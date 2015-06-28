@@ -33,7 +33,7 @@ int main(int argc, char* argv[]){
 
 	BOOST_LOG_TRIVIAL(info) << "Connecting to database...";
 
-	repo::core::handler::MongoDatabaseHandler *dbHandler = repo::core::handler::MongoDatabaseHandler::getHandler(address, port);
+	repo::core::handler::AbstractDatabaseHandler *dbHandler = repo::core::handler::MongoDatabaseHandler::getHandler(address, port);
 
 	BOOST_LOG_TRIVIAL(info) << (!dbHandler ? "FAIL" : "success!");
 

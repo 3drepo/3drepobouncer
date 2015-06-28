@@ -44,7 +44,7 @@
 namespace repo{
 	namespace core{
 		namespace handler {
-			class MongoDatabaseHandler : AbstractDatabaseHandler{
+			class MongoDatabaseHandler : public AbstractDatabaseHandler{
 				public:
 					/*
 					 *	=================================== Public Fields ========================================
