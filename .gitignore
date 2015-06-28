@@ -1,0 +1,12 @@
+
+#Windows junk
+*.vcxproj*
+*.sln
+*.suo
+*.rc
+*.opensdf
+*.aps
+*.sdf
+
+Debug
+x64
