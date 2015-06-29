@@ -1,4 +1,5 @@
 #include <iostream>
+#include <list>
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
 
@@ -7,10 +8,51 @@
 
 void configureLogging(){
 
-	//boost::log::core::get()->set_filter
-	//(
-	//	//boost::log::trivial::severity >= boost::log::trivial::info //only show info and above
-	//);
+	boost::log::core::get()->set_filter
+	(
+		boost::log::trivial::severity >= boost::log::trivial::info //only show info and above
+	);
+}
+
+void testDatabaseRetrieval(repo::core::handler::AbstractDatabaseHandler *dbHandler){
+
+	BOOST_LOG_TRIVIAL(debug) << "Retrieving list of databases...";
+	std::list<std::string> databaseList = dbHandler->getDatabases();
+
+	BOOST_LOG_TRIVIAL(debug) << "# of database: " << databaseList.size();
+
+	std::list<std::string>::const_iterator iterator;
+	for (iterator = databaseList.begin(); iterator != databaseList.end(); ++iterator) {
+		BOOST_LOG_TRIVIAL(debug) << "\t" << *iterator;
+	}
+
+	BOOST_LOG_TRIVIAL(debug) << "Retrieving list of database projects";
+	std::map<std::string, std::list<std::string>> mapDBProjects = dbHandler->getDatabasesWithProjects(databaseList);
+
+	std::map<std::string, std::list<std::string>>::const_iterator mapIterator;
+	for (mapIterator = mapDBProjects.begin(); mapIterator != mapDBProjects.end(); ++mapIterator) {
+		BOOST_LOG_TRIVIAL(debug) << mapIterator->first << ":";
+		std::list<std::string> projectList = mapIterator->second;
+
+		for (iterator = projectList.begin(); iterator != projectList.end(); ++iterator) {
+			BOOST_LOG_TRIVIAL(debug) << "\t" << *iterator;
+		}
+	}
+
+
+}
+
+void connect(repo::core::handler::AbstractDatabaseHandler *dbHandler, std::string username, std::string password){
+
+
+	BOOST_LOG_TRIVIAL(debug) << "Connecting to database...";
+
+
+	BOOST_LOG_TRIVIAL(debug) << (!dbHandler ? "FAIL" : "success!");
+
+	BOOST_LOG_TRIVIAL(debug) << "Authenticating...";
+	BOOST_LOG_TRIVIAL(debug) << (!dbHandler->authenticate(username, password) ? "FAIL" : "success!");
+
 }
 
 int main(int argc, char* argv[]){
@@ -28,18 +70,12 @@ int main(int argc, char* argv[]){
 	std::string password = argv[4];
 
 
-	configureLogging();
-
-
-	BOOST_LOG_TRIVIAL(info) << "Connecting to database...";
-
 	repo::core::handler::AbstractDatabaseHandler *dbHandler = repo::core::handler::MongoDatabaseHandler::getHandler(address, port);
 
-	BOOST_LOG_TRIVIAL(info) << (!dbHandler ? "FAIL" : "success!");
+	configureLogging();
 
-	BOOST_LOG_TRIVIAL(info) << "Authenticating...";
-	BOOST_LOG_TRIVIAL(info) << (!dbHandler->authenticate(username, password) ? "FAIL" : "success!");
-
+	connect(dbHandler, username, password);
+	testDatabaseRetrieval(dbHandler);
 
 	return EXIT_SUCCESS;
 }

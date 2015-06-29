@@ -15,7 +15,7 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
+/**
  * MongoDatabaseHandler.h
  *
  *  Created on: 26 Jun 2015
@@ -33,8 +33,10 @@
 #include <boost/log/trivial.hpp>
 
 #if defined(_WIN32) || defined(_WIN64)
-#include <WinSock2.h>
-#include <Windows.h>
+	#include <WinSock2.h>
+	#include <Windows.h>
+
+	#define strcasecmp _stricmp
 #endif
 
 #include "mongo/client/dbclient.h"
@@ -70,7 +72,7 @@ namespace repo{
 					/**
 					 * A Deconstructor
 					 */
-					~MongoDatabaseHandler(){};
+					~MongoDatabaseHandler();
 
 					/**
 					 * Returns the instance of MongoDatabaseHandler
@@ -85,7 +87,8 @@ namespace repo{
 				     */
 					bool authenticate(const std::string& username, const std::string& plainTextPassword);
 
-					/** Authenticates the user on a given database for a specific access.
+					/** 
+					 *  Authenticates the user on a given database for a specific access.
 				     *  Authentication is separate for each database and the user can
 					 *  authenticate on any number of databases. MongoDB password is the hex
 					 *  encoding of MD5( <username> + ":mongo:" + <password_text> ).
@@ -99,6 +102,37 @@ namespace repo{
 						const std::string& username,
 						const std::string& password,
 						bool isPasswordDigested = false);
+
+					/**
+					* Get a list of all available collections in a format "database.collection".
+					* Use mongo.nsGetCollection() to remove database from the returned string.
+					* @param name of the database
+					* @return a list of collection names
+					*/
+					std::list<std::string> getCollections(const std::string &database);
+
+
+					/**
+					 * Get a list of all available databases, alphabetically sorted by default.
+					 * @param sort the database
+					 * @return returns a list of database names
+					*/
+					std::list<std::string> getDatabases(const bool &sorted = true);
+
+					/** get the associated projects for the list of database.
+					 * @param list of database
+					 * @return returns a map of database -> list of projects
+					 */
+					std::map<std::string, std::list<std::string> > getDatabasesWithProjects(
+						const std::list<std::string> &databases);
+
+					/**
+					 * Get a list of projects associated with a given database (aka company account).
+					 * @param list of database
+					 * @return list of projects for the database
+					 */ 
+					std::list<std::string> getProjects(const std::string &database);
+
 					/*
 					 *	=============================================================================================
 					 */
@@ -134,6 +168,20 @@ namespace repo{
 					 */
 					MongoDatabaseHandler(const mongo::ConnectionString &dbAddress);
 					
+					/**
+					 * Extract collection name from namespace (db.collection)
+					 * @param namespace as string
+					 * @return returns a string with just the collection name
+					 */
+					std::string getCollectionFromNamespace(const std::string &ns);
+
+					/**
+					* Extract database name from namespace (db.collection)
+					* @param namespace as string
+					* @return returns a string with just the database name
+					*/
+					std::string MongoDatabaseHandler::getDatabaseFromNamespace(const std::string &ns);
+
 					/*
 					 * initialise the connection pool workers
 					 * @param number of workers in the pool
@@ -141,6 +189,16 @@ namespace repo{
 					 * @returns true if a connection to the database is established
 					 */
 					bool intialiseWorkers();
+
+					/**
+					* Compares two strings.
+					* @param string 1
+					* @param string 2
+					* @return returns true if string 1 matches (or is greater than) string 2
+					*/
+					static bool caseInsensitiveStringCompare(const std::string& s1, const std::string& s2);
+
+					
 					/*
 					 *	=============================================================================================
 					 */
