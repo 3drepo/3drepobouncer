@@ -3,7 +3,7 @@
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
 
-#include "core/handler/MongoDatabaseHandler.h"
+#include "core/handler/repo_mongo_database_handler.h"
 
 
 void configureLogging(){
