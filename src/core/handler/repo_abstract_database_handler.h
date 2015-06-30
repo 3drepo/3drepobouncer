@@ -52,14 +52,15 @@ namespace repo{
 				* @return returns a map of database -> list of projects
 				*/
 				virtual std::map<std::string, std::list<std::string> > getDatabasesWithProjects(
-					const std::list<std::string> &databases)=0;
+					const std::list<std::string> &databases, const std::string &projectExt) = 0;
 
 				/**
 				* Get a list of projects associated with a given database (aka company account).
 				* @param list of database
+				* @param extension that indicates it is a project (.scene)
 				* @return list of projects for the database
 				*/
-				virtual std::list<std::string> getProjects(const std::string &database)=0;
+				virtual std::list<std::string> getProjects(const std::string &database, const std::string &projectExt)=0;
 
 
 			protected:

@@ -104,7 +104,7 @@ namespace repo{
 						bool isPasswordDigested = false);
 
 					/**
-					* Get a list of all available collections in a format "database.collection".
+					* Get a list of all available collections.
 					* Use mongo.nsGetCollection() to remove database from the returned string.
 					* @param name of the database
 					* @return a list of collection names
@@ -124,14 +124,16 @@ namespace repo{
 					 * @return returns a map of database -> list of projects
 					 */
 					std::map<std::string, std::list<std::string> > getDatabasesWithProjects(
-						const std::list<std::string> &databases);
+						const std::list<std::string> &databases, const std::string &projectExt);
 
 					/**
 					 * Get a list of projects associated with a given database (aka company account).
+					 * It will filter out any collections without that isn't *.projectExt
 					 * @param list of database
+					 * @param extension that determines it is a project (scene)
 					 * @return list of projects for the database
 					 */ 
-					std::list<std::string> getProjects(const std::string &database);
+					std::list<std::string> getProjects(const std::string &database, const std::string &projectExt);
 
 					/*
 					 *	=============================================================================================
@@ -180,7 +182,7 @@ namespace repo{
 					* @param namespace as string
 					* @return returns a string with just the database name
 					*/
-					std::string MongoDatabaseHandler::getDatabaseFromNamespace(const std::string &ns);
+					std::string MongoDatabaseHandler::getProjectFromCollection(const std::string &ns, const std::string &projectExt);
 
 					/*
 					 * initialise the connection pool workers

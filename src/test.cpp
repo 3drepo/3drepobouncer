@@ -26,20 +26,18 @@ void testDatabaseRetrieval(repo::core::handler::AbstractDatabaseHandler *dbHandl
 		BOOST_LOG_TRIVIAL(debug) << "\t" << *iterator;
 	}
 
-	BOOST_LOG_TRIVIAL(debug) << "Retrieving list of database projects";
-	std::map<std::string, std::list<std::string>> mapDBProjects = dbHandler->getDatabasesWithProjects(databaseList);
+	BOOST_LOG_TRIVIAL(info) << "Retrieving list of database collections";
+	std::map<std::string, std::list<std::string>> mapDBProjects = dbHandler->getDatabasesWithProjects(databaseList, "scene");
 
 	std::map<std::string, std::list<std::string>>::const_iterator mapIterator;
 	for (mapIterator = mapDBProjects.begin(); mapIterator != mapDBProjects.end(); ++mapIterator) {
-		BOOST_LOG_TRIVIAL(debug) << mapIterator->first << ":";
+		BOOST_LOG_TRIVIAL(info) << mapIterator->first << ":";
 		std::list<std::string> projectList = mapIterator->second;
 
 		for (iterator = projectList.begin(); iterator != projectList.end(); ++iterator) {
-			BOOST_LOG_TRIVIAL(debug) << "\t" << *iterator;
+			BOOST_LOG_TRIVIAL(info) << "\t" << *iterator;
 		}
 	}
-
-
 }
 
 void connect(repo::core::handler::AbstractDatabaseHandler *dbHandler, std::string username, std::string password){

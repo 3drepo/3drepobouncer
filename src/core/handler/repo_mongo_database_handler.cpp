@@ -5,7 +5,7 @@
  *      Author: Carmen
  */
 
-//#include <regex>
+#include <regex>
 
 #include "repo_mongo_database_handler.h"
 
@@ -93,7 +93,6 @@ std::list<std::string> MongoDatabaseHandler::getCollections(
 	std::list<std::string> collections;
 	try
 	{
-		BOOST_LOG_TRIVIAL(info) << "use " + database + "; show collections;";
 		collections = worker->getCollectionNames(database);
 	}
 	catch (mongo::DBException& e)
@@ -128,7 +127,6 @@ std::list<std::string> MongoDatabaseHandler::getDatabases(
 	std::list<std::string> list;
 	try
 	{
-		BOOST_LOG_TRIVIAL(info) <<"show dbs;";
 		list = worker->getDatabaseNames();
 
 		if (sorted)
@@ -142,26 +140,20 @@ std::list<std::string> MongoDatabaseHandler::getDatabases(
 	return list;
 }
 
-//std::string MongoDatabaseHandler::getDatabaseFromNamespace(const std::string &ns)
-//{
-//
-//	std::regex rgx("(\\w+)\.*");
-//	std::smatch match;
-//
-//	std::string collection;
-//	if (std::regex_search(ns.begin(), ns.end(), match, rgx))
-//		collection = match[1];
-//	else{
-//		BOOST_LOG_TRIVIAL(debug) <<
-//			"in MongoDatabaseHandler::getCollectionFromNamespace : would not find collection name from namespace :" << ns;
-//		collection = ns;
-//	}
-//
-//	return collection;
-//}
+std::string MongoDatabaseHandler::getProjectFromCollection(const std::string &ns, const std::string &projectExt)
+{
+	size_t ind = ns.find("." + projectExt);
+	std::string project;
+	//just to make sure string is empty.
+	project.clear();
+	if (ind != std::string::npos){
+		project = ns.substr(0, ind);
+	}
+	return project;
+}
 
 std::map<std::string, std::list<std::string> > MongoDatabaseHandler::getDatabasesWithProjects(
-	const std::list<std::string> &databases)
+	const std::list<std::string> &databases, const std::string &projectExt)
 {
 	std::map<std::string, std::list<std::string> > mapping;
 	try
@@ -170,7 +162,7 @@ std::map<std::string, std::list<std::string> > MongoDatabaseHandler::getDatabase
 			it != databases.end(); ++it)
 		{
 			std::string database = *it;
-			std::list<std::string> projects = getProjects(database);
+			std::list<std::string> projects = getProjects(database, projectExt);
 			mapping.insert(std::make_pair(database, projects));
 		}
 	}
@@ -207,17 +199,19 @@ MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
 	return handler;
 }
 
-//FIXME: this changed? do i just return collections? collections = project?
-std::list<std::string> MongoDatabaseHandler::getProjects(const std::string &database)
+std::list<std::string> MongoDatabaseHandler::getProjects(const std::string &database, const std::string &projectExt)
 {
 	// TODO: remove db.info from the list (anything that is not a project basically)
 	std::list<std::string> collections = getCollections(database);
 	std::list<std::string> projects;
-	//for (std::list<std::string>::iterator it = collections.begin(); it != collections.end(); ++it)
-	//	projects.push_back(getDatabaseFromNamespace(getCollectionFromNamespace(*it)));
-	//projects.sort();
-	//projects.unique();
-	return collections;
+	for (std::list<std::string>::iterator it = collections.begin(); it != collections.end(); ++it){
+		std::string project = getProjectFromCollection(*it, projectExt);
+		if (!project.empty())
+			projects.push_back(project);
+	}
+	projects.sort();
+	projects.unique();
+	return projects;
 }
 
 bool MongoDatabaseHandler::intialiseWorkers(){
