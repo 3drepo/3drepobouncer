@@ -54,7 +54,10 @@ void connect(repo::core::handler::AbstractDatabaseHandler *dbHandler, std::strin
 
 }
 
-void buildRepoNode(){
+void insertARepoNode(repo::core::handler::AbstractDatabaseHandler *dbHandler){
+	//namespace to insert the node into.
+	std::string database = "test";
+	std::string collection = "test.scene";
 
 	//builds a repo node and dumps it out to check its value
 
@@ -62,6 +65,10 @@ void buildRepoNode(){
 
 	BOOST_LOG_TRIVIAL(info) << "Repo Node created: ";
 	BOOST_LOG_TRIVIAL(info) << "\t" << node.toString();
+
+	BOOST_LOG_TRIVIAL(info) << "Repo Node created inserting it in " << database << "." << collection;
+	dbHandler->insertDocument(database, collection, node);
+
 
 }
 
@@ -87,7 +94,7 @@ int main(int argc, char* argv[]){
 	connect(dbHandler, username, password);
 	//testDatabaseRetrieval(dbHandler);
 
-	buildRepoNode();
+	insertARepoNode(dbHandler);
 
 	return EXIT_SUCCESS;
 }

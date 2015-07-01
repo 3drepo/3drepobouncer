@@ -25,6 +25,8 @@
 #include <map>
 #include <string>
 
+#include "../model/bson/repo_bson.h"
+
 namespace repo{
 	namespace core{
 		namespace handler {
@@ -35,6 +37,15 @@ namespace repo{
 				 */
 				~AbstractDatabaseHandler(){};
 
+				/*
+				*	------------- Authentication (insert/delete/update) --------------
+				*/
+
+				/**
+				* Authenticates the user to the database
+				* @param username in the database
+				* @param password for this username
+				*/
 				virtual bool authenticate(const std::string& username, const std::string& plainTextPassword)=0;
 
 				/** Authenticates the user on a given database for a specific access.
@@ -46,6 +57,10 @@ namespace repo{
 				virtual bool authenticate(
 					const std::string& database, const std::string& username,
 					const std::string& password, bool isPasswordDigested = false)=0;
+
+				/*
+				*	------------- Database info lookup --------------
+				*/
 
 				/**
 				* Get a list of all available collections
@@ -74,6 +89,22 @@ namespace repo{
 				* @return list of projects for the database
 				*/
 				virtual std::list<std::string> getProjects(const std::string &database, const std::string &projectExt)=0;
+
+
+				/*
+				*	------------- Database operations (insert/delete/update) --------------
+				*/
+
+				/**
+				* Insert a single document in database.collection
+				* @param database name
+				* @param collection name
+				* @param document to insert
+				*/
+				virtual void insertDocument(
+					const std::string &database,
+					const std::string &collection,
+					const repo::core::model::bson::RepoBSON &obj)=0;
 
 
 			protected:

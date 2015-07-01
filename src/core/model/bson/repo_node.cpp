@@ -37,16 +37,6 @@ RepoNode RepoNode::createRepoNode(
 	//--------------------------------------------------------------------------
 	// Shared ID (UUID)
 	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedId);
-	
-	//--------------------------------------------------------------------------
-	// Paths
-	// 
-	// Paths are stored as array of arrays of shared_id (uuids)
-//FIXME: we don't use paths? Either way this should be a scene graph operation. Node document shouldn't even know what this means.
-	//const std::vector<std::vector<boost::uuids::uuid>> paths =
-	//	getPaths(this);
-	//if (paths.size() > 0)
-	//	RepoTranscoderBSON::append(REPO_NODE_LABEL_PATHS, paths, builder);
 
 	//--------------------------------------------------------------------------
 	// Type
