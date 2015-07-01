@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2014 3D Repo Ltd
+*  Copyright (C) 2015 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -16,8 +16,28 @@
 */
 
 /**
-* Abstract database handler which all database handler needs to inherit from
+*  BSON factory that creates specific BSON objects.
+*  This essentially functions as the builder (like Mongo BsonObjBuilder)
 */
 
-#include "repo_abstract_database_handler.h"
+#ifndef REPO_BSON_FACTORY_H
+#define REPO_BSON_FACTORY_H
 
+#include "repo_node.h"
+
+namespace repo {
+	namespace core {
+		namespace model {
+			namespace bson {
+				class RepoBSONFactory
+				{
+					public:
+						static RepoNode makeRepoNode(std::string type);
+
+				};
+			}//namespace bson
+		} //namespace model
+	} //namespace core
+} //namespace repo
+
+#endif //REPO_BSON_FACTORY_H

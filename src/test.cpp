@@ -4,7 +4,8 @@
 #include <boost/log/expressions.hpp>
 
 #include "core/handler/repo_mongo_database_handler.h"
-
+#include "core/model/bson/repo_bson_factory.h"
+#include "core/model/bson/repo_node.h"
 
 void configureLogging(){
 
@@ -26,16 +27,16 @@ void testDatabaseRetrieval(repo::core::handler::AbstractDatabaseHandler *dbHandl
 		BOOST_LOG_TRIVIAL(debug) << "\t" << *iterator;
 	}
 
-	BOOST_LOG_TRIVIAL(info) << "Retrieving list of database collections";
+	BOOST_LOG_TRIVIAL(debug) << "Retrieving list of database collections";
 	std::map<std::string, std::list<std::string>> mapDBProjects = dbHandler->getDatabasesWithProjects(databaseList, "scene");
 
 	std::map<std::string, std::list<std::string>>::const_iterator mapIterator;
 	for (mapIterator = mapDBProjects.begin(); mapIterator != mapDBProjects.end(); ++mapIterator) {
-		BOOST_LOG_TRIVIAL(info) << mapIterator->first << ":";
+		BOOST_LOG_TRIVIAL(debug) << mapIterator->first << ":";
 		std::list<std::string> projectList = mapIterator->second;
 
 		for (iterator = projectList.begin(); iterator != projectList.end(); ++iterator) {
-			BOOST_LOG_TRIVIAL(info) << "\t" << *iterator;
+			BOOST_LOG_TRIVIAL(debug) << "\t" << *iterator;
 		}
 	}
 }
@@ -50,6 +51,17 @@ void connect(repo::core::handler::AbstractDatabaseHandler *dbHandler, std::strin
 
 	BOOST_LOG_TRIVIAL(debug) << "Authenticating...";
 	BOOST_LOG_TRIVIAL(debug) << (!dbHandler->authenticate(username, password) ? "FAIL" : "success!");
+
+}
+
+void buildRepoNode(){
+
+	//builds a repo node and dumps it out to check its value
+
+	repo::core::model::bson::RepoNode node = repo::core::model::bson::RepoBSONFactory::makeRepoNode("<crazy>");
+
+	BOOST_LOG_TRIVIAL(info) << "Repo Node created: ";
+	BOOST_LOG_TRIVIAL(info) << "\t" << node.toString();
 
 }
 
@@ -73,7 +85,9 @@ int main(int argc, char* argv[]){
 	configureLogging();
 
 	connect(dbHandler, username, password);
-	testDatabaseRetrieval(dbHandler);
+	//testDatabaseRetrieval(dbHandler);
+
+	buildRepoNode();
 
 	return EXIT_SUCCESS;
 }

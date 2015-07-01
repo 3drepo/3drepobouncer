@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2014 3D Repo Ltd
+*  Copyright (C) 2015 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -16,8 +16,18 @@
 */
 
 /**
-* Abstract database handler which all database handler needs to inherit from
+*  Transformation node bson object. Generic bson that is inherited by others.
 */
 
-#include "repo_abstract_database_handler.h"
+#include "repo_node_transformation.h"
 
+using namespace repo::core::model::bson;
+
+//RepoNodeTransformation::RepoNodeTransformation()
+//{
+//}
+//
+//
+//RepoNodeTransformation::~RepoNodeTransformation()
+//{
+//}
