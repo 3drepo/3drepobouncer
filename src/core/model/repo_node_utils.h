@@ -16,8 +16,17 @@
 */
 
 /**
-* Abstract database handler which all database handler needs to inherit from
+* Static utility functions for nodes
 */
 
-#include "repo_abstract_database_handler.h"
+#pragma once
+#include <boost/uuid/uuid.hpp> 
+#include <boost/uuid/uuid_generators.hpp>
 
+//abstract out the use of boost inside the node codes 
+//incase we want to change it in the future
+typedef boost::uuids::uuid repo_uuid;
+
+static repo_uuid generateUUID(){
+	return  boost::uuids::random_generator()();
+}

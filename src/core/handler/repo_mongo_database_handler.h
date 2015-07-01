@@ -16,11 +16,6 @@
  */
 
 /**
- * MongoDatabaseHandler.h
- *
- *  Created on: 26 Jun 2015
- *      Author: Carmen
- *
  *  Mongo database handler
  */
 
