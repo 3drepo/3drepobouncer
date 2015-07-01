@@ -213,6 +213,13 @@ MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
 	return handler;
 }
 
+std::string MongoDatabaseHandler::getNamespace(
+	const std::string &database, 
+	const std::string &collection)
+{	
+	return database + "." + collection;
+}
+
 std::list<std::string> MongoDatabaseHandler::getProjects(const std::string &database, const std::string &projectExt)
 {
 	// TODO: remove db.info from the list (anything that is not a project basically)
@@ -226,6 +233,14 @@ std::list<std::string> MongoDatabaseHandler::getProjects(const std::string &data
 	projects.sort();
 	projects.unique();
 	return projects;
+}
+
+void MongoDatabaseHandler::insertDocument(
+	const std::string &database,
+	const std::string &collection,
+	const repo::core::model::bson::RepoBSON &obj)
+{
+	worker->insert(getNamespace(database, collection), obj);
 }
 
 bool MongoDatabaseHandler::intialiseWorkers(){

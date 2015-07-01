@@ -34,9 +34,10 @@
 	#define strcasecmp _stricmp
 #endif
 
-#include "mongo/client/dbclient.h"
+#include <mongo/client/dbclient.h>
 
 #include "repo_abstract_database_handler.h"
+#include "../model/bson/repo_bson.h"
 
 namespace repo{
 	namespace core{
@@ -75,6 +76,10 @@ namespace repo{
 					 */
 					static MongoDatabaseHandler* getHandler(const std::string &host, const int &port);
 
+					/*
+					*	------------- Authentication --------------
+					*/
+
 				    /**
 					 * Authenticates the user on the "admin" database. This gives access to all databases.
 					 * @param username in the database
@@ -97,6 +102,10 @@ namespace repo{
 						const std::string& username,
 						const std::string& password,
 						bool isPasswordDigested = false);
+
+					/*
+					*	------------- Database info lookup --------------
+					*/
 
 					/**
 					* Get a list of all available collections.
@@ -129,6 +138,21 @@ namespace repo{
 					 * @return list of projects for the database
 					 */ 
 					std::list<std::string> getProjects(const std::string &database, const std::string &projectExt);
+
+					/*
+					*	------------- Database operations (insert/delete/update) --------------
+					*/
+
+					/**
+					 * Insert a single document in database.collection
+					 * @param database name
+					 * @param collection name
+					 * @param document to insert
+					*/
+					void insertDocument(
+						const std::string &database,
+						const std::string &collection,
+						const repo::core::model::bson::RepoBSON &obj);
 
 					/*
 					 *	=============================================================================================
@@ -171,6 +195,17 @@ namespace repo{
 					 * @return returns a string with just the collection name
 					 */
 					std::string getCollectionFromNamespace(const std::string &ns);
+
+					/**
+					 * Given a database and collection name, returns its namespace
+					 * Basically, append database + "." + collection
+					 * @param database name
+					 * @param collection name
+					 * @return namespace
+					*/
+					std::string MongoDatabaseHandler::getNamespace(
+						const std::string &database,
+						const std::string &collection);
 
 					/**
 					* Extract database name from namespace (db.collection)
