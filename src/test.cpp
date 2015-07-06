@@ -3,6 +3,8 @@
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
 
+#include "manipulator/repo_project.h"
+
 #include "core/handler/repo_mongo_database_handler.h"
 #include "core/model/bson/repo_bson_factory.h"
 #include "core/model/bson/repo_node.h"
@@ -72,6 +74,18 @@ void insertARepoNode(repo::core::handler::AbstractDatabaseHandler *dbHandler){
 
 }
 
+void instantiateProject(repo::core::handler::AbstractDatabaseHandler *dbHandler){
+	repo::manipulator::RepoProject *project = new repo::manipulator::RepoProject(dbHandler, "map", "arup");
+	std::string errMsg;
+	if (!project->loadRevision(errMsg)){
+		BOOST_LOG_TRIVIAL(info) << "load Revision failed " << errMsg;
+	}
+	else{
+		BOOST_LOG_TRIVIAL(info) << "Revision loaded";
+	}
+}
+
+
 int main(int argc, char* argv[]){
 
 	//TODO: configuration needs to be done properly, but hey, i'm just a quick test!
@@ -94,7 +108,9 @@ int main(int argc, char* argv[]){
 	connect(dbHandler, username, password);
 	//testDatabaseRetrieval(dbHandler);
 
-	insertARepoNode(dbHandler);
+	//insertARepoNode(dbHandler);
+
+	instantiateProject(dbHandler);
 
 	return EXIT_SUCCESS;
 }

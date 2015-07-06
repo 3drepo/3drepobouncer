@@ -28,6 +28,8 @@
 #define REPO_BSON_H
 
 #include "../repo_model_global.h"
+#include "../repo_node_properties.h"
+#include "../repo_node_utils.h"
 
 ////------------------------------------------------------------------------------
 //#if defined(_WIN32) || defined(_WIN64)
@@ -87,6 +89,11 @@ namespace repo {
 						* Default empty deconstructor.
 						*/
 						~RepoBSON() {}
+
+						/**
+						* Overload of getField function to retreve repo_uuid
+						*/
+						repo_uuid getUUIDField(std::string label);
 
 //						//--------------------------------------------------------------------------
 //

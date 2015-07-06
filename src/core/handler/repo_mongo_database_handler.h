@@ -37,7 +37,9 @@
 #include <mongo/client/dbclient.h>
 
 #include "repo_abstract_database_handler.h"
+#include "../model/repo_node_utils.h"
 #include "../model/bson/repo_bson.h"
+#include "../model/bson/repo_bson_builder.h"
 
 namespace repo{
 	namespace core{
@@ -155,6 +157,26 @@ namespace repo{
 						const repo::core::model::bson::RepoBSON &obj);
 
 					/*
+					*	------------- Query operations --------------
+					*/
+
+					/**
+					*Retrieves the first document matching given Shared ID (SID), sorting is descending
+					* (newest first)
+					* @param name of database
+					* @param name of collectoin
+					* @param share id
+					* @param field to sort by
+					* @param fields to retrieve
+					* @return returns a bson object containing those fields
+					*/
+					repo::core::model::bson::RepoBSON findOneBySharedID(
+						const std::string& database,
+						const std::string& collection,
+						const repo_uuid& uuid,
+						const std::string& sortField);
+
+					/*
 					 *	=============================================================================================
 					 */
 
@@ -189,6 +211,17 @@ namespace repo{
 					 */
 					MongoDatabaseHandler(const mongo::ConnectionString &dbAddress);
 					
+
+					/**
+					* Turns a list of fields that needs to be returned by the query into a bson
+					* object.
+					* @param list of field names to return
+					* @param ID field is excluded by default unless explicitly stated in the list.
+					*/
+					mongo::BSONObj MongoDatabaseHandler::fieldsToReturn(
+						const std::list<std::string>& fields,
+						bool excludeIdField=false);
+
 					/**
 					 * Extract collection name from namespace (db.collection)
 					 * @param namespace as string

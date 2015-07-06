@@ -22,6 +22,25 @@
 #include "repo_bson_builder.h"
 using namespace repo::core::model::bson;
 
+RepoNode::RepoNode(RepoBSON bson) : RepoBSON(bson){
+	//--------------------------------------------------------------------------
+	// Type
+	if (bson.hasField(REPO_NODE_LABEL_TYPE))
+		type = bson.getField(REPO_NODE_LABEL_TYPE).String();
+	else
+		type = REPO_NODE_TYPE_UNKNOWN; // failsafe
+
+	//--------------------------------------------------------------------------
+	// ID
+	uniqueID = bson.getUUIDField(REPO_NODE_LABEL_ID);
+
+	//--------------------------------------------------------------------------
+	// Shared ID
+	if (bson.hasField(REPO_NODE_LABEL_SHARED_ID))
+		sharedID = bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
+
+}
+
 RepoNode RepoNode::createRepoNode(
 	const std::string &type,
 	const unsigned int api,

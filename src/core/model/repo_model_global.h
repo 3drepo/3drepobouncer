@@ -90,6 +90,8 @@
 
 #define REPO_PROJECT_TYPE_ARCHITECTURAL "architectural"
 
+#define REPO_HISTORY_MASTER_BRANCH  "00000000-0000-0000-0000-000000000000"
+
 //------------------------------------------------------------------------------
 // Media Types a.k.a. as Multipurpose Internet Mail Extensions (MIME) Types
 // http://www.iana.org/assignments/media-types/media-types.xhtml#image

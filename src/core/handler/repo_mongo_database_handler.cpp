@@ -100,6 +100,53 @@ bool MongoDatabaseHandler::caseInsensitiveStringCompare(
 }
 
 
+mongo::BSONObj MongoDatabaseHandler::fieldsToReturn(
+	const std::list<std::string>& fields,
+	bool excludeIdField)
+{
+	mongo::BSONObjBuilder fieldsToReturn;
+	std::list<std::string>::const_iterator it;
+	for (it = fields.begin(); it != fields.end(); ++it)
+	{
+		fieldsToReturn << *it << 1;
+		excludeIdField = excludeIdField && ID != *it;
+	}
+	if (excludeIdField)
+		fieldsToReturn << ID << 0;
+
+	return fieldsToReturn.obj();
+}
+
+
+repo::core::model::bson::RepoBSON MongoDatabaseHandler::findOneBySharedID(
+	const std::string& database,
+	const std::string& collection,
+	const repo_uuid& uuid,
+	const std::string& sortField)
+{
+
+	repo::core::model::bson::RepoBSON bson;
+	
+	try
+	{
+		repo::core::model::bson::RepoBSONBuilder queryBuilder;
+		//mongo::BSONObj obj = fieldsToReturn(fields);
+		queryBuilder.append("shared_id", uuid);
+		//----------------------------------------------------------------------
+		mongo::BSONObj bsonMongo = worker->findOne(
+			getNamespace(database, collection),
+			mongo::Query(queryBuilder.obj()).sort(sortField, -1));
+
+		bson = repo::core::model::bson::RepoBSON(bsonMongo);
+	}
+	catch (mongo::DBException& e)
+	{
+		BOOST_LOG_TRIVIAL(error) << "Error querying the database: "<< std::string(e.what());
+	}
+	return bson;
+}
+
+
 // Returns a list of tables for a given database name.
 std::list<std::string> MongoDatabaseHandler::getCollections(
 	const std::string &database)

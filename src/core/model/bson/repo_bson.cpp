@@ -17,6 +17,27 @@
 
 
 #include "repo_bson.h"
+
+using namespace repo::core::model::bson;
+
+repo_uuid RepoBSON::getUUIDField(std::string label){
+	repo_uuid uuid;
+	const mongo::BSONElement bse = getField(label);
+	if (bse.binDataType() == mongo::bdtUUID ||
+		bse.binDataType() == mongo::newUUID)
+	{
+		int len = static_cast<int>(bse.size() * sizeof(boost::uint8_t));
+		const char *binData = bse.binData(len);
+		memcpy(uuid.data, binData, len);
+	}
+	else
+		uuid = boost::uuids::random_generator()();  // failsafe
+	return uuid;
+}
+
+
+
+
 //
 ////------------------------------------------------------------------------------
 //

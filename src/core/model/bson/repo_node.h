@@ -37,7 +37,7 @@ namespace repo{
 						* Construct a RepoNode base on a RepoBSON object
 						* 
 						*/
-						RepoNode(RepoBSON bson) : RepoBSON(bson) {};
+						RepoNode(RepoBSON bson);
 
 						/**
 						* Empty Constructor
@@ -66,6 +66,41 @@ namespace repo{
 							const std::string &name = std::string(),
 							const std::vector<repo_uuid> &parents = std::vector<repo_uuid>());
 
+					protected:
+					
+						/*
+						*	------------- Query operations --------------
+						*/
+						
+						std::string type; //!< Compulsory type of this document.
+
+						unsigned int api; //!< Compulsory API level of this document (used to decode).
+
+						repo_uuid sharedID; //!< Shared unique graph document identifier.
+
+						repo_uuid uniqueID; //!< Compulsory unique database document identifier.
+
+						std::string name; //!< Optional name of this document.
+
+						////! Parents of this node.
+						///*!
+						//* Parents are a std:set to make sure all entries are unique.
+						//*/
+						//std::set<const RepoNode *> parents;
+
+						/*!
+						* Shared IDs of the parents. Needs to be in sync with
+						* parents set. This is only useful when retrieving data from the
+						* repository as this set can otherwise be calculated on the fly.
+						*/
+						std::set<repo_uuid> parentSharedIDs;
+
+						//! Children of this node.
+						/*!
+						* Children are a std:set to make sure all entries are unique.
+						*/
+						// TODO: remove const
+						std::set<const repo_uuid *> children;
 				};
 			}//namespace bson
 		} //namespace model

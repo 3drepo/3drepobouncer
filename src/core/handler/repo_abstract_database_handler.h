@@ -106,6 +106,26 @@ namespace repo{
 					const std::string &collection,
 					const repo::core::model::bson::RepoBSON &obj)=0;
 
+				/*
+				*	------------- Query operations --------------
+				*/
+
+				/**
+				*Retrieves the first document matching given Shared ID (SID), sorting is descending
+				* (newest first)
+				* @param name of database
+				* @param name of collectoin
+				* @param share id
+				* @param field to sort by
+				* @param fields to retrieve
+				* @return returns a bson object containing those fields
+				*/
+				virtual repo::core::model::bson::RepoBSON findOneBySharedID(
+					const std::string& database,
+					const std::string& collection,
+					const repo_uuid& uuid,
+					const std::string& sortField)=0;
+
 
 			protected:
 				/**
