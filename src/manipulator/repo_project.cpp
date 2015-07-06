@@ -53,24 +53,24 @@ RepoProject::~RepoProject()
 
 bool RepoProject::loadRevision(std::string &errMsg){
 	bool success = true;
+	repo::core::model::bson::RepoBSON bson;
 	if (headRevision){
 
-		repo::core::model::bson::RepoBSON bson = dbHandler->findOneBySharedID(databaseName, projectName + "." +
+		bson = dbHandler->findOneBySharedID(databaseName, projectName + "." +
 			revExt, branch, REPO_NODE_REVISION_LABEL_TIMESTAMP);
-
-		if (bson.isEmpty()){
-			errMsg = "Failed cannot find revision document from " + databaseName + "."+projectName + "." + revExt;
-			success = false;
-		}
-		else{
-			revNode = new repo::core::model::bson::RevisionNode(bson);
-		}
 	}
 	else{
-		//TODO: fill this in
-
-		//dbHandler->findOneByUniqueID(databaseName, projectName + "." + revExt, branch, "timestamp", fieldsToReturn);
+		bson = dbHandler->findOneByUniqueID(databaseName, projectName + "." + revExt, revision);
 	}
+
+	if (bson.isEmpty()){
+		errMsg = "Failed: cannot find revision document from " + databaseName + "." + projectName + "." + revExt;
+		success = false;
+	}
+	else{
+		revNode = new repo::core::model::bson::RevisionNode(bson);
+	}
+
 	return success;
 }
 

@@ -176,6 +176,18 @@ namespace repo{
 						const repo_uuid& uuid,
 						const std::string& sortField);
 
+					/**
+					*Retrieves the document matching given Unique ID (SID), sorting is descending
+					* @param name of database
+					* @param name of collectoin
+					* @param share id
+					* @return returns the matching bson object
+					*/
+					mongo::BSONObj findOneByUniqueID(
+						const std::string& database,
+						const std::string& collection,
+						const repo_uuid& uuid);
+
 					/*
 					 *	=============================================================================================
 					 */

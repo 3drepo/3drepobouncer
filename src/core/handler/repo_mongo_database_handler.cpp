@@ -130,7 +130,6 @@ repo::core::model::bson::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 	try
 	{
 		repo::core::model::bson::RepoBSONBuilder queryBuilder;
-		//mongo::BSONObj obj = fieldsToReturn(fields);
 		queryBuilder.append("shared_id", uuid);
 		//----------------------------------------------------------------------
 		mongo::BSONObj bsonMongo = worker->findOne(
@@ -146,6 +145,28 @@ repo::core::model::bson::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 	return bson;
 }
 
+mongo::BSONObj MongoDatabaseHandler::findOneByUniqueID(
+	const std::string& database,
+	const std::string& collection,
+	const repo_uuid& uuid){
+
+	repo::core::model::bson::RepoBSON bson;
+	try
+	{
+		repo::core::model::bson::RepoBSONBuilder queryBuilder;
+		queryBuilder.append(ID, uuid);
+
+		mongo::BSONObj bsonMongo = worker->findOne(getNamespace(database, collection),
+			mongo::Query(queryBuilder.obj()));
+
+		bson = repo::core::model::bson::RepoBSON(bsonMongo);
+	}
+	catch (mongo::DBException& e)
+	{
+		BOOST_LOG_TRIVIAL(error) << e.what();
+	}
+	return bson;
+}
 
 // Returns a list of tables for a given database name.
 std::list<std::string> MongoDatabaseHandler::getCollections(

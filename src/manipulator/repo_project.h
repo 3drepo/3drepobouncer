@@ -88,7 +88,7 @@ namespace repo{
 				* If setProjectRevision() and setProjectBranch was never called,
 				* it will load master/head.
 				*/
-				bool RepoProject::loadRevision(std::string &errMsg);
+				bool loadRevision(std::string &errMsg);
 
 				/**
 				* Load Scene into Scene graph object base on the 

@@ -117,14 +117,25 @@ namespace repo{
 				* @param name of collectoin
 				* @param share id
 				* @param field to sort by
-				* @param fields to retrieve
-				* @return returns a bson object containing those fields
+				* @return returns the first matching bson object
 				*/
 				virtual repo::core::model::bson::RepoBSON findOneBySharedID(
 					const std::string& database,
 					const std::string& collection,
 					const repo_uuid& uuid,
 					const std::string& sortField)=0;
+
+				/**
+				*Retrieves the document matching given Unique ID (SID), sorting is descending
+				* @param name of database
+				* @param name of collectoin
+				* @param share id
+				* @return returns the matching bson object
+				*/
+				virtual mongo::BSONObj findOneByUniqueID(
+					const std::string& database,
+					const std::string& collection,
+					const repo_uuid& uuid) = 0;
 
 
 			protected:

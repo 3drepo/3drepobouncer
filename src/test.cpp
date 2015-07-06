@@ -6,6 +6,8 @@
 #include "manipulator/repo_project.h"
 
 #include "core/handler/repo_mongo_database_handler.h"
+
+#include "core/model/repo_node_utils.h"
 #include "core/model/bson/repo_bson_factory.h"
 #include "core/model/bson/repo_node.h"
 
@@ -77,12 +79,17 @@ void insertARepoNode(repo::core::handler::AbstractDatabaseHandler *dbHandler){
 void instantiateProject(repo::core::handler::AbstractDatabaseHandler *dbHandler){
 	repo::manipulator::RepoProject *project = new repo::manipulator::RepoProject(dbHandler, "map", "arup");
 	std::string errMsg;
+
+	project->setProjectRevision(stringToUUID("a79ae12a-9828-468b-804c-149f6cb835a5"));
+	
 	if (!project->loadRevision(errMsg)){
 		BOOST_LOG_TRIVIAL(info) << "load Revision failed " << errMsg;
 	}
 	else{
 		BOOST_LOG_TRIVIAL(info) << "Revision loaded";
 	}
+
+
 }
 
 
