@@ -336,17 +336,17 @@ void SceneGraph::printStatistics(std::iostream &output)
 	{
 		output << "Scene Graph loaded:\t\ttrue" << std::endl;
 		output << "# Nodes:\t\t\t" << nodesByUniqueID.size() << std::endl;
-		output << "# shareToUnique:\t\t" << sharedIDtoUniqueID.size() << std::endl;
-		output << "# parentToChildren:\t\t" << parentToChildren.size() << std::endl;
-		output << "# referenceToScene:\t\t" << referenceToScene.size() << std::endl << std::endl;
+		output << "# ShareToUnique:\t\t" << sharedIDtoUniqueID.size() << std::endl;
+		output << "# ParentToChildren:\t\t" << parentToChildren.size() << std::endl;
+		output << "# PeferenceToScene:\t\t" << referenceToScene.size() << std::endl << std::endl;
 		output << "# Cameras:\t\t\t" << cameras.size() << std::endl;
 		output << "# Maps:\t\t\t\t" << maps.size() << std::endl;
 		output << "# Materials:\t\t\t" << materials.size() << std::endl;
 		output << "# Meshes:\t\t\t" << meshes.size() << std::endl;
 		output << "# Metadata:\t\t\t" << metadata.size() << std::endl;
-		output << "# references:\t\t\t" << references.size() << std::endl;
-		output << "# textures:\t\t\t" << textures.size() << std::endl;
-		output << "# transformations:\t\t" << transformations.size() << std::endl;
+		output << "# References:\t\t\t" << references.size() << std::endl;
+		output << "# Textures:\t\t\t" << textures.size() << std::endl;
+		output << "# Transformations:\t\t" << transformations.size() << std::endl;
 		output << "# Unknowns:\t\t\t" << unknowns.size() << std::endl;
 
 	}

@@ -5,7 +5,7 @@
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
 
-#include "manipulator/repo_project.h"
+#include "manipulator/graph/repo_graph_scene.h"
 
 #include "core/handler/repo_mongo_database_handler.h"
 
@@ -79,7 +79,7 @@ void insertARepoNode(repo::core::handler::AbstractDatabaseHandler *dbHandler){
 }
 
 void instantiateProject(repo::core::handler::AbstractDatabaseHandler *dbHandler){
-	repo::manipulator::graph::SceneGraph *scene = new repo::manipulator::graph::SceneGraph(dbHandler, "test", "test");
+	repo::manipulator::graph::SceneGraph *scene = new repo::manipulator::graph::SceneGraph(dbHandler, "test", "bridge");
 	std::string errMsg;
 
 	//scene->setRevision(stringToUUID("a79ae12a-9828-468b-804c-149f6cb835a5"));

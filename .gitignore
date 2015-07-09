@@ -7,6 +7,7 @@
 *.opensdf
 *.aps
 *.sdf
+resource.h
 
 Debug
 x64
