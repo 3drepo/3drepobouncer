@@ -16,18 +16,24 @@
 */
 
 /**
-*  Transformation node bson object. Generic bson that is inherited by others.
+*  Transformation node 
 */
 
 #include "repo_node_transformation.h"
 
 using namespace repo::core::model::bson;
 
-//RepoNodeTransformation::RepoNodeTransformation()
-//{
-//}
-//
-//
-//RepoNodeTransformation::~RepoNodeTransformation()
-//{
-//}
+TransformationNode::TransformationNode() :
+	RepoNode()
+{
+}
+
+TransformationNode::TransformationNode(RepoBSON bson) :
+	RepoNode(bson)
+{
+
+}
+
+TransformationNode::~TransformationNode()
+{
+}

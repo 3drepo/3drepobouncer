@@ -18,8 +18,7 @@
  * Abstract database handler which all database handler needs to inherit from
  */
 
-#ifndef SRC_CORE_HANDLER_ABSTRACTDATABASEHANDLER_H_
-#define SRC_CORE_HANDLER_ABSTRACTDATABASEHANDLER_H_
+#pragma once
 
 #include <list>
 #include <map>
@@ -110,6 +109,19 @@ namespace repo{
 				*	------------- Query operations --------------
 				*/
 
+
+				/**
+				* Given a list of unique IDs, find all the documents associated to them
+				* @param name of database
+				* @param name of collection
+				* @param array of uuids in a BSON object
+				* @return a vector of RepoBSON objects associated with the UUIDs given
+				*/
+				virtual std::vector<repo::core::model::bson::RepoBSON> findAllByUniqueIDs(
+					const std::string& database,
+					const std::string& collection,
+					const repo::core::model::bson::RepoBSON& uuid) = 0;
+
 				/**
 				*Retrieves the first document matching given Shared ID (SID), sorting is descending
 				* (newest first)
@@ -148,4 +160,3 @@ namespace repo{
 		}
 	}
 }
-#endif /* SRC_CORE_HANDLER_ABSTRACTDATABASEHANDLER_H_ */

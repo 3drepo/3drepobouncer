@@ -41,7 +41,7 @@ RepoProject::RepoProject(
 	//defaults to master branch
 	branch = stringToUUID(REPO_HISTORY_MASTER_BRANCH);
 	//instantiate scene and revision graph
-	sceneGraph = new graph::SceneGraph();
+	sceneGraph = 0;
 
 }
 
@@ -74,10 +74,29 @@ bool RepoProject::loadRevision(std::string &errMsg){
 	return success;
 }
 
-void RepoProject::loadScene(){
+bool RepoProject::loadScene(std::string &errMsg){
+	bool success=true;
 	if (!revNode){
-		//Load revision object first
+		//try to load revision node first.
+		if (!loadRevision(errMsg)) return false;
 	}
 
+	//Get the relevant nodes from the scene graph using the unique IDs stored in this revision node
+	repo::core::model::bson::RepoBSON idArray = revNode->getObjectField(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS);
+	std::vector<repo::core::model::bson::RepoBSON> nodes = dbHandler->findAllByUniqueIDs(
+		databaseName, projectName + "." + sceneExt, idArray);
+
+	BOOST_LOG_TRIVIAL(info) << "# of nodes in this scene = " << nodes.size();
+
+	//TODO: populate scenegraph here!
+
+	if (sceneGraph)
+	{
+		//already have a scene graph, delete this
+		delete sceneGraph;
+	}
+
+	sceneGraph = new graph::SceneGraph(nodes);
+	return success;
 
 }

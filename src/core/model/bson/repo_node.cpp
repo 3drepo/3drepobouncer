@@ -41,6 +41,10 @@ RepoNode::RepoNode(RepoBSON bson) : RepoBSON(bson){
 
 }
 
+RepoNode::~RepoNode()
+{
+}
+
 RepoNode RepoNode::createRepoNode(
 	const std::string &type,
 	const unsigned int api,
@@ -68,7 +72,8 @@ RepoNode RepoNode::createRepoNode(
 
 	//--------------------------------------------------------------------------
 	// Parents
-	builder.appendArray(REPO_NODE_LABEL_PARENTS, builder.createArrayBSON(parents));
+	if (parents.size() > 0)
+		builder.appendArray(REPO_NODE_LABEL_PARENTS, builder.createArrayBSON(parents));
 
 	//--------------------------------------------------------------------------
 	// Name
@@ -78,6 +83,9 @@ RepoNode RepoNode::createRepoNode(
 	return RepoNode(builder.obj());
 }
 
-RepoNode::~RepoNode()
+
+
+std::vector<repo_uuid> RepoNode::getParentIDs()
 {
+	return getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
 }

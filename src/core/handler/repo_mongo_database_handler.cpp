@@ -117,6 +117,54 @@ mongo::BSONObj MongoDatabaseHandler::fieldsToReturn(
 	return fieldsToReturn.obj();
 }
 
+std::vector<repo::core::model::bson::RepoBSON> MongoDatabaseHandler::findAllByUniqueIDs(
+	const std::string& database,
+	const std::string& collection,
+	const repo::core::model::bson::RepoBSON& uuids){
+
+	std::vector<repo::core::model::bson::RepoBSON> data;
+
+	mongo::BSONArray array = mongo::BSONArray(uuids);
+
+	int fieldsCount = array.nFields();
+	if (fieldsCount > 0)
+	{
+		try{
+			unsigned long long retrieved = 0;
+			std::auto_ptr<mongo::DBClientCursor> cursor;
+			do
+			{
+
+				mongo::BSONObjBuilder query;
+				query << ID << BSON("$in" << array);
+
+
+				cursor = worker->query(
+					database + "." + collection,
+					query.obj(),
+					0,
+					retrieved);
+
+				for (; cursor.get() && cursor->more(); ++retrieved)
+				{
+					data.push_back(repo::core::model::bson::RepoBSON(cursor->nextSafe().copy()));
+				}
+			} while (cursor.get() && cursor->more());
+
+			if (fieldsCount != retrieved){
+				BOOST_LOG_TRIVIAL(error) << "Number of documents("<< retrieved<<") retreived by findAllByUniqueIDs did not match the number of unique IDs(" <<  fieldsCount <<")!";
+			}
+		}
+		catch (mongo::DBException& e)
+		{
+			BOOST_LOG_TRIVIAL(error) << e.what();
+		}
+	}
+
+
+
+	return data;
+}
 
 repo::core::model::bson::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 	const std::string& database,

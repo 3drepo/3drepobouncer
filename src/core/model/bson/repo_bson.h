@@ -92,8 +92,17 @@ namespace repo {
 
 						/**
 						* Overload of getField function to retreve repo_uuid
+						* @param name of the field
+						* @return returns a repo_uuid from that field
 						*/
 						repo_uuid getUUIDField(std::string label);
+
+						/**
+						* Get an array of fields given an array element
+						* @param name of the array element
+						* @return returns the array element in their respective type
+						*/
+						std::vector<repo_uuid> getUUIDFieldArray(std::string label);
 
 //						//--------------------------------------------------------------------------
 //

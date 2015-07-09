@@ -14,28 +14,42 @@
 *  You should have received a copy of the GNU Affero General Public License
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-
 /**
-* A Scene graph representation of a collection
+* Mesh Node
 */
 
-#include "repo_graph_scene.h"
+#pragma once
+#include "repo_node.h"
 
-using namespace repo::manipulator::graph;
+namespace repo {
+	namespace core {
+		namespace model {
+			namespace bson {
+				class MeshNode :public RepoNode
+				{
+				public:
 
-SceneGraph::SceneGraph()
-	: history(0)
-{
+					/**
+					* Default constructor
+					*/
+					MeshNode();
 
-}
-
-SceneGraph::SceneGraph(RevisionGraph *history)
-	: history(history)
-{
-
-}
+					/**
+					* Construct a MeshNode from a RepoBSON object
+					* @param RepoBSON object
+					*/
+					MeshNode(RepoBSON bson);
 
 
-SceneGraph::~SceneGraph()
-{
-}
+					/**
+					* Default deconstructor
+					*/
+					~MeshNode();
+
+				};
+			}//namespace bson
+		} //namespace model
+	} //namespace core
+} //namespace repo
+
+

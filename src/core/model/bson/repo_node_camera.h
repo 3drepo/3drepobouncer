@@ -15,7 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 /**
-* Transformation Node
+* Camera Node
 */
 
 #pragma once
@@ -25,26 +25,26 @@ namespace repo {
 	namespace core {
 		namespace model {
 			namespace bson {
-				class TransformationNode :public RepoNode
+				class CameraNode :public RepoNode
 				{
-					public:
+				public:
 
-						/**
-						* Default constructor
-						*/
-						TransformationNode();
+					/**
+					* Default constructor
+					*/
+					CameraNode();
 
-						/**
-						* Construct a TransformationNode from a RepoBSON object
-						* @param RepoBSON object 
-						*/
-						TransformationNode(RepoBSON bson);
+					/**
+					* Construct a CameraNode from a RepoBSON object
+					* @param RepoBSON object
+					*/
+					CameraNode(RepoBSON bson);
 
 
-						/**
-						* Default deconstructor
-						*/
-						~TransformationNode();
+					/**
+					* Default deconstructor
+					*/
+					~CameraNode();
 
 				};
 			}//namespace bson

@@ -31,8 +31,8 @@
 #include "../core/model/bson/repo_node_revision.h"
 #include "../core/handler/repo_abstract_database_handler.h"
 
-#include "graphs/repo_graph_revision.h"
-#include "graphs/repo_graph_scene.h"
+#include "graph/repo_graph_revision.h"
+#include "graph/repo_graph_scene.h"
 
 
 namespace repo{
@@ -94,7 +94,7 @@ namespace repo{
 				* Load Scene into Scene graph object base on the 
 				* revision/branch setting. 
 				*/
-				void loadScene();
+				bool loadScene(std::string &errMsg);
 
 
 			private:

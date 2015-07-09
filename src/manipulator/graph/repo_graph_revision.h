@@ -14,42 +14,25 @@
 *  You should have received a copy of the GNU Affero General Public License
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /**
-* Transformation Node
+* A Revision graph representation of a collection
 */
 
 #pragma once
-#include "repo_node.h"
 
-namespace repo {
-	namespace core {
-		namespace model {
-			namespace bson {
-				class TransformationNode :public RepoNode
-				{
-					public:
+#include "repo_graph_abstract.h"
 
-						/**
-						* Default constructor
-						*/
-						TransformationNode();
-
-						/**
-						* Construct a TransformationNode from a RepoBSON object
-						* @param RepoBSON object 
-						*/
-						TransformationNode(RepoBSON bson);
-
-
-						/**
-						* Default deconstructor
-						*/
-						~TransformationNode();
-
-				};
-			}//namespace bson
-		} //namespace model
-	} //namespace core
-} //namespace repo
-
+namespace repo{
+	namespace manipulator{
+		namespace graph{
+			class RevisionGraph : public AbstractGraph
+			{
+			public:
+				RevisionGraph(){};
+				~RevisionGraph();
+			};
+		}//namespace graph
+	}//namespace manipulator
+}//namespace repo
 

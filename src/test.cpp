@@ -1,5 +1,7 @@
 #include <iostream>
 #include <list>
+#include <sstream>
+
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
 
@@ -77,17 +79,30 @@ void insertARepoNode(repo::core::handler::AbstractDatabaseHandler *dbHandler){
 }
 
 void instantiateProject(repo::core::handler::AbstractDatabaseHandler *dbHandler){
-	repo::manipulator::RepoProject *project = new repo::manipulator::RepoProject(dbHandler, "map", "arup");
+	repo::manipulator::graph::SceneGraph *scene = new repo::manipulator::graph::SceneGraph(dbHandler, "test", "test");
 	std::string errMsg;
 
-	project->setProjectRevision(stringToUUID("a79ae12a-9828-468b-804c-149f6cb835a5"));
+	//scene->setRevision(stringToUUID("a79ae12a-9828-468b-804c-149f6cb835a5"));
 	
-	if (!project->loadRevision(errMsg)){
+	if (!scene->loadRevision(errMsg)){
 		BOOST_LOG_TRIVIAL(info) << "load Revision failed " << errMsg;
 	}
 	else{
 		BOOST_LOG_TRIVIAL(info) << "Revision loaded";
 	}
+
+	if (!scene->loadScene(errMsg)){
+		BOOST_LOG_TRIVIAL(info) << "load Scene failed " << errMsg;
+	}
+	else{
+		BOOST_LOG_TRIVIAL(info) << "Scene loaded";
+	}
+
+	std::stringstream		stringMaker;
+	scene->printStatistics(stringMaker);
+
+	std::cout << stringMaker.str();
+
 
 
 }

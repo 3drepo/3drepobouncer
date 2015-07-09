@@ -14,47 +14,42 @@
 *  You should have received a copy of the GNU Affero General Public License
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-
 /**
-* A Scene graph representation of a collection
+* Metadata Node
 */
 
 #pragma once
+#include "repo_node.h"
 
-#include "repo_graph_revision.h"
-
-namespace repo{
-	namespace manipulator{
-		namespace graph{
-			class SceneGraph
-			{
+namespace repo {
+	namespace core {
+		namespace model {
+			namespace bson {
+				class MetadataNode :public RepoNode
+				{
 				public:
-					/**
-					* Default Constructor
-					*/
-					SceneGraph();
 
 					/**
-					* Instantiates a Scene graph with a reference to a revision graph
-					* @param A revision graph representing the history of this scene
+					* Default constructor
 					*/
-					SceneGraph(RevisionGraph *history);
+					MetadataNode();
 
 					/**
-					* Default Deconstructor
+					* Construct a MetadataNode from a RepoBSON object
+					* @param RepoBSON object
 					*/
-					~SceneGraph();
+					MetadataNode(RepoBSON bson);
+
 
 					/**
-					* Set the revision graph of this scene
-					* @param the revision graph
+					* Default deconstructor
 					*/
-					void setRevisionGraph(RevisionGraph *history) { this->history = history; };
-				private:
-					RevisionGraph *history;
-			};
-		}//namespace graph
-	}//namespace manipulator
-}//namespace repo
+					~MetadataNode();
+
+				};
+			}//namespace bson
+		} //namespace model
+	} //namespace core
+} //namespace repo
 
 

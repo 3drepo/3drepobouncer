@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2014 3D Repo Ltd
+*  Copyright (C) 2015 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -14,42 +14,26 @@
 *  You should have received a copy of the GNU Affero General Public License
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /**
-* Transformation Node
+*  Camera node
 */
 
-#pragma once
-#include "repo_node.h"
+#include "repo_node_camera.h"
 
-namespace repo {
-	namespace core {
-		namespace model {
-			namespace bson {
-				class TransformationNode :public RepoNode
-				{
-					public:
+using namespace repo::core::model::bson;
 
-						/**
-						* Default constructor
-						*/
-						TransformationNode();
+CameraNode::CameraNode() :
+RepoNode()
+{
+}
 
-						/**
-						* Construct a TransformationNode from a RepoBSON object
-						* @param RepoBSON object 
-						*/
-						TransformationNode(RepoBSON bson);
+CameraNode::CameraNode(RepoBSON bson) :
+RepoNode(bson)
+{
 
+}
 
-						/**
-						* Default deconstructor
-						*/
-						~TransformationNode();
-
-				};
-			}//namespace bson
-		} //namespace model
-	} //namespace core
-} //namespace repo
-
-
+CameraNode::~CameraNode()
+{
+}

@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2014 3D Repo Ltd
+*  Copyright (C) 2015 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -16,21 +16,24 @@
 */
 
 /**
-* A Revision graph representation of a collection
+*  Mesh node
 */
 
-#pragma once
+#include "repo_node_mesh.h"
 
-namespace repo{
-	namespace manipulator{
-		namespace graph{
-			class RevisionGraph
-			{
-			public:
-				RevisionGraph(){};
-				~RevisionGraph();
-			};
-		}//namespace graph
-	}//namespace manipulator
-}//namespace repo
+using namespace repo::core::model::bson;
 
+MeshNode::MeshNode() :
+RepoNode()
+{
+}
+
+MeshNode::MeshNode(RepoBSON bson) :
+RepoNode(bson)
+{
+
+}
+
+MeshNode::~MeshNode()
+{
+}

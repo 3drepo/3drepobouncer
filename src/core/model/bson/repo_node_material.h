@@ -15,7 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 /**
-* Transformation Node
+* Material Node
 */
 
 #pragma once
@@ -25,26 +25,26 @@ namespace repo {
 	namespace core {
 		namespace model {
 			namespace bson {
-				class TransformationNode :public RepoNode
+				class MaterialNode :public RepoNode
 				{
-					public:
+				public:
 
-						/**
-						* Default constructor
-						*/
-						TransformationNode();
+					/**
+					* Default constructor
+					*/
+					MaterialNode();
 
-						/**
-						* Construct a TransformationNode from a RepoBSON object
-						* @param RepoBSON object 
-						*/
-						TransformationNode(RepoBSON bson);
+					/**
+					* Construct a MaterialNode from a RepoBSON object
+					* @param RepoBSON object
+					*/
+					MaterialNode(RepoBSON bson);
 
 
-						/**
-						* Default deconstructor
-						*/
-						~TransformationNode();
+					/**
+					* Default deconstructor
+					*/
+					~MaterialNode();
 
 				};
 			}//namespace bson

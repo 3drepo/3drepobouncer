@@ -66,42 +66,87 @@ namespace repo{
 							const std::string &name = std::string(),
 							const std::vector<repo_uuid> &parents = std::vector<repo_uuid>());
 
+
+						/*
+						*	------------- Convenience getters --------------
+						*/
+
+						//FIXME: if we don't want convenince fields we need to use getFields()
+
+						/**
+						* Get the shared ID from the object
+						* @return returns the shared ID of the object
+						*/
+						repo_uuid getSharedID(){ return sharedID; }
+
+						/**
+						* Get the unique ID from the object
+						* @return returns the unique ID of the object
+						*/
+						repo_uuid getUniqueID(){ return uniqueID; }
+
+						/**
+						* Get the list of parent IDs 
+						* @return returns a set of parent IDs
+						*/
+						std::vector<repo_uuid> getParentIDs();
+
+						/*
+						*	------------- Compare operations --------------
+						*/
+						//! Returns true if the node is the same, false otherwise.
+						bool operator==(const RepoNode& other) const
+						{
+							return uniqueID == other.uniqueID && sharedID == other.sharedID;
+						}
+
+						//! Returns true if the other node is greater than this one, false otherwise.
+						bool operator<(const RepoNode& other) const
+						{
+							if (sharedID == other.sharedID){
+								return sharedID < other.sharedID;
+							}
+							else{
+								return uniqueID < other.uniqueID;
+							}
+						}
+
+
 					protected:
 					
 						/*
-						*	------------- Query operations --------------
+						*	------------- node fields --------------
 						*/
+
+						//FIXME: Convenience fields, should these really exist?
 						
 						std::string type; //!< Compulsory type of this document.
-
-						unsigned int api; //!< Compulsory API level of this document (used to decode).
 
 						repo_uuid sharedID; //!< Shared unique graph document identifier.
 
 						repo_uuid uniqueID; //!< Compulsory unique database document identifier.
 
-						std::string name; //!< Optional name of this document.
-
-						////! Parents of this node.
-						///*!
-						//* Parents are a std:set to make sure all entries are unique.
-						//*/
-						//std::set<const RepoNode *> parents;
-
-						/*!
-						* Shared IDs of the parents. Needs to be in sync with
-						* parents set. This is only useful when retrieving data from the
-						* repository as this set can otherwise be calculated on the fly.
-						*/
-						std::set<repo_uuid> parentSharedIDs;
-
-						//! Children of this node.
-						/*!
-						* Children are a std:set to make sure all entries are unique.
-						*/
-						// TODO: remove const
-						std::set<const repo_uuid *> children;
 				};
+				/*!
+				* Comparator definition to enable std::set to store pointers to abstract nodes
+				* so that they are compared based on their value rather than their integer
+				* pointers.
+				*
+				* This is a general Repo Node comparator where you would expect a different
+				* shared ID and unique ID. Should a different comparator is needed it should be
+				* implemented on that node's class level
+				*/
+				struct RepoNodeComparator
+				{
+					bool operator()(const RepoNode* a, const RepoNode* b) const
+					{
+						return *a < *b;
+					}
+				};
+
+				//! Set definition for pointers to abstract nodes (sorted by value rather than pointer)
+				typedef std::set<RepoNode *, RepoNodeComparator> RepoNodeSet;
+
 			}//namespace bson
 		} //namespace model
 	} //namespace core

@@ -20,9 +20,12 @@
 */
 
 #pragma once
+#include <boost/functional/hash.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/uuid/uuid.hpp> 
 #include <boost/uuid/uuid_generators.hpp>
-#include <boost/functional/hash.hpp>
+#include <boost/uuid/uuid_io.hpp>
+
 
 #include <sstream>
 
@@ -48,8 +51,8 @@ static repo_uuid generateUUID(){
 * \return valid uuid
 */
 static repo_uuid stringToUUID(
-	const std::string text,
-	const std::string suffix = std::string())
+	const std::string &text,
+	const std::string &suffix = std::string())
 {
 	boost::uuids::uuid uuid;
 	if (text.empty())
@@ -82,4 +85,9 @@ static repo_uuid stringToUUID(
 		}
 	}
 	return uuid;
+}
+
+static std::string UUIDtoString(const repo_uuid &id)
+{
+	return boost::lexical_cast<std::string>(id);
 }
