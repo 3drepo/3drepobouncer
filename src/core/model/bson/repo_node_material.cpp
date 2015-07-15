@@ -37,3 +37,28 @@ RepoNode(bson)
 MaterialNode::~MaterialNode()
 {
 }
+
+MaterialNode* MaterialNode::createMaterialNode(
+	const repo_material_t &material,
+	const std::string     &name,
+	const int     &apiLevel)
+{
+	RepoBSONBuilder builder;
+
+	// Compulsory fields such as _id, type, api as well as path
+	// and optional name
+	appendDefaults(builder, REPO_NODE_TYPE_MATERIAL, apiLevel, generateUUID(), name);
+
+
+	builder << REPO_NODE_LABEL_AMBIENT   << material.ambient;
+	builder << REPO_NODE_LABEL_DIFFUSE   << material.diffuse;
+	builder << REPO_NODE_LABEL_SPECULAR  << material.specular;
+	builder << REPO_NODE_LABEL_EMISSIVE  << material.emissive;
+	builder << REPO_NODE_LABEL_WIREFRAME << material.isWireframe;
+	builder << REPO_NODE_LABEL_TWO_SIDED << material.isTwoSided;
+	builder << REPO_NODE_LABEL_OPACITY   << material.opacity;
+	builder << REPO_NODE_LABEL_SHININESS << material.shininess;
+	builder << REPO_NODE_LABEL_SHININESS_STRENGTH << material.shininessStrength;
+
+	return new MaterialNode(builder.obj());
+}

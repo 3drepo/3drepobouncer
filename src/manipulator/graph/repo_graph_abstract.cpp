@@ -9,8 +9,8 @@ rootNode(0)
 
 AbstractGraph::AbstractGraph(
 	repo::core::handler::AbstractDatabaseHandler *dbHandler,
-	std::string databaseName,
-	std::string projectName) :
+	const std::string &databaseName,
+	const std::string &projectName) :
 	dbHandler(dbHandler),
 	databaseName(databaseName),
 	projectName(projectName),

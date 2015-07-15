@@ -37,3 +37,124 @@ RepoNode(bson)
 MeshNode::~MeshNode()
 {
 }
+
+MeshNode* MeshNode::createMeshNode(
+	std::vector<repo_vector_t>                  &vertices,
+	std::vector<repo_face_t>                    &faces,
+	std::vector<repo_vector_t>                  &normals,
+	std::vector<repo_vector_t>                  &boundingBox,
+	std::vector<std::vector<repo_vector2d_t>>   &uvChannels,
+	std::vector<repo_color4d_t>                 &colors,
+	std::vector<repo_vector2d_t>                &outline,
+	const int                                   &apiLevel,
+	const std::string                           &name)
+{
+	RepoBSONBuilder builder;
+
+	appendDefaults(builder, REPO_NODE_TYPE_MESH, apiLevel, generateUUID(), name);
+
+	if (vertices.size() > 0)
+	{
+		builder.appendBinary(
+			REPO_NODE_LABEL_VERTICES,
+			&vertices[0],
+			vertices.size() * sizeof(repo_vector_t),
+			REPO_NODE_LABEL_VERTICES_BYTE_COUNT,
+			REPO_NODE_LABEL_VERTICES_COUNT
+			);
+
+	}
+
+	if (faces.size() > 0)
+	{
+		builder << REPO_NODE_LABEL_FACES_COUNT << (uint32_t)(faces.size());
+
+		// In API LEVEL 1, faces are stored as
+		// [n1, v1, v2, ..., n2, v1, v2...]
+		std::vector<repo_face_t>::iterator faceIt;
+
+		std::vector<uint32_t> facesLevel1;
+		for (faceIt = faces.begin(); faceIt != faces.end(); ++faceIt){
+			repo_face_t face = *faceIt;
+			facesLevel1.push_back(face.numIndices);
+			for (uint32_t ind = 0; ind < face.numIndices; ind++)
+			{
+				facesLevel1.push_back(face.indices[ind]);
+			}
+		}
+
+		builder.appendBinary(
+			REPO_NODE_LABEL_FACES,
+			&facesLevel1[0],
+			facesLevel1.size() * sizeof(facesLevel1[0]),
+			REPO_NODE_LABEL_FACES_BYTE_COUNT
+			);
+	}
+
+	if (normals.size() > 0)
+	{
+		builder.appendBinary(
+			REPO_NODE_LABEL_NORMALS,
+			&normals[0],
+			normals.size() * sizeof(normals[0]));
+	}
+
+
+	builder.appendBinary(
+		REPO_NODE_LABEL_BOUNDING_BOX,
+		&boundingBox[0],
+		boundingBox.size() * sizeof(boundingBox[0]));
+
+	if (outline.size() > 0)
+	{
+		builder.appendBinary(
+			REPO_NODE_LABEL_OUTLINE,
+			&outline[0],
+			outline.size() * sizeof(outline[0]));
+	}
+
+	//if (!vertexHash.empty())
+	//{
+	//	// TODO: Fix this call - needs to be fixed as int conversion is overloaded
+	//	//builder << REPO_NODE_LABEL_SHA256 << (long unsigned int)(vertexHash);
+	//}
+
+
+	//--------------------------------------------------------------------------
+	// Vertex colors
+	if (colors.size())
+		builder.appendBinary(
+		REPO_NODE_LABEL_COLORS,
+		&colors[0],
+		colors.size() * sizeof(colors[0]));
+
+	//--------------------------------------------------------------------------
+	// UV channels
+	if (uvChannels.size() > 0)
+	{
+		// Could be unsigned __int64 if BSON had such construct (the closest is only __int64)
+		builder << REPO_NODE_LABEL_UV_CHANNELS_COUNT << (uint32_t)(uvChannels.size());
+
+		std::vector<repo_vector2d_t> concatenated;
+
+		std::vector<std::vector<repo_vector2d_t>>::iterator it;
+		for (it = uvChannels.begin(); it != uvChannels.end(); ++it)
+		{
+			std::vector<repo_vector2d_t> channel = *it;
+
+			std::vector<repo_vector2d_t>::iterator cit;
+			for (cit = channel.begin(); cit != channel.end(); ++cit)
+			{
+				concatenated.push_back(*cit);
+			}
+		}
+
+		builder.appendBinary(
+			REPO_NODE_LABEL_UV_CHANNELS,
+			&concatenated[0],
+			concatenated.size() * sizeof(concatenated[0]),
+			REPO_NODE_LABEL_UV_CHANNELS_BYTE_COUNT);
+	}
+
+	return new MeshNode(builder.obj());
+}

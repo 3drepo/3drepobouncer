@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2014 3D Repo Ltd
+*  Copyright (C) 2015 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -25,6 +25,26 @@ namespace repo {
 	namespace core {
 		namespace model {
 			namespace bson {
+
+				//------------------------------------------------------------------------------
+				//
+				// Fields specific to mesh only
+				//
+				//------------------------------------------------------------------------------
+				#define REPO_NODE_TYPE_MATERIAL					"material"
+				#define REPO_NODE_LABEL_AMBIENT					"ambient"
+				#define REPO_NODE_LABEL_DIFFUSE					"diffuse"
+				#define REPO_NODE_LABEL_SPECULAR				"specular"
+				#define REPO_NODE_LABEL_EMISSIVE				"emissive"
+				#define REPO_NODE_LABEL_WIREFRAME				"wireframe"
+				#define REPO_NODE_LABEL_TWO_SIDED				"two_sided"
+				#define REPO_NODE_LABEL_OPACITY					"opacity"
+				#define REPO_NODE_LABEL_SHININESS				"shininess"
+				#define REPO_NODE_LABEL_SHININESS_STRENGTH		"shininess_strength"
+				#define REPO_NODE_UUID_SUFFIX_MATERIAL			"07" //!< uuid suffix
+				//------------------------------------------------------------------------------
+
+
 				class MaterialNode :public RepoNode
 				{
 				public:
@@ -45,6 +65,18 @@ namespace repo {
 					* Default deconstructor
 					*/
 					~MaterialNode();
+
+
+					/**
+					* Static builder for factory use to create a Material Node
+					* @param a struct that contains the info about the material
+					* @param name of the Material node
+					* @return returns a pointer Material node
+					*/
+					static MaterialNode* createMaterialNode(
+						const repo_material_t &material,
+						const std::string     &name,
+						const int     &apiLevel = REPO_NODE_API_LEVEL_1);
 
 				};
 			}//namespace bson

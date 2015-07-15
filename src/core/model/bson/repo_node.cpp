@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2014 3D Repo Ltd
+*  Copyright (C) 2015 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -19,7 +19,7 @@
 */
 
 #include "repo_node.h"
-#include "repo_bson_builder.h"
+
 using namespace repo::core::model::bson;
 
 RepoNode::RepoNode(RepoBSON bson) : RepoBSON(bson){
@@ -45,7 +45,7 @@ RepoNode::~RepoNode()
 {
 }
 
-RepoNode RepoNode::createRepoNode(
+RepoNode* RepoNode::createRepoNode(
 	const std::string &type,
 	const unsigned int api,
 	const repo_uuid &sharedId,
@@ -53,37 +53,27 @@ RepoNode RepoNode::createRepoNode(
 	const std::vector<repo_uuid> &parents)
 {
 	RepoBSONBuilder builder;
-	//--------------------------------------------------------------------------
-	// ID field (UUID)
-	builder.append(REPO_NODE_LABEL_ID, generateUUID());
+	
+	appendDefaults(builder, type, api, sharedId, name, parents);
 
-	//--------------------------------------------------------------------------
-	// Shared ID (UUID)
-	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedId);
+	return new RepoNode(builder.obj());
+}
 
-	//--------------------------------------------------------------------------
-	// Type
-	if (!type.empty())
-		builder << REPO_NODE_LABEL_TYPE << type;
+RepoNode RepoNode::cloneAndAddParent(repo_uuid parentID)
+{
+	RepoBSONBuilder builder;
+	RepoBSONBuilder arrayBuilder;
 
-	//--------------------------------------------------------------------------
-	// API level
-	builder << REPO_NODE_LABEL_API << api;
 
-	//--------------------------------------------------------------------------
-	// Parents
-	if (parents.size() > 0)
-		builder.appendArray(REPO_NODE_LABEL_PARENTS, builder.createArrayBSON(parents));
+	std::vector<repo_uuid> currentParents = getParentIDs();
+	currentParents.push_back(parentID);
+	
+	builder.appendArray(REPO_NODE_LABEL_PARENTS, arrayBuilder.createArrayBSON(currentParents));
 
-	//--------------------------------------------------------------------------
-	// Name
-	if (!name.empty())
-		builder << REPO_NODE_LABEL_NAME << name;
+	builder.appendElementsUnique(*this);
 
 	return RepoNode(builder.obj());
 }
-
-
 
 std::vector<repo_uuid> RepoNode::getParentIDs()
 {

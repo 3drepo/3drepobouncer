@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2014 3D Repo Ltd
+*  Copyright (C) 2015 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -33,13 +33,15 @@ SceneGraph::SceneGraph() :
 
 SceneGraph::SceneGraph(
 	repo::core::handler::AbstractDatabaseHandler *dbHandler,
-	std::string database,
-	std::string projectName,
-	std::string sceneExt,
-	std::string revExt)
+	const std::string &database,
+	const std::string &projectName,
+	const std::string &sceneExt,
+	const std::string &revExt)
 	: AbstractGraph(dbHandler, database, projectName),
 	sceneExt(sceneExt),
 	revExt(revExt),
+	headRevision(true),
+	unRevisioned(false),
 	revNode(0)
 {
 	//defaults to master branch
@@ -48,97 +50,122 @@ SceneGraph::SceneGraph(
 
 }
 
-SceneGraph::~SceneGraph()
+SceneGraph::SceneGraph(
+	const repo::core::model::bson::RepoNodeSet &cameras,
+	const repo::core::model::bson::RepoNodeSet &meshes,
+	const repo::core::model::bson::RepoNodeSet &materials,
+	const repo::core::model::bson::RepoNodeSet &metadata,
+	const repo::core::model::bson::RepoNodeSet &textures,
+	const repo::core::model::bson::RepoNodeSet &transformations,
+	const repo::core::model::bson::RepoNodeSet &references,
+	const repo::core::model::bson::RepoNodeSet &maps,
+	const repo::core::model::bson::RepoNodeSet &unknowns,
+	const std::string                          &sceneExt,
+	const std::string                          &revExt)
+	: AbstractGraph(0, "", ""),
+	sceneExt(sceneExt),
+	revExt(revExt),
+	headRevision(true),
+	unRevisioned(true),
+	revNode(0)
 {
-	delete revNode;
+	populateAndUpdate(cameras, meshes, materials, metadata, textures, transformations, references, maps, unknowns);
 }
 
-//bool SceneGraph::append(repo_uuid parentID, SceneGraph *scene, std::string &errMsg)
-//{
-//	/*
-//	* FIXME:
-//	* This is used for federated projects where we append a scenegraph generated from database
-//	* with information based on a reference node.
-//	* This can be potential chaos if we decide to commit this scene graph, changing a node from
-//	* a difference scene, potentially causing weird-ness with the revision node
-//	* 
-//	* Probably can remedy this by tracking whether a scene is from this scene graph or 
-//	* the appended scene graph via reference node, and track change requests for referenced scenes
-//	* and commit those scenes when this scene is commited
-//	*
-//	*/
-//	bool success = true;
-//
-//	//check parentID exists
-//	if (sharedIDtoUniqueID.find(parentID) == sharedIDtoUniqueID.end()){
-//		errMsg = "Node with shared ID " + UUIDtoString(parentID) + " does not exist in this scene graph!";
-//		return false;
-//	}
-//	repo_uuid parentUniqueID = sharedIDtoUniqueID[parentID];
-//	model::bson::RepoNode *refNode = nodesByUniqueID[parentUniqueID];
-//
-//	if (refNode && refNode->getField(REPO_NODE_LABEL_TYPE).str() != REPO_NODE_TYPE_REFERENCE)
-//	{
-//		//Parent is not a reference node, the logic below would not be correct.
-//		errMsg = "Node associated with the parent ID is not a reference node.";
-//		return false;
-//	}
-//	
-//
-//
-//	if (scene && refNode)
-//	{
-//
-//		std::vector<repo_uuid> refNodeParentIDs = refNode->getParentIDs();
-//		std::vector<repo_uuid>::iterator it;
-//		for (it = refNodeParentIDs.begin(); it != refNodeParentIDs.end(); ++it)
-//		{
-//
-//			/*
-//			* Tricky Business, We want to essentially replace ref node with the node of this SceneGraph
-//			* So the rootNode of this scene we are appending will append to the parent of the reference Node
-//			* Adding the root node of this scene to the grandParent's children set
-//			* and adding grandParent to the parent of this root node.
-//			* Problem is, RepoNodes are BSON objects thus immutable.
-//			* so the plan is to replace the rootNode with a new rootNode with these new parents
-//			* before we add the root Node to this scene.
-//			*/
-//			repo_uuid grandParentID = *it;
-//			model::bson::RepoNode *grandParent = nodesByUniqueID[grandParentID];
-//			parentToChildren[grandParentID].push_back[scene->rootNode->getSharedID()];
-//			scene->rootNode->addParent(thisNodeParent);
-//		}
-//
-//		//append the collections from the scene to this scene.
-//
-//		nodesByUniqueID.insert(
-//			scene->nodesByUniqueID.begin(),
-//			scene->nodesByUniqueID.end());
-//
-//		sharedIDtoUniqueID.insert(
-//			scene->sharedIDtoUniqueID.begin(),
-//			scene->sharedIDtoUniqueID.end());
-//
-//		parentToChildren.insert(
-//			scene->parentToChildren.begin(),
-//			scene->parentToChildren.end());
-//
-//		cameras.insert(cameras.end(), scene->cameras.begin(), scene->cameras.end());
-//		meshes.insert(scene->meshes.begin(), scene->meshes.end());
-//		materials.insert(materials.end(), scene->materials.begin(), scene->materials.end());
-//		maps.insert(materials.end(), scene->maps.begin(), scene->maps.end());
-//		metadata.insert(metadata.end(), scene->metadata.begin(), scene->metadata.end());
-//		references.insert(references.end(), scene->references.begin(), scene->references.end());
-//		textures.insert(textures.end(), scene->textures.begin(), scene->textures.end());
-//		transformations.insert(scene->transformations.begin(), scene->transformations.end());
-//		unknowns.insert(scene->unknowns.begin(), scene->unknowns.end());
-//	}
-//	else{
-//		success = false;
-//		errMsg = "Pointer to Scene is NULL.";
-//	}
-//	return success;
-//}
+SceneGraph::~SceneGraph()
+{
+	//TODO: delete nodes instantiated and scene graph instantiated?
+
+	if (revNode)
+		delete revNode;
+}
+
+bool SceneGraph::addNodeToScene(
+	const repo::core::model::bson::RepoNodeSet nodes, 
+	std::string &errMsg,
+	 repo::core::model::bson::RepoNodeSet *collection)
+{
+	bool success = true;
+	repo::core::model::bson::RepoNodeSet::iterator nodeIterator;
+	if (nodes.size() > 0)
+	{
+		collection->insert(nodes.begin(), nodes.end());
+		for (nodeIterator = nodes.begin(); nodeIterator != nodes.end(); ++nodeIterator)
+		{
+			model::bson::RepoNode * node = *nodeIterator;
+			if (node)
+			{
+
+				if (!addNodeToMaps(node, errMsg))
+				{
+					BOOST_LOG_TRIVIAL(error) << "failed to add node (" << node->getUniqueID() << " to scene graph: " << errMsg;
+					success = false;
+				}
+			}
+		}
+	}
+
+	return success;
+}
+
+bool SceneGraph::addNodeToMaps(model::bson::RepoNode *node, std::string &errMsg)
+{
+	bool success = true; 
+	repo_uuid uniqueID = node->getUniqueID();
+	repo_uuid sharedID = node->getSharedID();
+
+	//----------------------------------------------------------------------
+	//If the node has no parents it must be the rootnode
+	if (!node->hasField(REPO_NODE_LABEL_PARENTS)){
+		if (!rootNode)
+			rootNode = node;
+		else{
+			//root node already exist, check if they are the same node
+			if (rootNode == node){
+				//for some reason 2 instance of the root node reside in this scene graph - probably not game breaking.
+				BOOST_LOG_TRIVIAL(warning) << "2 instance of the root node found";
+			}
+			else{
+				//2 root nodes?!
+				BOOST_LOG_TRIVIAL(error) << "Found 2 root nodes! (" << rootNode->getUniqueID() << " and  " << node->getUniqueID() << ")";
+				errMsg = "2 possible candidate for root node found. This is an invalid Scene Graph.";
+				success = false;
+			}
+		}
+	}
+	else{
+		//has parent
+		std::vector<repo_uuid> parentIDs = node->getParentIDs();
+		std::vector<repo_uuid>::iterator it;
+		for (it = parentIDs.begin(); it != parentIDs.end(); ++it)
+		{
+			//add itself to the parent on the "parent -> children" map
+			repo_uuid parent = *it;
+
+			//check if the parent already has an entry
+			std::map<repo_uuid, std::vector<repo_uuid>>::iterator mapIt;
+			mapIt = parentToChildren.find(parent);
+			if (mapIt != parentToChildren.end()){
+				//has an entry, add to the vector
+				parentToChildren[parent].push_back(sharedID);
+			}
+			else{
+				//no entry, create one
+				std::vector<repo_uuid> children;
+				children.push_back(sharedID);
+
+				parentToChildren[parent] = children;
+
+			}
+
+		}
+	} //if (!node->hasField(REPO_NODE_LABEL_PARENTS))
+
+	nodesByUniqueID[uniqueID] = node;
+	sharedIDtoUniqueID[sharedID] = uniqueID;
+
+	return success;
+}
 
 bool SceneGraph::loadRevision(std::string &errMsg){
 	bool success = true;
@@ -239,58 +266,7 @@ bool SceneGraph::populate(std::vector<model::bson::RepoBSON> nodes, std::string 
 			unknowns.insert(node);
 		}
 
-		repo_uuid uniqueID = node->getUniqueID();
-		repo_uuid sharedID = node->getSharedID();
-
-		//----------------------------------------------------------------------
-		//If the node has no parents it must be the rootnode
-		if (!node->hasField(REPO_NODE_LABEL_PARENTS)){
-			if (!rootNode)
-				rootNode = node;
-			else{
-				//root node already exist, check if they are the same node
-				if (rootNode == node){
-					//for some reason 2 instance of the root node reside in this scene graph - probably not game breaking.
-					BOOST_LOG_TRIVIAL(warning) << "2 instance of the root node found";
-				}
-				else{
-					//2 root nodes?!
-					BOOST_LOG_TRIVIAL(error) << "Found 2 root nodes! (" << rootNode->getUniqueID() << " and  " << node->getUniqueID() << ")";
-					errMsg = "2 possible candidate for root node found. This is an invalid Scene Graph.";
-					success = false;
-				}
-			}
-		}
-		else{
-			//has parent
-			std::vector<repo_uuid> parentIDs = node->getParentIDs();
-			std::vector<repo_uuid>::iterator it;
-			for (it = parentIDs.begin(); it != parentIDs.end(); ++it)
-			{
-				//add itself to the parent on the "parent -> children" map
-				repo_uuid parent = *it;
-
-				//check if the parent already has an entry
-				std::map<repo_uuid, std::vector<repo_uuid>>::iterator mapIt;
-				mapIt = parentToChildren.find(parent);
-				if (mapIt != parentToChildren.end()){
-					//has an entry, add to the vector
-					parentToChildren[parent].push_back(sharedID);
-				}
-				else{
-					//no entry, create one
-					std::vector<repo_uuid> children;
-					children.push_back(sharedID);
-
-					parentToChildren[parent] = children;
-
-				}
-				
-			}
-		} //if (!node->hasField(REPO_NODE_LABEL_PARENTS))
-
-		nodesByUniqueID   [uniqueID] = node;
-		sharedIDtoUniqueID[sharedID] = uniqueID;
+		success &= addNodeToMaps(node, errMsg);
 
 	} //Node Iteration
 
@@ -316,6 +292,32 @@ bool SceneGraph::populate(std::vector<model::bson::RepoBSON> nodes, std::string 
 	return success;
 }
 
+void SceneGraph::populateAndUpdate(
+	const repo::core::model::bson::RepoNodeSet &cameras,
+	const repo::core::model::bson::RepoNodeSet &meshes,
+	const repo::core::model::bson::RepoNodeSet &materials,
+	const repo::core::model::bson::RepoNodeSet &metadata,
+	const repo::core::model::bson::RepoNodeSet &textures,
+	const repo::core::model::bson::RepoNodeSet &transformations,
+	const repo::core::model::bson::RepoNodeSet &references,
+	const repo::core::model::bson::RepoNodeSet &maps,
+	const repo::core::model::bson::RepoNodeSet &unknowns)
+{
+
+	std::string errMsg;
+
+	addNodeToScene(cameras        , errMsg, &(this->cameras));
+	addNodeToScene(meshes         , errMsg, &(this->meshes));
+	addNodeToScene(materials      , errMsg, &(this->materials));
+	addNodeToScene(metadata       , errMsg, &(this->metadata));
+	addNodeToScene(textures       , errMsg, &(this->textures));
+	addNodeToScene(transformations, errMsg, &(this->transformations));
+	addNodeToScene(references     , errMsg, &(this->references));
+	addNodeToScene(maps           , errMsg, &(this->maps));
+	addNodeToScene(unknowns       , errMsg, &(this->unknowns));
+
+}
+
 void SceneGraph::printStatistics(std::iostream &output)
 {
 	output << "===================Scene Graph Statistics====================" << std::endl;
@@ -323,14 +325,22 @@ void SceneGraph::printStatistics(std::iostream &output)
 	output << "Scene Graph Extension:\t\t" << sceneExt << std::endl;
 	output << "Revision Graph Extension:\t" << revExt << std::endl << std::endl;
 	//use revision node info if available
-	if (revNode)
+
+	if (unRevisioned)
 	{
-		output << "Branch:\t\t\t\t" << UUIDtoString(revNode->getSharedID()) << std::endl;
-		output << "Revision:\t\t\t" << UUIDtoString(revNode->getUniqueID()) << std::endl;
-	}
-	else{
-		output << "Branch:\t\t\t\t" << UUIDtoString(branch) << std::endl;
-		output << "Revision:\t\t\t" << (headRevision? "Head" : UUIDtoString(revision)) << std::endl;
+		output << "Revision:\t\t\tNot Revisioned" << std::endl;
+	}	
+	else
+	{
+		if (revNode)
+		{
+			output << "Branch:\t\t\t\t" << UUIDtoString(revNode->getSharedID()) << std::endl;
+			output << "Revision:\t\t\t" << UUIDtoString(revNode->getUniqueID()) << std::endl;
+		}
+		else{
+			output << "Branch:\t\t\t\t" << UUIDtoString(branch) << std::endl;
+			output << "Revision:\t\t\t" << (headRevision ? "Head" : UUIDtoString(revision)) << std::endl;
+		}
 	}
 	if (rootNode)
 	{
@@ -338,7 +348,7 @@ void SceneGraph::printStatistics(std::iostream &output)
 		output << "# Nodes:\t\t\t" << nodesByUniqueID.size() << std::endl;
 		output << "# ShareToUnique:\t\t" << sharedIDtoUniqueID.size() << std::endl;
 		output << "# ParentToChildren:\t\t" << parentToChildren.size() << std::endl;
-		output << "# PeferenceToScene:\t\t" << referenceToScene.size() << std::endl << std::endl;
+		output << "# ReferenceToScene:\t\t" << referenceToScene.size() << std::endl << std::endl;
 		output << "# Cameras:\t\t\t" << cameras.size() << std::endl;
 		output << "# Maps:\t\t\t\t" << maps.size() << std::endl;
 		output << "# Materials:\t\t\t" << materials.size() << std::endl;

@@ -37,3 +37,52 @@ RepoNode(bson)
 CameraNode::~CameraNode()
 {
 }
+
+CameraNode* CameraNode::createCameraNode(
+	const float         &aspectRatio,
+	const float         &farClippingPlane,
+	const float         &nearClippingPlane,
+	const float         &fieldOfView,
+	const repo_vector_t &lookAt,
+	const repo_vector_t &position,
+	const repo_vector_t &up,
+	const int           &apiLevel,
+	const std::string   &name)
+{
+	RepoBSONBuilder builder;
+
+	//--------------------------------------------------------------------------
+	// Compulsory fields such as _id, type, api as well as path
+	// and optional name
+	appendDefaults(builder, REPO_NODE_TYPE_CAMERA, apiLevel, generateUUID(), name);
+
+	//--------------------------------------------------------------------------
+	// Aspect ratio
+	builder << REPO_NODE_LABEL_ASPECT_RATIO << aspectRatio;
+
+	//--------------------------------------------------------------------------
+	// Far clipping plane
+	builder << REPO_NODE_LABEL_FAR << farClippingPlane;
+
+	//--------------------------------------------------------------------------
+	// Near clipping plane
+	builder << REPO_NODE_LABEL_NEAR << nearClippingPlane;
+
+	//--------------------------------------------------------------------------
+	// Field of view
+	builder << REPO_NODE_LABEL_FOV << fieldOfView;
+
+	//--------------------------------------------------------------------------
+	// Look at vector
+	builder.appendVector(REPO_NODE_LABEL_LOOK_AT, lookAt);
+
+	//--------------------------------------------------------------------------
+	// Position vector 
+	builder.appendVector(REPO_NODE_LABEL_POSITION, position);
+
+	//--------------------------------------------------------------------------
+	// Up vector
+	builder.appendVector(REPO_NODE_LABEL_UP, up);
+
+	return new CameraNode(builder.obj());
+}

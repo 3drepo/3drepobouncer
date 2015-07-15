@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2014 3D Repo Ltd
+*  Copyright (C) 2015 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -24,7 +24,7 @@
 #include <vector>
 
 #include "../../core/model/bson/repo_node.h"
-#include "../../core/handler/repo_abstract_database_handler.h"
+#include "../../core/handler/repo_database_handler_abstract.h"
 
 
 namespace repo{
@@ -42,14 +42,14 @@ namespace repo{
 				/**
 				* Constructor - instantiates a new abstract graph with settings
 				*
-				* @param database handler (to read from/write to)
-				* @param name of the database
-				* @param name of the project
+				* @param dbHandler database handler (to read from/write to)
+				* @param databaseName name of the database
+				* @param projectName name of the project
 				*/
 				AbstractGraph(
 					repo::core::handler::AbstractDatabaseHandler *dbHandler,
-					std::string databaseName = std::string(),
-					std::string projectName = std::string());
+					const std::string                                  &databaseName = std::string(),
+					const std::string                                  &projectName = std::string());
 
 				/**
 				* Default Deconstructor
@@ -58,8 +58,8 @@ namespace repo{
 
 			protected:
 				repo::core::handler::AbstractDatabaseHandler *dbHandler; /*! handler to use for db operations*/
-				std::string databaseName;/*! name of the database */
-				std::string projectName; /*! name of the project */
+				const std::string databaseName;/*! name of the database */
+				const std::string projectName; /*! name of the project */
 
 				repo::core::model::bson::RepoNode *rootNode;
 				//! A lookup map for the all nodes the graph contains.

@@ -37,3 +37,30 @@ TransformationNode::TransformationNode(RepoBSON bson) :
 TransformationNode::~TransformationNode()
 {
 }
+
+TransformationNode* TransformationNode::createTransformationNode(
+	const std::vector<std::vector<float>> &transMatrix,
+	const std::string                     &name,
+	const std::vector<repo_uuid>		  &parents,
+	const int                             &apiLevel)
+{
+	RepoBSONBuilder builder;
+
+	appendDefaults(builder, REPO_NODE_TYPE_TRANSFORMATION, apiLevel, generateUUID(), name, parents);
+
+	//--------------------------------------------------------------------------
+	// Store matrix as array of arrays
+	uint32_t matrixSize = 4;
+	RepoBSONBuilder rows;
+	for (uint32_t i = 0; i < transMatrix.size(); ++i)
+	{
+		RepoBSONBuilder columns;
+		for (uint32_t j = 0; j < transMatrix[i].size(); ++j){
+			columns << boost::lexical_cast<std::string>(j) << transMatrix[i][j];
+		}
+		rows.appendArray(boost::lexical_cast<std::string>(i), columns.obj());
+	}
+	builder.appendArray(REPO_NODE_LABEL_MATRIX, rows.obj());
+
+	return new TransformationNode(builder.obj());
+}

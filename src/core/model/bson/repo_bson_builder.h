@@ -31,6 +31,7 @@
 #define strcasecmp _stricmp
 #endif
 #include <boost/lexical_cast.hpp>
+#include <boost/log/trivial.hpp>
 #include <string>
 #include <mongo/bson/bson.h>
 #include "../repo_node_utils.h"
@@ -40,9 +41,6 @@ namespace repo {
 	namespace core {
 		namespace model {
 			namespace bson {
-
-
-
 				class RepoBSONBuilder: public mongo::BSONObjBuilder
 				{
 					public:
@@ -67,9 +65,81 @@ namespace repo {
 						* @param label of the field
 						* @param UUID
 						*/
-						void RepoBSONBuilder::append(
+						void append(
 							const std::string &label,
 							const repo_uuid &uuid);
+
+						///*!
+						//* Appends a vector of object as an array
+						//* @param label Label for this element
+						//* @param data the data itself
+						//* @param countLabel count label to store count
+						//*/
+						//template <class T>
+						//void appendVector(
+						//	const std::string    &label,
+						//	const std::vector<T> data
+						//	)
+						//{
+
+						//	{
+
+						//		RepoBSONBuilder array;
+						//		for (uint32_t i = 0; i < vec.size(); ++i)
+						//			array << boost::lexical_cast<std::string>(i) << vec[i];
+
+						//		appendArray(label, array.obj());
+						//	}
+						//}
+
+						/*!
+						* Appends a vector of object as an array
+						* @param label Label for this element
+						* @param vec the data itself
+						* @param countLabel count label to store count
+						*/
+						void appendVector(
+							const std::string    &label,
+							const repo_vector_t vec
+							);
+						/*!
+						* Appends a pointer to some memory as binary mongo::BinDataGeneral type array.
+						* Appends given data as a binary data blob into a given builder. Also
+						* appends the count of the elements and the byte count of the array if
+						* labels are specified
+						* @param label Label for this element
+						* @param data the data itself 
+						* @param byteCount size of data in bytes
+						* @param byteCountLabel label to store byteCount
+						* @param countLabel count label to store count
+						*/
+						template <class T>
+						void appendBinary(
+							const std::string &label,
+							const T           *data,
+							const uint32_t  &byteCount,
+							const std::string &byteCountLabel = "",
+							const std::string &countLabel = "")
+						{
+							if (0 < byteCount)
+							{
+								if (!byteCountLabel.empty())
+								{
+									//write size in bytes
+									mongo::BSONObjBuilder::append(byteCountLabel, byteCount);
+								}
+
+								// Store size of the array for decoding purposes
+								if (!countLabel.empty())
+									mongo::BSONObjBuilder::append(countLabel, (uint32_t)(byteCount / sizeof(T)));
+
+							// Store data as a binary blob
+								appendBinData(
+									label, byteCount, mongo::BinDataGeneral,
+									(void *)data);
+								
+							}
+						}
 
 						/**
 						* builds the BSON object as RepoBSON given the information within the builder

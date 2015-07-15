@@ -39,15 +39,18 @@ repo_uuid RepoBSON::getUUIDField(std::string label){
 std::vector<repo_uuid> RepoBSON::getUUIDFieldArray(std::string label){
 	std::vector<repo_uuid> results;
 
-	RepoBSON array = RepoBSON(getField(label).embeddedObject());
+	if (hasField(label))
+	{
+		RepoBSON array = RepoBSON(getField(label).embeddedObject());
 
-	std::set<std::string> fields;
-	array.getFieldNames(fields);
+		std::set<std::string> fields;
+		array.getFieldNames(fields);
 
-	std::set<std::string>::iterator it;
-	for (it = fields.begin(); it != fields.end(); ++it)
-		results.push_back(array.getUUIDField(*it));
+		std::set<std::string>::iterator it;
+		for (it = fields.begin(); it != fields.end(); ++it)
+			results.push_back(array.getUUIDField(*it));
 
+	}
 	return results;
 }
 

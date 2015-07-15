@@ -1,5 +1,5 @@
 /**
- *  Copyright (C) 2014 3D Repo Ltd
+ *  Copyright (C) 2015 3D Repo Ltd
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as
@@ -36,7 +36,7 @@
 
 #include <mongo/client/dbclient.h>
 
-#include "repo_abstract_database_handler.h"
+#include "repo_database_handler_abstract.h"
 #include "../model/repo_node_utils.h"
 #include "../model/bson/repo_bson.h"
 #include "../model/bson/repo_bson_builder.h"

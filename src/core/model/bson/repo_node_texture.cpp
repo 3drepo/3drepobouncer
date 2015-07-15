@@ -21,6 +21,8 @@
 
 #include "repo_node_texture.h"
 
+#include <boost/filesystem.hpp>
+
 using namespace repo::core::model::bson;
 
 TextureNode::TextureNode() :
@@ -36,4 +38,49 @@ RepoNode(bson)
 
 TextureNode::~TextureNode()
 {
+}
+
+TextureNode* TextureNode::createTextureNode(
+	const std::string &name,
+	const char        *data,
+	const uint32_t    &byteCount,
+	const uint32_t    &width,
+	const uint32_t    &height,
+	const int &apiLevel
+	)
+{
+
+	RepoBSONBuilder builder;
+	RepoNode::appendDefaults(builder, REPO_NODE_TYPE_TEXTURE, apiLevel, generateUUID(), name);
+	//
+	// Width
+	//
+	builder << REPO_LABEL_WIDTH << width;
+
+	//
+	// Height
+	//
+	builder << REPO_LABEL_HEIGHT << height;
+
+	//
+	// Format
+	//
+	if (name.empty())
+	{
+		boost::filesystem::path file{ name };
+		builder << REPO_NODE_LABEL_EXTENSION << file.extension().c_str();
+	}
+
+	//
+	// Data
+	//
+
+	if (NULL != data && byteCount > 0)
+		builder.appendBinary(
+		REPO_LABEL_DATA,
+		data,
+		byteCount,
+		REPO_NODE_LABEL_DATA_BYTE_COUNT);
+
+	return new TextureNode(builder.obj());
 }

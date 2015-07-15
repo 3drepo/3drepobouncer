@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2014 3D Repo Ltd
+*  Copyright (C) 2015 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -32,6 +32,43 @@
 //abstract out the use of boost inside the node codes 
 //incase we want to change it in the future
 typedef boost::uuids::uuid repo_uuid;
+
+typedef struct{
+	float ambient[3];
+	float diffuse[3];
+	float specular[3];
+	float emissive[3];
+	float opacity;
+	float shininess;
+	float shininessStrength;
+	bool isWireframe;
+	bool isTwoSided;
+}repo_material_t;
+
+
+typedef struct{
+	float r;
+	float g;
+	float b;
+	float a;
+}repo_color4d_t;
+
+typedef struct{
+	float x;
+	float y;
+	float z;
+}repo_vector_t;
+
+typedef struct{
+	float x;
+	float y;
+}repo_vector2d_t;
+
+typedef struct{
+	uint32_t numIndices;
+	uint32_t *indices;
+}repo_face_t;
+
 
 static repo_uuid generateUUID(){
 	return  boost::uuids::random_generator()();

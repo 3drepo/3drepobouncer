@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2014 3D Repo Ltd
+*  Copyright (C) 2015 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -25,6 +25,23 @@ namespace repo {
 	namespace core {
 		namespace model {
 			namespace bson {
+
+				//------------------------------------------------------------------------------
+				//
+				// Fields specific to camera only
+				//
+				//------------------------------------------------------------------------------
+				#define REPO_NODE_LABEL_ASPECT_RATIO		"aspect_ratio"
+				#define REPO_NODE_LABEL_FAR					"far"
+				#define REPO_NODE_LABEL_NEAR				"near"
+				#define REPO_NODE_LABEL_FOV					"fov"
+				#define REPO_NODE_LABEL_LOOK_AT				"look_at"
+				#define REPO_NODE_LABEL_POSITION			"position"
+				#define REPO_NODE_LABEL_UP					"up"
+				#define REPO_NODE_UUID_SUFFIX_CAMERA		"04" //!< uuid suffix
+				//------------------------------------------------------------------------------
+
+
 				class CameraNode :public RepoNode
 				{
 				public:
@@ -45,6 +62,30 @@ namespace repo {
 					* Default deconstructor
 					*/
 					~CameraNode();
+
+					/**
+					* Static builder for factory use to create a Camera Node
+					* @param aspect ratio
+					* @param Far clipping plane
+					* @param Near clipping plane. Should not be 0 to avoid divis
+					* @param Field of view.
+					* @param LookAt vector relative to parent transformations.
+					* @param Position relative to parent transformations
+					* @param Up vector relative to parent transformations.
+					* @param API level of the node (optional, default REPO_NODE_API_LEVEL_1)
+					* @param name of the node (optional, default empty string)
+					* @return returns a pointer Camera node
+					*/
+					static CameraNode* createCameraNode(
+						const float         &aspectRatio,
+						const float         &farClippingPlane,
+						const float         &nearClippingPlane,
+						const float         &fieldOfView,
+						const repo_vector_t &lookAt,
+						const repo_vector_t &position,
+						const repo_vector_t &up,
+						const int           &apiLevel = REPO_NODE_API_LEVEL_1,
+						const std::string   &name = std::string());
 
 				};
 			}//namespace bson

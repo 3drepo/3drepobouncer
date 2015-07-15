@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2014 3D Repo Ltd
+*  Copyright (C) 2015 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -19,5 +19,5 @@
 * Abstract database handler which all database handler needs to inherit from
 */
 
-#include "repo_abstract_database_handler.h"
+#include "repo_database_handler_abstract.h"
 

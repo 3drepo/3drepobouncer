@@ -6,12 +6,14 @@
 #include <boost/log/expressions.hpp>
 
 #include "manipulator/graph/repo_graph_scene.h"
+#include "manipulator/modelcreator/repo_model_creator_assimp.h"
 
-#include "core/handler/repo_mongo_database_handler.h"
+#include "core/handler/repo_database_handler_mongo.h"
 
 #include "core/model/repo_node_utils.h"
 #include "core/model/bson/repo_bson_factory.h"
 #include "core/model/bson/repo_node.h"
+
 
 void configureLogging(){
 
@@ -67,13 +69,13 @@ void insertARepoNode(repo::core::handler::AbstractDatabaseHandler *dbHandler){
 
 	//builds a repo node and dumps it out to check its value
 
-	repo::core::model::bson::RepoNode node = repo::core::model::bson::RepoBSONFactory::makeRepoNode("<crazy>");
+	repo::core::model::bson::RepoNode *node = repo::core::model::bson::RepoBSONFactory::makeRepoNode("<crazy>");
 
 	BOOST_LOG_TRIVIAL(info) << "Repo Node created: ";
-	BOOST_LOG_TRIVIAL(info) << "\t" << node.toString();
+	BOOST_LOG_TRIVIAL(info) << "\t" << node->toString();
 
 	BOOST_LOG_TRIVIAL(info) << "Repo Node created inserting it in " << database << "." << collection;
-	dbHandler->insertDocument(database, collection, node);
+	dbHandler->insertDocument(database, collection, *node);
 
 
 }
@@ -107,6 +109,31 @@ void instantiateProject(repo::core::handler::AbstractDatabaseHandler *dbHandler)
 
 }
 
+void loadModelFromFile()
+{
+	repo::manipulator::modelcreator::AbstractModelCreator *modelCreator;
+
+	modelCreator = new repo::manipulator::modelcreator::AssimpModelCreator();
+
+	std::string errMsg, fileName;
+
+	fileName = "C:\\Users\\Carmen\\Desktop\\A556-CAP-7000-S06-IE-S-1001.ifc";
+	if (modelCreator->importModel( fileName ,errMsg))
+	{
+		BOOST_LOG_TRIVIAL(info) << "model loaded successfully! Attempting to port to Repo World...";
+		repo::manipulator::graph::SceneGraph *graph = modelCreator->generateSceneGraph();
+
+		BOOST_LOG_TRIVIAL(info) << " success? printing graph statistics...";
+		std::stringstream		stringMaker;
+		graph->printStatistics(stringMaker);
+		std::cout << stringMaker.str();
+
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "failed to load model from file : " << fileName << " : " << errMsg;
+	}
+}
 
 int main(int argc, char* argv[]){
 
@@ -133,6 +160,8 @@ int main(int argc, char* argv[]){
 	//insertARepoNode(dbHandler);
 
 	instantiateProject(dbHandler);
+
+	loadModelFromFile();
 
 	return EXIT_SUCCESS;
 }

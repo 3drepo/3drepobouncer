@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2014 3D Repo Ltd
+*  Copyright (C) 2015 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -25,6 +25,17 @@ namespace repo {
 	namespace core {
 		namespace model {
 			namespace bson {
+
+				//------------------------------------------------------------------------------
+				//
+				// Fields specific to transformation only
+				//
+				//------------------------------------------------------------------------------
+
+				#define REPO_NODE_LABEL_MATRIX						"matrix"
+				#define REPO_NODE_UUID_SUFFIX_TRANSFORMATION		"12" //!< uuid suffix
+				//------------------------------------------------------------------------------
+
 				class TransformationNode :public RepoNode
 				{
 					public:
@@ -45,6 +56,20 @@ namespace repo {
 						* Default deconstructor
 						*/
 						~TransformationNode();
+
+						/**
+						* Static builder for factory use to create a Transformation Node
+						* @param transMatrix a 4 by 4 transformation matrix
+						* @param name name of the transformation (optional)
+						* @param parents parents vector of parents uuid for this node (optional)
+						* @param apiLevel API Level (optional)
+						* @return returns a pointer Transformation node
+						*/
+						static TransformationNode* createTransformationNode(
+							const std::vector<std::vector<float>> &transMatrix,
+							const std::string                     &name = std::string(), 
+							const std::vector<repo_uuid>		  &parents = std::vector<repo_uuid>(),
+							const int                             &apiLevel = REPO_NODE_API_LEVEL_1);
 
 				};
 			}//namespace bson

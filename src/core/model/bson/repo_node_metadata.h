@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2014 3D Repo Ltd
+*  Copyright (C) 2015 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -25,6 +25,17 @@ namespace repo {
 	namespace core {
 		namespace model {
 			namespace bson {
+
+				//------------------------------------------------------------------------------
+				//
+				// Fields specific to metadata only
+				//
+				//------------------------------------------------------------------------------
+				#define REPO_NODE_LABEL_METADATA     			"metadata"
+				#define REPO_NODE_UUID_SUFFIX_METADATA			"14" //!< uuid suffix
+				//------------------------------------------------------------------------------
+
+
 				class MetadataNode :public RepoNode
 				{
 				public:
@@ -45,6 +56,24 @@ namespace repo {
 					* Default deconstructor
 					*/
 					~MetadataNode();
+
+
+
+					/**
+					* Static builder for factory use to create a Metadata Node
+					* @param metadata Metadata itself in RepoBSON format
+					* @param mimtype Mime type, the media type of the metadata (optional)
+					* @param name Name of Metadata (optional)
+					* @param parents shared ID of parents for this node (optional)
+					* @param apiLevel Repo Node API level (optional)
+					* @return returns a pointer metadata node
+					*/
+					static MetadataNode* createMetadataNode(
+						RepoBSON			  &metadata,
+						const std::string     &mimeType = std::string(),
+						const std::string     &name = std::string(),
+						const std::vector<repo_uuid> &parents = std::vector<repo_uuid>(),
+						const int             &apiLevel = REPO_NODE_API_LEVEL_1);
 
 				};
 			}//namespace bson
