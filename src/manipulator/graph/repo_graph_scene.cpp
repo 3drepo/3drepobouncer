@@ -89,6 +89,9 @@ bool SceneGraph::addNodeToScene(
 	repo::core::model::bson::RepoNodeSet::iterator nodeIterator;
 	if (nodes.size() > 0)
 	{
+		new_current.reserve(nodes.size());
+		new_added.reserve(nodes.size());
+
 		collection->insert(nodes.begin(), nodes.end());
 		for (nodeIterator = nodes.begin(); nodeIterator != nodes.end(); ++nodeIterator)
 		{
@@ -102,8 +105,12 @@ bool SceneGraph::addNodeToScene(
 					success = false;
 				}
 			}
+			new_current.push_back(node->getUniqueID());
+			new_added.push_back(node->getSharedID());
 		}
 	}
+
+	
 
 	return success;
 }
@@ -321,48 +328,56 @@ void SceneGraph::populateAndUpdate(
 void SceneGraph::printStatistics(std::iostream &output)
 {
 	output << "===================Scene Graph Statistics====================" << std::endl;
-	output << "Project:\t\t\t" << databaseName << "." << projectName << std::endl;
-	output << "Scene Graph Extension:\t\t" << sceneExt << std::endl;
-	output << "Revision Graph Extension:\t" << revExt << std::endl << std::endl;
+	output << "Project:\t\t\t\t" << databaseName << "." << projectName << std::endl;
+	output << "Scene Graph Extension:\t\t\t" << sceneExt << std::endl;
+	output << "Revision Graph Extension:\t\t" << revExt << std::endl << std::endl;
 	//use revision node info if available
 
 	if (unRevisioned)
 	{
-		output << "Revision:\t\t\tNot Revisioned" << std::endl;
+		output << "Revision:\t\t\t\tNot Revisioned" << std::endl;
 	}	
 	else
 	{
 		if (revNode)
 		{
-			output << "Branch:\t\t\t\t" << UUIDtoString(revNode->getSharedID()) << std::endl;
-			output << "Revision:\t\t\t" << UUIDtoString(revNode->getUniqueID()) << std::endl;
+			output << "Branch:\t\t\t\t\t" << UUIDtoString(revNode->getSharedID()) << std::endl;
+			output << "Revision:\t\t\t\t" << UUIDtoString(revNode->getUniqueID()) << std::endl;
 		}
 		else{
-			output << "Branch:\t\t\t\t" << UUIDtoString(branch) << std::endl;
-			output << "Revision:\t\t\t" << (headRevision ? "Head" : UUIDtoString(revision)) << std::endl;
+			output << "Branch:\t\t\t\t\t" << UUIDtoString(branch) << std::endl;
+			output << "Revision:\t\t\t\t" << (headRevision ? "Head" : UUIDtoString(revision)) << std::endl;
 		}
 	}
 	if (rootNode)
 	{
-		output << "Scene Graph loaded:\t\ttrue" << std::endl;
-		output << "# Nodes:\t\t\t" << nodesByUniqueID.size() << std::endl;
-		output << "# ShareToUnique:\t\t" << sharedIDtoUniqueID.size() << std::endl;
-		output << "# ParentToChildren:\t\t" << parentToChildren.size() << std::endl;
-		output << "# ReferenceToScene:\t\t" << referenceToScene.size() << std::endl << std::endl;
-		output << "# Cameras:\t\t\t" << cameras.size() << std::endl;
-		output << "# Maps:\t\t\t\t" << maps.size() << std::endl;
-		output << "# Materials:\t\t\t" << materials.size() << std::endl;
-		output << "# Meshes:\t\t\t" << meshes.size() << std::endl;
-		output << "# Metadata:\t\t\t" << metadata.size() << std::endl;
-		output << "# References:\t\t\t" << references.size() << std::endl;
-		output << "# Textures:\t\t\t" << textures.size() << std::endl;
-		output << "# Transformations:\t\t" << transformations.size() << std::endl;
-		output << "# Unknowns:\t\t\t" << unknowns.size() << std::endl;
+		output << "Scene Graph loaded:\t\t\ttrue" << std::endl;
+		output << "\t# Nodes:\t\t\t" << nodesByUniqueID.size() << std::endl;
+		output << "\t# ShareToUnique:\t\t" << sharedIDtoUniqueID.size() << std::endl;
+		output << "\t# ParentToChildren:\t\t" << parentToChildren.size() << std::endl;
+		output << "\t# ReferenceToScene:\t\t" << referenceToScene.size() << std::endl << std::endl;
+		output << "\t# Cameras:\t\t\t" << cameras.size() << std::endl;
+		output << "\t# Maps:\t\t\t\t" << maps.size() << std::endl;
+		output << "\t# Materials:\t\t\t" << materials.size() << std::endl;
+		output << "\t# Meshes:\t\t\t" << meshes.size() << std::endl;
+		output << "\t# Metadata:\t\t\t" << metadata.size() << std::endl;
+		output << "\t# References:\t\t\t" << references.size() << std::endl;
+		output << "\t# Textures:\t\t\t" << textures.size() << std::endl;
+		output << "\t# Transformations:\t\t" << transformations.size() << std::endl;
+		output << "\t# Unknowns:\t\t\t" << unknowns.size() << std::endl << std::endl;
+
+		output << "Uncommitted changes:" << std::endl;
+		output << "\t# Nodes:\t\t\t" << new_current.size() << std::endl;
+		output << "\tAdded:\t\t\t\t" << new_added.size() << std::endl;
+		output << "\tDeleted:\t\t\t" << new_removed.size() << std::endl;
+		output << "\tModified:\t\t\t" << new_modified.size() << std::endl;
+
+
 
 	}
 	else
 	{
-		output << "Scene Graph loaded:\t\tfalse" << std::endl;
+		output << "Scene Graph loaded:\t\t\tfalse" << std::endl;
 	}
 
 	output << "================End of Scene Graph Statistics================" << std::endl;
