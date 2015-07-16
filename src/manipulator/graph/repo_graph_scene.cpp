@@ -19,7 +19,12 @@
 * A Scene graph representation of a collection
 */
 
+#include <boost/range/adaptor/map.hpp>
+#include <boost/range/algorithm/copy.hpp>
+#include <boost/assign.hpp>
+
 #include "repo_graph_scene.h"
+#include "../../core/model/bson/repo_bson_factory.h"
 
 using namespace repo::manipulator::graph;
 
@@ -69,6 +74,7 @@ SceneGraph::SceneGraph(
 	unRevisioned(true),
 	revNode(0)
 {
+	branch = stringToUUID(REPO_HISTORY_MASTER_BRANCH);
 	populateAndUpdate(cameras, meshes, materials, metadata, textures, transformations, references, maps, unknowns);
 }
 
@@ -89,8 +95,7 @@ bool SceneGraph::addNodeToScene(
 	repo::core::model::bson::RepoNodeSet::iterator nodeIterator;
 	if (nodes.size() > 0)
 	{
-		new_current.reserve(nodes.size());
-		new_added.reserve(nodes.size());
+		newAdded.reserve(nodes.size());
 
 		collection->insert(nodes.begin(), nodes.end());
 		for (nodeIterator = nodes.begin(); nodeIterator != nodes.end(); ++nodeIterator)
@@ -105,8 +110,7 @@ bool SceneGraph::addNodeToScene(
 					success = false;
 				}
 			}
-			new_current.push_back(node->getUniqueID());
-			new_added.push_back(node->getSharedID());
+			newAdded.push_back(node->getSharedID());
 		}
 	}
 
@@ -118,8 +122,8 @@ bool SceneGraph::addNodeToScene(
 bool SceneGraph::addNodeToMaps(model::bson::RepoNode *node, std::string &errMsg)
 {
 	bool success = true; 
-	repo_uuid uniqueID = node->getUniqueID();
-	repo_uuid sharedID = node->getSharedID();
+	repoUUID uniqueID = node->getUniqueID();
+	repoUUID sharedID = node->getSharedID();
 
 	//----------------------------------------------------------------------
 	//If the node has no parents it must be the rootnode
@@ -142,15 +146,15 @@ bool SceneGraph::addNodeToMaps(model::bson::RepoNode *node, std::string &errMsg)
 	}
 	else{
 		//has parent
-		std::vector<repo_uuid> parentIDs = node->getParentIDs();
-		std::vector<repo_uuid>::iterator it;
+		std::vector<repoUUID> parentIDs = node->getParentIDs();
+		std::vector<repoUUID>::iterator it;
 		for (it = parentIDs.begin(); it != parentIDs.end(); ++it)
 		{
 			//add itself to the parent on the "parent -> children" map
-			repo_uuid parent = *it;
+			repoUUID parent = *it;
 
 			//check if the parent already has an entry
-			std::map<repo_uuid, std::vector<repo_uuid>>::iterator mapIt;
+			std::map<repoUUID, std::vector<repoUUID>>::iterator mapIt;
 			mapIt = parentToChildren.find(parent);
 			if (mapIt != parentToChildren.end()){
 				//has an entry, add to the vector
@@ -158,7 +162,7 @@ bool SceneGraph::addNodeToMaps(model::bson::RepoNode *node, std::string &errMsg)
 			}
 			else{
 				//no entry, create one
-				std::vector<repo_uuid> children;
+				std::vector<repoUUID> children;
 				children.push_back(sharedID);
 
 				parentToChildren[parent] = children;
@@ -170,6 +174,156 @@ bool SceneGraph::addNodeToMaps(model::bson::RepoNode *node, std::string &errMsg)
 
 	nodesByUniqueID[uniqueID] = node;
 	sharedIDtoUniqueID[sharedID] = uniqueID;
+
+	return success;
+}
+
+bool SceneGraph::commit(
+	std::string &errMsg, 
+	const std::string &userName, 
+	const std::string &message,
+	const std::string &tag)
+{
+
+	bool success = true;
+
+	//Sanity check that everything we need is here
+	if (!dbHandler)
+	{
+		errMsg = "Cannot commit to the database - no database handler assigned.";
+		return false;
+	}
+	
+	if (databaseName.empty() | projectName.empty())
+	{
+		errMsg = "Cannot commit to the database - databaseName or projectName is empty (database: " 
+			+ databaseName 
+			+ " project: " + projectName +  " ).";
+		return false;
+	}
+
+	if (success &= commitProjectSettings(errMsg, userName))
+	{
+		BOOST_LOG_TRIVIAL(info) << "Commited project settings, commiting revision...";
+		model::bson::RevisionNode *newRevNode = 0;
+		if (success &= commitRevisionNode(errMsg, newRevNode, userName, message, tag))
+		{
+			BOOST_LOG_TRIVIAL(info) << "Commited revision node, commiting scene nodes...";
+			//commited the revision node, commit the modification on the scene
+			if (success &= commitSceneChanges(errMsg))
+			{
+				//Succeed in commiting everything.
+				//Update Revision Node and reset state.
+				
+				if (revNode)
+				{
+					delete revNode;
+				}
+				revNode = newRevNode;
+				revision = newRevNode->getUniqueID();
+
+				newAdded.clear();
+				newRemoved.clear();
+				newModified.clear();
+
+				unRevisioned = false;
+			}
+		}
+	}
+	//Create and Commit revision node
+	return success;
+}
+
+bool SceneGraph::commitProjectSettings(
+	std::string &errMsg,
+	const std::string &userName)
+{
+	bool success = true;
+	model::bson::RepoProjectSettings * projectSettings = 
+		model::bson::RepoBSONFactory::makeRepoProjectSettings(projectName, userName);
+	
+	success = (projectSettings) != 0;
+	
+	if (success)
+	{
+		success &= dbHandler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, *projectSettings, false, errMsg);
+	}
+
+	return success;
+
+}
+
+bool SceneGraph::commitRevisionNode(
+	std::string &errMsg,
+	model::bson::RevisionNode *&newRevNode,
+	const std::string &userName,
+	const std::string &message,
+	const std::string &tag)
+{
+
+	bool success = true;
+	std::vector<repoUUID> parent;
+	parent.reserve(1);
+
+	if (!unRevisioned && !revNode)
+	{
+		if (!loadRevision(errMsg))
+			return false;
+		parent.push_back(revNode->getUniqueID());
+	}
+
+	std::vector<repoUUID> uniqueIDs;
+
+	//using boost's range adaptor, retrieve all the keys within this map
+	//http://www.boost.org/doc/libs/1_53_0/libs/range/doc/html/range/reference/adaptors/reference/map_keys.html
+	boost::copy(
+		nodesByUniqueID | boost::adaptors::map_keys,
+		std::back_inserter(uniqueIDs));
+
+	newRevNode =
+		model::bson::RepoBSONFactory::makeRevisionNode(userName, branch, uniqueIDs,
+		newAdded, newRemoved, newModified, parent, message, tag);
+
+
+	if (!newRevNode)
+	{
+		errMsg += "Failed to instantiate a new revision object!";
+		return false;
+	}
+
+
+	return success && dbHandler->insertDocument(databaseName, projectName +"." + revExt, *newRevNode, errMsg);
+}
+
+bool SceneGraph::commitSceneChanges(
+	std::string &errMsg)
+{
+	bool success = true;
+	std::vector<repoUUID> nodesToCommit;
+	std::vector<repoUUID>::iterator it;
+
+	long count = 0;
+	
+	nodesToCommit.reserve(newAdded.size() + newModified.size() + newRemoved.size());
+
+	nodesToCommit.insert(nodesToCommit.end(), newAdded.begin(), newAdded.end());
+	nodesToCommit.insert(nodesToCommit.end(), newModified.begin(), newModified.end());
+	nodesToCommit.insert(nodesToCommit.end(), newRemoved.begin(), newRemoved.end());
+
+	BOOST_LOG_TRIVIAL(info) << "Commiting addedNodes...." << newAdded.size() << " nodes";
+	
+	for (it = nodesToCommit.begin(); it != nodesToCommit.end(); ++it)
+	{
+		model::bson::RepoNode *node = nodesByUniqueID[sharedIDtoUniqueID[*it]];
+		if (node->objsize() > dbHandler->documentSizeLimit())
+		{
+			success = false;
+			errMsg += "Node '" + UUIDtoString(node->getUniqueID()) + "' over 16MB in size is not committed.";
+		}
+		else
+			success &= dbHandler->insertDocument(databaseName, projectName + "."+ sceneExt, *node, errMsg);
+	}
+
 
 	return success;
 }
@@ -218,7 +372,7 @@ bool SceneGraph::populate(std::vector<model::bson::RepoBSON> nodes, std::string 
 {
 	bool success = true;
 
-	std::map<repo_uuid, model::bson::RepoNode *> nodesBySharedID;
+	std::map<repoUUID, model::bson::RepoNode *> nodesBySharedID;
 	for (std::vector<model::bson::RepoBSON>::const_iterator it = nodes.begin();
 		it != nodes.end(); ++it)
 	{
@@ -367,13 +521,9 @@ void SceneGraph::printStatistics(std::iostream &output)
 		output << "\t# Unknowns:\t\t\t" << unknowns.size() << std::endl << std::endl;
 
 		output << "Uncommitted changes:" << std::endl;
-		output << "\t# Nodes:\t\t\t" << new_current.size() << std::endl;
-		output << "\tAdded:\t\t\t\t" << new_added.size() << std::endl;
-		output << "\tDeleted:\t\t\t" << new_removed.size() << std::endl;
-		output << "\tModified:\t\t\t" << new_modified.size() << std::endl;
-
-
-
+		output << "\tAdded:\t\t\t\t" << newAdded.size() << std::endl;
+		output << "\tDeleted:\t\t\t" << newRemoved.size() << std::endl;
+		output << "\tModified:\t\t\t" << newModified.size() << std::endl;
 	}
 	else
 	{

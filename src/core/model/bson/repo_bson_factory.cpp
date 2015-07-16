@@ -30,22 +30,11 @@ MaterialNode* RepoBSONFactory::makeMaterialNode(
 	return MaterialNode::createMaterialNode(material, name,  apiLevel);
 }
 
-TextureNode* RepoBSONFactory::makeTextureNode(
-	const std::string &name,
-	const char        *memblock,
-	const uint32_t    &size,
-	const uint32_t    &width,
-	const uint32_t    &height,
-	const int         &apiLevel)
-{
-	return TextureNode::createTextureNode(name, memblock, size, width, height, apiLevel);
-}
-
 MetadataNode* RepoBSONFactory::makeMetaDataNode(
 	RepoBSON			          &metadata,
 	const std::string             &mimeType,
 	const std::string             &name,
-	const std::vector<repo_uuid>  &parents,
+	const std::vector<repoUUID>  &parents,
 	const int                     &apiLevel)
 {
 	return MetadataNode::createMetadataNode(metadata, mimeType, name, parents, apiLevel);
@@ -66,10 +55,54 @@ MeshNode* RepoBSONFactory::makeMeshNode(
 		uvChannels, colors, outline, apiLevel, name);
 }
 
+RepoProjectSettings* RepoBSONFactory::makeRepoProjectSettings(
+	const std::string &uniqueProjectName,
+	const std::string &owner,
+	const std::string &group,
+	const std::string &type,
+	const std::string &description,
+	const uint8_t     &ownerPermissionsOctal,
+	const uint8_t     &groupPermissionsOctal,
+	const uint8_t     &publicPermissionsOctal)
+{
+	return RepoProjectSettings::createRepoProjectSettings(uniqueProjectName, owner,
+		group, type, description, ownerPermissionsOctal, groupPermissionsOctal, 
+		publicPermissionsOctal);
+}
+
+
+RevisionNode* RepoBSONFactory::makeRevisionNode(
+	const std::string			 &user,
+	const repoUUID              &branch,
+	const std::vector<repoUUID> &currentNodes,
+	const std::vector<repoUUID> &added,
+	const std::vector<repoUUID> &removed,
+	const std::vector<repoUUID> &modified,
+	const std::vector<repoUUID> &parent,
+	const std::string            &message,
+	const std::string            &tag,
+	const int                    &apiLevel
+	)
+{
+	return RevisionNode::createRevisionNode(user, branch, currentNodes, added, 
+		removed, modified, parent, message, tag, apiLevel);
+}
+
+TextureNode* RepoBSONFactory::makeTextureNode(
+	const std::string &name,
+	const char        *memblock,
+	const uint32_t    &size,
+	const uint32_t    &width,
+	const uint32_t    &height,
+	const int         &apiLevel)
+{
+	return TextureNode::createTextureNode(name, memblock, size, width, height, apiLevel);
+}
+
 TransformationNode* RepoBSONFactory::makeTransformationNode(
 	const std::vector<std::vector<float>> &transMatrix,
 	const std::string                     &name,
-	const std::vector<repo_uuid>		  &parents,
+	const std::vector<repoUUID>		  &parents,
 	const int                             &apiLevel)
 {
 	return TransformationNode::createTransformationNode(transMatrix, name, parents, apiLevel);

@@ -63,9 +63,9 @@ namespace repo{
 						static RepoNode* createRepoNode(
 							const std::string &type,
 							const unsigned int api = REPO_NODE_API_LEVEL_0,
-							const repo_uuid &sharedId = generateUUID(),
+							const repoUUID &sharedId = generateUUID(),
 							const std::string &name = std::string(),
-							const std::vector<repo_uuid> &parents = std::vector<repo_uuid>());
+							const std::vector<repoUUID> &parents = std::vector<repoUUID>());
 
 						/**
 						* Append default information onto the a RepoBSONBuilder
@@ -75,9 +75,9 @@ namespace repo{
 							RepoBSONBuilder &builder,
 							const std::string &type,
 							const unsigned int api = REPO_NODE_API_LEVEL_0,
-							const repo_uuid &sharedId = generateUUID(),
+							const repoUUID &sharedId = generateUUID(),
 							const std::string &name = std::string(),
-							const std::vector<repo_uuid> &parents = std::vector<repo_uuid>())
+							const std::vector<repoUUID> &parents = std::vector<repoUUID>())
 						{
 							//--------------------------------------------------------------------------
 							// ID field (UUID)
@@ -120,7 +120,7 @@ namespace repo{
 						* NOTE: this object is unchanged!
 						* @returns new object with the field updated
 						*/
-						RepoNode cloneAndAddParent(repo_uuid parentID);
+						RepoNode cloneAndAddParent(repoUUID parentID);
 
 
 
@@ -134,19 +134,19 @@ namespace repo{
 						* Get the shared ID from the object
 						* @return returns the shared ID of the object
 						*/
-						repo_uuid getSharedID(){ return sharedID; }
+						repoUUID getSharedID(){ return sharedID; }
 
 						/**
 						* Get the unique ID from the object
 						* @return returns the unique ID of the object
 						*/
-						repo_uuid getUniqueID(){ return uniqueID; }
+						repoUUID getUniqueID(){ return uniqueID; }
 
 						/**
 						* Get the list of parent IDs 
 						* @return returns a set of parent IDs
 						*/
-						std::vector<repo_uuid> getParentIDs();
+						std::vector<repoUUID> getParentIDs();
 
 						/*
 						*	------------- Compare operations --------------
@@ -181,9 +181,9 @@ namespace repo{
 						
 						std::string type; //!< Compulsory type of this document.
 
-						repo_uuid sharedID; //!< Shared unique graph document identifier.
+						repoUUID sharedID; //!< Shared unique graph document identifier.
 
-						repo_uuid uniqueID; //!< Compulsory unique database document identifier.
+						repoUUID uniqueID; //!< Compulsory unique database document identifier.
 
 				};
 				/*!

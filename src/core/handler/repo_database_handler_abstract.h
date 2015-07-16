@@ -36,6 +36,12 @@ namespace repo{
 				 */
 				~AbstractDatabaseHandler(){};
 
+				/**
+				* returns the size limit of each document(record) in bytes
+				* @return returns size limit in bytes.
+ 				*/
+				uint64_t documentSizeLimit() { return maxDocumentSize; };
+
 				/*
 				*	------------- Authentication (insert/delete/update) --------------
 				*/
@@ -99,11 +105,31 @@ namespace repo{
 				* @param database name
 				* @param collection name
 				* @param document to insert
+				* @param errMsg error message should it fail
+				* @return returns true upon success
 				*/
-				virtual void insertDocument(
+				virtual bool insertDocument(
 					const std::string &database,
 					const std::string &collection,
-					const repo::core::model::bson::RepoBSON &obj)=0;
+					const repo::core::model::bson::RepoBSON &obj,
+					std::string &errMsg) = 0;
+
+				/**
+				* Update/insert a single document in database.collection
+				* If the document exists, update it, if it doesn't, insert it
+				* @param database name
+				* @param collection name
+				* @param document to insert
+				* @param if it is an update, overwrites the document instead of updating the fields it has
+				* @param errMsg error message should it fail
+				* @return returns true upon success
+				*/
+				virtual bool upsertDocument(
+					const std::string &database,
+					const std::string &collection,
+					const repo::core::model::bson::RepoBSON &obj,
+					const bool        &overwrite,
+					std::string &errMsg)=0;
 
 				/*
 				*	------------- Query operations --------------
@@ -134,7 +160,7 @@ namespace repo{
 				virtual repo::core::model::bson::RepoBSON findOneBySharedID(
 					const std::string& database,
 					const std::string& collection,
-					const repo_uuid& uuid,
+					const repoUUID& uuid,
 					const std::string& sortField)=0;
 
 				/**
@@ -147,14 +173,17 @@ namespace repo{
 				virtual mongo::BSONObj findOneByUniqueID(
 					const std::string& database,
 					const std::string& collection,
-					const repo_uuid& uuid) = 0;
+					const repoUUID& uuid) = 0;
 
 
 			protected:
 				/**
 				* Default constructor
+				* @param size maximum size of documents(records) in bytes
 				*/
-				AbstractDatabaseHandler(){};
+				AbstractDatabaseHandler(uint64_t size):maxDocumentSize(size){};
+
+				const uint64_t maxDocumentSize;
 			};
 
 		}

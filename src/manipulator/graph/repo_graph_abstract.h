@@ -58,12 +58,12 @@ namespace repo{
 
 			protected:
 				repo::core::handler::AbstractDatabaseHandler *dbHandler; /*! handler to use for db operations*/
-				const std::string databaseName;/*! name of the database */
-				const std::string projectName; /*! name of the project */
+				std::string databaseName;/*! name of the database */
+				std::string projectName; /*! name of the project */
 
 				repo::core::model::bson::RepoNode *rootNode;
 				//! A lookup map for the all nodes the graph contains.
-				std::map<repo_uuid, repo::core::model::bson::RepoNode*> nodesByUniqueID;
+				std::map<repoUUID, repo::core::model::bson::RepoNode*> nodesByUniqueID;
 			};
 		}//namespace graph
 	}//namespace manipulator

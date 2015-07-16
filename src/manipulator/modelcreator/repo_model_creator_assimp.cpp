@@ -452,7 +452,7 @@ model::bson::MeshNode* AssimpModelCreator::createMeshRepoNode(
 model::bson::MetadataNode* AssimpModelCreator::createMetadataRepoNode(
 	const aiMetadata             *assimpMeta,
 	const std::string            &metadataName,
-	const std::vector<repo_uuid> &parents)
+	const std::vector<repoUUID> &parents)
 {
 	model::bson::MetadataNode *metaNode;
 	std::string val;
@@ -527,7 +527,7 @@ model::bson::RepoNodeSet AssimpModelCreator::createTransformationNodesRecursive(
 	const std::map<std::string, model::bson::RepoNode *> &cameras,
 	const std::vector<model::bson::RepoNode *>           &meshes,
 	model::bson::RepoNodeSet						     &metadata,
-	const std::vector<repo_uuid>						 &parent
+	const std::vector<repoUUID>						 &parent
 	)
 {
 	model::bson::RepoNodeSet transNodes;
@@ -549,8 +549,8 @@ model::bson::RepoNodeSet AssimpModelCreator::createTransformationNodesRecursive(
 		model::bson::TransformationNode * transNode = 
 			model::bson::RepoBSONFactory::makeTransformationNode(transMat, transName, parent);
 
-		repo_uuid sharedId = transNode->getSharedID();
-		std::vector<repo_uuid> myShareID;
+		repoUUID sharedId = transNode->getSharedID();
+		std::vector<repoUUID> myShareID;
 		myShareID.push_back(sharedId);
 
 		//--------------------------------------------------------------------------

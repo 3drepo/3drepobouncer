@@ -69,13 +69,22 @@ void insertARepoNode(repo::core::handler::AbstractDatabaseHandler *dbHandler){
 
 	//builds a repo node and dumps it out to check its value
 
+	std::string errMsg;
+
 	repo::core::model::bson::RepoNode *node = repo::core::model::bson::RepoBSONFactory::makeRepoNode("<crazy>");
 
 	BOOST_LOG_TRIVIAL(info) << "Repo Node created: ";
 	BOOST_LOG_TRIVIAL(info) << "\t" << node->toString();
 
 	BOOST_LOG_TRIVIAL(info) << "Repo Node created inserting it in " << database << "." << collection;
-	dbHandler->insertDocument(database, collection, *node);
+	if (dbHandler->insertDocument(database, collection, *node, errMsg))
+	{
+		BOOST_LOG_TRIVIAL(info) << "Node inserted successfully";
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(info) << "Node insertion failed: " << errMsg;
+	}
 
 
 }
@@ -109,7 +118,7 @@ void instantiateProject(repo::core::handler::AbstractDatabaseHandler *dbHandler)
 
 }
 
-void loadModelFromFile()
+void loadModelFromFileAndCommit(repo::core::handler::AbstractDatabaseHandler *dbHandler)
 {
 	repo::manipulator::modelcreator::AbstractModelCreator *modelCreator;
 
@@ -123,16 +132,38 @@ void loadModelFromFile()
 		BOOST_LOG_TRIVIAL(info) << "model loaded successfully! Attempting to port to Repo World...";
 		repo::manipulator::graph::SceneGraph *graph = modelCreator->generateSceneGraph();
 
-		BOOST_LOG_TRIVIAL(info) << " success? printing graph statistics...";
+		BOOST_LOG_TRIVIAL(info) << "SceneGraph generated. Printing graph statistics...";
 		std::stringstream		stringMaker;
 		graph->printStatistics(stringMaker);
 		std::cout << stringMaker.str();
 
+		std::string databaseName = "test";
+		std::string projectName = "repoTest";
+		BOOST_LOG_TRIVIAL(info) << "Trying to commit this scene to database as test.repoTest";
+		graph->setDatabaseHandler(dbHandler);
+		graph->setDatabaseAndProjectName(databaseName, projectName);
+		stringMaker.clear();
+		graph->printStatistics(stringMaker);
+		std::cout << stringMaker.str();
+
+		if (graph->commit(errMsg, "testUser", "This is a test"))
+		{
+			BOOST_LOG_TRIVIAL(info) << "Successfully commited";
+		}
+		else
+		{
+			BOOST_LOG_TRIVIAL(info) << "Database Commit failed " + errMsg;
+		}
+		stringMaker.clear();
+		graph->printStatistics(stringMaker);
+		std::cout << stringMaker.str();
 	}
 	else
 	{
 		BOOST_LOG_TRIVIAL(error) << "failed to load model from file : " << fileName << " : " << errMsg;
 	}
+
+
 }
 
 int main(int argc, char* argv[]){
@@ -161,7 +192,7 @@ int main(int argc, char* argv[]){
 
 	instantiateProject(dbHandler);
 
-	loadModelFromFile();
+	loadModelFromFileAndCommit(dbHandler);
 
 	return EXIT_SUCCESS;
 }

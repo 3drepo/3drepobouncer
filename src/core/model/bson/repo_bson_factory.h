@@ -23,11 +23,13 @@
 #pragma once
 #include "../repo_node_utils.h"
 
+#include "repo_bson_project_settings.h"
 #include "repo_node.h"
 #include "repo_node_camera.h"
 #include "repo_node_metadata.h"
 #include "repo_node_material.h"
 #include "repo_node_mesh.h"
+#include "repo_node_revision.h"
 #include "repo_node_texture.h"
 #include "repo_node_transformation.h"
 
@@ -38,6 +40,33 @@ namespace repo {
 				class RepoBSONFactory
 				{
 					public:
+
+						/**
+						* Create a project setting BSON
+						* @param uniqueProjectName a unique name for the project
+						* @param owner owner ofthis project
+						* @param group group with access of this project
+						* @param type  type of project
+						* @param description Short description of the project
+						* @param ownerPermissionsOctal owner's permission in POSIX
+						* @param groupPermissionsOctal group's permission in POSIX
+						* @param publicPermissionsOctal other's permission in POSIX
+						* @return returns a pointer Project settings
+						*/
+						static RepoProjectSettings* makeRepoProjectSettings(
+							const std::string &uniqueProjectName,
+							const std::string &owner,
+							const std::string &group = std::string(),
+							const std::string &type = REPO_PROJECT_TYPE_ARCHITECTURAL,
+							const std::string &description = std::string(),
+							const uint8_t     &ownerPermissionsOctal = 7,
+							const uint8_t     &groupPermissionsOctal = 0,
+							const uint8_t     &publicPermissionsOctal = 0);
+
+
+						/*
+						* -------------------- REPO NODES ------------------------
+						*/
 						/**
 						* Create a RepoNode
 						* @param type of node (Optional)
@@ -94,7 +123,7 @@ namespace repo {
 							RepoBSON			         &metadata,
 							const std::string            &mimeType = std::string(),
 							const std::string            &name = std::string(),
-							const std::vector<repo_uuid> &parents = std::vector<repo_uuid>(),
+							const std::vector<repoUUID> &parents = std::vector<repoUUID>(),
 							const int                    &apiLevel = REPO_NODE_API_LEVEL_1);
 						/**
 						* Create a Mesh Node
@@ -120,6 +149,34 @@ namespace repo {
 							const std::string                           &name = std::string(),
 							const int                                   &apiLevel = REPO_NODE_API_LEVEL_1);
 
+						/**
+						* Create a Revision Node
+						* @param user name of the user who is commiting this project
+						* @param branch UUID of the branch
+						* @param currentNodes vector of current nodes (unique IDs)
+						* @param added    vector of what nodes are added    (shared IDs) 
+						* @param removed  vector of what nodes are deleted  (shared IDs) 
+						* @param modified vector of what nodes are modified (shared IDs) 
+						* @param modified vector of what nodes are modified (shared IDs)
+						* @param parent   UUID of parent (in a vector)
+						* @param message  A message to describe what this commit is for (optional)
+						* @param tag      A tag for this specific revision (optional)
+						* @param apiLevel API Level(optional)
+						* @return returns a texture node
+						*/
+
+						static RevisionNode* makeRevisionNode(
+							const std::string			 &user,
+							const repoUUID              &branch,
+							const std::vector<repoUUID> &currentNodes,
+							const std::vector<repoUUID> &added,
+							const std::vector<repoUUID> &removed,
+							const std::vector<repoUUID> &modified,
+							const std::vector<repoUUID> &parent = std::vector<repoUUID>(),
+							const std::string            &message = std::string(),
+							const std::string            &tag = std::string(),
+							const int                    &apiLevel = REPO_NODE_API_LEVEL_1
+							);
 
 
 						/**
@@ -139,6 +196,7 @@ namespace repo {
 							const uint32_t    &width,
 							const uint32_t    &height,
 							const int         &apiLevel = REPO_NODE_API_LEVEL_1);
+
 						/**
 						* Create a Transformation Node
 						* @param transMatrix a 4 by 4 transformation matrix
@@ -150,7 +208,7 @@ namespace repo {
 						static TransformationNode* makeTransformationNode(
 						const std::vector<std::vector<float>> &transMatrix,
 						const std::string                     &name = std::string(),
-						const std::vector<repo_uuid>		  &parents = std::vector<repo_uuid>(),
+						const std::vector<repoUUID>		  &parents = std::vector<repoUUID>(),
 						const int                             &apiLevel = REPO_NODE_API_LEVEL_1);
 
 				};

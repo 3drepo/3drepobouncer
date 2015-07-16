@@ -14,7 +14,7 @@ RepoBSONBuilder::~RepoBSONBuilder()
 
 void RepoBSONBuilder::append(
 	const std::string &label,
-	const repo_uuid &uuid)
+	const repoUUID &uuid)
 {
 	appendBinData(label, uuid.size(), mongo::bdtUUID, (char*)uuid.data);
 

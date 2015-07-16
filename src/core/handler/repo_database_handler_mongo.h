@@ -150,11 +150,31 @@ namespace repo{
 					 * @param database name
 					 * @param collection name
 					 * @param document to insert
+					 * @param errMsg error message should it fail
+					 * @return returns true upon success
 					*/
-					void insertDocument(
+					bool insertDocument(
 						const std::string &database,
 						const std::string &collection,
-						const repo::core::model::bson::RepoBSON &obj);
+						const repo::core::model::bson::RepoBSON &obj,
+						std::string &errMsg);
+
+					/**
+					* Update/insert a single document in database.collection
+					* If the document exists, update it, if it doesn't, insert it
+					* @param database name
+					* @param collection name
+					* @param document to insert
+					* @param if it is an update, overwrites the document instead of updating the fields it has
+					* @param errMsg error message should it fail
+					* @return returns true upon success
+					*/
+					bool upsertDocument(
+						const std::string &database,
+						const std::string &collection,
+						const repo::core::model::bson::RepoBSON &obj,
+						const bool        &overwrite,
+						std::string &errMsg);
 
 					/*
 					*	------------- Query operations --------------
@@ -185,7 +205,7 @@ namespace repo{
 					repo::core::model::bson::RepoBSON findOneBySharedID(
 						const std::string& database,
 						const std::string& collection,
-						const repo_uuid& uuid,
+						const repoUUID& uuid,
 						const std::string& sortField);
 
 					/**
@@ -198,7 +218,7 @@ namespace repo{
 					mongo::BSONObj findOneByUniqueID(
 						const std::string& database,
 						const std::string& collection,
-						const repo_uuid& uuid);
+						const repoUUID& uuid);
 
 					/*
 					 *	=============================================================================================
@@ -303,348 +323,6 @@ namespace repo{
 					 */
 
 
-//				public:
-					//					MongoClientWrapper(const MongoClientWrapper&);
-//
-//					//! Move constructor
-//					MongoClientWrapper (MongoClientWrapper &&);
-//
-//					//! Copy assignment. Requires separate reconnection and reauthentication.
-//					MongoClientWrapper& operator= (const MongoClientWrapper&);
-//
-//					//! Move assignment
-//					MongoClientWrapper& operator= (MongoClientWrapper&&);
-//
-//				    //--------------------------------------------------------------------------
-//					//
-//					// Static helpers
-//					//
-//				    //--------------------------------------------------------------------------
-//
-//					/*! Appends binary mongo::bdfUUID type value to a given bson builder
-//						and returns the assigned uuid.
-//					*/
-//					static boost::uuids::uuid appendUUID(
-//				        const std::string &fieldName,
-//				        mongo::BSONObjBuilder &builder);
-//
-//					static boost::uuids::uuid appendUUID(
-//				        const std::string &fieldName,
-//				        const boost::uuids::uuid &val,
-//				        mongo::BSONObjBuilder &builder);
-//
-//				    //! Compares two strings.
-//				    static bool caseInsensitiveStringCompare(const std::string& s1, const std::string& s2);
-//
-//
-//				    /*! Returns uuid representation of a given BSONElement if its binDataType is
-//				     *  bdtUUID, empty uuid otherwise.
-//				     */
-//				    static boost::uuids::uuid retrieveUUID(const mongo::BSONElement &bse);
-//
-//				    static boost::uuids::uuid retrieveUUID(const mongo::BSONObj &obj);
-//
-//				    static std::string uuidToString(const boost::uuids::uuid &);
-//
-//				    //--------------------------------------------------------------------------
-//					// TODO: remove
-//					static int retrieveRevisionNumber(const mongo::BSONObj& obj);
-//
-//					//! Returns a namespace as database.collection
-//				    static std::string getNamespace(
-//				            const std::string &database,
-//				            const std::string &collection);
-//
-//				    //! Returns project.history
-//				    static std::string getHistoryCollectionName(const std::string& project)
-//				    {   return project + "." + REPO_COLLECTION_HISTORY;}
-//
-//				    //! Returns project.scene
-//				    static std::string getSceneCollectionName(const std::string& project)
-//				    { return project + "." + REPO_COLLECTION_SCENE; }
-//
-//				    //--------------------------------------------------------------------------
-//					//
-//					// Connection and authentication
-//					//
-//				    //--------------------------------------------------------------------------
-//
-//				    /*! Connect to MongoDB at a given host and port. If port is unspecified,
-//				     * connects to the default port.
-//				     */
-//					bool connect(const mongo::HostAndPort&);
-//
-//					/*!
-//					 * Connect to MongoDB at a given host and port.
-//					 * If port is unspecified, connects to the default port.
-//					 */
-//					bool connect(const std::string& host = "localhost", int port = -1);
-//
-//					//! Reconnect using the stored host and port.
-//					bool reconnect();
-//
-
-//
-
-//
-//					bool authenticate(
-//						const std::string& database,
-//						const std::pair<std::string, std::string>& usernameAndDigestedPassword);
-//
-//					//! Attempts authentication on all databases previously authenticated successfully.
-//					bool reauthenticate();
-//
-//				    /*! Attemps authentication using stored credentials on a specific database.
-//				     * If database not found, attempts "admin" db authentication.
-//				     */
-//					bool reauthenticate(const std::string& /* database */);
-//
-//					//! Performs reconnection and reauthentication.
-//					bool reconnectAndReauthenticate();
-//
-//					//! Reconnects and authenticates only on a specific database.
-//					bool reconnectAndReauthenticate(const std::string& /* database */);
-//
-//				    /*! Returns the username under which the given database has been
-//				     * authenticated. If not found, returns username authenticated on the
-//				     * "admin" database, otherwise returns empty string.
-//				     */
-//					std::string getUsername(const std::string& /* database */) const;
-//
-//				    //--------------------------------------------------------------------------
-//					//
-//					// Basic DB info retrieval
-//					//
-//				    //--------------------------------------------------------------------------
-//
-//				    //! Returns a list of all available databases, alphabetically sorted by default.
-//				    std::list<std::string> getDatabases(bool sorted = true);
-//
-//				    //! Returns a map of databases with associated projects.
-//				    std::map<std::string, std::list<std::string> > getDatabasesWithProjects(
-//				            const std::list<std::string> &databases);
-//
-//				    /*!
-//				     * Returns a list of all available collections in a format "database.collection".
-//				     * Use mongo.nsGetCollection() to remove database from the returned string.
-//				     */
-//				    std::list<std::string> getCollections(const std::string &database);
-//
-//				    //! Returns a list of projects associated with a given database (aka company account).
-//				    std::list<std::string> getProjects(const std::string &database);
-//
-//				    //! Returns connection status on the admin database.
-//				    mongo::BSONObj getConnectionStatus();
-//
-//				    //! Returns connection status on a given database.
-//				    mongo::BSONObj getConnectionStatus(const std::string &database);
-//
-//				    //! Returns stats for a collection.
-//				    repo::core::RepoCollStats getCollectionStats(const std::string &ns);
-//
-//				    //! Returns stats for a collection.
-//				    repo::core::RepoCollStats getCollectionStats(
-//				            const std::string &database,
-//				            const std::string &collection);
-//
-//					//! Returns a collection name from namespace (db.collection)
-//				    std::string nsGetCollection(const std::string &ns);
-//
-//					//! Returns a database name from namespace (db.collection)
-//				    std::string nsGetDB(const std::string &ns);
-//
-//					//! Returns the number of items in a collection
-//				    unsigned long long countItemsInCollection(
-//				            const std::string &database,
-//				            const std::string &collection);
-//
-//					//! Returns the number of items in a collection defined as namespace (db.collection)
-//				    unsigned long long countItemsInCollection(const std::string &ns);
-//
-//				    //--------------------------------------------------------------------------
-//					//
-//					// Queries
-//					//
-//				    //--------------------------------------------------------------------------
-//
-//					std::auto_ptr<mongo::DBClientCursor> listAll(
-//						const std::string& /* database */,
-//						const std::string& /* collection */);
-//
-//					std::auto_ptr<mongo::DBClientCursor> listAllTailable(
-//						const std::string& /* database */,
-//						const std::string& /* collection */,
-//						int skip = 0);
-//
-//					/*! Retrieves all objects but with a limited list of fields.
-//						@param sortOrder 1 ascending, -1 descending
-//					*/
-//					std::auto_ptr<mongo::DBClientCursor> listAllTailable(
-//						const std::string& database,
-//						const std::string& collection,
-//						const std::list<std::string>& fields,
-//						const std::string& sortField = std::string(),
-//						int sortOrder = -1,
-//						int skip = 0);
-//
-//					//! Retrieves all objects whose ID is in the array.
-//					std::auto_ptr<mongo::DBClientCursor> findAllByUniqueIDs(
-//						const std::string& database,
-//						const std::string& collection,
-//						const mongo::BSONArray& array,
-//						int skip);
-//
-//					// TODO: move logic to repo_core.
-//					//! Retrieves fields matching given Unique ID (UID).
-//					mongo::BSONObj findOneByUniqueID(
-//						const std::string& database,
-//						const std::string& collection,
-//						const std::string& uuid,
-//						const std::list<std::string>& fields);
-//
-//				    /*! Retrieves fields matching given Shared ID (SID), sorting is descending
-//				     * (newest first).
-//				     */
-//					mongo::BSONObj findOneBySharedID(
-//						const std::string& database,
-//						const std::string& collection,
-//						const std::string& uuid,
-//						const std::string& sortField,
-//						const std::list<std::string>& fields);
-//
-//				    //! Run db.eval command on the specified database.
-//				    mongo::BSONElement eval(const std::string &database,
-//				            const std::string &jscode);
-//
-//				    /*!
-//				     * See http://docs.mongodb.org/manual/reference/method/db.runCommand/
-//				     * http://docs.mongodb.org/manual/reference/command/
-//				     * \brief runCommand
-//				     * \param database
-//				     * \param command
-//				     */
-//				    mongo::BSONObj runCommand(
-//				            const std::string &database,
-//				            const mongo::BSONObj &command);
-//
-//				    //--------------------------------------------------------------------------
-//					// Deprecated
-//					//
-//					/*! Populates the ret vector with all BSON objs found in the collection
-//						Returns true if at least one BSON obj loaded, false otherwise
-//					*/
-//					bool fetchEntireCollection(
-//						const std::string& /* database */,
-//						const std::string& /* collection */,
-//						std::vector<mongo::BSONObj>& /* ret */);
-//
-//
-//				    //--------------------------------------------------------------------------
-//					// DEPRECATED
-//				    //--------------------------------------------------------------------------
-//					// Given dbName and collection name populates the ret vector with all BSON objs
-//					// belonging to revisions listed in set
-//					// Returns false if error
-//				    bool fetchRevision(std::vector<mongo::BSONObj> &/* ret */,
-//				                       std::string dbName,
-//				                       std::string collection,
-//				                       const std::set<int64_t> &revisionNumbersAncestralArray);
-//				    void getRevision(std::string dbName, std::string collection, int revNumber,
-//				                     int ancestor);
-//
-//				    //--------------------------------------------------------------------------
-//					//
-//					// Deletion
-//					//
-//				    //--------------------------------------------------------------------------
-//
-//				    /*! Object ID can be of any type not just OID, hence BSONElement is more
-//				     * suitable
-//				     */
-//					bool deleteRecord(
-//						const std::string& /* database */,
-//						const std::string& /* collection */,
-//						const mongo::BSONElement& /* recordID */ );
-//
-//					bool deleteAllRecords(
-//						const std::string& /* database */,
-//						const std::string& /* collection */);
-//
-//				    //! Drops given database.
-//				    bool dropDatabase(const std::string& database);
-//
-//				    //! Drops database.collection
-//				    bool dropCollection(const std::string& ns);
-//
-//				    //--------------------------------------------------------------------------
-//					//
-//					// Insertion
-//					//
-//				    //--------------------------------------------------------------------------
-//
-//					void insertRecord(
-//						const std::string &database,
-//						const std::string &collection,
-//						const mongo::BSONObj &obj);
-//
-//					void insertRecords(
-//						const std::string &database,
-//						const std::string &collection,
-//						const std::vector<mongo::BSONObj> &objs,
-//						bool inReverse = false);
-//
-//				    void upsertRecord(const std::string &database,
-//				                      const std::string &collection,
-//				                      const mongo::BSONObj &obj)
-//				    { updateRecord(database, collection, obj, true); }
-//
-//				    void updateRecord(
-//				            const std::string &database,
-//				            const std::string &collection,
-//				            const mongo::BSONObj &obj,
-//				            bool upsert = false);
-//
-//				    mongo::BSONObj insertFile(const std::string &database,
-//				                    const std::string &project,
-//				                    const std::string &filePath);
-//
-//				    //--------------------------------------------------------------------------
-//					//
-//					// Getters
-//					//
-//				    //--------------------------------------------------------------------------
-//
-//					//! Returns the host if set, "localhost" by default.
-//				    std::string getHost() const { return hostAndPort.host(); }
-//
-//					//! Returns the port if set, 27017 by default.
-//				    int getPort() const { return hostAndPort.port(); }
-//
-//					//! Returns the host and port as a string.
-//				    std::string getHostAndPort() const { return hostAndPort.toString(true); }
-//
-//					//! Returns a "username@host:port" string.
-//				    std::string getUsernameAtHostAndPort() const
-//				    { return clientConnection.getServerAddress(); }
-//
-//				    //--------------------------------------------------------------------------
-//					//
-//					// Helpers
-//					//
-//				    //--------------------------------------------------------------------------
-//
-//					/*! Generates a BSONObj with given strings labelled as return value for query
-//						Ie { string1 : 1, string2: 1 ... }
-//
-//						"_id" field is excluded by default unless explicitly stated in the list.
-//					*/
-//				    static mongo::BSONObj fieldsToReturn(
-//				            const std::list<std::string>& list,
-//				            bool excludeIdField = false);
-//
-//
-//
-//				    mongo::DBClientConnection clientConnection;
 
 			};
 

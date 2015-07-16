@@ -42,7 +42,7 @@ MetadataNode* MetadataNode::createMetadataNode(
 	RepoBSON			         &metadata,
 	const std::string            &mimeType,
 	const std::string            &name,
-	const std::vector<repo_uuid> &parents,
+	const std::vector<repoUUID> &parents,
 	const int                    &apiLevel)
 {
 	RepoBSONBuilder builder;

@@ -67,7 +67,7 @@ namespace repo {
 						*/
 						void append(
 							const std::string &label,
-							const repo_uuid &uuid);
+							const repoUUID &uuid);
 
 						///*!
 						//* Appends a vector of object as an array
@@ -139,6 +139,11 @@ namespace repo {
 									(void *)data);
 								
 							}
+						}
+
+						void appendTimeStamp(std::string label){
+							mongo::Date_t date = mongo::Date_t(time(NULL) * 1000);
+							mongo::BSONObjBuilder::append(label, date);
 						}
 
 						/**

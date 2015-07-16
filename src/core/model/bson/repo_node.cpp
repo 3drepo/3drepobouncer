@@ -48,9 +48,9 @@ RepoNode::~RepoNode()
 RepoNode* RepoNode::createRepoNode(
 	const std::string &type,
 	const unsigned int api,
-	const repo_uuid &sharedId,
+	const repoUUID &sharedId,
 	const std::string &name,
-	const std::vector<repo_uuid> &parents)
+	const std::vector<repoUUID> &parents)
 {
 	RepoBSONBuilder builder;
 	
@@ -59,13 +59,13 @@ RepoNode* RepoNode::createRepoNode(
 	return new RepoNode(builder.obj());
 }
 
-RepoNode RepoNode::cloneAndAddParent(repo_uuid parentID)
+RepoNode RepoNode::cloneAndAddParent(repoUUID parentID)
 {
 	RepoBSONBuilder builder;
 	RepoBSONBuilder arrayBuilder;
 
 
-	std::vector<repo_uuid> currentParents = getParentIDs();
+	std::vector<repoUUID> currentParents = getParentIDs();
 	currentParents.push_back(parentID);
 	
 	builder.appendArray(REPO_NODE_LABEL_PARENTS, arrayBuilder.createArrayBSON(currentParents));
@@ -75,7 +75,7 @@ RepoNode RepoNode::cloneAndAddParent(repo_uuid parentID)
 	return RepoNode(builder.obj());
 }
 
-std::vector<repo_uuid> RepoNode::getParentIDs()
+std::vector<repoUUID> RepoNode::getParentIDs()
 {
 	return getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
 }

@@ -25,7 +25,7 @@
 
 using namespace repo::core::handler;
 
-
+static uint64_t MAX_MONGO_BSON_SIZE=16777216L;
 //------------------------------------------------------------------------------
 const std::string repo::core::handler::MongoDatabaseHandler::ID = "_id";
 const std::string repo::core::handler::MongoDatabaseHandler::UUID = "uuid";
@@ -44,7 +44,8 @@ const std::string repo::core::handler::MongoDatabaseHandler::AUTH_MECH = "MONGOD
 MongoDatabaseHandler* MongoDatabaseHandler::handler = NULL;
 
 MongoDatabaseHandler::MongoDatabaseHandler(
-	const mongo::ConnectionString &dbAddress)
+	const mongo::ConnectionString &dbAddress) :
+	AbstractDatabaseHandler(MAX_MONGO_BSON_SIZE)
 {
 	mongo::client::initialize();
 
@@ -169,7 +170,7 @@ std::vector<repo::core::model::bson::RepoBSON> MongoDatabaseHandler::findAllByUn
 repo::core::model::bson::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 	const std::string& database,
 	const std::string& collection,
-	const repo_uuid& uuid,
+	const repoUUID& uuid,
 	const std::string& sortField)
 {
 
@@ -196,7 +197,7 @@ repo::core::model::bson::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 mongo::BSONObj MongoDatabaseHandler::findOneByUniqueID(
 	const std::string& database,
 	const std::string& collection,
-	const repo_uuid& uuid){
+	const repoUUID& uuid){
 
 	repo::core::model::bson::RepoBSON bson;
 	try
@@ -351,12 +352,25 @@ std::list<std::string> MongoDatabaseHandler::getProjects(const std::string &data
 	return projects;
 }
 
-void MongoDatabaseHandler::insertDocument(
+bool MongoDatabaseHandler::insertDocument(
 	const std::string &database,
 	const std::string &collection,
-	const repo::core::model::bson::RepoBSON &obj)
+	const repo::core::model::bson::RepoBSON &obj,
+	std::string &errMsg)
 {
-	worker->insert(getNamespace(database, collection), obj);
+	bool success = true;
+	try{
+		worker->insert(getNamespace(database, collection), obj);
+
+	}
+	catch (mongo::DBException &e)
+	{
+		success = false;
+		std::string errString(e.what());
+		errMsg += errString;
+	}
+
+	return success;
 }
 
 bool MongoDatabaseHandler::intialiseWorkers(){
@@ -372,5 +386,51 @@ bool MongoDatabaseHandler::intialiseWorkers(){
 	}
 
 
+	return success;
+}
+
+
+bool MongoDatabaseHandler::upsertDocument(
+	const std::string &database,
+	const std::string &collection,
+	const repo::core::model::bson::RepoBSON &obj,
+	const bool        &overwrite,
+	std::string &errMsg)
+{
+	bool success = true;
+	try{
+		if (overwrite)
+		{
+			mongo::Query query;
+			query = BSON(REPO_LABEL_ID << obj.getField(REPO_LABEL_ID));
+			worker->update(getNamespace(database, collection), query, obj, true);
+		}
+		else
+		{
+			//only update fields
+			mongo::BSONObjBuilder builder;
+			builder << REPO_COMMAND_UPDATE << collection;
+
+			mongo::BSONObjBuilder updateBuilder;
+			updateBuilder << REPO_COMMAND_Q << BSON(REPO_LABEL_ID << obj.getField(REPO_LABEL_ID));
+			updateBuilder << REPO_COMMAND_U << BSON("$set" << obj.copy());
+			updateBuilder << REPO_COMMAND_UPSERT << true;
+
+			builder << REPO_COMMAND_UPDATES << BSON_ARRAY(updateBuilder.obj());
+			mongo::BSONObj info;
+			worker->runCommand(database, builder.obj(), info);
+
+			BOOST_LOG_TRIVIAL(debug) << info;
+		}
+			
+		
+
+	}
+	catch (mongo::DBException &e)
+	{
+		success = false;
+		std::string errString(e.what());
+		errMsg += errString;
+	}
 	return success;
 }

@@ -21,7 +21,6 @@
 
 
 #pragma once
-#include "repo_bson.h"
 #include "repo_node.h"
 
 
@@ -30,7 +29,6 @@
 // Fields specific to revision only
 //
 //------------------------------------------------------------------------------
-#define REPO_NODE_TYPE_REVISION					"revision" //!< Type
 #define REPO_NODE_REVISION_LABEL_AUTHOR					"author" //!< Author
 #define REPO_NODE_REVISION_LABEL_MESSAGE					"message" //!< Message
 #define REPO_NODE_REVISION_LABEL_TAG						"tag" //!< Tag
@@ -63,6 +61,33 @@ namespace repo {
 
 					RevisionNode();
 					~RevisionNode();
+
+					/**
+					* Static builder for factory use to create a Revision Node
+					* @param user name of the user who is commiting this project
+					* @param branch UUID of the branch
+					* @param currentNodes vector of current nodes (unique IDs)
+					* @param added    vector of what nodes are added    (shared IDs)
+					* @param removed  vector of what nodes are deleted  (shared IDs)
+					* @param modified vector of what nodes are modified (shared IDs)
+					* @param parent   UUID of parent (in a vector)
+					* @param message  A message to describe what this commit is for (optional)
+					* @param tag      A tag for this specific revision (optional)
+					* @param apiLevel API Level(optional)
+					* @return returns a texture node
+					*/
+					static RevisionNode* createRevisionNode(
+						const std::string			 &user,
+						const repoUUID              &branch,
+						const std::vector<repoUUID> &currentNodes,
+						const std::vector<repoUUID> &added,
+						const std::vector<repoUUID> &removed,
+						const std::vector<repoUUID> &modified,
+						const std::vector<repoUUID> &parent,
+						const std::string            &message = std::string(),
+						const std::string            &tag = std::string(),
+						const int                    &apiLevel = REPO_NODE_API_LEVEL_1
+						);
 				};
 
 			}// end namespace bson

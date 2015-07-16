@@ -70,7 +70,7 @@ namespace repo {
 					* Retrieve the UUID of the revision this reference node is referring to
 					* @return returns the UUID for this reference
 					*/
-					repo_uuid getRevisionID(){
+					repoUUID getRevisionID(){
 						return getUUIDField(REPO_NODE_REFERENCE_LABEL_REVISION_ID);
 					}
 

@@ -72,7 +72,7 @@ namespace repo {
 						RepoBSON			  &metadata,
 						const std::string     &mimeType = std::string(),
 						const std::string     &name = std::string(),
-						const std::vector<repo_uuid> &parents = std::vector<repo_uuid>(),
+						const std::vector<repoUUID> &parents = std::vector<repoUUID>(),
 						const int             &apiLevel = REPO_NODE_API_LEVEL_1);
 
 				};

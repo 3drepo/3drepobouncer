@@ -31,7 +31,7 @@
 
 //abstract out the use of boost inside the node codes 
 //incase we want to change it in the future
-typedef boost::uuids::uuid repo_uuid;
+typedef boost::uuids::uuid repoUUID;
 
 typedef struct{
 	float ambient[3];
@@ -70,7 +70,7 @@ typedef struct{
 }repo_face_t;
 
 
-static repo_uuid generateUUID(){
+static repoUUID generateUUID(){
 	return  boost::uuids::random_generator()();
 }
 
@@ -87,7 +87,7 @@ static repo_uuid generateUUID(){
 * \param suffix Numerical suffix to prevent name clashes, eg "01".
 * \return valid uuid
 */
-static repo_uuid stringToUUID(
+static repoUUID stringToUUID(
 	const std::string &text,
 	const std::string &suffix = std::string())
 {
@@ -124,7 +124,7 @@ static repo_uuid stringToUUID(
 	return uuid;
 }
 
-static std::string UUIDtoString(const repo_uuid &id)
+static std::string UUIDtoString(const repoUUID &id)
 {
 	return boost::lexical_cast<std::string>(id);
 }

@@ -114,10 +114,54 @@ namespace repo{
 					~SceneGraph();
 
 					/**
+					* Commit changes into the database
+					* This commits an update to project settings, a new revision node
+					* and the changes within this scene
+					* @param errMsg error message if this failed
+					* @param userName name of the author
+					* @param message message for this commit (optional)
+					* @param tag tag for this commit (optional)
+					* @return returns true upon success
+					*/
+					bool commit(
+						std::string &errMsg,
+						const std::string &userName,
+						const std::string &message=std::string(),
+						const std::string &tag=std::string());
+
+					/**
+					* Set DatabaseHandler. This will overwrite the one currently referenced (if any)
+					* @param newHandler new reference to database handler.
+					*/
+					void setDatabaseHandler(repo::core::handler::AbstractDatabaseHandler *newHandler)
+					{
+						if (dbHandler)
+						{
+							BOOST_LOG_TRIVIAL(warning) << "SceneGraph.setDatabaseHandler() called when a handler is already referenced!";
+						}
+						
+						if (newHandler)
+						{
+							dbHandler = newHandler;
+						}
+					}
+
+					/**
+					* Set project and database names. This will overwrite the current ones
+					* @param newDatabaseName new name of database.
+					* @param newProjectMame new name of the project
+					*/
+					void setDatabaseAndProjectName(std::string newDatabaseName, std::string newProjectName)
+					{
+						databaseName = newDatabaseName;
+						projectName = newProjectName;
+					}
+
+					/**
 					* Set project revision
 					* @param uuid of the revision.
 					*/
-					void setRevision(repo_uuid revisionID)
+					void setRevision(repoUUID revisionID)
 					{
 						headRevision = false;
 						revision = revisionID;
@@ -128,7 +172,7 @@ namespace repo{
 					* Set Branch
 					* @param uuid of branch
 					*/
-					void setBranch(repo_uuid branchID){ branch = branchID; }
+					void setBranch(repoUUID branchID){ branch = branchID; }
 
 
 					/**
@@ -175,13 +219,13 @@ namespace repo{
 
 				protected:
 					/**
-					* Add Nodes to scene. If
+					* Add Nodes to scene.
 					* @param node pointer to the node to add
 					* @param errMsg error message if it returns false
 					* @param collection the collection for the node type if known.
 					* @return returns true if succeeded
 					*/
-					bool SceneGraph::addNodeToScene(
+					bool addNodeToScene(
 						const repo::core::model::bson::RepoNodeSet nodes,
 						std::string &errMsg,
 						repo::core::model::bson::RepoNodeSet *collection
@@ -194,8 +238,45 @@ namespace repo{
 					* @param errMsg error message if it returns false
 					* @return returns true if succeeded
 					*/
-					bool SceneGraph::addNodeToMaps(repo::core::model::bson::RepoNode *node, std::string &errMsg);
+					bool addNodeToMaps(repo::core::model::bson::RepoNode *node, std::string &errMsg);
 					
+					/**
+					* Commit a project settings base on the
+					* changes on this scene
+					* @param errMsg error message if this failed
+					* @param userName user name of the owner
+					* @return returns true upon success
+					*/
+					bool commitProjectSettings(
+						std::string &errMsg,
+						const std::string &userName);
+
+					/**
+					* Commit a revision node into project.revExt base on the
+					* changes on this scene
+					* @param errMsg error message if this failed
+					* @param newRevNode a reference to the revNode that will be created in this function
+					* @param userName name of the author
+					* @param message message describing this commit
+					* @param tag tag for this commit
+					* @return returns true upon success
+					*/
+					bool commitRevisionNode(
+						std::string &errMsg,
+						repo::core::model::bson::RevisionNode *&newRevNode,
+						const std::string &userName,
+						const std::string &message,
+						const std::string &tag);
+
+					/**
+					* Commit a new nodes into project.sceneExt base on the
+					* changes on this scene
+					* @param errMsg error message if this failed
+					* @return returns true upon success
+					*/
+					bool commitSceneChanges(
+						std::string &errMsg);
+
 					/**
 					* populate the collections (cameras, meshes etc) with the given nodes
 					* @params new nodes to add to scene graph
@@ -215,7 +296,7 @@ namespace repo{
 					* @param transformations Repo Node set of transformations
 					* @return returns true if scene graph populated with no errors
 					*/
-					void SceneGraph::populateAndUpdate(
+					void populateAndUpdate(
 						const repo::core::model::bson::RepoNodeSet &cameras,
 						const repo::core::model::bson::RepoNodeSet &meshes,
 						const repo::core::model::bson::RepoNodeSet &materials,
@@ -233,8 +314,8 @@ namespace repo{
 			
 					std::string sceneExt;    /*! extension for scene   graph (Default: scene)*/
 					std::string revExt;      /*! extension for history graph (Default: history)*/
-					repo_uuid   revision;
-					repo_uuid   branch;
+					repoUUID   revision;
+					repoUUID   branch;
 					bool headRevision;
 					bool unRevisioned;       /*! Flag to indicate if the scene graph is revisioned (true for scene graphs from model creator)*/
 
@@ -254,18 +335,18 @@ namespace repo{
 					repo::core::model::bson::RepoNodeSet transformations; //!< Transformations
 					repo::core::model::bson::RepoNodeSet unknowns; //!< Unknown types
 
-					std::map<repo_uuid, repo_uuid> sharedIDtoUniqueID; //** mapping of shared ID to Unique ID
-					std::map<repo_uuid, std::vector<repo_uuid>> parentToChildren; //** mapping of shared id to its children's shared id
-					std::map<repo_uuid, SceneGraph> referenceToScene; //** mapping of reference ID to it's scene graph
+					std::map<repoUUID, repoUUID> sharedIDtoUniqueID; //** mapping of shared ID to Unique ID
+					std::map<repoUUID, std::vector<repoUUID>> parentToChildren; //** mapping of shared id to its children's shared id
+					std::map<repoUUID, SceneGraph> referenceToScene; //** mapping of reference ID to it's scene graph
 
 					//Change trackers
-					std::vector<repo_uuid> new_current; //new list of current (unique IDs)
-					std::vector<repo_uuid> new_added; //list of nodes added to the new revision (shared ID)
-					std::vector<repo_uuid> new_removed; //list of nodes removed for this revision (shared ID)
-					std::vector<repo_uuid> new_modified; // list of nodes modified during this revision  (shared ID)
+					std::vector<repoUUID> newCurrent; //new list of current (unique IDs)
+					std::vector<repoUUID> newAdded; //list of nodes added to the new revision (shared ID)
+					std::vector<repoUUID> newRemoved; //list of nodes removed for this revision (shared ID)
+					std::vector<repoUUID> newModified; // list of nodes modified during this revision  (shared ID)
 
 
-
+					//TODO: Stashed version of the scene
 			};
 		}//namespace graph
 	}//namespace manipulator

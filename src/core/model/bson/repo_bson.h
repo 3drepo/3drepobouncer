@@ -24,8 +24,7 @@
 *  Base Bson object. Generic bson that is inherited by others.
 */
 
-#ifndef REPO_BSON_H
-#define REPO_BSON_H
+#pragma once
 
 #include "../repo_model_global.h"
 #include "../repo_node_properties.h"
@@ -91,66 +90,22 @@ namespace repo {
 						~RepoBSON() {}
 
 						/**
-						* Overload of getField function to retreve repo_uuid
+						* Overload of getField function to retreve repoUUID
 						* @param name of the field
-						* @return returns a repo_uuid from that field
+						* @return returns a repoUUID from that field
 						*/
-						repo_uuid getUUIDField(std::string label);
+						repoUUID getUUIDField(std::string label);
 
 						/**
 						* Get an array of fields given an array element
 						* @param name of the array element
 						* @return returns the array element in their respective type
 						*/
-						std::vector<repo_uuid> getUUIDFieldArray(std::string label);
+						std::vector<repoUUID> getUUIDFieldArray(std::string label);
 
-//						//--------------------------------------------------------------------------
-//
-//						/*!
-//						* Adds all fields from the given object to this bson if empty. Returns
-//						* true if successful, and false otherwise (eg when non-empty or not owned).
-//						*/
-//						int addFields(mongo::BSONObj &obj);
-//
-//						//! Returns a new full (and owned) copy of the object.
-//						inline RepoBSON copy() const { return RepoBSON(mongo::BSONObj::copy()); }
-//
-//						/*!
-//						* Returns a drop db.runCommand bson object by _id field. If _id is not set,
-//						* returns empty object.
-//						*
-//						* See http://docs.mongodb.org/manual/reference/command/delete/#dbcmd.delete
-//						*/
-//						virtual RepoBSON drop(const std::string &collection) const;
-//
-//						//--------------------------------------------------------------------------
-//						//
-//						// Getters
-//						//
-//						//--------------------------------------------------------------------------
-//
-//						//! Given an array, returns a list of pairs stored as given labels if any.
-//						static std::list<std::pair<std::string, std::string> > getArrayStringPairs(
-//							const mongo::BSONElement &arrayElement,
-//							const std::string &fstLabel,
-//							const std::string &sndLabel);
-//
-//						//! Returns an embedded element by label, EOO if not present.
-//						mongo::BSONElement getEmbeddedElement(
-//							const std::string &fstLevelLabel,
-//							const std::string &sndLevelLabel) const;
-//
-//						//! Returns true if it is valid and not empty, false otherwise.
-//						bool isOk() const { return isValid() && !isEmpty(); }
-//
-//						static mongo::BSONArray toArray(const std::list<std::pair<std::string, std::string> > &list,
-//							const std::string &fstLabel,
-//							const std::string &sndLabel);
-//
+
 					}; // end 
 			}// end namespace bson
 		}// end namespace model
 	} // end namespace core
 } // end namespace repo
-
-#endif // REPO_BSON_H

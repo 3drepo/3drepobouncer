@@ -112,7 +112,7 @@ namespace repo{
 				repo::core::model::bson::MetadataNode* AssimpModelCreator::createMetadataRepoNode(
 					const aiMetadata             *assimpMeta,
 					const std::string            &metadataName,
-					const std::vector<repo_uuid> &parents = std::vector<repo_uuid>());
+					const std::vector<repoUUID> &parents = std::vector<repoUUID>());
 
 				/**
 				* Create a Transformation Node given the information in ASSIMP objects
@@ -128,7 +128,7 @@ namespace repo{
 					const std::map<std::string, repo::core::model::bson::RepoNode *> &cameras,
 					const std::vector<repo::core::model::bson::RepoNode *>           &meshes,
 					repo::core::model::bson::RepoNodeSet						     &metadata,
-					const std::vector<repo_uuid>						             &parent = std::vector<repo_uuid>()
+					const std::vector<repoUUID>						             &parent = std::vector<repoUUID>()
 					);
 
 				/**

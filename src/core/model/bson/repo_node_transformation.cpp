@@ -41,7 +41,7 @@ TransformationNode::~TransformationNode()
 TransformationNode* TransformationNode::createTransformationNode(
 	const std::vector<std::vector<float>> &transMatrix,
 	const std::string                     &name,
-	const std::vector<repo_uuid>		  &parents,
+	const std::vector<repoUUID>		  &parents,
 	const int                             &apiLevel)
 {
 	RepoBSONBuilder builder;
