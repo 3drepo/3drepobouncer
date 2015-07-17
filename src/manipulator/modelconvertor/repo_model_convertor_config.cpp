@@ -15,85 +15,85 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 /**
-* Model Creator Config
-* used to track all settings required for Model Creator (mostly ASSIMP's)
+* Model Convertor Config
+* used to track all settings required for Model Convertor (mostly ASSIMP's)
 */
 
-#include "repo_model_creator_config.h"
-#include "repo_model_creator_config_default_values.h"
+#include "repo_model_convertor_config.h"
+#include "repo_model_convertor_config_default_values.h"
 
 
 
-using namespace repo::manipulator::modelcreator;
+using namespace repo::manipulator::modelconvertor;
 
-const std::string ModelCreatorConfig::CALCULATE_TANGENT_SPACE = "calculateTangentSpace";
-const std::string ModelCreatorConfig::CALCULATE_TANGENT_SPACE_MAX_SMOOTHING_ANGLE = "calculateTangentSpaceMaxSmoothingAngle";
-const std::string ModelCreatorConfig::CONVERT_TO_UV_COORDINATES = "convertToUVCoordinates";
-const std::string ModelCreatorConfig::DEGENERATES_TO_POINTS_LINES = "degeneratesToPoinstLines";
-const std::string ModelCreatorConfig::DEBONE = "debone";
-const std::string ModelCreatorConfig::DEBONE_THRESHOLD = "deboneThreshold";
-const std::string ModelCreatorConfig::DEBONE_ONLY_IF_ALL = "deboneOnlyIfAll";
-const std::string ModelCreatorConfig::FIND_INSTANCES = "findInstances";
-const std::string ModelCreatorConfig::FIND_INAVLID_DATA = "findInvalidData";
-const std::string ModelCreatorConfig::FIND_INAVLID_DATA_ANIMATION_ACCURACY = "findInvalidDataAnimationAccuracy";
-const std::string ModelCreatorConfig::FIX_INFACING_NORMALS = "fixInfacingNormals";
-const std::string ModelCreatorConfig::FLIP_UV_COORDINATES = "flipUVCoordinates";
-const std::string ModelCreatorConfig::FLIP_WINDING_ORDER = "flipWindingOrder";
-const std::string ModelCreatorConfig::GENERATE_NORMALS = "generateNormals";
-const std::string ModelCreatorConfig::GENERATE_NORMALS_FLAT = "generateNormalsFlat";
-const std::string ModelCreatorConfig::GENERATE_NORMALS_SMOOTH = "generateNormalsSmooth";
-const std::string ModelCreatorConfig::GENERATE_NORMALS_SMOOTH_CREASE_ANGLE = "generateNormalsSmoothCreaseAngle";
-const std::string ModelCreatorConfig::IMPROVE_CACHE_LOCALITY = "improveCacheLocality";
-const std::string ModelCreatorConfig::IMPROVE_CACHE_LOCALITY_VERTEX_CACHE_SIZE = "improveCacheLocalityVertexCacheSize";
-const std::string ModelCreatorConfig::JOIN_IDENTICAL_VERTICES = "joinIdenticalVertices";
-const std::string ModelCreatorConfig::LIMIT_BONE_WEIGHTS = "limitBoneWeights";
-const std::string ModelCreatorConfig::LIMIT_BONE_WEIGHTS_MAX_WEIGHTS = "limitBoneWeightsMaxWeight";
-const std::string ModelCreatorConfig::MAKE_LEFT_HANDED = "makeLeftHanded";
-const std::string ModelCreatorConfig::OPTIMIZE_MESHES = "optimizeMeshes";
-const std::string ModelCreatorConfig::PRE_TRANSFORM_UV_COORDINATES = "preTransformUVCoordinates";
-const std::string ModelCreatorConfig::PRE_TRANSFORM_VERTICES = "preTransformVertices";
-const std::string ModelCreatorConfig::PRE_TRANSFORM_VERTICES_NORMALIZE = "preTransformVerticesNormalize";
-const std::string ModelCreatorConfig::REMOVE_COMPONENTS = "removeComponents";
-const std::string ModelCreatorConfig::REMOVE_COMPONENTS_ANIMATIONS = "removeComponentsAnimations";
-const std::string ModelCreatorConfig::REMOVE_COMPONENTS_BI_TANGENTS = "removeComponentsBiTangents";
-const std::string ModelCreatorConfig::REMOVE_COMPONENTS_BONE_WEIGHTS = "removeComponentsBoneWeights";
-const std::string ModelCreatorConfig::REMOVE_COMPONENTS_CAMERAS = "removeComponentsCameras";
-const std::string ModelCreatorConfig::REMOVE_COMPONENTS_COLORS = "removeComponentsColors";
-const std::string ModelCreatorConfig::REMOVE_COMPONENTS_LIGHTS = "removeComponentsLights";
-const std::string ModelCreatorConfig::REMOVE_COMPONENTS_MATERIALS = "removeComponentsMaterials";
-const std::string ModelCreatorConfig::REMOVE_COMPONENTS_MESHES = "removeComponentsMeshes";
-const std::string ModelCreatorConfig::REMOVE_COMPONENTS_NORMALS = "removeComponentsNormals";
-const std::string ModelCreatorConfig::REMOVE_COMPONENTS_TEXTURES = "removeComponentsTextures";
-const std::string ModelCreatorConfig::REMOVE_COMPONENTS_TEXTURE_COORDINATES = "removeComponentsTextureCoordinates";
-const std::string ModelCreatorConfig::REMOVE_REDUNDANT_MATERIALS = "removeRedundantMaterials";
-const std::string ModelCreatorConfig::REMOVE_REDUNDANT_MATERIALS_SKIP = "removeRedundantMaterialsSkip";
-const std::string ModelCreatorConfig::REMOVE_REDUNDANT_NODES = "removeRedundantNodes";
-const std::string ModelCreatorConfig::REMOVE_REDUNDANT_NODES_SKIP = "removeRedundantNodesSkip";
-const std::string ModelCreatorConfig::SORT_AND_REMOVE = "sortAndRemove";
-const std::string ModelCreatorConfig::SORT_AND_REMOVE_POINTS = "sortAndRemovePoints";
-const std::string ModelCreatorConfig::SORT_AND_REMOVE_LINES = "sortAndRemoveLines";
-const std::string ModelCreatorConfig::SORT_AND_REMOVE_TRIANGLES = "sortAndRemoveTriangles";
-const std::string ModelCreatorConfig::SORT_AND_REMOVE_POLYGONS = "sortAndRemovePolygons";
-const std::string ModelCreatorConfig::SPLIT_BY_BONE_COUNT = "splitByBoneCount";
-const std::string ModelCreatorConfig::SPLIT_BY_BONE_COUNT_MAX_BONES = "splitByBoneCountMaxBones";
-const std::string ModelCreatorConfig::SPLIT_LARGE_MESHES = "splitLargeMeshes";
-const std::string ModelCreatorConfig::SPLIT_LARGE_MESHES_TRIANGLE_LIMIT = "splitLargeMeshesTriangleLimit";
-const std::string ModelCreatorConfig::SPLIT_LARGE_MESHES_VERTEX_LIMIT = "splitLargeMeshesVertexLimit";
-const std::string ModelCreatorConfig::TRIANGULATE = "triangulate";
-const std::string ModelCreatorConfig::VALIDATE_DATA_STRUCTURES = "validateDataStructures";
+const std::string ModelConvertorConfig::CALCULATE_TANGENT_SPACE = "calculateTangentSpace";
+const std::string ModelConvertorConfig::CALCULATE_TANGENT_SPACE_MAX_SMOOTHING_ANGLE = "calculateTangentSpaceMaxSmoothingAngle";
+const std::string ModelConvertorConfig::CONVERT_TO_UV_COORDINATES = "convertToUVCoordinates";
+const std::string ModelConvertorConfig::DEGENERATES_TO_POINTS_LINES = "degeneratesToPoinstLines";
+const std::string ModelConvertorConfig::DEBONE = "debone";
+const std::string ModelConvertorConfig::DEBONE_THRESHOLD = "deboneThreshold";
+const std::string ModelConvertorConfig::DEBONE_ONLY_IF_ALL = "deboneOnlyIfAll";
+const std::string ModelConvertorConfig::FIND_INSTANCES = "findInstances";
+const std::string ModelConvertorConfig::FIND_INAVLID_DATA = "findInvalidData";
+const std::string ModelConvertorConfig::FIND_INAVLID_DATA_ANIMATION_ACCURACY = "findInvalidDataAnimationAccuracy";
+const std::string ModelConvertorConfig::FIX_INFACING_NORMALS = "fixInfacingNormals";
+const std::string ModelConvertorConfig::FLIP_UV_COORDINATES = "flipUVCoordinates";
+const std::string ModelConvertorConfig::FLIP_WINDING_ORDER = "flipWindingOrder";
+const std::string ModelConvertorConfig::GENERATE_NORMALS = "generateNormals";
+const std::string ModelConvertorConfig::GENERATE_NORMALS_FLAT = "generateNormalsFlat";
+const std::string ModelConvertorConfig::GENERATE_NORMALS_SMOOTH = "generateNormalsSmooth";
+const std::string ModelConvertorConfig::GENERATE_NORMALS_SMOOTH_CREASE_ANGLE = "generateNormalsSmoothCreaseAngle";
+const std::string ModelConvertorConfig::IMPROVE_CACHE_LOCALITY = "improveCacheLocality";
+const std::string ModelConvertorConfig::IMPROVE_CACHE_LOCALITY_VERTEX_CACHE_SIZE = "improveCacheLocalityVertexCacheSize";
+const std::string ModelConvertorConfig::JOIN_IDENTICAL_VERTICES = "joinIdenticalVertices";
+const std::string ModelConvertorConfig::LIMIT_BONE_WEIGHTS = "limitBoneWeights";
+const std::string ModelConvertorConfig::LIMIT_BONE_WEIGHTS_MAX_WEIGHTS = "limitBoneWeightsMaxWeight";
+const std::string ModelConvertorConfig::MAKE_LEFT_HANDED = "makeLeftHanded";
+const std::string ModelConvertorConfig::OPTIMIZE_MESHES = "optimizeMeshes";
+const std::string ModelConvertorConfig::PRE_TRANSFORM_UV_COORDINATES = "preTransformUVCoordinates";
+const std::string ModelConvertorConfig::PRE_TRANSFORM_VERTICES = "preTransformVertices";
+const std::string ModelConvertorConfig::PRE_TRANSFORM_VERTICES_NORMALIZE = "preTransformVerticesNormalize";
+const std::string ModelConvertorConfig::REMOVE_COMPONENTS = "removeComponents";
+const std::string ModelConvertorConfig::REMOVE_COMPONENTS_ANIMATIONS = "removeComponentsAnimations";
+const std::string ModelConvertorConfig::REMOVE_COMPONENTS_BI_TANGENTS = "removeComponentsBiTangents";
+const std::string ModelConvertorConfig::REMOVE_COMPONENTS_BONE_WEIGHTS = "removeComponentsBoneWeights";
+const std::string ModelConvertorConfig::REMOVE_COMPONENTS_CAMERAS = "removeComponentsCameras";
+const std::string ModelConvertorConfig::REMOVE_COMPONENTS_COLORS = "removeComponentsColors";
+const std::string ModelConvertorConfig::REMOVE_COMPONENTS_LIGHTS = "removeComponentsLights";
+const std::string ModelConvertorConfig::REMOVE_COMPONENTS_MATERIALS = "removeComponentsMaterials";
+const std::string ModelConvertorConfig::REMOVE_COMPONENTS_MESHES = "removeComponentsMeshes";
+const std::string ModelConvertorConfig::REMOVE_COMPONENTS_NORMALS = "removeComponentsNormals";
+const std::string ModelConvertorConfig::REMOVE_COMPONENTS_TEXTURES = "removeComponentsTextures";
+const std::string ModelConvertorConfig::REMOVE_COMPONENTS_TEXTURE_COORDINATES = "removeComponentsTextureCoordinates";
+const std::string ModelConvertorConfig::REMOVE_REDUNDANT_MATERIALS = "removeRedundantMaterials";
+const std::string ModelConvertorConfig::REMOVE_REDUNDANT_MATERIALS_SKIP = "removeRedundantMaterialsSkip";
+const std::string ModelConvertorConfig::REMOVE_REDUNDANT_NODES = "removeRedundantNodes";
+const std::string ModelConvertorConfig::REMOVE_REDUNDANT_NODES_SKIP = "removeRedundantNodesSkip";
+const std::string ModelConvertorConfig::SORT_AND_REMOVE = "sortAndRemove";
+const std::string ModelConvertorConfig::SORT_AND_REMOVE_POINTS = "sortAndRemovePoints";
+const std::string ModelConvertorConfig::SORT_AND_REMOVE_LINES = "sortAndRemoveLines";
+const std::string ModelConvertorConfig::SORT_AND_REMOVE_TRIANGLES = "sortAndRemoveTriangles";
+const std::string ModelConvertorConfig::SORT_AND_REMOVE_POLYGONS = "sortAndRemovePolygons";
+const std::string ModelConvertorConfig::SPLIT_BY_BONE_COUNT = "splitByBoneCount";
+const std::string ModelConvertorConfig::SPLIT_BY_BONE_COUNT_MAX_BONES = "splitByBoneCountMaxBones";
+const std::string ModelConvertorConfig::SPLIT_LARGE_MESHES = "splitLargeMeshes";
+const std::string ModelConvertorConfig::SPLIT_LARGE_MESHES_TRIANGLE_LIMIT = "splitLargeMeshesTriangleLimit";
+const std::string ModelConvertorConfig::SPLIT_LARGE_MESHES_VERTEX_LIMIT = "splitLargeMeshesVertexLimit";
+const std::string ModelConvertorConfig::TRIANGULATE = "triangulate";
+const std::string ModelConvertorConfig::VALIDATE_DATA_STRUCTURES = "validateDataStructures";
 
-ModelCreatorConfig::ModelCreatorConfig()
+ModelConvertorConfig::ModelConvertorConfig()
 {
 	//call reset() to initialise all fields with defaults
 	reset();
 }
 
 
-ModelCreatorConfig::~ModelCreatorConfig()
+ModelConvertorConfig::~ModelConvertorConfig()
 {
 }
 
-void ModelCreatorConfig::reset()
+void ModelConvertorConfig::reset()
 {
 	//clear everything
 	boolSettings.clear();

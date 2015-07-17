@@ -20,38 +20,38 @@
 */
 
 
-#include "repo_model_creator_abstract.h"
+#include "repo_model_convertor_abstract.h"
 #include <boost/filesystem.hpp>
 
-using namespace repo::manipulator::modelcreator;
+using namespace repo::manipulator::modelconvertor;
 
-AbstractModelCreator::AbstractModelCreator()
+AbstractModelConvertor::AbstractModelConvertor()
 {
-	settings = new ModelCreatorConfig();
+	settings = new ModelConvertorConfig();
 }
 
-AbstractModelCreator::AbstractModelCreator(ModelCreatorConfig *settings) :
+AbstractModelConvertor::AbstractModelConvertor(ModelConvertorConfig *settings) :
 settings(settings)
 {
 	if (!settings)
 	{
 		//settings is null, used default
-		settings = new ModelCreatorConfig();
+		settings = new ModelConvertorConfig();
 	}
 }
 
-AbstractModelCreator::~AbstractModelCreator()
+AbstractModelConvertor::~AbstractModelConvertor()
 {
 	if (settings)
 		delete settings;
 }
 
-std::string AbstractModelCreator::getDirPath(std::string fullPath){
+std::string AbstractModelConvertor::getDirPath(std::string fullPath){
 	boost::filesystem::path p{ fullPath };
 	return p.parent_path().string();
 }
 
-std::string AbstractModelCreator::getFileName(std::string fullPath){
+std::string AbstractModelConvertor::getFileName(std::string fullPath){
 	boost::filesystem::path p{ fullPath };
 	return p.filename().string();
 }

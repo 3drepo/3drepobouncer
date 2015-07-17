@@ -30,30 +30,30 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-#include "repo_model_creator_abstract.h"
+#include "repo_model_convertor_abstract.h"
 #include "../graph/repo_graph_scene.h"
 
 namespace repo{
 	namespace manipulator{
-		namespace modelcreator{
-			class AssimpModelCreator : public AbstractModelCreator
+		namespace modelconvertor{
+			class AssimpModelConvertor : public AbstractModelConvertor
 			{
 			public:
 				/**
 				* Default Constructor, generate model with default settings
 				*/
-				AssimpModelCreator();
+				AssimpModelConvertor();
 
 				/**
-				* Create AssimpModelCreator with specific settings
+				* Create AssimpModelConvertor with specific settings
 				* @param settings
 				*/
-				AssimpModelCreator(ModelCreatorConfig *settings);
+				AssimpModelConvertor(ModelConvertorConfig *settings);
 
 				/**
 				* Default Deconstructor
 				*/
-				~AssimpModelCreator();
+				~AssimpModelConvertor();
 
 				/**
 				* Generates a repo scene graph
@@ -78,7 +78,7 @@ namespace repo{
 				* @param assimp camera object
 				* @return returns a pointer to the created camera node
 				*/
-				repo::core::model::bson::CameraNode* AssimpModelCreator::createCameraRepoNode(
+				repo::core::model::bson::CameraNode* AssimpModelConvertor::createCameraRepoNode(
 					const aiCamera *assimpCamera);
 				/**
 				* Create a Material Node given the information in ASSIMP objects
@@ -87,7 +87,7 @@ namespace repo{
 				* @param name name of the material
 				* @return returns the created material node
 				*/
-				repo::core::model::bson::MaterialNode* AssimpModelCreator::createMaterialRepoNode(
+				repo::core::model::bson::MaterialNode* AssimpModelConvertor::createMaterialRepoNode(
 					aiMaterial *material,
 					std::string name);
 
@@ -98,7 +98,7 @@ namespace repo{
 				* @param materials RepoNodeSet of material objects (to add reference)
 				* @return returns the created Mesh Node
 				*/
-				repo::core::model::bson::MeshNode* AssimpModelCreator::createMeshRepoNode(
+				repo::core::model::bson::MeshNode* AssimpModelConvertor::createMeshRepoNode(
 					const aiMesh *assimpMesh,
 					const std::vector<repo::core::model::bson::RepoNode *> &materials);
 
@@ -109,7 +109,7 @@ namespace repo{
 				* @param parent vector of node ID of parents (optional)
 				* @return returns the created Metadata Node
 				*/
-				repo::core::model::bson::MetadataNode* AssimpModelCreator::createMetadataRepoNode(
+				repo::core::model::bson::MetadataNode* AssimpModelConvertor::createMetadataRepoNode(
 					const aiMetadata             *assimpMeta,
 					const std::string            &metadataName,
 					const std::vector<repoUUID> &parents = std::vector<repoUUID>());
@@ -123,7 +123,7 @@ namespace repo{
 				* @param parent a vector of parents to this node (optional)
 				* @return returns the created Metadata Node
 				*/
-				repo::core::model::bson::RepoNodeSet AssimpModelCreator::createTransformationNodesRecursive(
+				repo::core::model::bson::RepoNodeSet AssimpModelConvertor::createTransformationNodesRecursive(
 					const aiNode                                                     *assimpNode,
 					const std::map<std::string, repo::core::model::bson::RepoNode *> &cameras,
 					const std::vector<repo::core::model::bson::RepoNode *>           &meshes,
@@ -138,16 +138,16 @@ namespace repo{
 				void loadTextures(std::string folderPath);
 
 				/**
-				* Set ASSIMP properties on the Importer using ModelCreatorConfig
+				* Set ASSIMP properties on the Importer using ModelConvertorConfig
 				*/
 				void setAssimpProperties();
 
 				/**
-				* Compose Assimp post processing flags based on information from ModelCreatorConfig
+				* Compose Assimp post processing flags based on information from ModelConvertorConfig
 				* @param flag to build upon
 				* @return reutnrs a post processing flag.
 				*/
-				uint32_t AssimpModelCreator::composeAssimpPostProcessingFlags(
+				uint32_t AssimpModelConvertor::composeAssimpPostProcessingFlags(
 					uint32_t flag = 0);
 
 				Assimp::Importer importer;  /*! Stores ASSIMP related settings for model import */
@@ -156,7 +156,7 @@ namespace repo{
 				std::map<std::string, repo::core::model::bson::RepoNode *> nameToTexture;
 			};
 
-		} //namespace AssimpModelCreator
+		} //namespace AssimpModelConvertor
 	} //namespace manipulator
 } //namespace repo
 

@@ -74,7 +74,7 @@ namespace repo{
 						const std::string                                  &revExt = REPO_COLLECTION_HISTORY);
 
 					/**
-					* Used for constructing scene graphs from model creators
+					* Used for constructing scene graphs from model convertors
 					* Constructor - instantiates a new scene graph representation.
 					* This scene will be flagged as not revisioned. A database handler
 					* will need to be set before it can be commited into the database
@@ -317,7 +317,7 @@ namespace repo{
 					repoUUID   revision;
 					repoUUID   branch;
 					bool headRevision;
-					bool unRevisioned;       /*! Flag to indicate if the scene graph is revisioned (true for scene graphs from model creator)*/
+					bool unRevisioned;       /*! Flag to indicate if the scene graph is revisioned (true for scene graphs from model convertor)*/
 
 					repo::core::model::bson::RevisionNode		 *revNode;
 

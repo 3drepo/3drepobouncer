@@ -6,7 +6,7 @@
 #include <boost/log/expressions.hpp>
 
 #include "manipulator/graph/repo_graph_scene.h"
-#include "manipulator/modelcreator/repo_model_creator_assimp.h"
+#include "manipulator/modelconvertor/repo_model_convertor_assimp.h"
 
 #include "core/handler/repo_database_handler_mongo.h"
 
@@ -120,17 +120,17 @@ void instantiateProject(repo::core::handler::AbstractDatabaseHandler *dbHandler)
 
 void loadModelFromFileAndCommit(repo::core::handler::AbstractDatabaseHandler *dbHandler)
 {
-	repo::manipulator::modelcreator::AbstractModelCreator *modelCreator;
+	repo::manipulator::modelconvertor::AbstractModelConvertor *modelConvertor;
 
-	modelCreator = new repo::manipulator::modelcreator::AssimpModelCreator();
+	modelConvertor = new repo::manipulator::modelconvertor::AssimpModelConvertor();
 
 	std::string errMsg, fileName;
 
 	fileName = "C:\\Users\\Carmen\\Desktop\\A556-CAP-7000-S06-IE-S-1001.ifc";
-	if (modelCreator->importModel( fileName ,errMsg))
+	if (modelConvertor->importModel( fileName ,errMsg))
 	{
 		BOOST_LOG_TRIVIAL(info) << "model loaded successfully! Attempting to port to Repo World...";
-		repo::manipulator::graph::SceneGraph *graph = modelCreator->generateSceneGraph();
+		repo::manipulator::graph::SceneGraph *graph = modelConvertor->generateSceneGraph();
 
 		BOOST_LOG_TRIVIAL(info) << "SceneGraph generated. Printing graph statistics...";
 		std::stringstream		stringMaker;

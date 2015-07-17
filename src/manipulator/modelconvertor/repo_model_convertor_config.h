@@ -15,8 +15,8 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 /**
-* General Model Creator Config
-* used to track all settings required for Model Creator
+* General Model Convertor Config
+* used to track all settings required for Model Convertor
 */
 
 #pragma once
@@ -27,13 +27,13 @@
 
 namespace repo{
 	namespace manipulator{
-		namespace modelcreator{
+		namespace modelconvertor{
 
-			class ModelCreatorConfig
+			class ModelConvertorConfig
 			{
 			public:
-				ModelCreatorConfig();
-				~ModelCreatorConfig();
+				ModelConvertorConfig();
+				~ModelConvertorConfig();
 
 				/**
 				* ---------------- Getters -------------------------
@@ -908,6 +908,6 @@ namespace repo{
 				static const std::string VALIDATE_DATA_STRUCTURES;
 
 			};
-		}//namespace modelcreator
+		}//namespace modelconvertor
 	}//namespace manipulator
 }//namespace repo

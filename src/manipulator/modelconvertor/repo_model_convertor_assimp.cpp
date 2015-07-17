@@ -20,7 +20,7 @@
 */
 
 
-#include "repo_model_creator_assimp.h"
+#include "repo_model_convertor_assimp.h"
 
 #include <fstream>
 #include <boost/filesystem.hpp>
@@ -28,29 +28,29 @@
 #include "../../core/model/bson/repo_bson_factory.h"
 #include "../../core/model/repo_node_utils.h"
 
-using namespace repo::manipulator::modelcreator;
+using namespace repo::manipulator::modelconvertor;
 
 namespace model = repo::core::model;
 
-AssimpModelCreator::AssimpModelCreator()
+AssimpModelConvertor::AssimpModelConvertor()
 {
 	//set default ASSIMP debone threshold
 	settings->setDeboneThreshold(AI_DEBONE_THRESHOLD);
 }
 
-AssimpModelCreator::AssimpModelCreator(ModelCreatorConfig *settings) :
-AbstractModelCreator(settings)
+AssimpModelConvertor::AssimpModelConvertor(ModelConvertorConfig *settings) :
+AbstractModelConvertor(settings)
 {
 
 }
 
-AssimpModelCreator::~AssimpModelCreator()
+AssimpModelConvertor::~AssimpModelConvertor()
 {
 	if (assimpScene)
 		importer.FreeScene();
 }
 
-uint32_t AssimpModelCreator::composeAssimpPostProcessingFlags(
+uint32_t AssimpModelConvertor::composeAssimpPostProcessingFlags(
 	uint32_t flag)
 {
 	if (settings->getCalculateTangentSpace())
@@ -160,7 +160,7 @@ uint32_t AssimpModelCreator::composeAssimpPostProcessingFlags(
 	return flag;
 }
 
-model::bson::CameraNode* AssimpModelCreator::createCameraRepoNode(
+model::bson::CameraNode* AssimpModelConvertor::createCameraRepoNode(
 	const aiCamera *assimpCamera)
 {
 	std::string cameraName(assimpCamera->mName.data);
@@ -184,7 +184,7 @@ model::bson::CameraNode* AssimpModelCreator::createCameraRepoNode(
 	return cameraNode;
 
 }
-model::bson::MaterialNode* AssimpModelCreator::createMaterialRepoNode(
+model::bson::MaterialNode* AssimpModelConvertor::createMaterialRepoNode(
 	aiMaterial *material,
 	std::string name)
 {
@@ -289,7 +289,7 @@ model::bson::MaterialNode* AssimpModelCreator::createMaterialRepoNode(
 	return materialNode;
 }
 
-model::bson::MeshNode* AssimpModelCreator::createMeshRepoNode(
+model::bson::MeshNode* AssimpModelConvertor::createMeshRepoNode(
 	const aiMesh *assimpMesh,
 	const std::vector<model::bson::RepoNode *> &materials)
 {
@@ -462,7 +462,7 @@ model::bson::MeshNode* AssimpModelCreator::createMeshRepoNode(
 	return meshNode;
 }
 
-model::bson::MetadataNode* AssimpModelCreator::createMetadataRepoNode(
+model::bson::MetadataNode* AssimpModelConvertor::createMetadataRepoNode(
 	const aiMetadata             *assimpMeta,
 	const std::string            &metadataName,
 	const std::vector<repoUUID> &parents)
@@ -535,7 +535,7 @@ model::bson::MetadataNode* AssimpModelCreator::createMetadataRepoNode(
 
 }
 
-model::bson::RepoNodeSet AssimpModelCreator::createTransformationNodesRecursive(
+model::bson::RepoNodeSet AssimpModelConvertor::createTransformationNodesRecursive(
 	const aiNode                                         *assimpNode,
 	const std::map<std::string, model::bson::RepoNode *> &cameras,
 	const std::vector<model::bson::RepoNode *>           &meshes,
@@ -626,7 +626,7 @@ model::bson::RepoNodeSet AssimpModelCreator::createTransformationNodesRecursive(
 	return transNodes;
 }
 
-repo::manipulator::graph::SceneGraph * AssimpModelCreator::generateSceneGraph()
+repo::manipulator::graph::SceneGraph * AssimpModelConvertor::generateSceneGraph()
 {
 	repo::manipulator::graph::SceneGraph *sceneGraph = 0;
 
@@ -661,7 +661,7 @@ repo::manipulator::graph::SceneGraph * AssimpModelCreator::generateSceneGraph()
 					name.data);
 
 				if (!material)
-					BOOST_LOG_TRIVIAL(error) << "Unable to construct material node in Assimp Model Creator!";
+					BOOST_LOG_TRIVIAL(error) << "Unable to construct material node in Assimp Model Convertor!";
 				else
 					materials.insert(material);
 					
@@ -686,7 +686,7 @@ repo::manipulator::graph::SceneGraph * AssimpModelCreator::generateSceneGraph()
 					originalOrderMaterial);
 
 				if (!mesh)
-					BOOST_LOG_TRIVIAL(error) << "Unable to construct mesh node in Assimp Model Creator!";
+					BOOST_LOG_TRIVIAL(error) << "Unable to construct mesh node in Assimp Model Convertor!";
 				else
 					meshes.insert(mesh);
 				originalOrderMesh.push_back(mesh);
@@ -708,7 +708,7 @@ repo::manipulator::graph::SceneGraph * AssimpModelCreator::generateSceneGraph()
 				std::string cameraName(assimpScene->mCameras[i]->mName.data);
 				model::bson::RepoNode* camera = createCameraRepoNode(assimpScene->mCameras[i]);
 				if (!camera)
-					BOOST_LOG_TRIVIAL(error) << "Unable to construct mesh node in Assimp Model Creator!";
+					BOOST_LOG_TRIVIAL(error) << "Unable to construct mesh node in Assimp Model Convertor!";
 				else
 					cameras.insert(camera);
 
@@ -759,7 +759,7 @@ repo::manipulator::graph::SceneGraph * AssimpModelCreator::generateSceneGraph()
 	return sceneGraph;
 }
 
-bool AssimpModelCreator::importModel(std::string filePath, std::string &errMsg)
+bool AssimpModelConvertor::importModel(std::string filePath, std::string &errMsg)
 {
 	bool success = true;
 
@@ -786,7 +786,7 @@ bool AssimpModelCreator::importModel(std::string filePath, std::string &errMsg)
 		for (unsigned int i = 0; i < assimpScene->mNumMeshes; ++i)
 			polyCount += assimpScene->mMeshes[i]->mNumFaces;
 
-		BOOST_LOG_TRIVIAL(info) << "============ IMPORTING MODEL WITh ASSIMP MODEL CREATOR ===============";
+		BOOST_LOG_TRIVIAL(info) << "============ IMPORTING MODEL WITh ASSIMP MODEL CONVERTOR ===============";
 		BOOST_LOG_TRIVIAL(info) << "Loaded ";
 		BOOST_LOG_TRIVIAL(info) << fileName << " with " << polyCount << " polygons in ";
 		BOOST_LOG_TRIVIAL(info) << assimpScene->mNumMeshes << " ";
@@ -802,7 +802,7 @@ bool AssimpModelCreator::importModel(std::string filePath, std::string &errMsg)
 	return success;
 }
 
-void AssimpModelCreator::loadTextures(std::string dirPath){
+void AssimpModelConvertor::loadTextures(std::string dirPath){
 
 	for (uint32_t m = 0; m < assimpScene->mNumMaterials; ++m)
 	{
@@ -868,7 +868,7 @@ void AssimpModelCreator::loadTextures(std::string dirPath){
 
 }
 
-void AssimpModelCreator::setAssimpProperties(){
+void AssimpModelConvertor::setAssimpProperties(){
 
 	if (settings->getCalculateTangentSpace())
 		importer.SetPropertyFloat(AI_CONFIG_PP_CT_MAX_SMOOTHING_ANGLE, settings->getCalculateTangentSpaceMaxSmoothingAngle());
