@@ -16,6 +16,8 @@
 */
 /**
  * Abstract database handler which all database handler needs to inherit from
+ * WARNING: Do not expect any database handlers to be thread safe. It is currently
+ * assumed that singleton object is instantiated before any threads are created!
  */
 
 #pragma once
@@ -41,27 +43,6 @@ namespace repo{
 				* @return returns size limit in bytes.
  				*/
 				uint64_t documentSizeLimit() { return maxDocumentSize; };
-
-				/*
-				*	------------- Authentication (insert/delete/update) --------------
-				*/
-
-				/**
-				* Authenticates the user to the database
-				* @param username in the database
-				* @param password for this username
-				*/
-				virtual bool authenticate(const std::string& username, const std::string& plainTextPassword)=0;
-
-				/** Authenticates the user on a given database for a specific access.
-				* @param name of database
-				* @param username
-				* @param password
-				* @param if the password is digested
-				*/
-				virtual bool authenticate(
-					const std::string& database, const std::string& username,
-					const std::string& password, bool isPasswordDigested = false)=0;
 
 				/*
 				*	------------- Database info lookup --------------

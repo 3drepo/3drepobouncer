@@ -44,12 +44,15 @@ const std::string repo::core::handler::MongoDatabaseHandler::AUTH_MECH = "MONGOD
 MongoDatabaseHandler* MongoDatabaseHandler::handler = NULL;
 
 MongoDatabaseHandler::MongoDatabaseHandler(
-	const mongo::ConnectionString &dbAddress) :
+	const mongo::ConnectionString &dbAddress,
+	const uint32_t                &maxConnections,
+	const std::string             &username,
+	const std::string             &password,
+	const bool                    &pwDigested) :
 	AbstractDatabaseHandler(MAX_MONGO_BSON_SIZE)
 {
 	mongo::client::initialize();
-
-	this->dbAddress = dbAddress;
+	workerPool = new connectionPool::MongoConnectionPool(maxConnections, dbAddress, createAuthBSON(ADMIN_DATABASE, username, password, pwDigested));
 }
 
 /**
@@ -57,40 +60,7 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 */
 MongoDatabaseHandler::~MongoDatabaseHandler()
 {
-
-}
-
-
-bool MongoDatabaseHandler::authenticate(
-	const std::string &username,
-	const std::string &plainTextPassword)
-{
-	return authenticate(ADMIN_DATABASE, username, plainTextPassword, false);
-}
-
-bool repo::core::handler::MongoDatabaseHandler::authenticate(
-	const std::string &database,
-	const std::string &username,
-	const std::string &password,
-	bool isPasswordDigested)
-{
-	bool success = true;
-	std::string passwordDigest = isPasswordDigested ? password : worker->createPasswordDigest(username, password);
-	try
-	{
-		//FIXME: it's aborting  if i use the auth(db, username, pw...) function call. I don't get why.
-		worker->auth(BSON("user" << username <<
-			"db" << database<<
-			"pwd" << passwordDigest <<
-			"digestPassword" << false <<
-			"mechanism" << AUTH_MECH));
-	}
-	catch (mongo::DBException& e)
-	{
-		BOOST_LOG_TRIVIAL(error) << "Database Authentication failed: " << e.what();
-		success = false;
-	}
-	return success;
+	delete workerPool;
 }
 
 bool MongoDatabaseHandler::caseInsensitiveStringCompare(
@@ -98,6 +68,29 @@ bool MongoDatabaseHandler::caseInsensitiveStringCompare(
 	const std::string& s2)
 {
 	return strcasecmp(s1.c_str(), s2.c_str()) <= 0;
+}
+
+mongo::BSONObj* MongoDatabaseHandler::createAuthBSON(
+	const std::string &database,
+	const std::string &username, 
+	const std::string &password,
+	const bool        &pwDigested)
+{
+	mongo::BSONObj* authBson = 0;
+	if (!username.empty())
+	{
+		std::string passwordDigest = pwDigested ?
+		password : mongo::DBClientWithCommands::createPasswordDigest(username, password);
+		authBson = new mongo::BSONObj(BSON("user" << username <<
+			"db" << database <<
+			"pwd" << passwordDigest <<
+			"digestPassword" << false <<
+			"mechanism" << AUTH_MECH));
+	}
+
+	return authBson;
+
+		
 }
 
 
@@ -130,9 +123,11 @@ std::vector<repo::core::model::bson::RepoBSON> MongoDatabaseHandler::findAllByUn
 	int fieldsCount = array.nFields();
 	if (fieldsCount > 0)
 	{
+		mongo::DBClientBase *worker;
 		try{
 			unsigned long long retrieved = 0;
 			std::auto_ptr<mongo::DBClientCursor> cursor;
+			worker = workerPool->getWorker();
 			do
 			{
 
@@ -160,6 +155,8 @@ std::vector<repo::core::model::bson::RepoBSON> MongoDatabaseHandler::findAllByUn
 		{
 			BOOST_LOG_TRIVIAL(error) << e.what();
 		}
+
+		workerPool->returnWorker(worker);
 	}
 
 
@@ -175,12 +172,14 @@ repo::core::model::bson::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 {
 
 	repo::core::model::bson::RepoBSON bson;
-	
+	mongo::DBClientBase *worker;
 	try
 	{
 		repo::core::model::bson::RepoBSONBuilder queryBuilder;
 		queryBuilder.append("shared_id", uuid);
 		//----------------------------------------------------------------------
+	
+		worker = workerPool->getWorker();
 		mongo::BSONObj bsonMongo = worker->findOne(
 			getNamespace(database, collection),
 			mongo::Query(queryBuilder.obj()).sort(sortField, -1));
@@ -191,6 +190,8 @@ repo::core::model::bson::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 	{
 		BOOST_LOG_TRIVIAL(error) << "Error querying the database: "<< std::string(e.what());
 	}
+
+	workerPool->returnWorker(worker);
 	return bson;
 }
 
@@ -200,11 +201,13 @@ mongo::BSONObj MongoDatabaseHandler::findOneByUniqueID(
 	const repoUUID& uuid){
 
 	repo::core::model::bson::RepoBSON bson;
+	mongo::DBClientBase *worker;
 	try
 	{
 		repo::core::model::bson::RepoBSONBuilder queryBuilder;
 		queryBuilder.append(ID, uuid);
 
+		worker = workerPool->getWorker();
 		mongo::BSONObj bsonMongo = worker->findOne(getNamespace(database, collection),
 			mongo::Query(queryBuilder.obj()));
 
@@ -214,6 +217,8 @@ mongo::BSONObj MongoDatabaseHandler::findOneByUniqueID(
 	{
 		BOOST_LOG_TRIVIAL(error) << e.what();
 	}
+
+	workerPool->returnWorker(worker);
 	return bson;
 }
 
@@ -222,42 +227,29 @@ std::list<std::string> MongoDatabaseHandler::getCollections(
 	const std::string &database)
 {
 	std::list<std::string> collections;
+	mongo::DBClientBase *worker;
 	try
 	{
+		worker = workerPool->getWorker();
 		collections = worker->getCollectionNames(database);
 	}
 	catch (mongo::DBException& e)
 	{
 		BOOST_LOG_TRIVIAL(error) << e.what();
 	}
+
+	workerPool->returnWorker(worker);
 	return collections;
 }
-
-//std::string MongoDatabaseHandler::getCollectionFromNamespace(const std::string &ns)
-//{
-//
-//	std::regex rgx("*\.(\\w+)");
-//	std::smatch match;
-//
-//	std::string collection;
-//	if (std::regex_search(ns.begin(), ns.end(), match, rgx))
-//		collection =  match[1];
-//	else{
-//		BOOST_LOG_TRIVIAL(debug) << 
-//			"in MongoDatabaseHandler::getCollectionFromNamespace : would not find collection name from namespace :" << ns;
-//		collection = ns;
-//	}
-//
-//	return collection;
-//}
-
 
 std::list<std::string> MongoDatabaseHandler::getDatabases(
 	const bool &sorted)
 {
 	std::list<std::string> list;
+	mongo::DBClientBase *worker;
 	try
 	{
+		worker = workerPool->getWorker();
 		list = worker->getDatabaseNames();
 
 		if (sorted)
@@ -267,7 +259,7 @@ std::list<std::string> MongoDatabaseHandler::getDatabases(
 	{
 		BOOST_LOG_TRIVIAL(error) << e.what();
 	}
-
+	workerPool->returnWorker(worker);
 	return list;
 }
 
@@ -305,24 +297,31 @@ std::map<std::string, std::list<std::string> > MongoDatabaseHandler::getDatabase
 }
 
 MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
+	std::string       &errMsg,
 	const std::string &host, 
-	const int         &port)
+	const int         &port,
+	const uint32_t    &maxConnections,
+	const std::string &username,
+	const std::string &password,
+	const bool        &pwDigested)
 {
 
 	std::ostringstream connectionString;
 
 	mongo::HostAndPort hostAndPort = mongo::HostAndPort(host, port >= 0 ? port : -1);
 
-	std::string errmsg;
 	mongo::ConnectionString mongoConnectionString = mongo::ConnectionString(hostAndPort);
 
 
 	if(!handler){
 		//initialise the mongo client
-		handler = new MongoDatabaseHandler(mongoConnectionString);
-		if (!handler->intialiseWorkers()){
-			delete handler;
-			handler = NULL;
+		try{
+			handler = new MongoDatabaseHandler(mongoConnectionString, maxConnections, username, password, pwDigested);
+		}
+		catch (mongo::DBException e)
+		{
+			handler = 0;
+			errMsg = std::string(e.what());
 		}
 	}
 
@@ -359,7 +358,9 @@ bool MongoDatabaseHandler::insertDocument(
 	std::string &errMsg)
 {
 	bool success = true;
+	mongo::DBClientBase *worker;
 	try{
+		worker = workerPool->getWorker();
 		worker->insert(getNamespace(database, collection), obj);
 
 	}
@@ -370,25 +371,10 @@ bool MongoDatabaseHandler::insertDocument(
 		errMsg += errString;
 	}
 
-	return success;
-}
-
-bool MongoDatabaseHandler::intialiseWorkers(){
-	//FIXME: this should be a collection of workers
-	bool success = true;
-	std::string csErrorMsg;
-
-	std::string errmsg;
-	worker = dbAddress.connect(errmsg);
-	if (!worker) {
-		BOOST_LOG_TRIVIAL(error) << "couldn't connect: " << errmsg << std::endl;
-		success = false;
-	}
-
+	workerPool->returnWorker(worker);
 
 	return success;
 }
-
 
 bool MongoDatabaseHandler::upsertDocument(
 	const std::string &database,
@@ -398,11 +384,14 @@ bool MongoDatabaseHandler::upsertDocument(
 	std::string &errMsg)
 {
 	bool success = true;
+	mongo::DBClientBase *worker;
 	try{
+		worker = workerPool->getWorker();
 		if (overwrite)
 		{
 			mongo::Query query;
 			query = BSON(REPO_LABEL_ID << obj.getField(REPO_LABEL_ID));
+
 			worker->update(getNamespace(database, collection), query, obj, true);
 		}
 		else
@@ -432,5 +421,7 @@ bool MongoDatabaseHandler::upsertDocument(
 		std::string errString(e.what());
 		errMsg += errString;
 	}
+
+	workerPool->returnWorker(worker);
 	return success;
 }

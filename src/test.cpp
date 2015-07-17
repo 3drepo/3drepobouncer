@@ -49,19 +49,6 @@ void testDatabaseRetrieval(repo::core::handler::AbstractDatabaseHandler *dbHandl
 	}
 }
 
-void connect(repo::core::handler::AbstractDatabaseHandler *dbHandler, std::string username, std::string password){
-
-
-	BOOST_LOG_TRIVIAL(debug) << "Connecting to database...";
-
-
-	BOOST_LOG_TRIVIAL(debug) << (!dbHandler ? "FAIL" : "success!");
-
-	BOOST_LOG_TRIVIAL(debug) << "Authenticating...";
-	BOOST_LOG_TRIVIAL(debug) << (!dbHandler->authenticate(username, password) ? "FAIL" : "success!");
-
-}
-
 void insertARepoNode(repo::core::handler::AbstractDatabaseHandler *dbHandler){
 	//namespace to insert the node into.
 	std::string database = "test";
@@ -177,13 +164,24 @@ int main(int argc, char* argv[]){
 	std::string username = argv[3];
 	std::string password = argv[4];
 
-
-	repo::core::handler::AbstractDatabaseHandler *dbHandler = repo::core::handler::MongoDatabaseHandler::getHandler(address, port);
-
 	configureLogging();
 
-	connect(dbHandler, username, password);
-	//testDatabaseRetrieval(dbHandler);
+	std::string errMsg;
+	repo::core::handler::AbstractDatabaseHandler *dbHandler = 
+		repo::core::handler::MongoDatabaseHandler::getHandler(errMsg, address, port, 10, username, password);
+
+	if (dbHandler)
+	{
+		BOOST_LOG_TRIVIAL(info) << "Successfully connected to the database.";
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(info) << "Failed to connect to the database: " << errMsg;
+	}
+
+
+
+	testDatabaseRetrieval(dbHandler);
 
 	//insertARepoNode(dbHandler);
 
