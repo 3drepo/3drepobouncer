@@ -5,14 +5,14 @@
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
 
-#include "manipulator/graph/repo_graph_scene.h"
-#include "manipulator/modelconvertor/repo_model_convertor_assimp.h"
+#include "repo/manipulator/graph/repo_graph_scene.h"
+#include "repo/manipulator/modelconvertor/repo_model_convertor_assimp.h"
 
-#include "core/handler/repo_database_handler_mongo.h"
+#include "repo/core/handler/repo_database_handler_mongo.h"
 
-#include "core/model/repo_node_utils.h"
-#include "core/model/bson/repo_bson_factory.h"
-#include "core/model/bson/repo_node.h"
+#include "repo/core/model/repo_node_utils.h"
+#include "repo/core/model/bson/repo_bson_factory.h"
+#include "repo/core/model/bson/repo_node.h"
 
 
 void configureLogging(){
