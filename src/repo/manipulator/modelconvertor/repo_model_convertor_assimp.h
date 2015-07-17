@@ -31,7 +31,7 @@
 #include <assimp/postprocess.h>
 
 #include "repo_model_convertor_abstract.h"
-#include "../graph/repo_graph_scene.h"
+#include "../graph/repo_scene.h"
 
 namespace repo{
 	namespace manipulator{
@@ -59,9 +59,9 @@ namespace repo{
 				* Generates a repo scene graph
 				* an internal representation(aiscene) needs to have 
 				* been created before this call
-				* @return returns a populated SceneGraph upon success.
+				* @return returns a populated RepoScene upon success.
 				*/
-				repo::manipulator::graph::SceneGraph* generateSceneGraph();
+				repo::manipulator::graph::RepoScene* generateRepoScene();
 
 
 				/**

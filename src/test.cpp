@@ -5,7 +5,7 @@
 #include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
 
-#include "repo/manipulator/graph/repo_graph_scene.h"
+#include "repo/manipulator/graph/repo_scene.h"
 #include "repo/manipulator/modelconvertor/repo_model_convertor_assimp.h"
 
 #include "repo/core/handler/repo_database_handler_mongo.h"
@@ -90,7 +90,7 @@ void insertARepoNode(repo::core::handler::AbstractDatabaseHandler *dbHandler){
 }
 
 void instantiateProject(repo::core::handler::AbstractDatabaseHandler *dbHandler){
-	repo::manipulator::graph::SceneGraph *scene = new repo::manipulator::graph::SceneGraph(dbHandler, "test", "repoTest");
+	repo::manipulator::graph::RepoScene *scene = new repo::manipulator::graph::RepoScene(dbHandler, "test", "repoTest");
 	std::string errMsg;
 
 	//scene->setRevision(stringToUUID("a79ae12a-9828-468b-804c-149f6cb835a5"));
@@ -130,9 +130,9 @@ void loadModelFromFileAndCommit(repo::core::handler::AbstractDatabaseHandler *db
 	if (modelConvertor->importModel( fileName ,errMsg))
 	{
 		BOOST_LOG_TRIVIAL(info) << "model loaded successfully! Attempting to port to Repo World...";
-		repo::manipulator::graph::SceneGraph *graph = modelConvertor->generateSceneGraph();
+		repo::manipulator::graph::RepoScene *graph = modelConvertor->generateRepoScene();
 
-		BOOST_LOG_TRIVIAL(info) << "SceneGraph generated. Printing graph statistics...";
+		BOOST_LOG_TRIVIAL(info) << "RepoScene generated. Printing graph statistics...";
 		std::stringstream		stringMaker;
 		graph->printStatistics(stringMaker);
 		std::cout << stringMaker.str();

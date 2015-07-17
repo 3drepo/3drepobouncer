@@ -25,7 +25,7 @@
 #include <string>
 
 #include "repo_model_convertor_config.h"
-#include "../graph/repo_graph_scene.h"
+#include "../graph/repo_scene.h"
 
 namespace repo{
 	namespace manipulator{
@@ -58,14 +58,14 @@ namespace repo{
 				* Generates a repo scene graph
 				* an internal representation needs to have
 				* been created before this call (e.g. by means of importModel())
-				* @return returns a populated SceneGraph upon success.
+				* @return returns a populated RepoScene upon success.
 				*/
-				virtual repo::manipulator::graph::SceneGraph* generateSceneGraph() = 0;
+				virtual repo::manipulator::graph::RepoScene* generateRepoScene() = 0;
 
 				/**
 				* Import model from a given file
 				* This does not generate the Repo Scene Graph
-				* Use getSceneGraph() to generate a Repo Scene Graph. 
+				* Use getRepoScene() to generate a Repo Scene Graph. 
 				* @param path to the file
 				* @param error message if failed
 				* @return returns true upon success

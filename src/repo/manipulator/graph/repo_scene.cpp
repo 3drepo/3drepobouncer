@@ -23,20 +23,20 @@
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/assign.hpp>
 
-#include "repo_graph_scene.h"
+#include "repo_scene.h"
 #include "../../core/model/bson/repo_bson_factory.h"
 
 using namespace repo::manipulator::graph;
 
 namespace model = repo::core::model;
 
-SceneGraph::SceneGraph() : 
+RepoScene::RepoScene() : 
 	AbstractGraph()
 {
 
 }
 
-SceneGraph::SceneGraph(
+RepoScene::RepoScene(
 	repo::core::handler::AbstractDatabaseHandler *dbHandler,
 	const std::string &database,
 	const std::string &projectName,
@@ -55,7 +55,7 @@ SceneGraph::SceneGraph(
 
 }
 
-SceneGraph::SceneGraph(
+RepoScene::RepoScene(
 	const repo::core::model::bson::RepoNodeSet &cameras,
 	const repo::core::model::bson::RepoNodeSet &meshes,
 	const repo::core::model::bson::RepoNodeSet &materials,
@@ -78,7 +78,7 @@ SceneGraph::SceneGraph(
 	populateAndUpdate(cameras, meshes, materials, metadata, textures, transformations, references, maps, unknowns);
 }
 
-SceneGraph::~SceneGraph()
+RepoScene::~RepoScene()
 {
 	//TODO: delete nodes instantiated and scene graph instantiated?
 
@@ -86,7 +86,7 @@ SceneGraph::~SceneGraph()
 		delete revNode;
 }
 
-bool SceneGraph::addNodeToScene(
+bool RepoScene::addNodeToScene(
 	const repo::core::model::bson::RepoNodeSet nodes, 
 	std::string &errMsg,
 	 repo::core::model::bson::RepoNodeSet *collection)
@@ -119,7 +119,7 @@ bool SceneGraph::addNodeToScene(
 	return success;
 }
 
-bool SceneGraph::addNodeToMaps(model::bson::RepoNode *node, std::string &errMsg)
+bool RepoScene::addNodeToMaps(model::bson::RepoNode *node, std::string &errMsg)
 {
 	bool success = true; 
 	repoUUID uniqueID = node->getUniqueID();
@@ -178,7 +178,7 @@ bool SceneGraph::addNodeToMaps(model::bson::RepoNode *node, std::string &errMsg)
 	return success;
 }
 
-bool SceneGraph::commit(
+bool RepoScene::commit(
 	std::string &errMsg, 
 	const std::string &userName, 
 	const std::string &message,
@@ -234,7 +234,7 @@ bool SceneGraph::commit(
 	return success;
 }
 
-bool SceneGraph::commitProjectSettings(
+bool RepoScene::commitProjectSettings(
 	std::string &errMsg,
 	const std::string &userName)
 {
@@ -253,7 +253,7 @@ bool SceneGraph::commitProjectSettings(
 
 }
 
-bool SceneGraph::commitRevisionNode(
+bool RepoScene::commitRevisionNode(
 	std::string &errMsg,
 	model::bson::RevisionNode *&newRevNode,
 	const std::string &userName,
@@ -295,7 +295,7 @@ bool SceneGraph::commitRevisionNode(
 	return success && dbHandler->insertDocument(databaseName, projectName +"." + revExt, *newRevNode, errMsg);
 }
 
-bool SceneGraph::commitSceneChanges(
+bool RepoScene::commitSceneChanges(
 	std::string &errMsg)
 {
 	bool success = true;
@@ -328,7 +328,7 @@ bool SceneGraph::commitSceneChanges(
 	return success;
 }
 
-bool SceneGraph::loadRevision(std::string &errMsg){
+bool RepoScene::loadRevision(std::string &errMsg){
 	bool success = true;
 	model::bson::RepoBSON bson;
 	if (headRevision){
@@ -350,7 +350,7 @@ bool SceneGraph::loadRevision(std::string &errMsg){
 	return success;
 }
 
-bool SceneGraph::loadScene(std::string &errMsg){
+bool RepoScene::loadScene(std::string &errMsg){
 	bool success = true;
 	if (!revNode){
 		//try to load revision node first.
@@ -368,7 +368,7 @@ bool SceneGraph::loadScene(std::string &errMsg){
 
 }
 
-bool SceneGraph::populate(std::vector<model::bson::RepoBSON> nodes, std::string errMsg)
+bool RepoScene::populate(std::vector<model::bson::RepoBSON> nodes, std::string errMsg)
 {
 	bool success = true;
 
@@ -438,8 +438,8 @@ bool SceneGraph::populate(std::vector<model::bson::RepoBSON> nodes, std::string 
 	{
 		model::bson::ReferenceNode *reference = (model::bson::ReferenceNode*)*refIt;
 
-		//construct a new SceneGraph with the information from reference node and append this graph to the Scene
-		SceneGraph *refGraph = new SceneGraph(dbHandler, databaseName, reference->getProjectName(), sceneExt, revExt);
+		//construct a new RepoScene with the information from reference node and append this graph to the Scene
+		RepoScene *refGraph = new RepoScene(dbHandler, databaseName, reference->getProjectName(), sceneExt, revExt);
 		refGraph->setRevision(reference->getRevisionID());
 
 		if (refGraph->loadScene(errMsg)){
@@ -453,7 +453,7 @@ bool SceneGraph::populate(std::vector<model::bson::RepoBSON> nodes, std::string 
 	return success;
 }
 
-void SceneGraph::populateAndUpdate(
+void RepoScene::populateAndUpdate(
 	const repo::core::model::bson::RepoNodeSet &cameras,
 	const repo::core::model::bson::RepoNodeSet &meshes,
 	const repo::core::model::bson::RepoNodeSet &materials,
@@ -479,7 +479,7 @@ void SceneGraph::populateAndUpdate(
 
 }
 
-void SceneGraph::printStatistics(std::iostream &output)
+void RepoScene::printStatistics(std::iostream &output)
 {
 	output << "===================Scene Graph Statistics====================" << std::endl;
 	output << "Project:\t\t\t\t" << databaseName << "." << projectName << std::endl;

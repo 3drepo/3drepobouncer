@@ -626,9 +626,9 @@ model::bson::RepoNodeSet AssimpModelConvertor::createTransformationNodesRecursiv
 	return transNodes;
 }
 
-repo::manipulator::graph::SceneGraph * AssimpModelConvertor::generateSceneGraph()
+repo::manipulator::graph::RepoScene * AssimpModelConvertor::generateRepoScene()
 {
-	repo::manipulator::graph::SceneGraph *sceneGraph = 0;
+	repo::manipulator::graph::RepoScene *sceneGraph = 0;
 
 	if (assimpScene)
 	{
@@ -752,7 +752,7 @@ repo::manipulator::graph::SceneGraph * AssimpModelConvertor::generateSceneGraph(
 		
 
 		//Construct the scene graph
-		sceneGraph = new repo::manipulator::graph::SceneGraph(cameras, meshes, materials, metadata, textures, transformations);
+		sceneGraph = new repo::manipulator::graph::RepoScene(cameras, meshes, materials, metadata, textures, transformations);
 
 	} //if(assimpScene)
 

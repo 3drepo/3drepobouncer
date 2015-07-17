@@ -43,13 +43,13 @@
 namespace repo{
 	namespace manipulator{
 		namespace graph{
-			class SceneGraph : public AbstractGraph
+			class RepoScene : public AbstractGraph
 			{
 				public:
 					/**
 					* Default Constructor
 					*/
-					SceneGraph();
+					RepoScene();
 
 					/**
 					* Used for loading scene graphs from database
@@ -66,7 +66,7 @@ namespace repo{
 					* @param sceneExt extension name of the scene graph (Default: "scene")
 					* @param revExt extension name of the revision graph (Default: "history")
 					*/
-					SceneGraph(
+					RepoScene(
 						repo::core::handler::AbstractDatabaseHandler *dbHandler,
 						const std::string                                  &database = std::string(),
 						const std::string                                  &projectName = std::string(),
@@ -92,7 +92,7 @@ namespace repo{
 					* @param sceneExt extension name of the scene when it is saved into the database (optional)
 					* @param revExt   extension name of the revision when it is saved into the database (optional)
 					*/
-					SceneGraph(
+					RepoScene(
 						const repo::core::model::bson::RepoNodeSet &cameras, 
 						const repo::core::model::bson::RepoNodeSet &meshes, 
 						const repo::core::model::bson::RepoNodeSet &materials, 
@@ -111,7 +111,7 @@ namespace repo{
 					* all nodes created by the scene graph
 					* and also its child graphs
 					*/
-					~SceneGraph();
+					~RepoScene();
 
 					/**
 					* Commit changes into the database
@@ -137,7 +137,7 @@ namespace repo{
 					{
 						if (dbHandler)
 						{
-							BOOST_LOG_TRIVIAL(warning) << "SceneGraph.setDatabaseHandler() called when a handler is already referenced!";
+							BOOST_LOG_TRIVIAL(warning) << "RepoScene.setDatabaseHandler() called when a handler is already referenced!";
 						}
 						
 						if (newHandler)
@@ -337,7 +337,7 @@ namespace repo{
 
 					std::map<repoUUID, repoUUID> sharedIDtoUniqueID; //** mapping of shared ID to Unique ID
 					std::map<repoUUID, std::vector<repoUUID>> parentToChildren; //** mapping of shared id to its children's shared id
-					std::map<repoUUID, SceneGraph> referenceToScene; //** mapping of reference ID to it's scene graph
+					std::map<repoUUID, RepoScene> referenceToScene; //** mapping of reference ID to it's scene graph
 
 					//Change trackers
 					std::vector<repoUUID> newCurrent; //new list of current (unique IDs)
