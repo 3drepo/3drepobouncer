@@ -58,7 +58,7 @@ MeshNode* MeshNode::createMeshNode(
 		builder.appendBinary(
 			REPO_NODE_LABEL_VERTICES,
 			&vertices[0],
-			vertices.size() * sizeof(repo_vector_t),
+			vertices.size() * sizeof(vertices[0]),
 			REPO_NODE_LABEL_VERTICES_BYTE_COUNT,
 			REPO_NODE_LABEL_VERTICES_COUNT
 			);
