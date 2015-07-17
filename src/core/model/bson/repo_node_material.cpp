@@ -49,16 +49,29 @@ MaterialNode* MaterialNode::createMaterialNode(
 	// and optional name
 	appendDefaults(builder, REPO_NODE_TYPE_MATERIAL, apiLevel, generateUUID(), name);
 
+	if (material.ambient.size() > 0)
+		builder.appendArray(REPO_NODE_MATERIAL_LABEL_AMBIENT, builder.createArrayBSON(material.ambient));
+	if (material.diffuse.size() > 0)
+		builder.appendArray(REPO_NODE_MATERIAL_LABEL_DIFFUSE, builder.createArrayBSON(material.diffuse));
+	if (material.specular.size() > 0)
+		builder.appendArray(REPO_NODE_MATERIAL_LABEL_SPECULAR, builder.createArrayBSON(material.specular));
+	if (material.emissive.size() > 0)
+		builder.appendArray(REPO_NODE_MATERIAL_LABEL_EMISSIVE, builder.createArrayBSON(material.emissive));
 
-	builder << REPO_NODE_LABEL_AMBIENT   << material.ambient;
-	builder << REPO_NODE_LABEL_DIFFUSE   << material.diffuse;
-	builder << REPO_NODE_LABEL_SPECULAR  << material.specular;
-	builder << REPO_NODE_LABEL_EMISSIVE  << material.emissive;
-	builder << REPO_NODE_LABEL_WIREFRAME << material.isWireframe;
-	builder << REPO_NODE_LABEL_TWO_SIDED << material.isTwoSided;
-	builder << REPO_NODE_LABEL_OPACITY   << material.opacity;
-	builder << REPO_NODE_LABEL_SHININESS << material.shininess;
-	builder << REPO_NODE_LABEL_SHININESS_STRENGTH << material.shininessStrength;
+
+	if (material.isWireframe)
+		builder << REPO_NODE_MATERIAL_LABEL_WIREFRAME << material.isWireframe;
+	if (material.isTwoSided)
+		builder << REPO_NODE_MATERIAL_LABEL_TWO_SIDED << material.isTwoSided;
+	
+	if (material.opacity == material.opacity)
+		builder << REPO_NODE_MATERIAL_LABEL_OPACITY   << material.opacity;
+	
+	if (material.shininess == material.shininess)
+		builder << REPO_NODE_MATERIAL_LABEL_SHININESS << material.shininess;
+	
+	if (material.shininessStrength == material.shininessStrength)
+		builder << REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH << material.shininessStrength;
 
 	return new MaterialNode(builder.obj());
 }

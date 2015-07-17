@@ -34,10 +34,10 @@
 typedef boost::uuids::uuid repoUUID;
 
 typedef struct{
-	float ambient[3];
-	float diffuse[3];
-	float specular[3];
-	float emissive[3];
+	std::vector<float> ambient;
+	std::vector<float> diffuse;
+	std::vector<float> specular;
+	std::vector<float> emissive;
 	float opacity;
 	float shininess;
 	float shininessStrength;

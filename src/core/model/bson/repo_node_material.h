@@ -31,16 +31,15 @@ namespace repo {
 				// Fields specific to mesh only
 				//
 				//------------------------------------------------------------------------------
-				#define REPO_NODE_TYPE_MATERIAL					"material"
-				#define REPO_NODE_LABEL_AMBIENT					"ambient"
-				#define REPO_NODE_LABEL_DIFFUSE					"diffuse"
-				#define REPO_NODE_LABEL_SPECULAR				"specular"
-				#define REPO_NODE_LABEL_EMISSIVE				"emissive"
-				#define REPO_NODE_LABEL_WIREFRAME				"wireframe"
-				#define REPO_NODE_LABEL_TWO_SIDED				"two_sided"
-				#define REPO_NODE_LABEL_OPACITY					"opacity"
-				#define REPO_NODE_LABEL_SHININESS				"shininess"
-				#define REPO_NODE_LABEL_SHININESS_STRENGTH		"shininess_strength"
+				#define REPO_NODE_MATERIAL_LABEL_AMBIENT					"ambient"
+				#define REPO_NODE_MATERIAL_LABEL_DIFFUSE					"diffuse"
+				#define REPO_NODE_MATERIAL_LABEL_SPECULAR				"specular"
+				#define REPO_NODE_MATERIAL_LABEL_EMISSIVE				"emissive"
+				#define REPO_NODE_MATERIAL_LABEL_WIREFRAME				"wireframe"
+				#define REPO_NODE_MATERIAL_LABEL_TWO_SIDED				"two_sided"
+				#define REPO_NODE_MATERIAL_LABEL_OPACITY					"opacity"
+				#define REPO_NODE_MATERIAL_LABEL_SHININESS				"shininess"
+				#define REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH		"shininess_strength"
 				#define REPO_NODE_UUID_SUFFIX_MATERIAL			"07" //!< uuid suffix
 				//------------------------------------------------------------------------------
 

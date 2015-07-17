@@ -58,39 +58,22 @@ namespace repo {
 							return array.obj();
 						}
 
-						/**
-						* @brief Append a UUID into the builder
-						* This is a is a wrapper around appendBinData from mongo as
-						* there is no support to append boost::uuid directly
-						* @param label of the field
-						* @param UUID
-						*/
+
+						template<class T>
 						void append(
 							const std::string &label,
-							const repoUUID &uuid);
+							const T &item)
+						{
+							mongo::BSONObjBuilder::append(label, item);
+						}
 
-						///*!
-						//* Appends a vector of object as an array
-						//* @param label Label for this element
-						//* @param data the data itself
-						//* @param countLabel count label to store count
-						//*/
-						//template <class T>
-						//void appendVector(
-						//	const std::string    &label,
-						//	const std::vector<T> data
-						//	)
-						//{
-
-						//	{
-
-						//		RepoBSONBuilder array;
-						//		for (uint32_t i = 0; i < vec.size(); ++i)
-						//			array << boost::lexical_cast<std::string>(i) << vec[i];
-
-						//		appendArray(label, array.obj());
-						//	}
-						//}
+						template<>
+						void append<repoUUID>(
+							const std::string &label,
+							const repoUUID &uuid)
+						{
+							appendUUID(label, uuid);
+						}
 
 						/*!
 						* Appends a vector of object as an array
@@ -151,6 +134,19 @@ namespace repo {
 						* @return returns a RepoBSON object with the fields given.
 						*/
 						RepoBSON obj();
+
+					private:
+						/**
+						* @brief Append a UUID into the builder
+						* This is a is a wrapper around appendBinData from mongo as
+						* there is no support to append boost::uuid directly
+						* @param label label of the field
+						* @param uuid UUID
+						*/
+						void appendUUID(
+							const std::string &label,
+							const repoUUID &uuid);
+
 				};
 			}// end namespace bson
 		}// end namespace model

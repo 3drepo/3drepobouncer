@@ -90,7 +90,7 @@ void insertARepoNode(repo::core::handler::AbstractDatabaseHandler *dbHandler){
 }
 
 void instantiateProject(repo::core::handler::AbstractDatabaseHandler *dbHandler){
-	repo::manipulator::graph::SceneGraph *scene = new repo::manipulator::graph::SceneGraph(dbHandler, "test", "bridge");
+	repo::manipulator::graph::SceneGraph *scene = new repo::manipulator::graph::SceneGraph(dbHandler, "test", "repoTest");
 	std::string errMsg;
 
 	//scene->setRevision(stringToUUID("a79ae12a-9828-468b-804c-149f6cb835a5"));
@@ -139,12 +139,9 @@ void loadModelFromFileAndCommit(repo::core::handler::AbstractDatabaseHandler *db
 
 		std::string databaseName = "test";
 		std::string projectName = "repoTest";
-		BOOST_LOG_TRIVIAL(info) << "Trying to commit this scene to database as test.repoTest";
+		BOOST_LOG_TRIVIAL(info) << "Trying to commit this scene to database as " << databaseName << "." << projectName;
 		graph->setDatabaseHandler(dbHandler);
 		graph->setDatabaseAndProjectName(databaseName, projectName);
-		stringMaker.clear();
-		graph->printStatistics(stringMaker);
-		std::cout << stringMaker.str();
 
 		if (graph->commit(errMsg, "testUser", "This is a test"))
 		{
@@ -190,9 +187,9 @@ int main(int argc, char* argv[]){
 
 	//insertARepoNode(dbHandler);
 
-	instantiateProject(dbHandler);
-
 	loadModelFromFileAndCommit(dbHandler);
+
+	instantiateProject(dbHandler);
 
 	return EXIT_SUCCESS;
 }

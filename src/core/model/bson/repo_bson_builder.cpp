@@ -12,7 +12,7 @@ RepoBSONBuilder::~RepoBSONBuilder()
 {
 }
 
-void RepoBSONBuilder::append(
+void RepoBSONBuilder::appendUUID(
 	const std::string &label,
 	const repoUUID &uuid)
 {

@@ -200,18 +200,18 @@ model::bson::MaterialNode* AssimpModelCreator::createMaterialRepoNode(
 		// Ambient
 		if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_AMBIENT, tempColor))
 		{
-			repo_material.ambient[0] = tempColor.r;
-			repo_material.ambient[1] = tempColor.g;
-			repo_material.ambient[2] = tempColor.b;
+			repo_material.ambient.push_back(tempColor.r);
+			repo_material.ambient.push_back(tempColor.g);
+			repo_material.ambient.push_back(tempColor.b);
 
 		}
 		//--------------------------------------------------------------------------
 		// Diffuse
 		if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_DIFFUSE, tempColor))
 		{
-			repo_material.diffuse[0] = tempColor.r;
-			repo_material.diffuse[1] = tempColor.g;
-			repo_material.diffuse[2] = tempColor.b;
+			repo_material.diffuse.push_back(tempColor.r);
+			repo_material.diffuse.push_back(tempColor.g);
+			repo_material.diffuse.push_back(tempColor.b);
 
 		}
 
@@ -220,9 +220,9 @@ model::bson::MaterialNode* AssimpModelCreator::createMaterialRepoNode(
 		// Specular
 		if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_SPECULAR, tempColor))
 		{
-			repo_material.specular[0] = tempColor.r;
-			repo_material.specular[1] = tempColor.g;
-			repo_material.specular[2] = tempColor.b;
+			repo_material.specular.push_back(tempColor.r);
+			repo_material.specular.push_back(tempColor.g);
+			repo_material.specular.push_back(tempColor.b);
 
 		}
 
@@ -230,10 +230,9 @@ model::bson::MaterialNode* AssimpModelCreator::createMaterialRepoNode(
 		// Emissive
 		if (AI_SUCCESS == material->Get(AI_MATKEY_COLOR_EMISSIVE, tempColor))
 		{
-			repo_material.emissive[0] = tempColor.r;
-			repo_material.emissive[1] = tempColor.g;
-			repo_material.emissive[2] = tempColor.b;
-
+			repo_material.emissive.push_back(tempColor.r);
+			repo_material.emissive.push_back(tempColor.g);
+			repo_material.emissive.push_back(tempColor.b);
 		}
 
 		//--------------------------------------------------------------------------
@@ -252,16 +251,20 @@ model::bson::MaterialNode* AssimpModelCreator::createMaterialRepoNode(
 		// Opacity
 		if (AI_SUCCESS == material->Get(AI_MATKEY_OPACITY, tempFloat))
 			repo_material.opacity = tempFloat;
-
+		else
+			repo_material.opacity = std::numeric_limits<float>::quiet_NaN();
 		//--------------------------------------------------------------------------
 		// Shininess
 		if (AI_SUCCESS == material->Get(AI_MATKEY_SHININESS, tempFloat))
 			repo_material.shininess = tempFloat;
-
+		else
+			repo_material.shininess = std::numeric_limits<float>::quiet_NaN();
 		//--------------------------------------------------------------------------
 		// Shininess strength
 		if (AI_SUCCESS == material->Get(AI_MATKEY_SHININESS_STRENGTH, tempFloat))
 			repo_material.shininessStrength = tempFloat > 0 ? tempFloat : 1;
+		else
+			repo_material.shininessStrength = std::numeric_limits<float>::quiet_NaN();
 
 
 		materialNode = model::bson::RepoBSONFactory::makeMaterialNode(repo_material, name, REPO_NODE_API_LEVEL_1);
@@ -299,7 +302,7 @@ model::bson::MeshNode* AssimpModelCreator::createMeshRepoNode(
 	std::vector<repo_vector_t> normals;
 	std::vector<std::vector<repo_vector2d_t>> uvChannels;
 	std::vector<repo_color4d_t> colors;
-	std::vector<repo_vector2d_t> outline;
+	std::vector<std::vector<float>>   outline;
 
 	repo_vector_t minVertex = { assimpMesh->mVertices[0].x, assimpMesh->mVertices[0].y, assimpMesh->mVertices[0].z };
 	repo_vector_t maxVertex = { assimpMesh->mVertices[0].x, assimpMesh->mVertices[0].y, assimpMesh->mVertices[0].z };
@@ -420,9 +423,19 @@ model::bson::MeshNode* AssimpModelCreator::createMeshRepoNode(
 	*-----------------------------------------------------------------------------
 	*/
 
-	std::vector<repo_vector_t> boundingBox;
-	boundingBox.push_back(minVertex);
-	boundingBox.push_back(maxVertex);
+	std::vector<std::vector<float>>  boundingBox;
+	std::vector<float> minBound, maxBound;
+	minBound.push_back(minVertex.x);
+	minBound.push_back(minVertex.y);
+	minBound.push_back(minVertex.z);
+
+	maxBound.push_back(maxVertex.x);
+	maxBound.push_back(maxVertex.y);
+	maxBound.push_back(maxVertex.z);
+
+
+	boundingBox.push_back(minBound);
+	boundingBox.push_back(maxBound);
 
 	outline.push_back({ minVertex.x, minVertex.y });
 	outline.push_back({ maxVertex.x, minVertex.y });

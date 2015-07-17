@@ -42,10 +42,10 @@ MeshNode* MeshNode::createMeshNode(
 	std::vector<repo_vector_t>                  &vertices,
 	std::vector<repo_face_t>                    &faces,
 	std::vector<repo_vector_t>                  &normals,
-	std::vector<repo_vector_t>                  &boundingBox,
+	std::vector<std::vector<float>>             &boundingBox,
 	std::vector<std::vector<repo_vector2d_t>>   &uvChannels,
 	std::vector<repo_color4d_t>                 &colors,
-	std::vector<repo_vector2d_t>                &outline,
+	std::vector<std::vector<float>>             &outline,
 	const int                                   &apiLevel,
 	const std::string                           &name)
 {
@@ -99,20 +99,31 @@ MeshNode* MeshNode::createMeshNode(
 			normals.size() * sizeof(normals[0]));
 	}
 
+	if (boundingBox.size() > 0)
+	{
+		RepoBSONBuilder arrayBuilder;
 
-	builder.appendBinary(
-		REPO_NODE_LABEL_BOUNDING_BOX,
-		&boundingBox[0],
-		boundingBox.size() * sizeof(boundingBox[0]));
+		for (int i = 0; i < boundingBox.size(); i++)
+		{
+			arrayBuilder.appendArray(boost::lexical_cast<std::string>(i), builder.createArrayBSON(boundingBox[i]));
+		}
+
+		builder.appendArray(REPO_NODE_LABEL_BOUNDING_BOX, arrayBuilder.obj());
+	}
+	
 
 	if (outline.size() > 0)
 	{
-		builder.appendBinary(
-			REPO_NODE_LABEL_OUTLINE,
-			&outline[0],
-			outline.size() * sizeof(outline[0]));
-	}
+		RepoBSONBuilder arrayBuilder;
 
+		for (int i = 0; i < outline.size(); i++)
+		{
+			arrayBuilder.appendArray(boost::lexical_cast<std::string>(i), builder.createArrayBSON(outline[i]));
+		}
+
+		builder.appendArray(REPO_NODE_LABEL_OUTLINE, arrayBuilder.obj());
+	}
+	
 	//if (!vertexHash.empty())
 	//{
 	//	// TODO: Fix this call - needs to be fixed as int conversion is overloaded
