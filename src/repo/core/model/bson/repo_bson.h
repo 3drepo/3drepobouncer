@@ -45,12 +45,6 @@
 #define strcasecmp _stricmp
 #endif
 #include <mongo/bson/bson.h> 
-////------------------------------------------------------------------------------
-////#include "../conversion/repo_transcoder_bson.h"
-////#include "../conversion/repo_transcoder_string.h"
-//////------------------------------------------------------------------------------
-//
-
 
 namespace repo {
 	namespace core {
