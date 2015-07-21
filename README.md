@@ -9,9 +9,11 @@ Dependencies
 * [Mongo CXX Driver Legacy v1.0+](https://github.com/mongodb/mongo-cxx-driver)
 * [Boost Library v1.58.0+](http://www.boost.org/)
 * [ASSIMP library](https://github.com/3drepo/assimp)
+
+To compile and install the library, the following are used:
 * [Python v2.x](https://www.python.org/)
 * [CMAKE v3.3] (http://www.cmake.org/)
-* Access to a C++ compiler (GNU GCC v3.4+, Visual Studio 12+)
+* A C++ compiler (GNU GCC v3.4+, Visual Studio 12+)
 
 Compilation (Windows)
 ------------
@@ -29,10 +31,10 @@ set the following environmental variables to the directories of your installatio
 1. Clone the repository: `git clone https://github.com/3drepo/3drepobouncer.git`
 2. Change directory: `cd 3drepobouncer`
 3. Update CMake files: `python updateSources.py`
-4. Create off-source build directory: mkdir build
-5. Change directory: cd build
-6. Configure build with CMAKE: cmake -G "Visual Studio 12 Win64" ../
-7. Build the library: msbuild 3drepobouncer.vcxproj
+4. Create off-source build directory: `mkdir build`
+5. Change directory: `cd build`
+6. Configure build with CMAKE: `cmake -G "Visual Studio 12 Win64" ../`
+7. Build the library: `msbuild 3drepobouncer.vcxproj`
 
 Compilation (Linux)
 ------------
@@ -46,10 +48,10 @@ If the libraries are not installed in /usr, /usr/local, /opt/local, set the foll
 1. Clone the repository: `git clone https://github.com/3drepo/3drepobouncer.git`
 2. Change directory: `cd 3drepobouncer`
 3. Update CMake files: `python updateSources.py`
-4. Create off-source build directory: mkdir build
-5. Change directory: cd build
-6. Configure build with CMAKE: cmake ../
-7. Build the library: make
+4. Create off-source build directory: `mkdir build`
+5. Change directory: `cd build`
+6. Configure build with CMAKE: `cmake ../`
+7. Build the library: `make`
 
 Recompiling with changes
 ------------
