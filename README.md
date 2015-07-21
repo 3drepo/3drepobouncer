@@ -9,8 +9,8 @@ Dependencies
 * [Mongo CXX Driver Legacy v1.0+](https://github.com/mongodb/mongo-cxx-driver)
 * [Boost Library v1.58.0+](http://www.boost.org/)
 * [ASSIMP library](https://github.com/3drepo/assimp)
-* Python v2
-* CMAKE
+* [Python v2.x](https://www.python.org/)
+* [CMAKE v3.3] (http://www.cmake.org/)
 * Access to a C++ compiler (GNU C++ (check for the version that supports pragma once!), Visual Studio 12+)
 
 Compilation (Windows)
@@ -21,10 +21,10 @@ The following instruction is for compiling a 64bit library using Visual Studio 1
 
 In command line prompt:
 set the following environmental variables to the directories of your installations:
-* $env:BOOST_ROOT =<path_to_boost>
-* (NOT REQUIRED if libraries are in $BOOST_ROOT/lib) $env:BOOST_LIBRARYDIR=<path_to_boost_libraries> (i.e <path_to_boost>\lib64-msvc-12.0)>
-* $env:MONGO_ROOT = <path_to_mongo_cxx_driver>
-* $env:ASSIMP_ROOT = <path_to_assimp>
+* $env:BOOST_ROOT = path_to_boost
+* $env:BOOST_LIBRARYDIR = path_to_boost_libraries (i.e path_to_boost\lib64-msvc-12.0) (NOT REQUIRED if libraries are in $BOOST_ROOT/lib) 
+* $env:MONGO_ROOT = path_to_mongo_cxx_driver
+* $env:ASSIMP_ROOT = path_to_assimp
 
 1. Clone the repository: `git clone https://github.com/3drepo/3drepobouncer.git`
 2. Change directory: `cd 3drepobouncer`
@@ -39,9 +39,9 @@ Compilation (Linux)
 Ensure Mongo CXX Driver, Boost and ASSIMP libraries are installed.
 
 If the libraries are not installed in /usr, /usr/local, /opt/local, set the following environmental variables:
-* export BOOST_ROOT = <path_to_boost>
-* export MONGO_ROOT = <path_to_mongo_cxx_driver>
-* export ASSIMP_ROOT = <path_to_assimp>
+* export BOOST_ROOT = path_to_boost
+* export MONGO_ROOT = path_to_mongo_cxx_driver
+* export ASSIMP_ROOT = path_to_assimp
 
 1. Clone the repository: `git clone https://github.com/3drepo/3drepobouncer.git`
 2. Change directory: `cd 3drepobouncer`
