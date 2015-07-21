@@ -11,7 +11,7 @@ Dependencies
 * [ASSIMP library](https://github.com/3drepo/assimp)
 * [Python v2.x](https://www.python.org/)
 * [CMAKE v3.3] (http://www.cmake.org/)
-* Access to a C++ compiler (GNU C++ (check for the version that supports pragma once!), Visual Studio 12+)
+* Access to a C++ compiler (GNU GCC v3.4+, Visual Studio 12+)
 
 Compilation (Windows)
 ------------
