@@ -20,34 +20,36 @@ Ensure Mongo CXX Driver, Boost and ASSIMP libraries are installed.
 The following instruction is for compiling a 64bit library using Visual Studio 12's tools. Change the pathing/cmake option appropriately if you are using another version of Visual Studio or compiling with a different compiler.
 
 In command line prompt:
-1. set the following environmental variables to the directories of your installations:
+set the following environmental variables to the directories of your installations:
 * $env:BOOST_ROOT =<path_to_boost>
 * (NOT REQUIRED if libraries are in $BOOST_ROOT/lib) $env:BOOST_LIBRARYDIR=<path_to_boost_libraries> (i.e <path_to_boost>\lib64-msvc-12.0)>
 * $env:MONGO_ROOT = <path_to_mongo_cxx_driver>
 * $env:ASSIMP_ROOT = <path_to_assimp>
-2. Clone the repository: `git clone https://github.com/3drepo/3drepobouncer.git`
-3. Change directory: `cd 3drepobouncer`
-4. Update CMake files: `python updateSources.py`
-5. Create off-source build directory: mkdir build
-6. Change directory: cd build
-7. Configure build with CMAKE: cmake -G "Visual Studio 12 Win64" ../
-8. Build the library: msbuild 3drepobouncer.vcxproj
+
+1. Clone the repository: `git clone https://github.com/3drepo/3drepobouncer.git`
+2. Change directory: `cd 3drepobouncer`
+3. Update CMake files: `python updateSources.py`
+4. Create off-source build directory: mkdir build
+5. Change directory: cd build
+6. Configure build with CMAKE: cmake -G "Visual Studio 12 Win64" ../
+7. Build the library: msbuild 3drepobouncer.vcxproj
 
 Compilation (Linux)
 ------------
 Ensure Mongo CXX Driver, Boost and ASSIMP libraries are installed.
 
-1. If the libraries are not installed in /usr, /usr/local, /opt/local, set the following environmental variables:
+If the libraries are not installed in /usr, /usr/local, /opt/local, set the following environmental variables:
 * export BOOST_ROOT = <path_to_boost>
 * export MONGO_ROOT = <path_to_mongo_cxx_driver>
 * export ASSIMP_ROOT = <path_to_assimp>
-2. Clone the repository: `git clone https://github.com/3drepo/3drepobouncer.git`
-3. Change directory: `cd 3drepobouncer`
-4. Update CMake files: `python updateSources.py`
-5. Create off-source build directory: mkdir build
-6. Change directory: cd build
-7. Configure build with CMAKE: cmake ../
-8. Build the library: make
+
+1. Clone the repository: `git clone https://github.com/3drepo/3drepobouncer.git`
+2. Change directory: `cd 3drepobouncer`
+3. Update CMake files: `python updateSources.py`
+4. Create off-source build directory: mkdir build
+5. Change directory: cd build
+6. Configure build with CMAKE: cmake ../
+7. Build the library: make
 
 Recompiling with changes
 ------------
