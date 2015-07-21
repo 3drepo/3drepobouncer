@@ -23,10 +23,10 @@ The following instruction is for compiling a 64bit library using Visual Studio 1
 
 In command line prompt:
 set the following environmental variables to the directories of your installations:
-* $env:BOOST_ROOT = path_to_boost
-* $env:BOOST_LIBRARYDIR = path_to_boost_libraries (i.e path_to_boost\lib64-msvc-12.0) (NOT REQUIRED if libraries are in $BOOST_ROOT/lib) 
-* $env:MONGO_ROOT = path_to_mongo_cxx_driver
-* $env:ASSIMP_ROOT = path_to_assimp
+* `$env:BOOST_ROOT = path_to_boost`
+* `$env:BOOST_LIBRARYDIR = path_to_boost_libraries (i.e path_to_boost\lib64-msvc-12.0)` (NOT REQUIRED if libraries are in `$BOOST_ROOT/lib`) 
+* `$env:MONGO_ROOT = path_to_mongo_cxx_driver`
+* `$env:ASSIMP_ROOT = path_to_assimp`
 
 1. Clone the repository: `git clone https://github.com/3drepo/3drepobouncer.git`
 2. Change directory: `cd 3drepobouncer`
@@ -40,10 +40,10 @@ Compilation (Linux)
 ------------
 Ensure Mongo CXX Driver, Boost and ASSIMP libraries are installed.
 
-If the libraries are not installed in /usr, /usr/local, /opt/local, set the following environmental variables:
-* export BOOST_ROOT = path_to_boost
-* export MONGO_ROOT = path_to_mongo_cxx_driver
-* export ASSIMP_ROOT = path_to_assimp
+If the libraries are not installed in `/usr, /usr/local, /opt/local,` set the following environmental variables:
+* `export BOOST_ROOT = path_to_boost`
+* `export MONGO_ROOT = path_to_mongo_cxx_driver`
+* `export ASSIMP_ROOT = path_to_assimp`
 
 1. Clone the repository: `git clone https://github.com/3drepo/3drepobouncer.git`
 2. Change directory: `cd 3drepobouncer`
@@ -55,9 +55,9 @@ If the libraries are not installed in /usr, /usr/local, /opt/local, set the foll
 
 Recompiling with changes
 ------------
-Apart from the CMakeLists.txt at root level, eveyr other cmake file is automatically generated. If you have moved/created any source/header files, please run `python updateSources.py` to update the CMakeLists.txt files within the subdirectories before compiling.
+Apart from the `CMakeLists.txt` at root level, eveyr other cmake file is automatically generated. If you have moved/created any source/header files, please run `python updateSources.py` to update the `CMakeLists.txt` files within the subdirectories before compiling.
 
-Do NOT modify any CMakeLists.txt files within src folder as any changes will be overwritten when updateSources.py is executed!
+Do NOT modify any `CMakeLists.txt` files within src folder as any changes will be overwritten when `updateSources.py` is executed!
 
 Contact
 -------
