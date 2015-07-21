@@ -1,0 +1,65 @@
+3drepobouncer
+=========
+
+3DRepoBouncer(temporary naming) is essentially the refactored 3DRepoCore and (parts of)3DRepoGUI. A C++ library providing 3D Repo Scene Graph definition, repository management logic and manipulation logic. 
+
+Dependencies
+------------
+3DRepoBouncer relies on the following libraries:
+* [Mongo CXX Driver Legacy v1.0+](https://github.com/mongodb/mongo-cxx-driver)
+* [Boost Library v1.58.0+](http://www.boost.org/)
+* [ASSIMP library](https://github.com/3drepo/assimp)
+* Python v2
+* CMAKE
+* Access to a C++ compiler (GNU C++ (check for the version that supports pragma once!), Visual Studio 12+)
+
+Compilation (Windows)
+------------
+Ensure Mongo CXX Driver, Boost and ASSIMP libraries are installed.
+
+The following instruction is for compiling a 64bit library using Visual Studio 12's tools. Change the pathing/cmake option appropriately if you are using another version of Visual Studio or compiling with a different compiler.
+
+In command line prompt:
+1. set the following environmental variables to the directories of your installations:
+* $env:BOOST_ROOT =<path_to_boost>
+* (NOT REQUIRED if libraries are in $BOOST_ROOT/lib) $env:BOOST_LIBRARYDIR=<path_to_boost_libraries> (i.e <path_to_boost>\lib64-msvc-12.0)>
+* $env:MONGO_ROOT = <path_to_mongo_cxx_driver>
+* $env:ASSIMP_ROOT = <path_to_assimp>
+2. Clone the repository: `git clone https://github.com/3drepo/3drepobouncer.git`
+3. Change directory: `cd 3drepobouncer`
+4. Update CMake files: `python updateSources.py`
+5. Create off-source build directory: mkdir build
+6. Change directory: cd build
+7. Configure build with CMAKE: cmake -G "Visual Studio 12 Win64" ../
+8. Build the library: msbuild 3drepobouncer.vcxproj
+
+Compilation (Linux)
+------------
+Ensure Mongo CXX Driver, Boost and ASSIMP libraries are installed.
+
+1. If the libraries are not installed in /usr, /usr/local, /opt/local, set the following environmental variables:
+* export BOOST_ROOT = <path_to_boost>
+* export MONGO_ROOT = <path_to_mongo_cxx_driver>
+* export ASSIMP_ROOT = <path_to_assimp>
+2. Clone the repository: `git clone https://github.com/3drepo/3drepobouncer.git`
+3. Change directory: `cd 3drepobouncer`
+4. Update CMake files: `python updateSources.py`
+5. Create off-source build directory: mkdir build
+6. Change directory: cd build
+7. Configure build with CMAKE: cmake ../
+8. Build the library: make
+
+Recompiling with changes
+------------
+Apart from the CMakeLists.txt at root level, eveyr other cmake file is automatically generated. If you have moved/created any source/header files, please run `python updateSources.py` to update the CMakeLists.txt files within the subdirectories before compiling.
+
+Do NOT modify any CMakeLists.txt files within src folder as any changes will be overwritten when updateSources.py is executed!
+
+Contact
+-------
+
+If you need any help or want to contribute please contact: `support@3drepo.org`
+We look forward to hearing from you.
+
+[3DRepoIO]: https://github.com/3drepo/3drepo.io
+[3DRepoGUI]: https://github.com/3drepo/3drepogui

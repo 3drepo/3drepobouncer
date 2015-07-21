@@ -24,7 +24,7 @@ def createCMakeList(dirName, files, subDirList):
 			headers[hInd] = fname
 			hInd+=1
 		
-	#populate a  CMake file with this info
+	#populate a CMake file with this info
 	
 	cmakeFile = open(dirName+"/CMakeLists.txt", 'w')
 	cmakeFile.truncate()
