@@ -33,6 +33,13 @@ namespace repo{
 		namespace handler {
 			class AbstractDatabaseHandler {
 			public:
+				/*
+				*	=================================== Public Fields ========================================
+				*/
+				static const std::string ID; //! "_id"
+				static const std::string UUID;//! "uuid"		
+				static const std::string ADMIN_DATABASE;//! "admin"
+
 				/**
 				 * A Deconstructor 
 				 */
@@ -43,6 +50,19 @@ namespace repo{
 				* @return returns size limit in bytes.
  				*/
 				uint64_t documentSizeLimit() { return maxDocumentSize; };
+
+
+				/**
+				* Generates a BSON object containing user credentials
+				* @param username user name for authentication
+				* @param password password of the user
+				* @param pwDigested true if pw is digested
+				* @return returns the constructed BSON object, or 0 if username is empty
+				*/
+				virtual repo::core::model::bson::RepoBSON* createBSONCredentials(
+					const std::string &username,
+					const std::string &password,
+					const bool        &pwDigested = false)=0;
 
 				/*
 				*	------------- Database info lookup --------------

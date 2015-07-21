@@ -48,11 +48,8 @@ namespace repo{
 			class MongoDatabaseHandler : public AbstractDatabaseHandler{
 			public:
 				/*
-				 *	=================================== Public Fields ========================================
-				 */
-				static const std::string ID; //! "_id"
-				static const std::string UUID;//! "uuid"		
-				static const std::string ADMIN_DATABASE;//! "admin"
+				*	=================================== Public Fields ========================================
+				*/
 				static const std::string SYSTEM_ROLES_COLLECTION;//! "system.roles"
 				static const std::string AUTH_MECH;//! Authentication mechanism. currently MONGO-CR since mongo v2.6
 				//! Built in any database roles. See http://docs.mongodb.org/manual/reference/built-in-roles/
@@ -88,10 +85,25 @@ namespace repo{
 					std::string &errMsg,
 					const std::string &host,
 					const int         &port,
-					const uint32_t    &maxConnections = 10,
+					const uint32_t    &maxConnections,
+					const std::string &dbName,
 					const std::string &username = std::string(),
 					const std::string &password = std::string(),
 					const bool        &pwDigested = false);
+
+
+				/**
+				* Generates a BSON object containing user credentials
+				* @param username user name for authentication
+				* @param password password of the user
+				* @param pwDigested true if pw is digested
+				* @return returns the constructed BSON object, or 0 if username is empty
+				*/
+				repo::core::model::bson::RepoBSON* createBSONCredentials(
+					const std::string &username,
+					const std::string &password,
+					const bool        &pwDigested = false);
+
 
 				/*
 				*	------------- Database info lookup --------------
@@ -257,13 +269,14 @@ namespace repo{
 				MongoDatabaseHandler::MongoDatabaseHandler(
 					const mongo::ConnectionString &dbAddress,
 					const uint32_t                &maxConnections,
+					const std::string             &dbName,
 					const std::string             &username = std::string(),
 					const std::string             &password = std::string(),
 					const bool                    &pwDigested = false);
 
 
 				/**
-				* Generates a mongo BSON object for authentication (to be passed to DBClientBase.auth()
+				* Generates a mongo BSON object for authentication
 				* @param database database to authenticate against
 				* @param username user name for authentication
 				* @param password password of the user

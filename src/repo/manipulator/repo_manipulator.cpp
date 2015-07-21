@@ -16,11 +16,33 @@
 */
 
 /**
-* Abstract database handler which all database handler needs to inherit from
+* Repo Manipulator which handles all the manipulation
 */
 
-#include "repo_database_handler_abstract.h"
+#include "repo_manipulator.h"
 
-const std::string repo::core::handler::AbstractDatabaseHandler::ID = "_id";
-const std::string repo::core::handler::AbstractDatabaseHandler::UUID = "uuid";
-const std::string repo::core::handler::AbstractDatabaseHandler::ADMIN_DATABASE = "admin";
+using namespace repo::manipulator;
+
+RepoManipulator::RepoManipulator()
+{
+}
+
+
+RepoManipulator::~RepoManipulator()
+{
+}
+
+repo::core::handler::AbstractDatabaseHandler* RepoManipulator::connectAndAuthenticate(
+	std::string       &errMsg,
+	const std::string &address,
+	const uint32_t    &port,
+	const uint32_t    &maxConnections,
+	const std::string &dbName,
+	const std::string &username,
+	const std::string &password,
+	const bool        &pwDigested
+	)
+{
+	return repo::core::handler::MongoDatabaseHandler::getHandler(
+		errMsg, address, port, maxConnections, dbName, username, password, pwDigested);
+}

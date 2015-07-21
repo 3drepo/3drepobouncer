@@ -34,34 +34,45 @@ namespace repo{
 		public:
 			RepoStack(){}
 			~RepoStack(){}
-		protected:
 
+			void push(const T& item) {
+				boost::mutex::scoped_lock lock(pushMutex);
+				stack.push_back(item);
+			}
+			T pop() {
 
-				void push(const T& item) {
-					boost::mutex::scoped_lock lock(pushMutex);
-					stack.push(item);
+				//order potentially matters. Think before shuffling!
+				boost::mutex::scoped_lock popLock(popMutex); //stopping anyone from popping
+				boost::mutex::scoped_lock pushLock(pushMutex); //stopping anyone from pushing
+
+				while (stack.empty())
+				{
+					//stack is empty. Release the push lock and try again in 5s
+					pushLock.release();							
+					boost::this_thread::sleep(boost::posix_time::seconds(5));
+					pushLock.lock();
 				}
-				T pop() {
 
-					//order potentially matters. Think before shuffling!
-					boost::mutex::scoped_lock popLock(popMutex); //stopping anyone from popping
-					boost::mutex::scoped_lock pushLock(pushMutex); //stopping anyone from pushing
+				T item = (T)stack.back();
+				stack.pop_back();
+				return item;
+			}
 
-					while (stack.empty())
-					{
-						//stack is empty. Release the push lock and try again in 5s
-						pushLock.release();							
-						boost::this_thread::sleep(boost::posix_time::seconds(5));
-						pushLock.lock();
-					}
-
-					T item = (T)stack.top();
-					stack.pop();
-					return item;
-				}
+			/**
+			* empty the stack and return all its elements in a vector
+			* @return vector of T
+			*/
+			std::vector<T> empty()
+			{
+				boost::mutex::scoped_lock popLock(popMutex); //stopping anyone from popping
+				boost::mutex::scoped_lock pushLock(pushMutex); //stopping anyone from pushing
+				std::vector<T> clone = stack;
+				stack.clear();
+				return clone;
+			}
 
 		private:
-			std::stack<T> stack;
+			std::vector<T> stack;
 			mutable boost::mutex pushMutex;
 			mutable boost::mutex popMutex;
 

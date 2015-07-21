@@ -27,9 +27,7 @@ using namespace repo::core::handler;
 
 static uint64_t MAX_MONGO_BSON_SIZE=16777216L;
 //------------------------------------------------------------------------------
-const std::string repo::core::handler::MongoDatabaseHandler::ID = "_id";
-const std::string repo::core::handler::MongoDatabaseHandler::UUID = "uuid";
-const std::string repo::core::handler::MongoDatabaseHandler::ADMIN_DATABASE = "admin";
+
 const std::string repo::core::handler::MongoDatabaseHandler::SYSTEM_ROLES_COLLECTION = "system.roles";
 const std::list<std::string> repo::core::handler::MongoDatabaseHandler::ANY_DATABASE_ROLES =
 { "dbAdmin", "dbOwner", "read", "readWrite", "userAdmin" };
@@ -46,13 +44,14 @@ MongoDatabaseHandler* MongoDatabaseHandler::handler = NULL;
 MongoDatabaseHandler::MongoDatabaseHandler(
 	const mongo::ConnectionString &dbAddress,
 	const uint32_t                &maxConnections,
+	const std::string             &dbName,
 	const std::string             &username,
 	const std::string             &password,
 	const bool                    &pwDigested) :
 	AbstractDatabaseHandler(MAX_MONGO_BSON_SIZE)
 {
 	mongo::client::initialize();
-	workerPool = new connectionPool::MongoConnectionPool(maxConnections, dbAddress, createAuthBSON(ADMIN_DATABASE, username, password, pwDigested));
+	workerPool = new connectionPool::MongoConnectionPool(maxConnections, dbAddress, createAuthBSON(dbName, username, password, pwDigested));
 }
 
 /**
@@ -60,7 +59,8 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 */
 MongoDatabaseHandler::~MongoDatabaseHandler()
 {
-	delete workerPool;
+	if (workerPool)
+		delete workerPool;
 }
 
 bool MongoDatabaseHandler::caseInsensitiveStringCompare(
@@ -68,6 +68,27 @@ bool MongoDatabaseHandler::caseInsensitiveStringCompare(
 	const std::string& s2)
 {
 	return strcasecmp(s1.c_str(), s2.c_str()) <= 0;
+}
+
+repo::core::model::bson::RepoBSON* MongoDatabaseHandler::createBSONCredentials(
+	const std::string &username,
+	const std::string &password,
+	const bool        &pwDigested)
+{
+	repo::core::model::bson::RepoBSON* authBson = 0;
+	if (!username.empty())
+	{
+		std::string passwordDigest = pwDigested ?
+		password : mongo::DBClientWithCommands::createPasswordDigest(username, password);
+		authBson = new repo::core::model::bson::RepoBSON(BSON("user" << username <<
+			"pwd" << passwordDigest <<
+			"digestPassword" << false <<
+			"mechanism" << AUTH_MECH));
+	}
+
+	return authBson;
+
+
 }
 
 mongo::BSONObj* MongoDatabaseHandler::createAuthBSON(
@@ -301,6 +322,7 @@ MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
 	const std::string &host, 
 	const int         &port,
 	const uint32_t    &maxConnections,
+	const std::string &dbName,
 	const std::string &username,
 	const std::string &password,
 	const bool        &pwDigested)
@@ -315,14 +337,22 @@ MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
 
 	if(!handler){
 		//initialise the mongo client
+		BOOST_LOG_TRIVIAL(debug) << "Handler not present for " << mongoConnectionString.toString() << " instantiating new handler...";
 		try{
-			handler = new MongoDatabaseHandler(mongoConnectionString, maxConnections, username, password, pwDigested);
+			handler = new MongoDatabaseHandler(mongoConnectionString, maxConnections, dbName, username, password, pwDigested);
 		}
 		catch (mongo::DBException e)
 		{
+			if (handler)
+				delete handler;
 			handler = 0;
 			errMsg = std::string(e.what());
+			BOOST_LOG_TRIVIAL(debug) << "Caught exception whilst instantiating Mongo Handler: " << errMsg;
 		}
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(debug) << "Found handler, returning existing handler";
 	}
 
 
