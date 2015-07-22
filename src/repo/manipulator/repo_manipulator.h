@@ -31,7 +31,7 @@ namespace repo{
 			RepoManipulator();
 			~RepoManipulator();
 
-			repo::core::handler::AbstractDatabaseHandler* connectAndAuthenticate(
+			bool connectAndAuthenticate(
 				std::string       &errMsg,
 				const std::string &address,
 				const uint32_t         &port,
@@ -43,14 +43,52 @@ namespace repo{
 				);
 
 			core::model::bson::RepoBSON* createCredBSON(
-				repo::core::handler::AbstractDatabaseHandler* &handler,
-				const std::string                                   &username, 
-				const std::string                                   &password, 
-				const bool                                          &pwDigested)
+				const std::string &databaseAd,
+				const std::string &username, 
+				const std::string &password, 
+				const bool        &pwDigested)
 			{
-				return handler->createBSONCredentials(username, password, pwDigested);
+				core::model::bson::RepoBSON* bson = 0;
+
+				repo::core::handler::AbstractDatabaseHandler* handler =
+					repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+				if (handler)
+					bson = handler->createBSONCredentials(username, password, pwDigested);
+				
+				return bson;
 			}
 
+
+			//FIXME: need to use the credentials!
+			std::list<std::string> fetchDatabases(
+				const std::string                             &databaseAd, 
+				const repo::core::model::bson::RepoBSON*	  &cred    
+				)
+			{
+				std::list<std::string> list;
+				repo::core::handler::AbstractDatabaseHandler* handler =
+					repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+				if(handler)
+					list = handler->getDatabases();
+
+				return list;
+			}
+
+			std::list<std::string> fetchCollections(
+				const std::string                             &databaseAd,
+				const repo::core::model::bson::RepoBSON*	  &cred,
+				const std::string                             &database
+				)
+			{
+
+				std::list<std::string> list;
+				repo::core::handler::AbstractDatabaseHandler* handler =
+					repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+				if (handler)
+					list = handler->getCollections(database);
+
+				return list;
+			}
 		};
 	}
 }

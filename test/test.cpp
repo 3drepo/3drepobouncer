@@ -16,6 +16,44 @@ void configureLogging(){
 	);
 }
 
+void testDatabaseRetrieval(repo::RepoController *controller, repo::RepoToken *token)
+{
+	BOOST_LOG_TRIVIAL(info) << "Fetching list of databases...";
+	std::list<std::string> databases = controller->getDatabases(token);
+	BOOST_LOG_TRIVIAL(info) << "Found " << databases.size() << " databases.";
+	std::string dbList;
+
+	std::list<std::string>::iterator it;
+	for (it = databases.begin(); it != databases.end(); ++it)
+	{
+		if (it != databases.begin())
+			dbList += ",";
+		dbList += *it;
+	}
+
+	BOOST_LOG_TRIVIAL(info) << "Database List: {" << dbList << "}";
+
+
+	if (databases.size() > 0)
+	{
+		std::string colList;
+
+		std::string dbName = *databases.begin();
+		BOOST_LOG_TRIVIAL(info) << "Fetching list of collections in " << dbName << " ...";
+		std::list<std::string> collections = controller->getCollections(token, dbName);
+		BOOST_LOG_TRIVIAL(info) << "Found " << collections.size() << " collections.";
+		
+		for (it = collections.begin(); it != collections.end(); ++it)
+		{
+			if (it != collections.begin())
+				colList += ",";
+			colList += *it;
+		}
+		BOOST_LOG_TRIVIAL(info) << "Collection List: {" << colList << "}";
+
+	}
+}
+
 int main(int argc, char* argv[]){
 
 	//TODO: configuration needs to be done properly, but hey, i'm just a quick test!
@@ -43,7 +81,7 @@ int main(int argc, char* argv[]){
 	else
 		BOOST_LOG_TRIVIAL(error) << "Failed to authenticate to the database: " << errMsg;
 
-	//testDatabaseRetrieval(dbHandler);
+	testDatabaseRetrieval(controller, token);
 
 	////insertARepoNode(dbHandler);
 

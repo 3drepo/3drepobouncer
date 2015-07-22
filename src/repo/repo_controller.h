@@ -43,20 +43,23 @@ namespace repo{
 		/**
 		* Construct a Repo token
 		* @param credentials user credentials in a bson format
-		* @param handler database handler
+		* @param databaseAd database address+port as a string
+		* @param databaseName database it is authenticating against
 		*/
 		RepoToken(
-			const repo::core::model::bson::RepoBSON* credentials,
-			const repo::core::handler::AbstractDatabaseHandler* handler) :
+			const repo::core::model::bson::RepoBSON*  credentials,
+			const std::string                         databaseAd,
+			const std::string                        &databaseName) :
 			credentials(credentials),
-			handler(handler){};
+			databaseName(databaseName){};
 
 		~RepoToken(){}
 
 
 	private:
 		const repo::core::model::bson::RepoBSON* credentials;
-		const repo::core::handler::AbstractDatabaseHandler* handler;
+		const std::string databaseAd;
+		const std::string databaseName;
 	};
 
 
@@ -121,6 +124,24 @@ namespace repo{
 				core::handler::AbstractDatabaseHandler::ADMIN_DATABASE,
 				username, password, pwDigested);
 		}
+
+		/**
+		* Return a list of database available to the user
+		* @param token A RepoToken given at authentication
+		* @return returns a list of database names
+		*/
+		std::list<std::string> getDatabases(RepoToken *token);
+
+		/**
+		* Return a list of collections within the database
+		* @param token A RepoToken given at authentication
+		* @param databaseName database to get collections from
+		* @return returns a list of collection names
+		*/
+		std::list<std::string> getCollections(
+			RepoToken             *token,
+			const std::string     &databaseName
+			);
 
 	private:
 		lib::RepoStack<manipulator::RepoManipulator*> workerPool;

@@ -32,7 +32,7 @@ RepoManipulator::~RepoManipulator()
 {
 }
 
-repo::core::handler::AbstractDatabaseHandler* RepoManipulator::connectAndAuthenticate(
+bool RepoManipulator::connectAndAuthenticate(
 	std::string       &errMsg,
 	const std::string &address,
 	const uint32_t    &port,
@@ -43,6 +43,8 @@ repo::core::handler::AbstractDatabaseHandler* RepoManipulator::connectAndAuthent
 	const bool        &pwDigested
 	)
 {
-	return repo::core::handler::MongoDatabaseHandler::getHandler(
+	repo::core::handler::AbstractDatabaseHandler *handler =repo::core::handler::MongoDatabaseHandler::getHandler(
 		errMsg, address, port, maxConnections, dbName, username, password, pwDigested);
+
+	return handler != 0;
 }

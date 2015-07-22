@@ -58,21 +58,70 @@ RepoToken* RepoController::authenticateMongo(
 {
 	manipulator::RepoManipulator* worker = workerPool.pop();
 
-	repo::core::handler::AbstractDatabaseHandler* handler = 0;
 	core::model::bson::RepoBSON* cred = 0;
 	RepoToken *token = 0;
 	
+	std::string dbFullAd = address + ":" + std::to_string(port);
 
-	handler = worker->connectAndAuthenticate(errMsg, address, port, 
+	bool success = worker->connectAndAuthenticate(errMsg, address, port, 
 		numDBConnections, dbName, username, password, pwDigested);
 	
-	if (handler)
-		cred = worker->createCredBSON(handler, username, password, pwDigested);
+	if (success)
+		cred = worker->createCredBSON(dbFullAd, username, password, pwDigested);
 	workerPool.push(worker);
 
-	if (cred && handler)
+	if (cred)
 	{
-		token = new RepoToken(cred, handler);
+		token = new RepoToken(cred, dbFullAd, dbName);
 	}
 	return token ;
+}
+
+std::list<std::string> RepoController::getDatabases(RepoToken *token)
+{
+	std::list<std::string> list;
+	if (token)
+	{
+		if (token->databaseName == core::handler::AbstractDatabaseHandler::ADMIN_DATABASE)
+		{
+			manipulator::RepoManipulator* worker = workerPool.pop();
+
+			list = worker->fetchDatabases(token->databaseAd, token->credentials);
+
+			workerPool.push(worker);
+		}
+		else
+		{
+			//If the user is only authenticated against a single 
+			//database then just return the database he/she is authenticated against.
+			list.push_back(token->databaseName);
+		}
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Trying to fetch database without a Repo Token!";
+	}
+
+	return list;
+}
+
+std::list<std::string>  RepoController::getCollections(
+	RepoToken             *token,
+	const std::string     &databaseName
+	)
+{
+	std::list<std::string> list;
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		list = worker->fetchCollections(token->databaseAd, token->credentials, databaseName);
+		workerPool.push(worker);
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Trying to fetch collections without a Repo Token!";
+	}
+
+	return list;
+
 }

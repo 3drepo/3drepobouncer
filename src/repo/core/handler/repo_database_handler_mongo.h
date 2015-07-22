@@ -93,6 +93,17 @@ namespace repo{
 
 
 				/**
+				* Returns the instance of MongoDatabaseHandler
+				* @param host string containing "databaseAddress:port"
+				* @return Returns null if there is no instance available
+				*/
+				static MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
+					const std::string &host)
+				{
+					return handler;
+				}
+
+				/**
 				* Generates a BSON object containing user credentials
 				* @param username user name for authentication
 				* @param password password of the user
