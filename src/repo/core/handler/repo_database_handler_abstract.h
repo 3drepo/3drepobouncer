@@ -60,6 +60,7 @@ namespace repo{
 				* @return returns the constructed BSON object, or 0 if username is empty
 				*/
 				virtual repo::core::model::bson::RepoBSON* createBSONCredentials(
+					const std::string &dbAddress,
 					const std::string &username,
 					const std::string &password,
 					const bool        &pwDigested = false)=0;

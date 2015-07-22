@@ -31,6 +31,19 @@ namespace repo{
 			RepoManipulator();
 			~RepoManipulator();
 
+
+			/**
+			* Connect to the given database address/port and authenticat the user
+			* @param errMsg error message if the function returns false
+			* @param address mongo database address
+			* @param port port number
+			* @param maxConnections maxmimum number of concurrent connections allowed to the database
+			* @param dbName database name to authenticate against
+			* @param username user name 
+			* @param password password of the user
+			* @param pwDigested is the password provided in digested form (default: false)
+			* @return returns true upon success
+			*/
 			bool connectAndAuthenticate(
 				std::string       &errMsg,
 				const std::string &address,
@@ -42,6 +55,14 @@ namespace repo{
 				const bool        &pwDigested = false
 				);
 
+			/**
+			* Create a bson object storing user credentials
+			* @param databaseAd mongo database address:port
+			* @param username user name
+			* @param password password of the user
+			* @param pwDigested is the password provided in digested form (default: false)
+			* @return returns true upon success
+			*/
 			core::model::bson::RepoBSON* createCredBSON(
 				const std::string &databaseAd,
 				const std::string &username, 
@@ -53,13 +74,17 @@ namespace repo{
 				repo::core::handler::AbstractDatabaseHandler* handler =
 					repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 				if (handler)
-					bson = handler->createBSONCredentials(username, password, pwDigested);
+					bson = handler->createBSONCredentials(databaseAd, username, password, pwDigested);
 				
 				return bson;
 			}
 
-
-			//FIXME: need to use the credentials!
+			/**
+			* Get a list of all available databases, alphabetically sorted by default.
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @return returns a list of database names
+			*/
 			std::list<std::string> fetchDatabases(
 				const std::string                             &databaseAd, 
 				const repo::core::model::bson::RepoBSON*	  &cred    
@@ -74,6 +99,13 @@ namespace repo{
 				return list;
 			}
 
+			/**
+			* Get a list of all available collections.
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param database database name
+			* @return a list of collection names
+			*/
 			std::list<std::string> fetchCollections(
 				const std::string                             &databaseAd,
 				const repo::core::model::bson::RepoBSON*	  &cred,

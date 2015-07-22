@@ -94,6 +94,7 @@ namespace repo{
 
 				/**
 				* Returns the instance of MongoDatabaseHandler
+				* @param errMsg error message if this fails
 				* @param host string containing "databaseAddress:port"
 				* @return Returns null if there is no instance available
 				*/
@@ -105,15 +106,21 @@ namespace repo{
 
 				/**
 				* Generates a BSON object containing user credentials
+				* @param dbName name of the database to authenticate against
 				* @param username user name for authentication
 				* @param password password of the user
 				* @param pwDigested true if pw is digested
 				* @return returns the constructed BSON object, or 0 if username is empty
 				*/
 				repo::core::model::bson::RepoBSON* createBSONCredentials(
+					const std::string &dbName,
 					const std::string &username,
 					const std::string &password,
-					const bool        &pwDigested = false);
+					const bool        &pwDigested = false)
+				{
+					mongo::BSONObj *mongoBSON = createAuthBSON(dbName, username, password, pwDigested);
+					return mongoBSON? new repo::core::model::bson::RepoBSON(*mongoBSON) : 0;
+				}
 
 
 				/*

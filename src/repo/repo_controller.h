@@ -53,7 +53,10 @@ namespace repo{
 			credentials(credentials),
 			databaseName(databaseName){};
 
-		~RepoToken(){}
+		~RepoToken(){
+			if (credentials)
+				delete credentials;
+		}
 
 
 	private:

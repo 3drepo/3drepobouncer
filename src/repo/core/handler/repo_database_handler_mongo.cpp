@@ -70,27 +70,6 @@ bool MongoDatabaseHandler::caseInsensitiveStringCompare(
 	return strcasecmp(s1.c_str(), s2.c_str()) <= 0;
 }
 
-repo::core::model::bson::RepoBSON* MongoDatabaseHandler::createBSONCredentials(
-	const std::string &username,
-	const std::string &password,
-	const bool        &pwDigested)
-{
-	repo::core::model::bson::RepoBSON* authBson = 0;
-	if (!username.empty())
-	{
-		std::string passwordDigest = pwDigested ?
-		password : mongo::DBClientWithCommands::createPasswordDigest(username, password);
-		authBson = new repo::core::model::bson::RepoBSON(BSON("user" << username <<
-			"pwd" << passwordDigest <<
-			"digestPassword" << false <<
-			"mechanism" << AUTH_MECH));
-	}
-
-	return authBson;
-
-
-}
-
 mongo::BSONObj* MongoDatabaseHandler::createAuthBSON(
 	const std::string &database,
 	const std::string &username, 

@@ -43,7 +43,8 @@ bool RepoManipulator::connectAndAuthenticate(
 	const bool        &pwDigested
 	)
 {
-	repo::core::handler::AbstractDatabaseHandler *handler =repo::core::handler::MongoDatabaseHandler::getHandler(
+	repo::core::handler::AbstractDatabaseHandler *handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(
 		errMsg, address, port, maxConnections, dbName, username, password, pwDigested);
 
 	return handler != 0;
