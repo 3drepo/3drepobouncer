@@ -18,27 +18,17 @@
 
 #include "repo_controller.h"
 
+#include <boost/log/sinks/text_file_backend.hpp>
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
 
-#include <boost/make_shared.hpp>
-#include <boost/iostreams/stream_buffer.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/log/core.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/sources/logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-#include <boost/log/trivial.hpp>
-
-#include "lib/repo_broadcaster.h"
-
-#include <boost/date_time/posix_time/posix_time_types.hpp>
-#include <boost/log/utility/empty_deleter.hpp>
 
 using namespace repo;
 
 typedef boost::log::sinks::synchronous_sink< boost::log::sinks::text_ostream_backend > text_sink;
 
 RepoController::RepoController(
+	std::vector<lib::RepoAbstractListener*> listeners,
 	const uint32_t &numConcurrentOps,
 	const uint32_t &numDbConn) :
 	numDBConnections(numDbConn)
@@ -50,6 +40,7 @@ RepoController::RepoController(
 		workerPool.push(worker);
 	}
 
+	subscribeToLogger(listeners);
 
 	subscribeBroadcasterToLog();
 
@@ -196,72 +187,53 @@ void RepoController::setLoggingLevel(const RepoLogLevel &level)
 void RepoController::logToFile(const std::string &filePath)
 {
 
-	subscribeToLogger(boost::make_shared< std::ofstream >(filePath));
+	boost::log::add_file_log
+		(
+		boost::log::keywords::file_name = filePath + "_%N",
+		boost::log::keywords::rotation_size = 10 * 1024 * 1024,
+		boost::log::keywords::time_based_rotation = boost::log::sinks::file::rotation_at_time_point(0, 0, 0),
+		boost::log::keywords::format = "[%TimeStamp%]: %Message%"
+		);
 
 }
 
 void RepoController::subscribeToLogger(
-	lib::RepoAbstractListener *listener)
+	std::vector<lib::RepoAbstractListener*> listeners)
 {
 	BOOST_LOG_TRIVIAL(trace) << "New subscriber to the log";
-	lib::RepoBroadcaster::getInstance()->subscribe(listener);
-
-	subscribeBroadcasterToLog();
+	lib::RepoBroadcaster *broadcaster = lib::RepoBroadcaster::getInstance();
+	
+	for (auto listener: listeners)
+		broadcaster->subscribe(listener);
 }
 
+void RepoController::subscribeBroadcasterToLog(){
+	BOOST_LOG_TRIVIAL(info) << "subscribeBroadcasterToLog()";
+	lib::RepoBroadcaster *broadcaster = lib::RepoBroadcaster::getInstance();
+
+	boost::iostreams::stream<lib::RepoBroadcaster> *streamptr =
+		new boost::iostreams::stream<lib::RepoBroadcaster>(*broadcaster);
 
 
-void RepoController::subscribeToLogger(
-	const boost::shared_ptr< std::ostream > stream)
-{
-	// Construct the sink
+	boost::shared_ptr< std::ostream > stream(
+		streamptr, boost::log::empty_deleter());
 
 	boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
+
 
 	sink->set_filter(boost::log::trivial::severity >= boost::log::trivial::trace);
 	sink->set_formatter
 		(
-		boost::log::expressions::stream 
-		<< "[" << boost::log::trivial::severity << "]"
-		<< " Message: " << boost::log::expressions::smessage);
+		boost::log::expressions::stream
+		<< "[" << boost::log::trivial::severity << "] "
+		<< boost::log::expressions::smessage);
 
 
-	// Add a stream to write log to
 	sink->locked_backend()->add_stream(stream);
 	sink->locked_backend()->auto_flush(true);
 
 	// Register the sink in the logging core
 	boost::log::core::get()->add_sink(sink);
 
-	BOOST_LOG_TRIVIAL(info) << "added new sink";
-}
-
-
-void RepoController::subscribeBroadcasterToLog(){
-	//The broadcaster pretends to be a sink of a stream_buffer, create an
-	//ostream with the buffer and add it as a sink to the logger
-
-	lib::RepoBroadcaster *broadcaster = lib::RepoBroadcaster::getInstance();
-
-
-
-	//std::clog.rdbuf(&sb);
-
-	boost::shared_ptr< std::ostream > stream(
-		new boost::iostreams::stream<lib::RepoBroadcaster>(*broadcaster), boost::log::empty_deleter());
-	
-	 //Construct the sink
-	//typedef boost::log::sinks::synchronous_sink< boost::log::sinks::text_ostream_backend > text_sink;
-	boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
-
-
-	std::cout << "test" << numDBConnections;
-
-	subscribeToLogger(stream);
-
-
-	BOOST_LOG_TRIVIAL(fatal) << " test: " << numDBConnections;
-	/*std::clog.flush();
-	std::clog.rdbuf(oldbuff);*/
-
+	BOOST_LOG_TRIVIAL(info) << "Subscribed broadcaster to log";
 }

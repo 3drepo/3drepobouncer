@@ -26,16 +26,30 @@
 #include <string>
 
 #include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <boost/log/core.hpp>
+#include <boost/log/expressions.hpp>
 #include <boost/log/sinks/sync_frontend.hpp>
 #include <boost/log/sinks/text_ostream_backend.hpp>
+#include <boost/log/sources/logger.hpp>
+#include <boost/log/sources/record_ostream.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/utility/empty_deleter.hpp>
+#include <boost/iostreams/stream_buffer.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/date_time/posix_time/posix_time_types.hpp>
+
 
 #include "repo_bouncer_global.h"
 
 #include "core/handler/repo_database_handler_mongo.h"
 #include "core/model/bson/repo_bson.h"
 #include "lib/repo_stack.h"
+#include "lib/repo_broadcaster.h"
 #include "lib/repo_listener_abstract.h"
 #include "manipulator/repo_manipulator.h"
+
 
 
 namespace repo{
@@ -43,6 +57,8 @@ namespace repo{
 	class REPO_API_EXPORT RepoToken
 	{
 		friend class RepoController;
+
+		typedef boost::log::sinks::synchronous_sink< boost::log::sinks::text_ostream_backend > text_sink;
 	public:
 
 		/**
@@ -87,6 +103,7 @@ namespace repo{
 		* @param numDBConn number of concurrent connections to the database
 		*/
 		RepoController(
+			std::vector<lib::RepoAbstractListener*> listeners = std::vector<lib::RepoAbstractListener *>(),
 			const uint32_t &numConcurrentOps=1,
 			const uint32_t &numDbConn=1);
 
@@ -185,20 +202,6 @@ namespace repo{
 		void setLoggingLevel(const RepoLogLevel &level);
 
 		/**
-		* Subscribe a RepoAbstractLister to logging messages
-		* @param listener object to subscribe
-		*/
-		void subscribeToLogger(
-			repo::lib::RepoAbstractListener *listener);
-
-		/**
-		* Subscribe a stream to the logger
-		* this bypasses the RepoBroadcaster and subscribes directly to boost::log
-		* @param stream pointer to the output stream to subscribe to
-		*/
-		void subscribeToLogger(const boost::shared_ptr< std::ostream > stream);
-
-		/**
 		* Log to a specific file
 		* @param filePath path to file
 		*/
@@ -212,8 +215,17 @@ namespace repo{
 		* Subscribe the Broadcaster to logging core
 		*/
 		void subscribeBroadcasterToLog();
+
+		/**
+		* Subscribe a RepoAbstractLister to logging messages
+		* @param listener object to subscribe
+		*/
+		void subscribeToLogger(
+			std::vector<lib::RepoAbstractListener*> listeners);
+
 		lib::RepoStack<manipulator::RepoManipulator*> workerPool;
 		const uint32_t numDBConnections;
+
 	};
 
 

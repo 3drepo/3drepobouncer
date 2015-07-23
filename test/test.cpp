@@ -62,9 +62,7 @@ public:
 
 	void messageGenerated(const std::string &message)
 	{
-		std::cout << "[LISTENER]I've been called!!!!!! - " << message;
-		std::cout << std::endl;
-		std::cout << "[LISTENER]THE END!" << std::endl;
+		std::cout << "[LISTENER] " << message;
 	}
 };
 
@@ -84,11 +82,11 @@ int main(int argc, char* argv[]){
 
 	configureLogging();
 
-	repo::RepoController *controller = new repo::RepoController();
+	std::vector<repo::lib::RepoAbstractListener*> listeners;
+	listeners.push_back(new TestListener());
 
-	TestListener *listener = new TestListener();
+	repo::RepoController *controller = new repo::RepoController(listeners);
 
-	controller->subscribeToLogger(listener);
 
 	//BOOST_LOG_TRIVIAL(info) << "Subscribed to the logger!";
 
