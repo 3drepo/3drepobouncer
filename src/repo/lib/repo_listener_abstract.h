@@ -15,22 +15,28 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+/**
+* Abstract listener class that any object wishing to subscript to the library logger
+* will have to implement.
+*/
+
 #pragma once
-#include <cstdint>
-#include <boost/log/trivial.hpp>
 
-#if defined(_WIN32) || defined(_WIN64)
-#   define REPO_DECL_EXPORT __declspec(dllexport)
-#   define REPO_DECL_IMPORT __declspec(dllimport)
-#else
-#   define REPO_DECL_EXPORT
-#   define REPO_DECL_IMPORT
-#endif
+#include "../repo_bouncer_global.h"
 
-//------------------------------------------------------------------------------
-#if defined(REPO_API_LIBRARY)
-#   define REPO_API_EXPORT REPO_DECL_EXPORT
-#else
-#   define REPO_API_EXPORT REPO_DECL_IMPORT
-#endif
 
+namespace repo{
+	namespace lib{
+		class REPO_API_EXPORT RepoAbstractListener
+		{
+
+		public:
+			RepoAbstractListener() {}
+			~RepoAbstractListener(){};
+
+			virtual void messageGenerated(const std::string &message) = 0;
+
+
+		};
+	}
+}

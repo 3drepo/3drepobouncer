@@ -54,6 +54,20 @@ void testDatabaseRetrieval(repo::RepoController *controller, repo::RepoToken *to
 	}
 }
 
+class TestListener : public repo::lib::RepoAbstractListener
+{
+public:
+	TestListener() {}
+	~TestListener(){}
+
+	void messageGenerated(const std::string &message)
+	{
+		std::cout << "[LISTENER]I've been called!!!!!! - " << message;
+		std::cout << std::endl;
+		std::cout << "[LISTENER]THE END!" << std::endl;
+	}
+};
+
 int main(int argc, char* argv[]){
 
 	//TODO: configuration needs to be done properly, but hey, i'm just a quick test!
@@ -72,16 +86,24 @@ int main(int argc, char* argv[]){
 
 	repo::RepoController *controller = new repo::RepoController();
 
+	TestListener *listener = new TestListener();
+
+	controller->subscribeToLogger(listener);
+
+	//BOOST_LOG_TRIVIAL(info) << "Subscribed to the logger!";
+
 	std::string errMsg;
 	repo::RepoToken* token = controller->authenticateToAdminDatabaseMongo(errMsg, address, port, username, password);
+	//BOOST_LOG_TRIVIAL(info) << "Exiting...." << port;
 
-
-	if (token)
-		BOOST_LOG_TRIVIAL(info) << "successfully connected to the database!";
-	else
-		BOOST_LOG_TRIVIAL(error) << "Failed to authenticate to the database: " << errMsg;
+	//if (token)
+	//	BOOST_LOG_TRIVIAL(info) << "successfully connected to the database!";
+	//else
+	//	BOOST_LOG_TRIVIAL(error) << "Failed to authenticate to the database: " << errMsg;
 
 	testDatabaseRetrieval(controller, token);
+
+
 
 	////insertARepoNode(dbHandler);
 
@@ -93,3 +115,4 @@ int main(int argc, char* argv[]){
 
 	return EXIT_SUCCESS;
 }
+

@@ -25,11 +25,16 @@
 
 #include <string>
 
+#include <boost/shared_ptr.hpp>
+#include <boost/log/sinks/sync_frontend.hpp>
+#include <boost/log/sinks/text_ostream_backend.hpp>
+
 #include "repo_bouncer_global.h"
 
 #include "core/handler/repo_database_handler_mongo.h"
 #include "core/model/bson/repo_bson.h"
 #include "lib/repo_stack.h"
+#include "lib/repo_listener_abstract.h"
 #include "manipulator/repo_manipulator.h"
 
 
@@ -69,6 +74,13 @@ namespace repo{
 	class REPO_API_EXPORT RepoController
 	{
 	public:
+
+		/**
+		* LOGGING LEVEL
+		*/
+		enum RepoLogLevel { LOG_ALL, LOG_DEBUG, LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_NONE };
+
+
 		/**
 		* Constructor
 		* @param numConcurrentOps maximum number of requests it can handle concurrently
@@ -82,6 +94,10 @@ namespace repo{
 		* Destructor
 		*/
 		~RepoController();
+
+		/*
+		*	------------- Database Authentication --------------
+		*/
 
 		/**
 		* Connect to a mongo database, authenticate by the admin database
@@ -128,6 +144,10 @@ namespace repo{
 				username, password, pwDigested);
 		}
 
+		/*
+		*	------------- Database info lookup --------------
+		*/
+
 		/**
 		* Return a list of database available to the user
 		* @param token A RepoToken given at authentication
@@ -146,7 +166,52 @@ namespace repo{
 			const std::string     &databaseName
 			);
 
+		/*
+		*	------------- Logging --------------
+		*/
+
+		/**
+		* Configure how verbose the log should be
+		* The levels of verbosity are:
+		* LOG_ALL - log all messages
+		* LOG_DEBUG - log messages of level debug or above (use for debugging)
+		* LOG_INFO - log messages of level info or above (use to filter debugging messages but want informative logging)
+		* LOG_WARNING - log messages of level warning or above
+		* LOG_ERROR - log messages of level error or above
+		* LOG_NONE - no logging
+		* @param level specify logging level
+		*
+		*/
+		void setLoggingLevel(const RepoLogLevel &level);
+
+		/**
+		* Subscribe a RepoAbstractLister to logging messages
+		* @param listener object to subscribe
+		*/
+		void subscribeToLogger(
+			repo::lib::RepoAbstractListener *listener);
+
+		/**
+		* Subscribe a stream to the logger
+		* this bypasses the RepoBroadcaster and subscribes directly to boost::log
+		* @param stream pointer to the output stream to subscribe to
+		*/
+		void subscribeToLogger(const boost::shared_ptr< std::ostream > stream);
+
+		/**
+		* Log to a specific file
+		* @param filePath path to file
+		*/
+		void logToFile(const std::string &filePath);
+
+
+
 	private:
+
+		/**
+		* Subscribe the Broadcaster to logging core
+		*/
+		void subscribeBroadcasterToLog();
 		lib::RepoStack<manipulator::RepoManipulator*> workerPool;
 		const uint32_t numDBConnections;
 	};

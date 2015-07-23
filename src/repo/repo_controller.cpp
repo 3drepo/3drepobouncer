@@ -18,18 +18,41 @@
 
 #include "repo_controller.h"
 
+
+#include <boost/make_shared.hpp>
+#include <boost/iostreams/stream_buffer.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+#include <boost/log/core.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/sources/logger.hpp>
+#include <boost/log/sources/record_ostream.hpp>
+#include <boost/log/trivial.hpp>
+
+#include "lib/repo_broadcaster.h"
+
+#include <boost/date_time/posix_time/posix_time_types.hpp>
+#include <boost/log/utility/empty_deleter.hpp>
+
 using namespace repo;
+
+typedef boost::log::sinks::synchronous_sink< boost::log::sinks::text_ostream_backend > text_sink;
 
 RepoController::RepoController(
 	const uint32_t &numConcurrentOps,
 	const uint32_t &numDbConn) :
 	numDBConnections(numDbConn)
 {
+
 	for (uint32_t i = 0; i < numConcurrentOps; i++)
 	{
 		manipulator::RepoManipulator* worker = new manipulator::RepoManipulator();
 		workerPool.push(worker);
 	}
+
+
+	subscribeBroadcasterToLog();
+
 }
 
 
@@ -79,6 +102,7 @@ RepoToken* RepoController::authenticateMongo(
 
 std::list<std::string> RepoController::getDatabases(RepoToken *token)
 {
+	BOOST_LOG_TRIVIAL(info) << "Controller: Fetching Database....";
 	std::list<std::string> list;
 	if (token)
 	{
@@ -123,5 +147,121 @@ std::list<std::string>  RepoController::getCollections(
 	}
 
 	return list;
+
+}
+
+void RepoController::setLoggingLevel(const RepoLogLevel &level)
+{
+
+	boost::log::trivial::severity_level loggingLevel;
+	switch (level)
+	{
+		case LOG_ALL:
+			loggingLevel = boost::log::trivial::trace;
+			break;
+		case LOG_DEBUG:
+			loggingLevel = boost::log::trivial::debug;
+			break;
+		case LOG_INFO:
+			loggingLevel = boost::log::trivial::info;
+			break;
+		case LOG_WARNING:
+			loggingLevel = boost::log::trivial::warning;
+			break;
+		case LOG_ERROR:
+			loggingLevel = boost::log::trivial::error;
+			break;
+		case LOG_NONE:
+			loggingLevel = boost::log::trivial::fatal;
+			break;
+		default:
+			BOOST_LOG_TRIVIAL(error) << "Unknown log level: " << level;
+			return;
+
+	}
+
+	BOOST_LOG_TRIVIAL(trace) << "Setting logging level to: " << level;
+	if (level == LOG_NONE)
+	{
+		boost::log::core::get()->set_filter(
+			boost::log::trivial::severity > loggingLevel);
+	}
+	else
+	{
+		boost::log::core::get()->set_filter(
+			boost::log::trivial::severity >= loggingLevel);
+	}
+}
+
+void RepoController::logToFile(const std::string &filePath)
+{
+
+	subscribeToLogger(boost::make_shared< std::ofstream >(filePath));
+
+}
+
+void RepoController::subscribeToLogger(
+	lib::RepoAbstractListener *listener)
+{
+	BOOST_LOG_TRIVIAL(trace) << "New subscriber to the log";
+	lib::RepoBroadcaster::getInstance()->subscribe(listener);
+
+	subscribeBroadcasterToLog();
+}
+
+
+
+void RepoController::subscribeToLogger(
+	const boost::shared_ptr< std::ostream > stream)
+{
+	// Construct the sink
+
+	boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
+
+	sink->set_filter(boost::log::trivial::severity >= boost::log::trivial::trace);
+	sink->set_formatter
+		(
+		boost::log::expressions::stream 
+		<< "[" << boost::log::trivial::severity << "]"
+		<< " Message: " << boost::log::expressions::smessage);
+
+
+	// Add a stream to write log to
+	sink->locked_backend()->add_stream(stream);
+	sink->locked_backend()->auto_flush(true);
+
+	// Register the sink in the logging core
+	boost::log::core::get()->add_sink(sink);
+
+	BOOST_LOG_TRIVIAL(info) << "added new sink";
+}
+
+
+void RepoController::subscribeBroadcasterToLog(){
+	//The broadcaster pretends to be a sink of a stream_buffer, create an
+	//ostream with the buffer and add it as a sink to the logger
+
+	lib::RepoBroadcaster *broadcaster = lib::RepoBroadcaster::getInstance();
+
+
+
+	//std::clog.rdbuf(&sb);
+
+	boost::shared_ptr< std::ostream > stream(
+		new boost::iostreams::stream<lib::RepoBroadcaster>(*broadcaster), boost::log::empty_deleter());
+	
+	 //Construct the sink
+	//typedef boost::log::sinks::synchronous_sink< boost::log::sinks::text_ostream_backend > text_sink;
+	boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
+
+
+	std::cout << "test" << numDBConnections;
+
+	subscribeToLogger(stream);
+
+
+	BOOST_LOG_TRIVIAL(fatal) << " test: " << numDBConnections;
+	/*std::clog.flush();
+	std::clog.rdbuf(oldbuff);*/
 
 }

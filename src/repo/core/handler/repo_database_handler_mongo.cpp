@@ -316,7 +316,7 @@ MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
 
 	if(!handler){
 		//initialise the mongo client
-		BOOST_LOG_TRIVIAL(debug) << "Handler not present for " << mongoConnectionString.toString() << " instantiating new handler...";
+		BOOST_LOG_TRIVIAL(trace) << "Handler not present for " << mongoConnectionString.toString() << " instantiating new handler...";
 		try{
 			handler = new MongoDatabaseHandler(mongoConnectionString, maxConnections, dbName, username, password, pwDigested);
 		}
@@ -331,7 +331,7 @@ MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(debug) << "Found handler, returning existing handler";
+		BOOST_LOG_TRIVIAL(trace) << "Found handler, returning existing handler";
 	}
 
 
