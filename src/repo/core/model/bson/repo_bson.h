@@ -30,14 +30,6 @@
 #include "../repo_node_properties.h"
 #include "../repo_node_utils.h"
 
-////------------------------------------------------------------------------------
-//#if defined(_WIN32) || defined(_WIN64)
-//#include <WinSock2.h>
-//#include <Windows.h>
-//#endif
-// FIXME: this should be purely a bson representation. 
-// Not including dbclient.h to make sure we have no extra access to mongo functionality
-
 #if defined(_WIN32) || defined(_WIN64)
 #include <WinSock2.h>
 #include <Windows.h>

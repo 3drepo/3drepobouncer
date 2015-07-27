@@ -135,6 +135,18 @@ namespace repo{
 				*/
 				std::list<std::string> getCollections(const std::string &database);
 
+				/**
+				* Get the collection statistics of the given collection
+				* @param database Name of database
+				* @param collection Name of collection
+				* @param errMsg error message when error occurs
+				* @return returns a bson object with statistical info.
+				*/
+				repo::core::model::bson::CollectionStats getCollectionStats(
+					const std::string    &database,
+					const std::string    &collection,
+					std::string          &errMsg);
+
 
 				/**
 				 * Get a list of all available databases, alphabetically sorted by default.
@@ -193,6 +205,26 @@ namespace repo{
 					const repo::core::model::bson::RepoBSON &obj,
 					const bool        &overwrite,
 					std::string &errMsg);
+
+				/**
+				* Remove a collection from the database
+				* @param database the database the collection resides in
+				* @param collection name of the collection to drop
+				* @param errMsg name of the collection to drop
+				*/
+				bool dropCollection(
+					const std::string &database,
+					const std::string &collection,
+					std::string &errMsg =std::string());
+
+				/**
+				* Remove a database from the mongo database
+				* @param database name of the database to drop
+				* @param errMsg name of the database to drop
+				*/
+				bool dropDatabase(
+					const std::string &database,
+					std::string &errMsg = std::string());
 
 				/*
 				*	------------- Query operations --------------

@@ -49,3 +49,104 @@ bool RepoManipulator::connectAndAuthenticate(
 
 	return handler != 0;
 }
+
+repo::core::model::bson::RepoBSON* RepoManipulator::createCredBSON(
+	const std::string &databaseAd,
+	const std::string &username,
+	const std::string &password,
+	const bool        &pwDigested)
+{
+	core::model::bson::RepoBSON* bson = 0;
+
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+		bson = handler->createBSONCredentials(databaseAd, username, password, pwDigested);
+
+	return bson;
+}
+
+
+bool RepoManipulator::dropCollection(
+	const std::string                             &databaseAd,
+	const repo::core::model::bson::RepoBSON*	  &cred,
+	const std::string                             &databaseName,
+	const std::string                             &collectionName,
+	std::string			                          &errMsg
+	)
+{
+	bool success = false;
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+		success = handler->dropCollection(databaseName, collectionName, errMsg);
+	else
+		errMsg = "Unable to locate database handler for " + databaseAd + ". Try reauthenticating.";
+
+	return success;
+}
+
+bool RepoManipulator::dropDatabase(
+	const std::string                             &databaseAd,
+	const repo::core::model::bson::RepoBSON*	  &cred,
+	const std::string                             &databaseName,
+	std::string			                          &errMsg
+	)
+{
+	bool success = false;
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+		success = handler->dropDatabase(databaseName, errMsg);
+	else
+		errMsg = "Unable to locate database handler for " + databaseAd + ". Try reauthenticating.";
+
+	return success;
+}
+
+std::list<std::string> RepoManipulator::fetchDatabases(
+	const std::string                             &databaseAd,
+	const repo::core::model::bson::RepoBSON*	  &cred
+	)
+{
+	std::list<std::string> list;
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+		list = handler->getDatabases();
+
+	return list;
+}
+
+std::list<std::string> RepoManipulator::fetchCollections(
+	const std::string                             &databaseAd,
+	const repo::core::model::bson::RepoBSON*	  &cred,
+	const std::string                             &database
+	)
+{
+
+	std::list<std::string> list;
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+		list = handler->getCollections(database);
+
+	return list;
+}
+
+repo::core::model::bson::CollectionStats RepoManipulator::getCollectionStats(
+	const std::string                             &databaseAd,
+	const repo::core::model::bson::RepoBSON*	  &cred,
+	const std::string                             &database,
+	const std::string                             &collection,
+	std::string                                   &errMsg)
+{
+
+	repo::core::model::bson::CollectionStats stats;
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+		stats = handler->getCollectionStats(database, collection, errMsg);
+
+	return stats;
+}

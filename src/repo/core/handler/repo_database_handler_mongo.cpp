@@ -93,6 +93,50 @@ mongo::BSONObj* MongoDatabaseHandler::createAuthBSON(
 		
 }
 
+bool MongoDatabaseHandler::dropCollection(
+	const std::string &database,
+	const std::string &collection,
+	std::string &errMsg)
+{
+
+	bool success = true;
+	mongo::DBClientBase *worker;
+	try{
+
+		worker = workerPool->getWorker();
+		worker->dropCollection(database + "." + collection);
+	}
+	catch (mongo::DBException& e)
+	{
+		BOOST_LOG_TRIVIAL(error) << "Failed to drop collection ("
+			<< database << "." << collection << ":" << e.what();
+	}
+
+	workerPool->returnWorker(worker);
+
+	return true;
+}
+
+bool MongoDatabaseHandler::dropDatabase(
+	const std::string &database,
+	std::string &errMsg)
+{
+	bool success = true;
+	mongo::DBClientBase *worker;
+	try{
+
+		worker = workerPool->getWorker();
+		worker->dropDatabase(database);
+	}
+	catch (mongo::DBException& e)
+	{
+		BOOST_LOG_TRIVIAL(error) << "Failed to drop database :" << e.what();
+	}
+
+	workerPool->returnWorker(worker);
+
+	return true;
+}
 
 mongo::BSONObj MongoDatabaseHandler::fieldsToReturn(
 	const std::list<std::string>& fields,
@@ -240,6 +284,38 @@ std::list<std::string> MongoDatabaseHandler::getCollections(
 
 	workerPool->returnWorker(worker);
 	return collections;
+}
+
+repo::core::model::bson::CollectionStats MongoDatabaseHandler::getCollectionStats(
+	const std::string    &database,
+	const std::string    &collection,
+	std::string          &errMsg)
+{
+	mongo::BSONObj info;
+	mongo::DBClientBase *worker;
+	try {
+		mongo::BSONObjBuilder builder;
+		builder.append("collstats", collection);
+		builder.append("scale", 1); // 1024 == KB 		
+
+		worker = workerPool->getWorker();
+
+		BOOST_LOG_TRIVIAL(trace) << "db."
+			+ collection
+			+ "._db.runCommand({collstats:db."
+			+ collection
+			+ "._shortName, scale:1});";
+		worker->runCommand(database, builder.obj(), info);
+	}
+	catch (mongo::DBException &e)
+	{
+		errMsg = e.what();
+		BOOST_LOG_TRIVIAL(error) << "Failed to retreive collection stats for" << database 
+			<< "." << collection << " : " << errMsg;
+	}
+
+	workerPool->returnWorker(worker);
+	return repo::core::model::bson::CollectionStats(info);
 }
 
 std::list<std::string> MongoDatabaseHandler::getDatabases(

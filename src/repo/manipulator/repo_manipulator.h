@@ -23,10 +23,13 @@
 #include <string>
 #include "../core/handler/repo_database_handler_mongo.h"
 
+
+
 namespace repo{
 	namespace manipulator{
 		class RepoManipulator
 		{
+
 		public:
 			RepoManipulator();
 			~RepoManipulator();
@@ -65,19 +68,41 @@ namespace repo{
 			*/
 			core::model::bson::RepoBSON* createCredBSON(
 				const std::string &databaseAd,
-				const std::string &username, 
-				const std::string &password, 
-				const bool        &pwDigested)
-			{
-				core::model::bson::RepoBSON* bson = 0;
+				const std::string &username,
+				const std::string &password,
+				const bool        &pwDigested);
 
-				repo::core::handler::AbstractDatabaseHandler* handler =
-					repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-				if (handler)
-					bson = handler->createBSONCredentials(databaseAd, username, password, pwDigested);
-				
-				return bson;
-			}
+			/**
+			* Remove a collection from the database
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param database the database the collection resides in
+			* @param collection name of the collection to drop
+			* @param errMsg error message if failed
+			* @return returns true upon success
+			*/
+			bool dropCollection(
+				const std::string                             &databaseAd,
+				const repo::core::model::bson::RepoBSON*	  &cred,
+				const std::string                             &databaseName,
+				const std::string                             &collectionName,
+				std::string			                          &errMsg = std::string()
+				);
+
+			/**
+			* Remove a database from the database instance
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param database the database the collection resides in
+			* @param errMsg error message if failed
+			* @return returns true upon success
+			*/
+			bool dropDatabase(
+				const std::string                             &databaseAd,
+				const repo::core::model::bson::RepoBSON*	  &cred,
+				const std::string                             &databaseName,
+				std::string			                          &errMsg = std::string()
+				);
 
 			/**
 			* Get a list of all available databases, alphabetically sorted by default.
@@ -86,18 +111,10 @@ namespace repo{
 			* @return returns a list of database names
 			*/
 			std::list<std::string> fetchDatabases(
-				const std::string                             &databaseAd, 
-				const repo::core::model::bson::RepoBSON*	  &cred    
-				)
-			{
-				std::list<std::string> list;
-				repo::core::handler::AbstractDatabaseHandler* handler =
-					repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-				if(handler)
-					list = handler->getDatabases();
+				const std::string                             &databaseAd,
+				const repo::core::model::bson::RepoBSON*	  &cred
+				);
 
-				return list;
-			}
 
 			/**
 			* Get a list of all available collections.
@@ -110,17 +127,24 @@ namespace repo{
 				const std::string                             &databaseAd,
 				const repo::core::model::bson::RepoBSON*	  &cred,
 				const std::string                             &database
-				)
-			{
+				);
 
-				std::list<std::string> list;
-				repo::core::handler::AbstractDatabaseHandler* handler =
-					repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-				if (handler)
-					list = handler->getCollections(database);
 
-				return list;
-			}
+			/**
+			* Get the collection statistics of the given collection
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param database Name of database
+			* @param collection Name of collection
+			* @param errMsg error message when error occurs
+			* @return returns a bson object with statistical info.
+			*/
+			repo::core::model::bson::CollectionStats getCollectionStats(
+				const std::string                             &databaseAd,
+				const repo::core::model::bson::RepoBSON*	  &cred,
+				const std::string                             &database,
+				const std::string                             &collection,
+				std::string	                                  &errMsg=std::string());
 		};
 	}
 }

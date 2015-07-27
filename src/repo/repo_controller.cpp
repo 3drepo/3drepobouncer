@@ -141,6 +141,83 @@ std::list<std::string>  RepoController::getCollections(
 
 }
 
+repo::core::model::bson::CollectionStats RepoController::getCollectionStats(
+	RepoToken      *token,
+	const std::string    &database,
+	const std::string    &collection)
+{
+	repo::core::model::bson::CollectionStats stats;
+
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		std::string errMsg;
+		stats = worker->getCollectionStats(token->databaseAd,
+			token->credentials, database, collection, errMsg);
+		workerPool.push(worker);
+
+		if (!errMsg.empty())
+			BOOST_LOG_TRIVIAL(error) << errMsg;
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Trying to get collections stats without a Repo Token!";
+
+	}
+
+	return stats;
+}
+
+bool RepoController::removeCollection(
+	RepoToken             *token,
+	const std::string     &databaseName,
+	const std::string     &collectionName,
+	std::string			  &errMsg
+	)
+{
+	bool success = false;
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		success = worker->dropCollection(token->databaseAd, 
+			token->credentials, databaseName, collectionName, errMsg);
+		workerPool.push(worker);
+	}
+	else
+	{
+		errMsg = "Trying to fetch collections without a Repo Token!"; 
+		BOOST_LOG_TRIVIAL(error) << errMsg;
+		
+	}
+
+	return success;
+}
+
+
+bool RepoController::removeDatabase(
+	RepoToken             *token,
+	const std::string     &databaseName,
+	std::string			  &errMsg
+	)
+{
+	bool success = false;
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		success = worker->dropDatabase(token->databaseAd,
+			token->credentials, databaseName, errMsg);
+		workerPool.push(worker);
+	}
+	else
+	{
+		errMsg = "Trying to fetch collections without a Repo Token!";
+		BOOST_LOG_TRIVIAL(error) << errMsg;
+
+	}
+
+	return success;
+}
+
 void RepoController::setLoggingLevel(const RepoLogLevel &level)
 {
 

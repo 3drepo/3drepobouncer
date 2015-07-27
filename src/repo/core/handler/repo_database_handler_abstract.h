@@ -27,6 +27,7 @@
 #include <string>
 
 #include "../model/bson/repo_bson.h"
+#include "../model/bson/repo_bson_collection_stats.h"
 
 namespace repo{
 	namespace core{
@@ -74,6 +75,17 @@ namespace repo{
 				*/
 				virtual std::list<std::string> getCollections(const std::string &database)=0;
 
+				/**
+				* Get the collection statistics of the given collection
+				* @param database Name of database
+				* @param collection Name of collection
+				* @param errMsg error message when error occurs
+				* @return returns a bson object with statistical info.
+				*/
+				virtual repo::core::model::bson::CollectionStats getCollectionStats(
+					const std::string    &database,
+					const std::string    &collection,
+					std::string          &errMsg) = 0;
 
 				/**
 				* Get a list of all available databases, alphabetically sorted by default.
@@ -132,6 +144,26 @@ namespace repo{
 					const repo::core::model::bson::RepoBSON &obj,
 					const bool        &overwrite,
 					std::string &errMsg)=0;
+
+				/**
+				* Remove a collection from the database
+				* @param database the database the collection resides in
+				* @param collection name of the collection to drop
+				* @param errMsg name of the collection to drop
+				*/
+				virtual bool dropCollection(
+					const std::string &database,
+					const std::string &collection,
+					std::string &errMsg = std::string())=0;
+
+				/**
+				* Remove a database from the database instance
+				* @param database name of the database to drop
+				* @param errMsg name of the database to drop
+				*/
+				virtual bool dropDatabase(
+					const std::string &database,
+					std::string &errMsg = std::string())=0;
 
 				/*
 				*	------------- Query operations --------------

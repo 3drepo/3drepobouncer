@@ -1,0 +1,83 @@
+#include "repo_bson_collection_stats.h"
+
+using namespace repo::core::model::bson;
+
+CollectionStats::CollectionStats() : RepoBSON()
+{
+}
+
+
+CollectionStats::~CollectionStats()
+{
+}
+
+
+uint64_t repo::core::model::bson::CollectionStats::getActualSizeOnDisk() const
+{
+	return getSize() + 16 * getCount() + getTotalIndexSize();
+}
+
+std::string repo::core::model::bson::CollectionStats::getDatabase() const
+{
+	return getDatabase(getNs());
+}
+
+std::string repo::core::model::bson::CollectionStats::getDatabase(const std::string& ns)
+{
+	std::string database = ns;
+	const char *str = ns.c_str();
+	const char *p;
+	if (ns.find('.') != std::string::npos && (p = strchr(str, '.')))
+		database = std::string(str, p - str);
+	return database;
+}
+
+uint64_t repo::core::model::bson::CollectionStats::getCount() const
+{
+	return getSize("count");
+}
+
+std::string repo::core::model::bson::CollectionStats::getCollection() const
+{
+	return getCollection(getNs());
+}
+
+std::string repo::core::model::bson::CollectionStats::getCollection(const std::string& ns)
+{
+	std::string collection = ns;
+	const char *p;
+	if (ns.find('.') != std::string::npos && (p = strchr(ns.c_str(), '.')))
+		collection = p + 1;
+	return collection;
+}
+
+std::string repo::core::model::bson::CollectionStats::getNs() const
+{
+	std::string ns;
+	if (hasField("ns"))
+		ns = getField("ns").String();
+	return ns;
+}
+
+uint64_t repo::core::model::bson::CollectionStats::getSize(const std::string& name) const
+{
+	uint64_t size = 0;
+	if (hasField(name))
+		size = getField(name).safeNumberLong();
+	return size;
+}
+
+uint64_t repo::core::model::bson::CollectionStats::getSize() const
+{
+	return getSize("size");
+}
+
+uint64_t repo::core::model::bson::CollectionStats::getStorageSize() const
+{
+	return getSize("storageSize");
+}
+
+uint64_t repo::core::model::bson::CollectionStats::getTotalIndexSize() const
+{
+	return getSize("totalIndexSize");
+}

@@ -92,15 +92,36 @@ int main(int argc, char* argv[]){
 
 	std::string errMsg;
 	repo::RepoToken* token = controller->authenticateToAdminDatabaseMongo(errMsg, address, port, username, password);
-	//BOOST_LOG_TRIVIAL(info) << "Exiting...." << port;
+	
+	
+	if (token)
+		std::cout << "successfully connected to the database!" << std::endl;
+	else
+		std::cerr << "Failed to authenticate to the database: " << errMsg << std::endl;
 
-	//if (token)
-	//	BOOST_LOG_TRIVIAL(info) << "successfully connected to the database!";
-	//else
-	//	BOOST_LOG_TRIVIAL(error) << "Failed to authenticate to the database: " << errMsg;
+	//testDatabaseRetrieval(controller, token);
+	errMsg.clear();
+	std::cout << "Trying to delete collection : deleteME";
 
-	testDatabaseRetrieval(controller, token);
+	if (controller->removeCollection(token, "deleteME", "deleteME", errMsg))
+	{
+		std::cout << "Collection Deleted!" << std::endl;
+	}
+	else
+	{
+		std::cerr << "Failed to delete collection : " << errMsg;
+	}
 
+	std::cout << "Trying to delete database : deleteME";
+
+	if (controller->removeDatabase(token, "deleteME", errMsg))
+	{
+		std::cout << "Database Deleted!" << std::endl;
+	}
+	else
+	{
+		std::cerr << "Failed to delete database : " << errMsg;
+	}
 
 
 	////insertARepoNode(dbHandler);

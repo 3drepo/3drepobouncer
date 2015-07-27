@@ -51,11 +51,11 @@
 #include "manipulator/repo_manipulator.h"
 
 
-
 namespace repo{
 
 	class REPO_API_EXPORT RepoToken
 	{
+
 		friend class RepoController;
 
 		typedef boost::log::sinks::synchronous_sink< boost::log::sinks::text_ostream_backend > text_sink;
@@ -182,6 +182,48 @@ namespace repo{
 			RepoToken             *token,
 			const std::string     &databaseName
 			);
+
+		repo::core::model::bson::CollectionStats getCollectionStats(
+			RepoToken            *token,
+			const std::string    &database,
+			const std::string    &collection);
+
+
+		std::string getHostAndPort(RepoToken *token) { return token->databaseAd; }
+
+		/*
+		*	------- Database Operations (insert/delete/update) ---------
+		*/
+
+		/**
+		* Remove a collection from the database
+		* @param token Authentication token
+		* @param database the database the collection resides in
+		* @param collection name of the collection to drop
+		* @param errMsg error message if failed
+		* @return returns true upon success
+		*/
+		bool removeCollection(
+			RepoToken             *token,
+			const std::string     &databaseName,
+			const std::string     &collectionName,
+			std::string			  &errMsg = std::string()
+		);
+
+		/**
+		* Remove a database
+		* @param token Authentication token
+		* @param database the database the collection resides in
+		* @param errMsg error message if failed
+		* @return returns true upon success
+		*/
+		bool removeDatabase(
+			RepoToken             *token,
+			const std::string     &databaseName,
+			std::string			  &errMsg = std::string()
+		);
+
+
 
 		/*
 		*	------------- Logging --------------
