@@ -129,6 +129,24 @@ namespace repo{
 				const std::string                             &database
 				);
 
+			/**
+			* Retrieve documents from a specified collection
+			* due to limitations of the transfer protocol this might need
+			* to be called multiple times, utilising the skip index to skip
+			* the first n items.
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param collection name of collection
+			* @param skip specify how many documents to skip
+			* @return list of RepoBSONs representing the documents
+			*/
+			std::vector<repo::core::model::bson::RepoBSON> 
+				getAllFromCollectionTailable(
+				const std::string                             &databaseAd,
+				const repo::core::model::bson::RepoBSON*	  &cred,
+				const std::string                             &database,
+				const std::string                             &collection, 
+				const uint64_t                                &skip=0);
 
 			/**
 			* Get the collection statistics of the given collection
@@ -145,6 +163,22 @@ namespace repo{
 				const std::string                             &database,
 				const std::string                             &collection,
 				std::string	                                  &errMsg=std::string());
+
+
+			/**
+			* Count the number of documents within the collection
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param database name of database
+			* @param collection name of collection
+			* @return number of documents within the specified collection
+			*/
+			uint64_t countItemsInCollection(
+				const std::string                             &databaseAd,
+				const repo::core::model::bson::RepoBSON*	  &cred,
+				const std::string                             &database,
+				const std::string                             &collection,
+				std::string                                   &errMsg=std::string());
 		};
 	}
 }

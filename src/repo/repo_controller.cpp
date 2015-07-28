@@ -91,9 +91,60 @@ RepoToken* RepoController::authenticateMongo(
 	return token ;
 }
 
+uint64_t RepoController::countItemsInCollection(
+	RepoToken            *token,
+	const std::string    &database,
+	const std::string    &collection)
+{
+	uint64_t numItems;
+	BOOST_LOG_TRIVIAL(trace) << "Controller: Counting number of items in the collection";
+
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		numItems = worker->countItemsInCollection(token->databaseAd, token->credentials, database, collection);
+		workerPool.push(worker);
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Trying to fetch database without a Repo Token!";
+	}
+
+	return numItems;
+}
+
+std::vector < repo::core::model::bson::RepoBSON >
+	RepoController::getAllFromCollectionContinuous(
+		RepoToken            *token,
+		const std::string    &database,
+		const std::string    &collection,
+		const uint64_t       &skip)
+{
+	BOOST_LOG_TRIVIAL(trace) << "Controller: Fetching BSONs from " 
+		<< database << "."  << collection << "....";
+	std::vector<repo::core::model::bson::RepoBSON> vector;
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+
+		vector = worker->getAllFromCollectionTailable(token->databaseAd, token->credentials,
+			database, collection, skip);
+
+		workerPool.push(worker);
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Trying to fetch BSONs from a collection without a Repo Token!";
+	}
+
+	BOOST_LOG_TRIVIAL(trace) << "Obtained " << vector.size() << " bson objects.";
+
+	return vector;
+}
+
 std::list<std::string> RepoController::getDatabases(RepoToken *token)
 {
-	BOOST_LOG_TRIVIAL(info) << "Controller: Fetching Database....";
+	BOOST_LOG_TRIVIAL(trace) << "Controller: Fetching Database....";
 	std::list<std::string> list;
 	if (token)
 	{

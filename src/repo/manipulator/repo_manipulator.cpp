@@ -66,6 +66,23 @@ repo::core::model::bson::RepoBSON* RepoManipulator::createCredBSON(
 	return bson;
 }
 
+uint64_t RepoManipulator::countItemsInCollection(
+	const std::string                             &databaseAd,
+	const repo::core::model::bson::RepoBSON*	  &cred,
+	const std::string                             &database,
+	const std::string                             &collection,
+	std::string                                   &errMsg)
+{
+
+	uint64_t numItems;
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+
+	if (handler)
+		numItems = handler->countItemsInCollection(database, collection, errMsg);
+
+	return numItems;
+}
 
 bool RepoManipulator::dropCollection(
 	const std::string                             &databaseAd,
@@ -132,6 +149,23 @@ std::list<std::string> RepoManipulator::fetchCollections(
 		list = handler->getCollections(database);
 
 	return list;
+}
+
+std::vector<repo::core::model::bson::RepoBSON>
+	RepoManipulator::getAllFromCollectionTailable(
+		const std::string                             &databaseAd,
+		const repo::core::model::bson::RepoBSON*	  &cred,
+		const std::string                             &database,
+		const std::string                             &collection,
+		const uint64_t                                &skip)
+{
+	std::vector<repo::core::model::bson::RepoBSON> vector;
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+		vector =  handler->getAllFromCollectionTailable(database, collection);
+
+	return vector;
 }
 
 repo::core::model::bson::CollectionStats RepoManipulator::getCollectionStats(

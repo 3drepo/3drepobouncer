@@ -70,6 +70,31 @@ bool MongoDatabaseHandler::caseInsensitiveStringCompare(
 	return strcasecmp(s1.c_str(), s2.c_str()) <= 0;
 }
 
+uint64_t MongoDatabaseHandler::countItemsInCollection(
+	const std::string &database,
+	const std::string &collection,
+	std::string &errMsg)
+{
+	uint64_t numItems;
+	mongo::DBClientBase *worker;
+	try{
+
+		worker = workerPool->getWorker();
+		numItems = worker->count(database + "." + collection);
+	}
+	catch (mongo::DBException& e)
+	{
+		errMsg =  "Failed to count num. items within "
+			+ database + "." + collection + ":" + e.what();
+		BOOST_LOG_TRIVIAL(error) << errMsg;
+	}
+
+	workerPool->returnWorker(worker);
+
+	return numItems;
+
+}
+
 mongo::BSONObj* MongoDatabaseHandler::createAuthBSON(
 	const std::string &database,
 	const std::string &username, 
@@ -266,7 +291,38 @@ mongo::BSONObj MongoDatabaseHandler::findOneByUniqueID(
 	return bson;
 }
 
-// Returns a list of tables for a given database name.
+std::vector<repo::core::model::bson::RepoBSON>
+	MongoDatabaseHandler::getAllFromCollectionTailable(
+		const std::string                             &database,
+		const std::string                             &collection,
+		const uint64_t                                &skip)
+{
+	std::vector<repo::core::model::bson::RepoBSON> bsons;
+	mongo::DBClientBase *worker;
+	try
+	{
+		worker = workerPool->getWorker();
+		std::auto_ptr<mongo::DBClientCursor> cursor = worker->query(
+			database + "." + collection,
+			mongo::Query(),
+			0,
+			skip);
+
+		while (cursor.get() && cursor->more())
+		{
+			bsons.push_back(repo::core::model::bson::RepoBSON(cursor->nextSafe()));
+		}
+	}
+	catch (mongo::DBException& e)
+	{
+		BOOST_LOG_TRIVIAL(error) << "Failed retrieving bsons from mongo: " << e.what();
+	}
+
+	workerPool->returnWorker(worker);
+	return bsons;
+
+}
+
 std::list<std::string> MongoDatabaseHandler::getCollections(
 	const std::string &database)
 {

@@ -166,6 +166,36 @@ namespace repo{
 		*/
 
 		/**
+		* Count the number of documents within the collection
+		* @param token A RepoToken given at authentication
+		* @param database name of database
+		* @param collection name of collection
+		* @return number of documents within the specified collection
+		*/
+		uint64_t countItemsInCollection(
+			RepoToken            *token,
+			const std::string    &database,
+			const std::string    &collection);
+
+		/**
+		* Retrieve documents from a specified collection
+		* due to limitations of the transfer protocol this might need
+		* to be called multiple times, utilising the skip index to skip
+		* the first n items.
+		* @param token A RepoToken given at authentication
+		* @param database name of database
+		* @param collection name of collection
+		* @param skip specify how many documents to skip
+		* @return list of RepoBSONs representing the documents
+		*/
+		std::vector < repo::core::model::bson::RepoBSON >
+			getAllFromCollectionContinuous(
+			RepoToken            *token,
+			const std::string    &database,
+			const std::string    &collection,
+			const uint64_t       &skip = 0);
+
+		/**
 		* Return a list of database available to the user
 		* @param token A RepoToken given at authentication
 		* @return returns a list of database names
@@ -183,6 +213,14 @@ namespace repo{
 			const std::string     &databaseName
 			);
 
+		/**
+		* Return a CollectionStats BSON containing statistics about 
+		* this collection
+		* @param token A RepoToken given at authentication
+		* @param database name of database
+		* @param collection name of collection
+		* @return returns a BSON object containing this information
+		*/
 		repo::core::model::bson::CollectionStats getCollectionStats(
 			RepoToken            *token,
 			const std::string    &database,

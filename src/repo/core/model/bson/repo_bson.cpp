@@ -20,7 +20,7 @@
 
 using namespace repo::core::model::bson;
 
-repoUUID RepoBSON::getUUIDField(std::string label){
+repoUUID RepoBSON::getUUIDField(std::string label) const{
 	repoUUID uuid;
 	const mongo::BSONElement bse = getField(label);
 	if (bse.binDataType() == mongo::bdtUUID ||

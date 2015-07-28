@@ -20,6 +20,8 @@
 */
 
 #pragma once
+#include <iostream>
+
 #include <boost/functional/hash.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/uuid/uuid.hpp> 
@@ -51,17 +53,20 @@ typedef struct{
 	float g;
 	float b;
 	float a;
+
 }repo_color4d_t;
 
 typedef struct{
 	float x;
 	float y;
 	float z;
+
 }repo_vector_t;
 
 typedef struct{
 	float x;
 	float y;
+
 }repo_vector2d_t;
 
 typedef struct{
@@ -124,7 +129,87 @@ static repoUUID stringToUUID(
 	return uuid;
 }
 
+/**
+* Converts a RepoUUID to string
+* @param id repoUUID to convert
+* @return a string representation of repoUUID
+*/
 static std::string UUIDtoString(const repoUUID &id)
 {
 	return boost::lexical_cast<std::string>(id);
 }
+
+///**
+//* Returns a string representation of a given value. 
+//* @param value value to turn into string
+//* @return return
+//*/
+//template <class T>
+//static std::string toString(T value)
+//{
+//	std::stringstream sstr;
+//	sstr << value;
+//	return sstr.str();
+//}
+
+static std::string toString(const repo_face_t &f)
+{
+	std::string str;
+	unsigned int mNumIndices = f.numIndices;
+
+	str += "[";
+	for (unsigned int i = 0; i < f.numIndices; i++)
+	{
+		str += std::to_string(f.indices[i]);
+		if (i != mNumIndices - 1)
+			str += ", ";
+	}
+	str += "]";
+	return str;
+}
+
+static std::string toString(const repo_color4d_t &color)
+{
+	std::stringstream sstr;
+	sstr << "[" << color.r << ", " << color.g << ", " << color.b << ", " << color.a << "]";
+	return sstr.str();
+}
+
+static std::string toString(const repo_vector_t &vec)
+{
+	std::stringstream sstr;
+	sstr << "[" << vec.x << ", " << vec.y << ", " << vec.z << "]";
+	return sstr.str();
+}
+
+static std::string toString(const repo_vector2d_t &vec)
+{
+	std::stringstream sstr;
+	sstr << "[" << vec.x << ", " << vec.y << "]";
+	return sstr.str();
+}
+
+/**
+* \brief Returns a compacted string representation of a given vector
+* as [toString(0) ... toString(n)] where only the very first and the very
+* last elements are displayed.
+* \sa toString()
+* @param vec vector to convert to string
+* @return returns a string representing the vector
+*/
+template <class T>
+static std::string vectorToString(const std::vector<T> &vec)
+{
+	{
+		std::string str;
+		if (vec.size() > 0)
+		{
+			str += "[" + toString(vec.at(0));
+			if (vec.size() > 1)
+				str += ", ..., " + toString(vec.at(vec.size() - 1));
+			str += "]";
+		}
+		return str;
+	}
+}
+

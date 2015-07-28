@@ -70,6 +70,34 @@ namespace repo{
 				*	------------- Database info lookup --------------
 				*/
 
+
+				/**
+				* Count the number of documents within the collection
+				* @param database name of database
+				* @param collection name of collection
+				* @param errMsg errMsg if failed
+				* @return number of documents within the specified collection
+				*/
+				virtual uint64_t countItemsInCollection(
+					const std::string &database, 
+					const std::string &collection, 
+					      std::string &errMsg) = 0;
+
+				/**
+				* Retrieve documents from a specified collection
+				* due to limitations of the transfer protocol this might need
+				* to be called multiple times, utilising the skip index to skip
+				* the first n items.
+				* @param collection name of collection
+				* @param skip specify how many documents to skip
+				* @return list of RepoBSONs representing the documents
+				*/
+				virtual std::vector<repo::core::model::bson::RepoBSON>
+					getAllFromCollectionTailable(
+					const std::string                             &database,
+					const std::string                             &collection,
+					const uint64_t                                &skip = 0) = 0;
+
 				/**
 				* Get a list of all available collections
 				*/

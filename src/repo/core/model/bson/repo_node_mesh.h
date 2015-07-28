@@ -21,6 +21,8 @@
 #pragma once
 #include "repo_node.h"
 
+#include "../../../repo_bouncer_global.h"
+
 namespace repo {
 	namespace core {
 		namespace model {
@@ -31,7 +33,6 @@ namespace repo {
 				// Fields specific only to mesh
 				//
 				//------------------------------------------------------------------------------
-				#define REPO_NODE_TYPE_MESH						"mesh"
 				#define REPO_NODE_LABEL_VERTICES				"vertices" //<! vertices array
 				#define REPO_NODE_LABEL_VERTICES_COUNT			"vertices_count" //<! vertices size
 				#define REPO_NODE_LABEL_VERTICES_BYTE_COUNT		"vertices_byte_count"
@@ -54,7 +55,7 @@ namespace repo {
 				#define REPO_NODE_UUID_SUFFIX_MESH				"08" //!< uuid suffix
 				//------------------------------------------------------------------------------
 
-				class MeshNode :public RepoNode
+				class REPO_API_EXPORT MeshNode :public RepoNode
 				{
 				public:
 
@@ -99,6 +100,30 @@ namespace repo {
 						const int                                   &apiLevel = REPO_NODE_API_LEVEL_1,
 						const std::string                           &name = std::string());
 
+
+					/**
+					* --------- Convenience functions -----------
+					*/
+
+					/**
+					* Retrieve a vector of vertices from the bson object
+					*/
+					std::vector<repo_vector_t>* getVertices();
+
+					/**
+					* Retrieve a vector of vertices from the bson object
+					*/
+					std::vector<repo_vector_t>* getNormals();
+
+					/**
+					* Retrieve a vector of UV Channels from the bson object
+					*/
+					std::vector<repo_vector2d_t>* getUVChannels();
+
+					/**
+					* Retrieve a vector of faces from the bson object
+					*/
+					std::vector<repo_face_t>* getFaces();
 				};
 			}//namespace bson
 		} //namespace model

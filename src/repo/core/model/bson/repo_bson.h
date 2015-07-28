@@ -26,10 +26,6 @@
 
 #pragma once
 
-#include "../repo_model_global.h"
-#include "../repo_node_properties.h"
-#include "../repo_node_utils.h"
-
 #if defined(_WIN32) || defined(_WIN64)
 #include <WinSock2.h>
 #include <Windows.h>
@@ -38,17 +34,27 @@
 #endif
 #include <mongo/bson/bson.h> 
 
+#include <boost/log/trivial.hpp>
+
+#include "repo_bson_element.h"
+
+#include "../repo_model_global.h"
+#include "../repo_node_properties.h"
+#include "../repo_node_utils.h"
+
+#include "../../../repo_bouncer_global.h"
+
 namespace repo {
 	namespace core {
 		namespace model {
 			namespace bson {
 
-					enum RepoBSONCommands { CREATE, DROP, UPDATE };
+					enum class RepoBSONCommands { CREATE, DROP, UPDATE };
 
 					//TODO: Eventually we should inherit from a generic BSON object. 
 					//work seems to have been started in here:https://github.com/jbenet/bson-cpp
 					//alternatively we can use a c++ wrapper on https://github.com/mongodb/libbson
-					class RepoBSON : public mongo::BSONObj
+					class REPO_API_EXPORT RepoBSON : public mongo::BSONObj
 					{
 
 					public:
@@ -76,11 +82,71 @@ namespace repo {
 						~RepoBSON() {}
 
 						/**
+						* returns a field from the BSON
+						* @param label name of the field to retrieve
+						* @return returns a RepoBSONElement
+						*/
+						RepoBSONElement getField(std::string label) const
+						{
+							return RepoBSONElement(mongo::BSONObj::getField(label));
+						}
+
+						/**
+						* get a binary field in the form of vector of T
+						* @param bse bson element
+						* @param vectorSize size of the vector
+						* @param vec pointer to a vector to store this data
+						* @return returns true upon success.
+						*/
+						template <class T>
+						bool getBinaryFieldAsVector(
+							const RepoBSONElement &bse,
+							const uint32_t vectorSize,
+							std::vector<T> * vec)
+						{
+							bool success = false;
+							if (vec && bse.binDataType() == mongo::BinDataGeneral)
+							{
+								vec->resize(vectorSize);
+								bse.value();
+								int length;
+								const char *binData = bse.binData(length);
+
+								if (length > vectorSize)
+								{
+									BOOST_LOG_TRIVIAL(warning) << "RepoBSON::getBinaryFieldAsVector : "
+										<< "size of binary data (" << length << ") is bigger than expected vector size(" 
+										<< vectorSize <<")";
+								}
+								if (success = length >= vectorSize)
+								{ 
+									//can copy as long as length is bigger or equal to vectorSize
+									memcpy(&(vec->at(0)), binData, vectorSize);
+									
+								}
+								else{
+									BOOST_LOG_TRIVIAL(error) << "RepoBSON::getBinaryFieldAsVector : "
+										<< "size of binary data (" << length << ") is smaller than expected vector size("
+										<< vectorSize << ")";
+								}
+							}
+							else{
+								BOOST_LOG_TRIVIAL(error) << "RepoBSON::getBinaryFieldAsVector :" <<
+									(!vec ? " nullptr to vector " : "bson element type is not BinDataGeneral!");
+							}
+
+							return success;
+						}
+
+
+					
+
+						/**
 						* Overload of getField function to retreve repoUUID
 						* @param name of the field
 						* @return returns a repoUUID from that field
 						*/
-						repoUUID getUUIDField(std::string label);
+						repoUUID getUUIDField(std::string label) const;
 
 						/**
 						* Get an array of fields given an array element

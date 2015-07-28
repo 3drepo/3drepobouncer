@@ -169,3 +169,94 @@ MeshNode* MeshNode::createMeshNode(
 
 	return new MeshNode(builder.obj());
 }
+
+
+std::vector<repo_vector_t>* MeshNode::getVertices()
+{
+	std::vector<repo_vector_t> *vertices = new std::vector<repo_vector_t>();
+	if (hasField(REPO_NODE_LABEL_VERTICES_COUNT)
+		&& hasField(REPO_NODE_LABEL_VERTICES))
+	{
+		const uint32_t verticesSize = getField(REPO_NODE_LABEL_VERTICES_COUNT).numberInt();
+		getBinaryFieldAsVector(getField(REPO_NODE_LABEL_VERTICES), verticesSize, vertices);
+	}
+
+	return vertices;
+}
+
+
+std::vector<repo_vector_t>* MeshNode::getNormals()
+{
+	std::vector<repo_vector_t> *vertices = new std::vector<repo_vector_t>();
+	if (hasField(REPO_NODE_LABEL_VERTICES_COUNT)
+		&& hasField(REPO_NODE_LABEL_NORMALS))
+	{
+		const uint32_t verticesSize = getField(REPO_NODE_LABEL_VERTICES_COUNT).numberInt();
+		getBinaryFieldAsVector(getField(REPO_NODE_LABEL_NORMALS), verticesSize, vertices);
+	}
+
+	return vertices;
+}
+
+
+std::vector<repo_vector2d_t>* MeshNode::getUVChannels()
+{
+	std::vector<repo_vector2d_t> *channels = new std::vector<repo_vector2d_t>();
+	if (hasField(REPO_NODE_LABEL_VERTICES_COUNT) 
+		&& hasField(REPO_NODE_LABEL_UV_CHANNELS_COUNT)
+		&& hasField(REPO_NODE_LABEL_UV_CHANNELS))
+	{
+		const uint32_t uvChannelSize = getField(REPO_NODE_LABEL_VERTICES_COUNT).numberInt() 
+			* getField(REPO_NODE_LABEL_UV_CHANNELS_COUNT).numberInt();
+		getBinaryFieldAsVector(getField(REPO_NODE_LABEL_UV_CHANNELS), uvChannelSize, channels);
+	}
+
+	return channels;
+}
+
+std::vector<repo_face_t>* MeshNode::getFaces()
+{
+	std::vector<repo_face_t> *faces = new std::vector<repo_face_t>();
+	if (hasField(REPO_NODE_LABEL_FACES)
+		&& hasField(REPO_NODE_LABEL_FACES_BYTE_COUNT)
+		&& hasField(REPO_NODE_LABEL_FACES_COUNT))
+	{
+		int32_t facesCount     = getField(REPO_NODE_LABEL_FACES_COUNT).numberInt();
+		int32_t facesByteCount = getField(REPO_NODE_LABEL_FACES_BYTE_COUNT).numberInt();
+
+		faces->resize(facesCount);
+		std::vector <uint32_t> *serializedFaces = new std::vector<uint32_t>();
+		
+		serializedFaces->resize(facesByteCount / sizeof(uint32_t));
+
+		getBinaryFieldAsVector(getField(REPO_NODE_LABEL_FACES), facesByteCount, serializedFaces);
+
+		// Retrieve numbers of vertices for each face and subsequent
+		// indices into the vertex array.
+		// In API level 1, mesh is represented as
+		// [n1, v1, v2, ..., n2, v1, v2...]
+		
+		unsigned int counter = 0;
+		int mNumIndicesIndex = 0;
+		while (counter < facesCount)
+		{
+			int mNumIndices = serializedFaces->at(mNumIndicesIndex);
+			repo_face_t face;
+			face.numIndices = mNumIndices;
+			uint32_t *indices = new uint32_t[mNumIndices];
+			for (int i = 0; i < mNumIndices; ++i)
+				indices[i] = serializedFaces->at(mNumIndicesIndex + 1 + i);
+			face.indices = indices;
+			(*faces)[counter] = face;
+			mNumIndicesIndex = mNumIndicesIndex + mNumIndices + 1;
+			++counter;
+		}
+
+		// Memory cleanup
+		if (NULL != serializedFaces)
+			delete[] serializedFaces;
+
+	}
+
+	return faces;
+}
