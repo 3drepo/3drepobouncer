@@ -164,7 +164,6 @@ std::vector<repo::core::model::bson::RepoBSON>
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	if (handler)
 		vector =  handler->getAllFromCollectionTailable(database, collection);
-
 	return vector;
 }
 

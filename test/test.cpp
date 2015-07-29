@@ -129,7 +129,13 @@ int main(int argc, char* argv[]){
 
 	//testDeletion(controller, token);
 
-	controller->getAllFromCollectionContinuous(token, "test", "bridge.scene");
+	std::vector<repo::core::model::bson::RepoBSON> bsons = controller->getAllFromCollectionContinuous(token, "test", "bridge.history");
+
+	std::cout << "obtained " << bsons.size() << std::endl;
+
+	std::cout << "first bson : " << bsons.at(0).toString() << std::endl;
+	//<< " bsons. first bson has a type of " << bsons.at(0).getStringField(REPO_NODE_LABEL_TYPE);
+
 
 	////insertARepoNode(dbHandler);
 

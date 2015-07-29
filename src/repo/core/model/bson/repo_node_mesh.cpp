@@ -253,8 +253,8 @@ std::vector<repo_face_t>* MeshNode::getFaces()
 		}
 
 		// Memory cleanup
-		if (NULL != serializedFaces)
-			delete[] serializedFaces;
+		if (serializedFaces)
+			delete serializedFaces;
 
 	}
 

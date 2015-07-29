@@ -310,7 +310,8 @@ std::vector<repo::core::model::bson::RepoBSON>
 
 		while (cursor.get() && cursor->more())
 		{
-			bsons.push_back(repo::core::model::bson::RepoBSON(cursor->nextSafe()));
+			//have to copy since the bson info gets cleaned up when cursor gets out of scope
+			bsons.push_back(repo::core::model::bson::RepoBSON(cursor->nextSafe().copy()));
 		}
 	}
 	catch (mongo::DBException& e)
