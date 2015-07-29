@@ -49,6 +49,7 @@
 #include "lib/repo_broadcaster.h"
 #include "lib/repo_listener_abstract.h"
 #include "manipulator/repo_manipulator.h"
+#include "manipulator/graph/repo_scene.h"
 
 
 namespace repo{
@@ -228,6 +229,28 @@ namespace repo{
 
 
 		std::string getHostAndPort(RepoToken *token) { return token->databaseAd; }
+
+
+		/*
+		*	---------------- Database Retrieval -----------------------
+		*/
+
+		/**
+		* Retrieve a RepoScene with a specific revision loaded.
+		* @param token Authentication token
+		* @param database the database the collection resides in
+		* @param project name of the project
+		* @param uuid if headRevision, uuid represents the branch id, 
+		*              otherwise the unique id of the revision branch
+		* @param headRevision true if retrieving head revision
+		* @return returns a pointer to a repoScene.
+		*/
+		repo::manipulator::graph::RepoScene* fetchScene(
+			const RepoToken      *token,
+			const std::string    &database,
+			const std::string    &project,
+			const std::string    &uuid,
+			const bool           &headRevision = false);
 
 		/*
 		*	------- Database Operations (insert/delete/update) ---------

@@ -68,7 +68,7 @@ repo::core::model::bson::RepoBSON* RepoManipulator::createCredBSON(
 
 uint64_t RepoManipulator::countItemsInCollection(
 	const std::string                             &databaseAd,
-	const repo::core::model::bson::RepoBSON*	  &cred,
+	const repo::core::model::bson::RepoBSON*	  cred,
 	const std::string                             &database,
 	const std::string                             &collection,
 	std::string                                   &errMsg)
@@ -86,7 +86,7 @@ uint64_t RepoManipulator::countItemsInCollection(
 
 bool RepoManipulator::dropCollection(
 	const std::string                             &databaseAd,
-	const repo::core::model::bson::RepoBSON*	  &cred,
+	const repo::core::model::bson::RepoBSON*	  cred,
 	const std::string                             &databaseName,
 	const std::string                             &collectionName,
 	std::string			                          &errMsg
@@ -105,7 +105,7 @@ bool RepoManipulator::dropCollection(
 
 bool RepoManipulator::dropDatabase(
 	const std::string                             &databaseAd,
-	const repo::core::model::bson::RepoBSON*	  &cred,
+	const repo::core::model::bson::RepoBSON*	  cred,
 	const std::string                             &databaseName,
 	std::string			                          &errMsg
 	)
@@ -123,7 +123,7 @@ bool RepoManipulator::dropDatabase(
 
 std::list<std::string> RepoManipulator::fetchDatabases(
 	const std::string                             &databaseAd,
-	const repo::core::model::bson::RepoBSON*	  &cred
+	const repo::core::model::bson::RepoBSON*	  cred
 	)
 {
 	std::list<std::string> list;
@@ -137,7 +137,7 @@ std::list<std::string> RepoManipulator::fetchDatabases(
 
 std::list<std::string> RepoManipulator::fetchCollections(
 	const std::string                             &databaseAd,
-	const repo::core::model::bson::RepoBSON*	  &cred,
+	const repo::core::model::bson::RepoBSON*	  cred,
 	const std::string                             &database
 	)
 {
@@ -151,10 +151,66 @@ std::list<std::string> RepoManipulator::fetchCollections(
 	return list;
 }
 
+repo::manipulator::graph::RepoScene* RepoManipulator::fetchScene(
+	const std::string                             &databaseAd,
+	const repo::core::model::bson::RepoBSON*	  cred,
+	const std::string                             &database,
+	const std::string                             &project,
+	const repoUUID                                &uuid,
+	const bool                                    &headRevision)
+{
+	graph::RepoScene* scene = nullptr;
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+	{
+		//not setting a scene if we don't have a handler since we 
+		//retreive anything from the database.
+		scene = new graph::RepoScene(database, project);
+		if (scene)
+		{
+			if (headRevision)
+				scene->setBranch(uuid);
+			else
+				scene->setRevision(uuid);
+
+			std::string errMsg;
+			if (scene->loadRevision(handler, errMsg))
+			{
+				BOOST_LOG_TRIVIAL(trace) << "Loaded " <<
+					(headRevision ? ("head revision of branch" + UUIDtoString(uuid))
+					: ("revision " + UUIDtoString(uuid)))
+					<< " of " << database << "." << project;
+
+				if (scene->loadScene(handler, errMsg))
+				{
+					BOOST_LOG_TRIVIAL(trace) << "Loaded Scene";
+				}
+				else{
+					delete scene;
+					scene = nullptr;
+				}
+			}
+			else
+			{
+				BOOST_LOG_TRIVIAL(error) << "Failed to load revision for " 
+				 << database << "." << project << " : " << errMsg;
+				delete scene;
+				scene = nullptr;
+			}
+		}
+		else{
+			BOOST_LOG_TRIVIAL(error) << "Failed to create a RepoScene(out of memory?)!";
+		}
+	}
+
+	return scene;
+}
+
 std::vector<repo::core::model::bson::RepoBSON>
 	RepoManipulator::getAllFromCollectionTailable(
 		const std::string                             &databaseAd,
-		const repo::core::model::bson::RepoBSON*	  &cred,
+		const repo::core::model::bson::RepoBSON*	  cred,
 		const std::string                             &database,
 		const std::string                             &collection,
 		const uint64_t                                &skip)
@@ -169,7 +225,7 @@ std::vector<repo::core::model::bson::RepoBSON>
 
 repo::core::model::bson::CollectionStats RepoManipulator::getCollectionStats(
 	const std::string                             &databaseAd,
-	const repo::core::model::bson::RepoBSON*	  &cred,
+	const repo::core::model::bson::RepoBSON*	  cred,
 	const std::string                             &database,
 	const std::string                             &collection,
 	std::string                                   &errMsg)

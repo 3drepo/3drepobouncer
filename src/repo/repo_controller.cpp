@@ -113,6 +113,31 @@ uint64_t RepoController::countItemsInCollection(
 	return numItems;
 }
 
+repo::manipulator::graph::RepoScene* RepoController::fetchScene(
+	const RepoToken      *token,
+	const std::string    &database,
+	const std::string    &collection,
+	const std::string    &uuid,
+	const bool           &headRevision)
+{
+	repo::manipulator::graph::RepoScene* scene = 0;
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+
+		scene = worker->fetchScene(token->databaseAd, token->credentials,
+			database, collection, stringToUUID(uuid), headRevision);
+
+		workerPool.push(worker);
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Trying to fetch scene without a Repo Token!";
+	}
+
+	return scene;
+}
+
 std::vector < repo::core::model::bson::RepoBSON >
 	RepoController::getAllFromCollectionContinuous(
 		RepoToken            *token,

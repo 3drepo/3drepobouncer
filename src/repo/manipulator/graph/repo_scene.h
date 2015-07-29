@@ -46,10 +46,6 @@ namespace repo{
 			class RepoScene : public AbstractGraph
 			{
 				public:
-					/**
-					* Default Constructor
-					*/
-					RepoScene();
 
 					/**
 					* Used for loading scene graphs from database
@@ -60,14 +56,12 @@ namespace repo{
 					* NOTE: This merely sets up the settings of the scene graph
 					* the graph itself is not loaded until loadScene() is called!
 					*
-					* @param dbHandler database handler (to read from/write to)
 					* @param database name  of the database
 					* @param projectName name of the project
 					* @param sceneExt extension name of the scene graph (Default: "scene")
 					* @param revExt extension name of the revision graph (Default: "history")
 					*/
 					RepoScene(
-						repo::core::handler::AbstractDatabaseHandler *dbHandler,
 						const std::string                                  &database = std::string(),
 						const std::string                                  &projectName = std::string(),
 						const std::string                                  &sceneExt = REPO_COLLECTION_SCENE,
@@ -124,27 +118,12 @@ namespace repo{
 					* @return returns true upon success
 					*/
 					bool commit(
+						repo::core::handler::AbstractDatabaseHandler *handler,
 						std::string &errMsg,
 						const std::string &userName,
 						const std::string &message=std::string(),
 						const std::string &tag=std::string());
 
-					/**
-					* Set DatabaseHandler. This will overwrite the one currently referenced (if any)
-					* @param newHandler new reference to database handler.
-					*/
-					void setDatabaseHandler(repo::core::handler::AbstractDatabaseHandler *newHandler)
-					{
-						if (dbHandler)
-						{
-							BOOST_LOG_TRIVIAL(warning) << "RepoScene.setDatabaseHandler() called when a handler is already referenced!";
-						}
-						
-						if (newHandler)
-						{
-							dbHandler = newHandler;
-						}
-					}
 
 					/**
 					* Set project and database names. This will overwrite the current ones
@@ -179,10 +158,13 @@ namespace repo{
 					* Load revision information of the configured branch/revision
 					* If setProjectRevision() and setProjectBranch was never called,
 					* it will load master/head.
+					* @param handler database handler to load from
 					* @param error messages will be returned here
 					* @return returns true upon success.
 					*/
-					bool loadRevision(std::string &errMsg);
+					bool loadRevision(
+						repo::core::handler::AbstractDatabaseHandler *handler,
+						std::string &errMsg);
 
 					/**
 					* Load Scene into Scene graph object base on the
@@ -190,7 +172,9 @@ namespace repo{
 					* @param error messages will be returned here
 					* @return returns true upon success.
 					*/
-					bool loadScene(std::string &errMsg);
+					bool loadScene(
+						repo::core::handler::AbstractDatabaseHandler *handler, 
+						std::string &errMsg);
 
 					/**
 					* Prints the statics of this Scene graph to an IO stream
@@ -248,6 +232,7 @@ namespace repo{
 					* @return returns true upon success
 					*/
 					bool commitProjectSettings(
+						repo::core::handler::AbstractDatabaseHandler *handler,
 						std::string &errMsg,
 						const std::string &userName);
 
@@ -262,6 +247,7 @@ namespace repo{
 					* @return returns true upon success
 					*/
 					bool commitRevisionNode(
+						repo::core::handler::AbstractDatabaseHandler *handler,
 						std::string &errMsg,
 						repo::core::model::bson::RevisionNode *&newRevNode,
 						const std::string &userName,
@@ -275,6 +261,7 @@ namespace repo{
 					* @return returns true upon success
 					*/
 					bool commitSceneChanges(
+						repo::core::handler::AbstractDatabaseHandler *handler,
 						std::string &errMsg);
 
 					/**
@@ -282,7 +269,10 @@ namespace repo{
 					* @params new nodes to add to scene graph
 					* @return returns true if scene graph populated with no errors
 					*/
-					bool populate(std::vector<repo::core::model::bson::RepoBSON> nodes, std::string errMsg);
+					bool populate(
+						repo::core::handler::AbstractDatabaseHandler *handler, 
+						std::vector<repo::core::model::bson::RepoBSON> nodes, 
+						std::string &errMsg);
 
 					/**
 					* Populate the collections with the given node sets

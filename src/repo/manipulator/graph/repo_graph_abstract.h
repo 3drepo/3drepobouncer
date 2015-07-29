@@ -34,10 +34,6 @@ namespace repo{
 			{
 			public:
 
-				/**
-				* Default Constructor
-				*/
-				AbstractGraph();
 
 				/**
 				* Constructor - instantiates a new abstract graph with settings
@@ -47,7 +43,6 @@ namespace repo{
 				* @param projectName name of the project
 				*/
 				AbstractGraph(
-					repo::core::handler::AbstractDatabaseHandler *dbHandler,
 					const std::string                                  &databaseName = std::string(),
 					const std::string                                  &projectName = std::string());
 
@@ -57,7 +52,6 @@ namespace repo{
 				~AbstractGraph();
 
 			protected:
-				repo::core::handler::AbstractDatabaseHandler *dbHandler; /*! handler to use for db operations*/
 				std::string databaseName;/*! name of the database */
 				std::string projectName; /*! name of the project */
 

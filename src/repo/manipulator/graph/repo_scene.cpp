@@ -30,19 +30,12 @@ using namespace repo::manipulator::graph;
 
 namespace model = repo::core::model;
 
-RepoScene::RepoScene() : 
-	AbstractGraph()
-{
-
-}
-
 RepoScene::RepoScene(
-	repo::core::handler::AbstractDatabaseHandler *dbHandler,
 	const std::string &database,
 	const std::string &projectName,
 	const std::string &sceneExt,
 	const std::string &revExt)
-	: AbstractGraph(dbHandler, database, projectName),
+	: AbstractGraph(database, projectName),
 	sceneExt(sceneExt),
 	revExt(revExt),
 	headRevision(true),
@@ -67,7 +60,7 @@ RepoScene::RepoScene(
 	const repo::core::model::bson::RepoNodeSet &unknowns,
 	const std::string                          &sceneExt,
 	const std::string                          &revExt)
-	: AbstractGraph(0, "", ""),
+	: AbstractGraph("", ""),
 	sceneExt(sceneExt),
 	revExt(revExt),
 	headRevision(true),
@@ -179,6 +172,7 @@ bool RepoScene::addNodeToMaps(model::bson::RepoNode *node, std::string &errMsg)
 }
 
 bool RepoScene::commit(
+	repo::core::handler::AbstractDatabaseHandler *handler,
 	std::string &errMsg, 
 	const std::string &userName, 
 	const std::string &message,
@@ -188,7 +182,7 @@ bool RepoScene::commit(
 	bool success = true;
 
 	//Sanity check that everything we need is here
-	if (!dbHandler)
+	if (!handler)
 	{
 		errMsg = "Cannot commit to the database - no database handler assigned.";
 		return false;
@@ -202,15 +196,15 @@ bool RepoScene::commit(
 		return false;
 	}
 
-	if (success &= commitProjectSettings(errMsg, userName))
+	if (success &= commitProjectSettings(handler, errMsg, userName))
 	{
 		BOOST_LOG_TRIVIAL(info) << "Commited project settings, commiting revision...";
 		model::bson::RevisionNode *newRevNode = 0;
-		if (success &= commitRevisionNode(errMsg, newRevNode, userName, message, tag))
+		if (success &= commitRevisionNode(handler, errMsg, newRevNode, userName, message, tag))
 		{
 			BOOST_LOG_TRIVIAL(info) << "Commited revision node, commiting scene nodes...";
 			//commited the revision node, commit the modification on the scene
-			if (success &= commitSceneChanges(errMsg))
+			if (success &= commitSceneChanges(handler, errMsg))
 			{
 				//Succeed in commiting everything.
 				//Update Revision Node and reset state.
@@ -235,6 +229,7 @@ bool RepoScene::commit(
 }
 
 bool RepoScene::commitProjectSettings(
+	repo::core::handler::AbstractDatabaseHandler *handler,
 	std::string &errMsg,
 	const std::string &userName)
 {
@@ -246,7 +241,7 @@ bool RepoScene::commitProjectSettings(
 	
 	if (success)
 	{
-		success &= dbHandler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, *projectSettings, false, errMsg);
+		success &= handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, *projectSettings, false, errMsg);
 	}
 
 	return success;
@@ -254,6 +249,7 @@ bool RepoScene::commitProjectSettings(
 }
 
 bool RepoScene::commitRevisionNode(
+	repo::core::handler::AbstractDatabaseHandler *handler,
 	std::string &errMsg,
 	model::bson::RevisionNode *&newRevNode,
 	const std::string &userName,
@@ -267,7 +263,7 @@ bool RepoScene::commitRevisionNode(
 
 	if (!unRevisioned && !revNode)
 	{
-		if (!loadRevision(errMsg))
+		if (!loadRevision(handler, errMsg))
 			return false;
 		parent.push_back(revNode->getUniqueID());
 	}
@@ -292,10 +288,11 @@ bool RepoScene::commitRevisionNode(
 	}
 
 
-	return success && dbHandler->insertDocument(databaseName, projectName +"." + revExt, *newRevNode, errMsg);
+	return success && handler->insertDocument(databaseName, projectName +"." + revExt, *newRevNode, errMsg);
 }
 
 bool RepoScene::commitSceneChanges(
+	repo::core::handler::AbstractDatabaseHandler *handler,
 	std::string &errMsg)
 {
 	bool success = true;
@@ -315,28 +312,34 @@ bool RepoScene::commitSceneChanges(
 	for (it = nodesToCommit.begin(); it != nodesToCommit.end(); ++it)
 	{
 		model::bson::RepoNode *node = nodesByUniqueID[sharedIDtoUniqueID[*it]];
-		if (node->objsize() > dbHandler->documentSizeLimit())
+		if (node->objsize() > handler->documentSizeLimit())
 		{
 			success = false;
 			errMsg += "Node '" + UUIDtoString(node->getUniqueID()) + "' over 16MB in size is not committed.";
 		}
 		else
-			success &= dbHandler->insertDocument(databaseName, projectName + "."+ sceneExt, *node, errMsg);
+			success &= handler->insertDocument(databaseName, projectName + "."+ sceneExt, *node, errMsg);
 	}
 
 
 	return success;
 }
 
-bool RepoScene::loadRevision(std::string &errMsg){
+bool RepoScene::loadRevision(
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	std::string &errMsg){
 	bool success = true;
+
+	if (!handler)
+		return false;
+
 	model::bson::RepoBSON bson;
 	if (headRevision){
-		bson = dbHandler->findOneBySharedID(databaseName, projectName + "." +
+		bson = handler->findOneBySharedID(databaseName, projectName + "." +
 			revExt, branch, REPO_NODE_REVISION_LABEL_TIMESTAMP);
 	}
 	else{
-		bson = dbHandler->findOneByUniqueID(databaseName, projectName + "." + revExt, revision);
+		bson = handler->findOneByUniqueID(databaseName, projectName + "." + revExt, revision);
 	}
 
 	if (bson.isEmpty()){
@@ -350,25 +353,33 @@ bool RepoScene::loadRevision(std::string &errMsg){
 	return success;
 }
 
-bool RepoScene::loadScene(std::string &errMsg){
+bool RepoScene::loadScene(
+	repo::core::handler::AbstractDatabaseHandler *handler, 
+	std::string &errMsg){
 	bool success = true;
+	
+	if (!handler) return false;
+
 	if (!revNode){
 		//try to load revision node first.
-		if (!loadRevision(errMsg)) return false;
+		if (!loadRevision(handler, errMsg)) return false;
 	}
 
 	//Get the relevant nodes from the scene graph using the unique IDs stored in this revision node
 	model::bson::RepoBSON idArray = revNode->getObjectField(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS);
-	std::vector<model::bson::RepoBSON> nodes = dbHandler->findAllByUniqueIDs(
+	std::vector<model::bson::RepoBSON> nodes = handler->findAllByUniqueIDs(
 		databaseName, projectName + "." + sceneExt, idArray);
 
 	BOOST_LOG_TRIVIAL(info) << "# of nodes in this scene = " << nodes.size();
 
-	return populate(nodes, errMsg);
+	return populate(handler, nodes, errMsg);
 
 }
 
-bool RepoScene::populate(std::vector<model::bson::RepoBSON> nodes, std::string errMsg)
+bool RepoScene::populate(
+	repo::core::handler::AbstractDatabaseHandler *handler, 
+	std::vector<model::bson::RepoBSON> nodes, 
+	std::string &errMsg)
 {
 	bool success = true;
 
@@ -439,10 +450,10 @@ bool RepoScene::populate(std::vector<model::bson::RepoBSON> nodes, std::string e
 		model::bson::ReferenceNode *reference = (model::bson::ReferenceNode*)*refIt;
 
 		//construct a new RepoScene with the information from reference node and append this graph to the Scene
-		RepoScene *refGraph = new RepoScene(dbHandler, databaseName, reference->getProjectName(), sceneExt, revExt);
+		RepoScene *refGraph = new RepoScene(databaseName, reference->getProjectName(), sceneExt, revExt);
 		refGraph->setRevision(reference->getRevisionID());
 
-		if (refGraph->loadScene(errMsg)){
+		if (refGraph->loadScene(handler, errMsg)){
 			referenceToScene[reference->getSharedID()];
 		}
 		else{

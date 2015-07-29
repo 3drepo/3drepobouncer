@@ -24,34 +24,34 @@
 
 #include <string>
 
-#include "repo_model_convertor_config.h"
-#include "../graph/repo_scene.h"
+#include "repo_model_import_config.h"
+#include "../../graph/repo_scene.h"
 
 namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
-			class AbstractModelConvertor
+			class AbstractModelImport
 			{
 			public:
 				/**
 				* Default Constructor, generate model with default settings
 				*/
-				AbstractModelConvertor();
+				AbstractModelImport();
 
 				/**
-				* Create AbstractModelConvertor with specific settings
+				* Create AbstractModelImport with specific settings
 				* NOTE: The destructor will destroy the settings object referenced
 				* in this object!
 				* @param settings
 				*/
-				AbstractModelConvertor(ModelConvertorConfig *settings);
+				AbstractModelImport(ModelImportConfig *settings);
 
 				/**
 				* Default Deconstructor
 				* NOTE: The destructor will destroy the settings object referenced
 				* in this object!
 				*/
-				~AbstractModelConvertor();
+				~AbstractModelImport();
 
 
 				/**
@@ -89,11 +89,11 @@ namespace repo{
 				*/
 				std::string  getFileName(std::string fullPath);
 
-				ModelConvertorConfig *settings; /*! Stores related settings for model import */
+				ModelImportConfig *settings; /*! Stores related settings for model import */
 
 			};
 
-		} //namespace AbstractModelConvertor
+		} //namespace AbstractModelImport
 	} //namespace manipulator
 } //namespace repo
 

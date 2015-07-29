@@ -22,7 +22,7 @@
 #pragma once
 #include <string>
 #include "../core/handler/repo_database_handler_mongo.h"
-
+#include "graph/repo_scene.h"
 
 
 namespace repo{
@@ -83,7 +83,7 @@ namespace repo{
 			*/
 			bool dropCollection(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  &cred,
+				const repo::core::model::bson::RepoBSON*	  cred,
 				const std::string                             &databaseName,
 				const std::string                             &collectionName,
 				std::string			                          &errMsg = std::string()
@@ -99,7 +99,7 @@ namespace repo{
 			*/
 			bool dropDatabase(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  &cred,
+				const repo::core::model::bson::RepoBSON*	  cred,
 				const std::string                             &databaseName,
 				std::string			                          &errMsg = std::string()
 				);
@@ -112,7 +112,7 @@ namespace repo{
 			*/
 			std::list<std::string> fetchDatabases(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  &cred
+				const repo::core::model::bson::RepoBSON*	  cred
 				);
 
 
@@ -125,9 +125,28 @@ namespace repo{
 			*/
 			std::list<std::string> fetchCollections(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  &cred,
+				const repo::core::model::bson::RepoBSON*	  cred,
 				const std::string                             &database
 				);
+			
+			/**
+			* Retrieve a RepoScene with a specific revision loaded.
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param database the database the collection resides in
+			* @param project name of the project
+			* @param uuid if headRevision, uuid represents the branch id,
+			*              otherwise the unique id of the revision branch
+			* @param headRevision true if retrieving head revision
+			* @return returns a pointer to a repoScene.
+			*/
+			repo::manipulator::graph::RepoScene* fetchScene(
+				const std::string                             &databaseAd,
+				const repo::core::model::bson::RepoBSON*	  cred,
+				const std::string                             &database,
+				const std::string                             &collection,
+				const repoUUID                                &uuid,
+				const bool                                    &headRevision = false);
 
 			/**
 			* Retrieve documents from a specified collection
@@ -143,7 +162,7 @@ namespace repo{
 			std::vector<repo::core::model::bson::RepoBSON> 
 				getAllFromCollectionTailable(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  &cred,
+				const repo::core::model::bson::RepoBSON*	  cred,
 				const std::string                             &database,
 				const std::string                             &collection, 
 				const uint64_t                                &skip=0);
@@ -159,7 +178,7 @@ namespace repo{
 			*/
 			repo::core::model::bson::CollectionStats getCollectionStats(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  &cred,
+				const repo::core::model::bson::RepoBSON*	  cred,
 				const std::string                             &database,
 				const std::string                             &collection,
 				std::string	                                  &errMsg=std::string());
@@ -175,7 +194,7 @@ namespace repo{
 			*/
 			uint64_t countItemsInCollection(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  &cred,
+				const repo::core::model::bson::RepoBSON*	  cred,
 				const std::string                             &database,
 				const std::string                             &collection,
 				std::string                                   &errMsg=std::string());

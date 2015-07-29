@@ -29,11 +29,11 @@ namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
 
-			class ModelConvertorConfig
+			class ModelImportConfig
 			{
 			public:
-				ModelConvertorConfig();
-				~ModelConvertorConfig();
+				ModelImportConfig();
+				~ModelImportConfig();
 
 				/**
 				* ---------------- Getters -------------------------

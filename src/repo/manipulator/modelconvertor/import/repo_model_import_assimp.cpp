@@ -20,37 +20,37 @@
 */
 
 
-#include "repo_model_convertor_assimp.h"
+#include "repo_model_import_assimp.h"
 
 #include <fstream>
 #include <boost/filesystem.hpp>
 
-#include "../../core/model/bson/repo_bson_factory.h"
-#include "../../core/model/repo_node_utils.h"
+#include "../../../core/model/bson/repo_bson_factory.h"
+#include "../../../core/model/repo_node_utils.h"
 
 using namespace repo::manipulator::modelconvertor;
 
 namespace model = repo::core::model;
 
-AssimpModelConvertor::AssimpModelConvertor()
+AssimpModelImport::AssimpModelImport()
 {
 	//set default ASSIMP debone threshold
 	settings->setDeboneThreshold(AI_DEBONE_THRESHOLD);
 }
 
-AssimpModelConvertor::AssimpModelConvertor(ModelConvertorConfig *settings) :
-AbstractModelConvertor(settings)
+AssimpModelImport::AssimpModelImport(ModelImportConfig *settings) :
+AbstractModelImport(settings)
 {
 
 }
 
-AssimpModelConvertor::~AssimpModelConvertor()
+AssimpModelImport::~AssimpModelImport()
 {
 	if (assimpScene)
 		importer.FreeScene();
 }
 
-uint32_t AssimpModelConvertor::composeAssimpPostProcessingFlags(
+uint32_t AssimpModelImport::composeAssimpPostProcessingFlags(
 	uint32_t flag)
 {
 	if (settings->getCalculateTangentSpace())
@@ -160,7 +160,7 @@ uint32_t AssimpModelConvertor::composeAssimpPostProcessingFlags(
 	return flag;
 }
 
-model::bson::CameraNode* AssimpModelConvertor::createCameraRepoNode(
+model::bson::CameraNode* AssimpModelImport::createCameraRepoNode(
 	const aiCamera *assimpCamera)
 {
 	std::string cameraName(assimpCamera->mName.data);
@@ -184,7 +184,7 @@ model::bson::CameraNode* AssimpModelConvertor::createCameraRepoNode(
 	return cameraNode;
 
 }
-model::bson::MaterialNode* AssimpModelConvertor::createMaterialRepoNode(
+model::bson::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 	aiMaterial *material,
 	std::string name)
 {
@@ -289,7 +289,7 @@ model::bson::MaterialNode* AssimpModelConvertor::createMaterialRepoNode(
 	return materialNode;
 }
 
-model::bson::MeshNode* AssimpModelConvertor::createMeshRepoNode(
+model::bson::MeshNode* AssimpModelImport::createMeshRepoNode(
 	const aiMesh *assimpMesh,
 	const std::vector<model::bson::RepoNode *> &materials)
 {
@@ -462,7 +462,7 @@ model::bson::MeshNode* AssimpModelConvertor::createMeshRepoNode(
 	return meshNode;
 }
 
-model::bson::MetadataNode* AssimpModelConvertor::createMetadataRepoNode(
+model::bson::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 	const aiMetadata             *assimpMeta,
 	const std::string            &metadataName,
 	const std::vector<repoUUID> &parents)
@@ -535,7 +535,7 @@ model::bson::MetadataNode* AssimpModelConvertor::createMetadataRepoNode(
 
 }
 
-model::bson::RepoNodeSet AssimpModelConvertor::createTransformationNodesRecursive(
+model::bson::RepoNodeSet AssimpModelImport::createTransformationNodesRecursive(
 	const aiNode                                         *assimpNode,
 	const std::map<std::string, model::bson::RepoNode *> &cameras,
 	const std::vector<model::bson::RepoNode *>           &meshes,
@@ -626,7 +626,7 @@ model::bson::RepoNodeSet AssimpModelConvertor::createTransformationNodesRecursiv
 	return transNodes;
 }
 
-repo::manipulator::graph::RepoScene * AssimpModelConvertor::generateRepoScene()
+repo::manipulator::graph::RepoScene * AssimpModelImport::generateRepoScene()
 {
 	repo::manipulator::graph::RepoScene *sceneGraph = 0;
 
@@ -759,7 +759,7 @@ repo::manipulator::graph::RepoScene * AssimpModelConvertor::generateRepoScene()
 	return sceneGraph;
 }
 
-bool AssimpModelConvertor::importModel(std::string filePath, std::string &errMsg)
+bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
 {
 	bool success = true;
 
@@ -802,7 +802,7 @@ bool AssimpModelConvertor::importModel(std::string filePath, std::string &errMsg
 	return success;
 }
 
-void AssimpModelConvertor::loadTextures(std::string dirPath){
+void AssimpModelImport::loadTextures(std::string dirPath){
 
 	for (uint32_t m = 0; m < assimpScene->mNumMaterials; ++m)
 	{
@@ -868,7 +868,7 @@ void AssimpModelConvertor::loadTextures(std::string dirPath){
 
 }
 
-void AssimpModelConvertor::setAssimpProperties(){
+void AssimpModelImport::setAssimpProperties(){
 
 	if (settings->getCalculateTangentSpace())
 		importer.SetPropertyFloat(AI_CONFIG_PP_CT_MAX_SMOOTHING_ANGLE, settings->getCalculateTangentSpaceMaxSmoothingAngle());
