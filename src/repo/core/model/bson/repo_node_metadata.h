@@ -36,7 +36,7 @@ namespace repo {
 				//------------------------------------------------------------------------------
 
 
-				class MetadataNode :public RepoNode
+				class REPO_API_EXPORT MetadataNode :public RepoNode
 				{
 				public:
 

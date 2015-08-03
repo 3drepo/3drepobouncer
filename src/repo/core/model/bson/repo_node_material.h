@@ -44,7 +44,7 @@ namespace repo {
 				//------------------------------------------------------------------------------
 
 
-				class MaterialNode :public RepoNode
+				class REPO_API_EXPORT MaterialNode :public RepoNode
 				{
 				public:
 
@@ -76,6 +76,17 @@ namespace repo {
 						const repo_material_t &material,
 						const std::string     &name,
 						const int     &apiLevel = REPO_NODE_API_LEVEL_1);
+
+
+					/**
+					* --------- Convenience functions -----------
+					*/
+
+					/**
+					* Get material information from the node as a struct
+					* @return returns a repo_material_t containing the information
+					*/
+					repo_material_t MaterialNode::getMaterialStruct() const;
 
 				};
 			}//namespace bson

@@ -106,24 +106,32 @@ namespace repo {
 					*/
 
 					/**
-					* Retrieve a vector of vertices from the bson object
+					* Retrieve a vector of Colors from the bson object
 					*/
-					std::vector<repo_vector_t>* getVertices();
-
-					/**
-					* Retrieve a vector of vertices from the bson object
-					*/
-					std::vector<repo_vector_t>* getNormals();
-
-					/**
-					* Retrieve a vector of UV Channels from the bson object
-					*/
-					std::vector<repo_vector2d_t>* getUVChannels();
+					std::vector<repo_color4d_t>* getColors() const;
 
 					/**
 					* Retrieve a vector of faces from the bson object
 					*/
-					std::vector<repo_face_t>* getFaces();
+					std::vector<repo_face_t>* getFaces() const;
+
+
+					/**
+					* Retrieve a vector of vertices from the bson object
+					*/
+					std::vector<repo_vector_t>* getNormals() const;
+
+					/**
+					* Retrieve a vector of UV Channels from the bson object
+					*/
+					std::vector<repo_vector2d_t>* getUVChannels() const;
+
+					/**
+					* Retrieve a vector of vertices from the bson object
+					*/
+					std::vector<repo_vector_t>* getVertices() const;
+
+
 				};
 			}//namespace bson
 		} //namespace model

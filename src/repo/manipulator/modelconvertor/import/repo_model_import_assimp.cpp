@@ -16,7 +16,7 @@
 */
 
 /**
-* Allows Import/Export functionality into/output Repo world using ASSIMP
+* Allows Import functionality into/output Repo world using ASSIMP
 */
 
 

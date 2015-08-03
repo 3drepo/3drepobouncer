@@ -29,7 +29,11 @@ namespace repo{
 	namespace core{
 		namespace model{
 			namespace bson{
-				class RepoNode : public RepoBSON
+
+				enum class NodeType{ CAMERA, MAP, MATERIAL, MESH, METADATA, REFERENCE, 
+					REVISION, TEXTURE, TRANSFORMATION, UNKNOWN};
+
+				class REPO_API_EXPORT RepoNode : public RepoBSON
 				{
 					public:
 		
@@ -48,7 +52,7 @@ namespace repo{
 						/**
 						* Default Deconstructor
 						*/
-						~RepoNode();
+						virtual ~RepoNode();
 						/**
 						* A static function (intended for use by RepoBSONFactory) to create
 						* a repo node object.
@@ -128,25 +132,51 @@ namespace repo{
 						*	------------- Convenience getters --------------
 						*/
 
-						//FIXME: if we don't want convenince fields we need to use getFields()
+						
+
+						/**
+						* Get the name of the node
+						* @return returns name or "" if no name
+						*/
+						std::string getName() const
+						{
+							return std::string(getStringField(REPO_NODE_LABEL_NAME));
+						}
 
 						/**
 						* Get the shared ID from the object
 						* @return returns the shared ID of the object
 						*/
-						repoUUID getSharedID(){ return sharedID; }
+						repoUUID getSharedID() const { return sharedID; }
+
+
+						/**
+						* Get the type of node
+						* @return returns the type as a string
+						*/
+						std::string getType() const
+						{ 
+							if (hasField(getStringField(REPO_NODE_LABEL_TYPE)))
+								return std::string(getStringField(REPO_NODE_LABEL_TYPE)); 
+						}
+
+						/**
+						* Get the type of node as an enum
+						* @return returns type as enum.
+						*/
+						NodeType getTypeAsEnum() const;
 
 						/**
 						* Get the unique ID from the object
 						* @return returns the unique ID of the object
 						*/
-						repoUUID getUniqueID(){ return uniqueID; }
+						repoUUID getUniqueID() const{ return uniqueID; }
 
 						/**
 						* Get the list of parent IDs 
 						* @return returns a set of parent IDs
 						*/
-						std::vector<repoUUID> getParentIDs();
+						std::vector<repoUUID> getParentIDs() const;
 
 
 						/*

@@ -14,42 +14,40 @@
 *  You should have received a copy of the GNU Affero General Public License
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
 /**
-* Map Node
+* Abstract Model convertor(Export)
 */
 
+
 #pragma once
-#include "repo_node.h"
 
-namespace repo {
-	namespace core {
-		namespace model {
-			namespace bson {
-				class REPO_API_EXPORT MapNode :public RepoNode
-				{
-				public:
+#include <string>
 
-					/**
-					* Default constructor
-					*/
-					MapNode();
+#include "../../graph/repo_scene.h"
 
-					/**
-					* Construct a MapNode from a RepoBSON object
-					* @param RepoBSON object
-					*/
-					MapNode(RepoBSON bson);
+namespace repo{
+	namespace manipulator{
+		namespace modelconvertor{
+			class AbstractModelExport
+			{
+			public:
+				/**
+				* Default Constructor, export model with default settings
+				*/
+				AbstractModelExport();
+
+				/**
+				* Default Deconstructor
+				*/
+				~AbstractModelExport();
+
+			protected:
 
 
-					/**
-					* Default deconstructor
-					*/
-					~MapNode();
+			};
 
-				};
-			}//namespace bson
-		} //namespace model
-	} //namespace core
+		} //namespace modelconvertor
+	} //namespace manipulator
 } //namespace repo
-
 

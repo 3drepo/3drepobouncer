@@ -49,7 +49,21 @@ namespace repo{
 				/**
 				* Default Deconstructor
 				*/
-				~AbstractGraph();
+				virtual ~AbstractGraph();
+
+				/**
+				* check if Root Node exists
+				* @return returns true if rootNode is not null.
+				*/
+				bool hasRoot() const { return (bool)rootNode; }
+				repo::core::model::bson::RepoNode* getRoot() { return rootNode; }
+
+				/**
+				* Return the number of nodes within the current 
+				* graph representation
+				* @return number of nodes within the graph
+				*/
+				uint32_t getItemsInCurrentGraph() { return nodesByUniqueID.size(); }
 
 			protected:
 				std::string databaseName;/*! name of the database */

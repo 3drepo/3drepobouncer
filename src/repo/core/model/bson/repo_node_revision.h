@@ -47,7 +47,7 @@ namespace repo {
 		namespace model {
 			namespace bson {
 
-				class RevisionNode : public RepoNode
+				class REPO_API_EXPORT RevisionNode : public RepoNode
 				{
 				public:
 

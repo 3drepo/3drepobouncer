@@ -75,7 +75,37 @@ RepoNode RepoNode::cloneAndAddParent(repoUUID parentID)
 	return RepoNode(builder.obj());
 }
 
-std::vector<repoUUID> RepoNode::getParentIDs()
+std::vector<repoUUID> RepoNode::getParentIDs() const
 {
 	return getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
+}
+
+
+NodeType RepoNode::getTypeAsEnum() const
+{ 
+	std::string type = getType(); 
+
+	NodeType enumType = NodeType::UNKNOWN;
+
+	if (REPO_NODE_TYPE_CAMERA == type)
+		enumType = NodeType::CAMERA;
+	else if (REPO_NODE_TYPE_MAP == type)
+		enumType = NodeType::MAP;
+	else if (REPO_NODE_TYPE_MATERIAL == type)
+		enumType = NodeType::MATERIAL;
+	else if (REPO_NODE_TYPE_MESH == type)
+		enumType = NodeType::MESH;
+	else if (REPO_NODE_TYPE_METADATA == type)
+		enumType = NodeType::METADATA;
+	else if (REPO_NODE_TYPE_REFERENCE == type)
+		enumType = NodeType::REFERENCE;
+	else if (REPO_NODE_TYPE_REVISION == type)
+		enumType = NodeType::REVISION;
+	else if (REPO_NODE_TYPE_TEXTURE == type)
+		enumType = NodeType::TEXTURE;
+	else if (REPO_NODE_TYPE_TRANSFORMATION == type)
+		enumType = NodeType::TRANSFORMATION;
+
+	return enumType;
+
 }

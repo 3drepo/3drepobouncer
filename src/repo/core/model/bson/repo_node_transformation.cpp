@@ -56,11 +56,54 @@ TransformationNode* TransformationNode::createTransformationNode(
 	{
 		RepoBSONBuilder columns;
 		for (uint32_t j = 0; j < transMatrix[i].size(); ++j){
-			columns << boost::lexical_cast<std::string>(j) << transMatrix[i][j];
+			columns << std::to_string(j) << transMatrix[i][j];
 		}
-		rows.appendArray(boost::lexical_cast<std::string>(i), columns.obj());
+		rows.appendArray(std::to_string(i), columns.obj());
 	}
 	builder.appendArray(REPO_NODE_LABEL_MATRIX, rows.obj());
 
 	return new TransformationNode(builder.obj());
+}
+
+
+std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) const
+{
+	std::vector<float> transformationMatrix;
+
+	uint32_t rowInd = 0, colInd = 0;
+	if (hasField(REPO_NODE_LABEL_MATRIX))
+	{
+		transformationMatrix.resize(16);
+		// matrix is stored as array of arrays
+		RepoBSON matrixObj =
+			getField(REPO_NODE_LABEL_MATRIX).embeddedObject();
+		std::set<std::string> mFields;
+		matrixObj.getFieldNames(mFields);
+		for (auto &field : mFields)
+		{
+			RepoBSON arrayObj = matrixObj.getField(field).embeddedObject();
+			std::set<std::string> aFields;
+			arrayObj.getFieldNames(aFields);
+			for (auto &aField : aFields)
+			{
+
+				//figure out the index depending on if it's row or col major
+				uint32_t index;
+				if (rowMajor)
+				{
+					//the matrix should already be rowMajor
+					index = rowInd * 4 + colInd;
+				}
+				else
+				{
+					index = colInd * 4 + rowInd;
+				}
+				transformationMatrix.insert(transformationMatrix.begin()+index,
+					(float)arrayObj.getField(aField).Double());
+				++colInd;
+			}
+			++rowInd;
+		}
+	}
+	return transformationMatrix;
 }

@@ -75,3 +75,46 @@ MaterialNode* MaterialNode::createMaterialNode(
 
 	return new MaterialNode(builder.obj());
 }
+
+
+repo_material_t MaterialNode::getMaterialStruct() const
+{
+	repo_material_t mat;
+
+
+	std::vector<float> tempVec = getFloatArray(REPO_NODE_MATERIAL_LABEL_AMBIENT);
+	if (tempVec.size() > 0)
+		mat.ambient.insert(mat.ambient.end(), tempVec.begin(), tempVec.end());
+
+	tempVec = getFloatArray(REPO_NODE_MATERIAL_LABEL_DIFFUSE);
+	if (tempVec.size() > 0)
+		mat.diffuse.insert(mat.diffuse.end(), tempVec.begin(), tempVec.end());
+
+	tempVec = getFloatArray(REPO_NODE_MATERIAL_LABEL_SPECULAR);
+	if (tempVec.size() > 0)
+		mat.specular.insert(mat.specular.end(), tempVec.begin(), tempVec.end());
+
+	tempVec = getFloatArray(REPO_NODE_MATERIAL_LABEL_EMISSIVE);
+	if (tempVec.size() > 0)
+		mat.emissive.insert(mat.emissive.end(), tempVec.begin(), tempVec.end());
+
+	mat.isWireframe = hasField(REPO_NODE_MATERIAL_LABEL_WIREFRAME) && 
+		getField(REPO_NODE_MATERIAL_LABEL_WIREFRAME).boolean();
+
+	mat.isTwoSided = hasField(REPO_NODE_MATERIAL_LABEL_TWO_SIDED) &&
+		getField(REPO_NODE_MATERIAL_LABEL_TWO_SIDED).boolean();
+
+	mat.opacity = hasField(REPO_NODE_MATERIAL_LABEL_OPACITY) ?
+		getField(REPO_NODE_MATERIAL_LABEL_OPACITY).numberDouble() :
+		std::numeric_limits<float>::quiet_NaN();
+
+	mat.shininess = hasField(REPO_NODE_MATERIAL_LABEL_SHININESS) ?
+		getField(REPO_NODE_MATERIAL_LABEL_SHININESS).numberDouble() :
+		std::numeric_limits<float>::quiet_NaN();
+
+	mat.shininessStrength = hasField(REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH) ?
+		getField(REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH).numberDouble() :
+		std::numeric_limits<float>::quiet_NaN();
+
+	return mat;
+}

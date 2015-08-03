@@ -170,8 +170,18 @@ MeshNode* MeshNode::createMeshNode(
 	return new MeshNode(builder.obj());
 }
 
+std::vector<repo_color4d_t>* MeshNode::getColors() const
+{
+	std::vector<repo_color4d_t> *colors = new std::vector<repo_color4d_t>();
+	if (hasField(REPO_NODE_LABEL_COLORS))
+	{
+		getBinaryFieldAsVector(getField(REPO_NODE_LABEL_COLORS), colors);
+	}
 
-std::vector<repo_vector_t>* MeshNode::getVertices()
+	return colors;
+}
+
+std::vector<repo_vector_t>* MeshNode::getVertices() const
 {
 	std::vector<repo_vector_t> *vertices = new std::vector<repo_vector_t>();
 	if (hasField(REPO_NODE_LABEL_VERTICES_COUNT)
@@ -185,7 +195,7 @@ std::vector<repo_vector_t>* MeshNode::getVertices()
 }
 
 
-std::vector<repo_vector_t>* MeshNode::getNormals()
+std::vector<repo_vector_t>* MeshNode::getNormals() const
 {
 	std::vector<repo_vector_t> *vertices = new std::vector<repo_vector_t>();
 	if (hasField(REPO_NODE_LABEL_VERTICES_COUNT)
@@ -199,7 +209,7 @@ std::vector<repo_vector_t>* MeshNode::getNormals()
 }
 
 
-std::vector<repo_vector2d_t>* MeshNode::getUVChannels()
+std::vector<repo_vector2d_t>* MeshNode::getUVChannels() const
 {
 	std::vector<repo_vector2d_t> *channels = new std::vector<repo_vector2d_t>();
 	if (hasField(REPO_NODE_LABEL_VERTICES_COUNT) 
@@ -214,7 +224,7 @@ std::vector<repo_vector2d_t>* MeshNode::getUVChannels()
 	return channels;
 }
 
-std::vector<repo_face_t>* MeshNode::getFaces()
+std::vector<repo_face_t>* MeshNode::getFaces() const
 {
 	std::vector<repo_face_t> *faces = new std::vector<repo_face_t>();
 	if (hasField(REPO_NODE_LABEL_FACES)

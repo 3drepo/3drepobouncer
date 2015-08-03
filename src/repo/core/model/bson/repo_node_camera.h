@@ -42,7 +42,7 @@ namespace repo {
 				//------------------------------------------------------------------------------
 
 
-				class CameraNode :public RepoNode
+				class REPO_API_EXPORT CameraNode :public RepoNode
 				{
 				public:
 
@@ -86,6 +86,58 @@ namespace repo {
 						const repo_vector_t &up,
 						const int           &apiLevel = REPO_NODE_API_LEVEL_1,
 						const std::string   &name = std::string());
+
+
+					/**
+					* --------- Convenience functions -----------
+					*/
+
+					/**
+					* Get aspect ratio
+					* @return returns the 4 by 4 matrix as a vector
+					*/
+					float getAspectRatio() const
+					{
+						return hasField(REPO_NODE_LABEL_ASPECT_RATIO) ?
+							(float) getField(REPO_NODE_LABEL_ASPECT_RATIO).numberDouble() :
+							1.;
+					}
+
+					/**
+					* Get horiztonal FOV
+					* @return returns the 4 by 4 matrix as a vector
+					*/
+					float getHorizontalFOV() const
+					{
+						return hasField(REPO_NODE_LABEL_FOV) ?
+							(float) getField(REPO_NODE_LABEL_FOV).numberDouble() :
+							1.;
+					}
+
+					/**
+					* Get the 4 by 4 camera matrix
+					* @param true if row major (row is the fast dimension)
+					* @return returns the 4 by 4 matrix as a vector
+					*/
+					std::vector<float> getCameraMatrix(const bool &rowMajor = true) const;
+
+					/**
+					* Get the Look At vector of the camera
+					* @return returns a vector of the "Look At" 
+					*/
+					repo_vector_t getLookAt() const;
+
+					/**
+					* Get the position of the camera
+					* @return returns a vector of the position
+					*/
+					repo_vector_t getPosition() const;
+
+					/**
+					* Get the up vector of the camera
+					* @return returns a vector of up
+					*/
+					repo_vector_t getUp() const;
 
 				};
 			}//namespace bson

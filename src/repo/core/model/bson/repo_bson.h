@@ -79,7 +79,7 @@ namespace repo {
 						/**
 						* Default empty deconstructor.
 						*/
-						~RepoBSON() {}
+						virtual ~RepoBSON() {}
 
 						/**
 						* returns a field from the BSON
@@ -102,7 +102,7 @@ namespace repo {
 						bool getBinaryFieldAsVector(
 							const RepoBSONElement &bse,
 							const uint32_t vectorSize,
-							std::vector<T> * vec)
+							std::vector<T> * vec) const
 						{
 							bool success = false;
 							uint64_t vectorSizeInBytes = vectorSize * sizeof(T);
@@ -142,6 +142,46 @@ namespace repo {
 							return success;
 						}
 
+						/**
+						* get a binary field in the form of vector of T
+						* @param bse bson element
+						* @param vec pointer to a vector to store this data
+						* @return returns true upon success.
+						*/
+						template <class T>
+						bool getBinaryFieldAsVector(
+							const RepoBSONElement &bse,
+							std::vector<T> * vec) const
+						{
+							bool success = false;
+							if (vec && bse.binDataType() == mongo::BinDataGeneral)
+							{
+								
+								bse.value();
+								int length;
+								const char *binData = bse.binData(length);
+
+								
+
+								if (length > 0)
+								{
+									vec->resize(length / sizeof(T));
+									memcpy(&(vec->at(0)), binData, length);
+
+								}
+								else{
+									BOOST_LOG_TRIVIAL(error) << "RepoBSON::getBinaryFieldAsVector : "
+										<< "size of binary data (" << length << ") Unable to copy 0 bytes!";
+								}
+							}
+							else{
+								BOOST_LOG_TRIVIAL(error) << "RepoBSON::getBinaryFieldAsVector :" <<
+									(!vec ? " nullptr to vector " : "bson element type is not BinDataGeneral!");
+							}
+
+							return success;
+						}
+
 
 					
 
@@ -157,7 +197,15 @@ namespace repo {
 						* @param name of the array element
 						* @return returns the array element in their respective type
 						*/
-						std::vector<repoUUID> getUUIDFieldArray(std::string label);
+						std::vector<repoUUID> getUUIDFieldArray(std::string label) const;
+
+
+						/**
+						* Get an array of fields given an array element
+						* @param name of the array element
+						* @return returns the array element in their respective type
+						*/
+						std::vector<float> getFloatArray(std::string label) const;
 
 
 					}; // end 

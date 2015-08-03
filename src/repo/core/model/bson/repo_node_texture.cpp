@@ -84,3 +84,17 @@ TextureNode* TextureNode::createTextureNode(
 
 	return new TextureNode(builder.obj());
 }
+
+std::vector<char>* TextureNode::getRawData() const
+{
+
+	std::vector<char> *dataVec = nullptr;
+	if (hasField(REPO_LABEL_DATA) &&
+		hasField(REPO_NODE_LABEL_DATA_BYTE_COUNT))
+	{
+		getBinaryFieldAsVector(getField(REPO_LABEL_DATA),
+			getField(REPO_NODE_LABEL_DATA_BYTE_COUNT).numberInt(), dataVec);
+	}
+
+	return dataVec;
+}

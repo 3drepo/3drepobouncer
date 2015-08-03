@@ -38,7 +38,7 @@ namespace repo {
 				#define REPO_NODE_UUID_SUFFIX_TEXTURE		"11" //!< uuid suffix
 				//------------------------------------------------------------------------------
 
-				class TextureNode :public RepoNode
+				class REPO_API_EXPORT TextureNode :public RepoNode
 				{
 				public:
 
@@ -75,6 +75,17 @@ namespace repo {
 						const uint32_t    &width,
 						const uint32_t    &height,
 						const int &apiLevel = REPO_NODE_API_LEVEL_1);
+
+
+					/**
+					* --------- Convenience functions -----------
+					*/
+
+					/**
+					* Retrieve texture image as raw data
+					* @return returns a pointer to the image (represented as char)
+					*/
+					std::vector<char>* getRawData() const;
 
 				};
 			}//namespace bson

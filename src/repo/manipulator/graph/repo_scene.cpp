@@ -73,7 +73,10 @@ RepoScene::RepoScene(
 
 RepoScene::~RepoScene()
 {
-	//TODO: delete nodes instantiated and scene graph instantiated?
+	for (auto& pair : nodesByUniqueID)
+	{
+		delete pair.second;
+	}
 
 	if (revNode)
 		delete revNode;
@@ -325,6 +328,23 @@ bool RepoScene::commitSceneChanges(
 	return success;
 }
 
+std::vector<repo::core::model::bson::RepoNode*> 
+RepoScene::getChildrenAsNodes(
+ const repoUUID &parent) 
+{
+	std::vector<repo::core::model::bson::RepoNode*> children;
+
+	std::map<repoUUID, std::vector<repoUUID>>::iterator it = parentToChildren.find(parent);
+	if (it != parentToChildren.end())
+	{
+		for (auto child : it->second)
+		{
+			children.push_back(nodesByUniqueID[child]);
+		}
+	}
+	return children;
+}
+
 bool RepoScene::loadRevision(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	std::string &errMsg){
@@ -375,6 +395,7 @@ bool RepoScene::loadScene(
 	return populate(handler, nodes, errMsg);
 
 }
+
 
 bool RepoScene::populate(
 	repo::core::handler::AbstractDatabaseHandler *handler, 
@@ -454,7 +475,7 @@ bool RepoScene::populate(
 		refGraph->setRevision(reference->getRevisionID());
 
 		if (refGraph->loadScene(handler, errMsg)){
-			referenceToScene[reference->getSharedID()];
+			referenceToScene[reference->getSharedID()] = refGraph;
 		}
 		else{
 			BOOST_LOG_TRIVIAL(warning) << "Failed to load reference node for ref ID" << reference->getUniqueID();

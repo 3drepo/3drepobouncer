@@ -43,7 +43,7 @@
 namespace repo{
 	namespace manipulator{
 		namespace graph{
-			class RepoScene : public AbstractGraph
+			class REPO_API_EXPORT RepoScene : public AbstractGraph
 			{
 				public:
 
@@ -184,7 +184,71 @@ namespace repo{
 					*/
 					void printStatistics(std::iostream &output);
 
+					/**
+					* --------------------- Node Relationship ----------------------
+					*/
 
+					/**
+					* Get children nodes of a specified parent
+					* @param parent shared UUID of the parent node
+					* @ return a vector of pointers to children node (potentially none)
+					*/
+					std::vector<repo::core::model::bson::RepoNode*>
+						getChildrenAsNodes(const repoUUID &parent);
+
+					/**
+					* Get Scene from reference node
+					*/
+					RepoScene* getSceneFromReference(const repoUUID &reference)
+					{
+						RepoScene* refScene = nullptr;
+
+						std::map<repoUUID, RepoScene*>::iterator it = referenceToScene.find(reference);
+						if (it != referenceToScene.end())
+							refScene = it->second;
+						return refScene;
+					}
+
+					/**
+					* --------------------- Scene Lookup ----------------------
+					*/
+
+
+					/**
+					* Get all camera nodes within current scene revision
+					* @return a RepoNodeSet of materials
+					*/
+					repo::core::model::bson::RepoNodeSet getAllCameras() const
+					{
+						return cameras;
+					}
+
+					/**
+					* Get all material nodes within current scene revision
+					* @return a RepoNodeSet of materials
+					*/
+					repo::core::model::bson::RepoNodeSet getAllMaterials() const
+					{
+						return materials;
+					}
+
+					/**
+					* Get all mesh nodes within current scene revision
+					* @return a RepoNodeSet of meshes
+					*/
+					repo::core::model::bson::RepoNodeSet getAllMeshes() const
+					{
+						return meshes;
+					}
+
+					/**
+					* Get all texture nodes within current scene revision
+					* @return a RepoNodeSet of textures
+					*/
+					repo::core::model::bson::RepoNodeSet getAllTextures() const
+					{
+						return textures;
+					}
 					/**
 					* -------------- Scene Modification Functions --------------
 					*/
@@ -196,10 +260,10 @@ namespace repo{
 					*/
 					void addNodes(std::vector<repo::core::model::bson::RepoNode *> nodes);
 
+
 					/**
 					* ----------------------------------------------------------
 					*/
-
 
 				protected:
 					/**
@@ -327,7 +391,7 @@ namespace repo{
 
 					std::map<repoUUID, repoUUID> sharedIDtoUniqueID; //** mapping of shared ID to Unique ID
 					std::map<repoUUID, std::vector<repoUUID>> parentToChildren; //** mapping of shared id to its children's shared id
-					std::map<repoUUID, RepoScene> referenceToScene; //** mapping of reference ID to it's scene graph
+					std::map<repoUUID, RepoScene*> referenceToScene; //** mapping of reference ID to it's scene graph
 
 					//Change trackers
 					std::vector<repoUUID> newCurrent; //new list of current (unique IDs)

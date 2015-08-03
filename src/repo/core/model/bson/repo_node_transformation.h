@@ -36,7 +36,7 @@ namespace repo {
 				#define REPO_NODE_UUID_SUFFIX_TRANSFORMATION		"12" //!< uuid suffix
 				//------------------------------------------------------------------------------
 
-				class TransformationNode :public RepoNode
+				class REPO_API_EXPORT TransformationNode :public RepoNode
 				{
 					public:
 
@@ -70,6 +70,18 @@ namespace repo {
 							const std::string                     &name = std::string(), 
 							const std::vector<repoUUID>		  &parents = std::vector<repoUUID>(),
 							const int                             &apiLevel = REPO_NODE_API_LEVEL_1);
+						
+						/**
+						* --------- Convenience functions -----------
+						*/
+
+						/**
+						* Get the 4 by 4 transformation matrix
+						* @param true if row major (row is the fast dimension)
+						* @return returns the 4 by 4 matrix as a vector
+						*/
+						std::vector<float> getTransMatrix(const bool &rowMajor = true) const;
+
 
 				};
 			}//namespace bson

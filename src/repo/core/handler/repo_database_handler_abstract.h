@@ -44,7 +44,7 @@ namespace repo{
 				/**
 				 * A Deconstructor 
 				 */
-				~AbstractDatabaseHandler(){};
+				virtual ~AbstractDatabaseHandler(){};
 
 				/**
 				* returns the size limit of each document(record) in bytes
