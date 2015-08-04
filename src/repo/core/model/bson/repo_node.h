@@ -154,17 +154,16 @@ namespace repo{
 						* Get the type of node
 						* @return returns the type as a string
 						*/
-						std::string getType() const
+						virtual std::string getType() const
 						{ 
-							if (hasField(getStringField(REPO_NODE_LABEL_TYPE)))
-								return std::string(getStringField(REPO_NODE_LABEL_TYPE)); 
+							return std::string(getStringField(REPO_NODE_LABEL_TYPE)); 
 						}
 
 						/**
 						* Get the type of node as an enum
 						* @return returns type as enum.
 						*/
-						NodeType getTypeAsEnum() const;
+						virtual NodeType getTypeAsEnum() const;
 
 						/**
 						* Get the unique ID from the object

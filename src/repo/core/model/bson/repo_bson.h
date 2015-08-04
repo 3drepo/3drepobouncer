@@ -119,11 +119,11 @@ namespace repo {
 										<< "size of binary data (" << length << ") is bigger than expected vector size(" 
 										<< vectorSizeInBytes << ")";
 								}
-								if (success = (length >= vectorSize))
+								if (success = (length >= vectorSizeInBytes))
 								{ 
-									BOOST_LOG_TRIVIAL(trace) << "RepoBSON::getBinaryFieldAsVector : Copying.."
+							/*		BOOST_LOG_TRIVIAL(trace) << "RepoBSON::getBinaryFieldAsVector : Copying.."
 										<< "size of binary data (" << length << "), expected vector size("
-										<< vectorSizeInBytes << ")";
+										<< vectorSizeInBytes << ")";*/
 									//can copy as long as length is bigger or equal to vectorSize
 									memcpy(&(vec->at(0)), binData, vectorSizeInBytes);
 									

@@ -339,7 +339,7 @@ RepoScene::getChildrenAsNodes(
 	{
 		for (auto child : it->second)
 		{
-			children.push_back(nodesByUniqueID[child]);
+			children.push_back(nodesByUniqueID[sharedIDtoUniqueID[child]]);
 		}
 	}
 	return children;
