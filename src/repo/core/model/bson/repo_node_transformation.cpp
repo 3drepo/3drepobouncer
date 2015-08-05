@@ -73,7 +73,10 @@ std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) cons
 	uint32_t rowInd = 0, colInd = 0;
 	if (hasField(REPO_NODE_LABEL_MATRIX))
 	{
+
 		transformationMatrix.resize(16);
+		float *transArr = &transformationMatrix.at(0);
+	
 		// matrix is stored as array of arrays
 		RepoBSON matrixObj =
 			getField(REPO_NODE_LABEL_MATRIX).embeddedObject();
@@ -91,19 +94,21 @@ std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) cons
 				uint32_t index;
 				if (rowMajor)
 				{
-					//the matrix should already be rowMajor
-					index = rowInd * 4 + colInd;
+					index = colInd * 4 + rowInd;
 				}
 				else
 				{
-					index = colInd * 4 + rowInd;
+					index = rowInd * 4 + colInd;
 				}
-				transformationMatrix.insert(transformationMatrix.begin()+index,
-					(float)arrayObj.getField(aField).Double());
+				transArr[index] = (float)arrayObj.getField(aField).Double();
+
 				++colInd;
 			}
+			colInd = 0;
 			++rowInd;
 		}
+
+
 	}
 	return transformationMatrix;
 }
