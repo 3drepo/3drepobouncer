@@ -74,8 +74,7 @@ MeshNode* MeshNode::createMeshNode(
 		std::vector<repo_face_t>::iterator faceIt;
 
 		std::vector<uint32_t> facesLevel1;
-		for (faceIt = faces.begin(); faceIt != faces.end(); ++faceIt){
-			repo_face_t face = *faceIt;
+		for (auto &face: faces){
 			facesLevel1.push_back(face.numIndices);
 			for (uint32_t ind = 0; ind < face.numIndices; ind++)
 			{
@@ -250,15 +249,24 @@ std::vector<repo_face_t>* MeshNode::getFaces() const
 		int mNumIndicesIndex = 0;
 		while (counter < facesCount)
 		{
-			int mNumIndices = serializedFaces->at(mNumIndicesIndex);
-			repo_face_t face;
-			face.numIndices = mNumIndices;
-			uint32_t *indices = new uint32_t[mNumIndices];
-			for (int i = 0; i < mNumIndices; ++i)
-				indices[i] = serializedFaces->at(mNumIndicesIndex + 1 + i);
-			face.indices = indices;
-			(*faces)[counter] = face;
-			mNumIndicesIndex = mNumIndicesIndex + mNumIndices + 1;
+
+			if (serializedFaces->size() <= mNumIndicesIndex)
+			{
+				BOOST_LOG_TRIVIAL(error) << "MeshNode::getFaces() : serialisedFaces.size() <= mNumIndicesIndex!";
+			}
+			else
+			{
+				int mNumIndices = serializedFaces->at(mNumIndicesIndex);
+				repo_face_t face;
+				face.numIndices = mNumIndices;
+				uint32_t *indices = new uint32_t[mNumIndices];
+				for (int i = 0; i < mNumIndices; ++i)
+					indices[i] = serializedFaces->at(mNumIndicesIndex + 1 + i);
+				face.indices = indices;
+				(*faces)[counter] = face;
+				mNumIndicesIndex = mNumIndicesIndex + mNumIndices + 1;
+			}
+			
 			++counter;
 		}
 

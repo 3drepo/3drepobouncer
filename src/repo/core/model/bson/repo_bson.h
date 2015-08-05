@@ -108,10 +108,12 @@ namespace repo {
 							uint64_t vectorSizeInBytes = vectorSize * sizeof(T);
 							if (vec && bse.binDataType() == mongo::BinDataGeneral)
 							{
-								vec->resize(vectorSize);
+								
 								bse.value();
 								int length;
 								const char *binData = bse.binData(length);
+
+								vec->resize(length/sizeof(T));
 
 								if (length > vectorSizeInBytes)
 								{
@@ -121,17 +123,17 @@ namespace repo {
 								}
 								if (success = (length >= vectorSizeInBytes))
 								{ 
-							/*		BOOST_LOG_TRIVIAL(trace) << "RepoBSON::getBinaryFieldAsVector : Copying.."
-										<< "size of binary data (" << length << "), expected vector size("
-										<< vectorSizeInBytes << ")";*/
 									//can copy as long as length is bigger or equal to vectorSize
-									memcpy(&(vec->at(0)), binData, vectorSizeInBytes);
+									memcpy(&(vec->at(0)), binData, length);
 									
 								}
 								else{
 									BOOST_LOG_TRIVIAL(error) << "RepoBSON::getBinaryFieldAsVector : "
 										<< "size of binary data (" << length << ") is smaller than expected vector size("
 										<< vectorSizeInBytes << ")";
+
+									//copy the length amount off anyway
+									memcpy(&(vec->at(0)), binData, length);
 								}
 							}
 							else{
