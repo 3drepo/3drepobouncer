@@ -375,6 +375,7 @@ void RepoController::subscribeBroadcasterToLog(){
 
 
 	sink->set_filter(boost::log::trivial::severity >= boost::log::trivial::trace);
+	//FIXME: better format!
 	sink->set_formatter
 		(
 		boost::log::expressions::stream
@@ -388,5 +389,30 @@ void RepoController::subscribeBroadcasterToLog(){
 	// Register the sink in the logging core
 	boost::log::core::get()->add_sink(sink);
 
-	BOOST_LOG_TRIVIAL(info) << "Subscribed broadcaster to log";
+	BOOST_LOG_TRIVIAL(trace) << "Subscribed broadcaster to log";
+}
+
+repo::manipulator::graph::RepoScene* 
+	RepoController::loadSceneFromFile(const std::string &filePath)
+{
+
+	std::string errMsg;
+	repo::manipulator::graph::RepoScene *scene = nullptr;
+
+	if (!filePath.empty())
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		scene = worker->loadSceneFromFile(filePath, errMsg);
+		workerPool.push(worker);
+		if (!scene)
+			BOOST_LOG_TRIVIAL(error) << "Failed ot load scene from file: " << errMsg;
+		
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Trying to load from an empty file path!";
+
+	}
+
+	return scene;
 }

@@ -23,6 +23,7 @@
 #include <string>
 #include "../core/handler/repo_database_handler_mongo.h"
 #include "graph/repo_scene.h"
+#include "modelconvertor/import/repo_model_import_assimp.h"
 
 
 namespace repo{
@@ -198,6 +199,16 @@ namespace repo{
 				const std::string                             &database,
 				const std::string                             &collection,
 				std::string                                   &errMsg=std::string());
+
+			/**
+			* Load a Repo Scene from a file
+			* @param filePath path to file
+			* @return returns a pointer to Repo Scene upon success
+			*/
+			repo::manipulator::graph::RepoScene*
+				loadSceneFromFile(
+				const std::string &filePath,
+				      std::string &msg = std::string());
 		};
 	}
 }

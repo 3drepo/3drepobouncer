@@ -135,8 +135,13 @@ bool RepoScene::addNodeToMaps(model::bson::RepoNode *node, std::string &errMsg)
 			else{
 				//2 root nodes?!
 				BOOST_LOG_TRIVIAL(error) << "Found 2 root nodes! (" << rootNode->getUniqueID() << " and  " << node->getUniqueID() << ")";
-				errMsg = "2 possible candidate for root node found. This is an invalid Scene Graph.";
-				success = false;
+				errMsg = "2 possible candidate for root node found. This is possibly an invalid Scene Graph.";
+				//if only one of them is transformation then take that one
+
+				if (node->getTypeAsEnum() == model::bson::NodeType::TRANSFORMATION)
+				{
+					rootNode = node;
+				}
 			}
 		}
 	}

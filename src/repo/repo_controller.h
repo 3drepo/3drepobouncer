@@ -310,7 +310,16 @@ namespace repo{
 		*/
 		void logToFile(const std::string &filePath);
 
+		/*
+		*	------------- Import --------------
+		*/
 
+		/**
+		* Load a Repo Scene from a file
+		* @param filePath path to file
+		* @return returns a pointer to Repo Scene upon success
+		*/
+		repo::manipulator::graph::RepoScene* loadSceneFromFile(const std::string &filePath);
 
 	private:
 
