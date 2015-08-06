@@ -30,19 +30,20 @@ AbstractModelImport::AbstractModelImport()
 	settings = new ModelImportConfig();
 }
 
-AbstractModelImport::AbstractModelImport(ModelImportConfig *settings) :
-settings(settings)
+AbstractModelImport::AbstractModelImport(const ModelImportConfig *settings) :
+settings(settings), destroySettings(false)
 {
 	if (!settings)
 	{
 		//settings is null, used default
-		settings = new ModelImportConfig();
+		this->settings = new ModelImportConfig();
+		destroySettings = true; 
 	}
 }
 
 AbstractModelImport::~AbstractModelImport()
 {
-	if (settings)
+	if (destroySettings)
 		delete settings;
 }
 

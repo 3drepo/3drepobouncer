@@ -35,10 +35,10 @@ namespace model = repo::core::model;
 AssimpModelImport::AssimpModelImport()
 {
 	//set default ASSIMP debone threshold
-	settings->setDeboneThreshold(AI_DEBONE_THRESHOLD);
+	//settings->setDeboneThreshold(AI_DEBONE_THRESHOLD);
 }
 
-AssimpModelImport::AssimpModelImport(ModelImportConfig *settings) :
+AssimpModelImport::AssimpModelImport(const ModelImportConfig *settings) :
 AbstractModelImport(settings)
 {
 
@@ -48,6 +48,9 @@ AssimpModelImport::~AssimpModelImport()
 {
 	if (assimpScene)
 		importer.FreeScene();
+
+	if (destroySettings)
+		delete settings;
 }
 
 uint32_t AssimpModelImport::composeAssimpPostProcessingFlags(

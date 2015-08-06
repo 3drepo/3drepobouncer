@@ -317,9 +317,13 @@ namespace repo{
 		/**
 		* Load a Repo Scene from a file
 		* @param filePath path to file
+		* @param config import settings(optional)
 		* @return returns a pointer to Repo Scene upon success
 		*/
-		repo::manipulator::graph::RepoScene* loadSceneFromFile(const std::string &filePath);
+		repo::manipulator::graph::RepoScene* loadSceneFromFile(
+			const std::string &filePath,
+			const repo::manipulator::modelconvertor::ModelImportConfig *config 
+				= nullptr);
 
 	private:
 

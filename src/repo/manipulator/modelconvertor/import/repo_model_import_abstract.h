@@ -44,14 +44,14 @@ namespace repo{
 				* in this object!
 				* @param settings
 				*/
-				AbstractModelImport(ModelImportConfig *settings);
+				AbstractModelImport(const ModelImportConfig *settings);
 
 				/**
 				* Default Deconstructor
 				* NOTE: The destructor will destroy the settings object referenced
 				* in this object!
 				*/
-				~AbstractModelImport();
+				virtual ~AbstractModelImport();
 
 
 				/**
@@ -89,7 +89,8 @@ namespace repo{
 				*/
 				std::string  getFileName(std::string fullPath);
 
-				ModelImportConfig *settings; /*! Stores related settings for model import */
+				const ModelImportConfig *settings; /*! Stores related settings for model import */
+				bool destroySettings; //only destroy settings if it is constructed by this object
 
 			};
 

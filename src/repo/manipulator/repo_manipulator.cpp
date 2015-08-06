@@ -243,13 +243,14 @@ repo::core::model::bson::CollectionStats RepoManipulator::getCollectionStats(
 repo::manipulator::graph::RepoScene* 
 	RepoManipulator::loadSceneFromFile(
 	const std::string &filePath, 
-	      std::string &msg)
+	      std::string &msg,
+    const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
 	
 	repo::manipulator::graph::RepoScene* scene = nullptr;
 
 	repo::manipulator::modelconvertor::AssimpModelImport*
-		modelConvertor = new repo::manipulator::modelconvertor::AssimpModelImport();
+		modelConvertor = new repo::manipulator::modelconvertor::AssimpModelImport(config);
 
 
 

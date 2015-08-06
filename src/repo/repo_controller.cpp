@@ -393,7 +393,9 @@ void RepoController::subscribeBroadcasterToLog(){
 }
 
 repo::manipulator::graph::RepoScene* 
-	RepoController::loadSceneFromFile(const std::string &filePath)
+	RepoController::loadSceneFromFile(
+	const std::string                                          &filePath,
+	const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
 
 	std::string errMsg;
@@ -402,7 +404,7 @@ repo::manipulator::graph::RepoScene*
 	if (!filePath.empty())
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		scene = worker->loadSceneFromFile(filePath, errMsg);
+		scene = worker->loadSceneFromFile(filePath, errMsg, config);
 		workerPool.push(worker);
 		if (!scene)
 			BOOST_LOG_TRIVIAL(error) << "Failed ot load scene from file: " << errMsg;

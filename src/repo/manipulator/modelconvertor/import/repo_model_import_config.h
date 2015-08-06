@@ -44,81 +44,81 @@ namespace repo{
 				* Returns true if calculate tangent space is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getCalculateTangentSpace()
+				virtual bool getCalculateTangentSpace() const
 				{
-					return boolSettings[CALCULATE_TANGENT_SPACE];
+					return boolSettings.at(CALCULATE_TANGENT_SPACE);
 				}
 
 				/*!
 				* Returns the maximum smoothing angle for calc tangent space. Defaults to
 				* 45.
 				*/
-				virtual float getCalculateTangentSpaceMaxSmoothingAngle()
+				virtual float getCalculateTangentSpaceMaxSmoothingAngle() const
 				{
-					return floatSettings[CALCULATE_TANGENT_SPACE_MAX_SMOOTHING_ANGLE];
+					return floatSettings.at(CALCULATE_TANGENT_SPACE_MAX_SMOOTHING_ANGLE);
 				}
 
 				/*!
 				* Returns true if convert to UV coords is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getConvertToUVCoordinates()
+				virtual bool getConvertToUVCoordinates()  const
 				{
-					return boolSettings[CONVERT_TO_UV_COORDINATES];
+					return boolSettings.at(CONVERT_TO_UV_COORDINATES);
 				}
 
 				/*!
 				* Returns true if degenerates to points/lines is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getDegeneratesToPointsLines()
+				virtual bool getDegeneratesToPointsLines() const
 				{
-					return boolSettings[DEGENERATES_TO_POINTS_LINES];
+					return boolSettings.at(DEGENERATES_TO_POINTS_LINES);
 				}
 
 				/*!
 				* Returns true if debone is checked in settings, false otherwise. Defaults
 				* to false.
 				*/
-				virtual bool getDebone()
+				virtual bool getDebone() const
 				{
-					return boolSettings[DEBONE];
+					return boolSettings.at(DEBONE);
 				}
 
 				/*!
 				* Returns the debone threshold set in settings. Defaults to Assimp's
 				* AI_DEBONE_THRESHOLD = 1.0f
 				*/
-				virtual float getDeboneThreshold()
+				virtual float getDeboneThreshold() const
 				{
-					return floatSettings[DEBONE_THRESHOLD];
+					return floatSettings.at(DEBONE_THRESHOLD);
 				}
 
 				/*!
 				* Returns true if debone only if all is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getDeboneOnlyIfAll()
+				virtual bool getDeboneOnlyIfAll() const
 				{
-					return boolSettings[DEBONE_ONLY_IF_ALL];
+					return boolSettings.at(DEBONE_ONLY_IF_ALL);
 				}
 
 				/*!
 				* Returns true if find instances is checked in settings, false otherwise.
 				* Defaults to false.
 				*/
-				virtual bool getFindInstances()
+				virtual bool getFindInstances() const
 				{
-					return boolSettings[FIND_INSTANCES];
+					return boolSettings.at(FIND_INSTANCES);
 				}
 
 				/*!
 				* Returns true if find invalid data is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getFindInvalidData()
+				virtual bool getFindInvalidData() const
 				{
-					return boolSettings[FIND_INAVLID_DATA];
+					return boolSettings.at(FIND_INAVLID_DATA);
 				}
 
 				/*!
@@ -126,415 +126,415 @@ namespace repo{
 				* Defaults to 0.0f == all comparisons are exact.
 				* See http://assimp.sourceforge.net/lib_html/config_8h.html#ad223c5e7e63d2937685cc704a181b950
 				*/
-				virtual float getFindInvalidDataAnimationAccuracy()
+				virtual float getFindInvalidDataAnimationAccuracy() const
 				{
-					return floatSettings[FIND_INAVLID_DATA_ANIMATION_ACCURACY];
+					return floatSettings.at(FIND_INAVLID_DATA_ANIMATION_ACCURACY);
 				}
 
 				/*!
 				* Returns true if fix infacing normals is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getFixInfacingNormals()
+				virtual bool getFixInfacingNormals() const
 				{
-					return boolSettings[FIX_INFACING_NORMALS];
+					return boolSettings.at(FIX_INFACING_NORMALS);
 				}
 
 				/*!
 				* Returns true if flip UV coordinates is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getFlipUVCoordinates()
+				virtual bool getFlipUVCoordinates() const
 				{
-					return boolSettings[FLIP_UV_COORDINATES];
+					return boolSettings.at(FLIP_UV_COORDINATES);
 				}
 
 				/*!
 				* Returns true if flip winding order is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getFlipWindingOrder()
+				virtual bool getFlipWindingOrder() const
 				{
-					return boolSettings[FLIP_WINDING_ORDER];
+					return boolSettings.at(FLIP_WINDING_ORDER);
 				}
 
 				/*!
 				* Returns true if generate normals is checked in settings, false otherwise.
 				* Defaults to false.
 				*/
-				virtual bool getGenerateNormals()
+				virtual bool getGenerateNormals() const
 				{
-					return boolSettings[GENERATE_NORMALS];
+					return boolSettings.at(GENERATE_NORMALS);
 				}
 
 				/*!
 				* Returns true if generate flat normals is checked in settings, false
 				* oterwise. Defaults to true.
 				*/
-				virtual bool getGenerateNormalsFlat()
+				virtual bool getGenerateNormalsFlat() const
 				{
-					return boolSettings[GENERATE_NORMALS_FLAT];
+					return boolSettings.at(GENERATE_NORMALS_FLAT);
 				}
 
 				/*!
 				* Returns true if generate smooth normals is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getGenerateNormalsSmooth()
+				virtual bool getGenerateNormalsSmooth() const
 				{
-					return boolSettings[GENERATE_NORMALS_SMOOTH];
+					return boolSettings.at(GENERATE_NORMALS_SMOOTH);
 				}
 
 				/*!
 				* Returns the crease angle for generate smooth normals set in settings.
 				* Defaults to 175.0f.
 				*/
-				virtual float getGenerateNormalsSmoothCreaseAngle()
+				virtual float getGenerateNormalsSmoothCreaseAngle() const
 				{
-					return floatSettings[GENERATE_NORMALS_SMOOTH_CREASE_ANGLE];
+					return floatSettings.at(GENERATE_NORMALS_SMOOTH_CREASE_ANGLE);
 				}
 
 				/*!
 				* Returns true if improve cache locality is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getImproveCacheLocality()
+				virtual bool getImproveCacheLocality() const
 				{
-					return boolSettings[IMPROVE_CACHE_LOCALITY];
+					return boolSettings.at(IMPROVE_CACHE_LOCALITY);
 				}
 
 				/*!
 				* Returns the vertex cache size for improve cache locality set in settings.
 				* Defaults to PP_ICL_PTCACHE_SIZE = 12.
 				*/
-				virtual int getImproveCacheLocalityVertexCacheSize()
+				virtual int getImproveCacheLocalityVertexCacheSize() const
 				{
-					return intSettings[IMPROVE_CACHE_LOCALITY_VERTEX_CACHE_SIZE];
+					return intSettings.at(IMPROVE_CACHE_LOCALITY_VERTEX_CACHE_SIZE);
 				}
 
 				/*!
 				* Returns true if join identical vertices is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getJoinIdenticalVertices()
+				virtual bool getJoinIdenticalVertices() const
 				{
-					return boolSettings[JOIN_IDENTICAL_VERTICES];
+					return boolSettings.at(JOIN_IDENTICAL_VERTICES);
 				}
 
 				/*!
 				* Returns true if limit bone weights is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getLimitBoneWeights()
+				virtual bool getLimitBoneWeights() const
 				{
-					return boolSettings[LIMIT_BONE_WEIGHTS];
+					return boolSettings.at(LIMIT_BONE_WEIGHTS);
 				}
 
 				/*!
 				* Returns the max weight for limit bone weights set in settings. Defaults
 				* to AI_LMW_MAX_WEIGHTS = 4.
 				*/
-				virtual int getLimitBoneWeightsMaxWeight()
+				virtual int getLimitBoneWeightsMaxWeight() const
 				{
 
-					return intSettings[LIMIT_BONE_WEIGHTS_MAX_WEIGHTS];
+					return intSettings.at(LIMIT_BONE_WEIGHTS_MAX_WEIGHTS);
 				}
 
 				/*!
 				* Returns true if make left handed is checked in settings, false otherwise.
 				* Defaults to false.
 				*/
-				virtual bool getMakeLeftHanded()
+				virtual bool getMakeLeftHanded() const
 				{
-					return boolSettings[MAKE_LEFT_HANDED];
+					return boolSettings.at(MAKE_LEFT_HANDED);
 				}
 
 				/*!
 				* Returns true if optimize meshes is checked in settings, false otherwise.
 				* Defaults to false.
 				*/
-				virtual bool getOptimizeMeshes()
+				virtual bool getOptimizeMeshes() const
 				{
-					return boolSettings[OPTIMIZE_MESHES];
+					return boolSettings.at(OPTIMIZE_MESHES);
 				}
 
 				/*!
 				* Returns true if pre-transform UV coordinates is checked in settings,
 				* false otherwise. Defaults to false.
 				*/
-				virtual bool getPreTransformUVCoordinates()
+				virtual bool getPreTransformUVCoordinates() const
 				{
-					return boolSettings[PRE_TRANSFORM_UV_COORDINATES];
+					return boolSettings.at(PRE_TRANSFORM_UV_COORDINATES);
 				}
 
 				/*!
 				* Returns true if pre-transform vertices is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getPreTransformVertices()
+				virtual bool getPreTransformVertices() const
 				{
-					return boolSettings[PRE_TRANSFORM_VERTICES];
+					return boolSettings.at(PRE_TRANSFORM_VERTICES);
 				}
 
 				/*!
 				* Returns true if normalize pre-transform vertices is checked in settings,
 				* false otherwise. Defaults to false.
 				*/
-				virtual bool getPreTransformVerticesNormalize()
+				virtual bool getPreTransformVerticesNormalize() const
 				{
-					return boolSettings[PRE_TRANSFORM_VERTICES_NORMALIZE];
+					return boolSettings.at(PRE_TRANSFORM_VERTICES_NORMALIZE);
 				}
 
 				/*!
 				* Returns true if remove components is checked in settings, false otherwise.
 				* Defaults to false.
 				*/
-				virtual bool getRemoveComponents()
+				virtual bool getRemoveComponents() const const
 				{
-					return boolSettings[REMOVE_COMPONENTS];
+					return boolSettings.at(REMOVE_COMPONENTS);
 				}
 
 				/*!
 				* Returns true if remove components animations is checked in settings,
 				* false otherwise. Defaults to false.
 				*/
-				virtual bool getRemoveComponentsAnimations()
+				virtual bool getRemoveComponentsAnimations() const const
 				{
-					return boolSettings[REMOVE_COMPONENTS_ANIMATIONS];
+					return boolSettings.at(REMOVE_COMPONENTS_ANIMATIONS);
 				}
 
 				/*!
 				* Returns true if remove components bi/tangents is checked in settings,
 				* false otherwise. Defaults to false.
 				*/
-				virtual bool getRemoveComponentsBiTangents()
+				virtual bool getRemoveComponentsBiTangents() const
 				{
-					return boolSettings[REMOVE_COMPONENTS_BI_TANGENTS];
+					return boolSettings.at(REMOVE_COMPONENTS_BI_TANGENTS);
 				}
 
 				/*!
 				* Returns true if remove components bone weights is checked in settings,
 				* false otherwise. Defaults to false.
 				*/
-				virtual bool getRemoveComponentsBoneWeights()
+				virtual bool getRemoveComponentsBoneWeights() const
 				{
-					return boolSettings[REMOVE_COMPONENTS_BONE_WEIGHTS];
+					return boolSettings.at(REMOVE_COMPONENTS_BONE_WEIGHTS);
 				}
 
 				/*!
 				* Returns true if remove components cameras is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getRemoveComponentsCameras()
+				virtual bool getRemoveComponentsCameras() const
 				{
-					return boolSettings[REMOVE_COMPONENTS_CAMERAS];
+					return boolSettings.at(REMOVE_COMPONENTS_CAMERAS);
 				}
 
 				/*!
 				* Returns true if remove components colors is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getRemoveComponentsColors()
+				virtual bool getRemoveComponentsColors() const
 				{
-					return boolSettings[REMOVE_COMPONENTS_COLORS];
+					return boolSettings.at(REMOVE_COMPONENTS_COLORS);
 				}
 
 				/*!
 				* Returns true if remove components lights is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getRemoveComponentsLights()
+				virtual bool getRemoveComponentsLights() const
 				{
-					return boolSettings[REMOVE_COMPONENTS_LIGHTS];
+					return boolSettings.at(REMOVE_COMPONENTS_LIGHTS);
 				}
 
 				/*!
 				* Returns true if remove components materials is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getRemoveComponentsMaterials()
+				virtual bool getRemoveComponentsMaterials() const
 				{
-					return boolSettings[REMOVE_COMPONENTS_MATERIALS];
+					return boolSettings.at(REMOVE_COMPONENTS_MATERIALS);
 				}
 
 				/*!
 				* Returns true if remove components meshes is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getRemoveComponentsMeshes()
+				virtual bool getRemoveComponentsMeshes() const
 				{
-					return boolSettings[REMOVE_COMPONENTS_MESHES];
+					return boolSettings.at(REMOVE_COMPONENTS_MESHES);
 				}
 
 				/*!
 				* Returns true if remove components normals is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getRemoveComponentsNormals()
+				virtual bool getRemoveComponentsNormals() const
 				{
-					return boolSettings[REMOVE_COMPONENTS_NORMALS];
+					return boolSettings.at(REMOVE_COMPONENTS_NORMALS);
 				}
 
 				/*!
 				* Returns true if remove components textures is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getRemoveComponentsTextures()
+				virtual bool getRemoveComponentsTextures() const
 				{
-					return boolSettings[REMOVE_COMPONENTS_TEXTURES];
+					return boolSettings.at(REMOVE_COMPONENTS_TEXTURES);
 				}
 
 				/*!
 				* Returns true if remove components texture coordinates is checked in
 				* settings, false otherwise. Defaults to false.
 				*/
-				virtual bool getRemoveComponentsTextureCoordinates()
+				virtual bool getRemoveComponentsTextureCoordinates() const
 				{
-					return boolSettings[REMOVE_COMPONENTS_TEXTURE_COORDINATES];
+					return boolSettings.at(REMOVE_COMPONENTS_TEXTURE_COORDINATES);
 				}
 
 				/*!
 				* Returns true if remove redundant materials is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getRemoveRedundantMaterials()
+				virtual bool getRemoveRedundantMaterials() const
 				{
-					return boolSettings[REMOVE_REDUNDANT_MATERIALS];
+					return boolSettings.at(REMOVE_REDUNDANT_MATERIALS);
 				}
 
 				/*!
 				* Returns a space-separated string of materials names to be skipped set in
 				* settings. Defaults to empty string.
 				*/
-				virtual std::string getRemoveRedundantMaterialsSkip()
+				virtual std::string getRemoveRedundantMaterialsSkip() const
 				{
-					return stringSettings[REMOVE_REDUNDANT_MATERIALS_SKIP];
+					return stringSettings.at(REMOVE_REDUNDANT_MATERIALS_SKIP);
 				}
 
 				/*!
 				* Returns true if remove redundant nodes is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getRemoveRedundantNodes()
+				virtual bool getRemoveRedundantNodes() const
 				{
-					return boolSettings[REMOVE_REDUNDANT_NODES];
+					return boolSettings.at(REMOVE_REDUNDANT_NODES);
 				}
 
 				/*!
 				* Returns a space-separated string of node names to be skipped set in
 				* settings. Defaults to empty string.
 				*/
-				virtual std::string getRemoveRedundantNodesSkip()
+				virtual std::string getRemoveRedundantNodesSkip() const
 				{
-					return stringSettings[REMOVE_REDUNDANT_NODES_SKIP];
+					return stringSettings.at(REMOVE_REDUNDANT_NODES_SKIP);
 				}
 
 				/*!
 				* Returns ture if sort and remove is checked in settings, false otherwise.
 				* Defaults to false.
 				*/
-				virtual bool getSortAndRemove()
+				virtual bool getSortAndRemove() const
 				{
-					return boolSettings[SORT_AND_REMOVE];
+					return boolSettings.at(SORT_AND_REMOVE);
 				}
 
 				/*!
 				* Returns true if sort and remove lines is checked in settings, false
 				* otherwise. Defaults to true.
 				*/
-				virtual bool getSortAndRemoveLines()
+				virtual bool getSortAndRemoveLines() const
 				{
-					return boolSettings[SORT_AND_REMOVE_LINES];
+					return boolSettings.at(SORT_AND_REMOVE_LINES);
 				}
 
 				/*!
 				* Returns true if sort and remove points is checked in settings, false
 				* otherwise. Defaults to true.
 				*/
-				virtual bool getSortAndRemovePoints()
+				virtual bool getSortAndRemovePoints() const
 				{
-					return boolSettings[SORT_AND_REMOVE_POINTS];
+					return boolSettings.at(SORT_AND_REMOVE_POINTS);
 				}
 
 				/*!
 				* Returns true if sort and remove points is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getSortAndRemovePolygons()
+				virtual bool getSortAndRemovePolygons() const
 				{
-					return boolSettings[SORT_AND_REMOVE_POLYGONS];
+					return boolSettings.at(SORT_AND_REMOVE_POLYGONS);
 				}
 
 				/*!
 				* Returns true if sort and remove triangles is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getSortAndRemoveTriangles()
+				virtual bool getSortAndRemoveTriangles() const
 				{
-					return boolSettings[SORT_AND_REMOVE_TRIANGLES];
+					return boolSettings.at(SORT_AND_REMOVE_TRIANGLES);
 				}
 
 				/*!
 				* Returns true if split by bone count is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getSplitByBoneCount()
+				virtual bool getSplitByBoneCount() const
 				{
-					return boolSettings[SPLIT_BY_BONE_COUNT];
+					return boolSettings.at(SPLIT_BY_BONE_COUNT);
 				}
 
 				/*!
 				* Returns a split by bones count max bones set in settings. Defaults to
 				* AI_SBBC_DEFAULT_MAX_BONES = 60.
 				*/
-				virtual int getSplitByBoneCountMaxBones()
+				virtual int getSplitByBoneCountMaxBones() const
 				{
-					return boolSettings[SPLIT_BY_BONE_COUNT_MAX_BONES];
+					return boolSettings.at(SPLIT_BY_BONE_COUNT_MAX_BONES);
 				}
 
 				/*!
 				* Returns true if split large meshes is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getSplitLargeMeshes()
+				virtual bool getSplitLargeMeshes() const
 				{
-					return boolSettings[SPLIT_LARGE_MESHES];
+					return boolSettings.at(SPLIT_LARGE_MESHES);
 				}
 
 				/*!
 				* Returns a split large meshes triangle limit set in settings. Defaults to
 				* AI_SLM_DEFAULT_MAX_TRIANGLES = 1,000,000.
 				*/
-				virtual int getSplitLargeMeshesTriangleLimit()
+				virtual int getSplitLargeMeshesTriangleLimit() const
 				{
-					return intSettings[SPLIT_LARGE_MESHES_TRIANGLE_LIMIT];
+					return intSettings.at(SPLIT_LARGE_MESHES_TRIANGLE_LIMIT);
 				}
 
 				/*!
 				* Returns a split large meshes triangle limit set in settings. Defaults to
 				* AI_SLM_DEFAULT_MAX_VERTICES = 1,000,000.
 				*/
-				virtual int getSplitLargeMeshesVertexLimit()
+				virtual int getSplitLargeMeshesVertexLimit() const
 				{
-					return intSettings[SPLIT_LARGE_MESHES_VERTEX_LIMIT];
+					return intSettings.at(SPLIT_LARGE_MESHES_VERTEX_LIMIT);
 				}
 
 				/*!
 				* Returns true if triangulate is checked in settings, false otherwise.
 				* Defaults to true.
 				*/
-				virtual bool getTriangulate()
+				virtual bool getTriangulate() const
 				{
-					return boolSettings[TRIANGULATE];
+					return boolSettings.at(TRIANGULATE);
 				}
 
 				/*!
 				* Returns true if validate data structures is checked in settings, false
 				* otherwise. Defaults to false.
 				*/
-				virtual bool getValidateDataStructures()
+				virtual bool getValidateDataStructures() const
 				{
-					return boolSettings[VALIDATE_DATA_STRUCTURES];
+					return boolSettings.at(VALIDATE_DATA_STRUCTURES);
 				}
 
 				/**

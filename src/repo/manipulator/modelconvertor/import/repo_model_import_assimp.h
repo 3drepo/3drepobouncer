@@ -48,12 +48,12 @@ namespace repo{
 				* Create AssimpModelImport with specific settings
 				* @param settings
 				*/
-				AssimpModelImport(ModelImportConfig *settings);
+				AssimpModelImport(const ModelImportConfig *settings);
 
 				/**
 				* Default Deconstructor
 				*/
-				~AssimpModelImport();
+				virtual ~AssimpModelImport();
 
 				/**
 				* Generates a repo scene graph
