@@ -4,17 +4,18 @@
 #If you really need to overwrite this file, be aware that it will be overwritten if updateSources.py is executed.
 
 
-add_subdirectory(core)
-add_subdirectory(lib)
-add_subdirectory(manipulator)
 set(SOURCES
 	${SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_controller.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_abstract.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_assimp.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_config.cpp
 	CACHE STRING "source files" FORCE)
 
 set(HEADERS
 	${HEADERS}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_bouncer_global.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_controller.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_abstract.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_assimp.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_config.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_config_default_values.h
 	CACHE STRING "header files" FORCE)
 

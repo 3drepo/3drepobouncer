@@ -34,7 +34,7 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 unset(Boost_INCLUDE_DIR CACHE)
 unset(Boost_LIBRARY_DIRS CACHE)
 
-find_package(Boost REQUIRED COMPONENTS system thread chrono log filesystem)
+find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem)
 
 
 #================Mongo SETTINGS=======================
@@ -50,10 +50,10 @@ add_subdirectory(src)
 if(${Boost_FOUND} AND ${Mongo_FOUND} AND ${Assimp_FOUND})
 	include_directories(${Boost_INCLUDE_DIRS} ${Mongo_INCLUDE_DIR} ${Assimp_INCLUDE_DIR} ${HEADERS})
 	add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
-	
+	add_definitions(-DREPO_API_LIBRARY)	
 
-	add_executable(bouncerTest ${SOURCES})
+	add_library(3drepobouncer SHARED ${SOURCES})
 
-	target_link_libraries(bouncerTest ${Boost_LIBRARIES} ${Mongo_LIBRARIES} ${Assimp_LIBRARIES})
+	target_link_libraries(3drepobouncer ${Boost_LIBRARIES} ${Mongo_LIBRARIES} ${Assimp_LIBRARIES})
 
 endif()

@@ -6,3 +6,13 @@
 
 add_subdirectory(graph)
 add_subdirectory(modelconvertor)
+set(SOURCES
+	${SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_manipulator.cpp
+	CACHE STRING "source files" FORCE)
+
+set(HEADERS
+	${HEADERS}
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_manipulator.h
+	CACHE STRING "header files" FORCE)
+
