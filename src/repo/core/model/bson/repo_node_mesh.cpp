@@ -174,7 +174,6 @@ std::vector<repo_color4d_t>* MeshNode::getColors() const
 	std::vector<repo_color4d_t> *colors = new std::vector<repo_color4d_t>();
 	if (hasField(REPO_NODE_LABEL_COLORS))
 	{
-		BOOST_LOG_TRIVIAL(trace) << "Getting colors..";
 		getBinaryFieldAsVector(getField(REPO_NODE_LABEL_COLORS), colors);
 	}
 
@@ -188,7 +187,6 @@ std::vector<repo_vector_t>* MeshNode::getVertices() const
 		&& hasField(REPO_NODE_LABEL_VERTICES))
 	{
 		const uint32_t verticesSize = getField(REPO_NODE_LABEL_VERTICES_COUNT).numberInt();
-		BOOST_LOG_TRIVIAL(trace) << "Getting vertices..";
 		getBinaryFieldAsVector(getField(REPO_NODE_LABEL_VERTICES), verticesSize, vertices);
 	}
 
@@ -203,7 +201,6 @@ std::vector<repo_vector_t>* MeshNode::getNormals() const
 		&& hasField(REPO_NODE_LABEL_NORMALS))
 	{
 		const uint32_t verticesSize = getField(REPO_NODE_LABEL_VERTICES_COUNT).numberInt();
-		BOOST_LOG_TRIVIAL(trace) << "Getting normals..";
 		getBinaryFieldAsVector(getField(REPO_NODE_LABEL_NORMALS), verticesSize, vertices);
 	}
 
@@ -221,7 +218,6 @@ std::vector<repo_vector2d_t>* MeshNode::getUVChannels() const
 		const uint32_t uvChannelSize = getField(REPO_NODE_LABEL_VERTICES_COUNT).numberInt() 
 			* getField(REPO_NODE_LABEL_UV_CHANNELS_COUNT).numberInt();
 
-		BOOST_LOG_TRIVIAL(trace) << "Getting uvs..";
 		getBinaryFieldAsVector(getField(REPO_NODE_LABEL_UV_CHANNELS), uvChannelSize, channels);
 	}
 
@@ -243,7 +239,6 @@ std::vector<repo_face_t>* MeshNode::getFaces() const
 		std::vector <uint32_t> *serializedFaces = new std::vector<uint32_t>();
 		
 		serializedFaces->resize(facesByteCount / sizeof(uint32_t));
-		BOOST_LOG_TRIVIAL(trace) << "Getting faces..";
 		getBinaryFieldAsVector(getField(REPO_NODE_LABEL_FACES), facesByteCount/sizeof(uint32_t), serializedFaces);
 
 		// Retrieve numbers of vertices for each face and subsequent
