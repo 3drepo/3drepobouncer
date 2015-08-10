@@ -86,7 +86,7 @@ namespace repo {
 						* @param label name of the field to retrieve
 						* @return returns a RepoBSONElement
 						*/
-						RepoBSONElement getField(std::string label) const
+						RepoBSONElement getField(const std::string &label) const
 						{
 							return RepoBSONElement(mongo::BSONObj::getField(label));
 						}
@@ -189,26 +189,32 @@ namespace repo {
 
 						/**
 						* Overload of getField function to retreve repoUUID
-						* @param name of the field
+						* @param label name of the field
 						* @return returns a repoUUID from that field
 						*/
-						repoUUID getUUIDField(std::string label) const;
+						repoUUID getUUIDField(const std::string &label) const;
 
 						/**
 						* Get an array of fields given an array element
-						* @param name of the array element
+						* @param label name of the array element
 						* @return returns the array element in their respective type
 						*/
-						std::vector<repoUUID> getUUIDFieldArray(std::string label) const;
+						std::vector<repoUUID> getUUIDFieldArray(const std::string &label) const;
 
 
 						/**
 						* Get an array of fields given an array element
-						* @param name of the array element
+						* @param label name of the array element
 						* @return returns the array element in their respective type
 						*/
-						std::vector<float> getFloatArray(std::string label) const;
+						std::vector<float> getFloatArray(const std::string &label) const;
 
+						/**
+						* Get a field as timestamp
+						* @param label name of the element
+						* @return returns timestamp as int64
+						*/
+						int64_t getTimeStampField(const std::string &label) const;
 						
 
 					}; // end 

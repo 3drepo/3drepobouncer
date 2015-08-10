@@ -104,3 +104,25 @@ RevisionNode* RevisionNode::createRevisionNode(
 	return new RevisionNode(builder.obj());
 
 }
+
+
+
+std::string RevisionNode::getAuthor() const
+{
+	return getStringField(REPO_NODE_REVISION_LABEL_AUTHOR);
+}
+
+std::string RevisionNode::getMessage() const
+{
+	return getStringField(REPO_NODE_REVISION_LABEL_MESSAGE);
+}
+
+std::vector<repoUUID> RevisionNode::getCurrentIDs() const
+{
+	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS);
+}
+
+int64_t RevisionNode::getTimestampInt64() const
+{
+	return getTimeStampField(REPO_NODE_REVISION_LABEL_TIMESTAMP);
+}

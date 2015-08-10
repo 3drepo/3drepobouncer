@@ -175,7 +175,7 @@ namespace repo{
 		* @return number of documents within the specified collection
 		*/
 		uint64_t countItemsInCollection(
-			RepoToken            *token,
+			const RepoToken            *token,
 			const std::string    &database,
 			const std::string    &collection);
 

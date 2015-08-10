@@ -88,6 +88,39 @@ namespace repo {
 						const std::string            &tag = std::string(),
 						const int                    &apiLevel = REPO_NODE_API_LEVEL_1
 						);
+
+
+					/**
+					* --------- Convenience functions -----------
+					*/
+
+					/**
+					* Get the author commited the revision
+					* @return returns a string for message. empty string if none.
+					*/
+					std::string getAuthor() const;
+
+					/**
+					* Get a list of current IDs for this revision
+					* @return returns a vector of unique IDs.
+					*/
+					std::vector<repoUUID> getCurrentIDs() const;
+
+					/**
+					* Get the message commited with the revision
+					* @return returns a string for message. empty string if none.
+					*/
+					std::string getMessage() const;
+
+					/**
+					* Get the timestamp as int when this revision was commited
+					* @return returns a timestamp
+					*/
+					int64_t getTimestampInt64() const;
+
+
+
+
 				};
 
 			}// end namespace bson

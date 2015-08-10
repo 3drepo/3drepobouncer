@@ -108,7 +108,7 @@ void RepoController::commitScene(
 }
 
 uint64_t RepoController::countItemsInCollection(
-	RepoToken            *token,
+	const RepoToken            *token,
 	const std::string    &database,
 	const std::string    &collection)
 {

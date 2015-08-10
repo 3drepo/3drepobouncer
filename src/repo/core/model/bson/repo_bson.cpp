@@ -20,7 +20,7 @@
 
 using namespace repo::core::model::bson;
 
-repoUUID RepoBSON::getUUIDField(std::string label) const{
+repoUUID RepoBSON::getUUIDField(const std::string &label) const{
 	repoUUID uuid;
 	const mongo::BSONElement bse = getField(label);
 	if (bse.binDataType() == mongo::bdtUUID ||
@@ -36,7 +36,7 @@ repoUUID RepoBSON::getUUIDField(std::string label) const{
 }
 
 
-std::vector<repoUUID> RepoBSON::getUUIDFieldArray(std::string label) const{
+std::vector<repoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) const{
 	std::vector<repoUUID> results;
 
 	if (hasField(label))
@@ -54,7 +54,7 @@ std::vector<repoUUID> RepoBSON::getUUIDFieldArray(std::string label) const{
 	return results;
 }
 
-std::vector<float> RepoBSON::getFloatArray(std::string label) const
+std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
 {
 	std::vector<float> results;
 
@@ -70,4 +70,17 @@ std::vector<float> RepoBSON::getFloatArray(std::string label) const
 
 	}
 	return results;
+}
+
+int64_t RepoBSON::getTimeStampField(const std::string &label) const
+{
+	int64_t time;
+
+	if (hasField(label))
+	{
+		time = getField(label).date().asInt64();
+
+
+	}
+	return time;
 }
