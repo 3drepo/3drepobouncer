@@ -122,6 +122,22 @@ std::vector<repoUUID> RevisionNode::getCurrentIDs() const
 	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS);
 }
 
+std::vector<repoUUID> RevisionNode::getAddedIDs() const
+{
+ 	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_ADDED_SHARED_IDS);
+}
+
+std::vector<repoUUID> RevisionNode::getModifiedIDs() const
+{
+	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_MODIFIED_SHARED_IDS);
+}
+
+std::vector<repoUUID> RevisionNode::getDeletedIDs() const
+{
+	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_DELETED_SHARED_IDS);
+}
+
+
 int64_t RevisionNode::getTimestampInt64() const
 {
 	return getTimeStampField(REPO_NODE_REVISION_LABEL_TIMESTAMP);

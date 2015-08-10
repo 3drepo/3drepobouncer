@@ -356,12 +356,6 @@ repo::core::model::bson::CollectionStats MongoDatabaseHandler::getCollectionStat
 		builder.append("scale", 1); // 1024 == KB 		
 
 		worker = workerPool->getWorker();
-
-		BOOST_LOG_TRIVIAL(trace) << "db."
-			+ collection
-			+ "._db.runCommand({collstats:db."
-			+ collection
-			+ "._shortName, scale:1});";
 		worker->runCommand(database, builder.obj(), info);
 	}
 	catch (mongo::DBException &e)

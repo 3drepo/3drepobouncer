@@ -295,6 +295,11 @@ bool RepoScene::commitRevisionNode(
 	std::vector<repoUUID> newRemovedV(newRemoved.begin(), newRemoved.end());
 	std::vector<repoUUID> newModifiedV(newModified.begin(), newModified.end());
 
+	BOOST_LOG_TRIVIAL(trace) << "Committing Revision Node....";
+
+	BOOST_LOG_TRIVIAL(trace) << "New revision: #current = " << uniqueIDs.size() << " #added = " << newAddedV.size()
+		<< " #deleted = " << newRemovedV.size() << " #modified = " << newModifiedV.size();
+
 	newRevNode =
 		model::bson::RepoBSONFactory::makeRevisionNode(userName, branch, uniqueIDs,
 		newAddedV, newRemovedV, newModifiedV, parent, message, tag);
