@@ -74,6 +74,17 @@ namespace repo{
 				const bool        &pwDigested);
 
 			/**
+			* Commit a scene graph
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param scene scene to commit
+			*/
+			void commitScene(
+				const std::string                             &databaseAd,
+				const repo::core::model::bson::RepoBSON 	  *cred, 
+				repo::manipulator::graph::RepoScene           *scene);
+
+			/**
 			* Remove a collection from the database
 			* @param databaseAd mongo database address:port
 			* @param cred user credentials in bson form

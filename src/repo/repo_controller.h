@@ -191,7 +191,7 @@ namespace repo{
 		*/
 		std::vector < repo::core::model::bson::RepoBSON >
 			getAllFromCollectionContinuous(
-			RepoToken            *token,
+			const RepoToken      *token,
 			const std::string    &database,
 			const std::string    &collection,
 			const uint64_t       &skip = 0);
@@ -210,7 +210,7 @@ namespace repo{
 		* @return returns a list of collection names
 		*/
 		std::list<std::string> getCollections(
-			RepoToken             *token,
+			const RepoToken             *token,
 			const std::string     &databaseName
 			);
 
@@ -223,7 +223,7 @@ namespace repo{
 		* @return returns a BSON object containing this information
 		*/
 		repo::core::model::bson::CollectionStats getCollectionStats(
-			RepoToken            *token,
+			const RepoToken            *token,
 			const std::string    &database,
 			const std::string    &collection);
 
@@ -265,7 +265,7 @@ namespace repo{
 		* @return returns true upon success
 		*/
 		bool removeCollection(
-			RepoToken             *token,
+			const RepoToken             *token,
 			const std::string     &databaseName,
 			const std::string     &collectionName,
 			std::string			  &errMsg = std::string()
@@ -279,11 +279,19 @@ namespace repo{
 		* @return returns true upon success
 		*/
 		bool removeDatabase(
-			RepoToken             *token,
+			const RepoToken             *token,
 			const std::string     &databaseName,
 			std::string			  &errMsg = std::string()
 		);
 
+		/**
+		* Commit a scene graph
+		* @param token Authentication token
+		* @param scene RepoScene to commit
+		*/
+		void commitScene(
+			const RepoToken                     *token,
+			repo::manipulator::graph::RepoScene *scene);
 
 
 		/*

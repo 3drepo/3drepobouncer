@@ -139,19 +139,6 @@ static std::string UUIDtoString(const repoUUID &id)
 	return boost::lexical_cast<std::string>(id);
 }
 
-///**
-//* Returns a string representation of a given value. 
-//* @param value value to turn into string
-//* @return return
-//*/
-//template <class T>
-//static std::string toString(T value)
-//{
-//	std::stringstream sstr;
-//	sstr << value;
-//	return sstr.str();
-//}
-
 static std::string toString(const repo_face_t &f)
 {
 	std::string str;

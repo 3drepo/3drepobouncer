@@ -126,7 +126,17 @@ namespace repo{
 						*/
 						RepoNode cloneAndAddParent(repoUUID parentID);
 
-
+						/**
+						* Create a new object with fields within the 
+						* change node (excluding parentID, unique ID and shared ID)
+						* NOTE this object is unchanged!
+						* @param changes a repoNode containing the fields to change
+						* @param newUniqueID generate a new unique ID if set to true
+						* @return returns a new object with fields updated
+						*/
+						RepoNode cloneAndAddFields(
+							const RepoNode *changes, 
+							const bool     &newUniqueID = true);
 
 						/*
 						*	------------- Convenience getters --------------

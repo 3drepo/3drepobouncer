@@ -145,13 +145,25 @@ namespace repo{
 						headRevision = false;
 						revision = revisionID;
 					}
-
-
+					
 					/**
 					* Set Branch
 					* @param uuid of branch
 					*/
 					void setBranch(repoUUID branchID){ branch = branchID; }
+
+					/**
+					* Set commit message
+					* @param msg message to go with the commit
+					*/
+					void setCommitMessage(const std::string &msg) { commitMsg = msg; }
+
+					/**
+					* Get branch name return uuid of branch there is no name
+					* return "master" if this scene is not revisioned.
+					* @return name of the branch or uuid if no name
+					*/
+					std::string getBranchName() const;
 
 
 					/**
@@ -249,6 +261,25 @@ namespace repo{
 					{
 						return textures;
 					}
+
+					/**
+					* Get all ID of nodes which are modified since last revision
+					* @return returns a vector of node IDs
+					*/
+					std::vector<repoUUID> getModifiedNodesID() const;
+
+					/**
+					* 
+					*/
+					repo::core::model::bson::RepoNode* getNodeBySharedID(
+						const repoUUID &sharedID) const
+					{
+						auto it = sharedIDtoUniqueID.find(sharedID);
+
+						if (it == sharedIDtoUniqueID.end()) return nullptr;
+
+						return nodesByUniqueID.at(it->second);
+					}
 					/**
 					* -------------- Scene Modification Functions --------------
 					*/
@@ -260,6 +291,20 @@ namespace repo{
 					*/
 					void addNodes(std::vector<repo::core::model::bson::RepoNode *> nodes);
 
+					/**
+					* Modify a node with the information within the new node.
+					* This will also update revision related information within 
+					* the scene (if necessary)
+					* @param sharedID of the node to modify
+					* @param node modified version node
+					* @param overwrite if true, overwrite the node with modified version, 
+					*        otherwise just update with its contents (default: false)
+					*/
+
+					void modifyNode(
+						const repoUUID                    &sharedID,
+						repo::core::model::bson::RepoNode *node,
+						const bool                        &overwrite=false);
 
 					/**
 					* ----------------------------------------------------------
@@ -370,6 +415,7 @@ namespace repo{
 					std::string revExt;      /*! extension for history graph (Default: history)*/
 					repoUUID   revision;
 					repoUUID   branch;
+					std::string commitMsg;
 					bool headRevision;
 					bool unRevisioned;       /*! Flag to indicate if the scene graph is revisioned (true for scene graphs from model convertor)*/
 
@@ -394,10 +440,10 @@ namespace repo{
 					std::map<repoUUID, RepoScene*> referenceToScene; //** mapping of reference ID to it's scene graph
 
 					//Change trackers
-					std::vector<repoUUID> newCurrent; //new list of current (unique IDs)
-					std::vector<repoUUID> newAdded; //list of nodes added to the new revision (shared ID)
-					std::vector<repoUUID> newRemoved; //list of nodes removed for this revision (shared ID)
-					std::vector<repoUUID> newModified; // list of nodes modified during this revision  (shared ID)
+					std::set<repoUUID> newCurrent; //new list of current (unique IDs)
+					std::set<repoUUID> newAdded; //list of nodes added to the new revision (shared ID)
+					std::set<repoUUID> newRemoved; //list of nodes removed for this revision (shared ID)
+					std::set<repoUUID> newModified; // list of nodes modified during this revision  (shared ID)
 
 
 					//TODO: Stashed version of the scene

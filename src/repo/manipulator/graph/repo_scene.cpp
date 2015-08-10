@@ -91,7 +91,6 @@ bool RepoScene::addNodeToScene(
 	repo::core::model::bson::RepoNodeSet::iterator nodeIterator;
 	if (nodes.size() > 0)
 	{
-		newAdded.reserve(nodes.size());
 
 		collection->insert(nodes.begin(), nodes.end());
 		for (nodeIterator = nodes.begin(); nodeIterator != nodes.end(); ++nodeIterator)
@@ -106,7 +105,7 @@ bool RepoScene::addNodeToScene(
 					success = false;
 				}
 			}
-			newAdded.push_back(node->getSharedID());
+			newAdded.insert(node->getSharedID());
 		}
 	}
 
@@ -208,7 +207,10 @@ bool RepoScene::commit(
 	{
 		BOOST_LOG_TRIVIAL(info) << "Commited project settings, commiting revision...";
 		model::bson::RevisionNode *newRevNode = 0;
-		if (success &= commitRevisionNode(handler, errMsg, newRevNode, userName, message, tag))
+		if (!message.empty())
+			commitMsg = message;
+
+		if (success &= commitRevisionNode(handler, errMsg, newRevNode, userName, commitMsg, tag))
 		{
 			BOOST_LOG_TRIVIAL(info) << "Commited revision node, commiting scene nodes...";
 			//commited the revision node, commit the modification on the scene
@@ -227,6 +229,7 @@ bool RepoScene::commit(
 				newAdded.clear();
 				newRemoved.clear();
 				newModified.clear();
+				commitMsg.clear();
 
 				unRevisioned = false;
 			}
@@ -284,9 +287,17 @@ bool RepoScene::commitRevisionNode(
 		nodesByUniqueID | boost::adaptors::map_keys,
 		std::back_inserter(uniqueIDs));
 
+
+	//convert the sets to vectors
+
+
+	std::vector<repoUUID> newAddedV(newAdded.begin(), newAdded.end());
+	std::vector<repoUUID> newRemovedV(newRemoved.begin(), newRemoved.end());
+	std::vector<repoUUID> newModifiedV(newModified.begin(), newModified.end());
+
 	newRevNode =
 		model::bson::RepoBSONFactory::makeRevisionNode(userName, branch, uniqueIDs,
-		newAdded, newRemoved, newModified, parent, message, tag);
+		newAddedV, newRemovedV, newModifiedV, parent, message, tag);
 
 
 	if (!newRevNode)
@@ -308,8 +319,6 @@ bool RepoScene::commitSceneChanges(
 	std::vector<repoUUID>::iterator it;
 
 	long count = 0;
-	
-	nodesToCommit.reserve(newAdded.size() + newModified.size() + newRemoved.size());
 
 	nodesToCommit.insert(nodesToCommit.end(), newAdded.begin(), newAdded.end());
 	nodesToCommit.insert(nodesToCommit.end(), newModified.begin(), newModified.end());
@@ -319,6 +328,7 @@ bool RepoScene::commitSceneChanges(
 	
 	for (it = nodesToCommit.begin(); it != nodesToCommit.end(); ++it)
 	{
+	
 		model::bson::RepoNode *node = nodesByUniqueID[sharedIDtoUniqueID[*it]];
 		if (node->objsize() > handler->documentSizeLimit())
 		{
@@ -348,6 +358,32 @@ RepoScene::getChildrenAsNodes(
 		}
 	}
 	return children;
+}
+
+std::string RepoScene::getBranchName() const
+{
+	std::string branchName("master");
+	if (revNode)
+	{
+		branchName = revNode->getName();
+		if (branchName.empty())
+		{
+			branchName = UUIDtoString(revNode->getUniqueID());
+		}
+	}
+
+	return branchName;
+}
+
+
+std::vector<repoUUID> RepoScene::getModifiedNodesID() const
+{
+	std::vector<repoUUID> ids(newAdded.begin(), newAdded.end());
+
+	ids.insert(ids.end(), newModified.begin(), newModified.end());
+	ids.insert(ids.end(), newRemoved.begin() , newRemoved.end());
+
+	return ids;
 }
 
 bool RepoScene::loadRevision(
@@ -399,6 +435,38 @@ bool RepoScene::loadScene(
 
 	return populate(handler, nodes, errMsg);
 
+}
+
+void RepoScene::modifyNode(
+	const repoUUID                    &sharedID,
+	repo::core::model::bson::RepoNode *node,
+	const bool                        &overwrite)
+{
+	//model::bson::RepoNode* updatedNode = nullptr;
+	if (sharedIDtoUniqueID.find(sharedID) != sharedIDtoUniqueID.end())
+	{
+		model::bson::RepoNode* nodeToChange = nodesByUniqueID[sharedIDtoUniqueID[sharedID]];
+
+		//check if the node is already in the "to modify" list
+		bool isInList = newAdded.find(sharedID) != newAdded.end() || newModified.find(sharedID) != newModified.end();
+
+		//generate new UUID if it  is not in list, otherwise use the current one.
+		model::bson::RepoNode updatedNode = model::bson::RepoNode(nodeToChange->cloneAndAddFields(node, !isInList));
+
+		if (!isInList)
+		{
+			newModified.insert(sharedID);
+			newCurrent.erase(newCurrent.find(nodeToChange->getUniqueID()));
+			newCurrent.insert(updatedNode.getUniqueID());
+		}
+
+		nodeToChange->swap(updatedNode);
+
+	}
+	else{
+		BOOST_LOG_TRIVIAL(error) << "Trying to update a node " << sharedID << " that doesn't exist in the scene!";
+	}
+	
 }
 
 

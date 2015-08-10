@@ -91,6 +91,22 @@ RepoToken* RepoController::authenticateMongo(
 	return token ;
 }
 
+void RepoController::commitScene(
+	const RepoToken                     *token,
+	repo::manipulator::graph::RepoScene *scene)
+{
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		worker->commitScene(token->databaseAd, token->credentials, scene);
+		workerPool.push(worker);
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Trying to commit to the database without a Repo Token!";
+	}
+}
+
 uint64_t RepoController::countItemsInCollection(
 	RepoToken            *token,
 	const std::string    &database,
@@ -140,7 +156,7 @@ repo::manipulator::graph::RepoScene* RepoController::fetchScene(
 
 std::vector < repo::core::model::bson::RepoBSON >
 	RepoController::getAllFromCollectionContinuous(
-		RepoToken            *token,
+	    const RepoToken      *token,
 		const std::string    &database,
 		const std::string    &collection,
 		const uint64_t       &skip)
@@ -197,7 +213,7 @@ std::list<std::string> RepoController::getDatabases(RepoToken *token)
 }
 
 std::list<std::string>  RepoController::getCollections(
-	RepoToken             *token,
+	const RepoToken       *token,
 	const std::string     &databaseName
 	)
 {
@@ -218,7 +234,7 @@ std::list<std::string>  RepoController::getCollections(
 }
 
 repo::core::model::bson::CollectionStats RepoController::getCollectionStats(
-	RepoToken      *token,
+	const RepoToken      *token,
 	const std::string    &database,
 	const std::string    &collection)
 {
@@ -245,7 +261,7 @@ repo::core::model::bson::CollectionStats RepoController::getCollectionStats(
 }
 
 bool RepoController::removeCollection(
-	RepoToken             *token,
+	const RepoToken             *token,
 	const std::string     &databaseName,
 	const std::string     &collectionName,
 	std::string			  &errMsg
@@ -271,7 +287,7 @@ bool RepoController::removeCollection(
 
 
 bool RepoController::removeDatabase(
-	RepoToken             *token,
+	const RepoToken       *token,
 	const std::string     &databaseName,
 	std::string			  &errMsg
 	)

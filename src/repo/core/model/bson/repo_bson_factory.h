@@ -37,7 +37,7 @@ namespace repo {
 	namespace core {
 		namespace model {
 			namespace bson {
-				class RepoBSONFactory
+				class REPO_API_EXPORT RepoBSONFactory
 				{
 					public:
 
@@ -208,7 +208,7 @@ namespace repo {
 						static TransformationNode* makeTransformationNode(
 						const std::vector<std::vector<float>> &transMatrix,
 						const std::string                     &name = std::string(),
-						const std::vector<repoUUID>		  &parents = std::vector<repoUUID>(),
+						const std::vector<repoUUID>		      &parents = std::vector<repoUUID>(),
 						const int                             &apiLevel = REPO_NODE_API_LEVEL_1);
 
 				};

@@ -66,6 +66,26 @@ repo::core::model::bson::RepoBSON* RepoManipulator::createCredBSON(
 	return bson;
 }
 
+void RepoManipulator::commitScene(
+	const std::string                             &databaseAd,
+	const repo::core::model::bson::RepoBSON 	  *cred,
+	repo::manipulator::graph::RepoScene           *scene)
+{
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+
+	std::string msg;
+	if (handler && scene && scene->commit(handler, msg, cred->getStringField("user")))
+	{
+		BOOST_LOG_TRIVIAL(info) << "Scene successfully committed to the database";
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Error committing scene to the database : " << msg;
+	}
+		
+}
+
 uint64_t RepoManipulator::countItemsInCollection(
 	const std::string                             &databaseAd,
 	const repo::core::model::bson::RepoBSON*	  cred,

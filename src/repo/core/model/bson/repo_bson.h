@@ -209,6 +209,7 @@ namespace repo {
 						*/
 						std::vector<float> getFloatArray(std::string label) const;
 
+						
 
 					}; // end 
 			}// end namespace bson

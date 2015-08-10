@@ -75,6 +75,32 @@ RepoNode RepoNode::cloneAndAddParent(repoUUID parentID)
 	return RepoNode(builder.obj());
 }
 
+RepoNode RepoNode::cloneAndAddFields(
+	const RepoNode *changes,
+	const bool     &newUniqueID)
+{
+	RepoBSONBuilder builder;
+	if (newUniqueID)
+	{
+		builder.append(REPO_NODE_LABEL_ID, generateUUID());
+	}
+	else
+	{
+		builder.append(REPO_NODE_LABEL_ID, getUniqueID());
+	}
+
+	builder.append(REPO_NODE_LABEL_SHARED_ID, getSharedID());
+
+	if (hasField(REPO_NODE_LABEL_PARENTS))
+		builder.append(REPO_NODE_LABEL_PARENTS, getField(REPO_NODE_LABEL_PARENTS));
+
+	builder.appendElementsUnique(*changes);
+
+	builder.appendElementsUnique(*this);
+
+	return builder.obj();
+}
+
 std::vector<repoUUID> RepoNode::getParentIDs() const
 {
 	return getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
