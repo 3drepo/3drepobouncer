@@ -72,6 +72,7 @@ namespace repo{
 			const repo::core::model::bson::RepoBSON*  credentials,
 			const std::string                         databaseAd,
 			const std::string                        &databaseName) :
+			databaseAd(databaseAd),
 			credentials(credentials),
 			databaseName(databaseName){};
 
@@ -228,7 +229,7 @@ namespace repo{
 			const std::string    &collection);
 
 
-		std::string getHostAndPort(RepoToken *token) { return token->databaseAd; }
+		std::string getHostAndPort(RepoToken *token) { BOOST_LOG_TRIVIAL(info) << "getHostAndPort: " << token->databaseAd; return token->databaseAd; }
 
 
 		/*
