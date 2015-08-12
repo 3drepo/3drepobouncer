@@ -521,13 +521,32 @@ bool MongoDatabaseHandler::upsertDocument(
 {
 	bool success = true;
 	mongo::DBClientBase *worker;
+
+	bool upsert = overwrite;
 	try{
 		worker = workerPool->getWorker();
-		if (overwrite)
+
+	
+		repo::core::model::bson::RepoBSONBuilder queryBuilder;
+		queryBuilder << ID << obj.getField(ID);
+
+		mongo::BSONElement bsonID;
+		obj.getObjectID(bsonID);
+		mongo::Query existQuery = MONGO_QUERY("_id" << bsonID);
+		mongo::BSONObj bsonMongo = worker->findOne(database + "." + collection, existQuery);
+
+		if (bsonMongo.isEmpty())
+		{
+			//document doens't exist, insert the document
+			upsert = true;
+		}
+
+		
+		if (upsert)
 		{
 			mongo::Query query;
-			query = BSON(REPO_LABEL_ID << obj.getField(REPO_LABEL_ID));
-
+			query = BSON(REPO_LABEL_ID << bsonID);
+			BOOST_LOG_TRIVIAL(trace) << "query = " << query.toString();
 			worker->update(getNamespace(database, collection), query, obj, true);
 		}
 		else
@@ -537,19 +556,22 @@ bool MongoDatabaseHandler::upsertDocument(
 			builder << REPO_COMMAND_UPDATE << collection;
 
 			mongo::BSONObjBuilder updateBuilder;
-			updateBuilder << REPO_COMMAND_Q << BSON(REPO_LABEL_ID << obj.getField(REPO_LABEL_ID));
-			updateBuilder << REPO_COMMAND_U << BSON("$set" << obj.copy());
+			updateBuilder << REPO_COMMAND_Q << BSON(REPO_LABEL_ID << bsonID);
+			updateBuilder << REPO_COMMAND_U << BSON("$set" << obj.removeField(ID));
 			updateBuilder << REPO_COMMAND_UPSERT << true;
 
 			builder << REPO_COMMAND_UPDATES << BSON_ARRAY(updateBuilder.obj());
 			mongo::BSONObj info;
 			worker->runCommand(database, builder.obj(), info);
 
-			BOOST_LOG_TRIVIAL(debug) << info;
+			if (info.hasField("writeErrors"))
+			{
+				BOOST_LOG_TRIVIAL(error) << info.getField("writeErrors").Array().at(0).embeddedObject().getField("errmsg");
+				success = false;
+			}
 		}
-			
-		
 
+			
 	}
 	catch (mongo::DBException &e)
 	{
