@@ -65,12 +65,18 @@ namespace repo {
 						* @param apiLevel API Level (optional)
 						* @return returns a pointer Transformation node
 						*/
-						static TransformationNode* createTransformationNode(
+						static TransformationNode createTransformationNode(
 							const std::vector<std::vector<float>> &transMatrix,
 							const std::string                     &name = std::string(), 
 							const std::vector<repoUUID>		      &parents = std::vector<repoUUID>(),
 							const int                             &apiLevel = REPO_NODE_API_LEVEL_1);
 						
+						/**
+						* Create an Identity matrix
+						* @return returns a 4 by 4 identity matrix
+						*/
+						static std::vector<std::vector<float>> identityMat();
+
 						/**
 						* --------- Convenience functions -----------
 						*/

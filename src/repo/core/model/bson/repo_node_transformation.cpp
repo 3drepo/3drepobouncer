@@ -38,7 +38,7 @@ TransformationNode::~TransformationNode()
 {
 }
 
-TransformationNode* TransformationNode::createTransformationNode(
+TransformationNode TransformationNode::createTransformationNode(
 	const std::vector<std::vector<float>> &transMatrix,
 	const std::string                     &name,
 	const std::vector<repoUUID>		  &parents,
@@ -62,9 +62,18 @@ TransformationNode* TransformationNode::createTransformationNode(
 	}
 	builder.appendArray(REPO_NODE_LABEL_MATRIX, rows.obj());
 
-	return new TransformationNode(builder.obj());
+	return TransformationNode(builder.obj());
 }
 
+std::vector<std::vector<float>> TransformationNode::identityMat()
+{
+	std::vector<std::vector<float>> idMat;
+	idMat.push_back({ 1, 0, 0, 0 });
+	idMat.push_back({ 0, 1, 0, 0 });
+	idMat.push_back({ 0, 0, 1, 0 });
+	idMat.push_back({ 0, 0, 0, 1 });
+	return idMat;
+}
 
 std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) const
 {

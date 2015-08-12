@@ -38,7 +38,7 @@ CameraNode::~CameraNode()
 {
 }
 
-CameraNode* CameraNode::createCameraNode(
+CameraNode CameraNode::createCameraNode(
 	const float         &aspectRatio,
 	const float         &farClippingPlane,
 	const float         &nearClippingPlane,
@@ -84,7 +84,7 @@ CameraNode* CameraNode::createCameraNode(
 	// Up vector
 	builder.appendVector(REPO_NODE_LABEL_UP, up);
 
-	return new CameraNode(builder.obj());
+	return CameraNode(builder.obj());
 }
 
 repo_vector_t CameraNode::getPosition() const

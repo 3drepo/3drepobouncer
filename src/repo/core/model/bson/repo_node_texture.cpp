@@ -40,7 +40,7 @@ TextureNode::~TextureNode()
 {
 }
 
-TextureNode* TextureNode::createTextureNode(
+TextureNode TextureNode::createTextureNode(
 	const std::string &name,
 	const char        *data,
 	const uint32_t    &byteCount,
@@ -82,7 +82,7 @@ TextureNode* TextureNode::createTextureNode(
 		byteCount,
 		REPO_NODE_LABEL_DATA_BYTE_COUNT);
 
-	return new TextureNode(builder.obj());
+	return TextureNode(builder.obj());
 }
 
 std::vector<char>* TextureNode::getRawData() const

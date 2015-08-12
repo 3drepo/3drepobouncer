@@ -17,10 +17,10 @@
 
 
 #include "repo_controller.h"
-
 #include <boost/log/sinks/text_file_backend.hpp>
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
+
 
 
 using namespace repo;
@@ -408,6 +408,25 @@ void RepoController::subscribeBroadcasterToLog(){
 	BOOST_LOG_TRIVIAL(trace) << "Subscribed broadcaster to log";
 }
 
+
+repo::manipulator::graph::RepoScene* RepoController::createFederatedScene(
+	const std::map<repo::core::model::bson::TransformationNode, repo::core::model::bson::ReferenceNode> &fedMap)
+{
+
+	repo::manipulator::graph::RepoScene* scene = nullptr;
+	if (fedMap.size() > 0)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		scene = worker->createFederatedScene(fedMap);
+		workerPool.push(worker);
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Trying to federate a new scene graph with no references!";
+	}
+
+	return scene;
+}
 repo::manipulator::graph::RepoScene* 
 	RepoController::loadSceneFromFile(
 	const std::string                                          &filePath,

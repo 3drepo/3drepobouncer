@@ -38,7 +38,7 @@ MetadataNode::~MetadataNode()
 {
 }
 
-MetadataNode* MetadataNode::createMetadataNode(
+MetadataNode MetadataNode::createMetadataNode(
 	RepoBSON			         &metadata,
 	const std::string            &mimeType,
 	const std::string            &name,
@@ -61,5 +61,5 @@ MetadataNode* MetadataNode::createMetadataNode(
 	if (!metadata.isEmpty())
 		builder << REPO_NODE_LABEL_METADATA << metadata;
 
-	return new MetadataNode(builder.obj());
+	return MetadataNode(builder.obj());
 }

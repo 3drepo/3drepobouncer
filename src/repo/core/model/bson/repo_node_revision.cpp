@@ -40,7 +40,7 @@ RevisionNode::~RevisionNode()
 {
 }
 
-RevisionNode* RevisionNode::createRevisionNode(
+RevisionNode RevisionNode::createRevisionNode(
 	const std::string			 &user,
 	const repoUUID              &branch,
 	const std::vector<repoUUID> &currentNodes,
@@ -101,7 +101,7 @@ RevisionNode* RevisionNode::createRevisionNode(
 		builder.appendArray(REPO_NODE_REVISION_LABEL_MODIFIED_SHARED_IDS, builder.createArrayBSON(modified));
 
 	//--------------------------------------------------------------------------
-	return new RevisionNode(builder.obj());
+	return RevisionNode(builder.obj());
 
 }
 

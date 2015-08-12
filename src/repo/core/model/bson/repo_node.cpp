@@ -45,7 +45,7 @@ RepoNode::~RepoNode()
 {
 }
 
-RepoNode* RepoNode::createRepoNode(
+RepoNode RepoNode::createRepoNode(
 	const std::string &type,
 	const unsigned int api,
 	const repoUUID &sharedId,
@@ -56,10 +56,10 @@ RepoNode* RepoNode::createRepoNode(
 	
 	appendDefaults(builder, type, api, sharedId, name, parents);
 
-	return new RepoNode(builder.obj());
+	return RepoNode(builder.obj());
 }
 
-RepoNode RepoNode::cloneAndAddParent(repoUUID parentID)
+RepoNode RepoNode::cloneAndAddParent(repoUUID parentID) const
 {
 	RepoBSONBuilder builder;
 	RepoBSONBuilder arrayBuilder;

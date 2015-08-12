@@ -320,8 +320,16 @@ namespace repo{
 		void logToFile(const std::string &filePath);
 
 		/*
-		*	------------- Import --------------
+		*	------------- Import/ Scene creation --------------
 		*/
+
+		/**
+		* Create a federated scene with the given scene collections
+		* @param fedMap a map of reference scene and transformation from root where the scene should lie
+		* @return returns a constructed scene graph with the reference.
+		*/
+		repo::manipulator::graph::RepoScene* createFederatedScene(
+			const std::map<repo::core::model::bson::TransformationNode, repo::core::model::bson::ReferenceNode> &fedMap);
 
 		/**
 		* Load a Repo Scene from a file

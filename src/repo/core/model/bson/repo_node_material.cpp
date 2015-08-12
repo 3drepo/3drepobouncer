@@ -38,7 +38,7 @@ MaterialNode::~MaterialNode()
 {
 }
 
-MaterialNode* MaterialNode::createMaterialNode(
+MaterialNode MaterialNode::createMaterialNode(
 	const repo_material_t &material,
 	const std::string     &name,
 	const int     &apiLevel)
@@ -73,7 +73,7 @@ MaterialNode* MaterialNode::createMaterialNode(
 	if (material.shininessStrength == material.shininessStrength)
 		builder << REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH << material.shininessStrength;
 
-	return new MaterialNode(builder.obj());
+	return MaterialNode(builder.obj());
 }
 
 

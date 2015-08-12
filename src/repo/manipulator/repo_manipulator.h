@@ -60,6 +60,18 @@ namespace repo{
 				);
 
 			/**
+			* Commit a scene graph
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param scene scene to commit
+			*/
+			void commitScene(
+				const std::string                             &databaseAd,
+				const repo::core::model::bson::RepoBSON 	  *cred, 
+				repo::manipulator::graph::RepoScene           *scene);
+
+
+			/**
 			* Create a bson object storing user credentials
 			* @param databaseAd mongo database address:port
 			* @param username user name
@@ -74,15 +86,27 @@ namespace repo{
 				const bool        &pwDigested);
 
 			/**
-			* Commit a scene graph
+			* Create a federated scene with the given scene collections
+			* @param fedMap a map of reference scene and transformation from root where the scene should lie
+			* @return returns a constructed scene graph with the reference.
+			*/
+			repo::manipulator::graph::RepoScene* createFederatedScene(
+				const std::map<repo::core::model::bson::TransformationNode, repo::core::model::bson::ReferenceNode> &fedMap);
+
+			/**
+			* Count the number of documents within the collection
 			* @param databaseAd mongo database address:port
 			* @param cred user credentials in bson form
-			* @param scene scene to commit
+			* @param database name of database
+			* @param collection name of collection
+			* @return number of documents within the specified collection
 			*/
-			void commitScene(
+			uint64_t countItemsInCollection(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON 	  *cred, 
-				repo::manipulator::graph::RepoScene           *scene);
+				const repo::core::model::bson::RepoBSON*	  cred,
+				const std::string                             &database,
+				const std::string                             &collection,
+				std::string                                   &errMsg = std::string());
 
 			/**
 			* Remove a collection from the database
@@ -194,22 +218,6 @@ namespace repo{
 				const std::string                             &database,
 				const std::string                             &collection,
 				std::string	                                  &errMsg=std::string());
-
-
-			/**
-			* Count the number of documents within the collection
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
-			* @param database name of database
-			* @param collection name of collection
-			* @return number of documents within the specified collection
-			*/
-			uint64_t countItemsInCollection(
-				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  cred,
-				const std::string                             &database,
-				const std::string                             &collection,
-				std::string                                   &errMsg=std::string());
 
 			/**
 			* Load a Repo Scene from a file

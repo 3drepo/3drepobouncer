@@ -76,7 +76,7 @@ namespace repo {
 					* @param apiLevel API Level(optional)
 					* @return returns a texture node
 					*/
-					static RevisionNode* createRevisionNode(
+					static RevisionNode createRevisionNode(
 						const std::string			 &user,
 						const repoUUID              &branch,
 						const std::vector<repoUUID> &currentNodes,

@@ -68,7 +68,7 @@ namespace repo {
 					* @param height of the texture
 					* @return returns a texture node
 					*/
-					static TextureNode* createTextureNode(
+					static TextureNode createTextureNode(
 						const std::string &name,
 						const char        *data,
 						const uint32_t    &size,

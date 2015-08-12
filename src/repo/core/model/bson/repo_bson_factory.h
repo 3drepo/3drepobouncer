@@ -29,9 +29,11 @@
 #include "repo_node_metadata.h"
 #include "repo_node_material.h"
 #include "repo_node_mesh.h"
+#include "repo_node_reference.h"
 #include "repo_node_revision.h"
 #include "repo_node_texture.h"
 #include "repo_node_transformation.h"
+
 
 namespace repo {
 	namespace core {
@@ -51,9 +53,9 @@ namespace repo {
 						* @param ownerPermissionsOctal owner's permission in POSIX
 						* @param groupPermissionsOctal group's permission in POSIX
 						* @param publicPermissionsOctal other's permission in POSIX
-						* @return returns a pointer Project settings
+						* @return returns a Project settings
 						*/
-						static RepoProjectSettings* makeRepoProjectSettings(
+						static RepoProjectSettings makeRepoProjectSettings(
 							const std::string &uniqueProjectName,
 							const std::string &owner,
 							const std::string &group = std::string(),
@@ -72,7 +74,7 @@ namespace repo {
 						* @param type of node (Optional)
 						* @return returns a RepoNode
 						*/
-						static RepoNode*    makeRepoNode   (std::string type=std::string());
+						static RepoNode    makeRepoNode   (std::string type=std::string());
 
 						/**
 						* Create a Camera Node
@@ -85,9 +87,9 @@ namespace repo {
 						* @param Up vector relative to parent transformations.
 						* @param API level of the node (optional, default REPO_NODE_API_LEVEL_1)
 						* @param name of the node (optional, default empty string)
-						* @return returns a pointer Camera node
+						* @return returns a Camera node
 						*/
-						static CameraNode* makeCameraNode(
+						static CameraNode makeCameraNode(
 							const float         &aspectRatio,
 							const float         &farClippingPlane,
 							const float         &nearClippingPlane,
@@ -103,9 +105,9 @@ namespace repo {
 						* Create a Material Node
 						* @param a struct that contains the info about the material
 						* @param name of the Material
-						* @return returns a pointer Material node
+						* @return returns a Material node
 						*/
-						static MaterialNode* makeMaterialNode(
+						static MaterialNode makeMaterialNode(
 							const repo_material_t &material,
 							const std::string     &name,
 							const int             &apiLevel = REPO_NODE_API_LEVEL_1);
@@ -117,9 +119,9 @@ namespace repo {
 						* @param name Name of Metadata (optional)
 						* @param parents 
 						* @param apiLevel Repo Node API level (optional)
-						* @return returns a pointer metadata node
+						* @return returns a metadata node
 						*/
-						static MetadataNode* makeMetaDataNode(
+						static MetadataNode makeMetaDataNode(
 							RepoBSON			         &metadata,
 							const std::string            &mimeType = std::string(),
 							const std::string            &name = std::string(),
@@ -136,9 +138,9 @@ namespace repo {
 						* @param outline outline generated from bounding box
 						* @param name name of the node (optional, default empty string)
 						* @param apiLevel API level of the node (optional, default REPO_NODE_API_LEVEL_1)
-						* @return returns a pointer mesh node
+						* @return returns a mesh node
 						*/
-						static MeshNode* makeMeshNode(
+						static MeshNode makeMeshNode(
 							std::vector<repo_vector_t>                  &vertices,
 							std::vector<repo_face_t>                    &faces,
 							std::vector<repo_vector_t>                  &normals,
@@ -148,6 +150,24 @@ namespace repo {
 							std::vector<std::vector<float>>             &outline,
 							const std::string                           &name = std::string(),
 							const int                                   &apiLevel = REPO_NODE_API_LEVEL_1);
+
+						/**
+						* Create a Reference Node
+						* If revision ID is unique, it will be referencing a specific revision
+						* If it isn't unique, it will represent a branch ID and reference its head
+						* @param database name of the database to reference
+						* @param project name of the project to reference
+						* @param revisionID uuid of the revision (default: master branch)
+						* @param isUniqueID is revisionID a specific revision ID (default: false - i.e it is a branch ID)
+						* @return returns a reference node
+						*/
+						static ReferenceNode makeReferenceNode(
+							const std::string &database,
+							const std::string &project,
+							const repoUUID    &revisionID = stringToUUID(REPO_HISTORY_MASTER_BRANCH),
+							const bool        &isUniqueID = false,
+							const std::string &name = std::string(),
+							const int         &apiLevel = REPO_NODE_API_LEVEL_1);
 
 						/**
 						* Create a Revision Node
@@ -165,7 +185,7 @@ namespace repo {
 						* @return returns a texture node
 						*/
 
-						static RevisionNode* makeRevisionNode(
+						static RevisionNode makeRevisionNode(
 							const std::string			 &user,
 							const repoUUID              &branch,
 							const std::vector<repoUUID> &currentNodes,
@@ -189,7 +209,7 @@ namespace repo {
 						* @param apiLevel API Level(optional)
 						* @return returns a texture node
 						*/
-						static TextureNode* makeTextureNode(
+						static TextureNode makeTextureNode(
 							const std::string &name,
 							const char        *memblock,
 							const uint32_t    &size,
@@ -197,17 +217,21 @@ namespace repo {
 							const uint32_t    &height,
 							const int         &apiLevel = REPO_NODE_API_LEVEL_1);
 
+
+						
+
+
 						/**
 						* Create a Transformation Node
-						* @param transMatrix a 4 by 4 transformation matrix
+						* @param transMatrix a 4 by 4 transformation matrix (optional - default is identity matrix)
 						* @param name name of the transformation(optional)
 						* @param parents vector of parents uuid for this node (optional)
 						* @param apiLevel API Level(optional)
-						* @return returns a pointer Transformation node
+						* @return returns a Transformation node
 						*/
-						static TransformationNode* makeTransformationNode(
-						const std::vector<std::vector<float>> &transMatrix,
-						const std::string                     &name = std::string(),
+						static TransformationNode makeTransformationNode(
+						const std::vector<std::vector<float>> &transMatrix = TransformationNode::identityMat(),
+						const std::string                     &name = "<transformation>",
 						const std::vector<repoUUID>		      &parents = std::vector<repoUUID>(),
 						const int                             &apiLevel = REPO_NODE_API_LEVEL_1);
 

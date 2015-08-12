@@ -2,11 +2,11 @@
 
 using namespace repo::core::model::bson;
 
-RepoNode* RepoBSONFactory::makeRepoNode(std::string type){
+RepoNode RepoBSONFactory::makeRepoNode(std::string type){
 	return RepoNode::createRepoNode(type);
 }
 
-CameraNode* RepoBSONFactory::makeCameraNode(
+CameraNode RepoBSONFactory::makeCameraNode(
 	const float         &aspectRatio,
 	const float         &farClippingPlane,
 	const float         &nearClippingPlane,
@@ -22,7 +22,7 @@ CameraNode* RepoBSONFactory::makeCameraNode(
 }
 
 
-MaterialNode* RepoBSONFactory::makeMaterialNode(
+MaterialNode RepoBSONFactory::makeMaterialNode(
 	const repo_material_t &material,
 	const std::string     &name,
 	const int             &apiLevel)
@@ -30,7 +30,7 @@ MaterialNode* RepoBSONFactory::makeMaterialNode(
 	return MaterialNode::createMaterialNode(material, name,  apiLevel);
 }
 
-MetadataNode* RepoBSONFactory::makeMetaDataNode(
+MetadataNode RepoBSONFactory::makeMetaDataNode(
 	RepoBSON			          &metadata,
 	const std::string             &mimeType,
 	const std::string             &name,
@@ -40,7 +40,7 @@ MetadataNode* RepoBSONFactory::makeMetaDataNode(
 	return MetadataNode::createMetadataNode(metadata, mimeType, name, parents, apiLevel);
 }
 
-MeshNode* RepoBSONFactory::makeMeshNode(
+MeshNode RepoBSONFactory::makeMeshNode(
 	std::vector<repo_vector_t>                  &vertices,
 	std::vector<repo_face_t>                    &faces,
 	std::vector<repo_vector_t>                  &normals,
@@ -55,7 +55,7 @@ MeshNode* RepoBSONFactory::makeMeshNode(
 		uvChannels, colors, outline, apiLevel, name);
 }
 
-RepoProjectSettings* RepoBSONFactory::makeRepoProjectSettings(
+RepoProjectSettings RepoBSONFactory::makeRepoProjectSettings(
 	const std::string &uniqueProjectName,
 	const std::string &owner,
 	const std::string &group,
@@ -70,8 +70,19 @@ RepoProjectSettings* RepoBSONFactory::makeRepoProjectSettings(
 		publicPermissionsOctal);
 }
 
+ReferenceNode RepoBSONFactory::makeReferenceNode(
+	const std::string &database,
+	const std::string &project,
+	const repoUUID    &revisionID,
+	const bool        &isUniqueID,
+	const std::string &name,
+	const int         &apiLevel)
+{
+	return ReferenceNode::createReferenceNode(database, project,
+		revisionID, isUniqueID, name, apiLevel);
+}
 
-RevisionNode* RepoBSONFactory::makeRevisionNode(
+RevisionNode RepoBSONFactory::makeRevisionNode(
 	const std::string			 &user,
 	const repoUUID              &branch,
 	const std::vector<repoUUID> &currentNodes,
@@ -88,7 +99,7 @@ RevisionNode* RepoBSONFactory::makeRevisionNode(
 		removed, modified, parent, message, tag, apiLevel);
 }
 
-TextureNode* RepoBSONFactory::makeTextureNode(
+TextureNode RepoBSONFactory::makeTextureNode(
 	const std::string &name,
 	const char        *memblock,
 	const uint32_t    &size,
@@ -99,7 +110,7 @@ TextureNode* RepoBSONFactory::makeTextureNode(
 	return TextureNode::createTextureNode(name, memblock, size, width, height, apiLevel);
 }
 
-TransformationNode* RepoBSONFactory::makeTransformationNode(
+TransformationNode RepoBSONFactory::makeTransformationNode(
 	const std::vector<std::vector<float>> &transMatrix,
 	const std::string                     &name,
 	const std::vector<repoUUID>		  &parents,

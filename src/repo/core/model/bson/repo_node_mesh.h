@@ -89,7 +89,7 @@ namespace repo {
 					* @param name of the node (optional, default empty string)
 					* @return returns a pointer mesh node
 					*/
-					static MeshNode* MeshNode::createMeshNode(
+					static MeshNode MeshNode::createMeshNode(
 						std::vector<repo_vector_t>                  &vertices,
 						std::vector<repo_face_t>                    &faces,
 						std::vector<repo_vector_t>                  &normals,

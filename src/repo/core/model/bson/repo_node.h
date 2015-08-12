@@ -64,7 +64,7 @@ namespace repo{
 						* @param name optional name of this object, empty string if not specified,
 						*             does not have to be unique
 						*/
-						static RepoNode* createRepoNode(
+						static RepoNode createRepoNode(
 							const std::string &type,
 							const unsigned int api = REPO_NODE_API_LEVEL_0,
 							const repoUUID &sharedId = generateUUID(),
@@ -124,7 +124,7 @@ namespace repo{
 						* NOTE: this object is unchanged!
 						* @returns new object with the field updated
 						*/
-						RepoNode cloneAndAddParent(repoUUID parentID);
+						RepoNode cloneAndAddParent(repoUUID parentID) const;
 
 						/**
 						* Create a new object with fields within the 

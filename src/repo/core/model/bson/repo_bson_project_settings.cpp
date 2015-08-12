@@ -30,7 +30,7 @@ RepoProjectSettings::RepoProjectSettings() : RepoBSON()
 }
 
 
-RepoProjectSettings* RepoProjectSettings::createRepoProjectSettings(
+RepoProjectSettings RepoProjectSettings::createRepoProjectSettings(
 	const std::string &uniqueProjectName,
 	const std::string &owner,
 	const std::string &group,
@@ -77,7 +77,7 @@ RepoProjectSettings* RepoProjectSettings::createRepoProjectSettings(
 
 	//--------------------------------------------------------------------------
 	// Add to the parent object
-	return new RepoProjectSettings(builder.obj());
+	return RepoProjectSettings(builder.obj());
 }
 
 RepoProjectSettings::~RepoProjectSettings()

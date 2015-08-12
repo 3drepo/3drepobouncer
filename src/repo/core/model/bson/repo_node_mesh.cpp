@@ -38,7 +38,7 @@ MeshNode::~MeshNode()
 {
 }
 
-MeshNode* MeshNode::createMeshNode(
+MeshNode MeshNode::createMeshNode(
 	std::vector<repo_vector_t>                  &vertices,
 	std::vector<repo_face_t>                    &faces,
 	std::vector<repo_vector_t>                  &normals,
@@ -166,7 +166,7 @@ MeshNode* MeshNode::createMeshNode(
 			REPO_NODE_LABEL_UV_CHANNELS_BYTE_COUNT);
 	}
 
-	return new MeshNode(builder.obj());
+	return MeshNode(builder.obj());
 }
 
 std::vector<repo_color4d_t>* MeshNode::getColors() const

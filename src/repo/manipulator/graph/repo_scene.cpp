@@ -244,16 +244,13 @@ bool RepoScene::commitProjectSettings(
 	std::string &errMsg,
 	const std::string &userName)
 {
-	bool success = true;
-	model::bson::RepoProjectSettings * projectSettings = 
+
+	model::bson::RepoProjectSettings projectSettings = 
 		model::bson::RepoBSONFactory::makeRepoProjectSettings(projectName, userName);
 	
-	success = (projectSettings) != 0;
+	bool success = handler->upsertDocument(
+		databaseName, REPO_COLLECTION_SETTINGS, projectSettings, false, errMsg);
 	
-	if (success)
-	{
-		success &= handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, *projectSettings, false, errMsg);
-	}
 
 	return success;
 
@@ -301,8 +298,8 @@ bool RepoScene::commitRevisionNode(
 		<< " #deleted = " << newRemovedV.size() << " #modified = " << newModifiedV.size();
 
 	newRevNode =
-		model::bson::RepoBSONFactory::makeRevisionNode(userName, branch, uniqueIDs,
-		newAddedV, newRemovedV, newModifiedV, parent, message, tag);
+		new model::bson::RevisionNode(model::bson::RepoBSONFactory::makeRevisionNode(userName, branch, uniqueIDs,
+		newAddedV, newRemovedV, newModifiedV, parent, message, tag));
 
 
 	if (!newRevNode)

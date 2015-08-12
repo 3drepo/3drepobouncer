@@ -49,7 +49,7 @@ namespace repo {
 					* @param publicPermissionsOctal other's permission in POSIX
 					* @return returns a pointer Camera node
 					*/
-					static RepoProjectSettings* createRepoProjectSettings(
+					static RepoProjectSettings createRepoProjectSettings(
 						const std::string &uniqueProjectName,
 						const std::string &owner,
 						const std::string &group = std::string(),

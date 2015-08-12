@@ -172,7 +172,7 @@ model::bson::CameraNode* AssimpModelImport::createCameraRepoNode(
 
 	if (assimpCamera)
 	{
-		cameraNode = model::bson::RepoBSONFactory::makeCameraNode(
+		cameraNode = new model::bson::CameraNode( model::bson::RepoBSONFactory::makeCameraNode(
 			assimpCamera->mAspect,
 			assimpCamera->mClipPlaneFar,
 			assimpCamera->mClipPlaneNear,
@@ -181,7 +181,7 @@ model::bson::CameraNode* AssimpModelImport::createCameraRepoNode(
 			{ assimpCamera->mPosition.x, assimpCamera->mPosition.y, assimpCamera->mPosition.z },
 			{ assimpCamera->mUp.x, assimpCamera->mUp.y, assimpCamera->mUp.z },
 			cameraName
-			);
+			));
 	}
 
 	return cameraNode;
@@ -270,7 +270,8 @@ model::bson::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 			repo_material.shininessStrength = std::numeric_limits<float>::quiet_NaN();
 
 
-		materialNode = model::bson::RepoBSONFactory::makeMaterialNode(repo_material, name, REPO_NODE_API_LEVEL_1);
+		materialNode = new model::bson::MaterialNode(
+			model::bson::RepoBSONFactory::makeMaterialNode(repo_material, name, REPO_NODE_API_LEVEL_1));
 
 
 		//--------------------------------------------------------------------------
@@ -445,8 +446,8 @@ model::bson::MeshNode* AssimpModelImport::createMeshRepoNode(
 	outline.push_back({ maxVertex.x, maxVertex.y });
 	outline.push_back({ minVertex.x, maxVertex.y });
 
-	meshNode = model::bson::RepoBSONFactory::makeMeshNode(
-		vertices, faces, normals, boundingBox, uvChannels, colors, outline);
+	meshNode = new model::bson::MeshNode(model::bson::RepoBSONFactory::makeMeshNode(
+		vertices, faces, normals, boundingBox, uvChannels, colors, outline));
 
 	///*
 	//*------------------------------ setParents ----------------------------------
@@ -531,7 +532,8 @@ model::bson::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 
 		model::bson::RepoBSON metaBSON = builder.obj();
 
-		metaNode = model::bson::RepoBSONFactory::makeMetaDataNode(metaBSON, "", metadataName, parents);
+		metaNode = new model::bson::MetadataNode(
+			model::bson::RepoBSONFactory::makeMetaDataNode(metaBSON, "", metadataName, parents));
 	}//if(assimpMeta)
 
 	return metaNode;
@@ -563,7 +565,8 @@ model::bson::RepoNodeSet AssimpModelImport::createTransformationNodesRecursive(
 
 
 		model::bson::TransformationNode * transNode = 
-			model::bson::RepoBSONFactory::makeTransformationNode(transMat, transName, parent);
+			new model::bson::TransformationNode(
+			model::bson::RepoBSONFactory::makeTransformationNode(transMat, transName, parent));
 
 		repoUUID sharedId = transNode->getSharedID();
 		std::vector<repoUUID> myShareID;
@@ -849,13 +852,13 @@ void AssimpModelImport::loadTextures(std::string dirPath){
 						file.read(memblock, size);
 						file.close();
 
-						textureNode = model::bson::RepoBSONFactory::makeTextureNode(
+						textureNode = new model::bson::TextureNode(model::bson::RepoBSONFactory::makeTextureNode(
 							fileName,
 							memblock,
 							(uint32_t)size,
 							texture->mWidth,
 							texture->mHeight,
-							REPO_NODE_API_LEVEL_1);
+							REPO_NODE_API_LEVEL_1));
 
 						textures.insert(textureNode);
 						nameToTexture[fileName] = textureNode;

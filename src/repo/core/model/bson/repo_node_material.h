@@ -72,7 +72,7 @@ namespace repo {
 					* @param name of the Material node
 					* @return returns a pointer Material node
 					*/
-					static MaterialNode* createMaterialNode(
+					static MaterialNode createMaterialNode(
 						const repo_material_t &material,
 						const std::string     &name,
 						const int     &apiLevel = REPO_NODE_API_LEVEL_1);

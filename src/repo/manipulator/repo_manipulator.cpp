@@ -20,8 +20,10 @@
 */
 
 #include "repo_manipulator.h"
+#include "../core/model/bson/repo_bson_factory.h"
 
 using namespace repo::manipulator;
+
 
 RepoManipulator::RepoManipulator()
 {
@@ -64,6 +66,39 @@ repo::core::model::bson::RepoBSON* RepoManipulator::createCredBSON(
 		bson = handler->createBSONCredentials(databaseAd, username, password, pwDigested);
 
 	return bson;
+}
+
+repo::manipulator::graph::RepoScene* RepoManipulator::createFederatedScene(
+	const std::map<repo::core::model::bson::TransformationNode, repo::core::model::bson::ReferenceNode> &fedMap)
+{
+
+	repo::core::model::bson::RepoNodeSet transNodes;
+	repo::core::model::bson::RepoNodeSet refNodes;
+	repo::core::model::bson::RepoNodeSet emptySet;
+
+	repo::core::model::bson::TransformationNode rootNode =
+		repo::core::model::bson::RepoBSONFactory::makeTransformationNode(
+		repo::core::model::bson::TransformationNode::identityMat(), "<root>");
+
+	transNodes.insert(new repo::core::model::bson::TransformationNode(rootNode));
+
+	for (const auto &pair : fedMap)
+	{
+
+		transNodes.insert(new repo::core::model::bson::TransformationNode(
+			pair.first.cloneAndAddParent(rootNode.getSharedID())
+			)
+			);
+		refNodes.insert(new repo::core::model::bson::ReferenceNode(
+			pair.second.cloneAndAddParent(pair.first.getSharedID())
+			)
+			);
+	}
+
+	repo::manipulator::graph::RepoScene *scene =
+		new repo::manipulator::graph::RepoScene(emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, refNodes);
+
+	return scene;
 }
 
 void RepoManipulator::commitScene(

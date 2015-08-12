@@ -76,7 +76,7 @@ namespace repo {
 					* @param name of the node (optional, default empty string)
 					* @return returns a pointer Camera node
 					*/
-					static CameraNode* createCameraNode(
+					static CameraNode createCameraNode(
 						const float         &aspectRatio,
 						const float         &farClippingPlane,
 						const float         &nearClippingPlane,

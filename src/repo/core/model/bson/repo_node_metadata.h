@@ -68,7 +68,7 @@ namespace repo {
 					* @param apiLevel Repo Node API level (optional)
 					* @return returns a pointer metadata node
 					*/
-					static MetadataNode* createMetadataNode(
+					static MetadataNode createMetadataNode(
 						RepoBSON			  &metadata,
 						const std::string     &mimeType = std::string(),
 						const std::string     &name = std::string(),
