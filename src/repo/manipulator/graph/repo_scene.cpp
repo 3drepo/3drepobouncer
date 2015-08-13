@@ -397,6 +397,7 @@ bool RepoScene::loadRevision(
 		return false;
 
 	model::bson::RepoBSON bson;
+	BOOST_LOG_TRIVIAL(trace) << "loading revision : " << databaseName << "." << projectName << " head Revision: " << headRevision;
 	if (headRevision){
 		bson = handler->findOneBySharedID(databaseName, projectName + "." +
 			revExt, branch, REPO_NODE_REVISION_LABEL_TIMESTAMP);
@@ -541,19 +542,22 @@ bool RepoScene::populate(
 
 	//deal with References
 	model::bson::RepoNodeSet::iterator refIt;
-	for (refIt = references.begin(); refIt != references.end(); ++refIt)
+	for (const auto &node : references)
 	{
-		model::bson::ReferenceNode *reference = (model::bson::ReferenceNode*)*refIt;
+		model::bson::ReferenceNode* reference = (model::bson::ReferenceNode*) node;
 
 		//construct a new RepoScene with the information from reference node and append this graph to the Scene
 		RepoScene *refGraph = new RepoScene(databaseName, reference->getProjectName(), sceneExt, revExt);
-		refGraph->setRevision(reference->getRevisionID());
+		if (reference->useSpecificRevision())
+			refGraph->setRevision(reference->getRevisionID());
+		else
+			refGraph->setBranch(reference->getRevisionID());
 
 		if (refGraph->loadScene(handler, errMsg)){
 			referenceToScene[reference->getSharedID()] = refGraph;
 		}
 		else{
-			BOOST_LOG_TRIVIAL(warning) << "Failed to load reference node for ref ID" << reference->getUniqueID();
+			BOOST_LOG_TRIVIAL(warning) << "Failed to load reference node for ref ID" << reference->getUniqueID() << ": " << errMsg;
 		}
 
 	}

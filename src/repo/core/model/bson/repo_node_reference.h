@@ -27,7 +27,6 @@
 // Fields specific to reference only
 //
 //------------------------------------------------------------------------------
-#define REPO_NODE_REFERENCE_TYPE_REFERENCE    			"ref"
 #define REPO_NODE_REFERENCE_LABEL_REVISION_ID            "_rid"
 #define REPO_NODE_REFERENCE_LABEL_UNIQUE                  "unique"
 #define REPO_NODE_REFERENCE_LABEL_PROJECT                 "project"
@@ -99,6 +98,21 @@ namespace repo {
 					*/
 					std::string getProjectName(){
 						return getStringField(REPO_NODE_REFERENCE_LABEL_PROJECT);
+					}
+
+					/**
+					* Indicates if the Revision ID from getRevisionID() 
+					* is a branch ID (false) or a specific revision(true)
+					* @return returns true if it is a uuid of a specific 
+					* revision, otherwise it's a branch uuid
+					*/
+					bool useSpecificRevision()
+					{
+						bool isUnique = false; //defaults to false.
+						if (hasField(REPO_NODE_REFERENCE_LABEL_UNIQUE))
+							isUnique =  getField(REPO_NODE_REFERENCE_LABEL_UNIQUE).boolean();
+
+						return isUnique;
 					}
 
 				};
