@@ -92,8 +92,12 @@ std::vector<char>* TextureNode::getRawData() const
 	if (hasField(REPO_LABEL_DATA) &&
 		hasField(REPO_NODE_LABEL_DATA_BYTE_COUNT))
 	{
+		dataVec = new std::vector<char>();
 		getBinaryFieldAsVector(getField(REPO_LABEL_DATA),
 			getField(REPO_NODE_LABEL_DATA_BYTE_COUNT).numberInt(), dataVec);
+	}
+	else{
+		BOOST_LOG_TRIVIAL(error) << "Cannot find field for data in texture node!";
 	}
 
 	return dataVec;
