@@ -654,6 +654,8 @@ bool AssimpModelExport::exportToFile(
 		success = writeSceneToFile(assimpScene, filePath);
 		writeTexturesToFiles(textureNodes, filePath);
 
+		//FIXME: this is breaking on my assimp.dll but works on assimpd.dll...? 
+		//problem seems to be related to meshes/materials
 		delete assimpScene;
 
 	}
