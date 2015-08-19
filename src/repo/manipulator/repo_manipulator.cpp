@@ -21,6 +21,7 @@
 
 #include "repo_manipulator.h"
 #include "../core/model/bson/repo_bson_factory.h"
+#include "modelconvertor/export/repo_model_export_assimp.h"
 
 using namespace repo::manipulator;
 
@@ -324,4 +325,13 @@ repo::manipulator::graph::RepoScene*
 	}
 
 	return scene;
+}
+
+
+bool RepoManipulator::saveSceneToFile(
+	const std::string &filePath,
+	const repo::manipulator::graph::RepoScene* scene)
+{
+	modelconvertor::AssimpModelExport modelExport;
+	return modelExport.exportToFile(scene, filePath);
 }

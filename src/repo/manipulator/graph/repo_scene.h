@@ -206,16 +206,16 @@ namespace repo{
 					* @ return a vector of pointers to children node (potentially none)
 					*/
 					std::vector<repo::core::model::bson::RepoNode*>
-						getChildrenAsNodes(const repoUUID &parent);
+						getChildrenAsNodes(const repoUUID &parent) const;
 
 					/**
 					* Get Scene from reference node
 					*/
-					RepoScene* getSceneFromReference(const repoUUID &reference)
+					RepoScene* getSceneFromReference(const repoUUID &reference) const
 					{
 						RepoScene* refScene = nullptr;
 
-						std::map<repoUUID, RepoScene*>::iterator it = referenceToScene.find(reference);
+						std::map<repoUUID, RepoScene*>::const_iterator it = referenceToScene.find(reference);
 						if (it != referenceToScene.end())
 							refScene = it->second;
 						return refScene;

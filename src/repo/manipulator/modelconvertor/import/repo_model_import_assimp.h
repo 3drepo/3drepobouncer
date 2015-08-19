@@ -55,6 +55,8 @@ namespace repo{
 				*/
 				virtual ~AssimpModelImport();
 
+				static std::string getSupportedFormats();
+
 				/**
 				* Generates a repo scene graph
 				* an internal representation(aiscene) needs to have 
@@ -78,7 +80,7 @@ namespace repo{
 				* @param assimp camera object
 				* @return returns a pointer to the created camera node
 				*/
-				repo::core::model::bson::CameraNode* AssimpModelImport::createCameraRepoNode(
+				repo::core::model::bson::CameraNode* createCameraRepoNode(
 					const aiCamera *assimpCamera);
 				/**
 				* Create a Material Node given the information in ASSIMP objects

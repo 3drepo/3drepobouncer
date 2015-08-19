@@ -53,7 +53,6 @@ namespace repo{
 				*/
 				virtual ~AbstractModelImport();
 
-
 				/**
 				* Generates a repo scene graph
 				* an internal representation needs to have

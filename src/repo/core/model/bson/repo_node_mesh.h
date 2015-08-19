@@ -127,6 +127,12 @@ namespace repo {
 					std::vector<repo_vector2d_t>* getUVChannels() const;
 
 					/**
+					* Retrieve a vector of UV Channels, separated by channels
+					*/
+					std::vector<std::vector<repo_vector2d_t>>* getUVChannelsSeparated() const;
+
+
+					/**
 					* Retrieve a vector of vertices from the bson object
 					*/
 					std::vector<repo_vector_t>* getVertices() const;

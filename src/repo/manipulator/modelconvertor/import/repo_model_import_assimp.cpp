@@ -22,8 +22,12 @@
 
 #include "repo_model_import_assimp.h"
 
+#include <algorithm>
 #include <fstream>
+#include <regex>
 #include <boost/filesystem.hpp>
+
+#include <assimp/importerdesc.h>
 
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../core/model/repo_node_utils.h"
@@ -52,6 +56,39 @@ AssimpModelImport::~AssimpModelImport()
 	if (destroySettings)
 		delete settings;
 }
+
+std::string AssimpModelImport::getSupportedFormats()
+{
+	Assimp::Importer importer;
+	aiString ext;
+	importer.GetExtensionList(ext);
+
+	// all file extensions in convenient all package
+	
+	std::string str(ext.C_Str());
+
+	std::replace(str.begin(), str.end(), ';', ' ');
+	
+	std::string all = "All (" + str + ")";
+
+	// individual extensions by name
+	std::string individual = "";
+	for (size_t i = 0; i < importer.GetImporterCount(); ++i)
+	{
+		const aiImporterDesc *desc = importer.GetImporterInfo(i);
+		std::string str(desc->mFileExtensions);
+
+		//put *. in front of the 2nd+ file extensions (as some might have multiple extensions)
+		std::string extension = std::regex_replace(str, std::regex(" "), " *.");
+
+		//remove "Importer" from the name 
+		std::string formatName = std::regex_replace(std::string(desc->mName), std::regex(" Importer"), "");
+		individual += ";;" + formatName + " (*." + extension + ")";
+
+	}
+	return all + individual;
+}
+
 
 uint32_t AssimpModelImport::composeAssimpPostProcessingFlags(
 	uint32_t flag)

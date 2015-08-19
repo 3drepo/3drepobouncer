@@ -122,6 +122,40 @@ namespace repo {
 					std::vector<float> getCameraMatrix(const bool &rowMajor = true) const;
 
 					/**
+					* Return the value for far clipping plane
+					* @return returns the value for far clipping plane
+					*/
+					float getFarClippingPlane() const
+					{
+						return hasField(REPO_NODE_LABEL_FAR) ?
+							(float)getField(REPO_NODE_LABEL_FAR).numberDouble() :
+							1.;
+					}
+
+
+					/**
+					* Return the value for field of view
+					* @return returns the value for fieldOfView
+					*/
+					float getFieldOfView() const
+					{
+						return hasField(REPO_NODE_LABEL_FOV) ?
+							(float)getField(REPO_NODE_LABEL_FOV).numberDouble() :
+							1.;
+					}
+
+					/**
+					* Return the value for near clipping plane
+					* @return returns the value for near clipping plane
+					*/
+					float getNearClippingPlane() const
+					{
+						return hasField(REPO_NODE_LABEL_NEAR) ?
+							(float)getField(REPO_NODE_LABEL_NEAR).numberDouble() :
+							1.;
+					}
+
+					/**
 					* Get the Look At vector of the camera
 					* @return returns a vector of the "Look At" 
 					*/

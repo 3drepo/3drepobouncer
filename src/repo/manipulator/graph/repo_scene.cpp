@@ -347,16 +347,16 @@ bool RepoScene::commitSceneChanges(
 
 std::vector<repo::core::model::bson::RepoNode*> 
 RepoScene::getChildrenAsNodes(
- const repoUUID &parent) 
+const repoUUID &parent) const
 {
 	std::vector<repo::core::model::bson::RepoNode*> children;
 
-	std::map<repoUUID, std::vector<repoUUID>>::iterator it = parentToChildren.find(parent);
+	std::map<repoUUID, std::vector<repoUUID>>::const_iterator it = parentToChildren.find(parent);
 	if (it != parentToChildren.end())
 	{
 		for (auto child : it->second)
 		{
-			children.push_back(nodesByUniqueID[sharedIDtoUniqueID[child]]);
+			children.push_back(nodesByUniqueID.at(sharedIDtoUniqueID.at(child)));
 		}
 	}
 	return children;
@@ -401,9 +401,11 @@ bool RepoScene::loadRevision(
 	if (headRevision){
 		bson = handler->findOneBySharedID(databaseName, projectName + "." +
 			revExt, branch, REPO_NODE_REVISION_LABEL_TIMESTAMP);
+		BOOST_LOG_TRIVIAL(trace) << "Fetching head of revision from branch " << UUIDtoString(branch);
 	}
 	else{
 		bson = handler->findOneByUniqueID(databaseName, projectName + "." + revExt, revision);
+		BOOST_LOG_TRIVIAL(trace) << "Fetching revision using unique ID: " << UUIDtoString(revision);
 	}
 
 	if (bson.isEmpty()){

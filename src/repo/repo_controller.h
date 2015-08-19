@@ -53,13 +53,12 @@
 
 
 namespace repo{
-
+	
 	class REPO_API_EXPORT RepoToken
 	{
 
 		friend class RepoController;
 
-		typedef boost::log::sinks::synchronous_sink< boost::log::sinks::text_ostream_backend > text_sink;
 	public:
 
 		/**
@@ -250,8 +249,8 @@ namespace repo{
 			const RepoToken      *token,
 			const std::string    &database,
 			const std::string    &project,
-			const std::string    &uuid,
-			const bool           &headRevision = false);
+			const std::string    &uuid = REPO_HISTORY_MASTER_BRANCH,
+			const bool           &headRevision = true);
 
 		/*
 		*	------- Database Operations (insert/delete/update) ---------
@@ -320,7 +319,7 @@ namespace repo{
 		void logToFile(const std::string &filePath);
 
 		/*
-		*	------------- Import/ Scene creation --------------
+		*	------------- Import/ Export --------------
 		*/
 
 		/**
@@ -332,6 +331,12 @@ namespace repo{
 			const std::map<repo::core::model::bson::TransformationNode, repo::core::model::bson::ReferenceNode> &fedMap);
 
 		/**
+		* Get a string of supported file formats for file import
+		* @return returns a string with list of supported file formats
+		*/
+		std::string getSupportedImportFormats();
+
+		/**
 		* Load a Repo Scene from a file
 		* @param filePath path to file
 		* @param config import settings(optional)
@@ -341,6 +346,17 @@ namespace repo{
 			const std::string &filePath,
 			const repo::manipulator::modelconvertor::ModelImportConfig *config 
 				= nullptr);
+
+
+		/**
+		* Save a Repo Scene to file
+		* @param filePath path to file
+		* @param scene scene to export
+		* @return returns true upon success
+		*/
+		bool saveSceneToFile(
+			const std::string &filePath,
+			const repo::manipulator::graph::RepoScene* scene);
 
 	private:
 

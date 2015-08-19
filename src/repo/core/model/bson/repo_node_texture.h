@@ -87,6 +87,8 @@ namespace repo {
 					*/
 					std::vector<char>* getRawData() const;
 
+					std::string getFileExtension() const;
+
 				};
 			}//namespace bson
 		} //namespace model

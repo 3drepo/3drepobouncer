@@ -17,6 +17,7 @@
 
 
 #include "repo_controller.h"
+#include "manipulator/modelconvertor/import/repo_model_import_assimp.h"
 #include <boost/log/sinks/text_file_backend.hpp>
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
@@ -40,9 +41,12 @@ RepoController::RepoController(
 		workerPool.push(worker);
 	}
 
-	subscribeToLogger(listeners);
+	if (listeners.size() > 0)
+	{
+		subscribeToLogger(listeners);
 
-	subscribeBroadcasterToLog();
+		subscribeBroadcasterToLog();
+	}
 
 }
 
@@ -427,6 +431,13 @@ repo::manipulator::graph::RepoScene* RepoController::createFederatedScene(
 
 	return scene;
 }
+
+std::string RepoController::getSupportedImportFormats()
+{
+	//This needs to be updated if we support more than assimp
+	return repo::manipulator::modelconvertor::AssimpModelImport::getSupportedFormats();
+}
+
 repo::manipulator::graph::RepoScene* 
 	RepoController::loadSceneFromFile(
 	const std::string                                          &filePath,
@@ -452,4 +463,26 @@ repo::manipulator::graph::RepoScene*
 	}
 
 	return scene;
+}
+
+
+bool RepoController::saveSceneToFile(
+	const std::string &filePath,
+	const repo::manipulator::graph::RepoScene* scene)
+{
+	bool success = true;
+	if (scene)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+
+		worker->saveSceneToFile(filePath, scene);
+		workerPool.push(worker);
+
+	}
+	else{
+		BOOST_LOG_TRIVIAL(error) << "RepoController::saveSceneToFile: NULL pointer to scene!";
+		success = false;
+	}
+
+	return success;
 }

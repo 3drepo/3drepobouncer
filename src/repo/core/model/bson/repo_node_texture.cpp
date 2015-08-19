@@ -63,7 +63,7 @@ TextureNode TextureNode::createTextureNode(
 	builder << REPO_LABEL_HEIGHT << height;
 
 	//
-	// Format
+	// Format TODO: replace format with MIME Type?
 	//
 	if (name.empty())
 	{
@@ -101,4 +101,9 @@ std::vector<char>* TextureNode::getRawData() const
 	}
 
 	return dataVec;
+}
+
+std::string TextureNode::getFileExtension() const
+{
+	return getStringField(REPO_NODE_LABEL_EXTENSION);
 }

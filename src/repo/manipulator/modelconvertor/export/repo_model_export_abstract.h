@@ -40,10 +40,17 @@ namespace repo{
 				/**
 				* Default Deconstructor
 				*/
-				~AbstractModelExport();
+				virtual ~AbstractModelExport();
 
-			protected:
-
+				/**
+				* Export a repo scene graph to file
+				* @param scene repo scene representation
+				* @param filePath path to destination file
+				* @return returns true upon success
+				*/
+				virtual bool exportToFile(
+					const repo::manipulator::graph::RepoScene *scene,
+					const std::string &filePath) = 0;
 
 			};
 

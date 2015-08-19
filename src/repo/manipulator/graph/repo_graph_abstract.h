@@ -56,7 +56,7 @@ namespace repo{
 				* @return returns true if rootNode is not null.
 				*/
 				bool hasRoot() const { return (bool)rootNode; }
-				repo::core::model::bson::RepoNode* getRoot() { return rootNode; }
+				repo::core::model::bson::RepoNode* getRoot() const { return rootNode; }
 
 				/**
 				* Return the number of nodes within the current 

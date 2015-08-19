@@ -232,6 +232,17 @@ namespace repo{
 				      std::string &msg = std::string(),
 			    const repo::manipulator::modelconvertor::ModelImportConfig *config
 					  = nullptr);
+
+
+			/**
+			* Save a Repo Scene to file
+			* @param filePath path to file
+			* @param scene scene to export
+			* @return returns true upon success
+			*/
+			bool saveSceneToFile(
+				const std::string &filePath,
+				const repo::manipulator::graph::RepoScene* scene);
 		};
 	}
 }

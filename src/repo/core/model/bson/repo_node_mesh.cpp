@@ -210,17 +210,49 @@ std::vector<repo_vector_t>* MeshNode::getNormals() const
 
 std::vector<repo_vector2d_t>* MeshNode::getUVChannels() const
 {
-	std::vector<repo_vector2d_t> *channels = new std::vector<repo_vector2d_t>();
+	std::vector<repo_vector2d_t> *channels = nullptr;
 	if (hasField(REPO_NODE_LABEL_VERTICES_COUNT) 
 		&& hasField(REPO_NODE_LABEL_UV_CHANNELS_COUNT)
 		&& hasField(REPO_NODE_LABEL_UV_CHANNELS))
 	{
+
+		channels = new std::vector<repo_vector2d_t>();
 		const uint32_t uvChannelSize = getField(REPO_NODE_LABEL_VERTICES_COUNT).numberInt() 
 			* getField(REPO_NODE_LABEL_UV_CHANNELS_COUNT).numberInt();
 
 		getBinaryFieldAsVector(getField(REPO_NODE_LABEL_UV_CHANNELS), uvChannelSize, channels);
 	}
 
+	return channels;
+}
+
+std::vector<std::vector<repo_vector2d_t>>* MeshNode::getUVChannelsSeparated() const
+{
+	std::vector<std::vector<repo_vector2d_t>> *channels = nullptr;
+
+	std::vector<repo_vector2d_t> *serialisedChannels = getUVChannels();
+
+	if (serialisedChannels)
+	{
+		//get number of channels and split the serialised.
+		channels = new std::vector<std::vector<repo_vector2d_t>>();
+
+		uint32_t nChannels = getField(REPO_NODE_LABEL_UV_CHANNELS_COUNT).numberInt();
+		uint32_t vecPerChannel = serialisedChannels->size() / nChannels;
+		channels->reserve(nChannels);
+		for (uint32_t i = 0; i < nChannels; i++)
+		{
+			channels->push_back(std::vector<repo_vector2d_t>());
+			channels->at(i).reserve(vecPerChannel);
+
+			uint32_t offset = i*vecPerChannel;
+			channels->at(i).insert(channels->at(i).begin(), serialisedChannels->begin() + offset,
+				serialisedChannels->begin() + offset + vecPerChannel);
+
+		}
+
+		delete serialisedChannels;
+	}
 	return channels;
 }
 
