@@ -325,28 +325,28 @@ aiMaterial* AssimpModelExport::convertMaterial(
 	const repo_material_t matStruct = matNode->getMaterialStruct();
 	//--------------------------------------------------------------------------
 	// Ambient
-	if (matStruct.ambient.size() >=0)
+	if (matStruct.ambient.size())
 		aiMat->AddProperty(new aiColor3D(
 		matStruct.ambient[0], matStruct.ambient[1], matStruct.ambient[2]), 1,
 		AI_MATKEY_COLOR_AMBIENT);
 
 	//--------------------------------------------------------------------------
 	// Diffuse
-	if (matStruct.diffuse.size() >= 0)
+	if (matStruct.diffuse.size())
 		aiMat->AddProperty(new aiColor3D(
 		matStruct.diffuse[0], matStruct.diffuse[1], matStruct.diffuse[2]), 1,
 		AI_MATKEY_COLOR_DIFFUSE);
 
 	//--------------------------------------------------------------------------
 	// Emissive
-	if (matStruct.emissive.size() >= 0)
+	if (matStruct.emissive.size())
 		aiMat->AddProperty(new aiColor3D(
 		matStruct.emissive[0], matStruct.emissive[1], matStruct.emissive[2]), 1,
 		AI_MATKEY_COLOR_EMISSIVE);
 
 	//--------------------------------------------------------------------------
 	// Specular
-	if (matStruct.specular.size() >= 0)
+	if (matStruct.specular.size())
 		aiMat->AddProperty(new aiColor3D(
 		matStruct.specular[0], matStruct.specular[1], matStruct.specular[2]), 1,
 		AI_MATKEY_COLOR_SPECULAR);
