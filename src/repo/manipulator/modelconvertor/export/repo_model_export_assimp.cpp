@@ -645,17 +645,17 @@ bool AssimpModelExport::exportToFile(
 {
 	bool success = true;
 	repo::core::model::bson::RepoNodeSet textureNodes;
-	const aiScene *assimpScene = convertToAssimp(scene, textureNodes);
+	aiScene *assimpScene = convertToAssimp(scene, textureNodes);
 
 	if (assimpScene)
 	{
 		showDebug(assimpScene);
 
 		success = writeSceneToFile(assimpScene, filePath);
-		//FIXME: Memory leak? deleting an aiScene is currently giving me an error message
-		//delete assimpScene;
-
 		writeTexturesToFiles(textureNodes, filePath);
+
+		delete assimpScene;
+
 	}
 	else
 	{
