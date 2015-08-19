@@ -66,6 +66,10 @@ namespace repo{
 					const repo::manipulator::graph::RepoScene *scene,
 					const std::string &filePath);
 
+				/**
+				* Get supported file formats for this exporter
+				*/
+				static std::string getSupportedFormats();
 
 				/**
 				* Write an aiScene to file

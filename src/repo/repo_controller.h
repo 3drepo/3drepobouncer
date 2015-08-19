@@ -331,6 +331,12 @@ namespace repo{
 			const std::map<repo::core::model::bson::TransformationNode, repo::core::model::bson::ReferenceNode> &fedMap);
 
 		/**
+		* Get a string of supported file formats for file export
+		* @return returns a string with list of supported file formats
+		*/
+		std::string getSupportedExportFormats();
+
+		/**
 		* Get a string of supported file formats for file import
 		* @return returns a string with list of supported file formats
 		*/

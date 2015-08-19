@@ -18,6 +18,7 @@
 
 #include "repo_controller.h"
 #include "manipulator/modelconvertor/import/repo_model_import_assimp.h"
+#include "manipulator/modelconvertor/export/repo_model_export_assimp.h"
 #include <boost/log/sinks/text_file_backend.hpp>
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
@@ -430,6 +431,12 @@ repo::manipulator::graph::RepoScene* RepoController::createFederatedScene(
 	}
 
 	return scene;
+}
+
+std::string RepoController::getSupportedExportFormats()
+{
+	//This needs to be updated if we support more than assimp
+	return repo::manipulator::modelconvertor::AssimpModelExport::getSupportedFormats();
 }
 
 std::string RepoController::getSupportedImportFormats()

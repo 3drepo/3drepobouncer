@@ -685,6 +685,22 @@ std::string AssimpModelExport::getExportFormatID(
 	return ret;
 }
 
+std::string AssimpModelExport::getSupportedFormats()
+{
+	std::string all = "All (";
+	std::string individual = "";
+
+	Assimp::Exporter exporter;
+	for (size_t i = 0; i < exporter.GetExportFormatCount(); ++i)
+	{
+		const aiExportFormatDesc* desc = exporter.GetExportFormatDescription(i);
+		all += "*." + std::string(desc->fileExtension) + " ";
+		individual += ";;" + std::string(desc->description) + " (*." +
+			std::string(desc->fileExtension) + ")";
+	}
+	all += ")";
+	return all + individual;
+}
 
 bool AssimpModelExport::writeTexturesToFiles(
 	const repo::core::model::bson::RepoNodeSet &nodes,
