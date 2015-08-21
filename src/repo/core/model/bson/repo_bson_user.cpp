@@ -98,11 +98,7 @@ RepoUser RepoUser::createRepoUser(
 std::list<std::pair<std::string, std::string> > RepoUser::getAPIKeysList() const
 {
 
-	RepoBSON customData;
-	if (hasField(REPO_USER_LABEL_CUSTOM_DATA))
-	{
-		customData = getField(REPO_USER_LABEL_CUSTOM_DATA).embeddedObject();
-	}
+	RepoBSON customData = getCustomDataBSON();
 
 	return customData.getListStringPairField(REPO_USER_LABEL_API_KEYS, REPO_USER_LABEL_LABEL, REPO_USER_LABEL_KEY);
 }
@@ -110,9 +106,9 @@ std::list<std::pair<std::string, std::string> > RepoUser::getAPIKeysList() const
 std::vector<char> RepoUser::getAvatarAsRawData() const
 {
 	std::vector<char> image;
-
-	if (hasField(REPO_USER_LABEL_AVATAR))
-		getBinaryFieldAsVector(getField(REPO_USER_LABEL_AVATAR), &image);
+	RepoBSON customData = getCustomDataBSON();
+	if (customData.hasField(REPO_USER_LABEL_AVATAR))
+		getBinaryFieldAsVector(customData.getObjectField(REPO_USER_LABEL_AVATAR).getField("data"), &image);
 
 	return image;
 }
