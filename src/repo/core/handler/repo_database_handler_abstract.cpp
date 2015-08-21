@@ -20,7 +20,3 @@
 */
 
 #include "repo_database_handler_abstract.h"
-
-const std::string repo::core::handler::AbstractDatabaseHandler::ID = "_id";
-const std::string repo::core::handler::AbstractDatabaseHandler::UUID = "uuid";
-const std::string repo::core::handler::AbstractDatabaseHandler::ADMIN_DATABASE = "admin";

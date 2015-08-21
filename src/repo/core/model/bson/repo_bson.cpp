@@ -84,3 +84,36 @@ int64_t RepoBSON::getTimeStampField(const std::string &label) const
 	}
 	return time;
 }
+
+
+std::list<std::pair<std::string, std::string> > RepoBSON::getListStringPairField(
+	const std::string &arrLabel,
+	const std::string &fstLabel,
+	const std::string &sndLabel)
+{
+	std::list<std::pair<std::string, std::string> > list;
+	mongo::BSONElement arrayElement;
+	if (hasField(arrLabel))
+	{
+		arrayElement = getField(arrLabel);
+	}
+
+	if (!arrayElement.eoo() && arrayElement.type() == mongo::BSONType::Array)
+	{
+		std::vector<mongo::BSONElement> array = arrayElement.Array();
+		for (const auto &element : array)
+		{
+			if (element.type() == mongo::BSONType::Object)
+			{
+				mongo::BSONObj obj = element.embeddedObject();
+				if (obj.hasField(fstLabel) && obj.hasField(sndLabel))
+				{
+					std::string field1 = obj.getField(fstLabel).String();
+					std::string field2 = obj.getField(sndLabel).String();
+					list.push_back(std::make_pair(field1, field2));
+				}
+			}
+		}
+	}
+	return list;
+}

@@ -60,6 +60,27 @@ namespace repo{
 				);
 
 			/**
+			* Connect to the given database address/port and authenticat the user using Admin database
+			* @param errMsg error message if the function returns false
+			* @param address mongo database address
+			* @param port port number
+			* @param maxConnections maxmimum number of concurrent connections allowed to the database
+			* @param username user name
+			* @param password password of the user
+			* @param pwDigested is the password provided in digested form (default: false)
+			* @return returns true upon success
+			*/
+			bool connectAndAuthenticateWithAdmin(
+				std::string       &errMsg,
+				const std::string &address,
+				const uint32_t    &port,
+				const uint32_t    &maxConnections,
+				const std::string &username,
+				const std::string &password,
+				const bool        &pwDigested = false
+				);
+
+			/**
 			* Commit a scene graph
 			* @param databaseAd mongo database address:port
 			* @param cred user credentials in bson form
@@ -204,6 +225,31 @@ namespace repo{
 				const uint64_t                                &skip=0);
 
 			/**
+			* Retrieve documents from a specified collection
+			* due to limitations of the transfer protocol this might need
+			* to be called multiple times, utilising the skip index to skip
+			* the first n items.
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param collection name of collection
+			* @param fields fields to get back from the database
+			* @param sortField field to sort upon
+			* @param sortOrder 1 ascending, -1 descending
+			* @param skip specify how many documents to skip
+			* @return list of RepoBSONs representing the documents
+			*/
+			std::vector<repo::core::model::bson::RepoBSON>
+				getAllFromCollectionTailable(
+				const std::string                             &databaseAd,
+				const repo::core::model::bson::RepoBSON*	  cred,
+				const std::string                             &database,
+				const std::string                             &collection,
+				const std::list<std::string>				  &fields,
+				const std::string							  &sortField = std::string(),
+				const int									  &sortOrder = -1,
+				const uint64_t                                &skip = 0);
+
+			/**
 			* Get the collection statistics of the given collection
 			* @param databaseAd mongo database address:port
 			* @param cred user credentials in bson form
@@ -219,6 +265,57 @@ namespace repo{
 				const std::string                             &collection,
 				std::string	                                  &errMsg=std::string());
 
+
+			/**
+			* Return a list of projects with the database available to the user
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param databases list of databases to look up
+			* @return returns a list of database names
+			*/
+			std::map<std::string, std::list<std::string>>
+				getDatabasesWithProjects(
+					const std::string                             &databaseAd,
+					const repo::core::model::bson::RepoBSON*	  cred,
+					const std::list<std::string> &databases);
+
+			/**
+			* Get a list of admin roles from the database
+			* @param databaseAd database address:portdatabase
+			* @return returns a vector of roles
+			*/
+			std::list<std::string> getAdminDatabaseRoles(
+				const std::string                             &databaseAd);
+
+			/**
+			* Get a list of standard roles from the database
+			* @param databaseAd database address:portdatabase
+			* @return returns a vector of roles
+			*/
+			std::list<std::string> getStandardDatabaseRoles(
+				const std::string                             &databaseAd);
+
+			/**
+			* Get the name of the admin database
+			* note it is done this way to support different admin database names
+			* for different handlers (which may be of different database types)
+			* @param databaseAd database address:portdatabase
+			* @return returns the name of the admin database
+			*/
+			std::string getNameOfAdminDatabase(
+				const std::string                             &databaseAd) const;
+
+			/**
+			* Insert a new user into the database
+			* @param databaseAd database address:portdatabase
+			* @param cred user credentials in bson form
+			* @param user user info to insert
+			*/
+			void insertUser(
+				const std::string                             &databaseAd,
+				const repo::core::model::bson::RepoBSON*	  cred,
+				const repo::core::model::bson::RepoUser       &user);
+
 			/**
 			* Load a Repo Scene from a file
 			* @param filePath path to file
@@ -232,6 +329,27 @@ namespace repo{
 				      std::string &msg = std::string(),
 			    const repo::manipulator::modelconvertor::ModelImportConfig *config
 					  = nullptr);
+
+
+			/**
+			* remove a user from the database
+			* @param token Authentication token
+			* @param user user info to remove
+			*/
+			void RepoManipulator::removeUser(
+				const std::string                             &databaseAd,
+				const repo::core::model::bson::RepoBSON*	  cred,
+				const repo::core::model::bson::RepoUser       &user);
+
+			/**
+			* Update a user on the database
+			* @param token Authentication token
+			* @param user user info to modify
+			*/
+			void updateUser(
+				const std::string                             &databaseAd,
+				const repo::core::model::bson::RepoBSON*	  cred,
+				const repo::core::model::bson::RepoUser  &user);
 
 
 			/**

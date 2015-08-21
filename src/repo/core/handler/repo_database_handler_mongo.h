@@ -40,16 +40,22 @@
 #include "../model/repo_node_utils.h"
 #include "../model/bson/repo_bson.h"
 #include "../model/bson/repo_bson_builder.h"
+#include "../model/bson/repo_bson_user.h"
 #include "../../lib/repo_stack.h"
 
 namespace repo{
 	namespace core{
 		namespace handler {
+
 			class MongoDatabaseHandler : public AbstractDatabaseHandler{
+				enum class OPERATION { DROP, INSERT, UPDATE };
 			public:
 				/*
 				*	=================================== Public Fields ========================================
 				*/
+				static const std::string ID; //! "_id"
+				static const std::string UUID;//! "uuid"		
+				static const std::string ADMIN_DATABASE;//! "admin"
 				static const std::string SYSTEM_ROLES_COLLECTION;//! "system.roles"
 				static const std::string AUTH_MECH;//! Authentication mechanism. currently MONGO-CR since mongo v2.6
 				//! Built in any database roles. See http://docs.mongodb.org/manual/reference/built-in-roles/
@@ -144,7 +150,11 @@ namespace repo{
 				* due to limitations of the transfer protocol this might need
 				* to be called multiple times, utilising the skip index to skip
 				* the first n items.
+				* @param database name of database
 				* @param collection name of collection
+				* @param fields fields to get back from the database
+				* @param sortField field to sort upon
+				* @param sortOrder 1 ascending, -1 descending
 				* @param skip specify how many documents to skip
 				* @return list of RepoBSONs representing the documents
 				*/
@@ -152,7 +162,11 @@ namespace repo{
 					getAllFromCollectionTailable(
 					const std::string                             &database,
 					const std::string                             &collection,
-					const uint64_t                                &skip = 0);
+					const uint64_t                                &skip = 0,
+					const std::list<std::string>				  &fields = std::list<std::string>(),
+					const std::string							  &sortField = std::string(),
+					const int									  &sortOrder = -1);
+
 
 				/**
 				* Get a list of all available collections.
@@ -187,7 +201,8 @@ namespace repo{
 				 * @return returns a map of database -> list of projects
 				 */
 				std::map<std::string, std::list<std::string> > getDatabasesWithProjects(
-					const std::list<std::string> &databases, const std::string &projectExt);
+					const std::list<std::string> &databases, 
+					const std::string &projectExt = "scene");
 
 				/**
 				 * Get a list of projects associated with a given database (aka company account).
@@ -198,6 +213,32 @@ namespace repo{
 				 */
 				std::list<std::string> getProjects(const std::string &database, const std::string &projectExt);
 
+				/**
+				* Return a list of Admin database roles
+				* @return a vector of Admin database roles
+				*/
+				std::list<std::string> getAdminDatabaseRoles()
+				{
+					return ADMIN_ONLY_DATABASE_ROLES;
+				}
+
+				/**
+				* Return the name of admin database
+				* @return name of admin database
+				*/
+				static std::string getAdminDatabaseName()
+				{
+					return ADMIN_DATABASE;
+				}
+
+				/**
+				* Return a list of standard database roles
+				* @return a vector of standard database roles
+				*/
+				std::list<std::string> getStandardDatabaseRoles()
+				{
+					return ANY_DATABASE_ROLES;
+				}
 				/*
 				*	------------- Database operations (insert/delete/update) --------------
 				*/
@@ -215,6 +256,20 @@ namespace repo{
 					const std::string &collection,
 					const repo::core::model::bson::RepoBSON &obj,
 					std::string &errMsg);
+
+
+				/**
+				* Insert a user into the database
+				* @param user user bson to insert
+				* @param errmsg error message
+				* @return returns true upon success
+				*/
+				bool insertUser(
+					const repo::core::model::bson::RepoUser &user,
+					std::string                             &errmsg)
+				{
+					return performUserCmd(OPERATION::INSERT, user, errmsg);
+				}
 
 				/**
 				* Update/insert a single document in database.collection
@@ -252,6 +307,33 @@ namespace repo{
 				bool dropDatabase(
 					const std::string &database,
 					std::string &errMsg = std::string());
+
+				/**
+				* Remove a user from the database
+				* @param user user bson to remove
+				* @param errmsg error message
+				* @return returns true upon success
+				*/
+				bool dropUser(
+					const repo::core::model::bson::RepoUser &user,
+					std::string                             &errmsg)
+				{
+					return performUserCmd(OPERATION::DROP, user, errmsg);
+				}
+
+				/**
+				* Update a user in the database
+				* @param user user bson to update
+				* @param errmsg error message
+				* @return returns true upon success
+				*/
+				bool updateUser(
+					const repo::core::model::bson::RepoUser &user,
+					std::string                             &errmsg)
+				{
+					return performUserCmd(OPERATION::UPDATE, user, errmsg);
+				}
+
 
 				/*
 				*	------------- Query operations --------------
@@ -399,6 +481,18 @@ namespace repo{
 				* @return returns a string with just the database name
 				*/
 				std::string MongoDatabaseHandler::getProjectFromCollection(const std::string &ns, const std::string &projectExt);
+
+				/**
+				* Perform command on the user
+				* @param op (insert, drop or update)
+				* @param user user to modify
+				* @param errMsg error message if failed
+				* @return returns true upon success
+				*/
+				bool MongoDatabaseHandler::performUserCmd(
+					const OPERATION                         &op,
+					const repo::core::model::bson::RepoUser &user,
+					std::string                       &errMsg);
 
 				/**
 				* Compares two strings.

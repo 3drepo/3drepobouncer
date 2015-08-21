@@ -49,7 +49,6 @@ namespace repo {
 		namespace model {
 			namespace bson {
 
-					enum class RepoBSONCommands { CREATE, DROP, UPDATE };
 
 					//TODO: Eventually we should inherit from a generic BSON object. 
 					//work seems to have been started in here:https://github.com/jbenet/bson-cpp
@@ -183,8 +182,6 @@ namespace repo {
 
 							return success;
 						}
-
-
 					
 
 						/**
@@ -215,6 +212,21 @@ namespace repo {
 						* @return returns timestamp as int64
 						*/
 						int64_t getTimeStampField(const std::string &label) const;
+
+						/**
+						* Get a field as a List of string pairs
+						* This is for scenarios were there is an element that is an array of objects
+						* and you want to get 2 fields within all the objects.
+						* @param arrLabel the element where this data is stored
+						* @param fstLabel label for #1 in pair
+						* @param sndLabel label for #2 in pair
+						* @returns a List of pairs of strings
+						*/
+						std::list<std::pair<std::string, std::string> > getListStringPairField(
+							const std::string &arrLabel,
+							const std::string &fstLabel,
+							const std::string &sndLabel);
+						
 						
 
 					}; // end 

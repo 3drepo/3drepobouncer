@@ -24,6 +24,7 @@
 #include "../repo_node_utils.h"
 
 #include "repo_bson_project_settings.h"
+#include "repo_bson_user.h"
 #include "repo_node.h"
 #include "repo_node_camera.h"
 #include "repo_node_metadata.h"
@@ -33,6 +34,7 @@
 #include "repo_node_revision.h"
 #include "repo_node_texture.h"
 #include "repo_node_transformation.h"
+
 
 
 namespace repo {
@@ -65,6 +67,34 @@ namespace repo {
 							const uint8_t     &groupPermissionsOctal = 0,
 							const uint8_t     &publicPermissionsOctal = 0);
 
+						/**
+						* Create a user BSON
+						* @param userName username
+						* @param password password of the user
+						* @param firstName first name of user
+						* @param lastName last name of user
+						* @param email  email address of the user
+						* @param projects list of projects the user has access to
+						* @param roles list of roles the users are capable of
+						* @param groups list of groups the user belongs to
+						* @param apiKeys a list of api keys for the user
+						* @param avatar picture of the user
+						* @return returns a RepoUser
+						*/
+
+						static RepoUser makeRepoUser(
+							const std::string                                      &userName,
+							const std::string                                      &password,
+							const std::string                                      &firstName,
+							const std::string                                      &lastName,
+							const std::string                                      &email,
+							const std::list<std::pair<std::string, std::string>>   &projects,
+							const std::list<std::pair<std::string, std::string>>   &roles,
+							const std::list<std::pair<std::string, std::string>>   &groups,
+							const std::list<std::pair<std::string, std::string>>   &apiKeys,
+							const std::vector<char>                                &avatar);
+							
+
 
 						/*
 						* -------------------- REPO NODES ------------------------
@@ -74,7 +104,7 @@ namespace repo {
 						* @param type of node (Optional)
 						* @return returns a RepoNode
 						*/
-						static RepoNode    makeRepoNode   (std::string type=std::string());
+						static RepoNode makeRepoNode (std::string type=std::string());
 
 						/**
 						* Create a Camera Node

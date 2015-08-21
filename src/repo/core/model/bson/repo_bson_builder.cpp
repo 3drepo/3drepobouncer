@@ -20,7 +20,26 @@ void RepoBSONBuilder::appendUUID(
 
 }
 
-//FIXME: this is silly. should just pass everything in as vectors
+void RepoBSONBuilder::appendArrayPair(
+	const std::string &label,
+	const std::list<std::pair<std::string, std::string> > &list,
+	const std::string &fstLabel,
+	const std::string &sndLabel
+	)
+{
+	mongo::BSONArrayBuilder arrBuilder;
+	
+	for (auto it = list.begin(); it != list.end(); ++it)
+	{
+		RepoBSONBuilder innerBuilder;
+		innerBuilder << fstLabel << it->first;
+		innerBuilder << sndLabel << it->second;
+		arrBuilder.append(innerBuilder.obj());
+	}
+	append(label, arrBuilder.arr());
+}
+
+
 void RepoBSONBuilder::appendVector(
 	const std::string    &label,
 	const repo_vector_t vec

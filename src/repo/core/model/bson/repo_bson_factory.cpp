@@ -70,6 +70,24 @@ RepoProjectSettings RepoBSONFactory::makeRepoProjectSettings(
 		publicPermissionsOctal);
 }
 
+//FIXME: no point calling a function to call a function, sohuld just create all the objects here.
+RepoUser RepoBSONFactory::makeRepoUser(
+	const std::string                           &userName,
+	const std::string                           &password,
+	const std::string                           &firstName,
+	const std::string                           &lastName,
+	const std::string                           &email,
+	const std::list<std::pair<std::string, std::string>>  &projects,
+	const std::list<std::pair<std::string, std::string>>   &roles,
+	const std::list<std::pair<std::string, std::string>>   &groups,
+	const std::list<std::pair<std::string, std::string>>   &apiKeys,
+	const std::vector<char>                     &avatar)
+{
+	return RepoUser::createRepoUser(userName, password, firstName, lastName, email,
+		projects, roles, groups, apiKeys, avatar);
+}
+
+
 ReferenceNode RepoBSONFactory::makeReferenceNode(
 	const std::string &database,
 	const std::string &project,

@@ -28,6 +28,9 @@ using namespace repo::core::handler;
 static uint64_t MAX_MONGO_BSON_SIZE=16777216L;
 //------------------------------------------------------------------------------
 
+const std::string repo::core::handler::MongoDatabaseHandler::ID = "_id";
+const std::string repo::core::handler::MongoDatabaseHandler::UUID = "uuid";
+const std::string repo::core::handler::MongoDatabaseHandler::ADMIN_DATABASE = "admin";
 const std::string repo::core::handler::MongoDatabaseHandler::SYSTEM_ROLES_COLLECTION = "system.roles";
 const std::list<std::string> repo::core::handler::MongoDatabaseHandler::ANY_DATABASE_ROLES =
 { "dbAdmin", "dbOwner", "read", "readWrite", "userAdmin" };
@@ -295,18 +298,23 @@ std::vector<repo::core::model::bson::RepoBSON>
 	MongoDatabaseHandler::getAllFromCollectionTailable(
 		const std::string                             &database,
 		const std::string                             &collection,
-		const uint64_t                                &skip)
+		const uint64_t                                &skip,
+		const std::list<std::string>				  &fields,
+		const std::string							  &sortField,
+		const int									  &sortOrder )
 {
 	std::vector<repo::core::model::bson::RepoBSON> bsons;
 	mongo::DBClientBase *worker;
 	try
 	{
+
 		worker = workerPool->getWorker();
 		std::auto_ptr<mongo::DBClientCursor> cursor = worker->query(
 			database + "." + collection,
-			mongo::Query(),
+			sortField.empty() ? mongo::Query() : mongo::Query().sort(sortField, sortOrder),
 			0,
-			skip);
+			skip,
+			fields.size() > 0 ? &fieldsToReturn(fields) : nullptr);
 
 		while (cursor.get() && cursor->more())
 		{
@@ -508,6 +516,74 @@ bool MongoDatabaseHandler::insertDocument(
 	}
 
 	workerPool->returnWorker(worker);
+
+	return success;
+}
+
+
+bool MongoDatabaseHandler::performUserCmd(
+	const OPERATION                         &op,
+	const repo::core::model::bson::RepoUser &user,
+	std::string                       &errMsg)
+{
+	bool success = true;
+	mongo::DBClientBase *worker;
+
+	if (!user.isEmpty())
+	{
+		try{
+			worker = workerPool->getWorker();
+			repo::core::model::bson::RepoBSONBuilder cmdBuilder;
+			std::string username = user.getUserName();
+
+			switch (op)
+			{
+			case OPERATION::INSERT:
+				cmdBuilder << "createUser" << username;
+				break;
+			case OPERATION::UPDATE:
+				cmdBuilder << "updateUser" << username;
+				break;
+			case OPERATION::DROP:
+				cmdBuilder << "dropUser" << username;
+			}
+
+			if (op != OPERATION::DROP)
+			{
+				std::string pw = user.getCleartextPassword();
+				if (!pw.empty())
+					cmdBuilder << "pwd" << pw;
+
+				repo::core::model::bson::RepoBSON customData = user.getCustomDataBSON();
+				if (!customData.isEmpty())
+					cmdBuilder << "customData" << customData;
+
+				repo::core::model::bson::RepoBSON roles = user.getRolesBSON();
+				if (!customData.isEmpty())
+					cmdBuilder.appendArray("roles", roles);
+			}
+	
+
+			mongo::BSONObj info;
+			worker->runCommand(ADMIN_DATABASE, cmdBuilder.obj(), info);
+
+			BOOST_LOG_TRIVIAL(trace) << "Info from running user command: " << info;
+
+		}
+		catch (mongo::DBException &e)
+		{
+			success = false;
+			std::string errString(e.what());
+			errMsg += errString;
+		}
+
+		workerPool->returnWorker(worker);
+	}
+	else
+	{
+		errMsg += "User bson is empty";
+	}
+
 
 	return success;
 }

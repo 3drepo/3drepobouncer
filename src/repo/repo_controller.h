@@ -45,6 +45,7 @@
 
 #include "core/handler/repo_database_handler_mongo.h"
 #include "core/model/bson/repo_bson.h"
+#include "core/model/bson/repo_bson_user.h"
 #include "lib/repo_stack.h"
 #include "lib/repo_broadcaster.h"
 #include "lib/repo_listener_abstract.h"
@@ -95,7 +96,7 @@ namespace repo{
 		/**
 		* LOGGING LEVEL
 		*/
-		enum RepoLogLevel { LOG_ALL, LOG_DEBUG, LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_NONE };
+		enum class RepoLogLevel { LOG_ALL, LOG_DEBUG, LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_NONE };
 
 
 		/**
@@ -155,12 +156,7 @@ namespace repo{
 			const std::string &username,
 			const std::string &password,
 			const bool        &pwDigested = false
-			)
-		{
-			return authenticateMongo(errMsg, address, port,
-				core::handler::AbstractDatabaseHandler::ADMIN_DATABASE,
-				username, password, pwDigested);
-		}
+			);
 
 		/*
 		*	------------- Database info lookup --------------
@@ -197,11 +193,28 @@ namespace repo{
 			const uint64_t       &skip = 0);
 
 		/**
-		* Return a list of database available to the user
+		* Retrieve documents from a specified collection, returning only the specified fields
+		* due to limitations of the transfer protocol this might need
+		* to be called multiple times, utilising the skip index to skip
+		* the first n items.
 		* @param token A RepoToken given at authentication
-		* @return returns a list of database names
+		* @param database name of database
+		* @param collection name of collection
+		* @param fields fields to get back from the database
+		* @param sortField field to sort upon
+		* @param sortOrder 1 ascending, -1 descending
+		* @param skip specify how many documents to skip (see description above)
+		* @return list of RepoBSONs representing the documents
 		*/
-		std::list<std::string> getDatabases(RepoToken *token);
+		std::vector < repo::core::model::bson::RepoBSON >
+			getAllFromCollectionContinuous(
+			const RepoToken              *token,
+			const std::string            &database,
+			const std::string            &collection,
+			const std::list<std::string> &fields,
+			const std::string            &sortField = std::string(),
+			const int                    &sortOrder = -1,
+			const uint64_t               &skip = 0);
 
 		/**
 		* Return a list of collections within the database
@@ -227,9 +240,57 @@ namespace repo{
 			const std::string    &database,
 			const std::string    &collection);
 
+		/**
+		* Return a list of database available to the user
+		* @param token A RepoToken given at authentication
+		* @return returns a list of database names
+		*/
+		std::list<std::string> getDatabases(
+			const RepoToken *token);
+		//FIXME: vectors are much better than list for traversal efficiency...
 
-		std::string getHostAndPort(RepoToken *token) { BOOST_LOG_TRIVIAL(info) << "getHostAndPort: " << token->databaseAd; return token->databaseAd; }
+		/**
+		* Return a list of projects with the database available to the user
+		* @param token A RepoToken given at authentication
+		* @param databases list of databases to look up
+		* @return returns a list of database names
+		*/
+		std::map<std::string, std::list<std::string>> 
+			getDatabasesWithProjects(
+			const RepoToken *token, 
+			const std::list<std::string> &databases);
 
+		/**
+		* Return host:port of the database connection that is associated with
+		* the given token
+		* @param token repo token
+		* @return return a string with "databaseAddress:port"
+		*/
+		std::string getHostAndPort(const RepoToken *token) const
+		{ 
+			return token->databaseAd; 
+		}
+
+		/**
+		* Get a list of Admin roles from the database
+		* @param token repo token to the database
+		* @return returns a vector of roles
+		*/
+		std::list<std::string> getAdminDatabaseRoles(const RepoToken *token);
+
+		/**
+		* Get the name of the admin database
+		* @param token repo token to the database
+		* @return returns the name of the admin database
+		*/
+		std::string getNameOfAdminDatabase(const RepoToken *token);
+
+		/**
+		* Get a list of standard roles from the database
+		* @param token repo token to the database
+		* @return returns a vector of roles
+		*/
+		std::list<std::string> getStandardDatabaseRoles(const RepoToken *token);
 
 		/*
 		*	---------------- Database Retrieval -----------------------
@@ -255,6 +316,25 @@ namespace repo{
 		/*
 		*	------- Database Operations (insert/delete/update) ---------
 		*/
+
+
+		/**
+		* Commit a scene graph
+		* @param token Authentication token
+		* @param scene RepoScene to commit
+		*/
+		void commitScene(
+			const RepoToken                     *token,
+			repo::manipulator::graph::RepoScene *scene);
+
+		/**
+		* Insert a new user into the database
+		* @param token Authentication token
+		* @param user user info to insert
+		*/
+		void insertUser(
+			const RepoToken                          *token,
+			const repo::core::model::bson::RepoUser  &user);
 
 		/**
 		* Remove a collection from the database
@@ -285,13 +365,22 @@ namespace repo{
 		);
 
 		/**
-		* Commit a scene graph
+		* remove a user from the database
 		* @param token Authentication token
-		* @param scene RepoScene to commit
+		* @param user user info to remove
 		*/
-		void commitScene(
-			const RepoToken                     *token,
-			repo::manipulator::graph::RepoScene *scene);
+		void removeUser(
+			const RepoToken                          *token,
+			const repo::core::model::bson::RepoUser  &user);
+
+		/**
+		* Update a user on the database
+		* @param token Authentication token
+		* @param user user info to modify
+		*/
+		void updateUser(
+			const RepoToken                          *token,
+			const repo::core::model::bson::RepoUser  &user);
 
 
 		/*
@@ -353,7 +442,6 @@ namespace repo{
 			const repo::manipulator::modelconvertor::ModelImportConfig *config 
 				= nullptr);
 
-
 		/**
 		* Save a Repo Scene to file
 		* @param filePath path to file
@@ -363,6 +451,7 @@ namespace repo{
 		bool saveSceneToFile(
 			const std::string &filePath,
 			const repo::manipulator::graph::RepoScene* scene);
+
 
 	private:
 

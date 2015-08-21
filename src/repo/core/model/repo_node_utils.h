@@ -79,6 +79,7 @@ static repoUUID generateUUID(){
 	return  boost::uuids::random_generator()();
 }
 
+//FIXME: scope this
 
 /*!
 * Returns a valid uuid representation of a given string. If empty, returns

@@ -65,6 +65,38 @@ RepoController::~RepoController()
 	}
 }
 
+RepoToken* RepoController::authenticateToAdminDatabaseMongo(
+	std::string       &errMsg,
+	const std::string &address,
+	const int         &port,
+	const std::string &username,
+	const std::string &password,
+	const bool        &pwDigested
+	)
+{
+	manipulator::RepoManipulator* worker = workerPool.pop();
+
+	core::model::bson::RepoBSON* cred = 0;
+	RepoToken *token = 0;
+
+	std::string dbFullAd = address + ":" + std::to_string(port);
+
+	bool success = worker->connectAndAuthenticateWithAdmin(errMsg, address, port,
+		numDBConnections, username, password, pwDigested);
+
+	if (success)
+		cred = worker->createCredBSON(dbFullAd, username, password, pwDigested);
+
+
+	if (cred)
+	{
+		token = new RepoToken(cred, dbFullAd, worker->getNameOfAdminDatabase(dbFullAd));
+	}
+
+	workerPool.push(worker);
+	return token;
+}
+
 RepoToken* RepoController::authenticateMongo(
 	std::string       &errMsg,
 	const std::string &address,
@@ -188,19 +220,48 @@ std::vector < repo::core::model::bson::RepoBSON >
 	return vector;
 }
 
-std::list<std::string> RepoController::getDatabases(RepoToken *token)
+std::vector < repo::core::model::bson::RepoBSON >
+	RepoController::getAllFromCollectionContinuous(
+		const RepoToken              *token,
+		const std::string            &database,
+		const std::string            &collection,
+		const std::list<std::string> &fields,
+		const std::string            &sortField,
+		const int                    &sortOrder,
+		const uint64_t               &skip)
+{
+	BOOST_LOG_TRIVIAL(trace) << "Controller: Fetching BSONs from "
+		<< database << "." << collection << "....";
+	std::vector<repo::core::model::bson::RepoBSON> vector;
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+
+		vector = worker->getAllFromCollectionTailable(token->databaseAd, token->credentials,
+			database, collection, fields, sortField, sortOrder, skip);
+
+		workerPool.push(worker);
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Trying to fetch BSONs from a collection without a Repo Token!";
+	}
+
+	BOOST_LOG_TRIVIAL(trace) << "Obtained " << vector.size() << " bson objects.";
+
+	return vector;
+}
+
+std::list<std::string> RepoController::getDatabases(const RepoToken *token)
 {
 	BOOST_LOG_TRIVIAL(trace) << "Controller: Fetching Database....";
 	std::list<std::string> list;
 	if (token)
 	{
-		if (token->databaseName == core::handler::AbstractDatabaseHandler::ADMIN_DATABASE)
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		if (token->databaseName == worker->getNameOfAdminDatabase(token->databaseAd))
 		{
-			manipulator::RepoManipulator* worker = workerPool.pop();
-
 			list = worker->fetchDatabases(token->databaseAd, token->credentials);
-
-			workerPool.push(worker);
 		}
 		else
 		{
@@ -208,6 +269,7 @@ std::list<std::string> RepoController::getDatabases(RepoToken *token)
 			//database then just return the database he/she is authenticated against.
 			list.push_back(token->databaseName);
 		}
+		workerPool.push(worker);
 	}
 	else
 	{
@@ -265,6 +327,47 @@ repo::core::model::bson::CollectionStats RepoController::getCollectionStats(
 	return stats;
 }
 
+std::map<std::string, std::list<std::string>>
+	RepoController::getDatabasesWithProjects(
+		const RepoToken *token, 
+		const std::list<std::string> &databases)
+{
+	std::map<std::string, std::list<std::string>> map;
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		map = worker->getDatabasesWithProjects(token->databaseAd,
+			token->credentials, databases);
+		workerPool.push(worker);
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Trying to insert a user without a Repo Token!";
+
+	}
+
+	return map;
+}
+
+void RepoController::insertUser(
+	const RepoToken                          *token,
+	const repo::core::model::bson::RepoUser  &user)
+{
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		worker->insertUser(token->databaseAd,
+			token->credentials, user);
+		workerPool.push(worker);
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Trying to insert a user without a Repo Token!";
+
+	}
+
+}
+
 bool RepoController::removeCollection(
 	const RepoToken             *token,
 	const std::string     &databaseName,
@@ -315,38 +418,75 @@ bool RepoController::removeDatabase(
 	return success;
 }
 
+void RepoController::removeUser(
+	const RepoToken                          *token,
+	const repo::core::model::bson::RepoUser  &user)
+{
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		worker->removeUser(token->databaseAd,
+			token->credentials, user);
+		workerPool.push(worker);
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Trying to insert a user without a Repo Token!";
+
+	}
+}
+
+
+void RepoController::updateUser(
+	const RepoToken                          *token,
+	const repo::core::model::bson::RepoUser  &user)
+{
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		worker->updateUser(token->databaseAd,
+			token->credentials, user);
+		workerPool.push(worker);
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Trying to insert a user without a Repo Token!";
+
+	}
+}
+
 void RepoController::setLoggingLevel(const RepoLogLevel &level)
 {
 
 	boost::log::trivial::severity_level loggingLevel;
 	switch (level)
 	{
-		case LOG_ALL:
+		case RepoLogLevel::LOG_ALL:
 			loggingLevel = boost::log::trivial::trace;
 			break;
-		case LOG_DEBUG:
+		case RepoLogLevel::LOG_DEBUG:
 			loggingLevel = boost::log::trivial::debug;
 			break;
-		case LOG_INFO:
+		case RepoLogLevel::LOG_INFO:
 			loggingLevel = boost::log::trivial::info;
 			break;
-		case LOG_WARNING:
+		case RepoLogLevel::LOG_WARNING:
 			loggingLevel = boost::log::trivial::warning;
 			break;
-		case LOG_ERROR:
+		case RepoLogLevel::LOG_ERROR:
 			loggingLevel = boost::log::trivial::error;
 			break;
-		case LOG_NONE:
+		case RepoLogLevel::LOG_NONE:
 			loggingLevel = boost::log::trivial::fatal;
 			break;
 		default:
-			BOOST_LOG_TRIVIAL(error) << "Unknown log level: " << level;
+			BOOST_LOG_TRIVIAL(error) << "Unknown log level: " << (int)level;
 			return;
 
 	}
 
-	BOOST_LOG_TRIVIAL(trace) << "Setting logging level to: " << level;
-	if (level == LOG_NONE)
+	BOOST_LOG_TRIVIAL(trace) << "Setting logging level to: " << (int)level;
+	if (level == RepoLogLevel::LOG_NONE)
 	{
 		boost::log::core::get()->set_filter(
 			boost::log::trivial::severity > loggingLevel);
@@ -431,6 +571,56 @@ repo::manipulator::graph::RepoScene* RepoController::createFederatedScene(
 	}
 
 	return scene;
+}
+
+std::list<std::string> RepoController::getAdminDatabaseRoles(const RepoToken *token)
+{
+	std::list<std::string> roles;
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		roles = worker->getAdminDatabaseRoles(token->databaseAd);
+		workerPool.push(worker);
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Trying to get database roles without a token!";
+	}
+
+	return roles;
+}
+
+std::string RepoController::getNameOfAdminDatabase(const RepoToken *token)
+{
+	std::string name;
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		name = worker->getNameOfAdminDatabase(token->databaseAd);
+		workerPool.push(worker);
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Trying to get database roles without a token!";
+	}
+	return name;
+}
+
+std::list<std::string> RepoController::getStandardDatabaseRoles(const RepoToken *token)
+{
+	std::list<std::string> roles;
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		roles = worker->getStandardDatabaseRoles(token->databaseAd);
+		workerPool.push(worker);
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Trying to get database roles without a token!";
+	}
+
+	return roles;
 }
 
 std::string RepoController::getSupportedExportFormats()

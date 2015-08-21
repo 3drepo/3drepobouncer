@@ -46,9 +46,30 @@ bool RepoManipulator::connectAndAuthenticate(
 	const bool        &pwDigested
 	)
 {
+	//FIXME: we should have a database manager class that will instantiate new handlers/give existing handlers
 	repo::core::handler::AbstractDatabaseHandler *handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(
 		errMsg, address, port, maxConnections, dbName, username, password, pwDigested);
+
+	return handler != 0;
+}
+
+bool RepoManipulator::connectAndAuthenticateWithAdmin(
+	std::string       &errMsg,
+	const std::string &address,
+	const uint32_t    &port,
+	const uint32_t    &maxConnections,
+	const std::string &username,
+	const std::string &password,
+	const bool        &pwDigested
+	)
+{
+	//FIXME: we should have a database manager class that will instantiate new handlers/give existing handlers
+	repo::core::handler::AbstractDatabaseHandler *handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(
+		errMsg, address, port, maxConnections, 
+		repo::core::handler::MongoDatabaseHandler::getAdminDatabaseName(), 
+		username, password, pwDigested);
 
 	return handler != 0;
 }
@@ -275,7 +296,26 @@ std::vector<repo::core::model::bson::RepoBSON>
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	if (handler)
-		vector =  handler->getAllFromCollectionTailable(database, collection);
+		vector = handler->getAllFromCollectionTailable(database, collection, skip);
+	return vector;
+}
+
+std::vector<repo::core::model::bson::RepoBSON>
+	RepoManipulator::getAllFromCollectionTailable(
+		const std::string                             &databaseAd,
+		const repo::core::model::bson::RepoBSON*	  cred,
+		const std::string                             &database,
+		const std::string                             &collection,
+		const std::list<std::string>				  &fields,
+		const std::string							  &sortField,
+		const int									  &sortOrder,
+		const uint64_t                                &skip)
+{
+	std::vector<repo::core::model::bson::RepoBSON> vector;
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+		vector = handler->getAllFromCollectionTailable(database, collection, skip, fields, sortField, sortOrder);
 	return vector;
 }
 
@@ -294,6 +334,56 @@ repo::core::model::bson::CollectionStats RepoManipulator::getCollectionStats(
 		stats = handler->getCollectionStats(database, collection, errMsg);
 
 	return stats;
+}
+
+std::map<std::string, std::list<std::string>>
+	RepoManipulator::getDatabasesWithProjects(
+		const std::string                             &databaseAd,
+		const repo::core::model::bson::RepoBSON*	  cred,
+		const std::list<std::string> &databases)
+{
+	std::map<std::string, std::list<std::string>> list;
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+		list = handler->getDatabasesWithProjects(databases);
+
+	return list;
+}
+
+std::list<std::string> RepoManipulator::getAdminDatabaseRoles(
+	const std::string  &databaseAd)
+{
+	std::list<std::string> roles;
+
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+		roles = handler->getAdminDatabaseRoles();
+
+	return roles;
+}
+
+std::list<std::string> RepoManipulator::getStandardDatabaseRoles(
+	const std::string  &databaseAd)
+{
+	std::list<std::string> roles;
+
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+		roles = handler->getStandardDatabaseRoles();
+
+	return roles;
+}
+
+std::string RepoManipulator::getNameOfAdminDatabase(
+	const std::string                             &databaseAd) const
+{
+	
+	//FIXME: at the moment we only have mongo. But if we have
+	//different database types then this would not work
+	return  repo::core::handler::MongoDatabaseHandler::getAdminDatabaseName();
 }
 
 repo::manipulator::graph::RepoScene* 
@@ -327,6 +417,71 @@ repo::manipulator::graph::RepoScene*
 	return scene;
 }
 
+void RepoManipulator::insertUser(
+	const std::string                             &databaseAd,
+	const repo::core::model::bson::RepoBSON*	  cred,
+	const repo::core::model::bson::RepoUser       &user)
+{
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+	{
+		std::string errMsg;
+		if (handler->insertUser(user, errMsg))
+		{
+			BOOST_LOG_TRIVIAL(info) << "User added successfully.";
+		}
+		else
+		{
+			BOOST_LOG_TRIVIAL(error) << "Failed to add user : " << errMsg;
+		}
+	}
+		
+}
+
+void RepoManipulator::removeUser(
+	const std::string                             &databaseAd,
+	const repo::core::model::bson::RepoBSON*	  cred,
+	const repo::core::model::bson::RepoUser       &user)
+{
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+	{
+		std::string errMsg;
+		if (handler->dropUser(user, errMsg))
+		{
+			BOOST_LOG_TRIVIAL(info) << "User removed successfully.";
+		}
+		else
+		{
+			BOOST_LOG_TRIVIAL(error) << "Failed to remove user : " << errMsg;
+		}
+	}
+
+}
+
+void RepoManipulator::updateUser(
+	const std::string                             &databaseAd,
+	const repo::core::model::bson::RepoBSON*	  cred,
+	const repo::core::model::bson::RepoUser       &user)
+{
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+	{
+		std::string errMsg;
+		if (handler->updateUser(user, errMsg))
+		{
+			BOOST_LOG_TRIVIAL(info) << "User updated successfully.";
+		}
+		else
+		{
+			BOOST_LOG_TRIVIAL(error) << "Failed to update user : " << errMsg;
+		}
+	}
+
+}
 
 bool RepoManipulator::saveSceneToFile(
 	const std::string &filePath,
@@ -335,3 +490,4 @@ bool RepoManipulator::saveSceneToFile(
 	modelconvertor::AssimpModelExport modelExport;
 	return modelExport.exportToFile(scene, filePath);
 }
+

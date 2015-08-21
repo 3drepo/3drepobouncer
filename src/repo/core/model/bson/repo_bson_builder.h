@@ -48,6 +48,9 @@ namespace repo {
 						~RepoBSONBuilder();
 
 						//! Appends a vector as an array to BSON builder.
+						//FIXME: should turn this to an appendArray kind of function
+						// instead of a stateless bson creation (technically doesn't belong here if it is
+						// just a object creation
 						template <class T>
 						RepoBSON createArrayBSON(
 							const std::vector<T> &vec)
@@ -74,6 +77,20 @@ namespace repo {
 						{
 							appendUUID(label, uuid);
 						}
+
+						/**
+						* Append a list of pairs into an arraybson of objects
+						* @param label label to append the array against
+						* @param list list of pairs to append
+						* @param fstLabel label for #1 in the pair
+						* @param sndLabel label for #2 in the pair
+						*/
+						void appendArrayPair(
+							const std::string &label,
+							const std::list<std::pair<std::string, std::string> > &list,
+							const std::string &fstLabel,
+							const std::string &sndLabel
+							);
 
 						/*!
 						* Appends a vector of object as an array

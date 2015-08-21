@@ -16,7 +16,7 @@ void configureLogging(){
 	);
 }
 
-void testDatabaseRetrieval(repo::RepoController *controller, repo::RepoToken *token)
+void testDatabaseRetrieval(repo::RepoController *controller, const repo::RepoToken *token)
 {
 	BOOST_LOG_TRIVIAL(info) << "Fetching list of databases...";
 	std::list<std::string> databases = controller->getDatabases(token);
@@ -137,8 +137,8 @@ int main(int argc, char* argv[]){
 	//loadModelFromFileAndCommit(dbHandler);
 
 	//instantiateProject(dbHandler);
-	repo::manipulator::graph::RepoScene *scene = controller->fetchScene(token, "test", "chair");
-	controller->saveSceneToFile("C:/Users/Carmen/Desktop/chairtest.obj", scene);
+	repo::manipulator::graph::RepoScene *scene = controller->fetchScene(token, "test", "cameraTest");
+	controller->saveSceneToFile("C:/Users/Carmen/Desktop/camTest.dae", scene);
 
 
 	return EXIT_SUCCESS;
