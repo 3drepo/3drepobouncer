@@ -67,6 +67,21 @@ namespace repo {
 					*/
 					ElementType type();
 
+					std::vector<RepoBSONElement> Array()
+					{
+						//FIXME: potentially slow.
+						//This is done so we can hide mongo representation from the bouncer world.
+						std::vector<RepoBSONElement> arr;
+						std::vector<mongo::BSONElement> mongoArr = mongo::BSONElement::Array();
+						arr.reserve(mongoArr.size());
+
+						for (auto const &ele : mongoArr)
+						{
+							arr.push_back(RepoBSONElement(ele));
+						}
+						return arr;
+					}
+
 				};
 			}// end namespace bson
 		}// end namespace model

@@ -360,9 +360,24 @@ namespace repo{
 		*/
 		bool removeDatabase(
 			const RepoToken             *token,
-			const std::string     &databaseName,
-			std::string			  &errMsg = std::string()
+			const std::string           &databaseName,
+			std::string			        &errMsg = std::string()
 		);
+
+		/**
+		* remove a document from the database
+		* NOTE: this should never be called for a bson from RepoNode family
+		*       as you should never remove a node from a scene graph like this.
+		* @param token Authentication token
+		* @param database the database the collection resides in
+		* @param collection name of the collection to drop
+		* @param bson document to remove
+		*/
+		void removeDocument(
+			const RepoToken                          *token,
+			const std::string                        &databaseName,
+			const std::string                        &collectionName,
+			const repo::core::model::bson::RepoBSON  &bson);
 
 		/**
 		* remove a user from the database
@@ -382,6 +397,20 @@ namespace repo{
 			const RepoToken                          *token,
 			const repo::core::model::bson::RepoUser  &user);
 
+		/**
+		* upsert a document in the database
+		* NOTE: this should never be called for a bson from  RepoNode family
+		*       as you should never update a node from a scene graph like this.
+		* @param token Authentication token
+		* @param database the database the collection resides in
+		* @param collection name of the collection 
+		* @param bson document to update/insert
+		*/
+		void upsertDocument(
+			const RepoToken                          *token,
+			const std::string                        &databaseName,
+			const std::string                        &collectionName,
+			const repo::core::model::bson::RepoBSON  &bson);
 
 		/*
 		*	------------- Logging --------------

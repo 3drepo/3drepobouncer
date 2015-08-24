@@ -142,7 +142,7 @@ bool MongoDatabaseHandler::dropCollection(
 
 	workerPool->returnWorker(worker);
 
-	return true;
+	return success;
 }
 
 bool MongoDatabaseHandler::dropDatabase(
@@ -159,6 +159,33 @@ bool MongoDatabaseHandler::dropDatabase(
 	catch (mongo::DBException& e)
 	{
 		BOOST_LOG_TRIVIAL(error) << "Failed to drop database :" << e.what();
+	}
+
+	workerPool->returnWorker(worker);
+
+	return success;
+}
+
+bool MongoDatabaseHandler::dropDocument(
+	const repo::core::model::bson::RepoBSON bson,
+	const std::string &database,
+	const std::string &collection,
+	std::string &errMsg)
+{
+	bool success = true;
+	mongo::DBClientBase *worker;
+	try{
+		worker = workerPool->getWorker();
+		mongo::BSONElement bsonID;
+		bson.getObjectID(bsonID);
+		mongo::Query query = MONGO_QUERY("_id" << bsonID);
+		worker->remove(database + "." + collection, query, true);
+
+
+	}
+	catch (mongo::DBException& e)
+	{
+		BOOST_LOG_TRIVIAL(error) << "Failed to drop document :" << e.what();
 	}
 
 	workerPool->returnWorker(worker);

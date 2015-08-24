@@ -243,6 +243,55 @@ namespace repo{
 				*	------------- Database operations (insert/delete/update) --------------
 				*/
 
+
+				/**
+				* Remove a collection from the database
+				* @param database the database the collection resides in
+				* @param collection name of the collection to drop
+				* @param errMsg name of the collection to drop
+				*/
+				bool dropCollection(
+					const std::string &database,
+					const std::string &collection,
+					std::string &errMsg = std::string());
+
+				/**
+				* Remove a database from the mongo database
+				* @param database name of the database to drop
+				* @param errMsg name of the database to drop
+				*/
+				bool dropDatabase(
+					const std::string &database,
+					std::string &errMsg = std::string());
+
+
+				/**
+				* Remove a document from the mongo database
+				* @param bson document to remove
+				* @param database the database the collection resides in
+				* @param collection name of the collection the document is in
+				* @param errMsg name of the database to drop
+				*/
+				bool dropDocument(
+					const repo::core::model::bson::RepoBSON bson,
+					const std::string &database,
+					const std::string &collection,
+					std::string &errMsg = std::string());
+
+				/**
+				* Remove a user from the database
+				* @param user user bson to remove
+				* @param errmsg error message
+				* @return returns true upon success
+				*/
+				bool dropUser(
+					const repo::core::model::bson::RepoUser &user,
+					std::string                             &errmsg)
+				{
+					return performUserCmd(OPERATION::DROP, user, errmsg);
+				}
+
+
 				/**
 				 * Insert a single document in database.collection
 				 * @param database name
@@ -287,39 +336,6 @@ namespace repo{
 					const repo::core::model::bson::RepoBSON &obj,
 					const bool        &overwrite,
 					std::string &errMsg);
-
-				/**
-				* Remove a collection from the database
-				* @param database the database the collection resides in
-				* @param collection name of the collection to drop
-				* @param errMsg name of the collection to drop
-				*/
-				bool dropCollection(
-					const std::string &database,
-					const std::string &collection,
-					std::string &errMsg =std::string());
-
-				/**
-				* Remove a database from the mongo database
-				* @param database name of the database to drop
-				* @param errMsg name of the database to drop
-				*/
-				bool dropDatabase(
-					const std::string &database,
-					std::string &errMsg = std::string());
-
-				/**
-				* Remove a user from the database
-				* @param user user bson to remove
-				* @param errmsg error message
-				* @return returns true upon success
-				*/
-				bool dropUser(
-					const repo::core::model::bson::RepoUser &user,
-					std::string                             &errmsg)
-				{
-					return performUserCmd(OPERATION::DROP, user, errmsg);
-				}
 
 				/**
 				* Update a user in the database

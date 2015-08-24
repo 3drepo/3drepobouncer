@@ -418,6 +418,26 @@ bool RepoController::removeDatabase(
 	return success;
 }
 
+void RepoController::removeDocument(
+	const RepoToken                          *token,
+	const std::string                        &databaseName,
+	const std::string                        &collectionName,
+	const repo::core::model::bson::RepoBSON  &bson)
+{
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		worker->removeDocument(token->databaseAd,
+			token->credentials, databaseName, collectionName, bson);
+		workerPool.push(worker);
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Trying to delete a document without a Repo Token!";
+	}
+
+}
+
 void RepoController::removeUser(
 	const RepoToken                          *token,
 	const repo::core::model::bson::RepoUser  &user)
@@ -436,7 +456,6 @@ void RepoController::removeUser(
 	}
 }
 
-
 void RepoController::updateUser(
 	const RepoToken                          *token,
 	const repo::core::model::bson::RepoUser  &user)
@@ -452,6 +471,26 @@ void RepoController::updateUser(
 	{
 		BOOST_LOG_TRIVIAL(error) << "Trying to insert a user without a Repo Token!";
 
+	}
+}
+
+
+void RepoController::upsertDocument(
+	const RepoToken                          *token,
+	const std::string                        &databaseName,
+	const std::string                        &collectionName,
+	const repo::core::model::bson::RepoBSON  &bson)
+{
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		worker->upsertDocument(token->databaseAd,
+			token->credentials, databaseName, collectionName, bson);
+		workerPool.push(worker);
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Trying to upsert a document without a Repo Token!";
 	}
 }
 

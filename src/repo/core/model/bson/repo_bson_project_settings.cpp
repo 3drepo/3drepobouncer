@@ -83,3 +83,119 @@ RepoProjectSettings RepoProjectSettings::createRepoProjectSettings(
 RepoProjectSettings::~RepoProjectSettings()
 {
 }
+
+std::vector<bool> RepoProjectSettings::getPermissionsBoolean() const
+{
+
+	std::vector<bool> perm;
+	perm.resize(12);
+
+	std::vector<uint8_t> permInt = getPermissionsOctal();
+	uint8_t mask[3] = { READVAL, WRITEVAL, EXECUTEVAL };
+
+
+	perm[0] = perm[1] = perm[2] = false; //uid/gid/sticky all false.
+
+	for (uint32_t i = 0; i < 3; i++)
+	{
+		for (uint32_t j = 0; j < 3; j++)
+		{
+			uint32_t ind = (i+1) * 3 + j;
+			perm[ind] = permInt[i] & mask[j];
+		}
+
+		BOOST_LOG_TRIVIAL(trace) << "POSIX value : " << permInt[i] << "Permission = " 
+			<< perm[(i + 1) * 3] << ", " << perm[(i + 1) * 3 + 1] << "," << perm[(i + 1) * 3 + 2];
+	}
+
+
+
+	return perm;
+}
+
+std::string RepoProjectSettings::getPermissionsString() const
+{
+	std::stringstream sstream;
+	std::vector<uint8_t> permVec = getPermissionsOctal();
+
+	std::string mapping[8] = {"---", "--x", "-w-", "-wx", "r--", "r-x", "rw-", "rwx"};
+
+	if (permVec.size() >= 3)
+	{
+		//only take the first 3 values as the rest wouldn't make sense anyway
+		for (int i = 0; i < 3; i++)
+		{
+			int value = permVec[i];
+
+			if (value >= 0 && value <= 7)
+			{
+				//ensure the value is in range to prevent index out of range
+				sstream << mapping[value];
+			}
+			else
+			{
+				BOOST_LOG_TRIVIAL(error) << "Invalid POSIX permission value : " << value;
+				sstream << "eee"; //let's use "eee" to denote error.
+			}
+		}
+	}
+
+	return sstream.str();
+}
+
+
+std::vector<uint8_t> RepoProjectSettings::getPermissionsOctal() const
+{
+
+	std::vector<uint8_t> perm;
+	if (hasField(REPO_LABEL_PERMISSIONS))
+	{
+		std::vector<RepoBSONElement> arr = getField(REPO_LABEL_PERMISSIONS).Array();
+		for (const auto &ele : arr)
+			perm.push_back(ele.Int());
+	}
+
+	return perm;
+}
+
+std::vector<bool> RepoProjectSettings::stringToPermissionsBool(std::string octal)
+{
+	std::vector<bool> perm;
+	perm.resize(12);
+	uint8_t mask[3] = { READVAL, WRITEVAL, EXECUTEVAL };
+
+	//FIXME: a lot of repetition with getPermissionBoolean().
+	if (octal.size() >= 4)
+	{
+		for (int i = 0; i < 4; i++)
+		{
+			uint32_t p = std::stoi(octal.substr(i, 1));
+
+			for (int j = 0; j < 3; j++)
+			{
+				uint32_t ind = i * 3 + j;
+				perm[ind] = p & mask[j];
+			}
+				
+		}
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "ProjectSettings - stringToPermissionsBool : size of parameter is smaller than 4.";
+	}
+
+	return perm;
+}
+
+std::vector<std::string> RepoProjectSettings::getUsers() const
+{
+	std::vector<std::string> users;
+	if (hasField(REPO_LABEL_USERS))
+	{
+		std::vector<RepoBSONElement> arr = getField(REPO_LABEL_USERS).Array();
+		users.reserve(arr.size());
+		for (const auto &ele : arr)
+			users.push_back(ele.String());
+	}
+	return users;
+}

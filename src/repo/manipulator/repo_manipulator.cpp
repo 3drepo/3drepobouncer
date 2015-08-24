@@ -439,6 +439,31 @@ void RepoManipulator::insertUser(
 		
 }
 
+void RepoManipulator::removeDocument(
+	const std::string                             &databaseAd,
+	const repo::core::model::bson::RepoBSON*	  cred,
+	const std::string                             &databaseName,
+	const std::string                             &collectionName,
+	const repo::core::model::bson::RepoBSON       &bson)
+{
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+	{
+		std::string errMsg;
+		if (handler->dropDocument(bson, databaseName, collectionName, errMsg))
+		{
+			BOOST_LOG_TRIVIAL(info) << "Document removed successfully.";
+		}
+		else
+		{
+			BOOST_LOG_TRIVIAL(error) << "Failed to remove document : " << errMsg;
+		}
+	}
+
+}
+
+
 void RepoManipulator::removeUser(
 	const std::string                             &databaseAd,
 	const repo::core::model::bson::RepoBSON*	  cred,
@@ -460,6 +485,15 @@ void RepoManipulator::removeUser(
 	}
 
 }
+
+bool RepoManipulator::saveSceneToFile(
+	const std::string &filePath,
+	const repo::manipulator::graph::RepoScene* scene)
+{
+	modelconvertor::AssimpModelExport modelExport;
+	return modelExport.exportToFile(scene, filePath);
+}
+
 
 void RepoManipulator::updateUser(
 	const std::string                             &databaseAd,
@@ -483,11 +517,27 @@ void RepoManipulator::updateUser(
 
 }
 
-bool RepoManipulator::saveSceneToFile(
-	const std::string &filePath,
-	const repo::manipulator::graph::RepoScene* scene)
+void RepoManipulator::upsertDocument(
+	const std::string                             &databaseAd,
+	const repo::core::model::bson::RepoBSON*	  cred,
+	const std::string                             &databaseName,
+	const std::string                             &collectionName,
+	const repo::core::model::bson::RepoBSON       &bson)
 {
-	modelconvertor::AssimpModelExport modelExport;
-	return modelExport.exportToFile(scene, filePath);
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+	{
+		std::string errMsg;
+		if (handler->upsertDocument(databaseName, collectionName, bson, true, errMsg))
+		{
+			BOOST_LOG_TRIVIAL(info) << "Document updated successfully.";
+		}
+		else
+		{
+			BOOST_LOG_TRIVIAL(error) << "Failed to remove document : " << errMsg;
+		}
+	}
 }
+
 

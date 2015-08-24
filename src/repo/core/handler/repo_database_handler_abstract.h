@@ -222,6 +222,19 @@ namespace repo{
 					std::string &errMsg = std::string())=0;
 
 				/**
+				* Remove a document from the mongo database
+				* @param bson document to remove
+				* @param database the database the collection resides in
+				* @param collection name of the collection the document is in
+				* @param errMsg name of the database to drop
+				*/
+				virtual bool dropDocument(
+					const repo::core::model::bson::RepoBSON bson,
+					const std::string &database,
+					const std::string &collection,
+					std::string &errMsg = std::string())=0;
+
+				/**
 				* Remove a user from the database
 				* @param user user bson to remove
 				* @param errmsg error message

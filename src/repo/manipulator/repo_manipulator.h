@@ -329,28 +329,34 @@ namespace repo{
 				      std::string &msg = std::string(),
 			    const repo::manipulator::modelconvertor::ModelImportConfig *config
 					  = nullptr);
-
+			
+			/**
+			* remove a document from the database
+			* NOTE: this should never be called for a RepoNode family
+			*       as you should never remove a node from a scene graph like this.
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param database the database the collection resides in
+			* @param collection name of the collection to drop
+			* @param bson document to remove
+			*/
+			void removeDocument(
+				const std::string                             &databaseAd,
+				const repo::core::model::bson::RepoBSON*	  cred,
+				const std::string                             &databaseName,
+				const std::string                             &collectionName,
+				const repo::core::model::bson::RepoBSON       &bson);
 
 			/**
 			* remove a user from the database
-			* @param token Authentication token
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
 			* @param user user info to remove
 			*/
 			void RepoManipulator::removeUser(
 				const std::string                             &databaseAd,
 				const repo::core::model::bson::RepoBSON*	  cred,
 				const repo::core::model::bson::RepoUser       &user);
-
-			/**
-			* Update a user on the database
-			* @param token Authentication token
-			* @param user user info to modify
-			*/
-			void updateUser(
-				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  cred,
-				const repo::core::model::bson::RepoUser  &user);
-
 
 			/**
 			* Save a Repo Scene to file
@@ -361,6 +367,34 @@ namespace repo{
 			bool saveSceneToFile(
 				const std::string &filePath,
 				const repo::manipulator::graph::RepoScene* scene);
+
+			/**
+			* Update a user on the database
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param user user info to modify
+			*/
+			void updateUser(
+				const std::string                             &databaseAd,
+				const repo::core::model::bson::RepoBSON*	  cred,
+				const repo::core::model::bson::RepoUser       &user);
+			/**
+			* upsert a document in the database
+			* NOTE: this should never be called for a bson from RepoNode family
+			*       as you should never update a node from a scene graph like this.
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param database the database the collection resides in
+			* @param collection name of the collection
+			* @param bson document to update/insert
+			*/
+			void upsertDocument(
+				const std::string                             &databaseAd,
+				const repo::core::model::bson::RepoBSON*	  cred,
+				const std::string                             &databaseName,
+				const std::string                             &collectionName,
+				const repo::core::model::bson::RepoBSON       &bson);
+
 		};
 	}
 }
