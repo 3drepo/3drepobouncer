@@ -24,7 +24,6 @@
 namespace repo {
 	namespace core {
 		namespace model {
-			namespace bson {
 
 				//------------------------------------------------------------------------------
 				//
@@ -76,7 +75,6 @@ namespace repo {
 						const int             &apiLevel = REPO_NODE_API_LEVEL_1);
 
 				};
-			}//namespace bson
 		} //namespace model
 	} //namespace core
 } //namespace repo

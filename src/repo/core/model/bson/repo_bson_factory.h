@@ -40,7 +40,6 @@
 namespace repo {
 	namespace core {
 		namespace model {
-			namespace bson {
 				class REPO_API_EXPORT RepoBSONFactory
 				{
 					public:
@@ -266,7 +265,6 @@ namespace repo {
 						const int                             &apiLevel = REPO_NODE_API_LEVEL_1);
 
 				};
-			}//namespace bson
 		} //namespace model
 	} //namespace core
 } //namespace repo

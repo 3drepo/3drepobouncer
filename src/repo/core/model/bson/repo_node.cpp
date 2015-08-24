@@ -20,7 +20,7 @@
 
 #include "repo_node.h"
 
-using namespace repo::core::model::bson;
+using namespace repo::core::model;
 
 RepoNode::RepoNode(RepoBSON bson) : RepoBSON(bson){
 	//--------------------------------------------------------------------------

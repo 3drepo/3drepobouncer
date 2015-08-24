@@ -28,7 +28,6 @@
 namespace repo{
 	namespace core{
 		namespace model{
-			namespace bson{
 
 				enum class NodeType{ CAMERA, MAP, MATERIAL, MESH, METADATA, REFERENCE, 
 					REVISION, TEXTURE, TRANSFORMATION, UNKNOWN};
@@ -246,7 +245,6 @@ namespace repo{
 				//! Set definition for pointers to abstract nodes (sorted by value rather than pointer)
 				typedef std::set<RepoNode *, RepoNodeComparator> RepoNodeSet;
 
-			}//namespace bson
 		} //namespace model
 	} //namespace core
 } //namespace repo

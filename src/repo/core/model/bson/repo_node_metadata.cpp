@@ -21,7 +21,7 @@
 
 #include "repo_node_metadata.h"
 
-using namespace repo::core::model::bson;
+using namespace repo::core::model;
 
 MetadataNode::MetadataNode() :
 RepoNode()

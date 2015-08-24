@@ -23,7 +23,7 @@
 
 #include <boost/filesystem.hpp>
 
-using namespace repo::core::model::bson;
+using namespace repo::core::model;
 
 TextureNode::TextureNode() :
 RepoNode()

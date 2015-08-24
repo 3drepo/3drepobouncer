@@ -200,16 +200,16 @@ uint32_t AssimpModelImport::composeAssimpPostProcessingFlags(
 	return flag;
 }
 
-model::bson::CameraNode* AssimpModelImport::createCameraRepoNode(
+model::CameraNode* AssimpModelImport::createCameraRepoNode(
 	const aiCamera *assimpCamera)
 {
 	std::string cameraName(assimpCamera->mName.data);
 	
-	model::bson::CameraNode * cameraNode;
+	model::CameraNode * cameraNode;
 
 	if (assimpCamera)
 	{
-		cameraNode = new model::bson::CameraNode( model::bson::RepoBSONFactory::makeCameraNode(
+		cameraNode = new model::CameraNode( model::RepoBSONFactory::makeCameraNode(
 			assimpCamera->mAspect,
 			assimpCamera->mClipPlaneFar,
 			assimpCamera->mClipPlaneNear,
@@ -224,11 +224,11 @@ model::bson::CameraNode* AssimpModelImport::createCameraRepoNode(
 	return cameraNode;
 
 }
-model::bson::MaterialNode* AssimpModelImport::createMaterialRepoNode(
+model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 	aiMaterial *material,
 	std::string name)
 {
-	model::bson::MaterialNode *materialNode;
+	model::MaterialNode *materialNode;
 
 	if (material){
 		repo_material_t repo_material;
@@ -307,8 +307,8 @@ model::bson::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 			repo_material.shininessStrength = std::numeric_limits<float>::quiet_NaN();
 
 
-		materialNode = new model::bson::MaterialNode(
-			model::bson::RepoBSONFactory::makeMaterialNode(repo_material, name, REPO_NODE_API_LEVEL_1));
+		materialNode = new model::MaterialNode(
+			model::RepoBSONFactory::makeMaterialNode(repo_material, name, REPO_NODE_API_LEVEL_1));
 
 
 		//--------------------------------------------------------------------------
@@ -317,11 +317,11 @@ model::bson::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 		aiString texPath; // contains a filename of a texture
 		if (AI_SUCCESS == material->GetTexture(aiTextureType_DIFFUSE, 0, &texPath))
 		{
-			std::map<std::string, model::bson::RepoNode *>::const_iterator it = nameToTexture.find(texPath.data);
+			std::map<std::string, model::RepoNode *>::const_iterator it = nameToTexture.find(texPath.data);
 
 			if (nameToTexture.end() != it)
 			{
-				model::bson::RepoNode * nodeAddr = it->second;
+				model::RepoNode * nodeAddr = it->second;
 				nodeAddr->swap(nodeAddr->cloneAndAddParent(materialNode->getSharedID()));
 			}
 		}
@@ -330,12 +330,12 @@ model::bson::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 	return materialNode;
 }
 
-model::bson::MeshNode* AssimpModelImport::createMeshRepoNode(
+model::MeshNode* AssimpModelImport::createMeshRepoNode(
 	const aiMesh *assimpMesh,
-	const std::vector<model::bson::RepoNode *> &materials)
+	const std::vector<model::RepoNode *> &materials)
 {
 
-	model::bson::MeshNode *meshNode = 0;
+	model::MeshNode *meshNode = 0;
 
 	//Avoid using assimp objects everywhere -> converting assimp objects into repo structs
 	std::vector<repo_vector_t> vertices;
@@ -483,7 +483,7 @@ model::bson::MeshNode* AssimpModelImport::createMeshRepoNode(
 	outline.push_back({ maxVertex.x, maxVertex.y });
 	outline.push_back({ minVertex.x, maxVertex.y });
 
-	meshNode = new model::bson::MeshNode(model::bson::RepoBSONFactory::makeMeshNode(
+	meshNode = new model::MeshNode(model::RepoBSONFactory::makeMeshNode(
 		vertices, faces, normals, boundingBox, uvChannels, colors, outline));
 
 	///*
@@ -492,7 +492,7 @@ model::bson::MeshNode* AssimpModelImport::createMeshRepoNode(
 
 	if (assimpMesh->mMaterialIndex < materials.size())
 	{
-		model::bson::RepoNode *materialNode = materials[assimpMesh->mMaterialIndex];
+		model::RepoNode *materialNode = materials[assimpMesh->mMaterialIndex];
 		materialNode->swap(materialNode->cloneAndAddParent(meshNode->getSharedID()));
 	}
 
@@ -503,17 +503,17 @@ model::bson::MeshNode* AssimpModelImport::createMeshRepoNode(
 	return meshNode;
 }
 
-model::bson::MetadataNode* AssimpModelImport::createMetadataRepoNode(
+model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 	const aiMetadata             *assimpMeta,
 	const std::string            &metadataName,
 	const std::vector<repoUUID> &parents)
 {
-	model::bson::MetadataNode *metaNode;
+	model::MetadataNode *metaNode;
 	std::string val;
 	if (assimpMeta)
 	{
 		//build the metadata as a bson
-		model::bson::RepoBSONBuilder builder;
+		model::RepoBSONBuilder builder;
 
 		for (uint32_t i = 0; i < assimpMeta->mNumProperties; i++)
 		{
@@ -567,25 +567,25 @@ model::bson::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 			}
 		}
 
-		model::bson::RepoBSON metaBSON = builder.obj();
+		model::RepoBSON metaBSON = builder.obj();
 
-		metaNode = new model::bson::MetadataNode(
-			model::bson::RepoBSONFactory::makeMetaDataNode(metaBSON, "", metadataName, parents));
+		metaNode = new model::MetadataNode(
+			model::RepoBSONFactory::makeMetaDataNode(metaBSON, "", metadataName, parents));
 	}//if(assimpMeta)
 
 	return metaNode;
 
 }
 
-model::bson::RepoNodeSet AssimpModelImport::createTransformationNodesRecursive(
+model::RepoNodeSet AssimpModelImport::createTransformationNodesRecursive(
 	const aiNode                                         *assimpNode,
-	const std::map<std::string, model::bson::RepoNode *> &cameras,
-	const std::vector<model::bson::RepoNode *>           &meshes,
-	model::bson::RepoNodeSet						     &metadata,
+	const std::map<std::string, model::RepoNode *> &cameras,
+	const std::vector<model::RepoNode *>           &meshes,
+	model::RepoNodeSet						     &metadata,
 	const std::vector<repoUUID>						 &parent
 	)
 {
-	model::bson::RepoNodeSet transNodes;
+	model::RepoNodeSet transNodes;
 
 	if (assimpNode){
 		std::string transName(assimpNode->mName.data);
@@ -601,9 +601,9 @@ model::bson::RepoNodeSet AssimpModelImport::createTransformationNodesRecursive(
 		}
 
 
-		model::bson::TransformationNode * transNode = 
-			new model::bson::TransformationNode(
-			model::bson::RepoBSONFactory::makeTransformationNode(transMat, transName, parent));
+		model::TransformationNode * transNode = 
+			new model::TransformationNode(
+			model::RepoBSONFactory::makeTransformationNode(transMat, transName, parent));
 
 		repoUUID sharedId = transNode->getSharedID();
 		std::vector<repoUUID> myShareID;
@@ -616,7 +616,7 @@ model::bson::RepoNodeSet AssimpModelImport::createTransformationNodesRecursive(
 			unsigned int meshIndex = assimpNode->mMeshes[i];
 			if (meshIndex < meshes.size())
 			{
-				model::bson::RepoNode *mesh = meshes[meshIndex];
+				model::RepoNode *mesh = meshes[meshIndex];
 				
 				if (mesh)
 				{
@@ -627,11 +627,11 @@ model::bson::RepoNodeSet AssimpModelImport::createTransformationNodesRecursive(
 
 		//--------------------------------------------------------------------------
 		// Register cameras as children of this transformation (by name) if any
-		std::map<std::string, model::bson::RepoNode *>::const_iterator it =
+		std::map<std::string, model::RepoNode *>::const_iterator it =
 			cameras.find(assimpNode->mName.data);
 		if (cameras.end() != it)
 		{
-			model::bson::RepoNode * camera = it->second;
+			model::RepoNode * camera = it->second;
 			if (camera)
 			{
 				camera->swap(camera->cloneAndAddParent(sharedId));
@@ -647,7 +647,7 @@ model::bson::RepoNodeSet AssimpModelImport::createTransformationNodesRecursive(
 			if (metadataName == "<transformation>")
 				metadataName = "<metadata>";
 
-			model::bson::MetadataNode *metachild = createMetadataRepoNode(assimpNode->mMetaData, metadataName, myShareID);
+			model::MetadataNode *metachild = createMetadataRepoNode(assimpNode->mMetaData, metadataName, myShareID);
 			metadata.insert(metachild);
 		}
 
@@ -658,8 +658,8 @@ model::bson::RepoNodeSet AssimpModelImport::createTransformationNodesRecursive(
 		for (unsigned int i = 0; i < assimpNode->mNumChildren; ++i)
 		{
 				
-			model::bson::RepoNodeSet childMetadata;
-			model::bson::RepoNodeSet childSet =  createTransformationNodesRecursive(assimpNode->mChildren[i], 
+			model::RepoNodeSet childMetadata;
+			model::RepoNodeSet childSet =  createTransformationNodesRecursive(assimpNode->mChildren[i], 
 				cameras, meshes, childMetadata, myShareID);
 
 			transNodes.insert(childSet.begin(), childSet.end());
@@ -676,15 +676,15 @@ repo::manipulator::graph::RepoScene * AssimpModelImport::generateRepoScene()
 	if (assimpScene)
 	{
 		//Turn everything into repoNodes and construct a scene
-		repo::core::model::bson::RepoNodeSet cameras; //!< Cameras
-		repo::core::model::bson::RepoNodeSet meshes; //!< Meshes
-		repo::core::model::bson::RepoNodeSet materials; //!< Materials
-		repo::core::model::bson::RepoNodeSet metadata; //!< Metadata
-		repo::core::model::bson::RepoNodeSet transformations; //!< Transformations
+		repo::core::model::RepoNodeSet cameras; //!< Cameras
+		repo::core::model::RepoNodeSet meshes; //!< Meshes
+		repo::core::model::RepoNodeSet materials; //!< Materials
+		repo::core::model::RepoNodeSet metadata; //!< Metadata
+		repo::core::model::RepoNodeSet transformations; //!< Transformations
 
-		std::vector<model::bson::RepoNode *> originalOrderMaterial; //vector that keeps track original order for assimp indices
-		std::vector<model::bson::RepoNode *> originalOrderMesh; //vector that keeps track original order for assimp indices
-		std::map<std::string, model::bson::RepoNode *> camerasMap;
+		std::vector<model::RepoNode *> originalOrderMaterial; //vector that keeps track original order for assimp indices
+		std::vector<model::RepoNode *> originalOrderMesh; //vector that keeps track original order for assimp indices
+		std::map<std::string, model::RepoNode *> camerasMap;
 
 		BOOST_LOG_TRIVIAL(info) << "Constructing Material Nodes...";
 		/*
@@ -699,7 +699,7 @@ repo::manipulator::graph::RepoScene * AssimpModelImport::generateRepoScene()
 				aiString name;
 				assimpScene->mMaterials[i]->Get(AI_MATKEY_NAME, name);
 
-				model::bson::RepoNode* material = createMaterialRepoNode(
+				model::RepoNode* material = createMaterialRepoNode(
 					assimpScene->mMaterials[i],
 					name.data);
 
@@ -724,7 +724,7 @@ repo::manipulator::graph::RepoScene * AssimpModelImport::generateRepoScene()
 		{
 			for (unsigned int i = 0; i < assimpScene->mNumMeshes; ++i)
 			{
-				model::bson::RepoNode* mesh = createMeshRepoNode(
+				model::RepoNode* mesh = createMeshRepoNode(
 					assimpScene->mMeshes[i],
 					originalOrderMaterial);
 
@@ -749,7 +749,7 @@ repo::manipulator::graph::RepoScene * AssimpModelImport::generateRepoScene()
 			for (unsigned int i = 0; i < assimpScene->mNumCameras; ++i)
 			{
 				std::string cameraName(assimpScene->mCameras[i]->mName.data);
-				model::bson::RepoNode* camera = createCameraRepoNode(assimpScene->mCameras[i]);
+				model::RepoNode* camera = createCameraRepoNode(assimpScene->mCameras[i]);
 				if (!camera)
 					BOOST_LOG_TRIVIAL(error) << "Unable to construct mesh node in Assimp Model Convertor!";
 				else
@@ -862,7 +862,7 @@ void AssimpModelImport::loadTextures(std::string dirPath){
 			// Multiple materials can point to the same texture
 			if (!fileName.empty() && nameToTexture.find(fileName.c_str()) == nameToTexture.end())
 			{
-				model::bson::RepoNode *textureNode;
+				model::RepoNode *textureNode;
 				// In assimp, embedded textures name starts with asterisk and a textures array index
 				// so the name can be "*0" for example
 				if (assimpScene->HasTextures() && '*' == fileName.at(0))
@@ -889,7 +889,7 @@ void AssimpModelImport::loadTextures(std::string dirPath){
 						file.read(memblock, size);
 						file.close();
 
-						textureNode = new model::bson::TextureNode(model::bson::RepoBSONFactory::makeTextureNode(
+						textureNode = new model::TextureNode(model::RepoBSONFactory::makeTextureNode(
 							fileName,
 							memblock,
 							(uint32_t)size,

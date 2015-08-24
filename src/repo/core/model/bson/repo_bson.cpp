@@ -18,7 +18,7 @@
 
 #include "repo_bson.h"
 
-using namespace repo::core::model::bson;
+using namespace repo::core::model;
 
 repoUUID RepoBSON::getUUIDField(const std::string &label) const{
 	repoUUID uuid;

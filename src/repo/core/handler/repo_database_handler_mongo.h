@@ -118,14 +118,14 @@ namespace repo{
 				* @param pwDigested true if pw is digested
 				* @return returns the constructed BSON object, or 0 if username is empty
 				*/
-				repo::core::model::bson::RepoBSON* createBSONCredentials(
+				repo::core::model::RepoBSON* createBSONCredentials(
 					const std::string &dbName,
 					const std::string &username,
 					const std::string &password,
 					const bool        &pwDigested = false)
 				{
 					mongo::BSONObj *mongoBSON = createAuthBSON(dbName, username, password, pwDigested);
-					return mongoBSON? new repo::core::model::bson::RepoBSON(*mongoBSON) : 0;
+					return mongoBSON? new repo::core::model::RepoBSON(*mongoBSON) : 0;
 				}
 
 
@@ -158,7 +158,7 @@ namespace repo{
 				* @param skip specify how many documents to skip
 				* @return list of RepoBSONs representing the documents
 				*/
-				std::vector<repo::core::model::bson::RepoBSON>
+				std::vector<repo::core::model::RepoBSON>
 					getAllFromCollectionTailable(
 					const std::string                             &database,
 					const std::string                             &collection,
@@ -183,7 +183,7 @@ namespace repo{
 				* @param errMsg error message when error occurs
 				* @return returns a bson object with statistical info.
 				*/
-				repo::core::model::bson::CollectionStats getCollectionStats(
+				repo::core::model::CollectionStats getCollectionStats(
 					const std::string    &database,
 					const std::string    &collection,
 					std::string          &errMsg);
@@ -273,7 +273,7 @@ namespace repo{
 				* @param errMsg name of the database to drop
 				*/
 				bool dropDocument(
-					const repo::core::model::bson::RepoBSON bson,
+					const repo::core::model::RepoBSON bson,
 					const std::string &database,
 					const std::string &collection,
 					std::string &errMsg = std::string());
@@ -285,7 +285,7 @@ namespace repo{
 				* @return returns true upon success
 				*/
 				bool dropUser(
-					const repo::core::model::bson::RepoUser &user,
+					const repo::core::model::RepoUser &user,
 					std::string                             &errmsg)
 				{
 					return performUserCmd(OPERATION::DROP, user, errmsg);
@@ -303,7 +303,7 @@ namespace repo{
 				bool insertDocument(
 					const std::string &database,
 					const std::string &collection,
-					const repo::core::model::bson::RepoBSON &obj,
+					const repo::core::model::RepoBSON &obj,
 					std::string &errMsg);
 
 
@@ -314,7 +314,7 @@ namespace repo{
 				* @return returns true upon success
 				*/
 				bool insertUser(
-					const repo::core::model::bson::RepoUser &user,
+					const repo::core::model::RepoUser &user,
 					std::string                             &errmsg)
 				{
 					return performUserCmd(OPERATION::INSERT, user, errmsg);
@@ -333,7 +333,7 @@ namespace repo{
 				bool upsertDocument(
 					const std::string &database,
 					const std::string &collection,
-					const repo::core::model::bson::RepoBSON &obj,
+					const repo::core::model::RepoBSON &obj,
 					const bool        &overwrite,
 					std::string &errMsg);
 
@@ -344,7 +344,7 @@ namespace repo{
 				* @return returns true upon success
 				*/
 				bool updateUser(
-					const repo::core::model::bson::RepoUser &user,
+					const repo::core::model::RepoUser &user,
 					std::string                             &errmsg)
 				{
 					return performUserCmd(OPERATION::UPDATE, user, errmsg);
@@ -362,10 +362,10 @@ namespace repo{
 				* @param array of uuids in a BSON object
 				* @return a vector of RepoBSON objects associated with the UUIDs given
 				*/
-				std::vector<repo::core::model::bson::RepoBSON> findAllByUniqueIDs(
+				std::vector<repo::core::model::RepoBSON> findAllByUniqueIDs(
 					const std::string& database,
 					const std::string& collection,
-					const repo::core::model::bson::RepoBSON& uuids);
+					const repo::core::model::RepoBSON& uuids);
 
 				/**
 				*Retrieves the first document matching given Shared ID (SID), sorting is descending
@@ -377,7 +377,7 @@ namespace repo{
 				* @param fields to retrieve
 				* @return returns a bson object containing those fields
 				*/
-				repo::core::model::bson::RepoBSON findOneBySharedID(
+				repo::core::model::RepoBSON findOneBySharedID(
 					const std::string& database,
 					const std::string& collection,
 					const repoUUID& uuid,
@@ -507,7 +507,7 @@ namespace repo{
 				*/
 				bool MongoDatabaseHandler::performUserCmd(
 					const OPERATION                         &op,
-					const repo::core::model::bson::RepoUser &user,
+					const repo::core::model::RepoUser &user,
 					std::string                       &errMsg);
 
 				/**

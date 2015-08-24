@@ -25,7 +25,6 @@
 namespace repo {
 	namespace core {
 		namespace model {
-			namespace bson {
 
 				//------------------------------------------------------------------------------
 				//
@@ -190,7 +189,6 @@ namespace repo {
 
 
 				};
-			}// end namespace bson
 		}// end namespace model
 	} // end namespace core
 } // end namespace repo

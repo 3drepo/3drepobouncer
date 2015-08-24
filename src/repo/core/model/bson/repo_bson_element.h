@@ -33,7 +33,6 @@
 namespace repo {
 	namespace core {
 		namespace model {
-			namespace bson {
 				//type of element
 				enum class REPO_API_EXPORT ElementType{
 					ARRAY, UUID, BINARY, BOOL, DATE,
@@ -83,7 +82,6 @@ namespace repo {
 					}
 
 				};
-			}// end namespace bson
 		}// end namespace model
 	} // end namespace core
 } // end namespace repo

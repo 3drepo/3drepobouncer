@@ -54,7 +54,7 @@ namespace repo{
 				*/
 				aiScene* convertToAssimp(
 					const repo::manipulator::graph::RepoScene *scene,
-					repo::core::model::bson::RepoNodeSet &textNodes);
+					repo::core::model::RepoNodeSet &textNodes);
 
 				/**
 				* Export a repo scene graph to file
@@ -102,14 +102,14 @@ namespace repo{
 				*/
 				aiNode* constructAiSceneRecursively(
 					const repo::manipulator::graph::RepoScene *scene,
-					const repo::core::model::bson::RepoNode   *currNode,
+					const repo::core::model::RepoNode   *currNode,
 					std::vector<aiMesh*>                      &meshVec,
 					std::vector<aiMaterial*>                  &matVec,
 					std::vector<aiCamera*>                    &camVec,
 					std::map<repoUUID, aiMesh*>               &meshMap,
 					std::map<repoUUID, aiMaterial*>           &materialMap,
 					std::map<repoUUID, aiCamera*>             &camMap,
-					repo::core::model::bson::RepoNodeSet &textNodes);
+					repo::core::model::RepoNodeSet &textNodes);
 
 				/**
 				* Convert a camera node to aiCamera
@@ -121,7 +121,7 @@ namespace repo{
 				*/
 				aiCamera* convertCamera(
 					const repo::manipulator::graph::RepoScene *scene,
-					const repo::core::model::bson::CameraNode *camNode,
+					const repo::core::model::CameraNode *camNode,
 					const std::string                         &name = std::string());
 
 				/**
@@ -132,8 +132,8 @@ namespace repo{
 				*/
 				aiMaterial* convertMaterial(
 					const repo::manipulator::graph::RepoScene *scene,
-					const repo::core::model::bson::MaterialNode *matNode,
-					repo::core::model::bson::RepoNodeSet  &textNodes);
+					const repo::core::model::MaterialNode *matNode,
+					repo::core::model::RepoNodeSet  &textNodes);
 
 				/**
 				* Convert a mesh node to aiMesh
@@ -147,10 +147,10 @@ namespace repo{
 
 				aiMesh* convertMesh(
 					const repo::manipulator::graph::RepoScene *scene,
-					const repo::core::model::bson::MeshNode   *meshNode,
+					const repo::core::model::MeshNode   *meshNode,
 					std::vector<aiMaterial*>                  &matVec,
 					std::map<repoUUID, aiMaterial*>           &matMap,
-					repo::core::model::bson::RepoNodeSet &textNodes);
+					repo::core::model::RepoNodeSet &textNodes);
 
 				/**
 				* Returns the ID of the exported file type
@@ -169,7 +169,7 @@ namespace repo{
 				* @return returns true upon success
 				*/
 				bool writeTexturesToFiles(
-					const repo::core::model::bson::RepoNodeSet &nodes,
+					const repo::core::model::RepoNodeSet &nodes,
 					const std::string &filePath);
 
 

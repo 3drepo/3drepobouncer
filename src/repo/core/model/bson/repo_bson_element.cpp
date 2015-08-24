@@ -1,6 +1,6 @@
 #include "repo_bson_element.h"
 
-using namespace repo::core::model::bson;
+using namespace repo::core::model;
 
 
 RepoBSONElement::~RepoBSONElement()

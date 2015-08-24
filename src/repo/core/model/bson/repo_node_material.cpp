@@ -21,7 +21,7 @@
 
 #include "repo_node_material.h"
 
-using namespace repo::core::model::bson;
+using namespace repo::core::model;
 
 MaterialNode::MaterialNode() :
 RepoNode()

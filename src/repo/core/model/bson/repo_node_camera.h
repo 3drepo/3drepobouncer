@@ -24,7 +24,6 @@
 namespace repo {
 	namespace core {
 		namespace model {
-			namespace bson {
 
 				//------------------------------------------------------------------------------
 				//
@@ -174,7 +173,6 @@ namespace repo {
 					repo_vector_t getUp() const;
 
 				};
-			}//namespace bson
 		} //namespace model
 	} //namespace core
 } //namespace repo

@@ -56,7 +56,7 @@ namespace repo{
 				* @return returns true if rootNode is not null.
 				*/
 				bool hasRoot() const { return (bool)rootNode; }
-				repo::core::model::bson::RepoNode* getRoot() const { return rootNode; }
+				repo::core::model::RepoNode* getRoot() const { return rootNode; }
 
 				/**
 				* Return the number of nodes within the current 
@@ -69,9 +69,9 @@ namespace repo{
 				std::string databaseName;/*! name of the database */
 				std::string projectName; /*! name of the project */
 
-				repo::core::model::bson::RepoNode *rootNode;
+				repo::core::model::RepoNode *rootNode;
 				//! A lookup map for the all nodes the graph contains.
-				std::map<repoUUID, repo::core::model::bson::RepoNode*> nodesByUniqueID;
+				std::map<repoUUID, repo::core::model::RepoNode*> nodesByUniqueID;
 			};
 		}//namespace graph
 	}//namespace manipulator

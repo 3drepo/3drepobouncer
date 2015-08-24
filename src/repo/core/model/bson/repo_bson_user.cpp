@@ -23,7 +23,7 @@
 #include "repo_bson_user.h"
 
 
-using namespace repo::core::model::bson;
+using namespace repo::core::model;
 
 RepoUser::RepoUser() : RepoBSON()
 {

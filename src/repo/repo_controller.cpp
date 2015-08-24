@@ -76,7 +76,7 @@ RepoToken* RepoController::authenticateToAdminDatabaseMongo(
 {
 	manipulator::RepoManipulator* worker = workerPool.pop();
 
-	core::model::bson::RepoBSON* cred = 0;
+	core::model::RepoBSON* cred = 0;
 	RepoToken *token = 0;
 
 	std::string dbFullAd = address + ":" + std::to_string(port);
@@ -109,7 +109,7 @@ RepoToken* RepoController::authenticateMongo(
 {
 	manipulator::RepoManipulator* worker = workerPool.pop();
 
-	core::model::bson::RepoBSON* cred = 0;
+	core::model::RepoBSON* cred = 0;
 	RepoToken *token = 0;
 	
 	std::string dbFullAd = address + ":" + std::to_string(port);
@@ -191,7 +191,7 @@ repo::manipulator::graph::RepoScene* RepoController::fetchScene(
 	return scene;
 }
 
-std::vector < repo::core::model::bson::RepoBSON >
+std::vector < repo::core::model::RepoBSON >
 	RepoController::getAllFromCollectionContinuous(
 	    const RepoToken      *token,
 		const std::string    &database,
@@ -200,7 +200,7 @@ std::vector < repo::core::model::bson::RepoBSON >
 {
 	BOOST_LOG_TRIVIAL(trace) << "Controller: Fetching BSONs from " 
 		<< database << "."  << collection << "....";
-	std::vector<repo::core::model::bson::RepoBSON> vector;
+	std::vector<repo::core::model::RepoBSON> vector;
 	if (token)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
@@ -220,7 +220,7 @@ std::vector < repo::core::model::bson::RepoBSON >
 	return vector;
 }
 
-std::vector < repo::core::model::bson::RepoBSON >
+std::vector < repo::core::model::RepoBSON >
 	RepoController::getAllFromCollectionContinuous(
 		const RepoToken              *token,
 		const std::string            &database,
@@ -232,7 +232,7 @@ std::vector < repo::core::model::bson::RepoBSON >
 {
 	BOOST_LOG_TRIVIAL(trace) << "Controller: Fetching BSONs from "
 		<< database << "." << collection << "....";
-	std::vector<repo::core::model::bson::RepoBSON> vector;
+	std::vector<repo::core::model::RepoBSON> vector;
 	if (token)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
@@ -300,12 +300,12 @@ std::list<std::string>  RepoController::getCollections(
 
 }
 
-repo::core::model::bson::CollectionStats RepoController::getCollectionStats(
+repo::core::model::CollectionStats RepoController::getCollectionStats(
 	const RepoToken      *token,
 	const std::string    &database,
 	const std::string    &collection)
 {
-	repo::core::model::bson::CollectionStats stats;
+	repo::core::model::CollectionStats stats;
 
 	if (token)
 	{
@@ -351,7 +351,7 @@ std::map<std::string, std::list<std::string>>
 
 void RepoController::insertUser(
 	const RepoToken                          *token,
-	const repo::core::model::bson::RepoUser  &user)
+	const repo::core::model::RepoUser  &user)
 {
 	if (token)
 	{
@@ -422,7 +422,7 @@ void RepoController::removeDocument(
 	const RepoToken                          *token,
 	const std::string                        &databaseName,
 	const std::string                        &collectionName,
-	const repo::core::model::bson::RepoBSON  &bson)
+	const repo::core::model::RepoBSON  &bson)
 {
 	if (token)
 	{
@@ -440,7 +440,7 @@ void RepoController::removeDocument(
 
 void RepoController::removeUser(
 	const RepoToken                          *token,
-	const repo::core::model::bson::RepoUser  &user)
+	const repo::core::model::RepoUser  &user)
 {
 	if (token)
 	{
@@ -458,7 +458,7 @@ void RepoController::removeUser(
 
 void RepoController::updateUser(
 	const RepoToken                          *token,
-	const repo::core::model::bson::RepoUser  &user)
+	const repo::core::model::RepoUser  &user)
 {
 	if (token)
 	{
@@ -479,7 +479,7 @@ void RepoController::upsertDocument(
 	const RepoToken                          *token,
 	const std::string                        &databaseName,
 	const std::string                        &collectionName,
-	const repo::core::model::bson::RepoBSON  &bson)
+	const repo::core::model::RepoBSON  &bson)
 {
 	if (token)
 	{
@@ -594,7 +594,7 @@ void RepoController::subscribeBroadcasterToLog(){
 
 
 repo::manipulator::graph::RepoScene* RepoController::createFederatedScene(
-	const std::map<repo::core::model::bson::TransformationNode, repo::core::model::bson::ReferenceNode> &fedMap)
+	const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap)
 {
 
 	repo::manipulator::graph::RepoScene* scene = nullptr;

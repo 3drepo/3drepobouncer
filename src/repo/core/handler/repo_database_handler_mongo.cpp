@@ -167,7 +167,7 @@ bool MongoDatabaseHandler::dropDatabase(
 }
 
 bool MongoDatabaseHandler::dropDocument(
-	const repo::core::model::bson::RepoBSON bson,
+	const repo::core::model::RepoBSON bson,
 	const std::string &database,
 	const std::string &collection,
 	std::string &errMsg)
@@ -210,12 +210,12 @@ mongo::BSONObj MongoDatabaseHandler::fieldsToReturn(
 	return fieldsToReturn.obj();
 }
 
-std::vector<repo::core::model::bson::RepoBSON> MongoDatabaseHandler::findAllByUniqueIDs(
+std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueIDs(
 	const std::string& database,
 	const std::string& collection,
-	const repo::core::model::bson::RepoBSON& uuids){
+	const repo::core::model::RepoBSON& uuids){
 
-	std::vector<repo::core::model::bson::RepoBSON> data;
+	std::vector<repo::core::model::RepoBSON> data;
 
 	mongo::BSONArray array = mongo::BSONArray(uuids);
 
@@ -242,7 +242,7 @@ std::vector<repo::core::model::bson::RepoBSON> MongoDatabaseHandler::findAllByUn
 
 				for (; cursor.get() && cursor->more(); ++retrieved)
 				{
-					data.push_back(repo::core::model::bson::RepoBSON(cursor->nextSafe().copy()));
+					data.push_back(repo::core::model::RepoBSON(cursor->nextSafe().copy()));
 				}
 			} while (cursor.get() && cursor->more());
 
@@ -263,18 +263,18 @@ std::vector<repo::core::model::bson::RepoBSON> MongoDatabaseHandler::findAllByUn
 	return data;
 }
 
-repo::core::model::bson::RepoBSON MongoDatabaseHandler::findOneBySharedID(
+repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 	const std::string& database,
 	const std::string& collection,
 	const repoUUID& uuid,
 	const std::string& sortField)
 {
 
-	repo::core::model::bson::RepoBSON bson;
+	repo::core::model::RepoBSON bson;
 	mongo::DBClientBase *worker;
 	try
 	{
-		repo::core::model::bson::RepoBSONBuilder queryBuilder;
+		repo::core::model::RepoBSONBuilder queryBuilder;
 		queryBuilder.append("shared_id", uuid);
 		//----------------------------------------------------------------------
 	
@@ -283,7 +283,7 @@ repo::core::model::bson::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 			getNamespace(database, collection),
 			mongo::Query(queryBuilder.obj()).sort(sortField, -1));
 
-		bson = repo::core::model::bson::RepoBSON(bsonMongo);
+		bson = repo::core::model::RepoBSON(bsonMongo);
 	}
 	catch (mongo::DBException& e)
 	{
@@ -299,18 +299,18 @@ mongo::BSONObj MongoDatabaseHandler::findOneByUniqueID(
 	const std::string& collection,
 	const repoUUID& uuid){
 
-	repo::core::model::bson::RepoBSON bson;
+	repo::core::model::RepoBSON bson;
 	mongo::DBClientBase *worker;
 	try
 	{
-		repo::core::model::bson::RepoBSONBuilder queryBuilder;
+		repo::core::model::RepoBSONBuilder queryBuilder;
 		queryBuilder.append(ID, uuid);
 
 		worker = workerPool->getWorker();
 		mongo::BSONObj bsonMongo = worker->findOne(getNamespace(database, collection),
 			mongo::Query(queryBuilder.obj()));
 
-		bson = repo::core::model::bson::RepoBSON(bsonMongo);
+		bson = repo::core::model::RepoBSON(bsonMongo);
 	}
 	catch (mongo::DBException& e)
 	{
@@ -321,7 +321,7 @@ mongo::BSONObj MongoDatabaseHandler::findOneByUniqueID(
 	return bson;
 }
 
-std::vector<repo::core::model::bson::RepoBSON>
+std::vector<repo::core::model::RepoBSON>
 	MongoDatabaseHandler::getAllFromCollectionTailable(
 		const std::string                             &database,
 		const std::string                             &collection,
@@ -330,7 +330,7 @@ std::vector<repo::core::model::bson::RepoBSON>
 		const std::string							  &sortField,
 		const int									  &sortOrder )
 {
-	std::vector<repo::core::model::bson::RepoBSON> bsons;
+	std::vector<repo::core::model::RepoBSON> bsons;
 	mongo::DBClientBase *worker;
 	try
 	{
@@ -346,7 +346,7 @@ std::vector<repo::core::model::bson::RepoBSON>
 		while (cursor.get() && cursor->more())
 		{
 			//have to copy since the bson info gets cleaned up when cursor gets out of scope
-			bsons.push_back(repo::core::model::bson::RepoBSON(cursor->nextSafe().copy()));
+			bsons.push_back(repo::core::model::RepoBSON(cursor->nextSafe().copy()));
 		}
 	}
 	catch (mongo::DBException& e)
@@ -378,7 +378,7 @@ std::list<std::string> MongoDatabaseHandler::getCollections(
 	return collections;
 }
 
-repo::core::model::bson::CollectionStats MongoDatabaseHandler::getCollectionStats(
+repo::core::model::CollectionStats MongoDatabaseHandler::getCollectionStats(
 	const std::string    &database,
 	const std::string    &collection,
 	std::string          &errMsg)
@@ -401,7 +401,7 @@ repo::core::model::bson::CollectionStats MongoDatabaseHandler::getCollectionStat
 	}
 
 	workerPool->returnWorker(worker);
-	return repo::core::model::bson::CollectionStats(info);
+	return repo::core::model::CollectionStats(info);
 }
 
 std::list<std::string> MongoDatabaseHandler::getDatabases(
@@ -525,7 +525,7 @@ std::list<std::string> MongoDatabaseHandler::getProjects(const std::string &data
 bool MongoDatabaseHandler::insertDocument(
 	const std::string &database,
 	const std::string &collection,
-	const repo::core::model::bson::RepoBSON &obj,
+	const repo::core::model::RepoBSON &obj,
 	std::string &errMsg)
 {
 	bool success = true;
@@ -550,7 +550,7 @@ bool MongoDatabaseHandler::insertDocument(
 
 bool MongoDatabaseHandler::performUserCmd(
 	const OPERATION                         &op,
-	const repo::core::model::bson::RepoUser &user,
+	const repo::core::model::RepoUser &user,
 	std::string                       &errMsg)
 {
 	bool success = true;
@@ -560,7 +560,7 @@ bool MongoDatabaseHandler::performUserCmd(
 	{
 		try{
 			worker = workerPool->getWorker();
-			repo::core::model::bson::RepoBSONBuilder cmdBuilder;
+			repo::core::model::RepoBSONBuilder cmdBuilder;
 			std::string username = user.getUserName();
 			switch (op)
 			{
@@ -580,7 +580,7 @@ bool MongoDatabaseHandler::performUserCmd(
 				if (!pw.empty())
 					cmdBuilder << "pwd" << pw;
 
-				repo::core::model::bson::RepoBSON customData = user.getCustomDataBSON();
+				repo::core::model::RepoBSON customData = user.getCustomDataBSON();
 				if (!customData.isEmpty())
 					cmdBuilder << "customData" << customData;
 
@@ -621,7 +621,7 @@ bool MongoDatabaseHandler::performUserCmd(
 bool MongoDatabaseHandler::upsertDocument(
 	const std::string &database,
 	const std::string &collection,
-	const repo::core::model::bson::RepoBSON &obj,
+	const repo::core::model::RepoBSON &obj,
 	const bool        &overwrite,
 	std::string &errMsg)
 {
@@ -633,7 +633,7 @@ bool MongoDatabaseHandler::upsertDocument(
 		worker = workerPool->getWorker();
 
 	
-		repo::core::model::bson::RepoBSONBuilder queryBuilder;
+		repo::core::model::RepoBSONBuilder queryBuilder;
 		queryBuilder << ID << obj.getField(ID);
 
 		mongo::BSONElement bsonID;

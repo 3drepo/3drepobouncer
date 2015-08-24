@@ -40,7 +40,6 @@
 namespace repo {
 	namespace core {
 		namespace model {
-			namespace bson {
 				class RepoBSONBuilder: public mongo::BSONObjBuilder
 				{
 					public:
@@ -165,7 +164,6 @@ namespace repo {
 							const repoUUID &uuid);
 
 				};
-			}// end namespace bson
 		}// end namespace model
 	} // end namespace core
 } // end namespace repo

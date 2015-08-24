@@ -21,7 +21,7 @@
 
 #include "repo_node_mesh.h"
 
-using namespace repo::core::model::bson;
+using namespace repo::core::model;
 
 MeshNode::MeshNode() :
 RepoNode()

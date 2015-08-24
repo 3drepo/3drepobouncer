@@ -21,7 +21,7 @@
 
 #include "repo_node_transformation.h"
 
-using namespace repo::core::model::bson;
+using namespace repo::core::model;
 
 TransformationNode::TransformationNode() :
 	RepoNode()

@@ -27,7 +27,6 @@
 namespace repo {
 	namespace core {
 		namespace model {
-			namespace bson {
 				class REPO_API_EXPORT CollectionStats :
 					public RepoBSON
 				{
@@ -94,8 +93,6 @@ namespace repo {
 					*/
 					uint64_t getTotalIndexSize() const;
 				};
-
-			}// end namespace bson
 		}// end namespace model
 	} // end namespace core
 } // end namespace repo

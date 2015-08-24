@@ -88,7 +88,7 @@ namespace repo{
 			*/
 			void commitScene(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON 	  *cred, 
+				const repo::core::model::RepoBSON 	  *cred, 
 				repo::manipulator::graph::RepoScene           *scene);
 
 
@@ -100,7 +100,7 @@ namespace repo{
 			* @param pwDigested is the password provided in digested form (default: false)
 			* @return returns true upon success
 			*/
-			core::model::bson::RepoBSON* createCredBSON(
+			core::model::RepoBSON* createCredBSON(
 				const std::string &databaseAd,
 				const std::string &username,
 				const std::string &password,
@@ -112,7 +112,7 @@ namespace repo{
 			* @return returns a constructed scene graph with the reference.
 			*/
 			repo::manipulator::graph::RepoScene* createFederatedScene(
-				const std::map<repo::core::model::bson::TransformationNode, repo::core::model::bson::ReferenceNode> &fedMap);
+				const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap);
 
 			/**
 			* Count the number of documents within the collection
@@ -124,7 +124,7 @@ namespace repo{
 			*/
 			uint64_t countItemsInCollection(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  cred,
+				const repo::core::model::RepoBSON*	  cred,
 				const std::string                             &database,
 				const std::string                             &collection,
 				std::string                                   &errMsg = std::string());
@@ -140,7 +140,7 @@ namespace repo{
 			*/
 			bool dropCollection(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  cred,
+				const repo::core::model::RepoBSON*	  cred,
 				const std::string                             &databaseName,
 				const std::string                             &collectionName,
 				std::string			                          &errMsg = std::string()
@@ -156,7 +156,7 @@ namespace repo{
 			*/
 			bool dropDatabase(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  cred,
+				const repo::core::model::RepoBSON*	  cred,
 				const std::string                             &databaseName,
 				std::string			                          &errMsg = std::string()
 				);
@@ -169,7 +169,7 @@ namespace repo{
 			*/
 			std::list<std::string> fetchDatabases(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  cred
+				const repo::core::model::RepoBSON*	  cred
 				);
 
 
@@ -182,7 +182,7 @@ namespace repo{
 			*/
 			std::list<std::string> fetchCollections(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  cred,
+				const repo::core::model::RepoBSON*	  cred,
 				const std::string                             &database
 				);
 			
@@ -199,7 +199,7 @@ namespace repo{
 			*/
 			repo::manipulator::graph::RepoScene* fetchScene(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  cred,
+				const repo::core::model::RepoBSON*	  cred,
 				const std::string                             &database,
 				const std::string                             &collection,
 				const repoUUID                                &uuid,
@@ -216,10 +216,10 @@ namespace repo{
 			* @param skip specify how many documents to skip
 			* @return list of RepoBSONs representing the documents
 			*/
-			std::vector<repo::core::model::bson::RepoBSON> 
+			std::vector<repo::core::model::RepoBSON> 
 				getAllFromCollectionTailable(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  cred,
+				const repo::core::model::RepoBSON*	  cred,
 				const std::string                             &database,
 				const std::string                             &collection, 
 				const uint64_t                                &skip=0);
@@ -238,10 +238,10 @@ namespace repo{
 			* @param skip specify how many documents to skip
 			* @return list of RepoBSONs representing the documents
 			*/
-			std::vector<repo::core::model::bson::RepoBSON>
+			std::vector<repo::core::model::RepoBSON>
 				getAllFromCollectionTailable(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  cred,
+				const repo::core::model::RepoBSON*	  cred,
 				const std::string                             &database,
 				const std::string                             &collection,
 				const std::list<std::string>				  &fields,
@@ -258,9 +258,9 @@ namespace repo{
 			* @param errMsg error message when error occurs
 			* @return returns a bson object with statistical info.
 			*/
-			repo::core::model::bson::CollectionStats getCollectionStats(
+			repo::core::model::CollectionStats getCollectionStats(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  cred,
+				const repo::core::model::RepoBSON*	  cred,
 				const std::string                             &database,
 				const std::string                             &collection,
 				std::string	                                  &errMsg=std::string());
@@ -276,7 +276,7 @@ namespace repo{
 			std::map<std::string, std::list<std::string>>
 				getDatabasesWithProjects(
 					const std::string                             &databaseAd,
-					const repo::core::model::bson::RepoBSON*	  cred,
+					const repo::core::model::RepoBSON*	  cred,
 					const std::list<std::string> &databases);
 
 			/**
@@ -313,8 +313,8 @@ namespace repo{
 			*/
 			void insertUser(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  cred,
-				const repo::core::model::bson::RepoUser       &user);
+				const repo::core::model::RepoBSON*	  cred,
+				const repo::core::model::RepoUser       &user);
 
 			/**
 			* Load a Repo Scene from a file
@@ -342,10 +342,10 @@ namespace repo{
 			*/
 			void removeDocument(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  cred,
+				const repo::core::model::RepoBSON*	  cred,
 				const std::string                             &databaseName,
 				const std::string                             &collectionName,
-				const repo::core::model::bson::RepoBSON       &bson);
+				const repo::core::model::RepoBSON       &bson);
 
 			/**
 			* remove a user from the database
@@ -355,8 +355,8 @@ namespace repo{
 			*/
 			void RepoManipulator::removeUser(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  cred,
-				const repo::core::model::bson::RepoUser       &user);
+				const repo::core::model::RepoBSON*	  cred,
+				const repo::core::model::RepoUser       &user);
 
 			/**
 			* Save a Repo Scene to file
@@ -376,8 +376,8 @@ namespace repo{
 			*/
 			void updateUser(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  cred,
-				const repo::core::model::bson::RepoUser       &user);
+				const repo::core::model::RepoBSON*	  cred,
+				const repo::core::model::RepoUser       &user);
 			/**
 			* upsert a document in the database
 			* NOTE: this should never be called for a bson from RepoNode family
@@ -390,10 +390,10 @@ namespace repo{
 			*/
 			void upsertDocument(
 				const std::string                             &databaseAd,
-				const repo::core::model::bson::RepoBSON*	  cred,
+				const repo::core::model::RepoBSON*	  cred,
 				const std::string                             &databaseName,
 				const std::string                             &collectionName,
-				const repo::core::model::bson::RepoBSON       &bson);
+				const repo::core::model::RepoBSON       &bson);
 
 		};
 	}

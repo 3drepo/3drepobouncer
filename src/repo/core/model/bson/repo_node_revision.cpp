@@ -22,7 +22,7 @@
 
 #include "repo_node_revision.h"
 
-using namespace repo::core::model::bson;
+using namespace repo::core::model;
 
 
 RevisionNode::RevisionNode(RepoBSON bson) :

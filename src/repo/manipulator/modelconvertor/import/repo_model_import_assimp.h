@@ -80,7 +80,7 @@ namespace repo{
 				* @param assimp camera object
 				* @return returns a pointer to the created camera node
 				*/
-				repo::core::model::bson::CameraNode* createCameraRepoNode(
+				repo::core::model::CameraNode* createCameraRepoNode(
 					const aiCamera *assimpCamera);
 				/**
 				* Create a Material Node given the information in ASSIMP objects
@@ -89,7 +89,7 @@ namespace repo{
 				* @param name name of the material
 				* @return returns the created material node
 				*/
-				repo::core::model::bson::MaterialNode* AssimpModelImport::createMaterialRepoNode(
+				repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 					aiMaterial *material,
 					std::string name);
 
@@ -100,9 +100,9 @@ namespace repo{
 				* @param materials RepoNodeSet of material objects (to add reference)
 				* @return returns the created Mesh Node
 				*/
-				repo::core::model::bson::MeshNode* AssimpModelImport::createMeshRepoNode(
+				repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 					const aiMesh *assimpMesh,
-					const std::vector<repo::core::model::bson::RepoNode *> &materials);
+					const std::vector<repo::core::model::RepoNode *> &materials);
 
 				/**
 				* Create a Metadata Node given the information in ASSIMP objects
@@ -111,7 +111,7 @@ namespace repo{
 				* @param parent vector of node ID of parents (optional)
 				* @return returns the created Metadata Node
 				*/
-				repo::core::model::bson::MetadataNode* AssimpModelImport::createMetadataRepoNode(
+				repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 					const aiMetadata             *assimpMeta,
 					const std::string            &metadataName,
 					const std::vector<repoUUID> &parents = std::vector<repoUUID>());
@@ -125,11 +125,11 @@ namespace repo{
 				* @param parent a vector of parents to this node (optional)
 				* @return returns the created Metadata Node
 				*/
-				repo::core::model::bson::RepoNodeSet AssimpModelImport::createTransformationNodesRecursive(
+				repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecursive(
 					const aiNode                                                     *assimpNode,
-					const std::map<std::string, repo::core::model::bson::RepoNode *> &cameras,
-					const std::vector<repo::core::model::bson::RepoNode *>           &meshes,
-					repo::core::model::bson::RepoNodeSet						     &metadata,
+					const std::map<std::string, repo::core::model::RepoNode *> &cameras,
+					const std::vector<repo::core::model::RepoNode *>           &meshes,
+					repo::core::model::RepoNodeSet						     &metadata,
 					const std::vector<repoUUID>						             &parent = std::vector<repoUUID>()
 					);
 
@@ -154,8 +154,8 @@ namespace repo{
 
 				Assimp::Importer importer;  /*! Stores ASSIMP related settings for model import */
 				const aiScene *assimpScene; /*! ASSIMP scene representation of the model */
-				repo::core::model::bson::RepoNodeSet textures;
-				std::map<std::string, repo::core::model::bson::RepoNode *> nameToTexture;
+				repo::core::model::RepoNodeSet textures;
+				std::map<std::string, repo::core::model::RepoNode *> nameToTexture;
 			};
 
 		} //namespace AssimpModelImport

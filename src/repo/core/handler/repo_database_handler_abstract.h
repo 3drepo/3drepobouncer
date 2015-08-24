@@ -56,7 +56,7 @@ namespace repo{
 				* @param pwDigested true if pw is digested
 				* @return returns the constructed BSON object, or 0 if username is empty
 				*/
-				virtual repo::core::model::bson::RepoBSON* createBSONCredentials(
+				virtual repo::core::model::RepoBSON* createBSONCredentials(
 					const std::string &dbAddress,
 					const std::string &username,
 					const std::string &password,
@@ -92,7 +92,7 @@ namespace repo{
 				* @param skip specify how many documents to skip
 				* @return list of RepoBSONs representing the documents
 				*/
-				virtual std::vector<repo::core::model::bson::RepoBSON>
+				virtual std::vector<repo::core::model::RepoBSON>
 					getAllFromCollectionTailable(
 					const std::string                             &database,
 					const std::string                             &collection,
@@ -113,7 +113,7 @@ namespace repo{
 				* @param errMsg error message when error occurs
 				* @return returns a bson object with statistical info.
 				*/
-				virtual repo::core::model::bson::CollectionStats getCollectionStats(
+				virtual repo::core::model::CollectionStats getCollectionStats(
 					const std::string    &database,
 					const std::string    &collection,
 					std::string          &errMsg) = 0;
@@ -169,7 +169,7 @@ namespace repo{
 				virtual bool insertDocument(
 					const std::string &database,
 					const std::string &collection,
-					const repo::core::model::bson::RepoBSON &obj,
+					const repo::core::model::RepoBSON &obj,
 					std::string &errMsg) = 0;
 
 
@@ -180,7 +180,7 @@ namespace repo{
 				* @return returns true upon success
 				*/
 				virtual bool insertUser(
-					const repo::core::model::bson::RepoUser &user,
+					const repo::core::model::RepoUser &user,
 					std::string                             &errmsg) = 0;
 
 
@@ -197,7 +197,7 @@ namespace repo{
 				virtual bool upsertDocument(
 					const std::string &database,
 					const std::string &collection,
-					const repo::core::model::bson::RepoBSON &obj,
+					const repo::core::model::RepoBSON &obj,
 					const bool        &overwrite,
 					std::string &errMsg)=0;
 
@@ -229,7 +229,7 @@ namespace repo{
 				* @param errMsg name of the database to drop
 				*/
 				virtual bool dropDocument(
-					const repo::core::model::bson::RepoBSON bson,
+					const repo::core::model::RepoBSON bson,
 					const std::string &database,
 					const std::string &collection,
 					std::string &errMsg = std::string())=0;
@@ -241,7 +241,7 @@ namespace repo{
 				* @return returns true upon success
 				*/
 				virtual bool dropUser(
-					const repo::core::model::bson::RepoUser &user,
+					const repo::core::model::RepoUser &user,
 					std::string                             &errmsg) = 0;
 
 				/**
@@ -251,7 +251,7 @@ namespace repo{
 				* @return returns true upon success
 				*/
 				virtual bool updateUser(
-					const repo::core::model::bson::RepoUser &user,
+					const repo::core::model::RepoUser &user,
 					std::string                             &errmsg) = 0;
 				/*
 				*	------------- Query operations --------------
@@ -265,10 +265,10 @@ namespace repo{
 				* @param array of uuids in a BSON object
 				* @return a vector of RepoBSON objects associated with the UUIDs given
 				*/
-				virtual std::vector<repo::core::model::bson::RepoBSON> findAllByUniqueIDs(
+				virtual std::vector<repo::core::model::RepoBSON> findAllByUniqueIDs(
 					const std::string& database,
 					const std::string& collection,
-					const repo::core::model::bson::RepoBSON& uuid) = 0;
+					const repo::core::model::RepoBSON& uuid) = 0;
 
 				/**
 				*Retrieves the first document matching given Shared ID (SID), sorting is descending
@@ -279,7 +279,7 @@ namespace repo{
 				* @param field to sort by
 				* @return returns the first matching bson object
 				*/
-				virtual repo::core::model::bson::RepoBSON findOneBySharedID(
+				virtual repo::core::model::RepoBSON findOneBySharedID(
 					const std::string& database,
 					const std::string& collection,
 					const repoUUID& uuid,

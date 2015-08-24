@@ -38,7 +38,7 @@ AssimpModelExport::~AssimpModelExport()
 
 aiScene* AssimpModelExport::convertToAssimp(
 	const repo::manipulator::graph::RepoScene *scene,
-	repo::core::model::bson::RepoNodeSet &textNodes)
+	repo::core::model::RepoNodeSet &textNodes)
 {
 
 
@@ -106,14 +106,14 @@ aiScene* AssimpModelExport::convertToAssimp(
 
 aiNode* AssimpModelExport::constructAiSceneRecursively(
 	const repo::manipulator::graph::RepoScene *scene,
-	const repo::core::model::bson::RepoNode   *currNode,
+	const repo::core::model::RepoNode   *currNode,
 	std::vector<aiMesh*>                      &meshVec,
 	std::vector<aiMaterial*>                  &matVec,
 	std::vector<aiCamera*>                    &camVec,
 	std::map<repoUUID, aiMesh*>               &meshMap,
 	std::map<repoUUID, aiMaterial*>           &matMap,
 	std::map<repoUUID, aiCamera*>             &camMap,
-	repo::core::model::bson::RepoNodeSet &textNodes)
+	repo::core::model::RepoNodeSet &textNodes)
 {
 	/*
 	* Assumptions:
@@ -132,13 +132,13 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 		switch (currNode->getTypeAsEnum())
 		{
 			//we only need to construct an aiNode if it is a transformation, or a reference to another scene
-		case repo::core::model::bson::NodeType::TRANSFORMATION:
+		case repo::core::model::NodeType::TRANSFORMATION:
 		{
 			node = new aiNode();
 			if (node)
 			{
-				repo::core::model::bson::TransformationNode *currNodeTrans =
-					(repo::core::model::bson::TransformationNode*) currNode;
+				repo::core::model::TransformationNode *currNodeTrans =
+					(repo::core::model::TransformationNode*) currNode;
 				node->mName = aiString(currNodeTrans->getName());
 				std::vector<float> transMat = currNodeTrans->getTransMatrix();
 				if (transMat.size() >= 16)
@@ -162,7 +162,7 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 					//==================MESH============================
 					switch (child->getTypeAsEnum())
 					{
-						case repo::core::model::bson::NodeType::MESH:
+						case repo::core::model::NodeType::MESH:
 						{
 							auto it = meshMap.find(childSharedID);
 							aiMesh *assimpMesh;
@@ -170,7 +170,7 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 							if (it == meshMap.end())
 							{
 								//mesh isn't in the map yet - create a new entry
-								assimpMesh = convertMesh(scene, (repo::core::model::bson::MeshNode *)child, matVec, matMap, textNodes);
+								assimpMesh = convertMesh(scene, (repo::core::model::MeshNode *)child, matVec, matMap, textNodes);
 								meshMap[childSharedID] = assimpMesh;
 								meshVec.push_back(assimpMesh);
 							}
@@ -188,7 +188,7 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 						// Cameras
 						// Unlike meshes, cameras are not pointed to by index from transformations.
 						// Instead, corresponding camera shares the same name with transformation in Assimp.
-						case repo::core::model::bson::NodeType::CAMERA:
+						case repo::core::model::NodeType::CAMERA:
 						{
 							auto it = camMap.find(childSharedID);
 							aiCamera *assimpCam;
@@ -196,7 +196,7 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 							if (it == camMap.end())
 							{
 								//mesh isn't in the map yet - create a new entry
-								assimpCam = convertCamera(scene, (repo::core::model::bson::CameraNode *)child, currNode->getName());
+								assimpCam = convertCamera(scene, (repo::core::model::CameraNode *)child, currNode->getName());
 								camMap[childSharedID] = assimpCam;
 								camVec.push_back(assimpCam);
 							}
@@ -219,7 +219,7 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 			}
 		}
 		break;
-		case repo::core::model::bson::NodeType::REFERENCE:
+		case repo::core::model::NodeType::REFERENCE:
 		{
 			const repo::manipulator::graph::RepoScene *refScene = 
 				scene->getSceneFromReference(currNode->getSharedID());
@@ -262,7 +262,7 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 
 aiCamera* AssimpModelExport::convertCamera(
 	const repo::manipulator::graph::RepoScene *scene,
-	const repo::core::model::bson::CameraNode *camNode,
+	const repo::core::model::CameraNode *camNode,
 	const std::string                         &name)
 {
 	if (!scene || !camNode) return nullptr;
@@ -311,8 +311,8 @@ aiCamera* AssimpModelExport::convertCamera(
 
 aiMaterial* AssimpModelExport::convertMaterial(
 	const repo::manipulator::graph::RepoScene *scene,
-	const repo::core::model::bson::MaterialNode *matNode,
-	repo::core::model::bson::RepoNodeSet &textNodes)
+	const repo::core::model::MaterialNode *matNode,
+	repo::core::model::RepoNodeSet &textNodes)
 {
 
 	if (!matNode || !scene) return nullptr;
@@ -383,7 +383,7 @@ aiMaterial* AssimpModelExport::convertMaterial(
 	// 3D Repo supports only diffuse textures at the moment
 	for (const auto &child : scene->getChildrenAsNodes(matNode->getSharedID()))
 	{
-		if (child->getTypeAsEnum() == repo::core::model::bson::NodeType::TEXTURE)
+		if (child->getTypeAsEnum() == repo::core::model::NodeType::TEXTURE)
 		{
 			aiString *texName = new aiString(child->getName());
 			aiMat->AddProperty(texName,
@@ -403,10 +403,10 @@ aiMaterial* AssimpModelExport::convertMaterial(
 
 aiMesh* AssimpModelExport::convertMesh(
 	const repo::manipulator::graph::RepoScene *scene,
-	const repo::core::model::bson::MeshNode   *meshNode,
+	const repo::core::model::MeshNode   *meshNode,
 	std::vector<aiMaterial*>                  &matVec,
 	std::map<repoUUID, aiMaterial*>           &matMap,
-	repo::core::model::bson::RepoNodeSet &textNodes)
+	repo::core::model::RepoNodeSet &textNodes)
 {
 	if (!meshNode || !scene) return nullptr;
 
@@ -541,14 +541,14 @@ aiMesh* AssimpModelExport::convertMesh(
 	// If multiple children materials are found, takes the first one
 	for (const auto & child : scene->getChildrenAsNodes(meshNode->getSharedID()))
 	{
-		if (child->getTypeAsEnum() == repo::core::model::bson::NodeType::MATERIAL)
+		if (child->getTypeAsEnum() == repo::core::model::NodeType::MATERIAL)
 		{
 			//check if it already exist in matMap, if yes use that, if not create a new one
 			auto it = matMap.find(child->getSharedID());
 			aiMaterial *aiMat = nullptr;
 			if (it == matMap.end())
 			{
-				aiMat = convertMaterial(scene, (repo::core::model::bson::MaterialNode *)child, textNodes);
+				aiMat = convertMaterial(scene, (repo::core::model::MaterialNode *)child, textNodes);
 				matMap[child->getSharedID()] = aiMat;
 				matVec.push_back(aiMat);
 			}
@@ -644,7 +644,7 @@ bool AssimpModelExport::exportToFile(
 	const std::string &filePath)
 {
 	bool success = true;
-	repo::core::model::bson::RepoNodeSet textureNodes;
+	repo::core::model::RepoNodeSet textureNodes;
 	aiScene *assimpScene = convertToAssimp(scene, textureNodes);
 
 	if (assimpScene)
@@ -703,14 +703,14 @@ std::string AssimpModelExport::getSupportedFormats()
 }
 
 bool AssimpModelExport::writeTexturesToFiles(
-	const repo::core::model::bson::RepoNodeSet &nodes,
+	const repo::core::model::RepoNodeSet &nodes,
 	const std::string &filePath)
 {
 	bool success = true;
 	boost::filesystem::path path(filePath);
 	for (const auto &repoNode : nodes)
 	{
-		const repo::core::model::bson::TextureNode *repoTex = (repo::core::model::bson::TextureNode*) repoNode;
+		const repo::core::model::TextureNode *repoTex = (repo::core::model::TextureNode*) repoNode;
 		std::vector<char> *rawData = repoTex->getRawData();
 		const char *data =&rawData->at(0);
 		std::string ext = repoTex->getFileExtension();

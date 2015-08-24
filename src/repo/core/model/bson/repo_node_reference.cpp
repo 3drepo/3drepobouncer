@@ -21,7 +21,7 @@
 
 #include "repo_node_reference.h"
 
-using namespace repo::core::model::bson;
+using namespace repo::core::model;
 
 ReferenceNode::ReferenceNode() :
 RepoNode()

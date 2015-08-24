@@ -47,8 +47,6 @@
 namespace repo {
 	namespace core {
 		namespace model {
-			namespace bson {
-
 
 					//TODO: Eventually we should inherit from a generic BSON object. 
 					//work seems to have been started in here:https://github.com/jbenet/bson-cpp
@@ -230,7 +228,6 @@ namespace repo {
 						
 
 					}; // end 
-			}// end namespace bson
 		}// end namespace model
 	} // end namespace core
 } // end namespace repo

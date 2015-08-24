@@ -24,7 +24,6 @@
 namespace repo {
 	namespace core {
 		namespace model {
-			namespace bson {
 
 				//------------------------------------------------------------------------------
 				//
@@ -90,7 +89,6 @@ namespace repo {
 					std::string getFileExtension() const;
 
 				};
-			}//namespace bson
 		} //namespace model
 	} //namespace core
 } //namespace repo

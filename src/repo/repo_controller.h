@@ -69,7 +69,7 @@ namespace repo{
 		* @param databaseName database it is authenticating against
 		*/
 		RepoToken(
-			const repo::core::model::bson::RepoBSON*  credentials,
+			const repo::core::model::RepoBSON*  credentials,
 			const std::string                         databaseAd,
 			const std::string                        &databaseName) :
 			databaseAd(databaseAd),
@@ -83,7 +83,7 @@ namespace repo{
 
 
 	private:
-		const repo::core::model::bson::RepoBSON* credentials;
+		const repo::core::model::RepoBSON* credentials;
 		const std::string databaseAd;
 		const std::string databaseName;
 	};
@@ -185,7 +185,7 @@ namespace repo{
 		* @param skip specify how many documents to skip
 		* @return list of RepoBSONs representing the documents
 		*/
-		std::vector < repo::core::model::bson::RepoBSON >
+		std::vector < repo::core::model::RepoBSON >
 			getAllFromCollectionContinuous(
 			const RepoToken      *token,
 			const std::string    &database,
@@ -206,7 +206,7 @@ namespace repo{
 		* @param skip specify how many documents to skip (see description above)
 		* @return list of RepoBSONs representing the documents
 		*/
-		std::vector < repo::core::model::bson::RepoBSON >
+		std::vector < repo::core::model::RepoBSON >
 			getAllFromCollectionContinuous(
 			const RepoToken              *token,
 			const std::string            &database,
@@ -235,7 +235,7 @@ namespace repo{
 		* @param collection name of collection
 		* @return returns a BSON object containing this information
 		*/
-		repo::core::model::bson::CollectionStats getCollectionStats(
+		repo::core::model::CollectionStats getCollectionStats(
 			const RepoToken            *token,
 			const std::string    &database,
 			const std::string    &collection);
@@ -334,7 +334,7 @@ namespace repo{
 		*/
 		void insertUser(
 			const RepoToken                          *token,
-			const repo::core::model::bson::RepoUser  &user);
+			const repo::core::model::RepoUser  &user);
 
 		/**
 		* Remove a collection from the database
@@ -377,7 +377,7 @@ namespace repo{
 			const RepoToken                          *token,
 			const std::string                        &databaseName,
 			const std::string                        &collectionName,
-			const repo::core::model::bson::RepoBSON  &bson);
+			const repo::core::model::RepoBSON  &bson);
 
 		/**
 		* remove a user from the database
@@ -386,7 +386,7 @@ namespace repo{
 		*/
 		void removeUser(
 			const RepoToken                          *token,
-			const repo::core::model::bson::RepoUser  &user);
+			const repo::core::model::RepoUser  &user);
 
 		/**
 		* Update a user on the database
@@ -395,7 +395,7 @@ namespace repo{
 		*/
 		void updateUser(
 			const RepoToken                          *token,
-			const repo::core::model::bson::RepoUser  &user);
+			const repo::core::model::RepoUser  &user);
 
 		/**
 		* upsert a document in the database
@@ -410,7 +410,7 @@ namespace repo{
 			const RepoToken                          *token,
 			const std::string                        &databaseName,
 			const std::string                        &collectionName,
-			const repo::core::model::bson::RepoBSON  &bson);
+			const repo::core::model::RepoBSON  &bson);
 
 		/*
 		*	------------- Logging --------------
@@ -446,7 +446,7 @@ namespace repo{
 		* @return returns a constructed scene graph with the reference.
 		*/
 		repo::manipulator::graph::RepoScene* createFederatedScene(
-			const std::map<repo::core::model::bson::TransformationNode, repo::core::model::bson::ReferenceNode> &fedMap);
+			const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap);
 
 		/**
 		* Get a string of supported file formats for file export

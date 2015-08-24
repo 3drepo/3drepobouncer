@@ -23,7 +23,7 @@
 #include "repo_bson_project_settings.h"
 
 
-using namespace repo::core::model::bson;
+using namespace repo::core::model;
 
 RepoProjectSettings::RepoProjectSettings() : RepoBSON()
 {

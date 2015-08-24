@@ -21,7 +21,7 @@
 
 #include "repo_node_map.h"
 
-using namespace repo::core::model::bson;
+using namespace repo::core::model;
 
 MapNode::MapNode() :
 RepoNode()

@@ -24,7 +24,6 @@
 namespace repo {
 	namespace core {
 		namespace model {
-			namespace bson {
 				class REPO_API_EXPORT MapNode :public RepoNode
 				{
 				public:
@@ -47,7 +46,6 @@ namespace repo {
 					~MapNode();
 
 				};
-			}//namespace bson
 		} //namespace model
 	} //namespace core
 } //namespace repo

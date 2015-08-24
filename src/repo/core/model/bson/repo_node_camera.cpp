@@ -21,7 +21,7 @@
 
 #include "repo_node_camera.h"
 
-using namespace repo::core::model::bson;
+using namespace repo::core::model;
 
 CameraNode::CameraNode() :
 RepoNode()
