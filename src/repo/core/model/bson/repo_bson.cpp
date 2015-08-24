@@ -86,10 +86,10 @@ int64_t RepoBSON::getTimeStampField(const std::string &label) const
 }
 
 
-std::list<std::pair<std::string, std::string> > RepoBSON::getListStringPairField(
+std::list<std::pair<std::string, std::string> > RepoBSON::getListStringPairField (
 	const std::string &arrLabel,
 	const std::string &fstLabel,
-	const std::string &sndLabel)
+	const std::string &sndLabel) const
 {
 	std::list<std::pair<std::string, std::string> > list;
 	mongo::BSONElement arrayElement;

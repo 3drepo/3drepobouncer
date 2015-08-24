@@ -225,7 +225,7 @@ namespace repo {
 						std::list<std::pair<std::string, std::string> > getListStringPairField(
 							const std::string &arrLabel,
 							const std::string &fstLabel,
-							const std::string &sndLabel);
+							const std::string &sndLabel) const;
 						
 						
 

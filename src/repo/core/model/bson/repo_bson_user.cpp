@@ -70,10 +70,10 @@ RepoUser RepoUser::createRepoUser(
 		customDataBuilder << REPO_USER_LABEL_EMAIL << email;
 
 	if (projects.size())
-		customDataBuilder.appendArrayPair(REPO_USER_LABEL_PROJECT, projects, REPO_USER_LABEL_OWNER, REPO_USER_LABEL_PROJECT);
+		customDataBuilder.appendArrayPair(REPO_USER_LABEL_PROJECTS, projects, REPO_USER_LABEL_OWNER, REPO_USER_LABEL_PROJECT);
 
 	if (groups.size())
-		customDataBuilder.appendArrayPair(REPO_USER_LABEL_PROJECT, groups, REPO_USER_LABEL_OWNER, REPO_USER_LABEL_PROJECT);
+		customDataBuilder.appendArrayPair(REPO_USER_LABEL_GROUPS, groups, REPO_USER_LABEL_OWNER, REPO_USER_LABEL_GROUP);
 
 	if (!apiKeys.empty())
 		customDataBuilder.appendArrayPair(REPO_USER_LABEL_API_KEYS, apiKeys, REPO_USER_LABEL_LABEL, REPO_USER_LABEL_KEY);
@@ -161,9 +161,10 @@ std::list<std::pair<std::string, std::string>>
 	RepoUser::getRolesList() const
 {
 	std::list<std::pair<std::string, std::string>> result;
-	RepoBSON customData = getCustomDataBSON();
-	if (!customData.isEmpty())
-		result = customData.getListStringPairField(REPO_USER_LABEL_ROLES, REPO_USER_LABEL_DB, REPO_USER_LABEL_ROLE);
+/*	RepoBSON roleData = getRolesBSON();
+	if (!roleData.isEmpty())
+		result = roleData.*/
+	result = getListStringPairField(REPO_USER_LABEL_ROLES, REPO_USER_LABEL_DB, REPO_USER_LABEL_ROLE);
 
 	return result;
 }

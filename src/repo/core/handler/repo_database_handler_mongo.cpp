@@ -535,7 +535,6 @@ bool MongoDatabaseHandler::performUserCmd(
 			worker = workerPool->getWorker();
 			repo::core::model::bson::RepoBSONBuilder cmdBuilder;
 			std::string username = user.getUserName();
-
 			switch (op)
 			{
 			case OPERATION::INSERT:
@@ -558,16 +557,20 @@ bool MongoDatabaseHandler::performUserCmd(
 				if (!customData.isEmpty())
 					cmdBuilder << "customData" << customData;
 
-				repo::core::model::bson::RepoBSON roles = user.getRolesBSON();
-				if (!customData.isEmpty())
-					cmdBuilder.appendArray("roles", roles);
+				//compulsory, so no point checking if it's empty
+				cmdBuilder.appendArray("roles", user.getRolesBSON());
 			}
 	
 
 			mongo::BSONObj info;
 			worker->runCommand(ADMIN_DATABASE, cmdBuilder.obj(), info);
 
-			BOOST_LOG_TRIVIAL(trace) << "Info from running user command: " << info;
+			std::string cmdError = info.getStringField("errmsg");
+			if (!cmdError.empty())
+			{
+				success = false;
+				errMsg += cmdError;
+			}
 
 		}
 		catch (mongo::DBException &e)
