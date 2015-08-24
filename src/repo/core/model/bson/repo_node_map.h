@@ -26,6 +26,16 @@ namespace repo {
 		namespace model {
 				class REPO_API_EXPORT MapNode :public RepoNode
 				{
+					#define REPO_NODE_MAP_LABEL_WIDTH               "width"
+					#define REPO_NODE_MAP_LABEL_YROT                "yrot"
+					#define REPO_NODE_MAP_LABEL_TILESIZE            "worldTileSize"
+					#define REPO_NODE_MAP_LABEL_LONG                "long"
+					#define REPO_NODE_MAP_LABEL_LAT                 "lat"
+					#define REPO_NODE_MAP_LABEL_ZOOM                "zoom"
+					#define REPO_NODE_MAP_LABEL_TRANS               "trans"
+					#define REPO_NODE_UUID_SUFFIX_METADATA			"15" //!< uuid suffix
+					#define REPO_NODE_MAP_DEFAULTNAME               "<map>"
+
 				public:
 
 					/**

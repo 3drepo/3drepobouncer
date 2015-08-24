@@ -37,29 +37,3 @@ RepoNode(bson)
 MetadataNode::~MetadataNode()
 {
 }
-
-MetadataNode MetadataNode::createMetadataNode(
-	RepoBSON			         &metadata,
-	const std::string            &mimeType,
-	const std::string            &name,
-	const std::vector<repoUUID> &parents,
-	const int                    &apiLevel)
-{
-	RepoBSONBuilder builder;
-
-	// Compulsory fields such as _id, type, api as well as path
-	// and optional name
-	appendDefaults(builder, REPO_NODE_TYPE_METADATA, apiLevel, generateUUID(), name, parents);
-
-	//--------------------------------------------------------------------------
-	// Media type
-	if (!mimeType.empty())
-		builder << REPO_LABEL_MEDIA_TYPE << mimeType;
-
-	//--------------------------------------------------------------------------
-	// Add metadata subobject
-	if (!metadata.isEmpty())
-		builder << REPO_NODE_LABEL_METADATA << metadata;
-
-	return MetadataNode(builder.obj());
-}

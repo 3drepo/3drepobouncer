@@ -41,28 +41,6 @@ namespace repo {
 					~RepoProjectSettings();
 
 					/**
-					* Static builder for factory use to create a project setting BSON
-					* @param uniqueProjectName a unique name for the project
-					* @param owner owner ofthis project
-					* @param group group with access of this project
-					* @param type  type of project
-					* @param description Short description of the project
-					* @param ownerPermissionsOctal owner's permission in POSIX
-					* @param groupPermissionsOctal group's permission in POSIX
-					* @param publicPermissionsOctal other's permission in POSIX
-					* @return returns a pointer Camera node
-					*/
-					static RepoProjectSettings createRepoProjectSettings(
-						const std::string &uniqueProjectName,
-						const std::string &owner,
-						const std::string &group = std::string(),
-						const std::string &type = REPO_PROJECT_TYPE_ARCHITECTURAL,
-						const std::string &description = std::string(),
-						const uint8_t     &ownerPermissionsOctal = 7,
-						const uint8_t     &groupPermissionsOctal = 0,
-						const uint8_t     &publicPermissionsOctal = 0);
-
-					/**
 					* --------- Convenience functions -----------
 					*/
 

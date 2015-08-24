@@ -62,30 +62,6 @@ namespace repo {
 					*/
 					~CameraNode();
 
-					/**
-					* Static builder for factory use to create a Camera Node
-					* @param aspect ratio
-					* @param Far clipping plane
-					* @param Near clipping plane. Should not be 0 to avoid divis
-					* @param Field of view.
-					* @param LookAt vector relative to parent transformations.
-					* @param Position relative to parent transformations
-					* @param Up vector relative to parent transformations.
-					* @param API level of the node (optional, default REPO_NODE_API_LEVEL_1)
-					* @param name of the node (optional, default empty string)
-					* @return returns a pointer Camera node
-					*/
-					static CameraNode createCameraNode(
-						const float         &aspectRatio,
-						const float         &farClippingPlane,
-						const float         &nearClippingPlane,
-						const float         &fieldOfView,
-						const repo_vector_t &lookAt,
-						const repo_vector_t &position,
-						const repo_vector_t &up,
-						const int           &apiLevel = REPO_NODE_API_LEVEL_1,
-						const std::string   &name = std::string());
-
 
 					/**
 					* --------- Convenience functions -----------

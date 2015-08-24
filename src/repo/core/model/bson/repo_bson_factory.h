@@ -29,6 +29,7 @@
 #include "repo_node_camera.h"
 #include "repo_node_metadata.h"
 #include "repo_node_material.h"
+#include "repo_node_map.h"
 #include "repo_node_mesh.h"
 #include "repo_node_reference.h"
 #include "repo_node_revision.h"
@@ -44,6 +45,7 @@ namespace repo {
 				{
 					public:
 
+						
 						/**
 						* Create a project setting BSON
 						* @param uniqueProjectName a unique name for the project
@@ -98,6 +100,25 @@ namespace repo {
 						/*
 						* -------------------- REPO NODES ------------------------
 						*/
+
+						/**
+						* Append default information onto the a RepoBSONBuilder
+						* This is used for children nodes to create their BSONs.
+						* @param builder the builder to append the info to
+						* @param type type of node
+						* @param api api level of this node
+						* @param shareID shared ID of this node
+						* @param name name of the node
+						* @param parents vector of shared IDs of this node's parents
+						*/
+						static void appendDefaults(
+							RepoBSONBuilder &builder,
+							const std::string &type,
+							const unsigned int api = REPO_NODE_API_LEVEL_0,
+							const repoUUID &sharedId = generateUUID(),
+							const std::string &name = std::string(),
+							const std::vector<repoUUID> &parents = std::vector<repoUUID>());
+
 						/**
 						* Create a RepoNode
 						* @param type of node (Optional)
@@ -139,6 +160,23 @@ namespace repo {
 						static MaterialNode makeMaterialNode(
 							const repo_material_t &material,
 							const std::string     &name,
+							const int             &apiLevel = REPO_NODE_API_LEVEL_1);
+
+						/**
+						* Create a Map Node
+						* @param a struct that contains the info about the material
+						* @param name of the Map
+						* @return returns a Map node
+						*/
+						static MapNode makeMapNode(
+							const uint32_t        &width,
+							const uint32_t        &zoom,
+							const float           &tilt,
+							const float           &tileSize,
+							const float           &longitude,
+							const float           &latitude,
+							const repo_vector_t   &centrePoint,
+							const std::string     &name = std::string(),
 							const int             &apiLevel = REPO_NODE_API_LEVEL_1);
 
 						/**
@@ -231,8 +269,8 @@ namespace repo {
 						/**
 						* Create a Texture Node
 						* @param name name of the texture node, with extension to indicate file format
-						* @param memblock binary data to store
-						* @param size size of the binary data in bytes
+						* @param data binary data to store
+						* @param byteCount size of the binary data in bytes
 						* @param width width of the texture
 						* @param height height of the texture
 						* @param apiLevel API Level(optional)
@@ -240,15 +278,11 @@ namespace repo {
 						*/
 						static TextureNode makeTextureNode(
 							const std::string &name,
-							const char        *memblock,
-							const uint32_t    &size,
+							const char        *data,
+							const uint32_t    &byteCount,
 							const uint32_t    &width,
 							const uint32_t    &height,
 							const int         &apiLevel = REPO_NODE_API_LEVEL_1);
-
-
-						
-
 
 						/**
 						* Create a Transformation Node

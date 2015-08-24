@@ -30,56 +30,6 @@ RepoProjectSettings::RepoProjectSettings() : RepoBSON()
 }
 
 
-RepoProjectSettings RepoProjectSettings::createRepoProjectSettings(
-	const std::string &uniqueProjectName,
-	const std::string &owner,
-	const std::string &group,
-	const std::string &type,
-	const std::string &description,
-	const uint8_t     &ownerPermissionsOctal,
-	const uint8_t     &groupPermissionsOctal,
-	const uint8_t     &publicPermissionsOctal)
-{
-	RepoBSONBuilder builder;
-
-	//--------------------------------------------------------------------------
-	// Project name
-	if (!uniqueProjectName.empty())
-		builder << REPO_LABEL_ID << uniqueProjectName;
-
-	//--------------------------------------------------------------------------
-	// Owner
-	if (!owner.empty())
-		builder << REPO_LABEL_OWNER << owner;
-
-	//--------------------------------------------------------------------------
-	// Description
-	if (!description.empty())
-		builder << REPO_LABEL_DESCRIPTION << description;
-
-	//--------------------------------------------------------------------------
-	// Type
-	if (!type.empty())
-		builder << REPO_LABEL_TYPE << type;
-
-	//--------------------------------------------------------------------------
-	// Group
-	if (!group.empty())
-		builder << REPO_LABEL_GROUP << group;
-
-	//--------------------------------------------------------------------------
-	// Permissions
-	mongo::BSONArrayBuilder arrayBuilder;
-	arrayBuilder << ownerPermissionsOctal;
-	arrayBuilder << groupPermissionsOctal;
-	arrayBuilder << publicPermissionsOctal;
-	builder << REPO_LABEL_PERMISSIONS << arrayBuilder.arr();
-
-	//--------------------------------------------------------------------------
-	// Add to the parent object
-	return RepoProjectSettings(builder.obj());
-}
-
 RepoProjectSettings::~RepoProjectSettings()
 {
 }

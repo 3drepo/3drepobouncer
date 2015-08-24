@@ -1,9 +1,52 @@
 #include "repo_bson_factory.h"
 
+#include <boost/filesystem.hpp>
+
 using namespace repo::core::model;
 
-RepoNode RepoBSONFactory::makeRepoNode(std::string type){
-	return RepoNode::createRepoNode(type);
+
+
+void RepoBSONFactory::appendDefaults(
+	RepoBSONBuilder &builder,
+	const std::string &type,
+	const unsigned int api,
+	const repoUUID &sharedId,
+	const std::string &name,
+	const std::vector<repoUUID> &parents)
+{
+	//--------------------------------------------------------------------------
+	// ID field (UUID)
+	builder.append(REPO_NODE_LABEL_ID, generateUUID());
+
+	//--------------------------------------------------------------------------
+	// Shared ID (UUID)
+	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedId);
+
+	//--------------------------------------------------------------------------
+	// Type
+	if (!type.empty())
+		builder << REPO_NODE_LABEL_TYPE << type;
+
+	//--------------------------------------------------------------------------
+	// API level
+	builder << REPO_NODE_LABEL_API << api;
+
+	//--------------------------------------------------------------------------
+	// Parents
+	if (parents.size() > 0)
+		builder.appendArray(REPO_NODE_LABEL_PARENTS, builder.createArrayBSON(parents));
+
+	//--------------------------------------------------------------------------
+	// Name
+	if (!name.empty())
+		builder << REPO_NODE_LABEL_NAME << name;
+}
+
+RepoNode RepoBSONFactory::makeRepoNode(std::string type)
+{
+	RepoBSONBuilder builder;
+	appendDefaults(builder, type);
+	return RepoNode(builder.obj());
 }
 
 CameraNode RepoBSONFactory::makeCameraNode(
@@ -17,8 +60,42 @@ CameraNode RepoBSONFactory::makeCameraNode(
 	const std::string   &name,
 	const int           &apiLevel)
 {
-	return CameraNode::createCameraNode(aspectRatio, farClippingPlane, nearClippingPlane,
-		fieldOfView, lookAt, position, up, apiLevel, name);
+	RepoBSONBuilder builder;
+
+	//--------------------------------------------------------------------------
+	// Compulsory fields such as _id, type, api as well as path
+	// and optional name
+	appendDefaults(builder, REPO_NODE_TYPE_CAMERA, apiLevel, generateUUID(), name);
+
+	//--------------------------------------------------------------------------
+	// Aspect ratio
+	builder << REPO_NODE_LABEL_ASPECT_RATIO << aspectRatio;
+
+	//--------------------------------------------------------------------------
+	// Far clipping plane
+	builder << REPO_NODE_LABEL_FAR << farClippingPlane;
+
+	//--------------------------------------------------------------------------
+	// Near clipping plane
+	builder << REPO_NODE_LABEL_NEAR << nearClippingPlane;
+
+	//--------------------------------------------------------------------------
+	// Field of view
+	builder << REPO_NODE_LABEL_FOV << fieldOfView;
+
+	//--------------------------------------------------------------------------
+	// Look at vector
+	builder.appendVector(REPO_NODE_LABEL_LOOK_AT, lookAt);
+
+	//--------------------------------------------------------------------------
+	// Position vector 
+	builder.appendVector(REPO_NODE_LABEL_POSITION, position);
+
+	//--------------------------------------------------------------------------
+	// Up vector
+	builder.appendVector(REPO_NODE_LABEL_UP, up);
+
+	return CameraNode(builder.obj());
 }
 
 
@@ -27,7 +104,78 @@ MaterialNode RepoBSONFactory::makeMaterialNode(
 	const std::string     &name,
 	const int             &apiLevel)
 {
-	return MaterialNode::createMaterialNode(material, name,  apiLevel);
+	RepoBSONBuilder builder;
+
+	// Compulsory fields such as _id, type, api as well as path
+	// and optional name
+	appendDefaults(builder, REPO_NODE_TYPE_MATERIAL, apiLevel, generateUUID(), name);
+
+	if (material.ambient.size() > 0)
+		builder.appendArray(REPO_NODE_MATERIAL_LABEL_AMBIENT, builder.createArrayBSON(material.ambient));
+	if (material.diffuse.size() > 0)
+		builder.appendArray(REPO_NODE_MATERIAL_LABEL_DIFFUSE, builder.createArrayBSON(material.diffuse));
+	if (material.specular.size() > 0)
+		builder.appendArray(REPO_NODE_MATERIAL_LABEL_SPECULAR, builder.createArrayBSON(material.specular));
+	if (material.emissive.size() > 0)
+		builder.appendArray(REPO_NODE_MATERIAL_LABEL_EMISSIVE, builder.createArrayBSON(material.emissive));
+
+
+	if (material.isWireframe)
+		builder << REPO_NODE_MATERIAL_LABEL_WIREFRAME << material.isWireframe;
+	if (material.isTwoSided)
+		builder << REPO_NODE_MATERIAL_LABEL_TWO_SIDED << material.isTwoSided;
+
+	if (material.opacity == material.opacity)
+		builder << REPO_NODE_MATERIAL_LABEL_OPACITY << material.opacity;
+
+	if (material.shininess == material.shininess)
+		builder << REPO_NODE_MATERIAL_LABEL_SHININESS << material.shininess;
+
+	if (material.shininessStrength == material.shininessStrength)
+		builder << REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH << material.shininessStrength;
+
+	return MaterialNode(builder.obj());
+}
+
+MapNode RepoBSONFactory::makeMapNode(
+	const uint32_t        &width,
+	const uint32_t        &zoom,
+	const float           &tilt,
+	const float           &tileSize,
+	const float           &longitude,
+	const float           &latitude,
+	const repo_vector_t   &centrePoint,
+	const std::string     &name,
+	const int             &apiLevel)
+{
+	RepoBSONBuilder map_builder;
+
+	// Compulsory fields such as _id, type, api as well as path
+	// and optional name
+	appendDefaults(map_builder, REPO_NODE_TYPE_MAP, apiLevel, generateUUID(), name, std::vector<repoUUID>());
+	//--------------------------------------------------------------------------
+	// width (# of horizontal tiles)
+	map_builder << REPO_NODE_MAP_LABEL_WIDTH << width;
+	//--------------------------------------------------------------------------
+	// yrot (tilt on y axis in radians)
+	map_builder << REPO_NODE_MAP_LABEL_YROT << tilt;
+	//--------------------------------------------------------------------------
+	// world tile size (size of tiles)
+	map_builder << REPO_NODE_MAP_LABEL_TILESIZE << tileSize;
+	//--------------------------------------------------------------------------
+	// longitude
+	map_builder << REPO_NODE_MAP_LABEL_LONG << longitude;
+	//--------------------------------------------------------------------------
+	// latitude
+	map_builder << REPO_NODE_MAP_LABEL_LAT << latitude;
+	//--------------------------------------------------------------------------
+	// zoom
+	map_builder << REPO_NODE_MAP_LABEL_ZOOM << zoom;
+	//--------------------------------------------------------------------------
+	// trans
+	map_builder << REPO_NODE_MAP_LABEL_TRANS << BSON_ARRAY(centrePoint.x << centrePoint.y << centrePoint.z);
+	//--------------------------------------------------------------------------
+	return map_builder.obj();
 }
 
 MetadataNode RepoBSONFactory::makeMetaDataNode(
@@ -37,7 +185,23 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	const std::vector<repoUUID>  &parents,
 	const int                     &apiLevel)
 {
-	return MetadataNode::createMetadataNode(metadata, mimeType, name, parents, apiLevel);
+	RepoBSONBuilder builder;
+
+	// Compulsory fields such as _id, type, api as well as path
+	// and optional name
+	appendDefaults(builder, REPO_NODE_TYPE_METADATA, apiLevel, generateUUID(), name, parents);
+
+	//--------------------------------------------------------------------------
+	// Media type
+	if (!mimeType.empty())
+		builder << REPO_LABEL_MEDIA_TYPE << mimeType;
+
+	//--------------------------------------------------------------------------
+	// Add metadata subobject
+	if (!metadata.isEmpty())
+		builder << REPO_NODE_LABEL_METADATA << metadata;
+
+	return MetadataNode(builder.obj());
 }
 
 MeshNode RepoBSONFactory::makeMeshNode(
@@ -51,8 +215,124 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	const std::string                           &name,
 	const int                                   &apiLevel)
 {
-	return MeshNode::createMeshNode(vertices, faces, normals, boundingBox, 
-		uvChannels, colors, outline, apiLevel, name);
+	RepoBSONBuilder builder;
+
+	appendDefaults(builder, REPO_NODE_TYPE_MESH, apiLevel, generateUUID(), name);
+
+	if (vertices.size() > 0)
+	{
+		builder.appendBinary(
+			REPO_NODE_LABEL_VERTICES,
+			&vertices[0],
+			vertices.size() * sizeof(vertices[0]),
+			REPO_NODE_LABEL_VERTICES_BYTE_COUNT,
+			REPO_NODE_LABEL_VERTICES_COUNT
+			);
+
+	}
+
+	if (faces.size() > 0)
+	{
+		builder << REPO_NODE_LABEL_FACES_COUNT << (uint32_t)(faces.size());
+
+		// In API LEVEL 1, faces are stored as
+		// [n1, v1, v2, ..., n2, v1, v2...]
+		std::vector<repo_face_t>::iterator faceIt;
+
+		std::vector<uint32_t> facesLevel1;
+		for (auto &face : faces){
+			facesLevel1.push_back(face.numIndices);
+			for (uint32_t ind = 0; ind < face.numIndices; ind++)
+			{
+				facesLevel1.push_back(face.indices[ind]);
+			}
+		}
+
+		builder.appendBinary(
+			REPO_NODE_LABEL_FACES,
+			&facesLevel1[0],
+			facesLevel1.size() * sizeof(facesLevel1[0]),
+			REPO_NODE_LABEL_FACES_BYTE_COUNT
+			);
+	}
+
+	if (normals.size() > 0)
+	{
+		builder.appendBinary(
+			REPO_NODE_LABEL_NORMALS,
+			&normals[0],
+			normals.size() * sizeof(normals[0]));
+	}
+
+	if (boundingBox.size() > 0)
+	{
+		RepoBSONBuilder arrayBuilder;
+
+		for (int i = 0; i < boundingBox.size(); i++)
+		{
+			arrayBuilder.appendArray(boost::lexical_cast<std::string>(i), builder.createArrayBSON(boundingBox[i]));
+		}
+
+		builder.appendArray(REPO_NODE_LABEL_BOUNDING_BOX, arrayBuilder.obj());
+	}
+
+
+	if (outline.size() > 0)
+	{
+		RepoBSONBuilder arrayBuilder;
+
+		for (int i = 0; i < outline.size(); i++)
+		{
+			arrayBuilder.appendArray(boost::lexical_cast<std::string>(i), builder.createArrayBSON(outline[i]));
+		}
+
+		builder.appendArray(REPO_NODE_LABEL_OUTLINE, arrayBuilder.obj());
+	}
+
+	//if (!vertexHash.empty())
+	//{
+	//	// TODO: Fix this call - needs to be fixed as int conversion is overloaded
+	//	//builder << REPO_NODE_LABEL_SHA256 << (long unsigned int)(vertexHash);
+	//}
+
+
+	//--------------------------------------------------------------------------
+	// Vertex colors
+	if (colors.size())
+		builder.appendBinary(
+		REPO_NODE_LABEL_COLORS,
+		&colors[0],
+		colors.size() * sizeof(colors[0]));
+
+	//--------------------------------------------------------------------------
+	// UV channels
+	if (uvChannels.size() > 0)
+	{
+		// Could be unsigned __int64 if BSON had such construct (the closest is only __int64)
+		builder << REPO_NODE_LABEL_UV_CHANNELS_COUNT << (uint32_t)(uvChannels.size());
+
+		std::vector<repo_vector2d_t> concatenated;
+
+		std::vector<std::vector<repo_vector2d_t>>::iterator it;
+		for (it = uvChannels.begin(); it != uvChannels.end(); ++it)
+		{
+			std::vector<repo_vector2d_t> channel = *it;
+
+			std::vector<repo_vector2d_t>::iterator cit;
+			for (cit = channel.begin(); cit != channel.end(); ++cit)
+			{
+				concatenated.push_back(*cit);
+			}
+		}
+
+		builder.appendBinary(
+			REPO_NODE_LABEL_UV_CHANNELS,
+			&concatenated[0],
+			concatenated.size() * sizeof(concatenated[0]),
+			REPO_NODE_LABEL_UV_CHANNELS_BYTE_COUNT);
+	}
+
+	return MeshNode(builder.obj());
 }
 
 RepoProjectSettings RepoBSONFactory::makeRepoProjectSettings(
@@ -65,12 +345,46 @@ RepoProjectSettings RepoBSONFactory::makeRepoProjectSettings(
 	const uint8_t     &groupPermissionsOctal,
 	const uint8_t     &publicPermissionsOctal)
 {
-	return RepoProjectSettings::createRepoProjectSettings(uniqueProjectName, owner,
-		group, type, description, ownerPermissionsOctal, groupPermissionsOctal, 
-		publicPermissionsOctal);
+	RepoBSONBuilder builder;
+
+	//--------------------------------------------------------------------------
+	// Project name
+	if (!uniqueProjectName.empty())
+		builder << REPO_LABEL_ID << uniqueProjectName;
+
+	//--------------------------------------------------------------------------
+	// Owner
+	if (!owner.empty())
+		builder << REPO_LABEL_OWNER << owner;
+
+	//--------------------------------------------------------------------------
+	// Description
+	if (!description.empty())
+		builder << REPO_LABEL_DESCRIPTION << description;
+
+	//--------------------------------------------------------------------------
+	// Type
+	if (!type.empty())
+		builder << REPO_LABEL_TYPE << type;
+
+	//--------------------------------------------------------------------------
+	// Group
+	if (!group.empty())
+		builder << REPO_LABEL_GROUP << group;
+
+	//--------------------------------------------------------------------------
+	// Permissions
+	mongo::BSONArrayBuilder arrayBuilder;
+	arrayBuilder << ownerPermissionsOctal;
+	arrayBuilder << groupPermissionsOctal;
+	arrayBuilder << publicPermissionsOctal;
+	builder << REPO_LABEL_PERMISSIONS << arrayBuilder.arr();
+
+	//--------------------------------------------------------------------------
+	// Add to the parent object
+	return RepoProjectSettings(builder.obj());
 }
 
-//FIXME: no point calling a function to call a function, sohuld just create all the objects here.
 RepoUser RepoBSONFactory::makeRepoUser(
 	const std::string                           &userName,
 	const std::string                           &password,
@@ -83,8 +397,53 @@ RepoUser RepoBSONFactory::makeRepoUser(
 	const std::list<std::pair<std::string, std::string>>   &apiKeys,
 	const std::vector<char>                     &avatar)
 {
-	return RepoUser::createRepoUser(userName, password, firstName, lastName, email,
-		projects, roles, groups, apiKeys, avatar);
+	RepoBSONBuilder builder;
+	RepoBSONBuilder customDataBuilder;
+
+	builder.append(REPO_LABEL_ID, generateUUID());
+	if (!userName.empty())
+		builder << REPO_USER_LABEL_USER << userName;
+
+	if (!password.empty())
+	{
+		RepoBSONBuilder credentialsBuilder;
+		credentialsBuilder << REPO_USER_LABEL_CLEARTEXT << password;
+		builder << REPO_USER_LABEL_CREDENTIALS << credentialsBuilder.obj();
+	}
+
+	if (!firstName.empty())
+		customDataBuilder << REPO_USER_LABEL_FIRST_NAME << firstName;
+
+	if (!lastName.empty())
+		customDataBuilder << REPO_USER_LABEL_LAST_NAME << lastName;
+
+	if (!email.empty())
+		customDataBuilder << REPO_USER_LABEL_EMAIL << email;
+
+	if (projects.size())
+		customDataBuilder.appendArrayPair(REPO_USER_LABEL_PROJECTS, projects, REPO_USER_LABEL_OWNER, REPO_USER_LABEL_PROJECT);
+
+	if (groups.size())
+		customDataBuilder.appendArrayPair(REPO_USER_LABEL_GROUPS, groups, REPO_USER_LABEL_OWNER, REPO_USER_LABEL_GROUP);
+
+	if (!apiKeys.empty())
+		customDataBuilder.appendArrayPair(REPO_USER_LABEL_API_KEYS, apiKeys, REPO_USER_LABEL_LABEL, REPO_USER_LABEL_KEY);
+
+	if (avatar.size())
+	{
+		RepoBSONBuilder avatarBuilder;
+		//FIXME: use repo image?
+		avatarBuilder.appendBinary(REPO_LABEL_DATA, &avatar.at(0), sizeof(avatar.at(0))*avatar.size());
+		customDataBuilder << REPO_LABEL_AVATAR << avatarBuilder.obj();
+	}
+
+
+	builder << REPO_USER_LABEL_CUSTOM_DATA << customDataBuilder.obj();
+
+	if (roles.size())
+		builder.appendArrayPair(REPO_USER_LABEL_ROLES, roles, REPO_USER_LABEL_DB, REPO_USER_LABEL_ROLE);
+
+	return RepoUser(builder.obj());
 }
 
 
@@ -96,8 +455,33 @@ ReferenceNode RepoBSONFactory::makeReferenceNode(
 	const std::string &name,
 	const int         &apiLevel)
 {
-	return ReferenceNode::createReferenceNode(database, project,
-		revisionID, isUniqueID, name, apiLevel);
+	RepoBSONBuilder builder;
+	std::string nodeName = name.empty() ? database + "." + project : name;
+
+	appendDefaults(builder, REPO_NODE_TYPE_REFERENCE, apiLevel, generateUUID(), nodeName);
+
+	//--------------------------------------------------------------------------
+	// Project owner (company or individual)
+	if (!database.empty())
+		builder << REPO_NODE_REFERENCE_LABEL_OWNER << database;
+
+	//--------------------------------------------------------------------------
+	// Project name
+	if (!project.empty())
+		builder << REPO_NODE_REFERENCE_LABEL_PROJECT << project;
+
+	//--------------------------------------------------------------------------
+	// Revision ID (specific revision if UID, branch if SID)
+	builder.append(
+		REPO_NODE_REFERENCE_LABEL_REVISION_ID,
+		revisionID);
+
+	//--------------------------------------------------------------------------
+	// Unique set if the revisionID is UID, not set if SID (branch)
+	if (isUniqueID)
+		builder << REPO_NODE_REFERENCE_LABEL_UNIQUE << isUniqueID;
+
+	return ReferenceNode(builder.obj());
 }
 
 RevisionNode RepoBSONFactory::makeRevisionNode(
@@ -113,19 +497,98 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 	const int                    &apiLevel
 	)
 {
-	return RevisionNode::createRevisionNode(user, branch, currentNodes, added, 
-		removed, modified, parent, message, tag, apiLevel);
+	RepoBSONBuilder builder;
+
+	//--------------------------------------------------------------------------
+	// Compulsory fields such as _id, type, api as well as path
+	appendDefaults(builder, REPO_NODE_TYPE_REVISION, apiLevel, branch, "", parent);
+
+	//--------------------------------------------------------------------------
+	// Author
+	if (!user.empty())
+		builder << REPO_NODE_REVISION_LABEL_AUTHOR << user;
+
+	//--------------------------------------------------------------------------
+	// Message
+	if (!message.empty())
+		builder << REPO_NODE_REVISION_LABEL_MESSAGE << message;
+
+	//--------------------------------------------------------------------------
+	// Tag
+	if (!tag.empty())
+		builder << REPO_NODE_REVISION_LABEL_TAG << tag;
+
+	//--------------------------------------------------------------------------
+	// Timestamp
+	builder.appendTimeStamp(REPO_NODE_REVISION_LABEL_TIMESTAMP);
+
+	//--------------------------------------------------------------------------
+
+	// Current Unique IDs
+	if (currentNodes.size() > 0)
+		builder.appendArray(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS, builder.createArrayBSON(currentNodes));
+
+	//--------------------------------------------------------------------------
+	// Added Shared IDs
+
+	if (added.size() > 0)
+		builder.appendArray(REPO_NODE_REVISION_LABEL_ADDED_SHARED_IDS, builder.createArrayBSON(added));
+
+	//--------------------------------------------------------------------------
+	// Deleted Shared IDs		
+	if (removed.size() > 0)
+		builder.appendArray(REPO_NODE_REVISION_LABEL_DELETED_SHARED_IDS, builder.createArrayBSON(removed));
+
+	//--------------------------------------------------------------------------
+	// Modified Shared IDs
+	if (modified.size() > 0)
+		builder.appendArray(REPO_NODE_REVISION_LABEL_MODIFIED_SHARED_IDS, builder.createArrayBSON(modified));
+
+	//--------------------------------------------------------------------------
+	return RevisionNode(builder.obj());
 }
 
 TextureNode RepoBSONFactory::makeTextureNode(
 	const std::string &name,
-	const char        *memblock,
-	const uint32_t    &size,
+	const char        *data,
+	const uint32_t    &byteCount,
 	const uint32_t    &width,
 	const uint32_t    &height,
 	const int         &apiLevel)
 {
-	return TextureNode::createTextureNode(name, memblock, size, width, height, apiLevel);
+	RepoBSONBuilder builder;
+	appendDefaults(builder, REPO_NODE_TYPE_TEXTURE, apiLevel, generateUUID(), name);
+	//
+	// Width
+	//
+	builder << REPO_LABEL_WIDTH << width;
+
+	//
+	// Height
+	//
+	builder << REPO_LABEL_HEIGHT << height;
+
+	//
+	// Format TODO: replace format with MIME Type?
+	//
+	if (name.empty())
+	{
+		boost::filesystem::path file{ name };
+		builder << REPO_NODE_LABEL_EXTENSION << file.extension().c_str();
+	}
+
+	//
+	// Data
+	//
+
+	if (NULL != data && byteCount > 0)
+		builder.appendBinary(
+		REPO_LABEL_DATA,
+		data,
+		byteCount,
+		REPO_NODE_LABEL_DATA_BYTE_COUNT);
+
+	return TextureNode(builder.obj());
 }
 
 TransformationNode RepoBSONFactory::makeTransformationNode(
@@ -134,5 +597,23 @@ TransformationNode RepoBSONFactory::makeTransformationNode(
 	const std::vector<repoUUID>		  &parents,
 	const int                             &apiLevel)
 {
-	return TransformationNode::createTransformationNode(transMatrix, name, parents, apiLevel);
+	RepoBSONBuilder builder;
+
+	appendDefaults(builder, REPO_NODE_TYPE_TRANSFORMATION, apiLevel, generateUUID(), name, parents);
+
+	//--------------------------------------------------------------------------
+	// Store matrix as array of arrays
+	uint32_t matrixSize = 4;
+	RepoBSONBuilder rows;
+	for (uint32_t i = 0; i < transMatrix.size(); ++i)
+	{
+		RepoBSONBuilder columns;
+		for (uint32_t j = 0; j < transMatrix[i].size(); ++j){
+			columns << std::to_string(j) << transMatrix[i][j];
+		}
+		rows.appendArray(std::to_string(i), columns.obj());
+	}
+	builder.appendArray(REPO_NODE_LABEL_MATRIX, rows.obj());
+
+	return TransformationNode(builder.obj());
 }

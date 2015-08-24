@@ -75,30 +75,6 @@ namespace repo {
 					*/
 					~MeshNode();
 
-					/**
-					* Static builder for factory use to create a Mesh Node
-					* @param vector of vertices
-					* @param vector of faces
-					* @param vecotr of normals
-					* @param vector of 2 vertex indicating the bounding box
-					* @param vector of UV Channels
-					* @param vector of colours
-					* @param outline, generated from bounding box
-					* @param API level of the node (optional, default REPO_NODE_API_LEVEL_1)
-					* @param name of the node (optional, default empty string)
-					* @return returns a pointer mesh node
-					*/
-					static MeshNode MeshNode::createMeshNode(
-						std::vector<repo_vector_t>                  &vertices,
-						std::vector<repo_face_t>                    &faces,
-						std::vector<repo_vector_t>                  &normals,
-						std::vector<std::vector<float>>             &boundingBox,
-						std::vector<std::vector<repo_vector2d_t>>   &uvChannels,
-						std::vector<repo_color4d_t>                 &colors,
-						std::vector<std::vector<float>>             &outline,
-						const int                                   &apiLevel = REPO_NODE_API_LEVEL_1,
-						const std::string                           &name = std::string());
-
 
 					/**
 					* --------- Convenience functions -----------

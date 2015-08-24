@@ -57,20 +57,6 @@ namespace repo {
 						~TransformationNode();
 
 						/**
-						* Static builder for factory use to create a Transformation Node
-						* @param transMatrix a 4 by 4 transformation matrix
-						* @param name name of the transformation (optional)
-						* @param parents parents vector of parents uuid for this node (optional)
-						* @param apiLevel API Level (optional)
-						* @return returns a pointer Transformation node
-						*/
-						static TransformationNode createTransformationNode(
-							const std::vector<std::vector<float>> &transMatrix,
-							const std::string                     &name = std::string(), 
-							const std::vector<repoUUID>		      &parents = std::vector<repoUUID>(),
-							const int                             &apiLevel = REPO_NODE_API_LEVEL_1);
-						
-						/**
 						* Create an Identity matrix
 						* @return returns a 4 by 4 identity matrix
 						*/

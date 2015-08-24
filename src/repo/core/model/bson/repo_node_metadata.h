@@ -56,24 +56,6 @@ namespace repo {
 					*/
 					~MetadataNode();
 
-
-
-					/**
-					* Static builder for factory use to create a Metadata Node
-					* @param metadata Metadata itself in RepoBSON format
-					* @param mimtype Mime type, the media type of the metadata (optional)
-					* @param name Name of Metadata (optional)
-					* @param parents shared ID of parents for this node (optional)
-					* @param apiLevel Repo Node API level (optional)
-					* @return returns a pointer metadata node
-					*/
-					static MetadataNode createMetadataNode(
-						RepoBSON			  &metadata,
-						const std::string     &mimeType = std::string(),
-						const std::string     &name = std::string(),
-						const std::vector<repoUUID> &parents = std::vector<repoUUID>(),
-						const int             &apiLevel = REPO_NODE_API_LEVEL_1);
-
 				};
 		} //namespace model
 	} //namespace core

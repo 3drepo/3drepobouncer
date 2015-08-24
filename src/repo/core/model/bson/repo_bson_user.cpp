@@ -34,67 +34,6 @@ RepoUser::~RepoUser()
 {
 }
 
-RepoUser RepoUser::createRepoUser(
-	const std::string                                      &userName,
-	const std::string									   &cleartextPassword,
-	const std::string                                      &firstName,
-	const std::string                                      &lastName,
-	const std::string                                      &email,
-	const std::list<std::pair<std::string, std::string>>   &projects,
-	const std::list<std::pair<std::string, std::string>>   &roles,
-	const std::list<std::pair<std::string, std::string> >  &groups,
-	const std::list<std::pair<std::string, std::string> >  &apiKeys,
-	const std::vector<char>                                &avatar)
-{
-	RepoBSONBuilder builder;
-	RepoBSONBuilder customDataBuilder;
-
-	builder.append(REPO_LABEL_ID, generateUUID());
-	if (!userName.empty())
-		builder << REPO_USER_LABEL_USER << userName;
-
-	if (!cleartextPassword.empty())
-	{
-		RepoBSONBuilder credentialsBuilder;
-		credentialsBuilder << REPO_USER_LABEL_CLEARTEXT << cleartextPassword;
-		builder << REPO_USER_LABEL_CREDENTIALS << credentialsBuilder.obj();
-	}
-
-	if (!firstName.empty())
-		customDataBuilder << REPO_USER_LABEL_FIRST_NAME << firstName;
-
-	if (!lastName.empty())
-		customDataBuilder << REPO_USER_LABEL_LAST_NAME << lastName;
-
-	if (!email.empty())
-		customDataBuilder << REPO_USER_LABEL_EMAIL << email;
-
-	if (projects.size())
-		customDataBuilder.appendArrayPair(REPO_USER_LABEL_PROJECTS, projects, REPO_USER_LABEL_OWNER, REPO_USER_LABEL_PROJECT);
-
-	if (groups.size())
-		customDataBuilder.appendArrayPair(REPO_USER_LABEL_GROUPS, groups, REPO_USER_LABEL_OWNER, REPO_USER_LABEL_GROUP);
-
-	if (!apiKeys.empty())
-		customDataBuilder.appendArrayPair(REPO_USER_LABEL_API_KEYS, apiKeys, REPO_USER_LABEL_LABEL, REPO_USER_LABEL_KEY);
-	
-	if (avatar.size())
-	{
-		RepoBSONBuilder avatarBuilder;
-		//FIXME: use repo image?
-		avatarBuilder.appendBinary(REPO_LABEL_DATA, &avatar.at(0), sizeof(avatar.at(0))*avatar.size());
-		customDataBuilder << REPO_LABEL_AVATAR << avatarBuilder.obj();
-	}
-		
-
-	builder << REPO_USER_LABEL_CUSTOM_DATA << customDataBuilder.obj();
-
-	if (roles.size())
-		builder.appendArrayPair(REPO_USER_LABEL_ROLES, roles, REPO_USER_LABEL_DB, REPO_USER_LABEL_ROLE);
-
-	return RepoUser(builder.obj());
-}
-
 std::list<std::pair<std::string, std::string> > RepoUser::getAPIKeysList() const
 {
 

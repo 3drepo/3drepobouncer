@@ -63,31 +63,6 @@ namespace repo {
 					~RepoUser();
 
 					/**
-					* Create a user BSON
-					* @param userName username
-					* @param firstName first name of user
-					* @param lastName last name of user
-					* @param email  email address of the user
-					* @param projects list of projects the user has access to
-					* @param roles list of roles the users are capable of
-					* @param groups list of groups the user belongs to
-					* @param apiKeys a list of api keys for the user
-					* @param avatar picture of the user
-					* @return returns a Project settings
-					*/
-					static RepoUser createRepoUser(
-						const std::string                                      &userName,
-						const std::string									   &cleartextPassword,
-						const std::string                                      &firstName,
-						const std::string                                      &lastName,
-						const std::string                                      &email,
-						const std::list<std::pair<std::string, std::string>>   &projects,
-						const std::list<std::pair<std::string, std::string>>   &roles,
-						const std::list<std::pair<std::string, std::string> >  &groups,
-						const std::list<std::pair<std::string, std::string> >  &apiKeys,
-						const std::vector<char>                                &avatar);
-
-					/**
 					* --------- Convenience functions -----------
 					*/
 

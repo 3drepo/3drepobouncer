@@ -38,33 +38,6 @@ TransformationNode::~TransformationNode()
 {
 }
 
-TransformationNode TransformationNode::createTransformationNode(
-	const std::vector<std::vector<float>> &transMatrix,
-	const std::string                     &name,
-	const std::vector<repoUUID>		  &parents,
-	const int                             &apiLevel)
-{
-	RepoBSONBuilder builder;
-
-	appendDefaults(builder, REPO_NODE_TYPE_TRANSFORMATION, apiLevel, generateUUID(), name, parents);
-
-	//--------------------------------------------------------------------------
-	// Store matrix as array of arrays
-	uint32_t matrixSize = 4;
-	RepoBSONBuilder rows;
-	for (uint32_t i = 0; i < transMatrix.size(); ++i)
-	{
-		RepoBSONBuilder columns;
-		for (uint32_t j = 0; j < transMatrix[i].size(); ++j){
-			columns << std::to_string(j) << transMatrix[i][j];
-		}
-		rows.appendArray(std::to_string(i), columns.obj());
-	}
-	builder.appendArray(REPO_NODE_LABEL_MATRIX, rows.obj());
-
-	return TransformationNode(builder.obj());
-}
-
 std::vector<std::vector<float>> TransformationNode::identityMat()
 {
 	std::vector<std::vector<float>> idMat;

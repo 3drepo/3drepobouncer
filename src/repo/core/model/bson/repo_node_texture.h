@@ -58,23 +58,6 @@ namespace repo {
 					*/
 					~TextureNode();
 
-					/**
-					* Static builder for factory use to create a Texture Node
-					* @param name of the texture node
-					* @param binary data to store
-					* @param size of the binary data in bytes
-					* @param width of the texture
-					* @param height of the texture
-					* @return returns a texture node
-					*/
-					static TextureNode createTextureNode(
-						const std::string &name,
-						const char        *data,
-						const uint32_t    &size,
-						const uint32_t    &width,
-						const uint32_t    &height,
-						const int &apiLevel = REPO_NODE_API_LEVEL_1);
-
 
 					/**
 					* --------- Convenience functions -----------

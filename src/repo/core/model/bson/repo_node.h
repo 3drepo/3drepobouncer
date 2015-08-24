@@ -52,63 +52,7 @@ namespace repo{
 						* Default Deconstructor
 						*/
 						virtual ~RepoNode();
-						/**
-						* A static function (intended for use by RepoBSONFactory) to create
-						* a repo node object.
-						*
-						* @param type repository object type such as 'material', 'mesh', etc.
-						* @param api API level of this object, information used to decode it in
-						*        clients
-						* @param uuid unique identifier, randomly generated if not given
-						* @param name optional name of this object, empty string if not specified,
-						*             does not have to be unique
-						*/
-						static RepoNode createRepoNode(
-							const std::string &type,
-							const unsigned int api = REPO_NODE_API_LEVEL_0,
-							const repoUUID &sharedId = generateUUID(),
-							const std::string &name = std::string(),
-							const std::vector<repoUUID> &parents = std::vector<repoUUID>());
-
-						/**
-						* Append default information onto the a RepoBSONBuilder
-						* This is used for children nodes to create their BSONs.
-						*/
-						static void appendDefaults(
-							RepoBSONBuilder &builder,
-							const std::string &type,
-							const unsigned int api = REPO_NODE_API_LEVEL_0,
-							const repoUUID &sharedId = generateUUID(),
-							const std::string &name = std::string(),
-							const std::vector<repoUUID> &parents = std::vector<repoUUID>())
-						{
-							//--------------------------------------------------------------------------
-							// ID field (UUID)
-							builder.append(REPO_NODE_LABEL_ID, generateUUID());
-
-							//--------------------------------------------------------------------------
-							// Shared ID (UUID)
-							builder.append(REPO_NODE_LABEL_SHARED_ID, sharedId);
-
-							//--------------------------------------------------------------------------
-							// Type
-							if (!type.empty())
-								builder << REPO_NODE_LABEL_TYPE << type;
-
-							//--------------------------------------------------------------------------
-							// API level
-							builder << REPO_NODE_LABEL_API << api;
-
-							//--------------------------------------------------------------------------
-							// Parents
-							if (parents.size() > 0)
-								builder.appendArray(REPO_NODE_LABEL_PARENTS, builder.createArrayBSON(parents));
-
-							//--------------------------------------------------------------------------
-							// Name
-							if (!name.empty())
-								builder << REPO_NODE_LABEL_NAME << name;
-						}
+	
 
 
 						/*

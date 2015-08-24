@@ -66,18 +66,6 @@ namespace repo {
 
 
 					/**
-					* Static builder for factory use to create a Material Node
-					* @param a struct that contains the info about the material
-					* @param name of the Material node
-					* @return returns a pointer Material node
-					*/
-					static MaterialNode createMaterialNode(
-						const repo_material_t &material,
-						const std::string     &name,
-						const int     &apiLevel = REPO_NODE_API_LEVEL_1);
-
-
-					/**
 					* --------- Convenience functions -----------
 					*/
 
