@@ -612,6 +612,16 @@ repo::manipulator::graph::RepoScene* RepoController::createFederatedScene(
 	return scene;
 }
 
+repo::manipulator::graph::RepoScene* RepoController::createMapScene(
+	const repo::core::model::MapNode &mapNode)
+{
+	manipulator::RepoManipulator* worker = workerPool.pop();
+	repo::manipulator::graph::RepoScene* scene = worker->createMapScene(mapNode);
+	workerPool.push(worker);
+
+	return scene;
+}
+
 std::list<std::string> RepoController::getAdminDatabaseRoles(const RepoToken *token)
 {
 	std::list<std::string> roles;

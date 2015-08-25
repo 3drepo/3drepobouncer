@@ -449,6 +449,15 @@ namespace repo{
 			const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap);
 
 		/**
+		* Create a create a map scene with the given map node
+		* This is essentially a scene creation with a trans node (identity matrix) and the map
+		* @param mapNode the map node to create the scene with
+		* @return returns a constructed scene graph with the reference.
+		*/
+		repo::manipulator::graph::RepoScene* createMapScene(
+			const repo::core::model::MapNode &mapNode);
+
+		/**
 		* Get a string of supported file formats for file export
 		* @return returns a string with list of supported file formats
 		*/

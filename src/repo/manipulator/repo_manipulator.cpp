@@ -123,6 +123,29 @@ repo::manipulator::graph::RepoScene* RepoManipulator::createFederatedScene(
 	return scene;
 }
 
+repo::manipulator::graph::RepoScene* RepoManipulator::createMapScene(
+	const repo::core::model::MapNode &mapNode)
+{
+	repo::core::model::RepoNodeSet transNodes;
+	repo::core::model::RepoNodeSet mapNodes;
+	repo::core::model::RepoNodeSet emptySet;
+
+	repo::core::model::TransformationNode rootNode =
+		repo::core::model::RepoBSONFactory::makeTransformationNode(
+		repo::core::model::TransformationNode::identityMat(), "<root>");
+
+	transNodes.insert(new repo::core::model::TransformationNode(rootNode));
+
+	mapNodes.insert(new repo::core::model::MapNode(mapNode.cloneAndAddParent(rootNode.getSharedID())));
+
+
+
+	repo::manipulator::graph::RepoScene *scene =
+		new repo::manipulator::graph::RepoScene(emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, emptySet, mapNodes);
+
+	return scene;
+}
+
 void RepoManipulator::commitScene(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON 	  *cred,

@@ -115,6 +115,14 @@ namespace repo{
 				const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap);
 
 			/**
+			* Create a map scene with the given map
+			* @param mapNode the map node to create the scene with
+			* @return returns a constructed scene graph with the map.
+			*/
+			repo::manipulator::graph::RepoScene* createMapScene(
+				const repo::core::model::MapNode &mapNode);
+
+			/**
 			* Count the number of documents within the collection
 			* @param databaseAd mongo database address:port
 			* @param cred user credentials in bson form
