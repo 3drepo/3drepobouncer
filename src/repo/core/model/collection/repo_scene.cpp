@@ -80,6 +80,66 @@ RepoScene::~RepoScene()
 		delete revNode;
 }
 
+void RepoScene::addMetadata(
+	RepoNodeSet &metadata,
+	const bool        &exactMatch)
+{
+
+	std::map<std::string, RepoNode*> transMap;
+
+	for (RepoNode* transformation : transformations)
+	{
+		std::string transformationName = transformation->getName();
+		if (!exactMatch)
+		{
+			transformationName = transformationName.substr(0, transformationName.find(" "));
+			std::transform(transformationName.begin(), transformationName.end(), transformationName.begin(), ::toupper);
+		}
+
+		transMap[transformationName] = transformation;
+	}
+
+	for (RepoNode* meta : metadata)
+	{
+		// TODO: improve efficiency by storing in std::map
+		std::string metaName = meta->getName();
+		if (!exactMatch)
+			std::transform(metaName.begin(), metaName.end(), metaName.begin(), ::toupper);
+
+		auto nameIt = transMap.find(metaName);
+
+		if (nameIt != transMap.end())
+		{
+			RepoNode *transformation = nameIt->second;
+			repoUUID transSharedID = transformation->getSharedID();
+			repoUUID metaSharedID = meta->getSharedID();
+			repoUUID metaUniqueID = meta->getUniqueID();
+
+			if (parentToChildren.find(transSharedID) == parentToChildren.end())
+				parentToChildren[transSharedID] = std::vector<repoUUID>();
+
+			parentToChildren[transSharedID].push_back(metaSharedID);
+			meta->swap(meta->cloneAndAddParent(transSharedID));
+
+			nodesByUniqueID[metaUniqueID] = meta;
+			sharedIDtoUniqueID[metaSharedID] = metaUniqueID;
+
+
+			//FIXME should move this to a generic add node function...
+			newAdded.insert(metaSharedID);
+			newCurrent.insert(metaUniqueID);
+			this->metadata.insert(meta);
+
+			BOOST_LOG_TRIVIAL(trace) << "Found pairing transformation! Metadata " << metaName <<  " added into the scene graph.";
+		}
+		else
+		{
+			BOOST_LOG_TRIVIAL(warning) << "Did not find a pairing transformation node with the same name : " << metaName;
+		}
+	}
+}
+
+
 bool RepoScene::addNodeToScene(
 	const RepoNodeSet nodes, 
 	std::string &errMsg,
@@ -378,11 +438,17 @@ std::string RepoScene::getBranchName() const
 
 std::vector<repoUUID> RepoScene::getModifiedNodesID() const
 {
+	BOOST_LOG_TRIVIAL(trace) << "getting modified nodes...";
 	std::vector<repoUUID> ids(newAdded.begin(), newAdded.end());
 
 	ids.insert(ids.end(), newModified.begin(), newModified.end());
 	ids.insert(ids.end(), newRemoved.begin() , newRemoved.end());
+	BOOST_LOG_TRIVIAL(trace) << "Added: " << 
+		newAdded.size() << " modified: " << 
+		newModified.size() << " removed: " << 
+		newRemoved.size();
 
+	BOOST_LOG_TRIVIAL(trace) << "# modified nodes : " << ids.size();
 	return ids;
 }
 

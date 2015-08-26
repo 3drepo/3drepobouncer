@@ -93,7 +93,7 @@ namespace repo{
 
 			};
 
-		} //namespace AbstractModelImport
+		} //namespace modelconvertor
 	} //namespace manipulator
 } //namespace repo
 

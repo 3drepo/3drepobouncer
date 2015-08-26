@@ -22,6 +22,7 @@
 #include "repo_manipulator.h"
 #include "../core/model/bson/repo_bson_factory.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
+#include "modelconvertor/import/repo_metadata_import_csv.h"
 
 using namespace repo::manipulator;
 
@@ -407,6 +408,16 @@ std::string RepoManipulator::getNameOfAdminDatabase(
 	//FIXME: at the moment we only have mongo. But if we have
 	//different database types then this would not work
 	return  repo::core::handler::MongoDatabaseHandler::getAdminDatabaseName();
+}
+
+repo::core::model::RepoNodeSet
+	RepoManipulator::loadMetadataFromFile(
+		const std::string &filePath,
+		const char        &delimiter)
+{
+	repo::manipulator::modelconvertor::MetadataImportCSV metaImport;
+
+	return metaImport.readMetadata(filePath, std::vector<std::string>(), delimiter);
 }
 
 repo::core::model::RepoScene* 

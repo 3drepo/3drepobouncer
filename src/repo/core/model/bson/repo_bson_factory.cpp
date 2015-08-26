@@ -1,6 +1,7 @@
 #include "repo_bson_factory.h"
 
 #include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
 
 using namespace repo::core::model;
 
@@ -200,6 +201,64 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	// Add metadata subobject
 	if (!metadata.isEmpty())
 		builder << REPO_NODE_LABEL_METADATA << metadata;
+
+	return MetadataNode(builder.obj());
+}
+
+MetadataNode RepoBSONFactory::makeMetaDataNode(
+	const std::vector<std::string>  &keys,
+	const std::vector<std::string>  &values,
+	const std::string               &name,
+	const std::vector<repoUUID>     &parents,
+	const int                       &apiLevel)
+{
+	RepoBSONBuilder builder;
+	// Compulsory fields such as _id, type, api as well as path
+	// and optional name
+	appendDefaults(builder, REPO_NODE_TYPE_METADATA, apiLevel, generateUUID(), name, parents);
+
+	//check keys and values have the same sizes
+
+	if (keys.size() != values.size())
+	{
+		BOOST_LOG_TRIVIAL(warning) << "makeMetaDataNode: number of keys (" << keys.size()
+			<< ") does not match the number of values(" << values.size() << ")!";
+	}
+
+	std::vector<std::string>::const_iterator kit = keys.begin();
+	std::vector<std::string>::const_iterator vit = values.begin();
+	for (; kit != keys.end() && vit != values.end(); ++kit, ++vit)
+	{
+
+		std::string key = *kit;
+		std::string value = *vit;
+
+		if (!key.empty() && !value.empty())
+		{
+			//Check if it is a number, if it is, store it as a number
+
+			try{
+				int64_t valueInt = boost::lexical_cast<int64_t>(value);
+				builder << key << valueInt;
+			}
+			catch (boost::bad_lexical_cast &)
+			{
+				//not an int, try a double
+
+				try{
+					double valueFloat = boost::lexical_cast<double>(value);
+					builder << key << valueFloat;
+				}
+				catch (boost::bad_lexical_cast &)
+				{
+					//not an int or float, store as string
+					builder << key << value;
+
+				}
+			}
+		}
+
+	}
 
 	return MetadataNode(builder.obj());
 }

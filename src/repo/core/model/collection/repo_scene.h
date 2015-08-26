@@ -107,6 +107,16 @@ namespace repo{
 					*/
 					~RepoScene();
 
+
+					/**
+					* Add metadata that has a matching name as the transformation into the scene
+					* @param metadata set of metadata to attach
+					* @param exactMatch whether the name has to be an exact match or a substring will do
+					*/
+					void addMetadata(
+						RepoNodeSet &metadata,
+						const bool        &exactMatch);
+
 					/**
 					* Commit changes into the database
 					* This commits an update to project settings, a new revision node
@@ -124,6 +134,23 @@ namespace repo{
 						const std::string &message=std::string(),
 						const std::string &tag=std::string());
 
+					/**
+					* Get name of the database
+					* @return returns name of the database if available
+					*/
+					std::string getDatabaseName()
+					{
+						return databaseName;
+					}
+
+					/**
+					* Get name of the project
+					* @return returns name of the project if available
+					*/
+					std::string getProjectName()
+					{
+						return projectName;
+					}
 
 					/**
 					* Set project and database names. This will overwrite the current ones

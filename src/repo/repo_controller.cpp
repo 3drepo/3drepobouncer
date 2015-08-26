@@ -684,6 +684,28 @@ std::string RepoController::getSupportedImportFormats()
 	return repo::manipulator::modelconvertor::AssimpModelImport::getSupportedFormats();
 }
 
+
+repo::core::model::RepoNodeSet RepoController::loadMetadataFromFile(
+	const std::string &filePath,
+	const char        &delimiter)
+{
+	repo::core::model::RepoNodeSet metadata;
+
+	if (!filePath.empty())
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		metadata = worker->loadMetadataFromFile(filePath, delimiter);
+		workerPool.push(worker);
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Trying to load from an empty file path!";
+
+	}
+
+	return metadata;
+}
+
 repo::core::model::RepoScene* 
 	RepoController::loadSceneFromFile(
 	const std::string                                          &filePath,
@@ -710,6 +732,7 @@ repo::core::model::RepoScene*
 
 	return scene;
 }
+
 
 
 bool RepoController::saveSceneToFile(
