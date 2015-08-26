@@ -25,7 +25,7 @@
 #include <string>
 
 #include "repo_model_import_config.h"
-#include "../../graph/repo_scene.h"
+#include "../../../core/model/collection/repo_scene.h"
 
 namespace repo{
 	namespace manipulator{
@@ -59,7 +59,7 @@ namespace repo{
 				* been created before this call (e.g. by means of importModel())
 				* @return returns a populated RepoScene upon success.
 				*/
-				virtual repo::manipulator::graph::RepoScene* generateRepoScene() = 0;
+				virtual repo::core::model::RepoScene* generateRepoScene() = 0;
 
 				/**
 				* Import model from a given file

@@ -26,23 +26,23 @@
 
 #include "repo_graph_abstract.h"
 
-#include "../../core/handler/repo_database_handler_abstract.h"
+#include "../../handler/repo_database_handler_abstract.h"
 
-#include "../../core/model/bson/repo_node.h"
-#include "../../core/model/bson/repo_node_camera.h"
-#include "../../core/model/bson/repo_node_map.h"
-#include "../../core/model/bson/repo_node_material.h"
-#include "../../core/model/bson/repo_node_mesh.h"
-#include "../../core/model/bson/repo_node_metadata.h"
-#include "../../core/model/bson/repo_node_reference.h"
-#include "../../core/model/bson/repo_node_revision.h"
-#include "../../core/model/bson/repo_node_texture.h"
-#include "../../core/model/bson/repo_node_transformation.h"
+#include "../bson/repo_node.h"
+#include "../bson/repo_node_camera.h"
+#include "../bson/repo_node_map.h"
+#include "../bson/repo_node_material.h"
+#include "../bson/repo_node_mesh.h"
+#include "../bson/repo_node_metadata.h"
+#include "../bson/repo_node_reference.h"
+#include "../bson/repo_node_revision.h"
+#include "../bson/repo_node_texture.h"
+#include "../bson/repo_node_transformation.h"
 
 
 namespace repo{
-	namespace manipulator{
-		namespace graph{
+	namespace core{
+		namespace model{
 			class REPO_API_EXPORT RepoScene : public AbstractGraph
 			{
 				public:
@@ -87,15 +87,15 @@ namespace repo{
 					* @param revExt   extension name of the revision when it is saved into the database (optional)
 					*/
 					RepoScene(
-						const repo::core::model::RepoNodeSet &cameras, 
-						const repo::core::model::RepoNodeSet &meshes, 
-						const repo::core::model::RepoNodeSet &materials, 
-						const repo::core::model::RepoNodeSet &metadata, 
-						const repo::core::model::RepoNodeSet &textures, 
-						const repo::core::model::RepoNodeSet &transformations,
-						const repo::core::model::RepoNodeSet &references = repo::core::model::RepoNodeSet(),
-						const repo::core::model::RepoNodeSet &maps = repo::core::model::RepoNodeSet(),
-						const repo::core::model::RepoNodeSet &unknowns = repo::core::model::RepoNodeSet(),
+						const RepoNodeSet &cameras, 
+						const RepoNodeSet &meshes, 
+						const RepoNodeSet &materials, 
+						const RepoNodeSet &metadata, 
+						const RepoNodeSet &textures, 
+						const RepoNodeSet &transformations,
+						const RepoNodeSet &references = RepoNodeSet(),
+						const RepoNodeSet &maps = RepoNodeSet(),
+						const RepoNodeSet &unknowns = RepoNodeSet(),
 						const std::string                          &sceneExt = REPO_COLLECTION_SCENE,
 						const std::string                          &revExt = REPO_COLLECTION_HISTORY);
 
@@ -205,7 +205,7 @@ namespace repo{
 					* @param parent shared UUID of the parent node
 					* @ return a vector of pointers to children node (potentially none)
 					*/
-					std::vector<repo::core::model::RepoNode*>
+					std::vector<RepoNode*>
 						getChildrenAsNodes(const repoUUID &parent) const;
 
 					/**
@@ -230,7 +230,7 @@ namespace repo{
 					* Get all camera nodes within current scene revision
 					* @return a RepoNodeSet of materials
 					*/
-					repo::core::model::RepoNodeSet getAllCameras() const
+					RepoNodeSet getAllCameras() const
 					{
 						return cameras;
 					}
@@ -239,7 +239,7 @@ namespace repo{
 					* Get all material nodes within current scene revision
 					* @return a RepoNodeSet of materials
 					*/
-					repo::core::model::RepoNodeSet getAllMaterials() const
+					RepoNodeSet getAllMaterials() const
 					{
 						return materials;
 					}
@@ -248,7 +248,7 @@ namespace repo{
 					* Get all mesh nodes within current scene revision
 					* @return a RepoNodeSet of meshes
 					*/
-					repo::core::model::RepoNodeSet getAllMeshes() const
+					RepoNodeSet getAllMeshes() const
 					{
 						return meshes;
 					}
@@ -257,7 +257,7 @@ namespace repo{
 					* Get all texture nodes within current scene revision
 					* @return a RepoNodeSet of textures
 					*/
-					repo::core::model::RepoNodeSet getAllTextures() const
+					RepoNodeSet getAllTextures() const
 					{
 						return textures;
 					}
@@ -271,7 +271,7 @@ namespace repo{
 					/**
 					* 
 					*/
-					repo::core::model::RepoNode* getNodeBySharedID(
+					RepoNode* getNodeBySharedID(
 						const repoUUID &sharedID) const
 					{
 						auto it = sharedIDtoUniqueID.find(sharedID);
@@ -289,7 +289,7 @@ namespace repo{
 					* Tracks the modification for commit
 					* @param vector of nodes to insert.
 					*/
-					void addNodes(std::vector<repo::core::model::RepoNode *> nodes);
+					void addNodes(std::vector<RepoNode *> nodes);
 
 					/**
 					* Modify a node with the information within the new node.
@@ -303,7 +303,7 @@ namespace repo{
 
 					void modifyNode(
 						const repoUUID                    &sharedID,
-						repo::core::model::RepoNode *node,
+						RepoNode *node,
 						const bool                        &overwrite=false);
 
 					/**
@@ -319,9 +319,9 @@ namespace repo{
 					* @return returns true if succeeded
 					*/
 					bool addNodeToScene(
-						const repo::core::model::RepoNodeSet nodes,
+						const RepoNodeSet nodes,
 						std::string &errMsg,
-						repo::core::model::RepoNodeSet *collection
+						RepoNodeSet *collection
 					);
 					/**
 					* Add node to the following maps: UniqueID -> Node, SharedID -> UniqueID,
@@ -331,7 +331,7 @@ namespace repo{
 					* @param errMsg error message if it returns false
 					* @return returns true if succeeded
 					*/
-					bool addNodeToMaps(repo::core::model::RepoNode *node, std::string &errMsg);
+					bool addNodeToMaps(RepoNode *node, std::string &errMsg);
 					
 					/**
 					* Commit a project settings base on the
@@ -358,7 +358,7 @@ namespace repo{
 					bool commitRevisionNode(
 						repo::core::handler::AbstractDatabaseHandler *handler,
 						std::string &errMsg,
-						repo::core::model::RevisionNode *&newRevNode,
+						RevisionNode *&newRevNode,
 						const std::string &userName,
 						const std::string &message,
 						const std::string &tag);
@@ -380,7 +380,7 @@ namespace repo{
 					*/
 					bool populate(
 						repo::core::handler::AbstractDatabaseHandler *handler, 
-						std::vector<repo::core::model::RepoBSON> nodes, 
+						std::vector<RepoBSON> nodes, 
 						std::string &errMsg);
 
 					/**
@@ -396,15 +396,15 @@ namespace repo{
 					* @return returns true if scene graph populated with no errors
 					*/
 					void populateAndUpdate(
-						const repo::core::model::RepoNodeSet &cameras,
-						const repo::core::model::RepoNodeSet &meshes,
-						const repo::core::model::RepoNodeSet &materials,
-						const repo::core::model::RepoNodeSet &metadata,
-						const repo::core::model::RepoNodeSet &textures,
-						const repo::core::model::RepoNodeSet &transformations,
-						const repo::core::model::RepoNodeSet &references,
-						const repo::core::model::RepoNodeSet &maps,
-						const repo::core::model::RepoNodeSet &unknowns);
+						const RepoNodeSet &cameras,
+						const RepoNodeSet &meshes,
+						const RepoNodeSet &materials,
+						const RepoNodeSet &metadata,
+						const RepoNodeSet &textures,
+						const RepoNodeSet &transformations,
+						const RepoNodeSet &references,
+						const RepoNodeSet &maps,
+						const RepoNodeSet &unknowns);
 
 
 					/*
@@ -419,21 +419,21 @@ namespace repo{
 					bool headRevision;
 					bool unRevisioned;       /*! Flag to indicate if the scene graph is revisioned (true for scene graphs from model convertor)*/
 
-					repo::core::model::RevisionNode		 *revNode;
+					RevisionNode		 *revNode;
 
 					/*
 					* ---------------- Scene Graph Details ----------------
 					*/
 
-					repo::core::model::RepoNodeSet cameras; //!< Cameras
-					repo::core::model::RepoNodeSet meshes; //!< Meshes
-					repo::core::model::RepoNodeSet materials; //!< Materials
-					repo::core::model::RepoNodeSet maps; //!< Maps
-					repo::core::model::RepoNodeSet metadata; //!< Metadata
-					repo::core::model::RepoNodeSet references; //!< References
-					repo::core::model::RepoNodeSet textures; //!< Textures
-					repo::core::model::RepoNodeSet transformations; //!< Transformations
-					repo::core::model::RepoNodeSet unknowns; //!< Unknown types
+					RepoNodeSet cameras; //!< Cameras
+					RepoNodeSet meshes; //!< Meshes
+					RepoNodeSet materials; //!< Materials
+					RepoNodeSet maps; //!< Maps
+					RepoNodeSet metadata; //!< Metadata
+					RepoNodeSet references; //!< References
+					RepoNodeSet textures; //!< Textures
+					RepoNodeSet transformations; //!< Transformations
+					RepoNodeSet unknowns; //!< Unknown types
 
 					std::map<repoUUID, repoUUID> sharedIDtoUniqueID; //** mapping of shared ID to Unique ID
 					std::map<repoUUID, std::vector<repoUUID>> parentToChildren; //** mapping of shared id to its children's shared id

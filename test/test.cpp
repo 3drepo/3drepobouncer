@@ -137,7 +137,7 @@ int main(int argc, char* argv[]){
 	//loadModelFromFileAndCommit(dbHandler);
 
 	//instantiateProject(dbHandler);
-	repo::manipulator::graph::RepoScene *scene = controller->fetchScene(token, "test", "cameraTest");
+	repo::core::model::RepoScene *scene = controller->fetchScene(token, "test", "cameraTest");
 	controller->saveSceneToFile("C:/Users/Carmen/Desktop/camTest.dae", scene);
 
 

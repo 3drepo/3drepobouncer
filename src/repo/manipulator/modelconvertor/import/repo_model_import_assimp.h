@@ -31,7 +31,7 @@
 #include <assimp/postprocess.h>
 
 #include "repo_model_import_abstract.h"
-#include "../../graph/repo_scene.h"
+#include "../../../core/model/collection/repo_scene.h"
 
 namespace repo{
 	namespace manipulator{
@@ -63,7 +63,7 @@ namespace repo{
 				* been created before this call
 				* @return returns a populated RepoScene upon success.
 				*/
-				repo::manipulator::graph::RepoScene* generateRepoScene();
+				repo::core::model::RepoScene* generateRepoScene();
 
 
 				/**

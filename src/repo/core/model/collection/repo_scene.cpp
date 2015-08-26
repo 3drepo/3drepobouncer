@@ -24,11 +24,9 @@
 #include <boost/assign.hpp>
 
 #include "repo_scene.h"
-#include "../../core/model/bson/repo_bson_factory.h"
+#include "../bson/repo_bson_factory.h"
 
-using namespace repo::manipulator::graph;
-
-namespace model = repo::core::model;
+using namespace repo::core::model;
 
 RepoScene::RepoScene(
 	const std::string &database,
@@ -49,15 +47,15 @@ RepoScene::RepoScene(
 }
 
 RepoScene::RepoScene(
-	const repo::core::model::RepoNodeSet &cameras,
-	const repo::core::model::RepoNodeSet &meshes,
-	const repo::core::model::RepoNodeSet &materials,
-	const repo::core::model::RepoNodeSet &metadata,
-	const repo::core::model::RepoNodeSet &textures,
-	const repo::core::model::RepoNodeSet &transformations,
-	const repo::core::model::RepoNodeSet &references,
-	const repo::core::model::RepoNodeSet &maps,
-	const repo::core::model::RepoNodeSet &unknowns,
+	const RepoNodeSet &cameras,
+	const RepoNodeSet &meshes,
+	const RepoNodeSet &materials,
+	const RepoNodeSet &metadata,
+	const RepoNodeSet &textures,
+	const RepoNodeSet &transformations,
+	const RepoNodeSet &references,
+	const RepoNodeSet &maps,
+	const RepoNodeSet &unknowns,
 	const std::string                          &sceneExt,
 	const std::string                          &revExt)
 	: AbstractGraph("", ""),
@@ -83,19 +81,19 @@ RepoScene::~RepoScene()
 }
 
 bool RepoScene::addNodeToScene(
-	const repo::core::model::RepoNodeSet nodes, 
+	const RepoNodeSet nodes, 
 	std::string &errMsg,
-	 repo::core::model::RepoNodeSet *collection)
+	 RepoNodeSet *collection)
 {
 	bool success = true;
-	repo::core::model::RepoNodeSet::iterator nodeIterator;
+	RepoNodeSet::iterator nodeIterator;
 	if (nodes.size() > 0)
 	{
 
 		collection->insert(nodes.begin(), nodes.end());
 		for (nodeIterator = nodes.begin(); nodeIterator != nodes.end(); ++nodeIterator)
 		{
-			model::RepoNode * node = *nodeIterator;
+			RepoNode * node = *nodeIterator;
 			if (node)
 			{
 
@@ -114,7 +112,7 @@ bool RepoScene::addNodeToScene(
 	return success;
 }
 
-bool RepoScene::addNodeToMaps(model::RepoNode *node, std::string &errMsg)
+bool RepoScene::addNodeToMaps(RepoNode *node, std::string &errMsg)
 {
 	bool success = true; 
 	repoUUID uniqueID = node->getUniqueID();
@@ -137,7 +135,7 @@ bool RepoScene::addNodeToMaps(model::RepoNode *node, std::string &errMsg)
 				errMsg = "2 possible candidate for root node found. This is possibly an invalid Scene Graph.";
 				//if only one of them is transformation then take that one
 
-				if (node->getTypeAsEnum() == model::NodeType::TRANSFORMATION)
+				if (node->getTypeAsEnum() == NodeType::TRANSFORMATION)
 				{
 					rootNode = node;
 				}
@@ -206,7 +204,7 @@ bool RepoScene::commit(
 	if (success &= commitProjectSettings(handler, errMsg, userName))
 	{
 		BOOST_LOG_TRIVIAL(info) << "Commited project settings, commiting revision...";
-		model::RevisionNode *newRevNode = 0;
+		RevisionNode *newRevNode = 0;
 		if (!message.empty())
 			commitMsg = message;
 
@@ -245,8 +243,8 @@ bool RepoScene::commitProjectSettings(
 	const std::string &userName)
 {
 
-	model::RepoProjectSettings projectSettings = 
-		model::RepoBSONFactory::makeRepoProjectSettings(projectName, userName);
+	RepoProjectSettings projectSettings = 
+		RepoBSONFactory::makeRepoProjectSettings(projectName, userName);
 	
 	bool success = handler->upsertDocument(
 		databaseName, REPO_COLLECTION_SETTINGS, projectSettings, false, errMsg);
@@ -259,7 +257,7 @@ bool RepoScene::commitProjectSettings(
 bool RepoScene::commitRevisionNode(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	std::string &errMsg,
-	model::RevisionNode *&newRevNode,
+	RevisionNode *&newRevNode,
 	const std::string &userName,
 	const std::string &message,
 	const std::string &tag)
@@ -298,7 +296,7 @@ bool RepoScene::commitRevisionNode(
 		<< " #deleted = " << newRemovedV.size() << " #modified = " << newModifiedV.size();
 
 	newRevNode =
-		new model::RevisionNode(model::RepoBSONFactory::makeRevisionNode(userName, branch, uniqueIDs,
+		new RevisionNode(RepoBSONFactory::makeRevisionNode(userName, branch, uniqueIDs,
 		newAddedV, newRemovedV, newModifiedV, parent, message, tag));
 
 
@@ -331,7 +329,7 @@ bool RepoScene::commitSceneChanges(
 	for (it = nodesToCommit.begin(); it != nodesToCommit.end(); ++it)
 	{
 	
-		model::RepoNode *node = nodesByUniqueID[sharedIDtoUniqueID[*it]];
+		RepoNode *node = nodesByUniqueID[sharedIDtoUniqueID[*it]];
 		if (node->objsize() > handler->documentSizeLimit())
 		{
 			success = false;
@@ -345,11 +343,11 @@ bool RepoScene::commitSceneChanges(
 	return success;
 }
 
-std::vector<repo::core::model::RepoNode*> 
+std::vector<RepoNode*> 
 RepoScene::getChildrenAsNodes(
 const repoUUID &parent) const
 {
-	std::vector<repo::core::model::RepoNode*> children;
+	std::vector<RepoNode*> children;
 
 	std::map<repoUUID, std::vector<repoUUID>>::const_iterator it = parentToChildren.find(parent);
 	if (it != parentToChildren.end())
@@ -396,7 +394,7 @@ bool RepoScene::loadRevision(
 	if (!handler)
 		return false;
 
-	model::RepoBSON bson;
+	RepoBSON bson;
 	BOOST_LOG_TRIVIAL(trace) << "loading revision : " << databaseName << "." << projectName << " head Revision: " << headRevision;
 	if (headRevision){
 		bson = handler->findOneBySharedID(databaseName, projectName + "." +
@@ -413,7 +411,7 @@ bool RepoScene::loadRevision(
 		success = false;
 	}
 	else{
-		revNode = new model::RevisionNode(bson);
+		revNode = new RevisionNode(bson);
 	}
 
 	return success;
@@ -432,8 +430,8 @@ bool RepoScene::loadScene(
 	}
 
 	//Get the relevant nodes from the scene graph using the unique IDs stored in this revision node
-	model::RepoBSON idArray = revNode->getObjectField(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS);
-	std::vector<model::RepoBSON> nodes = handler->findAllByUniqueIDs(
+	RepoBSON idArray = revNode->getObjectField(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS);
+	std::vector<RepoBSON> nodes = handler->findAllByUniqueIDs(
 		databaseName, projectName + "." + sceneExt, idArray);
 
 	BOOST_LOG_TRIVIAL(info) << "# of nodes in this scene = " << nodes.size();
@@ -444,19 +442,19 @@ bool RepoScene::loadScene(
 
 void RepoScene::modifyNode(
 	const repoUUID                    &sharedID,
-	repo::core::model::RepoNode *node,
+	RepoNode *node,
 	const bool                        &overwrite)
 {
-	//model::RepoNode* updatedNode = nullptr;
+	//RepoNode* updatedNode = nullptr;
 	if (sharedIDtoUniqueID.find(sharedID) != sharedIDtoUniqueID.end())
 	{
-		model::RepoNode* nodeToChange = nodesByUniqueID[sharedIDtoUniqueID[sharedID]];
+		RepoNode* nodeToChange = nodesByUniqueID[sharedIDtoUniqueID[sharedID]];
 
 		//check if the node is already in the "to modify" list
 		bool isInList = newAdded.find(sharedID) != newAdded.end() || newModified.find(sharedID) != newModified.end();
 
 		//generate new UUID if it  is not in list, otherwise use the current one.
-		model::RepoNode updatedNode = model::RepoNode(nodeToChange->cloneAndAddFields(node, !isInList));
+		RepoNode updatedNode = RepoNode(nodeToChange->cloneAndAddFields(node, !isInList));
 
 		if (!isInList)
 		{
@@ -477,63 +475,63 @@ void RepoScene::modifyNode(
 
 bool RepoScene::populate(
 	repo::core::handler::AbstractDatabaseHandler *handler, 
-	std::vector<model::RepoBSON> nodes, 
+	std::vector<RepoBSON> nodes, 
 	std::string &errMsg)
 {
 	bool success = true;
 
-	std::map<repoUUID, model::RepoNode *> nodesBySharedID;
-	for (std::vector<model::RepoBSON>::const_iterator it = nodes.begin();
+	std::map<repoUUID, RepoNode *> nodesBySharedID;
+	for (std::vector<RepoBSON>::const_iterator it = nodes.begin();
 		it != nodes.end(); ++it)
 	{
-		model::RepoBSON obj = *it;
-		model::RepoNode *node = NULL;
+		RepoBSON obj = *it;
+		RepoNode *node = NULL;
 
 		std::string nodeType = obj.getField(REPO_NODE_LABEL_TYPE).str();
 
 		if (REPO_NODE_TYPE_TRANSFORMATION == nodeType)
 		{
-			node = new model::TransformationNode(obj);
+			node = new TransformationNode(obj);
 			transformations.insert(node);
 		}
 		else if (REPO_NODE_TYPE_MESH == nodeType)
 		{
-			node = new model::MeshNode(obj);
+			node = new MeshNode(obj);
 			meshes.insert(node);
 		}
 		else if (REPO_NODE_TYPE_MATERIAL == nodeType)
 		{
-			node = new model::MaterialNode(obj);
+			node = new MaterialNode(obj);
 			materials.insert(node);
 		}
 		else if (REPO_NODE_TYPE_TEXTURE == nodeType)
 		{
-			node = new model::TextureNode(obj);
+			node = new TextureNode(obj);
 			textures.insert(node);
 		}
 		else if (REPO_NODE_TYPE_CAMERA == nodeType)
 		{
-			node = new model::CameraNode(obj);
+			node = new CameraNode(obj);
 			cameras.insert(node);
 		}
 		else if (REPO_NODE_TYPE_REFERENCE == nodeType)
 		{
-			node = new model::ReferenceNode(obj);
+			node = new ReferenceNode(obj);
 			references.insert(node);
 		}
 		else if (REPO_NODE_TYPE_METADATA == nodeType)
 		{
-			node = new model::MetadataNode(obj);
+			node = new MetadataNode(obj);
 			metadata.insert(node);
 		}
 		else if (REPO_NODE_TYPE_MAP == nodeType)
 		{
-			node = new model::MapNode(obj);
+			node = new MapNode(obj);
 			maps.insert(node);
 		}
 		else{
 			//UNKNOWN TYPE - instantiate it with generic RepoNode
-			node = new model::RepoNode(obj);
+			node = new RepoNode(obj);
 			unknowns.insert(node);
 		}
 
@@ -543,10 +541,10 @@ bool RepoScene::populate(
 
 
 	//deal with References
-	model::RepoNodeSet::iterator refIt;
+	RepoNodeSet::iterator refIt;
 	for (const auto &node : references)
 	{
-		model::ReferenceNode* reference = (model::ReferenceNode*) node;
+		ReferenceNode* reference = (ReferenceNode*) node;
 
 		//construct a new RepoScene with the information from reference node and append this graph to the Scene
 		RepoScene *refGraph = new RepoScene(databaseName, reference->getProjectName(), sceneExt, revExt);
@@ -567,15 +565,15 @@ bool RepoScene::populate(
 }
 
 void RepoScene::populateAndUpdate(
-	const repo::core::model::RepoNodeSet &cameras,
-	const repo::core::model::RepoNodeSet &meshes,
-	const repo::core::model::RepoNodeSet &materials,
-	const repo::core::model::RepoNodeSet &metadata,
-	const repo::core::model::RepoNodeSet &textures,
-	const repo::core::model::RepoNodeSet &transformations,
-	const repo::core::model::RepoNodeSet &references,
-	const repo::core::model::RepoNodeSet &maps,
-	const repo::core::model::RepoNodeSet &unknowns)
+	const RepoNodeSet &cameras,
+	const RepoNodeSet &meshes,
+	const RepoNodeSet &materials,
+	const RepoNodeSet &metadata,
+	const RepoNodeSet &textures,
+	const RepoNodeSet &transformations,
+	const RepoNodeSet &references,
+	const RepoNodeSet &maps,
+	const RepoNodeSet &unknowns)
 {
 
 	std::string errMsg;

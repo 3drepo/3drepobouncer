@@ -669,9 +669,9 @@ model::RepoNodeSet AssimpModelImport::createTransformationNodesRecursive(
 	return transNodes;
 }
 
-repo::manipulator::graph::RepoScene * AssimpModelImport::generateRepoScene()
+repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 {
-	repo::manipulator::graph::RepoScene *sceneGraph = 0;
+	repo::core::model::RepoScene *sceneGraph = 0;
 
 	if (assimpScene)
 	{
@@ -795,7 +795,7 @@ repo::manipulator::graph::RepoScene * AssimpModelImport::generateRepoScene()
 		
 
 		//Construct the scene graph
-		sceneGraph = new repo::manipulator::graph::RepoScene(cameras, meshes, materials, metadata, textures, transformations);
+		sceneGraph = new repo::core::model::RepoScene(cameras, meshes, materials, metadata, textures, transformations);
 
 	} //if(assimpScene)
 

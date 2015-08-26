@@ -28,7 +28,7 @@
 #include <assimp/Exporter.hpp>
 
 #include "repo_model_export_abstract.h"
-#include "../../graph/repo_scene.h"
+#include "../../../core/model/collection/repo_scene.h"
 
 namespace repo{
 	namespace manipulator{
@@ -53,7 +53,7 @@ namespace repo{
 				* @return returns a pointer to aiScene
 				*/
 				aiScene* convertToAssimp(
-					const repo::manipulator::graph::RepoScene *scene,
+					const repo::core::model::RepoScene *scene,
 					repo::core::model::RepoNodeSet &textNodes);
 
 				/**
@@ -63,7 +63,7 @@ namespace repo{
 				* @return returns true upon success
 				*/
 				bool exportToFile(
-					const repo::manipulator::graph::RepoScene *scene,
+					const repo::core::model::RepoScene *scene,
 					const std::string &filePath);
 
 				/**
@@ -101,7 +101,7 @@ namespace repo{
 				* @param textNodes keeps track of the texture nodes that are referenced in this scene
 				*/
 				aiNode* constructAiSceneRecursively(
-					const repo::manipulator::graph::RepoScene *scene,
+					const repo::core::model::RepoScene *scene,
 					const repo::core::model::RepoNode   *currNode,
 					std::vector<aiMesh*>                      &meshVec,
 					std::vector<aiMaterial*>                  &matVec,
@@ -120,7 +120,7 @@ namespace repo{
 				* @return returns a aiCamera node
 				*/
 				aiCamera* convertCamera(
-					const repo::manipulator::graph::RepoScene *scene,
+					const repo::core::model::RepoScene *scene,
 					const repo::core::model::CameraNode *camNode,
 					const std::string                         &name = std::string());
 
@@ -131,7 +131,7 @@ namespace repo{
 				* @return returns a aiMaterial node
 				*/
 				aiMaterial* convertMaterial(
-					const repo::manipulator::graph::RepoScene *scene,
+					const repo::core::model::RepoScene *scene,
 					const repo::core::model::MaterialNode *matNode,
 					repo::core::model::RepoNodeSet  &textNodes);
 
@@ -146,7 +146,7 @@ namespace repo{
 				*/
 
 				aiMesh* convertMesh(
-					const repo::manipulator::graph::RepoScene *scene,
+					const repo::core::model::RepoScene *scene,
 					const repo::core::model::MeshNode   *meshNode,
 					std::vector<aiMaterial*>                  &matVec,
 					std::map<repoUUID, aiMaterial*>           &matMap,

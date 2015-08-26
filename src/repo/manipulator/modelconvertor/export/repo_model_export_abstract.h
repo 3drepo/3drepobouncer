@@ -24,7 +24,7 @@
 
 #include <string>
 
-#include "../../graph/repo_scene.h"
+#include "../../../core/model/collection/repo_scene.h"
 
 namespace repo{
 	namespace manipulator{
@@ -49,7 +49,7 @@ namespace repo{
 				* @return returns true upon success
 				*/
 				virtual bool exportToFile(
-					const repo::manipulator::graph::RepoScene *scene,
+					const repo::core::model::RepoScene *scene,
 					const std::string &filePath) = 0;
 
 			};

@@ -23,13 +23,13 @@
 #include <string>
 #include <vector>
 
-#include "../../core/model/bson/repo_node.h"
-#include "../../core/handler/repo_database_handler_abstract.h"
+#include "../bson/repo_node.h"
+#include "../../handler/repo_database_handler_abstract.h"
 
 
 namespace repo{
-	namespace manipulator{
-		namespace graph{
+	namespace core{
+		namespace model{
 			class AbstractGraph
 			{
 			public:
@@ -56,7 +56,7 @@ namespace repo{
 				* @return returns true if rootNode is not null.
 				*/
 				bool hasRoot() const { return (bool)rootNode; }
-				repo::core::model::RepoNode* getRoot() const { return rootNode; }
+				RepoNode* getRoot() const { return rootNode; }
 
 				/**
 				* Return the number of nodes within the current 
@@ -69,9 +69,9 @@ namespace repo{
 				std::string databaseName;/*! name of the database */
 				std::string projectName; /*! name of the project */
 
-				repo::core::model::RepoNode *rootNode;
+				RepoNode *rootNode;
 				//! A lookup map for the all nodes the graph contains.
-				std::map<repoUUID, repo::core::model::RepoNode*> nodesByUniqueID;
+				std::map<repoUUID, RepoNode*> nodesByUniqueID;
 			};
 		}//namespace graph
 	}//namespace manipulator

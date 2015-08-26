@@ -22,7 +22,7 @@
 #pragma once
 #include <string>
 #include "../core/handler/repo_database_handler_mongo.h"
-#include "graph/repo_scene.h"
+#include "../core/model/collection/repo_scene.h"
 #include "modelconvertor/import/repo_model_import_assimp.h"
 
 
@@ -89,7 +89,7 @@ namespace repo{
 			void commitScene(
 				const std::string                             &databaseAd,
 				const repo::core::model::RepoBSON 	  *cred, 
-				repo::manipulator::graph::RepoScene           *scene);
+				repo::core::model::RepoScene           *scene);
 
 
 			/**
@@ -111,7 +111,7 @@ namespace repo{
 			* @param fedMap a map of reference scene and transformation from root where the scene should lie
 			* @return returns a constructed scene graph with the reference.
 			*/
-			repo::manipulator::graph::RepoScene* createFederatedScene(
+			repo::core::model::RepoScene* createFederatedScene(
 				const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap);
 
 			/**
@@ -119,7 +119,7 @@ namespace repo{
 			* @param mapNode the map node to create the scene with
 			* @return returns a constructed scene graph with the map.
 			*/
-			repo::manipulator::graph::RepoScene* createMapScene(
+			repo::core::model::RepoScene* createMapScene(
 				const repo::core::model::MapNode &mapNode);
 
 			/**
@@ -205,7 +205,7 @@ namespace repo{
 			* @param headRevision true if retrieving head revision
 			* @return returns a pointer to a repoScene.
 			*/
-			repo::manipulator::graph::RepoScene* fetchScene(
+			repo::core::model::RepoScene* fetchScene(
 				const std::string                             &databaseAd,
 				const repo::core::model::RepoBSON*	  cred,
 				const std::string                             &database,
@@ -331,7 +331,7 @@ namespace repo{
 			* @param config import config (optional)
 			* @return returns a pointer to Repo Scene upon success
 			*/
-			repo::manipulator::graph::RepoScene*
+			repo::core::model::RepoScene*
 				loadSceneFromFile(
 				const std::string &filePath,
 				      std::string &msg = std::string(),
@@ -374,7 +374,7 @@ namespace repo{
 			*/
 			bool saveSceneToFile(
 				const std::string &filePath,
-				const repo::manipulator::graph::RepoScene* scene);
+				const repo::core::model::RepoScene* scene);
 
 			/**
 			* Update a user on the database

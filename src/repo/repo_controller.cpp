@@ -130,7 +130,7 @@ RepoToken* RepoController::authenticateMongo(
 
 void RepoController::commitScene(
 	const RepoToken                     *token,
-	repo::manipulator::graph::RepoScene *scene)
+	repo::core::model::RepoScene *scene)
 {
 	if (token)
 	{
@@ -166,14 +166,14 @@ uint64_t RepoController::countItemsInCollection(
 	return numItems;
 }
 
-repo::manipulator::graph::RepoScene* RepoController::fetchScene(
+repo::core::model::RepoScene* RepoController::fetchScene(
 	const RepoToken      *token,
 	const std::string    &database,
 	const std::string    &collection,
 	const std::string    &uuid,
 	const bool           &headRevision)
 {
-	repo::manipulator::graph::RepoScene* scene = 0;
+	repo::core::model::RepoScene* scene = 0;
 	if (token)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
@@ -593,11 +593,11 @@ void RepoController::subscribeBroadcasterToLog(){
 }
 
 
-repo::manipulator::graph::RepoScene* RepoController::createFederatedScene(
+repo::core::model::RepoScene* RepoController::createFederatedScene(
 	const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap)
 {
 
-	repo::manipulator::graph::RepoScene* scene = nullptr;
+	repo::core::model::RepoScene* scene = nullptr;
 	if (fedMap.size() > 0)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
@@ -612,11 +612,11 @@ repo::manipulator::graph::RepoScene* RepoController::createFederatedScene(
 	return scene;
 }
 
-repo::manipulator::graph::RepoScene* RepoController::createMapScene(
+repo::core::model::RepoScene* RepoController::createMapScene(
 	const repo::core::model::MapNode &mapNode)
 {
 	manipulator::RepoManipulator* worker = workerPool.pop();
-	repo::manipulator::graph::RepoScene* scene = worker->createMapScene(mapNode);
+	repo::core::model::RepoScene* scene = worker->createMapScene(mapNode);
 	workerPool.push(worker);
 
 	return scene;
@@ -684,14 +684,14 @@ std::string RepoController::getSupportedImportFormats()
 	return repo::manipulator::modelconvertor::AssimpModelImport::getSupportedFormats();
 }
 
-repo::manipulator::graph::RepoScene* 
+repo::core::model::RepoScene* 
 	RepoController::loadSceneFromFile(
 	const std::string                                          &filePath,
 	const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
 
 	std::string errMsg;
-	repo::manipulator::graph::RepoScene *scene = nullptr;
+	repo::core::model::RepoScene *scene = nullptr;
 
 	if (!filePath.empty())
 	{
@@ -714,7 +714,7 @@ repo::manipulator::graph::RepoScene*
 
 bool RepoController::saveSceneToFile(
 	const std::string &filePath,
-	const repo::manipulator::graph::RepoScene* scene)
+	const repo::core::model::RepoScene* scene)
 {
 	bool success = true;
 	if (scene)

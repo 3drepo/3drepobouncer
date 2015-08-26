@@ -90,7 +90,7 @@ repo::core::model::RepoBSON* RepoManipulator::createCredBSON(
 	return bson;
 }
 
-repo::manipulator::graph::RepoScene* RepoManipulator::createFederatedScene(
+repo::core::model::RepoScene* RepoManipulator::createFederatedScene(
 	const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap)
 {
 
@@ -117,13 +117,13 @@ repo::manipulator::graph::RepoScene* RepoManipulator::createFederatedScene(
 			);
 	}
 
-	repo::manipulator::graph::RepoScene *scene =
-		new repo::manipulator::graph::RepoScene(emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, refNodes);
+	repo::core::model::RepoScene *scene =
+		new repo::core::model::RepoScene(emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, refNodes);
 
 	return scene;
 }
 
-repo::manipulator::graph::RepoScene* RepoManipulator::createMapScene(
+repo::core::model::RepoScene* RepoManipulator::createMapScene(
 	const repo::core::model::MapNode &mapNode)
 {
 	repo::core::model::RepoNodeSet transNodes;
@@ -140,8 +140,8 @@ repo::manipulator::graph::RepoScene* RepoManipulator::createMapScene(
 
 
 
-	repo::manipulator::graph::RepoScene *scene =
-		new repo::manipulator::graph::RepoScene(emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, emptySet, mapNodes);
+	repo::core::model::RepoScene *scene =
+		new repo::core::model::RepoScene(emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, emptySet, mapNodes);
 
 	return scene;
 }
@@ -149,7 +149,7 @@ repo::manipulator::graph::RepoScene* RepoManipulator::createMapScene(
 void RepoManipulator::commitScene(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON 	  *cred,
-	repo::manipulator::graph::RepoScene           *scene)
+	repo::core::model::RepoScene           *scene)
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
@@ -251,7 +251,7 @@ std::list<std::string> RepoManipulator::fetchCollections(
 	return list;
 }
 
-repo::manipulator::graph::RepoScene* RepoManipulator::fetchScene(
+repo::core::model::RepoScene* RepoManipulator::fetchScene(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON*	  cred,
 	const std::string                             &database,
@@ -259,14 +259,14 @@ repo::manipulator::graph::RepoScene* RepoManipulator::fetchScene(
 	const repoUUID                                &uuid,
 	const bool                                    &headRevision)
 {
-	graph::RepoScene* scene = nullptr;
+	repo::core::model::RepoScene* scene = nullptr;
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	if (handler)
 	{
 		//not setting a scene if we don't have a handler since we 
 		//retreive anything from the database.
-		scene = new graph::RepoScene(database, project);
+		scene = new repo::core::model::RepoScene(database, project);
 		if (scene)
 		{
 			if (headRevision)
@@ -409,14 +409,14 @@ std::string RepoManipulator::getNameOfAdminDatabase(
 	return  repo::core::handler::MongoDatabaseHandler::getAdminDatabaseName();
 }
 
-repo::manipulator::graph::RepoScene* 
+repo::core::model::RepoScene* 
 	RepoManipulator::loadSceneFromFile(
 	const std::string &filePath, 
 	      std::string &msg,
     const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
 	
-	repo::manipulator::graph::RepoScene* scene = nullptr;
+	repo::core::model::RepoScene* scene = nullptr;
 
 	repo::manipulator::modelconvertor::AssimpModelImport*
 		modelConvertor = new repo::manipulator::modelconvertor::AssimpModelImport(config);
@@ -511,7 +511,7 @@ void RepoManipulator::removeUser(
 
 bool RepoManipulator::saveSceneToFile(
 	const std::string &filePath,
-	const repo::manipulator::graph::RepoScene* scene)
+	const repo::core::model::RepoScene* scene)
 {
 	modelconvertor::AssimpModelExport modelExport;
 	return modelExport.exportToFile(scene, filePath);

@@ -1,6 +1,6 @@
 #include "repo_graph_abstract.h"
 
-using namespace repo::manipulator::graph;
+using namespace repo::core::model;
 
 AbstractGraph::AbstractGraph(
 	const std::string &databaseName,

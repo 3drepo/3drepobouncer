@@ -37,7 +37,7 @@ AssimpModelExport::~AssimpModelExport()
 }
 
 aiScene* AssimpModelExport::convertToAssimp(
-	const repo::manipulator::graph::RepoScene *scene,
+	const repo::core::model::RepoScene *scene,
 	repo::core::model::RepoNodeSet &textNodes)
 {
 
@@ -105,7 +105,7 @@ aiScene* AssimpModelExport::convertToAssimp(
 }
 
 aiNode* AssimpModelExport::constructAiSceneRecursively(
-	const repo::manipulator::graph::RepoScene *scene,
+	const repo::core::model::RepoScene *scene,
 	const repo::core::model::RepoNode   *currNode,
 	std::vector<aiMesh*>                      &meshVec,
 	std::vector<aiMaterial*>                  &matVec,
@@ -221,7 +221,7 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 		break;
 		case repo::core::model::NodeType::REFERENCE:
 		{
-			const repo::manipulator::graph::RepoScene *refScene = 
+			const repo::core::model::RepoScene *refScene = 
 				scene->getSceneFromReference(currNode->getSharedID());
 			node = constructAiSceneRecursively(refScene, refScene->getRoot(),
 				meshVec, matVec, camVec, meshMap, matMap, camMap, textNodes);
@@ -261,7 +261,7 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 }
 
 aiCamera* AssimpModelExport::convertCamera(
-	const repo::manipulator::graph::RepoScene *scene,
+	const repo::core::model::RepoScene *scene,
 	const repo::core::model::CameraNode *camNode,
 	const std::string                         &name)
 {
@@ -310,7 +310,7 @@ aiCamera* AssimpModelExport::convertCamera(
 }
 
 aiMaterial* AssimpModelExport::convertMaterial(
-	const repo::manipulator::graph::RepoScene *scene,
+	const repo::core::model::RepoScene *scene,
 	const repo::core::model::MaterialNode *matNode,
 	repo::core::model::RepoNodeSet &textNodes)
 {
@@ -402,7 +402,7 @@ aiMaterial* AssimpModelExport::convertMaterial(
 }
 
 aiMesh* AssimpModelExport::convertMesh(
-	const repo::manipulator::graph::RepoScene *scene,
+	const repo::core::model::RepoScene *scene,
 	const repo::core::model::MeshNode   *meshNode,
 	std::vector<aiMaterial*>                  &matVec,
 	std::map<repoUUID, aiMaterial*>           &matMap,
@@ -640,7 +640,7 @@ bool AssimpModelExport::writeSceneToFile(
 }
 
 bool AssimpModelExport::exportToFile(
-	const repo::manipulator::graph::RepoScene *scene,
+	const repo::core::model::RepoScene *scene,
 	const std::string &filePath)
 {
 	bool success = true;

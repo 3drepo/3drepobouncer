@@ -50,7 +50,7 @@
 #include "lib/repo_broadcaster.h"
 #include "lib/repo_listener_abstract.h"
 #include "manipulator/repo_manipulator.h"
-#include "manipulator/graph/repo_scene.h"
+#include "core/model/collection//repo_scene.h"
 
 
 namespace repo{
@@ -306,7 +306,7 @@ namespace repo{
 		* @param headRevision true if retrieving head revision
 		* @return returns a pointer to a repoScene.
 		*/
-		repo::manipulator::graph::RepoScene* fetchScene(
+		repo::core::model::RepoScene* fetchScene(
 			const RepoToken      *token,
 			const std::string    &database,
 			const std::string    &project,
@@ -325,7 +325,7 @@ namespace repo{
 		*/
 		void commitScene(
 			const RepoToken                     *token,
-			repo::manipulator::graph::RepoScene *scene);
+			repo::core::model::RepoScene *scene);
 
 		/**
 		* Insert a new user into the database
@@ -445,7 +445,7 @@ namespace repo{
 		* @param fedMap a map of reference scene and transformation from root where the scene should lie
 		* @return returns a constructed scene graph with the reference.
 		*/
-		repo::manipulator::graph::RepoScene* createFederatedScene(
+		repo::core::model::RepoScene* createFederatedScene(
 			const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap);
 
 		/**
@@ -454,7 +454,7 @@ namespace repo{
 		* @param mapNode the map node to create the scene with
 		* @return returns a constructed scene graph with the reference.
 		*/
-		repo::manipulator::graph::RepoScene* createMapScene(
+		repo::core::model::RepoScene* createMapScene(
 			const repo::core::model::MapNode &mapNode);
 
 		/**
@@ -475,7 +475,7 @@ namespace repo{
 		* @param config import settings(optional)
 		* @return returns a pointer to Repo Scene upon success
 		*/
-		repo::manipulator::graph::RepoScene* loadSceneFromFile(
+		repo::core::model::RepoScene* loadSceneFromFile(
 			const std::string &filePath,
 			const repo::manipulator::modelconvertor::ModelImportConfig *config 
 				= nullptr);
@@ -488,7 +488,7 @@ namespace repo{
 		*/
 		bool saveSceneToFile(
 			const std::string &filePath,
-			const repo::manipulator::graph::RepoScene* scene);
+			const repo::core::model::RepoScene* scene);
 
 
 	private:

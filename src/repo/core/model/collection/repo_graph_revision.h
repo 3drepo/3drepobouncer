@@ -24,8 +24,8 @@
 #include "repo_graph_abstract.h"
 
 namespace repo{
-	namespace manipulator{
-		namespace graph{
+	namespace core{
+		namespace model{
 			class RevisionGraph : public AbstractGraph
 			{
 			public:
