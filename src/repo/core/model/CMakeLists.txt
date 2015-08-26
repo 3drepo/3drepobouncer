@@ -5,6 +5,7 @@
 
 
 add_subdirectory(bson)
+add_subdirectory(collection)
 set(HEADERS
 	${HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_global.h
