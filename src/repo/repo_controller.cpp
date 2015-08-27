@@ -91,6 +91,10 @@ RepoToken* RepoController::authenticateToAdminDatabaseMongo(
 	if (cred)
 	{
 		token = new RepoToken(cred, dbFullAd, worker->getNameOfAdminDatabase(dbFullAd));
+
+		BOOST_LOG_TRIVIAL(info) << "Successfully connected to the " << dbFullAd;
+		if (!username.empty())
+			BOOST_LOG_TRIVIAL(info) << username << " is authenticated to " << dbFullAd;
 	}
 
 	workerPool.push(worker);
@@ -579,7 +583,7 @@ void RepoController::subscribeBroadcasterToLog(){
 	sink->set_formatter
 		(
 		boost::log::expressions::stream
-		<< "[" << boost::log::trivial::severity << "] "
+		<< "%" << boost::log::trivial::severity << "%"
 		<< boost::log::expressions::smessage);
 
 

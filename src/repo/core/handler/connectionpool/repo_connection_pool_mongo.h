@@ -51,7 +51,7 @@ namespace repo{
 						dbAddress(dbAddress),
 						auth(auth)
 					{
-						BOOST_LOG_TRIVIAL(debug) << "Instantiating Mongo connectiong pool with " << maxSize << " connections...";
+						BOOST_LOG_TRIVIAL(debug) << "Instantiating Mongo connection pool with " << maxSize << " connections...";
 						//push one connected worker to ensure valid connection
 						//so the caller can handle the exceptions appropriately
 						std::string errMsg;

@@ -488,7 +488,7 @@ MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
 				delete handler;
 			handler = 0;
 			errMsg = std::string(e.what());
-			BOOST_LOG_TRIVIAL(debug) << "Caught exception whilst instantiating Mongo Handler: " << errMsg;
+			BOOST_LOG_TRIVIAL(error) << "Error establishing Mongo Handler: " << errMsg;
 		}
 	}
 	else
