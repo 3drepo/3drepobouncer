@@ -91,6 +91,7 @@ void testDeletion(repo::RepoController *controller, repo::RepoToken *token)
 	}
 }
 
+
 int main(int argc, char* argv[]){
 
 	//TODO: configuration needs to be done properly, but hey, i'm just a quick test!
@@ -105,40 +106,41 @@ int main(int argc, char* argv[]){
 	std::string username = argv[3];
 	std::string password = argv[4];
 
-	/*configureLogging();
-
-	std::vector<repo::lib::RepoAbstractListener*> listeners;
-	listeners.push_back(new TestListener());*/
 
 	repo::RepoController *controller = new repo::RepoController();
 
-
+	repoLog("Testing this..");
+	repoInfo << "Testing this info..";
+	repoTrace << "this is trace";
+	repoError << "this is error";
+	repoWarning << "this is warning";
+	repoFatal << "this is fatal";
 	//BOOST_LOG_TRIVIAL(info) << "Subscribed to the logger!";
 
-	std::string errMsg;
-	repo::RepoToken* token = controller->authenticateToAdminDatabaseMongo(errMsg, address, port, username, password);
-	
-	
-	if (token)
-		std::cout << "successfully connected to the database!" << std::endl;
-	else
-		std::cerr << "Failed to authenticate to the database: " << errMsg << std::endl;
+	//std::string errMsg;
+	//repo::RepoToken* token = controller->authenticateToAdminDatabaseMongo(errMsg, address, port, username, password);
+	//
+	//
+	//if (token)
+	//	std::cout << "successfully connected to the database!" << std::endl;
+	//else
+	//	std::cerr << "Failed to authenticate to the database: " << errMsg << std::endl;
 
-	//testDatabaseRetrieval(controller, token);
-	errMsg.clear();
+	////testDatabaseRetrieval(controller, token);
+	//errMsg.clear();
 
-	//testDeletion(controller, token);
+	////testDeletion(controller, token);
 
-	//<< " bsons. first bson has a type of " << bsons.at(0).getStringField(REPO_NODE_LABEL_TYPE);
+	////<< " bsons. first bson has a type of " << bsons.at(0).getStringField(REPO_NODE_LABEL_TYPE);
 
 
-	////insertARepoNode(dbHandler);
+	//////insertARepoNode(dbHandler);
 
-	//loadModelFromFileAndCommit(dbHandler);
+	////loadModelFromFileAndCommit(dbHandler);
 
-	//instantiateProject(dbHandler);
-	repo::core::model::RepoScene *scene = controller->fetchScene(token, "test", "cameraTest");
-	controller->saveSceneToFile("C:/Users/Carmen/Desktop/camTest.dae", scene);
+	////instantiateProject(dbHandler);
+	//repo::core::model::RepoScene *scene = controller->fetchScene(token, "test", "cameraTest");
+	//controller->saveSceneToFile("C:/Users/Carmen/Desktop/camTest.dae", scene);
 
 
 	return EXIT_SUCCESS;

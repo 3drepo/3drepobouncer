@@ -44,7 +44,12 @@ namespace repo{
 		{
 		public:
 			~RepoBroadcaster();
-			static RepoBroadcaster* getInstance();
+
+			//static RepoBroadcaster* getInstance();
+			/**
+			* FIXME: should be a private constructor - singleton class.
+			*/
+			RepoBroadcaster();
 
 			/**
 			* Subscribe to the broadcaster
@@ -64,10 +69,7 @@ namespace repo{
 
 
 		private:
-			/**
-			* Private constructor - singleton class.
-			*/
-			RepoBroadcaster();
+
 
 			std::vector<RepoAbstractListener *> subscribers;
 			

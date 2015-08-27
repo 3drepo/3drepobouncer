@@ -25,21 +25,8 @@
 
 #include <string>
 
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <boost/log/core.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/sinks/sync_frontend.hpp>
-#include <boost/log/sinks/text_ostream_backend.hpp>
-#include <boost/log/sources/logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/utility/empty_deleter.hpp>
-#include <boost/iostreams/stream_buffer.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
-#include <boost/date_time/posix_time/posix_time_types.hpp>
 
+#include <boost/log/trivial.hpp>
 
 #include "repo_bouncer_global.h"
 
@@ -48,6 +35,7 @@
 #include "core/model/bson/repo_bson_user.h"
 #include "lib/repo_stack.h"
 #include "lib/repo_broadcaster.h"
+#include "lib/repo_log.h"
 #include "lib/repo_listener_abstract.h"
 #include "manipulator/repo_manipulator.h"
 #include "core/model/collection//repo_scene.h"
@@ -92,11 +80,6 @@ namespace repo{
 	class REPO_API_EXPORT RepoController
 	{
 	public:
-
-		/**
-		* LOGGING LEVEL
-		*/
-		enum class RepoLogLevel { LOG_ALL, LOG_DEBUG, LOG_INFO, LOG_WARNING, LOG_ERROR, LOG_NONE };
 
 
 		/**
@@ -419,16 +402,16 @@ namespace repo{
 		/**
 		* Configure how verbose the log should be
 		* The levels of verbosity are:
-		* LOG_ALL - log all messages
-		* LOG_DEBUG - log messages of level debug or above (use for debugging)
-		* LOG_INFO - log messages of level info or above (use to filter debugging messages but want informative logging)
-		* LOG_WARNING - log messages of level warning or above
-		* LOG_ERROR - log messages of level error or above
-		* LOG_NONE - no logging
+		* TRACE - log all messages
+		* DEBUG - log messages of level debug or above (use for debugging)
+		* INFO - log messages of level info or above (use to filter debugging messages but want informative logging)
+		* WARNING - log messages of level warning or above
+		* ERROR - log messages of level error or above
+		* FATAL - log messages of level fatal or above
 		* @param level specify logging level
 		*
 		*/
-		void setLoggingLevel(const RepoLogLevel &level);
+		void setLoggingLevel(const repo::lib::RepoLog::RepoLogLevel &level);
 
 		/**
 		* Log to a specific file
@@ -502,10 +485,6 @@ namespace repo{
 
 	private:
 
-		/**
-		* Subscribe the Broadcaster to logging core
-		*/
-		void subscribeBroadcasterToLog();
 
 		/**
 		* Subscribe a RepoAbstractLister to logging messages

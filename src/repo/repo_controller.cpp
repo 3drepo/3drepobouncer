@@ -17,17 +17,14 @@
 
 
 #include "repo_controller.h"
+
 #include "manipulator/modelconvertor/import/repo_model_import_assimp.h"
 #include "manipulator/modelconvertor/export/repo_model_export_assimp.h"
-#include <boost/log/sinks/text_file_backend.hpp>
-#include <boost/log/utility/setup/file.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
+
 
 
 
 using namespace repo;
-
-typedef boost::log::sinks::synchronous_sink< boost::log::sinks::text_ostream_backend > text_sink;
 
 RepoController::RepoController(
 	std::vector<lib::RepoAbstractListener*> listeners,
@@ -45,8 +42,6 @@ RepoController::RepoController(
 	if (listeners.size() > 0)
 	{
 		subscribeToLogger(listeners);
-
-		subscribeBroadcasterToLog();
 	}
 
 }
@@ -498,103 +493,24 @@ void RepoController::upsertDocument(
 	}
 }
 
-void RepoController::setLoggingLevel(const RepoLogLevel &level)
+void RepoController::setLoggingLevel(const repo::lib::RepoLog::RepoLogLevel &level)
 {
 
-	boost::log::trivial::severity_level loggingLevel;
-	switch (level)
-	{
-		case RepoLogLevel::LOG_ALL:
-			loggingLevel = boost::log::trivial::trace;
-			break;
-		case RepoLogLevel::LOG_DEBUG:
-			loggingLevel = boost::log::trivial::debug;
-			break;
-		case RepoLogLevel::LOG_INFO:
-			loggingLevel = boost::log::trivial::info;
-			break;
-		case RepoLogLevel::LOG_WARNING:
-			loggingLevel = boost::log::trivial::warning;
-			break;
-		case RepoLogLevel::LOG_ERROR:
-			loggingLevel = boost::log::trivial::error;
-			break;
-		case RepoLogLevel::LOG_NONE:
-			loggingLevel = boost::log::trivial::fatal;
-			break;
-		default:
-			BOOST_LOG_TRIVIAL(error) << "Unknown log level: " << (int)level;
-			return;
-
-	}
-
-	BOOST_LOG_TRIVIAL(trace) << "Setting logging level to: " << (int)level;
-	if (level == RepoLogLevel::LOG_NONE)
-	{
-		boost::log::core::get()->set_filter(
-			boost::log::trivial::severity > loggingLevel);
-	}
-	else
-	{
-		boost::log::core::get()->set_filter(
-			boost::log::trivial::severity >= loggingLevel);
-	}
+	repo::lib::RepoLog::getInstance().setLoggingLevel(level);
+	
 }
 
 void RepoController::logToFile(const std::string &filePath)
 {
-
-	boost::log::add_file_log
-		(
-		boost::log::keywords::file_name = filePath + "_%N",
-		boost::log::keywords::rotation_size = 10 * 1024 * 1024,
-		boost::log::keywords::time_based_rotation = boost::log::sinks::file::rotation_at_time_point(0, 0, 0),
-		boost::log::keywords::format = "[%TimeStamp%]: %Message%"
-		);
-
+	repo::lib::RepoLog::getInstance().logToFile(filePath);
 }
 
 void RepoController::subscribeToLogger(
 	std::vector<lib::RepoAbstractListener*> listeners)
 {
-	BOOST_LOG_TRIVIAL(trace) << "New subscriber to the log";
-	lib::RepoBroadcaster *broadcaster = lib::RepoBroadcaster::getInstance();
-	
-	for (auto listener: listeners)
-		broadcaster->subscribe(listener);
+	repo::lib::RepoLog::getInstance().subscribeListeners(listeners);
 }
 
-void RepoController::subscribeBroadcasterToLog(){
-	BOOST_LOG_TRIVIAL(info) << "subscribeBroadcasterToLog()";
-	lib::RepoBroadcaster *broadcaster = lib::RepoBroadcaster::getInstance();
-
-	boost::iostreams::stream<lib::RepoBroadcaster> *streamptr =
-		new boost::iostreams::stream<lib::RepoBroadcaster>(*broadcaster);
-
-
-	boost::shared_ptr< std::ostream > stream(
-		streamptr, boost::log::empty_deleter());
-
-	boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
-
-
-	sink->set_filter(boost::log::trivial::severity >= boost::log::trivial::trace);
-	//FIXME: better format!
-	sink->set_formatter
-		(
-		boost::log::expressions::stream
-		<< "%" << boost::log::trivial::severity << "%"
-		<< boost::log::expressions::smessage);
-
-
-	sink->locked_backend()->add_stream(stream);
-	sink->locked_backend()->auto_flush(true);
-
-	// Register the sink in the logging core
-	boost::log::core::get()->add_sink(sink);
-
-	BOOST_LOG_TRIVIAL(trace) << "Subscribed broadcaster to log";
-}
 
 
 repo::core::model::RepoScene* RepoController::createFederatedScene(

@@ -17,8 +17,6 @@
 
 #pragma once
 #include <cstdint>
-#include <boost/log/trivial.hpp>
-
 #if defined(_WIN32) || defined(_WIN64)
 #   define REPO_DECL_EXPORT __declspec(dllexport)
 #   define REPO_DECL_IMPORT __declspec(dllimport)
@@ -33,4 +31,5 @@
 #else
 #   define REPO_API_EXPORT REPO_DECL_IMPORT
 #endif
+
 
