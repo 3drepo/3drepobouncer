@@ -20,6 +20,7 @@
 */
 
 #include "repo_manipulator.h"
+#include "../lib/repo_log.h"
 #include "../core/model/bson/repo_bson_factory.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
@@ -158,11 +159,11 @@ void RepoManipulator::commitScene(
 	std::string msg;
 	if (handler && scene && scene->commit(handler, msg, cred->getStringField("user")))
 	{
-		BOOST_LOG_TRIVIAL(info) << "Scene successfully committed to the database";
+		repoInfo << "Scene successfully committed to the database";
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Error committing scene to the database : " << msg;
+		repoError << "Error committing scene to the database : " << msg;
 	}
 		
 }
@@ -278,14 +279,14 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 			std::string errMsg;
 			if (scene->loadRevision(handler, errMsg))
 			{
-				BOOST_LOG_TRIVIAL(trace) << "Loaded " <<
+				repoTrace << "Loaded " <<
 					(headRevision ? ("head revision of branch" + UUIDtoString(uuid))
 					: ("revision " + UUIDtoString(uuid)))
 					<< " of " << database << "." << project;
 
 				if (scene->loadScene(handler, errMsg))
 				{
-					BOOST_LOG_TRIVIAL(trace) << "Loaded Scene";
+					repoTrace << "Loaded Scene";
 				}
 				else{
 					delete scene;
@@ -294,14 +295,14 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 			}
 			else
 			{
-				BOOST_LOG_TRIVIAL(error) << "Failed to load revision for " 
+				repoError << "Failed to load revision for " 
 				 << database << "." << project << " : " << errMsg;
 				delete scene;
 				scene = nullptr;
 			}
 		}
 		else{
-			BOOST_LOG_TRIVIAL(error) << "Failed to create a RepoScene(out of memory?)!";
+			repoError << "Failed to create a RepoScene(out of memory?)!";
 		}
 	}
 
@@ -463,11 +464,11 @@ void RepoManipulator::insertUser(
 		std::string errMsg;
 		if (handler->insertUser(user, errMsg))
 		{
-			BOOST_LOG_TRIVIAL(info) << "User added successfully.";
+			repoInfo << "User added successfully.";
 		}
 		else
 		{
-			BOOST_LOG_TRIVIAL(error) << "Failed to add user : " << errMsg;
+			repoError << "Failed to add user : " << errMsg;
 		}
 	}
 		
@@ -487,11 +488,11 @@ void RepoManipulator::removeDocument(
 		std::string errMsg;
 		if (handler->dropDocument(bson, databaseName, collectionName, errMsg))
 		{
-			BOOST_LOG_TRIVIAL(info) << "Document removed successfully.";
+			repoInfo << "Document removed successfully.";
 		}
 		else
 		{
-			BOOST_LOG_TRIVIAL(error) << "Failed to remove document : " << errMsg;
+			repoError << "Failed to remove document : " << errMsg;
 		}
 	}
 
@@ -510,11 +511,11 @@ void RepoManipulator::removeUser(
 		std::string errMsg;
 		if (handler->dropUser(user, errMsg))
 		{
-			BOOST_LOG_TRIVIAL(info) << "User removed successfully.";
+			repoInfo << "User removed successfully.";
 		}
 		else
 		{
-			BOOST_LOG_TRIVIAL(error) << "Failed to remove user : " << errMsg;
+			repoError << "Failed to remove user : " << errMsg;
 		}
 	}
 
@@ -541,11 +542,11 @@ void RepoManipulator::updateUser(
 		std::string errMsg;
 		if (handler->updateUser(user, errMsg))
 		{
-			BOOST_LOG_TRIVIAL(info) << "User updated successfully.";
+			repoInfo << "User updated successfully.";
 		}
 		else
 		{
-			BOOST_LOG_TRIVIAL(error) << "Failed to update user : " << errMsg;
+			repoError << "Failed to update user : " << errMsg;
 		}
 	}
 
@@ -565,11 +566,11 @@ void RepoManipulator::upsertDocument(
 		std::string errMsg;
 		if (handler->upsertDocument(databaseName, collectionName, bson, true, errMsg))
 		{
-			BOOST_LOG_TRIVIAL(info) << "Document updated successfully.";
+			repoInfo << "Document updated successfully.";
 		}
 		else
 		{
-			BOOST_LOG_TRIVIAL(error) << "Failed to remove document : " << errMsg;
+			repoError << "Failed to remove document : " << errMsg;
 		}
 	}
 }

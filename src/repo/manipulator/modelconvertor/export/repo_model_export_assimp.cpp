@@ -21,6 +21,7 @@
 
 
 #include "repo_model_export_assimp.h"
+#include "../../../lib/repo_log.h"
 
 #include <boost/filesystem.hpp>
 
@@ -61,7 +62,7 @@ aiScene* AssimpModelExport::convertToAssimp(
 		assimpScene->mFlags = 0; //getPostProcessingFlags(); // TODO FIX ME!
 
 		assimpScene->mNumCameras = camVec.size();
-		BOOST_LOG_TRIVIAL(trace) << "CamVec: " << camVec.size();
+		repoTrace << "CamVec: " << camVec.size();
 		if (camVec.size() > 0)
 		{
 			assimpScene->mCameras = new aiCamera*[camVec.size()];
@@ -69,7 +70,7 @@ aiScene* AssimpModelExport::convertToAssimp(
 		}
 
 		assimpScene->mNumMaterials = matVec.size();
-		BOOST_LOG_TRIVIAL(trace) << "matVec: " << matVec.size();
+		repoTrace << "matVec: " << matVec.size();
 		if (matVec.size() > 0)
 		{
 			assimpScene->mMaterials = new aiMaterial*[matVec.size()];
@@ -77,7 +78,7 @@ aiScene* AssimpModelExport::convertToAssimp(
 		}
 
 		assimpScene->mNumMeshes = meshVec.size();
-		BOOST_LOG_TRIVIAL(trace) << "meshVec: " << meshVec.size();
+		repoTrace << "meshVec: " << meshVec.size();
 		if (meshVec.size() > 0)
 		{
 			assimpScene->mMeshes = new aiMesh*[meshVec.size()];
@@ -86,9 +87,9 @@ aiScene* AssimpModelExport::convertToAssimp(
 			for (auto &mesh : meshVec)
 			{
 				assimpScene->mMeshes[i++] = mesh;
-				BOOST_LOG_TRIVIAL(trace) << " mesh #" << i - 1 << " #vertices = " << mesh->mNumVertices;
+				repoTrace << " mesh #" << i - 1 << " #vertices = " << mesh->mNumVertices;
 				if (mesh->mNumVertices > 0)
-					BOOST_LOG_TRIVIAL(trace) << " First vertice = " << mesh->mVertices[0].x << ", " 
+					repoTrace << " First vertice = " << mesh->mVertices[0].x << ", " 
 						<< mesh->mVertices[0].y << "," << mesh->mVertices[0].z;
 			}
 		}
@@ -148,7 +149,7 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 					transMat[12], transMat[13], transMat[14], transMat[15]);
 				else
 				{
-					BOOST_LOG_TRIVIAL(error) << "AssimpModelExport: Failed to obtain Transformation matrix from Transformation Node!";
+					repoError << "AssimpModelExport: Failed to obtain Transformation matrix from Transformation Node!";
 				}
 
 
@@ -603,10 +604,10 @@ bool AssimpModelExport::writeSceneToFile(
 		std::string extension = boostPath.extension().string();
 
 		std::string exportFormat = getExportFormatID(extension.substr(1, extension.size()-1));
-		BOOST_LOG_TRIVIAL(trace) << "Exporting repo scene using ASSIMP: export format = " << exportFormat  << " to " << filePath;
+		repoTrace << "Exporting repo scene using ASSIMP: export format = " << exportFormat  << " to " << filePath;
 		if (exportFormat.empty())
 		{
-			BOOST_LOG_TRIVIAL(error) << "Unrecognised export format: " << boostPath.extension().string();
+			repoError << "Unrecognised export format: " << boostPath.extension().string();
 		}
 		else
 		{
@@ -614,13 +615,13 @@ bool AssimpModelExport::writeSceneToFile(
 			switch (ret)
 			{
 			case aiReturn_FAILURE:
-				BOOST_LOG_TRIVIAL(error) << "Export failed due to unknown reason.";
+				repoError << "Export failed due to unknown reason.";
 				break;
 			case aiReturn_OUTOFMEMORY:
-				BOOST_LOG_TRIVIAL(error) << "Export failed due to running out of memory.";
+				repoError << "Export failed due to running out of memory.";
 				break;
 			case aiReturn_SUCCESS:
-				BOOST_LOG_TRIVIAL(trace) << "Export completed successfully";
+				repoTrace << "Export completed successfully";
 				break;
 			case _AI_ENFORCE_ENUM_SIZE:
 				// Silently handle assimp's bogus enum-size-enforcing value.
@@ -632,7 +633,7 @@ bool AssimpModelExport::writeSceneToFile(
 
 	}
 	else{
-		BOOST_LOG_TRIVIAL(error) << "Trying to write a null pointer assimp scene!";
+		repoError << "Trying to write a null pointer assimp scene!";
 	}
 
 	return success;
@@ -661,7 +662,7 @@ bool AssimpModelExport::exportToFile(
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Failed to convert scene to assimp scene(nullptr) ";
+		repoError << "Failed to convert scene to assimp scene(nullptr) ";
 		success = false;
 	}
 
@@ -720,7 +721,7 @@ bool AssimpModelExport::writeTexturesToFiles(
 		std::string fullPath = path.parent_path().string() + repoTex->getName() + ext;
 		//write texture to file
 		std::ofstream myfile;
-		BOOST_LOG_TRIVIAL(trace) << "Writing texture to " << fullPath;
+		repoTrace << "Writing texture to " << fullPath;
 		myfile.open(fullPath, std::ios::binary);
 
 		if (myfile.is_open())
@@ -731,7 +732,7 @@ bool AssimpModelExport::writeTexturesToFiles(
 		}
 		else
 		{
-			BOOST_LOG_TRIVIAL(error) << "Unable to open file to write texture! File path: " << fullPath;
+			repoError << "Unable to open file to write texture! File path: " << fullPath;
 			success = false;
 		}
 

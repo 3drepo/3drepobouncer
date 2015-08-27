@@ -30,8 +30,7 @@
 
 #define strcasecmp _stricmp
 #endif
-#include <boost/lexical_cast.hpp>
-#include <boost/log/trivial.hpp>
+
 #include <string>
 #include <mongo/bson/bson.h>
 #include "../repo_node_utils.h"
@@ -56,7 +55,7 @@ namespace repo {
 						{
 							RepoBSONBuilder array;
 							for (unsigned int i = 0; i < vec.size(); ++i)
-								array.append(boost::lexical_cast<std::string>(i), vec[i]);
+								array.append(std::to_string(i), vec[i]);
 							return array.obj();
 						}
 

@@ -25,6 +25,7 @@
 
 #include "repo_scene.h"
 #include "../bson/repo_bson_factory.h"
+#include "../../../lib/repo_log.h"
 
 using namespace repo::core::model;
 
@@ -130,11 +131,11 @@ void RepoScene::addMetadata(
 			newCurrent.insert(metaUniqueID);
 			this->metadata.insert(meta);
 
-			BOOST_LOG_TRIVIAL(trace) << "Found pairing transformation! Metadata " << metaName <<  " added into the scene graph.";
+			repoTrace << "Found pairing transformation! Metadata " << metaName <<  " added into the scene graph.";
 		}
 		else
 		{
-			BOOST_LOG_TRIVIAL(warning) << "Did not find a pairing transformation node with the same name : " << metaName;
+			repoWarning << "Did not find a pairing transformation node with the same name : " << metaName;
 		}
 	}
 }
@@ -159,7 +160,7 @@ bool RepoScene::addNodeToScene(
 
 				if (!addNodeToMaps(node, errMsg))
 				{
-					BOOST_LOG_TRIVIAL(error) << "failed to add node (" << node->getUniqueID() << " to scene graph: " << errMsg;
+					repoError << "failed to add node (" << node->getUniqueID() << " to scene graph: " << errMsg;
 					success = false;
 				}
 			}
@@ -187,11 +188,11 @@ bool RepoScene::addNodeToMaps(RepoNode *node, std::string &errMsg)
 			//root node already exist, check if they are the same node
 			if (rootNode == node){
 				//for some reason 2 instance of the root node reside in this scene graph - probably not game breaking.
-				BOOST_LOG_TRIVIAL(warning) << "2 instance of the root node found";
+				repoWarning << "2 instance of the root node found";
 			}
 			else{
 				//2 root nodes?!
-				BOOST_LOG_TRIVIAL(error) << "Found 2 root nodes! (" << rootNode->getUniqueID() << " and  " << node->getUniqueID() << ")";
+				repoError << "Found 2 root nodes! (" << rootNode->getUniqueID() << " and  " << node->getUniqueID() << ")";
 				errMsg = "2 possible candidate for root node found. This is possibly an invalid Scene Graph.";
 				//if only one of them is transformation then take that one
 
@@ -263,14 +264,14 @@ bool RepoScene::commit(
 
 	if (success &= commitProjectSettings(handler, errMsg, userName))
 	{
-		BOOST_LOG_TRIVIAL(info) << "Commited project settings, commiting revision...";
+		repoInfo << "Commited project settings, commiting revision...";
 		RevisionNode *newRevNode = 0;
 		if (!message.empty())
 			commitMsg = message;
 
 		if (success &= commitRevisionNode(handler, errMsg, newRevNode, userName, commitMsg, tag))
 		{
-			BOOST_LOG_TRIVIAL(info) << "Commited revision node, commiting scene nodes...";
+			repoInfo << "Commited revision node, commiting scene nodes...";
 			//commited the revision node, commit the modification on the scene
 			if (success &= commitSceneChanges(handler, errMsg))
 			{
@@ -350,9 +351,9 @@ bool RepoScene::commitRevisionNode(
 	std::vector<repoUUID> newRemovedV(newRemoved.begin(), newRemoved.end());
 	std::vector<repoUUID> newModifiedV(newModified.begin(), newModified.end());
 
-	BOOST_LOG_TRIVIAL(trace) << "Committing Revision Node....";
+	repoTrace << "Committing Revision Node....";
 
-	BOOST_LOG_TRIVIAL(trace) << "New revision: #current = " << uniqueIDs.size() << " #added = " << newAddedV.size()
+	repoTrace << "New revision: #current = " << uniqueIDs.size() << " #added = " << newAddedV.size()
 		<< " #deleted = " << newRemovedV.size() << " #modified = " << newModifiedV.size();
 
 	newRevNode =
@@ -384,7 +385,7 @@ bool RepoScene::commitSceneChanges(
 	nodesToCommit.insert(nodesToCommit.end(), newModified.begin(), newModified.end());
 	nodesToCommit.insert(nodesToCommit.end(), newRemoved.begin(), newRemoved.end());
 
-	BOOST_LOG_TRIVIAL(info) << "Commiting addedNodes...." << newAdded.size() << " nodes";
+	repoInfo << "Commiting addedNodes...." << newAdded.size() << " nodes";
 	
 	for (it = nodesToCommit.begin(); it != nodesToCommit.end(); ++it)
 	{
@@ -438,17 +439,17 @@ std::string RepoScene::getBranchName() const
 
 std::vector<repoUUID> RepoScene::getModifiedNodesID() const
 {
-	BOOST_LOG_TRIVIAL(trace) << "getting modified nodes...";
+	repoTrace << "getting modified nodes...";
 	std::vector<repoUUID> ids(newAdded.begin(), newAdded.end());
 
 	ids.insert(ids.end(), newModified.begin(), newModified.end());
 	ids.insert(ids.end(), newRemoved.begin() , newRemoved.end());
-	BOOST_LOG_TRIVIAL(trace) << "Added: " << 
+	repoTrace << "Added: " << 
 		newAdded.size() << " modified: " << 
 		newModified.size() << " removed: " << 
 		newRemoved.size();
 
-	BOOST_LOG_TRIVIAL(trace) << "# modified nodes : " << ids.size();
+	repoTrace << "# modified nodes : " << ids.size();
 	return ids;
 }
 
@@ -461,15 +462,15 @@ bool RepoScene::loadRevision(
 		return false;
 
 	RepoBSON bson;
-	BOOST_LOG_TRIVIAL(trace) << "loading revision : " << databaseName << "." << projectName << " head Revision: " << headRevision;
+	repoTrace << "loading revision : " << databaseName << "." << projectName << " head Revision: " << headRevision;
 	if (headRevision){
 		bson = handler->findOneBySharedID(databaseName, projectName + "." +
 			revExt, branch, REPO_NODE_REVISION_LABEL_TIMESTAMP);
-		BOOST_LOG_TRIVIAL(trace) << "Fetching head of revision from branch " << UUIDtoString(branch);
+		repoTrace << "Fetching head of revision from branch " << UUIDtoString(branch);
 	}
 	else{
 		bson = handler->findOneByUniqueID(databaseName, projectName + "." + revExt, revision);
-		BOOST_LOG_TRIVIAL(trace) << "Fetching revision using unique ID: " << UUIDtoString(revision);
+		repoTrace << "Fetching revision using unique ID: " << UUIDtoString(revision);
 	}
 
 	if (bson.isEmpty()){
@@ -500,7 +501,7 @@ bool RepoScene::loadScene(
 	std::vector<RepoBSON> nodes = handler->findAllByUniqueIDs(
 		databaseName, projectName + "." + sceneExt, idArray);
 
-	BOOST_LOG_TRIVIAL(info) << "# of nodes in this scene = " << nodes.size();
+	repoInfo << "# of nodes in this scene = " << nodes.size();
 
 	return populate(handler, nodes, errMsg);
 
@@ -533,7 +534,7 @@ void RepoScene::modifyNode(
 
 	}
 	else{
-		BOOST_LOG_TRIVIAL(error) << "Trying to update a node " << sharedID << " that doesn't exist in the scene!";
+		repoError << "Trying to update a node " << sharedID << " that doesn't exist in the scene!";
 	}
 	
 }
@@ -623,7 +624,7 @@ bool RepoScene::populate(
 			referenceToScene[reference->getSharedID()] = refGraph;
 		}
 		else{
-			BOOST_LOG_TRIVIAL(warning) << "Failed to load reference node for ref ID" << reference->getUniqueID() << ": " << errMsg;
+			repoWarning << "Failed to load reference node for ref ID" << reference->getUniqueID() << ": " << errMsg;
 		}
 
 	}

@@ -18,9 +18,9 @@ void configureLogging(){
 
 void testDatabaseRetrieval(repo::RepoController *controller, const repo::RepoToken *token)
 {
-	BOOST_LOG_TRIVIAL(info) << "Fetching list of databases...";
+	repoInfo << "Fetching list of databases...";
 	std::list<std::string> databases = controller->getDatabases(token);
-	BOOST_LOG_TRIVIAL(info) << "Found " << databases.size() << " databases.";
+	repoInfo << "Found " << databases.size() << " databases.";
 	std::string dbList;
 
 	std::list<std::string>::iterator it;
@@ -31,7 +31,7 @@ void testDatabaseRetrieval(repo::RepoController *controller, const repo::RepoTok
 		dbList += *it;
 	}
 
-	BOOST_LOG_TRIVIAL(info) << "Database List: {" << dbList << "}";
+	repoInfo << "Database List: {" << dbList << "}";
 
 
 	if (databases.size() > 0)
@@ -39,9 +39,9 @@ void testDatabaseRetrieval(repo::RepoController *controller, const repo::RepoTok
 		std::string colList;
 
 		std::string dbName = *databases.begin();
-		BOOST_LOG_TRIVIAL(info) << "Fetching list of collections in " << dbName << " ...";
+		repoInfo << "Fetching list of collections in " << dbName << " ...";
 		std::list<std::string> collections = controller->getCollections(token, dbName);
-		BOOST_LOG_TRIVIAL(info) << "Found " << collections.size() << " collections.";
+		repoInfo << "Found " << collections.size() << " collections.";
 		
 		for (it = collections.begin(); it != collections.end(); ++it)
 		{
@@ -49,7 +49,7 @@ void testDatabaseRetrieval(repo::RepoController *controller, const repo::RepoTok
 				colList += ",";
 			colList += *it;
 		}
-		BOOST_LOG_TRIVIAL(info) << "Collection List: {" << colList << "}";
+		repoInfo << "Collection List: {" << colList << "}";
 
 	}
 }
@@ -115,7 +115,7 @@ int main(int argc, char* argv[]){
 	repoError << "this is error";
 	repoWarning << "this is warning";
 	repoFatal << "this is fatal";
-	//BOOST_LOG_TRIVIAL(info) << "Subscribed to the logger!";
+	//repoInfo << "Subscribed to the logger!";
 
 	//std::string errMsg;
 	//repo::RepoToken* token = controller->authenticateToAdminDatabaseMongo(errMsg, address, port, username, password);

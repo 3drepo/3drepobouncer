@@ -20,7 +20,7 @@
 */
 
 #include "repo_node_texture.h"
-
+#include "../../../lib/repo_log.h"
 #include <boost/filesystem.hpp>
 
 using namespace repo::core::model;
@@ -53,7 +53,7 @@ std::vector<char>* TextureNode::getRawData() const
 			getField(REPO_NODE_LABEL_DATA_BYTE_COUNT).numberInt(), dataVec);
 	}
 	else{
-		BOOST_LOG_TRIVIAL(error) << "Cannot find field for data in texture node!";
+		repoError << "Cannot find field for data in texture node!";
 	}
 
 	return dataVec;

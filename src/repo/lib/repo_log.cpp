@@ -36,22 +36,22 @@ void RepoLog::log(
 	switch (severity)
 	{
 	case RepoLogLevel::TRACE :
-		BOOST_LOG_TRIVIAL(trace) << msg;
+		repoTrace << msg;
 		break;
 	case RepoLogLevel::DEBUG :
-		BOOST_LOG_TRIVIAL(debug) << msg;
+		repoDebug << msg;
 		break;
 	case RepoLogLevel::INFO :
-		BOOST_LOG_TRIVIAL(info) << msg;
+		repoInfo << msg;
 		break;
 	case RepoLogLevel::WARNING :
-		BOOST_LOG_TRIVIAL(warning) << msg;
+		repoWarning << msg;
 		break;
 	case RepoLogLevel::ERR :
-		BOOST_LOG_TRIVIAL(error) << msg;
+		repoError << msg;
 		break;
 	case RepoLogLevel::FATAL :
-		BOOST_LOG_TRIVIAL(fatal) << msg;
+		repoFatal << msg;
 	}
 
 	
@@ -94,7 +94,7 @@ void RepoLog::setLoggingLevel(const RepoLogLevel &level)
 		loggingLevel = boost::log::trivial::fatal;
 		break;
 	default:
-		BOOST_LOG_TRIVIAL(error) << "Unknown log level: " << (int)level;
+		repoError << "Unknown log level: " << (int)level;
 		return;
 
 	}
@@ -138,7 +138,7 @@ void RepoLog::subscribeBroadcaster(RepoBroadcaster *broadcaster){
 void RepoLog::subscribeListeners(
 	const std::vector<RepoAbstractListener*> &listeners)
 {
-	BOOST_LOG_TRIVIAL(trace) << "Adding new subscriber(s) to the log";
+	repoTrace << "Adding new subscriber(s) to the log";
 
 	/*
 		FIXME: ideally, we should have a single broadcaster for the application

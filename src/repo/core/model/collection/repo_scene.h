@@ -22,7 +22,6 @@
 #pragma once
 
 #include <map>
-#include <boost/log/trivial.hpp>
 
 #include "repo_graph_abstract.h"
 

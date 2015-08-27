@@ -34,13 +34,12 @@
 //#define repoTrace(MSG) repo::lib::RepoLog::getInstance().log(repo::lib::RepoLog::RepoLogLevel::TRACE, MSG)
 //#define repoDebug(MSG) repo::lib::RepoLog::getInstance().log(repo::lib::RepoLog::RepoLogLevel::DEBUG, MSG)
 //#define repoInfo(MSG) repo::lib::RepoLog::getInstance().log(repo::lib::RepoLog::RepoLogLevel::INFO, MSG)
-#define repoLog(MSG) repo::lib::RepoLog::getInstance().log(repo::lib::RepoLog::RepoLogLevel::INFO, MSG)
 //#define repoWarning(MSG) repo::lib::RepoLog::getInstance().log(repo::lib::RepoLog::RepoLogLevel::WARNING, MSG)
 //#define repoError(MSG) repo::lib::RepoLog::getInstance().log(repo::lib::RepoLog::RepoLogLevel::ERR, MSG)
 //#define repoFatal(MSG) repo::lib::RepoLog::getInstance().log(repo::lib::RepoLog::RepoLogLevel::FATAL, MSG)
 
 
-
+#define repoLog(MSG) repo::lib::RepoLog::getInstance().log(repo::lib::RepoLog::RepoLogLevel::INFO, MSG)
 #define repoTrace BOOST_LOG_TRIVIAL(trace)
 #define repoDebug BOOST_LOG_TRIVIAL(debug)
 #define repoInfo BOOST_LOG_TRIVIAL(info)

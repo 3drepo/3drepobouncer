@@ -33,15 +33,12 @@
 #define strcasecmp _stricmp
 #endif
 #include <mongo/bson/bson.h> 
-
-#include <boost/log/trivial.hpp>
-
 #include "repo_bson_element.h"
 
 #include "../repo_model_global.h"
 #include "../repo_node_properties.h"
 #include "../repo_node_utils.h"
-
+#include "../../../lib/repo_log.h"
 #include "../../../repo_bouncer_global.h"
 
 namespace repo {
@@ -114,7 +111,7 @@ namespace repo {
 
 								if (length > vectorSizeInBytes)
 								{
-									BOOST_LOG_TRIVIAL(warning) << "RepoBSON::getBinaryFieldAsVector : "
+									repoWarning << "RepoBSON::getBinaryFieldAsVector : "
 										<< "size of binary data (" << length << ") is bigger than expected vector size(" 
 										<< vectorSizeInBytes << ")";
 								}
@@ -125,7 +122,7 @@ namespace repo {
 									
 								}
 								else{
-									BOOST_LOG_TRIVIAL(error) << "RepoBSON::getBinaryFieldAsVector : "
+									repoError << "RepoBSON::getBinaryFieldAsVector : "
 										<< "size of binary data (" << length << ") is smaller than expected vector size("
 										<< vectorSizeInBytes << ")";
 
@@ -134,7 +131,7 @@ namespace repo {
 								}
 							}
 							else{
-								BOOST_LOG_TRIVIAL(error) << "RepoBSON::getBinaryFieldAsVector :" <<
+								repoError << "RepoBSON::getBinaryFieldAsVector :" <<
 									(!vec ? " nullptr to vector " : "bson element type is not BinDataGeneral!");
 							}
 
@@ -169,12 +166,12 @@ namespace repo {
 
 								}
 								else{
-									BOOST_LOG_TRIVIAL(error) << "RepoBSON::getBinaryFieldAsVector : "
+									repoError << "RepoBSON::getBinaryFieldAsVector : "
 										<< "size of binary data (" << length << ") Unable to copy 0 bytes!";
 								}
 							}
 							else{
-								BOOST_LOG_TRIVIAL(error) << "RepoBSON::getBinaryFieldAsVector :" <<
+								repoError << "RepoBSON::getBinaryFieldAsVector :" <<
 									(!vec ? " nullptr to vector " : "bson element type is not BinDataGeneral!");
 							}
 

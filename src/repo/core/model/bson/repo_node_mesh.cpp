@@ -20,7 +20,7 @@
 */
 
 #include "repo_node_mesh.h"
-
+#include "../../../lib/repo_log.h"
 using namespace repo::core::model;
 
 MeshNode::MeshNode() :
@@ -154,7 +154,7 @@ std::vector<repo_face_t>* MeshNode::getFaces() const
 
 			if (serializedFaces->size() <= mNumIndicesIndex)
 			{
-				BOOST_LOG_TRIVIAL(error) << "MeshNode::getFaces() : serialisedFaces.size() <= mNumIndicesIndex!";
+				repoError << "MeshNode::getFaces() : serialisedFaces.size() <= mNumIndicesIndex!";
 			}
 			else
 			{

@@ -31,6 +31,7 @@
 
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../core/model/repo_node_utils.h"
+#include "../../../lib/repo_log.h"
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -521,7 +522,7 @@ model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 			aiMetadataEntry &currentValue = assimpMeta->mValues[i];
 
 			if (key == "IfcGloballyUniqueId")
-				BOOST_LOG_TRIVIAL(error) << "TODO: fix IfcGloballyUniqueId in RepoMetadata" << std::endl;
+				repoError << "TODO: fix IfcGloballyUniqueId in RepoMetadata" << std::endl;
 
 
 			switch (currentValue.mType)
@@ -686,7 +687,7 @@ repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 		std::vector<model::RepoNode *> originalOrderMesh; //vector that keeps track original order for assimp indices
 		std::map<std::string, model::RepoNode *> camerasMap;
 
-		BOOST_LOG_TRIVIAL(info) << "Constructing Material Nodes...";
+		repoInfo << "Constructing Material Nodes...";
 		/*
 		* ------------- Material Nodes -----------------
 		*/
@@ -704,7 +705,7 @@ repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 					name.data);
 
 				if (!material)
-					BOOST_LOG_TRIVIAL(error) << "Unable to construct material node in Assimp Model Convertor!";
+					repoError << "Unable to construct material node in Assimp Model Convertor!";
 				else
 					materials.insert(material);
 					
@@ -716,7 +717,7 @@ repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 		* ---------------------------------------------
 		*/
 
-		BOOST_LOG_TRIVIAL(info) << "Constructing Mesh Nodes...";
+		repoInfo << "Constructing Mesh Nodes...";
 		/*
 		* --------------- Mesh Nodes ------------------
 		*/
@@ -729,7 +730,7 @@ repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 					originalOrderMaterial);
 
 				if (!mesh)
-					BOOST_LOG_TRIVIAL(error) << "Unable to construct mesh node in Assimp Model Convertor!";
+					repoError << "Unable to construct mesh node in Assimp Model Convertor!";
 				else
 					meshes.insert(mesh);
 				originalOrderMesh.push_back(mesh);
@@ -739,7 +740,7 @@ repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 		* ---------------------------------------------
 		*/
 
-		BOOST_LOG_TRIVIAL(info) << "Constructing Camera Nodes...";
+		repoInfo << "Constructing Camera Nodes...";
 		/*
 		* ------------- Camera Nodes ------------------
 		*/
@@ -751,7 +752,7 @@ repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 				std::string cameraName(assimpScene->mCameras[i]->mName.data);
 				model::RepoNode* camera = createCameraRepoNode(assimpScene->mCameras[i]);
 				if (!camera)
-					BOOST_LOG_TRIVIAL(error) << "Unable to construct mesh node in Assimp Model Convertor!";
+					repoError << "Unable to construct mesh node in Assimp Model Convertor!";
 				else
 					cameras.insert(camera);
 
@@ -777,7 +778,7 @@ repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 
 		// TODO: Bones
 
-		BOOST_LOG_TRIVIAL(info) << "Constructing Transformation Nodes...";
+		repoInfo << "Constructing Transformation Nodes...";
 		/*
 		* ----------- Transformation Nodes ------------
 		*/
@@ -829,12 +830,12 @@ bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
 		for (unsigned int i = 0; i < assimpScene->mNumMeshes; ++i)
 			polyCount += assimpScene->mMeshes[i]->mNumFaces;
 
-		BOOST_LOG_TRIVIAL(info) << "============ IMPORTING MODEL WITh ASSIMP MODEL CONVERTOR ===============";
-		BOOST_LOG_TRIVIAL(info) << "Loaded ";
-		BOOST_LOG_TRIVIAL(info) << fileName << " with " << polyCount << " polygons in ";
-		BOOST_LOG_TRIVIAL(info) << assimpScene->mNumMeshes << " ";
-		BOOST_LOG_TRIVIAL(info) << ((assimpScene->mNumMeshes == 1) ? "mesh" : "meshes");
-		BOOST_LOG_TRIVIAL(info) << std::endl;
+		repoInfo << "============ IMPORTING MODEL WITh ASSIMP MODEL CONVERTOR ===============";
+		repoInfo << "Loaded ";
+		repoInfo << fileName << " with " << polyCount << " polygons in ";
+		repoInfo << assimpScene->mNumMeshes << " ";
+		repoInfo << ((assimpScene->mNumMeshes == 1) ? "mesh" : "meshes");
+		repoInfo << std::endl;
 
 		//-------------------------------------------------------------------------
 		// Textures
@@ -879,7 +880,7 @@ void AssimpModelImport::loadTextures(std::string dirPath){
 					std::ifstream file(dirPath + fileName, std::ios::in | std::ios::binary | std::ios::ate);
 					if (!file.is_open())
 					{
-						BOOST_LOG_TRIVIAL(error) << "Could not open texture: " << dirPath << fileName << std::endl;
+						repoError << "Could not open texture: " << dirPath << fileName << std::endl;
 					}
 					else
 					{

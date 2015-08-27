@@ -24,10 +24,6 @@
 #pragma once
 
 #include <string>
-
-
-#include <boost/log/trivial.hpp>
-
 #include "repo_bouncer_global.h"
 
 #include "core/handler/repo_database_handler_mongo.h"

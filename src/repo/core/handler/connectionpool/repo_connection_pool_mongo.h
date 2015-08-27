@@ -19,7 +19,7 @@
 #pragma once
 
 #include "../../../lib/repo_stack.h"
-
+#include "../../../lib/repo_log.h"
 
 
 #if defined(_WIN32) || defined(_WIN64)
@@ -30,7 +30,6 @@
 #endif
 
 #include <mongo/client/dbclient.h>
-#include <boost/log/trivial.hpp>
 
 namespace repo{
 	namespace core{
@@ -51,7 +50,7 @@ namespace repo{
 						dbAddress(dbAddress),
 						auth(auth)
 					{
-						BOOST_LOG_TRIVIAL(debug) << "Instantiating Mongo connection pool with " << maxSize << " connections...";
+						repoDebug << "Instantiating Mongo connection pool with " << maxSize << " connections...";
 						//push one connected worker to ensure valid connection
 						//so the caller can handle the exceptions appropriately
 						std::string errMsg;
@@ -60,12 +59,12 @@ namespace repo{
 
 						if (worker)
 						{
-							BOOST_LOG_TRIVIAL(debug) << "Connected to database, trying authentication..";
+							repoDebug << "Connected to database, trying authentication..";
 							worker->auth(*auth);
 						}
 						else
 						{
-							BOOST_LOG_TRIVIAL(debug) << "Failed to connect: " << errMsg;
+							repoDebug << "Failed to connect: " << errMsg;
 							throw mongo::DBException(errMsg, 1000);
 						}
 

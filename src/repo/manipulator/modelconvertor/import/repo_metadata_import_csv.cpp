@@ -16,7 +16,7 @@
 */
 
 #include "repo_metadata_import_csv.h"
-
+#include "../../../lib/repo_log.h"
 #include <fstream>
 
 using namespace repo::manipulator::modelconvertor;
@@ -58,7 +58,7 @@ repo::core::model::RepoNodeSet MetadataImportCSV::readMetadata(
 
 	if (file.is_open())
 	{
-		BOOST_LOG_TRIVIAL(trace) << "Reading... " << path;
+		repoTrace << "Reading... " << path;
 		std::vector<std::string> tokens;
 		while (file.good() && readLine(file, tokens))
 		{
@@ -70,7 +70,7 @@ repo::core::model::RepoNodeSet MetadataImportCSV::readMetadata(
 					repo::core::model::RepoBSONFactory::makeMetaDataNode(headers, tokens, tokens[0]);
 				metadata.insert(new repo::core::model::MetadataNode(meta));
 
-				BOOST_LOG_TRIVIAL(debug) << " metadata: " << meta.toString();
+				repoDebug << " metadata: " << meta.toString();
 
 			}
 
@@ -79,11 +79,11 @@ repo::core::model::RepoNodeSet MetadataImportCSV::readMetadata(
 		file.close();
 
 
-		BOOST_LOG_TRIVIAL(trace) << "Created " << metadata.size() << " metadata nodes.";
+		repoTrace << "Created " << metadata.size() << " metadata nodes.";
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Error opening file: " << path;
+		repoError << "Error opening file: " << path;
 	}
 
 	

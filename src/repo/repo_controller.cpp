@@ -87,9 +87,9 @@ RepoToken* RepoController::authenticateToAdminDatabaseMongo(
 	{
 		token = new RepoToken(cred, dbFullAd, worker->getNameOfAdminDatabase(dbFullAd));
 
-		BOOST_LOG_TRIVIAL(info) << "Successfully connected to the " << dbFullAd;
+		repoInfo << "Successfully connected to the " << dbFullAd;
 		if (!username.empty())
-			BOOST_LOG_TRIVIAL(info) << username << " is authenticated to " << dbFullAd;
+			repoInfo << username << " is authenticated to " << dbFullAd;
 	}
 
 	workerPool.push(worker);
@@ -139,7 +139,7 @@ void RepoController::commitScene(
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Trying to commit to the database without a Repo Token!";
+		repoError << "Trying to commit to the database without a Repo Token!";
 	}
 }
 
@@ -149,7 +149,7 @@ uint64_t RepoController::countItemsInCollection(
 	const std::string    &collection)
 {
 	uint64_t numItems;
-	BOOST_LOG_TRIVIAL(trace) << "Controller: Counting number of items in the collection";
+	repoTrace << "Controller: Counting number of items in the collection";
 
 	if (token)
 	{
@@ -159,7 +159,7 @@ uint64_t RepoController::countItemsInCollection(
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Trying to fetch database without a Repo Token!";
+		repoError << "Trying to fetch database without a Repo Token!";
 	}
 
 	return numItems;
@@ -184,7 +184,7 @@ repo::core::model::RepoScene* RepoController::fetchScene(
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Trying to fetch scene without a Repo Token!";
+		repoError << "Trying to fetch scene without a Repo Token!";
 	}
 
 	return scene;
@@ -197,7 +197,7 @@ std::vector < repo::core::model::RepoBSON >
 		const std::string    &collection,
 		const uint64_t       &skip)
 {
-	BOOST_LOG_TRIVIAL(trace) << "Controller: Fetching BSONs from " 
+	repoTrace << "Controller: Fetching BSONs from " 
 		<< database << "."  << collection << "....";
 	std::vector<repo::core::model::RepoBSON> vector;
 	if (token)
@@ -211,10 +211,10 @@ std::vector < repo::core::model::RepoBSON >
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Trying to fetch BSONs from a collection without a Repo Token!";
+		repoError << "Trying to fetch BSONs from a collection without a Repo Token!";
 	}
 
-	BOOST_LOG_TRIVIAL(trace) << "Obtained " << vector.size() << " bson objects.";
+	repoTrace << "Obtained " << vector.size() << " bson objects.";
 
 	return vector;
 }
@@ -229,7 +229,7 @@ std::vector < repo::core::model::RepoBSON >
 		const int                    &sortOrder,
 		const uint64_t               &skip)
 {
-	BOOST_LOG_TRIVIAL(trace) << "Controller: Fetching BSONs from "
+	repoTrace << "Controller: Fetching BSONs from "
 		<< database << "." << collection << "....";
 	std::vector<repo::core::model::RepoBSON> vector;
 	if (token)
@@ -243,17 +243,17 @@ std::vector < repo::core::model::RepoBSON >
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Trying to fetch BSONs from a collection without a Repo Token!";
+		repoError << "Trying to fetch BSONs from a collection without a Repo Token!";
 	}
 
-	BOOST_LOG_TRIVIAL(trace) << "Obtained " << vector.size() << " bson objects.";
+	repoTrace << "Obtained " << vector.size() << " bson objects.";
 
 	return vector;
 }
 
 std::list<std::string> RepoController::getDatabases(const RepoToken *token)
 {
-	BOOST_LOG_TRIVIAL(trace) << "Controller: Fetching Database....";
+	repoTrace << "Controller: Fetching Database....";
 	std::list<std::string> list;
 	if (token)
 	{
@@ -272,7 +272,7 @@ std::list<std::string> RepoController::getDatabases(const RepoToken *token)
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Trying to fetch database without a Repo Token!";
+		repoError << "Trying to fetch database without a Repo Token!";
 	}
 
 	return list;
@@ -292,7 +292,7 @@ std::list<std::string>  RepoController::getCollections(
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Trying to fetch collections without a Repo Token!";
+		repoError << "Trying to fetch collections without a Repo Token!";
 	}
 
 	return list;
@@ -315,11 +315,11 @@ repo::core::model::CollectionStats RepoController::getCollectionStats(
 		workerPool.push(worker);
 
 		if (!errMsg.empty())
-			BOOST_LOG_TRIVIAL(error) << errMsg;
+			repoError << errMsg;
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Trying to get collections stats without a Repo Token!";
+		repoError << "Trying to get collections stats without a Repo Token!";
 
 	}
 
@@ -341,7 +341,7 @@ std::map<std::string, std::list<std::string>>
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Trying to insert a user without a Repo Token!";
+		repoError << "Trying to insert a user without a Repo Token!";
 
 	}
 
@@ -361,7 +361,7 @@ void RepoController::insertUser(
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Trying to insert a user without a Repo Token!";
+		repoError << "Trying to insert a user without a Repo Token!";
 
 	}
 
@@ -385,7 +385,7 @@ bool RepoController::removeCollection(
 	else
 	{
 		errMsg = "Trying to fetch collections without a Repo Token!"; 
-		BOOST_LOG_TRIVIAL(error) << errMsg;
+		repoError << errMsg;
 		
 	}
 
@@ -410,7 +410,7 @@ bool RepoController::removeDatabase(
 	else
 	{
 		errMsg = "Trying to fetch collections without a Repo Token!";
-		BOOST_LOG_TRIVIAL(error) << errMsg;
+		repoError << errMsg;
 
 	}
 
@@ -432,7 +432,7 @@ void RepoController::removeDocument(
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Trying to delete a document without a Repo Token!";
+		repoError << "Trying to delete a document without a Repo Token!";
 	}
 
 }
@@ -450,7 +450,7 @@ void RepoController::removeUser(
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Trying to insert a user without a Repo Token!";
+		repoError << "Trying to insert a user without a Repo Token!";
 
 	}
 }
@@ -468,7 +468,7 @@ void RepoController::updateUser(
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Trying to insert a user without a Repo Token!";
+		repoError << "Trying to insert a user without a Repo Token!";
 
 	}
 }
@@ -489,7 +489,7 @@ void RepoController::upsertDocument(
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Trying to upsert a document without a Repo Token!";
+		repoError << "Trying to upsert a document without a Repo Token!";
 	}
 }
 
@@ -526,7 +526,7 @@ repo::core::model::RepoScene* RepoController::createFederatedScene(
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Trying to federate a new scene graph with no references!";
+		repoError << "Trying to federate a new scene graph with no references!";
 	}
 
 	return scene;
@@ -553,7 +553,7 @@ std::list<std::string> RepoController::getAdminDatabaseRoles(const RepoToken *to
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Trying to get database roles without a token!";
+		repoError << "Trying to get database roles without a token!";
 	}
 
 	return roles;
@@ -570,7 +570,7 @@ std::string RepoController::getNameOfAdminDatabase(const RepoToken *token)
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Trying to get database roles without a token!";
+		repoError << "Trying to get database roles without a token!";
 	}
 	return name;
 }
@@ -586,7 +586,7 @@ std::list<std::string> RepoController::getStandardDatabaseRoles(const RepoToken 
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Trying to get database roles without a token!";
+		repoError << "Trying to get database roles without a token!";
 	}
 
 	return roles;
@@ -619,7 +619,7 @@ repo::core::model::RepoNodeSet RepoController::loadMetadataFromFile(
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Trying to load from an empty file path!";
+		repoError << "Trying to load from an empty file path!";
 
 	}
 
@@ -641,12 +641,12 @@ repo::core::model::RepoScene*
 		scene = worker->loadSceneFromFile(filePath, errMsg, config);
 		workerPool.push(worker);
 		if (!scene)
-			BOOST_LOG_TRIVIAL(error) << "Failed ot load scene from file: " << errMsg;
+			repoError << "Failed ot load scene from file: " << errMsg;
 		
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Trying to load from an empty file path!";
+		repoError << "Trying to load from an empty file path!";
 
 	}
 
@@ -669,7 +669,7 @@ bool RepoController::saveSceneToFile(
 
 	}
 	else{
-		BOOST_LOG_TRIVIAL(error) << "RepoController::saveSceneToFile: NULL pointer to scene!";
+		repoError << "RepoController::saveSceneToFile: NULL pointer to scene!";
 		success = false;
 	}
 

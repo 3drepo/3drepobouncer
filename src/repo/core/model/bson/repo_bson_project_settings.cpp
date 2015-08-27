@@ -21,6 +21,7 @@
 
 #include "repo_bson_builder.h"
 #include "repo_bson_project_settings.h"
+#include "../../../lib/repo_log.h"
 
 
 using namespace repo::core::model;
@@ -54,7 +55,7 @@ std::vector<bool> RepoProjectSettings::getPermissionsBoolean() const
 			perm[ind] = permInt[i] & mask[j];
 		}
 
-		BOOST_LOG_TRIVIAL(trace) << "POSIX value : " << permInt[i] << "Permission = " 
+		repoTrace << "POSIX value : " << permInt[i] << "Permission = " 
 			<< perm[(i + 1) * 3] << ", " << perm[(i + 1) * 3 + 1] << "," << perm[(i + 1) * 3 + 2];
 	}
 
@@ -84,7 +85,7 @@ std::string RepoProjectSettings::getPermissionsString() const
 			}
 			else
 			{
-				BOOST_LOG_TRIVIAL(error) << "Invalid POSIX permission value : " << value;
+				repoError << "Invalid POSIX permission value : " << value;
 				sstream << "eee"; //let's use "eee" to denote error.
 			}
 		}
@@ -131,7 +132,7 @@ std::vector<bool> RepoProjectSettings::stringToPermissionsBool(std::string octal
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "ProjectSettings - stringToPermissionsBool : size of parameter is smaller than 4.";
+		repoError << "ProjectSettings - stringToPermissionsBool : size of parameter is smaller than 4.";
 	}
 
 	return perm;

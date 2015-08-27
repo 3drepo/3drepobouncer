@@ -24,7 +24,6 @@
 #include <string>
 #include <iostream>
 #include <sstream>
-#include <boost/log/trivial.hpp>
 
 #if defined(_WIN32) || defined(_WIN64)
 	#include <WinSock2.h>

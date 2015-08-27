@@ -22,6 +22,7 @@
 #include <regex>
 
 #include "repo_database_handler_mongo.h"
+#include "../../lib/repo_log.h"
 
 using namespace repo::core::handler;
 
@@ -89,7 +90,7 @@ uint64_t MongoDatabaseHandler::countItemsInCollection(
 	{
 		errMsg =  "Failed to count num. items within "
 			+ database + "." + collection + ":" + e.what();
-		BOOST_LOG_TRIVIAL(error) << errMsg;
+		repoError << errMsg;
 	}
 
 	workerPool->returnWorker(worker);
@@ -136,7 +137,7 @@ bool MongoDatabaseHandler::dropCollection(
 	}
 	catch (mongo::DBException& e)
 	{
-		BOOST_LOG_TRIVIAL(error) << "Failed to drop collection ("
+		repoError << "Failed to drop collection ("
 			<< database << "." << collection << ":" << e.what();
 	}
 
@@ -158,7 +159,7 @@ bool MongoDatabaseHandler::dropDatabase(
 	}
 	catch (mongo::DBException& e)
 	{
-		BOOST_LOG_TRIVIAL(error) << "Failed to drop database :" << e.what();
+		repoError << "Failed to drop database :" << e.what();
 	}
 
 	workerPool->returnWorker(worker);
@@ -185,7 +186,7 @@ bool MongoDatabaseHandler::dropDocument(
 	}
 	catch (mongo::DBException& e)
 	{
-		BOOST_LOG_TRIVIAL(error) << "Failed to drop document :" << e.what();
+		repoError << "Failed to drop document :" << e.what();
 	}
 
 	workerPool->returnWorker(worker);
@@ -247,12 +248,12 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 			} while (cursor.get() && cursor->more());
 
 			if (fieldsCount != retrieved){
-				BOOST_LOG_TRIVIAL(error) << "Number of documents("<< retrieved<<") retreived by findAllByUniqueIDs did not match the number of unique IDs(" <<  fieldsCount <<")!";
+				repoError << "Number of documents("<< retrieved<<") retreived by findAllByUniqueIDs did not match the number of unique IDs(" <<  fieldsCount <<")!";
 			}
 		}
 		catch (mongo::DBException& e)
 		{
-			BOOST_LOG_TRIVIAL(error) << e.what();
+			repoError << e.what();
 		}
 
 		workerPool->returnWorker(worker);
@@ -287,7 +288,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 	}
 	catch (mongo::DBException& e)
 	{
-		BOOST_LOG_TRIVIAL(error) << "Error querying the database: "<< std::string(e.what());
+		repoError << "Error querying the database: "<< std::string(e.what());
 	}
 
 	workerPool->returnWorker(worker);
@@ -314,7 +315,7 @@ mongo::BSONObj MongoDatabaseHandler::findOneByUniqueID(
 	}
 	catch (mongo::DBException& e)
 	{
-		BOOST_LOG_TRIVIAL(error) << e.what();
+		repoError << e.what();
 	}
 
 	workerPool->returnWorker(worker);
@@ -351,7 +352,7 @@ std::vector<repo::core::model::RepoBSON>
 	}
 	catch (mongo::DBException& e)
 	{
-		BOOST_LOG_TRIVIAL(error) << "Failed retrieving bsons from mongo: " << e.what();
+		repoError << "Failed retrieving bsons from mongo: " << e.what();
 	}
 
 	workerPool->returnWorker(worker);
@@ -371,7 +372,7 @@ std::list<std::string> MongoDatabaseHandler::getCollections(
 	}
 	catch (mongo::DBException& e)
 	{
-		BOOST_LOG_TRIVIAL(error) << e.what();
+		repoError << e.what();
 	}
 
 	workerPool->returnWorker(worker);
@@ -396,7 +397,7 @@ repo::core::model::CollectionStats MongoDatabaseHandler::getCollectionStats(
 	catch (mongo::DBException &e)
 	{
 		errMsg = e.what();
-		BOOST_LOG_TRIVIAL(error) << "Failed to retreive collection stats for" << database 
+		repoError << "Failed to retreive collection stats for" << database 
 			<< "." << collection << " : " << errMsg;
 	}
 
@@ -419,7 +420,7 @@ std::list<std::string> MongoDatabaseHandler::getDatabases(
 	}
 	catch (mongo::DBException& e)
 	{
-		BOOST_LOG_TRIVIAL(error) << e.what();
+		repoError << e.what();
 	}
 	workerPool->returnWorker(worker);
 	return list;
@@ -453,7 +454,7 @@ std::map<std::string, std::list<std::string> > MongoDatabaseHandler::getDatabase
 	}
 	catch (mongo::DBException& e)
 	{
-		BOOST_LOG_TRIVIAL(error) << e.what();
+		repoError << e.what();
 	}
 	return mapping;
 }
@@ -478,7 +479,7 @@ MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
 
 	if(!handler){
 		//initialise the mongo client
-		BOOST_LOG_TRIVIAL(trace) << "Handler not present for " << mongoConnectionString.toString() << " instantiating new handler...";
+		repoTrace << "Handler not present for " << mongoConnectionString.toString() << " instantiating new handler...";
 		try{
 			handler = new MongoDatabaseHandler(mongoConnectionString, maxConnections, dbName, username, password, pwDigested);
 		}
@@ -488,12 +489,12 @@ MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
 				delete handler;
 			handler = 0;
 			errMsg = std::string(e.what());
-			BOOST_LOG_TRIVIAL(error) << "Error establishing Mongo Handler: " << errMsg;
+			repoError << "Error establishing Mongo Handler: " << errMsg;
 		}
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(trace) << "Found handler, returning existing handler";
+		repoTrace << "Found handler, returning existing handler";
 	}
 
 
@@ -652,7 +653,7 @@ bool MongoDatabaseHandler::upsertDocument(
 		{
 			mongo::Query query;
 			query = BSON(REPO_LABEL_ID << bsonID);
-			BOOST_LOG_TRIVIAL(trace) << "query = " << query.toString();
+			repoTrace << "query = " << query.toString();
 			worker->update(getNamespace(database, collection), query, obj, true);
 		}
 		else
@@ -672,7 +673,7 @@ bool MongoDatabaseHandler::upsertDocument(
 
 			if (info.hasField("writeErrors"))
 			{
-				BOOST_LOG_TRIVIAL(error) << info.getField("writeErrors").Array().at(0).embeddedObject().getField("errmsg");
+				repoError << info.getField("writeErrors").Array().at(0).embeddedObject().getField("errmsg");
 				success = false;
 			}
 		}

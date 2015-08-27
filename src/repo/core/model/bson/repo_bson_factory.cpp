@@ -3,6 +3,8 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include "../../../lib/repo_log.h"
+
 using namespace repo::core::model;
 
 
@@ -221,7 +223,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 
 	if (keys.size() != values.size())
 	{
-		BOOST_LOG_TRIVIAL(warning) << "makeMetaDataNode: number of keys (" << keys.size()
+		repoWarning << "makeMetaDataNode: number of keys (" << keys.size()
 			<< ") does not match the number of values(" << values.size() << ")!";
 	}
 
