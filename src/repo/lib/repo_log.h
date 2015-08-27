@@ -22,6 +22,7 @@
 #pragma once
 
 #include <string> 
+#include <boost/log/trivial.hpp>
 
 #include "repo_broadcaster.h"
 #include "repo_listener_abstract.h"

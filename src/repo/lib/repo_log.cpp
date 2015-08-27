@@ -3,7 +3,6 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/iostreams/stream.hpp>
-#include <boost/log/trivial.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/sinks/sync_frontend.hpp>
 #include <boost/log/sinks/text_ostream_backend.hpp>
