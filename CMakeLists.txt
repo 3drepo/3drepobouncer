@@ -18,7 +18,7 @@
 # So this generates a CMakeList.txt for each sub directory within the src folder
 # update the SOURCES and HEADERS variable, and include their child directory
 
-project("testCmake")
+project("3drepobouncer")
 
 cmake_minimum_required(VERSION 3.3)
 
