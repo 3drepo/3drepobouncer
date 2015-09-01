@@ -6,8 +6,7 @@ AbstractGraph::AbstractGraph(
 	const std::string &databaseName,
 	const std::string &projectName) :
 	databaseName(databaseName),
-	projectName(projectName),
-	rootNode(0)
+	projectName(projectName)
 {
 
 }

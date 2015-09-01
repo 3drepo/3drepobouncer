@@ -39,11 +39,13 @@ RepoScene::RepoScene(
 	revExt(revExt),
 	headRevision(true),
 	unRevisioned(false),
-	revNode(0)
+	revNode(0),
+	queryStashGraph(false)
 {
+	graph.rootNode = nullptr;
+	stashGraph.rootNode = nullptr;
 	//defaults to master branch
 	branch = stringToUUID(REPO_HISTORY_MASTER_BRANCH);
-	//instantiate scene and revision graph
 
 }
 
@@ -64,15 +66,23 @@ RepoScene::RepoScene(
 	revExt(revExt),
 	headRevision(true),
 	unRevisioned(true),
-	revNode(0)
+	revNode(0),
+	queryStashGraph(false)
 {
+	graph.rootNode = nullptr;
+	stashGraph.rootNode = nullptr;
 	branch = stringToUUID(REPO_HISTORY_MASTER_BRANCH);
 	populateAndUpdate(cameras, meshes, materials, metadata, textures, transformations, references, maps, unknowns);
 }
 
 RepoScene::~RepoScene()
 {
-	for (auto& pair : nodesByUniqueID)
+	for (auto& pair : graph.nodesByUniqueID)
+	{
+		delete pair.second;
+	}
+
+	for (auto& pair : stashGraph.nodesByUniqueID)
 	{
 		delete pair.second;
 	}
@@ -83,12 +93,12 @@ RepoScene::~RepoScene()
 
 void RepoScene::addMetadata(
 	RepoNodeSet &metadata,
-	const bool        &exactMatch)
+	const bool  &exactMatch)
 {
 
 	std::map<std::string, RepoNode*> transMap;
-
-	for (RepoNode* transformation : transformations)
+	//stashed version of the graph does not need to track metadata information
+	for (RepoNode* transformation : graph.transformations)
 	{
 		std::string transformationName = transformation->getName();
 		if (!exactMatch)
@@ -116,20 +126,20 @@ void RepoScene::addMetadata(
 			repoUUID metaSharedID = meta->getSharedID();
 			repoUUID metaUniqueID = meta->getUniqueID();
 
-			if (parentToChildren.find(transSharedID) == parentToChildren.end())
-				parentToChildren[transSharedID] = std::vector<repoUUID>();
+			if (graph.parentToChildren.find(transSharedID) == graph.parentToChildren.end())
+				graph.parentToChildren[transSharedID] = std::vector<repoUUID>();
 
-			parentToChildren[transSharedID].push_back(metaSharedID);
+			graph.parentToChildren[transSharedID].push_back(metaSharedID);
 			meta->swap(meta->cloneAndAddParent(transSharedID));
 
-			nodesByUniqueID[metaUniqueID] = meta;
-			sharedIDtoUniqueID[metaSharedID] = metaUniqueID;
+			graph.nodesByUniqueID[metaUniqueID] = meta;
+			graph.sharedIDtoUniqueID[metaSharedID] = metaUniqueID;
 
 
 			//FIXME should move this to a generic add node function...
 			newAdded.insert(metaSharedID);
 			newCurrent.insert(metaUniqueID);
-			this->metadata.insert(meta);
+			graph.metadata.insert(meta);
 
 			repoTrace << "Found pairing transformation! Metadata " << metaName <<  " added into the scene graph.";
 		}
@@ -173,7 +183,7 @@ bool RepoScene::addNodeToScene(
 	return success;
 }
 
-bool RepoScene::addNodeToMaps(RepoNode *node, std::string &errMsg)
+bool RepoScene::addNodeToMaps(repoGraphInstance &g, RepoNode *node, std::string &errMsg)
 {
 	bool success = true; 
 	repoUUID uniqueID = node->getUniqueID();
@@ -182,23 +192,23 @@ bool RepoScene::addNodeToMaps(RepoNode *node, std::string &errMsg)
 	//----------------------------------------------------------------------
 	//If the node has no parents it must be the rootnode
 	if (!node->hasField(REPO_NODE_LABEL_PARENTS)){
-		if (!rootNode)
-			rootNode = node;
+		if (!g.rootNode)
+			g.rootNode = node;
 		else{
 			//root node already exist, check if they are the same node
-			if (rootNode == node){
+			if (g.rootNode == node){
 				//for some reason 2 instance of the root node reside in this scene graph - probably not game breaking.
-				repoWarning << "2 instance of the root node found";
+				repoWarning << "2 instance of the (same) root node found";
 			}
 			else{
 				//2 root nodes?!
-				repoError << "Found 2 root nodes! (" << rootNode->getUniqueID() << " and  " << node->getUniqueID() << ")";
-				errMsg = "2 possible candidate for root node found. This is possibly an invalid Scene Graph.";
+				repoError << "Found 2 root nodes! (" << g.rootNode->getUniqueID() << " and  " << node->getUniqueID() << ")";
+				errMsg = "2 candidate for root node found. This is possibly an invalid Scene Graph.";
 				//if only one of them is transformation then take that one
 
 				if (node->getTypeAsEnum() == NodeType::TRANSFORMATION)
 				{
-					rootNode = node;
+					g.rootNode = node;
 				}
 			}
 		}
@@ -214,25 +224,25 @@ bool RepoScene::addNodeToMaps(RepoNode *node, std::string &errMsg)
 
 			//check if the parent already has an entry
 			std::map<repoUUID, std::vector<repoUUID>>::iterator mapIt;
-			mapIt = parentToChildren.find(parent);
-			if (mapIt != parentToChildren.end()){
+			mapIt = g.parentToChildren.find(parent);
+			if (mapIt != g.parentToChildren.end()){
 				//has an entry, add to the vector
-				parentToChildren[parent].push_back(sharedID);
+				g.parentToChildren[parent].push_back(sharedID);
 			}
 			else{
 				//no entry, create one
 				std::vector<repoUUID> children;
 				children.push_back(sharedID);
 
-				parentToChildren[parent] = children;
+				g.parentToChildren[parent] = children;
 
 			}
 
 		}
 	} //if (!node->hasField(REPO_NODE_LABEL_PARENTS))
 
-	nodesByUniqueID[uniqueID] = node;
-	sharedIDtoUniqueID[sharedID] = uniqueID;
+	g.nodesByUniqueID[uniqueID] = node;
+	g.sharedIDtoUniqueID[sharedID] = uniqueID;
 
 	return success;
 }
@@ -339,8 +349,9 @@ bool RepoScene::commitRevisionNode(
 
 	//using boost's range adaptor, retrieve all the keys within this map
 	//http://www.boost.org/doc/libs/1_53_0/libs/range/doc/html/range/reference/adaptors/reference/map_keys.html
+	//revision node should only track non optimised graph members.
 	boost::copy(
-		nodesByUniqueID | boost::adaptors::map_keys,
+		graph.nodesByUniqueID | boost::adaptors::map_keys,
 		std::back_inserter(uniqueIDs));
 
 
@@ -390,7 +401,7 @@ bool RepoScene::commitSceneChanges(
 	for (it = nodesToCommit.begin(); it != nodesToCommit.end(); ++it)
 	{
 	
-		RepoNode *node = nodesByUniqueID[sharedIDtoUniqueID[*it]];
+		RepoNode *node = graph.nodesByUniqueID[graph.sharedIDtoUniqueID[*it]];
 		if (node->objsize() > handler->documentSizeLimit())
 		{
 			success = false;
@@ -406,16 +417,17 @@ bool RepoScene::commitSceneChanges(
 
 std::vector<RepoNode*> 
 RepoScene::getChildrenAsNodes(
+const repoGraphInstance &g,
 const repoUUID &parent) const
 {
 	std::vector<RepoNode*> children;
 
-	std::map<repoUUID, std::vector<repoUUID>>::const_iterator it = parentToChildren.find(parent);
-	if (it != parentToChildren.end())
+	std::map<repoUUID, std::vector<repoUUID>>::const_iterator it = g.parentToChildren.find(parent);
+	if (it != g.parentToChildren.end())
 	{
 		for (auto child : it->second)
 		{
-			children.push_back(nodesByUniqueID.at(sharedIDtoUniqueID.at(child)));
+			children.push_back(g.nodesByUniqueID.at(g.sharedIDtoUniqueID.at(child)));
 		}
 	}
 	return children;
@@ -513,9 +525,9 @@ void RepoScene::modifyNode(
 	const bool                        &overwrite)
 {
 	//RepoNode* updatedNode = nullptr;
-	if (sharedIDtoUniqueID.find(sharedID) != sharedIDtoUniqueID.end())
+	if (graph.sharedIDtoUniqueID.find(sharedID) != graph.sharedIDtoUniqueID.end())
 	{
-		RepoNode* nodeToChange = nodesByUniqueID[sharedIDtoUniqueID[sharedID]];
+		RepoNode* nodeToChange = graph.nodesByUniqueID[graph.sharedIDtoUniqueID[sharedID]];
 
 		//check if the node is already in the "to modify" list
 		bool isInList = newAdded.find(sharedID) != newAdded.end() || newModified.find(sharedID) != newModified.end();
@@ -559,47 +571,47 @@ bool RepoScene::populate(
 		if (REPO_NODE_TYPE_TRANSFORMATION == nodeType)
 		{
 			node = new TransformationNode(obj);
-			transformations.insert(node);
+			graph.transformations.insert(node);
 		}
 		else if (REPO_NODE_TYPE_MESH == nodeType)
 		{
 			node = new MeshNode(obj);
-			meshes.insert(node);
+			graph.meshes.insert(node);
 		}
 		else if (REPO_NODE_TYPE_MATERIAL == nodeType)
 		{
 			node = new MaterialNode(obj);
-			materials.insert(node);
+			graph.materials.insert(node);
 		}
 		else if (REPO_NODE_TYPE_TEXTURE == nodeType)
 		{
 			node = new TextureNode(obj);
-			textures.insert(node);
+			graph.textures.insert(node);
 		}
 		else if (REPO_NODE_TYPE_CAMERA == nodeType)
 		{
 			node = new CameraNode(obj);
-			cameras.insert(node);
+			graph.cameras.insert(node);
 		}
 		else if (REPO_NODE_TYPE_REFERENCE == nodeType)
 		{
 			node = new ReferenceNode(obj);
-			references.insert(node);
+			graph.references.insert(node);
 		}
 		else if (REPO_NODE_TYPE_METADATA == nodeType)
 		{
 			node = new MetadataNode(obj);
-			metadata.insert(node);
+			graph.metadata.insert(node);
 		}
 		else if (REPO_NODE_TYPE_MAP == nodeType)
 		{
 			node = new MapNode(obj);
-			maps.insert(node);
+			graph.maps.insert(node);
 		}
 		else{
 			//UNKNOWN TYPE - instantiate it with generic RepoNode
 			node = new RepoNode(obj);
-			unknowns.insert(node);
+			graph.unknowns.insert(node);
 		}
 
 		success &= addNodeToMaps(node, errMsg);
@@ -609,7 +621,7 @@ bool RepoScene::populate(
 
 	//deal with References
 	RepoNodeSet::iterator refIt;
-	for (const auto &node : references)
+	for (const auto &node : graph.references)
 	{
 		ReferenceNode* reference = (ReferenceNode*) node;
 
@@ -621,7 +633,7 @@ bool RepoScene::populate(
 			refGraph->setBranch(reference->getRevisionID());
 
 		if (refGraph->loadScene(handler, errMsg)){
-			referenceToScene[reference->getSharedID()] = refGraph;
+			graph.referenceToScene[reference->getSharedID()] = refGraph;
 		}
 		else{
 			repoWarning << "Failed to load reference node for ref ID" << reference->getUniqueID() << ": " << errMsg;
@@ -632,6 +644,7 @@ bool RepoScene::populate(
 }
 
 void RepoScene::populateAndUpdate(
+	repoGraphInstance &instance,
 	const RepoNodeSet &cameras,
 	const RepoNodeSet &meshes,
 	const RepoNodeSet &materials,
@@ -645,15 +658,15 @@ void RepoScene::populateAndUpdate(
 
 	std::string errMsg;
 
-	addNodeToScene(cameras        , errMsg, &(this->cameras));
-	addNodeToScene(meshes         , errMsg, &(this->meshes));
-	addNodeToScene(materials      , errMsg, &(this->materials));
-	addNodeToScene(metadata       , errMsg, &(this->metadata));
-	addNodeToScene(textures       , errMsg, &(this->textures));
-	addNodeToScene(transformations, errMsg, &(this->transformations));
-	addNodeToScene(references     , errMsg, &(this->references));
-	addNodeToScene(maps           , errMsg, &(this->maps));
-	addNodeToScene(unknowns       , errMsg, &(this->unknowns));
+	addNodeToScene(cameras,         errMsg, &(instance.cameras));
+	addNodeToScene(meshes,          errMsg, &(instance.meshes));
+	addNodeToScene(materials,       errMsg, &(instance.materials));
+	addNodeToScene(metadata,        errMsg, &(instance.metadata));
+	addNodeToScene(textures,        errMsg, &(instance.textures));
+	addNodeToScene(transformations, errMsg, &(instance.transformations));
+	addNodeToScene(references,      errMsg, &(instance.references));
+	addNodeToScene(maps,            errMsg, &(instance.maps));
+	addNodeToScene(unknowns,        errMsg, &(instance.unknowns));
 
 }
 
@@ -681,22 +694,22 @@ void RepoScene::printStatistics(std::iostream &output)
 			output << "Revision:\t\t\t\t" << (headRevision ? "Head" : UUIDtoString(revision)) << std::endl;
 		}
 	}
-	if (rootNode)
+	if (graph.rootNode)
 	{
 		output << "Scene Graph loaded:\t\t\ttrue" << std::endl;
-		output << "\t# Nodes:\t\t\t" << nodesByUniqueID.size() << std::endl;
-		output << "\t# ShareToUnique:\t\t" << sharedIDtoUniqueID.size() << std::endl;
-		output << "\t# ParentToChildren:\t\t" << parentToChildren.size() << std::endl;
-		output << "\t# ReferenceToScene:\t\t" << referenceToScene.size() << std::endl << std::endl;
-		output << "\t# Cameras:\t\t\t" << cameras.size() << std::endl;
-		output << "\t# Maps:\t\t\t\t" << maps.size() << std::endl;
-		output << "\t# Materials:\t\t\t" << materials.size() << std::endl;
-		output << "\t# Meshes:\t\t\t" << meshes.size() << std::endl;
-		output << "\t# Metadata:\t\t\t" << metadata.size() << std::endl;
-		output << "\t# References:\t\t\t" << references.size() << std::endl;
-		output << "\t# Textures:\t\t\t" << textures.size() << std::endl;
-		output << "\t# Transformations:\t\t" << transformations.size() << std::endl;
-		output << "\t# Unknowns:\t\t\t" << unknowns.size() << std::endl << std::endl;
+		output << "\t# Nodes:\t\t\t" << graph.nodesByUniqueID.size() << std::endl;
+		output << "\t# ShareToUnique:\t\t" << graph.sharedIDtoUniqueID.size() << std::endl;
+		output << "\t# ParentToChildren:\t\t" << graph.parentToChildren.size() << std::endl;
+		output << "\t# ReferenceToScene:\t\t" << graph.referenceToScene.size() << std::endl << std::endl;
+		output << "\t# Cameras:\t\t\t" << graph.cameras.size() << std::endl;
+		output << "\t# Maps:\t\t\t\t" << graph.maps.size() << std::endl;
+		output << "\t# Materials:\t\t\t" << graph.materials.size() << std::endl;
+		output << "\t# Meshes:\t\t\t" << graph.meshes.size() << std::endl;
+		output << "\t# Metadata:\t\t\t" << graph.metadata.size() << std::endl;
+		output << "\t# References:\t\t\t" << graph.references.size() << std::endl;
+		output << "\t# Textures:\t\t\t" << graph.textures.size() << std::endl;
+		output << "\t# Transformations:\t\t" << graph.transformations.size() << std::endl;
+		output << "\t# Unknowns:\t\t\t" << graph.unknowns.size() << std::endl << std::endl;
 
 		output << "Uncommitted changes:" << std::endl;
 		output << "\tAdded:\t\t\t\t" << newAdded.size() << std::endl;
@@ -706,6 +719,32 @@ void RepoScene::printStatistics(std::iostream &output)
 	else
 	{
 		output << "Scene Graph loaded:\t\t\tfalse" << std::endl;
+	}
+	if (stashGraph.rootNode)
+	{
+		output << "Stash Graph loaded:\t\t\ttrue" << std::endl;
+		output << "\t# Nodes:\t\t\t" << stashGraph.nodesByUniqueID.size() << std::endl;
+		output << "\t# ShareToUnique:\t\t" << stashGraph.sharedIDtoUniqueID.size() << std::endl;
+		output << "\t# ParentToChildren:\t\t" << stashGraph.parentToChildren.size() << std::endl;
+		output << "\t# ReferenceToScene:\t\t" << stashGraph.referenceToScene.size() << std::endl << std::endl;
+		output << "\t# Cameras:\t\t\t" << stashGraph.cameras.size() << std::endl;
+		output << "\t# Maps:\t\t\t\t" << stashGraph.maps.size() << std::endl;
+		output << "\t# Materials:\t\t\t" << stashGraph.materials.size() << std::endl;
+		output << "\t# Meshes:\t\t\t" << stashGraph.meshes.size() << std::endl;
+		output << "\t# Metadata:\t\t\t" << stashGraph.metadata.size() << std::endl;
+		output << "\t# References:\t\t\t" << stashGraph.references.size() << std::endl;
+		output << "\t# Textures:\t\t\t" << stashGraph.textures.size() << std::endl;
+		output << "\t# Transformations:\t\t" << stashGraph.transformations.size() << std::endl;
+		output << "\t# Unknowns:\t\t\t" << stashGraph.unknowns.size() << std::endl << std::endl;
+
+		output << "Uncommitted changes:" << std::endl;
+		output << "\tAdded:\t\t\t\t" << newAdded.size() << std::endl;
+		output << "\tDeleted:\t\t\t" << newRemoved.size() << std::endl;
+		output << "\tModified:\t\t\t" << newModified.size() << std::endl;
+	}
+	else
+	{
+		output << "Stash Graph loaded:\t\t\tfalse" << std::endl;
 	}
 
 	output << "================End of Scene Graph Statistics================" << std::endl;
