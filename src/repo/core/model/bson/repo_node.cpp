@@ -45,7 +45,8 @@ RepoNode::~RepoNode()
 {
 }
 
-RepoNode RepoNode::cloneAndAddParent(repoUUID parentID) const
+RepoNode RepoNode::cloneAndAddParent(
+	const repoUUID &parentID) const
 {
 	RepoBSONBuilder builder;
 	RepoBSONBuilder arrayBuilder;
@@ -63,7 +64,7 @@ RepoNode RepoNode::cloneAndAddParent(repoUUID parentID) const
 
 RepoNode RepoNode::cloneAndAddFields(
 	const RepoNode *changes,
-	const bool     &newUniqueID)
+	const bool     &newUniqueID) const
 {
 	RepoBSONBuilder builder;
 	if (newUniqueID)
@@ -85,6 +86,18 @@ RepoNode RepoNode::cloneAndAddFields(
 	builder.appendElementsUnique(*this);
 
 	return builder.obj();
+}
+
+RepoNode RepoNode::cloneAndAddMergedNodes(
+	const std::vector<repoUUID> &mergeMap) const
+{
+	RepoBSONBuilder builder;
+	RepoBSONBuilder arrayBuilder;
+	builder.appendArray(REPO_LABEL_MERGED_NODES, arrayBuilder.createArrayBSON(mergeMap));
+
+	builder.appendElementsUnique(*this);
+
+	return RepoNode(builder.obj());
 }
 
 std::vector<repoUUID> RepoNode::getParentIDs() const

@@ -32,26 +32,34 @@ namespace repo {
 				// Fields specific only to mesh
 				//
 				//------------------------------------------------------------------------------
-				#define REPO_NODE_LABEL_VERTICES				"vertices" //<! vertices array
-				#define REPO_NODE_LABEL_VERTICES_COUNT			"vertices_count" //<! vertices size
-				#define REPO_NODE_LABEL_VERTICES_BYTE_COUNT		"vertices_byte_count"
+				#define REPO_NODE_MESH_LABEL_VERTICES				"vertices" //<! vertices array
+				#define REPO_NODE_MESH_LABEL_VERTICES_COUNT			"vertices_count" //<! vertices size
+				#define REPO_NODE_MESH_LABEL_VERTICES_BYTE_COUNT		"vertices_byte_count"
 				//------------------------------------------------------------------------------
-				#define REPO_NODE_LABEL_FACES					"faces" //<! faces array label
-				#define REPO_NODE_LABEL_FACES_COUNT				"faces_count" //<! number of faces
-				#define REPO_NODE_LABEL_FACES_BYTE_COUNT		"faces_byte_count"
+				#define REPO_NODE_MESH_LABEL_FACES					"faces" //<! faces array label
+				#define REPO_NODE_MESH_LABEL_FACES_COUNT				"faces_count" //<! number of faces
+				#define REPO_NODE_MESH_LABEL_FACES_BYTE_COUNT		"faces_byte_count"
 				//------------------------------------------------------------------------------
-				#define REPO_NODE_LABEL_NORMALS					"normals" //!< normals array label
+				#define REPO_NODE_MESH_LABEL_NORMALS					"normals" //!< normals array label
 				//------------------------------------------------------------------------------
-				#define REPO_NODE_LABEL_OUTLINE					"outline" //!< outline array label
-				#define REPO_NODE_LABEL_BOUNDING_BOX			"bounding_box" //!< bounding box
+				#define REPO_NODE_MESH_LABEL_OUTLINE					"outline" //!< outline array label
+				#define REPO_NODE_MESH_LABEL_BOUNDING_BOX			"bounding_box" //!< bounding box
 				//------------------------------------------------------------------------------
-				#define REPO_NODE_LABEL_UV_CHANNELS				"uv_channels" //!< uv channels array
-				#define REPO_NODE_LABEL_UV_CHANNELS_COUNT		"uv_channels_count"
-				#define REPO_NODE_LABEL_UV_CHANNELS_BYTE_COUNT	"uv_channels_byte_count"
-				#define REPO_NODE_LABEL_SHA256                  "sha256"
-				#define REPO_NODE_LABEL_COLORS                  "colors"
+				#define REPO_NODE_MESH_LABEL_UV_CHANNELS				"uv_channels" //!< uv channels array
+				#define REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT		"uv_channels_count"
+				#define REPO_NODE_MESH_LABEL_UV_CHANNELS_BYTE_COUNT	"uv_channels_byte_count"
+				#define REPO_NODE_MESH_LABEL_SHA256                  "sha256"
+				#define REPO_NODE_MESH_LABEL_COLORS                  "colors"
 				//------------------------------------------------------------------------------
-				#define REPO_NODE_UUID_SUFFIX_MESH				"08" //!< uuid suffix
+				#define REPO_NODE_MESH_LABEL_MAP_ID			        "map_id"
+				#define REPO_NODE_MESH_LABEL_VERTEX_FROM 		    "v_from"
+				#define REPO_NODE_MESH_LABEL_VERTEX_TO 		        "v_to"
+				#define REPO_NODE_MESH_LABEL_TRIANGLE_FROM	        "t_from"
+				#define REPO_NODE_MESH_LABEL_TRIANGLE_TO		        "t_to"
+				#define REPO_NODE_MESH_LABEL_MATERIAL_ID		        "mat_id"
+				#define REPO_NODE_MESH_LABEL_MERGE_MAP		        "m_map"
+				//------------------------------------------------------------------------------
+				#define REPO_NODE_MESH_UUID_SUFFIX_MESH				"08" //!< uuid suffix
 				//------------------------------------------------------------------------------
 
 				class REPO_API_EXPORT MeshNode :public RepoNode
@@ -77,6 +85,13 @@ namespace repo {
 
 
 					/**
+					* Create a new copy of the node and update its mesh mapping
+					* @return returns a new meshNode with the new mappings
+					*/
+					MeshNode cloneAndUpdateMeshMapping(const std::vector<repo_mesh_mapping_t> &vec);
+
+					
+					/**
 					* --------- Convenience functions -----------
 					*/
 
@@ -90,6 +105,8 @@ namespace repo {
 					*/
 					std::vector<repo_face_t>* getFaces() const;
 
+
+					std::vector<repo_mesh_mapping_t> getMeshMapping() const;
 
 					/**
 					* Retrieve a vector of vertices from the bson object
@@ -112,6 +129,13 @@ namespace repo {
 					*/
 					std::vector<repo_vector_t>* getVertices() const;
 
+				private:
+					/**
+					* Given a mesh mapping, convert it into a bson object
+					* @param mapping the mapping to convert
+					* @return return a bson object containing the mapping
+					*/
+					RepoBSON meshMappingAsBSON(const repo_mesh_mapping_t  &mapping);
 
 				};
 		} //namespace model

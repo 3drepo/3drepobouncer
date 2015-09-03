@@ -39,8 +39,7 @@ RepoScene::RepoScene(
 	revExt(revExt),
 	headRevision(true),
 	unRevisioned(false),
-	revNode(0),
-	queryStashGraph(false)
+	revNode(0)
 {
 	graph.rootNode = nullptr;
 	stashGraph.rootNode = nullptr;
@@ -66,8 +65,7 @@ RepoScene::RepoScene(
 	revExt(revExt),
 	headRevision(true),
 	unRevisioned(true),
-	revNode(0),
-	queryStashGraph(false)
+	revNode(0)
 {
 	graph.rootNode = nullptr;
 	stashGraph.rootNode = nullptr;
@@ -90,6 +88,75 @@ RepoScene::~RepoScene()
 	if (revNode)
 		delete revNode;
 }
+
+
+void RepoScene::addInheritance(
+	const GraphType &gType,
+	const repoUUID  &parent,
+	const repoUUID  &child,
+	const bool      &noUpdate)
+{
+	repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+	//stash has no sense of version control, so only default graph needs to track changes
+	bool trackChanges = noUpdate && gType == GraphType::DEFAULT;
+
+	//check if both nodes exist in the graph
+	RepoNode *parentNode = getNodeByUniqueID(gType, parent);
+	RepoNode *childNode = getNodeByUniqueID(gType, child);
+
+	if (parentNode && childNode)
+	{
+		repoUUID parentShareID = parentNode->getSharedID();
+		repoUUID childShareID = childNode->getSharedID();
+
+
+		//add children to parentToChildren mapping
+		std::map<repoUUID, std::vector<repoUUID>>::iterator childrenIT = 
+			g.parentToChildren.find(parentShareID);
+
+		if (childrenIT != g.parentToChildren.end())
+		{
+			std::vector<repoUUID> &children = childrenIT->second;
+			//TODO: use sets for performance?
+			auto childrenInd = std::find(children.begin(), children.end(), childShareID);
+			if (childrenInd == children.end())
+			{
+				children.push_back(childShareID);
+			}
+		}
+		else
+		{
+			g.parentToChildren[parentShareID] = std::vector<repoUUID>();
+			g.parentToChildren[parentShareID].push_back(childShareID);
+		}
+
+
+		//add parent to children
+		std::vector<repoUUID> parents = childNode->getParentIDs();
+		//TODO: use sets for performance?
+		auto parentInd = std::find(parents.begin(), parents.end(), parentShareID);
+		if (parentInd == parents.end())
+		{
+			if (trackChanges)
+			{
+				//this is considered a change on the node, we need to make a new node with new uniqueID
+				modifyNode(childShareID, new RepoNode(childNode->cloneAndAddParent(parentShareID)));
+			}
+			else
+			{
+				//not tracking, just swap the content
+				childNode->swap(childNode->cloneAndAddParent(parentShareID));
+			}
+				
+		}
+	}
+	else
+	{
+		repoError << "Unable to add parentship: parent node / child node not found.";
+	}
+
+}
+
 
 void RepoScene::addMetadata(
 	RepoNodeSet &metadata,
@@ -152,6 +219,7 @@ void RepoScene::addMetadata(
 
 
 bool RepoScene::addNodeToScene(
+	const GraphType &gType,
 	const RepoNodeSet nodes, 
 	std::string &errMsg,
 	 RepoNodeSet *collection)
@@ -168,13 +236,14 @@ bool RepoScene::addNodeToScene(
 			if (node)
 			{
 
-				if (!addNodeToMaps(node, errMsg))
+				if (!addNodeToMaps(gType, node, errMsg))
 				{
 					repoError << "failed to add node (" << node->getUniqueID() << " to scene graph: " << errMsg;
 					success = false;
 				}
 			}
-			newAdded.insert(node->getSharedID());
+			if (gType == GraphType::DEFAULT)
+				newAdded.insert(node->getSharedID());
 		}
 	}
 
@@ -183,12 +252,17 @@ bool RepoScene::addNodeToScene(
 	return success;
 }
 
-bool RepoScene::addNodeToMaps(repoGraphInstance &g, RepoNode *node, std::string &errMsg)
+bool RepoScene::addNodeToMaps(
+	const GraphType &gType, 
+	RepoNode *node, 
+	std::string &errMsg)
 {
 	bool success = true; 
 	repoUUID uniqueID = node->getUniqueID();
 	repoUUID sharedID = node->getSharedID();
 
+
+	repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 	//----------------------------------------------------------------------
 	//If the node has no parents it must be the rootnode
 	if (!node->hasField(REPO_NODE_LABEL_PARENTS)){
@@ -245,6 +319,44 @@ bool RepoScene::addNodeToMaps(repoGraphInstance &g, RepoNode *node, std::string 
 	g.sharedIDtoUniqueID[sharedID] = uniqueID;
 
 	return success;
+}
+
+void RepoScene::addStashGraph(
+	const RepoNodeSet &cameras,
+	const RepoNodeSet &meshes,
+	const RepoNodeSet &materials,
+	const RepoNodeSet &textures,
+	const RepoNodeSet &transformations)
+{
+	populateAndUpdate(GraphType::OPTIMIZED, cameras, meshes, materials, RepoNodeSet(), 
+		textures, transformations, RepoNodeSet(), RepoNodeSet(), RepoNodeSet());
+}
+
+void RepoScene::clearStash()
+{
+
+	for (auto &pair : stashGraph.nodesByUniqueID)
+	{
+		if (pair.second)
+			delete pair.second;
+	}
+
+	stashGraph.cameras.clear();
+	stashGraph.meshes.clear();
+	stashGraph.materials.clear();
+	stashGraph.maps.clear();
+	stashGraph.metadata.clear();
+	stashGraph.references.clear();
+	stashGraph.textures.clear();
+	stashGraph.transformations.clear();
+	stashGraph.unknowns.clear();
+	stashGraph.nodesByUniqueID.clear();
+	stashGraph.sharedIDtoUniqueID.clear();
+	stashGraph.parentToChildren.clear();
+	stashGraph.referenceToScene.clear(); //how will this work for stash?
+
+	stashGraph.rootNode = nullptr;
+
 }
 
 bool RepoScene::commit(
@@ -417,11 +529,11 @@ bool RepoScene::commitSceneChanges(
 
 std::vector<RepoNode*> 
 RepoScene::getChildrenAsNodes(
-const repoGraphInstance &g,
-const repoUUID &parent) const
+	const GraphType &gType,
+	const repoUUID &parent) const
 {
 	std::vector<RepoNode*> children;
-
+	repoGraphInstance g = GraphType::OPTIMIZED == gType ? stashGraph : graph;
 	std::map<repoUUID, std::vector<repoUUID>>::const_iterator it = g.parentToChildren.find(parent);
 	if (it != g.parentToChildren.end())
 	{
@@ -644,7 +756,7 @@ bool RepoScene::populate(
 }
 
 void RepoScene::populateAndUpdate(
-	repoGraphInstance &instance,
+	const GraphType   &gType,
 	const RepoNodeSet &cameras,
 	const RepoNodeSet &meshes,
 	const RepoNodeSet &materials,
@@ -657,16 +769,16 @@ void RepoScene::populateAndUpdate(
 {
 
 	std::string errMsg;
-
-	addNodeToScene(cameras,         errMsg, &(instance.cameras));
-	addNodeToScene(meshes,          errMsg, &(instance.meshes));
-	addNodeToScene(materials,       errMsg, &(instance.materials));
-	addNodeToScene(metadata,        errMsg, &(instance.metadata));
-	addNodeToScene(textures,        errMsg, &(instance.textures));
-	addNodeToScene(transformations, errMsg, &(instance.transformations));
-	addNodeToScene(references,      errMsg, &(instance.references));
-	addNodeToScene(maps,            errMsg, &(instance.maps));
-	addNodeToScene(unknowns,        errMsg, &(instance.unknowns));
+	repoGraphInstance &instance = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+	addNodeToScene(gType, cameras, errMsg, &(instance.cameras));
+	addNodeToScene(gType, meshes, errMsg, &(instance.meshes));
+	addNodeToScene(gType, materials, errMsg, &(instance.materials));
+	addNodeToScene(gType, metadata, errMsg, &(instance.metadata));
+	addNodeToScene(gType, textures, errMsg, &(instance.textures));
+	addNodeToScene(gType, transformations, errMsg, &(instance.transformations));
+	addNodeToScene(gType, references, errMsg, &(instance.references));
+	addNodeToScene(gType, maps, errMsg, &(instance.maps));
+	addNodeToScene(gType, unknowns, errMsg, &(instance.unknowns));
 
 }
 

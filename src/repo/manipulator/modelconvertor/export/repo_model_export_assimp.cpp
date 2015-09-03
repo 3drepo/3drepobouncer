@@ -222,8 +222,9 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 		break;
 		case repo::core::model::NodeType::REFERENCE:
 		{
+			//FIXME: default?
 			const repo::core::model::RepoScene *refScene = 
-				scene->getSceneFromReference(currNode->getSharedID());
+				scene->getSceneFromReference(repo::core::model::RepoScene::GraphType::DEFAULT, currNode->getSharedID());
 			node = constructAiSceneRecursively(refScene, refScene->getRoot(),
 				meshVec, matVec, camVec, meshMap, matMap, camMap, textNodes);
 		}

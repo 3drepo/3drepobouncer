@@ -437,9 +437,15 @@ repo::core::model::RepoScene*
 
 	if (modelConvertor)
 	{
+		repoTrace << "Importing model...";
 		if (modelConvertor->importModel(filePath, msg))
 		{
+			repoTrace << "model Imported, generating Repo Scene";
 			scene = modelConvertor->generateRepoScene();
+		}
+		else
+		{
+			repoError << "Failed to import model : " << msg;
 		}
 
 		delete modelConvertor;

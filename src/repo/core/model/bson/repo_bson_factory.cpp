@@ -283,18 +283,18 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	if (vertices.size() > 0)
 	{
 		builder.appendBinary(
-			REPO_NODE_LABEL_VERTICES,
+			REPO_NODE_MESH_LABEL_VERTICES,
 			&vertices[0],
 			vertices.size() * sizeof(vertices[0]),
-			REPO_NODE_LABEL_VERTICES_BYTE_COUNT,
-			REPO_NODE_LABEL_VERTICES_COUNT
+			REPO_NODE_MESH_LABEL_VERTICES_BYTE_COUNT,
+			REPO_NODE_MESH_LABEL_VERTICES_COUNT
 			);
 
 	}
 
 	if (faces.size() > 0)
 	{
-		builder << REPO_NODE_LABEL_FACES_COUNT << (uint32_t)(faces.size());
+		builder << REPO_NODE_MESH_LABEL_FACES_COUNT << (uint32_t)(faces.size());
 
 		// In API LEVEL 1, faces are stored as
 		// [n1, v1, v2, ..., n2, v1, v2...]
@@ -310,17 +310,17 @@ MeshNode RepoBSONFactory::makeMeshNode(
 		}
 
 		builder.appendBinary(
-			REPO_NODE_LABEL_FACES,
+			REPO_NODE_MESH_LABEL_FACES,
 			&facesLevel1[0],
 			facesLevel1.size() * sizeof(facesLevel1[0]),
-			REPO_NODE_LABEL_FACES_BYTE_COUNT
+			REPO_NODE_MESH_LABEL_FACES_BYTE_COUNT
 			);
 	}
 
 	if (normals.size() > 0)
 	{
 		builder.appendBinary(
-			REPO_NODE_LABEL_NORMALS,
+			REPO_NODE_MESH_LABEL_NORMALS,
 			&normals[0],
 			normals.size() * sizeof(normals[0]));
 	}
@@ -334,7 +334,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 			arrayBuilder.appendArray(boost::lexical_cast<std::string>(i), builder.createArrayBSON(boundingBox[i]));
 		}
 
-		builder.appendArray(REPO_NODE_LABEL_BOUNDING_BOX, arrayBuilder.obj());
+		builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, arrayBuilder.obj());
 	}
 
 
@@ -347,7 +347,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 			arrayBuilder.appendArray(boost::lexical_cast<std::string>(i), builder.createArrayBSON(outline[i]));
 		}
 
-		builder.appendArray(REPO_NODE_LABEL_OUTLINE, arrayBuilder.obj());
+		builder.appendArray(REPO_NODE_MESH_LABEL_OUTLINE, arrayBuilder.obj());
 	}
 
 	//if (!vertexHash.empty())
@@ -361,7 +361,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	// Vertex colors
 	if (colors.size())
 		builder.appendBinary(
-		REPO_NODE_LABEL_COLORS,
+		REPO_NODE_MESH_LABEL_COLORS,
 		&colors[0],
 		colors.size() * sizeof(colors[0]));
 
@@ -370,7 +370,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	if (uvChannels.size() > 0)
 	{
 		// Could be unsigned __int64 if BSON had such construct (the closest is only __int64)
-		builder << REPO_NODE_LABEL_UV_CHANNELS_COUNT << (uint32_t)(uvChannels.size());
+		builder << REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT << (uint32_t)(uvChannels.size());
 
 		std::vector<repo_vector2d_t> concatenated;
 
@@ -387,10 +387,10 @@ MeshNode RepoBSONFactory::makeMeshNode(
 		}
 
 		builder.appendBinary(
-			REPO_NODE_LABEL_UV_CHANNELS,
+			REPO_NODE_MESH_LABEL_UV_CHANNELS,
 			&concatenated[0],
 			concatenated.size() * sizeof(concatenated[0]),
-			REPO_NODE_LABEL_UV_CHANNELS_BYTE_COUNT);
+			REPO_NODE_MESH_LABEL_UV_CHANNELS_BYTE_COUNT);
 	}
 
 	return MeshNode(builder.obj());

@@ -30,12 +30,15 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include <boost/bimap.hpp>
+
 #include "repo_model_import_abstract.h"
 #include "../../../core/model/collection/repo_scene.h"
 
 namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
+			using assimp_map = boost::bimap<uintptr_t, repo::core::model::RepoNode*>;
 			class AssimpModelImport : public AbstractModelImport
 			{
 			public:
@@ -75,6 +78,19 @@ namespace repo{
 				bool importModel(std::string filePath, std::string &errMsg);
 
 			private:
+
+				/**
+				* Convert the assimp scene into Repo Scene
+				* If scene is null, construct a new repo scene
+				* if scene already exists, this must be a stash representation
+				* thus add it into the existing scene
+				* @param scene Repo Scene (if exists)
+				* @return return a pointer to the scene (same pointer if scene != nullptr)
+				*/
+				repo::core::model::RepoScene* convertAiSceneToRepoScene(
+					assimp_map                    &map,
+					repo::core::model::RepoScene  *scene = nullptr);
+				
 				/**
 				* Create a Camera Node given the information in ASSIMP objects
 				* @param assimp camera object
@@ -122,14 +138,16 @@ namespace repo{
 				* @param cameras a map of camera name to camera objects
 				* @param meshes A vector fo mesh nodes in its original ASSIMP object order
 				* @param metadata a RepoNode Set to store metadata nodes generated within this function
+				* @param map keeps track of the mapping between assimp pointer and repoNode
 				* @param parent a vector of parents to this node (optional)
 				* @return returns the created Metadata Node
 				*/
-				repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecursive(
+				repo::core::model::RepoNodeSet createTransformationNodesRecursive(
 					const aiNode                                                     *assimpNode,
 					const std::map<std::string, repo::core::model::RepoNode *> &cameras,
 					const std::vector<repo::core::model::RepoNode *>           &meshes,
 					repo::core::model::RepoNodeSet						     &metadata,
+					assimp_map													&map,
 					const std::vector<repoUUID>						             &parent = std::vector<repoUUID>()
 					);
 
@@ -151,6 +169,23 @@ namespace repo{
 				*/
 				uint32_t AssimpModelImport::composeAssimpPostProcessingFlags(
 					uint32_t flag = 0);
+
+				/**
+				* Populate the optimization linkage between the org. scene graph 
+				* and the optimised scene graph
+				* note: this is a recursive function
+				* @param node  node we are currently trasversing
+				* @param scene repo scene in process
+				* @param combinedMap the mapping of both opt and org mapping
+				* @param optMap optimised mapping
+				* @return returns whether it has successfully mapped everything.
+ 				*/
+
+				bool populateOptimMaps(
+					repo::core::model::RepoNode  *node,
+					repo::core::model::RepoScene *scene, 
+					const assimp_map             &combinedMap, 
+					const assimp_map             &optMap);
 
 				Assimp::Importer importer;  /*! Stores ASSIMP related settings for model import */
 				const aiScene *assimpScene; /*! ASSIMP scene representation of the model */
