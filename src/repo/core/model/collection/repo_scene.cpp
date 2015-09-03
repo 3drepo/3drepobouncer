@@ -275,10 +275,13 @@ bool RepoScene::addNodeToMaps(
 				repoWarning << "2 instance of the (same) root node found";
 			}
 			else{
-				//2 root nodes?!
-				repoError << "Found 2 root nodes! (" << g.rootNode->getUniqueID() << " and  " << node->getUniqueID() << ")";
-				errMsg = "2 candidate for root node found. This is possibly an invalid Scene Graph.";
-				//if only one of them is transformation then take that one
+				//found 2 nodes with no parents...
+				//they could be straggling materials. Only give an error if both are transformation
+				//NOTE: this will fall apart if we ever allow root node to be something other than a transformation.
+
+				if (node->getTypeAsEnum() == NodeType::TRANSFORMATION && 
+					g.rootNode->getTypeAsEnum() == NodeType::TRANSFORMATION)
+					repoError << "2 candidate for root node found. This is possibly an invalid Scene Graph.";
 
 				if (node->getTypeAsEnum() == NodeType::TRANSFORMATION)
 				{
@@ -848,11 +851,6 @@ void RepoScene::printStatistics(std::iostream &output)
 		output << "\t# Textures:\t\t\t" << stashGraph.textures.size() << std::endl;
 		output << "\t# Transformations:\t\t" << stashGraph.transformations.size() << std::endl;
 		output << "\t# Unknowns:\t\t\t" << stashGraph.unknowns.size() << std::endl << std::endl;
-
-		output << "Uncommitted changes:" << std::endl;
-		output << "\tAdded:\t\t\t\t" << newAdded.size() << std::endl;
-		output << "\tDeleted:\t\t\t" << newRemoved.size() << std::endl;
-		output << "\tModified:\t\t\t" << newModified.size() << std::endl;
 	}
 	else
 	{

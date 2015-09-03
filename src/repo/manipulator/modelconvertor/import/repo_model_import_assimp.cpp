@@ -826,15 +826,6 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		repoError << "Failed to load scene from file (aiScene is null)";
 	}//if(assimpScene)
 
-	if (scenePtr)
-	{
-		repoTrace << "Scene is ok here!";
-	}
-	else
-	{
-		repoTrace << "Scene is already null...";
-	}
-
 
 	return scenePtr;
 }
@@ -854,12 +845,6 @@ repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 
 		//This will generate the optimised scene graph and put it in the RepoScene referenced
 		convertAiSceneToRepoScene(optMap, scene);
-
-		std::stringstream sstream;
-
-		scene->printStatistics(sstream);
-
-		repoTrace << "Print Statistics:: " << sstream.str();
 
 		assimp_map combinedMap;
 

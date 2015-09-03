@@ -96,8 +96,9 @@ void loadModelFromFileAndCommit(repo::RepoController *controller)
 	
 	std::string fileName;
 
-	fileName = "C:\\Users\\Carmen\\Desktop\\models\\A556-CAP-7000-S06-IE-S-1001.ifc";
+	//fileName = "C:\\Users\\Carmen\\Desktop\\models\\A556-CAP-7000-S06-IE-S-1001.ifc"; - no worky at the moment
 	//fileName = "C:\\Users\\Carmen\\Desktop\\models\\chair\\Bo Concept Imola.obj";
+	fileName = "C:\\Users\\Carmen\\Desktop\\models\\Duplex_A_20110907.ifc";
 
 	repo::manipulator::modelconvertor::ModelImportConfig config;
 
@@ -160,8 +161,6 @@ int main(int argc, char* argv[]){
 
 	std::string errMsg;
 	repo::RepoToken* token = controller->authenticateToAdminDatabaseMongo(errMsg, address, port, username, password);
-	//
-	//
 	if (token)
 		std::cout << "successfully connected to the database!" << std::endl;
 	else
