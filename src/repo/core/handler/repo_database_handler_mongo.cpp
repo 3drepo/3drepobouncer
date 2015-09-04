@@ -211,6 +211,50 @@ mongo::BSONObj MongoDatabaseHandler::fieldsToReturn(
 	return fieldsToReturn.obj();
 }
 
+std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria(
+	const std::string& database,
+	const std::string& collection,
+	const repo::core::model::RepoBSON& criteria)
+{
+	std::vector<repo::core::model::RepoBSON> data;
+
+	if (!criteria.isEmpty())
+	{
+		mongo::DBClientBase *worker;
+		try{
+			uint64_t retrieved = 0;
+			std::auto_ptr<mongo::DBClientCursor> cursor;
+			worker = workerPool->getWorker();
+			do
+			{
+
+
+				cursor = worker->query(
+					database + "." + collection,
+					criteria,
+					0,
+					retrieved);
+
+				for (; cursor.get() && cursor->more(); ++retrieved)
+				{
+					data.push_back(repo::core::model::RepoBSON(cursor->nextSafe().copy()));
+				}
+			} while (cursor.get() && cursor->more());
+
+		}
+		catch (mongo::DBException& e)
+		{
+			repoError << e.what();
+		}
+
+		workerPool->returnWorker(worker);
+	}
+
+
+
+	return data;
+}
+
 std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueIDs(
 	const std::string& database,
 	const std::string& collection,
@@ -225,7 +269,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 	{
 		mongo::DBClientBase *worker;
 		try{
-			unsigned long long retrieved = 0;
+			uint64_t retrieved = 0;
 			std::auto_ptr<mongo::DBClientCursor> cursor;
 			worker = workerPool->getWorker();
 			do

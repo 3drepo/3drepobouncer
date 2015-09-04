@@ -91,6 +91,46 @@ void testDeletion(repo::RepoController *controller, repo::RepoToken *token)
 	}
 }
 
+void loadModelFromFileAndCommit(repo::RepoController *controller, const repo::RepoToken *token)
+{
+	
+	std::string fileName;
+
+	//fileName = "C:\\Users\\Carmen\\Desktop\\models\\A556-CAP-7000-S06-IE-S-1001.ifc"; - no worky at the moment
+	//fileName = "C:\\Users\\Carmen\\Desktop\\models\\chair\\Bo Concept Imola.obj";
+	fileName = "C:\\Users\\Carmen\\Desktop\\models\\Duplex_A_20110907.ifc";
+
+	repo::manipulator::modelconvertor::ModelImportConfig config;
+
+	config.setPreTransformVertices(true);
+	config.setRemoveRedundantMaterials(true);
+
+	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileName, &config);
+	if (graph)
+	{
+		BOOST_LOG_TRIVIAL(info) << "model loaded successfully! Attempting to port to Repo World...";
+
+		BOOST_LOG_TRIVIAL(info) << "RepoScene generated. Printing graph statistics...";
+		//std::stringstream		stringMaker;
+		//graph->printStatistics(stringMaker);
+		//std::cout << stringMaker.str();
+
+		//std::string databaseName = "test";
+		//std::string projectName = "stashTest";
+		//BOOST_LOG_TRIVIAL(info) << "Trying to commit this scene to database as " << databaseName << "." << projectName;
+		//
+		//graph->setDatabaseAndProjectName(databaseName, projectName);
+
+		//controller->commitScene(token, graph);
+	}
+	else
+	{
+		BOOST_LOG_TRIVIAL(error) << "Failed to load model from file : " << fileName  ;
+	}
+
+
+}
+
 
 int main(int argc, char* argv[]){
 
@@ -109,24 +149,14 @@ int main(int argc, char* argv[]){
 
 	repo::RepoController *controller = new repo::RepoController();
 
-	repoLog("Testing this..");
-	repoInfo << "Testing this info..";
-	repoTrace << "this is trace";
-	repoError << "this is error";
-	repoWarning << "this is warning";
-	repoFatal << "this is fatal";
-	//repoInfo << "Subscribed to the logger!";
+	std::string errMsg;
+	repo::RepoToken* token = controller->authenticateToAdminDatabaseMongo(errMsg, address, port, username, password);
+	if (token)
+		std::cout << "successfully connected to the database!" << std::endl;
+	else
+		std::cerr << "Failed to authenticate to the database: " << errMsg << std::endl;
 
-	//std::string errMsg;
-	//repo::RepoToken* token = controller->authenticateToAdminDatabaseMongo(errMsg, address, port, username, password);
-	//
-	//
-	//if (token)
-	//	std::cout << "successfully connected to the database!" << std::endl;
-	//else
-	//	std::cerr << "Failed to authenticate to the database: " << errMsg << std::endl;
-
-	////testDatabaseRetrieval(controller, token);
+	//testDatabaseRetrieval(controller, token);
 	//errMsg.clear();
 
 	////testDeletion(controller, token);
@@ -136,10 +166,13 @@ int main(int argc, char* argv[]){
 
 	//////insertARepoNode(dbHandler);
 
-	////loadModelFromFileAndCommit(dbHandler);
+	loadModelFromFileAndCommit(controller, token);
 
 	////instantiateProject(dbHandler);
-	//repo::core::model::RepoScene *scene = controller->fetchScene(token, "test", "cameraTest");
+	//repo::core::model::RepoScene *scene = controller->fetchScene(token, "test", "stashTest");
+	//std::stringstream		stringMaker;
+	//scene->printStatistics(stringMaker);
+	//std::cout << stringMaker.str();
 	//controller->saveSceneToFile("C:/Users/Carmen/Desktop/camTest.dae", scene);
 
 

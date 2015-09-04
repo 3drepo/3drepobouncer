@@ -35,7 +35,7 @@ settings(settings), destroySettings(false)
 {
 	if (!settings)
 	{
-		//settings is null, used default
+		//settings is null, use default
 		this->settings = new ModelImportConfig();
 		destroySettings = true; 
 	}
@@ -43,7 +43,7 @@ settings(settings), destroySettings(false)
 
 AbstractModelImport::~AbstractModelImport()
 {
-	if (destroySettings)
+	if (destroySettings && settings)
 		delete settings;
 }
 

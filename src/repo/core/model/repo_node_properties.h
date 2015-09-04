@@ -45,7 +45,9 @@
 //-----------------------------------------------------------------------------
 #define REPO_NODE_LABEL_NAME			"name" //!< optional bson field label
 #define REPO_NODE_LABEL_PARENTS			"parents" //!< optional field label
+#define REPO_NODE_STASH_REF              "rev_id" 
 //-----------------------------------------------------------------------------
+
 #define REPO_NODE_TYPE_ANIMATION		"animation"
 #define REPO_NODE_TYPE_BONE				"bone"
 #define REPO_NODE_TYPE_CAMERA			"camera"

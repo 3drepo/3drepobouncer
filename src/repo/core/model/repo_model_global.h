@@ -36,21 +36,6 @@
 #pragma warning( disable : 4100 )
 #pragma warning( disable : 4005 )
 
-//------------------------------------------------------------------------------
-//#if defined(_WIN32) || defined(_WIN64)
-//#   define Q_DECL_EXPORT __declspec(dllexport)
-//#   define Q_DECL_IMPORT __declspec(dllimport)
-//#else
-//#   define Q_DECL_EXPORT
-//#   define Q_DECL_IMPORT
-//#endif
-
-//------------------------------------------------------------------------------
-//#if defined(REPO_CORE_LIBRARY)
-//#   define REPO_CORE_EXPORT Q_DECL_EXPORT
-//#else
-//#   define REPO_CORE_EXPORT Q_DECL_IMPORT
-//#endif
 
 //------------------------------------------------------------------------------
 // Constants
@@ -75,6 +60,10 @@
 #define REPO_LABEL_PERMISSIONS      "permissions"
 #define REPO_LABEL_USERS            "users"
 
+// Vertex/triangle map propeties
+#define REPO_LABEL_MERGED_NODES 	"merged_nodes"
+
+
 #define REPO_COMMAND_UPDATE         "update"
 #define REPO_COMMAND_UPDATES        "updates"
 #define REPO_COMMAND_DELETE         "delete"
@@ -86,6 +75,7 @@
 
 #define REPO_COLLECTION_HISTORY     "history"
 #define REPO_COLLECTION_SCENE       "scene"
+#define REPO_COLLECTION_REPOSTASH   "stash.3drepo"
 #define REPO_COLLECTION_SETTINGS    "settings"
 
 #define REPO_PROJECT_TYPE_ARCHITECTURAL "architectural"

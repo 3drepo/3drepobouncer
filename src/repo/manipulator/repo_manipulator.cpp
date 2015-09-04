@@ -160,11 +160,22 @@ void RepoManipulator::commitScene(
 	if (handler && scene && scene->commit(handler, msg, cred->getStringField("user")))
 	{
 		repoInfo << "Scene successfully committed to the database";
+		if (scene->commitStash(handler, msg))
+		{
+			repoInfo << "Commited scene stash successfully.";
+		}
+		else
+		{
+			repoError << "Failed to commit scene stash : " << msg;
+		}
+
+
 	}
 	else
 	{
 		repoError << "Error committing scene to the database : " << msg;
 	}
+
 		
 }
 
@@ -287,6 +298,16 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 				if (scene->loadScene(handler, errMsg))
 				{
 					repoTrace << "Loaded Scene";
+
+					if (scene->loadStash(handler, errMsg))
+					{
+						repoTrace << "Stash Loaded";
+					}
+					else
+					{
+						//failed to load stash isn't critical, give it a warning instead of returning false
+						repoWarning << "Error loading trace" << errMsg;
+					}
 				}
 				else{
 					delete scene;
@@ -437,9 +458,15 @@ repo::core::model::RepoScene*
 
 	if (modelConvertor)
 	{
+		repoTrace << "Importing model...";
 		if (modelConvertor->importModel(filePath, msg))
 		{
+			repoTrace << "model Imported, generating Repo Scene";
 			scene = modelConvertor->generateRepoScene();
+		}
+		else
+		{
+			repoError << "Failed to import model : " << msg;
 		}
 
 		delete modelConvertor;

@@ -75,6 +75,18 @@ typedef struct{
 }repo_face_t;
 
 
+//This is used to map info for multipart optimization
+typedef struct{
+	repo_vector_t min;
+	repo_vector_t max;
+	repoUUID      mesh_id;
+	repoUUID      material_id;
+	int32_t       vertFrom;
+	int32_t       vertTo;
+	int32_t       triFrom;
+	int32_t       triTo;
+}repo_mesh_mapping_t;
+
 static repoUUID generateUUID(){
 	return  boost::uuids::random_generator()();
 }

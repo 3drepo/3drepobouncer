@@ -259,6 +259,18 @@ namespace repo{
 
 
 				/**
+				* Given a search criteria,  find all the documents that passes this query
+				* @param database name of database
+				* @param collection name of collection
+				* @param criteria search criteria in a bson object
+				* @return a vector of RepoBSON objects satisfy the given criteria
+				*/
+				virtual std::vector<repo::core::model::RepoBSON> findAllByCriteria(
+					const std::string& database,
+					const std::string& collection,
+					const repo::core::model::RepoBSON& criteria) = 0;
+
+				/**
 				* Given a list of unique IDs, find all the documents associated to them
 				* @param name of database
 				* @param name of collection

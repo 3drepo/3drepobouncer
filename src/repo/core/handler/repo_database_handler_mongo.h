@@ -366,6 +366,19 @@ namespace repo{
 					const std::string& collection,
 					const repo::core::model::RepoBSON& uuids);
 
+
+				/**
+				* Given a search criteria,  find all the documents that passes this query
+				* @param database name of database
+				* @param collection name of collection
+				* @param criteria search criteria in a bson object
+				* @return a vector of RepoBSON objects satisfy the given criteria
+				*/
+				std::vector<repo::core::model::RepoBSON> findAllByCriteria(
+					const std::string& database,
+					const std::string& collection,
+					const repo::core::model::RepoBSON& criteria);
+
 				/**
 				*Retrieves the first document matching given Shared ID (SID), sorting is descending
 				* (newest first)

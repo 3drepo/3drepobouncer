@@ -34,7 +34,7 @@ namespace repo{
 			{
 			public:
 
-
+				//FIXME: this has hardly any reason to exist. Consider removing
 				/**
 				* Constructor - instantiates a new abstract graph with settings
 				*
@@ -51,27 +51,13 @@ namespace repo{
 				*/
 				virtual ~AbstractGraph();
 
-				/**
-				* check if Root Node exists
-				* @return returns true if rootNode is not null.
-				*/
-				bool hasRoot() const { return (bool)rootNode; }
-				RepoNode* getRoot() const { return rootNode; }
 
-				/**
-				* Return the number of nodes within the current 
-				* graph representation
-				* @return number of nodes within the graph
-				*/
-				uint32_t getItemsInCurrentGraph() { return nodesByUniqueID.size(); }
 
 			protected:
 				std::string databaseName;/*! name of the database */
 				std::string projectName; /*! name of the project */
 
-				RepoNode *rootNode;
-				//! A lookup map for the all nodes the graph contains.
-				std::map<repoUUID, RepoNode*> nodesByUniqueID;
+
 			};
 		}//namespace graph
 	}//namespace manipulator
