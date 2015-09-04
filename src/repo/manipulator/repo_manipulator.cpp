@@ -298,6 +298,16 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 				if (scene->loadScene(handler, errMsg))
 				{
 					repoTrace << "Loaded Scene";
+
+					if (scene->loadStash(handler, errMsg))
+					{
+						repoTrace << "Stash Loaded";
+					}
+					else
+					{
+						//failed to load stash isn't critical, give it a warning instead of returning false
+						repoWarning << "Error loading trace" << errMsg;
+					}
 				}
 				else{
 					delete scene;

@@ -74,7 +74,7 @@ RepoScene::RepoScene(
 	graph.rootNode = nullptr;
 	stashGraph.rootNode = nullptr;
 	branch = stringToUUID(REPO_HISTORY_MASTER_BRANCH);
-	populateAndUpdate(cameras, meshes, materials, metadata, textures, transformations, references, maps, unknowns);
+	populateAndUpdate(GraphType::DEFAULT, cameras, meshes, materials, metadata, textures, transformations, references, maps, unknowns);
 }
 
 RepoScene::~RepoScene()
@@ -696,13 +696,40 @@ bool RepoScene::loadScene(
 
 	repoInfo << "# of nodes in this scene = " << nodes.size();
 
-	return populate(handler, nodes, errMsg);
+	return populate(GraphType::DEFAULT, handler, nodes, errMsg);
+
+}
+
+bool RepoScene::loadStash(
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	std::string &errMsg){
+	bool success = true;
+
+	if (!handler)
+	{
+		errMsg += "Trying to load stash graph without a database handler!";
+		return false;
+	}
+
+	if (!revNode){
+		if (!loadRevision(handler, errMsg)) return false;
+	}
+
+	//Get the relevant nodes from the scene graph using the unique IDs stored in this revision node
+	RepoBSONBuilder builder;
+	builder.append(REPO_NODE_STASH_REF, revNode->getUniqueID());
+
+	std::vector<RepoBSON> nodes = handler->findAllByCriteria(databaseName, projectName + "." + stashExt, builder.obj());
+
+	repoInfo << "# of nodes in this stash scene = " << nodes.size();
+
+	return populate(GraphType::OPTIMIZED, handler, nodes, errMsg);
 
 }
 
 void RepoScene::modifyNode(
 	const repoUUID                    &sharedID,
-	RepoNode *node,
+	RepoNode                          *node,
 	const bool                        &overwrite)
 {
 	//RepoNode* updatedNode = nullptr;
@@ -734,11 +761,14 @@ void RepoScene::modifyNode(
 
 
 bool RepoScene::populate(
+	const GraphType &gtype,
 	repo::core::handler::AbstractDatabaseHandler *handler, 
 	std::vector<RepoBSON> nodes, 
 	std::string &errMsg)
 {
 	bool success = true;
+
+	repoGraphInstance &g = gtype == GraphType::OPTIMIZED ? stashGraph : graph;
 
 	std::map<repoUUID, RepoNode *> nodesBySharedID;
 	for (std::vector<RepoBSON>::const_iterator it = nodes.begin();
@@ -752,69 +782,69 @@ bool RepoScene::populate(
 		if (REPO_NODE_TYPE_TRANSFORMATION == nodeType)
 		{
 			node = new TransformationNode(obj);
-			graph.transformations.insert(node);
+			g.transformations.insert(node);
 		}
 		else if (REPO_NODE_TYPE_MESH == nodeType)
 		{
 			node = new MeshNode(obj);
-			graph.meshes.insert(node);
+			g.meshes.insert(node);
 		}
 		else if (REPO_NODE_TYPE_MATERIAL == nodeType)
 		{
 			node = new MaterialNode(obj);
-			graph.materials.insert(node);
+			g.materials.insert(node);
 		}
 		else if (REPO_NODE_TYPE_TEXTURE == nodeType)
 		{
 			node = new TextureNode(obj);
-			graph.textures.insert(node);
+			g.textures.insert(node);
 		}
 		else if (REPO_NODE_TYPE_CAMERA == nodeType)
 		{
 			node = new CameraNode(obj);
-			graph.cameras.insert(node);
+			g.cameras.insert(node);
 		}
 		else if (REPO_NODE_TYPE_REFERENCE == nodeType)
 		{
 			node = new ReferenceNode(obj);
-			graph.references.insert(node);
+			g.references.insert(node);
 		}
 		else if (REPO_NODE_TYPE_METADATA == nodeType)
 		{
 			node = new MetadataNode(obj);
-			graph.metadata.insert(node);
+			g.metadata.insert(node);
 		}
 		else if (REPO_NODE_TYPE_MAP == nodeType)
 		{
 			node = new MapNode(obj);
-			graph.maps.insert(node);
+			g.maps.insert(node);
 		}
 		else{
 			//UNKNOWN TYPE - instantiate it with generic RepoNode
 			node = new RepoNode(obj);
-			graph.unknowns.insert(node);
+			g.unknowns.insert(node);
 		}
 
-		success &= addNodeToMaps(node, errMsg);
+		success &= addNodeToMaps(gtype, node, errMsg);
 
 	} //Node Iteration
 
 
 	//deal with References
 	RepoNodeSet::iterator refIt;
-	for (const auto &node : graph.references)
+	for (const auto &node : g.references)
 	{
 		ReferenceNode* reference = (ReferenceNode*) node;
 
-		//construct a new RepoScene with the information from reference node and append this graph to the Scene
-		RepoScene *refGraph = new RepoScene(databaseName, reference->getProjectName(), sceneExt, revExt);
+		//construct a new RepoScene with the information from reference node and append this g to the Scene
+		RepoScene *refg = new RepoScene(databaseName, reference->getProjectName(), sceneExt, revExt);
 		if (reference->useSpecificRevision())
-			refGraph->setRevision(reference->getRevisionID());
+			refg->setRevision(reference->getRevisionID());
 		else
-			refGraph->setBranch(reference->getRevisionID());
+			refg->setBranch(reference->getRevisionID());
 
-		if (refGraph->loadScene(handler, errMsg)){
-			graph.referenceToScene[reference->getSharedID()] = refGraph;
+		if (refg->loadScene(handler, errMsg)){
+			g.referenceToScene[reference->getSharedID()] = refg;
 		}
 		else{
 			repoWarning << "Failed to load reference node for ref ID" << reference->getUniqueID() << ": " << errMsg;

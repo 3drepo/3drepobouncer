@@ -116,7 +116,7 @@ void loadModelFromFileAndCommit(repo::RepoController *controller, const repo::Re
 		std::cout << stringMaker.str();
 
 		std::string databaseName = "test";
-		std::string projectName = "repoTest";
+		std::string projectName = "stashTest";
 		BOOST_LOG_TRIVIAL(info) << "Trying to commit this scene to database as " << databaseName << "." << projectName;
 		
 		graph->setDatabaseAndProjectName(databaseName, projectName);
@@ -156,7 +156,7 @@ int main(int argc, char* argv[]){
 	else
 		std::cerr << "Failed to authenticate to the database: " << errMsg << std::endl;
 
-	////testDatabaseRetrieval(controller, token);
+	//testDatabaseRetrieval(controller, token);
 	//errMsg.clear();
 
 	////testDeletion(controller, token);
@@ -169,7 +169,10 @@ int main(int argc, char* argv[]){
 	loadModelFromFileAndCommit(controller, token);
 
 	////instantiateProject(dbHandler);
-	//repo::core::model::RepoScene *scene = controller->fetchScene(token, "test", "cameraTest");
+	repo::core::model::RepoScene *scene = controller->fetchScene(token, "test", "stashTest");
+	std::stringstream		stringMaker;
+	scene->printStatistics(stringMaker);
+	std::cout << stringMaker.str();
 	//controller->saveSceneToFile("C:/Users/Carmen/Desktop/camTest.dae", scene);
 
 

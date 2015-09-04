@@ -261,9 +261,9 @@ namespace repo{
 					* Load revision information of the configured branch/revision
 					* If setProjectRevision() and setProjectBranch was never called,
 					* it will load master/head.
-					* @param handler database handler to load from
-					* @param error messages will be returned here
-					* @return returns true upon success.
+					* @param handler database handler to perform this action
+					* @param errMsg message if it failed
+					* @return return true upon success
 					*/
 					bool loadRevision(
 						repo::core::handler::AbstractDatabaseHandler *handler,
@@ -272,11 +272,22 @@ namespace repo{
 					/**
 					* Load Scene into Scene graph object base on the
 					* revision/branch setting.
-					* @param error messages will be returned here
-					* @return returns true upon success.
+					* @param handler database handler to perform this action
+					* @param errMsg message if it failed
+					* @return return true upon success
 					*/
 					bool loadScene(
 						repo::core::handler::AbstractDatabaseHandler *handler, 
+						std::string &errMsg);
+
+					/**
+					* Load stash into scene base on the revision setting
+					* @param handler database handler to perform this action
+					* @param errMsg message if it failed
+					* @return return true upon success
+					*/
+					bool RepoScene::loadStash(
+						repo::core::handler::AbstractDatabaseHandler *handler,
 						std::string &errMsg);
 
 					/**
@@ -596,10 +607,14 @@ namespace repo{
 
 					/**
 					* populate the collections (cameras, meshes etc) with the given nodes
-					* @params new nodes to add to scene graph
+					* @param gtype which graph to populate
+					* @param handler database handler to use for retrieval
+					* @param nodes the nodes to populate with
+					* @param errMsg error message when this function returns false
 					* @return returns true if scene graph populated with no errors
 					*/
 					bool populate(
+						const GraphType &gtype,
 						repo::core::handler::AbstractDatabaseHandler *handler, 
 						std::vector<RepoBSON> nodes, 
 						std::string &errMsg);
