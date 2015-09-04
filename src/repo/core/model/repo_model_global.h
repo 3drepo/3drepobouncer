@@ -75,6 +75,7 @@
 
 #define REPO_COLLECTION_HISTORY     "history"
 #define REPO_COLLECTION_SCENE       "scene"
+#define REPO_COLLECTION_REPOSTASH   "stash.3drepo"
 #define REPO_COLLECTION_SETTINGS    "settings"
 
 #define REPO_PROJECT_TYPE_ARCHITECTURAL "architectural"

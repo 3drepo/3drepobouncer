@@ -91,7 +91,7 @@ void testDeletion(repo::RepoController *controller, repo::RepoToken *token)
 	}
 }
 
-void loadModelFromFileAndCommit(repo::RepoController *controller)
+void loadModelFromFileAndCommit(repo::RepoController *controller, const repo::RepoToken *token)
 {
 	
 	std::string fileName;
@@ -115,23 +115,13 @@ void loadModelFromFileAndCommit(repo::RepoController *controller)
 		graph->printStatistics(stringMaker);
 		std::cout << stringMaker.str();
 
-		//std::string databaseName = "test";
-		//std::string projectName = "repoTest";
-		/*BOOST_LOG_TRIVIAL(info) << "Trying to commit this scene to database as " << databaseName << "." << projectName;
-		graph->setDatabaseHandler(dbHandler);
+		std::string databaseName = "test";
+		std::string projectName = "repoTest";
+		BOOST_LOG_TRIVIAL(info) << "Trying to commit this scene to database as " << databaseName << "." << projectName;
+		
 		graph->setDatabaseAndProjectName(databaseName, projectName);
 
-		if (graph->commit(errMsg, "testUser", "This is a test"))
-		{
-			BOOST_LOG_TRIVIAL(info) << "Successfully commited";
-		}
-		else
-		{
-			BOOST_LOG_TRIVIAL(info) << "Database Commit failed " + errMsg;
-		}
-		stringMaker.clear();
-		graph->printStatistics(stringMaker);
-		std::cout << stringMaker.str();*/
+		controller->commitScene(token, graph);
 	}
 	else
 	{
@@ -176,7 +166,7 @@ int main(int argc, char* argv[]){
 
 	//////insertARepoNode(dbHandler);
 
-	loadModelFromFileAndCommit(controller);
+	loadModelFromFileAndCommit(controller, token);
 
 	////instantiateProject(dbHandler);
 	//repo::core::model::RepoScene *scene = controller->fetchScene(token, "test", "cameraTest");

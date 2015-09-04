@@ -33,10 +33,12 @@ RepoScene::RepoScene(
 	const std::string &database,
 	const std::string &projectName,
 	const std::string &sceneExt,
-	const std::string &revExt)
+	const std::string &revExt,
+	const std::string &stashExt)
 	: AbstractGraph(database, projectName),
 	sceneExt(sceneExt),
 	revExt(revExt),
+	stashExt(stashExt),
 	headRevision(true),
 	unRevisioned(false),
 	revNode(0)
@@ -59,10 +61,12 @@ RepoScene::RepoScene(
 	const RepoNodeSet &maps,
 	const RepoNodeSet &unknowns,
 	const std::string                          &sceneExt,
-	const std::string                          &revExt)
+	const std::string                          &revExt,
+	const std::string                          &stashExt)
 	: AbstractGraph("", ""),
 	sceneExt(sceneExt),
 	revExt(revExt),
+	stashExt(stashExt),
 	headRevision(true),
 	unRevisioned(true),
 	revNode(0)
@@ -497,6 +501,34 @@ bool RepoScene::commitRevisionNode(
 	return success && handler->insertDocument(databaseName, projectName +"." + revExt, *newRevNode, errMsg);
 }
 
+bool RepoScene::commitNodes(
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	const std::vector<repoUUID> &nodesToCommit,
+	const GraphType &gType,
+	std::string &errMsg)
+{
+	bool success = true;
+	
+	bool isStashGraph = gType == GraphType::OPTIMIZED;
+	repoGraphInstance &g = isStashGraph ? stashGraph : graph;
+	std::string ext = isStashGraph ? stashExt : sceneExt;
+	repoDebug << "stash extension is : " << stashExt << " chosen extension is " << ext;
+	for (const repoUUID &id : nodesToCommit)
+	{
+		const repoUUID uniqueID = gType == GraphType::OPTIMIZED ? id : g.sharedIDtoUniqueID[id];
+		RepoNode *node = g.nodesByUniqueID[uniqueID];
+		if (node->objsize() > handler->documentSizeLimit())
+		{
+			success = false;
+			errMsg += "Node '" + UUIDtoString(node->getUniqueID()) + "' over 16MB in size is not committed.";
+		}
+		else
+			success &= handler->insertDocument(databaseName, projectName + "." + ext, *node, errMsg);
+	}
+
+	return success;
+}
+
 bool RepoScene::commitSceneChanges(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	std::string &errMsg)
@@ -513,21 +545,56 @@ bool RepoScene::commitSceneChanges(
 
 	repoInfo << "Commiting addedNodes...." << newAdded.size() << " nodes";
 	
-	for (it = nodesToCommit.begin(); it != nodesToCommit.end(); ++it)
-	{
-	
-		RepoNode *node = graph.nodesByUniqueID[graph.sharedIDtoUniqueID[*it]];
-		if (node->objsize() > handler->documentSizeLimit())
-		{
-			success = false;
-			errMsg += "Node '" + UUIDtoString(node->getUniqueID()) + "' over 16MB in size is not committed.";
-		}
-		else
-			success &= handler->insertDocument(databaseName, projectName + "."+ sceneExt, *node, errMsg);
-	}
+	commitNodes(handler, nodesToCommit, GraphType::DEFAULT, errMsg);
 
 
 	return success;
+}
+
+bool RepoScene::commitStash(
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	std::string &errMsg)
+{
+
+	/*
+	* Don't bother if:
+	* 1. root node is null (not instantiated)
+	* 2. revnode is null (unoptimised scene graph needs to be commited first
+	*/
+
+	repoUUID rev;
+	if (!revNode)
+	{
+		errMsg += "Revision node not found, make sure the default scene graph is commited";
+		return false;
+	}
+	else
+	{ 
+		rev = revNode->getUniqueID();
+	}
+	if (stashGraph.rootNode)
+	{
+		//Add rev id onto the stash nodes before committing.
+		std::vector<repoUUID> nodes;
+		RepoBSONBuilder builder;
+		builder.append(REPO_NODE_STASH_REF, rev);
+		RepoBSON revID = builder.obj(); // this should be RepoBSON?
+
+		for (auto &pair : stashGraph.nodesByUniqueID)
+		{
+			nodes.push_back(pair.first);
+			pair.second->swap(pair.second->cloneAndAddFields(&revID, false));
+		}
+
+		return commitNodes(handler, nodes, GraphType::OPTIMIZED, errMsg);
+	}
+	else
+	{
+		//Not neccessarily an error. Make it visible for debugging purposes
+		repoDebug << "Stash graph not commited. Root node is nullptr!";
+		return true;
+	}
+	
 }
 
 std::vector<RepoNode*> 

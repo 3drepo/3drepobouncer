@@ -160,11 +160,22 @@ void RepoManipulator::commitScene(
 	if (handler && scene && scene->commit(handler, msg, cred->getStringField("user")))
 	{
 		repoInfo << "Scene successfully committed to the database";
+		if (scene->commitStash(handler, msg))
+		{
+			repoInfo << "Commited scene stash successfully.";
+		}
+		else
+		{
+			repoError << "Failed to commit scene stash : " << msg;
+		}
+
+
 	}
 	else
 	{
 		repoError << "Error committing scene to the database : " << msg;
 	}
+
 		
 }
 

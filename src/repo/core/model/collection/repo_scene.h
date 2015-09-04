@@ -88,12 +88,14 @@ namespace repo{
 					* @param projectName name of the project
 					* @param sceneExt extension name of the scene graph (Default: "scene")
 					* @param revExt extension name of the revision graph (Default: "history")
+					* @param stashExt extension name of the stash (Default: "stash.3drepo")
 					*/
 					RepoScene(
 						const std::string                                  &database = std::string(),
 						const std::string                                  &projectName = std::string(),
 						const std::string                                  &sceneExt = REPO_COLLECTION_SCENE,
-						const std::string                                  &revExt = REPO_COLLECTION_HISTORY);
+						const std::string                                  &revExt = REPO_COLLECTION_HISTORY,
+						const std::string                                  &stashExt = REPO_COLLECTION_REPOSTASH);
 
 					/**
 					* Used for constructing scene graphs from model convertors
@@ -113,6 +115,7 @@ namespace repo{
 					* @param unknowns Repo Node set of unknowns (optional)
 					* @param sceneExt extension name of the scene when it is saved into the database (optional)
 					* @param revExt   extension name of the revision when it is saved into the database (optional)
+					* @param stashExt extension name of the stash (Default: "stash.3drepo")
 					*/
 					RepoScene(
 						const RepoNodeSet &cameras, 
@@ -125,7 +128,8 @@ namespace repo{
 						const RepoNodeSet &maps = RepoNodeSet(),
 						const RepoNodeSet &unknowns = RepoNodeSet(),
 						const std::string                          &sceneExt = REPO_COLLECTION_SCENE,
-						const std::string                          &revExt = REPO_COLLECTION_HISTORY);
+						const std::string                          &revExt = REPO_COLLECTION_HISTORY,
+						const std::string                          &stashExt = REPO_COLLECTION_REPOSTASH);
 
 					/**
 					* Default Deconstructor
@@ -167,7 +171,7 @@ namespace repo{
 					void clearStash();
 
 					/**
-					* Commit changes into the database
+					* Commit changes on the default graph into the database
 					* This commits an update to project settings, a new revision node
 					* and the changes within this scene
 					* @param errMsg error message if this failed
@@ -182,6 +186,17 @@ namespace repo{
 						const std::string &userName,
 						const std::string &message=std::string(),
 						const std::string &tag=std::string());
+
+					/**
+					* Commit the stash representation into the database
+					* This can only happen if there is a stash representation
+					* and the graph is already commited (i.e. there is a revision node)
+					* @param errMsg error message if this failed
+					* @return returns true upon success
+					*/
+					bool commitStash(
+						repo::core::handler::AbstractDatabaseHandler *handler,
+						std::string &errMsg);
 
 					/**
 					* Get name of the database
@@ -526,6 +541,20 @@ namespace repo{
 						std::string &errMsg);
 					
 					/**
+					* Commit a vector of nodes into the database
+					* @param handler database handler to perform the commit
+					* @param nodesToCommit vector of uuids of nodes to commit
+					* @param graphType which graph did the nodes come from
+					* @param errMsg error message if this failed
+					* @return returns true upon success
+					*/
+					bool RepoScene::commitNodes(
+						repo::core::handler::AbstractDatabaseHandler *handler,
+						const std::vector<repoUUID> &nodesToCommit,
+						const GraphType &gType,
+						std::string &errMsg);
+
+					/**
 					* Commit a project settings base on the
 					* changes on this scene
 					* @param errMsg error message if this failed
@@ -635,6 +664,7 @@ namespace repo{
 			
 					std::string sceneExt;    /*! extension for scene   graph (Default: scene)*/
 					std::string revExt;      /*! extension for history graph (Default: history)*/
+					std::string stashExt;      /*! extension for optimized graph (Default: stash.3drepo)*/
 					repoUUID   revision;
 					repoUUID   branch;
 					std::string commitMsg;

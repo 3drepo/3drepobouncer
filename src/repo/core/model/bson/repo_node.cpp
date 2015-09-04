@@ -63,7 +63,7 @@ RepoNode RepoNode::cloneAndAddParent(
 }
 
 RepoNode RepoNode::cloneAndAddFields(
-	const RepoNode *changes,
+	const RepoBSON *changes,
 	const bool     &newUniqueID) const
 {
 	RepoBSONBuilder builder;
