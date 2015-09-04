@@ -909,7 +909,7 @@ bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
 		for (unsigned int i = 0; i < assimpScene->mNumMeshes; ++i)
 			polyCount += assimpScene->mMeshes[i]->mNumFaces;
 
-		repoInfo << "============ IMPORTING MODEL WITh ASSIMP MODEL CONVERTOR ===============";
+		repoInfo << "=== IMPORTING MODEL WITH ASSIMP MODEL CONVERTOR ===";
 		repoInfo << "Loaded ";
 		repoInfo << fileName << " with " << polyCount << " polygons in ";
 		repoInfo << assimpScene->mNumMeshes << " ";
