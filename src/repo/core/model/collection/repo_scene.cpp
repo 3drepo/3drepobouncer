@@ -156,7 +156,7 @@ void RepoScene::addInheritance(
 	}
 	else
 	{
-		repoError << "Unable to add parentship: parent node / child node not found.";
+		repoError << "Unable to add parentship:" << (parentNode ? "child" : "parent") << " node not found.";
 	}
 
 }

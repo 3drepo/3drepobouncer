@@ -997,8 +997,6 @@ bool AssimpModelImport::populateOptimMaps(
 	const assimp_map                   &combinedMap,
 	const assimp_map                   &optMap)
 {
-
-
 	std::map<repoUUID, std::vector<repo_mesh_mapping_t>> meshMapping;
 	// If this is a mesh then we the optimization map is transferred for 
 	// it's parent.
@@ -1018,8 +1016,6 @@ bool AssimpModelImport::populateOptimMaps(
 		if (node && node->mOptimMap)
 		{
 
-			repoInfo << "node->mMeshes = " << node->mNumMeshes;
-			repoInfo << "node->merMage = " << node->mNumMeshes;
 			aiOptimMap *ai_map = node->mOptimMap;
 
 			std::vector<repoUUID> mergeMap;
@@ -1041,10 +1037,19 @@ bool AssimpModelImport::populateOptimMaps(
 				}
 			}
 
-			repo::core::model::RepoNode newCurrent = current->cloneAndAddMergedNodes(mergeMap);
+			if (mergeMap.size() != ai_map->getMergeMap().size())
+			{
+				repoError << "Error mapping stash graph: mergeMap.size() != ai_map->getMergeMap().size()";
+				return false;
+			}
 
-			//swap contents of newCurrent onto current (it was cloned since RepoBSONs are immutable)
-			current->swap(newCurrent);
+			if (mergeMap.size() > 0)
+			{
+				repo::core::model::RepoNode newCurrent = current->cloneAndAddMergedNodes(mergeMap);
+				//swap contents of newCurrent onto current (it was cloned since RepoBSONs are immutable)
+				current->swap(newCurrent);
+			}
+
 
 			// Now populate the vertex maps
 			for (const auto &map : ai_map->getMeshMaps())
@@ -1115,7 +1120,9 @@ bool AssimpModelImport::populateOptimMaps(
 		}
 	}
 
-	const std::vector<repo::core::model::RepoNode *> &children = scene->getChildrenAsNodes(current->getSharedID());
+	const std::vector<repo::core::model::RepoNode *> &children = scene->getChildrenAsNodes(
+		repo::core::model::RepoScene::GraphType::OPTIMIZED, 
+		current->getSharedID());
 
 	//--------------------------------------------------------------------------
 	// Register child transformations as children if any
@@ -1151,11 +1158,8 @@ bool AssimpModelImport::populateOptimMaps(
 						scene->getNodeByUniqueID(repo::core::model::RepoScene::GraphType::OPTIMIZED, rMap.material_id);
 					if (matNode)
 					{
-						repoDebug << "Found matching material " << UUIDtoString(matNode->getUniqueID());
-		/*				child->addChild(materialIT->second);
-						materialIT->second->addParent(child);*/
 						scene->addInheritance(repo::core::model::RepoScene::GraphType::OPTIMIZED,
-							rMap.mesh_id, rMap.material_id);
+							child->getUniqueID(), rMap.material_id);
 					}
 				}
 			}

@@ -111,17 +111,17 @@ void loadModelFromFileAndCommit(repo::RepoController *controller, const repo::Re
 		BOOST_LOG_TRIVIAL(info) << "model loaded successfully! Attempting to port to Repo World...";
 
 		BOOST_LOG_TRIVIAL(info) << "RepoScene generated. Printing graph statistics...";
-		std::stringstream		stringMaker;
-		graph->printStatistics(stringMaker);
-		std::cout << stringMaker.str();
+		//std::stringstream		stringMaker;
+		//graph->printStatistics(stringMaker);
+		//std::cout << stringMaker.str();
 
-		std::string databaseName = "test";
-		std::string projectName = "stashTest";
-		BOOST_LOG_TRIVIAL(info) << "Trying to commit this scene to database as " << databaseName << "." << projectName;
-		
-		graph->setDatabaseAndProjectName(databaseName, projectName);
+		//std::string databaseName = "test";
+		//std::string projectName = "stashTest";
+		//BOOST_LOG_TRIVIAL(info) << "Trying to commit this scene to database as " << databaseName << "." << projectName;
+		//
+		//graph->setDatabaseAndProjectName(databaseName, projectName);
 
-		controller->commitScene(token, graph);
+		//controller->commitScene(token, graph);
 	}
 	else
 	{
@@ -169,10 +169,10 @@ int main(int argc, char* argv[]){
 	loadModelFromFileAndCommit(controller, token);
 
 	////instantiateProject(dbHandler);
-	repo::core::model::RepoScene *scene = controller->fetchScene(token, "test", "stashTest");
-	std::stringstream		stringMaker;
-	scene->printStatistics(stringMaker);
-	std::cout << stringMaker.str();
+	//repo::core::model::RepoScene *scene = controller->fetchScene(token, "test", "stashTest");
+	//std::stringstream		stringMaker;
+	//scene->printStatistics(stringMaker);
+	//std::cout << stringMaker.str();
 	//controller->saveSceneToFile("C:/Users/Carmen/Desktop/camTest.dae", scene);
 
 
