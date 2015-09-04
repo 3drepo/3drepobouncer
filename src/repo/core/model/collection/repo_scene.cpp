@@ -512,7 +512,6 @@ bool RepoScene::commitNodes(
 	bool isStashGraph = gType == GraphType::OPTIMIZED;
 	repoGraphInstance &g = isStashGraph ? stashGraph : graph;
 	std::string ext = isStashGraph ? stashExt : sceneExt;
-	repoDebug << "stash extension is : " << stashExt << " chosen extension is " << ext;
 	for (const repoUUID &id : nodesToCommit)
 	{
 		const repoUUID uniqueID = gType == GraphType::OPTIMIZED ? id : g.sharedIDtoUniqueID[id];

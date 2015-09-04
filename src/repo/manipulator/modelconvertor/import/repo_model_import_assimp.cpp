@@ -750,6 +750,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 				originalOrderMesh.push_back(mesh);
 			}
 		}
+
 		/*
 		* ---------------------------------------------
 		*/
@@ -806,6 +807,8 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 
 		transformations = createTransformationNodesRecursive(assimpScene->mRootNode, camerasMap, originalOrderMesh, metadata, map);
 
+
+
 		/*
 		* ---------------------------------------------
 		*/
@@ -819,7 +822,6 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		{
 			scenePtr = new repo::core::model::RepoScene(cameras, meshes, materials, metadata, textures, transformations);
 		}
-
 	}
 	else
 	{
