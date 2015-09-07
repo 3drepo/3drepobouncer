@@ -66,6 +66,10 @@ std::vector<uint8_t> RepoBSON::getBigBinary(
 
 	if (it != bigFiles.end())
 		binary = it->second;
+	else
+	{
+		repoError << "External binary not found for key " << key << "!";
+	}
 
 	return binary;
 }
