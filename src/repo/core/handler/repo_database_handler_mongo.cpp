@@ -74,6 +74,48 @@ bool MongoDatabaseHandler::caseInsensitiveStringCompare(
 	return strcasecmp(s1.c_str(), s2.c_str()) <= 0;
 }
 
+bool MongoDatabaseHandler::storeBigFiles(
+	mongo::DBClientBase *worker,
+	const std::string &database,
+	const std::string &collection,
+	const repo::core::model::RepoBSON &obj,
+	std::string &errMsg
+	)
+{
+	bool success = true;
+
+
+	//insert files into gridFS if applicable
+	if (obj.hasOversizeFiles())
+	{
+		const std::vector<std::string> fNames = obj.getFileList();
+		repoTrace << "storeBigFiles: #oversized files: " << fNames.size();
+
+		for (const std::string &file : fNames)
+		{
+			std::vector<uint8_t> binary = obj.getBigBinary(file);
+			if (binary.size())
+			{
+				//store the big biary file within GridFS
+				mongo::GridFS gfs(*worker, database, collection);
+				//FIXME: there must be errors to catch...
+				repoTrace << "storing " << file << " in gridfs: " << database << "." << collection;
+				mongo::BSONObj bson = gfs.storeFile((char*)&binary[0], binary.size() * sizeof(binary[0]), file);
+
+				repoTrace << "returned object: " << bson.toString();
+
+			}
+			else
+			{
+				repoError << "A oversized entry exist but binary not found!";
+				success = false;
+			}
+		}
+	}
+
+	return true;
+}
+
 uint64_t MongoDatabaseHandler::countItemsInCollection(
 	const std::string &database,
 	const std::string &collection,
@@ -579,6 +621,8 @@ bool MongoDatabaseHandler::insertDocument(
 		worker = workerPool->getWorker();
 		worker->insert(getNamespace(database, collection), obj);
 
+		success &= storeBigFiles(worker, database, collection, obj, errMsg);
+
 	}
 	catch (mongo::DBException &e)
 	{
@@ -721,6 +765,9 @@ bool MongoDatabaseHandler::upsertDocument(
 				success = false;
 			}
 		}
+
+		if (success)
+			success = storeBigFiles(worker, database, collection, obj, errMsg);
 
 			
 	}

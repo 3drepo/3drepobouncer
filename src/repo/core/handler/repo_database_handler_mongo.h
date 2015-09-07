@@ -461,6 +461,22 @@ namespace repo{
 					const std::string             &password = std::string(),
 					const bool                    &pwDigested = false);
 
+				/**
+				* check if the bson object contains any big binary files
+				* if yes, store them in gridFS
+				* @param worker the worker to operate with
+				* @param database database to store in
+				* @param collection collection to store in
+				* @param obj the bson object to work with
+				* @param errMsg error message when failed
+				* @return returns true upon success
+				*/
+				bool storeBigFiles(
+					mongo::DBClientBase *worker,
+					const std::string &database,
+					const std::string &collection,
+					const repo::core::model::RepoBSON &obj,
+					std::string &errMsg);
 
 				/**
 				* Generates a mongo BSON object for authentication

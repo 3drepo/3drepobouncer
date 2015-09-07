@@ -98,30 +98,39 @@ void loadModelFromFileAndCommit(repo::RepoController *controller, const repo::Re
 
 	//fileName = "C:\\Users\\Carmen\\Desktop\\models\\A556-CAP-7000-S06-IE-S-1001.ifc"; - no worky at the moment
 	//fileName = "C:\\Users\\Carmen\\Desktop\\models\\chair\\Bo Concept Imola.obj";
-	fileName = "C:\\Users\\Carmen\\Desktop\\models\\Duplex_A_20110907.ifc";
+	//fileName = "C:\\Users\\Carmen\\Desktop\\models\\Duplex_A_20110907.ifc";
+	fileName = "C:\\Users\\Carmen\\Desktop\\models\\103EW-A-BASEMENT.fbx";
 
 	repo::manipulator::modelconvertor::ModelImportConfig config;
 
 	config.setPreTransformVertices(true);
 	config.setRemoveRedundantMaterials(true);
 
-	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileName, &config);
+	repo::core::model::RepoScene *graph = nullptr;
+	try{
+		graph = controller->loadSceneFromFile(fileName, &config);
+	}
+	catch (std::exception &e)
+	{
+		std::cout << "Exception occured whilst loading scene from file: " << e.what() <<std::endl;
+	}
+
 	if (graph)
 	{
 		BOOST_LOG_TRIVIAL(info) << "model loaded successfully! Attempting to port to Repo World...";
 
 		BOOST_LOG_TRIVIAL(info) << "RepoScene generated. Printing graph statistics...";
-		//std::stringstream		stringMaker;
-		//graph->printStatistics(stringMaker);
-		//std::cout << stringMaker.str();
+		std::stringstream		stringMaker;
+		graph->printStatistics(stringMaker);
+		std::cout << stringMaker.str();
 
-		//std::string databaseName = "test";
-		//std::string projectName = "stashTest";
+		std::string databaseName = "test";
+		std::string projectName = "bigfileTest";
 		//BOOST_LOG_TRIVIAL(info) << "Trying to commit this scene to database as " << databaseName << "." << projectName;
 		//
-		//graph->setDatabaseAndProjectName(databaseName, projectName);
+		graph->setDatabaseAndProjectName(databaseName, projectName);
 
-		//controller->commitScene(token, graph);
+		controller->commitScene(token, graph);
 	}
 	else
 	{

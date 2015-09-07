@@ -41,7 +41,9 @@ namespace repo{
 						* Construct a RepoNode base on a RepoBSON object
 						* 
 						*/
-						RepoNode(RepoBSON bson);
+						RepoNode(RepoBSON bson,
+							const std::unordered_map<std::string, std::vector<uint8_t>> &binMapping =
+								std::unordered_map<std::string, std::vector<uint8_t>>());
 
 						/**
 						* Empty Constructor

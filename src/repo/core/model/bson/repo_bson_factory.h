@@ -110,8 +110,9 @@ namespace repo {
 						* @param shareID shared ID of this node
 						* @param name name of the node
 						* @param parents vector of shared IDs of this node's parents
+						* @ return return the size of the fields appended in bytes
 						*/
-						static void appendDefaults(
+						static uint64_t appendDefaults(
 							RepoBSONBuilder &builder,
 							const std::string &type,
 							const unsigned int api = REPO_NODE_API_LEVEL_0,

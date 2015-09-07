@@ -33,6 +33,8 @@
 #define strcasecmp _stricmp
 #endif
 #include <mongo/bson/bson.h> 
+#include <unordered_map>
+
 #include "repo_bson_element.h"
 
 #include "../repo_model_global.h"
@@ -40,6 +42,8 @@
 #include "../repo_node_utils.h"
 #include "../../../lib/repo_log.h"
 #include "../../../repo_bouncer_global.h"
+
+#define REPO_BSON_MAX_BYTE_SIZE 16770000 //max size is 16MB,but leave a bit for buffer
 
 namespace repo {
 	namespace core {
@@ -62,7 +66,9 @@ namespace repo {
 						 * Constructor from Mongo BSON object.
 						 * @param mongo BSON object
 						 */
-						RepoBSON(const mongo::BSONObj &obj) : mongo::BSONObj(obj) {}
+						RepoBSON(const mongo::BSONObj &obj,
+							const std::unordered_map<std::string, std::vector<uint8_t>> &binMapping =
+							std::unordered_map<std::string, std::vector<uint8_t>>()) : mongo::BSONObj(obj), bigFiles(binMapping) {}
 
 						/**
 						* Constructor from Mongo BSON object builder.
@@ -221,7 +227,31 @@ namespace repo {
 							const std::string &arrLabel,
 							const std::string &fstLabel,
 							const std::string &sndLabel) const;
+
+
+						/*
+						* ----------------- BIG FILE MANIPULATION --------------------
+						*/
+						std::vector<uint8_t> RepoBSON::getBigBinary(const std::string &key) const;
+
+						/**
+						* Get the list of file names for the big files 
+						* needs to be stored for this bson
+						* @return returns a list of file names needed to be stored
+						*/
+						std::vector<std::string> getFileList() const;
+
+						/**
+						* Check if this bson object has oversized files
+						* @return returns true if there are oversized files
+						*/
+						bool hasOversizeFiles() const
+						{
+							return bigFiles.size() > 0;
+						}
 						
+						protected:
+							std::unordered_map< std::string, std::vector<uint8_t> > bigFiles;
 						
 
 					}; // end 

@@ -9,7 +9,7 @@ using namespace repo::core::model;
 
 
 
-void RepoBSONFactory::appendDefaults(
+uint64_t RepoBSONFactory::appendDefaults(
 	RepoBSONBuilder &builder,
 	const std::string &type,
 	const unsigned int api,
@@ -17,6 +17,9 @@ void RepoBSONFactory::appendDefaults(
 	const std::string &name,
 	const std::vector<repoUUID> &parents)
 {
+
+	uint64_t bytesize = 0;
+
 	//--------------------------------------------------------------------------
 	// ID field (UUID)
 	builder.append(REPO_NODE_LABEL_ID, generateUUID());
@@ -25,24 +28,42 @@ void RepoBSONFactory::appendDefaults(
 	// Shared ID (UUID)
 	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedId);
 
+
+	bytesize += 2 * sizeof(repoUUID);
+
 	//--------------------------------------------------------------------------
 	// Type
 	if (!type.empty())
+	{
 		builder << REPO_NODE_LABEL_TYPE << type;
+		bytesize += sizeof(type);
+	}
+		
 
 	//--------------------------------------------------------------------------
 	// API level
 	builder << REPO_NODE_LABEL_API << api;
 
+	bytesize += sizeof(api);
+
 	//--------------------------------------------------------------------------
 	// Parents
 	if (parents.size() > 0)
+	{
 		builder.appendArray(REPO_NODE_LABEL_PARENTS, builder.createArrayBSON(parents));
-
+	
+		bytesize += parents.size() * sizeof(parents[0]);
+	}
+		
 	//--------------------------------------------------------------------------
 	// Name
 	if (!name.empty())
+	{
 		builder << REPO_NODE_LABEL_NAME << name;
+		bytesize += sizeof(name);
+	}
+
+	return bytesize;
 }
 
 RepoNode RepoBSONFactory::makeRepoNode(std::string type)
@@ -277,18 +298,74 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	const int                                   &apiLevel)
 {
 	RepoBSONBuilder builder;
+	uint64_t bytesize = 0; //track the (approximate) size to know when we need to offload to gridFS
+	bytesize += appendDefaults(builder, REPO_NODE_TYPE_MESH, apiLevel, generateUUID(), name);
 
-	appendDefaults(builder, REPO_NODE_TYPE_MESH, apiLevel, generateUUID(), name);
+	std::unordered_map<std::string, std::vector<uint8_t>> binMapping;
+
+	if (boundingBox.size() > 0)
+	{
+		RepoBSONBuilder arrayBuilder;
+
+		for (int i = 0; i < boundingBox.size(); i++)
+		{
+			arrayBuilder.appendArray(std::to_string(i), builder.createArrayBSON(boundingBox[i]));
+			bytesize += boundingBox[i].size() * sizeof(boundingBox[i][0]);
+		}
+
+		builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, arrayBuilder.obj());
+		
+	}
+
+
+	if (outline.size() > 0)
+	{
+		RepoBSONBuilder arrayBuilder;
+
+		for (int i = 0; i < outline.size(); i++)
+		{
+			arrayBuilder.appendArray(boost::lexical_cast<std::string>(i), builder.createArrayBSON(outline[i]));
+			bytesize += outline[i].size() * sizeof(outline[i][0]);
+		}
+
+		builder.appendArray(REPO_NODE_MESH_LABEL_OUTLINE, arrayBuilder.obj());
+	}
+
+	/*
+	* TODO: because mongo has a stupid internal limit of 64MB, we can't store everything in a BSON
+	* There are 2 options
+	* 1. store binaries in memory outside of the bson and put it into GRIDFS at the point of commit
+	* 2. leave mongo's bson, use our own/exteral library that doesn't have this limit and database handle this at the point of commit
+	* below uses option 1, but ideally we should be doing option 2.
+	*/ 
 
 	if (vertices.size() > 0)
 	{
-		builder.appendBinary(
-			REPO_NODE_MESH_LABEL_VERTICES,
-			&vertices[0],
-			vertices.size() * sizeof(vertices[0]),
-			REPO_NODE_MESH_LABEL_VERTICES_BYTE_COUNT,
-			REPO_NODE_MESH_LABEL_VERTICES_COUNT
-			);
+		uint64_t verticesByteCount = vertices.size() * sizeof(vertices[0]);
+
+		if (verticesByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
+		{
+			std::string bName = UUIDtoString(generateUUID());
+			//inclusion of this binary exceeds the maximum, store separately
+			binMapping[bName] = std::vector<uint8_t>();
+			binMapping[bName].resize(verticesByteCount); //uint8_t will ensure it is a byte addrressing
+			memcpy(&binMapping[bName][0], &vertices[0], verticesByteCount); 
+			builder << REPO_NODE_MESH_LABEL_VERTICES << bName;
+
+			bytesize += sizeof(bName);
+		}
+		else
+		{
+
+			builder.appendBinary(
+				REPO_NODE_MESH_LABEL_VERTICES,
+				&vertices[0],
+				vertices.size() * sizeof(vertices[0]),
+				REPO_NODE_MESH_LABEL_VERTICES_BYTE_COUNT,
+				REPO_NODE_MESH_LABEL_VERTICES_COUNT
+				);
+			bytesize += verticesByteCount;
+		}
 
 	}
 
@@ -309,45 +386,61 @@ MeshNode RepoBSONFactory::makeMeshNode(
 			}
 		}
 
-		builder.appendBinary(
-			REPO_NODE_MESH_LABEL_FACES,
-			&facesLevel1[0],
-			facesLevel1.size() * sizeof(facesLevel1[0]),
-			REPO_NODE_MESH_LABEL_FACES_BYTE_COUNT
-			);
+
+		uint64_t facesByteCount = facesLevel1.size() * sizeof(facesLevel1[0]);
+
+		if (facesByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
+		{
+			std::string bName = UUIDtoString(generateUUID());
+			//inclusion of this binary exceeds the maximum, store separately
+			binMapping[bName] = std::vector<uint8_t>();
+			binMapping[bName].resize(facesByteCount); //uint8_t will ensure it is a byte addrressing
+			memcpy(&binMapping[bName][0], &facesLevel1[0], facesByteCount);
+
+			builder << REPO_NODE_MESH_LABEL_FACES << bName;
+
+			bytesize += sizeof(bName);
+		}
+		else
+		{
+			builder.appendBinary(
+				REPO_NODE_MESH_LABEL_FACES,
+				&facesLevel1[0],
+				facesLevel1.size() * sizeof(facesLevel1[0]),
+				REPO_NODE_MESH_LABEL_FACES_BYTE_COUNT
+				);
+
+			bytesize += facesByteCount;
+		}
+
 	}
 
 	if (normals.size() > 0)
 	{
-		builder.appendBinary(
-			REPO_NODE_MESH_LABEL_NORMALS,
-			&normals[0],
-			normals.size() * sizeof(normals[0]));
-	}
 
-	if (boundingBox.size() > 0)
-	{
-		RepoBSONBuilder arrayBuilder;
+		uint64_t normalsByteCount = normals.size() * sizeof(normals[0]);
 
-		for (int i = 0; i < boundingBox.size(); i++)
+		if (normalsByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
 		{
-			arrayBuilder.appendArray(boost::lexical_cast<std::string>(i), builder.createArrayBSON(boundingBox[i]));
+			std::string bName = UUIDtoString(generateUUID());
+			//inclusion of this binary exceeds the maximum, store separately
+			binMapping[bName] = std::vector<uint8_t>();
+			binMapping[bName].resize(normalsByteCount); //uint8_t will ensure it is a byte addrressing
+			memcpy(&binMapping[bName][0], &normals[0], normalsByteCount);
+
+			builder << REPO_NODE_MESH_LABEL_NORMALS << bName;
+
+			bytesize += sizeof(bName);
 		}
-
-		builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, arrayBuilder.obj());
-	}
-
-
-	if (outline.size() > 0)
-	{
-		RepoBSONBuilder arrayBuilder;
-
-		for (int i = 0; i < outline.size(); i++)
+		else
 		{
-			arrayBuilder.appendArray(boost::lexical_cast<std::string>(i), builder.createArrayBSON(outline[i]));
-		}
+			builder.appendBinary(
+				REPO_NODE_MESH_LABEL_NORMALS,
+				&normals[0],
+				normals.size() * sizeof(normals[0]));
 
-		builder.appendArray(REPO_NODE_MESH_LABEL_OUTLINE, arrayBuilder.obj());
+			bytesize += normalsByteCount;
+		}
 	}
 
 	//if (!vertexHash.empty())
@@ -360,11 +453,32 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	//--------------------------------------------------------------------------
 	// Vertex colors
 	if (colors.size())
-		builder.appendBinary(
-		REPO_NODE_MESH_LABEL_COLORS,
-		&colors[0],
-		colors.size() * sizeof(colors[0]));
+	{
+		uint64_t colorsByteCount = colors.size() * sizeof(colors[0]);
 
+		if (colorsByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
+		{
+			std::string bName = UUIDtoString(generateUUID());
+			//inclusion of this binary exceeds the maximum, store separately
+			binMapping[bName] = std::vector<uint8_t>();
+			binMapping[bName].resize(colorsByteCount); //uint8_t will ensure it is a byte addrressing
+			memcpy(&binMapping[bName][0], &colors[0], colorsByteCount);
+
+			builder << REPO_NODE_MESH_LABEL_COLORS << bName;
+
+			bytesize += sizeof(bName);
+		}
+		else
+		{
+			builder.appendBinary(
+				REPO_NODE_MESH_LABEL_COLORS,
+				&colors[0],
+				colors.size() * sizeof(colors[0]));
+			bytesize += colorsByteCount;
+		}
+
+	}
+		
 	//--------------------------------------------------------------------------
 	// UV channels
 	if (uvChannels.size() > 0)
@@ -386,14 +500,34 @@ MeshNode RepoBSONFactory::makeMeshNode(
 			}
 		}
 
-		builder.appendBinary(
-			REPO_NODE_MESH_LABEL_UV_CHANNELS,
-			&concatenated[0],
-			concatenated.size() * sizeof(concatenated[0]),
-			REPO_NODE_MESH_LABEL_UV_CHANNELS_BYTE_COUNT);
+
+		uint64_t uvByteCount = concatenated.size() * sizeof(concatenated[0]);
+
+		if (uvByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
+		{
+			std::string bName = UUIDtoString(generateUUID());
+			//inclusion of this binary exceeds the maximum, store separately
+			binMapping[bName] = std::vector<uint8_t>();
+			binMapping[bName].resize(uvByteCount); //uint8_t will ensure it is a byte addrressing
+			memcpy(&binMapping[bName][0], &concatenated[0], uvByteCount);
+
+			builder << REPO_NODE_MESH_LABEL_UV_CHANNELS << bName;
+
+			bytesize += sizeof(bName);
+		}
+		else
+		{
+			builder.appendBinary(
+				REPO_NODE_MESH_LABEL_UV_CHANNELS,
+				&concatenated[0],
+				concatenated.size() * sizeof(concatenated[0]),
+				REPO_NODE_MESH_LABEL_UV_CHANNELS_BYTE_COUNT);
+
+			bytesize += uvByteCount;
+		}
 	}
 
-	return MeshNode(builder.obj());
+	return MeshNode(builder.obj(), binMapping);
 }
 
 RepoProjectSettings RepoBSONFactory::makeRepoProjectSettings(

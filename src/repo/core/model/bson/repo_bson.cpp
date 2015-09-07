@@ -18,7 +18,11 @@
 
 #include "repo_bson.h"
 
+#include <boost/range/adaptor/map.hpp>
+#include <boost/range/algorithm/copy.hpp>
+
 using namespace repo::core::model;
+
 
 repoUUID RepoBSON::getUUIDField(const std::string &label) const{
 	repoUUID uuid;
@@ -52,6 +56,28 @@ std::vector<repoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) cons
 
 	}
 	return results;
+}
+
+std::vector<uint8_t> RepoBSON::getBigBinary(
+	const std::string &key) const
+{
+	std::vector<uint8_t> binary;
+	const auto &it = bigFiles.find(key);
+
+	if (it != bigFiles.end())
+		binary = it->second;
+
+	return binary;
+}
+
+std::vector<std::string> RepoBSON::getFileList() const
+{
+	std::vector<std::string> fileList;
+	boost::copy(
+		bigFiles | boost::adaptors::map_keys,
+		std::back_inserter(fileList));
+
+	return fileList;
 }
 
 std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
