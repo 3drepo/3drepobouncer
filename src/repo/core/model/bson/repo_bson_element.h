@@ -64,7 +64,7 @@ namespace repo {
 					* get the type of the element
 					* @return returns the type of the element using enum Type specified above
 					*/
-					ElementType type();
+					ElementType type() const;
 
 					std::vector<RepoBSONElement> Array()
 					{

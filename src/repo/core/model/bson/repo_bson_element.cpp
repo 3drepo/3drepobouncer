@@ -8,7 +8,7 @@ RepoBSONElement::~RepoBSONElement()
 }
 
 
-ElementType RepoBSONElement::type()
+ElementType RepoBSONElement::type() const
 {
 	ElementType elementType;
 	switch (mongo::BSONElement::type())
