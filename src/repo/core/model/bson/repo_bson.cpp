@@ -45,8 +45,6 @@ RepoBSON::RepoBSON(const mongo::BSONObj &obj,
 		builder.appendElementsUnique(obj);
 		this->swap(builder.obj());
 
-		repoTrace << "Before: " << obj.toString();
-		repoTrace << "After" << this->toString();
 	}
 
 }

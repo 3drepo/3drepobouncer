@@ -138,7 +138,9 @@ repo::core::model::RepoBSON MongoDatabaseHandler::createRepoBSON(
 
 	for (const std::string &file : extFileList)
 	{
+		repoTrace << "Found existing GridFS reference, retrieving file @ " << database << "." << collection << ":" << file;
 		binMap[file] = getBigFile(worker, database, collection, file);
+		repoTrace << "Done";
 	}
 
 	return repo::core::model::RepoBSON(obj, binMap);
@@ -266,7 +268,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 		}
 		catch (mongo::DBException& e)
 		{
-			repoError << e.what();
+			repoError << "Error in MongoDatabaseHandler::findAllByCriteria: " << e.what();
 		}
 
 		workerPool->returnWorker(worker);
@@ -499,11 +501,12 @@ std::vector<uint8_t> MongoDatabaseHandler::getBigFile(
 	const std::string &fileName)
 {
 	mongo::GridFS gfs(*worker, database, collection);
-	mongo::GridFile tmpFile = gfs.findFile(fileName);
+	mongo::GridFile tmpFile = gfs.findFileByName(fileName);
 
 	std::vector<uint8_t> bin;
 	if (tmpFile.exists())
 	{
+		repoTrace << "tmpFile loaded";
 		std::ostringstream oss;
 		tmpFile.write(oss);
 
