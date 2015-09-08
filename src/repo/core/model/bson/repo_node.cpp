@@ -40,6 +40,9 @@ RepoNode::RepoNode(RepoBSON bson,
 	if (bson.hasField(REPO_NODE_LABEL_SHARED_ID))
 		sharedID = bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
 
+	if (binMapping.size() == 0)
+		bigFiles = bson.getFilesMapping();
+
 }
 
 RepoNode::~RepoNode()

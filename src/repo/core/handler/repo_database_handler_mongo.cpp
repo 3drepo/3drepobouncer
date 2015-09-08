@@ -140,7 +140,6 @@ repo::core::model::RepoBSON MongoDatabaseHandler::createRepoBSON(
 	{
 		repoTrace << "Found existing GridFS reference, retrieving file @ " << database << "." << collection << ":" << file;
 		binMap[file] = getBigFile(worker, database, collection, file);
-		repoTrace << "Done";
 	}
 
 	return repo::core::model::RepoBSON(obj, binMap);
@@ -311,7 +310,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 
 				for (; cursor.get() && cursor->more(); ++retrieved)
 				{
-					data.push_back(repo::core::model::RepoBSON(cursor->nextSafe().copy()));
+					data.push_back(createRepoBSON(worker, database, collection, cursor->nextSafe().copy()));
 				}
 			} while (cursor.get() && cursor->more());
 
@@ -352,7 +351,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 			getNamespace(database, collection),
 			mongo::Query(queryBuilder.obj()).sort(sortField, -1));
 
-		bson = repo::core::model::RepoBSON(bsonMongo);
+		bson = createRepoBSON(worker, database, collection, bsonMongo);
 	}
 	catch (mongo::DBException& e)
 	{
@@ -379,7 +378,7 @@ mongo::BSONObj MongoDatabaseHandler::findOneByUniqueID(
 		mongo::BSONObj bsonMongo = worker->findOne(getNamespace(database, collection),
 			mongo::Query(queryBuilder.obj()));
 
-		bson = repo::core::model::RepoBSON(bsonMongo);
+		bson = createRepoBSON(worker, database, collection, bsonMongo);
 	}
 	catch (mongo::DBException& e)
 	{
@@ -415,7 +414,7 @@ std::vector<repo::core::model::RepoBSON>
 		while (cursor.get() && cursor->more())
 		{
 			//have to copy since the bson info gets cleaned up when cursor gets out of scope
-			bsons.push_back(repo::core::model::RepoBSON(cursor->nextSafe().copy()));
+			bsons.push_back(createRepoBSON(worker, database, collection, cursor->nextSafe().copy()));
 		}
 	}
 	catch (mongo::DBException& e)
@@ -506,7 +505,6 @@ std::vector<uint8_t> MongoDatabaseHandler::getBigFile(
 	std::vector<uint8_t> bin;
 	if (tmpFile.exists())
 	{
-		repoTrace << "tmpFile loaded";
 		std::ostringstream oss;
 		tmpFile.write(oss);
 

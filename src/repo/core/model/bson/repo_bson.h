@@ -108,16 +108,22 @@ namespace repo {
 							std::vector<T> * vec) const
 						{
 							bool success = false;
-
 							if (vec && bse.type() == ElementType::STRING)
 							{
 								//this is a reference, try to get it from map
+								repoTrace << "getting Binary from reference...";
 								std::vector<uint8_t> bin = getBigBinary(bse.str());
+								repoTrace << " Get binary from Grid FS";
 								if (bin.size() > 0)
 								{
+									repoTrace << " size of bin : " << bin.size();
 									vec->resize(bin.size() / sizeof(T));
-									memcpy(&vec[0], &bin[0], bin.size()*sizeof(bin[0]));
+									memcpy(&vec->at(0), &bin[0], bin.size());
 									success = true;
+								}
+								else
+								{
+									repoWarning << "Binary obtained from gridFS is of size = 0";
 								}
 
 							}
@@ -177,16 +183,22 @@ namespace repo {
 							std::vector<T> * vec) const
 						{
 							bool success = false;
-
 							if (vec && bse.type() == ElementType::STRING)
 							{
+								repoTrace << "getting Binary from reference...";
 								//this is a reference, try to get it from map
 								std::vector<uint8_t> bin = getBigBinary(bse.str());
+								repoTrace << " Get binary from Grid FS";
 								if (bin.size() > 0)
 								{
+									repoTrace << "Size of bin = " << bin.size();
 									vec->resize(bin.size() / sizeof(T));
-									memcpy(&vec[0], &bin[0], bin.size()*sizeof(bin[0]));
+									memcpy(&vec->at(0), &bin[0], bin.size());
 									success = true;
+								}
+								else
+								{
+									repoWarning << "Binary obtained from gridFS is of size = 0";
 								}
 
 							}
@@ -278,6 +290,15 @@ namespace repo {
 						* @return returns a list of file names needed to be stored
 						*/
 						std::vector<std::string> getFileList() const;
+
+						/**
+						* Get the mapping files from the bson object
+						* @return returns the map of external (gridFS) files
+						*/
+						std::unordered_map< std::string, std::vector<uint8_t>> getFilesMapping() const
+						{
+							return bigFiles;
+						}
 
 						/**
 						* Check if this bson object has oversized files

@@ -255,6 +255,20 @@ int main(int argc, char* argv[]){
 	std::stringstream		stringMaker;
 	scene->printStatistics(stringMaker);
 	std::cout << stringMaker.str();
+
+	auto mesh = (repo::core::model::MeshNode*) *scene->getAllMeshes(repo::core::model::RepoScene::GraphType::OPTIMIZED).begin();
+	std::vector<repo_vector_t> *vec = mesh->getVertices();
+
+	if (vec)
+	{
+		std::cout << "Vertice exists" <<std::endl;
+		std::cout << "Vertices size: " << vec->size() << std::endl;
+	}
+	else
+	{
+		std::cout << "Vertice is null" << std::endl;
+	}
+
 	//controller->saveSceneToFile("C:/Users/Carmen/Desktop/camTest.dae", scene);
 
 

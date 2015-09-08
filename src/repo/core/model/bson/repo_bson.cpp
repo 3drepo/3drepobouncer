@@ -22,30 +22,32 @@
 using namespace repo::core::model;
 
 RepoBSON::RepoBSON(const mongo::BSONObj &obj,
-	const std::unordered_map<std::string, std::vector<uint8_t>> &binMapping) 
-	: mongo::BSONObj(obj), 
+	const std::unordered_map<std::string, std::vector<uint8_t>> &binMapping)
+	: mongo::BSONObj(obj),
 	bigFiles(binMapping)
 {
-	//Append oversize file references into the bson
-	std::vector<std::string> fnames;
-	boost::copy(
-		binMapping | boost::adaptors::map_keys,
-		std::back_inserter(fnames));
-
-	mongo::BSONObjBuilder builder, arrbuilder;
-
-	if (fnames.size() > 0)
+	if (!obj.hasField(REPO_LABEL_OVERSIZED_FILES))
 	{
-		for (int i = 0; i < fnames.size(); ++i)
+		//Append oversize file references into the bson
+		std::vector<std::string> fnames;
+		boost::copy(
+			bigFiles | boost::adaptors::map_keys,
+			std::back_inserter(fnames));
+
+		mongo::BSONObjBuilder builder, arrbuilder;
+		if (fnames.size() > 0)
 		{
-			arrbuilder << std::to_string(i) << fnames[i];
+			for (int i = 0; i < fnames.size(); ++i)
+			{
+				arrbuilder << std::to_string(i) << fnames[i];
+			}
+
+			builder.appendArray(REPO_LABEL_OVERSIZED_FILES, arrbuilder.obj());
+			builder.appendElementsUnique(obj);
+			this->swap(builder.obj());
 		}
-
-		builder.appendArray(REPO_LABEL_OVERSIZED_FILES, arrbuilder.obj());
-		builder.appendElementsUnique(obj);
-		this->swap(builder.obj());
-
 	}
+	
 
 }
 
@@ -93,7 +95,7 @@ std::vector<uint8_t> RepoBSON::getBigBinary(
 		binary = it->second;
 	else
 	{
-		repoError << "External binary not found for key " << key << "!";
+		repoError << "External binary not found for key " << key << "! (size of mapping is : " << bigFiles.size() << ")";
 	}
 
 	return binary;
