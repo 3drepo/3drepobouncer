@@ -55,7 +55,5 @@ if(${Boost_FOUND} AND ${Mongo_FOUND} AND ${Assimp_FOUND})
 	add_library(3drepobouncer SHARED ${SOURCES})
 
 	target_link_libraries(3drepobouncer ${Boost_LIBRARIES} ${Mongo_LIBRARIES} ${Assimp_LIBRARIES})
-	install(TARGETS 3drepobouncer DESTINATION lib)
-	install(DIRECTORY src/ DESTINATION include FILES_MATCHING PATTERN "*.h")
 
 endif()
