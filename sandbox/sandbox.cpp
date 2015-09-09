@@ -166,7 +166,7 @@ int main(int argc, char* argv[]){
 
 	//////insertARepoNode(dbHandler);
 
-	loadModelFromFileAndCommit(controller, token);
+	//loadModelFromFileAndCommit(controller, token);
 
 	////instantiateProject(dbHandler);
 	//repo::core::model::RepoScene *scene = controller->fetchScene(token, "test", "stashTest");
