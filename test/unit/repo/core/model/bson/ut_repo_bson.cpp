@@ -108,7 +108,7 @@ TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
 	RepoBSON bson(BSON("binDataTest" << fname), map);
 
 
-	bson.getBinaryFieldAsVector(bson.getField("binDataTest"), in.size(), &out);
+	EXPECT_TRUE(bson.getBinaryFieldAsVector(bson.getField("binDataTest"), in.size(), &out));
 
 	ASSERT_EQ(out.size(), in.size());
 	for (size_t i = 0; i < size; ++i)
