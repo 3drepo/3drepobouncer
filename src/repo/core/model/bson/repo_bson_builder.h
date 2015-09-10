@@ -119,6 +119,7 @@ namespace repo {
 							const std::string &byteCountLabel = "",
 							const std::string &countLabel = "")
 						{
+
 							if (0 < byteCount)
 							{
 								if (!byteCountLabel.empty())

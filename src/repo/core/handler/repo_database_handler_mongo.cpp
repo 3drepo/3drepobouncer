@@ -20,6 +20,7 @@
 */
 
 #include <regex>
+#include <unordered_map>
 
 #include "repo_database_handler_mongo.h"
 #include "../../lib/repo_log.h"
@@ -74,6 +75,7 @@ bool MongoDatabaseHandler::caseInsensitiveStringCompare(
 	return strcasecmp(s1.c_str(), s2.c_str()) <= 0;
 }
 
+
 uint64_t MongoDatabaseHandler::countItemsInCollection(
 	const std::string &database,
 	const std::string &collection,
@@ -120,6 +122,27 @@ mongo::BSONObj* MongoDatabaseHandler::createAuthBSON(
 	return authBson;
 
 		
+}
+
+repo::core::model::RepoBSON MongoDatabaseHandler::createRepoBSON(
+	mongo::DBClientBase *worker,
+	const std::string &database,
+	const std::string &collection,
+	const mongo::BSONObj &obj)
+{
+	repo::core::model::RepoBSON orgBson = repo::core::model::RepoBSON(obj);
+
+	std::vector<std::string> extFileList = orgBson.getFileList();
+
+	std::unordered_map< std::string, std::vector<uint8_t> > binMap;
+
+	for (const std::string &file : extFileList)
+	{
+		repoTrace << "Found existing GridFS reference, retrieving file @ " << database << "." << collection << ":" << file;
+		binMap[file] = getBigFile(worker, database, collection, file);
+	}
+
+	return repo::core::model::RepoBSON(obj, binMap);
 }
 
 bool MongoDatabaseHandler::dropCollection(
@@ -237,14 +260,14 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 
 				for (; cursor.get() && cursor->more(); ++retrieved)
 				{
-					data.push_back(repo::core::model::RepoBSON(cursor->nextSafe().copy()));
+					data.push_back(createRepoBSON(worker, database, collection, cursor->nextSafe().copy()));
 				}
 			} while (cursor.get() && cursor->more());
 
 		}
 		catch (mongo::DBException& e)
 		{
-			repoError << e.what();
+			repoError << "Error in MongoDatabaseHandler::findAllByCriteria: " << e.what();
 		}
 
 		workerPool->returnWorker(worker);
@@ -287,7 +310,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 
 				for (; cursor.get() && cursor->more(); ++retrieved)
 				{
-					data.push_back(repo::core::model::RepoBSON(cursor->nextSafe().copy()));
+					data.push_back(createRepoBSON(worker, database, collection, cursor->nextSafe().copy()));
 				}
 			} while (cursor.get() && cursor->more());
 
@@ -328,7 +351,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 			getNamespace(database, collection),
 			mongo::Query(queryBuilder.obj()).sort(sortField, -1));
 
-		bson = repo::core::model::RepoBSON(bsonMongo);
+		bson = createRepoBSON(worker, database, collection, bsonMongo);
 	}
 	catch (mongo::DBException& e)
 	{
@@ -355,7 +378,7 @@ mongo::BSONObj MongoDatabaseHandler::findOneByUniqueID(
 		mongo::BSONObj bsonMongo = worker->findOne(getNamespace(database, collection),
 			mongo::Query(queryBuilder.obj()));
 
-		bson = repo::core::model::RepoBSON(bsonMongo);
+		bson = createRepoBSON(worker, database, collection, bsonMongo);
 	}
 	catch (mongo::DBException& e)
 	{
@@ -391,7 +414,7 @@ std::vector<repo::core::model::RepoBSON>
 		while (cursor.get() && cursor->more())
 		{
 			//have to copy since the bson info gets cleaned up when cursor gets out of scope
-			bsons.push_back(repo::core::model::RepoBSON(cursor->nextSafe().copy()));
+			bsons.push_back(createRepoBSON(worker, database, collection, cursor->nextSafe().copy()));
 		}
 	}
 	catch (mongo::DBException& e)
@@ -468,6 +491,46 @@ std::list<std::string> MongoDatabaseHandler::getDatabases(
 	}
 	workerPool->returnWorker(worker);
 	return list;
+}
+
+std::vector<uint8_t> MongoDatabaseHandler::getBigFile(
+	mongo::DBClientBase *worker,
+	const std::string &database,
+	const std::string &collection,
+	const std::string &fileName)
+{
+	mongo::GridFS gfs(*worker, database, collection);
+	mongo::GridFile tmpFile = gfs.findFileByName(fileName);
+
+	std::vector<uint8_t> bin;
+	if (tmpFile.exists())
+	{
+		std::ostringstream oss;
+		tmpFile.write(oss);
+
+		std::string fileStr = oss.str();
+		
+		assert(sizeof(*fileStr.c_str()) == sizeof(uint8_t));
+
+		if (!fileStr.empty())
+		{
+			bin.resize(fileStr.size());
+			memcpy(&bin[0], fileStr.c_str(), fileStr.size());
+
+		}
+		else
+		{
+			repoError << "GridFS file : " << fileName << " in " 
+				<< database << "." << collection << " is empty.";
+ 		}
+	}
+	else
+	{
+		repoError << "Failed to find file within GridFS";
+	}
+
+
+	return bin;
 }
 
 std::string MongoDatabaseHandler::getProjectFromCollection(const std::string &ns, const std::string &projectExt)
@@ -578,6 +641,8 @@ bool MongoDatabaseHandler::insertDocument(
 	try{
 		worker = workerPool->getWorker();
 		worker->insert(getNamespace(database, collection), obj);
+
+		success &= storeBigFiles(worker, database, collection, obj, errMsg);
 
 	}
 	catch (mongo::DBException &e)
@@ -722,6 +787,9 @@ bool MongoDatabaseHandler::upsertDocument(
 			}
 		}
 
+		if (success)
+			success = storeBigFiles(worker, database, collection, obj, errMsg);
+
 			
 	}
 	catch (mongo::DBException &e)
@@ -733,4 +801,47 @@ bool MongoDatabaseHandler::upsertDocument(
 
 	workerPool->returnWorker(worker);
 	return success;
+}
+
+
+bool MongoDatabaseHandler::storeBigFiles(
+	mongo::DBClientBase *worker,
+	const std::string &database,
+	const std::string &collection,
+	const repo::core::model::RepoBSON &obj,
+	std::string &errMsg
+	)
+{
+	bool success = true;
+
+
+	//insert files into gridFS if applicable
+	if (obj.hasOversizeFiles())
+	{
+		const std::vector<std::string> fNames = obj.getFileList();
+		repoTrace << "storeBigFiles: #oversized files: " << fNames.size();
+
+		for (const std::string &file : fNames)
+		{
+			std::vector<uint8_t> binary = obj.getBigBinary(file);
+			if (binary.size())
+			{
+				//store the big biary file within GridFS
+				mongo::GridFS gfs(*worker, database, collection);
+				//FIXME: there must be errors to catch...
+				repoTrace << "storing " << file << " in gridfs: " << database << "." << collection;
+				mongo::BSONObj bson = gfs.storeFile((char*)&binary[0], binary.size() * sizeof(binary[0]), file);
+
+				repoTrace << "returned object: " << bson.toString();
+
+			}
+			else
+			{
+				repoError << "A oversized entry exist but binary not found!";
+				success = false;
+			}
+		}
+	}
+
+	return true;
 }
