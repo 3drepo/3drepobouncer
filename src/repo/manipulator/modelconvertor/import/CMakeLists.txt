@@ -10,7 +10,7 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_abstract.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_assimp.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_config.cpp
-	CACHE STRING "source files" FORCE)
+	CACHE STRING "SOURCES" FORCE)
 
 set(HEADERS
 	${HEADERS}
@@ -19,5 +19,5 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_assimp.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_config.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_config_default_values.h
-	CACHE STRING "header files" FORCE)
+	CACHE STRING "HEADERS" FORCE)
 

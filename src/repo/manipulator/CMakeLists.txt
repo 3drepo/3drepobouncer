@@ -8,10 +8,10 @@ add_subdirectory(modelconvertor)
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_manipulator.cpp
-	CACHE STRING "source files" FORCE)
+	CACHE STRING "SOURCES" FORCE)
 
 set(HEADERS
 	${HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_manipulator.h
-	CACHE STRING "header files" FORCE)
+	CACHE STRING "HEADERS" FORCE)
 

@@ -23,7 +23,7 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_revision.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_texture.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_transformation.cpp
-	CACHE STRING "source files" FORCE)
+	CACHE STRING "SOURCES" FORCE)
 
 set(HEADERS
 	${HEADERS}
@@ -44,5 +44,5 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_revision.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_texture.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_transformation.h
-	CACHE STRING "header files" FORCE)
+	CACHE STRING "HEADERS" FORCE)
 

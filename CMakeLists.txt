@@ -60,3 +60,18 @@ if(${Boost_FOUND} AND ${Mongo_FOUND} AND ${Assimp_FOUND})
 	install(TARGETS 3drepobouncer DESTINATION lib)
 
 endif()
+
+#=============== Compile Test ===================
+option (REPO_BUILD_TESTS "If the test suite is built in addition to the library" OFF)
+if (REPO_BUILD_TESTS)
+
+
+	add_subdirectory(submodules/googletest)
+	enable_testing()
+	add_subdirectory(test)
+	
+	include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR} ${TEST_HEADERS} src)
+	add_executable(3drepobouncerTest ${TEST_SOURCES})   
+	target_link_libraries(3drepobouncerTest gtest 3drepobouncer ${Boost_LIBRARIES} ${Mongo_LIBRARIES} ${Assimp_LIBRARIES})
+	add_test(3drepobouncerTest 3drepobouncerTest)
+endif()

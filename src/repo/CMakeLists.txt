@@ -10,11 +10,11 @@ add_subdirectory(manipulator)
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_controller.cpp
-	CACHE STRING "source files" FORCE)
+	CACHE STRING "SOURCES" FORCE)
 
 set(HEADERS
 	${HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bouncer_global.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_controller.h
-	CACHE STRING "header files" FORCE)
+	CACHE STRING "HEADERS" FORCE)
 
