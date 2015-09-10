@@ -22,7 +22,8 @@
 
 using namespace repo::core::model;
 
-RepoNode::RepoNode(RepoBSON bson) : RepoBSON(bson){
+RepoNode::RepoNode(RepoBSON bson,
+	const std::unordered_map<std::string, std::vector<uint8_t>> &binMapping) : RepoBSON(bson, binMapping){
 	//--------------------------------------------------------------------------
 	// Type
 	if (bson.hasField(REPO_NODE_LABEL_TYPE))
@@ -38,6 +39,9 @@ RepoNode::RepoNode(RepoBSON bson) : RepoBSON(bson){
 	// Shared ID
 	if (bson.hasField(REPO_NODE_LABEL_SHARED_ID))
 		sharedID = bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
+
+	if (binMapping.size() == 0)
+		bigFiles = bson.getFilesMapping();
 
 }
 

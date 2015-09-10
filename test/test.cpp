@@ -7,6 +7,14 @@
 
 #include <repo/repo_controller.h>
 
+#if defined(_WIN32) || defined(_WIN64)
+#include <WinSock2.h>
+#include <Windows.h>
+
+#endif
+
+#include <mongo/client/dbclient.h>
+
 
 void configureLogging(){
 
@@ -98,30 +106,39 @@ void loadModelFromFileAndCommit(repo::RepoController *controller, const repo::Re
 
 	//fileName = "C:\\Users\\Carmen\\Desktop\\models\\A556-CAP-7000-S06-IE-S-1001.ifc"; - no worky at the moment
 	//fileName = "C:\\Users\\Carmen\\Desktop\\models\\chair\\Bo Concept Imola.obj";
-	fileName = "C:\\Users\\Carmen\\Desktop\\models\\Duplex_A_20110907.ifc";
+	//fileName = "C:\\Users\\Carmen\\Desktop\\models\\Duplex_A_20110907.ifc";
+	fileName = "C:\\Users\\Carmen\\Desktop\\models\\103EW-A-BASEMENT.fbx";
 
 	repo::manipulator::modelconvertor::ModelImportConfig config;
 
 	config.setPreTransformVertices(true);
 	config.setRemoveRedundantMaterials(true);
 
-	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileName, &config);
+	repo::core::model::RepoScene *graph = nullptr;
+	try{
+		graph = controller->loadSceneFromFile(fileName, &config);
+	}
+	catch (std::exception &e)
+	{
+		std::cout << "Exception occured whilst loading scene from file: " << e.what() <<std::endl;
+	}
+
 	if (graph)
 	{
 		BOOST_LOG_TRIVIAL(info) << "model loaded successfully! Attempting to port to Repo World...";
 
 		BOOST_LOG_TRIVIAL(info) << "RepoScene generated. Printing graph statistics...";
-		//std::stringstream		stringMaker;
-		//graph->printStatistics(stringMaker);
-		//std::cout << stringMaker.str();
+		std::stringstream		stringMaker;
+		graph->printStatistics(stringMaker);
+		std::cout << stringMaker.str();
 
-		//std::string databaseName = "test";
-		//std::string projectName = "stashTest";
+		std::string databaseName = "test";
+		std::string projectName = "bigfileTest";
 		//BOOST_LOG_TRIVIAL(info) << "Trying to commit this scene to database as " << databaseName << "." << projectName;
 		//
-		//graph->setDatabaseAndProjectName(databaseName, projectName);
+		graph->setDatabaseAndProjectName(databaseName, projectName);
 
-		//controller->commitScene(token, graph);
+		controller->commitScene(token, graph);
 	}
 	else
 	{
@@ -147,6 +164,71 @@ int main(int argc, char* argv[]){
 	std::string password = argv[4];
 
 
+	//mongo::client::initialize();
+	//mongo::HostAndPort hostAndPort = mongo::HostAndPort(address, port >= 0 ? port : -1);
+	//mongo::ConnectionString cs = mongo::ConnectionString(hostAndPort);
+	//mongo::DBClientBase *worker = cs.connect(std::string());
+
+	//std::string passwordDigest =  mongo::DBClientWithCommands::createPasswordDigest(username, password);
+	//mongo::BSONObj authBson = mongo::BSONObj(BSON("user" << username <<
+	//	"db" << "admin" <<
+	//	"pwd" << passwordDigest <<
+	//	"digestPassword" << false <<
+	//	"mechanism" << "MONGODB-CR"));
+	//worker->auth(authBson);
+
+	//size_t size = 104857600; //100MB
+	//std::string fileName = "testingFile";
+	//char* random = (char*)malloc(sizeof(*random) * size);
+	//if (random)
+	//{
+	//	try{
+	//		mongo::GridFS gfs(*worker, "test", "gridTest");
+	//		mongo::BSONObj bson = gfs.storeFile(random, size, fileName );
+	//		std::cout << bson.toString() << std::endl;
+	//		mongo::GridFile tmpFile = gfs.findFileByName(fileName);
+	//		if (tmpFile.exists())
+	//		{
+	//			std::cout << "Found file" << std::endl;
+	//			std::ostringstream oss;
+	//			tmpFile.write(oss);
+
+	//			std::string fileStr = oss.str();
+	//			char* random_out = (char*)malloc(sizeof(*fileStr.c_str())*fileStr.size());
+	//			if (random_out)
+	//			{
+	//				std::cout << "fileStr.size = " << fileStr.size();
+	//				memcpy(random_out, fileStr.c_str(), fileStr.size());
+	//				fflush(stdout);
+	//				if (!strcmp(random, random_out))
+	//				{
+	//					std::cout << " In/Out Matched" << std::endl;
+
+	//				}
+	//				else
+	//				{
+	//					std::cout << "In/Out misMatched" << std::endl;
+	//				}
+	//			}
+	//			else
+	//			{
+	//				std::cout << "oops... OOM part 2" << std::endl;
+	//			}
+	//		}
+	//	}
+	//	catch (std::exception &e)
+	//	{
+	//		std::cout << "Exception caught: " << e.what();
+	//	}
+	//	
+	//}
+	//else
+	//{
+	//	std::cout << "oops... OOM." << std::endl;
+	//}
+
+	//return 0;
+
 	repo::RepoController *controller = new repo::RepoController();
 
 	std::string errMsg;
@@ -166,13 +248,27 @@ int main(int argc, char* argv[]){
 
 	//////insertARepoNode(dbHandler);
 
-	loadModelFromFileAndCommit(controller, token);
+	//loadModelFromFileAndCommit(controller, token);
 
 	////instantiateProject(dbHandler);
-	//repo::core::model::RepoScene *scene = controller->fetchScene(token, "test", "stashTest");
-	//std::stringstream		stringMaker;
-	//scene->printStatistics(stringMaker);
-	//std::cout << stringMaker.str();
+	repo::core::model::RepoScene *scene = controller->fetchScene(token, "test", "bigfileTest");
+	std::stringstream		stringMaker;
+	scene->printStatistics(stringMaker);
+	std::cout << stringMaker.str();
+
+	auto mesh = (repo::core::model::MeshNode*) *scene->getAllMeshes(repo::core::model::RepoScene::GraphType::OPTIMIZED).begin();
+	std::vector<repo_vector_t> *vec = mesh->getVertices();
+
+	if (vec)
+	{
+		std::cout << "Vertice exists" <<std::endl;
+		std::cout << "Vertices size: " << vec->size() << std::endl;
+	}
+	else
+	{
+		std::cout << "Vertice is null" << std::endl;
+	}
+
 	//controller->saveSceneToFile("C:/Users/Carmen/Desktop/camTest.dae", scene);
 
 

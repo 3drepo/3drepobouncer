@@ -74,8 +74,12 @@ namespace repo {
 					/**
 					* Construct a MeshNode from a RepoBSON object
 					* @param RepoBSON object
+					* @param binMapping binary mapping of fields that are too big to fit within the bson
 					*/
-					MeshNode(RepoBSON bson);
+					MeshNode(RepoBSON bson,
+						const std::unordered_map<std::string, std::vector<uint8_t>> &binMapping =
+									std::unordered_map<std::string, std::vector<uint8_t>>()
+						);
 
 
 					/**

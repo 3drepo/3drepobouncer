@@ -18,7 +18,38 @@
 
 #include "repo_bson.h"
 
+
 using namespace repo::core::model;
+
+RepoBSON::RepoBSON(const mongo::BSONObj &obj,
+	const std::unordered_map<std::string, std::vector<uint8_t>> &binMapping)
+	: mongo::BSONObj(obj),
+	bigFiles(binMapping)
+{
+	if (!obj.hasField(REPO_LABEL_OVERSIZED_FILES))
+	{
+		//Append oversize file references into the bson
+		std::vector<std::string> fnames;
+		boost::copy(
+			bigFiles | boost::adaptors::map_keys,
+			std::back_inserter(fnames));
+
+		mongo::BSONObjBuilder builder, arrbuilder;
+		if (fnames.size() > 0)
+		{
+			for (int i = 0; i < fnames.size(); ++i)
+			{
+				arrbuilder << std::to_string(i) << fnames[i];
+			}
+
+			builder.appendArray(REPO_LABEL_OVERSIZED_FILES, arrbuilder.obj());
+			builder.appendElementsUnique(obj);
+			this->swap(builder.obj());
+		}
+	}
+	
+
+}
 
 repoUUID RepoBSON::getUUIDField(const std::string &label) const{
 	repoUUID uuid;
@@ -52,6 +83,41 @@ std::vector<repoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) cons
 
 	}
 	return results;
+}
+
+std::vector<uint8_t> RepoBSON::getBigBinary(
+	const std::string &key) const
+{
+	std::vector<uint8_t> binary;
+	const auto &it = bigFiles.find(key);
+
+	if (it != bigFiles.end())
+		binary = it->second;
+	else
+	{
+		repoError << "External binary not found for key " << key << "! (size of mapping is : " << bigFiles.size() << ")";
+	}
+
+	return binary;
+}
+
+std::vector<std::string> RepoBSON::getFileList() const
+{
+	std::vector<std::string> fileList;
+	if (hasField(REPO_LABEL_OVERSIZED_FILES))
+	{
+		RepoBSON arraybson = getObjectField(REPO_LABEL_OVERSIZED_FILES);
+
+		std::set<std::string> fields;
+		arraybson.getFieldNames(fields);
+
+		for (const auto &field : fields)
+		{
+			fileList.push_back(arraybson.getStringField(field));
+		}
+	}
+
+	return fileList;
 }
 
 std::vector<float> RepoBSON::getFloatArray(const std::string &label) const

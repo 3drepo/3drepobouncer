@@ -461,6 +461,22 @@ namespace repo{
 					const std::string             &password = std::string(),
 					const bool                    &pwDigested = false);
 
+				/**
+				* Create a Repo BSON and populate all relevant data
+				* this includes getting data from GridFS
+				* NOTE: the handler will only get the data from GridFS if it is 
+				* listed in REPO_LABEL_OVERSIZED_FILES
+				* @param worker the worker to operate with
+				* @param database database to store in
+				* @param collection collection to store in
+				* @param obj the mongo bson this repoBSON is basing from
+				* @return returns a repo BSON that is fully populated
+				*/
+				repo::core::model::RepoBSON createRepoBSON(
+					mongo::DBClientBase *worker, 
+					const std::string &database,
+					const std::string &collection,
+					const mongo::BSONObj &obj);
 
 				/**
 				* Generates a mongo BSON object for authentication
@@ -492,6 +508,21 @@ namespace repo{
 				 */
 				std::string getCollectionFromNamespace(const std::string &ns);
 
+
+				/**
+				* Get large file off GridFS
+				* @param worker the worker to operate with
+				* @param database database that it is stored in
+				* @param collection collection that it is stored in
+				* @param fileName file name in GridFS
+				* @return returns true upon success
+				*/
+				std::vector<uint8_t> getBigFile(
+					mongo::DBClientBase *worker,
+					const std::string &database,
+					const std::string &collection,
+					const std::string &fileName);
+
 				/**
 				 * Given a database and collection name, returns its namespace
 				 * Basically, append database + "." + collection
@@ -521,6 +552,24 @@ namespace repo{
 					const OPERATION                         &op,
 					const repo::core::model::RepoUser &user,
 					std::string                       &errMsg);
+
+
+				/**
+				* check if the bson object contains any big binary files
+				* if yes, store them in gridFS
+				* @param worker the worker to operate with
+				* @param database database to store in
+				* @param collection collection to store in
+				* @param obj the bson object to work with
+				* @param errMsg error message when failed
+				* @return returns true upon success
+				*/
+				bool storeBigFiles(
+					mongo::DBClientBase *worker,
+					const std::string &database,
+					const std::string &collection,
+					const repo::core::model::RepoBSON &obj,
+					std::string &errMsg);
 
 				/**
 				* Compares two strings.

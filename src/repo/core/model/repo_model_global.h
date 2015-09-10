@@ -44,6 +44,7 @@
 #define REPO_SYSTEM_ROLES           "system.roles"      //!< Roles collection
 
 #define REPO_LABEL_ID               "_id"
+#define REPO_LABEL_OVERSIZED_FILES  "_extRef"
 #define REPO_LABEL_AVATAR           "avatar"
 #define REPO_LABEL_DATA             "data"
 #define REPO_LABEL_HEIGHT           "height"
