@@ -43,9 +43,6 @@ TEST(RepoBSONTest, ConstructFromMongo)
 
 }
 
-/**
-* Test getfield
-*/
 TEST(RepoBSONTest, GetField)
 {
 	EXPECT_EQ(testBson.getField("ice"), testBson.getField("ice"));
@@ -54,3 +51,59 @@ TEST(RepoBSONTest, GetField)
 	EXPECT_EQ("lolly", testBson.getField("ice").str());
 	EXPECT_EQ(100, testBson.getField("amount").Int());
 }
+
+TEST(RepoBSONTest, GetBinaryAsVectorEmbedded)
+{
+	mongo::BSONObjBuilder builder;
+
+	std::vector < uint8_t > in, out;
+
+	size_t size = 100;
+
+	for (size_t i = 0; i < size; ++i)
+		in.push_back(i);
+
+	builder.appendBinData("binDataTest", in.size(), mongo::BinDataGeneral, &in[0]);
+
+	RepoBSON bson(builder);
+
+
+	bson.getBinaryFieldAsVector(bson.getField("binDataTest"), in.size(), &out);
+
+	ASSERT_EQ(out.size(), in.size());
+	for (size_t i = 0; i < size; ++i)
+	{
+		EXPECT_EQ(in[i], out[i]);
+	}
+
+}
+//
+//TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
+//{
+//	mongo::BSONObjBuilder builder;
+//
+//	std::vector < uint8_t > in, out;
+//
+//	size_t size = 100;
+//
+//	for (size_t i = 0; i < size; ++i)
+//		in.push_back(i);
+//
+//	std::map<std::string, std::vector<uint8_t>> map;
+//	std::string fname = "testingfile";
+//	map[fname] = in;
+//
+//
+//
+//	RepoBSON bson(BSON("binDataTest" << fname), map);
+//
+//
+//	bson.getBinaryFieldAsVector(bson.getField("binDataTest"), in.size(), &out);
+//
+//	ASSERT_EQ(out.size(), in.size());
+//	for (size_t i = 0; i < size; ++i)
+//	{
+//		EXPECT_EQ(in[i], out[i]);
+//	}
+//
+//}
