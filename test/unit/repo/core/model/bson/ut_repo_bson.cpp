@@ -63,9 +63,49 @@ TEST(RepoBSONTest, GetBinaryAsVectorEmbedded)
 	for (size_t i = 0; i < size; ++i)
 		in.push_back(i);
 
+	builder << "stringTest" << "hello";
+	builder << "numTest" << 1.35;
 	builder.appendBinData("binDataTest", in.size(), mongo::BinDataGeneral, &in[0]);
 
 	RepoBSON bson(builder);
+
+
+	EXPECT_TRUE(bson.getBinaryFieldAsVector(bson.getField("binDataTest"), in.size(), &out));
+
+	ASSERT_EQ(out.size(), in.size());
+	for (size_t i = 0; i < size; ++i)
+	{
+		EXPECT_EQ(in[i], out[i]);
+	}
+
+
+	std::vector<char> *null = nullptr;
+
+	//Invalid retrieval, but they shouldn't throw exception
+	EXPECT_FALSE(bson.getBinaryFieldAsVector(bson.getField("binDataTest"), in.size(), null));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector(bson.getField("numTest"), &out));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector(bson.getField("stringTest"), &out));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector(bson.getField("doesn'tExist"), &out));
+}
+
+TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
+{
+	mongo::BSONObjBuilder builder;
+
+	std::vector < uint8_t > in, out;
+
+	size_t size = 100;
+
+	for (size_t i = 0; i < size; ++i)
+		in.push_back(i);
+
+	std::unordered_map<std::string, std::vector<uint8_t>> map;
+	std::string fname = "testingfile";
+	map[fname] = in;
+
+
+
+	RepoBSON bson(BSON("binDataTest" << fname), map);
 
 
 	bson.getBinaryFieldAsVector(bson.getField("binDataTest"), in.size(), &out);
@@ -77,33 +117,3 @@ TEST(RepoBSONTest, GetBinaryAsVectorEmbedded)
 	}
 
 }
-//
-//TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
-//{
-//	mongo::BSONObjBuilder builder;
-//
-//	std::vector < uint8_t > in, out;
-//
-//	size_t size = 100;
-//
-//	for (size_t i = 0; i < size; ++i)
-//		in.push_back(i);
-//
-//	std::map<std::string, std::vector<uint8_t>> map;
-//	std::string fname = "testingfile";
-//	map[fname] = in;
-//
-//
-//
-//	RepoBSON bson(BSON("binDataTest" << fname), map);
-//
-//
-//	bson.getBinaryFieldAsVector(bson.getField("binDataTest"), in.size(), &out);
-//
-//	ASSERT_EQ(out.size(), in.size());
-//	for (size_t i = 0; i < size; ++i)
-//	{
-//		EXPECT_EQ(in[i], out[i]);
-//	}
-//
-//}
