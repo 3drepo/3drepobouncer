@@ -4,13 +4,4 @@
 #If you really need to overwrite this file, be aware that it will be overwritten if updateSources.py is executed.
 
 
-set(SOURCES
-	${SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_connection_pool_mongo.cpp
-	CACHE STRING "SOURCES" FORCE)
-
-set(HEADERS
-	${HEADERS}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_connection_pool_mongo.h
-	CACHE STRING "HEADERS" FORCE)
-
+add_subdirectory(core)
