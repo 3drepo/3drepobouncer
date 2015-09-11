@@ -47,7 +47,7 @@ namespace repo{
 				*/
 				repo::core::model::RepoNodeSet readMetadata(
 					const std::string        &filePath,
-					std::vector<std::string> &headers = std::vector<std::string>(),
+					std::vector<std::string> &headers,
 					const char               &delimiter = ',');
 
 				//! Sets the delimiter

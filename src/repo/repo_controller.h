@@ -38,7 +38,7 @@
 
 
 namespace repo{
-	
+
 	class REPO_API_EXPORT RepoToken
 	{
 
@@ -191,7 +191,7 @@ namespace repo{
 			const std::string            &database,
 			const std::string            &collection,
 			const std::list<std::string> &fields,
-			const std::string            &sortField = std::string(),
+			const std::string            &sortField,
 			const int                    &sortOrder = -1,
 			const uint64_t               &skip = 0);
 
@@ -207,7 +207,7 @@ namespace repo{
 			);
 
 		/**
-		* Return a CollectionStats BSON containing statistics about 
+		* Return a CollectionStats BSON containing statistics about
 		* this collection
 		* @param token A RepoToken given at authentication
 		* @param database name of database
@@ -234,9 +234,9 @@ namespace repo{
 		* @param databases list of databases to look up
 		* @return returns a list of database names
 		*/
-		std::map<std::string, std::list<std::string>> 
+		std::map<std::string, std::list<std::string>>
 			getDatabasesWithProjects(
-			const RepoToken *token, 
+			const RepoToken *token,
 			const std::list<std::string> &databases);
 
 		/**
@@ -246,8 +246,8 @@ namespace repo{
 		* @return return a string with "databaseAddress:port"
 		*/
 		std::string getHostAndPort(const RepoToken *token) const
-		{ 
-			return token->databaseAd; 
+		{
+			return token->databaseAd;
 		}
 
 		/**
@@ -280,7 +280,7 @@ namespace repo{
 		* @param token Authentication token
 		* @param database the database the collection resides in
 		* @param project name of the project
-		* @param uuid if headRevision, uuid represents the branch id, 
+		* @param uuid if headRevision, uuid represents the branch id,
 		*              otherwise the unique id of the revision branch
 		* @param headRevision true if retrieving head revision
 		* @return returns a pointer to a repoScene.
@@ -327,7 +327,7 @@ namespace repo{
 			const RepoToken             *token,
 			const std::string     &databaseName,
 			const std::string     &collectionName,
-			std::string			  &errMsg = std::string()
+			std::string			  &errMsg
 		);
 
 		/**
@@ -340,7 +340,7 @@ namespace repo{
 		bool removeDatabase(
 			const RepoToken             *token,
 			const std::string           &databaseName,
-			std::string			        &errMsg = std::string()
+			std::string			        &errMsg
 		);
 
 		/**
@@ -382,7 +382,7 @@ namespace repo{
 		*       as you should never update a node from a scene graph like this.
 		* @param token Authentication token
 		* @param database the database the collection resides in
-		* @param collection name of the collection 
+		* @param collection name of the collection
 		* @param bson document to update/insert
 		*/
 		void upsertDocument(
@@ -456,7 +456,7 @@ namespace repo{
 		*/
 		repo::core::model::RepoScene* loadSceneFromFile(
 			const std::string &filePath,
-			const repo::manipulator::modelconvertor::ModelImportConfig *config 
+			const repo::manipulator::modelconvertor::ModelImportConfig *config
 				= nullptr);
 
 		/**

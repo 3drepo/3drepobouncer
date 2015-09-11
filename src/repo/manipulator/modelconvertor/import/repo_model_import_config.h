@@ -289,7 +289,7 @@ namespace repo{
 				* Returns true if remove components is checked in settings, false otherwise.
 				* Defaults to false.
 				*/
-				virtual bool getRemoveComponents() const const
+				virtual bool getRemoveComponents() const
 				{
 					return boolSettings.at(REMOVE_COMPONENTS);
 				}
@@ -298,7 +298,7 @@ namespace repo{
 				* Returns true if remove components animations is checked in settings,
 				* false otherwise. Defaults to false.
 				*/
-				virtual bool getRemoveComponentsAnimations() const const
+				virtual bool getRemoveComponentsAnimations() const
 				{
 					return boolSettings.at(REMOVE_COMPONENTS_ANIMATIONS);
 				}
