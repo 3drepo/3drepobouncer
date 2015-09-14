@@ -1,0 +1,17 @@
+language: cpp
+
+compiler:
+     - gcc
+before_install:
+    - sudo apt-get install libboost-thead-dev libboost-system-dev libboost-chrono-dev libboost-log-dev libboost-log_setup-dev libboost-filesystem-dev
+before_script:
+
+script:
+
+
+branches:
+   only:
+       - master
+
+notifications:
+    email: true

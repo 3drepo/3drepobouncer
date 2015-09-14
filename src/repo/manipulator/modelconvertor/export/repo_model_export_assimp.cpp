@@ -115,7 +115,7 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 	std::map<repoUUID, aiMaterial*> matMap;
 	std::map<repoUUID, aiCamera*>   camMap;
 
-	constructAiSceneRecursively(scene, currNode, meshVec, matVec, camVec,
+	return constructAiSceneRecursively(scene, currNode, meshVec, matVec, camVec,
 		meshMap, matMap, camMap, textNodes);
 }
 
