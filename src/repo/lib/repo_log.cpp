@@ -9,7 +9,7 @@
 #include <boost/log/sources/severity_logger.hpp>
 #include <boost/log/sources/record_ostream.hpp>
 #include <boost/log/support/date_time.hpp>
-#include <boost/log/utility/empty_deleter.hpp>
+#include <boost/core/null_deleter.hpp>
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 
@@ -110,7 +110,7 @@ void RepoLog::subscribeBroadcaster(RepoBroadcaster *broadcaster){
 
 
 	boost::shared_ptr< std::ostream > stream(
-		streamptr, boost::log::empty_deleter());
+		streamptr, boost::null_deleter());
 
 	boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
 

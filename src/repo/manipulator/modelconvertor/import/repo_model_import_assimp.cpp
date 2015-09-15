@@ -67,11 +67,11 @@ std::string AssimpModelImport::getSupportedFormats()
 	importer.GetExtensionList(ext);
 
 	// all file extensions in convenient all package
-	
+
 	std::string str(ext.C_Str());
 
 	std::replace(str.begin(), str.end(), ';', ' ');
-	
+
 	std::string all = "All (" + str + ")";
 
 	// individual extensions by name
@@ -84,7 +84,7 @@ std::string AssimpModelImport::getSupportedFormats()
 		//put *. in front of the 2nd+ file extensions (as some might have multiple extensions)
 		std::string extension = std::regex_replace(str, std::regex(" "), " *.");
 
-		//remove "Importer" from the name 
+		//remove "Importer" from the name
 		std::string formatName = std::regex_replace(std::string(desc->mName), std::regex(" Importer"), "");
 		individual += ";;" + formatName + " (*." + extension + ")";
 
@@ -207,7 +207,7 @@ repo::core::model::CameraNode* AssimpModelImport::createCameraRepoNode(
 	const aiCamera *assimpCamera)
 {
 	std::string cameraName(assimpCamera->mName.data);
-	
+
 	repo::core::model::CameraNode * cameraNode;
 
 	if (assimpCamera)
@@ -325,7 +325,9 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 			if (nameToTexture.end() != it)
 			{
 				repo::core::model::RepoNode * nodeAddr = it->second;
-				nodeAddr->swap(nodeAddr->cloneAndAddParent(materialNode->getSharedID()));
+
+				repo::core::model::RepoNode tmp = nodeAddr->cloneAndAddParent(materialNode->getSharedID());
+				nodeAddr->swap(tmp);
 			}
 		}
 	}
@@ -496,7 +498,8 @@ repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 	if (assimpMesh->mMaterialIndex < materials.size())
 	{
 		repo::core::model::RepoNode *materialNode = materials[assimpMesh->mMaterialIndex];
-		materialNode->swap(materialNode->cloneAndAddParent(meshNode->getSharedID()));
+		repo::core::model::RepoNode tmp = materialNode->cloneAndAddParent(meshNode->getSharedID());
+		materialNode->swap(tmp);
 	}
 
 	///*
@@ -539,7 +542,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 
 			case AI_UINT64:
 				//mongo doesn't support 64bit unsigned. storing it as a signed number
-				builder << key << (int64_t)(*(static_cast<uint64_t *>(currentValue.mData)));
+				builder << key << (long long)(*(static_cast<uint64_t *>(currentValue.mData)));
 				break;
 
 			case AI_FLOAT:
@@ -605,7 +608,7 @@ const std::vector<repoUUID>						             &parent
 		}
 
 
-		repo::core::model::TransformationNode * transNode = 
+		repo::core::model::TransformationNode * transNode =
 			new repo::core::model::TransformationNode(
 			repo::core::model::RepoBSONFactory::makeTransformationNode(transMat, transName, parent));
 
@@ -624,10 +627,11 @@ const std::vector<repoUUID>						             &parent
 			if (meshIndex < meshes.size())
 			{
 				repo::core::model::RepoNode *mesh = meshes[meshIndex];
-				
+
 				if (mesh)
 				{
-					mesh->swap(mesh->cloneAndAddParent(sharedId));
+					repo::core::model::RepoNode tmp = mesh->cloneAndAddParent(sharedId);
+					mesh->swap(tmp);
 				}
 			}
 		}
@@ -641,8 +645,8 @@ const std::vector<repoUUID>						             &parent
 			repo::core::model::RepoNode * camera = it->second;
 			if (camera)
 			{
-				camera->swap(camera->cloneAndAddParent(sharedId));
-
+				repo::core::model::RepoNode tmp = camera->cloneAndAddParent(sharedId);
+				camera->swap(tmp);
 			}
 		}
 
@@ -664,9 +668,9 @@ const std::vector<repoUUID>						             &parent
 	// Register child transformations as children if any
 		for (unsigned int i = 0; i < assimpNode->mNumChildren; ++i)
 		{
-				
+
 			repo::core::model::RepoNodeSet childMetadata;
-			repo::core::model::RepoNodeSet childSet =  createTransformationNodesRecursive(assimpNode->mChildren[i], 
+			repo::core::model::RepoNodeSet childSet =  createTransformationNodesRecursive(assimpNode->mChildren[i],
 				cameras, meshes, childMetadata, map, myShareID);
 
 			transNodes.insert(childSet.begin(), childSet.end());
@@ -835,7 +839,7 @@ repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 {
 	repo::core::model::RepoScene *scene;
 	assimp_map orgMap, optMap;
-	
+
 	//This will generate the non optimised scene
 	repoTrace << "Converting AiScene to repoScene";
 	scene = convertAiSceneToRepoScene(orgMap);
@@ -866,7 +870,7 @@ repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 		repoError << "Failed to construct default graph scene.";
 	}
 
-	
+
 	return scene;
 }
 
@@ -881,7 +885,7 @@ bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
 	// Import model
 
 	std::string fileName = getFileName(filePath);
-	
+
 	repoInfo << "IMPORT [" << fileName << "]";
 
 	//check if a file exist first
@@ -998,7 +1002,7 @@ bool AssimpModelImport::populateOptimMaps(
 	const assimp_map                   &optMap)
 {
 	std::map<repoUUID, std::vector<repo_mesh_mapping_t>> meshMapping;
-	// If this is a mesh then we the optimization map is transferred for 
+	// If this is a mesh then we the optimization map is transferred for
 	// it's parent.
 	if (current->getTypeAsEnum() ==  repo::core::model::NodeType::TRANSFORMATION)
 	{
@@ -1025,7 +1029,7 @@ bool AssimpModelImport::populateOptimMaps(
 
 			for (uintptr_t mergedNode : ai_map->getMergeMap())
 			{
-				// Find the corresponding abstract node for an assimp 
+				// Find the corresponding abstract node for an assimp
 				assimp_map::left_const_iterator nit = combinedMap.left.find(mergedNode);
 
 				if (nit != combinedMap.left.end())
@@ -1081,7 +1085,7 @@ bool AssimpModelImport::populateOptimMaps(
 								repo_vector_t min = { mMap.min.x, mMap.min.y, mMap.min.z };
 								repo_vector_t max = { mMap.max.x, mMap.max.y, mMap.max.z };
 
-	
+
 								//check if there's already a mapping for this node
 								if (meshMapping.find(parentUUID) == meshMapping.end())
 								{
@@ -1091,7 +1095,7 @@ bool AssimpModelImport::populateOptimMaps(
 								//create a repo_mesh_mapping struct and push it to the vector
 								meshMapping[parentUUID].push_back({ min, max, childUUID, materialUUID, mMap.startVertexIDX,
 									mMap.endVertexIDX, mMap.startTriangleIDX, mMap.endTriangleIDX });
-								
+
 							}
 							else {
 								repoError << "populateOptimMaps: Unable to find material  node from combinedMap!";
@@ -1121,7 +1125,7 @@ bool AssimpModelImport::populateOptimMaps(
 	}
 
 	const std::vector<repo::core::model::RepoNode *> &children = scene->getChildrenAsNodes(
-		repo::core::model::RepoScene::GraphType::OPTIMIZED, 
+		repo::core::model::RepoScene::GraphType::OPTIMIZED,
 		current->getSharedID());
 
 	//--------------------------------------------------------------------------
@@ -1136,7 +1140,7 @@ bool AssimpModelImport::populateOptimMaps(
 		{
 			if (optMap.right.find(child) == optMap.right.end())
 			{
-				//This should never ever happen, unless the graph was tampered with between import and 
+				//This should never ever happen, unless the graph was tampered with between import and
 				//this call without updating the mappings.
 				repoError << "populateOptimMaps: Cannot find Mesh node in optimized graph in optMap!";
 				return false;
@@ -1151,10 +1155,10 @@ bool AssimpModelImport::populateOptimMaps(
 				meshChild->swap(updatedChild);
 
 				// We also need to transfer the materials so that they are children of the mesh
-				
+
 				for (const auto &rMap : meshChild->getMeshMapping())
 				{
-					repo::core::model::RepoNode *matNode = 
+					repo::core::model::RepoNode *matNode =
 						scene->getNodeByUniqueID(repo::core::model::RepoScene::GraphType::OPTIMIZED, rMap.material_id);
 					if (matNode)
 					{
@@ -1183,7 +1187,7 @@ void AssimpModelImport::setAssimpProperties(){
 
 	if (settings->getGenerateNormals() && settings->getGenerateNormalsSmooth())
 		importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, settings->getGenerateNormalsSmoothCreaseAngle());
-		
+
 	if (settings->getImproveCacheLocality())
 		importer.SetPropertyInteger(AI_CONFIG_PP_ICL_PTCACHE_SIZE, settings->getImproveCacheLocalityVertexCacheSize());
 

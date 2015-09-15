@@ -13,74 +13,67 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#attempt to find Mongo C++ driver 
-#if Mongo is found, Mongo_FOUND is set to true
-#Mongo_INCLUDE_DIR will point to the include folder of the installation
-#Mongo_LIBRARIES will point to the libraries
+#attempt to find MONGO C++ driver 
+#if MONGO is found, MONGO_FOUND is set to true
+#MONGO_INCLUDE_DIR will point to the include folder of the installation
+#MONGO_LIBRARIES will point to the libraries
 
 
 if(DEFINED ENV{MONGO_ROOT})
-	set(Mongo_ROOT $ENV{MONGO_ROOT})
-	message(STATUS "$MONGO_ROOT defined: ${Mongo_ROOT}")
-	find_path(Mongo_INCLUDE_DIR mongo/client/dbclient.h
-		${Mongo_ROOT}/include
+	set(MONGO_ROOT $ENV{MONGO_ROOT})
+	message(STATUS "$MONGO_ROOT defined: ${MONGO_ROOT}")
+	find_path(MONGO_INCLUDE_DIR mongo/client/dbclient.h
+		${MONGO_ROOT}/include
 		)    
-	find_library(Mongo_LIBRARIES_RELEASE NAMES mongoclient
+	find_library(MONGO_LIBRARIES_RELEASE NAMES mongoclient
 		PATHS
-		${Mongo_ROOT}/lib
+		${MONGO_ROOT}/lib
 	)	
 	
-	find_library(Mongo_LIBRARIES_DEBUG NAMES mongoclient-gd
+	find_library(MONGO_LIBRARIES_DEBUG NAMES mongoclient-gd
 		PATHS
-		${Mongo_ROOT}/lib
+		${MONGO_ROOT}/lib
 	)
 
-	set(Mongo_LIBRARIES
-		debug ${Mongo_LIBRARIES_DEBUG}
-		optimized ${Mongo_LIBRARIES_RELEASE}
+	set(MONGO_LIBRARIES
+		debug ${MONGO_LIBRARIES_DEBUG}
+		optimized ${MONGO_LIBRARIES_RELEASE}
 		)
 endif()
 
-if(Mongo_INCLUDE_DIR AND Mongo_LIBRARIES)
-	set(Mongo_FOUND TRUE)
+if(MONGO_INCLUDE_DIR AND MONGO_LIBRARIES)
+	set(MONGO_FOUND TRUE)
 
-else(Mongo_INCLUDE_DIR AND Mongo_LIBRARIES)
+else(MONGO_INCLUDE_DIR AND MONGO_LIBRARIES)
 	find_path(MONGO_INCLUDE_DIR mongo/client/dbclient.h
 		/usr/include
 		/usr/local/include
 		/opt/local/include
     )
 
-	find_library(Mongo_LIBRARIES_RELEASE NAMES mongoclient
+	find_library(MONGO_LIBRARIES_RELEASE NAMES mongoclient
     	PATHS
     	/usr/lib
     	/usr/local/lib
     	/opt/local/lib
+		/usr/lib64
     )
 
-	find_library(Mongo_LIBRARIES_DEBUG NAMES mongoclient-gd
-    	PATHS
-    	/usr/lib
-    	/usr/local/lib
-    	/opt/local/lib
-    )
-
-	set(Mongo_LIBRARIES
-		debug ${Mongo_LIBRARIES_DEBUG}
-		optimized ${Mongo_LIBRARIES_RELEASE}
+	set(MONGO_LIBRARIES
+		optimized ${MONGO_LIBRARIES_RELEASE}
 		)
-endif(Mongo_INCLUDE_DIR AND Mongo_LIBRARIES)
+endif(MONGO_INCLUDE_DIR AND MONGO_LIBRARIES)
 
 
 
-if(Mongo_INCLUDE_DIR AND Mongo_LIBRARIES)
-	set(Mongo_FOUND TRUE)
-	message(STATUS "Mongo installation found.")
-	message(STATUS "MONGO_INCLUDE_DIR: ${Mongo_INCLUDE_DIR}")
-	message(STATUS "Mongo_LIBRARIES: ${Mongo_LIBRARIES}")
+if(MONGO_INCLUDE_DIR AND MONGO_LIBRARIES)
+	set(MONGO_FOUND TRUE)
+	message(STATUS "MONGO installation found.")
+	message(STATUS "MONGO_INCLUDE_DIR: ${MONGO_INCLUDE_DIR}")
+	message(STATUS "MONGO_LIBRARIES: ${MONGO_LIBRARIES}")
 	
-else(Mongo_INCLUDE_DIR AND Mongo_LIBRARIES)
+else(MONGO_INCLUDE_DIR AND MONGO_LIBRARIES)
 #cannot find mongo anywhere!
-	set(Mongo_FOUND FALSE)
-	message(STATUS "Mongo not found. Please set MONGO_ROOT to your installation directory")
-endif(Mongo_INCLUDE_DIR AND Mongo_LIBRARIES)
+	set(MONGO_FOUND FALSE)
+	message(STATUS "MONGO not found. Please set MONGO_ROOT to your installation directory")
+endif(MONGO_INCLUDE_DIR AND MONGO_LIBRARIES)

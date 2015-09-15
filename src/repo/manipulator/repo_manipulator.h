@@ -43,7 +43,7 @@ namespace repo{
 			* @param port port number
 			* @param maxConnections maxmimum number of concurrent connections allowed to the database
 			* @param dbName database name to authenticate against
-			* @param username user name 
+			* @param username user name
 			* @param password password of the user
 			* @param pwDigested is the password provided in digested form (default: false)
 			* @return returns true upon success
@@ -88,7 +88,7 @@ namespace repo{
 			*/
 			void commitScene(
 				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON 	  *cred, 
+				const repo::core::model::RepoBSON 	  *cred,
 				repo::core::model::RepoScene           *scene);
 
 
@@ -135,7 +135,8 @@ namespace repo{
 				const repo::core::model::RepoBSON*	  cred,
 				const std::string                             &database,
 				const std::string                             &collection,
-				std::string                                   &errMsg = std::string());
+				std::string                                   &errMsg
+			);
 
 			/**
 			* Remove a collection from the database
@@ -151,8 +152,8 @@ namespace repo{
 				const repo::core::model::RepoBSON*	  cred,
 				const std::string                             &databaseName,
 				const std::string                             &collectionName,
-				std::string			                          &errMsg = std::string()
-				);
+				std::string			                          &errMsg
+			);
 
 			/**
 			* Remove a database from the database instance
@@ -166,8 +167,8 @@ namespace repo{
 				const std::string                             &databaseAd,
 				const repo::core::model::RepoBSON*	  cred,
 				const std::string                             &databaseName,
-				std::string			                          &errMsg = std::string()
-				);
+				std::string			                          &errMsg
+			);
 
 			/**
 			* Get a list of all available databases, alphabetically sorted by default.
@@ -193,7 +194,7 @@ namespace repo{
 				const repo::core::model::RepoBSON*	  cred,
 				const std::string                             &database
 				);
-			
+
 			/**
 			* Retrieve a RepoScene with a specific revision loaded.
 			* @param databaseAd mongo database address:port
@@ -224,12 +225,12 @@ namespace repo{
 			* @param skip specify how many documents to skip
 			* @return list of RepoBSONs representing the documents
 			*/
-			std::vector<repo::core::model::RepoBSON> 
+			std::vector<repo::core::model::RepoBSON>
 				getAllFromCollectionTailable(
 				const std::string                             &databaseAd,
 				const repo::core::model::RepoBSON*	  cred,
 				const std::string                             &database,
-				const std::string                             &collection, 
+				const std::string                             &collection,
 				const uint64_t                                &skip=0);
 
 			/**
@@ -271,7 +272,8 @@ namespace repo{
 				const repo::core::model::RepoBSON*	  cred,
 				const std::string                             &database,
 				const std::string                             &collection,
-				std::string	                                  &errMsg=std::string());
+				std::string	                                  &errMsg
+			);
 
 
 			/**
@@ -328,7 +330,7 @@ namespace repo{
 			/**
 			* Load metadata from a file
 			* @param filePath path to file
-			* @param delimiter 
+			* @param delimiter
 			* @return returns a pointer to Repo Scene upon success
 			*/
 			repo::core::model::RepoNodeSet
@@ -346,10 +348,10 @@ namespace repo{
 			repo::core::model::RepoScene*
 				loadSceneFromFile(
 				const std::string &filePath,
-				      std::string &msg = std::string(),
+				      std::string &msg,
 			    const repo::manipulator::modelconvertor::ModelImportConfig *config
 					  = nullptr);
-			
+
 			/**
 			* remove a document from the database
 			* NOTE: this should never be called for a RepoNode family

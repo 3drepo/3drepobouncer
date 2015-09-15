@@ -69,8 +69,8 @@ bool RepoManipulator::connectAndAuthenticateWithAdmin(
 	//FIXME: we should have a database manager class that will instantiate new handlers/give existing handlers
 	repo::core::handler::AbstractDatabaseHandler *handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(
-		errMsg, address, port, maxConnections, 
-		repo::core::handler::MongoDatabaseHandler::getAdminDatabaseName(), 
+		errMsg, address, port, maxConnections,
+		repo::core::handler::MongoDatabaseHandler::getAdminDatabaseName(),
 		username, password, pwDigested);
 
 	return handler != 0;
@@ -176,7 +176,7 @@ void RepoManipulator::commitScene(
 		repoError << "Error committing scene to the database : " << msg;
 	}
 
-		
+
 }
 
 uint64_t RepoManipulator::countItemsInCollection(
@@ -277,7 +277,7 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	if (handler)
 	{
-		//not setting a scene if we don't have a handler since we 
+		//not setting a scene if we don't have a handler since we
 		//retreive anything from the database.
 		scene = new repo::core::model::RepoScene(database, project);
 		if (scene)
@@ -316,7 +316,7 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 			}
 			else
 			{
-				repoError << "Failed to load revision for " 
+				repoError << "Failed to load revision for "
 				 << database << "." << project << " : " << errMsg;
 				delete scene;
 				scene = nullptr;
@@ -426,7 +426,7 @@ std::list<std::string> RepoManipulator::getStandardDatabaseRoles(
 std::string RepoManipulator::getNameOfAdminDatabase(
 	const std::string                             &databaseAd) const
 {
-	
+
 	//FIXME: at the moment we only have mongo. But if we have
 	//different database types then this would not work
 	return  repo::core::handler::MongoDatabaseHandler::getAdminDatabaseName();
@@ -438,17 +438,18 @@ repo::core::model::RepoNodeSet
 		const char        &delimiter)
 {
 	repo::manipulator::modelconvertor::MetadataImportCSV metaImport;
+	std::vector<std::string> tmp;
 
-	return metaImport.readMetadata(filePath, std::vector<std::string>(), delimiter);
+	return metaImport.readMetadata(filePath, tmp, delimiter);
 }
 
-repo::core::model::RepoScene* 
+repo::core::model::RepoScene*
 	RepoManipulator::loadSceneFromFile(
-	const std::string &filePath, 
+	const std::string &filePath,
 	      std::string &msg,
     const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
-	
+
 	repo::core::model::RepoScene* scene = nullptr;
 
 	repo::manipulator::modelconvertor::AssimpModelImport*
@@ -498,7 +499,7 @@ void RepoManipulator::insertUser(
 			repoError << "Failed to add user : " << errMsg;
 		}
 	}
-		
+
 }
 
 void RepoManipulator::removeDocument(

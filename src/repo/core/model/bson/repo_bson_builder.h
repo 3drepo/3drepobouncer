@@ -16,7 +16,7 @@
 */
 
 /**
-* BSON object builder. Currently it does nothing more than inherit mongo. 
+* BSON object builder. Currently it does nothing more than inherit mongo.
 * It is a layer of abstraction between 3D Repo and mongo.
 * In the future this may be replaced by utilising a BSON library
 */
@@ -68,14 +68,6 @@ namespace repo {
 							mongo::BSONObjBuilder::append(label, item);
 						}
 
-						template<>
-						void append<repoUUID>(
-							const std::string &label,
-							const repoUUID &uuid)
-						{
-							appendUUID(label, uuid);
-						}
-
 						/**
 						* Append a list of pairs into an arraybson of objects
 						* @param label label to append the array against
@@ -106,7 +98,7 @@ namespace repo {
 						* appends the count of the elements and the byte count of the array if
 						* labels are specified
 						* @param label Label for this element
-						* @param data the data itself 
+						* @param data the data itself
 						* @param byteCount size of data in bytes
 						* @param byteCountLabel label to store byteCount
 						* @param countLabel count label to store count
@@ -136,7 +128,7 @@ namespace repo {
 								appendBinData(
 									label, byteCount, mongo::BinDataGeneral,
 									(void *)data);
-								
+
 							}
 						}
 
@@ -167,3 +159,11 @@ namespace repo {
 		}// end namespace model
 	} // end namespace core
 } // end namespace repo
+
+// Template specialization
+template<> void repo::core::model::RepoBSONBuilder::append<repoUUID>
+(
+	const std::string &label,
+	const repoUUID &uuid
+);
+

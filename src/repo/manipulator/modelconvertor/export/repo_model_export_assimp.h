@@ -88,7 +88,31 @@ namespace repo{
 				* construct aiNodes from its children
 				* NB: The reason why we have meshVec/meshMap etc is because map is a sorted container
 				*     and thus order will change as we add items in it. We need a vector container
-				*     to keep track of the original order, which is the order in which will be going into the 
+				*     to keep track of the original order, which is the order in which will be going into the
+				*     aiscene. A possible alternative to this is using boost's multiIndex container
+				* @param scene the scene the node came from
+				* @param currNode the node to convert
+				* @param meshVec a list of aiMesh pointers in the order that is going into aiScene
+				* @param matVec  a list of aiMaterial pointers in the order that is going into aiScene
+				* @param camVec  a list of aiCamera pointers in the order that is going into aiScene
+				* @param textNodes keeps track of the texture nodes that are referenced in this scene
+				*/
+
+				aiNode* constructAiSceneRecursively(
+					const repo::core::model::RepoScene *scene,
+					const repo::core::model::RepoNode   *currNode,
+					std::vector<aiMesh*>                      &meshVec,
+					std::vector<aiMaterial*>                  &matVec,
+					std::vector<aiCamera*>                    &camVec,
+					repo::core::model::RepoNodeSet &textNodes);
+
+				/**
+				* Construct an assimp node from 3DRepo scene
+				* this is a recursive function call and will
+				* construct aiNodes from its children
+				* NB: The reason why we have meshVec/meshMap etc is because map is a sorted container
+				*     and thus order will change as we add items in it. We need a vector container
+				*     to keep track of the original order, which is the order in which will be going into the
 				*     aiscene. A possible alternative to this is using boost's multiIndex container
 				* @param scene the scene the node came from
 				* @param currNode the node to convert

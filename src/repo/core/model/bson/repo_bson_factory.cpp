@@ -38,7 +38,7 @@ uint64_t RepoBSONFactory::appendDefaults(
 		builder << REPO_NODE_LABEL_TYPE << type;
 		bytesize += sizeof(type);
 	}
-		
+
 
 	//--------------------------------------------------------------------------
 	// API level
@@ -51,10 +51,10 @@ uint64_t RepoBSONFactory::appendDefaults(
 	if (parents.size() > 0)
 	{
 		builder.appendArray(REPO_NODE_LABEL_PARENTS, builder.createArrayBSON(parents));
-	
+
 		bytesize += parents.size() * sizeof(parents[0]);
 	}
-		
+
 	//--------------------------------------------------------------------------
 	// Name
 	if (!name.empty())
@@ -112,7 +112,7 @@ CameraNode RepoBSONFactory::makeCameraNode(
 	builder.appendVector(REPO_NODE_LABEL_LOOK_AT, lookAt);
 
 	//--------------------------------------------------------------------------
-	// Position vector 
+	// Position vector
 	builder.appendVector(REPO_NODE_LABEL_POSITION, position);
 
 	//--------------------------------------------------------------------------
@@ -261,7 +261,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 			//Check if it is a number, if it is, store it as a number
 
 			try{
-				int64_t valueInt = boost::lexical_cast<int64_t>(value);
+				long long valueInt = boost::lexical_cast<long long>(value);
 				builder << key << valueInt;
 			}
 			catch (boost::bad_lexical_cast &)
@@ -314,7 +314,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 		}
 
 		builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, arrayBuilder.obj());
-		
+
 	}
 
 
@@ -337,7 +337,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	* 1. store binaries in memory outside of the bson and put it into GRIDFS at the point of commit
 	* 2. leave mongo's bson, use our own/exteral library that doesn't have this limit and database handle this at the point of commit
 	* below uses option 1, but ideally we should be doing option 2.
-	*/ 
+	*/
 
 	if (vertices.size() > 0)
 	{
@@ -349,7 +349,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 			//inclusion of this binary exceeds the maximum, store separately
 			binMapping[bName] = std::vector<uint8_t>();
 			binMapping[bName].resize(verticesByteCount); //uint8_t will ensure it is a byte addrressing
-			memcpy(&binMapping[bName][0], &vertices[0], verticesByteCount); 
+			memcpy(&binMapping[bName][0], &vertices[0], verticesByteCount);
 			builder << REPO_NODE_MESH_LABEL_VERTICES << bName;
 
 			bytesize += sizeof(bName);
@@ -478,7 +478,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 		}
 
 	}
-		
+
 	//--------------------------------------------------------------------------
 	// UV channels
 	if (uvChannels.size() > 0)
@@ -730,7 +730,7 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 		builder.appendArray(REPO_NODE_REVISION_LABEL_ADDED_SHARED_IDS, builder.createArrayBSON(added));
 
 	//--------------------------------------------------------------------------
-	// Deleted Shared IDs		
+	// Deleted Shared IDs
 	if (removed.size() > 0)
 		builder.appendArray(REPO_NODE_REVISION_LABEL_DELETED_SHARED_IDS, builder.createArrayBSON(removed));
 
