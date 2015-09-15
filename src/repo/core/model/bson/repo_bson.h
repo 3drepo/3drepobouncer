@@ -84,6 +84,7 @@ namespace repo {
 						*/
 						virtual ~RepoBSON() {}
 
+
 						/**
 						* returns a field from the BSON
 						* @param label name of the field to retrieve

@@ -151,7 +151,7 @@ void RepoScene::addInheritance(
 			else
 			{
 				//not tracking, just swap the content
-				*childNode = childWithParent;
+				childNode->swap(childWithParent);
 			}
 
 		}
@@ -203,7 +203,8 @@ void RepoScene::addMetadata(
 				graph.parentToChildren[transSharedID] = std::vector<repoUUID>();
 
 			graph.parentToChildren[transSharedID].push_back(metaSharedID);
-			*meta = meta->cloneAndAddParent(transSharedID);
+			RepoNode metaWithParent = meta->cloneAndAddParent(transSharedID);
+			meta->swap(metaWithParent);
 
 			graph.nodesByUniqueID[metaUniqueID] = meta;
 			graph.sharedIDtoUniqueID[metaSharedID] = metaUniqueID;
@@ -584,7 +585,8 @@ bool RepoScene::commitStash(
 		for (auto &pair : stashGraph.nodesByUniqueID)
 		{
 			nodes.push_back(pair.first);
-			*pair.second = pair.second->cloneAndAddFields(&revID, false);
+			RepoNode withRev = pair.second->cloneAndAddFields(&revID, false);
+			pair.second->swap(withRev);
 		}
 
 		return commitNodes(handler, nodes, GraphType::OPTIMIZED, errMsg);

@@ -63,7 +63,7 @@ RepoNode RepoNode::cloneAndAddParent(
 
 	builder.appendElementsUnique(*this);
 
-	return RepoNode(builder.obj());
+	return RepoNode(builder.obj(), bigFiles);
 }
 
 RepoNode RepoNode::cloneAndAddFields(
