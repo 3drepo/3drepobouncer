@@ -18,22 +18,14 @@
 #include <iostream>
 #include <repo/repo_controller.h>
 
-void loadModelFromFileAndCommit(repo::RepoController *controller, const repo::RepoToken *token)
+void loadModelFromFileAndCommit(repo::RepoController *controller, const repo::RepoToken *token, const std::string &fileLoc)
 {
-
-	std::string fileName;
-
-	//fileName = "C:\\Users\\Carmen\\Desktop\\models\\A556-CAP-7000-S06-IE-S-1001.ifc"; - no worky at the moment
-	//fileName = "C:\\Users\\Carmen\\Desktop\\models\\chair\\Bo Concept Imola.obj";
-	//fileName = "C:\\Users\\Carmen\\Desktop\\models\\Duplex_A_20110907.ifc";
-	fileName = "C:\\Users\\Carmen\\Desktop\\models\\103EW-A-BASEMENT.fbx";
-
 	repo::manipulator::modelconvertor::ModelImportConfig config;
 
 	config.setPreTransformVertices(true);
 	config.setRemoveRedundantMaterials(true);
 
-	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileName, &config);
+	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, &config);
 	if (graph)
 	{
 		BOOST_LOG_TRIVIAL(info) << "model loaded successfully! Attempting to port to Repo World...";
@@ -53,7 +45,7 @@ void loadModelFromFileAndCommit(repo::RepoController *controller, const repo::Re
 	}
 	else
 	{
-		BOOST_LOG_TRIVIAL(error) << "Failed to load model from file : " << fileName;
+		BOOST_LOG_TRIVIAL(error) << "Failed to load model from file : " << fileLoc;
 	}
 
 
@@ -62,9 +54,9 @@ void loadModelFromFileAndCommit(repo::RepoController *controller, const repo::Re
 int main(int argc, char* argv[]){
 
 	//TODO: configuration needs to be done properly, but hey, i'm just a quick test!
-	if (argc != 5){
+	if (argc != 7){
 		std::cout << "Usage: " << std::endl;
-		std::cout << "\t " << argv[0] << " address port username password" << std::endl;
+		std::cout << "\t " << argv[0] << " address port username password command fileLocation" << std::endl;
 		return EXIT_FAILURE;
 	}
 
@@ -72,6 +64,8 @@ int main(int argc, char* argv[]){
 	int port = atoi(argv[2]);
 	std::string username = argv[3];
 	std::string password = argv[4];
+	std::string command = argv[5];
+	std::string fileLoc = argv[6];
 
 
 	repo::RepoController *controller = new repo::RepoController();
@@ -83,7 +77,7 @@ int main(int argc, char* argv[]){
 	else
 		std::cerr << "Failed to authenticate to the database: " << errMsg << std::endl;
 
-	loadModelFromFileAndCommit(controller, token);
+	loadModelFromFileAndCommit(controller, token, fileLoc);
 
 
 
