@@ -15,48 +15,28 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <iostream>
-#include <repo/repo_controller.h>
+#include "functions.h"
 
-void loadModelFromFileAndCommit(repo::RepoController *controller, const repo::RepoToken *token, const std::string &fileLoc)
+static const uint32_t minArgs = 6;  //exe address port username password command
+
+void printHelp()
 {
-	repo::manipulator::modelconvertor::ModelImportConfig config;
-
-	config.setPreTransformVertices(true);
-	config.setRemoveRedundantMaterials(true);
-
-	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, &config);
-	if (graph)
-	{
-		BOOST_LOG_TRIVIAL(info) << "model loaded successfully! Attempting to port to Repo World...";
-
-		BOOST_LOG_TRIVIAL(info) << "RepoScene generated. Printing graph statistics...";
-		std::stringstream		stringMaker;
-		graph->printStatistics(stringMaker);
-		std::cout << stringMaker.str();
-
-		std::string databaseName = "test";
-		std::string projectName = "stashTest";
-		BOOST_LOG_TRIVIAL(info) << "Trying to commit this scene to database as " << databaseName << "." << projectName;
-		
-		graph->setDatabaseAndProjectName(databaseName, projectName);
-
-		controller->commitScene(token, graph);
-	}
-	else
-	{
-		BOOST_LOG_TRIVIAL(error) << "Failed to load model from file : " << fileLoc;
-	}
-
-
+	std::cout << "Usage: repobouncerclient <address> <port> <username> <password> <command> [<args>]" << std::endl;
+	std::cout << std::endl;
+	std::cout << "address\t\tAddress of database instance" << std::endl;
+	std::cout << "port\t\tPort of database instance" << std::endl;
+	std::cout << "username\tUsername to connect to database" << std::endl;
+	std::cout << "password\tPassword of user" << std::endl;
+	std::cout << std::endl;
+	std::cout << "Supported Commands:" << std::endl;
+	std::cout << helpInfo() << std::endl;
 }
 
 int main(int argc, char* argv[]){
 
-	//TODO: configuration needs to be done properly, but hey, i'm just a quick test!
-	if (argc != 7){
-		std::cout << "Usage: " << std::endl;
-		std::cout << "\t " << argv[0] << " address port username password command fileLocation" << std::endl;
+	
+	if (argc < minArgs){
+		printHelp();
 		return EXIT_FAILURE;
 	}
 
@@ -64,22 +44,43 @@ int main(int argc, char* argv[]){
 	int port = atoi(argv[2]);
 	std::string username = argv[3];
 	std::string password = argv[4];
-	std::string command = argv[5];
-	std::string fileLoc = argv[6];
 
+	repo_op_t op;
+	op.command = argv[5];
+	if (argc > minArgs)
+		op.args = &argv[minArgs];
+	op.nArgcs = argc - minArgs;
 
-	repo::RepoController *controller = new repo::RepoController();
+	//Check before connecting to the database
+	int32_t cmdnArgs = knownValid(op.command);
+	if (cmdnArgs <= op.nArgcs)
+	{
 
-	std::string errMsg;
-	repo::RepoToken* token = controller->authenticateToAdminDatabaseMongo(errMsg, address, port, username, password);
-	if (token)
-		std::cout << "successfully connected to the database!" << std::endl;
+		repo::RepoController *controller = new repo::RepoController();
+
+		std::string errMsg;
+		repo::RepoToken* token = controller->authenticateToAdminDatabaseMongo(errMsg, address, port, username, password);
+		if (token)
+			repoLog("successfully connected to the database!");
+		else
+			repoLogError("Failed to authenticate to the database: " + errMsg);
+
+		bool success = performOperation(controller, token, op);
+
+		delete controller;
+		delete token;
+		return !success;
+	}
 	else
-		std::cerr << "Failed to authenticate to the database: " << errMsg << std::endl;
+	{
+		std::cout << "Not enough arguments for command: " << op.command << std::endl;
+		printHelp();
+		return EXIT_FAILURE;
+	}
 
-	loadModelFromFileAndCommit(controller, token, fileLoc);
 
-
-
-	return EXIT_SUCCESS;
+	std::cout << "Unknown command: " << op.command << std::endl;
+	printHelp();
+	return EXIT_FAILURE;
+	
 }
