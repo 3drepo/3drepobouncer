@@ -84,6 +84,25 @@ namespace repo {
 						*/
 						virtual ~RepoBSON() {}
 
+						/** 
+						* Override the equals operator to perform the swap just like mongo bson
+						* but also retrieve the mapping information
+						*/
+						RepoBSON& operator=(RepoBSON otherCopy) {
+							swap(otherCopy);
+							bigFiles = otherCopy.bigFiles;
+							return *this;
+						}
+						///**
+						//* Override the swap operator to perform the swap just like mongo bson
+						//* but also carry over the mapping information
+						//*/
+						//void swap(RepoBSON otherCopy)
+						//{
+						//	mongo::BSONObj::swap(otherCopy);
+						//	//bigFiles = otherCopy.bigFiles;
+						//}
+
 						/**
 						* returns a field from the BSON
 						* @param label name of the field to retrieve

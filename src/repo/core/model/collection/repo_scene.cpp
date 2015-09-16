@@ -203,7 +203,9 @@ void RepoScene::addMetadata(
 				graph.parentToChildren[transSharedID] = std::vector<repoUUID>();
 
 			graph.parentToChildren[transSharedID].push_back(metaSharedID);
+		
 			*meta = meta->cloneAndAddParent(transSharedID);
+			
 
 			graph.nodesByUniqueID[metaUniqueID] = meta;
 			graph.sharedIDtoUniqueID[metaSharedID] = metaUniqueID;
@@ -585,6 +587,7 @@ bool RepoScene::commitStash(
 		{
 			nodes.push_back(pair.first);
 			*pair.second = pair.second->cloneAndAddFields(&revID, false);
+
 		}
 
 		return commitNodes(handler, nodes, GraphType::OPTIMIZED, errMsg);

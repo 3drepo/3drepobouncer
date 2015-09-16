@@ -46,6 +46,7 @@ RepoBSON::RepoBSON(const mongo::BSONObj &obj,
 			builder.appendElementsUnique(obj);
 
 			*this = builder.obj();
+			bigFiles = binMapping;
 		}
 	}
 
