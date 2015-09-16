@@ -117,3 +117,40 @@ TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
 	}
 
 }
+
+TEST(RepoBSONTest, AssignOperator)
+{
+	RepoBSON test = testBson;
+
+	EXPECT_TRUE(test.toString() == testBson.toString());
+
+	EXPECT_EQ(test.getFilesMapping().size(), testBson.getFilesMapping().size());
+	
+	//Test with bigfile mapping
+	std::vector < uint8_t > in;
+
+	in.resize(100);
+
+	std::unordered_map<std::string, std::vector<uint8_t>> map, mapout;
+	map["testingfile"] = in;
+
+	RepoBSON test2(testBson, map);
+
+
+	mapout = test2.getFilesMapping();
+	ASSERT_EQ(mapout.size(), map.size());
+	
+	auto mapIt = map.begin();
+	auto mapoutIt = mapout.begin();
+
+	for (; mapIt != map.end(); ++mapIt, ++mapoutIt)
+	{
+		EXPECT_EQ(mapIt->first, mapIt->first);
+		std::vector<uint8_t> dataOut = mapoutIt->second;
+		std::vector<uint8_t> dataIn = mapIt->second;
+		ASSERT_EQ(dataOut.size(), dataIn.size());
+		if (dataIn.size()>0)
+			EXPECT_EQ(strncmp((char*)&dataOut[0], (char*)&dataIn[0], dataIn.size()), 0);
+	}
+
+}
