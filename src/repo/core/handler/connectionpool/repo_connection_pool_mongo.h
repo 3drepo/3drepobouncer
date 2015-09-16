@@ -113,14 +113,16 @@ namespace repo{
 						if (!worker)
 						{
 							//worker was never used, instantiate it with a connection
-							worker = connectWorker(std::string());
+							std::string tmp;
+							worker = connectWorker(tmp);
 						}
 						else
 						{
 							//check worker is still connected
 							if (!worker->isStillConnected())
 							{
-								worker = connectWorker(std::string());
+								std::string tmp;
+								worker = connectWorker(tmp);
 							}
 						}
 
@@ -146,7 +148,7 @@ namespace repo{
 					const mongo::BSONObj *auth;
 
 				};
-			
+
 			}
 		} /* namespace handler */
 	}

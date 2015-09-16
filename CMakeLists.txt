@@ -20,9 +20,12 @@
 
 project("3drepobouncer")
 
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 3.2)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
+
+add_compile_options(-std=c++11)
+add_compile_options(-fpermissive)
 
 #================BOOST SETTINGS=======================
 add_definitions(-DBOOST_ALL_NO_LIB)
@@ -37,24 +40,24 @@ unset(Boost_LIBRARY_DIRS CACHE)
 find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem)
 
 
-#================Mongo SETTINGS=======================
+#================MONGO SETTINGS=======================
 find_package(Mongo REQUIRED)
 
 
 #================ASSIMP SETTINGS=======================
-find_package(Assimp REQUIRED)
+find_package(ASSIMP REQUIRED)
 
 #================Source and header files===============
 add_subdirectory(src)
 
-if(${Boost_FOUND} AND ${Mongo_FOUND} AND ${Assimp_FOUND})
-	include_directories(${Boost_INCLUDE_DIRS} ${Mongo_INCLUDE_DIR} ${Assimp_INCLUDE_DIR} ${HEADERS})
+if(${Boost_FOUND} AND ${MONGO_FOUND} AND ${ASSIMP_FOUND})
+	include_directories(${Boost_INCLUDE_DIRS} ${MONGO_INCLUDE_DIR} ${ASSIMP_INCLUDE_DIR} src)
 	add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
 	add_definitions(-DREPO_API_LIBRARY)	
 
 	add_library(3drepobouncer SHARED ${SOURCES})
 
-	target_link_libraries(3drepobouncer ${Boost_LIBRARIES} ${Mongo_LIBRARIES} ${Assimp_LIBRARIES})
+	target_link_libraries(3drepobouncer ${Boost_LIBRARIES} ${MONGO_LIBRARIES} ${ASSIMP_LIBRARIES})
 
 	install(DIRECTORY src/ DESTINATION include FILES_MATCHING PATTERN "*.h")
 	install(TARGETS 3drepobouncer DESTINATION lib)

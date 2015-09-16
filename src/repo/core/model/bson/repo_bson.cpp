@@ -44,10 +44,12 @@ RepoBSON::RepoBSON(const mongo::BSONObj &obj,
 
 			builder.appendArray(REPO_LABEL_OVERSIZED_FILES, arrbuilder.obj());
 			builder.appendElementsUnique(obj);
-			this->swap(builder.obj());
+
+			*this = builder.obj();
+			bigFiles = binMapping;
 		}
 	}
-	
+
 
 }
 

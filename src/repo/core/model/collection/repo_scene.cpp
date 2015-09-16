@@ -115,7 +115,7 @@ void RepoScene::addInheritance(
 
 
 		//add children to parentToChildren mapping
-		std::map<repoUUID, std::vector<repoUUID>>::iterator childrenIT = 
+		std::map<repoUUID, std::vector<repoUUID>>::iterator childrenIT =
 			g.parentToChildren.find(parentShareID);
 
 		if (childrenIT != g.parentToChildren.end())
@@ -141,17 +141,19 @@ void RepoScene::addInheritance(
 		auto parentInd = std::find(parents.begin(), parents.end(), parentShareID);
 		if (parentInd == parents.end())
 		{
+			RepoNode childWithParent = childNode->cloneAndAddParent(parentShareID);
+
 			if (trackChanges)
 			{
 				//this is considered a change on the node, we need to make a new node with new uniqueID
-				modifyNode(childShareID, new RepoNode(childNode->cloneAndAddParent(parentShareID)));
+				modifyNode(childShareID, new RepoNode(childWithParent));
 			}
 			else
 			{
 				//not tracking, just swap the content
-				childNode->swap(childNode->cloneAndAddParent(parentShareID));
+				*childNode = childWithParent;
 			}
-				
+
 		}
 	}
 	else
@@ -201,7 +203,9 @@ void RepoScene::addMetadata(
 				graph.parentToChildren[transSharedID] = std::vector<repoUUID>();
 
 			graph.parentToChildren[transSharedID].push_back(metaSharedID);
-			meta->swap(meta->cloneAndAddParent(transSharedID));
+		
+			*meta = meta->cloneAndAddParent(transSharedID);
+			
 
 			graph.nodesByUniqueID[metaUniqueID] = meta;
 			graph.sharedIDtoUniqueID[metaSharedID] = metaUniqueID;
@@ -224,7 +228,7 @@ void RepoScene::addMetadata(
 
 bool RepoScene::addNodeToScene(
 	const GraphType &gType,
-	const RepoNodeSet nodes, 
+	const RepoNodeSet nodes,
 	std::string &errMsg,
 	 RepoNodeSet *collection)
 {
@@ -251,17 +255,17 @@ bool RepoScene::addNodeToScene(
 		}
 	}
 
-	
+
 
 	return success;
 }
 
 bool RepoScene::addNodeToMaps(
-	const GraphType &gType, 
-	RepoNode *node, 
+	const GraphType &gType,
+	RepoNode *node,
 	std::string &errMsg)
 {
-	bool success = true; 
+	bool success = true;
 	repoUUID uniqueID = node->getUniqueID();
 	repoUUID sharedID = node->getSharedID();
 
@@ -283,7 +287,7 @@ bool RepoScene::addNodeToMaps(
 				//they could be straggling materials. Only give an error if both are transformation
 				//NOTE: this will fall apart if we ever allow root node to be something other than a transformation.
 
-				if (node->getTypeAsEnum() == NodeType::TRANSFORMATION && 
+				if (node->getTypeAsEnum() == NodeType::TRANSFORMATION &&
 					g.rootNode->getTypeAsEnum() == NodeType::TRANSFORMATION)
 					repoError << "2 candidate for root node found. This is possibly an invalid Scene Graph.";
 
@@ -335,7 +339,7 @@ void RepoScene::addStashGraph(
 	const RepoNodeSet &textures,
 	const RepoNodeSet &transformations)
 {
-	populateAndUpdate(GraphType::OPTIMIZED, cameras, meshes, materials, RepoNodeSet(), 
+	populateAndUpdate(GraphType::OPTIMIZED, cameras, meshes, materials, RepoNodeSet(),
 		textures, transformations, RepoNodeSet(), RepoNodeSet(), RepoNodeSet());
 }
 
@@ -368,8 +372,8 @@ void RepoScene::clearStash()
 
 bool RepoScene::commit(
 	repo::core::handler::AbstractDatabaseHandler *handler,
-	std::string &errMsg, 
-	const std::string &userName, 
+	std::string &errMsg,
+	const std::string &userName,
 	const std::string &message,
 	const std::string &tag)
 {
@@ -382,11 +386,11 @@ bool RepoScene::commit(
 		errMsg = "Cannot commit to the database - no database handler assigned.";
 		return false;
 	}
-	
+
 	if (databaseName.empty() | projectName.empty())
 	{
-		errMsg = "Cannot commit to the database - databaseName or projectName is empty (database: " 
-			+ databaseName 
+		errMsg = "Cannot commit to the database - databaseName or projectName is empty (database: "
+			+ databaseName
 			+ " project: " + projectName +  " ).";
 		return false;
 	}
@@ -406,7 +410,7 @@ bool RepoScene::commit(
 			{
 				//Succeed in commiting everything.
 				//Update Revision Node and reset state.
-				
+
 				if (revNode)
 				{
 					delete revNode;
@@ -433,12 +437,12 @@ bool RepoScene::commitProjectSettings(
 	const std::string &userName)
 {
 
-	RepoProjectSettings projectSettings = 
+	RepoProjectSettings projectSettings =
 		RepoBSONFactory::makeRepoProjectSettings(projectName, userName);
-	
+
 	bool success = handler->upsertDocument(
 		databaseName, REPO_COLLECTION_SETTINGS, projectSettings, false, errMsg);
-	
+
 
 	return success;
 
@@ -508,7 +512,7 @@ bool RepoScene::commitNodes(
 	std::string &errMsg)
 {
 	bool success = true;
-	
+
 	bool isStashGraph = gType == GraphType::OPTIMIZED;
 	repoGraphInstance &g = isStashGraph ? stashGraph : graph;
 	std::string ext = isStashGraph ? stashExt : sceneExt;
@@ -543,7 +547,7 @@ bool RepoScene::commitSceneChanges(
 	nodesToCommit.insert(nodesToCommit.end(), newRemoved.begin(), newRemoved.end());
 
 	repoInfo << "Commiting addedNodes...." << newAdded.size() << " nodes";
-	
+
 	commitNodes(handler, nodesToCommit, GraphType::DEFAULT, errMsg);
 
 
@@ -568,7 +572,7 @@ bool RepoScene::commitStash(
 		return false;
 	}
 	else
-	{ 
+	{
 		rev = revNode->getUniqueID();
 	}
 	if (stashGraph.rootNode)
@@ -582,7 +586,8 @@ bool RepoScene::commitStash(
 		for (auto &pair : stashGraph.nodesByUniqueID)
 		{
 			nodes.push_back(pair.first);
-			pair.second->swap(pair.second->cloneAndAddFields(&revID, false));
+			*pair.second = pair.second->cloneAndAddFields(&revID, false);
+
 		}
 
 		return commitNodes(handler, nodes, GraphType::OPTIMIZED, errMsg);
@@ -593,10 +598,10 @@ bool RepoScene::commitStash(
 		repoDebug << "Stash graph not commited. Root node is nullptr!";
 		return true;
 	}
-	
+
 }
 
-std::vector<RepoNode*> 
+std::vector<RepoNode*>
 RepoScene::getChildrenAsNodes(
 	const GraphType &gType,
 	const repoUUID &parent) const
@@ -637,9 +642,9 @@ std::vector<repoUUID> RepoScene::getModifiedNodesID() const
 
 	ids.insert(ids.end(), newModified.begin(), newModified.end());
 	ids.insert(ids.end(), newRemoved.begin() , newRemoved.end());
-	repoTrace << "Added: " << 
-		newAdded.size() << " modified: " << 
-		newModified.size() << " removed: " << 
+	repoTrace << "Added: " <<
+		newAdded.size() << " modified: " <<
+		newModified.size() << " removed: " <<
 		newRemoved.size();
 
 	repoTrace << "# modified nodes : " << ids.size();
@@ -678,10 +683,10 @@ bool RepoScene::loadRevision(
 }
 
 bool RepoScene::loadScene(
-	repo::core::handler::AbstractDatabaseHandler *handler, 
+	repo::core::handler::AbstractDatabaseHandler *handler,
 	std::string &errMsg){
 	bool success = true;
-	
+
 	if (!handler) return false;
 
 	if (!revNode){
@@ -756,14 +761,14 @@ void RepoScene::modifyNode(
 	else{
 		repoError << "Trying to update a node " << sharedID << " that doesn't exist in the scene!";
 	}
-	
+
 }
 
 
 bool RepoScene::populate(
 	const GraphType &gtype,
-	repo::core::handler::AbstractDatabaseHandler *handler, 
-	std::vector<RepoBSON> nodes, 
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	std::vector<RepoBSON> nodes,
 	std::string &errMsg)
 {
 	bool success = true;
@@ -892,7 +897,7 @@ void RepoScene::printStatistics(std::iostream &output)
 	if (unRevisioned)
 	{
 		output << "Revision:\t\t\t\tNot Revisioned" << std::endl;
-	}	
+	}
 	else
 	{
 		if (revNode)

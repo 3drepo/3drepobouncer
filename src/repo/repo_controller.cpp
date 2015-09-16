@@ -110,12 +110,12 @@ RepoToken* RepoController::authenticateMongo(
 
 	core::model::RepoBSON* cred = 0;
 	RepoToken *token = 0;
-	
+
 	std::string dbFullAd = address + ":" + std::to_string(port);
 
-	bool success = worker->connectAndAuthenticate(errMsg, address, port, 
+	bool success = worker->connectAndAuthenticate(errMsg, address, port,
 		numDBConnections, dbName, username, password, pwDigested);
-	
+
 	if (success)
 		cred = worker->createCredBSON(dbFullAd, username, password, pwDigested);
 	workerPool.push(worker);
@@ -154,7 +154,8 @@ uint64_t RepoController::countItemsInCollection(
 	if (token)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		numItems = worker->countItemsInCollection(token->databaseAd, token->credentials, database, collection);
+		std::string errMsg;
+		numItems = worker->countItemsInCollection(token->databaseAd, token->credentials, database, collection, errMsg);
 		workerPool.push(worker);
 	}
 	else
@@ -197,7 +198,7 @@ std::vector < repo::core::model::RepoBSON >
 		const std::string    &collection,
 		const uint64_t       &skip)
 {
-	repoTrace << "Controller: Fetching BSONs from " 
+	repoTrace << "Controller: Fetching BSONs from "
 		<< database << "."  << collection << "....";
 	std::vector<repo::core::model::RepoBSON> vector;
 	if (token)
@@ -264,7 +265,7 @@ std::list<std::string> RepoController::getDatabases(const RepoToken *token)
 		}
 		else
 		{
-			//If the user is only authenticated against a single 
+			//If the user is only authenticated against a single
 			//database then just return the database he/she is authenticated against.
 			list.push_back(token->databaseName);
 		}
@@ -328,7 +329,7 @@ repo::core::model::CollectionStats RepoController::getCollectionStats(
 
 std::map<std::string, std::list<std::string>>
 	RepoController::getDatabasesWithProjects(
-		const RepoToken *token, 
+		const RepoToken *token,
 		const std::list<std::string> &databases)
 {
 	std::map<std::string, std::list<std::string>> map;
@@ -378,15 +379,15 @@ bool RepoController::removeCollection(
 	if (token)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		success = worker->dropCollection(token->databaseAd, 
+		success = worker->dropCollection(token->databaseAd,
 			token->credentials, databaseName, collectionName, errMsg);
 		workerPool.push(worker);
 	}
 	else
 	{
-		errMsg = "Trying to fetch collections without a Repo Token!"; 
+		errMsg = "Trying to fetch collections without a Repo Token!";
 		repoError << errMsg;
-		
+
 	}
 
 	return success;
@@ -497,7 +498,7 @@ void RepoController::setLoggingLevel(const repo::lib::RepoLog::RepoLogLevel &lev
 {
 
 	repo::lib::RepoLog::getInstance().setLoggingLevel(level);
-	
+
 }
 
 void RepoController::logToFile(const std::string &filePath)
@@ -626,7 +627,7 @@ repo::core::model::RepoNodeSet RepoController::loadMetadataFromFile(
 	return metadata;
 }
 
-repo::core::model::RepoScene* 
+repo::core::model::RepoScene*
 	RepoController::loadSceneFromFile(
 	const std::string                                          &filePath,
 	const repo::manipulator::modelconvertor::ModelImportConfig *config)
@@ -642,7 +643,7 @@ repo::core::model::RepoScene*
 		workerPool.push(worker);
 		if (!scene)
 			repoError << "Failed ot load scene from file: " << errMsg;
-		
+
 	}
 	else
 	{

@@ -53,7 +53,7 @@ namespace repo{
 				*	=================================== Public Fields ========================================
 				*/
 				static const std::string ID; //! "_id"
-				static const std::string UUID;//! "uuid"		
+				static const std::string UUID;//! "uuid"
 				static const std::string ADMIN_DATABASE;//! "admin"
 				static const std::string SYSTEM_ROLES_COLLECTION;//! "system.roles"
 				static const std::string AUTH_MECH;//! Authentication mechanism. currently MONGO-CR since mongo v2.6
@@ -200,7 +200,7 @@ namespace repo{
 				 * @return returns a map of database -> list of projects
 				 */
 				std::map<std::string, std::list<std::string> > getDatabasesWithProjects(
-					const std::list<std::string> &databases, 
+					const std::list<std::string> &databases,
 					const std::string &projectExt = "scene");
 
 				/**
@@ -252,7 +252,7 @@ namespace repo{
 				bool dropCollection(
 					const std::string &database,
 					const std::string &collection,
-					std::string &errMsg = std::string());
+					std::string &errMsg);
 
 				/**
 				* Remove a database from the mongo database
@@ -261,7 +261,7 @@ namespace repo{
 				*/
 				bool dropDatabase(
 					const std::string &database,
-					std::string &errMsg = std::string());
+					std::string &errMsg);
 
 
 				/**
@@ -275,7 +275,7 @@ namespace repo{
 					const repo::core::model::RepoBSON bson,
 					const std::string &database,
 					const std::string &collection,
-					std::string &errMsg = std::string());
+					std::string &errMsg);
 
 				/**
 				* Remove a user from the database
@@ -464,7 +464,7 @@ namespace repo{
 				/**
 				* Create a Repo BSON and populate all relevant data
 				* this includes getting data from GridFS
-				* NOTE: the handler will only get the data from GridFS if it is 
+				* NOTE: the handler will only get the data from GridFS if it is
 				* listed in REPO_LABEL_OVERSIZED_FILES
 				* @param worker the worker to operate with
 				* @param database database to store in
@@ -473,7 +473,7 @@ namespace repo{
 				* @return returns a repo BSON that is fully populated
 				*/
 				repo::core::model::RepoBSON createRepoBSON(
-					mongo::DBClientBase *worker, 
+					mongo::DBClientBase *worker,
 					const std::string &database,
 					const std::string &collection,
 					const mongo::BSONObj &obj);

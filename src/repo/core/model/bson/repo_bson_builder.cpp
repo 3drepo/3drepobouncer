@@ -28,7 +28,7 @@ void RepoBSONBuilder::appendArrayPair(
 	)
 {
 	mongo::BSONArrayBuilder arrBuilder;
-	
+
 	for (auto it = list.begin(); it != list.end(); ++it)
 	{
 		RepoBSONBuilder innerBuilder;
@@ -60,3 +60,14 @@ RepoBSON RepoBSONBuilder::obj()
 	mongo::BSONObjBuilder build;
 	return RepoBSON(mongo::BSONObjBuilder::obj());
 }
+
+template<> void repo::core::model::RepoBSONBuilder::append<repoUUID>
+(
+	const std::string &label,
+	const repoUUID &uuid
+)
+{
+	appendUUID(label, uuid);
+}
+
+

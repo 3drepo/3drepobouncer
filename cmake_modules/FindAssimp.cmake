@@ -13,72 +13,72 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#attempt to find Assimp library 
-#if Assimp is found, Assimp_FOUND is set to true
-#Assimp_INCLUDE_DIR will point to the include folder of the installation
-#Assimp_LIBRARIES will point to the libraries
+#attempt to find ASSIMP library 
+#if ASSIMP is found, ASSIMP_FOUND is set to true
+#ASSIMP_INCLUDE_DIR will point to the include folder of the installation
+#ASSIMP_LIBRARIES will point to the libraries
 
 
 if(DEFINED ENV{ASSIMP_ROOT})
-	set(Assimp_ROOT $ENV{ASSIMP_ROOT})
-	message(STATUS "$ASSIMP_ROOT defined: ${Assimp_ROOT}")
-	find_path(Assimp_INCLUDE_DIR assimp
-		${Assimp_ROOT}/include
+	set(ASSIMP_ROOT $ENV{ASSIMP_ROOT})
+	message(STATUS "$ASSIMP_ROOT defined: ${ASSIMP_ROOT}")
+	find_path(ASSIMP_INCLUDE_DIR assimp
+		${ASSIMP_ROOT}/include
 		)    
-	find_library(Assimp_LIBRARIES_RELEASE NAMES assimp
+	find_library(ASSIMP_LIBRARIES_RELEASE NAMES assimp
 		PATHS
-		${Assimp_ROOT}/lib
+		${ASSIMP_ROOT}/lib
 	)	
-	find_library(Assimp_LIBRARIES_DEBUG NAMES assimpd
+	find_library(ASSIMP_LIBRARIES_DEBUG NAMES assimpd
 		PATHS
-		${Assimp_ROOT}/lib
+		${ASSIMP_ROOT}/lib
 	)	
-	set(Assimp_LIBRARIES
-		debug ${Assimp_LIBRARIES_DEBUG}
-		optimized ${Assimp_LIBRARIES_RELEASE}
+	set(ASSIMP_LIBRARIES
+		debug ${ASSIMP_LIBRARIES_DEBUG}
+		optimized ${ASSIMP_LIBRARIES_RELEASE}
 		)
 endif()
 
-if(Assimp_INCLUDE_DIR AND Assimp_LIBRARIES)
-	set(Assimp_FOUND TRUE)
+if(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)
+	set(ASSIMP_FOUND TRUE)
 
-else(Assimp_INCLUDE_DIR AND Assimp_LIBRARIES)
+else(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)
 	find_path(ASSIMP_INCLUDE_DIR assimp
 		/usr/include
 		/usr/local/include
 		/opt/local/include
     )
 
-	find_library(Assimp_LIBRARIES_RELEASE NAMES assimp 
+	find_library(ASSIMP_LIBRARIES_RELEASE NAMES assimp
     	PATHS
-    	/usr/lib
-    	/usr/local/lib
-    	/opt/local/lib
+    	/usr/lib/
+    	/usr/local/lib/
+    	/opt/local/lib/
     )
 	
-	find_library(Assimp_LIBRARIES_DEBUG NAMES assimpd 
+	find_library(ASSIMP_LIBRARIES_DEBUG NAMES assimpd
     	PATHS
-    	/usr/lib
-    	/usr/local/lib
-    	/opt/local/lib
+    	/usr/lib/
+    	/usr/local/lib/
+    	/opt/local/lib/
     )
 
-	set(Assimp_LIBRARIES
-		debug ${Assimp_LIBRARIES_DEBUG}
-		optimized ${Assimp_LIBRARIES_RELEASE}
+	set(ASSIMP_LIBRARIES
+		debug ${ASSIMP_LIBRARIES_DEBUG}
+		optimized ${ASSIMP_LIBRARIES_RELEASE}
 		)
-endif(Assimp_INCLUDE_DIR AND Assimp_LIBRARIES)
+endif(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)
 
 
 
-if(Assimp_INCLUDE_DIR AND Assimp_LIBRARIES)
-	set(Assimp_FOUND TRUE)
-	message(STATUS "Assimp installation found.")
-	message(STATUS "Assimp_INCLUDE_DIR: ${Assimp_INCLUDE_DIR}")
-	message(STATUS "Assimp_LIBRARIES: ${Assimp_LIBRARIES}")
+if(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)
+	set(ASSIMP_FOUND TRUE)
+	message(STATUS "ASSIMP installation found.")
+	message(STATUS "ASSIMP_INCLUDE_DIR: ${ASSIMP_INCLUDE_DIR}")
+	message(STATUS "ASSIMP_LIBRARIES: ${ASSIMP_LIBRARIES}")
 	
-else(Assimp_INCLUDE_DIR AND Assimp_LIBRARIES)
+else(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)
 #cannot find mongo anywhere!
-	set(Assimp_FOUND FALSE)
-	message(STATUS "Assimp not found. Please set ASSIMP_ROOT to your installation directory")
-endif(Assimp_INCLUDE_DIR AND Assimp_LIBRARIES)
+	set(ASSIMP_FOUND FALSE)
+	message(STATUS "ASSIMP not found. Please set ASSIMP_ROOT to your installation directory")
+endif(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)

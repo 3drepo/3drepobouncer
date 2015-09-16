@@ -38,7 +38,7 @@ namespace repo{
 
 
 				/**
-				 * A Deconstructor 
+				 * A Deconstructor
 				 */
 				virtual ~AbstractDatabaseHandler(){};
 
@@ -75,8 +75,8 @@ namespace repo{
 				* @return number of documents within the specified collection
 				*/
 				virtual uint64_t countItemsInCollection(
-					const std::string &database, 
-					const std::string &collection, 
+					const std::string &database,
+					const std::string &collection,
 					      std::string &errMsg) = 0;
 
 				/**
@@ -130,7 +130,7 @@ namespace repo{
 				* @return returns a map of database -> list of projects
 				*/
 				virtual std::map<std::string, std::list<std::string> > getDatabasesWithProjects(
-					const std::list<std::string> &databases, 
+					const std::list<std::string> &databases,
 					const std::string &projectExt = "scene") = 0;
 
 				/**
@@ -210,7 +210,7 @@ namespace repo{
 				virtual bool dropCollection(
 					const std::string &database,
 					const std::string &collection,
-					std::string &errMsg = std::string())=0;
+					std::string &errMsg)=0;
 
 				/**
 				* Remove a database from the database instance
@@ -219,7 +219,7 @@ namespace repo{
 				*/
 				virtual bool dropDatabase(
 					const std::string &database,
-					std::string &errMsg = std::string())=0;
+					std::string &errMsg)=0;
 
 				/**
 				* Remove a document from the mongo database
@@ -232,7 +232,7 @@ namespace repo{
 					const repo::core::model::RepoBSON bson,
 					const std::string &database,
 					const std::string &collection,
-					std::string &errMsg = std::string())=0;
+					std::string &errMsg)=0;
 
 				/**
 				* Remove a user from the database
