@@ -6,17 +6,17 @@
 
 set(SOURCES
 	${SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_config.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_abstract.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_metadata_import_csv.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_abstract.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_assimp.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_config.cpp
 	CACHE STRING "SOURCES" FORCE)
 
 set(HEADERS
 	${HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_metadata_import_csv.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_assimp.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_abstract.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_assimp.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_config.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_config_default_values.h
 	CACHE STRING "HEADERS" FORCE)
