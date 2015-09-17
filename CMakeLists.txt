@@ -47,20 +47,18 @@ find_package(Mongo REQUIRED)
 #================ASSIMP SETTINGS=======================
 find_package(ASSIMP REQUIRED)
 
-
-
 #================COMPILE 3D REPO BOUNCER ==============
 option (REPO_BUILD_CLIENT "If the Command Line Client is built in addition to the library" ON)
 option (REPO_BUILD_TESTS "If the test suite is built in addition to the library" OFF)
 if(${Boost_FOUND} AND ${MONGO_FOUND} AND ${ASSIMP_FOUND})
 
 	#bouncer library
-	add_subdirectory(bouncerlib)
+	add_subdirectory(bouncer)
 
 
 	#client exe
 	if (REPO_BUILD_CLIENT)
-		add_subdirectory(repobouncerclient)
+		add_subdirectory(client)
 	endif()
 
 	#test exe
