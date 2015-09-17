@@ -64,6 +64,18 @@ if(${Boost_FOUND} AND ${MONGO_FOUND} AND ${ASSIMP_FOUND})
 
 endif()
 
+#=============== Compile Command Line Client ===================
+option (REPO_BUILD_CLIENT "If the Command Line Client is built in addition to the library" ON)
+if (REPO_BUILD_CLIENT)
+
+
+	add_subdirectory(repobouncerclient)
+	
+	include_directories(repobouncerclient src)
+	add_executable(3drepobouncerclient ${CLIENT_SOURCES})   
+	target_link_libraries(3drepobouncerclient 3drepobouncer ${Boost_LIBRARIES} ${Mongo_LIBRARIES} ${Assimp_LIBRARIES})
+endif()
+
 #=============== Compile Test ===================
 option (REPO_BUILD_TESTS "If the test suite is built in addition to the library" OFF)
 if (REPO_BUILD_TESTS)
@@ -73,7 +85,7 @@ if (REPO_BUILD_TESTS)
 	enable_testing()
 	add_subdirectory(test)
 	
-	include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR} ${TEST_HEADERS} src)
+	include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR} test src)
 	add_executable(3drepobouncerTest ${TEST_SOURCES})   
 	target_link_libraries(3drepobouncerTest gtest 3drepobouncer ${Boost_LIBRARIES} ${Mongo_LIBRARIES} ${Assimp_LIBRARIES})
 	add_test(3drepobouncerTest 3drepobouncerTest)
