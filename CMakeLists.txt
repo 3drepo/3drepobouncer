@@ -81,6 +81,7 @@ option (REPO_BUILD_TESTS "If the test suite is built in addition to the library"
 if (REPO_BUILD_TESTS)
 
 
+	set(gtest_force_shared_crt ON CACHE BOOL "Build gtest as shared library" FORCE)
 	add_subdirectory(submodules/googletest)
 	enable_testing()
 	add_subdirectory(test)
