@@ -1,12 +1,11 @@
-#THIS IS AN AUTOMATICALLY GENERATED FILE - DO NOT OVERWRITE THE CONTENT!
-#If you need to update the sources/headers/sub directory information, run updateSources.py at project root level
-#If you need to import an extra library or something clever, do it on the CMakeLists.txt at the root level
-#If you really need to overwrite this file, be aware that it will be overwritten if updateSources.py is executed.
+add_subdirectory(src)
 
+enable_testing()
+	
 
-add_subdirectory(unit)
-set(TEST_SOURCES
-	${TEST_SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
-	CACHE STRING "TEST_SOURCES" FORCE)
-
+include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR} src ../bouncerlib/src 
+	${Boost_INCLUDE_DIR} ${MONGO_INCLUDE_DIR} ${ASSIMP_INCLUDE_DIR})
+add_executable(3drepobouncerTest ${TEST_SOURCES}) 
+target_link_libraries(3drepobouncerTest gtest 3drepobouncer 
+	${Boost_LIBRARIES} ${MOMGO_LIBRARIES} ${ASSIMP_LIBRARIES})
+add_test(3drepobouncerTest 3drepobouncerTest)
