@@ -12,3 +12,5 @@ resource.h
 
 Debug
 x64
+sandbox
+sandbox/sandbox.cpp
