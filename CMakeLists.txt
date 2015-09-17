@@ -38,7 +38,7 @@ unset(Boost_INCLUDE_DIR CACHE)
 unset(Boost_LIBRARY_DIRS CACHE)
 
 find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem)
-
+add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
 
 #================MONGO SETTINGS=======================
 find_package(Mongo REQUIRED)
@@ -47,47 +47,25 @@ find_package(Mongo REQUIRED)
 #================ASSIMP SETTINGS=======================
 find_package(ASSIMP REQUIRED)
 
-#================Source and header files===============
-add_subdirectory(src)
-
-if(${Boost_FOUND} AND ${MONGO_FOUND} AND ${ASSIMP_FOUND})
-	include_directories(${Boost_INCLUDE_DIRS} ${MONGO_INCLUDE_DIR} ${ASSIMP_INCLUDE_DIR} src)
-	add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
-	add_definitions(-DREPO_API_LIBRARY)	
-
-	add_library(3drepobouncer SHARED ${SOURCES})
-
-	target_link_libraries(3drepobouncer ${Boost_LIBRARIES} ${MONGO_LIBRARIES} ${ASSIMP_LIBRARIES})
-
-	install(DIRECTORY src/ DESTINATION include FILES_MATCHING PATTERN "*.h")
-	install(TARGETS 3drepobouncer DESTINATION lib)
-
-endif()
-
-#=============== Compile Command Line Client ===================
+#================COMPILE 3D REPO BOUNCER ==============
 option (REPO_BUILD_CLIENT "If the Command Line Client is built in addition to the library" ON)
-if (REPO_BUILD_CLIENT)
-
-
-	add_subdirectory(repobouncerclient)
-	
-	include_directories(repobouncerclient src)
-	add_executable(3drepobouncerclient ${CLIENT_SOURCES})   
-	target_link_libraries(3drepobouncerclient 3drepobouncer ${Boost_LIBRARIES} ${Mongo_LIBRARIES} ${Assimp_LIBRARIES})
-endif()
-
-#=============== Compile Test ===================
 option (REPO_BUILD_TESTS "If the test suite is built in addition to the library" OFF)
-if (REPO_BUILD_TESTS)
+if(${Boost_FOUND} AND ${MONGO_FOUND} AND ${ASSIMP_FOUND})
+
+	#bouncer library
+	add_subdirectory(bouncer)
 
 
-	set(gtest_force_shared_crt ON CACHE BOOL "Build gtest as shared library" FORCE)
-	add_subdirectory(submodules/googletest)
-	enable_testing()
-	add_subdirectory(test)
-	
-	include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR} test src)
-	add_executable(3drepobouncerTest ${TEST_SOURCES})   
-	target_link_libraries(3drepobouncerTest gtest 3drepobouncer ${Boost_LIBRARIES} ${Mongo_LIBRARIES} ${Assimp_LIBRARIES})
-	add_test(3drepobouncerTest 3drepobouncerTest)
+	#client exe
+	if (REPO_BUILD_CLIENT)
+		add_subdirectory(client)
+	endif()
+
+	#test exe
+	if (REPO_BUILD_TESTS)
+		set(gtest_force_shared_crt ON CACHE BOOL "Build gtest as shared library" FORCE)
+		add_subdirectory(submodules/googletest)
+		add_subdirectory(test)
+	endif()
 endif()
+
