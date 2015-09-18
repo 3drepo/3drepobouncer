@@ -26,7 +26,7 @@ std::string helpInfo()
 {
 	std::stringstream ss;
 
-	ss << cmdImportFile << "\t\tImport file to database. (args: file database project)";
+	ss << cmdImportFile << "\t\tImport file to database. (args: file database project [configfile])";
 
 	return ss.str();
 }
@@ -69,23 +69,29 @@ bool importFileAndCommit(
 	/*
 	* Check the amount of parameters matches
 	*/
-	if (command.nArgcs != 3)
+	if (command.nArgcs < 3)
 	{
 		repoLogError("Number of arguments mismatch! " + cmdImportFile 
-			+ " requires 3 arguments: file database project");
+			+ " requires 3 arguments: file database project [");
 		return false;
 	}
 
 	std::string fileLoc = command.args[0];
 	std::string database = command.args[1];
 	std::string project = command.args[2];
+	std::string configFile;
+	if (command.nArgcs > 3)
+	{
+		configFile = command.args[3];
+	}
 
 
-	repo::manipulator::modelconvertor::ModelImportConfig config;
+	repo::manipulator::modelconvertor::ModelImportConfig config(configFile);
 
-	//Set to create stash
-	config.setPreTransformVertices(true);
-	config.setRemoveRedundantMaterials(true);
+
+
+
+
 
 	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, &config);
 	if (graph)

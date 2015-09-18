@@ -34,8 +34,10 @@ namespace repo{
 			class REPO_API_EXPORT ModelImportConfig
 			{
 			public:
-				ModelImportConfig();
+				ModelImportConfig(const std::string &configFile = std::string());
 				~ModelImportConfig();
+
+
 
 				/**
 				* ---------------- Getters -------------------------
@@ -825,6 +827,13 @@ namespace repo{
 				* Also used at initialisation.
 				*/
 				void reset();
+
+				/**
+				* Read configuration from a file stream
+				* @param conf file stream to read from
+				*/
+				void readConfig(
+					std::ifstream &conf);
 
 				void setValue(std::string label, bool value)
 				{
