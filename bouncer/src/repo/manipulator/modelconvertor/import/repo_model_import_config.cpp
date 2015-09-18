@@ -101,8 +101,6 @@ ModelImportConfig::ModelImportConfig(
 	}
 	else
 		repoTrace << "config File not found! using default settings for file import.";
-
-	repoTrace << "PRE_TRANSFORM_VERTICES = " << boolSettings[PRE_TRANSFORM_VERTICES];
 }
 
 ModelImportConfig::~ModelImportConfig()
