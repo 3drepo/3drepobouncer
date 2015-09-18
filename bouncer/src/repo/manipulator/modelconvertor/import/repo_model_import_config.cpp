@@ -135,7 +135,7 @@ void ModelImportConfig::readConfig(
 	(MAKE_LEFT_HANDED.c_str(), boost::program_options::value<bool>(&boolSettings[MAKE_LEFT_HANDED]), "MAKE_LEFT_HANDED")
 	(OPTIMIZE_MESHES.c_str(), boost::program_options::value<bool>(&boolSettings[OPTIMIZE_MESHES]), "OPTIMIZE_MESHES")
 	(PRE_TRANSFORM_UV_COORDINATES.c_str(), boost::program_options::value<bool>(&boolSettings[PRE_TRANSFORM_UV_COORDINATES]), "PRE_TRANSFORM_UV_COORDINATES")
-	(PRE_TRANSFORM_VERTICES, boost::program_options::value<bool>(&boolSettings[PRE_TRANSFORM_VERTICES]), "PRE_TRANSFORM_VERTICES")
+	(PRE_TRANSFORM_VERTICES.c_str(), boost::program_options::value<bool>(&boolSettings[PRE_TRANSFORM_VERTICES]), "PRE_TRANSFORM_VERTICES")
 	(PRE_TRANSFORM_VERTICES_NORMALIZE.c_str(), boost::program_options::value<bool>(&boolSettings[PRE_TRANSFORM_VERTICES_NORMALIZE]), "PRE_TRANSFORM_VERTICES_NORMALIZE")
 	(REMOVE_COMPONENTS.c_str(), boost::program_options::value<bool>(&boolSettings[REMOVE_COMPONENTS]), "REMOVE_COMPONENTS")
 	(REMOVE_COMPONENTS_ANIMATIONS.c_str(), boost::program_options::value<bool>(&boolSettings[REMOVE_COMPONENTS_ANIMATIONS]), "REMOVE_COMPONENTS_ANIMATIONS")
