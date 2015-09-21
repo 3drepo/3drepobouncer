@@ -95,7 +95,8 @@ namespace repo{
 						const std::string                                  &projectName = std::string(),
 						const std::string                                  &sceneExt = REPO_COLLECTION_SCENE,
 						const std::string                                  &revExt = REPO_COLLECTION_HISTORY,
-						const std::string                                  &stashExt = REPO_COLLECTION_REPOSTASH);
+						const std::string                                  &stashExt = REPO_COLLECTION_REPOSTASH,
+						const std::string                                  &rawExt = REPO_COLLECTION_RAW);
 
 					/**
 					* Used for constructing scene graphs from model convertors
@@ -104,6 +105,7 @@ namespace repo{
 					* will need to be set before it can be commited into the database
 					* NOTE: database handler, project name, database name will need to be 
 					* set before this scene graph can be commited to the database.
+					* @param refFiles vector of files created this scene
 					* @param cameras Repo Node set of cameras
 					* @param meshes  Repo Node set of meshes
 					* @param materials Repo Node set of materials
@@ -118,18 +120,20 @@ namespace repo{
 					* @param stashExt extension name of the stash (Default: "stash.3drepo")
 					*/
 					RepoScene(
-						const RepoNodeSet &cameras, 
-						const RepoNodeSet &meshes, 
-						const RepoNodeSet &materials, 
-						const RepoNodeSet &metadata, 
-						const RepoNodeSet &textures, 
-						const RepoNodeSet &transformations,
-						const RepoNodeSet &references = RepoNodeSet(),
-						const RepoNodeSet &maps = RepoNodeSet(),
-						const RepoNodeSet &unknowns = RepoNodeSet(),
-						const std::string                          &sceneExt = REPO_COLLECTION_SCENE,
-						const std::string                          &revExt = REPO_COLLECTION_HISTORY,
-						const std::string                          &stashExt = REPO_COLLECTION_REPOSTASH);
+						const std::vector<std::string> &refFiles,
+						const RepoNodeSet              &cameras, 
+						const RepoNodeSet              &meshes, 
+						const RepoNodeSet              &materials, 
+						const RepoNodeSet              &metadata, 
+						const RepoNodeSet              &textures, 
+						const RepoNodeSet              &transformations,
+						const RepoNodeSet              &references = RepoNodeSet(),
+						const RepoNodeSet              &maps = RepoNodeSet(),
+						const RepoNodeSet              &unknowns = RepoNodeSet(),
+						const std::string              &sceneExt = REPO_COLLECTION_SCENE,
+						const std::string              &revExt = REPO_COLLECTION_HISTORY,
+						const std::string              &stashExt = REPO_COLLECTION_REPOSTASH,
+						const std::string              &rawExt = REPO_COLLECTION_RAW);
 
 					/**
 					* Default Deconstructor
@@ -202,16 +206,25 @@ namespace repo{
 					* Get name of the database
 					* @return returns name of the database if available
 					*/
-					std::string getDatabaseName()
+					std::string getDatabaseName() const
 					{
 						return databaseName;
+					}
+
+					/**
+					* Get raw extension for this project
+					* @return returns the raw extension 
+					*/
+					std::string getRawExtension() const
+					{
+						return rawExt;
 					}
 
 					/**
 					* Get name of the project
 					* @return returns name of the project if available
 					*/
-					std::string getProjectName()
+					std::string getProjectName() const
 					{
 						return projectName;
 					}
@@ -479,6 +492,12 @@ namespace repo{
 					}
 
 					/**
+					* Get the file names of the original files that are stored within the database
+					* @return returns a vector of file names
+					*/
+					std::vector<std::string> getOriginalFiles() const;
+
+					/**
 					* -------------- Scene Modification Functions --------------
 					*/
 
@@ -680,6 +699,8 @@ namespace repo{
 					std::string sceneExt;    /*! extension for scene   graph (Default: scene)*/
 					std::string revExt;      /*! extension for history graph (Default: history)*/
 					std::string stashExt;      /*! extension for optimized graph (Default: stash.3drepo)*/
+					std::string rawExt;      /*! extension for raw file dumps (e.g. original files) (Default: raw)*/
+					std::vector<std::string> refFiles;  //Original Files that created this scene
 					repoUUID   revision;
 					repoUUID   branch;
 					std::string commitMsg;

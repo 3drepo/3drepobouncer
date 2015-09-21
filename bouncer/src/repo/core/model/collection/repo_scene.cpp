@@ -19,6 +19,7 @@
 * A Scene graph representation of a collection
 */
 
+#include <boost/filesystem.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/assign.hpp>
@@ -34,11 +35,13 @@ RepoScene::RepoScene(
 	const std::string &projectName,
 	const std::string &sceneExt,
 	const std::string &revExt,
-	const std::string &stashExt)
+	const std::string &stashExt, 
+	const std::string &rawExt)
 	: AbstractGraph(database, projectName),
-	sceneExt(sceneExt),
-	revExt(revExt),
-	stashExt(stashExt),
+	sceneExt(sanitizeName(sceneExt)),
+	revExt(sanitizeName(revExt)),
+	stashExt(sanitizeName(stashExt)),
+	rawExt(sanitizeName(rawExt)),
 	headRevision(true),
 	unRevisioned(false),
 	revNode(0)
@@ -51,24 +54,28 @@ RepoScene::RepoScene(
 }
 
 RepoScene::RepoScene(
-	const RepoNodeSet &cameras,
-	const RepoNodeSet &meshes,
-	const RepoNodeSet &materials,
-	const RepoNodeSet &metadata,
-	const RepoNodeSet &textures,
-	const RepoNodeSet &transformations,
-	const RepoNodeSet &references,
-	const RepoNodeSet &maps,
-	const RepoNodeSet &unknowns,
-	const std::string                          &sceneExt,
-	const std::string                          &revExt,
-	const std::string                          &stashExt)
+	const std::vector<std::string> &refFiles,
+	const RepoNodeSet              &cameras,
+	const RepoNodeSet              &meshes,
+	const RepoNodeSet              &materials,
+	const RepoNodeSet              &metadata,
+	const RepoNodeSet              &textures,
+	const RepoNodeSet              &transformations,
+	const RepoNodeSet              &references,
+	const RepoNodeSet              &maps,
+	const RepoNodeSet              &unknowns,
+	const std::string              &sceneExt,
+	const std::string              &revExt,
+	const std::string              &stashExt,
+	const std::string              &rawExt)
 	: AbstractGraph("", ""),
-	sceneExt(sceneExt),
-	revExt(revExt),
-	stashExt(stashExt),
+	sceneExt(sanitizeName(sceneExt)),
+	revExt(sanitizeName(revExt)),
+	stashExt(sanitizeName(stashExt)),
+	rawExt(sanitizeName(rawExt)),
 	headRevision(true),
 	unRevisioned(true),
+	refFiles(refFiles),
 	revNode(0)
 {
 	graph.rootNode = nullptr;
@@ -423,6 +430,8 @@ bool RepoScene::commit(
 				newModified.clear();
 				commitMsg.clear();
 
+				refFiles.clear();
+
 				unRevisioned = false;
 			}
 		}
@@ -479,8 +488,6 @@ bool RepoScene::commitRevisionNode(
 
 
 	//convert the sets to vectors
-
-
 	std::vector<repoUUID> newAddedV(newAdded.begin(), newAdded.end());
 	std::vector<repoUUID> newRemovedV(newRemoved.begin(), newRemoved.end());
 	std::vector<repoUUID> newModifiedV(newModified.begin(), newModified.end());
@@ -490,12 +497,78 @@ bool RepoScene::commitRevisionNode(
 	repoTrace << "New revision: #current = " << uniqueIDs.size() << " #added = " << newAddedV.size()
 		<< " #deleted = " << newRemovedV.size() << " #modified = " << newModifiedV.size();
 
+	std::vector<std::string> fileNames;
+	for (const std::string &name : refFiles)
+	{
+		boost::filesystem::path filePath(name);
+		fileNames.push_back(sanitizeName(filePath.filename().string()));
+	}
+
 	newRevNode =
 		new RevisionNode(RepoBSONFactory::makeRevisionNode(userName, branch, uniqueIDs,
-		newAddedV, newRemovedV, newModifiedV, parent, message, tag));
+		newAddedV, newRemovedV, newModifiedV, fileNames, parent, message, tag));
 
+	if (newRevNode)
+	{
+		//Creation of the revision node will append unique id onto the filename (e.g. <uniqueID>chair.obj)
+		//we need to store the file in GridFS under the new name
+		std::vector<std::string> newRefFileNames = newRevNode->getOrgFiles();
+		for (size_t i = 0; i < refFiles.size(); i++)
+		{
+			std::ifstream file(refFiles[i], std::ios::binary);
 
-	if (!newRevNode)
+			if (file.is_open())
+			{
+				//newRefFileNames should be at the same index as the refFile. but double check this!
+				std::string gridFSName = newRefFileNames[i];
+				if (gridFSName.find(fileNames[i]) == std::string::npos)
+				{
+					//fileNames[i] is not a substring of newName, try to find it
+					for (const std::string &name : newRefFileNames)
+					{
+						if (gridFSName.find(fileNames[i]) != std::string::npos)
+						{
+							gridFSName = name;
+						}
+					}
+
+					if (gridFSName == newRefFileNames[i])
+					{
+						//could not find the matching name (theoretically this should never happen). Skip this file.
+						repoError << "Cannot find matching file name for : " << refFiles[i] << " skipping...";
+						continue;
+					}
+				}
+
+								
+				file.seekg(0, std::ios::end);
+				std::streamsize size = file.tellg();
+				file.seekg(0, std::ios::beg);
+
+				std::vector<uint8_t> rawFile(size);
+				if (file.read((char*)rawFile.data(), size))
+				{
+					std::string errMsg;
+					if (!handler->insertRawFile(databaseName, projectName + "." + rawExt, gridFSName, rawFile, errMsg))
+					{
+						repoError << "Failed to save original file into the database: " << errMsg;
+					}
+				}
+				else
+				{
+					repoError << "Failed to read reference file " << refFiles[i];
+				}
+
+				file.close();
+			}
+			else
+			{
+				repoError << "Failed to open reference file " << refFiles[i];
+			}
+
+		}
+	}
+	else
 	{
 		errMsg += "Failed to instantiate a new revision object!";
 		return false;
@@ -649,6 +722,16 @@ std::vector<repoUUID> RepoScene::getModifiedNodesID() const
 
 	repoTrace << "# modified nodes : " << ids.size();
 	return ids;
+}
+
+std::vector<std::string> RepoScene::getOriginalFiles() const
+{
+	
+	if (revNode)
+	{
+		return revNode->getOrgFiles();
+	}
+	return std::vector<std::string>();
 }
 
 bool RepoScene::loadRevision(

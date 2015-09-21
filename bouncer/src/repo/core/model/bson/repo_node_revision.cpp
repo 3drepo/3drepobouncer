@@ -70,6 +70,25 @@ std::vector<repoUUID> RevisionNode::getDeletedIDs() const
 	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_DELETED_SHARED_IDS);
 }
 
+std::vector<std::string> RevisionNode::getOrgFiles() const
+{
+
+	std::vector<std::string> fileList;
+	if (hasField(REPO_NODE_REVISION_LABEL_REF_FILE))
+	{
+		RepoBSON arraybson = getObjectField(REPO_NODE_REVISION_LABEL_REF_FILE);
+
+		std::set<std::string> fields;
+		arraybson.getFieldNames(fields);
+
+		for (const auto &field : fields)
+		{
+			fileList.push_back(arraybson.getStringField(field));
+		}
+	}
+
+	return fileList;
+}
 
 int64_t RevisionNode::getTimestampInt64() const
 {

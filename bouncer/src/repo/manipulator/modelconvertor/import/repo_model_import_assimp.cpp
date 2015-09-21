@@ -824,7 +824,10 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		}
 		else
 		{
-			scenePtr = new repo::core::model::RepoScene(cameras, meshes, materials, metadata, textures, transformations);
+			std::vector<std::string> fileVect;
+			if (!orgFile.empty())
+				fileVect.push_back(orgFile);
+			scenePtr = new repo::core::model::RepoScene(fileVect, cameras, meshes, materials, metadata, textures, transformations);
 		}
 	}
 	else
@@ -877,7 +880,7 @@ repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
 {
 	bool success = true;
-
+	orgFile = filePath;
 	setAssimpProperties();
 
 

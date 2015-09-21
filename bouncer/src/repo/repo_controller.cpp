@@ -654,7 +654,25 @@ repo::core::model::RepoScene*
 	return scene;
 }
 
+void RepoController::saveOriginalFiles(
+	const RepoToken                    *token,
+	const repo::core::model::RepoScene *scene,
+	const std::string                   &directory)
+{
+	bool success = true;
+	if (scene)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
 
+		worker->saveOriginalFiles(token->databaseAd, token->credentials, scene, directory);
+		workerPool.push(worker);
+
+	}
+	else{
+		repoError << "RepoController::saveSceneToFile: NULL pointer to scene!";
+	}
+
+}
 
 bool RepoController::saveSceneToFile(
 	const std::string &filePath,

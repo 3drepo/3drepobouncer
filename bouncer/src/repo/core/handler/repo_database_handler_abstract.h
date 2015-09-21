@@ -174,6 +174,23 @@ namespace repo{
 
 
 				/**
+				* Insert big raw file in binary format 
+				* @param database name
+				* @param collection name
+				* @param fileName to insert (has to be unique)
+				* @param bin raw binary of the file
+				* @param errMsg error message if it fails
+				* @return returns true upon success
+				*/
+				virtual bool insertRawFile(
+					const std::string          &database,
+					const std::string          &collection,
+					const std::string          &fileName,
+					const std::vector<uint8_t> &bin,
+					std::string          &errMsg
+					) = 0;
+
+				/**
 				* Insert a user into the database
 				* @param user user bson to insert
 				* @param errmsg error message
@@ -285,10 +302,10 @@ namespace repo{
 				/**
 				*Retrieves the first document matching given Shared ID (SID), sorting is descending
 				* (newest first)
-				* @param name of database
-				* @param name of collectoin
-				* @param share id
-				* @param field to sort by
+				* @param database name of database
+				* @param collection name of collection
+				* @param uuid share id
+				* @param field field to sort by
 				* @return returns the first matching bson object
 				*/
 				virtual repo::core::model::RepoBSON findOneBySharedID(
@@ -299,16 +316,28 @@ namespace repo{
 
 				/**
 				*Retrieves the document matching given Unique ID (SID), sorting is descending
-				* @param name of database
-				* @param name of collectoin
-				* @param share id
+				* @param database name of database
+				* @param collection name of collection
+				* @param uuid share id
 				* @return returns the matching bson object
 				*/
-				virtual mongo::BSONObj findOneByUniqueID(
+				virtual repo::core::model::RepoBSON findOneByUniqueID(
 					const std::string& database,
 					const std::string& collection,
 					const repoUUID& uuid) = 0;
 
+				/**
+				* Get raw binary file from database
+				* @param database name of database
+				* @param collection name of collection
+				* @param fname name of the file
+				* @return return the raw binary as a vector of uint8_t (if found)
+				*/
+				virtual std::vector<uint8_t> getRawFile(
+					const std::string& database,
+					const std::string& collection,
+					const std::string& fname
+					) = 0;
 
 			protected:
 				/**

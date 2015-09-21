@@ -110,6 +110,8 @@ namespace repo {
 						* @param shareID shared ID of this node
 						* @param name name of the node
 						* @param parents vector of shared IDs of this node's parents
+						* @param uniqueID specify unique ID for the object (do not use unless you are 
+						*			sure you know what you're doing!)
 						* @ return return the size of the fields appended in bytes
 						*/
 						static uint64_t appendDefaults(
@@ -118,7 +120,8 @@ namespace repo {
 							const unsigned int api = REPO_NODE_API_LEVEL_0,
 							const repoUUID &sharedId = generateUUID(),
 							const std::string &name = std::string(),
-							const std::vector<repoUUID> &parents = std::vector<repoUUID>());
+							const std::vector<repoUUID> &parents = std::vector<repoUUID>(),
+							const repoUUID &uniqueID = generateUUID());
 
 						/**
 						* Create a RepoNode
@@ -262,7 +265,7 @@ namespace repo {
 						* @param added    vector of what nodes are added    (shared IDs) 
 						* @param removed  vector of what nodes are deleted  (shared IDs) 
 						* @param modified vector of what nodes are modified (shared IDs) 
-						* @param modified vector of what nodes are modified (shared IDs)
+						* @param files    vector of the original files for this model
 						* @param parent   UUID of parent (in a vector)
 						* @param message  A message to describe what this commit is for (optional)
 						* @param tag      A tag for this specific revision (optional)
@@ -271,16 +274,17 @@ namespace repo {
 						*/
 
 						static RevisionNode makeRevisionNode(
-							const std::string			 &user,
-							const repoUUID              &branch,
-							const std::vector<repoUUID> &currentNodes,
-							const std::vector<repoUUID> &added,
-							const std::vector<repoUUID> &removed,
-							const std::vector<repoUUID> &modified,
-							const std::vector<repoUUID> &parent = std::vector<repoUUID>(),
-							const std::string            &message = std::string(),
-							const std::string            &tag = std::string(),
-							const int                    &apiLevel = REPO_NODE_API_LEVEL_1
+							const std::string			   &user,
+							const repoUUID                 &branch,
+							const std::vector<repoUUID>    &currentNodes,
+							const std::vector<repoUUID>    &added,
+							const std::vector<repoUUID>    &removed,
+							const std::vector<repoUUID>    &modified,
+							const std::vector<std::string> &files = std::vector<std::string>(),
+							const std::vector<repoUUID>    &parent = std::vector<repoUUID>(),
+							const std::string              &message = std::string(),
+							const std::string              &tag = std::string(),
+							const int                      &apiLevel = REPO_NODE_API_LEVEL_1
 							);
 
 

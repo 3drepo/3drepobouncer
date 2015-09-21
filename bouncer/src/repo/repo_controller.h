@@ -292,6 +292,17 @@ namespace repo{
 			const std::string    &uuid = REPO_HISTORY_MASTER_BRANCH,
 			const bool           &headRevision = true);
 
+		/**
+		* Save the files of the original model to a specified directory
+		* @param token Authentication token
+		* @param scene Repo Scene to save
+		* @param directory directory to save into
+		*/
+		void saveOriginalFiles(
+			const RepoToken                    *token,
+			const repo::core::model::RepoScene *scene,
+			const std::string                   &directory);
+
 		/*
 		*	------- Database Operations (insert/delete/update) ---------
 		*/
