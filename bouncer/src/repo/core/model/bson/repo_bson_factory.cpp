@@ -300,7 +300,8 @@ MeshNode RepoBSONFactory::makeMeshNode(
 {
 	RepoBSONBuilder builder;
 	uint64_t bytesize = 0; //track the (approximate) size to know when we need to offload to gridFS
-	bytesize += appendDefaults(builder, REPO_NODE_TYPE_MESH, apiLevel, generateUUID(), name);
+	repoUUID uniqueID = generateUUID();
+	bytesize += appendDefaults(builder, REPO_NODE_TYPE_MESH, apiLevel, generateUUID(), name, std::vector<repoUUID>(), uniqueID);
 
 	std::unordered_map<std::string, std::vector<uint8_t>> binMapping;
 
@@ -346,7 +347,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 		if (verticesByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
 		{
-			std::string bName = UUIDtoString(generateUUID());
+			std::string bName = UUIDtoString(uniqueID) + "_vertices";
 			//inclusion of this binary exceeds the maximum, store separately
 			binMapping[bName] = std::vector<uint8_t>();
 			binMapping[bName].resize(verticesByteCount); //uint8_t will ensure it is a byte addrressing
@@ -392,7 +393,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 		if (facesByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
 		{
-			std::string bName = UUIDtoString(generateUUID());
+			std::string bName = UUIDtoString(uniqueID) + "_faces";
 			//inclusion of this binary exceeds the maximum, store separately
 			binMapping[bName] = std::vector<uint8_t>();
 			binMapping[bName].resize(facesByteCount); //uint8_t will ensure it is a byte addrressing
@@ -423,7 +424,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 		if (normalsByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
 		{
-			std::string bName = UUIDtoString(generateUUID());
+			std::string bName = UUIDtoString(uniqueID) + "_normals";
 			//inclusion of this binary exceeds the maximum, store separately
 			binMapping[bName] = std::vector<uint8_t>();
 			binMapping[bName].resize(normalsByteCount); //uint8_t will ensure it is a byte addrressing
@@ -459,7 +460,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 		if (colorsByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
 		{
-			std::string bName = UUIDtoString(generateUUID());
+			std::string bName = UUIDtoString(uniqueID) + "_colors";
 			//inclusion of this binary exceeds the maximum, store separately
 			binMapping[bName] = std::vector<uint8_t>();
 			binMapping[bName].resize(colorsByteCount); //uint8_t will ensure it is a byte addrressing
@@ -506,7 +507,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 		if (uvByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
 		{
-			std::string bName = UUIDtoString(generateUUID());
+			std::string bName = UUIDtoString(uniqueID) + "_uv";
 			//inclusion of this binary exceeds the maximum, store separately
 			binMapping[bName] = std::vector<uint8_t>();
 			binMapping[bName].resize(uvByteCount); //uint8_t will ensure it is a byte addrressing
