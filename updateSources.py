@@ -1,7 +1,8 @@
 import os
 
-srcDir='src'
-testDir='test'
+srcDir='bouncer/src'
+testDir='test/src'
+clientDir='client/src'
 
 
 def printHeaderForCMakeFiles(file):
@@ -70,3 +71,6 @@ for dir, subDirList, fl in os.walk(srcDir):
 
 for dir, subDirList, fl in os.walk(testDir):
 	createCMakeList(dir, fl, subDirList, "TEST_SOURCES", "TEST_HEADERS")
+
+for dir, subDirList, fl in os.walk(clientDir):
+	createCMakeList(dir, fl, subDirList, "CLIENT_SOURCES", "CLIENT_HEADERS")
