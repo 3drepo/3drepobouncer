@@ -1,8 +1,8 @@
 import os
 
-srcDir='src'
-testDir='test'
-clientDir='repobouncerclient'
+srcDir='bouncer/src'
+testDir='test/src'
+clientDir='client/src'
 
 
 def printHeaderForCMakeFiles(file):
