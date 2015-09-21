@@ -362,7 +362,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 	return bson;
 }
 
-mongo::BSONObj MongoDatabaseHandler::findOneByUniqueID(
+repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
 	const std::string& database,
 	const std::string& collection,
 	const repoUUID& uuid){
@@ -630,6 +630,54 @@ std::list<std::string> MongoDatabaseHandler::getProjects(const std::string &data
 	return projects;
 }
 
+std::vector<uint8_t> MongoDatabaseHandler::getRawFile(
+	const std::string& database,
+	const std::string& collection,
+	const std::string& fname
+	)
+{
+	bool success = true;
+	mongo::DBClientBase *worker;
+
+	worker = workerPool->getWorker();
+	mongo::GridFS gfs(*worker, database, collection);
+	mongo::GridFile tmpFile = gfs.findFileByName(fname);
+
+	repoTrace << "Getting file from GridFS: " << fname << " in : " << database << "." << collection;
+
+	std::vector<uint8_t> bin;
+	if (tmpFile.exists())
+	{
+		std::ostringstream oss;
+		tmpFile.write(oss);
+
+		std::string fileStr = oss.str();
+
+		assert(sizeof(*fileStr.c_str()) == sizeof(uint8_t));
+
+		if (!fileStr.empty())
+		{
+			bin.resize(fileStr.size());
+			memcpy(&bin[0], fileStr.c_str(), fileStr.size());
+
+		}
+		else
+		{
+			repoError << "GridFS file : " << fname << " in "
+				<< database << "." << collection << " is empty.";
+		}
+	}
+	else
+	{
+		repoError << "Failed to find file within GridFS";
+	}
+
+
+	workerPool->returnWorker(worker);
+
+	return bin;
+}
+
 bool MongoDatabaseHandler::insertDocument(
 	const std::string &database,
 	const std::string &collection,
@@ -644,6 +692,53 @@ bool MongoDatabaseHandler::insertDocument(
 
 		success &= storeBigFiles(worker, database, collection, obj, errMsg);
 
+	}
+	catch (mongo::DBException &e)
+	{
+		success = false;
+		std::string errString(e.what());
+		errMsg += errString;
+	}
+
+	workerPool->returnWorker(worker);
+
+	return success;
+}
+
+bool MongoDatabaseHandler::insertRawFile(
+	const std::string          &database,
+	const std::string          &collection,
+	const std::string          &fileName,
+	const std::vector<uint8_t> &bin,
+	      std::string          &errMsg
+	)
+{
+	bool success = true;
+	mongo::DBClientBase *worker;
+
+	repoTrace << "writing raw file: " << fileName;
+
+	if (bin.size() == 0)
+	{
+		errMsg = "size of file is 0!";
+		return false;
+	}
+
+	if (fileName.empty())
+	{
+		errMsg = "Cannot store a raw file in the database with no file name!";
+		return false;
+	}
+
+	try{
+		worker = workerPool->getWorker();
+		//store the big biary file within GridFS
+		mongo::GridFS gfs(*worker, database, collection);
+		//FIXME: there must be errors to catch...
+		repoTrace << "storing " << fileName << " in gridfs: " << database << "." << collection;
+		mongo::BSONObj bson = gfs.storeFile((char*)&bin[0], bin.size() * sizeof(bin[0]), fileName);
+
+		repoTrace << "returned object: " << bson.toString();
 	}
 	catch (mongo::DBException &e)
 	{

@@ -19,6 +19,8 @@
 * Repo Manipulator which handles all the manipulation
 */
 
+#include <boost/filesystem.hpp>
+
 #include "repo_manipulator.h"
 #include "../lib/repo_log.h"
 #include "../core/model/bson/repo_bson_factory.h"
@@ -118,9 +120,10 @@ repo::core::model::RepoScene* RepoManipulator::createFederatedScene(
 			)
 			);
 	}
-
+	//federate scene has no referenced files
+	std::vector<std::string> empty;
 	repo::core::model::RepoScene *scene =
-		new repo::core::model::RepoScene(emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, refNodes);
+		new repo::core::model::RepoScene(empty, emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, refNodes);
 
 	return scene;
 }
@@ -141,9 +144,10 @@ repo::core::model::RepoScene* RepoManipulator::createMapScene(
 	mapNodes.insert(new repo::core::model::MapNode(mapNode.cloneAndAddParent(rootNode.getSharedID())));
 
 
-
+	//federate scene has no referenced files
+	std::vector<std::string> empty;
 	repo::core::model::RepoScene *scene =
-		new repo::core::model::RepoScene(emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, emptySet, mapNodes);
+		new repo::core::model::RepoScene(empty, emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, emptySet, mapNodes);
 
 	return scene;
 }
@@ -547,6 +551,59 @@ void RepoManipulator::removeUser(
 		}
 	}
 
+}
+
+void RepoManipulator::saveOriginalFiles(
+	const std::string                    &databaseAd,
+	const repo::core::model::RepoBSON	 *cred,
+	const repo::core::model::RepoScene   *scene,
+	const std::string                    &directory)
+{
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler && scene)
+	{
+		std::string errMsg;
+
+		const std::vector<std::string> files = scene->getOriginalFiles();
+		if (files.size() > 0)
+		{
+			boost::filesystem::path dir(directory);
+			/*if (boost::filesystem::create_directory(dir))
+			{
+				repoTrace << "Directory created: " << directory;
+			}*/
+
+			for (const std::string &file : files)
+			{
+				std::vector<uint8_t> rawFile = handler->getRawFile(scene->getDatabaseName(),
+					scene->getProjectName() + "." + scene->getRawExtension(), file);
+				if (rawFile.size() > 0)
+				{
+					boost::filesystem::path filePath(file);
+					boost::filesystem::path fullPath = dir / filePath;
+
+
+					std::ofstream out(fullPath.string(), std::ofstream::binary);
+					if (out.good())
+					{
+						out.write((char*)rawFile.data(), rawFile.size());
+						out.close();
+					}
+					else
+					{
+						repoError << " Failed to open file to write: " << fullPath.string();
+					}
+				}
+				else
+				{
+					repoWarning << "Unable to read file " << file << " from the database. Skipping...";
+				}
+			}
+		}
+		
+
+	}
 }
 
 bool RepoManipulator::saveSceneToFile(

@@ -375,10 +375,23 @@ namespace repo{
 			* @param cred user credentials in bson form
 			* @param user user info to remove
 			*/
-			void RepoManipulator::removeUser(
+			void removeUser(
 				const std::string                             &databaseAd,
 				const repo::core::model::RepoBSON*	  cred,
 				const repo::core::model::RepoUser       &user);
+
+			/**
+			* Save the files of the original model to a specified directory
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param scene Repo Scene to save
+			* @param directory directory to save into
+			*/
+			void saveOriginalFiles(
+				const std::string                    &databaseAd,
+				const repo::core::model::RepoBSON	 *cred,
+				const repo::core::model::RepoScene   *scene,
+				const std::string                    &directory);
 
 			/**
 			* Save a Repo Scene to file

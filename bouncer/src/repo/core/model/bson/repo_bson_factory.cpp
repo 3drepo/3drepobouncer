@@ -15,14 +15,15 @@ uint64_t RepoBSONFactory::appendDefaults(
 	const unsigned int api,
 	const repoUUID &sharedId,
 	const std::string &name,
-	const std::vector<repoUUID> &parents)
+	const std::vector<repoUUID> &parents,
+	const repoUUID &uniqueID)
 {
 
 	uint64_t bytesize = 0;
 
 	//--------------------------------------------------------------------------
 	// ID field (UUID)
-	builder.append(REPO_NODE_LABEL_ID, generateUUID());
+	builder.append(REPO_NODE_LABEL_ID, uniqueID);
 
 	//--------------------------------------------------------------------------
 	// Shared ID (UUID)
@@ -680,23 +681,25 @@ ReferenceNode RepoBSONFactory::makeReferenceNode(
 }
 
 RevisionNode RepoBSONFactory::makeRevisionNode(
-	const std::string			 &user,
-	const repoUUID              &branch,
-	const std::vector<repoUUID> &currentNodes,
-	const std::vector<repoUUID> &added,
-	const std::vector<repoUUID> &removed,
-	const std::vector<repoUUID> &modified,
-	const std::vector<repoUUID> &parent,
-	const std::string            &message,
-	const std::string            &tag,
-	const int                    &apiLevel
+	const std::string			   &user,
+	const repoUUID                 &branch,
+	const std::vector<repoUUID>    &currentNodes,
+	const std::vector<repoUUID>    &added,
+	const std::vector<repoUUID>    &removed,
+	const std::vector<repoUUID>    &modified,
+	const std::vector<std::string> &files,
+	const std::vector<repoUUID>    &parent,
+	const std::string              &message,
+	const std::string              &tag,
+	const int                      &apiLevel
 	)
 {
 	RepoBSONBuilder builder;
+	repoUUID uniqueID = generateUUID();
 
 	//--------------------------------------------------------------------------
 	// Compulsory fields such as _id, type, api as well as path
-	appendDefaults(builder, REPO_NODE_TYPE_REVISION, apiLevel, branch, "", parent);
+	appendDefaults(builder, REPO_NODE_TYPE_REVISION, apiLevel, branch, "", parent, uniqueID);
 
 	//--------------------------------------------------------------------------
 	// Author
@@ -740,6 +743,22 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 		builder.appendArray(REPO_NODE_REVISION_LABEL_MODIFIED_SHARED_IDS, builder.createArrayBSON(modified));
 
 	//--------------------------------------------------------------------------
+
+	//--------------------------------------------------------------------------
+	// original files references
+	if (files.size() > 0)
+	{
+
+		std::string uniqueIDStr = UUIDtoString(uniqueID);
+		mongo::BSONObjBuilder arrbuilder;
+		for (int i = 0; i < files.size(); ++i)
+		{
+			arrbuilder << std::to_string(i) << uniqueIDStr + files[i];
+		}
+
+		builder.appendArray(REPO_NODE_REVISION_LABEL_REF_FILE, arrbuilder.obj());
+	}
+
 	return RevisionNode(builder.obj());
 }
 

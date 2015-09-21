@@ -189,6 +189,7 @@ namespace repo{
 
 				Assimp::Importer importer;  /*! Stores ASSIMP related settings for model import */
 				const aiScene *assimpScene; /*! ASSIMP scene representation of the model */
+				std::string orgFile; /*! orgFileName */
 				repo::core::model::RepoNodeSet textures;
 				std::map<std::string, repo::core::model::RepoNode *> nameToTexture;
 			};

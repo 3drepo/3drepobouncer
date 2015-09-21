@@ -21,6 +21,7 @@
 
 #pragma once
 #include <iostream>
+#include <algorithm>
 
 #include <boost/functional/hash.hpp>
 #include <boost/lexical_cast.hpp>
@@ -236,4 +237,45 @@ static void normalize(repo_vector_t &a)
 	a.x /= length;
 	a.y /= length;
 	a.z /= length;
+}
+
+static bool nameCheck(const char &c)
+{
+	return c == ' ' || c == '$';
+}
+
+static bool dbNameCheck(const char &c)
+{
+	return c == '/' || c == '\\' || c == '.' || c == ' '
+		|| c == '\"' || c == '$' || c == '*' || c == '<'
+		|| c == '>"' || c == ':' || c == '?';
+}
+
+
+static std::string sanitizeName(const std::string& name)
+{
+	// http://docs.mongodb.org/manual/reference/limits/#Restriction-on-Collection-Names
+	std::string newName(name);
+	std::replace_if(newName.begin(), newName.end(), nameCheck, '_');
+	auto strPos = newName.find("system.");
+	if ( strPos != std::string::npos)
+	{
+		newName.replace(strPos, sizeof("system."), "");
+	}
+	return newName;
+}
+
+static std::string sanitizeDatabaseName(const std::string& name)
+{
+	// http://docs.mongodb.org/manual/reference/limits/#naming-restrictions
+
+	// Cannot contain any of /\. "$*<>:|?
+	std::string newName(name);
+	std::replace_if(newName.begin(), newName.end(), dbNameCheck, '_');
+	auto strPos = newName.find("system.");
+	if (strPos != std::string::npos)
+	{
+		newName.replace(strPos, sizeof("system."), "");
+	}
+	return newName;
 }

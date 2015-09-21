@@ -305,6 +305,22 @@ namespace repo{
 					const repo::core::model::RepoBSON &obj,
 					std::string &errMsg);
 
+				/**
+				* Insert big raw file in binary format (using GridFS)
+				* @param database name
+				* @param collection name
+				* @param fileName to insert (has to be unique)
+				* @param bin raw binary of the file
+				* @param errMsg error message if it fails
+				* @return returns true upon success
+				*/
+				bool insertRawFile(
+					const std::string          &database,
+					const std::string          &collection,
+					const std::string          &fileName,
+					const std::vector<uint8_t> &bin,
+					      std::string          &errMsg
+					);
 
 				/**
 				* Insert a user into the database
@@ -402,10 +418,24 @@ namespace repo{
 				* @param share id
 				* @return returns the matching bson object
 				*/
-				mongo::BSONObj findOneByUniqueID(
+				repo::core::model::RepoBSON findOneByUniqueID(
 					const std::string& database,
 					const std::string& collection,
 					const repoUUID& uuid);
+
+
+				/**
+				* Get raw binary file from database
+				* @param database name of database
+				* @param collection name of collection
+				* @param fname name of the file
+				* @return return the raw binary as a vector of uint8_t (if found)
+				*/
+				std::vector<uint8_t> getRawFile(
+					const std::string& database,
+					const std::string& collection,
+					const std::string& fname
+					) ;
 
 				/*
 				 *	=============================================================================================
