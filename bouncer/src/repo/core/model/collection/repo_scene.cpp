@@ -595,8 +595,19 @@ bool RepoScene::commitNodes(
 		RepoNode *node = g.nodesByUniqueID[uniqueID];
 		if (node->objsize() > handler->documentSizeLimit())
 		{
-			success = false;
-			errMsg += "Node '" + UUIDtoString(node->getUniqueID()) + "' over 16MB in size is not committed.";
+				
+			//Try to extract binary data out of the bson to shrink it.
+			RepoNode shrunkNode = node->cloneAndShrink();
+			if (shrunkNode.objsize() >  handler->documentSizeLimit())
+			{
+				success = false;
+				errMsg += "Node '" + UUIDtoString(node->getUniqueID()) + "' over 16MB in size is not committed.";
+			}
+			else
+			{
+				node->swap(shrunkNode);
+			}
+		
 		}
 		else
 			success &= handler->insertDocument(databaseName, projectName + "." + ext, *node, errMsg);
