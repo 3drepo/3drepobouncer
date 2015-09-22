@@ -67,7 +67,8 @@ MeshNode MeshNode::cloneAndUpdateMeshMapping(
 	//append the rest of the mesh onto this new bson
 	builder.appendElementsUnique(*this);
 
-	return MeshNode(builder.obj());
+	return MeshNode(builder.obj(), bigFiles);
+	//TODO run this tomorrow and see if i can get away with not overloading the equals operator!!!
 }
 
 std::vector<repo_color4d_t>* MeshNode::getColors() const

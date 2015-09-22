@@ -101,7 +101,7 @@ RepoNode RepoNode::cloneAndAddMergedNodes(
 
 	builder.appendElementsUnique(*this);
 
-	return RepoNode(builder.obj());
+	return RepoNode(builder.obj(), bigFiles);
 }
 
 std::vector<repoUUID> RepoNode::getParentIDs() const
