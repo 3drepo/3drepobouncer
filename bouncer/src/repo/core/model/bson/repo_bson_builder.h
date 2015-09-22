@@ -39,7 +39,7 @@
 namespace repo {
 	namespace core {
 		namespace model {
-				class REPO_API_EXPORT RepoBSONBuilder: public mongo::BSONObjBuilder
+				class RepoBSONBuilder: public mongo::BSONObjBuilder
 				{
 					public:
 						RepoBSONBuilder();
