@@ -3,8 +3,16 @@ language: cpp
 compiler:
      - gcc
 before_install:
+    - echo ============ BOOST  INSTALL =============
     - sudo apt-get install libboost-all-dev
-    - sudo apt-get mongodb-dev libmongo-client-dev
+    - echo ============ MONGO  INSTALL =============
+    - mkdir mongo
+    - cd mongo
+    - git clone https://github.com/mongodb/mongo-cxx-driver.git
+    - git checkout -b legacy
+    - scons -j2 --64 --mute --sharedclient --use-system-boost install
+    - cd ../
+    - echo ============ ASSIMP INSTALL =============
     - mkdir assimp
     - cd assimp
     - git clone https://github.com/3drepo/assimp.git      
