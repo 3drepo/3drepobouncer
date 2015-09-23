@@ -4,14 +4,21 @@ compiler:
      - gcc
 before_install:
     - sudo apt-get install libboost-thead-dev libboost-system-dev libboost-chrono-dev libboost-log-dev libboost-log_setup-dev libboost-filesystem-dev
+    - git clone https://github.com/3drepo/assimp.git
+    - cmake assimp
+    - make install
+    - sudo apt-get mongodb-dev libmongo-client-dev
 before_script:
-
+    - ls
+    cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON .
 script:
+    make install
 
 
 branches:
    only:
        - master
+       - ISSUE_24
 
 notifications:
     email: true
