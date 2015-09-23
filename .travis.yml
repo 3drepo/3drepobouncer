@@ -4,10 +4,13 @@ compiler:
      - gcc
 before_install:
     - sudo apt-get install libboost-all-dev
-    - git clone https://github.com/3drepo/assimp.git
-    - cmake assimp
-    - make install
     - sudo apt-get mongodb-dev libmongo-client-dev
+    - mkdir assimp
+    - cd assimp
+    - git clone https://github.com/3drepo/assimp.git      
+    - cmake -DASSIMP_BUILD_TESTS=OFF assimp
+    - sudo make install
+    - cd ..
 before_script:
     - ls
     - cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON .
