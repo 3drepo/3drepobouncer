@@ -10,7 +10,7 @@ before_install:
     - sudo apt-get mongodb-dev libmongo-client-dev
 before_script:
     - ls
-    cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON .
+    - cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON .
 script:
     make install
 
