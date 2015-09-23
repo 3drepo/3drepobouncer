@@ -14,7 +14,6 @@ before_script:
 script:
     make install
 
-
 branches:
    only:
        - master
