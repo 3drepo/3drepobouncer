@@ -2,11 +2,9 @@ language: cpp
 
 compiler:
      - gcc
-addons:
-    apt:
-        packages:
-            libboost1.55-all-dev
 before_install:
+    - echo ============ BOOST  INSTALL =============
+    - sudo apt-get install libboost1.55-all-dev
     - echo ============ MONGO  INSTALL =============
     - mkdir mongo
     - cd mongo
