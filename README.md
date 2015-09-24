@@ -1,7 +1,7 @@
 3drepobouncer
 =========
 
-3DRepoBouncer(temporary naming) is essentially the refactored 3DRepoCore and (parts of)3DRepoGUI. A C++ library providing 3D Repo Scene Graph definition, repository management logic and manipulation logic. 
+3DRepoBouncer (temporary naming) is essentially the refactored 3DRepoCore and (parts of) 3DRepoGUI. A C++ library providing 3D Repo Scene Graph definition, repository management logic and manipulation logic. 
 
 Dependencies
 ------------
@@ -14,6 +14,10 @@ To compile and install the library, the following are used:
 * [Python v2.x](https://www.python.org/)
 * [CMAKE v3.3] (http://www.cmake.org/)
 * A C++ compiler (GNU GCC v3.4+, Visual Studio 12+)
+
+Compilation (Qt)
+------------
+See instructions here [https://github.com/3drepo/3drepobouncer/issues/9#issuecomment-135727927](https://github.com/3drepo/3drepobouncer/issues/9#issuecomment-135727927)
 
 Compilation (Windows)
 ------------
