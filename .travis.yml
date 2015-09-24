@@ -17,7 +17,6 @@ before_install:
     - mkdir assimp
     - cd assimp
     - git clone https://github.com/3drepo/assimp.git      
-    - cd assimp
     - cmake -DASSIMP_BUILD_TESTS=OFF assimp
     - sudo make install
     - cd ../../
