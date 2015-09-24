@@ -21,7 +21,7 @@
 
 using namespace repo::lib;
 
-typedef boost::log::sinks::synchronous_sink< boost::log::sinks::text_ostream_backend > text_sink;
+using text_sink = boost::log::sinks::synchronous_sink< boost::log::sinks::text_ostream_backend >;
 
 
 RepoLog::RepoLog()

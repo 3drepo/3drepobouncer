@@ -7,8 +7,8 @@ addons:
         sources:
             - ubuntu-toolchain-r-test
         packages:
-            - gcc-4.8
-            - g++-4.8
+            - gcc-4.9
+            - g++-4.9
 before_install:
     - export CXX="g++-4.8"
     - export CC="gcc-4.8"
@@ -29,14 +29,14 @@ before_install:
     - mkdir assimp
     - cd assimp
     - git clone --branch=multipart https://github.com/3drepo/assimp.git      
-    - CXXFLAGS+=-std=c++0x cmake -DASSIMP_BUILD_TESTS=OFF assimp
-    - sudo make install
+    - CXXFLAGS+=-std=c++11 cmake -DASSIMP_BUILD_TESTS=OFF assimp
+    - sudo make -j2 install
     - cd ../
 before_script:
     - ls
     - MONGO_ROOT=$HOME/mongo-cxx cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON .
 script:
-    make install
+    make -j2 install
 
 branches:
    only:
