@@ -9,7 +9,11 @@
 #include <boost/log/sources/severity_logger.hpp>
 #include <boost/log/sources/record_ostream.hpp>
 #include <boost/log/support/date_time.hpp>
+#if BOOST_VERSION > 105700
 #include <boost/core/null_deleter.hpp>
+#else
+#include <boost/log/utility/empty_deleter.hpp>
+#endif
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 
