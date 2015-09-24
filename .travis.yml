@@ -17,7 +17,7 @@ before_install:
     - mkdir assimp
     - cd assimp
     - git clone --branch=multipart https://github.com/3drepo/assimp.git      
-    - cmake -DASSIMP_BUILD_TESTS=OFF assimp
+    - cmake -DASSIMP_BUILD_TESTS=OFF-DCMAKE_CXX_FLAGS=c++0x assimp
     - sudo make install
     - cd ../
 before_script:
