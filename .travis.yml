@@ -4,7 +4,7 @@ compiler:
      - gcc
 before_install:
     - echo ============ BOOST  INSTALL =============
-    - sudo apt-get install libboost1.55-system-dev libboost1.55-filesystem-dev libboost1.55-chrono-dev libboost1.55-thread-dev libboost1.55-log-dev libboost1.55-log_setup-dev
+    - sudo apt-get install libboost-system1.55-dev libboost-filesystem1.55-dev libboost-chrono1.55-dev libboost-thread1.55-dev libboost-log1.55-dev libboost-log1.55_setup-dev
     - echo ============ MONGO  INSTALL =============
     - mkdir mongo
     - cd mongo
