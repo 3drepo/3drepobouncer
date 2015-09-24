@@ -18,12 +18,12 @@ before_install:
     - mkdir assimp
     - cd assimp
     - git clone --branch=multipart https://github.com/3drepo/assimp.git      
-    - CXXFLAGS+=-std=c++0x MONGO_ROOT=$HOME/mongo-cxx cmake -DASSIMP_BUILD_TESTS=OFF assimp
+    - CXXFLAGS+=-std=c++0x cmake -DASSIMP_BUILD_TESTS=OFF assimp
     - sudo make install
     - cd ../
 before_script:
     - ls
-    - cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON .
+    - MONGO_ROOT=$HOME/mongo-cxx cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON .
 script:
     make install
 
