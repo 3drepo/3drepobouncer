@@ -6,18 +6,21 @@
 Dependencies
 ------------
 3DRepoBouncer relies on the following libraries:
+* [Boost Library v1.58.0+](http://www.boost.org/)  
+See also [pre-built binaries for Windows](http://sourceforge.net/projects/boost/files/boost-binaries/)
+and [modular Boost](https://svn.boost.org/trac/boost/wiki/ModularBoost)
+on [GitHub](https://github.com/boostorg)
 * [Mongo CXX Driver Legacy v1.0+](https://github.com/mongodb/mongo-cxx-driver)
-* [Boost Library v1.58.0+](http://www.boost.org/)
-* [ASSIMP library](https://github.com/3drepo/assimp)
+* [3D Repo ASSIMP library fork](https://github.com/3drepo/assimp)
 
 To compile and install the library, the following are used:
 * [Python v2.x](https://www.python.org/)
 * [CMAKE v3.3] (http://www.cmake.org/)
-* A C++ compiler (GNU GCC v3.4+, Visual Studio 12+)
+* A C++ compiler (GNU GCC v3.4+, [Visual Studio 12+](https://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx))
 
 Compilation (Qt)
 ------------
-See instructions here [https://github.com/3drepo/3drepobouncer/issues/9#issuecomment-135727927](https://github.com/3drepo/3drepobouncer/issues/9#issuecomment-135727927)
+See instructions at [https://github.com/3drepo/3drepobouncer/issues/9#issuecomment-135727927](https://github.com/3drepo/3drepobouncer/issues/9#issuecomment-135727927)
 
 Compilation (Windows)
 ------------
