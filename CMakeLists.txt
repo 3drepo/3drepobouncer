@@ -43,15 +43,12 @@ find_package(Mongo REQUIRED)
 
 
 #================ASSIMP SETTINGS=======================
-find_package(ASSIMP REQUIRED)
+find_package(ASSIMPM REQUIRED)
 
 #================COMPILE 3D REPO BOUNCER ==============
 option (REPO_BUILD_CLIENT "If the Command Line Client is built in addition to the library" ON)
 option (REPO_BUILD_TESTS "If the test suite is built in addition to the library" OFF)
-if(${Boost_FOUND} AND ${MONGO_FOUND} AND ${ASSIMP_FOUND})
-	message(STATUS "ASSIMP installation found.")
-	message(STATUS "ASSIMP_INCLUDE_DIR: ${ASSIMP_INCLUDE_DIR}")
-	message(STATUS "ASSIMP_LIBRARIES: ${ASSIMP_LIBRARIES}")
+if(${Boost_FOUND} AND ${MONGO_FOUND} AND ${ASSIMPM_FOUND})
 
 	#bouncer library
 	add_subdirectory(bouncer)
