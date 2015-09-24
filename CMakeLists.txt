@@ -25,7 +25,6 @@ cmake_minimum_required(VERSION 3.2)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
 
 add_compile_options(-std=c++11)
-add_compile_options(-fpermissive)
 
 #================BOOST SETTINGS=======================
 add_definitions(-DBOOST_ALL_NO_LIB)
@@ -37,7 +36,7 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 unset(Boost_INCLUDE_DIR CACHE)
 unset(Boost_LIBRARY_DIRS CACHE)
 
-find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem)
+find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options)
 add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
 
 #================MONGO SETTINGS=======================

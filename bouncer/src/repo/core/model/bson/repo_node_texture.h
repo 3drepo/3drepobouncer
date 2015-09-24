@@ -34,7 +34,6 @@ namespace repo {
 				#define REPO_NODE_LABEL_BIT_DEPTH			"bit_depth"
 				#define REPO_NODE_LABEL_EXTENSION			"extension"
 				#define REPO_NODE_LABEL_DATA_BYTE_COUNT		"data_byte_count"
-				#define REPO_NODE_UUID_SUFFIX_TEXTURE		"11" //!< uuid suffix
 				//------------------------------------------------------------------------------
 
 				class REPO_API_EXPORT TextureNode :public RepoNode

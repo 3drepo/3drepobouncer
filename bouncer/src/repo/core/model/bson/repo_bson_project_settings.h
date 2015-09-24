@@ -88,7 +88,7 @@ namespace repo {
 					* public read, public write, public exe
 					* @return returns a vector of size 9 containing the permissions
 					*/
-					std::vector<bool> RepoProjectSettings::getPermissionsBoolean() const;
+					std::vector<bool> getPermissionsBoolean() const;
 
 					/**
 					* Get permissions as octal form (777, 660 etc)

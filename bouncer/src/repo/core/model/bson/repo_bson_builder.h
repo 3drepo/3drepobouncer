@@ -156,14 +156,15 @@ namespace repo {
 							const repoUUID &uuid);
 
 				};
+
+			// Template specialization
+			template<> void RepoBSONBuilder::append<repoUUID>
+			(
+				const std::string &label,
+				const repoUUID &uuid
+			);
+
 		}// end namespace model
 	} // end namespace core
 } // end namespace repo
-
-// Template specialization
-template<> void repo::core::model::RepoBSONBuilder::append<repoUUID>
-(
-	const std::string &label,
-	const repoUUID &uuid
-);
 

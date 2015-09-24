@@ -19,6 +19,7 @@
 * A Scene graph representation of a collection
 */
 
+#include <fstream>
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
@@ -35,7 +36,7 @@ RepoScene::RepoScene(
 	const std::string &projectName,
 	const std::string &sceneExt,
 	const std::string &revExt,
-	const std::string &stashExt, 
+	const std::string &stashExt,
 	const std::string &rawExt)
 	: AbstractGraph(database, projectName),
 	sceneExt(sanitizeName(sceneExt)),
@@ -210,9 +211,9 @@ void RepoScene::addMetadata(
 				graph.parentToChildren[transSharedID] = std::vector<repoUUID>();
 
 			graph.parentToChildren[transSharedID].push_back(metaSharedID);
-		
+
 			*meta = meta->cloneAndAddParent(transSharedID);
-			
+
 
 			graph.nodesByUniqueID[metaUniqueID] = meta;
 			graph.sharedIDtoUniqueID[metaSharedID] = metaUniqueID;
@@ -540,7 +541,7 @@ bool RepoScene::commitRevisionNode(
 					}
 				}
 
-								
+
 				file.seekg(0, std::ios::end);
 				std::streamsize size = file.tellg();
 				file.seekg(0, std::ios::beg);
@@ -595,7 +596,7 @@ bool RepoScene::commitNodes(
 		RepoNode *node = g.nodesByUniqueID[uniqueID];
 		if (node->objsize() > handler->documentSizeLimit())
 		{
-				
+
 			//Try to extract binary data out of the bson to shrink it.
 			RepoNode shrunkNode = node->cloneAndShrink();
 			if (shrunkNode.objsize() >  handler->documentSizeLimit())
@@ -607,7 +608,7 @@ bool RepoScene::commitNodes(
 			{
 				node->swap(shrunkNode);
 			}
-		
+
 		}
 		else
 			success &= handler->insertDocument(databaseName, projectName + "." + ext, *node, errMsg);
@@ -737,7 +738,7 @@ std::vector<repoUUID> RepoScene::getModifiedNodesID() const
 
 std::vector<std::string> RepoScene::getOriginalFiles() const
 {
-	
+
 	if (revNode)
 	{
 		return revNode->getOrgFiles();

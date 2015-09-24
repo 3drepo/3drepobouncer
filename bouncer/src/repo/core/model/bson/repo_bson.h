@@ -322,7 +322,7 @@ namespace repo {
 						*/
 						RepoBSON cloneAndShrink() const;
 
-						std::vector<uint8_t> RepoBSON::getBigBinary(const std::string &key) const;
+						std::vector<uint8_t> getBigBinary(const std::string &key) const;
 
 						/**
 						* Get the list of file names for the big files 

@@ -160,7 +160,7 @@ namespace repo {
 					* @return returns a vector of string pairs (database, roles)
 					*/
 					std::list<std::pair<std::string, std::string>>
-						RepoUser::getRolesList() const;
+						getRolesList() const;
 
 
 				};
