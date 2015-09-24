@@ -10,8 +10,8 @@ addons:
             - gcc-4.9
             - g++-4.9
 before_install:
-    - export CXX="g++-4.8"
-    - export CC="gcc-4.8"
+    - export CXX="g++-4.9"
+    - export CC="gcc-4.9"
     - echo ============ BOOST  INSTALL =============
     - sudo add-apt-repository -y ppa:boost-latest/ppa
     - sudo apt-get update
