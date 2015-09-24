@@ -9,13 +9,13 @@ before_install:
     - mkdir mongo
     - cd mongo
     - git clone https://github.com/mongodb/mongo-cxx-driver.git
-    - git checkout -b legacy
+    - cd mongo-cxx-driver
+    - ls
     - scons -j2 --64 --mute --sharedclient --use-system-boost install
-    - cd ../
+    - cd ../../
     - echo ============ ASSIMP INSTALL =============
-    - mkdir assimp
-    - cd assimp
     - git clone https://github.com/3drepo/assimp.git      
+    - cd assimp
     - cmake -DASSIMP_BUILD_TESTS=OFF assimp
     - sudo make install
     - cd ..
