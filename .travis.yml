@@ -11,7 +11,7 @@ before_install:
     - git clone https://github.com/mongodb/mongo-cxx-driver.git
     - cd mongo-cxx-driver
     - ls
-    - scons -j2 --64 --mute --sharedclient --use-system-boost install
+    - scons -j2 --64 --mute --sharedclient install
     - cd ../../
     - echo ============ ASSIMP INSTALL =============
     - git clone https://github.com/3drepo/assimp.git      
