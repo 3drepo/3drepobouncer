@@ -11,7 +11,7 @@ See also [pre-built binaries for Windows](http://sourceforge.net/projects/boost/
 and [modular Boost](https://svn.boost.org/trac/boost/wiki/ModularBoost)
 on [GitHub](https://github.com/boostorg)
 * [Mongo CXX Driver Legacy v1.0+](https://github.com/mongodb/mongo-cxx-driver)
-See [3D Repo guide for compiling MongoDB](https://github.com/3drepo/3drepobouncer/wiki/Compiling-MongoDB)
+See [3D Repo guide for compiling MongoDB](https://github.com/3drepo/3drepobouncer/wiki/Compiling-MongoDB-CXX-Driver)
 * [3D Repo ASSIMP library fork](https://github.com/3drepo/assimp)
 
 To compile and install the library, the following are used:
