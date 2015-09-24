@@ -14,11 +14,13 @@ before_install:
     - scons -j2 --64 --mute --sharedclient install
     - cd ../../
     - echo ============ ASSIMP INSTALL =============
+    - mkdir assimp
+    - cd assimp
     - git clone https://github.com/3drepo/assimp.git      
     - cd assimp
     - cmake -DASSIMP_BUILD_TESTS=OFF assimp
     - sudo make install
-    - cd ..
+    - cd ../../
 before_script:
     - ls
     - cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON .
