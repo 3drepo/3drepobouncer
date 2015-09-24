@@ -34,7 +34,7 @@ before_install:
     - cd ../
 before_script:
     - ls
-    - MONGO_ROOT=$HOME/mongo-cxx cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON .
+    - MONGO_ROOT=$HOME/mongo-cxx cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DCMAKE_BUILD_TYPE=Release .
 script:
     make -j2 install
 
@@ -44,4 +44,6 @@ branches:
        - ISSUE_24
 
 notifications:
-    email: true
+    email: 
+        recipents:
+            - carmen.fan@3drepo.org
