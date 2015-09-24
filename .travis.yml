@@ -11,13 +11,14 @@ before_install:
     - git clone https://github.com/mongodb/mongo-cxx-driver.git
     - cd mongo-cxx-driver
     - ls
-    - scons -j2 --64 --mute --sharedclient install
+    - scons -j2 --64 --mute --sharedclient --prefix=$HOME/mongo-cxx install
+    - ls $HOME/mongo-cxx
     - cd ../../
     - echo ============ ASSIMP INSTALL =============
     - mkdir assimp
     - cd assimp
     - git clone --branch=multipart https://github.com/3drepo/assimp.git      
-    - CXXFLAGS+=-std=c++0x cmake -DASSIMP_BUILD_TESTS=OFF assimp
+    - CXXFLAGS+=-std=c++0x MONGO_ROOT=$HOME/mongo-cxx cmake -DASSIMP_BUILD_TESTS=OFF assimp
     - sudo make install
     - cd ../
 before_script:
