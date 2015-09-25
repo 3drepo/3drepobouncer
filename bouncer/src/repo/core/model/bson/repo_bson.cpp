@@ -115,16 +115,21 @@ std::vector<repoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) cons
 
 	if (hasField(label))
 	{
-		RepoBSON array = RepoBSON(getField(label).embeddedObject());
+		RepoBSON array = getObjectField(label);
 
-		std::set<std::string> fields;
-		array.getFieldNames(fields);
+		if (!array.isEmpty())
+		{
+			std::set<std::string> fields;
+			array.getFieldNames(fields);
 
-		std::set<std::string>::iterator it;
-		for (it = fields.begin(); it != fields.end(); ++it)
-			results.push_back(array.getUUIDField(*it));
+			std::set<std::string>::iterator it;
+			for (it = fields.begin(); it != fields.end(); ++it)
+				results.push_back(array.getUUIDField(*it));
+		}
+
 
 	}
+	
 	return results;
 }
 

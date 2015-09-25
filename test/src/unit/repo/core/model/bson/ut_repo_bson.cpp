@@ -211,3 +211,36 @@ TEST(RepoBSONTest, GetUUIDField)
 	EXPECT_NE(testBson.getUUIDField("ice"), uuid);
 
 }
+
+
+TEST(RepoBSONTest, GetUUIDFieldArray)
+{
+	std::vector<repoUUID> uuids;
+
+	size_t size = 10;
+	mongo::BSONObjBuilder builder, arrbuilder;
+
+	uuids.reserve(size);
+	for (size_t i = 0; i < size; ++i)
+	{
+		uuids.push_back(generateUUID());
+		arrbuilder.appendBinData(std::to_string(i), uuids[i].size(), mongo::bdtUUID, (char*)uuids[i].data);
+	}
+
+	builder.appendArray("uuid", arrbuilder.obj());
+
+	RepoBSON bson = builder.obj();
+
+	std::vector<repoUUID> outUUIDS = bson.getUUIDFieldArray("uuid");
+
+	ASSERT_EQ(outUUIDS.size(), uuids.size());
+	for (size_t i = 0; i < size; i++)
+	{
+		EXPECT_EQ(outUUIDS[i], uuids[i]);
+	}
+
+	//Shouldn't fail if trying to get a uuid field that doesn't exist
+	EXPECT_EQ(bson.getUUIDFieldArray("hello").size(), 0);
+	EXPECT_EQ(testBson.getUUIDFieldArray("ice").size(), 0);
+
+}
