@@ -37,7 +37,8 @@ before_script:
     - MONGO_ROOT=$HOME/mongo-cxx cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DCMAKE_BUILD_TYPE=Release .
 script:
     - sudo make -j2 install
-    - 3drepobouncerTest
+    - ldd 3drepobouncerTest
+    - LD_LIBRARY_PATH=$HOME/mongo-cxx/lib/:$LD_LIBRARY_PATH 3drepobouncerTest
 
 branches:
    only:

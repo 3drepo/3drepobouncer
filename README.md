@@ -1,4 +1,4 @@
-3drepobouncer
+3drepobouncer [![Build Status](https://travis-ci.org/3drepo/3drepobouncer.svg?branch=master)](https://travis-ci.org/3drepo/3drepobouncer)
 =========
 
 3DRepoBouncer(temporary naming) is essentially the refactored 3DRepoCore and (parts of)3DRepoGUI. A C++ library providing 3D Repo Scene Graph definition, repository management logic and manipulation logic. 
