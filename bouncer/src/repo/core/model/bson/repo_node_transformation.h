@@ -32,7 +32,6 @@ namespace repo {
 				//------------------------------------------------------------------------------
 
 				#define REPO_NODE_LABEL_MATRIX						"matrix"
-				#define REPO_NODE_UUID_SUFFIX_TRANSFORMATION		"12" //!< uuid suffix
 				//------------------------------------------------------------------------------
 
 				class REPO_API_EXPORT TransformationNode :public RepoNode

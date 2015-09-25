@@ -10,6 +10,10 @@ build
 *.sdf
 resource.h
 
+# Sublime junk
+.tags
+.tags_sorted_by_file
+
 Debug
 x64
 sandbox

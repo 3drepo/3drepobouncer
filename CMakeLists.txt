@@ -20,12 +20,10 @@
 
 project("3drepobouncer")
 
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
-
-add_compile_options(-std=c++11)
-add_compile_options(-fpermissive)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 #================BOOST SETTINGS=======================
 add_definitions(-DBOOST_ALL_NO_LIB)
@@ -37,7 +35,7 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 unset(Boost_INCLUDE_DIR CACHE)
 unset(Boost_LIBRARY_DIRS CACHE)
 
-find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem)
+find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options)
 add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
 
 #================MONGO SETTINGS=======================
@@ -45,12 +43,12 @@ find_package(Mongo REQUIRED)
 
 
 #================ASSIMP SETTINGS=======================
-find_package(ASSIMP REQUIRED)
+find_package(ASSIMPM REQUIRED)
 
 #================COMPILE 3D REPO BOUNCER ==============
 option (REPO_BUILD_CLIENT "If the Command Line Client is built in addition to the library" ON)
 option (REPO_BUILD_TESTS "If the test suite is built in addition to the library" OFF)
-if(${Boost_FOUND} AND ${MONGO_FOUND} AND ${ASSIMP_FOUND})
+if(${Boost_FOUND} AND ${MONGO_FOUND} AND ${ASSIMPM_FOUND})
 
 	#bouncer library
 	add_subdirectory(bouncer)

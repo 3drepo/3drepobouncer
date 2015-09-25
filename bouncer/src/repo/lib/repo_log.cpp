@@ -9,7 +9,11 @@
 #include <boost/log/sources/severity_logger.hpp>
 #include <boost/log/sources/record_ostream.hpp>
 #include <boost/log/support/date_time.hpp>
+#if BOOST_VERSION > 105700
 #include <boost/core/null_deleter.hpp>
+#else
+#include <boost/utility/empty_deleter.hpp>
+#endif
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 
@@ -17,7 +21,7 @@
 
 using namespace repo::lib;
 
-using text_sink =  boost::log::sinks::synchronous_sink< boost::log::sinks::text_ostream_backend > ;
+using text_sink = boost::log::sinks::synchronous_sink< boost::log::sinks::text_ostream_backend >;
 
 
 RepoLog::RepoLog()
@@ -108,9 +112,14 @@ void RepoLog::subscribeBroadcaster(RepoBroadcaster *broadcaster){
 	boost::iostreams::stream<RepoBroadcaster> *streamptr =
 		new boost::iostreams::stream<RepoBroadcaster>(*broadcaster);
 
-
+#if BOOST_VERSION > 105700
 	boost::shared_ptr< std::ostream > stream(
 		streamptr, boost::null_deleter());
+#else
+	boost::shared_ptr< std::ostream > stream(
+		streamptr, boost::empty_deleter());
+#endif
+
 
 	boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
 

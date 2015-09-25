@@ -30,13 +30,13 @@ if(DEFINED ENV{MONGO_ROOT})
 		${MONGO_ROOT}/lib
 	)	
 	
-	find_library(MONGO_LIBRARIES_DEBUG NAMES mongoclient-gd
-		PATHS
-		${MONGO_ROOT}/lib
-	)
+#	find_library(MONGO_LIBRARIES_DEBUG NAMES mongoclient-gd
+#		PATHS
+#		${MONGO_ROOT}/lib
+#	)
 
 	set(MONGO_LIBRARIES
-		debug ${MONGO_LIBRARIES_DEBUG}
+		#		debug ${MONGO_LIBRARIES_DEBUG}
 		optimized ${MONGO_LIBRARIES_RELEASE}
 		)
 endif()
@@ -60,6 +60,7 @@ else(MONGO_INCLUDE_DIR AND MONGO_LIBRARIES)
     )
 
 	set(MONGO_LIBRARIES
+		debug ${MONGO_LIBRARIES_RELEASE}
 		optimized ${MONGO_LIBRARIES_RELEASE}
 		)
 endif(MONGO_INCLUDE_DIR AND MONGO_LIBRARIES)

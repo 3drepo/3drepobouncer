@@ -90,18 +90,18 @@ namespace repo {
 						*/
 						RepoBSON& operator=(RepoBSON otherCopy) {
 							swap(otherCopy);
-							bigFiles = otherCopy.bigFiles;
 							return *this;
 						}
-						///**
-						//* Override the swap operator to perform the swap just like mongo bson
-						//* but also carry over the mapping information
-						//*/
-						//void swap(RepoBSON otherCopy)
-						//{
-						//	mongo::BSONObj::swap(otherCopy);
-						//	//bigFiles = otherCopy.bigFiles;
-						//}
+						/**
+						* Override the swap operator to perform the swap just like mongo bson
+						* but also carry over the mapping information
+						*/
+						void swap(RepoBSON otherCopy)
+						{
+							mongo::BSONObj::swap(otherCopy);
+							bigFiles = otherCopy.bigFiles;
+						}
+
 
 						/**
 						* returns a field from the BSON
@@ -314,7 +314,15 @@ namespace repo {
 						/*
 						* ----------------- BIG FILE MANIPULATION --------------------
 						*/
-						std::vector<uint8_t> RepoBSON::getBigBinary(const std::string &key) const;
+
+
+						/**
+						* Clone and attempt the shrink the bson by offloading binary files to big file storage
+						* @return returns the shrunk BSON
+						*/
+						RepoBSON cloneAndShrink() const;
+
+						std::vector<uint8_t> getBigBinary(const std::string &key) const;
 
 						/**
 						* Get the list of file names for the big files 

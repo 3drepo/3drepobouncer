@@ -679,6 +679,7 @@ const std::vector<repoUUID>						             &parent
 	} //if assimpNode
 	return transNodes;
 }
+
 repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 	assimp_map                    &map,
 	repo::core::model::RepoScene  *scene)
@@ -838,6 +839,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 
 	return scenePtr;
 }
+
 repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 {
 	repo::core::model::RepoScene *scene;
@@ -853,6 +855,7 @@ repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 		importer.ApplyPostProcessing(composeAssimpPostProcessingFlags());
 
 		//This will generate the optimised scene graph and put it in the RepoScene referenced
+		repoTrace << "Converting AiScene to Optimised RepoScene";
 		convertAiSceneToRepoScene(optMap, scene);
 
 		assimp_map combinedMap;
@@ -860,10 +863,12 @@ repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 		combinedMap.insert(orgMap.begin(), orgMap.end());
 		combinedMap.insert(optMap.begin(), optMap.end());
 
-		if (!populateOptimMaps(scene->getRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED),
-			scene, combinedMap, optMap))
+		repo::core::model::RepoNode *stashRoot =  scene->getRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED);
+
+		if (!populateOptimMaps(stashRoot, scene, combinedMap, optMap))
 		{
 			//populateOptimMaps is false so stash is invalid. clear it out.
+			repoError << "Stash invalid ... clearing.";
 			scene->clearStash();
 		}
 
@@ -1022,13 +1027,11 @@ bool AssimpModelImport::populateOptimMaps(
 
 		if (node && node->mOptimMap)
 		{
-
 			aiOptimMap *ai_map = node->mOptimMap;
 
 			std::vector<repoUUID> mergeMap;
 			if (ai_map->getMergeMap().size() > 0)
 				mergeMap.reserve(ai_map->getMergeMap().size());
-
 
 			for (uintptr_t mergedNode : ai_map->getMergeMap())
 			{
@@ -1172,6 +1175,8 @@ bool AssimpModelImport::populateOptimMaps(
 			}
 		}
 	}
+
+	return true;
 }
 
 void AssimpModelImport::setAssimpProperties(){

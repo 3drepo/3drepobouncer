@@ -13,7 +13,7 @@
 #  You should have received a copy of the GNU Affero General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#attempt to find ASSIMP library 
+#attempt to find ASSIMP library (renamed to avoid clashing with the assimp default one)
 #if ASSIMP is found, ASSIMP_FOUND is set to true
 #ASSIMP_INCLUDE_DIR will point to the include folder of the installation
 #ASSIMP_LIBRARIES will point to the libraries
@@ -34,7 +34,7 @@ if(DEFINED ENV{ASSIMP_ROOT})
 		${ASSIMP_ROOT}/lib
 	)	
 	set(ASSIMP_LIBRARIES
-		debug ${ASSIMP_LIBRARIES_DEBUG}
+		debug ${ASSIMP_LIBRARIES_RELEASE}
 		optimized ${ASSIMP_LIBRARIES_RELEASE}
 		)
 endif()
@@ -64,7 +64,7 @@ else(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)
     )
 
 	set(ASSIMP_LIBRARIES
-		debug ${ASSIMP_LIBRARIES_DEBUG}
+		debug ${ASSIMP_LIBRARIES_RELEASE}
 		optimized ${ASSIMP_LIBRARIES_RELEASE}
 		)
 endif(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)
@@ -72,13 +72,13 @@ endif(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)
 
 
 if(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)
-	set(ASSIMP_FOUND TRUE)
+	set(ASSIMPM_FOUND TRUE)
 	message(STATUS "ASSIMP installation found.")
 	message(STATUS "ASSIMP_INCLUDE_DIR: ${ASSIMP_INCLUDE_DIR}")
 	message(STATUS "ASSIMP_LIBRARIES: ${ASSIMP_LIBRARIES}")
 	
 else(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)
 #cannot find mongo anywhere!
-	set(ASSIMP_FOUND FALSE)
+	set(ASSIMPM_FOUND FALSE)
 	message(STATUS "ASSIMP not found. Please set ASSIMP_ROOT to your installation directory")
 endif(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)

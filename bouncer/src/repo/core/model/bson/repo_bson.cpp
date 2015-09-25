@@ -53,6 +53,34 @@ RepoBSON::RepoBSON(const mongo::BSONObj &obj,
 
 }
 
+RepoBSON RepoBSON::cloneAndShrink() const
+{
+	std::set<std::string> fields;
+
+	std::unordered_map< std::string, std::vector<uint8_t>> rawFiles(bigFiles.begin(), bigFiles.end());
+	std::string uniqueIDStr = hasField(REPO_LABEL_ID) ? UUIDtoString(getUUIDField(REPO_LABEL_ID)) : UUIDtoString(generateUUID());
+	mongo::BSONObjBuilder builder;
+
+	getFieldNames(fields);
+	
+	for (const std::string &field : fields)
+	{
+		if (getField(field).type() == ElementType::BINARY)
+		{
+			std::string fileName = uniqueIDStr + "_" + field;
+			builder << field << fileName;
+			rawFiles[fileName] = std::vector<uint8_t>();
+
+			getBinaryFieldAsVector(getField(field), &rawFiles[fileName]);
+		}
+	}
+
+	builder.appendElementsUnique(*this);
+
+	return RepoBSON(builder.obj(), rawFiles);
+
+}
+
 repoUUID RepoBSON::getUUIDField(const std::string &label) const{
 	repoUUID uuid;
 	const mongo::BSONElement bse = getField(label);

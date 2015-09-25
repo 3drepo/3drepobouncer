@@ -404,12 +404,15 @@ std::vector<repo::core::model::RepoBSON>
 	{
 
 		worker = workerPool->getWorker();
+		
+		mongo::BSONObj tmp = fieldsToReturn(fields);
+
 		std::auto_ptr<mongo::DBClientCursor> cursor = worker->query(
 			database + "." + collection,
 			sortField.empty() ? mongo::Query() : mongo::Query().sort(sortField, sortOrder),
 			0,
 			skip,
-			fields.size() > 0 ? &fieldsToReturn(fields) : nullptr);
+			fields.size() > 0 ? &tmp : nullptr);
 
 		while (cursor.get() && cursor->more())
 		{
