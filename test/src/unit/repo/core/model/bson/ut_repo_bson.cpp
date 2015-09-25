@@ -25,6 +25,7 @@
 using namespace repo::core::model;
 
 static const RepoBSON testBson = RepoBSON(BSON("ice" << "lolly" << "amount" << 100));
+static const RepoBSON emptyBson;
 
 /**
 * Construct from mongo builder and mongo bson should give me the same bson
@@ -53,6 +54,7 @@ TEST(RepoBSONTest, GetField)
 
 	EXPECT_EQ("lolly", testBson.getField("ice").str());
 	EXPECT_EQ(100, testBson.getField("amount").Int());
+	EXPECT_TRUE(emptyBson.getField("hello").eoo());
 }
 
 TEST(RepoBSONTest, GetBinaryAsVectorEmbedded)
@@ -211,6 +213,8 @@ TEST(RepoBSONTest, GetUUIDField)
 	//Shouldn't fail if trying to get a uuid field that doesn't exist
 	EXPECT_NE(uuid, test.getUUIDField("hello"));
 	EXPECT_NE(uuid, testBson.getUUIDField("ice"));
+	EXPECT_NE(uuid, emptyBson.getUUIDField("ice"));
+	
 
 }
 
@@ -244,6 +248,7 @@ TEST(RepoBSONTest, GetUUIDFieldArray)
 	//Shouldn't fail if trying to get a uuid field that doesn't exist
 	EXPECT_EQ(0, bson.getUUIDFieldArray("hello").size());
 	EXPECT_EQ(0, testBson.getUUIDFieldArray("ice").size());
+	EXPECT_EQ(0, emptyBson.getUUIDFieldArray("ice").size());
 
 }
 
@@ -277,6 +282,7 @@ TEST(RepoBSONTest, GetFloatArray)
 	//Shouldn't fail if trying to get a uuid field that doesn't exist
 	EXPECT_EQ(0, bson.getFloatArray("hello").size());
 	EXPECT_EQ(0, testBson.getFloatArray("ice").size());
+	EXPECT_EQ(0, emptyBson.getFloatArray("ice").size());
 }
 
 TEST(RepoBSONTest, GetTimeStampField)
@@ -294,4 +300,48 @@ TEST(RepoBSONTest, GetTimeStampField)
 	//Shouldn't fail if trying to get a uuid field that doesn't exist
 	EXPECT_EQ(-1, tsBson.getTimeStampField("hello"));
 	EXPECT_EQ(-1, testBson.getTimeStampField("ice"));
+	EXPECT_EQ(-1, emptyBson.getTimeStampField("ice"));
+}
+
+TEST(RepoBSONTest, GetListStringPairField)
+{
+	std::vector<std::vector<std::string>> vecIn;
+
+	size_t size = 10;
+	mongo::BSONObjBuilder builder, arrbuilder;
+
+	vecIn.reserve(size);
+	for (size_t i = 0; i < size; ++i)
+	{
+		int n1 = rand();
+		int n2 = rand();
+		vecIn.push_back({ std::to_string(n1), std::to_string(n2) });
+
+		arrbuilder << std::to_string(i) << BSON("first" << std::to_string(n1) << "second" << std::to_string(n2) << "third" << 1);
+	}
+
+	builder.appendArray("bsonArr", arrbuilder.obj());
+
+	RepoBSON bson = builder.obj();
+
+	std::list<std::pair<std::string, std::string>> vecOut = 
+		bson.getListStringPairField("bsonArr", "first", "second");
+
+	EXPECT_EQ(vecIn.size(), vecOut.size());
+	auto listIt = vecOut.begin();
+
+	for (size_t i = 0; i < size; i++)
+	{
+
+		EXPECT_EQ(vecIn[i][0], listIt->first);
+		EXPECT_EQ(vecIn[i][1], listIt->second);
+		++listIt;
+
+	}
+
+	//Shouldn't fail if trying to get a uuid field that doesn't exist
+	EXPECT_EQ(0, bson.getListStringPairField("hello", "first", "third").size());
+	EXPECT_EQ(0, bson.getListStringPairField("hello", "first", "second").size());
+	EXPECT_EQ(0, testBson.getListStringPairField("ice", "first", "second").size());
+	EXPECT_EQ(0, emptyBson.getListStringPairField("ice", "first", "second").size());
 }
