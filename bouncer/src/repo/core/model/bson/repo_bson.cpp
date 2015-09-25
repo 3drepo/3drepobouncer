@@ -83,16 +83,29 @@ RepoBSON RepoBSON::cloneAndShrink() const
 
 repoUUID RepoBSON::getUUIDField(const std::string &label) const{
 	repoUUID uuid;
-	const mongo::BSONElement bse = getField(label);
-	if (bse.binDataType() == mongo::bdtUUID ||
-		bse.binDataType() == mongo::newUUID)
+	if (hasField(label))
 	{
-		int len = static_cast<int>(bse.size() * sizeof(boost::uint8_t));
-		const char *binData = bse.binData(len);
-		memcpy(uuid.data, binData, len);
+
+		const mongo::BSONElement bse = getField(label);
+		if (bse.type() == mongo::BSONType::BinData && (bse.binDataType() == mongo::bdtUUID ||
+			bse.binDataType() == mongo::newUUID))
+		{
+			int len = static_cast<int>(bse.size() * sizeof(boost::uint8_t));
+			const char *binData = bse.binData(len);
+			memcpy(uuid.data, binData, len);
+		}
+		else
+		{
+			repoError << "Field  " << label << " is not of type UUID!";
+			uuid = generateUUID();  // failsafe
+		}
 	}
 	else
-		uuid = boost::uuids::random_generator()();  // failsafe
+	{
+		repoError << "Field  " << label << " does not exist!";
+		uuid = generateUUID();  // failsafe
+	}
+
 	return uuid;
 }
 
@@ -102,16 +115,25 @@ std::vector<repoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) cons
 
 	if (hasField(label))
 	{
-		RepoBSON array = RepoBSON(getField(label).embeddedObject());
+		RepoBSON array = getObjectField(label);
 
-		std::set<std::string> fields;
-		array.getFieldNames(fields);
+		if (!array.isEmpty())
+		{
+			std::set<std::string> fields;
+			array.getFieldNames(fields);
 
-		std::set<std::string>::iterator it;
-		for (it = fields.begin(); it != fields.end(); ++it)
-			results.push_back(array.getUUIDField(*it));
+			std::set<std::string>::iterator it;
+			for (it = fields.begin(); it != fields.end(); ++it)
+				results.push_back(array.getUUIDField(*it));
+		}
+		else
+		{
+			repoError << "getUUIDFieldArray: field " << label << " is an empty bson or wrong type!";
+		}
+
 
 	}
+	
 	return results;
 }
 
@@ -156,13 +178,20 @@ std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
 
 	if (hasField(label))
 	{
-		RepoBSON array = RepoBSON(getField(label).embeddedObject());
+		RepoBSON array = getObjectField(label);
 
-		std::set<std::string> fields;
-		array.getFieldNames(fields);
+		if (!array.isEmpty())
+		{
+			std::set<std::string> fields;
+			array.getFieldNames(fields);
 
-		for (auto field: fields)
-			results.push_back(array.getField(field).numberDouble());
+			for (auto field : fields)
+				results.push_back(array.getField(field).numberDouble());
+		}
+		else
+		{
+			repoError << "getFloatArray: field " << label << " is an empty bson or wrong type!";
+		}
 
 	}
 	return results;
@@ -170,12 +199,17 @@ std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
 
 int64_t RepoBSON::getTimeStampField(const std::string &label) const
 {
-	int64_t time;
+	int64_t time = -1;
 
 	if (hasField(label))
 	{
-		time = getField(label).date().asInt64();
-
+		auto field = getField(label);
+		if (field.type() == ElementType::DATE)
+			time = field.date().asInt64();
+		else
+		{
+			repoError << "GetTimeStampField: field " << label << " is not of type Date!";
+		}
 
 	}
 	return time;

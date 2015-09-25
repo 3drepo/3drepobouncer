@@ -49,7 +49,7 @@ void RepoBSONBuilder::appendVector(
 	float vector[] = { vec.x, vec.y, vec.z };
 	RepoBSONBuilder array;
 	for (uint32_t i = 0; i < 3; ++i)
-		array << boost::lexical_cast<std::string>(i) << vector[i];
+		array << std::to_string(i) << vector[i];
 
 	appendArray(label, array.obj());
 }
