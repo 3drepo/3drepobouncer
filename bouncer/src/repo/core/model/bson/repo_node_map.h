@@ -33,7 +33,6 @@ namespace repo {
 					#define REPO_NODE_MAP_LABEL_LAT                 "lat"
 					#define REPO_NODE_MAP_LABEL_ZOOM                "zoom"
 					#define REPO_NODE_MAP_LABEL_TRANS               "trans"
-					#define REPO_NODE_UUID_SUFFIX_METADATA			"15" //!< uuid suffix
 					#define REPO_NODE_MAP_DEFAULTNAME               "<map>"
 
 				public:

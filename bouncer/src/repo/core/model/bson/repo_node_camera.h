@@ -37,7 +37,6 @@ namespace repo {
 				#define REPO_NODE_LABEL_LOOK_AT				"look_at"
 				#define REPO_NODE_LABEL_POSITION			"position"
 				#define REPO_NODE_LABEL_UP					"up"
-				#define REPO_NODE_UUID_SUFFIX_CAMERA		"04" //!< uuid suffix
 				//------------------------------------------------------------------------------
 
 

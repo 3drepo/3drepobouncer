@@ -39,7 +39,6 @@ namespace repo {
 				#define REPO_NODE_MATERIAL_LABEL_OPACITY					"opacity"
 				#define REPO_NODE_MATERIAL_LABEL_SHININESS				"shininess"
 				#define REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH		"shininess_strength"
-				#define REPO_NODE_UUID_SUFFIX_MATERIAL			"07" //!< uuid suffix
 				//------------------------------------------------------------------------------
 
 
@@ -73,7 +72,7 @@ namespace repo {
 					* Get material information from the node as a struct
 					* @return returns a repo_material_t containing the information
 					*/
-					repo_material_t MaterialNode::getMaterialStruct() const;
+					repo_material_t getMaterialStruct() const;
 
 				};
 		} //namespace model

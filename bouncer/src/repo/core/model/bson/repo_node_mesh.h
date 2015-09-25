@@ -59,8 +59,6 @@ namespace repo {
 				#define REPO_NODE_MESH_LABEL_MATERIAL_ID		        "mat_id"
 				#define REPO_NODE_MESH_LABEL_MERGE_MAP		        "m_map"
 				//------------------------------------------------------------------------------
-				#define REPO_NODE_MESH_UUID_SUFFIX_MESH				"08" //!< uuid suffix
-				//------------------------------------------------------------------------------
 
 				class REPO_API_EXPORT MeshNode :public RepoNode
 				{

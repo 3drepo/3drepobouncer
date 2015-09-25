@@ -100,7 +100,7 @@ namespace repo{
 			* @param pwDigested is the password provided in digested form (default: false)
 			* @return returns true upon success
 			*/
-			core::model::RepoBSON* createCredBSON(
+			repo::core::model::RepoBSON* createCredBSON(
 				const std::string &databaseAd,
 				const std::string &username,
 				const std::string &password,

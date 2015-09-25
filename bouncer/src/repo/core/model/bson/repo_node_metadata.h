@@ -31,7 +31,6 @@ namespace repo {
 				//
 				//------------------------------------------------------------------------------
 				#define REPO_NODE_LABEL_METADATA     			"metadata"
-				#define REPO_NODE_UUID_SUFFIX_METADATA			"14" //!< uuid suffix
 				//------------------------------------------------------------------------------
 
 

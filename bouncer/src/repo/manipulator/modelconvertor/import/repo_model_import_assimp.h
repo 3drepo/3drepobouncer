@@ -105,7 +105,7 @@ namespace repo{
 				* @param name name of the material
 				* @return returns the created material node
 				*/
-				repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
+				repo::core::model::MaterialNode* createMaterialRepoNode(
 					aiMaterial *material,
 					std::string name);
 
@@ -116,7 +116,7 @@ namespace repo{
 				* @param materials RepoNodeSet of material objects (to add reference)
 				* @return returns the created Mesh Node
 				*/
-				repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
+				repo::core::model::MeshNode* createMeshRepoNode(
 					const aiMesh *assimpMesh,
 					const std::vector<repo::core::model::RepoNode *> &materials);
 
@@ -127,7 +127,7 @@ namespace repo{
 				* @param parent vector of node ID of parents (optional)
 				* @return returns the created Metadata Node
 				*/
-				repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
+				repo::core::model::MetadataNode* createMetadataRepoNode(
 					const aiMetadata             *assimpMeta,
 					const std::string            &metadataName,
 					const std::vector<repoUUID> &parents = std::vector<repoUUID>());
@@ -167,7 +167,7 @@ namespace repo{
 				* @param flag to build upon
 				* @return reutnrs a post processing flag.
 				*/
-				uint32_t AssimpModelImport::composeAssimpPostProcessingFlags(
+				uint32_t composeAssimpPostProcessingFlags(
 					uint32_t flag = 0);
 
 				/**

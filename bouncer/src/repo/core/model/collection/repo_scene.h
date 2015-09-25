@@ -162,7 +162,7 @@ namespace repo{
 					* @param textures set of textures
 					* @param transformations set of transformations
 					*/
-					void RepoScene::addStashGraph(
+					void addStashGraph(
 						const RepoNodeSet &cameras,
 						const RepoNodeSet &meshes,
 						const RepoNodeSet &materials,
@@ -299,7 +299,7 @@ namespace repo{
 					* @param errMsg message if it failed
 					* @return return true upon success
 					*/
-					bool RepoScene::loadStash(
+					bool loadStash(
 						repo::core::handler::AbstractDatabaseHandler *handler,
 						std::string &errMsg);
 
@@ -349,7 +349,7 @@ namespace repo{
 					* @ return a vector of pointers to children node (potentially none)
 					*/
 					std::vector<RepoNode*>
-						RepoScene::getChildrenAsNodes(
+						getChildrenAsNodes(
 						const GraphType &g,
 						const repoUUID &parent) const;
 
@@ -578,7 +578,7 @@ namespace repo{
 					* @param errMsg error message if this failed
 					* @return returns true upon success
 					*/
-					bool RepoScene::commitNodes(
+					bool commitNodes(
 						repo::core::handler::AbstractDatabaseHandler *handler,
 						const std::vector<repoUUID> &nodesToCommit,
 						const GraphType &gType,

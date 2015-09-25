@@ -31,7 +31,6 @@
 #define REPO_NODE_REFERENCE_LABEL_UNIQUE                  "unique"
 #define REPO_NODE_REFERENCE_LABEL_PROJECT                 "project"
 #define REPO_NODE_REFERENCE_LABEL_OWNER                   "owner"
-#define REPO_NODE_REFERENCE_UUID_SUFFIX_REFERENCE			"13" //!< uuid suffix
 //------------------------------------------------------------------------------
 
 

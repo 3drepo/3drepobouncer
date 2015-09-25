@@ -86,7 +86,7 @@ namespace repo{
 				 * @param pwDigested true if password is digested
 				 * @return Returns the single instance
 				 */
-				static MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
+				static MongoDatabaseHandler* getHandler(
 					std::string &errMsg,
 					const std::string &host,
 					const int         &port,
@@ -103,7 +103,7 @@ namespace repo{
 				* @param host string containing "databaseAddress:port"
 				* @return Returns null if there is no instance available
 				*/
-				static MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
+				static MongoDatabaseHandler* getHandler(
 					const std::string &host)
 				{
 					return handler;
@@ -483,7 +483,7 @@ namespace repo{
 				 * @param password password of the user (optional)
 				 * @param pwDigested true if pw is digested (optional)
 				 */
-				MongoDatabaseHandler::MongoDatabaseHandler(
+				MongoDatabaseHandler(
 					const mongo::ConnectionString &dbAddress,
 					const uint32_t                &maxConnections,
 					const std::string             &dbName,
@@ -527,7 +527,7 @@ namespace repo{
 				* @param list of field names to return
 				* @param ID field is excluded by default unless explicitly stated in the list.
 				*/
-				mongo::BSONObj MongoDatabaseHandler::fieldsToReturn(
+				mongo::BSONObj fieldsToReturn(
 					const std::list<std::string>& fields,
 					bool excludeIdField = false);
 
@@ -560,7 +560,7 @@ namespace repo{
 				 * @param collection name
 				 * @return namespace
 				 */
-				std::string MongoDatabaseHandler::getNamespace(
+				std::string getNamespace(
 					const std::string &database,
 					const std::string &collection);
 
@@ -569,7 +569,7 @@ namespace repo{
 				* @param namespace as string
 				* @return returns a string with just the database name
 				*/
-				std::string MongoDatabaseHandler::getProjectFromCollection(const std::string &ns, const std::string &projectExt);
+				std::string getProjectFromCollection(const std::string &ns, const std::string &projectExt);
 
 				/**
 				* Perform command on the user
@@ -578,7 +578,7 @@ namespace repo{
 				* @param errMsg error message if failed
 				* @return returns true upon success
 				*/
-				bool MongoDatabaseHandler::performUserCmd(
+				bool performUserCmd(
 					const OPERATION                         &op,
 					const repo::core::model::RepoUser &user,
 					std::string                       &errMsg);
