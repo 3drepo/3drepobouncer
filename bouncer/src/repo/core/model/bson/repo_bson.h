@@ -292,7 +292,7 @@ namespace repo {
 						/**
 						* Get a field as timestamp
 						* @param label name of the element
-						* @return returns timestamp as int64
+						* @return returns timestamp as int64, return -1 if not found
 						*/
 						int64_t getTimeStampField(const std::string &label) const;
 

@@ -153,7 +153,7 @@ TEST(RepoBSONTest, AssignOperator)
 		std::vector<uint8_t> dataIn = mapIt->second;
 		EXPECT_EQ(dataOut.size(), dataIn.size());
 		if (dataIn.size()>0)
-			EXPECT_EQ(strncmp((char*)&dataOut[0], (char*)&dataIn[0], dataIn.size()), 0);
+			EXPECT_EQ(0, strncmp((char*)&dataOut[0], (char*)&dataIn[0], dataIn.size()));
 	}
 
 }
@@ -178,11 +178,11 @@ TEST(RepoBSONTest, Swap)
 
 
 	test.swap(testDiff);
-	EXPECT_EQ(test.toString(), testDiff_org.toString());
+	EXPECT_EQ(testDiff_org.toString(), test.toString());
 
 
 	mapout = test.getFilesMapping();
-	ASSERT_EQ(mapout.size(), map.size());
+	ASSERT_EQ(map.size(), mapout.size());
 
 	auto mapIt = map.begin();
 	auto mapoutIt = mapout.begin();
@@ -192,9 +192,9 @@ TEST(RepoBSONTest, Swap)
 		EXPECT_EQ(mapIt->first, mapIt->first);
 		std::vector<uint8_t> dataOut = mapoutIt->second;
 		std::vector<uint8_t> dataIn = mapIt->second;
-		EXPECT_EQ(dataOut.size(), dataIn.size());
+		EXPECT_EQ(dataIn.size(), dataOut.size());
 		if (dataIn.size()>0)
-			EXPECT_EQ(strncmp((char*)dataOut.data(), (char*)dataIn.data(), dataIn.size()), 0);
+			EXPECT_EQ(0, strncmp((char*)dataOut.data(), (char*)dataIn.data(), dataIn.size()));
 	}
 }
 
@@ -206,11 +206,11 @@ TEST(RepoBSONTest, GetUUIDField)
 	builder.appendBinData("uuid", uuid.size(), mongo::bdtUUID, (char*)uuid.data);
 
 	RepoBSON test = RepoBSON(builder.obj());
-	EXPECT_EQ(test.getUUIDField("uuid"), uuid);
+	EXPECT_EQ(uuid, test.getUUIDField("uuid"));
 
 	//Shouldn't fail if trying to get a uuid field that doesn't exist
-	EXPECT_NE(test.getUUIDField("hello"), uuid);
-	EXPECT_NE(testBson.getUUIDField("ice"), uuid);
+	EXPECT_NE(uuid, test.getUUIDField("hello"));
+	EXPECT_NE(uuid, testBson.getUUIDField("ice"));
 
 }
 
@@ -238,12 +238,12 @@ TEST(RepoBSONTest, GetUUIDFieldArray)
 	EXPECT_EQ(outUUIDS.size(), uuids.size());
 	for (size_t i = 0; i < size; i++)
 	{
-		EXPECT_EQ(outUUIDS[i], uuids[i]);
+		EXPECT_EQ(uuids[i], outUUIDS[i]);
 	}
 
 	//Shouldn't fail if trying to get a uuid field that doesn't exist
-	EXPECT_EQ(bson.getUUIDFieldArray("hello").size(), 0);
-	EXPECT_EQ(testBson.getUUIDFieldArray("ice").size(), 0);
+	EXPECT_EQ(0, bson.getUUIDFieldArray("hello").size());
+	EXPECT_EQ(0, testBson.getUUIDFieldArray("ice").size());
 
 }
 
@@ -267,7 +267,7 @@ TEST(RepoBSONTest, GetFloatArray)
 
 	std::vector<float> floatArrOut = bson.getFloatArray("floatarr");
 
-	EXPECT_EQ(floatArrOut.size(), floatArrIn.size());
+	EXPECT_EQ(floatArrIn.size(), floatArrOut.size());
 
 	for (size_t i = 0; i < size; i++)
 	{
@@ -275,6 +275,23 @@ TEST(RepoBSONTest, GetFloatArray)
 	}
 
 	//Shouldn't fail if trying to get a uuid field that doesn't exist
-	EXPECT_EQ(bson.getFloatArray("hello").size(), 0);
-	EXPECT_EQ(testBson.getFloatArray("ice").size(), 0);
+	EXPECT_EQ(0, bson.getFloatArray("hello").size());
+	EXPECT_EQ(0, testBson.getFloatArray("ice").size());
+}
+
+TEST(RepoBSONTest, GetTimeStampField)
+{
+	mongo::BSONObjBuilder builder;
+	
+	mongo::Date_t date = mongo::Date_t(time(NULL) * 1000);
+	
+	builder.append("ts", date);
+
+	RepoBSON tsBson = builder.obj();
+
+	EXPECT_EQ(date.asInt64(), tsBson.getTimeStampField("ts"));
+
+	//Shouldn't fail if trying to get a uuid field that doesn't exist
+	EXPECT_EQ(-1, tsBson.getTimeStampField("hello"));
+	EXPECT_EQ(-1, testBson.getTimeStampField("ice"));
 }

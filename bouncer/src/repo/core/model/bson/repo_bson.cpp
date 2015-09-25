@@ -199,11 +199,13 @@ std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
 
 int64_t RepoBSON::getTimeStampField(const std::string &label) const
 {
-	int64_t time;
+	int64_t time = -1;
 
 	if (hasField(label))
 	{
-		time = getField(label).date().asInt64();
+		auto field =  getField(label);
+		if (field.type() == ElementType::DATE)
+			time = field.date().asInt64();
 
 
 	}
