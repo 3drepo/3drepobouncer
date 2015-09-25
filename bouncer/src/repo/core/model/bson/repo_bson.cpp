@@ -203,10 +203,13 @@ int64_t RepoBSON::getTimeStampField(const std::string &label) const
 
 	if (hasField(label))
 	{
-		auto field =  getField(label);
+		auto field = getField(label);
 		if (field.type() == ElementType::DATE)
 			time = field.date().asInt64();
-
+		else
+		{
+			repoError << "GetTimeStampField: field " << label << " is not of type Date!";
+		}
 
 	}
 	return time;
