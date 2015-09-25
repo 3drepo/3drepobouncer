@@ -6,7 +6,7 @@
 Dependencies
 ------------
 3DRepoBouncer relies on the following libraries:
-* [Boost Library v1.58.0+](http://www.boost.org/)  
+* [Boost Library v1.55.0+](http://www.boost.org/)  
 See also [pre-built binaries for Windows](http://sourceforge.net/projects/boost/files/boost-binaries/)
 and [modular Boost](https://svn.boost.org/trac/boost/wiki/ModularBoost)
 on [GitHub](https://github.com/boostorg)
@@ -16,8 +16,8 @@ See [3D Repo guide for compiling MongoDB](https://github.com/3drepo/3drepobounce
 
 To compile and install the library, the following are used:
 * [Python v2.x](https://www.python.org/)
-* [CMAKE v3.3] (http://www.cmake.org/)
-* A C++ compiler (GNU GCC v3.4+, [Visual Studio 12+](https://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx))
+* [CMAKE v2.8] (http://www.cmake.org/)
+* A C++ compiler (GNU GCC v4.9+, [Visual Studio 12+](https://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx))
 
 Compilation (Qt)
 ------------
