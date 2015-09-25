@@ -83,16 +83,29 @@ RepoBSON RepoBSON::cloneAndShrink() const
 
 repoUUID RepoBSON::getUUIDField(const std::string &label) const{
 	repoUUID uuid;
-	const mongo::BSONElement bse = getField(label);
-	if (bse.binDataType() == mongo::bdtUUID ||
-		bse.binDataType() == mongo::newUUID)
+	if (hasField(label))
 	{
-		int len = static_cast<int>(bse.size() * sizeof(boost::uint8_t));
-		const char *binData = bse.binData(len);
-		memcpy(uuid.data, binData, len);
+
+		const mongo::BSONElement bse = getField(label);
+		if (bse.type() == mongo::BSONType::BinData && (bse.binDataType() == mongo::bdtUUID ||
+			bse.binDataType() == mongo::newUUID))
+		{
+			int len = static_cast<int>(bse.size() * sizeof(boost::uint8_t));
+			const char *binData = bse.binData(len);
+			memcpy(uuid.data, binData, len);
+		}
+		else
+		{
+			repoError << "Field  " << label << " is not of type UUID!";
+			uuid = generateUUID();  // failsafe
+		}
 	}
 	else
-		uuid = boost::uuids::random_generator()();  // failsafe
+	{
+		repoError << "Field  " << label << " does not exist!";
+		uuid = generateUUID();  // failsafe
+	}
+
 	return uuid;
 }
 

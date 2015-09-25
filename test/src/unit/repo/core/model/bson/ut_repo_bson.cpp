@@ -18,6 +18,7 @@
 #include <gtest/gtest.h>
 
 #include <repo/core/model/bson/repo_bson.h>
+#include <repo/core/model/bson/repo_bson_builder.h>
 
 using namespace repo::core::model;
 
@@ -152,5 +153,61 @@ TEST(RepoBSONTest, AssignOperator)
 		if (dataIn.size()>0)
 			EXPECT_EQ(strncmp((char*)&dataOut[0], (char*)&dataIn[0], dataIn.size()), 0);
 	}
+
+}
+
+TEST(RepoBSONTest, Swap)
+{
+	RepoBSON test = testBson;
+
+	//Test with bigfile mapping
+	std::vector < uint8_t > in;
+
+	in.resize(100);
+
+	std::unordered_map<std::string, std::vector<uint8_t>> map, mapout;
+	map["testingfile"] = in;
+
+	RepoBSON testDiff_org(BSON("entirely" << "different"), map);
+	RepoBSON testDiff = testDiff_org;
+
+	ASSERT_TRUE(testDiff_org.toString() == testDiff.toString());
+	ASSERT_TRUE(testDiff_org.getFilesMapping().size() == testDiff.getFilesMapping().size());
+
+
+	test.swap(testDiff);
+	EXPECT_EQ(test.toString(), testDiff_org.toString());
+
+
+	mapout = test.getFilesMapping();
+	ASSERT_EQ(mapout.size(), map.size());
+
+	auto mapIt = map.begin();
+	auto mapoutIt = mapout.begin();
+
+	for (; mapIt != map.end(); ++mapIt, ++mapoutIt)
+	{
+		EXPECT_EQ(mapIt->first, mapIt->first);
+		std::vector<uint8_t> dataOut = mapoutIt->second;
+		std::vector<uint8_t> dataIn = mapIt->second;
+		ASSERT_EQ(dataOut.size(), dataIn.size());
+		if (dataIn.size()>0)
+			EXPECT_EQ(strncmp((char*)dataOut.data(), (char*)dataIn.data(), dataIn.size()), 0);
+	}
+}
+
+TEST(RepoBSONTest, GetUUIDField)
+{
+
+	repoUUID uuid = generateUUID();
+	mongo::BSONObjBuilder builder;
+	builder.appendBinData("uuid", uuid.size(), mongo::bdtUUID, (char*)uuid.data);
+
+	RepoBSON test = RepoBSON(builder.obj());
+	EXPECT_EQ(test.getUUIDField("uuid"), uuid);
+
+	//Shouldn't fail if trying to get a uuid field that doesn't exist
+	EXPECT_NE(test.getUUIDField("hello"), uuid);
+	EXPECT_NE(testBson.getUUIDField("ice"), uuid);
 
 }
