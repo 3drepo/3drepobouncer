@@ -15,6 +15,8 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <cstdlib>
+
 #include <gtest/gtest.h>
 
 #include <repo/core/model/bson/repo_bson.h>
@@ -149,7 +151,7 @@ TEST(RepoBSONTest, AssignOperator)
 		EXPECT_EQ(mapIt->first, mapIt->first);
 		std::vector<uint8_t> dataOut = mapoutIt->second;
 		std::vector<uint8_t> dataIn = mapIt->second;
-		ASSERT_EQ(dataOut.size(), dataIn.size());
+		EXPECT_EQ(dataOut.size(), dataIn.size());
 		if (dataIn.size()>0)
 			EXPECT_EQ(strncmp((char*)&dataOut[0], (char*)&dataIn[0], dataIn.size()), 0);
 	}
@@ -171,8 +173,8 @@ TEST(RepoBSONTest, Swap)
 	RepoBSON testDiff_org(BSON("entirely" << "different"), map);
 	RepoBSON testDiff = testDiff_org;
 
-	ASSERT_TRUE(testDiff_org.toString() == testDiff.toString());
-	ASSERT_TRUE(testDiff_org.getFilesMapping().size() == testDiff.getFilesMapping().size());
+	EXPECT_TRUE(testDiff_org.toString() == testDiff.toString());
+	EXPECT_TRUE(testDiff_org.getFilesMapping().size() == testDiff.getFilesMapping().size());
 
 
 	test.swap(testDiff);
@@ -190,7 +192,7 @@ TEST(RepoBSONTest, Swap)
 		EXPECT_EQ(mapIt->first, mapIt->first);
 		std::vector<uint8_t> dataOut = mapoutIt->second;
 		std::vector<uint8_t> dataIn = mapIt->second;
-		ASSERT_EQ(dataOut.size(), dataIn.size());
+		EXPECT_EQ(dataOut.size(), dataIn.size());
 		if (dataIn.size()>0)
 			EXPECT_EQ(strncmp((char*)dataOut.data(), (char*)dataIn.data(), dataIn.size()), 0);
 	}
@@ -233,7 +235,7 @@ TEST(RepoBSONTest, GetUUIDFieldArray)
 
 	std::vector<repoUUID> outUUIDS = bson.getUUIDFieldArray("uuid");
 
-	ASSERT_EQ(outUUIDS.size(), uuids.size());
+	EXPECT_EQ(outUUIDS.size(), uuids.size());
 	for (size_t i = 0; i < size; i++)
 	{
 		EXPECT_EQ(outUUIDS[i], uuids[i]);
@@ -243,4 +245,36 @@ TEST(RepoBSONTest, GetUUIDFieldArray)
 	EXPECT_EQ(bson.getUUIDFieldArray("hello").size(), 0);
 	EXPECT_EQ(testBson.getUUIDFieldArray("ice").size(), 0);
 
+}
+
+TEST(RepoBSONTest, GetFloatArray)
+{
+	std::vector<float> floatArrIn;
+
+	size_t size = 10;
+	mongo::BSONObjBuilder builder, arrbuilder;
+
+	floatArrIn.reserve(size);
+	for (size_t i = 0; i < size; ++i)
+	{
+		floatArrIn.push_back((float)rand()/100.);
+		arrbuilder << std::to_string(i) << floatArrIn[i];
+	}
+
+	builder.appendArray("floatarr", arrbuilder.obj());
+
+	RepoBSON bson = builder.obj();
+
+	std::vector<float> floatArrOut = bson.getFloatArray("floatarr");
+
+	EXPECT_EQ(floatArrOut.size(), floatArrIn.size());
+
+	for (size_t i = 0; i < size; i++)
+	{
+		EXPECT_EQ(floatArrIn[i], floatArrOut[i]);
+	}
+
+	//Shouldn't fail if trying to get a uuid field that doesn't exist
+	EXPECT_EQ(bson.getFloatArray("hello").size(), 0);
+	EXPECT_EQ(testBson.getFloatArray("ice").size(), 0);
 }

@@ -126,6 +126,10 @@ std::vector<repoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) cons
 			for (it = fields.begin(); it != fields.end(); ++it)
 				results.push_back(array.getUUIDField(*it));
 		}
+		else
+		{
+			repoError << "getUUIDFieldArray: field " << label << " is an empty bson or wrong type!";
+		}
 
 
 	}
@@ -174,13 +178,20 @@ std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
 
 	if (hasField(label))
 	{
-		RepoBSON array = RepoBSON(getField(label).embeddedObject());
+		RepoBSON array = getObjectField(label);
 
-		std::set<std::string> fields;
-		array.getFieldNames(fields);
+		if (!array.isEmpty())
+		{
+			std::set<std::string> fields;
+			array.getFieldNames(fields);
 
-		for (auto field: fields)
-			results.push_back(array.getField(field).numberDouble());
+			for (auto field : fields)
+				results.push_back(array.getField(field).numberDouble());
+		}
+		else
+		{
+			repoError << "getFloatArray: field " << label << " is an empty bson or wrong type!";
+		}
 
 	}
 	return results;
