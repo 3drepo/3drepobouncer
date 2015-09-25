@@ -77,7 +77,7 @@ TEST(RepoBSONTest, GetBinaryAsVectorEmbedded)
 
 	EXPECT_TRUE(bson.getBinaryFieldAsVector(bson.getField("binDataTest"), in.size(), &out));
 
-	ASSERT_EQ(out.size(), in.size());
+	EXPECT_EQ(in.size(), out.size());
 	for (size_t i = 0; i < size; ++i)
 	{
 		EXPECT_EQ(in[i], out[i]);
@@ -341,7 +341,146 @@ TEST(RepoBSONTest, GetListStringPairField)
 
 	//Shouldn't fail if trying to get a uuid field that doesn't exist
 	EXPECT_EQ(0, bson.getListStringPairField("hello", "first", "third").size());
+	EXPECT_EQ(0, bson.getListStringPairField("hello", "hi", "bye").size());
 	EXPECT_EQ(0, bson.getListStringPairField("hello", "first", "second").size());
 	EXPECT_EQ(0, testBson.getListStringPairField("ice", "first", "second").size());
 	EXPECT_EQ(0, emptyBson.getListStringPairField("ice", "first", "second").size());
+}
+
+TEST(RepoBSONTest, CloneAndShrink)
+{
+	//shrinking a bson without any binary fields should yield an identical bson
+	RepoBSON shrunkBson = testBson.cloneAndShrink();
+
+	EXPECT_EQ(testBson.toString(), shrunkBson.toString());
+	EXPECT_EQ(testBson.getFilesMapping().size(), shrunkBson.getFilesMapping().size());
+	
+	mongo::BSONObjBuilder builder;
+	std::vector < uint8_t > in, out, ref;
+	
+	size_t size = 100;
+
+	in.resize(size);
+	ref.resize(size);
+
+	builder << "stringTest" << "hello";
+	builder << "numTest" << 1.35;
+	builder.appendBinData("binDataTest", in.size(), mongo::BinDataGeneral, in.data());
+
+	std::unordered_map < std::string, std::vector<uint8_t>> mapping, outMapping;
+	mapping["orgRef"] = ref;
+
+	RepoBSON binBson(builder.obj(), mapping);
+
+	shrunkBson = binBson.cloneAndShrink();
+
+	outMapping = shrunkBson.getFilesMapping();
+
+	EXPECT_NE(shrunkBson, binBson);
+	EXPECT_EQ(2, outMapping.size());
+	EXPECT_TRUE(outMapping.find("orgRef") != outMapping.end());
+
+	//Check the binary still obtainable
+	EXPECT_TRUE(shrunkBson.getBinaryFieldAsVector(binBson.getField("binDataTest"), in.size(), &out));
+
+	EXPECT_EQ(in.size(), out.size());
+	for (size_t i = 0; i < out.size(); ++i)
+	{
+		EXPECT_EQ(in[i], out[i]);
+	}
+
+	//Check the out referenced bigfile is still sane
+	EXPECT_EQ(ref.size(), outMapping["orgRef"].size());
+	for (size_t i = 0; i < ref.size(); ++i)
+	{
+		EXPECT_EQ(ref[i], outMapping["orgRef"][i]);
+	}
+
+}
+
+TEST(RepoBSONTest, GetBigBinary)
+{
+	std::vector < uint8_t > in, out;
+
+	size_t size = 100;
+
+	in.resize(size);
+
+	std::unordered_map < std::string, std::vector<uint8_t>> mapping;
+	mapping["orgRef"] = in;
+
+	RepoBSON binBson(testBson, mapping);
+
+	out = binBson.getBigBinary("orgRef");
+	EXPECT_EQ(in.size(), out.size());
+	for (size_t i = 0; i < out.size(); ++i)
+	{
+		EXPECT_EQ(in[i], out[i]);
+	}
+
+	EXPECT_EQ(0, binBson.getBigBinary("hello").size());
+	EXPECT_EQ(0, binBson.getBigBinary("ice").size());
+	EXPECT_EQ(0, emptyBson.getBigBinary("ice").size());
+}
+
+TEST(RepoBSONTest, GetFileList)
+{
+	std::vector < uint8_t > in;
+
+	size_t size = 100;
+
+	in.resize(size);
+
+	std::unordered_map < std::string, std::vector<uint8_t>> mapping;
+	mapping["orgRef"] = in;
+
+	RepoBSON binBson(testBson, mapping);
+	auto fileList = binBson.getFileList();
+
+	EXPECT_EQ(1, fileList.size());
+	EXPECT_TRUE(fileList[0] == "orgRef");
+	EXPECT_EQ(0, testBson.getFileList().size());
+	EXPECT_EQ(0, emptyBson.getFileList().size());
+}
+
+TEST(RepoBSONTest, GetFilesMapping)
+{
+	std::vector < uint8_t > in;
+
+	size_t size = 100;
+
+	in.resize(size);
+
+	std::unordered_map < std::string, std::vector<uint8_t>> mapping, outMapping;
+	mapping["orgRef"] = in;
+
+	RepoBSON binBson(testBson, mapping);
+	outMapping = binBson.getFilesMapping();
+
+	EXPECT_EQ(1, outMapping.size());
+	EXPECT_FALSE(outMapping.find("orgRef") == outMapping.end());
+
+
+	EXPECT_EQ(0, testBson.getFilesMapping().size());
+	EXPECT_EQ(0, emptyBson.getFilesMapping().size());
+}
+
+
+TEST(RepoBSONTest, HasOversizeFiles)
+{
+	std::vector < uint8_t > in;
+
+	size_t size = 100;
+
+	in.resize(size);
+
+	std::unordered_map < std::string, std::vector<uint8_t>> mapping;
+	mapping["orgRef"] = in;
+
+	RepoBSON binBson(testBson, mapping);
+
+	EXPECT_TRUE(binBson.hasOversizeFiles());
+	EXPECT_FALSE(testBson.hasOversizeFiles());
+	EXPECT_FALSE(emptyBson.hasOversizeFiles());
+
 }
