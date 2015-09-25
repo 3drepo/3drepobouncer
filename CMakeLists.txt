@@ -35,7 +35,7 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 unset(Boost_INCLUDE_DIR CACHE)
 unset(Boost_LIBRARY_DIRS CACHE)
 
-find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem)
+find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options)
 add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
 
 #================MONGO SETTINGS=======================
