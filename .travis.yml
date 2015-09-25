@@ -41,12 +41,7 @@ script:
     - ls /usr/local/lib
     - LD_LIBRARY_PATH=$HOME/mongo-cxx/lib/:/usr/local/lib:$LD_LIBRARY_PATH 3drepobouncerTest
 
-branches:
-   only:
-       - master
-       - ISSUE_24
-
 notifications:
     email: 
         recipients:
-            - carmen.fan@3drepo.org
+            - team@3drepo.org
