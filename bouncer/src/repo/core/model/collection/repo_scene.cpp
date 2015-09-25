@@ -25,6 +25,8 @@
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/assign.hpp>
 
+#include <fstream>
+
 #include "repo_scene.h"
 #include "../bson/repo_bson_factory.h"
 #include "../../../lib/repo_log.h"

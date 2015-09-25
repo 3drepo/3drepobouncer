@@ -14,7 +14,7 @@ set(SOURCES
 
 set(HEADERS
 	${HEADERS}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_controller.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bouncer_global.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_controller.h
 	CACHE STRING "HEADERS" FORCE)
 
