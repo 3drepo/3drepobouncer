@@ -13,6 +13,7 @@ on [GitHub](https://github.com/boostorg)
 * [Mongo CXX Driver Legacy v1.0+](https://github.com/mongodb/mongo-cxx-driver)
 See [3D Repo guide for compiling MongoDB](https://github.com/3drepo/3drepobouncer/wiki/Compiling-MongoDB-CXX-Driver)
 * [3D Repo ASSIMP library fork](https://github.com/3drepo/assimp)
+See [3D Repo guide for compiling ASSIMP](https://github.com/3drepo/3drepobouncer/wiki/Compiling-ASSIMP)
 
 To compile and install the library, the following are used:
 * [Python v2.x](https://www.python.org/)
