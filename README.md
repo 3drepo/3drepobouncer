@@ -64,7 +64,7 @@ If the libraries are not installed in `/usr, /usr/local, /opt/local,` set the fo
 
 Recompiling with changes
 ------------
-Apart from the `CMakeLists.txt` at root level, eveyr other cmake file is automatically generated. If you have moved/created any source/header files, please run `python updateSources.py` to update the `CMakeLists.txt` files within the subdirectories before compiling.
+Apart from the `CMakeLists.txt` at root level, every other cmake file is automatically generated. If you have moved/created any source/header files, please run `python updateSources.py` to update the `CMakeLists.txt` files within the subdirectories before compiling.
 
 Do NOT modify any `CMakeLists.txt` files within src folder as any changes will be overwritten when `updateSources.py` is executed!
 
