@@ -61,15 +61,21 @@ int main(int argc, char* argv[]){
 		std::string errMsg;
 		repo::RepoToken* token = controller->authenticateToAdminDatabaseMongo(errMsg, address, port, username, password);
 		if (token)
+		{
 			repoLog("successfully connected to the database!");
-		else
+			bool success = performOperation(controller, token, op);
+
+			delete controller;
+			delete token;
+			return !success;
+		}
+		else{
 			repoLogError("Failed to authenticate to the database: " + errMsg);
+			return EXIT_FAILURE;
+		}
+			
 
-		bool success = performOperation(controller, token, op);
-
-		delete controller;
-		delete token;
-		return !success;
+		
 	}
 	else
 	{
