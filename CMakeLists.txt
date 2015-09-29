@@ -28,6 +28,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 #================BOOST SETTINGS=======================
 add_definitions(-DBOOST_ALL_NO_LIB)
 add_definitions(-DBOOST_LOG_DYN_LINK)
+add_definitions(-DBOOST_PROGRAM_OPTIONS_DYN_LINK)
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
