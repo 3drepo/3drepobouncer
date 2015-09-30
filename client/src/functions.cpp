@@ -81,7 +81,7 @@ bool importFileAndCommit(
 	if (command.nArgcs < 3)
 	{
 		repoLogError("Number of arguments mismatch! " + cmdImportFile 
-			+ " requires 3 arguments: file database project [");
+			+ " requires 3 arguments: file database project [owner] [config file]");
 		return false;
 	}
 
@@ -89,9 +89,14 @@ bool importFileAndCommit(
 	std::string database = command.args[1];
 	std::string project = command.args[2];
 	std::string configFile;
+	std::string owner;
 	if (command.nArgcs > 3)
 	{
-		configFile = command.args[3];
+		owner = command.args[3];
+	}
+	if (command.nArgcs > 4)
+	{
+		configFile = command.args[4];
 	}
 
 	repo::manipulator::modelconvertor::ModelImportConfig config(configFile);
@@ -102,7 +107,10 @@ bool importFileAndCommit(
 		repoLog("Trying to commit this scene to database as " + database + "." + project);
 		graph->setDatabaseAndProjectName(database, project);
 
-		controller->commitScene(token, graph);
+		if (owner.empty())
+			controller->commitScene(token, graph);
+		else
+			controller->commitScene(token, graph, owner);
 		//FIXME: should make commitscene return a boolean even though GUI doesn't care...
 		return true;
 	}

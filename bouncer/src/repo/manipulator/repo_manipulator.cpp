@@ -155,13 +155,14 @@ repo::core::model::RepoScene* RepoManipulator::createMapScene(
 void RepoManipulator::commitScene(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON 	  *cred,
-	repo::core::model::RepoScene           *scene)
+	repo::core::model::RepoScene           *scene,
+	const std::string                      &owner)
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 
 	std::string msg;
-	if (handler && scene && scene->commit(handler, msg, cred->getStringField("user")))
+	if (handler && scene && scene->commit(handler, msg, owner.empty() ? cred->getStringField("user") : owner))
 	{
 		repoInfo << "Scene successfully committed to the database";
 		if (scene->commitStash(handler, msg))
