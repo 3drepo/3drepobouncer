@@ -900,7 +900,7 @@ bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
 	std::ifstream fs(filePath);
 	if (!fs.good())
 	{
-		errMsg += "Failed to import model from file: File doesn't exist";
+		errMsg += "File doesn't exist ("+ filePath +")";
 
 		return false;
 	}

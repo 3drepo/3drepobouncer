@@ -19,14 +19,16 @@
 
 #include <sstream>
 
-static const std::string cmdImportFile = "import";
+static const std::string cmdImportFile = "import"; //file import
+static const std::string cmdTestConn   = "test";   //test the connection
 
 
 std::string helpInfo()
 {
 	std::stringstream ss;
 
-	ss << cmdImportFile << "\t\tImport file to database. (args: file database project [configfile])";
+	ss << cmdImportFile << "\t\tImport file to database. (args: file database project [configfile])\n";
+	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
 
 	return ss.str();
 }
@@ -35,7 +37,8 @@ int32_t knownValid(const std::string &cmd)
 {
 	if (cmd == cmdImportFile)
 		return 3;
-
+	if (cmd == cmdTestConn)
+		return 0;
 	return -1;
 }
 
@@ -48,6 +51,12 @@ bool performOperation(
 	if (command.command == cmdImportFile)
 	{
 		return importFileAndCommit(controller, token, command);
+	}
+	else if (command.command == cmdTestConn)
+	{
+		//This is just to test if the client is working and if the connection is working
+		//if we got a token from the controller we can assume that it worked.
+		return token;
 	}
 
 
@@ -85,19 +94,12 @@ bool importFileAndCommit(
 		configFile = command.args[3];
 	}
 
-
 	repo::manipulator::modelconvertor::ModelImportConfig config(configFile);
-
-
-
-
-
 
 	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, &config);
 	if (graph)
 	{
 		repoLog("Trying to commit this scene to database as " + database + "." + project);
-
 		graph->setDatabaseAndProjectName(database, project);
 
 		controller->commitScene(token, graph);
