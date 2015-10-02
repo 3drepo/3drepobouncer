@@ -81,7 +81,7 @@ uint64_t MongoDatabaseHandler::countItemsInCollection(
 	const std::string &collection,
 	std::string &errMsg)
 {
-	uint64_t numItems;
+	uint64_t numItems = 0;
 	mongo::DBClientBase *worker;
 	try{
 
