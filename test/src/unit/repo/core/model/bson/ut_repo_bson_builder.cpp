@@ -23,9 +23,39 @@
 
 using namespace repo::core::model;
 
+RepoBSON emptyBSON;
+
 TEST(RepoBSONBuilderTest, ConstructBuilder)
 {
 	RepoBSONBuilder b;
 	RepoBSONBuilder *b_ptr = new RepoBSONBuilder();
 	delete b_ptr;
+}
+
+TEST(RepoBSONBuilderTest, appendArray)
+{
+	std::vector<std::string> arr({"hello", "bye"});
+	RepoBSON arrBson = BSON("1" << arr[0] << "2" << arr[1]);
+	mongo::BSONObjBuilder mbuilder;
+	mbuilder.appendArray("arrayTest", arrBson);
+	RepoBSON b(mbuilder.obj());
+
+	RepoBSONBuilder builder, builder2;
+	builder.appendArray("arrayTest", arr);
+	builder2.appendArray("arrayTest", RepoBSON(arrBson));
+
+	RepoBSON arrayRepoBson = builder.obj();
+	RepoBSON arrayRepoBson2 = builder2.obj();
+
+	EXPECT_EQ(arrayRepoBson.toString(), b.toString());
+	EXPECT_EQ(arrayRepoBson2.toString(), b.toString());
+
+	//Sanity check: make sure everything is not equal to empty bson.
+	EXPECT_NE(emptyBSON.toString(), arrayRepoBson.toString());
+	//Sanity check: make sure appending an empty bson/vector doesn't crash
+	RepoBSONBuilder testBuilder;
+
+	testBuilder.appendArray("emptyTest", emptyBSON);
+	testBuilder.appendArray("emptyTest", std::vector<std::string>());
+	
 }
