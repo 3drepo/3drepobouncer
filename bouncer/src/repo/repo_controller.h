@@ -312,10 +312,12 @@ namespace repo{
 		* Commit a scene graph
 		* @param token Authentication token
 		* @param scene RepoScene to commit
+		* @param owner specify the owner of the scene (by default it is the user authorised to commit)
 		*/
 		void commitScene(
 			const RepoToken                     *token,
-			repo::core::model::RepoScene *scene);
+			repo::core::model::RepoScene        *scene,
+			const std::string                   &owner = "");
 
 		/**
 		* Insert a new user into the database

@@ -78,7 +78,7 @@ function connectQ(){
 			ch.consume(conf.rabbitmq.worker_queue, function(msg){
 				console.log(" [x] Received %s", msg.content.toString());
 				exeCommand(msg.content.toString(), function(reply){
-					console.log("sending to reply queue: %s", reply);
+					console.log("sending to reply queue(%s): %s", msg.properties.replyTo, reply);
 					ch.sendToQueue(msg.properties.replyTo, new Buffer(reply),
 						{correlationId: msg.properties.correlationId});	
 				});		
