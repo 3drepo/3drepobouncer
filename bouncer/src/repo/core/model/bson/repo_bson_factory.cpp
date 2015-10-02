@@ -110,15 +110,15 @@ CameraNode RepoBSONFactory::makeCameraNode(
 
 	//--------------------------------------------------------------------------
 	// Look at vector
-	builder.appendVector(REPO_NODE_LABEL_LOOK_AT, lookAt);
+	builder.append(REPO_NODE_LABEL_LOOK_AT, lookAt);
 
 	//--------------------------------------------------------------------------
 	// Position vector
-	builder.appendVector(REPO_NODE_LABEL_POSITION, position);
+	builder.append(REPO_NODE_LABEL_POSITION, position);
 
 	//--------------------------------------------------------------------------
 	// Up vector
-	builder.appendVector(REPO_NODE_LABEL_UP, up);
+	builder.append(REPO_NODE_LABEL_UP, up);
 
 	return CameraNode(builder.obj());
 }

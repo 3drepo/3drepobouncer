@@ -48,21 +48,6 @@ void RepoBSONBuilder::appendArrayPair(
 }
 
 
-void RepoBSONBuilder::appendVector(
-	const std::string    &label,
-	const repo_vector_t vec
-	)
-{
-
-	float vector[] = { vec.x, vec.y, vec.z };
-	RepoBSONBuilder array;
-	for (uint32_t i = 0; i < 3; ++i)
-		array << std::to_string(i) << vector[i];
-
-	appendArray(label, array.obj());
-}
-
-
 RepoBSON RepoBSONBuilder::obj()
 {
 	mongo::BSONObjBuilder build;
@@ -77,5 +62,15 @@ template<> void repo::core::model::RepoBSONBuilder::append<repoUUID>
 {
 	appendUUID(label, uuid);
 }
+
+template<> void repo::core::model::RepoBSONBuilder::append<repo_vector_t>
+	(
+		const std::string &label,
+		const repo_vector_t &vec
+		)
+{
+	appendArray(label, std::vector<float>({ vec.x, vec.y, vec.z }));
+}
+
 
 

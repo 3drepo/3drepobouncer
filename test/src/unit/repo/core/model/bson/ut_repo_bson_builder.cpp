@@ -69,6 +69,7 @@ TEST(RepoBSONBuilderTest, AppendGeneric)
 	long long longT = 123412452141L;
 	float floatT = 1.2345678;
 	repoUUID idT = generateUUID();
+	repo_vector_t rvecT = { 0.1234, 1.2345, 2.34567 };
 	//TODO: add more if more comes up!
 
 
@@ -77,6 +78,7 @@ TEST(RepoBSONBuilderTest, AppendGeneric)
 	builder.append("long", longT);
 	builder.append("float", floatT);
 	builder.append("id", idT);
+	builder.append("repoVector", rvecT);
 
 	RepoBSON bson = builder.obj();
 
@@ -86,6 +88,12 @@ TEST(RepoBSONBuilderTest, AppendGeneric)
 	EXPECT_EQ(bson.getField("float").Double(), floatT);
 	EXPECT_EQ(bson.getUUIDField("id"), idT);
 
+	std::vector<float> rvecOut = bson.getFloatArray("repoVector");
+	EXPECT_EQ(3, rvecOut.size());
+	EXPECT_EQ(rvecT.x, rvecOut[0]);
+	EXPECT_EQ(rvecT.y, rvecOut[1]);
+	EXPECT_EQ(rvecT.z, rvecOut[2]);
+	
 }
 
 
