@@ -51,7 +51,7 @@ uint64_t RepoBSONFactory::appendDefaults(
 	// Parents
 	if (parents.size() > 0)
 	{
-		builder.appendArray(REPO_NODE_LABEL_PARENTS, builder.createArrayBSON(parents));
+		builder.appendArray(REPO_NODE_LABEL_PARENTS, parents);
 
 		bytesize += parents.size() * sizeof(parents[0]);
 	}
@@ -136,13 +136,13 @@ MaterialNode RepoBSONFactory::makeMaterialNode(
 	appendDefaults(builder, REPO_NODE_TYPE_MATERIAL, apiLevel, generateUUID(), name);
 
 	if (material.ambient.size() > 0)
-		builder.appendArray(REPO_NODE_MATERIAL_LABEL_AMBIENT, builder.createArrayBSON(material.ambient));
+		builder.appendArray(REPO_NODE_MATERIAL_LABEL_AMBIENT, material.ambient);
 	if (material.diffuse.size() > 0)
-		builder.appendArray(REPO_NODE_MATERIAL_LABEL_DIFFUSE, builder.createArrayBSON(material.diffuse));
+		builder.appendArray(REPO_NODE_MATERIAL_LABEL_DIFFUSE, material.diffuse);
 	if (material.specular.size() > 0)
-		builder.appendArray(REPO_NODE_MATERIAL_LABEL_SPECULAR, builder.createArrayBSON(material.specular));
+		builder.appendArray(REPO_NODE_MATERIAL_LABEL_SPECULAR, material.specular);
 	if (material.emissive.size() > 0)
-		builder.appendArray(REPO_NODE_MATERIAL_LABEL_EMISSIVE, builder.createArrayBSON(material.emissive));
+		builder.appendArray(REPO_NODE_MATERIAL_LABEL_EMISSIVE, material.emissive);
 
 
 	if (material.isWireframe)
@@ -311,7 +311,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 		for (int i = 0; i < boundingBox.size(); i++)
 		{
-			arrayBuilder.appendArray(std::to_string(i), builder.createArrayBSON(boundingBox[i]));
+			arrayBuilder.appendArray(std::to_string(i), boundingBox[i]);
 			bytesize += boundingBox[i].size() * sizeof(boundingBox[i][0]);
 		}
 
@@ -326,7 +326,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 		for (int i = 0; i < outline.size(); i++)
 		{
-			arrayBuilder.appendArray(boost::lexical_cast<std::string>(i), builder.createArrayBSON(outline[i]));
+			arrayBuilder.appendArray(boost::lexical_cast<std::string>(i), outline[i]);
 			bytesize += outline[i].size() * sizeof(outline[i][0]);
 		}
 
@@ -725,23 +725,23 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 
 	// Current Unique IDs
 	if (currentNodes.size() > 0)
-		builder.appendArray(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS, builder.createArrayBSON(currentNodes));
+		builder.appendArray(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS, currentNodes);
 
 	//--------------------------------------------------------------------------
 	// Added Shared IDs
 
 	if (added.size() > 0)
-		builder.appendArray(REPO_NODE_REVISION_LABEL_ADDED_SHARED_IDS, builder.createArrayBSON(added));
+		builder.appendArray(REPO_NODE_REVISION_LABEL_ADDED_SHARED_IDS, added);
 
 	//--------------------------------------------------------------------------
 	// Deleted Shared IDs
 	if (removed.size() > 0)
-		builder.appendArray(REPO_NODE_REVISION_LABEL_DELETED_SHARED_IDS, builder.createArrayBSON(removed));
+		builder.appendArray(REPO_NODE_REVISION_LABEL_DELETED_SHARED_IDS, removed);
 
 	//--------------------------------------------------------------------------
 	// Modified Shared IDs
 	if (modified.size() > 0)
-		builder.appendArray(REPO_NODE_REVISION_LABEL_MODIFIED_SHARED_IDS, builder.createArrayBSON(modified));
+		builder.appendArray(REPO_NODE_REVISION_LABEL_MODIFIED_SHARED_IDS, modified);
 
 	//--------------------------------------------------------------------------
 

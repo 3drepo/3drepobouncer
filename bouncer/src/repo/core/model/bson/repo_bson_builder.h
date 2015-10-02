@@ -45,18 +45,28 @@ namespace repo {
 						RepoBSONBuilder();
 						~RepoBSONBuilder();
 
-						//! Appends a vector as an array to BSON builder.
-						//FIXME: should turn this to an appendArray kind of function
-						// instead of a stateless bson creation (technically doesn't belong here if it is
-						// just a object creation
+						/**
+						* Append a vector as object into the bson
+						* This function creates an embedded RepoBSON and append that object as an array into the builder
+						* @param label label of the array
+						* @param vec vector to append
+						*/
 						template <class T>
-						RepoBSON createArrayBSON(
+						void appendArray(
+							const std::string &label,
 							const std::vector<T> &vec)
 						{
 							RepoBSONBuilder array;
 							for (unsigned int i = 0; i < vec.size(); ++i)
 								array.append(std::to_string(i), vec[i]);
-							return array.obj();
+							mongo::BSONObjBuilder::appendArray(label, array.obj());
+						}
+
+						void appendArray(
+							const std::string &label,
+							const RepoBSON &bson)
+						{
+							mongo::BSONObjBuilder::appendArray(label,bson);
 						}
 
 

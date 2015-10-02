@@ -59,7 +59,7 @@ RepoNode RepoNode::cloneAndAddParent(
 	std::vector<repoUUID> currentParents = getParentIDs();
 	currentParents.push_back(parentID);
 	
-	builder.appendArray(REPO_NODE_LABEL_PARENTS, arrayBuilder.createArrayBSON(currentParents));
+	builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);
 
 	builder.appendElementsUnique(*this);
 
@@ -97,7 +97,7 @@ RepoNode RepoNode::cloneAndAddMergedNodes(
 {
 	RepoBSONBuilder builder;
 	RepoBSONBuilder arrayBuilder;
-	builder.appendArray(REPO_LABEL_MERGED_NODES, arrayBuilder.createArrayBSON(mergeMap));
+	builder.appendArray(REPO_LABEL_MERGED_NODES, mergeMap);
 
 	builder.appendElementsUnique(*this);
 
