@@ -129,12 +129,13 @@ RepoToken* RepoController::authenticateMongo(
 
 void RepoController::commitScene(
 	const RepoToken                     *token,
-	repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene        *scene,
+	const std::string                   &owner)
 {
 	if (token)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		worker->commitScene(token->databaseAd, token->credentials, scene);
+		worker->commitScene(token->databaseAd, token->credentials, scene, owner);
 		workerPool.push(worker);
 	}
 	else

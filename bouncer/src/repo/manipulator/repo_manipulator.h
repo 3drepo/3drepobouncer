@@ -85,11 +85,13 @@ namespace repo{
 			* @param databaseAd mongo database address:port
 			* @param cred user credentials in bson form
 			* @param scene scene to commit
+			* @param owner specify the owner of the scene (by default it is the user authorised to commit)
 			*/
 			void commitScene(
 				const std::string                             &databaseAd,
 				const repo::core::model::RepoBSON 	  *cred,
-				repo::core::model::RepoScene           *scene);
+				repo::core::model::RepoScene           *scene,
+				const std::string                   &owner = "");
 
 
 			/**
