@@ -56,6 +56,36 @@ TEST(RepoBSONBuilderTest, appendArray)
 	RepoBSONBuilder testBuilder;
 
 	testBuilder.appendArray("emptyTest", emptyBSON);
-	testBuilder.appendArray("emptyTest", std::vector<std::string>());
+	testBuilder.appendArray("emptyTest2", std::vector<std::string>());
 	
+}
+
+TEST(RepoBSONBuilderTest, appendGeneric)
+{
+	RepoBSONBuilder builder;
+
+	std::string stringT = "string";
+	int intT = 64;
+	long long longT = 123412452141L;
+	float floatT = 1.2345678;
+	repoUUID idT = generateUUID();
+	//TODO: add more if more comes up!
+
+
+	builder.append("string", stringT);
+	builder.append("int", intT);
+	builder.append("long", longT);
+	builder.append("float", floatT);
+	builder.append("id", idT);
+
+	RepoBSON bson = builder.obj();
+
+	EXPECT_EQ(bson.getStringField("string"), stringT);
+	EXPECT_EQ(bson.getField("int").Int(), intT);
+	EXPECT_EQ(bson.getField("long").Long(), longT);
+	EXPECT_EQ(bson.getField("float").Double(), floatT);
+	EXPECT_EQ(bson.getUUIDField("id"), idT);
+
+
+
 }
