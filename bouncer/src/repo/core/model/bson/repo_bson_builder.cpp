@@ -27,16 +27,24 @@ void RepoBSONBuilder::appendArrayPair(
 	const std::string &sndLabel
 	)
 {
-	mongo::BSONArrayBuilder arrBuilder;
-
-	for (auto it = list.begin(); it != list.end(); ++it)
+	if (list.size() > 0)
 	{
-		RepoBSONBuilder innerBuilder;
-		innerBuilder << fstLabel << it->first;
-		innerBuilder << sndLabel << it->second;
-		arrBuilder.append(innerBuilder.obj());
+		mongo::BSONArrayBuilder arrBuilder;
+		for (auto it = list.begin(); it != list.end(); ++it)
+		{
+			RepoBSONBuilder innerBuilder;
+			innerBuilder << fstLabel << it->first;
+			innerBuilder << sndLabel << it->second;
+			arrBuilder.append(innerBuilder.obj());
+		}
+		append(label, arrBuilder.arr());
 	}
-	append(label, arrBuilder.arr());
+	else
+	{
+		repoWarning << "Trying to append an empty array pair with label:" << label;
+	}
+	
+
 }
 
 

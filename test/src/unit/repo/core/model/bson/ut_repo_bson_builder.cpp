@@ -32,7 +32,7 @@ TEST(RepoBSONBuilderTest, ConstructBuilder)
 	delete b_ptr;
 }
 
-TEST(RepoBSONBuilderTest, appendArray)
+TEST(RepoBSONBuilderTest, AppendArray)
 {
 	std::vector<std::string> arr({"hello", "bye"});
 	RepoBSON arrBson = BSON("1" << arr[0] << "2" << arr[1]);
@@ -60,7 +60,7 @@ TEST(RepoBSONBuilderTest, appendArray)
 	
 }
 
-TEST(RepoBSONBuilderTest, appendGeneric)
+TEST(RepoBSONBuilderTest, AppendGeneric)
 {
 	RepoBSONBuilder builder;
 
@@ -86,6 +86,38 @@ TEST(RepoBSONBuilderTest, appendGeneric)
 	EXPECT_EQ(bson.getField("float").Double(), floatT);
 	EXPECT_EQ(bson.getUUIDField("id"), idT);
 
+}
 
+
+TEST(RepoBSONBuilderTest, AppendArrayPair)
+{
+	std::list<std::pair<std::string, std::string>> list;
+	int size = 10;
+	for (int i = 0; i < size; ++i)
+	{
+		std::pair<std::string, std::string> p(std::to_string(std::rand()), std::to_string(std::rand()));
+		list.push_back(p);
+	}
+	
+	RepoBSONBuilder builder;
+	builder.appendArrayPair("arrayPairTest", list, "first", "second");
+
+	RepoBSON testBson = builder.obj();
+
+	std::list<std::pair<std::string, std::string> > outList = testBson.getListStringPairField("arrayPairTest", "first", "second");
+
+	EXPECT_EQ(outList.size(), list.size());
+
+	auto inIt = list.begin();
+	auto outIt = outList.begin();
+
+	for (; inIt != list.end(); ++inIt, ++outIt)
+	{
+		EXPECT_EQ(outIt->first, inIt->first);
+		EXPECT_EQ(outIt->second, inIt->second);
+	}
+
+	//Ensure this doesn't crash and die.
+	builder.appendArrayPair("blah", std::list<std::pair<std::string, std::string> >(), "first", "second");
 
 }
