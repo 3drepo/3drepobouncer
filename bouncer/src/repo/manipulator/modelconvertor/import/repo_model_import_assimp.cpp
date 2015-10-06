@@ -709,6 +709,10 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		{
 			for (uint32_t i = 0; i < assimpScene->mNumMaterials; ++i)
 			{
+				if (i % 100 == 0 || i == assimpScene->mNumMaterials - 1)
+				{
+					repoTrace << "Constructing " << i << " of " << assimpScene->mNumMaterials;
+				}
 				aiString name;
 				assimpScene->mMaterials[i]->Get(AI_MATKEY_NAME, name);
 
@@ -741,6 +745,10 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		{
 			for (unsigned int i = 0; i < assimpScene->mNumMeshes; ++i)
 			{
+				if (i % 100 == 0 || i == assimpScene->mNumMeshes-1)
+				{
+					repoTrace << "Constructing " << i << " of " << assimpScene->mNumMeshes;
+				}
 				repo::core::model::RepoNode* mesh = createMeshRepoNode(
 					assimpScene->mMeshes[i],
 					originalOrderMaterial);
@@ -769,6 +777,11 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		{
 			for (unsigned int i = 0; i < assimpScene->mNumCameras; ++i)
 			{
+
+				if (i % 100 == 0 || i == assimpScene->mNumCameras - 1)
+				{
+					repoTrace << "Constructing " << i << " of " << assimpScene->mNumCameras;
+				}
 				std::string cameraName(assimpScene->mCameras[i]->mName.data);
 				repo::core::model::RepoNode* camera = createCameraRepoNode(assimpScene->mCameras[i]);
 				if (!camera)

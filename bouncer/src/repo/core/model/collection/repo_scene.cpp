@@ -592,8 +592,19 @@ bool RepoScene::commitNodes(
 	bool isStashGraph = gType == GraphType::OPTIMIZED;
 	repoGraphInstance &g = isStashGraph ? stashGraph : graph;
 	std::string ext = isStashGraph ? stashExt : sceneExt;
+
+	size_t count = 0;
+	size_t total = nodesToCommit.size();
+
+	repoTrace << "Committing " << total << " nodes...";
+
 	for (const repoUUID &id : nodesToCommit)
 	{
+		if (++count % 100 == 0 || count == total -1)
+		{
+			repoTrace << "Committing " << id << " (" << count << " of " << total << ")";
+		}
+
 		const repoUUID uniqueID = gType == GraphType::OPTIMIZED ? id : g.sharedIDtoUniqueID[id];
 		RepoNode *node = g.nodesByUniqueID[uniqueID];
 		if (node->objsize() > handler->documentSizeLimit())
