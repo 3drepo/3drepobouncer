@@ -21,6 +21,7 @@
 
 #pragma once
 
+#include <string>
 #include <map>
 #include <stdint.h>
 
