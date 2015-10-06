@@ -50,7 +50,19 @@ bool performOperation(
 {
 	if (command.command == cmdImportFile)
 	{
-		return importFileAndCommit(controller, token, command);
+		bool success = false;
+		
+		try{
+
+			success = importFileAndCommit(controller, token, command);
+		}
+		catch (const std::exception &e)
+		{
+			repoLogError("Failed to import and commit file: " + std::string(e.what()));
+		}
+
+		return success;
+		
 	}
 	else if (command.command == cmdTestConn)
 	{
