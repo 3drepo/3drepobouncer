@@ -75,7 +75,7 @@ TEST(RepoBSONTest, GetBinaryAsVectorEmbedded)
 	RepoBSON bson(builder);
 
 
-	EXPECT_TRUE(bson.getBinaryFieldAsVector(bson.getField("binDataTest"), in.size(), &out));
+	EXPECT_TRUE(bson.getBinaryFieldAsVector("binDataTest", in.size(), &out));
 
 	EXPECT_EQ(in.size(), out.size());
 	for (size_t i = 0; i < size; ++i)
@@ -87,10 +87,10 @@ TEST(RepoBSONTest, GetBinaryAsVectorEmbedded)
 	std::vector<char> *null = nullptr;
 
 	//Invalid retrieval, but they shouldn't throw exception
-	EXPECT_FALSE(bson.getBinaryFieldAsVector(bson.getField("binDataTest"), in.size(), null));
-	EXPECT_FALSE(bson.getBinaryFieldAsVector(bson.getField("numTest"), &out));
-	EXPECT_FALSE(bson.getBinaryFieldAsVector(bson.getField("stringTest"), &out));
-	EXPECT_FALSE(bson.getBinaryFieldAsVector(bson.getField("doesn'tExist"), &out));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector("binDataTest", in.size(), null));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector("numTest", &out));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector("stringTest", &out));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector("doesn'tExist", &out));
 }
 
 TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
@@ -106,14 +106,15 @@ TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
 
 	std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> map;
 	std::string fname = "testingfile";
-	map[fname] = std::pair<std::string, std::vector<uint8_t>>("binDataTest",in);
+	map["binDataTest"] = std::pair<std::string, std::vector<uint8_t>>(fname,in);
 
 
 
 	RepoBSON bson(BSON("binDataTest" << fname), map);
 
 
-	EXPECT_TRUE(bson.getBinaryFieldAsVector(bson.getField("binDataTest"), in.size(), &out));
+	EXPECT_TRUE(bson.getBinaryFieldAsVector("binDataTest", in.size(), &out));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector(fname, in.size(), &out)); //make sure fieldname/filename are not mixed up.
 
 	ASSERT_EQ(out.size(), in.size());
 	for (size_t i = 0; i < size; ++i)
@@ -383,7 +384,7 @@ TEST(RepoBSONTest, CloneAndShrink)
 	EXPECT_TRUE(outMapping.find("orgRef") != outMapping.end());
 
 	//Check the binary still obtainable
-	EXPECT_TRUE(shrunkBson.getBinaryFieldAsVector(binBson.getField("binDataTest"), in.size(), &out));
+	EXPECT_TRUE(shrunkBson.getBinaryFieldAsVector("binDataTest", in.size(), &out));
 
 	EXPECT_EQ(in.size(), out.size());
 	for (size_t i = 0; i < out.size(); ++i)
@@ -410,11 +411,11 @@ TEST(RepoBSONTest, GetBigBinary)
 	in.resize(size);
 
 	std::unordered_map < std::string, std::pair<std::string, std::vector<uint8_t>>> mapping;
-	mapping["orgRef"] = std::pair<std::string, std::vector<uint8_t>>("blah", in);
+	mapping["blah"] = std::pair<std::string, std::vector<uint8_t>>("orgRef", in);
 
 	RepoBSON binBson(testBson, mapping);
 
-	out = binBson.getBigBinary("orgRef");
+	out = binBson.getBigBinary("blah");
 	EXPECT_EQ(in.size(), out.size());
 	for (size_t i = 0; i < out.size(); ++i)
 	{

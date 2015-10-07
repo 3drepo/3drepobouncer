@@ -77,7 +77,7 @@ std::vector<repo_color4d_t>* MeshNode::getColors() const
 	std::vector<repo_color4d_t> *colors = new std::vector<repo_color4d_t>();
 	if (hasField(REPO_NODE_MESH_LABEL_COLORS))
 	{
-		getBinaryFieldAsVector(getField(REPO_NODE_MESH_LABEL_COLORS), colors);
+		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_COLORS, colors);
 	}
 
 	return colors;
@@ -91,11 +91,11 @@ std::vector<repo_vector_t>* MeshNode::getVertices() const
 		if (hasField(REPO_NODE_MESH_LABEL_VERTICES_COUNT))
 		{
 			const uint32_t verticesSize = getField(REPO_NODE_MESH_LABEL_VERTICES_COUNT).numberInt();
-			getBinaryFieldAsVector(getField(REPO_NODE_MESH_LABEL_VERTICES), verticesSize, vertices);
+			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_VERTICES, verticesSize, vertices);
 
 		}
 		else
-			getBinaryFieldAsVector(getField(REPO_NODE_MESH_LABEL_VERTICES), vertices);
+			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_VERTICES, vertices);
 
 	}
 
@@ -170,11 +170,11 @@ std::vector<repo_vector_t>* MeshNode::getNormals() const
 		if (hasField(REPO_NODE_MESH_LABEL_VERTICES_COUNT))
 		{
 			const uint32_t verticesSize = getField(REPO_NODE_MESH_LABEL_VERTICES_COUNT).numberInt();
-			getBinaryFieldAsVector(getField(REPO_NODE_MESH_LABEL_NORMALS), verticesSize, vertices);
+			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_NORMALS, verticesSize, vertices);
 
 		}
 		else
-			getBinaryFieldAsVector(getField(REPO_NODE_MESH_LABEL_NORMALS), vertices);
+			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_NORMALS, vertices);
 
 	}
 
@@ -194,11 +194,11 @@ std::vector<repo_vector2d_t>* MeshNode::getUVChannels() const
 			const uint32_t uvChannelSize = getField(REPO_NODE_MESH_LABEL_VERTICES_COUNT).numberInt()
 				* getField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT).numberInt();
 
-			getBinaryFieldAsVector(getField(REPO_NODE_MESH_LABEL_UV_CHANNELS), uvChannelSize, channels);
+			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_UV_CHANNELS, uvChannelSize, channels);
 
 		}
 		else
-			getBinaryFieldAsVector(getField(REPO_NODE_MESH_LABEL_UV_CHANNELS), channels);		
+			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_UV_CHANNELS, channels);		
 	}
 
 
@@ -251,11 +251,11 @@ std::vector<repo_face_t>* MeshNode::getFaces() const
 			int32_t facesByteCount = getField(REPO_NODE_MESH_LABEL_FACES_BYTE_COUNT).numberInt();
 
 			serializedFaces->resize(facesByteCount / sizeof(uint32_t));
-			getBinaryFieldAsVector(getField(REPO_NODE_MESH_LABEL_FACES), facesByteCount / sizeof(uint32_t), serializedFaces);
+			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_FACES, facesByteCount / sizeof(uint32_t), serializedFaces);
 		}
 		else
 		{
-			getBinaryFieldAsVector(getField(REPO_NODE_MESH_LABEL_FACES), serializedFaces);
+			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_FACES, serializedFaces);
 		}
 
 		

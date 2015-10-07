@@ -37,7 +37,7 @@ RepoBSON::RepoBSON(
 			for (const auto & pair : bigFiles)
 			{
 				//append field name :file name
-				arrbuilder << pair.second.first << pair.first;
+				arrbuilder << pair.first << pair.second.first;
 			}
 
 			builder.append(REPO_LABEL_OVERSIZED_FILES, arrbuilder.obj());
@@ -67,9 +67,9 @@ RepoBSON RepoBSON::cloneAndShrink() const
 		{
 			std::string fileName = uniqueIDStr + "_" + field;
 			builder << field << fileName;
-			rawFiles[fileName] = std::pair<std::string, std::vector<uint8_t>>(field, std::vector<uint8_t>());
+			rawFiles[field] = std::pair<std::string, std::vector<uint8_t>>(fileName, std::vector<uint8_t>());
 
-			getBinaryFieldAsVector(getField(field), &rawFiles[fileName].second);
+			getBinaryFieldAsVector(getField(field), &rawFiles[field].second);
 		}
 	}
 
@@ -162,7 +162,7 @@ std::vector<std::pair<std::string, std::string>> RepoBSON::getFileList() const
 		extRefbson.getFieldNames(fieldNames);
 		for (const auto &name : fieldNames)
 		{
-			fileList.push_back(std::pair<std::string, std::string>(extRefbson.getStringField(name), name));
+			fileList.push_back(std::pair<std::string, std::string>(name, extRefbson.getStringField(name)));
 		}
 	}
 

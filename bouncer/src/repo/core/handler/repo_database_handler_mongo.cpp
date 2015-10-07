@@ -139,7 +139,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::createRepoBSON(
 	for (const auto &pair : extFileList)
 	{
 		repoTrace << "Found existing GridFS reference, retrieving file @ " << database << "." << collection << ":" << pair.first;
-		binMap[pair.first] = std::pair<std::string, std::vector<uint8_t>>(pair.second, getBigFile(worker, database, collection, pair.first));
+		binMap[pair.first] = std::pair<std::string, std::vector<uint8_t>>(pair.second, getBigFile(worker, database, collection, pair.second));
 	}
 
 	return repo::core::model::RepoBSON(obj, binMap);
@@ -927,8 +927,8 @@ bool MongoDatabaseHandler::storeBigFiles(
 				//store the big biary file within GridFS
 				mongo::GridFS gfs(*worker, database, collection);
 				//FIXME: there must be errors to catch...
-				repoTrace << "storing " << file.first << "("<< file.second << ") in gridfs: " << database << "." << collection;
-				mongo::BSONObj bson = gfs.storeFile((char*)&binary[0], binary.size() * sizeof(binary[0]), file.first);
+				repoTrace << "storing " << file.second << "("<< file.first << ") in gridfs: " << database << "." << collection;
+				mongo::BSONObj bson = gfs.storeFile((char*)&binary[0], binary.size() * sizeof(binary[0]), file.second);
 
 				repoTrace << "returned object: " << bson.toString();
 

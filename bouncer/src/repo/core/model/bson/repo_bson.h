@@ -115,26 +115,31 @@ namespace repo {
 
 						/**
 						* get a binary field in the form of vector of T
-						* @param bse bson element
+						* @param field field name
 						* @param vectorSize size of the vector
 						* @param vec pointer to a vector to store this data
 						* @return returns true upon success.
 						*/
 						template <class T>
 						bool getBinaryFieldAsVector(
-							const RepoBSONElement &bse,
+							const std::string &field,
 							const uint32_t vectorSize,
 							std::vector<T> * vec) const
 						{
 							bool success = false;
-							if (bse.isNull()) return false;
+							if (!hasField(field))
+							{
+								repoError << "Trying to retrieve binary from a field that doesn't exist(" << field << ")";
+								return false;
+							}
 
+							RepoBSONElement bse = getField(field);
 
 							if (vec && bse.type() == ElementType::STRING)
 							{
 								//this is a reference, try to get it from map
 								repoTrace << "getting Binary from reference...";
-								std::vector<uint8_t> bin = getBigBinary(bse.str());
+								std::vector<uint8_t> bin = getBigBinary(field);
 								repoTrace << " Get binary from Grid FS";
 								if (bin.size() > 0)
 								{
@@ -196,30 +201,32 @@ namespace repo {
 
 						/**
 						* get a binary field in the form of vector of T
-						* @param bse bson element
+						* @param field field name
 						* @param vec pointer to a vector to store this data
 						* @return returns true upon success.
 						*/
 						template <class T>
 						bool getBinaryFieldAsVector(
-							const RepoBSONElement &bse,
+							const std::string &field,
 							std::vector<T> * vec) const
+
 						{
 							bool success = false;
-							repoTrace << bse;
-
-							if (bse.eoo())
+							
+							if (!hasField(field))
 							{
 								repoError << "Trying to get binary object from an empty field!";
 								return false;
 							}
+
+							RepoBSONElement bse = getField(field);
 
 	
 							if (vec && bse.type() == ElementType::STRING)
 							{
 								repoTrace << "getting Binary from reference...";
 								//this is a reference, try to get it from map
-								std::vector<uint8_t> bin = getBigBinary(bse.str());
+								std::vector<uint8_t> bin = getBigBinary(field);
 								repoTrace << " Get binary from Grid FS";
 								if (bin.size() > 0)
 								{
@@ -327,7 +334,7 @@ namespace repo {
 						/**
 						* Get the list of file names for the big files 
 						* needs to be stored for this bson
-						* @return returns a list of {file name, field name} needed to be stored
+						* @return returns a list of {field name, file name} needed to be stored
 						*/
 						std::vector<std::pair<std::string, std::string>> getFileList() const;
 

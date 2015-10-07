@@ -49,7 +49,7 @@ std::vector<char>* TextureNode::getRawData() const
 		hasField(REPO_NODE_LABEL_DATA_BYTE_COUNT))
 	{
 		dataVec = new std::vector<char>();
-		getBinaryFieldAsVector(getField(REPO_LABEL_DATA),
+		getBinaryFieldAsVector(REPO_LABEL_DATA,
 			getField(REPO_NODE_LABEL_DATA_BYTE_COUNT).numberInt(), dataVec);
 	}
 	else{
