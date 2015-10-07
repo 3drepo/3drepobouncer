@@ -132,14 +132,14 @@ repo::core::model::RepoBSON MongoDatabaseHandler::createRepoBSON(
 {
 	repo::core::model::RepoBSON orgBson = repo::core::model::RepoBSON(obj);
 
-	std::vector<std::string> extFileList = orgBson.getFileList();
+	std::vector<std::pair<std::string, std::string>> extFileList = orgBson.getFileList();
 
-	std::unordered_map< std::string, std::vector<uint8_t> > binMap;
+	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>> > binMap;
 
-	for (const std::string &file : extFileList)
+	for (const auto &pair : extFileList)
 	{
-		repoTrace << "Found existing GridFS reference, retrieving file @ " << database << "." << collection << ":" << file;
-		binMap[file] = getBigFile(worker, database, collection, file);
+		repoTrace << "Found existing GridFS reference, retrieving file @ " << database << "." << collection << ":" << pair.first;
+		binMap[pair.first] = std::pair<std::string, std::vector<uint8_t>>(pair.second, getBigFile(worker, database, collection, pair.first));
 	}
 
 	return repo::core::model::RepoBSON(obj, binMap);
@@ -916,19 +916,19 @@ bool MongoDatabaseHandler::storeBigFiles(
 	//insert files into gridFS if applicable
 	if (obj.hasOversizeFiles())
 	{
-		const std::vector<std::string> fNames = obj.getFileList();
+		const std::vector<std::pair<std::string,std::string>> fNames = obj.getFileList();
 		repoTrace << "storeBigFiles: #oversized files: " << fNames.size();
 
-		for (const std::string &file : fNames)
+		for (const auto &file : fNames)
 		{
-			std::vector<uint8_t> binary = obj.getBigBinary(file);
+			std::vector<uint8_t> binary = obj.getBigBinary(file.first);
 			if (binary.size())
 			{
 				//store the big biary file within GridFS
 				mongo::GridFS gfs(*worker, database, collection);
 				//FIXME: there must be errors to catch...
-				repoTrace << "storing " << file << " in gridfs: " << database << "." << collection;
-				mongo::BSONObj bson = gfs.storeFile((char*)&binary[0], binary.size() * sizeof(binary[0]), file);
+				repoTrace << "storing " << file.first << "("<< file.second << ") in gridfs: " << database << "." << collection;
+				mongo::BSONObj bson = gfs.storeFile((char*)&binary[0], binary.size() * sizeof(binary[0]), file.first);
 
 				repoTrace << "returned object: " << bson.toString();
 

@@ -70,8 +70,8 @@ namespace repo {
 						 * @param mongo BSON object
 						 */
 						RepoBSON(const mongo::BSONObj &obj,
-							const std::unordered_map<std::string, std::vector<uint8_t>> &binMapping =
-							std::unordered_map<std::string, std::vector<uint8_t>>());
+							const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping =
+							std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>());
 
 						/**
 						* Constructor from Mongo BSON object builder.
@@ -327,15 +327,15 @@ namespace repo {
 						/**
 						* Get the list of file names for the big files 
 						* needs to be stored for this bson
-						* @return returns a list of file names needed to be stored
+						* @return returns a list of {file name, field name} needed to be stored
 						*/
-						std::vector<std::string> getFileList() const;
+						std::vector<std::pair<std::string, std::string>> getFileList() const;
 
 						/**
 						* Get the mapping files from the bson object
 						* @return returns the map of external (gridFS) files
 						*/
-						std::unordered_map< std::string, std::vector<uint8_t>> getFilesMapping() const
+						std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>>> getFilesMapping() const
 						{
 							return bigFiles;
 						}
@@ -351,7 +351,7 @@ namespace repo {
 
 						
 						protected:
-							std::unordered_map< std::string, std::vector<uint8_t> > bigFiles;
+							std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>> > bigFiles;
 						
 
 					}; // end 
