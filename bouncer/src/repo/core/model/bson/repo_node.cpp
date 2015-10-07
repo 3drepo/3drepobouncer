@@ -23,7 +23,7 @@
 using namespace repo::core::model;
 
 RepoNode::RepoNode(RepoBSON bson,
-	const std::unordered_map<std::string, std::vector<uint8_t>> &binMapping) : RepoBSON(bson, binMapping){
+	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping) : RepoBSON(bson, binMapping){
 	//--------------------------------------------------------------------------
 	// Type
 	if (bson.hasField(REPO_NODE_LABEL_TYPE))

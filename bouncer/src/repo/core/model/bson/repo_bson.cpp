@@ -21,28 +21,26 @@
 
 using namespace repo::core::model;
 
-RepoBSON::RepoBSON(const mongo::BSONObj &obj,
-	const std::unordered_map<std::string, std::vector<uint8_t>> &binMapping)
+RepoBSON::RepoBSON(
+	const mongo::BSONObj &obj,
+	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping)
 	: mongo::BSONObj(obj),
 	bigFiles(binMapping)
 {
 	if (!obj.hasField(REPO_LABEL_OVERSIZED_FILES))
 	{
 		//Append oversize file references into the bson
-		std::vector<std::string> fnames;
-		boost::copy(
-			bigFiles | boost::adaptors::map_keys,
-			std::back_inserter(fnames));
 
 		mongo::BSONObjBuilder builder, arrbuilder;
-		if (fnames.size() > 0)
+		if (bigFiles.size() > 0)
 		{
-			for (int i = 0; i < fnames.size(); ++i)
+			for (const auto & pair : bigFiles)
 			{
-				arrbuilder << std::to_string(i) << fnames[i];
+				//append field name :file name
+				arrbuilder << pair.second.first << pair.first;
 			}
 
-			builder.appendArray(REPO_LABEL_OVERSIZED_FILES, arrbuilder.obj());
+			builder.append(REPO_LABEL_OVERSIZED_FILES, arrbuilder.obj());
 			builder.appendElementsUnique(obj);
 
 			*this = builder.obj();
@@ -57,7 +55,7 @@ RepoBSON RepoBSON::cloneAndShrink() const
 {
 	std::set<std::string> fields;
 
-	std::unordered_map< std::string, std::vector<uint8_t>> rawFiles(bigFiles.begin(), bigFiles.end());
+	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>>> rawFiles(bigFiles.begin(), bigFiles.end());
 	std::string uniqueIDStr = hasField(REPO_LABEL_ID) ? UUIDtoString(getUUIDField(REPO_LABEL_ID)) : UUIDtoString(generateUUID());
 	mongo::BSONObjBuilder builder;
 
@@ -69,9 +67,9 @@ RepoBSON RepoBSON::cloneAndShrink() const
 		{
 			std::string fileName = uniqueIDStr + "_" + field;
 			builder << field << fileName;
-			rawFiles[fileName] = std::vector<uint8_t>();
+			rawFiles[fileName] = std::pair<std::string, std::vector<uint8_t>>(field, std::vector<uint8_t>());
 
-			getBinaryFieldAsVector(getField(field), &rawFiles[fileName]);
+			getBinaryFieldAsVector(getField(field), &rawFiles[fileName].second);
 		}
 	}
 
@@ -144,7 +142,7 @@ std::vector<uint8_t> RepoBSON::getBigBinary(
 	const auto &it = bigFiles.find(key);
 
 	if (it != bigFiles.end())
-		binary = it->second;
+		binary = it->second.second;
 	else
 	{
 		repoError << "External binary not found for key " << key << "! (size of mapping is : " << bigFiles.size() << ")";
@@ -153,19 +151,18 @@ std::vector<uint8_t> RepoBSON::getBigBinary(
 	return binary;
 }
 
-std::vector<std::string> RepoBSON::getFileList() const
+std::vector<std::pair<std::string, std::string>> RepoBSON::getFileList() const
 {
-	std::vector<std::string> fileList;
+	std::vector<std::pair<std::string, std::string>> fileList;
 	if (hasField(REPO_LABEL_OVERSIZED_FILES))
 	{
-		RepoBSON arraybson = getObjectField(REPO_LABEL_OVERSIZED_FILES);
+		RepoBSON extRefbson = getObjectField(REPO_LABEL_OVERSIZED_FILES);
 
-		std::set<std::string> fields;
-		arraybson.getFieldNames(fields);
-
-		for (const auto &field : fields)
+		std::set<std::string> fieldNames;
+		extRefbson.getFieldNames(fieldNames);
+		for (const auto &name : fieldNames)
 		{
-			fileList.push_back(arraybson.getStringField(field));
+			fileList.push_back(std::pair<std::string, std::string>(extRefbson.getStringField(name), name));
 		}
 	}
 
