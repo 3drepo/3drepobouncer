@@ -1,19 +1,28 @@
-3drepobouncer
+3drepobouncer [![Build Status](https://travis-ci.org/3drepo/3drepobouncer.svg?branch=master)](https://travis-ci.org/3drepo/3drepobouncer)
 =========
 
-3DRepoBouncer(temporary naming) is essentially the refactored 3DRepoCore and (parts of)3DRepoGUI. A C++ library providing 3D Repo Scene Graph definition, repository management logic and manipulation logic. 
+3DRepoBouncer (temporary naming) is essentially the refactored 3DRepoCore and (parts of) 3DRepoGUI. A C++ library providing 3D Repo Scene Graph definition, repository management logic and manipulation logic. 
 
 Dependencies
 ------------
 3DRepoBouncer relies on the following libraries:
+* [Boost Library v1.55.0+](http://www.boost.org/)  
+See also [pre-built binaries for Windows](http://sourceforge.net/projects/boost/files/boost-binaries/)
+and [modular Boost](https://svn.boost.org/trac/boost/wiki/ModularBoost)
+on [GitHub](https://github.com/boostorg)
 * [Mongo CXX Driver Legacy v1.0+](https://github.com/mongodb/mongo-cxx-driver)
-* [Boost Library v1.58.0+](http://www.boost.org/)
-* [ASSIMP library](https://github.com/3drepo/assimp)
+See [3D Repo guide for compiling MongoDB](https://github.com/3drepo/3drepobouncer/wiki/Compiling-MongoDB-CXX-Driver)
+* [3D Repo ASSIMP library fork](https://github.com/3drepo/assimp)
+See [3D Repo guide for compiling ASSIMP](https://github.com/3drepo/3drepobouncer/wiki/Compiling-ASSIMP)
 
 To compile and install the library, the following are used:
 * [Python v2.x](https://www.python.org/)
-* [CMAKE v3.3] (http://www.cmake.org/)
-* A C++ compiler (GNU GCC v3.4+, Visual Studio 12+)
+* [CMAKE v2.8] (http://www.cmake.org/)
+* A C++ compiler (GNU GCC v4.9+, [Visual Studio 12+](https://www.visualstudio.com/en-us/downloads/download-visual-studio-vs.aspx))
+
+Compilation (Qt)
+------------
+See instructions at [https://github.com/3drepo/3drepobouncer/issues/9#issuecomment-135727927](https://github.com/3drepo/3drepobouncer/issues/9#issuecomment-135727927)
 
 Compilation (Windows)
 ------------
@@ -55,7 +64,7 @@ If the libraries are not installed in `/usr, /usr/local, /opt/local,` set the fo
 
 Recompiling with changes
 ------------
-Apart from the `CMakeLists.txt` at root level, eveyr other cmake file is automatically generated. If you have moved/created any source/header files, please run `python updateSources.py` to update the `CMakeLists.txt` files within the subdirectories before compiling.
+Apart from the `CMakeLists.txt` at root level, every other cmake file is automatically generated. If you have moved/created any source/header files, please run `python updateSources.py` to update the `CMakeLists.txt` files within the subdirectories before compiling.
 
 Do NOT modify any `CMakeLists.txt` files within src folder as any changes will be overwritten when `updateSources.py` is executed!
 

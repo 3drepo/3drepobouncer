@@ -20,13 +20,15 @@
 
 project("3drepobouncer")
 
-cmake_minimum_required(VERSION 3.3)
+cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 #================BOOST SETTINGS=======================
 add_definitions(-DBOOST_ALL_NO_LIB)
 add_definitions(-DBOOST_LOG_DYN_LINK)
+add_definitions(-DBOOST_PROGRAM_OPTIONS_DYN_LINK)
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
@@ -34,26 +36,35 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 unset(Boost_INCLUDE_DIR CACHE)
 unset(Boost_LIBRARY_DIRS CACHE)
 
-find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem)
+find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options)
+add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
 
-
-#================Mongo SETTINGS=======================
+#================MONGO SETTINGS=======================
 find_package(Mongo REQUIRED)
 
 
 #================ASSIMP SETTINGS=======================
-find_package(Assimp REQUIRED)
+find_package(ASSIMPM REQUIRED)
 
-#================Source and header files===============
-add_subdirectory(src)
+#================COMPILE 3D REPO BOUNCER ==============
+option (REPO_BUILD_CLIENT "If the Command Line Client is built in addition to the library" ON)
+option (REPO_BUILD_TESTS "If the test suite is built in addition to the library" OFF)
+if(${Boost_FOUND} AND ${MONGO_FOUND} AND ${ASSIMPM_FOUND})
 
-if(${Boost_FOUND} AND ${Mongo_FOUND} AND ${Assimp_FOUND})
-	include_directories(${Boost_INCLUDE_DIRS} ${Mongo_INCLUDE_DIR} ${Assimp_INCLUDE_DIR} ${HEADERS})
-	add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
-	add_definitions(-DREPO_API_LIBRARY)	
+	#bouncer library
+	add_subdirectory(bouncer)
 
-	add_library(3drepobouncer SHARED ${SOURCES})
 
-	target_link_libraries(3drepobouncer ${Boost_LIBRARIES} ${Mongo_LIBRARIES} ${Assimp_LIBRARIES})
+	#client exe
+	if (REPO_BUILD_CLIENT)
+		add_subdirectory(client)
+	endif()
 
+	#test exe
+	if (REPO_BUILD_TESTS)
+		set(gtest_force_shared_crt ON CACHE BOOL "Build gtest as shared library" FORCE)
+		add_subdirectory(submodules/googletest)
+		add_subdirectory(test)
+	endif()
 endif()
+

@@ -1,6 +1,8 @@
 import os
 
-srcDir='src'
+srcDir='bouncer/src'
+testDir='test/src'
+clientDir='client/src'
 
 
 def printHeaderForCMakeFiles(file):
@@ -11,7 +13,7 @@ def printHeaderForCMakeFiles(file):
 	file.write('#If you really need to overwrite this file, be aware that it will be overwritten if updateSources.py is executed.\n\n\n')
 	return
 
-def createCMakeList(dirName, files, subDirList):
+def createCMakeList(dirName, files, subDirList, sourceName, headerName):
 	cppInd = 0
 	hInd = 0
 	sources = {}
@@ -37,23 +39,23 @@ def createCMakeList(dirName, files, subDirList):
 
 	#write sources
 	if len(sources.values()) > 0 :
-		cmakeFile.write('set(SOURCES\n')
-		cmakeFile.write('\t${SOURCES}\n')
+		cmakeFile.write('set('+sourceName+'\n')
+		cmakeFile.write('\t${'+sourceName+'}\n')
 
 		for fname in sources.values():
 			cmakeFile.write('\t${CMAKE_CURRENT_SOURCE_DIR}/' + fname + '\n')
 		
-		cmakeFile.write('\tCACHE STRING "source files" FORCE)\n\n')
+		cmakeFile.write('\tCACHE STRING "'+sourceName+'" FORCE)\n\n')
 
 	#write headers
 	if len(headers.values()) > 0 :
-		cmakeFile.write('set(HEADERS\n')
-		cmakeFile.write('\t${HEADERS}\n')
+		cmakeFile.write('set('+headerName+'\n')
+		cmakeFile.write('\t${'+headerName+'}\n')
 	
 		for fname in headers.values():
 			cmakeFile.write('\t${CMAKE_CURRENT_SOURCE_DIR}/' + fname + '\n')
 		
-		cmakeFile.write('\tCACHE STRING "header files" FORCE)\n\n')
+		cmakeFile.write('\tCACHE STRING "'+headerName+'" FORCE)\n\n')
 
 	cmakeFile.close()
 
@@ -64,4 +66,11 @@ def createCMakeList(dirName, files, subDirList):
 
 
 for dir, subDirList, fl in os.walk(srcDir):
-	createCMakeList(dir, fl, subDirList)
+	createCMakeList(dir, fl, subDirList, "SOURCES", "HEADERS")
+
+
+for dir, subDirList, fl in os.walk(testDir):
+	createCMakeList(dir, fl, subDirList, "TEST_SOURCES", "TEST_HEADERS")
+
+for dir, subDirList, fl in os.walk(clientDir):
+	createCMakeList(dir, fl, subDirList, "CLIENT_SOURCES", "CLIENT_HEADERS")

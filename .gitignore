@@ -1,2 +1,24 @@
 build
 
+#nodeJS stuff
+utils/bouncer_worker/config.js
+utils/bouncer_worker/node_modules
+
+#Windows junk
+*.vcxproj*
+*.sln
+*.suo
+*.rc
+*.opensdf
+*.aps
+*.sdf
+resource.h
+
+# Sublime junk
+.tags
+.tags_sorted_by_file
+
+Debug
+x64
+sandbox
+sandbox/sandbox.cpp
