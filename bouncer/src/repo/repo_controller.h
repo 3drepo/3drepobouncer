@@ -283,6 +283,8 @@ namespace repo{
 		* @param uuid if headRevision, uuid represents the branch id,
 		*              otherwise the unique id of the revision branch
 		* @param headRevision true if retrieving head revision
+		* @param lightFetch fetches only the stash (or scene if stash failed),
+		*                   reduce computation and memory usage (ideal for visualisation)
 		* @return returns a pointer to a repoScene.
 		*/
 		repo::core::model::RepoScene* fetchScene(
@@ -290,7 +292,8 @@ namespace repo{
 			const std::string    &database,
 			const std::string    &project,
 			const std::string    &uuid = REPO_HISTORY_MASTER_BRANCH,
-			const bool           &headRevision = true);
+			const bool           &headRevision = true,
+			const bool           &lightFetch = false);
 
 		/**
 		* Save the files of the original model to a specified directory

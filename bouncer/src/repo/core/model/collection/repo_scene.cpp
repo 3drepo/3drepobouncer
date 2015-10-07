@@ -836,7 +836,7 @@ bool RepoScene::loadStash(
 
 	repoInfo << "# of nodes in this stash scene = " << nodes.size();
 
-	return populate(GraphType::OPTIMIZED, handler, nodes, errMsg);
+	return populate(GraphType::OPTIMIZED, handler, nodes, errMsg) && nodes.size() > 0;
 
 }
 
