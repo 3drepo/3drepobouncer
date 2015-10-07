@@ -118,7 +118,8 @@ namespace repo{
 				*/
 				repo::core::model::MeshNode* createMeshRepoNode(
 					const aiMesh *assimpMesh,
-					const std::vector<repo::core::model::RepoNode *> &materials);
+					const std::vector<repo::core::model::RepoNode *> &materials,
+					std::map < repo::core::model::RepoNode*, std::vector<repoUUID>> &matMap);
 
 				/**
 				* Create a Metadata Node given the information in ASSIMP objects

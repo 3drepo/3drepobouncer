@@ -71,7 +71,17 @@ namespace repo{
 						* @returns new object with the field updated
 						*/
 						RepoNode cloneAndAddParent(
-							const repoUUID &parentID) const;
+							const repoUUID &parent) const;
+
+						/**
+						* Create a new object with this object's values,
+						* and add other parents into this new object
+						* NOTE: this object is unchanged!
+						* @param parentID the shared uuid of the parent
+						* @returns new object with the field updated
+						*/
+						RepoNode cloneAndAddParent(
+							const std::vector<repoUUID> &parents) const;
 
 						/**
 						* Create a new object with fields within the 
