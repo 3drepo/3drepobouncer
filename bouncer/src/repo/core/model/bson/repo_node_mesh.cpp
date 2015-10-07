@@ -105,7 +105,6 @@ std::vector<repo_vector_t>* MeshNode::getVertices() const
 std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
 {
 	std::vector<repo_mesh_mapping_t> mappings;
-	repoLog("Mesh size: " + this->objsize());
 	RepoBSON mapArray = getObjectField(REPO_NODE_MESH_LABEL_MERGE_MAP);
 	if (!mapArray.isEmpty())
 	{
