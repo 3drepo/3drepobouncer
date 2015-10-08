@@ -376,7 +376,6 @@ TEST(RepoBSONTest, CloneAndShrink)
 	RepoBSON binBson(builder.obj(), mapping);
 
 	shrunkBson = binBson.cloneAndShrink();
-
 	outMapping = shrunkBson.getFilesMapping();
 
 	EXPECT_NE(shrunkBson, binBson);
@@ -386,7 +385,7 @@ TEST(RepoBSONTest, CloneAndShrink)
 	//Check the binary still obtainable
 	EXPECT_TRUE(shrunkBson.getBinaryFieldAsVector("binDataTest", in.size(), &out));
 
-	EXPECT_EQ(in.size(), out.size());
+	ASSERT_EQ(in.size(), out.size());
 	for (size_t i = 0; i < out.size(); ++i)
 	{
 		EXPECT_EQ(in[i], out[i]);
