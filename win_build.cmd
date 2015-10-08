@@ -3,6 +3,8 @@ SET BOOST_LIBRARYDIR=c:/local/boost_1_58_0/lib64-msvc-12.0/
 SET MONGO_ROOT=c:/local/mongo-cxx-driver/
 SET ASSIMP_ROOT=c:/local/assimp/
 
+python updateSources.py
+
 mkdir build
 cd build
 cmake -G "Visual Studio 12 Win64" ../
