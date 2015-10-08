@@ -27,26 +27,31 @@ RepoBSON::RepoBSON(
 	: mongo::BSONObj(obj),
 	bigFiles(binMapping)
 {
-	if (!obj.hasField(REPO_LABEL_OVERSIZED_FILES))
+	std::vector<std::pair<std::string, std::string>> existingFiles;
+
+	if (bigFiles.size() > 0)
 	{
-		//Append oversize file references into the bson
-
 		mongo::BSONObjBuilder builder, arrbuilder;
-		if (bigFiles.size() > 0)
+
+		for (const auto & pair : bigFiles)
 		{
-			for (const auto & pair : bigFiles)
-			{
-				//append field name :file name
-				arrbuilder << pair.second.first << pair.first;
-			}
-
-			builder.append(REPO_LABEL_OVERSIZED_FILES, arrbuilder.obj());
-			builder.appendElementsUnique(obj);
-
-			*this = builder.obj();
-			bigFiles = binMapping;
+			//append field name :file name
+			arrbuilder << pair.first << pair.second.first;
 		}
+
+		if (obj.hasField(REPO_LABEL_OVERSIZED_FILES))
+		{
+			arrbuilder.appendElementsUnique(obj.getObjectField(REPO_LABEL_OVERSIZED_FILES));
+		}
+
+
+		builder.append(REPO_LABEL_OVERSIZED_FILES, arrbuilder.obj());
+		builder.appendElementsUnique(obj);
+
+		*this = builder.obj();
+		bigFiles = binMapping;
 	}
+	
 
 
 }
@@ -66,10 +71,8 @@ RepoBSON RepoBSON::cloneAndShrink() const
 		if (getField(field).type() == ElementType::BINARY)
 		{
 			std::string fileName = uniqueIDStr + "_" + field;
-			builder << field << fileName;
-			rawFiles[fileName] = std::pair<std::string, std::vector<uint8_t>>(field, std::vector<uint8_t>());
-
-			getBinaryFieldAsVector(getField(field), &rawFiles[fileName].second);
+			rawFiles[field] = std::pair<std::string, std::vector<uint8_t>>(fileName, std::vector<uint8_t>());
+			getBinaryFieldAsVector(field, &rawFiles[field].second);
 		}
 	}
 
@@ -142,7 +145,9 @@ std::vector<uint8_t> RepoBSON::getBigBinary(
 	const auto &it = bigFiles.find(key);
 
 	if (it != bigFiles.end())
+	{
 		binary = it->second.second;
+	}
 	else
 	{
 		repoError << "External binary not found for key " << key << "! (size of mapping is : " << bigFiles.size() << ")";
@@ -162,7 +167,7 @@ std::vector<std::pair<std::string, std::string>> RepoBSON::getFileList() const
 		extRefbson.getFieldNames(fieldNames);
 		for (const auto &name : fieldNames)
 		{
-			fileList.push_back(std::pair<std::string, std::string>(extRefbson.getStringField(name), name));
+			fileList.push_back(std::pair<std::string, std::string>(name, extRefbson.getStringField(name)));
 		}
 	}
 
