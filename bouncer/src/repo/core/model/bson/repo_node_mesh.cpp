@@ -75,7 +75,7 @@ std::vector<repo_color4d_t>* MeshNode::getColors() const
 {
 
 	std::vector<repo_color4d_t> *colors = new std::vector<repo_color4d_t>();
-	if (hasField(REPO_NODE_MESH_LABEL_COLORS))
+	if (hasBinField(REPO_NODE_MESH_LABEL_COLORS))
 	{
 		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_COLORS, colors);
 	}
@@ -86,7 +86,7 @@ std::vector<repo_color4d_t>* MeshNode::getColors() const
 std::vector<repo_vector_t>* MeshNode::getVertices() const
 {
 	std::vector<repo_vector_t> *vertices = new std::vector<repo_vector_t>();
-	if (hasField(REPO_NODE_MESH_LABEL_VERTICES))
+	if (hasBinField(REPO_NODE_MESH_LABEL_VERTICES))
 	{
 		if (hasField(REPO_NODE_MESH_LABEL_VERTICES_COUNT))
 		{
@@ -97,6 +97,10 @@ std::vector<repo_vector_t>* MeshNode::getVertices() const
 		else
 			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_VERTICES, vertices);
 
+	}
+	else
+	{
+		repoWarning << "Could not find any vertices within mesh node (" << getUniqueID() << ")";
 	}
 
 	return vertices;
@@ -164,7 +168,7 @@ std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
 std::vector<repo_vector_t>* MeshNode::getNormals() const
 {
 	std::vector<repo_vector_t> *vertices = new std::vector<repo_vector_t>();
-	if (hasField(REPO_NODE_MESH_LABEL_NORMALS))
+	if (hasBinField(REPO_NODE_MESH_LABEL_NORMALS))
 	{
 
 		if (hasField(REPO_NODE_MESH_LABEL_VERTICES_COUNT))
@@ -240,7 +244,7 @@ std::vector<repo_face_t>* MeshNode::getFaces() const
 {
 	std::vector<repo_face_t> *faces = new std::vector<repo_face_t>();
 
-	if (hasField(REPO_NODE_MESH_LABEL_FACES) && hasField(REPO_NODE_MESH_LABEL_FACES_COUNT))
+	if (hasBinField(REPO_NODE_MESH_LABEL_FACES) && hasField(REPO_NODE_MESH_LABEL_FACES_COUNT))
 	{
 		std::vector <uint32_t> *serializedFaces = new std::vector<uint32_t>();
 		int32_t facesCount = getField(REPO_NODE_MESH_LABEL_FACES_COUNT).numberInt();

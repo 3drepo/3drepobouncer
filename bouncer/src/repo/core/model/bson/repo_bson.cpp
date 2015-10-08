@@ -71,7 +71,6 @@ RepoBSON RepoBSON::cloneAndShrink() const
 		if (getField(field).type() == ElementType::BINARY)
 		{
 			std::string fileName = uniqueIDStr + "_" + field;
-			builder << field << fileName;
 			rawFiles[field] = std::pair<std::string, std::vector<uint8_t>>(fileName, std::vector<uint8_t>());
 			getBinaryFieldAsVector(field, &rawFiles[field].second);
 		}

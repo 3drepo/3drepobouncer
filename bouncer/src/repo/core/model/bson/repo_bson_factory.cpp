@@ -353,8 +353,6 @@ MeshNode RepoBSONFactory::makeMeshNode(
 				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
 			binMapping[REPO_NODE_MESH_LABEL_VERTICES].second.resize(verticesByteCount); //uint8_t will ensure it is a byte addrressing
 			memcpy(binMapping[REPO_NODE_MESH_LABEL_VERTICES].second.data(), &vertices[0], verticesByteCount);
-			builder << REPO_NODE_MESH_LABEL_VERTICES << bName;
-
 			bytesize += sizeof(bName);
 		}
 		else
@@ -401,8 +399,6 @@ MeshNode RepoBSONFactory::makeMeshNode(
 			binMapping[REPO_NODE_MESH_LABEL_FACES].second.resize(facesByteCount); //uint8_t will ensure it is a byte addrressing
 			memcpy(binMapping[REPO_NODE_MESH_LABEL_FACES].second.data(), &facesLevel1[0], facesByteCount);
 
-			builder << REPO_NODE_MESH_LABEL_FACES << bName;
-
 			bytesize += sizeof(bName);
 		}
 		else
@@ -432,8 +428,6 @@ MeshNode RepoBSONFactory::makeMeshNode(
 				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
 			binMapping[REPO_NODE_MESH_LABEL_NORMALS].second.resize(normalsByteCount); //uint8_t will ensure it is a byte addrressing
 			memcpy(binMapping[REPO_NODE_MESH_LABEL_NORMALS].second.data(), &normals[0], normalsByteCount);
-
-			builder << REPO_NODE_MESH_LABEL_NORMALS << bName;
 
 			bytesize += sizeof(bName);
 		}
@@ -469,8 +463,6 @@ MeshNode RepoBSONFactory::makeMeshNode(
 				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
 			binMapping[REPO_NODE_MESH_LABEL_COLORS].second.resize(colorsByteCount); //uint8_t will ensure it is a byte addrressing
 			memcpy(binMapping[REPO_NODE_MESH_LABEL_COLORS].second.data(), &colors[0], colorsByteCount);
-
-			builder << REPO_NODE_MESH_LABEL_COLORS << bName;
 
 			bytesize += sizeof(bName);
 		}
@@ -517,8 +509,6 @@ MeshNode RepoBSONFactory::makeMeshNode(
 				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
 			binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS].second.resize(uvByteCount); //uint8_t will ensure it is a byte addrressing
 			memcpy(binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS].second.data(), &concatenated[0], uvByteCount);
-
-			builder << REPO_NODE_MESH_LABEL_UV_CHANNELS << bName;
 
 			bytesize += sizeof(bName);
 		}

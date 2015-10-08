@@ -109,12 +109,23 @@ TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
 	map["binDataTest"] = std::pair<std::string, std::vector<uint8_t>>(fname,in);
 
 
-
+	//FIXME: This needs to work until we stop supporting it
 	RepoBSON bson(BSON("binDataTest" << fname), map);
-
+	
+	RepoBSON bson2(RepoBSON(), map);
 
 	EXPECT_TRUE(bson.getBinaryFieldAsVector("binDataTest", in.size(), &out));
 	EXPECT_FALSE(bson.getBinaryFieldAsVector(fname, in.size(), &out)); //make sure fieldname/filename are not mixed up.
+
+	ASSERT_EQ(out.size(), in.size());
+	for (size_t i = 0; i < size; ++i)
+	{
+		EXPECT_EQ(in[i], out[i]);
+	}
+
+
+	EXPECT_TRUE(bson2.getBinaryFieldAsVector("binDataTest", in.size(), &out));
+	EXPECT_FALSE(bson2.getBinaryFieldAsVector(fname, in.size(), &out)); //make sure fieldname/filename are not mixed up.
 
 	ASSERT_EQ(out.size(), in.size());
 	for (size_t i = 0; i < size; ++i)
