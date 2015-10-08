@@ -7,6 +7,6 @@ python updateSources.py
 
 mkdir build
 cd build
-cmake -G "Visual Studio 12 Win64" ../
+cmake -DCMAKE_INSTALL_PREFIX=C:/local/3drepobouncer -G "Visual Studio 12 Win64" ../
 msbuild ALL_BUILD.vcxproj /v:quiet /p:Configuration=Release /t:Rebuild 
 cd ..
