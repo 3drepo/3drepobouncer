@@ -42,38 +42,38 @@ int32_t knownValid(const std::string &cmd)
 	return -1;
 }
 
-bool performOperation(
+int32_t performOperation(
 	repo::RepoController *controller,
 	const repo::RepoToken      *token,
 	const repo_op_t            &command
 	)
 {
+
+	int32_t errCode = REPOERR_UNKNOWN_CMD;
+
 	if (command.command == cmdImportFile)
-	{
-		bool success = false;
-		
+	{		
 		try{
 
-			success = importFileAndCommit(controller, token, command);
+			errCode = importFileAndCommit(controller, token, command);
 		}
 		catch (const std::exception &e)
 		{
 			repoLogError("Failed to import and commit file: " + std::string(e.what()));
+			errCode = REPOERR_UNKNOWN_ERR;
 		}
-
-		return success;
 		
 	}
 	else if (command.command == cmdTestConn)
 	{
 		//This is just to test if the client is working and if the connection is working
 		//if we got a token from the controller we can assume that it worked.
-		return token;
+		return token ?  REPOERR_OK : REPOERR_AUTH_FAILED;
 	}
+	else
+		repoLogError("Unrecognised command: " + command.command + ". Type --help for info");
 
-
-	repoLogError("Unrecognised command: " + command.command + ". Type --help for info");
-	return false;
+	return errCode;
 }
 
 /*
@@ -81,7 +81,7 @@ bool performOperation(
 */
 
 
-bool importFileAndCommit(
+int32_t importFileAndCommit(
 	repo::RepoController *controller,
 	const repo::RepoToken      *token,
 	const repo_op_t            &command
@@ -94,7 +94,7 @@ bool importFileAndCommit(
 	{
 		repoLogError("Number of arguments mismatch! " + cmdImportFile 
 			+ " requires 3 arguments: file database project [dxrotate] [owner] [config file]");
-		return false;
+		return REPOERR_INVALID_ARG;
 	}
 
 	std::string fileLoc = command.args[0];
@@ -158,10 +158,10 @@ bool importFileAndCommit(
 		else
 			controller->commitScene(token, graph, owner);
 		//FIXME: should make commitscene return a boolean even though GUI doesn't care...
-		return true;
+		return REPOERR_OK;
 	}
-
-	return false;
+	
+	return REPOERR_LOAD_SCENE_FAIL;
 
 
 }
