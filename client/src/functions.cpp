@@ -27,7 +27,7 @@ std::string helpInfo()
 {
 	std::stringstream ss;
 
-	ss << cmdImportFile << "\t\tImport file to database. (args: file database project [configfile])\n";
+	ss << cmdImportFile << "\t\tImport file to database. (args: file database project [dxrotate] [owner] [configfile])\n";
 	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
 
 	return ss.str();
@@ -50,7 +50,19 @@ bool performOperation(
 {
 	if (command.command == cmdImportFile)
 	{
-		return importFileAndCommit(controller, token, command);
+		bool success = false;
+		
+		try{
+
+			success = importFileAndCommit(controller, token, command);
+		}
+		catch (const std::exception &e)
+		{
+			repoLogError("Failed to import and commit file: " + std::string(e.what()));
+		}
+
+		return success;
+		
 	}
 	else if (command.command == cmdTestConn)
 	{
@@ -81,7 +93,7 @@ bool importFileAndCommit(
 	if (command.nArgcs < 3)
 	{
 		repoLogError("Number of arguments mismatch! " + cmdImportFile 
-			+ " requires 3 arguments: file database project [owner] [config file]");
+			+ " requires 3 arguments: file database project [dxrotate] [owner] [config file]");
 		return false;
 	}
 
@@ -90,14 +102,47 @@ bool importFileAndCommit(
 	std::string project = command.args[2];
 	std::string configFile;
 	std::string owner;
+	bool rotate = false;
+
+	//FIXME: This is getting complicated, we should consider using boost::program_options and start utilising flags...
+	//Something like this: http://stackoverflow.com/questions/15541498/how-to-implement-subcommands-using-boost-program-options
 	if (command.nArgcs > 3)
 	{
-		owner = command.args[3];
+		//If 3rd argument is "dxrotate", we need to rotate the X axis
+		//Otherwise the user is trying to name the owner, rotate is false.
+		std::string arg3 = command.args[3];
+		if (arg3 == "dxrotate")
+		{
+			rotate = true;
+		}
+		else
+		{
+			owner = command.args[3];
+		}
 	}
 	if (command.nArgcs > 4)
 	{
-		configFile = command.args[4];
+		//If the last argument is rotate, this is owner
+		//otherwise this is configFile (confusing, I know.)
+		if (rotate)
+		{
+			owner = command.args[4];
+			if (command.nArgcs > 5)
+			{
+				configFile = command.args[5];
+			}
+			
+		}
+		else
+		{
+			configFile = command.args[4];
+		}
+		
 	}
+
+	repoLogDebug("File: " + fileLoc + " database: " + database
+		+ " project: " + project + " rotate:"
+		+ (rotate ? "true" : "false") + " owner :" + owner + " configFile: " + configFile);
 
 	repo::manipulator::modelconvertor::ModelImportConfig config(configFile);
 
@@ -106,7 +151,8 @@ bool importFileAndCommit(
 	{
 		repoLog("Trying to commit this scene to database as " + database + "." + project);
 		graph->setDatabaseAndProjectName(database, project);
-
+		if (rotate)
+			graph->reorientateDirectXModel();
 		if (owner.empty())
 			controller->commitScene(token, graph);
 		else

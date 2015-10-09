@@ -23,7 +23,7 @@
 using namespace repo::core::model;
 
 RepoNode::RepoNode(RepoBSON bson,
-	const std::unordered_map<std::string, std::vector<uint8_t>> &binMapping) : RepoBSON(bson, binMapping){
+	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping) : RepoBSON(bson, binMapping){
 	//--------------------------------------------------------------------------
 	// Type
 	if (bson.hasField(REPO_NODE_LABEL_TYPE))
@@ -58,8 +58,37 @@ RepoNode RepoNode::cloneAndAddParent(
 
 	std::vector<repoUUID> currentParents = getParentIDs();
 	currentParents.push_back(parentID);
-	
+
 	builder.appendArray(REPO_NODE_LABEL_PARENTS, arrayBuilder.createArrayBSON(currentParents));
+	////FIXME: Clean this up, shouldn't have mongo exposed.
+	//std::vector<mongo::BSONElement> parents = ((mongo::BSONElement)getField(REPO_NODE_LABEL_PARENTS)).Array();
+
+	//mongo::BSONArrayBuilder parentsBuilder;
+	//for (const auto &ele : parents)
+	//{
+	//	parentsBuilder.append(ele);
+	//}
+	//parentsBuilder.appendBinData(parentID.size(), mongo::bdtUUID, (char*)parentID.data);
+
+	//builder.appendArray(REPO_NODE_LABEL_PARENTS, parentsBuilder.obj());
+
+	builder.appendElementsUnique(*this);
+
+	return RepoNode(builder.obj(), bigFiles);
+}
+
+RepoNode RepoNode::cloneAndAddParent(
+	const std::vector<repoUUID> &parentIDs) const
+{
+	RepoBSONBuilder builder;
+	RepoBSONBuilder arrayBuilder;
+
+
+	std::vector<repoUUID> currentParents = getParentIDs();
+	currentParents.insert(currentParents.end(), parentIDs.begin(), parentIDs.end());
+
+	builder.appendArray(REPO_NODE_LABEL_PARENTS, arrayBuilder.createArrayBSON(currentParents));
+
 
 	builder.appendElementsUnique(*this);
 

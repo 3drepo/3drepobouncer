@@ -156,7 +156,7 @@ void RepoScene::addInheritance(
 			if (trackChanges)
 			{
 				//this is considered a change on the node, we need to make a new node with new uniqueID
-				modifyNode(childShareID, new RepoNode(childWithParent));
+				modifyNode(GraphType::DEFAULT, childShareID, new RepoNode(childWithParent));
 			}
 			else
 			{
@@ -592,8 +592,19 @@ bool RepoScene::commitNodes(
 	bool isStashGraph = gType == GraphType::OPTIMIZED;
 	repoGraphInstance &g = isStashGraph ? stashGraph : graph;
 	std::string ext = isStashGraph ? stashExt : sceneExt;
+
+	size_t count = 0;
+	size_t total = nodesToCommit.size();
+
+	repoTrace << "Committing " << total << " nodes...";
+
 	for (const repoUUID &id : nodesToCommit)
 	{
+		if (++count % 100 == 0 || count == total -1)
+		{
+			repoTrace << "Committing " << id << " (" << count << " of " << total << ")";
+		}
+
 		const repoUUID uniqueID = gType == GraphType::OPTIMIZED ? id : g.sharedIDtoUniqueID[id];
 		RepoNode *node = g.nodesByUniqueID[uniqueID];
 		if (node->objsize() > handler->documentSizeLimit())
@@ -825,31 +836,41 @@ bool RepoScene::loadStash(
 
 	repoInfo << "# of nodes in this stash scene = " << nodes.size();
 
-	return populate(GraphType::OPTIMIZED, handler, nodes, errMsg);
+	return populate(GraphType::OPTIMIZED, handler, nodes, errMsg) && nodes.size() > 0;
 
 }
 
 void RepoScene::modifyNode(
+	const GraphType                   &gtype,
 	const repoUUID                    &sharedID,
-	RepoNode                          *node,
-	const bool                        &overwrite)
+	RepoNode                          *node)
 {
+	repoGraphInstance &g = gtype == GraphType::OPTIMIZED ? stashGraph : graph;
 	//RepoNode* updatedNode = nullptr;
-	if (graph.sharedIDtoUniqueID.find(sharedID) != graph.sharedIDtoUniqueID.end())
+	if (g.sharedIDtoUniqueID.find(sharedID) != g.sharedIDtoUniqueID.end())
 	{
-		RepoNode* nodeToChange = graph.nodesByUniqueID[graph.sharedIDtoUniqueID[sharedID]];
-
-		//check if the node is already in the "to modify" list
-		bool isInList = newAdded.find(sharedID) != newAdded.end() || newModified.find(sharedID) != newModified.end();
-
+		RepoNode* nodeToChange = g.nodesByUniqueID[g.sharedIDtoUniqueID[sharedID]];
 		//generate new UUID if it  is not in list, otherwise use the current one.
-		RepoNode updatedNode = RepoNode(nodeToChange->cloneAndAddFields(node, !isInList));
+		RepoNode updatedNode;
 
-		if (!isInList)
+		if (gtype == GraphType::DEFAULT)
 		{
-			newModified.insert(sharedID);
-			newCurrent.erase(newCurrent.find(nodeToChange->getUniqueID()));
-			newCurrent.insert(updatedNode.getUniqueID());
+			//check if the node is already in the "to modify" list
+			bool isInList = newAdded.find(sharedID) != newAdded.end() || newModified.find(sharedID) != newModified.end();
+
+			updatedNode = RepoNode(nodeToChange->cloneAndAddFields(node, !isInList));
+
+			if (!isInList)
+			{
+				newModified.insert(sharedID);
+				newCurrent.erase(newCurrent.find(nodeToChange->getUniqueID()));
+				newCurrent.insert(updatedNode.getUniqueID());
+			}
+
+		}
+		else
+		{
+			updatedNode = RepoNode(nodeToChange->cloneAndAddFields(node, false));
 		}
 
 		nodeToChange->swap(updatedNode);
@@ -981,6 +1002,48 @@ void RepoScene::populateAndUpdate(
 	addNodeToScene(gType, maps, errMsg, &(instance.maps));
 	addNodeToScene(gType, unknowns, errMsg, &(instance.unknowns));
 
+}
+
+
+void RepoScene::reorientateDirectXModel()
+{
+	//Need to rotate the model by 270 degrees on the X axis
+	//This is essentially swapping the 2nd and 3rd column, negating the 2nd.
+
+	//Stash root and scene root should be identical!
+	if (graph.rootNode)
+	{
+		TransformationNode rootTrans = TransformationNode(*graph.rootNode);
+		std::vector<float> mat =  rootTrans.getTransMatrix();
+		if (mat.size() == 16)
+		{
+			std::vector<std::vector<float>> newMatrix;
+
+			for (uint32_t row = 0; row < 4; row++)
+			{
+				std::vector<float> matRow;
+				
+				matRow.push_back( mat[row * 4]);
+				matRow.push_back(-mat[row * 4 + 2]);
+				matRow.push_back( mat[row * 4 + 1]);
+				matRow.push_back( mat[row * 4 + 3]);
+
+				newMatrix.push_back(matRow);
+			}
+
+
+
+			TransformationNode newRoot = RepoBSONFactory::makeTransformationNode(newMatrix, rootTrans.getName());
+			modifyNode(GraphType::DEFAULT, rootTrans.getSharedID(), new TransformationNode(newRoot));
+			if (stashGraph.rootNode)
+				modifyNode(GraphType::OPTIMIZED, stashGraph.rootNode->getSharedID(), new TransformationNode(newRoot));
+		}
+		else
+		{
+			repoError << "Root Transformation is not a 4x4 matrix!";
+		}
+
+	}
 }
 
 void RepoScene::printStatistics(std::iostream &output)

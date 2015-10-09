@@ -337,7 +337,8 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 
 repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 	const aiMesh *assimpMesh,
-	const std::vector<repo::core::model::RepoNode *> &materials)
+	const std::vector<repo::core::model::RepoNode *> &materials,
+	std::map < repo::core::model::RepoNode*, std::vector<repoUUID>> &matMap)
 {
 
 	repo::core::model::MeshNode *meshNode = 0;
@@ -498,8 +499,7 @@ repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 	if (assimpMesh->mMaterialIndex < materials.size())
 	{
 		repo::core::model::RepoNode *materialNode = materials[assimpMesh->mMaterialIndex];
-		repo::core::model::RepoNode tmp = materialNode->cloneAndAddParent(meshNode->getSharedID());
-		materialNode->swap(tmp);
+		matMap[materialNode].push_back(meshNode->getSharedID());
 	}
 
 	///*
@@ -696,6 +696,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		repo::core::model::RepoNodeSet transformations; //!< Transformations
 
 		std::vector<repo::core::model::RepoNode *> originalOrderMaterial; //vector that keeps track original order for assimp indices
+		std::map<repo::core::model::RepoNode *, std::vector<repoUUID>> matParents;//Tracks material parents
 		std::vector<repo::core::model::RepoNode *> originalOrderMesh; //vector that keeps track original order for assimp indices
 		std::map<std::string, repo::core::model::RepoNode *> camerasMap;
 
@@ -709,6 +710,10 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		{
 			for (uint32_t i = 0; i < assimpScene->mNumMaterials; ++i)
 			{
+				if (i % 100 == 0 || i == assimpScene->mNumMaterials - 1)
+				{
+					repoTrace << "Constructing " << i << " of " << assimpScene->mNumMaterials;
+				}
 				aiString name;
 				assimpScene->mMaterials[i]->Get(AI_MATKEY_NAME, name);
 
@@ -725,7 +730,11 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 				}
 
 
-				originalOrderMaterial.push_back(material);
+				originalOrderMaterial.push_back(material); 
+				std::pair<repo::core::model::RepoNode *, std::vector<repoUUID>> a;
+				a.first = material;
+				a.second = std::vector<repoUUID>();
+				matParents.insert(a);
 			}
 		}
 
@@ -741,9 +750,14 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		{
 			for (unsigned int i = 0; i < assimpScene->mNumMeshes; ++i)
 			{
+				if (i % 100 == 0 || i == assimpScene->mNumMeshes-1)
+				{
+					repoTrace << "Constructing " << i << " of " << assimpScene->mNumMeshes;
+				}
 				repo::core::model::RepoNode* mesh = createMeshRepoNode(
 					assimpScene->mMeshes[i],
-					originalOrderMaterial);
+					originalOrderMaterial,
+					matParents);
 
 				if (!mesh)
 					repoError << "Unable to construct mesh node in Assimp Model Convertor!";
@@ -753,6 +767,16 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 					meshes.insert(mesh);
 				}
 				originalOrderMesh.push_back(mesh);
+			}
+
+			//Update material parents
+			for (const auto &matPair : matParents)
+			{
+				if (matPair.second.size() > 0)
+				{
+					repo::core::model::RepoNode updatedMat = matPair.first->cloneAndAddParent(matPair.second);
+					matPair.first->swap(updatedMat);
+				}
 			}
 		}
 
@@ -769,6 +793,11 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		{
 			for (unsigned int i = 0; i < assimpScene->mNumCameras; ++i)
 			{
+
+				if (i % 100 == 0 || i == assimpScene->mNumCameras - 1)
+				{
+					repoTrace << "Constructing " << i << " of " << assimpScene->mNumCameras;
+				}
 				std::string cameraName(assimpScene->mCameras[i]->mName.data);
 				repo::core::model::RepoNode* camera = createCameraRepoNode(assimpScene->mCameras[i]);
 				if (!camera)
@@ -1044,6 +1073,10 @@ bool AssimpModelImport::populateOptimMaps(
 					repoUUID mergedUUID = node->getUniqueID();
 
 					mergeMap.push_back(mergedUUID);
+				}
+				else
+				{
+					repoDebug << "Could not find the RepoNode corresponding to the assimp node!";
 				}
 			}
 

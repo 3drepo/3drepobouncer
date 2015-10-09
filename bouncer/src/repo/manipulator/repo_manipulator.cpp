@@ -275,7 +275,8 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 	const std::string                             &database,
 	const std::string                             &project,
 	const repoUUID                                &uuid,
-	const bool                                    &headRevision)
+	const bool                                    &headRevision,
+	const bool                                    &lightFetch)
 {
 	repo::core::model::RepoScene* scene = nullptr;
 	repo::core::handler::AbstractDatabaseHandler* handler =
@@ -299,25 +300,50 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 					(headRevision ? ("head revision of branch" + UUIDtoString(uuid))
 					: ("revision " + UUIDtoString(uuid)))
 					<< " of " << database << "." << project;
-
-				if (scene->loadScene(handler, errMsg))
+				if (lightFetch)
 				{
-					repoTrace << "Loaded Scene";
 
-					if (scene->loadStash(handler, errMsg))
+
+						if (scene->loadStash(handler, errMsg))
+						{
+							repoTrace << "Stash Loaded";
+						}
+						else
+						{
+							//failed to load stash isn't critical, give it a warning instead of returning false
+							repoWarning << "Error loading stash" << errMsg;
+							if (scene->loadScene(handler, errMsg))
+							{
+								repoTrace << "Scene Loaded";
+							}
+							else{
+								delete scene;
+								scene = nullptr;
+							}
+						}
+				}
+				else
+				{
+					if (scene->loadScene(handler, errMsg))
 					{
-						repoTrace << "Stash Loaded";
+						repoTrace << "Loaded Scene";
+
+						if (scene->loadStash(handler, errMsg))
+						{
+							repoTrace << "Stash Loaded";
+						}
+						else
+						{
+							//failed to load stash isn't critical, give it a warning instead of returning false
+							repoWarning << "Error loading stash" << errMsg;
+						}
 					}
-					else
-					{
-						//failed to load stash isn't critical, give it a warning instead of returning false
-						repoWarning << "Error loading trace" << errMsg;
+					else{
+						delete scene;
+						scene = nullptr;
 					}
 				}
-				else{
-					delete scene;
-					scene = nullptr;
-				}
+				
 			}
 			else
 			{

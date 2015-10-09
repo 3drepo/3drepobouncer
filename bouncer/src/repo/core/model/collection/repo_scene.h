@@ -519,9 +519,15 @@ namespace repo{
 					*/
 
 					void modifyNode(
+						const GraphType                   &gtype,
 						const repoUUID                    &sharedID,
-						RepoNode *node,
-						const bool                        &overwrite=false);
+						RepoNode *node);
+
+					/**
+					* Rotates the model by 270 degrees to compensate the different axis orientation
+					* in directX. Commonly happens in fbx models
+					*/
+					void reorientateDirectXModel();
 
 					/**
 					* ----------------------------------------------------------
