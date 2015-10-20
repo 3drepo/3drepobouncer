@@ -1188,24 +1188,25 @@ bool AssimpModelImport::populateOptimMaps(
 				repo::core::model::MeshNode *meshChild = (repo::core::model::MeshNode *) child;
 
 				auto meshMappingIt = meshMapping.find(child->getUniqueID());
-                                if (meshMappingIt != meshMapping.end)
+                                if (meshMappingIt != meshMapping.end())
                                 {
                                     repo::core::model::MeshNode updatedChild = meshChild->cloneAndUpdateMeshMapping(meshMappingIt->second);
                                     meshChild->swap(updatedChild);
+
+
+                                    // We also need to transfer the materials so that they are children of the mesh
+
+                                    for (const auto &rMap : meshChild->getMeshMapping())
+                                    {
+                                            repo::core::model::RepoNode *matNode =
+                                                    scene->getNodeByUniqueID(repo::core::model::RepoScene::GraphType::OPTIMIZED, rMap.material_id);
+                                            if (matNode)
+                                            {
+                                                    scene->addInheritance(repo::core::model::RepoScene::GraphType::OPTIMIZED,
+                                                            child->getUniqueID(), rMap.material_id);
+                                            }
+                                    }
                                 }
-
-				// We also need to transfer the materials so that they are children of the mesh
-
-				for (const auto &rMap : meshChild->getMeshMapping())
-				{
-					repo::core::model::RepoNode *matNode =
-						scene->getNodeByUniqueID(repo::core::model::RepoScene::GraphType::OPTIMIZED, rMap.material_id);
-					if (matNode)
-					{
-						scene->addInheritance(repo::core::model::RepoScene::GraphType::OPTIMIZED,
-							child->getUniqueID(), rMap.material_id);
-					}
-				}
 			}
 		}
 	}
