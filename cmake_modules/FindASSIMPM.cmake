@@ -29,14 +29,14 @@ if(DEFINED ENV{ASSIMP_ROOT})
 		PATHS
 		${ASSIMP_ROOT}/lib
 	)	
-	find_library(ASSIMP_LIBRARIES_DEBUG NAMES assimp-vc120-mtd assimpd
+	find_library(ASSIMP_LIBRARIES_DEBUG NAMES assimp-vc120-mtd assimpd assimp
 		PATHS
 		${ASSIMP_ROOT}/lib
-	)	
+	)
 	set(ASSIMP_LIBRARIES
 		debug ${ASSIMP_LIBRARIES_DEBUG}
 		optimized ${ASSIMP_LIBRARIES_RELEASE}
-		)
+	)
 endif()
 
 if(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)
@@ -56,7 +56,7 @@ else(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)
     	/opt/local/lib/
     )
 	
-	find_library(ASSIMP_LIBRARIES_DEBUG NAMES assimpd
+	find_library(ASSIMP_LIBRARIES_DEBUG NAMES assimpd assimp
     	PATHS
     	/usr/lib/
     	/usr/local/lib/
