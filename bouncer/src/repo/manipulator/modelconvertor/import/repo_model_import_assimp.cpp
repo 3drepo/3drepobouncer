@@ -1188,10 +1188,11 @@ bool AssimpModelImport::populateOptimMaps(
 				repo::core::model::MeshNode *meshChild = (repo::core::model::MeshNode *) child;
 
 				auto meshMappingIt = meshMapping.find(child->getUniqueID());
-
-				repo::core::model::MeshNode updatedChild = meshChild->cloneAndUpdateMeshMapping(meshMappingIt->second);
-
-				meshChild->swap(updatedChild);
+                                if (meshMappingIt != meshMapping.end)
+                                {
+                                    repo::core::model::MeshNode updatedChild = meshChild->cloneAndUpdateMeshMapping(meshMappingIt->second);
+                                    meshChild->swap(updatedChild);
+                                }
 
 				// We also need to transfer the materials so that they are children of the mesh
 
