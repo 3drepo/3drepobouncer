@@ -63,7 +63,7 @@ else(ASSIMP_INCLUDE_DIR AND ASSIMP_LIBRARIES)
     	/opt/local/lib/
     )
 	
-	find_library(ASSIMP_LIBRARIES_DEBUG NAMES assimpd
+	find_library(ASSIMP_LIBRARIES_DEBUG NAMES assimpd assimp
     	PATHS
     	/usr/lib/
     	/usr/local/lib/
