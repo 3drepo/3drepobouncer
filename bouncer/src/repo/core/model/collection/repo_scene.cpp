@@ -807,7 +807,7 @@ bool RepoScene::loadScene(
 	std::vector<RepoBSON> nodes = handler->findAllByUniqueIDs(
 		databaseName, projectName + "." + sceneExt, idArray);
 
-	repoInfo << "# of nodes in this scene = " << nodes.size();
+	repoInfo << "# of nodes in this unoptimised scene = " << nodes.size();
 
 	return populate(GraphType::DEFAULT, handler, nodes, errMsg);
 
@@ -966,7 +966,9 @@ bool RepoScene::populate(
 		else
 			refg->setBranch(reference->getRevisionID());
 
-		if (refg->loadScene(handler, errMsg)){
+		//Try to load the stash first, if fail, try scene.
+		if (refg->loadStash(handler, errMsg) || refg->loadScene(handler, errMsg))
+		{
 			g.referenceToScene[reference->getSharedID()] = refg;
 		}
 		else{

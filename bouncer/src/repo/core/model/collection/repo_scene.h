@@ -269,6 +269,18 @@ namespace repo{
 					*/
 					std::string getBranchName() const;
 
+					/**
+					* Return the best graph type availalble for viewing
+					* if stash is loaded, returns stash, otherwise default
+					* @return returns either optimised or default
+					*/
+					GraphType getViewGraph() const
+					{
+						if (stashGraph.rootNode)
+							return GraphType::OPTIMIZED;
+						else
+							return GraphType::DEFAULT;
+					}
 
 					/**
 					* Load revision information of the configured branch/revision
