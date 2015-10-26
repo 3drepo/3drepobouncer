@@ -30,3 +30,8 @@ RepoCredentials::RepoCredentials(
     , port(port)
 {
 }
+
+bool RepoCredentials::isEmpty() const
+{
+    return username.empty() && password.empty();
+}

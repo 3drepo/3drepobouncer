@@ -31,10 +31,26 @@ class REPO_API_EXPORT RepoCredentials
 
 public:
 
+    //! Empty default constructor
+    RepoCredentials() {}
+
+
     RepoCredentials(std::string username,
                     std::string password,
                     std::string host = "localhost",
                     int port = 27017);
+
+    //! Returns true if username and password are empty, false otherwise.
+    bool isEmpty() const;
+
+    //! Returns username
+    std::string getUsername() const { return username; }
+
+    //! Returns host which can be an IP address or DNS host entry
+    std::string getHost() const { return host; }
+
+    //! Returns port
+    int getPort() const { return port; }
 
 private :
 
