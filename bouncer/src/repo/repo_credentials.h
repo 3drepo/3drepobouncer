@@ -31,17 +31,20 @@ class REPO_API_EXPORT RepoCredentials
 
 public:
 
-    //! Empty default constructor
-    RepoCredentials() {}
+    RepoCredentials(std::string alias = "localhost",
+                    std::string host = "127.0.0.1",
+                    int port = 27017,
+                    std::string authenticationDatabase = "admin",
+                    std::string username = std::string(),
+                    std::string password = std::string());
 
+public :
 
-    RepoCredentials(std::string username,
-                    std::string password,
-                    std::string host = "localhost",
-                    int port = 27017);
+    //! Returns connection alias
+    std::string getAlias() const { return alias; }
 
-    //! Returns true if username and password are empty, false otherwise.
-    bool isEmpty() const;
+    //! Returns database to authenticate against
+    std::string getAuthenticationDatabase() const { return authenticationDatabase; }
 
     //! Returns username
     std::string getUsername() const { return username; }
@@ -52,7 +55,14 @@ public:
     //! Returns port
     int getPort() const { return port; }
 
+    //! Returns host:port as a string
+    std::string getHostAndPort() const { return host + ":" + std::to_string(port); }
+
 private :
+
+    std::string alias; //!< Connection alias for easy identification
+
+    std::string authenticationDatabase; //!< Database to authenticate against
 
     std::string username; //!< Username
 
