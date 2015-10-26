@@ -1,3 +1,21 @@
+/**
+*  Copyright (C) 2015 3D Repo Ltd
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU Affero General Public License as
+*  published by the Free Software Foundation, either version 3 of the
+*  License, or (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU Affero General Public License for more details.
+*
+*  You should have received a copy of the GNU Affero General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+
 #include "repo_bson_factory.h"
 
 #include <boost/filesystem.hpp>
@@ -380,6 +398,10 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 		std::vector<uint32_t> facesLevel1;
 		for (auto &face : faces){
+			if (face.numIndices == 0)
+			{
+				repoWarning << "number of indices in this face is 0!";
+			}
 			facesLevel1.push_back(face.numIndices);
 			for (uint32_t ind = 0; ind < face.numIndices; ind++)
 			{
