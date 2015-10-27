@@ -48,7 +48,7 @@ namespace repo{
 				while (stack.empty())
 				{
 					//stack is empty. Release the push lock and try again in 5s
-					pushLock.release();							
+					pushLock.unlock();							
 					boost::this_thread::sleep(boost::posix_time::seconds(5));
 					pushLock.lock();
 				}
