@@ -35,6 +35,7 @@ RepoController::RepoController(
 
 	for (uint32_t i = 0; i < numConcurrentOps; i++)
 	{
+		repoTrace << "Instantiating worker pool with " << numConcurrentOps << " workers";
 		manipulator::RepoManipulator* worker = new manipulator::RepoManipulator();
 		workerPool.push(worker);
 	}
@@ -140,7 +141,7 @@ void RepoController::commitScene(
 	}
 	else
 	{
-		repoError << "Trying to commit to the database without a Repo Token!";
+		repoError << "Trying to commit to the database without a database connection!";
 	}
 }
 
@@ -149,7 +150,7 @@ uint64_t RepoController::countItemsInCollection(
 	const std::string    &database,
 	const std::string    &collection)
 {
-	uint64_t numItems;
+	uint64_t numItems = 0;
 	repoTrace << "Controller: Counting number of items in the collection";
 
 	if (token)
@@ -161,7 +162,7 @@ uint64_t RepoController::countItemsInCollection(
 	}
 	else
 	{
-		repoError << "Trying to fetch database without a Repo Token!";
+		repoError << "Trying to fetch database without a database connection!";
 	}
 
 	return numItems;
@@ -187,7 +188,7 @@ repo::core::model::RepoScene* RepoController::fetchScene(
 	}
 	else
 	{
-		repoError << "Trying to fetch scene without a Repo Token!";
+		repoError << "Trying to fetch scene without a database connection!";
 	}
 
 	return scene;
@@ -214,7 +215,7 @@ std::vector < repo::core::model::RepoBSON >
 	}
 	else
 	{
-		repoError << "Trying to fetch BSONs from a collection without a Repo Token!";
+		repoError << "Trying to fetch data from a collection without a database connection!";
 	}
 
 	repoTrace << "Obtained " << vector.size() << " bson objects.";
@@ -246,7 +247,7 @@ std::vector < repo::core::model::RepoBSON >
 	}
 	else
 	{
-		repoError << "Trying to fetch BSONs from a collection without a Repo Token!";
+		repoError << "Trying to fetch data from a collection without a database connection!";
 	}
 
 	repoTrace << "Obtained " << vector.size() << " bson objects.";
@@ -275,7 +276,7 @@ std::list<std::string> RepoController::getDatabases(const RepoToken *token)
 	}
 	else
 	{
-		repoError << "Trying to fetch database without a Repo Token!";
+		repoError << "Trying to fetch database without a database connection!";
 	}
 
 	return list;
@@ -295,7 +296,7 @@ std::list<std::string>  RepoController::getCollections(
 	}
 	else
 	{
-		repoError << "Trying to fetch collections without a Repo Token!";
+		repoError << "Trying to fetch collections without a database connection!";
 	}
 
 	return list;
@@ -322,7 +323,7 @@ repo::core::model::CollectionStats RepoController::getCollectionStats(
 	}
 	else
 	{
-		repoError << "Trying to get collections stats without a Repo Token!";
+		repoError << "Trying to get collections stats without a database connection!";
 
 	}
 
@@ -344,7 +345,7 @@ std::map<std::string, std::list<std::string>>
 	}
 	else
 	{
-		repoError << "Trying to insert a user without a Repo Token!";
+		repoError << "Trying to insert a user without a database connection!";
 
 	}
 
@@ -364,7 +365,7 @@ void RepoController::insertUser(
 	}
 	else
 	{
-		repoError << "Trying to insert a user without a Repo Token!";
+		repoError << "Trying to insert a user without a database connection!";
 
 	}
 
@@ -387,7 +388,7 @@ bool RepoController::removeCollection(
 	}
 	else
 	{
-		errMsg = "Trying to fetch collections without a Repo Token!";
+		errMsg = "Trying to fetch collections without a database connection!";
 		repoError << errMsg;
 
 	}
@@ -412,7 +413,7 @@ bool RepoController::removeDatabase(
 	}
 	else
 	{
-		errMsg = "Trying to fetch collections without a Repo Token!";
+		errMsg = "Trying to fetch collections without a database connection!";
 		repoError << errMsg;
 
 	}
@@ -435,7 +436,7 @@ void RepoController::removeDocument(
 	}
 	else
 	{
-		repoError << "Trying to delete a document without a Repo Token!";
+		repoError << "Trying to delete a document without a database connection!";
 	}
 
 }
@@ -453,7 +454,7 @@ void RepoController::removeUser(
 	}
 	else
 	{
-		repoError << "Trying to insert a user without a Repo Token!";
+		repoError << "Trying to insert a user without a database connection!";
 
 	}
 }
@@ -471,7 +472,7 @@ void RepoController::updateUser(
 	}
 	else
 	{
-		repoError << "Trying to insert a user without a Repo Token!";
+		repoError << "Trying to insert a user without a database connection!";
 
 	}
 }
@@ -492,7 +493,7 @@ void RepoController::upsertDocument(
 	}
 	else
 	{
-		repoError << "Trying to upsert a document without a Repo Token!";
+		repoError << "Trying to upsert a document without a database connection!";
 	}
 }
 
@@ -556,7 +557,7 @@ std::list<std::string> RepoController::getAdminDatabaseRoles(const RepoToken *to
 	}
 	else
 	{
-		repoError << "Trying to get database roles without a token!";
+		repoError << "Trying to get database roles without a database connection!";
 	}
 
 	return roles;
