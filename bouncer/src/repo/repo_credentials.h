@@ -52,6 +52,9 @@ public :
     //! Returns host which can be an IP address or DNS host entry
     std::string getHost() const { return host; }
 
+    //! Returns password.
+    std::string getPassword() const { return password; }
+
     //! Returns port
     int getPort() const { return port; }
 
