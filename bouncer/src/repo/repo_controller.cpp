@@ -35,6 +35,7 @@ RepoController::RepoController(
 
 	for (uint32_t i = 0; i < numConcurrentOps; i++)
 	{
+		repoTrace << "Instantiating worker pool with " << numConcurrentOps << " workers";
 		manipulator::RepoManipulator* worker = new manipulator::RepoManipulator();
 		workerPool.push(worker);
 	}
