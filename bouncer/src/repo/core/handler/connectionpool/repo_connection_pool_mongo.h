@@ -73,9 +73,9 @@ namespace repo{
 						push(worker);
 						for (int i = 1; i < numConnections; i++)
 						{
-							//push a bunch of null pointers into the stack
-							//We will connect these as required
-							push(0);
+							mongo::DBClientBase *worker = dbAddress.connect(errMsg);
+							worker->auth(*auth);
+							push(worker);
 						}
 					}
 
