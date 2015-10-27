@@ -21,7 +21,7 @@
 namespace repo {
 	namespace core {
 		namespace model {
-			enum class DBActions {INSERT, UPDATE, FIND, CREATE_USER, CREATE_ROLE, GRANT_ROLE, REVOKE_ROLE, VIEW_ROLE};
+			enum class DBActions {INSERT, UPDATE, FIND, CREATE_USER, CREATE_ROLE, GRANT_ROLE, REVOKE_ROLE, VIEW_ROLE, UNKNOWN};
 
 			struct RepoPrivilege{
 				std::string database;
@@ -55,6 +55,51 @@ namespace repo {
 				* --------- Convenience functions -----------
 				*/
 
+				/**
+				* Get the name of the database which this role belongs to
+				* @return returns the name of the database
+				*/
+				std::string getDatabase() const
+				{
+					return getStringField(REPO_ROLE_LABEL_DATABASE);
+				}
+
+				/**
+				* Get the list of roles this role inherited as a vector of {database, role}
+				* @return returns a vector of pairs {database, role}
+				*/
+				std::vector<std::pair<std::string, std::string>> getInheritedRoles() const;
+
+				/**
+				* Get the name of the role
+				* @return returns the name of the role
+				*/
+				std::string getName() const
+				{
+					return getStringField(REPO_ROLE_LABEL_ROLE);
+				}
+
+				/**
+				* Get the list of privileges as a vector
+				* @return returns a vector of privileges
+				*/
+				std::vector<RepoPrivilege> getPrivileges() const;				
+
+			private:
+				/**
+				* Given a RepoBSON that is an array of database actions, 
+				* return a vector of DBActions
+				* @param actionArr a BSON that contains an array of actions
+				* @return returns a vector of DBActions
+				*/
+				std::vector<DBActions> RepoRole::getActions(RepoBSON actionArr) const;
+
+				/**
+				* Given a string representing a dbAction, returns the enumType
+				* @param action action in string
+				* @return returns Action type in DBAction
+				*/
+				DBActions RepoRole::stringToDBAction(const std::string &action) const;
 			};
 
 		}// end namespace model
