@@ -330,6 +330,18 @@ namespace repo{
 			std::string getNameOfAdminDatabase(
 				const std::string                             &databaseAd) const;
 
+
+			/**
+			* Insert a new role into the database
+			* @param databaseAd database address:portdatabase
+			* @param cred user credentials in bson form
+			* @param role role info to insert
+			*/
+			void insertRole(
+				const std::string                             &databaseAd,
+				const repo::core::model::RepoBSON	          *cred,
+				const repo::core::model::RepoRole             &role);
+
 			/**
 			* Insert a new user into the database
 			* @param databaseAd database address:portdatabase

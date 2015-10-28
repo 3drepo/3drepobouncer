@@ -396,6 +396,25 @@ std::map<std::string, std::list<std::string>>
 	return map;
 }
 
+void RepoController::insertRole(
+	const RepoToken                   *token,
+	const repo::core::model::RepoRole &role
+	)
+{
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		worker->insertRole(token->databaseAd,
+			token->credentials, role);
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Trying to insert a user without a database connection!";
+
+	}
+}
+
 void RepoController::insertUser(
 	const RepoToken                          *token,
 	const repo::core::model::RepoUser  &user)

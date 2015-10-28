@@ -755,6 +755,94 @@ bool MongoDatabaseHandler::insertRawFile(
 	return success;
 }
 
+bool MongoDatabaseHandler::performRoleCmd(
+	const OPERATION                         &op,
+	const repo::core::model::RepoRole       &role,
+	std::string                             &errMsg)
+{
+	bool success = true;
+	mongo::DBClientBase *worker;
+
+	if (!role.isEmpty())
+	{
+		if (role.getName().empty() || role.getDatabase().empty())
+		{
+			errMsg += "Role bson does not contain role name/database name";
+		}
+		else{
+			try{
+				worker = workerPool->getWorker();
+				repo::core::model::RepoBSONBuilder cmdBuilder;
+				std::string roleName = role.getName();
+				switch (op)
+				{
+				case OPERATION::INSERT:
+					cmdBuilder << "createRole" << roleName;
+					break;
+				case OPERATION::UPDATE:
+					cmdBuilder << "updateRole" << roleName;
+					break;
+				case OPERATION::DROP:
+					cmdBuilder << "dropRole" << roleName;
+				}
+
+				if (op != OPERATION::DROP)
+				{
+
+					cmdBuilder << "db" << role.getDatabase();
+					repo::core::model::RepoBSON privileges = role.getObjectField(REPO_ROLE_LABEL_PRIVILEGES);
+					if (privileges.isEmpty())
+					{
+						cmdBuilder << "privileges" << mongo::BSONArray();
+					}
+					else
+					{
+						cmdBuilder << "privileges" << privileges;
+					}
+
+					repo::core::model::RepoBSON inheritedRoles = role.getObjectField(REPO_ROLE_LABEL_INHERITED_ROLES);
+
+					if (inheritedRoles.isEmpty())
+					{
+						cmdBuilder << "roles" << mongo::BSONArray();
+					}
+					else
+					{
+						cmdBuilder << "roles" << inheritedRoles;
+					}
+				}
+
+
+				mongo::BSONObj info;
+				worker->runCommand(role.getDatabase(), cmdBuilder.obj(), info);
+
+				std::string cmdError = info.getStringField("errmsg");
+				if (!cmdError.empty())
+				{
+					success = false;
+					errMsg += cmdError;
+				}
+
+			}
+			catch (mongo::DBException &e)
+			{
+				success = false;
+				std::string errString(e.what());
+				errMsg += errString;
+			}
+
+			workerPool->returnWorker(worker);
+		}
+		
+	}
+	else
+	{
+		errMsg += "Role bson is empty";
+	}
+
+
+	return success;
+}
 
 bool MongoDatabaseHandler::performUserCmd(
 	const OPERATION                         &op,

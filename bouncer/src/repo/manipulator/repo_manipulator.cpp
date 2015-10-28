@@ -511,6 +511,28 @@ repo::core::model::RepoScene*
 	return scene;
 }
 
+void RepoManipulator::insertRole(
+	const std::string                             &databaseAd,
+	const repo::core::model::RepoBSON	          *cred,
+	const repo::core::model::RepoRole             &role)
+{
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+	{
+		std::string errMsg;
+		if (handler->insertRole(role, errMsg))
+		{
+			repoInfo << "Role added successfully.";
+		}
+		else
+		{
+			repoError << "Failed to add role : " << errMsg;
+		}
+	}
+
+}
+
 void RepoManipulator::insertUser(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON*	  cred,
