@@ -60,9 +60,14 @@ namespace repo{
 						if (worker)
 						{
 							repoDebug << "Connected to database, trying authentication..";
-							if (!worker->auth(auth->getStringField("db"), auth->getStringField("user"), auth->getStringField("pwd"), errMsg, auth->getField("digestPassword").boolean()))
+							for (int i = 0; i < numConnections; i++)
 							{
-								throw mongo::DBException(errMsg, mongo::ErrorCodes::AuthenticationFailed);
+								mongo::DBClientBase *worker = dbAddress.connect(errMsg);
+								if (!worker->auth(auth->getStringField("db"), auth->getStringField("user"), auth->getStringField("pwd"), errMsg, auth->getField("digestPassword").boolean()))
+								{
+									throw mongo::DBException(errMsg, mongo::ErrorCodes::AuthenticationFailed);
+								}
+								push(worker);
 							}
 						}
 						else
@@ -73,16 +78,7 @@ namespace repo{
 
 
 
-						push(worker);
-						for (int i = 1; i < numConnections; i++)
-						{
-							mongo::DBClientBase *worker = dbAddress.connect(errMsg);
-							if (!worker->auth(auth->getStringField("db"), auth->getStringField("user"), auth->getStringField("pwd"), errMsg, auth->getField("digestPassword").boolean()))
-							{
-								throw mongo::DBException(errMsg, mongo::ErrorCodes::AuthenticationFailed);
-							}
-							push(worker);
-						}
+
 					}
 
 					MongoConnectionPool():maxSize(0){}
