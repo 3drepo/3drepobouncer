@@ -104,7 +104,7 @@ namespace repo{
 		~RepoController();
 
 		/*
-		*	------------- Database Authentication --------------
+		*	------------- Database Connection & Authentication --------------
 		*/
 
 		/**
@@ -147,6 +147,15 @@ namespace repo{
 			const bool        &pwDigested = false
 			);
 
+
+		/**
+		* Disconnect the controller from a database connection
+		* and destroys the token
+		* FIXME: CURRENTLY NOT THREAD SAFE! POTENTIALLY DANGEROUS
+		* @param token token to the database
+		*/
+		void disconnectFromDatabase(const RepoToken* token);
+
         /**
          * Checks whether given credentials permit successful connection to a
          * given database.
@@ -154,6 +163,7 @@ namespace repo{
          * @return returns true if successful, false otherwise
          */
         bool testConnection(const repo::RepoCredentials &credentials);
+
 
 		/*
 		*	------------- Database info lookup --------------
