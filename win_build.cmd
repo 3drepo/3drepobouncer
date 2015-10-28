@@ -9,5 +9,5 @@ mkdir build
 cd build
 cmake -DCMAKE_INSTALL_PREFIX=C:/local/3drepobouncer -G "Visual Studio 12 Win64" ../
 msbuild INSTALL.vcxproj /v:quiet /p:Configuration=Release /t:Rebuild
-msbuild INSTALL.vcxproj /v:quiet /p:Configuration=Debug
+msbuild INSTALL.vcxproj /v:quiet /p:Configuration=Debug /t:Rebuild
 cd ..

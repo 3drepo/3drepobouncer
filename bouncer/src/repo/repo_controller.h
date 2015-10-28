@@ -25,6 +25,7 @@
 
 #include <string>
 #include "repo_bouncer_global.h"
+#include "repo_credentials.h"
 
 #include "core/handler/repo_database_handler_mongo.h"
 #include "core/model/bson/repo_bson.h"
@@ -145,6 +146,14 @@ namespace repo{
 			const std::string &password,
 			const bool        &pwDigested = false
 			);
+
+        /**
+         * Checks whether given credentials permit successful connection to a
+         * given database.
+         * @param credentials user credentials
+         * @return returns true if successful, false otherwise
+         */
+        bool testConnection(const repo::RepoCredentials &credentials);
 
 		/*
 		*	------------- Database info lookup --------------
