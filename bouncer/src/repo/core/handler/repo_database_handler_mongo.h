@@ -48,6 +48,7 @@ namespace repo{
 
 			class MongoDatabaseHandler : public AbstractDatabaseHandler{
 				enum class OPERATION { DROP, INSERT, UPDATE };
+				enum class AuthMech { MONGODB_CR, SCRAM_SHA_1 };
 			public:
 				/*
 				*	=================================== Public Fields ========================================
@@ -140,8 +141,8 @@ namespace repo{
 					const std::string &password,
 					const bool        &pwDigested = false)
 				{
-					mongo::BSONObj *mongoBSON = createAuthBSON(dbName, username, password, pwDigested);
-					return mongoBSON? new repo::core::model::RepoBSON(*mongoBSON) : 0;
+					mongo::BSONObj *mongoBSON = createAuthBSON(dbName, username, password, pwDigested, defaultMech);
+					return mongoBSON? new repo::core::model::RepoBSON(*mongoBSON) : nullptr;
 				}
 
 
@@ -484,6 +485,8 @@ namespace repo{
 
 				mongo::ConnectionString dbAddress; /* !address of the database (host:port)*/
 
+				AuthMech defaultMech; /** Default authentcation mechanism for this handler */
+
 				/*
 				 *	=============================================================================================
 				 */
@@ -537,7 +540,8 @@ namespace repo{
 					const std::string &database,
 					const std::string &username,
 					const std::string &password,
-					const bool        &pwDigested);
+					const bool        &pwDigested,
+					const AuthMech    &mech = AuthMech::MONGODB_CR);
 				/**
 				* Turns a list of fields that needs to be returned by the query into a bson
 				* object.
