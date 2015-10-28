@@ -142,7 +142,7 @@ namespace repo{
 					const bool        &pwDigested = false)
 				{
 					mongo::BSONObj *mongoBSON = createAuthBSON(dbName, username, password, pwDigested);
-					return mongoBSON? new repo::core::model::RepoBSON(*mongoBSON) : 0;
+					return mongoBSON? new repo::core::model::RepoBSON(*mongoBSON) : nullptr;
 				}
 
 

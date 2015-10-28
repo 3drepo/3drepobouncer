@@ -41,7 +41,6 @@ const std::list<std::string> repo::core::handler::MongoDatabaseHandler::ADMIN_ON
 "hostManager", "readAnyDatabase", "readWriteAnyDatabase", "restore", "root",
 "userAdminAnyDatabase" };
 
-const std::string repo::core::handler::MongoDatabaseHandler::AUTH_MECH = "MONGODB-CR";
 //------------------------------------------------------------------------------
 
 MongoDatabaseHandler* MongoDatabaseHandler::handler = NULL;
@@ -110,13 +109,13 @@ mongo::BSONObj* MongoDatabaseHandler::createAuthBSON(
 	mongo::BSONObj* authBson = 0;
 	if (!username.empty())
 	{
+
 		std::string passwordDigest = pwDigested ?
 		password : mongo::DBClientWithCommands::createPasswordDigest(username, password);
 		authBson = new mongo::BSONObj(BSON("user" << username <<
 			"db" << database <<
 			"pwd" << passwordDigest <<
-			"digestPassword" << false <<
-			"mechanism" << AUTH_MECH));
+			"digestPassword" << false));
 	}
 
 	return authBson;
