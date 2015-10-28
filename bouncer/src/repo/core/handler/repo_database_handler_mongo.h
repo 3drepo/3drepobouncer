@@ -76,6 +76,24 @@ namespace repo{
 				~MongoDatabaseHandler();
 
 				/**
+				* Disconnects the handler and resets the instance
+				* Must call this before trying to reconnect to another database!
+				*/
+				static void disconnectHandler()
+				{
+					if (handler)
+					{
+						repoInfo << "Disconnecting from database...";
+						delete handler;
+						handler = nullptr;
+					}
+					else
+					{
+						repoTrace << "Attempting to disconnect a handler without ever instantiating it!";
+					}
+				}
+
+				/**
 				 * Returns the instance of MongoDatabaseHandler
 				 * @param errMsg error message if this fails
 				 * @param host hostname of the database
@@ -99,7 +117,6 @@ namespace repo{
 
 				/**
 				* Returns the instance of MongoDatabaseHandler
-				* @param errMsg error message if this fails
 				* @param host string containing "databaseAddress:port"
 				* @return Returns null if there is no instance available
 				*/

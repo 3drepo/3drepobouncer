@@ -128,6 +128,34 @@ RepoToken* RepoController::authenticateMongo(
 	return token ;
 }
 
+bool RepoController::testConnection(const repo::RepoCredentials &credentials)
+{
+    std::string errMsg;
+	bool isConnected = false;
+    RepoToken* token = nullptr;
+	if (token = authenticateMongo(
+		errMsg,
+		credentials.getHost(),
+		credentials.getPort(),
+		credentials.getAuthenticationDatabase(),
+		credentials.getUsername(),
+		credentials.getPassword(),
+		false))
+	{
+		repoTrace << "Connection established.";
+		disconnectFromDatabase(token);
+		isConnected = true;
+		delete token;
+	}
+    else
+    {
+        //connection/authentication failed
+        repoError << "Failed to connect/authenticate.";
+        repoError << errMsg;
+    }
+	return isConnected;
+}
+
 void RepoController::commitScene(
 	const RepoToken                     *token,
 	repo::core::model::RepoScene        *scene,
@@ -166,6 +194,22 @@ uint64_t RepoController::countItemsInCollection(
 	}
 
 	return numItems;
+}
+
+void RepoController::disconnectFromDatabase(const RepoToken* token)
+{
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+
+		worker->disconnectFromDatabase(token->databaseAd);
+
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Trying to disconnect from database with an invalid token!";
+	}
 }
 
 repo::core::model::RepoScene* RepoController::fetchScene(
