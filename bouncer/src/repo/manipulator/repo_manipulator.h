@@ -141,6 +141,16 @@ namespace repo{
 			);
 
 			/**
+			* Disconnects from the given database host
+			* @param databaseAd database address:port
+			*/
+			void disconnectFromDatabase(const std::string &databaseAd)
+			{
+				//FIXME: can only kill mongo here, but this is suppose to be a quick fix
+				core::handler::MongoDatabaseHandler::disconnectHandler();
+			}
+
+			/**
 			* Remove a collection from the database
 			* @param databaseAd mongo database address:port
 			* @param cred user credentials in bson form

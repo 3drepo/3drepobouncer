@@ -168,6 +168,22 @@ uint64_t RepoController::countItemsInCollection(
 	return numItems;
 }
 
+void RepoController::disconnectFromDatabase(const RepoToken* token)
+{
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+
+		worker->disconnectFromDatabase(token->databaseAd);
+
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Trying to disconnect from database with an invalid token!";
+	}
+}
+
 repo::core::model::RepoScene* RepoController::fetchScene(
 	const RepoToken      *token,
 	const std::string    &database,
