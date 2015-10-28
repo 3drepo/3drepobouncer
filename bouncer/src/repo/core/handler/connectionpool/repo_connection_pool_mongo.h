@@ -74,7 +74,10 @@ namespace repo{
 						for (int i = 1; i < numConnections; i++)
 						{
 							mongo::DBClientBase *worker = dbAddress.connect(errMsg);
-							worker->auth(*auth);
+							if (!worker->auth(auth->getStringField("db"), auth->getStringField("user"), auth->getStringField("pwd"), errMsg, auth->getField("digestPassword").boolean()))
+							{
+								throw mongo::DBException(errMsg, mongo::ErrorCodes::AuthenticationFailed);
+							}
 							push(worker);
 						}
 					}
@@ -138,7 +141,10 @@ namespace repo{
 					mongo::DBClientBase* connectWorker(std::string &errMsg)
 					{
 						mongo::DBClientBase *worker = dbAddress.connect(errMsg);
-						worker->auth(*auth);
+						if (!worker->auth(auth->getStringField("db"), auth->getStringField("user"), auth->getStringField("pwd"), errMsg, auth->getField("digestPassword").boolean()))
+						{
+							throw mongo::DBException(errMsg, mongo::ErrorCodes::AuthenticationFailed);
+						}
 						return worker;
 					}
 
