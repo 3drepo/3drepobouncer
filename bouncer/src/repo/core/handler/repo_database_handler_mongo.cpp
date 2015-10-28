@@ -41,7 +41,6 @@ const std::list<std::string> repo::core::handler::MongoDatabaseHandler::ADMIN_ON
 "hostManager", "readAnyDatabase", "readWriteAnyDatabase", "restore", "root",
 "userAdminAnyDatabase" };
 
-const std::string repo::core::handler::MongoDatabaseHandler::AUTH_MECH = "MONGODB-CR";
 //------------------------------------------------------------------------------
 
 MongoDatabaseHandler* MongoDatabaseHandler::handler = NULL;
@@ -56,7 +55,19 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 	AbstractDatabaseHandler(MAX_MONGO_BSON_SIZE)
 {
 	mongo::client::initialize();
-	workerPool = new connectionPool::MongoConnectionPool(maxConnections, dbAddress, createAuthBSON(dbName, username, password, pwDigested));
+	defaultMech = AuthMech::MONGODB_CR;
+	try{
+		workerPool = new connectionPool::MongoConnectionPool(maxConnections, dbAddress, createAuthBSON(dbName, username, password, pwDigested, defaultMech));
+	}
+	catch (mongo::DBException &e)
+	{
+		repoDebug << "Exception caught whilst instantiating connection pool: " << e.what();
+		repoDebug << "attempting a different protocol...";
+		//Try SCRAM SHA 1 before giving up
+		defaultMech = AuthMech::SCRAM_SHA_1;
+		workerPool = new connectionPool::MongoConnectionPool(maxConnections, dbAddress, createAuthBSON(dbName, username, password, pwDigested, defaultMech));
+	}
+
 }
 
 /**
@@ -105,18 +116,30 @@ mongo::BSONObj* MongoDatabaseHandler::createAuthBSON(
 	const std::string &database,
 	const std::string &username, 
 	const std::string &password,
-	const bool        &pwDigested)
+	const bool        &pwDigested,
+	const AuthMech   &mech)
 {
 	mongo::BSONObj* authBson = 0;
 	if (!username.empty())
 	{
+		std::string authenticationMech;
+
+		switch (mech)
+		{
+		case AuthMech::MONGODB_CR:
+			authenticationMech = "MONGODB-CR";
+			break;
+		case AuthMech::SCRAM_SHA_1:
+			authenticationMech = "SCRAM-SHA-1";
+		}
+
 		std::string passwordDigest = pwDigested ?
 		password : mongo::DBClientWithCommands::createPasswordDigest(username, password);
 		authBson = new mongo::BSONObj(BSON("user" << username <<
 			"db" << database <<
 			"pwd" << passwordDigest <<
 			"digestPassword" << false <<
-			"mechanism" << AUTH_MECH));
+			"mechanism" << authenticationMech));
 	}
 
 	return authBson;
