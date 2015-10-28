@@ -92,14 +92,14 @@ namespace repo {
 				* @param actionArr a BSON that contains an array of actions
 				* @return returns a vector of DBActions
 				*/
-				std::vector<DBActions> RepoRole::getActions(RepoBSON actionArr) const;
+				std::vector<DBActions> getActions(RepoBSON actionArr) const;
 
 				/**
 				* Given a string representing a dbAction, returns the enumType
 				* @param action action in string
 				* @return returns Action type in DBAction
 				*/
-				DBActions RepoRole::stringToDBAction(const std::string &action) const;
+				DBActions stringToDBAction(const std::string &action) const;
 			};
 
 		}// end namespace model
