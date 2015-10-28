@@ -61,12 +61,20 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 	}
 	catch (mongo::DBException &e)
 	{
-		repoDebug << "Exception caught whilst instantiating connection pool: (" <<e.getCode() << ")" << e.what() ;
-		repoDebug << "attempting a different protocol...";
+		
+		if (e.getCode() == mongo::ErrorCodes::AuthenticationFailed)
+		{
+			repoDebug << "Authentication failed: attempting a different protocol...";
+			//Try SCRAM SHA 1 before giving up
+			defaultMech = AuthMech::SCRAM_SHA_1;
+			workerPool = new connectionPool::MongoConnectionPool(maxConnections, dbAddress, createAuthBSON(dbName, username, password, pwDigested, defaultMech));
+		}
+		else
+		{
+			//Not something we want to catch, throw it up
+			throw e; 
+		}
 
-		//Try SCRAM SHA 1 before giving up
-		defaultMech = AuthMech::SCRAM_SHA_1;
-		workerPool = new connectionPool::MongoConnectionPool(maxConnections, dbAddress, createAuthBSON(dbName, username, password, pwDigested, defaultMech));
 		
 		
 	}
