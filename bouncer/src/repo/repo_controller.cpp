@@ -131,7 +131,7 @@ RepoToken* RepoController::authenticateMongo(
 bool RepoController::testConnection(const repo::RepoCredentials &credentials)
 {
     std::string errMsg;
-	boolean isConnected = false;
+	bool isConnected = false;
     RepoToken* token = nullptr;
 	if (token = authenticateMongo(
 		errMsg,
