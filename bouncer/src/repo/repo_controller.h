@@ -25,6 +25,7 @@
 
 #include <string>
 #include "repo_bouncer_global.h"
+#include "repo_credentials.h"
 
 #include "core/handler/repo_database_handler_mongo.h"
 #include "core/model/bson/repo_bson.h"
@@ -49,24 +50,33 @@ namespace repo{
 		/**
 		* Construct a Repo token
 		* @param credentials user credentials in a bson format
-		* @param databaseAd database address+port as a string
+        * @param databaseHostPort database address+port as a string
 		* @param databaseName database it is authenticating against
 		*/
 		RepoToken(
-			const repo::core::model::RepoBSON*  credentials,
-			const std::string                         databaseAd,
-			const std::string                        &databaseName) :
-			databaseAd(databaseAd),
+            const repo::core::model::RepoBSON* credentials = 0,
+            const std::string &databaseHostPort = std::string(),
+            const std::string &databaseName = std::string()) :
+            databaseAd(databaseHostPort),
 			credentials(credentials),
-			databaseName(databaseName){};
+            databaseName(databaseName) {}
 
 		~RepoToken(){
 			if (credentials)
 				delete credentials;
 		}
 
+        /**
+         * @brief getDatabaseHostPort
+         * @return database host and port in as a string
+         */
+        std::string getDatabaseHostPort() const { return databaseAd; }
+
+        std::string getDatabaseName() const { return databaseName; }
+
 
 	private:
+
 		const repo::core::model::RepoBSON* credentials;
 		const std::string databaseAd;
 		const std::string databaseName;
@@ -137,6 +147,7 @@ namespace repo{
 			const bool        &pwDigested = false
 			);
 
+
 		/**
 		* Disconnect the controller from a database connection
 		* and destroys the token
@@ -144,6 +155,16 @@ namespace repo{
 		* @param token token to the database
 		*/
 		void disconnectFromDatabase(const RepoToken* token);
+
+        /**
+         * Checks whether given credentials permit successful connection to a
+         * given database.
+         * @param credentials user credentials
+         * @return returns true if successful, false otherwise
+         */
+        bool testConnection(const repo::RepoCredentials &credentials);
+
+
 		/*
 		*	------------- Database info lookup --------------
 		*/

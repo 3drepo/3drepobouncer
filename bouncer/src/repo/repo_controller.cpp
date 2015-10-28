@@ -128,6 +128,28 @@ RepoToken* RepoController::authenticateMongo(
 	return token ;
 }
 
+bool RepoController::testConnection(const repo::RepoCredentials &credentials)
+{
+    std::string errMsg;
+    bool isConnected = false;
+    if (isConnected = authenticateMongo(
+                errMsg,
+                credentials.getHost(),
+                credentials.getPort(),
+                credentials.getAuthenticationDatabase(),
+                credentials.getUsername(),
+                credentials.getPassword(),
+                false))
+        repoTrace << "Connection established.";
+    else
+    {
+        //connection/authentication failed
+        repoError << "Failed to connect/authenticate.";
+        repoError << errMsg;
+    }
+    return isConnected;
+}
+
 void RepoController::commitScene(
 	const RepoToken                     *token,
 	repo::core::model::RepoScene        *scene,
