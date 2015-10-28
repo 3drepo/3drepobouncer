@@ -60,7 +60,10 @@ namespace repo{
 						if (worker)
 						{
 							repoDebug << "Connected to database, trying authentication..";
-							worker->auth(*auth);
+							if (!worker->auth(auth->getStringField("db"), auth->getStringField("user"), auth->getStringField("pwd"), errMsg, auth->getField("digestPassword").boolean()))
+							{
+								throw mongo::DBException(errMsg, mongo::ErrorCodes::AuthenticationFailed);
+							}
 						}
 						else
 						{
