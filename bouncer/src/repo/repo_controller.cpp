@@ -140,7 +140,7 @@ bool RepoController::testConnection(const repo::RepoCredentials &credentials)
                 credentials.getUsername(),
                 credentials.getPassword(),
                 false))
-        repoLog << "Connection established.";
+        repoTrace << "Connection established.";
     else
     {
         //connection/authentication failed
