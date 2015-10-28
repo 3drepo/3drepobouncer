@@ -627,11 +627,11 @@ RepoRole RepoBSONFactory::makeRepoRole(
 				actionBuilder << std::to_string(aCount) << RepoRole::dbActionToString(p.actions[aCount]);
 			}
 
-			innerBsonBuilder << REPO_ROLE_LABEL_ACTIONS << actionBuilder.obj();
+			innerBsonBuilder.appendArray(REPO_ROLE_LABEL_ACTIONS, actionBuilder.obj());
 
 			privilegesBuilder << std::to_string(i) << innerBsonBuilder.obj();
 		}
-		builder << REPO_ROLE_LABEL_PRIVILEGES << privilegesBuilder.obj();
+		builder.appendArray(REPO_ROLE_LABEL_PRIVILEGES, privilegesBuilder.obj());
 	}
 	else
 	{
@@ -655,7 +655,7 @@ RepoRole RepoBSONFactory::makeRepoRole(
 			inheritedRolesBuilder << std::to_string(i) << parentRole;
 		}
 
-		builder << REPO_ROLE_LABEL_INHERITED_ROLES << inheritedRolesBuilder.obj();
+		builder.appendArray(REPO_ROLE_LABEL_INHERITED_ROLES, inheritedRolesBuilder.obj());
 	}
 
 	return RepoRole(builder.obj());

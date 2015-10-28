@@ -771,7 +771,7 @@ bool MongoDatabaseHandler::performRoleCmd(
 		else{
 			try{
 				worker = workerPool->getWorker();
-				repo::core::model::RepoBSONBuilder cmdBuilder;
+				mongo::BSONObjBuilder cmdBuilder;
 				std::string roleName = role.getName();
 				switch (op)
 				{
@@ -788,32 +788,20 @@ bool MongoDatabaseHandler::performRoleCmd(
 				if (op != OPERATION::DROP)
 				{
 
-					cmdBuilder << "db" << role.getDatabase();
 					repo::core::model::RepoBSON privileges = role.getObjectField(REPO_ROLE_LABEL_PRIVILEGES);
-					if (privileges.isEmpty())
-					{
-						cmdBuilder << "privileges" << mongo::BSONArray();
-					}
-					else
-					{
-						cmdBuilder << "privileges" << privileges;
-					}
+					cmdBuilder.appendArray("privileges", privileges);
 
 					repo::core::model::RepoBSON inheritedRoles = role.getObjectField(REPO_ROLE_LABEL_INHERITED_ROLES);
 
-					if (inheritedRoles.isEmpty())
-					{
-						cmdBuilder << "roles" << mongo::BSONArray();
-					}
-					else
-					{
-						cmdBuilder << "roles" << inheritedRoles;
-					}
+					cmdBuilder.appendArray("roles", inheritedRoles);
 				}
 
 
 				mongo::BSONObj info;
-				worker->runCommand(role.getDatabase(), cmdBuilder.obj(), info);
+				auto cmd = cmdBuilder.obj();
+				worker->runCommand(role.getDatabase(), cmd, info);
+
+				repoTrace << "Role command : " << cmd;
 
 				std::string cmdError = info.getStringField("errmsg");
 				if (!cmdError.empty())
