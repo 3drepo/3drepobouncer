@@ -366,7 +366,7 @@ TEST(RepoBSONTest, CloneAndShrink)
 	//shrinking a bson without any binary fields should yield an identical bson
 	RepoBSON shrunkBson = testBson.cloneAndShrink();
 
-	EXPECT_EQ(testBson.toString(), shrunkBson.toString());
+	EXPECT_EQ(testBson, shrunkBson);
 	EXPECT_EQ(testBson.getFilesMapping().size(), shrunkBson.getFilesMapping().size());
 	
 	mongo::BSONObjBuilder builder;
