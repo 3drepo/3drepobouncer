@@ -616,10 +616,12 @@ bool RepoScene::commitNodes(
 			{
 				success = false;
 				errMsg += "Node '" + UUIDtoString(node->getUniqueID()) + "' over 16MB in size is not committed.";
+
 			}
 			else
 			{
 				node->swap(shrunkNode);
+				success &= handler->insertDocument(databaseName, projectName + "." + ext, *node, errMsg);
 			}
 
 		}
