@@ -744,21 +744,21 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 	if (currentNodes.size() > 0)
 		builder.appendArray(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS, builder.createArrayBSON(currentNodes));
 
-	//--------------------------------------------------------------------------
-	// Added Shared IDs
+	////--------------------------------------------------------------------------
+	//// Added Shared IDs
 
-	if (added.size() > 0)
-		builder.appendArray(REPO_NODE_REVISION_LABEL_ADDED_SHARED_IDS, builder.createArrayBSON(added));
+	//if (added.size() > 0)
+	//	builder.appendArray(REPO_NODE_REVISION_LABEL_ADDED_SHARED_IDS, builder.createArrayBSON(added));
 
-	//--------------------------------------------------------------------------
-	// Deleted Shared IDs
-	if (removed.size() > 0)
-		builder.appendArray(REPO_NODE_REVISION_LABEL_DELETED_SHARED_IDS, builder.createArrayBSON(removed));
+	////--------------------------------------------------------------------------
+	//// Deleted Shared IDs
+	//if (removed.size() > 0)
+	//	builder.appendArray(REPO_NODE_REVISION_LABEL_DELETED_SHARED_IDS, builder.createArrayBSON(removed));
 
-	//--------------------------------------------------------------------------
-	// Modified Shared IDs
-	if (modified.size() > 0)
-		builder.appendArray(REPO_NODE_REVISION_LABEL_MODIFIED_SHARED_IDS, builder.createArrayBSON(modified));
+	////--------------------------------------------------------------------------
+	//// Modified Shared IDs
+	//if (modified.size() > 0)
+	//	builder.appendArray(REPO_NODE_REVISION_LABEL_MODIFIED_SHARED_IDS, builder.createArrayBSON(modified));
 
 	//--------------------------------------------------------------------------
 
