@@ -390,6 +390,7 @@ TEST(RepoBSONTest, CloneAndShrink)
 	outMapping = shrunkBson.getFilesMapping();
 
 	EXPECT_NE(shrunkBson, binBson);
+	EXPECT_FALSE(shrunkBson.hasField("binDataTest"));
 	EXPECT_EQ(2, outMapping.size());
 	EXPECT_TRUE(outMapping.find("orgRef") != outMapping.end());
 
