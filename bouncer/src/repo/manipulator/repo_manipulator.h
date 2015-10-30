@@ -397,6 +397,17 @@ namespace repo{
 				const repo::core::model::RepoBSON       &bson);
 
 			/**
+			* remove a role from the database
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param role role info to remove
+			*/
+			void removeRole(
+				const std::string                             &databaseAd,
+				const repo::core::model::RepoBSON*	  cred,
+				const repo::core::model::RepoRole       &role);
+
+			/**
 			* remove a user from the database
 			* @param databaseAd mongo database address:port
 			* @param cred user credentials in bson form
@@ -429,6 +440,17 @@ namespace repo{
 			bool saveSceneToFile(
 				const std::string &filePath,
 				const repo::core::model::RepoScene* scene);
+
+			/**
+			* Update a role on the database
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param role role info to modify
+			*/
+			void updateRole(
+				const std::string                             &databaseAd,
+				const repo::core::model::RepoBSON*	  cred,
+				const repo::core::model::RepoRole       &role);
 
 			/**
 			* Update a user on the database

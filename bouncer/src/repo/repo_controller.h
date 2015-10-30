@@ -415,11 +415,29 @@ namespace repo{
 		/**
 		* remove a user from the database
 		* @param token Authentication token
+		* @param role role to remove
+		*/
+		void removeRole(
+			const RepoToken                          *token,
+			const repo::core::model::RepoRole  &role);
+
+		/**
+		* remove a user from the database
+		* @param token Authentication token
 		* @param user user info to remove
 		*/
 		void removeUser(
 			const RepoToken                          *token,
 			const repo::core::model::RepoUser  &user);
+
+		/**
+		* Update a role on the database
+		* @param token Authentication token
+		* @param role role info to modify
+		*/
+		void updateRole(
+			const RepoToken                          *token,
+			const repo::core::model::RepoRole		 &role);
 
 		/**
 		* Update a user on the database
