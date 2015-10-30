@@ -75,8 +75,7 @@ namespace repo {
 						* Use _makeRepoRole() if you wish to have direct control on the interface
 						* @param roleName name of the role
 						* @param database database where this role resides
-						* @param privileges a vector of privileges this role has
-						* @param inhertedRoles vector of roles which this role inherits from
+						* @param permissions a vector of project and their access permissions
 						* @return returns a bson with this role information
 						*/
 						static RepoRole makeRepoRole(
