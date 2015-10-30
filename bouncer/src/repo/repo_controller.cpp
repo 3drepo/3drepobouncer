@@ -80,11 +80,11 @@ RepoToken* RepoController::authenticateToAdminDatabaseMongo(
 	bool success = worker->connectAndAuthenticateWithAdmin(errMsg, address, port,
 		numDBConnections, username, password, pwDigested);
 
-	if (success)
+	if (success && !username.empty())
 		cred = worker->createCredBSON(dbFullAd, username, password, pwDigested);
 
 
-	if (cred)
+	if (cred || username.empty())
 	{
 		token = new RepoToken(cred, dbFullAd, worker->getNameOfAdminDatabase(dbFullAd));
 
@@ -117,11 +117,11 @@ RepoToken* RepoController::authenticateMongo(
 	bool success = worker->connectAndAuthenticate(errMsg, address, port,
 		numDBConnections, dbName, username, password, pwDigested);
 
-	if (success)
+	if (success && !username.empty())
 		cred = worker->createCredBSON(dbFullAd, username, password, pwDigested);
 	workerPool.push(worker);
 
-	if (cred)
+	if (cred || username.empty())
 	{
 		token = new RepoToken(cred, dbFullAd, dbName);
 	}
