@@ -127,6 +127,15 @@ namespace repo {
 				*/
 				std::vector<RepoPrivilege> getPrivileges() const;				
 
+				/**
+				* Get the list of project access rights as a vector
+				* @return returns a vector of permissions
+				*/
+				std::vector<RepoPermission> getProjectAccessRights() const
+				{
+					return translatePrivileges(getPrivileges());
+				}
+
 			private:
 				/**
 				* Given a RepoBSON that is an array of database actions, 
