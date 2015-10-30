@@ -330,6 +330,18 @@ namespace repo{
 			std::string getNameOfAdminDatabase(
 				const std::string                             &databaseAd) const;
 
+
+			/**
+			* Insert a new role into the database
+			* @param databaseAd database address:portdatabase
+			* @param cred user credentials in bson form
+			* @param role role info to insert
+			*/
+			void insertRole(
+				const std::string                             &databaseAd,
+				const repo::core::model::RepoBSON	          *cred,
+				const repo::core::model::RepoRole             &role);
+
 			/**
 			* Insert a new user into the database
 			* @param databaseAd database address:portdatabase
@@ -385,6 +397,17 @@ namespace repo{
 				const repo::core::model::RepoBSON       &bson);
 
 			/**
+			* remove a role from the database
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param role role info to remove
+			*/
+			void removeRole(
+				const std::string                             &databaseAd,
+				const repo::core::model::RepoBSON*	  cred,
+				const repo::core::model::RepoRole       &role);
+
+			/**
 			* remove a user from the database
 			* @param databaseAd mongo database address:port
 			* @param cred user credentials in bson form
@@ -417,6 +440,17 @@ namespace repo{
 			bool saveSceneToFile(
 				const std::string &filePath,
 				const repo::core::model::RepoScene* scene);
+
+			/**
+			* Update a role on the database
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param role role info to modify
+			*/
+			void updateRole(
+				const std::string                             &databaseAd,
+				const repo::core::model::RepoBSON*	  cred,
+				const repo::core::model::RepoRole       &role);
 
 			/**
 			* Update a user on the database

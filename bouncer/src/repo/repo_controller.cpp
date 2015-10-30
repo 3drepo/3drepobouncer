@@ -396,6 +396,25 @@ std::map<std::string, std::list<std::string>>
 	return map;
 }
 
+void RepoController::insertRole(
+	const RepoToken                   *token,
+	const repo::core::model::RepoRole &role
+	)
+{
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		worker->insertRole(token->databaseAd,
+			token->credentials, role);
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Trying to insert a user without a database connection!";
+
+	}
+}
+
 void RepoController::insertUser(
 	const RepoToken                          *token,
 	const repo::core::model::RepoUser  &user)
@@ -485,6 +504,24 @@ void RepoController::removeDocument(
 
 }
 
+void RepoController::removeRole(
+	const RepoToken                          *token,
+	const repo::core::model::RepoRole        &role)
+{
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		worker->removeRole(token->databaseAd,
+			token->credentials, role);
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Trying to insert a user without a database connection!";
+
+	}
+}
+
 void RepoController::removeUser(
 	const RepoToken                          *token,
 	const repo::core::model::RepoUser  &user)
@@ -494,6 +531,24 @@ void RepoController::removeUser(
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		worker->removeUser(token->databaseAd,
 			token->credentials, user);
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Trying to insert a user without a database connection!";
+
+	}
+}
+
+void RepoController::updateRole(
+	const RepoToken                          *token,
+	const repo::core::model::RepoRole        &role)
+{
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		worker->updateRole(token->databaseAd,
+			token->credentials, role);
 		workerPool.push(worker);
 	}
 	else

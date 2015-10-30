@@ -599,6 +599,77 @@ RepoProjectSettings RepoBSONFactory::makeRepoProjectSettings(
 	return RepoProjectSettings(builder.obj());
 }
 
+RepoRole RepoBSONFactory::makeRepoRole(
+	const std::string &roleName,
+	const std::string &database,
+	const std::vector<RepoPermission> &permissions
+	)
+{
+	return _makeRepoRole(roleName, database, RepoRole::translatePermissions(permissions));
+}
+
+RepoRole RepoBSONFactory::_makeRepoRole(
+	const std::string &roleName,
+	const std::string &database,
+	const std::vector<RepoPrivilege> &privileges,
+	const std::vector<std::pair<std::string, std::string>> &inheritedRoles
+	)
+{
+	RepoBSONBuilder builder;
+	builder << REPO_LABEL_ID << database + "." + roleName;
+	builder << REPO_ROLE_LABEL_ROLE << roleName;
+	builder << REPO_ROLE_LABEL_DATABASE << database;
+	
+	//====== Add Privileges ========
+	if (privileges.size() > 0)
+	{
+		RepoBSONBuilder privilegesBuilder;
+		for (size_t i = 0; i < privileges.size(); ++i)
+		{
+			const auto &p = privileges[i];
+			RepoBSONBuilder innerBsonBuilder, actionBuilder;
+			RepoBSON resource = BSON(REPO_ROLE_LABEL_DATABASE << p.database << REPO_ROLE_LABEL_COLLECTION << p.collection);
+			innerBsonBuilder << REPO_ROLE_LABEL_RESOURCE << resource;
+
+			for (size_t aCount = 0; aCount < p.actions.size(); ++aCount)
+			{
+				actionBuilder << std::to_string(aCount) << RepoRole::dbActionToString(p.actions[aCount]);
+			}
+
+			innerBsonBuilder.appendArray(REPO_ROLE_LABEL_ACTIONS, actionBuilder.obj());
+
+			privilegesBuilder << std::to_string(i) << innerBsonBuilder.obj();
+		}
+		builder.appendArray(REPO_ROLE_LABEL_PRIVILEGES, privilegesBuilder.obj());
+	}
+	else
+	{
+		repoWarning << "Creating a role with no privileges!";
+	}
+
+	//====== Add Inherited Roles ========
+
+	if (inheritedRoles.size() > 0)
+	{
+		RepoBSONBuilder inheritedRolesBuilder;
+
+		for (size_t i = 0; i < inheritedRoles.size(); ++i)
+		{
+			
+			RepoBSON parentRole = BSON(
+					REPO_ROLE_LABEL_ROLE << inheritedRoles[i].second 
+					<< REPO_ROLE_LABEL_DATABASE << inheritedRoles[i].first
+				);
+
+			inheritedRolesBuilder << std::to_string(i) << parentRole;
+		}
+
+		builder.appendArray(REPO_ROLE_LABEL_INHERITED_ROLES, inheritedRolesBuilder.obj());
+	}
+
+	return RepoRole(builder.obj());
+}
+
 RepoUser RepoBSONFactory::makeRepoUser(
 	const std::string                           &userName,
 	const std::string                           &password,

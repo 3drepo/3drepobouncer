@@ -29,6 +29,7 @@
 
 #include "core/handler/repo_database_handler_mongo.h"
 #include "core/model/bson/repo_bson.h"
+#include "core/model/bson/repo_bson_role.h"
 #include "core/model/bson/repo_bson_user.h"
 #include "lib/repo_stack.h"
 #include "lib/repo_broadcaster.h"
@@ -351,12 +352,21 @@ namespace repo{
 			const std::string                   &owner = "");
 
 		/**
+		* Insert a new role into the database
+		* @param token Authentication token
+		* @param role role info to insert
+		*/
+		void insertRole(
+			const RepoToken                     *token,
+			const repo::core::model::RepoRole   &role);
+
+		/**
 		* Insert a new user into the database
 		* @param token Authentication token
 		* @param user user info to insert
 		*/
 		void insertUser(
-			const RepoToken                          *token,
+			const RepoToken                    *token,
 			const repo::core::model::RepoUser  &user);
 
 		/**
@@ -405,11 +415,29 @@ namespace repo{
 		/**
 		* remove a user from the database
 		* @param token Authentication token
+		* @param role role to remove
+		*/
+		void removeRole(
+			const RepoToken                          *token,
+			const repo::core::model::RepoRole  &role);
+
+		/**
+		* remove a user from the database
+		* @param token Authentication token
 		* @param user user info to remove
 		*/
 		void removeUser(
 			const RepoToken                          *token,
 			const repo::core::model::RepoUser  &user);
+
+		/**
+		* Update a role on the database
+		* @param token Authentication token
+		* @param role role info to modify
+		*/
+		void updateRole(
+			const RepoToken                          *token,
+			const repo::core::model::RepoRole		 &role);
 
 		/**
 		* Update a user on the database
