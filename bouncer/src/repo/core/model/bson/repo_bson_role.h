@@ -21,13 +21,22 @@
 namespace repo {
 	namespace core {
 		namespace model {
-			enum class DBActions {INSERT, UPDATE, FIND, CREATE_USER, CREATE_ROLE, GRANT_ROLE, REVOKE_ROLE, VIEW_ROLE, UNKNOWN};
+			enum class DBActions { INSERT, UPDATE, REMOVE, FIND, CREATE_USER, CREATE_ROLE, DROP_ROLE, GRANT_ROLE, REVOKE_ROLE, VIEW_ROLE, UNKNOWN };
+			enum class AccessRight { READ, WRITE, READ_WRITE};
 
 			struct RepoPrivilege{
 				std::string database;
 				std::string collection;
 				std::vector<DBActions> actions;
 				
+			};
+
+			struct RepoPermission{
+				std::string database;
+				//Project name (not collection! put "model" instead of "model.{scene,history,stash,...}" in here.)
+				std::string project; 
+				AccessRight permission;
+
 			};
 
 			class REPO_API_EXPORT RepoRole :
@@ -48,8 +57,41 @@ namespace repo {
 
 				~RepoRole();
 
+				/**
+				* Convert a given DBAction to a string command
+				* @param action the DBAction enum to convert from
+				* @return a string that represents the DBAction, empty string if unknown action
+				*/
 				static std::string dbActionToString(const DBActions &action);
 
+				/**
+				* Translate RepoPermission of projects into RepoPrivileges for collections
+				* @param permission a vector of permissions to translate
+				* @return returns a vector of privileges for the corresponding collections
+				*/
+				static std::vector<RepoPrivilege> translatePermissions(
+					const std::vector<RepoPermission> &permissions);
+
+				/**
+				* Translate RepoPermission of projects into RepoPrivileges for collections
+				* @param permission a vector of permissions to translate
+				* @return returns a vector of privileges for the corresponding collections
+				*/
+				static std::vector<RepoPermission> translatePrivileges(
+					const std::vector<RepoPrivilege> &permissions);
+
+				/**
+				* Update the vector of actions with the appropriate action
+				* gien the access information
+				* @param collectionType the type of collection in question (e.g "history", "scene", "issues")
+				* @param permission the access right for this collection type
+				* @param vec the vector to update
+				*/
+				static void updateActions(
+					const std::string &collectionType,
+					const AccessRight &permission,
+					std::vector<DBActions> &vec
+					);
 
 				/**
 				* --------- Convenience functions -----------
@@ -100,6 +142,8 @@ namespace repo {
 				* @return returns Action type in DBAction
 				*/
 				DBActions stringToDBAction(const std::string &action) const;
+
+					
 			};
 
 		}// end namespace model

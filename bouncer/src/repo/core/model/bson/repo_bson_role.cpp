@@ -21,6 +21,11 @@
 
 using namespace repo::core::model;
 
+static const std::vector<std::string> collectionsInProject =
+{
+	"scene", "stash.3drepo", "stash.src", "history", "issues", "wayfinder"
+};
+
 RepoRole::RepoRole()
 {
 }
@@ -40,12 +45,16 @@ std::string RepoRole::dbActionToString(const DBActions &action)
 		return "insert";
 	case DBActions::UPDATE:
 		return "update";
+	case DBActions::REMOVE:
+		return "remove";
 	case DBActions::FIND:
 		return "find";
 	case DBActions::CREATE_USER:
 		return "createUser";
 	case DBActions::CREATE_ROLE:
 		return "createRole";
+	case DBActions::DROP_ROLE:
+		return "dropRole";
 	case DBActions::GRANT_ROLE:
 		return "grantRole";
 	case DBActions::REVOKE_ROLE:
@@ -142,6 +151,10 @@ DBActions RepoRole::stringToDBAction(const std::string &action) const
 		return DBActions::FIND;
 	}
 
+	if (action_lowerCase == "REMOVE")
+	{
+		return DBActions::REMOVE;
+	}
 	
 	if (action_lowerCase == "INSERT")
 	{
@@ -163,6 +176,11 @@ DBActions RepoRole::stringToDBAction(const std::string &action) const
 		return DBActions::CREATE_ROLE;
 	}
 
+	if (action_lowerCase == "DROPROLE")
+	{
+		return DBActions::DROP_ROLE;
+	}
+
 	if (action_lowerCase == "GRANTROLE")
 	{
 		return DBActions::GRANT_ROLE;
@@ -182,4 +200,178 @@ DBActions RepoRole::stringToDBAction(const std::string &action) const
 
 	return DBActions::UNKNOWN;
 
+}
+
+std::vector<RepoPrivilege> RepoRole::translatePermissions(
+	const std::vector<RepoPermission> &permissions)
+{
+	std::vector<RepoPrivilege> privileges;
+	//privileges would be at least the side of permissions
+	privileges.reserve(permissions.size());
+
+	/*
+		For each project, we need to look at the permission (r/w/rw) allowed and
+		translate that into db actions. One project maps to different collections,
+		and different collections would require different actions to read/write.
+		for e.g.:
+		write access to .scene would mean insert but not update, 
+		as you are not suppose to alter any objects.
+		but for .issues, you should have write permission (update AND insert) 
+		even if you only have read privileges
+		For project settings (settings collection), it will be an update and insert operation.
+	*/
+	for (const RepoPermission &p : permissions)
+	{
+		if (!p.project.empty())
+		{
+
+			for (const std::string &postfix : collectionsInProject)
+			{
+				RepoPrivilege privilege;
+				privilege.database = p.database;
+				privilege.collection = p.project + "." + postfix;
+				updateActions(postfix, p.permission, privilege.actions);
+				privileges.push_back(privilege);
+			}
+
+			//FIXME: If you have write access to a project, do you
+			//need write access to settings? or should the project be created by an admin already
+			//and people who can upload to the project has no right to alter the settings?
+
+
+		}
+	}
+
+	return privileges;
+}
+
+std::vector<RepoPermission> RepoRole::translatePrivileges(
+	const std::vector<RepoPrivilege> &privileges)
+{
+
+	std::vector<RepoPermission> permissions;
+	
+	for (const RepoPrivilege &p : privileges)
+	{
+		size_t lastDot = p.collection.find_last_of('.');
+		if (lastDot == std::string::npos)
+		{
+			//does not have a .* Regard it as a different project
+			RepoPermission perm;
+			perm.database = p.database;
+			perm.project = p.collection;
+			bool hasRead = std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end();
+			bool hasWrite = std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end();
+			hasWrite |= std::find(p.actions.begin(), p.actions.end(), DBActions::UPDATE) != p.actions.end();
+
+			if (hasRead && hasWrite)
+			{
+				perm.permission = AccessRight::READ_WRITE;
+			}
+			else if (hasWrite)
+			{
+				perm.permission = AccessRight::WRITE;
+			}
+			else
+			{
+				perm.permission = AccessRight::READ;
+			}
+			permissions.push_back(perm);
+		}
+		else
+		{
+			std::string postfix = p.collection.substr(lastDot +1);
+			/*
+				Making an assumption here that all valid projects has a
+				history collection. so we only look for .history when we are looking for a project
+				to check for permissions
+			*/
+			if (postfix == "history")
+			{
+				RepoPermission perm;
+				perm.database = p.database;
+				perm.project = p.collection.substr(0, lastDot);
+				bool hasRead = std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end();
+				bool hasWrite = std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end();
+
+				if (hasRead && hasWrite)
+				{
+					perm.permission = AccessRight::READ_WRITE;
+				}
+				else if (hasWrite)
+				{
+					perm.permission = AccessRight::WRITE; 
+				}
+				else
+				{
+					perm.permission = AccessRight::READ;
+				}
+				permissions.push_back(perm);
+			}
+
+		}
+	}
+
+	return permissions;
+}
+
+void RepoRole::updateActions(
+	const std::string &collectionType,
+	const AccessRight &permission,
+	std::vector<DBActions> &vec
+	)
+{
+	
+	//READ PERMISSIONS:
+	if (permission == AccessRight::READ || permission == AccessRight::READ_WRITE)
+	{
+		vec.push_back(DBActions::FIND);
+
+		if (collectionType == "issues")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::UPDATE);
+		}
+	}
+
+	//WRITE PERMISSIONS:
+	if (permission == AccessRight::WRITE || permission == AccessRight::READ_WRITE)
+	{
+		if (collectionType == "scene")
+		{
+			vec.push_back(DBActions::INSERT);
+		}
+		else if (collectionType == "stash.3drepo")
+		{
+			vec.push_back(DBActions::INSERT);
+		}
+		else if (collectionType == "stash.src")
+		{
+			vec.push_back(DBActions::INSERT);
+		}
+		else if (collectionType == "history")
+		{
+			vec.push_back(DBActions::INSERT);
+		}
+		else if (collectionType == "issues")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::UPDATE);
+		}
+		else if (collectionType == "wayfinder")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::UPDATE);
+			vec.push_back(DBActions::REMOVE);
+		}
+		else
+
+		{
+			repoError << "Failed to update privileges: unknown collection type: " << collectionType;
+		}
+
+
+	}
+	//Prune possible duplicates
+	vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
 }

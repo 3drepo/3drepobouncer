@@ -602,6 +602,15 @@ RepoProjectSettings RepoBSONFactory::makeRepoProjectSettings(
 RepoRole RepoBSONFactory::makeRepoRole(
 	const std::string &roleName,
 	const std::string &database,
+	const std::vector<RepoPermission> &permissions
+	)
+{
+	return _makeRepoRole(roleName, database, RepoRole::translatePermissions(permissions));
+}
+
+RepoRole RepoBSONFactory::_makeRepoRole(
+	const std::string &roleName,
+	const std::string &database,
 	const std::vector<RepoPrivilege> &privileges,
 	const std::vector<std::pair<std::string, std::string>> &inheritedRoles
 	)
