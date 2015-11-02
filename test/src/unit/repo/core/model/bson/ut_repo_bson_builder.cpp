@@ -96,6 +96,34 @@ TEST(RepoBSONBuilderTest, AppendGeneric)
 	
 }
 
+TEST(RepoBSONBuilderTest, AppendUUID)
+{
+	repoUUID uuid = generateUUID();
+	RepoBSONBuilder builder;
+	builder.append("uuidTest", uuid);
+	RepoBSON bson = builder.obj();
+
+	EXPECT_EQ(uuid, bson.getUUIDField("uuidTest"));
+
+}
+
+TEST(RepoBSONBuilderTest, AppendRepoVectorT)
+{
+	repo_vector_t vector3d = { 1.0, 2.0, 3.0 };
+	RepoBSONBuilder builder;
+	builder.append("vectorTest", vector3d);
+	RepoBSON bson = builder.obj();
+
+	std::vector<float> vectorOut = bson.getFloatArray("vectorTest");
+
+	EXPECT_EQ(3, vectorOut.size());
+
+	EXPECT_EQ(vectorOut[0], vector3d.x);
+	EXPECT_EQ(vectorOut[1], vector3d.y);
+	EXPECT_EQ(vectorOut[2], vector3d.z);
+
+
+}
 
 TEST(RepoBSONBuilderTest, AppendArrayPair)
 {
@@ -128,4 +156,47 @@ TEST(RepoBSONBuilderTest, AppendArrayPair)
 	//Ensure this doesn't crash and die.
 	builder.appendArrayPair("blah", std::list<std::pair<std::string, std::string> >(), "first", "second");
 
+}
+
+TEST(RepoBSONBuilderTest, appendBinary)
+{
+	size_t binSize = 1024 * 1024;
+	uint8_t *binaryData = (uint8_t*) malloc(binSize);
+
+	RepoBSONBuilder builder;
+
+	builder.appendBinary("binaryData", binaryData, binSize);
+	builder.appendBinary("binaryData2", binaryData, 0);
+
+	uint8_t *nothing = nullptr;
+	builder.appendBinary("binaryData3", nothing, 0);
+
+	RepoBSON bson = builder.obj();
+
+	//only "binaryData" should've been appended
+	EXPECT_TRUE(bson.hasField("binaryData"));
+	EXPECT_FALSE(bson.hasField("binaryData2"));
+	EXPECT_FALSE(bson.hasField("binaryData3"));
+
+	std::vector<uint8_t> binOut;
+	EXPECT_TRUE(bson.getBinaryFieldAsVector("binaryData", &binOut));
+	EXPECT_EQ(binOut.size(), binSize);
+
+	for (size_t i = 0; i < binSize; ++i)
+	{
+		EXPECT_EQ(binOut[i], binaryData[i]);
+	}
+}
+
+TEST(RepoBSONBuilderTest, appendTimeStamp)
+{
+
+	RepoBSONBuilder builder;
+	builder.appendTimeStamp("ts");
+
+	RepoBSON bson = builder.obj();
+
+	EXPECT_TRUE(bson.hasField("ts"));
+
+	EXPECT_EQ(bson.getField("ts").type(), ElementType::DATE );
 }

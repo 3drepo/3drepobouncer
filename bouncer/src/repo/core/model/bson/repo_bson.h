@@ -161,7 +161,6 @@ namespace repo {
 									{
 										vec->resize(length / sizeof(T));
 										memcpy(&(vec->at(0)), binData, length);
-										repoTrace << "Binary field found within the bson, success.";
 										success = true;
 
 									}

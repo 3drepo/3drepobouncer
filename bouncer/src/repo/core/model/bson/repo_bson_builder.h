@@ -110,7 +110,7 @@ namespace repo {
 							const uint32_t  &byteCount)
 						{
 
-							if (0 < byteCount)
+							if (data && 0 < byteCount)
 							{
 
 							// Store data as a binary blob
@@ -118,6 +118,10 @@ namespace repo {
 									label, byteCount, mongo::BinDataGeneral,
 									(void *)data);
 
+							}
+							else
+							{
+								repoWarning << "Trying to append a binary of size 0 into a bson. Skipping..";
 							}
 						}
 
