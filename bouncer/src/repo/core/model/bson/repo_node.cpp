@@ -58,7 +58,7 @@ RepoNode RepoNode::cloneAndAddParent(
 
 	std::vector<repoUUID> currentParents = getParentIDs();
 	currentParents.push_back(parentID);
-	builder.appendArray(REPO_NODE_LABEL_PARENTS, arrayBuilder.createArrayBSON(currentParents));	
+	builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);	
 
 	builder.appendElementsUnique(*this);
 
@@ -75,7 +75,7 @@ RepoNode RepoNode::cloneAndAddParent(
 	std::vector<repoUUID> currentParents = getParentIDs();
 	currentParents.insert(currentParents.end(), parentIDs.begin(), parentIDs.end());
 
-	builder.appendArray(REPO_NODE_LABEL_PARENTS, arrayBuilder.createArrayBSON(currentParents));
+	builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);
 
 	builder.appendElementsUnique(*this);
 
