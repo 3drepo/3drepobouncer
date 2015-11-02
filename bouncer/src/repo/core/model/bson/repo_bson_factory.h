@@ -24,6 +24,7 @@
 #include "../repo_node_utils.h"
 
 #include "repo_bson_project_settings.h"
+#include "repo_bson_role.h"
 #include "repo_bson_user.h"
 #include "repo_node.h"
 #include "repo_node_camera.h"
@@ -67,6 +68,37 @@ namespace repo {
 							const uint8_t     &ownerPermissionsOctal = 7,
 							const uint8_t     &groupPermissionsOctal = 0,
 							const uint8_t     &publicPermissionsOctal = 0);
+
+
+						/**
+						* Create a role BSON (Simple interface)
+						* Use _makeRepoRole() if you wish to have direct control on the interface
+						* @param roleName name of the role
+						* @param database database where this role resides
+						* @param permissions a vector of project and their access permissions
+						* @return returns a bson with this role information
+						*/
+						static RepoRole makeRepoRole(
+							const std::string &roleName,
+							const std::string &database,
+							const std::vector<RepoPermission> &permissions
+							);
+
+						/**
+						* Create a role BSON
+						* @param roleName name of the role
+						* @param database database where this role resides
+						* @param privileges a vector of privileges this role has
+						* @param inhertedRoles vector of roles which this role inherits from
+						* @return returns a bson with this role information
+						*/
+						static RepoRole _makeRepoRole(
+							const std::string &roleName,
+							const std::string &database,
+							const std::vector<RepoPrivilege> &privileges,
+							const std::vector<std::pair<std::string, std::string>> &inheritedRoles
+														= std::vector<std::pair<std::string, std::string>>()
+							);
 
 						/**
 						* Create a user BSON

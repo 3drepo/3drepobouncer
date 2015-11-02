@@ -60,12 +60,16 @@ function exeCommand(cmd, callback){
 
 
 	exec(path.normalize(conf.bouncer.path) + ' ' + conf.bouncer.dbhost + ' ' + conf.bouncer.dbport + ' ' + conf.bouncer.username + ' ' + conf.bouncer.password + ' ' + cmd, function(error, stdout, stderr){
-		var reply = "Failed";
-		if(error == null){
-			reply = "Success";
+		var reply = {};
+		if(error != null){
+		
+			reply.value = error.code;
 		}
-		console.log("Executed command: %s", reply);
-		callback(reply);
+		else
+			reply.value = 0;
+
+		console.log("Executed command: ", reply);
+		callback(JSON.stringify(reply));
 	});
 }
 

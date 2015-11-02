@@ -141,6 +141,16 @@ namespace repo{
 			);
 
 			/**
+			* Disconnects from the given database host
+			* @param databaseAd database address:port
+			*/
+			void disconnectFromDatabase(const std::string &databaseAd)
+			{
+				//FIXME: can only kill mongo here, but this is suppose to be a quick fix
+				core::handler::MongoDatabaseHandler::disconnectHandler();
+			}
+
+			/**
 			* Remove a collection from the database
 			* @param databaseAd mongo database address:port
 			* @param cred user credentials in bson form
@@ -206,6 +216,8 @@ namespace repo{
 			* @param uuid if headRevision, uuid represents the branch id,
 			*              otherwise the unique id of the revision branch
 			* @param headRevision true if retrieving head revision
+			* @param lightFetch fetches only the stash (or scene if stash failed), 
+			                    reduce computation and memory usage (ideal for visualisation only)
 			* @return returns a pointer to a repoScene.
 			*/
 			repo::core::model::RepoScene* fetchScene(
@@ -214,7 +226,8 @@ namespace repo{
 				const std::string                             &database,
 				const std::string                             &collection,
 				const repoUUID                                &uuid,
-				const bool                                    &headRevision = false);
+				const bool                                    &headRevision = false,
+				const bool                                    &lightFetch = false);
 
 			/**
 			* Retrieve documents from a specified collection
@@ -317,6 +330,18 @@ namespace repo{
 			std::string getNameOfAdminDatabase(
 				const std::string                             &databaseAd) const;
 
+
+			/**
+			* Insert a new role into the database
+			* @param databaseAd database address:portdatabase
+			* @param cred user credentials in bson form
+			* @param role role info to insert
+			*/
+			void insertRole(
+				const std::string                             &databaseAd,
+				const repo::core::model::RepoBSON	          *cred,
+				const repo::core::model::RepoRole             &role);
+
 			/**
 			* Insert a new user into the database
 			* @param databaseAd database address:portdatabase
@@ -372,6 +397,17 @@ namespace repo{
 				const repo::core::model::RepoBSON       &bson);
 
 			/**
+			* remove a role from the database
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param role role info to remove
+			*/
+			void removeRole(
+				const std::string                             &databaseAd,
+				const repo::core::model::RepoBSON*	  cred,
+				const repo::core::model::RepoRole       &role);
+
+			/**
 			* remove a user from the database
 			* @param databaseAd mongo database address:port
 			* @param cred user credentials in bson form
@@ -404,6 +440,17 @@ namespace repo{
 			bool saveSceneToFile(
 				const std::string &filePath,
 				const repo::core::model::RepoScene* scene);
+
+			/**
+			* Update a role on the database
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param role role info to modify
+			*/
+			void updateRole(
+				const std::string                             &databaseAd,
+				const repo::core::model::RepoBSON*	  cred,
+				const repo::core::model::RepoRole       &role);
 
 			/**
 			* Update a user on the database

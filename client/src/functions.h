@@ -16,6 +16,7 @@
 */
 
 #pragma once
+#include "error_codes.h"
 #include <stdint.h>
 #include <iostream>
 #include <repo/repo_controller.h>
@@ -54,7 +55,7 @@ int32_t knownValid(const std::string &cmd);
 * @param command    command and it's arguments to perform
 * @return returns true upon success
 */
-bool performOperation(
+int32_t performOperation(
 	      repo::RepoController *controller, 
 	const repo::RepoToken      *token,
 	const repo_op_t            &command
@@ -72,7 +73,7 @@ bool performOperation(
 * @param command    command and it's arguments to perform
 * @return returns true upon success
 */
-static bool importFileAndCommit(
+static int32_t importFileAndCommit(
 	      repo::RepoController *controller,
 	const repo::RepoToken      *token,
 	const repo_op_t            &command

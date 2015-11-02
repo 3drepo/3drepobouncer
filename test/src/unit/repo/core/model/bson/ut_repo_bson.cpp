@@ -75,7 +75,7 @@ TEST(RepoBSONTest, GetBinaryAsVectorEmbedded)
 	RepoBSON bson(builder);
 
 
-	EXPECT_TRUE(bson.getBinaryFieldAsVector(bson.getField("binDataTest"), &out));
+	EXPECT_TRUE(bson.getBinaryFieldAsVector("binDataTest", in.size(), &out));
 
 	EXPECT_EQ(in.size(), out.size());
 	for (size_t i = 0; i < size; ++i)
@@ -87,10 +87,11 @@ TEST(RepoBSONTest, GetBinaryAsVectorEmbedded)
 	std::vector<char> *null = nullptr;
 
 	//Invalid retrieval, but they shouldn't throw exception
-	EXPECT_FALSE(bson.getBinaryFieldAsVector(bson.getField("binDataTest"), null));
-	EXPECT_FALSE(bson.getBinaryFieldAsVector(bson.getField("numTest"), &out));
-	EXPECT_FALSE(bson.getBinaryFieldAsVector(bson.getField("stringTest"), &out));
-	EXPECT_FALSE(bson.getBinaryFieldAsVector(bson.getField("doesn'tExist"), &out));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector("binDataTest", in.size(), null));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector("numTest", &out));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector("stringTest", &out));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector("doesn'tExist", &out));
+
 }
 
 TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
@@ -104,16 +105,28 @@ TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
 	for (size_t i = 0; i < size; ++i)
 		in.push_back(i);
 
-	std::unordered_map<std::string, std::vector<uint8_t>> map;
+	std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> map;
 	std::string fname = "testingfile";
-	map[fname] = in;
+	map["binDataTest"] = std::pair<std::string, std::vector<uint8_t>>(fname,in);
 
 
-
+	//FIXME: This needs to work until we stop supporting it
 	RepoBSON bson(BSON("binDataTest" << fname), map);
+	
+	RepoBSON bson2(RepoBSON(), map);
+
+	EXPECT_TRUE(bson.getBinaryFieldAsVector("binDataTest", in.size(), &out));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector(fname, in.size(), &out)); //make sure fieldname/filename are not mixed up.
+
+	ASSERT_EQ(out.size(), in.size());
+	for (size_t i = 0; i < size; ++i)
+	{
+		EXPECT_EQ(in[i], out[i]);
+	}
 
 
-	EXPECT_TRUE(bson.getBinaryFieldAsVector(bson.getField("binDataTest"), &out));
+	EXPECT_TRUE(bson2.getBinaryFieldAsVector("binDataTest", in.size(), &out));
+	EXPECT_FALSE(bson2.getBinaryFieldAsVector(fname, in.size(), &out)); //make sure fieldname/filename are not mixed up.
 
 	ASSERT_EQ(out.size(), in.size());
 	for (size_t i = 0; i < size; ++i)
@@ -136,8 +149,8 @@ TEST(RepoBSONTest, AssignOperator)
 
 	in.resize(100);
 
-	std::unordered_map<std::string, std::vector<uint8_t>> map, mapout;
-	map["testingfile"] = in;
+	std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> map, mapout;
+	map["testingfile"] = std::pair<std::string, std::vector<uint8_t>>( "field", in);
 
 	RepoBSON test2(testBson, map);
 
@@ -151,8 +164,9 @@ TEST(RepoBSONTest, AssignOperator)
 	for (; mapIt != map.end(); ++mapIt, ++mapoutIt)
 	{
 		EXPECT_EQ(mapIt->first, mapIt->first);
-		std::vector<uint8_t> dataOut = mapoutIt->second;
-		std::vector<uint8_t> dataIn = mapIt->second;
+		EXPECT_EQ(mapIt->second.first, mapIt->second.first);
+		std::vector<uint8_t> dataOut = mapoutIt->second.second;
+		std::vector<uint8_t> dataIn = mapIt->second.second;
 		EXPECT_EQ(dataOut.size(), dataIn.size());
 		if (dataIn.size()>0)
 			EXPECT_EQ(0, strncmp((char*)&dataOut[0], (char*)&dataIn[0], dataIn.size()));
@@ -169,8 +183,8 @@ TEST(RepoBSONTest, Swap)
 
 	in.resize(100);
 
-	std::unordered_map<std::string, std::vector<uint8_t>> map, mapout;
-	map["testingfile"] = in;
+	std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> map, mapout;
+	map["testingfile"] = std::pair<std::string, std::vector<uint8_t>>("blah", in);
 
 	RepoBSON testDiff_org(BSON("entirely" << "different"), map);
 	RepoBSON testDiff = testDiff_org;
@@ -192,8 +206,9 @@ TEST(RepoBSONTest, Swap)
 	for (; mapIt != map.end(); ++mapIt, ++mapoutIt)
 	{
 		EXPECT_EQ(mapIt->first, mapIt->first);
-		std::vector<uint8_t> dataOut = mapoutIt->second;
-		std::vector<uint8_t> dataIn = mapIt->second;
+		EXPECT_EQ(mapIt->second.first, mapIt->second.first);
+		std::vector<uint8_t> dataOut = mapoutIt->second.second;
+		std::vector<uint8_t> dataIn = mapIt->second.second;
 		EXPECT_EQ(dataIn.size(), dataOut.size());
 		if (dataIn.size()>0)
 			EXPECT_EQ(0, strncmp((char*)dataOut.data(), (char*)dataIn.data(), dataIn.size()));
@@ -352,7 +367,7 @@ TEST(RepoBSONTest, CloneAndShrink)
 	//shrinking a bson without any binary fields should yield an identical bson
 	RepoBSON shrunkBson = testBson.cloneAndShrink();
 
-	EXPECT_EQ(testBson.toString(), shrunkBson.toString());
+	EXPECT_EQ(testBson, shrunkBson);
 	EXPECT_EQ(testBson.getFilesMapping().size(), shrunkBson.getFilesMapping().size());
 	
 	mongo::BSONObjBuilder builder;
@@ -367,33 +382,35 @@ TEST(RepoBSONTest, CloneAndShrink)
 	builder << "numTest" << 1.35;
 	builder.appendBinData("binDataTest", in.size(), mongo::BinDataGeneral, in.data());
 
-	std::unordered_map < std::string, std::vector<uint8_t>> mapping, outMapping;
-	mapping["orgRef"] = ref;
+	std::unordered_map < std::string, std::pair<std::string, std::vector<uint8_t>>> mapping, outMapping;
+	mapping["orgRef"] = std::pair<std::string, std::vector<uint8_t>>("blah", ref);
 
 	RepoBSON binBson(builder.obj(), mapping);
 
 	shrunkBson = binBson.cloneAndShrink();
-
 	outMapping = shrunkBson.getFilesMapping();
 
 	EXPECT_NE(shrunkBson, binBson);
+	EXPECT_FALSE(shrunkBson.hasField("binDataTest"));
 	EXPECT_EQ(2, outMapping.size());
 	EXPECT_TRUE(outMapping.find("orgRef") != outMapping.end());
 
 	//Check the binary still obtainable
-	EXPECT_TRUE(shrunkBson.getBinaryFieldAsVector(binBson.getField("binDataTest"), &out));
+	EXPECT_TRUE(shrunkBson.getBinaryFieldAsVector("binDataTest", in.size(), &out));
 
-	EXPECT_EQ(in.size(), out.size());
+
+	ASSERT_EQ(in.size(), out.size());
 	for (size_t i = 0; i < out.size(); ++i)
 	{
 		EXPECT_EQ(in[i], out[i]);
 	}
 
 	//Check the out referenced bigfile is still sane
-	EXPECT_EQ(ref.size(), outMapping["orgRef"].size());
+	
+	EXPECT_EQ(ref.size(), outMapping["orgRef"].second.size());
 	for (size_t i = 0; i < ref.size(); ++i)
 	{
-		EXPECT_EQ(ref[i], outMapping["orgRef"][i]);
+		EXPECT_EQ(ref[i], outMapping["orgRef"].second[i]);
 	}
 
 }
@@ -406,12 +423,12 @@ TEST(RepoBSONTest, GetBigBinary)
 
 	in.resize(size);
 
-	std::unordered_map < std::string, std::vector<uint8_t>> mapping;
-	mapping["orgRef"] = in;
+	std::unordered_map < std::string, std::pair<std::string, std::vector<uint8_t>>> mapping;
+	mapping["blah"] = std::pair<std::string, std::vector<uint8_t>>("orgRef", in);
 
 	RepoBSON binBson(testBson, mapping);
 
-	out = binBson.getBigBinary("orgRef");
+	out = binBson.getBigBinary("blah");
 	EXPECT_EQ(in.size(), out.size());
 	for (size_t i = 0; i < out.size(); ++i)
 	{
@@ -431,14 +448,14 @@ TEST(RepoBSONTest, GetFileList)
 
 	in.resize(size);
 
-	std::unordered_map < std::string, std::vector<uint8_t>> mapping;
-	mapping["orgRef"] = in;
+	std::unordered_map < std::string, std::pair<std::string, std::vector<uint8_t>>> mapping;
+	mapping["orgRef"] = std::pair<std::string, std::vector<uint8_t>>("blah", in);
 
 	RepoBSON binBson(testBson, mapping);
 	auto fileList = binBson.getFileList();
 
 	EXPECT_EQ(1, fileList.size());
-	EXPECT_TRUE(fileList[0] == "orgRef");
+	EXPECT_TRUE(fileList[0].first == "orgRef");
 	EXPECT_EQ(0, testBson.getFileList().size());
 	EXPECT_EQ(0, emptyBson.getFileList().size());
 }
@@ -451,8 +468,8 @@ TEST(RepoBSONTest, GetFilesMapping)
 
 	in.resize(size);
 
-	std::unordered_map < std::string, std::vector<uint8_t>> mapping, outMapping;
-	mapping["orgRef"] = in;
+	std::unordered_map < std::string, std::pair<std::string, std::vector<uint8_t>>> mapping, outMapping;
+	mapping["orgRef"] = std::pair<std::string, std::vector<uint8_t>>("blah", in);
 
 	RepoBSON binBson(testBson, mapping);
 	outMapping = binBson.getFilesMapping();
@@ -474,8 +491,8 @@ TEST(RepoBSONTest, HasOversizeFiles)
 
 	in.resize(size);
 
-	std::unordered_map < std::string, std::vector<uint8_t>> mapping;
-	mapping["orgRef"] = in;
+	std::unordered_map < std::string, std::pair<std::string, std::vector<uint8_t>>> mapping;
+	mapping["orgRef"] = std::pair<std::string, std::vector<uint8_t>>("blah", in);
 
 	RepoBSON binBson(testBson, mapping);
 

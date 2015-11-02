@@ -269,6 +269,18 @@ namespace repo{
 					*/
 					std::string getBranchName() const;
 
+					/**
+					* Return the best graph type availalble for viewing
+					* if stash is loaded, returns stash, otherwise default
+					* @return returns either optimised or default
+					*/
+					GraphType getViewGraph() const
+					{
+						if (stashGraph.rootNode)
+							return GraphType::OPTIMIZED;
+						else
+							return GraphType::DEFAULT;
+					}
 
 					/**
 					* Load revision information of the configured branch/revision
@@ -519,9 +531,15 @@ namespace repo{
 					*/
 
 					void modifyNode(
+						const GraphType                   &gtype,
 						const repoUUID                    &sharedID,
-						RepoNode *node,
-						const bool                        &overwrite=false);
+						RepoNode *node);
+
+					/**
+					* Rotates the model by 270 degrees to compensate the different axis orientation
+					* in directX. Commonly happens in fbx models
+					*/
+					void reorientateDirectXModel();
 
 					/**
 					* ----------------------------------------------------------

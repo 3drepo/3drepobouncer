@@ -25,9 +25,11 @@
 
 #include <string>
 #include "repo_bouncer_global.h"
+#include "repo_credentials.h"
 
 #include "core/handler/repo_database_handler_mongo.h"
 #include "core/model/bson/repo_bson.h"
+#include "core/model/bson/repo_bson_role.h"
 #include "core/model/bson/repo_bson_user.h"
 #include "lib/repo_stack.h"
 #include "lib/repo_broadcaster.h"
@@ -49,24 +51,33 @@ namespace repo{
 		/**
 		* Construct a Repo token
 		* @param credentials user credentials in a bson format
-		* @param databaseAd database address+port as a string
+        * @param databaseHostPort database address+port as a string
 		* @param databaseName database it is authenticating against
 		*/
 		RepoToken(
-			const repo::core::model::RepoBSON*  credentials,
-			const std::string                         databaseAd,
-			const std::string                        &databaseName) :
-			databaseAd(databaseAd),
+            const repo::core::model::RepoBSON* credentials = 0,
+            const std::string &databaseHostPort = std::string(),
+            const std::string &databaseName = std::string()) :
+            databaseAd(databaseHostPort),
 			credentials(credentials),
-			databaseName(databaseName){};
+            databaseName(databaseName) {}
 
 		~RepoToken(){
 			if (credentials)
 				delete credentials;
 		}
 
+        /**
+         * @brief getDatabaseHostPort
+         * @return database host and port in as a string
+         */
+        std::string getDatabaseHostPort() const { return databaseAd; }
+
+        std::string getDatabaseName() const { return databaseName; }
+
 
 	private:
+
 		const repo::core::model::RepoBSON* credentials;
 		const std::string databaseAd;
 		const std::string databaseName;
@@ -94,7 +105,7 @@ namespace repo{
 		~RepoController();
 
 		/*
-		*	------------- Database Authentication --------------
+		*	------------- Database Connection & Authentication --------------
 		*/
 
 		/**
@@ -136,6 +147,24 @@ namespace repo{
 			const std::string &password,
 			const bool        &pwDigested = false
 			);
+
+
+		/**
+		* Disconnect the controller from a database connection
+		* and destroys the token
+		* FIXME: CURRENTLY NOT THREAD SAFE! POTENTIALLY DANGEROUS
+		* @param token token to the database
+		*/
+		void disconnectFromDatabase(const RepoToken* token);
+
+        /**
+         * Checks whether given credentials permit successful connection to a
+         * given database.
+         * @param credentials user credentials
+         * @return returns true if successful, false otherwise
+         */
+        bool testConnection(const repo::RepoCredentials &credentials);
+
 
 		/*
 		*	------------- Database info lookup --------------
@@ -283,6 +312,8 @@ namespace repo{
 		* @param uuid if headRevision, uuid represents the branch id,
 		*              otherwise the unique id of the revision branch
 		* @param headRevision true if retrieving head revision
+		* @param lightFetch fetches only the stash (or scene if stash failed),
+		*                   reduce computation and memory usage (ideal for visualisation)
 		* @return returns a pointer to a repoScene.
 		*/
 		repo::core::model::RepoScene* fetchScene(
@@ -290,7 +321,8 @@ namespace repo{
 			const std::string    &database,
 			const std::string    &project,
 			const std::string    &uuid = REPO_HISTORY_MASTER_BRANCH,
-			const bool           &headRevision = true);
+			const bool           &headRevision = true,
+			const bool           &lightFetch = false);
 
 		/**
 		* Save the files of the original model to a specified directory
@@ -320,12 +352,21 @@ namespace repo{
 			const std::string                   &owner = "");
 
 		/**
+		* Insert a new role into the database
+		* @param token Authentication token
+		* @param role role info to insert
+		*/
+		void insertRole(
+			const RepoToken                     *token,
+			const repo::core::model::RepoRole   &role);
+
+		/**
 		* Insert a new user into the database
 		* @param token Authentication token
 		* @param user user info to insert
 		*/
 		void insertUser(
-			const RepoToken                          *token,
+			const RepoToken                    *token,
 			const repo::core::model::RepoUser  &user);
 
 		/**
@@ -374,11 +415,29 @@ namespace repo{
 		/**
 		* remove a user from the database
 		* @param token Authentication token
+		* @param role role to remove
+		*/
+		void removeRole(
+			const RepoToken                          *token,
+			const repo::core::model::RepoRole  &role);
+
+		/**
+		* remove a user from the database
+		* @param token Authentication token
 		* @param user user info to remove
 		*/
 		void removeUser(
 			const RepoToken                          *token,
 			const repo::core::model::RepoUser  &user);
+
+		/**
+		* Update a role on the database
+		* @param token Authentication token
+		* @param role role info to modify
+		*/
+		void updateRole(
+			const RepoToken                          *token,
+			const repo::core::model::RepoRole		 &role);
 
 		/**
 		* Update a user on the database

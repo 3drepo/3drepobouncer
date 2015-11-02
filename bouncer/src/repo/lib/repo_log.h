@@ -35,6 +35,7 @@
 
 //The external libraries need to use these 2 because they don't seem to share the same instance of log
 #define repoLog(MSG) repo::lib::RepoLog::getInstance().log(repo::lib::RepoLog::RepoLogLevel::INFO, MSG)
+#define repoLogDebug(MSG) repo::lib::RepoLog::getInstance().log(repo::lib::RepoLog::RepoLogLevel::DEBUG, MSG)
 #define repoLogError(MSG) repo::lib::RepoLog::getInstance().log(repo::lib::RepoLog::RepoLogLevel::ERR, MSG)
 
 //internal classes should all be using this.

@@ -275,7 +275,8 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 	const std::string                             &database,
 	const std::string                             &project,
 	const repoUUID                                &uuid,
-	const bool                                    &headRevision)
+	const bool                                    &headRevision,
+	const bool                                    &lightFetch)
 {
 	repo::core::model::RepoScene* scene = nullptr;
 	repo::core::handler::AbstractDatabaseHandler* handler =
@@ -299,25 +300,50 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 					(headRevision ? ("head revision of branch" + UUIDtoString(uuid))
 					: ("revision " + UUIDtoString(uuid)))
 					<< " of " << database << "." << project;
-
-				if (scene->loadScene(handler, errMsg))
+				if (lightFetch)
 				{
-					repoTrace << "Loaded Scene";
 
-					if (scene->loadStash(handler, errMsg))
+
+						if (scene->loadStash(handler, errMsg))
+						{
+							repoTrace << "Stash Loaded";
+						}
+						else
+						{
+							//failed to load stash isn't critical, give it a warning instead of returning false
+							repoWarning << "Error loading stash" << errMsg;
+							if (scene->loadScene(handler, errMsg))
+							{
+								repoTrace << "Scene Loaded";
+							}
+							else{
+								delete scene;
+								scene = nullptr;
+							}
+						}
+				}
+				else
+				{
+					if (scene->loadScene(handler, errMsg))
 					{
-						repoTrace << "Stash Loaded";
+						repoTrace << "Loaded Scene";
+
+						if (scene->loadStash(handler, errMsg))
+						{
+							repoTrace << "Stash Loaded";
+						}
+						else
+						{
+							//failed to load stash isn't critical, give it a warning instead of returning false
+							repoWarning << "Error loading stash" << errMsg;
+						}
 					}
-					else
-					{
-						//failed to load stash isn't critical, give it a warning instead of returning false
-						repoWarning << "Error loading trace" << errMsg;
+					else{
+						delete scene;
+						scene = nullptr;
 					}
 				}
-				else{
-					delete scene;
-					scene = nullptr;
-				}
+				
 			}
 			else
 			{
@@ -485,6 +511,28 @@ repo::core::model::RepoScene*
 	return scene;
 }
 
+void RepoManipulator::insertRole(
+	const std::string                             &databaseAd,
+	const repo::core::model::RepoBSON	          *cred,
+	const repo::core::model::RepoRole             &role)
+{
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+	{
+		std::string errMsg;
+		if (handler->insertRole(role, errMsg))
+		{
+			repoInfo << "Role added successfully.";
+		}
+		else
+		{
+			repoError << "Failed to add role : " << errMsg;
+		}
+	}
+
+}
+
 void RepoManipulator::insertUser(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON*	  cred,
@@ -531,6 +579,27 @@ void RepoManipulator::removeDocument(
 
 }
 
+void RepoManipulator::removeRole(
+	const std::string                             &databaseAd,
+	const repo::core::model::RepoBSON*	  cred,
+	const repo::core::model::RepoRole       &role)
+{
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+	{
+		std::string errMsg;
+		if (handler->dropRole(role, errMsg))
+		{
+			repoInfo << "Role removed successfully.";
+		}
+		else
+		{
+			repoError << "Failed to remove role : " << errMsg;
+		}
+	}
+
+}
 
 void RepoManipulator::removeUser(
 	const std::string                             &databaseAd,
@@ -615,6 +684,27 @@ bool RepoManipulator::saveSceneToFile(
 	return modelExport.exportToFile(scene, filePath);
 }
 
+void RepoManipulator::updateRole(
+	const std::string                             &databaseAd,
+	const repo::core::model::RepoBSON*	  cred,
+	const repo::core::model::RepoRole       &role)
+{
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+	{
+		std::string errMsg;
+		if (handler->updateRole(role, errMsg))
+		{
+			repoInfo << "Role updated successfully.";
+		}
+		else
+		{
+			repoError << "Failed to update role : " << errMsg;
+		}
+	}
+
+}
 
 void RepoManipulator::updateUser(
 	const std::string                             &databaseAd,

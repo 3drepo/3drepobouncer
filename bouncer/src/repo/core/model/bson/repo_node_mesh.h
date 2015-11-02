@@ -75,8 +75,8 @@ namespace repo {
 					* @param binMapping binary mapping of fields that are too big to fit within the bson
 					*/
 					MeshNode(RepoBSON bson,
-						const std::unordered_map<std::string, std::vector<uint8_t>> &binMapping =
-									std::unordered_map<std::string, std::vector<uint8_t>>()
+						const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping =
+									std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>()
 						);
 
 

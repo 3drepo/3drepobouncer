@@ -37,7 +37,7 @@ int main(int argc, char* argv[]){
 	
 	if (argc < minArgs){
 		printHelp();
-		return EXIT_FAILURE;
+		return REPOERR_INVALID_ARG;
 	}
 
 	std::string address = argv[1];
@@ -63,15 +63,15 @@ int main(int argc, char* argv[]){
 		if (token)
 		{
 			repoLog("successfully connected to the database!");
-			bool success = performOperation(controller, token, op);
+			int32_t errcode = performOperation(controller, token, op);
 
 			delete controller;
 			delete token;
-			return !success;
+			return errcode;
 		}
 		else{
 			repoLogError("Failed to authenticate to the database: " + errMsg);
-			return EXIT_FAILURE;
+			return REPOERR_AUTH_FAILED;
 		}
 			
 
@@ -81,12 +81,12 @@ int main(int argc, char* argv[]){
 	{
 		std::cout << "Not enough arguments for command: " << op.command << std::endl;
 		printHelp();
-		return EXIT_FAILURE;
+		return REPOERR_INVALID_ARG;
 	}
 
 
 	std::cout << "Unknown command: " << op.command << std::endl;
 	printHelp();
-	return EXIT_FAILURE;
+	return REPOERR_UNKNOWN_CMD;
 	
 }

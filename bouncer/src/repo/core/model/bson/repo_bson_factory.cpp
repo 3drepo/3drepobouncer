@@ -1,3 +1,21 @@
+/**
+*  Copyright (C) 2015 3D Repo Ltd
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU Affero General Public License as
+*  published by the Free Software Foundation, either version 3 of the
+*  License, or (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU Affero General Public License for more details.
+*
+*  You should have received a copy of the GNU Affero General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+
 #include "repo_bson_factory.h"
 
 #include <boost/filesystem.hpp>
@@ -303,7 +321,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	repoUUID uniqueID = generateUUID();
 	bytesize += appendDefaults(builder, REPO_NODE_TYPE_MESH, apiLevel, generateUUID(), name, std::vector<repoUUID>(), uniqueID);
 
-	std::unordered_map<std::string, std::vector<uint8_t>> binMapping;
+	std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> binMapping;
 
 	if (boundingBox.size() > 0)
 	{
@@ -349,11 +367,10 @@ MeshNode RepoBSONFactory::makeMeshNode(
 		{
 			std::string bName = UUIDtoString(uniqueID) + "_vertices";
 			//inclusion of this binary exceeds the maximum, store separately
-			binMapping[bName] = std::vector<uint8_t>();
-			binMapping[bName].resize(verticesByteCount); //uint8_t will ensure it is a byte addrressing
-			memcpy(&binMapping[bName][0], &vertices[0], verticesByteCount);
-			builder << REPO_NODE_MESH_LABEL_VERTICES << bName;
-
+			binMapping[REPO_NODE_MESH_LABEL_VERTICES] =
+				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
+			binMapping[REPO_NODE_MESH_LABEL_VERTICES].second.resize(verticesByteCount); //uint8_t will ensure it is a byte addrressing
+			memcpy(binMapping[REPO_NODE_MESH_LABEL_VERTICES].second.data(), &vertices[0], verticesByteCount);
 			bytesize += sizeof(bName);
 		}
 		else
@@ -381,6 +398,10 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 		std::vector<uint32_t> facesLevel1;
 		for (auto &face : faces){
+			if (face.numIndices == 0)
+			{
+				repoWarning << "number of indices in this face is 0!";
+			}
 			facesLevel1.push_back(face.numIndices);
 			for (uint32_t ind = 0; ind < face.numIndices; ind++)
 			{
@@ -395,11 +416,10 @@ MeshNode RepoBSONFactory::makeMeshNode(
 		{
 			std::string bName = UUIDtoString(uniqueID) + "_faces";
 			//inclusion of this binary exceeds the maximum, store separately
-			binMapping[bName] = std::vector<uint8_t>();
-			binMapping[bName].resize(facesByteCount); //uint8_t will ensure it is a byte addrressing
-			memcpy(&binMapping[bName][0], &facesLevel1[0], facesByteCount);
-
-			builder << REPO_NODE_MESH_LABEL_FACES << bName;
+			binMapping[REPO_NODE_MESH_LABEL_FACES] =
+				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
+			binMapping[REPO_NODE_MESH_LABEL_FACES].second.resize(facesByteCount); //uint8_t will ensure it is a byte addrressing
+			memcpy(binMapping[REPO_NODE_MESH_LABEL_FACES].second.data(), &facesLevel1[0], facesByteCount);
 
 			bytesize += sizeof(bName);
 		}
@@ -426,11 +446,10 @@ MeshNode RepoBSONFactory::makeMeshNode(
 		{
 			std::string bName = UUIDtoString(uniqueID) + "_normals";
 			//inclusion of this binary exceeds the maximum, store separately
-			binMapping[bName] = std::vector<uint8_t>();
-			binMapping[bName].resize(normalsByteCount); //uint8_t will ensure it is a byte addrressing
-			memcpy(&binMapping[bName][0], &normals[0], normalsByteCount);
-
-			builder << REPO_NODE_MESH_LABEL_NORMALS << bName;
+			binMapping[REPO_NODE_MESH_LABEL_NORMALS] =
+				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
+			binMapping[REPO_NODE_MESH_LABEL_NORMALS].second.resize(normalsByteCount); //uint8_t will ensure it is a byte addrressing
+			memcpy(binMapping[REPO_NODE_MESH_LABEL_NORMALS].second.data(), &normals[0], normalsByteCount);
 
 			bytesize += sizeof(bName);
 		}
@@ -462,11 +481,10 @@ MeshNode RepoBSONFactory::makeMeshNode(
 		{
 			std::string bName = UUIDtoString(uniqueID) + "_colors";
 			//inclusion of this binary exceeds the maximum, store separately
-			binMapping[bName] = std::vector<uint8_t>();
-			binMapping[bName].resize(colorsByteCount); //uint8_t will ensure it is a byte addrressing
-			memcpy(&binMapping[bName][0], &colors[0], colorsByteCount);
-
-			builder << REPO_NODE_MESH_LABEL_COLORS << bName;
+			binMapping[REPO_NODE_MESH_LABEL_COLORS] =
+				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
+			binMapping[REPO_NODE_MESH_LABEL_COLORS].second.resize(colorsByteCount); //uint8_t will ensure it is a byte addrressing
+			memcpy(binMapping[REPO_NODE_MESH_LABEL_COLORS].second.data(), &colors[0], colorsByteCount);
 
 			bytesize += sizeof(bName);
 		}
@@ -509,11 +527,10 @@ MeshNode RepoBSONFactory::makeMeshNode(
 		{
 			std::string bName = UUIDtoString(uniqueID) + "_uv";
 			//inclusion of this binary exceeds the maximum, store separately
-			binMapping[bName] = std::vector<uint8_t>();
-			binMapping[bName].resize(uvByteCount); //uint8_t will ensure it is a byte addrressing
-			memcpy(&binMapping[bName][0], &concatenated[0], uvByteCount);
-
-			builder << REPO_NODE_MESH_LABEL_UV_CHANNELS << bName;
+			binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS] =
+				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
+			binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS].second.resize(uvByteCount); //uint8_t will ensure it is a byte addrressing
+			memcpy(binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS].second.data(), &concatenated[0], uvByteCount);
 
 			bytesize += sizeof(bName);
 		}
@@ -580,6 +597,77 @@ RepoProjectSettings RepoBSONFactory::makeRepoProjectSettings(
 	//--------------------------------------------------------------------------
 	// Add to the parent object
 	return RepoProjectSettings(builder.obj());
+}
+
+RepoRole RepoBSONFactory::makeRepoRole(
+	const std::string &roleName,
+	const std::string &database,
+	const std::vector<RepoPermission> &permissions
+	)
+{
+	return _makeRepoRole(roleName, database, RepoRole::translatePermissions(permissions));
+}
+
+RepoRole RepoBSONFactory::_makeRepoRole(
+	const std::string &roleName,
+	const std::string &database,
+	const std::vector<RepoPrivilege> &privileges,
+	const std::vector<std::pair<std::string, std::string>> &inheritedRoles
+	)
+{
+	RepoBSONBuilder builder;
+	builder << REPO_LABEL_ID << database + "." + roleName;
+	builder << REPO_ROLE_LABEL_ROLE << roleName;
+	builder << REPO_ROLE_LABEL_DATABASE << database;
+	
+	//====== Add Privileges ========
+	if (privileges.size() > 0)
+	{
+		RepoBSONBuilder privilegesBuilder;
+		for (size_t i = 0; i < privileges.size(); ++i)
+		{
+			const auto &p = privileges[i];
+			RepoBSONBuilder innerBsonBuilder, actionBuilder;
+			RepoBSON resource = BSON(REPO_ROLE_LABEL_DATABASE << p.database << REPO_ROLE_LABEL_COLLECTION << p.collection);
+			innerBsonBuilder << REPO_ROLE_LABEL_RESOURCE << resource;
+
+			for (size_t aCount = 0; aCount < p.actions.size(); ++aCount)
+			{
+				actionBuilder << std::to_string(aCount) << RepoRole::dbActionToString(p.actions[aCount]);
+			}
+
+			innerBsonBuilder.appendArray(REPO_ROLE_LABEL_ACTIONS, actionBuilder.obj());
+
+			privilegesBuilder << std::to_string(i) << innerBsonBuilder.obj();
+		}
+		builder.appendArray(REPO_ROLE_LABEL_PRIVILEGES, privilegesBuilder.obj());
+	}
+	else
+	{
+		repoWarning << "Creating a role with no privileges!";
+	}
+
+	//====== Add Inherited Roles ========
+
+	if (inheritedRoles.size() > 0)
+	{
+		RepoBSONBuilder inheritedRolesBuilder;
+
+		for (size_t i = 0; i < inheritedRoles.size(); ++i)
+		{
+			
+			RepoBSON parentRole = BSON(
+					REPO_ROLE_LABEL_ROLE << inheritedRoles[i].second 
+					<< REPO_ROLE_LABEL_DATABASE << inheritedRoles[i].first
+				);
+
+			inheritedRolesBuilder << std::to_string(i) << parentRole;
+		}
+
+		builder.appendArray(REPO_ROLE_LABEL_INHERITED_ROLES, inheritedRolesBuilder.obj());
+	}
+
+	return RepoRole(builder.obj());
 }
 
 RepoUser RepoBSONFactory::makeRepoUser(
@@ -727,22 +815,21 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 	if (currentNodes.size() > 0)
 		builder.appendArray(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS, currentNodes);
 
-	//--------------------------------------------------------------------------
-	// Added Shared IDs
+	////--------------------------------------------------------------------------
+	//// Added Shared IDs
 
-	if (added.size() > 0)
-		builder.appendArray(REPO_NODE_REVISION_LABEL_ADDED_SHARED_IDS, added);
+	//if (added.size() > 0)
+	//	builder.appendArray(REPO_NODE_REVISION_LABEL_ADDED_SHARED_IDS, builder.createArrayBSON(added));
 
-	//--------------------------------------------------------------------------
-	// Deleted Shared IDs
-	if (removed.size() > 0)
-		builder.appendArray(REPO_NODE_REVISION_LABEL_DELETED_SHARED_IDS, removed);
+	////--------------------------------------------------------------------------
+	//// Deleted Shared IDs
+	//if (removed.size() > 0)
+	//	builder.appendArray(REPO_NODE_REVISION_LABEL_DELETED_SHARED_IDS, builder.createArrayBSON(removed));
 
-	//--------------------------------------------------------------------------
-	// Modified Shared IDs
-	if (modified.size() > 0)
-		builder.appendArray(REPO_NODE_REVISION_LABEL_MODIFIED_SHARED_IDS, modified);
-
+	////--------------------------------------------------------------------------
+	//// Modified Shared IDs
+	//if (modified.size() > 0)
+	//	builder.appendArray(REPO_NODE_REVISION_LABEL_MODIFIED_SHARED_IDS, builder.createArrayBSON(modified));
 	//--------------------------------------------------------------------------
 
 	//--------------------------------------------------------------------------
