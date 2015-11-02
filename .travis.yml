@@ -40,7 +40,6 @@ script:
     - LD_LIBRARY_PATH=$HOME/mongo-cxx/lib/:/usr/local/lib:$LD_LIBRARY_PATH ldd /usr/local/bin/3drepobouncerTest
     - ls /usr/local/lib
     - LD_LIBRARY_PATH=$HOME/mongo-cxx/lib/:/usr/local/lib:$LD_LIBRARY_PATH 3drepobouncerTest
-
 notifications:
     email: 
         recipients:

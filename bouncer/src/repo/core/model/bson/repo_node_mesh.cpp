@@ -88,14 +88,7 @@ std::vector<repo_vector_t>* MeshNode::getVertices() const
 	std::vector<repo_vector_t> *vertices = new std::vector<repo_vector_t>();
 	if (hasBinField(REPO_NODE_MESH_LABEL_VERTICES))
 	{
-		if (hasField(REPO_NODE_MESH_LABEL_VERTICES_COUNT))
-		{
-			const uint32_t verticesSize = getField(REPO_NODE_MESH_LABEL_VERTICES_COUNT).numberInt();
-			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_VERTICES, verticesSize, vertices);
-
-		}
-		else
-			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_VERTICES, vertices);
+		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_VERTICES, vertices);
 
 	}
 	else
@@ -170,16 +163,7 @@ std::vector<repo_vector_t>* MeshNode::getNormals() const
 	std::vector<repo_vector_t> *vertices = new std::vector<repo_vector_t>();
 	if (hasBinField(REPO_NODE_MESH_LABEL_NORMALS))
 	{
-
-		if (hasField(REPO_NODE_MESH_LABEL_VERTICES_COUNT))
-		{
-			const uint32_t verticesSize = getField(REPO_NODE_MESH_LABEL_VERTICES_COUNT).numberInt();
-			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_NORMALS, verticesSize, vertices);
-
-		}
-		else
-			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_NORMALS, vertices);
-
+		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_NORMALS, vertices);
 	}
 
 	return vertices;
@@ -193,16 +177,7 @@ std::vector<repo_vector2d_t>* MeshNode::getUVChannels() const
 	{
 		channels = new std::vector<repo_vector2d_t>();
 
-		if (hasField(REPO_NODE_MESH_LABEL_VERTICES_COUNT))
-		{
-			const uint32_t uvChannelSize = getField(REPO_NODE_MESH_LABEL_VERTICES_COUNT).numberInt()
-				* getField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT).numberInt();
-
-			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_UV_CHANNELS, uvChannelSize, channels);
-
-		}
-		else
-			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_UV_CHANNELS, channels);		
+		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_UV_CHANNELS, channels);		
 	}
 
 
@@ -250,18 +225,7 @@ std::vector<repo_face_t>* MeshNode::getFaces() const
 		int32_t facesCount = getField(REPO_NODE_MESH_LABEL_FACES_COUNT).numberInt();
 		faces->resize(facesCount);
 
-		if (hasField(REPO_NODE_MESH_LABEL_FACES_BYTE_COUNT))
-		{
-			int32_t facesByteCount = getField(REPO_NODE_MESH_LABEL_FACES_BYTE_COUNT).numberInt();
-
-			serializedFaces->resize(facesByteCount / sizeof(uint32_t));
-			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_FACES, facesByteCount / sizeof(uint32_t), serializedFaces);
-		}
-		else
-		{
-			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_FACES, serializedFaces);
-		}
-
+		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_FACES, serializedFaces);
 		
 		// Retrieve numbers of vertices for each face and subsequent
 		// indices into the vertex array.
@@ -313,8 +277,8 @@ RepoBSON MeshNode::meshMappingAsBSON(const repo_mesh_mapping_t  &mapping)
 	builder << REPO_NODE_MESH_LABEL_TRIANGLE_TO << mapping.triTo;
 
 	RepoBSONBuilder bbBuilder;
-	bbBuilder.appendVector("0", mapping.min);
-	bbBuilder.appendVector("1", mapping.max);
+	bbBuilder.append("0", mapping.min);
+	bbBuilder.append("1", mapping.max);
 
 	builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, bbBuilder.obj());
 

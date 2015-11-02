@@ -58,19 +58,7 @@ RepoNode RepoNode::cloneAndAddParent(
 
 	std::vector<repoUUID> currentParents = getParentIDs();
 	currentParents.push_back(parentID);
-
-	builder.appendArray(REPO_NODE_LABEL_PARENTS, arrayBuilder.createArrayBSON(currentParents));
-	////FIXME: Clean this up, shouldn't have mongo exposed.
-	//std::vector<mongo::BSONElement> parents = ((mongo::BSONElement)getField(REPO_NODE_LABEL_PARENTS)).Array();
-
-	//mongo::BSONArrayBuilder parentsBuilder;
-	//for (const auto &ele : parents)
-	//{
-	//	parentsBuilder.append(ele);
-	//}
-	//parentsBuilder.appendBinData(parentID.size(), mongo::bdtUUID, (char*)parentID.data);
-
-	//builder.appendArray(REPO_NODE_LABEL_PARENTS, parentsBuilder.obj());
+	builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);	
 
 	builder.appendElementsUnique(*this);
 
@@ -87,8 +75,7 @@ RepoNode RepoNode::cloneAndAddParent(
 	std::vector<repoUUID> currentParents = getParentIDs();
 	currentParents.insert(currentParents.end(), parentIDs.begin(), parentIDs.end());
 
-	builder.appendArray(REPO_NODE_LABEL_PARENTS, arrayBuilder.createArrayBSON(currentParents));
-
+	builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);
 
 	builder.appendElementsUnique(*this);
 
@@ -126,7 +113,7 @@ RepoNode RepoNode::cloneAndAddMergedNodes(
 {
 	RepoBSONBuilder builder;
 	RepoBSONBuilder arrayBuilder;
-	builder.appendArray(REPO_LABEL_MERGED_NODES, arrayBuilder.createArrayBSON(mergeMap));
+	builder.appendArray(REPO_LABEL_MERGED_NODES, mergeMap);
 
 	builder.appendElementsUnique(*this);
 
