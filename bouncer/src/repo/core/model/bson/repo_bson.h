@@ -113,86 +113,6 @@ namespace repo {
 							return RepoBSONElement(mongo::BSONObj::getField(label));
 						}
 
-
-						/**
-						* get a binary field in the form of vector of T
-						* @param field field name
-						* @param vectorSize size of the vector
-						* @param vec pointer to a vector to store this data
-						* @return returns true upon success.
-						*/
-						template <class T>
-						bool getBinaryFieldAsVector(
-							const std::string &field,
-							const uint32_t vectorSize,
-							std::vector<T> * vec) const
-						{
-							bool success = false;
-							//ensure backwards compatibility.
-							//FIXME: This needs to check for string field until we stop supporting it
-							if (!hasField(field) || getField(field).type() == ElementType::STRING)
-							{
-								//Try to get it from file mapping.
-								std::vector<uint8_t> bin = getBigBinary(field);
-								if (bin.size() > 0)
-								{
-									repoTrace << "Found field " << field << " in extref - size: " << (bin.size()/1024/1024) << "MiB";
-									vec->resize(bin.size() / sizeof(T));
-									memcpy(&vec->at(0), &bin[0], bin.size());
-									success = true;
-								}
-								else
-								{
-									repoError << "Trying to retrieve binary from a field that doesn't exist(" << field << ")";
-									return false;
-								}
-							}
-							else{
-								RepoBSONElement bse = getField(field);
-								if (vec && bse.type() == ElementType::BINARY && bse.binDataType() == mongo::BinDataGeneral)
-								{
-									uint64_t vectorSizeInBytes = vectorSize * sizeof(T);
-									bse.value();
-									int length;
-									const char *binData = bse.binData(length);
-
-									vec->resize(length / sizeof(T));
-
-									if (length > vectorSizeInBytes)
-									{
-										repoWarning << "RepoBSON::getBinaryFieldAsVector : "
-											<< "size of binary data (" << length << ") is bigger than expected vector size("
-											<< vectorSizeInBytes << ")";
-									}
-
-									if (success = (length >= vectorSizeInBytes))
-									{
-										//can copy as long as length is bigger or equal to vectorSize
-										memcpy(&(vec->at(0)), binData, length);
-
-									}
-									else{
-										repoError << "RepoBSON::getBinaryFieldAsVector : "
-											<< "size of binary data (" << length << ") is smaller than expected vector size("
-											<< vectorSizeInBytes << ")";
-
-										//copy the length amount off anyway
-										memcpy(&(vec->at(0)), binData, length);
-									}
-
-
-								}
-								else
-								{
-									repoError << "RepoBSON::getBinaryFieldAsVector :" <<
-										(!vec ? " nullptr to vector " : "bson element type is not BinDataGeneral!");
-								}
-							}
-
-
-							return success;
-						}
-
 						/**
 						* get a binary field in the form of vector of T
 						* @param field field name
@@ -241,6 +161,8 @@ namespace repo {
 									{
 										vec->resize(length / sizeof(T));
 										memcpy(&(vec->at(0)), binData, length);
+										repoTrace << "Binary field found within the bson, success.";
+										success = true;
 
 									}
 									else{

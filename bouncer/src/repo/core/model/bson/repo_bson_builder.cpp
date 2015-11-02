@@ -47,6 +47,19 @@ void RepoBSONBuilder::appendArrayPair(
 
 }
 
+void RepoBSONBuilder::appendVector(
+	const std::string    &label,
+	const repo_vector_t vec
+	)
+{
+
+	float vector[] = { vec.x, vec.y, vec.z };
+	RepoBSONBuilder array;
+	for (uint32_t i = 0; i < 3; ++i)
+		array << std::to_string(i) << vector[i];
+
+	appendArray(label, array.obj());
+}
 
 RepoBSON RepoBSONBuilder::obj()
 {
