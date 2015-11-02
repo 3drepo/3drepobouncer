@@ -379,9 +379,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 			builder.appendBinary(
 				REPO_NODE_MESH_LABEL_VERTICES,
 				&vertices[0],
-				vertices.size() * sizeof(vertices[0]),
-				REPO_NODE_MESH_LABEL_VERTICES_BYTE_COUNT,
-				REPO_NODE_MESH_LABEL_VERTICES_COUNT
+				vertices.size() * sizeof(vertices[0])
 				);
 			bytesize += verticesByteCount;
 		}
@@ -428,8 +426,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 			builder.appendBinary(
 				REPO_NODE_MESH_LABEL_FACES,
 				&facesLevel1[0],
-				facesLevel1.size() * sizeof(facesLevel1[0]),
-				REPO_NODE_MESH_LABEL_FACES_BYTE_COUNT
+				facesLevel1.size() * sizeof(facesLevel1[0])
 				);
 
 			bytesize += facesByteCount;
@@ -539,8 +536,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 			builder.appendBinary(
 				REPO_NODE_MESH_LABEL_UV_CHANNELS,
 				&concatenated[0],
-				concatenated.size() * sizeof(concatenated[0]),
-				REPO_NODE_MESH_LABEL_UV_CHANNELS_BYTE_COUNT);
+				concatenated.size() * sizeof(concatenated[0]));
 
 			bytesize += uvByteCount;
 		}
@@ -722,7 +718,6 @@ RepoUser RepoBSONFactory::makeRepoUser(
 		customDataBuilder << REPO_LABEL_AVATAR << avatarBuilder.obj();
 	}
 
-
 	builder << REPO_USER_LABEL_CUSTOM_DATA << customDataBuilder.obj();
 
 	if (roles.size())
@@ -887,8 +882,7 @@ TextureNode RepoBSONFactory::makeTextureNode(
 		builder.appendBinary(
 		REPO_LABEL_DATA,
 		data,
-		byteCount,
-		REPO_NODE_LABEL_DATA_BYTE_COUNT);
+		byteCount);
 
 	return TextureNode(builder.obj());
 }

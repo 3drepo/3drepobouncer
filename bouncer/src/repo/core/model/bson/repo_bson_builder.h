@@ -107,22 +107,11 @@ namespace repo {
 						void appendBinary(
 							const std::string &label,
 							const T           *data,
-							const uint32_t  &byteCount,
-							const std::string &byteCountLabel = "",
-							const std::string &countLabel = "")
+							const uint32_t  &byteCount)
 						{
 
 							if (0 < byteCount)
 							{
-								if (!byteCountLabel.empty())
-								{
-									//write size in bytes
-									mongo::BSONObjBuilder::append(byteCountLabel, byteCount);
-								}
-
-								// Store size of the array for decoding purposes
-								if (!countLabel.empty())
-									mongo::BSONObjBuilder::append(countLabel, (uint32_t)(byteCount / sizeof(T)));
 
 							// Store data as a binary blob
 								appendBinData(
