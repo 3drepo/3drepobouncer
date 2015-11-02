@@ -19,6 +19,7 @@
 
 #include <gtest/gtest.h>
 
+#include <repo/core/model/collection/repo_scene.h>
 #include <repo/core/model/bson/repo_bson_role.h>
 #include <repo/core/model/bson/repo_bson_builder.h>
 
@@ -72,4 +73,47 @@ TEST(RepoRoleTest, ConstructorTest)
 
 	RepoRole role2(buildRoleExample());
 	EXPECT_FALSE(role2.isEmpty());
+}
+
+TEST(RepoRoleTest, DBActionToStringTest)
+{
+	EXPECT_EQ("insert", RepoRole::dbActionToString(DBActions::INSERT));
+	EXPECT_EQ("update", RepoRole::dbActionToString(DBActions::UPDATE));
+	EXPECT_EQ("remove", RepoRole::dbActionToString(DBActions::REMOVE));
+	EXPECT_EQ("find", RepoRole::dbActionToString(DBActions::FIND));
+	EXPECT_EQ("createUser", RepoRole::dbActionToString(DBActions::CREATE_USER));
+	EXPECT_EQ("createRole", RepoRole::dbActionToString(DBActions::CREATE_ROLE));
+	EXPECT_EQ("dropRole", RepoRole::dbActionToString(DBActions::DROP_ROLE));
+	EXPECT_EQ("grantRole", RepoRole::dbActionToString(DBActions::GRANT_ROLE));
+	EXPECT_EQ("revokeRole", RepoRole::dbActionToString(DBActions::REVOKE_ROLE));
+	EXPECT_EQ("viewRole", RepoRole::dbActionToString(DBActions::VIEW_ROLE));
+	EXPECT_EQ("", RepoRole::dbActionToString(DBActions::UNKNOWN));
+	EXPECT_EQ("", RepoRole::dbActionToString((DBActions)100600));
+
+	//This is a bit hacky, but we want to ensure that every enum is catered for.
+	//so loop through until we hit UNKNWON and make sure every enum returns a valid string
+
+	uint32_t i = 0;
+	for (; i < (uint32_t)DBActions::UNKNOWN-1; ++i)
+	{
+		EXPECT_NE("", RepoRole::dbActionToString((DBActions)i));
+	}
+
+	//Also ensure UNKNOWN is the last member in the enum class
+	i += 2;
+	EXPECT_EQ("", RepoRole::dbActionToString((DBActions)i));
+}
+
+TEST(RepoRoleTest, TranslatePermissionsTest)
+{
+	std::vector<RepoPermission> permissions;
+
+	permissions.push_back({"test", "project", AccessRight::READ});
+
+	std::vector<RepoPrivilege> privileges = RepoRole::translatePermissions(permissions);
+
+	EXPECT_EQ(RepoScene::getProjectExtensions().size(), privileges.size());
+
+
+	EXPECT_EQ(0, RepoRole::translatePermissions(std::vector<RepoPermission>()).size());
 }

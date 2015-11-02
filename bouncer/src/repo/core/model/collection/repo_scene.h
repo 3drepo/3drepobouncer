@@ -67,6 +67,8 @@ namespace repo{
 					std::map<repoUUID, RepoScene*> referenceToScene; //** mapping of reference ID to it's scene graph
 				};
 
+
+				static const std::vector<std::string> collectionsInProject;
 				public:
 
 					/**
@@ -218,6 +220,10 @@ namespace repo{
 					std::string getRawExtension() const
 					{
 						return rawExt;
+					}
+
+					static std::vector<std::string> getProjectExtensions()					{
+						return collectionsInProject;
 					}
 
 					/**

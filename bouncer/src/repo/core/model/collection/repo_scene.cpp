@@ -33,6 +33,9 @@
 
 using namespace repo::core::model;
 
+const std::vector<std::string> RepoScene::collectionsInProject = { "scene", "stash.3drepo",
+"stash.src", "history", "issues", "wayfinder" };
+
 RepoScene::RepoScene(
 	const std::string &database,
 	const std::string &projectName,
