@@ -91,17 +91,7 @@ namespace repo {
 							const std::string &fstLabel,
 							const std::string &sndLabel
 							);
-						/*!
-						* Appends a vector of object as an array
-						* @param label Label for this element
-						* @param vec the data itself
-						* @param countLabel count label to store count
-						*/
-						void appendVector(
-							const std::string    &label,
-							const repo_vector_t vec
-							);
-
+				
 						/*!
 						* Appends a pointer to some memory as binary mongo::BinDataGeneral type array.
 						* Appends given data as a binary data blob into a given builder. Also

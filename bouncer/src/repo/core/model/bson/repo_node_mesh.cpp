@@ -277,8 +277,8 @@ RepoBSON MeshNode::meshMappingAsBSON(const repo_mesh_mapping_t  &mapping)
 	builder << REPO_NODE_MESH_LABEL_TRIANGLE_TO << mapping.triTo;
 
 	RepoBSONBuilder bbBuilder;
-	bbBuilder.appendVector("0", mapping.min);
-	bbBuilder.appendVector("1", mapping.max);
+	bbBuilder.append("0", mapping.min);
+	bbBuilder.append("1", mapping.max);
 
 	builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, bbBuilder.obj());
 
