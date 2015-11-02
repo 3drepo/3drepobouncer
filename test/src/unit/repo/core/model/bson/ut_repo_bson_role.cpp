@@ -64,7 +64,7 @@ static RepoBSON buildRoleExample()
 	return builder.obj();
 }
 
-TEST(RepoBSONTest, ConstructorTest)
+TEST(RepoRoleTest, ConstructorTest)
 {
 	RepoRole role;
 
