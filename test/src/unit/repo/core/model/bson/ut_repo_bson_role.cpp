@@ -91,7 +91,7 @@ TEST(RepoRoleTest, DBActionToStringTest)
 	EXPECT_EQ("", RepoRole::dbActionToString((DBActions)100600));
 
 	//This is a bit hacky, but we want to ensure that every enum is catered for.
-	//so loop through until we hit UNKNWON and make sure every enum returns a valid string
+	//so loop through until we hit UNKNOWN and make sure every enum returns a valid string
 
 	uint32_t i = 0;
 	for (; i < (uint32_t)DBActions::UNKNOWN-1; ++i)
@@ -104,16 +104,181 @@ TEST(RepoRoleTest, DBActionToStringTest)
 	EXPECT_EQ("", RepoRole::dbActionToString((DBActions)i));
 }
 
-TEST(RepoRoleTest, TranslatePermissionsTest)
+TEST(RepoRoleTest, TranslatePermissionsTest_READ)
 {
 	std::vector<RepoPermission> permissions;
 
-	permissions.push_back({"test", "project", AccessRight::READ});
+	std::string projectName = "project";
+	permissions.push_back({"test", projectName, AccessRight::READ});
 
 	std::vector<RepoPrivilege> privileges = RepoRole::translatePermissions(permissions);
 
 	EXPECT_EQ(RepoScene::getProjectExtensions().size(), privileges.size());
 
+	for (const auto &p : privileges)
+	{
+		if (p.collection == (projectName + ".scene"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.3drepo"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.src"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".history"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".wayfinder"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".issues"))
+		{
+			EXPECT_EQ(3, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::UPDATE) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+		}
+		else
+		{
+			//There is an extension the test doesn't know about. Make sure 
+			//this extension is catered for within the roles function
+			//and add it as another case here.
+			FAIL("Unexpected project extension name");
+		}
+	}
+
+	EXPECT_EQ(0, RepoRole::translatePermissions(std::vector<RepoPermission>()).size());
+}
+
+TEST(RepoRoleTest, TranslatePermissionsTest_WRITE)
+{
+	std::vector<RepoPermission> permissions;
+
+	std::string projectName = "project";
+	permissions.push_back({ "test", projectName, AccessRight::WRITE });
+
+	std::vector<RepoPrivilege> privileges = RepoRole::translatePermissions(permissions);
+
+	EXPECT_EQ(RepoScene::getProjectExtensions().size(), privileges.size());
+
+	for (const auto &p : privileges)
+	{
+		if (p.collection == (projectName + ".scene"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::INSERT, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.3drepo"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::INSERT, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.src"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::INSERT, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".history"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::INSERT, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".wayfinder"))
+		{
+			EXPECT_EQ(3, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::UPDATE) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+		}
+		else if (p.collection == (projectName + ".issues"))
+		{
+			EXPECT_EQ(2, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::UPDATE) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+		}
+		else
+		{
+			//There is an extension the test doesn't know about. Make sure 
+			//this extension is catered for within the roles function
+			//and add it as another case here.
+			FAIL("Unexpected project extension name");
+		}
+	}
+
+	EXPECT_EQ(0, RepoRole::translatePermissions(std::vector<RepoPermission>()).size());
+}
+
+TEST(RepoRoleTest, TranslatePermissionsTest_READWRITE)
+{
+	std::vector<RepoPermission> permissions;
+
+	std::string projectName = "project";
+	permissions.push_back({ "test", projectName, AccessRight::READ_WRITE });
+
+	std::vector<RepoPrivilege> privileges = RepoRole::translatePermissions(permissions);
+
+	EXPECT_EQ(RepoScene::getProjectExtensions().size(), privileges.size());
+
+	for (const auto &p : privileges)
+	{
+		if (p.collection == (projectName + ".scene"))
+		{
+			EXPECT_EQ(2, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
+		}
+		else if (p.collection == (projectName + ".stash.3drepo"))
+		{
+			EXPECT_EQ(2, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
+		}
+		else if (p.collection == (projectName + ".stash.src"))
+		{
+			EXPECT_EQ(2, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
+		}
+		else if (p.collection == (projectName + ".history"))
+		{
+			EXPECT_EQ(2, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
+		}
+		else if (p.collection == (projectName + ".wayfinder"))
+		{
+			EXPECT_EQ(4, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::UPDATE) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+		}
+		else if (p.collection == (projectName + ".issues"))
+		{
+			EXPECT_EQ(3, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::UPDATE) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+		}
+		else
+		{
+			//There is an extension the test doesn't know about. Make sure 
+			//this extension is catered for within the roles function
+			//and add it as another case here.
+			FAIL("Unexpected project extension name");
+		}
+	}
 
 	EXPECT_EQ(0, RepoRole::translatePermissions(std::vector<RepoPermission>()).size());
 }

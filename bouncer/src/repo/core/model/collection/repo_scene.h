@@ -222,7 +222,8 @@ namespace repo{
 						return rawExt;
 					}
 
-					static std::vector<std::string> getProjectExtensions()					{
+					static std::vector<std::string> getProjectExtensions()
+					{
 						return collectionsInProject;
 					}
 
