@@ -212,7 +212,7 @@ TEST(RepoRoleTest, TranslatePermissionsTest_WRITE)
 			//There is an extension the test doesn't know about. Make sure 
 			//this extension is catered for within the roles function
 			//and add it as another case here.
-			FAIL("Unexpected project extension name");
+			FAIL();
 		}
 	}
 
