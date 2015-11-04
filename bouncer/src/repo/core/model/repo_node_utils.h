@@ -241,7 +241,7 @@ static void normalize(repo_vector_t &a)
 
 static bool nameCheck(const char &c)
 {
-	return c == ' ' || c == '$';
+	return c == ' ' || c == '$' || c == '.';
 }
 
 static bool dbNameCheck(const char &c)
