@@ -65,6 +65,58 @@ static RepoBSON buildRoleExample()
 	return builder.obj();
 }
 
+static RepoBSON buildRoleExample2()
+{
+	RepoBSONBuilder builder;
+	std::string database = "admin";
+	std::string roleName = "testRole";
+	builder << REPO_LABEL_ID << database + "." + roleName;
+	builder << REPO_ROLE_LABEL_ROLE << roleName;
+	builder << REPO_ROLE_LABEL_DATABASE << database;
+
+	//====== Add Privileges ========
+	RepoBSONBuilder privilegesBuilder;
+
+	RepoBSONBuilder innerBsonBuilder, actionBuilder;
+	RepoBSON resource = BSON(REPO_ROLE_LABEL_DATABASE << "testdb" << REPO_ROLE_LABEL_COLLECTION << "testCol");
+	innerBsonBuilder << REPO_ROLE_LABEL_RESOURCE << resource;
+
+	std::vector<std::string> actions = { "find", "update" };
+
+	for (size_t aCount = 0; aCount < actions.size(); ++aCount)
+	{
+		actionBuilder << std::to_string(aCount) << actions[aCount];
+	}
+
+	innerBsonBuilder.appendArray(REPO_ROLE_LABEL_ACTIONS, actionBuilder.obj());
+
+	privilegesBuilder << "0" << innerBsonBuilder.obj();
+
+	RepoBSON resource2 = BSON(REPO_ROLE_LABEL_DATABASE << "testdb" << REPO_ROLE_LABEL_COLLECTION << "project.history");
+	innerBsonBuilder << REPO_ROLE_LABEL_RESOURCE << resource2;
+
+	std::vector<std::string> actions = {"find"};
+
+	for (size_t aCount = 0; aCount < actions.size(); ++aCount)
+	{
+		actionBuilder << std::to_string(aCount) << actions[aCount];
+	}
+
+	innerBsonBuilder.appendArray(REPO_ROLE_LABEL_ACTIONS, actionBuilder.obj());
+
+	builder.appendArray(REPO_ROLE_LABEL_PRIVILEGES, privilegesBuilder.obj());
+
+
+	//====== Add Inherited Roles ========
+
+	RepoBSON inheritedRole = BSON("role" << "readWrite" << "db" << "canarywharf");
+	RepoBSONBuilder inheritedRolesBuilder;
+
+	inheritedRolesBuilder << "0" << inheritedRole;
+	builder.appendArray(REPO_ROLE_LABEL_INHERITED_ROLES, inheritedRolesBuilder.obj());
+	return builder.obj();
+}
+
 TEST(RepoRoleTest, ConstructorTest)
 {
 	RepoRole role;
@@ -281,4 +333,90 @@ TEST(RepoRoleTest, TranslatePermissionsTest_READWRITE)
 	}
 
 	EXPECT_EQ(0, RepoRole::translatePermissions(std::vector<RepoPermission>()).size());
+}
+
+TEST(RepoRoleTest, UpdateActions)
+{
+	//This is already tested via translatePermissions. If the above passes this function has to run fine.
+	std::vector<DBActions> vec;
+
+	RepoRole::updateActions("scene", AccessRight::READ, vec);
+	EXPECT_EQ(1, vec.size());
+	EXPECT_EQ(DBActions::FIND, vec[0]);
+
+	//Expect no duplicates (check the [A, A] will become [A])
+	RepoRole::updateActions("scene", AccessRight::READ, vec);
+	EXPECT_EQ(1, vec.size());
+	EXPECT_EQ(DBActions::FIND, vec[0]);
+
+
+	RepoRole::updateActions("scene", AccessRight::WRITE, vec);
+	EXPECT_EQ(2, vec.size());
+	EXPECT_TRUE(std::find(vec.begin(), vec.end(), DBActions::FIND) != vec.end());
+	EXPECT_TRUE(std::find(vec.begin(), vec.end(), DBActions::INSERT) != vec.end());
+
+	//again, expect no duplicates (check the [A, B, A] will become [A, B])
+	RepoRole::updateActions("scene", AccessRight::READ, vec);
+	EXPECT_EQ(2, vec.size());
+
+	vec.clear();
+	
+}
+
+TEST(RepoRoleTest, GetDatabaseTest)
+{
+	RepoRole empty;
+	RepoRole role(buildRoleExample());
+
+	EXPECT_EQ("admin", role.getDatabase());
+	EXPECT_EQ("", empty.getDatabase());
+}
+
+TEST(RepoRoleTest, GetInheritedRolesTest)
+{
+	RepoRole empty;
+	RepoRole role(buildRoleExample());
+
+	std::vector<std::pair<std::string, std::string>> inheritedRoles = role.getInheritedRoles();
+
+	ASSERT_EQ(1, inheritedRoles.size());
+	EXPECT_EQ("canarywharf",inheritedRoles[0].first);
+	EXPECT_EQ("readWrite", inheritedRoles[0].second);
+
+	EXPECT_EQ(0, empty.getInheritedRoles().size());
+}
+
+TEST(RepoRoleTest, GetNameTest)
+{
+	RepoRole empty;
+	RepoRole role(buildRoleExample());
+
+	EXPECT_EQ("testRole", role.getName());
+	EXPECT_EQ("", empty.getName());
+}
+
+TEST(RepoRoleTest, GetPrivilegesTest)
+{
+
+	RepoRole empty;
+	RepoRole role(buildRoleExample());
+
+	std::vector<RepoPrivilege> privileges = role.getPrivileges();
+	ASSERT_EQ(1, privileges.size());
+	EXPECT_EQ("testdb", privileges[0].database);
+	EXPECT_EQ("testCol", privileges[0].collection);
+	EXPECT_EQ(2, privileges[0].actions.size());
+	EXPECT_TRUE(std::find(privileges[0].actions.begin(), privileges[0].actions.end(), DBActions::UPDATE) != privileges[0].actions.end());
+	EXPECT_TRUE(std::find(privileges[0].actions.begin(), privileges[0].actions.end(), DBActions::FIND) != privileges[0].actions.end());
+
+
+	EXPECT_EQ(0, empty.getPrivileges().size());
+
+}
+
+TEST(RepoRoleTest, GetProjectAccessRightsTest)
+{
+	RepoRole empty;
+	RepoRole role(buildRoleExample());
+	RepoRole role2(buildRoleExample2());
 }
