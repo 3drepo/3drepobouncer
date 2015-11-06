@@ -95,11 +95,11 @@ static RepoBSON buildRoleExample2()
 	RepoBSON resource2 = BSON(REPO_ROLE_LABEL_DATABASE << "testdb" << REPO_ROLE_LABEL_COLLECTION << "project.history");
 	innerBsonBuilder << REPO_ROLE_LABEL_RESOURCE << resource2;
 
-	std::vector<std::string> actions = {"find"};
+	std::vector<std::string> actions2 = {"find"};
 
-	for (size_t aCount = 0; aCount < actions.size(); ++aCount)
+	for (size_t aCount = 0; aCount < actions2.size(); ++aCount)
 	{
-		actionBuilder << std::to_string(aCount) << actions[aCount];
+		actionBuilder << std::to_string(aCount) << actions2[aCount];
 	}
 
 	innerBsonBuilder.appendArray(REPO_ROLE_LABEL_ACTIONS, actionBuilder.obj());
@@ -418,5 +418,21 @@ TEST(RepoRoleTest, GetProjectAccessRightsTest)
 {
 	RepoRole empty;
 	RepoRole role(buildRoleExample());
-	RepoRole role2(buildRoleExample2());
+	EXPECT_EQ(0, empty.getProjectAccessRights().size());
+
+	//This function currently only calls 2 already tested functions.
+	//So we just make sure it's permforming the right thing here.
+	//If it is no longer the case this function needs to have its own fully tested body
+
+	auto accessRights = role.getProjectAccessRights();
+	auto accessRights2 = role.translatePrivileges(role.getPrivileges());
+
+	ASSERT_EQ(accessRights.size(), accessRights2.size());
+
+	for (size_t i = 0; i < accessRights.size(); ++i)
+	{
+		EXPECT_EQ(accessRights[i].database, accessRights2[i].database);
+		EXPECT_EQ(accessRights[i].project, accessRights2[i].project);
+		EXPECT_EQ(accessRights[i].permission, accessRights2[i].permission);
+	}
 }
