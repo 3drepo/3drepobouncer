@@ -113,6 +113,7 @@ void RepoScene::abandonChild(
 	const repoUUID  &child,
 	const bool      &modifyNode)
 {
+	repoTrace << UUIDtoString(parent) << " is abandoning child :" << UUIDtoString(child);
 	repoGraphInstance g = GraphType::OPTIMIZED == gType ? stashGraph : graph;
 	auto pToCIt = g.parentToChildren.find(parent);
 	if (pToCIt != g.parentToChildren.end())
@@ -934,6 +935,8 @@ void RepoScene::modifyNode(
 	const repoUUID                    &sharedID,
 	RepoNode                          *node)
 {
+
+	repoTrace << "Modify Node...";
 	repoGraphInstance &g = gtype == GraphType::OPTIMIZED ? stashGraph : graph;
 	if (g.sharedIDtoUniqueID.find(sharedID) != g.sharedIDtoUniqueID.end())
 	{
@@ -945,13 +948,14 @@ void RepoScene::modifyNode(
 		{
 			//check if the node is already in the "to modify" list
 			bool isInList = newAdded.find(sharedID) != newAdded.end() || newModified.find(sharedID) != newModified.end();
-
+			repoTrace << "IsInList: " << isInList;
 			updatedNode = RepoNode(nodeToChange->cloneAndAddFields(node, !isInList));
 
 			if (!isInList)
 			{
+				repoTrace << "Adding to list";
 				newModified.insert(sharedID);
-				newCurrent.erase(newCurrent.find(nodeToChange->getUniqueID()));
+				newCurrent.erase(nodeToChange->getUniqueID());
 				newCurrent.insert(updatedNode.getUniqueID());
 			}
 
@@ -961,8 +965,9 @@ void RepoScene::modifyNode(
 			updatedNode = RepoNode(nodeToChange->cloneAndAddFields(node, false));
 		}
 
+		repoTrace << "Swapping...";
 		nodeToChange->swap(updatedNode);
-
+		repoTrace << "done.";
 	}
 	else{
 		repoError << "Trying to update a node " << sharedID << " that doesn't exist in the scene!";
@@ -991,10 +996,14 @@ void RepoScene::removeNode(
 		{
 			newAdded.erase(iterator);
 		}
-
-		if ((iterator = newModified.find(sharedID)) != newModified.end())
+		else
 		{
-			newModified.erase(iterator);
+			if ((iterator = newModified.find(sharedID)) != newModified.end())
+			{
+				newModified.erase(iterator);
+			}
+
+			newRemoved.insert(sharedID);
 		}
 	}
 

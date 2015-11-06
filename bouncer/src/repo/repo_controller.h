@@ -551,6 +551,18 @@ namespace repo{
 			const repo::core::model::RepoScene* scene);
 
 
+		/*
+		*	------------- Optimizations --------------
+		*/
+
+		/**
+		* Reduce redundant transformations from the scene
+		* to optimise the graph
+		* @param scene RepoScene to optimize
+		*/
+		void reduceTransformations(
+			repo::core::model::RepoScene *scene);
+
 	private:
 
 

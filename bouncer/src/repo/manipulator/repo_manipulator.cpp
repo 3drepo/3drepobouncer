@@ -26,6 +26,7 @@
 #include "../core/model/bson/repo_bson_factory.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
+#include "modeloptimizer/repo_optimizer_trans_reduction.h"
 
 using namespace repo::manipulator;
 
@@ -553,6 +554,28 @@ void RepoManipulator::insertUser(
 		}
 	}
 
+}
+
+void RepoManipulator::reduceTransformations(
+	repo::core::model::RepoScene *scene)
+{
+	if (scene && scene->hasRoot())
+	{
+		modeloptimizer::TransformationReductionOptimizer optimizer;
+
+		//try{
+			optimizer.apply(scene);
+		//}
+		//catch (std::exception &e)
+		//{
+		//	repoError << "Caught exception : " << e.what();
+		//}
+		
+
+	}
+	else{
+		repoError << "RepoController::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
+	}
 }
 
 void RepoManipulator::removeDocument(

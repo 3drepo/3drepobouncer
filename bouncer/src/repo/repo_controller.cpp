@@ -796,3 +796,20 @@ bool RepoController::saveSceneToFile(
 
 	return success;
 }
+
+void RepoController::reduceTransformations(
+	repo::core::model::RepoScene *scene)
+{
+	if (scene && scene->hasRoot())
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+
+		worker->reduceTransformations(scene);
+		workerPool.push(worker);
+
+	}
+	else{
+		repoError << "RepoController::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
+	}
+
+}

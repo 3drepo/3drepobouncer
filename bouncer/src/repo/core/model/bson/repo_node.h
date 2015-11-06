@@ -94,7 +94,7 @@ namespace repo{
 							const bool &newUniqueID = true
 						) const
 						{
-							return cloneAndAddFields(new RepoNode(BSON(REPO_NODE_LABEL_NAME << newName)), newUniqueID);
+							return cloneAndAddFields(new RepoBSON(BSON(REPO_NODE_LABEL_NAME << newName)), newUniqueID);
 						}
 
 						/**

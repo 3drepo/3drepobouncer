@@ -397,6 +397,14 @@ namespace repo{
 				const repo::core::model::RepoBSON       &bson);
 
 			/**
+			* Reduce redundant transformations from the scene
+			* to optimise the graph
+			* @param scene RepoScene to optimize
+			*/
+			void reduceTransformations(
+				repo::core::model::RepoScene *scene);
+
+			/**
 			* remove a role from the database
 			* @param databaseAd mongo database address:port
 			* @param cred user credentials in bson form
