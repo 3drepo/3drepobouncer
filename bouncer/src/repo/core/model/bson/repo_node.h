@@ -84,6 +84,32 @@ namespace repo{
 							const std::vector<repoUUID> &parents) const;
 
 						/**
+						* Create a new object with this object's values,
+						* but a different name
+						* @param newName new name
+						* @return returns an object with the change
+						*/
+						RepoNode cloneAndChangeName(
+							const std::string &newName,
+							const bool &newUniqueID = true
+						) const
+						{
+							return cloneAndAddFields(new RepoNode(BSON(REPO_NODE_LABEL_NAME << newName)), newUniqueID);
+						}
+
+						/**
+						* Create a new object with this object's values,
+						* and remove a parent into this new object
+						* NOTE: this object is unchanged!
+						* @param parentID the shared uuid of the parent
+						* @param newUniqueID generate a new unique ID if set to true
+						* @returns new object with the field updated
+						*/
+						RepoNode cloneAndRemoveParent(
+							const repoUUID &parent,
+							const bool     &newUniqueID = true) const;
+
+						/**
 						* Create a new object with fields within the 
 						* change node (excluding parentID, unique ID and shared ID)
 						* NOTE this object is unchanged!
@@ -151,7 +177,6 @@ namespace repo{
 						* @return returns a set of parent IDs
 						*/
 						std::vector<repoUUID> getParentIDs() const;
-
 
 						/*
 						*	------------- Compare operations --------------

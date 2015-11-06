@@ -36,8 +36,12 @@ TEST(TransformationReductionOptimizer, ApplyOptimizationTest)
 
 	auto opt = TransformationReductionOptimizer();
 	repo::core::model::RepoScene *empty = nullptr;
+	repo::core::model::RepoScene *empty2 = new repo::core::model::RepoScene();
 
 	EXPECT_FALSE(opt.apply(empty));
+	EXPECT_FALSE(opt.apply(empty2));
+
+	//FIXME: to finish. need to construct a scene to test this properly.
 
 }
 

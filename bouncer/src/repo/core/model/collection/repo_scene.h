@@ -335,6 +335,18 @@ namespace repo{
 					*/
 
 					/**
+					* Abandon child from parent (disjoint 2 nodes within the scene)
+					* @param parent shared ID of parent
+					* @param child shared ID of child
+					* @param modifyNode modify child node to relay this information (not needed if this node is to be removed)
+					*/
+					void abandonChild(
+						const GraphType &gType,
+						const repoUUID  &parent,
+						const repoUUID  &child,
+						const bool      &modifyNode = true);
+
+					/**
 					* Introduce parentship to 2 nodes that already reside within the scene.
 					* If either of the nodes are not found, it does nothing
 					* If they already share an inheritance, it does nothing
@@ -371,6 +383,33 @@ namespace repo{
 						getChildrenAsNodes(
 						const GraphType &g,
 						const repoUUID &parent) const;
+
+					/**
+					* Get children nodes of a specified parent that satisfy the filtering condition
+					* @param g graph to retrieve from
+					* @param parent shared UUID of the parent node
+					* @param type the type of nodes to obtain
+					* @ return a vector of pointers to children node (potentially none)
+					*/
+					std::vector<RepoNode*>
+						getChildrenNodesFiltered(
+						const GraphType &g,
+						const repoUUID &parent,
+						const NodeType  &type) const;
+
+
+					/**
+					* Get the list of parent nodes that satisfy the filtering condition
+					* @param gType graphType
+					* @param node node in question
+					* @param type the type of nodes to obtain
+					* @return returns a vector of transformation nodes
+					*/
+					std::vector<RepoNode*> getParentNodesFiltered(
+						const GraphType &gType, 
+						const RepoNode  *node, 
+						const NodeType  &type) const;
+
 
 					/**
 					* Get Scene from reference node
@@ -541,6 +580,21 @@ namespace repo{
 						const GraphType                   &gtype,
 						const repoUUID                    &sharedID,
 						RepoNode *node);
+
+
+					/**
+					* Remove a node from the scene
+					* WARNING: Ensure all relationships are patched up,
+					* or you may end up with orphaned nodes/disjoint trees!
+					* This function will not try to patch up any orphaned children
+					* The node will be deleted from memory after this call!
+					* @param gtype graph type 
+					* @param sharedID of the node to remove
+					*/
+					void removeNode(
+						const GraphType                   &gtype,
+						const repoUUID                    &sharedID);
+
 
 					/**
 					* Rotates the model by 270 degrees to compensate the different axis orientation
