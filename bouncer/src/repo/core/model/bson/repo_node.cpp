@@ -123,7 +123,6 @@ RepoNode RepoNode::cloneAndAddFields(
 	}
 	else
 	{
-		repoTrace << "Unique ID = " << UUIDtoString(getUniqueID());
 		builder.append(REPO_NODE_LABEL_ID, getUniqueID());
 	}
 

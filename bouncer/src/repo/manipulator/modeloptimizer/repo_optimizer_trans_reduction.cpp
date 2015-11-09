@@ -78,7 +78,6 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 			repoUUID rootUniqueID = scene->getRoot(repo::core::model::RepoScene::GraphType::DEFAULT)->getUniqueID();
 			bool isRoot = transUniqueID == rootUniqueID;
 			bool isIdentity = trans->isIdentity();
-			repoTrace << trans->getName() << "- isRoot : " << isRoot << " isIdentity: " << isIdentity;
 			if (!isRoot && isIdentity )
 			{
 				bool singleMeshChild = scene->getChildrenNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT,
@@ -92,8 +91,6 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 					scene->getParentNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT,
 					trans, repo::core::model::NodeType::TRANSFORMATION);
 
-				repoTrace << " singleMeshChild : " << singleMeshChild << " noTransSiblings: " << noTransSiblings;
-				repoTrace << " granTransParents : " << granTransParents.size();
 
 				if (singleMeshChild && noTransSiblings && granTransParents.size() == 1)
 				{
