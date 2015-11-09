@@ -549,6 +549,18 @@ namespace repo{
 						return std::vector<repoUUID>(newRemoved.begin(), newRemoved.end());
 					}
 
+
+					/**
+					* Get allnodes which are removed since last revision
+					* @return returns a vector of node removed from scene
+					*/
+					std::vector<RepoNode*> getRemovedNodes() const
+					{
+
+						return toRemove;
+					}
+
+
 					size_t getTotalNodesChanged() const
 					{
 						return newRemoved.size() + newAdded.size() + newModified.size();
@@ -856,6 +868,7 @@ namespace repo{
 					std::string stashExt;      /*! extension for optimized graph (Default: stash.3drepo)*/
 					std::string rawExt;      /*! extension for raw file dumps (e.g. original files) (Default: raw)*/
 					std::vector<std::string> refFiles;  //Original Files that created this scene
+					std::vector<RepoNode*> toRemove;
 					repoUUID   revision;
 					repoUUID   branch;
 					std::string commitMsg;
