@@ -56,7 +56,7 @@ bool TransformationNode::isIdentity(const float &eps) const
 	//  08 09 10 11
 	//  12 13 14 15
 
-	bool iden;
+	bool iden = true;
 	float threshold = fabs(eps);
 
 	for (size_t i = 0; i < mat.size(); ++i)
@@ -72,7 +72,6 @@ bool TransformationNode::isIdentity(const float &eps) const
 			iden &= mat[i] <= 1 + threshold && mat[i] >= 1 - threshold;
 		}
 	}
-
 
 	return iden;
 

@@ -205,6 +205,15 @@ namespace repo{
 						std::string &errMsg);
 
 					/**
+					* Get the branch ID of this scene graph
+					* @return returns the branch ID of this scene
+					*/
+					repoUUID getBranchID() const
+					{
+						return branch;
+					}
+
+					/**
 					* Get name of the database
 					* @return returns name of the database if available
 					*/
@@ -222,6 +231,15 @@ namespace repo{
 						return rawExt;
 					}
 
+					/**
+					* Get the revision ID of this scene graph
+					* @return returns the revision ID of this scene
+					*/
+					repoUUID getRevisionID() const
+					{
+						return revision;
+					}
+
 					static std::vector<std::string> getProjectExtensions()
 					{
 						return collectionsInProject;
@@ -234,6 +252,24 @@ namespace repo{
 					std::string getProjectName() const
 					{
 						return projectName;
+					}
+
+					/**
+					* Return if it the scene is of a head revision
+					* @return returns true if it is head of a branch
+					*/
+					bool isHeadRevision() const
+					{
+						return headRevision;
+					}
+
+					/**
+					* Check if this scene is revisioned
+					* @return returns true if the scene is revisioned
+					*/
+					bool isRevisioned() const
+					{
+						return !unRevisioned;
 					}
 
 					/**
@@ -473,10 +509,50 @@ namespace repo{
 					}
 
 					/**
+					* Get all transformation nodes within current scene revision
+					* @return a RepoNodeSet of transformations
+					*/
+					RepoNodeSet getAllTransformations(
+						const GraphType &gType = GraphType::DEFAULT) const
+					{
+						return  gType == GraphType::OPTIMIZED ? stashGraph.transformations : graph.transformations;
+					}
+
+					/**
+					* Get all ID of nodes which are added since last revision
+					* @return returns a vector of node IDs
+					*/
+					std::vector<repoUUID> getAddedNodesID() const
+					{
+
+						return std::vector<repoUUID>(newAdded.begin(), newAdded.end());
+					}
+
+
+					/**
 					* Get all ID of nodes which are modified since last revision
 					* @return returns a vector of node IDs
 					*/
-					std::vector<repoUUID> getModifiedNodesID() const;
+					std::vector<repoUUID> getModifiedNodesID() const
+					{
+
+						return std::vector<repoUUID>(newModified.begin(), newModified.end());
+					}
+
+					/**
+					* Get all ID of nodes which are removed since last revision
+					* @return returns a vector of node IDs
+					*/
+					std::vector<repoUUID> getRemovedNodesID() const
+					{
+
+						return std::vector<repoUUID>(newRemoved.begin(), newRemoved.end());
+					}
+
+					size_t getTotalNodesChanged() const
+					{
+						return newRemoved.size() + newAdded.size() + newModified.size();
+					}
 
 					/**
 					* Get the node given the shared ID of this node

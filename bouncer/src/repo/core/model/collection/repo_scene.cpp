@@ -822,22 +822,22 @@ std::string RepoScene::getBranchName() const
 	return branchName;
 }
 
-
-std::vector<repoUUID> RepoScene::getModifiedNodesID() const
-{
-	repoTrace << "getting modified nodes...";
-	std::vector<repoUUID> ids(newAdded.begin(), newAdded.end());
-
-	ids.insert(ids.end(), newModified.begin(), newModified.end());
-	ids.insert(ids.end(), newRemoved.begin() , newRemoved.end());
-	repoTrace << "Added: " <<
-		newAdded.size() << " modified: " <<
-		newModified.size() << " removed: " <<
-		newRemoved.size();
-
-	repoTrace << "# modified nodes : " << ids.size();
-	return ids;
-}
+//
+//std::vector<repoUUID> RepoScene::getModifiedNodesID() const
+//{
+//	repoTrace << "getting modified nodes...";
+//	std::vector<repoUUID> ids(newAdded.begin(), newAdded.end());
+//
+//	ids.insert(ids.end(), newModified.begin(), newModified.end());
+//	ids.insert(ids.end(), newRemoved.begin() , newRemoved.end());
+//	repoTrace << "Added: " <<
+//		newAdded.size() << " modified: " <<
+//		newModified.size() << " removed: " <<
+//		newRemoved.size();
+//
+//	repoTrace << "# modified nodes : " << ids.size();
+//	return ids;
+//}
 
 std::vector<std::string> RepoScene::getOriginalFiles() const
 {

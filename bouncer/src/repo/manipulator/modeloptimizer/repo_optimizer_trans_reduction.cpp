@@ -54,7 +54,7 @@ bool TransformationReductionOptimizer::apply(repo::core::model::RepoScene *scene
 	}
 	else
 	{
-		repoError << "Trying to apply transformation on an empty scene!";
+		repoError << "Trying to apply optimisation on an empty scene!";
 	}
 	return success;
 }
@@ -74,16 +74,13 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 		repo::core::model::TransformationNode *trans = dynamic_cast<repo::core::model::TransformationNode*>(transParents[0]);
 		if (trans)
 		{
-			repoTrace << "Parent bson:" << trans->toString();
-			repoTrace << "Root bson:" << scene->getRoot(repo::core::model::RepoScene::GraphType::DEFAULT)->toString();
 			repoUUID transUniqueID = trans->getUniqueID();
 			repoUUID rootUniqueID = scene->getRoot(repo::core::model::RepoScene::GraphType::DEFAULT)->getUniqueID();
 			bool isRoot = transUniqueID == rootUniqueID;
 			bool isIdentity = trans->isIdentity();
+			repoTrace << trans->getName() << "- isRoot : " << isRoot << " isIdentity: " << isIdentity;
 			if (!isRoot && isIdentity )
 			{
-				repoTrace << "WORKING: is Root : " << isRoot << " isIdentity: " << isIdentity;
-				
 				bool singleMeshChild = scene->getChildrenNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT,
 					trans->getSharedID(), repo::core::model::NodeType::MESH).size() == 1;
 				
@@ -94,6 +91,9 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 				std::vector<repo::core::model::RepoNode*> granTransParents =
 					scene->getParentNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT,
 					trans, repo::core::model::NodeType::TRANSFORMATION);
+
+				repoTrace << " singleMeshChild : " << singleMeshChild << " noTransSiblings: " << noTransSiblings;
+				repoTrace << " granTransParents : " << granTransParents.size();
 
 				if (singleMeshChild && noTransSiblings && granTransParents.size() == 1)
 				{
@@ -108,25 +108,19 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 						repoUUID granSharedID = granTrans->getSharedID();
 						repoUUID parentSharedID = trans->getSharedID();
 						repoUUID meshSharedID = mesh->getSharedID();
-						repoTrace << "Grandparent : " << UUIDtoString(granSharedID);
-						repoTrace << "parent : " << UUIDtoString(parentSharedID);
-						repoTrace << "mesh : " << UUIDtoString(meshSharedID);
 						//Disconnect grandparent from parent
 						scene->abandonChild(repo::core::model::RepoScene::GraphType::DEFAULT,
 							granSharedID, parentSharedID, false);
-
-						repoTrace << "This parent has " << scene->getChildrenAsNodes(trans->getSharedID()).size() << " children";
 
 						for (repo::core::model::RepoNode *node : scene->getChildrenAsNodes(trans->getSharedID()))
 						{
 							//Put all children of trans node to granTrans, unless it's a metadata node
 							if (node)
 							{
-								repoTrace << "Dealing with " << node->getUniqueID();
-								//not metadata, assign under grandparent
 								//metadata should be assigned under the mesh
 								scene->addInheritance(repo::core::model::RepoScene::GraphType::DEFAULT,
-									node->getTypeAsEnum() == repo::core::model::NodeType::METADATA ? mesh->getUniqueID() : granTrans->getUniqueID(),
+									node->getTypeAsEnum() == repo::core::model::NodeType::METADATA ? mesh->getUniqueID() 
+										: granTrans->getUniqueID(),
 									node->getUniqueID(),
 									false
 									);
@@ -134,15 +128,12 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 						}
 
 						//change mesh name
-						repoTrace << "Changing name....";
 						repo::core::model::MeshNode *newMesh = 
 							new repo::core::model::MeshNode(mesh->cloneAndChangeName(trans->getName(), false));
 	
-						repoTrace << "modifying Node....";
 						scene->modifyNode(repo::core::model::RepoScene::GraphType::DEFAULT, meshSharedID, newMesh);
 
 						//remove parent from the scene.
-						repoTrace << "removing Node....";
 						scene->removeNode(repo::core::model::RepoScene::GraphType::DEFAULT, parentSharedID);
 						
 					}
@@ -155,11 +146,6 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 				} //(singleMeshChild && noTransSiblings && granTransParents.size() == 1)
 
 			}//(trans->getUniqueID() != scene->getRoot()->getUniqueID() && trans->isIdentity())
-			else
-			{
-				repoTrace << "SKIPPING: is Root : " << isRoot << " isIdentity: " << isIdentity;
-			}
-
 		}
 		else
 		{

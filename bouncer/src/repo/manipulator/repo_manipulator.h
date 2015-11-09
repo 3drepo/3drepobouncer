@@ -230,6 +230,18 @@ namespace repo{
 				const bool                                    &lightFetch = false);
 
 			/**
+			* Retrieve all RepoScene representations given a partially loaded scene.
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param scene scene to fully load
+			*/
+
+			void fetchScene(
+				const std::string                         &databaseAd,
+				const repo::core::model::RepoBSON         *cred,
+				repo::core::model::RepoScene              *scene);
+
+			/**
 			* Retrieve documents from a specified collection
 			* due to limitations of the transfer protocol this might need
 			* to be called multiple times, utilising the skip index to skip
@@ -402,7 +414,7 @@ namespace repo{
 			* @param scene RepoScene to optimize
 			*/
 			void reduceTransformations(
-				repo::core::model::RepoScene *scene);
+				repo::core::model::RepoScene          *scene);
 
 			/**
 			* remove a role from the database

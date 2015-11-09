@@ -798,14 +798,33 @@ bool RepoController::saveSceneToFile(
 }
 
 void RepoController::reduceTransformations(
+	const RepoToken              *token,
 	repo::core::model::RepoScene *scene)
 {
+	if (token && scene && scene->isRevisioned() && !scene->hasRoot())
+	{
+		//If the unoptimised graph isn't fetched, try to fetch full scene before beginning
+		//This should be safe considering if it has not loaded the unoptimised graph it shouldn't have
+		//any uncommited changes.
+		repoInfo << "Unoptimised scene not loaded, trying loading unoptimised scene...";
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		worker->fetchScene(token->databaseAd, token->credentials, scene);
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Cannot perform optimisation on a scene with no unoptimised graph loaded.";
+	}
+
 	if (scene && scene->hasRoot())
 	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
 
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		size_t transNodes_pre = scene->getAllTransformations().size();
 		worker->reduceTransformations(scene);
 		workerPool.push(worker);
+		repoInfo << "Optimization completed. Number of transformations has been reduced from "
+			<< transNodes_pre << " to " << scene->getAllTransformations().size();
 
 	}
 	else{
