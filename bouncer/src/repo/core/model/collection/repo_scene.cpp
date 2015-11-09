@@ -940,7 +940,6 @@ void RepoScene::modifyNode(
 	RepoNode                          *node)
 {
 
-	repoTrace << "Modify Node...";
 	repoGraphInstance &g = gtype == GraphType::OPTIMIZED ? stashGraph : graph;
 	if (g.sharedIDtoUniqueID.find(sharedID) != g.sharedIDtoUniqueID.end())
 	{
@@ -952,12 +951,10 @@ void RepoScene::modifyNode(
 		{
 			//check if the node is already in the "to modify" list
 			bool isInList = newAdded.find(sharedID) != newAdded.end() || newModified.find(sharedID) != newModified.end();
-			repoTrace << "IsInList: " << isInList;
 			updatedNode = RepoNode(nodeToChange->cloneAndAddFields(node, !isInList));
 
 			if (!isInList)
 			{
-				repoTrace << "Adding to list";
 				newModified.insert(sharedID);
 				newCurrent.erase(nodeToChange->getUniqueID());
 				newCurrent.insert(updatedNode.getUniqueID());
@@ -969,9 +966,13 @@ void RepoScene::modifyNode(
 			updatedNode = RepoNode(nodeToChange->cloneAndAddFields(node, false));
 		}
 
-		repoTrace << "Swapping...";
+		//update shared to unique ID  and uniqueID to node mapping
+		g.sharedIDtoUniqueID[sharedID] = updatedNode.getUniqueID();
+		g.nodesByUniqueID.erase(nodeToChange->getUniqueID());
 		nodeToChange->swap(updatedNode);
-		repoTrace << "done.";
+		g.nodesByUniqueID[updatedNode.getUniqueID()] = nodeToChange;
+
+
 	}
 	else{
 		repoError << "Trying to update a node " << sharedID << " that doesn't exist in the scene!";
