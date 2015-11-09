@@ -811,10 +811,6 @@ void RepoController::reduceTransformations(
 		worker->fetchScene(token->databaseAd, token->credentials, scene);
 		workerPool.push(worker);
 	}
-	else
-	{
-		repoError << "Cannot perform optimisation on a scene with no unoptimised graph loaded.";
-	}
 
 	if (scene && scene->hasRoot())
 	{

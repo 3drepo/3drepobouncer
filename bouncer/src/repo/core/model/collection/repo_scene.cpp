@@ -113,7 +113,6 @@ void RepoScene::abandonChild(
 	const repoUUID  &child,
 	const bool      &modifyNode)
 {
-	repoTrace << UUIDtoString(parent) << " is abandoning child :" << UUIDtoString(child);
 	repoGraphInstance g = GraphType::OPTIMIZED == gType ? stashGraph : graph;
 	auto pToCIt = g.parentToChildren.find(parent);
 	if (pToCIt != g.parentToChildren.end())
@@ -161,7 +160,7 @@ void RepoScene::addInheritance(
 {
 	repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 	//stash has no sense of version control, so only default graph needs to track changes
-	bool trackChanges = noUpdate && gType == GraphType::DEFAULT;
+	bool trackChanges = !noUpdate && gType == GraphType::DEFAULT;
 
 	//check if both nodes exist in the graph
 	RepoNode *parentNode = getNodeByUniqueID(gType, parent);
@@ -210,14 +209,15 @@ void RepoScene::addInheritance(
 			else
 			{
 				//not tracking, just swap the content
-				*childNode = childWithParent;
+				childNode->swap(childWithParent);
 			}
 
 		}
 	}
 	else
 	{
-		repoError << "Unable to add parentship:" << (parentNode ? "child" : "parent") << " node not found.";
+		repoDebug << "Parent: " << UUIDtoString(parent) << " child: " << UUIDtoString(child);
+		repoError << "Unable to add parentship:" << (parentNode ? "child" : "parent") << " [" << UUIDtoString(parent) << "] node not found.";
 	}
 
 }
@@ -940,38 +940,35 @@ void RepoScene::modifyNode(
 	RepoNode                          *node)
 {
 
-	repoTrace << "Modify Node...";
 	repoGraphInstance &g = gtype == GraphType::OPTIMIZED ? stashGraph : graph;
 	if (g.sharedIDtoUniqueID.find(sharedID) != g.sharedIDtoUniqueID.end())
 	{
 		RepoNode* nodeToChange = g.nodesByUniqueID[g.sharedIDtoUniqueID[sharedID]];
 		//generate new UUID if it  is not in list, otherwise use the current one.
 		RepoNode updatedNode;
+		bool isInList = gtype == GraphType::DEFAULT &&
+			( newAdded.find(sharedID) != newAdded.end() || newModified.find(sharedID) != newModified.end());
+		
+		updatedNode = RepoNode(nodeToChange->cloneAndAddFields(node, !isInList));
 
-		if (gtype == GraphType::DEFAULT)
+		if (!isInList)
 		{
-			//check if the node is already in the "to modify" list
-			bool isInList = newAdded.find(sharedID) != newAdded.end() || newModified.find(sharedID) != newModified.end();
-			repoTrace << "IsInList: " << isInList;
-			updatedNode = RepoNode(nodeToChange->cloneAndAddFields(node, !isInList));
-
-			if (!isInList)
-			{
-				repoTrace << "Adding to list";
-				newModified.insert(sharedID);
-				newCurrent.erase(nodeToChange->getUniqueID());
-				newCurrent.insert(updatedNode.getUniqueID());
-			}
-
+			newModified.insert(sharedID);
+			newCurrent.erase(nodeToChange->getUniqueID());
+			newCurrent.insert(updatedNode.getUniqueID());
 		}
-		else
-		{
-			updatedNode = RepoNode(nodeToChange->cloneAndAddFields(node, false));
+		
+
+		if (isInList){
+			//update shared to unique ID  and uniqueID to node mapping
+			g.sharedIDtoUniqueID[sharedID] = updatedNode.getUniqueID();
+			g.nodesByUniqueID.erase(nodeToChange->getUniqueID());		
+			g.nodesByUniqueID[updatedNode.getUniqueID()] = nodeToChange;
 		}
 
-		repoTrace << "Swapping...";
 		nodeToChange->swap(updatedNode);
-		repoTrace << "done.";
+
+
 	}
 	else{
 		repoError << "Trying to update a node " << sharedID << " that doesn't exist in the scene!";
