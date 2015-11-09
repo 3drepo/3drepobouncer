@@ -56,6 +56,13 @@ namespace repo {
 						~TransformationNode();
 
 						/**
+						* Check if the transformation matrix is the identity matrix
+						* This checks with a small epsilon to counter floating point inaccuracies
+						* @param eps epsilon value for accepting inaccuracies (default 10e-5)
+						* @return returns true if it is the identity matrix
+						*/
+						bool isIdentity(const float &eps = 10e-5) const;
+						/**
 						* Create an Identity matrix
 						* @return returns a 4 by 4 identity matrix
 						*/

@@ -35,15 +35,122 @@ TransformationReductionOptimizer::~TransformationReductionOptimizer()
 {
 }
 
-bool TransformationReductionOptimizer::apply(repo::core::model::RepoScene *scene){
+bool TransformationReductionOptimizer::apply(repo::core::model::RepoScene *scene)
+{
 	bool success = false;
-	if (scene)
+	if (scene && scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
 	{
-
+		for (repo::core::model::RepoNode *node : scene->getAllMeshes())
+		{
+			if (node && node->getTypeAsEnum() == repo::core::model::NodeType::MESH)
+			{
+				repo::core::model::MeshNode *mesh = dynamic_cast<repo::core::model::MeshNode*>(node);
+				if (mesh)
+					applyOptimOnMesh(scene, mesh);
+				else
+					repoError << "Failed to dynamically cast a mesh node!!!";
+			}
+		}
 	}
 	else
 	{
-		repoError << "Trying to apply transformation on an empty scene!";
+		repoError << "Trying to apply optimisation on an empty scene!";
 	}
 	return success;
+}
+
+void TransformationReductionOptimizer::applyOptimOnMesh(
+	repo::core::model::RepoScene *scene,
+	repo::core::model::MeshNode  *mesh)
+{
+	std::vector<repo::core::model::RepoNode*> transParents =
+		scene->getParentNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT,
+		mesh, repo::core::model::NodeType::TRANSFORMATION);
+
+	repoTrace << "Mesh " << mesh->getSharedID() << " has " << transParents.size() << " transformation Node parents";
+
+	if (transParents.size() == 1)
+	{
+		repo::core::model::TransformationNode *trans = dynamic_cast<repo::core::model::TransformationNode*>(transParents[0]);
+		if (trans)
+		{
+			repoUUID transUniqueID = trans->getUniqueID();
+			repoUUID rootUniqueID = scene->getRoot(repo::core::model::RepoScene::GraphType::DEFAULT)->getUniqueID();
+			bool isRoot = transUniqueID == rootUniqueID;
+			bool isIdentity = trans->isIdentity();
+			repoTrace << trans->getName() << "- isRoot : " << isRoot << " isIdentity: " << isIdentity;
+			if (!isRoot && isIdentity )
+			{
+				bool singleMeshChild = scene->getChildrenNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT,
+					trans->getSharedID(), repo::core::model::NodeType::MESH).size() == 1;
+				
+				bool noTransSiblings = (bool) !scene->getChildrenNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT,
+					trans->getSharedID(), repo::core::model::NodeType::TRANSFORMATION).size();
+				
+
+				std::vector<repo::core::model::RepoNode*> granTransParents =
+					scene->getParentNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT,
+					trans, repo::core::model::NodeType::TRANSFORMATION);
+
+				repoTrace << " singleMeshChild : " << singleMeshChild << " noTransSiblings: " << noTransSiblings;
+				repoTrace << " granTransParents : " << granTransParents.size();
+
+				if (singleMeshChild && noTransSiblings && granTransParents.size() == 1)
+				{
+					repo::core::model::TransformationNode *granTrans = 
+						dynamic_cast<repo::core::model::TransformationNode*>(granTransParents[0]);
+
+					if (granTrans)
+					{
+						repoDebug << "Reparenting " << mesh->getName() <<
+							" from " << trans->getName() << " to " << granTrans->getName() << std::endl;
+
+						repoUUID granSharedID = granTrans->getSharedID();
+						repoUUID parentSharedID = trans->getSharedID();
+						repoUUID meshSharedID = mesh->getSharedID();
+						//Disconnect grandparent from parent
+						scene->abandonChild(repo::core::model::RepoScene::GraphType::DEFAULT,
+							granSharedID, parentSharedID, false);
+
+						for (repo::core::model::RepoNode *node : scene->getChildrenAsNodes(trans->getSharedID()))
+						{
+							//Put all children of trans node to granTrans, unless it's a metadata node
+							if (node)
+							{
+								//metadata should be assigned under the mesh
+								scene->addInheritance(repo::core::model::RepoScene::GraphType::DEFAULT,
+									node->getTypeAsEnum() == repo::core::model::NodeType::METADATA ? mesh->getUniqueID() 
+										: granTrans->getUniqueID(),
+									node->getUniqueID(),
+									false
+									);
+							}
+						}
+
+						//change mesh name
+						repo::core::model::MeshNode *newMesh = 
+							new repo::core::model::MeshNode(mesh->cloneAndChangeName(trans->getName(), false));
+	
+						scene->modifyNode(repo::core::model::RepoScene::GraphType::DEFAULT, meshSharedID, newMesh);
+
+						//remove parent from the scene.
+						scene->removeNode(repo::core::model::RepoScene::GraphType::DEFAULT, parentSharedID);
+						
+					}
+					else
+					{
+						repoError << "Failed to dynamically cast a transformation node!!!!";
+					}
+
+
+				} //(singleMeshChild && noTransSiblings && granTransParents.size() == 1)
+
+			}//(trans->getUniqueID() != scene->getRoot()->getUniqueID() && trans->isIdentity())
+		}
+		else
+		{
+			repoError << "Failed to dynamically cast a transformation node!!!!";
+		}
+	}
+
 }

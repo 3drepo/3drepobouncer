@@ -107,6 +107,52 @@ RepoScene::~RepoScene()
 }
 
 
+void RepoScene::abandonChild(
+	const GraphType &gType,
+	const repoUUID  &parent,
+	const repoUUID  &child,
+	const bool      &modifyNode)
+{
+	repoTrace << UUIDtoString(parent) << " is abandoning child :" << UUIDtoString(child);
+	repoGraphInstance g = GraphType::OPTIMIZED == gType ? stashGraph : graph;
+	auto pToCIt = g.parentToChildren.find(parent);
+	if (pToCIt != g.parentToChildren.end())
+	{
+		std::vector<repoUUID> children = pToCIt->second;
+		auto childIt = std::find(children.begin(), children.end(), child);
+		if (childIt != children.end())
+		{
+			children.erase(childIt);
+			g.parentToChildren[parent] = children;
+		}
+		else
+		{
+			repoWarning << "Trying to abandon a child that isn't a child of the parent!";
+		}
+	}
+
+	if (modifyNode)
+	{
+		//Remove parent from the child node
+		RepoNode *node = getNodeBySharedID(gType, child);
+		if (node)
+		{
+			//We only need a new unique ID if this graph is revisioned,
+			//And the child node in question is not a added/modified node already
+			bool needNewId = !unRevisioned
+				&& newAdded.find(child) != newAdded.end()
+				&& newModified.find(child) != newAdded.end();
+			auto nodeWithoutParent = node->cloneAndRemoveParent(parent, needNewId);
+			node->swap(nodeWithoutParent);
+			if (needNewId)
+			{
+				newModified.insert(child);
+			}
+
+		}
+	}
+}
+
 void RepoScene::addInheritance(
 	const GraphType &gType,
 	const repoUUID  &parent,
@@ -722,6 +768,45 @@ RepoScene::getChildrenAsNodes(
 	return children;
 }
 
+std::vector<RepoNode*>
+RepoScene::getChildrenNodesFiltered(
+	const GraphType &gType,
+	const repoUUID  &parent,
+	const NodeType  &type) const
+{
+	std::vector<RepoNode*> childrenUnfiltered = getChildrenAsNodes(gType, parent);
+
+	std::vector<RepoNode*> children;
+
+	for (RepoNode* child : childrenUnfiltered)
+	{
+		if (child && child->getTypeAsEnum() == type)
+		{
+			children.push_back(child);
+		}
+	}
+	return children;
+}
+
+std::vector<RepoNode*> RepoScene::getParentNodesFiltered(
+	const GraphType &gType,
+	const RepoNode* node, 
+	const NodeType &type) const
+{
+	std::vector<repoUUID> parentIDs = node->getParentIDs();
+	std::vector<RepoNode*> results;
+	for (const repoUUID &id : parentIDs)
+	{
+		RepoNode* node = getNodeBySharedID(gType, id);
+		if (node && node->getTypeAsEnum() == type)
+		{
+			results.push_back(node);
+		}
+	}
+
+	return results;
+}
+
 std::string RepoScene::getBranchName() const
 {
 	std::string branchName("master");
@@ -737,22 +822,22 @@ std::string RepoScene::getBranchName() const
 	return branchName;
 }
 
-
-std::vector<repoUUID> RepoScene::getModifiedNodesID() const
-{
-	repoTrace << "getting modified nodes...";
-	std::vector<repoUUID> ids(newAdded.begin(), newAdded.end());
-
-	ids.insert(ids.end(), newModified.begin(), newModified.end());
-	ids.insert(ids.end(), newRemoved.begin() , newRemoved.end());
-	repoTrace << "Added: " <<
-		newAdded.size() << " modified: " <<
-		newModified.size() << " removed: " <<
-		newRemoved.size();
-
-	repoTrace << "# modified nodes : " << ids.size();
-	return ids;
-}
+//
+//std::vector<repoUUID> RepoScene::getModifiedNodesID() const
+//{
+//	repoTrace << "getting modified nodes...";
+//	std::vector<repoUUID> ids(newAdded.begin(), newAdded.end());
+//
+//	ids.insert(ids.end(), newModified.begin(), newModified.end());
+//	ids.insert(ids.end(), newRemoved.begin() , newRemoved.end());
+//	repoTrace << "Added: " <<
+//		newAdded.size() << " modified: " <<
+//		newModified.size() << " removed: " <<
+//		newRemoved.size();
+//
+//	repoTrace << "# modified nodes : " << ids.size();
+//	return ids;
+//}
 
 std::vector<std::string> RepoScene::getOriginalFiles() const
 {
@@ -850,8 +935,9 @@ void RepoScene::modifyNode(
 	const repoUUID                    &sharedID,
 	RepoNode                          *node)
 {
+
+	repoTrace << "Modify Node...";
 	repoGraphInstance &g = gtype == GraphType::OPTIMIZED ? stashGraph : graph;
-	//RepoNode* updatedNode = nullptr;
 	if (g.sharedIDtoUniqueID.find(sharedID) != g.sharedIDtoUniqueID.end())
 	{
 		RepoNode* nodeToChange = g.nodesByUniqueID[g.sharedIDtoUniqueID[sharedID]];
@@ -862,13 +948,14 @@ void RepoScene::modifyNode(
 		{
 			//check if the node is already in the "to modify" list
 			bool isInList = newAdded.find(sharedID) != newAdded.end() || newModified.find(sharedID) != newModified.end();
-
+			repoTrace << "IsInList: " << isInList;
 			updatedNode = RepoNode(nodeToChange->cloneAndAddFields(node, !isInList));
 
 			if (!isInList)
 			{
+				repoTrace << "Adding to list";
 				newModified.insert(sharedID);
-				newCurrent.erase(newCurrent.find(nodeToChange->getUniqueID()));
+				newCurrent.erase(nodeToChange->getUniqueID());
 				newCurrent.insert(updatedNode.getUniqueID());
 			}
 
@@ -878,13 +965,89 @@ void RepoScene::modifyNode(
 			updatedNode = RepoNode(nodeToChange->cloneAndAddFields(node, false));
 		}
 
+		repoTrace << "Swapping...";
 		nodeToChange->swap(updatedNode);
-
+		repoTrace << "done.";
 	}
 	else{
 		repoError << "Trying to update a node " << sharedID << " that doesn't exist in the scene!";
 	}
 
+}
+
+void RepoScene::removeNode(
+	const GraphType                   &gtype,
+	const repoUUID                    &sharedID
+	)
+{
+	repoGraphInstance &g = gtype == GraphType::OPTIMIZED ? stashGraph : graph;
+	RepoNode *node = getNodeBySharedID(gtype, sharedID);
+	//Remove entry from everything.
+	g.nodesByUniqueID.erase(node->getUniqueID());
+	g.sharedIDtoUniqueID.erase(sharedID);
+	g.parentToChildren.erase(sharedID);
+	
+	if (gtype == GraphType::DEFAULT)
+	{
+
+		//If this node was in newAdded or newModified, remove it
+		std::set<repoUUID>::iterator iterator;
+		if ((iterator = newAdded.find(sharedID)) != newAdded.end())
+		{
+			newAdded.erase(iterator);
+		}
+		else
+		{
+			if ((iterator = newModified.find(sharedID)) != newModified.end())
+			{
+				newModified.erase(iterator);
+			}
+
+			newRemoved.insert(sharedID);
+		}
+	}
+
+	//remove from the nodes sets
+	switch (node->getTypeAsEnum())
+	{
+	case NodeType::CAMERA:
+		g.cameras.erase(node);
+		break;
+	case NodeType::MAP:
+		g.maps.erase(node);
+		break;
+	case NodeType::MATERIAL:
+		g.materials.erase(node);
+		break;
+	case NodeType::MESH:
+		g.meshes.erase(node);
+		break;
+	case NodeType::METADATA:
+		g.metadata.erase(node);
+		break;
+	case NodeType::REFERENCE:
+	{
+		g.references.erase(node);
+		//Since it's reference node, also delete the referenced scene
+		RepoScene *s = g.referenceToScene[sharedID];
+		delete s;
+		g.referenceToScene.erase(sharedID);
+	}
+		break;
+	case NodeType::TEXTURE:
+		g.textures.erase(node);
+		break;
+	case NodeType::TRANSFORMATION:
+		g.transformations.erase(node);
+		break;
+	case NodeType::UNKNOWN:
+		g.unknowns.erase(node);
+		break;
+	default:
+		repoError << "Unexpected node type: " << (int)node->getTypeAsEnum();
+	}
+
+	delete node;
 }
 
 

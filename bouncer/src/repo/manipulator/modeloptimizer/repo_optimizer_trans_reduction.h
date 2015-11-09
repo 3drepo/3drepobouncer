@@ -47,6 +47,18 @@ namespace repo {
 				* @return returns true upon success
 				*/
 				virtual bool apply(repo::core::model::RepoScene *scene);
+
+
+			private:
+				/**
+				* Apply optimization on the mesh, given
+				* it satisfies the condition for the optimisation to happen
+				* @param scene scene to optimise
+				* @param mesh mesh in question
+				*/
+				void applyOptimOnMesh(
+					repo::core::model::RepoScene *scene,
+					repo::core::model::MeshNode  *mesh);
 			};
 		}
 	}

@@ -205,6 +205,15 @@ namespace repo{
 						std::string &errMsg);
 
 					/**
+					* Get the branch ID of this scene graph
+					* @return returns the branch ID of this scene
+					*/
+					repoUUID getBranchID() const
+					{
+						return branch;
+					}
+
+					/**
 					* Get name of the database
 					* @return returns name of the database if available
 					*/
@@ -222,6 +231,15 @@ namespace repo{
 						return rawExt;
 					}
 
+					/**
+					* Get the revision ID of this scene graph
+					* @return returns the revision ID of this scene
+					*/
+					repoUUID getRevisionID() const
+					{
+						return revision;
+					}
+
 					static std::vector<std::string> getProjectExtensions()
 					{
 						return collectionsInProject;
@@ -234,6 +252,24 @@ namespace repo{
 					std::string getProjectName() const
 					{
 						return projectName;
+					}
+
+					/**
+					* Return if it the scene is of a head revision
+					* @return returns true if it is head of a branch
+					*/
+					bool isHeadRevision() const
+					{
+						return headRevision;
+					}
+
+					/**
+					* Check if this scene is revisioned
+					* @return returns true if the scene is revisioned
+					*/
+					bool isRevisioned() const
+					{
+						return !unRevisioned;
 					}
 
 					/**
@@ -335,6 +371,18 @@ namespace repo{
 					*/
 
 					/**
+					* Abandon child from parent (disjoint 2 nodes within the scene)
+					* @param parent shared ID of parent
+					* @param child shared ID of child
+					* @param modifyNode modify child node to relay this information (not needed if this node is to be removed)
+					*/
+					void abandonChild(
+						const GraphType &gType,
+						const repoUUID  &parent,
+						const repoUUID  &child,
+						const bool      &modifyNode = true);
+
+					/**
 					* Introduce parentship to 2 nodes that already reside within the scene.
 					* If either of the nodes are not found, it does nothing
 					* If they already share an inheritance, it does nothing
@@ -371,6 +419,33 @@ namespace repo{
 						getChildrenAsNodes(
 						const GraphType &g,
 						const repoUUID &parent) const;
+
+					/**
+					* Get children nodes of a specified parent that satisfy the filtering condition
+					* @param g graph to retrieve from
+					* @param parent shared UUID of the parent node
+					* @param type the type of nodes to obtain
+					* @ return a vector of pointers to children node (potentially none)
+					*/
+					std::vector<RepoNode*>
+						getChildrenNodesFiltered(
+						const GraphType &g,
+						const repoUUID &parent,
+						const NodeType  &type) const;
+
+
+					/**
+					* Get the list of parent nodes that satisfy the filtering condition
+					* @param gType graphType
+					* @param node node in question
+					* @param type the type of nodes to obtain
+					* @return returns a vector of transformation nodes
+					*/
+					std::vector<RepoNode*> getParentNodesFiltered(
+						const GraphType &gType, 
+						const RepoNode  *node, 
+						const NodeType  &type) const;
+
 
 					/**
 					* Get Scene from reference node
@@ -434,10 +509,50 @@ namespace repo{
 					}
 
 					/**
+					* Get all transformation nodes within current scene revision
+					* @return a RepoNodeSet of transformations
+					*/
+					RepoNodeSet getAllTransformations(
+						const GraphType &gType = GraphType::DEFAULT) const
+					{
+						return  gType == GraphType::OPTIMIZED ? stashGraph.transformations : graph.transformations;
+					}
+
+					/**
+					* Get all ID of nodes which are added since last revision
+					* @return returns a vector of node IDs
+					*/
+					std::vector<repoUUID> getAddedNodesID() const
+					{
+
+						return std::vector<repoUUID>(newAdded.begin(), newAdded.end());
+					}
+
+
+					/**
 					* Get all ID of nodes which are modified since last revision
 					* @return returns a vector of node IDs
 					*/
-					std::vector<repoUUID> getModifiedNodesID() const;
+					std::vector<repoUUID> getModifiedNodesID() const
+					{
+
+						return std::vector<repoUUID>(newModified.begin(), newModified.end());
+					}
+
+					/**
+					* Get all ID of nodes which are removed since last revision
+					* @return returns a vector of node IDs
+					*/
+					std::vector<repoUUID> getRemovedNodesID() const
+					{
+
+						return std::vector<repoUUID>(newRemoved.begin(), newRemoved.end());
+					}
+
+					size_t getTotalNodesChanged() const
+					{
+						return newRemoved.size() + newAdded.size() + newModified.size();
+					}
 
 					/**
 					* Get the node given the shared ID of this node
@@ -541,6 +656,21 @@ namespace repo{
 						const GraphType                   &gtype,
 						const repoUUID                    &sharedID,
 						RepoNode *node);
+
+
+					/**
+					* Remove a node from the scene
+					* WARNING: Ensure all relationships are patched up,
+					* or you may end up with orphaned nodes/disjoint trees!
+					* This function will not try to patch up any orphaned children
+					* The node will be deleted from memory after this call!
+					* @param gtype graph type 
+					* @param sharedID of the node to remove
+					*/
+					void removeNode(
+						const GraphType                   &gtype,
+						const repoUUID                    &sharedID);
+
 
 					/**
 					* Rotates the model by 270 degrees to compensate the different axis orientation

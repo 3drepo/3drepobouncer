@@ -26,6 +26,7 @@
 #include "../core/model/bson/repo_bson_factory.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
+#include "modeloptimizer/repo_optimizer_trans_reduction.h"
 
 using namespace repo::manipulator;
 
@@ -284,7 +285,7 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 	if (handler)
 	{
 		//not setting a scene if we don't have a handler since we
-		//retreive anything from the database.
+		//can't retreive anything from the database.
 		scene = new repo::core::model::RepoScene(database, project);
 		if (scene)
 		{
@@ -359,6 +360,52 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 	}
 
 	return scene;
+}
+
+void RepoManipulator::fetchScene(
+	const std::string                     &databaseAd,
+	const repo::core::model::RepoBSON     *cred,
+	repo::core::model::RepoScene          *scene)
+{
+	if (scene)
+	{
+		if (scene->isRevisioned())
+		{
+			repo::core::handler::AbstractDatabaseHandler* handler =
+				repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+			if (!handler)
+			{
+				repoError << "Failed to retrieve database handler to perform the operation!";
+			}
+
+			std::string errMsg;
+			if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED) && scene->loadStash(handler, errMsg))
+			{
+				repoTrace << "Stash Loaded";
+			}
+			else
+			{
+				if (!errMsg.empty())
+					repoError << "Error loading stash: " << errMsg;
+			}
+
+			errMsg.clear();
+
+			if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT) && scene->loadScene(handler, errMsg))
+			{
+				repoTrace << "Scene Loaded";
+			}
+			else
+			{
+				if (!errMsg.empty())
+					repoError << "Error loading scene: " << errMsg;
+			}
+		}
+	}
+	else
+	{
+		repoError << "Cannot populate a scene that doesn't exist. Use the other function if you wish to fully load a scene from scratch";
+	}
 }
 
 std::vector<repo::core::model::RepoBSON>
@@ -553,6 +600,22 @@ void RepoManipulator::insertUser(
 		}
 	}
 
+}
+
+void RepoManipulator::reduceTransformations(
+	repo::core::model::RepoScene *scene)
+{
+	if (scene && scene->hasRoot())
+	{
+		modeloptimizer::TransformationReductionOptimizer optimizer;
+
+		optimizer.apply(scene);
+		
+
+	}
+	else{
+		repoError << "RepoController::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
+	}
 }
 
 void RepoManipulator::removeDocument(
