@@ -67,8 +67,7 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 		scene->getParentNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT,
 		mesh, repo::core::model::NodeType::TRANSFORMATION);
 
-	repoTrace << "Mesh " << mesh->getSharedID() << " has " << transParents.size() << " transformation Node parents";
-
+	
 	if (transParents.size() == 1)
 	{
 		repo::core::model::TransformationNode *trans = dynamic_cast<repo::core::model::TransformationNode*>(transParents[0]);
@@ -114,9 +113,12 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 							//Put all children of trans node to granTrans, unless it's a metadata node
 							if (node)
 							{
+								scene->abandonChild(repo::core::model::RepoScene::GraphType::DEFAULT,
+									parentSharedID, node->getSharedID(), true);
+
 								//metadata should be assigned under the mesh
 								scene->addInheritance(repo::core::model::RepoScene::GraphType::DEFAULT,
-									node->getTypeAsEnum() == repo::core::model::NodeType::METADATA ? mesh->getUniqueID() 
+									node->getTypeAsEnum() == repo::core::model::NodeType::METADATA ? mesh->getUniqueID()
 										: granTrans->getUniqueID(),
 									node->getUniqueID(),
 									false

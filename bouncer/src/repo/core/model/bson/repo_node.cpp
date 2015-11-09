@@ -104,10 +104,18 @@ RepoNode RepoNode::cloneAndRemoveParent(
 	{
 		repoWarning << "Trying to remove a parent that isn't really a parent!";
 	}
+	if (currentParents.size() > 0)
+	{
+		builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);
+		builder.appendElementsUnique(*this);
+	}
+	else
+	{
+		builder.appendElementsUnique(removeField(REPO_NODE_LABEL_PARENTS));
+	}
 
-	builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);
 
-	builder.appendElementsUnique(*this);
+
 
 	return RepoNode(builder.obj(), bigFiles);
 }

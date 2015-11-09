@@ -593,7 +593,7 @@ namespace repo{
 
 						if (it == g.sharedIDtoUniqueID.end()) return nullptr;
 
-						return g.nodesByUniqueID.at(it->second);
+						return getNodeByUniqueID(gType, it->second);
 					}
 
 					/**
