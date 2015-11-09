@@ -483,7 +483,11 @@ bool RepoScene::commit(
 				commitMsg.clear();
 
 				refFiles.clear();
-
+				for (RepoNode* node : toRemove)
+				{
+					delete node;
+				}
+				toRemove.clear();
 				unRevisioned = false;
 			}
 		}
@@ -693,10 +697,10 @@ bool RepoScene::commitSceneChanges(
 
 	nodesToCommit.insert(nodesToCommit.end(), newAdded.begin(), newAdded.end());
 	nodesToCommit.insert(nodesToCommit.end(), newModified.begin(), newModified.end());
-	nodesToCommit.insert(nodesToCommit.end(), newRemoved.begin(), newRemoved.end());
+	//There is nothign to commit on removed nodes
+	//nodesToCommit.insert(nodesToCommit.end(), newRemoved.begin(), newRemoved.end());
 
-	repoInfo << "Commiting addedNodes...." << newAdded.size() << " nodes";
-
+	
 	commitNodes(handler, nodesToCommit, GraphType::DEFAULT, errMsg);
 
 
@@ -987,6 +991,8 @@ void RepoScene::removeNode(
 	g.sharedIDtoUniqueID.erase(sharedID);
 	g.parentToChildren.erase(sharedID);
 	
+	
+	bool keepNode = false;
 	if (gtype == GraphType::DEFAULT)
 	{
 
@@ -1004,6 +1010,9 @@ void RepoScene::removeNode(
 			}
 
 			newRemoved.insert(sharedID);
+			keepNode = true;
+
+
 		}
 	}
 
@@ -1047,7 +1056,13 @@ void RepoScene::removeNode(
 		repoError << "Unexpected node type: " << (int)node->getTypeAsEnum();
 	}
 
-	delete node;
+	if (keepNode)
+	{
+		//add node onto the toRemove list
+		toRemove.push_back(node);
+	}
+	else
+		delete node;
 }
 
 

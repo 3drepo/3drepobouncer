@@ -610,7 +610,9 @@ void RepoManipulator::reduceTransformations(
 		modeloptimizer::TransformationReductionOptimizer optimizer;
 
 		optimizer.apply(scene);
-		
+		//clear stash, it is not guaranteed to be relevant now.
+		//The user needs to regenerate the stash if they want one for this version
+		scene->clearStash();
 
 	}
 	else{
