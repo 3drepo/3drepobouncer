@@ -130,6 +130,7 @@ void RepoScene::abandonChild(
 		}
 	}
 
+	repoTrace << "modifyNode = " << modifyNode;
 	if (modifyNode)
 	{
 		//Remove parent from the child node
@@ -139,14 +140,12 @@ void RepoScene::abandonChild(
 			//We only need a new unique ID if this graph is revisioned,
 			//And the child node in question is not a added/modified node already
 			bool needNewId = !unRevisioned
-				&& newAdded.find(child) != newAdded.end()
-				&& newModified.find(child) != newAdded.end();
+				&& (newAdded.find(child) == newAdded.end()
+				|| newModified.find(child) == newModified.end());
+			repoUUID oldUUID = node->getUniqueID();
 			auto nodeWithoutParent = node->cloneAndRemoveParent(parent, needNewId);
-			node->swap(nodeWithoutParent);
-			if (needNewId)
-			{
-				newModified.insert(child);
-			}
+
+			this->modifyNode(gType, node->getSharedID(), new RepoNode(nodeWithoutParent), true);
 
 		}
 	}
@@ -937,7 +936,8 @@ bool RepoScene::loadStash(
 void RepoScene::modifyNode(
 	const GraphType                   &gtype,
 	const repoUUID                    &sharedID,
-	RepoNode                          *node)
+	RepoNode                          *node,
+	const bool						  &overwrite)
 {
 
 	repoGraphInstance &g = gtype == GraphType::OPTIMIZED ? stashGraph : graph;
@@ -949,22 +949,21 @@ void RepoScene::modifyNode(
 		bool isInList = gtype == GraphType::DEFAULT &&
 			( newAdded.find(sharedID) != newAdded.end() || newModified.find(sharedID) != newModified.end());
 		
-		updatedNode = RepoNode(nodeToChange->cloneAndAddFields(node, !isInList));
+		updatedNode = overwrite? *node : RepoNode(nodeToChange->cloneAndAddFields(node, !isInList));
 
 		if (!isInList)
 		{
 			newModified.insert(sharedID);
 			newCurrent.erase(nodeToChange->getUniqueID());
 			newCurrent.insert(updatedNode.getUniqueID());
-		}
-		
 
-		if (isInList){
-			//update shared to unique ID  and uniqueID to node mapping
-			g.sharedIDtoUniqueID[sharedID] = updatedNode.getUniqueID();
-			g.nodesByUniqueID.erase(nodeToChange->getUniqueID());		
-			g.nodesByUniqueID[updatedNode.getUniqueID()] = nodeToChange;
 		}
+
+
+		//update shared to unique ID  and uniqueID to node mapping
+		g.sharedIDtoUniqueID[sharedID] = updatedNode.getUniqueID();
+		g.nodesByUniqueID.erase(nodeToChange->getUniqueID());
+		g.nodesByUniqueID[updatedNode.getUniqueID()] = nodeToChange;
 
 		nodeToChange->swap(updatedNode);
 

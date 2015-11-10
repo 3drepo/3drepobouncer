@@ -667,7 +667,8 @@ namespace repo{
 					void modifyNode(
 						const GraphType                   &gtype,
 						const repoUUID                    &sharedID,
-						RepoNode *node);
+						RepoNode *node,
+						const bool                       &overwrite = false);
 
 
 					/**

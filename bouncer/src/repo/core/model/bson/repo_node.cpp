@@ -31,15 +31,8 @@ RepoNode::RepoNode(RepoBSON bson,
 	else
 		type = REPO_NODE_TYPE_UNKNOWN; // failsafe
 
-	//--------------------------------------------------------------------------
-	// ID
-	uniqueID = bson.getUUIDField(REPO_NODE_LABEL_ID);
 
-	//--------------------------------------------------------------------------
-	// Shared ID
-	if (bson.hasField(REPO_NODE_LABEL_SHARED_ID))
-		sharedID = bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
-
+	
 	if (binMapping.size() == 0)
 		bigFiles = bson.getFilesMapping();
 

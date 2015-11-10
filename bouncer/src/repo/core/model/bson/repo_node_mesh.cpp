@@ -39,6 +39,55 @@ MeshNode::~MeshNode()
 {
 }
 
+RepoNode MeshNode::cloneAndApplyTransformation(
+	const std::vector<float> &matrix) const
+{
+	std::vector<repo_vector_t> *vertices = getVertices();
+	std::vector<repo_vector_t> resultVertice;
+
+	RepoBSONBuilder builder;
+
+	if (vertices)
+	{
+		for (repo_vector_t &v : *vertices)
+		{
+			resultVertice.push_back(multiplyMatVec(matrix, v));
+		}
+
+		builder.appendBinary(REPO_NODE_MESH_LABEL_VERTICES, resultVertice.data(), resultVertice.size() * sizeof(repo_vector_t));
+
+		delete vertices;
+
+		std::vector < repo_vector_t >*normals = getNormals();
+		if (normals && normals->size())
+		{
+			//TODO:
+			// According to assimp, this requires somethign like this:
+			//aiMatrix4x4 mWorldIT = mat;
+			//mWorldIT.Inverse().Transpose();
+
+			//// TODO: implement Inverse() for aiMatrix3x3
+			//aiMatrix3x3 m = aiMatrix3x3(mWorldIT);
+
+			//if (mesh->HasNormals()) {
+			//	for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
+			//		mesh->mNormals[i] = (m * mesh->mNormals[i]).Normalize();
+			//	}
+			//}
+
+			// At the current scope we don't require this as only unoptimised mesh calls this
+			// Unoptimised mesh has no normals.
+			throw std::exception("Transforming meshes with normals is currently not supported!");
+		}
+	}
+	else
+	{
+		repoError << "Unable to apply transformation: Cannot find vertices within a mesh!";
+	}
+
+	return MeshNode(builder.appendElementsUnique(*this));
+}
+
 MeshNode MeshNode::cloneAndUpdateMeshMapping(
 	const std::vector<repo_mesh_mapping_t> &vec)
 {

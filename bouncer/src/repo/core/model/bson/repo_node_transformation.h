@@ -69,6 +69,37 @@ namespace repo {
 						static std::vector<std::vector<float>> identityMat();
 
 						/**
+						* Check if the node is position dependant.
+						* i.e. if parent transformation is merged onto the node,
+						* does the node requre to a transformation applied to it
+						* e.g. meshes and cameras are position dependant, metadata isn't
+						* Default behaviour is false. Position dependant child requires
+						* override this function.
+						* @return true if node is positionDependant.
+						*/
+						virtual bool positionDependant() { return true; }
+
+						/*
+						*	------------- Delusional modifiers --------------
+						*   These are like "setters" but not. We are actually
+						*   creating a new bson object with the changed field
+						*/
+
+						/**
+						*  Create a new object with transformation applied to the node
+						* default behaviour is do nothing. Children object
+						* needs to override this function to perform their own specific behaviour.
+						* @param matrix transformation matrix to apply.
+						* @return returns a new object with transformation applied.
+						*/
+						virtual RepoNode cloneAndApplyTransformation(
+							const std::vector<float> &matrix) const
+						{
+							//TODO: currently no use case. ignore for now.
+							throw std::exception("Transforming transformations are currently not supported!");
+						}
+
+						/**
 						* --------- Convenience functions -----------
 						*/
 

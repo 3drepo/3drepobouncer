@@ -230,6 +230,37 @@ static repo_vector_t crossProduct(const repo_vector_t a, const repo_vector_t b)
 	return product;
 }
 
+/**
+* Matrix x vector multiplication
+* NOTE: this assumes matrix has row as fast dimension!
+* @param mat 4x4 matrix
+* @param vec vector 
+* @return returns the resulting vector.
+*/
+static repo_vector_t multiplyMatVec(const std::vector<float> mat, const repo_vector_t vec)
+{
+	repo_vector_t result;
+	if (mat.size() != 16)
+	{
+		std::cerr << "Trying to perform a matrix x vector multiplation with unexpected matrix size(" << mat.size() << ")";
+
+	}
+	else{
+		/*
+		00 01 02 03
+		04 05 06 07
+		08 09 10 11
+		12 13 14 15
+		*/
+
+		result.x = mat[0] * vec.x + mat[1] * vec.y + mat[2] * vec.z  + mat[3];
+		result.y = mat[4] * vec.x + mat[5] * vec.y + mat[6] * vec.z  + mat[7];
+		result.z = mat[8] * vec.x + mat[9] * vec.y + mat[10] * vec.z + mat[11];
+	}
+	
+	return result;
+}
+
 static void normalize(repo_vector_t &a)
 {
 	float length = std::sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
