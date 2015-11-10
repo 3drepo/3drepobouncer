@@ -817,7 +817,15 @@ void RepoController::reduceTransformations(
 
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		size_t transNodes_pre = scene->getAllTransformations().size();
-		worker->reduceTransformations(scene);
+		try{
+			worker->reduceTransformations(scene);
+		}
+		catch (const std::exception &e)
+		{
+			repoError << "Caught exception whilst trying to optimise graph : " << e.what();
+
+		}
+
 		workerPool.push(worker);
 		repoInfo << "Optimization completed. Number of transformations has been reduced from "
 			<< transNodes_pre << " to " << scene->getAllTransformations().size();

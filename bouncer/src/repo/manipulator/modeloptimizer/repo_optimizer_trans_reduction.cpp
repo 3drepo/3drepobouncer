@@ -77,7 +77,7 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 			repoUUID rootUniqueID = scene->getRoot(repo::core::model::RepoScene::GraphType::DEFAULT)->getUniqueID();
 			bool isRoot = transUniqueID == rootUniqueID;
 			bool isIdentity = trans->isIdentity();
-			if (!isRoot && isIdentity )
+			if (!isRoot)
 			{
 				bool singleMeshChild = scene->getChildrenNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT,
 					trans->getSharedID(), repo::core::model::NodeType::MESH).size() == 1;
@@ -104,6 +104,7 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 						repoUUID granSharedID = granTrans->getSharedID();
 						repoUUID parentSharedID = trans->getSharedID();
 						repoUUID meshSharedID = mesh->getSharedID();
+						repoUUID mesholdID = mesh->getUniqueID();
 						//Disconnect grandparent from parent
 						scene->abandonChild(repo::core::model::RepoScene::GraphType::DEFAULT,
 							granSharedID, parentSharedID, false);
@@ -113,8 +114,21 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 							//Put all children of trans node to granTrans, unless it's a metadata node
 							if (node)
 							{
+
 								scene->abandonChild(repo::core::model::RepoScene::GraphType::DEFAULT,
 									parentSharedID, node->getSharedID(), true);
+								if (!isIdentity && node->positionDependant()){
+									//Parent is not the identity matrix, we need to reapply the transformation if 
+									//the node is position dependant
+									node->swap(node->cloneAndApplyTransformation(trans->getTransMatrix(false)));
+
+									
+								}
+								else
+								{
+									repoTrace << "Trans is identity or it's not relevant for this node (" << node->getType() <<" ), skipping...";
+								}
+
 
 								//metadata should be assigned under the mesh
 								scene->addInheritance(repo::core::model::RepoScene::GraphType::DEFAULT,
@@ -134,7 +148,8 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 
 						//remove parent from the scene.
 						scene->removeNode(repo::core::model::RepoScene::GraphType::DEFAULT, parentSharedID);
-						
+						repoTrace << " old unique ID : " << UUIDtoString(mesholdID) << " new unique ID: " << UUIDtoString(mesh->getUniqueID());
+						delete newMesh;
 					}
 					else
 					{
