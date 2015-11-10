@@ -49,13 +49,11 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 
 	if (vertices)
 	{ 
-//		repoDebug << " Matrx: " << printMat(matrix);
 		std::vector<repo_vector_t> resultVertice;
 		resultVertice.reserve(vertices->size());
 		for (const repo_vector_t &v : *vertices)
 		{
 			resultVertice.push_back(multiplyMatVec(matrix, v));
-	//		repoDebug << " Before: " << printVec(v) << " after: " << printVec(resultVertice.back());
 		}
 
 
@@ -68,7 +66,6 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 		if (normals && normals->size())
 		{
 			std::vector<repo_vector_t> resultNormals;
-
 
 			const std::vector<float> normMat = transposeMat(invertMat(matrix));
 			for (const repo_vector_t &n : *normals) {

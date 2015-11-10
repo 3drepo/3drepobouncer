@@ -114,15 +114,12 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 							//Put all children of trans node to granTrans, unless it's a metadata node
 							if (node)
 							{
-								repoTrace << "#parents = " << node->getParentIDs().size();
-								repoTrace << "Abandoning child: " << UUIDtoString(node->getUniqueID());
+
 								scene->abandonChild(repo::core::model::RepoScene::GraphType::DEFAULT,
 									parentSharedID, node->getSharedID(), true);
-								repoTrace << "#parents = " << node->getParentIDs().size();
 								if (!isIdentity && node->positionDependant()){
 									//Parent is not the identity matrix, we need to reapply the transformation if 
 									//the node is position dependant
-									repoTrace << " Applying transformation, node type : " << node->getType();
 									node->swap(node->cloneAndApplyTransformation(trans->getTransMatrix(false)));
 
 									

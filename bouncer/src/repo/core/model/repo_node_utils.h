@@ -313,15 +313,15 @@ static repo_vector_t multiplyMatVecFake3x3(const std::vector<float> &mat, const 
 		12 13 14 15
 		*/
 
-		result.x = mat[0] * vec.x + mat[1] * vec.y + mat[2];
-		result.y = mat[4] * vec.x + mat[5] * vec.y + mat[6];
-		result.z = mat[8] * vec.x + mat[9] * vec.y + mat[10];
+		result.x = mat[0] * vec.x + mat[1] * vec.y + mat[2] * vec.z;
+		result.y = mat[4] * vec.x + mat[5] * vec.y + mat[6] * vec.z;
+		result.z = mat[8] * vec.x + mat[9] * vec.y + mat[10] * vec.z;
 	}
 
 	return result;
 }
 
-static float calculateDerminant(std::vector<float> mat)
+static float calculateDeterminant(std::vector<float> mat)
 {
 	/*
 	00 01 02 03
@@ -374,7 +374,7 @@ static std::vector<float> invertMat(const std::vector<float> &mat)
 	}
 	else
 	{
-		const float det = calculateDerminant(mat);
+		const float det = calculateDeterminant(mat);
 		if (det == 0)
 		{
 			std::cerr << "Trying to invert a matrix with determinant = 0!";
