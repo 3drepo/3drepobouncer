@@ -75,9 +75,8 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 			//	}
 			//}
 
-			// At the current scope we don't require this as only unoptimised mesh calls this
-			// Unoptimised mesh has no normals.
-			throw std::exception("Transforming meshes with normals is currently not supported!");
+			//"Transforming meshes with normals is currently not supported!"
+			throw std::exception();
 		}
 	}
 	else

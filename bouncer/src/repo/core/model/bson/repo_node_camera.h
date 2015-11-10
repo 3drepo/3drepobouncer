@@ -89,7 +89,8 @@ namespace repo {
 						const std::vector<float> &matrix) const
 					{
 						//TODO: currently no use case. ignore for now.
-						throw std::exception("Transforming cameras are currently not supported!");
+						//"Transforming cameras are currently not supported!"
+						throw std::exception();
 					}
 
 					/**
