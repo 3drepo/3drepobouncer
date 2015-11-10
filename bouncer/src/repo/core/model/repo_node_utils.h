@@ -483,7 +483,7 @@ static std::string sanitizeExt(const std::string& name)
 {
 	// http://docs.mongodb.org/manual/reference/limits/#Restriction-on-Collection-Names
 	std::string newName(name);
-	std::replace_if(newName.begin(), newName.end(), nameCheck, '_');
+	std::replace_if(newName.begin(), newName.end(), extNameCheck, '_');
 	auto strPos = newName.find("system.");
 	if (strPos != std::string::npos)
 	{

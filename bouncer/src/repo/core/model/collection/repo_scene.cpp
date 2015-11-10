@@ -130,7 +130,6 @@ void RepoScene::abandonChild(
 		}
 	}
 
-	repoTrace << "modifyNode = " << modifyNode;
 	if (modifyNode)
 	{
 		//Remove parent from the child node
