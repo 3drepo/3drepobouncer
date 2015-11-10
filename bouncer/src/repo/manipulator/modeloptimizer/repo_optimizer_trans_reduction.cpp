@@ -123,7 +123,7 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 									//Parent is not the identity matrix, we need to reapply the transformation if 
 									//the node is position dependant
 									repoTrace << " Applying transformation, node type : " << node->getType();
-									node->swap(node->cloneAndApplyTransformation(trans->getTransMatrix()));
+									node->swap(node->cloneAndApplyTransformation(trans->getTransMatrix(false)));
 
 									
 								}

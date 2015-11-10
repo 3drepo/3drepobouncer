@@ -43,16 +43,22 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 	const std::vector<float> &matrix) const
 {
 	std::vector<repo_vector_t> *vertices = getVertices();
-	std::vector<repo_vector_t> resultVertice;
+
 
 	RepoBSONBuilder builder;
 
 	if (vertices)
-	{
-		for (repo_vector_t &v : *vertices)
+	{ 
+//		repoDebug << " Matrx: " << printMat(matrix);
+		std::vector<repo_vector_t> resultVertice;
+		resultVertice.reserve(vertices->size());
+		for (const repo_vector_t &v : *vertices)
 		{
 			resultVertice.push_back(multiplyMatVec(matrix, v));
+	//		repoDebug << " Before: " << printVec(v) << " after: " << printVec(resultVertice.back());
 		}
+
+
 
 		builder.appendBinary(REPO_NODE_MESH_LABEL_VERTICES, resultVertice.data(), resultVertice.size() * sizeof(repo_vector_t));
 
@@ -61,22 +67,18 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 		std::vector < repo_vector_t >*normals = getNormals();
 		if (normals && normals->size())
 		{
-			//TODO:
-			// According to assimp, this requires somethign like this:
-			//aiMatrix4x4 mWorldIT = mat;
-			//mWorldIT.Inverse().Transpose();
+			std::vector<repo_vector_t> resultNormals;
 
-			//// TODO: implement Inverse() for aiMatrix3x3
-			//aiMatrix3x3 m = aiMatrix3x3(mWorldIT);
 
-			//if (mesh->HasNormals()) {
-			//	for (unsigned int i = 0; i < mesh->mNumVertices; ++i) {
-			//		mesh->mNormals[i] = (m * mesh->mNormals[i]).Normalize();
-			//	}
-			//}
+			const std::vector<float> normMat = transposeMat(invertMat(matrix));
+			for (const repo_vector_t &n : *normals) {
+				repo_vector_t transedNormal = multiplyMatVecFake3x3(matrix, n);
+				normalize(transedNormal);
+				resultNormals.push_back(transedNormal);
+			}
 
-			//"Transforming meshes with normals is currently not supported!"
-			throw std::exception();
+			delete normals;
+			builder.appendBinary(REPO_NODE_MESH_LABEL_NORMALS, resultNormals.data(), resultNormals.size() * sizeof(repo_vector_t));
 		}
 	}
 	else
