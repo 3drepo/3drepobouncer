@@ -414,13 +414,14 @@ std::vector<repo::core::model::RepoBSON>
 		const repo::core::model::RepoBSON*	  cred,
 		const std::string                             &database,
 		const std::string                             &collection,
-		const uint64_t                                &skip)
+		const uint64_t                                &skip,
+		const uint32_t								  &limit)
 {
 	std::vector<repo::core::model::RepoBSON> vector;
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	if (handler)
-		vector = handler->getAllFromCollectionTailable(database, collection, skip);
+		vector = handler->getAllFromCollectionTailable(database, collection, skip, limit);
 	return vector;
 }
 
@@ -433,13 +434,14 @@ std::vector<repo::core::model::RepoBSON>
 		const std::list<std::string>				  &fields,
 		const std::string							  &sortField,
 		const int									  &sortOrder,
-		const uint64_t                                &skip)
+		const uint64_t                                &skip,
+		const uint32_t								  &limit)
 {
 	std::vector<repo::core::model::RepoBSON> vector;
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	if (handler)
-		vector = handler->getAllFromCollectionTailable(database, collection, skip, fields, sortField, sortOrder);
+		vector = handler->getAllFromCollectionTailable(database, collection, skip, limit, fields, sortField, sortOrder);
 	return vector;
 }
 
