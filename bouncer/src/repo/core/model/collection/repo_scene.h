@@ -145,6 +145,9 @@ namespace repo{
 					*/
 					~RepoScene();
 
+					static std::vector<RepoNode*> filterNodesByType(
+						const std::vector<RepoNode*> nodes,
+						const NodeType filter);
 
 					/**
 					* Add metadata that has a matching name as the transformation into the scene
@@ -374,13 +377,32 @@ namespace repo{
 					* Abandon child from parent (disjoint 2 nodes within the scene)
 					* @param parent shared ID of parent
 					* @param child shared ID of child
-					* @param modifyNode modify child node to relay this information (not needed if this node is to be removed)
+					* @param modifyParent modify parent to relay the information (not needed if this node is to be removed)
+					* @param modifyChild modify child node to relay this information (not needed if this node is to be removed)
 					*/
 					void abandonChild(
 						const GraphType &gType,
 						const repoUUID  &parent,
 						const repoUUID  &child,
-						const bool      &modifyNode = true);
+						const bool      &modifyParent = true,
+						const bool      &modifyChild= true)
+					{
+						return abandonChild(gType, parent, getNodeBySharedID(gType, child), modifyParent, modifyChild);
+					}
+
+					/**
+					* Abandon child from parent (disjoint 2 nodes within the scene)
+					* @param parent shared ID of parent
+					* @param child node of child
+					* @param modifyNode modify child node to relay this information (not needed if this node is to be removed)
+					*/
+					void abandonChild(
+						const GraphType &gType,
+						const repoUUID  &parent,
+						      RepoNode  *child,
+						const bool      &modifyParent = true,
+						const bool      &modifyChild = true);
+
 
 					/**
 					* Introduce parentship to 2 nodes that already reside within the scene.
@@ -396,6 +418,25 @@ namespace repo{
 						const GraphType &gType,
 						const repoUUID  &parent,
 						const repoUUID  &child,
+						const bool      &noUpdate = false)
+					{
+						addInheritance(gType, getNodeByUniqueID(gType, parent), getNodeByUniqueID(gType, child), noUpdate);
+					}
+
+					/**
+					* Introduce parentship to 2 nodes that already reside within the scene.
+					* If either of the nodes are not found, it does nothing
+					* If they already share an inheritance, it does nothing
+					* @param gType which graph are the nodes
+					* @param parent parent Node
+					* @param child child node
+					* @param noUpdate if true, it will not be treated as
+					*        a change that is needed to be commited (only valid for default graph)
+					*/
+					void addInheritance(
+						const GraphType &gType,
+						const RepoNode  *parent,
+							  RepoNode  *child,
 						const bool      &noUpdate = false);
 
 					/**
@@ -659,7 +700,7 @@ namespace repo{
 					* This will also update revision related information within 
 					* the scene (if necessary)
 					* @param sharedID of the node to modify
-					* @param node modified version node
+					* @param newNode modified version node
 					* @param overwrite if true, overwrite the node with modified version, 
 					*        otherwise just update with its contents (default: false)
 					*/
@@ -667,8 +708,29 @@ namespace repo{
 					void modifyNode(
 						const GraphType                   &gtype,
 						const repoUUID                    &sharedID,
-						RepoNode *node,
+						RepoNode						  *newNode,
+						const bool                        &overwrite = false)
+					{
+						modifyNode(gtype, getNodeBySharedID(sharedID), newNode, overwrite);
+					}
+
+					/**
+					* Modify a node with the information within the new node.
+					* This will also update revision related information within
+					* the scene (if necessary)
+					* @param sharedID of the node to modify
+					* @param node node to change
+					* @param newNode modified node(or modifications)
+					* @param overwrite if true, overwrite the node with modified version,
+					*        otherwise just update with its contents (default: false)
+					*/
+
+					void modifyNode(
+						const GraphType                   &gtype,
+						RepoNode						  *node,                   
+						RepoNode                          *newNode,
 						const bool                       &overwrite = false);
+
 
 
 					/**
