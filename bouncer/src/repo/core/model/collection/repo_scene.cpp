@@ -122,7 +122,7 @@ void RepoScene::abandonChild(
 	}
 
 
-	repoGraphInstance g = GraphType::OPTIMIZED == gType ? stashGraph : graph;
+	repoGraphInstance &g = GraphType::OPTIMIZED == gType ? stashGraph : graph;
 	repoUUID childSharedID = child->getSharedID();
 
 	if (modifyParent)
@@ -131,8 +131,8 @@ void RepoScene::abandonChild(
 		
 		if (pToCIt != g.parentToChildren.end())
 		{
-			std::vector<repoUUID> children = pToCIt->second;
-			auto childIt = std::find(children.begin(), children.end(), childSharedID);
+			std::vector<RepoNode *> children = pToCIt->second;
+			auto childIt = std::find(children.begin(), children.end(), child);
 			if (childIt != children.end())
 			{
 				children.erase(childIt);
@@ -178,23 +178,23 @@ void RepoScene::addInheritance(
 
 
 		//add children to parentToChildren mapping
-		std::map<repoUUID, std::vector<repoUUID>>::iterator childrenIT =
+		auto childrenIT =
 			g.parentToChildren.find(parentShareID);
 
 		if (childrenIT != g.parentToChildren.end())
 		{
-			std::vector<repoUUID> &children = childrenIT->second;
+			std::vector<RepoNode*> &children = childrenIT->second;
 			//TODO: use sets for performance?
-			auto childrenInd = std::find(children.begin(), children.end(), childShareID);
+			auto childrenInd = std::find(children.begin(), children.end(), childNode);
 			if (childrenInd == children.end())
 			{
-				children.push_back(childShareID);
+				children.push_back(childNode);
 			}
 		}
 		else
 		{
-			g.parentToChildren[parentShareID] = std::vector<repoUUID>();
-			g.parentToChildren[parentShareID].push_back(childShareID);
+			g.parentToChildren[parentShareID] = std::vector<RepoNode*>();
+			g.parentToChildren[parentShareID].push_back(childNode);
 		}
 
 
@@ -260,9 +260,9 @@ void RepoScene::addMetadata(
 			repoUUID metaUniqueID = meta->getUniqueID();
 
 			if (graph.parentToChildren.find(transSharedID) == graph.parentToChildren.end())
-				graph.parentToChildren[transSharedID] = std::vector<repoUUID>();
+				graph.parentToChildren[transSharedID] = std::vector<RepoNode*>();
 
-			graph.parentToChildren[transSharedID].push_back(metaSharedID);
+			graph.parentToChildren[transSharedID].push_back(meta);
 
 			*meta = meta->cloneAndAddParent(transSharedID);
 
@@ -367,17 +367,16 @@ bool RepoScene::addNodeToMaps(
 			//add itself to the parent on the "parent -> children" map
 			repoUUID parent = *it;
 
-			//check if the parent already has an entry
-			std::map<repoUUID, std::vector<repoUUID>>::iterator mapIt;
-			mapIt = g.parentToChildren.find(parent);
+			//check if the parent already has an entry			
+			auto mapIt = g.parentToChildren.find(parent);
 			if (mapIt != g.parentToChildren.end()){
 				//has an entry, add to the vector
-				g.parentToChildren[parent].push_back(sharedID);
+				g.parentToChildren[parent].push_back(node);
 			}
 			else{
 				//no entry, create one
-				std::vector<repoUUID> children;
-				children.push_back(sharedID);
+				std::vector<RepoNode*> children;
+				children.push_back(node);
 
 				g.parentToChildren[parent] = children;
 
@@ -761,16 +760,9 @@ RepoScene::getChildrenAsNodes(
 	const repoUUID &parent) const
 {
 	std::vector<RepoNode*> children;
-	repoGraphInstance g = GraphType::OPTIMIZED == gType ? stashGraph : graph;
-	std::map<repoUUID, std::vector<repoUUID>>::const_iterator it = g.parentToChildren.find(parent);
-	if (it != g.parentToChildren.end())
-	{
-		for (auto child : it->second)
-		{
-			children.push_back(getNodeBySharedID(gType, child));
-		}
-	}
-	return children;
+	const repoGraphInstance &g = GraphType::OPTIMIZED == gType ? stashGraph : graph;
+	auto it = g.parentToChildren.find(parent);
+	return it != g.parentToChildren.end() ? it->second : std::vector<RepoNode*>();
 }
 
 std::vector<RepoNode*>
