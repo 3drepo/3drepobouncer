@@ -4,10 +4,4 @@
 #If you really need to overwrite this file, be aware that it will be overwritten if updateSources.py is executed.
 
 
-set(TEST_SOURCES
-	${TEST_SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_builder.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_role.cpp
-	CACHE STRING "TEST_SOURCES" FORCE)
-
+add_subdirectory(modeloptimizer)

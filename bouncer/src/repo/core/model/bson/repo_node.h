@@ -55,6 +55,16 @@ namespace repo{
 						*/
 						virtual ~RepoNode();
 	
+						/**
+						* Check if the node is position dependant.
+						* i.e. if parent transformation is merged onto the node,
+						* does the node requre to a transformation applied to it
+						* e.g. meshes and cameras are position dependant, metadata isn't
+						* Default behaviour is false. Position dependant child requires 
+						* override this function.
+						* @return true if node is positionDependant.
+						*/
+						virtual bool positionDependant() { return false; }
 
 
 						/*
@@ -68,7 +78,7 @@ namespace repo{
 						* and add another parent into this new object
 						* NOTE: this object is unchanged!
 						* @param parentID the shared uuid of the parent
-						* @returns new object with the field updated
+						* @return new object with the field updated
 						*/
 						RepoNode cloneAndAddParent(
 							const repoUUID &parent) const;
@@ -78,10 +88,49 @@ namespace repo{
 						* and add other parents into this new object
 						* NOTE: this object is unchanged!
 						* @param parentID the shared uuid of the parent
-						* @returns new object with the field updated
+						* @return new object with the field updated
 						*/
 						RepoNode cloneAndAddParent(
 							const std::vector<repoUUID> &parents) const;
+
+						/**
+						*  Create a new object with transformation applied to the node
+						* default behaviour is do nothing. Children object
+						* needs to override this function to perform their own specific behaviour.
+						* @param matrix transformation matrix to apply.
+						* @return returns a new object with transformation applied.
+						*/
+						virtual RepoNode cloneAndApplyTransformation(
+							const std::vector<float> &matrix) const
+						{
+							return RepoNode(copy());
+						}
+
+						/**
+						* Create a new object with this object's values,
+						* but a different name
+						* @param newName new name
+						* @return returns an object with the change
+						*/
+						RepoNode cloneAndChangeName(
+							const std::string &newName,
+							const bool &newUniqueID = true
+						) const
+						{
+							return cloneAndAddFields(new RepoBSON(BSON(REPO_NODE_LABEL_NAME << newName)), newUniqueID);
+						}
+
+						/**
+						* Create a new object with this object's values,
+						* and remove a parent into this new object
+						* NOTE: this object is unchanged!
+						* @param parentID the shared uuid of the parent
+						* @param newUniqueID generate a new unique ID if set to true
+						* @returns new object with the field updated
+						*/
+						RepoNode cloneAndRemoveParent(
+							const repoUUID &parent,
+							const bool     &newUniqueID = true) const;
 
 						/**
 						* Create a new object with fields within the 
@@ -122,7 +171,7 @@ namespace repo{
 						* Get the shared ID from the object
 						* @return returns the shared ID of the object
 						*/
-						repoUUID getSharedID() const { return sharedID; }
+						repoUUID getSharedID() const { return getUUIDField(REPO_NODE_LABEL_SHARED_ID); }
 
 
 						/**
@@ -144,7 +193,7 @@ namespace repo{
 						* Get the unique ID from the object
 						* @return returns the unique ID of the object
 						*/
-						repoUUID getUniqueID() const{ return uniqueID; }
+						repoUUID getUniqueID() const{ return getUUIDField(REPO_NODE_LABEL_ID); }
 
 						/**
 						* Get the list of parent IDs 
@@ -152,24 +201,25 @@ namespace repo{
 						*/
 						std::vector<repoUUID> getParentIDs() const;
 
-
 						/*
 						*	------------- Compare operations --------------
 						*/
 						//! Returns true if the node is the same, false otherwise.
 						bool operator==(const RepoNode& other) const
 						{
-							return uniqueID == other.uniqueID && sharedID == other.sharedID;
+
+							return getUniqueID() == other.getUniqueID() && getSharedID() == other.getSharedID();
 						}
 
 						//! Returns true if the other node is greater than this one, false otherwise.
 						bool operator<(const RepoNode& other) const
 						{
-							if (sharedID == other.sharedID){
-								return sharedID < other.sharedID;
+							repoUUID sharedID = getSharedID();
+							if (sharedID == other.getSharedID()){
+								return sharedID < other.getSharedID();
 							}
 							else{
-								return uniqueID < other.uniqueID;
+								return getUniqueID() < other.getUniqueID();
 							}
 						}
 
@@ -186,9 +236,6 @@ namespace repo{
 						
 						std::string type; //!< Compulsory type of this document.
 
-						repoUUID sharedID; //!< Shared unique graph document identifier.
-
-						repoUUID uniqueID; //!< Compulsory unique database document identifier.
 
 				};
 				/*!

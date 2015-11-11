@@ -31,15 +31,8 @@ RepoNode::RepoNode(RepoBSON bson,
 	else
 		type = REPO_NODE_TYPE_UNKNOWN; // failsafe
 
-	//--------------------------------------------------------------------------
-	// ID
-	uniqueID = bson.getUUIDField(REPO_NODE_LABEL_ID);
 
-	//--------------------------------------------------------------------------
-	// Shared ID
-	if (bson.hasField(REPO_NODE_LABEL_SHARED_ID))
-		sharedID = bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
-
+	
 	if (binMapping.size() == 0)
 		bigFiles = bson.getFilesMapping();
 
@@ -58,19 +51,7 @@ RepoNode RepoNode::cloneAndAddParent(
 
 	std::vector<repoUUID> currentParents = getParentIDs();
 	currentParents.push_back(parentID);
-
-	builder.appendArray(REPO_NODE_LABEL_PARENTS, arrayBuilder.createArrayBSON(currentParents));
-	////FIXME: Clean this up, shouldn't have mongo exposed.
-	//std::vector<mongo::BSONElement> parents = ((mongo::BSONElement)getField(REPO_NODE_LABEL_PARENTS)).Array();
-
-	//mongo::BSONArrayBuilder parentsBuilder;
-	//for (const auto &ele : parents)
-	//{
-	//	parentsBuilder.append(ele);
-	//}
-	//parentsBuilder.appendBinData(parentID.size(), mongo::bdtUUID, (char*)parentID.data);
-
-	//builder.appendArray(REPO_NODE_LABEL_PARENTS, parentsBuilder.obj());
+	builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);	
 
 	builder.appendElementsUnique(*this);
 
@@ -87,10 +68,47 @@ RepoNode RepoNode::cloneAndAddParent(
 	std::vector<repoUUID> currentParents = getParentIDs();
 	currentParents.insert(currentParents.end(), parentIDs.begin(), parentIDs.end());
 
-	builder.appendArray(REPO_NODE_LABEL_PARENTS, arrayBuilder.createArrayBSON(currentParents));
-
+	builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);
 
 	builder.appendElementsUnique(*this);
+
+	return RepoNode(builder.obj(), bigFiles);
+}
+
+RepoNode RepoNode::cloneAndRemoveParent(
+	const repoUUID &parentID,
+	const bool     &newUniqueID) const
+{
+	RepoBSONBuilder builder;
+	RepoBSONBuilder arrayBuilder;
+
+
+	std::vector<repoUUID> currentParents = getParentIDs();
+	auto parentIdx = std::find(currentParents.begin(), currentParents.end(), parentID);
+	if (parentIdx != currentParents.end())
+	{
+		currentParents.erase(parentIdx);
+		if (newUniqueID)
+		{
+			builder.append(REPO_NODE_LABEL_ID, generateUUID());
+		}
+	}
+	else
+	{
+		repoWarning << "Trying to remove a parent that isn't really a parent!";
+	}
+	if (currentParents.size() > 0)
+	{
+		builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);
+		builder.appendElementsUnique(*this);
+	}
+	else
+	{
+		builder.appendElementsUnique(removeField(REPO_NODE_LABEL_PARENTS));
+	}
+
+
+
 
 	return RepoNode(builder.obj(), bigFiles);
 }
@@ -126,7 +144,7 @@ RepoNode RepoNode::cloneAndAddMergedNodes(
 {
 	RepoBSONBuilder builder;
 	RepoBSONBuilder arrayBuilder;
-	builder.appendArray(REPO_LABEL_MERGED_NODES, arrayBuilder.createArrayBSON(mergeMap));
+	builder.appendArray(REPO_LABEL_MERGED_NODES, mergeMap);
 
 	builder.appendElementsUnique(*this);
 

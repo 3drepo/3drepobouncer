@@ -39,6 +39,53 @@ MeshNode::~MeshNode()
 {
 }
 
+RepoNode MeshNode::cloneAndApplyTransformation(
+	const std::vector<float> &matrix) const
+{
+	std::vector<repo_vector_t> *vertices = getVertices();
+
+
+	RepoBSONBuilder builder;
+
+	if (vertices)
+	{ 
+		std::vector<repo_vector_t> resultVertice;
+		resultVertice.reserve(vertices->size());
+		for (const repo_vector_t &v : *vertices)
+		{
+			resultVertice.push_back(multiplyMatVec(matrix, v));
+		}
+
+
+
+		builder.appendBinary(REPO_NODE_MESH_LABEL_VERTICES, resultVertice.data(), resultVertice.size() * sizeof(repo_vector_t));
+
+		delete vertices;
+
+		std::vector < repo_vector_t >*normals = getNormals();
+		if (normals && normals->size())
+		{
+			std::vector<repo_vector_t> resultNormals;
+
+			const std::vector<float> normMat = transposeMat(invertMat(matrix));
+			for (const repo_vector_t &n : *normals) {
+				repo_vector_t transedNormal = multiplyMatVecFake3x3(matrix, n);
+				normalize(transedNormal);
+				resultNormals.push_back(transedNormal);
+			}
+
+			delete normals;
+			builder.appendBinary(REPO_NODE_MESH_LABEL_NORMALS, resultNormals.data(), resultNormals.size() * sizeof(repo_vector_t));
+		}
+	}
+	else
+	{
+		repoError << "Unable to apply transformation: Cannot find vertices within a mesh!";
+	}
+
+	return MeshNode(builder.appendElementsUnique(*this));
+}
+
 MeshNode MeshNode::cloneAndUpdateMeshMapping(
 	const std::vector<repo_mesh_mapping_t> &vec)
 {
@@ -88,14 +135,7 @@ std::vector<repo_vector_t>* MeshNode::getVertices() const
 	std::vector<repo_vector_t> *vertices = new std::vector<repo_vector_t>();
 	if (hasBinField(REPO_NODE_MESH_LABEL_VERTICES))
 	{
-		if (hasField(REPO_NODE_MESH_LABEL_VERTICES_COUNT))
-		{
-			const uint32_t verticesSize = getField(REPO_NODE_MESH_LABEL_VERTICES_COUNT).numberInt();
-			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_VERTICES, verticesSize, vertices);
-
-		}
-		else
-			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_VERTICES, vertices);
+		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_VERTICES, vertices);
 
 	}
 	else
@@ -170,16 +210,7 @@ std::vector<repo_vector_t>* MeshNode::getNormals() const
 	std::vector<repo_vector_t> *vertices = new std::vector<repo_vector_t>();
 	if (hasBinField(REPO_NODE_MESH_LABEL_NORMALS))
 	{
-
-		if (hasField(REPO_NODE_MESH_LABEL_VERTICES_COUNT))
-		{
-			const uint32_t verticesSize = getField(REPO_NODE_MESH_LABEL_VERTICES_COUNT).numberInt();
-			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_NORMALS, verticesSize, vertices);
-
-		}
-		else
-			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_NORMALS, vertices);
-
+		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_NORMALS, vertices);
 	}
 
 	return vertices;
@@ -193,16 +224,7 @@ std::vector<repo_vector2d_t>* MeshNode::getUVChannels() const
 	{
 		channels = new std::vector<repo_vector2d_t>();
 
-		if (hasField(REPO_NODE_MESH_LABEL_VERTICES_COUNT))
-		{
-			const uint32_t uvChannelSize = getField(REPO_NODE_MESH_LABEL_VERTICES_COUNT).numberInt()
-				* getField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT).numberInt();
-
-			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_UV_CHANNELS, uvChannelSize, channels);
-
-		}
-		else
-			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_UV_CHANNELS, channels);		
+		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_UV_CHANNELS, channels);		
 	}
 
 
@@ -250,18 +272,7 @@ std::vector<repo_face_t>* MeshNode::getFaces() const
 		int32_t facesCount = getField(REPO_NODE_MESH_LABEL_FACES_COUNT).numberInt();
 		faces->resize(facesCount);
 
-		if (hasField(REPO_NODE_MESH_LABEL_FACES_BYTE_COUNT))
-		{
-			int32_t facesByteCount = getField(REPO_NODE_MESH_LABEL_FACES_BYTE_COUNT).numberInt();
-
-			serializedFaces->resize(facesByteCount / sizeof(uint32_t));
-			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_FACES, facesByteCount / sizeof(uint32_t), serializedFaces);
-		}
-		else
-		{
-			getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_FACES, serializedFaces);
-		}
-
+		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_FACES, serializedFaces);
 		
 		// Retrieve numbers of vertices for each face and subsequent
 		// indices into the vertex array.
@@ -313,8 +324,8 @@ RepoBSON MeshNode::meshMappingAsBSON(const repo_mesh_mapping_t  &mapping)
 	builder << REPO_NODE_MESH_LABEL_TRIANGLE_TO << mapping.triTo;
 
 	RepoBSONBuilder bbBuilder;
-	bbBuilder.appendVector("0", mapping.min);
-	bbBuilder.appendVector("1", mapping.max);
+	bbBuilder.append("0", mapping.min);
+	bbBuilder.append("1", mapping.max);
 
 	builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, bbBuilder.obj());
 

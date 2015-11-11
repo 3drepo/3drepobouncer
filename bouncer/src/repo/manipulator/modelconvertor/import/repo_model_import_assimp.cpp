@@ -563,7 +563,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 					repo_vector_t repoVector = { vector->x, vector->y, vector->z };
 
 
-					builder.appendVector(key, repoVector);
+					builder.append(key, repoVector);
 				}
 				break;
 			case FORCE_32BIT:

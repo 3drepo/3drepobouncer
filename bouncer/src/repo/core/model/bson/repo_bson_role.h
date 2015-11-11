@@ -21,7 +21,8 @@
 namespace repo {
 	namespace core {
 		namespace model {
-			enum class DBActions { INSERT, UPDATE, REMOVE, FIND, CREATE_USER, CREATE_ROLE, DROP_ROLE, GRANT_ROLE, REVOKE_ROLE, VIEW_ROLE, UNKNOWN };
+			enum class DBActions { INSERT, UPDATE, REMOVE, FIND, CREATE_USER, CREATE_ROLE, 
+				DROP_ROLE, GRANT_ROLE, REVOKE_ROLE, VIEW_ROLE, UNKNOWN };
 			enum class AccessRight { READ, WRITE, READ_WRITE};
 
 			struct RepoPrivilege{

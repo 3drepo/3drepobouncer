@@ -551,6 +551,21 @@ namespace repo{
 			const repo::core::model::RepoScene* scene);
 
 
+		/*
+		*	------------- Optimizations --------------
+		*/
+
+		/**
+		* Reduce redundant transformations from the scene
+		* to optimise the graph
+		* @param token to load full scene from database if required 
+				(if not required, a nullptr can be passed in)
+		* @param scene RepoScene to optimize
+		*/
+		void reduceTransformations(
+			const RepoToken              *token,
+			repo::core::model::RepoScene *scene);
+
 	private:
 
 

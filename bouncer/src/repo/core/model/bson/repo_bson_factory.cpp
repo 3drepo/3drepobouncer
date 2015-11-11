@@ -69,7 +69,7 @@ uint64_t RepoBSONFactory::appendDefaults(
 	// Parents
 	if (parents.size() > 0)
 	{
-		builder.appendArray(REPO_NODE_LABEL_PARENTS, builder.createArrayBSON(parents));
+		builder.appendArray(REPO_NODE_LABEL_PARENTS, parents);
 
 		bytesize += parents.size() * sizeof(parents[0]);
 	}
@@ -128,15 +128,15 @@ CameraNode RepoBSONFactory::makeCameraNode(
 
 	//--------------------------------------------------------------------------
 	// Look at vector
-	builder.appendVector(REPO_NODE_LABEL_LOOK_AT, lookAt);
+	builder.append(REPO_NODE_LABEL_LOOK_AT, lookAt);
 
 	//--------------------------------------------------------------------------
 	// Position vector
-	builder.appendVector(REPO_NODE_LABEL_POSITION, position);
+	builder.append(REPO_NODE_LABEL_POSITION, position);
 
 	//--------------------------------------------------------------------------
 	// Up vector
-	builder.appendVector(REPO_NODE_LABEL_UP, up);
+	builder.append(REPO_NODE_LABEL_UP, up);
 
 	return CameraNode(builder.obj());
 }
@@ -154,13 +154,13 @@ MaterialNode RepoBSONFactory::makeMaterialNode(
 	appendDefaults(builder, REPO_NODE_TYPE_MATERIAL, apiLevel, generateUUID(), name);
 
 	if (material.ambient.size() > 0)
-		builder.appendArray(REPO_NODE_MATERIAL_LABEL_AMBIENT, builder.createArrayBSON(material.ambient));
+		builder.appendArray(REPO_NODE_MATERIAL_LABEL_AMBIENT, material.ambient);
 	if (material.diffuse.size() > 0)
-		builder.appendArray(REPO_NODE_MATERIAL_LABEL_DIFFUSE, builder.createArrayBSON(material.diffuse));
+		builder.appendArray(REPO_NODE_MATERIAL_LABEL_DIFFUSE, material.diffuse);
 	if (material.specular.size() > 0)
-		builder.appendArray(REPO_NODE_MATERIAL_LABEL_SPECULAR, builder.createArrayBSON(material.specular));
+		builder.appendArray(REPO_NODE_MATERIAL_LABEL_SPECULAR, material.specular);
 	if (material.emissive.size() > 0)
-		builder.appendArray(REPO_NODE_MATERIAL_LABEL_EMISSIVE, builder.createArrayBSON(material.emissive));
+		builder.appendArray(REPO_NODE_MATERIAL_LABEL_EMISSIVE, material.emissive);
 
 
 	if (material.isWireframe)
@@ -329,7 +329,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 		for (int i = 0; i < boundingBox.size(); i++)
 		{
-			arrayBuilder.appendArray(std::to_string(i), builder.createArrayBSON(boundingBox[i]));
+			arrayBuilder.appendArray(std::to_string(i), boundingBox[i]);
 			bytesize += boundingBox[i].size() * sizeof(boundingBox[i][0]);
 		}
 
@@ -344,7 +344,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 		for (int i = 0; i < outline.size(); i++)
 		{
-			arrayBuilder.appendArray(boost::lexical_cast<std::string>(i), builder.createArrayBSON(outline[i]));
+			arrayBuilder.appendArray(boost::lexical_cast<std::string>(i), outline[i]);
 			bytesize += outline[i].size() * sizeof(outline[i][0]);
 		}
 
@@ -379,9 +379,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 			builder.appendBinary(
 				REPO_NODE_MESH_LABEL_VERTICES,
 				&vertices[0],
-				vertices.size() * sizeof(vertices[0]),
-				REPO_NODE_MESH_LABEL_VERTICES_BYTE_COUNT,
-				REPO_NODE_MESH_LABEL_VERTICES_COUNT
+				vertices.size() * sizeof(vertices[0])
 				);
 			bytesize += verticesByteCount;
 		}
@@ -428,8 +426,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 			builder.appendBinary(
 				REPO_NODE_MESH_LABEL_FACES,
 				&facesLevel1[0],
-				facesLevel1.size() * sizeof(facesLevel1[0]),
-				REPO_NODE_MESH_LABEL_FACES_BYTE_COUNT
+				facesLevel1.size() * sizeof(facesLevel1[0])
 				);
 
 			bytesize += facesByteCount;
@@ -539,8 +536,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 			builder.appendBinary(
 				REPO_NODE_MESH_LABEL_UV_CHANNELS,
 				&concatenated[0],
-				concatenated.size() * sizeof(concatenated[0]),
-				REPO_NODE_MESH_LABEL_UV_CHANNELS_BYTE_COUNT);
+				concatenated.size() * sizeof(concatenated[0]));
 
 			bytesize += uvByteCount;
 		}
@@ -722,7 +718,6 @@ RepoUser RepoBSONFactory::makeRepoUser(
 		customDataBuilder << REPO_LABEL_AVATAR << avatarBuilder.obj();
 	}
 
-
 	builder << REPO_USER_LABEL_CUSTOM_DATA << customDataBuilder.obj();
 
 	if (roles.size())
@@ -813,7 +808,7 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 
 	// Current Unique IDs
 	if (currentNodes.size() > 0)
-		builder.appendArray(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS, builder.createArrayBSON(currentNodes));
+		builder.appendArray(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS, currentNodes);
 
 	////--------------------------------------------------------------------------
 	//// Added Shared IDs
@@ -830,7 +825,6 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 	//// Modified Shared IDs
 	//if (modified.size() > 0)
 	//	builder.appendArray(REPO_NODE_REVISION_LABEL_MODIFIED_SHARED_IDS, builder.createArrayBSON(modified));
-
 	//--------------------------------------------------------------------------
 
 	//--------------------------------------------------------------------------
@@ -888,8 +882,7 @@ TextureNode RepoBSONFactory::makeTextureNode(
 		builder.appendBinary(
 		REPO_LABEL_DATA,
 		data,
-		byteCount,
-		REPO_NODE_LABEL_DATA_BYTE_COUNT);
+		byteCount);
 
 	return TextureNode(builder.obj());
 }

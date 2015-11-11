@@ -45,18 +45,28 @@ namespace repo {
 						RepoBSONBuilder();
 						~RepoBSONBuilder();
 
-						//! Appends a vector as an array to BSON builder.
-						//FIXME: should turn this to an appendArray kind of function
-						// instead of a stateless bson creation (technically doesn't belong here if it is
-						// just a object creation
+						/**
+						* Append a vector as object into the bson
+						* This function creates an embedded RepoBSON and append that object as an array into the builder
+						* @param label label of the array
+						* @param vec vector to append
+						*/
 						template <class T>
-						RepoBSON createArrayBSON(
+						void appendArray(
+							const std::string &label,
 							const std::vector<T> &vec)
 						{
 							RepoBSONBuilder array;
 							for (unsigned int i = 0; i < vec.size(); ++i)
 								array.append(std::to_string(i), vec[i]);
-							return array.obj();
+							mongo::BSONObjBuilder::appendArray(label, array.obj());
+						}
+
+						void appendArray(
+							const std::string &label,
+							const RepoBSON &bson)
+						{
+							mongo::BSONObjBuilder::appendArray(label,bson);
 						}
 
 
@@ -81,17 +91,7 @@ namespace repo {
 							const std::string &fstLabel,
 							const std::string &sndLabel
 							);
-
-						/*!
-						* Appends a vector of object as an array
-						* @param label Label for this element
-						* @param vec the data itself
-						* @param countLabel count label to store count
-						*/
-						void appendVector(
-							const std::string    &label,
-							const repo_vector_t vec
-							);
+				
 						/*!
 						* Appends a pointer to some memory as binary mongo::BinDataGeneral type array.
 						* Appends given data as a binary data blob into a given builder. Also
@@ -107,28 +107,21 @@ namespace repo {
 						void appendBinary(
 							const std::string &label,
 							const T           *data,
-							const uint32_t  &byteCount,
-							const std::string &byteCountLabel = "",
-							const std::string &countLabel = "")
+							const uint32_t  &byteCount)
 						{
 
-							if (0 < byteCount)
+							if (data && 0 < byteCount)
 							{
-								if (!byteCountLabel.empty())
-								{
-									//write size in bytes
-									mongo::BSONObjBuilder::append(byteCountLabel, byteCount);
-								}
-
-								// Store size of the array for decoding purposes
-								if (!countLabel.empty())
-									mongo::BSONObjBuilder::append(countLabel, (uint32_t)(byteCount / sizeof(T)));
 
 							// Store data as a binary blob
 								appendBinData(
 									label, byteCount, mongo::BinDataGeneral,
 									(void *)data);
 
+							}
+							else
+							{
+								repoWarning << "Trying to append a binary of size 0 into a bson. Skipping..";
 							}
 						}
 
@@ -162,6 +155,12 @@ namespace repo {
 			(
 				const std::string &label,
 				const repoUUID &uuid
+			);
+
+			template<> void RepoBSONBuilder::append<repo_vector_t>
+			(
+				const std::string &label,
+				const repo_vector_t &vec
 			);
 
 		}// end namespace model

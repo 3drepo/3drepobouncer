@@ -80,11 +80,11 @@ RepoToken* RepoController::authenticateToAdminDatabaseMongo(
 	bool success = worker->connectAndAuthenticateWithAdmin(errMsg, address, port,
 		numDBConnections, username, password, pwDigested);
 
-	if (success)
+	if (success && !username.empty())
 		cred = worker->createCredBSON(dbFullAd, username, password, pwDigested);
 
 
-	if (cred)
+	if (cred || username.empty())
 	{
 		token = new RepoToken(cred, dbFullAd, worker->getNameOfAdminDatabase(dbFullAd));
 
@@ -117,11 +117,11 @@ RepoToken* RepoController::authenticateMongo(
 	bool success = worker->connectAndAuthenticate(errMsg, address, port,
 		numDBConnections, dbName, username, password, pwDigested);
 
-	if (success)
+	if (success && !username.empty())
 		cred = worker->createCredBSON(dbFullAd, username, password, pwDigested);
 	workerPool.push(worker);
 
-	if (cred)
+	if (cred || username.empty())
 	{
 		token = new RepoToken(cred, dbFullAd, dbName);
 	}
@@ -795,4 +795,44 @@ bool RepoController::saveSceneToFile(
 	}
 
 	return success;
+}
+
+void RepoController::reduceTransformations(
+	const RepoToken              *token,
+	repo::core::model::RepoScene *scene)
+{
+	if (token && scene && scene->isRevisioned() && !scene->hasRoot())
+	{
+		//If the unoptimised graph isn't fetched, try to fetch full scene before beginning
+		//This should be safe considering if it has not loaded the unoptimised graph it shouldn't have
+		//any uncommited changes.
+		repoInfo << "Unoptimised scene not loaded, trying loading unoptimised scene...";
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		worker->fetchScene(token->databaseAd, token->credentials, scene);
+		workerPool.push(worker);
+	}
+
+	if (scene && scene->hasRoot())
+	{
+
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		size_t transNodes_pre = scene->getAllTransformations().size();
+		try{
+			worker->reduceTransformations(scene);
+		}
+		catch (const std::exception &e)
+		{
+			repoError << "Caught exception whilst trying to optimise graph : " << e.what();
+
+		}
+
+		workerPool.push(worker);
+		repoInfo << "Optimization completed. Number of transformations has been reduced from "
+			<< transNodes_pre << " to " << scene->getAllTransformations().size();
+
+	}
+	else{
+		repoError << "RepoController::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
+	}
+
 }

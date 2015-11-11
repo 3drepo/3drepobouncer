@@ -17,14 +17,12 @@
 
 #include <algorithm>
 #include "repo_bson_role.h"
+#include "../collection/repo_scene.h"
 
 
 using namespace repo::core::model;
 
-static const std::vector<std::string> collectionsInProject =
-{
-	"scene", "stash.3drepo", "stash.src", "history", "issues", "wayfinder"
-};
+
 
 RepoRole::RepoRole()
 {
@@ -225,7 +223,7 @@ std::vector<RepoPrivilege> RepoRole::translatePermissions(
 		if (!p.project.empty())
 		{
 
-			for (const std::string &postfix : collectionsInProject)
+			for (const std::string &postfix : RepoScene::getProjectExtensions())
 			{
 				RepoPrivilege privilege;
 				privilege.database = p.database;
@@ -372,6 +370,8 @@ void RepoRole::updateActions(
 
 
 	}
+
 	//Prune possible duplicates
+	std::sort(vec.begin(), vec.end());
 	vec.erase(std::unique(vec.begin(), vec.end()), vec.end());
 }

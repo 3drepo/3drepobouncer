@@ -6,8 +6,6 @@
 
 set(TEST_SOURCES
 	${TEST_SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_builder.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_role.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_optimizer_trans_reduction.cpp
 	CACHE STRING "TEST_SOURCES" FORCE)
 
