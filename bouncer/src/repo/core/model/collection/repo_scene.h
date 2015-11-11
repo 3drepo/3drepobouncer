@@ -63,7 +63,7 @@ namespace repo{
 					//! A lookup map for the all nodes the graph contains.
 					std::map<repoUUID, RepoNode*> nodesByUniqueID;
 					std::map<repoUUID, repoUUID> sharedIDtoUniqueID; //** mapping of shared ID to Unique ID
-					std::map<repoUUID, std::vector<repoUUID>> parentToChildren; //** mapping of shared id to its children's shared id
+					std::map<repoUUID, std::vector<RepoNode*>> parentToChildren; //** mapping of shared id to its children's shared id
 					std::map<repoUUID, RepoScene*> referenceToScene; //** mapping of reference ID to it's scene graph
 				};
 
