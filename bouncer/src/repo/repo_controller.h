@@ -236,7 +236,6 @@ namespace repo{
 		* the first n items.
 		* @param token A RepoToken given at authentication
 		* @param database name of database
-		* @param collection name of collection
 		* @param skip specify how many documents to skip (see description above)
 		* @param limit specifiy max. number of documents to retrieve (0 = no limit)
 		* @return list of RepoBSONs representing the documents
