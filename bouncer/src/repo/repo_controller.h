@@ -191,6 +191,7 @@ namespace repo{
 		* @param database name of database
 		* @param collection name of collection
 		* @param skip specify how many documents to skip
+		* @param limit specifiy max. number of documents to retrieve (0 = no limit)
 		* @return list of RepoBSONs representing the documents
 		*/
 		std::vector < repo::core::model::RepoBSON >
@@ -198,7 +199,8 @@ namespace repo{
 			const RepoToken      *token,
 			const std::string    &database,
 			const std::string    &collection,
-			const uint64_t       &skip = 0);
+			const uint64_t       &skip = 0,
+			const uint32_t       &limit = 0);
 
 		/**
 		* Retrieve documents from a specified collection, returning only the specified fields
@@ -212,6 +214,7 @@ namespace repo{
 		* @param sortField field to sort upon
 		* @param sortOrder 1 ascending, -1 descending
 		* @param skip specify how many documents to skip (see description above)
+		* @param limit specifiy max. number of documents to retrieve (0 = no limit)
 		* @return list of RepoBSONs representing the documents
 		*/
 		std::vector < repo::core::model::RepoBSON >
@@ -222,7 +225,27 @@ namespace repo{
 			const std::list<std::string> &fields,
 			const std::string            &sortField,
 			const int                    &sortOrder = -1,
-			const uint64_t               &skip = 0);
+			const uint64_t               &skip = 0,
+			const uint32_t               &limit = 0);
+
+
+		/**
+		* Retrieve roles from a specified database
+		* due to limitations of the transfer protocol this might need
+		* to be called multiple times, utilising the skip index to skip
+		* the first n items.
+		* @param token A RepoToken given at authentication
+		* @param database name of database
+		* @param skip specify how many documents to skip (see description above)
+		* @param limit specifiy max. number of documents to retrieve (0 = no limit)
+		* @return list of RepoRole representing the roles
+		*/
+		std::vector < repo::core::model::RepoRole >
+			getRolesFromDatabase(
+			const RepoToken              *token,
+			const std::string            &database,
+			const uint64_t               &skip = 0,
+			const uint32_t               &limit = 0);
 
 		/**
 		* Return a list of collections within the database

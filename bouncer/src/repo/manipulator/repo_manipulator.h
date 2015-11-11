@@ -250,6 +250,7 @@ namespace repo{
 			* @param cred user credentials in bson form
 			* @param collection name of collection
 			* @param skip specify how many documents to skip
+			* @param limit limits the max amount of documents to retrieve (0 = no limit)
 			* @return list of RepoBSONs representing the documents
 			*/
 			std::vector<repo::core::model::RepoBSON>
@@ -258,7 +259,8 @@ namespace repo{
 				const repo::core::model::RepoBSON*	  cred,
 				const std::string                             &database,
 				const std::string                             &collection,
-				const uint64_t                                &skip=0);
+				const uint64_t                                &skip=0,
+				const uint32_t                                &limit = 0);
 
 			/**
 			* Retrieve documents from a specified collection
@@ -272,18 +274,20 @@ namespace repo{
 			* @param sortField field to sort upon
 			* @param sortOrder 1 ascending, -1 descending
 			* @param skip specify how many documents to skip
+			* @param limit limits the max amount of documents to retrieve (0 = no limit)
 			* @return list of RepoBSONs representing the documents
 			*/
 			std::vector<repo::core::model::RepoBSON>
 				getAllFromCollectionTailable(
 				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON*	  cred,
+				const repo::core::model::RepoBSON             *cred,
 				const std::string                             &database,
 				const std::string                             &collection,
 				const std::list<std::string>				  &fields,
 				const std::string							  &sortField = std::string(),
 				const int									  &sortOrder = -1,
-				const uint64_t                                &skip = 0);
+				const uint64_t                                &skip = 0,
+				const uint32_t                                &limit = 0);
 
 			/**
 			* Get the collection statistics of the given collection
