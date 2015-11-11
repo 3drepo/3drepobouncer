@@ -38,10 +38,19 @@ TransformationReductionOptimizer::~TransformationReductionOptimizer()
 bool TransformationReductionOptimizer::apply(repo::core::model::RepoScene *scene)
 {
 	bool success = false;
+
 	if (scene && scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
 	{
-		for (repo::core::model::RepoNode *node : scene->getAllMeshes())
+		auto meshes = scene->getAllMeshes();
+		size_t count = 0;
+		size_t total = meshes.size();
+		for (repo::core::model::RepoNode *node : meshes)
 		{
+			++count;
+			if (count % 10 == 0)
+			{
+				repoTrace << "Optimizer : processed " << count << " of " << total;
+			}
 			if (node && node->getTypeAsEnum() == repo::core::model::NodeType::MESH)
 			{
 				repo::core::model::MeshNode *mesh = dynamic_cast<repo::core::model::MeshNode*>(node);
@@ -70,21 +79,23 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 	
 	if (transParents.size() == 1)
 	{
-		repo::core::model::TransformationNode *trans = dynamic_cast<repo::core::model::TransformationNode*>(transParents[0]);
+		repo::core::model::TransformationNode *trans = 
+			dynamic_cast<repo::core::model::TransformationNode*>(transParents[0]);
 		if (trans)
 		{
-			repoUUID transUniqueID = trans->getUniqueID();
+			repoUUID parentUniqueID = trans->getUniqueID();
+			repoUUID parentSharedID = trans->getSharedID();
 			repoUUID rootUniqueID = scene->getRoot(repo::core::model::RepoScene::GraphType::DEFAULT)->getUniqueID();
-			bool isRoot = transUniqueID == rootUniqueID;
+			bool isRoot = parentUniqueID == rootUniqueID;
 			bool isIdentity = trans->isIdentity();
 			if (!isRoot)
 			{
-				bool singleMeshChild = scene->getChildrenNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT,
-					trans->getSharedID(), repo::core::model::NodeType::MESH).size() == 1;
+				std::vector<repo::core::model::RepoNode*> children = scene->getChildrenAsNodes(parentSharedID);
+				bool singleMeshChild = scene->filterNodesByType(
+					children, repo::core::model::NodeType::MESH).size() == 1;
 				
-				bool noTransSiblings = (bool) !scene->getChildrenNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT,
-					trans->getSharedID(), repo::core::model::NodeType::TRANSFORMATION).size();
-				
+				bool noTransSiblings = (bool)!scene->filterNodesByType(
+					children, repo::core::model::NodeType::TRANSFORMATION).size() == 1;			
 
 				std::vector<repo::core::model::RepoNode*> granTransParents =
 					scene->getParentNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT,
@@ -102,27 +113,22 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 							" from " << trans->getName() << " to " << granTrans->getName() << std::endl;
 
 						repoUUID granSharedID = granTrans->getSharedID();
-						repoUUID parentSharedID = trans->getSharedID();
 						repoUUID meshSharedID = mesh->getSharedID();
-						repoUUID mesholdID = mesh->getUniqueID();
 						//Disconnect grandparent from parent
 						scene->abandonChild(repo::core::model::RepoScene::GraphType::DEFAULT,
-							granSharedID, parentSharedID, false);
-
-						for (repo::core::model::RepoNode *node : scene->getChildrenAsNodes(trans->getSharedID()))
+							granSharedID, parentSharedID, true, false);
+						for (repo::core::model::RepoNode *node : children)
 						{
 							//Put all children of trans node to granTrans, unless it's a metadata node
 							if (node)
 							{
 
 								scene->abandonChild(repo::core::model::RepoScene::GraphType::DEFAULT,
-									parentSharedID, node->getSharedID(), true);
+									parentSharedID, node, false, true);
 								if (!isIdentity && node->positionDependant()){
 									//Parent is not the identity matrix, we need to reapply the transformation if 
 									//the node is position dependant
 									node->swap(node->cloneAndApplyTransformation(trans->getTransMatrix(false)));
-
-									
 								}
 								else
 								{
@@ -132,9 +138,9 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 
 								//metadata should be assigned under the mesh
 								scene->addInheritance(repo::core::model::RepoScene::GraphType::DEFAULT,
-									node->getTypeAsEnum() == repo::core::model::NodeType::METADATA ? mesh->getUniqueID()
-										: granTrans->getUniqueID(),
-									node->getUniqueID(),
+									node->getTypeAsEnum() == repo::core::model::NodeType::METADATA ? (repo::core::model::RepoNode*)mesh
+									: (repo::core::model::RepoNode*) granTrans,
+									node,
 									false
 									);
 							}
@@ -144,7 +150,7 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 						repo::core::model::MeshNode *newMesh = 
 							new repo::core::model::MeshNode(mesh->cloneAndChangeName(trans->getName(), false));
 	
-						scene->modifyNode(repo::core::model::RepoScene::GraphType::DEFAULT, meshSharedID, newMesh);
+						scene->modifyNode(repo::core::model::RepoScene::GraphType::DEFAULT, mesh, newMesh);
 
 						//remove parent from the scene.
 						scene->removeNode(repo::core::model::RepoScene::GraphType::DEFAULT, parentSharedID);

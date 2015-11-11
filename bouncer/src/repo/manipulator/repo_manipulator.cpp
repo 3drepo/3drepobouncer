@@ -613,7 +613,12 @@ void RepoManipulator::reduceTransformations(
 		//clear stash, it is not guaranteed to be relevant now.
 		//The user needs to regenerate the stash if they want one for this version
 		if (scene->isRevisioned())
+		{
 			scene->clearStash();
+			//FIXME: There is currently no way to regenerate the stash. Give this warning message. 
+			//In the future we may want to autogenerate the stash upon commit.
+			repoWarning << "There is no stash associated with this optimised graph. Viewing may be impossible/slow should you commit this scene.";
+		}
 
 	}
 	else{
