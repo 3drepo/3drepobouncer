@@ -122,7 +122,7 @@ void RepoScene::abandonChild(
 	}
 
 
-	repoGraphInstance g = GraphType::OPTIMIZED == gType ? stashGraph : graph;
+	repoGraphInstance &g = GraphType::OPTIMIZED == gType ? stashGraph : graph;
 	repoUUID childSharedID = child->getSharedID();
 
 	if (modifyParent)
@@ -760,7 +760,7 @@ RepoScene::getChildrenAsNodes(
 	const repoUUID &parent) const
 {
 	std::vector<RepoNode*> children;
-	repoGraphInstance g = GraphType::OPTIMIZED == gType ? stashGraph : graph;
+	const repoGraphInstance &g = GraphType::OPTIMIZED == gType ? stashGraph : graph;
 	auto it = g.parentToChildren.find(parent);
 	return it != g.parentToChildren.end() ? it->second : std::vector<RepoNode*>();
 }

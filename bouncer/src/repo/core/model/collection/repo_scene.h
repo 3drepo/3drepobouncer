@@ -495,7 +495,7 @@ namespace repo{
 						const GraphType &gType, 
 						const repoUUID  &reference) const
 					{
-						repoGraphInstance g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+						const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 						RepoScene* refScene = nullptr;
 
 						std::map<repoUUID, RepoScene*>::const_iterator it = g.referenceToScene.find(reference);
@@ -629,7 +629,7 @@ namespace repo{
 						const GraphType &gType,
 						const repoUUID &sharedID) const
 					{
-						repoGraphInstance g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+						const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 						auto it = g.sharedIDtoUniqueID.find(sharedID);
 
 						if (it == g.sharedIDtoUniqueID.end()) return nullptr;
@@ -647,7 +647,7 @@ namespace repo{
 						const GraphType &gType,
 						const repoUUID &uniqueID) const
 					{
-						repoGraphInstance g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+						const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 						auto it = g.nodesByUniqueID.find(uniqueID);
 
 						if (it == g.nodesByUniqueID.end()) return nullptr;
@@ -660,11 +660,11 @@ namespace repo{
 					* @return returns true if rootNode is not null.
 					*/
 					bool hasRoot(const GraphType &gType = GraphType::DEFAULT) const {
-						repoGraphInstance g = gType == GraphType::OPTIMIZED ? stashGraph : graph; 
+						const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph; 
 						return (bool)g.rootNode;
 					}
 					RepoNode* getRoot(const GraphType &gType = GraphType::DEFAULT) const {
-						repoGraphInstance g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+						const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 						return g.rootNode;
 					}
 
@@ -674,7 +674,7 @@ namespace repo{
 					* @return number of nodes within the graph
 					*/
 					uint32_t getItemsInCurrentGraph(const GraphType &gType = GraphType::DEFAULT) {
-						repoGraphInstance g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+						const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 						return g.nodesByUniqueID.size();
 					}
 
