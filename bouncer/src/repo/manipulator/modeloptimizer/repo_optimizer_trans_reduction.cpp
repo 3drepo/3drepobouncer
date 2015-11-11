@@ -109,9 +109,6 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 
 					if (granTrans)
 					{
-						repoDebug << "Reparenting " << mesh->getName() <<
-							" from " << trans->getName() << " to " << granTrans->getName() << std::endl;
-
 						repoUUID granSharedID = granTrans->getSharedID();
 						repoUUID meshSharedID = mesh->getSharedID();
 						//Disconnect grandparent from parent
@@ -130,11 +127,6 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 									//the node is position dependant
 									node->swap(node->cloneAndApplyTransformation(trans->getTransMatrix(false)));
 								}
-								else
-								{
-									repoTrace << "Trans is identity or it's not relevant for this node (" << node->getType() <<" ), skipping...";
-								}
-
 
 								//metadata should be assigned under the mesh
 								scene->addInheritance(repo::core::model::RepoScene::GraphType::DEFAULT,
@@ -154,7 +146,6 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 
 						//remove parent from the scene.
 						scene->removeNode(repo::core::model::RepoScene::GraphType::DEFAULT, parentSharedID);
-						repoTrace << " old unique ID : " << UUIDtoString(mesholdID) << " new unique ID: " << UUIDtoString(mesh->getUniqueID());
 						delete newMesh;
 					}
 					else

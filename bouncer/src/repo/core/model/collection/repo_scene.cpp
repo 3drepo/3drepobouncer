@@ -44,10 +44,10 @@ RepoScene::RepoScene(
 	const std::string &stashExt,
 	const std::string &rawExt)
 	: AbstractGraph(database, projectName),
-	sceneExt(sanitizeName(sceneExt)),
-	revExt(sanitizeName(revExt)),
-	stashExt(sanitizeName(stashExt)),
-	rawExt(sanitizeName(rawExt)),
+	sceneExt(sanitizeExt(sceneExt)),
+	revExt(sanitizeExt(revExt)),
+	stashExt(sanitizeExt(stashExt)),
+	rawExt(sanitizeExt(rawExt)),
 	headRevision(true),
 	unRevisioned(false),
 	revNode(0)
@@ -75,10 +75,10 @@ RepoScene::RepoScene(
 	const std::string              &stashExt,
 	const std::string              &rawExt)
 	: AbstractGraph("", ""),
-	sceneExt(sanitizeName(sceneExt)),
-	revExt(sanitizeName(revExt)),
-	stashExt(sanitizeName(stashExt)),
-	rawExt(sanitizeName(rawExt)),
+	sceneExt(sanitizeExt(sceneExt)),
+	revExt(sanitizeExt(revExt)),
+	stashExt(sanitizeExt(stashExt)),
+	rawExt(sanitizeExt(rawExt)),
 	headRevision(true),
 	unRevisioned(true),
 	refFiles(refFiles),
@@ -145,24 +145,6 @@ void RepoScene::abandonChild(
 		}
 	}
 
-<<<<<<< Updated upstream
-	repoTrace << "modifyNode = " << modifyNode;
-	if (modifyNode)
-	{
-		//Remove parent from the child node
-		RepoNode *node = getNodeBySharedID(gType, child);
-		if (node)
-		{
-			//We only need a new unique ID if this graph is revisioned,
-			//And the child node in question is not a added/modified node already
-			bool needNewId = !unRevisioned
-				&& (newAdded.find(child) == newAdded.end()
-				|| newModified.find(child) == newModified.end());
-			repoUUID oldUUID = node->getUniqueID();
-			auto nodeWithoutParent = node->cloneAndRemoveParent(parent, needNewId);
-=======
-	
->>>>>>> Stashed changes
 
 	if (modifyChild)
 	{		
