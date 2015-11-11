@@ -230,16 +230,13 @@ namespace repo{
 
 
 		/**
-		* Retrieve documents from a specified collection, returning only the specified fields
+		* Retrieve roles from a specified database
 		* due to limitations of the transfer protocol this might need
 		* to be called multiple times, utilising the skip index to skip
 		* the first n items.
 		* @param token A RepoToken given at authentication
 		* @param database name of database
 		* @param collection name of collection
-		* @param fields fields to get back from the database
-		* @param sortField field to sort upon
-		* @param sortOrder 1 ascending, -1 descending
 		* @param skip specify how many documents to skip (see description above)
 		* @param limit specifiy max. number of documents to retrieve (0 = no limit)
 		* @return list of RepoBSONs representing the documents
