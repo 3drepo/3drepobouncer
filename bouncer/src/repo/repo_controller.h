@@ -238,7 +238,7 @@ namespace repo{
 		* @param database name of database
 		* @param skip specify how many documents to skip (see description above)
 		* @param limit specifiy max. number of documents to retrieve (0 = no limit)
-		* @return list of RepoBSONs representing the documents
+		* @return list of RepoRole representing the roles
 		*/
 		std::vector < repo::core::model::RepoRole >
 			getRolesFromDatabase(
