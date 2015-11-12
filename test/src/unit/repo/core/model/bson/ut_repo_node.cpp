@@ -190,3 +190,55 @@ TEST(RepoNodeTest, CloneAndApplyTransformationTest)
 	EXPECT_NE(transedEmpty.toString(), transedTest.toString());
 }
 
+TEST(RepoNodeTest, CloneAndChangeNameTest)
+{
+	std::string name = "3dRepo";
+	std::string name2 = "Open Source";
+	RepoNode emptyNodeWithName = emptyNode.cloneAndChangeName(name);
+
+	EXPECT_FALSE(emptyNodeWithName.isEmpty());
+	EXPECT_EQ(name, emptyNodeWithName.getStringField(REPO_NODE_LABEL_NAME));
+	//ensure it is a clone, there is no change
+	EXPECT_TRUE(emptyNode.isEmpty());
+
+	RepoNode anotherNameNode = emptyNodeWithName.cloneAndChangeName(name2);
+	EXPECT_EQ(name, emptyNodeWithName.getStringField(REPO_NODE_LABEL_NAME));
+	EXPECT_EQ(name2, anotherNameNode.getStringField(REPO_NODE_LABEL_NAME));
+	EXPECT_NE(emptyNodeWithName.getUniqueID(), anotherNameNode.getUniqueID());
+	EXPECT_EQ(emptyNodeWithName.getUniqueID(), emptyNodeWithName.cloneAndChangeName(name2, false).getUniqueID());
+}
+
+TEST(RepoNodeTest, CloneAndRemoveParentTest)
+{
+
+	RepoNode stillEmpty = emptyNode.cloneAndRemoveParent(generateUUID());
+	EXPECT_TRUE(stillEmpty.isEmpty());
+
+	RepoBSONBuilder builder;
+	builder.append("_id", generateUUID());
+	RepoNode startNode = RepoNode(builder.obj());
+
+	repoUUID singleParent = generateUUID();
+	RepoNode oneParentNode = startNode.cloneAndAddParent(singleParent);
+	//Ensure the field is removed all together if there is no parent left
+	EXPECT_FALSE(oneParentNode.cloneAndRemoveParent(singleParent).hasField(REPO_NODE_LABEL_PARENTS));
+
+	std::vector<repoUUID> parents;
+	size_t nParents = 10;
+	for (int i = 0; i < nParents; ++i)
+	{
+		parents.push_back(generateUUID());
+	}
+
+	RepoNode manyParentsNode = startNode.cloneAndAddParent(parents);
+
+	int indToRemove = std::rand() % nParents;
+
+	RepoNode parentRemovedNode = manyParentsNode.cloneAndRemoveParent(parents[indToRemove]);
+
+	std::vector<repoUUID> parentsOut = parentRemovedNode.getParentIDs();
+	EXPECT_EQ(parentsOut.end(), std::find(parentsOut.begin(), parentsOut.end(), parents[indToRemove]));
+
+	EXPECT_NE(manyParentsNode.getUniqueID(), parentRemovedNode.getUniqueID());
+	EXPECT_EQ(manyParentsNode.getUniqueID(), manyParentsNode.cloneAndRemoveParent(parents[indToRemove], false).getUniqueID());
+}
