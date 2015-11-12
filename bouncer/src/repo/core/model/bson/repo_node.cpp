@@ -24,14 +24,6 @@ using namespace repo::core::model;
 
 RepoNode::RepoNode(RepoBSON bson,
 	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping) : RepoBSON(bson, binMapping){
-	//--------------------------------------------------------------------------
-	// Type
-	if (bson.hasField(REPO_NODE_LABEL_TYPE))
-		type = bson.getField(REPO_NODE_LABEL_TYPE).String();
-	else
-		type = REPO_NODE_TYPE_UNKNOWN; // failsafe
-
-
 	
 	if (binMapping.size() == 0)
 		bigFiles = bson.getFilesMapping();
@@ -50,7 +42,8 @@ RepoNode RepoNode::cloneAndAddParent(
 
 
 	std::vector<repoUUID> currentParents = getParentIDs();
-	currentParents.push_back(parentID);
+	if (std::find(currentParents.begin(), currentParents.end(), parentID) == currentParents.end())
+		currentParents.push_back(parentID);
 	builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);	
 
 	builder.appendElementsUnique(*this);
@@ -67,6 +60,11 @@ RepoNode RepoNode::cloneAndAddParent(
 
 	std::vector<repoUUID> currentParents = getParentIDs();
 	currentParents.insert(currentParents.end(), parentIDs.begin(), parentIDs.end());
+
+	std::sort(currentParents.begin(), currentParents.end());
+	auto last = std::unique(currentParents.begin(), currentParents.end());
+	if (last != currentParents.end())
+		currentParents.erase(last, currentParents.end());
 
 	builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);
 
