@@ -86,12 +86,7 @@ namespace repo {
 					* @return returns a new object with transformation applied.
 					*/
 					virtual RepoNode cloneAndApplyTransformation(
-						const std::vector<float> &matrix) const
-					{
-						//TODO: currently no use case. ignore for now.
-						//"Transforming cameras are currently not supported!"
-						throw std::exception();
-					}
+						const std::vector<float> &matrix) const;
 
 					/**
 					* --------- Convenience functions -----------
