@@ -4,5 +4,8 @@
 #If you really need to overwrite this file, be aware that it will be overwritten if updateSources.py is executed.
 
 
-add_subdirectory(core)
-add_subdirectory(manipulator)
+set(TEST_SOURCES
+	${TEST_SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_optimizer_trans_reduction.cpp
+	CACHE STRING "TEST_SOURCES" FORCE)
+

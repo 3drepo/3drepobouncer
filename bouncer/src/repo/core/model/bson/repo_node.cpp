@@ -31,15 +31,8 @@ RepoNode::RepoNode(RepoBSON bson,
 	else
 		type = REPO_NODE_TYPE_UNKNOWN; // failsafe
 
-	//--------------------------------------------------------------------------
-	// ID
-	uniqueID = bson.getUUIDField(REPO_NODE_LABEL_ID);
 
-	//--------------------------------------------------------------------------
-	// Shared ID
-	if (bson.hasField(REPO_NODE_LABEL_SHARED_ID))
-		sharedID = bson.getUUIDField(REPO_NODE_LABEL_SHARED_ID);
-
+	
 	if (binMapping.size() == 0)
 		bigFiles = bson.getFilesMapping();
 
@@ -78,6 +71,44 @@ RepoNode RepoNode::cloneAndAddParent(
 	builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);
 
 	builder.appendElementsUnique(*this);
+
+	return RepoNode(builder.obj(), bigFiles);
+}
+
+RepoNode RepoNode::cloneAndRemoveParent(
+	const repoUUID &parentID,
+	const bool     &newUniqueID) const
+{
+	RepoBSONBuilder builder;
+	RepoBSONBuilder arrayBuilder;
+
+
+	std::vector<repoUUID> currentParents = getParentIDs();
+	auto parentIdx = std::find(currentParents.begin(), currentParents.end(), parentID);
+	if (parentIdx != currentParents.end())
+	{
+		currentParents.erase(parentIdx);
+		if (newUniqueID)
+		{
+			builder.append(REPO_NODE_LABEL_ID, generateUUID());
+		}
+	}
+	else
+	{
+		repoWarning << "Trying to remove a parent that isn't really a parent!";
+	}
+	if (currentParents.size() > 0)
+	{
+		builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);
+		builder.appendElementsUnique(*this);
+	}
+	else
+	{
+		builder.appendElementsUnique(removeField(REPO_NODE_LABEL_PARENTS));
+	}
+
+
+
 
 	return RepoNode(builder.obj(), bigFiles);
 }

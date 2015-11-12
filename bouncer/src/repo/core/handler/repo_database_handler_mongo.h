@@ -173,6 +173,7 @@ namespace repo{
 				* @param sortField field to sort upon
 				* @param sortOrder 1 ascending, -1 descending
 				* @param skip specify how many documents to skip
+				* @param limit number of maximum items to return (default is 0)
 				* @return list of RepoBSONs representing the documents
 				*/
 				std::vector<repo::core::model::RepoBSON>
@@ -180,6 +181,7 @@ namespace repo{
 					const std::string                             &database,
 					const std::string                             &collection,
 					const uint64_t                                &skip = 0,
+					const uint32_t								  &limit = 0,
 					const std::list<std::string>				  &fields = std::list<std::string>(),
 					const std::string							  &sortField = std::string(),
 					const int									  &sortOrder = -1);

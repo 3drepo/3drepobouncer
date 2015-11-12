@@ -63,7 +63,7 @@ namespace repo{
 					//! A lookup map for the all nodes the graph contains.
 					std::map<repoUUID, RepoNode*> nodesByUniqueID;
 					std::map<repoUUID, repoUUID> sharedIDtoUniqueID; //** mapping of shared ID to Unique ID
-					std::map<repoUUID, std::vector<repoUUID>> parentToChildren; //** mapping of shared id to its children's shared id
+					std::map<repoUUID, std::vector<RepoNode*>> parentToChildren; //** mapping of shared id to its children's shared id
 					std::map<repoUUID, RepoScene*> referenceToScene; //** mapping of reference ID to it's scene graph
 				};
 
@@ -145,6 +145,9 @@ namespace repo{
 					*/
 					~RepoScene();
 
+					static std::vector<RepoNode*> filterNodesByType(
+						const std::vector<RepoNode*> nodes,
+						const NodeType filter);
 
 					/**
 					* Add metadata that has a matching name as the transformation into the scene
@@ -205,6 +208,15 @@ namespace repo{
 						std::string &errMsg);
 
 					/**
+					* Get the branch ID of this scene graph
+					* @return returns the branch ID of this scene
+					*/
+					repoUUID getBranchID() const
+					{
+						return branch;
+					}
+
+					/**
 					* Get name of the database
 					* @return returns name of the database if available
 					*/
@@ -222,6 +234,15 @@ namespace repo{
 						return rawExt;
 					}
 
+					/**
+					* Get the revision ID of this scene graph
+					* @return returns the revision ID of this scene
+					*/
+					repoUUID getRevisionID() const
+					{
+						return revision;
+					}
+
 					static std::vector<std::string> getProjectExtensions()
 					{
 						return collectionsInProject;
@@ -234,6 +255,24 @@ namespace repo{
 					std::string getProjectName() const
 					{
 						return projectName;
+					}
+
+					/**
+					* Return if it the scene is of a head revision
+					* @return returns true if it is head of a branch
+					*/
+					bool isHeadRevision() const
+					{
+						return headRevision;
+					}
+
+					/**
+					* Check if this scene is revisioned
+					* @return returns true if the scene is revisioned
+					*/
+					bool isRevisioned() const
+					{
+						return !unRevisioned;
 					}
 
 					/**
@@ -335,6 +374,37 @@ namespace repo{
 					*/
 
 					/**
+					* Abandon child from parent (disjoint 2 nodes within the scene)
+					* @param parent shared ID of parent
+					* @param child shared ID of child
+					* @param modifyParent modify parent to relay the information (not needed if this node is to be removed)
+					* @param modifyChild modify child node to relay this information (not needed if this node is to be removed)
+					*/
+					void abandonChild(
+						const GraphType &gType,
+						const repoUUID  &parent,
+						const repoUUID  &child,
+						const bool      &modifyParent = true,
+						const bool      &modifyChild= true)
+					{
+						return abandonChild(gType, parent, getNodeBySharedID(gType, child), modifyParent, modifyChild);
+					}
+
+					/**
+					* Abandon child from parent (disjoint 2 nodes within the scene)
+					* @param parent shared ID of parent
+					* @param child node of child
+					* @param modifyNode modify child node to relay this information (not needed if this node is to be removed)
+					*/
+					void abandonChild(
+						const GraphType &gType,
+						const repoUUID  &parent,
+						      RepoNode  *child,
+						const bool      &modifyParent = true,
+						const bool      &modifyChild = true);
+
+
+					/**
 					* Introduce parentship to 2 nodes that already reside within the scene.
 					* If either of the nodes are not found, it does nothing
 					* If they already share an inheritance, it does nothing
@@ -348,6 +418,25 @@ namespace repo{
 						const GraphType &gType,
 						const repoUUID  &parent,
 						const repoUUID  &child,
+						const bool      &noUpdate = false)
+					{
+						addInheritance(gType, getNodeByUniqueID(gType, parent), getNodeByUniqueID(gType, child), noUpdate);
+					}
+
+					/**
+					* Introduce parentship to 2 nodes that already reside within the scene.
+					* If either of the nodes are not found, it does nothing
+					* If they already share an inheritance, it does nothing
+					* @param gType which graph are the nodes
+					* @param parent parent Node
+					* @param child child node
+					* @param noUpdate if true, it will not be treated as
+					*        a change that is needed to be commited (only valid for default graph)
+					*/
+					void addInheritance(
+						const GraphType &gType,
+						const RepoNode  *parent,
+							  RepoNode  *child,
 						const bool      &noUpdate = false);
 
 					/**
@@ -373,13 +462,40 @@ namespace repo{
 						const repoUUID &parent) const;
 
 					/**
+					* Get children nodes of a specified parent that satisfy the filtering condition
+					* @param g graph to retrieve from
+					* @param parent shared UUID of the parent node
+					* @param type the type of nodes to obtain
+					* @ return a vector of pointers to children node (potentially none)
+					*/
+					std::vector<RepoNode*>
+						getChildrenNodesFiltered(
+						const GraphType &g,
+						const repoUUID &parent,
+						const NodeType  &type) const;
+
+
+					/**
+					* Get the list of parent nodes that satisfy the filtering condition
+					* @param gType graphType
+					* @param node node in question
+					* @param type the type of nodes to obtain
+					* @return returns a vector of transformation nodes
+					*/
+					std::vector<RepoNode*> getParentNodesFiltered(
+						const GraphType &gType, 
+						const RepoNode  *node, 
+						const NodeType  &type) const;
+
+
+					/**
 					* Get Scene from reference node
 					*/
 					RepoScene* getSceneFromReference(
 						const GraphType &gType, 
 						const repoUUID  &reference) const
 					{
-						repoGraphInstance g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+						const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 						RepoScene* refScene = nullptr;
 
 						std::map<repoUUID, RepoScene*>::const_iterator it = g.referenceToScene.find(reference);
@@ -434,10 +550,62 @@ namespace repo{
 					}
 
 					/**
+					* Get all transformation nodes within current scene revision
+					* @return a RepoNodeSet of transformations
+					*/
+					RepoNodeSet getAllTransformations(
+						const GraphType &gType = GraphType::DEFAULT) const
+					{
+						return  gType == GraphType::OPTIMIZED ? stashGraph.transformations : graph.transformations;
+					}
+
+					/**
+					* Get all ID of nodes which are added since last revision
+					* @return returns a vector of node IDs
+					*/
+					std::vector<repoUUID> getAddedNodesID() const
+					{
+
+						return std::vector<repoUUID>(newAdded.begin(), newAdded.end());
+					}
+
+
+					/**
 					* Get all ID of nodes which are modified since last revision
 					* @return returns a vector of node IDs
 					*/
-					std::vector<repoUUID> getModifiedNodesID() const;
+					std::vector<repoUUID> getModifiedNodesID() const
+					{
+
+						return std::vector<repoUUID>(newModified.begin(), newModified.end());
+					}
+
+					/**
+					* Get all ID of nodes which are removed since last revision
+					* @return returns a vector of node IDs
+					*/
+					std::vector<repoUUID> getRemovedNodesID() const
+					{
+
+						return std::vector<repoUUID>(newRemoved.begin(), newRemoved.end());
+					}
+
+
+					/**
+					* Get allnodes which are removed since last revision
+					* @return returns a vector of node removed from scene
+					*/
+					std::vector<RepoNode*> getRemovedNodes() const
+					{
+
+						return toRemove;
+					}
+
+
+					size_t getTotalNodesChanged() const
+					{
+						return newRemoved.size() + newAdded.size() + newModified.size();
+					}
 
 					/**
 					* Get the node given the shared ID of this node
@@ -461,12 +629,12 @@ namespace repo{
 						const GraphType &gType,
 						const repoUUID &sharedID) const
 					{
-						repoGraphInstance g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+						const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 						auto it = g.sharedIDtoUniqueID.find(sharedID);
 
 						if (it == g.sharedIDtoUniqueID.end()) return nullptr;
 
-						return g.nodesByUniqueID.at(it->second);
+						return getNodeByUniqueID(gType, it->second);
 					}
 
 					/**
@@ -479,7 +647,7 @@ namespace repo{
 						const GraphType &gType,
 						const repoUUID &uniqueID) const
 					{
-						repoGraphInstance g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+						const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 						auto it = g.nodesByUniqueID.find(uniqueID);
 
 						if (it == g.nodesByUniqueID.end()) return nullptr;
@@ -492,11 +660,11 @@ namespace repo{
 					* @return returns true if rootNode is not null.
 					*/
 					bool hasRoot(const GraphType &gType = GraphType::DEFAULT) const {
-						repoGraphInstance g = gType == GraphType::OPTIMIZED ? stashGraph : graph; 
+						const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph; 
 						return (bool)g.rootNode;
 					}
 					RepoNode* getRoot(const GraphType &gType = GraphType::DEFAULT) const {
-						repoGraphInstance g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+						const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 						return g.rootNode;
 					}
 
@@ -506,7 +674,7 @@ namespace repo{
 					* @return number of nodes within the graph
 					*/
 					uint32_t getItemsInCurrentGraph(const GraphType &gType = GraphType::DEFAULT) {
-						repoGraphInstance g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+						const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 						return g.nodesByUniqueID.size();
 					}
 
@@ -532,7 +700,7 @@ namespace repo{
 					* This will also update revision related information within 
 					* the scene (if necessary)
 					* @param sharedID of the node to modify
-					* @param node modified version node
+					* @param newNode modified version node
 					* @param overwrite if true, overwrite the node with modified version, 
 					*        otherwise just update with its contents (default: false)
 					*/
@@ -540,7 +708,44 @@ namespace repo{
 					void modifyNode(
 						const GraphType                   &gtype,
 						const repoUUID                    &sharedID,
-						RepoNode *node);
+						RepoNode						  *newNode,
+						const bool                        &overwrite = false)
+					{
+						modifyNode(gtype, getNodeBySharedID(sharedID), newNode, overwrite);
+					}
+
+					/**
+					* Modify a node with the information within the new node.
+					* This will also update revision related information within
+					* the scene (if necessary)
+					* @param sharedID of the node to modify
+					* @param node node to change
+					* @param newNode modified node(or modifications)
+					* @param overwrite if true, overwrite the node with modified version,
+					*        otherwise just update with its contents (default: false)
+					*/
+
+					void modifyNode(
+						const GraphType                   &gtype,
+						RepoNode						  *node,                   
+						RepoNode                          *newNode,
+						const bool                       &overwrite = false);
+
+
+
+					/**
+					* Remove a node from the scene
+					* WARNING: Ensure all relationships are patched up,
+					* or you may end up with orphaned nodes/disjoint trees!
+					* This function will not try to patch up any orphaned children
+					* The node will be deleted from memory after this call!
+					* @param gtype graph type 
+					* @param sharedID of the node to remove
+					*/
+					void removeNode(
+						const GraphType                   &gtype,
+						const repoUUID                    &sharedID);
+
 
 					/**
 					* Rotates the model by 270 degrees to compensate the different axis orientation
@@ -726,6 +931,7 @@ namespace repo{
 					std::string stashExt;      /*! extension for optimized graph (Default: stash.3drepo)*/
 					std::string rawExt;      /*! extension for raw file dumps (e.g. original files) (Default: raw)*/
 					std::vector<std::string> refFiles;  //Original Files that created this scene
+					std::vector<RepoNode*> toRemove;
 					repoUUID   revision;
 					repoUUID   branch;
 					std::string commitMsg;

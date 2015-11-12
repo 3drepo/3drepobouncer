@@ -39,6 +39,53 @@ MeshNode::~MeshNode()
 {
 }
 
+RepoNode MeshNode::cloneAndApplyTransformation(
+	const std::vector<float> &matrix) const
+{
+	std::vector<repo_vector_t> *vertices = getVertices();
+
+
+	RepoBSONBuilder builder;
+
+	if (vertices)
+	{ 
+		std::vector<repo_vector_t> resultVertice;
+		resultVertice.reserve(vertices->size());
+		for (const repo_vector_t &v : *vertices)
+		{
+			resultVertice.push_back(multiplyMatVec(matrix, v));
+		}
+
+
+
+		builder.appendBinary(REPO_NODE_MESH_LABEL_VERTICES, resultVertice.data(), resultVertice.size() * sizeof(repo_vector_t));
+
+		delete vertices;
+
+		std::vector < repo_vector_t >*normals = getNormals();
+		if (normals && normals->size())
+		{
+			std::vector<repo_vector_t> resultNormals;
+
+			const std::vector<float> normMat = transposeMat(invertMat(matrix));
+			for (const repo_vector_t &n : *normals) {
+				repo_vector_t transedNormal = multiplyMatVecFake3x3(matrix, n);
+				normalize(transedNormal);
+				resultNormals.push_back(transedNormal);
+			}
+
+			delete normals;
+			builder.appendBinary(REPO_NODE_MESH_LABEL_NORMALS, resultNormals.data(), resultNormals.size() * sizeof(repo_vector_t));
+		}
+	}
+	else
+	{
+		repoError << "Unable to apply transformation: Cannot find vertices within a mesh!";
+	}
+
+	return MeshNode(builder.appendElementsUnique(*this));
+}
+
 MeshNode MeshNode::cloneAndUpdateMeshMapping(
 	const std::vector<repo_mesh_mapping_t> &vec)
 {

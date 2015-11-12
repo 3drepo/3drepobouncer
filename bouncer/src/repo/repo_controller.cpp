@@ -243,7 +243,8 @@ std::vector < repo::core::model::RepoBSON >
 	    const RepoToken      *token,
 		const std::string    &database,
 		const std::string    &collection,
-		const uint64_t       &skip)
+		const uint64_t       &skip,
+		const uint32_t       &limit)
 {
 	repoTrace << "Controller: Fetching BSONs from "
 		<< database << "."  << collection << "....";
@@ -253,7 +254,7 @@ std::vector < repo::core::model::RepoBSON >
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
 		vector = worker->getAllFromCollectionTailable(token->databaseAd, token->credentials,
-			database, collection, skip);
+			database, collection, skip, limit);
 
 		workerPool.push(worker);
 	}
@@ -275,7 +276,8 @@ std::vector < repo::core::model::RepoBSON >
 		const std::list<std::string> &fields,
 		const std::string            &sortField,
 		const int                    &sortOrder,
-		const uint64_t               &skip)
+		const uint64_t               &skip,
+		const uint32_t               &limit)
 {
 	repoTrace << "Controller: Fetching BSONs from "
 		<< database << "." << collection << "....";
@@ -285,7 +287,7 @@ std::vector < repo::core::model::RepoBSON >
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
 		vector = worker->getAllFromCollectionTailable(token->databaseAd, token->credentials,
-			database, collection, fields, sortField, sortOrder, skip);
+			database, collection, fields, sortField, sortOrder, skip, limit);
 
 		workerPool.push(worker);
 	}
@@ -297,6 +299,23 @@ std::vector < repo::core::model::RepoBSON >
 	repoTrace << "Obtained " << vector.size() << " bson objects.";
 
 	return vector;
+}
+
+std::vector < repo::core::model::RepoRole >
+RepoController::getRolesFromDatabase(
+const RepoToken              *token,
+const std::string            &database,
+const uint64_t               &skip,
+const uint32_t               &limit)
+{
+	auto bsons = getAllFromCollectionContinuous(token, database, REPO_SYSTEM_ROLES, skip, limit);
+	std::vector<repo::core::model::RepoRole> roles;
+	for (const auto &b : bsons)
+	{
+		roles.push_back(repo::core::model::RepoRole(b));
+	}
+
+	return roles;
 }
 
 std::list<std::string> RepoController::getDatabases(const RepoToken *token)
@@ -795,4 +814,44 @@ bool RepoController::saveSceneToFile(
 	}
 
 	return success;
+}
+
+void RepoController::reduceTransformations(
+	const RepoToken              *token,
+	repo::core::model::RepoScene *scene)
+{
+	if (token && scene && scene->isRevisioned() && !scene->hasRoot())
+	{
+		//If the unoptimised graph isn't fetched, try to fetch full scene before beginning
+		//This should be safe considering if it has not loaded the unoptimised graph it shouldn't have
+		//any uncommited changes.
+		repoInfo << "Unoptimised scene not loaded, trying loading unoptimised scene...";
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		worker->fetchScene(token->databaseAd, token->credentials, scene);
+		workerPool.push(worker);
+	}
+
+	if (scene && scene->hasRoot())
+	{
+
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		size_t transNodes_pre = scene->getAllTransformations().size();
+		try{
+			worker->reduceTransformations(scene);
+		}
+		catch (const std::exception &e)
+		{
+			repoError << "Caught exception whilst trying to optimise graph : " << e.what();
+
+		}
+
+		workerPool.push(worker);
+		repoInfo << "Optimization completed. Number of transformations has been reduced from "
+			<< transNodes_pre << " to " << scene->getAllTransformations().size();
+
+	}
+	else{
+		repoError << "RepoController::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
+	}
+
 }

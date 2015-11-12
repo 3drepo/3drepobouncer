@@ -393,9 +393,10 @@ std::vector<repo::core::model::RepoBSON>
 		const std::string                             &database,
 		const std::string                             &collection,
 		const uint64_t                                &skip,
+		const uint32_t                                &limit,
 		const std::list<std::string>				  &fields,
 		const std::string							  &sortField,
-		const int									  &sortOrder )
+		const int									  &sortOrder)
 {
 	std::vector<repo::core::model::RepoBSON> bsons;
 	mongo::DBClientBase *worker;
