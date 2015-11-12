@@ -59,6 +59,16 @@ namespace repo {
 				void applyOptimOnMesh(
 					repo::core::model::RepoScene *scene,
 					repo::core::model::MeshNode  *mesh);
+
+				/**
+				* Apply optimization on the camera, given
+				* it satisfies the condition for the optimisation to happen
+				* @param scene scene to optimise
+				* @param camera camera in question
+				*/
+				void applyOptimOnCamera(
+					repo::core::model::RepoScene *scene,
+					repo::core::model::CameraNode  *camera);
 			};
 		}
 	}
