@@ -155,9 +155,7 @@ namespace repo{
 						/*
 						*	------------- Convenience getters --------------
 						*/
-
-						
-
+					
 						/**
 						* Get the name of the node
 						* @return returns name or "" if no name
@@ -180,7 +178,7 @@ namespace repo{
 						*/
 						virtual std::string getType() const
 						{ 
-							return std::string(getStringField(REPO_NODE_LABEL_TYPE)); 
+							return getStringField(REPO_NODE_LABEL_TYPE); 
 						}
 
 						/**
@@ -215,11 +213,26 @@ namespace repo{
 						bool operator<(const RepoNode& other) const
 						{
 							repoUUID sharedID = getSharedID();
+							
 							if (sharedID == other.getSharedID()){
-								return sharedID < other.getSharedID();
+								return getUniqueID() < other.getUniqueID();								
 							}
 							else{
-								return getUniqueID() < other.getUniqueID();
+								return sharedID < other.getSharedID();
+							}
+						}
+
+						//! Returns true if the other node is greater than this one, false otherwise.
+						bool operator>(const RepoNode& other) const
+						{
+							repoUUID sharedID = getSharedID();
+
+							
+							if (sharedID == other.getSharedID()){
+								return getUniqueID() > other.getUniqueID();
+							}
+							else{
+								return sharedID > other.getSharedID();
 							}
 						}
 

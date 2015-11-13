@@ -27,6 +27,46 @@ using namespace repo::core::model;
 static const RepoNode testNode = RepoNode(BSON("ice" << "lolly" << "amount" << 100));
 static const RepoNode emptyNode;
 
+static const std::string typicalName = "3drepo";
+static const repoUUID typicalUniqueID = generateUUID();
+static const repoUUID typicalSharedID = generateUUID();
+
+RepoNode makeTypicalNode()
+{
+	RepoBSONBuilder builder;
+
+	builder << REPO_NODE_LABEL_NAME << typicalName;
+	builder.append(REPO_NODE_LABEL_ID, typicalUniqueID);
+	builder.append(REPO_NODE_LABEL_SHARED_ID, typicalSharedID);
+
+	return RepoNode(builder.obj());
+}
+
+RepoNode makeRandomNode()
+{
+	RepoBSONBuilder builder;
+
+	builder.append(REPO_NODE_LABEL_ID, generateUUID());
+	builder.append(REPO_NODE_LABEL_SHARED_ID, generateUUID());
+
+	return RepoNode(builder.obj());
+}
+
+RepoNode makeNode(const repoUUID &unqiueID, const repoUUID &sharedID, const std::string &name = "")
+{
+	RepoBSONBuilder builder;
+
+	builder.append(REPO_NODE_LABEL_ID, unqiueID);
+	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedID);
+
+	if (!name.empty())
+	{
+		builder << REPO_NODE_LABEL_NAME << name;
+	}
+
+	return RepoNode(builder.obj());
+}
+
 /**
 * Construct from mongo builder and mongo bson should give me the same bson
 */
@@ -398,7 +438,7 @@ TEST(RepoNodeTest, CloneAndAddMergedNodesTest)
 {
 	std::vector<repoUUID> mergeMap;
 
-	size_t size = 2123;
+	size_t size = 100;
 	mergeMap.resize(size);
 
 	RepoNode node = emptyNode.cloneAndAddMergedNodes(mergeMap);
@@ -433,4 +473,157 @@ TEST(RepoNodeTest, CloneAndAddMergedNodesTest)
 	EXPECT_TRUE(clonedNodeWithFiles.hasOversizeFiles());
 	auto mappingOut = clonedNodeWithFiles.getFilesMapping();
 	EXPECT_EQ(2, mappingOut.size());
+}
+
+TEST(RepoNodeTest, GetNameTest)
+{
+	RepoNode node = makeTypicalNode();
+
+	EXPECT_EQ(node.getName(), typicalName);
+	EXPECT_EQ(emptyNode.getName(), "");
+
+}
+
+TEST(RepoNodeTest, GetSharedIDTest)
+{
+	RepoNode node = makeTypicalNode();
+
+	EXPECT_EQ(node.getSharedID(), typicalSharedID);
+	
+	//Ensure no exception is thrown if not found
+	emptyNode.getSharedID();
+
+}
+
+TEST(RepoNodeTest, GetUniqueIDTest)
+{
+	RepoNode node = makeTypicalNode();
+
+	EXPECT_EQ(node.getUniqueID(), typicalUniqueID);
+
+	//Ensure no exception is thrown if not found
+	emptyNode.getUniqueID();
+
+}
+
+TEST(RepoNodeTest, GetTypeTest)
+{
+	EXPECT_EQ("", emptyNode.getType());
+	std::string type = "myType";
+	RepoNode node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << type));
+
+	EXPECT_EQ(type, node.getType());
+
+}
+
+TEST(RepoNodeTest, GetTypeAsEnumTest)
+{
+	EXPECT_EQ(NodeType::UNKNOWN, emptyNode.getTypeAsEnum());
+	RepoNode node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << "nonExistentType"));
+	EXPECT_EQ(NodeType::UNKNOWN, node.getTypeAsEnum());
+
+	//camera
+	node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << REPO_NODE_TYPE_CAMERA));
+	EXPECT_EQ(NodeType::CAMERA, node.getTypeAsEnum());
+
+	//map
+	node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << REPO_NODE_TYPE_MAP));
+	EXPECT_EQ(NodeType::MAP, node.getTypeAsEnum());
+
+	//material
+	node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << REPO_NODE_TYPE_MATERIAL));
+	EXPECT_EQ(NodeType::MATERIAL, node.getTypeAsEnum());
+
+	//mesh
+	node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << REPO_NODE_TYPE_MESH));
+	EXPECT_EQ(NodeType::MESH, node.getTypeAsEnum());
+
+	//reference
+	node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << REPO_NODE_TYPE_REFERENCE));
+	EXPECT_EQ(NodeType::REFERENCE, node.getTypeAsEnum());
+
+	//revision
+	node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << REPO_NODE_TYPE_REVISION));
+	EXPECT_EQ(NodeType::REVISION, node.getTypeAsEnum());
+
+	//texture
+	node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << REPO_NODE_TYPE_TEXTURE));
+	EXPECT_EQ(NodeType::TEXTURE, node.getTypeAsEnum());
+
+	//transformation
+	node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << REPO_NODE_TYPE_TRANSFORMATION));
+	EXPECT_EQ(NodeType::TRANSFORMATION, node.getTypeAsEnum());
+
+
+}
+
+TEST(RepoNodeTest, GetParentsIDTest)
+{
+	EXPECT_EQ(0, emptyNode.getParentIDs().size());
+
+	std::vector<repoUUID> parent;
+	size_t nParents = 10;
+
+	for (size_t i = 0; i < nParents; ++i)
+	{
+		parent.push_back(generateUUID());
+	}
+
+	RepoBSONBuilder builder;
+	builder.appendArray(REPO_NODE_LABEL_PARENTS, parent);
+	RepoNode node = builder.obj();
+
+	std::vector<repoUUID> parentOut = node.getParentIDs();
+
+	ASSERT_EQ(nParents, parentOut.size());
+
+	for (size_t i = 0; i < parentOut.size(); ++i)
+	{
+		EXPECT_EQ(parentOut[i], parent[i]);
+	}
+}
+
+TEST(RepoNodeTest, OperatorEqualTest)
+{
+	RepoNode typicalNode = makeTypicalNode();
+	EXPECT_NE(makeRandomNode(), typicalNode);
+	EXPECT_NE(makeRandomNode(), makeRandomNode());
+	EXPECT_EQ(typicalNode, typicalNode);
+
+	repoUUID sharedID = generateUUID();
+	EXPECT_NE(makeNode(generateUUID(), sharedID), makeNode(generateUUID(), sharedID));
+	EXPECT_NE(makeNode(sharedID, generateUUID()), makeNode(sharedID, generateUUID()));
+}
+
+TEST(RepoNodeTest, OperatorCompareTest)
+{
+	RepoNode typicalNode = makeTypicalNode();
+	EXPECT_FALSE(typicalNode>typicalNode);
+
+	repoUUID sharedID = generateUUID();
+	repoUUID uniqueID = generateUUID();
+	repoUUID sharedID2 = generateUUID();
+	repoUUID uniqueID2 = generateUUID();
+
+	EXPECT_EQ(uniqueID > uniqueID, makeNode(uniqueID, sharedID, "1") > makeNode(uniqueID, sharedID, "1"));
+	EXPECT_EQ(sharedID > sharedID2, makeNode(uniqueID, sharedID, "2") > makeNode(uniqueID, sharedID2, "2"));
+	EXPECT_EQ(sharedID > sharedID2, makeNode(uniqueID, sharedID, "3") > makeNode(uniqueID2, sharedID2, "3"));
+	EXPECT_EQ(sharedID > sharedID2, makeNode(uniqueID2, sharedID, "4") > makeNode(uniqueID, sharedID2, "4"));
+
+	EXPECT_EQ(uniqueID2 < uniqueID, makeNode(uniqueID2, sharedID, "5") < makeNode(uniqueID, sharedID, "5"));
+	EXPECT_EQ(sharedID < sharedID2, makeNode(uniqueID2, sharedID, "6") < makeNode(uniqueID, sharedID2, "6"));
+	EXPECT_EQ(sharedID < sharedID2, makeNode(uniqueID, sharedID, "7") < makeNode(uniqueID, sharedID2, "7"));
+	EXPECT_EQ(sharedID < sharedID2, makeNode(uniqueID, sharedID, "8") < makeNode(uniqueID2, sharedID2, "8"));
+
+	EXPECT_EQ(uniqueID < uniqueID, makeNode(uniqueID, sharedID, "9") < makeNode(uniqueID, sharedID, "9"));
+	EXPECT_EQ(uniqueID < uniqueID2, makeNode(uniqueID, sharedID, "10") < makeNode(uniqueID2, sharedID, "10"));
+	EXPECT_EQ(uniqueID < uniqueID2, makeNode(uniqueID, sharedID, "11") < makeNode(uniqueID2, sharedID, "11"));
+	EXPECT_EQ(uniqueID < uniqueID2, makeNode(uniqueID, sharedID, "12") < makeNode(uniqueID2, sharedID, "12"));
+
+	EXPECT_EQ(uniqueID < uniqueID, makeNode(uniqueID, sharedID, "13") < makeNode(uniqueID, sharedID, "13"));
+	EXPECT_EQ(uniqueID < uniqueID2, makeNode(uniqueID, sharedID, "14") < makeNode(uniqueID2, sharedID, "14"));
+	EXPECT_EQ(uniqueID < uniqueID2, makeNode(uniqueID, sharedID, "15") < makeNode(uniqueID2, sharedID, "15"));
+	EXPECT_EQ(uniqueID < uniqueID2, makeNode(uniqueID, sharedID, "16") < makeNode(uniqueID2, sharedID, "16"));
+
+
 }
