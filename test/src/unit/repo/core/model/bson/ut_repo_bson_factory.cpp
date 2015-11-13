@@ -41,6 +41,7 @@ TEST(RepoBSONTest, MakeRepoProjectSettingsTest)
 	EXPECT_EQ(description, settings.getDescription());
 	EXPECT_EQ(owner, settings.getOwner());
 	EXPECT_EQ(group, settings.getGroup());
+	EXPECT_EQ(type, settings.getType());
 	std::vector<uint8_t> permOct = settings.getPermissionsOctal();
 
 	std::vector<uint8_t> mask = { 4, 2, 1 };
@@ -49,8 +50,150 @@ TEST(RepoBSONTest, MakeRepoProjectSettingsTest)
 	{
 		EXPECT_EQ(perm[i], permOct[i]);
 	}
-
-	EXPECT_EQ(type, settings.getType());
-
 }
 
+TEST(RepoBSONTest, MakeRepoRoleTest)
+{
+	std::string roleName = "repoRole";
+	std::string databaseName = "admin";
+	std::vector<RepoPermission> permissions;
+
+	std::string proDB1 = "database";
+	std::string proName1 = "project1";
+	AccessRight proAccess1 = AccessRight::READ;
+
+	std::string proDB2 = "databaseb";
+	std::string proName2 = "project2";
+	AccessRight proAccess2 = AccessRight::WRITE;
+
+	std::string proDB3 = "databasec";
+	std::string proName3 = "project3";
+	AccessRight proAccess3 = AccessRight::READ_WRITE;
+
+	permissions.push_back({ proDB1, proName1, proAccess1 });
+	permissions.push_back({ proDB2, proName2, proAccess2 });
+	permissions.push_back({ proDB3, proName3, proAccess3 });
+
+	RepoRole role = RepoBSONFactory::makeRepoRole(roleName, databaseName, permissions);
+
+	EXPECT_EQ(databaseName, role.getDatabase());
+	EXPECT_EQ(roleName, role.getName());
+	EXPECT_EQ(0, role.getInheritedRoles().size()); 
+
+	std::vector<RepoPermission> accessRights = role.getProjectAccessRights();
+
+	ASSERT_EQ(permissions.size(), accessRights.size());
+
+	for (int i = 0; i < accessRights.size(); ++i)
+	{
+		//Order is not guaranteed, this is a long winded way to find the same permission again
+		//but it should be fine as it's only 3 members
+		bool found = false; 
+		for (int j = 0; j < permissions.size(); ++j)
+		{
+			found |=  permissions[j].database == accessRights[i].database
+						&& permissions[j].project == accessRights[i].project
+						&& permissions[j].permission == accessRights[i].permission;
+		}
+		EXPECT_TRUE(found);
+	}
+}
+
+TEST(RepoBSONTest, MakeRepoRoleTest2)
+{
+	std::string roleName = "repoRole";
+	std::string databaseName = "admin";
+	std::vector<RepoPrivilege> privileges;
+	std::vector <std::pair<std::string, std::string>> inheritedRoles;
+
+	privileges.push_back({ "db1", "col1", {DBActions::FIND} });
+	privileges.push_back({ "db2", "col2", { DBActions::INSERT, DBActions::CREATE_USER } });
+	privileges.push_back({ "db1", "col2", { DBActions::FIND, DBActions::DROP_ROLE } });
+
+	inheritedRoles.push_back(std::pair < std::string, std::string > {"orange", "superUser"});
+
+	RepoRole role = RepoBSONFactory::_makeRepoRole(roleName, databaseName, privileges, inheritedRoles);
+
+
+	EXPECT_EQ(databaseName, role.getDatabase());
+	EXPECT_EQ(roleName, role.getName());
+	
+	auto inheritedRolesOut = role.getInheritedRoles();
+
+	ASSERT_EQ(inheritedRoles.size(), inheritedRolesOut.size());
+
+	for (int i = 0; i < inheritedRolesOut.size(); ++i)
+	{
+		EXPECT_EQ(inheritedRolesOut[i].first, inheritedRoles[i].first);
+		EXPECT_EQ(inheritedRolesOut[i].second, inheritedRoles[i].second);
+	}
+
+
+	auto privOut = role.getPrivileges();
+
+	ASSERT_EQ(privOut.size(), privileges.size());
+	for (int i = 0; i < privOut.size(); ++i)
+	{
+		EXPECT_EQ(privOut[i].database, privileges[i].database);
+		EXPECT_EQ(privOut[i].collection, privileges[i].collection);
+		EXPECT_EQ(privOut[i].actions.size(), privileges[i].actions.size());
+	}
+}
+
+TEST(RepoBSONTest, MakeRepoUserTest)
+{
+	std::string username = "user";
+	std::string password = "password";
+	std::string firstName = "firstname";
+	std::string lastName = "lastName";
+	std::string email = "email";
+
+	std::list<std::pair<std::string, std::string>>   projects;
+	std::list<std::pair<std::string, std::string>>   roles;
+	std::list<std::pair<std::string, std::string>>   groups;
+	std::list<std::pair<std::string, std::string>>   apiKeys;
+	std::vector<char>                                avatar;
+
+
+	projects.push_back(std::pair<std::string, std::string >("database", "projectName"));
+	roles.push_back(std::pair<std::string, std::string >("database", "roleName"));
+	groups.push_back(std::pair<std::string, std::string >("database", "groupName"));
+	apiKeys.push_back(std::pair<std::string, std::string >("database", "apiKey"));
+	avatar.resize(10);
+
+	RepoUser user = RepoBSONFactory::makeRepoUser(username, password, firstName, lastName, email, projects, roles, groups, apiKeys, avatar);
+
+	EXPECT_EQ(username, user.getUserName());
+	EXPECT_EQ(firstName, user.getFirstName());
+	EXPECT_EQ(lastName, user.getLastName());
+	EXPECT_EQ(email, user.getEmail());
+
+	auto proOut = user.getProjectsList();
+	auto rolesOut = user.getRolesList();
+	auto groupsOut = user.getGroupsList();
+	auto apiOut = user.getAPIKeysList();
+	auto avatarOut = user.getAvatarAsRawData();
+
+
+	EXPECT_EQ(projects.size(), proOut.size());
+	EXPECT_EQ(roles.size(), rolesOut.size());
+	EXPECT_EQ(groups.size(), groupsOut.size());
+	EXPECT_EQ(apiKeys.size(), apiOut.size());
+	EXPECT_EQ(avatar.size(), avatarOut.size());
+
+	EXPECT_EQ(proOut.begin()->first, projects.begin()->first);
+	EXPECT_EQ(proOut.begin()->second, projects.begin()->second);
+
+	EXPECT_EQ(rolesOut.begin()->first, roles.begin()->first);
+	EXPECT_EQ(rolesOut.begin()->second, roles.begin()->second);
+
+	EXPECT_EQ(groupsOut.begin()->first, groups.begin()->first);
+	EXPECT_EQ(groupsOut.begin()->second, groups.begin()->second);
+
+	EXPECT_EQ(apiOut.begin()->first, apiKeys.begin()->first);
+	EXPECT_EQ(apiOut.begin()->second, apiKeys.begin()->second);
+
+	EXPECT_EQ(std::string(avatar.data()), std::string(avatarOut.data()));
+
+
+}
