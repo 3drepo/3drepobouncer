@@ -62,7 +62,7 @@ namespace repo {
 						static RepoProjectSettings makeRepoProjectSettings(
 							const std::string &uniqueProjectName,
 							const std::string &owner,
-							const std::string &group = std::string(),
+							const std::string &group = std::string(), //FIXME: this needs modifying once role is the way of dealing with permissions
 							const std::string &type = REPO_PROJECT_TYPE_ARCHITECTURAL,
 							const std::string &description = std::string(),
 							const uint8_t     &ownerPermissionsOctal = 7,
