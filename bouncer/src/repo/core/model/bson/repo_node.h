@@ -103,7 +103,7 @@ namespace repo{
 						virtual RepoNode cloneAndApplyTransformation(
 							const std::vector<float> &matrix) const
 						{
-							return RepoNode(copy());
+							return RepoNode(copy(), bigFiles);
 						}
 
 						/**
