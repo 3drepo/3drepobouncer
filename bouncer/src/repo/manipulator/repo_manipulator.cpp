@@ -194,19 +194,30 @@ void RepoManipulator::compareScenesByIDs(
 	std::vector<repoUUID>              &deleted,
 	std::vector<repoUUID>              &modified)
 {
-	diff::DiffBySharedID diff(base, compare);
-	std::string msg;
+	diff::AbstractDiff *diff =  new diff::DiffBySharedID(base, compare);
 
-	if (diff.isOk(msg))
+	if (diff)
 	{
-		added = diff.getNodesAdded();
-		modified = diff.getNodesModified();
-		deleted = diff.getNodesDeleted();
+		std::string msg;
+
+		if (diff->isOk(msg))
+		{
+			added = diff->getNodesAdded();
+			modified = diff->getNodesModified();
+			deleted = diff->getNodesDeleted();
+		}
+		else
+		{
+			repoError << "Error on scene comparator: " << msg;
+		}
+
+		delete diff;
 	}
 	else
 	{
-		repoError << "Error on scene comparator: " << msg;
+		repoError << "Failed to instantiate 3D Diff comparator - out of memory?";
 	}
+	
 }
 
 uint64_t RepoManipulator::countItemsInCollection(
