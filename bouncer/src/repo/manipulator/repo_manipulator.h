@@ -93,6 +93,23 @@ namespace repo{
 				repo::core::model::RepoScene           *scene,
 				const std::string                   &owner = "");
 
+			/**
+			* Compare 2 scenes via IDs.
+			* @param base base scene to compare against
+			* @param compare scene to compare base scene against
+			* @param added (returning parameter) vector where shared IDs
+			*				of nodes added will be placed
+			* @param deleted (returning parameter) vector where shared IDs
+			*				of nodes deleted will be placed
+			* @param modified (returning parameter) vector where shared IDs
+			*				of nodes modified will be placed
+			*/
+			void compareScenesByIDs(
+				repo::core::model::RepoScene       *base,
+				repo::core::model::RepoScene       *compare,
+				std::vector<repoUUID>              &added,
+				std::vector<repoUUID>              &deleted,
+				std::vector<repoUUID>              &modified);
 
 			/**
 			* Create a bson object storing user credentials

@@ -24,9 +24,11 @@
 #include "repo_manipulator.h"
 #include "../lib/repo_log.h"
 #include "../core/model/bson/repo_bson_factory.h"
+#include "diff/repo_diff_sharedid.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
+
 
 using namespace repo::manipulator;
 
@@ -183,6 +185,28 @@ void RepoManipulator::commitScene(
 	}
 
 
+}
+
+void RepoManipulator::compareScenesByIDs(
+	repo::core::model::RepoScene       *base,
+	repo::core::model::RepoScene       *compare,
+	std::vector<repoUUID>              &added,
+	std::vector<repoUUID>              &deleted,
+	std::vector<repoUUID>              &modified)
+{
+	diff::DiffBySharedID diff(base, compare);
+	std::string msg;
+
+	if (diff.isOk(msg))
+	{
+		added = diff.getNodesAdded();
+		modified = diff.getNodesModified();
+		deleted = diff.getNodesDeleted();
+	}
+	else
+	{
+		repoError << "Error on scene comparator: " << msg;
+	}
 }
 
 uint64_t RepoManipulator::countItemsInCollection(
