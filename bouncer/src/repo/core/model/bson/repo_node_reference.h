@@ -66,10 +66,14 @@ namespace repo {
 
 					/**
 					* Retrieve the UUID of the revision this reference node is referring to
+					* if it doesn't exist, return master branch id
 					* @return returns the UUID for this reference
 					*/
 					repoUUID getRevisionID(){
-						return getUUIDField(REPO_NODE_REFERENCE_LABEL_REVISION_ID);
+						if(hasField(REPO_NODE_REFERENCE_LABEL_REVISION_ID))
+							return getUUIDField(REPO_NODE_REFERENCE_LABEL_REVISION_ID);
+						else
+							return stringToUUID(REPO_HISTORY_MASTER_BRANCH);
 					}
 
 					/**

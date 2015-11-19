@@ -540,6 +540,17 @@ namespace repo{
 					}
 
 					/**
+					* Get all reference nodes within current scene revision
+					* @return a RepoNodeSet of references
+					*/
+					RepoNodeSet getAllReferences(
+						const GraphType &gType = GraphType::DEFAULT) const
+					{
+						return  gType == GraphType::OPTIMIZED ? stashGraph.references : graph.references;
+					}
+
+
+					/**
 					* Get all texture nodes within current scene revision
 					* @return a RepoNodeSet of textures
 					*/
