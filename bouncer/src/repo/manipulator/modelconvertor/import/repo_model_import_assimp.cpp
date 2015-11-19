@@ -887,14 +887,9 @@ repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 		repoTrace << "Converting AiScene to Optimised RepoScene";
 		convertAiSceneToRepoScene(optMap, scene);
 
-		assimp_map combinedMap;
-
-		combinedMap.insert(orgMap.begin(), orgMap.end());
-		combinedMap.insert(optMap.begin(), optMap.end());
-
 		repo::core::model::RepoNode *stashRoot =  scene->getRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED);
 
-		if (!populateOptimMaps(stashRoot, scene, combinedMap, optMap))
+		if (!populateOptimMaps(stashRoot, scene, orgMap, optMap))
 		{
 			//populateOptimMaps is false so stash is invalid. clear it out.
 			repoError << "Stash invalid ... clearing.";
@@ -1035,7 +1030,7 @@ void AssimpModelImport::loadTextures(std::string dirPath){
 bool AssimpModelImport::populateOptimMaps(
 	repo::core::model::RepoNode		   *current,
 	repo::core::model::RepoScene       *scene,
-	const assimp_map                   &combinedMap,
+	const assimp_map                   &orgMap,
 	const assimp_map                   &optMap)
 {
 	std::map<repoUUID, std::vector<repo_mesh_mapping_t>> meshMapping;
@@ -1065,9 +1060,9 @@ bool AssimpModelImport::populateOptimMaps(
 			for (uintptr_t mergedNode : ai_map->getMergeMap())
 			{
 				// Find the corresponding abstract node for an assimp
-				assimp_map::left_const_iterator nit = combinedMap.left.find(mergedNode);
+				assimp_map::left_const_iterator nit = orgMap.left.find(mergedNode);
 
-				if (nit != combinedMap.left.end())
+				if (nit != orgMap.left.end())
 				{
 					repo::core::model::RepoNode *node = nit->second;
 					repoUUID mergedUUID = node->getUniqueID();
@@ -1098,9 +1093,9 @@ bool AssimpModelImport::populateOptimMaps(
 			for (const auto &map : ai_map->getMeshMaps())
 			{
 				// First find the mesh that all the meshes were merged into
-				assimp_map::left_const_iterator mergedMeshIT = combinedMap.left.find(map.first);
+				assimp_map::left_const_iterator mergedMeshIT = optMap.left.find(map.first);
 
-				if (mergedMeshIT != combinedMap.left.end())
+				if (mergedMeshIT != optMap.left.end())
 				{
 					boost::uuids::uuid parentUUID = mergedMeshIT->second->getUniqueID();
 
@@ -1108,16 +1103,16 @@ bool AssimpModelImport::populateOptimMaps(
 					{
 						// Search for the Unique ID for this child
 
-						assimp_map::left_const_iterator childIT = combinedMap.left.find(mMap.childMesh);
+						assimp_map::left_const_iterator childIT = orgMap.left.find(mMap.childMesh);
 
-						if (childIT != combinedMap.left.end())
+						if (childIT != orgMap.left.end())
 						{
 							repoUUID childUUID = childIT->second->getUniqueID();
 
 							// Now find the UUID of the material
 							assimp_map::left_const_iterator materialIT = optMap.left.find(mMap.material);
 
-							if (materialIT != combinedMap.left.end())
+							if (materialIT != orgMap.left.end())
 							{
 								repoUUID materialUUID = materialIT->second->getUniqueID();
 
@@ -1137,7 +1132,7 @@ bool AssimpModelImport::populateOptimMaps(
 
 							}
 							else {
-								repoError << "populateOptimMaps: Unable to find material  node from combinedMap!";
+								repoError << "populateOptimMaps: Unable to find material node from orgMap!";
 								return false;
 							}
 						}
@@ -1148,7 +1143,7 @@ bool AssimpModelImport::populateOptimMaps(
 					}
 				}
 				else {
-					repoError << "populateOptimMaps: Unable to find mesh from combinedMap!";
+					repoError << "populateOptimMaps: Unable to find mesh from orgMap!";
 					return false;
 				}
 			}
@@ -1171,7 +1166,7 @@ bool AssimpModelImport::populateOptimMaps(
 	// Register child transformations as children if any
 	for (repo::core::model::RepoNode *child : children)
 	{
-		if (!populateOptimMaps(child, scene, combinedMap, optMap)) return false;
+		if (!populateOptimMaps(child, scene, orgMap, optMap)) return false;
 
 		// If the child is a mesh then we may need to
 		// transfer the optimization map to it.
