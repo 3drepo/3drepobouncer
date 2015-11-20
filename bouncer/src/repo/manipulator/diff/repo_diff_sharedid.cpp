@@ -55,7 +55,8 @@ bool DiffBySharedID::compare(
 				if (baseNode->getUniqueID() != compNode->getUniqueID())
 				{
 					//modified
-					modified.push_back(sharedID);
+					compRes.modified.push_back(sharedID);
+					baseRes.modified.push_back(sharedID);
 				}
 
 				compIDs.erase(sharedID);
@@ -63,14 +64,14 @@ bool DiffBySharedID::compare(
 			else
 			{
 				//doesn't exist - add to deleted
-				deleted.push_back(sharedID);
+				baseRes.added.push_back(sharedID);
 			}			
 		}
 
 		//any remaining items within compIDs doesn't exist in base.
-		added.insert(added.end(), compIDs.begin(), compIDs.end());
-		repoInfo << "Comparison completed: #nodes added: " << added.size() << " deleted: " 
-			<< deleted.size() << " modified: " << modified.size();
+		compRes.added.insert(compRes.added.end(), compIDs.begin(), compIDs.end());
+		repoInfo << "Comparison completed: #nodes added: " << compRes.added.size() << " deleted: "
+			<< baseRes.added.size() << " modified: " << baseRes.modified.size();
 		res = true;
 	}
 	else

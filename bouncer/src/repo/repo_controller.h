@@ -36,6 +36,7 @@
 #include "lib/repo_log.h"
 #include "lib/repo_listener_abstract.h"
 #include "manipulator/repo_manipulator.h"
+#include "manipulator/diff/repo_diff_abstract.h"
 #include "core/model/collection//repo_scene.h"
 
 
@@ -599,20 +600,15 @@ namespace repo{
 		*		(if not required, a nullptr can be passed in)
 		* @param base base scene to compare against
 		* @param compare scene to compare base scene against
-		* @param added (returning parameter) vector where shared IDs 
-		*				of nodes added will be placed
-		* @param deleted (returning parameter) vector where shared IDs
-		*				of nodes deleted will be placed
-		* @param modified (returning parameter) vector where shared IDs
-		*				of nodes modified will be placed
+		* @param baseResults Diff results in the perspective of base
+		* @param compResults Diff results in the perspective of compare
 		*/
 		void compareScenesByIDs(
-			const RepoToken                    *token,
-			repo::core::model::RepoScene       *base,
-			repo::core::model::RepoScene       *compare,
-			std::vector<repoUUID>              &added,
-			std::vector<repoUUID>              &deleted,
-			std::vector<repoUUID>              &modified
+			const RepoToken                     *token,
+			repo::core::model::RepoScene        *base,
+			repo::core::model::RepoScene        *compare,
+			repo::manipulator::diff::DiffResult &baseResults,
+			repo::manipulator::diff::DiffResult &compResults
 			);
 
 	private:

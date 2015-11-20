@@ -860,9 +860,8 @@ void RepoController::compareScenesByIDs(
 	const RepoToken                    *token,
 	repo::core::model::RepoScene       *base,
 	repo::core::model::RepoScene       *compare,
-	std::vector<repoUUID>              &added,
-	std::vector<repoUUID>              &deleted,
-	std::vector<repoUUID>              &modified
+	repo::manipulator::diff::DiffResult &baseResults,
+	repo::manipulator::diff::DiffResult &compResults
 	)
 {
 	if (token && base && compare)
@@ -891,7 +890,7 @@ void RepoController::compareScenesByIDs(
 	{
 		repoInfo << "Comparing scenes...";
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		worker->compareScenesByIDs(base, compare, added, deleted, modified);
+		worker->compareScenesByIDs(base, compare, baseResults, compResults);
 		workerPool.push(worker);
 	}
 	else{

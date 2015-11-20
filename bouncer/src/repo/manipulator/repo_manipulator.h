@@ -24,6 +24,7 @@
 #include "../core/handler/repo_database_handler_mongo.h"
 #include "../core/model/collection/repo_scene.h"
 #include "modelconvertor/import/repo_model_import_assimp.h"
+#include "diff/repo_diff_abstract.h"
 
 
 namespace repo{
@@ -97,19 +98,14 @@ namespace repo{
 			* Compare 2 scenes via IDs.
 			* @param base base scene to compare against
 			* @param compare scene to compare base scene against
-			* @param added (returning parameter) vector where shared IDs
-			*				of nodes added will be placed
-			* @param deleted (returning parameter) vector where shared IDs
-			*				of nodes deleted will be placed
-			* @param modified (returning parameter) vector where shared IDs
-			*				of nodes modified will be placed
+			* @param baseResults Diff results in the perspective of base
+			* @param compResults Diff results in the perspective of compare
 			*/
 			void compareScenesByIDs(
 				repo::core::model::RepoScene       *base,
 				repo::core::model::RepoScene       *compare,
-				std::vector<repoUUID>              &added,
-				std::vector<repoUUID>              &deleted,
-				std::vector<repoUUID>              &modified);
+				diff::DiffResult                   &baseResults,
+				diff::DiffResult                   &compResults);
 
 			/**
 			* Create a bson object storing user credentials

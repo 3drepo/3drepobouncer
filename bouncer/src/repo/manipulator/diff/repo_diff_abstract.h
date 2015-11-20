@@ -23,6 +23,12 @@
 namespace repo{
 	namespace manipulator{
 		namespace diff{
+
+			struct DiffResult{
+				std::vector<repoUUID> added; //nodes that does not exist on the other model
+				std::vector<repoUUID> modified; //nodes that exist on the other model but it is modified.
+			};
+
 			class AbstractDiff
 			{
 			public:
@@ -37,30 +43,21 @@ namespace repo{
 				virtual ~AbstractDiff();
 
 				/**
-				* Return the sharedID of nodes which are added into the scene
-				* @return return a vector of sharedIDs of nodes added
+				* Obtain the diff result in the perspective of the base scene
+				* @return return the diff result for base scene
 				*/
-				std::vector<repoUUID> getNodesAdded()
+				DiffResult getDiffResultForBase()
 				{
-					return added;
+					return baseRes;
 				}
-
+				
 				/**
-				* Return the sharedID of nodes which are deleted from the scene
-				* @return return a vector of sharedIDs of nodes deleted
+				* Obtain the diff result in the perspective of the compare scene
+				* @return return the diff result for compare scene
 				*/
-				std::vector<repoUUID> getNodesDeleted()
+				DiffResult getDiffResultForComp()
 				{
-					return deleted;
-				}
-
-				/**
-				* Return the sharedID of nodes which are modified in scene
-				* @return return a vector of sharedIDs of nodes modified
-				*/
-				std::vector<repoUUID> getNodesModified()
-				{
-					return modified;
+					return compRes;
 				}
 
 				/**
@@ -74,7 +71,7 @@ namespace repo{
 			protected:
 				const repo::core::model::RepoScene *baseScene;
 				const repo::core::model::RepoScene *compareScene;
-				std::vector<repoUUID> deleted, modified, added;
+				DiffResult baseRes, compRes;
 
 			};
 		}

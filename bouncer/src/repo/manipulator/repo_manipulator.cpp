@@ -190,9 +190,8 @@ void RepoManipulator::commitScene(
 void RepoManipulator::compareScenesByIDs(
 	repo::core::model::RepoScene       *base,
 	repo::core::model::RepoScene       *compare,
-	std::vector<repoUUID>              &added,
-	std::vector<repoUUID>              &deleted,
-	std::vector<repoUUID>              &modified)
+	repo::manipulator::diff::DiffResult &baseResults,
+	repo::manipulator::diff::DiffResult &compResults)
 {
 	diff::AbstractDiff *diff =  new diff::DiffBySharedID(base, compare);
 
@@ -202,9 +201,8 @@ void RepoManipulator::compareScenesByIDs(
 
 		if (diff->isOk(msg))
 		{
-			added = diff->getNodesAdded();
-			modified = diff->getNodesModified();
-			deleted = diff->getNodesDeleted();
+			baseResults = diff->getDiffResultForBase();
+			compResults = diff->getDiffResultForComp();
 		}
 		else
 		{
