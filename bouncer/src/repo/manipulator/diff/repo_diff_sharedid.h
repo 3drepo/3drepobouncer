@@ -58,7 +58,7 @@ namespace repo{
 				/**
 				* Get the difference of the 2 graphs as a scene
 				*/
-				bool DiffBySharedID::compare(
+				bool compare(
 					std::string &msg);
 
 
