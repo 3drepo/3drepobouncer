@@ -855,3 +855,45 @@ void RepoController::reduceTransformations(
 	}
 
 }
+
+void RepoController::compareScenesByIDs(
+	const RepoToken                    *token,
+	repo::core::model::RepoScene       *base,
+	repo::core::model::RepoScene       *compare,
+	repo::manipulator::diff::DiffResult &baseResults,
+	repo::manipulator::diff::DiffResult &compResults
+	)
+{
+	if (token && base && compare)
+	{
+		//If the unoptimised graph isn't fetched, try to fetch full scene before beginning
+		//This should be safe considering if it has not loaded the unoptimised graph it shouldn't have
+		//any uncommited changes.
+		if (base->isRevisioned() && !base->hasRoot())
+		{
+			repoInfo << "Unoptimised base scene not loaded, trying loading unoptimised scene...";
+			manipulator::RepoManipulator* worker = workerPool.pop();
+			worker->fetchScene(token->databaseAd, token->credentials, base);
+			workerPool.push(worker);
+		}
+
+		if (compare->isRevisioned() && !compare->hasRoot())
+		{
+			repoInfo << "Unoptimised compare scene not loaded, trying loading unoptimised scene...";
+			manipulator::RepoManipulator* worker = workerPool.pop();
+			worker->fetchScene(token->databaseAd, token->credentials, compare);
+			workerPool.push(worker);
+		}
+	}
+
+	if (base && base->hasRoot() && compare && compare->hasRoot())
+	{
+		repoInfo << "Comparing scenes...";
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		worker->compareScenesByIDs(base, compare, baseResults, compResults);
+		workerPool.push(worker);
+	}
+	else{
+		repoError << "RepoController::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
+	}
+}

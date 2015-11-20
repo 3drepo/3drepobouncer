@@ -36,6 +36,7 @@
 #include "lib/repo_log.h"
 #include "lib/repo_listener_abstract.h"
 #include "manipulator/repo_manipulator.h"
+#include "manipulator/diff/repo_diff_abstract.h"
 #include "core/model/collection//repo_scene.h"
 
 
@@ -588,6 +589,27 @@ namespace repo{
 		void reduceTransformations(
 			const RepoToken              *token,
 			repo::core::model::RepoScene *scene);
+
+		/*
+		*	------------- 3D Diff --------------
+		*/
+
+		/**
+		* Compare 2 scenes via IDs.
+		* @param token to load full scene from database if required 
+		*		(if not required, a nullptr can be passed in)
+		* @param base base scene to compare against
+		* @param compare scene to compare base scene against
+		* @param baseResults Diff results in the perspective of base
+		* @param compResults Diff results in the perspective of compare
+		*/
+		void compareScenesByIDs(
+			const RepoToken                     *token,
+			repo::core::model::RepoScene        *base,
+			repo::core::model::RepoScene        *compare,
+			repo::manipulator::diff::DiffResult &baseResults,
+			repo::manipulator::diff::DiffResult &compResults
+			);
 
 	private:
 

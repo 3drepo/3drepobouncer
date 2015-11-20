@@ -580,6 +580,16 @@ namespace repo{
 						return std::vector<repoUUID>(newAdded.begin(), newAdded.end());
 					}
 
+					std::set<repoUUID> getAllSharedIDs() const
+					{
+						std::set<repoUUID> sharedIDs;
+
+						boost::copy(
+							graph.sharedIDtoUniqueID | boost::adaptors::map_keys,
+							std::inserter(sharedIDs, sharedIDs.begin()));
+
+						return sharedIDs;
+					}
 
 					/**
 					* Get all ID of nodes which are modified since last revision
