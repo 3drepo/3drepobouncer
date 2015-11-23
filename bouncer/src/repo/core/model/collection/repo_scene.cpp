@@ -473,7 +473,6 @@ bool RepoScene::commit(
 			if (success &= commitSceneChanges(handler, errMsg))
 			{
 
-				//FIXME: remove hard coded ".issues" and use extIssues or something
 				handler->createCollection(databaseName, projectName + "." + issuesExt);
 				
 				//Succeed in commiting everything.
