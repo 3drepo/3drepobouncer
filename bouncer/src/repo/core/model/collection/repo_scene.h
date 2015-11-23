@@ -98,7 +98,8 @@ namespace repo{
 						const std::string                                  &sceneExt = REPO_COLLECTION_SCENE,
 						const std::string                                  &revExt = REPO_COLLECTION_HISTORY,
 						const std::string                                  &stashExt = REPO_COLLECTION_REPOSTASH,
-						const std::string                                  &rawExt = REPO_COLLECTION_RAW);
+						const std::string                                  &rawExt = REPO_COLLECTION_RAW,
+						const std::string                                  &issuesExt = REPO_COLLECTION_ISSUES);
 
 					/**
 					* Used for constructing scene graphs from model convertors
@@ -135,7 +136,8 @@ namespace repo{
 						const std::string              &sceneExt = REPO_COLLECTION_SCENE,
 						const std::string              &revExt = REPO_COLLECTION_HISTORY,
 						const std::string              &stashExt = REPO_COLLECTION_REPOSTASH,
-						const std::string              &rawExt = REPO_COLLECTION_RAW);
+						const std::string              &rawExt = REPO_COLLECTION_RAW,
+						const std::string              &issuesExt = REPO_COLLECTION_ISSUES);
 
 					/**
 					* Default Deconstructor
@@ -951,6 +953,7 @@ namespace repo{
 					std::string revExt;      /*! extension for history graph (Default: history)*/
 					std::string stashExt;      /*! extension for optimized graph (Default: stash.3drepo)*/
 					std::string rawExt;      /*! extension for raw file dumps (e.g. original files) (Default: raw)*/
+					std::string issuesExt;      /*! extension for issues*/
 					std::vector<std::string> refFiles;  //Original Files that created this scene
 					std::vector<RepoNode*> toRemove;
 					repoUUID   revision;
