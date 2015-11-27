@@ -4,12 +4,15 @@
 #If you really need to overwrite this file, be aware that it will be overwritten if updateSources.py is executed.
 
 
-set(TEST_SOURCES
-	${TEST_SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_builder.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_factory.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_role.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node.cpp
-	CACHE STRING "TEST_SOURCES" FORCE)
+set(SOURCES
+	${SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_diff_abstract.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_diff_sharedid.cpp
+	CACHE STRING "SOURCES" FORCE)
+
+set(HEADERS
+	${HEADERS}
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_diff_abstract.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_diff_sharedid.h
+	CACHE STRING "HEADERS" FORCE)
 

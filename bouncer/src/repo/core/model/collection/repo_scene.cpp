@@ -42,12 +42,14 @@ RepoScene::RepoScene(
 	const std::string &sceneExt,
 	const std::string &revExt,
 	const std::string &stashExt,
-	const std::string &rawExt)
+	const std::string &rawExt,
+	const std::string &issuesExt)
 	: AbstractGraph(database, projectName),
 	sceneExt(sanitizeExt(sceneExt)),
 	revExt(sanitizeExt(revExt)),
 	stashExt(sanitizeExt(stashExt)),
 	rawExt(sanitizeExt(rawExt)),
+	issuesExt(sanitizeExt(issuesExt)),
 	headRevision(true),
 	unRevisioned(false),
 	revNode(0)
@@ -73,12 +75,15 @@ RepoScene::RepoScene(
 	const std::string              &sceneExt,
 	const std::string              &revExt,
 	const std::string              &stashExt,
-	const std::string              &rawExt)
+	const std::string              &rawExt,
+	const std::string              &issuesExt
+	)
 	: AbstractGraph("", ""),
 	sceneExt(sanitizeExt(sceneExt)),
 	revExt(sanitizeExt(revExt)),
 	stashExt(sanitizeExt(stashExt)),
 	rawExt(sanitizeExt(rawExt)),
+	issuesExt(sanitizeExt(issuesExt)),
 	headRevision(true),
 	unRevisioned(true),
 	refFiles(refFiles),
@@ -467,6 +472,9 @@ bool RepoScene::commit(
 			//commited the revision node, commit the modification on the scene
 			if (success &= commitSceneChanges(handler, errMsg))
 			{
+
+				handler->createCollection(databaseName, projectName + "." + issuesExt);
+				
 				//Succeed in commiting everything.
 				//Update Revision Node and reset state.
 

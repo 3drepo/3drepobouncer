@@ -264,6 +264,13 @@ namespace repo{
 
 
 				/**
+				* Create a collection with the name specified
+				* @param database name of the database
+				* @param name name of the collection
+				*/
+				virtual void createCollection(const std::string &database, const std::string &name);
+
+				/**
 				* Remove a collection from the database
 				* @param database the database the collection resides in
 				* @param collection name of the collection to drop

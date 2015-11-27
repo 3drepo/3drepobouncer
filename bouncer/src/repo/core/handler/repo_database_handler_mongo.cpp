@@ -123,6 +123,23 @@ mongo::BSONObj* MongoDatabaseHandler::createAuthBSON(
 		
 }
 
+void MongoDatabaseHandler::createCollection(const std::string &database, const std::string &name)
+{
+	mongo::DBClientBase *worker;
+	try{
+
+		worker = workerPool->getWorker();
+		worker->createCollection(database + "." + name);
+	}
+	catch (mongo::DBException& e)
+	{
+		repoError << "Failed to create collection ("
+			<< database << "." << name << ":" << e.what();
+	}
+
+	workerPool->returnWorker(worker);
+}
+
 repo::core::model::RepoBSON MongoDatabaseHandler::createRepoBSON(
 	mongo::DBClientBase *worker,
 	const std::string &database,

@@ -24,6 +24,7 @@
 #include "../core/handler/repo_database_handler_mongo.h"
 #include "../core/model/collection/repo_scene.h"
 #include "modelconvertor/import/repo_model_import_assimp.h"
+#include "diff/repo_diff_abstract.h"
 
 
 namespace repo{
@@ -93,6 +94,18 @@ namespace repo{
 				repo::core::model::RepoScene           *scene,
 				const std::string                   &owner = "");
 
+			/**
+			* Compare 2 scenes via IDs.
+			* @param base base scene to compare against
+			* @param compare scene to compare base scene against
+			* @param baseResults Diff results in the perspective of base
+			* @param compResults Diff results in the perspective of compare
+			*/
+			void compareScenesByIDs(
+				repo::core::model::RepoScene       *base,
+				repo::core::model::RepoScene       *compare,
+				diff::DiffResult                   &baseResults,
+				diff::DiffResult                   &compResults);
 
 			/**
 			* Create a bson object storing user credentials

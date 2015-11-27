@@ -24,9 +24,11 @@
 #include "repo_manipulator.h"
 #include "../lib/repo_log.h"
 #include "../core/model/bson/repo_bson_factory.h"
+#include "diff/repo_diff_sharedid.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
+
 
 using namespace repo::manipulator;
 
@@ -183,6 +185,37 @@ void RepoManipulator::commitScene(
 	}
 
 
+}
+
+void RepoManipulator::compareScenesByIDs(
+	repo::core::model::RepoScene       *base,
+	repo::core::model::RepoScene       *compare,
+	repo::manipulator::diff::DiffResult &baseResults,
+	repo::manipulator::diff::DiffResult &compResults)
+{
+	diff::AbstractDiff *diff =  new diff::DiffBySharedID(base, compare);
+
+	if (diff)
+	{
+		std::string msg;
+
+		if (diff->isOk(msg))
+		{
+			baseResults = diff->getDiffResultForBase();
+			compResults = diff->getDiffResultForComp();
+		}
+		else
+		{
+			repoError << "Error on scene comparator: " << msg;
+		}
+
+		delete diff;
+	}
+	else
+	{
+		repoError << "Failed to instantiate 3D Diff comparator - out of memory?";
+	}
+	
 }
 
 uint64_t RepoManipulator::countItemsInCollection(

@@ -4,6 +4,7 @@
 #If you really need to overwrite this file, be aware that it will be overwritten if updateSources.py is executed.
 
 
+add_subdirectory(diff)
 add_subdirectory(modelconvertor)
 add_subdirectory(modeloptimizer)
 set(SOURCES

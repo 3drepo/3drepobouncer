@@ -98,7 +98,8 @@ namespace repo{
 						const std::string                                  &sceneExt = REPO_COLLECTION_SCENE,
 						const std::string                                  &revExt = REPO_COLLECTION_HISTORY,
 						const std::string                                  &stashExt = REPO_COLLECTION_REPOSTASH,
-						const std::string                                  &rawExt = REPO_COLLECTION_RAW);
+						const std::string                                  &rawExt = REPO_COLLECTION_RAW,
+						const std::string                                  &issuesExt = REPO_COLLECTION_ISSUES);
 
 					/**
 					* Used for constructing scene graphs from model convertors
@@ -135,7 +136,8 @@ namespace repo{
 						const std::string              &sceneExt = REPO_COLLECTION_SCENE,
 						const std::string              &revExt = REPO_COLLECTION_HISTORY,
 						const std::string              &stashExt = REPO_COLLECTION_REPOSTASH,
-						const std::string              &rawExt = REPO_COLLECTION_RAW);
+						const std::string              &rawExt = REPO_COLLECTION_RAW,
+						const std::string              &issuesExt = REPO_COLLECTION_ISSUES);
 
 					/**
 					* Default Deconstructor
@@ -540,6 +542,17 @@ namespace repo{
 					}
 
 					/**
+					* Get all reference nodes within current scene revision
+					* @return a RepoNodeSet of references
+					*/
+					RepoNodeSet getAllReferences(
+						const GraphType &gType = GraphType::DEFAULT) const
+					{
+						return  gType == GraphType::OPTIMIZED ? stashGraph.references : graph.references;
+					}
+
+
+					/**
 					* Get all texture nodes within current scene revision
 					* @return a RepoNodeSet of textures
 					*/
@@ -569,6 +582,16 @@ namespace repo{
 						return std::vector<repoUUID>(newAdded.begin(), newAdded.end());
 					}
 
+					std::set<repoUUID> getAllSharedIDs() const
+					{
+						std::set<repoUUID> sharedIDs;
+
+						boost::copy(
+							graph.sharedIDtoUniqueID | boost::adaptors::map_keys,
+							std::inserter(sharedIDs, sharedIDs.begin()));
+
+						return sharedIDs;
+					}
 
 					/**
 					* Get all ID of nodes which are modified since last revision
@@ -930,6 +953,7 @@ namespace repo{
 					std::string revExt;      /*! extension for history graph (Default: history)*/
 					std::string stashExt;      /*! extension for optimized graph (Default: stash.3drepo)*/
 					std::string rawExt;      /*! extension for raw file dumps (e.g. original files) (Default: raw)*/
+					std::string issuesExt;      /*! extension for issues*/
 					std::vector<std::string> refFiles;  //Original Files that created this scene
 					std::vector<RepoNode*> toRemove;
 					repoUUID   revision;

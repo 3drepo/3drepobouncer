@@ -16,7 +16,7 @@
 */
 
 /**
-* Creates a model(scene graph). 
+* Creates a model(scene graph).
 * Given a file, it will utilist ASSIMP library and eventually converts it into Repo world meaning
 */
 
@@ -62,7 +62,7 @@ namespace repo{
 
 				/**
 				* Generates a repo scene graph
-				* an internal representation(aiscene) needs to have 
+				* an internal representation(aiscene) needs to have
 				* been created before this call
 				* @return returns a populated RepoScene upon success.
 				*/
@@ -90,7 +90,7 @@ namespace repo{
 				repo::core::model::RepoScene* convertAiSceneToRepoScene(
 					assimp_map                    &map,
 					repo::core::model::RepoScene  *scene = nullptr);
-				
+
 				/**
 				* Create a Camera Node given the information in ASSIMP objects
 				* @param assimp camera object
@@ -172,20 +172,20 @@ namespace repo{
 					uint32_t flag = 0);
 
 				/**
-				* Populate the optimization linkage between the org. scene graph 
+				* Populate the optimization linkage between the org. scene graph
 				* and the optimised scene graph
 				* note: this is a recursive function
 				* @param node  node we are currently trasversing
 				* @param scene repo scene in process
-				* @param combinedMap the mapping of both opt and org mapping
+				* @param orgMap the org mapping
 				* @param optMap optimised mapping
 				* @return returns whether it has successfully mapped everything.
  				*/
 
 				bool populateOptimMaps(
 					repo::core::model::RepoNode  *node,
-					repo::core::model::RepoScene *scene, 
-					const assimp_map             &combinedMap, 
+					repo::core::model::RepoScene *scene,
+					const assimp_map             &orgMap,
 					const assimp_map             &optMap);
 
 				Assimp::Importer importer;  /*! Stores ASSIMP related settings for model import */
