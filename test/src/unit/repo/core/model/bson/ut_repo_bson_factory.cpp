@@ -40,14 +40,6 @@ TEST(RepoBSONTest, MakeRepoProjectSettingsTest)
 	EXPECT_EQ(description, settings.getDescription());
 	EXPECT_EQ(owner, settings.getOwner());
 	EXPECT_EQ(type, settings.getType());
-	std::vector<uint8_t> permOct = settings.getPermissionsOctal();
-
-	std::vector<uint8_t> mask = { 4, 2, 1 };
-
-	for (int i = 0; i < 3; ++i)
-	{
-		EXPECT_EQ(perm[i], permOct[i]);
-	}
 }
 
 TEST(RepoBSONTest, MakeRepoRoleTest)
