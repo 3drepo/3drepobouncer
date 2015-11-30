@@ -141,18 +141,6 @@ public :
             const std::string &embeddedObjName,
             const std::string &fieldName) const;
 
-    /**
-    * @deprecated
-    *
-    * Given a string representation of a 4 digit octal, return the
-    * permissions in boolean form
-    * @param octal octal permission number in string form(4digit)
-    * @return returns a vector of 12 booleans representing the relative permissions
-    */
-    static std::vector<bool> stringToPermissionsBool(std::string octal);
-
-
-
 };
 }// end namespace model
 } // end namespace core

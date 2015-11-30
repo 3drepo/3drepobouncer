@@ -50,31 +50,3 @@ bool RepoProjectSettings::hasEmbeddedField(
     return found;
 }
 
-// Deprecated
-std::vector<bool> RepoProjectSettings::stringToPermissionsBool(std::string octal)
-{
-    std::vector<bool> perm;
-    perm.resize(12);
-    uint8_t mask[3] = { READVAL, WRITEVAL, EXECUTEVAL };
-
-    if (octal.size() >= 4)
-    {
-        for (int i = 0; i < 4; i++)
-        {
-            uint32_t p = std::stoi(octal.substr(i, 1));
-            for (int j = 0; j < 3; j++)
-            {
-                uint32_t ind = i * 3 + j;
-                perm[ind] = p & mask[j];
-            }
-
-        }
-    }
-    else
-    {
-        repoError << "ProjectSettings - stringToPermissionsBool : size of parameter is smaller than 4.";
-    }
-
-    return perm;
-}
-
