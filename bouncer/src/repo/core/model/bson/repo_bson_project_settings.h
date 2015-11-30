@@ -23,107 +23,138 @@
 #include "repo_bson.h"
 
 namespace repo {
-	namespace core {
-		namespace model {
-				class REPO_API_EXPORT RepoProjectSettings :
-					public RepoBSON
-				{
-				public:
+namespace core {
+namespace model {
 
-					static const uint8_t READVAL = 4;
-					static const uint8_t WRITEVAL = 2;
-					static const uint8_t EXECUTEVAL = 1;
+class REPO_API_EXPORT RepoProjectSettings : public RepoBSON
+{
 
-					RepoProjectSettings();
+public:
 
-					RepoProjectSettings(RepoBSON bson) : RepoBSON(bson){}
+    RepoProjectSettings() : RepoBSON() {}
 
-					~RepoProjectSettings();
+    RepoProjectSettings(RepoBSON bson) : RepoBSON(bson){}
 
-					/**
-					* --------- Convenience functions -----------
-					*/
+    ~RepoProjectSettings() {}
 
-					/**
-					* Get the name of the project for this settings
-					* @return returns project name as string
-					*/
-					std::string getProjectName() const
-					{
-						return getStringField(REPO_LABEL_ID);
-					}
+public :
 
-					/**
-					* Get the description of the project for this settings
-					* @return returns project description as string
-					*/
-					std::string getDescription() const
-					{
-						return getStringField(REPO_LABEL_DESCRIPTION);
-					}
+    //--------------------------------------------------------------------------
+    // Convenience functions
 
-					/**
-					* Get the owner of the project for this settings
-					* @return returns owner name as string
-					*/
-					std::string getOwner() const
-					{
-						return getStringField(REPO_LABEL_OWNER);
-					}
+    double getAvatarHeight() const
+    {
+        return getEmbeddedDouble(
+                    REPO_LABEL_PROPERTIES,
+                    REPO_LABEL_AVATAR_HEIGHT,
+                    (double) REPO_DEFAULT_PROJECT_AVATAR_HEIGHT);
+    }
 
-					/**
-					* Get the group of the project for this settings
-					* @return returns group name as string
-					*/
-					std::string getGroup() const
-					{
-						return getStringField(REPO_LABEL_GROUP);
-					}
+    /**
+    * Get the description of the project for this settings
+    * @return returns project description as string
+    */
+    std::string getDescription() const
+    {
+        return getStringField(REPO_LABEL_DESCRIPTION);
+    }
 
-					/**
-					* Get permissions as a vector of 9 booleans
-					* the booleans represents permissions in this order:
-					* owner read, owner write, owner exe,
-					* group read, group write, group exe,
-					* public read, public write, public exe
-					* @return returns a vector of size 9 containing the permissions
-					*/
-					std::vector<bool> getPermissionsBoolean() const;
+    /**
+    * Get the owner of the project for this settings
+    * @return returns owner name as string
+    */
+    std::string getOwner() const
+    {
+        return getStringField(REPO_LABEL_OWNER);
+    }
 
-					/**
-					* Get permissions as octal form (777, 660 etc)
-					* @return returns a vector of size 3 containing the permissions
-					*/
-					std::vector<uint8_t> getPermissionsOctal() const;
+    double getPinSize() const
+    {
+        return getEmbeddedDouble(
+                    REPO_LABEL_PROPERTIES,
+                    REPO_LABEL_PIN_SIZE,
+                    REPO_DEFAULT_PROJECT_PIN_SIZE);
+    }
 
-					/**
-					* Get the rwx permissions of the project as string
-					* @return returns permissions as string (eee denotes error reading that permission value)
-					*/
-					std::string getPermissionsString() const;
+    /**
+    * Get the name of the project for this settings
+    * @return returns project name as string
+    */
+    std::string getProjectName() const
+    {
+        return getStringField(REPO_LABEL_ID);
+    }
 
-					/**
-					* given a string representation of a 4 digit octal, return the
-					* permissions in boolean form
-					* @param octal octal permission number in string form(4digit)
-					* @return returns a vector of 12 booleans representing the relative permissions
-					*/
-					static std::vector<bool> stringToPermissionsBool(std::string octal);
+    double getSpeed() const
+    {
+        return getEmbeddedDouble(
+                    REPO_LABEL_PROPERTIES,
+                    REPO_LABEL_SPEED,
+                    REPO_DEFAULT_PROJECT_SPEED);
+    }
 
-					/**
-					* Get the type of the project for this settings
-					* @return returns project type as string
-					*/
-					std::string getType() const
-					{
-						return getStringField(REPO_LABEL_TYPE);
-					}
+    /**
+    * Get the type of the project for this settings
+    * @return returns project type as string
+    */
+    std::string getType() const
+    {
+        return getStringField(REPO_LABEL_TYPE);
+    }
 
-					std::vector<std::string> getUsers() const;
+    double getVisibilityLimit() const
+    {
+        return getEmbeddedDouble(
+                    REPO_LABEL_PROPERTIES,
+                    REPO_LABEL_VISIBILITY_LIMIT,
+                    REPO_DEFAULT_PROJECT_VISIBILITY_LIMIT);
+    }
+
+    double getZFar() const
+    {
+        return getEmbeddedDouble(
+                    REPO_LABEL_PROPERTIES,
+                    REPO_LABEL_ZFAR,
+                    REPO_DEFAULT_PROJECT_ZFAR);
+    }
+
+    /**
+    * Get the zNear of the project for this settings
+    * @return returns project zNear as double
+    */
+    double getZNear() const
+    {
+        return getEmbeddedDouble(
+                    REPO_LABEL_PROPERTIES,
+                    REPO_LABEL_ZNEAR,
+                    REPO_DEFAULT_PROJECT_ZNEAR);
+    }
+
+public :
+
+    double getEmbeddedDouble(
+            const std::string &embeddedObjName,
+            const std::string &fieldName,
+            const double &defaultValue = 0) const;
+
+    bool hasEmbeddedField(
+            const std::string &embeddedObjName,
+            const std::string &fieldName) const;
+
+    /**
+    * @deprecated
+    *
+    * Given a string representation of a 4 digit octal, return the
+    * permissions in boolean form
+    * @param octal octal permission number in string form(4digit)
+    * @return returns a vector of 12 booleans representing the relative permissions
+    */
+    static std::vector<bool> stringToPermissionsBool(std::string octal);
 
 
-				};
-		}// end namespace model
-	} // end namespace core
+
+};
+}// end namespace model
+} // end namespace core
 } // end namespace repo
 
