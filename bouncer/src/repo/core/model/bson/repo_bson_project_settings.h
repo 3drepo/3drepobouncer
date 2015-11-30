@@ -39,9 +39,11 @@ public:
 
 public :
 
-    //--------------------------------------------------------------------------
-    // Convenience functions
-
+    /**
+     * Get the avatar height if present or default value if not.
+     * @brief getAvatarHeight
+     * @return returns avatar height as double.
+     */
     double getAvatarHeight() const
     {
         return getEmbeddedDouble(

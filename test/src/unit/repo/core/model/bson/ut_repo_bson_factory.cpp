@@ -29,18 +29,16 @@ TEST(RepoBSONTest, MakeRepoProjectSettingsTest)
 {
 	std::string projectName = "project";
 	std::string owner = "repo";
-	std::string group = "repoGroup";
 	std::string type = "Structural";
 	std::string description = "testing project";
-	std::vector<uint8_t> perm = { 7, 4, 0 };
+    // TODO: add test values for pinSize, avatarHeight, visibilityLimit, speed, zNear, zFar
 
-	RepoProjectSettings settings = RepoBSONFactory::makeRepoProjectSettings(projectName, owner, group, type,
-		description, perm[0], perm[1], perm[2]);
+    RepoProjectSettings settings = RepoBSONFactory::makeRepoProjectSettings(projectName, owner, type,
+        description);
 
 	EXPECT_EQ(projectName, settings.getProjectName());
 	EXPECT_EQ(description, settings.getDescription());
 	EXPECT_EQ(owner, settings.getOwner());
-	EXPECT_EQ(group, settings.getGroup());
 	EXPECT_EQ(type, settings.getType());
 	std::vector<uint8_t> permOct = settings.getPermissionsOctal();
 
