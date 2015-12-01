@@ -674,6 +674,28 @@ RepoRole RepoBSONFactory::_makeRepoRole(
     return RepoRole(builder.obj());
 }
 
+RepoRoleSettings makeRepoRoleSettings(
+        const std::string &color,
+        const std::string &description,
+        const std::vector<std::string> &modules)
+{
+    RepoBSONBuilder builder;
+
+    // Color
+    if (!color.empty())
+        builder << REPO_LABEL_COLOR << color;
+
+    // Description
+    if (!description.empty())
+        builder << REPO_LABEL_DESCRIPTION << description;
+
+    // Modules
+    if (modules.size() > 0)
+        builder.appendArray(REPO_LABEL_MODULES, modules);
+
+    return RepoRoleSettings(builder.obj());
+}
+
 RepoUser RepoBSONFactory::makeRepoUser(
         const std::string                           &userName,
         const std::string                           &password,

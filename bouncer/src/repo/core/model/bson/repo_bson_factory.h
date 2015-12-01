@@ -36,6 +36,7 @@
 #include "repo_node_revision.h"
 #include "repo_node_texture.h"
 #include "repo_node_transformation.h"
+#include "repo_bson_role_settings.h"
 
 
 
@@ -101,6 +102,11 @@ public:
             const std::vector<std::pair<std::string, std::string>> &inheritedRoles
             = std::vector<std::pair<std::string, std::string>>()
             );
+
+    static RepoRoleSettings makeRepoRoleSettings(
+            const std::string &color,
+            const std::string &description,
+            const std::vector<std::string> &modules);
 
     /**
     * Create a user BSON

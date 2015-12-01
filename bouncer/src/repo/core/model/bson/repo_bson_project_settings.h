@@ -26,6 +26,8 @@ namespace repo {
 namespace core {
 namespace model {
 
+// TODO: make into header only
+
 class REPO_API_EXPORT RepoProjectSettings : public RepoBSON
 {
 
@@ -131,17 +133,6 @@ public :
                     REPO_LABEL_ZNEAR,
                     REPO_DEFAULT_PROJECT_ZNEAR);
     }
-
-public :
-
-    double getEmbeddedDouble(
-            const std::string &embeddedObjName,
-            const std::string &fieldName,
-            const double &defaultValue = 0) const;
-
-    bool hasEmbeddedField(
-            const std::string &embeddedObjName,
-            const std::string &fieldName) const;
 
 };
 }// end namespace model

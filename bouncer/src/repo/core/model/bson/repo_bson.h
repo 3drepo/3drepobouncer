@@ -61,41 +61,41 @@ class REPO_API_EXPORT RepoBSON : public mongo::BSONObj
 public:
 
     /**
-                                                 * Default empty constructor.
-                                                 */
+    * Default empty constructor.
+    */
     RepoBSON() : mongo::BSONObj() {}
 
     /**
-                                                 * Constructor from Mongo BSON object.
-                                                 * @param mongo BSON object
-                                                 */
+    * Constructor from Mongo BSON object.
+    * @param mongo BSON object
+    */
     RepoBSON(const mongo::BSONObj &obj,
              const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping =
             std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>());
 
     /**
-                                                * Constructor from Mongo BSON object builder.
-                                                * @param mongo BSON object builder
-                                                */
+    * Constructor from Mongo BSON object builder.
+    * @param mongo BSON object builder
+    */
     RepoBSON(mongo::BSONObjBuilder &builder) : mongo::BSONObj(builder.obj()) {}
 
     /**
-                                                * Default empty deconstructor.
-                                                */
+    * Default empty deconstructor.
+    */
     virtual ~RepoBSON() {}
 
     /**
-                                                * Override the equals operator to perform the swap just like mongo bson
-                                                * but also retrieve the mapping information
-                                                */
+    * Override the equals operator to perform the swap just like mongo bson
+    * but also retrieve the mapping information
+    */
     RepoBSON& operator=(RepoBSON otherCopy) {
         swap(otherCopy);
         return *this;
     }
     /**
-                                                * Override the swap operator to perform the swap just like mongo bson
-                                                * but also carry over the mapping information
-                                                */
+    * Override the swap operator to perform the swap just like mongo bson
+    * but also carry over the mapping information
+    */
     void swap(RepoBSON otherCopy)
     {
         mongo::BSONObj::swap(otherCopy);
@@ -104,21 +104,21 @@ public:
 
 
     /**
-                                                * returns a field from the BSON
-                                                * @param label name of the field to retrieve
-                                                * @return returns a RepoBSONElement
-                                                */
+    * returns a field from the BSON
+    * @param label name of the field to retrieve
+    * @return returns a RepoBSONElement
+    */
     RepoBSONElement getField(const std::string &label) const
     {
         return RepoBSONElement(mongo::BSONObj::getField(label));
     }
 
     /**
-                                                * get a binary field in the form of vector of T
-                                                * @param field field name
-                                                * @param vec pointer to a vector to store this data
-                                                * @return returns true upon success.
-                                                */
+    * get a binary field in the form of vector of T
+    * @param field field name
+    * @param vec pointer to a vector to store this data
+    * @return returns true upon success.
+    */
     template <class T>
     bool getBinaryFieldAsVector(
             const std::string &field,
@@ -149,14 +149,9 @@ public:
             RepoBSONElement bse = getField(field);
             if (vec && bse.type() == ElementType::BINARY && bse.binDataType() == mongo::BinDataGeneral)
             {
-
-
                 bse.value();
                 int length;
                 const char *binData = bse.binData(length);
-
-
-
                 if (length > 0)
                 {
                     vec->resize(length / sizeof(T));
@@ -182,26 +177,33 @@ public:
 
 
     /**
-                                                * Overload of getField function to retreve repoUUID
-                                                * @param label name of the field
-                                                * @return returns a repoUUID from that field
-                                                */
+    * Overload of getField function to retreve repoUUID
+    * @param label name of the field
+    * @return returns a repoUUID from that field
+    */
     repoUUID getUUIDField(const std::string &label) const;
 
     /**
-                                                * Get an array of fields given an array element
-                                                * @param label name of the array element
-                                                * @return returns the array element in their respective type
-                                                */
+    * Get an array of fields given an array element
+    * @param label name of the array element
+    * @return returns the array element in their respective type
+    */
     std::vector<repoUUID> getUUIDFieldArray(const std::string &label) const;
 
 
     /**
-                                                * Get an array of fields given an array element
-                                                * @param label name of the array element
-                                                * @return returns the array element in their respective type
-                                                */
+    * Get an array of fields given an element label
+    * @param label name of the array element
+    * @return returns the array element in their respective type
+    */
     std::vector<float> getFloatArray(const std::string &label) const;
+
+    /**
+    * Get an array of fields given an element label
+    * @param label name of the array element
+    * @return returns the array element in their respective type
+    */
+    std::vector<std::string> getStringArray(const std::string &label) const;
 
     /**
     * Get a field as timestamp
@@ -224,6 +226,17 @@ public:
             const std::string &fstLabel,
             const std::string &sndLabel) const;
 
+    //! Gets double from embedded sub-object based on name fields.
+    double getEmbeddedDouble(
+            const std::string &embeddedObjName,
+            const std::string &fieldName,
+            const double &defaultValue = 0) const;
+
+    //! Returns true if embedded object contains given fieldName.
+    bool hasEmbeddedField(
+            const std::string &embeddedObjName,
+            const std::string &fieldName) const;
+
     /**
     * Checks if a binary field exists within the RepoBSON
     * This differs from hasField() as it also checks the bigFiles mapping
@@ -236,13 +249,16 @@ public:
         return hasField(label) || bigFiles.find(label) != bigFiles.end();
     }
 
+public :
+
     /*
-    * ----------------- BIG FILE MANIPULATION --------------------
+    * ----------------- BIG FILE MANIPULATION ----------------------------------
     */
 
 
     /**
-    * Clone and attempt the shrink the bson by offloading binary files to big file storage
+    * Clone and attempt the shrink the bson by offloading binary files to big
+    * file storage
     * @return returns the shrunk BSON
     */
     RepoBSON cloneAndShrink() const;
@@ -260,7 +276,7 @@ public:
     * Get the mapping files from the bson object
     * @return returns the map of external (gridFS) files
     */
-    std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>>> getFilesMapping() const
+    std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t> > > getFilesMapping() const
     {
         return bigFiles;
     }
@@ -276,7 +292,8 @@ public:
 
 
 protected:
-    std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>> > bigFiles;
+
+    std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t> > > bigFiles;
 
 
 }; // end

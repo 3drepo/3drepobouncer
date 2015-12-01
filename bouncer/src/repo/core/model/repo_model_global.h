@@ -67,6 +67,9 @@
 #define REPO_LABEL_PROPERTIES       "properties"
 #define REPO_LABEL_USERS            "users"
 
+#define REPO_LABEL_COLOR            "color"
+#define REPO_LABEL_MODULES          "modules"
+
 // Vertex/triangle map propeties
 #define REPO_LABEL_MERGED_NODES     "merged_nodes"
 
@@ -85,7 +88,15 @@
 #define REPO_COLLECTION_REPOSTASH   "stash.3drepo"
 #define REPO_COLLECTION_RAW         "history"
 #define REPO_COLLECTION_ISSUES      "issues"
-#define REPO_COLLECTION_SETTINGS    "settings"
+
+#define REPO_COLLECTION_SETTINGS            "settings"
+
+//!!!!!!!!!!!!!!!!!!
+// FIXME: change to settings.projects once the 3drepo.io is ready!
+#define REPO_COLLECTION_SETTINGS_PROJECTS   "settings"
+//!!!!!!!!!!!!!!!!!!
+
+#define REPO_COLLECTION_SETTINGS_ROLES      "settings.roles"
 
 // Project settings
 #define REPO_DEFAULT_PROJECT_TYPE_ARCHITECTURAL "architectural"
@@ -93,8 +104,9 @@
 #define REPO_DEFAULT_PROJECT_AVATAR_HEIGHT      1.6
 #define REPO_DEFAULT_PROJECT_VISIBILITY_LIMIT   1000.0
 #define REPO_DEFAULT_PROJECT_SPEED              5.0
-#define REPO_DEFAULT_PROJECT_ZNEAR              0.001
 #define REPO_DEFAULT_PROJECT_ZFAR               1000.0
+#define REPO_DEFAULT_PROJECT_ZNEAR              0.001
+
 
 
 #define REPO_HISTORY_MASTER_BRANCH  "00000000-0000-0000-0000-000000000000"
