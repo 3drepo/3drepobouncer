@@ -67,6 +67,15 @@ public :
     {
         return getStringArray(REPO_LABEL_MODULES);
     }
+
+    /**
+    * Get the name of the role for this settings
+    * @return returns role name as string
+    */
+    std::string getName() const
+    {
+        return getStringField(REPO_LABEL_ID);
+    }
 };
 }// end namespace model
 } // end namespace core

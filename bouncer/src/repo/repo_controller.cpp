@@ -285,7 +285,6 @@ RepoController::getAllFromCollectionContinuous(
     if (token)
     {
         manipulator::RepoManipulator* worker = workerPool.pop();
-
         vector = worker->getAllFromCollectionTailable(token->databaseAd, token->credentials,
                                                       database, collection, fields, sortField, sortOrder, skip, limit);
 
@@ -301,8 +300,7 @@ RepoController::getAllFromCollectionContinuous(
     return vector;
 }
 
-std::vector < repo::core::model::RepoRole >
-RepoController::getRolesFromDatabase(
+std::vector < repo::core::model::RepoRole > RepoController::getRolesFromDatabase(
         const RepoToken              *token,
         const std::string            &database,
         const uint64_t               &skip,
@@ -318,8 +316,7 @@ RepoController::getRolesFromDatabase(
     return roles;
 }
 
-std::vector < repo::core::model::RepoRoleSettings >
-RepoController::getRoleSettingsFromDatabase(
+std::vector < repo::core::model::RepoRoleSettings > RepoController::getRoleSettingsFromDatabase(
         const RepoToken              *token,
         const std::string            &database,
         const uint64_t               &skip,

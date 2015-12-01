@@ -104,9 +104,10 @@ public:
             );
 
     static RepoRoleSettings makeRepoRoleSettings(
+            const std::string &uniqueRoleName,
             const std::string &color,
-            const std::string &description,
-            const std::vector<std::string> &modules);
+            const std::string &description = std::string(),
+            const std::vector<std::string> &modules = std::vector<std::string>());
 
     /**
     * Create a user BSON

@@ -675,11 +675,17 @@ RepoRole RepoBSONFactory::_makeRepoRole(
 }
 
 RepoRoleSettings makeRepoRoleSettings(
+        const std::string &uniqueRoleName,
         const std::string &color,
         const std::string &description,
         const std::vector<std::string> &modules)
 {
     RepoBSONBuilder builder;
+
+    //--------------------------------------------------------------------------
+    // Project name
+    if (!uniqueRoleName.empty())
+        builder << REPO_LABEL_ID << uniqueRoleName;
 
     // Color
     if (!color.empty())

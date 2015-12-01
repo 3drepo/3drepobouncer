@@ -170,8 +170,8 @@ public:
 
 
     /*
-        *	------------- Database info lookup --------------
-        */
+    *	------------- Database info lookup --------------
+    */
 
     /**
         * Count the number of documents within the collection
@@ -257,6 +257,18 @@ public:
             const uint64_t               &skip = 0,
             const uint32_t               &limit = 0);
 
+    // TODO: fill me in pls! Thanks Carmen.
+    repo::core::model::RepoRoleSettings getRoleSettingByName(
+            const RepoToken *token,
+            const std::string &database,
+            const std::string &uniqueRoleName
+            )
+    {
+        // TODO: db.settings.roles.findOne( id : uniqueRoleName )
+        // return role
+        return repo::core::model::RepoRoleSettings();
+    }
+
 
 
     /**
@@ -291,6 +303,7 @@ public:
     std::list<std::string> getDatabases(
             const RepoToken *token);
     //FIXME: vectors are much better than list for traversal efficiency...
+    // (but they also require large continuos memory allocation should they be massive)
 
     /**
         * Return a list of projects with the database available to the user
