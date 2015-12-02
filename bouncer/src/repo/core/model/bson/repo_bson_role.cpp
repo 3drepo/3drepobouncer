@@ -19,24 +19,10 @@
 #include "repo_bson_role.h"
 #include "../collection/repo_scene.h"
 
-
 using namespace repo::core::model;
 
-
-
-RepoRole::RepoRole()
-{
-}
-
-
-RepoRole::~RepoRole()
-{
-}
-
-
 std::string RepoRole::dbActionToString(const DBActions &action)
-{
-	
+{	
 	switch (action)
 	{
 	case DBActions::INSERT:
@@ -62,8 +48,93 @@ std::string RepoRole::dbActionToString(const DBActions &action)
 	default:
 		repoError << "Unrecognised action value: " << (uint32_t)action;
 	}
+    return std::string(); //only default values will fall through and return empty string.
+}
 
-	return ""; //only default values will fall through and return empty string.
+std::vector<std::string> RepoRole::dbActionsToStrings(
+        const std::vector<DBActions> &actions)
+{
+    std::vector<std::string> strings(actions.size());
+    std::vector<std::string>::size_type i = 0;
+    for (DBActions action : actions)
+    {
+        strings[i++] = dbActionToString(action);
+    }
+    return strings;
+}
+
+
+DBActions RepoRole::stringToDBAction(const std::string &action)
+{
+    std::string action_lowerCase = action;
+
+    std::transform(action_lowerCase.begin(), action_lowerCase.end(), action_lowerCase.begin(), ::toupper);
+
+    if (action_lowerCase == "FIND")
+    {
+        return DBActions::FIND;
+    }
+
+    if (action_lowerCase == "REMOVE")
+    {
+        return DBActions::REMOVE;
+    }
+
+    if (action_lowerCase == "INSERT")
+    {
+        return DBActions::INSERT;
+    }
+
+    if (action_lowerCase == "UPDATE")
+    {
+        return DBActions::UPDATE;
+    }
+
+    if (action_lowerCase == "CREATEUSER")
+    {
+        return DBActions::CREATE_USER;
+    }
+
+    if (action_lowerCase == "CREATEROLE")
+    {
+        return DBActions::CREATE_ROLE;
+    }
+
+    if (action_lowerCase == "DROPROLE")
+    {
+        return DBActions::DROP_ROLE;
+    }
+
+    if (action_lowerCase == "GRANTROLE")
+    {
+        return DBActions::GRANT_ROLE;
+    }
+
+    if (action_lowerCase == "REVOKEROLE")
+    {
+        return DBActions::REVOKE_ROLE;
+    }
+
+    if (action_lowerCase == "VIEWROLE")
+    {
+        return DBActions::VIEW_ROLE;
+    }
+    repoWarning << "Unrecognised privileged action: " << action;
+
+    return DBActions::UNKNOWN;
+
+}
+
+std::vector<DBActions> RepoRole::stringsToDBActions(
+        const std::vector<std::string> &strings)
+{
+    std::vector<DBActions> actions(strings.size());
+    std::vector<DBActions>::size_type i = 0;
+    for (std::string string : strings)
+    {
+        actions[i++] = stringToDBAction(string);
+    }
+    return actions;
 }
 
 std::vector<DBActions> RepoRole::getActions(RepoBSON actionArr) const
@@ -138,67 +209,6 @@ std::vector<RepoPrivilege> RepoRole::getPrivileges() const
 	return privileges;
 }
 
-DBActions RepoRole::stringToDBAction(const std::string &action) const
-{
-	std::string action_lowerCase = action;
-
-	std::transform(action_lowerCase.begin(), action_lowerCase.end(), action_lowerCase.begin(), ::toupper);
-
-	if (action_lowerCase == "FIND")
-	{
-		return DBActions::FIND;
-	}
-
-	if (action_lowerCase == "REMOVE")
-	{
-		return DBActions::REMOVE;
-	}
-	
-	if (action_lowerCase == "INSERT")
-	{
-		return DBActions::INSERT;
-	}
-
-	if (action_lowerCase == "UPDATE")
-	{
-		return DBActions::UPDATE;
-	}
-
-	if (action_lowerCase == "CREATEUSER")
-	{
-		return DBActions::CREATE_USER;
-	}
-
-	if (action_lowerCase == "CREATEROLE")
-	{
-		return DBActions::CREATE_ROLE;
-	}
-
-	if (action_lowerCase == "DROPROLE")
-	{
-		return DBActions::DROP_ROLE;
-	}
-
-	if (action_lowerCase == "GRANTROLE")
-	{
-		return DBActions::GRANT_ROLE;
-	}
-
-	if (action_lowerCase == "REVOKEROLE")
-	{
-		return DBActions::REVOKE_ROLE;
-	}
-
-	if (action_lowerCase == "VIEWROLE")
-	{
-		return DBActions::VIEW_ROLE;
-	}
-
-	repoWarning << "Unrecognised privileged action: " << action;
-
-	return DBActions::UNKNOWN;
-
-}
 
 std::vector<RepoPrivilege> RepoRole::translatePermissions(
 	const std::vector<RepoPermission> &permissions)
