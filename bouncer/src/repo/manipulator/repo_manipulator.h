@@ -23,6 +23,7 @@
 #include <string>
 #include "../core/handler/repo_database_handler_mongo.h"
 #include "../core/model/collection/repo_scene.h"
+#include "../core/model/bson/repo_bson_role_settings.h"
 #include "modelconvertor/import/repo_model_import_assimp.h"
 #include "diff/repo_diff_abstract.h"
 
@@ -342,6 +343,20 @@ namespace repo{
 				const std::string                             &databaseAd);
 
 			/**
+			* Get a role settings within a database
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param database name of database
+			* @param uniqueRoleName name of the role to look for
+			*/
+			repo::core::model::RepoRoleSettings getRoleSettingByName(
+				const std::string                   &databaseAd,
+				const repo::core::model::RepoBSON	*cred,
+				const std::string					&database,
+				const std::string					&uniqueRoleName
+				);
+
+			/**
 			* Get a list of standard roles from the database
 			* @param databaseAd database address:portdatabase
 			* @return returns a vector of roles
@@ -451,8 +466,8 @@ namespace repo{
 			* @param user user info to remove
 			*/
 			void removeUser(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON*	  cred,
+				const std::string                       &databaseAd,
+				const repo::core::model::RepoBSON       *cred,
 				const repo::core::model::RepoUser       &user);
 
 			/**

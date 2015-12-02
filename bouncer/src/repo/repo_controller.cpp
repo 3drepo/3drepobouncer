@@ -343,9 +343,18 @@ repo::core::model::RepoRoleSettings RepoController::getRoleSettings(
         const std::string &database,
         const std::string &uniqueRoleName)
 {
-    // TODO: db.settings.roles.findOne( id : uniqueRoleName )
-    // return role
-    return repo::core::model::RepoRoleSettings();
+	repo::core::model::RepoRoleSettings res;
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		res = worker->getRoleSettingByName(token->databaseAd, token->credentials, database, uniqueRoleName);
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Trying to retrieve Role setting from database without a valid token!";
+	}
+	return res;
 }
 
 std::list<std::string> RepoController::getDatabases(const RepoToken *token)
