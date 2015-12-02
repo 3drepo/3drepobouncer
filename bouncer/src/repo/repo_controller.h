@@ -255,19 +255,18 @@ public:
             const RepoToken              *token,
             const std::string            &database,
             const uint64_t               &skip = 0,
-            const uint32_t               &limit = 0);
+            const uint32_t               &limit = 0);    
+
+    repo::core::model::RepoRoleSettings getRoleSettings(
+            const RepoToken *token,
+            const repo::core::model::RepoRole &role);
 
     // TODO: fill me in pls! Thanks Carmen.
-    repo::core::model::RepoRoleSettings getRoleSettingByName(
+    repo::core::model::RepoRoleSettings getRoleSettings(
             const RepoToken *token,
             const std::string &database,
             const std::string &uniqueRoleName
-            )
-    {
-        // TODO: db.settings.roles.findOne( id : uniqueRoleName )
-        // return role
-        return repo::core::model::RepoRoleSettings();
-    }
+            );
 
 
 
@@ -476,6 +475,14 @@ public:
         removeDocument(token, database, REPO_COLLECTION_SETTINGS_ROLES, roleSettings);
     }
 
+    void removeRoleSettings(
+            const RepoToken *token,
+            const repo::core::model::RepoRole &role,
+            const repo::core::model::RepoRoleSettings &settings)
+    {
+        removeRoleSettings(token, role.getDatabase(), settings);
+    }
+
     /**
         * remove a user from the database
         * @param token Authentication token
@@ -533,6 +540,14 @@ public:
             const repo::core::model::RepoRoleSettings &roleSettings)
     {
         upsertDocument(token, database, REPO_COLLECTION_SETTINGS_ROLES, roleSettings);
+    }
+
+    void upsertRoleSettings(
+            const RepoToken *token,
+            const repo::core::model::RepoRole &role,
+            const repo::core::model::RepoRoleSettings &settings)
+    {
+        upsertRoleSettings(token, role.getDatabase(), settings);
     }
 
     void upsertProjectSettings(

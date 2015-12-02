@@ -331,6 +331,23 @@ std::vector < repo::core::model::RepoRoleSettings > RepoController::getRoleSetti
     return roleSettings;
 }
 
+repo::core::model::RepoRoleSettings RepoController::getRoleSettings(
+        const RepoToken *token,
+        const repo::core::model::RepoRole &role)
+{
+    return getRoleSettings(token, role.getDatabase(), role.getName());
+}
+
+repo::core::model::RepoRoleSettings RepoController::getRoleSettings(
+        const RepoToken *token,
+        const std::string &database,
+        const std::string &uniqueRoleName)
+{
+    // TODO: db.settings.roles.findOne( id : uniqueRoleName )
+    // return role
+    return repo::core::model::RepoRoleSettings();
+}
+
 std::list<std::string> RepoController::getDatabases(const RepoToken *token)
 {
     repoTrace << "Controller: Fetching Database....";
