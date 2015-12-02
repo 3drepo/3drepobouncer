@@ -250,6 +250,13 @@ public:
             const uint64_t               &skip = 0,
             const uint32_t               &limit = 0);
 
+	/**
+	* Get all role settings within a database
+	* @param token A RepoToken given at authentication
+	* @param database name of database
+	* @param skip specify how many documents to skip (see description above)
+	* @param limit specifiy max. number of documents to retrieve (0 = no limit)
+	*/
     std::vector < repo::core::model::RepoRoleSettings >
     getRoleSettingsFromDatabase(
             const RepoToken              *token,
@@ -257,17 +264,17 @@ public:
             const uint64_t               &skip = 0,
             const uint32_t               &limit = 0);
 
-    // TODO: fill me in pls! Thanks Carmen.
-    repo::core::model::RepoRoleSettings getRoleSettingByName(
-            const RepoToken *token,
-            const std::string &database,
-            const std::string &uniqueRoleName
-            )
-    {
-        // TODO: db.settings.roles.findOne( id : uniqueRoleName )
-        // return role
-        return repo::core::model::RepoRoleSettings();
-    }
+	/**
+	* Get a role settings within a database
+	* @param token A RepoToken given at authentication
+	* @param database name of database
+	* @param uniqueRoleName name of the role to look for
+	*/
+	repo::core::model::RepoRoleSettings getRoleSettingByName(
+		const RepoToken *token,
+		const std::string &database,
+		const std::string &uniqueRoleName
+		);
 
 
 

@@ -289,7 +289,37 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 		workerPool->returnWorker(worker);
 	}
 
+	return data;
+}
 
+repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
+	const std::string& database,
+	const std::string& collection,
+	const repo::core::model::RepoBSON& criteria)
+{
+	repo::core::model::RepoBSON data;
+
+	if (!criteria.isEmpty())
+	{
+		mongo::DBClientBase *worker;
+		try{
+			uint64_t retrieved = 0;
+			worker = workerPool->getWorker();
+			
+			auto query = mongo::Query(criteria);
+
+			data = repo::core::model::RepoBSON(worker->findOne(
+				database + "." + collection,
+				query));
+
+		}
+		catch (mongo::DBException& e)
+		{
+			repoError << "Error in MongoDatabaseHandler::findAllByCriteria: " << e.what();
+		}
+
+		workerPool->returnWorker(worker);
+	}
 
 	return data;
 }
