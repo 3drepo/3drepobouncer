@@ -674,7 +674,7 @@ RepoRole RepoBSONFactory::_makeRepoRole(
     return RepoRole(builder.obj());
 }
 
-RepoRoleSettings makeRepoRoleSettings(
+RepoRoleSettings RepoBSONFactory::makeRepoRoleSettings(
         const std::string &uniqueRoleName,
         const std::string &color,
         const std::string &description,
