@@ -20,3 +20,10 @@
 using namespace repo::core::model;
 
 
+RepoRoleSettings::RepoRoleSettings() : RepoBSON() {}
+
+RepoRoleSettings::RepoRoleSettings(RepoBSON bson) : RepoBSON(bson) {}
+
+RepoRoleSettings::~RepoRoleSettings() {}
+
+

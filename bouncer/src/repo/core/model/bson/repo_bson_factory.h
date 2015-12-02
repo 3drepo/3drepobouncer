@@ -25,6 +25,7 @@
 
 #include "repo_bson_project_settings.h"
 #include "repo_bson_role.h"
+#include "repo_bson_role_settings.h"
 #include "repo_bson_user.h"
 #include "repo_node.h"
 #include "repo_node_camera.h"
@@ -36,7 +37,7 @@
 #include "repo_node_revision.h"
 #include "repo_node_texture.h"
 #include "repo_node_transformation.h"
-#include "repo_bson_role_settings.h"
+
 
 
 

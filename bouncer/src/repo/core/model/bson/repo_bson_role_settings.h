@@ -33,11 +33,11 @@ class REPO_API_EXPORT RepoRoleSettings : public RepoBSON
 
 public:
 
-    RepoRoleSettings() : RepoBSON() {}
+    RepoRoleSettings();
 
-    RepoRoleSettings(RepoBSON bson) : RepoBSON(bson){}
+    RepoRoleSettings(RepoBSON bson);
 
-    ~RepoRoleSettings() {}
+    ~RepoRoleSettings();
 
 public :
 
