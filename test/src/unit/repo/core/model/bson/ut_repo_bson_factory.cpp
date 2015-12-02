@@ -194,6 +194,34 @@ TEST(RepoBSONTest, MakeRepoUserTest)
 	EXPECT_EQ(apiOut.begin()->second, apiKeys.begin()->second);
 
 	EXPECT_EQ(std::string(avatar.data()), std::string(avatarOut.data()));
+}
 
+TEST(RepoBSONTest, AppendDefaultsTest)
+{
+	RepoBSONBuilder builder;
+
+	RepoBSONFactory::appendDefaults(
+		builder, "test");
+
+	RepoNode n = builder.obj();
+
+	EXPECT_FALSE(n.isEmpty());
+
+	EXPECT_EQ(4, n.nFields()); 
+
+	EXPECT_TRUE(n.hasField(REPO_NODE_LABEL_ID));
+	EXPECT_TRUE(n.hasField(REPO_NODE_LABEL_SHARED_ID));
+	EXPECT_TRUE(n.hasField(REPO_NODE_LABEL_API));
+	EXPECT_TRUE(n.hasField(REPO_NODE_LABEL_TYPE));
+
+	//Ensure existing fields doesnt' disappear
+
+	RepoBSONBuilder builderWithFields;
+
+	builderWithFields << "Number" << 1023;
+	builderWithFields << "doll" << "Kitty";
+
+	RepoBSONFactory::appendDefaults(
+		builderWithFields, "test");
 
 }
