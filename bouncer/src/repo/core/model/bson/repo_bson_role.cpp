@@ -23,41 +23,48 @@
 
 using namespace repo::core::model;
 
-RepoRole RepoRole::cloneAndAddPermissions(
+RepoRole RepoRole::cloneAndUpdatePermissions(
 	const std::vector<RepoPermission> &permissions
 	)
 {
-	std::vector<RepoPrivilege> newPriv = translatePermissions(permissions);
+	//Remove all project access related privileges, then add the new ones in.
+	std::vector<RepoPermission> oldPermissions = getProjectAccessRights();
 
-	return cloneAndAddPrivileges(newPriv);
+	auto oldPriv = getPrivilegesMapped(translatePermissions(oldPermissions));
 
-}
-
-RepoRole RepoRole::cloneAndAddPrivileges(
-	const std::vector<RepoPrivilege> &privileges
-	)
-{
 	std::unordered_map<std::string, RepoPrivilege> mapped_privileges = getPrivilegesMapped();
-	//since the policy is to overwrite any existing privileges,
-	//there is no need to check if a privilege already exists
-	for (const RepoPrivilege &p : privileges)
-	{
-		mapped_privileges[p.database + "." + p.collection] = p;
-	}
 
-	std::vector<RepoPrivilege> newPrivileges;
+	for (const auto &p : oldPriv)
+	{
+		mapped_privileges.erase(p.first);
+	}
+	
+
+	auto newPriv = getPrivilegesMapped(translatePermissions(permissions));
+
+	mapped_privileges.insert(newPriv.begin(), newPriv.end());
+
+	std::vector<RepoPrivilege> privilegesUpdated;
 
 	boost::copy(
 		mapped_privileges | boost::adaptors::map_values,
-		std::back_inserter(newPrivileges));
+		std::back_inserter(privilegesUpdated));
 
+	return cloneAndUpdatePrivileges(privilegesUpdated);
+
+}
+
+RepoRole RepoRole::cloneAndUpdatePrivileges(
+	const std::vector<RepoPrivilege> &privileges
+	)
+{
 	RepoBSONBuilder builder;
-	if (newPrivileges.size() > 0)
+	if (privileges.size() > 0)
 	{
 		RepoBSONBuilder privilegesBuilder;
-		for (size_t i = 0; i < newPrivileges.size(); ++i)
+		for (size_t i = 0; i < privileges.size(); ++i)
 		{
-			const auto &p = newPrivileges[i];
+			const auto &p = privileges[i];
 			RepoBSONBuilder innerBsonBuilder, actionBuilder;
 			RepoBSON resource = BSON(REPO_ROLE_LABEL_DATABASE << p.database << REPO_ROLE_LABEL_COLLECTION << p.collection);
 			innerBsonBuilder << REPO_ROLE_LABEL_RESOURCE << resource;
@@ -267,11 +274,9 @@ std::vector<RepoPrivilege> RepoRole::getPrivileges() const
 	return privileges;
 }
 
-std::unordered_map<std::string, RepoPrivilege> RepoRole::getPrivilegesMapped() const
+std::unordered_map<std::string, RepoPrivilege> RepoRole::getPrivilegesMapped(const std::vector<RepoPrivilege> &ps)
 {
 	std::unordered_map<std::string, RepoPrivilege> map;
-
-	std::vector<RepoPrivilege> ps = getPrivileges();
 
 	for (const auto priv : ps)
 	{
