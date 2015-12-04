@@ -138,6 +138,7 @@ public:
 	* NOTE3: Access rights that used to exist but not specified in this
 	*        list will be removed
 	* @param permissions new permissions list
+	* @return returns the cloned and updated RepoRole
 	*/
 	RepoRole cloneAndUpdatePermissions(
 		const std::vector<RepoPermission> &permissions
@@ -214,6 +215,7 @@ private:
 	/**
 	* Make a copy of the role and alter privileges to the set provided
 	* @param privileges new privileges 
+	* @return returns the cloned and updated RepoRole
 	*/
 	RepoRole cloneAndUpdatePrivileges(
 		const std::vector<RepoPrivilege> &privileges
