@@ -140,7 +140,7 @@ namespace repo{
 						* @param newUniqueID generate a new unique ID if set to true
 						* @return returns a new object with fields updated
 						*/
-						RepoNode cloneAndAddFields(
+						virtual RepoNode cloneAndAddFields(
 							const RepoBSON *changes, 
 							const bool     &newUniqueID = true) const;
 

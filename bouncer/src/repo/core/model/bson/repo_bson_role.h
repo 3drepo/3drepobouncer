@@ -124,6 +124,36 @@ public :
             std::vector<DBActions> &vec
             );
 
+	/**
+	* --------- Pretentious Edit functions -----------
+	*/
+
+
+	/**
+	* Make a copy of this role and add the specified access rights into
+	* the new role
+	* NOTE1: this function does NOT alter the existing RepoRole
+	* NOTE2: if the role already has privilege on the project in question
+	*       the privileges will be overwritten!
+	* @param permissions new permissions to add
+	*/
+	RepoRole cloneAndAddPermissions(
+		const std::vector<RepoPermission> &permissions
+		);
+
+
+	/**
+	* Make a copy of this role and add the specified privileges into
+	* the new role
+	* NOTE1: this function does NOT alter the existing RepoRole
+	* NOTE2: if the role already has privilege on the project in question
+	*       the privileges will be overwritten!
+	* @param privileges new privileges to add
+	*/
+	RepoRole cloneAndAddPrivileges(
+		const std::vector<RepoPrivilege> &privileges
+		);
+
     /**
     * --------- Convenience functions -----------
     */
@@ -176,6 +206,13 @@ private:
     * @return returns a vector of DBActions
     */
     std::vector<DBActions> getActions(RepoBSON actionArr) const;
+
+
+	/**
+	* Get the list of privileges as a map of database.collection, privileges
+	* @return returns a map of privileges
+	*/
+	std::unordered_map<std::string, RepoPrivilege> getPrivilegesMapped() const;
 
 
 };

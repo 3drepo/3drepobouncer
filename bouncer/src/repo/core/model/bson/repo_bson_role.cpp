@@ -18,8 +18,65 @@
 #include <algorithm>
 #include "repo_bson_role.h"
 #include "../collection/repo_scene.h"
+#include <boost/range/adaptor/map.hpp>
+#include <boost/range/algorithm/copy.hpp>
 
 using namespace repo::core::model;
+
+RepoRole RepoRole::cloneAndAddPermissions(
+	const std::vector<RepoPermission> &permissions
+	)
+{
+	std::vector<RepoPrivilege> newPriv = translatePermissions(permissions);
+
+	return cloneAndAddPrivileges(newPriv);
+
+}
+
+RepoRole RepoRole::cloneAndAddPrivileges(
+	const std::vector<RepoPrivilege> &privileges
+	)
+{
+	std::unordered_map<std::string, RepoPrivilege> mapped_privileges = getPrivilegesMapped();
+	//since the policy is to overwrite any existing privileges,
+	//there is no need to check if a privilege already exists
+	for (const RepoPrivilege &p : privileges)
+	{
+		mapped_privileges[p.database + "." + p.collection] = p;
+	}
+
+	std::vector<RepoPrivilege> newPrivileges;
+
+	boost::copy(
+		mapped_privileges | boost::adaptors::map_values,
+		std::back_inserter(newPrivileges));
+
+	RepoBSONBuilder builder;
+	if (newPrivileges.size() > 0)
+	{
+		RepoBSONBuilder privilegesBuilder;
+		for (size_t i = 0; i < newPrivileges.size(); ++i)
+		{
+			const auto &p = newPrivileges[i];
+			RepoBSONBuilder innerBsonBuilder, actionBuilder;
+			RepoBSON resource = BSON(REPO_ROLE_LABEL_DATABASE << p.database << REPO_ROLE_LABEL_COLLECTION << p.collection);
+			innerBsonBuilder << REPO_ROLE_LABEL_RESOURCE << resource;
+
+			for (size_t aCount = 0; aCount < p.actions.size(); ++aCount)
+			{
+				actionBuilder << std::to_string(aCount) << RepoRole::dbActionToString(p.actions[aCount]);
+			}
+
+			innerBsonBuilder.appendArray(REPO_ROLE_LABEL_ACTIONS, actionBuilder.obj());
+
+			privilegesBuilder << std::to_string(i) << innerBsonBuilder.obj();
+		}
+		builder.appendArray(REPO_ROLE_LABEL_PRIVILEGES, privilegesBuilder.obj());
+	}
+
+	return RepoRole(cloneAndAddFields(&builder.obj()));
+
+}
 
 std::string RepoRole::dbActionToString(const DBActions &action)
 {	
@@ -66,56 +123,56 @@ std::vector<std::string> RepoRole::dbActionsToStrings(
 
 DBActions RepoRole::stringToDBAction(const std::string &action)
 {
-    std::string action_lowerCase = action;
+    std::string actionUpperCase = action;
 
-    std::transform(action_lowerCase.begin(), action_lowerCase.end(), action_lowerCase.begin(), ::toupper);
+    std::transform(actionUpperCase.begin(), actionUpperCase.end(), actionUpperCase.begin(), ::toupper);
 
-    if (action_lowerCase == "FIND")
+    if (actionUpperCase == "FIND")
     {
         return DBActions::FIND;
     }
 
-    if (action_lowerCase == "REMOVE")
+    if (actionUpperCase == "REMOVE")
     {
         return DBActions::REMOVE;
     }
 
-    if (action_lowerCase == "INSERT")
+    if (actionUpperCase == "INSERT")
     {
         return DBActions::INSERT;
     }
 
-    if (action_lowerCase == "UPDATE")
+    if (actionUpperCase == "UPDATE")
     {
         return DBActions::UPDATE;
     }
 
-    if (action_lowerCase == "CREATEUSER")
+    if (actionUpperCase == "CREATEUSER")
     {
         return DBActions::CREATE_USER;
     }
 
-    if (action_lowerCase == "CREATEROLE")
+    if (actionUpperCase == "CREATEROLE")
     {
         return DBActions::CREATE_ROLE;
     }
 
-    if (action_lowerCase == "DROPROLE")
+    if (actionUpperCase == "DROPROLE")
     {
         return DBActions::DROP_ROLE;
     }
 
-    if (action_lowerCase == "GRANTROLE")
+    if (actionUpperCase == "GRANTROLE")
     {
         return DBActions::GRANT_ROLE;
     }
 
-    if (action_lowerCase == "REVOKEROLE")
+    if (actionUpperCase == "REVOKEROLE")
     {
         return DBActions::REVOKE_ROLE;
     }
 
-    if (action_lowerCase == "VIEWROLE")
+    if (actionUpperCase == "VIEWROLE")
     {
         return DBActions::VIEW_ROLE;
     }
@@ -207,6 +264,20 @@ std::vector<RepoPrivilege> RepoRole::getPrivileges() const
 	}
 
 	return privileges;
+}
+
+std::unordered_map<std::string, RepoPrivilege> RepoRole::getPrivilegesMapped() const
+{
+	std::unordered_map<std::string, RepoPrivilege> map;
+
+	std::vector<RepoPrivilege> ps = getPrivileges();
+
+	for (const auto priv : ps)
+	{
+		map[priv.database + "." + priv.collection] = priv;
+	}
+
+	return map;
 }
 
 

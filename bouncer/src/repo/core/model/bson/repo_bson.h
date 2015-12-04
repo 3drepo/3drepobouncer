@@ -249,6 +249,10 @@ public:
         return hasField(label) || bigFiles.find(label) != bigFiles.end();
     }
 
+	virtual RepoBSON cloneAndAddFields(
+		const RepoBSON *changes) const;
+	
+
 public :
 
     /*

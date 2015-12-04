@@ -21,6 +21,7 @@
 
 #include <repo/core/model/collection/repo_scene.h>
 #include <repo/core/model/bson/repo_bson_role.h>
+#include <repo/core/model/bson/repo_bson_factory.h>
 #include <repo/core/model/bson/repo_bson_builder.h>
 
 using namespace repo::core::model;
@@ -435,4 +436,62 @@ TEST(RepoRoleTest, GetProjectAccessRightsTest)
 		EXPECT_EQ(accessRights[i].project, accessRights2[i].project);
 		EXPECT_EQ(accessRights[i].permission, accessRights2[i].permission);
 	}
+}
+
+TEST(RepoRoleTest, CloneAndAddPermissionsTest)
+{
+
+	std::vector<RepoPermission> permissions;
+	permissions.push_back({ "testdb", "testcol2", AccessRight::WRITE });
+	permissions.push_back({ "testdb", "testcol", AccessRight::WRITE });
+	RepoRole role = RepoBSONFactory::makeRepoRole("roleTest", "testDB", permissions);
+	
+	RepoRole newRole = role.cloneAndAddPermissions(std::vector<RepoPermission>());
+
+	ASSERT_EQ(role.getPrivileges().size(), newRole.getPrivileges().size());
+	EXPECT_EQ(role.getName(), newRole.getName());
+	EXPECT_EQ(role.getDatabase(), newRole.getDatabase());
+	EXPECT_EQ(role.getInheritedRoles().size(), newRole.getInheritedRoles().size());
+
+	RepoRole empty;
+
+	EXPECT_TRUE(empty.cloneAndAddPermissions(std::vector<RepoPermission>()).isEmpty());
+
+	std::vector<RepoPermission> newPermissions;
+	newPermissions.push_back({ "db", "col", AccessRight::READ }); 
+	newPermissions.push_back({ "db", "col2", AccessRight::WRITE });
+	newPermissions.push_back({ "testdb", "testcol", AccessRight::READ }); //Modify existing
+
+	RepoRole newRole2 = role.cloneAndAddPermissions(newPermissions);
+
+	auto accessRights = newRole2.getProjectAccessRights();
+
+	repoTrace << "role : " << role.toString();
+	repoTrace << "new role : " << newRole2.toString();
+
+	ASSERT_EQ(accessRights.size(), 4);
+	
+	for (const auto a : accessRights)
+	{
+		if (a.database == "testdb"
+			&& a.project == "testcol2")
+		{
+			EXPECT_EQ(AccessRight::WRITE, a.permission);
+			break;
+		}
+	}
+
+	for (const auto p : newPermissions)
+	{
+		bool found = false;
+		for (const auto a : accessRights)
+		{
+			
+			if (found |= a.database == p.database
+				&& a.project == p.project
+				&& a.permission == p.permission) break;
+		}
+		EXPECT_TRUE(found);
+	}
+
 }

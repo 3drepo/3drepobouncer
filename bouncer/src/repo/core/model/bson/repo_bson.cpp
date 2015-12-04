@@ -56,6 +56,18 @@ RepoBSON::RepoBSON(
 
 }
 
+RepoBSON RepoBSON::cloneAndAddFields(
+	const RepoBSON *changes) const
+{
+	mongo::BSONObjBuilder builder;
+
+	builder.appendElementsUnique(*changes);
+
+	builder.appendElementsUnique(*this);
+
+	return RepoBSON(builder.obj());
+}
+
 RepoBSON RepoBSON::cloneAndShrink() const
 {
 	std::set<std::string> fields;
