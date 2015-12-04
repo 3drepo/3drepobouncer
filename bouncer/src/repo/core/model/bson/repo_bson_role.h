@@ -136,7 +136,7 @@ public:
 	* NOTE2: if the role already has privilege on the project in question
 	*       the privileges will be overwritten!
 	* NOTE3: Access rights that used to exist but not specified in this
-	*        list will be moved
+	*        list will be removed
 	* @param permissions new permissions list
 	*/
 	RepoRole cloneAndUpdatePermissions(
