@@ -130,7 +130,7 @@ public:
 
 
 	/**
-	* Make a copy of this role and add the update access rights into
+	* Make a copy of this role and update the access rights on
 	* the new role
 	* NOTE1: this function does NOT alter the existing RepoRole
 	* NOTE2: if the role already has privilege on the project in question
