@@ -37,8 +37,7 @@ RepoRole RepoRole::cloneAndUpdatePermissions(
 	for (const auto &p : oldPriv)
 	{
 		mapped_privileges.erase(p.first);
-	}
-	
+	}	
 
 	auto newPriv = getPrivilegesMapped(translatePermissions(permissions));
 
