@@ -495,3 +495,8 @@ TEST(RepoRoleTest, CloneAndAddPermissionsTest)
 	}
 
 }
+
+TEST(RepoRoleTest, CloneAndAddPrivilegesTest)
+{
+
+}

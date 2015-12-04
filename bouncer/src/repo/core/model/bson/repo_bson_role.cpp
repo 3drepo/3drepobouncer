@@ -74,7 +74,8 @@ RepoRole RepoRole::cloneAndAddPrivileges(
 		builder.appendArray(REPO_ROLE_LABEL_PRIVILEGES, privilegesBuilder.obj());
 	}
 
-	return RepoRole(cloneAndAddFields(&builder.obj()));
+	auto change = builder.obj();
+	return RepoRole(cloneAndAddFields(&change));
 
 }
 
