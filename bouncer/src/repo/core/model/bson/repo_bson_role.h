@@ -142,7 +142,16 @@ public:
 	*/
 	RepoRole cloneAndUpdatePermissions(
 		const std::vector<RepoPermission> &permissions
-		);
+		);   
+
+    /**
+    * Make a copy of the role and alter privileges to the set provided
+    * @param privileges new privileges
+    * @return returns the cloned and updated RepoRole
+    */
+    RepoRole cloneAndUpdatePrivileges(
+        const std::vector<RepoPrivilege> &privileges
+        );
 
 	/**
 	* --------- Convenience functions -----------
@@ -210,19 +219,6 @@ private:
 	* @return returns a vector of DBActions
 	*/
 	std::vector<DBActions> getActions(RepoBSON actionArr) const;
-
-
-	/**
-	* Make a copy of the role and alter privileges to the set provided
-	* @param privileges new privileges 
-	* @return returns the cloned and updated RepoRole
-	*/
-	RepoRole cloneAndUpdatePrivileges(
-		const std::vector<RepoPrivilege> &privileges
-		);
-
-
-
 };
 
 }// end namespace model
