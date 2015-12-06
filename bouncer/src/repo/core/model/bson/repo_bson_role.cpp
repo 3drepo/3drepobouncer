@@ -25,7 +25,7 @@ using namespace repo::core::model;
 
 RepoRole RepoRole::cloneAndUpdatePermissions(
 	const std::vector<RepoPermission> &permissions
-	)
+    ) const
 {
 	//Remove all project access related privileges, then add the new ones in.
 	std::vector<RepoPermission> oldPermissions = getProjectAccessRights();
@@ -55,7 +55,7 @@ RepoRole RepoRole::cloneAndUpdatePermissions(
 
 RepoRole RepoRole::cloneAndUpdatePrivileges(
 	const std::vector<RepoPrivilege> &privileges
-	)
+    ) const
 {
 	RepoBSONBuilder builder;
 	if (privileges.size() > 0)

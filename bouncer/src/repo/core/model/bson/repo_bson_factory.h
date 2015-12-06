@@ -73,20 +73,34 @@ public:
             const double zNear = REPO_DEFAULT_PROJECT_ZNEAR,
             const double zFar = REPO_DEFAULT_PROJECT_ZFAR);
 
-
     /**
-    * Create a role BSON (Simple interface)
+    * Create a role BSON from previous role
     * Use _makeRepoRole() if you wish to have direct control on the interface
     * @param roleName name of the role
     * @param database database where this role resides
     * @param permissions a vector of project and their access permissions
+    * @param oldRole previous role from which to copy over privileges and inherited roles
     * @return returns a bson with this role information
     */
     static RepoRole makeRepoRole(
             const std::string &roleName,
             const std::string &database,
-            const std::vector<RepoPermission> &permissions
-            );
+            const std::vector<RepoPermission> &permissions,
+            const RepoRole &oldRole = RepoRole());
+
+//    /**
+//    * Create a role BSON (Simple interface)
+//    * Use _makeRepoRole() if you wish to have direct control on the interface
+//    * @param roleName name of the role
+//    * @param database database where this role resides
+//    * @param permissions a vector of project and their access permissions
+//    * @return returns a bson with this role information
+//    */
+//    static RepoRole makeRepoRole(
+//            const std::string &roleName,
+//            const std::string &database,
+//            const std::vector<RepoPermission> &permissions
+//            );
 
     /**
     * Create a role BSON

@@ -142,7 +142,7 @@ public:
 	*/
 	RepoRole cloneAndUpdatePermissions(
 		const std::vector<RepoPermission> &permissions
-		);   
+        ) const;
 
     /**
     * Make a copy of the role and alter privileges to the set provided
@@ -151,7 +151,7 @@ public:
     */
     RepoRole cloneAndUpdatePrivileges(
         const std::vector<RepoPrivilege> &privileges
-        );
+        ) const;
 
 	/**
 	* --------- Convenience functions -----------

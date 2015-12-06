@@ -606,17 +606,34 @@ RepoProjectSettings RepoBSONFactory::makeRepoProjectSettings(
 RepoRole RepoBSONFactory::makeRepoRole(
         const std::string &roleName,
         const std::string &database,
-        const std::vector<RepoPermission> &permissions
+        const std::vector<RepoPermission> &permissions,
+        const RepoRole &oldRole
         )
 {
-    return _makeRepoRole(roleName, database, RepoRole::translatePermissions(permissions));
+    RepoRole updatedOldRole = oldRole.cloneAndUpdatePermissions(permissions);
+    return _makeRepoRole(roleName,
+                         database,
+                         RepoRole::translatePermissions(
+                             updatedOldRole.getProjectAccessRights()),
+                         updatedOldRole.getInheritedRoles());
 }
+
+//RepoRole RepoBSONFactory::makeRepoRole(
+//        const std::string &roleName,
+//        const std::string &database,
+//        const std::vector<RepoPermission> &permissions
+//        )
+//{
+//    return _makeRepoRole(roleName,
+//                         database,
+//                         RepoRole::translatePermissions(permissions));
+//}
 
 RepoRole RepoBSONFactory::_makeRepoRole(
         const std::string &roleName,
         const std::string &database,
         const std::vector<RepoPrivilege> &privileges,
-        const std::vector<std::pair<std::string, std::string>> &inheritedRoles
+        const std::vector<std::pair<std::string, std::string> > &inheritedRoles
         )
 {
     RepoBSONBuilder builder;
