@@ -617,17 +617,6 @@ RepoRole RepoBSONFactory::makeRepoRole(
                          updatedOldRole.getInheritedRoles());
 }
 
-//RepoRole RepoBSONFactory::makeRepoRole(
-//        const std::string &roleName,
-//        const std::string &database,
-//        const std::vector<RepoPermission> &permissions
-//        )
-//{
-//    return _makeRepoRole(roleName,
-//                         database,
-//                         RepoRole::translatePermissions(permissions));
-//}
-
 RepoRole RepoBSONFactory::_makeRepoRole(
         const std::string &roleName,
         const std::string &database,

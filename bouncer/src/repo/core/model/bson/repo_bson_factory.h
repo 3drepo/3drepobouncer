@@ -88,20 +88,6 @@ public:
             const std::vector<RepoPermission> &permissions,
             const RepoRole &oldRole = RepoRole());
 
-//    /**
-//    * Create a role BSON (Simple interface)
-//    * Use _makeRepoRole() if you wish to have direct control on the interface
-//    * @param roleName name of the role
-//    * @param database database where this role resides
-//    * @param permissions a vector of project and their access permissions
-//    * @return returns a bson with this role information
-//    */
-//    static RepoRole makeRepoRole(
-//            const std::string &roleName,
-//            const std::string &database,
-//            const std::vector<RepoPermission> &permissions
-//            );
-
     /**
     * Create a role BSON
     * @param roleName name of the role
