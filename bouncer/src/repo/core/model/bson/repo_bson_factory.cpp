@@ -613,8 +613,7 @@ RepoRole RepoBSONFactory::makeRepoRole(
     RepoRole updatedOldRole = oldRole.cloneAndUpdatePermissions(permissions);
     return _makeRepoRole(roleName,
                          database,
-                         RepoRole::translatePermissions(
-                             updatedOldRole.getProjectAccessRights()),
+                         updatedOldRole.getPrivileges(),
                          updatedOldRole.getInheritedRoles());
 }
 
