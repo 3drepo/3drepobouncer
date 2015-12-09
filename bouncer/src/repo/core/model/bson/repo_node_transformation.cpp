@@ -138,3 +138,21 @@ std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) cons
 	}
 	return transformationMatrix;
 }
+
+bool TransformationNode::sEqual(const RepoNode &other) const
+{
+	if (other.getTypeAsEnum() != NodeType::TRANSFORMATION || other.getParentIDs().size() != getParentIDs().size())
+	{
+		return false;
+	}
+
+	const TransformationNode otherTrans = TransformationNode(other);
+
+
+	std::vector<float> mat = getTransMatrix();
+	std::vector<float> otherMat = otherTrans.getTransMatrix();
+
+
+	return mat.size() == otherMat.size() && !memcmp(mat.data(), otherMat.data(), mat.size() *sizeof(*mat.data()));
+
+}

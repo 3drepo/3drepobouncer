@@ -54,6 +54,15 @@ namespace repo {
 					*/
 					~MapNode();
 
+					/**
+					* Check if the node is semantically equal to another
+					* Different node should have a different interpretation of what
+					* this means.
+					* @param other node to compare with
+					* @param returns true if equal, false otherwise
+					*/
+					virtual bool sEqual(const RepoNode &other) const;
+
 				};
 		} //namespace model
 	} //namespace core

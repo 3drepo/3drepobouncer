@@ -675,6 +675,26 @@ public:
         *	------------- 3D Diff --------------
         */
 
+	/**
+	* Compare 2 scenes via IDs.
+	* @param token to load full scene from database if required
+	*		(if not required, a nullptr can be passed in)
+	* @param base base scene to compare against
+	* @param compare scene to compare base scene against
+	* @param baseResults Diff results in the perspective of base
+	* @param compResults Diff results in the perspective of compare
+	* @param diffMode mode to use on comparison
+	*/
+	void compareScenes(
+		const RepoToken                     *token,
+		repo::core::model::RepoScene        *base,
+		repo::core::model::RepoScene        *compare,
+		repo::manipulator::diff::DiffResult &baseResults,
+		repo::manipulator::diff::DiffResult &compResults,
+		const repo::manipulator::diff::Mode       &diffMode
+		);
+
+
     /**
         * Compare 2 scenes via IDs.
         * @param token to load full scene from database if required
@@ -684,13 +704,36 @@ public:
         * @param baseResults Diff results in the perspective of base
         * @param compResults Diff results in the perspective of compare
         */
-    void compareScenesByIDs(
-            const RepoToken                     *token,
-            repo::core::model::RepoScene        *base,
-            repo::core::model::RepoScene        *compare,
-            repo::manipulator::diff::DiffResult &baseResults,
-            repo::manipulator::diff::DiffResult &compResults
-            );
+	void compareScenesByIDs(
+		const RepoToken                     *token,
+		repo::core::model::RepoScene        *base,
+		repo::core::model::RepoScene        *compare,
+		repo::manipulator::diff::DiffResult &baseResults,
+		repo::manipulator::diff::DiffResult &compResults
+		)
+	{
+		compareScenes(token, base, compare, baseResults, compResults, manipulator::diff::Mode::DIFF_BY_ID);
+	}
+
+	/**
+	* Compare 2 scenes via Names.
+	* @param token to load full scene from database if required
+	*		(if not required, a nullptr can be passed in)
+	* @param base base scene to compare against
+	* @param compare scene to compare base scene against
+	* @param baseResults Diff results in the perspective of base
+	* @param compResults Diff results in the perspective of compare
+	*/
+	void compareScenesByNames(
+		const RepoToken                     *token,
+		repo::core::model::RepoScene        *base,
+		repo::core::model::RepoScene        *compare,
+		repo::manipulator::diff::DiffResult &baseResults,
+		repo::manipulator::diff::DiffResult &compResults
+		)
+	{
+		compareScenes(token, base, compare, baseResults, compResults, manipulator::diff::Mode::DIFF_BY_NAME);
+	}
 
 private:
 

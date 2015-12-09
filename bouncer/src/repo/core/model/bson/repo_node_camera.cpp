@@ -114,8 +114,6 @@ std::vector<float> CameraNode::getCameraMatrix(
 	const bool &rowMajor) const
 {
 
-	/** todo: test ... should work, but i'm not absolutely sure */
-
 	std::vector<float> mat;
 	mat.resize(16);
 
@@ -199,4 +197,22 @@ std::vector<float> CameraNode::getCameraMatrix(
 	mat[d4] = 1.f;
 
 	return mat;
+}
+
+bool CameraNode::sEqual(const RepoNode &other) const
+{
+	if (other.getTypeAsEnum() != NodeType::CAMERA || other.getParentIDs().size() != getParentIDs().size())
+	{
+		return false;
+	}
+
+	const CameraNode otherCam = CameraNode(other);
+
+
+	std::vector<float> mat = getCameraMatrix();
+	std::vector<float> otherMat = otherCam.getCameraMatrix();
+
+
+	return !memcmp(mat.data(), otherMat.data(), mat.size() *sizeof(*mat.data()));
+
 }
