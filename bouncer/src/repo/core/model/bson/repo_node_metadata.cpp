@@ -37,3 +37,15 @@ RepoNode(bson)
 MetadataNode::~MetadataNode()
 {
 }
+
+bool MetadataNode::sEqual(const RepoNode &other) const
+{
+	if (other.getTypeAsEnum() != NodeType::METADATA || other.getParentIDs().size() != getParentIDs().size())
+	{
+		return false;
+	}
+
+	//TODO:
+	repoError << "Semantic comparison of metadata nodes are currently not supported!";
+	return false;
+}

@@ -80,3 +80,58 @@ repo_material_t MaterialNode::getMaterialStruct() const
 
 	return mat;
 }
+
+std::vector<float> MaterialNode::getDataAsBuffer() const
+{
+	repo_material_t mat = getMaterialStruct();
+
+	//flatten the material struct
+	std::vector<float> buffer;
+	buffer.reserve(sizeof(mat)/sizeof(float)); //FIXME: bigger than this, since we have 4 vector points with each having 3 members.
+	
+	for (const float &n : mat.ambient)
+	{
+		buffer.push_back(n);
+	}
+	
+	for (const float &n : mat.diffuse)
+	{
+		buffer.push_back(n);
+	}
+
+
+	for (const float &n : mat.specular)
+	{
+		buffer.push_back(n);
+	}
+
+
+	for (const float &n : mat.emissive)
+	{
+		buffer.push_back(n);
+	}
+
+	buffer.push_back(mat.opacity);
+	buffer.push_back(mat.shininess);
+	buffer.push_back(mat.shininessStrength);
+	uint32_t mask = (((int)mat.isWireframe) << 1) | mat.isTwoSided;
+
+	buffer.push_back((float)mask);
+
+	return buffer;
+
+}
+
+bool MaterialNode::sEqual(const RepoNode &other) const
+{
+	if (other.getTypeAsEnum() != NodeType::MATERIAL || other.getParentIDs().size() != getParentIDs().size())
+	{
+		return false;
+	}
+	
+	auto mat = getDataAsBuffer();
+	auto otherMat = MaterialNode(other).getDataAsBuffer();
+
+	return mat.size() == otherMat.size() && !memcmp(&mat, &otherMat, mat.size() * sizeof(mat[0]));
+
+}

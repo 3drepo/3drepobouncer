@@ -62,3 +62,33 @@ std::string TextureNode::getFileExtension() const
 {
 	return getStringField(REPO_NODE_LABEL_EXTENSION);
 }
+
+bool TextureNode::sEqual(const RepoNode &other) const
+{
+	if (other.getTypeAsEnum() != NodeType::TEXTURE || other.getParentIDs().size() != getParentIDs().size())
+	{
+		return false;
+	}
+
+	TextureNode otherText = TextureNode(other);
+	bool equal;
+
+	if (equal = getFileExtension() == otherText.getFileExtension())
+	{
+		std::vector<char> *raw, *raw2;
+
+		raw = getRawData();
+		raw2 = otherText.getRawData();
+
+		if (equal = (raw && raw2 && (raw->size() == raw2->size())) )
+		{
+			equal = !memcmp(raw->data(), raw2->data(), raw->size() * sizeof(*raw->data()));
+
+			delete raw;
+			delete raw2;
+		}
+
+	}
+
+	return equal;
+}

@@ -37,3 +37,15 @@ RepoNode(bson)
 ReferenceNode::~ReferenceNode()
 {
 }
+
+bool ReferenceNode::sEqual(const RepoNode &other) const
+{
+	if (other.getTypeAsEnum() != NodeType::REFERENCE || other.getParentIDs().size() != getParentIDs().size())
+	{
+		return false;
+	}
+
+	//TODO:
+	repoError << "Semantic comparison of reference nodes are currently not supported!";
+	return false;
+}
