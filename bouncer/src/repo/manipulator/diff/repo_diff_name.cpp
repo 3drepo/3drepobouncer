@@ -104,7 +104,6 @@ void DiffByName::compareNodes(
 		repoUUID baseId = pair.second->getSharedID();
 		if (mapIt != compNodeMap.end())
 		{
-			repoDebug << "Found match for name: "  << pair.first << " of type : " << pair.second->getType();
 			//found a name match
 			//Compare to see if it is modified
 
@@ -114,10 +113,8 @@ void DiffByName::compareNodes(
 				//unmatch, implies modified
 				baseRes.modified.push_back(baseId);
 				compRes.modified.push_back(compId);
-				repoTrace << "This node has been deemed modified.";
 			}
 			else
-				repoTrace << "This node is the same.";
 
 			compIDs.erase(compId);
 		}
