@@ -29,6 +29,8 @@ namespace repo{
 				std::vector<repoUUID> modified; //nodes that exist on the other model but it is modified.
 			};
 
+			enum class Mode{ DIFF_BY_ID, DIFF_BY_NAME };
+
 			class AbstractDiff
 			{
 			public:

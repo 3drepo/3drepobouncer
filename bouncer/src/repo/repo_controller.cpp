@@ -895,12 +895,13 @@ void RepoController::reduceTransformations(
 
 }
 
-void RepoController::compareScenesByIDs(
+void RepoController::compareScenes(
         const RepoToken                    *token,
         repo::core::model::RepoScene       *base,
         repo::core::model::RepoScene       *compare,
         repo::manipulator::diff::DiffResult &baseResults,
-        repo::manipulator::diff::DiffResult &compResults
+        repo::manipulator::diff::DiffResult &compResults,
+		const repo::manipulator::diff::Mode       &diffMode
         )
 {
     if (token && base && compare)
@@ -929,7 +930,7 @@ void RepoController::compareScenesByIDs(
     {
         repoInfo << "Comparing scenes...";
         manipulator::RepoManipulator* worker = workerPool.pop();
-        worker->compareScenesByIDs(base, compare, baseResults, compResults);
+        worker->compareScenes(base, compare, baseResults, compResults, diffMode);
         workerPool.push(worker);
     }
     else{

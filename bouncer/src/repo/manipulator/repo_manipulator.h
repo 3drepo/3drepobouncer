@@ -96,17 +96,19 @@ namespace repo{
 				const std::string                   &owner = "");
 
 			/**
-			* Compare 2 scenes via IDs.
+			* Compare 2 scenes.
 			* @param base base scene to compare against
 			* @param compare scene to compare base scene against
 			* @param baseResults Diff results in the perspective of base
 			* @param compResults Diff results in the perspective of compare
+			* @param diffMode the mode to use to compare the scenes
 			*/
-			void compareScenesByIDs(
+			void compareScenes(
 				repo::core::model::RepoScene       *base,
 				repo::core::model::RepoScene       *compare,
 				diff::DiffResult                   &baseResults,
-				diff::DiffResult                   &compResults);
+				diff::DiffResult                   &compResults,
+				const diff::Mode				   &diffMode);
 
 			/**
 			* Create a bson object storing user credentials

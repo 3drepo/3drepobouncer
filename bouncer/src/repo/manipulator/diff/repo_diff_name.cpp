@@ -71,6 +71,7 @@ bool DiffByName::compare(
 
 		//any remaining items within compIDs doesn't exist in base.
 		compRes.added.insert(compRes.added.end(), compIDs.begin(), compIDs.end());
+		baseRes.added.insert(baseRes.added.end(), baseIDs.begin(), baseIDs.end());
 		repoInfo << "Comparison completed: #nodes added: " << compRes.added.size() << " deleted: "
 			<< baseRes.added.size() << " modified: " << baseRes.modified.size();
 		res = true;
@@ -100,28 +101,30 @@ void DiffByName::compareNodes(
 	{
 		//Try to find the same name in compNodeMap
 		auto mapIt = compNodeMap.find(pair.first);
-
+		repoUUID baseId = pair.second->getSharedID();
 		if (mapIt != compNodeMap.end())
 		{
 			repoLogDebug("Found match for name: " + pair.first);
 			//found a name match
 			//Compare to see if it is modified
-			repoUUID baseId = pair.second->getSharedID();
+
+			repoUUID compId = mapIt->second->getSharedID();
 			if (!pair.second->sEqual(*mapIt->second))
 			{
 				//unmatch, implies modified
-				repoUUID compId = mapIt->second->getSharedID();
 				baseRes.modified.push_back(baseId);
 				compRes.modified.push_back(compId);
-				compIDs.erase(compId);
+
 			}
-			else
-			{
-				//Does not exist in comp, 
-				baseRes.added.push_back(baseId);
-			}
-			baseIDs.erase(baseId);
+
+			compIDs.erase(compId);
 		}
+		else
+		{
+
+			baseRes.added.push_back(baseId);
+		}
+		baseIDs.erase(baseId);
 	}
 }
 
