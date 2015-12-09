@@ -132,6 +132,6 @@ bool MaterialNode::sEqual(const RepoNode &other) const
 	auto mat = getDataAsBuffer();
 	auto otherMat = MaterialNode(other).getDataAsBuffer();
 
-	return mat.size() == otherMat.size() && !memcmp(&mat, &otherMat, mat.size() * sizeof(mat[0]));
+	return mat.size() == otherMat.size() && !memcmp(mat.data(), otherMat.data(), mat.size() * sizeof(*mat.data()));
 
 }
