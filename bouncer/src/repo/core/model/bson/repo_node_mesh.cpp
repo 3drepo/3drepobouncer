@@ -375,28 +375,50 @@ bool MeshNode::sEqual(const RepoNode &other) const
 	//check all the sizes match first, as comparing the content will be costly
 	bool success = false;
 
-	if (success = vertices->size()         == vertices2->size() &&
-					normals->size()        == normals2->size() &&
-					uvChannels->size()     == uvChannels2->size() &&
-					facesSerialized.size() == facesSerialized2.size() &&
-					colors->size()         == colors2->size())
+	//FIXME: why is this so messy... actually why do we have pointers to vectors?!
+	if (vertices && (success = (bool)vertices == (bool)vertices2))
 	{
-		if (vertices->size())
+		success &= vertices->size() == vertices2->size();
+	}
+
+	if (normals && (success &= (bool) normals == (bool)normals2))
+	{
+		success &= normals->size() == normals2->size();
+	}
+
+	if (uvChannels && (success &= (bool) uvChannels == (bool)uvChannels2))
+	{
+		success &= uvChannels->size() == uvChannels2->size();
+	}
+
+	if (success)
+		success &= facesSerialized.size() == facesSerialized2.size();
+
+	if (colors && (success &= (bool)colors == (bool)colors2))
+	{
+		success &= colors->size() == colors2->size();
+	}
+
+
+	if (success)
+	{
+
+		if (vertices && vertices->size())
 		{
 			success &= !memcmp(vertices->data(), vertices2->data(), vertices->size() * sizeof(*vertices->data()));
 		}
 
-		if (success && normals->size())
+		if (normals && success && normals->size())
 		{
 			success &= !memcmp(normals->data(), normals2->data(), normals->size() * sizeof(*normals->data()));
 		}
 
-		if (success && uvChannels->size())
+		if (uvChannels && success && uvChannels->size())
 		{
 			success &= !memcmp(uvChannels->data(), uvChannels2->data(), uvChannels->size() * sizeof(*uvChannels->data()));
 		}
 
-		if (success && colors->size())
+		if (colors && success && colors->size())
 		{
 			success &= !memcmp(colors->data(), colors2->data(), colors->size() * sizeof(*colors->data()));
 		}
