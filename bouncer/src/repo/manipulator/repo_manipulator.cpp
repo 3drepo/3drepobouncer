@@ -594,6 +594,7 @@ repo::core::model::RepoScene*
 	RepoManipulator::loadSceneFromFile(
 	const std::string &filePath,
 	      std::string &msg,
+	const bool &applyReduction,
     const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
 
@@ -610,7 +611,13 @@ repo::core::model::RepoScene*
 		if (modelConvertor->importModel(filePath, msg))
 		{
 			repoTrace << "model Imported, generating Repo Scene";
-			scene = modelConvertor->generateRepoScene();
+			if ((scene = modelConvertor->generateRepoScene()) && applyReduction)
+			{
+				repoTrace << "Scene generated. Applying transformation reduction optimizer";
+				modeloptimizer::TransformationReductionOptimizer optimizer;
+				optimizer.apply(scene);
+			}
+			
 		}
 		else
 		{

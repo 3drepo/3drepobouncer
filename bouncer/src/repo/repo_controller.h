@@ -628,11 +628,13 @@ public:
     /**
         * Load a Repo Scene from a file
         * @param filePath path to file
+		* @param apply transformation reduction (default: true)
         * @param config import settings(optional)
         * @return returns a pointer to Repo Scene upon success
         */
     repo::core::model::RepoScene* loadSceneFromFile(
             const std::string &filePath,
+			const bool &applyReduction = true,
             const repo::manipulator::modelconvertor::ModelImportConfig *config
             = nullptr);
 

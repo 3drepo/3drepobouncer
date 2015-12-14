@@ -414,7 +414,8 @@ namespace repo{
 			/**
 			* Load a Repo Scene from a file
 			* @param filePath path to file
-			* @param msg error message if it fails (optional)
+			* @param msg error message if it fails 
+			* @param apply transformation reduction optimizer (default = true)
 			* @param config import config (optional)
 			* @return returns a pointer to Repo Scene upon success
 			*/
@@ -422,6 +423,7 @@ namespace repo{
 				loadSceneFromFile(
 				const std::string &filePath,
 				      std::string &msg,
+				const bool &applyReduction = true,
 			    const repo::manipulator::modelconvertor::ModelImportConfig *config
 					  = nullptr);
 
