@@ -790,6 +790,7 @@ repo::core::model::RepoNodeSet RepoController::loadMetadataFromFile(
 repo::core::model::RepoScene*
 RepoController::loadSceneFromFile(
         const std::string                                          &filePath,
+		const bool &applyReduction,
         const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
 
@@ -799,7 +800,7 @@ RepoController::loadSceneFromFile(
     if (!filePath.empty())
     {
         manipulator::RepoManipulator* worker = workerPool.pop();
-        scene = worker->loadSceneFromFile(filePath, errMsg, config);
+        scene = worker->loadSceneFromFile(filePath, errMsg, applyReduction, config);
         workerPool.push(worker);
         if (!scene)
             repoError << "Failed ot load scene from file: " << errMsg;
