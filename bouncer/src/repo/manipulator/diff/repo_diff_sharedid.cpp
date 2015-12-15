@@ -52,6 +52,18 @@ bool DiffBySharedID::compare(
 				repo::core::model::RepoNode *baseNode = baseScene->getNodeBySharedID(sharedID);
 				repo::core::model::RepoNode *compNode = compareScene->getNodeBySharedID(sharedID);
 
+				auto corrIt = baseRes.correspondence.find(sharedID);
+
+				if (corrIt == baseRes.correspondence.end())
+				{
+					baseRes.correspondence[sharedID] = sharedID;
+					compRes.correspondence[sharedID] = sharedID;
+				}
+				else
+				{
+					repoLogError("Found multiple potential correspondence for " + UUIDtoString(sharedID));
+				}
+
 				if (baseNode->getUniqueID() != compNode->getUniqueID())
 				{
 					//modified
