@@ -105,9 +105,23 @@ void DiffByName::compareNodes(
 		if (mapIt != compNodeMap.end())
 		{
 			//found a name match
+			repoUUID compId = mapIt->second->getSharedID();
+			auto corrIt = baseRes.correspondence.find(baseId);
+
+			if (corrIt == baseRes.correspondence.end())
+			{
+				baseRes.correspondence[baseId] = compId;
+				compRes.correspondence[compId] = baseId;
+			}
+			else
+			{
+				repoLogError("Found multiple potential correspondence for " + UUIDtoString(baseId));
+			}
+
+
 			//Compare to see if it is modified
 
-			repoUUID compId = mapIt->second->getSharedID();
+
 			if (!pair.second->sEqual(*mapIt->second))
 			{
 				//unmatch, implies modified
