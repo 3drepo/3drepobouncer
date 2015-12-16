@@ -22,7 +22,9 @@ using namespace repo::manipulator::diff;
 
 DiffByName::DiffByName(
 	const repo::core::model::RepoScene *base,
-	const repo::core::model::RepoScene *compare) : AbstractDiff(base, compare)
+	const repo::core::model::RepoScene *compare) 
+	: AbstractDiff(base, compare)
+	, errorReported(false)
 {
 
 	ok = this->compare(msg);
@@ -155,9 +157,10 @@ std::unordered_map<std::string, repo::core::model::RepoNode*> DiffByName::create
 		{
 			map[name] = node;
 		}
-		else
+		else if (!errorReported)
 		{
-			repoLogError("More than one node is named the same (" + node->getName() + ")");
+			repoLogError("More than one node is named the same. Some nodes which may have correspondence might be presented as a mismatch.");
+			errorReported = true;
 		}
 	}
 

@@ -81,6 +81,7 @@ namespace repo{
 
 
 				bool ok; //Check if comparator status is ok
+				bool errorReported;
 				std::string msg; //error message if comaprator statis is false
 			};
 		}
