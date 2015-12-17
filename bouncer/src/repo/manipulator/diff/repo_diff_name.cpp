@@ -22,7 +22,9 @@ using namespace repo::manipulator::diff;
 
 DiffByName::DiffByName(
 	const repo::core::model::RepoScene *base,
-	const repo::core::model::RepoScene *compare) : AbstractDiff(base, compare)
+	const repo::core::model::RepoScene *compare) 
+	: AbstractDiff(base, compare)
+	, errorReported(false)
 {
 
 	ok = this->compare(msg);
@@ -105,9 +107,23 @@ void DiffByName::compareNodes(
 		if (mapIt != compNodeMap.end())
 		{
 			//found a name match
+			repoUUID compId = mapIt->second->getSharedID();
+			auto corrIt = baseRes.correspondence.find(baseId);
+
+			if (corrIt == baseRes.correspondence.end())
+			{
+				baseRes.correspondence[baseId] = compId;
+				compRes.correspondence[compId] = baseId;
+			}
+			else
+			{
+				repoLogError("Found multiple potential correspondence for " + UUIDtoString(baseId));
+			}
+
+
 			//Compare to see if it is modified
 
-			repoUUID compId = mapIt->second->getSharedID();
+
 			if (!pair.second->sEqual(*mapIt->second))
 			{
 				//unmatch, implies modified
@@ -141,9 +157,10 @@ std::unordered_map<std::string, repo::core::model::RepoNode*> DiffByName::create
 		{
 			map[name] = node;
 		}
-		else
+		else if (!errorReported)
 		{
-			repoLogError("More than one node is named the same (" + node->getName() + ")");
+			repoLogError("More than one node is named the same. Some nodes which may have correspondence might be presented as a mismatch.");
+			errorReported = true;
 		}
 	}
 

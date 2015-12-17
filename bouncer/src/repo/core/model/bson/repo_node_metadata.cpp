@@ -45,7 +45,28 @@ bool MetadataNode::sEqual(const RepoNode &other) const
 		return false;
 	}
 
-	//TODO:
-	repoError << "Semantic comparison of metadata nodes are currently not supported!";
-	return false;
+	std::set<std::string> fieldNames, otherFieldNames;
+	
+	bool match = false;
+	if (match = (getFieldNames(fieldNames) == other.getFieldNames(otherFieldNames)))
+	{
+		for (const std::string &fieldName : fieldNames)
+		{
+			auto it = otherFieldNames.find(fieldName);
+			if (match = (it != otherFieldNames.end()))
+			{
+				RepoBSONElement element = getField(fieldName);
+				RepoBSONElement otherElement = other.getField(fieldName);
+
+				if (match = (element.type() == otherElement.type()))
+				{
+					//it'll get complicated to check the actual value, so just
+					//rely on element comparison..?
+					match = element == otherElement;
+				}
+			}
+			if (!match) break;
+		}
+	}
+	return match;
 }
