@@ -160,9 +160,8 @@ void RepoScene::abandonChild(
 			|| newModified.find(childSharedID) == newModified.end());
 
 		auto nodeWithoutParent = child->cloneAndRemoveParent(parent, needNewId);
-		this->modifyNode(gType, child, new RepoNode(nodeWithoutParent), true);
+		this->modifyNode(gType, child, &nodeWithoutParent, true);
 
-		
 	}
 }
 
@@ -214,7 +213,7 @@ void RepoScene::addInheritance(
 			if (trackChanges)
 			{
 				//this is considered a change on the node, we need to make a new node with new uniqueID
-				modifyNode(GraphType::DEFAULT, childNode, new RepoNode(childWithParent));
+				modifyNode(GraphType::DEFAULT, childNode, &childWithParent);
 			}
 			else
 			{
@@ -1226,9 +1225,9 @@ void RepoScene::reorientateDirectXModel()
 
 
 			TransformationNode newRoot = RepoBSONFactory::makeTransformationNode(newMatrix, rootTrans.getName());
-			modifyNode(GraphType::DEFAULT, rootTrans.getSharedID(), new TransformationNode(newRoot));
+			modifyNode(GraphType::DEFAULT, rootTrans.getSharedID(), &newRoot);
 			if (stashGraph.rootNode)
-				modifyNode(GraphType::OPTIMIZED, stashGraph.rootNode->getSharedID(), new TransformationNode(newRoot));
+				modifyNode(GraphType::OPTIMIZED, stashGraph.rootNode->getSharedID(), &newRoot);
 		}
 		else
 		{

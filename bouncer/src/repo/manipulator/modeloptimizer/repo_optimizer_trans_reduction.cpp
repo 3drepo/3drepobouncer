@@ -172,14 +172,12 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 						}
 
 						//change mesh name
-						repo::core::model::MeshNode *newMesh = 
-							new repo::core::model::MeshNode(mesh->cloneAndChangeName(trans->getName(), false));
+						repo::core::model::MeshNode newMesh = mesh->cloneAndChangeName(trans->getName(), false);
 	
-						scene->modifyNode(repo::core::model::RepoScene::GraphType::DEFAULT, mesh, newMesh);
+						scene->modifyNode(repo::core::model::RepoScene::GraphType::DEFAULT, mesh, &newMesh);
 
 						//remove parent from the scene.
 						scene->removeNode(repo::core::model::RepoScene::GraphType::DEFAULT, parentSharedID);
-						delete newMesh;
 					}
 					else
 					{
