@@ -32,10 +32,47 @@ void printHelp()
 	std::cout << helpInfo() << std::endl;
 }
 
+repo::RepoController* instantiateController()
+{
+	repo::RepoController *controller = new repo::RepoController();
+
+	char* debug = getenv("REPO_DEBUG");
+	char* verbose = getenv("REPO_VERBOSE");
+
+	if (verbose)
+	{
+		controller->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::TRACE);
+	}
+	else if (debug)
+	{
+		controller->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::DEBUG);
+	}
+	else
+	{
+		controller->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::INFO);
+	}
+
+	return controller;
+}
+
 int main(int argc, char* argv[]){
 
 	
 	if (argc < minArgs){
+		if (argc == 2 && isSpecialCommand(argv[1]))
+		{
+			repo_op_t op;
+			op.command = argv[1];
+			op.nArgcs = 0;
+
+			repo::RepoController *controller = instantiateController();
+
+			int32_t errcode = performOperation(controller, nullptr, op);
+			
+			delete controller;
+			return errcode;
+		}
+
 		printHelp();
 		return REPOERR_INVALID_ARG;
 	}
@@ -56,7 +93,7 @@ int main(int argc, char* argv[]){
 	if (cmdnArgs <= op.nArgcs)
 	{
 
-		repo::RepoController *controller = new repo::RepoController();
+		repo::RepoController *controller = instantiateController();
 
 		std::string errMsg;
 		repo::RepoToken* token = controller->authenticateToAdminDatabaseMongo(errMsg, address, port, username, password);

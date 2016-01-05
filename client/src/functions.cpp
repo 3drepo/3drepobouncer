@@ -21,6 +21,8 @@
 
 static const std::string cmdImportFile = "import"; //file import
 static const std::string cmdTestConn   = "test";   //test the connection
+static const std::string cmdVersion = "version";   //test the connection
+static const std::string cmdVersion2 = "-v";   //test the connection
 
 
 std::string helpInfo()
@@ -29,8 +31,14 @@ std::string helpInfo()
 
 	ss << cmdImportFile << "\t\tImport file to database. (args: file database project [dxrotate] [owner] [configfile])\n";
 	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
+	ss << cmdVersion << "[-v]\t\tPrints the version of Repo Bouncer Client/Library\n";
 
 	return ss.str();
+}
+
+bool isSpecialCommand(const std::string &cmd)
+{
+	return cmd == cmdVersion || cmd == cmdVersion2;
 }
 
 int32_t knownValid(const std::string &cmd)
@@ -38,6 +46,8 @@ int32_t knownValid(const std::string &cmd)
 	if (cmd == cmdImportFile)
 		return 3;
 	if (cmd == cmdTestConn)
+		return 0;
+	if (cmd == cmdVersion || cmd == cmdVersion2)
 		return 0;
 	return -1;
 }
@@ -69,6 +79,11 @@ int32_t performOperation(
 		//This is just to test if the client is working and if the connection is working
 		//if we got a token from the controller we can assume that it worked.
 		return token ?  REPOERR_OK : REPOERR_AUTH_FAILED;
+	}
+	else if (command.command == cmdVersion || command.command == cmdVersion2)
+	{
+		std::cout << "3D Repo Bouncer Client v" + controller->getVersion() << std::endl;
+		errCode = REPOERR_OK;
 	}
 	else
 		repoLogError("Unrecognised command: " + command.command + ". Type --help for info");
