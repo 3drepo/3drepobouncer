@@ -35,7 +35,6 @@ RepoController::RepoController(
 
     for (uint32_t i = 0; i < numConcurrentOps; i++)
     {
-        repoTrace << "Instantiating worker pool with " << numConcurrentOps << " workers";
         manipulator::RepoManipulator* worker = new manipulator::RepoManipulator();
         workerPool.push(worker);
     }
@@ -938,3 +937,10 @@ void RepoController::compareScenes(
         repoError << "RepoController::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
     }
 }
+
+std::string RepoController::getVersion()
+{
+	std::stringstream ss;
+	ss << BOUNCER_VMAJOR << "." << BOUNCER_VMINOR;
+	return ss.str();
+} 

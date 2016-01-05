@@ -94,6 +94,7 @@ public:
 
     /**
         * Constructor
+		* @param listeners a list of listeners subscribing to the log
         * @param numConcurrentOps maximum number of requests it can handle concurrently
         * @param numDBConn number of concurrent connections to the database
         */
@@ -736,6 +737,14 @@ public:
 	{
 		compareScenes(token, base, compare, baseResults, compResults, manipulator::diff::Mode::DIFF_BY_NAME);
 	}
+
+	/*
+	*	------------- Versioning --------------
+	*/
+	/**
+	* Get bouncer version in the form of a string
+	*/
+	std::string getVersion();
 
 private:
 
