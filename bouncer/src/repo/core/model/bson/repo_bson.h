@@ -165,7 +165,6 @@ public:
                 }
             }
             else{
-                repoTrace << "passed1 jhere";
                 repoError << "RepoBSON::getBinaryFieldAsVector :" <<
                              (!vec ? " nullptr to vector " : "bson element type is not BinDataGeneral!");
 
