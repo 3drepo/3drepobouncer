@@ -107,7 +107,6 @@ void RepoLog::setLoggingLevel(const RepoLogLevel &level)
 }
 
 void RepoLog::subscribeBroadcaster(RepoBroadcaster *broadcaster){
-	repoInfo << "subscribeBroadcasterToLog()";
 
 	boost::iostreams::stream<RepoBroadcaster> *streamptr =
 		new boost::iostreams::stream<RepoBroadcaster>(*broadcaster);
