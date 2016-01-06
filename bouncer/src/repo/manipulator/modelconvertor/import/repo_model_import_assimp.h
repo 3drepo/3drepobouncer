@@ -106,7 +106,7 @@ namespace repo{
 				* @param nameToTexture a mapping of texture name to texture node
 				* @return returns the created material node
 				*/
-				repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
+				repo::core::model::MaterialNode* createMaterialRepoNode(
 					const aiMaterial *material,
 					const std::string &name,
 					const std::map<std::string, repo::core::model::RepoNode *> &nameToTexture);
