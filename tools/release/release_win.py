@@ -12,7 +12,7 @@
 githubRepo = "https://github.com/3drepo/3drepobouncer"
 
 #Release tag (Also used to name the folder)
-releaseTag = "1.0a"
+releaseTag = "v1.0a"
 
 #name
 projName = "3drepobouncer"
