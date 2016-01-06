@@ -909,12 +909,12 @@ TextureNode RepoBSONFactory::makeTextureNode(
     //
     // Format TODO: replace format with MIME Type?
     //
-    if (name.empty())
-    {
-        boost::filesystem::path file{ name };
-        builder << REPO_NODE_LABEL_EXTENSION << file.extension().c_str();
-    }
-
+	if (!name.empty())
+	{
+		boost::filesystem::path file{ name };
+		std::string ext = file.extension().string();
+		builder << REPO_NODE_LABEL_EXTENSION << ext.substr(1, ext.size());
+	}
     //
     // Data
     //
@@ -924,6 +924,11 @@ TextureNode RepoBSONFactory::makeTextureNode(
                     REPO_LABEL_DATA,
                     data,
                     byteCount);
+	else
+	{
+		repoWarning << " data is null or byteCount(" << byteCount << ") is 0!";
+	}
+	
 
     return TextureNode(builder.obj());
 }
