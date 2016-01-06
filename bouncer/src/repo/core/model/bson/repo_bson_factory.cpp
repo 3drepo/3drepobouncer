@@ -924,6 +924,10 @@ TextureNode RepoBSONFactory::makeTextureNode(
                     REPO_LABEL_DATA,
                     data,
                     byteCount);
+	else
+	{
+		repoWarning << " data is null or byteCount(" << byteCount << ") is 0!";
+	}
 
     return TextureNode(builder.obj());
 }

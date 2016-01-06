@@ -228,8 +228,9 @@ repo::core::model::CameraNode* AssimpModelImport::createCameraRepoNode(
 
 }
 repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
-	aiMaterial *material,
-	std::string name)
+	const aiMaterial *material,
+	const std::string &name,
+	const std::map<std::string, repo::core::model::RepoNode *> &nameToTexture)
 {
 	repo::core::model::MaterialNode *materialNode;
 
@@ -318,6 +319,22 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 		// Texture (one diffuse for the moment)
 		// Textures are uniquely referenced by their name
 		aiString texPath; // contains a filename of a texture
+		/*repoTrace << " #None Texture:" << material->GetTextureCount(aiTextureType_NONE);
+		repoTrace << " #Diffuse Texture:" << material->GetTextureCount(aiTextureType_DIFFUSE);
+		repoTrace << " #Spec Texture:" << material->GetTextureCount(aiTextureType_SPECULAR);
+		repoTrace << " #Ambient Texture:" << material->GetTextureCount(aiTextureType_AMBIENT);
+		repoTrace << " #Emissive Texture:" << material->GetTextureCount(aiTextureType_EMISSIVE);
+		repoTrace << " #Height Texture:" << material->GetTextureCount(aiTextureType_HEIGHT);
+		repoTrace << " #Normal Texture:" << material->GetTextureCount(aiTextureType_NORMALS);
+		repoTrace << " #Shiniess Texture:" << material->GetTextureCount(aiTextureType_SHININESS);
+		repoTrace << " #Opac Texture:" << material->GetTextureCount(aiTextureType_OPACITY);
+		repoTrace << " #Disp Texture:" << material->GetTextureCount(aiTextureType_DISPLACEMENT);
+		repoTrace << " #LightM Texture:" << material->GetTextureCount(aiTextureType_LIGHTMAP);
+		repoTrace << " #Reflection Texture:" << material->GetTextureCount(aiTextureType_REFLECTION);
+		repoTrace << " #Unknown Texture:" << material->GetTextureCount(aiTextureType_UNKNOWN);
+*/
+
+
 		if (AI_SUCCESS == material->GetTexture(aiTextureType_DIFFUSE, 0, &texPath))
 		{
 			std::map<std::string, repo::core::model::RepoNode *>::const_iterator it = nameToTexture.find(texPath.data);
@@ -328,6 +345,10 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 
 				repo::core::model::RepoNode tmp = nodeAddr->cloneAndAddParent(materialNode->getSharedID());
 				nodeAddr->swap(tmp);
+			}
+			else
+			{
+				repoError << "Could not find related texture mapping";
 			}
 		}
 	}
@@ -694,11 +715,113 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		repo::core::model::RepoNodeSet materials; //!< Materials
 		repo::core::model::RepoNodeSet metadata; //!< Metadata
 		repo::core::model::RepoNodeSet transformations; //!< Transformations
+		repo::core::model::RepoNodeSet textures;
+
 
 		std::vector<repo::core::model::RepoNode *> originalOrderMaterial; //vector that keeps track original order for assimp indices
 		std::map<repo::core::model::RepoNode *, std::vector<repoUUID>> matParents;//Tracks material parents
 		std::vector<repo::core::model::RepoNode *> originalOrderMesh; //vector that keeps track original order for assimp indices
 		std::map<std::string, repo::core::model::RepoNode *> camerasMap;
+		std::map<std::string, repo::core::model::RepoNode *> nameToTexture;
+
+		//-------------------------------------------------------------------------
+		// Textures
+		repoInfo << "Constructing Texture Nodes...";
+		for (uint32_t m = 0; m < assimpScene->mNumMaterials; ++m)
+		{
+			int texIndex = 0;
+			aiReturn texFound = AI_SUCCESS;
+			const aiMaterial *material = assimpScene->mMaterials[m];
+
+
+			uint32_t nTex = material->GetTextureCount(aiTextureType_DIFFUSE);
+			for (uint32_t iTex = 0; iTex < nTex; ++iTex)
+			{
+				aiString path;	// filename
+				if (AI_SUCCESS == material->GetTexture(aiTextureType_DIFFUSE, iTex, &path))
+				{
+					std::string texName(path.data);
+					if (!texName.empty())
+					{
+						repo::core::model::RepoNode *textureNode = nullptr;
+						if (assimpScene->HasTextures() && '*' == texName.at(0))
+						{
+							repoTrace << "Embedded texture name: " << texName;
+							//---------------------------------------------------------
+							// Embedded texture
+							int textureIndex = atoi(texName.substr(1, texName.size()).c_str());
+							aiTexture *texture = assimpScene->mTextures[textureIndex];
+
+
+
+							//FIXME: Untested!
+							textureNode = new repo::core::model::TextureNode(repo::core::model::RepoBSONFactory::makeTextureNode(
+								texName,
+								(char*)texture->pcData,
+								sizeof(texture->pcData) * texture->mWidth * texture->mHeight ? texture->mHeight : 1,
+								texture->mWidth,
+								texture->mHeight,
+								REPO_NODE_API_LEVEL_1));
+
+						}
+						else
+						{
+							repoTrace << "External texture name: " << texName;
+							//External texture
+							std::ifstream::pos_type size;
+							std::string dirPath = getDirPath(orgFile);
+							char *memblock;
+							boost::filesystem::path filePath = boost::filesystem::path(dirPath) / boost::filesystem::path(texName);
+							std::ifstream file(filePath.string(), std::ios::in | std::ios::binary | std::ios::ate);
+							if (!file.is_open())
+							{
+								repoError << "Could not open texture: " << dirPath << texName << std::endl;
+							}
+							else
+							{
+								std::ifstream::pos_type size = file.tellg();
+								char *memblock = new char[size];
+								file.seekg(0, std::ios::beg);
+								file.read(memblock, size);
+								file.close();
+
+								textureNode = new repo::core::model::TextureNode(repo::core::model::RepoBSONFactory::makeTextureNode(
+									texName,
+									memblock,
+									size,
+									size,
+									0,
+									REPO_NODE_API_LEVEL_1));
+
+
+								delete[] memblock;
+							}
+
+
+						}
+
+						if (textureNode)
+						{
+							textures.insert(textureNode);
+							nameToTexture[texName] = textureNode;
+							repoTrace << "Added texture :" << texName;
+						}
+					}
+					else
+					{
+						repoWarning << "Texture name is empty!";
+
+					}
+
+				}
+				else
+				{
+					repoWarning << "Unable to get texture from material.";
+				}
+			}
+
+		}
+
 
 		repoInfo << "Constructing Material Nodes...";
 		/*
@@ -719,7 +842,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 
 				repo::core::model::RepoNode* material = createMaterialRepoNode(
 					assimpScene->mMaterials[i],
-					name.data);
+					name.data, nameToTexture);
 
 				if (!material)
 					repoError << "Unable to construct material node in Assimp Model Convertor!";
@@ -946,86 +1069,15 @@ bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
 			polyCount += assimpScene->mMeshes[i]->mNumFaces;
 
 		repoInfo << "=== IMPORTING MODEL WITH ASSIMP MODEL CONVERTOR ===";
-		repoInfo << "Loaded ";
-		repoInfo << fileName << " with " << polyCount << " polygons in ";
-		repoInfo << assimpScene->mNumMeshes << " ";
-		repoInfo << ((assimpScene->mNumMeshes == 1) ? "mesh" : "meshes");
+		repoInfo << "Loaded " << fileName << " with " << polyCount << " polygons in " << assimpScene->mNumMeshes << " " << ((assimpScene->mNumMeshes == 1) ? "mesh" : "meshes");
 		repoInfo << std::endl;
 
-		//-------------------------------------------------------------------------
-		// Textures
-		loadTextures(getDirPath(filePath));
 
 	}
 
 	return success;
 }
 
-void AssimpModelImport::loadTextures(std::string dirPath){
-
-	for (uint32_t m = 0; m < assimpScene->mNumMaterials; ++m)
-	{
-		int texIndex = 0;
-		aiReturn texFound = AI_SUCCESS;
-		const aiMaterial *material = assimpScene->mMaterials[m];
-
-		aiString path;	// filename
-		while (AI_SUCCESS == texFound)
-		{
-			texFound = material->GetTexture(aiTextureType_DIFFUSE, texIndex, &path);
-			std::string fileName(path.data);
-
-			// Multiple materials can point to the same texture
-			if (!fileName.empty() && nameToTexture.find(fileName.c_str()) == nameToTexture.end())
-			{
-				repo::core::model::RepoNode *textureNode;
-				// In assimp, embedded textures name starts with asterisk and a textures array index
-				// so the name can be "*0" for example
-				if (assimpScene->HasTextures() && '*' == fileName.at(0))
-				{
-					//---------------------------------------------------------
-					// Embedded texture
-					int textureIndex = atoi(fileName.substr(1, fileName.size()).c_str());
-					aiTexture *texture = assimpScene->mTextures[textureIndex];
-
-					// Read the raw file to save space in the DB. QImage will happily
-					// claim a file is 32 bit depth even though it is 24 for example.
-					std::ifstream::pos_type size;
-					char *memblock;
-					std::ifstream file(dirPath + fileName, std::ios::in | std::ios::binary | std::ios::ate);
-					if (!file.is_open())
-					{
-						repoError << "Could not open texture: " << dirPath << fileName << std::endl;
-					}
-					else
-					{
-						size = file.tellg();
-						memblock = new char[size];
-						file.seekg(0, std::ios::beg);
-						file.read(memblock, size);
-						file.close();
-
-						textureNode = new repo::core::model::TextureNode(repo::core::model::RepoBSONFactory::makeTextureNode(
-							fileName,
-							memblock,
-							(uint32_t)size,
-							texture->mWidth,
-							texture->mHeight,
-							REPO_NODE_API_LEVEL_1));
-
-						textures.insert(textureNode);
-						nameToTexture[fileName] = textureNode;
-
-						delete[] memblock;
-					}
-				}
-			}
-			texIndex++;
-		}
-	}
-
-
-}
 
 bool AssimpModelImport::populateOptimMaps(
 	repo::core::model::RepoNode		   *current,
