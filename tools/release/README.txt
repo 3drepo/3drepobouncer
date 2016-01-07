@@ -8,7 +8,8 @@ This is the internal library used for 3D Repo GUI.
       the client (and its required DLLs)
  > include
       header files for 3drepobouncer library
- > dll for 3drepobouncer library
+ > lib
+	 libraries for 3drepobouncer library
  > license
       licensing information
 
@@ -20,6 +21,6 @@ features within the library, designed for server deployment
 To exploit the full features of the library as a user, please 
 download a copy of our desktop client - 3D Repo GUI.
 
-=========================== To Run ==============================
+=========================== Contact ==============================
 If you need any help, please contact support@3drepo.org, we
 look forward to hear from you.
