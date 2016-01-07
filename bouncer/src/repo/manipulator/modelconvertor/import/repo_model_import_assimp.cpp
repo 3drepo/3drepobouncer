@@ -1070,7 +1070,6 @@ bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
 
 		repoInfo << "=== IMPORTING MODEL WITH ASSIMP MODEL CONVERTOR ===";
 		repoInfo << "Loaded " << fileName << " with " << polyCount << " polygons in " << assimpScene->mNumMeshes << " " << ((assimpScene->mNumMeshes == 1) ? "mesh" : "meshes");
-		repoInfo << std::endl;
 
 
 	}
