@@ -214,4 +214,19 @@ TEST(RepoBSONTest, AppendDefaultsTest)
 	RepoBSONFactory::appendDefaults(
 		builderWithFields, "test");
 
+	RepoNode nWithExists = builderWithFields.obj();
+	EXPECT_FALSE(nWithExists.isEmpty());
+
+	EXPECT_EQ(6, nWithExists.nFields());
+
+	EXPECT_TRUE(nWithExists.hasField(REPO_NODE_LABEL_ID));
+	EXPECT_TRUE(nWithExists.hasField(REPO_NODE_LABEL_SHARED_ID));
+	EXPECT_TRUE(nWithExists.hasField(REPO_NODE_LABEL_API));
+	EXPECT_TRUE(nWithExists.hasField(REPO_NODE_LABEL_TYPE));
+
+	EXPECT_TRUE(nWithExists.hasField("doll"));
+	EXPECT_EQ("Kitty", std::string(nWithExists.getStringField("doll")));
+	EXPECT_TRUE(nWithExists.hasField("Number"));
+	EXPECT_EQ(nWithExists.getField("Number").Int(), 1023);
+
 }
