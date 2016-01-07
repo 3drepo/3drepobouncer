@@ -18,14 +18,14 @@
 #include <cstdlib>
 
 #include <gtest/gtest.h>
-
+#include "../../../../repo_test_utils.h"
 #include <repo/core/model/bson/repo_bson_factory.h>
 
 
 using namespace repo::core::model;
 
 
-TEST(RepoBSONTest, MakeRepoProjectSettingsTest)
+TEST(RepoBSONFactoryTest, MakeRepoProjectSettingsTest)
 {
 	std::string projectName = "project";
 	std::string owner = "repo";
@@ -42,7 +42,7 @@ TEST(RepoBSONTest, MakeRepoProjectSettingsTest)
 	EXPECT_EQ(type, settings.getType());
 }
 
-TEST(RepoBSONTest, MakeRepoRoleTest)
+TEST(RepoBSONFactoryTest, MakeRepoRoleTest)
 {
 	std::string roleName = "repoRole";
 	std::string databaseName = "admin";
@@ -89,7 +89,7 @@ TEST(RepoBSONTest, MakeRepoRoleTest)
 	}
 }
 
-TEST(RepoBSONTest, MakeRepoRoleTest2)
+TEST(RepoBSONFactoryTest, MakeRepoRoleTest2)
 {
 	std::string roleName = "repoRole";
 	std::string databaseName = "admin";
@@ -130,7 +130,7 @@ TEST(RepoBSONTest, MakeRepoRoleTest2)
 	}
 }
 
-TEST(RepoBSONTest, MakeRepoUserTest)
+TEST(RepoBSONFactoryTest, MakeRepoUserTest)
 {
 	std::string username = "user";
 	std::string password = "password";
@@ -186,7 +186,7 @@ TEST(RepoBSONTest, MakeRepoUserTest)
 	EXPECT_EQ(std::string(avatar.data()), std::string(avatarOut.data()));
 }
 
-TEST(RepoBSONTest, AppendDefaultsTest)
+TEST(RepoBSONFactoryTest, AppendDefaultsTest)
 {
 	RepoBSONBuilder builder;
 
@@ -229,4 +229,144 @@ TEST(RepoBSONTest, AppendDefaultsTest)
 	EXPECT_TRUE(nWithExists.hasField("Number"));
 	EXPECT_EQ(nWithExists.getField("Number").Int(), 1023);
 
+}
+
+
+TEST(RepoBSONFactoryTest, MakeCameraNodeTest)
+{
+	float aspectRatio = 1.0;
+	float fCP = 10;
+	float nCP = 100;
+	float fov = 500;
+	repo_vector_t lookAt = { 1.0, 2.0, 3.0 };
+	repo_vector_t position = { 3.1, 2.2, 3.5 };
+	repo_vector_t up = { 4.1, 12.2, 23.5 };
+
+	std::string name = "CamTest";
+
+	CameraNode camera = RepoBSONFactory::makeCameraNode(aspectRatio, fCP, nCP, fov, lookAt, position, up, name);
+
+	EXPECT_FALSE(camera.isEmpty());
+	EXPECT_EQ(aspectRatio, camera.getAspectRatio());
+	EXPECT_EQ(fCP, camera.getFarClippingPlane());
+	EXPECT_EQ(nCP, camera.getNearClippingPlane());
+	EXPECT_EQ(fov, camera.getFieldOfView());
+	
+	EXPECT_TRUE(compareVectors(lookAt, camera.getLookAt()));
+	EXPECT_TRUE(compareVectors(position, camera.getPosition()));
+	EXPECT_TRUE(compareVectors(up, camera.getUp()));
+	
+	EXPECT_EQ(name, camera.getName());
+
+	EXPECT_EQ(camera.getTypeAsEnum(), NodeType::CAMERA);
+
+}
+
+TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
+{
+	repo_material_t mat_struct;
+	mat_struct.ambient.resize(4);
+	mat_struct.diffuse.resize(4);
+	mat_struct.specular.resize(4);
+	mat_struct.emissive.resize(4);
+	mat_struct.opacity = 0.9;
+	mat_struct.shininess = 1.0;
+	mat_struct.shininessStrength = 0.5;
+	mat_struct.isWireframe = true;
+	mat_struct.isTwoSided = false;
+
+	std::string name = "MatTest";
+
+	MaterialNode material = RepoBSONFactory::makeMaterialNode(mat_struct, name);
+
+	EXPECT_FALSE(material.isEmpty());
+	EXPECT_EQ(name, material.getName());
+	EXPECT_EQ(material.getTypeAsEnum(), NodeType::MATERIAL);
+
+
+	auto matOut = material.getMaterialStruct();
+
+	compareMaterialStructs(mat_struct, matOut);
+
+	repo_material_t emptyStruct;
+
+	//See if it breaks if the vectors in the struct is never filled 
+	MaterialNode material2 = RepoBSONFactory::makeMaterialNode(emptyStruct, name);
+	EXPECT_FALSE(material2.isEmpty());
+	EXPECT_EQ(name, material2.getName());
+	EXPECT_EQ(material2.getTypeAsEnum(), NodeType::MATERIAL);
+
+}
+
+TEST(RepoBSONFactoryTest, MakeMapNodeTest)
+{
+	uint32_t width = 1, zoom = 19;
+	float tilt = 2.0, tileSize = 10.5, longit = 2.3546, latit = 5.3235;
+	repo_vector_t centrePoint = { 3.12345, 54.3536, 435.32 };
+	std::string name = "mapTest";
+
+	MapNode map = RepoBSONFactory::makeMapNode(width, zoom, tilt, tileSize, longit, latit, centrePoint, name);
+
+	EXPECT_FALSE(map.isEmpty());
+	EXPECT_EQ(name, map.getName());
+	EXPECT_EQ(map.getTypeAsEnum(), NodeType::MAP);
+
+	//TODO: There's no functionality to extract Map yet. once we have them we should replace these with the default functions
+	EXPECT_EQ(width, map.getField(REPO_NODE_MAP_LABEL_WIDTH).Int());
+	EXPECT_EQ(zoom, map.getField(REPO_NODE_MAP_LABEL_ZOOM).Int());
+	EXPECT_EQ(tileSize, map.getField(REPO_NODE_MAP_LABEL_TILESIZE).Double());
+	EXPECT_EQ(tilt, map.getField(REPO_NODE_MAP_LABEL_YROT).Double());
+	EXPECT_EQ(longit, map.getField(REPO_NODE_MAP_LABEL_LONG).Double());
+	EXPECT_EQ(latit, map.getField(REPO_NODE_MAP_LABEL_LAT).Double());
+	
+	repo_vector_t vec;
+	if (map.hasField(REPO_NODE_MAP_LABEL_TRANS))
+	{
+		std::vector<float> floatArr = map.getFloatArray(REPO_NODE_MAP_LABEL_TRANS);
+		if (floatArr.size() >= 3)
+		{
+			//repo_vector_t is effectively float[3]
+			std::copy(floatArr.begin(), floatArr.begin() + 3, (float*)&vec);
+		}
+	}
+
+	EXPECT_TRUE(compareVectors(centrePoint, vec));
+
+}
+
+TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
+{
+	RepoBSON data = BSON("something" << "Something else" << "something2" << "somethingelse2");
+	std::string mimeType = "application/x-mswrite";
+	std::string name = "MetaTest";
+
+	MetadataNode metaNode = RepoBSONFactory::makeMetaDataNode(data, mimeType, name);
+
+	EXPECT_FALSE(metaNode.isEmpty());
+	EXPECT_EQ(name, metaNode.getName());
+	EXPECT_EQ(metaNode.getTypeAsEnum(), NodeType::METADATA);
+
+	EXPECT_EQ(mimeType, metaNode.getStringField(REPO_LABEL_MEDIA_TYPE));
+
+	EXPECT_EQ(data.toString(), metaNode.getObjectField(REPO_NODE_LABEL_METADATA).toString());
+}
+
+TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest2)
+{
+	std::vector<std::string> keys({ "one", "two", "three", "four", "five" }), values({"!", "!!", "!!!", "!!!!", "!!!!!"});
+
+
+	std::string name = "MetaTest";
+
+	MetadataNode metaNode = RepoBSONFactory::makeMetaDataNode(keys, values, name);
+
+	EXPECT_FALSE(metaNode.isEmpty());
+	EXPECT_EQ(name, metaNode.getName());
+	EXPECT_EQ(metaNode.getTypeAsEnum(), NodeType::METADATA);
+
+	for (uint32_t i = 0; i < keys.size(); ++i)
+	{
+		ASSERT_TRUE(metaNode.hasField(keys[i]));
+		EXPECT_EQ(values[i], metaNode.getStringField(keys[i]));
+	}
 }
