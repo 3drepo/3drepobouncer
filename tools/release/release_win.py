@@ -44,7 +44,7 @@ os.system("mkdir \"" + workSpaceDir + "\"")
 os.chdir(workSpaceDir)
 
 #Get fresh code base from git & compile and Install
-os.system("git clone --branch=" + releaseTag + " " + githubRepo) #Change it to only get the tagged version
+os.system("git clone --branch=" + releaseTag + " " + githubRepo)
 os.system("mkdir build")
 os.chdir("build")
 
