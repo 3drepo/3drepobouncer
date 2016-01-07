@@ -464,6 +464,18 @@ namespace repo{
 					const repo::core::model::RepoBSON& criteria);
 
 				/**
+				* Given a search criteria,  find one documents that passes this query
+				* @param database name of database
+				* @param collection name of collection
+				* @param criteria search criteria in a bson object
+				* @return a RepoBSON objects satisfy the given criteria
+				*/
+				repo::core::model::RepoBSON findOneByCriteria(
+					const std::string& database,
+					const std::string& collection,
+					const repo::core::model::RepoBSON& criteria);
+
+				/**
 				*Retrieves the first document matching given Shared ID (SID), sorting is descending
 				* (newest first)
 				* @param name of database

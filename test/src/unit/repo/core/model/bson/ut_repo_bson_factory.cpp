@@ -29,27 +29,17 @@ TEST(RepoBSONTest, MakeRepoProjectSettingsTest)
 {
 	std::string projectName = "project";
 	std::string owner = "repo";
-	std::string group = "repoGroup";
 	std::string type = "Structural";
 	std::string description = "testing project";
-	std::vector<uint8_t> perm = { 7, 4, 0 };
+    // TODO: add test values for pinSize, avatarHeight, visibilityLimit, speed, zNear, zFar
 
-	RepoProjectSettings settings = RepoBSONFactory::makeRepoProjectSettings(projectName, owner, group, type,
-		description, perm[0], perm[1], perm[2]);
+    RepoProjectSettings settings = RepoBSONFactory::makeRepoProjectSettings(projectName, owner, type,
+        description);
 
 	EXPECT_EQ(projectName, settings.getProjectName());
 	EXPECT_EQ(description, settings.getDescription());
 	EXPECT_EQ(owner, settings.getOwner());
-	EXPECT_EQ(group, settings.getGroup());
 	EXPECT_EQ(type, settings.getType());
-	std::vector<uint8_t> permOct = settings.getPermissionsOctal();
-
-	std::vector<uint8_t> mask = { 4, 2, 1 };
-
-	for (int i = 0; i < 3; ++i)
-	{
-		EXPECT_EQ(perm[i], permOct[i]);
-	}
 }
 
 TEST(RepoBSONTest, MakeRepoRoleTest)
@@ -194,6 +184,34 @@ TEST(RepoBSONTest, MakeRepoUserTest)
 	EXPECT_EQ(apiOut.begin()->second, apiKeys.begin()->second);
 
 	EXPECT_EQ(std::string(avatar.data()), std::string(avatarOut.data()));
+}
 
+TEST(RepoBSONTest, AppendDefaultsTest)
+{
+	RepoBSONBuilder builder;
+
+	RepoBSONFactory::appendDefaults(
+		builder, "test");
+
+	RepoNode n = builder.obj();
+
+	EXPECT_FALSE(n.isEmpty());
+
+	EXPECT_EQ(4, n.nFields()); 
+
+	EXPECT_TRUE(n.hasField(REPO_NODE_LABEL_ID));
+	EXPECT_TRUE(n.hasField(REPO_NODE_LABEL_SHARED_ID));
+	EXPECT_TRUE(n.hasField(REPO_NODE_LABEL_API));
+	EXPECT_TRUE(n.hasField(REPO_NODE_LABEL_TYPE));
+
+	//Ensure existing fields doesnt' disappear
+
+	RepoBSONBuilder builderWithFields;
+
+	builderWithFields << "Number" << 1023;
+	builderWithFields << "doll" << "Kitty";
+
+	RepoBSONFactory::appendDefaults(
+		builderWithFields, "test");
 
 }

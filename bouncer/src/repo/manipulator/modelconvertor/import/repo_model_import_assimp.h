@@ -103,11 +103,13 @@ namespace repo{
 				* NOTE: textures must've been populated at this point to populate references
 				* @param material assimp material object
 				* @param name name of the material
+				* @param nameToTexture a mapping of texture name to texture node
 				* @return returns the created material node
 				*/
 				repo::core::model::MaterialNode* createMaterialRepoNode(
-					aiMaterial *material,
-					std::string name);
+					const aiMaterial *material,
+					const std::string &name,
+					const std::map<std::string, repo::core::model::RepoNode *> &nameToTexture);
 
 				/**
 				* Create a Mesh Node given the information in ASSIMP objects
@@ -191,8 +193,6 @@ namespace repo{
 				Assimp::Importer importer;  /*! Stores ASSIMP related settings for model import */
 				const aiScene *assimpScene; /*! ASSIMP scene representation of the model */
 				std::string orgFile; /*! orgFileName */
-				repo::core::model::RepoNodeSet textures;
-				std::map<std::string, repo::core::model::RepoNode *> nameToTexture;
 			};
 
 		} //namespace AssimpModelImport

@@ -97,6 +97,15 @@ namespace repo {
 					*/
 					virtual bool positionDependant() { return true; }
 
+					/**
+					* Check if the node is semantically equal to another
+					* Different node should have a different interpretation of what
+					* this means.
+					* @param other node to compare with
+					* @param returns true if equal, false otherwise
+					*/
+					virtual bool sEqual(const RepoNode &other) const;
+
 					/*
 					*	------------- Delusional modifiers --------------
 					*   These are like "setters" but not. We are actually
@@ -167,6 +176,12 @@ namespace repo {
 					* @return return a bson object containing the mapping
 					*/
 					RepoBSON meshMappingAsBSON(const repo_mesh_mapping_t  &mapping);
+
+
+					/**
+					* Retrieve a vector of faces (serialised) from the bson object
+					*/
+					std::vector<uint32_t> getFacesSerialized() const;
 
 				};
 		} //namespace model

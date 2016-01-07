@@ -15,15 +15,15 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/**
-*  Project setting BSON
-*/
-
-#include "repo_bson_builder.h"
-#include "repo_bson_project_settings.h"
-#include "../../../lib/repo_log.h"
+#include "repo_bson_role_settings.h"
 
 using namespace repo::core::model;
 
+
+RepoRoleSettings::RepoRoleSettings() : RepoBSON() {}
+
+RepoRoleSettings::RepoRoleSettings(RepoBSON bson) : RepoBSON(bson) {}
+
+RepoRoleSettings::~RepoRoleSettings() {}
 
 

@@ -140,7 +140,7 @@ namespace repo{
 						* @param newUniqueID generate a new unique ID if set to true
 						* @return returns a new object with fields updated
 						*/
-						RepoNode cloneAndAddFields(
+						virtual RepoNode cloneAndAddFields(
 							const RepoBSON *changes, 
 							const bool     &newUniqueID = true) const;
 
@@ -220,6 +220,22 @@ namespace repo{
 							else{
 								return sharedID < other.getSharedID();
 							}
+						}
+
+						/**
+						* Check if the node is semantically equal to another
+						* Different node should have a different interpretation of what
+						* this means.
+						* @param other node to compare with
+						* @param returns true if equal, false otherwise
+						*/
+						virtual bool sEqual(const RepoNode &other) const
+						{
+							//On a node level, it is impossible to tell if 
+							//one node is semantically the same as other. 
+							//One does not expect this to be ever called 
+							repoWarning << "sEqual() is called for RepoNode* this is not expected!";
+							return false; //returns false just incase.
 						}
 
 						//! Returns true if the other node is greater than this one, false otherwise.

@@ -13,6 +13,7 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_factory.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_project_settings.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_role.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_role_settings.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_user.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_camera.cpp
@@ -35,6 +36,7 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_factory.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_project_settings.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_role.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_role_settings.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_user.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_camera.h

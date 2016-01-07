@@ -165,7 +165,7 @@ std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
 			mapping.vertFrom    = mappingObj.getField(REPO_NODE_MESH_LABEL_VERTEX_FROM).Int();
 			mapping.vertTo      = mappingObj.getField(REPO_NODE_MESH_LABEL_VERTEX_TO).Int();
 			mapping.triFrom     = mappingObj.getField(REPO_NODE_MESH_LABEL_TRIANGLE_FROM).Int();
-			mapping.triTo       = mappingObj.getField(REPO_NODE_MESH_LABEL_TRIANGLE_FROM).Int();
+			mapping.triTo       = mappingObj.getField(REPO_NODE_MESH_LABEL_TRIANGLE_TO).Int();
 
 			RepoBSON boundingBox = getObjectField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
 			
@@ -262,6 +262,16 @@ std::vector<std::vector<repo_vector2d_t>>* MeshNode::getUVChannelsSeparated() co
 	return channels;
 }
 
+std::vector<uint32_t> MeshNode::getFacesSerialized() const
+{
+
+	std::vector <uint32_t> serializedFaces;
+	if (hasBinField(REPO_NODE_MESH_LABEL_FACES))
+		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_FACES, &serializedFaces);
+
+	return serializedFaces;
+}
+
 std::vector<repo_face_t>* MeshNode::getFaces() const
 {
 	std::vector<repo_face_t> *faces = new std::vector<repo_face_t>();
@@ -330,4 +340,101 @@ RepoBSON MeshNode::meshMappingAsBSON(const repo_mesh_mapping_t  &mapping)
 	builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, bbBuilder.obj());
 
 	return builder.obj();
+}
+
+bool MeshNode::sEqual(const RepoNode &other) const
+{
+	if (other.getTypeAsEnum() != NodeType::MESH || other.getParentIDs().size() != getParentIDs().size())
+	{
+		return false;
+	}
+
+	MeshNode otherMesh = MeshNode(other);
+
+
+	std::vector<repo_vector_t> *vertices, *vertices2, *normals, *normals2;
+	std::vector<repo_vector2d_t>* uvChannels, *uvChannels2;
+	std::vector<uint32_t> facesSerialized, facesSerialized2;
+	std::vector<repo_color4d_t>* colors, *colors2;
+
+	vertices = getVertices();
+	vertices2 = otherMesh.getVertices();
+
+	normals = getNormals();
+	normals2 = otherMesh.getNormals();
+
+	uvChannels = getUVChannels();
+	uvChannels2 = otherMesh.getUVChannels();
+
+	facesSerialized = getFacesSerialized();
+	facesSerialized2 = otherMesh.getFacesSerialized();
+
+	colors = getColors();
+	colors2 = otherMesh.getColors();
+
+	//check all the sizes match first, as comparing the content will be costly
+	bool success = false;
+
+	//FIXME: why is this so messy... actually why do we have pointers to vectors?!
+	if (vertices && (success = (bool)vertices == (bool)vertices2))
+	{
+		success &= vertices->size() == vertices2->size();
+	}
+
+	if (normals && (success &= (bool) normals == (bool)normals2))
+	{
+		success &= normals->size() == normals2->size();
+	}
+
+	if (uvChannels && (success &= (bool) uvChannels == (bool)uvChannels2))
+	{
+		success &= uvChannels->size() == uvChannels2->size();
+	}
+
+	if (success)
+		success &= facesSerialized.size() == facesSerialized2.size();
+
+	if (colors && (success &= (bool)colors == (bool)colors2))
+	{
+		success &= colors->size() == colors2->size();
+	}
+
+
+	if (success)
+	{
+
+		if (vertices && vertices->size())
+		{
+			success &= !memcmp(vertices->data(), vertices2->data(), vertices->size() * sizeof(*vertices->data()));
+		}
+
+		if (normals && success && normals->size())
+		{
+			success &= !memcmp(normals->data(), normals2->data(), normals->size() * sizeof(*normals->data()));
+		}
+
+		if (uvChannels && success && uvChannels->size())
+		{
+			success &= !memcmp(uvChannels->data(), uvChannels2->data(), uvChannels->size() * sizeof(*uvChannels->data()));
+		}
+
+		if (colors && success && colors->size())
+		{
+			success &= !memcmp(colors->data(), colors2->data(), colors->size() * sizeof(*colors->data()));
+		}
+
+		if (success && facesSerialized.size())
+		{
+			success &= !memcmp(facesSerialized.data(), facesSerialized.data(), facesSerialized.size() * sizeof(*facesSerialized.data()));
+		}
+	}
+
+	delete vertices;
+	delete normals;
+	delete uvChannels;
+	delete vertices2;
+	delete normals2;
+	delete uvChannels2;
+
+	return success;
 }

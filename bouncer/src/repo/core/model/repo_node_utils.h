@@ -32,6 +32,8 @@
 
 #include <sstream>
 
+#include "../../lib/repo_log.h"
+
 //abstract out the use of boost inside the node codes 
 //incase we want to change it in the future
 typedef boost::uuids::uuid repoUUID;
@@ -265,7 +267,7 @@ static repo_vector_t multiplyMatVec(const std::vector<float> &mat, const repo_ve
 	repo_vector_t result;
 	if (mat.size() != 16)
 	{
-		std::cerr << "Trying to perform a matrix x vector multiplation with unexpected matrix size(" << mat.size() << ")";
+		repoError << "Trying to perform a matrix x vector multiplation with unexpected matrix size(" << mat.size() << ")";
 
 	}
 	else{
@@ -282,7 +284,7 @@ static repo_vector_t multiplyMatVec(const std::vector<float> &mat, const repo_ve
 
 		if (!(mat[12] == mat[13] == mat[14] == 0 && 1 == mat[15]))
 		{
-			std::cerr << "Potentially incorrect transformation : does not expect the last row to have values!";
+			repoError << "Potentially incorrect transformation : does not expect the last row to have values!";
 		}
 	}
 	
@@ -302,7 +304,7 @@ static repo_vector_t multiplyMatVecFake3x3(const std::vector<float> &mat, const 
 	repo_vector_t result;
 	if (mat.size() != 16)
 	{
-		std::cerr << "Trying to perform a matrix x vector multiplation with unexpected matrix size(" << mat.size() << ")";
+		repoError << "Trying to perform a matrix x vector multiplation with unexpected matrix size(" << mat.size() << ")";
 
 	}
 	else{
@@ -369,7 +371,7 @@ static std::vector<float> invertMat(const std::vector<float> &mat)
 
 	if (mat.size() != 16)
 	{
-		std::cerr << "Unsupported vector size ("<< mat.size() << ")!";
+		repoError << "Unsupported vector size ("<< mat.size() << ")!";
 		
 	}
 	else
@@ -377,7 +379,7 @@ static std::vector<float> invertMat(const std::vector<float> &mat)
 		const float det = calculateDeterminant(mat);
 		if (det == 0)
 		{
-			std::cerr << "Trying to invert a matrix with determinant = 0!";
+			repoError << "Trying to invert a matrix with determinant = 0!";
 		
 		}
 		else
@@ -423,7 +425,7 @@ static std::vector<float> transposeMat(const std::vector<float> &mat)
 
 	if (mat.size() != 16)
 	{
-		std::cerr << "Unsupported vector size (" << mat.size() << ")!";
+		repoError << "Unsupported vector size (" << mat.size() << ")!";
 
 	}
 	else

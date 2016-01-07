@@ -532,6 +532,16 @@ namespace repo{
 					}
 
 					/**
+					* Get all map nodes within current scene revision
+					* @return a RepoNodeSet of map
+					*/
+					RepoNodeSet getAllMaps(
+						const GraphType &gType = GraphType::DEFAULT) const
+					{
+						return  gType == GraphType::OPTIMIZED ? stashGraph.maps : graph.maps;
+					}
+
+					/**
 					* Get all mesh nodes within current scene revision
 					* @return a RepoNodeSet of meshes
 					*/
@@ -539,6 +549,17 @@ namespace repo{
 						const GraphType &gType = GraphType::DEFAULT) const
 					{
 						return  gType == GraphType::OPTIMIZED ? stashGraph.meshes : graph.meshes;
+					}
+
+
+					/**
+					* Get all metadata nodes within current scene revision
+					* @return a RepoNodeSet of metadata
+					*/
+					RepoNodeSet getAllMetadata(
+						const GraphType &gType = GraphType::DEFAULT) const
+					{
+						return  gType == GraphType::OPTIMIZED ? stashGraph.metadata : graph.metadata;
 					}
 
 					/**

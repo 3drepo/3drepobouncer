@@ -23,6 +23,7 @@
 #include <string>
 #include "../core/handler/repo_database_handler_mongo.h"
 #include "../core/model/collection/repo_scene.h"
+#include "../core/model/bson/repo_bson_role_settings.h"
 #include "modelconvertor/import/repo_model_import_assimp.h"
 #include "diff/repo_diff_abstract.h"
 
@@ -95,17 +96,19 @@ namespace repo{
 				const std::string                   &owner = "");
 
 			/**
-			* Compare 2 scenes via IDs.
+			* Compare 2 scenes.
 			* @param base base scene to compare against
 			* @param compare scene to compare base scene against
 			* @param baseResults Diff results in the perspective of base
 			* @param compResults Diff results in the perspective of compare
+			* @param diffMode the mode to use to compare the scenes
 			*/
-			void compareScenesByIDs(
+			void compareScenes(
 				repo::core::model::RepoScene       *base,
 				repo::core::model::RepoScene       *compare,
 				diff::DiffResult                   &baseResults,
-				diff::DiffResult                   &compResults);
+				diff::DiffResult                   &compResults,
+				const diff::Mode				   &diffMode);
 
 			/**
 			* Create a bson object storing user credentials
@@ -342,6 +345,20 @@ namespace repo{
 				const std::string                             &databaseAd);
 
 			/**
+			* Get a role settings within a database
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param database name of database
+			* @param uniqueRoleName name of the role to look for
+			*/
+			repo::core::model::RepoRoleSettings getRoleSettingByName(
+				const std::string                   &databaseAd,
+				const repo::core::model::RepoBSON	*cred,
+				const std::string					&database,
+				const std::string					&uniqueRoleName
+				);
+
+			/**
 			* Get a list of standard roles from the database
 			* @param databaseAd database address:portdatabase
 			* @return returns a vector of roles
@@ -397,7 +414,8 @@ namespace repo{
 			/**
 			* Load a Repo Scene from a file
 			* @param filePath path to file
-			* @param msg error message if it fails (optional)
+			* @param msg error message if it fails 
+			* @param apply transformation reduction optimizer (default = true)
 			* @param config import config (optional)
 			* @return returns a pointer to Repo Scene upon success
 			*/
@@ -405,6 +423,7 @@ namespace repo{
 				loadSceneFromFile(
 				const std::string &filePath,
 				      std::string &msg,
+				const bool &applyReduction = true,
 			    const repo::manipulator::modelconvertor::ModelImportConfig *config
 					  = nullptr);
 
@@ -451,8 +470,8 @@ namespace repo{
 			* @param user user info to remove
 			*/
 			void removeUser(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON*	  cred,
+				const std::string                       &databaseAd,
+				const repo::core::model::RepoBSON       *cred,
 				const repo::core::model::RepoUser       &user);
 
 			/**

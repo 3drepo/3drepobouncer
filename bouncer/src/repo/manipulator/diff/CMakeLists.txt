@@ -7,12 +7,14 @@
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_diff_abstract.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_diff_name.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_diff_sharedid.cpp
 	CACHE STRING "SOURCES" FORCE)
 
 set(HEADERS
 	${HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_diff_abstract.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_diff_name.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_diff_sharedid.h
 	CACHE STRING "HEADERS" FORCE)
 

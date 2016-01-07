@@ -25,6 +25,7 @@
 #include "../lib/repo_log.h"
 #include "../core/model/bson/repo_bson_factory.h"
 #include "diff/repo_diff_sharedid.h"
+#include "diff/repo_diff_name.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
@@ -187,13 +188,27 @@ void RepoManipulator::commitScene(
 
 }
 
-void RepoManipulator::compareScenesByIDs(
+void RepoManipulator::compareScenes(
 	repo::core::model::RepoScene       *base,
 	repo::core::model::RepoScene       *compare,
 	repo::manipulator::diff::DiffResult &baseResults,
-	repo::manipulator::diff::DiffResult &compResults)
+	repo::manipulator::diff::DiffResult &compResults,
+	const diff::Mode					&diffMode)
 {
-	diff::AbstractDiff *diff =  new diff::DiffBySharedID(base, compare);
+	diff::AbstractDiff *diff = nullptr; 
+	
+	switch (diffMode)
+	{
+	case diff::Mode::DIFF_BY_ID:
+		diff = new diff::DiffBySharedID(base, compare);
+		break;
+	case diff::Mode::DIFF_BY_NAME:
+		diff = new diff::DiffByName(base, compare);
+		break;
+	default:
+		repoError << "Unknown diff mode: " << (int)diffMode;
+	}
+	
 
 	if (diff)
 	{
@@ -213,7 +228,7 @@ void RepoManipulator::compareScenesByIDs(
 	}
 	else
 	{
-		repoError << "Failed to instantiate 3D Diff comparator - out of memory?";
+		repoError << "Failed to instantiate 3D Diff comparator (unsupported diff mode/out of memory?)";
 	}
 	
 }
@@ -523,6 +538,25 @@ std::list<std::string> RepoManipulator::getAdminDatabaseRoles(
 	return roles;
 }
 
+repo::core::model::RepoRoleSettings RepoManipulator::getRoleSettingByName(
+	const std::string                   &databaseAd,
+	const repo::core::model::RepoBSON	*cred,
+	const std::string					&database,
+	const std::string					&uniqueRoleName
+	)
+{
+
+	repo::core::model::RepoRoleSettings settings;
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	repo::core::model::RepoBSONBuilder builder;
+	builder << REPO_LABEL_ID << uniqueRoleName;
+	if (handler)
+		settings = repo::core::model::RepoRoleSettings(
+			handler->findOneByCriteria(database, REPO_COLLECTION_SETTINGS_ROLES, builder.obj()));
+	return settings;
+}
+
 std::list<std::string> RepoManipulator::getStandardDatabaseRoles(
 	const std::string  &databaseAd)
 {
@@ -560,6 +594,7 @@ repo::core::model::RepoScene*
 	RepoManipulator::loadSceneFromFile(
 	const std::string &filePath,
 	      std::string &msg,
+	const bool &applyReduction,
     const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
 
@@ -576,7 +611,13 @@ repo::core::model::RepoScene*
 		if (modelConvertor->importModel(filePath, msg))
 		{
 			repoTrace << "model Imported, generating Repo Scene";
-			scene = modelConvertor->generateRepoScene();
+			if ((scene = modelConvertor->generateRepoScene()) && applyReduction)
+			{
+				repoTrace << "Scene generated. Applying transformation reduction optimizer";
+				modeloptimizer::TransformationReductionOptimizer optimizer;
+				optimizer.apply(scene);
+			}
+			
 		}
 		else
 		{

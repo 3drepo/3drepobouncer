@@ -18,25 +18,75 @@
 #include <algorithm>
 #include "repo_bson_role.h"
 #include "../collection/repo_scene.h"
-
+#include <boost/range/adaptor/map.hpp>
+#include <boost/range/algorithm/copy.hpp>
 
 using namespace repo::core::model;
 
-
-
-RepoRole::RepoRole()
+RepoRole RepoRole::cloneAndUpdatePermissions(
+	const std::vector<RepoPermission> &permissions
+    ) const
 {
+	//Remove all project access related privileges, then add the new ones in.
+	std::vector<RepoPermission> oldPermissions = getProjectAccessRights();
+
+	auto oldPriv = getPrivilegesMapped(translatePermissions(oldPermissions));
+
+	std::unordered_map<std::string, RepoPrivilege> mapped_privileges = getPrivilegesMapped();
+
+	for (const auto &p : oldPriv)
+	{
+		mapped_privileges.erase(p.first);
+	}	
+
+	auto newPriv = getPrivilegesMapped(translatePermissions(permissions));
+
+	mapped_privileges.insert(newPriv.begin(), newPriv.end());
+
+	std::vector<RepoPrivilege> privilegesUpdated;
+
+	boost::copy(
+		mapped_privileges | boost::adaptors::map_values,
+		std::back_inserter(privilegesUpdated));
+
+	return cloneAndUpdatePrivileges(privilegesUpdated);
+
 }
 
-
-RepoRole::~RepoRole()
+RepoRole RepoRole::cloneAndUpdatePrivileges(
+	const std::vector<RepoPrivilege> &privileges
+    ) const
 {
-}
+	RepoBSONBuilder builder;
+	if (privileges.size() > 0)
+	{
+		RepoBSONBuilder privilegesBuilder;
+		for (size_t i = 0; i < privileges.size(); ++i)
+		{
+			const auto &p = privileges[i];
+			RepoBSONBuilder innerBsonBuilder, actionBuilder;
+			RepoBSON resource = BSON(REPO_ROLE_LABEL_DATABASE << p.database << REPO_ROLE_LABEL_COLLECTION << p.collection);
+			innerBsonBuilder << REPO_ROLE_LABEL_RESOURCE << resource;
 
+			for (size_t aCount = 0; aCount < p.actions.size(); ++aCount)
+			{
+				actionBuilder << std::to_string(aCount) << RepoRole::dbActionToString(p.actions[aCount]);
+			}
+
+			innerBsonBuilder.appendArray(REPO_ROLE_LABEL_ACTIONS, actionBuilder.obj());
+
+			privilegesBuilder << std::to_string(i) << innerBsonBuilder.obj();
+		}
+		builder.appendArray(REPO_ROLE_LABEL_PRIVILEGES, privilegesBuilder.obj());
+	}
+
+	auto change = builder.obj();
+	return RepoRole(cloneAndAddFields(&change));
+
+}
 
 std::string RepoRole::dbActionToString(const DBActions &action)
-{
-	
+{	
 	switch (action)
 	{
 	case DBActions::INSERT:
@@ -62,8 +112,93 @@ std::string RepoRole::dbActionToString(const DBActions &action)
 	default:
 		repoError << "Unrecognised action value: " << (uint32_t)action;
 	}
+    return std::string(); //only default values will fall through and return empty string.
+}
 
-	return ""; //only default values will fall through and return empty string.
+std::vector<std::string> RepoRole::dbActionsToStrings(
+        const std::vector<DBActions> &actions)
+{
+    std::vector<std::string> strings(actions.size());
+    std::vector<std::string>::size_type i = 0;
+    for (DBActions action : actions)
+    {
+        strings[i++] = dbActionToString(action);
+    }
+    return strings;
+}
+
+
+DBActions RepoRole::stringToDBAction(const std::string &action)
+{
+    std::string actionUpperCase = action;
+
+    std::transform(actionUpperCase.begin(), actionUpperCase.end(), actionUpperCase.begin(), ::toupper);
+
+    if (actionUpperCase == "FIND")
+    {
+        return DBActions::FIND;
+    }
+
+    if (actionUpperCase == "REMOVE")
+    {
+        return DBActions::REMOVE;
+    }
+
+    if (actionUpperCase == "INSERT")
+    {
+        return DBActions::INSERT;
+    }
+
+    if (actionUpperCase == "UPDATE")
+    {
+        return DBActions::UPDATE;
+    }
+
+    if (actionUpperCase == "CREATEUSER")
+    {
+        return DBActions::CREATE_USER;
+    }
+
+    if (actionUpperCase == "CREATEROLE")
+    {
+        return DBActions::CREATE_ROLE;
+    }
+
+    if (actionUpperCase == "DROPROLE")
+    {
+        return DBActions::DROP_ROLE;
+    }
+
+    if (actionUpperCase == "GRANTROLE")
+    {
+        return DBActions::GRANT_ROLE;
+    }
+
+    if (actionUpperCase == "REVOKEROLE")
+    {
+        return DBActions::REVOKE_ROLE;
+    }
+
+    if (actionUpperCase == "VIEWROLE")
+    {
+        return DBActions::VIEW_ROLE;
+    }
+    repoWarning << "Unrecognised privileged action: " << action;
+
+    return DBActions::UNKNOWN;
+
+}
+
+std::vector<DBActions> RepoRole::stringsToDBActions(
+        const std::vector<std::string> &strings)
+{
+    std::vector<DBActions> actions(strings.size());
+    std::vector<DBActions>::size_type i = 0;
+    for (std::string string : strings)
+    {
+        actions[i++] = stringToDBAction(string);
+    }
+    return actions;
 }
 
 std::vector<DBActions> RepoRole::getActions(RepoBSON actionArr) const
@@ -138,67 +273,18 @@ std::vector<RepoPrivilege> RepoRole::getPrivileges() const
 	return privileges;
 }
 
-DBActions RepoRole::stringToDBAction(const std::string &action) const
+std::unordered_map<std::string, RepoPrivilege> RepoRole::getPrivilegesMapped(const std::vector<RepoPrivilege> &ps)
 {
-	std::string action_lowerCase = action;
+	std::unordered_map<std::string, RepoPrivilege> map;
 
-	std::transform(action_lowerCase.begin(), action_lowerCase.end(), action_lowerCase.begin(), ::toupper);
-
-	if (action_lowerCase == "FIND")
+	for (const auto priv : ps)
 	{
-		return DBActions::FIND;
+		map[priv.database + "." + priv.collection] = priv;
 	}
 
-	if (action_lowerCase == "REMOVE")
-	{
-		return DBActions::REMOVE;
-	}
-	
-	if (action_lowerCase == "INSERT")
-	{
-		return DBActions::INSERT;
-	}
-
-	if (action_lowerCase == "UPDATE")
-	{
-		return DBActions::UPDATE;
-	}
-
-	if (action_lowerCase == "CREATEUSER")
-	{
-		return DBActions::CREATE_USER;
-	}
-
-	if (action_lowerCase == "CREATEROLE")
-	{
-		return DBActions::CREATE_ROLE;
-	}
-
-	if (action_lowerCase == "DROPROLE")
-	{
-		return DBActions::DROP_ROLE;
-	}
-
-	if (action_lowerCase == "GRANTROLE")
-	{
-		return DBActions::GRANT_ROLE;
-	}
-
-	if (action_lowerCase == "REVOKEROLE")
-	{
-		return DBActions::REVOKE_ROLE;
-	}
-
-	if (action_lowerCase == "VIEWROLE")
-	{
-		return DBActions::VIEW_ROLE;
-	}
-
-	repoWarning << "Unrecognised privileged action: " << action;
-
-	return DBActions::UNKNOWN;
-
+	return map;
 }
+
 
 std::vector<RepoPrivilege> RepoRole::translatePermissions(
 	const std::vector<RepoPermission> &permissions)

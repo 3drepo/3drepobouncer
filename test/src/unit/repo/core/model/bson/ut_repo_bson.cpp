@@ -501,3 +501,40 @@ TEST(RepoBSONTest, HasOversizeFiles)
 	EXPECT_FALSE(emptyBson.hasOversizeFiles());
 
 }
+
+TEST(RepoBSONTest, GetEmbeddedDoubleTest)
+{
+	RepoBSON empty;
+
+	//Shouldn't fail.
+	EXPECT_EQ(empty.getEmbeddedDouble("something", "somethingElse"), 0);
+	EXPECT_EQ(empty.getEmbeddedDouble("something", "somethingElse", 10), 10);
+	
+	RepoBSON hasFieldWrongTypeBson(BSON("field" << 1));
+	EXPECT_EQ(hasFieldWrongTypeBson.getEmbeddedDouble("field", "somethingElse"), 0);
+
+	RepoBSON hasFieldNoEmbeddedField(BSON("field" << testBson));
+	EXPECT_EQ(hasFieldNoEmbeddedField.getEmbeddedDouble("field", "somethingElse"), 0);
+
+	RepoBSON hasEmbeddedFieldWrongType(BSON("field" << testBson));
+	EXPECT_EQ(hasEmbeddedFieldWrongType.getEmbeddedDouble("field", "ice"), 0);
+
+	RepoBSON expectNumber(BSON("field" << testBson));
+	EXPECT_EQ(expectNumber.getEmbeddedDouble("field", "amount"), 100);
+
+	auto innerBson = BSON("amount" << 1.10101);
+	RepoBSON expectNumber2(BSON("field" << innerBson ));
+	EXPECT_EQ(expectNumber2.getEmbeddedDouble("field", "amount"), 1.10101);
+}
+
+TEST(RepoBSONTest, HasEmbeddedFieldTest)
+{
+	EXPECT_FALSE(emptyBson.hasEmbeddedField("hi", "bye"));
+
+	RepoBSON hasFieldWrongTypeBson(BSON("field" << 1));
+	EXPECT_FALSE(hasFieldWrongTypeBson.hasEmbeddedField("field", "bye"));
+
+	RepoBSON expectTrue(BSON("field" << testBson));
+	EXPECT_TRUE(expectTrue.hasEmbeddedField("field", "ice"));
+	EXPECT_FALSE(expectTrue.hasEmbeddedField("field", "NonExistent"));
+}
