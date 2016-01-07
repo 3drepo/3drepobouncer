@@ -68,3 +68,9 @@ for boostDll in boostdlls:
 	os.system("copy \"" + boostLib + "\\" + boostDll + "\" \"" + installDir + "\\bin\"")
 
 os.system("copy \"" + installDir + "\\lib\\" + bouncerdll + "\" \"" + installDir + "\\bin\"")
+
+#copy README and licensing info
+os.system("copy \"" + rootDir + "\\..\\README.txt\" .")
+os.system("mkdir license")
+os.system("copy \"" + rootDir + "\\..\\license\" license")
+
