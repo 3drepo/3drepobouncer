@@ -656,13 +656,13 @@ bool RepoScene::commitNodes(
 	size_t count = 0;
 	size_t total = nodesToCommit.size();
 
-	repoTrace << "Committing " << total << " nodes...";
+	repoInfo << "Committing " << total << " nodes...";
 
 	for (const repoUUID &id : nodesToCommit)
 	{
-		if (++count % 100 == 0 || count == total -1)
+		if (++count % 500 == 0 || count == total -1)
 		{
-			repoTrace << "Committing " << id << " (" << count << " of " << total << ")";
+			repoInfo << "Committing " << count << " of " << total ;
 		}
 
 		const repoUUID uniqueID = gType == GraphType::OPTIMIZED ? id : g.sharedIDtoUniqueID[id];

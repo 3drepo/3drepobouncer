@@ -389,14 +389,15 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
         std::vector<uint32_t> facesLevel1;
         for (auto &face : faces){
-            if (face.numIndices == 0)
+			auto nIndices = face.size();
+			if (!nIndices)
             {
                 repoWarning << "number of indices in this face is 0!";
             }
-            facesLevel1.push_back(face.numIndices);
-            for (uint32_t ind = 0; ind < face.numIndices; ind++)
+			facesLevel1.push_back(nIndices);
+			for (uint32_t ind = 0; ind < nIndices; ind++)
             {
-                facesLevel1.push_back(face.indices[ind]);
+                facesLevel1.push_back(face[ind]);
             }
         }
 

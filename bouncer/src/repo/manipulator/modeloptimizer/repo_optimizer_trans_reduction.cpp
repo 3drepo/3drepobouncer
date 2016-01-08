@@ -62,7 +62,7 @@ bool TransformationReductionOptimizer::apply(repo::core::model::RepoScene *scene
 			}
 		}
 
-		repoTrace << "Mesh Optimisation complete. Number of transformations has been reduced from "
+		repoInfo << "Mesh Optimisation complete. Number of transformations has been reduced from "
 			<< transNodes_pre << " to " << scene->getAllTransformations().size();
 		
 		transNodes_pre = scene->getAllTransformations().size();
