@@ -18,9 +18,35 @@
 #pragma once
 #include <repo/core/model/repo_node_utils.h>
 
+
+static bool compareVectors(const repo_vector2d_t &v1, const repo_vector2d_t &v2)
+{
+	return v1.x == v2.x && v1.y == v2.y;
+}
+
+
 static bool compareVectors(const repo_vector_t &v1, const repo_vector_t &v2)
 {
 	return v1.x == v2.x && v1.y == v2.y && v1.z == v2.z;
+}
+
+template <typename T>
+static bool compareVectors(const std::vector<T> &v1, const  std::vector<T> &v2)
+{
+	if (v1.size() != v2.size())
+	{
+		return false;
+	}
+
+	for (size_t i = 0; i < v1.size(); ++i)
+	{
+		if (!compareVectors(v1[i], v2[i]))
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 template <typename T>

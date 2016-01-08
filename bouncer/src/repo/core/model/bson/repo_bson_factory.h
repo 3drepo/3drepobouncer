@@ -274,6 +274,7 @@ public:
             const std::string                           &name = std::string(),
             const int                                   &apiLevel = REPO_NODE_API_LEVEL_1);
 
+
     /**
     * Create a Reference Node
     * If revision ID is unique, it will be referencing a specific revision

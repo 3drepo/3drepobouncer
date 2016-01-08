@@ -370,3 +370,80 @@ TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest2)
 		EXPECT_EQ(values[i], metaNode.getStringField(keys[i]));
 	}
 }
+
+TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
+{
+
+	//uint32_t nCount = 10;
+	////using malloc to get un-initalised values to fill the memory. 
+	//repo_vector_t *rawVec = (repo_vector_t*)malloc(sizeof(*rawVec) * nCount);
+	//repo_vector_t *rawNorm = (repo_vector_t*)malloc(sizeof(*rawNorm) * nCount);
+	//repo_vector2d_t *rawUV = (repo_vector2d_t*)malloc(sizeof(*rawUV) * nCount);
+	//repo_color4d_t *rawColors = (repo_color4d_t*)malloc(sizeof(*rawColors) * nCount);
+
+	//ASSERT_TRUE(rawVec != nullptr);
+	//ASSERT_TRUE(rawNorm != nullptr);
+	//ASSERT_TRUE(rawUV != nullptr);
+
+	////Set up faces
+	//std::vector<repo_face_t> faces;
+	//faces.reserve(nCount);
+	//for (uint32_t i = 0; i < nCount; ++i)
+	//{
+	//	repo_face_t f;
+	//	f.numIndices = 3;
+	//	f.indices = (uint32_t*)malloc(sizeof(*f.indices) * 3);
+	//}
+
+	//std::vector<repo_vector_t> vectors;
+	//vectors.resize(nCount);
+	//std::vector<repo_vector_t> normals;
+	//normals.resize(nCount);
+
+	//std::memcpy(vectors.data(), rawVec, nCount*sizeof(*rawVec));
+	//std::memcpy(normals.data(), rawNorm, nCount*sizeof(*rawNorm));
+
+	//std::vector<std::vector<float>> boundingBox, outLine;
+	//boundingBox.resize(2);
+	//boundingBox[0] = { 1.0, 1.0, 2.0 };
+	//boundingBox[1] = { 1.5f, 10.1f, 23.1f };
+	//outLine = boundingBox;
+
+	//std::vector<std::vector<repo_vector2d_t>> uvChannels;
+	//uvChannels.resize(1);
+	//std::memcpy(uvChannels[0].data(), rawUV, nCount*sizeof(*rawUV));
+
+	//std::vector<repo_color4d_t> colors;
+	//colors.resize(nCount);
+	//std::memcpy(colors.data(), rawColors, nCount*sizeof(*rawColors));
+
+	//free(rawVec);
+	//free(rawNorm);
+	//free(rawUV);
+	//free(rawColors);
+
+
+	//std::string name = "meshTest";
+
+	////End of setting up data... the actual testing happens here.
+
+	//MeshNode mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, outLine, name);
+
+	//auto vOut = mesh.getVertices();
+	//auto nOut = mesh.getNormals();
+	////auto fOut = mesh.getFaces();
+	//EXPECT_TRUE(compareVectors(vectors, *vOut));
+	//EXPECT_TRUE(compareVectors(normals, *nOut));
+	////EXPECT_TRUE(compareVectors(faces, *fOut));
+
+	//delete vOut;
+	//delete nOut;
+	////delete fOut;
+
+	//for (repo_face_t face : faces)
+	//{
+	//	free(face.indices);
+	//}
+
+
+}
