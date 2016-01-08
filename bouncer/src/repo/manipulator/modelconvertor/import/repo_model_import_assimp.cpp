@@ -612,13 +612,18 @@ const std::map<std::string, repo::core::model::RepoNode *> &cameras,
 const std::vector<repo::core::model::RepoNode *>           &meshes,
 repo::core::model::RepoNodeSet						     &metadata,
 assimp_map													&map,
+uint32_t                                               &count,
 const std::vector<repoUUID>						             &parent
+
 	)
 {
 	repo::core::model::RepoNodeSet transNodes;
 
 	if (assimpNode){
 		std::string transName(assimpNode->mName.data);
+		if(count % 1000 == 0)
+			repoInfo << "Constructing transName: " << transName << " (" << count << " of ???)";
+
 		//create a 4 by 4 vector
 		std::vector < std::vector<float> > transMat;
 
@@ -694,7 +699,7 @@ const std::vector<repoUUID>						             &parent
 
 			repo::core::model::RepoNodeSet childMetadata;
 			repo::core::model::RepoNodeSet childSet =  createTransformationNodesRecursive(assimpNode->mChildren[i],
-				cameras, meshes, childMetadata, map, myShareID);
+				cameras, meshes, childMetadata, map, ++count, myShareID);
 
 			transNodes.insert(childSet.begin(), childSet.end());
 			metadata.insert(childMetadata.begin(), childMetadata.end());
@@ -963,10 +968,10 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		// of RepoNodeTransformations. Call with root node of aiScene.
 		// RootNode will be the first entry in transformations vector.
 
+		uint32_t count = 0;
+		transformations = createTransformationNodesRecursive(assimpScene->mRootNode, camerasMap, originalOrderMesh, metadata, map, count);
 
-		transformations = createTransformationNodesRecursive(assimpScene->mRootNode, camerasMap, originalOrderMesh, metadata, map);
-
-
+		repoInfo << "Node Construction completed. (# of transformation nodes created: ) " << transformations.size();
 
 		/*
 		* ---------------------------------------------

@@ -151,6 +151,7 @@ namespace repo{
 					const std::vector<repo::core::model::RepoNode *>           &meshes,
 					repo::core::model::RepoNodeSet						     &metadata,
 					assimp_map													&map,
+					uint32_t &count ,
 					const std::vector<repoUUID>						             &parent = std::vector<repoUUID>()
 					);
 
