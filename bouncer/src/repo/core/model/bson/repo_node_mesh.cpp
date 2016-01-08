@@ -297,10 +297,9 @@ std::vector<repo_face_t>* MeshNode::getFaces() const
 			if (serializedFaces->size() > mNumIndicesIndex + mNumIndices)
 			{
 				repo_face_t face;
-				face.numIndices = mNumIndices;
-				face.indices.resize(mNumIndices);
+				face.resize(mNumIndices);
 				for (int i = 0; i < mNumIndices; ++i)
-					face.indices[i] = serializedFaces->at(mNumIndicesIndex + 1 + i);
+					face[i] = serializedFaces->at(mNumIndicesIndex + 1 + i);
 				faces->push_back(face);
 				mNumIndicesIndex += mNumIndices + 1;
 			}

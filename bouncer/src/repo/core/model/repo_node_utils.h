@@ -72,10 +72,7 @@ typedef struct{
 
 }repo_vector2d_t;
 
-typedef struct{
-	uint32_t numIndices;
-	std::vector<uint32_t> indices;
-}repo_face_t;
+typedef std::vector<uint32_t> repo_face_t;
 
 
 //This is used to map info for multipart optimization
@@ -158,12 +155,12 @@ static std::string UUIDtoString(const repoUUID &id)
 static std::string toString(const repo_face_t &f)
 {
 	std::string str;
-	unsigned int mNumIndices = f.numIndices;
+	unsigned int mNumIndices = f.size();
 
 	str += "[";
-	for (unsigned int i = 0; i < f.numIndices; i++)
+	for (unsigned int i = 0; i < mNumIndices; i++)
 	{
-		str += std::to_string(f.indices[i]);
+		str += std::to_string(f[i]);
 		if (i != mNumIndices - 1)
 			str += ", ";
 	}

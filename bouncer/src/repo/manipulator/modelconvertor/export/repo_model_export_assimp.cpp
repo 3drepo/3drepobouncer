@@ -441,8 +441,8 @@ aiMesh* AssimpModelExport::convertMesh(
 			uint32_t i = 0;
 			for (const auto &face : *faces)
 			{
-				assimpMesh->mFaces[i].mIndices = (unsigned int*)face.indices.data();
-				assimpMesh->mFaces[i].mNumIndices = face.numIndices;
+				assimpMesh->mFaces[i].mIndices = (unsigned int*)face.data();
+				assimpMesh->mFaces[i].mNumIndices = face.size();
 				i++;
 
 			}
