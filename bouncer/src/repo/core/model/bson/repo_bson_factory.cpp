@@ -85,13 +85,6 @@ uint64_t RepoBSONFactory::appendDefaults(
     return bytesize;
 }
 
-RepoNode RepoBSONFactory::makeRepoNode(std::string type)
-{
-    RepoBSONBuilder builder;
-    appendDefaults(builder, type);
-    return RepoNode(builder.obj());
-}
-
 CameraNode RepoBSONFactory::makeCameraNode(
         const float         &aspectRatio,
         const float         &farClippingPlane,

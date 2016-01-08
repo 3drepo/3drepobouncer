@@ -166,13 +166,6 @@ public:
             const repoUUID &uniqueID = generateUUID());
 
     /**
-    * Create a RepoNode
-    * @param type of node (Optional)
-    * @return returns a RepoNode
-                                                */
-    static RepoNode makeRepoNode (std::string type=std::string());
-
-    /**
     * Create a Camera Node
     * @param aspect ratio
     * @param Far clipping plane
@@ -280,6 +273,7 @@ public:
             std::vector<std::vector<float>>             &outline,
             const std::string                           &name = std::string(),
             const int                                   &apiLevel = REPO_NODE_API_LEVEL_1);
+
 
     /**
     * Create a Reference Node
