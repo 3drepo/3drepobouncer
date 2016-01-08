@@ -345,7 +345,7 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 			std::string errMsg;
 			if (scene->loadRevision(handler, errMsg))
 			{
-				repoTrace << "Loaded " <<
+				repoInfo << "Loaded " <<
 					(headRevision ? ("head revision of branch" + UUIDtoString(uuid))
 					: ("revision " + UUIDtoString(uuid)))
 					<< " of " << database << "." << project;

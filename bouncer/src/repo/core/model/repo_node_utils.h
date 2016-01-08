@@ -74,7 +74,7 @@ typedef struct{
 
 typedef struct{
 	uint32_t numIndices;
-	uint32_t *indices;
+	std::vector<uint32_t> indices;
 }repo_face_t;
 
 

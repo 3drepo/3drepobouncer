@@ -280,7 +280,7 @@ std::vector<repo_face_t>* MeshNode::getFaces() const
 	{
 		std::vector <uint32_t> *serializedFaces = new std::vector<uint32_t>();
 		int32_t facesCount = getField(REPO_NODE_MESH_LABEL_FACES_COUNT).numberInt();
-		faces->resize(facesCount);
+		faces->reserve(facesCount);
 
 		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_FACES, serializedFaces);
 		
@@ -289,29 +289,25 @@ std::vector<repo_face_t>* MeshNode::getFaces() const
 		// In API level 1, mesh is represented as
 		// [n1, v1, v2, ..., n2, v1, v2...]
 		
-		unsigned int counter = 0;
 		int mNumIndicesIndex = 0;
-		while (counter < facesCount)
+		while (serializedFaces->size() > mNumIndicesIndex)
 		{
 
-			if (serializedFaces->size() <= mNumIndicesIndex)
+			int mNumIndices = serializedFaces->at(mNumIndicesIndex);
+			if (serializedFaces->size() > mNumIndicesIndex + mNumIndices)
 			{
-				repoError << "MeshNode::getFaces() : serialisedFaces.size() <= mNumIndicesIndex!";
+				repo_face_t face;
+				face.numIndices = mNumIndices;
+				face.indices.resize(mNumIndices);
+				for (int i = 0; i < mNumIndices; ++i)
+					face.indices[i] = serializedFaces->at(mNumIndicesIndex + 1 + i);
+				faces->push_back(face);
+				mNumIndicesIndex += mNumIndices + 1;
 			}
 			else
 			{
-				int mNumIndices = serializedFaces->at(mNumIndicesIndex);
-				repo_face_t face;
-				face.numIndices = mNumIndices;
-				uint32_t *indices = new uint32_t[mNumIndices];
-				for (int i = 0; i < mNumIndices; ++i)
-					indices[i] = serializedFaces->at(mNumIndicesIndex + 1 + i);
-				face.indices = indices;
-				(*faces)[counter] = face;
-				mNumIndicesIndex = mNumIndicesIndex + mNumIndices + 1;
+				repoError << "Cannot copy all faces. Buffer size is smaller than expected!";
 			}
-			
-			++counter;
 		}
 
 		// Memory cleanup
