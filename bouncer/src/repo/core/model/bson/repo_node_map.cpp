@@ -37,3 +37,15 @@ RepoNode(bson)
 MapNode::~MapNode()
 {
 }
+
+bool MapNode::sEqual(const RepoNode &other) const
+{
+	if (other.getTypeAsEnum() != NodeType::MAP || other.getParentIDs().size() != getParentIDs().size())
+	{
+		return false;
+	}
+
+	//TODO:
+	repoError << "Semantic comparison of map nodes are currently not supported!";
+	return false;
+}

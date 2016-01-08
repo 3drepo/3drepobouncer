@@ -75,8 +75,8 @@ namespace repo {
 					* @param binMapping binary mapping of fields that are too big to fit within the bson
 					*/
 					MeshNode(RepoBSON bson,
-						const std::unordered_map<std::string, std::vector<uint8_t>> &binMapping =
-									std::unordered_map<std::string, std::vector<uint8_t>>()
+						const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping =
+									std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>()
 						);
 
 
@@ -87,10 +87,48 @@ namespace repo {
 
 
 					/**
+					* Check if the node is position dependant.
+					* i.e. if parent transformation is merged onto the node,
+					* does the node requre to a transformation applied to it
+					* e.g. meshes and cameras are position dependant, metadata isn't
+					* Default behaviour is false. Position dependant child requires
+					* override this function.
+					* @return true if node is positionDependant.
+					*/
+					virtual bool positionDependant() { return true; }
+
+					/**
+					* Check if the node is semantically equal to another
+					* Different node should have a different interpretation of what
+					* this means.
+					* @param other node to compare with
+					* @param returns true if equal, false otherwise
+					*/
+					virtual bool sEqual(const RepoNode &other) const;
+
+					/*
+					*	------------- Delusional modifiers --------------
+					*   These are like "setters" but not. We are actually
+					*   creating a new bson object with the changed field
+					*/
+
+					/**
+					*  Create a new object with transformation applied to the node
+					* default behaviour is do nothing. Children object
+					* needs to override this function to perform their own specific behaviour.
+					* @param matrix transformation matrix to apply.
+					* @return returns a new object with transformation applied.
+					*/
+					virtual RepoNode cloneAndApplyTransformation(
+						const std::vector<float> &matrix) const;
+
+					/**
 					* Create a new copy of the node and update its mesh mapping
 					* @return returns a new meshNode with the new mappings
 					*/
 					MeshNode cloneAndUpdateMeshMapping(const std::vector<repo_mesh_mapping_t> &vec);
+
+
 
 					
 					/**
@@ -138,6 +176,12 @@ namespace repo {
 					* @return return a bson object containing the mapping
 					*/
 					RepoBSON meshMappingAsBSON(const repo_mesh_mapping_t  &mapping);
+
+
+					/**
+					* Retrieve a vector of faces (serialised) from the bson object
+					*/
+					std::vector<uint32_t> getFacesSerialized() const;
 
 				};
 		} //namespace model

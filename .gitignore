@@ -1,8 +1,8 @@
 build
 
 #nodeJS stuff
-utils/bouncer_worker/config.js
-utils/bouncer_worker/node_modules
+tools/bouncer_worker/config.js
+tools/bouncer_worker/node_modules
 
 #Windows junk
 *.vcxproj*

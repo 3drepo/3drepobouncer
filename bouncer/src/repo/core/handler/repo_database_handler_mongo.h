@@ -39,6 +39,7 @@
 #include "../model/repo_node_utils.h"
 #include "../model/bson/repo_bson.h"
 #include "../model/bson/repo_bson_builder.h"
+#include "../model/bson/repo_bson_role.h"
 #include "../model/bson/repo_bson_user.h"
 #include "../../lib/repo_stack.h"
 
@@ -76,6 +77,24 @@ namespace repo{
 				~MongoDatabaseHandler();
 
 				/**
+				* Disconnects the handler and resets the instance
+				* Must call this before trying to reconnect to another database!
+				*/
+				static void disconnectHandler()
+				{
+					if (handler)
+					{
+						repoInfo << "Disconnecting from database...";
+						delete handler;
+						handler = nullptr;
+					}
+					else
+					{
+						repoTrace << "Attempting to disconnect a handler without ever instantiating it!";
+					}
+				}
+
+				/**
 				 * Returns the instance of MongoDatabaseHandler
 				 * @param errMsg error message if this fails
 				 * @param host hostname of the database
@@ -99,7 +118,6 @@ namespace repo{
 
 				/**
 				* Returns the instance of MongoDatabaseHandler
-				* @param errMsg error message if this fails
 				* @param host string containing "databaseAddress:port"
 				* @return Returns null if there is no instance available
 				*/
@@ -124,7 +142,7 @@ namespace repo{
 					const bool        &pwDigested = false)
 				{
 					mongo::BSONObj *mongoBSON = createAuthBSON(dbName, username, password, pwDigested);
-					return mongoBSON? new repo::core::model::RepoBSON(*mongoBSON) : 0;
+					return mongoBSON? new repo::core::model::RepoBSON(*mongoBSON) : nullptr;
 				}
 
 
@@ -155,6 +173,7 @@ namespace repo{
 				* @param sortField field to sort upon
 				* @param sortOrder 1 ascending, -1 descending
 				* @param skip specify how many documents to skip
+				* @param limit number of maximum items to return (default is 0)
 				* @return list of RepoBSONs representing the documents
 				*/
 				std::vector<repo::core::model::RepoBSON>
@@ -162,6 +181,7 @@ namespace repo{
 					const std::string                             &database,
 					const std::string                             &collection,
 					const uint64_t                                &skip = 0,
+					const uint32_t								  &limit = 0,
 					const std::list<std::string>				  &fields = std::list<std::string>(),
 					const std::string							  &sortField = std::string(),
 					const int									  &sortOrder = -1);
@@ -244,6 +264,13 @@ namespace repo{
 
 
 				/**
+				* Create a collection with the name specified
+				* @param database name of the database
+				* @param name name of the collection
+				*/
+				virtual void createCollection(const std::string &database, const std::string &name);
+
+				/**
 				* Remove a collection from the database
 				* @param database the database the collection resides in
 				* @param collection name of the collection to drop
@@ -276,6 +303,19 @@ namespace repo{
 					const std::string &database,
 					const std::string &collection,
 					std::string &errMsg);
+
+				/**
+				* Remove a role from the database
+				* @param role user bson to remove
+				* @param errmsg error message
+				* @return returns true upon success
+				*/
+				bool dropRole(
+					const repo::core::model::RepoRole &role,
+					std::string                             &errmsg)
+				{
+					return performRoleCmd(OPERATION::DROP, role, errmsg);
+				}
 
 				/**
 				* Remove a user from the database
@@ -323,6 +363,20 @@ namespace repo{
 					);
 
 				/**
+				* Insert a role into the database
+				* @param role role bson to insert
+				* @param errmsg error message
+				* @return returns true upon success
+				*/
+				bool insertRole(
+					const repo::core::model::RepoRole       &role,
+					std::string                             &errmsg)
+				{
+					return performRoleCmd(OPERATION::INSERT, role, errmsg);
+				}
+
+
+				/**
 				* Insert a user into the database
 				* @param user user bson to insert
 				* @param errmsg error message
@@ -334,6 +388,7 @@ namespace repo{
 				{
 					return performUserCmd(OPERATION::INSERT, user, errmsg);
 				}
+
 
 				/**
 				* Update/insert a single document in database.collection
@@ -351,6 +406,19 @@ namespace repo{
 					const repo::core::model::RepoBSON &obj,
 					const bool        &overwrite,
 					std::string &errMsg);
+
+				/**
+				* Update a role in the database
+				* @param role role bson to update
+				* @param errmsg error message
+				* @return returns true upon success
+				*/
+				bool updateRole(
+					const repo::core::model::RepoRole       &role,
+					std::string                             &errmsg)
+				{
+					return performRoleCmd(OPERATION::UPDATE, role, errmsg);
+				}
 
 				/**
 				* Update a user in the database
@@ -391,6 +459,18 @@ namespace repo{
 				* @return a vector of RepoBSON objects satisfy the given criteria
 				*/
 				std::vector<repo::core::model::RepoBSON> findAllByCriteria(
+					const std::string& database,
+					const std::string& collection,
+					const repo::core::model::RepoBSON& criteria);
+
+				/**
+				* Given a search criteria,  find one documents that passes this query
+				* @param database name of database
+				* @param collection name of collection
+				* @param criteria search criteria in a bson object
+				* @return a RepoBSON objects satisfy the given criteria
+				*/
+				repo::core::model::RepoBSON findOneByCriteria(
 					const std::string& database,
 					const std::string& collection,
 					const repo::core::model::RepoBSON& criteria);
@@ -571,6 +651,18 @@ namespace repo{
 				*/
 				std::string getProjectFromCollection(const std::string &ns, const std::string &projectExt);
 
+				/**
+				* Perform command on the user
+				* @param op (insert, drop or update)
+				* @param role user to modify
+				* @param errMsg error message if failed
+				* @return returns true upon success
+				*/
+				bool performRoleCmd(
+					const OPERATION                         &op,
+					const repo::core::model::RepoRole       &role,
+					std::string                             &errMsg);
+				
 				/**
 				* Perform command on the user
 				* @param op (insert, drop or update)

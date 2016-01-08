@@ -38,6 +38,27 @@ CameraNode::~CameraNode()
 {
 }
 
+RepoNode CameraNode::cloneAndApplyTransformation(
+	const std::vector<float> &matrix) const
+{
+	RepoBSONBuilder builder;
+	if (hasField(REPO_NODE_LABEL_LOOK_AT))
+	{
+		builder.append(REPO_NODE_LABEL_LOOK_AT, multiplyMatVec(matrix, getLookAt()));
+	}
+
+	if (hasField(REPO_NODE_LABEL_POSITION))
+	{
+		builder.append(REPO_NODE_LABEL_POSITION, multiplyMatVec(matrix, getPosition()));
+	}
+
+	if (hasField(REPO_NODE_LABEL_UP))
+	{
+		builder.append(REPO_NODE_LABEL_UP, multiplyMatVec(matrix, getUp()));
+	}
+	return CameraNode(builder.appendElementsUnique(*this));
+}
+
 repo_vector_t CameraNode::getPosition() const
 {
 	repo_vector_t vec;
@@ -92,8 +113,6 @@ repo_vector_t CameraNode::getUp() const
 std::vector<float> CameraNode::getCameraMatrix(
 	const bool &rowMajor) const
 {
-
-	/** todo: test ... should work, but i'm not absolutely sure */
 
 	std::vector<float> mat;
 	mat.resize(16);
@@ -178,4 +197,22 @@ std::vector<float> CameraNode::getCameraMatrix(
 	mat[d4] = 1.f;
 
 	return mat;
+}
+
+bool CameraNode::sEqual(const RepoNode &other) const
+{
+	if (other.getTypeAsEnum() != NodeType::CAMERA || other.getParentIDs().size() != getParentIDs().size())
+	{
+		return false;
+	}
+
+	const CameraNode otherCam = CameraNode(other);
+
+
+	std::vector<float> mat = getCameraMatrix();
+	std::vector<float> otherMat = otherCam.getCameraMatrix();
+
+
+	return !memcmp(mat.data(), otherMat.data(), mat.size() *sizeof(*mat.data()));
+
 }

@@ -60,7 +60,23 @@ namespace repo{
 						if (worker)
 						{
 							repoDebug << "Connected to database, trying authentication..";
-							worker->auth(*auth);
+							for (int i = 0; i < numConnections; i++)
+							{
+								mongo::DBClientBase *worker = dbAddress.connect(errMsg);
+								if (auth)
+								{
+									if (!worker->auth(auth->getStringField("db"), auth->getStringField("user"), auth->getStringField("pwd"), errMsg, auth->getField("digestPassword").boolean()))
+									{
+										throw mongo::DBException(errMsg, mongo::ErrorCodes::AuthenticationFailed);
+									}
+
+								}
+								else
+								{
+									repoWarning << "No credentials found. User is not authenticated against the database!";
+								}
+								push(worker);
+							}
 						}
 						else
 						{
@@ -70,13 +86,7 @@ namespace repo{
 
 
 
-						push(worker);
-						for (int i = 1; i < numConnections; i++)
-						{
-							//push a bunch of null pointers into the stack
-							//We will connect these as required
-							push(0);
-						}
+
 					}
 
 					MongoConnectionPool():maxSize(0){}
@@ -138,7 +148,10 @@ namespace repo{
 					mongo::DBClientBase* connectWorker(std::string &errMsg)
 					{
 						mongo::DBClientBase *worker = dbAddress.connect(errMsg);
-						worker->auth(*auth);
+						if (auth && !worker->auth(auth->getStringField("db"), auth->getStringField("user"), auth->getStringField("pwd"), errMsg, auth->getField("digestPassword").boolean()))
+						{
+							throw mongo::DBException(errMsg, mongo::ErrorCodes::AuthenticationFailed);
+						}
 						return worker;
 					}
 

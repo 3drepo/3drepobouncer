@@ -21,63 +21,75 @@
 
 using namespace repo::core::model;
 
-RepoBSON::RepoBSON(const mongo::BSONObj &obj,
-	const std::unordered_map<std::string, std::vector<uint8_t>> &binMapping)
+RepoBSON::RepoBSON(
+	const mongo::BSONObj &obj,
+	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping)
 	: mongo::BSONObj(obj),
 	bigFiles(binMapping)
 {
-	if (!obj.hasField(REPO_LABEL_OVERSIZED_FILES))
+	std::vector<std::pair<std::string, std::string>> existingFiles;
+
+	if (bigFiles.size() > 0)
 	{
-		//Append oversize file references into the bson
-		std::vector<std::string> fnames;
-		boost::copy(
-			bigFiles | boost::adaptors::map_keys,
-			std::back_inserter(fnames));
-
 		mongo::BSONObjBuilder builder, arrbuilder;
-		if (fnames.size() > 0)
+
+		for (const auto & pair : bigFiles)
 		{
-			for (int i = 0; i < fnames.size(); ++i)
-			{
-				arrbuilder << std::to_string(i) << fnames[i];
-			}
-
-			builder.appendArray(REPO_LABEL_OVERSIZED_FILES, arrbuilder.obj());
-			builder.appendElementsUnique(obj);
-
-			*this = builder.obj();
-			bigFiles = binMapping;
+			//append field name :file name
+			arrbuilder << pair.first << pair.second.first;
 		}
+
+		if (obj.hasField(REPO_LABEL_OVERSIZED_FILES))
+		{
+			arrbuilder.appendElementsUnique(obj.getObjectField(REPO_LABEL_OVERSIZED_FILES));
+		}
+
+
+		builder.append(REPO_LABEL_OVERSIZED_FILES, arrbuilder.obj());
+		builder.appendElementsUnique(obj);
+
+		*this = builder.obj();
+		bigFiles = binMapping;
 	}
+	
 
 
+}
+
+RepoBSON RepoBSON::cloneAndAddFields(
+	const RepoBSON *changes) const
+{
+	mongo::BSONObjBuilder builder;
+
+	builder.appendElementsUnique(*changes);
+
+	builder.appendElementsUnique(*this);
+
+	return RepoBSON(builder.obj());
 }
 
 RepoBSON RepoBSON::cloneAndShrink() const
 {
 	std::set<std::string> fields;
-
-	std::unordered_map< std::string, std::vector<uint8_t>> rawFiles(bigFiles.begin(), bigFiles.end());
+	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>>> rawFiles(bigFiles.begin(), bigFiles.end());
 	std::string uniqueIDStr = hasField(REPO_LABEL_ID) ? UUIDtoString(getUUIDField(REPO_LABEL_ID)) : UUIDtoString(generateUUID());
-	mongo::BSONObjBuilder builder;
 
 	getFieldNames(fields);
+
+	RepoBSON resultBson = *this;
 	
 	for (const std::string &field : fields)
 	{
 		if (getField(field).type() == ElementType::BINARY)
 		{
 			std::string fileName = uniqueIDStr + "_" + field;
-			builder << field << fileName;
-			rawFiles[fileName] = std::vector<uint8_t>();
-
-			getBinaryFieldAsVector(getField(field), &rawFiles[fileName]);
+			rawFiles[field] = std::pair<std::string, std::vector<uint8_t>>(fileName, std::vector<uint8_t>());
+			getBinaryFieldAsVector(field, &rawFiles[field].second);
+			resultBson = resultBson.removeField(field);
 		}
 	}
 
-	builder.appendElementsUnique(*this);
-
-	return RepoBSON(builder.obj(), rawFiles);
+	return RepoBSON(resultBson, rawFiles);
 
 }
 
@@ -144,7 +156,9 @@ std::vector<uint8_t> RepoBSON::getBigBinary(
 	const auto &it = bigFiles.find(key);
 
 	if (it != bigFiles.end())
-		binary = it->second;
+	{
+		binary = it->second.second;
+	}
 	else
 	{
 		repoError << "External binary not found for key " << key << "! (size of mapping is : " << bigFiles.size() << ")";
@@ -153,19 +167,18 @@ std::vector<uint8_t> RepoBSON::getBigBinary(
 	return binary;
 }
 
-std::vector<std::string> RepoBSON::getFileList() const
+std::vector<std::pair<std::string, std::string>> RepoBSON::getFileList() const
 {
-	std::vector<std::string> fileList;
+	std::vector<std::pair<std::string, std::string>> fileList;
 	if (hasField(REPO_LABEL_OVERSIZED_FILES))
 	{
-		RepoBSON arraybson = getObjectField(REPO_LABEL_OVERSIZED_FILES);
+		RepoBSON extRefbson = getObjectField(REPO_LABEL_OVERSIZED_FILES);
 
-		std::set<std::string> fields;
-		arraybson.getFieldNames(fields);
-
-		for (const auto &field : fields)
+		std::set<std::string> fieldNames;
+		extRefbson.getFieldNames(fieldNames);
+		for (const auto &name : fieldNames)
 		{
-			fileList.push_back(arraybson.getStringField(field));
+			fileList.push_back(std::pair<std::string, std::string>(name, extRefbson.getStringField(name)));
 		}
 	}
 
@@ -175,16 +188,16 @@ std::vector<std::string> RepoBSON::getFileList() const
 std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
 {
 	std::vector<float> results;
-
 	if (hasField(label))
 	{
 		RepoBSON array = getObjectField(label);
-
 		if (!array.isEmpty())
 		{
 			std::set<std::string> fields;
 			array.getFieldNames(fields);
 
+            // Pre allocate memory to speed up copying
+            results.reserve(fields.size());
 			for (auto field : fields)
 				results.push_back(array.getField(field).numberDouble());
 		}
@@ -195,6 +208,20 @@ std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
 
 	}
 	return results;
+}
+
+std::vector<std::string> RepoBSON::getStringArray(const std::string &label) const
+{
+    std::vector<std::string> results;
+    if (hasField(label))
+    {
+        std::vector<RepoBSONElement> array = getField(label).Array();
+        // Pre allocate memory to speed up copying
+        results.reserve(array.size());
+        for (auto element : array)
+            results.push_back(element.String());
+    }
+    return results;
 }
 
 int64_t RepoBSON::getTimeStampField(const std::string &label) const
@@ -246,4 +273,29 @@ std::list<std::pair<std::string, std::string> > RepoBSON::getListStringPairField
 		}
 	}
 	return list;
+}
+
+double RepoBSON::getEmbeddedDouble(
+        const std::string &embeddedObjName,
+        const std::string &fieldName,
+        const double &defaultValue) const
+{
+    double value = defaultValue;
+    if (hasEmbeddedField(embeddedObjName, fieldName))
+    {
+         value = (getObjectField(embeddedObjName)).getField(fieldName).numberDouble();
+    }
+    return value;
+}
+
+bool RepoBSON::hasEmbeddedField(
+            const std::string &embeddedObjName,
+            const std::string &fieldName) const
+{
+    bool found = false;
+    if (hasField(embeddedObjName))
+    {
+        found = (getObjectField(embeddedObjName)).hasField(fieldName);
+    }
+    return found;
 }

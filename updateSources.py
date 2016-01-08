@@ -18,7 +18,7 @@ def createCMakeList(dirName, files, subDirList, sourceName, headerName):
 	hInd = 0
 	sources = {}
 	headers = {}
-	for fname in files:
+	for fname in sorted(files):
 		if fname.lower().endswith('.cpp'):
 			sources[cppInd] = fname
 			cppInd+=1
@@ -34,7 +34,7 @@ def createCMakeList(dirName, files, subDirList, sourceName, headerName):
 	printHeaderForCMakeFiles(cmakeFile)
 
 	#include sub directories
-	for subDir in subDirList:
+	for subDir in sorted(subDirList):
 		cmakeFile.write('add_subdirectory(' + subDir + ")\n")
 
 	#write sources
@@ -42,7 +42,7 @@ def createCMakeList(dirName, files, subDirList, sourceName, headerName):
 		cmakeFile.write('set('+sourceName+'\n')
 		cmakeFile.write('\t${'+sourceName+'}\n')
 
-		for fname in sources.values():
+		for fname in sorted(sources.values()):
 			cmakeFile.write('\t${CMAKE_CURRENT_SOURCE_DIR}/' + fname + '\n')
 		
 		cmakeFile.write('\tCACHE STRING "'+sourceName+'" FORCE)\n\n')
@@ -52,7 +52,7 @@ def createCMakeList(dirName, files, subDirList, sourceName, headerName):
 		cmakeFile.write('set('+headerName+'\n')
 		cmakeFile.write('\t${'+headerName+'}\n')
 	
-		for fname in headers.values():
+		for fname in sorted(headers.values()):
 			cmakeFile.write('\t${CMAKE_CURRENT_SOURCE_DIR}/' + fname + '\n')
 		
 		cmakeFile.write('\tCACHE STRING "'+headerName+'" FORCE)\n\n')

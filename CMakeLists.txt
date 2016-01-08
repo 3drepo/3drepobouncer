@@ -29,6 +29,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 add_definitions(-DBOOST_ALL_NO_LIB)
 add_definitions(-DBOOST_LOG_DYN_LINK)
 add_definitions(-DBOOST_PROGRAM_OPTIONS_DYN_LINK)
+add_definitions(-DBOOST_UUID_NO_SIMD)
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
@@ -36,7 +37,7 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 unset(Boost_INCLUDE_DIR CACHE)
 unset(Boost_LIBRARY_DIRS CACHE)
 
-find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options)
+find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options regex)
 add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
 
 #================MONGO SETTINGS=======================

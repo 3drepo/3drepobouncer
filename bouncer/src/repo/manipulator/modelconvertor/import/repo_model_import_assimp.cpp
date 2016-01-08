@@ -228,8 +228,9 @@ repo::core::model::CameraNode* AssimpModelImport::createCameraRepoNode(
 
 }
 repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
-	aiMaterial *material,
-	std::string name)
+	const aiMaterial *material,
+	const std::string &name,
+	const std::map<std::string, repo::core::model::RepoNode *> &nameToTexture)
 {
 	repo::core::model::MaterialNode *materialNode;
 
@@ -318,6 +319,22 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 		// Texture (one diffuse for the moment)
 		// Textures are uniquely referenced by their name
 		aiString texPath; // contains a filename of a texture
+		/*repoTrace << " #None Texture:" << material->GetTextureCount(aiTextureType_NONE);
+		repoTrace << " #Diffuse Texture:" << material->GetTextureCount(aiTextureType_DIFFUSE);
+		repoTrace << " #Spec Texture:" << material->GetTextureCount(aiTextureType_SPECULAR);
+		repoTrace << " #Ambient Texture:" << material->GetTextureCount(aiTextureType_AMBIENT);
+		repoTrace << " #Emissive Texture:" << material->GetTextureCount(aiTextureType_EMISSIVE);
+		repoTrace << " #Height Texture:" << material->GetTextureCount(aiTextureType_HEIGHT);
+		repoTrace << " #Normal Texture:" << material->GetTextureCount(aiTextureType_NORMALS);
+		repoTrace << " #Shiniess Texture:" << material->GetTextureCount(aiTextureType_SHININESS);
+		repoTrace << " #Opac Texture:" << material->GetTextureCount(aiTextureType_OPACITY);
+		repoTrace << " #Disp Texture:" << material->GetTextureCount(aiTextureType_DISPLACEMENT);
+		repoTrace << " #LightM Texture:" << material->GetTextureCount(aiTextureType_LIGHTMAP);
+		repoTrace << " #Reflection Texture:" << material->GetTextureCount(aiTextureType_REFLECTION);
+		repoTrace << " #Unknown Texture:" << material->GetTextureCount(aiTextureType_UNKNOWN);
+*/
+
+
 		if (AI_SUCCESS == material->GetTexture(aiTextureType_DIFFUSE, 0, &texPath))
 		{
 			std::map<std::string, repo::core::model::RepoNode *>::const_iterator it = nameToTexture.find(texPath.data);
@@ -328,6 +345,10 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 
 				repo::core::model::RepoNode tmp = nodeAddr->cloneAndAddParent(materialNode->getSharedID());
 				nodeAddr->swap(tmp);
+			}
+			else
+			{
+				repoError << "Could not find related texture mapping";
 			}
 		}
 	}
@@ -382,7 +403,9 @@ repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 	{
 		for (uint32_t i = 0; i < assimpMesh->mNumFaces; i++)
 		{
-			faces.push_back({ assimpMesh->mFaces[i].mNumIndices, assimpMesh->mFaces[i].mIndices });
+
+			faces.push_back({ std::vector<uint32_t>(assimpMesh->mFaces[i].mIndices, 
+				assimpMesh->mFaces[i].mIndices + assimpMesh->mFaces[i].mNumIndices) });
 		}
 	}
 	/*
@@ -563,7 +586,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 					repo_vector_t repoVector = { vector->x, vector->y, vector->z };
 
 
-					builder.appendVector(key, repoVector);
+					builder.append(key, repoVector);
 				}
 				break;
 			case FORCE_32BIT:
@@ -694,11 +717,113 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		repo::core::model::RepoNodeSet materials; //!< Materials
 		repo::core::model::RepoNodeSet metadata; //!< Metadata
 		repo::core::model::RepoNodeSet transformations; //!< Transformations
+		repo::core::model::RepoNodeSet textures;
+
 
 		std::vector<repo::core::model::RepoNode *> originalOrderMaterial; //vector that keeps track original order for assimp indices
 		std::map<repo::core::model::RepoNode *, std::vector<repoUUID>> matParents;//Tracks material parents
 		std::vector<repo::core::model::RepoNode *> originalOrderMesh; //vector that keeps track original order for assimp indices
 		std::map<std::string, repo::core::model::RepoNode *> camerasMap;
+		std::map<std::string, repo::core::model::RepoNode *> nameToTexture;
+
+		//-------------------------------------------------------------------------
+		// Textures
+		repoInfo << "Constructing Texture Nodes...";
+		for (uint32_t m = 0; m < assimpScene->mNumMaterials; ++m)
+		{
+			int texIndex = 0;
+			aiReturn texFound = AI_SUCCESS;
+			const aiMaterial *material = assimpScene->mMaterials[m];
+
+
+			uint32_t nTex = material->GetTextureCount(aiTextureType_DIFFUSE);
+			for (uint32_t iTex = 0; iTex < nTex; ++iTex)
+			{
+				aiString path;	// filename
+				if (AI_SUCCESS == material->GetTexture(aiTextureType_DIFFUSE, iTex, &path))
+				{
+					std::string texName(path.data);
+					if (!texName.empty())
+					{
+						repo::core::model::RepoNode *textureNode = nullptr;
+						if (assimpScene->HasTextures() && '*' == texName.at(0))
+						{
+							repoTrace << "Embedded texture name: " << texName;
+							//---------------------------------------------------------
+							// Embedded texture
+							int textureIndex = atoi(texName.substr(1, texName.size()).c_str());
+							aiTexture *texture = assimpScene->mTextures[textureIndex];
+
+
+
+							//FIXME: Untested!
+							textureNode = new repo::core::model::TextureNode(repo::core::model::RepoBSONFactory::makeTextureNode(
+								texName,
+								(char*)texture->pcData,
+								sizeof(texture->pcData) * texture->mWidth * texture->mHeight ? texture->mHeight : 1,
+								texture->mWidth,
+								texture->mHeight,
+								REPO_NODE_API_LEVEL_1));
+
+						}
+						else
+						{
+							repoTrace << "External texture name: " << texName;
+							//External texture
+							std::ifstream::pos_type size;
+							std::string dirPath = getDirPath(orgFile);
+							char *memblock;
+							boost::filesystem::path filePath = boost::filesystem::path(dirPath) / boost::filesystem::path(texName);
+							std::ifstream file(filePath.string(), std::ios::in | std::ios::binary | std::ios::ate);
+							if (!file.is_open())
+							{
+								repoError << "Could not open texture: " << dirPath << texName << std::endl;
+							}
+							else
+							{
+								std::ifstream::pos_type size = file.tellg();
+								char *memblock = new char[size];
+								file.seekg(0, std::ios::beg);
+								file.read(memblock, size);
+								file.close();
+
+								textureNode = new repo::core::model::TextureNode(repo::core::model::RepoBSONFactory::makeTextureNode(
+									texName,
+									memblock,
+									size,
+									size,
+									0,
+									REPO_NODE_API_LEVEL_1));
+
+
+								delete[] memblock;
+							}
+
+
+						}
+
+						if (textureNode)
+						{
+							textures.insert(textureNode);
+							nameToTexture[texName] = textureNode;
+							repoTrace << "Added texture :" << texName;
+						}
+					}
+					else
+					{
+						repoWarning << "Texture name is empty!";
+
+					}
+
+				}
+				else
+				{
+					repoWarning << "Unable to get texture from material.";
+				}
+			}
+
+		}
+
 
 		repoInfo << "Constructing Material Nodes...";
 		/*
@@ -712,14 +837,14 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 			{
 				if (i % 100 == 0 || i == assimpScene->mNumMaterials - 1)
 				{
-					repoTrace << "Constructing " << i << " of " << assimpScene->mNumMaterials;
+					repoInfo << "Constructing " << i << " of " << assimpScene->mNumMaterials;
 				}
 				aiString name;
 				assimpScene->mMaterials[i]->Get(AI_MATKEY_NAME, name);
 
 				repo::core::model::RepoNode* material = createMaterialRepoNode(
 					assimpScene->mMaterials[i],
-					name.data);
+					name.data, nameToTexture);
 
 				if (!material)
 					repoError << "Unable to construct material node in Assimp Model Convertor!";
@@ -750,9 +875,9 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		{
 			for (unsigned int i = 0; i < assimpScene->mNumMeshes; ++i)
 			{
-				if (i % 100 == 0 || i == assimpScene->mNumMeshes-1)
+				if (i % 500 == 0 || i == assimpScene->mNumMeshes-1)
 				{
-					repoTrace << "Constructing " << i << " of " << assimpScene->mNumMeshes;
+					repoInfo << "Constructing " << i << " of " << assimpScene->mNumMeshes;
 				}
 				repo::core::model::RepoNode* mesh = createMeshRepoNode(
 					assimpScene->mMeshes[i],
@@ -796,7 +921,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 
 				if (i % 100 == 0 || i == assimpScene->mNumCameras - 1)
 				{
-					repoTrace << "Constructing " << i << " of " << assimpScene->mNumCameras;
+					repoInfo << "Constructing " << i << " of " << assimpScene->mNumCameras;
 				}
 				std::string cameraName(assimpScene->mCameras[i]->mName.data);
 				repo::core::model::RepoNode* camera = createCameraRepoNode(assimpScene->mCameras[i]);
@@ -887,14 +1012,9 @@ repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 		repoTrace << "Converting AiScene to Optimised RepoScene";
 		convertAiSceneToRepoScene(optMap, scene);
 
-		assimp_map combinedMap;
-
-		combinedMap.insert(orgMap.begin(), orgMap.end());
-		combinedMap.insert(optMap.begin(), optMap.end());
-
 		repo::core::model::RepoNode *stashRoot =  scene->getRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED);
 
-		if (!populateOptimMaps(stashRoot, scene, combinedMap, optMap))
+		if (!populateOptimMaps(stashRoot, scene, orgMap, optMap))
 		{
 			//populateOptimMaps is false so stash is invalid. clear it out.
 			repoError << "Stash invalid ... clearing.";
@@ -951,91 +1071,19 @@ bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
 			polyCount += assimpScene->mMeshes[i]->mNumFaces;
 
 		repoInfo << "=== IMPORTING MODEL WITH ASSIMP MODEL CONVERTOR ===";
-		repoInfo << "Loaded ";
-		repoInfo << fileName << " with " << polyCount << " polygons in ";
-		repoInfo << assimpScene->mNumMeshes << " ";
-		repoInfo << ((assimpScene->mNumMeshes == 1) ? "mesh" : "meshes");
-		repoInfo << std::endl;
+		repoInfo << "Loaded " << fileName << " with " << polyCount << " polygons in " << assimpScene->mNumMeshes << " " << ((assimpScene->mNumMeshes == 1) ? "mesh" : "meshes");
 
-		//-------------------------------------------------------------------------
-		// Textures
-		loadTextures(getDirPath(filePath));
 
 	}
 
 	return success;
 }
 
-void AssimpModelImport::loadTextures(std::string dirPath){
-
-	for (uint32_t m = 0; m < assimpScene->mNumMaterials; ++m)
-	{
-		int texIndex = 0;
-		aiReturn texFound = AI_SUCCESS;
-		const aiMaterial *material = assimpScene->mMaterials[m];
-
-		aiString path;	// filename
-		while (AI_SUCCESS == texFound)
-		{
-			texFound = material->GetTexture(aiTextureType_DIFFUSE, texIndex, &path);
-			std::string fileName(path.data);
-
-			// Multiple materials can point to the same texture
-			if (!fileName.empty() && nameToTexture.find(fileName.c_str()) == nameToTexture.end())
-			{
-				repo::core::model::RepoNode *textureNode;
-				// In assimp, embedded textures name starts with asterisk and a textures array index
-				// so the name can be "*0" for example
-				if (assimpScene->HasTextures() && '*' == fileName.at(0))
-				{
-					//---------------------------------------------------------
-					// Embedded texture
-					int textureIndex = atoi(fileName.substr(1, fileName.size()).c_str());
-					aiTexture *texture = assimpScene->mTextures[textureIndex];
-
-					// Read the raw file to save space in the DB. QImage will happily
-					// claim a file is 32 bit depth even though it is 24 for example.
-					std::ifstream::pos_type size;
-					char *memblock;
-					std::ifstream file(dirPath + fileName, std::ios::in | std::ios::binary | std::ios::ate);
-					if (!file.is_open())
-					{
-						repoError << "Could not open texture: " << dirPath << fileName << std::endl;
-					}
-					else
-					{
-						size = file.tellg();
-						memblock = new char[size];
-						file.seekg(0, std::ios::beg);
-						file.read(memblock, size);
-						file.close();
-
-						textureNode = new repo::core::model::TextureNode(repo::core::model::RepoBSONFactory::makeTextureNode(
-							fileName,
-							memblock,
-							(uint32_t)size,
-							texture->mWidth,
-							texture->mHeight,
-							REPO_NODE_API_LEVEL_1));
-
-						textures.insert(textureNode);
-						nameToTexture[fileName] = textureNode;
-
-						delete[] memblock;
-					}
-				}
-			}
-			texIndex++;
-		}
-	}
-
-
-}
 
 bool AssimpModelImport::populateOptimMaps(
 	repo::core::model::RepoNode		   *current,
 	repo::core::model::RepoScene       *scene,
-	const assimp_map                   &combinedMap,
+	const assimp_map                   &orgMap,
 	const assimp_map                   &optMap)
 {
 	std::map<repoUUID, std::vector<repo_mesh_mapping_t>> meshMapping;
@@ -1065,9 +1113,9 @@ bool AssimpModelImport::populateOptimMaps(
 			for (uintptr_t mergedNode : ai_map->getMergeMap())
 			{
 				// Find the corresponding abstract node for an assimp
-				assimp_map::left_const_iterator nit = combinedMap.left.find(mergedNode);
+				assimp_map::left_const_iterator nit = orgMap.left.find(mergedNode);
 
-				if (nit != combinedMap.left.end())
+				if (nit != orgMap.left.end())
 				{
 					repo::core::model::RepoNode *node = nit->second;
 					repoUUID mergedUUID = node->getUniqueID();
@@ -1098,9 +1146,9 @@ bool AssimpModelImport::populateOptimMaps(
 			for (const auto &map : ai_map->getMeshMaps())
 			{
 				// First find the mesh that all the meshes were merged into
-				assimp_map::left_const_iterator mergedMeshIT = combinedMap.left.find(map.first);
+				assimp_map::left_const_iterator mergedMeshIT = optMap.left.find(map.first);
 
-				if (mergedMeshIT != combinedMap.left.end())
+				if (mergedMeshIT != optMap.left.end())
 				{
 					boost::uuids::uuid parentUUID = mergedMeshIT->second->getUniqueID();
 
@@ -1108,16 +1156,16 @@ bool AssimpModelImport::populateOptimMaps(
 					{
 						// Search for the Unique ID for this child
 
-						assimp_map::left_const_iterator childIT = combinedMap.left.find(mMap.childMesh);
+						assimp_map::left_const_iterator childIT = orgMap.left.find(mMap.childMesh);
 
-						if (childIT != combinedMap.left.end())
+						if (childIT != orgMap.left.end())
 						{
 							repoUUID childUUID = childIT->second->getUniqueID();
 
 							// Now find the UUID of the material
 							assimp_map::left_const_iterator materialIT = optMap.left.find(mMap.material);
 
-							if (materialIT != combinedMap.left.end())
+							if (materialIT != orgMap.left.end())
 							{
 								repoUUID materialUUID = materialIT->second->getUniqueID();
 
@@ -1137,7 +1185,7 @@ bool AssimpModelImport::populateOptimMaps(
 
 							}
 							else {
-								repoError << "populateOptimMaps: Unable to find material  node from combinedMap!";
+								repoError << "populateOptimMaps: Unable to find material node from orgMap!";
 								return false;
 							}
 						}
@@ -1148,7 +1196,7 @@ bool AssimpModelImport::populateOptimMaps(
 					}
 				}
 				else {
-					repoError << "populateOptimMaps: Unable to find mesh from combinedMap!";
+					repoError << "populateOptimMaps: Unable to find mesh from orgMap!";
 					return false;
 				}
 			}
@@ -1171,7 +1219,7 @@ bool AssimpModelImport::populateOptimMaps(
 	// Register child transformations as children if any
 	for (repo::core::model::RepoNode *child : children)
 	{
-		if (!populateOptimMaps(child, scene, combinedMap, optMap)) return false;
+		if (!populateOptimMaps(child, scene, orgMap, optMap)) return false;
 
 		// If the child is a mesh then we may need to
 		// transfer the optimization map to it.
@@ -1188,23 +1236,25 @@ bool AssimpModelImport::populateOptimMaps(
 				repo::core::model::MeshNode *meshChild = (repo::core::model::MeshNode *) child;
 
 				auto meshMappingIt = meshMapping.find(child->getUniqueID());
+                                if (meshMappingIt != meshMapping.end())
+                                {
+                                    repo::core::model::MeshNode updatedChild = meshChild->cloneAndUpdateMeshMapping(meshMappingIt->second);
+                                    meshChild->swap(updatedChild);
 
-				repo::core::model::MeshNode updatedChild = meshChild->cloneAndUpdateMeshMapping(meshMappingIt->second);
 
-				meshChild->swap(updatedChild);
+                                    // We also need to transfer the materials so that they are children of the mesh
 
-				// We also need to transfer the materials so that they are children of the mesh
-
-				for (const auto &rMap : meshChild->getMeshMapping())
-				{
-					repo::core::model::RepoNode *matNode =
-						scene->getNodeByUniqueID(repo::core::model::RepoScene::GraphType::OPTIMIZED, rMap.material_id);
-					if (matNode)
-					{
-						scene->addInheritance(repo::core::model::RepoScene::GraphType::OPTIMIZED,
-							child->getUniqueID(), rMap.material_id);
-					}
-				}
+                                    for (const auto &rMap : meshChild->getMeshMapping())
+                                    {
+                                            repo::core::model::RepoNode *matNode =
+                                                    scene->getNodeByUniqueID(repo::core::model::RepoScene::GraphType::OPTIMIZED, rMap.material_id);
+                                            if (matNode)
+                                            {
+                                                    scene->addInheritance(repo::core::model::RepoScene::GraphType::OPTIMIZED,
+                                                            child->getUniqueID(), rMap.material_id);
+                                            }
+                                    }
+                                }
 			}
 		}
 	}

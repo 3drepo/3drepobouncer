@@ -29,7 +29,7 @@ RepoNode()
 }
 
 MeshNode::MeshNode(RepoBSON bson,
-	const std::unordered_map<std::string, std::vector<uint8_t>> &binMapping) :
+	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>&binMapping) :
 RepoNode(bson, binMapping)
 {
 
@@ -37,6 +37,53 @@ RepoNode(bson, binMapping)
 
 MeshNode::~MeshNode()
 {
+}
+
+RepoNode MeshNode::cloneAndApplyTransformation(
+	const std::vector<float> &matrix) const
+{
+	std::vector<repo_vector_t> *vertices = getVertices();
+
+
+	RepoBSONBuilder builder;
+
+	if (vertices)
+	{ 
+		std::vector<repo_vector_t> resultVertice;
+		resultVertice.reserve(vertices->size());
+		for (const repo_vector_t &v : *vertices)
+		{
+			resultVertice.push_back(multiplyMatVec(matrix, v));
+		}
+
+
+
+		builder.appendBinary(REPO_NODE_MESH_LABEL_VERTICES, resultVertice.data(), resultVertice.size() * sizeof(repo_vector_t));
+
+		delete vertices;
+
+		std::vector < repo_vector_t >*normals = getNormals();
+		if (normals && normals->size())
+		{
+			std::vector<repo_vector_t> resultNormals;
+
+			const std::vector<float> normMat = transposeMat(invertMat(matrix));
+			for (const repo_vector_t &n : *normals) {
+				repo_vector_t transedNormal = multiplyMatVecFake3x3(matrix, n);
+				normalize(transedNormal);
+				resultNormals.push_back(transedNormal);
+			}
+
+			delete normals;
+			builder.appendBinary(REPO_NODE_MESH_LABEL_NORMALS, resultNormals.data(), resultNormals.size() * sizeof(repo_vector_t));
+		}
+	}
+	else
+	{
+		repoError << "Unable to apply transformation: Cannot find vertices within a mesh!";
+	}
+
+	return MeshNode(builder.appendElementsUnique(*this));
 }
 
 MeshNode MeshNode::cloneAndUpdateMeshMapping(
@@ -75,9 +122,9 @@ std::vector<repo_color4d_t>* MeshNode::getColors() const
 {
 
 	std::vector<repo_color4d_t> *colors = new std::vector<repo_color4d_t>();
-	if (hasField(REPO_NODE_MESH_LABEL_COLORS))
+	if (hasBinField(REPO_NODE_MESH_LABEL_COLORS))
 	{
-		getBinaryFieldAsVector(getField(REPO_NODE_MESH_LABEL_COLORS), colors);
+		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_COLORS, colors);
 	}
 
 	return colors;
@@ -86,17 +133,14 @@ std::vector<repo_color4d_t>* MeshNode::getColors() const
 std::vector<repo_vector_t>* MeshNode::getVertices() const
 {
 	std::vector<repo_vector_t> *vertices = new std::vector<repo_vector_t>();
-	if (hasField(REPO_NODE_MESH_LABEL_VERTICES))
+	if (hasBinField(REPO_NODE_MESH_LABEL_VERTICES))
 	{
-		if (hasField(REPO_NODE_MESH_LABEL_VERTICES_COUNT))
-		{
-			const uint32_t verticesSize = getField(REPO_NODE_MESH_LABEL_VERTICES_COUNT).numberInt();
-			getBinaryFieldAsVector(getField(REPO_NODE_MESH_LABEL_VERTICES), verticesSize, vertices);
+		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_VERTICES, vertices);
 
-		}
-		else
-			getBinaryFieldAsVector(getField(REPO_NODE_MESH_LABEL_VERTICES), vertices);
-
+	}
+	else
+	{
+		repoWarning << "Could not find any vertices within mesh node (" << getUniqueID() << ")";
 	}
 
 	return vertices;
@@ -121,7 +165,7 @@ std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
 			mapping.vertFrom    = mappingObj.getField(REPO_NODE_MESH_LABEL_VERTEX_FROM).Int();
 			mapping.vertTo      = mappingObj.getField(REPO_NODE_MESH_LABEL_VERTEX_TO).Int();
 			mapping.triFrom     = mappingObj.getField(REPO_NODE_MESH_LABEL_TRIANGLE_FROM).Int();
-			mapping.triTo       = mappingObj.getField(REPO_NODE_MESH_LABEL_TRIANGLE_FROM).Int();
+			mapping.triTo       = mappingObj.getField(REPO_NODE_MESH_LABEL_TRIANGLE_TO).Int();
 
 			RepoBSON boundingBox = getObjectField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
 			
@@ -164,18 +208,9 @@ std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
 std::vector<repo_vector_t>* MeshNode::getNormals() const
 {
 	std::vector<repo_vector_t> *vertices = new std::vector<repo_vector_t>();
-	if (hasField(REPO_NODE_MESH_LABEL_NORMALS))
+	if (hasBinField(REPO_NODE_MESH_LABEL_NORMALS))
 	{
-
-		if (hasField(REPO_NODE_MESH_LABEL_VERTICES_COUNT))
-		{
-			const uint32_t verticesSize = getField(REPO_NODE_MESH_LABEL_VERTICES_COUNT).numberInt();
-			getBinaryFieldAsVector(getField(REPO_NODE_MESH_LABEL_NORMALS), verticesSize, vertices);
-
-		}
-		else
-			getBinaryFieldAsVector(getField(REPO_NODE_MESH_LABEL_NORMALS), vertices);
-
+		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_NORMALS, vertices);
 	}
 
 	return vertices;
@@ -189,16 +224,7 @@ std::vector<repo_vector2d_t>* MeshNode::getUVChannels() const
 	{
 		channels = new std::vector<repo_vector2d_t>();
 
-		if (hasField(REPO_NODE_MESH_LABEL_VERTICES_COUNT))
-		{
-			const uint32_t uvChannelSize = getField(REPO_NODE_MESH_LABEL_VERTICES_COUNT).numberInt()
-				* getField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT).numberInt();
-
-			getBinaryFieldAsVector(getField(REPO_NODE_MESH_LABEL_UV_CHANNELS), uvChannelSize, channels);
-
-		}
-		else
-			getBinaryFieldAsVector(getField(REPO_NODE_MESH_LABEL_UV_CHANNELS), channels);		
+		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_UV_CHANNELS, channels);		
 	}
 
 
@@ -236,57 +262,51 @@ std::vector<std::vector<repo_vector2d_t>>* MeshNode::getUVChannelsSeparated() co
 	return channels;
 }
 
+std::vector<uint32_t> MeshNode::getFacesSerialized() const
+{
+
+	std::vector <uint32_t> serializedFaces;
+	if (hasBinField(REPO_NODE_MESH_LABEL_FACES))
+		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_FACES, &serializedFaces);
+
+	return serializedFaces;
+}
+
 std::vector<repo_face_t>* MeshNode::getFaces() const
 {
 	std::vector<repo_face_t> *faces = new std::vector<repo_face_t>();
 
-	if (hasField(REPO_NODE_MESH_LABEL_FACES) && hasField(REPO_NODE_MESH_LABEL_FACES_COUNT))
+	if (hasBinField(REPO_NODE_MESH_LABEL_FACES) && hasField(REPO_NODE_MESH_LABEL_FACES_COUNT))
 	{
 		std::vector <uint32_t> *serializedFaces = new std::vector<uint32_t>();
 		int32_t facesCount = getField(REPO_NODE_MESH_LABEL_FACES_COUNT).numberInt();
-		faces->resize(facesCount);
+		faces->reserve(facesCount);
 
-		if (hasField(REPO_NODE_MESH_LABEL_FACES_BYTE_COUNT))
-		{
-			int32_t facesByteCount = getField(REPO_NODE_MESH_LABEL_FACES_BYTE_COUNT).numberInt();
-
-			serializedFaces->resize(facesByteCount / sizeof(uint32_t));
-			getBinaryFieldAsVector(getField(REPO_NODE_MESH_LABEL_FACES), facesByteCount / sizeof(uint32_t), serializedFaces);
-		}
-		else
-		{
-			getBinaryFieldAsVector(getField(REPO_NODE_MESH_LABEL_FACES), serializedFaces);
-		}
-
+		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_FACES, serializedFaces);
 		
 		// Retrieve numbers of vertices for each face and subsequent
 		// indices into the vertex array.
 		// In API level 1, mesh is represented as
 		// [n1, v1, v2, ..., n2, v1, v2...]
 		
-		unsigned int counter = 0;
 		int mNumIndicesIndex = 0;
-		while (counter < facesCount)
+		while (serializedFaces->size() > mNumIndicesIndex)
 		{
 
-			if (serializedFaces->size() <= mNumIndicesIndex)
+			int mNumIndices = serializedFaces->at(mNumIndicesIndex);
+			if (serializedFaces->size() > mNumIndicesIndex + mNumIndices)
 			{
-				repoError << "MeshNode::getFaces() : serialisedFaces.size() <= mNumIndicesIndex!";
+				repo_face_t face;
+				face.resize(mNumIndices);
+				for (int i = 0; i < mNumIndices; ++i)
+					face[i] = serializedFaces->at(mNumIndicesIndex + 1 + i);
+				faces->push_back(face);
+				mNumIndicesIndex += mNumIndices + 1;
 			}
 			else
 			{
-				int mNumIndices = serializedFaces->at(mNumIndicesIndex);
-				repo_face_t face;
-				face.numIndices = mNumIndices;
-				uint32_t *indices = new uint32_t[mNumIndices];
-				for (int i = 0; i < mNumIndices; ++i)
-					indices[i] = serializedFaces->at(mNumIndicesIndex + 1 + i);
-				face.indices = indices;
-				(*faces)[counter] = face;
-				mNumIndicesIndex = mNumIndicesIndex + mNumIndices + 1;
+				repoError << "Cannot copy all faces. Buffer size is smaller than expected!";
 			}
-			
-			++counter;
 		}
 
 		// Memory cleanup
@@ -309,10 +329,107 @@ RepoBSON MeshNode::meshMappingAsBSON(const repo_mesh_mapping_t  &mapping)
 	builder << REPO_NODE_MESH_LABEL_TRIANGLE_TO << mapping.triTo;
 
 	RepoBSONBuilder bbBuilder;
-	bbBuilder.appendVector("0", mapping.min);
-	bbBuilder.appendVector("1", mapping.max);
+	bbBuilder.append("0", mapping.min);
+	bbBuilder.append("1", mapping.max);
 
 	builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, bbBuilder.obj());
 
 	return builder.obj();
+}
+
+bool MeshNode::sEqual(const RepoNode &other) const
+{
+	if (other.getTypeAsEnum() != NodeType::MESH || other.getParentIDs().size() != getParentIDs().size())
+	{
+		return false;
+	}
+
+	MeshNode otherMesh = MeshNode(other);
+
+
+	std::vector<repo_vector_t> *vertices, *vertices2, *normals, *normals2;
+	std::vector<repo_vector2d_t>* uvChannels, *uvChannels2;
+	std::vector<uint32_t> facesSerialized, facesSerialized2;
+	std::vector<repo_color4d_t>* colors, *colors2;
+
+	vertices = getVertices();
+	vertices2 = otherMesh.getVertices();
+
+	normals = getNormals();
+	normals2 = otherMesh.getNormals();
+
+	uvChannels = getUVChannels();
+	uvChannels2 = otherMesh.getUVChannels();
+
+	facesSerialized = getFacesSerialized();
+	facesSerialized2 = otherMesh.getFacesSerialized();
+
+	colors = getColors();
+	colors2 = otherMesh.getColors();
+
+	//check all the sizes match first, as comparing the content will be costly
+	bool success = false;
+
+	//FIXME: why is this so messy... actually why do we have pointers to vectors?!
+	if (vertices && (success = (bool)vertices == (bool)vertices2))
+	{
+		success &= vertices->size() == vertices2->size();
+	}
+
+	if (normals && (success &= (bool) normals == (bool)normals2))
+	{
+		success &= normals->size() == normals2->size();
+	}
+
+	if (uvChannels && (success &= (bool) uvChannels == (bool)uvChannels2))
+	{
+		success &= uvChannels->size() == uvChannels2->size();
+	}
+
+	if (success)
+		success &= facesSerialized.size() == facesSerialized2.size();
+
+	if (colors && (success &= (bool)colors == (bool)colors2))
+	{
+		success &= colors->size() == colors2->size();
+	}
+
+
+	if (success)
+	{
+
+		if (vertices && vertices->size())
+		{
+			success &= !memcmp(vertices->data(), vertices2->data(), vertices->size() * sizeof(*vertices->data()));
+		}
+
+		if (normals && success && normals->size())
+		{
+			success &= !memcmp(normals->data(), normals2->data(), normals->size() * sizeof(*normals->data()));
+		}
+
+		if (uvChannels && success && uvChannels->size())
+		{
+			success &= !memcmp(uvChannels->data(), uvChannels2->data(), uvChannels->size() * sizeof(*uvChannels->data()));
+		}
+
+		if (colors && success && colors->size())
+		{
+			success &= !memcmp(colors->data(), colors2->data(), colors->size() * sizeof(*colors->data()));
+		}
+
+		if (success && facesSerialized.size())
+		{
+			success &= !memcmp(facesSerialized.data(), facesSerialized.data(), facesSerialized.size() * sizeof(*facesSerialized.data()));
+		}
+	}
+
+	delete vertices;
+	delete normals;
+	delete uvChannels;
+	delete vertices2;
+	delete normals2;
+	delete uvChannels2;
+
+	return success;
 }

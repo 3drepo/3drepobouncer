@@ -48,10 +48,40 @@ std::vector<std::vector<float>> TransformationNode::identityMat()
 	return idMat;
 }
 
+bool TransformationNode::isIdentity(const float &eps) const
+{
+	std::vector<float> mat = getTransMatrix();
+	//  00 01 02 03 
+	//  04 05 06 07
+	//  08 09 10 11
+	//  12 13 14 15
+
+	bool iden = true;
+	float threshold = fabs(eps);
+
+	for (size_t i = 0; i < mat.size(); ++i)
+	{
+		if (i % 5)
+		{
+			//This is suppose to be 0
+			iden &= fabs(mat[i]) <= threshold;
+		}
+		else
+		{
+			//This is suppose to be 1
+			iden &= mat[i] <= 1 + threshold && mat[i] >= 1 - threshold;
+		}
+	}
+
+	return iden;
+
+
+
+}
+
 std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) const
 {
 	std::vector<float> transformationMatrix;
-
 	uint32_t rowInd = 0, colInd = 0;
 	if (hasField(REPO_NODE_LABEL_MATRIX))
 	{
@@ -62,6 +92,7 @@ std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) cons
 		// matrix is stored as array of arrays
 		RepoBSON matrixObj =
 			getField(REPO_NODE_LABEL_MATRIX).embeddedObject();
+
 		std::set<std::string> mFields;
 		matrixObj.getFieldNames(mFields);
 		for (auto &field : mFields)
@@ -82,7 +113,16 @@ std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) cons
 				{
 					index = rowInd * 4 + colInd;
 				}
-				transArr[index] = (float)arrayObj.getField(aField).Double();
+
+				auto f =  arrayObj.getField(aField);
+				if (f.type() == ElementType::DOUBLE)
+					transArr[index] = (float)f.Double();
+				else if (f.type() == ElementType::INT)
+					transArr[index] = (float)f.Int();
+				else
+				{
+					repoError << "Unexpected type within transformation matrix!";
+				}
 
 				++colInd;
 			}
@@ -92,5 +132,27 @@ std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) cons
 
 
 	}
+	else
+	{
+		repoError << "This transformation has no matrix field!";
+	}
 	return transformationMatrix;
+}
+
+bool TransformationNode::sEqual(const RepoNode &other) const
+{
+	if (other.getTypeAsEnum() != NodeType::TRANSFORMATION || other.getParentIDs().size() != getParentIDs().size())
+	{
+		return false;
+	}
+
+	const TransformationNode otherTrans = TransformationNode(other);
+
+
+	std::vector<float> mat = getTransMatrix();
+	std::vector<float> otherMat = otherTrans.getTransMatrix();
+
+
+	return mat.size() == otherMat.size() && !memcmp(mat.data(), otherMat.data(), mat.size() *sizeof(*mat.data()));
+
 }

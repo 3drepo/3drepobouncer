@@ -27,6 +27,7 @@
 #include <string>
 
 #include "../model/bson/repo_bson.h"
+#include "../model/bson/repo_bson_role.h"
 #include "../model/bson/repo_bson_user.h"
 #include "../model/bson/repo_bson_collection_stats.h"
 
@@ -97,6 +98,7 @@ namespace repo{
 					const std::string                             &database,
 					const std::string                             &collection,
 					const uint64_t                                &skip = 0,
+					const uint32_t								  &limit = 0,
 					const std::list<std::string>				  &fields = std::list<std::string>(),
 					const std::string							  &sortField = std::string(),
 					const int									  &sortOrder = -1) = 0;
@@ -159,6 +161,14 @@ namespace repo{
 				*/
 
 				/**
+				* Create a collection with the name specified
+				* @param database name of the database
+				* @param name name of the collection
+				*/
+				virtual void createCollection(const std::string &database, const std::string &name) = 0;
+				
+
+				/**
 				* Insert a single document in database.collection
 				* @param database name
 				* @param collection name
@@ -189,6 +199,17 @@ namespace repo{
 					const std::vector<uint8_t> &bin,
 					std::string          &errMsg
 					) = 0;
+
+
+				/**
+				* Insert a role into the database
+				* @param role role bson to insert
+				* @param errmsg error message
+				* @return returns true upon success
+				*/
+				virtual bool insertRole(
+					const repo::core::model::RepoRole       &role,
+					std::string                             &errmsg) = 0;
 
 				/**
 				* Insert a user into the database
@@ -251,6 +272,17 @@ namespace repo{
 					const std::string &collection,
 					std::string &errMsg)=0;
 
+
+				/**
+				* Remove a role from the database
+				* @param role user bson to remove
+				* @param errmsg error message
+				* @return returns true upon success
+				*/
+				virtual bool dropRole(
+					const repo::core::model::RepoRole &role,
+					std::string                       &errmsg) = 0;
+
 				/**
 				* Remove a user from the database
 				* @param user user bson to remove
@@ -259,6 +291,17 @@ namespace repo{
 				*/
 				virtual bool dropUser(
 					const repo::core::model::RepoUser &user,
+					std::string                             &errmsg) = 0;
+
+
+				/**
+				* Update a role in the database
+				* @param role role bson to update
+				* @param errmsg error message
+				* @return returns true upon success
+				*/
+				virtual bool updateRole(
+					const repo::core::model::RepoRole       &role,
 					std::string                             &errmsg) = 0;
 
 				/**
@@ -283,6 +326,18 @@ namespace repo{
 				* @return a vector of RepoBSON objects satisfy the given criteria
 				*/
 				virtual std::vector<repo::core::model::RepoBSON> findAllByCriteria(
+					const std::string& database,
+					const std::string& collection,
+					const repo::core::model::RepoBSON& criteria) = 0;
+
+				/**
+				* Given a search criteria,  find one documents that passes this query
+				* @param database name of database
+				* @param collection name of collection
+				* @param criteria search criteria in a bson object
+				* @return a RepoBSON objects satisfy the given criteria
+				*/
+				virtual repo::core::model::RepoBSON findOneByCriteria(
 					const std::string& database,
 					const std::string& collection,
 					const repo::core::model::RepoBSON& criteria) = 0;
