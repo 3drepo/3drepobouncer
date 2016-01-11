@@ -971,7 +971,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		uint32_t count = 0;
 		transformations = createTransformationNodesRecursive(assimpScene->mRootNode, camerasMap, originalOrderMesh, metadata, map, count);
 
-		repoInfo << "Node Construction completed. (# of transformation nodes created: ) " << transformations.size();
+		repoInfo << "Node Construction completed. (#transformations: " << transformations.size() << ", #Metadata" << metadata.size();
 
 		/*
 		* ---------------------------------------------
