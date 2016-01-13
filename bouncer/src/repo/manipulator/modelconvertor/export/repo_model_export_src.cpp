@@ -488,8 +488,9 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 		// Each bufferView is composed of several chunks.
 		// ------------------------------------------------------------------------
 
-		repoTrace << "Generating subMesh #" << subMeshIdx;
-		std::string meshIDX = idx + "_" + subMeshIdx;
+		repoTrace << "Generating subMesh #" << subMeshIdx << " of " << idx;
+		std::string meshIDX = std::to_string(idx) + "_" + std::to_string(subMeshIdx);
+		repoTrace << "meshIDX = " << meshIDX;
 
 		std::string positionAttributeView = SRC_PREFIX_POSITION_ATTR_VIEW + meshIDX;
 		std::string normalAttributeView   = SRC_PREFIX_NORMAL_ATTR_VIEW   + meshIDX;
@@ -523,6 +524,7 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 		if (vertices->size())
 		{		
 			std::string srcAccessors_AttrViews_positionAttrView = srcAccessors_AttributeViews + "." + positionAttributeView + ".";
+			repoTrace << srcAccessors_AttrViews_positionAttrView;
 			tree.add(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BUFFVIEW     , positionBufferView);
 			tree.add(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BYTE_OFFSET  , 0);
 			tree.add(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BYTE_STRIDE  , 12);
