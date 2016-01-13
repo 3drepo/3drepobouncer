@@ -118,6 +118,48 @@ MeshNode MeshNode::cloneAndUpdateMeshMapping(
 	//TODO run this tomorrow and see if i can get away with not overloading the equals operator!!!
 }
 
+std::vector<repo_vector_t> MeshNode::getBoundingBox() const
+{
+	std::vector<repo_vector_t> bbox;
+	
+	auto bbArr = getObjectField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
+
+	if (!bbArr.isEmpty() && bbArr.couldBeArray())
+	{
+		for (uint32_t i = 0; i < bbArr.nFields(); ++i)
+		{
+			auto bbVectorBson = bbArr.getObjectField(std::to_string(i));
+			if (!bbVectorBson.isEmpty() && bbVectorBson.couldBeArray())
+			{
+				int32_t nFields = bbVectorBson.nFields();
+
+				if (nFields > 3)
+				{
+					repo_vector_t vector;
+					vector.x = bbVectorBson.getField("0").Double();
+					vector.y = bbVectorBson.getField("1").Double();
+					vector.z = bbVectorBson.getField("2").Double();
+					bbox.push_back(vector);
+				}
+				else
+				{
+					repoError << "Insufficient amount of elements within bounding box!";
+				}
+			}
+			else
+			{
+				repoError << "Failed to get a vector for bounding box!";
+			}
+		}
+	}
+	else
+	{
+		repoError << "Failed to fetch bounding box from Mesh Node!";
+	}
+
+	return bbox;
+}
+
 std::vector<repo_color4d_t>* MeshNode::getColors() const
 {
 

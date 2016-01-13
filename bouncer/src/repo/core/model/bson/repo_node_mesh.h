@@ -136,6 +136,12 @@ namespace repo {
 					*/
 
 					/**
+					* Retrieve the bounding box of this mesh
+					* @return returns a vector of size 2, containing the bounding box.
+					*/
+					std::vector<repo_vector_t> getBoundingBox() const;
+
+					/**
 					* Retrieve a vector of Colors from the bson object
 					*/
 					std::vector<repo_color4d_t>* getColors() const;
