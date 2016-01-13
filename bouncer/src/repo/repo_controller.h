@@ -614,6 +614,15 @@ public:
     repo::core::model::RepoScene* createMapScene(
             const repo::core::model::MapNode &mapNode);
 
+	/**
+	* Generate a SRC encoding in the form of a buffer for the given scene
+	* This requires the stash to have been generated already
+	* @param scene the scene to generate the src encoding from
+	* @return returns a buffer in the form of a byte vector
+	*/
+	std::vector<uint8_t> generateSRCBuffer(
+			const repo::core::model::RepoScene *scene);
+
     /**
         * Get a string of supported file formats for file export
         * @return returns a string with list of supported file formats

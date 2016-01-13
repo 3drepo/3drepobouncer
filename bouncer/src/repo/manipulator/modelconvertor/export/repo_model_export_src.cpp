@@ -437,9 +437,9 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 				subMeshArray[subMeshIndex].idMapBuf.resize(idMapLength + currentMeshNumVertices);
 
 				//FIXME potentially flawed
-				repoTrace << "Writing IDMapBuf";
+				repoTrace << "Writing IDMapBuf of size " + (idMapLength + currentMeshNumVertices);
 				memset(&subMeshArray[subMeshIndex].idMapBuf[idMapLength], (float)runningIdx, 
-					sizeof(subMeshArray[subMeshIndex].idMapBuf.data())*currentMeshNumVertices);
+					sizeof(*subMeshArray[subMeshIndex].idMapBuf.data())*currentMeshNumVertices);
 
 				//++idBufIdx;
 				++runningIdx;
@@ -464,14 +464,14 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 	size_t bufPos = 0; //In bytes
 	size_t vertexWritePosition = bufPos;
 	
-	bufPos += vertices->size()*sizeof(vertices->data());
+	bufPos += vertices->size()*sizeof(*vertices->data());
 
 	size_t normalWritePosition = bufPos;
 	auto normals = mesh->getNormals();
-	bufPos += normals->size()*sizeof(normals->data());
+	bufPos += normals->size()*sizeof(*normals->data());
 
 	size_t facesWritePosition = bufPos;
-	bufPos += faceBuf.size() * sizeof(faceBuf.data());
+	bufPos += faceBuf.size() * sizeof(*faceBuf.data());
 
 	size_t idMapWritePosition = bufPos;
 	bufPos += vertices->size() * sizeof(float); //idMap array is of floats
@@ -665,23 +665,25 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 		}
 	}
 
-	size_t bufferSize = vertices->size() ? vertices->size() * 3 * 4 : 0
-						+ normals->size() ? normals->size() * 3 * 4 : 0
-						+ faces->size() ? faces->size() * 3 * 2 : 0
-						+ (useIDMap && idMapBuf.size()) ? idMapBuf.size() : 0;
+	size_t bufferSize = (vertices->size() ? vertices->size() * 3 * 4 : 0)
+						+ (normals->size() ? normals->size() * 3 * 4 : 0)
+						+ (faces->size() ? faces->size() * 3 * 2 : 0)
+						+ ((useIDMap && idMapBuf.size()) ? idMapBuf.size() * sizeof(*idMapBuf.data()) : 0);
 						//+ ((tex_uuid != null) ? (mesh.vertices_count * 4 * 2) : 0);
 
 	std::vector<uint8_t> dataBuffer;
 	dataBuffer.resize(bufferSize);
 
 	size_t bufferPtr = 0;
-
+	repoTrace << "Writing to buffer... expected Size is : " << bufferSize;
 	// Output vertices
 	if (vertices->size())
 	{
 		size_t byteSize = vertices->size() * sizeof(*vertices->data());
 		memcpy(&dataBuffer[bufferPtr], vertices->data(), byteSize);
 		bufferPtr += byteSize;
+
+		repoTrace << "Written Vertices: byte Size " << byteSize << " bufferPtr is " << bufferPtr;
 	}
 
 	// Output normals
@@ -690,6 +692,7 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 		size_t byteSize = normals->size() * sizeof(*normals->data());
 		memcpy(&dataBuffer[bufferPtr], normals->data(), byteSize);
 		bufferPtr += byteSize;
+		repoTrace << "Written normals: byte Size " << byteSize << " bufferPtr is " << bufferPtr;
 	}
 
 	// Output faces
@@ -698,6 +701,7 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 		size_t byteSize = faceBuf.size() * sizeof(*faceBuf.data());
 		memcpy(&dataBuffer[bufferPtr], faceBuf.data(), byteSize);
 		bufferPtr += byteSize;
+		repoTrace << "Written faces: byte Size " << byteSize << " bufferPtr is " << bufferPtr;
 	}
 
 	if (useIDMap && idMapBuf.size())
@@ -705,6 +709,7 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 		size_t byteSize = idMapBuf.size() * sizeof(*idMapBuf.data());
 		memcpy(&dataBuffer[bufferPtr], idMapBuf.data(), byteSize);
 		bufferPtr += byteSize;
+		repoTrace << "Written idMapBuff: byte Size " << byteSize << " bufferPtr is " << bufferPtr;
 	}
 
 	//TODO: Output optional texture bits
@@ -725,16 +730,7 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 	delete faces;
 	delete vertices;
 
-
-}
-
-bool SRCModelExport::exportToFile(
-	const std::string &filePath)
-{
-	bool success = false;
-	//TODO;
-	
-	return success;
+	return dataBuffer;
 }
 
 std::vector<uint8_t> SRCModelExport::getFileAsBuffer()
@@ -777,8 +773,8 @@ std::vector<uint8_t> SRCModelExport::getFileAsBuffer()
 bool SRCModelExport::generateTreeRepresentation(
 	)
 {
-	bool success = false;
-	if (scene->hasRoot(gType))
+	bool success;
+	if (success = scene->hasRoot(gType))
 	{
 		auto meshes = scene->getAllMeshes(gType);
 		size_t index = 0;
@@ -787,7 +783,7 @@ bool SRCModelExport::generateTreeRepresentation(
 			std::vector<uint8_t> dataBuffer = convertMesh((repo::core::model::MeshNode*)mesh, index++);
 			//concatenate the buffer
 			fullDataBuffer.insert(fullDataBuffer.end(), dataBuffer.begin(), dataBuffer.end());
-		}
+		}		
 	}
 
 	return success;

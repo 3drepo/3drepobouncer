@@ -63,8 +63,11 @@ namespace repo{
 				* @param filePath path to destination file
 				* @return returns true upon success
 				*/
-				bool exportToFile(
-					const std::string &filePath);
+				virtual bool exportToFile(
+					const repo::core::model::RepoScene *scene,
+					const std::string &filePath){
+					return false;
+				};
 
 				/**
 				* Return the SRC file as raw bytes buffer
@@ -76,6 +79,16 @@ namespace repo{
 				* Get supported file formats for this exporter
 				*/
 				static std::string getSupportedFormats();
+
+				/**
+				* Returns the status of the converter,
+				* whether it has successfully converted the model
+				* @return returns true if success
+				*/
+				bool isOk() const
+				{
+					return convertSuccess;
+				}
 
 				/**
 				* @param filePath path to destination file (including file extension)

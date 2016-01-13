@@ -258,6 +258,15 @@ namespace repo{
 				repo::core::model::RepoScene              *scene);
 
 			/**
+			* Generate a SRC encoding in the form of a buffer for the given scene
+			* This requires the stash to have been generated already
+			* @param scene the scene to generate the src encoding from
+			* @return returns a buffer in the form of a byte vector
+			*/
+			std::vector<uint8_t> generateSRCBuffer(
+				const repo::core::model::RepoScene *scene);
+
+			/**
 			* Retrieve documents from a specified collection
 			* due to limitations of the transfer protocol this might need
 			* to be called multiple times, utilising the skip index to skip

@@ -702,6 +702,24 @@ repo::core::model::RepoScene* RepoController::createMapScene(
     return scene;
 }
 
+
+std::vector<uint8_t> RepoController::generateSRCBuffer(
+	const repo::core::model::RepoScene *scene)
+{
+	std::vector<uint8_t> buffer;
+	if (scene)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		buffer = worker->generateSRCBuffer(scene);
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Failed to generate SRC Buffer - null pointer to scene!";
+	}
+	return buffer;
+}
+
 std::list<std::string> RepoController::getAdminDatabaseRoles(const RepoToken *token)
 {
     std::list<std::string> roles;

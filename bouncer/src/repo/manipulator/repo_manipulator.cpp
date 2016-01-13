@@ -27,6 +27,7 @@
 #include "diff/repo_diff_sharedid.h"
 #include "diff/repo_diff_name.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
+#include "modelconvertor/export/repo_model_export_src.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
 
@@ -454,6 +455,23 @@ void RepoManipulator::fetchScene(
 	{
 		repoError << "Cannot populate a scene that doesn't exist. Use the other function if you wish to fully load a scene from scratch";
 	}
+}
+
+std::vector<uint8_t> RepoManipulator::generateSRCBuffer(
+	const repo::core::model::RepoScene *scene)
+{
+
+	std::vector<uint8_t> result;
+	modelconvertor::SRCModelExport srcExport(scene);
+	if (srcExport.isOk())
+	{
+		repoTrace << "Conversion succeed.. exporting as buffer..";
+		result = srcExport.getFileAsBuffer();
+	}
+	else
+		repoError << "Export to SRC failed.";
+
+	return result;
 }
 
 std::vector<repo::core::model::RepoBSON>
