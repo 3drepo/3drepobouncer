@@ -5,3 +5,8 @@
 
 
 add_subdirectory(repo)
+set(TEST_HEADERS
+	${TEST_HEADERS}
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_utils.h
+	CACHE STRING "TEST_HEADERS" FORCE)
+
