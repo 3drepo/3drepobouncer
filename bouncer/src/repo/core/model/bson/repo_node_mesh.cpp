@@ -133,7 +133,7 @@ std::vector<repo_vector_t> MeshNode::getBoundingBox() const
 			{
 				int32_t nFields = bbVectorBson.nFields();
 
-				if (nFields > 3)
+				if (nFields >= 3)
 				{
 					repo_vector_t vector;
 					vector.x = bbVectorBson.getField("0").Double();
@@ -143,7 +143,7 @@ std::vector<repo_vector_t> MeshNode::getBoundingBox() const
 				}
 				else
 				{
-					repoError << "Insufficient amount of elements within bounding box!";
+					repoError << "Insufficient amount of elements within bounding box! #fields: " << nFields;
 				}
 			}
 			else
