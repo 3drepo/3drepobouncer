@@ -634,10 +634,10 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 			tree.add_child(srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_DECODE_SCALE , createPTArray(scaleArr));
 
 			std::string srcBufferChunks_idMapBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + idMapBufferChunk + ".";
-			size_t idMapBufferLength = subMeshArray[subMeshIdx].idMapBuf.size();
+			size_t idMapBufferLength = subMeshArray[subMeshIdx].idMapBuf.size() * sizeof(*subMeshArray[subMeshIdx].idMapBuf.data());
 
 			tree.add(srcBufferChunks_idMapBufferChunks + SRC_LABEL_BYTE_OFFSET, idMapWritePosition);
-			tree.add(srcBufferChunks_idMapBufferChunks + SRC_LABEL_BYTE_LENGTH, idMapBufferLength); // 3 floats to a vertex
+			tree.add(srcBufferChunks_idMapBufferChunks + SRC_LABEL_BYTE_LENGTH, idMapBufferLength); 
 
 			idMapWritePosition += idMapBufferLength*sizeof(*subMeshArray[subMeshIdx].idMapBuf.data());
 
