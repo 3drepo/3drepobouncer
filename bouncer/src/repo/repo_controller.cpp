@@ -446,11 +446,33 @@ RepoController::getDatabasesWithProjects(
     }
     else
     {
-        repoError << "Trying to insert a user without a database connection!";
+        repoError << "Trying to get database listings without a database connection!";
 
     }
 
     return map;
+}
+
+void RepoController::insertBinaryFileToDatabase(
+	const RepoToken            *token,
+	const std::string          &database,
+	const std::string          &collection,
+	const std::string          &name,
+	const std::vector<uint8_t> &rawData,
+	const std::string          &mimeType)
+{
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		worker->insertBinaryFileToDatabase(token->databaseAd,
+			token->credentials, database, collection, name, rawData, mimeType);
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Trying to save a binary file without a database connection!";
+
+	}
 }
 
 void RepoController::insertRole(

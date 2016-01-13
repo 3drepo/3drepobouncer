@@ -652,6 +652,31 @@ repo::core::model::RepoScene*
 	return scene;
 }
 
+void RepoManipulator::insertBinaryFileToDatabase(
+	const std::string                             &databaseAd,
+	const repo::core::model::RepoBSON	          *cred,
+	const std::string                             &database,
+	const std::string                             &collection,
+	const std::string                             &name,
+	const std::vector<uint8_t>                    &rawData,
+	const std::string                             &mimeType)
+{
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+	{
+		std::string errMsg;
+		if (handler->insertRawFile(database, collection, name, rawData, errMsg, mimeType))
+		{
+			repoInfo << "File added successfully.";
+		}
+		else
+		{
+			repoError << "Failed to add file : " << errMsg;
+		}
+	}
+}
+
 void RepoManipulator::insertRole(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON	          *cred,

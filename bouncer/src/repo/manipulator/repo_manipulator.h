@@ -387,6 +387,23 @@ namespace repo{
 
 
 			/**
+			* Insert a binary file into the database (GridFS)
+			* @param token Authentication token
+			* @param database name of the database
+			* @param collection name of the collection (it'll be saved into *.files, *.chunks)
+			* @param  rawData data in the form of byte vector
+			* @param mimeType the MIME type of the data (optional)
+			*/
+			void insertBinaryFileToDatabase(
+				const std::string                             &databaseAd,
+				const repo::core::model::RepoBSON	          *cred,
+				const std::string                             &database,
+				const std::string                             &collection,
+				const std::string                             &name,
+				const std::vector<uint8_t>                    &rawData,
+				const std::string                             &mimeType = "");
+
+			/**
 			* Insert a new role into the database
 			* @param databaseAd database address:portdatabase
 			* @param cred user credentials in bson form
