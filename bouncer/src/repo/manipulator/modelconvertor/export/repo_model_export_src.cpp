@@ -437,7 +437,7 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 				subMeshArray[subMeshIndex].idMapBuf.resize(idMapLength + currentMeshNumVertices);
 
 				//FIXME potentially flawed
-				repoTrace << "Writing IDMapBuf of size " + (idMapLength + currentMeshNumVertices);
+				repoTrace << "Writing IDMapBuf of size " << (idMapLength + currentMeshNumVertices);
 				memset(&subMeshArray[subMeshIndex].idMapBuf[idMapLength], (float)runningIdx, 
 					sizeof(*subMeshArray[subMeshIndex].idMapBuf.data())*currentMeshNumVertices);
 
