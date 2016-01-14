@@ -160,6 +160,7 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 	std::vector<uint16_t> faceBuf;
 	faceBuf.reserve(faces->size() * 3); //triangulated faces
 
+	repoTrace << "#mappings = " << mapping.size();
 	for (size_t i = 0; i < mapping.size(); ++i)
 	{
 		//For each submesh...
@@ -180,13 +181,6 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 				subMeshArray[subMeshIndex].offset = 0;
 				subMeshArray[subMeshIndex].vCount = runningVertTotal;
 				subMeshArray[subMeshIndex].fCount = runningFaceTotal;
-
-				//if (useIDMap)
-				//{
-				//	//FIXME: this is a multiple list of buffers concatenated to a single buffer.
-				//	repoFatal << "WON'T WORK - FIX THIS. ";
-				//	subMeshArray[subMeshIndex].idMapBuf = Buffer.concat(subMeshArray[subMeshIndex].idMapBuf);
-				//}
 			}
 
 			startLargeMeshSplit = false;
@@ -202,20 +196,10 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 			subMeshArray[subMeshIndex].vFrom = currentMeshVFrom;
 			subMeshArray[subMeshIndex].fFrom = currentMeshTFrom;
 
-			/*if (useIDMap)
-			{
-				repoFatal << "WON'T WORK - FIX THIS. ";
-				subMeshArray[subMeshIndex].idMapBuf = [];
-			}*/
-
 			// Reset runnning values
 			runningVertTotal = 0;
 			runningFaceTotal = 0;
 
-
-
-			//runningIDX += 1;
-			//idBufIDX = 0;
 		}
 
 
@@ -259,7 +243,8 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 
 							repoTrace <<"Writing IDMapBuf";
 							for (uint32_t k = 0; k < runningVertTotal; k++) {
-								subMeshArray[subMeshIndex].idMapBuf.push_back(runningIdx);
+								float runningIdx_f = runningIdx;
+								subMeshArray[subMeshIndex].idMapBuf.push_back(runningIdx_f);
 							}
 						}
 
@@ -291,7 +276,7 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 					subMeshArray[subMeshIndex].vFrom = currentMeshVFrom;
 					subMeshArray[subMeshIndex].fFrom = currentMeshTFrom + faceIdx;
 					runningVertTotal = 0;
-
+					repoInfo << " running Vertice total reset!!!!!!!!";
 					startLargeMeshSplit = true;
 				}
 
@@ -301,6 +286,7 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 
 					if (reIndexMap.find(indexVal) == reIndexMap.end())
 					{
+						repoDebug << "New index : " << indexVal << " will be mapped to " << runningVertTotal;
 						reIndexMap[indexVal] = runningVertTotal;
 						faceBuf.push_back(runningVertTotal);
 
@@ -343,9 +329,11 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 					}
 					else
 					{
+						repoDebug << "Using existing index for idx " << indexVal << " : " << reIndexMap[indexVal];
 						//FIXME: faceBuf.writeUInt16LE(reindexMap[idx_val]); - no offset?
 						repoWarning << " //FIXME: faceBuf.writeUInt16LE(reindexMap[idx_val]);";
-						faceBuf[0] = reIndexMap[indexVal];
+						faceBuf.push_back(reIndexMap[indexVal]);
+						exit(0);
 					}
 					
 				}
@@ -354,7 +342,7 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 			}
 
 			//FIXME: - no idea what i'm doing really.
-			std::copy(newVertexBuffer.begin(), newVertexBuffer.end(), vertices->begin() + mapping[i].vertFrom);
+			//std::copy(newVertexBuffer.begin(), newVertexBuffer.end(), vertices->begin() + mapping[i].vertFrom);
 
 
 			subMeshArray[subMeshIndex].vTo = currentMeshVFrom;
@@ -368,18 +356,18 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 			if (useIDMap)
 			{
 				subMeshArray[subMeshIndex].idMapBuf.resize(runningVertTotal);
-				memset(subMeshArray[subMeshIndex].idMapBuf.data(), (float)runningIdx, runningVertTotal * sizeof(runningIdx));
+				float runningIdx_f = runningIdx;
+				std::fill(subMeshArray[subMeshIndex].idMapBuf.begin(), subMeshArray[subMeshIndex].idMapBuf.end(), runningIdx_f);
 
 				++runningIdx;
 			}
 
 			runningVertTotal = 0;
+			repoInfo << " running Vertice total reset!!!!!!!!";
 
 		}
 		else //currentMeshNumVertices > SRC_MAX_VERTEX_LIMIT
 		{
-			repoTrace << "Reindexing faces";
-
 			//FIXME: duplicated code
 			for (uint32_t faceIdx = 0; faceIdx < currentMeshNumFaces; ++faceIdx)
 			{
@@ -397,7 +385,10 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 						// Take currentMeshVFrom from Index Value to reset to zero start,
 						// then add back in the current running total to append after
 						// pervious mesh.
+
 						indexVal += (runningVertTotal - currentMeshVFrom);
+						if ((runningVertTotal - currentMeshVFrom) != 0)
+							repoTrace << "Original Vertice index: " << faces->at(origIndexPtr)[compIdx] << " new index Val : " << indexVal;
 						faceBuf.push_back(indexVal);
 					}
 				}
@@ -437,9 +428,9 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 				subMeshArray[subMeshIndex].idMapBuf.resize(idMapLength + currentMeshNumVertices);
 
 				//FIXME potentially flawed
-				repoTrace << "Writing IDMapBuf of size " << (idMapLength + currentMeshNumVertices);
-				memset(&subMeshArray[subMeshIndex].idMapBuf[idMapLength], (float)runningIdx, 
-					sizeof(*subMeshArray[subMeshIndex].idMapBuf.data())*currentMeshNumVertices);
+				float runningIdx_f = runningIdx;
+				std::fill(subMeshArray[subMeshIndex].idMapBuf.begin() + idMapLength, subMeshArray[subMeshIndex].idMapBuf.end(), runningIdx_f);
+
 
 				//++idBufIdx;
 				++runningIdx;
