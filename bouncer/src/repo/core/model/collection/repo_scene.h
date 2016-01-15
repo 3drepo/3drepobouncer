@@ -38,10 +38,20 @@
 #include "../bson/repo_node_texture.h"
 #include "../bson/repo_node_transformation.h"
 
+typedef std::unordered_map<repoUUID, std::vector<repo::core::model::RepoNode*>, RepoUUIDHasher > ParentMap; 
 
 namespace repo{
 	namespace core{
 		namespace model{
+
+			struct RepoUUIDHasher
+			{
+				std::size_t operator()(const repoUUID& uid) const
+				{
+					return boost::hash<boost::uuids::uuid>()(uid);
+				}
+			};
+
 			class REPO_API_EXPORT RepoScene : public AbstractGraph
 			{
 
@@ -61,10 +71,10 @@ namespace repo{
 
 					RepoNode *rootNode;
 					//! A lookup map for the all nodes the graph contains.
-					std::map<repoUUID, RepoNode*> nodesByUniqueID;
-					std::map<repoUUID, repoUUID> sharedIDtoUniqueID; //** mapping of shared ID to Unique ID
-					std::map<repoUUID, std::vector<RepoNode*>> parentToChildren; //** mapping of shared id to its children's shared id
-					std::map<repoUUID, RepoScene*> referenceToScene; //** mapping of reference ID to it's scene graph
+					std::unordered_map<repoUUID, RepoNode*, RepoUUIDHasher > nodesByUniqueID;
+					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher > sharedIDtoUniqueID; //** mapping of shared ID to Unique ID
+					ParentMap parentToChildren; //** mapping of shared id to its children's shared id
+					std::unordered_map<repoUUID, RepoScene*, RepoUUIDHasher > referenceToScene; //** mapping of reference ID to it's scene graph
 				};
 
 
@@ -500,7 +510,7 @@ namespace repo{
 						const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 						RepoScene* refScene = nullptr;
 
-						std::map<repoUUID, RepoScene*>::const_iterator it = g.referenceToScene.find(reference);
+						std::unordered_map<repoUUID, RepoScene*, boost::hash<boost::uuids::uuid> >::const_iterator it = g.referenceToScene.find(reference);
 						if (it != g.referenceToScene.end())
 							refScene = it->second;
 						return refScene;

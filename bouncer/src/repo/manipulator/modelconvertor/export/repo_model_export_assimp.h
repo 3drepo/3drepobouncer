@@ -130,9 +130,9 @@ namespace repo{
 					std::vector<aiMesh*>                      &meshVec,
 					std::vector<aiMaterial*>                  &matVec,
 					std::vector<aiCamera*>                    &camVec,
-					std::map<repoUUID, aiMesh*>               &meshMap,
-					std::map<repoUUID, aiMaterial*>           &materialMap,
-					std::map<repoUUID, aiCamera*>             &camMap,
+					std::unordered_map<repoUUID, aiMesh*, RepoUUIDHasher>     &meshMap,
+					std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher> &materialMap,
+					std::unordered_map<repoUUID, aiCamera*, RepoUUIDHasher>   &camMap,
 					repo::core::model::RepoNodeSet &textNodes);
 
 				/**
@@ -173,7 +173,7 @@ namespace repo{
 					const repo::core::model::RepoScene *scene,
 					const repo::core::model::MeshNode   *meshNode,
 					std::vector<aiMaterial*>                  &matVec,
-					std::map<repoUUID, aiMaterial*>           &matMap,
+					std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher>           &matMap,
 					repo::core::model::RepoNodeSet &textNodes);
 
 				/**

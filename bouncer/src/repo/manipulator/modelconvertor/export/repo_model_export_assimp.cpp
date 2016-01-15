@@ -111,24 +111,24 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 	std::vector<aiCamera*>                    &camVec,
 	repo::core::model::RepoNodeSet &textNodes)
 {
-	std::map<repoUUID, aiMesh*>     meshMap;
-	std::map<repoUUID, aiMaterial*> matMap;
-	std::map<repoUUID, aiCamera*>   camMap;
+	std::unordered_map<repoUUID, aiMesh*, RepoUUIDHasher>     meshMap;
+	std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher> matMap;
+	std::unordered_map<repoUUID, aiCamera*, RepoUUIDHasher>   camMap;
 
 	return constructAiSceneRecursively(scene, currNode, meshVec, matVec, camVec,
 		meshMap, matMap, camMap, textNodes);
 }
 
 aiNode* AssimpModelExport::constructAiSceneRecursively(
-	const repo::core::model::RepoScene *scene,
-	const repo::core::model::RepoNode   *currNode,
-	std::vector<aiMesh*>                      &meshVec,
-	std::vector<aiMaterial*>                  &matVec,
-	std::vector<aiCamera*>                    &camVec,
-	std::map<repoUUID, aiMesh*>               &meshMap,
-	std::map<repoUUID, aiMaterial*>           &matMap,
-	std::map<repoUUID, aiCamera*>             &camMap,
-	repo::core::model::RepoNodeSet &textNodes)
+	const repo::core::model::RepoScene                        *scene,
+	const repo::core::model::RepoNode                         *currNode,
+	std::vector<aiMesh*>                                      &meshVec,
+	std::vector<aiMaterial*>                                  &matVec,
+	std::vector<aiCamera*>                                    &camVec,
+	std::unordered_map<repoUUID, aiMesh*, RepoUUIDHasher>     &meshMap,
+	std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher> &matMap,
+	std::unordered_map<repoUUID, aiCamera*, RepoUUIDHasher>   &camMap,
+	repo::core::model::RepoNodeSet                            &textNodes)
 {
 	/*
 	* Assumptions:
@@ -421,7 +421,7 @@ aiMesh* AssimpModelExport::convertMesh(
 	const repo::core::model::RepoScene *scene,
 	const repo::core::model::MeshNode   *meshNode,
 	std::vector<aiMaterial*>                  &matVec,
-	std::map<repoUUID, aiMaterial*>           &matMap,
+	std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher>           &matMap,
 	repo::core::model::RepoNodeSet &textNodes)
 {
 	if (!meshNode || !scene) return nullptr;
