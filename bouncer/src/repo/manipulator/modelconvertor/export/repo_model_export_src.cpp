@@ -789,4 +789,14 @@ std::string SRCModelExport::getSupportedFormats()
 {
 	return ".src";
 }
-
+template <>
+void SRCModelExport::addToTree<std::string>(
+	boost::property_tree::ptree &tree,
+	const std::string           &label,
+	const std::string           &value)
+{
+	if (label.empty())
+		tree.put(label, value, stringTranslator());
+	else
+		tree.add(label, value, stringTranslator());
+}

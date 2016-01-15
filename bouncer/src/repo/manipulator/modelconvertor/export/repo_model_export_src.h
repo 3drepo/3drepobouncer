@@ -134,18 +134,6 @@ namespace repo{
 						tree.add(label, value);
 				}
 
-				template <>
-				void addToTree(
-					boost::property_tree::ptree &tree,
-					const std::string           &label,
-					const std::string           &value)
-				{
-					if (label.empty())
-						tree.put(label, value, stringTranslator());
-					else
-						tree.add(label, value, stringTranslator());
-				}
-
 				/**
 				* Create a property tree with an array of ints
 				* @param children 
@@ -167,6 +155,12 @@ namespace repo{
 
 			};
 
+			// Template specialization
+			template <>
+			void SRCModelExport::addToTree<std::string>(
+				boost::property_tree::ptree &tree,
+				const std::string           &label,
+				const std::string           &value);
 
 
 		} //namespace modelconvertor
