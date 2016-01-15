@@ -25,7 +25,8 @@
 #include <string>
 
 #include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
+//#include <boost/property_tree/json_parser.hpp>
+#include "../../../lib/json_parser.h"
 
 #include "repo_model_export_abstract.h"
 #include "../../../core/model/collection/repo_scene.h"
@@ -33,6 +34,17 @@
 namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
+
+			//see http://stackoverflow.com/questions/2855741/why-boost-property-tree-write-json-saves-everything-as-string-is-it-possible-to
+			struct stringTranslator
+			{
+				typedef std::string internal_type;
+				typedef std::string external_type;
+
+				boost::optional<std::string> get_value(const std::string &v) { return  v.substr(1, v.size() - 2); }
+				boost::optional<std::string> put_value(const std::string &v) { return '"' + v + '"'; }
+			};
+
 			class SRCModelExport : public AbstractModelExport
 			{	
 			public:
@@ -110,18 +122,42 @@ namespace repo{
 				*/
 				bool generateTreeRepresentation();
 				
+				template <typename T>
+				void addToTree(
+					boost::property_tree::ptree &tree,
+					const std::string           &label,
+					const T                     &value)
+				{
+					if (label.empty())
+						tree.put(label, value);
+					else
+						tree.add(label, value);
+				}
+
+				template <>
+				void addToTree(
+					boost::property_tree::ptree &tree,
+					const std::string           &label,
+					const std::string           &value)
+				{
+					if (label.empty())
+						tree.put(label, value, stringTranslator());
+					else
+						tree.add(label, value, stringTranslator());
+				}
+
 				/**
 				* Create a property tree with an array of ints
 				* @param children 
 				*/
 				template <typename T>
-				boost::property_tree::ptree createPTArray(std::vector<T> children) const
+				boost::property_tree::ptree createPTArray(std::vector<T> children)
 				{					
 					boost::property_tree::ptree arrayTree;
 					for (const auto &child : children)
 					{
 						boost::property_tree::ptree childTree;
-						childTree.put("", child);
+						addToTree(childTree, "", child);
 						arrayTree.push_back(std::make_pair("", childTree));
 					}
 

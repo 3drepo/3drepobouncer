@@ -98,6 +98,7 @@ struct repo_src_mesh_info
 	std::vector<float> idMapBuf;
 };
 
+
 SRCModelExport::SRCModelExport(
 	const repo::core::model::RepoScene *scene
 	) : AbstractModelExport()
@@ -516,12 +517,12 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 		{		
 			std::string srcAccessors_AttrViews_positionAttrView = srcAccessors_AttributeViews + "." + positionAttributeView + ".";
 			repoTrace << srcAccessors_AttrViews_positionAttrView;
-			tree.add(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BUFFVIEW     , positionBufferView);
-			tree.add(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BYTE_OFFSET  , 0);
-			tree.add(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BYTE_STRIDE  , 12);
-			tree.add(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_COMP_TYPE    , SRC_X3DOM_FLOAT);
-			tree.add(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_TYPE         , SRC_VECTOR_3D);
-			tree.add(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_COUNT        , subMeshArray[subMeshIdx].vCount);
+			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BUFFVIEW     , positionBufferView);
+			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BYTE_OFFSET  , 0);
+			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BYTE_STRIDE  , 12);
+			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_COMP_TYPE    , SRC_X3DOM_FLOAT);
+			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_TYPE         , SRC_VECTOR_3D);
+			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_COUNT        , subMeshArray[subMeshIdx].vCount);
 			
 			std::vector<uint32_t> offsetArr = { 0, 0, 0 };
 			std::vector<uint32_t> scaleArr  = { 1, 1, 1 };
@@ -532,8 +533,8 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 			std::string srcBufferChunks_positionBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + positionBufferChunk + ".";
 			size_t verticeBufferLength = subMeshArray[subMeshIdx].vCount * 3 * 4;
 
-			tree.add(srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_OFFSET, vertexWritePosition);
-			tree.add(srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_LENGTH, verticeBufferLength); // 3 floats to a vertex
+			addToTree(tree, srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_OFFSET, vertexWritePosition);
+			addToTree(tree, srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_LENGTH, verticeBufferLength); // 3 floats to a vertex
 
 			vertexWritePosition += verticeBufferLength;
 
@@ -542,19 +543,19 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 			std::vector<std::string> chunksArray =  { positionBufferChunk } ;
 			tree.add_child(srcBufferViews_positionBufferView + SRC_LABEL_CHUNKS, createPTArray(chunksArray));
 
-			tree.add(srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_POSITION, positionAttributeView);
+			addToTree(tree, srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_POSITION, positionAttributeView);
 		}
 
 		//Normal Attribute View
 		if (normals->size())
 		{
 			std::string srcAccessors_AttrViews_normalAttrView = srcAccessors_AttributeViews + "." + normalAttributeView + ".";
-			tree.add(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_BUFFVIEW   , normalBufferView);
-			tree.add(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_BYTE_OFFSET, 0);
-			tree.add(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_BYTE_STRIDE, 12);
-			tree.add(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_COMP_TYPE  , SRC_X3DOM_FLOAT);
-			tree.add(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_TYPE       , SRC_VECTOR_3D);
-			tree.add(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_COUNT      , subMeshArray[subMeshIdx].vCount);
+			addToTree(tree, srcAccessors_AttrViews_normalAttrView + SRC_LABEL_BUFFVIEW   , normalBufferView);
+			addToTree(tree, srcAccessors_AttrViews_normalAttrView + SRC_LABEL_BYTE_OFFSET, 0);
+			addToTree(tree, srcAccessors_AttrViews_normalAttrView + SRC_LABEL_BYTE_STRIDE, 12);
+			addToTree(tree, srcAccessors_AttrViews_normalAttrView + SRC_LABEL_COMP_TYPE  , SRC_X3DOM_FLOAT);
+			addToTree(tree, srcAccessors_AttrViews_normalAttrView + SRC_LABEL_TYPE       , SRC_VECTOR_3D);
+			addToTree(tree, srcAccessors_AttrViews_normalAttrView + SRC_LABEL_COUNT      , subMeshArray[subMeshIdx].vCount);
 
 			std::vector<uint32_t> offsetArr = { 0, 0, 0 };
 			std::vector<uint32_t> scaleArr = { 1, 1, 1 };
@@ -565,8 +566,8 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 			std::string srcBufferChunks_positionBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + normalBufferChunk + ".";
 			size_t verticeBufferLength = subMeshArray[subMeshIdx].vCount * 3 * 4;
 
-			tree.add(srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_OFFSET, normalWritePosition);
-			tree.add(srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_LENGTH, verticeBufferLength); // 3 floats to a vertex
+			addToTree(tree, srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_OFFSET, normalWritePosition);
+			addToTree(tree, srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_LENGTH, verticeBufferLength); // 3 floats to a vertex
 
 			normalWritePosition += verticeBufferLength;
 
@@ -576,7 +577,7 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 			std::vector<std::string> chunksArray =  { normalBufferChunk } ;
 			tree.add_child(srcBufferViews_normalBufferView + SRC_LABEL_CHUNKS, createPTArray(chunksArray));
 
-			tree.add(srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_NORMAL, normalAttributeView);
+			addToTree(tree, srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_NORMAL, normalAttributeView);
 
 		}
 
@@ -585,16 +586,16 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 		{
 			std::string srcAccessors_indexViews = SRC_LABEL_ACCESSORS + "." + SRC_LABEL_INDEX_VIEWS + "." + indexView + ".";
 
-			tree.add(srcAccessors_indexViews + SRC_LABEL_BUFFVIEW   , indexBufferView);
-			tree.add(srcAccessors_indexViews + SRC_LABEL_BYTE_OFFSET, 0);
-			tree.add(srcAccessors_indexViews + SRC_LABEL_COMP_TYPE  , SRC_X3DOM_USHORT);
-			tree.add(srcAccessors_indexViews + SRC_LABEL_COUNT      , subMeshArray[subMeshIdx].fCount * 3);
+			addToTree(tree, srcAccessors_indexViews + SRC_LABEL_BUFFVIEW   , indexBufferView);
+			addToTree(tree, srcAccessors_indexViews + SRC_LABEL_BYTE_OFFSET, 0);
+			addToTree(tree, srcAccessors_indexViews + SRC_LABEL_COMP_TYPE  , SRC_X3DOM_USHORT);
+			addToTree(tree, srcAccessors_indexViews + SRC_LABEL_COUNT      , subMeshArray[subMeshIdx].fCount * 3);
 
 			std::string srcBufferChunks_indexBufferChunk = SRC_LABEL_BUFFER_CHUNKS + "." + indexBufferChunk + ".";
 			size_t facesBufferLength = subMeshArray[subMeshIdx].fCount * 3 * 2; //3 shorts for face index
 
-			tree.add(srcBufferChunks_indexBufferChunk + SRC_LABEL_BYTE_OFFSET, facesWritePosition);
-			tree.add(srcBufferChunks_indexBufferChunk + SRC_LABEL_BYTE_LENGTH, facesBufferLength);
+			addToTree(tree, srcBufferChunks_indexBufferChunk + SRC_LABEL_BYTE_OFFSET, facesWritePosition);
+			addToTree(tree, srcBufferChunks_indexBufferChunk + SRC_LABEL_BYTE_LENGTH, facesBufferLength);
 
 			facesWritePosition += facesBufferLength;
 
@@ -603,8 +604,8 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 			std::vector<std::string> chunksArray = { indexBufferChunk };
 			tree.add_child(srcBufferViews_indexBufferView + SRC_LABEL_CHUNKS, createPTArray(chunksArray));
 
-			tree.add(srcMesh_MeshID + SRC_LABEL_INDICIES , indexView);
-			tree.add(srcMesh_MeshID + SRC_LABEL_PRIMITIVE, SRC_X3DOM_TRIANGLE);
+			addToTree(tree, srcMesh_MeshID + SRC_LABEL_INDICIES , indexView);
+			addToTree(tree, srcMesh_MeshID + SRC_LABEL_PRIMITIVE, SRC_X3DOM_TRIANGLE);
 
 		}
 
@@ -612,12 +613,12 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 		{
 			std::string srcAccessors_AttrViews_idMapAttributeView = srcAccessors_AttributeViews + "." + idMapAttributeView + ".";
 			
-			tree.add(srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_BUFFVIEW, idMapBufferView);
-			tree.add(srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_BYTE_OFFSET, 0);
-			tree.add(srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_BYTE_STRIDE, 4);
-			tree.add(srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_COMP_TYPE, SRC_X3DOM_FLOAT);
-			tree.add(srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_TYPE, SRC_SCALAR);
-			tree.add(srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_COUNT, subMeshArray[subMeshIdx].vCount);
+			addToTree(tree, srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_BUFFVIEW, idMapBufferView);
+			addToTree(tree, srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_BYTE_OFFSET, 0);
+			addToTree(tree, srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_BYTE_STRIDE, 4);
+			addToTree(tree, srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_COMP_TYPE, SRC_X3DOM_FLOAT);
+			addToTree(tree, srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_TYPE, SRC_SCALAR);
+			addToTree(tree, srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_COUNT, subMeshArray[subMeshIdx].vCount);
 
 			std::vector<uint32_t> offsetArr = { 0};
 			std::vector<uint32_t> scaleArr = { 1};
@@ -627,8 +628,8 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 			std::string srcBufferChunks_idMapBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + idMapBufferChunk + ".";
 			size_t idMapBufferLength = subMeshArray[subMeshIdx].idMapBuf.size() * sizeof(*subMeshArray[subMeshIdx].idMapBuf.data());
 
-			tree.add(srcBufferChunks_idMapBufferChunks + SRC_LABEL_BYTE_OFFSET, idMapWritePosition);
-			tree.add(srcBufferChunks_idMapBufferChunks + SRC_LABEL_BYTE_LENGTH, idMapBufferLength); 
+			addToTree(tree, srcBufferChunks_idMapBufferChunks + SRC_LABEL_BYTE_OFFSET, idMapWritePosition);
+			addToTree(tree, srcBufferChunks_idMapBufferChunks + SRC_LABEL_BYTE_LENGTH, idMapBufferLength); 
 
 			idMapWritePosition += idMapBufferLength*sizeof(*subMeshArray[subMeshIdx].idMapBuf.data());
 
@@ -637,7 +638,7 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 			std::vector<std::string> chunksArray = { idMapBufferChunk};
 			tree.add_child(srcBufferViews_idMapBufferView + SRC_LABEL_CHUNKS, createPTArray(chunksArray));
 
-			tree.add(srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_ID, idMapAttributeView);
+			addToTree(tree, srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_ID, idMapAttributeView);
 		}
 
 		//TODO:: texture

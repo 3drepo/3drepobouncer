@@ -13,6 +13,8 @@ set(SOURCES
 
 set(HEADERS
 	${HEADERS}
+	${CMAKE_CURRENT_SOURCE_DIR}/json_parser.h
+	${CMAKE_CURRENT_SOURCE_DIR}/json_parser_write.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_broadcaster.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_listener_abstract.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_log.h
