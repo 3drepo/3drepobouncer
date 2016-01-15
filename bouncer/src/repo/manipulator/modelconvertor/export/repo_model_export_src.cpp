@@ -31,6 +31,7 @@ const static size_t SRC_MAX_VERTEX_LIMIT = 65535;
 const static size_t SRC_X3DOM_FLOAT      = 5126;
 const static size_t SRC_X3DOM_USHORT     = 5123;
 const static size_t SRC_X3DOM_TRIANGLE   = 4;
+const static std::string SRC_VECTOR_2D = "VEC2";
 const static std::string SRC_VECTOR_3D   = "VEC3";
 const static std::string SRC_SCALAR      = "SCALAR";
 
@@ -58,6 +59,7 @@ const static std::string SRC_LABEL_PRIMITIVE            = "primitive";
 const static std::string SRC_LABEL_MESHES               = "meshes";
 const static std::string SRC_LABEL_NORMAL               = "normal";
 const static std::string SRC_LABEL_POSITION             = "position";
+const static std::string SRC_LABEL_TEX_COORD            = "texcoord";
 
 const static std::string SRC_PREFIX_POSITION_ATTR_VIEW = "p";
 const static std::string SRC_PREFIX_NORMAL_ATTR_VIEW   = "n";
@@ -154,8 +156,9 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 	std::vector<repo_src_mesh_info> subMeshArray;
 
 
-	std::vector<repo_face_t> *faces = mesh->getFaces();
-	std::vector<repo_vector_t> *vertices = mesh->getVertices();
+	std::vector<repo_face_t>     *faces    = mesh->getFaces();
+	std::vector<repo_vector_t>   *vertices = mesh->getVertices();
+	std::vector<repo_vector2d_t> *uvs      = mesh->getUVChannels();
 
 
 	std::vector<uint16_t> faceBuf;
@@ -428,12 +431,9 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 
 				subMeshArray[subMeshIndex].idMapBuf.resize(idMapLength + currentMeshNumVertices);
 
-				//FIXME potentially flawed
 				float runningIdx_f = runningIdx;
 				std::fill(subMeshArray[subMeshIndex].idMapBuf.begin() + idMapLength, subMeshArray[subMeshIndex].idMapBuf.end(), runningIdx_f);
 
-
-				//++idBufIdx;
 				++runningIdx;
 
 			}
@@ -641,7 +641,38 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 			addToTree(tree, srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_ID, idMapAttributeView);
 		}
 
-		//TODO:: texture
+		if (uvs && uvs->size())
+		{
+			// UV coordinates
+			std::string srcAccessors_AttrViews_uvAttrView = srcAccessors_AttributeViews + "." + uvAttributeView + ".";
+			addToTree(tree, srcAccessors_AttrViews_uvAttrView + SRC_LABEL_BUFFVIEW, uvBufferView);
+			addToTree(tree, srcAccessors_AttrViews_uvAttrView + SRC_LABEL_BYTE_OFFSET, 0);
+			addToTree(tree, srcAccessors_AttrViews_uvAttrView + SRC_LABEL_BYTE_STRIDE, 8);
+			addToTree(tree, srcAccessors_AttrViews_uvAttrView + SRC_LABEL_COMP_TYPE, SRC_X3DOM_FLOAT);
+			addToTree(tree, srcAccessors_AttrViews_uvAttrView + SRC_LABEL_TYPE, SRC_VECTOR_2D);
+			addToTree(tree, srcAccessors_AttrViews_uvAttrView + SRC_LABEL_COUNT, subMeshArray[subMeshIdx].vCount);
+
+			std::vector<uint32_t> offsetArr = { 0, 0 };
+			std::vector<uint32_t> scaleArr = { 1, 1};
+			tree.add_child(srcAccessors_AttrViews_uvAttrView + SRC_LABEL_DECODE_OFFSET, createPTArray(offsetArr));
+			tree.add_child(srcAccessors_AttrViews_uvAttrView + SRC_LABEL_DECODE_SCALE, createPTArray(scaleArr));
+
+			std::string srcBufferChunks_uvBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + uvBufferChunk + ".";
+			size_t uvBufferLength = subMeshArray[subMeshIdx].vCount * 2 * 4;
+
+			addToTree(tree, srcBufferChunks_uvBufferChunks + SRC_LABEL_BYTE_OFFSET, uvWritePosition);
+			addToTree(tree, srcBufferChunks_uvBufferChunks + SRC_LABEL_BYTE_LENGTH, uvBufferLength); 
+
+			uvWritePosition += uvBufferLength;
+
+			std::string srcBufferViews_uvBufferView = SRC_LABEL_BUFF_VIEWS + "." + uvBufferView + ".";
+
+			std::vector<std::string> chunksArray = { uvBufferChunk };
+			tree.add_child(srcBufferViews_uvBufferView + SRC_LABEL_CHUNKS, createPTArray(chunksArray));
+
+			addToTree(tree, srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_TEX_COORD, uvAttributeView);
+
+		}
 	}//for (size_t subMeshIdx = 0; subMeshIdx < nSubMeshes; ++subMeshIdx)
 
 	repoTrace << "Generating output buffers";
@@ -662,8 +693,8 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 	size_t bufferSize = (vertices->size() ? vertices->size() * 3 * 4 : 0)
 						+ (normals->size() ? normals->size() * 3 * 4 : 0)
 						+ (faces->size() ? faces->size() * 3 * 2 : 0)
-						+ ((useIDMap && idMapBuf.size()) ? idMapBuf.size() * sizeof(*idMapBuf.data()) : 0);
-						//+ ((tex_uuid != null) ? (mesh.vertices_count * 4 * 2) : 0);
+						+ ((useIDMap && idMapBuf.size()) ? idMapBuf.size() * sizeof(*idMapBuf.data()) : 0)
+						+ (uvs && uvs->size() ? (uvs->size() * 4 * 2) : 0);
 
 	std::vector<uint8_t> dataBuffer;
 	dataBuffer.resize(bufferSize);
@@ -673,6 +704,7 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 	// Output vertices
 	if (vertices->size())
 	{
+		repoTrace << "Vertices #: " << vertices->size();
 		size_t byteSize = vertices->size() * sizeof(*vertices->data());
 		memcpy(&dataBuffer[bufferPtr], vertices->data(), byteSize);
 		bufferPtr += byteSize;
@@ -683,6 +715,7 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 	// Output normals
 	if (normals->size())
 	{
+		repoTrace << "Normals #: " << normals->size();
 		size_t byteSize = normals->size() * sizeof(*normals->data());
 		memcpy(&dataBuffer[bufferPtr], normals->data(), byteSize);
 		bufferPtr += byteSize;
@@ -692,6 +725,7 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 	// Output faces
 	if (faceBuf.size())
 	{
+		repoTrace << "Faces #: " << faceBuf.size();
 		size_t byteSize = faceBuf.size() * sizeof(*faceBuf.data());
 		memcpy(&dataBuffer[bufferPtr], faceBuf.data(), byteSize);
 		bufferPtr += byteSize;
@@ -700,29 +734,31 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 
 	if (useIDMap && idMapBuf.size())
 	{
+		repoTrace << "idMap #: " << idMapBuf.size();
 		size_t byteSize = idMapBuf.size() * sizeof(*idMapBuf.data());
 		memcpy(&dataBuffer[bufferPtr], idMapBuf.data(), byteSize);
 		bufferPtr += byteSize;
 		repoTrace << "Written idMapBuff: byte Size " << byteSize << " bufferPtr is " << bufferPtr;
 	}
 
-	//TODO: Output optional texture bits
-	/*if (tex_uuid != null) {
-
-		mesh["uv_channels"].buffer.copy(dataBuffers[idx], bufPos);
-		bufPos += mesh["uv_channels"].buffer.length;
-
-		if (embedded_texture)
-		{
-			texture.data.buffer.copy(dataBuffers[idx], bufPos);
-			bufPos += texture.data.buffer.length;
-		}
-	}*/
+	
+	if (uvs && uvs->size()) {
+		repoTrace << "UV #: " << uvs->size();
+		size_t byteSize = uvs->size() * sizeof(*uvs->data());
+		memcpy(&dataBuffer[bufferPtr], uvs->data(), byteSize);
+		bufferPtr += byteSize;
+		repoTrace << "Written UVs: byte Size " << byteSize << " bufferPtr is " << bufferPtr;
+	}
 
 
-	delete normals;
-	delete faces;
-	delete vertices;
+	if (normals)
+		delete normals;
+	if (faces)
+		delete faces;
+	if (vertices)
+		delete vertices;
+	if (uvs)
+		delete uvs;
 
 	return dataBuffer;
 }
