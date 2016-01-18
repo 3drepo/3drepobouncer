@@ -31,7 +31,7 @@ const static size_t SRC_MAX_VERTEX_LIMIT = 65535;
 const static size_t SRC_X3DOM_FLOAT      = 5126;
 const static size_t SRC_X3DOM_USHORT     = 5123;
 const static size_t SRC_X3DOM_TRIANGLE   = 4;
-const static std::string SRC_VECTOR_2D = "VEC2";
+const static std::string SRC_VECTOR_2D   = "VEC2";
 const static std::string SRC_VECTOR_3D   = "VEC3";
 const static std::string SRC_SCALAR      = "SCALAR";
 
@@ -132,7 +132,7 @@ SRCModelExport::~SRCModelExport()
 {
 }
 
-std::vector<uint8_t> SRCModelExport::convertMesh(
+void SRCModelExport::convertMesh(
 	const repo::core::model::MeshNode* mesh,
 	const size_t &idx
 	)
@@ -163,6 +163,11 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 
 	std::vector<uint16_t> faceBuf;
 	faceBuf.reserve(faces->size() * 3); //triangulated faces
+
+	boost::property_tree::ptree tree;
+
+	//TODO: not mpc if textured
+	std::string fname = UUIDtoString(mesh->getUniqueID()) + ".src.mpc";
 
 	repoTrace << "#mappings = " << mapping.size();
 	for (size_t i = 0; i < mapping.size(); ++i)
@@ -760,44 +765,59 @@ std::vector<uint8_t> SRCModelExport::convertMesh(
 	if (uvs)
 		delete uvs;
 
-	return dataBuffer;
+	trees[fname] = tree;
+	fullDataBuffer[fname] = dataBuffer;
+
 }
 
-std::vector<uint8_t> SRCModelExport::getFileAsBuffer()
+std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getFileAsBuffer()
 {
-	std::vector<uint8_t> buffer;
+	std::unordered_map < std::string, std::vector<uint8_t> > fileBuffers;
 
-	std::stringstream ss;
-	boost::property_tree::write_json(ss, tree);
-	std::string jsonStr = ss.str();
+	for (const auto &treePair : trees)
+	{
+		std::vector<uint8_t> buffer;
+		std::string fName = treePair.first;		
 
-	repoTrace << "Json header: " << jsonStr;
+		std::stringstream ss;
+		boost::property_tree::write_json(ss, treePair.second);
+		std::string jsonStr = ss.str();
 
-	//one char is one byte, 12bytes for Magic Bit(4), SRC Version (4), Header Length(4)	
-	size_t jsonByteSize = jsonStr.size()*sizeof(*jsonStr.c_str());
-	size_t headerSize = 12 + jsonByteSize;
+		//one char is one byte, 12bytes for Magic Bit(4), SRC Version (4), Header Length(4)	
+		size_t jsonByteSize = jsonStr.size()*sizeof(*jsonStr.c_str());
+		size_t headerSize = 12 + jsonByteSize;
 
-	buffer.resize(headerSize);
-	
-	size_t buffPtr = 0; //BufferPointer in bytes
-	uint32_t* bufferAsUInt = (uint32_t*) buffer.data();
-	
-	//Header ints
-	bufferAsUInt[0] = SRC_MAGIC_BIT;
-	bufferAsUInt[1] = SRC_VERSION;
-	bufferAsUInt[2] = jsonByteSize;
+		buffer.resize(headerSize);
 
-	buffPtr += 3 * sizeof(uint32_t);
+		size_t buffPtr = 0; //BufferPointer in bytes
+		uint32_t* bufferAsUInt = (uint32_t*)buffer.data();
 
-	//write json
-	memcpy(&buffer[buffPtr], jsonStr.c_str(), jsonByteSize);
+		//Header ints
+		bufferAsUInt[0] = SRC_MAGIC_BIT;
+		bufferAsUInt[1] = SRC_VERSION;
+		bufferAsUInt[2] = jsonByteSize;
 
-	buffPtr += jsonByteSize;
+		buffPtr += 3 * sizeof(uint32_t);
 
-	//Add data buffer to the full buffer
-	buffer.insert(buffer.end(), fullDataBuffer.begin(), fullDataBuffer.end());
+		//write json
+		memcpy(&buffer[buffPtr], jsonStr.c_str(), jsonByteSize);
 
-	return buffer;
+		buffPtr += jsonByteSize;
+		
+		if (fullDataBuffer.find(fName) != fullDataBuffer.end())
+		{
+			//Add data buffer to the full buffer
+			buffer.insert(buffer.end(), fullDataBuffer[fName].begin(), fullDataBuffer[fName].end());
+			fileBuffers[fName] = buffer;
+		}
+		else
+		{
+			repoError << " Failed to find data buffer for " << fName;
+		}
+
+	}
+
+	return fileBuffers;
 }
 
 bool SRCModelExport::generateTreeRepresentation(
@@ -808,11 +828,13 @@ bool SRCModelExport::generateTreeRepresentation(
 	{
 		auto meshes = scene->getAllMeshes(gType);
 		size_t index = 0;
+		//Every mesh is a new SRC file
+		fullDataBuffer.reserve(meshes.size());
+
 		for (const repo::core::model::RepoNode* mesh : meshes)
-		{
-			std::vector<uint8_t> dataBuffer = convertMesh((repo::core::model::MeshNode*)mesh, index++);
-			//concatenate the buffer
-			fullDataBuffer.insert(fullDataBuffer.end(), dataBuffer.begin(), dataBuffer.end());
+		{			
+			convertMesh((repo::core::model::MeshNode*)mesh, index++);
+
 		}		
 	}
 

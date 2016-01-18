@@ -256,14 +256,28 @@ namespace repo{
 				const std::string                         &databaseAd,
 				const repo::core::model::RepoBSON         *cred,
 				repo::core::model::RepoScene              *scene);
+ 
+			/**
+			* Generate and commit a SRC encoding for the given scene
+			* This requires the stash to have been generated already
+			* @param databaseAd database address:portdatabase
+			* @param cred user credentials in bson form
+			* @param scene the scene to generate the src encoding from
+			* @return returns true upon success
+			*/
+			bool generateAndCommitSRCBuffer(
+				const std::string                             &databaseAd,
+				const repo::core::model::RepoBSON	          *cred,
+				const repo::core::model::RepoScene            *scene);
+
 
 			/**
 			* Generate a SRC encoding in the form of a buffer for the given scene
 			* This requires the stash to have been generated already
 			* @param scene the scene to generate the src encoding from
-			* @return returns a buffer in the form of a byte vector
+			* @return returns a buffer in the form of a byte vector mapped to its filename
 			*/
-			std::vector<uint8_t> generateSRCBuffer(
+			std::unordered_map<std::string, std::vector<uint8_t>> generateSRCBuffer(
 				const repo::core::model::RepoScene *scene);
 
 			/**
@@ -388,7 +402,8 @@ namespace repo{
 
 			/**
 			* Insert a binary file into the database (GridFS)
-			* @param token Authentication token
+			* @param databaseAd database address:portdatabase
+			* @param cred user credentials in bson form
 			* @param database name of the database
 			* @param collection name of the collection (it'll be saved into *.files, *.chunks)
 			* @param  rawData data in the form of byte vector

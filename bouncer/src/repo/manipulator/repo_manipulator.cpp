@@ -173,6 +173,13 @@ void RepoManipulator::commitScene(
 		if (scene->commitStash(handler, msg))
 		{
 			repoInfo << "Commited scene stash successfully.";
+
+			repoInfo << "Generating SRC encoding for web viewing...";
+			if (generateAndCommitSRCBuffer(databaseAd, cred, scene))
+			{
+				repoInfo << "SRC file stored into the database";
+			}
+			
 		}
 		else
 		{
@@ -457,11 +464,49 @@ void RepoManipulator::fetchScene(
 	}
 }
 
-std::vector<uint8_t> RepoManipulator::generateSRCBuffer(
+bool RepoManipulator::generateAndCommitSRCBuffer(
+	const std::string                             &databaseAd,
+	const repo::core::model::RepoBSON	          *cred,
+	const repo::core::model::RepoScene            *scene)
+{
+	bool success;
+	std::unordered_map<std::string, std::vector<uint8_t>> v = generateSRCBuffer(scene);
+	if (success = v.size())
+	{
+		repo::core::handler::AbstractDatabaseHandler* handler =
+			repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+		if (success = handler)
+		{
+
+			for (const auto bufferPair : v)
+			{
+				std::string databaseName = scene->getDatabaseName();
+				std::string projectName = scene->getProjectName();
+				std::string prefix = "/" + databaseName + "/" + projectName + "/";
+				std::string errMsg;
+				//FIXME: constant value somewhere for .stash.src?
+				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.src", prefix+bufferPair.first, bufferPair.second,
+					errMsg, "binary/octet-stream"))
+				{
+					repoInfo << "File added successfully.";
+				}
+				else
+				{
+					repoError << "Failed to add file : " << errMsg;
+				}
+			}		
+		}
+	}
+
+	return success;
+
+}
+
+std::unordered_map<std::string, std::vector<uint8_t>> RepoManipulator::generateSRCBuffer(
 	const repo::core::model::RepoScene *scene)
 {
 
-	std::vector<uint8_t> result;
+	std::unordered_map<std::string, std::vector<uint8_t>> result;
 	modelconvertor::SRCModelExport srcExport(scene);
 	if (srcExport.isOk())
 	{

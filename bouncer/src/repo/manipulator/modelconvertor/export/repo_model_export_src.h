@@ -63,9 +63,8 @@ namespace repo{
 				* Convert a Mesh Node into src format
 				* @param mesh the mesh to convert
 				* @param index a counter indiciating the mesh index
-				* @return returns a buffer to the data
 				*/
-				std::vector<uint8_t> convertMesh(
+				void convertMesh(
 					const repo::core::model::MeshNode* mesh,
 					const size_t &index
 					);
@@ -85,7 +84,7 @@ namespace repo{
 				* Return the SRC file as raw bytes buffer
 				* returns an empty vector if the export has failed
 				*/
-				std::vector<uint8_t> getFileAsBuffer();
+				std::unordered_map<std::string, std::vector<uint8_t>> getFileAsBuffer();
 
 				/**
 				* Get supported file formats for this exporter
@@ -112,9 +111,9 @@ namespace repo{
 			private:
 				const repo::core::model::RepoScene *scene;
 				bool convertSuccess;
-				boost::property_tree::ptree tree;
+				std::unordered_map<std::string, boost::property_tree::ptree> trees;
 				repo::core::model::RepoScene::GraphType gType;
-				std::vector<uint8_t> fullDataBuffer;
+				std::unordered_map<std::string, std::vector<uint8_t>> fullDataBuffer;
 
 				/**
 				* Create a tree representation for the graph

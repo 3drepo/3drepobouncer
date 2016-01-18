@@ -724,11 +724,29 @@ repo::core::model::RepoScene* RepoController::createMapScene(
     return scene;
 }
 
-
-std::vector<uint8_t> RepoController::generateSRCBuffer(
+bool RepoController::generateAndCommitSRCBuffer(
+	const RepoToken                    *token,
 	const repo::core::model::RepoScene *scene)
 {
-	std::vector<uint8_t> buffer;
+	bool success;
+	if (success = token && scene)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		success = worker->generateAndCommitSRCBuffer(token->databaseAd, token->credentials, scene);
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Failed to generate SRC Buffer - null pointer to scene/token!";
+	}
+	return success;
+}
+
+
+std::unordered_map<std::string, std::vector<uint8_t>> RepoController::generateSRCBuffer(
+	const repo::core::model::RepoScene *scene)
+{
+	std::unordered_map<std::string,std::vector<uint8_t>> buffer;
 	if (scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
