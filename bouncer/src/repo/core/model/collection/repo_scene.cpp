@@ -834,22 +834,38 @@ std::string RepoScene::getBranchName() const
 	return branchName;
 }
 
-//
-//std::vector<repoUUID> RepoScene::getModifiedNodesID() const
-//{
-//	repoTrace << "getting modified nodes...";
-//	std::vector<repoUUID> ids(newAdded.begin(), newAdded.end());
-//
-//	ids.insert(ids.end(), newModified.begin(), newModified.end());
-//	ids.insert(ids.end(), newRemoved.begin() , newRemoved.end());
-//	repoTrace << "Added: " <<
-//		newAdded.size() << " modified: " <<
-//		newModified.size() << " removed: " <<
-//		newRemoved.size();
-//
-//	repoTrace << "# modified nodes : " << ids.size();
-//	return ids;
-//}
+std::string RepoScene::getTextureIDForMesh(
+	const GraphType &gType,
+	const repoUUID  &sharedID) const
+{
+	std::vector<RepoNode*> matNodes = getChildrenNodesFiltered(gType, sharedID, NodeType::MATERIAL);
+
+	/*
+	* NOTE:
+	* This assumes there is only one texture for a mesh.
+	* If this is a multipart mesh where there are multiple submesh,
+	* one assumes they share the same material -> which has the same texture
+	*
+	* Similarly, there will not be a mixed texture/non textured sub meshes
+	* in a single mesh. Thereofre checking the first MatNode is already sufficient
+	* to obtain the texture ID.
+	*
+	* This also assumes there's a 1 to 1 mapping of texture and materials.
+	*
+	* This assumption is valid for the current implementation of multipart
+	*/
+
+	if (matNodes.size())
+	{
+		std::vector<RepoNode*> textureNodes = getChildrenNodesFiltered(
+			gType, matNodes[0]->getSharedID(), NodeType::TEXTURE);
+		if (textureNodes.size())
+			return UUIDtoString(textureNodes[0]->getUniqueID());
+
+	}
+		
+	return "";
+}
 
 std::vector<std::string> RepoScene::getOriginalFiles() const
 {

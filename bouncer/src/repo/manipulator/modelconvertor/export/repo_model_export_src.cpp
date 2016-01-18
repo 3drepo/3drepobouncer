@@ -134,7 +134,8 @@ SRCModelExport::~SRCModelExport()
 
 void SRCModelExport::convertMesh(
 	const repo::core::model::MeshNode* mesh,
-	const size_t &idx
+	const size_t &idx,
+	const std::string &textureID
 	)
 {
 	std::vector<repo_mesh_mapping_t> mapping =  mesh->getMeshMapping();
@@ -166,8 +167,14 @@ void SRCModelExport::convertMesh(
 
 	boost::property_tree::ptree tree;
 
+	std::string fname;
 	//TODO: not mpc if textured
-	std::string fname = UUIDtoString(mesh->getUniqueID()) + ".src.mpc";
+	if (textureID.empty())
+		fname = UUIDtoString(mesh->getUniqueID()) + ".src.mpc";
+	else
+	{
+		fname = UUIDtoString(mesh->getUniqueID()) + ".src?tex_uuid=" + textureID;
+	}
 
 	repoTrace << "#mappings = " << mapping.size();
 	for (size_t i = 0; i < mapping.size(); ++i)
@@ -833,7 +840,7 @@ bool SRCModelExport::generateTreeRepresentation(
 
 		for (const repo::core::model::RepoNode* mesh : meshes)
 		{			
-			convertMesh((repo::core::model::MeshNode*)mesh, index++);
+			convertMesh((repo::core::model::MeshNode*)mesh, index++, scene->getTextureIDForMesh(gType, mesh->getSharedID()));
 
 		}		
 	}

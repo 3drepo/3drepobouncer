@@ -63,10 +63,12 @@ namespace repo{
 				* Convert a Mesh Node into src format
 				* @param mesh the mesh to convert
 				* @param index a counter indiciating the mesh index
+				* @param textureID ID of the texture associated with this mesh (if any)
 				*/
 				void convertMesh(
-					const repo::core::model::MeshNode* mesh,
-					const size_t &index
+					const repo::core::model::MeshNode *mesh,
+					const size_t                      &index,
+					const std::string                 &textureID = ""
 					);
 
 				/**

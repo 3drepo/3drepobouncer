@@ -507,6 +507,17 @@ namespace repo{
 					}
 
 					/**
+					* Get the texture ID that is associated with the given mesh
+					* if the mesh has no texture, it returns an empty string
+					* @param gType the graph type to search through
+					* @param sharedID shared ID of the mesh
+					* @return returns a string consisting of texture ID
+					*/
+					std::string getTextureIDForMesh(
+						const GraphType &gType,
+						const repoUUID  &sharedID) const;
+
+					/**
 					* --------------------- Scene Lookup ----------------------
 					*/
 
