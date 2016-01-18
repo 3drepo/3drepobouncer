@@ -170,7 +170,13 @@ void SRCModelExport::convertMesh(
 	std::string fname;
 	//TODO: not mpc if textured
 	if (textureID.empty())
-		fname = UUIDtoString(mesh->getUniqueID()) + ".src.mpc";
+	{ 
+		if (mapping.size() > 1)
+			fname = UUIDtoString(mesh->getUniqueID()) + ".src.mpc";
+		else
+			fname = UUIDtoString(mesh->getUniqueID()) + ".src";
+		
+	}
 	else
 	{
 		fname = UUIDtoString(mesh->getUniqueID()) + ".src?tex_uuid=" + textureID;
