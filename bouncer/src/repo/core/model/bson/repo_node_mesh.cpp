@@ -105,7 +105,7 @@ MeshNode MeshNode::cloneAndUpdateMeshMapping(
 	{
 		mapbuilder << std::to_string(index+i) << meshMappingAsBSON(vec[i]);
 	}
-	repoLog("cloneAndUpdateMeshMapping : size of mesh map = " + (vec.size() + index));
+	repoInfo << "cloneAndUpdateMeshMapping : size of mesh map = " << (vec.size() + index);	
 	//append the rest of the array onto this new map bson
 	mapbuilder.appendElementsUnique(mapArray);
 
