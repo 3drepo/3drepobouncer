@@ -272,8 +272,7 @@ void SRCModelExport::convertMesh(
 
 						++runningIdx;
 
-
-						//FIXME: this might be wrong if it entered the if condition about this one.
+						
 						auto bboxMin = splitBBox[0];
 						auto bboxMax = splitBBox[1];
 						repo_vector_t bboxCenter = { (bboxMin.x + bboxMax.x) / 2, (bboxMin.y + bboxMax.y) / 2, (bboxMin.z + bboxMax.z) / 2 };
@@ -409,8 +408,6 @@ void SRCModelExport::convertMesh(
 						// pervious mesh.
 
 						indexVal += (runningVertTotal - currentMeshVFrom);
-						if ((runningVertTotal - currentMeshVFrom) != 0)
-							repoTrace << "Original Vertice index: " << faces->at(origIndexPtr)[compIdx] << " new index Val : " << indexVal;
 						faceBuf.push_back(indexVal);
 					}
 				}
@@ -500,7 +497,6 @@ void SRCModelExport::convertMesh(
 
 		repoTrace << "Generating subMesh #" << subMeshIdx << " of " << idx;
 		std::string meshIDX = std::to_string(idx) + "_" + std::to_string(subMeshIdx);
-		repoTrace << "meshIDX = " << meshIDX;
 
 		std::string positionAttributeView = SRC_PREFIX_POSITION_ATTR_VIEW + meshIDX;
 		std::string normalAttributeView   = SRC_PREFIX_NORMAL_ATTR_VIEW   + meshIDX;
@@ -534,7 +530,6 @@ void SRCModelExport::convertMesh(
 		if (vertices->size())
 		{		
 			std::string srcAccessors_AttrViews_positionAttrView = srcAccessors_AttributeViews + "." + positionAttributeView + ".";
-			repoTrace << srcAccessors_AttrViews_positionAttrView;
 			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BUFFVIEW     , positionBufferView);
 			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BYTE_OFFSET  , 0);
 			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BYTE_STRIDE  , 12);
@@ -649,7 +644,7 @@ void SRCModelExport::convertMesh(
 			addToTree(tree, srcBufferChunks_idMapBufferChunks + SRC_LABEL_BYTE_OFFSET, idMapWritePosition);
 			addToTree(tree, srcBufferChunks_idMapBufferChunks + SRC_LABEL_BYTE_LENGTH, idMapBufferLength); 
 
-			idMapWritePosition += idMapBufferLength*sizeof(*subMeshArray[subMeshIdx].idMapBuf.data());
+			idMapWritePosition += idMapBufferLength;
 
 			std::string srcBufferViews_idMapBufferView = SRC_LABEL_BUFF_VIEWS + "." + idMapBufferView + ".";
 
@@ -843,7 +838,7 @@ bool SRCModelExport::generateTreeRepresentation(
 		size_t index = 0;
 		//Every mesh is a new SRC file
 		fullDataBuffer.reserve(meshes.size());
-
+		repoTrace << "#Meshes = " << meshes.size();
 		for (const repo::core::model::RepoNode* mesh : meshes)
 		{			
 			convertMesh((repo::core::model::MeshNode*)mesh, index++, scene->getTextureIDForMesh(gType, mesh->getSharedID()));

@@ -485,14 +485,15 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 				std::string prefix = "/" + databaseName + "/" + projectName + "/";
 				std::string errMsg;
 				//FIXME: constant value somewhere for .stash.src?
-				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.src", prefix+bufferPair.first, bufferPair.second,
+				std::string fileName = prefix+bufferPair.first;
+				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.src", fileName, bufferPair.second,
 					errMsg, "binary/octet-stream"))
 				{
-					repoInfo << "File added successfully.";
+					repoInfo << "File ("<<fileName <<") added successfully.";
 				}
 				else
 				{
-					repoError << "Failed to add file : " << errMsg;
+					repoError << "Failed to add file  ("<<fileName <<"): " << errMsg;
 				}
 			}		
 		}
@@ -713,11 +714,11 @@ void RepoManipulator::insertBinaryFileToDatabase(
 		std::string errMsg;
 		if (handler->insertRawFile(database, collection, name, rawData, errMsg, mimeType))
 		{
-			repoInfo << "File added successfully.";
+			repoInfo << "File ("<< name <<") added successfully.";
 		}
 		else
 		{
-			repoError << "Failed to add file : " << errMsg;
+			repoError << "Failed to add file ("<< name <<"): " << errMsg;
 		}
 	}
 }
