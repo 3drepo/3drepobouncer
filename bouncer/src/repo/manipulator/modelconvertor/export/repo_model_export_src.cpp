@@ -197,9 +197,11 @@ void SRCModelExport::convertMesh(
 		//If the max. number of vertices exceeds the limit or it is the first sub mesh
 		if ((runningVertTotal + currentMeshNumVertices) > SRC_MAX_VERTEX_LIMIT || subMeshIndex == -1)
 		{
+			repoTrace << "Starting a new mesh";
 			//If (runningVertTotal + subMeshNumVertices) > SRC_MAX_VERTEX_LIMIT
 			if ((subMeshIndex != -1) && !startLargeMeshSplit)
 			{
+				repoTrace << "Running total (" << runningVertTotal + currentMeshNumVertices << ") exceeds vertex limit:" << SRC_MAX_VERTEX_LIMIT;
 				subMeshArray[subMeshIndex].offset = 0;
 				subMeshArray[subMeshIndex].vCount = runningVertTotal;
 				subMeshArray[subMeshIndex].fCount = runningFaceTotal;
@@ -230,7 +232,7 @@ void SRCModelExport::convertMesh(
 		// the limit itself. In the case that it is, this will always flag as above.
 		if (currentMeshNumVertices > SRC_MAX_VERTEX_LIMIT)
 		{
-			repoTrace << "Splitting large meshes into smaller meshes";
+			repoTrace << "Limit exceeded splitting large meshes into smaller meshes";
 
 			// Perform quick and dirty splitting algorithm
 			std::unordered_map<uint32_t, uint32_t> reIndexMap;
@@ -249,6 +251,7 @@ void SRCModelExport::convertMesh(
 				}
 				else if (runningVertTotal + nComp > SRC_MAX_VERTEX_LIMIT || !startLargeMeshSplit)
 				{
+
 					// If new meshes has at least one in, then we are updating
 					// an old one
 					if (startLargeMeshSplit) {
@@ -297,9 +300,9 @@ void SRCModelExport::convertMesh(
 					subMeshArray[subMeshIndex].vFrom = currentMeshVFrom;
 					subMeshArray[subMeshIndex].fFrom = currentMeshTFrom + faceIdx;
 					runningVertTotal = 0;
-					repoInfo << " running Vertice total reset!!!!!!!!";
+					repoTrace << "Large Mesh Split is set to true";
 					startLargeMeshSplit = true;
-				}
+				} // (runningVertTotal + nComp > SRC_MAX_VERTEX_LIMIT || !startLargeMeshSplit)
 
 				for (uint32_t compIdx = 0; compIdx < nComp; ++compIdx)
 				{
@@ -307,7 +310,6 @@ void SRCModelExport::convertMesh(
 
 					if (reIndexMap.find(indexVal) == reIndexMap.end())
 					{
-						repoDebug << "New index : " << indexVal << " will be mapped to " << runningVertTotal;
 						reIndexMap[indexVal] = runningVertTotal;
 						faceBuf.push_back(runningVertTotal);
 
@@ -384,7 +386,6 @@ void SRCModelExport::convertMesh(
 			}
 
 			runningVertTotal = 0;
-			repoInfo << " running Vertice total reset!!!!!!!!";
 
 		}
 		else //currentMeshNumVertices > SRC_MAX_VERTEX_LIMIT
