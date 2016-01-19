@@ -203,6 +203,7 @@ void SRCModelExport::convertMesh(
 				subMeshArray[subMeshIndex].offset = 0;
 				subMeshArray[subMeshIndex].vCount = runningVertTotal;
 				subMeshArray[subMeshIndex].fCount = runningFaceTotal;
+
 			}
 
 			startLargeMeshSplit = false;
@@ -263,7 +264,6 @@ void SRCModelExport::convertMesh(
 						if (useIDMap) {
 							subMeshArray[subMeshIndex].idMapBuf.reserve(runningVertTotal);
 
-							repoTrace <<"Writing IDMapBuf";
 							for (uint32_t k = 0; k < runningVertTotal; k++) {
 								float runningIdx_f = runningIdx;
 								subMeshArray[subMeshIndex].idMapBuf.push_back(runningIdx_f);
@@ -486,7 +486,7 @@ void SRCModelExport::convertMesh(
 	size_t uvWritePosition = bufPos;
 	size_t nSubMeshes = subMeshArray.size();
 
-	repoTrace << "Looping Through submeshes";
+	repoTrace << "Looping Through submeshes (#submeshes : " << nSubMeshes << ")";
 	for (size_t subMeshIdx = 0; subMeshIdx < nSubMeshes; ++subMeshIdx)
 	{
 		// ------------------------------------------------------------------------
@@ -495,7 +495,6 @@ void SRCModelExport::convertMesh(
 		// Each bufferView is composed of several chunks.
 		// ------------------------------------------------------------------------
 
-		repoTrace << "Generating subMesh #" << subMeshIdx << " of " << idx;
 		std::string meshIDX = std::to_string(idx) + "_" + std::to_string(subMeshIdx);
 
 		std::string positionAttributeView = SRC_PREFIX_POSITION_ATTR_VIEW + meshIDX;
@@ -686,6 +685,7 @@ void SRCModelExport::convertMesh(
 			addToTree(tree, srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_TEX_COORD, uvAttributeView);
 
 		}
+
 	}//for (size_t subMeshIdx = 0; subMeshIdx < nSubMeshes; ++subMeshIdx)
 
 	repoTrace << "Generating output buffers";
