@@ -504,11 +504,12 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 }
 
 std::unordered_map<std::string, std::vector<uint8_t>> RepoManipulator::generateSRCBuffer(
-	const repo::core::model::RepoScene *scene)
+	const repo::core::model::RepoScene *scene,
+	const bool &useOld)
 {
 
 	std::unordered_map<std::string, std::vector<uint8_t>> result;
-	modelconvertor::SRCModelExport srcExport(scene);
+	modelconvertor::SRCModelExport srcExport(scene, useOld);
 	if (srcExport.isOk())
 	{
 		repoTrace << "Conversion succeed.. exporting as buffer..";

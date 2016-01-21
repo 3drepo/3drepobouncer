@@ -52,12 +52,29 @@ namespace repo{
 				* Default Constructor, export model with default settings
 				* @param scene repo scene to convert
 				*/
-				SRCModelExport(const repo::core::model::RepoScene *scene);
+				SRCModelExport(const repo::core::model::RepoScene *scene, const bool &useOld = false);
 
 				/**
 				* Default Destructor
 				*/
 				virtual ~SRCModelExport();
+
+				/**
+				* Convert a Mesh Node into src format
+				* @param mesh the mesh to convert
+				* @param index a counter indiciating the mesh index
+				* @param textureID ID of the texture associated with this mesh (if any)
+				* @param faceBuf face buffer with only the face indices
+				* @param idMapBuf idMapping for each sub meshes
+				*/
+				void SRCModelExport::addMeshToExport(
+					const repo::core::model::MeshNode &mesh,
+					const size_t &idx,
+					const std::string &textureID,
+					const std::vector<uint16_t> &faceBuf,
+					const std::vector<std::vector<float>>  &idMapBuf,
+					const std::string                      &fileExt
+					);
 
 				/**
 				* Convert a Mesh Node into src format
@@ -113,6 +130,7 @@ namespace repo{
 			private:
 				const repo::core::model::RepoScene *scene;
 				bool convertSuccess;
+				bool useOld;
 				std::unordered_map<std::string, boost::property_tree::ptree> trees;
 				repo::core::model::RepoScene::GraphType gType;
 				std::unordered_map<std::string, std::vector<uint8_t>> fullDataBuffer;

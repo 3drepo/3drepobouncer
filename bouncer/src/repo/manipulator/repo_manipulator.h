@@ -278,7 +278,8 @@ namespace repo{
 			* @return returns a buffer in the form of a byte vector mapped to its filename
 			*/
 			std::unordered_map<std::string, std::vector<uint8_t>> generateSRCBuffer(
-				const repo::core::model::RepoScene *scene);
+				const repo::core::model::RepoScene *scene,
+				const bool &useOld = false);
 
 			/**
 			* Retrieve documents from a specified collection

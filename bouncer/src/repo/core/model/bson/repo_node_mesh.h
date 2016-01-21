@@ -126,8 +126,17 @@ namespace repo {
 					* Create a new copy of the node and update its mesh mapping
 					* @return returns a new meshNode with the new mappings
 					*/
-					MeshNode cloneAndUpdateMeshMapping(const std::vector<repo_mesh_mapping_t> &vec);
+					MeshNode cloneAndUpdateMeshMapping(
+						const std::vector<repo_mesh_mapping_t> &vec,
+						const bool                             &overwrite = false);
 
+					/**
+					* Remap the submeshes to 
+					*/
+					MeshNode cloneAndRemapMeshMapping(
+						const size_t verticeThreshold,
+						std::vector<uint16_t> &newFaces,
+						std::vector<std::vector<float>> &idMapBuf) const;
 
 
 					

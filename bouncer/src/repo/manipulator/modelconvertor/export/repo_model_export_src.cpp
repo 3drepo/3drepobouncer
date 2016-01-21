@@ -22,6 +22,7 @@
 
 #include "repo_model_export_src.h"
 #include "../../../lib/repo_log.h"
+#include "../../../core/model/bson/repo_bson_factory.h"
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -102,9 +103,11 @@ struct repo_src_mesh_info
 
 
 SRCModelExport::SRCModelExport(
-	const repo::core::model::RepoScene *scene
+	const repo::core::model::RepoScene *scene,
+	const bool &useOld
 	) : AbstractModelExport()
 	, scene(scene)
+	, useOld(useOld)
 {
 	//Considering all newly imported models should have a stash graph, we only need to support stash graph?
 	if (scene)
@@ -168,7 +171,6 @@ void SRCModelExport::convertMesh(
 	boost::property_tree::ptree tree;
 
 	std::string fname;
-	//TODO: not mpc if textured
 	if (textureID.empty())
 	{ 
 		if (mapping.size() > 1)
@@ -197,11 +199,9 @@ void SRCModelExport::convertMesh(
 		//If the max. number of vertices exceeds the limit or it is the first sub mesh
 		if ((runningVertTotal + currentMeshNumVertices) > SRC_MAX_VERTEX_LIMIT || subMeshIndex == -1)
 		{
-			repoTrace << "Starting a new mesh";
 			//If (runningVertTotal + subMeshNumVertices) > SRC_MAX_VERTEX_LIMIT
 			if ((subMeshIndex != -1) && !startLargeMeshSplit)
 			{
-				repoTrace << "Running total (" << runningVertTotal + currentMeshNumVertices << ") exceeds vertex limit:" << SRC_MAX_VERTEX_LIMIT;
 				subMeshArray[subMeshIndex].offset = 0;
 				subMeshArray[subMeshIndex].vCount = runningVertTotal;
 				subMeshArray[subMeshIndex].fCount = runningFaceTotal;
@@ -241,7 +241,8 @@ void SRCModelExport::convertMesh(
 			newVertexBuffer.reserve(currentMeshNumVertices);
 
 
-			for (uint32_t faceIdx = 0; faceIdx < currentMeshNumFaces; ++faceIdx) {
+			for (uint32_t faceIdx = 0; faceIdx < currentMeshNumFaces; ++faceIdx) 
+			{
 				uint32_t nComp = faces->at(origIndexPtr).size();
 				if (nComp != 3)
 				{
@@ -525,7 +526,6 @@ void SRCModelExport::convertMesh(
 		std::string srcAccessors_AttributeViews = SRC_LABEL_ACCESSORS + "." + SRC_LABEL_ACCESSORS_ATTR_VIEWS;
 		std::string srcMesh_MeshID = SRC_LABEL_MESHES + "." + meshID + ".";
 
-
 		// SRC Header for this mesh
 		if (vertices->size())
 		{		
@@ -689,7 +689,7 @@ void SRCModelExport::convertMesh(
 
 	}//for (size_t subMeshIdx = 0; subMeshIdx < nSubMeshes; ++subMeshIdx)
 
-	repoTrace << "Generating output buffers";
+	repoTrace << "Generating output buffers for " << idx;
 
 	std::vector<float> idMapBuf;
 	//create the full buffer
@@ -796,9 +796,10 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getFileAsB
 		size_t jsonByteSize = jsonStr.size()*sizeof(*jsonStr.c_str());
 		size_t headerSize = 12 + jsonByteSize;
 
+		size_t buffPtr = 0; //BufferPointer in bytes
+
 		buffer.resize(headerSize);
 
-		size_t buffPtr = 0; //BufferPointer in bytes
 		uint32_t* bufferAsUInt = (uint32_t*)buffer.data();
 
 		//Header ints
@@ -841,8 +842,28 @@ bool SRCModelExport::generateTreeRepresentation(
 		fullDataBuffer.reserve(meshes.size());
 		repoTrace << "#Meshes = " << meshes.size();
 		for (const repo::core::model::RepoNode* mesh : meshes)
-		{			
-			convertMesh((repo::core::model::MeshNode*)mesh, index++, scene->getTextureIDForMesh(gType, mesh->getSharedID()));
+		{	
+			
+			if(useOld)
+				convertMesh((repo::core::model::MeshNode*)mesh, index++, scene->getTextureIDForMesh(gType, mesh->getSharedID()));
+			else
+			{
+				std::string textureID = scene->getTextureIDForMesh(gType, mesh->getSharedID());
+				std::vector<uint16_t> facebuf;
+				std::vector<std::vector<float>> idMapBuf;
+				repo::core::model::MeshNode splittedMesh =
+					((repo::core::model::MeshNode*)mesh)->cloneAndRemapMeshMapping(SRC_MAX_VERTEX_LIMIT, facebuf, idMapBuf);
+				repoTrace << " Mapping before: " << ((repo::core::model::MeshNode*)mesh)->getMeshMapping().size() << " Mapping after: " << splittedMesh.getMeshMapping().size();
+
+				std::string ext = ".src";
+				if (((repo::core::model::MeshNode*)mesh)->getMeshMapping().size() > 1)
+				{
+					ext = ".src.mpc";
+				}
+
+				addMeshToExport(splittedMesh, index++, textureID, facebuf, idMapBuf, ext);
+			}
+			//break;
 
 		}		
 	}
@@ -866,4 +887,342 @@ void SRCModelExport::addToTree<std::string>(
 		tree.put(label, value, stringTranslator());
 	else
 		tree.add(label, value, stringTranslator());
+}
+
+void SRCModelExport::addMeshToExport(
+	const repo::core::model::MeshNode      &mesh,
+	const size_t                           &idx,
+	const std::string                      &textureID,
+	const std::vector<uint16_t>            &faceBuf,
+	const std::vector<std::vector<float>>  &idMapBuf,
+	const std::string                      &fileExt
+	)
+{
+	std::vector<repo_mesh_mapping_t> mapping = mesh.getMeshMapping();
+	
+
+	auto vertices = mesh.getVertices();
+	auto normals = mesh.getNormals();
+	auto uvs = mesh.getUVChannels();
+
+	repoTrace << "Vertices size: " << vertices->size();
+
+	//Define starting position of buffers
+
+	size_t bufPos = 0; //In bytes
+	size_t vertexWritePosition = bufPos;
+
+	bufPos += vertices->size()*sizeof(*vertices->data());
+
+	size_t normalWritePosition = bufPos;
+	bufPos += normals->size()*sizeof(*normals->data());
+
+	size_t facesWritePosition = bufPos;
+	bufPos += faceBuf.size() * sizeof(*faceBuf.data());
+
+	size_t idMapWritePosition = bufPos;
+	bufPos += vertices->size() * sizeof(float); //idMap array is of floats
+
+	size_t uvWritePosition = bufPos;
+	size_t nSubMeshes = mapping.size();
+
+	std::string meshId = UUIDtoString(mesh.getUniqueID());
+
+	boost::property_tree::ptree tree;
+
+	repoTrace << "Looping Through submeshes (#submeshes : " << nSubMeshes << ")";
+	for (size_t subMeshIdx = 0; subMeshIdx < nSubMeshes; ++subMeshIdx)
+	{
+		// ------------------------------------------------------------------------
+		// In SRC each attribute has an associated attributeView.
+		// Each attributeView has an associated bufferView
+		// Each bufferView is composed of several chunks.
+		// ------------------------------------------------------------------------
+
+		std::string meshIDX = std::to_string(idx) + "_" + std::to_string(subMeshIdx);
+
+		std::string positionAttributeView = SRC_PREFIX_POSITION_ATTR_VIEW + meshIDX;
+		std::string normalAttributeView = SRC_PREFIX_NORMAL_ATTR_VIEW + meshIDX;
+		std::string uvAttributeView = SRC_PREFIX_UV_ATTR_VIEW + meshIDX;
+		std::string idMapAttributeView = SRC_PREFIX_IDMAP_ATTR_VIEW + meshIDX;
+		std::string indexView = SRC_PREFIX_IDX_VIEW + meshIDX;
+
+		std::string positionBufferView = SRC_PREFIX_POSITION_BUFF_VIEW + meshIDX;
+		std::string normalBufferView = SRC_PREFIX_NORMAL_BUFF_VIEW + meshIDX;
+		std::string texBufferView = SRC_PREFIX_TEX_BUFF_VIEW + meshIDX;
+		std::string uvBufferView = SRC_PREFIX_UV_BUFF_VIEW + meshIDX;
+		std::string indexBufferView = SRC_PREFIX_IDX_BUFF_VIEW + meshIDX;
+		std::string idMapBufferView = SRC_PREFIX_IDMAP_BUFF_VIEW + meshIDX;
+
+		std::string positionBufferChunk = SRC_PREFIX_POSITION_BUFF_CHK + meshIDX;
+		std::string indexBufferChunk = SRC_PREFIX_IDX_BUFF_CHK + meshIDX;
+		std::string normalBufferChunk = SRC_PREFIX_NORMAL_BUFF_CHK + meshIDX;
+		std::string texBufferChunk = SRC_PREFIX_TEX_BUFF_CHK + meshIDX;
+		std::string uvBufferChunk = SRC_PREFIX_UV_BUFF_CHK + meshIDX;
+		std::string idMapBufferChunk = SRC_PREFIX_IDMAP_BUFF_CHK + meshIDX;
+
+		std::string idMapID = SRC_PREFIX_IDMAP + meshIDX;
+
+		std::string meshID = meshId + "_" + std::to_string(subMeshIdx);
+
+		std::string srcAccessors_AttributeViews = SRC_LABEL_ACCESSORS + "." + SRC_LABEL_ACCESSORS_ATTR_VIEWS;
+		std::string srcMesh_MeshID = SRC_LABEL_MESHES + "." + meshID + ".";
+
+
+		size_t vCount = mapping[subMeshIdx].vertTo - mapping[subMeshIdx].vertFrom;
+		size_t fCount = mapping[subMeshIdx].triTo - mapping[subMeshIdx].triFrom;
+
+		// SRC Header for this mesh
+		if (vertices->size())
+		{
+			std::string srcAccessors_AttrViews_positionAttrView = srcAccessors_AttributeViews + "." + positionAttributeView + ".";
+			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BUFFVIEW, positionBufferView);
+			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BYTE_OFFSET, 0);
+			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BYTE_STRIDE, 12);
+			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_COMP_TYPE, SRC_X3DOM_FLOAT);
+			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_TYPE, SRC_VECTOR_3D);
+			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_COUNT, vCount);
+
+			std::vector<uint32_t> offsetArr = { 0, 0, 0 };
+			std::vector<uint32_t> scaleArr = { 1, 1, 1 };
+			tree.add_child(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_DECODE_OFFSET, createPTArray(offsetArr));
+			tree.add_child(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_DECODE_SCALE, createPTArray(scaleArr));
+
+
+			std::string srcBufferChunks_positionBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + positionBufferChunk + ".";
+			size_t verticeBufferLength = vCount * 3 * 4;
+
+			addToTree(tree, srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_OFFSET, vertexWritePosition);
+			addToTree(tree, srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_LENGTH, verticeBufferLength); // 3 floats to a vertex
+
+			vertexWritePosition += verticeBufferLength;
+
+			std::string srcBufferViews_positionBufferView = SRC_LABEL_BUFF_VIEWS + "." + positionBufferView + ".";
+
+			std::vector<std::string> chunksArray = { positionBufferChunk };
+			tree.add_child(srcBufferViews_positionBufferView + SRC_LABEL_CHUNKS, createPTArray(chunksArray));
+
+			addToTree(tree, srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_POSITION, positionAttributeView);
+		}
+
+		//Normal Attribute View
+		if (normals->size())
+		{
+			std::string srcAccessors_AttrViews_normalAttrView = srcAccessors_AttributeViews + "." + normalAttributeView + ".";
+			addToTree(tree, srcAccessors_AttrViews_normalAttrView + SRC_LABEL_BUFFVIEW, normalBufferView);
+			addToTree(tree, srcAccessors_AttrViews_normalAttrView + SRC_LABEL_BYTE_OFFSET, 0);
+			addToTree(tree, srcAccessors_AttrViews_normalAttrView + SRC_LABEL_BYTE_STRIDE, 12);
+			addToTree(tree, srcAccessors_AttrViews_normalAttrView + SRC_LABEL_COMP_TYPE, SRC_X3DOM_FLOAT);
+			addToTree(tree, srcAccessors_AttrViews_normalAttrView + SRC_LABEL_TYPE, SRC_VECTOR_3D);
+			addToTree(tree, srcAccessors_AttrViews_normalAttrView + SRC_LABEL_COUNT, vCount);
+
+			std::vector<uint32_t> offsetArr = { 0, 0, 0 };
+			std::vector<uint32_t> scaleArr = { 1, 1, 1 };
+			tree.add_child(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_DECODE_OFFSET, createPTArray(offsetArr));
+			tree.add_child(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_DECODE_SCALE, createPTArray(scaleArr));
+
+
+			std::string srcBufferChunks_positionBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + normalBufferChunk + ".";
+			size_t verticeBufferLength = vCount * 3 * 4;
+
+			addToTree(tree, srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_OFFSET, normalWritePosition);
+			addToTree(tree, srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_LENGTH, verticeBufferLength); // 3 floats to a vertex
+
+			normalWritePosition += verticeBufferLength;
+
+
+			std::string srcBufferViews_normalBufferView = SRC_LABEL_BUFF_VIEWS + "." + normalBufferView + ".";
+
+			std::vector<std::string> chunksArray = { normalBufferChunk };
+			tree.add_child(srcBufferViews_normalBufferView + SRC_LABEL_CHUNKS, createPTArray(chunksArray));
+
+			addToTree(tree, srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_NORMAL, normalAttributeView);
+
+		}
+
+		// Index View
+		if (faceBuf.size())
+		{
+			std::string srcAccessors_indexViews = SRC_LABEL_ACCESSORS + "." + SRC_LABEL_INDEX_VIEWS + "." + indexView + ".";
+
+			addToTree(tree, srcAccessors_indexViews + SRC_LABEL_BUFFVIEW, indexBufferView);
+			addToTree(tree, srcAccessors_indexViews + SRC_LABEL_BYTE_OFFSET, 0);
+			addToTree(tree, srcAccessors_indexViews + SRC_LABEL_COMP_TYPE, SRC_X3DOM_USHORT);
+			addToTree(tree, srcAccessors_indexViews + SRC_LABEL_COUNT, fCount * 3);
+
+			std::string srcBufferChunks_indexBufferChunk = SRC_LABEL_BUFFER_CHUNKS + "." + indexBufferChunk + ".";
+			size_t facesBufferLength = fCount * 3 * 2; //3 shorts for face index
+
+			addToTree(tree, srcBufferChunks_indexBufferChunk + SRC_LABEL_BYTE_OFFSET, facesWritePosition);
+			addToTree(tree, srcBufferChunks_indexBufferChunk + SRC_LABEL_BYTE_LENGTH, facesBufferLength);
+
+			facesWritePosition += facesBufferLength;
+
+			std::string srcBufferViews_indexBufferView = SRC_LABEL_BUFF_VIEWS + "." + indexBufferView + ".";
+
+			std::vector<std::string> chunksArray = { indexBufferChunk };
+			tree.add_child(srcBufferViews_indexBufferView + SRC_LABEL_CHUNKS, createPTArray(chunksArray));
+
+			addToTree(tree, srcMesh_MeshID + SRC_LABEL_INDICIES, indexView);
+			addToTree(tree, srcMesh_MeshID + SRC_LABEL_PRIMITIVE, SRC_X3DOM_TRIANGLE);
+
+		}
+
+		if (idMapBuf.size() && idMapBuf[subMeshIdx].size())
+		{
+			std::string srcAccessors_AttrViews_idMapAttributeView = srcAccessors_AttributeViews + "." + idMapAttributeView + ".";
+
+			addToTree(tree, srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_BUFFVIEW, idMapBufferView);
+			addToTree(tree, srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_BYTE_OFFSET, 0);
+			addToTree(tree, srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_BYTE_STRIDE, 4);
+			addToTree(tree, srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_COMP_TYPE, SRC_X3DOM_FLOAT);
+			addToTree(tree, srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_TYPE, SRC_SCALAR);
+			addToTree(tree, srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_COUNT, vCount);
+
+			std::vector<uint32_t> offsetArr = { 0 };
+			std::vector<uint32_t> scaleArr = { 1 };
+			tree.add_child(srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_DECODE_OFFSET, createPTArray(offsetArr));
+			tree.add_child(srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_DECODE_SCALE, createPTArray(scaleArr));
+
+			std::string srcBufferChunks_idMapBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + idMapBufferChunk + ".";
+			size_t idMapBufferLength = idMapBuf[subMeshIdx].size() * sizeof(*idMapBuf[subMeshIdx].data());
+
+			addToTree(tree, srcBufferChunks_idMapBufferChunks + SRC_LABEL_BYTE_OFFSET, idMapWritePosition);
+			addToTree(tree, srcBufferChunks_idMapBufferChunks + SRC_LABEL_BYTE_LENGTH, idMapBufferLength);
+
+			idMapWritePosition += idMapBufferLength;
+
+			std::string srcBufferViews_idMapBufferView = SRC_LABEL_BUFF_VIEWS + "." + idMapBufferView + ".";
+
+			std::vector<std::string> chunksArray = { idMapBufferChunk };
+			tree.add_child(srcBufferViews_idMapBufferView + SRC_LABEL_CHUNKS, createPTArray(chunksArray));
+
+			addToTree(tree, srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_ID, idMapAttributeView);
+		}
+
+		if (uvs && uvs->size())
+		{
+			// UV coordinates
+			std::string srcAccessors_AttrViews_uvAttrView = srcAccessors_AttributeViews + "." + uvAttributeView + ".";
+			addToTree(tree, srcAccessors_AttrViews_uvAttrView + SRC_LABEL_BUFFVIEW, uvBufferView);
+			addToTree(tree, srcAccessors_AttrViews_uvAttrView + SRC_LABEL_BYTE_OFFSET, 0);
+			addToTree(tree, srcAccessors_AttrViews_uvAttrView + SRC_LABEL_BYTE_STRIDE, 8);
+			addToTree(tree, srcAccessors_AttrViews_uvAttrView + SRC_LABEL_COMP_TYPE, SRC_X3DOM_FLOAT);
+			addToTree(tree, srcAccessors_AttrViews_uvAttrView + SRC_LABEL_TYPE, SRC_VECTOR_2D);
+			addToTree(tree, srcAccessors_AttrViews_uvAttrView + SRC_LABEL_COUNT, vCount);
+
+			std::vector<uint32_t> offsetArr = { 0, 0 };
+			std::vector<uint32_t> scaleArr = { 1, 1 };
+			tree.add_child(srcAccessors_AttrViews_uvAttrView + SRC_LABEL_DECODE_OFFSET, createPTArray(offsetArr));
+			tree.add_child(srcAccessors_AttrViews_uvAttrView + SRC_LABEL_DECODE_SCALE, createPTArray(scaleArr));
+
+			std::string srcBufferChunks_uvBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + uvBufferChunk + ".";
+			size_t uvBufferLength = vCount * 2 * 4;
+
+			addToTree(tree, srcBufferChunks_uvBufferChunks + SRC_LABEL_BYTE_OFFSET, uvWritePosition);
+			addToTree(tree, srcBufferChunks_uvBufferChunks + SRC_LABEL_BYTE_LENGTH, uvBufferLength);
+
+			uvWritePosition += uvBufferLength;
+
+			std::string srcBufferViews_uvBufferView = SRC_LABEL_BUFF_VIEWS + "." + uvBufferView + ".";
+
+			std::vector<std::string> chunksArray = { uvBufferChunk };
+			tree.add_child(srcBufferViews_uvBufferView + SRC_LABEL_CHUNKS, createPTArray(chunksArray));
+
+			addToTree(tree, srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_TEX_COORD, uvAttributeView);
+
+		}
+
+	}//for (size_t subMeshIdx = 0; subMeshIdx < nSubMeshes; ++subMeshIdx)
+
+	repoTrace << "Generating output buffers for " << idx;
+
+	std::vector<float> idMapBufFull;
+	//create the full buffer
+	for (const auto &subMesh : idMapBuf)
+	{
+		if (subMesh.size())
+		{
+			idMapBufFull.insert(idMapBufFull.end(), subMesh.begin(), subMesh.end());
+		}
+	}
+	
+
+	size_t bufferSize = (vertices->size() ? vertices->size() * 3 * 4 : 0)
+		+ (normals->size() ? normals->size() * 3 * 4 : 0)
+		+ (faceBuf.size() ? faceBuf.size() * 2 : 0)
+		+ (idMapBufFull.size() ? idMapBufFull.size() * sizeof(*idMapBufFull.data()) : 0)
+		+ (uvs && uvs->size() ? (uvs->size() * 4 * 2) : 0);
+
+	std::vector<uint8_t> dataBuffer;
+	dataBuffer.resize(bufferSize);
+
+	size_t bufferPtr = 0;
+	repoTrace << "Writing to buffer... expected Size is : " << bufferSize;
+	// Output vertices
+	if (vertices->size())
+	{
+		repoTrace << "Vertices #: " << vertices->size();
+		size_t byteSize = vertices->size() * sizeof(*vertices->data());
+		memcpy(&dataBuffer[bufferPtr], vertices->data(), byteSize);
+		bufferPtr += byteSize;
+
+		repoTrace << "Written Vertices: byte Size " << byteSize << " bufferPtr is " << bufferPtr;
+	}
+
+	// Output normals
+	if (normals->size())
+	{
+		repoTrace << "Normals #: " << normals->size();
+		size_t byteSize = normals->size() * sizeof(*normals->data());
+		memcpy(&dataBuffer[bufferPtr], normals->data(), byteSize);
+		bufferPtr += byteSize;
+		repoTrace << "Written normals: byte Size " << byteSize << " bufferPtr is " << bufferPtr;
+	}
+
+	// Output faces
+	if (faceBuf.size())
+	{
+		repoTrace << "Faces #: " << faceBuf.size();
+		size_t byteSize = faceBuf.size() * sizeof(*faceBuf.data());
+		memcpy(&dataBuffer[bufferPtr], faceBuf.data(), byteSize);
+		bufferPtr += byteSize;
+		repoTrace << "Written faces: byte Size " << byteSize << " bufferPtr is " << bufferPtr;
+	}
+
+	if (idMapBufFull.size())
+	{
+		repoTrace << "idMap #: " << idMapBufFull.size();
+		size_t byteSize = idMapBufFull.size() * sizeof(*idMapBufFull.data());
+		memcpy(&dataBuffer[bufferPtr], idMapBufFull.data(), byteSize);
+		bufferPtr += byteSize;
+		repoTrace << "Written idMapBuff: byte Size " << byteSize << " bufferPtr is " << bufferPtr;
+	}
+
+
+	if (uvs && uvs->size()) {
+		repoTrace << "UV #: " << uvs->size();
+		size_t byteSize = uvs->size() * sizeof(*uvs->data());
+		memcpy(&dataBuffer[bufferPtr], uvs->data(), byteSize);
+		bufferPtr += byteSize;
+		repoTrace << "Written UVs: byte Size " << byteSize << " bufferPtr is " << bufferPtr;
+	}
+
+
+	if (normals)
+		delete normals;
+	if (vertices)
+		delete vertices;
+	if (uvs)
+		delete uvs;
+
+	std::string fname = meshId + fileExt;
+	if (!textureID.empty())
+	{
+		fname += "?tex_uuid=" + textureID;
+	}
+
+	trees[fname] = tree;
+	fullDataBuffer[fname] = dataBuffer;
+
 }
