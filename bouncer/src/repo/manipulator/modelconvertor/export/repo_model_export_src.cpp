@@ -339,10 +339,10 @@ void SRCModelExport::addMeshToExport(
 
 
 			std::string srcBufferChunks_positionBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + positionBufferChunk + ".";
-			size_t verticeBufferLength = vCount * 3 * 4;
+			size_t verticeBufferLength = vCount * sizeof(*vertices->data());
 
 			addToTree(tree, srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_OFFSET, vertexWritePosition);
-			addToTree(tree, srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_LENGTH, verticeBufferLength); // 3 floats to a vertex
+			addToTree(tree, srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_LENGTH, verticeBufferLength); 
 
 			vertexWritePosition += verticeBufferLength;
 
@@ -372,10 +372,10 @@ void SRCModelExport::addMeshToExport(
 
 
 			std::string srcBufferChunks_positionBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + normalBufferChunk + ".";
-			size_t verticeBufferLength = vCount * 3 * 4;
+			size_t verticeBufferLength = vCount * sizeof(*normals->data());
 
 			addToTree(tree, srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_OFFSET, normalWritePosition);
-			addToTree(tree, srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_LENGTH, verticeBufferLength); // 3 floats to a vertex
+			addToTree(tree, srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_LENGTH, verticeBufferLength); 
 
 			normalWritePosition += verticeBufferLength;
 
@@ -400,7 +400,7 @@ void SRCModelExport::addMeshToExport(
 			addToTree(tree, srcAccessors_indexViews + SRC_LABEL_COUNT, fCount * 3);
 
 			std::string srcBufferChunks_indexBufferChunk = SRC_LABEL_BUFFER_CHUNKS + "." + indexBufferChunk + ".";
-			size_t facesBufferLength = fCount * 3 * 2; //3 shorts for face index
+			size_t facesBufferLength = fCount * 3 * sizeof(*faceBuf.data()); //3 shorts for face index
 
 			addToTree(tree, srcBufferChunks_indexBufferChunk + SRC_LABEL_BYTE_OFFSET, facesWritePosition);
 			addToTree(tree, srcBufferChunks_indexBufferChunk + SRC_LABEL_BYTE_LENGTH, facesBufferLength);
@@ -466,7 +466,7 @@ void SRCModelExport::addMeshToExport(
 			tree.add_child(srcAccessors_AttrViews_uvAttrView + SRC_LABEL_DECODE_SCALE, createPTArray(scaleArr));
 
 			std::string srcBufferChunks_uvBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + uvBufferChunk + ".";
-			size_t uvBufferLength = vCount * 2 * 4;
+			size_t uvBufferLength = vCount * sizeof(*uvs->data());
 
 			addToTree(tree, srcBufferChunks_uvBufferChunks + SRC_LABEL_BYTE_OFFSET, uvWritePosition);
 			addToTree(tree, srcBufferChunks_uvBufferChunks + SRC_LABEL_BYTE_LENGTH, uvBufferLength);
@@ -497,11 +497,11 @@ void SRCModelExport::addMeshToExport(
 	}
 	
 
-	size_t bufferSize = (vertices->size() ? vertices->size() * 3 * 4 : 0)
-		+ (normals->size() ? normals->size() * 3 * 4 : 0)
-		+ (faceBuf.size() ? faceBuf.size() * 2 : 0)
+	size_t bufferSize = (vertices->size() ? vertices->size() * sizeof(*vertices->data()) : 0)
+		+ (normals->size() ? normals->size() * sizeof(*normals->data()) : 0)
+		+ (faceBuf.size() ? faceBuf.size() * sizeof(*faceBuf.data()) : 0)
 		+ (idMapBufFull.size() ? idMapBufFull.size() * sizeof(*idMapBufFull.data()) : 0)
-		+ (uvs && uvs->size() ? (uvs->size() * 4 * 2) : 0);
+		+ (uvs && uvs->size() ? uvs->size() *sizeof(*uvs->data()) : 0);
 
 	std::vector<uint8_t> dataBuffer;
 	dataBuffer.resize(bufferSize);
