@@ -50,6 +50,7 @@ find_package(ASSIMPM REQUIRED)
 #================COMPILE 3D REPO BOUNCER ==============
 option (REPO_BUILD_CLIENT "If the Command Line Client is built in addition to the library" ON)
 option (REPO_BUILD_TESTS "If the test suite is built in addition to the library" OFF)
+add_definitions( -DWIN32_LEAN_AND_MEAN )
 if(${Boost_FOUND} AND ${MONGO_FOUND} AND ${ASSIMPM_FOUND})
 
 	#bouncer library

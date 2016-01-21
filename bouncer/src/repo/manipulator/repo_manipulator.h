@@ -256,6 +256,29 @@ namespace repo{
 				const std::string                         &databaseAd,
 				const repo::core::model::RepoBSON         *cred,
 				repo::core::model::RepoScene              *scene);
+ 
+			/**
+			* Generate and commit a SRC encoding for the given scene
+			* This requires the stash to have been generated already
+			* @param databaseAd database address:portdatabase
+			* @param cred user credentials in bson form
+			* @param scene the scene to generate the src encoding from
+			* @return returns true upon success
+			*/
+			bool generateAndCommitSRCBuffer(
+				const std::string                             &databaseAd,
+				const repo::core::model::RepoBSON	          *cred,
+				const repo::core::model::RepoScene            *scene);
+
+
+			/**
+			* Generate a SRC encoding in the form of a buffer for the given scene
+			* This requires the stash to have been generated already
+			* @param scene the scene to generate the src encoding from
+			* @return returns a buffer in the form of a byte vector mapped to its filename
+			*/
+			std::unordered_map<std::string, std::vector<uint8_t>> generateSRCBuffer(
+				const repo::core::model::RepoScene *scene);
 
 			/**
 			* Retrieve documents from a specified collection
@@ -376,6 +399,24 @@ namespace repo{
 			std::string getNameOfAdminDatabase(
 				const std::string                             &databaseAd) const;
 
+
+			/**
+			* Insert a binary file into the database (GridFS)
+			* @param databaseAd database address:portdatabase
+			* @param cred user credentials in bson form
+			* @param database name of the database
+			* @param collection name of the collection (it'll be saved into *.files, *.chunks)
+			* @param  rawData data in the form of byte vector
+			* @param mimeType the MIME type of the data (optional)
+			*/
+			void insertBinaryFileToDatabase(
+				const std::string                             &databaseAd,
+				const repo::core::model::RepoBSON	          *cred,
+				const std::string                             &database,
+				const std::string                             &collection,
+				const std::string                             &name,
+				const std::vector<uint8_t>                    &rawData,
+				const std::string                             &mimeType = "");
 
 			/**
 			* Insert a new role into the database

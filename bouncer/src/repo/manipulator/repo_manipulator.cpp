@@ -27,6 +27,7 @@
 #include "diff/repo_diff_sharedid.h"
 #include "diff/repo_diff_name.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
+#include "modelconvertor/export/repo_model_export_src.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
 
@@ -172,6 +173,13 @@ void RepoManipulator::commitScene(
 		if (scene->commitStash(handler, msg))
 		{
 			repoInfo << "Commited scene stash successfully.";
+
+			repoInfo << "Generating SRC encoding for web viewing...";
+			if (generateAndCommitSRCBuffer(databaseAd, cred, scene))
+			{
+				repoInfo << "SRC file stored into the database";
+			}
+			
 		}
 		else
 		{
@@ -456,6 +464,62 @@ void RepoManipulator::fetchScene(
 	}
 }
 
+bool RepoManipulator::generateAndCommitSRCBuffer(
+	const std::string                             &databaseAd,
+	const repo::core::model::RepoBSON	          *cred,
+	const repo::core::model::RepoScene            *scene)
+{
+	bool success;
+	std::unordered_map<std::string, std::vector<uint8_t>> v = generateSRCBuffer(scene);
+	if (success = v.size())
+	{
+		repo::core::handler::AbstractDatabaseHandler* handler =
+			repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+		if (success = handler)
+		{
+
+			for (const auto bufferPair : v)
+			{
+				std::string databaseName = scene->getDatabaseName();
+				std::string projectName = scene->getProjectName();
+				std::string prefix = "/" + databaseName + "/" + projectName + "/";
+				std::string errMsg;
+				//FIXME: constant value somewhere for .stash.src?
+				std::string fileName = prefix+bufferPair.first;
+				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.src", fileName, bufferPair.second,
+					errMsg, "binary/octet-stream"))
+				{
+					repoInfo << "File ("<<fileName <<") added successfully.";
+				}
+				else
+				{
+					repoError << "Failed to add file  ("<<fileName <<"): " << errMsg;
+				}
+			}		
+		}
+	}
+
+	return success;
+
+}
+
+std::unordered_map<std::string, std::vector<uint8_t>> RepoManipulator::generateSRCBuffer(
+	const repo::core::model::RepoScene *scene)
+{
+
+	std::unordered_map<std::string, std::vector<uint8_t>> result;
+	modelconvertor::SRCModelExport srcExport(scene);
+	if (srcExport.isOk())
+	{
+		repoTrace << "Conversion succeed.. exporting as buffer..";
+		result = srcExport.getFileAsBuffer();
+	}
+	else
+		repoError << "Export to SRC failed.";
+
+	return result;
+}
+
 std::vector<repo::core::model::RepoBSON>
 	RepoManipulator::getAllFromCollectionTailable(
 		const std::string                             &databaseAd,
@@ -632,6 +696,31 @@ repo::core::model::RepoScene*
 	}
 
 	return scene;
+}
+
+void RepoManipulator::insertBinaryFileToDatabase(
+	const std::string                             &databaseAd,
+	const repo::core::model::RepoBSON	          *cred,
+	const std::string                             &database,
+	const std::string                             &collection,
+	const std::string                             &name,
+	const std::vector<uint8_t>                    &rawData,
+	const std::string                             &mimeType)
+{
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+	{
+		std::string errMsg;
+		if (handler->insertRawFile(database, collection, name, rawData, errMsg, mimeType))
+		{
+			repoInfo << "File ("<< name <<") added successfully.";
+		}
+		else
+		{
+			repoError << "Failed to add file ("<< name <<"): " << errMsg;
+		}
+	}
 }
 
 void RepoManipulator::insertRole(

@@ -760,7 +760,8 @@ bool MongoDatabaseHandler::insertRawFile(
 	const std::string          &collection,
 	const std::string          &fileName,
 	const std::vector<uint8_t> &bin,
-	      std::string          &errMsg
+	      std::string          &errMsg,
+	const std::string          &contentType
 	)
 {
 	bool success = true;
@@ -786,7 +787,7 @@ bool MongoDatabaseHandler::insertRawFile(
 		mongo::GridFS gfs(*worker, database, collection);
 		//FIXME: there must be errors to catch...
 		repoTrace << "storing " << fileName << " in gridfs: " << database << "." << collection;
-		mongo::BSONObj bson = gfs.storeFile((char*)&bin[0], bin.size() * sizeof(bin[0]), fileName);
+		mongo::BSONObj bson = gfs.storeFile((char*)&bin[0], bin.size() * sizeof(bin[0]), fileName, contentType);
 
 		repoTrace << "returned object: " << bson.toString();
 	}

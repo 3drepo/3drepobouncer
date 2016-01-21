@@ -446,11 +446,33 @@ RepoController::getDatabasesWithProjects(
     }
     else
     {
-        repoError << "Trying to insert a user without a database connection!";
+        repoError << "Trying to get database listings without a database connection!";
 
     }
 
     return map;
+}
+
+void RepoController::insertBinaryFileToDatabase(
+	const RepoToken            *token,
+	const std::string          &database,
+	const std::string          &collection,
+	const std::string          &name,
+	const std::vector<uint8_t> &rawData,
+	const std::string          &mimeType)
+{
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		worker->insertBinaryFileToDatabase(token->databaseAd,
+			token->credentials, database, collection, name, rawData, mimeType);
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Trying to save a binary file without a database connection!";
+
+	}
 }
 
 void RepoController::insertRole(
@@ -700,6 +722,42 @@ repo::core::model::RepoScene* RepoController::createMapScene(
     workerPool.push(worker);
 
     return scene;
+}
+
+bool RepoController::generateAndCommitSRCBuffer(
+	const RepoToken                    *token,
+	const repo::core::model::RepoScene *scene)
+{
+	bool success;
+	if (success = token && scene)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		success = worker->generateAndCommitSRCBuffer(token->databaseAd, token->credentials, scene);
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Failed to generate SRC Buffer.";
+	}
+	return success;
+}
+
+
+std::unordered_map<std::string, std::vector<uint8_t>> RepoController::generateSRCBuffer(
+	const repo::core::model::RepoScene *scene)
+{
+	std::unordered_map<std::string,std::vector<uint8_t>> buffer;
+	if (scene)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		buffer = worker->generateSRCBuffer(scene);
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Failed to generate SRC Buffer.";
+	}
+	return buffer;
 }
 
 std::list<std::string> RepoController::getAdminDatabaseRoles(const RepoToken *token)
