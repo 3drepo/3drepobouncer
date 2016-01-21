@@ -737,7 +737,7 @@ bool RepoController::generateAndCommitSRCBuffer(
 	}
 	else
 	{
-		repoError << "Failed to generate SRC Buffer - null pointer to scene/token!";
+		repoError << "Failed to generate SRC Buffer.";
 	}
 	return success;
 }
@@ -755,7 +755,7 @@ std::unordered_map<std::string, std::vector<uint8_t>> RepoController::generateSR
 	}
 	else
 	{
-		repoError << "Failed to generate SRC Buffer - null pointer to scene!";
+		repoError << "Failed to generate SRC Buffer.";
 	}
 	return buffer;
 }

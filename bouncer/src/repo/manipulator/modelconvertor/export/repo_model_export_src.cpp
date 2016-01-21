@@ -113,18 +113,18 @@ SRCModelExport::SRCModelExport(
 		if (scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED))
 		{
 			gType = repo::core::model::RepoScene::GraphType::OPTIMIZED;
+			convertSuccess = generateTreeRepresentation();
 		}
 		else
 		{
-			gType = repo::core::model::RepoScene::GraphType::OPTIMIZED;
+			repoError << "Scene has no optimised graph. SRC Exporter relies on this.";
+			convertSuccess = false;
 		}
-
-
-		convertSuccess = generateTreeRepresentation();
+		
 	}
 	else
 	{
-		repoError << "Unable to export to SRC : Stash graph does not exist";
+		repoError << "Unable to export to SRC : Empty scene graph!";
 	}
 
 }
