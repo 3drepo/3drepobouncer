@@ -744,14 +744,13 @@ bool RepoController::generateAndCommitSRCBuffer(
 
 
 std::unordered_map<std::string, std::vector<uint8_t>> RepoController::generateSRCBuffer(
-	const repo::core::model::RepoScene *scene,
-	const bool &useOld)
+	const repo::core::model::RepoScene *scene)
 {
 	std::unordered_map<std::string,std::vector<uint8_t>> buffer;
 	if (scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		buffer = worker->generateSRCBuffer(scene, useOld);
+		buffer = worker->generateSRCBuffer(scene);
 		workerPool.push(worker);
 	}
 	else

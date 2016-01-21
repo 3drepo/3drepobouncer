@@ -270,7 +270,6 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 					idMapBuf.back().resize(runningVTotal);
 					float runningIdx_f = runningIdx;
 					std::fill(idMapBuf.back().begin(), idMapBuf.back().end(), runningIdx_f);
-					repoTrace << "Filled idmap[" << idMapBuf.size() - 1 << "] between 0 and " << idMapBuf.back().size() << " with " << runningIdx_f;
 					++runningIdx;
 					newMappings.push_back(newMap);
 					reIndexMap.clear();
@@ -374,7 +373,6 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 			idMapBuf.back().resize(idMapLength + smVertices);
 			float runningIdx_f = runningIdx;
 			std::fill(idMapBuf.back().begin() + idMapLength, idMapBuf.back().end(), runningIdx_f);
-			repoTrace << "Filled idmap[" << idMapBuf.size() - 1 << "] between " << idMapLength << " and " << idMapBuf.back().size() << " with " << runningIdx_f;
 			++runningIdx;
 			
 
@@ -450,7 +448,6 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 			idMapBuf.back().resize(idMapLength + smVertices);
 			float runningIdx_f = runningIdx;
 			std::fill(idMapBuf.back().begin() + idMapLength, idMapBuf.back().end(), runningIdx_f);
-			repoTrace << "Filled idmap[" << idMapBuf.size() - 1 << "] between " << idMapLength << " and " << idMapBuf.back().size() << " with " << runningIdx_f;
 
 			++runningIdx;
 

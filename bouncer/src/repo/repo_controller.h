@@ -648,8 +648,7 @@ public:
 	* @return returns a buffer in the form of a byte vector
 	*/
 	std::unordered_map<std::string, std::vector<uint8_t>> generateSRCBuffer(
-			const repo::core::model::RepoScene *scene,
-			const bool &useOld = false);
+			const repo::core::model::RepoScene *scene);
 
     /**
         * Get a string of supported file formats for file export
