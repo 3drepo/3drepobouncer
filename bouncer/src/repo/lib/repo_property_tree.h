@@ -18,8 +18,10 @@
 #pragma once
 
 #include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/xml_parser.hpp>
 //#include <boost/property_tree/json_parser.hpp>
 #include "json_parser.h"
+#include "../core/model/repo_node_utils.h"
 
 namespace repo{
 	namespace lib{
@@ -28,6 +30,36 @@ namespace repo{
 		public:
 			PropertyTree();
 			~PropertyTree();
+
+			/**
+			* Add an attribute to the field
+			* This is very xml specific
+			* it is to achieve things like <FIELD NAME="Hi">
+			* instead of <FIELD>"Hi"</FIELD>
+			* @param label field name to add to
+			* @param attribute name of attribute
+			* @param value value of attribute
+			*/
+			void addFieldAttribute(
+				const std::string &label,
+				const std::string &attribute,
+				const std::string &value
+				);
+
+			/**
+			* Add an attribute to the field with the a 3d vector as value
+			* This is very xml specific
+			* it is to achieve things like <FIELD NAME="Hi">
+			* instead of <FIELD>"Hi"</FIELD>
+			* @param label field name to add to
+			* @param attribute name of attribute
+			* @param value value of attribute
+			*/
+			void PropertyTree::addFieldAttribute(
+				const std::string  &label,
+				const std::string  &attribute,
+				const repo_vector_t &value
+				);
 
 			/**
 			* Add a children onto the tree
@@ -71,6 +103,32 @@ namespace repo{
 			}
 
 			/**
+			* Disable the JSON workaround for quotes
+			* There is currently a work around to allow
+			* json parser writes to remove quotes from
+			* anything that isn't a string. Calling this 
+			* function will disable it. You might want to do this
+			* BEFORE you add any data into the tree for XML
+			* or any non JSON exports
+			*/
+			void disableJSONWorkaround()
+			{
+				hackStrings = false;
+			}
+
+			/**
+			* Merging sub tree into this tree
+			* @param label label where the subTree goes
+			* @param subTree the sub tree to add
+			*/
+			void mergeSubTree(
+				const std::string &label,
+				PropertyTree      &subTree)
+			{
+				tree.add_child(label, subTree.tree);
+			}
+
+			/**
 			* Write tree data onto a stream
 			* @param stream stream to write onto
 			*/
@@ -81,7 +139,19 @@ namespace repo{
 				boost::property_tree::write_json(stream, tree);
 			}
 
+			/**
+			* Write tree data onto a stream
+			* @param stream stream to write onto
+			*/
+			void write_xml(
+				std::iostream &stream
+				) const
+			{
+				boost::property_tree::write_xml(stream, tree);
+			}
+
 		private:
+			bool hackStrings;
 			boost::property_tree::ptree tree;
 		};
 

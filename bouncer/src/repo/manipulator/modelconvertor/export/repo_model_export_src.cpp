@@ -23,6 +23,7 @@
 #include "repo_model_export_src.h"
 #include "../../../lib/repo_log.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
+#include "auxiliary/repo_model_export_x3d.h"
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -133,7 +134,7 @@ SRCModelExport::~SRCModelExport()
 {
 }
 
-std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getFileAsBuffer()
+std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getSRCFilesAsBuffer() const
 {
 	std::unordered_map < std::string, std::vector<uint8_t> > fileBuffers;
 
@@ -168,10 +169,12 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getFileAsB
 
 		buffPtr += jsonByteSize;
 		
-		if (fullDataBuffer.find(fName) != fullDataBuffer.end())
+		const auto fdIt = fullDataBuffer.find(fName);
+
+		if (fdIt  != fullDataBuffer.end())
 		{
 			//Add data buffer to the full buffer
-			buffer.insert(buffer.end(), fullDataBuffer[fName].begin(), fullDataBuffer[fName].end());
+			buffer.insert(buffer.end(), fdIt->second.begin(), fdIt->second.end());
 			fileBuffers[fName] = buffer;
 		}
 		else
@@ -182,6 +185,11 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getFileAsB
 	}
 
 	return fileBuffers;
+}
+
+repo_src_export_t SRCModelExport::getAllFilesExportedAsBuffer() const
+{
+	return { getSRCFilesAsBuffer(), getX3DFilesAsBuffer() };
 }
 
 bool SRCModelExport::generateTreeRepresentation(
@@ -205,7 +213,8 @@ bool SRCModelExport::generateTreeRepresentation(
 			repoTrace << " Mapping before: " << ((repo::core::model::MeshNode*)mesh)->getMeshMapping().size() << " Mapping after: " << splittedMesh.getMeshMapping().size();
 
 			std::string ext = ".src";
-			if (((repo::core::model::MeshNode*)mesh)->getMeshMapping().size() > 1)
+			bool sepX3d; //requires a separate x3d file if it is a multipart mesh
+			if (sepX3d = ((repo::core::model::MeshNode*)mesh)->getMeshMapping().size() > 1)
 			{
 				ext += ".mpc";
 			}
@@ -216,8 +225,19 @@ bool SRCModelExport::generateTreeRepresentation(
 			}
 
 			addMeshToExport(splittedMesh, index++, facebuf, idMapBuf, ext);
+			if (sepX3d)
+			{
+				X3DModelExport x3dExport(splittedMesh, scene);
+				if (x3dExport.isOk())
+				{
+					x3dBufs[x3dExport.getFileName()] = x3dExport.getFileAsBuffer();
+				}
+				else
+				{
+					repoError << "Failed to generate x3d representation for mesh: " << UUIDtoString(mesh->getUniqueID());
+				}
+			}
 			
-
 		}		
 	}
 

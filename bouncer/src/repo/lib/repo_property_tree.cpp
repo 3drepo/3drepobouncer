@@ -16,10 +16,14 @@
 */
 
 #include "repo_property_tree.h"
+#include "../core//model/repo_node_utils.h"
 
 using namespace repo::lib;
 
-PropertyTree::PropertyTree()
+static const std::string XML_ATTR_TAG = "<xmlattr>";
+
+PropertyTree::PropertyTree() :
+	hackStrings(true)
 {
 }
 
@@ -27,7 +31,6 @@ PropertyTree::PropertyTree()
 PropertyTree::~PropertyTree()
 {
 }
-
 
 //see http://stackoverflow.com/questions/2855741/why-boost-property-tree-write-json-saves-everything-as-string-is-it-possible-to
 struct stringTranslator
@@ -39,13 +42,54 @@ struct stringTranslator
 	boost::optional<std::string> put_value(const std::string &v) { return '"' + v + '"'; }
 };
 
+
+void PropertyTree::addFieldAttribute(
+	const std::string &label,
+	const std::string &attribute,
+	const std::string &value
+	)
+{
+	std::string actualLabel = XML_ATTR_TAG;
+
+	if (!label.empty())
+		actualLabel = label + "." + actualLabel;
+
+	addToTree(actualLabel + "." + attribute, value);
+}
+
+void PropertyTree::addFieldAttribute(
+	const std::string  &label,
+	const std::string  &attribute,
+	const repo_vector_t &value
+	)
+{
+
+	std::stringstream ss;
+	ss << value.x << "," << value.x << "," << value.z ;
+
+
+	addFieldAttribute(label, attribute, ss.str());
+}
+
+
 template <>
 void PropertyTree::addToTree<std::string>(
 	const std::string           &label,
 	const std::string           &value)
 {
-	if (label.empty())
-		tree.put(label, value, stringTranslator());
+	if (hackStrings)
+	{
+		if (label.empty())
+			tree.put(label, value, stringTranslator());
+		else
+			tree.add(label, value, stringTranslator());
+	}
 	else
-		tree.add(label, value, stringTranslator());
+	{
+		if (label.empty())
+			tree.put(label, value);
+		else
+			tree.add(label, value);
+	}
+	
 }

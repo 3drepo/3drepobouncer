@@ -32,6 +32,11 @@ namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
 
+			typedef struct {
+				std::unordered_map<std::string, std::vector<uint8_t>> srcFiles;
+				std::unordered_map<std::string, std::vector<uint8_t>> x3dFiles;
+			}repo_src_export_t;
+
 
 			class SRCModelExport : public AbstractModelExport
 			{	
@@ -62,7 +67,18 @@ namespace repo{
 				* Return the SRC file as raw bytes buffer
 				* returns an empty vector if the export has failed
 				*/
-				std::unordered_map<std::string, std::vector<uint8_t>> getFileAsBuffer();
+				std::unordered_map<std::string, std::vector<uint8_t>> getSRCFilesAsBuffer() const;
+
+				/**
+				* Return the X3D file as raw bytes buffer
+				* returns an empty vector if the export has failed
+				*/
+				std::unordered_map<std::string, std::vector<uint8_t>> getX3DFilesAsBuffer() const
+				{
+					return x3dBufs;
+				}
+
+				repo_src_export_t getAllFilesExportedAsBuffer() const;
 
 				/**
 				* Get supported file formats for this exporter
@@ -90,6 +106,7 @@ namespace repo{
 				const repo::core::model::RepoScene *scene;
 				bool convertSuccess;
 				std::unordered_map<std::string, repo::lib::PropertyTree> trees;
+				std::unordered_map<std::string, std::vector<uint8_t>> x3dBufs;
 				repo::core::model::RepoScene::GraphType gType;
 				std::unordered_map<std::string, std::vector<uint8_t>> fullDataBuffer;
 
