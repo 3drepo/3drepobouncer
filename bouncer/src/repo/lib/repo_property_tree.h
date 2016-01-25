@@ -55,7 +55,7 @@ namespace repo{
 			* @param attribute name of attribute
 			* @param value value of attribute
 			*/
-			void PropertyTree::addFieldAttribute(
+			void addFieldAttribute(
 				const std::string  &label,
 				const std::string  &attribute,
 				const repo_vector_t &value
