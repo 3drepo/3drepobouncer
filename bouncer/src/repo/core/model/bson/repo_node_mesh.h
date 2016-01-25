@@ -150,7 +150,7 @@ namespace repo {
 					*/
 					std::vector<repo_vector_t> getBoundingBox() const;
 
-					static std::vector<repo_vector_t> MeshNode::getBoundingBox(RepoBSON &bbArr);
+					static std::vector<repo_vector_t> getBoundingBox(RepoBSON &bbArr);
 
 					/**
 					* Retrieve a vector of Colors from the bson object
