@@ -67,6 +67,7 @@ namespace repo {
 					/**
 					* Clone the revision node, remove the incomplete flag
 					* during the process
+					* @return a clone of the revision node without the flag
 					*/
 					RevisionNode cloneAndRemoveIncompleteFlag() const;
 
