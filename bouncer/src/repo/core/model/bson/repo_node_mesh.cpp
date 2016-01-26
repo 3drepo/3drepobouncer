@@ -553,12 +553,6 @@ std::vector<repo_vector_t> MeshNode::getBoundingBox(RepoBSON &bbArr)
 		repoError << "Failed to fetch bounding box from Mesh Node!";
 	}
 
-	//repoDebug << "Bbox size: " << bbox.size();
-	//for (auto const &v : bbox)
-	//{
-	//	repoDebug << "[extract] bbox [" <<v.x << ", " << v.y << ", " << v.z <<"]";
-	//}
-
 	return bbox;
 }
 
@@ -621,8 +615,6 @@ std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
 			mapping.max.x = bboxVec[1].x;
 			mapping.max.y = bboxVec[1].y;
 			mapping.max.z = bboxVec[1].z;
-
-
 
 			mappings[std::stoi(name)] = mapping;
 

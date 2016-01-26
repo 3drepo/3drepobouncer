@@ -36,30 +36,52 @@ namespace repo{
 			* This is very xml specific
 			* it is to achieve things like <FIELD NAME="Hi">
 			* instead of <FIELD>"Hi"</FIELD>
+			* The type fo the value can be of any type as long as
+			* it is a qualified member of std::to_string()
 			* @param label field name to add to
 			* @param attribute name of attribute
-			* @param value value of attribute
+			* @param value value of attribute 
 			*/
+			template <typename T>
 			void addFieldAttribute(
 				const std::string &label,
 				const std::string &attribute,
-				const std::string &value
-				);
+				const T &value
+				)
+			{
+				addFieldAttribute(label, attribute, std::to_string(T) value);
+			}
 
 			/**
-			* Add an attribute to the field with the a 3d vector as value
+			* Add an attribute to the field
 			* This is very xml specific
 			* it is to achieve things like <FIELD NAME="Hi">
 			* instead of <FIELD>"Hi"</FIELD>
+			* The type of the vector can be of any type as long as
+			* it is a qualified member of std::to_string()
 			* @param label field name to add to
 			* @param attribute name of attribute
 			* @param value value of attribute
 			*/
+			template <typename T>
 			void addFieldAttribute(
-				const std::string  &label,
-				const std::string  &attribute,
-				const repo_vector_t &value
-				);
+				const std::string &label,
+				const std::string &attribute,
+				const std::vector<T> &value
+				)
+			{
+				std::string vStr;
+				for (uint32_t i = 0; i < value.size(); ++i)
+				{
+					vStr += value[i];
+					if (i != value.size() - 1)
+					{
+						vStr += ",";
+					}
+				}
+				addFieldAttribute(label, attribute, vStr);
+			}
+			
 
 			/**
 			* Add a children onto the tree
@@ -160,5 +182,19 @@ namespace repo{
 		void PropertyTree::addToTree<std::string>(
 			const std::string           &label,
 			const std::string           &value);
+
+		template <>
+		void PropertyTree::addFieldAttribute(
+			const std::string &label,
+			const std::string &attribute,
+			const std::string &value
+			);
+
+		template <>
+		void PropertyTree::addFieldAttribute(
+			const std::string  &label,
+			const std::string  &attribute,
+			const repo_vector_t &value
+			);
 	}
 }

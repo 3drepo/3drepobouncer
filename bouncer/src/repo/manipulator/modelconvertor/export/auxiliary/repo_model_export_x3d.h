@@ -38,9 +38,19 @@ namespace repo{
 			class X3DModelExport
 			{	
 			public:
+
 				/**
-				* Default Constructor, export model with default settings
-				* @param scene repo scene to convert
+				* Export a Scene as a x3d file
+				* @param scene scene to export
+				*/
+				X3DModelExport::X3DModelExport(
+					const repo::core::model::RepoScene *scene
+					);
+
+				/**
+				* Export a x3D file for a mesh seen as a scene on its own
+				* @param mesh the mesh in question
+				* @param scene repo scene as reference
 				*/
 				X3DModelExport(
 					const repo::core::model::MeshNode  &mesh,
@@ -81,27 +91,12 @@ namespace repo{
 				bool convertSuccess;
 			
 				/**
-				* Write header of the dom XML onto
-				* the property tree
-				* @return returns true upon success
+				* Create a subTree for google map tiles
+				* @param mapNode with the information on the map tiles
+				* @return returns a property tree with google map info
 				*/
-				bool includeHeader();
-
-				/**
-				* Populate the property tree with
-				* Mesh information
-				*/
-				bool populateTree(
-					const repo::core::model::MeshNode  &mesh,
-					const repo::core::model::RepoScene *scene);
-
-				/**
-				* Write the given mesh as a x3dScene
-				* @return returns true upon success
-				*/
-				bool writeMultiPartMeshAsScene(
-					const repo::core::model::MeshNode &mesh,
-					const repo::core::model::RepoScene *scene);
+				repo::lib::PropertyTree createGoogleMapSubTree(
+					const repo::core::model::MapNode *mapNode);
 
 				/**
 				* Calculates the centre of the box
@@ -123,6 +118,73 @@ namespace repo{
 					const repo_vector_t &min,
 					const repo_vector_t &max) const;
 
+
+				/**
+				* Populate the given tree with properties associated with the node
+				* @param node node in question
+				* @param scene reference scene
+				* @param tree tree to populate (the subtree will be populated from the root)
+				* @return the subtree label that is required for the node type
+				*/
+				std::string populateTreeWithProperties(
+					const repo::core::model::RepoNode  *node,
+					const repo::core::model::RepoScene *scene,
+					repo::lib::PropertyTree            &tree
+					);
+
+				/**
+				* Create a subtree for the subgraph
+				* @param node node where this subgraph starts
+				* @param gtype type of graph (expected to be optimized graph)
+				* @param scene scene for reference
+				* @return returns a property tree filled with the subGraph's info
+				*/
+				repo::lib::PropertyTree generateSubTree(
+					const repo::core::model::RepoNode             *node,
+					const repo::core::model::RepoScene::GraphType &gtype,
+					const repo::core::model::RepoScene            *scene);
+
+				/**
+				* Write header of the dom XML onto
+				* the property tree
+				* @return returns true upon success
+				*/
+				bool includeHeader();
+
+				/**
+				* Populate the property tree with scene information
+				* @param scene scene for reference
+				* @return returns true upon success
+				*/
+				bool populateTree(
+					const repo::core::model::RepoScene *scene);
+
+				/**
+				* Populate the property tree with
+				* Mesh as the scene
+				* @param mesh mesh in question
+				* @param scene scene for reference
+				* @return returns true upon success
+				*/
+				bool populateTree(
+					const repo::core::model::MeshNode  &mesh,
+					const repo::core::model::RepoScene *scene);
+
+				/**
+				* Write the given scene as a x3dScene
+				* @return returns true upon success
+				*/
+				bool X3DModelExport::writeScene(
+					const repo::core::model::RepoScene *scene);
+
+				/**
+				* Write the given mesh as a x3dScene
+				* @return returns true upon success
+				*/
+				bool writeMultiPartMeshAsScene(
+					const repo::core::model::MeshNode &mesh,
+					const repo::core::model::RepoScene *scene);
+				
 			};
 
 		} //namespace modelconvertor
