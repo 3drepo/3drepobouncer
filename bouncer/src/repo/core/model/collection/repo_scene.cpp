@@ -481,6 +481,13 @@ bool RepoScene::commit(
 				{
 					delete revNode;
 				}
+				auto completeRevNode = newRevNode->cloneAndRemoveIncompleteFlag();
+
+				//update revision node
+				handler->upsertDocument(databaseName, projectName + "." + revExt, completeRevNode, true, errMsg);
+
+				newRevNode->swap(completeRevNode);
+
 				revNode = newRevNode;
 				revision = newRevNode->getUniqueID();
 

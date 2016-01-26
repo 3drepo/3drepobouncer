@@ -845,6 +845,11 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
     if (currentNodes.size() > 0)
         builder.appendArray(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS, currentNodes);
 
+	////--------------------------------------------------------------------------
+	//// Upload In Progress flag
+	builder << REPO_NODE_REVISION_LABEL_INCOMPLETE << true;
+
+
     ////--------------------------------------------------------------------------
     //// Added Shared IDs
 
