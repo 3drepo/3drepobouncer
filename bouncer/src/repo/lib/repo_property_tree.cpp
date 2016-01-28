@@ -27,6 +27,10 @@ PropertyTree::PropertyTree() :
 {
 }
 
+PropertyTree::PropertyTree(const bool &enableJSONWorkAround) :
+	hackStrings(false)
+{}
+
 
 PropertyTree::~PropertyTree()
 {
@@ -42,7 +46,7 @@ struct stringTranslator
 	boost::optional<std::string> put_value(const std::string &v) { return '"' + v + '"'; }
 };
 
-
+template <>
 void PropertyTree::addFieldAttribute(
 	const std::string &label,
 	const std::string &attribute,
@@ -57,6 +61,8 @@ void PropertyTree::addFieldAttribute(
 	addToTree(actualLabel + "." + attribute, value);
 }
 
+
+template <>
 void PropertyTree::addFieldAttribute(
 	const std::string  &label,
 	const std::string  &attribute,

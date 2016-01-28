@@ -25,25 +25,31 @@
 using namespace repo::manipulator::modelconvertor;
 
 //DOMs
-static const std::string X3D_LABEL             = "X3D";
-static const std::string X3D_LABEL_APP         = "Appearance";
-static const std::string X3D_LABEL_EXT_GEO     = "ExternalGeometry";
-static const std::string X3D_LABEL_GROUP       = "Group";
-static const std::string X3D_LABEL_IMG_TEXTURE = "ImageTexutre";
-static const std::string X3D_LABEL_INLINE      = "Inline";
-static const std::string X3D_LABEL_MAT         = "Material";
-static const std::string X3D_LABEL_MAT_TRANS   = "MatrixTransform";
-static const std::string X3D_LABEL_SCENE       = "Scene";
-static const std::string X3D_LABEL_SHAPE       = "Shape";
-static const std::string X3D_LABEL_TEXT_PROP   = "TextureProperties";
-static const std::string X3D_LABEL_TRANS       = "Transform";
-static const std::string X3D_LABEL_TWOSIDEMAT  = "TwoSidedMaterial";
-static const std::string X3D_LABEL_VIEWPOINT   = "Viewpoint";
+static const std::string X3D_LABEL                 = "X3D";
+static const std::string X3D_LABEL_APP             = "Appearance";
+static const std::string X3D_LABEL_COMPOSED_SHADER = "ComposedShader";
+static const std::string X3D_LABEL_EXT_GEO         = "ExternalGeometry";
+static const std::string X3D_LABEL_FIELD           = "Field";
+static const std::string X3D_LABEL_GROUP           = "Group";
+static const std::string X3D_LABEL_IMG_TEXTURE     = "ImageTexture";
+static const std::string X3D_LABEL_INLINE          = "Inline";
+static const std::string X3D_LABEL_MAT             = "Material";
+static const std::string X3D_LABEL_MAT_TRANS       = "MatrixTransform";
+static const std::string X3D_LABEL_MULTIPART       = "Multipart";
+static const std::string X3D_LABEL_PLANE           = "Plane";
+static const std::string X3D_LABEL_SCENE           = "Scene";
+static const std::string X3D_LABEL_SHADER_PART     = "ShaderPart";
+static const std::string X3D_LABEL_SHAPE           = "Shape";
+static const std::string X3D_LABEL_TEXT_PROP       = "TextureProperties";
+static const std::string X3D_LABEL_TRANS           = "Transform";
+static const std::string X3D_LABEL_TWOSIDEMAT      = "TwoSidedMaterial";
+static const std::string X3D_LABEL_VIEWPOINT       = "Viewpoint";
 
 //Attribute Names
 static const std::string X3D_ATTR_BIND             = "bind";
 static const std::string X3D_ATTR_BBOX_CENTRE      = "bboxCenter";
 static const std::string X3D_ATTR_BBOX_SIZE        = "bboxSize";
+static const std::string X3D_ATTR_CENTRE           = "center";
 static const std::string X3D_ATTR_COL_DIFFUSE      = "diffuseColor";
 static const std::string X3D_ATTR_COL_BK_DIFFUSE   = "backDiffuseColor";
 static const std::string X3D_ATTR_COL_EMISSIVE     = "emissiveColor";
@@ -56,24 +62,32 @@ static const std::string X3D_ATTR_FOV              = "fieldOfView";
 static const std::string X3D_ATTR_GEN_MIPMAPS      = "generateMipMaps";
 static const std::string X3D_ATTR_ID               = "id";
 static const std::string X3D_ATTR_INVISIBLE        = "invisible";
+static const std::string X3D_ATTR_LIT              = "lit";
 static const std::string X3D_ATTR_MAT              = "matrix";
+static const std::string X3D_ATTR_NAME             = "name";
 static const std::string X3D_ATTR_NAMESPACE        = "nameSpaceName";
 static const std::string X3D_ATTR_ON_MOUSE_MOVE    = "onmouseover";
 static const std::string X3D_ATTR_ON_MOUSE_OVER    = "onmousemove";
 static const std::string X3D_ATTR_ON_CLICK         = "onclick";
 static const std::string X3D_ATTR_ON_LOAD          = "onload";
 static const std::string X3D_ATTR_SCALE            = "scale";
+static const std::string X3D_ATTR_SIZE             = "size";
 static const std::string X3D_ATTR_ROTATION         = "rotation";
 static const std::string X3D_ATTR_TRANSLATION      = "translation";
 static const std::string X3D_ATTR_TRANSPARENCY     = "transparency";
 static const std::string X3D_ATTR_BK_TRANSPARENCY  = "backTransparency";
+static const std::string X3D_ATTR_TYPE             = "type";
+static const std::string X3D_ATTR_USE              = "USE";
 static const std::string X3D_ATTR_ORIENTATION      = "orientation";
 static const std::string X3D_ATTR_POS              = "position";
 static const std::string X3D_ATTR_RENDER           = "render";
-static const std::string X3D_ATTR_ROT_CENTRE       = "centreOfRotation";
+static const std::string X3D_ATTR_ROT_CENTRE       = "centerOfRotation";
 static const std::string X3D_ATTR_SHININESS        = "shininess";
 static const std::string X3D_ATTR_BK_SHININESS     = "backShininess";
+static const std::string X3D_ATTR_SOLID            = "solid";
 static const std::string X3D_ATTR_URL              = "url";
+static const std::string X3D_ATTR_URL_IDMAP        = "urlIDMap";
+static const std::string X3D_ATTR_VALUE            = "value";
 static const std::string X3D_ATTR_XMLNS            = "xmlns";
 static const std::string X3D_ATTR_XORIGIN          = "crossOrigin";
 static const std::string X3D_ATTR_ZFAR             = "zFar";
@@ -93,31 +107,39 @@ static const size_t      GOOGLE_TILE_SIZE  = 640;
 
 X3DModelExport::X3DModelExport(
 	const repo::core::model::RepoScene *scene
-	)
+	) :
+	fullScene(true)
 {
 	tree.disableJSONWorkaround();
 	convertSuccess = populateTree(scene);
+	fname = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/revision/master/" + UUIDtoString(scene->getRevisionID());
+	
 }
 
 X3DModelExport::X3DModelExport(
 	const repo::core::model::MeshNode &mesh,
 	const repo::core::model::RepoScene *scene
 	)
+	:
+	fullScene(false)
 {
 	tree.disableJSONWorkaround();
 	convertSuccess = populateTree(mesh, scene);
+	
 }
 
-repo::lib::PropertyTree createGoogleMapSubTree(
+repo::lib::PropertyTree X3DModelExport::createGoogleMapSubTree(
 	const repo::core::model::MapNode *mapNode)
 {
-	repo::lib::PropertyTree gmtree;
+	repo::lib::PropertyTree gmtree(false);
 
 	if (mapNode)
 	{
+
+		repo_vector_t centrePoint = mapNode->getCentre();
 		repo::lib::PropertyTree yrotTrans, shapeTrans, tileGroup;
 		gmtree.addFieldAttribute("", X3D_ATTR_ID, "mapPosition");
-		gmtree.addFieldAttribute("", X3D_ATTR_TRANSLATION, mapNode->getTransformationMatrix());
+		gmtree.addFieldAttribute("", X3D_ATTR_TRANSLATION, centrePoint);
 		gmtree.addFieldAttribute("", X3D_ATTR_SCALE, "1,1,1");
 
 		yrotTrans.addFieldAttribute("", X3D_ATTR_ID      , "mapRotation");
@@ -130,16 +152,103 @@ repo::lib::PropertyTree createGoogleMapSubTree(
 
 		uint32_t halfWidth = (mapNode->getWidth() + 1) / 2;
 
+		size_t zoom = mapNode->getZoom();
+		size_t nTiles = 1 << zoom;
+		
+		std::string mapType = mapNode->getMapType();
+		
+		if (mapType.empty()) mapType = "satellite";
+
 		for (uint32_t x = -halfWidth; x < halfWidth; ++x)
 			for (uint32_t y = -halfWidth; y < halfWidth; ++y)
 			{
-				repo::lib::PropertyTree tileTree;
+				repo::lib::PropertyTree tileTree(false);
 
 				float xPos = ((float)x + 0.5) * GOOGLE_TILE_SIZE;
 				float yPos = ((float)y + 0.5) * GOOGLE_TILE_SIZE;
 
-				float tileCentX = centX * nTiles + xPos;
-				float tileCentY = centY * nTiles + yPos;
+				float tileCentX = centrePoint.x * nTiles + xPos;
+				float tileCentY = centrePoint.y * nTiles + yPos;
+
+				float tileLat = (2. * atan(exp(((tileCentY / nTiles) - 128.) / - (256. / (2. * M_PI)))) - M_PI / 2.) / (M_PI / 180.);
+				float tileLong = ((tileCentX / nTiles) - 128.) / (256. / 360.);
+
+				std::stringstream ss;
+				ss << "https://maps.googleapis.com/maps/api/staticmap?center=" << tileLat << "," 
+					<< tileLong << "&size=" << GOOGLE_TILE_SIZE << "x" << GOOGLE_TILE_SIZE
+					<< "&zoom=" << zoom << "&key=" << mapNode->getAPIKey() << "&maptype=" << mapType;
+				std::string googleMapsURL = ss.str();
+
+				if (mapNode->getIsTwoSided())
+				{
+					repo::lib::PropertyTree shaderPt(false), alphaValuePt(false), textureIdPTree(false), vertShaderPt(false), fragShaderPt(false);
+					shaderPt.addFieldAttribute("", X3D_ATTR_USE, "TwoSidedShader");
+
+					//Field element
+					alphaValuePt.addFieldAttribute("", X3D_ATTR_NAME, "alpha");
+					alphaValuePt.addFieldAttribute("", X3D_ATTR_TYPE, "SFFloat");
+					alphaValuePt.addFieldAttribute("", X3D_ATTR_VALUE, "true");
+
+					shaderPt.mergeSubTree(X3D_LABEL_FIELD, alphaValuePt);
+
+					textureIdPTree.addFieldAttribute("", X3D_ATTR_NAME, "map");
+					textureIdPTree.addFieldAttribute("", X3D_ATTR_TYPE, "SFInt32");
+					textureIdPTree.addFieldAttribute("", X3D_ATTR_VALUE, 0);
+
+					shaderPt.mergeSubTree(X3D_LABEL_FIELD, textureIdPTree);
+
+					vertShaderPt.addFieldAttribute("", X3D_ATTR_TYPE, "VERTEX");
+					vertShaderPt.addToTree("", "\n\
+							attribute vec3 position;\n\
+							attribute vec2 texcoord;\n\
+							varying vec2 fragTexCoord;\n\
+							uniform mat4 modelViewProjectionMatrix;\n\
+							\n\
+							void main()\n\
+							{\n\
+								fragTexCoord = vec2(texcoord.x, 1.0 - texcoord.y);\n\
+								gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n\
+							}\n\
+							")			;
+					shaderPt.mergeSubTree(X3D_LABEL_SHADER_PART, vertShaderPt);
+
+					fragShaderPt.addFieldAttribute("", X3D_ATTR_TYPE, "FRAGMENT");
+					fragShaderPt.addToTree("", " \
+							#ifdef GL_ES\n\
+								precision highp float;\n\
+							#endif\n\
+							\n\
+							varying vec2 fragTexCoord;\n\
+							\n\
+							uniform float alpha;\n\
+							uniform sampler2D map;\n\
+							\n\
+							void main()\n\
+							{\n\
+								vec4 mapCol = texture2D(map, fragTexCoord);\n\
+								gl_FragColor.rgba = vec4(mapCol.rgb, alpha);\n\
+							}\n\
+							");
+
+					shaderPt.mergeSubTree(X3D_LABEL_SHADER_PART, fragShaderPt);
+					tileTree.mergeSubTree(X3D_LABEL_COMPOSED_SHADER, shaderPt);
+				}
+
+				
+				
+
+				tileTree.addFieldAttribute(X3D_LABEL_IMG_TEXTURE,  X3D_ATTR_URL , googleMapsURL);
+
+				tileGroup.mergeSubTree(X3D_LABEL_SHAPE + "." + X3D_LABEL_APP, tileTree);
+
+				repo::lib::PropertyTree planePt(false);
+				float worldTileSize = mapNode->getTileSize();
+				planePt.addFieldAttribute("", X3D_ATTR_CENTRE, std::to_string(x*worldTileSize) + "," + std::to_string(y*worldTileSize));
+				planePt.addFieldAttribute("", X3D_ATTR_SIZE, std::to_string(worldTileSize) + "," + std::to_string(worldTileSize));
+				planePt.addFieldAttribute("", X3D_ATTR_SOLID, "false");
+				planePt.addFieldAttribute("", X3D_ATTR_LIT, "false");
+
+				tileGroup.mergeSubTree(X3D_LABEL_SHAPE + "." + X3D_LABEL_PLANE, tileTree);
 
 			}
 
@@ -153,25 +262,6 @@ repo::lib::PropertyTree createGoogleMapSubTree(
 	}
 
 	return gmtree;
-}
-
-repo::lib::PropertyTree X3DModelExport::generateSubTree(
-	const repo::core::model::RepoNode             *node,
-	const repo::core::model::RepoScene::GraphType &gtype,
-	const repo::core::model::RepoScene            *scene)
-{
-	repo::lib::PropertyTree subTree;
-	std::string label; //top subtree label depending on node types
-	if (node)
-	{
-		populateTreeWithProperties(node, scene, subTree);
-
-	}
-	else
-	{
-		repoWarning << "Unexpected error occured in x3d file generation: Null pointer to child. The tree may not be complete"; 
-	}
-	return subTree;
 }
 
 repo_vector_t X3DModelExport::getBoxCentre(
@@ -208,7 +298,11 @@ std::vector<uint8_t> X3DModelExport::getFileAsBuffer() const
 
 std::string X3DModelExport::getFileName() const
 {
-	return fname + ".x3d.mpc";
+	std::string fullName =  fname + ".x3d.mp";
+	if (!fullScene)
+		fullName += "c";
+
+	return fullName;
 }
 
 bool X3DModelExport::includeHeader()
@@ -219,13 +313,14 @@ bool X3DModelExport::includeHeader()
 	return true;
 }
 
-std::string populateTreeWithProperties(
+std::string X3DModelExport::populateTreeWithProperties(
 	const repo::core::model::RepoNode  *node,
 	const repo::core::model::RepoScene *scene,
 	repo::lib::PropertyTree            &tree
 	)
 {
 	std::string label;
+	bool stopRecursing = false;
 	if (node)
 	{
 		switch (node->getTypeAsEnum())
@@ -263,17 +358,17 @@ std::string populateTreeWithProperties(
 
 			if (matStruct.diffuse.size() > 0)
 			{
-				tree.addFieldAttribute("", X3D_ATTR_COL_DIFFUSE, matStruct.diffuse);
+				tree.addFieldAttribute("", X3D_ATTR_COL_DIFFUSE, matStruct.diffuse, false);
 				if (matStruct.isTwoSided)
-					tree.addFieldAttribute("", X3D_ATTR_COL_BK_DIFFUSE, matStruct.diffuse);
+					tree.addFieldAttribute("", X3D_ATTR_COL_BK_DIFFUSE, matStruct.diffuse, false);
 
 			}
 
 			if (matStruct.emissive.size() > 0)
 			{
-				tree.addFieldAttribute("", X3D_ATTR_COL_EMISSIVE, matStruct.emissive);
+				tree.addFieldAttribute("", X3D_ATTR_COL_EMISSIVE, matStruct.emissive, false);
 				if (matStruct.isTwoSided)
-					tree.addFieldAttribute("", X3D_ATTR_COL_BK_EMISSIVE, matStruct.emissive);
+					tree.addFieldAttribute("", X3D_ATTR_COL_BK_EMISSIVE, matStruct.emissive, false);
 
 			}
 
@@ -287,18 +382,22 @@ std::string populateTreeWithProperties(
 
 			if (matStruct.specular.size() > 0)
 			{
-				tree.addFieldAttribute("", X3D_ATTR_COL_SPECULAR, matStruct.specular);
+				tree.addFieldAttribute("", X3D_ATTR_COL_SPECULAR, matStruct.specular, false);
 				if (matStruct.isTwoSided)
-					tree.addFieldAttribute("", X3D_ATTR_COL_BK_SPECULAR, matStruct.specular);
+					tree.addFieldAttribute("", X3D_ATTR_COL_BK_SPECULAR, matStruct.specular, false);
 
 			}
 
 			if (matStruct.opacity == matStruct.opacity)
 			{
 				float transparency = 1.0 - matStruct.opacity;
-				tree.addFieldAttribute("", X3D_ATTR_TRANSPARENCY, transparency);
-				if (matStruct.isTwoSided)
-					tree.addFieldAttribute("", X3D_ATTR_BK_TRANSPARENCY, transparency);
+				if (transparency != 0.0)
+				{
+					tree.addFieldAttribute("", X3D_ATTR_TRANSPARENCY, transparency);
+					if (matStruct.isTwoSided)
+						tree.addFieldAttribute("", X3D_ATTR_BK_TRANSPARENCY, transparency);
+				}
+
 
 			}
 
@@ -309,15 +408,88 @@ std::string populateTreeWithProperties(
 		case repo::core::model::NodeType::MAP:
 		{
 			const repo::core::model::MapNode *mapNode = (const repo::core::model::MapNode *)node;
-			label = X3D_LABEL_GROUP + "." + X3D_LABEL_TRANS;
+			label = X3D_LABEL_GROUP;
 			std::string mapType = mapNode->getMapType();
 			if (mapType.empty())
 				mapType = "satellite";
 
 			tree.addFieldAttribute("", X3D_ATTR_ID, UUIDtoString(mapNode->getUniqueID()));
 			tree.addFieldAttribute("", X3D_ATTR_DEF, UUIDtoString(mapNode->getSharedID()));
+			
+			tree.mergeSubTree(X3D_LABEL_TRANS, createGoogleMapSubTree(mapNode));
+			stopRecursing = true;
+		}
+		break;
+		case repo::core::model::NodeType::MESH:
+		{
+			const repo::core::model::MeshNode *meshNode = (const repo::core::model::MeshNode *)node;
+			std::vector<repo_mesh_mapping_t> mappings = meshNode->getMeshMapping();
+			
 
-			repo::lib::PropertyTree gmST = createGoogleMapSubTree(mapNode);
+			std::string nodeID = mappings.size() == 1 ? UUIDtoString(mappings[0].mesh_id) : UUIDtoString(meshNode->getUniqueID());
+
+			tree.addFieldAttribute("", X3D_ATTR_ID, nodeID);
+			tree.addFieldAttribute("", X3D_ATTR_ON_CLICK     , X3D_ON_CLICK);
+			tree.addFieldAttribute("", X3D_ATTR_ON_MOUSE_OVER, X3D_ON_MOUSE_OVER);
+
+			std::vector<repo_vector_t> bbox = meshNode->getBoundingBox();
+
+			if (bbox.size() >= 2)
+			{
+				repo_vector_t boxCentre = getBoxCentre(bbox[0], bbox[1]);
+				repo_vector_t boxSize   = getBoxSize(bbox[0], bbox[1]);
+
+				tree.addFieldAttribute("", X3D_ATTR_BBOX_CENTRE, boxCentre);
+				tree.addFieldAttribute("", X3D_ATTR_BBOX_SIZE, boxSize);
+			}
+		
+
+			if (mappings.size() > 1)
+			{
+				label = X3D_LABEL_MULTIPART;
+				tree.addFieldAttribute("", X3D_ATTR_ON_LOAD, X3D_ON_LOAD);
+				
+				std::string baseURL = "/api/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + nodeID;
+
+				tree.addFieldAttribute("", X3D_ATTR_URL      , baseURL + ".x3d.mpc");
+				tree.addFieldAttribute("", X3D_ATTR_URL_IDMAP, baseURL + ".json.mpc");
+				tree.addFieldAttribute("", X3D_ATTR_SOLID    , "false");
+				tree.addFieldAttribute("", X3D_ATTR_NAMESPACE, nodeID);
+
+				stopRecursing = true;
+
+			}
+			else
+			{
+				label = X3D_LABEL_SHAPE;
+				tree.addFieldAttribute("", X3D_ATTR_DEF, nodeID);
+				tree.addFieldAttribute("", X3D_ATTR_ON_MOUSE_MOVE, X3D_ON_MOUSE_MOVE);
+
+				//Add material to shape
+				std::string suffix;
+				if (mappings.size() > 0)
+					suffix = "#" + UUIDtoString(mappings[0].mesh_id);				
+				else
+					suffix = "#" + nodeID;
+
+				//Would we ever be working with unoptimized graph?
+				std::vector<repo::core::model::RepoNode*> mats  
+					= scene->getChildrenNodesFiltered(gType, meshNode->getSharedID(), repo::core::model::NodeType::MATERIAL);
+				if (mats.size())
+				{
+					//check for textures
+					std::vector<repo::core::model::RepoNode*> textures
+						= scene->getChildrenNodesFiltered(gType, mats[0]->getSharedID(), repo::core::model::NodeType::TEXTURE);
+					if (textures.size())
+					{
+						suffix += "?tex_uuid=" + UUIDtoString(textures[0]->getUniqueID());
+					}
+				}
+
+				std::string url = "/api/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + UUIDtoString(meshNode->getUniqueID()) + ".src" + suffix;
+
+				tree.addFieldAttribute(X3D_LABEL_EXT_GEO, X3D_ATTR_URL, url);
+			}
 
 		}
 		break;
@@ -336,7 +508,7 @@ std::string populateTreeWithProperties(
 			{
 				//load specific revision
 				//FIXME: this is weird. We don't need a branch specification for a specific revision loading
-				//Also it may not be master this revision is from
+				//Also it may not be the master branch where this revision is from
 				url += "master/" + revisionId;
 			}
 
@@ -387,7 +559,17 @@ std::string populateTreeWithProperties(
 			repoError << "Unsupported node type: " << node->getType();
 		}
 	}
-
+	if (!stopRecursing)
+	{
+		//Get subtrees of children
+		std::vector<repo::core::model::RepoNode*> children = scene->getChildrenAsNodes(gType, node->getSharedID());
+		for (const auto & child : children)
+		{
+			repo::lib::PropertyTree childTree(false);
+			std::string childLabel = populateTreeWithProperties(child, scene, childTree);
+			tree.mergeSubTree(childLabel, childTree);
+		}
+	}
 	return label;
 }
 
@@ -421,8 +603,7 @@ bool X3DModelExport::writeMultiPartMeshAsScene(
 	std::string meshIDStr = UUIDtoString(mesh.getUniqueID());
 	fname = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + meshIDStr;
 
-	repo::lib::PropertyTree groupSubTree;
-	groupSubTree.disableJSONWorkaround();
+	repo::lib::PropertyTree groupSubTree(false);
 	//Set root group attributes
 	groupSubTree.addFieldAttribute("", X3D_ATTR_ON_LOAD, X3D_ON_LOAD);
 	groupSubTree.addFieldAttribute("", X3D_ATTR_ID, "root");
@@ -431,8 +612,7 @@ bool X3DModelExport::writeMultiPartMeshAsScene(
 
 	for (size_t idx = 0; idx < mappings.size(); ++idx)
 	{
-		repo::lib::PropertyTree subTree;
-		subTree.disableJSONWorkaround();
+		repo::lib::PropertyTree subTree(false);
 		std::string shapeLabel = X3D_LABEL_SHAPE;
 		std::string childId    = meshIDStr + "_" + std::to_string(idx);
 
@@ -468,6 +648,8 @@ bool X3DModelExport::writeMultiPartMeshAsScene(
 bool X3DModelExport::writeScene(
 	const repo::core::model::RepoScene *scene)
 {
+
+	repoDebug << "Writing scene...";
 	if (!scene)
 	{
 		repoError << "Failed to generate x3d representation: Null pointer to scene!";
@@ -481,8 +663,7 @@ bool X3DModelExport::writeScene(
 	}
 
 	//We only support stash graph generation
-	repo::core::model::RepoScene::GraphType gType = 
-		repo::core::model::RepoScene::GraphType::OPTIMIZED;
+	gType = repo::core::model::RepoScene::GraphType::OPTIMIZED;
 
 	if (!scene->hasRoot(gType))
 	{
@@ -490,23 +671,59 @@ bool X3DModelExport::writeScene(
 		return false;
 	}
 
+	repo::lib::PropertyTree rootGrpST(false), sceneST(false);
+
 	std::string sceneLabel = X3D_LABEL + "." + X3D_LABEL_SCENE;
 
 	//Set Scene Attributes
-	tree.addFieldAttribute(sceneLabel, X3D_ATTR_ID, "scene");
-	tree.addFieldAttribute(sceneLabel, X3D_ATTR_DO_PICK_PASS, "false");
+	sceneST.addFieldAttribute("", X3D_ATTR_ID, "scene");
+	sceneST.addFieldAttribute("", X3D_ATTR_DO_PICK_PASS, "false");
 
-	repo::lib::PropertyTree rootGrpST;
-	rootGrpST.disableJSONWorkaround();
+
 	//Set root group attributes
 	rootGrpST.addFieldAttribute("", X3D_ATTR_ON_LOAD, X3D_ON_LOAD);
 	rootGrpST.addFieldAttribute("", X3D_ATTR_ID     , "root");
 	rootGrpST.addFieldAttribute("", X3D_ATTR_DEF    , "root");
 	rootGrpST.addFieldAttribute("", X3D_ATTR_RENDER , "true");
 
-	repo::lib::PropertyTree subTree = generateSubTree(scene->getRoot(gType), gType, scene);
-	std::string rootGroupLabel = sceneLabel + "." + X3D_LABEL_GROUP;
-	rootGrpST.mergeSubTree(rootGroupLabel, subTree);
+	repo::lib::PropertyTree subTree(false);
+
+
+	std::string label = populateTreeWithProperties(scene->getRoot(gType), scene, subTree);
+
+
+	rootGrpST.mergeSubTree(label, subTree);
+	sceneST.mergeSubTree(X3D_LABEL_GROUP, rootGrpST);
+
+	//FIXME: node JS gets the bounding box from the root node, root node is always a transformation?
+	//Faking a bounding box for now.
+	repo_vector_t bboxCentre = { 0, 0, 0 };
+	repo_vector_t bboxSize = { 2, 2, 2 };
+	repo_vector_t vpos = bboxCentre;
+
+	float max_dim = max(bboxSize.x, bboxSize.y)*0.5;
+
+	float fov = 40 * (M_PI / 180); //Field of View in radians (40 degrees)
+
+	// Move back in the z direction such that the model takes
+	// up half the center of the screen.
+
+	vpos.z += bboxSize.z * 0.5 + max_dim / tanf(0.5*fov);
+
+	repo::lib::PropertyTree vpTree(false);
+	vpTree.addFieldAttribute("", X3D_ATTR_ID, scene->getDatabaseName() + "_" + scene->getProjectName() + "_origin");
+	vpTree.addFieldAttribute("", X3D_ATTR_POS, vpos);
+	vpTree.addFieldAttribute("", X3D_ATTR_ROT_CENTRE, bboxCentre);
+	vpTree.addFieldAttribute("", X3D_ATTR_ORIENTATION, "0 0 -1 0");
+	vpTree.addFieldAttribute("", X3D_ATTR_FOV, fov);
+	vpTree.addToTree("", " ");
+	sceneST.mergeSubTree(X3D_LABEL_VIEWPOINT, vpTree);
+
+	tree.mergeSubTree(sceneLabel, sceneST);
+
+
+
+	return true;
 }
 
 bool X3DModelExport::populateTree(
@@ -516,6 +733,8 @@ bool X3DModelExport::populateTree(
 	bool success = includeHeader();
 
 	success &= writeScene(scene);
+
+
 	return success;
 }
 
@@ -526,10 +745,8 @@ bool X3DModelExport::populateTree(
 	//Write xml header
 	bool success = includeHeader();
 
-	success &= writeMultiPartMeshAsScene(mesh, scene);
-	return success;
-}
+	success &= writeMultiPartMeshAsScene(mesh, scene);	
 
-X3DModelExport::~X3DModelExport()
-{
+
+	return success;
 }

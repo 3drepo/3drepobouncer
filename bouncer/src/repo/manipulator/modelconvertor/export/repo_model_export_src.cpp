@@ -115,6 +115,28 @@ SRCModelExport::SRCModelExport(
 		{
 			gType = repo::core::model::RepoScene::GraphType::OPTIMIZED;
 			convertSuccess = generateTreeRepresentation();
+
+			if (convertSuccess)
+			{
+				repoDebug << "Writing X3D Backbone file...";
+				//Build general x3d backbone
+				X3DModelExport x3dExport(scene);
+
+				if (convertSuccess = x3dExport.isOk())
+				{
+					auto buffer = x3dExport.getFileAsBuffer();
+					x3dBufs[x3dExport.getFileName()] = buffer;
+					if (scene->isHeadRevision())
+						x3dBufs["/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/revision/master/head.x3d.mp"] = buffer;
+
+					FILE* fp = fopen("C:\\\\Users\\Carmen\\Desktop\\test.txt", "wb");
+					fwrite(buffer.data(), sizeof(*buffer.data()), buffer.size(), fp);
+					fclose(fp);
+				}
+
+
+				
+			}
 		}
 		else
 		{

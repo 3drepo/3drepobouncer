@@ -158,8 +158,8 @@ repo::core::model::RepoScene* RepoManipulator::createMapScene(
 }
 
 void RepoManipulator::commitScene(
-	const std::string                             &databaseAd,
-	const repo::core::model::RepoBSON 	  *cred,
+	const std::string                      &databaseAd,
+	const repo::core::model::RepoBSON 	   *cred,
 	repo::core::model::RepoScene           *scene,
 	const std::string                      &owner)
 {
@@ -178,15 +178,12 @@ void RepoManipulator::commitScene(
 			if (generateAndCommitSRCBuffer(databaseAd, cred, scene))
 			{
 				repoInfo << "SRC file stored into the database";
-			}
-			
+			}			
 		}
 		else
 		{
 			repoError << "Failed to commit scene stash : " << msg;
 		}
-
-
 	}
 	else
 	{

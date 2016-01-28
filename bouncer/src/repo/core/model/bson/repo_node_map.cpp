@@ -38,65 +38,46 @@ MapNode::~MapNode()
 {
 }
 
-std::vector<float> MapNode::getTransformationMatrix(const bool &rowMajor) const
+repo_vector_t MapNode::getCentre() const
 {
-	std::vector<float> transformationMatrix;
-	uint32_t rowInd = 0, colInd = 0;
-	if (hasField(REPO_NODE_MAP_LABEL_TRANS))
+	repo_vector_t centre;
+	RepoBSON centreArr = getObjectField(REPO_NODE_MAP_LABEL_TRANS);
+	if (!centreArr.isEmpty() && centreArr.couldBeArray())
 	{
+		size_t nVec = centreArr.nFields();
+		int32_t nFields = centreArr.nFields();
 
-		transformationMatrix.resize(16);
-		float *transArr = &transformationMatrix.at(0);
-
-		// matrix is stored as array of arrays
-		RepoBSON matrixObj =
-			getField(REPO_NODE_MAP_LABEL_TRANS).embeddedObject();
-
-		std::set<std::string> mFields;
-		matrixObj.getFieldNames(mFields);
-		for (auto &field : mFields)
-		{
-			RepoBSON arrayObj = matrixObj.getField(field).embeddedObject();
-			std::set<std::string> aFields;
-			arrayObj.getFieldNames(aFields);
-			for (auto &aField : aFields)
+			if (nFields >= 3)
 			{
+				centre.x = centreArr.getField("0").Double();
+				centre.y = centreArr.getField("1").Double();
+				centre.z = centreArr.getField("2").Double();
 
-				//figure out the index depending on if it's row or col major
-				uint32_t index;
-				if (rowMajor)
-				{
-					index = colInd * 4 + rowInd;
-				}
-				else
-				{
-					index = rowInd * 4 + colInd;
-				}
-
-				auto f = arrayObj.getField(aField);
-				if (f.type() == ElementType::DOUBLE)
-					transArr[index] = (float)f.Double();
-				else if (f.type() == ElementType::INT)
-					transArr[index] = (float)f.Int();
-				else
-				{
-					repoError << "Unexpected type within transformation matrix!";
-				}
-
-				++colInd;
 			}
-			colInd = 0;
-			++rowInd;
-		}
+			else
+			{
+				repoError << "Insufficient amount of elements within centre point! #fields: " << nFields;
+			}
 
-
-	}
+	}	
 	else
 	{
-		//No trans matrix, return identity
-		transformationMatrix = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
+		repoError << "Failed to fetch centre point from Map Node!";
 	}
-	return transformationMatrix;
+
+	return centre;
+}
+
+float MapNode::getTileSize() const
+{
+	float tileSize = 1;
+
+	if (hasField(REPO_NODE_MAP_LABEL_TILESIZE))
+	{
+		tileSize = getField(REPO_NODE_MAP_LABEL_TILESIZE).Double();
+	}
+
+	return tileSize;
 }
 
 uint32_t MapNode::getWidth() const
@@ -122,6 +103,18 @@ float MapNode::getYRot() const
 	}
 
 	return yrot;
+}
+
+uint32_t MapNode::getZoom() const
+{
+	uint32_t zoom = 0;
+
+	if (hasField(REPO_NODE_MAP_LABEL_ZOOM))
+	{
+		zoom = getField(REPO_NODE_MAP_LABEL_ZOOM).Int();
+	}
+
+	return zoom;
 }
 
 bool MapNode::sEqual(const RepoNode &other) const

@@ -66,6 +66,8 @@ namespace repo {
 						return getStringField(REPO_NODE_MAP_LABEL_APIKEY);
 					}
 
+					repo_vector_t getCentre() const;
+
 					/**
 					* Check if the map tile is suppose to be 2 sided
 					* Default is false
@@ -91,11 +93,11 @@ namespace repo {
 					}
 
 					/**
-					* Get transformation matrix within the Map node
-					* @return returns the transformation matrix within this node
+					* Get world tile size from map
+					* @retun returns world tile size, 1 if not found
 					*/
-					std::vector<float> getTransformationMatrix(const bool &rowMajor = true) const;
-
+					float getTileSize() const;
+					
 					/**
 					* Get the tile width 
 					* @return returns the tile width
@@ -108,6 +110,13 @@ namespace repo {
 					* @retun returns the rotational tilt
 					*/
 					float getYRot() const;
+
+					/**
+					* Get zoom value
+					* @return returns zoom value, 0 if not found
+					*/
+					uint32_t getZoom() const;
+
 					
 					/**
 					* Check if the node is semantically equal to another

@@ -29,6 +29,7 @@ namespace repo{
 		{
 		public:
 			PropertyTree();
+			PropertyTree(const bool &enableJSONWorkAround);
 			~PropertyTree();
 
 			/**
@@ -49,7 +50,8 @@ namespace repo{
 				const T &value
 				)
 			{
-				addFieldAttribute(label, attribute, std::to_string(T) value);
+				repoDebug << "normal field check: label " << label << ":" << value;
+				addFieldAttribute(label, attribute, boost::lexical_cast<std::string>(value));
 			}
 
 			/**
@@ -67,19 +69,24 @@ namespace repo{
 			void addFieldAttribute(
 				const std::string &label,
 				const std::string &attribute,
-				const std::vector<T> &value
+				const std::vector<T> &value,
+				const bool        &useDelimiter = true
 				)
 			{
-				std::string vStr;
+				std::stringstream ss;
 				for (uint32_t i = 0; i < value.size(); ++i)
 				{
-					vStr += value[i];
-					if (i != value.size() - 1)
+					ss << value[i];
+					if (useDelimiter && i != value.size() - 1)
 					{
-						vStr += ",";
+						ss << ",";
 					}
+					else
+						ss << " ";
 				}
-				addFieldAttribute(label, attribute, vStr);
+				std::string val = ss.str();
+				repoDebug << "Vector check: label " << attribute << ":" << val;
+				addFieldAttribute(label, attribute, val);
 			}
 			
 

@@ -59,7 +59,7 @@ namespace repo{
 				/**
 				* Default Destructor
 				*/
-				virtual ~X3DModelExport();				
+				virtual ~X3DModelExport() {};
 
 				/**
 				* Obtain the x3d representation as a buffer
@@ -86,9 +86,10 @@ namespace repo{
 				
 			private:
 				const repo::core::model::RepoScene *scene;
+				repo::core::model::RepoScene::GraphType gType;
 				std::string fname;
 				repo::lib::PropertyTree tree;
-				bool convertSuccess;
+				bool convertSuccess, fullScene;
 			
 				/**
 				* Create a subTree for google map tiles
