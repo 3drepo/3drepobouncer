@@ -43,7 +43,7 @@ namespace repo{
 				* Export a Scene as a x3d file
 				* @param scene scene to export
 				*/
-				X3DModelExport::X3DModelExport(
+				X3DModelExport(
 					const repo::core::model::RepoScene *scene
 					);
 
@@ -175,7 +175,7 @@ namespace repo{
 				* Write the given scene as a x3dScene
 				* @return returns true upon success
 				*/
-				bool X3DModelExport::writeScene(
+				bool writeScene(
 					const repo::core::model::RepoScene *scene);
 
 				/**
