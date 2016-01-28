@@ -66,8 +66,8 @@ static const std::string X3D_ATTR_LIT              = "lit";
 static const std::string X3D_ATTR_MAT              = "matrix";
 static const std::string X3D_ATTR_NAME             = "name";
 static const std::string X3D_ATTR_NAMESPACE        = "nameSpaceName";
-static const std::string X3D_ATTR_ON_MOUSE_MOVE    = "onmouseover";
-static const std::string X3D_ATTR_ON_MOUSE_OVER    = "onmousemove";
+static const std::string X3D_ATTR_ON_MOUSE_MOVE    = "onmousemove";
+static const std::string X3D_ATTR_ON_MOUSE_OVER    = "onmouseover"; 
 static const std::string X3D_ATTR_ON_CLICK         = "onclick";
 static const std::string X3D_ATTR_ON_LOAD          = "onload";
 static const std::string X3D_ATTR_SCALE            = "scale";
@@ -431,6 +431,7 @@ std::string X3DModelExport::populateTreeWithProperties(
 			tree.addFieldAttribute("", X3D_ATTR_ID, nodeID);
 			tree.addFieldAttribute("", X3D_ATTR_ON_CLICK     , X3D_ON_CLICK);
 			tree.addFieldAttribute("", X3D_ATTR_ON_MOUSE_OVER, X3D_ON_MOUSE_OVER);
+			tree.addFieldAttribute("", X3D_ATTR_ON_MOUSE_MOVE, X3D_ON_MOUSE_MOVE);
 
 			std::vector<repo_vector_t> bbox = meshNode->getBoundingBox();
 
@@ -462,8 +463,7 @@ std::string X3DModelExport::populateTreeWithProperties(
 			else
 			{
 				label = X3D_LABEL_SHAPE;
-				tree.addFieldAttribute("", X3D_ATTR_DEF, nodeID);
-				tree.addFieldAttribute("", X3D_ATTR_ON_MOUSE_MOVE, X3D_ON_MOUSE_MOVE);
+				tree.addFieldAttribute("", X3D_ATTR_DEF, nodeID);				
 
 				//Add material to shape
 				std::string suffix;
