@@ -152,7 +152,7 @@ repo::lib::PropertyTree X3DModelExport::createGoogleMapSubTree(
 		tileGroup.addFieldAttribute("", X3D_ATTR_INVISIBLE, "true");
 
 		uint32_t halfWidth = (mapNode->getWidth() + 1) / 2;
-		float centX = 128.0f + mapNode->getListStringPairField * (256.0f / 360.0f);
+		float centX = 128.0f + mapNode->getLong() * (256.0f / 360.0f);
 		float s = sinf(mapNode->getLat() * (M_PI / 180.0f));
 		if (s < -0.9999f)
 			s = -0.9999f;
