@@ -93,6 +93,18 @@ namespace repo {
 					}
 
 					/**
+					* Get the Latitude value from the map
+					* @retun returns Latitude value, 0
+					*/
+					float getLat() const;
+
+					/**
+					* Get the Longitude value from the map
+					* @retun returns Longitude value, 0
+					*/
+					float getLong() const;
+
+					/**
 					* Get world tile size from map
 					* @retun returns world tile size, 1 if not found
 					*/

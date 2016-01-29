@@ -152,6 +152,15 @@ repo::lib::PropertyTree X3DModelExport::createGoogleMapSubTree(
 		tileGroup.addFieldAttribute("", X3D_ATTR_INVISIBLE, "true");
 
 		uint32_t halfWidth = (mapNode->getWidth() + 1) / 2;
+		float centX = 128.0f + mapNode->getListStringPairField * (256.0f / 360.0f);
+		float s = sinf(mapNode->getLat() * (M_PI / 180.0f));
+		if (s < -0.9999f)
+			s = -0.9999f;
+		else if (s > 0.9999f)
+			s = 0.9999f;
+
+		float centY = 128.0f + 0.5 * logf((1.0f + s) / (1.0f - s)) * (-256.0f / 2.0f * M_PI);
+
 
 		size_t zoom = mapNode->getZoom();
 		size_t nTiles = 1 << zoom;
@@ -168,8 +177,8 @@ repo::lib::PropertyTree X3DModelExport::createGoogleMapSubTree(
 				float xPos = ((float)x + 0.5) * GOOGLE_TILE_SIZE;
 				float yPos = ((float)y + 0.5) * GOOGLE_TILE_SIZE;
 
-				float tileCentX = centrePoint.x * nTiles + xPos;
-				float tileCentY = centrePoint.y * nTiles + yPos;
+				float tileCentX = centX * nTiles + xPos;
+				float tileCentY = centY * nTiles + yPos;
 
 				float tileLat = (2. * atan(exp(((tileCentY / nTiles) - 128.) / - (256. / (2. * M_PI)))) - M_PI / 2.) / (M_PI / 180.);
 				float tileLong = ((tileCentX / nTiles) - 128.) / (256. / 360.);

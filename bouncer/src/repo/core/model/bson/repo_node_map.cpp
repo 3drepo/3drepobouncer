@@ -68,6 +68,30 @@ repo_vector_t MapNode::getCentre() const
 	return centre;
 }
 
+float MapNode::getLat() const
+{
+	float lat = 0;
+
+	if (hasField(REPO_NODE_MAP_LABEL_LAT))
+	{
+		lat = getField(REPO_NODE_MAP_LABEL_LAT).Double();
+	}
+
+	return lat;
+}
+
+float MapNode::getLong() const
+{
+	float longit = 0;
+
+	if (hasField(REPO_NODE_MAP_LABEL_LONG))
+	{
+		longit = getField(REPO_NODE_MAP_LABEL_LONG).Double();
+	}
+
+	return longit;
+}
+
 float MapNode::getTileSize() const
 {
 	float tileSize = 1;
