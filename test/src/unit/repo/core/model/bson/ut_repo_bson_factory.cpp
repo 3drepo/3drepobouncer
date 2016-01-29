@@ -304,7 +304,7 @@ TEST(RepoBSONFactoryTest, MakeMapNodeTest)
 	float tilt = 2.0, tileSize = 10.5, longit = 2.3546, latit = 5.3235;
 	repo_vector_t centrePoint = { 3.12345, 54.3536, 435.32 };
 	std::string name = "mapTest";
-	std::string name = "apiKey";
+	std::string apiKey = "apiKey";
 
 	MapNode map = RepoBSONFactory::makeMapNode(width, zoom, tilt, tileSize, longit, latit, centrePoint, apiKey, name);
 
