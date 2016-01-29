@@ -645,6 +645,8 @@ bool X3DModelExport::writeMultiPartMeshAsScene(
 	std::string rootGroupLabel = sceneLabel + "." + X3D_LABEL_GROUP;
 
 	tree.mergeSubTree(rootGroupLabel, groupSubTree);
+
+	return true;
 }
 
 bool X3DModelExport::writeScene(
