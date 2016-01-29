@@ -181,6 +181,7 @@ MapNode RepoBSONFactory::makeMapNode(
         const float           &longitude,
         const float           &latitude,
         const repo_vector_t   &centrePoint,
+		const std::string     &apiKey,
         const std::string     &name,
         const int             &apiLevel)
 {
@@ -211,6 +212,10 @@ MapNode RepoBSONFactory::makeMapNode(
     // trans
     map_builder << REPO_NODE_MAP_LABEL_TRANS << BSON_ARRAY(centrePoint.x << centrePoint.y << centrePoint.z);
     //--------------------------------------------------------------------------
+	// API Key (temporary, needs to be removed when x3dom can plug it in on the fly.
+	if (!apiKey.empty())
+		map_builder << REPO_NODE_MAP_LABEL_APIKEY << apiKey;
+	//--------------------------------------------------------------------------
     return map_builder.obj();
 }
 

@@ -304,18 +304,19 @@ TEST(RepoBSONFactoryTest, MakeMapNodeTest)
 	float tilt = 2.0, tileSize = 10.5, longit = 2.3546, latit = 5.3235;
 	repo_vector_t centrePoint = { 3.12345, 54.3536, 435.32 };
 	std::string name = "mapTest";
+	std::string name = "apiKey";
 
-	MapNode map = RepoBSONFactory::makeMapNode(width, zoom, tilt, tileSize, longit, latit, centrePoint, name);
+	MapNode map = RepoBSONFactory::makeMapNode(width, zoom, tilt, tileSize, longit, latit, centrePoint, apiKey, name);
 
 	EXPECT_FALSE(map.isEmpty());
 	EXPECT_EQ(name, map.getName());
+	EXPECT_EQ(apiKey, map.getAPIKey());
 	EXPECT_EQ(map.getTypeAsEnum(), NodeType::MAP);
 
-	//TODO: There's no functionality to extract Map yet. once we have them we should replace these with the default functions
-	EXPECT_EQ(width, map.getField(REPO_NODE_MAP_LABEL_WIDTH).Int());
-	EXPECT_EQ(zoom, map.getField(REPO_NODE_MAP_LABEL_ZOOM).Int());
-	EXPECT_EQ(tileSize, map.getField(REPO_NODE_MAP_LABEL_TILESIZE).Double());
-	EXPECT_EQ(tilt, map.getField(REPO_NODE_MAP_LABEL_YROT).Double());
+	EXPECT_EQ(width, map.getWidth());
+	EXPECT_EQ(zoom, map.getZoom());
+	EXPECT_EQ(tileSize, map.getTileSize());
+	EXPECT_EQ(tilt, map.getYRot());
 	EXPECT_EQ(longit, map.getField(REPO_NODE_MAP_LABEL_LONG).Double());
 	EXPECT_EQ(latit, map.getField(REPO_NODE_MAP_LABEL_LAT).Double());
 	
