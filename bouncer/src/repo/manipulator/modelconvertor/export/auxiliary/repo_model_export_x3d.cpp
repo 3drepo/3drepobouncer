@@ -21,6 +21,7 @@
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <algorithm>
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -271,7 +272,7 @@ repo_vector_t X3DModelExport::getBoxCentre(
 	repoDebug << "Centre of bbox of [" << min.x << "," << min.y << "," << min.z << "] and [" << max.x << "," << max.y << "," << max.z << "] is " 
 		<< "[" << (min.x + max.x) / 2. << ", " << (min.y + max.y) / 2. << ", " << (min.z + max.z) / 2. << "]";
 
-	return { (min.x + max.x) / 2., (min.y + max.y) / 2., (min.z + max.z) / 2. };
+	return { (min.x + max.x) / 2.0f, (min.y + max.y) / 2.0f, (min.z + max.z) / 2.0f };
 }
 
 repo_vector_t X3DModelExport::getBoxSize(
@@ -416,7 +417,8 @@ std::string X3DModelExport::populateTreeWithProperties(
 			tree.addFieldAttribute("", X3D_ATTR_ID, UUIDtoString(mapNode->getUniqueID()));
 			tree.addFieldAttribute("", X3D_ATTR_DEF, UUIDtoString(mapNode->getSharedID()));
 			
-			tree.mergeSubTree(X3D_LABEL_TRANS, createGoogleMapSubTree(mapNode));
+			auto subTree = createGoogleMapSubTree(mapNode);
+			tree.mergeSubTree(X3D_LABEL_TRANS, subTree);
 			stopRecursing = true;
 		}
 		break;
@@ -701,7 +703,7 @@ bool X3DModelExport::writeScene(
 	repo_vector_t bboxSize = { 2, 2, 2 };
 	repo_vector_t vpos = bboxCentre;
 
-	float max_dim = max(bboxSize.x, bboxSize.y)*0.5;
+	float max_dim = (bboxSize.x > bboxSize.y? bboxSize.x : bboxSize.y)*0.5f;
 
 	float fov = 40 * (M_PI / 180); //Field of View in radians (40 degrees)
 

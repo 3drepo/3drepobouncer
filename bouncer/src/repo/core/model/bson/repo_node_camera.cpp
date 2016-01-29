@@ -206,7 +206,7 @@ std::vector<float> CameraNode::getOrientation() const
 {
 	repo_vector_t lookAt = getLookAt();
 	repo_vector_t up = getUp();
-	repo_vector_t forward = { lookAt.x*-1., lookAt.y*-1., lookAt.z*-1. };
+	repo_vector_t forward = { lookAt.x * -1.0f, lookAt.y * -1.0f, lookAt.z*-1.0f };
 	normalize(forward);
 	normalize(up);
 	repo_vector_t right = crossProduct(up, forward);
