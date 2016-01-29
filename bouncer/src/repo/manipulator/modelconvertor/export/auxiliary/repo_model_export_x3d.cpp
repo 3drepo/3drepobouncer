@@ -352,39 +352,39 @@ std::string X3DModelExport::populateTreeWithProperties(
 		case repo::core::model::NodeType::MATERIAL:
 		{
 			const repo::core::model::MaterialNode *matNode = (const repo::core::model::MaterialNode *)node;
-			label = X3D_LABEL_APP + "." + X3D_LABEL_TWOSIDEMAT;
+			label = X3D_LABEL_APP;
 
 			repo_material_t matStruct = matNode->getMaterialStruct();
 
 			if (matStruct.diffuse.size() > 0)
 			{
-				tree.addFieldAttribute("", X3D_ATTR_COL_DIFFUSE, matStruct.diffuse, false);
+				tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_COL_DIFFUSE, matStruct.diffuse, false);
 				if (matStruct.isTwoSided)
-					tree.addFieldAttribute("", X3D_ATTR_COL_BK_DIFFUSE, matStruct.diffuse, false);
+					tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_COL_BK_DIFFUSE, matStruct.diffuse, false);
 
 			}
 
 			if (matStruct.emissive.size() > 0)
 			{
-				tree.addFieldAttribute("", X3D_ATTR_COL_EMISSIVE, matStruct.emissive, false);
+				tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_COL_EMISSIVE, matStruct.emissive, false);
 				if (matStruct.isTwoSided)
-					tree.addFieldAttribute("", X3D_ATTR_COL_BK_EMISSIVE, matStruct.emissive, false);
+					tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_COL_BK_EMISSIVE, matStruct.emissive, false);
 
 			}
 
 			if (matStruct.shininess == matStruct.shininess)
 			{
-				tree.addFieldAttribute("", X3D_ATTR_SHININESS, matStruct.shininess);
+				tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_SHININESS, matStruct.shininess);
 				if (matStruct.isTwoSided)
-					tree.addFieldAttribute("", X3D_ATTR_BK_SHININESS, matStruct.shininess);
+					tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_BK_SHININESS, matStruct.shininess);
 
 			}
 
 			if (matStruct.specular.size() > 0)
 			{
-				tree.addFieldAttribute("", X3D_ATTR_COL_SPECULAR, matStruct.specular, false);
+				tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_COL_SPECULAR, matStruct.specular, false);
 				if (matStruct.isTwoSided)
-					tree.addFieldAttribute("", X3D_ATTR_COL_BK_SPECULAR, matStruct.specular, false);
+					tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_COL_BK_SPECULAR, matStruct.specular, false);
 
 			}
 
@@ -393,16 +393,16 @@ std::string X3DModelExport::populateTreeWithProperties(
 				float transparency = 1.0 - matStruct.opacity;
 				if (transparency != 0.0)
 				{
-					tree.addFieldAttribute("", X3D_ATTR_TRANSPARENCY, transparency);
+					tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_TRANSPARENCY, transparency);
 					if (matStruct.isTwoSided)
-						tree.addFieldAttribute("", X3D_ATTR_BK_TRANSPARENCY, transparency);
+						tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_BK_TRANSPARENCY, transparency);
 				}
 
 
 			}
 
-			tree.addFieldAttribute("", X3D_ATTR_ID , UUIDtoString(matNode->getUniqueID()));
-			tree.addFieldAttribute("", X3D_ATTR_DEF, UUIDtoString(matNode->getSharedID()));
+			tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_ID, UUIDtoString(matNode->getUniqueID()));
+			tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_DEF, UUIDtoString(matNode->getSharedID()));
 		}
 		break;
 		case repo::core::model::NodeType::MAP:
