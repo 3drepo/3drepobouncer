@@ -136,10 +136,25 @@ SRCModelExport::SRCModelExport(
 				
 			}
 		}
+		else  if (scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT) && !scene->getAllMeshes().size())
+		{
+			//There are no meshes, just generate the x3d backbone (most likely a federation model).
+			gType = repo::core::model::RepoScene::GraphType::DEFAULT;
+			X3DModelExport x3dExport(scene);
+
+			if (convertSuccess = x3dExport.isOk())
+			{
+				auto buffer = x3dExport.getFileAsBuffer();
+				x3dBufs[x3dExport.getFileName()] = buffer;
+
+				FILE* fp = fopen("C:\\\\Users\\Carmen\\Desktop\\test.txt", "wb");
+				fwrite(buffer.data(), sizeof(*buffer.data()), buffer.size(), fp);
+				fclose(fp);
+			}
+		}
 		else
 		{
-			repoError << "Scene has no optimised graph. SRC Exporter relies on this.";
-			convertSuccess = false;
+			repoError << "Scene has no optimised graph and it is not a federation graph. SRC Exporter relies on this.";
 		}
 		
 	}

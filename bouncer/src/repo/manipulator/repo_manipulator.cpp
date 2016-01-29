@@ -468,7 +468,7 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 {
 	bool success;
 	modelconvertor::repo_src_export_t v = generateSRCBuffer(scene);
-	if (success = v.srcFiles.size())
+	if (success = (v.srcFiles.size() + v.x3dFiles.size()))
 	{
 		repo::core::handler::AbstractDatabaseHandler* handler =
 			repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);

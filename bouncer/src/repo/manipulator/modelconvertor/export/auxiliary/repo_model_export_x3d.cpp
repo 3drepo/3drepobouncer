@@ -500,7 +500,7 @@ std::string X3DModelExport::populateTreeWithProperties(
 			label = X3D_LABEL_INLINE;
 			const repo::core::model::ReferenceNode *refNode = (const repo::core::model::ReferenceNode *)node;
 			std::string revisionId = UUIDtoString(refNode->getRevisionID());
-			std::string url = "/api/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/revision/";
+			std::string url = "/api/" + refNode->getDatabaseName() + "/" + refNode->getProjectName() + "/revision/";
 			if (revisionId == REPO_HISTORY_MASTER_BRANCH)
 			{
 				//Load head of master
@@ -512,7 +512,7 @@ std::string X3DModelExport::populateTreeWithProperties(
 				url += revisionId;
 			}
 
-			url += ".x3d";
+			url += ".x3d.mp";
 
 			tree.addFieldAttribute("", X3D_ATTR_ON_LOAD  , X3D_ON_LOAD);
 			tree.addFieldAttribute("", X3D_ATTR_URL      , url);
@@ -664,13 +664,17 @@ bool X3DModelExport::writeScene(
 		return false;
 	}
 
-	//We only support stash graph generation
+	
 	gType = repo::core::model::RepoScene::GraphType::OPTIMIZED;
 
 	if (!scene->hasRoot(gType))
 	{
-		repoError << "Failed to generate x3d representation: Cannot find optimised graph representation!";
-		return false;
+		gType = repo::core::model::RepoScene::GraphType::DEFAULT;
+		if (!scene->hasRoot(gType))
+		{
+			repoError << "Failed to generate x3d representation: Cannot find optimised graph representation!";
+			return false;
+		}
 	}
 
 	repo::lib::PropertyTree rootGrpST(false), sceneST(false);
