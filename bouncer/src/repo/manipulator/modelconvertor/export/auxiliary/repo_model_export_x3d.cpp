@@ -113,7 +113,7 @@ X3DModelExport::X3DModelExport(
 {
 	tree.disableJSONWorkaround();
 	convertSuccess = populateTree(scene);
-	fname = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/revision/master/" + UUIDtoString(scene->getRevisionID());
+	fname = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/revision/" + UUIDtoString(scene->getRevisionID());
 	
 }
 
@@ -509,9 +509,7 @@ std::string X3DModelExport::populateTreeWithProperties(
 			else
 			{
 				//load specific revision
-				//FIXME: this is weird. We don't need a branch specification for a specific revision loading
-				//Also it may not be the master branch where this revision is from
-				url += "master/" + revisionId;
+				url += revisionId;
 			}
 
 			url += ".x3d";

@@ -126,9 +126,7 @@ SRCModelExport::SRCModelExport(
 				{
 					auto buffer = x3dExport.getFileAsBuffer();
 					x3dBufs[x3dExport.getFileName()] = buffer;
-					if (scene->isHeadRevision())
-						x3dBufs["/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/revision/master/head.x3d.mp"] = buffer;
-
+					
 					FILE* fp = fopen("C:\\\\Users\\Carmen\\Desktop\\test.txt", "wb");
 					fwrite(buffer.data(), sizeof(*buffer.data()), buffer.size(), fp);
 					fclose(fp);
