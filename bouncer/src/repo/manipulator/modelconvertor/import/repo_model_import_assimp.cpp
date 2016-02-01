@@ -230,7 +230,7 @@ repo::core::model::CameraNode* AssimpModelImport::createCameraRepoNode(
 repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 	const aiMaterial *material,
 	const std::string &name,
-	const std::map<std::string, repo::core::model::RepoNode *> &nameToTexture)
+	const std::unordered_map<std::string, repo::core::model::RepoNode *> &nameToTexture)
 {
 	repo::core::model::MaterialNode *materialNode;
 
@@ -337,7 +337,7 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 
 		if (AI_SUCCESS == material->GetTexture(aiTextureType_DIFFUSE, 0, &texPath))
 		{
-			std::map<std::string, repo::core::model::RepoNode *>::const_iterator it = nameToTexture.find(texPath.data);
+			std::unordered_map<std::string, repo::core::model::RepoNode *>::const_iterator it = nameToTexture.find(texPath.data);
 
 			if (nameToTexture.end() != it)
 			{
@@ -359,7 +359,7 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 	const aiMesh *assimpMesh,
 	const std::vector<repo::core::model::RepoNode *> &materials,
-	std::map < repo::core::model::RepoNode*, std::vector<repoUUID>> &matMap)
+	std::unordered_map < repo::core::model::RepoNode*, std::vector<repoUUID>> &matMap)
 {
 
 	repo::core::model::MeshNode *meshNode = 0;
@@ -404,7 +404,7 @@ repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 		for (uint32_t i = 0; i < assimpMesh->mNumFaces; i++)
 		{
 
-			faces.push_back({ std::vector<uint32_t>(assimpMesh->mFaces[i].mIndices, 
+			faces.push_back({ std::vector<uint32_t>(assimpMesh->mFaces[i].mIndices,
 				assimpMesh->mFaces[i].mIndices + assimpMesh->mFaces[i].mNumIndices) });
 		}
 	}
@@ -608,7 +608,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 
 repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecursive(
 const aiNode                                                     *assimpNode,
-const std::map<std::string, repo::core::model::RepoNode *> &cameras,
+const std::unordered_map<std::string, repo::core::model::RepoNode *> &cameras,
 const std::vector<repo::core::model::RepoNode *>           &meshes,
 repo::core::model::RepoNodeSet						     &metadata,
 assimp_map													&map,
@@ -666,7 +666,7 @@ const std::vector<repoUUID>						             &parent
 
 		//--------------------------------------------------------------------------
 		// Register cameras as children of this transformation (by name) if any
-		std::map<std::string, repo::core::model::RepoNode *>::const_iterator it =
+		std::unordered_map<std::string, repo::core::model::RepoNode *>::const_iterator it =
 			cameras.find(assimpNode->mName.data);
 		if (cameras.end() != it)
 		{
@@ -705,6 +705,7 @@ const std::vector<repoUUID>						             &parent
 			metadata.insert(childMetadata.begin(), childMetadata.end());
 		}
 	} //if assimpNode
+
 	return transNodes;
 }
 
@@ -726,10 +727,10 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 
 
 		std::vector<repo::core::model::RepoNode *> originalOrderMaterial; //vector that keeps track original order for assimp indices
-		std::map<repo::core::model::RepoNode *, std::vector<repoUUID>> matParents;//Tracks material parents
+		std::unordered_map<repo::core::model::RepoNode *, std::vector<repoUUID>> matParents;//Tracks material parents
 		std::vector<repo::core::model::RepoNode *> originalOrderMesh; //vector that keeps track original order for assimp indices
-		std::map<std::string, repo::core::model::RepoNode *> camerasMap;
-		std::map<std::string, repo::core::model::RepoNode *> nameToTexture;
+		std::unordered_map<std::string, repo::core::model::RepoNode *> camerasMap;
+		std::unordered_map<std::string, repo::core::model::RepoNode *> nameToTexture;
 
 		//-------------------------------------------------------------------------
 		// Textures
@@ -860,7 +861,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 				}
 
 
-				originalOrderMaterial.push_back(material); 
+				originalOrderMaterial.push_back(material);
 				std::pair<repo::core::model::RepoNode *, std::vector<repoUUID>> a;
 				a.first = material;
 				a.second = std::vector<repoUUID>();
@@ -1091,7 +1092,7 @@ bool AssimpModelImport::populateOptimMaps(
 	const assimp_map                   &orgMap,
 	const assimp_map                   &optMap)
 {
-	std::map<repoUUID, std::vector<repo_mesh_mapping_t>> meshMapping;
+	std::unordered_map<repoUUID, std::vector<repo_mesh_mapping_t>, RepoUUIDHasher> meshMapping;
 	// If this is a mesh then we the optimization map is transferred for
 	// it's parent.
 	if (current->getTypeAsEnum() ==  repo::core::model::NodeType::TRANSFORMATION)

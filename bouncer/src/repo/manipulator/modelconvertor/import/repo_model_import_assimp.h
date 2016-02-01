@@ -109,7 +109,7 @@ namespace repo{
 				repo::core::model::MaterialNode* createMaterialRepoNode(
 					const aiMaterial *material,
 					const std::string &name,
-					const std::map<std::string, repo::core::model::RepoNode *> &nameToTexture);
+					const std::unordered_map<std::string, repo::core::model::RepoNode *> &nameToTexture);
 
 				/**
 				* Create a Mesh Node given the information in ASSIMP objects
@@ -121,7 +121,7 @@ namespace repo{
 				repo::core::model::MeshNode* createMeshRepoNode(
 					const aiMesh *assimpMesh,
 					const std::vector<repo::core::model::RepoNode *> &materials,
-					std::map < repo::core::model::RepoNode*, std::vector<repoUUID>> &matMap);
+					std::unordered_map < repo::core::model::RepoNode*, std::vector<repoUUID>> &matMap);
 
 				/**
 				* Create a Metadata Node given the information in ASSIMP objects
@@ -147,7 +147,7 @@ namespace repo{
 				*/
 				repo::core::model::RepoNodeSet createTransformationNodesRecursive(
 					const aiNode                                                     *assimpNode,
-					const std::map<std::string, repo::core::model::RepoNode *> &cameras,
+					const std::unordered_map<std::string, repo::core::model::RepoNode *> &cameras,
 					const std::vector<repo::core::model::RepoNode *>           &meshes,
 					repo::core::model::RepoNodeSet						     &metadata,
 					assimp_map													&map,

@@ -22,8 +22,8 @@
 #include <fstream>
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptor/map.hpp>
-#include <boost/range/algorithm/copy.hpp>
 #include <boost/assign.hpp>
+#include <boost/bind.hpp>
 
 #include <fstream>
 
@@ -233,7 +233,7 @@ void RepoScene::addMetadata(
 	const bool  &exactMatch)
 {
 
-	std::map<std::string, RepoNode*> transMap;
+	std::unordered_map<std::string, RepoNode*> transMap;
 	//stashed version of the graph does not need to track metadata information
 	for (RepoNode* transformation : graph.transformations)
 	{
@@ -549,13 +549,11 @@ bool RepoScene::commitRevisionNode(
 
 	std::vector<repoUUID> uniqueIDs;
 
-	//using boost's range adaptor, retrieve all the keys within this map
-	//http://www.boost.org/doc/libs/1_53_0/libs/range/doc/html/range/reference/adaptors/reference/map_keys.html
-	//revision node should only track non optimised graph members.
-	boost::copy(
-		graph.nodesByUniqueID | boost::adaptors::map_keys,
-		std::back_inserter(uniqueIDs));
-
+	// Using a more standard transform to cope with use of unordered_map
+	for (auto& keyVal: graph.nodesByUniqueID)
+	{
+		uniqueIDs.push_back(keyVal.first);
+	}
 
 	//convert the sets to vectors
 	std::vector<repoUUID> newAddedV(newAdded.begin(), newAdded.end());
@@ -1105,7 +1103,7 @@ bool RepoScene::populate(
 
 	repoGraphInstance &g = gtype == GraphType::OPTIMIZED ? stashGraph : graph;
 
-	std::map<repoUUID, RepoNode *> nodesBySharedID;
+	std::unordered_map<repoUUID, RepoNode *, RepoUUIDHasher> nodesBySharedID;
 	for (std::vector<RepoBSON>::const_iterator it = nodes.begin();
 		it != nodes.end(); ++it)
 	{
