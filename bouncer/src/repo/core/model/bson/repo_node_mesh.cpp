@@ -121,7 +121,8 @@ MeshNode MeshNode::cloneAndUpdateMeshMapping(
 MeshNode MeshNode::cloneAndRemapMeshMapping(
 	const size_t verticeThreshold,
 	std::vector<uint16_t> &newFaces,
-	std::vector<std::vector<float>> &idMapBuf) const
+	std::vector<std::vector<float>> &idMapBuf,
+	std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> &splitMap) const
 {
 	//A lot easier if we can directly manipulate the binaries without 
 	//keep having to modify the mongo buffer, so call cloneAndShrink
@@ -160,6 +161,8 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 
 	for (const auto &mapping : mappings)
 	{
+		splitMap[mapping.mesh_id] = std::vector < uint32_t >() ;
+
 		size_t smVertices = mapping.vertTo  -  mapping.vertFrom;
 		size_t smFaces = mapping.triTo - mapping.triFrom;
 		size_t currentVFrom = mapping.vertFrom;
@@ -237,6 +240,9 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 				{
 					//With this face included, the running total will exceed the threshold
 					//so close up the current subMesh and start a new one
+
+					if (faceIdx)
+						splitMap[mapping.mesh_id].push_back(newMappings.size());
 
 					//==================== END OF SUB MESH =====================
 
@@ -359,6 +365,7 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 
 			//Update the subMesh info to include this face
 
+
 			//Modify the vertices as it may be rearranged within this region
 			std::copy(newVertices.begin(), newVertices.end(), vertices->begin() + mapping.vertFrom);
 
@@ -368,6 +375,9 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 
 			runningVTotal = subMeshVTo - subMeshVFrom;
 			runningFTotal = subMeshFTo - subMeshFFrom;
+
+			if (runningFTotal)
+				splitMap[mapping.mesh_id].push_back(newMappings.size());
 
 			uint32_t idMapLength = idMapBuf.back().size();
 			idMapBuf.back().resize(idMapLength + smVertices);
@@ -454,6 +464,8 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 			runningVTotal += smVertices;
 			runningFTotal += smFaces;
 
+			splitMap[mapping.mesh_id].push_back(newMappings.size());
+
 		}//else of (smVertices > verticeThreshold)
 
 	}//for (const auto &mapping : mappings)
@@ -506,14 +518,22 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 }
 
 std::vector<repo_vector_t> MeshNode::getBoundingBox() const
+{	
+	RepoBSON bbArr = getObjectField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
+
+	std::vector<repo_vector_t> bbox = getBoundingBox(bbArr);
+
+	return bbox;
+}
+
+std::vector<repo_vector_t> MeshNode::getBoundingBox(RepoBSON &bbArr)
 {
 	std::vector<repo_vector_t> bbox;
-	
-	auto bbArr = getObjectField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
-
 	if (!bbArr.isEmpty() && bbArr.couldBeArray())
 	{
-		for (uint32_t i = 0; i < bbArr.nFields(); ++i)
+		size_t nVec = bbArr.nFields();
+		bbox.reserve(nVec);
+		for (uint32_t i = 0; i < nVec; ++i)
 		{
 			auto bbVectorBson = bbArr.getObjectField(std::to_string(i));
 			if (!bbVectorBson.isEmpty() && bbVectorBson.couldBeArray())
@@ -526,6 +546,7 @@ std::vector<repo_vector_t> MeshNode::getBoundingBox() const
 					vector.x = bbVectorBson.getField("0").Double();
 					vector.y = bbVectorBson.getField("1").Double();
 					vector.z = bbVectorBson.getField("2").Double();
+					
 					bbox.push_back(vector);
 				}
 				else
@@ -596,34 +617,16 @@ std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
 			mapping.triFrom     = mappingObj.getField(REPO_NODE_MESH_LABEL_TRIANGLE_FROM).Int();
 			mapping.triTo       = mappingObj.getField(REPO_NODE_MESH_LABEL_TRIANGLE_TO).Int();
 
-			RepoBSON boundingBox = getObjectField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
+			RepoBSON boundingBox = mappingObj.getObjectField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
 			
-			std::set<std::string> bbfields;
-			boundingBox.getFieldNames(bbfields);
+			std::vector<repo_vector_t> bboxVec = getBoundingBox(boundingBox);
+			mapping.min.x = bboxVec[0].x;
+			mapping.min.y = bboxVec[0].y;
+			mapping.min.z = bboxVec[0].z;
 
-
-			auto bbfieldIT = bbfields.begin();
-			if (bbfields.size() >= 2)
-			{
-				std::vector<float> min = getFloatArray(*bbfieldIT++);
-				if (min.size() >= 3)
-				{
-					mapping.min.x = min[0];
-					mapping.min.y = min[1];
-					mapping.min.z = min[2];
-				}
-				std::vector<float> max = getFloatArray(*bbfieldIT++);
-				if (max.size() >= 3)
-				{
-					mapping.max.x = max[0];
-					mapping.max.y = max[1];
-					mapping.max.z = max[2];
-				}
-			}
-			else
-			{
-				repoError << "bounding box has " << bbfields.size() << " vectors!";
-			}
+			mapping.max.x = bboxVec[1].x;
+			mapping.max.y = bboxVec[1].y;
+			mapping.max.z = bboxVec[1].z;
 
 			mappings[std::stoi(name)] = mapping;
 

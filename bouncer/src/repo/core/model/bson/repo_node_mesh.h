@@ -136,7 +136,8 @@ namespace repo {
 					MeshNode cloneAndRemapMeshMapping(
 						const size_t verticeThreshold,
 						std::vector<uint16_t> &newFaces,
-						std::vector<std::vector<float>> &idMapBuf) const;
+						std::vector<std::vector<float>> &idMapBuf,
+						std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> &splitMap) const;
 
 
 					
@@ -149,6 +150,8 @@ namespace repo {
 					* @return returns a vector of size 2, containing the bounding box.
 					*/
 					std::vector<repo_vector_t> getBoundingBox() const;
+
+					static std::vector<repo_vector_t> getBoundingBox(RepoBSON &bbArr);
 
 					/**
 					* Retrieve a vector of Colors from the bson object

@@ -252,7 +252,10 @@ namespace repo{
 					*/
 					repoUUID getRevisionID() const
 					{
-						return revision;
+						if (revNode)
+							return revNode->getUniqueID();
+						else 
+							return revision;
 					}
 
 					static std::vector<std::string> getProjectExtensions()

@@ -32,6 +32,12 @@ namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
 
+			typedef struct {
+				std::unordered_map<std::string, std::vector<uint8_t>> srcFiles;
+				std::unordered_map<std::string, std::vector<uint8_t>> x3dFiles;
+				std::unordered_map<std::string, std::vector<uint8_t>> jsonFiles;
+			}repo_src_export_t;
+
 
 			class SRCModelExport : public AbstractModelExport
 			{	
@@ -62,7 +68,24 @@ namespace repo{
 				* Return the SRC file as raw bytes buffer
 				* returns an empty vector if the export has failed
 				*/
-				std::unordered_map<std::string, std::vector<uint8_t>> getFileAsBuffer();
+				std::unordered_map<std::string, std::vector<uint8_t>> getSRCFilesAsBuffer() const;
+
+				/**
+				* Return the X3D file as raw bytes buffer
+				* returns an empty vector if the export has failed
+				*/
+				std::unordered_map<std::string, std::vector<uint8_t>> getX3DFilesAsBuffer() const
+				{
+					return x3dBufs;
+				}
+
+				/**
+				* Return the JSON MPC files as raw bytes buffer
+				* returns an empty vector if the export has failed
+				*/
+				std::unordered_map<std::string, std::vector<uint8_t>> getJSONFilesAsBuffer() const;
+
+				repo_src_export_t getAllFilesExportedAsBuffer() const;
 
 				/**
 				* Get supported file formats for this exporter
@@ -90,6 +113,8 @@ namespace repo{
 				const repo::core::model::RepoScene *scene;
 				bool convertSuccess;
 				std::unordered_map<std::string, repo::lib::PropertyTree> trees;
+				std::unordered_map<std::string, std::vector<uint8_t>> x3dBufs;
+				std::unordered_map<std::string, repo::lib::PropertyTree> jsonTrees;
 				repo::core::model::RepoScene::GraphType gType;
 				std::unordered_map<std::string, std::vector<uint8_t>> fullDataBuffer;
 
@@ -109,6 +134,19 @@ namespace repo{
 					const std::vector<std::vector<float>>  &idMapBuf,
 					const std::string                      &fileExt
 					);
+
+				/**
+				* Generate JSON mapping for multipart meshes
+				* And add it into the object 
+				* @param mesh mesh to generate with
+				* @param scene scene for reference
+				* @param splitMapping how the mapping is split after subMesh split
+				*/
+				bool generateJSONMapping(
+					const repo::core::model::MeshNode *mesh,
+					const repo::core::model::RepoScene *scene,
+					const std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> &splitMapping);
+
 
 				/**
 				* Create a tree representation for the graph

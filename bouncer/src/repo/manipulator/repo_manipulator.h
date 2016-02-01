@@ -25,6 +25,7 @@
 #include "../core/model/collection/repo_scene.h"
 #include "../core/model/bson/repo_bson_role_settings.h"
 #include "modelconvertor/import/repo_model_import_assimp.h"
+#include "modelconvertor/export/repo_model_export_src.h"
 #include "diff/repo_diff_abstract.h"
 
 
@@ -277,7 +278,7 @@ namespace repo{
 			* @param scene the scene to generate the src encoding from
 			* @return returns a buffer in the form of a byte vector mapped to its filename
 			*/
-			std::unordered_map<std::string, std::vector<uint8_t>> generateSRCBuffer(
+			modelconvertor::repo_src_export_t generateSRCBuffer(
 				const repo::core::model::RepoScene *scene);
 
 			/**

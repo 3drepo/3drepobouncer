@@ -750,7 +750,7 @@ std::unordered_map<std::string, std::vector<uint8_t>> RepoController::generateSR
 	if (scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		buffer = worker->generateSRCBuffer(scene);
+		buffer = worker->generateSRCBuffer(scene).srcFiles;
 		workerPool.push(worker);
 	}
 	else

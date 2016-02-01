@@ -23,6 +23,7 @@
 #include "repo_model_export_src.h"
 #include "../../../lib/repo_log.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
+#include "auxiliary/repo_model_export_x3d.h"
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -84,6 +85,22 @@ const static std::string SRC_PREFIX_IDMAP_BUFF_CHK     = "idc";
 
 const static std::string SRC_PREFIX_IDMAP              = "idMap";
 
+//Labels for multipart JSON descriptor files
+const static std::string MP_LABEL_APPEARANCE       = "appearance";
+const static std::string MP_LABEL_MAT_DIFFUSE      = "diffuseColor";
+const static std::string MP_LABEL_MAT_EMISSIVE     = "emissiveColor";
+const static std::string MP_LABEL_MATERIAL         = "material";
+const static std::string MP_LABEL_MAPPING          = "mapping";
+const static std::string MP_LABEL_MAT_SHININESS    = "shininess";
+const static std::string MP_LABEL_MAT_SPECULAR     = "specularColor";
+const static std::string MP_LABEL_MAT_TRANSPARENCY = "transparency";
+const static std::string MP_LABEL_MAX              = "max";
+const static std::string MP_LABEL_MAX_GEO_COUNT    = "maxGeoCount";
+const static std::string MP_LABEL_MIN              = "min";
+const static std::string MP_LABEL_NAME             = "name";
+const static std::string MP_LABEL_NUM_IDs          = "numberOfIDs";
+const static std::string MP_LABEL_USAGE            = "usage";
+
 
 
 struct repo_src_mesh_info
@@ -114,11 +131,39 @@ SRCModelExport::SRCModelExport(
 		{
 			gType = repo::core::model::RepoScene::GraphType::OPTIMIZED;
 			convertSuccess = generateTreeRepresentation();
+
+			if (convertSuccess)
+			{
+				repoDebug << "Writing X3D Backbone file...";
+				//Build general x3d backbone
+				X3DModelExport x3dExport(scene);
+
+				if (convertSuccess = x3dExport.isOk())
+				{
+					auto buffer = x3dExport.getFileAsBuffer();
+					x3dBufs[x3dExport.getFileName()] = buffer;
+				}
+
+
+				
+			}
+		}
+		else  if (scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT) && !scene->getAllMeshes().size())
+		{
+			//There are no meshes, just generate the x3d backbone (most likely a federation model).
+			gType = repo::core::model::RepoScene::GraphType::DEFAULT;
+			X3DModelExport x3dExport(scene);
+
+			if (convertSuccess = x3dExport.isOk())
+			{
+				auto buffer = x3dExport.getFileAsBuffer();
+				x3dBufs[x3dExport.getFileName()] = buffer;
+
+			}
 		}
 		else
 		{
-			repoError << "Scene has no optimised graph. SRC Exporter relies on this.";
-			convertSuccess = false;
+			repoError << "Scene has no optimised graph and it is not a federation graph. SRC Exporter relies on this.";
 		}
 		
 	}
@@ -133,7 +178,7 @@ SRCModelExport::~SRCModelExport()
 {
 }
 
-std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getFileAsBuffer()
+std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getSRCFilesAsBuffer() const
 {
 	std::unordered_map < std::string, std::vector<uint8_t> > fileBuffers;
 
@@ -168,10 +213,12 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getFileAsB
 
 		buffPtr += jsonByteSize;
 		
-		if (fullDataBuffer.find(fName) != fullDataBuffer.end())
+		const auto fdIt = fullDataBuffer.find(fName);
+
+		if (fdIt  != fullDataBuffer.end())
 		{
 			//Add data buffer to the full buffer
-			buffer.insert(buffer.end(), fullDataBuffer[fName].begin(), fullDataBuffer[fName].end());
+			buffer.insert(buffer.end(), fdIt->second.begin(), fdIt->second.end());
 			fileBuffers[fName] = buffer;
 		}
 		else
@@ -182,6 +229,127 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getFileAsB
 	}
 
 	return fileBuffers;
+}
+
+std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getJSONFilesAsBuffer() const
+{
+	std::unordered_map < std::string, std::vector<uint8_t> > fileBuffers;
+
+	for (const auto &treePair : jsonTrees)
+	{
+		
+		std::stringstream ss;
+		treePair.second.write_json(ss);
+		std::string jsonStr = ss.str();
+
+		fileBuffers[treePair.first] = std::vector<uint8_t>();
+		fileBuffers[treePair.first].resize(jsonStr.size());
+		memcpy(fileBuffers[treePair.first].data(), jsonStr.c_str(), jsonStr.size());
+
+	}
+
+	return fileBuffers;
+}
+
+repo_src_export_t SRCModelExport::getAllFilesExportedAsBuffer() const
+{
+	return { getSRCFilesAsBuffer(), getX3DFilesAsBuffer(), getJSONFilesAsBuffer() };
+}
+
+bool SRCModelExport::generateJSONMapping(
+	const repo::core::model::MeshNode  *mesh,
+	const repo::core::model::RepoScene *scene,
+	const std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> &splitMapping)
+{
+	bool success;
+	if (success = mesh)
+	{
+		repo::lib::PropertyTree jsonTree;
+		std::vector<repo_mesh_mapping_t> mappings = mesh->getMeshMapping();
+		std::sort(mappings.begin(), mappings.end(),
+			[](repo_mesh_mapping_t const& a, repo_mesh_mapping_t const& b) { return a.vertFrom < b.vertFrom; });
+
+		size_t mappingLength = mappings.size();
+
+		jsonTree.addToTree(MP_LABEL_NUM_IDs, mappingLength);
+		jsonTree.addToTree(MP_LABEL_MAX_GEO_COUNT, mappingLength);
+
+		std::vector<repo::core::model::RepoNode*> matChild = 
+			scene->getChildrenNodesFiltered(gType, mesh->getSharedID(), repo::core::model::NodeType::MATERIAL);
+
+		std::vector <repo::lib::PropertyTree> matChildrenTrees;
+		for (size_t i = 0; i < matChild.size(); ++i)
+		{
+			repo::lib::PropertyTree matTree;
+			const repo::core::model::MaterialNode *matNode = (const repo::core::model::MaterialNode *) matChild[i];
+			matTree.addToTree(MP_LABEL_NAME, UUIDtoString(matNode->getUniqueID()));
+			repo_material_t matStruct = matNode->getMaterialStruct();
+
+			if (matStruct.diffuse.size())
+				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_DIFFUSE, matStruct.diffuse, false);
+
+			if (matStruct.emissive.size())
+				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_EMISSIVE, matStruct.emissive, false);
+
+			if (matStruct.shininess == matStruct.shininess)
+				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_SHININESS, matStruct.shininess);
+
+			if (matStruct.specular.size())
+				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_SPECULAR, matStruct.specular, false);
+
+			if (matStruct.opacity == matStruct.opacity)
+				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_TRANSPARENCY, 1.0 - matStruct.opacity);
+
+			matChildrenTrees.push_back(matTree);
+
+		}
+
+		jsonTree.addArrayObjects(MP_LABEL_APPEARANCE, matChildrenTrees);
+
+		
+		std::vector<repo::lib::PropertyTree> mappingTrees;
+		std::string meshUID = UUIDtoString(mesh->getUniqueID());
+		//Could get the mesh split function to pass a mapping out so we don't do this again.
+		for (size_t i = 0; i < mappingLength; ++i)
+		{
+			auto mapIt  = splitMapping.find(mappings[i].mesh_id);
+			if (mapIt != splitMapping.end())
+			{
+
+				for (const uint32_t &subMeshID : mapIt->second)
+				{
+					repo::lib::PropertyTree mappingTree;
+
+					mappingTree.addToTree(MP_LABEL_NAME, UUIDtoString(mappings[i].mesh_id));
+					mappingTree.addToTree(MP_LABEL_APPEARANCE, UUIDtoString(mappings[i].material_id));
+					mappingTree.addToTree(MP_LABEL_MIN, mappings[i].min);
+					mappingTree.addToTree(MP_LABEL_MAX, mappings[i].max);
+					std::vector<std::string> usageArr = { meshUID + "_" + std::to_string(subMeshID) };
+					mappingTree.addToTree(MP_LABEL_USAGE, usageArr);
+
+					mappingTrees.push_back(mappingTree);
+				}
+				
+			}
+			else
+			{
+				repoError << "Failed to find split mapping for id: " << UUIDtoString(mappings[i].mesh_id);
+			}
+			
+		}
+
+		jsonTree.addArrayObjects(MP_LABEL_MAPPING, mappingTrees);
+
+		std::string jsonFileName = "/" +  scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + UUIDtoString(mesh->getUniqueID()) + ".json.mpc";
+
+		jsonTrees[jsonFileName] = jsonTree;
+	}
+	else
+	{
+		repoError << "Unable to generate JSON file mapping : null pointer to mesh!";
+	}
+
+	return success;
 }
 
 bool SRCModelExport::generateTreeRepresentation(
@@ -200,12 +368,13 @@ bool SRCModelExport::generateTreeRepresentation(
 			std::string textureID = scene->getTextureIDForMesh(gType, mesh->getSharedID());
 			std::vector<uint16_t> facebuf;
 			std::vector<std::vector<float>> idMapBuf;
+			std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> splitMapping;
 			repo::core::model::MeshNode splittedMesh =
-				((repo::core::model::MeshNode*)mesh)->cloneAndRemapMeshMapping(SRC_MAX_VERTEX_LIMIT, facebuf, idMapBuf);
-			repoTrace << " Mapping before: " << ((repo::core::model::MeshNode*)mesh)->getMeshMapping().size() << " Mapping after: " << splittedMesh.getMeshMapping().size();
+				((repo::core::model::MeshNode*)mesh)->cloneAndRemapMeshMapping(SRC_MAX_VERTEX_LIMIT, facebuf, idMapBuf, splitMapping);
 
 			std::string ext = ".src";
-			if (((repo::core::model::MeshNode*)mesh)->getMeshMapping().size() > 1)
+			bool sepX3d; //requires a separate x3d file if it is a multipart mesh
+			if (sepX3d = ((repo::core::model::MeshNode*)mesh)->getMeshMapping().size() > 1)
 			{
 				ext += ".mpc";
 			}
@@ -216,8 +385,23 @@ bool SRCModelExport::generateTreeRepresentation(
 			}
 
 			addMeshToExport(splittedMesh, index++, facebuf, idMapBuf, ext);
-			
+			if (sepX3d)
+			{
+				success &= generateJSONMapping((repo::core::model::MeshNode*)mesh, scene, splitMapping);
 
+				X3DModelExport x3dExport(splittedMesh, scene);
+				if (x3dExport.isOk())
+				{
+					x3dBufs[x3dExport.getFileName()] = x3dExport.getFileAsBuffer();
+				}
+				else
+				{
+					repoError << "Failed to generate x3d representation for mesh: " << UUIDtoString(mesh->getUniqueID());
+				}
+			}
+
+
+			
 		}		
 	}
 
