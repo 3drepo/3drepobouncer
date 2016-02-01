@@ -19,6 +19,7 @@
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <boost/algorithm/string/replace.hpp>
 //#include <boost/property_tree/json_parser.hpp>
 #include "json_parser.h"
 #include "../core/model/repo_node_utils.h"
@@ -50,7 +51,6 @@ namespace repo{
 				const T &value
 				)
 			{
-				repoDebug << "normal field check: label " << label << ":" << value;
 				addFieldAttribute(label, attribute, boost::lexical_cast<std::string>(value));
 			}
 
@@ -176,7 +176,13 @@ namespace repo{
 				std::iostream &stream
 				) const
 			{
-				boost::property_tree::write_xml(stream, tree);
+				std::stringstream ss; 
+				boost::property_tree::write_xml(ss, tree);
+				std::string stringxml = ss.str();
+				//revert the xml_parser's utility where it swaps tabs and newlines with codes
+				boost::replace_all(stringxml, "&#9;", "\t");
+				boost::replace_all(stringxml, "&#10;", "\n");
+				stream << stringxml;
 			}
 
 		private:

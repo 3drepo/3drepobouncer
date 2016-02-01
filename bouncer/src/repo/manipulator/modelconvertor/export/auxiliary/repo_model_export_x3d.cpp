@@ -78,7 +78,6 @@ static const std::string X3D_ATTR_TRANSLATION      = "translation";
 static const std::string X3D_ATTR_TRANSPARENCY     = "transparency";
 static const std::string X3D_ATTR_BK_TRANSPARENCY  = "backTransparency";
 static const std::string X3D_ATTR_TYPE             = "type";
-static const std::string X3D_ATTR_USE              = "USE";
 static const std::string X3D_ATTR_ORIENTATION      = "orientation";
 static const std::string X3D_ATTR_POS              = "position";
 static const std::string X3D_ATTR_RENDER           = "render";
@@ -89,6 +88,7 @@ static const std::string X3D_ATTR_SOLID            = "solid";
 static const std::string X3D_ATTR_URL              = "url";
 static const std::string X3D_ATTR_URL_IDMAP        = "urlIDMap";
 static const std::string X3D_ATTR_VALUE            = "value";
+static const std::string X3D_ATTR_VALUES           = "values";
 static const std::string X3D_ATTR_XMLNS            = "xmlns";
 static const std::string X3D_ATTR_XORIGIN          = "crossOrigin";
 static const std::string X3D_ATTR_ZFAR             = "zFar";
@@ -103,7 +103,7 @@ static const std::string X3D_ON_MOUSE_OVER = "onMouseMove(event);";
 static const std::string X3D_USE_CRED      = "use-credentials";
 static const float       X3D_DEFAULT_FOV   = 0.25 * M_PI;
 
-static const size_t      GOOGLE_TILE_SIZE  = 640;
+static const float      GOOGLE_TILE_SIZE  = 640;
 
 
 X3DModelExport::X3DModelExport(
@@ -138,7 +138,7 @@ repo::lib::PropertyTree X3DModelExport::createGoogleMapSubTree(
 	{
 
 		repo_vector_t centrePoint = mapNode->getCentre();
-		repo::lib::PropertyTree yrotTrans, shapeTrans, tileGroup;
+		repo::lib::PropertyTree yrotTrans(false), shapeTrans(false), tileGroup(false);
 		gmtree.addFieldAttribute("", X3D_ATTR_ID, "mapPosition");
 		gmtree.addFieldAttribute("", X3D_ATTR_TRANSLATION, centrePoint);
 		gmtree.addFieldAttribute("", X3D_ATTR_SCALE, "1,1,1");
@@ -151,36 +151,38 @@ repo::lib::PropertyTree X3DModelExport::createGoogleMapSubTree(
 		tileGroup.addFieldAttribute("", X3D_ATTR_ID, "tileGroup");
 		tileGroup.addFieldAttribute("", X3D_ATTR_INVISIBLE, "true");
 
-		uint32_t halfWidth = (mapNode->getWidth() + 1) / 2;
+		int32_t halfWidth = (mapNode->getWidth() + 1) / 2;
 		float centX = 128.0f + mapNode->getLong() * (256.0f / 360.0f);
-		float s = sinf(mapNode->getLat() * (M_PI / 180.0f));
-		if (s < -0.9999f)
-			s = -0.9999f;
-		else if (s > 0.9999f)
-			s = 0.9999f;
+		double s = sinf(mapNode->getLat() * (M_PI / 180.0f));
+		if (s < -0.9999)
+			s = -0.9999;
+		else if (s > 0.9999)
+			s = 0.9999;
 
-		float centY = 128.0f + 0.5 * logf((1.0f + s) / (1.0f - s)) * (-256.0f / 2.0f * M_PI);
+		double centY = 128.0 + 0.5 * log((1.0 + s) / (1.0 - s)) * (-256.0 / (2.0 * M_PI));
 
 
 		size_t zoom = mapNode->getZoom();
 		size_t nTiles = 1 << zoom;
-		
+
 		std::string mapType = mapNode->getMapType();
 		
 		if (mapType.empty()) mapType = "satellite";
 
-		for (uint32_t x = -halfWidth; x < halfWidth; ++x)
-			for (uint32_t y = -halfWidth; y < halfWidth; ++y)
+		for (int32_t x = -halfWidth; x < halfWidth; ++x)
+		{
+			for (int32_t y = -halfWidth; y < halfWidth; ++y)
 			{
-				repo::lib::PropertyTree tileTree(false);
+				repo::lib::PropertyTree tileTree(false), tileTreeWithPlane(false);
 
 				float xPos = ((float)x + 0.5) * GOOGLE_TILE_SIZE;
-				float yPos = ((float)y + 0.5) * GOOGLE_TILE_SIZE;
+				double yPos = -((float)y + 0.5) * GOOGLE_TILE_SIZE;
 
 				float tileCentX = centX * nTiles + xPos;
-				float tileCentY = centY * nTiles + yPos;
+				double tileCentY = centY * (double)nTiles + yPos;
 
-				float tileLat = (2. * atan(exp(((tileCentY / nTiles) - 128.) / - (256. / (2. * M_PI)))) - M_PI / 2.) / (M_PI / 180.);
+				double tileLat = (2.0 * atan(exp(((tileCentY / nTiles) - 128.0) / -(256.0 / (2.0 * M_PI)))) - M_PI / 2.0) / (M_PI / 180.0);
+				
 				float tileLong = ((tileCentX / nTiles) - 128.) / (256. / 360.);
 
 				std::stringstream ss;
@@ -189,21 +191,22 @@ repo::lib::PropertyTree X3DModelExport::createGoogleMapSubTree(
 					<< "&zoom=" << zoom << "&key=" << mapNode->getAPIKey() << "&maptype=" << mapType;
 				std::string googleMapsURL = ss.str();
 
-				if (mapNode->getIsTwoSided())
+
+				if (mapNode->isTwoSided())
 				{
 					repo::lib::PropertyTree shaderPt(false), alphaValuePt(false), textureIdPTree(false), vertShaderPt(false), fragShaderPt(false);
-					shaderPt.addFieldAttribute("", X3D_ATTR_USE, "TwoSidedShader");
+					shaderPt.addFieldAttribute("", X3D_ATTR_DEF, "TwoSidedShader");
 
 					//Field element
 					alphaValuePt.addFieldAttribute("", X3D_ATTR_NAME, "alpha");
 					alphaValuePt.addFieldAttribute("", X3D_ATTR_TYPE, "SFFloat");
-					alphaValuePt.addFieldAttribute("", X3D_ATTR_VALUE, "true");
+					alphaValuePt.addFieldAttribute("", X3D_ATTR_VALUE, mapNode->getTwoSidedValue());
 
 					shaderPt.mergeSubTree(X3D_LABEL_FIELD, alphaValuePt);
 
 					textureIdPTree.addFieldAttribute("", X3D_ATTR_NAME, "map");
 					textureIdPTree.addFieldAttribute("", X3D_ATTR_TYPE, "SFInt32");
-					textureIdPTree.addFieldAttribute("", X3D_ATTR_VALUE, 0);
+					textureIdPTree.addFieldAttribute("", X3D_ATTR_VALUES, 0);
 
 					shaderPt.mergeSubTree(X3D_LABEL_FIELD, textureIdPTree);
 
@@ -242,14 +245,9 @@ repo::lib::PropertyTree X3DModelExport::createGoogleMapSubTree(
 
 					shaderPt.mergeSubTree(X3D_LABEL_SHADER_PART, fragShaderPt);
 					tileTree.mergeSubTree(X3D_LABEL_COMPOSED_SHADER, shaderPt);
-				}
-
-				
-				
+				}				
 
 				tileTree.addFieldAttribute(X3D_LABEL_IMG_TEXTURE,  X3D_ATTR_URL , googleMapsURL);
-
-				tileGroup.mergeSubTree(X3D_LABEL_SHAPE + "." + X3D_LABEL_APP, tileTree);
 
 				repo::lib::PropertyTree planePt(false);
 				float worldTileSize = mapNode->getTileSize();
@@ -258,9 +256,14 @@ repo::lib::PropertyTree X3DModelExport::createGoogleMapSubTree(
 				planePt.addFieldAttribute("", X3D_ATTR_SOLID, "false");
 				planePt.addFieldAttribute("", X3D_ATTR_LIT, "false");
 
-				tileGroup.mergeSubTree(X3D_LABEL_SHAPE + "." + X3D_LABEL_PLANE, tileTree);
+				tileTreeWithPlane.mergeSubTree(X3D_LABEL_APP, tileTree);
+				tileTreeWithPlane.mergeSubTree(X3D_LABEL_PLANE, planePt);
+
+				tileGroup.mergeSubTree(X3D_LABEL_SHAPE, tileTreeWithPlane);
 
 			}
+		}
+		repoDebug << "Exited...";
 
 		shapeTrans.mergeSubTree(X3D_LABEL_GROUP, tileGroup);
 		yrotTrans.mergeSubTree(X3D_LABEL_TRANS, shapeTrans);
@@ -300,7 +303,7 @@ std::vector<uint8_t> X3DModelExport::getFileAsBuffer() const
 	std::string xmlFile = ss.str();
 	std::vector<uint8_t> xmlBuf;
 	xmlBuf.resize(xmlFile.size());
-	repoTrace << "FILE: " << fname << " : " << xmlFile;
+	//repoTrace << "FILE: " << fname << " : " << xmlFile;
 	memcpy(xmlBuf.data(), xmlFile.c_str(), xmlFile.size());
 
 	return xmlBuf;

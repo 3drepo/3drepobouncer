@@ -68,17 +68,29 @@ namespace repo {
 
 					repo_vector_t getCentre() const;
 
+
 					/**
 					* Check if the map tile is suppose to be 2 sided
 					* Default is false
 					* @return returns true if the map tile is 2 sided
 					*/
-					bool getIsTwoSided() const
+					bool isTwoSided() const
 					{
-						bool twoSided = false;
+						return hasField(REPO_NODE_MAP_LABEL_TWO_SIDED);
+					}
+
+					/**
+					* Get the alpha value if the map tiles are 2 sided
+					* This is meaningless if isTwoSided() returned false
+					* Only call this function if isTwoSided is true
+					* @return returns the alpha value for the two sided tiles
+					*/
+					float getTwoSidedValue () const
+					{
+						float twoSided = false;
 						if (hasField(REPO_NODE_MAP_LABEL_TWO_SIDED))
 						{
-							twoSided = getField(REPO_NODE_MAP_LABEL_TWO_SIDED).Bool();
+							twoSided = getField(REPO_NODE_MAP_LABEL_TWO_SIDED).Double();
 						}
 						return twoSided;
 					}
