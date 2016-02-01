@@ -242,13 +242,6 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getJSONFil
 		treePair.second.write_json(ss);
 		std::string jsonStr = ss.str();
 
-		repoDebug << jsonStr;
-	
-
-		FILE* fp = fopen("C:\\\\Users\\Carmen\\Desktop\\test.txt", "wb");
-		fwrite(jsonStr.c_str(), sizeof(*jsonStr.data()), jsonStr.size(), fp);
-		fclose(fp);
-
 		fileBuffers[treePair.first] = std::vector<uint8_t>();
 		fileBuffers[treePair.first].resize(jsonStr.size());
 		memcpy(fileBuffers[treePair.first].data(), jsonStr.c_str(), jsonStr.size());
@@ -347,7 +340,7 @@ bool SRCModelExport::generateJSONMapping(
 
 		jsonTree.addArrayObjects(MP_LABEL_MAPPING, mappingTrees);
 
-		std::string jsonFileName = "/api/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + UUIDtoString(mesh->getUniqueID()) + ".json.mpc";
+		std::string jsonFileName = "/" +  scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + UUIDtoString(mesh->getUniqueID()) + ".json.mpc";
 
 		jsonTrees[jsonFileName] = jsonTree;
 	}
