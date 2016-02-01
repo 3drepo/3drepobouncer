@@ -153,13 +153,13 @@ repo::lib::PropertyTree X3DModelExport::createGoogleMapSubTree(
 
 		int32_t halfWidth = (mapNode->getWidth() + 1) / 2;
 		float centX = 128.0f + mapNode->getLong() * (256.0f / 360.0f);
-		double s = sinf(mapNode->getLat() * (M_PI / 180.0f));
+		float s = sinf(mapNode->getLat() * (M_PI / 180.0f));
 		if (s < -0.9999)
 			s = -0.9999;
 		else if (s > 0.9999)
 			s = 0.9999;
 
-		double centY = 128.0 + 0.5 * log((1.0 + s) / (1.0 - s)) * (-256.0 / (2.0 * M_PI));
+		float centY = 128.0 + 0.5 * log((1.0 + s) / (1.0 - s)) * (-256.0 / (2.0 * M_PI));
 
 
 		size_t zoom = mapNode->getZoom();
@@ -175,13 +175,13 @@ repo::lib::PropertyTree X3DModelExport::createGoogleMapSubTree(
 			{
 				repo::lib::PropertyTree tileTree(false), tileTreeWithPlane(false);
 
-				float xPos = ((float)x + 0.5) * GOOGLE_TILE_SIZE;
-				double yPos = -((float)y + 0.5) * GOOGLE_TILE_SIZE;
+				float xPos = (x + 0.5) * GOOGLE_TILE_SIZE;
+				float yPos = -(y + 0.5) * GOOGLE_TILE_SIZE;
 
 				float tileCentX = centX * nTiles + xPos;
-				double tileCentY = centY * (double)nTiles + yPos;
+				float tileCentY = centY * nTiles + yPos;
 
-				double tileLat = (2.0 * atan(exp(((tileCentY / nTiles) - 128.0) / -(256.0 / (2.0 * M_PI)))) - M_PI / 2.0) / (M_PI / 180.0);
+				float tileLat = (2.0 * atan(exp(((tileCentY / nTiles) - 128.0) / -(256.0 / (2.0 * M_PI)))) - M_PI / 2.0) / (M_PI / 180.0);
 				
 				float tileLong = ((tileCentX / nTiles) - 128.) / (256. / 360.);
 
