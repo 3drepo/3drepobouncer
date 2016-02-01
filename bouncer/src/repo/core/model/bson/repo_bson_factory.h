@@ -215,7 +215,8 @@ public:
             const float           &longitude,
             const float           &latitude,
             const repo_vector_t   &centrePoint,
-            const std::string     &name = std::string(),
+			const std::string     &apiKey = std::string(),
+			const std::string     &name = std::string(),
             const int             &apiLevel = REPO_NODE_API_LEVEL_1);
 
     /**
