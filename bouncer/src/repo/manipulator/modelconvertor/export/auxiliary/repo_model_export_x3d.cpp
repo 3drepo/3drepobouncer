@@ -281,9 +281,6 @@ repo_vector_t X3DModelExport::getBoxCentre(
 	const repo_vector_t &min,
 	const repo_vector_t &max) const
 {
-	repoDebug << "Centre of bbox of [" << min.x << "," << min.y << "," << min.z << "] and [" << max.x << "," << max.y << "," << max.z << "] is " 
-		<< "[" << (min.x + max.x) / 2. << ", " << (min.y + max.y) / 2. << ", " << (min.z + max.z) / 2. << "]";
-
 	return { (min.x + max.x) / 2.0f, (min.y + max.y) / 2.0f, (min.z + max.z) / 2.0f };
 }
 
@@ -291,8 +288,6 @@ repo_vector_t X3DModelExport::getBoxSize(
 	const repo_vector_t &min,
 	const repo_vector_t &max) const
 {
-	repoDebug << "Size of bbox of [" << min.x << "," << min.y << "," << min.z << "] and [" << max.x << "," << max.y << "," << max.z << "] is "
-		<< "[" << max.x - min.x << ", " << max.y - min.y << ", " << max.z - min.z << "]";
 	return { max.x - min.x, max.y - min.y, max.z - min.z};
 }
 
