@@ -71,7 +71,7 @@ void PropertyTree::addFieldAttribute(
 {
 
 	std::stringstream ss;
-	ss << value.x << "," << value.x << "," << value.z ;
+	ss << value.x << "," << value.y << "," << value.z ;
 
 
 	addFieldAttribute(label, attribute, ss.str());
