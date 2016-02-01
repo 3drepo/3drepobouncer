@@ -468,7 +468,7 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 {
 	bool success;
 	modelconvertor::repo_src_export_t v = generateSRCBuffer(scene);
-	if (success = (v.srcFiles.size() + v.x3dFiles.size()))
+	if (success = (v.srcFiles.size() + v.x3dFiles.size() + v.jsonFiles.size()))
 	{
 		repo::core::handler::AbstractDatabaseHandler* handler =
 			repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
@@ -501,6 +501,24 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 				//FIXME: constant value somewhere for .stash.x3d?
 				std::string fileName = bufferPair.first;
 				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.x3d", fileName, bufferPair.second,
+					errMsg, "binary/octet-stream"))
+				{
+					repoInfo << "File (" << fileName << ") added successfully.";
+				}
+				else
+				{
+					repoError << "Failed to add file  (" << fileName << "): " << errMsg;
+				}
+			}
+
+			for (const auto bufferPair : v.jsonFiles)
+			{
+				std::string databaseName = scene->getDatabaseName();
+				std::string projectName = scene->getProjectName();
+				std::string errMsg;
+				//FIXME: constant value somewhere for .stash.x3d?
+				std::string fileName = bufferPair.first;
+				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.json_mpc", fileName, bufferPair.second,
 					errMsg, "binary/octet-stream"))
 				{
 					repoInfo << "File (" << fileName << ") added successfully.";

@@ -121,7 +121,8 @@ MeshNode MeshNode::cloneAndUpdateMeshMapping(
 MeshNode MeshNode::cloneAndRemapMeshMapping(
 	const size_t verticeThreshold,
 	std::vector<uint16_t> &newFaces,
-	std::vector<std::vector<float>> &idMapBuf) const
+	std::vector<std::vector<float>> &idMapBuf,
+	std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> &splitMap) const
 {
 	//A lot easier if we can directly manipulate the binaries without 
 	//keep having to modify the mongo buffer, so call cloneAndShrink
@@ -160,6 +161,8 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 
 	for (const auto &mapping : mappings)
 	{
+		splitMap[mapping.mesh_id] = std::vector < uint32_t >() ;
+
 		size_t smVertices = mapping.vertTo  -  mapping.vertFrom;
 		size_t smFaces = mapping.triTo - mapping.triFrom;
 		size_t currentVFrom = mapping.vertFrom;
@@ -237,6 +240,9 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 				{
 					//With this face included, the running total will exceed the threshold
 					//so close up the current subMesh and start a new one
+
+					if (faceIdx)
+						splitMap[mapping.mesh_id].push_back(newMappings.size());
 
 					//==================== END OF SUB MESH =====================
 
@@ -359,6 +365,7 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 
 			//Update the subMesh info to include this face
 
+
 			//Modify the vertices as it may be rearranged within this region
 			std::copy(newVertices.begin(), newVertices.end(), vertices->begin() + mapping.vertFrom);
 
@@ -368,6 +375,9 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 
 			runningVTotal = subMeshVTo - subMeshVFrom;
 			runningFTotal = subMeshFTo - subMeshFFrom;
+
+			if (runningFTotal)
+				splitMap[mapping.mesh_id].push_back(newMappings.size());
 
 			uint32_t idMapLength = idMapBuf.back().size();
 			idMapBuf.back().resize(idMapLength + smVertices);
@@ -453,6 +463,8 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 
 			runningVTotal += smVertices;
 			runningFTotal += smFaces;
+
+			splitMap[mapping.mesh_id].push_back(newMappings.size());
 
 		}//else of (smVertices > verticeThreshold)
 

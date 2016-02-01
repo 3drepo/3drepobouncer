@@ -33,6 +33,27 @@ namespace repo{
 			PropertyTree(const bool &enableJSONWorkAround);
 			~PropertyTree();
 
+
+			/**
+			* Add an array of objects to the tree at a specified level
+			* This is used for things like arrays of objects within JSON
+			* @param label indicating where the child lives in the tree
+			* @param value vector of children to add
+			*/
+			void addArrayObjects(
+				const std::string               &label,
+				const std::vector<PropertyTree> &value)
+			{
+				boost::property_tree::ptree arraytree;
+				for (size_t i = 0; i < value.size(); ++i)
+				{
+					arraytree.push_back(std::make_pair("", value[i].tree));
+				}
+
+				tree.add_child(label, arraytree);
+				
+			}
+
 			/**
 			* Add an attribute to the field
 			* This is very xml specific
@@ -114,21 +135,39 @@ namespace repo{
 			* This is used for things like arrays within JSON
 			* @param label indicating where the child lives in the tree
 			* @param value vector of children to add
+			* @param join merge vector into a string value instead of putting in a vector
 			*/
 			template <typename T>
 			void addToTree(
 				const std::string           &label,
-				const std::vector<T>        &value)
+				const std::vector<T>        &value,
+				const bool                  &join = true)
 			{
-				boost::property_tree::ptree arrayTree;
-				for (const auto &child : value)
+				if (join)
 				{
-					PropertyTree childTree;
-					childTree.addToTree("", child);
-					arrayTree.push_back(std::make_pair("", childTree.tree));
-				}
+					boost::property_tree::ptree arrayTree;
+					for (const auto &child : value)
+					{
+						PropertyTree childTree;
+						childTree.addToTree("", child);
+						arrayTree.push_back(std::make_pair("", childTree.tree));
+					}
 
-				tree.add_child(label, arrayTree);
+					tree.add_child(label, arrayTree);
+				}
+				else
+				{
+					std::stringstream ss;
+					for (size_t i = 0; i < value.size(); ++i)
+					{
+						ss << boost::lexical_cast<std::string>(value[i]);
+						if (i != value.size()-1)
+							ss << " ";
+					}
+
+					std::string valueInStr = ss.str();
+					addToTree(label, valueInStr);
+				}				
 			}
 
 			/**
@@ -151,8 +190,8 @@ namespace repo{
 			* @param subTree the sub tree to add
 			*/
 			void mergeSubTree(
-				const std::string &label,
-				PropertyTree      &subTree)
+				const std::string   &label,
+				const PropertyTree  &subTree)
 			{
 				tree.add_child(label, subTree.tree);
 			}
@@ -189,8 +228,12 @@ namespace repo{
 			bool hackStrings;
 			boost::property_tree::ptree tree;
 		};
-
 		// Template specialization
+		template <>
+		void PropertyTree::addToTree<repo_vector_t>(
+			const std::string           &label,
+			const repo_vector_t         &value);
+
 		template <>
 		void PropertyTree::addToTree<std::string>(
 			const std::string           &label,

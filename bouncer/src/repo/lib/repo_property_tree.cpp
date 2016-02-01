@@ -99,3 +99,18 @@ void PropertyTree::addToTree<std::string>(
 	}
 	
 }
+
+
+template <>
+void PropertyTree::addToTree<repo_vector_t>(
+	const std::string  &label,
+	const repo_vector_t &value
+	)
+{
+
+	std::stringstream ss;
+	ss << value.x << " " << value.y << " " << value.z;
+
+
+	addToTree(label, ss.str());
+}

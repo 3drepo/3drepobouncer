@@ -136,7 +136,8 @@ namespace repo {
 					MeshNode cloneAndRemapMeshMapping(
 						const size_t verticeThreshold,
 						std::vector<uint16_t> &newFaces,
-						std::vector<std::vector<float>> &idMapBuf) const;
+						std::vector<std::vector<float>> &idMapBuf,
+						std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> &splitMap) const;
 
 
 					
