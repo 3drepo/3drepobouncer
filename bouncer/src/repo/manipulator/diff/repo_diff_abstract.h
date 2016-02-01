@@ -27,7 +27,7 @@ namespace repo{
 			struct DiffResult{
 				std::vector<repoUUID> added; //nodes that does not exist on the other model
 				std::vector<repoUUID> modified; //nodes that exist on the other model but it is modified.
-				std::map<repoUUID, repoUUID> correspondence;
+				std::unordered_map<repoUUID, repoUUID, boost::hash<boost::uuids::uuid> > correspondence;
 			};
 
 			enum class Mode{ DIFF_BY_ID, DIFF_BY_NAME };

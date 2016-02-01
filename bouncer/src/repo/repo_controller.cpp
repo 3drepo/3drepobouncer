@@ -436,7 +436,7 @@ RepoController::getDatabasesWithProjects(
         const RepoToken *token,
         const std::list<std::string> &databases)
 {
-    std::map<std::string, std::list<std::string>> map;
+    std::map<std::string, std::list<std::string> > map;
     if (token)
     {
         manipulator::RepoManipulator* worker = workerPool.pop();
