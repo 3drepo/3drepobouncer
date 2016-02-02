@@ -434,16 +434,16 @@ void SRCModelExport::addMeshToExport(
 	size_t bufPos = 0; //In bytes
 	size_t vertexWritePosition = bufPos;
 
-	bufPos += vertices->size()*sizeof(*vertices->data());
+	bufPos += vertices.size()*sizeof(*vertices.data());
 
 	size_t normalWritePosition = bufPos;
-	bufPos += normals->size()*sizeof(*normals->data());
+	bufPos += normals.size()*sizeof(*normals.data());
 
 	size_t facesWritePosition = bufPos;
 	bufPos += faceBuf.size() * sizeof(*faceBuf.data());
 
 	size_t idMapWritePosition = bufPos;
-	bufPos += vertices->size() * sizeof(float); //idMap array is of floats
+	bufPos += vertices.size() * sizeof(float); //idMap array is of floats
 
 	size_t uvWritePosition = bufPos;
 	size_t nSubMeshes = mapping.size();
@@ -495,7 +495,7 @@ void SRCModelExport::addMeshToExport(
 		size_t fCount = mapping[subMeshIdx].triTo - mapping[subMeshIdx].triFrom;
 
 		// SRC Header for this mesh
-		if (vertices->size())
+		if (vertices.size())
 		{
 			std::string srcAccessors_AttrViews_positionAttrView = srcAccessors_AttributeViews + "." + positionAttributeView + ".";
 			tree.addToTree(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BUFFVIEW, positionBufferView);
@@ -512,7 +512,7 @@ void SRCModelExport::addMeshToExport(
 
 
 			std::string srcBufferChunks_positionBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + positionBufferChunk + ".";
-			size_t verticeBufferLength = vCount * sizeof(*vertices->data());
+			size_t verticeBufferLength = vCount * sizeof(*vertices.data());
 
 			tree.addToTree(srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_OFFSET, vertexWritePosition);
 			tree.addToTree(srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_LENGTH, verticeBufferLength); 
@@ -528,7 +528,7 @@ void SRCModelExport::addMeshToExport(
 		}
 
 		//Normal Attribute View
-		if (normals->size())
+		if (normals.size())
 		{
 			std::string srcAccessors_AttrViews_normalAttrView = srcAccessors_AttributeViews + "." + normalAttributeView + ".";
 			tree.addToTree(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_BUFFVIEW, normalBufferView);
@@ -545,7 +545,7 @@ void SRCModelExport::addMeshToExport(
 
 
 			std::string srcBufferChunks_positionBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + normalBufferChunk + ".";
-			size_t verticeBufferLength = vCount * sizeof(*normals->data());
+			size_t verticeBufferLength = vCount * sizeof(*normals.data());
 
 			tree.addToTree(srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_OFFSET, normalWritePosition);
 			tree.addToTree(srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_LENGTH, verticeBufferLength); 
@@ -622,7 +622,7 @@ void SRCModelExport::addMeshToExport(
 			tree.addToTree(srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_ID, idMapAttributeView);
 		}
 
-		if (uvs && uvs->size())
+		if (uvs.size())
 		{
 			// UV coordinates
 			std::string srcAccessors_AttrViews_uvAttrView = srcAccessors_AttributeViews + "." + uvAttributeView + ".";
@@ -639,7 +639,7 @@ void SRCModelExport::addMeshToExport(
 			tree.addToTree(srcAccessors_AttrViews_uvAttrView + SRC_LABEL_DECODE_SCALE, scaleArr);
 
 			std::string srcBufferChunks_uvBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + uvBufferChunk + ".";
-			size_t uvBufferLength = vCount * sizeof(*uvs->data());
+			size_t uvBufferLength = vCount * sizeof(*uvs.data());
 
 			tree.addToTree(srcBufferChunks_uvBufferChunks + SRC_LABEL_BYTE_OFFSET, uvWritePosition);
 			tree.addToTree(srcBufferChunks_uvBufferChunks + SRC_LABEL_BYTE_LENGTH, uvBufferLength);
@@ -670,11 +670,11 @@ void SRCModelExport::addMeshToExport(
 	}
 	
 
-	size_t bufferSize = (vertices->size() ? vertices->size() * sizeof(*vertices->data()) : 0)
-		+ (normals->size() ? normals->size() * sizeof(*normals->data()) : 0)
-		+ (faceBuf.size() ? faceBuf.size() * sizeof(*faceBuf.data()) : 0)
-		+ (idMapBufFull.size() ? idMapBufFull.size() * sizeof(*idMapBufFull.data()) : 0)
-		+ (uvs && uvs->size() ? uvs->size() *sizeof(*uvs->data()) : 0);
+	size_t bufferSize = vertices.size() * sizeof(*vertices.data())
+		+ normals.size() * sizeof(*normals.data())
+		+ faceBuf.size() * sizeof(*faceBuf.data())
+		+ idMapBufFull.size() * sizeof(*idMapBufFull.data())
+		+ uvs.size() *sizeof(*uvs.data());
 
 	std::vector<uint8_t> dataBuffer;
 	dataBuffer.resize(bufferSize);
@@ -682,20 +682,20 @@ void SRCModelExport::addMeshToExport(
 	size_t bufferPtr = 0;
 	repoTrace << "Writing to buffer... expected Size is : " << bufferSize;
 	// Output vertices
-	if (vertices->size())
+	if (vertices.size())
 	{
-		size_t byteSize = vertices->size() * sizeof(*vertices->data());
-		memcpy(&dataBuffer[bufferPtr], vertices->data(), byteSize);
+		size_t byteSize = vertices.size() * sizeof(*vertices.data());
+		memcpy(&dataBuffer[bufferPtr], vertices.data(), byteSize);
 		bufferPtr += byteSize;
 
 		repoTrace << "Written Vertices: byte Size " << byteSize << " bufferPtr is " << bufferPtr;
 	}
 
 	// Output normals
-	if (normals->size())
+	if (normals.size())
 	{
-		size_t byteSize = normals->size() * sizeof(*normals->data());
-		memcpy(&dataBuffer[bufferPtr], normals->data(), byteSize);
+		size_t byteSize = normals.size() * sizeof(*normals.data());
+		memcpy(&dataBuffer[bufferPtr], normals.data(), byteSize);
 		bufferPtr += byteSize;
 		repoTrace << "Written normals: byte Size " << byteSize << " bufferPtr is " << bufferPtr;
 	}
@@ -718,20 +718,13 @@ void SRCModelExport::addMeshToExport(
 	}
 
 
-	if (uvs && uvs->size()) {
-		size_t byteSize = uvs->size() * sizeof(*uvs->data());
-		memcpy(&dataBuffer[bufferPtr], uvs->data(), byteSize);
+	if (uvs.size()) {
+		size_t byteSize = uvs.size() * sizeof(*uvs.data());
+		memcpy(&dataBuffer[bufferPtr], uvs.data(), byteSize);
 		bufferPtr += byteSize;
 		repoTrace << "Written UVs: byte Size " << byteSize << " bufferPtr is " << bufferPtr;
 	}
 
-
-	if (normals)
-		delete normals;
-	if (vertices)
-		delete vertices;
-	if (uvs)
-		delete uvs;
 
 	std::string fname = meshId + fileExt;
 	
