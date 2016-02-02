@@ -140,23 +140,9 @@ namespace repo {
 					* @return returns masked password of the user
 					*/
 					std::string getPassword() const;
-					/**
-					* Get list of projects 
-					* @return returns a vector of string pairs (database, project)
-					*/
-					std::list<std::pair<std::string, std::string>>
-						getProjectsList() const;
 
 					/**
-					* Get list of groups
-					* @return returns a vector of string pairs (owner, group)
-					*/
-					std::list<std::pair<std::string, std::string>>
-						getGroupsList() const;
-
-
-					/**
-					* Get list of groups
+					* Get list of roles
 					* @return returns a vector of string pairs (database, roles)
 					*/
 					std::list<std::pair<std::string, std::string>>

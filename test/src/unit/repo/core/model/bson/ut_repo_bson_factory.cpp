@@ -138,47 +138,33 @@ TEST(RepoBSONFactoryTest, MakeRepoUserTest)
 	std::string lastName = "lastName";
 	std::string email = "email";
 
-	std::list<std::pair<std::string, std::string>>   projects;
 	std::list<std::pair<std::string, std::string>>   roles;
-	std::list<std::pair<std::string, std::string>>   groups;
 	std::list<std::pair<std::string, std::string>>   apiKeys;
 	std::vector<char>                                avatar;
 
 
-	projects.push_back(std::pair<std::string, std::string >("database", "projectName"));
 	roles.push_back(std::pair<std::string, std::string >("database", "roleName"));
-	groups.push_back(std::pair<std::string, std::string >("database", "groupName"));
 	apiKeys.push_back(std::pair<std::string, std::string >("database", "apiKey"));
 	avatar.resize(10);
 
-	RepoUser user = RepoBSONFactory::makeRepoUser(username, password, firstName, lastName, email, projects, roles, groups, apiKeys, avatar);
+	RepoUser user = RepoBSONFactory::makeRepoUser(username, password, firstName, lastName, email, roles, apiKeys, avatar);
 
 	EXPECT_EQ(username, user.getUserName());
 	EXPECT_EQ(firstName, user.getFirstName());
 	EXPECT_EQ(lastName, user.getLastName());
 	EXPECT_EQ(email, user.getEmail());
 
-	auto proOut = user.getProjectsList();
 	auto rolesOut = user.getRolesList();
-	auto groupsOut = user.getGroupsList();
 	auto apiOut = user.getAPIKeysList();
 	auto avatarOut = user.getAvatarAsRawData();
 
 
-	EXPECT_EQ(projects.size(), proOut.size());
 	EXPECT_EQ(roles.size(), rolesOut.size());
-	EXPECT_EQ(groups.size(), groupsOut.size());
 	EXPECT_EQ(apiKeys.size(), apiOut.size());
 	EXPECT_EQ(avatar.size(), avatarOut.size());
 
-	EXPECT_EQ(proOut.begin()->first, projects.begin()->first);
-	EXPECT_EQ(proOut.begin()->second, projects.begin()->second);
-
 	EXPECT_EQ(rolesOut.begin()->first, roles.begin()->first);
 	EXPECT_EQ(rolesOut.begin()->second, roles.begin()->second);
-
-	EXPECT_EQ(groupsOut.begin()->first, groups.begin()->first);
-	EXPECT_EQ(groupsOut.begin()->second, groups.begin()->second);
 
 	EXPECT_EQ(apiOut.begin()->first, apiKeys.begin()->first);
 	EXPECT_EQ(apiOut.begin()->second, apiKeys.begin()->second);

@@ -712,9 +712,7 @@ RepoUser RepoBSONFactory::makeRepoUser(
         const std::string                           &firstName,
         const std::string                           &lastName,
         const std::string                           &email,
-        const std::list<std::pair<std::string, std::string>>  &projects,
         const std::list<std::pair<std::string, std::string>>   &roles,
-        const std::list<std::pair<std::string, std::string>>   &groups,
         const std::list<std::pair<std::string, std::string>>   &apiKeys,
         const std::vector<char>                     &avatar)
 {
@@ -741,13 +739,7 @@ RepoUser RepoBSONFactory::makeRepoUser(
     if (!email.empty())
         customDataBuilder << REPO_USER_LABEL_EMAIL << email;
 
-    if (projects.size())
-        customDataBuilder.appendArrayPair(REPO_USER_LABEL_PROJECTS, projects, REPO_USER_LABEL_OWNER, REPO_USER_LABEL_PROJECT);
-
-    if (groups.size())
-        customDataBuilder.appendArrayPair(REPO_USER_LABEL_GROUPS, groups, REPO_USER_LABEL_OWNER, REPO_USER_LABEL_GROUP);
-
-    if (!apiKeys.empty())
+	if (!apiKeys.empty())
         customDataBuilder.appendArrayPair(REPO_USER_LABEL_API_KEYS, apiKeys, REPO_USER_LABEL_LABEL, REPO_USER_LABEL_KEY);
 
     if (avatar.size())
