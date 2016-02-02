@@ -84,10 +84,8 @@ TEST(RepoBSONTest, GetBinaryAsVectorEmbedded)
 	}
 
 
-	std::vector<char> null;
-
+	
 	//Invalid retrieval, but they shouldn't throw exception
-	EXPECT_FALSE(bson.getBinaryFieldAsVector("binDataTest", null));
 	EXPECT_FALSE(bson.getBinaryFieldAsVector("numTest", out));
 	EXPECT_FALSE(bson.getBinaryFieldAsVector("stringTest", out));
 	EXPECT_FALSE(bson.getBinaryFieldAsVector("doesn'tExist", out));
