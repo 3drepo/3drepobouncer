@@ -179,7 +179,7 @@ TEST(RepoBSONBuilderTest, appendBinary)
 	EXPECT_FALSE(bson.hasField("binaryData3"));
 
 	std::vector<uint8_t> binOut;
-	EXPECT_TRUE(bson.getBinaryFieldAsVector("binaryData", &binOut));
+	EXPECT_TRUE(bson.getBinaryFieldAsVector("binaryData", binOut));
 	EXPECT_EQ(binOut.size(), binSize);
 
 	for (size_t i = 0; i < binSize; ++i)

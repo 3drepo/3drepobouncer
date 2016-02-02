@@ -47,7 +47,7 @@ std::vector<char> RepoUser::getAvatarAsRawData() const
 	std::vector<char> image;
 	RepoBSON customData = getCustomDataBSON();
 	if (customData.hasField(REPO_USER_LABEL_AVATAR))
-		RepoBSON(customData.getObjectField(REPO_USER_LABEL_AVATAR)).getBinaryFieldAsVector("data", &image);
+		RepoBSON(customData.getObjectField(REPO_USER_LABEL_AVATAR)).getBinaryFieldAsVector("data", image);
 
 	return image;
 }

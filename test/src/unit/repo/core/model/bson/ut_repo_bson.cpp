@@ -75,7 +75,7 @@ TEST(RepoBSONTest, GetBinaryAsVectorEmbedded)
 	RepoBSON bson(builder);
 
 
-	EXPECT_TRUE(bson.getBinaryFieldAsVector("binDataTest", &out));
+	EXPECT_TRUE(bson.getBinaryFieldAsVector("binDataTest", out));
 
 	EXPECT_EQ(in.size(), out.size());
 	for (size_t i = 0; i < size; ++i)
@@ -84,13 +84,11 @@ TEST(RepoBSONTest, GetBinaryAsVectorEmbedded)
 	}
 
 
-	std::vector<char> *null = nullptr;
-
+	
 	//Invalid retrieval, but they shouldn't throw exception
-	EXPECT_FALSE(bson.getBinaryFieldAsVector("binDataTest", null));
-	EXPECT_FALSE(bson.getBinaryFieldAsVector("numTest", &out));
-	EXPECT_FALSE(bson.getBinaryFieldAsVector("stringTest", &out));
-	EXPECT_FALSE(bson.getBinaryFieldAsVector("doesn'tExist", &out));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector("numTest", out));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector("stringTest", out));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector("doesn'tExist", out));
 
 }
 
@@ -115,8 +113,8 @@ TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
 	
 	RepoBSON bson2(RepoBSON(), map);
 
-	EXPECT_TRUE(bson.getBinaryFieldAsVector("binDataTest", &out));
-	EXPECT_FALSE(bson.getBinaryFieldAsVector(fname, &out)); //make sure fieldname/filename are not mixed up.
+	EXPECT_TRUE(bson.getBinaryFieldAsVector("binDataTest", out));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector(fname, out)); //make sure fieldname/filename are not mixed up.
 
 	ASSERT_EQ(out.size(), in.size());
 	for (size_t i = 0; i < size; ++i)
@@ -125,8 +123,8 @@ TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
 	}
 
 
-	EXPECT_TRUE(bson2.getBinaryFieldAsVector("binDataTest", &out));
-	EXPECT_FALSE(bson2.getBinaryFieldAsVector(fname, &out)); //make sure fieldname/filename are not mixed up.
+	EXPECT_TRUE(bson2.getBinaryFieldAsVector("binDataTest", out));
+	EXPECT_FALSE(bson2.getBinaryFieldAsVector(fname, out)); //make sure fieldname/filename are not mixed up.
 
 	ASSERT_EQ(out.size(), in.size());
 	for (size_t i = 0; i < size; ++i)
@@ -396,7 +394,7 @@ TEST(RepoBSONTest, CloneAndShrink)
 	EXPECT_TRUE(outMapping.find("orgRef") != outMapping.end());
 
 	//Check the binary still obtainable
-	EXPECT_TRUE(shrunkBson.getBinaryFieldAsVector("binDataTest", &out));
+	EXPECT_TRUE(shrunkBson.getBinaryFieldAsVector("binDataTest", out));
 
 
 	ASSERT_EQ(in.size(), out.size());
