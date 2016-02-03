@@ -25,14 +25,31 @@
 
 using namespace repo::manipulator::modelconvertor;
 
+static const std::string GLTF_LABEL_ATTRIBUTES = "attributes";
 static const std::string GLTF_LABEL_CAMERAS = "cameras";
 static const std::string GLTF_LABEL_CHILDREN = "children";
+static const std::string GLTF_LABEL_INDICES  = "indices";
+static const std::string GLTF_LABEL_MATERIAL = "material";
 static const std::string GLTF_LABEL_MATRIX = "matrix";
 static const std::string GLTF_LABEL_MESHES = "meshes";
 static const std::string GLTF_LABEL_NAME = "name";
 static const std::string GLTF_LABEL_NODES = "nodes";
+static const std::string GLTF_LABEL_NORMAL = "NORMAL";
+static const std::string GLTF_LABEL_POSITION = "POSITION";
+static const std::string GLTF_LABEL_TEXCOORD = "TEXCOORD";
+static const std::string GLTF_LABEL_PRIMITIVE = "primitive";
+static const std::string GLTF_LABEL_PRIMITIVES = "primitives";
 static const std::string GLTF_LABEL_SCENE = "scene";
 static const std::string GLTF_LABEL_SCENES = "scenes";
+
+static const std::string GLTF_PREFIX_ACCESSORS = "acc";
+
+static const std::string GLTF_SUFFIX_FACES = "f";
+static const std::string GLTF_SUFFIX_NORMALS = "n";
+static const std::string GLTF_SUFFIX_POSITION = "p";
+static const std::string GLTF_SUFFIX_TEX_COORD = "uv";
+
+static const uint32_t GLTF_PRIM_TYPE_TRIANGLE = 4;
 
 
 GLTFModelExport::GLTFModelExport(
@@ -80,6 +97,8 @@ bool GLTFModelExport::constructScene(
 		tree.addToTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_NODES, treeNodes);
 
 		populateWithNode(root, tree);
+
+		populateWithMeshes(tree);
 
 	}
 	else
@@ -138,6 +157,59 @@ void GLTFModelExport::processNodeChildren(
 	if (cameras.size())
 		tree.addToTree(prefix + GLTF_LABEL_CAMERAS, cameras);
 
+}
+
+void GLTFModelExport::populateWithMeshes(
+	repo::lib::PropertyTree           &tree)
+{
+	repo::core::model::RepoNodeSet meshes = scene->getAllMeshes(gType);
+
+	for (const auto &mesh : meshes)
+	{
+		const repo::core::model::MeshNode *node = (const repo::core::model::MeshNode *)mesh;
+		std::string meshId = UUIDtoString(node->getUniqueID());
+		std::string label = GLTF_LABEL_MESHES + "." + meshId;
+		std::string accessorPrefix = GLTF_PREFIX_ACCESSORS + "_" + meshId;
+		std::string name = node->getName();
+		if (!name.empty())
+			tree.addToTree(label + "." + GLTF_LABEL_NAME, node->getName());
+
+		std::vector<repo::lib::PropertyTree> primitives;
+		primitives.push_back(repo::lib::PropertyTree());
+
+
+		auto children = scene->getChildrenNodesFiltered(gType, node->getSharedID(), repo::core::model::NodeType::MATERIAL);
+		//FIXME: need multiple primitives for multiple materials, check for subMeshes
+		if (children.size())
+		{
+			primitives[0].addToTree(GLTF_LABEL_MATERIAL, UUIDtoString(children[0]->getUniqueID()));
+			primitives[0].addToTree(GLTF_LABEL_INDICES, accessorPrefix + "_" + GLTF_SUFFIX_FACES);
+			primitives[0].addToTree(GLTF_LABEL_PRIMITIVE, GLTF_PRIM_TYPE_TRIANGLE);
+
+			//attributes
+			if (node->getNormals().size())
+				primitives[0].addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_NORMAL  , accessorPrefix + "_" + GLTF_SUFFIX_NORMALS);
+			if (node->getVertices().size())
+				primitives[0].addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_POSITION, accessorPrefix + "_" + GLTF_SUFFIX_POSITION);
+			
+			uint32_t nUVs = node->getUVChannelsSeparated().size();
+			if (nUVs)
+			{
+				for (uint32_t i = 0; i < nUVs; ++i)
+				{
+					primitives[0].addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_TEXCOORD + "_" + std::to_string(i), 
+						accessorPrefix + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(i));
+				}
+			}
+
+		}
+
+		tree.addArrayObjects(label + "." + GLTF_LABEL_PRIMITIVES, primitives);
+
+	}
+
+	
+	
 }
 
 void GLTFModelExport::populateWithNode(

@@ -121,6 +121,13 @@ namespace repo{
 					);
 
 				/**
+				* Populate the given tree with the meshes within the scene
+				* @param tree tree to populate
+				*/
+				void populateWithMeshes(
+					repo::lib::PropertyTree          &tree);
+
+				/**
 				* Populate the given tree with the asset
 				* @param node node to define the asset from
 				* @param tree tree to populate
