@@ -453,6 +453,7 @@ namespace repo{
 						const RepoNode  *parent,
 							  RepoNode  *child,
 						const bool      &noUpdate = false);
+										
 
 					/**
 					* Get children nodes of a specified parent
