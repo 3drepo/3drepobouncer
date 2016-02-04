@@ -26,6 +26,7 @@
 using namespace repo::manipulator::modelconvertor;
 
 static const std::string GLTF_LABEL_ACCESSORS    = "accessors";
+static const std::string GLTF_LABEL_AMBIENT      = "ambient";
 static const std::string GLTF_LABEL_ASSET        = "asset";
 static const std::string GLTF_LABEL_ATTRIBUTES   = "attributes";
 static const std::string GLTF_LABEL_BUFFER       = "buffer";
@@ -39,23 +40,32 @@ static const std::string GLTF_LABEL_CAMERAS      = "cameras";
 static const std::string GLTF_LABEL_CHILDREN     = "children";
 static const std::string GLTF_LABEL_COMP_TYPE    = "componentType";
 static const std::string GLTF_LABEL_COUNT        = "count";
+static const std::string GLTF_LABEL_DIFFUSE      = "diffuse";
+static const std::string GLTF_LABEL_EMISSIVE     = "emission";
 static const std::string GLTF_LABEL_GENERATOR    = "generator";
 static const std::string GLTF_LABEL_INDICES      = "indices";
 static const std::string GLTF_LABEL_MATERIAL     = "material";
+static const std::string GLTF_LABEL_MATERIALS    = "materials";
 static const std::string GLTF_LABEL_MATRIX       = "matrix";
 static const std::string GLTF_LABEL_MESHES       = "meshes";
 static const std::string GLTF_LABEL_NAME         = "name";
 static const std::string GLTF_LABEL_NODES        = "nodes";
 static const std::string GLTF_LABEL_NORMAL       = "NORMAL";
 static const std::string GLTF_LABEL_POSITION     = "POSITION";
+static const std::string GLTF_LABEL_TECHNIQUE    = "technique";
 static const std::string GLTF_LABEL_TEXCOORD     = "TEXCOORD";
 static const std::string GLTF_LABEL_PRIMITIVE    = "primitive";
 static const std::string GLTF_LABEL_PRIMITIVES   = "primitives";
 static const std::string GLTF_LABEL_SCENE        = "scene";
 static const std::string GLTF_LABEL_SCENES       = "scenes";
+static const std::string GLTF_LABEL_SHININESS    = "shininess";
+static const std::string GLTF_LABEL_SPECULAR     = "specular";
 static const std::string GLTF_LABEL_TARGET       = "target";
+static const std::string GLTF_LABEL_TRANSPARENCY = "transparency";
+static const std::string GLTF_LABEL_TWO_SIDED    = "twoSided";
 static const std::string GLTF_LABEL_TYPE         = "type";
 static const std::string GLTF_LABEL_URI          = "uri";
+static const std::string GLTF_LABEL_VALUES       = "values";
 static const std::string GLTF_LABEL_VERSION      = "version";
 
 static const std::string GLTF_PREFIX_ACCESSORS   =  "acc";
@@ -81,6 +91,8 @@ static const std::string GLTF_TYPE_VEC3    = "VEC3";
 
 static const std::string GLTF_VERSION = "1.0";
 
+//Default shader properties
+static const std::string REPO_GLTF_DEFAULT_TECHNIQUE = "default_technique";
 
 
 GLTFModelExport::GLTFModelExport(
@@ -233,8 +245,8 @@ bool GLTFModelExport::constructScene(
 		tree.addToTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_NODES, treeNodes);
 
 		populateWithNode(root, tree);
-
 		populateWithMeshes(tree);
+		populateWithMaterials(tree);
 
 	}
 	else
@@ -301,6 +313,65 @@ void GLTFModelExport::processNodeChildren(
 		tree.addToTree(prefix + GLTF_LABEL_MESHES, meshes);
 	if (cameras.size())
 		tree.addToTree(prefix + GLTF_LABEL_CAMERAS, cameras);
+
+}
+
+void GLTFModelExport::populateWithMaterials(
+	repo::lib::PropertyTree           &tree)
+{
+
+	repo::core::model::RepoNodeSet mats = scene->getAllMaterials(gType);
+
+	for (const auto &mat : mats)
+	{
+		const repo::core::model::MaterialNode *node = (const repo::core::model::MaterialNode *)mat;
+		repo_material_t matStruct = node->getMaterialStruct();
+		std::string matLabel = GLTF_LABEL_MATERIALS + "." + UUIDtoString(node->getUniqueID());
+		tree.addToTree(matLabel + "." + GLTF_LABEL_TECHNIQUE, REPO_GLTF_DEFAULT_TECHNIQUE);
+
+		std::string valuesLabel = matLabel + "." + GLTF_LABEL_VALUES;
+		if (matStruct.ambient.size())
+		{
+			//FIXME: default technique takes on a 4d vector, we store 3d vectors
+			matStruct.ambient.push_back(1);
+			tree.addToTree(valuesLabel + "." + GLTF_LABEL_AMBIENT, matStruct.ambient);
+		}
+		if (matStruct.diffuse.size())
+		{
+			//FIXME: default technique takes on a 4d vector, we store 3d vectors
+			matStruct.diffuse.push_back(1);
+			tree.addToTree(valuesLabel + "." + GLTF_LABEL_DIFFUSE, matStruct.diffuse);
+		}
+		if (matStruct.emissive.size())
+		{
+			matStruct.emissive.push_back(1);
+			tree.addToTree(valuesLabel + "." + GLTF_LABEL_EMISSIVE, matStruct.emissive);
+		}
+		if (matStruct.specular.size())
+		{
+			matStruct.specular.push_back(1);
+			tree.addToTree(valuesLabel + "." + GLTF_LABEL_SPECULAR, matStruct.specular);
+		}
+
+		if (matStruct.shininess == matStruct.shininess)
+		{
+			tree.addToTree(valuesLabel + "." + GLTF_LABEL_SHININESS, matStruct.shininess);
+		}
+
+		if (matStruct.opacity == matStruct.opacity)
+		{
+			tree.addToTree(valuesLabel + "." + GLTF_LABEL_TRANSPARENCY, 1.0 - matStruct.opacity);
+		}
+
+		if (matStruct.isTwoSided)
+			tree.addToTree(valuesLabel + "." + GLTF_LABEL_TWO_SIDED, std::string("true"));
+
+		std::string matName = node->getName();
+		if (!matName.empty())
+			tree.addToTree(matLabel + "." + GLTF_LABEL_NAME, matName);
+
+	}
+
 
 }
 

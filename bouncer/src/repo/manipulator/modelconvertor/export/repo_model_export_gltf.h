@@ -197,6 +197,12 @@ namespace repo{
 					const repo::core::model::RepoNode *node,
 					repo::lib::PropertyTree          &tree
 					);
+				/**
+				* Populate the given tree with the materials within the scene
+				* @param tree tree to populate
+				*/
+				void populateWithMaterials(
+					repo::lib::PropertyTree          &tree);
 
 				/**
 				* Populate the given tree with the meshes within the scene
