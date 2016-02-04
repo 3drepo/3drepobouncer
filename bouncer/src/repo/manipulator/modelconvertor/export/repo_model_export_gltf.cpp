@@ -61,6 +61,7 @@ static const std::string GLTF_LABEL_PROGRAMS     = "programs";
 static const std::string GLTF_LABEL_SCENE        = "scene";
 static const std::string GLTF_LABEL_SCENES       = "scenes";
 static const std::string GLTF_LABEL_SEMANTIC     = "semantic";
+static const std::string GLTF_LABEL_SHADERS      = "shaders";
 static const std::string GLTF_LABEL_SHADER_FRAG  = "fragmentShader";
 static const std::string GLTF_LABEL_SHADER_VERT  = "vertexShader";
 static const std::string GLTF_LABEL_SHININESS    = "shininess";
@@ -98,6 +99,9 @@ static const uint32_t GLTF_COMP_TYPE_FLOAT_VEC4 = 35666;
 static const uint32_t GLTF_COMP_TYPE_FLOAT_MAT3 = 35675;
 static const uint32_t GLTF_COMP_TYPE_FLOAT_MAT4 = 35676;
 
+static const uint32_t GLTF_SHADER_TYPE_FRAGMENT = 35632;
+static const uint32_t GLTF_SHADER_TYPE_VERTEX   = 35633;
+
 static const uint32_t GLTF_STATE_BLEND                    = 3042;
 static const uint32_t GLTF_STATE_CULL_FACE                = 2884;
 static const uint32_t GLTF_STATE_DEPTH_TEST               = 2929;
@@ -114,10 +118,12 @@ static const std::string GLTF_TYPE_VEC3    = "VEC3";
 static const std::string GLTF_VERSION = "1.0";
 
 //Default shader properties
-static const std::string REPO_GLTF_DEFAULT_TECHNIQUE   = "default_technique";
-static const std::string REPO_GLTF_DEFAULT_PROGRAM     = "default_program";
-static const std::string REPO_GLTF_DEFAULT_SHADER_FRAG = "default_fshader";
-static const std::string REPO_GLTF_DEFAULT_SHADER_VERT = "default_vshader";
+static const std::string REPO_GLTF_DEFAULT_PROGRAM         = "default_program";
+static const std::string REPO_GLTF_DEFAULT_SHADER_FRAG     = "default_fshader";
+static const std::string REPO_GLTF_DEFAULT_SHADER_FRAG_URI = "fragShader.glsl";
+static const std::string REPO_GLTF_DEFAULT_SHADER_VERT     = "default_vshader";
+static const std::string REPO_GLTF_DEFAULT_SHADER_VERT_URI = "vertShader.glsl";
+static const std::string REPO_GLTF_DEFAULT_TECHNIQUE       = "default_technique";
 
 
 GLTFModelExport::GLTFModelExport(
@@ -572,6 +578,12 @@ void GLTFModelExport::writeDefaultTechnique(
 	tree.addToTree(programLabel + "." + GLTF_LABEL_SHADER_FRAG, REPO_GLTF_DEFAULT_SHADER_FRAG);
 	tree.addToTree(programLabel + "." + GLTF_LABEL_SHADER_VERT, REPO_GLTF_DEFAULT_SHADER_VERT);
 	
+	//========== DEFAULT SHADERS =========
+	tree.addToTree(GLTF_LABEL_SHADERS + "." + REPO_GLTF_DEFAULT_SHADER_FRAG + "." + GLTF_LABEL_TYPE, GLTF_SHADER_TYPE_FRAGMENT);
+	tree.addToTree(GLTF_LABEL_SHADERS + "." + REPO_GLTF_DEFAULT_SHADER_FRAG + "." + GLTF_LABEL_URI, REPO_GLTF_DEFAULT_SHADER_FRAG_URI);
+
+	tree.addToTree(GLTF_LABEL_SHADERS + "." + REPO_GLTF_DEFAULT_SHADER_VERT + "." + GLTF_LABEL_TYPE, GLTF_SHADER_TYPE_VERTEX);
+	tree.addToTree(GLTF_LABEL_SHADERS + "." + REPO_GLTF_DEFAULT_SHADER_VERT + "." + GLTF_LABEL_URI , REPO_GLTF_DEFAULT_SHADER_VERT_URI);
 
 
 }
