@@ -47,7 +47,7 @@ namespace repo{
 				virtual ~GLTFModelExport();
 
 				//temporary function to debug gltf. to remove once done
-				void GLTFModelExport::debug() const;
+				void debug() const;
 
 				/**
 				* Export a repo scene graph to file
