@@ -52,19 +52,22 @@ static const std::string GLTF_LABEL_MESHES       = "meshes";
 static const std::string GLTF_LABEL_NAME         = "name";
 static const std::string GLTF_LABEL_NODES        = "nodes";
 static const std::string GLTF_LABEL_NORMAL       = "NORMAL";
-static const std::string GLTF_LABEL_POSITION     = "POSITION";
-static const std::string GLTF_LABEL_TECHNIQUE    = "technique";
-static const std::string GLTF_LABEL_TECHNIQUES   = "techniques";
-static const std::string GLTF_LABEL_TEXCOORD     = "TEXCOORD";
 static const std::string GLTF_LABEL_PARAMETERS   = "parameters";
+static const std::string GLTF_LABEL_POSITION     = "POSITION";
 static const std::string GLTF_LABEL_PRIMITIVE    = "primitive";
 static const std::string GLTF_LABEL_PRIMITIVES   = "primitives";
 static const std::string GLTF_LABEL_PROGRAM      = "program";
+static const std::string GLTF_LABEL_PROGRAMS     = "programs";
 static const std::string GLTF_LABEL_SCENE        = "scene";
 static const std::string GLTF_LABEL_SCENES       = "scenes";
 static const std::string GLTF_LABEL_SEMANTIC     = "semantic";
+static const std::string GLTF_LABEL_SHADER_FRAG  = "fragmentShader";
+static const std::string GLTF_LABEL_SHADER_VERT  = "vertexShader";
 static const std::string GLTF_LABEL_SHININESS    = "shininess";
 static const std::string GLTF_LABEL_SPECULAR     = "specular";
+static const std::string GLTF_LABEL_TECHNIQUE    = "technique";
+static const std::string GLTF_LABEL_TECHNIQUES   = "techniques";
+static const std::string GLTF_LABEL_TEXCOORD     = "TEXCOORD";
 static const std::string GLTF_LABEL_STATES       = "states";
 static const std::string GLTF_LABEL_TARGET       = "target";
 static const std::string GLTF_LABEL_TRANSPARENCY = "transparency";
@@ -111,8 +114,10 @@ static const std::string GLTF_TYPE_VEC3    = "VEC3";
 static const std::string GLTF_VERSION = "1.0";
 
 //Default shader properties
-static const std::string REPO_GLTF_DEFAULT_TECHNIQUE = "default_technique";
-static const std::string REPO_GLTF_DEFAULT_PROGRAM   = "default_program";
+static const std::string REPO_GLTF_DEFAULT_TECHNIQUE   = "default_technique";
+static const std::string REPO_GLTF_DEFAULT_PROGRAM     = "default_program";
+static const std::string REPO_GLTF_DEFAULT_SHADER_FRAG = "default_fshader";
+static const std::string REPO_GLTF_DEFAULT_SHADER_VERT = "default_vshader";
 
 
 GLTFModelExport::GLTFModelExport(
@@ -559,6 +564,15 @@ void GLTFModelExport::writeDefaultTechnique(
 	const std::string attriLabel = label + "." + GLTF_LABEL_ATTRIBUTES;
 	tree.addToTree(attriLabel + ".a_normal", "normal");
 	tree.addToTree(attriLabel + ".a_position", "position");
+
+	//========== DEFAULT PROGRAM =========
+	const std::string programLabel = GLTF_LABEL_PROGRAMS + "." + REPO_GLTF_DEFAULT_PROGRAM;
+	std::vector<std::string> programAttributes = { "a_normal", "a_position" };
+	tree.addToTree(programLabel + "." + GLTF_LABEL_ATTRIBUTES , programAttributes);
+	tree.addToTree(programLabel + "." + GLTF_LABEL_SHADER_FRAG, REPO_GLTF_DEFAULT_SHADER_FRAG);
+	tree.addToTree(programLabel + "." + GLTF_LABEL_SHADER_VERT, REPO_GLTF_DEFAULT_SHADER_VERT);
+	
+
 
 }
 
