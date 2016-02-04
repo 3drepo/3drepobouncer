@@ -25,24 +25,39 @@
 
 using namespace repo::manipulator::modelconvertor;
 
-static const std::string GLTF_LABEL_ATTRIBUTES = "attributes";
-static const std::string GLTF_LABEL_CAMERAS = "cameras";
-static const std::string GLTF_LABEL_CHILDREN = "children";
-static const std::string GLTF_LABEL_INDICES  = "indices";
-static const std::string GLTF_LABEL_MATERIAL = "material";
-static const std::string GLTF_LABEL_MATRIX = "matrix";
-static const std::string GLTF_LABEL_MESHES = "meshes";
-static const std::string GLTF_LABEL_NAME = "name";
-static const std::string GLTF_LABEL_NODES = "nodes";
-static const std::string GLTF_LABEL_NORMAL = "NORMAL";
-static const std::string GLTF_LABEL_POSITION = "POSITION";
-static const std::string GLTF_LABEL_TEXCOORD = "TEXCOORD";
-static const std::string GLTF_LABEL_PRIMITIVE = "primitive";
-static const std::string GLTF_LABEL_PRIMITIVES = "primitives";
-static const std::string GLTF_LABEL_SCENE = "scene";
-static const std::string GLTF_LABEL_SCENES = "scenes";
+static const std::string GLTF_LABEL_ACCESSORS    = "accessors";
+static const std::string GLTF_LABEL_ATTRIBUTES   = "attributes";
+static const std::string GLTF_LABEL_BUFFER       = "buffer";
+static const std::string GLTF_LABEL_BUFFERS      = "buffers";
+static const std::string GLTF_LABEL_BUFFER_VIEW  = "bufferView";
+static const std::string GLTF_LABEL_BUFFER_VIEWS = "bufferViews";
+static const std::string GLTF_LABEL_BYTE_LENGTH  = "byteLength";
+static const std::string GLTF_LABEL_BYTE_OFFSET  = "byteOffset";
+static const std::string GLTF_LABEL_BYTE_STRIDE  = "byteStride";
+static const std::string GLTF_LABEL_CAMERAS      = "cameras";
+static const std::string GLTF_LABEL_CHILDREN     = "children";
+static const std::string GLTF_LABEL_COMP_TYPE    = "componentType";
+static const std::string GLTF_LABEL_COUNT        = "count";
+static const std::string GLTF_LABEL_INDICES      = "indices";
+static const std::string GLTF_LABEL_MATERIAL     = "material";
+static const std::string GLTF_LABEL_MATRIX       = "matrix";
+static const std::string GLTF_LABEL_MESHES       = "meshes";
+static const std::string GLTF_LABEL_NAME         = "name";
+static const std::string GLTF_LABEL_NODES        = "nodes";
+static const std::string GLTF_LABEL_NORMAL       = "NORMAL";
+static const std::string GLTF_LABEL_POSITION     = "POSITION";
+static const std::string GLTF_LABEL_TEXCOORD     = "TEXCOORD";
+static const std::string GLTF_LABEL_PRIMITIVE    = "primitive";
+static const std::string GLTF_LABEL_PRIMITIVES   = "primitives";
+static const std::string GLTF_LABEL_SCENE        = "scene";
+static const std::string GLTF_LABEL_SCENES       = "scenes";
+static const std::string GLTF_LABEL_TARGET       = "target";
+static const std::string GLTF_LABEL_TYPE         = "type";
+static const std::string GLTF_LABEL_URI          = "uri";
 
-static const std::string GLTF_PREFIX_ACCESSORS = "acc";
+static const std::string GLTF_PREFIX_ACCESSORS   =  "acc";
+static const std::string GLTF_PREFIX_BUFFERS      = "buf";
+static const std::string GLTF_PREFIX_BUFFER_VIEWS = "bufv";
 
 static const std::string GLTF_SUFFIX_FACES = "f";
 static const std::string GLTF_SUFFIX_NORMALS = "n";
@@ -50,6 +65,14 @@ static const std::string GLTF_SUFFIX_POSITION = "p";
 static const std::string GLTF_SUFFIX_TEX_COORD = "uv";
 
 static const uint32_t GLTF_PRIM_TYPE_TRIANGLE = 4;
+static const uint32_t GLTF_PRIM_TYPE_ARRAY_BUFFER = 34962;
+static const uint32_t GLTF_PRIM_TYPE_ELEMENT_ARRAY_BUFFER = 34963;
+
+static const uint32_t GLTF_COMP_TYPE_USHORT = 5123;
+
+static const std::string GLTF_ARRAY_BUFFER = "arraybuffer";
+static const std::string GLTF_TYPE_SCALAR  = "SCALAR";
+
 
 
 GLTFModelExport::GLTFModelExport(
@@ -69,6 +92,79 @@ GLTFModelExport::GLTFModelExport(
 
 GLTFModelExport::~GLTFModelExport()
 {
+}
+
+void GLTFModelExport::addBuffer(
+	const std::string              &name,
+	const std::string              &fileName,
+	repo::lib::PropertyTree        &tree,
+	const std::vector<uint16_t>    &buffer)
+{
+	//declare buffer	
+	std::string bufferName = GLTF_PREFIX_BUFFERS + "_" + name;
+	std::string bufferViewName = GLTF_PREFIX_BUFFER_VIEWS + "_" + name;
+	//std::string bufferLabel = GLTF_LABEL_BUFFERS + "." + bufferName;
+	//tree.addToTree(bufferLabel + "." + GLTF_LABEL_BYTE_LENGTH, buffer.size()  * sizeof(*buffer.data()));
+	//tree.addToTree(bufferLabel + "." + GLTF_LABEL_TYPE, GLTF_ARRAY_BUFFER);
+	//tree.addToTree(bufferLabel + "." + GLTF_LABEL_URI, fileName);
+
+	auto mapIt = fullDataBuffer.find(fileName);
+
+	if (mapIt == fullDataBuffer.end())
+	{
+		//current no such buffer, create one
+		fullDataBuffer[fileName] = std::vector<uint8_t>();
+	}
+	//Append buffer into the dataBuffer
+	size_t offset = fullDataBuffer.size();
+	size_t byteLength = buffer.size()  * sizeof(*buffer.data());
+	fullDataBuffer[fileName].resize(offset + byteLength);
+	memcpy(&fullDataBuffer[fileName][offset], buffer.data(), byteLength);
+
+	//declare buffer view
+	std::string bufferViewLabel = GLTF_LABEL_BUFFER_VIEWS + "." + bufferViewName;
+	tree.addToTree(bufferViewLabel + "." + GLTF_LABEL_BUFFER, bufferName);
+	tree.addToTree(bufferViewLabel + "." + GLTF_LABEL_BYTE_LENGTH, byteLength);
+	tree.addToTree(bufferViewLabel + "." + GLTF_LABEL_BYTE_OFFSET, offset);
+	tree.addToTree(bufferViewLabel + "." + GLTF_LABEL_TARGET, GLTF_PRIM_TYPE_ELEMENT_ARRAY_BUFFER); //if it is a uint16_t its an indices buffer...?
+
+	//declare accessor
+	std::string accLabel = GLTF_LABEL_ACCESSORS + "." + GLTF_PREFIX_ACCESSORS + "_" + name;
+	tree.addToTree(accLabel + "." + GLTF_LABEL_BUFFER_VIEW, bufferViewName); 
+	tree.addToTree(accLabel + "." + GLTF_LABEL_BYTE_OFFSET, 0);
+	tree.addToTree(accLabel + "." + GLTF_LABEL_BYTE_STRIDE, 0);
+	tree.addToTree(accLabel + "." + GLTF_LABEL_COMP_TYPE, GLTF_COMP_TYPE_USHORT);
+	tree.addToTree(accLabel + "." + GLTF_LABEL_COUNT, buffer.size());
+	tree.addToTree(accLabel + "." + GLTF_LABEL_TYPE, GLTF_TYPE_SCALAR);
+
+}
+
+void GLTFModelExport::addFaceBuffer(
+	const std::string              &name,
+	const std::string              &fileName,
+	repo::lib::PropertyTree        &tree,
+	const std::vector<repo_face_t> &faces)
+{
+	//We first need to serialise this then pass it into the generic add buffer function
+	//Faces should also be uint16_t
+	std::vector<uint16_t> serialisedFaces;
+	serialisedFaces.reserve(faces.size() * 3); //faces should be triangulated
+
+	for (uint32_t i = 0; i < faces.size(); ++i)
+	{
+		if (faces[i].size() == 3)
+		{
+			serialisedFaces.push_back(faces[i][0]);
+			serialisedFaces.push_back(faces[i][1]);
+			serialisedFaces.push_back(faces[i][2]);
+		}
+		else
+		{
+			repoError << "Error during glTF export: found non triangulated face. This may not visualise correctly.";
+		}		
+	}
+
+	addBuffer(name, fileName, tree, serialisedFaces);
 }
 
 
@@ -169,7 +265,6 @@ void GLTFModelExport::populateWithMeshes(
 		const repo::core::model::MeshNode *node = (const repo::core::model::MeshNode *)mesh;
 		std::string meshId = UUIDtoString(node->getUniqueID());
 		std::string label = GLTF_LABEL_MESHES + "." + meshId;
-		std::string accessorPrefix = GLTF_PREFIX_ACCESSORS + "_" + meshId;
 		std::string name = node->getName();
 		if (!name.empty())
 			tree.addToTree(label + "." + GLTF_LABEL_NAME, node->getName());
@@ -179,13 +274,21 @@ void GLTFModelExport::populateWithMeshes(
 
 
 		auto children = scene->getChildrenNodesFiltered(gType, node->getSharedID(), repo::core::model::NodeType::MATERIAL);
-		//FIXME: need multiple primitives for multiple materials, check for subMeshes
+		//TODO: need multiple primitives for multiple materials, check for subMeshes
 		if (children.size())
 		{
-			primitives[0].addToTree(GLTF_LABEL_MATERIAL, UUIDtoString(children[0]->getUniqueID()));
-			primitives[0].addToTree(GLTF_LABEL_INDICES, accessorPrefix + "_" + GLTF_SUFFIX_FACES);
+			primitives[0].addToTree(GLTF_LABEL_MATERIAL, UUIDtoString(children[0]->getUniqueID()));	
 			primitives[0].addToTree(GLTF_LABEL_PRIMITIVE, GLTF_PRIM_TYPE_TRIANGLE);
-
+			auto faces = node->getFaces();
+			if (faces.size())
+			{
+				std::string bufferName = meshId + "_" + GLTF_SUFFIX_FACES;
+				primitives[0].addToTree(GLTF_LABEL_INDICES, GLTF_PREFIX_ACCESSORS + "_" + bufferName);
+				//FIXME: fill in filename properly
+				addFaceBuffer(bufferName, "testFILENAME", tree, faces);
+			}
+				
+			std::string accessorPrefix = GLTF_PREFIX_ACCESSORS + "_" + meshId;
 			//attributes
 			if (node->getNormals().size())
 				primitives[0].addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_NORMAL  , accessorPrefix + "_" + GLTF_SUFFIX_NORMALS);

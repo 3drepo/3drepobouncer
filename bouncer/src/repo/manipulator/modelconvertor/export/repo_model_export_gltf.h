@@ -95,6 +95,32 @@ namespace repo{
 				std::unordered_map<std::string, std::vector<uint8_t>> fullDataBuffer;
 
 				/**
+				* Add buffer into export
+				* @param name name of the buffer
+				* @param fileName name of binary file
+				* @param tree tree to insert header info into
+				* @param buffer buffer to export
+				*/
+				void addBuffer(
+					const std::string              &name,
+					const std::string              &fileName,
+					repo::lib::PropertyTree        &tree,
+					const std::vector<uint16_t>    &buffer);
+				
+
+				/**
+				* Add face buffer into the export
+				* @param name name of the buffer
+				* @param tree tree to insert header info into
+				* @param faces the face buffer to export
+				*/
+				void addFaceBuffer(
+					const std::string              &name,
+					const std::string              &fileName,
+					repo::lib::PropertyTree        &tree, 
+					const std::vector<repo_face_t> &faces);
+
+				/**
 				* Construct JSON document about the scene
 				* @param tree tree to place the info
 				* @return returns true upon success
