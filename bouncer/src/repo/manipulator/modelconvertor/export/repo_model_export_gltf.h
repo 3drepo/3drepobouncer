@@ -108,7 +108,7 @@ namespace repo{
 				* @param componentType component type (SHORT, USHORT, FLOAT etc.) of the array
 				* @param bufferType element type (SCALAR, VEC3D etc..)
 				*/
-				void GLTFModelExport::addBuffer(
+				void addBuffer(
 					const std::string              &name,
 					const std::string              &fileName,
 					repo::lib::PropertyTree        &tree,
@@ -177,7 +177,7 @@ namespace repo{
 				* @param tree tree to place the info
 				* @return returns true upon success
 				*/
-				bool GLTFModelExport::constructScene(
+				bool constructScene(
 					repo::lib::PropertyTree &tree);
 
 				/**
