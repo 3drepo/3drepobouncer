@@ -42,6 +42,7 @@ static const std::string GLTF_LABEL_COMP_TYPE    = "componentType";
 static const std::string GLTF_LABEL_COUNT        = "count";
 static const std::string GLTF_LABEL_DIFFUSE      = "diffuse";
 static const std::string GLTF_LABEL_EMISSIVE     = "emission";
+static const std::string GLTF_LABEL_ENABLE       = "enable";
 static const std::string GLTF_LABEL_GENERATOR    = "generator";
 static const std::string GLTF_LABEL_INDICES      = "indices";
 static const std::string GLTF_LABEL_MATERIAL     = "material";
@@ -53,17 +54,23 @@ static const std::string GLTF_LABEL_NODES        = "nodes";
 static const std::string GLTF_LABEL_NORMAL       = "NORMAL";
 static const std::string GLTF_LABEL_POSITION     = "POSITION";
 static const std::string GLTF_LABEL_TECHNIQUE    = "technique";
+static const std::string GLTF_LABEL_TECHNIQUES   = "techniques";
 static const std::string GLTF_LABEL_TEXCOORD     = "TEXCOORD";
+static const std::string GLTF_LABEL_PARAMETERS   = "parameters";
 static const std::string GLTF_LABEL_PRIMITIVE    = "primitive";
 static const std::string GLTF_LABEL_PRIMITIVES   = "primitives";
+static const std::string GLTF_LABEL_PROGRAM      = "program";
 static const std::string GLTF_LABEL_SCENE        = "scene";
 static const std::string GLTF_LABEL_SCENES       = "scenes";
+static const std::string GLTF_LABEL_SEMANTIC     = "semantic";
 static const std::string GLTF_LABEL_SHININESS    = "shininess";
 static const std::string GLTF_LABEL_SPECULAR     = "specular";
+static const std::string GLTF_LABEL_STATES       = "states";
 static const std::string GLTF_LABEL_TARGET       = "target";
 static const std::string GLTF_LABEL_TRANSPARENCY = "transparency";
 static const std::string GLTF_LABEL_TWO_SIDED    = "twoSided";
 static const std::string GLTF_LABEL_TYPE         = "type";
+static const std::string GLTF_LABEL_UNIFORMS     = "uniforms";
 static const std::string GLTF_LABEL_URI          = "uri";
 static const std::string GLTF_LABEL_VALUES       = "values";
 static const std::string GLTF_LABEL_VERSION      = "version";
@@ -83,6 +90,18 @@ static const uint32_t GLTF_PRIM_TYPE_ELEMENT_ARRAY_BUFFER = 34963;
 
 static const uint32_t GLTF_COMP_TYPE_USHORT = 5123;
 static const uint32_t GLTF_COMP_TYPE_FLOAT  = 5126;
+static const uint32_t GLTF_COMP_TYPE_FLOAT_VEC3 = 35665;
+static const uint32_t GLTF_COMP_TYPE_FLOAT_VEC4 = 35666;
+static const uint32_t GLTF_COMP_TYPE_FLOAT_MAT3 = 35675;
+static const uint32_t GLTF_COMP_TYPE_FLOAT_MAT4 = 35676;
+
+static const uint32_t GLTF_STATE_BLEND                    = 3042;
+static const uint32_t GLTF_STATE_CULL_FACE                = 2884;
+static const uint32_t GLTF_STATE_DEPTH_TEST               = 2929;
+static const uint32_t GLTF_STATE_POLYGON_OFFSET_FILL      = 32823;
+static const uint32_t GLTF_STATE_SAMPLE_ALPHA_TO_COVERAGE = 32926;
+static const uint32_t GLTF_STATE_SCISSOR_TEST             = 3089;
+
 
 static const std::string GLTF_ARRAY_BUFFER = "arraybuffer";
 static const std::string GLTF_TYPE_SCALAR  = "SCALAR";
@@ -93,6 +112,7 @@ static const std::string GLTF_VERSION = "1.0";
 
 //Default shader properties
 static const std::string REPO_GLTF_DEFAULT_TECHNIQUE = "default_technique";
+static const std::string REPO_GLTF_DEFAULT_PROGRAM   = "default_program";
 
 
 GLTFModelExport::GLTFModelExport(
@@ -320,6 +340,8 @@ void GLTFModelExport::populateWithMaterials(
 	repo::lib::PropertyTree           &tree)
 {
 
+	writeDefaultTechnique(tree);
+
 	repo::core::model::RepoNodeSet mats = scene->getAllMaterials(gType);
 
 	for (const auto &mat : mats)
@@ -332,23 +354,25 @@ void GLTFModelExport::populateWithMaterials(
 		std::string valuesLabel = matLabel + "." + GLTF_LABEL_VALUES;
 		if (matStruct.ambient.size())
 		{
-			//FIXME: default technique takes on a 4d vector, we store 3d vectors
+			//default technique takes on a 4d vector, we store 3d vectors
 			matStruct.ambient.push_back(1);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_AMBIENT, matStruct.ambient);
 		}
 		if (matStruct.diffuse.size())
 		{
-			//FIXME: default technique takes on a 4d vector, we store 3d vectors
+			//default technique takes on a 4d vector, we store 3d vectors
 			matStruct.diffuse.push_back(1);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_DIFFUSE, matStruct.diffuse);
 		}
 		if (matStruct.emissive.size())
 		{
+			//default technique takes on a 4d vector, we store 3d vectors
 			matStruct.emissive.push_back(1);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_EMISSIVE, matStruct.emissive);
 		}
 		if (matStruct.specular.size())
 		{
+			//default technique takes on a 4d vector, we store 3d vectors
 			matStruct.specular.push_back(1);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_SPECULAR, matStruct.specular);
 		}
@@ -364,7 +388,7 @@ void GLTFModelExport::populateWithMaterials(
 		}
 
 		if (matStruct.isTwoSided)
-			tree.addToTree(valuesLabel + "." + GLTF_LABEL_TWO_SIDED, std::string("true"));
+			tree.addToTree(valuesLabel + "." + GLTF_LABEL_TWO_SIDED, "true");
 
 		std::string matName = node->getName();
 		if (!matName.empty())
@@ -488,6 +512,54 @@ void GLTFModelExport::writeBuffers(
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_TYPE, GLTF_ARRAY_BUFFER);
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_URI, pair.first);
 	}
+}
+
+void GLTFModelExport::writeDefaultTechnique(
+	repo::lib::PropertyTree &tree)
+{
+
+	//========== DEFAULT TECHNIQUE =========
+	const std::string label = GLTF_LABEL_TECHNIQUES + "." + REPO_GLTF_DEFAULT_TECHNIQUE;
+	const std::string paramlabel = label + "." +  GLTF_LABEL_PARAMETERS;
+
+	tree.addToTree(paramlabel + ".modelViewMatrix." + GLTF_LABEL_SEMANTIC, "MODELVIEW");
+	tree.addToTree(paramlabel + ".modelViewMatrix." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT_MAT4);
+
+	tree.addToTree(paramlabel + ".normal." + GLTF_LABEL_SEMANTIC, GLTF_LABEL_NORMAL);
+	tree.addToTree(paramlabel + ".normal." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT_VEC3);
+
+	tree.addToTree(paramlabel + ".normalMatrix." + GLTF_LABEL_SEMANTIC, "MODELVIEWINVERSETRANSPOSE");
+	tree.addToTree(paramlabel + ".normalMatrix." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT_MAT3);
+
+	tree.addToTree(paramlabel + ".position." + GLTF_LABEL_SEMANTIC, GLTF_LABEL_POSITION);
+	tree.addToTree(paramlabel + ".position." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT_VEC3);
+
+	tree.addToTree(paramlabel + ".projectionMatrix." + GLTF_LABEL_SEMANTIC, "PROJECTION");
+	tree.addToTree(paramlabel + ".projectionMatrix." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT_MAT4);
+
+	tree.addToTree(paramlabel + "." + GLTF_LABEL_SHININESS + "." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT);
+	tree.addToTree(paramlabel + "." + GLTF_LABEL_DIFFUSE + "."  + GLTF_LABEL_TYPE , GLTF_COMP_TYPE_FLOAT_VEC4);
+	tree.addToTree(paramlabel + "." + GLTF_LABEL_SPECULAR + "." + GLTF_LABEL_TYPE , GLTF_COMP_TYPE_FLOAT_VEC4);
+
+	tree.addToTree(label + "." + GLTF_LABEL_PROGRAM, REPO_GLTF_DEFAULT_PROGRAM);
+
+	const std::string stateslabel = label + "." + GLTF_LABEL_STATES;
+	std::vector<uint32_t> states = { GLTF_STATE_DEPTH_TEST, GLTF_STATE_CULL_FACE };
+	tree.addToTree(stateslabel + "." + GLTF_LABEL_ENABLE, states);
+
+	const std::string uniformLabel = label + "." +  GLTF_LABEL_UNIFORMS;
+
+	tree.addToTree(uniformLabel + ".u_diffuse"         , GLTF_LABEL_DIFFUSE);
+	tree.addToTree(uniformLabel + ".u_modelViewMatrix" , "modelViewMatrix");
+	tree.addToTree(uniformLabel + ".u_normalMatrix"    , "normalMatrix");
+	tree.addToTree(uniformLabel + ".u_projectionMatrix", "projectionMatrix");
+	tree.addToTree(uniformLabel + ".u_shininess"       , GLTF_LABEL_SHININESS);
+	tree.addToTree(uniformLabel + ".u_specular"        , GLTF_LABEL_SPECULAR);
+
+	const std::string attriLabel = label + "." + GLTF_LABEL_ATTRIBUTES;
+	tree.addToTree(attriLabel + ".a_normal", "normal");
+	tree.addToTree(attriLabel + ".a_position", "position");
+
 }
 
 void GLTFModelExport::debug() const

@@ -226,6 +226,20 @@ namespace repo{
 				*/
 				void writeBuffers(
 					repo::lib::PropertyTree &tree);
+
+				/**
+				* Write the default shading technique into the 
+				* property tree. Unless specified, all materials
+				* will be rendered using this technique
+				* Note: there is currently no way to specific 
+				* your own specific technique/shader
+				* @param tree tree to write into
+				*/
+				void writeDefaultTechnique(
+					repo::lib::PropertyTree &tree
+					);
+
+				
 			};
 
 
