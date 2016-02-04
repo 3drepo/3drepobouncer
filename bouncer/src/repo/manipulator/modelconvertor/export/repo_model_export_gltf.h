@@ -94,8 +94,34 @@ namespace repo{
 				repo::core::model::RepoScene::GraphType gType;
 				std::unordered_map<std::string, std::vector<uint8_t>> fullDataBuffer;
 
+
 				/**
-				* Add buffer into export
+				* Add buffer into export (generic, not expected to be called directly)
+				* @param name name of the buffer
+				* @param fileName name of binary file
+				* @param tree tree to insert header info into
+				* @param buffer buffer to export
+				* @param count number of elements in the buffer
+				* @param byteLength number of bytes in the buffer
+				* @param stride stride in bytes between elements
+				* @param bufferTarget Target type as of OpenGL
+				* @param componentType component type (SHORT, USHORT, FLOAT etc.) of the array
+				* @param bufferType element type (SCALAR, VEC3D etc..)
+				*/
+				void GLTFModelExport::addBuffer(
+					const std::string              &name,
+					const std::string              &fileName,
+					repo::lib::PropertyTree        &tree,
+					const uint8_t                  *buffer,
+					const size_t                   &count,
+					const size_t                   &byteLength,
+					const size_t                   &stride,
+					const uint32_t                 &bufferTarget,
+					const uint32_t                 &componentType,
+					const std::string              &bufferType);
+
+				/**
+				* Add buffer into export (unsigned 16 bit integers)
 				* @param name name of the buffer
 				* @param fileName name of binary file
 				* @param tree tree to insert header info into
@@ -106,6 +132,32 @@ namespace repo{
 					const std::string              &fileName,
 					repo::lib::PropertyTree        &tree,
 					const std::vector<uint16_t>    &buffer);
+
+				/**
+				* Add buffer into export (2x 32 bit float vectors)
+				* @param name name of the buffer
+				* @param fileName name of binary file
+				* @param tree tree to insert header info into
+				* @param buffer buffer to export
+				*/
+				void addBuffer(
+					const std::string                   &name,
+					const std::string                   &fileName,
+					repo::lib::PropertyTree             &tree,
+					const std::vector<repo_vector2d_t>    &buffer);
+
+				/**
+				* Add buffer into export (3x 32 bit float vectors)
+				* @param name name of the buffer
+				* @param fileName name of binary file
+				* @param tree tree to insert header info into
+				* @param buffer buffer to export
+				*/
+				void addBuffer(
+					const std::string                   &name,
+					const std::string                   &fileName,
+					repo::lib::PropertyTree             &tree,
+					const std::vector<repo_vector_t>    &buffer);
 				
 
 				/**
@@ -162,6 +214,12 @@ namespace repo{
 					const repo::core::model::RepoNode* node,
 					repo::lib::PropertyTree          &tree);
 		
+				/**
+				* write buffered binary files into the tree
+				* @param tree tree to write into
+				*/
+				void writeBuffers(
+					repo::lib::PropertyTree &tree);
 			};
 
 
