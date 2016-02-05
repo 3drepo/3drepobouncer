@@ -54,7 +54,7 @@ static const std::string GLTF_LABEL_NODES        = "nodes";
 static const std::string GLTF_LABEL_NORMAL       = "NORMAL";
 static const std::string GLTF_LABEL_PARAMETERS   = "parameters";
 static const std::string GLTF_LABEL_POSITION     = "POSITION";
-static const std::string GLTF_LABEL_PRIMITIVE    = "primitive";
+static const std::string GLTF_LABEL_PRIMITIVE    = "mode";
 static const std::string GLTF_LABEL_PRIMITIVES   = "primitives";
 static const std::string GLTF_LABEL_PROGRAM      = "program";
 static const std::string GLTF_LABEL_PROGRAMS     = "programs";
@@ -188,7 +188,6 @@ void GLTFModelExport::addBuffer(
 	const uint32_t                 &componentType,
 	const std::string              &bufferType)
 {
-	std::string bufferName = GLTF_PREFIX_BUFFERS + "_" + name;
 	std::string bufferViewName = GLTF_PREFIX_BUFFER_VIEWS + "_" + name;	
 
 	auto mapIt = fullDataBuffer.find(fileName);
@@ -199,16 +198,16 @@ void GLTFModelExport::addBuffer(
 		fullDataBuffer[fileName] = std::vector<uint8_t>();
 	}
 	//Append buffer into the dataBuffer
-	size_t offset = fullDataBuffer.size();
+	size_t offset = fullDataBuffer[fileName].size();
 	fullDataBuffer[fileName].resize(offset + byteLength);
 	memcpy(&fullDataBuffer[fileName][offset], buffer, byteLength);
 
 	//declare buffer view
 	std::string bufferViewLabel = GLTF_LABEL_BUFFER_VIEWS + "." + bufferViewName;
-	tree.addToTree(bufferViewLabel + "." + GLTF_LABEL_BUFFER, bufferName);
+	tree.addToTree(bufferViewLabel + "." + GLTF_LABEL_BUFFER, fileName);
 	tree.addToTree(bufferViewLabel + "." + GLTF_LABEL_BYTE_LENGTH, byteLength);
 	tree.addToTree(bufferViewLabel + "." + GLTF_LABEL_BYTE_OFFSET, offset);
-	tree.addToTree(bufferViewLabel + "." + GLTF_LABEL_TARGET, bufferTarget); //if it is a uint16_t its an indices buffer...?
+	tree.addToTree(bufferViewLabel + "." + GLTF_LABEL_TARGET, bufferTarget); 
 
 	//declare accessor
 	std::string accLabel = GLTF_LABEL_ACCESSORS + "." + GLTF_PREFIX_ACCESSORS + "_" + name;
@@ -430,13 +429,14 @@ void GLTFModelExport::populateWithMeshes(
 
 		auto children = scene->getChildrenNodesFiltered(gType, node->getSharedID(), repo::core::model::NodeType::MATERIAL);
 
-		std::string binFileName = UUIDtoString(scene->getRevisionID()) + ".bin";
+		std::string binFileName = UUIDtoString(scene->getRevisionID());
 		//TODO: need multiple primitives for multiple materials, check for subMeshes
 		if (children.size())
 		{
 			primitives[0].addToTree(GLTF_LABEL_MATERIAL, UUIDtoString(children[0]->getUniqueID()));	
 			primitives[0].addToTree(GLTF_LABEL_PRIMITIVE, GLTF_PRIM_TYPE_TRIANGLE);
 			auto faces = node->getFaces();
+			repoDebug << "#faces: " << faces.size();
 			if (faces.size())
 			{
 				std::string bufferName = meshId + "_" + GLTF_SUFFIX_FACES;
@@ -448,6 +448,7 @@ void GLTFModelExport::populateWithMeshes(
 			std::string accessorPrefix = GLTF_PREFIX_ACCESSORS + "_" + meshId;
 			//attributes
 			auto normals = node->getNormals();
+			repoDebug << "#normals: " << normals.size();
 			if (normals.size())
 			{
 				std::string bufferName = meshId + "_" + GLTF_SUFFIX_NORMALS;
@@ -455,6 +456,7 @@ void GLTFModelExport::populateWithMeshes(
 				addBuffer(bufferName, binFileName, tree, normals);
 			}
 			auto vertices = node->getVertices();
+			repoDebug << "#vertices: " << vertices.size();
 			if (vertices.size())
 			{
 				std::string bufferName = meshId + "_" + GLTF_SUFFIX_POSITION;
@@ -463,6 +465,7 @@ void GLTFModelExport::populateWithMeshes(
 			}
 			
 			auto UVs = node->getUVChannelsSeparated();
+			repoDebug << "#UVs: " << UVs[0].size();
 			if (UVs.size())
 			{
 				for (uint32_t i = 0; i < UVs.size(); ++i)
@@ -521,7 +524,7 @@ void GLTFModelExport::writeBuffers(
 		std::string bufferLabel = GLTF_LABEL_BUFFERS + "." + pair.first;
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_BYTE_LENGTH, pair.second.size()  * sizeof(*pair.second.data()));
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_TYPE, GLTF_ARRAY_BUFFER);
-		tree.addToTree(bufferLabel + "." + GLTF_LABEL_URI, pair.first);
+		tree.addToTree(bufferLabel + "." + GLTF_LABEL_URI, pair.first + ".bin");
 	}
 }
 
@@ -595,9 +598,21 @@ void GLTFModelExport::debug() const
 	std::stringstream ss;
 	std::string fname = "test";
 	auto it = trees.find(fname);
-	if (it != trees.end())
-	{
-		it->second.write_json(ss);
-		repoDebug << ss.str();
-	}
+	it->second.write_json(ss);
+	
+	std::string jsonFile = ss.str();
+
+	std::string dir = "D:\\gltfTest\\redBox\\";
+	std::string filePath = dir + "redBox.gltf";
+	FILE *fp = fopen(filePath.c_str(), "w");
+	fwrite(jsonFile.c_str(), 1, jsonFile.size(), fp);
+	fclose(fp);
+
+	auto it2 = fullDataBuffer.begin();
+	
+	filePath = dir + it2->first + ".bin";
+	fopen(filePath.c_str(), "wb");
+	std::vector<uint8_t> buffer = it2->second;
+	fwrite(it2->second.data(), 1,it2->second.size(), fp);
+	fclose(fp);
 }
