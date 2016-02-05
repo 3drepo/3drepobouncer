@@ -25,63 +25,75 @@
 
 using namespace repo::manipulator::modelconvertor;
 
-static const std::string GLTF_LABEL_ACCESSORS    = "accessors";
-static const std::string GLTF_LABEL_AMBIENT      = "ambient";
-static const std::string GLTF_LABEL_ASSET        = "asset";
-static const std::string GLTF_LABEL_ATTRIBUTES   = "attributes";
-static const std::string GLTF_LABEL_BUFFER       = "buffer";
-static const std::string GLTF_LABEL_BUFFERS      = "buffers";
-static const std::string GLTF_LABEL_BUFFER_VIEW  = "bufferView";
-static const std::string GLTF_LABEL_BUFFER_VIEWS = "bufferViews";
-static const std::string GLTF_LABEL_BYTE_LENGTH  = "byteLength";
-static const std::string GLTF_LABEL_BYTE_OFFSET  = "byteOffset";
-static const std::string GLTF_LABEL_BYTE_STRIDE  = "byteStride";
-static const std::string GLTF_LABEL_CAMERAS      = "cameras";
-static const std::string GLTF_LABEL_CHILDREN     = "children";
-static const std::string GLTF_LABEL_COMP_TYPE    = "componentType";
-static const std::string GLTF_LABEL_COUNT        = "count";
-static const std::string GLTF_LABEL_DIFFUSE      = "diffuse";
-static const std::string GLTF_LABEL_EMISSIVE     = "emission";
-static const std::string GLTF_LABEL_ENABLE       = "enable";
-static const std::string GLTF_LABEL_GENERATOR    = "generator";
-static const std::string GLTF_LABEL_INDICES      = "indices";
-static const std::string GLTF_LABEL_MATERIAL     = "material";
-static const std::string GLTF_LABEL_MATERIALS    = "materials";
-static const std::string GLTF_LABEL_MATRIX       = "matrix";
-static const std::string GLTF_LABEL_MESHES       = "meshes";
-static const std::string GLTF_LABEL_NAME         = "name";
-static const std::string GLTF_LABEL_NODES        = "nodes";
-static const std::string GLTF_LABEL_NORMAL       = "NORMAL";
-static const std::string GLTF_LABEL_PARAMETERS   = "parameters";
-static const std::string GLTF_LABEL_POSITION     = "POSITION";
-static const std::string GLTF_LABEL_PRIMITIVE    = "mode";
-static const std::string GLTF_LABEL_PRIMITIVES   = "primitives";
-static const std::string GLTF_LABEL_PROGRAM      = "program";
-static const std::string GLTF_LABEL_PROGRAMS     = "programs";
-static const std::string GLTF_LABEL_SCENE        = "scene";
-static const std::string GLTF_LABEL_SCENES       = "scenes";
-static const std::string GLTF_LABEL_SEMANTIC     = "semantic";
-static const std::string GLTF_LABEL_SHADERS      = "shaders";
-static const std::string GLTF_LABEL_SHADER_FRAG  = "fragmentShader";
-static const std::string GLTF_LABEL_SHADER_VERT  = "vertexShader";
-static const std::string GLTF_LABEL_SHININESS    = "shininess";
-static const std::string GLTF_LABEL_SPECULAR     = "specular";
-static const std::string GLTF_LABEL_TECHNIQUE    = "technique";
-static const std::string GLTF_LABEL_TECHNIQUES   = "techniques";
-static const std::string GLTF_LABEL_TEXCOORD     = "TEXCOORD";
-static const std::string GLTF_LABEL_STATES       = "states";
-static const std::string GLTF_LABEL_TARGET       = "target";
-static const std::string GLTF_LABEL_TRANSPARENCY = "transparency";
-static const std::string GLTF_LABEL_TWO_SIDED    = "twoSided";
-static const std::string GLTF_LABEL_TYPE         = "type";
-static const std::string GLTF_LABEL_UNIFORMS     = "uniforms";
-static const std::string GLTF_LABEL_URI          = "uri";
-static const std::string GLTF_LABEL_VALUES       = "values";
-static const std::string GLTF_LABEL_VERSION      = "version";
+static const std::string GLTF_LABEL_ACCESSORS       = "accessors";
+static const std::string GLTF_LABEL_AMBIENT         = "ambient";
+static const std::string GLTF_LABEL_ASSET           = "asset";
+static const std::string GLTF_LABEL_ATTRIBUTES      = "attributes";
+static const std::string GLTF_LABEL_BUFFER          = "buffer";
+static const std::string GLTF_LABEL_BUFFERS         = "buffers";
+static const std::string GLTF_LABEL_BUFFER_VIEW     = "bufferView";
+static const std::string GLTF_LABEL_BUFFER_VIEWS    = "bufferViews";
+static const std::string GLTF_LABEL_BYTE_LENGTH     = "byteLength";
+static const std::string GLTF_LABEL_BYTE_OFFSET     = "byteOffset";
+static const std::string GLTF_LABEL_BYTE_STRIDE     = "byteStride";
+static const std::string GLTF_LABEL_CAMERAS         = "cameras";
+static const std::string GLTF_LABEL_CHILDREN        = "children";
+static const std::string GLTF_LABEL_COMP_TYPE       = "componentType";
+static const std::string GLTF_LABEL_COUNT           = "count";
+static const std::string GLTF_LABEL_DIFFUSE         = "diffuse";
+static const std::string GLTF_LABEL_EMISSIVE        = "emission";
+static const std::string GLTF_LABEL_ENABLE          = "enable";
+static const std::string GLTF_LABEL_FILTER_MAG      = "magFilter";
+static const std::string GLTF_LABEL_FILTER_MIN      = "minFilter";
+static const std::string GLTF_LABEL_FORMAT          = "format";
+static const std::string GLTF_LABEL_GENERATOR       = "generator";
+static const std::string GLTF_LABEL_IMAGES          = "images";
+static const std::string GLTF_LABEL_INDICES         = "indices";
+static const std::string GLTF_LABEL_INTERNAL_FORMAT = "internalFormat";
+static const std::string GLTF_LABEL_MATERIAL        = "material";
+static const std::string GLTF_LABEL_MATERIALS       = "materials";
+static const std::string GLTF_LABEL_MATRIX          = "matrix";
+static const std::string GLTF_LABEL_MESHES          = "meshes";
+static const std::string GLTF_LABEL_NAME            = "name";
+static const std::string GLTF_LABEL_NODES           = "nodes";
+static const std::string GLTF_LABEL_NORMAL          = "NORMAL";
+static const std::string GLTF_LABEL_PARAMETERS      = "parameters";
+static const std::string GLTF_LABEL_POSITION        = "POSITION";
+static const std::string GLTF_LABEL_PRIMITIVE       = "mode";
+static const std::string GLTF_LABEL_PRIMITIVES      = "primitives";
+static const std::string GLTF_LABEL_PROGRAM         = "program";
+static const std::string GLTF_LABEL_PROGRAMS        = "programs";
+static const std::string GLTF_LABEL_SAMPLER         = "sampler";
+static const std::string GLTF_LABEL_SAMPLERS        = "samplers";
+static const std::string GLTF_LABEL_SCENE           = "scene";
+static const std::string GLTF_LABEL_SCENES          = "scenes";
+static const std::string GLTF_LABEL_SEMANTIC        = "semantic";
+static const std::string GLTF_LABEL_SHADERS         = "shaders";
+static const std::string GLTF_LABEL_SHADER_FRAG     = "fragmentShader";
+static const std::string GLTF_LABEL_SHADER_VERT     = "vertexShader";
+static const std::string GLTF_LABEL_SHININESS       = "shininess";
+static const std::string GLTF_LABEL_SOURCE          = "source";
+static const std::string GLTF_LABEL_SPECULAR        = "specular";
+static const std::string GLTF_LABEL_STATES          = "states";
+static const std::string GLTF_LABEL_TARGET          = "target";
+static const std::string GLTF_LABEL_TECHNIQUE       = "technique";
+static const std::string GLTF_LABEL_TECHNIQUES      = "techniques";
+static const std::string GLTF_LABEL_TEXCOORD        = "TEXCOORD";
+static const std::string GLTF_LABEL_TEXTURES        = "textures";
+static const std::string GLTF_LABEL_TRANSPARENCY    = "transparency";
+static const std::string GLTF_LABEL_TWO_SIDED       = "twoSided";
+static const std::string GLTF_LABEL_TYPE            = "type";
+static const std::string GLTF_LABEL_UNIFORMS        = "uniforms";
+static const std::string GLTF_LABEL_URI             = "uri";
+static const std::string GLTF_LABEL_VALUES          = "values";
+static const std::string GLTF_LABEL_VERSION         = "version";
+static const std::string GLTF_LABEL_WRAP_S          = "wrapS";
+static const std::string GLTF_LABEL_WRAP_T          = "wrapT";
 
-static const std::string GLTF_PREFIX_ACCESSORS   =  "acc";
+static const std::string GLTF_PREFIX_ACCESSORS    =  "acc";
 static const std::string GLTF_PREFIX_BUFFERS      = "buf";
 static const std::string GLTF_PREFIX_BUFFER_VIEWS = "bufv";
+static const std::string GLTF_PREFIX_TEXTURE      = "img";
 
 static const std::string GLTF_SUFFIX_FACES = "f";
 static const std::string GLTF_SUFFIX_NORMALS = "n";
@@ -98,6 +110,15 @@ static const uint32_t GLTF_COMP_TYPE_FLOAT_VEC3 = 35665;
 static const uint32_t GLTF_COMP_TYPE_FLOAT_VEC4 = 35666;
 static const uint32_t GLTF_COMP_TYPE_FLOAT_MAT3 = 35675;
 static const uint32_t GLTF_COMP_TYPE_FLOAT_MAT4 = 35676;
+
+static const uint32_t GLTF_FILTER_TYPE_LINEAR                = 9729;
+static const uint32_t GLTF_FILTER_TYPE_NEAREST_MIPMAP_LINEAR = 9987;
+static const uint32_t GLTF_WRAP_MODE_REPEAT                  = 10497;
+
+static const uint32_t GLTF_FORMAT_RGBA = 6408;
+static const uint32_t GLTF_TYPE_TEXTURE_2D = 3553;
+static const uint32_t GLTF_TYPE_UNSIGNED_BYTES = 5121;
+
 
 static const uint32_t GLTF_SHADER_TYPE_FRAGMENT = 35632;
 static const uint32_t GLTF_SHADER_TYPE_VERTEX   = 35633;
@@ -119,6 +140,7 @@ static const std::string GLTF_VERSION = "1.0";
 
 //Default shader properties
 static const std::string REPO_GLTF_DEFAULT_PROGRAM         = "default_program";
+static const std::string REPO_GLTF_DEFAULT_SAMPLER         = "default_sampler";
 static const std::string REPO_GLTF_DEFAULT_SHADER_FRAG     = "default_fshader";
 static const std::string REPO_GLTF_DEFAULT_SHADER_FRAG_URI = "fragShader.glsl";
 static const std::string REPO_GLTF_DEFAULT_SHADER_VERT     = "default_vshader";
@@ -277,6 +299,7 @@ bool GLTFModelExport::constructScene(
 		populateWithNode(root, tree);
 		populateWithMeshes(tree);
 		populateWithMaterials(tree);
+		populateWithTextures(tree);
 
 	}
 	else
@@ -368,12 +391,21 @@ void GLTFModelExport::populateWithMaterials(
 			matStruct.ambient.push_back(1);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_AMBIENT, matStruct.ambient);
 		}
-		if (matStruct.diffuse.size())
+
+		//find if there are any diffuse texture within the model, add it onto the material if so
+		std::vector<repo::core::model::RepoNode*> childrenNodes = scene->getChildrenNodesFiltered(gType, node->getSharedID(), repo::core::model::NodeType::TEXTURE);
+		if (childrenNodes.size())
+		{
+			//should only ever have 1 texture to a material
+			tree.addToTree(valuesLabel + "." + GLTF_LABEL_DIFFUSE, UUIDtoString(childrenNodes[0]->getUniqueID()));
+		}
+		else if (matStruct.diffuse.size())
 		{
 			//default technique takes on a 4d vector, we store 3d vectors
 			matStruct.diffuse.push_back(1);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_DIFFUSE, matStruct.diffuse);
 		}
+
 		if (matStruct.emissive.size())
 		{
 			//default technique takes on a 4d vector, we store 3d vectors
@@ -448,7 +480,6 @@ void GLTFModelExport::populateWithMeshes(
 			std::string accessorPrefix = GLTF_PREFIX_ACCESSORS + "_" + meshId;
 			//attributes
 			auto normals = node->getNormals();
-			repoDebug << "#normals: " << normals.size();
 			if (normals.size())
 			{
 				std::string bufferName = meshId + "_" + GLTF_SUFFIX_NORMALS;
@@ -456,7 +487,6 @@ void GLTFModelExport::populateWithMeshes(
 				addBuffer(bufferName, binFileName, tree, normals);
 			}
 			auto vertices = node->getVertices();
-			repoDebug << "#vertices: " << vertices.size();
 			if (vertices.size())
 			{
 				std::string bufferName = meshId + "_" + GLTF_SUFFIX_POSITION;
@@ -465,7 +495,6 @@ void GLTFModelExport::populateWithMeshes(
 			}
 			
 			auto UVs = node->getUVChannelsSeparated();
-			repoDebug << "#UVs: " << UVs[0].size();
 			if (UVs.size())
 			{
 				for (uint32_t i = 0; i < UVs.size(); ++i)
@@ -481,10 +510,38 @@ void GLTFModelExport::populateWithMeshes(
 
 		tree.addArrayObjects(label + "." + GLTF_LABEL_PRIMITIVES, primitives);
 
+	}	
+}
+
+void GLTFModelExport::populateWithTextures(
+	repo::lib::PropertyTree           &tree)
+{
+	repo::core::model::RepoNodeSet textures = scene->getAllTextures(gType);
+
+	writeDefaultSampler(tree);
+
+	for (const auto &texture : textures)
+	{
+		const repo::core::model::TextureNode *node = (const repo::core::model::TextureNode *)texture;
+		const std::string textureID = UUIDtoString(node->getUniqueID());
+		const std::string label = GLTF_LABEL_TEXTURES + "." + textureID;
+		const std::string imageName = GLTF_PREFIX_TEXTURE + "_" + textureID;
+		tree.addToTree(label + "." + GLTF_LABEL_FORMAT, GLTF_FORMAT_RGBA);
+		tree.addToTree(label + "." + GLTF_LABEL_INTERNAL_FORMAT, GLTF_FORMAT_RGBA);
+		tree.addToTree(label + "." + GLTF_LABEL_SOURCE, imageName);
+		tree.addToTree(label + "." + GLTF_LABEL_SAMPLER, REPO_GLTF_DEFAULT_SAMPLER);
+		tree.addToTree(label + "." + GLTF_LABEL_TARGET, GLTF_TYPE_TEXTURE_2D);
+		tree.addToTree(label + "." + GLTF_LABEL_TYPE, GLTF_TYPE_UNSIGNED_BYTES);
+		tree.addToTree(label + "." + GLTF_LABEL_NAME, node->getName());
+
+		const std::string imageLabel = GLTF_LABEL_IMAGES + "." + imageName;
+
+		//FIXME: this should be an api or something to drag the image out
+		tree.addToTree(imageLabel + "." + GLTF_LABEL_URI, node->getName());
+		tree.addToTree(imageLabel + "." + GLTF_LABEL_NAME, node->getName());
+
 	}
 
-	
-	
 }
 
 void GLTFModelExport::populateWithNode(
@@ -526,6 +583,16 @@ void GLTFModelExport::writeBuffers(
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_TYPE, GLTF_ARRAY_BUFFER);
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_URI, pair.first + ".bin");
 	}
+}
+
+void GLTFModelExport::writeDefaultSampler(
+	repo::lib::PropertyTree &tree)
+{
+	const std::string label = GLTF_LABEL_SAMPLERS + "." + REPO_GLTF_DEFAULT_SAMPLER;
+	tree.addToTree(label + "." + GLTF_LABEL_FILTER_MAG, GLTF_FILTER_TYPE_LINEAR);
+	tree.addToTree(label + "." + GLTF_LABEL_FILTER_MIN, GLTF_FILTER_TYPE_NEAREST_MIPMAP_LINEAR);
+	tree.addToTree(label + "." + GLTF_LABEL_WRAP_S, GLTF_WRAP_MODE_REPEAT);
+	tree.addToTree(label + "." + GLTF_LABEL_WRAP_T, GLTF_WRAP_MODE_REPEAT);
 }
 
 void GLTFModelExport::writeDefaultTechnique(

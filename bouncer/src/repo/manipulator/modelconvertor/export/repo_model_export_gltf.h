@@ -212,6 +212,13 @@ namespace repo{
 					repo::lib::PropertyTree          &tree);
 
 				/**
+				* Populate the given tree with the textures within the scene
+				* @param tree tree to populate
+				*/
+				void populateWithTextures(
+					repo::lib::PropertyTree          &tree);
+
+				/**
 				* Populate the given tree with the asset
 				* @param node node to define the asset from
 				* @param tree tree to populate
@@ -228,10 +235,22 @@ namespace repo{
 					repo::lib::PropertyTree &tree);
 
 				/**
+				* Write the default sampler into the
+				* property tree. Unless specified, all textures
+				* will be using this sampler
+				* Note: there is currently no way to specify
+				* your own specific sampler
+				* @param tree tree to write into
+				*/
+				void writeDefaultSampler(
+					repo::lib::PropertyTree &tree
+					);
+
+				/**
 				* Write the default shading technique into the 
 				* property tree. Unless specified, all materials
 				* will be rendered using this technique
-				* Note: there is currently no way to specific 
+				* Note: there is currently no way to specify 
 				* your own specific technique/shader
 				* @param tree tree to write into
 				*/
