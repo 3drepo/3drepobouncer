@@ -228,10 +228,9 @@ static float dotProduct(const repo_vector_t a, const repo_vector_t b)
 	return a.x*b.x + a.y*b.y + a.z*b.z;
 }
 
-static repo_vector_t crossProduct(const repo_vector_t a, const repo_vector_t b)
+static repo_vector_t crossProduct(const repo_vector_t &a, const repo_vector_t &b)
 {
 	repo_vector_t product;
-
 	product.x = (a.y * b.z) - (a.z * b.y);
 	product.y = (a.z * b.x) - (a.x * b.z);
 	product.z = (a.x * b.y) - (a.y * b.x);
@@ -466,9 +465,13 @@ static void normalize(repo_vector_t &a)
 {
 	float length = std::sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
 
-	a.x /= length;
-	a.y /= length;
-	a.z /= length;
+	if (length > 0)
+	{
+		a.x /= length;
+		a.y /= length;
+		a.z /= length;
+	}
+	
 }
 
 static bool nameCheck(const char &c)
