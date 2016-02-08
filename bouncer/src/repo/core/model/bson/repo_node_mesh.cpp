@@ -249,8 +249,8 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 					newMap.vertFrom = mapping.vertFrom;
 					newMap.vertTo = runningVTotal;
 
-					newMap.triFrom = mapping.triFrom + faceIdx;
-					newMap.triTo = mapping.triTo - newMap.triFrom;
+					newMap.triTo = mapping.triFrom + faceIdx;
+					newMap.triFrom = subMeshFFrom;
 
 					newMap.mesh_id = mapping.mesh_id;
 					newMap.material_id = mapping.material_id;
