@@ -11,7 +11,11 @@
 #define BOOST_PROPERTY_TREE_JSON_PARSER_HPP_INCLUDED
 
 #include <boost/property_tree/ptree.hpp>
+#if BOOST_VERSION < 105900
 #include <boost/property_tree/detail/json_parser_read.hpp>
+#else
+#include <boost/property_tree/detail/json_parser/read.hpp>
+#endif
 #include "json_parser_write.h"
 #include <boost/property_tree/detail/json_parser_error.hpp>
 

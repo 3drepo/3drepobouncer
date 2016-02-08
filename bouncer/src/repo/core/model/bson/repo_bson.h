@@ -122,20 +122,20 @@ public:
     template <class T>
     bool getBinaryFieldAsVector(
             const std::string &field,
-            std::vector<T> * vec) const
+            std::vector<T> &vec) const
 
     {
         bool success = false;
 
-        if (vec && (!hasField(field) || getField(field).type() == ElementType::STRING))
+        if (!hasField(field) || getField(field).type() == ElementType::STRING)
         {
             //Try to get it from file mapping.
             std::vector<uint8_t> bin = getBigBinary(field);
             if (bin.size() > 0)
             {
                 repoTrace << "Found file in extref - size of bin : " << (bin.size() / 1024 / 1024) << "MiB";
-                vec->resize(bin.size() / sizeof(T));
-                memcpy(&vec->at(0), &bin[0], bin.size());
+                vec.resize(bin.size() / sizeof(T));
+                memcpy(vec.data(), &bin[0], bin.size());
                 success = true;
             }
             else
@@ -147,15 +147,15 @@ public:
         else{
 
             RepoBSONElement bse = getField(field);
-            if (vec && bse.type() == ElementType::BINARY && bse.binDataType() == mongo::BinDataGeneral)
+            if (bse.type() == ElementType::BINARY && bse.binDataType() == mongo::BinDataGeneral)
             {
                 bse.value();
                 int length;
                 const char *binData = bse.binData(length);
                 if (length > 0)
                 {
-                    vec->resize(length / sizeof(T));
-                    memcpy(&(vec->at(0)), binData, length);
+                    vec.resize(length / sizeof(T));
+                    memcpy(vec.data(), binData, length);
                     success = true;
 
                 }
@@ -165,8 +165,7 @@ public:
                 }
             }
             else{
-                repoError << "RepoBSON::getBinaryFieldAsVector :" <<
-                             (!vec ? " nullptr to vector " : "bson element type is not BinDataGeneral!");
+                repoError << "RepoBSON::getBinaryFieldAsVector : bson element type is not BinDataGeneral!";
 
             }
         }

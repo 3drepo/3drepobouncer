@@ -158,8 +158,8 @@ repo::core::model::RepoScene* RepoManipulator::createMapScene(
 }
 
 void RepoManipulator::commitScene(
-	const std::string                             &databaseAd,
-	const repo::core::model::RepoBSON 	  *cred,
+	const std::string                      &databaseAd,
+	const repo::core::model::RepoBSON 	   *cred,
 	repo::core::model::RepoScene           *scene,
 	const std::string                      &owner)
 {
@@ -178,15 +178,12 @@ void RepoManipulator::commitScene(
 			if (generateAndCommitSRCBuffer(databaseAd, cred, scene))
 			{
 				repoInfo << "SRC file stored into the database";
-			}
-			
+			}			
 		}
 		else
 		{
 			repoError << "Failed to commit scene stash : " << msg;
 		}
-
-
 	}
 	else
 	{
@@ -470,15 +467,15 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 	const repo::core::model::RepoScene            *scene)
 {
 	bool success;
-	std::unordered_map<std::string, std::vector<uint8_t>> v = generateSRCBuffer(scene);
-	if (success = v.size())
+	modelconvertor::repo_src_export_t v = generateSRCBuffer(scene);
+	if (success = (v.srcFiles.size() + v.x3dFiles.size() + v.jsonFiles.size()))
 	{
 		repo::core::handler::AbstractDatabaseHandler* handler =
 			repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 		if (success = handler)
 		{
 
-			for (const auto bufferPair : v)
+			for (const auto bufferPair : v.srcFiles)
 			{
 				std::string databaseName = scene->getDatabaseName();
 				std::string projectName = scene->getProjectName();
@@ -496,6 +493,41 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 					repoError << "Failed to add file  ("<<fileName <<"): " << errMsg;
 				}
 			}		
+			for (const auto bufferPair : v.x3dFiles)
+			{
+				std::string databaseName = scene->getDatabaseName();
+				std::string projectName = scene->getProjectName();
+				std::string errMsg;
+				//FIXME: constant value somewhere for .stash.x3d?
+				std::string fileName = bufferPair.first;
+				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.x3d", fileName, bufferPair.second,
+					errMsg, "binary/octet-stream"))
+				{
+					repoInfo << "File (" << fileName << ") added successfully.";
+				}
+				else
+				{
+					repoError << "Failed to add file  (" << fileName << "): " << errMsg;
+				}
+			}
+
+			for (const auto bufferPair : v.jsonFiles)
+			{
+				std::string databaseName = scene->getDatabaseName();
+				std::string projectName = scene->getProjectName();
+				std::string errMsg;
+				//FIXME: constant value somewhere for .stash.x3d?
+				std::string fileName = bufferPair.first;
+				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.json_mpc", fileName, bufferPair.second,
+					errMsg, "binary/octet-stream"))
+				{
+					repoInfo << "File (" << fileName << ") added successfully.";
+				}
+				else
+				{
+					repoError << "Failed to add file  (" << fileName << "): " << errMsg;
+				}
+			}
 		}
 	}
 
@@ -503,16 +535,16 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 
 }
 
-std::unordered_map<std::string, std::vector<uint8_t>> RepoManipulator::generateSRCBuffer(
+modelconvertor::repo_src_export_t RepoManipulator::generateSRCBuffer(
 	const repo::core::model::RepoScene *scene)
 {
 
-	std::unordered_map<std::string, std::vector<uint8_t>> result;
+	modelconvertor::repo_src_export_t result;
 	modelconvertor::SRCModelExport srcExport(scene);
 	if (srcExport.isOk())
 	{
 		repoTrace << "Conversion succeed.. exporting as buffer..";
-		result = srcExport.getFileAsBuffer();
+		result = srcExport.getAllFilesExportedAsBuffer();
 	}
 	else
 		repoError << "Export to SRC failed.";

@@ -138,47 +138,33 @@ TEST(RepoBSONFactoryTest, MakeRepoUserTest)
 	std::string lastName = "lastName";
 	std::string email = "email";
 
-	std::list<std::pair<std::string, std::string>>   projects;
 	std::list<std::pair<std::string, std::string>>   roles;
-	std::list<std::pair<std::string, std::string>>   groups;
 	std::list<std::pair<std::string, std::string>>   apiKeys;
 	std::vector<char>                                avatar;
 
 
-	projects.push_back(std::pair<std::string, std::string >("database", "projectName"));
 	roles.push_back(std::pair<std::string, std::string >("database", "roleName"));
-	groups.push_back(std::pair<std::string, std::string >("database", "groupName"));
 	apiKeys.push_back(std::pair<std::string, std::string >("database", "apiKey"));
 	avatar.resize(10);
 
-	RepoUser user = RepoBSONFactory::makeRepoUser(username, password, firstName, lastName, email, projects, roles, groups, apiKeys, avatar);
+	RepoUser user = RepoBSONFactory::makeRepoUser(username, password, firstName, lastName, email, roles, apiKeys, avatar);
 
 	EXPECT_EQ(username, user.getUserName());
 	EXPECT_EQ(firstName, user.getFirstName());
 	EXPECT_EQ(lastName, user.getLastName());
 	EXPECT_EQ(email, user.getEmail());
 
-	auto proOut = user.getProjectsList();
 	auto rolesOut = user.getRolesList();
-	auto groupsOut = user.getGroupsList();
 	auto apiOut = user.getAPIKeysList();
 	auto avatarOut = user.getAvatarAsRawData();
 
 
-	EXPECT_EQ(projects.size(), proOut.size());
 	EXPECT_EQ(roles.size(), rolesOut.size());
-	EXPECT_EQ(groups.size(), groupsOut.size());
 	EXPECT_EQ(apiKeys.size(), apiOut.size());
 	EXPECT_EQ(avatar.size(), avatarOut.size());
 
-	EXPECT_EQ(proOut.begin()->first, projects.begin()->first);
-	EXPECT_EQ(proOut.begin()->second, projects.begin()->second);
-
 	EXPECT_EQ(rolesOut.begin()->first, roles.begin()->first);
 	EXPECT_EQ(rolesOut.begin()->second, roles.begin()->second);
-
-	EXPECT_EQ(groupsOut.begin()->first, groups.begin()->first);
-	EXPECT_EQ(groupsOut.begin()->second, groups.begin()->second);
 
 	EXPECT_EQ(apiOut.begin()->first, apiKeys.begin()->first);
 	EXPECT_EQ(apiOut.begin()->second, apiKeys.begin()->second);
@@ -304,18 +290,19 @@ TEST(RepoBSONFactoryTest, MakeMapNodeTest)
 	float tilt = 2.0, tileSize = 10.5, longit = 2.3546, latit = 5.3235;
 	repo_vector_t centrePoint = { 3.12345, 54.3536, 435.32 };
 	std::string name = "mapTest";
+	std::string apiKey = "apiKey";
 
-	MapNode map = RepoBSONFactory::makeMapNode(width, zoom, tilt, tileSize, longit, latit, centrePoint, name);
+	MapNode map = RepoBSONFactory::makeMapNode(width, zoom, tilt, tileSize, longit, latit, centrePoint, apiKey, name);
 
 	EXPECT_FALSE(map.isEmpty());
 	EXPECT_EQ(name, map.getName());
+	EXPECT_EQ(apiKey, map.getAPIKey());
 	EXPECT_EQ(map.getTypeAsEnum(), NodeType::MAP);
 
-	//TODO: There's no functionality to extract Map yet. once we have them we should replace these with the default functions
-	EXPECT_EQ(width, map.getField(REPO_NODE_MAP_LABEL_WIDTH).Int());
-	EXPECT_EQ(zoom, map.getField(REPO_NODE_MAP_LABEL_ZOOM).Int());
-	EXPECT_EQ(tileSize, map.getField(REPO_NODE_MAP_LABEL_TILESIZE).Double());
-	EXPECT_EQ(tilt, map.getField(REPO_NODE_MAP_LABEL_YROT).Double());
+	EXPECT_EQ(width, map.getWidth());
+	EXPECT_EQ(zoom, map.getZoom());
+	EXPECT_EQ(tileSize, map.getTileSize());
+	EXPECT_EQ(tilt, map.getYRot());
 	EXPECT_EQ(longit, map.getField(REPO_NODE_MAP_LABEL_LONG).Double());
 	EXPECT_EQ(latit, map.getField(REPO_NODE_MAP_LABEL_LAT).Double());
 	

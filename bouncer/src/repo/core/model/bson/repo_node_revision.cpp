@@ -40,6 +40,11 @@ RevisionNode::~RevisionNode()
 {
 }
 
+RevisionNode RevisionNode::cloneAndRemoveIncompleteFlag() const
+{
+	return RepoNode(removeField(REPO_NODE_REVISION_LABEL_INCOMPLETE), bigFiles);
+}
+
 std::string RevisionNode::getAuthor() const
 {
 	return getStringField(REPO_NODE_REVISION_LABEL_AUTHOR);

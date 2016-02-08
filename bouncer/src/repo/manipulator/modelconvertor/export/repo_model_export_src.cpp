@@ -23,6 +23,7 @@
 #include "repo_model_export_src.h"
 #include "../../../lib/repo_log.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
+#include "auxiliary/repo_model_export_x3d.h"
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -84,6 +85,22 @@ const static std::string SRC_PREFIX_IDMAP_BUFF_CHK     = "idc";
 
 const static std::string SRC_PREFIX_IDMAP              = "idMap";
 
+//Labels for multipart JSON descriptor files
+const static std::string MP_LABEL_APPEARANCE       = "appearance";
+const static std::string MP_LABEL_MAT_DIFFUSE      = "diffuseColor";
+const static std::string MP_LABEL_MAT_EMISSIVE     = "emissiveColor";
+const static std::string MP_LABEL_MATERIAL         = "material";
+const static std::string MP_LABEL_MAPPING          = "mapping";
+const static std::string MP_LABEL_MAT_SHININESS    = "shininess";
+const static std::string MP_LABEL_MAT_SPECULAR     = "specularColor";
+const static std::string MP_LABEL_MAT_TRANSPARENCY = "transparency";
+const static std::string MP_LABEL_MAX              = "max";
+const static std::string MP_LABEL_MAX_GEO_COUNT    = "maxGeoCount";
+const static std::string MP_LABEL_MIN              = "min";
+const static std::string MP_LABEL_NAME             = "name";
+const static std::string MP_LABEL_NUM_IDs          = "numberOfIDs";
+const static std::string MP_LABEL_USAGE            = "usage";
+
 
 
 struct repo_src_mesh_info
@@ -114,11 +131,39 @@ SRCModelExport::SRCModelExport(
 		{
 			gType = repo::core::model::RepoScene::GraphType::OPTIMIZED;
 			convertSuccess = generateTreeRepresentation();
+
+			if (convertSuccess)
+			{
+				repoDebug << "Writing X3D Backbone file...";
+				//Build general x3d backbone
+				X3DModelExport x3dExport(scene);
+
+				if (convertSuccess = x3dExport.isOk())
+				{
+					auto buffer = x3dExport.getFileAsBuffer();
+					x3dBufs[x3dExport.getFileName()] = buffer;
+				}
+
+
+				
+			}
+		}
+		else  if (scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT) && !scene->getAllMeshes().size())
+		{
+			//There are no meshes, just generate the x3d backbone (most likely a federation model).
+			gType = repo::core::model::RepoScene::GraphType::DEFAULT;
+			X3DModelExport x3dExport(scene);
+
+			if (convertSuccess = x3dExport.isOk())
+			{
+				auto buffer = x3dExport.getFileAsBuffer();
+				x3dBufs[x3dExport.getFileName()] = buffer;
+
+			}
 		}
 		else
 		{
-			repoError << "Scene has no optimised graph. SRC Exporter relies on this.";
-			convertSuccess = false;
+			repoError << "Scene has no optimised graph and it is not a federation graph. SRC Exporter relies on this.";
 		}
 		
 	}
@@ -133,7 +178,7 @@ SRCModelExport::~SRCModelExport()
 {
 }
 
-std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getFileAsBuffer()
+std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getSRCFilesAsBuffer() const
 {
 	std::unordered_map < std::string, std::vector<uint8_t> > fileBuffers;
 
@@ -143,7 +188,7 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getFileAsB
 		std::string fName = treePair.first;		
 
 		std::stringstream ss;
-		boost::property_tree::write_json(ss, treePair.second);
+		treePair.second.write_json(ss);
 		std::string jsonStr = ss.str();
 
 		//one char is one byte, 12bytes for Magic Bit(4), SRC Version (4), Header Length(4)	
@@ -168,10 +213,12 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getFileAsB
 
 		buffPtr += jsonByteSize;
 		
-		if (fullDataBuffer.find(fName) != fullDataBuffer.end())
+		const auto fdIt = fullDataBuffer.find(fName);
+
+		if (fdIt  != fullDataBuffer.end())
 		{
 			//Add data buffer to the full buffer
-			buffer.insert(buffer.end(), fullDataBuffer[fName].begin(), fullDataBuffer[fName].end());
+			buffer.insert(buffer.end(), fdIt->second.begin(), fdIt->second.end());
 			fileBuffers[fName] = buffer;
 		}
 		else
@@ -182,6 +229,127 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getFileAsB
 	}
 
 	return fileBuffers;
+}
+
+std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getJSONFilesAsBuffer() const
+{
+	std::unordered_map < std::string, std::vector<uint8_t> > fileBuffers;
+
+	for (const auto &treePair : jsonTrees)
+	{
+		
+		std::stringstream ss;
+		treePair.second.write_json(ss);
+		std::string jsonStr = ss.str();
+
+		fileBuffers[treePair.first] = std::vector<uint8_t>();
+		fileBuffers[treePair.first].resize(jsonStr.size());
+		memcpy(fileBuffers[treePair.first].data(), jsonStr.c_str(), jsonStr.size());
+
+	}
+
+	return fileBuffers;
+}
+
+repo_src_export_t SRCModelExport::getAllFilesExportedAsBuffer() const
+{
+	return { getSRCFilesAsBuffer(), getX3DFilesAsBuffer(), getJSONFilesAsBuffer() };
+}
+
+bool SRCModelExport::generateJSONMapping(
+	const repo::core::model::MeshNode  *mesh,
+	const repo::core::model::RepoScene *scene,
+	const std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> &splitMapping)
+{
+	bool success;
+	if (success = mesh)
+	{
+		repo::lib::PropertyTree jsonTree;
+		std::vector<repo_mesh_mapping_t> mappings = mesh->getMeshMapping();
+		std::sort(mappings.begin(), mappings.end(),
+			[](repo_mesh_mapping_t const& a, repo_mesh_mapping_t const& b) { return a.vertFrom < b.vertFrom; });
+
+		size_t mappingLength = mappings.size();
+
+		jsonTree.addToTree(MP_LABEL_NUM_IDs, mappingLength);
+		jsonTree.addToTree(MP_LABEL_MAX_GEO_COUNT, mappingLength);
+
+		std::vector<repo::core::model::RepoNode*> matChild = 
+			scene->getChildrenNodesFiltered(gType, mesh->getSharedID(), repo::core::model::NodeType::MATERIAL);
+
+		std::vector <repo::lib::PropertyTree> matChildrenTrees;
+		for (size_t i = 0; i < matChild.size(); ++i)
+		{
+			repo::lib::PropertyTree matTree;
+			const repo::core::model::MaterialNode *matNode = (const repo::core::model::MaterialNode *) matChild[i];
+			matTree.addToTree(MP_LABEL_NAME, UUIDtoString(matNode->getUniqueID()));
+			repo_material_t matStruct = matNode->getMaterialStruct();
+
+			if (matStruct.diffuse.size())
+				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_DIFFUSE, matStruct.diffuse, false);
+
+			if (matStruct.emissive.size())
+				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_EMISSIVE, matStruct.emissive, false);
+
+			if (matStruct.shininess == matStruct.shininess)
+				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_SHININESS, matStruct.shininess);
+
+			if (matStruct.specular.size())
+				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_SPECULAR, matStruct.specular, false);
+
+			if (matStruct.opacity == matStruct.opacity)
+				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_TRANSPARENCY, 1.0 - matStruct.opacity);
+
+			matChildrenTrees.push_back(matTree);
+
+		}
+
+		jsonTree.addArrayObjects(MP_LABEL_APPEARANCE, matChildrenTrees);
+
+		
+		std::vector<repo::lib::PropertyTree> mappingTrees;
+		std::string meshUID = UUIDtoString(mesh->getUniqueID());
+		//Could get the mesh split function to pass a mapping out so we don't do this again.
+		for (size_t i = 0; i < mappingLength; ++i)
+		{
+			auto mapIt  = splitMapping.find(mappings[i].mesh_id);
+			if (mapIt != splitMapping.end())
+			{
+
+				for (const uint32_t &subMeshID : mapIt->second)
+				{
+					repo::lib::PropertyTree mappingTree;
+
+					mappingTree.addToTree(MP_LABEL_NAME, UUIDtoString(mappings[i].mesh_id));
+					mappingTree.addToTree(MP_LABEL_APPEARANCE, UUIDtoString(mappings[i].material_id));
+					mappingTree.addToTree(MP_LABEL_MIN, mappings[i].min);
+					mappingTree.addToTree(MP_LABEL_MAX, mappings[i].max);
+					std::vector<std::string> usageArr = { meshUID + "_" + std::to_string(subMeshID) };
+					mappingTree.addToTree(MP_LABEL_USAGE, usageArr);
+
+					mappingTrees.push_back(mappingTree);
+				}
+				
+			}
+			else
+			{
+				repoError << "Failed to find split mapping for id: " << UUIDtoString(mappings[i].mesh_id);
+			}
+			
+		}
+
+		jsonTree.addArrayObjects(MP_LABEL_MAPPING, mappingTrees);
+
+		std::string jsonFileName = "/" +  scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + UUIDtoString(mesh->getUniqueID()) + ".json.mpc";
+
+		jsonTrees[jsonFileName] = jsonTree;
+	}
+	else
+	{
+		repoError << "Unable to generate JSON file mapping : null pointer to mesh!";
+	}
+
+	return success;
 }
 
 bool SRCModelExport::generateTreeRepresentation(
@@ -200,12 +368,13 @@ bool SRCModelExport::generateTreeRepresentation(
 			std::string textureID = scene->getTextureIDForMesh(gType, mesh->getSharedID());
 			std::vector<uint16_t> facebuf;
 			std::vector<std::vector<float>> idMapBuf;
+			std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> splitMapping;
 			repo::core::model::MeshNode splittedMesh =
-				((repo::core::model::MeshNode*)mesh)->cloneAndRemapMeshMapping(SRC_MAX_VERTEX_LIMIT, facebuf, idMapBuf);
-			repoTrace << " Mapping before: " << ((repo::core::model::MeshNode*)mesh)->getMeshMapping().size() << " Mapping after: " << splittedMesh.getMeshMapping().size();
+				((repo::core::model::MeshNode*)mesh)->cloneAndRemapMeshMapping(SRC_MAX_VERTEX_LIMIT, facebuf, idMapBuf, splitMapping);
 
 			std::string ext = ".src";
-			if (((repo::core::model::MeshNode*)mesh)->getMeshMapping().size() > 1)
+			bool sepX3d; //requires a separate x3d file if it is a multipart mesh
+			if (sepX3d = ((repo::core::model::MeshNode*)mesh)->getMeshMapping().size() > 1)
 			{
 				ext += ".mpc";
 			}
@@ -216,8 +385,23 @@ bool SRCModelExport::generateTreeRepresentation(
 			}
 
 			addMeshToExport(splittedMesh, index++, facebuf, idMapBuf, ext);
-			
+			if (sepX3d)
+			{
+				success &= generateJSONMapping((repo::core::model::MeshNode*)mesh, scene, splitMapping);
 
+				X3DModelExport x3dExport(splittedMesh, scene);
+				if (x3dExport.isOk())
+				{
+					x3dBufs[x3dExport.getFileName()] = x3dExport.getFileAsBuffer();
+				}
+				else
+				{
+					repoError << "Failed to generate x3d representation for mesh: " << UUIDtoString(mesh->getUniqueID());
+				}
+			}
+
+
+			
 		}		
 	}
 
@@ -229,17 +413,6 @@ bool SRCModelExport::generateTreeRepresentation(
 std::string SRCModelExport::getSupportedFormats()
 {
 	return ".src";
-}
-template <>
-void SRCModelExport::addToTree<std::string>(
-	boost::property_tree::ptree &tree,
-	const std::string           &label,
-	const std::string           &value)
-{
-	if (label.empty())
-		tree.put(label, value, stringTranslator());
-	else
-		tree.add(label, value, stringTranslator());
 }
 
 void SRCModelExport::addMeshToExport(
@@ -261,23 +434,23 @@ void SRCModelExport::addMeshToExport(
 	size_t bufPos = 0; //In bytes
 	size_t vertexWritePosition = bufPos;
 
-	bufPos += vertices->size()*sizeof(*vertices->data());
+	bufPos += vertices.size()*sizeof(*vertices.data());
 
 	size_t normalWritePosition = bufPos;
-	bufPos += normals->size()*sizeof(*normals->data());
+	bufPos += normals.size()*sizeof(*normals.data());
 
 	size_t facesWritePosition = bufPos;
 	bufPos += faceBuf.size() * sizeof(*faceBuf.data());
 
 	size_t idMapWritePosition = bufPos;
-	bufPos += vertices->size() * sizeof(float); //idMap array is of floats
+	bufPos += vertices.size() * sizeof(float); //idMap array is of floats
 
 	size_t uvWritePosition = bufPos;
 	size_t nSubMeshes = mapping.size();
 
 	std::string meshId = UUIDtoString(mesh.getUniqueID());
 
-	boost::property_tree::ptree tree;
+	repo::lib::PropertyTree tree;
 
 	repoTrace << "Looping Through submeshes (#submeshes : " << nSubMeshes << ")";
 	for (size_t subMeshIdx = 0; subMeshIdx < nSubMeshes; ++subMeshIdx)
@@ -322,60 +495,60 @@ void SRCModelExport::addMeshToExport(
 		size_t fCount = mapping[subMeshIdx].triTo - mapping[subMeshIdx].triFrom;
 
 		// SRC Header for this mesh
-		if (vertices->size())
+		if (vertices.size())
 		{
 			std::string srcAccessors_AttrViews_positionAttrView = srcAccessors_AttributeViews + "." + positionAttributeView + ".";
-			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BUFFVIEW, positionBufferView);
-			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BYTE_OFFSET, 0);
-			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BYTE_STRIDE, 12);
-			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_COMP_TYPE, SRC_X3DOM_FLOAT);
-			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_TYPE, SRC_VECTOR_3D);
-			addToTree(tree, srcAccessors_AttrViews_positionAttrView + SRC_LABEL_COUNT, vCount);
+			tree.addToTree(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BUFFVIEW, positionBufferView);
+			tree.addToTree(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BYTE_OFFSET, 0);
+			tree.addToTree(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_BYTE_STRIDE, 12);
+			tree.addToTree(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_COMP_TYPE, SRC_X3DOM_FLOAT);
+			tree.addToTree(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_TYPE, SRC_VECTOR_3D);
+			tree.addToTree(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_COUNT, vCount);
 
 			std::vector<uint32_t> offsetArr = { 0, 0, 0 };
 			std::vector<uint32_t> scaleArr = { 1, 1, 1 };
-			tree.add_child(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_DECODE_OFFSET, createPTArray(offsetArr));
-			tree.add_child(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_DECODE_SCALE, createPTArray(scaleArr));
+			tree.addToTree(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_DECODE_OFFSET, offsetArr);
+			tree.addToTree(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_DECODE_SCALE, scaleArr);
 
 
 			std::string srcBufferChunks_positionBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + positionBufferChunk + ".";
-			size_t verticeBufferLength = vCount * sizeof(*vertices->data());
+			size_t verticeBufferLength = vCount * sizeof(*vertices.data());
 
-			addToTree(tree, srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_OFFSET, vertexWritePosition);
-			addToTree(tree, srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_LENGTH, verticeBufferLength); 
+			tree.addToTree(srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_OFFSET, vertexWritePosition);
+			tree.addToTree(srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_LENGTH, verticeBufferLength); 
 
 			vertexWritePosition += verticeBufferLength;
 
 			std::string srcBufferViews_positionBufferView = SRC_LABEL_BUFF_VIEWS + "." + positionBufferView + ".";
 
 			std::vector<std::string> chunksArray = { positionBufferChunk };
-			tree.add_child(srcBufferViews_positionBufferView + SRC_LABEL_CHUNKS, createPTArray(chunksArray));
+			tree.addToTree(srcBufferViews_positionBufferView + SRC_LABEL_CHUNKS, chunksArray);
 
-			addToTree(tree, srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_POSITION, positionAttributeView);
+			tree.addToTree(srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_POSITION, positionAttributeView);
 		}
 
 		//Normal Attribute View
-		if (normals->size())
+		if (normals.size())
 		{
 			std::string srcAccessors_AttrViews_normalAttrView = srcAccessors_AttributeViews + "." + normalAttributeView + ".";
-			addToTree(tree, srcAccessors_AttrViews_normalAttrView + SRC_LABEL_BUFFVIEW, normalBufferView);
-			addToTree(tree, srcAccessors_AttrViews_normalAttrView + SRC_LABEL_BYTE_OFFSET, 0);
-			addToTree(tree, srcAccessors_AttrViews_normalAttrView + SRC_LABEL_BYTE_STRIDE, 12);
-			addToTree(tree, srcAccessors_AttrViews_normalAttrView + SRC_LABEL_COMP_TYPE, SRC_X3DOM_FLOAT);
-			addToTree(tree, srcAccessors_AttrViews_normalAttrView + SRC_LABEL_TYPE, SRC_VECTOR_3D);
-			addToTree(tree, srcAccessors_AttrViews_normalAttrView + SRC_LABEL_COUNT, vCount);
+			tree.addToTree(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_BUFFVIEW, normalBufferView);
+			tree.addToTree(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_BYTE_OFFSET, 0);
+			tree.addToTree(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_BYTE_STRIDE, 12);
+			tree.addToTree(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_COMP_TYPE, SRC_X3DOM_FLOAT);
+			tree.addToTree(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_TYPE, SRC_VECTOR_3D);
+			tree.addToTree(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_COUNT, vCount);
 
 			std::vector<uint32_t> offsetArr = { 0, 0, 0 };
 			std::vector<uint32_t> scaleArr = { 1, 1, 1 };
-			tree.add_child(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_DECODE_OFFSET, createPTArray(offsetArr));
-			tree.add_child(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_DECODE_SCALE, createPTArray(scaleArr));
+			tree.addToTree(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_DECODE_OFFSET, offsetArr);
+			tree.addToTree(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_DECODE_SCALE, scaleArr);
 
 
 			std::string srcBufferChunks_positionBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + normalBufferChunk + ".";
-			size_t verticeBufferLength = vCount * sizeof(*normals->data());
+			size_t verticeBufferLength = vCount * sizeof(*normals.data());
 
-			addToTree(tree, srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_OFFSET, normalWritePosition);
-			addToTree(tree, srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_LENGTH, verticeBufferLength); 
+			tree.addToTree(srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_OFFSET, normalWritePosition);
+			tree.addToTree(srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_LENGTH, verticeBufferLength); 
 
 			normalWritePosition += verticeBufferLength;
 
@@ -383,9 +556,9 @@ void SRCModelExport::addMeshToExport(
 			std::string srcBufferViews_normalBufferView = SRC_LABEL_BUFF_VIEWS + "." + normalBufferView + ".";
 
 			std::vector<std::string> chunksArray = { normalBufferChunk };
-			tree.add_child(srcBufferViews_normalBufferView + SRC_LABEL_CHUNKS, createPTArray(chunksArray));
+			tree.addToTree(srcBufferViews_normalBufferView + SRC_LABEL_CHUNKS, chunksArray);
 
-			addToTree(tree, srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_NORMAL, normalAttributeView);
+			tree.addToTree(srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_NORMAL, normalAttributeView);
 
 		}
 
@@ -394,26 +567,26 @@ void SRCModelExport::addMeshToExport(
 		{
 			std::string srcAccessors_indexViews = SRC_LABEL_ACCESSORS + "." + SRC_LABEL_INDEX_VIEWS + "." + indexView + ".";
 
-			addToTree(tree, srcAccessors_indexViews + SRC_LABEL_BUFFVIEW, indexBufferView);
-			addToTree(tree, srcAccessors_indexViews + SRC_LABEL_BYTE_OFFSET, 0);
-			addToTree(tree, srcAccessors_indexViews + SRC_LABEL_COMP_TYPE, SRC_X3DOM_USHORT);
-			addToTree(tree, srcAccessors_indexViews + SRC_LABEL_COUNT, fCount * 3);
+			tree.addToTree(srcAccessors_indexViews + SRC_LABEL_BUFFVIEW, indexBufferView);
+			tree.addToTree(srcAccessors_indexViews + SRC_LABEL_BYTE_OFFSET, 0);
+			tree.addToTree(srcAccessors_indexViews + SRC_LABEL_COMP_TYPE, SRC_X3DOM_USHORT);
+			tree.addToTree(srcAccessors_indexViews + SRC_LABEL_COUNT, fCount * 3);
 
 			std::string srcBufferChunks_indexBufferChunk = SRC_LABEL_BUFFER_CHUNKS + "." + indexBufferChunk + ".";
 			size_t facesBufferLength = fCount * 3 * sizeof(*faceBuf.data()); //3 shorts for face index
 
-			addToTree(tree, srcBufferChunks_indexBufferChunk + SRC_LABEL_BYTE_OFFSET, facesWritePosition);
-			addToTree(tree, srcBufferChunks_indexBufferChunk + SRC_LABEL_BYTE_LENGTH, facesBufferLength);
+			tree.addToTree(srcBufferChunks_indexBufferChunk + SRC_LABEL_BYTE_OFFSET, facesWritePosition);
+			tree.addToTree(srcBufferChunks_indexBufferChunk + SRC_LABEL_BYTE_LENGTH, facesBufferLength);
 
 			facesWritePosition += facesBufferLength;
 
 			std::string srcBufferViews_indexBufferView = SRC_LABEL_BUFF_VIEWS + "." + indexBufferView + ".";
 
 			std::vector<std::string> chunksArray = { indexBufferChunk };
-			tree.add_child(srcBufferViews_indexBufferView + SRC_LABEL_CHUNKS, createPTArray(chunksArray));
+			tree.addToTree(srcBufferViews_indexBufferView + SRC_LABEL_CHUNKS, chunksArray);
 
-			addToTree(tree, srcMesh_MeshID + SRC_LABEL_INDICIES, indexView);
-			addToTree(tree, srcMesh_MeshID + SRC_LABEL_PRIMITIVE, SRC_X3DOM_TRIANGLE);
+			tree.addToTree(srcMesh_MeshID + SRC_LABEL_INDICIES, indexView);
+			tree.addToTree(srcMesh_MeshID + SRC_LABEL_PRIMITIVE, SRC_X3DOM_TRIANGLE);
 
 		}
 
@@ -421,64 +594,64 @@ void SRCModelExport::addMeshToExport(
 		{
 			std::string srcAccessors_AttrViews_idMapAttributeView = srcAccessors_AttributeViews + "." + idMapAttributeView + ".";
 
-			addToTree(tree, srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_BUFFVIEW, idMapBufferView);
-			addToTree(tree, srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_BYTE_OFFSET, 0);
-			addToTree(tree, srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_BYTE_STRIDE, 4);
-			addToTree(tree, srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_COMP_TYPE, SRC_X3DOM_FLOAT);
-			addToTree(tree, srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_TYPE, SRC_SCALAR);
-			addToTree(tree, srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_COUNT, vCount);
+			tree.addToTree(srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_BUFFVIEW, idMapBufferView);
+			tree.addToTree(srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_BYTE_OFFSET, 0);
+			tree.addToTree(srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_BYTE_STRIDE, 4);
+			tree.addToTree(srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_COMP_TYPE, SRC_X3DOM_FLOAT);
+			tree.addToTree(srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_TYPE, SRC_SCALAR);
+			tree.addToTree(srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_COUNT, vCount);
 
 			std::vector<uint32_t> offsetArr = { 0 };
 			std::vector<uint32_t> scaleArr = { 1 };
-			tree.add_child(srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_DECODE_OFFSET, createPTArray(offsetArr));
-			tree.add_child(srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_DECODE_SCALE, createPTArray(scaleArr));
+			tree.addToTree(srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_DECODE_OFFSET, offsetArr);
+			tree.addToTree(srcAccessors_AttrViews_idMapAttributeView + SRC_LABEL_DECODE_SCALE, scaleArr);
 
 			std::string srcBufferChunks_idMapBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + idMapBufferChunk + ".";
 			size_t idMapBufferLength = idMapBuf[subMeshIdx].size() * sizeof(*idMapBuf[subMeshIdx].data());
 
-			addToTree(tree, srcBufferChunks_idMapBufferChunks + SRC_LABEL_BYTE_OFFSET, idMapWritePosition);
-			addToTree(tree, srcBufferChunks_idMapBufferChunks + SRC_LABEL_BYTE_LENGTH, idMapBufferLength);
+			tree.addToTree(srcBufferChunks_idMapBufferChunks + SRC_LABEL_BYTE_OFFSET, idMapWritePosition);
+			tree.addToTree(srcBufferChunks_idMapBufferChunks + SRC_LABEL_BYTE_LENGTH, idMapBufferLength);
 
 			idMapWritePosition += idMapBufferLength;
 
 			std::string srcBufferViews_idMapBufferView = SRC_LABEL_BUFF_VIEWS + "." + idMapBufferView + ".";
 
 			std::vector<std::string> chunksArray = { idMapBufferChunk };
-			tree.add_child(srcBufferViews_idMapBufferView + SRC_LABEL_CHUNKS, createPTArray(chunksArray));
+			tree.addToTree(srcBufferViews_idMapBufferView + SRC_LABEL_CHUNKS, chunksArray);
 
-			addToTree(tree, srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_ID, idMapAttributeView);
+			tree.addToTree(srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_ID, idMapAttributeView);
 		}
 
-		if (uvs && uvs->size())
+		if (uvs.size())
 		{
 			// UV coordinates
 			std::string srcAccessors_AttrViews_uvAttrView = srcAccessors_AttributeViews + "." + uvAttributeView + ".";
-			addToTree(tree, srcAccessors_AttrViews_uvAttrView + SRC_LABEL_BUFFVIEW, uvBufferView);
-			addToTree(tree, srcAccessors_AttrViews_uvAttrView + SRC_LABEL_BYTE_OFFSET, 0);
-			addToTree(tree, srcAccessors_AttrViews_uvAttrView + SRC_LABEL_BYTE_STRIDE, 8);
-			addToTree(tree, srcAccessors_AttrViews_uvAttrView + SRC_LABEL_COMP_TYPE, SRC_X3DOM_FLOAT);
-			addToTree(tree, srcAccessors_AttrViews_uvAttrView + SRC_LABEL_TYPE, SRC_VECTOR_2D);
-			addToTree(tree, srcAccessors_AttrViews_uvAttrView + SRC_LABEL_COUNT, vCount);
+			tree.addToTree(srcAccessors_AttrViews_uvAttrView + SRC_LABEL_BUFFVIEW, uvBufferView);
+			tree.addToTree(srcAccessors_AttrViews_uvAttrView + SRC_LABEL_BYTE_OFFSET, 0);
+			tree.addToTree(srcAccessors_AttrViews_uvAttrView + SRC_LABEL_BYTE_STRIDE, 8);
+			tree.addToTree(srcAccessors_AttrViews_uvAttrView + SRC_LABEL_COMP_TYPE, SRC_X3DOM_FLOAT);
+			tree.addToTree(srcAccessors_AttrViews_uvAttrView + SRC_LABEL_TYPE, SRC_VECTOR_2D);
+			tree.addToTree(srcAccessors_AttrViews_uvAttrView + SRC_LABEL_COUNT, vCount);
 
 			std::vector<uint32_t> offsetArr = { 0, 0 };
 			std::vector<uint32_t> scaleArr = { 1, 1 };
-			tree.add_child(srcAccessors_AttrViews_uvAttrView + SRC_LABEL_DECODE_OFFSET, createPTArray(offsetArr));
-			tree.add_child(srcAccessors_AttrViews_uvAttrView + SRC_LABEL_DECODE_SCALE, createPTArray(scaleArr));
+			tree.addToTree(srcAccessors_AttrViews_uvAttrView + SRC_LABEL_DECODE_OFFSET, offsetArr);
+			tree.addToTree(srcAccessors_AttrViews_uvAttrView + SRC_LABEL_DECODE_SCALE, scaleArr);
 
 			std::string srcBufferChunks_uvBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + uvBufferChunk + ".";
-			size_t uvBufferLength = vCount * sizeof(*uvs->data());
+			size_t uvBufferLength = vCount * sizeof(*uvs.data());
 
-			addToTree(tree, srcBufferChunks_uvBufferChunks + SRC_LABEL_BYTE_OFFSET, uvWritePosition);
-			addToTree(tree, srcBufferChunks_uvBufferChunks + SRC_LABEL_BYTE_LENGTH, uvBufferLength);
+			tree.addToTree(srcBufferChunks_uvBufferChunks + SRC_LABEL_BYTE_OFFSET, uvWritePosition);
+			tree.addToTree(srcBufferChunks_uvBufferChunks + SRC_LABEL_BYTE_LENGTH, uvBufferLength);
 
 			uvWritePosition += uvBufferLength;
 
 			std::string srcBufferViews_uvBufferView = SRC_LABEL_BUFF_VIEWS + "." + uvBufferView + ".";
 
 			std::vector<std::string> chunksArray = { uvBufferChunk };
-			tree.add_child(srcBufferViews_uvBufferView + SRC_LABEL_CHUNKS, createPTArray(chunksArray));
+			tree.addToTree(srcBufferViews_uvBufferView + SRC_LABEL_CHUNKS, chunksArray);
 
-			addToTree(tree, srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_TEX_COORD, uvAttributeView);
+			tree.addToTree(srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_TEX_COORD, uvAttributeView);
 
 		}
 
@@ -497,11 +670,11 @@ void SRCModelExport::addMeshToExport(
 	}
 	
 
-	size_t bufferSize = (vertices->size() ? vertices->size() * sizeof(*vertices->data()) : 0)
-		+ (normals->size() ? normals->size() * sizeof(*normals->data()) : 0)
-		+ (faceBuf.size() ? faceBuf.size() * sizeof(*faceBuf.data()) : 0)
-		+ (idMapBufFull.size() ? idMapBufFull.size() * sizeof(*idMapBufFull.data()) : 0)
-		+ (uvs && uvs->size() ? uvs->size() *sizeof(*uvs->data()) : 0);
+	size_t bufferSize = vertices.size() * sizeof(*vertices.data())
+		+ normals.size() * sizeof(*normals.data())
+		+ faceBuf.size() * sizeof(*faceBuf.data())
+		+ idMapBufFull.size() * sizeof(*idMapBufFull.data())
+		+ uvs.size() *sizeof(*uvs.data());
 
 	std::vector<uint8_t> dataBuffer;
 	dataBuffer.resize(bufferSize);
@@ -509,20 +682,20 @@ void SRCModelExport::addMeshToExport(
 	size_t bufferPtr = 0;
 	repoTrace << "Writing to buffer... expected Size is : " << bufferSize;
 	// Output vertices
-	if (vertices->size())
+	if (vertices.size())
 	{
-		size_t byteSize = vertices->size() * sizeof(*vertices->data());
-		memcpy(&dataBuffer[bufferPtr], vertices->data(), byteSize);
+		size_t byteSize = vertices.size() * sizeof(*vertices.data());
+		memcpy(&dataBuffer[bufferPtr], vertices.data(), byteSize);
 		bufferPtr += byteSize;
 
 		repoTrace << "Written Vertices: byte Size " << byteSize << " bufferPtr is " << bufferPtr;
 	}
 
 	// Output normals
-	if (normals->size())
+	if (normals.size())
 	{
-		size_t byteSize = normals->size() * sizeof(*normals->data());
-		memcpy(&dataBuffer[bufferPtr], normals->data(), byteSize);
+		size_t byteSize = normals.size() * sizeof(*normals.data());
+		memcpy(&dataBuffer[bufferPtr], normals.data(), byteSize);
 		bufferPtr += byteSize;
 		repoTrace << "Written normals: byte Size " << byteSize << " bufferPtr is " << bufferPtr;
 	}
@@ -545,20 +718,13 @@ void SRCModelExport::addMeshToExport(
 	}
 
 
-	if (uvs && uvs->size()) {
-		size_t byteSize = uvs->size() * sizeof(*uvs->data());
-		memcpy(&dataBuffer[bufferPtr], uvs->data(), byteSize);
+	if (uvs.size()) {
+		size_t byteSize = uvs.size() * sizeof(*uvs.data());
+		memcpy(&dataBuffer[bufferPtr], uvs.data(), byteSize);
 		bufferPtr += byteSize;
 		repoTrace << "Written UVs: byte Size " << byteSize << " bufferPtr is " << bufferPtr;
 	}
 
-
-	if (normals)
-		delete normals;
-	if (vertices)
-		delete vertices;
-	if (uvs)
-		delete uvs;
 
 	std::string fname = meshId + fileExt;
 	

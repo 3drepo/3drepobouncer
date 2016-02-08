@@ -24,26 +24,20 @@
 
 #include <string>
 
-#include <boost/property_tree/ptree.hpp>
-//#include <boost/property_tree/json_parser.hpp>
-#include "../../../lib/json_parser.h"
-
 #include "repo_model_export_abstract.h"
+#include "../../../lib/repo_property_tree.h"
 #include "../../../core/model/collection/repo_scene.h"
 
 namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
 
-			//see http://stackoverflow.com/questions/2855741/why-boost-property-tree-write-json-saves-everything-as-string-is-it-possible-to
-			struct stringTranslator
-			{
-				typedef std::string internal_type;
-				typedef std::string external_type;
+			typedef struct {
+				std::unordered_map<std::string, std::vector<uint8_t>> srcFiles;
+				std::unordered_map<std::string, std::vector<uint8_t>> x3dFiles;
+				std::unordered_map<std::string, std::vector<uint8_t>> jsonFiles;
+			}repo_src_export_t;
 
-				boost::optional<std::string> get_value(const std::string &v) { return  v.substr(1, v.size() - 2); }
-				boost::optional<std::string> put_value(const std::string &v) { return '"' + v + '"'; }
-			};
 
 			class SRCModelExport : public AbstractModelExport
 			{	
@@ -74,7 +68,24 @@ namespace repo{
 				* Return the SRC file as raw bytes buffer
 				* returns an empty vector if the export has failed
 				*/
-				std::unordered_map<std::string, std::vector<uint8_t>> getFileAsBuffer();
+				std::unordered_map<std::string, std::vector<uint8_t>> getSRCFilesAsBuffer() const;
+
+				/**
+				* Return the X3D file as raw bytes buffer
+				* returns an empty vector if the export has failed
+				*/
+				std::unordered_map<std::string, std::vector<uint8_t>> getX3DFilesAsBuffer() const
+				{
+					return x3dBufs;
+				}
+
+				/**
+				* Return the JSON MPC files as raw bytes buffer
+				* returns an empty vector if the export has failed
+				*/
+				std::unordered_map<std::string, std::vector<uint8_t>> getJSONFilesAsBuffer() const;
+
+				repo_src_export_t getAllFilesExportedAsBuffer() const;
 
 				/**
 				* Get supported file formats for this exporter
@@ -101,7 +112,9 @@ namespace repo{
 			private:
 				const repo::core::model::RepoScene *scene;
 				bool convertSuccess;
-				std::unordered_map<std::string, boost::property_tree::ptree> trees;
+				std::unordered_map<std::string, repo::lib::PropertyTree> trees;
+				std::unordered_map<std::string, std::vector<uint8_t>> x3dBufs;
+				std::unordered_map<std::string, repo::lib::PropertyTree> jsonTrees;
 				repo::core::model::RepoScene::GraphType gType;
 				std::unordered_map<std::string, std::vector<uint8_t>> fullDataBuffer;
 
@@ -123,50 +136,27 @@ namespace repo{
 					);
 
 				/**
+				* Generate JSON mapping for multipart meshes
+				* And add it into the object 
+				* @param mesh mesh to generate with
+				* @param scene scene for reference
+				* @param splitMapping how the mapping is split after subMesh split
+				*/
+				bool generateJSONMapping(
+					const repo::core::model::MeshNode *mesh,
+					const repo::core::model::RepoScene *scene,
+					const std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> &splitMapping);
+
+
+				/**
 				* Create a tree representation for the graph
 				* This creates the header of the SRC
 				*/
 				bool generateTreeRepresentation();
-				
-				template <typename T>
-				void addToTree(
-					boost::property_tree::ptree &tree,
-					const std::string           &label,
-					const T                     &value)
-				{
-					if (label.empty())
-						tree.put(label, value);
-					else
-						tree.add(label, value);
-				}
-
-				/**
-				* Create a property tree with an array of ints
-				* @param children 
-				*/
-				template <typename T>
-				boost::property_tree::ptree createPTArray(std::vector<T> children)
-				{					
-					boost::property_tree::ptree arrayTree;
-					for (const auto &child : children)
-					{
-						boost::property_tree::ptree childTree;
-						addToTree(childTree, "", child);
-						arrayTree.push_back(std::make_pair("", childTree));
-					}
-
-
-					return arrayTree;		
-				}
-
+			
 			};
 
-			// Template specialization
-			template <>
-			void SRCModelExport::addToTree<std::string>(
-				boost::property_tree::ptree &tree,
-				const std::string           &label,
-				const std::string           &value);
+
 
 
 		} //namespace modelconvertor

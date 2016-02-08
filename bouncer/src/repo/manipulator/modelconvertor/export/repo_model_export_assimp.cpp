@@ -111,24 +111,24 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 	std::vector<aiCamera*>                    &camVec,
 	repo::core::model::RepoNodeSet &textNodes)
 {
-	std::map<repoUUID, aiMesh*>     meshMap;
-	std::map<repoUUID, aiMaterial*> matMap;
-	std::map<repoUUID, aiCamera*>   camMap;
+	std::unordered_map<repoUUID, aiMesh*, RepoUUIDHasher>     meshMap;
+	std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher> matMap;
+	std::unordered_map<repoUUID, aiCamera*, RepoUUIDHasher>   camMap;
 
 	return constructAiSceneRecursively(scene, currNode, meshVec, matVec, camVec,
 		meshMap, matMap, camMap, textNodes);
 }
 
 aiNode* AssimpModelExport::constructAiSceneRecursively(
-	const repo::core::model::RepoScene *scene,
-	const repo::core::model::RepoNode   *currNode,
-	std::vector<aiMesh*>                      &meshVec,
-	std::vector<aiMaterial*>                  &matVec,
-	std::vector<aiCamera*>                    &camVec,
-	std::map<repoUUID, aiMesh*>               &meshMap,
-	std::map<repoUUID, aiMaterial*>           &matMap,
-	std::map<repoUUID, aiCamera*>             &camMap,
-	repo::core::model::RepoNodeSet &textNodes)
+	const repo::core::model::RepoScene                        *scene,
+	const repo::core::model::RepoNode                         *currNode,
+	std::vector<aiMesh*>                                      &meshVec,
+	std::vector<aiMaterial*>                                  &matVec,
+	std::vector<aiCamera*>                                    &camVec,
+	std::unordered_map<repoUUID, aiMesh*, RepoUUIDHasher>     &meshMap,
+	std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher> &matMap,
+	std::unordered_map<repoUUID, aiCamera*, RepoUUIDHasher>   &camMap,
+	repo::core::model::RepoNodeSet                            &textNodes)
 {
 	/*
 	* Assumptions:
@@ -421,7 +421,7 @@ aiMesh* AssimpModelExport::convertMesh(
 	const repo::core::model::RepoScene *scene,
 	const repo::core::model::MeshNode   *meshNode,
 	std::vector<aiMaterial*>                  &matVec,
-	std::map<repoUUID, aiMaterial*>           &matMap,
+	std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher>           &matMap,
 	repo::core::model::RepoNodeSet &textNodes)
 {
 	if (!meshNode || !scene) return nullptr;
@@ -430,29 +430,27 @@ aiMesh* AssimpModelExport::convertMesh(
 
 	assimpMesh->mName = aiString(meshNode->getName());
 
-	std::vector<repo_face_t>* faces =  meshNode->getFaces();
+	std::vector<repo_face_t> faces =  meshNode->getFaces();
 	//--------------------------------------------------------------------------
 	// Faces
-	if (faces && faces->size())
+	if (faces.size())
 	{
-		assimpMesh->mFaces = new aiFace[faces->size()];
+		assimpMesh->mFaces = new aiFace[faces.size()];
 		if (assimpMesh->mFaces)
 		{
 			uint32_t i = 0;
-			for (const auto &face : *faces)
+			for (const auto &face : faces)
 			{
 				assimpMesh->mFaces[i].mIndices = (unsigned int*)face.data();
 				assimpMesh->mFaces[i].mNumIndices = face.size();
 				i++;
 
 			}
-			assimpMesh->mNumFaces = faces->size();
+			assimpMesh->mNumFaces = faces.size();
 			assimpMesh->mPrimitiveTypes = 4; // TODO: work out the exact primitive type of each mesh!
 		}
 		else
 			assimpMesh->mNumFaces = 0;
-
-		delete faces;
 	}
 	else
 		assimpMesh->mNumFaces = 0;
@@ -460,21 +458,20 @@ aiMesh* AssimpModelExport::convertMesh(
 	//--------------------------------------------------------------------------
 	// Vertices
 	// Make a copy of vertices
-	std::vector<repo_vector_t> *vertices = meshNode->getVertices();
-	assimpMesh->mVertices = new aiVector3D[vertices->size()];
-	if (vertices && assimpMesh->mVertices)
+	std::vector<repo_vector_t> vertices = meshNode->getVertices();
+	assimpMesh->mVertices = new aiVector3D[vertices.size()];
+	if (assimpMesh->mVertices)
 	{
 		uint32_t i = 0;
-		for (const auto vertix : *vertices)
+		for (const auto vertix : vertices)
 		{
 			assimpMesh->mVertices[i].x = vertix.x;
 			assimpMesh->mVertices[i].y = vertix.y;
 			assimpMesh->mVertices[i].z = vertix.z;
 			i++;
 		}
-		assimpMesh->mNumVertices = vertices->size();
+		assimpMesh->mNumVertices = vertices.size();
 
-		delete vertices;
 	}
 	else
 	{
@@ -484,14 +481,14 @@ aiMesh* AssimpModelExport::convertMesh(
 	//--------------------------------------------------------------------------
 	// Normals
 	// Make a copy of normals
-	std::vector<repo_vector_t> *normals = meshNode->getNormals();
-	if (normals && normals->size())
+	std::vector<repo_vector_t> normals = meshNode->getNormals();
+	if (normals.size())
 	{
-		assimpMesh->mNormals = new aiVector3D[normals->size()];
+		assimpMesh->mNormals = new aiVector3D[normals.size()];
 		if (assimpMesh->mNormals)
 		{
 			uint32_t i = 0;
-			for (const auto &normal : *normals)
+			for (const auto &normal : normals)
 			{
 				assimpMesh->mNormals[i].x = normal.x;
 				assimpMesh->mNormals[i].y = normal.y;
@@ -499,24 +496,23 @@ aiMesh* AssimpModelExport::convertMesh(
 				i++;
 			}
 		}
-		delete normals;
 	}
 
 	//--------------------------------------------------------------------------
 	// Texture coordinates
 	//
 	// TODO: change to support U and UVW, not just UV as done now.
-	std::vector<std::vector<repo_vector2d_t>> *uvChannels = meshNode->getUVChannelsSeparated();
-	if (uvChannels && uvChannels->size())
+	std::vector<std::vector<repo_vector2d_t>> uvChannels = meshNode->getUVChannelsSeparated();
+	if (uvChannels.size())
 	{
 		//figure out the number of channels, then split the serialised uvChannel vector to
 		// those channels
-		for (uint32_t i = 0; i < uvChannels->size() &&
+		for (uint32_t i = 0; i < uvChannels.size() &&
 			i < AI_MAX_NUMBER_OF_TEXTURECOORDS; ++i)
 		{
-			assimpMesh->mTextureCoords[i] = new aiVector3D[meshNode->getVertices()->size()];
+			assimpMesh->mTextureCoords[i] = new aiVector3D[meshNode->getVertices().size()];
 			uint32_t ind = 0;
-			for (const auto &vec : uvChannels->at(i))
+			for (const auto &vec : uvChannels.at(i))
 			{
 				assimpMesh->mTextureCoords[i][ind].x = vec.x;
 				assimpMesh->mTextureCoords[i][ind].y = vec.y;
@@ -526,18 +522,17 @@ aiMesh* AssimpModelExport::convertMesh(
 			assimpMesh->mNumUVComponents[i] = 2; // UV
 		}
 
-		delete uvChannels;
 	}
 
-	std::vector<repo_color4d_t> *colors = meshNode->getColors();
+	std::vector<repo_color4d_t> colors = meshNode->getColors();
 
 	//--------------------------------------------------------------------------
 	// Vertex colors
-	if (colors && colors->size())
+	if (colors.size())
 	{
-		assimpMesh->mColors[0] = new aiColor4D[colors->size()];
+		assimpMesh->mColors[0] = new aiColor4D[colors.size()];
 		uint32_t i = 0;
-		for (const auto &color : *colors)
+		for (const auto &color : colors)
 		{
 			assimpMesh->mColors[0][i].r = color.r;
 			assimpMesh->mColors[0][i].g = color.g;
@@ -546,8 +541,6 @@ aiMesh* AssimpModelExport::convertMesh(
 			i++;
 
 		}
-
-		delete colors;
 	}
 
 	//--------------------------------------------------------------------------
@@ -727,8 +720,8 @@ bool AssimpModelExport::writeTexturesToFiles(
 	for (const auto &repoNode : nodes)
 	{
 		const repo::core::model::TextureNode *repoTex = (repo::core::model::TextureNode*) repoNode;
-		std::vector<char> *rawData = repoTex->getRawData();
-		const char *data =&rawData->at(0);
+		std::vector<char> rawData = repoTex->getRawData();
+
 		std::string ext = repoTex->getFileExtension();
 
 		if (ext.empty()) ext = REPO_DEFAULT_TEXTURE_EXT;
@@ -741,7 +734,7 @@ bool AssimpModelExport::writeTexturesToFiles(
 
 		if (myfile.is_open())
 		{
-			myfile.write(data, sizeof(*data) * rawData->size());
+			myfile.write(rawData.data(), sizeof(*rawData.data()) * rawData.size());
 
 			myfile.close();
 		}

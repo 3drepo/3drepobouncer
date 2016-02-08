@@ -84,7 +84,7 @@ RepoBSON RepoBSON::cloneAndShrink() const
 		{
 			std::string fileName = uniqueIDStr + "_" + field;
 			rawFiles[field] = std::pair<std::string, std::vector<uint8_t>>(fileName, std::vector<uint8_t>());
-			getBinaryFieldAsVector(field, &rawFiles[field].second);
+			getBinaryFieldAsVector(field, rawFiles[field].second);
 			resultBson = resultBson.removeField(field);
 		}
 	}

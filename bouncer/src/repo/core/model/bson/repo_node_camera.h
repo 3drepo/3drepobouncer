@@ -162,6 +162,12 @@ namespace repo {
 					repo_vector_t getLookAt() const;
 
 					/**
+					* get the orientation of the camera
+					* @return returns a vector with 4 fields, {x, y, z, angle}
+					*/
+					std::vector<float> getOrientation() const;
+
+					/**
 					* Get the position of the camera
 					* @return returns a vector of the position
 					*/

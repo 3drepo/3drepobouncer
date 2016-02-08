@@ -38,6 +38,14 @@
 //incase we want to change it in the future
 typedef boost::uuids::uuid repoUUID;
 
+struct RepoUUIDHasher
+{
+	std::size_t operator()(const repoUUID& uid) const
+	{
+		return boost::hash<boost::uuids::uuid>()(uid);
+	}
+};
+
 typedef struct{
 	std::vector<float> ambient;
 	std::vector<float> diffuse;
@@ -87,8 +95,10 @@ typedef struct{
 	int32_t       triTo;
 }repo_mesh_mapping_t;
 
+static boost::uuids::random_generator gen;
+
 static repoUUID generateUUID(){
-	return  boost::uuids::random_generator()();
+	return gen();
 }
 
 //FIXME: scope this

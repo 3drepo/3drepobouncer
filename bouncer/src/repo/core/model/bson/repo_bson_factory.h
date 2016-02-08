@@ -131,9 +131,7 @@ public:
             const std::string                                      &firstName,
             const std::string                                      &lastName,
             const std::string                                      &email,
-            const std::list<std::pair<std::string, std::string>>   &projects,
             const std::list<std::pair<std::string, std::string>>   &roles,
-            const std::list<std::pair<std::string, std::string>>   &groups,
             const std::list<std::pair<std::string, std::string>>   &apiKeys,
             const std::vector<char>                                &avatar);
 
@@ -215,7 +213,8 @@ public:
             const float           &longitude,
             const float           &latitude,
             const repo_vector_t   &centrePoint,
-            const std::string     &name = std::string(),
+			const std::string     &apiKey = std::string(),
+			const std::string     &name = std::string(),
             const int             &apiLevel = REPO_NODE_API_LEVEL_1);
 
     /**

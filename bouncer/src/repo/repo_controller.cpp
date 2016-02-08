@@ -436,7 +436,7 @@ RepoController::getDatabasesWithProjects(
         const RepoToken *token,
         const std::list<std::string> &databases)
 {
-    std::map<std::string, std::list<std::string>> map;
+    std::map<std::string, std::list<std::string> > map;
     if (token)
     {
         manipulator::RepoManipulator* worker = workerPool.pop();
@@ -750,7 +750,7 @@ std::unordered_map<std::string, std::vector<uint8_t>> RepoController::generateSR
 	if (scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		buffer = worker->generateSRCBuffer(scene);
+		buffer = worker->generateSRCBuffer(scene).srcFiles;
 		workerPool.push(worker);
 	}
 	else

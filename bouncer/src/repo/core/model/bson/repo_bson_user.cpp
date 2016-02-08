@@ -47,7 +47,7 @@ std::vector<char> RepoUser::getAvatarAsRawData() const
 	std::vector<char> image;
 	RepoBSON customData = getCustomDataBSON();
 	if (customData.hasField(REPO_USER_LABEL_AVATAR))
-		RepoBSON(customData.getObjectField(REPO_USER_LABEL_AVATAR)).getBinaryFieldAsVector("data", &image);
+		RepoBSON(customData.getObjectField(REPO_USER_LABEL_AVATAR)).getBinaryFieldAsVector("data", image);
 
 	return image;
 }
@@ -100,32 +100,7 @@ std::list<std::pair<std::string, std::string>>
 	RepoUser::getRolesList() const
 {
 	std::list<std::pair<std::string, std::string>> result;
-/*	RepoBSON roleData = getRolesBSON();
-	if (!roleData.isEmpty())
-		result = roleData.*/
 	result = getListStringPairField(REPO_USER_LABEL_ROLES, REPO_USER_LABEL_DB, REPO_USER_LABEL_ROLE);
-
-	return result;
-}
-
-std::list<std::pair<std::string, std::string>>
-	RepoUser::getGroupsList() const
-{
-	std::list<std::pair<std::string, std::string>> result;
-	RepoBSON customData = getCustomDataBSON();
-	if (!customData.isEmpty())
-		result = customData.getListStringPairField(REPO_USER_LABEL_GROUPS, REPO_USER_LABEL_OWNER, REPO_USER_LABEL_GROUP);
-
-	return result;
-}
-
-std::list<std::pair<std::string, std::string>>
-	RepoUser::getProjectsList() const 
-{
-	std::list<std::pair<std::string, std::string>> result;
-	RepoBSON customData = getCustomDataBSON();
-	if (!customData.isEmpty())
-		result = customData.getListStringPairField(REPO_USER_LABEL_PROJECTS, REPO_USER_LABEL_OWNER, REPO_USER_LABEL_PROJECT);
 
 	return result;
 }
