@@ -363,7 +363,7 @@ bool GLTFModelExport::constructScene(
 		std::vector<std::string> treeNodes = { UUIDtoString(root->getUniqueID()) };
 		tree.addToTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_NODES, treeNodes);
 
-		populateWithNode(root, tree);
+		populateWithNodes(tree);
 		populateWithMeshes(tree);
 		populateWithMaterials(tree);
 		populateWithTextures(tree);
@@ -420,8 +420,6 @@ void GLTFModelExport::processNodeChildren(
 			break;
 		case repo::core::model::NodeType::TRANSFORMATION:
 			trans.push_back(UUIDtoString(child->getUniqueID())); 
-			//Recursive call to construct transformation node
-			populateWithNode(child, tree);
 			break;
 		}
 	}
@@ -611,33 +609,26 @@ void GLTFModelExport::populateWithTextures(
 
 }
 
-void GLTFModelExport::populateWithNode(
-	const repo::core::model::RepoNode* node,
+void GLTFModelExport::populateWithNodes(
 	repo::lib::PropertyTree          &tree)
 {
-	if (node)
+
+	repo::core::model::RepoNodeSet trans = scene->getAllTransformations(gType);
+	for (const auto &tran : trans)
 	{
-		if (node->getTypeAsEnum() == repo::core::model::NodeType::TRANSFORMATION)
+		const repo::core::model::TransformationNode *node = (const repo::core::model::TransformationNode *)tran;
+		//add to list of nodes
+		std::string label = GLTF_LABEL_NODES + "." + UUIDtoString(node->getUniqueID());
+		std::string name = node->getName();
+		if (!name.empty())
+			tree.addToTree(label + "." + GLTF_LABEL_NAME, node->getName());
+		const repo::core::model::TransformationNode *transNode = (const repo::core::model::TransformationNode*) node;
+		if (!transNode->isIdentity())
 		{
-			//add to list of nodes
-			std::string label = GLTF_LABEL_NODES + "." + UUIDtoString(node->getUniqueID());
-			std::string name = node->getName();
-			if (!name.empty())
-				tree.addToTree(label+ "." + GLTF_LABEL_NAME, node->getName());
-			const repo::core::model::TransformationNode *transNode = (const repo::core::model::TransformationNode*) node;
-			if (!transNode->isIdentity())
-			{
-				tree.addToTree(label + "." + GLTF_LABEL_MATRIX, transNode->getTransMatrix());
-			}
-			processNodeChildren(node, tree);
+			tree.addToTree(label + "." + GLTF_LABEL_MATRIX, transNode->getTransMatrix());
 		}
-		else
-		{
-			//Not expecting anything but transformation to be passed into this function
-			repoWarning << "Trying to create a node that is not of type transformation! (node type: " 
-				<< node->getType() << ")";
-		}
-	}
+		processNodeChildren(node, tree);
+	}	
 }
 
 void GLTFModelExport::writeBuffers(

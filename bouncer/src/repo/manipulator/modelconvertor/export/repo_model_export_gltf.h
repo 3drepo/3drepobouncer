@@ -223,12 +223,10 @@ namespace repo{
 					repo::lib::PropertyTree          &tree);
 
 				/**
-				* Populate the given tree with the asset
-				* @param node node to define the asset from
+				* Populate the given tree with transformations
 				* @param tree tree to populate
 				*/
-				void populateWithNode(
-					const repo::core::model::RepoNode* node,
+				void populateWithNodes(
 					repo::lib::PropertyTree          &tree);
 		
 				/**
