@@ -107,6 +107,8 @@ namespace repo{
 				* @param bufferTarget Target type as of OpenGL
 				* @param componentType component type (SHORT, USHORT, FLOAT etc.) of the array
 				* @param bufferType element type (SCALAR, VEC3D etc..)
+				* @param min minimum values of the buffer
+				* @param max maximum values of the buffer
 				*/
 				void addBuffer(
 					const std::string              &name,
@@ -118,7 +120,9 @@ namespace repo{
 					const size_t                   &stride,
 					const uint32_t                 &bufferTarget,
 					const uint32_t                 &componentType,
-					const std::string              &bufferType);
+					const std::string              &bufferType,
+					const std::vector<float>       &min = std::vector<float>(),
+					const std::vector<float>       &max = std::vector<float>());
 
 				/**
 				* Add buffer into export (unsigned 16 bit integers)

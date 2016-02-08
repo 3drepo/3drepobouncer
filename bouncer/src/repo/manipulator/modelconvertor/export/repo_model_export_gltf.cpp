@@ -53,7 +53,9 @@ static const std::string GLTF_LABEL_INTERNAL_FORMAT = "internalFormat";
 static const std::string GLTF_LABEL_MATERIAL        = "material";
 static const std::string GLTF_LABEL_MATERIALS       = "materials";
 static const std::string GLTF_LABEL_MATRIX          = "matrix";
+static const std::string GLTF_LABEL_MAX             = "max";
 static const std::string GLTF_LABEL_MESHES          = "meshes";
+static const std::string GLTF_LABEL_MIN             = "min";
 static const std::string GLTF_LABEL_NAME            = "name";
 static const std::string GLTF_LABEL_NODES           = "nodes";
 static const std::string GLTF_LABEL_NORMAL          = "NORMAL";
@@ -183,8 +185,39 @@ void GLTFModelExport::addBuffer(
 	repo::lib::PropertyTree             &tree,
 	const std::vector<repo_vector_t>    &buffer)
 {
+	std::vector<float> min, max;
+	//find maximum and minimum values
+	if (buffer.size())
+	{
+		min.push_back(buffer[0].x);
+		min.push_back(buffer[0].y);
+		min.push_back(buffer[0].z);
+		max.push_back(buffer[0].x);
+		max.push_back(buffer[0].y);
+		max.push_back(buffer[0].z);
+
+		for (uint32_t i = 1; i < buffer.size(); ++i)
+		{
+			if (buffer[i].x < min[0])
+				min[0] = buffer[i].x;
+			if (buffer[i].x > max[0])
+				max[0] = buffer[i].x;
+
+			if (buffer[i].y < min[1])
+				min[1] = buffer[i].y;
+			if (buffer[i].y > max[1])
+				max[1] = buffer[i].y;
+
+			if (buffer[i].z < min[2])
+				min[2] = buffer[i].z;
+			if (buffer[i].z > max[2])
+				max[2] = buffer[i].z;
+		}
+	}
+	
+	
 	addBuffer(name, fileName, tree, (uint8_t*)buffer.data(), buffer.size(), buffer.size() * sizeof(*buffer.data()),
-		sizeof(repo_vector_t), GLTF_PRIM_TYPE_ARRAY_BUFFER, GLTF_COMP_TYPE_FLOAT, GLTF_TYPE_VEC3);
+		sizeof(repo_vector_t), GLTF_PRIM_TYPE_ARRAY_BUFFER, GLTF_COMP_TYPE_FLOAT, GLTF_TYPE_VEC3, min, max);
 }
 
 void GLTFModelExport::addBuffer(
@@ -193,8 +226,32 @@ void GLTFModelExport::addBuffer(
 	repo::lib::PropertyTree             &tree,
 	const std::vector<repo_vector2d_t>    &buffer)
 {
+	std::vector<float> min, max;
+	//find maximum and minimum values
+	if (buffer.size())
+	{
+		min.push_back(buffer[0].x);
+		min.push_back(buffer[0].y);
+		max.push_back(buffer[0].x);
+		max.push_back(buffer[0].y);
+
+
+		for (uint32_t i = 1; i < buffer.size(); ++i)
+		{
+			if (buffer[i].x < min[0])
+				min[0] = buffer[i].x;
+			if (buffer[i].x > max[0])
+				max[0] = buffer[i].x;
+
+			if (buffer[i].y < min[1])
+				min[1] = buffer[i].y;
+			if (buffer[i].y > max[1])
+				max[1] = buffer[i].y;
+
+		}
+	}
 	addBuffer(name, fileName, tree, (uint8_t*)buffer.data(), buffer.size(), buffer.size() * sizeof(*buffer.data()),
-		sizeof(repo_vector2d_t), GLTF_PRIM_TYPE_ARRAY_BUFFER, GLTF_COMP_TYPE_FLOAT, GLTF_TYPE_VEC2);
+		sizeof(repo_vector2d_t), GLTF_PRIM_TYPE_ARRAY_BUFFER, GLTF_COMP_TYPE_FLOAT, GLTF_TYPE_VEC2, min, max);
 }
 
 
@@ -208,7 +265,9 @@ void GLTFModelExport::addBuffer(
 	const size_t                   &stride,
 	const uint32_t                 &bufferTarget,
 	const uint32_t                 &componentType,
-	const std::string              &bufferType)
+	const std::string              &bufferType,
+	const std::vector<float>       &min,
+	const std::vector<float>       &max)
 {
 	std::string bufferViewName = GLTF_PREFIX_BUFFER_VIEWS + "_" + name;	
 
@@ -238,6 +297,14 @@ void GLTFModelExport::addBuffer(
 	tree.addToTree(accLabel + "." + GLTF_LABEL_BYTE_STRIDE, stride);
 	tree.addToTree(accLabel + "." + GLTF_LABEL_COMP_TYPE, componentType);
 	tree.addToTree(accLabel + "." + GLTF_LABEL_COUNT, count);
+	if (min.size())
+	{
+		tree.addToTree(accLabel + "." + GLTF_LABEL_MIN, min);
+	}
+	if (max.size())
+	{
+		tree.addToTree(accLabel + "." + GLTF_LABEL_MAX, max);
+	}
 	tree.addToTree(accLabel + "." + GLTF_LABEL_TYPE, bufferType);
 
 }
