@@ -106,7 +106,6 @@ namespace repo{
 						ss << " ";
 				}
 				std::string val = ss.str();
-				repoDebug << "Vector check: label " << attribute << ":" << val;
 				addFieldAttribute(label, attribute, val);
 			}
 			

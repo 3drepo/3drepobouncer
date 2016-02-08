@@ -217,8 +217,6 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 			//If the current subMesh in question is already bigger than the 
 			//threshold already, we need to split this submesh into 2 mappings
 			repoTrace << "Limit exceeded splitting large meshes into smaller meshes";
-			//Never had a model that has a submesh that is THIS big
-			repoDebug << "[WARNING] Entering untested code in cloneAndRemapMeshMapping()";
 
 			std::unordered_map<uint32_t, uint32_t> reIndexMap; //Vertices may be moved during the operation
 			std::vector<repo_vector_t> newVertices;
@@ -246,11 +244,11 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 					//NOTE: meshIDs and materials ID are not reliable due to a single 
 					//      submesh here can be multiple mesh of original scene
 					repo_mesh_mapping_t newMap;
-					newMap.vertFrom = mapping.vertFrom;
-					newMap.vertTo = runningVTotal;
+					newMap.vertFrom = subMeshVFrom;
+					newMap.vertTo = newMap.vertFrom + runningVTotal;
 
-					newMap.triFrom = mapping.triFrom + faceIdx;
-					newMap.triTo = mapping.triTo - newMap.triFrom;
+					newMap.triTo = mapping.triFrom + faceIdx;
+					newMap.triFrom = subMeshFFrom;
 
 					newMap.mesh_id = mapping.mesh_id;
 					newMap.material_id = mapping.material_id;
@@ -357,6 +355,7 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 
 
 				++fullFaceIndex;
+				++runningFTotal;
 
 			}//for (uint32_t faceIdx = 0; faceIdx < smFaces; ++faceIdx)
 
@@ -367,21 +366,17 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 			std::copy(newVertices.begin(), newVertices.end(), vertices.begin() + mapping.vertFrom);
 
 			//Update the subMesh info of the last submesh occupied by this mapping
-			subMeshVTo = currentVFrom;
+			subMeshVTo = subMeshVFrom + runningVTotal;
 			subMeshFTo = mapping.triTo;
 
-			runningVTotal = subMeshVTo - subMeshVFrom;
-			runningFTotal = subMeshFTo - subMeshFFrom;
-
-			if (runningFTotal)
+			if (runningVTotal)
+			{
 				splitMap[mapping.mesh_id].push_back(newMappings.size());
-
-			uint32_t idMapLength = idMapBuf.back().size();
-			idMapBuf.back().resize(idMapLength + smVertices);
-			float runningIdx_f = runningIdx;
-			std::fill(idMapBuf.back().begin() + idMapLength, idMapBuf.back().end(), runningIdx_f);
-			++runningIdx;
-			
+				idMapBuf.back().resize(runningVTotal);
+				float runningIdx_f = runningIdx;
+				std::fill(idMapBuf.back().begin(), idMapBuf.back().end(), runningIdx_f);
+				++runningIdx;
+			}
 
 		}//if (smVertices > verticeThreshold)
 		else
@@ -466,9 +461,9 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 		}//else of (smVertices > verticeThreshold)
 
 	}//for (const auto &mapping : mappings)
-
+	
 	//Finish off the last subMesh
-	if (runningVTotal)
+	if (runningVTotal )
 	{
 		repo_mesh_mapping_t newMap;
 		newMap.vertFrom = subMeshVFrom;
