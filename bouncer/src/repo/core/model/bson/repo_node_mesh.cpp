@@ -217,8 +217,6 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 			//If the current subMesh in question is already bigger than the 
 			//threshold already, we need to split this submesh into 2 mappings
 			repoTrace << "Limit exceeded splitting large meshes into smaller meshes";
-			//Never had a model that has a submesh that is THIS big
-			repoDebug << "[WARNING] Entering untested code in cloneAndRemapMeshMapping()";
 
 			std::unordered_map<uint32_t, uint32_t> reIndexMap; //Vertices may be moved during the operation
 			std::vector<repo_vector_t> newVertices;
@@ -371,27 +369,14 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 			subMeshVTo = subMeshVFrom + runningVTotal;
 			subMeshFTo = mapping.triTo;
 
-			//runningVTotal = subMeshVTo - subMeshVFrom;
-			//runningFTotal = subMeshFTo - subMeshFFrom;
-
-			if (runningFTotal)
-				splitMap[mapping.mesh_id].push_back(newMappings.size());
-
-		/*	uint32_t idMapLength = idMapBuf.back().size();
-			idMapBuf.back().resize(idMapLength + smVertices);
-			float runningIdx_f = runningIdx;
-			std::fill(idMapBuf.back().begin() + idMapLength, idMapBuf.back().end(), runningIdx_f);
-			++runningIdx;*/
-
 			if (runningVTotal)
 			{
+				splitMap[mapping.mesh_id].push_back(newMappings.size());
 				idMapBuf.back().resize(runningVTotal);
 				float runningIdx_f = runningIdx;
 				std::fill(idMapBuf.back().begin(), idMapBuf.back().end(), runningIdx_f);
 				++runningIdx;
 			}
-
-			
 
 		}//if (smVertices > verticeThreshold)
 		else
@@ -477,7 +462,6 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 
 	}//for (const auto &mapping : mappings)
 	
-	repoDebug << "Last sub mesh : " << newMappings.size() << " running VTotal : " << runningVTotal << " running FTotal" << runningFTotal;
 	//Finish off the last subMesh
 	if (runningVTotal )
 	{
