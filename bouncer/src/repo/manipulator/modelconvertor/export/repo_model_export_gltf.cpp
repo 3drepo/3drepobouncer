@@ -25,6 +25,8 @@
 
 using namespace repo::manipulator::modelconvertor;
 
+const static size_t GLTF_MAX_VERTEX_LIMIT = 65535;
+
 static const std::string GLTF_LABEL_ACCESSORS       = "accessors";
 static const std::string GLTF_LABEL_AMBIENT         = "ambient";
 static const std::string GLTF_LABEL_ASSET           = "asset";
@@ -169,21 +171,72 @@ GLTFModelExport::~GLTFModelExport()
 {
 }
 
-void GLTFModelExport::addBuffer(
-	const std::string              &name,
-	const std::string              &fileName,
+void GLTFModelExport::addAccessors(
+	const std::string              &accName,
+	const std::string              &buffViewName,
 	repo::lib::PropertyTree        &tree,
-	const std::vector<uint16_t>    &buffer)
+	const std::vector<uint16_t>    &faces,
+	const uint32_t                 &addrFrom,
+	const uint32_t                 &addrTo)
 {
-	addBuffer(name, fileName, tree, (uint8_t*)buffer.data(), buffer.size(), buffer.size() * sizeof(*buffer.data()), 
-		0, GLTF_PRIM_TYPE_ELEMENT_ARRAY_BUFFER, GLTF_COMP_TYPE_USHORT, GLTF_TYPE_SCALAR);
+	std::vector<float> min, max;
+	if (faces.size())
+	{
+		min.push_back(faces[0]);
+		max.push_back(faces[0]);
+	}
+	for (size_t i = 1; i < faces.size(); ++i)
+	{
+		if (min[0] > faces[i]) min[0] = faces[i];
+		if (max[0] < faces[i]) max[0] = faces[i];
+	}
+	addAccessors(accName, buffViewName, tree, addrTo - addrFrom, 
+		addrFrom, 0, GLTF_COMP_TYPE_USHORT, GLTF_TYPE_SCALAR, min, max);
 }
 
-void GLTFModelExport::addBuffer(
-	const std::string                   &name,
-	const std::string                   &fileName,
-	repo::lib::PropertyTree             &tree,
-	const std::vector<repo_vector_t>    &buffer)
+void GLTFModelExport::addAccessors(
+	const std::string                  &accName,
+	const std::string                  &buffViewName,
+	repo::lib::PropertyTree            &tree,
+	const std::vector<repo_vector2d_t> &buffer,
+	const uint32_t                     &addrFrom,
+	const uint32_t                     &addrTo)
+{
+	std::vector<float> min, max;
+	//find maximum and minimum values
+	if (buffer.size())
+	{
+		min.push_back(buffer[0].x);
+		min.push_back(buffer[0].y);
+		max.push_back(buffer[0].x);
+		max.push_back(buffer[0].y);
+
+
+		for (uint32_t i = 1; i < buffer.size(); ++i)
+		{
+			if (buffer[i].x < min[0])
+				min[0] = buffer[i].x;
+			if (buffer[i].x > max[0])
+				max[0] = buffer[i].x;
+
+			if (buffer[i].y < min[1])
+				min[1] = buffer[i].y;
+			if (buffer[i].y > max[1])
+				max[1] = buffer[i].y;
+
+		}
+	}
+	addAccessors(accName, buffViewName, tree, addrTo - addrFrom,
+		addrFrom, sizeof(*buffer.data()), GLTF_COMP_TYPE_FLOAT, GLTF_TYPE_VEC2, min, max);
+}
+
+void GLTFModelExport::addAccessors(
+	const std::string                &accName,
+	const std::string                &buffViewName,
+	repo::lib::PropertyTree          &tree,
+	const std::vector<repo_vector_t> &buffer,
+	const uint32_t                   &addrFrom,
+	const uint32_t                   &addrTo)
 {
 	std::vector<float> min, max;
 	//find maximum and minimum values
@@ -214,10 +267,60 @@ void GLTFModelExport::addBuffer(
 				max[2] = buffer[i].z;
 		}
 	}
+	addAccessors(accName, buffViewName, tree, addrTo - addrFrom,
+		addrFrom, sizeof(*buffer.data()), GLTF_COMP_TYPE_FLOAT, GLTF_TYPE_VEC3, min, max);
+}
 	
+void GLTFModelExport::addAccessors(
+	const std::string              &accName,
+	const std::string              &buffViewName,
+	repo::lib::PropertyTree        &tree,
+	const size_t                   &count,
+	const size_t                   &offset,
+	const size_t                   &stride,
+	const uint32_t                 &componentType,
+	const std::string              &bufferType,
+	const std::vector<float>       &min,
+	const std::vector<float>       &max)
+{
 	
-	addBuffer(name, fileName, tree, (uint8_t*)buffer.data(), buffer.size(), buffer.size() * sizeof(*buffer.data()),
-		sizeof(repo_vector_t), GLTF_PRIM_TYPE_ARRAY_BUFFER, GLTF_COMP_TYPE_FLOAT, GLTF_TYPE_VEC3, min, max);
+	//declare accessor
+	std::string accLabel = GLTF_LABEL_ACCESSORS + "." + GLTF_PREFIX_ACCESSORS + "_" + accName;
+	tree.addToTree(accLabel + "." + GLTF_LABEL_BUFFER_VIEW, GLTF_PREFIX_BUFFER_VIEWS + "_" + buffViewName);
+	tree.addToTree(accLabel + "." + GLTF_LABEL_BYTE_OFFSET, offset);
+	tree.addToTree(accLabel + "." + GLTF_LABEL_BYTE_STRIDE, stride);
+	tree.addToTree(accLabel + "." + GLTF_LABEL_COMP_TYPE, componentType);
+	tree.addToTree(accLabel + "." + GLTF_LABEL_COUNT, count);
+	if (min.size())
+	{
+		tree.addToTree(accLabel + "." + GLTF_LABEL_MIN, min);
+	}
+	if (max.size())
+	{
+		tree.addToTree(accLabel + "." + GLTF_LABEL_MAX, max);
+	}
+	tree.addToTree(accLabel + "." + GLTF_LABEL_TYPE, bufferType);
+
+}
+
+void GLTFModelExport::addBuffer(
+	const std::string              &name,
+	const std::string              &fileName,
+	repo::lib::PropertyTree        &tree,
+	const std::vector<uint16_t>    &buffer)
+{
+	addBufferView(name, fileName, tree, buffer);
+	addAccessors(name, name, tree, buffer, 0, buffer.size());
+}
+
+void GLTFModelExport::addBuffer(
+	const std::string                   &name,
+	const std::string                   &fileName,
+	repo::lib::PropertyTree             &tree,
+	const std::vector<repo_vector_t>    &buffer)
+{
+	addBufferView(name, fileName, tree, buffer);
+	addAccessors(name, name, tree, buffer, 0, buffer.size());
 }
 
 void GLTFModelExport::addBuffer(
@@ -226,50 +329,49 @@ void GLTFModelExport::addBuffer(
 	repo::lib::PropertyTree             &tree,
 	const std::vector<repo_vector2d_t>    &buffer)
 {
-	std::vector<float> min, max;
-	//find maximum and minimum values
-	if (buffer.size())
-	{
-		min.push_back(buffer[0].x);
-		min.push_back(buffer[0].y);
-		max.push_back(buffer[0].x);
-		max.push_back(buffer[0].y);
+	addBufferView(name, fileName, tree, buffer);
+	addAccessors(name, name, tree, buffer, 0, buffer.size());
+}
+void GLTFModelExport::addBufferView(
+	const std::string              &name,
+	const std::string              &fileName,
+	repo::lib::PropertyTree        &tree,
+	const std::vector<uint16_t>    &buffer)
+{
+	addBufferView(name, fileName, tree, 
+		(uint8_t*)buffer.data(), buffer.size() * sizeof(*buffer.data()), GLTF_PRIM_TYPE_ELEMENT_ARRAY_BUFFER);
+}
 
+void GLTFModelExport::addBufferView(
+	const std::string                   &name,
+	const std::string                   &fileName,
+	repo::lib::PropertyTree             &tree,
+	const std::vector<repo_vector_t>    &buffer)
+{
+	addBufferView(name, fileName, tree,
+		(uint8_t*)buffer.data(), buffer.size() * sizeof(*buffer.data()), GLTF_PRIM_TYPE_ARRAY_BUFFER);
+}
 
-		for (uint32_t i = 1; i < buffer.size(); ++i)
-		{
-			if (buffer[i].x < min[0])
-				min[0] = buffer[i].x;
-			if (buffer[i].x > max[0])
-				max[0] = buffer[i].x;
-
-			if (buffer[i].y < min[1])
-				min[1] = buffer[i].y;
-			if (buffer[i].y > max[1])
-				max[1] = buffer[i].y;
-
-		}
-	}
-	addBuffer(name, fileName, tree, (uint8_t*)buffer.data(), buffer.size(), buffer.size() * sizeof(*buffer.data()),
-		sizeof(repo_vector2d_t), GLTF_PRIM_TYPE_ARRAY_BUFFER, GLTF_COMP_TYPE_FLOAT, GLTF_TYPE_VEC2, min, max);
+void GLTFModelExport::addBufferView(
+	const std::string                   &name,
+	const std::string                   &fileName,
+	repo::lib::PropertyTree             &tree,
+	const std::vector<repo_vector2d_t>    &buffer)
+{
+	addBufferView(name, fileName, tree,
+		(uint8_t*)buffer.data(), buffer.size() * sizeof(*buffer.data()), GLTF_PRIM_TYPE_ARRAY_BUFFER);
 }
 
 
-void GLTFModelExport::addBuffer(
+void GLTFModelExport::addBufferView(
 	const std::string              &name,
 	const std::string              &fileName,
 	repo::lib::PropertyTree        &tree,
 	const uint8_t                  *buffer,
-	const size_t                   &count,
 	const size_t                   &byteLength,
-	const size_t                   &stride,
-	const uint32_t                 &bufferTarget,
-	const uint32_t                 &componentType,
-	const std::string              &bufferType,
-	const std::vector<float>       &min,
-	const std::vector<float>       &max)
+	const uint32_t                 &bufferTarget)
 {
-	std::string bufferViewName = GLTF_PREFIX_BUFFER_VIEWS + "_" + name;	
+	std::string bufferViewName = GLTF_PREFIX_BUFFER_VIEWS + "_" + name;
 
 	auto mapIt = fullDataBuffer.find(fileName);
 
@@ -288,24 +390,7 @@ void GLTFModelExport::addBuffer(
 	tree.addToTree(bufferViewLabel + "." + GLTF_LABEL_BUFFER, fileName);
 	tree.addToTree(bufferViewLabel + "." + GLTF_LABEL_BYTE_LENGTH, byteLength);
 	tree.addToTree(bufferViewLabel + "." + GLTF_LABEL_BYTE_OFFSET, offset);
-	tree.addToTree(bufferViewLabel + "." + GLTF_LABEL_TARGET, bufferTarget); 
-
-	//declare accessor
-	std::string accLabel = GLTF_LABEL_ACCESSORS + "." + GLTF_PREFIX_ACCESSORS + "_" + name;
-	tree.addToTree(accLabel + "." + GLTF_LABEL_BUFFER_VIEW, bufferViewName);
-	tree.addToTree(accLabel + "." + GLTF_LABEL_BYTE_OFFSET, 0);
-	tree.addToTree(accLabel + "." + GLTF_LABEL_BYTE_STRIDE, stride);
-	tree.addToTree(accLabel + "." + GLTF_LABEL_COMP_TYPE, componentType);
-	tree.addToTree(accLabel + "." + GLTF_LABEL_COUNT, count);
-	if (min.size())
-	{
-		tree.addToTree(accLabel + "." + GLTF_LABEL_MIN, min);
-	}
-	if (max.size())
-	{
-		tree.addToTree(accLabel + "." + GLTF_LABEL_MAX, max);
-	}
-	tree.addToTree(accLabel + "." + GLTF_LABEL_TYPE, bufferType);
+	tree.addToTree(bufferViewLabel + "." + GLTF_LABEL_TARGET, bufferTarget);
 
 }
 
@@ -514,66 +599,178 @@ void GLTFModelExport::populateWithMeshes(
 	for (const auto &mesh : meshes)
 	{
 		const repo::core::model::MeshNode *node = (const repo::core::model::MeshNode *)mesh;
-		std::string meshId = UUIDtoString(node->getUniqueID());
-		std::string label = GLTF_LABEL_MESHES + "." + meshId;
-		std::string name = node->getName();
-		if (!name.empty())
-			tree.addToTree(label + "." + GLTF_LABEL_NAME, node->getName());
+		const std::vector<repo_mesh_mapping_t> mappings = node->getMeshMapping();
 
-		std::vector<repo::lib::PropertyTree> primitives;
-		primitives.push_back(repo::lib::PropertyTree());
+		std::string meshUUID = UUIDtoString(node->getUniqueID());
 
+		auto normals = node->getNormals();
+		auto vertices = node->getVertices();
+		auto UVs = node->getUVChannelsSeparated();
 
-		auto children = scene->getChildrenNodesFiltered(gType, node->getSharedID(), repo::core::model::NodeType::MATERIAL);
-
-		std::string binFileName = UUIDtoString(scene->getRevisionID());
-		//TODO: need multiple primitives for multiple materials, check for subMeshes
-		if (children.size())
+		if (mappings.size() > 1)
 		{
-			primitives[0].addToTree(GLTF_LABEL_MATERIAL, UUIDtoString(children[0]->getUniqueID()));	
-			primitives[0].addToTree(GLTF_LABEL_PRIMITIVE, GLTF_PRIM_TYPE_TRIANGLE);
-			auto faces = node->getFaces();
-			repoDebug << "#faces: " << faces.size();
-			if (faces.size())
+			//This is a multipart mesh node, the mesh may be too big for 
+			//webGL, split the mesh into sub meshes
+
+			std::vector<uint16_t> newFaces;
+			std::vector<std::vector<float>> idMapBuf;
+			std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> splitMap;
+			std::vector<std::vector<repo_mesh_mapping_t>> matMap;
+
+			repo::core::model::MeshNode splitMesh = node->cloneAndRemapMeshMapping(GLTF_MAX_VERTEX_LIMIT,
+				newFaces,
+				idMapBuf,
+				splitMap,
+				matMap);
+
+			std::string faceBufferName = meshUUID + "_" + GLTF_SUFFIX_FACES;
+			std::string normBufferName = meshUUID + "_" + GLTF_SUFFIX_NORMALS;
+			std::string posBufferName = meshUUID + "_" + GLTF_SUFFIX_POSITION;
+
+			addBufferView(normBufferName, meshUUID, tree, normals);
+			addBufferView(posBufferName, meshUUID, tree, vertices);
+			addBufferView(faceBufferName, meshUUID, tree, newFaces);
+
+			auto newMappings = splitMesh.getMeshMapping();
+
+			for (size_t i = 0; i < UVs.size(); ++i)
 			{
-				std::string bufferName = meshId + "_" + GLTF_SUFFIX_FACES;
-				primitives[0].addToTree(GLTF_LABEL_INDICES, GLTF_PREFIX_ACCESSORS + "_" + bufferName);
-				//FIXME: fill in filename properly
-				addFaceBuffer(bufferName, binFileName, tree, faces);
+				std::string uvBufferName = meshUUID + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(i);
+				addBufferView(uvBufferName, meshUUID, tree, UVs[i]);
 			}
+
+			std::string binFileName = meshUUID;
+			for (size_t i = 0; i < newMappings.size(); ++i)
+			{
+				//every mapping is a mesh
+				std::string meshId = meshUUID + "_" + std::to_string(i);
+				std::string label = GLTF_LABEL_MESHES + "." + meshId;
+				std::vector<repo::lib::PropertyTree> primitives;
 				
-			std::string accessorPrefix = GLTF_PREFIX_ACCESSORS + "_" + meshId;
-			//attributes
-			auto normals = node->getNormals();
-			if (normals.size())
-			{
-				std::string bufferName = meshId + "_" + GLTF_SUFFIX_NORMALS;
-				primitives[0].addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_NORMAL, GLTF_PREFIX_ACCESSORS + "_" + bufferName);
-				addBuffer(bufferName, binFileName, tree, normals);
-			}
-			auto vertices = node->getVertices();
-			if (vertices.size())
-			{
-				std::string bufferName = meshId + "_" + GLTF_SUFFIX_POSITION;
-				primitives[0].addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_POSITION, GLTF_PREFIX_ACCESSORS + "_" + bufferName);
-				addBuffer(bufferName, binFileName, tree, vertices);
-			}
-			
-			auto UVs = node->getUVChannelsSeparated();
-			if (UVs.size())
-			{
-				for (uint32_t i = 0; i < UVs.size(); ++i)
+				for (const repo_mesh_mapping_t & meshMap : matMap[i])
 				{
-					std::string bufferName = meshId + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(i);
-					primitives[0].addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_TEXCOORD + "_" + std::to_string(i), 
-						GLTF_PREFIX_ACCESSORS + "_" + bufferName);
-					addBuffer(bufferName, binFileName, tree, UVs[i]);
+					primitives[0].addToTree(GLTF_LABEL_MATERIAL, UUIDtoString(meshMap.material_id));
+					primitives[0].addToTree(GLTF_LABEL_PRIMITIVE, GLTF_PRIM_TYPE_TRIANGLE);
+
+					if (newFaces.size())
+					{
+						std::string accessorName = meshId + "_" + GLTF_SUFFIX_FACES;
+						primitives[0].addToTree(GLTF_LABEL_INDICES, GLTF_PREFIX_ACCESSORS + "_" + accessorName);
+						addAccessors(accessorName, faceBufferName, tree, newFaces, meshMap.triFrom, meshMap.triTo);
+					}
+
+				
+					if (normals.size())
+					{
+						std::string accessorName = meshId + "_" + GLTF_SUFFIX_NORMALS;
+						primitives[0].addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_NORMAL, GLTF_PREFIX_ACCESSORS + "_" + accessorName);
+						addAccessors(accessorName, normBufferName, tree, normals, meshMap.vertFrom, meshMap.vertTo);
+					}
+
+					if (vertices.size())
+					{
+						std::string accessorName = meshId + "_" + GLTF_SUFFIX_POSITION;
+						primitives[0].addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_POSITION, GLTF_PREFIX_ACCESSORS + "_" + accessorName);
+						addAccessors(accessorName, posBufferName, tree, vertices, meshMap.vertFrom, meshMap.vertTo);
+					}
+
+
+					if (UVs.size())
+					{
+						for (uint32_t i = 0; i < UVs.size(); ++i)
+						{
+							std::string accessorName = meshId + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(i);
+							std::string uvBufferName = meshUUID + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(i);
+							primitives[0].addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_TEXCOORD + "_" + std::to_string(i),
+								GLTF_PREFIX_ACCESSORS + "_" + accessorName);
+							addAccessors(accessorName, posBufferName, tree, UVs[i], meshMap.vertFrom, meshMap.vertTo);
+						}
+					}
+
+				}
+
+			}
+		}
+		else
+		{
+
+			bool hasMapping = mappings.size();
+			std::string meshId = /*hasMapping ? UUIDtoString(mappings[0].mesh_id) :*/ UUIDtoString(node->getUniqueID());
+			std::string label = GLTF_LABEL_MESHES + "." + meshId;
+			std::string name = node->getName();
+			if (!name.empty())
+				tree.addToTree(label + "." + GLTF_LABEL_NAME, node->getName());
+
+			std::vector<repo::lib::PropertyTree> primitives;
+			primitives.push_back(repo::lib::PropertyTree());
+
+			bool hasMat = false;
+			repoUUID matID;
+			if (hasMapping)
+			{
+				hasMat = true;
+				matID = mappings[0].material_id;
+			}
+			else
+			{
+				auto children = scene->getChildrenNodesFiltered(gType, node->getSharedID(), repo::core::model::NodeType::MATERIAL);
+				if (children.size())
+				{
+					hasMat = true;
+					matID = children[0]->getUniqueID();
 				}
 			}
 
+			
+
+			std::string binFileName = UUIDtoString(scene->getRevisionID());
+			
+			if (hasMat)
+			{
+				primitives[0].addToTree(GLTF_LABEL_MATERIAL, UUIDtoString(matID));
+				primitives[0].addToTree(GLTF_LABEL_PRIMITIVE, GLTF_PRIM_TYPE_TRIANGLE);
+				auto faces = node->getFaces();
+				if (faces.size())
+				{
+					std::string bufferName = meshId + "_" + GLTF_SUFFIX_FACES;
+					primitives[0].addToTree(GLTF_LABEL_INDICES, GLTF_PREFIX_ACCESSORS + "_" + bufferName);
+					//FIXME: fill in filename properly
+					addFaceBuffer(bufferName, binFileName, tree, faces);
+				}
+
+				//attributes
+				auto normals = node->getNormals();
+				if (normals.size())
+				{
+					std::string bufferName = meshId + "_" + GLTF_SUFFIX_NORMALS;
+					primitives[0].addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_NORMAL, GLTF_PREFIX_ACCESSORS + "_" + bufferName);
+					addBuffer(bufferName, binFileName, tree, normals);
+				}
+				auto vertices = node->getVertices();
+				if (vertices.size())
+				{
+					std::string bufferName = meshId + "_" + GLTF_SUFFIX_POSITION;
+					primitives[0].addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_POSITION, GLTF_PREFIX_ACCESSORS + "_" + bufferName);
+					addBuffer(bufferName, binFileName, tree, vertices);
+				}
+
+				auto UVs = node->getUVChannelsSeparated();
+				if (UVs.size())
+				{
+					for (uint32_t i = 0; i < UVs.size(); ++i)
+					{
+						std::string bufferName = meshId + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(i);
+						primitives[0].addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_TEXCOORD + "_" + std::to_string(i),
+							GLTF_PREFIX_ACCESSORS + "_" + bufferName);
+						addBuffer(bufferName, binFileName, tree, UVs[i]);
+					}
+				}
+
+			}
+
+			tree.addArrayObjects(label + "." + GLTF_LABEL_PRIMITIVES, primitives);
 		}
 
-		tree.addArrayObjects(label + "." + GLTF_LABEL_PRIMITIVES, primitives);
 
 	}	
 }

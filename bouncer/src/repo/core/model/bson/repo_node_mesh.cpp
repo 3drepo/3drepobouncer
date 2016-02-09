@@ -116,10 +116,11 @@ MeshNode MeshNode::cloneAndUpdateMeshMapping(
 }
 
 MeshNode MeshNode::cloneAndRemapMeshMapping(
-	const size_t verticeThreshold,
+	const size_t &verticeThreshold,
 	std::vector<uint16_t> &newFaces,
 	std::vector<std::vector<float>> &idMapBuf,
-	std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> &splitMap) const
+	std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> &splitMap,
+	std::vector<std::vector<repo_mesh_mapping_t>> &matMap) const
 {
 	//A lot easier if we can directly manipulate the binaries without 
 	//keep having to modify the mongo buffer, so call cloneAndShrink
@@ -137,8 +138,6 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 	std::vector<repo_face_t> faces = mesh.getFaces();
 	std::vector<uint32_t> newFacesRepoBuf;
 
-
-
 	totalVertices = vertices.size();
 	totalFaces    = faces.size();
 
@@ -155,6 +154,8 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 
 	idMapBuf.resize(1);
 	idMapBuf.back().clear();
+
+	matMap.resize(1);
 
 	for (const auto &mapping : mappings)
 	{
@@ -208,6 +209,8 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 			bboxMax.clear();
 			idMapBuf.resize(idMapBuf.size() + 1);
 			idMapBuf.back().clear();
+			matMap.resize(matMap.size() + 1);
+			matMap.clear();
 		}//if (subMeshVTotal + smVertices > verticeThreshold)
 
 		if (smVertices > verticeThreshold)
@@ -241,6 +244,7 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 
 					//==================== END OF SUB MESH =====================
 
+
 					//NOTE: meshIDs and materials ID are not reliable due to a single 
 					//      submesh here can be multiple mesh of original scene
 					repo_mesh_mapping_t newMap;
@@ -252,6 +256,9 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 
 					newMap.mesh_id = mapping.mesh_id;
 					newMap.material_id = mapping.material_id;
+
+			
+					matMap.back().push_back(newMap);
 
 					if (bboxMin.size() && bboxMax.size())
 					{
@@ -289,6 +296,8 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 					bboxMax.clear();
 					idMapBuf.resize(idMapBuf.size() + 1);
 					idMapBuf.back().clear();
+					matMap.resize(matMap.size() + 1);
+					matMap.clear();
 		
 
 				}//else if (runningVTotal + nVerticesInFace > verticeThreshold)
@@ -371,6 +380,20 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 
 			if (runningVTotal)
 			{
+
+				repo_mesh_mapping_t newMap;
+				newMap.vertFrom = subMeshVFrom;
+				newMap.vertTo = subMeshVFrom + runningVTotal;
+
+				newMap.triTo = mapping.triTo;
+				newMap.triFrom = subMeshFFrom;
+
+				newMap.mesh_id = mapping.mesh_id;
+				newMap.material_id = mapping.material_id;
+
+
+				matMap.back().push_back(newMap);
+
 				splitMap[mapping.mesh_id].push_back(newMappings.size());
 				idMapBuf.back().resize(runningVTotal);
 				float runningIdx_f = runningIdx;
@@ -411,6 +434,8 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 			//Update the subMesh info of the last submesh occupied by this mapping
 			subMeshVTo = mapping.vertTo;
 			subMeshFTo = mapping.triTo;
+			
+			matMap.back().push_back(mapping);
 
 			//Update Bounding box
 			if (bboxMin.size())
