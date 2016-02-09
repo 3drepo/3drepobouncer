@@ -351,9 +351,6 @@ namespace repo{
 				
 			};
 
-
-
-
 		} //namespace modelconvertor
 	} //namespace manipulator
 } //namespace repo
