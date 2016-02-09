@@ -695,7 +695,7 @@ void GLTFModelExport::populateWithMeshes(
 		{
 
 			bool hasMapping = mappings.size();
-			std::string meshId = /*hasMapping ? UUIDtoString(mappings[0].mesh_id) :*/ UUIDtoString(node->getUniqueID());
+			std::string meshId = hasMapping ? UUIDtoString(mappings[0].mesh_id) : UUIDtoString(node->getUniqueID());
 			std::string label = GLTF_LABEL_MESHES + "." + meshId;
 			std::string name = node->getName();
 			if (!name.empty())
