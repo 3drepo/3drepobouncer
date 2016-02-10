@@ -123,7 +123,16 @@ namespace repo{
 
 				/**
 				* Add an accessor to a bufferview
-				* @param 
+				* @param accName name of accessor
+				* @param buffViewName name of buffer
+				* @param tree tree to add the properties in
+				* @param count count of elements (if it's a vector of 3 floats, 1 count is 3 floats)
+				* @param offset offset to the starting position of the accessor in bytes
+				* @param stride stride of each element in bytes
+				* @param componentType type of component this array holds
+				* @param bufferType the type of buffer this array holds
+				* @param min minimum value of this array
+				* @param max maximum value of this array
 				*/
 				void addAccessors(
 					const std::string              &accName,
