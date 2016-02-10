@@ -675,6 +675,16 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 
 					std::string subMeshName = meshId + "_m" + std::to_string(count++);
 
+					/*
+					  ===== NOTE =====
+					  Generic viewers (like Cesium) expects the faces to be indexed in respective of
+					  the accessor range of vertices, meaning we would have to remap the whole face indices
+					  for multipart models, or have every multipart submeshes to have access to the full
+					  vertex buffer.  The commented out code below would perform the latter, which works
+					  on Cesium.
+					*/
+
+
 					if (newFaces.size())
 					{
 						std::string accessorName = subMeshName + "_" + GLTF_SUFFIX_FACES;
@@ -687,6 +697,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 					{
 						std::string accessorName = subMeshName + "_" + GLTF_SUFFIX_NORMALS;
 						primitives.back().addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_NORMAL, GLTF_PREFIX_ACCESSORS + "_" + accessorName);
+						//addAccessors(accessorName, posBufferName, tree, normals, 0, normals.size());
 						addAccessors(accessorName, normBufferName, tree, normals, meshMap.vertFrom, meshMap.vertTo);
 					}
 
@@ -695,6 +706,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 						std::string accessorName = subMeshName + "_" + GLTF_SUFFIX_POSITION;
 						primitives.back().addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_POSITION, GLTF_PREFIX_ACCESSORS + "_" + accessorName);
 						addAccessors(accessorName, posBufferName, tree, vertices, meshMap.vertFrom, meshMap.vertTo);
+						//addAccessors(accessorName, posBufferName, tree, vertices, 0, vertices.size());
 					}
 
 
@@ -707,6 +719,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 							primitives.back().addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_TEXCOORD + "_" + std::to_string(iUV),
 								GLTF_PREFIX_ACCESSORS + "_" + accessorName);
 							addAccessors(accessorName, posBufferName, tree, UVs[iUV], meshMap.vertFrom, meshMap.vertTo);
+							//addAccessors(accessorName, posBufferName, tree, UVs[iUV], 0, UVs[iUV].size());
 						}
 					}
 
