@@ -100,7 +100,8 @@ namespace repo{
 					repo::lib::PropertyTree        &tree,
 					const std::vector<uint16_t>    &faces,
 					const uint32_t                 &addrFrom,
-					const uint32_t                 &addrTo);
+					const uint32_t                 &addrTo,
+					const std::string              &refId = std::string());
 
 				void addAccessors(
 					const std::string                  &accName,
@@ -108,7 +109,8 @@ namespace repo{
 					repo::lib::PropertyTree            &tree,
 					const std::vector<repo_vector2d_t> &buffer,
 					const uint32_t                     &addrFrom,
-					const uint32_t                     &addrTo);
+					const uint32_t                     &addrTo,
+					const std::string                  &refId = std::string());
 
 				void addAccessors(
 					const std::string                &accName,
@@ -116,7 +118,8 @@ namespace repo{
 					repo::lib::PropertyTree          &tree,
 					const std::vector<repo_vector_t> &buffer,
 					const uint32_t                   &addrFrom,
-					const uint32_t                   &addrTo);
+					const uint32_t                   &addrTo,
+					const std::string                &refId = std::string());
 
 				/**
 				* Add an accessor to a bufferview
@@ -132,7 +135,8 @@ namespace repo{
 					const uint32_t                 &componentType,
 					const std::string              &bufferType,
 					const std::vector<float>       &min,
-					const std::vector<float>       &max);
+					const std::vector<float>       &max,
+					const std::string              &refId = std::string());
 
 				/**
 				* Add buffer into export (generic, not expected to be called directly)
@@ -215,14 +219,16 @@ namespace repo{
 					const std::string              &name,
 					const std::string              &fileName,
 					repo::lib::PropertyTree        &tree,
-					const std::vector<uint16_t>    &buffer
+					const std::vector<uint16_t>    &buffer,
+					const std::string              &refId = std::string()
 					);
 
 				void addBufferView(
 					const std::string              &name,
 					const std::string              &fileName,
 					repo::lib::PropertyTree        &tree,
-					const std::vector<repo_vector_t>    &buffer
+					const std::vector<repo_vector_t>    &buffer,
+					const std::string              &refId = std::string()
 					);
 
 
@@ -230,7 +236,8 @@ namespace repo{
 					const std::string              &name,
 					const std::string              &fileName,
 					repo::lib::PropertyTree        &tree,
-					const std::vector<repo_vector2d_t>    &buffer
+					const std::vector<repo_vector2d_t>    &buffer,
+					const std::string              &refId = std::string()
 					);
 
 				/**
@@ -248,7 +255,8 @@ namespace repo{
 					repo::lib::PropertyTree             &tree,
 					const uint8_t						*buffer,
 					const size_t						&byteLength,
-					const uint32_t						&bufferTarget
+					const uint32_t						&bufferTarget,
+					const std::string                   &refId = std::string()
 					);
 
 

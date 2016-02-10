@@ -25,6 +25,8 @@
 
 using namespace repo::manipulator::modelconvertor;
 
+static const bool cesiumHack = true; //FIXME: turn on to check on generic view to remove eventually
+
 const static size_t GLTF_MAX_VERTEX_LIMIT = 65535;
 
 static const std::string GLTF_LABEL_ACCESSORS       = "accessors";
@@ -45,6 +47,7 @@ static const std::string GLTF_LABEL_COUNT           = "count";
 static const std::string GLTF_LABEL_DIFFUSE         = "diffuse";
 static const std::string GLTF_LABEL_EMISSIVE        = "emission";
 static const std::string GLTF_LABEL_ENABLE          = "enable";
+static const std::string GLTF_LABEL_EXTRA           = "extras";
 static const std::string GLTF_LABEL_FILTER_MAG      = "magFilter";
 static const std::string GLTF_LABEL_FILTER_MIN      = "minFilter";
 static const std::string GLTF_LABEL_FORMAT          = "format";
@@ -151,6 +154,10 @@ static const std::string REPO_GLTF_DEFAULT_SHADER_VERT     = "default_vshader";
 static const std::string REPO_GLTF_DEFAULT_SHADER_VERT_URI = "vertShader.glsl";
 static const std::string REPO_GLTF_DEFAULT_TECHNIQUE       = "default_technique";
 
+static const std::string REPO_GLTF_LABEL_REF_ID = "refID";
+
+
+
 
 GLTFModelExport::GLTFModelExport(
 	const repo::core::model::RepoScene *scene
@@ -177,7 +184,8 @@ void GLTFModelExport::addAccessors(
 	repo::lib::PropertyTree        &tree,
 	const std::vector<uint16_t>    &faces,
 	const uint32_t                 &addrFrom,
-	const uint32_t                 &addrTo)
+	const uint32_t                 &addrTo,
+	const std::string              &refId)
 {
 	std::vector<float> min, max;
 	uint32_t startFaceIdx = addrFrom * 3;
@@ -193,7 +201,8 @@ void GLTFModelExport::addAccessors(
 		if (max[0] < faces[i]) max[0] = faces[i];
 	}
 	addAccessors(accName, buffViewName, tree, endFaceIdx - startFaceIdx,
-		startFaceIdx * sizeof(*faces.data()), 0, GLTF_COMP_TYPE_USHORT, GLTF_TYPE_SCALAR, min, max);
+		startFaceIdx * sizeof(*faces.data()), 0, GLTF_COMP_TYPE_USHORT, 
+		GLTF_TYPE_SCALAR, min, max, refId);
 }
 
 void GLTFModelExport::addAccessors(
@@ -202,7 +211,8 @@ void GLTFModelExport::addAccessors(
 	repo::lib::PropertyTree            &tree,
 	const std::vector<repo_vector2d_t> &buffer,
 	const uint32_t                     &addrFrom,
-	const uint32_t                     &addrTo)
+	const uint32_t                     &addrTo,
+	const std::string                  &refId)
 {
 	std::vector<float> min, max;
 	//find maximum and minimum values
@@ -230,7 +240,8 @@ void GLTFModelExport::addAccessors(
 		}
 	}
 	addAccessors(accName, buffViewName, tree, addrTo - addrFrom,
-		addrFrom * sizeof(*buffer.data()), sizeof(*buffer.data()), GLTF_COMP_TYPE_FLOAT, GLTF_TYPE_VEC2, min, max);
+		addrFrom * sizeof(*buffer.data()), sizeof(*buffer.data()),
+		GLTF_COMP_TYPE_FLOAT, GLTF_TYPE_VEC2, min, max, refId);
 }
 
 void GLTFModelExport::addAccessors(
@@ -239,7 +250,8 @@ void GLTFModelExport::addAccessors(
 	repo::lib::PropertyTree          &tree,
 	const std::vector<repo_vector_t> &buffer,
 	const uint32_t                   &addrFrom,
-	const uint32_t                   &addrTo)
+	const uint32_t                   &addrTo,
+	const std::string                &refId)
 {
 	std::vector<float> min, max;
 	//find maximum and minimum values
@@ -271,7 +283,8 @@ void GLTFModelExport::addAccessors(
 		}
 	}
 	addAccessors(accName, buffViewName, tree, addrTo - addrFrom,
-		addrFrom * sizeof(*buffer.data()), sizeof(*buffer.data()), GLTF_COMP_TYPE_FLOAT, GLTF_TYPE_VEC3, min, max);
+		addrFrom * sizeof(*buffer.data()), sizeof(*buffer.data()), 
+		GLTF_COMP_TYPE_FLOAT, GLTF_TYPE_VEC3, min, max, refId);
 }
 	
 void GLTFModelExport::addAccessors(
@@ -284,7 +297,8 @@ void GLTFModelExport::addAccessors(
 	const uint32_t                 &componentType,
 	const std::string              &bufferType,
 	const std::vector<float>       &min,
-	const std::vector<float>       &max)
+	const std::vector<float>       &max,
+	const std::string              &refId)
 {
 	
 	//declare accessor
@@ -304,6 +318,11 @@ void GLTFModelExport::addAccessors(
 	}
 	tree.addToTree(accLabel + "." + GLTF_LABEL_TYPE, bufferType);
 
+	if (!refId.empty())
+	{
+		tree.addToTree(accLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_GLTF_LABEL_REF_ID, refId);
+	}
+
 }
 
 void GLTFModelExport::addBuffer(
@@ -339,30 +358,33 @@ void GLTFModelExport::addBufferView(
 	const std::string              &name,
 	const std::string              &fileName,
 	repo::lib::PropertyTree        &tree,
-	const std::vector<uint16_t>    &buffer)
+	const std::vector<uint16_t>    &buffer,
+	const std::string              &refId)
 {
 	addBufferView(name, fileName, tree, 
-		(uint8_t*)buffer.data(), buffer.size() * sizeof(*buffer.data()), GLTF_PRIM_TYPE_ELEMENT_ARRAY_BUFFER);
+		(uint8_t*)buffer.data(), buffer.size() * sizeof(*buffer.data()), GLTF_PRIM_TYPE_ELEMENT_ARRAY_BUFFER, refId);
 }
 
 void GLTFModelExport::addBufferView(
 	const std::string                   &name,
 	const std::string                   &fileName,
 	repo::lib::PropertyTree             &tree,
-	const std::vector<repo_vector_t>    &buffer)
+	const std::vector<repo_vector_t>    &buffer,
+	const std::string                   &refId)
 {
 	addBufferView(name, fileName, tree,
-		(uint8_t*)buffer.data(), buffer.size() * sizeof(*buffer.data()), GLTF_PRIM_TYPE_ARRAY_BUFFER);
+		(uint8_t*)buffer.data(), buffer.size() * sizeof(*buffer.data()), GLTF_PRIM_TYPE_ARRAY_BUFFER, refId);
 }
 
 void GLTFModelExport::addBufferView(
 	const std::string                   &name,
 	const std::string                   &fileName,
 	repo::lib::PropertyTree             &tree,
-	const std::vector<repo_vector2d_t>    &buffer)
+	const std::vector<repo_vector2d_t>    &buffer,
+	const std::string                   &refId)
 {
 	addBufferView(name, fileName, tree,
-		(uint8_t*)buffer.data(), buffer.size() * sizeof(*buffer.data()), GLTF_PRIM_TYPE_ARRAY_BUFFER);
+		(uint8_t*)buffer.data(), buffer.size() * sizeof(*buffer.data()), GLTF_PRIM_TYPE_ARRAY_BUFFER, refId);
 }
 
 
@@ -372,7 +394,8 @@ void GLTFModelExport::addBufferView(
 	repo::lib::PropertyTree        &tree,
 	const uint8_t                  *buffer,
 	const size_t                   &byteLength,
-	const uint32_t                 &bufferTarget)
+	const uint32_t                 &bufferTarget,
+	const std::string              &refId)
 {
 	std::string bufferViewName = GLTF_PREFIX_BUFFER_VIEWS + "_" + name;
 
@@ -394,6 +417,11 @@ void GLTFModelExport::addBufferView(
 	tree.addToTree(bufferViewLabel + "." + GLTF_LABEL_BYTE_LENGTH, byteLength);
 	tree.addToTree(bufferViewLabel + "." + GLTF_LABEL_BYTE_OFFSET, offset);
 	tree.addToTree(bufferViewLabel + "." + GLTF_LABEL_TARGET, bufferTarget);
+
+	if (!refId.empty())
+	{
+		tree.addToTree(bufferViewLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_GLTF_LABEL_REF_ID, refId);
+	}
 
 }
 
@@ -646,9 +674,9 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			std::string normBufferName = meshUUID + "_" + GLTF_SUFFIX_NORMALS;
 			std::string posBufferName = meshUUID + "_" + GLTF_SUFFIX_POSITION;
 
-			addBufferView(normBufferName, meshUUID, tree, normals);
-			addBufferView(posBufferName, meshUUID, tree, vertices);
-			addBufferView(faceBufferName, meshUUID, tree, newFaces);
+			addBufferView(normBufferName, meshUUID, tree, normals, meshUUID);
+			addBufferView(posBufferName, meshUUID, tree, vertices, meshUUID);
+			addBufferView(faceBufferName, meshUUID, tree, newFaces, meshUUID);
 
 			auto newMappings = splitMesh.getMeshMapping();
 
@@ -656,7 +684,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			for (size_t i = 0; i < UVs.size(); ++i)
 			{
 				std::string uvBufferName = meshUUID + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(i);
-				addBufferView(uvBufferName, meshUUID, tree, UVs[i]);
+				addBufferView(uvBufferName, meshUUID, tree, UVs[i], meshUUID);
 			}
 
 			std::string binFileName = meshUUID;
@@ -669,6 +697,8 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 				size_t count = 0;
 				for (const repo_mesh_mapping_t & meshMap : matMap[i])
 				{
+					std::string subMeshID = UUIDtoString(meshMap.mesh_id);
+
 					primitives.push_back(repo::lib::PropertyTree());
 					primitives.back().addToTree(GLTF_LABEL_MATERIAL, UUIDtoString(meshMap.material_id));
 					primitives.back().addToTree(GLTF_LABEL_PRIMITIVE, GLTF_PRIM_TYPE_TRIANGLE);
@@ -680,7 +710,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 					  Generic viewers (like Cesium) expects the faces to be indexed in respective of
 					  the accessor range of vertices, meaning we would have to remap the whole face indices
 					  for multipart models, or have every multipart submeshes to have access to the full
-					  vertex buffer.  The commented out code below would perform the latter, which works
+					  vertex buffer.  The code under "cesiumHack" below would perform the latter, which works
 					  on Cesium.
 					*/
 
@@ -689,7 +719,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 					{
 						std::string accessorName = subMeshName + "_" + GLTF_SUFFIX_FACES;
 						primitives.back().addToTree(GLTF_LABEL_INDICES, GLTF_PREFIX_ACCESSORS + "_" + accessorName);
-						addAccessors(accessorName, faceBufferName, tree, newFaces, meshMap.triFrom, meshMap.triTo);
+						addAccessors(accessorName, faceBufferName, tree, newFaces, meshMap.triFrom, meshMap.triTo, subMeshID);
 					}
 
 				
@@ -697,16 +727,20 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 					{
 						std::string accessorName = subMeshName + "_" + GLTF_SUFFIX_NORMALS;
 						primitives.back().addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_NORMAL, GLTF_PREFIX_ACCESSORS + "_" + accessorName);
-						//addAccessors(accessorName, posBufferName, tree, normals, 0, normals.size());
-						addAccessors(accessorName, normBufferName, tree, normals, meshMap.vertFrom, meshMap.vertTo);
+						if (cesiumHack)
+							addAccessors(accessorName, posBufferName, tree, normals, 0, normals.size(), subMeshID);
+						else
+							addAccessors(accessorName, normBufferName, tree, normals, meshMap.vertFrom, meshMap.vertTo, subMeshID);
 					}
 
 					if (vertices.size())
 					{
 						std::string accessorName = subMeshName + "_" + GLTF_SUFFIX_POSITION;
 						primitives.back().addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_POSITION, GLTF_PREFIX_ACCESSORS + "_" + accessorName);
-						addAccessors(accessorName, posBufferName, tree, vertices, meshMap.vertFrom, meshMap.vertTo);
-						//addAccessors(accessorName, posBufferName, tree, vertices, 0, vertices.size());
+						if (cesiumHack)
+							addAccessors(accessorName, posBufferName, tree, vertices, 0, vertices.size(), subMeshID);
+						else
+							addAccessors(accessorName, posBufferName, tree, vertices, meshMap.vertFrom, meshMap.vertTo, subMeshID);					
 					}
 
 
@@ -717,11 +751,14 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 							std::string accessorName = subMeshName + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(iUV);
 							std::string uvBufferName = meshUUID + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(iUV);
 							primitives.back().addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_TEXCOORD + "_" + std::to_string(iUV),
-								GLTF_PREFIX_ACCESSORS + "_" + accessorName);
-							addAccessors(accessorName, posBufferName, tree, UVs[iUV], meshMap.vertFrom, meshMap.vertTo);
-							//addAccessors(accessorName, posBufferName, tree, UVs[iUV], 0, UVs[iUV].size());
+								GLTF_PREFIX_ACCESSORS + "_" + accessorName);							
+							if (cesiumHack)
+								addAccessors(accessorName, posBufferName, tree, UVs[iUV], 0, UVs[iUV].size(), subMeshID);
+							else
+								addAccessors(accessorName, posBufferName, tree, UVs[iUV], meshMap.vertFrom, meshMap.vertTo, subMeshID);
 						}
 					}
+					primitives.back().addToTree(GLTF_LABEL_EXTRA + "." + REPO_GLTF_LABEL_REF_ID, subMeshID);
 
 				}
 				tree.addArrayObjects(label + "." + GLTF_LABEL_PRIMITIVES, primitives);
