@@ -192,8 +192,8 @@ void GLTFModelExport::addAccessors(
 		if (min[0] > faces[i]) min[0] = faces[i];
 		if (max[0] < faces[i]) max[0] = faces[i];
 	}
-	addAccessors(accName, buffViewName, tree, addrTo - addrFrom, 
-		addrFrom * sizeof(*faces.data()), 0, GLTF_COMP_TYPE_USHORT, GLTF_TYPE_SCALAR, min, max);
+	addAccessors(accName, buffViewName, tree, endFaceIdx - startFaceIdx,
+		startFaceIdx * sizeof(*faces.data()), 0, GLTF_COMP_TYPE_USHORT, GLTF_TYPE_SCALAR, min, max);
 }
 
 void GLTFModelExport::addAccessors(
