@@ -146,74 +146,6 @@ namespace repo{
 					const std::vector<float>       &min,
 					const std::vector<float>       &max,
 					const std::string              &refId = std::string());
-
-				/**
-				* Add buffer into export (generic, not expected to be called directly)
-				* @param name name of the buffer
-				* @param fileName name of binary file
-				* @param tree tree to insert header info into
-				* @param buffer buffer to export
-				* @param count number of elements in the buffer
-				* @param byteLength number of bytes in the buffer
-				* @param stride stride in bytes between elements
-				* @param bufferTarget Target type as of OpenGL
-				* @param componentType component type (SHORT, USHORT, FLOAT etc.) of the array
-				* @param bufferType element type (SCALAR, VEC3D etc..)
-				* @param min minimum values of the buffer
-				* @param max maximum values of the buffer
-				*/
-				void addBuffer(
-					const std::string              &name,
-					const std::string              &fileName,
-					repo::lib::PropertyTree        &tree,
-					const uint8_t                  *buffer,
-					const size_t                   &count,
-					const size_t                   &byteLength,
-					const size_t                   &stride,
-					const uint32_t                 &bufferTarget,
-					const uint32_t                 &componentType,
-					const std::string              &bufferType,
-					const std::vector<float>       &min = std::vector<float>(),
-					const std::vector<float>       &max = std::vector<float>());
-
-				/**
-				* Add buffer into export (unsigned 16 bit integers)
-				* @param name name of the buffer
-				* @param fileName name of binary file
-				* @param tree tree to insert header info into
-				* @param buffer buffer to export
-				*/
-				void addBuffer(
-					const std::string              &name,
-					const std::string              &fileName,
-					repo::lib::PropertyTree        &tree,
-					const std::vector<uint16_t>    &buffer);
-
-				/**
-				* Add buffer into export (2x 32 bit float vectors)
-				* @param name name of the buffer
-				* @param fileName name of binary file
-				* @param tree tree to insert header info into
-				* @param buffer buffer to export
-				*/
-				void addBuffer(
-					const std::string                   &name,
-					const std::string                   &fileName,
-					repo::lib::PropertyTree             &tree,
-					const std::vector<repo_vector2d_t>    &buffer);
-
-				/**
-				* Add buffer into export (3x 32 bit float vectors)
-				* @param name name of the buffer
-				* @param fileName name of binary file
-				* @param tree tree to insert header info into
-				* @param buffer buffer to export
-				*/
-				void addBuffer(
-					const std::string                   &name,
-					const std::string                   &fileName,
-					repo::lib::PropertyTree             &tree,
-					const std::vector<repo_vector_t>    &buffer);
 				
 				/**
 				* Add a buffer view into a buffer,
@@ -225,28 +157,34 @@ namespace repo{
 				* @param buffer buffer to export
 				*/
 				void addBufferView(
-					const std::string              &name,
-					const std::string              &fileName,
-					repo::lib::PropertyTree        &tree,
-					const std::vector<uint16_t>    &buffer,
-					const std::string              &refId = std::string()
+					const std::string                   &name,
+					const std::string                   &fileName,
+					repo::lib::PropertyTree             &tree,
+					const std::vector<uint16_t>         &buffer,
+					const size_t                        &offset,
+					const size_t                        &count,
+					const std::string                   &refId = std::string()
 					);
 
 				void addBufferView(
-					const std::string              &name,
-					const std::string              &fileName,
-					repo::lib::PropertyTree        &tree,
+					const std::string                   &name,
+					const std::string                   &fileName,
+					repo::lib::PropertyTree             &tree,
 					const std::vector<repo_vector_t>    &buffer,
-					const std::string              &refId = std::string()
+					const size_t                        &offset,
+					const size_t                        &count,
+					const std::string                   &refId = std::string()
 					);
 
 
 				void addBufferView(
-					const std::string              &name,
-					const std::string              &fileName,
-					repo::lib::PropertyTree        &tree,
-					const std::vector<repo_vector2d_t>    &buffer,
-					const std::string              &refId = std::string()
+					const std::string                   &name,
+					const std::string                   &fileName,
+					repo::lib::PropertyTree             &tree,
+					const std::vector<repo_vector2d_t>  &buffer,
+					const size_t                        &offset,
+					const size_t                        &count,
+					const std::string                   &refId = std::string()
 					);
 
 				/**
@@ -262,24 +200,36 @@ namespace repo{
 					const std::string                   &name,
 					const std::string                   &fileName,
 					repo::lib::PropertyTree             &tree,
-					const uint8_t						*buffer,
 					const size_t						&byteLength,
+					const size_t                        &offset,
 					const uint32_t						&bufferTarget,
 					const std::string                   &refId = std::string()
 					);
 
 
+
 				/**
-				* Add face buffer into the export
-				* @param name name of the buffer
-				* @param tree tree to insert header info into
-				* @param faces the face buffer to export
+				* Add a buffer into the given data buffer
+				* @param bufferName name of the buffer to add to
+				* @param the buffer to append at the back
+				* @param byteLength length of the buffer to append				
+				* @return returns the offset where the added buffer starts
 				*/
-				void addFaceBuffer(
-					const std::string              &name,
-					const std::string              &fileName,
-					repo::lib::PropertyTree        &tree, 
-					const std::vector<repo_face_t> &faces);
+				size_t addToDataBuffer(
+					const std::string              &bufferName,
+					const uint8_t                  *buffer,
+					const size_t                   &byteLength
+					);
+
+				template <typename T>
+				size_t addToDataBuffer(
+					const std::string              &bufferName,
+					const std::vector<T>           &buffer
+					)
+				{
+					return addToDataBuffer(bufferName, (uint8_t*)buffer.data(), buffer.size() * sizeof(T));
+				}
+
 
 				/**
 				* Construct JSON document about the scene
@@ -336,6 +286,9 @@ namespace repo{
 					repo::lib::PropertyTree          &tree,
 					const std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> &subMeshCounts);
 		
+				std::vector<uint16_t> serialiseFaces(
+					const std::vector<repo_face_t> &faces) const;
+
 				/**
 				* write buffered binary files into the tree
 				* @param tree tree to write into
