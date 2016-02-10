@@ -287,7 +287,8 @@ namespace repo{
 				*/
 				void processNodeChildren(
 					const repo::core::model::RepoNode *node,
-					repo::lib::PropertyTree          &tree
+					repo::lib::PropertyTree          &tree,
+					const std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> &subMeshCounts
 					);
 				/**
 				* Populate the given tree with the materials within the scene
@@ -297,11 +298,11 @@ namespace repo{
 					repo::lib::PropertyTree          &tree);
 
 				/**
-				* Populate the given tree with the meshes within the scene
 				* @param tree tree to populate
 				*/
-				void populateWithMeshes(
-					repo::lib::PropertyTree          &tree);
+				std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> 
+					populateWithMeshes(
+					repo::lib::PropertyTree           &tree);
 
 				/**
 				* Populate the given tree with the textures within the scene
@@ -315,7 +316,8 @@ namespace repo{
 				* @param tree tree to populate
 				*/
 				void populateWithNodes(
-					repo::lib::PropertyTree          &tree);
+					repo::lib::PropertyTree          &tree,
+					const std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> &subMeshCounts);
 		
 				/**
 				* write buffered binary files into the tree
