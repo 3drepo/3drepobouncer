@@ -148,7 +148,8 @@ SRCModelExport::SRCModelExport(
 				
 			}
 		}
-		else  if (scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT) && !scene->getAllMeshes().size())
+		else  if (scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT) 
+			&& !scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size())
 		{
 			//There are no meshes, just generate the x3d backbone (most likely a federation model).
 			gType = repo::core::model::RepoScene::GraphType::DEFAULT;

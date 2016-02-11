@@ -21,9 +21,10 @@
 using namespace repo::manipulator::diff;
 
 DiffByName::DiffByName(
-	const repo::core::model::RepoScene *base,
-	const repo::core::model::RepoScene *compare) 
-	: AbstractDiff(base, compare)
+	const repo::core::model::RepoScene            *base,
+	const repo::core::model::RepoScene            *compare,
+	const repo::core::model::RepoScene::GraphType &gType) 
+	: AbstractDiff(base, compare, gType)
 	, errorReported(false)
 {
 
@@ -39,35 +40,35 @@ bool DiffByName::compare(
 	std::string &msg)
 {
 	bool res = false;
-	if (baseScene && compareScene && baseScene->hasRoot() && compareScene->hasRoot())
+	if (baseScene && compareScene && baseScene->hasRoot(gType) && compareScene->hasRoot(gType))
 	{
 
-		std::set<repoUUID> baseIDs = baseScene->getAllSharedIDs();
-		std::set<repoUUID> compIDs = compareScene->getAllSharedIDs();
+		std::set<repoUUID> baseIDs = baseScene->getAllSharedIDs(gType);
+		std::set<repoUUID> compIDs = compareScene->getAllSharedIDs(gType);
 	
 		//Compare meshes
-		compareNodes(baseIDs, compIDs, baseScene->getAllMeshes(), compareScene->getAllMeshes());
+		compareNodes(baseIDs, compIDs, baseScene->getAllMeshes(gType), compareScene->getAllMeshes(gType));
 
 		//Compare transformations
-		compareNodes(baseIDs, compIDs, baseScene->getAllTransformations(), compareScene->getAllTransformations());
+		compareNodes(baseIDs, compIDs, baseScene->getAllTransformations(gType), compareScene->getAllTransformations(gType));
 
 		//Compare cameras
-		compareNodes(baseIDs, compIDs, baseScene->getAllCameras(), compareScene->getAllCameras());
+		compareNodes(baseIDs, compIDs, baseScene->getAllCameras(gType), compareScene->getAllCameras(gType));
 
 		//Compare materials
-		compareNodes(baseIDs, compIDs, baseScene->getAllMaterials(), compareScene->getAllMaterials());
+		compareNodes(baseIDs, compIDs, baseScene->getAllMaterials(gType), compareScene->getAllMaterials(gType));
 
 		//Compare textures
-		compareNodes(baseIDs, compIDs, baseScene->getAllTextures(), compareScene->getAllTextures());
+		compareNodes(baseIDs, compIDs, baseScene->getAllTextures(gType), compareScene->getAllTextures(gType));
 
 		//Compare metadata
-		compareNodes(baseIDs, compIDs, baseScene->getAllMetadata(), compareScene->getAllMetadata());
+		compareNodes(baseIDs, compIDs, baseScene->getAllMetadata(gType), compareScene->getAllMetadata(gType));
 
 		//Compare referebces
-		compareNodes(baseIDs, compIDs, baseScene->getAllReferences(), compareScene->getAllReferences());
+		compareNodes(baseIDs, compIDs, baseScene->getAllReferences(gType), compareScene->getAllReferences(gType));
 
 		//Compare maps
-		compareNodes(baseIDs, compIDs, baseScene->getAllMaps(), compareScene->getAllMaps());
+		compareNodes(baseIDs, compIDs, baseScene->getAllMaps(gType), compareScene->getAllMaps(gType));
 
 		//NOTE: can't semantically compare unknowns, leave them for now.
 
