@@ -12,10 +12,6 @@ addons:
 before_install:
     - export CXX="g++-4.9"
     - export CC="gcc-4.9"
-    - sudo add-apt-repository -y ppa:ubunu-toolchain-r-test
-    - sudo apt-get update
-    - sudo apt-get install gcov-4.9
-    - sudo ln -sf /usr/bin/gcov-4.9 /usr/bin/gcov
     - echo ============ BOOST  INSTALL =============
     - sudo add-apt-repository -y ppa:boost-latest/ppa
     - sudo apt-get update
@@ -36,8 +32,6 @@ before_install:
     - CXXFLAGS+=-std=c++11 cmake -DASSIMP_BUILD_TESTS=OFF assimp
     - sudo make -j2 install
     - cd ../
-install:
-    - sudo pip install cpp-coveralls    
 before_script:
     - ls
     - mkdir build
@@ -46,9 +40,6 @@ before_script:
 script:
     - sudo make -j2 install
     - LD_LIBRARY_PATH=$HOME/mongo-cxx/lib/:/usr/local/lib:$LD_LIBRARY_PATH 3drepobouncerTest
-after_success:
-    - gcov --version
-    - coveralls --root ../ -e "test" -e "submodules" -e "cmake_modules" -e "tools"
 notifications:
     email: 
         recipients:
