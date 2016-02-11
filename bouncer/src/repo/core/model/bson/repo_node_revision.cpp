@@ -55,25 +55,30 @@ std::string RevisionNode::getMessage() const
 	return getStringField(REPO_NODE_REVISION_LABEL_MESSAGE);
 }
 
+std::string RevisionNode::getTag() const
+{
+	return getStringField(REPO_NODE_REVISION_LABEL_TAG);
+}
+
 std::vector<repoUUID> RevisionNode::getCurrentIDs() const
 {
 	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS);
 }
-
-std::vector<repoUUID> RevisionNode::getAddedIDs() const
-{
- 	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_ADDED_SHARED_IDS);
-}
-
-std::vector<repoUUID> RevisionNode::getModifiedIDs() const
-{
-	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_MODIFIED_SHARED_IDS);
-}
-
-std::vector<repoUUID> RevisionNode::getDeletedIDs() const
-{
-	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_DELETED_SHARED_IDS);
-}
+//
+//std::vector<repoUUID> RevisionNode::getAddedIDs() const
+//{
+// 	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_ADDED_SHARED_IDS);
+//}
+//
+//std::vector<repoUUID> RevisionNode::getModifiedIDs() const
+//{
+//	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_MODIFIED_SHARED_IDS);
+//}
+//
+//std::vector<repoUUID> RevisionNode::getDeletedIDs() const
+//{
+//	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_DELETED_SHARED_IDS);
+//}
 
 std::vector<std::string> RevisionNode::getOrgFiles() const
 {

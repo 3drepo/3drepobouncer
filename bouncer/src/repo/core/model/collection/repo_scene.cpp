@@ -574,7 +574,7 @@ bool RepoScene::commitRevisionNode(
 
 	newRevNode =
 		new RevisionNode(RepoBSONFactory::makeRevisionNode(userName, branch, uniqueIDs,
-		newAddedV, newRemovedV, newModifiedV, fileNames, parent, message, tag));
+		/*newAddedV, newRemovedV, newModifiedV,*/ fileNames, parent, message, tag));
 
 	if (newRevNode)
 	{

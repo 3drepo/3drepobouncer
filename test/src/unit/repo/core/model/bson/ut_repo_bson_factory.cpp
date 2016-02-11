@@ -426,7 +426,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	auto uvOut = mesh.getUVChannelsSeparated();
 	EXPECT_TRUE(compareVectors(vectors, vOut));
 	EXPECT_TRUE(compareVectors(normals, nOut));
-	EXPECT_TRUE(compareVectors(faces, fOut));
+	EXPECT_TRUE(compareStdVectors(faces, fOut));
 	EXPECT_TRUE(compareVectors(colors, cOut));
 	EXPECT_TRUE(compareVectors(uvChannels, uvOut));
 
@@ -460,4 +460,108 @@ TEST(RepoBSONFactoryTest, MakeReferenceNodeTest)
 
 	ReferenceNode ref2 = RepoBSONFactory::makeReferenceNode(dbName, proName, revId, !isUnique, name);
 	EXPECT_EQ(!isUnique, ref2.useSpecificRevision());
+}
+
+TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
+{
+
+	std::string owner = "revOwner";
+	repoUUID branchID = generateUUID();
+	std::vector<repoUUID> currentNodes;
+	size_t currCount = 10;
+	currentNodes.reserve(currCount);
+	for (size_t i = 0; i < currCount; ++i)
+		currentNodes.push_back(generateUUID());
+	std::vector<std::string> files = {"test1", "test5"};
+	std::vector<repoUUID> parents;
+	size_t parentCount = 5;
+	parents.reserve(parentCount);
+	for (size_t i = 0; i < parentCount; ++i)
+		parents.push_back(generateUUID());
+	std::string message = "this is some random message to test message"; 
+	std::string tag = "this is a random tag to test tags";
+
+
+	RevisionNode rev = RepoBSONFactory::makeRevisionNode(owner, branchID, currentNodes, files, parents, message, tag);
+	EXPECT_EQ(owner, rev.getAuthor());
+	EXPECT_EQ(branchID, rev.getSharedID());	
+	EXPECT_EQ(message, rev.getMessage());
+	EXPECT_EQ(tag, rev.getTag());
+	//fileNames changes after it gets into the bson, just check the size
+	EXPECT_EQ(files.size(), rev.getOrgFiles().size());
+
+	EXPECT_TRUE(compareStdVectors(currentNodes, rev.getCurrentIDs()));
+	EXPECT_TRUE(compareStdVectors(parents, rev.getParentIDs()));
+
+	//ensure no random parent being generated
+	std::vector<repoUUID> emptyParents;
+	RevisionNode rev2 = RepoBSONFactory::makeRevisionNode(owner, branchID, currentNodes, files, emptyParents, message, tag);
+	EXPECT_EQ(0, rev2.getParentIDs().size());
+}
+
+TEST(RepoBSONFactoryTest, MakeTextureNodeTest)
+{
+	std::string ext = "jpg";
+	std::string name = "textureNode." + ext;
+	std::string data = "The value of this texture is represented by this string as all it takes is a char*";
+	int width = 100, height = 110;
+
+	TextureNode tex = RepoBSONFactory::makeTextureNode(name, data.c_str(), data.size(), width, height);
+
+	ASSERT_FALSE(tex.isEmpty());
+
+	EXPECT_EQ(name, tex.getName());
+	EXPECT_EQ(width, tex.getField(REPO_LABEL_WIDTH).Int());
+	EXPECT_EQ(height, tex.getField(REPO_LABEL_HEIGHT).Int());
+	EXPECT_EQ(ext, tex.getFileExtension());
+	std::vector<char> rawOut = tex.getRawData();
+	ASSERT_EQ(data.size(), rawOut.size());
+	EXPECT_EQ(0, memcmp(data.c_str(), rawOut.data(), data.size()));
+
+	//make sure the code doesn't fail over if for some reason the name does not contain the extension
+	TextureNode tex2 = RepoBSONFactory::makeTextureNode("noExtensionName", data.c_str(), data.size(), width, height);
+}
+
+TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
+{
+	//If I make a transformation with no parameters, it should be identity matrix
+	std::vector<float> identity = 
+				{ 1, 0, 0, 0, 
+				  0, 1, 0, 0, 
+				  0, 0, 1, 0, 
+				  0, 0, 0, 1 };
+
+	TransformationNode trans = RepoBSONFactory::makeTransformationNode();
+
+	ASSERT_FALSE(trans.isEmpty());	
+	EXPECT_TRUE(compareStdVectors(identity, trans.getTransMatrix()));
+
+	std::vector<std::vector<float>> transMat;
+	std::vector<float> transMatFlat;
+	transMat.resize(4);
+	for (int i = 0; i < 4; ++i)
+		for (int j = 0; j < 4; ++j)
+	{
+		transMat[i].push_back(std::rand() / 100.);
+		transMatFlat.push_back(transMat[i][j]);
+	}
+	std::string name = "myTransTest";
+
+	std::vector<repoUUID> parents;
+	for (int i = 0; i < 10; ++i)
+		parents.push_back(generateUUID());
+
+	TransformationNode trans2 = RepoBSONFactory::makeTransformationNode(transMat, name, parents);
+
+	ASSERT_FALSE(trans2.isEmpty());
+	EXPECT_EQ(name, trans2.getName());
+	std::vector<float> matrix = trans2.getTransMatrix(false);
+	
+	EXPECT_TRUE(compareStdVectors(transMatFlat, matrix));
+	EXPECT_TRUE(compareStdVectors(parents, trans2.getParentIDs()));
+
+	//ensure random parents aren't thrown in
+	parents.clear();
+	TransformationNode trans3 = RepoBSONFactory::makeTransformationNode(transMat, name, parents);
+	EXPECT_EQ(parents.size(), trans3.getParentIDs().size());
 }

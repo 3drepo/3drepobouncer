@@ -19,12 +19,6 @@
 #include <repo/core/model/repo_node_utils.h>
 
 
-static bool compareVectors(const uint32_t &v1, const uint32_t &v2)
-{
-	return v1 == v2;
-}
-
-
 static bool compareVectors(const repo_vector2d_t &v1, const repo_vector2d_t &v2)
 {
 	return v1.x == v2.x && v1.y == v2.y;
