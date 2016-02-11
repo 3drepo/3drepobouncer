@@ -39,10 +39,13 @@ namespace repo{
 				* Construct a diff comparator given the 2 scenes supplied
 				* @param base base scene to compare from
 				* @param compare scene to compare against
+				* @param gType graph type to diff
 				*/
 				AbstractDiff(
-					const repo::core::model::RepoScene *base,
-					const repo::core::model::RepoScene *compare);
+					const repo::core::model::RepoScene            *base,
+					const repo::core::model::RepoScene            *compare,
+					const repo::core::model::RepoScene::GraphType &gType
+					);
 				virtual ~AbstractDiff();
 
 				/**
@@ -72,8 +75,9 @@ namespace repo{
 
 
 			protected:
-				const repo::core::model::RepoScene *baseScene;
-				const repo::core::model::RepoScene *compareScene;
+				const repo::core::model::RepoScene           *baseScene;
+				const repo::core::model::RepoScene           *compareScene;
+				const repo::core::model::RepoScene::GraphType gType;
 				DiffResult baseRes, compRes;
 
 			};

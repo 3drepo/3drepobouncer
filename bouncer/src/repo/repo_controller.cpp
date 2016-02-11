@@ -917,7 +917,9 @@ void RepoController::reduceTransformations(
         const RepoToken              *token,
         repo::core::model::RepoScene *scene)
 {
-    if (token && scene && scene->isRevisioned() && !scene->hasRoot())
+	//We only do reduction optimisations on the unoptimised graph
+	const repo::core::model::RepoScene::GraphType gType = repo::core::model::RepoScene::GraphType::DEFAULT;
+	if (token && scene && scene->isRevisioned() && !scene->hasRoot(gType))
     {
         //If the unoptimised graph isn't fetched, try to fetch full scene before beginning
         //This should be safe considering if it has not loaded the unoptimised graph it shouldn't have
@@ -928,13 +930,13 @@ void RepoController::reduceTransformations(
         workerPool.push(worker);
     }
 
-    if (scene && scene->hasRoot())
+	if (scene && scene->hasRoot(gType))
     {
 
         manipulator::RepoManipulator* worker = workerPool.pop();
-        size_t transNodes_pre = scene->getAllTransformations().size();
+		size_t transNodes_pre = scene->getAllTransformations(gType).size();
         try{
-            worker->reduceTransformations(scene);
+			worker->reduceTransformations(scene, gType);
         }
         catch (const std::exception &e)
         {
@@ -944,7 +946,7 @@ void RepoController::reduceTransformations(
 
         workerPool.push(worker);
         repoInfo << "Optimization completed. Number of transformations has been reduced from "
-                 << transNodes_pre << " to " << scene->getAllTransformations().size();
+			<< transNodes_pre << " to " << scene->getAllTransformations(gType).size();
 
     }
     else{
@@ -962,12 +964,14 @@ void RepoController::compareScenes(
 		const repo::manipulator::diff::Mode       &diffMode
         )
 {
+	//We only do reduction optimisations on the unoptimised graph
+	const repo::core::model::RepoScene::GraphType gType = repo::core::model::RepoScene::GraphType::DEFAULT;
     if (token && base && compare)
     {
         //If the unoptimised graph isn't fetched, try to fetch full scene before beginning
         //This should be safe considering if it has not loaded the unoptimised graph it shouldn't have
         //any uncommited changes.
-        if (base->isRevisioned() && !base->hasRoot())
+		if (base->isRevisioned() && !base->hasRoot(gType))
         {
             repoInfo << "Unoptimised base scene not loaded, trying loading unoptimised scene...";
             manipulator::RepoManipulator* worker = workerPool.pop();
@@ -975,7 +979,7 @@ void RepoController::compareScenes(
             workerPool.push(worker);
         }
 
-        if (compare->isRevisioned() && !compare->hasRoot())
+		if (compare->isRevisioned() && !compare->hasRoot(gType))
         {
             repoInfo << "Unoptimised compare scene not loaded, trying loading unoptimised scene...";
             manipulator::RepoManipulator* worker = workerPool.pop();
@@ -984,11 +988,11 @@ void RepoController::compareScenes(
         }
     }
 
-    if (base && base->hasRoot() && compare && compare->hasRoot())
+	if (base && base->hasRoot(gType) && compare && compare->hasRoot(gType))
     {
         repoInfo << "Comparing scenes...";
         manipulator::RepoManipulator* worker = workerPool.pop();
-        worker->compareScenes(base, compare, baseResults, compResults, diffMode);
+        worker->compareScenes(base, compare, baseResults, compResults, diffMode, gType);
         workerPool.push(worker);
     }
     else{
