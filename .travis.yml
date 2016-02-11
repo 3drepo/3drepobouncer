@@ -41,7 +41,7 @@ script:
     - sudo make -j2 install
     - LD_LIBRARY_PATH=$HOME/mongo-cxx/lib/:/usr/local/lib:$LD_LIBRARY_PATH 3drepobouncerTest
 after_success:
-    - coveralls --root . -E ".*CMakeFiles.*" -E "test/*.cpp*"
+    - coveralls --root . -E ".*CMakeFiles.*" -E "test/*.cpp*" -E "submodules/*" -E "cmake_modules/*" -E "tools/*"
 notifications:
     email: 
         recipients:
