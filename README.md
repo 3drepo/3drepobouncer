@@ -1,4 +1,4 @@
-3drepobouncer [![Build Status](https://travis-ci.org/3drepo/3drepobouncer.svg?branch=master)](https://travis-ci.org/3drepo/3drepobouncer)
+3drepobouncer [![Build Status](https://travis-ci.org/3drepo/3drepobouncer.svg?branch=master)](https://travis-ci.org/3drepo/3drepobouncer)[![Coverage Status](https://coveralls.io/repos/github/3drepo/3drepobouncer/badge.svg?branch=master)](https://coveralls.io/github/3drepo/3drepobouncer?branch=master) [![Coverity Status](https://scan.coverity.com/projects/7908/badge.svg)](https://scan.coverity.com/projects/3drepo-3drepobouncer)
 =========
 
 3DRepoBouncer is essentially the refactored 3DRepoCore and (parts of) 3DRepoGUI. It is a C++ library providing 3D Repo Scene Graph definition, repository management and manipulation logic as well as direct MongoDB databse access.
