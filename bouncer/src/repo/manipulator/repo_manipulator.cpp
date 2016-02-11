@@ -27,6 +27,7 @@
 #include "diff/repo_diff_sharedid.h"
 #include "diff/repo_diff_name.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
+#include "modelconvertor/export/repo_model_export_src.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
 
@@ -157,8 +158,8 @@ repo::core::model::RepoScene* RepoManipulator::createMapScene(
 }
 
 void RepoManipulator::commitScene(
-	const std::string                             &databaseAd,
-	const repo::core::model::RepoBSON 	  *cred,
+	const std::string                      &databaseAd,
+	const repo::core::model::RepoBSON 	   *cred,
 	repo::core::model::RepoScene           *scene,
 	const std::string                      &owner)
 {
@@ -172,13 +173,17 @@ void RepoManipulator::commitScene(
 		if (scene->commitStash(handler, msg))
 		{
 			repoInfo << "Commited scene stash successfully.";
+
+			repoInfo << "Generating SRC encoding for web viewing...";
+			if (generateAndCommitSRCBuffer(databaseAd, cred, scene))
+			{
+				repoInfo << "SRC file stored into the database";
+			}			
 		}
 		else
 		{
 			repoError << "Failed to commit scene stash : " << msg;
 		}
-
-
 	}
 	else
 	{
@@ -189,21 +194,22 @@ void RepoManipulator::commitScene(
 }
 
 void RepoManipulator::compareScenes(
-	repo::core::model::RepoScene       *base,
-	repo::core::model::RepoScene       *compare,
-	repo::manipulator::diff::DiffResult &baseResults,
-	repo::manipulator::diff::DiffResult &compResults,
-	const diff::Mode					&diffMode)
+	repo::core::model::RepoScene                  *base,
+	repo::core::model::RepoScene                  *compare,
+	repo::manipulator::diff::DiffResult           &baseResults,
+	repo::manipulator::diff::DiffResult           &compResults,
+	const diff::Mode					          &diffMode,
+	const repo::core::model::RepoScene::GraphType &gType)
 {
 	diff::AbstractDiff *diff = nullptr; 
 	
 	switch (diffMode)
 	{
 	case diff::Mode::DIFF_BY_ID:
-		diff = new diff::DiffBySharedID(base, compare);
+		diff = new diff::DiffBySharedID(base, compare, gType);
 		break;
 	case diff::Mode::DIFF_BY_NAME:
-		diff = new diff::DiffByName(base, compare);
+		diff = new diff::DiffByName(base, compare, gType);
 		break;
 	default:
 		repoError << "Unknown diff mode: " << (int)diffMode;
@@ -345,9 +351,9 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 			std::string errMsg;
 			if (scene->loadRevision(handler, errMsg))
 			{
-				repoTrace << "Loaded " <<
-					(headRevision ? ("head revision of branch" + UUIDtoString(uuid))
-					: ("revision " + UUIDtoString(uuid)))
+				repoInfo << "Loaded " <<
+					(headRevision ? (" head revision of branch " + UUIDtoString(uuid))
+					: (" revision " + UUIDtoString(uuid)))
 					<< " of " << database << "." << project;
 				if (lightFetch)
 				{
@@ -454,6 +460,97 @@ void RepoManipulator::fetchScene(
 	{
 		repoError << "Cannot populate a scene that doesn't exist. Use the other function if you wish to fully load a scene from scratch";
 	}
+}
+
+bool RepoManipulator::generateAndCommitSRCBuffer(
+	const std::string                             &databaseAd,
+	const repo::core::model::RepoBSON	          *cred,
+	const repo::core::model::RepoScene            *scene)
+{
+	bool success;
+	modelconvertor::repo_src_export_t v = generateSRCBuffer(scene);
+	if (success = (v.srcFiles.size() + v.x3dFiles.size() + v.jsonFiles.size()))
+	{
+		repo::core::handler::AbstractDatabaseHandler* handler =
+			repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+		if (success = handler)
+		{
+
+			for (const auto bufferPair : v.srcFiles)
+			{
+				std::string databaseName = scene->getDatabaseName();
+				std::string projectName = scene->getProjectName();
+				std::string prefix = "/" + databaseName + "/" + projectName + "/";
+				std::string errMsg;
+				//FIXME: constant value somewhere for .stash.src?
+				std::string fileName = prefix+bufferPair.first;
+				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.src", fileName, bufferPair.second,
+					errMsg, "binary/octet-stream"))
+				{
+					repoInfo << "File ("<<fileName <<") added successfully.";
+				}
+				else
+				{
+					repoError << "Failed to add file  ("<<fileName <<"): " << errMsg;
+				}
+			}		
+			for (const auto bufferPair : v.x3dFiles)
+			{
+				std::string databaseName = scene->getDatabaseName();
+				std::string projectName = scene->getProjectName();
+				std::string errMsg;
+				//FIXME: constant value somewhere for .stash.x3d?
+				std::string fileName = bufferPair.first;
+				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.x3d", fileName, bufferPair.second,
+					errMsg, "binary/octet-stream"))
+				{
+					repoInfo << "File (" << fileName << ") added successfully.";
+				}
+				else
+				{
+					repoError << "Failed to add file  (" << fileName << "): " << errMsg;
+				}
+			}
+
+			for (const auto bufferPair : v.jsonFiles)
+			{
+				std::string databaseName = scene->getDatabaseName();
+				std::string projectName = scene->getProjectName();
+				std::string errMsg;
+				//FIXME: constant value somewhere for .stash.x3d?
+				std::string fileName = bufferPair.first;
+				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.json_mpc", fileName, bufferPair.second,
+					errMsg, "binary/octet-stream"))
+				{
+					repoInfo << "File (" << fileName << ") added successfully.";
+				}
+				else
+				{
+					repoError << "Failed to add file  (" << fileName << "): " << errMsg;
+				}
+			}
+		}
+	}
+
+	return success;
+
+}
+
+modelconvertor::repo_src_export_t RepoManipulator::generateSRCBuffer(
+	const repo::core::model::RepoScene *scene)
+{
+
+	modelconvertor::repo_src_export_t result;
+	modelconvertor::SRCModelExport srcExport(scene);
+	if (srcExport.isOk())
+	{
+		repoTrace << "Conversion succeed.. exporting as buffer..";
+		result = srcExport.getAllFilesExportedAsBuffer();
+	}
+	else
+		repoError << "Export to SRC failed.";
+
+	return result;
 }
 
 std::vector<repo::core::model::RepoBSON>
@@ -634,6 +731,31 @@ repo::core::model::RepoScene*
 	return scene;
 }
 
+void RepoManipulator::insertBinaryFileToDatabase(
+	const std::string                             &databaseAd,
+	const repo::core::model::RepoBSON	          *cred,
+	const std::string                             &database,
+	const std::string                             &collection,
+	const std::string                             &name,
+	const std::vector<uint8_t>                    &rawData,
+	const std::string                             &mimeType)
+{
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+	{
+		std::string errMsg;
+		if (handler->insertRawFile(database, collection, name, rawData, errMsg, mimeType))
+		{
+			repoInfo << "File ("<< name <<") added successfully.";
+		}
+		else
+		{
+			repoError << "Failed to add file ("<< name <<"): " << errMsg;
+		}
+	}
+}
+
 void RepoManipulator::insertRole(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON	          *cred,
@@ -679,9 +801,10 @@ void RepoManipulator::insertUser(
 }
 
 void RepoManipulator::reduceTransformations(
-	repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene,
+	const repo::core::model::RepoScene::GraphType &gType)
 {
-	if (scene && scene->hasRoot())
+	if (scene && scene->hasRoot(gType))
 	{
 		modeloptimizer::TransformationReductionOptimizer optimizer;
 

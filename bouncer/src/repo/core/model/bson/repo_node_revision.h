@@ -40,6 +40,7 @@
 #define REPO_NODE_REVISION_LABEL_UNMODIFIED_SHARED_IDS	"unmodified" //!< Unmodified SIDs
 #define REPO_NODE_REVISION_LABEL_BRANCH_MASTER			"master" //!< Master branch
 #define REPO_NODE_REVISION_LABEL_REF_FILE               "rFile" //!< Reference file
+#define REPO_NODE_REVISION_LABEL_INCOMPLETE             "incomplete"
 #define REPO_NODE_UUID_SUFFIX_REVISION			"10" //!< uuid suffix
 //------------------------------------------------------------------------------
 
@@ -63,6 +64,12 @@ namespace repo {
 					~RevisionNode();
 
 
+					/**
+					* Clone the revision node, remove the incomplete flag
+					* during the process
+					* @return a clone of the revision node without the flag
+					*/
+					RevisionNode cloneAndRemoveIncompleteFlag() const;
 
 					/**
 					* --------- Convenience functions -----------

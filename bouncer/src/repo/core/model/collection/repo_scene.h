@@ -38,10 +38,20 @@
 #include "../bson/repo_node_texture.h"
 #include "../bson/repo_node_transformation.h"
 
+typedef std::unordered_map<repoUUID, std::vector<repo::core::model::RepoNode*>, RepoUUIDHasher > ParentMap; 
 
 namespace repo{
 	namespace core{
 		namespace model{
+
+			struct RepoUUIDHasher
+			{
+				std::size_t operator()(const repoUUID& uid) const
+				{
+					return boost::hash<boost::uuids::uuid>()(uid);
+				}
+			};
+
 			class REPO_API_EXPORT RepoScene : public AbstractGraph
 			{
 
@@ -61,10 +71,10 @@ namespace repo{
 
 					RepoNode *rootNode;
 					//! A lookup map for the all nodes the graph contains.
-					std::map<repoUUID, RepoNode*> nodesByUniqueID;
-					std::map<repoUUID, repoUUID> sharedIDtoUniqueID; //** mapping of shared ID to Unique ID
-					std::map<repoUUID, std::vector<RepoNode*>> parentToChildren; //** mapping of shared id to its children's shared id
-					std::map<repoUUID, RepoScene*> referenceToScene; //** mapping of reference ID to it's scene graph
+					std::unordered_map<repoUUID, RepoNode*, RepoUUIDHasher > nodesByUniqueID;
+					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher > sharedIDtoUniqueID; //** mapping of shared ID to Unique ID
+					ParentMap parentToChildren; //** mapping of shared id to its children's shared id
+					std::unordered_map<repoUUID, RepoScene*, RepoUUIDHasher > referenceToScene; //** mapping of reference ID to it's scene graph
 				};
 
 
@@ -242,7 +252,10 @@ namespace repo{
 					*/
 					repoUUID getRevisionID() const
 					{
-						return revision;
+						if (revNode)
+							return revNode->getUniqueID();
+						else 
+							return revision;
 					}
 
 					static std::vector<std::string> getProjectExtensions()
@@ -443,17 +456,6 @@ namespace repo{
 
 					/**
 					* Get children nodes of a specified parent
-					* @param parent shared UUID of the parent node
-					* @ return a vector of pointers to children node (potentially none)
-					*/
-					std::vector<RepoNode*>
-						getChildrenAsNodes(const repoUUID &parent) const
-					{
-						return getChildrenAsNodes(GraphType::DEFAULT, parent);
-					}
-
-					/**
-					* Get children nodes of a specified parent
 					* @param g graph to retrieve from
 					* @param parent shared UUID of the parent node
 					* @ return a vector of pointers to children node (potentially none)
@@ -500,11 +502,22 @@ namespace repo{
 						const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 						RepoScene* refScene = nullptr;
 
-						std::map<repoUUID, RepoScene*>::const_iterator it = g.referenceToScene.find(reference);
+						std::unordered_map<repoUUID, RepoScene*, boost::hash<boost::uuids::uuid> >::const_iterator it = g.referenceToScene.find(reference);
 						if (it != g.referenceToScene.end())
 							refScene = it->second;
 						return refScene;
 					}
+
+					/**
+					* Get the texture ID that is associated with the given mesh
+					* if the mesh has no texture, it returns an empty string
+					* @param gType the graph type to search through
+					* @param sharedID shared ID of the mesh
+					* @return returns a string consisting of texture ID
+					*/
+					std::string getTextureIDForMesh(
+						const GraphType &gType,
+						const repoUUID  &sharedID) const;
 
 					/**
 					* --------------------- Scene Lookup ----------------------
@@ -516,7 +529,7 @@ namespace repo{
 					* @return a RepoNodeSet of materials
 					*/
 					RepoNodeSet getAllCameras(
-						const GraphType &gType = GraphType::DEFAULT) const
+						const GraphType &gType) const
 					{
 						return  gType == GraphType::OPTIMIZED ? stashGraph.cameras : graph.cameras;
 					}
@@ -526,7 +539,7 @@ namespace repo{
 					* @return a RepoNodeSet of materials
 					*/
 					RepoNodeSet getAllMaterials(
-						const GraphType &gType = GraphType::DEFAULT) const
+						const GraphType &gType) const
 					{
 						return  gType == GraphType::OPTIMIZED ? stashGraph.materials : graph.materials;
 					}
@@ -546,7 +559,7 @@ namespace repo{
 					* @return a RepoNodeSet of meshes
 					*/
 					RepoNodeSet getAllMeshes(
-						const GraphType &gType = GraphType::DEFAULT) const
+						const GraphType &gType) const
 					{
 						return  gType == GraphType::OPTIMIZED ? stashGraph.meshes : graph.meshes;
 					}
@@ -557,7 +570,7 @@ namespace repo{
 					* @return a RepoNodeSet of metadata
 					*/
 					RepoNodeSet getAllMetadata(
-						const GraphType &gType = GraphType::DEFAULT) const
+						const GraphType &gType) const
 					{
 						return  gType == GraphType::OPTIMIZED ? stashGraph.metadata : graph.metadata;
 					}
@@ -567,7 +580,7 @@ namespace repo{
 					* @return a RepoNodeSet of references
 					*/
 					RepoNodeSet getAllReferences(
-						const GraphType &gType = GraphType::DEFAULT) const
+						const GraphType &gType) const
 					{
 						return  gType == GraphType::OPTIMIZED ? stashGraph.references : graph.references;
 					}
@@ -578,7 +591,7 @@ namespace repo{
 					* @return a RepoNodeSet of textures
 					*/
 					RepoNodeSet getAllTextures(
-						const GraphType &gType = GraphType::DEFAULT) const
+						const GraphType &gType) const
 					{
 						return  gType == GraphType::OPTIMIZED ? stashGraph.textures : graph.textures;
 					}
@@ -588,7 +601,7 @@ namespace repo{
 					* @return a RepoNodeSet of transformations
 					*/
 					RepoNodeSet getAllTransformations(
-						const GraphType &gType = GraphType::DEFAULT) const
+						const GraphType &gType) const
 					{
 						return  gType == GraphType::OPTIMIZED ? stashGraph.transformations : graph.transformations;
 					}
@@ -603,12 +616,15 @@ namespace repo{
 						return std::vector<repoUUID>(newAdded.begin(), newAdded.end());
 					}
 
-					std::set<repoUUID> getAllSharedIDs() const
+					std::set<repoUUID> getAllSharedIDs(
+						const GraphType &gType) const
 					{
 						std::set<repoUUID> sharedIDs;
 
+						const auto &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+
 						boost::copy(
-							graph.sharedIDtoUniqueID | boost::adaptors::map_keys,
+							g.sharedIDtoUniqueID | boost::adaptors::map_keys,
 							std::inserter(sharedIDs, sharedIDs.begin()));
 
 						return sharedIDs;
@@ -650,18 +666,7 @@ namespace repo{
 					{
 						return newRemoved.size() + newAdded.size() + newModified.size();
 					}
-
-					/**
-					* Get the node given the shared ID of this node
-					* @param sharedID shared ID of the node
-					* @return returns a pointer to the node if found.
-					*/
-					RepoNode* getNodeBySharedID(
-						const repoUUID &sharedID) const
-					{
-
-						return getNodeBySharedID(GraphType::DEFAULT, sharedID);
-					}
+					
 
 					/**
 					* Get the node given the shared ID of this node
@@ -703,11 +708,11 @@ namespace repo{
 					* check if Root Node exists
 					* @return returns true if rootNode is not null.
 					*/
-					bool hasRoot(const GraphType &gType = GraphType::DEFAULT) const {
+					bool hasRoot(const GraphType &gType) const {
 						const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph; 
 						return (bool)g.rootNode;
 					}
-					RepoNode* getRoot(const GraphType &gType = GraphType::DEFAULT) const {
+					RepoNode* getRoot(const GraphType &gType) const {
 						const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 						return g.rootNode;
 					}
@@ -717,7 +722,7 @@ namespace repo{
 					* graph representation
 					* @return number of nodes within the graph
 					*/
-					uint32_t getItemsInCurrentGraph(const GraphType &gType = GraphType::DEFAULT) {
+					uint32_t getItemsInCurrentGraph(const GraphType &gType) {
 						const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 						return g.nodesByUniqueID.size();
 					}
@@ -755,7 +760,7 @@ namespace repo{
 						RepoNode						  *newNode,
 						const bool                        &overwrite = false)
 					{
-						modifyNode(gtype, getNodeBySharedID(sharedID), newNode, overwrite);
+						modifyNode(gtype, getNodeBySharedID(gtype, sharedID), newNode, overwrite);
 					}
 
 					/**
@@ -815,20 +820,7 @@ namespace repo{
 						const RepoNodeSet nodes,
 						std::string &errMsg,
 						RepoNodeSet *collection);
-
-					/**
-					* Add node to the following maps: UniqueID -> Node, SharedID -> UniqueID,
-					* Parent->Children.
-					* It will also assign root node if the node has no parent.
-					* @param node pointer to the node to add
-					* @param errMsg error message if it returns false
-					* @return returns true if succeeded
-					*/
-					bool addNodeToMaps(RepoNode *node, std::string &errMsg)
-					{
-						//add to unoptimised graph by default
-						return addNodeToMaps(GraphType::DEFAULT, node, errMsg);
-					}
+					
 
 					/**
 					* Add node to the following maps: UniqueID -> Node, SharedID -> UniqueID,
@@ -910,35 +902,7 @@ namespace repo{
 						const GraphType &gtype,
 						repo::core::handler::AbstractDatabaseHandler *handler, 
 						std::vector<RepoBSON> nodes, 
-						std::string &errMsg);
-
-					/**
-					* Populate the collections with the given node sets
-					* This populates the scene graph information and also track the nodes that are added.
-					* i.e. this assumes the nodes did not exist in the previous revision (if any)
-					* @param cameras Repo Node set of cameras
-					* @param meshes  Repo Node set of meshes
-					* @param materials Repo Node set of materials
-					* @param metadata Repo Node set of metadata
-					* @param textures Repo Node set of textures
-					* @param transformations Repo Node set of transformations
-					* @return returns true if scene graph populated with no errors
-					*/
-					void populateAndUpdate(
-						const RepoNodeSet &cameras,
-						const RepoNodeSet &meshes,
-						const RepoNodeSet &materials,
-						const RepoNodeSet &metadata,
-						const RepoNodeSet &textures,
-						const RepoNodeSet &transformations,
-						const RepoNodeSet &references,
-						const RepoNodeSet &maps,
-						const RepoNodeSet &unknowns)
-					{
-						//populate the non optimised graph by default
-						populateAndUpdate(GraphType::DEFAULT, cameras, meshes, materials, metadata,
-							textures, transformations, references, maps, unknowns);
-					}
+						std::string &errMsg);					
 
 					/**
 					* Populate the collections with the given node sets

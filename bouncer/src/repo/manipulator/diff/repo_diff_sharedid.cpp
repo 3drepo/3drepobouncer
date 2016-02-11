@@ -21,8 +21,9 @@
 using namespace repo::manipulator::diff;
 
 DiffBySharedID::DiffBySharedID(
-	const repo::core::model::RepoScene *base,
-	const repo::core::model::RepoScene *compare) : AbstractDiff(base, compare)
+	const repo::core::model::RepoScene            *base,
+	const repo::core::model::RepoScene            *compare,
+	const repo::core::model::RepoScene::GraphType &gType) : AbstractDiff(base, compare, gType)
 {
 
 	ok = this->compare(msg);
@@ -37,11 +38,11 @@ bool DiffBySharedID::compare(
 	std::string &msg)
 {
 	bool res = false;
-	if (baseScene && compareScene && baseScene->hasRoot() && compareScene->hasRoot())
+	if (baseScene && compareScene && baseScene->hasRoot(gType) && compareScene->hasRoot(gType))
 	{
 
-		std::set<repoUUID> baseIDs = baseScene->getAllSharedIDs();
-		std::set<repoUUID> compIDs = compareScene->getAllSharedIDs();
+		std::set<repoUUID> baseIDs = baseScene->getAllSharedIDs(gType);
+		std::set<repoUUID> compIDs = compareScene->getAllSharedIDs(gType);
 		for (const repoUUID &sharedID : baseIDs)
 		{
 			bool existInComp = compIDs.find(sharedID) != compIDs.end();
@@ -49,8 +50,8 @@ bool DiffBySharedID::compare(
 			if (existInComp)
 			{
 				//either equal or modified
-				repo::core::model::RepoNode *baseNode = baseScene->getNodeBySharedID(sharedID);
-				repo::core::model::RepoNode *compNode = compareScene->getNodeBySharedID(sharedID);
+				repo::core::model::RepoNode *baseNode = baseScene->getNodeBySharedID(gType, sharedID);
+				repo::core::model::RepoNode *compNode = compareScene->getNodeBySharedID(gType, sharedID);
 
 				auto corrIt = baseRes.correspondence.find(sharedID);
 

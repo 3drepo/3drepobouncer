@@ -38,6 +38,14 @@
 //incase we want to change it in the future
 typedef boost::uuids::uuid repoUUID;
 
+struct RepoUUIDHasher
+{
+	std::size_t operator()(const repoUUID& uid) const
+	{
+		return boost::hash<boost::uuids::uuid>()(uid);
+	}
+};
+
 typedef struct{
 	std::vector<float> ambient;
 	std::vector<float> diffuse;
@@ -72,10 +80,7 @@ typedef struct{
 
 }repo_vector2d_t;
 
-typedef struct{
-	uint32_t numIndices;
-	uint32_t *indices;
-}repo_face_t;
+typedef std::vector<uint32_t> repo_face_t;
 
 
 //This is used to map info for multipart optimization
@@ -90,8 +95,10 @@ typedef struct{
 	int32_t       triTo;
 }repo_mesh_mapping_t;
 
+static boost::uuids::random_generator gen;
+
 static repoUUID generateUUID(){
-	return  boost::uuids::random_generator()();
+	return gen();
 }
 
 //FIXME: scope this
@@ -158,12 +165,12 @@ static std::string UUIDtoString(const repoUUID &id)
 static std::string toString(const repo_face_t &f)
 {
 	std::string str;
-	unsigned int mNumIndices = f.numIndices;
+	unsigned int mNumIndices = f.size();
 
 	str += "[";
-	for (unsigned int i = 0; i < f.numIndices; i++)
+	for (unsigned int i = 0; i < mNumIndices; i++)
 	{
-		str += std::to_string(f.indices[i]);
+		str += std::to_string(f[i]);
 		if (i != mNumIndices - 1)
 			str += ", ";
 	}
@@ -221,10 +228,9 @@ static float dotProduct(const repo_vector_t a, const repo_vector_t b)
 	return a.x*b.x + a.y*b.y + a.z*b.z;
 }
 
-static repo_vector_t crossProduct(const repo_vector_t a, const repo_vector_t b)
+static repo_vector_t crossProduct(const repo_vector_t &a, const repo_vector_t &b)
 {
 	repo_vector_t product;
-
 	product.x = (a.y * b.z) - (a.z * b.y);
 	product.y = (a.z * b.x) - (a.x * b.z);
 	product.z = (a.x * b.y) - (a.y * b.x);
@@ -459,9 +465,13 @@ static void normalize(repo_vector_t &a)
 {
 	float length = std::sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
 
-	a.x /= length;
-	a.y /= length;
-	a.z /= length;
+	if (length > 0)
+	{
+		a.x /= length;
+		a.y /= length;
+		a.z /= length;
+	}
+	
 }
 
 static bool nameCheck(const char &c)

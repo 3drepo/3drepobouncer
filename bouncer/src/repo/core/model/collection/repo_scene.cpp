@@ -22,8 +22,8 @@
 #include <fstream>
 #include <boost/filesystem.hpp>
 #include <boost/range/adaptor/map.hpp>
-#include <boost/range/algorithm/copy.hpp>
 #include <boost/assign.hpp>
+#include <boost/bind.hpp>
 
 #include <fstream>
 
@@ -233,7 +233,7 @@ void RepoScene::addMetadata(
 	const bool  &exactMatch)
 {
 
-	std::map<std::string, RepoNode*> transMap;
+	std::unordered_map<std::string, RepoNode*> transMap;
 	//stashed version of the graph does not need to track metadata information
 	for (RepoNode* transformation : graph.transformations)
 	{
@@ -481,6 +481,13 @@ bool RepoScene::commit(
 				{
 					delete revNode;
 				}
+				auto completeRevNode = newRevNode->cloneAndRemoveIncompleteFlag();
+
+				//update revision node
+				handler->upsertDocument(databaseName, projectName + "." + revExt, completeRevNode, true, errMsg);
+
+				newRevNode->swap(completeRevNode);
+
 				revNode = newRevNode;
 				revision = newRevNode->getUniqueID();
 
@@ -542,13 +549,11 @@ bool RepoScene::commitRevisionNode(
 
 	std::vector<repoUUID> uniqueIDs;
 
-	//using boost's range adaptor, retrieve all the keys within this map
-	//http://www.boost.org/doc/libs/1_53_0/libs/range/doc/html/range/reference/adaptors/reference/map_keys.html
-	//revision node should only track non optimised graph members.
-	boost::copy(
-		graph.nodesByUniqueID | boost::adaptors::map_keys,
-		std::back_inserter(uniqueIDs));
-
+	// Using a more standard transform to cope with use of unordered_map
+	for (auto& keyVal: graph.nodesByUniqueID)
+	{
+		uniqueIDs.push_back(keyVal.first);
+	}
 
 	//convert the sets to vectors
 	std::vector<repoUUID> newAddedV(newAdded.begin(), newAdded.end());
@@ -656,13 +661,13 @@ bool RepoScene::commitNodes(
 	size_t count = 0;
 	size_t total = nodesToCommit.size();
 
-	repoTrace << "Committing " << total << " nodes...";
+	repoInfo << "Committing " << total << " nodes...";
 
 	for (const repoUUID &id : nodesToCommit)
 	{
-		if (++count % 100 == 0 || count == total -1)
+		if (++count % 500 == 0 || count == total -1)
 		{
-			repoTrace << "Committing " << id << " (" << count << " of " << total << ")";
+			repoInfo << "Committing " << count << " of " << total ;
 		}
 
 		const repoUUID uniqueID = gType == GraphType::OPTIMIZED ? id : g.sharedIDtoUniqueID[id];
@@ -834,22 +839,38 @@ std::string RepoScene::getBranchName() const
 	return branchName;
 }
 
-//
-//std::vector<repoUUID> RepoScene::getModifiedNodesID() const
-//{
-//	repoTrace << "getting modified nodes...";
-//	std::vector<repoUUID> ids(newAdded.begin(), newAdded.end());
-//
-//	ids.insert(ids.end(), newModified.begin(), newModified.end());
-//	ids.insert(ids.end(), newRemoved.begin() , newRemoved.end());
-//	repoTrace << "Added: " <<
-//		newAdded.size() << " modified: " <<
-//		newModified.size() << " removed: " <<
-//		newRemoved.size();
-//
-//	repoTrace << "# modified nodes : " << ids.size();
-//	return ids;
-//}
+std::string RepoScene::getTextureIDForMesh(
+	const GraphType &gType,
+	const repoUUID  &sharedID) const
+{
+	std::vector<RepoNode*> matNodes = getChildrenNodesFiltered(gType, sharedID, NodeType::MATERIAL);
+
+	/*
+	* NOTE:
+	* This assumes there is only one texture for a mesh.
+	* If this is a multipart mesh where there are multiple submesh,
+	* one assumes they share the same material -> which has the same texture
+	*
+	* Similarly, there will not be a mixed texture/non textured sub meshes
+	* in a single mesh. Thereofre checking the first MatNode is already sufficient
+	* to obtain the texture ID.
+	*
+	* This also assumes there's a 1 to 1 mapping of texture and materials.
+	*
+	* This assumption is valid for the current implementation of multipart
+	*/
+
+	if (matNodes.size())
+	{
+		std::vector<RepoNode*> textureNodes = getChildrenNodesFiltered(
+			gType, matNodes[0]->getSharedID(), NodeType::TEXTURE);
+		if (textureNodes.size())
+			return UUIDtoString(textureNodes[0]->getUniqueID());
+
+	}
+		
+	return "";
+}
 
 std::vector<std::string> RepoScene::getOriginalFiles() const
 {
@@ -1082,7 +1103,7 @@ bool RepoScene::populate(
 
 	repoGraphInstance &g = gtype == GraphType::OPTIMIZED ? stashGraph : graph;
 
-	std::map<repoUUID, RepoNode *> nodesBySharedID;
+	std::unordered_map<repoUUID, RepoNode *, RepoUUIDHasher> nodesBySharedID;
 	for (std::vector<RepoBSON>::const_iterator it = nodes.begin();
 		it != nodes.end(); ++it)
 	{

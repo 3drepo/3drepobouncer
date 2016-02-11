@@ -409,6 +409,22 @@ public:
             repo::core::model::RepoScene        *scene,
             const std::string                   &owner = "");
 
+
+	/**
+	* Insert a binary file into the database (GridFS)
+	* @param token Authentication token
+	* @param database name of the database
+	* @param collection name of the collection (it'll be saved into *.files, *.chunks)
+	* @param  rawData data in the form of byte vector
+	* @param mimeType the MIME type of the data (optional)
+	*/
+	void insertBinaryFileToDatabase(
+		const RepoToken            *token,
+		const std::string          &database,
+		const std::string          &collection,
+		const std::string          &name,
+		const std::vector<uint8_t> &rawData,
+		const std::string          &mimeType = "");
     /**
         * Insert a new role into the database
         * @param token Authentication token
@@ -613,6 +629,26 @@ public:
         */
     repo::core::model::RepoScene* createMapScene(
             const repo::core::model::MapNode &mapNode);
+
+	/**
+	* Generate and commit a SRC encoding for the given scene
+	* This requires the stash to have been generated already
+	* @param token token for authentication
+	* @param scene the scene to generate the src encoding from
+	* @return returns true upon success
+	*/
+	bool generateAndCommitSRCBuffer(
+		const RepoToken                               *token,
+		const repo::core::model::RepoScene            *scene);
+
+	/**
+	* Generate a SRC encoding in the form of a buffer for the given scene
+	* This requires the stash to have been generated already
+	* @param scene the scene to generate the src encoding from
+	* @return returns a buffer in the form of a byte vector
+	*/
+	std::unordered_map<std::string, std::vector<uint8_t>> generateSRCBuffer(
+			const repo::core::model::RepoScene *scene);
 
     /**
         * Get a string of supported file formats for file export

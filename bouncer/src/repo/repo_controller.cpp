@@ -160,16 +160,40 @@ void RepoController::commitScene(
         repo::core::model::RepoScene        *scene,
         const std::string                   &owner)
 {
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        worker->commitScene(token->databaseAd, token->credentials, scene, owner);
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to commit to the database without a database connection!";
-    }
+	if (scene)
+	{
+		if (!(scene->getDatabaseName().empty() || scene->getProjectName().empty()))
+		{
+			if (token)
+			{
+				std::string sceneOwner = owner;
+				if (!token->credentials)
+				{
+					sceneOwner = "ANONYMOUS USER";
+				}
+				manipulator::RepoManipulator* worker = workerPool.pop();
+				worker->commitScene(token->databaseAd, token->credentials, scene, sceneOwner);
+				workerPool.push(worker);
+
+			}
+			else
+			{
+				repoError << "Trying to commit to the database without a database connection!";
+			}
+
+		}
+		else
+		{
+			repoError << "Trying to commit a scene without specifying database/project names.";
+		}
+		
+	}
+	else
+	{
+		repoError << "Trying to commit an empty scene into the database";
+	}
+
+    
 }
 
 uint64_t RepoController::countItemsInCollection(
@@ -436,7 +460,7 @@ RepoController::getDatabasesWithProjects(
         const RepoToken *token,
         const std::list<std::string> &databases)
 {
-    std::map<std::string, std::list<std::string>> map;
+    std::map<std::string, std::list<std::string> > map;
     if (token)
     {
         manipulator::RepoManipulator* worker = workerPool.pop();
@@ -446,11 +470,33 @@ RepoController::getDatabasesWithProjects(
     }
     else
     {
-        repoError << "Trying to insert a user without a database connection!";
+        repoError << "Trying to get database listings without a database connection!";
 
     }
 
     return map;
+}
+
+void RepoController::insertBinaryFileToDatabase(
+	const RepoToken            *token,
+	const std::string          &database,
+	const std::string          &collection,
+	const std::string          &name,
+	const std::vector<uint8_t> &rawData,
+	const std::string          &mimeType)
+{
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		worker->insertBinaryFileToDatabase(token->databaseAd,
+			token->credentials, database, collection, name, rawData, mimeType);
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Trying to save a binary file without a database connection!";
+
+	}
 }
 
 void RepoController::insertRole(
@@ -702,6 +748,42 @@ repo::core::model::RepoScene* RepoController::createMapScene(
     return scene;
 }
 
+bool RepoController::generateAndCommitSRCBuffer(
+	const RepoToken                    *token,
+	const repo::core::model::RepoScene *scene)
+{
+	bool success;
+	if (success = token && scene)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		success = worker->generateAndCommitSRCBuffer(token->databaseAd, token->credentials, scene);
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Failed to generate SRC Buffer.";
+	}
+	return success;
+}
+
+
+std::unordered_map<std::string, std::vector<uint8_t>> RepoController::generateSRCBuffer(
+	const repo::core::model::RepoScene *scene)
+{
+	std::unordered_map<std::string,std::vector<uint8_t>> buffer;
+	if (scene)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		buffer = worker->generateSRCBuffer(scene).srcFiles;
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Failed to generate SRC Buffer.";
+	}
+	return buffer;
+}
+
 std::list<std::string> RepoController::getAdminDatabaseRoles(const RepoToken *token)
 {
     std::list<std::string> roles;
@@ -859,7 +941,9 @@ void RepoController::reduceTransformations(
         const RepoToken              *token,
         repo::core::model::RepoScene *scene)
 {
-    if (token && scene && scene->isRevisioned() && !scene->hasRoot())
+	//We only do reduction optimisations on the unoptimised graph
+	const repo::core::model::RepoScene::GraphType gType = repo::core::model::RepoScene::GraphType::DEFAULT;
+	if (token && scene && scene->isRevisioned() && !scene->hasRoot(gType))
     {
         //If the unoptimised graph isn't fetched, try to fetch full scene before beginning
         //This should be safe considering if it has not loaded the unoptimised graph it shouldn't have
@@ -870,13 +954,13 @@ void RepoController::reduceTransformations(
         workerPool.push(worker);
     }
 
-    if (scene && scene->hasRoot())
+	if (scene && scene->hasRoot(gType))
     {
 
         manipulator::RepoManipulator* worker = workerPool.pop();
-        size_t transNodes_pre = scene->getAllTransformations().size();
+		size_t transNodes_pre = scene->getAllTransformations(gType).size();
         try{
-            worker->reduceTransformations(scene);
+			worker->reduceTransformations(scene, gType);
         }
         catch (const std::exception &e)
         {
@@ -886,7 +970,7 @@ void RepoController::reduceTransformations(
 
         workerPool.push(worker);
         repoInfo << "Optimization completed. Number of transformations has been reduced from "
-                 << transNodes_pre << " to " << scene->getAllTransformations().size();
+			<< transNodes_pre << " to " << scene->getAllTransformations(gType).size();
 
     }
     else{
@@ -904,12 +988,14 @@ void RepoController::compareScenes(
 		const repo::manipulator::diff::Mode       &diffMode
         )
 {
+	//We only do reduction optimisations on the unoptimised graph
+	const repo::core::model::RepoScene::GraphType gType = repo::core::model::RepoScene::GraphType::DEFAULT;
     if (token && base && compare)
     {
         //If the unoptimised graph isn't fetched, try to fetch full scene before beginning
         //This should be safe considering if it has not loaded the unoptimised graph it shouldn't have
         //any uncommited changes.
-        if (base->isRevisioned() && !base->hasRoot())
+		if (base->isRevisioned() && !base->hasRoot(gType))
         {
             repoInfo << "Unoptimised base scene not loaded, trying loading unoptimised scene...";
             manipulator::RepoManipulator* worker = workerPool.pop();
@@ -917,7 +1003,7 @@ void RepoController::compareScenes(
             workerPool.push(worker);
         }
 
-        if (compare->isRevisioned() && !compare->hasRoot())
+		if (compare->isRevisioned() && !compare->hasRoot(gType))
         {
             repoInfo << "Unoptimised compare scene not loaded, trying loading unoptimised scene...";
             manipulator::RepoManipulator* worker = workerPool.pop();
@@ -926,11 +1012,11 @@ void RepoController::compareScenes(
         }
     }
 
-    if (base && base->hasRoot() && compare && compare->hasRoot())
+	if (base && base->hasRoot(gType) && compare && compare->hasRoot(gType))
     {
         repoInfo << "Comparing scenes...";
         manipulator::RepoManipulator* worker = workerPool.pop();
-        worker->compareScenes(base, compare, baseResults, compResults, diffMode);
+        worker->compareScenes(base, compare, baseResults, compResults, diffMode, gType);
         workerPool.push(worker);
     }
     else{

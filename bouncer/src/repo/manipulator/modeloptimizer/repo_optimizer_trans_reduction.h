@@ -50,6 +50,8 @@ namespace repo {
 
 
 			private:
+				const repo::core::model::RepoScene::GraphType gType;
+
 				/**
 				* Apply optimization on the mesh, given
 				* it satisfies the condition for the optimisation to happen

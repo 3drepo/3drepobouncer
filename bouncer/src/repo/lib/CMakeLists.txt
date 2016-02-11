@@ -8,14 +8,18 @@ set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_broadcaster.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_log.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_property_tree.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_stack.cpp
 	CACHE STRING "SOURCES" FORCE)
 
 set(HEADERS
 	${HEADERS}
+	${CMAKE_CURRENT_SOURCE_DIR}/json_parser.h
+	${CMAKE_CURRENT_SOURCE_DIR}/json_parser_write.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_broadcaster.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_listener_abstract.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_log.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_property_tree.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_stack.h
 	CACHE STRING "HEADERS" FORCE)
 

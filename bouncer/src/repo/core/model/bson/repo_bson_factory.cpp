@@ -181,6 +181,7 @@ MapNode RepoBSONFactory::makeMapNode(
         const float           &longitude,
         const float           &latitude,
         const repo_vector_t   &centrePoint,
+		const std::string     &apiKey,
         const std::string     &name,
         const int             &apiLevel)
 {
@@ -211,6 +212,10 @@ MapNode RepoBSONFactory::makeMapNode(
     // trans
     map_builder << REPO_NODE_MAP_LABEL_TRANS << BSON_ARRAY(centrePoint.x << centrePoint.y << centrePoint.z);
     //--------------------------------------------------------------------------
+	// API Key (temporary, needs to be removed when x3dom can plug it in on the fly.
+	if (!apiKey.empty())
+		map_builder << REPO_NODE_MAP_LABEL_APIKEY << apiKey;
+	//--------------------------------------------------------------------------
     return map_builder.obj();
 }
 
@@ -389,14 +394,15 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
         std::vector<uint32_t> facesLevel1;
         for (auto &face : faces){
-            if (face.numIndices == 0)
+			auto nIndices = face.size();
+			if (!nIndices)
             {
                 repoWarning << "number of indices in this face is 0!";
             }
-            facesLevel1.push_back(face.numIndices);
-            for (uint32_t ind = 0; ind < face.numIndices; ind++)
+			facesLevel1.push_back(nIndices);
+			for (uint32_t ind = 0; ind < nIndices; ind++)
             {
-                facesLevel1.push_back(face.indices[ind]);
+                facesLevel1.push_back(face[ind]);
             }
         }
 
@@ -706,9 +712,7 @@ RepoUser RepoBSONFactory::makeRepoUser(
         const std::string                           &firstName,
         const std::string                           &lastName,
         const std::string                           &email,
-        const std::list<std::pair<std::string, std::string>>  &projects,
         const std::list<std::pair<std::string, std::string>>   &roles,
-        const std::list<std::pair<std::string, std::string>>   &groups,
         const std::list<std::pair<std::string, std::string>>   &apiKeys,
         const std::vector<char>                     &avatar)
 {
@@ -735,13 +739,7 @@ RepoUser RepoBSONFactory::makeRepoUser(
     if (!email.empty())
         customDataBuilder << REPO_USER_LABEL_EMAIL << email;
 
-    if (projects.size())
-        customDataBuilder.appendArrayPair(REPO_USER_LABEL_PROJECTS, projects, REPO_USER_LABEL_OWNER, REPO_USER_LABEL_PROJECT);
-
-    if (groups.size())
-        customDataBuilder.appendArrayPair(REPO_USER_LABEL_GROUPS, groups, REPO_USER_LABEL_OWNER, REPO_USER_LABEL_GROUP);
-
-    if (!apiKeys.empty())
+	if (!apiKeys.empty())
         customDataBuilder.appendArrayPair(REPO_USER_LABEL_API_KEYS, apiKeys, REPO_USER_LABEL_LABEL, REPO_USER_LABEL_KEY);
 
     if (avatar.size())
@@ -843,6 +841,11 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
     // Current Unique IDs
     if (currentNodes.size() > 0)
         builder.appendArray(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS, currentNodes);
+
+	////--------------------------------------------------------------------------
+	//// Upload In Progress flag
+	builder << REPO_NODE_REVISION_LABEL_INCOMPLETE << true;
+
 
     ////--------------------------------------------------------------------------
     //// Added Shared IDs

@@ -21,10 +21,12 @@
 using namespace repo::manipulator::diff;
 
 AbstractDiff::AbstractDiff(
-	const repo::core::model::RepoScene *base,
-	const repo::core::model::RepoScene *compare) :
+	const repo::core::model::RepoScene            *base,
+	const repo::core::model::RepoScene            *compare,
+	const repo::core::model::RepoScene::GraphType &gType) :
 	baseScene(base),
-	compareScene(compare)
+	compareScene(compare),
+	gType(gType)
 {
 }
 

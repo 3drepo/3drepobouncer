@@ -126,8 +126,18 @@ namespace repo {
 					* Create a new copy of the node and update its mesh mapping
 					* @return returns a new meshNode with the new mappings
 					*/
-					MeshNode cloneAndUpdateMeshMapping(const std::vector<repo_mesh_mapping_t> &vec);
+					MeshNode cloneAndUpdateMeshMapping(
+						const std::vector<repo_mesh_mapping_t> &vec,
+						const bool                             &overwrite = false);
 
+					/**
+					* Remap the submeshes to 
+					*/
+					MeshNode cloneAndRemapMeshMapping(
+						const size_t verticeThreshold,
+						std::vector<uint16_t> &newFaces,
+						std::vector<std::vector<float>> &idMapBuf,
+						std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> &splitMap) const;
 
 
 					
@@ -136,14 +146,22 @@ namespace repo {
 					*/
 
 					/**
+					* Retrieve the bounding box of this mesh
+					* @return returns a vector of size 2, containing the bounding box.
+					*/
+					std::vector<repo_vector_t> getBoundingBox() const;
+
+					static std::vector<repo_vector_t> getBoundingBox(RepoBSON &bbArr);
+
+					/**
 					* Retrieve a vector of Colors from the bson object
 					*/
-					std::vector<repo_color4d_t>* getColors() const;
+					std::vector<repo_color4d_t> getColors() const;
 
 					/**
 					* Retrieve a vector of faces from the bson object
 					*/
-					std::vector<repo_face_t>* getFaces() const;
+					std::vector<repo_face_t> getFaces() const;
 
 
 					std::vector<repo_mesh_mapping_t> getMeshMapping() const;
@@ -151,23 +169,23 @@ namespace repo {
 					/**
 					* Retrieve a vector of vertices from the bson object
 					*/
-					std::vector<repo_vector_t>* getNormals() const;
+					std::vector<repo_vector_t> getNormals() const;
 
 					/**
 					* Retrieve a vector of UV Channels from the bson object
 					*/
-					std::vector<repo_vector2d_t>* getUVChannels() const;
+					std::vector<repo_vector2d_t> getUVChannels() const;
 
 					/**
 					* Retrieve a vector of UV Channels, separated by channels
 					*/
-					std::vector<std::vector<repo_vector2d_t>>* getUVChannelsSeparated() const;
+					std::vector<std::vector<repo_vector2d_t>> getUVChannelsSeparated() const;
 
 
 					/**
 					* Retrieve a vector of vertices from the bson object
 					*/
-					std::vector<repo_vector_t>* getVertices() const;
+					std::vector<repo_vector_t> getVertices() const;
 
 				private:
 					/**

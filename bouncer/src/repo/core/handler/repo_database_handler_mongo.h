@@ -352,6 +352,7 @@ namespace repo{
 				* @param fileName to insert (has to be unique)
 				* @param bin raw binary of the file
 				* @param errMsg error message if it fails
+				* @param contentType the MIME type of the object (optional)
 				* @return returns true upon success
 				*/
 				bool insertRawFile(
@@ -359,7 +360,8 @@ namespace repo{
 					const std::string          &collection,
 					const std::string          &fileName,
 					const std::vector<uint8_t> &bin,
-					      std::string          &errMsg
+					      std::string          &errMsg,
+					const std::string          &contentType = ""
 					);
 
 				/**

@@ -27,7 +27,7 @@ namespace repo{
 			struct DiffResult{
 				std::vector<repoUUID> added; //nodes that does not exist on the other model
 				std::vector<repoUUID> modified; //nodes that exist on the other model but it is modified.
-				std::map<repoUUID, repoUUID> correspondence;
+				std::unordered_map<repoUUID, repoUUID, boost::hash<boost::uuids::uuid> > correspondence;
 			};
 
 			enum class Mode{ DIFF_BY_ID, DIFF_BY_NAME };
@@ -39,10 +39,13 @@ namespace repo{
 				* Construct a diff comparator given the 2 scenes supplied
 				* @param base base scene to compare from
 				* @param compare scene to compare against
+				* @param gType graph type to diff
 				*/
 				AbstractDiff(
-					const repo::core::model::RepoScene *base,
-					const repo::core::model::RepoScene *compare);
+					const repo::core::model::RepoScene            *base,
+					const repo::core::model::RepoScene            *compare,
+					const repo::core::model::RepoScene::GraphType &gType
+					);
 				virtual ~AbstractDiff();
 
 				/**
@@ -72,8 +75,9 @@ namespace repo{
 
 
 			protected:
-				const repo::core::model::RepoScene *baseScene;
-				const repo::core::model::RepoScene *compareScene;
+				const repo::core::model::RepoScene           *baseScene;
+				const repo::core::model::RepoScene           *compareScene;
+				const repo::core::model::RepoScene::GraphType gType;
 				DiffResult baseRes, compRes;
 
 			};

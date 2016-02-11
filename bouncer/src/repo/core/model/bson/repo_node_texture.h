@@ -74,7 +74,7 @@ namespace repo {
 					* Retrieve texture image as raw data
 					* @return returns a pointer to the image (represented as char)
 					*/
-					std::vector<char>* getRawData() const;
+					std::vector<char> getRawData() const;
 
 					std::string getFileExtension() const;
 

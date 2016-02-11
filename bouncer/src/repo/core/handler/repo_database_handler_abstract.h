@@ -184,12 +184,13 @@ namespace repo{
 
 
 				/**
-				* Insert big raw file in binary format 
+				* Insert big raw file in binary format (using GridFS)
 				* @param database name
 				* @param collection name
 				* @param fileName to insert (has to be unique)
 				* @param bin raw binary of the file
 				* @param errMsg error message if it fails
+				* @param contentType the MIME type of the object (optional)
 				* @return returns true upon success
 				*/
 				virtual bool insertRawFile(
@@ -197,7 +198,8 @@ namespace repo{
 					const std::string          &collection,
 					const std::string          &fileName,
 					const std::vector<uint8_t> &bin,
-					std::string          &errMsg
+					std::string          &errMsg,
+					const std::string          &contentType = ""
 					) = 0;
 
 
