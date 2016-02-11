@@ -160,16 +160,40 @@ void RepoController::commitScene(
         repo::core::model::RepoScene        *scene,
         const std::string                   &owner)
 {
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        worker->commitScene(token->databaseAd, token->credentials, scene, owner);
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to commit to the database without a database connection!";
-    }
+	if (scene)
+	{
+		if (!(scene->getDatabaseName().empty() || scene->getProjectName().empty()))
+		{
+			if (token)
+			{
+				std::string sceneOwner = owner;
+				if (!token->credentials)
+				{
+					sceneOwner = "ANONYMOUS USER";
+				}
+				manipulator::RepoManipulator* worker = workerPool.pop();
+				worker->commitScene(token->databaseAd, token->credentials, scene, sceneOwner);
+				workerPool.push(worker);
+
+			}
+			else
+			{
+				repoError << "Trying to commit to the database without a database connection!";
+			}
+
+		}
+		else
+		{
+			repoError << "Trying to commit a scene without specifying database/project names.";
+		}
+		
+	}
+	else
+	{
+		repoError << "Trying to commit an empty scene into the database";
+	}
+
+    
 }
 
 uint64_t RepoController::countItemsInCollection(
