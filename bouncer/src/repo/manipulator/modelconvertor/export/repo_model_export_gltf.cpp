@@ -1015,11 +1015,13 @@ void GLTFModelExport::debug() const
 	fwrite(jsonFile.c_str(), 1, jsonFile.size(), fp);
 	fclose(fp);
 
-	auto it2 = fullDataBuffer.begin();
-	
-	filePath = dir + it2->first + ".bin";
-	fopen(filePath.c_str(), "wb");
-	std::vector<uint8_t> buffer = it2->second;
-	fwrite(it2->second.data(), 1,it2->second.size(), fp);
-	fclose(fp);
+	for (const auto &pair : fullDataBuffer)
+	{
+		filePath = dir + pair.first + ".bin";
+		fopen(filePath.c_str(), "wb");
+		std::vector<uint8_t> buffer = pair.second;
+		fwrite(pair.second.data(), 1, pair.second.size(), fp);
+		fclose(fp);
+	}
+
 }
