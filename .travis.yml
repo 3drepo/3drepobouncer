@@ -36,12 +36,14 @@ install:
     - sudo pip install cpp-coveralls    
 before_script:
     - ls
-    - MONGO_ROOT=$HOME/mongo-cxx cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DCMAKE_BUILD_TYPE=Release .
+    - mkdir build
+    - cd build
+    - MONGO_ROOT=$HOME/mongo-cxx cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DCMAKE_BUILD_TYPE=Release ../
 script:
     - sudo make -j2 install
     - LD_LIBRARY_PATH=$HOME/mongo-cxx/lib/:/usr/local/lib:$LD_LIBRARY_PATH 3drepobouncerTest
 after_success:
-    - coveralls --root . -E ".*CMakeFiles.*" -E "test/*.cpp*" -E "submodules/*" -E "cmake_modules/*" -E "tools/*"
+    - coveralls --root ../ -e "test" -e "submodules" -e "cmake_modules" -e "tools"
 notifications:
     email: 
         recipients:
