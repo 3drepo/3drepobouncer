@@ -118,6 +118,7 @@ static const uint32_t GLTF_PRIM_TYPE_ELEMENT_ARRAY_BUFFER = 34963;
 
 static const uint32_t GLTF_COMP_TYPE_USHORT = 5123;
 static const uint32_t GLTF_COMP_TYPE_FLOAT  = 5126;
+static const uint32_t GLTF_COMP_TYPE_FLOAT_VEC2 = 35664;
 static const uint32_t GLTF_COMP_TYPE_FLOAT_VEC3 = 35665;
 static const uint32_t GLTF_COMP_TYPE_FLOAT_VEC4 = 35666;
 static const uint32_t GLTF_COMP_TYPE_FLOAT_MAT3 = 35675;
@@ -990,6 +991,9 @@ void GLTFModelExport::writeDefaultTechnique(
 	tree.addToTree(paramlabel + ".position." + GLTF_LABEL_SEMANTIC, GLTF_LABEL_POSITION);
 	tree.addToTree(paramlabel + ".position." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT_VEC3);
 
+	tree.addToTree(paramlabel + ".texcoord0." + GLTF_LABEL_SEMANTIC, GLTF_LABEL_TEXCOORD + "_0");
+	tree.addToTree(paramlabel + ".texcoord0." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT_VEC2);
+
 	tree.addToTree(paramlabel + ".projectionMatrix." + GLTF_LABEL_SEMANTIC, "PROJECTION");
 	tree.addToTree(paramlabel + ".projectionMatrix." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT_MAT4);
 
@@ -1017,6 +1021,7 @@ void GLTFModelExport::writeDefaultTechnique(
 	const std::string attriLabel = label + "." + GLTF_LABEL_ATTRIBUTES;
 	tree.addToTree(attriLabel + ".a_normal", "normal");
 	tree.addToTree(attriLabel + ".a_position", "position");
+	tree.addToTree(attriLabel + ".a_texcoord0", "texcoord0");
 
 	//========== DEFAULT PROGRAM =========
 	const std::string programLabel = GLTF_LABEL_PROGRAMS + "." + REPO_GLTF_DEFAULT_PROGRAM;
