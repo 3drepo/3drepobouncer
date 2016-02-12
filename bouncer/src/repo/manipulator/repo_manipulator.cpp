@@ -194,21 +194,22 @@ void RepoManipulator::commitScene(
 }
 
 void RepoManipulator::compareScenes(
-	repo::core::model::RepoScene       *base,
-	repo::core::model::RepoScene       *compare,
-	repo::manipulator::diff::DiffResult &baseResults,
-	repo::manipulator::diff::DiffResult &compResults,
-	const diff::Mode					&diffMode)
+	repo::core::model::RepoScene                  *base,
+	repo::core::model::RepoScene                  *compare,
+	repo::manipulator::diff::DiffResult           &baseResults,
+	repo::manipulator::diff::DiffResult           &compResults,
+	const diff::Mode					          &diffMode,
+	const repo::core::model::RepoScene::GraphType &gType)
 {
 	diff::AbstractDiff *diff = nullptr; 
 	
 	switch (diffMode)
 	{
 	case diff::Mode::DIFF_BY_ID:
-		diff = new diff::DiffBySharedID(base, compare);
+		diff = new diff::DiffBySharedID(base, compare, gType);
 		break;
 	case diff::Mode::DIFF_BY_NAME:
-		diff = new diff::DiffByName(base, compare);
+		diff = new diff::DiffByName(base, compare, gType);
 		break;
 	default:
 		repoError << "Unknown diff mode: " << (int)diffMode;
@@ -800,9 +801,10 @@ void RepoManipulator::insertUser(
 }
 
 void RepoManipulator::reduceTransformations(
-	repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene,
+	const repo::core::model::RepoScene::GraphType &gType)
 {
-	if (scene && scene->hasRoot())
+	if (scene && scene->hasRoot(gType))
 	{
 		modeloptimizer::TransformationReductionOptimizer optimizer;
 

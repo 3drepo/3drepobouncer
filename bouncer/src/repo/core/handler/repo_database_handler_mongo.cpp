@@ -161,6 +161,20 @@ repo::core::model::RepoBSON MongoDatabaseHandler::createRepoBSON(
 	return repo::core::model::RepoBSON(obj, binMap);
 }
 
+void MongoDatabaseHandler::disconnectHandler()
+{
+	if (handler)
+	{
+		repoInfo << "Disconnecting from database...";
+		delete handler;
+		handler = nullptr;
+	}
+	else
+	{
+		repoTrace << "Attempting to disconnect a handler without ever instantiating it!";
+	}
+}
+
 bool MongoDatabaseHandler::dropCollection(
 	const std::string &database,
 	const std::string &collection,

@@ -297,9 +297,9 @@ public:
     * @param user name of the user who is commiting this project
     * @param branch UUID of the branch
     * @param currentNodes vector of current nodes (unique IDs)
-    * @param added    vector of what nodes are added    (shared IDs)
-    * @param removed  vector of what nodes are deleted  (shared IDs)
-    * @param modified vector of what nodes are modified (shared IDs)
+    //* @param added    vector of what nodes are added    (shared IDs)
+    //* @param removed  vector of what nodes are deleted  (shared IDs)
+    //* @param modified vector of what nodes are modified (shared IDs)
     * @param files    vector of the original files for this model
     * @param parent   UUID of parent (in a vector)
     * @param message  A message to describe what this commit is for (optional)
@@ -312,9 +312,9 @@ public:
             const std::string			   &user,
             const repoUUID                 &branch,
             const std::vector<repoUUID>    &currentNodes,
-            const std::vector<repoUUID>    &added,
-            const std::vector<repoUUID>    &removed,
-            const std::vector<repoUUID>    &modified,
+            //const std::vector<repoUUID>    &added,
+            //const std::vector<repoUUID>    &removed,
+            //const std::vector<repoUUID>    &modified,
             const std::vector<std::string> &files = std::vector<std::string>(),
             const std::vector<repoUUID>    &parent = std::vector<repoUUID>(),
             const std::string              &message = std::string(),

@@ -37,10 +37,13 @@ namespace repo{
 				* Construct a diff comparator given the 2 scenes supplied
 				* @param base base scene to compare from
 				* @param compare scene to compare against
+				* @param gType graph type to diff (default: unoptimised)
 				*/
 				DiffBySharedID(
 					const repo::core::model::RepoScene *base,
-					const repo::core::model::RepoScene *compare);
+					const repo::core::model::RepoScene *compare,
+					const repo::core::model::RepoScene::GraphType &gType
+					= repo::core::model::RepoScene::GraphType::DEFAULT);
 				virtual ~DiffBySharedID();
 
 				/**

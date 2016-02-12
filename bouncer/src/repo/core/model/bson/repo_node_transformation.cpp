@@ -97,11 +97,13 @@ std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) cons
 		matrixObj.getFieldNames(mFields);
 		for (auto &field : mFields)
 		{
+			rowInd = std::stoi(field);
 			RepoBSON arrayObj = matrixObj.getField(field).embeddedObject();
 			std::set<std::string> aFields;
 			arrayObj.getFieldNames(aFields);
 			for (auto &aField : aFields)
 			{
+				colInd = std::stoi(aField);
 
 				//figure out the index depending on if it's row or col major
 				uint32_t index;
@@ -123,11 +125,8 @@ std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) cons
 				{
 					repoError << "Unexpected type within transformation matrix!";
 				}
-
-				++colInd;
 			}
-			colInd = 0;
-			++rowInd;
+
 		}
 
 

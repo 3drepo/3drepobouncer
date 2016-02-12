@@ -39,8 +39,9 @@ AssimpModelExport::~AssimpModelExport()
 }
 
 aiScene* AssimpModelExport::convertToAssimp(
-	const repo::core::model::RepoScene *scene,
-	repo::core::model::RepoNodeSet &textNodes)
+	const repo::core::model::RepoScene            *scene,
+	repo::core::model::RepoNodeSet                &textNodes,
+	const repo::core::model::RepoScene::GraphType &gType)
 {
 
 
@@ -49,7 +50,7 @@ aiScene* AssimpModelExport::convertToAssimp(
 	std::vector<aiMaterial*>                  matVec;
 	std::vector<aiCamera*>                    camVec;
 	aiNode *rootNode = constructAiSceneRecursively(
-		scene, scene->getRoot(),
+		scene, scene->getRoot(gType),
 		meshVec, matVec, camVec,
 		textNodes);
 
@@ -104,19 +105,20 @@ aiScene* AssimpModelExport::convertToAssimp(
 }
 
 aiNode* AssimpModelExport::constructAiSceneRecursively(
-	const repo::core::model::RepoScene *scene,
-	const repo::core::model::RepoNode   *currNode,
-	std::vector<aiMesh*>                      &meshVec,
-	std::vector<aiMaterial*>                  &matVec,
-	std::vector<aiCamera*>                    &camVec,
-	repo::core::model::RepoNodeSet &textNodes)
+	const repo::core::model::RepoScene            *scene,
+	const repo::core::model::RepoNode             *currNode,
+	std::vector<aiMesh*>                          &meshVec,
+	std::vector<aiMaterial*>                      &matVec,
+	std::vector<aiCamera*>                        &camVec,
+	repo::core::model::RepoNodeSet                &textNodes,
+	const repo::core::model::RepoScene::GraphType &gType)
 {
 	std::unordered_map<repoUUID, aiMesh*, RepoUUIDHasher>     meshMap;
 	std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher> matMap;
 	std::unordered_map<repoUUID, aiCamera*, RepoUUIDHasher>   camMap;
 
 	return constructAiSceneRecursively(scene, currNode, meshVec, matVec, camVec,
-		meshMap, matMap, camMap, textNodes);
+		meshMap, matMap, camMap, textNodes, gType);
 }
 
 aiNode* AssimpModelExport::constructAiSceneRecursively(
@@ -128,7 +130,8 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 	std::unordered_map<repoUUID, aiMesh*, RepoUUIDHasher>     &meshMap,
 	std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher> &matMap,
 	std::unordered_map<repoUUID, aiCamera*, RepoUUIDHasher>   &camMap,
-	repo::core::model::RepoNodeSet                            &textNodes)
+	repo::core::model::RepoNodeSet                            &textNodes,
+	const repo::core::model::RepoScene::GraphType             &gType)
 {
 	/*
 	* Assumptions:
@@ -169,7 +172,7 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 
 				// Find Mesh/Camera childs
 				std::vector<uint32_t> meshIndices;
-				for (const auto & child : scene->getChildrenAsNodes(currNode->getSharedID()))
+				for (const auto & child : scene->getChildrenAsNodes(gType, currNode->getSharedID()))
 				{
 					repoUUID childSharedID = child->getSharedID();
 
@@ -239,7 +242,7 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 			//FIXME: default?
 			const repo::core::model::RepoScene *refScene =
 				scene->getSceneFromReference(repo::core::model::RepoScene::GraphType::DEFAULT, currNode->getSharedID());
-			node = constructAiSceneRecursively(refScene, refScene->getRoot(),
+			node = constructAiSceneRecursively(refScene, refScene->getRoot(gType),
 				meshVec, matVec, camVec, meshMap, matMap, camMap, textNodes);
 		}
 			break;
@@ -251,7 +254,7 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 		{
 			//deal with the children
 			std::vector<aiNode*> children;
-			for (const auto & child : scene->getChildrenAsNodes(currNode->getSharedID()))
+			for (const auto & child : scene->getChildrenAsNodes(gType, currNode->getSharedID()))
 			{
 				aiNode *aiChild = constructAiSceneRecursively(scene, child,
 					meshVec, matVec, camVec, meshMap, matMap, camMap, textNodes);
@@ -277,9 +280,9 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 }
 
 aiCamera* AssimpModelExport::convertCamera(
-	const repo::core::model::RepoScene *scene,
+	const repo::core::model::RepoScene  *scene,
 	const repo::core::model::CameraNode *camNode,
-	const std::string                         &name)
+	const std::string                   &name)
 {
 	if (!scene || !camNode) return nullptr;
 
@@ -326,9 +329,10 @@ aiCamera* AssimpModelExport::convertCamera(
 }
 
 aiMaterial* AssimpModelExport::convertMaterial(
-	const repo::core::model::RepoScene *scene,
-	const repo::core::model::MaterialNode *matNode,
-	repo::core::model::RepoNodeSet &textNodes)
+	const repo::core::model::RepoScene            *scene,
+	const repo::core::model::MaterialNode         *matNode,
+	repo::core::model::RepoNodeSet                &textNodes,
+	const repo::core::model::RepoScene::GraphType &gType)
 {
 
 	if (!matNode || !scene) return nullptr;
@@ -397,7 +401,7 @@ aiMaterial* AssimpModelExport::convertMaterial(
 	//--------------------------------------------------------------------------
 	// Diffuse texture
 	// 3D Repo supports only diffuse textures at the moment
-	for (const auto &child : scene->getChildrenAsNodes(matNode->getSharedID()))
+	for (const auto &child : scene->getChildrenAsNodes(gType, matNode->getSharedID()))
 	{
 		if (child->getTypeAsEnum() == repo::core::model::NodeType::TEXTURE)
 		{
@@ -418,11 +422,12 @@ aiMaterial* AssimpModelExport::convertMaterial(
 }
 
 aiMesh* AssimpModelExport::convertMesh(
-	const repo::core::model::RepoScene *scene,
-	const repo::core::model::MeshNode   *meshNode,
-	std::vector<aiMaterial*>                  &matVec,
-	std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher>           &matMap,
-	repo::core::model::RepoNodeSet &textNodes)
+	const repo::core::model::RepoScene                        *scene,
+	const repo::core::model::MeshNode                         *meshNode,
+	std::vector<aiMaterial*>                                  &matVec,
+	std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher> &matMap,
+	repo::core::model::RepoNodeSet                            &textNodes,
+	const repo::core::model::RepoScene::GraphType             &gType)
 {
 	if (!meshNode || !scene) return nullptr;
 
@@ -548,7 +553,7 @@ aiMesh* AssimpModelExport::convertMesh(
 	//
 	// In assimp, mesh would be expected to have only one child.
 	// If multiple children materials are found, takes the first one
-	for (const auto & child : scene->getChildrenAsNodes(meshNode->getSharedID()))
+	for (const auto & child : scene->getChildrenAsNodes(gType, meshNode->getSharedID()))
 	{
 		if (child->getTypeAsEnum() == repo::core::model::NodeType::MATERIAL)
 		{
@@ -572,7 +577,7 @@ aiMesh* AssimpModelExport::convertMesh(
 }
 
 bool AssimpModelExport::writeSceneToFile(
-	const aiScene *scene,
+	const aiScene     *scene,
 	const std::string &filePath)
 {
 	bool success = false;
@@ -650,7 +655,7 @@ bool AssimpModelExport::writeSceneToFile(
 
 bool AssimpModelExport::exportToFile(
 	const repo::core::model::RepoScene *scene,
-	const std::string &filePath)
+	const std::string                  &filePath)
 {
 	bool success = true;
 	repo::core::model::RepoNodeSet textureNodes;
@@ -658,8 +663,6 @@ bool AssimpModelExport::exportToFile(
 
 	if (assimpScene)
 	{
-		showDebug(assimpScene);
-
 		success = writeSceneToFile(assimpScene, filePath);
 		writeTexturesToFiles(textureNodes, filePath);
 
@@ -713,7 +716,7 @@ std::string AssimpModelExport::getSupportedFormats()
 
 bool AssimpModelExport::writeTexturesToFiles(
 	const repo::core::model::RepoNodeSet &nodes,
-	const std::string &filePath)
+	const std::string                    &filePath)
 {
 	bool success = true;
 	boost::filesystem::path path(filePath);
@@ -747,68 +750,4 @@ bool AssimpModelExport::writeTexturesToFiles(
 	}
 
 	return success;
-}
-
-void AssimpModelExport::showDebug(
-	const aiScene *assimpScene)
-{
-	std::cout << "================== Assimp Scene Statistics ===============" << std::endl;
-	if (assimpScene)
-	{
-		std::cout << "Debug Flags" << assimpScene->mFlags << std::endl;
-		std::cout << "#Meshes" << assimpScene->mNumMeshes << std::endl;
-		std::cout << "#Materials" << assimpScene->mNumMaterials << std::endl;
-		std::cout << "#Cameras" << assimpScene->mNumCameras << std::endl;
-		aiNode *root = assimpScene->mRootNode;
-		showNodeDebug(root, 0, assimpScene);
-
-	}
-	else
-	{
-		std::cout << "This assimp scene is null" << std::endl;
-	}
-
-	std::cout << "==========================================================" << std::endl;
-}
-
-void AssimpModelExport::showNodeDebug(
-	const aiNode *node,
-	const uint32_t &level,
-	const aiScene *assimpScene)
-{
-	if (node)
-	{
-		std::cout << "Node Level :" << level << std::endl;
-		std::cout << "\t#Children : " << node->mNumChildren << std::endl;
-		std::cout << "\t#Meshes : " << node->mNumMeshes << std::endl;
-
-		for (uint32_t i = 0; i < node->mNumMeshes; i++)
-		{
-
-			std::cout << "Mesh # : " << i << " (index =  "  << node->mMeshes[i] << ") "<< std::endl;
-			showMeshDebug(assimpScene->mMeshes[node->mMeshes[i]]);
-		}
-
-		for (uint32_t i = 0; i < node->mNumChildren; i++)
-		{
-			showNodeDebug(node->mChildren[i], level + 1, assimpScene);
-		}
-	}
-
-}
-
-void AssimpModelExport::showMeshDebug(
-	const aiMesh *mesh)
-{
-	if (mesh)
-	{
-		std::cout << "Mesh info:" << std::endl;
-		std::cout << "\t#Vertices" << mesh->mNumVertices << std::endl;
-		std::cout << "\t#Faces" << mesh->mNumFaces << std::endl;
-		std::cout << "\t#UVs" << mesh->mNumUVComponents[2] << std::endl;
-	}
-	else
-	{
-		std::cout << "NULL PTR to mesh! " << std::endl;
-	}
 }
