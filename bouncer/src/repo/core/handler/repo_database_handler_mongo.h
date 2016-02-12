@@ -80,19 +80,7 @@ namespace repo{
 				* Disconnects the handler and resets the instance
 				* Must call this before trying to reconnect to another database!
 				*/
-				static void disconnectHandler()
-				{
-					if (handler)
-					{
-						repoInfo << "Disconnecting from database...";
-						delete handler;
-						handler = nullptr;
-					}
-					else
-					{
-						repoTrace << "Attempting to disconnect a handler without ever instantiating it!";
-					}
-				}
+				static void disconnectHandler();
 
 				/**
 				 * Returns the instance of MongoDatabaseHandler
