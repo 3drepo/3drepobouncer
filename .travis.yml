@@ -43,7 +43,7 @@ script:
     - sudo make -j2 install
     - LD_LIBRARY_PATH=$HOME/mongo-cxx/lib/:/usr/local/lib:$LD_LIBRARY_PATH 3drepobouncerTest
 after_success:
-    - coveralls --root . -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "/usr/include/" -e "mongo/mongo-cxx" -e "assimp"
+    - coveralls --root . -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "/usr/include/" -e "mongo" -e "assimp"
 notifications:
     email: 
         recipients:
