@@ -800,9 +800,9 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
         const std::string			   &user,
         const repoUUID                 &branch,
         const std::vector<repoUUID>    &currentNodes,
-        const std::vector<repoUUID>    &added,
-        const std::vector<repoUUID>    &removed,
-        const std::vector<repoUUID>    &modified,
+        //const std::vector<repoUUID>    &added,
+        //const std::vector<repoUUID>    &removed,
+        //const std::vector<repoUUID>    &modified,
         const std::vector<std::string> &files,
         const std::vector<repoUUID>    &parent,
         const std::string              &message,
@@ -909,7 +909,8 @@ TextureNode RepoBSONFactory::makeTextureNode(
 	{
 		boost::filesystem::path file{ name };
 		std::string ext = file.extension().string();
-		builder << REPO_NODE_LABEL_EXTENSION << ext.substr(1, ext.size());
+		if (!ext.empty())
+			builder << REPO_NODE_LABEL_EXTENSION << ext.substr(1, ext.size());
 	}
     //
     // Data

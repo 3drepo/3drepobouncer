@@ -30,6 +30,11 @@ static bool compareVectors(const repo_vector_t &v1, const repo_vector_t &v2)
 	return v1.x == v2.x && v1.y == v2.y && v1.z == v2.z;
 }
 
+static bool compareVectors(const repo_color4d_t &v1, const repo_color4d_t &v2)
+{
+	return v1.r == v2.r && v1.g == v2.g && v1.b == v2.b && v1.a == v2.a;
+}
+
 template <typename T>
 static bool compareVectors(const std::vector<T> &v1, const  std::vector<T> &v2)
 {

@@ -12,6 +12,8 @@ addons:
 before_install:
     - export CXX="g++-4.9"
     - export CC="gcc-4.9"
+    - sudo ln -sf /usr/bin/gcov-4.9 /usr/bin/gcov
+    - gcov --version
     - echo ============ BOOST  INSTALL =============
     - sudo add-apt-repository -y ppa:boost-latest/ppa
     - sudo apt-get update
@@ -32,14 +34,16 @@ before_install:
     - CXXFLAGS+=-std=c++11 cmake -DASSIMP_BUILD_TESTS=OFF assimp
     - sudo make -j2 install
     - cd ../
+install:
+    - sudo pip install cpp-coveralls    
 before_script:
     - ls
-    - MONGO_ROOT=$HOME/mongo-cxx cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DCMAKE_BUILD_TYPE=Release .
+    - MONGO_ROOT=$HOME/mongo-cxx cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DCMAKE_BUILD_TYPE=Release ../
 script:
     - sudo make -j2 install
-    - LD_LIBRARY_PATH=$HOME/mongo-cxx/lib/:/usr/local/lib:$LD_LIBRARY_PATH ldd /usr/local/bin/3drepobouncerTest
-    - ls /usr/local/lib
     - LD_LIBRARY_PATH=$HOME/mongo-cxx/lib/:/usr/local/lib:$LD_LIBRARY_PATH 3drepobouncerTest
+after_success:
+    - coveralls --root . -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "/usr/include/" -e "mongo" -e "assimp"
 notifications:
     email: 
         recipients:
