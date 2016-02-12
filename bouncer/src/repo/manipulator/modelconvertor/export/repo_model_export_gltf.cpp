@@ -596,6 +596,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 {
 	repo::core::model::RepoNodeSet meshes = scene->getAllMeshes(gType);
 	std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> splitSizes;
+	std::string bufferFileName = UUIDtoString(scene->getRevisionID());
 	for (const auto &mesh : meshes)
 	{
 		const repo::core::model::MeshNode *node = (const repo::core::model::MeshNode *)mesh;
@@ -608,8 +609,8 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 		auto UVs = node->getUVChannelsSeparated();
 
 
-		size_t vStart = addToDataBuffer(meshUUID, vertices);
-		size_t nStart = addToDataBuffer(meshUUID, vertices);
+		size_t vStart = addToDataBuffer(bufferFileName, vertices);
+		size_t nStart = addToDataBuffer(bufferFileName, vertices);
 
 		if (mappings.size() > 1)
 		{
@@ -628,13 +629,12 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 				matMap);
 
 
-			size_t fStart = addToDataBuffer(meshUUID, newFaces);
+			size_t fStart = addToDataBuffer(bufferFileName, newFaces);
 		
 			auto newMappings = splitMesh.getMeshMapping();
 
 			splitSizes[node->getUniqueID()] = newMappings.size();			
 
-			std::string binFileName = meshUUID;
 			for (size_t i = 0; i < newMappings.size(); ++i)
 			{
 				//every mapping is a mesh
@@ -651,15 +651,15 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 				size_t fCount = newMappings[i].triTo - newMappings[i].triFrom;
 
 				//for each mesh we need to add a bufferView for each buffer
-				addBufferView(normBufferName, meshUUID, tree, normals , nStart, vCount, meshId);
-				addBufferView(posBufferName , meshUUID, tree, vertices, vStart, vCount, meshId);
-				addBufferView(faceBufferName, meshUUID, tree, newFaces, fStart, fCount, meshId);
+				addBufferView(normBufferName, bufferFileName, tree, normals, nStart, vCount, meshId);
+				addBufferView(posBufferName,  bufferFileName, tree, vertices, vStart, vCount, meshId);
+				addBufferView(faceBufferName, bufferFileName, tree, newFaces, fStart, fCount, meshId);
 
 				for (size_t i = 0; i < UVs.size(); ++i)
 				{
-					size_t uvStart = addToDataBuffer(meshUUID, UVs[i]);
+					size_t uvStart = addToDataBuffer(bufferFileName, UVs[i]);
 					std::string uvBufferName = meshId + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(i);
-					addBufferView(uvBufferName, meshUUID, tree, UVs[i], uvStart, vCount, meshId);
+					addBufferView(uvBufferName, bufferFileName, tree, UVs[i], uvStart, vCount, meshId);
 				}
 
 				for (const repo_mesh_mapping_t & meshMap : matMap[i])
@@ -744,22 +744,22 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 
 			auto faces = node->getFaces();
 			std::vector<uint16_t> sFaces = serialiseFaces(faces);
-			size_t fStart = addToDataBuffer(meshUUID, sFaces);
+			size_t fStart = addToDataBuffer(bufferFileName, sFaces);
 
 			std::string faceBufferName = meshId + "_" + GLTF_SUFFIX_FACES;
 			std::string normBufferName = meshId + "_" + GLTF_SUFFIX_NORMALS;
 			std::string posBufferName = meshId + "_" + GLTF_SUFFIX_POSITION;
 
 			//for each mesh we need to add a bufferView for each buffer
-			addBufferView(normBufferName, meshUUID, tree, normals, nStart, normals.size(), meshId);
-			addBufferView(posBufferName, meshUUID, tree, vertices, vStart, vertices.size(), meshId);
-			addBufferView(faceBufferName, meshUUID, tree, sFaces, fStart, faces.size(), meshId);
+			addBufferView(normBufferName, bufferFileName, tree, normals, nStart, normals.size(), meshId);
+			addBufferView(posBufferName, bufferFileName, tree, vertices, vStart, vertices.size(), meshId);
+			addBufferView(faceBufferName, bufferFileName, tree, sFaces, fStart, faces.size(), meshId);
 
 			for (size_t i = 0; i < UVs.size(); ++i)
 			{
-				size_t uvStart = addToDataBuffer(meshUUID, UVs[i]);
+				size_t uvStart = addToDataBuffer(bufferFileName, UVs[i]);
 				std::string uvBufferName = meshId + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(i);
-				addBufferView(uvBufferName, meshUUID, tree, UVs[i], uvStart, UVs[i].size(), meshId);
+				addBufferView(uvBufferName, bufferFileName, tree, UVs[i], uvStart, UVs[i].size(), meshId);
 			}
 
 
