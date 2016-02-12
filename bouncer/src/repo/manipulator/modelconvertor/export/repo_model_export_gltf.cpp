@@ -96,6 +96,7 @@ static const std::string GLTF_LABEL_TWO_SIDED       = "twoSided";
 static const std::string GLTF_LABEL_TYPE            = "type";
 static const std::string GLTF_LABEL_UNIFORMS        = "uniforms";
 static const std::string GLTF_LABEL_URI             = "uri";
+static const std::string GLTF_LABEL_VALUE           = "value";
 static const std::string GLTF_LABEL_VALUES          = "values";
 static const std::string GLTF_LABEL_VERSION         = "version";
 static const std::string GLTF_LABEL_WRAP_S          = "wrapS";
@@ -111,8 +112,8 @@ static const std::string GLTF_SUFFIX_NORMALS = "n";
 static const std::string GLTF_SUFFIX_POSITION = "p";
 static const std::string GLTF_SUFFIX_TEX_COORD = "uv";
 
-static const uint32_t GLTF_PRIM_TYPE_TRIANGLE = 4;
-static const uint32_t GLTF_PRIM_TYPE_ARRAY_BUFFER = 34962;
+static const uint32_t GLTF_PRIM_TYPE_TRIANGLE             = 4;
+static const uint32_t GLTF_PRIM_TYPE_ARRAY_BUFFER         = 34962;
 static const uint32_t GLTF_PRIM_TYPE_ELEMENT_ARRAY_BUFFER = 34963;
 
 static const uint32_t GLTF_COMP_TYPE_USHORT = 5123;
@@ -151,13 +152,15 @@ static const std::string GLTF_TYPE_VEC3            = "VEC3";
 static const std::string GLTF_VERSION = "1.0";
 
 //Default shader properties
-static const std::string REPO_GLTF_DEFAULT_PROGRAM         = "default_program";
-static const std::string REPO_GLTF_DEFAULT_SAMPLER         = "default_sampler";
-static const std::string REPO_GLTF_DEFAULT_SHADER_FRAG     = "default_fshader";
-static const std::string REPO_GLTF_DEFAULT_SHADER_FRAG_URI = "fragShader.glsl";
-static const std::string REPO_GLTF_DEFAULT_SHADER_VERT     = "default_vshader";
-static const std::string REPO_GLTF_DEFAULT_SHADER_VERT_URI = "vertShader.glsl";
-static const std::string REPO_GLTF_DEFAULT_TECHNIQUE       = "default_technique";
+static const std::string        REPO_GLTF_DEFAULT_PROGRAM         = "default_program";
+static const std::string        REPO_GLTF_DEFAULT_SAMPLER         = "default_sampler";
+static const std::string        REPO_GLTF_DEFAULT_SHADER_FRAG     = "default_fshader";
+static const std::string        REPO_GLTF_DEFAULT_SHADER_FRAG_URI = "fragShader.glsl";
+static const std::string        REPO_GLTF_DEFAULT_SHADER_VERT     = "default_vshader";
+static const std::string        REPO_GLTF_DEFAULT_SHADER_VERT_URI = "vertShader.glsl";
+static const std::string        REPO_GLTF_DEFAULT_TECHNIQUE       = "default_technique";
+static const float              REPO_GLTF_DEFAULT_SHININESS       = 50; 
+static const std::vector<float> REPO_GLTF_DEFAULT_SPECULAR        = { 0, 0, 0, 0 };
 
 static const std::string REPO_GLTF_LABEL_REF_ID = "refID";
 
@@ -991,8 +994,10 @@ void GLTFModelExport::writeDefaultTechnique(
 	tree.addToTree(paramlabel + ".projectionMatrix." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT_MAT4);
 
 	tree.addToTree(paramlabel + "." + GLTF_LABEL_SHININESS + "." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT);
+	tree.addToTree(paramlabel + "." + GLTF_LABEL_SHININESS + "." + GLTF_LABEL_VALUE, REPO_GLTF_DEFAULT_SHININESS);
 	tree.addToTree(paramlabel + "." + GLTF_LABEL_DIFFUSE + "."  + GLTF_LABEL_TYPE , GLTF_COMP_TYPE_FLOAT_VEC4);
 	tree.addToTree(paramlabel + "." + GLTF_LABEL_SPECULAR + "." + GLTF_LABEL_TYPE , GLTF_COMP_TYPE_FLOAT_VEC4);
+	tree.addToTree(paramlabel + "." + GLTF_LABEL_SPECULAR + "." + GLTF_LABEL_VALUE, REPO_GLTF_DEFAULT_SPECULAR);
 
 	tree.addToTree(label + "." + GLTF_LABEL_PROGRAM, REPO_GLTF_DEFAULT_PROGRAM);
 
