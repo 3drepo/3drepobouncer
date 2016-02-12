@@ -31,6 +31,7 @@ const static size_t GLTF_MAX_VERTEX_LIMIT = 65535;
 
 static const std::string GLTF_LABEL_ACCESSORS       = "accessors";
 static const std::string GLTF_LABEL_AMBIENT         = "ambient";
+static const std::string GLTF_LABEL_ASP_RATIO       = "aspectRatio";
 static const std::string GLTF_LABEL_ASSET           = "asset";
 static const std::string GLTF_LABEL_ATTRIBUTES      = "attributes";
 static const std::string GLTF_LABEL_BUFFER          = "buffer";
@@ -48,9 +49,11 @@ static const std::string GLTF_LABEL_DIFFUSE         = "diffuse";
 static const std::string GLTF_LABEL_EMISSIVE        = "emission";
 static const std::string GLTF_LABEL_ENABLE          = "enable";
 static const std::string GLTF_LABEL_EXTRA           = "extras";
+static const std::string GLTF_LABEL_FAR_CP          = "zfar";
 static const std::string GLTF_LABEL_FILTER_MAG      = "magFilter";
 static const std::string GLTF_LABEL_FILTER_MIN      = "minFilter";
 static const std::string GLTF_LABEL_FORMAT          = "format";
+static const std::string GLTF_LABEL_FOV             = "yfov";
 static const std::string GLTF_LABEL_GENERATOR       = "generator";
 static const std::string GLTF_LABEL_IMAGES          = "images";
 static const std::string GLTF_LABEL_INDICES         = "indices";
@@ -62,6 +65,7 @@ static const std::string GLTF_LABEL_MAX             = "max";
 static const std::string GLTF_LABEL_MESHES          = "meshes";
 static const std::string GLTF_LABEL_MIN             = "min";
 static const std::string GLTF_LABEL_NAME            = "name";
+static const std::string GLTF_LABEL_NEAR_CP         = "znear;
 static const std::string GLTF_LABEL_NODES           = "nodes";
 static const std::string GLTF_LABEL_NORMAL          = "NORMAL";
 static const std::string GLTF_LABEL_PARAMETERS      = "parameters";
@@ -138,10 +142,11 @@ static const uint32_t GLTF_STATE_SAMPLE_ALPHA_TO_COVERAGE = 32926;
 static const uint32_t GLTF_STATE_SCISSOR_TEST             = 3089;
 
 
-static const std::string GLTF_ARRAY_BUFFER = "arraybuffer";
-static const std::string GLTF_TYPE_SCALAR  = "SCALAR";
-static const std::string GLTF_TYPE_VEC2    = "VEC2";
-static const std::string GLTF_TYPE_VEC3    = "VEC3";
+static const std::string GLTF_ARRAY_BUFFER         = "arraybuffer";
+static const std::string GLTF_CAM_TYPE_PERSPECTIVE = "perspective";
+static const std::string GLTF_TYPE_SCALAR          = "SCALAR";
+static const std::string GLTF_TYPE_VEC2            = "VEC2";
+static const std::string GLTF_TYPE_VEC3            = "VEC3";
 
 static const std::string GLTF_VERSION = "1.0";
 
@@ -436,6 +441,7 @@ bool GLTFModelExport::constructScene(
 		populateWithNodes(tree, splitMeshes);
 		populateWithMaterials(tree);
 		populateWithTextures(tree);
+		populateWithCameras(tree);
 
 	}
 	else
@@ -517,6 +523,32 @@ void GLTFModelExport::processNodeChildren(
 	if (cameras.size())
 		tree.addToTree(prefix + GLTF_LABEL_CAMERAS, cameras);
 
+}
+
+void GLTFModelExport::populateWithCameras(
+	repo::lib::PropertyTree           &tree)
+{
+	repo::core::model::RepoNodeSet cameras = scene->getAllCameras(gType);
+	for (const auto &cam : cameras)
+	{
+		const repo::core::model::CameraNode *node = (const repo::core::model::CameraNode *)cam;
+		const std::string label = GLTF_LABEL_CAMERAS + "." + UUIDtoString(node->getUniqueID());
+		//All our viewpoints are perspective..?
+		tree.addToTree(label + "." + GLTF_LABEL_TYPE, GLTF_CAM_TYPE_PERSPECTIVE);
+		std::string name = node->getName();
+		if (!name.empty())
+			tree.addToTree(label + "." + GLTF_LABEL_NAME, name);
+
+		const std::string perspectLabel = label + "." + GLTF_CAM_TYPE_PERSPECTIVE;
+
+		tree.addToTree(perspectLabel + "." + GLTF_LABEL_ASP_RATIO, node->getAspectRatio());
+		tree.addToTree(perspectLabel + "." + GLTF_LABEL_FOV      , node->getFieldOfView());
+		tree.addToTree(perspectLabel + "." + GLTF_LABEL_FAR_CP   , node->getFarClippingPlane());
+		tree.addToTree(perspectLabel + "." + GLTF_LABEL_NEAR_CP  , node->getNearClippingPlane());
+
+
+
+	}
 }
 
 void GLTFModelExport::populateWithMaterials(

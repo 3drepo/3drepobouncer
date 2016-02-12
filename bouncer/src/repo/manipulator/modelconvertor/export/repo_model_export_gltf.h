@@ -257,6 +257,14 @@ namespace repo{
 					repo::lib::PropertyTree          &tree,
 					const std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> &subMeshCounts
 					);
+
+				/**
+				* Populate the given tree with the cameras within the scene
+				* @param tree tree to populate
+				*/
+				void populateWithCameras(
+					repo::lib::PropertyTree          &tree);
+
 				/**
 				* Populate the given tree with the materials within the scene
 				* @param tree tree to populate
