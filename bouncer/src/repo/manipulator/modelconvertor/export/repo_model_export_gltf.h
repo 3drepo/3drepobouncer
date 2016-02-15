@@ -60,6 +60,13 @@ namespace repo{
 					return false;
 				};
 				
+
+				/**
+				* Return the GLTF file as raw bytes buffer
+				* returns an empty vector if the export has failed
+				*/
+				std::unordered_map<std::string, std::vector<uint8_t>> getGLTFFilesAsBuffer() const;
+
 				/**
 				* Get supported file formats for this exporter
 				*/

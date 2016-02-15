@@ -190,10 +190,7 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getSRCFile
 
 		std::stringstream ss;
 		treePair.second.write_json(ss);
-		std::string jsonStr = ss.str();
-		FILE *file = fopen("C:\\Users\\Carmen\\Desktop\\test.json", "w");
-		fwrite(jsonStr.c_str(), 1, jsonStr.size(), file);
-		fclose(file);
+		std::string jsonStr = ss.str();		
 
 		//one char is one byte, 12bytes for Magic Bit(4), SRC Version (4), Header Length(4)	
 		size_t jsonByteSize = jsonStr.size()*sizeof(*jsonStr.c_str());

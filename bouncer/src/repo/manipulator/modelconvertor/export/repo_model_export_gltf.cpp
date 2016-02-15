@@ -469,14 +469,67 @@ bool GLTFModelExport::generateTreeRepresentation()
 	ss << "3D Repo Bouncer v" << BOUNCER_VMAJOR << "." << BOUNCER_VMINOR;
 	tree.addToTree(GLTF_LABEL_ASSET + "." + GLTF_LABEL_GENERATOR, ss.str());
 	tree.addToTree(GLTF_LABEL_ASSET + "." + GLTF_LABEL_VERSION  , GLTF_VERSION);
-	//SHADER- Premultiplied alpha?
+	//FIXME: SHADER- Premultiplied alpha?
 
 	constructScene(tree);
 	writeBuffers(tree);
 
-	trees["test"] = tree;
+	std::string fname = UUIDtoString(scene->getRevisionID()) + ".gltf";
+	trees[fname] = tree;
 
 	return true;
+}
+
+std::unordered_map<std::string, std::vector<uint8_t>> GLTFModelExport::getGLTFFilesAsBuffer() const
+{
+	std::unordered_map<std::string, std::vector<uint8_t>> files;
+	//GLTF files
+	for (const auto &pair : trees)
+	{
+		std::stringstream ss;
+		pair.second.write_json(ss);
+		std::string jsonString = ss.str();
+		if (!jsonString.empty())
+		{
+			files[pair.first] = std::vector<uint8_t>();
+			size_t byteLength = jsonString.size() * sizeof(*jsonString.data());
+			files[pair.first].resize(byteLength);
+			memcpy(files[pair.first].data(), jsonString.data(), byteLength);
+		}
+		else
+		{
+			repoError << "Failed to write " << pair.first << " into the buffer: JSON string is empty.";
+		}
+
+	}
+
+	//bin files
+	for (const auto &pair : fullDataBuffer)
+	{
+		std::string fileName = pair.first + ".bin";
+		if (pair.second.size())
+		{
+			auto it = files.find(fileName);
+			//None of the gltf should ever share the same name, this is a sanity check
+			if (it == files.end())
+			{
+				files[fileName] = std::vector<uint8_t>();
+				size_t byteLength = pair.second.size() * sizeof(*pair.second.data());
+				files[fileName].resize(byteLength);
+				memcpy(files[fileName].data(), pair.second.data(), byteLength);
+			}
+			else
+			{
+				repoError << "Multiple files are named " << fileName << ". This is not allowed.";
+			}
+		}
+		else
+		{
+			repoError << "Failed to write " << fileName << " into the buffer: data buffer is empty.";
+		}		
+	}
+
+	return files;
 }
 
 void GLTFModelExport::processNodeChildren(
@@ -1044,23 +1097,14 @@ void GLTFModelExport::debug() const
 {
 	//temporary function to debug gltf. to remove once done
 
-	std::stringstream ss;
-	std::string fname = "test";
-	auto it = trees.find(fname);
-	it->second.write_json(ss);
-	
-	std::string jsonFile = ss.str();
-
 	std::string dir = "D:\\gltfTest\\redBox\\";
-	std::string filePath = dir + "redBox.gltf";
-	FILE *fp = fopen(filePath.c_str(), "w");
-	fwrite(jsonFile.c_str(), 1, jsonFile.size(), fp);
-	fclose(fp);
 
-	for (const auto &pair : fullDataBuffer)
+	auto buffers = getGLTFFilesAsBuffer();
+
+	for (const auto &pair : buffers)
 	{
-		filePath = dir + pair.first + ".bin";
-		fopen(filePath.c_str(), "wb");
+		std::string filePath = dir + pair.first;
+		FILE *fp = fopen(filePath.c_str(), "wb");
 		std::vector<uint8_t> buffer = pair.second;
 		fwrite(pair.second.data(), 1, pair.second.size(), fp);
 		fclose(fp);
