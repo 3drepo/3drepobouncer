@@ -23,7 +23,7 @@
 #include "repo_model_export_src.h"
 #include "../../../lib/repo_log.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
-#include "auxiliary/repo_model_export_x3d.h"
+#include "auxiliary/repo_model_export_x3d_src.h"
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -128,9 +128,9 @@ SRCModelExport::SRCModelExport(
 
 		if (convertSuccess)
 		{
-			repoDebug << "Writing X3D Backbone file...";
+			repoDebug << "Generating X3D Backbone file...";
 			//Build general x3d backbone if SRC conversion was a success
-			X3DModelExport x3dExport(scene);
+			X3DSRCModelExport x3dExport(scene);
 
 			if (convertSuccess = x3dExport.isOk())
 			{
@@ -361,7 +361,7 @@ bool SRCModelExport::generateTreeRepresentation(
 			{
 				success &= generateJSONMapping((repo::core::model::MeshNode*)mesh, scene, splitMapping);
 
-				X3DModelExport x3dExport(splittedMesh, scene);
+				X3DSRCModelExport x3dExport(splittedMesh, scene);
 				if (x3dExport.isOk())
 				{
 					x3dBufs[x3dExport.getFileName()] = x3dExport.getFileAsBuffer();

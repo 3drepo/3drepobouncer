@@ -76,6 +76,15 @@ namespace repo{
 				std::unordered_map<std::string, std::vector<uint8_t>> getGLTFFilesAsBuffer() const;
 
 				/**
+				* Return the X3D file as raw bytes buffer
+				* returns an empty vector if the export has failed
+				*/
+				std::unordered_map<std::string, std::vector<uint8_t>> getX3DFilesAsBuffer() const
+				{
+					return x3dBufs;
+				}
+
+				/**
 				* Get supported file formats for this exporter
 				*/
 				static std::string getSupportedFormats()
@@ -106,6 +115,7 @@ namespace repo{
 				const repo::core::model::RepoScene *scene;
 				bool convertSuccess;
 				std::unordered_map<std::string, repo::lib::PropertyTree> trees;
+				std::unordered_map<std::string, std::vector<uint8_t>> x3dBufs;
 				repo::core::model::RepoScene::GraphType gType;
 				std::unordered_map<std::string, std::vector<uint8_t>> fullDataBuffer;
 

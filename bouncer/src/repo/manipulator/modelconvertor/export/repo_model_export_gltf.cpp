@@ -22,6 +22,7 @@
 #include "repo_model_export_gltf.h"
 #include "../../../lib/repo_log.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
+#include "auxiliary/repo_model_export_x3d_gltf.h"
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -168,6 +169,7 @@ static const std::string REPO_GLTF_LABEL_REF_ID = "refID";
 
 
 
+
 GLTFModelExport::GLTFModelExport(
 	const repo::core::model::RepoScene *scene
 	) : AbstractModelExport()
@@ -175,7 +177,42 @@ GLTFModelExport::GLTFModelExport(
 {
 	if (convertSuccess = scene)
 	{
-		convertSuccess = generateTreeRepresentation();
+		
+		if (scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED))
+		{
+			gType = repo::core::model::RepoScene::GraphType::OPTIMIZED;
+		}
+		else if (scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
+		{
+			gType = repo::core::model::RepoScene::GraphType::DEFAULT;
+		}
+		else
+		{
+			repoError << "Failed to export to glTF : Failed to find root node within the scene!";
+			convertSuccess = false;
+		}
+		//We only need a GLTF representation if there are meshes or cameras
+		if (scene->getAllMeshes(gType).size() || scene->getAllCameras(gType).size())
+			convertSuccess = generateTreeRepresentation();
+
+		if (convertSuccess)
+		{
+			repoDebug << "Generating X3D Backbone file...";
+			//Build general x3d backbone if SRC conversion was a success
+			X3DGLTFModelExport x3dExport(scene);
+
+			if (convertSuccess = x3dExport.isOk())
+			{
+				auto buffer = x3dExport.getFileAsBuffer();
+				x3dBufs[x3dExport.getFileName()] = buffer;
+			}
+			else
+			{
+				repoError << "Failed to Export x3dom backbone";
+
+			}
+		}
+
 	}
 	else
 	{
@@ -419,22 +456,11 @@ size_t GLTFModelExport::addToDataBuffer(
 bool GLTFModelExport::constructScene(
 	repo::lib::PropertyTree &tree)
 {
-	if (scene)
+	
+	repo::core::model::RepoNode* root = scene->getRoot(gType);
+	
+	if (scene && root)
 	{
-		repo::core::model::RepoNode* root;
-		if (root = scene->getRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED))
-		{
-			gType = repo::core::model::RepoScene::GraphType::OPTIMIZED;
-		}
-		else if (root = scene->getRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
-		{
-			gType = repo::core::model::RepoScene::GraphType::DEFAULT;
-		}
-		else
-		{
-			repoError << "Failed to export to glTF : Failed to find root node within the scene!";
-			return false;
-		}
 			
 		std::string sceneName = "defaultScene";
 		tree.addToTree(GLTF_LABEL_SCENE, sceneName);
@@ -485,6 +511,7 @@ repo_gltf_export_t GLTFModelExport::getAllFilesExportedAsBuffer() const
 	repo_gltf_export_t results;
 
 	results.gltfFiles = getGLTFFilesAsBuffer();
+	results.x3dFiles  = getX3DFilesAsBuffer();
 
 	return results;
 }
