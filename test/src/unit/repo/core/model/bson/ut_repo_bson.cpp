@@ -229,9 +229,9 @@ TEST(RepoBSONTest, GetUUIDField)
 	EXPECT_NE(uuid, emptyBson.getUUIDField("ice"));
 
 	//Test new UUID
-	mongo::BSONObjBuilder builder;
-	builder.appendBinData("uuid", uuid.size(), mongo::newUUID, (char*)uuid.data);
-	RepoBSON test2 = RepoBSON(builder.obj());
+	mongo::BSONObjBuilder builder2;
+	builder2.appendBinData("uuid", uuid.size(), mongo::newUUID, (char*)uuid.data);
+	RepoBSON test2 = RepoBSON(builder2.obj());
 	EXPECT_EQ(uuid, test2.getUUIDField("uuid"));
 	
 
