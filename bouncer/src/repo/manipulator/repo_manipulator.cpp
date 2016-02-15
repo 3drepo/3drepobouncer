@@ -462,6 +462,59 @@ void RepoManipulator::fetchScene(
 	}
 }
 
+bool RepoManipulator::generateAndCommitGLTFBuffer(
+	const std::string                             &databaseAd,
+	const repo::core::model::RepoBSON	          *cred,
+	const repo::core::model::RepoScene            *scene)
+{
+	bool success;
+	modelconvertor::repo_gltf_export_t v = generateGLTFBuffer(scene);
+	if (success = (v.gltfFiles.size() + v.x3dFiles.size()))
+	{
+		repo::core::handler::AbstractDatabaseHandler* handler =
+			repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+		if (success = handler)
+		{
+
+			for (const auto bufferPair : v.gltfFiles)
+			{
+
+				std::string errMsg;
+				//FIXME: constant value somewhere for .stash.src?
+				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.gltf", bufferPair.first, bufferPair.second,
+					errMsg, "binary/octet-stream"))
+				{
+					repoInfo << "File (" << bufferPair.first << ") added successfully.";
+				}
+				else
+				{
+					repoError << "Failed to add file  (" << bufferPair.first << "): " << errMsg;
+				}
+			}
+			for (const auto bufferPair : v.x3dFiles)
+			{
+				std::string databaseName = scene->getDatabaseName();
+				std::string projectName = scene->getProjectName();
+				std::string errMsg;
+				//FIXME: constant value somewhere for .stash.x3d?
+				std::string fileName = bufferPair.first;
+				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.x3d", fileName, bufferPair.second,
+					errMsg, "binary/octet-stream"))
+				{
+					repoInfo << "File (" << fileName << ") added successfully.";
+				}
+				else
+				{
+					repoError << "Failed to add file  (" << fileName << "): " << errMsg;
+				}
+			}
+		}
+	}
+
+	return success;
+
+}
+
 bool RepoManipulator::generateAndCommitSRCBuffer(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON	          *cred,
@@ -478,20 +531,17 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 
 			for (const auto bufferPair : v.srcFiles)
 			{
-				std::string databaseName = scene->getDatabaseName();
-				std::string projectName = scene->getProjectName();
-				std::string prefix = "/" + databaseName + "/" + projectName + "/";
+
 				std::string errMsg;
 				//FIXME: constant value somewhere for .stash.src?
-				std::string fileName = prefix+bufferPair.first;
-				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.src", fileName, bufferPair.second,
+				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.src", bufferPair.first, bufferPair.second,
 					errMsg, "binary/octet-stream"))
 				{
-					repoInfo << "File ("<<fileName <<") added successfully.";
+					repoInfo << "File (" << bufferPair.first << ") added successfully.";
 				}
 				else
 				{
-					repoError << "Failed to add file  ("<<fileName <<"): " << errMsg;
+					repoError << "Failed to add file  (" << bufferPair.first << "): " << errMsg;
 				}
 			}		
 			for (const auto bufferPair : v.x3dFiles)

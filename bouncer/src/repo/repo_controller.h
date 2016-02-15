@@ -631,6 +631,17 @@ public:
             const repo::core::model::MapNode &mapNode);
 
 	/**
+	* Generate and commit a GLTF encoding for the given scene
+	* This requires the stash to have been generated already
+	* @param token token for authentication
+	* @param scene the scene to generate the gltf encoding from
+	* @return returns true upon success
+	*/
+	bool generateAndCommitGLTFBuffer(
+		const RepoToken                               *token,
+		const repo::core::model::RepoScene            *scene);
+
+	/**
 	* Generate and commit a SRC encoding for the given scene
 	* This requires the stash to have been generated already
 	* @param token token for authentication

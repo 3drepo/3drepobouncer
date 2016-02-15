@@ -695,7 +695,7 @@ void SRCModelExport::addMeshToExport(
 	}
 
 
-	std::string fname = meshId + fileExt;
+	std::string fname = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + meshId + fileExt;
 	
 	trees[fname] = tree;
 	fullDataBuffer[fname] = dataBuffer;

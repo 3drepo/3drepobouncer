@@ -500,7 +500,7 @@ bool GLTFModelExport::generateTreeRepresentation()
 	constructScene(tree);
 	writeBuffers(tree);
 
-	std::string fname = UUIDtoString(scene->getRevisionID()) + ".gltf";
+	std::string fname = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + UUIDtoString(scene->getRevisionID()) + ".gltf";
 	trees[fname] = tree;
 
 	return true;
@@ -721,7 +721,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 {
 	repo::core::model::RepoNodeSet meshes = scene->getAllMeshes(gType);
 	std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> splitSizes;
-	std::string bufferFileName = UUIDtoString(scene->getRevisionID());
+	std::string bufferFileName = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + UUIDtoString(scene->getRevisionID());
 	for (const auto &mesh : meshes)
 	{
 		const repo::core::model::MeshNode *node = (const repo::core::model::MeshNode *)mesh;

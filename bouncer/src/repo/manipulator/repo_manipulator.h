@@ -263,6 +263,20 @@ namespace repo{
 				repo::core::model::RepoScene              *scene);
  
 			/**
+			* Generate and commit a GLTF encoding for the given scene
+			* This requires the stash to have been generated already
+			* @param databaseAd database address:portdatabase
+			* @param cred user credentials in bson form
+			* @param scene the scene to generate the gltf encoding from
+			* @return returns true upon success
+			*/
+
+			bool RepoManipulator::generateAndCommitGLTFBuffer(
+				const std::string                             &databaseAd,
+				const repo::core::model::RepoBSON	          *cred,
+				const repo::core::model::RepoScene            *scene);
+
+			/**
 			* Generate and commit a SRC encoding for the given scene
 			* This requires the stash to have been generated already
 			* @param databaseAd database address:portdatabase
