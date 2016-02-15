@@ -767,14 +767,14 @@ bool RepoController::generateAndCommitSRCBuffer(
 }
 
 
-std::unordered_map<std::string, std::vector<uint8_t>> RepoController::generateGLTFBuffer(
+manipulator::modelconvertor::repo_gltf_export_t RepoController::generateGLTFBuffer(
 	const repo::core::model::RepoScene *scene)
 {
-	std::unordered_map<std::string, std::vector<uint8_t>> buffer;
+	manipulator::modelconvertor::repo_gltf_export_t buffer;
 	if (scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		buffer = worker->generateGLTFBuffer(scene).gltfFiles;
+		buffer = worker->generateGLTFBuffer(scene);
 		workerPool.push(worker);
 	}
 	else
@@ -784,14 +784,14 @@ std::unordered_map<std::string, std::vector<uint8_t>> RepoController::generateGL
 	return buffer;
 }
 
-std::unordered_map<std::string, std::vector<uint8_t>> RepoController::generateSRCBuffer(
+manipulator::modelconvertor::repo_src_export_t RepoController::generateSRCBuffer(
 	const repo::core::model::RepoScene *scene)
 {
-	std::unordered_map<std::string,std::vector<uint8_t>> buffer;
+	manipulator::modelconvertor::repo_src_export_t buffer;
 	if (scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		buffer = worker->generateSRCBuffer(scene).srcFiles;
+		buffer = worker->generateSRCBuffer(scene);
 		workerPool.push(worker);
 	}
 	else
