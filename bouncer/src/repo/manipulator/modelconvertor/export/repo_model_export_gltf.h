@@ -32,7 +32,12 @@ namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
 
-			class REPO_API_EXPORT GLTFModelExport : public AbstractModelExport
+			typedef struct{
+				std::unordered_map<std::string, std::vector<uint8_t>> gltfFiles;
+				std::unordered_map<std::string, std::vector<uint8_t>> x3dFiles;
+			}repo_gltf_export_t;
+
+			class GLTFModelExport : public AbstractModelExport
 			{	
 			public:
 				/**
@@ -46,9 +51,6 @@ namespace repo{
 				*/
 				virtual ~GLTFModelExport();
 
-				//temporary function to debug gltf. to remove once done
-				void debug() const;
-
 				/**
 				* Export a repo scene graph to file
 				* @param filePath path to destination file
@@ -60,6 +62,12 @@ namespace repo{
 					return false;
 				};
 				
+				/**
+				* Export all necessary files as buffers
+				* @return returns a repo_src_export_t containing all files needed for this
+				*          model to be rendered
+				*/
+				repo_gltf_export_t getAllFilesExportedAsBuffer() const;
 
 				/**
 				* Return the GLTF file as raw bytes buffer

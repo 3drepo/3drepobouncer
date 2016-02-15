@@ -642,6 +642,15 @@ public:
 		const repo::core::model::RepoScene            *scene);
 
 	/**
+	* Generate a GLTF encoding in the form of a buffer for the given scene
+	* This requires the stash to have been generated already
+	* @param scene the scene to generate the gltf encoding from
+	* @return returns a buffer in the form of a byte vector
+	*/
+	std::unordered_map<std::string, std::vector<uint8_t>> generateGLTFBuffer(
+		const repo::core::model::RepoScene *scene);
+
+	/**
 	* Generate a SRC encoding in the form of a buffer for the given scene
 	* This requires the stash to have been generated already
 	* @param scene the scene to generate the src encoding from

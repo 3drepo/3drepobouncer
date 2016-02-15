@@ -25,6 +25,7 @@
 #include "../core/model/collection/repo_scene.h"
 #include "../core/model/bson/repo_bson_role_settings.h"
 #include "modelconvertor/import/repo_model_import_assimp.h"
+#include "modelconvertor/export/repo_model_export_gltf.h"
 #include "modelconvertor/export/repo_model_export_src.h"
 #include "diff/repo_diff_abstract.h"
 
@@ -273,6 +274,15 @@ namespace repo{
 				const std::string                             &databaseAd,
 				const repo::core::model::RepoBSON	          *cred,
 				const repo::core::model::RepoScene            *scene);
+
+			/**
+			* Generate a gltf encoding in the form of a buffer for the given scene
+			* This requires the stash to have been generated already
+			* @param scene the scene to generate the gltf encoding from
+			* @return returns a buffer in the form of a byte vector mapped to its filename
+			*/
+			modelconvertor::repo_gltf_export_t generateGLTFBuffer(
+				const repo::core::model::RepoScene *scene);
 
 
 			/**

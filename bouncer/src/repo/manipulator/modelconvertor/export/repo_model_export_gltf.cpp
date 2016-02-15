@@ -480,6 +480,15 @@ bool GLTFModelExport::generateTreeRepresentation()
 	return true;
 }
 
+repo_gltf_export_t GLTFModelExport::getAllFilesExportedAsBuffer() const
+{
+	repo_gltf_export_t results;
+
+	results.gltfFiles = getGLTFFilesAsBuffer();
+
+	return results;
+}
+
 std::unordered_map<std::string, std::vector<uint8_t>> GLTFModelExport::getGLTFFilesAsBuffer() const
 {
 	std::unordered_map<std::string, std::vector<uint8_t>> files;
@@ -1090,24 +1099,5 @@ void GLTFModelExport::writeDefaultTechnique(
 	tree.addToTree(GLTF_LABEL_SHADERS + "." + REPO_GLTF_DEFAULT_SHADER_VERT + "." + GLTF_LABEL_TYPE, GLTF_SHADER_TYPE_VERTEX);
 	tree.addToTree(GLTF_LABEL_SHADERS + "." + REPO_GLTF_DEFAULT_SHADER_VERT + "." + GLTF_LABEL_URI , REPO_GLTF_DEFAULT_SHADER_VERT_URI);
 
-
-}
-
-void GLTFModelExport::debug() const
-{
-	//temporary function to debug gltf. to remove once done
-
-	std::string dir = "D:\\gltfTest\\redBox\\";
-
-	auto buffers = getGLTFFilesAsBuffer();
-
-	for (const auto &pair : buffers)
-	{
-		std::string filePath = dir + pair.first;
-		FILE *fp = fopen(filePath.c_str(), "wb");
-		std::vector<uint8_t> buffer = pair.second;
-		fwrite(pair.second.data(), 1, pair.second.size(), fp);
-		fclose(fp);
-	}
 
 }

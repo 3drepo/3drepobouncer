@@ -536,6 +536,24 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 
 }
 
+modelconvertor::repo_gltf_export_t RepoManipulator::generateGLTFBuffer(
+	const repo::core::model::RepoScene *scene)
+{
+
+	modelconvertor::repo_gltf_export_t result;
+	modelconvertor::GLTFModelExport gltfExport(scene);
+	if (gltfExport.isOk())
+	{
+		repoTrace << "Conversion succeed.. exporting as buffer..";
+		result = gltfExport.getAllFilesExportedAsBuffer();
+	}
+	else
+		repoError << "Export to GLTF failed.";
+
+	return result;
+}
+
+
 modelconvertor::repo_src_export_t RepoManipulator::generateSRCBuffer(
 	const repo::core::model::RepoScene *scene)
 {

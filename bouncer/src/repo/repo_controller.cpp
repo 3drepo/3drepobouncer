@@ -767,6 +767,23 @@ bool RepoController::generateAndCommitSRCBuffer(
 }
 
 
+std::unordered_map<std::string, std::vector<uint8_t>> RepoController::generateGLTFBuffer(
+	const repo::core::model::RepoScene *scene)
+{
+	std::unordered_map<std::string, std::vector<uint8_t>> buffer;
+	if (scene)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		buffer = worker->generateGLTFBuffer(scene).gltfFiles;
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Failed to generate SRC Buffer.";
+	}
+	return buffer;
+}
+
 std::unordered_map<std::string, std::vector<uint8_t>> RepoController::generateSRCBuffer(
 	const repo::core::model::RepoScene *scene)
 {

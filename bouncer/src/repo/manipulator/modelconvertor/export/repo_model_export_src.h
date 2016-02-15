@@ -85,6 +85,11 @@ namespace repo{
 				*/
 				std::unordered_map<std::string, std::vector<uint8_t>> getJSONFilesAsBuffer() const;
 
+				/**
+				* Export all necessary files as buffers
+				* @return returns a repo_src_export_t containing all files needed for this 
+				*          model to be rendered
+				*/
 				repo_src_export_t getAllFilesExportedAsBuffer() const;
 
 				/**
