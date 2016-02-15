@@ -27,7 +27,7 @@
 
 #include <string>
 
-#include "repo_model_export_x3d.h"
+#include "repo_model_export_x3d_abstract.h"
 #include "../repo_model_export_abstract.h"
 #include "../../../../lib/repo_property_tree.h"
 #include "../../../../core/model/collection/repo_scene.h"
@@ -36,7 +36,7 @@ namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
 
-			class X3DGLTFModelExport : public X3DModelExport
+			class X3DGLTFModelExport : public AbstractX3DModelExport
 			{	
 			public:
 

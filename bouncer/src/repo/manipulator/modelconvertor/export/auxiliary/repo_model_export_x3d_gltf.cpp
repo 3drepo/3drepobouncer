@@ -24,7 +24,7 @@ using namespace repo::manipulator::modelconvertor;
 
 X3DGLTFModelExport::X3DGLTFModelExport(
 	const repo::core::model::RepoScene *scene
-	) : X3DModelExport(scene)
+	) : AbstractX3DModelExport(scene)
 {	
 }
 
@@ -32,7 +32,7 @@ X3DGLTFModelExport::X3DGLTFModelExport(
 	const repo::core::model::MeshNode &mesh,
 	const repo::core::model::RepoScene *scene
 	)
-	: X3DModelExport(mesh, scene)
+	: AbstractX3DModelExport(mesh, scene)
 {
 }
 
@@ -144,7 +144,7 @@ bool X3DGLTFModelExport::writeScene(
 			return false;
 		}
 
-		return X3DModelExport::writeScene(scene);
+		return AbstractX3DModelExport::writeScene(scene);
 	}
 	else
 	{

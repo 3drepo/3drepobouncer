@@ -24,7 +24,7 @@ using namespace repo::manipulator::modelconvertor;
 
 X3DSRCModelExport::X3DSRCModelExport(
 	const repo::core::model::RepoScene *scene
-	) : X3DModelExport(scene)
+	) : AbstractX3DModelExport(scene)
 {	
 }
 
@@ -32,7 +32,7 @@ X3DSRCModelExport::X3DSRCModelExport(
 	const repo::core::model::MeshNode &mesh,
 	const repo::core::model::RepoScene *scene
 	)
-	: X3DModelExport(mesh, scene)
+	: AbstractX3DModelExport(mesh, scene)
 {
 }
 

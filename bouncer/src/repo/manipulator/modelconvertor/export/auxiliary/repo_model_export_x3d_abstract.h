@@ -35,7 +35,7 @@ namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
 
-			class X3DModelExport
+			class AbstractX3DModelExport
 			{	
 			public:
 
@@ -43,7 +43,7 @@ namespace repo{
 				* Export a Scene as a x3d file
 				* @param scene scene to export
 				*/
-				X3DModelExport(
+				AbstractX3DModelExport(
 					const repo::core::model::RepoScene *scene
 					);
 
@@ -52,14 +52,14 @@ namespace repo{
 				* @param mesh the mesh in question
 				* @param scene repo scene as reference
 				*/
-				X3DModelExport(
+				AbstractX3DModelExport(
 					const repo::core::model::MeshNode  &mesh,
 					const repo::core::model::RepoScene *scene);
 
 				/**
 				* Default Destructor
 				*/
-				virtual ~X3DModelExport() {};
+				virtual ~AbstractX3DModelExport() {};
 
 				/**
 				* Obtain the x3d representation as a buffer

@@ -15,7 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "repo_model_export_x3d.h"
+#include "repo_model_export_x3d_abstract.h"
 #include "x3dom_constants.h"
 #include "../../../../lib/repo_log.h"
 #include "../../../../core/model/bson/repo_bson_factory.h"
@@ -24,7 +24,7 @@ using namespace repo::manipulator::modelconvertor;
 
 
 
-X3DModelExport::X3DModelExport(
+AbstractX3DModelExport::AbstractX3DModelExport(
 	const repo::core::model::RepoScene *scene
 	) : 
 	fullScene(true),
@@ -39,7 +39,7 @@ X3DModelExport::X3DModelExport(
 	
 }
 
-X3DModelExport::X3DModelExport(
+AbstractX3DModelExport::AbstractX3DModelExport(
 	const repo::core::model::MeshNode &mesh,
 	const repo::core::model::RepoScene *scene
 	)
@@ -53,7 +53,7 @@ X3DModelExport::X3DModelExport(
 	tree.disableJSONWorkaround();	
 }
 
-repo::lib::PropertyTree X3DModelExport::createGoogleMapSubTree(
+repo::lib::PropertyTree AbstractX3DModelExport::createGoogleMapSubTree(
 	const repo::core::model::MapNode *mapNode)
 {
 	repo::lib::PropertyTree gmtree(false);
@@ -201,21 +201,21 @@ repo::lib::PropertyTree X3DModelExport::createGoogleMapSubTree(
 	return gmtree;
 }
 
-repo_vector_t X3DModelExport::getBoxCentre(
+repo_vector_t AbstractX3DModelExport::getBoxCentre(
 	const repo_vector_t &min,
 	const repo_vector_t &max) const
 {
 	return { (min.x + max.x) / 2.0f, (min.y + max.y) / 2.0f, (min.z + max.z) / 2.0f };
 }
 
-repo_vector_t X3DModelExport::getBoxSize(
+repo_vector_t AbstractX3DModelExport::getBoxSize(
 	const repo_vector_t &min,
 	const repo_vector_t &max) const
 {
 	return { max.x - min.x, max.y - min.y, max.z - min.z};
 }
 
-std::vector<uint8_t> X3DModelExport::getFileAsBuffer()
+std::vector<uint8_t> AbstractX3DModelExport::getFileAsBuffer()
 {
 	std::vector<uint8_t> xmlBuf;
 	if (!initialised) initialize();
@@ -234,7 +234,7 @@ std::vector<uint8_t> X3DModelExport::getFileAsBuffer()
 	return xmlBuf;
 }
 
-std::string X3DModelExport::getFileName() const
+std::string AbstractX3DModelExport::getFileName() const
 {
 	std::string fullName =  fname + ".x3d.mp";
 	if (!fullScene)
@@ -244,7 +244,7 @@ std::string X3DModelExport::getFileName() const
 }
 
 
-repo::lib::PropertyTree X3DModelExport::generateDefaultViewPointTree()
+repo::lib::PropertyTree AbstractX3DModelExport::generateDefaultViewPointTree()
 {
 	repo::lib::PropertyTree vpTree(false);
 	//FIXME: node JS gets the bounding box from the root node, root node is always a transformation?
@@ -272,7 +272,7 @@ repo::lib::PropertyTree X3DModelExport::generateDefaultViewPointTree()
 	return vpTree;
 }
 
-bool X3DModelExport::includeHeader()
+bool AbstractX3DModelExport::includeHeader()
 {
 	tree.addFieldAttribute(X3D_LABEL, X3D_ATTR_XMLNS, X3D_SPEC_URL);
 	tree.addFieldAttribute(X3D_LABEL, X3D_ATTR_ON_LOAD, X3D_ON_LOAD);
@@ -280,7 +280,7 @@ bool X3DModelExport::includeHeader()
 	return true;
 }
 
-bool X3DModelExport::sceneValid()
+bool AbstractX3DModelExport::sceneValid()
 {
 	if (!scene)
 	{
@@ -308,7 +308,7 @@ bool X3DModelExport::sceneValid()
 	}
 }
 
-bool X3DModelExport::writeScene(
+bool AbstractX3DModelExport::writeScene(
 	const repo::core::model::RepoScene *scene)
 {
 
@@ -350,7 +350,7 @@ bool X3DModelExport::writeScene(
 }
 
 
-bool X3DModelExport::populateTree(
+bool AbstractX3DModelExport::populateTree(
 	const repo::core::model::RepoScene *scene)
 {
 	//Write xml header
@@ -362,7 +362,7 @@ bool X3DModelExport::populateTree(
 	return success;
 }
 
-bool X3DModelExport::populateTree(
+bool AbstractX3DModelExport::populateTree(
 	const repo::core::model::MeshNode &mesh,
 	const repo::core::model::RepoScene *scene)
 {
