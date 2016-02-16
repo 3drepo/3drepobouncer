@@ -271,7 +271,7 @@ namespace repo{
 			* @return returns true upon success
 			*/
 
-			bool RepoManipulator::generateAndCommitGLTFBuffer(
+			bool generateAndCommitGLTFBuffer(
 				const std::string                             &databaseAd,
 				const repo::core::model::RepoBSON	          *cred,
 				const repo::core::model::RepoScene            *scene);
