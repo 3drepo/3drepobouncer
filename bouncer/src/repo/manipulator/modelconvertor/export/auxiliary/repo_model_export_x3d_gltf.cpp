@@ -162,6 +162,7 @@ bool X3DGLTFModelExport::writeScene(
 		gltfST.addFieldAttribute("", X3D_ATTR_URL, gltfURL);
 		
 		sceneST.mergeSubTree(X3D_LABEL_GLTF, gltfST);
+		sceneST.mergeSubTree(X3D_LABEL_VIEWPOINT, generateDefaultViewPointTree());
 
 		tree.mergeSubTree(sceneLabel, sceneST);
 
