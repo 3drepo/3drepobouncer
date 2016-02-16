@@ -26,8 +26,6 @@
 
 using namespace repo::manipulator::modelconvertor;
 
-static const bool cesiumHack = true; //FIXME: turn on to check on generic viewer - to remove eventually
-
 const static size_t GLTF_MAX_VERTEX_LIMIT = 65535;
 
 static const std::string GLTF_LABEL_ACCESSORS       = "accessors";
@@ -568,6 +566,32 @@ std::unordered_map<std::string, std::vector<uint8_t>> GLTFModelExport::getGLTFFi
 	return files;
 }
 
+/**
+* TODO: this should really be done whilst the mesh is being split
+* But since we still need the non re-Indexed faces for SRC export,
+* This is temporarily done here.
+* Once we stop support for SRC, the faces should be remapped during the
+* meshsplit functionality within MeshNode.
+*/
+void GLTFModelExport::reIndexFaces(
+	const std::vector<std::vector<repo_mesh_mapping_t>> &matMap,
+	std::vector<uint16_t>                               &faces)
+{
+	for (const auto &subMeshMap : matMap)
+	{
+		for (const auto &mapping : subMeshMap)
+		{
+			uint16_t offset = mapping.vertFrom;
+			//This will totally fall apart if the faces are not triangulated
+			//But at this stage all faces should be triangulated.
+			for (size_t i = mapping.triFrom*3; i < mapping.triTo*3; ++i)
+			{
+				faces[i] -= offset;
+			}
+		}
+	}
+}
+
 void GLTFModelExport::processNodeChildren(
 	const repo::core::model::RepoNode                            *node,
 	repo::lib::PropertyTree                                      &tree,
@@ -753,6 +777,8 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 				splitMap,
 				matMap);
 
+			//reindex the face buffer
+			reIndexFaces(matMap, newFaces);
 
 			size_t fStart = addToDataBuffer(bufferFileName, newFaces);
 		
@@ -796,16 +822,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 					primitives.back().addToTree(GLTF_LABEL_PRIMITIVE, GLTF_PRIM_TYPE_TRIANGLE);
 
 					std::string subMeshName = meshId + "_m" + std::to_string(count++);
-
-					/*
-					  ===== NOTE =====
-					  Generic viewers (like Cesium) expects the faces to be indexed in respective of
-					  the accessor range of vertices, meaning we would have to remap the whole face indices
-					  for multipart models, or have every multipart submeshes to have access to the full
-					  vertex buffer.  The code under "cesiumHack" below would perform the latter, which works
-					  on Cesium.
-					*/
-
+					
 
 					if (newFaces.size())
 					{
@@ -819,20 +836,14 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 					{
 						std::string accessorName = subMeshName + "_" + GLTF_SUFFIX_NORMALS;
 						primitives.back().addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_NORMAL, GLTF_PREFIX_ACCESSORS + "_" + accessorName);
-						if (cesiumHack)
-							addAccessors(accessorName, posBufferName, tree, normals, 0, normals.size(), subMeshID);
-						else
-							addAccessors(accessorName, normBufferName, tree, normals, meshMap.vertFrom, meshMap.vertTo, subMeshID);
+						addAccessors(accessorName, normBufferName, tree, normals, meshMap.vertFrom, meshMap.vertTo, subMeshID);
 					}
 
 					if (vertices.size())
 					{
 						std::string accessorName = subMeshName + "_" + GLTF_SUFFIX_POSITION;
 						primitives.back().addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_POSITION, GLTF_PREFIX_ACCESSORS + "_" + accessorName);
-						if (cesiumHack)
-							addAccessors(accessorName, posBufferName, tree, vertices, 0, vertices.size(), subMeshID);
-						else
-							addAccessors(accessorName, posBufferName, tree, vertices, meshMap.vertFrom, meshMap.vertTo, subMeshID);					
+						addAccessors(accessorName, posBufferName, tree, vertices, meshMap.vertFrom, meshMap.vertTo, subMeshID);					
 					}
 
 
@@ -844,10 +855,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 							std::string uvBufferName = meshUUID + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(iUV);
 							primitives.back().addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_TEXCOORD + "_" + std::to_string(iUV),
 								GLTF_PREFIX_ACCESSORS + "_" + accessorName);							
-							if (cesiumHack)
-								addAccessors(accessorName, posBufferName, tree, UVs[iUV], 0, UVs[iUV].size(), subMeshID);
-							else
-								addAccessors(accessorName, posBufferName, tree, UVs[iUV], meshMap.vertFrom, meshMap.vertTo, subMeshID);
+							addAccessors(accessorName, posBufferName, tree, UVs[iUV], meshMap.vertFrom, meshMap.vertTo, subMeshID);
 						}
 					}
 					primitives.back().addToTree(GLTF_LABEL_EXTRA + "." + REPO_GLTF_LABEL_REF_ID, subMeshID);

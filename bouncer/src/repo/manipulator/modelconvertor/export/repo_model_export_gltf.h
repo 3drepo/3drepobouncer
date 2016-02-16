@@ -272,6 +272,15 @@ namespace repo{
 				bool generateTreeRepresentation();
 
 				/**
+				* Reindex the given faces base on the given information
+				* @param matMap materialMapping as reference
+				* @param faces the faces to remap
+				*/
+				void reIndexFaces(
+					const std::vector<std::vector<repo_mesh_mapping_t>> &matMap,
+					std::vector<uint16_t>                               &faces);
+
+				/**
 				* Process children of nodes(Transformation)
 				* Recurse call of populateWithNode() if there is a transformation as child
 				* and also property lists (meshes/cameras)
