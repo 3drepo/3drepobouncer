@@ -540,7 +540,8 @@ std::unordered_map<std::string, std::vector<uint8_t>> GLTFModelExport::getGLTFFi
 	//bin files
 	for (const auto &pair : fullDataBuffer)
 	{
-		std::string fileName = pair.first + ".bin";
+		std::string bufferFilePrefix = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/";
+		std::string fileName = bufferFilePrefix + pair.first + ".bin";
 		if (pair.second.size())
 		{
 			auto it = files.find(fileName);
@@ -745,7 +746,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 {
 	repo::core::model::RepoNodeSet meshes = scene->getAllMeshes(gType);
 	std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> splitSizes;
-	std::string bufferFileName = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + UUIDtoString(scene->getRevisionID());
+	std::string bufferFileName =  UUIDtoString(scene->getRevisionID());
 	for (const auto &mesh : meshes)
 	{
 		const repo::core::model::MeshNode *node = (const repo::core::model::MeshNode *)mesh;
@@ -1051,10 +1052,11 @@ void GLTFModelExport::writeBuffers(
 {
 	for (const auto &pair : fullDataBuffer)
 	{
+		std::string bufferFilePrefix = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/";
 		std::string bufferLabel = GLTF_LABEL_BUFFERS + "." + pair.first;
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_BYTE_LENGTH, pair.second.size()  * sizeof(*pair.second.data()));
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_TYPE, GLTF_ARRAY_BUFFER);
-		tree.addToTree(bufferLabel + "." + GLTF_LABEL_URI, pair.first + ".bin");
+		tree.addToTree(bufferLabel + "." + GLTF_LABEL_URI, "/api" + bufferFilePrefix + pair.first + ".bin");
 	}
 }
 
