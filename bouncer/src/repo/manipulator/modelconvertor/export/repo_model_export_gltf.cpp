@@ -746,7 +746,6 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 {
 	repo::core::model::RepoNodeSet meshes = scene->getAllMeshes(gType);
 	std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> splitSizes;
-	std::string bufferFileName =  UUIDtoString(scene->getRevisionID());
 	for (const auto &mesh : meshes)
 	{
 		const repo::core::model::MeshNode *node = (const repo::core::model::MeshNode *)mesh;
@@ -759,8 +758,6 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 		auto UVs = node->getUVChannelsSeparated();
 
 
-		size_t vStart = addToDataBuffer(bufferFileName, vertices);
-		size_t nStart = addToDataBuffer(bufferFileName, vertices);
 
 		if (mappings.size() > 1)
 		{
@@ -772,6 +769,8 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> splitMap;
 			std::vector<std::vector<repo_mesh_mapping_t>> matMap;
 
+			std::string bufferFileName = UUIDtoString(mesh->getUniqueID());
+
 			repo::core::model::MeshNode splitMesh = node->cloneAndRemapMeshMapping(GLTF_MAX_VERTEX_LIMIT,
 				newFaces,
 				idMapBuf,
@@ -781,6 +780,9 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			//reindex the face buffer
 			reIndexFaces(matMap, newFaces);
 
+
+			size_t vStart = addToDataBuffer(bufferFileName, vertices);
+			size_t nStart = addToDataBuffer(bufferFileName, vertices);
 			size_t fStart = addToDataBuffer(bufferFileName, newFaces);
 		
 			auto newMappings = splitMesh.getMeshMapping();
@@ -878,6 +880,11 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 
 			auto faces = node->getFaces();
 			std::vector<uint16_t> sFaces = serialiseFaces(faces);
+
+			std::string bufferFileName = UUIDtoString(scene->getRevisionID());
+
+			size_t vStart = addToDataBuffer(bufferFileName, vertices);
+			size_t nStart = addToDataBuffer(bufferFileName, vertices);
 			size_t fStart = addToDataBuffer(bufferFileName, sFaces);
 
 			std::string faceBufferName = meshId + "_" + GLTF_SUFFIX_FACES;
