@@ -61,7 +61,6 @@ namespace repo{
 				* @return returns true upon success
 				*/
 				virtual bool exportToFile(
-					const repo::core::model::RepoScene *scene,
 					const std::string &filePath){
 					return false;
 				};
@@ -90,7 +89,6 @@ namespace repo{
 
 				
 			protected:
-				const repo::core::model::RepoScene *scene;
 				bool convertSuccess;
 				repo::core::model::RepoScene::GraphType gType;
 				std::unordered_map<std::string, repo::lib::PropertyTree> trees;

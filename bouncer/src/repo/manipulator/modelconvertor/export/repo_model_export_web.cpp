@@ -28,8 +28,7 @@ using namespace repo::manipulator::modelconvertor;
 
 WebModelExport::WebModelExport(
 	const repo::core::model::RepoScene *scene
-	) : AbstractModelExport()
-	, scene(scene)
+	) : AbstractModelExport(scene)
 {
 	if (convertSuccess = scene)
 	{

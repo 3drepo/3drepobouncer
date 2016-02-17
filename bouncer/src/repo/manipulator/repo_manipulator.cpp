@@ -533,7 +533,6 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 				std::string databaseName = scene->getDatabaseName();
 				std::string projectName = scene->getProjectName();
 				std::string errMsg;
-				//FIXME: constant value somewhere for .stash.x3d?
 				std::string fileName = bufferPair.first;
 				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + x3dStashExt, fileName, bufferPair.second,
 					errMsg))
@@ -551,7 +550,6 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 				std::string databaseName = scene->getDatabaseName();
 				std::string projectName = scene->getProjectName();
 				std::string errMsg;
-				//FIXME: constant value somewhere for .stash.x3d?
 				std::string fileName = bufferPair.first;
 				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + jsonStashExt, fileName, bufferPair.second,
 					errMsg))
@@ -1000,8 +998,8 @@ bool RepoManipulator::saveSceneToFile(
 	const std::string &filePath,
 	const repo::core::model::RepoScene* scene)
 {
-	modelconvertor::AssimpModelExport modelExport;
-	return modelExport.exportToFile(scene, filePath);
+	modelconvertor::AssimpModelExport modelExport(scene);
+	return modelExport.exportToFile(filePath);
 }
 
 void RepoManipulator::updateRole(

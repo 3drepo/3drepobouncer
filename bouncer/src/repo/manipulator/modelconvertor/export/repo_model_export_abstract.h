@@ -35,7 +35,7 @@ namespace repo{
 				/**
 				* Default Constructor, export model with default settings
 				*/
-				AbstractModelExport();
+				AbstractModelExport(const repo::core::model::RepoScene *scene);
 
 				/**
 				* Default Deconstructor
@@ -49,8 +49,10 @@ namespace repo{
 				* @return returns true upon success
 				*/
 				virtual bool exportToFile(
-					const repo::core::model::RepoScene *scene,
 					const std::string &filePath) = 0;
+
+			protected:
+				const repo::core::model::RepoScene *scene;
 
 			};
 
