@@ -519,7 +519,7 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 
 				std::string errMsg;
 				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + geoStashExt, bufferPair.first, bufferPair.second,
-					errMsg, "binary/octet-stream"))
+					errMsg))
 				{
 					repoInfo << "File (" << bufferPair.first << ") added successfully.";
 				}
@@ -536,7 +536,7 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 				//FIXME: constant value somewhere for .stash.x3d?
 				std::string fileName = bufferPair.first;
 				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + x3dStashExt, fileName, bufferPair.second,
-					errMsg, "binary/octet-stream"))
+					errMsg))
 				{
 					repoInfo << "File (" << fileName << ") added successfully.";
 				}
@@ -554,7 +554,7 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 				//FIXME: constant value somewhere for .stash.x3d?
 				std::string fileName = bufferPair.first;
 				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + jsonStashExt, fileName, bufferPair.second,
-					errMsg, "binary/octet-stream"))
+					errMsg))
 				{
 					repoInfo << "File (" << fileName << ") added successfully.";
 				}
