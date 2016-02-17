@@ -24,6 +24,8 @@
 #include "../../../lib/repo_log.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 
+#include <boost/filesystem.hpp>
+
 using namespace repo::manipulator::modelconvertor;
 
 WebModelExport::WebModelExport(
@@ -54,7 +56,75 @@ WebModelExport::~WebModelExport()
 }
 
 
+bool WebModelExport::exportToFile(
+	const std::string &filePath)
+{
+	if (!convertSuccess) return convertSuccess;
+
+	const repo_export_buffers_t buffers = getAllFilesExportedAsBuffer();
+
+	boost::filesystem::path boostPath(filePath);
+
+	for (const auto &buff : buffers.geoFiles)
+	{
+		std::string fname = sanitizeFileName(buff.first);
+		boostPath /= fname;
+		FILE* fp = fopen(boostPath.string().c_str(), "wb");
+		if (fp)
+		{
+			fwrite(buff.second.data(), sizeof(*buff.second.data()), buff.second.size(), fp);
+			fclose(fp);
+		}
+		else
+		{
+			repoError << "Failed to open file for writing: " << fname;
+		}
+	}
+
+	for (const auto &buff : buffers.x3dFiles)
+	{
+		std::string fname = sanitizeFileName(buff.first);
+		boostPath /= fname;
+		FILE* fp = fopen(boostPath.string().c_str(), "wb");
+		if (fp)
+		{
+			fwrite(buff.second.data(), sizeof(*buff.second.data()), buff.second.size(), fp);
+			fclose(fp);
+		}
+		else
+		{
+			repoError << "Failed to open file for writing: " << fname;
+		}
+	}
+
+	for (const auto &buff : buffers.jsonFiles)
+	{
+		std::string fname = sanitizeFileName(buff.first);
+		boostPath /= fname;
+		FILE* fp = fopen(boostPath.string().c_str(), "wb");
+		if (fp)
+		{
+			fwrite(buff.second.data(), sizeof(*buff.second.data()), buff.second.size(), fp);
+			fclose(fp);
+		}
+		else
+		{
+			repoError << "Failed to open file for writing: " << fname;
+		}
+	}
+}
+
 std::string WebModelExport::getSupportedFormats()
 {
 	return ".src, .gltf";
+}
+
+std::string WebModelExport::sanitizeFileName(
+	const std::string &name) const
+{
+	std::string res = name;
+	std::replace(res.begin(), res.end(), '\\', '_');
+	std::replace(res.begin(), res.end(),  '/', '_');
+
+	return res;
 }

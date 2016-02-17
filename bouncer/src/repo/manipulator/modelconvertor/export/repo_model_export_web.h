@@ -61,9 +61,7 @@ namespace repo{
 				* @return returns true upon success
 				*/
 				virtual bool exportToFile(
-					const std::string &filePath){
-					return false;
-				};
+					const std::string &filePath);
 
 				/**
 				* Export all necessary files as buffers
@@ -94,6 +92,10 @@ namespace repo{
 				std::unordered_map<std::string, repo::lib::PropertyTree> trees;
 				std::unordered_map<std::string, std::vector<uint8_t>> x3dBufs;
 				std::unordered_map<std::string, repo::lib::PropertyTree> jsonTrees;
+
+			private:
+				std::string WebModelExport::sanitizeFileName(
+					const std::string &name) const;
 			};
 
 		} //namespace modelconvertor

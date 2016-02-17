@@ -657,11 +657,11 @@ bool AssimpModelExport::writeSceneToFile(
 bool AssimpModelExport::exportToFile(
 	const std::string                  &filePath)
 {
-	bool success = true;
+	bool success = false;
 	repo::core::model::RepoNodeSet textureNodes;
 	aiScene *assimpScene = convertToAssimp(scene, textureNodes);
 
-	if (assimpScene)
+	if (success = assimpScene)
 	{
 		success = writeSceneToFile(assimpScene, filePath);
 		writeTexturesToFiles(textureNodes, filePath);

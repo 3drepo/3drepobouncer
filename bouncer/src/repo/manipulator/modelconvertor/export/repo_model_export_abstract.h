@@ -49,7 +49,7 @@ namespace repo{
 				* @return returns true upon success
 				*/
 				virtual bool exportToFile(
-					const std::string &filePath) = 0;
+					const std::string &filePath) = 0; //FIXME: this shoudl be const, but it requires quite a major refactoring on assimp export
 
 			protected:
 				const repo::core::model::RepoScene *scene;
