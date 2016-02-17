@@ -210,7 +210,7 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 			idMapBuf.resize(idMapBuf.size() + 1);
 			idMapBuf.back().clear();
 			matMap.resize(matMap.size() + 1);
-			matMap.clear();
+			matMap.back().clear();
 		}//if (subMeshVTotal + smVertices > verticeThreshold)
 
 		if (smVertices > verticeThreshold)
@@ -297,7 +297,7 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 					idMapBuf.resize(idMapBuf.size() + 1);
 					idMapBuf.back().clear();
 					matMap.resize(matMap.size() + 1);
-					matMap.clear();
+					matMap.back().clear();
 		
 
 				}//else if (runningVTotal + nVerticesInFace > verticeThreshold)
