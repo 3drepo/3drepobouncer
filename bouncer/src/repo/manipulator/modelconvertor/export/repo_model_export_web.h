@@ -94,7 +94,7 @@ namespace repo{
 				std::unordered_map<std::string, repo::lib::PropertyTree> jsonTrees;
 
 			private:
-				std::string WebModelExport::sanitizeFileName(
+				std::string sanitizeFileName(
 					const std::string &name) const;
 			};
 
