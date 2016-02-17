@@ -107,9 +107,13 @@ namespace repo{
 						const std::string                                  &projectName = std::string(),
 						const std::string                                  &sceneExt = REPO_COLLECTION_SCENE,
 						const std::string                                  &revExt = REPO_COLLECTION_HISTORY,
-						const std::string                                  &stashExt = REPO_COLLECTION_REPOSTASH,
+						const std::string                                  &stashExt = REPO_COLLECTION_STASH_REPO,
 						const std::string                                  &rawExt = REPO_COLLECTION_RAW,
-						const std::string                                  &issuesExt = REPO_COLLECTION_ISSUES);
+						const std::string                                  &issuesExt = REPO_COLLECTION_ISSUES,
+						const std::string                                  &srcExt = REPO_COLLECTION_STASH_SRC,
+						const std::string                                  &gltfExt = REPO_COLLECTION_STASH_GLTF,
+						const std::string                                  &x3dExt = REPO_COLLECTION_STASH_X3D,
+						const std::string                                  &jsonExt = REPO_COLLECTION_STASH_JSON);
 
 					/**
 					* Used for constructing scene graphs from model convertors
@@ -145,9 +149,13 @@ namespace repo{
 						const RepoNodeSet              &unknowns = RepoNodeSet(),
 						const std::string              &sceneExt = REPO_COLLECTION_SCENE,
 						const std::string              &revExt = REPO_COLLECTION_HISTORY,
-						const std::string              &stashExt = REPO_COLLECTION_REPOSTASH,
+						const std::string              &stashExt = REPO_COLLECTION_STASH_REPO,
 						const std::string              &rawExt = REPO_COLLECTION_RAW,
-						const std::string              &issuesExt = REPO_COLLECTION_ISSUES);
+						const std::string              &issuesExt = REPO_COLLECTION_ISSUES,
+						const std::string              &srcExt = REPO_COLLECTION_STASH_SRC,
+						const std::string              &gltfExt = REPO_COLLECTION_STASH_GLTF,
+						const std::string              &x3dExt = REPO_COLLECTION_STASH_X3D,
+						const std::string              &jsonExt = REPO_COLLECTION_STASH_JSON);
 
 					/**
 					* Default Deconstructor
@@ -244,6 +252,42 @@ namespace repo{
 					std::string getRawExtension() const
 					{
 						return rawExt;
+					}
+
+					/**
+					* Get src extension for this project
+					* @return returns the src extension
+					*/
+					std::string getSRCExtension() const
+					{
+						return srcExt;
+					}
+
+					/**
+					* Get gltf extension for this project
+					* @return returns the gltf extension
+					*/
+					std::string getGLTFExtension() const
+					{
+						return gltfExt;
+					}
+
+					/**
+					* Get x3d extension for this project
+					* @return returns the x3d extension
+					*/
+					std::string getX3DExtension() const
+					{
+						return x3dExt;
+					}
+
+					/**
+					* Get json extension for this project
+					* @return returns the json extension
+					*/
+					std::string getJSONExtension() const
+					{
+						return jsonExt;
 					}
 
 					/**
@@ -940,6 +984,10 @@ namespace repo{
 					std::string stashExt;      /*! extension for optimized graph (Default: stash.3drepo)*/
 					std::string rawExt;      /*! extension for raw file dumps (e.g. original files) (Default: raw)*/
 					std::string issuesExt;      /*! extension for issues*/
+					std::string srcExt;      /*! extension for SRC stash files*/
+					std::string gltfExt;      /*! extension for GLTF stash files*/
+					std::string x3dExt;      /*! extension for X3Dom backbone files*/
+					std::string jsonExt;      /*! extension for JSON graph metadata files*/
 					std::vector<std::string> refFiles;  //Original Files that created this scene
 					std::vector<RepoNode*> toRemove;
 					repoUUID   revision;

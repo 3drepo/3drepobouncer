@@ -39,6 +39,8 @@ namespace repo{
 			}repo_export_buffers_t;
 
 
+			enum class WebExportType { GLTF, SRC };
+
 			class WebModelExport : public AbstractModelExport
 			{	
 			public:

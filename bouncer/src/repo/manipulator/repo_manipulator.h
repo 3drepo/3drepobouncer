@@ -263,6 +263,23 @@ namespace repo{
 				repo::core::model::RepoScene              *scene);
  
 			/**
+			* Generate and commit a SRC encoding for the given scene
+			* This requires the stash to have been generated already
+			* @param databaseAd database address:portdatabase
+			* @param cred user credentials in bson form
+			* @param scene the scene to generate the src encoding from
+			* @param buffers buffers to commit to database
+			* @param exType the type of export it is 
+			* @return returns true upon success
+			*/
+			bool generateAndCommitWebViewBuffer(
+				const std::string                             &databaseAd,
+				const repo::core::model::RepoBSON	          *cred,
+				const repo::core::model::RepoScene            *scene,
+				const modelconvertor::repo_export_buffers_t   &buffers,
+				const modelconvertor::WebExportType           &exType);
+
+			/**
 			* Generate and commit a GLTF encoding for the given scene
 			* This requires the stash to have been generated already
 			* @param databaseAd database address:portdatabase
