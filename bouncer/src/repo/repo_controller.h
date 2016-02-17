@@ -658,7 +658,7 @@ public:
 	* @param scene the scene to generate the gltf encoding from
 	* @return returns a buffer in the form of a byte vector
 	*/
-	manipulator::modelconvertor::repo_gltf_export_t generateGLTFBuffer(
+	manipulator::modelconvertor::repo_export_buffers_t generateGLTFBuffer(
 		const repo::core::model::RepoScene *scene);
 
 	/**
@@ -667,7 +667,7 @@ public:
 	* @param scene the scene to generate the src encoding from
 	* @return returns a buffer in the form of a byte vector
 	*/
-	manipulator::modelconvertor::repo_src_export_t generateSRCBuffer(
+	manipulator::modelconvertor::repo_export_buffers_t generateSRCBuffer(
 			const repo::core::model::RepoScene *scene);
 
     /**

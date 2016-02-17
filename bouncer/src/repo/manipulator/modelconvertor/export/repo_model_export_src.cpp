@@ -103,25 +103,17 @@ const static std::string MP_LABEL_USAGE            = "usage";
 
 SRCModelExport::SRCModelExport(
 	const repo::core::model::RepoScene *scene
-	) : AbstractModelExport()
-	, scene(scene)
+	) : WebModelExport(scene)
 {
 	//Considering all newly imported models should have a stash graph, we only need to support stash graph?
-	if (scene)
+	if (convertSuccess)
 	{
-		if (scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED))
+		if (gType == repo::core::model::RepoScene::GraphType::OPTIMIZED)
 		{
-			gType = repo::core::model::RepoScene::GraphType::OPTIMIZED;
 			convertSuccess = generateTreeRepresentation();
 
 		}
-		else  if (convertSuccess = (scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT) 
-			&& !scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()))
-		{
-			//There are no meshes, just generate the x3d backbone (most likely a federation model).
-			gType = repo::core::model::RepoScene::GraphType::DEFAULT;
-		}
-		else
+		else  if (!(convertSuccess = !scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()))
 		{
 			repoError << "Scene has no optimised graph and it is not a federation graph. SRC Exporter relies on this.";
 		}
@@ -224,7 +216,7 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getJSONFil
 	return fileBuffers;
 }
 
-repo_src_export_t SRCModelExport::getAllFilesExportedAsBuffer() const
+repo_export_buffers_t SRCModelExport::getAllFilesExportedAsBuffer() const
 {
 	return { getSRCFilesAsBuffer(), getX3DFilesAsBuffer(), getJSONFilesAsBuffer() };
 }
@@ -377,11 +369,6 @@ bool SRCModelExport::generateTreeRepresentation(
 	return success;
 
 
-}
-
-std::string SRCModelExport::getSupportedFormats()
-{
-	return ".src";
 }
 
 void SRCModelExport::addMeshToExport(

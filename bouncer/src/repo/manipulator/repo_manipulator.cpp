@@ -468,15 +468,15 @@ bool RepoManipulator::generateAndCommitGLTFBuffer(
 	const repo::core::model::RepoScene            *scene)
 {
 	bool success;
-	modelconvertor::repo_gltf_export_t v = generateGLTFBuffer(scene);
-	if (success = (v.gltfFiles.size() + v.x3dFiles.size()))
+	modelconvertor::repo_export_buffers_t v = generateGLTFBuffer(scene);
+	if (success = (v.geoFiles.size() + v.x3dFiles.size()))
 	{
 		repo::core::handler::AbstractDatabaseHandler* handler =
 			repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 		if (success = handler)
 		{
 
-			for (const auto bufferPair : v.gltfFiles)
+			for (const auto bufferPair : v.geoFiles)
 			{
 
 				std::string errMsg;
@@ -521,15 +521,15 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 	const repo::core::model::RepoScene            *scene)
 {
 	bool success;
-	modelconvertor::repo_src_export_t v = generateSRCBuffer(scene);
-	if (success = (v.srcFiles.size() + v.x3dFiles.size() + v.jsonFiles.size()))
+	modelconvertor::repo_export_buffers_t v = generateSRCBuffer(scene);
+	if (success = (v.geoFiles.size() + v.x3dFiles.size() + v.jsonFiles.size()))
 	{
 		repo::core::handler::AbstractDatabaseHandler* handler =
 			repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 		if (success = handler)
 		{
 
-			for (const auto bufferPair : v.srcFiles)
+			for (const auto bufferPair : v.geoFiles)
 			{
 
 				std::string errMsg;
@@ -586,11 +586,11 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 
 }
 
-modelconvertor::repo_gltf_export_t RepoManipulator::generateGLTFBuffer(
+modelconvertor::repo_export_buffers_t RepoManipulator::generateGLTFBuffer(
 	const repo::core::model::RepoScene *scene)
 {
 
-	modelconvertor::repo_gltf_export_t result;
+	modelconvertor::repo_export_buffers_t result;
 	modelconvertor::GLTFModelExport gltfExport(scene);
 	if (gltfExport.isOk())
 	{
@@ -604,11 +604,11 @@ modelconvertor::repo_gltf_export_t RepoManipulator::generateGLTFBuffer(
 }
 
 
-modelconvertor::repo_src_export_t RepoManipulator::generateSRCBuffer(
+modelconvertor::repo_export_buffers_t RepoManipulator::generateSRCBuffer(
 	const repo::core::model::RepoScene *scene)
 {
 
-	modelconvertor::repo_src_export_t result;
+	modelconvertor::repo_export_buffers_t result;
 	modelconvertor::SRCModelExport srcExport(scene);
 	if (srcExport.isOk())
 	{

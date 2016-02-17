@@ -170,25 +170,10 @@ static const std::string REPO_GLTF_LABEL_REF_ID = "refID";
 
 GLTFModelExport::GLTFModelExport(
 	const repo::core::model::RepoScene *scene
-	) : AbstractModelExport()
-	, scene(scene)
+	) : WebModelExport(scene)
 {
-	if (convertSuccess = scene)
-	{
-		
-		if (scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED))
-		{
-			gType = repo::core::model::RepoScene::GraphType::OPTIMIZED;
-		}
-		else if (scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
-		{
-			gType = repo::core::model::RepoScene::GraphType::DEFAULT;
-		}
-		else
-		{
-			repoError << "Failed to export to glTF : Failed to find root node within the scene!";
-			convertSuccess = false;
-		}
+	if (convertSuccess)
+	{		
 		//We only need a GLTF representation if there are meshes or cameras
 		if (scene->getAllMeshes(gType).size() || scene->getAllCameras(gType).size())
 			convertSuccess = generateTreeRepresentation();
@@ -504,11 +489,11 @@ bool GLTFModelExport::generateTreeRepresentation()
 	return true;
 }
 
-repo_gltf_export_t GLTFModelExport::getAllFilesExportedAsBuffer() const
+repo_export_buffers_t GLTFModelExport::getAllFilesExportedAsBuffer() const
 {
-	repo_gltf_export_t results;
+	repo_export_buffers_t results;
 
-	results.gltfFiles = getGLTFFilesAsBuffer();
+	results.geoFiles = getGLTFFilesAsBuffer();
 	results.x3dFiles  = getX3DFilesAsBuffer();
 
 	return results;

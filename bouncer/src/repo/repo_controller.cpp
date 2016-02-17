@@ -786,10 +786,10 @@ bool RepoController::generateAndCommitSRCBuffer(
 }
 
 
-manipulator::modelconvertor::repo_gltf_export_t RepoController::generateGLTFBuffer(
+manipulator::modelconvertor::repo_export_buffers_t RepoController::generateGLTFBuffer(
 	const repo::core::model::RepoScene *scene)
 {
-	manipulator::modelconvertor::repo_gltf_export_t buffer;
+	manipulator::modelconvertor::repo_export_buffers_t buffer;
 	if (scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
@@ -803,10 +803,10 @@ manipulator::modelconvertor::repo_gltf_export_t RepoController::generateGLTFBuff
 	return buffer;
 }
 
-manipulator::modelconvertor::repo_src_export_t RepoController::generateSRCBuffer(
+manipulator::modelconvertor::repo_export_buffers_t RepoController::generateSRCBuffer(
 	const repo::core::model::RepoScene *scene)
 {
-	manipulator::modelconvertor::repo_src_export_t buffer;
+	manipulator::modelconvertor::repo_export_buffers_t buffer;
 	if (scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();

@@ -24,7 +24,7 @@
 
 #include <string>
 
-#include "repo_model_export_abstract.h"
+#include "repo_model_export_web.h"
 #include "../../../lib/repo_property_tree.h"
 #include "../../../core/model/collection/repo_scene.h"
 
@@ -32,14 +32,7 @@ namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
 
-			typedef struct {
-				std::unordered_map<std::string, std::vector<uint8_t>> srcFiles;
-				std::unordered_map<std::string, std::vector<uint8_t>> x3dFiles;
-				std::unordered_map<std::string, std::vector<uint8_t>> jsonFiles;
-			}repo_src_export_t;
-
-
-			class SRCModelExport : public AbstractModelExport
+			class SRCModelExport : public WebModelExport
 			{	
 			public:
 				/**
@@ -52,75 +45,15 @@ namespace repo{
 				* Default Destructor
 				*/
 				virtual ~SRCModelExport();
-
-				/**
-				* Export a repo scene graph to file
-				* @param filePath path to destination file
-				* @return returns true upon success
-				*/
-				virtual bool exportToFile(
-					const repo::core::model::RepoScene *scene,
-					const std::string &filePath){
-					return false;
-				};
-
-				/**
-				* Return the SRC file as raw bytes buffer
-				* returns an empty vector if the export has failed
-				*/
-				std::unordered_map<std::string, std::vector<uint8_t>> getSRCFilesAsBuffer() const;
-
-				/**
-				* Return the X3D file as raw bytes buffer
-				* returns an empty vector if the export has failed
-				*/
-				std::unordered_map<std::string, std::vector<uint8_t>> getX3DFilesAsBuffer() const
-				{
-					return x3dBufs;
-				}
-
-				/**
-				* Return the JSON MPC files as raw bytes buffer
-				* returns an empty vector if the export has failed
-				*/
-				std::unordered_map<std::string, std::vector<uint8_t>> getJSONFilesAsBuffer() const;
-
+				
 				/**
 				* Export all necessary files as buffers
 				* @return returns a repo_src_export_t containing all files needed for this 
 				*          model to be rendered
 				*/
-				repo_src_export_t getAllFilesExportedAsBuffer() const;
-
-				/**
-				* Get supported file formats for this exporter
-				*/
-				static std::string getSupportedFormats();
-
-				/**
-				* Returns the status of the converter,
-				* whether it has successfully converted the model
-				* @return returns true if success
-				*/
-				bool isOk() const
-				{
-					return convertSuccess;
-				}
-
-				/**
-				* @param filePath path to destination file (including file extension)
-				* @return returns true upon success
-				*/
-				bool writeSceneToFile(
-					const std::string &filePath);
-				
+				repo_export_buffers_t getAllFilesExportedAsBuffer() const;
+			
 			private:
-				const repo::core::model::RepoScene *scene;
-				bool convertSuccess;
-				std::unordered_map<std::string, repo::lib::PropertyTree> trees;
-				std::unordered_map<std::string, std::vector<uint8_t>> x3dBufs;
-				std::unordered_map<std::string, repo::lib::PropertyTree> jsonTrees;
-				repo::core::model::RepoScene::GraphType gType;
 				std::unordered_map<std::string, std::vector<uint8_t>> fullDataBuffer;
 
 
@@ -159,6 +92,27 @@ namespace repo{
 				* @return returns true upon success
 				*/
 				bool generateTreeRepresentation();
+
+				/**
+				* Return the SRC file as raw bytes buffer
+				* returns an empty vector if the export has failed
+				*/
+				std::unordered_map<std::string, std::vector<uint8_t>> getSRCFilesAsBuffer() const;
+
+				/**
+				* Return the X3D file as raw bytes buffer
+				* returns an empty vector if the export has failed
+				*/
+				std::unordered_map<std::string, std::vector<uint8_t>> getX3DFilesAsBuffer() const
+				{
+					return x3dBufs;
+				}
+
+				/**
+				* Return the JSON MPC files as raw bytes buffer
+				* returns an empty vector if the export has failed
+				*/
+				std::unordered_map<std::string, std::vector<uint8_t>> getJSONFilesAsBuffer() const;
 			
 			};
 
