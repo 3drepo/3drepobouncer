@@ -185,6 +185,16 @@ TEST(RepoRoleTest, TranslatePermissionsTest_READ)
 			EXPECT_EQ(1, p.actions.size());
 			EXPECT_EQ(DBActions::FIND, p.actions[0]);
 		}
+		else if (p.collection == (projectName + ".stash.gltf"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.x3d"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
 		else if (p.collection == (projectName + ".history"))
 		{
 			EXPECT_EQ(1, p.actions.size());
@@ -234,13 +244,27 @@ TEST(RepoRoleTest, TranslatePermissionsTest_WRITE)
 		}
 		else if (p.collection == (projectName + ".stash.3drepo"))
 		{
-			EXPECT_EQ(1, p.actions.size());
-			EXPECT_EQ(DBActions::INSERT, p.actions[0]);
+			EXPECT_EQ(2, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
 		}
 		else if (p.collection == (projectName + ".stash.src"))
 		{
-			EXPECT_EQ(1, p.actions.size());
-			EXPECT_EQ(DBActions::INSERT, p.actions[0]);
+			EXPECT_EQ(2, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
+		}
+		else if (p.collection == (projectName + ".stash.gltf"))
+		{
+			EXPECT_EQ(2, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
+		}
+		else if (p.collection == (projectName + ".stash.x3d"))
+		{
+			EXPECT_EQ(2, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
 		}
 		else if (p.collection == (projectName + ".history"))
 		{
@@ -293,15 +317,31 @@ TEST(RepoRoleTest, TranslatePermissionsTest_READWRITE)
 		}
 		else if (p.collection == (projectName + ".stash.3drepo"))
 		{
-			EXPECT_EQ(2, p.actions.size());
+			EXPECT_EQ(3, p.actions.size());
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
 		}
 		else if (p.collection == (projectName + ".stash.src"))
 		{
-			EXPECT_EQ(2, p.actions.size());
+			EXPECT_EQ(3, p.actions.size());
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
+		}
+		else if(p.collection == (projectName + ".stash.x3d"))
+		{
+			EXPECT_EQ(3, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
+		}
+		else if(p.collection == (projectName + ".stash.gltf"))
+		{
+			EXPECT_EQ(3, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
 		}
 		else if (p.collection == (projectName + ".history"))
 		{
@@ -329,6 +369,7 @@ TEST(RepoRoleTest, TranslatePermissionsTest_READWRITE)
 			//There is an extension the test doesn't know about. Make sure 
 			//this extension is catered for within the roles function
 			//and add it as another case here.
+			repoError << "Unknown collection: " << p.collection;
 			FAIL();
 		}
 	}
