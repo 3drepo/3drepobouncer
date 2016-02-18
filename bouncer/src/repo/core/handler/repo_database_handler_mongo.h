@@ -98,7 +98,7 @@ namespace repo{
 					const std::string &host,
 					const int         &port,
 					const uint32_t    &maxConnections,
-					const std::string &dbName,
+					const std::string &dbName = std::string(),
 					const std::string &username = std::string(),
 					const std::string &password = std::string(),
 					const bool        &pwDigested = false);

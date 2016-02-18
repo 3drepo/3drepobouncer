@@ -33,5 +33,29 @@ TEST(RepoBSONTest, GetHandler)
 
 	EXPECT_TRUE(handler);
 	EXPECT_TRUE(errMsg.empty());
-	delete handler;
+
+	EXPECT_TRUE(MongoDatabaseHandler::getHandler(REPO_GTEST_DBADDRESS));
+	MongoDatabaseHandler::disconnectHandler();
+
+	EXPECT_FALSE(MongoDatabaseHandler::getHandler(REPO_GTEST_DBADDRESS));
+
+	MongoDatabaseHandler *wrongAdd = MongoDatabaseHandler::getHandler(errMsg, "blah", REPO_GTEST_DBPORT,
+		1,
+		REPO_GTEST_AUTH_DATABASE,
+		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+
+	EXPECT_FALSE(wrongAdd);
+	MongoDatabaseHandler *wrongPort = MongoDatabaseHandler::getHandler(errMsg, REPO_GTEST_DBADDRESS, 0001,
+		1,
+		REPO_GTEST_AUTH_DATABASE,
+		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+	EXPECT_FALSE(wrongPort);
+	
+
+	//Check can connect without authentication
+	MongoDatabaseHandler *noauth = MongoDatabaseHandler::getHandler(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+		1);
+
+	EXPECT_TRUE(noauth);
+	delete noauth;
 }
