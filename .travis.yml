@@ -31,6 +31,7 @@ before_install:
     - sudo apt-get update
     - sudo apt-get install libboost1.55-all-dev
     - echo ============ MONGO  INSTALL =============
+    - ls
     - tar -zxvf tools/ext_lib/mongo-cxx-1.1.0.tgz
     - echo ============ ASSIMP INSTALL =============
     - tar -zxvf tools/ext_lib/assimp-install.tgz
