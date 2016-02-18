@@ -31,20 +31,15 @@ before_install:
     - sudo apt-get update
     - sudo apt-get install libboost1.55-all-dev
     - echo ============ MONGO  INSTALL =============
-    - tar -zxcf tools/ext_lib/mongo-cxx-1.1.0.tgz
+    - tar -zcvf tools/ext_lib/mongo-cxx-1.1.0.tgz
     - echo ============ ASSIMP INSTALL =============
-    - mkdir assimp
-    - cd assimp
-    - git clone https://github.com/3drepo/assimp.git      
-    - CXXFLAGS+=-std=c++11 cmake -DASSIMP_BUILD_TESTS=OFF assimp
-    - sudo make -j2 install
-    - cd ../
+    - tar -zcvf tools/ext_lib/assimp-install.tgz
 install:
     - sudo pip install cpp-coveralls    
 before_script:
     - ls
     - mkdir build && cd build
-    - MONGO_ROOT=$HOME/mongo-cxx-1.1.0 cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DCMAKE_BUILD_TYPE=Release ../
+    - MONGO_ROOT=$HOME/mongo-cxx-1.1.0 ASSIMP_ROOT=$HOME/assimp-install cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DCMAKE_BUILD_TYPE=Release ../
 script:
     - sudo make -j2 install
     - LD_LIBRARY_PATH=$HOME/mongo-cxx/lib/:/usr/local/lib:$LD_LIBRARY_PATH 3drepobouncerTest
