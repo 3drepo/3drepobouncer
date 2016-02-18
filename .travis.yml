@@ -2,6 +2,14 @@ language: cpp
 
 compiler:
      - gcc
+
+env:
+    global:
+        - MONGODB_VERSION=2.6.10
+
+services:
+    - mongodb
+
 addons:
     apt:
         sources:
@@ -10,6 +18,10 @@ addons:
             - gcc-4.9
             - g++-4.9
 before_install:
+    - mongo admin --eval 'db.addUser("testUser", "3drepotest");'
+#     - cd test/data/database/
+#    - mongorestore --host localhost:27017      
+#    - cd ../../../
     - export CXX="g++-4.9"
     - export CC="gcc-4.9"
     - sudo ln -sf /usr/bin/gcov-4.9 /usr/bin/gcov
@@ -23,7 +35,7 @@ before_install:
     - echo ============ ASSIMP INSTALL =============
     - mkdir assimp
     - cd assimp
-    - git clone --branch=ISSUE_1 https://github.com/3drepo/assimp.git      
+    - git clone https://github.com/3drepo/assimp.git      
     - CXXFLAGS+=-std=c++11 cmake -DASSIMP_BUILD_TESTS=OFF assimp
     - sudo make -j2 install
     - cd ../
@@ -41,4 +53,4 @@ after_success:
 notifications:
     email: 
         recipients:
-            - team@3drepo.org
+            - carmen.fan@3drepo.org

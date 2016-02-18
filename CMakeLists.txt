@@ -23,7 +23,13 @@ project("3drepobouncer")
 cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 --coverage")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
+
+option (REPO_BUILD_COVERAGE "Building with coverage report" OFF)
+if(REPO_BUILD_COVERAGE)
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 --coverage")
+endif()
 
 #================BOOST SETTINGS=======================
 add_definitions(-DBOOST_ALL_NO_LIB)
