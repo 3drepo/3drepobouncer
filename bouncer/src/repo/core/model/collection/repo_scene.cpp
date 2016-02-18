@@ -519,9 +519,24 @@ bool RepoScene::commitProjectSettings(
 	RepoProjectSettings projectSettings =
 		RepoBSONFactory::makeRepoProjectSettings(projectName, userName);
 
-	bool success = handler->upsertDocument(
-		databaseName, REPO_COLLECTION_SETTINGS, projectSettings, false, errMsg);
+	bool success = handler->insertDocument(
+		databaseName, REPO_COLLECTION_SETTINGS, projectSettings, errMsg);
 
+	if (!success)
+	{
+		//check that the error occurred because of duplicated index (i.e. there's already an entry for projects)
+		RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
+
+		RepoBSON doc = handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria);
+
+		//If it already exist, that's fine.
+		success = !doc.isEmpty();
+		if (success)
+		{
+			repoTrace << "This project already has a project settings entry, skipping project settings commit...";
+			errMsg.clear();
+		}
+	}
 
 	return success;
 
