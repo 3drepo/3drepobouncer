@@ -21,7 +21,7 @@ before_install:
     - mongo admin --eval 'db.addUser("testUser", "3drepotest");'
 #     - cd test/data/database/
 #    - mongorestore --host localhost:27017      
-    - cd ../../../
+#    - cd ../../../
     - export CXX="g++-4.9"
     - export CC="gcc-4.9"
     - sudo ln -sf /usr/bin/gcov-4.9 /usr/bin/gcov
