@@ -908,8 +908,12 @@ bool RepoScene::loadRevision(
 	RepoBSON bson;
 	repoTrace << "loading revision : " << databaseName << "." << projectName << " head Revision: " << headRevision;
 	if (headRevision){
-		bson = handler->findOneBySharedID(databaseName, projectName + "." +
-			revExt, branch, REPO_NODE_REVISION_LABEL_TIMESTAMP);
+		RepoBSONBuilder critBuilder;
+		critBuilder.append(REPO_NODE_LABEL_SHARED_ID, branch);
+		critBuilder << REPO_NODE_REVISION_LABEL_INCOMPLETE << BSON("$exists" << false);
+
+		bson = handler->findOneByCriteria(databaseName, projectName + "." +
+			revExt, critBuilder.obj(), REPO_NODE_REVISION_LABEL_TIMESTAMP);
 		repoTrace << "Fetching head of revision from branch " << UUIDtoString(branch);
 	}
 	else{
