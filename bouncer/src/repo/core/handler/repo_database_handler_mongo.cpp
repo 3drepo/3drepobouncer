@@ -280,8 +280,6 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 			worker = workerPool->getWorker();
 			do
 			{
-
-
 				cursor = worker->query(
 					database + "." + collection,
 					criteria,
@@ -309,7 +307,8 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 	const std::string& database,
 	const std::string& collection,
-	const repo::core::model::RepoBSON& criteria)
+	const repo::core::model::RepoBSON& criteria,
+	const std::string& sortField)
 {
 	repo::core::model::RepoBSON data;
 
@@ -319,9 +318,10 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 		try{
 			uint64_t retrieved = 0;
 			worker = workerPool->getWorker();
-			
 			auto query = mongo::Query(criteria);
-
+			if (!sortField.empty())
+				query = query.sort(sortField, -1);
+			
 			data = repo::core::model::RepoBSON(worker->findOne(
 				database + "." + collection,
 				query));
@@ -329,7 +329,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 		}
 		catch (mongo::DBException& e)
 		{
-			repoError << "Error in MongoDatabaseHandler::findAllByCriteria: " << e.what();
+			repoError << "Error in MongoDatabaseHandler::findOneByCriteria: " << e.what();
 		}
 
 		workerPool->returnWorker(worker);
