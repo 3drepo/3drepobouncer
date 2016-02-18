@@ -19,14 +19,7 @@ before_install:
     - sudo apt-get update
     - sudo apt-get install libboost1.55-all-dev
     - echo ============ MONGO  INSTALL =============
-    - mkdir mongo
-    - cd mongo
-    - git clone --branch=legacy-1.1.0 https://github.com/mongodb/mongo-cxx-driver.git
-    - cd mongo-cxx-driver
-    - ls
-    - scons -j2 --64 --mute --sharedclient --prefix=$HOME/mongo-cxx install
-    - ls $HOME/mongo-cxx
-    - cd ../../
+    - tar -zxcf tools/ext_lib/mongo-cxx-1.1.0.tgz
     - echo ============ ASSIMP INSTALL =============
     - mkdir assimp
     - cd assimp
@@ -39,7 +32,7 @@ install:
 before_script:
     - ls
     - mkdir build && cd build
-    - MONGO_ROOT=$HOME/mongo-cxx cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DCMAKE_BUILD_TYPE=Release ../
+    - MONGO_ROOT=$HOME/mongo-cxx-1.1.0 cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DCMAKE_BUILD_TYPE=Release ../
 script:
     - sudo make -j2 install
     - LD_LIBRARY_PATH=$HOME/mongo-cxx/lib/:/usr/local/lib:$LD_LIBRARY_PATH 3drepobouncerTest
