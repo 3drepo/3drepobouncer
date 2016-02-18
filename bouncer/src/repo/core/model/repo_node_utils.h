@@ -288,9 +288,13 @@ static repo_vector_t multiplyMatVec(const std::vector<float> &mat, const repo_ve
 		result.y = mat[4] * vec.x + mat[5] * vec.y + mat[6] * vec.z  + mat[7];
 		result.z = mat[8] * vec.x + mat[9] * vec.y + mat[10] * vec.z + mat[11];
 
-		if (!(mat[12] == mat[13] == mat[14] == 0 && 1 == mat[15]))
+		float sig = 1e-5;
+
+		if (fabs(mat[12]) > sig || fabs(mat[13]) > sig || fabs(mat[14]) > sig || fabs(mat[15] -1) > sig)
 		{
-			repoError << "Potentially incorrect transformation : does not expect the last row to have values!";
+
+			repoWarning << "Potentially incorrect transformation : does not expect the last row to have values!";
+			
 		}
 	}
 	
