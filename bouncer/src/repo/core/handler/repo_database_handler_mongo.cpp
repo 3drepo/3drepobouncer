@@ -56,6 +56,7 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 {
 	repoTrace << "Mongo::client::initialise...";
 	mongo::client::initialize();
+	repoTrace << "Creating connection Pool with " << maxConnections << " connections @ " << dbAddress;
 	workerPool = new connectionPool::MongoConnectionPool(maxConnections, dbAddress, createAuthBSON(dbName, username, password, pwDigested));
 }
 
@@ -107,16 +108,27 @@ mongo::BSONObj* MongoDatabaseHandler::createAuthBSON(
 	const std::string &password,
 	const bool        &pwDigested)
 {
-	mongo::BSONObj* authBson = 0;
+	mongo::BSONObj* authBson = nullptr;
+	repoTrace << "creatine auth Bson with " << database << " u: " << username << " p:" << password;
 	if (!username.empty() && !database.empty() && !password.empty())
 	{
 
 		std::string passwordDigest = pwDigested ?
 		password : mongo::DBClientWithCommands::createPasswordDigest(username, password);
+		repoTrace << "Created Password digest";
 		authBson = new mongo::BSONObj(BSON("user" << username <<
 			"db" << database <<
 			"pwd" << passwordDigest <<
 			"digestPassword" << false));
+	}
+
+	if (authBson)
+	{
+		repoTrace << "AuthBSON: " << authBson->toString();
+	}
+	else
+	{
+		repoTrace << "Failed to create auth bson";
 	}
 
 	return authBson;
