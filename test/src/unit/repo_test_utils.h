@@ -18,6 +18,12 @@
 #pragma once
 #include <repo/core/model/repo_node_utils.h>
 
+//Test Database address
+const static std::string REPO_GTEST_DBADDRESS     = "localhost";
+const static uint32_t    REPO_GTEST_DBPORT        = 27017;
+const static std::string REPO_GTEST_AUTH_DATABASE = "admin";
+const static std::string REPO_GTEST_DBUSER        = "testUser";
+const static std::string REPO_GTEST_DBPW          = "3drepotest";
 
 static bool compareVectors(const repo_vector2d_t &v1, const repo_vector2d_t &v2)
 {
