@@ -56,7 +56,7 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 {
 	repoTrace << "Mongo::client::initialise...";
 	mongo::client::initialize();
-	repoTrace << "Creating connection Pool with " << maxConnections << " connections @ " << dbAddress;
+	repoTrace << "Creating connection Pool with " << maxConnections << " connections @ " << dbAddress.toString();
 	workerPool = new connectionPool::MongoConnectionPool(maxConnections, dbAddress, createAuthBSON(dbName, username, password, pwDigested));
 }
 
