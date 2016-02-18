@@ -54,6 +54,7 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 	const bool                    &pwDigested) :
 	AbstractDatabaseHandler(MAX_MONGO_BSON_SIZE)
 {
+	repoTrace << "Mongo::client::initialise...";
 	mongo::client::initialize();
 	workerPool = new connectionPool::MongoConnectionPool(maxConnections, dbAddress, createAuthBSON(dbName, username, password, pwDigested));
 }
@@ -107,7 +108,7 @@ mongo::BSONObj* MongoDatabaseHandler::createAuthBSON(
 	const bool        &pwDigested)
 {
 	mongo::BSONObj* authBson = 0;
-	if (!username.empty())
+	if (!username.empty() && !database.empty() && !password.empty())
 	{
 
 		std::string passwordDigest = pwDigested ?

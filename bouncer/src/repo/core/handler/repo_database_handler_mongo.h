@@ -121,7 +121,7 @@ namespace repo{
 				* @param username user name for authentication
 				* @param password password of the user
 				* @param pwDigested true if pw is digested
-				* @return returns the constructed BSON object, or 0 if username is empty
+				* @return returns the constructed BSON object, or 0 nullptr username is empty
 				*/
 				repo::core::model::RepoBSON* createBSONCredentials(
 					const std::string &dbName,
