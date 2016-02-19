@@ -64,7 +64,8 @@ namespace repo{
 					const std::vector<uint16_t>    &faces,
 					const uint32_t                 &addrFrom,
 					const uint32_t                 &addrTo,
-					const std::string              &refId = std::string());
+					const std::string              &refId = std::string(),
+					const size_t                   &offset = 0);
 
 				void addAccessors(
 					const std::string                  &accName,
@@ -73,7 +74,8 @@ namespace repo{
 					const std::vector<repo_vector2d_t> &buffer,
 					const uint32_t                     &addrFrom,
 					const uint32_t                     &addrTo,
-					const std::string                  &refId = std::string());
+					const std::string                  &refId = std::string(),
+					const size_t                       &offset = 0);
 
 				void addAccessors(
 					const std::string                &accName,
@@ -82,7 +84,8 @@ namespace repo{
 					const std::vector<repo_vector_t> &buffer,
 					const uint32_t                   &addrFrom,
 					const uint32_t                   &addrTo,
-					const std::string                &refId = std::string());
+					const std::string                &refId = std::string(),
+					const size_t                     &offset = 0);
 
 				/**
 				* Add an accessor to a bufferview
