@@ -40,7 +40,7 @@ install:
 before_script:
     - ls
     - mkdir build && cd build
-    - MONGO_ROOT=$HOME/mongo-cxx-1.1.0 ASSIMP_ROOT=$HOME/assimp-install cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DCMAKE_BUILD_TYPE=Release ../
+    - MONGO_ROOT=$PWD/../mongo-cxx-1.1.0 ASSIMP_ROOT=$PWD/../assimp-install cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DCMAKE_BUILD_TYPE=Release ../
 script:
     - sudo make -j2 install
     - LD_LIBRARY_PATH=$HOME/mongo-cxx/lib/:/usr/local/lib:$LD_LIBRARY_PATH 3drepobouncerTest
