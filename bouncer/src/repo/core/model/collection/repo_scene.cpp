@@ -33,7 +33,7 @@
 
 using namespace repo::core::model;
 
-const std::vector<std::string> RepoScene::collectionsInProject = { "scene", "stash.3drepo",
+const std::vector<std::string> RepoScene::collectionsInProject = { "scene", "stash.3drepo", "stash.x3d", "stash.gltf",
 "stash.src", "history", "issues", "wayfinder" };
 
 RepoScene::RepoScene(
@@ -535,9 +535,24 @@ bool RepoScene::commitProjectSettings(
 	RepoProjectSettings projectSettings =
 		RepoBSONFactory::makeRepoProjectSettings(projectName, userName);
 
-	bool success = handler->upsertDocument(
-		databaseName, REPO_COLLECTION_SETTINGS, projectSettings, false, errMsg);
+	bool success = handler->insertDocument(
+		databaseName, REPO_COLLECTION_SETTINGS, projectSettings, errMsg);
 
+	if (!success)
+	{
+		//check that the error occurred because of duplicated index (i.e. there's already an entry for projects)
+		RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
+
+		RepoBSON doc = handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria);
+
+		//If it already exist, that's fine.
+		success = !doc.isEmpty();
+		if (success)
+		{
+			repoTrace << "This project already has a project settings entry, skipping project settings commit...";
+			errMsg.clear();
+		}
+	}
 
 	return success;
 
@@ -909,8 +924,12 @@ bool RepoScene::loadRevision(
 	RepoBSON bson;
 	repoTrace << "loading revision : " << databaseName << "." << projectName << " head Revision: " << headRevision;
 	if (headRevision){
-		bson = handler->findOneBySharedID(databaseName, projectName + "." +
-			revExt, branch, REPO_NODE_REVISION_LABEL_TIMESTAMP);
+		RepoBSONBuilder critBuilder;
+		critBuilder.append(REPO_NODE_LABEL_SHARED_ID, branch);
+		critBuilder << REPO_NODE_REVISION_LABEL_INCOMPLETE << BSON("$exists" << false);
+
+		bson = handler->findOneByCriteria(databaseName, projectName + "." +
+			revExt, critBuilder.obj(), REPO_NODE_REVISION_LABEL_TIMESTAMP);
 		repoTrace << "Fetching head of revision from branch " << UUIDtoString(branch);
 	}
 	else{

@@ -337,12 +337,14 @@ namespace repo{
 				* @param database name of database
 				* @param collection name of collection
 				* @param criteria search criteria in a bson object
+				* @param sortField field to sort
 				* @return a RepoBSON objects satisfy the given criteria
 				*/
 				virtual repo::core::model::RepoBSON findOneByCriteria(
 					const std::string& database,
 					const std::string& collection,
-					const repo::core::model::RepoBSON& criteria) = 0;
+					const repo::core::model::RepoBSON& criteria,
+					const std::string& sortField = "") = 0;
 
 				/**
 				* Given a list of unique IDs, find all the documents associated to them

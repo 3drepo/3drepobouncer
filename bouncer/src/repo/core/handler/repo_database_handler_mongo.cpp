@@ -54,7 +54,9 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 	const bool                    &pwDigested) :
 	AbstractDatabaseHandler(MAX_MONGO_BSON_SIZE)
 {
+	repoTrace << "Mongo::client::initialise...";
 	mongo::client::initialize();
+	repoTrace << "Creating connection Pool with " << maxConnections << " connections @ " << dbAddress.toString();
 	workerPool = new connectionPool::MongoConnectionPool(maxConnections, dbAddress, createAuthBSON(dbName, username, password, pwDigested));
 }
 
@@ -106,16 +108,27 @@ mongo::BSONObj* MongoDatabaseHandler::createAuthBSON(
 	const std::string &password,
 	const bool        &pwDigested)
 {
-	mongo::BSONObj* authBson = 0;
-	if (!username.empty())
+	mongo::BSONObj* authBson = nullptr;
+	repoTrace << "creatine auth Bson with " << database << " u: " << username << " p:" << password;
+	if (!username.empty() && !database.empty() && !password.empty())
 	{
 
 		std::string passwordDigest = pwDigested ?
 		password : mongo::DBClientWithCommands::createPasswordDigest(username, password);
+		repoTrace << "Created Password digest";
 		authBson = new mongo::BSONObj(BSON("user" << username <<
 			"db" << database <<
 			"pwd" << passwordDigest <<
 			"digestPassword" << false));
+	}
+
+	if (authBson)
+	{
+		repoTrace << "AuthBSON: " << authBson->toString();
+	}
+	else
+	{
+		repoTrace << "Failed to create auth bson";
 	}
 
 	return authBson;
@@ -280,8 +293,6 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 			worker = workerPool->getWorker();
 			do
 			{
-
-
 				cursor = worker->query(
 					database + "." + collection,
 					criteria,
@@ -309,7 +320,8 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 	const std::string& database,
 	const std::string& collection,
-	const repo::core::model::RepoBSON& criteria)
+	const repo::core::model::RepoBSON& criteria,
+	const std::string& sortField)
 {
 	repo::core::model::RepoBSON data;
 
@@ -319,9 +331,10 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 		try{
 			uint64_t retrieved = 0;
 			worker = workerPool->getWorker();
-			
 			auto query = mongo::Query(criteria);
-
+			if (!sortField.empty())
+				query = query.sort(sortField, -1);
+			
 			data = repo::core::model::RepoBSON(worker->findOne(
 				database + "." + collection,
 				query));
@@ -329,7 +342,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 		}
 		catch (mongo::DBException& e)
 		{
-			repoError << "Error in MongoDatabaseHandler::findAllByCriteria: " << e.what();
+			repoError << "Error in MongoDatabaseHandler::findOneByCriteria: " << e.what();
 		}
 
 		workerPool->returnWorker(worker);

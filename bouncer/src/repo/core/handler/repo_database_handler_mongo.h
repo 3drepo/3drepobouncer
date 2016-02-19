@@ -98,7 +98,7 @@ namespace repo{
 					const std::string &host,
 					const int         &port,
 					const uint32_t    &maxConnections,
-					const std::string &dbName,
+					const std::string &dbName = std::string(),
 					const std::string &username = std::string(),
 					const std::string &password = std::string(),
 					const bool        &pwDigested = false);
@@ -121,7 +121,7 @@ namespace repo{
 				* @param username user name for authentication
 				* @param password password of the user
 				* @param pwDigested true if pw is digested
-				* @return returns the constructed BSON object, or 0 if username is empty
+				* @return returns the constructed BSON object, or 0 nullptr username is empty
 				*/
 				repo::core::model::RepoBSON* createBSONCredentials(
 					const std::string &dbName,
@@ -458,12 +458,15 @@ namespace repo{
 				* @param database name of database
 				* @param collection name of collection
 				* @param criteria search criteria in a bson object
+				* @param sortField field to sort
 				* @return a RepoBSON objects satisfy the given criteria
 				*/
 				repo::core::model::RepoBSON findOneByCriteria(
 					const std::string& database,
 					const std::string& collection,
-					const repo::core::model::RepoBSON& criteria);
+					const repo::core::model::RepoBSON& criteria,
+					const std::string& sortField = ""
+					);
 
 				/**
 				*Retrieves the first document matching given Shared ID (SID), sorting is descending
