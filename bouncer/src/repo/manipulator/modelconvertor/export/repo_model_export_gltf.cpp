@@ -563,18 +563,24 @@ void GLTFModelExport::reIndexFaces(
 	const std::vector<std::vector<repo_mesh_mapping_t>> &matMap,
 	std::vector<uint16_t>                               &faces)
 {
+	size_t verticesOffset = 0;
 	for (const auto &subMeshMap : matMap)
 	{
+		
 		for (const auto &mapping : subMeshMap)
 		{
-			uint16_t offset = mapping.vertFrom;
+			uint16_t offset = mapping.vertFrom - verticesOffset;
 			//This will totally fall apart if the faces are not triangulated
 			//But at this stage all faces should be triangulated.
 			for (size_t i = mapping.triFrom*3; i < mapping.triTo*3; ++i)
 			{
 				faces[i] -= offset;
 			}
+
 		}
+		//Faces given are already offset by subMeshes. we need to know the start of the vertices
+		verticesOffset = subMeshMap.back().vertTo;
+
 	}
 }
 
@@ -772,7 +778,24 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 		
 			auto newMappings = splitMesh.getMeshMapping();
 
-			splitSizes[node->getUniqueID()] = newMappings.size();			
+			splitSizes[node->getUniqueID()] = newMappings.size();		
+
+			std::string faceBufferName = meshUUID + "_" + GLTF_SUFFIX_FACES;
+			std::string normBufferName = meshUUID + "_" + GLTF_SUFFIX_NORMALS;
+			std::string posBufferName = meshUUID + "_" + GLTF_SUFFIX_POSITION;
+
+			//for each mesh we need to add a bufferView for each buffer
+			addBufferView(normBufferName, bufferFileName, tree, normals, nStart, normals.size(), meshUUID);
+			addBufferView(posBufferName, bufferFileName, tree, vertices, vStart, vertices.size(), meshUUID);
+			addBufferView(faceBufferName, bufferFileName, tree, newFaces, fStart, newFaces.size() / 3, meshUUID);
+
+
+			for (size_t i = 0; i < UVs.size(); ++i)
+			{
+				size_t uvStart = addToDataBuffer(bufferFileName, UVs[i]);
+				std::string uvBufferName = meshUUID + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(i);
+				addBufferView(uvBufferName, bufferFileName, tree, UVs[i], uvStart, UVs[i].size(), meshUUID);
+			}
 
 			for (size_t i = 0; i < newMappings.size(); ++i)
 			{
@@ -781,25 +804,8 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 				std::string label = GLTF_LABEL_MESHES + "." + meshId;
 				std::vector<repo::lib::PropertyTree> primitives;
 				size_t count = 0;
+								
 
-				std::string faceBufferName = meshId + "_" + GLTF_SUFFIX_FACES;
-				std::string normBufferName = meshId + "_" + GLTF_SUFFIX_NORMALS;
-				std::string posBufferName = meshId + "_" + GLTF_SUFFIX_POSITION;
-
-				size_t vCount = newMappings[i].vertTo - newMappings[i].vertFrom;
-				size_t fCount = newMappings[i].triTo - newMappings[i].triFrom;
-
-				//for each mesh we need to add a bufferView for each buffer
-				addBufferView(normBufferName, bufferFileName, tree, normals, nStart, vCount, meshId);
-				addBufferView(posBufferName,  bufferFileName, tree, vertices, vStart, vCount, meshId);
-				addBufferView(faceBufferName, bufferFileName, tree, newFaces, fStart, fCount, meshId);
-
-				for (size_t i = 0; i < UVs.size(); ++i)
-				{
-					size_t uvStart = addToDataBuffer(bufferFileName, UVs[i]);
-					std::string uvBufferName = meshId + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(i);
-					addBufferView(uvBufferName, bufferFileName, tree, UVs[i], uvStart, vCount, meshId);
-				}
 
 				for (const repo_mesh_mapping_t & meshMap : matMap[i])
 				{
