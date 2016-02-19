@@ -40,43 +40,43 @@ TEST(MongoDatabaseHandlerTest, GetHandlerDisconnectHandler)
 		REPO_GTEST_AUTH_DATABASE, 
 		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
 
-	//EXPECT_TRUE(handler);
-	//EXPECT_TRUE(errMsg.empty());
+	EXPECT_TRUE(handler);
+	EXPECT_TRUE(errMsg.empty());
 
-	//EXPECT_TRUE(MongoDatabaseHandler::getHandler(REPO_GTEST_DBADDRESS));
-	//MongoDatabaseHandler::disconnectHandler();
+	EXPECT_TRUE(MongoDatabaseHandler::getHandler(REPO_GTEST_DBADDRESS));
+	MongoDatabaseHandler::disconnectHandler();
 
-	//EXPECT_FALSE(MongoDatabaseHandler::getHandler(REPO_GTEST_DBADDRESS));
+	EXPECT_FALSE(MongoDatabaseHandler::getHandler(REPO_GTEST_DBADDRESS));
 
-	//MongoDatabaseHandler *wrongAdd = MongoDatabaseHandler::getHandler(errMsg, "blah", REPO_GTEST_DBPORT,
-	//	1,
-	//	REPO_GTEST_AUTH_DATABASE,
-	//	REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+	MongoDatabaseHandler *wrongAdd = MongoDatabaseHandler::getHandler(errMsg, "blah", REPO_GTEST_DBPORT,
+		1,
+		REPO_GTEST_AUTH_DATABASE,
+		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
 
-	//EXPECT_FALSE(wrongAdd);
-	//MongoDatabaseHandler *wrongPort = MongoDatabaseHandler::getHandler(errMsg, REPO_GTEST_DBADDRESS, 0001,
-	//	1,
-	//	REPO_GTEST_AUTH_DATABASE,
-	//	REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
-	//EXPECT_FALSE(wrongPort);
-	//
+	EXPECT_FALSE(wrongAdd);
+	MongoDatabaseHandler *wrongPort = MongoDatabaseHandler::getHandler(errMsg, REPO_GTEST_DBADDRESS, 0001,
+		1,
+		REPO_GTEST_AUTH_DATABASE,
+		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+	EXPECT_FALSE(wrongPort);
+	
 
-	////Check can connect without authentication
-	//MongoDatabaseHandler *noauth = MongoDatabaseHandler::getHandler(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
-	//	1);
+	//Check can connect without authentication
+	MongoDatabaseHandler *noauth = MongoDatabaseHandler::getHandler(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+		1);
 
-	//EXPECT_TRUE(noauth);
-	//MongoDatabaseHandler::disconnectHandler();
+	EXPECT_TRUE(noauth);
+	MongoDatabaseHandler::disconnectHandler();
 }
-//
-//TEST(MongoDatabaseHandlerTest, CreateBSONCredentials)
-//{
-//	auto handler = getHandler();
-//	ASSERT_TRUE(handler);
-//	EXPECT_TRUE(handler->createBSONCredentials("testdb" , "username", "password"));
-//	EXPECT_TRUE(handler->createBSONCredentials("testdb" , "username", "password", true));
-//	EXPECT_FALSE(handler->createBSONCredentials(""      , "username", "password"));
-//	EXPECT_FALSE(handler->createBSONCredentials("testdb", ""        , "password"));
-//	EXPECT_FALSE(handler->createBSONCredentials("testdb", "username", ""));
-//}
-//
+
+TEST(MongoDatabaseHandlerTest, CreateBSONCredentials)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	EXPECT_TRUE(handler->createBSONCredentials("testdb" , "username", "password"));
+	EXPECT_TRUE(handler->createBSONCredentials("testdb" , "username", "password", true));
+	EXPECT_FALSE(handler->createBSONCredentials(""      , "username", "password"));
+	EXPECT_FALSE(handler->createBSONCredentials("testdb", ""        , "password"));
+	EXPECT_FALSE(handler->createBSONCredentials("testdb", "username", ""));
+}
+
