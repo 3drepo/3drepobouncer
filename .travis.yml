@@ -40,10 +40,12 @@ install:
 before_script:
     - ls
     - mkdir build && cd build
-    - MONGO_ROOT=$PWD/../mongo-cxx-1.1.0 ASSIMP_ROOT=$PWD/../assimp-install cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DCMAKE_BUILD_TYPE=Release ../
+    - export MONGO_ROOT=$PWD/../mongo-cxx-1.1.0 
+    - export ASSIMP_ROOT=$PWD/../assimp-install 
+    - cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DCMAKE_BUILD_TYPE=Release ../
 script:
     - sudo make -j2 install
-    - LD_LIBRARY_PATH=$HOME/mongo-cxx/lib/:/usr/local/lib:$LD_LIBRARY_PATH 3drepobouncerTest
+    - LD_LIBRARY_PATH=$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$LD_LIBRARY_PATH 3drepobouncerTest
 after_success:
     - coveralls --root ../ -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp"
 notifications:
