@@ -374,45 +374,35 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 
 	//Set up faces
 	std::vector<repo_face_t> faces;
+	std::vector<repo_vector_t> vectors;
+	std::vector<repo_vector_t> normals;
+	std::vector<std::vector<repo_vector2d_t>> uvChannels;
+	std::vector<repo_color4d_t> colors;
+	uvChannels.resize(1);
 	faces.reserve(nCount);
+	vectors.reserve(nCount);
+	normals.reserve(nCount);
+	uvChannels[0].reserve(nCount);
+	colors.reserve(nCount);
 	for (uint32_t i = 0; i < nCount; ++i)
 	{
 
 		repo_face_t face = { (uint32_t)std::rand(), (uint32_t)std::rand(), (uint32_t)std::rand() };
 		faces.push_back(face);
 
-
+		vectors.push_back({(float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f});
+		normals.push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
+		uvChannels[0].push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f});
+		colors.push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
 	}
-
-	std::vector<repo_vector_t> vectors;
-	vectors.resize(nCount);
-	std::vector<repo_vector_t> normals;
-	normals.resize(nCount);
-
-	std::memcpy(vectors.data(), rawVec, nCount*sizeof(*rawVec));
-	std::memcpy(normals.data(), rawNorm, nCount*sizeof(*rawNorm));
-
+	
 	std::vector<std::vector<float>> boundingBox, outLine;
 	boundingBox.resize(2);
 	boundingBox[0] = { std::rand() / 100.f, std::rand() / 100.f, std::rand() / 100.f };
 	boundingBox[1] = { std::rand() / 100.f, std::rand() / 100.f, std::rand() / 100.f };
 	outLine = boundingBox;
 
-	std::vector<std::vector<repo_vector2d_t>> uvChannels;
-	uvChannels.resize(1);
-	uvChannels[0].resize(nCount);
-	std::memcpy(uvChannels[0].data(), rawUV, nCount*sizeof(*rawUV));
-
-	std::vector<repo_color4d_t> colors;
-	colors.resize(nCount);
-	std::memcpy(colors.data(), rawColors, nCount*sizeof(*rawColors));
-
-	free(rawVec);
-	free(rawNorm);
-	free(rawUV);
-	free(rawColors);
-
-
+	
 	std::string name = "meshTest";
 
 	//End of setting up data... the actual testing happens here.

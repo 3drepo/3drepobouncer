@@ -98,7 +98,7 @@ namespace repo{
 					const std::string &host,
 					const int         &port,
 					const uint32_t    &maxConnections,
-					const std::string &dbName,
+					const std::string &dbName = std::string(),
 					const std::string &username = std::string(),
 					const std::string &password = std::string(),
 					const bool        &pwDigested = false);
@@ -121,7 +121,7 @@ namespace repo{
 				* @param username user name for authentication
 				* @param password password of the user
 				* @param pwDigested true if pw is digested
-				* @return returns the constructed BSON object, or 0 if username is empty
+				* @return returns the constructed BSON object, or 0 nullptr username is empty
 				*/
 				repo::core::model::RepoBSON* createBSONCredentials(
 					const std::string &dbName,

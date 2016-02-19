@@ -18,6 +18,12 @@ resource.h
 .tags
 .tags_sorted_by_file
 
+#vim junk
+*.swp
+
+#mongo junk
+*.lock
+
 Debug
 x64
 sandbox
