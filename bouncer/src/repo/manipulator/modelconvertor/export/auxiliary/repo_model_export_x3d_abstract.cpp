@@ -306,6 +306,8 @@ bool AbstractX3DModelExport::sceneValid()
 			return false;
 		}
 	}
+
+	return true;
 }
 
 bool AbstractX3DModelExport::writeScene(
