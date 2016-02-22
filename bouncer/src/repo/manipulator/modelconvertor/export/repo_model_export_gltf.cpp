@@ -1158,7 +1158,7 @@ std::vector<uint16_t> GLTFModelExport::reorderFaces(
 				uint32_t currQuantY = quantIndex[fRaw[startIdx + 1 ]];
 				uint32_t currQuantZ = quantIndex[fRaw[startIdx + 2 ]];
 
-				if (currQuantX != currQuantY && currQuantX != currQuantY && currQuantY != currQuantZ)
+				if (currQuantX != currQuantY && currQuantX != currQuantY && currQuantY != currQuantZ || lod == maxBits -1)
 				{
 					//Add this face to the new face buffer
 					reOrderedFaces.push_back(fRaw[startIdx]);
@@ -1166,7 +1166,7 @@ std::vector<uint16_t> GLTFModelExport::reorderFaces(
 					reOrderedFaces.push_back(fRaw[startIdx + 2]);
 
 					validFaces[triIdx] = true;
-				}
+				}			
 			}			
 
 		}
