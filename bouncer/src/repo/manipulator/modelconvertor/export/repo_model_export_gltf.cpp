@@ -24,6 +24,8 @@
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "auxiliary/repo_model_export_x3d_gltf.h"
 
+#include <cmath>
+
 using namespace repo::manipulator::modelconvertor;
 
 const static size_t GLTF_MAX_VERTEX_LIMIT = 65535;
@@ -163,6 +165,8 @@ static const float              REPO_GLTF_DEFAULT_SHININESS       = 50;
 static const std::vector<float> REPO_GLTF_DEFAULT_SPECULAR        = { 0, 0, 0, 0 };
 
 static const std::string REPO_GLTF_LABEL_REF_ID = "refID";
+static const std::string REPO_GLTF_LABEL_LOD    = "lodRef";
+
 
 
 
@@ -215,6 +219,7 @@ void GLTFModelExport::addAccessors(
 	const uint32_t                 &addrFrom,
 	const uint32_t                 &addrTo,
 	const std::string              &refId,
+	const std::vector<uint16_t>    &lod,
 	const size_t                   &offset)
 {
 	std::vector<float> min, max;
@@ -232,7 +237,7 @@ void GLTFModelExport::addAccessors(
 	}
 	addAccessors(accName, buffViewName, tree, endFaceIdx - startFaceIdx,
 		(startFaceIdx - offset*3) * sizeof(*faces.data()), 0, GLTF_COMP_TYPE_USHORT, 
-		GLTF_TYPE_SCALAR, min, max, refId);
+		GLTF_TYPE_SCALAR, min, max, refId, lod);
 }
 
 void GLTFModelExport::addAccessors(
@@ -330,7 +335,8 @@ void GLTFModelExport::addAccessors(
 	const std::string              &bufferType,
 	const std::vector<float>       &min,
 	const std::vector<float>       &max,
-	const std::string              &refId)
+	const std::string              &refId,
+	const std::vector<uint16_t>    &lod)
 {
 	
 	//declare accessor
@@ -353,6 +359,10 @@ void GLTFModelExport::addAccessors(
 	if (!refId.empty())
 	{
 		tree.addToTree(accLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_GLTF_LABEL_REF_ID, refId);
+	}
+	if (lod.size())
+	{
+		tree.addToTree(accLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_GLTF_LABEL_LOD, lod);
 	}
 
 }
@@ -773,6 +783,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 
 			//reindex the face buffer
 			reIndexFaces(matMap, newFaces);
+			auto lods = reorderFaces(newFaces, vertices, matMap);
 
 
 		
@@ -827,6 +838,9 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 				size_t subMeshOffset_v = newMappings[i].vertFrom;
 				size_t subMeshOffset_f = newMappings[i].triFrom;
 
+				auto lodIterator = lods[i].begin();
+
+				//For each sub mesh...
 				for (const repo_mesh_mapping_t & meshMap : matMap[i])
 				{
 					std::string subMeshID = UUIDtoString(meshMap.mesh_id);
@@ -839,12 +853,12 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 					
 
 					if (newFaces.size())
-					{
+					{						
 						std::string accessorName = subMeshName + "_" + GLTF_SUFFIX_FACES;
 						primitives.back().addToTree(GLTF_LABEL_INDICES, GLTF_PREFIX_ACCESSORS + "_" + accessorName);
-						addAccessors(accessorName, faceBufferName, tree, newFaces, meshMap.triFrom, meshMap.triTo, subMeshID, subMeshOffset_f);
+						addAccessors(accessorName, faceBufferName, tree, newFaces, meshMap.triFrom, meshMap.triTo, subMeshID, *lodIterator, subMeshOffset_f);
 					}
-
+					++lodIterator;
 				
 					if (normals.size())
 					{
@@ -1041,6 +1055,135 @@ void GLTFModelExport::populateWithNodes(
 		}
 		processNodeChildren(node, tree, subMeshCounts);
 	}	
+}
+
+std::vector<std::vector<std::vector<uint16_t>>> GLTFModelExport::reorderFaces(
+	      std::vector<uint16_t>                         &faces,
+	const std::vector<repo_vector_t>                    &vertices,
+	const std::vector<std::vector<repo_mesh_mapping_t>> &mapping)
+{
+	std::vector<std::vector<std::vector<uint16_t>>> lods;
+	for (size_t i = 0; i < mapping.size(); ++i)
+	{
+		lods.resize(lods.size() + 1);
+		lods.back().clear();
+		for (size_t j = 0; j < mapping[i].size(); ++j)
+		{
+			lods[i].resize(lods[i].size() + 1);
+			lods[i].back().clear();
+			std::vector<uint16_t> newFaces = reorderFaces(faces, vertices, mapping[i][j], lods[i].back());
+			std::copy(newFaces.begin(), newFaces.end(), faces.begin() + mapping[i][j].triFrom * 3);
+
+		}
+	}
+	return lods;
+
+}
+
+std::vector<uint16_t> GLTFModelExport::reorderFaces(
+	const std::vector<uint16_t>      &faces,
+	const std::vector<repo_vector_t> &vertices,
+	const repo_mesh_mapping_t        &mapping,
+	      std::vector<uint16_t>      &lods) const
+{
+	const uint32_t maxBits = 16;
+	const uint32_t maxQuant = pow(2, maxBits) - 1;
+
+	const repo_vector_t *vRaw = &vertices[mapping.vertFrom];
+	const uint16_t      *fRaw = &faces[mapping.triFrom * 3];
+
+	const size_t vCount = mapping.vertTo - mapping.vertFrom;
+	const size_t fCount = mapping.triTo - mapping.triFrom;
+
+	//use int32_t because we need to represent all values in uint16_t and also -1
+	std::vector<int32_t> vertexMap;
+	vertexMap.resize(vCount);
+
+	//Instantiate with -1s
+	std::fill(vertexMap.begin(), vertexMap.end(), -1);
+
+	std::vector<bool> validFaces;
+	validFaces.resize(fCount);
+
+	//Instantiate with false
+	std::fill(validFaces.begin(), validFaces.end(), false);
+
+	std::vector<uint16_t> reOrderedFaces;
+	reOrderedFaces.reserve(fCount * 3);
+
+	repo_vector_t bboxMin = mapping.min;
+	repo_vector_t bboxSize = { mapping.max.x - bboxMin.x, mapping.max.y - bboxMin.y, mapping.max.z - bboxMin.z };
+
+	std::vector<uint32_t> quantIndex;
+	quantIndex.resize(vCount);
+	std::vector<repo_vector_t> quantVertices;
+	quantVertices.resize(vCount);
+
+	/**
+	* Every level of detail, we need to identify the quantized vertices 
+	* see which face should be degenerated.
+	* for all faces that are not degenerated, put them into the new face buffer
+	*/
+	for (uint32_t lod = 0; lod < maxBits; ++lod)
+	{
+		uint32_t dim = pow(2, (maxBits - lod));
+
+		// For all non mapped vertices compute quantization
+		for (size_t vertId = 0; vertId < vCount; ++vertId)
+		{
+			if (vertexMap[vertId] == -1)
+			{			
+				float vertXNormal = floorf(((vRaw[vertId].x - bboxMin.x) / bboxSize.x) * maxQuant + 0.5);
+				float vertYNormal = floorf(((vRaw[vertId].y - bboxMin.y) / bboxSize.y) * maxQuant + 0.5);
+				float vertZNormal = floorf(((vRaw[vertId].z - bboxMin.z) / bboxSize.z) * maxQuant + 0.5);
+
+				uint32_t vertX = floorf(vertXNormal / dim) * dim;
+				uint32_t vertY = floorf(vertYNormal / dim) * dim;
+				uint32_t vertZ = floorf(vertZNormal / dim) * dim;
+
+				quantIndex[vertId] = vertX + vertY * dim + vertZ * dim * dim;
+				quantVertices[vertId] = { vertXNormal, vertYNormal, vertZNormal };				
+			}
+		}
+
+		//check if any faces appear in this quantization
+		for (size_t triIdx = 0; triIdx < fCount; ++triIdx)
+		{
+			size_t startIdx = triIdx * 3;
+			//If this face has not been added from previous LODs
+			if (!validFaces[triIdx])
+			{
+				//the face should not be rendered if more than 1 vertex fall into the same quantized region
+				uint32_t currQuantX = quantIndex[fRaw[startIdx]];
+				uint32_t currQuantY = quantIndex[fRaw[startIdx + 1 ]];
+				uint32_t currQuantZ = quantIndex[fRaw[startIdx + 2 ]];
+
+				if (currQuantX != currQuantY && currQuantX != currQuantY && currQuantY != currQuantZ)
+				{
+					//Add this face to the new face buffer
+					reOrderedFaces.push_back(fRaw[startIdx]);
+					reOrderedFaces.push_back(fRaw[startIdx + 1]);
+					reOrderedFaces.push_back(fRaw[startIdx + 2]);
+
+					validFaces[triIdx] = true;
+				}
+			}			
+
+		}
+
+		lods.push_back(reOrderedFaces.size());
+
+		if (reOrderedFaces.size() == fCount * 3)
+			break;
+	}
+
+	if (reOrderedFaces.size() != fCount * 3)
+	{
+		//sanity check
+		repoError << "Reordered faces (" << reOrderedFaces.size() << ") != fCount("<< fCount *3 << ")!!!";
+	}
+
+	return reOrderedFaces;
 }
 
 std::vector<uint16_t> GLTFModelExport::serialiseFaces(
