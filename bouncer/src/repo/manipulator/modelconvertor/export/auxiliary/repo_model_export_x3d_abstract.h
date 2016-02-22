@@ -35,7 +35,7 @@ namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
 
-			class X3DModelExport
+			class AbstractX3DModelExport
 			{	
 			public:
 
@@ -43,7 +43,7 @@ namespace repo{
 				* Export a Scene as a x3d file
 				* @param scene scene to export
 				*/
-				X3DModelExport(
+				AbstractX3DModelExport(
 					const repo::core::model::RepoScene *scene
 					);
 
@@ -52,20 +52,20 @@ namespace repo{
 				* @param mesh the mesh in question
 				* @param scene repo scene as reference
 				*/
-				X3DModelExport(
+				AbstractX3DModelExport(
 					const repo::core::model::MeshNode  &mesh,
 					const repo::core::model::RepoScene *scene);
 
 				/**
 				* Default Destructor
 				*/
-				virtual ~X3DModelExport() {};
+				virtual ~AbstractX3DModelExport() {};
 
 				/**
 				* Obtain the x3d representation as a buffer
 				* @return returns a vector of uint8_t as a buffer
 				*/
-				std::vector<uint8_t> getFileAsBuffer() const;
+				std::vector<uint8_t> getFileAsBuffer();
 
 				/**
 				* Obtain the file name for this x3d document
@@ -73,23 +73,45 @@ namespace repo{
 				*/
 				std::string getFileName() const;
 
+				void initialize()
+				{
+					if (!initialised && sceneValid())
+					{						
+						if (fullScene)
+							convertSuccess = populateTree(scene);
+						else
+							convertSuccess = populateTree(mesh, scene);
+					}
+
+					initialised = true;
+				}
+
 				/**
 				* Returns the status of the converter,
 				* whether it has successfully converted the model
 				* @return returns true if success
 				*/
-				bool isOk() const
+				bool isOk()
 				{
+					if (!initialised) initialize();
 					return convertSuccess;
 				}
 
+				/**
+				* Check if scene is valid for export
+				* @return returns true if valid 
+				*/
+				bool sceneValid();
 				
-			private:
+
+				
+			protected:
 				const repo::core::model::RepoScene *scene;
+				const repo::core::model::MeshNode &mesh;
 				repo::core::model::RepoScene::GraphType gType;
 				std::string fname;
 				repo::lib::PropertyTree tree;
-				bool convertSuccess, fullScene;
+				bool convertSuccess, fullScene, initialised;
 			
 				/**
 				* Create a subTree for google map tiles
@@ -98,6 +120,12 @@ namespace repo{
 				*/
 				repo::lib::PropertyTree createGoogleMapSubTree(
 					const repo::core::model::MapNode *mapNode);
+
+				/**
+				* Generate the default viewing point for the scene
+				* @return returns a property tree with default view point
+				*/
+				repo::lib::PropertyTree generateDefaultViewPointTree();
 
 				/**
 				* Calculates the centre of the box
@@ -127,11 +155,11 @@ namespace repo{
 				* @param tree tree to populate (the subtree will be populated from the root)
 				* @return the subtree label that is required for the node type
 				*/
-				std::string populateTreeWithProperties(
+				virtual std::string populateTreeWithProperties(
 					const repo::core::model::RepoNode  *node,
 					const repo::core::model::RepoScene *scene,
 					repo::lib::PropertyTree            &tree
-					);
+					) = 0;
 
 				/**
 				* Create a subtree for the subgraph
@@ -175,16 +203,16 @@ namespace repo{
 				* Write the given scene as a x3dScene
 				* @return returns true upon success
 				*/
-				bool writeScene(
+				virtual bool writeScene(
 					const repo::core::model::RepoScene *scene);
 
 				/**
 				* Write the given mesh as a x3dScene
 				* @return returns true upon success
 				*/
-				bool writeMultiPartMeshAsScene(
+				virtual bool writeMultiPartMeshAsScene(
 					const repo::core::model::MeshNode &mesh,
-					const repo::core::model::RepoScene *scene);
+					const repo::core::model::RepoScene *scene) = 0;
 				
 			};
 

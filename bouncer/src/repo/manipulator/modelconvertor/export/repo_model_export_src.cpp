@@ -23,7 +23,7 @@
 #include "repo_model_export_src.h"
 #include "../../../lib/repo_log.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
-#include "auxiliary/repo_model_export_x3d.h"
+#include "auxiliary/repo_model_export_x3d_src.h"
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -101,70 +101,34 @@ const static std::string MP_LABEL_NAME             = "name";
 const static std::string MP_LABEL_NUM_IDs          = "numberOfIDs";
 const static std::string MP_LABEL_USAGE            = "usage";
 
-
-
-struct repo_src_mesh_info
-{
-	std::string meshId;
-	uint32_t offset;
-	uint32_t vCount;
-	uint32_t vFrom;
-	uint32_t vTo;
-	uint32_t fCount;
-	uint32_t fFrom;
-	uint32_t fTo;
-	repo_vector_t bbox[2];
-	std::vector<uint32_t> idxList;
-	std::vector<float> idMapBuf;
-};
-
-
 SRCModelExport::SRCModelExport(
 	const repo::core::model::RepoScene *scene
-	) : AbstractModelExport()
-	, scene(scene)
+	) : WebModelExport(scene)
 {
 	//Considering all newly imported models should have a stash graph, we only need to support stash graph?
-	if (scene)
+	if (convertSuccess)
 	{
-		if (scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED))
+		if (gType == repo::core::model::RepoScene::GraphType::OPTIMIZED)
 		{
-			gType = repo::core::model::RepoScene::GraphType::OPTIMIZED;
 			convertSuccess = generateTreeRepresentation();
 
-			if (convertSuccess)
-			{
-				repoDebug << "Writing X3D Backbone file...";
-				//Build general x3d backbone
-				X3DModelExport x3dExport(scene);
-
-				if (convertSuccess = x3dExport.isOk())
-				{
-					auto buffer = x3dExport.getFileAsBuffer();
-					x3dBufs[x3dExport.getFileName()] = buffer;
-				}
-
-
-				
-			}
 		}
-		else  if (scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT) 
-			&& !scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size())
+		else  if (!(convertSuccess = !scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()))
 		{
-			//There are no meshes, just generate the x3d backbone (most likely a federation model).
-			gType = repo::core::model::RepoScene::GraphType::DEFAULT;
-			X3DModelExport x3dExport(scene);
+			repoError << "Scene has no optimised graph and it is not a federation graph. SRC Exporter relies on this.";
+		}
+
+		if (convertSuccess)
+		{
+			repoDebug << "Generating X3D Backbone file...";
+			//Build general x3d backbone if SRC conversion was a success
+			X3DSRCModelExport x3dExport(scene);
 
 			if (convertSuccess = x3dExport.isOk())
 			{
 				auto buffer = x3dExport.getFileAsBuffer();
 				x3dBufs[x3dExport.getFileName()] = buffer;
-
 			}
-		}
-		else
-		{
-			repoError << "Scene has no optimised graph and it is not a federation graph. SRC Exporter relies on this.";
 		}
 		
 	}
@@ -190,10 +154,7 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getSRCFile
 
 		std::stringstream ss;
 		treePair.second.write_json(ss);
-		std::string jsonStr = ss.str();
-		FILE *file = fopen("C:\\Users\\Carmen\\Desktop\\test.json", "w");
-		fwrite(jsonStr.c_str(), 1, jsonStr.size(), file);
-		fclose(file);
+		std::string jsonStr = ss.str();		
 
 		//one char is one byte, 12bytes for Magic Bit(4), SRC Version (4), Header Length(4)	
 		size_t jsonByteSize = jsonStr.size()*sizeof(*jsonStr.c_str());
@@ -255,7 +216,7 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getJSONFil
 	return fileBuffers;
 }
 
-repo_src_export_t SRCModelExport::getAllFilesExportedAsBuffer() const
+repo_export_buffers_t SRCModelExport::getAllFilesExportedAsBuffer() const
 {
 	return { getSRCFilesAsBuffer(), getX3DFilesAsBuffer(), getJSONFilesAsBuffer() };
 }
@@ -366,7 +327,6 @@ bool SRCModelExport::generateTreeRepresentation(
 		size_t index = 0;
 		//Every mesh is a new SRC file
 		fullDataBuffer.reserve(meshes.size());
-		repoTrace << "#Meshes = " << meshes.size();
 		for (const repo::core::model::RepoNode* mesh : meshes)
 		{	
 			std::string textureID = scene->getTextureIDForMesh(gType, mesh->getSharedID());
@@ -393,7 +353,7 @@ bool SRCModelExport::generateTreeRepresentation(
 			{
 				success &= generateJSONMapping((repo::core::model::MeshNode*)mesh, scene, splitMapping);
 
-				X3DModelExport x3dExport(splittedMesh, scene);
+				X3DSRCModelExport x3dExport(splittedMesh, scene);
 				if (x3dExport.isOk())
 				{
 					x3dBufs[x3dExport.getFileName()] = x3dExport.getFileAsBuffer();
@@ -403,20 +363,12 @@ bool SRCModelExport::generateTreeRepresentation(
 					repoError << "Failed to generate x3d representation for mesh: " << UUIDtoString(mesh->getUniqueID());
 				}
 			}
-
-
-			
 		}		
 	}
 
 	return success;
 
 
-}
-
-std::string SRCModelExport::getSupportedFormats()
-{
-	return ".src";
 }
 
 void SRCModelExport::addMeshToExport(
@@ -730,7 +682,7 @@ void SRCModelExport::addMeshToExport(
 	}
 
 
-	std::string fname = meshId + fileExt;
+	std::string fname = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + meshId + fileExt;
 	
 	trees[fname] = tree;
 	fullDataBuffer[fname] = dataBuffer;

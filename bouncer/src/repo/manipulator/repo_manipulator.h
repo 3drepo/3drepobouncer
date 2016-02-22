@@ -25,6 +25,7 @@
 #include "../core/model/collection/repo_scene.h"
 #include "../core/model/bson/repo_bson_role_settings.h"
 #include "modelconvertor/import/repo_model_import_assimp.h"
+#include "modelconvertor/export/repo_model_export_gltf.h"
 #include "modelconvertor/export/repo_model_export_src.h"
 #include "diff/repo_diff_abstract.h"
 
@@ -267,12 +268,52 @@ namespace repo{
 			* @param databaseAd database address:portdatabase
 			* @param cred user credentials in bson form
 			* @param scene the scene to generate the src encoding from
+			* @param buffers buffers to commit to database
+			* @param exType the type of export it is 
+			* @return returns true upon success
+			*/
+			bool generateAndCommitWebViewBuffer(
+				const std::string                             &databaseAd,
+				const repo::core::model::RepoBSON	          *cred,
+				const repo::core::model::RepoScene            *scene,
+				const modelconvertor::repo_export_buffers_t   &buffers,
+				const modelconvertor::WebExportType           &exType);
+
+			/**
+			* Generate and commit a GLTF encoding for the given scene
+			* This requires the stash to have been generated already
+			* @param databaseAd database address:portdatabase
+			* @param cred user credentials in bson form
+			* @param scene the scene to generate the gltf encoding from
+			* @return returns true upon success
+			*/
+
+			bool generateAndCommitGLTFBuffer(
+				const std::string                             &databaseAd,
+				const repo::core::model::RepoBSON	          *cred,
+				const repo::core::model::RepoScene            *scene);
+
+			/**
+			* Generate and commit a SRC encoding for the given scene
+			* This requires the stash to have been generated already
+			* @param databaseAd database address:portdatabase
+			* @param cred user credentials in bson form
+			* @param scene the scene to generate the src encoding from
 			* @return returns true upon success
 			*/
 			bool generateAndCommitSRCBuffer(
 				const std::string                             &databaseAd,
 				const repo::core::model::RepoBSON	          *cred,
 				const repo::core::model::RepoScene            *scene);
+
+			/**
+			* Generate a gltf encoding in the form of a buffer for the given scene
+			* This requires the stash to have been generated already
+			* @param scene the scene to generate the gltf encoding from
+			* @return returns a buffer in the form of a byte vector mapped to its filename
+			*/
+			modelconvertor::repo_export_buffers_t generateGLTFBuffer(
+				const repo::core::model::RepoScene *scene);
 
 
 			/**
@@ -281,7 +322,7 @@ namespace repo{
 			* @param scene the scene to generate the src encoding from
 			* @return returns a buffer in the form of a byte vector mapped to its filename
 			*/
-			modelconvertor::repo_src_export_t generateSRCBuffer(
+			modelconvertor::repo_export_buffers_t generateSRCBuffer(
 				const repo::core::model::RepoScene *scene);
 
 			/**

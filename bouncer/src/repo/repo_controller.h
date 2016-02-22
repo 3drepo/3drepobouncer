@@ -631,6 +631,17 @@ public:
             const repo::core::model::MapNode &mapNode);
 
 	/**
+	* Generate and commit a GLTF encoding for the given scene
+	* This requires the stash to have been generated already
+	* @param token token for authentication
+	* @param scene the scene to generate the gltf encoding from
+	* @return returns true upon success
+	*/
+	bool generateAndCommitGLTFBuffer(
+		const RepoToken                               *token,
+		const repo::core::model::RepoScene            *scene);
+
+	/**
 	* Generate and commit a SRC encoding for the given scene
 	* This requires the stash to have been generated already
 	* @param token token for authentication
@@ -642,12 +653,21 @@ public:
 		const repo::core::model::RepoScene            *scene);
 
 	/**
+	* Generate a GLTF encoding in the form of a buffer for the given scene
+	* This requires the stash to have been generated already
+	* @param scene the scene to generate the gltf encoding from
+	* @return returns a buffer in the form of a byte vector
+	*/
+	manipulator::modelconvertor::repo_export_buffers_t generateGLTFBuffer(
+		const repo::core::model::RepoScene *scene);
+
+	/**
 	* Generate a SRC encoding in the form of a buffer for the given scene
 	* This requires the stash to have been generated already
 	* @param scene the scene to generate the src encoding from
 	* @return returns a buffer in the form of a byte vector
 	*/
-	std::unordered_map<std::string, std::vector<uint8_t>> generateSRCBuffer(
+	manipulator::modelconvertor::repo_export_buffers_t generateSRCBuffer(
 			const repo::core::model::RepoScene *scene);
 
     /**

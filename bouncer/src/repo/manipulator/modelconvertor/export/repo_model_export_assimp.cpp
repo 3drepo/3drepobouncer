@@ -30,7 +30,8 @@ using namespace repo::manipulator::modelconvertor;
 
 #define REPO_DEFAULT_TEXTURE_EXT ".jpg"
 
-AssimpModelExport::AssimpModelExport()
+AssimpModelExport::AssimpModelExport(
+	const repo::core::model::RepoScene *scene) : AbstractModelExport(scene)
 {
 }
 
@@ -654,14 +655,13 @@ bool AssimpModelExport::writeSceneToFile(
 }
 
 bool AssimpModelExport::exportToFile(
-	const repo::core::model::RepoScene *scene,
 	const std::string                  &filePath)
 {
-	bool success = true;
+	bool success = false;
 	repo::core::model::RepoNodeSet textureNodes;
 	aiScene *assimpScene = convertToAssimp(scene, textureNodes);
 
-	if (assimpScene)
+	if (success = assimpScene)
 	{
 		success = writeSceneToFile(assimpScene, filePath);
 		writeTexturesToFiles(textureNodes, filePath);

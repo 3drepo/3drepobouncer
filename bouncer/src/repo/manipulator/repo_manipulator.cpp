@@ -462,47 +462,80 @@ void RepoManipulator::fetchScene(
 	}
 }
 
+bool RepoManipulator::generateAndCommitGLTFBuffer(
+	const std::string                             &databaseAd,
+	const repo::core::model::RepoBSON	          *cred,
+	const repo::core::model::RepoScene            *scene)
+{
+	
+	return generateAndCommitWebViewBuffer(databaseAd, cred, scene, 
+		generateGLTFBuffer(scene), modelconvertor::WebExportType::GLTF);
+}
+
 bool RepoManipulator::generateAndCommitSRCBuffer(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON	          *cred,
 	const repo::core::model::RepoScene            *scene)
 {
-	bool success;
-	modelconvertor::repo_src_export_t v = generateSRCBuffer(scene);
-	if (success = (v.srcFiles.size() + v.x3dFiles.size() + v.jsonFiles.size()))
+	return generateAndCommitWebViewBuffer(databaseAd, cred, scene, 
+		generateSRCBuffer(scene), modelconvertor::WebExportType::SRC);
+}
+
+bool RepoManipulator::generateAndCommitWebViewBuffer(
+	const std::string                             &databaseAd,
+	const repo::core::model::RepoBSON	          *cred,
+	const repo::core::model::RepoScene            *scene,
+	const modelconvertor::repo_export_buffers_t   &buffers,
+	const modelconvertor::WebExportType           &exType)
+{
+	bool success = false;
+	if (success = (buffers.geoFiles.size() + buffers.x3dFiles.size() + buffers.jsonFiles.size()))
 	{
 		repo::core::handler::AbstractDatabaseHandler* handler =
 			repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 		if (success = handler)
 		{
 
-			for (const auto bufferPair : v.srcFiles)
+			std::string geoStashExt;
+			switch (exType)
 			{
-				std::string databaseName = scene->getDatabaseName();
-				std::string projectName = scene->getProjectName();
-				std::string prefix = "/" + databaseName + "/" + projectName + "/";
+			case modelconvertor::WebExportType::GLTF:
+				geoStashExt = scene->getGLTFExtension();
+				break;
+			case modelconvertor::WebExportType::SRC:
+				geoStashExt = scene->getSRCExtension();
+				break;
+			default:
+				repoError << "Unknown export type with enum:  " << (uint16_t)exType;
+				return false;
+			}
+
+			std::string x3dStashExt = scene->getX3DExtension();
+			std::string jsonStashExt = scene->getJSONExtension();
+
+
+			for (const auto &bufferPair : buffers.geoFiles)
+			{
+
 				std::string errMsg;
-				//FIXME: constant value somewhere for .stash.src?
-				std::string fileName = prefix+bufferPair.first;
-				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.src", fileName, bufferPair.second,
-					errMsg, "binary/octet-stream"))
+				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + geoStashExt, bufferPair.first, bufferPair.second,
+					errMsg))
 				{
-					repoInfo << "File ("<<fileName <<") added successfully.";
+					repoInfo << "File (" << bufferPair.first << ") added successfully.";
 				}
 				else
 				{
-					repoError << "Failed to add file  ("<<fileName <<"): " << errMsg;
+					repoError << "Failed to add file  (" << bufferPair.first << "): " << errMsg;
 				}
-			}		
-			for (const auto bufferPair : v.x3dFiles)
+			}
+			for (const auto &bufferPair : buffers.x3dFiles)
 			{
 				std::string databaseName = scene->getDatabaseName();
 				std::string projectName = scene->getProjectName();
 				std::string errMsg;
-				//FIXME: constant value somewhere for .stash.x3d?
 				std::string fileName = bufferPair.first;
-				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.x3d", fileName, bufferPair.second,
-					errMsg, "binary/octet-stream"))
+				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + x3dStashExt, fileName, bufferPair.second,
+					errMsg))
 				{
 					repoInfo << "File (" << fileName << ") added successfully.";
 				}
@@ -512,15 +545,14 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 				}
 			}
 
-			for (const auto bufferPair : v.jsonFiles)
+			for (const auto &bufferPair : buffers.jsonFiles)
 			{
 				std::string databaseName = scene->getDatabaseName();
 				std::string projectName = scene->getProjectName();
 				std::string errMsg;
-				//FIXME: constant value somewhere for .stash.x3d?
 				std::string fileName = bufferPair.first;
-				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.json_mpc", fileName, bufferPair.second,
-					errMsg, "binary/octet-stream"))
+				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + jsonStashExt, fileName, bufferPair.second,
+					errMsg))
 				{
 					repoInfo << "File (" << fileName << ") added successfully.";
 				}
@@ -531,16 +563,32 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 			}
 		}
 	}
-
 	return success;
-
 }
 
-modelconvertor::repo_src_export_t RepoManipulator::generateSRCBuffer(
+modelconvertor::repo_export_buffers_t RepoManipulator::generateGLTFBuffer(
 	const repo::core::model::RepoScene *scene)
 {
 
-	modelconvertor::repo_src_export_t result;
+	modelconvertor::repo_export_buffers_t result;
+	modelconvertor::GLTFModelExport gltfExport(scene);
+	if (gltfExport.isOk())
+	{
+		repoTrace << "Conversion succeed.. exporting as buffer..";
+		result = gltfExport.getAllFilesExportedAsBuffer();
+	}
+	else
+		repoError << "Export to GLTF failed.";
+
+	return result;
+}
+
+
+modelconvertor::repo_export_buffers_t RepoManipulator::generateSRCBuffer(
+	const repo::core::model::RepoScene *scene)
+{
+
+	modelconvertor::repo_export_buffers_t result;
 	modelconvertor::SRCModelExport srcExport(scene);
 	if (srcExport.isOk())
 	{
@@ -950,8 +998,8 @@ bool RepoManipulator::saveSceneToFile(
 	const std::string &filePath,
 	const repo::core::model::RepoScene* scene)
 {
-	modelconvertor::AssimpModelExport modelExport;
-	return modelExport.exportToFile(scene, filePath);
+	modelconvertor::AssimpModelExport modelExport(scene);
+	return modelExport.exportToFile(filePath);
 }
 
 void RepoManipulator::updateRole(
