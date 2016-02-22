@@ -17,7 +17,7 @@
 
 #include <gtest/gtest.h>
 #include <repo/core/handler/repo_database_handler_mongo.h>
-#include "../../../repo_test_utils.h"
+#include "../../../repo_test_database_info.h"
 
 using namespace repo::core::handler;
 
