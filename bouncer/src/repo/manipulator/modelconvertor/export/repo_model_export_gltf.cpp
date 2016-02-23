@@ -28,7 +28,10 @@
 
 using namespace repo::manipulator::modelconvertor;
 
+const static int lodLimit = 10; //Hack to test pop buffers, i should not be committing this!
+
 const static size_t GLTF_MAX_VERTEX_LIMIT = 65535;
+#define DEBUG //FIXME: to remove
 
 static const std::string GLTF_LABEL_ACCESSORS       = "accessors";
 static const std::string GLTF_LABEL_AMBIENT         = "ambient";
@@ -157,9 +160,17 @@ static const std::string GLTF_VERSION = "1.0";
 static const std::string        REPO_GLTF_DEFAULT_PROGRAM         = "default_program";
 static const std::string        REPO_GLTF_DEFAULT_SAMPLER         = "default_sampler";
 static const std::string        REPO_GLTF_DEFAULT_SHADER_FRAG     = "default_fshader";
+#ifdef DEBUG
+static const std::string        REPO_GLTF_DEFAULT_SHADER_FRAG_URI = "fragShader.glsl";
+#else
 static const std::string        REPO_GLTF_DEFAULT_SHADER_FRAG_URI = "/public/shader/gltfStockShaders/fragShader.glsl";
+#endif
 static const std::string        REPO_GLTF_DEFAULT_SHADER_VERT     = "default_vshader";
+#ifdef DEBUG
+static const std::string        REPO_GLTF_DEFAULT_SHADER_VERT_URI = "vertShader.glsl";
+#else
 static const std::string        REPO_GLTF_DEFAULT_SHADER_VERT_URI = "/public/shader/gltfStockShaders/vertShader.glsl";
+#endif
 static const std::string        REPO_GLTF_DEFAULT_TECHNIQUE       = "default_technique";
 static const float              REPO_GLTF_DEFAULT_SHININESS       = 50; 
 static const std::vector<float> REPO_GLTF_DEFAULT_SPECULAR        = { 0, 0, 0, 0 };
@@ -761,7 +772,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 		auto vertices = node->getVertices();
 		auto UVs = node->getUVChannelsSeparated();
 
-
+		
 
 		if (mappings.size() > 1 || vertices.size() > GLTF_MAX_VERTEX_LIMIT)
 		{
@@ -783,10 +794,42 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 
 			//reindex the face buffer
 			reIndexFaces(matMap, newFaces);
+
 			auto lods = reorderFaces(newFaces, vertices, matMap);
+#ifdef DEBUG			
+			for (size_t i = 0; i < matMap.size(); ++i)
+				for (size_t j = 0; j < matMap[i].size(); ++j)
+				{
+					repo_mesh_mapping_t mapping = matMap[i][j];
+					size_t maxBits = 16;
+					const float maxQuant = pow(2, maxBits) - 1;
+					const size_t vCount = mapping.vertTo - mapping.vertFrom;
+					uint32_t dim = pow(2, (maxBits - lodLimit));
+					uint32_t shift = maxBits - lodLimit;
+					repo_vector_t *vRaw = &vertices[mapping.vertFrom];
+					repo_vector_t bboxMin = mapping.min;
+					repo_vector_t bboxSize = { mapping.max.x - bboxMin.x, mapping.max.y - bboxMin.y, mapping.max.z - bboxMin.z };
+					for (size_t vertId = 0; vertId < vCount; ++vertId)
+					{
+						uint32_t vertXNormal = floorf(((vRaw[vertId].x - bboxMin.x) / bboxSize.x) * maxQuant + 0.5);
+						uint32_t vertYNormal = floorf(((vRaw[vertId].y - bboxMin.y) / bboxSize.y) * maxQuant + 0.5);
+						uint32_t vertZNormal = floorf(((vRaw[vertId].z - bboxMin.z) / bboxSize.z) * maxQuant + 0.5);
 
+						uint32_t vertX = (vertXNormal >> shift) << shift;
+						uint32_t vertY = (vertYNormal >> shift) << shift;
+						uint32_t vertZ = (vertZNormal >> shift) << shift;
 
-		
+//						repoDebug << "Before: (" << vRaw[vertId].x << "," << vRaw[vertId].y << ", " << vRaw[vertId].z << ")";
+						vRaw[vertId].x = ((float)vertX) / maxQuant * bboxSize.x + bboxMin.x;
+						vRaw[vertId].y = ((float)vertY) / maxQuant * bboxSize.y + bboxMin.y;
+						vRaw[vertId].z = ((float)vertZ) / maxQuant * bboxSize.z + bboxMin.z;
+	//					repoDebug << "After: (" << vRaw[vertId].x << "," << vRaw[vertId].y << ", " << vRaw[vertId].z << ")";
+
+					}
+
+				}
+#endif
+			
 			auto newMappings = splitMesh.getMeshMapping();
 
 			splitSizes[node->getUniqueID()] = newMappings.size();		
@@ -856,7 +899,13 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 					{						
 						std::string accessorName = subMeshName + "_" + GLTF_SUFFIX_FACES;
 						primitives.back().addToTree(GLTF_LABEL_INDICES, GLTF_PREFIX_ACCESSORS + "_" + accessorName);
-						addAccessors(accessorName, faceBufferName, tree, newFaces, meshMap.triFrom, meshMap.triTo, subMeshID, *lodIterator, subMeshOffset_f);
+						std::vector<uint16_t> lodVec = *lodIterator;
+#ifdef DEBUG
+						size_t triTo = meshMap.triFrom + (lodVec.size() < lodLimit ? lodVec.back() : lodVec[lodLimit - 1])/3;
+#else
+						size_t triTo = meshMap.triTo;
+#endif
+						addAccessors(accessorName, faceBufferName, tree, newFaces, meshMap.triFrom, triTo, subMeshID, *lodIterator, subMeshOffset_f);
 					}
 					++lodIterator;
 				
@@ -906,6 +955,71 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			auto faces = node->getFaces();
 			std::vector<uint16_t> sFaces = serialiseFaces(faces);
 
+			bool hasMat = false;
+			repoUUID matID;
+			if (hasMapping)
+			{
+				hasMat = true;
+				matID = mappings[0].material_id;
+			}
+			else
+			{
+				auto children = scene->getChildrenNodesFiltered(gType, node->getSharedID(), repo::core::model::NodeType::MATERIAL);
+				if (children.size())
+				{
+					hasMat = true;
+					matID = children[0]->getUniqueID();
+				}
+			}
+
+			std::vector < std::vector<repo_mesh_mapping_t>> matMap;
+			matMap.resize(1);
+			matMap[0].resize(1);
+			matMap[0][0].material_id = matID;
+			matMap[0][0].mesh_id = hasMapping ? mappings[0].mesh_id : node->getUniqueID();
+			auto bbox = node->getBoundingBox();
+			matMap[0][0].max = bbox[1];
+			matMap[0][0].min = bbox[0];
+			matMap[0][0].triFrom = 0;
+			matMap[0][0].triTo = faces.size();
+			matMap[0][0].vertFrom = 0;
+			matMap[0][0].vertTo = vertices.size();
+
+			auto lods = reorderFaces(sFaces, vertices, matMap);
+#ifdef DEBUG			
+			for (size_t i = 0; i < matMap.size(); ++i)
+				for (size_t j = 0; j < matMap[i].size(); ++j)
+				{
+					repo_mesh_mapping_t mapping = matMap[i][j];
+					size_t maxBits = 16;
+					const float maxQuant = pow(2, maxBits) - 1;
+					const size_t vCount = mapping.vertTo - mapping.vertFrom;
+					uint32_t dim = pow(2, (maxBits - lodLimit));
+					uint32_t shift = maxBits - lodLimit;
+					repo_vector_t *vRaw = &vertices[mapping.vertFrom];
+					repo_vector_t bboxMin = mapping.min;
+					repo_vector_t bboxSize = { mapping.max.x - bboxMin.x, mapping.max.y - bboxMin.y, mapping.max.z - bboxMin.z };
+					for (size_t vertId = 0; vertId < vCount; ++vertId)
+					{
+						uint32_t vertXNormal = floorf(((vRaw[vertId].x - bboxMin.x) / bboxSize.x) * maxQuant + 0.5);
+						uint32_t vertYNormal = floorf(((vRaw[vertId].y - bboxMin.y) / bboxSize.y) * maxQuant + 0.5);
+						uint32_t vertZNormal = floorf(((vRaw[vertId].z - bboxMin.z) / bboxSize.z) * maxQuant + 0.5);
+
+						uint32_t vertX = (vertXNormal >> shift) << shift;
+						uint32_t vertY = (vertYNormal >> shift) << shift;
+						uint32_t vertZ = (vertZNormal >> shift) << shift;
+
+						//						repoDebug << "Before: (" << vRaw[vertId].x << "," << vRaw[vertId].y << ", " << vRaw[vertId].z << ")";
+						vRaw[vertId].x = ((float)vertX) / maxQuant * bboxSize.x + bboxMin.x;
+						vRaw[vertId].y = ((float)vertY) / maxQuant * bboxSize.y + bboxMin.y;
+						vRaw[vertId].z = ((float)vertZ) / maxQuant * bboxSize.z + bboxMin.z;
+						//					repoDebug << "After: (" << vRaw[vertId].x << "," << vRaw[vertId].y << ", " << vRaw[vertId].z << ")";
+
+					}
+
+				}
+#endif
+
 			std::string bufferFileName = UUIDtoString(scene->getRevisionID());
 
 			size_t vStart = addToDataBuffer(bufferFileName, vertices);
@@ -932,24 +1046,6 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			std::vector<repo::lib::PropertyTree> primitives;
 			primitives.push_back(repo::lib::PropertyTree());
 
-			bool hasMat = false;
-			repoUUID matID;
-			if (hasMapping)
-			{
-				hasMat = true;
-				matID = mappings[0].material_id;
-			}
-			else
-			{
-				auto children = scene->getChildrenNodesFiltered(gType, node->getSharedID(), repo::core::model::NodeType::MATERIAL);
-				if (children.size())
-				{
-					hasMat = true;
-					matID = children[0]->getUniqueID();
-				}
-			}
-
-			
 
 			std::string binFileName = UUIDtoString(scene->getRevisionID());
 			
@@ -962,6 +1058,11 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 				{
 					std::string bufferName = meshId + "_" + GLTF_SUFFIX_FACES;
 					primitives[0].addToTree(GLTF_LABEL_INDICES, GLTF_PREFIX_ACCESSORS + "_" + bufferName);
+#ifdef DEBUG
+					size_t triTo = (lods[0][0].size() < lodLimit ? lods[0][0].back() : lods[0][0][lodLimit - 1]) / 3;
+#else
+					size_t triTo =  faces.size();
+#endif
 					addAccessors(bufferName, bufferName, tree, sFaces, 0, faces.size(), meshId);
 				}
 
@@ -1087,7 +1188,7 @@ std::vector<uint16_t> GLTFModelExport::reorderFaces(
 	      std::vector<uint16_t>      &lods) const
 {
 	const uint32_t maxBits = 16;
-	const uint32_t maxQuant = pow(2, maxBits) - 1;
+	const float maxQuant = pow(2, maxBits) - 1;
 
 	const repo_vector_t *vRaw = &vertices[mapping.vertFrom];
 	const uint16_t      *fRaw = &faces[mapping.triFrom * 3];
@@ -1115,10 +1216,7 @@ std::vector<uint16_t> GLTFModelExport::reorderFaces(
 	repo_vector_t bboxSize = { mapping.max.x - bboxMin.x, mapping.max.y - bboxMin.y, mapping.max.z - bboxMin.z };
 
 	std::vector<uint32_t> quantIndex;
-	quantIndex.resize(vCount);
-	std::vector<repo_vector_t> quantVertices;
-	quantVertices.resize(vCount);
-
+	quantIndex.resize(vCount);	
 	/**
 	* Every level of detail, we need to identify the quantized vertices 
 	* see which face should be degenerated.
@@ -1127,22 +1225,22 @@ std::vector<uint16_t> GLTFModelExport::reorderFaces(
 	for (uint32_t lod = 0; lod < maxBits; ++lod)
 	{
 		uint32_t dim = pow(2, (maxBits - lod));
+		uint32_t shift = maxBits - lodLimit;
 
 		// For all non mapped vertices compute quantization
 		for (size_t vertId = 0; vertId < vCount; ++vertId)
 		{
 			if (vertexMap[vertId] == -1)
 			{			
-				float vertXNormal = floorf(((vRaw[vertId].x - bboxMin.x) / bboxSize.x) * maxQuant + 0.5);
-				float vertYNormal = floorf(((vRaw[vertId].y - bboxMin.y) / bboxSize.y) * maxQuant + 0.5);
-				float vertZNormal = floorf(((vRaw[vertId].z - bboxMin.z) / bboxSize.z) * maxQuant + 0.5);
+				uint32_t vertXNormal = floorf(((vRaw[vertId].x - bboxMin.x) / bboxSize.x) * maxQuant + 0.5);
+				uint32_t vertYNormal = floorf(((vRaw[vertId].y - bboxMin.y) / bboxSize.y) * maxQuant + 0.5);
+				uint32_t vertZNormal = floorf(((vRaw[vertId].z - bboxMin.z) / bboxSize.z) * maxQuant + 0.5);
 
-				uint32_t vertX = floorf(vertXNormal / dim) * dim;
-				uint32_t vertY = floorf(vertYNormal / dim) * dim;
-				uint32_t vertZ = floorf(vertZNormal / dim) * dim;
+				uint32_t vertX = (vertXNormal >> shift) << shift;
+				uint32_t vertY = (vertYNormal >> shift) << shift;
+				uint32_t vertZ = (vertZNormal >> shift) << shift;
 
-				quantIndex[vertId] = vertX + vertY * dim + vertZ * dim * dim;
-				quantVertices[vertId] = { vertXNormal, vertYNormal, vertZNormal };				
+				quantIndex[vertId] = vertX + vertY * dim + vertZ * dim * dim;		
 			}
 		}
 
@@ -1213,11 +1311,15 @@ void GLTFModelExport::writeBuffers(
 {
 	for (const auto &pair : fullDataBuffer)
 	{
-		std::string bufferFilePrefix = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/";
+#ifdef DEBUG
+		std::string bufferFilePrefix = "";
+#else
+		std::string bufferFilePrefix = "/api/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/";
+#endif
 		std::string bufferLabel = GLTF_LABEL_BUFFERS + "." + pair.first;
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_BYTE_LENGTH, pair.second.size()  * sizeof(*pair.second.data()));
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_TYPE, GLTF_ARRAY_BUFFER);
-		tree.addToTree(bufferLabel + "." + GLTF_LABEL_URI, "/api" + bufferFilePrefix + pair.first + ".bin");
+		tree.addToTree(bufferLabel + "." + GLTF_LABEL_URI, bufferFilePrefix + pair.first + ".bin");
 	}
 }
 
