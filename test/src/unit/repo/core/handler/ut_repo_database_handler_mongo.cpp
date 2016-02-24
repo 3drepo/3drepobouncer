@@ -195,3 +195,45 @@ TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
 	EXPECT_EQ(0, handler->getAllFromCollectionTailable("blah", "").size());
 	EXPECT_EQ(0, handler->getAllFromCollectionTailable("blah", "blah").size());
 }
+
+TEST(MongoDatabaseHandlerTest, GetCollections)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+
+	auto goldenData = getCollectionList(REPO_GTEST_DBNAME1);
+
+	auto collections = handler->getCollections(REPO_GTEST_DBNAME1);
+	
+	ASSERT_EQ(goldenData.size(), collections.size());
+
+	std::sort(goldenData.begin(), goldenData.end());
+	collections.sort();
+
+	auto colIt = collections.begin();
+	auto gdIt = goldenData.begin();
+	for (;colIt != collections.end(); ++colIt, ++gdIt)
+	{
+		EXPECT_EQ(*colIt, *gdIt);
+	}
+
+
+	goldenData = getCollectionList(REPO_GTEST_DBNAME2);
+	collections = handler->getCollections(REPO_GTEST_DBNAME2);
+
+	ASSERT_EQ(goldenData.size(), collections.size());
+	
+	std::sort(goldenData.begin(), goldenData.end());	
+	collections.sort();
+	
+	colIt = collections.begin();
+	gdIt = goldenData.begin();
+	for (; colIt != collections.end(); ++colIt, ++gdIt)
+	{
+		EXPECT_EQ(*colIt, *gdIt);
+	}
+
+	//check error handling - make sure it doesn't crash
+	EXPECT_EQ(0, handler->getCollections("").size());
+	EXPECT_EQ(0, handler->getCollections("blahblah").size());
+}

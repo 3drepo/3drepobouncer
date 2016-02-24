@@ -63,6 +63,21 @@ static std::unordered_map<std::string, uint32_t> getCollectionCounts(
 
 }
 
+static std::vector<std::string> getCollectionList(
+	const std::string &databaseName)
+{
+	if (databaseName == REPO_GTEST_DBNAME1)
+	{
+		return { "3drepoBIM.history", "3drepoBIM.history.chunks", "3drepoBIM.history.files", "3drepoBIM.issues", "3drepoBIM.scene", "3drepoBIM.stash.3drepo", "settings", "system.indexes"};
+	}
+	else
+	{
+		return{ "sphere.history", "sphere.history.chunks", "sphere.history.files", "sphere.issues", "sphere.scene", "sphere.scene.files", "sphere.scene.chunks", "sphere.stash.3drepo", "sphere.stash.3drepo.chunks", "sphere.stash.3drepo.files", "settings", "system.indexes" };
+	}
+
+
+}
+
 static std::pair<std::pair<std::string, std::string>, std::vector<std::string>> getGoldenForGetAllFromCollectionTailable()
 {
 	std::pair<std::pair<std::string, std::string>, std::vector<std::string>> results;
