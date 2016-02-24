@@ -28,10 +28,11 @@
 
 using namespace repo::manipulator::modelconvertor;
 
-const static int lodLimit = 10; //Hack to test pop buffers, i should not be committing this!
+const static int lodLimit = 15; //Hack to test pop buffers, i should not be committing this!
 
 const static size_t GLTF_MAX_VERTEX_LIMIT = 65535;
 #define DEBUG //FIXME: to remove
+//#define LODLIMIT
 
 static const std::string GLTF_LABEL_ACCESSORS       = "accessors";
 static const std::string GLTF_LABEL_AMBIENT         = "ambient";
@@ -796,7 +797,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			reIndexFaces(matMap, newFaces);
 
 			auto lods = reorderFaces(newFaces, vertices, matMap);
-#ifdef DEBUG			
+#if defined(DEBUG) && defined(LODLIMIT)			
 			for (size_t i = 0; i < matMap.size(); ++i)
 				for (size_t j = 0; j < matMap[i].size(); ++j)
 				{
@@ -900,7 +901,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 						std::string accessorName = subMeshName + "_" + GLTF_SUFFIX_FACES;
 						primitives.back().addToTree(GLTF_LABEL_INDICES, GLTF_PREFIX_ACCESSORS + "_" + accessorName);
 						std::vector<uint16_t> lodVec = *lodIterator;
-#ifdef DEBUG
+#if defined(DEBUG) && defined(LODLIMIT)
 						size_t triTo = meshMap.triFrom + (lodVec.size() < lodLimit ? lodVec.back() : lodVec[lodLimit - 1])/3;
 #else
 						size_t triTo = meshMap.triTo;
@@ -986,7 +987,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			matMap[0][0].vertTo = vertices.size();
 
 			auto lods = reorderFaces(sFaces, vertices, matMap);
-#ifdef DEBUG			
+#if defined(DEBUG) && defined(LODLIMIT)
 			for (size_t i = 0; i < matMap.size(); ++i)
 				for (size_t j = 0; j < matMap[i].size(); ++j)
 				{
@@ -1058,7 +1059,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 				{
 					std::string bufferName = meshId + "_" + GLTF_SUFFIX_FACES;
 					primitives[0].addToTree(GLTF_LABEL_INDICES, GLTF_PREFIX_ACCESSORS + "_" + bufferName);
-#ifdef DEBUG
+#if defined(DEBUG) && defined(LODLIMIT)
 					size_t triTo = (lods[0][0].size() < lodLimit ? lods[0][0].back() : lods[0][0][lodLimit - 1]) / 3;
 #else
 					size_t triTo =  faces.size();
