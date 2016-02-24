@@ -20,7 +20,7 @@ addons:
 before_install:
     - mongo admin --eval 'db.addUser("testUser", "3drepotest");'
     - cd test/data/database/
-    - mongorestore 
+    - mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin
     - cd ../../../
     - export CXX="g++-4.9"
     - export CC="gcc-4.9"
@@ -51,4 +51,4 @@ after_success:
 notifications:
     email: 
         recipients:
-            - team@3drepo.org
+            - carmen@3drepo.org
