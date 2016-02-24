@@ -19,7 +19,7 @@ addons:
             - g++-4.9
 before_install:
     - mongo admin --eval 'db.addUser("testUser", "3drepotest");'
-     - cd test/data/database/
+    - cd test/data/database/
     - mongorestore 
     - cd ../../../
     - export CXX="g++-4.9"
