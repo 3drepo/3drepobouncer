@@ -82,6 +82,10 @@ uint64_t MongoDatabaseHandler::countItemsInCollection(
 {
 	uint64_t numItems = 0;
 	mongo::DBClientBase *worker;
+	if (database.empty() || collection.empty())
+	{
+		errMsg = "Failed to count num. items in collection: database name or collection name was not specified";
+	}
 	try{
 
 		worker = workerPool->getWorker();
@@ -469,7 +473,7 @@ std::vector<repo::core::model::RepoBSON>
 		std::auto_ptr<mongo::DBClientCursor> cursor = worker->query(
 			database + "." + collection,
 			sortField.empty() ? mongo::Query() : mongo::Query().sort(sortField, sortOrder),
-			0,
+			limit,
 			skip,
 			fields.size() > 0 ? &tmp : nullptr);
 

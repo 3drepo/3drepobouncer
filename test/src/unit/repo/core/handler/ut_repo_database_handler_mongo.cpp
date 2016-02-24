@@ -80,3 +80,72 @@ TEST(MongoDatabaseHandlerTest, CreateBSONCredentials)
 	EXPECT_FALSE(handler->createBSONCredentials("testdb", "username", ""));
 }
 
+TEST(MongoDatabaseHandlerTest, CountItemsInCollection)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);	
+	auto goldenData = getCollectionCounts(REPO_GTEST_DBNAME1);
+	for (const auto &pair : goldenData)
+	{
+		std::string message;
+		EXPECT_EQ(pair.second, handler->countItemsInCollection(REPO_GTEST_DBNAME1, pair.first, message)); 
+		EXPECT_TRUE(message.empty());
+	}
+
+	goldenData = getCollectionCounts(REPO_GTEST_DBNAME2);
+	for (const auto &pair : goldenData)
+	{
+		std::string message;
+		EXPECT_EQ(pair.second, handler->countItemsInCollection(REPO_GTEST_DBNAME2, pair.first, message));
+		EXPECT_TRUE(message.empty());
+	}
+
+	std::string message;
+	EXPECT_EQ(0, handler->countItemsInCollection("", "", message));
+	EXPECT_FALSE(message.empty());
+
+	message.clear();
+	EXPECT_EQ(0, handler->countItemsInCollection("", "blah", message));
+	EXPECT_FALSE(message.empty());
+
+	message.clear();
+	EXPECT_EQ(0, handler->countItemsInCollection("blah", "", message));
+	EXPECT_FALSE(message.empty());
+
+	message.clear();
+	EXPECT_EQ(0, handler->countItemsInCollection("blah", "blah", message));
+	EXPECT_TRUE(message.empty());
+
+}
+
+TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	auto goldenData = getGoldenForGetAllFromCollectionTailable();
+
+	std::vector<repo::core::model::RepoBSON> bsons = handler->getAllFromCollectionTailable(
+		goldenData.first.first, goldenData.first.second);
+
+	ASSERT_EQ(bsons.size(), goldenData.second.size());
+	for (int i = 0; i < bsons.size(); ++i)
+	{
+		EXPECT_EQ(bsons[i].toString(), goldenData.second[i]);
+	}
+
+	//Test limit and skip
+	bsons = handler->getAllFromCollectionTailable(
+		goldenData.first.first, goldenData.first.second, 1, 1);
+
+	repoTrace << "bson size: " << bsons.size();
+
+	ASSERT_EQ(bsons.size(), 1);
+
+	repoTrace << bsons[0].toString();
+	repoTrace << goldenData.second[1];
+	EXPECT_EQ(bsons[0].toString(), goldenData.second[1]);
+
+	//test projection
+	auto bsonsProjected = handler->getAllFromCollectionTailable(
+		goldenData.first.first, goldenData.first.second, 0, 0, { "_id", "shared_id" });
+}

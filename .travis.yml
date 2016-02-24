@@ -51,4 +51,4 @@ after_success:
 notifications:
     email: 
         recipients:
-            - carmen@3drepo.org
+            - team@3drepo.org

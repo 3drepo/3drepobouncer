@@ -157,11 +157,12 @@ namespace repo{
 				* the first n items.
 				* @param database name of database
 				* @param collection name of collection
+				* @param skip number of maximum items to skip (default is 0)
+				* @param limit number of maximum items to return (default is 0)
 				* @param fields fields to get back from the database
 				* @param sortField field to sort upon
 				* @param sortOrder 1 ascending, -1 descending
 				* @param skip specify how many documents to skip
-				* @param limit number of maximum items to return (default is 0)
 				* @return list of RepoBSONs representing the documents
 				*/
 				std::vector<repo::core::model::RepoBSON>
