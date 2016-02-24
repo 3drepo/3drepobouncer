@@ -124,28 +124,74 @@ TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
 	ASSERT_TRUE(handler);
 	auto goldenData = getGoldenForGetAllFromCollectionTailable();
 
+
 	std::vector<repo::core::model::RepoBSON> bsons = handler->getAllFromCollectionTailable(
 		goldenData.first.first, goldenData.first.second);
 
 	ASSERT_EQ(bsons.size(), goldenData.second.size());
+	auto goldenDataDisposable = goldenData.second;
 	for (int i = 0; i < bsons.size(); ++i)
 	{
-		EXPECT_EQ(bsons[i].toString(), goldenData.second[i]);
+		bool foundMatch = false;
+		for (int j = 0; j< goldenDataDisposable.size(); ++j)
+		{
+			if (foundMatch = bsons[i].toString() == goldenDataDisposable[j])
+			{
+				goldenDataDisposable.erase(goldenDataDisposable.begin() + j);
+				break;
+			}
+				
+		}
+		EXPECT_TRUE(foundMatch);
+		
 	}
 
 	//Test limit and skip
-	bsons = handler->getAllFromCollectionTailable(
+	std::vector<repo::core::model::RepoBSON> bsonsLimitSkip = handler->getAllFromCollectionTailable(
 		goldenData.first.first, goldenData.first.second, 1, 1);
 
-	repoTrace << "bson size: " << bsons.size();
+	ASSERT_EQ(bsonsLimitSkip.size(), 1);
 
-	ASSERT_EQ(bsons.size(), 1);
-
-	repoTrace << bsons[0].toString();
-	repoTrace << goldenData.second[1];
-	EXPECT_EQ(bsons[0].toString(), goldenData.second[1]);
+	EXPECT_EQ(bsonsLimitSkip[0].toString(), goldenData.second[1]);
 
 	//test projection
 	auto bsonsProjected = handler->getAllFromCollectionTailable(
 		goldenData.first.first, goldenData.first.second, 0, 0, { "_id", "shared_id" });
+
+	std::vector<repoUUID> ids;
+
+	ASSERT_EQ(bsonsProjected.size(), bsons.size());
+	for (int i = 0; i < bsons.size(); ++i)
+	{
+		ids.push_back(bsons[i].getUUIDField("_id"));
+		EXPECT_EQ(bsons[i].getUUIDField("_id"), bsonsProjected[i].getUUIDField("_id"));
+		EXPECT_EQ(bsons[i].getUUIDField("shared_id"), bsonsProjected[i].getUUIDField("shared_id"));
+	}
+
+	//test sort
+	auto bsonsSorted = handler->getAllFromCollectionTailable(
+		goldenData.first.first, goldenData.first.second, 0, 0, {}, "_id", -1);
+
+	std::sort(ids.begin(), ids.end());
+
+	ASSERT_EQ(bsonsSorted.size(), ids.size());
+	for (int i = 0; i < bsons.size(); ++i)
+	{
+		EXPECT_EQ(bsonsSorted[i].getUUIDField("_id"), ids[bsons.size() - i - 1]);
+	}
+
+	bsonsSorted = handler->getAllFromCollectionTailable(
+		goldenData.first.first, goldenData.first.second, 0, 0, {}, "_id", 1);
+
+	ASSERT_EQ(bsonsSorted.size(), ids.size());
+	for (int i = 0; i < bsons.size(); ++i)
+	{
+		EXPECT_EQ(bsonsSorted[i].getUUIDField("_id"), ids[i]);
+	}
+
+	//check error handling - make sure it doesn't crash
+	EXPECT_EQ(0, handler->getAllFromCollectionTailable("", "").size());
+	EXPECT_EQ(0, handler->getAllFromCollectionTailable("", "blah").size());
+	EXPECT_EQ(0, handler->getAllFromCollectionTailable("blah", "").size());
+	EXPECT_EQ(0, handler->getAllFromCollectionTailable("blah", "blah").size());
 }

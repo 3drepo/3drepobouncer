@@ -162,8 +162,6 @@ namespace repo{
 				* @param fields fields to get back from the database
 				* @param sortField field to sort upon
 				* @param sortOrder 1 ascending, -1 descending
-				* @param skip specify how many documents to skip
-				* @return list of RepoBSONs representing the documents
 				*/
 				std::vector<repo::core::model::RepoBSON>
 					getAllFromCollectionTailable(
