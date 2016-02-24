@@ -124,7 +124,6 @@ TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
 	ASSERT_TRUE(handler);
 	auto goldenData = getGoldenForGetAllFromCollectionTailable();
 
-
 	std::vector<repo::core::model::RepoBSON> bsons = handler->getAllFromCollectionTailable(
 		goldenData.first.first, goldenData.first.second);
 
@@ -152,7 +151,7 @@ TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
 
 	ASSERT_EQ(bsonsLimitSkip.size(), 1);
 
-	//EXPECT_EQ(bsonsLimitSkip[0].toString(), goldenData.second[1]);
+	EXPECT_EQ(bsonsLimitSkip[0].toString(), bsons[1]);
 
 	//test projection
 	auto bsonsProjected = handler->getAllFromCollectionTailable(
