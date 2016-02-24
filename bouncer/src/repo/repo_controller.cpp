@@ -748,6 +748,25 @@ repo::core::model::RepoScene* RepoController::createMapScene(
     return scene;
 }
 
+bool RepoController::generateAndCommitGLTFBuffer(
+	const RepoToken                    *token,
+	const repo::core::model::RepoScene *scene)
+{
+	bool success;
+	if (success = token && scene)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		success = worker->generateAndCommitGLTFBuffer(token->databaseAd, token->credentials, scene);
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Failed to generate GLTF Buffer.";
+	}
+	return success;
+}
+
+
 bool RepoController::generateAndCommitSRCBuffer(
 	const RepoToken                    *token,
 	const repo::core::model::RepoScene *scene)
@@ -767,14 +786,31 @@ bool RepoController::generateAndCommitSRCBuffer(
 }
 
 
-std::unordered_map<std::string, std::vector<uint8_t>> RepoController::generateSRCBuffer(
+manipulator::modelconvertor::repo_export_buffers_t RepoController::generateGLTFBuffer(
 	const repo::core::model::RepoScene *scene)
 {
-	std::unordered_map<std::string,std::vector<uint8_t>> buffer;
+	manipulator::modelconvertor::repo_export_buffers_t buffer;
 	if (scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		buffer = worker->generateSRCBuffer(scene).srcFiles;
+		buffer = worker->generateGLTFBuffer(scene);
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Failed to generate SRC Buffer.";
+	}
+	return buffer;
+}
+
+manipulator::modelconvertor::repo_export_buffers_t RepoController::generateSRCBuffer(
+	const repo::core::model::RepoScene *scene)
+{
+	manipulator::modelconvertor::repo_export_buffers_t buffer;
+	if (scene)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		buffer = worker->generateSRCBuffer(scene);
 		workerPool.push(worker);
 	}
 	else

@@ -6,11 +6,16 @@
 
 set(SOURCES
 	${SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_export_x3d.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_export_x3d_abstract.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_export_x3d_gltf.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_export_x3d_src.cpp
 	CACHE STRING "SOURCES" FORCE)
 
 set(HEADERS
 	${HEADERS}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_export_x3d.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_export_x3d_abstract.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_export_x3d_gltf.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_export_x3d_src.h
+	${CMAKE_CURRENT_SOURCE_DIR}/x3dom_constants.h
 	CACHE STRING "HEADERS" FORCE)
 

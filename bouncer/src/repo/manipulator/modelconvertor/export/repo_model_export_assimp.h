@@ -39,25 +39,13 @@ namespace repo{
 				/**
 				* Default Constructor, export model with default settings
 				*/
-				AssimpModelExport();
+				AssimpModelExport(
+					const repo::core::model::RepoScene *scene);
 
 				/**
 				* Default Deconstructor
 				*/
 				virtual ~AssimpModelExport();
-
-				/**
-				* Convert repo scene to assimp interpretation
-				* @param scene repo scene to convert
-				* @param textNodes Keeps track on the textures that are used in this scene.
-				* @param gType which graph to convert (default: unoptimised)
-				* @return returns a pointer to aiScene
-				*/
-				aiScene* convertToAssimp(
-					const repo::core::model::RepoScene            *scene,
-					repo::core::model::RepoNodeSet                &textNodes,
-					const repo::core::model::RepoScene::GraphType &gType 
-							= repo::core::model::RepoScene::GraphType::DEFAULT);
 
 				/**
 				* Export a repo scene graph to file
@@ -66,7 +54,6 @@ namespace repo{
 				* @return returns true upon success
 				*/
 				bool exportToFile(
-					const repo::core::model::RepoScene *scene,
 					const std::string                  &filePath);
 
 				/**
@@ -74,15 +61,6 @@ namespace repo{
 				*/
 				static std::string getSupportedFormats();
 
-				/**
-				* Write an aiScene to file
-				* @param scene aiScene representation
-				* @param filePath path to destination file (including file extension)
-				* @return returns true upon success
-				*/
-				bool writeSceneToFile(
-					const aiScene     *scene,
-					const std::string &filePath);
 			private:
 
 				/**
@@ -192,6 +170,19 @@ namespace repo{
 					= repo::core::model::RepoScene::GraphType::DEFAULT);
 
 				/**
+				* Convert repo scene to assimp interpretation
+				* @param scene repo scene to convert
+				* @param textNodes Keeps track on the textures that are used in this scene.
+				* @param gType which graph to convert (default: unoptimised)
+				* @return returns a pointer to aiScene
+				*/
+				aiScene* convertToAssimp(
+					const repo::core::model::RepoScene            *scene,
+					repo::core::model::RepoNodeSet                &textNodes,
+					const repo::core::model::RepoScene::GraphType &gType
+					= repo::core::model::RepoScene::GraphType::DEFAULT);
+
+				/**
 				* Returns the ID of the exported file type
 				* @param fileExtension string of the extension
 				* @return returns the format ID for this file type
@@ -210,6 +201,17 @@ namespace repo{
 				bool writeTexturesToFiles(
 					const repo::core::model::RepoNodeSet &nodes,
 					const std::string                    &filePath);
+
+
+				/**
+				* Write an aiScene to file
+				* @param scene aiScene representation
+				* @param filePath path to destination file (including file extension)
+				* @return returns true upon success
+				*/
+				bool writeSceneToFile(
+					const aiScene     *scene,
+					const std::string &filePath);
 				
 
 			};

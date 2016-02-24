@@ -109,7 +109,6 @@ namespace repo{
 				addFieldAttribute(label, attribute, val);
 			}
 			
-
 			/**
 			* Add a children onto the tree
 			* label can denote it's inheritance.
@@ -127,6 +126,14 @@ namespace repo{
 					tree.put(label, value);
 				else
 					tree.add(label, value);
+			}
+
+			template <std::size_t N>
+			void addToTree(
+				const std::string           &label,
+				const char                  (&value)[N])
+			{
+				addToTree(label, std::string(value));
 			}
 
 			/**

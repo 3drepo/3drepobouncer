@@ -24,7 +24,9 @@
 
 using namespace repo::manipulator::modelconvertor;
 
-AbstractModelExport::AbstractModelExport()
+AbstractModelExport::AbstractModelExport(
+	const repo::core::model::RepoScene *scene)
+	: scene(scene)
 {
 }
 

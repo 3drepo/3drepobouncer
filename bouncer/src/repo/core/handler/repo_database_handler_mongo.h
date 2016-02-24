@@ -349,7 +349,7 @@ namespace repo{
 					const std::string          &fileName,
 					const std::vector<uint8_t> &bin,
 					      std::string          &errMsg,
-					const std::string          &contentType = ""
+					const std::string          &contentType = "binary/octet-stream"
 					);
 
 				/**
