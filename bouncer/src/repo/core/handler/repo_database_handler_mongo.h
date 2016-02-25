@@ -208,7 +208,7 @@ namespace repo{
 				 */
 				std::map<std::string, std::list<std::string> > getDatabasesWithProjects(
 					const std::list<std::string> &databases,
-					const std::string &projectExt = "scene");
+					const std::string &projectExt = "history");
 
 				/**
 				 * Get a list of projects associated with a given database (aka company account).

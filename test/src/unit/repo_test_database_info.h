@@ -25,6 +25,8 @@ const static std::string REPO_GTEST_DBUSER = "testUser";
 const static std::string REPO_GTEST_DBPW   = "3drepotest";
 const static std::string REPO_GTEST_DBNAME1 = "sampleDataReadOnly";
 const static std::string REPO_GTEST_DBNAME2 = "sampleDataReadOnly2";
+const static std::string REPO_GTEST_DBNAME1_PROJ = "3drepoBIM";
+const static std::string REPO_GTEST_DBNAME2_PROJ = "sphere";
 
 /*
 * Get expected #items in collection count within testCases
