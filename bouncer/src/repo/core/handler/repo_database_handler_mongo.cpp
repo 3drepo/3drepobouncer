@@ -252,25 +252,41 @@ bool MongoDatabaseHandler::dropDocument(
 	const std::string &collection,
 	std::string &errMsg)
 {
-	bool success = true;
+	bool success = false;
 	mongo::DBClientBase *worker;
-	try{
-		worker = workerPool->getWorker();
-		mongo::BSONElement bsonID;
-		bson.getObjectID(bsonID);
-		mongo::Query query = MONGO_QUERY("_id" << bsonID);
-		worker->remove(database + "." + collection, query, true);
-
-
-	}
-	catch (mongo::DBException& e)
+	if (!database.empty() && !collection.empty())
 	{
-		repoError << "Failed to drop document :" << e.what();
+		try{
+			worker = workerPool->getWorker();
+			mongo::BSONElement bsonID;
+			bson.getObjectID(bsonID);
+			if (success = !bson.isEmpty() && !bsonID.isNull())
+			{
+				mongo::Query query = MONGO_QUERY("_id" << bsonID);
+				worker->remove(database + "." + collection, query, true);
+
+			}
+			else
+			{
+				errMsg = "Failed to drop document: id not found";
+			}
+
+		}
+		catch (mongo::DBException& e)
+		{
+			errMsg = "Failed to drop document :" + std::string(e.what());
+			success = false;
+		}
+
+		workerPool->returnWorker(worker);
+
 	}
-
-	workerPool->returnWorker(worker);
-
-	return true;
+	else
+	{
+		errMsg = "Failed to drop document: either database (value: " + database + ") or collection (value: " + collection + ") is empty";
+	}
+	
+	return success;
 }
 
 mongo::BSONObj MongoDatabaseHandler::fieldsToReturn(

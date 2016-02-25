@@ -401,10 +401,35 @@ TEST(MongoDatabaseHandlerTest, DropDatabase)
 
 	EXPECT_TRUE(handler->dropDatabase(REPO_GTEST_DROPCOL_TESTCASE.first, errMsg));
 	EXPECT_TRUE(errMsg.empty());
+	errMsg.clear();
 	//Apparently if you drop the database that doesn't exist it still returns true... Which is inconsistent to dropCollection..
 	EXPECT_TRUE(handler->dropDatabase(REPO_GTEST_DROPCOL_TESTCASE.first, errMsg));
 	EXPECT_TRUE(errMsg.empty());
+	errMsg.clear();
 	EXPECT_FALSE(handler->dropDatabase("", errMsg));
 	EXPECT_FALSE(errMsg.empty());
 }
 
+TEST(MongoDatabaseHandlerTest, DropDocument)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	std::string errMsg;
+
+	auto testCase = getDataForDropCase();
+	
+	EXPECT_TRUE(handler->dropDocument(testCase.second, testCase.first.first, testCase.first.second, errMsg));
+	EXPECT_TRUE(errMsg.empty());
+	//Dropping something that doesn't exist apparently returns true...
+	EXPECT_TRUE(handler->dropDocument(testCase.second, testCase.first.first, testCase.first.second, errMsg));
+	EXPECT_TRUE(errMsg.empty());
+	//test empty bson
+	EXPECT_FALSE(handler->dropDocument(mongo::BSONObj(), testCase.first.first, testCase.first.second, errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(handler->dropDocument(testCase.second, testCase.first.first, "", errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(handler->dropDocument(testCase.second, "", testCase.first.first, errMsg));
+	EXPECT_FALSE(errMsg.empty());
+}

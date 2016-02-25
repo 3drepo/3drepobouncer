@@ -17,6 +17,10 @@
 
 #pragma once
 
+
+#include <repo/core/model/bson/repo_bson_builder.h>
+
+
 //Test Database address
 const static std::string REPO_GTEST_DBADDRESS = "localhost";
 const static uint32_t    REPO_GTEST_DBPORT = 27017;
@@ -28,6 +32,7 @@ const static std::string REPO_GTEST_DBNAME2 = "sampleDataReadOnly2";
 const static std::string REPO_GTEST_DBNAME1_PROJ = "3drepoBIM";
 const static std::string REPO_GTEST_DBNAME2_PROJ = "sphere";
 const static std::pair<std::string, std::string> REPO_GTEST_DROPCOL_TESTCASE = {"sampleDataRW", "collectionToDrop"};
+
 
 /*
 * Get expected #items in collection count within testCases
@@ -89,7 +94,7 @@ static std::pair <std::pair<std::string, std::string>, mongo::BSONObj> getCollec
 		//<< "size" << 18918176
 		//<< "avgObjSize" <<  1351298
 		//<< "storageSize" << 33562624
-		<< "numExtents" << 2
+		//<< "numExtents" << 2
 		<< "nindexes" << 1
 		//<< "lastExtentSize" << 33554432
 		<< "paddingFactor" << 1.0000000000000000
@@ -102,6 +107,17 @@ static std::pair <std::pair<std::string, std::string>, mongo::BSONObj> getCollec
 		);
 
 	return results;
+}
+
+static std::pair<std::pair<std::string, std::string>, mongo::BSONObj> getDataForDropCase()
+{
+	std::pair<std::pair<std::string, std::string>, mongo::BSONObj> result;
+	result.first = { "sampleDataRW", "collectionToDrop" };
+	repo::core::model::RepoBSONBuilder builder;
+	builder.append("_id", stringToUUID("0ab45528-9258-421a-927c-c51bf40fc478"));
+	result.second = builder.obj();
+
+	return result;
 }
 
 static std::pair<std::pair<std::string, std::string>, std::vector<std::string>> getGoldenForGetAllFromCollectionTailable()
