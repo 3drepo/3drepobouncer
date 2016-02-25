@@ -247,13 +247,13 @@ TEST(MongoDatabaseHandlerTest, GetCollectionStats)
 	
 	EXPECT_TRUE(message.empty());
 	EXPECT_FALSE(stats.isEmpty());
-	ASSERT_EQ(stats.nFields(), golden.second.nFields());
+	ASSERT_TRUE(stats.nFields()> golden.second.nFields());
 	std::set<std::string> fields;
-	stats.getFieldNames(fields);
+	golden.second.getFieldNames(fields);
 
 	for (const auto &fieldName : fields)
 	{
-		ASSERT_TRUE(golden.second.hasField(fieldName));
+		ASSERT_TRUE(stats.hasField(fieldName));
 		EXPECT_EQ(stats.getField(fieldName).toString(), golden.second.getField(fieldName).toString());
 	}
 	//check error handling - make sure it doesn't crash
