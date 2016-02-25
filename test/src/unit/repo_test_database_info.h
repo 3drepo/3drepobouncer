@@ -83,15 +83,15 @@ static std::pair <std::pair<std::string, std::string>, mongo::BSONObj> getCollec
 	results.first = { REPO_GTEST_DBNAME1, "3drepoBIM.scene" };
 	results.second = BSON("ns" << "sampleDataReadOnly.3drepoBIM.scene" 
 		<< "count" << 14
-		<< "size" << 18918176
-		<< "avgObjSize" <<  1351298
-		<< "storageSize" << 33562624
+		//<< "size" << 18918176
+		//<< "avgObjSize" <<  1351298
+		//<< "storageSize" << 33562624
 		<< "numExtents" << 2
 		<< "nindexes" << 1
-		<< "lastExtentSize" << 33554432
+		//<< "lastExtentSize" << 33554432
 		<< "paddingFactor" << 1.0000000000000000
 		<< "systemFlags" << 1
-		<< "userFlags" << 1
+		//<< "userFlags" << 1
 		<< "totalIndexSize" << 8176
 		<< "indexSizes" 
 		<< BSON("_id_" << 8176)
