@@ -872,7 +872,7 @@ bool MongoDatabaseHandler::performRoleCmd(
 	const repo::core::model::RepoRole       &role,
 	std::string                             &errMsg)
 {
-	bool success = true;
+	bool success = false;
 	mongo::DBClientBase *worker;
 
 	if (!role.isEmpty())
@@ -912,7 +912,7 @@ bool MongoDatabaseHandler::performRoleCmd(
 
 				mongo::BSONObj info;
 				auto cmd = cmdBuilder.obj();
-				worker->runCommand(role.getDatabase(), cmd, info);
+				success = worker->runCommand(role.getDatabase(), cmd, info);
 
 				repoTrace << "Role command : " << cmd;
 
@@ -922,6 +922,7 @@ bool MongoDatabaseHandler::performRoleCmd(
 					success = false;
 					errMsg += cmdError;
 				}
+
 
 			}
 			catch (mongo::DBException &e)
