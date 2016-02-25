@@ -151,7 +151,7 @@ TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
 
 	ASSERT_EQ(bsonsLimitSkip.size(), 1);
 
-	EXPECT_EQ(bsonsLimitSkip[0].toString(), bsons[1]);
+	EXPECT_EQ(bsonsLimitSkip[0].toString(), bsons[1].toString());
 
 	//test projection
 	auto bsonsProjected = handler->getAllFromCollectionTailable(

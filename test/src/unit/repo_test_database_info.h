@@ -74,8 +74,6 @@ static std::vector<std::string> getCollectionList(
 	{
 		return{ "sphere.history", "sphere.history.chunks", "sphere.history.files", "sphere.issues", "sphere.scene", "sphere.scene.files", "sphere.scene.chunks", "sphere.stash.3drepo", "sphere.stash.3drepo.chunks", "sphere.stash.3drepo.files", "settings", "system.indexes" };
 	}
-
-
 }
 
 static std::pair<std::pair<std::string, std::string>, std::vector<std::string>> getGoldenForGetAllFromCollectionTailable()
