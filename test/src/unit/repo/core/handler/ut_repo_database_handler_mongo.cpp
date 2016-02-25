@@ -274,3 +274,18 @@ TEST(MongoDatabaseHandlerTest, GetCollectionStats)
 	EXPECT_EQ(0.0, handler->getCollectionStats(golden.first.first, "blah", message).getField("ok").Double());
 	EXPECT_TRUE(message.empty());
 }
+
+TEST(MongoDatabaseHandlerTest, GetDatabases)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+
+	std::list<std::string> dbList = handler->getDatabases();
+
+	//there are probably bogus databases in there due to the previous tests automatically creating them
+	//so just check that the 2 we are looking for is in there.
+
+	EXPECT_FALSE(std::find(dbList.begin(), dbList.end(), REPO_GTEST_DBNAME1) == dbList.end());
+	EXPECT_FALSE(std::find(dbList.begin(), dbList.end(), REPO_GTEST_DBNAME2) == dbList.end());
+
+}
