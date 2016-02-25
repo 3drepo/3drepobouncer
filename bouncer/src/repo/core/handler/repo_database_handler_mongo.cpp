@@ -519,22 +519,30 @@ repo::core::model::CollectionStats MongoDatabaseHandler::getCollectionStats(
 {
 	mongo::BSONObj info;
 	mongo::DBClientBase *worker;
-	try {
-		mongo::BSONObjBuilder builder;
-		builder.append("collstats", collection);
-		builder.append("scale", 1); // 1024 == KB 		
-
-		worker = workerPool->getWorker();
-		worker->runCommand(database, builder.obj(), info);
-	}
-	catch (mongo::DBException &e)
+	if (!(database.empty() || collection.empty()))
 	{
-		errMsg = e.what();
-		repoError << "Failed to retreive collection stats for" << database 
-			<< "." << collection << " : " << errMsg;
-	}
+		try {
+			mongo::BSONObjBuilder builder;
+			builder.append("collstats", collection);
+			builder.append("scale", 1); // 1024 == KB 		
 
-	workerPool->returnWorker(worker);
+			worker = workerPool->getWorker();
+			worker->runCommand(database, builder.obj(), info);
+		}
+		catch (mongo::DBException &e)
+		{
+			errMsg = e.what();
+			repoError << "Failed to retreive collection stats for" << database
+				<< "." << collection << " : " << errMsg;
+		}
+
+		workerPool->returnWorker(worker);
+	}
+	else
+	{
+		errMsg = "Failed to retrieve collection stats: empty database name/collection name";
+	}
+	
 	return repo::core::model::CollectionStats(info);
 }
 

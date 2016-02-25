@@ -138,8 +138,7 @@ TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
 			{
 				goldenDataDisposable.erase(goldenDataDisposable.begin() + j);
 				break;
-			}
-				
+			}				
 		}
 		EXPECT_TRUE(foundMatch);
 		
@@ -235,4 +234,43 @@ TEST(MongoDatabaseHandlerTest, GetCollections)
 	//check error handling - make sure it doesn't crash
 	EXPECT_EQ(0, handler->getCollections("").size());
 	EXPECT_EQ(0, handler->getCollections("blahblah").size());
+}
+
+TEST(MongoDatabaseHandlerTest, GetCollectionStats)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+
+	auto golden = getCollectionStats();
+	std::string message;
+	repo::core::model::CollectionStats stats = handler->getCollectionStats(golden.first.first, golden.first.second, message);
+	
+	EXPECT_TRUE(message.empty());
+	EXPECT_FALSE(stats.isEmpty());
+	ASSERT_EQ(stats.nFields(), golden.second.nFields());
+	std::set<std::string> fields;
+	stats.getFieldNames(fields);
+
+	for (const auto &fieldName : fields)
+	{
+		ASSERT_TRUE(golden.second.hasField(fieldName));
+		EXPECT_EQ(stats.getField(fieldName).toString(), golden.second.getField(fieldName).toString());
+	}
+	//check error handling - make sure it doesn't crash
+	message.clear();
+	EXPECT_TRUE(handler->getCollectionStats("", golden.first.second, message).isEmpty());
+	EXPECT_FALSE(message.empty());
+
+	message.clear();
+	EXPECT_TRUE(handler->getCollectionStats(golden.first.first, "", message).isEmpty());
+	EXPECT_FALSE(message.empty());
+
+	message.clear();
+	//Shoudl return with collection not found	
+	EXPECT_EQ(0, handler->getCollectionStats("nonExistent", "blah", message).getField("ok").Double());
+	EXPECT_TRUE(message.empty());
+
+	message.clear();
+	EXPECT_EQ(0.0, handler->getCollectionStats(golden.first.first, "blah", message).getField("ok").Double());
+	EXPECT_TRUE(message.empty());
 }

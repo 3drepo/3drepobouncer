@@ -76,6 +76,31 @@ static std::vector<std::string> getCollectionList(
 	}
 }
 
+static std::pair <std::pair<std::string, std::string>, mongo::BSONObj> getCollectionStats()
+{
+	std::pair <std::pair<std::string, std::string>, mongo::BSONObj> results;
+
+	results.first = { REPO_GTEST_DBNAME1, "3drepoBIM.scene" };
+	results.second = BSON("ns" << "sampleDataReadOnly.3drepoBIM.scene" 
+		<< "count" << 14
+		<< "size" << 18918176
+		<< "avgObjSize" <<  1351298
+		<< "storageSize" << 33562624
+		<< "numExtents" << 2
+		<< "nindexes" << 1
+		<< "lastExtentSize" << 33554432
+		<< "paddingFactor" << 1.0000000000000000
+		<< "systemFlags" << 1
+		<< "userFlags" << 1
+		<< "totalIndexSize" << 8176
+		<< "indexSizes" 
+		<< BSON("_id_" << 8176)
+		<< "ok" << 1.0000000000000000
+		);
+
+	return results;
+}
+
 static std::pair<std::pair<std::string, std::string>, std::vector<std::string>> getGoldenForGetAllFromCollectionTailable()
 {
 	std::pair<std::pair<std::string, std::string>, std::vector<std::string>> results;
@@ -86,9 +111,5 @@ static std::pair<std::pair<std::string, std::string>, std::vector<std::string>> 
 	"{ _id: BinData(3, E625D5737A694313873AB231E8708360), rev_id: BinData(3, 297DB5A5E7024ECAB4F2EF098D13C278), shared_id: BinData(3, 11553A7A497C4E748D60F9B99B3AFF57), type: \"transformation\", api: 1, name: \"<dummy_root>\", matrix: [ [ 1.0, 0.0, 0.0, 0.0 ], [ 0.0, 1.0, 0.0, 0.0 ], [ 0.0, 0.0, 1.0, 0.0 ], [ 0.0, 0.0, 0.0, 1.0 ] ] }",
 	"{ _extRef: { normals: \"6b7d6af3-850e-463e-a450-3593b75b3ea3_normals\", vertices: \"6b7d6af3-850e-463e-a450-3593b75b3ea3_vertices\" }, _id: BinData(3, 6B7D6AF3850E463EA4503593B75B3EA3), rev_id: BinData(3, 297DB5A5E7024ECAB4F2EF098D13C278), m_map: [ { map_id: BinData(3, C3ED4CB1D9A94747963E2B89ACBF7096), mat_id: BinData(3, 816B8599779B44439CB35C5D8D14871F), v_from: 0, v_to: 1497000, t_from: 0, t_to: 499000, bounding_box: [ [ -1.0, -1.0, -1.0 ], [ 1.0, 1.0, 1.0 ] ] } ], parents: [ BinData(3, 11553A7A497C4E748D60F9B99B3AFF57) ], shared_id: BinData(3, 8E7F856993704399896EE407731B947E), type: \"mesh\", api: 1, bounding_box: [ [ -1.0, -1.0, -1.0 ], [ 1.0, 1.0, 1.0 ] ], outline: [ [ -1.0, -1.0 ], [ 1.0, -1.0 ], [ 1.0, 1.0 ], [ -1.0, 1.0 ] ], faces_count: 499000, faces: BinData(0, 03000000000000000100000002000000030000000300000004000000050000000300000006000000070000000800000003000000090000000A0000000B000000030000000C00...) }"
 	};
-
-
-
 	return results;
-
 }
