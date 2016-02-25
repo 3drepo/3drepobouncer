@@ -221,19 +221,27 @@ bool MongoDatabaseHandler::dropDatabase(
 	const std::string &database,
 	std::string &errMsg)
 {
-	bool success = true;
+	bool success = false;
 	mongo::DBClientBase *worker;
-	try{
-
-		worker = workerPool->getWorker();
-		worker->dropDatabase(database);
-	}
-	catch (mongo::DBException& e)
+	if (!database.empty())
 	{
-		repoError << "Failed to drop database :" << e.what();
-	}
+		try{
 
-	workerPool->returnWorker(worker);
+			worker = workerPool->getWorker();
+			success = worker->dropDatabase(database);
+		}
+		catch (mongo::DBException& e)
+		{
+			errMsg = "Failed to drop database :" + std::string(e.what());
+		}
+
+		workerPool->returnWorker(worker);
+	}
+	else
+	{
+		errMsg = "Failed to drop database: name of database is unspecified!";
+	}
+	
 
 	return success;
 }

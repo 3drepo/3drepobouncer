@@ -390,7 +390,21 @@ TEST(MongoDatabaseHandlerTest, DropCollection)
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
 	EXPECT_FALSE(handler->dropCollection("", REPO_GTEST_DROPCOL_TESTCASE.second, errMsg));
-	EXPECT_FALSE(errMsg.empty());
-
-	
+	EXPECT_FALSE(errMsg.empty());	
 }
+
+TEST(MongoDatabaseHandlerTest, DropDatabase)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	std::string errMsg;
+
+	EXPECT_TRUE(handler->dropDatabase(REPO_GTEST_DROPCOL_TESTCASE.first, errMsg));
+	EXPECT_TRUE(errMsg.empty());
+	//Apparently if you drop the database that doesn't exist it still returns true... Which is inconsistent to dropCollection..
+	EXPECT_TRUE(handler->dropDatabase(REPO_GTEST_DROPCOL_TESTCASE.first, errMsg));
+	EXPECT_TRUE(errMsg.empty());
+	EXPECT_FALSE(handler->dropDatabase("", errMsg));
+	EXPECT_FALSE(errMsg.empty());
+}
+
