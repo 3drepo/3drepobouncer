@@ -128,18 +128,26 @@ mongo::BSONObj* MongoDatabaseHandler::createAuthBSON(
 void MongoDatabaseHandler::createCollection(const std::string &database, const std::string &name)
 {
 	mongo::DBClientBase *worker;
-	try{
-
-		worker = workerPool->getWorker();
-		worker->createCollection(database + "." + name);
-	}
-	catch (mongo::DBException& e)
+	if (!(database.empty() || name.empty()))
 	{
-		repoError << "Failed to create collection ("
-			<< database << "." << name << ":" << e.what();
-	}
+		try{
 
-	workerPool->returnWorker(worker);
+			worker = workerPool->getWorker();
+			worker->createCollection(database + "." + name);
+		}
+		catch (mongo::DBException& e)
+		{
+			repoError << "Failed to create collection ("
+				<< database << "." << name << ":" << e.what();
+		}
+
+		workerPool->returnWorker(worker);
+	}
+	else
+	{
+		repoError << "Failed to create collection: database(value: " << database << ")/collection(value: " << name << ") name is empty!";
+	}	
+
 }
 
 repo::core::model::RepoBSON MongoDatabaseHandler::createRepoBSON(
@@ -183,20 +191,28 @@ bool MongoDatabaseHandler::dropCollection(
 	std::string &errMsg)
 {
 
-	bool success = true;
+	bool success = false;
 	mongo::DBClientBase *worker;
-	try{
-
-		worker = workerPool->getWorker();
-		worker->dropCollection(database + "." + collection);
-	}
-	catch (mongo::DBException& e)
+	if (!database.empty() || collection.empty())
 	{
-		repoError << "Failed to drop collection ("
-			<< database << "." << collection << ":" << e.what();
-	}
+		try{
 
-	workerPool->returnWorker(worker);
+			worker = workerPool->getWorker();
+			success = worker->dropCollection(database + "." + collection);
+		}
+		catch (mongo::DBException& e)
+		{
+			errMsg = "Failed to drop collection ("
+				+ database + "." + collection + ":" + e.what();
+		}
+
+		workerPool->returnWorker(worker);
+
+	}
+	else
+	{
+		errMsg = "Failed to drop collection: either database (value: " + database + ") or collection (value: " + collection + ") is empty";
+	}
 
 	return success;
 }

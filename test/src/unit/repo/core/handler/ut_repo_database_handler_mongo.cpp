@@ -321,3 +321,76 @@ TEST(MongoDatabaseHandlerTest, GetDatabasesWithProjects)
 	EXPECT_EQ(dbWithProjects2[fakeDB].size(), 0);
 
 }
+
+TEST(MongoDatabaseHandlerTest, GetProjects)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+
+	auto projects = handler->getProjects(REPO_GTEST_DBNAME1, "history");
+	ASSERT_EQ(projects.size(), 1);
+	EXPECT_EQ(projects.front(), REPO_GTEST_DBNAME1_PROJ);
+
+	projects = handler->getProjects(REPO_GTEST_DBNAME1, "blah");
+	EXPECT_EQ(projects.size(), 0);
+
+	projects = handler->getProjects("noDB", "history");
+	EXPECT_EQ(projects.size(), 0);
+
+}
+
+TEST(MongoDatabaseHandlerTest, GetAdminDatabaseRoles)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	//This should be non zero.
+	EXPECT_TRUE(handler->getAdminDatabaseRoles().size());
+}
+
+TEST(MongoDatabaseHandlerTest, GetAdminDatabaseName)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	//This should not be an empty string
+	EXPECT_FALSE(handler->getAdminDatabaseName().empty());
+}
+
+TEST(MongoDatabaseHandlerTest, GetStandardDatabaseRoles)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	//This should be non zero.
+	EXPECT_TRUE(handler->getStandardDatabaseRoles().size());
+}
+
+TEST(MongoDatabaseHandlerTest, CreateCollection)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+
+	//no exception
+	handler->createCollection("this_database", "newCollection");
+	handler->createCollection("this_database", "");
+	handler->createCollection("", "newCollection");
+}
+
+TEST(MongoDatabaseHandlerTest, DropCollection)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	std::string errMsg;
+	//no exception
+	EXPECT_TRUE(handler->dropCollection(REPO_GTEST_DROPCOL_TESTCASE.first, REPO_GTEST_DROPCOL_TESTCASE.second, errMsg));
+	EXPECT_TRUE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(handler->dropCollection(REPO_GTEST_DROPCOL_TESTCASE.first, REPO_GTEST_DROPCOL_TESTCASE.second, errMsg));
+	EXPECT_TRUE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(handler->dropCollection(REPO_GTEST_DROPCOL_TESTCASE.first, "", errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(handler->dropCollection("", REPO_GTEST_DROPCOL_TESTCASE.second, errMsg));
+	EXPECT_FALSE(errMsg.empty());
+
+	
+}
