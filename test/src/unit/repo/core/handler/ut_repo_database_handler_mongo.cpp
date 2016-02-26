@@ -759,7 +759,7 @@ TEST(MongoDatabaseHandlerTest, FindAllByCriteria)
 
 	auto results = handler->findAllByCriteria(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", search);
 	
-	EXPECT_EQ(4, results.size(),);
+	EXPECT_EQ(4, results.size());
 
 	EXPECT_EQ(0, handler->findAllByCriteria(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", repo::core::model::RepoBSON()).size());
 	EXPECT_EQ(0, handler->findAllByCriteria("", REPO_GTEST_DBNAME1_PROJ + ".scene", search).size());
