@@ -34,6 +34,7 @@ const static std::string REPO_GTEST_DBNAME2_PROJ = "sphere";
 const static std::string REPO_GTEST_DBNAME_ROLEUSERTEST = "sampleDataRWRolesUsers";
 
 const static mongo::BSONObj REPO_GTEST_DROPROLETEST = BSON("db" << REPO_GTEST_DBNAME_ROLEUSERTEST << "role" <<  "dropRoleTest");
+const static mongo::BSONObj REPO_GTEST_DROPUSERTEST = BSON("db" << "admin" << "user" << "dropUserTest");
 
 const static std::pair<std::string, std::string> REPO_GTEST_DROPCOL_TESTCASE = {"sampleDataRW", "collectionToDrop"};
 

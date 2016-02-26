@@ -950,7 +950,7 @@ bool MongoDatabaseHandler::performUserCmd(
 	const repo::core::model::RepoUser &user,
 	std::string                       &errMsg)
 {
-	bool success = true;
+	bool success = false;
 	mongo::DBClientBase *worker;
 
 	if (!user.isEmpty())
@@ -987,7 +987,7 @@ bool MongoDatabaseHandler::performUserCmd(
 	
 
 			mongo::BSONObj info;
-			worker->runCommand(ADMIN_DATABASE, cmdBuilder.obj(), info);
+			success = worker->runCommand(ADMIN_DATABASE, cmdBuilder.obj(), info);
 
 			std::string cmdError = info.getStringField("errmsg");
 			if (!cmdError.empty())
@@ -999,7 +999,6 @@ bool MongoDatabaseHandler::performUserCmd(
 		}
 		catch (mongo::DBException &e)
 		{
-			success = false;
 			std::string errString(e.what());
 			errMsg += errString;
 		}

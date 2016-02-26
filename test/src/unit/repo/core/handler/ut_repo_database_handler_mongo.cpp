@@ -433,3 +433,38 @@ TEST(MongoDatabaseHandlerTest, DropDocument)
 	EXPECT_FALSE(handler->dropDocument(testCase.second, "", testCase.first.first, errMsg));
 	EXPECT_FALSE(errMsg.empty());
 }
+
+TEST(MongoDatabaseHandlerTest, DropRole)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	std::string errMsg;
+	EXPECT_TRUE(handler->dropRole(repo::core::model::RepoRole(REPO_GTEST_DROPROLETEST), errMsg));
+	EXPECT_TRUE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(handler->dropRole(repo::core::model::RepoRole(REPO_GTEST_DROPROLETEST), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(handler->dropRole(repo::core::model::RepoRole(mongo::BSONObj()), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+
+}
+
+TEST(MongoDatabaseHandlerTest, DropUser)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	std::string errMsg;
+	EXPECT_TRUE(handler->dropUser(repo::core::model::RepoUser(REPO_GTEST_DROPUSERTEST), errMsg));
+	EXPECT_TRUE(errMsg.empty());
+	repoTrace << errMsg;
+	errMsg.clear();
+	EXPECT_FALSE(handler->dropUser(repo::core::model::RepoUser(REPO_GTEST_DROPUSERTEST), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(handler->dropUser(repo::core::model::RepoUser(mongo::BSONObj()), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+
+}
