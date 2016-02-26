@@ -566,11 +566,12 @@ TEST(MongoDatabaseHandlerTest, InsertRole)
 	repo::core::model::RepoBSON result = handler->findOneByCriteria("admin", "system.roles", roleTest);
 	EXPECT_FALSE(result.isEmpty());
 
+	repoTrace << "results: " << result.toString();
 	std::set<std::string> fields;
-	result.getFieldNames(fields);
+	roleTest.getFieldNames(fields);
 	for (const auto &fname : fields)
 	{
-		ASSERT_TRUE(roleTest.hasField(fname));
+		ASSERT_TRUE(result.hasField(fname));
 		EXPECT_EQ(result.getField(fname), roleTest.getField(fname));
 	}
 
@@ -594,31 +595,22 @@ TEST(MongoDatabaseHandlerTest, InsertUser)
 	auto handler = getHandler();
 	ASSERT_TRUE(handler);
 	std::string errMsg;
-
-	repo::core::model::RepoUser userTest = BSON("db" << "admin" << "user" << "insertUserTest" << "pwd" << "1234");
-
+	repo::core::model::RepoUser userTest = BSON("db" << "admin" << "user" << "insertUserTest" 
+					<< REPO_USER_LABEL_CREDENTIALS << BSON(REPO_USER_LABEL_CLEARTEXT<< "123"));
+	repoTrace << userTest.toString();
 	EXPECT_TRUE(handler->insertUser(userTest, errMsg));
 	EXPECT_TRUE(errMsg.empty());
 	repoTrace << errMsg;
 	errMsg.clear();
 
 	//The following will of cousre fail if findOneByCriteria is failing
-	repo::core::model::RepoBSON result = handler->findOneByCriteria("admin", "system.users", userTest);
+	repo::core::model::RepoBSON result = handler->findOneByCriteria("admin", "system.users", BSON("_id" << "admin.insertUserTest"));
 	EXPECT_FALSE(result.isEmpty());
-
-	std::set<std::string> fields;
-	result.getFieldNames(fields);
-	for (const auto &fname : fields)
-	{
-		ASSERT_TRUE(userTest.hasField(fname));
-		EXPECT_EQ(result.getField(fname), userTest.getField(fname));
-	}
-
 
 	EXPECT_FALSE(handler->insertUser(repo::core::model::RepoUser(), errMsg));
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
-	EXPECT_FALSE(handler->insertUser(repo::core::model::RepoUser(BSON("user" << "insertUserTest")), errMsg));
+	EXPECT_FALSE(handler->insertUser(repo::core::model::RepoUser(BSON("_id" << "insertUserTest")), errMsg));
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
 	EXPECT_FALSE(handler->insertUser(repo::core::model::RepoUser(BSON("db" << "admin")), errMsg));
@@ -628,16 +620,16 @@ TEST(MongoDatabaseHandlerTest, InsertUser)
 	handler->dropUser(userTest, errMsg);
 }
 
-TEST(MongoDatabaseHandlerTest, InsertUser)
+TEST(MongoDatabaseHandlerTest, UpsertDocument)
 {
 	auto handler = getHandler();
 	ASSERT_TRUE(handler);
 	std::string errMsg;
 
-	repo::core::model::RepoBSON testCase = BSON("_id" << generateUUID() << "anotherField" << std::rand());
+	repo::core::model::RepoBSON testCase = BSON("_id" << UUIDtoString(generateUUID()) << "anotherField" << std::rand());
 	std::string database = "sandbox";
 	std::string collection = "sbCollection";
-	EXPECT_TRUE(handler->insertDocument(database, collection, testCase, errMsg));
+	EXPECT_TRUE(handler->upsertDocument(database, collection, testCase, false, errMsg));
 	EXPECT_TRUE(errMsg.empty());
 	errMsg.clear();
 
@@ -653,14 +645,46 @@ TEST(MongoDatabaseHandlerTest, InsertUser)
 		EXPECT_EQ(result.getField(fname), testCase.getField(fname));
 	}
 
-	EXPECT_FALSE(handler->insertDocument("", "insertCollection", repo::core::model::RepoBSON(), errMsg));
-	EXPECT_FALSE(errMsg.empty());
+	//upserting the same thing twice shouldn't cause any errors
+	EXPECT_TRUE(handler->upsertDocument(database, collection, testCase, false, errMsg));
+	EXPECT_TRUE(errMsg.empty());
 	errMsg.clear();
-	EXPECT_FALSE(handler->insertDocument("testingInsert", "", repo::core::model::RepoBSON(), errMsg));
-	EXPECT_FALSE(errMsg.empty());
+
+	std::string id = testCase.getStringField("_id");
+	repo::core::model::RepoBSON searchCriteria = BSON("_id" << id);
+	repo::core::model::RepoBSON extraFields = BSON("_id" << id << "extraField" << std::rand());
+
+	EXPECT_TRUE(handler->upsertDocument(database, collection, extraFields, false, errMsg));
+	EXPECT_TRUE(errMsg.empty());
 	errMsg.clear();
-	EXPECT_FALSE(handler->insertDocument("", "", repo::core::model::RepoBSON(), errMsg));
-	EXPECT_FALSE(errMsg.empty());
+
+	//The following will of cousre fail if findOneByCriteria is failing
+	result = handler->findOneByCriteria(database, collection, searchCriteria);
+	EXPECT_FALSE(result.isEmpty());
+
+	EXPECT_TRUE(result.hasField("anotherField"));
+	EXPECT_TRUE(result.hasField("extraField"));
+
+
+	EXPECT_TRUE(handler->upsertDocument(database, collection, extraFields, true, errMsg));
+	EXPECT_TRUE(errMsg.empty());
 	errMsg.clear();
+
+	//The following will of cousre fail if findOneByCriteria is failing
+	result = handler->findOneByCriteria(database, collection, searchCriteria);
+	EXPECT_FALSE(result.isEmpty());
+
+	EXPECT_FALSE(result.hasField("anotherField"));
+	EXPECT_TRUE(result.hasField("extraField"));
+
+	//EXPECT_FALSE(handler->insertDocument("", "insertCollection", repo::core::model::RepoBSON(), errMsg));
+	//EXPECT_FALSE(errMsg.empty());
+	//errMsg.clear();
+	//EXPECT_FALSE(handler->insertDocument("testingInsert", "", repo::core::model::RepoBSON(), errMsg));
+	//EXPECT_FALSE(errMsg.empty());
+	//errMsg.clear();
+	//EXPECT_FALSE(handler->insertDocument("", "", repo::core::model::RepoBSON(), errMsg));
+	//EXPECT_FALSE(errMsg.empty());
+	//errMsg.clear();
 
 }
