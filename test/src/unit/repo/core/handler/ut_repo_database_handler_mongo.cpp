@@ -441,6 +441,7 @@ TEST(MongoDatabaseHandlerTest, DropRole)
 	std::string errMsg;
 	EXPECT_TRUE(handler->dropRole(repo::core::model::RepoRole(REPO_GTEST_DROPROLETEST), errMsg));
 	EXPECT_TRUE(errMsg.empty());
+	repoTrace << errMsg;
 	errMsg.clear();
 	EXPECT_FALSE(handler->dropRole(repo::core::model::RepoRole(REPO_GTEST_DROPROLETEST), errMsg));
 	EXPECT_FALSE(errMsg.empty());
@@ -458,6 +459,7 @@ TEST(MongoDatabaseHandlerTest, DropUser)
 	std::string errMsg;
 	EXPECT_TRUE(handler->dropUser(repo::core::model::RepoUser(REPO_GTEST_DROPUSERTEST), errMsg));
 	EXPECT_TRUE(errMsg.empty());
+	repoTrace << errMsg;
 	errMsg.clear();
 	EXPECT_FALSE(handler->dropUser(repo::core::model::RepoUser(REPO_GTEST_DROPUSERTEST), errMsg));
 	EXPECT_FALSE(errMsg.empty());
