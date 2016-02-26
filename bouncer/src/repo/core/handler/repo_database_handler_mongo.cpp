@@ -388,7 +388,6 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 	std::vector<repo::core::model::RepoBSON> data;
 
 	mongo::BSONArray array = mongo::BSONArray(uuids);
-
 	int fieldsCount = array.nFields();
 	if (fieldsCount > 0)
 	{
@@ -403,7 +402,6 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 				mongo::BSONObjBuilder query;
 				query << ID << BSON("$in" << array);
 
-
 				cursor = worker->query(
 					database + "." + collection,
 					query.obj(),
@@ -417,7 +415,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 			} while (cursor.get() && cursor->more());
 
 			if (fieldsCount != retrieved){
-				repoError << "Number of documents("<< retrieved<<") retreived by findAllByUniqueIDs did not match the number of unique IDs(" <<  fieldsCount <<")!";
+				repoWarning << "Number of documents("<< retrieved<<") retreived by findAllByUniqueIDs did not match the number of unique IDs(" <<  fieldsCount <<")!";
 			}
 		}
 		catch (mongo::DBException& e)
