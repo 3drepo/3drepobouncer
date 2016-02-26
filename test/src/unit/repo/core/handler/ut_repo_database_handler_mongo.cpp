@@ -555,7 +555,7 @@ TEST(MongoDatabaseHandlerTest, InsertRole)
 	ASSERT_TRUE(handler);
 	std::string errMsg;
 
-	repo::core::model::RepoRole roleTest = BSON("db" << "admin" << "role" << "insertRoleTest");
+	repo::core::model::RepoRole roleTest = repo::core::model::RepoRole(BSON("db" << "admin" << "role" << "insertRoleTest"));
 
 	EXPECT_TRUE(handler->insertRole(roleTest, errMsg));
 	EXPECT_TRUE(errMsg.empty());
@@ -595,8 +595,8 @@ TEST(MongoDatabaseHandlerTest, InsertUser)
 	auto handler = getHandler();
 	ASSERT_TRUE(handler);
 	std::string errMsg;
-	repo::core::model::RepoUser userTest = BSON("db" << "admin" << "user" << "insertUserTest" 
-					<< REPO_USER_LABEL_CREDENTIALS << BSON(REPO_USER_LABEL_CLEARTEXT<< "123"));
+	repo::core::model::RepoUser userTest = repo::core::model::RepoUser(BSON("db" << "admin" << "user" << "insertUserTest"
+					<< REPO_USER_LABEL_CREDENTIALS << BSON(REPO_USER_LABEL_CLEARTEXT<< "123")));
 	repoTrace << userTest.toString();
 	EXPECT_TRUE(handler->insertUser(userTest, errMsg));
 	EXPECT_TRUE(errMsg.empty());
@@ -677,14 +677,54 @@ TEST(MongoDatabaseHandlerTest, UpsertDocument)
 	EXPECT_FALSE(result.hasField("anotherField"));
 	EXPECT_TRUE(result.hasField("extraField"));
 
-	//EXPECT_FALSE(handler->insertDocument("", "insertCollection", repo::core::model::RepoBSON(), errMsg));
-	//EXPECT_FALSE(errMsg.empty());
-	//errMsg.clear();
-	//EXPECT_FALSE(handler->insertDocument("testingInsert", "", repo::core::model::RepoBSON(), errMsg));
-	//EXPECT_FALSE(errMsg.empty());
-	//errMsg.clear();
-	//EXPECT_FALSE(handler->insertDocument("", "", repo::core::model::RepoBSON(), errMsg));
-	//EXPECT_FALSE(errMsg.empty());
-	//errMsg.clear();
+	EXPECT_FALSE(handler->upsertDocument(database, "", extraFields, false, errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
 
+	EXPECT_FALSE(handler->upsertDocument("", collection, extraFields, false, errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+}
+
+TEST(MongoDatabaseHandlerTest, UpdateRole)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	std::string errMsg;
+
+	EXPECT_TRUE(handler->updateRole(repo::core::model::RepoRole(REPO_GTEST_UPDATEROLETEST), errMsg));
+	EXPECT_TRUE(errMsg.empty());
+
+	//The following will of cousre fail if findOneByCriteria is failing
+	repo::core::model::RepoRole result = repo::core::model::RepoRole(
+		handler->findOneByCriteria("admin", "system.roles", repo::core::model::RepoRole(REPO_GTEST_UPDATEROLETEST)));
+	EXPECT_FALSE(result.isEmpty());
+	EXPECT_EQ(0, result.getPrivileges().size());
+
+	EXPECT_FALSE(handler->updateRole(repo::core::model::RepoRole(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+
+}
+
+TEST(MongoDatabaseHandlerTest, UpdateUser)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	std::string errMsg;
+
+	EXPECT_TRUE(handler->updateUser(repo::core::model::RepoUser(REPO_GTEST_UPDATEUSERTEST), errMsg));
+	EXPECT_TRUE(errMsg.empty());
+	errMsg.clear();
+	//The following will of cousre fail if findOneByCriteria is failing
+	std::string userID = std::string(REPO_GTEST_UPDATEUSERTEST.getStringField("db")) + "." + std::string(REPO_GTEST_UPDATEUSERTEST.getStringField("user"));
+	repo::core::model::RepoBSON search = BSON("_id" << userID);
+	repo::core::model::RepoUser result = repo::core::model::RepoUser(
+		handler->findOneByCriteria("admin", "system.users", repo::core::model::RepoUser(search)));
+	EXPECT_FALSE(result.isEmpty());
+	EXPECT_TRUE(result.getRolesBSON().isEmpty());
+
+	EXPECT_FALSE(handler->updateUser(repo::core::model::RepoUser(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+
+	handler->dropUser(search, errMsg);
 }

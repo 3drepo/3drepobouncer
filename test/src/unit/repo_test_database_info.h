@@ -35,6 +35,8 @@ const static std::string REPO_GTEST_DBNAME_ROLEUSERTEST = "sampleDataRWRolesUser
 
 const static mongo::BSONObj REPO_GTEST_DROPROLETEST = BSON("db" << REPO_GTEST_DBNAME_ROLEUSERTEST << "role" <<  "dropRoleTest");
 const static mongo::BSONObj REPO_GTEST_DROPUSERTEST = BSON("db" << "admin" << "user" << "dropUserTest");
+const static mongo::BSONObj REPO_GTEST_UPDATEROLETEST = BSON("db" << REPO_GTEST_DBNAME_ROLEUSERTEST << "role" << "updateRole");
+const static mongo::BSONObj REPO_GTEST_UPDATEUSERTEST = BSON("db" << "admin" << "user" << "updateUserTest");
 
 const static std::pair<std::string, std::string> REPO_GTEST_DROPCOL_TESTCASE = {"sampleDataRW", "collectionToDrop"};
 
