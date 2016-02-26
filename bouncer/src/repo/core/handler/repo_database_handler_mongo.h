@@ -485,9 +485,9 @@ namespace repo{
 
 				/**
 				*Retrieves the document matching given Unique ID (SID), sorting is descending
-				* @param name of database
-				* @param name of collectoin
-				* @param share id
+				* @param database name of database
+				* @param collection name of collectoin
+				* @param uuid share id
 				* @return returns the matching bson object
 				*/
 				repo::core::model::RepoBSON findOneByUniqueID(

@@ -852,6 +852,12 @@ bool MongoDatabaseHandler::insertRawFile(
 		return false;
 	}
 
+	if (database.empty() || collection.empty())
+	{
+		errMsg = "Cannot store a raw file: database(value: " + database + ") or collection name(value: " + collection + ") is not specified!";
+		return false;
+	}
+
 	try{
 		worker = workerPool->getWorker();
 		//store the big biary file within GridFS

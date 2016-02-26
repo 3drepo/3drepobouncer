@@ -67,6 +67,8 @@ TEST(MongoDatabaseHandlerTest, GetHandlerDisconnectHandler)
 
 	EXPECT_TRUE(noauth);
 	MongoDatabaseHandler::disconnectHandler();
+	//ensure no crash when disconnecting the disconnected
+	MongoDatabaseHandler::disconnectHandler();
 }
 
 TEST(MongoDatabaseHandlerTest, CreateBSONCredentials)
@@ -477,9 +479,180 @@ TEST(MongoDatabaseHandlerTest, InsertDocument)
 	ASSERT_TRUE(handler);
 	std::string errMsg;
 
-	EXPECT_TRUE(handler->insertDocument("testingInsert", "insertCollection", repo::core::model::RepoBSON(), errMsg));
+	repo::core::model::RepoBSON testCase = BSON("_id" << "testID" << "anotherField" << std::rand());
+	std::string database = "sandbox";
+	std::string collection = "sbCollection";
+	EXPECT_TRUE(handler->insertDocument(database, collection, testCase, errMsg));
 	EXPECT_TRUE(errMsg.empty());
 	errMsg.clear();
+
+	//The following will of cousre fail if findOneByCriteria is failing
+	repo::core::model::RepoBSON result = handler->findOneByCriteria(database, collection, testCase);
+	EXPECT_FALSE(result.isEmpty());
+
+	std::set<std::string> fields;
+	result.getFieldNames(fields);
+	for (const auto &fname : fields)
+	{
+		ASSERT_TRUE(testCase.hasField(fname));
+		EXPECT_EQ(result.getField(fname), testCase.getField(fname));
+	}
+
+	EXPECT_FALSE(handler->insertDocument("", "insertCollection", repo::core::model::RepoBSON(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(handler->insertDocument("testingInsert", "", repo::core::model::RepoBSON(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(handler->insertDocument("", "", repo::core::model::RepoBSON(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+
+}
+
+
+TEST(MongoDatabaseHandlerTest, InsertRawFile)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	std::string errMsg;
+
+	std::vector<uint8_t> binary;
+	for (int i = 0; i < 100; ++i)
+	{
+		binary.push_back(std::rand());
+	}
+
+	EXPECT_TRUE(handler->insertRawFile("randomTest", "randomCol", "rawFileName", binary, errMsg));
+	EXPECT_TRUE(errMsg.empty());
+
+	std::vector<uint8_t> result = handler->getRawFile("randomTest", "randomCol", "rawFileName");
+	ASSERT_EQ(result.size(), binary.size());
+	for (int i = 0; i < binary.size(); ++i)
+		EXPECT_EQ(binary[i], result[i]);
+
+	errMsg.clear();
+	EXPECT_FALSE(handler->insertRawFile("randomTest", "", "rawFileName", binary, errMsg));
+	EXPECT_FALSE(errMsg.empty());
+
+	errMsg.clear();
+	EXPECT_FALSE(handler->insertRawFile("", "randomCol", "rawFileName", binary, errMsg));
+	EXPECT_FALSE(errMsg.empty());
+
+	errMsg.clear();
+	EXPECT_FALSE(handler->insertRawFile("randomTest", "randomCol", "", binary, errMsg));
+	EXPECT_FALSE(errMsg.empty());
+
+	errMsg.clear();
+	EXPECT_FALSE(handler->insertRawFile("randomTest", "randomCol", "rawFileName", std::vector<uint8_t>(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+
+}
+
+TEST(MongoDatabaseHandlerTest, InsertRole)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	std::string errMsg;
+
+	repo::core::model::RepoRole roleTest = BSON("db" << "admin" << "role" << "insertRoleTest");
+
+	EXPECT_TRUE(handler->insertRole(roleTest, errMsg));
+	EXPECT_TRUE(errMsg.empty());
+	repoTrace << errMsg;
+	errMsg.clear();
+
+	//The following will of cousre fail if findOneByCriteria is failing
+	repo::core::model::RepoBSON result = handler->findOneByCriteria("admin", "system.roles", roleTest);
+	EXPECT_FALSE(result.isEmpty());
+
+	std::set<std::string> fields;
+	result.getFieldNames(fields);
+	for (const auto &fname : fields)
+	{
+		ASSERT_TRUE(roleTest.hasField(fname));
+		EXPECT_EQ(result.getField(fname), roleTest.getField(fname));
+	}
+
+	EXPECT_FALSE(handler->insertRole(repo::core::model::RepoRole(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(handler->insertRole(repo::core::model::RepoRole(BSON("role" << "insertRoleTest")), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(handler->insertRole(repo::core::model::RepoRole(BSON("db" << "admin")), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+
+	//drop it after the test is done
+	handler->dropRole(roleTest, errMsg);
+
+}
+
+TEST(MongoDatabaseHandlerTest, InsertUser)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	std::string errMsg;
+
+	repo::core::model::RepoUser userTest = BSON("db" << "admin" << "user" << "insertUserTest" << "pwd" << "1234");
+
+	EXPECT_TRUE(handler->insertUser(userTest, errMsg));
+	EXPECT_TRUE(errMsg.empty());
+	repoTrace << errMsg;
+	errMsg.clear();
+
+	//The following will of cousre fail if findOneByCriteria is failing
+	repo::core::model::RepoBSON result = handler->findOneByCriteria("admin", "system.users", userTest);
+	EXPECT_FALSE(result.isEmpty());
+
+	std::set<std::string> fields;
+	result.getFieldNames(fields);
+	for (const auto &fname : fields)
+	{
+		ASSERT_TRUE(userTest.hasField(fname));
+		EXPECT_EQ(result.getField(fname), userTest.getField(fname));
+	}
+
+
+	EXPECT_FALSE(handler->insertUser(repo::core::model::RepoUser(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(handler->insertUser(repo::core::model::RepoUser(BSON("user" << "insertUserTest")), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(handler->insertUser(repo::core::model::RepoUser(BSON("db" << "admin")), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+
+	handler->dropUser(userTest, errMsg);
+}
+
+TEST(MongoDatabaseHandlerTest, InsertUser)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	std::string errMsg;
+
+	repo::core::model::RepoBSON testCase = BSON("_id" << generateUUID() << "anotherField" << std::rand());
+	std::string database = "sandbox";
+	std::string collection = "sbCollection";
+	EXPECT_TRUE(handler->insertDocument(database, collection, testCase, errMsg));
+	EXPECT_TRUE(errMsg.empty());
+	errMsg.clear();
+
+	//The following will of cousre fail if findOneByCriteria is failing
+	repo::core::model::RepoBSON result = handler->findOneByCriteria(database, collection, testCase);
+	EXPECT_FALSE(result.isEmpty());
+
+	std::set<std::string> fields;
+	result.getFieldNames(fields);
+	for (const auto &fname : fields)
+	{
+		ASSERT_TRUE(testCase.hasField(fname));
+		EXPECT_EQ(result.getField(fname), testCase.getField(fname));
+	}
+
 	EXPECT_FALSE(handler->insertDocument("", "insertCollection", repo::core::model::RepoBSON(), errMsg));
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
