@@ -18,7 +18,7 @@ before_install:
     - mongod --version
     - mkdir data
     - sudo service mongod stop
-    - mongod --dbpath data
+    - mongod --dbpath data & 
     - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
     - mongo admin --eval 'db.addUser("testUser", "3drepotest");'
     - cd test/data/database/
