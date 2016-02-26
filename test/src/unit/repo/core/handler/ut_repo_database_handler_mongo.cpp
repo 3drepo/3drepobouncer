@@ -458,12 +458,33 @@ TEST(MongoDatabaseHandlerTest, DropUser)
 	std::string errMsg;
 	EXPECT_TRUE(handler->dropUser(repo::core::model::RepoUser(REPO_GTEST_DROPUSERTEST), errMsg));
 	EXPECT_TRUE(errMsg.empty());
-	repoTrace << errMsg;
 	errMsg.clear();
 	EXPECT_FALSE(handler->dropUser(repo::core::model::RepoUser(REPO_GTEST_DROPUSERTEST), errMsg));
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
 	EXPECT_FALSE(handler->dropUser(repo::core::model::RepoUser(mongo::BSONObj()), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+
+}
+
+
+TEST(MongoDatabaseHandlerTest, InsertDocument)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	std::string errMsg;
+
+	EXPECT_TRUE(handler->insertDocument("testingInsert", "insertCollection", repo::core::model::RepoBSON(), errMsg));
+	EXPECT_TRUE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(handler->insertDocument("", "insertCollection", repo::core::model::RepoBSON(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(handler->insertDocument("testingInsert", "", repo::core::model::RepoBSON(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(handler->insertDocument("", "", repo::core::model::RepoBSON(), errMsg));
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
 

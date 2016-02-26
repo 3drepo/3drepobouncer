@@ -798,23 +798,30 @@ bool MongoDatabaseHandler::insertDocument(
 	const repo::core::model::RepoBSON &obj,
 	std::string &errMsg)
 {
-	bool success = true;
+	bool success = false;
 	mongo::DBClientBase *worker;
-	try{
-		worker = workerPool->getWorker();
-		worker->insert(getNamespace(database, collection), obj);
-
-		success &= storeBigFiles(worker, database, collection, obj, errMsg);
-
-	}
-	catch (mongo::DBException &e)
+	if (!database.empty() || collection.empty())
 	{
-		success = false;
-		std::string errString(e.what());
-		errMsg += errString;
-	}
+		try{
+			worker = workerPool->getWorker();
+			worker->insert(getNamespace(database, collection), obj);
 
-	workerPool->returnWorker(worker);
+			success = storeBigFiles(worker, database, collection, obj, errMsg);
+			repoTrace << "Success: " << success;
+
+		}
+		catch (mongo::DBException &e)
+		{
+			std::string errString(e.what());
+			errMsg += errString;
+		}
+
+		workerPool->returnWorker(worker);
+	}
+	else
+	{
+		errMsg = "Unable to insert Document, database(value : " + database + ")/collection(value : " + collection + ") name was not specified";
+	}
 
 	return success;
 }
@@ -1129,5 +1136,5 @@ bool MongoDatabaseHandler::storeBigFiles(
 		}
 	}
 
-	return true;
+	return success;
 }
