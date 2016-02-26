@@ -17,7 +17,9 @@
 
 #include <gtest/gtest.h>
 #include <repo/core/handler/repo_database_handler_mongo.h>
+#include <repo/core/model/bson/repo_node.h>
 #include "../../../repo_test_database_info.h"
+
 
 using namespace repo::core::handler;
 
@@ -443,7 +445,6 @@ TEST(MongoDatabaseHandlerTest, DropRole)
 	std::string errMsg;
 	EXPECT_TRUE(handler->dropRole(repo::core::model::RepoRole(REPO_GTEST_DROPROLETEST), errMsg));
 	EXPECT_TRUE(errMsg.empty());
-	repoTrace << errMsg;
 	errMsg.clear();
 	EXPECT_FALSE(handler->dropRole(repo::core::model::RepoRole(REPO_GTEST_DROPROLETEST), errMsg));
 	EXPECT_FALSE(errMsg.empty());
@@ -461,7 +462,6 @@ TEST(MongoDatabaseHandlerTest, DropUser)
 	std::string errMsg;
 	EXPECT_TRUE(handler->dropUser(repo::core::model::RepoUser(REPO_GTEST_DROPUSERTEST), errMsg));
 	EXPECT_TRUE(errMsg.empty());
-	repoTrace << errMsg;
 	errMsg.clear();
 	EXPECT_FALSE(handler->dropUser(repo::core::model::RepoUser(REPO_GTEST_DROPUSERTEST), errMsg));
 	EXPECT_FALSE(errMsg.empty());
@@ -559,14 +559,12 @@ TEST(MongoDatabaseHandlerTest, InsertRole)
 
 	EXPECT_TRUE(handler->insertRole(roleTest, errMsg));
 	EXPECT_TRUE(errMsg.empty());
-	repoTrace << errMsg;
 	errMsg.clear();
 
 	//The following will of cousre fail if findOneByCriteria is failing
 	repo::core::model::RepoBSON result = handler->findOneByCriteria("admin", "system.roles", roleTest);
 	EXPECT_FALSE(result.isEmpty());
 
-	repoTrace << "results: " << result.toString();
 	std::set<std::string> fields;
 	roleTest.getFieldNames(fields);
 	for (const auto &fname : fields)
@@ -597,10 +595,8 @@ TEST(MongoDatabaseHandlerTest, InsertUser)
 	std::string errMsg;
 	repo::core::model::RepoUser userTest = repo::core::model::RepoUser(BSON("db" << "admin" << "user" << "insertUserTest"
 					<< REPO_USER_LABEL_CREDENTIALS << BSON(REPO_USER_LABEL_CLEARTEXT<< "123")));
-	repoTrace << userTest.toString();
 	EXPECT_TRUE(handler->insertUser(userTest, errMsg));
 	EXPECT_TRUE(errMsg.empty());
-	repoTrace << errMsg;
 	errMsg.clear();
 
 	//The following will of cousre fail if findOneByCriteria is failing
@@ -729,7 +725,6 @@ TEST(MongoDatabaseHandlerTest, UpdateUser)
 	handler->dropUser(search, errMsg);
 }
 
-
 TEST(MongoDatabaseHandlerTest, FindAllByUniqueIDs)
 {
 	auto handler = getHandler();
@@ -746,11 +741,83 @@ TEST(MongoDatabaseHandlerTest, FindAllByUniqueIDs)
 	repo::core::model::RepoBSON search = builder.obj();
 
 	auto results = handler->findAllByUniqueIDs(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ+ ".scene", search);
-	repoTrace << search.toString();
 
 	EXPECT_EQ(uuidsToSearch.size(), results.size());
 
 	EXPECT_EQ(0, handler->findAllByUniqueIDs(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ, repo::core::model::RepoBSON()).size());
 	EXPECT_EQ(0, handler->findAllByUniqueIDs(REPO_GTEST_DBNAME1, "", search).size());
 	EXPECT_EQ(0, handler->findAllByUniqueIDs("", REPO_GTEST_DBNAME1_PROJ, search).size());
+}
+
+TEST(MongoDatabaseHandlerTest, FindAllByCriteria)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	std::string errMsg;
+
+	repo::core::model::RepoBSON search = BSON("type" << "mesh");
+
+	auto results = handler->findAllByCriteria(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", search);
+	
+	EXPECT_EQ(4, results.size(),);
+
+	EXPECT_EQ(0, handler->findAllByCriteria(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", repo::core::model::RepoBSON()).size());
+	EXPECT_EQ(0, handler->findAllByCriteria("", REPO_GTEST_DBNAME1_PROJ + ".scene", search).size());
+	EXPECT_EQ(0, handler->findAllByCriteria(REPO_GTEST_DBNAME1, "", search).size());
+
+}
+
+TEST(MongoDatabaseHandlerTest, FindOneByCriteria)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	std::string errMsg;
+	repo::core::model::RepoBSONBuilder builder;
+
+	builder.append("_id", uuidsToSearch[0]);
+
+	repo::core::model::RepoBSON search = builder.obj();
+
+	auto results = handler->findOneByCriteria(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", search);
+	
+	EXPECT_FALSE(results.isEmpty());
+	EXPECT_EQ(results.getField("_id"), search.getField("_id"));
+
+	EXPECT_TRUE(handler->findOneByCriteria(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".scene", repo::core::model::RepoBSON()).isEmpty());
+	EXPECT_TRUE(handler->findOneByCriteria("", REPO_GTEST_DBNAME1_PROJ + ".scene", search).isEmpty());
+	EXPECT_TRUE(handler->findOneByCriteria(REPO_GTEST_DBNAME1, "", search).isEmpty());
+
+}
+
+TEST(MongoDatabaseHandlerTest, FindOneBySharedID)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	
+	repo::core::model::RepoNode result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "sampleProject.history", stringToUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
+	EXPECT_FALSE(result.isEmpty());
+	EXPECT_EQ(result.getSharedID(), stringToUUID(REPO_HISTORY_MASTER_BRANCH));
+
+	result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "sampleProject.history", stringToUUID(REPO_HISTORY_MASTER_BRANCH), "");
+	EXPECT_FALSE(result.isEmpty());
+	EXPECT_EQ(result.getSharedID(), stringToUUID(REPO_HISTORY_MASTER_BRANCH));
+
+	result = handler->findOneBySharedID("", "sampleProject", stringToUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
+	EXPECT_TRUE(result.isEmpty());
+	result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "", stringToUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
+	EXPECT_TRUE(result.isEmpty());
+
+}
+
+TEST(MongoDatabaseHandlerTest, GetRawFile)
+{
+	auto handler = getHandler();
+	ASSERT_TRUE(handler);
+	auto file = handler->getRawFile(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".history", REPO_GTEST_RAWFILE_FETCH_TEST);
+
+	EXPECT_EQ(REPO_GTEST_RAWFILE_FETCH_SIZE, file.size());
+
+	EXPECT_EQ(0, handler->getRawFile(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".history", "some_non_existent_file").size());
+	EXPECT_EQ(0, handler->getRawFile("", REPO_GTEST_DBNAME1_PROJ + ".history", REPO_GTEST_RAWFILE_FETCH_TEST).size());
+	EXPECT_EQ(0, handler->getRawFile(REPO_GTEST_DBNAME1, "", REPO_GTEST_RAWFILE_FETCH_TEST).size());
 }

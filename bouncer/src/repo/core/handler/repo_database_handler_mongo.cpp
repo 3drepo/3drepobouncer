@@ -447,9 +447,13 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 		//----------------------------------------------------------------------
 	
 		worker = workerPool->getWorker();
+		auto query = mongo::Query(queryBuilder.obj());
+		if (!sortField.empty())
+			query = query.sort(sortField, -1);
+
 		mongo::BSONObj bsonMongo = worker->findOne(
 			getNamespace(database, collection),
-			mongo::Query(queryBuilder.obj()).sort(sortField, -1));
+			query);
 
 		bson = createRepoBSON(worker, database, collection, bsonMongo);
 	}
@@ -748,42 +752,50 @@ std::vector<uint8_t> MongoDatabaseHandler::getRawFile(
 	const std::string& fname
 	)
 {
-	bool success = true;
-	mongo::DBClientBase *worker;
-
-	worker = workerPool->getWorker();
-	mongo::GridFS gfs(*worker, database, collection);
-	mongo::GridFile tmpFile = gfs.findFileByName(fname);
-
-	repoTrace << "Getting file from GridFS: " << fname << " in : " << database << "." << collection;
-
+	
 	std::vector<uint8_t> bin;
-	if (tmpFile.exists())
-	{
-		std::ostringstream oss;
-		tmpFile.write(oss);
 
-		std::string fileStr = oss.str();
+	mongo::DBClientBase *worker;
+	try{
+		worker = workerPool->getWorker();
+		mongo::GridFS gfs(*worker, database, collection);
+		mongo::GridFile tmpFile = gfs.findFileByName(fname);
 
-		assert(sizeof(*fileStr.c_str()) == sizeof(uint8_t));
+		repoTrace << "Getting file from GridFS: " << fname << " in : " << database << "." << collection;
 
-		if (!fileStr.empty())
+		if (tmpFile.exists())
 		{
-			bin.resize(fileStr.size());
-			memcpy(&bin[0], fileStr.c_str(), fileStr.size());
+			std::ostringstream oss;
+			tmpFile.write(oss);
 
+			std::string fileStr = oss.str();
+
+			assert(sizeof(*fileStr.c_str()) == sizeof(uint8_t));
+
+			if (!fileStr.empty())
+			{
+				bin.resize(fileStr.size());
+				memcpy(&bin[0], fileStr.c_str(), fileStr.size());
+
+			}
+			else
+			{
+				repoError << "GridFS file : " << fname << " in "
+					<< database << "." << collection << " is empty.";
+			}
 		}
 		else
 		{
-			repoError << "GridFS file : " << fname << " in "
-				<< database << "." << collection << " is empty.";
+			repoError << "Failed to find file within GridFS";
 		}
-	}
-	else
-	{
-		repoError << "Failed to find file within GridFS";
-	}
 
+	}
+	catch (mongo::DBException e)
+	{
+
+		repoError << "Error fetching raw file: " << e.what();
+	}
+	
 
 	workerPool->returnWorker(worker);
 
