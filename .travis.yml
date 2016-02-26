@@ -17,12 +17,11 @@ before_install:
     - sudo apt-get install mongodb-org-server
     - mongod --version
     - mkdir data
-    - sudo service mongod stop
-    - mongod --dbpath data & 
+    - mongod --dbpath data &
     - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
-    - mongo admin --eval 'db.addUser("testUser", "3drepotest");'
+      #    - mongo admin --eval 'db.addUser("testUser", "3drepotest");'
     - cd test/data/database/
-    - mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin
+    - mongorestore #-u "testUser" -p "3drepotest" --authenticationDatabase admin
     - cd ../../../
     - export CXX="g++-4.9"
     - export CC="gcc-4.9"
