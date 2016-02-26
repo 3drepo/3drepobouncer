@@ -18,6 +18,7 @@ addons:
             - gcc-4.9
             - g++-4.9
 before_install:
+    - mongod --version
     - mongo admin --eval 'db.addUser("testUser", "3drepotest");'
     - cd test/data/database/
     - mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin
