@@ -157,12 +157,11 @@ namespace repo{
 				* the first n items.
 				* @param database name of database
 				* @param collection name of collection
+				* @param skip number of maximum items to skip (default is 0)
+				* @param limit number of maximum items to return (default is 0)
 				* @param fields fields to get back from the database
 				* @param sortField field to sort upon
 				* @param sortOrder 1 ascending, -1 descending
-				* @param skip specify how many documents to skip
-				* @param limit number of maximum items to return (default is 0)
-				* @return list of RepoBSONs representing the documents
 				*/
 				std::vector<repo::core::model::RepoBSON>
 					getAllFromCollectionTailable(
@@ -209,7 +208,7 @@ namespace repo{
 				 */
 				std::map<std::string, std::list<std::string> > getDatabasesWithProjects(
 					const std::list<std::string> &databases,
-					const std::string &projectExt = "scene");
+					const std::string &projectExt = "history");
 
 				/**
 				 * Get a list of projects associated with a given database (aka company account).
@@ -486,9 +485,9 @@ namespace repo{
 
 				/**
 				*Retrieves the document matching given Unique ID (SID), sorting is descending
-				* @param name of database
-				* @param name of collectoin
-				* @param share id
+				* @param database name of database
+				* @param collection name of collectoin
+				* @param uuid share id
 				* @return returns the matching bson object
 				*/
 				repo::core::model::RepoBSON findOneByUniqueID(

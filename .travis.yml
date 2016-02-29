@@ -3,12 +3,6 @@ language: cpp
 compiler:
      - gcc
 
-env:
-    global:
-        - MONGODB_VERSION=2.6.10
-
-services:
-    - mongodb
 
 addons:
     apt:
@@ -18,10 +12,17 @@ addons:
             - gcc-4.9
             - g++-4.9
 before_install:
+    - echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list
+    - sudo apt-get update
+    - sudo apt-get install mongodb-org
+    - mongod --version
+    - mkdir data
+    - mongod --dbpath data &
+    - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
     - mongo admin --eval 'db.addUser("testUser", "3drepotest");'
-#     - cd test/data/database/
-#    - mongorestore --host localhost:27017      
-#    - cd ../../../
+    - cd test/data/database/
+    - mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin
+    - cd ../../../
     - export CXX="g++-4.9"
     - export CC="gcc-4.9"
     - sudo ln -sf /usr/bin/gcov-4.9 /usr/bin/gcov
