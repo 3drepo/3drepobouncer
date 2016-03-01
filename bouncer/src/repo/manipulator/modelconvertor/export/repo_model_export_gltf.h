@@ -67,6 +67,16 @@ namespace repo{
 					const std::string              &refId = std::string(),
 					const std::vector<uint16_t>    &lod = std::vector<uint16_t>(),
 					const size_t                   &offset = 0);
+				
+				void addAccessors(
+					const std::string              &accName,
+					const std::string              &buffViewName,
+					repo::lib::PropertyTree        &tree,
+					const std::vector<float>       &data,
+					const uint32_t                 &addrFrom,
+					const uint32_t                 &addrTo,
+					const std::string              &refId,
+					const size_t                   &offset);
 
 				void addAccessors(
 					const std::string                  &accName,
@@ -133,6 +143,15 @@ namespace repo{
 					const size_t                        &count,
 					const std::string                   &refId = std::string()
 					);
+
+				void addBufferView(
+					const std::string                   &name,
+					const std::string                   &fileName,
+					repo::lib::PropertyTree             &tree,
+					const std::vector<float>            &buffer,
+					const size_t                        &offset,
+					const size_t                        &count,
+					const std::string                   &refId);
 
 				void addBufferView(
 					const std::string                   &name,

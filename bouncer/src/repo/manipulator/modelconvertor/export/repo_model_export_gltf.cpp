@@ -113,9 +113,11 @@ static const std::string GLTF_PREFIX_BUFFER_VIEWS = "bufv";
 static const std::string GLTF_PREFIX_TEXTURE      = "img";
 
 static const std::string GLTF_SUFFIX_FACES = "f";
+static const std::string GLTF_SUFFIX_IDMAP = "id";
 static const std::string GLTF_SUFFIX_NORMALS = "n";
 static const std::string GLTF_SUFFIX_POSITION = "p";
 static const std::string GLTF_SUFFIX_TEX_COORD = "uv";
+
 
 static const uint32_t GLTF_PRIM_TYPE_TRIANGLE             = 4;
 static const uint32_t GLTF_PRIM_TYPE_ARRAY_BUFFER         = 34962;
@@ -156,6 +158,8 @@ static const std::string GLTF_TYPE_VEC2            = "VEC2";
 static const std::string GLTF_TYPE_VEC3            = "VEC3";
 
 static const std::string GLTF_VERSION = "1.0";
+
+static const std::string        REPO_GLTF_LABEL_IDMAP = "IDMAP";
 
 //Default shader properties
 static const std::string        REPO_GLTF_DEFAULT_PROGRAM            = "default_program";
@@ -252,6 +256,34 @@ void GLTFModelExport::addAccessors(
 	addAccessors(accName, buffViewName, tree, endFaceIdx - startFaceIdx,
 		(startFaceIdx - offset*3) * sizeof(*faces.data()), 0, GLTF_COMP_TYPE_USHORT, 
 		GLTF_TYPE_SCALAR, min, max, refId, lod);
+}
+
+
+void GLTFModelExport::addAccessors(
+	const std::string              &accName,
+	const std::string              &buffViewName,
+	repo::lib::PropertyTree        &tree,
+	const std::vector<float>       &data,
+	const uint32_t                 &addrFrom,
+	const uint32_t                 &addrTo,
+	const std::string              &refId,
+	const size_t                   &offset)
+{
+	std::vector<float> min, max;
+
+	if (data.size() >= addrFrom)
+	{
+		min.push_back(data[addrFrom]);
+		max.push_back(data[addrFrom]);
+	}
+	for (size_t i = addrFrom + 1; i < addrTo; ++i)
+	{
+		if (min[0] > data[i]) min[0] = data[i];
+		if (max[0] < data[i]) max[0] = data[i];
+	}
+	addAccessors(accName, buffViewName, tree, addrTo - addrFrom,
+		(addrFrom - offset) * sizeof(*data.data()), 0, GLTF_COMP_TYPE_FLOAT,
+		GLTF_TYPE_SCALAR, min, max, refId);
 }
 
 void GLTFModelExport::addAccessors(
@@ -392,6 +424,19 @@ void GLTFModelExport::addBufferView(
 {
 	addBufferView(name, fileName, tree, count * 3 * sizeof(*buffer.data()), offset, GLTF_PRIM_TYPE_ELEMENT_ARRAY_BUFFER, refId);
 }
+
+void GLTFModelExport::addBufferView(
+	const std::string              &name,
+	const std::string              &fileName,
+	repo::lib::PropertyTree        &tree,
+	const std::vector<float>       &buffer,
+	const size_t                   &offset,
+	const size_t                   &count,
+	const std::string              &refId)
+{
+	addBufferView(name, fileName, tree, count * sizeof(*buffer.data()), offset, GLTF_PRIM_TYPE_ELEMENT_ARRAY_BUFFER, refId);
+}
+
 
 void GLTFModelExport::addBufferView(
 	const std::string                   &name,
@@ -842,8 +887,16 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			splitSizes[node->getUniqueID()] = newMappings.size();		
 
 			size_t vStart = addToDataBuffer(bufferFileName, vertices);
-			size_t nStart = addToDataBuffer(bufferFileName, vertices);
+			size_t nStart = addToDataBuffer(bufferFileName, normals);
 			size_t fStart = addToDataBuffer(bufferFileName, newFaces);
+
+			std::vector<size_t> idMapStart;
+			idMapStart.reserve(idMapBuf.size());
+
+			for (const auto &idMap : idMapBuf)
+			{
+				idMapStart.push_back(addToDataBuffer(bufferFileName, idMap));
+			}
 
 			std::vector<size_t> uvStart;
 			for (size_t i = 0; i < UVs.size(); ++i)
@@ -863,7 +916,8 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 
 				std::string faceBufferName = meshId + "_" + GLTF_SUFFIX_FACES;
 				std::string normBufferName = meshId + "_" + GLTF_SUFFIX_NORMALS;
-				std::string posBufferName = meshId + "_" + GLTF_SUFFIX_POSITION;
+				std::string posBufferName  = meshId + "_" + GLTF_SUFFIX_POSITION;
+				std::string idBufferName   = meshId + "_" + GLTF_SUFFIX_IDMAP;
 
 				size_t vcount = newMappings[i].vertTo - newMappings[i].vertFrom;
 				size_t fcount = newMappings[i].triTo - newMappings[i].triFrom;
@@ -877,6 +931,9 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 
 				addBufferView(faceBufferName, bufferFileName, tree, newFaces, fStart, fcount, meshId);
 				fStart += fcount * 3 * sizeof(uint16_t); //faces are triangulated
+
+				addBufferView(idBufferName, bufferFileName, tree, idMapBuf[i], idMapStart[i], vcount, meshId);
+
 
 				for (size_t iUV = 0; iUV < UVs.size(); ++iUV)
 				{
@@ -930,6 +987,12 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 						addAccessors(accessorName, posBufferName, tree, vertices, meshMap.vertFrom, meshMap.vertTo, subMeshID, subMeshOffset_v);
 					}
 
+					if (idMapBuf[i].size())
+					{
+						std::string accessorName = subMeshName + "_" + GLTF_SUFFIX_IDMAP;
+						primitives.back().addToTree(GLTF_LABEL_ATTRIBUTES + "." + REPO_GLTF_LABEL_IDMAP, GLTF_PREFIX_ACCESSORS + "_" + accessorName);
+						addAccessors(accessorName, idBufferName, tree, idMapBuf[i], meshMap.vertFrom, meshMap.vertTo, subMeshID, subMeshOffset_v);
+					}
 
 					if (UVs.size())
 					{
