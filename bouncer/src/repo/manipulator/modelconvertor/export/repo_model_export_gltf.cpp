@@ -434,7 +434,7 @@ void GLTFModelExport::addBufferView(
 	const size_t                   &count,
 	const std::string              &refId)
 {
-	addBufferView(name, fileName, tree, count * sizeof(*buffer.data()), offset, GLTF_PRIM_TYPE_ELEMENT_ARRAY_BUFFER, refId);
+	addBufferView(name, fileName, tree, count * sizeof(*buffer.data()), offset, GLTF_PRIM_TYPE_ARRAY_BUFFER, refId);
 }
 
 
