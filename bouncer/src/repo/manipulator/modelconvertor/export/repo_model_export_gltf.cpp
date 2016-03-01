@@ -158,28 +158,30 @@ static const std::string GLTF_TYPE_VEC3            = "VEC3";
 static const std::string GLTF_VERSION = "1.0";
 
 //Default shader properties
-static const std::string        REPO_GLTF_DEFAULT_PROGRAM         = "default_program";
-static const std::string        REPO_GLTF_DEFAULT_SAMPLER         = "default_sampler";
-static const std::string        REPO_GLTF_DEFAULT_SHADER_FRAG     = "default_fshader";
+static const std::string        REPO_GLTF_DEFAULT_PROGRAM            = "default_program";
+static const std::string        REPO_GLTF_DEFAULT_SAMPLER            = "default_sampler";
+static const std::string        REPO_GLTF_DEFAULT_SHADER_FRAG        = "default_fshader";
 #ifdef DEBUG
-static const std::string        REPO_GLTF_DEFAULT_SHADER_FRAG_URI = "fragShader.glsl";
+static const std::string        REPO_GLTF_DEFAULT_SHADER_FRAG_URI    = "fragShader.glsl";
+static const std::string        REPO_GLTF_DEFAULT_X3DSHADER_FRAG_URI = "x3domFragShader.glsl";
 #else
-static const std::string        REPO_GLTF_DEFAULT_SHADER_FRAG_URI = "/public/shader/gltfStockShaders/fragShader.glsl";
+static const std::string        REPO_GLTF_DEFAULT_SHADER_FRAG_URI    = "/public/shader/gltfStockShaders/fragShader.glsl";
+static const std::string        REPO_GLTF_DEFAULT_X3DSHADER_FRAG_URI = "/public/shader/gltfStockShaders/x3domFragShader.glsl";
 #endif
-static const std::string        REPO_GLTF_DEFAULT_SHADER_VERT     = "default_vshader";
+static const std::string        REPO_GLTF_DEFAULT_SHADER_VERT        = "default_vshader";
 #ifdef DEBUG
-static const std::string        REPO_GLTF_DEFAULT_SHADER_VERT_URI = "vertShader.glsl";
+static const std::string        REPO_GLTF_DEFAULT_SHADER_VERT_URI    = "vertShader.glsl";
+static const std::string        REPO_GLTF_DEFAULT_X3DSHADER_VERT_URI = "x3domVertShader.glsl";
 #else
-static const std::string        REPO_GLTF_DEFAULT_SHADER_VERT_URI = "/public/shader/gltfStockShaders/vertShader.glsl";
+static const std::string        REPO_GLTF_DEFAULT_SHADER_VERT_URI    = "/public/shader/gltfStockShaders/vertShader.glsl";
+static const std::string        REPO_GLTF_DEFAULT_X3DSHADER_VERT_URI = "/public/shader/gltfStockShaders/x3domVertShader.glsl";
 #endif
-static const std::string        REPO_GLTF_DEFAULT_TECHNIQUE       = "default_technique";
-static const float              REPO_GLTF_DEFAULT_SHININESS       = 50; 
-static const std::vector<float> REPO_GLTF_DEFAULT_SPECULAR        = { 0, 0, 0, 0 };
+static const std::string        REPO_GLTF_DEFAULT_TECHNIQUE          = "default_technique";
+static const float              REPO_GLTF_DEFAULT_SHININESS          = 50; 
+static const std::vector<float> REPO_GLTF_DEFAULT_SPECULAR           = { 0, 0, 0, 0 };
 
 static const std::string REPO_GLTF_LABEL_REF_ID = "refID";
 static const std::string REPO_GLTF_LABEL_LOD    = "lodRef";
-
-
 
 
 
@@ -703,6 +705,7 @@ void GLTFModelExport::populateWithMaterials(
 		std::string valuesLabel = matLabel + "." + GLTF_LABEL_VALUES;
 		if (matStruct.ambient.size())
 		{
+			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + ".x3dmaterial." + GLTF_LABEL_AMBIENT, matStruct.ambient);
 			//default technique takes on a 4d vector, we store 3d vectors
 			matStruct.ambient.push_back(1);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_AMBIENT, matStruct.ambient);
@@ -717,6 +720,7 @@ void GLTFModelExport::populateWithMaterials(
 		}
 		else if (matStruct.diffuse.size())
 		{
+			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + ".x3dmaterial." + GLTF_LABEL_DIFFUSE, matStruct.diffuse);
 			//default technique takes on a 4d vector, we store 3d vectors
 			matStruct.diffuse.push_back(1);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_DIFFUSE, matStruct.diffuse);
@@ -724,12 +728,14 @@ void GLTFModelExport::populateWithMaterials(
 
 		if (matStruct.emissive.size())
 		{
+			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + ".x3dmaterial." + GLTF_LABEL_EMISSIVE, matStruct.emissive);
 			//default technique takes on a 4d vector, we store 3d vectors
 			matStruct.emissive.push_back(1);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_EMISSIVE, matStruct.emissive);
 		}
 		if (matStruct.specular.size())
 		{
+			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + ".x3dmaterial." + GLTF_LABEL_SPECULAR, matStruct.specular);
 			//default technique takes on a 4d vector, we store 3d vectors
 			matStruct.specular.push_back(1);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_SPECULAR, matStruct.specular);
@@ -1349,7 +1355,7 @@ void GLTFModelExport::writeDefaultTechnique(
 	tree.addToTree(paramlabel + ".normal." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT_VEC3);
 
 	tree.addToTree(paramlabel + ".normalMatrix." + GLTF_LABEL_SEMANTIC, "MODELVIEWINVERSETRANSPOSE");
-	tree.addToTree(paramlabel + ".normalMatrix." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT_MAT3);
+	tree.addToTree(paramlabel + ".normalMatrix." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT_MAT4);
 
 	tree.addToTree(paramlabel + ".position." + GLTF_LABEL_SEMANTIC, GLTF_LABEL_POSITION);
 	tree.addToTree(paramlabel + ".position." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT_VEC3);
@@ -1375,20 +1381,23 @@ void GLTFModelExport::writeDefaultTechnique(
 	const std::string uniformLabel = label + "." +  GLTF_LABEL_UNIFORMS;
 
 	tree.addToTree(uniformLabel + ".u_diffuse"         , GLTF_LABEL_DIFFUSE);
-	tree.addToTree(uniformLabel + ".u_modelViewMatrix" , "modelViewMatrix");
-	tree.addToTree(uniformLabel + ".u_normalMatrix"    , "normalMatrix");
-	tree.addToTree(uniformLabel + ".u_projectionMatrix", "projectionMatrix");
+	tree.addToTree(uniformLabel + ".modelViewMatrix" , "modelViewMatrix");
+	tree.addToTree(uniformLabel + ".normalMatrix"    , "normalMatrix");
+	tree.addToTree(uniformLabel + ".projectionMatrix", "projectionMatrix");
 	tree.addToTree(uniformLabel + ".u_shininess"       , GLTF_LABEL_SHININESS);
 	tree.addToTree(uniformLabel + ".u_specular"        , GLTF_LABEL_SPECULAR);
 
 	const std::string attriLabel = label + "." + GLTF_LABEL_ATTRIBUTES;
-	tree.addToTree(attriLabel + ".a_normal", "normal");
-	tree.addToTree(attriLabel + ".a_position", "position");
+	tree.addToTree(attriLabel + ".normal", "normal");
+	tree.addToTree(attriLabel + ".position", "position");
 	tree.addToTree(attriLabel + ".a_texcoord0", "texcoord0");
+
+	const std::string extraLabel = label + "." + GLTF_LABEL_EXTRA;
+	tree.addToTree(extraLabel + ".varyings.v_normal", GLTF_COMP_TYPE_FLOAT_MAT4);
 
 	//========== DEFAULT PROGRAM =========
 	const std::string programLabel = GLTF_LABEL_PROGRAMS + "." + REPO_GLTF_DEFAULT_PROGRAM;
-	std::vector<std::string> programAttributes = { "a_normal", "a_position" };
+	std::vector<std::string> programAttributes = { "normal", "position" };
 	tree.addToTree(programLabel + "." + GLTF_LABEL_ATTRIBUTES , programAttributes);
 	tree.addToTree(programLabel + "." + GLTF_LABEL_SHADER_FRAG, REPO_GLTF_DEFAULT_SHADER_FRAG);
 	tree.addToTree(programLabel + "." + GLTF_LABEL_SHADER_VERT, REPO_GLTF_DEFAULT_SHADER_VERT);
@@ -1396,9 +1405,24 @@ void GLTFModelExport::writeDefaultTechnique(
 	//========== DEFAULT SHADERS =========
 	tree.addToTree(GLTF_LABEL_SHADERS + "." + REPO_GLTF_DEFAULT_SHADER_FRAG + "." + GLTF_LABEL_TYPE, GLTF_SHADER_TYPE_FRAGMENT);
 	tree.addToTree(GLTF_LABEL_SHADERS + "." + REPO_GLTF_DEFAULT_SHADER_FRAG + "." + GLTF_LABEL_URI, REPO_GLTF_DEFAULT_SHADER_FRAG_URI);
+	//x3d shader
+	std::string x3dShaderFragLabel = GLTF_LABEL_SHADERS + "." + REPO_GLTF_DEFAULT_SHADER_FRAG + "." + GLTF_LABEL_EXTRA + ".x3domShaderFunction";
+	tree.addToTree(x3dShaderFragLabel + "." + GLTF_LABEL_URI, REPO_GLTF_DEFAULT_X3DSHADER_FRAG_URI);
+	tree.addToTree(x3dShaderFragLabel + "." + GLTF_LABEL_NAME, "x3dmain");
+	std::vector<std::string> fragParameters = { "v_normal", "u_diffuse", "u_specular", "u_shininess" };
+	tree.addToTree(x3dShaderFragLabel + "." + GLTF_LABEL_PARAMETERS, fragParameters);
+	tree.addToTree(x3dShaderFragLabel + "." + "returns", "gl_FragColor");
+
 
 	tree.addToTree(GLTF_LABEL_SHADERS + "." + REPO_GLTF_DEFAULT_SHADER_VERT + "." + GLTF_LABEL_TYPE, GLTF_SHADER_TYPE_VERTEX);
 	tree.addToTree(GLTF_LABEL_SHADERS + "." + REPO_GLTF_DEFAULT_SHADER_VERT + "." + GLTF_LABEL_URI , REPO_GLTF_DEFAULT_SHADER_VERT_URI);
+	//x3d shader
+	std::string x3dShaderVertLabel = GLTF_LABEL_SHADERS + "." + REPO_GLTF_DEFAULT_SHADER_VERT + "." + GLTF_LABEL_EXTRA + ".x3domShaderFunction";
+	tree.addToTree(x3dShaderVertLabel + "." + GLTF_LABEL_URI, REPO_GLTF_DEFAULT_X3DSHADER_VERT_URI);
+	tree.addToTree(x3dShaderVertLabel + "." + GLTF_LABEL_NAME, "x3dmain");
+	std::vector<std::string> vertParameters = { "position", "normal", "v_normal", "normalMatrix", "modelViewMatrix", "projectionMatrix" };
+	tree.addToTree(x3dShaderVertLabel + "." + GLTF_LABEL_PARAMETERS, vertParameters);
+	tree.addToTree(x3dShaderVertLabel + "." + "returns", "gl_Position");
 
 
 }
