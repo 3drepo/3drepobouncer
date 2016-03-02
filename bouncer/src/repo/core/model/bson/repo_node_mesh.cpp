@@ -56,24 +56,7 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 			resultVertice.push_back(multiplyMatVec(matrix, v));
 		}
 
-
-
 		builder.appendBinary(REPO_NODE_MESH_LABEL_VERTICES, resultVertice.data(), resultVertice.size() * sizeof(repo_vector_t));
-
-		std::vector < repo_vector_t >normals = getNormals();
-		if (normals.size())
-		{
-			std::vector<repo_vector_t> resultNormals;
-
-			const std::vector<float> normMat = transposeMat(invertMat(matrix));
-			for (const repo_vector_t &n : normals) {
-				repo_vector_t transedNormal = multiplyMatVecFake3x3(matrix, n);
-				normalize(transedNormal);
-				resultNormals.push_back(transedNormal);
-			}
-
-			builder.appendBinary(REPO_NODE_MESH_LABEL_NORMALS, resultNormals.data(), resultNormals.size() * sizeof(repo_vector_t));
-		}
 	}
 	else
 	{
@@ -610,6 +593,23 @@ std::vector<repo_vector_t> MeshNode::getVertices() const
 	}
 
 	return vertices;
+}
+
+uint32_t MeshNode::getMFormat() const
+{
+	/*
+	 * maximum of 32 bit, each bit represent the presents of the following
+	 * vertices faces normals colors #uvs
+	 */
+	
+	uint32_t vBit = (uint32_t) hasBinField(REPO_NODE_MESH_LABEL_VERTICES);
+	uint32_t fBit = (uint32_t) hasBinField(REPO_NODE_MESH_LABEL_FACES)    << 1;
+	uint32_t nBit = (uint32_t) hasBinField(REPO_NODE_MESH_LABEL_NORMALS)  << 2;
+	uint32_t cBit = (uint32_t) hasBinField(REPO_NODE_MESH_LABEL_COLORS)   << 3;
+	uint32_t uvBits = (hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT) ?  getField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT).numberInt() : 0) << 4;
+
+	return vBit | fBit | nBit | cBit | uvBits;
+
 }
 
 std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
