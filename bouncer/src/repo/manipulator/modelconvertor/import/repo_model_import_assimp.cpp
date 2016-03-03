@@ -359,7 +359,8 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 	const aiMesh *assimpMesh,
 	const std::vector<repo::core::model::RepoNode *> &materials,
-	std::unordered_map < repo::core::model::RepoNode*, std::vector<repoUUID>> &matMap)
+	std::unordered_map < repo::core::model::RepoNode*, std::vector<repoUUID>> &matMap,
+	const bool hasTexture)
 {
 
 	repo::core::model::MeshNode *meshNode = 0;
@@ -464,6 +465,21 @@ repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 		}
 		uvChannels.push_back(channelVector);
 
+	}
+	else if (hasTexture)
+	{
+		
+		//Has texture but no UV coordinates, attempt to fabricate some
+		std::vector<repo_vector2d_t> channelVector;
+
+		repo_vector_t bboxSize = { fabs(maxVertex.x - minVertex.x), fabs(maxVertex.y - minVertex.y), fabs(maxVertex.z - minVertex.z) };
+
+		for (const auto & v: vertices)
+		{
+			repo_vector_t dVector = { fabs(v.x - minVertex.x), fabs(v.y - minVertex.y), fabs(v.z - minVertex.z) };
+			channelVector.push_back({ dVector.x / bboxSize.x, dVector.y / bboxSize.y });
+		}
+		uvChannels.push_back(channelVector);
 	}
 
 	// Consider only first color set
@@ -885,10 +901,13 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 				{
 					repoInfo << "Constructing " << i << " of " << assimpScene->mNumMeshes;
 				}
+
+
+				int numTextures = assimpScene->mMaterials[assimpScene->mMeshes[i]->mMaterialIndex]->GetTextureCount(aiTextureType_DIFFUSE);
 				repo::core::model::RepoNode* mesh = createMeshRepoNode(
 					assimpScene->mMeshes[i],
 					originalOrderMaterial,
-					matParents);
+					matParents, numTextures > 0);
 
 				if (!mesh)
 					repoError << "Unable to construct mesh node in Assimp Model Convertor!";
