@@ -817,7 +817,6 @@ bool MongoDatabaseHandler::insertDocument(
 			worker->insert(getNamespace(database, collection), obj);
 
 			success = storeBigFiles(worker, database, collection, obj, errMsg);
-			repoTrace << "Success: " << success;
 
 		}
 		catch (mongo::DBException &e)

@@ -121,7 +121,8 @@ namespace repo{
 				repo::core::model::MeshNode* createMeshRepoNode(
 					const aiMesh *assimpMesh,
 					const std::vector<repo::core::model::RepoNode *> &materials,
-					std::unordered_map < repo::core::model::RepoNode*, std::vector<repoUUID>> &matMap);
+					std::unordered_map < repo::core::model::RepoNode*, std::vector<repoUUID>> &matMap,
+					const bool hasTexture);
 
 				/**
 				* Create a Metadata Node given the information in ASSIMP objects
