@@ -121,14 +121,22 @@ bool MultipartOptimizer::collectMeshData(
 				if (success = submVertices.size() && submFaces.size())
 				{
 					meshMap.vertFrom = vertices.size();
-					meshMap.vertTo = meshMap.vertFrom + submVertices.size() - 1;
+					meshMap.vertTo = meshMap.vertFrom + submVertices.size();
 					meshMap.triFrom = faces.size();
-					meshMap.triTo = faces.size() + submFaces.size() - 1;
+					meshMap.triTo = faces.size() + submFaces.size();
 				
 					meshMapping.push_back(meshMap);
 
 					vertices.insert(vertices.end(), submVertices.begin(), submVertices.end());
-					faces.insert(faces.end(), submFaces.begin(), submFaces.end());
+					for (const auto face : submFaces)
+					{
+						repo_face_t offsetFace;
+						for (const auto idx : face)
+						{
+							offsetFace.push_back(meshMap.vertFrom + idx);
+						}
+						faces.push_back(offsetFace);
+					}
 
 					if (submNormals.size())
 						normals.insert(normals.end(), submNormals.begin(), submNormals.end());
@@ -434,6 +442,7 @@ void MultipartOptimizer::sortMeshes(
 	for (const auto &node : meshes)
 	{
 		auto mesh = (repo::core::model::MeshNode*) node;
+		repoTrace << " faces: " << mesh->getFaces().size();
 		/**
 		* 1 - figure out it's mFormat (what buffers does it have)
 		* 2 - check if it has texture
