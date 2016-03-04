@@ -46,10 +46,10 @@ bool TransformationReductionOptimizer::apply(repo::core::model::RepoScene *scene
 		size_t total = meshes.size();
 		size_t transNodes_pre = scene->getAllTransformations(gType).size();
 		size_t step = total / 10;
+		if (!step) step = total; //avoid modulo of 0;
 		for (repo::core::model::RepoNode *node : meshes)
-		{
-			++count;
-			if ( count % step == 0)
+		{			
+			if ( ++count % step == 0)
 			{
 				repoInfo << "Optimizer : processed " << count << " of " << total << " meshes";
 			}
