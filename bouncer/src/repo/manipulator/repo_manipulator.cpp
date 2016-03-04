@@ -30,6 +30,8 @@
 #include "modelconvertor/export/repo_model_export_src.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
+#include "modeloptimizer/repo_optimizer_multipart.h"
+
 
 
 using namespace repo::manipulator;
@@ -480,6 +482,63 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 	return generateAndCommitWebViewBuffer(databaseAd, cred, scene, 
 		generateSRCBuffer(scene), modelconvertor::WebExportType::SRC);
 }
+
+bool RepoManipulator::removeStashGraphFromDatabase(
+	const std::string                         &databaseAd,
+	const repo::core::model::RepoBSON         *cred,
+	repo::core::model::RepoScene* scene
+	)
+{
+	bool success = false;
+	if (scene && scene->isRevisioned())
+	{
+		repo::core::handler::AbstractDatabaseHandler* handler =
+			repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+		std::string errMsg;
+
+		repo::core::model::RepoBSONBuilder builder;
+		builder.append(REPO_NODE_STASH_REF, scene->getRevisionID());
+		success = handler->dropDocuments(builder.obj(), scene->getDatabaseName(), scene->getProjectName() + "." + scene->getStashExtension(), errMsg);
+	}
+
+	return success;
+}
+
+bool RepoManipulator::generateAndCommitStashGraph(
+	const std::string                         &databaseAd,
+	const repo::core::model::RepoBSON         *cred,
+	repo::core::model::RepoScene              *scene
+	)
+{
+	bool success = false;
+	if (scene && scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
+	{
+		modeloptimizer::MultipartOptimizer mpOpt;
+		if (success = mpOpt.apply(scene))
+		{
+			repo::core::handler::AbstractDatabaseHandler* handler =
+				repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+			std::string errMsg;
+			//Remove all stash graph nodes that may have existed for this current revision
+			removeStashGraphFromDatabase(databaseAd, cred, scene);
+
+			if (success &= (bool)handler && scene->commitStash(handler, errMsg))
+			{
+				repoInfo << "Stash Graph committed successfully";
+			}
+			else
+			{
+				repoError << "Failed to commit stash graph: " << errMsg;
+			}
+		}
+		else
+		{
+			repoError << "Failed to generate stash graph.";
+		}
+	}
+	return success;
+}
+
 
 bool RepoManipulator::generateAndCommitWebViewBuffer(
 	const std::string                             &databaseAd,

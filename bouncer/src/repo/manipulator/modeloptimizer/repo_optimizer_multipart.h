@@ -27,7 +27,7 @@
 namespace repo {
 	namespace manipulator {
 		namespace modeloptimizer {
-			class REPO_API_EXPORT MultipartOptimizer : AbstractOptimizer
+			class MultipartOptimizer : AbstractOptimizer
 			{
 			public:
 				/**

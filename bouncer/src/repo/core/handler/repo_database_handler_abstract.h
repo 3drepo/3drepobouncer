@@ -274,6 +274,19 @@ namespace repo{
 					const std::string &collection,
 					std::string &errMsg)=0;
 
+				/**
+				* Remove all documents satisfying a certain criteria
+				* @param criteria document to remove
+				* @param database the database the collection resides in
+				* @param collection name of the collection the document is in
+				* @param errMsg name of the database to drop
+				*/
+				virtual bool dropDocuments(
+					const repo::core::model::RepoBSON criteria,
+					const std::string &database,
+					const std::string &collection,
+					std::string &errMsg) = 0;
+
 
 				/**
 				* Remove a role from the database
