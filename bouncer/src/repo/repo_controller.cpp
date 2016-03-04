@@ -940,7 +940,7 @@ repo::core::model::RepoNodeSet RepoController::loadMetadataFromFile(
 repo::core::model::RepoScene*
 RepoController::loadSceneFromFile(
         const std::string                                          &filePath,
-		const bool &applyReduction,
+		const bool                                                 &applyReduction,
         const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
 

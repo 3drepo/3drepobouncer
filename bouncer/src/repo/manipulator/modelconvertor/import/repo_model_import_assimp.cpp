@@ -1026,31 +1026,32 @@ repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 
 	//This will generate the non optimised scene
 	repoTrace << "Converting AiScene to repoScene";
+	importer.ApplyPostProcessing(composeAssimpPostProcessingFlags());
 	scene = convertAiSceneToRepoScene(orgMap);
 
-	if (scene)
-	{
-		// Assign the unoptimized node map, and start optimization
-		importer.ApplyPostProcessing(composeAssimpPostProcessingFlags());
+	//if (scene)
+	//{
+	//	// Assign the unoptimized node map, and start optimization
+	//	
 
-		//This will generate the optimised scene graph and put it in the RepoScene referenced
-		repoTrace << "Converting AiScene to Optimised RepoScene";
-		convertAiSceneToRepoScene(optMap, scene);
+	//	//This will generate the optimised scene graph and put it in the RepoScene referenced
+	//	repoTrace << "Converting AiScene to Optimised RepoScene";
+	//	convertAiSceneToRepoScene(optMap, scene);
 
-		repo::core::model::RepoNode *stashRoot =  scene->getRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED);
+	//	repo::core::model::RepoNode *stashRoot =  scene->getRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED);
 
-		if (!populateOptimMaps(stashRoot, scene, orgMap, optMap))
-		{
-			//populateOptimMaps is false so stash is invalid. clear it out.
-			repoError << "Stash invalid ... clearing.";
-			scene->clearStash();
-		}
+	//	if (!populateOptimMaps(stashRoot, scene, orgMap, optMap))
+	//	{
+	//		//populateOptimMaps is false so stash is invalid. clear it out.
+	//		repoError << "Stash invalid ... clearing.";
+	//		scene->clearStash();
+	//	}
 
-	}
-	else
-	{
-		repoError << "Failed to construct default graph scene.";
-	}
+	//}
+	//else
+	//{
+	//	repoError << "Failed to construct default graph scene.";
+	//}
 
 
 	return scene;

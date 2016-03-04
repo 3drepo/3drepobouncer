@@ -504,6 +504,25 @@ bool RepoManipulator::removeStashGraphFromDatabase(
 	return success;
 }
 
+bool RepoManipulator::generateStashGraph(
+	repo::core::model::RepoScene              *scene
+	)
+{
+	bool success = false;
+	if (scene && scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
+	{
+		modeloptimizer::MultipartOptimizer mpOpt;
+		success = mpOpt.apply(scene);
+	}
+	else
+	{
+		repoError << "Failed to generate stash graph: nullptr to scene or empty scene graph!";
+	}
+
+	return success;
+}
+
+
 bool RepoManipulator::generateAndCommitStashGraph(
 	const std::string                         &databaseAd,
 	const repo::core::model::RepoBSON         *cred,
@@ -513,8 +532,8 @@ bool RepoManipulator::generateAndCommitStashGraph(
 	bool success = false;
 	if (scene && scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
 	{
-		modeloptimizer::MultipartOptimizer mpOpt;
-		if (success = mpOpt.apply(scene))
+
+		if (success = generateStashGraph(scene))
 		{
 			repo::core::handler::AbstractDatabaseHandler* handler =
 				repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
@@ -815,11 +834,26 @@ repo::core::model::RepoScene*
 		if (modelConvertor->importModel(filePath, msg))
 		{
 			repoTrace << "model Imported, generating Repo Scene";
-			if ((scene = modelConvertor->generateRepoScene()) && applyReduction)
+			if ((scene = modelConvertor->generateRepoScene()))
 			{
-				repoTrace << "Scene generated. Applying transformation reduction optimizer";
-				modeloptimizer::TransformationReductionOptimizer optimizer;
-				optimizer.apply(scene);
+				if (applyReduction)
+				{
+					repoTrace << "Scene generated. Applying transformation reduction optimizer";
+					modeloptimizer::TransformationReductionOptimizer optimizer;
+					optimizer.apply(scene);
+				}
+				
+				//Generate stash
+				repoTrace << "Generating stash graph...";
+				if (generateStashGraph(scene))
+				{
+					repoTrace << "Stash graph generated.";
+				}
+				else
+				{
+					repoError << "Error generating stash graph";
+				}
+				
 			}
 			
 		}

@@ -343,6 +343,15 @@ namespace repo{
 				const repo::core::model::RepoScene *scene);
 
 			/**
+			* Generate a stash graph for the given scene and populate it 
+			* into the given scene
+			* @param scene scene to generate stash graph for
+			* @return returns true upon success
+			*/
+			bool generateStashGraph(
+				repo::core::model::RepoScene              *scene
+				);
+			/**
 			* Retrieve documents from a specified collection
 			* due to limitations of the transfer protocol this might need
 			* to be called multiple times, utilising the skip index to skip
