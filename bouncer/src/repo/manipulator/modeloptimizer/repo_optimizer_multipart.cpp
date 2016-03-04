@@ -82,7 +82,7 @@ bool MultipartOptimizer::collectMeshData(
 		case repo::core::model::NodeType::TRANSFORMATION:
 		{
 			auto trans = (repo::core::model::TransformationNode *) node;
-			mat = matMult(mat, trans->getTransMatrix());
+			mat = matMult(mat, trans->getTransMatrix(false));
 			auto children = scene->getChildrenAsNodes(defaultGraph, trans->getSharedID());
 			for (const auto &child : children)
 			{

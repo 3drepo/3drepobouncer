@@ -409,7 +409,6 @@ repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 				assimpMesh->mFaces[i].mIndices + assimpMesh->mFaces[i].mNumIndices) });
 		}
 	}
-	repoTrace << "Assimp: faces: " << faces.size();
 	/*
 	*-----------------------------------------------------------------------------
 	*/
