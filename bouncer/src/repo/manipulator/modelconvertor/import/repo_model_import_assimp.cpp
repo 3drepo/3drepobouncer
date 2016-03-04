@@ -643,7 +643,7 @@ const std::vector<repoUUID>						             &parent
 	if (assimpNode){
 		std::string transName(assimpNode->mName.data);
 		if(count % 1000 == 0)
-			repoInfo << "Constructing transName: " << transName << " (" << count << " of ???)";
+			repoInfo << "Constructing transformation #" << count;
 
 		//create a 4 by 4 vector
 		std::vector < std::vector<float> > transMat;
