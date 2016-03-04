@@ -48,9 +48,9 @@ bool TransformationReductionOptimizer::apply(repo::core::model::RepoScene *scene
 		for (repo::core::model::RepoNode *node : meshes)
 		{
 			++count;
-			if (count % 100 == 0)
+			if (count % 500 == 0)
 			{
-				repoTrace << "Optimizer : processed " << count << " of " << total;
+				repoInfo << "Optimizer : processed " << count << " of " << total << " meshes";
 			}
 			if (node && node->getTypeAsEnum() == repo::core::model::NodeType::MESH)
 			{
@@ -74,7 +74,7 @@ bool TransformationReductionOptimizer::apply(repo::core::model::RepoScene *scene
 			++count;
 			if (count % 100 == 0)
 			{
-				repoTrace << "Optimizer : processed " << count << " of " << total;
+				repoInfo << "Optimizer : processed " << count << " of " << total << " cameras";
 			}
 			if (node && node->getTypeAsEnum() == repo::core::model::NodeType::CAMERA)
 			{
