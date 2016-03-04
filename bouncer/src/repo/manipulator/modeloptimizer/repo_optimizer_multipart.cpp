@@ -404,7 +404,7 @@ bool MultipartOptimizer::processMeshGroup(
 				//This material hasn't beenn copied yet.
 				//clone and wipe the parent entries, insert new parents
 				auto matNode = scene->getNodeByUniqueID(defaultGraph, matID);
-				repo::core::model::RepoNode clonedMat = matNode->removeField(REPO_NODE_LABEL_PARENTS);
+				repo::core::model::RepoNode clonedMat = repo::core::model::RepoNode (matNode->removeField(REPO_NODE_LABEL_PARENTS));
 				clonedMat = clonedMat.cloneAndAddParent({ sMeshSharedID });
 				matNodes[matID] =  new repo::core::model::MaterialNode(clonedMat);
 			}
