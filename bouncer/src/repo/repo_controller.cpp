@@ -261,6 +261,39 @@ repo::core::model::RepoScene* RepoController::fetchScene(
     return scene;
 }
 
+bool RepoController::generateAndCommitStashGraph(
+	const RepoToken              *token,
+	repo::core::model::RepoScene* scene
+	)
+{
+	bool success = false;
+
+	if (token && scene)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+
+		if (scene->isRevisioned() && !scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
+		{
+			//If the unoptimised graph isn't fetched, try to fetch full scene before beginning
+			//This should be safe considering if it has not loaded the unoptimised graph it shouldn't have
+			//any uncommited changes.
+			repoInfo << "Unoptimised scene not loaded, trying loading unoptimised scene...";
+			worker->fetchScene(token->databaseAd, token->credentials, scene);
+		}
+		
+		success = worker->generateAndCommitStashGraph(token->databaseAd, token->credentials,
+			scene);
+
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Failed to generate stash graph: nullptr to scene or token!";
+	}
+
+	return success;
+}
+
 std::vector < repo::core::model::RepoBSON >
 RepoController::getAllFromCollectionContinuous(
         const RepoToken      *token,
@@ -907,7 +940,7 @@ repo::core::model::RepoNodeSet RepoController::loadMetadataFromFile(
 repo::core::model::RepoScene*
 RepoController::loadSceneFromFile(
         const std::string                                          &filePath,
-		const bool &applyReduction,
+		const bool                                                 &applyReduction,
         const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
 

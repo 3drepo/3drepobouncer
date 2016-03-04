@@ -289,6 +289,45 @@ bool MongoDatabaseHandler::dropDocument(
 	return success;
 }
 
+bool MongoDatabaseHandler::dropDocuments(
+	const repo::core::model::RepoBSON criteria,
+	const std::string &database,
+	const std::string &collection,
+	std::string &errMsg)
+{
+	bool success = false;
+	mongo::DBClientBase *worker;
+	if (!database.empty() && !collection.empty())
+	{
+		try{
+			worker = workerPool->getWorker();
+			if (success = !criteria.isEmpty())
+			{
+				worker->remove(database + "." + collection, criteria, false);
+
+			}
+			else
+			{
+				errMsg = "Failed to drop documents: empty criteria";
+			}
+
+		}
+		catch (mongo::DBException& e)
+		{
+			errMsg = "Failed to drop documents:" + std::string(e.what());		
+		}
+
+		workerPool->returnWorker(worker);
+
+	}
+	else
+	{
+		errMsg = "Failed to drop document: either database (value: " + database + ") or collection (value: " + collection + ") is empty";
+	}
+
+	return success;
+}
+
 mongo::BSONObj MongoDatabaseHandler::fieldsToReturn(
 	const std::list<std::string>& fields,
 	bool excludeIdField)

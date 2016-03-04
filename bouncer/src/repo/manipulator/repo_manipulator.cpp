@@ -30,6 +30,8 @@
 #include "modelconvertor/export/repo_model_export_src.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
+#include "modeloptimizer/repo_optimizer_multipart.h"
+
 
 
 using namespace repo::manipulator;
@@ -174,11 +176,11 @@ void RepoManipulator::commitScene(
 		{
 			repoInfo << "Commited scene stash successfully.";
 
-			repoInfo << "Generating SRC encoding for web viewing...";
+		/*	repoInfo << "Generating SRC encoding for web viewing...";
 			if (generateAndCommitSRCBuffer(databaseAd, cred, scene))
 			{
 				repoInfo << "SRC file stored into the database";
-			}			
+			}			*/
 		}
 		else
 		{
@@ -481,6 +483,82 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 		generateSRCBuffer(scene), modelconvertor::WebExportType::SRC);
 }
 
+bool RepoManipulator::removeStashGraphFromDatabase(
+	const std::string                         &databaseAd,
+	const repo::core::model::RepoBSON         *cred,
+	repo::core::model::RepoScene* scene
+	)
+{
+	bool success = false;
+	if (scene && scene->isRevisioned())
+	{
+		repo::core::handler::AbstractDatabaseHandler* handler =
+			repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+		std::string errMsg;
+
+		repo::core::model::RepoBSONBuilder builder;
+		builder.append(REPO_NODE_STASH_REF, scene->getRevisionID());
+		success = handler->dropDocuments(builder.obj(), scene->getDatabaseName(), scene->getProjectName() + "." + scene->getStashExtension(), errMsg);
+	}
+
+	return success;
+}
+
+bool RepoManipulator::generateStashGraph(
+	repo::core::model::RepoScene              *scene
+	)
+{
+	bool success = false;
+	if (scene && scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
+	{
+		modeloptimizer::MultipartOptimizer mpOpt;
+		success = mpOpt.apply(scene);
+	}
+	else
+	{
+		repoError << "Failed to generate stash graph: nullptr to scene or empty scene graph!";
+	}
+
+	return success;
+}
+
+
+bool RepoManipulator::generateAndCommitStashGraph(
+	const std::string                         &databaseAd,
+	const repo::core::model::RepoBSON         *cred,
+	repo::core::model::RepoScene              *scene
+	)
+{
+	bool success = false;
+	if (scene && scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
+	{
+
+		if (success = generateStashGraph(scene))
+		{
+			repo::core::handler::AbstractDatabaseHandler* handler =
+				repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+			std::string errMsg;
+			//Remove all stash graph nodes that may have existed for this current revision
+			removeStashGraphFromDatabase(databaseAd, cred, scene);
+
+			if (success &= (bool)handler && scene->commitStash(handler, errMsg))
+			{
+				repoInfo << "Stash Graph committed successfully";
+			}
+			else
+			{
+				repoError << "Failed to commit stash graph: " << errMsg;
+			}
+		}
+		else
+		{
+			repoError << "Failed to generate stash graph.";
+		}
+	}
+	return success;
+}
+
+
 bool RepoManipulator::generateAndCommitWebViewBuffer(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON	          *cred,
@@ -756,11 +834,26 @@ repo::core::model::RepoScene*
 		if (modelConvertor->importModel(filePath, msg))
 		{
 			repoTrace << "model Imported, generating Repo Scene";
-			if ((scene = modelConvertor->generateRepoScene()) && applyReduction)
+			if ((scene = modelConvertor->generateRepoScene()))
 			{
-				repoTrace << "Scene generated. Applying transformation reduction optimizer";
-				modeloptimizer::TransformationReductionOptimizer optimizer;
-				optimizer.apply(scene);
+				if (applyReduction)
+				{
+					repoTrace << "Scene generated. Applying transformation reduction optimizer";
+					modeloptimizer::TransformationReductionOptimizer optimizer;
+					optimizer.apply(scene);
+				}
+				
+				//Generate stash
+				repoInfo << "Generating stash graph for optimised viewing...";
+				if (generateStashGraph(scene))
+				{
+					repoTrace << "Stash graph generated.";
+				}
+				else
+				{
+					repoError << "Error generating stash graph";
+				}
+				
 			}
 			
 		}
