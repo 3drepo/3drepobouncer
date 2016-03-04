@@ -103,6 +103,7 @@ bool MultipartOptimizer::collectMeshData(
 				//this node is in the grouping, add it into the data buffers
 				repo_mesh_mapping_t meshMap;
 				meshMap.material_id = getMaterialID(scene, &transformedMesh);
+				repoTrace << "Material ID is: " << UUIDtoString(meshMap.material_id);
 				meshMap.mesh_id = meshUniqueID;
 				auto bbox = transformedMesh.getBoundingBox();
 				if (bbox.size() >= 2)
@@ -123,6 +124,7 @@ bool MultipartOptimizer::collectMeshData(
 					meshMap.vertTo = meshMap.vertFrom + submVertices.size() - 1;
 					meshMap.triFrom = faces.size();
 					meshMap.triTo = faces.size() + submFaces.size() - 1;
+				
 					meshMapping.push_back(meshMap);
 
 					vertices.insert(vertices.end(), submVertices.begin(), submVertices.end());
@@ -132,6 +134,12 @@ bool MultipartOptimizer::collectMeshData(
 						normals.insert(normals.end(), submNormals.begin(), submNormals.end());
 					if (submColors.size())
 						colors.insert(colors.end(), submColors.begin(), submColors.end());
+
+					if (uvChannels.size() == 0 && submUVs.size() != 0)
+					{
+						//initialise uvChannels
+						uvChannels.resize(submUVs.size());
+					}
 
 					if (success = uvChannels.size() == submUVs.size())
 					{
@@ -164,6 +172,8 @@ bool MultipartOptimizer::collectMeshData(
 	{
 		repoError << "Scene or node is null!";
 	}
+
+	return success;
 }
 
 repo::core::model::MeshNode* MultipartOptimizer::createSuperMesh(
@@ -187,6 +197,7 @@ repo::core::model::MeshNode* MultipartOptimizer::createSuperMesh(
 	bool success = collectMeshData(scene, scene->getRoot(defaultGraph), meshGroup, identity,
 		vertices, normals, faces, uvChannels, colors, meshMapping);
 
+	repoTrace << "mesh mapping: " << meshMapping.size();
 	
 	if (success && meshMapping.size())
 	{
@@ -194,7 +205,7 @@ repo::core::model::MeshNode* MultipartOptimizer::createSuperMesh(
 		std::vector<repo_vector_t> bbox;
 		bbox.push_back(meshMapping[0].min);
 		bbox.push_back(meshMapping[0].max);
-
+		matIDs.insert(meshMapping[0].material_id);
 		for (int i = 1; i < meshMapping.size(); ++i)
 		{
 			if (bbox[0].x > meshMapping[i].min.x)
@@ -225,6 +236,10 @@ repo::core::model::MeshNode* MultipartOptimizer::createSuperMesh(
 		repo::core::model::MeshNode superMesh = repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces, normals, bboxVec, uvChannels, colors, outline);
 		resultMesh = new repo::core::model::MeshNode(superMesh.cloneAndUpdateMeshMapping(meshMapping, true));
 	}
+	else
+	{
+		repoError << "Failed";
+	}
 	
 	return resultMesh;
 
@@ -243,62 +258,59 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 		//Sort the meshes into 3 different grouping
 		sortMeshes(scene, meshes, normalMeshes, transparentMeshes, texturedMeshes);
 
-		repo::core::model::RepoNodeSet mergedMeshes, material, trans, textures;
+		repo::core::model::RepoNodeSet mergedMeshes, materials, trans, textures, dummy;
 
 		auto rootNode = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
 		trans.insert(rootNode);
-		repoUUID rootID = rootNode->getUniqueID();
+		repoUUID rootID = rootNode->getSharedID();
 
 		std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> matNodes;
 
-		//normal meshes
-		for (const auto & meshGroup : normalMeshes)
+		for (const auto &grouping : normalMeshes)
 		{
-			std::set<repoUUID> matIDs;
-			auto sMesh = createSuperMesh(scene, meshGroup.second, matIDs);
-			auto sMeshWithParent = sMesh->cloneAndAddParent({ rootID });
-			sMesh->swap(sMeshWithParent);
-			mergedMeshes.insert(sMesh);
-
-			repoUUID sMeshSharedID  = sMesh->getSharedID();
-
-			for (const auto matID : matIDs)
-			{
-				if (matNodes.find(matID) == matNodes.end())
-				{
-					//This material hasn't beenn copied yet.
-					//clone and wipe the parent entries, insert new parents
-					auto matNode = scene->getNodeByUniqueID(defaultGraph, matID);
-					repo::core::model::RepoNode clonedMat = matNode->removeField(REPO_NODE_LABEL_PARENTS);
-					clonedMat = clonedMat.cloneAndAddParent({ sMeshSharedID });
-				}
-				else
-				{
-					//created by another superMesh (set should have no duplicate so it shouldn't be from this mesh)
-					
-				}
-				
-				
-			}
+			success &= processMeshGroup(scene, grouping.second, rootID, mergedMeshes, matNodes);
 		}
 
-		//(semi)transparent meshes
-		for (const auto & meshGroup : transparentMeshes)
+		for (const auto &grouping : transparentMeshes)
 		{
-			mergedMeshes.insert(createSuperMesh(scene, meshGroup.second));
+			success &= processMeshGroup(scene, grouping.second, rootID, mergedMeshes, matNodes);
 		}
-		
+
 		//textured meshes
 		for (const auto &textureMeshMap : texturedMeshes)
 		{
-			for (const auto &meshGroup : textureMeshMap.second)
+			for (const auto &grouping : textureMeshMap.second)
 			{
-				mergedMeshes.insert(createSuperMesh(scene, meshGroup.second));
-			}
-			
+				success &= processMeshGroup(scene, grouping.second, rootID, mergedMeshes, matNodes);
+			}			
 		}
 
+		if (success)
+		{
+			repoTrace << "matNodes: " << matNodes.size();
+			//fill Material nodeset
+			for (const auto &matPair : matNodes)
+			{
+				materials.insert(matPair.second);
+			}
+
+			//fill Texture nodeset
+			for (const auto &texture : scene->getAllTextures(defaultGraph))
+			{
+				//create new instance to avoid X contamination
+				textures.insert(new repo::core::model::TextureNode(*texture));
+			}
+
+			repoTrace << " mergedMeshes : " << mergedMeshes.size() << " materials: " << materials.size() << " textures: " << textures.size() << " trans: " << trans.size();
+
+			scene->addStashGraph(dummy, mergedMeshes, materials, textures, trans);
+		}
+		else
+		{
+			repoError << "Failed to process Mesh Groups";
+		}
 	
+
 	}
 	else
 	{
@@ -360,6 +372,54 @@ bool MultipartOptimizer::isTransparent(
 	}
 
 	return isTransparent;
+}
+
+bool MultipartOptimizer::processMeshGroup(
+	const repo::core::model::RepoScene                                        *scene,
+	const  std::set<repoUUID>                                                  &meshes,
+	const repoUUID                                                             &rootID,
+	repo::core::model::RepoNodeSet                                             &mergedMeshes,
+	std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> &matNodes
+	)
+{
+	bool success = false;
+	std::set<repoUUID> matIDs;
+	auto sMesh = createSuperMesh(scene, meshes, matIDs);
+	repoTrace << "mat IDs: " << matIDs.size();
+	if (success = sMesh)
+	{
+		auto sMeshWithParent = sMesh->cloneAndAddParent({ rootID });
+		sMesh->swap(sMeshWithParent);
+		mergedMeshes.insert(sMesh);
+
+		repoUUID sMeshSharedID = sMesh->getSharedID();
+
+		for (const auto matID : matIDs)
+		{
+			auto matIt = matNodes.find(matID);
+			if (matIt == matNodes.end())
+			{
+				//This material hasn't beenn copied yet.
+				//clone and wipe the parent entries, insert new parents
+				auto matNode = scene->getNodeByUniqueID(defaultGraph, matID);
+				repo::core::model::RepoNode clonedMat = matNode->removeField(REPO_NODE_LABEL_PARENTS);
+				clonedMat = clonedMat.cloneAndAddParent({ sMeshSharedID });
+				matNodes[matID] =  new repo::core::model::MaterialNode(clonedMat);
+			}
+			else
+			{
+				//created by another superMesh (set should have no duplicate so it shouldn't be from this mesh)
+				auto addedParentMat = matIt->second->cloneAndAddParent({ sMeshSharedID });
+				matIt->second->swap(addedParentMat);
+			}
+		}
+	}
+	else
+	{
+		repoError << "Failed to create super mesh (nullptr returned)";
+	}
+	return success;
+	
 }
 
 void MultipartOptimizer::sortMeshes(

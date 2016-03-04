@@ -27,7 +27,7 @@
 namespace repo {
 	namespace manipulator {
 		namespace modeloptimizer {
-			class MultipartOptimizer : AbstractOptimizer
+			class REPO_API_EXPORT MultipartOptimizer : AbstractOptimizer
 			{
 			public:
 				/**
@@ -127,6 +127,21 @@ namespace repo {
 				bool isTransparent(
 					const repo::core::model::RepoScene *scene,
 					const repo::core::model::MeshNode  *mesh); 
+
+				/**
+				* Process a mesh grouping, great a merged mesh base on the information
+				* @param scene as reference
+				* @param meshes mesh groupings
+				* @param mergedMeshes add newly created meshes into this set
+				* @param matNodes contains already processed materials
+				*/
+				bool processMeshGroup(
+					const repo::core::model::RepoScene                                         *scene,
+					const std::set<repoUUID>							                       & meshes,
+					const repoUUID                                                             &rootID,
+					repo::core::model::RepoNodeSet                                             &mergedMeshes,
+					std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> &matNodes
+					);
 
 				/**
 				* Sort the given RepoNodeSet of meshes for multipart merging
