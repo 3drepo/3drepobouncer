@@ -154,10 +154,10 @@ namespace repo {
 				void sortMeshes(
 					const repo::core::model::RepoScene                                      *scene,
 					const repo::core::model::RepoNodeSet                                    &meshes,
-					std::unordered_map<uint32_t, std::set<repoUUID>>						&normalMeshes,
-					std::unordered_map<uint32_t, std::set<repoUUID>>						&transparentMeshes,
-					std::unordered_map < uint32_t, std::unordered_map<repoUUID,
-													  std::set<repoUUID>, RepoUUIDHasher> > &texturedMeshes);
+					std::unordered_map<uint32_t, std::vector<std::set<repoUUID>>>			&normalMeshes,
+					std::unordered_map<uint32_t, std::vector<std::set<repoUUID>>>			&transparentMeshes,
+					std::unordered_map<uint32_t, std::unordered_map<repoUUID,
+										 std::vector<std::set<repoUUID>>, RepoUUIDHasher >> &texturedMeshes);
 
 			};
 

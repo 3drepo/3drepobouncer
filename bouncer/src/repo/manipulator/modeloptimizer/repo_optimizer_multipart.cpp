@@ -26,6 +26,8 @@ using namespace repo::manipulator::modeloptimizer;
 
 auto defaultGraph = repo::core::model::RepoScene::GraphType::DEFAULT;
 
+static const size_t  REPO_MP_MAX_FACE_COUNT = 500000;
+
 MultipartOptimizer::MultipartOptimizer() : 
 	AbstractOptimizer()
 {
@@ -258,8 +260,8 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 	auto meshes = scene->getAllMeshes(defaultGraph);
 	if (success = meshes.size())
 	{
-		std::unordered_map<uint32_t, std::set<repoUUID>> transparentMeshes, normalMeshes;
-		std::unordered_map<uint32_t, std::unordered_map<repoUUID, std::set<repoUUID>, RepoUUIDHasher>> texturedMeshes;
+		std::unordered_map<uint32_t, std::vector<std::set<repoUUID>>> transparentMeshes, normalMeshes;
+		std::unordered_map<uint32_t, std::unordered_map<repoUUID, std::vector<std::set<repoUUID>>, RepoUUIDHasher>> texturedMeshes;
 
 		//Sort the meshes into 3 different grouping
 		sortMeshes(scene, meshes, normalMeshes, transparentMeshes, texturedMeshes);
@@ -272,22 +274,25 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 
 		std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> matNodes;
 
-		for (const auto &grouping : normalMeshes)
+		for (const auto &groupings : normalMeshes)
 		{
-			success &= processMeshGroup(scene, grouping.second, rootID, mergedMeshes, matNodes);
+			for (const auto grouping : groupings.second )
+				success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, matNodes);
 		}
 
-		for (const auto &grouping : transparentMeshes)
+		for (const auto &groupings : transparentMeshes)
 		{
-			success &= processMeshGroup(scene, grouping.second, rootID, mergedMeshes, matNodes);
+			for (const auto grouping : groupings.second)
+				success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, matNodes);
 		}
 
 		//textured meshes
 		for (const auto &textureMeshMap : texturedMeshes)
 		{
-			for (const auto &grouping : textureMeshMap.second)
+			for (const auto &groupings : textureMeshMap.second)
 			{
-				success &= processMeshGroup(scene, grouping.second, rootID, mergedMeshes, matNodes);
+				for (const auto grouping : groupings.second)
+					success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, matNodes);
 			}			
 		}
 
@@ -427,11 +432,14 @@ bool MultipartOptimizer::processMeshGroup(
 void MultipartOptimizer::sortMeshes(
 	const repo::core::model::RepoScene                                      *scene,
 	const repo::core::model::RepoNodeSet                                    &meshes,
-	std::unordered_map<uint32_t, std::set<repoUUID>>						&normalMeshes,
-	std::unordered_map<uint32_t, std::set<repoUUID>>						&transparentMeshes,
+	std::unordered_map<uint32_t, std::vector<std::set<repoUUID>>>						&normalMeshes,
+	std::unordered_map<uint32_t, std::vector<std::set<repoUUID>>>						&transparentMeshes,
 	std::unordered_map<uint32_t, std::unordered_map<repoUUID, 
-									   std::set<repoUUID>, RepoUUIDHasher> > &texturedMeshes)
+									   std::vector<std::set<repoUUID>>, RepoUUIDHasher>> &texturedMeshes)
 {
+
+	std::unordered_map<uint32_t, size_t> normalFCount, transparentFCount;
+	std::unordered_map<uint32_t, std::unordered_map<repoUUID, size_t, RepoUUIDHasher> > texturedFCount;
 
 	for (const auto &node : meshes)
 	{
@@ -449,29 +457,50 @@ void MultipartOptimizer::sortMeshes(
 			auto it = texturedMeshes.find(mFormat);
 			if (it == texturedMeshes.end())
 			{
-				texturedMeshes[mFormat] = std::unordered_map<repoUUID, std::set<repoUUID>, RepoUUIDHasher>();
+				texturedMeshes[mFormat] = std::unordered_map<repoUUID, std::vector<std::set<repoUUID>>, RepoUUIDHasher>();
+				texturedFCount[mFormat] = std::unordered_map<repoUUID, size_t, RepoUUIDHasher>();
 			}
 
 			auto it2 = texturedMeshes[mFormat].find(texID);
 			if (it2 == texturedMeshes[mFormat].end())
 			{
-				texturedMeshes[mFormat][texID] = std::set<repoUUID>();
+				texturedMeshes[mFormat][texID] = std::vector<std::set<repoUUID>>();
+				texturedMeshes[mFormat][texID].push_back(std::set<repoUUID>());
+				texturedFCount[mFormat][texID] = 0;
 			}
+			size_t faceCount = mesh->getFaces().size();
+			if (texturedFCount[mFormat][texID] + faceCount > REPO_MP_MAX_FACE_COUNT)
+			{
+				//Exceed max face count, create another grouping entry for this format
+				texturedMeshes[mFormat][texID].push_back(std::set<repoUUID>());
+				texturedFCount[mFormat][texID] = 0;
 
-			texturedMeshes[mFormat][texID].insert(mesh->getUniqueID());
+			}
+			texturedMeshes[mFormat][texID].back().insert(mesh->getUniqueID());
+			texturedFCount[mFormat][texID] += mesh->getFaces().size();
 		}
 		else
 		{
 			//no mesh, check if it is transparent
 			auto &meshMap = isTransparent(scene, mesh) ? transparentMeshes : normalMeshes;
+			auto &meshFCount = isTransparent(scene, mesh) ? transparentFCount : normalFCount;
 			auto it = meshMap.find(mFormat);
 			if (it == meshMap.end())
 			{
-				meshMap[mFormat] = std::set<repoUUID>();
+				meshMap[mFormat] = std::vector<std::set<repoUUID>>();
+				meshMap[mFormat].push_back(std::set<repoUUID>());
+				meshFCount[mFormat] = 0;
 			}
+			size_t faceCount = mesh->getFaces().size();
+			if (meshFCount[mFormat] + faceCount > REPO_MP_MAX_FACE_COUNT)
+			{
+				//Exceed max face count, create another grouping entry for this format
+				meshMap[mFormat].push_back(std::set<repoUUID>());
+				meshFCount[mFormat] = 0;
 
-
-			meshMap[mFormat].insert(mesh->getUniqueID());
+			}
+			meshMap[mFormat].back().insert(mesh->getUniqueID());
+			meshFCount[mFormat] += mesh->getFaces().size();
 		}
 
 	}

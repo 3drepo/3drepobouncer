@@ -844,7 +844,7 @@ repo::core::model::RepoScene*
 				}
 				
 				//Generate stash
-				repoTrace << "Generating stash graph...";
+				repoInfo << "Generating stash graph for optimised viewing...";
 				if (generateStashGraph(scene))
 				{
 					repoTrace << "Stash graph generated.";
