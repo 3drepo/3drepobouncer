@@ -472,11 +472,11 @@ repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 		//Has texture but no UV coordinates, attempt to fabricate some
 		std::vector<repo_vector2d_t> channelVector;
 
-		repo_vector_t bboxSize = { fabs(maxVertex.x - minVertex.x), fabs(maxVertex.y - minVertex.y), fabs(maxVertex.z - minVertex.z) };
+		repo_vector_t bboxSize = { fabsf(maxVertex.x - minVertex.x), fabsf(maxVertex.y - minVertex.y), fabsf(maxVertex.z - minVertex.z) };
 
 		for (const auto & v: vertices)
 		{
-			repo_vector_t dVector = { fabs(v.x - minVertex.x), fabs(v.y - minVertex.y), fabs(v.z - minVertex.z) };
+			repo_vector_t dVector = { fabsf(v.x - minVertex.x), fabsf(v.y - minVertex.y), fabsf(v.z - minVertex.z) };
 			channelVector.push_back({ dVector.x / bboxSize.x, dVector.y / bboxSize.y });
 		}
 		uvChannels.push_back(channelVector);
