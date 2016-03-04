@@ -96,6 +96,8 @@ std::string AssimpModelImport::getSupportedFormats()
 uint32_t AssimpModelImport::composeAssimpPostProcessingFlags(
 	uint32_t flag)
 {
+
+
 	if (settings->getCalculateTangentSpace())
 		flag |= aiProcess_CalcTangentSpace;
 
@@ -159,7 +161,10 @@ uint32_t AssimpModelImport::composeAssimpPostProcessingFlags(
 		flag |= aiProcess_TransformUVCoords;
 
 	if (settings->getPreTransformVertices())
+	{
+		repoWarning << "PretransformVertices flag is set. If you want to generate multipart stash disable this flag as it has been migrated to RepoBouncer.";
 		flag |= aiProcess_PreTransformVertices;
+	}
 
 	// Normalize
 
