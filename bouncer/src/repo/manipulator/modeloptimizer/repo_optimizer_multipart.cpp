@@ -103,7 +103,6 @@ bool MultipartOptimizer::collectMeshData(
 				//this node is in the grouping, add it into the data buffers
 				repo_mesh_mapping_t meshMap;
 				meshMap.material_id = getMaterialID(scene, &transformedMesh);
-				repoTrace << "Material ID is: " << UUIDtoString(meshMap.material_id);
 				meshMap.mesh_id = meshUniqueID;
 				auto bbox = transformedMesh.getBoundingBox();
 				if (bbox.size() >= 2)
@@ -205,8 +204,7 @@ repo::core::model::MeshNode* MultipartOptimizer::createSuperMesh(
 	bool success = collectMeshData(scene, scene->getRoot(defaultGraph), meshGroup, identity,
 		vertices, normals, faces, uvChannels, colors, meshMapping);
 
-	repoTrace << "mesh mapping: " << meshMapping.size();
-	
+
 	if (success && meshMapping.size())
 	{
 		//workout bbox and outline from meshMapping
@@ -295,7 +293,6 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 
 		if (success)
 		{
-			repoTrace << "matNodes: " << matNodes.size();
 			//fill Material nodeset
 			for (const auto &matPair : matNodes)
 			{
@@ -308,8 +305,6 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 				//create new instance to avoid X contamination
 				textures.insert(new repo::core::model::TextureNode(*texture));
 			}
-
-			repoTrace << " mergedMeshes : " << mergedMeshes.size() << " materials: " << materials.size() << " textures: " << textures.size() << " trans: " << trans.size();
 
 			scene->addStashGraph(dummy, mergedMeshes, materials, textures, trans);
 		}
@@ -393,7 +388,6 @@ bool MultipartOptimizer::processMeshGroup(
 	bool success = false;
 	std::set<repoUUID> matIDs;
 	auto sMesh = createSuperMesh(scene, meshes, matIDs);
-	repoTrace << "mat IDs: " << matIDs.size();
 	if (success = sMesh)
 	{
 		auto sMeshWithParent = sMesh->cloneAndAddParent({ rootID });
@@ -442,7 +436,6 @@ void MultipartOptimizer::sortMeshes(
 	for (const auto &node : meshes)
 	{
 		auto mesh = (repo::core::model::MeshNode*) node;
-		repoTrace << " faces: " << mesh->getFaces().size();
 		/**
 		* 1 - figure out it's mFormat (what buffers does it have)
 		* 2 - check if it has texture
