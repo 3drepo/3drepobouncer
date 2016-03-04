@@ -108,7 +108,7 @@ bool MultipartOptimizer::collectMeshData(
 				if (bbox.size() >= 2)
 				{
 					meshMap.min = bbox[0];
-					meshMap.min = bbox[1];
+					meshMap.max = bbox[1];
 				}
 
 				std::vector<repo_vector_t> submVertices = transformedMesh.getVertices();
