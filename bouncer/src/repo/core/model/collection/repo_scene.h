@@ -246,6 +246,15 @@ namespace repo{
 					}
 
 					/**
+					* Get stash extension for this project
+					* @return returns the src extension
+					*/
+					std::string getStashExtension() const
+					{
+						return stashExt;
+					}
+
+					/**
 					* Get raw extension for this project
 					* @return returns the raw extension 
 					*/

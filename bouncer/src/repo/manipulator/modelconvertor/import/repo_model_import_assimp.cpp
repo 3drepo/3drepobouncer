@@ -96,6 +96,8 @@ std::string AssimpModelImport::getSupportedFormats()
 uint32_t AssimpModelImport::composeAssimpPostProcessingFlags(
 	uint32_t flag)
 {
+
+
 	if (settings->getCalculateTangentSpace())
 		flag |= aiProcess_CalcTangentSpace;
 
@@ -159,7 +161,10 @@ uint32_t AssimpModelImport::composeAssimpPostProcessingFlags(
 		flag |= aiProcess_TransformUVCoords;
 
 	if (settings->getPreTransformVertices())
+	{
+		repoWarning << "PretransformVertices flag is set. If you want to generate multipart stash disable this flag as it has been migrated to RepoBouncer.";
 		flag |= aiProcess_PreTransformVertices;
+	}
 
 	// Normalize
 
@@ -359,7 +364,8 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 	const aiMesh *assimpMesh,
 	const std::vector<repo::core::model::RepoNode *> &materials,
-	std::unordered_map < repo::core::model::RepoNode*, std::vector<repoUUID>> &matMap)
+	std::unordered_map < repo::core::model::RepoNode*, std::vector<repoUUID>> &matMap,
+	const bool hasTexture)
 {
 
 	repo::core::model::MeshNode *meshNode = 0;
@@ -464,6 +470,21 @@ repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 		}
 		uvChannels.push_back(channelVector);
 
+	}
+	else if (hasTexture)
+	{
+		
+		//Has texture but no UV coordinates, attempt to fabricate some
+		std::vector<repo_vector2d_t> channelVector;
+
+		repo_vector_t bboxSize = { fabsf(maxVertex.x - minVertex.x), fabsf(maxVertex.y - minVertex.y), fabsf(maxVertex.z - minVertex.z) };
+
+		for (const auto & v: vertices)
+		{
+			repo_vector_t dVector = { fabsf(v.x - minVertex.x), fabsf(v.y - minVertex.y), fabsf(v.z - minVertex.z) };
+			channelVector.push_back({ dVector.x / bboxSize.x, dVector.y / bboxSize.y });
+		}
+		uvChannels.push_back(channelVector);
 	}
 
 	// Consider only first color set
@@ -622,7 +643,7 @@ const std::vector<repoUUID>						             &parent
 	if (assimpNode){
 		std::string transName(assimpNode->mName.data);
 		if(count % 1000 == 0)
-			repoInfo << "Constructing transName: " << transName << " (" << count << " of ???)";
+			repoInfo << "Constructing transformation #" << count;
 
 		//create a 4 by 4 vector
 		std::vector < std::vector<float> > transMat;
@@ -885,10 +906,13 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 				{
 					repoInfo << "Constructing " << i << " of " << assimpScene->mNumMeshes;
 				}
+
+
+				int numTextures = assimpScene->mMaterials[assimpScene->mMeshes[i]->mMaterialIndex]->GetTextureCount(aiTextureType_DIFFUSE);
 				repo::core::model::RepoNode* mesh = createMeshRepoNode(
 					assimpScene->mMeshes[i],
 					originalOrderMaterial,
-					matParents);
+					matParents, numTextures > 0);
 
 				if (!mesh)
 					repoError << "Unable to construct mesh node in Assimp Model Convertor!";
@@ -1007,31 +1031,32 @@ repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 
 	//This will generate the non optimised scene
 	repoTrace << "Converting AiScene to repoScene";
+	importer.ApplyPostProcessing(composeAssimpPostProcessingFlags());
 	scene = convertAiSceneToRepoScene(orgMap);
 
-	if (scene)
-	{
-		// Assign the unoptimized node map, and start optimization
-		importer.ApplyPostProcessing(composeAssimpPostProcessingFlags());
+	//if (scene)
+	//{
+	//	// Assign the unoptimized node map, and start optimization
+	//	
 
-		//This will generate the optimised scene graph and put it in the RepoScene referenced
-		repoTrace << "Converting AiScene to Optimised RepoScene";
-		convertAiSceneToRepoScene(optMap, scene);
+	//	//This will generate the optimised scene graph and put it in the RepoScene referenced
+	//	repoTrace << "Converting AiScene to Optimised RepoScene";
+	//	convertAiSceneToRepoScene(optMap, scene);
 
-		repo::core::model::RepoNode *stashRoot =  scene->getRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED);
+	//	repo::core::model::RepoNode *stashRoot =  scene->getRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED);
 
-		if (!populateOptimMaps(stashRoot, scene, orgMap, optMap))
-		{
-			//populateOptimMaps is false so stash is invalid. clear it out.
-			repoError << "Stash invalid ... clearing.";
-			scene->clearStash();
-		}
+	//	if (!populateOptimMaps(stashRoot, scene, orgMap, optMap))
+	//	{
+	//		//populateOptimMaps is false so stash is invalid. clear it out.
+	//		repoError << "Stash invalid ... clearing.";
+	//		scene->clearStash();
+	//	}
 
-	}
-	else
-	{
-		repoError << "Failed to construct default graph scene.";
-	}
+	//}
+	//else
+	//{
+	//	repoError << "Failed to construct default graph scene.";
+	//}
 
 
 	return scene;

@@ -429,6 +429,34 @@ static std::vector<float> invertMat(const std::vector<float> &mat)
 	return result;
 }
 
+static std::vector<float> matMult(const std::vector<float> &mat1, const std::vector<float> &mat2)
+{
+	std::vector<float> result;
+	if (mat1.size() != mat2.size() != 16)
+	{
+		result.resize(16);
+
+		for (int i = 0; i < 4; ++i)
+		{
+			for (int j = 0; j < 4; ++j)
+			{
+				size_t resultIdx = i * 4 + j;
+				result[resultIdx] = 0;
+				for (int k = 0; k < 4; ++k)
+				{
+					result[resultIdx] += mat1[i * 4 + k] * mat2[k * 4 + j];
+				}
+			}
+		}
+	}
+	else
+	{
+		repoError << "We currently only support 4x4 matrix multiplications";
+	}
+
+	return result;
+}
+
 static std::vector<float> transposeMat(const std::vector<float> &mat)
 {
 	std::vector<float> result(mat.begin(), mat.end());

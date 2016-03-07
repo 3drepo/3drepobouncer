@@ -45,12 +45,13 @@ bool TransformationReductionOptimizer::apply(repo::core::model::RepoScene *scene
 		size_t count = 0;
 		size_t total = meshes.size();
 		size_t transNodes_pre = scene->getAllTransformations(gType).size();
+		size_t step = total / 10;
+		if (!step) step = total; //avoid modulo of 0;
 		for (repo::core::model::RepoNode *node : meshes)
-		{
-			++count;
-			if (count % 100 == 0)
+		{			
+			if ( ++count % step == 0)
 			{
-				repoTrace << "Optimizer : processed " << count << " of " << total;
+				repoInfo << "Optimizer : processed " << count << " of " << total << " meshes";
 			}
 			if (node && node->getTypeAsEnum() == repo::core::model::NodeType::MESH)
 			{
@@ -74,7 +75,7 @@ bool TransformationReductionOptimizer::apply(repo::core::model::RepoScene *scene
 			++count;
 			if (count % 100 == 0)
 			{
-				repoTrace << "Optimizer : processed " << count << " of " << total;
+				repoInfo << "Optimizer : processed " << count << " of " << total << " cameras";
 			}
 			if (node && node->getTypeAsEnum() == repo::core::model::NodeType::CAMERA)
 			{

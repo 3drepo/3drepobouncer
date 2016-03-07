@@ -87,6 +87,15 @@ namespace repo {
 
 
 					/**
+					* Returns a number, indicating it's mesh format
+					* maximum of 32 bit, each bit represent the presents of the following
+					*  vertices faces normals colors #uvs
+					* where vertices is the LSB
+					* @return returns the mFormat flag
+					*/
+					uint32_t getMFormat() const;
+
+					/**
 					* Check if the node is position dependant.
 					* i.e. if parent transformation is merged onto the node,
 					* does the node requre to a transformation applied to it

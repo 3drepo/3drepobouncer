@@ -719,6 +719,19 @@ public:
         *	------------- Optimizations --------------
         */
 
+	/**
+	* Generate and commit stash graph (multipart viewing graph)
+	* The generated graph will be added into the scene provided
+	* also commited to the database/project set within the scene
+	* @param token database token
+	* @param scene scene to optimise
+	* @param return true upon success
+	*/
+	bool generateAndCommitStashGraph(
+		const RepoToken              *token,
+		repo::core::model::RepoScene* scene
+		);
+
     /**
         * Reduce redundant transformations from the scene
         * to optimise the graph
