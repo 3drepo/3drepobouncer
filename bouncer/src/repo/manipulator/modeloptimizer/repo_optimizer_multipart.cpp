@@ -404,7 +404,7 @@ repo::core::model::MeshNode* MultipartOptimizer::createSuperMesh(
 	std::vector<repo_color4d_t> colors;
 	std::vector<repo_mesh_mapping_t> meshMapping;
 
-	repo::core::model::MeshNode* resultMesh;
+	repo::core::model::MeshNode* resultMesh = nullptr;
 
 	std::vector<float> identity = { 1, 0, 0, 0,
 		0, 1, 0, 0,
