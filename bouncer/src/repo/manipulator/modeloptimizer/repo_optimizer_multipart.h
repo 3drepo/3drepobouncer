@@ -24,6 +24,8 @@
 #include "repo_optimizer_abstract.h"
 #include "../../core/model/collection/repo_scene.h"
 
+#define REPO_MP_TEXTURE_WORK_AROUND
+
 namespace repo {
 	namespace manipulator {
 		namespace modeloptimizer {
@@ -63,6 +65,20 @@ namespace repo {
 				* @param colors colors collected
 				* @param meshMapping meshMapping for this superMesh
 				*/
+#ifdef REPO_MP_TEXTURE_WORK_AROUND
+				bool collectMeshData(
+					const repo::core::model::RepoScene        *scene,
+					const repo::core::model::RepoNode         *node,
+					const std::set<repoUUID>                  &meshGroup,
+					std::vector<float>                        &mat,
+					std::vector<std::vector<repo_vector_t>>                &vertices,
+					std::vector<std::vector<repo_vector_t>>               &normals,
+					std::vector<std::vector<repo_face_t>>                &faces,
+					std::vector<std::vector<std::vector<repo_vector2d_t>>> &uvChannels,
+					std::vector<std::vector<repo_color4d_t>>               &colors,
+					std::vector<std::vector<repo_mesh_mapping_t>>          &meshMapping
+					);
+#endif
 				bool collectMeshData(
 					const repo::core::model::RepoScene        *scene,
 					const repo::core::model::RepoNode         *node,
@@ -84,10 +100,18 @@ namespace repo {
 				* @param matIDs the unique IDs f materials required by this mesh
 				* @return returns a pointer to a newly created merged mesh
 				*/
-				repo::core::model::MeshNode *createSuperMesh(
+#ifdef REPO_MP_TEXTURE_WORK_AROUND
+				std::vector<repo::core::model::MeshNode*>createSuperMesh(
+					const repo::core::model::RepoScene *scene,
+					const std::set<repoUUID>           &meshGroup,
+					std::set<repoUUID>                 &matIDs,
+					const bool                         &texture);
+#endif
+				repo::core::model::MeshNode* createSuperMesh(
 					const repo::core::model::RepoScene *scene,
 					const std::set<repoUUID>           &meshGroup,
 					std::set<repoUUID>                 &matIDs);
+
 				/**
 				* Generate the multipart scene 
 				* @param scene scene to base on, this will also be modified to store the stash graph
@@ -135,13 +159,22 @@ namespace repo {
 				* @param mergedMeshes add newly created meshes into this set
 				* @param matNodes contains already processed materials
 				*/
+#ifdef REPO_MP_TEXTURE_WORK_AROUND
 				bool processMeshGroup(
 					const repo::core::model::RepoScene                                         *scene,
 					const std::set<repoUUID>							                       & meshes,
 					const repoUUID                                                             &rootID,
 					repo::core::model::RepoNodeSet                                             &mergedMeshes,
-					std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> &matNodes
+					std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> &matNodes,
+					const bool                                                                 &texture
 					);
+#endif
+				bool processMeshGroup(
+					const repo::core::model::RepoScene                                         *scene,
+					const std::set<repoUUID>							                       & meshes,
+					const repoUUID                                                             &rootID,
+					repo::core::model::RepoNodeSet                                             &mergedMeshes,
+					std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> &matNodes);
 
 				/**
 				* Sort the given RepoNodeSet of meshes for multipart merging
