@@ -23,6 +23,7 @@
 #include "../../../lib/repo_log.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "auxiliary/repo_model_export_x3d_gltf.h"
+#include "auxiliary/x3dom_constants.h"
 
 #include <cmath>
 
@@ -31,7 +32,7 @@ using namespace repo::manipulator::modelconvertor;
 const static int lodLimit = 15; //Hack to test pop buffers, i should not be committing this!
 
 const static size_t GLTF_MAX_VERTEX_LIMIT = 65535;
-#define DEBUG //FIXME: to remove
+//#define DEBUG //FIXME: to remove
 //#define LODLIMIT
 
 static const std::string GLTF_LABEL_ACCESSORS       = "accessors";
@@ -186,6 +187,7 @@ static const std::vector<float> REPO_GLTF_DEFAULT_SPECULAR           = { 0, 0, 0
 
 static const std::string REPO_GLTF_LABEL_REF_ID = "refID";
 static const std::string REPO_GLTF_LABEL_LOD    = "lodRef";
+static const std::string REPO_LABEL_X3D_MATERIAL = "x3dmaterial";
 
 
 
@@ -270,19 +272,25 @@ void GLTFModelExport::addAccessors(
 	const size_t                   &offset)
 {
 	std::vector<float> min, max;
-
-	if (data.size() >= addrFrom)
+	size_t offsetIdx = addrFrom - offset;
+	if (data.size() >= (addrTo - addrFrom) + offsetIdx)
 	{
-		min.push_back(data[addrFrom]);
-		max.push_back(data[addrFrom]);
+		//This is idmapbuff accessor, it's already offseted to the submesh
+		min.push_back(data[offsetIdx]);
+		max.push_back(data[offsetIdx]);
 	}
-	for (size_t i = addrFrom + 1; i < addrTo; ++i)
+	else
+	{
+		repoError << "Failed to add accessor for " << accName << " #data (" << data.size()<<") does not match it's range ("<<addrFrom<<","<<addrTo<<" ,"<<offset<<")!";
+		return;
+	}
+	for (size_t i = offsetIdx + 1; i < addrTo - addrFrom; ++i)
 	{
 		if (min[0] > data[i]) min[0] = data[i];
 		if (max[0] < data[i]) max[0] = data[i];
 	}
 	addAccessors(accName, buffViewName, tree, addrTo - addrFrom,
-		(addrFrom - offset) * sizeof(*data.data()), 0, GLTF_COMP_TYPE_FLOAT,
+		(addrFrom - offset) * sizeof(*data.data()), sizeof(*data.data()), GLTF_COMP_TYPE_FLOAT,
 		GLTF_TYPE_SCALAR, min, max, refId);
 }
 
@@ -750,7 +758,6 @@ void GLTFModelExport::populateWithMaterials(
 		std::string valuesLabel = matLabel + "." + GLTF_LABEL_VALUES;
 		if (matStruct.ambient.size())
 		{
-			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + ".x3dmaterial." + GLTF_LABEL_AMBIENT, matStruct.ambient);
 			//default technique takes on a 4d vector, we store 3d vectors
 			matStruct.ambient.push_back(1);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_AMBIENT, matStruct.ambient);
@@ -765,7 +772,9 @@ void GLTFModelExport::populateWithMaterials(
 		}
 		else if (matStruct.diffuse.size())
 		{
-			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + ".x3dmaterial." + GLTF_LABEL_DIFFUSE, matStruct.diffuse);
+			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_COL_DIFFUSE, matStruct.diffuse, false);
+			if (matStruct.isTwoSided)
+				tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_COL_BK_DIFFUSE, matStruct.diffuse, false);
 			//default technique takes on a 4d vector, we store 3d vectors
 			matStruct.diffuse.push_back(1);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_DIFFUSE, matStruct.diffuse);
@@ -773,14 +782,18 @@ void GLTFModelExport::populateWithMaterials(
 
 		if (matStruct.emissive.size())
 		{
-			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + ".x3dmaterial." + GLTF_LABEL_EMISSIVE, matStruct.emissive);
+			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_COL_EMISSIVE, matStruct.emissive, false);
+			if (matStruct.isTwoSided)
+				tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_COL_BK_DIFFUSE, matStruct.emissive, false);
 			//default technique takes on a 4d vector, we store 3d vectors
 			matStruct.emissive.push_back(1);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_EMISSIVE, matStruct.emissive);
 		}
 		if (matStruct.specular.size())
 		{
-			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + ".x3dmaterial." + GLTF_LABEL_SPECULAR, matStruct.specular);
+			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_COL_SPECULAR, matStruct.specular, false);
+			if(matStruct.isTwoSided)
+				tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_COL_BK_SPECULAR, matStruct.specular, false);
 			//default technique takes on a 4d vector, we store 3d vectors
 			matStruct.specular.push_back(1);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_SPECULAR, matStruct.specular);
@@ -788,12 +801,19 @@ void GLTFModelExport::populateWithMaterials(
 
 		if (matStruct.shininess == matStruct.shininess)
 		{
+			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_SHININESS, matStruct.shininess);
+			if (matStruct.isTwoSided)
+				tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "" + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_BK_SHININESS, matStruct.shininess);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_SHININESS, matStruct.shininess);
 		}
 
 		if (matStruct.opacity == matStruct.opacity)
 		{
-			tree.addToTree(valuesLabel + "." + GLTF_LABEL_TRANSPARENCY, 1.0 - matStruct.opacity);
+			float transparency = 1.0 - matStruct.opacity;
+			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_TRANSPARENCY, transparency);
+			if (matStruct.isTwoSided)
+				tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_BK_TRANSPARENCY, transparency);
+			tree.addToTree(valuesLabel + "." + GLTF_LABEL_TRANSPARENCY, transparency);
 		}
 
 		if (matStruct.isTwoSided)
@@ -999,10 +1019,10 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 						for (uint32_t iUV = 0; iUV < UVs.size(); ++iUV)
 						{
 							std::string accessorName = subMeshName + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(iUV);
-							std::string uvBufferName = meshUUID + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(iUV);
+							std::string uvBufferName = meshId + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(iUV);
 							primitives.back().addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_TEXCOORD + "_" + std::to_string(iUV),
 								GLTF_PREFIX_ACCESSORS + "_" + accessorName);							
-							addAccessors(accessorName, posBufferName, tree, UVs[iUV], meshMap.vertFrom, meshMap.vertTo, subMeshID, subMeshOffset_v);
+							addAccessors(accessorName, uvBufferName, tree, UVs[iUV], meshMap.vertFrom, meshMap.vertTo, subMeshID, subMeshOffset_v);
 						}
 					}
 					primitives.back().addToTree(GLTF_LABEL_EXTRA + "." + REPO_GLTF_LABEL_REF_ID, subMeshID);
@@ -1133,7 +1153,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 #else
 					size_t triTo =  faces.size();
 #endif
-					addAccessors(bufferName, bufferName, tree, sFaces, 0, faces.size(), meshId);
+					addAccessors(bufferName, faceBufferName, tree, sFaces, 0, faces.size(), meshId);
 				}
 
 				//attributes
@@ -1142,14 +1162,14 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 				{
 					std::string bufferName = meshId + "_" + GLTF_SUFFIX_NORMALS;
 					primitives[0].addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_NORMAL, GLTF_PREFIX_ACCESSORS + "_" + bufferName);
-					addAccessors(bufferName, bufferName, tree, normals, 0, normals.size(), meshId);
+					addAccessors(bufferName, normBufferName, tree, normals, 0, normals.size(), meshId);
 				}
 				auto vertices = node->getVertices();
 				if (vertices.size())
 				{
 					std::string bufferName = meshId + "_" + GLTF_SUFFIX_POSITION;
 					primitives[0].addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_POSITION, GLTF_PREFIX_ACCESSORS + "_" + bufferName);
-					addAccessors(bufferName, bufferName, tree, vertices, 0, vertices.size(), meshId);
+					addAccessors(bufferName, posBufferName, tree, vertices, 0, vertices.size(), meshId);
 				}
 
 				auto UVs = node->getUVChannelsSeparated();
@@ -1456,7 +1476,7 @@ void GLTFModelExport::writeDefaultTechnique(
 	tree.addToTree(attriLabel + ".a_texcoord0", "texcoord0");
 
 	const std::string extraLabel = label + "." + GLTF_LABEL_EXTRA;
-	tree.addToTree(extraLabel + ".varyings.v_normal", GLTF_COMP_TYPE_FLOAT_MAT4);
+	tree.addToTree(extraLabel + ".varyings.v_normal." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT_VEC3);
 
 	//========== DEFAULT PROGRAM =========
 	const std::string programLabel = GLTF_LABEL_PROGRAMS + "." + REPO_GLTF_DEFAULT_PROGRAM;
