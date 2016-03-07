@@ -26,6 +26,7 @@ using namespace repo::manipulator::modeloptimizer;
 
 auto defaultGraph = repo::core::model::RepoScene::GraphType::DEFAULT;
 
+#define REPO_MP_TEXTURE_WORK_AROUND
 static const size_t  REPO_MP_MAX_FACE_COUNT = 500000;
 
 MultipartOptimizer::MultipartOptimizer() : 
@@ -223,13 +224,13 @@ repo::core::model::MeshNode* MultipartOptimizer::createSuperMesh(
 			if (bbox[0].z > meshMapping[i].min.z)
 				bbox[0].z = meshMapping[i].min.z;
 
-			if (bbox[1].x > meshMapping[i].max.x)
+			if (bbox[1].x < meshMapping[i].max.x)
 				bbox[1].x = meshMapping[i].max.x;
-			if (bbox[1].y > meshMapping[i].max.y)
+			if (bbox[1].y < meshMapping[i].max.y)
 				bbox[1].y = meshMapping[i].max.y;
-			if (bbox[1].z > meshMapping[i].max.z)
+			if (bbox[1].z < meshMapping[i].max.z)
 				bbox[1].z = meshMapping[i].max.z;
-
+			
 			matIDs.insert(meshMapping[i].material_id);
 		}
 
@@ -460,8 +461,20 @@ void MultipartOptimizer::sortMeshes(
 				texturedMeshes[mFormat] = std::unordered_map<repoUUID, std::vector<std::set<repoUUID>>, RepoUUIDHasher>();
 				texturedFCount[mFormat] = std::unordered_map<repoUUID, size_t, RepoUUIDHasher>();
 			}
-
 			auto it2 = texturedMeshes[mFormat].find(texID);
+#ifdef REPO_MP_TEXTURE_WORK_AROUND
+			//TODO: Texture meshes are kept as separate meshes to workaround the shortcomings of the current multipart
+			//implementation. This needs to be removed and the server needs to support multipart models with textures
+
+			if (it2 == texturedMeshes[mFormat].end())
+			{
+				texturedMeshes[mFormat][texID] = std::vector<std::set<repoUUID>>();
+			}
+			std::set<repoUUID> singleMeshSet;
+			singleMeshSet.insert(mesh->getUniqueID());
+			texturedMeshes[mFormat][texID].push_back(singleMeshSet);
+
+#else
 			if (it2 == texturedMeshes[mFormat].end())
 			{
 				texturedMeshes[mFormat][texID] = std::vector<std::set<repoUUID>>();
@@ -478,6 +491,8 @@ void MultipartOptimizer::sortMeshes(
 			}
 			texturedMeshes[mFormat][texID].back().insert(mesh->getUniqueID());
 			texturedFCount[mFormat][texID] += mesh->getFaces().size();
+#endif
+			
 		}
 		else
 		{

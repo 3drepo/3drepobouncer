@@ -43,12 +43,13 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 	const std::vector<float> &matrix) const
 {
 	std::vector<repo_vector_t> vertices = getVertices();
+	std::vector<repo_vector_t> normals = getNormals();
 
 
 	RepoBSONBuilder builder;
 
 	if (vertices.size())
-	{ 
+	{
 		std::vector<repo_vector_t> resultVertice;
 		resultVertice.reserve(vertices.size());
 		for (const repo_vector_t &v : vertices)
@@ -62,6 +63,45 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 	{
 		repoError << "Unable to apply transformation: Cannot find vertices within a mesh!";
 	}
+
+	if (normals.size())
+	{
+		auto matInverse = invertMat(matrix);
+		auto worldMat = transposeMat(matInverse);
+
+		std::vector<repo_vector_t> resultNormals;
+		resultNormals.reserve(normals.size());
+		for (const repo_vector_t &v : normals)
+		{
+			auto transformedNormal = multiplyMatVecFake3x3(worldMat, v);
+			normalize(transformedNormal);
+			resultNormals.push_back(transformedNormal);
+		}
+
+		builder.appendBinary(REPO_NODE_MESH_LABEL_NORMALS, resultNormals.data(), resultNormals.size() * sizeof(repo_vector_t));
+	}
+
+	std::vector<repo_vector_t> newBbox;
+	std::vector<repo_vector_t> bbox = getBoundingBox();
+	RepoBSONBuilder arrayBuilder, outlineBuilder;
+	for (size_t i = 0; i < bbox.size(); ++i)
+	{
+		newBbox.push_back(multiplyMatVec(matrix, bbox[i]));
+		std::vector<float> boundVec = { newBbox.back().x, newBbox.back().y, newBbox.back().z };
+		arrayBuilder.appendArray(std::to_string(i), boundVec);
+
+	}
+	builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, arrayBuilder.obj());
+
+	std::vector<float> outline0 = { newBbox[0].x, newBbox[0].y };
+	std::vector<float> outline1 = { newBbox[1].x, newBbox[0].y };
+	std::vector<float> outline2 = { newBbox[1].x, newBbox[1].y };
+	std::vector<float> outline3 = { newBbox[0].x, newBbox[1].y };
+	outlineBuilder.appendArray("0", outline0);
+	outlineBuilder.appendArray("1", outline1);
+	outlineBuilder.appendArray("2", outline2);
+	outlineBuilder.appendArray("3", outline3);
+	builder.appendArray(REPO_NODE_MESH_LABEL_OUTLINE, outlineBuilder.obj());
 
 	return MeshNode(builder.appendElementsUnique(*this));
 }
