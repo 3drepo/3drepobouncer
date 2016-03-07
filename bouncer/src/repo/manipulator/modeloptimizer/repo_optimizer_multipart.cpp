@@ -770,8 +770,9 @@ void MultipartOptimizer::sortMeshes(
 		else
 		{
 			//no mesh, check if it is transparent
-			auto &meshMap = isTransparent(scene, mesh) ? transparentMeshes : normalMeshes;
-			auto &meshFCount = isTransparent(scene, mesh) ? transparentFCount : normalFCount;
+			const bool istransParentMesh = isTransparent(scene, mesh);
+			auto &meshMap = istransParentMesh ? transparentMeshes : normalMeshes;
+			auto &meshFCount = istransParentMesh ? transparentFCount : normalFCount;
 			auto it = meshMap.find(mFormat);
 			if (it == meshMap.end())
 			{
