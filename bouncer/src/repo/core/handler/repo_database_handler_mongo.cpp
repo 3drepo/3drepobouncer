@@ -975,8 +975,6 @@ bool MongoDatabaseHandler::performRoleCmd(
 				auto cmd = cmdBuilder.obj();
 				success = worker->runCommand(role.getDatabase(), cmd, info);
 
-				repoTrace << "Role command : " << cmd;
-
 				std::string cmdError = info.getStringField("errmsg");
 				if (!cmdError.empty())
 				{

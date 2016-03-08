@@ -640,6 +640,27 @@ void RepoController::removeDocument(
 
 }
 
+bool RepoController::removeProject(
+	const RepoToken                          *token,
+	const std::string                        &databaseName,
+	const std::string                        &projectName,
+	std::string								 &errMsg)
+{
+	bool result = false;
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		result = worker->removeProject(token->databaseAd,
+			token->credentials, databaseName, projectName, errMsg);
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Trying to delete a document without a database connection!";
+	}
+	return result; 
+}
+
 void RepoController::removeRole(
         const RepoToken                          *token,
         const repo::core::model::RepoRole        &role)

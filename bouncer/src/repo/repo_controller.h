@@ -486,6 +486,24 @@ public:
             const std::string                        &collectionName,
             const repo::core::model::RepoBSON  &bson);
 
+	/**
+	* Remove a project from the database
+	* This removes:
+	*   1. all collections associated with the project,
+	*   2. the project entry within project settings
+	*   3. all privileges assigned to any roles, related to this project
+	* @param token Authentication token
+	* @param database name of the datbase
+	* @param name of the project
+	* @param errMsg error message if the operation fails
+	* @return returns true upon success
+	*/
+	bool removeProject(
+		const RepoToken                          *token,
+		const std::string                        &databaseName,
+		const std::string                        &projectName,
+		std::string								 &errMsg);
+
     void removeProjectSettings(
             const RepoToken *token,
             const std::string &database,

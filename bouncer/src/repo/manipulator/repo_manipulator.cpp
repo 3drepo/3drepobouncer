@@ -990,6 +990,68 @@ void RepoManipulator::removeDocument(
 
 }
 
+bool RepoManipulator::removeProject(
+	const std::string                        &databaseAd,
+	const repo::core::model::RepoBSON        *cred,
+	const std::string                        &databaseName,
+	const std::string                        &projectName,
+	std::string								 &errMsg
+	)
+{
+	bool success = true;
+	//Remove entry from project settings
+	repo::core::model::RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
+	removeDocument(databaseAd, cred, databaseName, REPO_COLLECTION_SETTINGS, criteria);
+
+
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+
+	//Remove all the collections
+	for (const auto &ext : repo::core::model::RepoScene::getProjectExtensions())
+	{
+		std::string collectionName = projectName + "." + ext;
+		bool droppedCol = dropCollection(databaseAd, cred, databaseName, collectionName, errMsg);
+		//if drop collection failed with no errMsg = failed because the collection didn't exist  should be considered as a success
+		if (!(!droppedCol && errMsg.empty()))
+		{		
+			success &= droppedCol;
+		}
+
+
+		//find all roles with a privilege of this collection and remove it
+		repo::core::model::RepoBSON privCriteria = BSON("privileges" << 
+			BSON("$elemMatch" << 
+						BSON("resource" << BSON("db" << databaseName << "collection" << collectionName))
+			)
+			);
+
+		//FIXME: should get this from handler to ensure it's correct for non mongo databases (future proof)
+		auto results = handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_ROLES, privCriteria);
+
+		for (const auto &roleBSON : results)
+		{
+			repo::core::model::RepoRole role = repo::core::model::RepoRole(roleBSON);
+			auto privilegesMap = role.getPrivilegesMapped();
+			privilegesMap.erase(databaseName + "." + collectionName);
+
+			std::vector<repo::core::model::RepoPrivilege> privilegesUpdated;
+			boost::copy(
+				privilegesMap | boost::adaptors::map_values,
+				std::back_inserter(privilegesUpdated));
+			role = role.cloneAndUpdatePrivileges(privilegesUpdated); 
+
+			success &= handler->updateRole(role, errMsg);
+
+
+		}
+		if (!success) break;
+	}
+		
+
+	return success;
+}
+
 void RepoManipulator::removeRole(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON*	  cred,
