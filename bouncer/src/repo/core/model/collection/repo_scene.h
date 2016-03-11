@@ -716,6 +716,13 @@ namespace repo{
 					}
 
 
+					/**
+					* Get a bounding box for the entire scene
+					* @return returns bounding box for the whole graph.
+					*/
+					std::vector<repo_vector_t> getSceneBoundingBox() const;
+
+
 					size_t getTotalNodesChanged() const
 					{
 						return newRemoved.size() + newAdded.size() + newModified.size();
@@ -943,6 +950,19 @@ namespace repo{
 					bool commitSceneChanges(
 						repo::core::handler::AbstractDatabaseHandler *handler,
 						std::string &errMsg);
+
+					/**
+					* Recursive function to find the scene's bounding box
+					* @param gtype type of graph to navigate
+					* @param node current node
+					* @param mat transformation matrix
+					* @param bbox boudning box (to return/update)
+					*/
+					void getSceneBoundingBoxInternal(
+						const GraphType            &gType,
+						const RepoNode             *node,
+						const std::vector<float>   &mat,
+						std::vector<repo_vector_t> &bbox) const;
 
 					/**
 					* populate the collections (cameras, meshes etc) with the given nodes

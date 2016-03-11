@@ -870,6 +870,83 @@ std::string RepoScene::getBranchName() const
 	return branchName;
 }
 
+std::vector<repo_vector_t> RepoScene::getSceneBoundingBox() const
+{
+	std::vector<repo_vector_t> bbox;
+	GraphType gType = stashGraph.rootNode ? GraphType::OPTIMIZED : GraphType::DEFAULT;
+	
+	std::vector<float> identity = {
+									1, 0, 0, 0,
+									0, 1, 0, 0, 
+									0, 0, 1, 0, 
+									0, 0, 0, 1, };
+
+	getSceneBoundingBoxInternal(gType, gType == GraphType::OPTIMIZED ? stashGraph.rootNode : graph.rootNode, identity ,bbox);
+	repoTrace << "Scene bounding box: {" << bbox[0].x << "," << bbox[0].y << "," << bbox[0].z << "}{" << bbox[1].x << "," << bbox[1].y << "," << bbox[1].z << "}";
+	return bbox;
+}
+
+void RepoScene::getSceneBoundingBoxInternal(
+	const GraphType            &gType,
+	const RepoNode             *node,
+	const std::vector<float>   &mat,
+	std::vector<repo_vector_t> &bbox) const
+{
+
+	if (node)
+	{
+		switch (node->getTypeAsEnum())
+		{
+		case NodeType::TRANSFORMATION:
+		{
+			const TransformationNode *trans = dynamic_cast<const TransformationNode*>(node);
+			auto matTransformed = matMult(mat, trans->getTransMatrix());
+			for (const auto & child : getChildrenAsNodes(gType, trans->getSharedID()))
+			{
+				getSceneBoundingBoxInternal(gType, child, matTransformed, bbox);
+			}
+			break;
+
+		}
+		case NodeType::MESH:
+			const MeshNode *mesh = dynamic_cast<const MeshNode*>(node);
+			auto mbbox = mesh->getBoundingBox();
+			std::vector<repo_vector_t> newmBBox;
+
+			for (size_t i = 0; i < mbbox.size(); ++i)
+			{
+				newmBBox.push_back(multiplyMatVec(mat, mbbox[i]));
+			}
+
+			if (bbox.size())
+			{
+				if (newmBBox[0].x < bbox[0].x)
+					bbox[0].x = newmBBox[0].x;
+				if (newmBBox[0].y < bbox[0].y)
+					bbox[0].y = newmBBox[0].y;
+				if (newmBBox[0].z < bbox[0].z)
+					bbox[0].z = newmBBox[0].z;
+
+				if (newmBBox[1].x > bbox[1].x)
+					bbox[1].x = newmBBox[1].x;
+				if (newmBBox[1].y > bbox[1].y)
+					bbox[1].y = newmBBox[1].y;
+				if (newmBBox[1].z > bbox[1].z)
+					bbox[1].z = newmBBox[1].z;
+			}
+			else
+			{
+				//no bbox yet
+				bbox.push_back(newmBBox[0]);
+				bbox.push_back(newmBBox[1]);
+			}
+
+			break;
+		}
+	}
+
+}
+
 std::string RepoScene::getTextureIDForMesh(
 	const GraphType &gType,
 	const repoUUID  &sharedID) const
