@@ -32,7 +32,7 @@
 
 namespace repo{
 	namespace manipulator{
-		namespace modelconvertor{
+		namespace modelconvertor{//x3d shader
 			class AssimpModelExport : public AbstractModelExport
 			{	
 			public:

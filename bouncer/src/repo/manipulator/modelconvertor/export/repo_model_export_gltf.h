@@ -65,7 +65,18 @@ namespace repo{
 					const uint32_t                 &addrFrom,
 					const uint32_t                 &addrTo,
 					const std::string              &refId = std::string(),
+					const std::vector<uint16_t>    &lod = std::vector<uint16_t>(),
 					const size_t                   &offset = 0);
+				
+				void addAccessors(
+					const std::string              &accName,
+					const std::string              &buffViewName,
+					repo::lib::PropertyTree        &tree,
+					const std::vector<float>       &data,
+					const uint32_t                 &addrFrom,
+					const uint32_t                 &addrTo,
+					const std::string              &refId,
+					const size_t                   &offset);
 
 				void addAccessors(
 					const std::string                  &accName,
@@ -111,7 +122,8 @@ namespace repo{
 					const std::string              &bufferType,
 					const std::vector<float>       &min,
 					const std::vector<float>       &max,
-					const std::string              &refId = std::string());
+					const std::string              &refId = std::string(),
+					const std::vector<uint16_t>    &lod = std::vector<uint16_t>());
 				
 				/**
 				* Add a buffer view into a buffer,
@@ -131,6 +143,15 @@ namespace repo{
 					const size_t                        &count,
 					const std::string                   &refId = std::string()
 					);
+
+				void addBufferView(
+					const std::string                   &name,
+					const std::string                   &fileName,
+					repo::lib::PropertyTree             &tree,
+					const std::vector<float>            &buffer,
+					const size_t                        &offset,
+					const size_t                        &count,
+					const std::string                   &refId);
 
 				void addBufferView(
 					const std::string                   &name,
@@ -285,6 +306,24 @@ namespace repo{
 					repo::lib::PropertyTree          &tree,
 					const std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> &subMeshCounts);
 		
+				std::vector<std::vector<std::vector<uint16_t>>> reorderFaces(
+					std::vector<uint16_t>                               &faces,
+					const std::vector<repo_vector_t>                    &vertices,
+					const std::vector<std::vector<repo_mesh_mapping_t>> &mapping);
+
+				/**
+				* Reorder a certain chunk of faces base on quantization
+				* @param faces faces array to reOrder
+				* @param vertices reference vertices
+				* @param mapping mapping detailing which chunk of face to reorder
+				* @return returns the reordered version of the faces
+				*/
+				std::vector<uint16_t> reorderFaces(
+					const std::vector<uint16_t>      &faces,
+					const std::vector<repo_vector_t> &vertices,
+					const repo_mesh_mapping_t        &mapping,
+					      std::vector<uint16_t>      &lods) const;
+
 				std::vector<uint16_t> serialiseFaces(
 					const std::vector<repo_face_t> &faces) const;
 
