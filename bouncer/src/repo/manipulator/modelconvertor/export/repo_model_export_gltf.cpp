@@ -927,7 +927,6 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 
 				idMapStart.push_back(addToDataBuffer(bufferFileName, idMapBuf[idMapBufIdx]));
 				offset += matMap[idMapBufIdx].size();
-				repoTrace << "offset = " << offset << " matMapSize: " << matMap[idMapBufIdx].size();
 			}
 
 			std::vector<size_t> uvStart;
