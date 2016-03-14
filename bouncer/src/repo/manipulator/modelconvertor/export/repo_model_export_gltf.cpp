@@ -23,10 +23,17 @@
 #include "../../../lib/repo_log.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "auxiliary/repo_model_export_x3d_gltf.h"
+#include "auxiliary/x3dom_constants.h"
+
+#include <cmath>
 
 using namespace repo::manipulator::modelconvertor;
 
+const static int lodLimit = 15; //Hack to test pop buffers, i should not be committing this!
+
 const static size_t GLTF_MAX_VERTEX_LIMIT = 65535;
+#define DEBUG //FIXME: to remove
+//#define LODLIMIT
 
 static const std::string GLTF_LABEL_ACCESSORS       = "accessors";
 static const std::string GLTF_LABEL_AMBIENT         = "ambient";
@@ -107,9 +114,11 @@ static const std::string GLTF_PREFIX_BUFFER_VIEWS = "bufv";
 static const std::string GLTF_PREFIX_TEXTURE      = "img";
 
 static const std::string GLTF_SUFFIX_FACES = "f";
+static const std::string GLTF_SUFFIX_IDMAP = "id";
 static const std::string GLTF_SUFFIX_NORMALS = "n";
 static const std::string GLTF_SUFFIX_POSITION = "p";
 static const std::string GLTF_SUFFIX_TEX_COORD = "uv";
+
 
 static const uint32_t GLTF_PRIM_TYPE_TRIANGLE             = 4;
 static const uint32_t GLTF_PRIM_TYPE_ARRAY_BUFFER         = 34962;
@@ -151,19 +160,34 @@ static const std::string GLTF_TYPE_VEC3            = "VEC3";
 
 static const std::string GLTF_VERSION = "1.0";
 
+static const std::string        REPO_GLTF_LABEL_IDMAP = "IDMAP";
+
 //Default shader properties
-static const std::string        REPO_GLTF_DEFAULT_PROGRAM         = "default_program";
-static const std::string        REPO_GLTF_DEFAULT_SAMPLER         = "default_sampler";
-static const std::string        REPO_GLTF_DEFAULT_SHADER_FRAG     = "default_fshader";
-static const std::string        REPO_GLTF_DEFAULT_SHADER_FRAG_URI = "/public/shader/gltfStockShaders/fragShader.glsl";
-static const std::string        REPO_GLTF_DEFAULT_SHADER_VERT     = "default_vshader";
-static const std::string        REPO_GLTF_DEFAULT_SHADER_VERT_URI = "/public/shader/gltfStockShaders/vertShader.glsl";
-static const std::string        REPO_GLTF_DEFAULT_TECHNIQUE       = "default_technique";
-static const float              REPO_GLTF_DEFAULT_SHININESS       = 50; 
-static const std::vector<float> REPO_GLTF_DEFAULT_SPECULAR        = { 0, 0, 0, 0 };
+static const std::string        REPO_GLTF_DEFAULT_PROGRAM            = "default_program";
+static const std::string        REPO_GLTF_DEFAULT_SAMPLER            = "default_sampler";
+static const std::string        REPO_GLTF_DEFAULT_SHADER_FRAG        = "default_fshader";
+#ifdef DEBUG
+static const std::string        REPO_GLTF_DEFAULT_SHADER_FRAG_URI    = "fragShader.glsl";
+static const std::string        REPO_GLTF_DEFAULT_X3DSHADER_FRAG_URI = "x3domFragShader.glsl";
+#else
+static const std::string        REPO_GLTF_DEFAULT_SHADER_FRAG_URI    = "/public/shader/gltfStockShaders/fragShader.glsl";
+static const std::string        REPO_GLTF_DEFAULT_X3DSHADER_FRAG_URI = "/public/shader/gltfStockShaders/x3domFragShader.glsl";
+#endif
+static const std::string        REPO_GLTF_DEFAULT_SHADER_VERT        = "default_vshader";
+#ifdef DEBUG
+static const std::string        REPO_GLTF_DEFAULT_SHADER_VERT_URI    = "vertShader.glsl";
+static const std::string        REPO_GLTF_DEFAULT_X3DSHADER_VERT_URI = "x3domVertShader.glsl";
+#else
+static const std::string        REPO_GLTF_DEFAULT_SHADER_VERT_URI    = "/public/shader/gltfStockShaders/vertShader.glsl";
+static const std::string        REPO_GLTF_DEFAULT_X3DSHADER_VERT_URI = "/public/shader/gltfStockShaders/x3domVertShader.glsl";
+#endif
+static const std::string        REPO_GLTF_DEFAULT_TECHNIQUE          = "default_technique";
+static const float              REPO_GLTF_DEFAULT_SHININESS          = 50; 
+static const std::vector<float> REPO_GLTF_DEFAULT_SPECULAR           = { 0, 0, 0, 0 };
 
 static const std::string REPO_GLTF_LABEL_REF_ID = "refID";
-
+static const std::string REPO_GLTF_LABEL_LOD    = "lodRef";
+static const std::string REPO_LABEL_X3D_MATERIAL = "x3dmaterial";
 
 
 
@@ -215,6 +239,7 @@ void GLTFModelExport::addAccessors(
 	const uint32_t                 &addrFrom,
 	const uint32_t                 &addrTo,
 	const std::string              &refId,
+	const std::vector<uint16_t>    &lod,
 	const size_t                   &offset)
 {
 	std::vector<float> min, max;
@@ -232,6 +257,40 @@ void GLTFModelExport::addAccessors(
 	}
 	addAccessors(accName, buffViewName, tree, endFaceIdx - startFaceIdx,
 		(startFaceIdx - offset*3) * sizeof(*faces.data()), 0, GLTF_COMP_TYPE_USHORT, 
+		GLTF_TYPE_SCALAR, min, max, refId, lod);
+}
+
+
+void GLTFModelExport::addAccessors(
+	const std::string              &accName,
+	const std::string              &buffViewName,
+	repo::lib::PropertyTree        &tree,
+	const std::vector<float>       &data,
+	const uint32_t                 &addrFrom,
+	const uint32_t                 &addrTo,
+	const std::string              &refId,
+	const size_t                   &offset)
+{
+	std::vector<float> min, max;
+	size_t offsetIdx = addrFrom - offset;
+	if (data.size() >= (addrTo - addrFrom) + offsetIdx)
+	{
+		//This is idmapbuff accessor, it's already offseted to the submesh
+		min.push_back(data[offsetIdx]);
+		max.push_back(data[offsetIdx]);
+	}
+	else
+	{
+		repoError << "Failed to add accessor for " << accName << " #data (" << data.size()<<") does not match it's range ("<<addrFrom<<","<<addrTo<<" ,"<<offset<<")!";
+		return;
+	}
+	for (size_t i = offsetIdx + 1; i < addrTo - addrFrom; ++i)
+	{
+		if (min[0] > data[i]) min[0] = data[i];
+		if (max[0] < data[i]) max[0] = data[i];
+	}
+	addAccessors(accName, buffViewName, tree, addrTo - addrFrom,
+		(addrFrom - offset) * sizeof(*data.data()), sizeof(*data.data()), GLTF_COMP_TYPE_FLOAT,
 		GLTF_TYPE_SCALAR, min, max, refId);
 }
 
@@ -330,7 +389,8 @@ void GLTFModelExport::addAccessors(
 	const std::string              &bufferType,
 	const std::vector<float>       &min,
 	const std::vector<float>       &max,
-	const std::string              &refId)
+	const std::string              &refId,
+	const std::vector<uint16_t>    &lod)
 {
 	
 	//declare accessor
@@ -354,6 +414,10 @@ void GLTFModelExport::addAccessors(
 	{
 		tree.addToTree(accLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_GLTF_LABEL_REF_ID, refId);
 	}
+	if (lod.size())
+	{
+		tree.addToTree(accLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_GLTF_LABEL_LOD, lod);
+	}
 
 }
 
@@ -368,6 +432,19 @@ void GLTFModelExport::addBufferView(
 {
 	addBufferView(name, fileName, tree, count * 3 * sizeof(*buffer.data()), offset, GLTF_PRIM_TYPE_ELEMENT_ARRAY_BUFFER, refId);
 }
+
+void GLTFModelExport::addBufferView(
+	const std::string              &name,
+	const std::string              &fileName,
+	repo::lib::PropertyTree        &tree,
+	const std::vector<float>       &buffer,
+	const size_t                   &offset,
+	const size_t                   &count,
+	const std::string              &refId)
+{
+	addBufferView(name, fileName, tree, count * sizeof(*buffer.data()), offset, GLTF_PRIM_TYPE_ARRAY_BUFFER, refId);
+}
+
 
 void GLTFModelExport::addBufferView(
 	const std::string                   &name,
@@ -695,6 +772,9 @@ void GLTFModelExport::populateWithMaterials(
 		}
 		else if (matStruct.diffuse.size())
 		{
+			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_COL_DIFFUSE, matStruct.diffuse, false);
+			if (matStruct.isTwoSided)
+				tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_COL_BK_DIFFUSE, matStruct.diffuse, false);
 			//default technique takes on a 4d vector, we store 3d vectors
 			matStruct.diffuse.push_back(1);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_DIFFUSE, matStruct.diffuse);
@@ -702,12 +782,18 @@ void GLTFModelExport::populateWithMaterials(
 
 		if (matStruct.emissive.size())
 		{
+			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_COL_EMISSIVE, matStruct.emissive, false);
+			if (matStruct.isTwoSided)
+				tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_COL_BK_DIFFUSE, matStruct.emissive, false);
 			//default technique takes on a 4d vector, we store 3d vectors
 			matStruct.emissive.push_back(1);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_EMISSIVE, matStruct.emissive);
 		}
 		if (matStruct.specular.size())
 		{
+			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_COL_SPECULAR, matStruct.specular, false);
+			if(matStruct.isTwoSided)
+				tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_COL_BK_SPECULAR, matStruct.specular, false);
 			//default technique takes on a 4d vector, we store 3d vectors
 			matStruct.specular.push_back(1);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_SPECULAR, matStruct.specular);
@@ -715,12 +801,19 @@ void GLTFModelExport::populateWithMaterials(
 
 		if (matStruct.shininess == matStruct.shininess)
 		{
+			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_SHININESS, matStruct.shininess);
+			if (matStruct.isTwoSided)
+				tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "" + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_BK_SHININESS, matStruct.shininess);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_SHININESS, matStruct.shininess);
 		}
 
 		if (matStruct.opacity == matStruct.opacity)
 		{
-			tree.addToTree(valuesLabel + "." + GLTF_LABEL_TRANSPARENCY, 1.0 - matStruct.opacity);
+			float transparency = 1.0 - matStruct.opacity;
+			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_TRANSPARENCY, transparency);
+			if (matStruct.isTwoSided)
+				tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_BK_TRANSPARENCY, transparency);
+			tree.addToTree(valuesLabel + "." + GLTF_LABEL_TRANSPARENCY, transparency);
 		}
 
 		if (matStruct.isTwoSided)
@@ -751,7 +844,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 		auto vertices = node->getVertices();
 		auto UVs = node->getUVChannelsSeparated();
 
-
+		
 
 		if (mappings.size() > 1 || vertices.size() > GLTF_MAX_VERTEX_LIMIT)
 		{
@@ -774,15 +867,68 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			//reindex the face buffer
 			reIndexFaces(matMap, newFaces);
 
+			auto lods = reorderFaces(newFaces, vertices, matMap);
+#if defined(DEBUG) && defined(LODLIMIT)			
+			for (size_t i = 0; i < matMap.size(); ++i)
+				for (size_t j = 0; j < matMap[i].size(); ++j)
+				{
+					repo_mesh_mapping_t mapping = matMap[i][j];
+					size_t maxBits = 16;
+					const float maxQuant = pow(2, maxBits) - 1;
+					const size_t vCount = mapping.vertTo - mapping.vertFrom;
+					uint32_t dim = pow(2, (maxBits - lodLimit));
+					uint32_t shift = maxBits - lodLimit;
+					repo_vector_t *vRaw = &vertices[mapping.vertFrom];
+					repo_vector_t bboxMin = mapping.min;
+					repo_vector_t bboxSize = { mapping.max.x - bboxMin.x, mapping.max.y - bboxMin.y, mapping.max.z - bboxMin.z };
+					for (size_t vertId = 0; vertId < vCount; ++vertId)
+					{
+						uint32_t vertXNormal = floorf(((vRaw[vertId].x - bboxMin.x) / bboxSize.x) * maxQuant + 0.5);
+						uint32_t vertYNormal = floorf(((vRaw[vertId].y - bboxMin.y) / bboxSize.y) * maxQuant + 0.5);
+						uint32_t vertZNormal = floorf(((vRaw[vertId].z - bboxMin.z) / bboxSize.z) * maxQuant + 0.5);
 
-		
+						uint32_t vertX = (vertXNormal >> shift) << shift;
+						uint32_t vertY = (vertYNormal >> shift) << shift;
+						uint32_t vertZ = (vertZNormal >> shift) << shift;
+
+//						repoDebug << "Before: (" << vRaw[vertId].x << "," << vRaw[vertId].y << ", " << vRaw[vertId].z << ")";
+						vRaw[vertId].x = ((float)vertX) / maxQuant * bboxSize.x + bboxMin.x;
+						vRaw[vertId].y = ((float)vertY) / maxQuant * bboxSize.y + bboxMin.y;
+						vRaw[vertId].z = ((float)vertZ) / maxQuant * bboxSize.z + bboxMin.z;
+	//					repoDebug << "After: (" << vRaw[vertId].x << "," << vRaw[vertId].y << ", " << vRaw[vertId].z << ")";
+
+					}
+
+				}
+#endif
+			
 			auto newMappings = splitMesh.getMeshMapping();
 
 			splitSizes[node->getUniqueID()] = newMappings.size();		
 
 			size_t vStart = addToDataBuffer(bufferFileName, vertices);
-			size_t nStart = addToDataBuffer(bufferFileName, vertices);
+			size_t nStart = addToDataBuffer(bufferFileName, normals);
 			size_t fStart = addToDataBuffer(bufferFileName, newFaces);
+
+			std::vector<size_t> idMapStart;
+			idMapStart.reserve(idMapBuf.size());
+
+			size_t offset = 0;
+			for (size_t idMapBufIdx = 0; idMapBufIdx < idMapBuf.size(); ++ idMapBufIdx)
+			{
+				if (offset > 0)
+				{
+					for (size_t idMapIdx = 0; idMapIdx < idMapBuf[idMapBufIdx].size(); idMapIdx++)
+					{
+						//remove offset on subsequent supermeshes
+						idMapBuf[idMapBufIdx][idMapIdx] -= offset;
+					}
+				}
+
+				idMapStart.push_back(addToDataBuffer(bufferFileName, idMapBuf[idMapBufIdx]));
+				offset += matMap[idMapBufIdx].size();
+				repoTrace << "offset = " << offset << " matMapSize: " << matMap[idMapBufIdx].size();
+			}
 
 			std::vector<size_t> uvStart;
 			for (size_t i = 0; i < UVs.size(); ++i)
@@ -802,7 +948,8 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 
 				std::string faceBufferName = meshId + "_" + GLTF_SUFFIX_FACES;
 				std::string normBufferName = meshId + "_" + GLTF_SUFFIX_NORMALS;
-				std::string posBufferName = meshId + "_" + GLTF_SUFFIX_POSITION;
+				std::string posBufferName  = meshId + "_" + GLTF_SUFFIX_POSITION;
+				std::string idBufferName   = meshId + "_" + GLTF_SUFFIX_IDMAP;
 
 				size_t vcount = newMappings[i].vertTo - newMappings[i].vertFrom;
 				size_t fcount = newMappings[i].triTo - newMappings[i].triFrom;
@@ -817,6 +964,9 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 				addBufferView(faceBufferName, bufferFileName, tree, newFaces, fStart, fcount, meshId);
 				fStart += fcount * 3 * sizeof(uint16_t); //faces are triangulated
 
+				addBufferView(idBufferName, bufferFileName, tree, idMapBuf[i], idMapStart[i], vcount, meshId);
+
+
 				for (size_t iUV = 0; iUV < UVs.size(); ++iUV)
 				{
 					std::string uvBufferName = meshId + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(iUV);
@@ -827,6 +977,9 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 				size_t subMeshOffset_v = newMappings[i].vertFrom;
 				size_t subMeshOffset_f = newMappings[i].triFrom;
 
+				auto lodIterator = lods[i].begin();
+
+				//For each sub mesh...
 				for (const repo_mesh_mapping_t & meshMap : matMap[i])
 				{
 					std::string subMeshID = UUIDtoString(meshMap.mesh_id);
@@ -839,12 +992,18 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 					
 
 					if (newFaces.size())
-					{
+					{						
 						std::string accessorName = subMeshName + "_" + GLTF_SUFFIX_FACES;
 						primitives.back().addToTree(GLTF_LABEL_INDICES, GLTF_PREFIX_ACCESSORS + "_" + accessorName);
-						addAccessors(accessorName, faceBufferName, tree, newFaces, meshMap.triFrom, meshMap.triTo, subMeshID, subMeshOffset_f);
+						std::vector<uint16_t> lodVec = *lodIterator;
+#if defined(DEBUG) && defined(LODLIMIT)
+						size_t triTo = meshMap.triFrom + (lodVec.size() < lodLimit ? lodVec.back() : lodVec[lodLimit - 1])/3;
+#else
+						size_t triTo = meshMap.triTo;
+#endif
+						addAccessors(accessorName, faceBufferName, tree, newFaces, meshMap.triFrom, triTo, subMeshID, *lodIterator, subMeshOffset_f);
 					}
-
+					++lodIterator;
 				
 					if (normals.size())
 					{
@@ -860,16 +1019,22 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 						addAccessors(accessorName, posBufferName, tree, vertices, meshMap.vertFrom, meshMap.vertTo, subMeshID, subMeshOffset_v);
 					}
 
+					if (idMapBuf[i].size())
+					{
+						std::string accessorName = subMeshName + "_" + GLTF_SUFFIX_IDMAP;
+						primitives.back().addToTree(GLTF_LABEL_ATTRIBUTES + "." + REPO_GLTF_LABEL_IDMAP, GLTF_PREFIX_ACCESSORS + "_" + accessorName);
+						addAccessors(accessorName, idBufferName, tree, idMapBuf[i], meshMap.vertFrom, meshMap.vertTo, subMeshID, subMeshOffset_v);
+					}
 
 					if (UVs.size())
 					{
 						for (uint32_t iUV = 0; iUV < UVs.size(); ++iUV)
 						{
 							std::string accessorName = subMeshName + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(iUV);
-							std::string uvBufferName = meshUUID + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(iUV);
+							std::string uvBufferName = meshId + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(iUV);
 							primitives.back().addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_TEXCOORD + "_" + std::to_string(iUV),
 								GLTF_PREFIX_ACCESSORS + "_" + accessorName);							
-							addAccessors(accessorName, posBufferName, tree, UVs[iUV], meshMap.vertFrom, meshMap.vertTo, subMeshID, subMeshOffset_v);
+							addAccessors(accessorName, uvBufferName, tree, UVs[iUV], meshMap.vertFrom, meshMap.vertTo, subMeshID, subMeshOffset_v);
 						}
 					}
 					primitives.back().addToTree(GLTF_LABEL_EXTRA + "." + REPO_GLTF_LABEL_REF_ID, subMeshID);
@@ -891,6 +1056,71 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 
 			auto faces = node->getFaces();
 			std::vector<uint16_t> sFaces = serialiseFaces(faces);
+
+			bool hasMat = false;
+			repoUUID matID;
+			if (hasMapping)
+			{
+				hasMat = true;
+				matID = mappings[0].material_id;
+			}
+			else
+			{
+				auto children = scene->getChildrenNodesFiltered(gType, node->getSharedID(), repo::core::model::NodeType::MATERIAL);
+				if (children.size())
+				{
+					hasMat = true;
+					matID = children[0]->getUniqueID();
+				}
+			}
+
+			std::vector < std::vector<repo_mesh_mapping_t>> matMap;
+			matMap.resize(1);
+			matMap[0].resize(1);
+			matMap[0][0].material_id = matID;
+			matMap[0][0].mesh_id = hasMapping ? mappings[0].mesh_id : node->getUniqueID();
+			auto bbox = node->getBoundingBox();
+			matMap[0][0].max = bbox[1];
+			matMap[0][0].min = bbox[0];
+			matMap[0][0].triFrom = 0;
+			matMap[0][0].triTo = faces.size();
+			matMap[0][0].vertFrom = 0;
+			matMap[0][0].vertTo = vertices.size();
+
+			auto lods = reorderFaces(sFaces, vertices, matMap);
+#if defined(DEBUG) && defined(LODLIMIT)
+			for (size_t i = 0; i < matMap.size(); ++i)
+				for (size_t j = 0; j < matMap[i].size(); ++j)
+				{
+					repo_mesh_mapping_t mapping = matMap[i][j];
+					size_t maxBits = 16;
+					const float maxQuant = pow(2, maxBits) - 1;
+					const size_t vCount = mapping.vertTo - mapping.vertFrom;
+					uint32_t dim = pow(2, (maxBits - lodLimit));
+					uint32_t shift = maxBits - lodLimit;
+					repo_vector_t *vRaw = &vertices[mapping.vertFrom];
+					repo_vector_t bboxMin = mapping.min;
+					repo_vector_t bboxSize = { mapping.max.x - bboxMin.x, mapping.max.y - bboxMin.y, mapping.max.z - bboxMin.z };
+					for (size_t vertId = 0; vertId < vCount; ++vertId)
+					{
+						uint32_t vertXNormal = floorf(((vRaw[vertId].x - bboxMin.x) / bboxSize.x) * maxQuant + 0.5);
+						uint32_t vertYNormal = floorf(((vRaw[vertId].y - bboxMin.y) / bboxSize.y) * maxQuant + 0.5);
+						uint32_t vertZNormal = floorf(((vRaw[vertId].z - bboxMin.z) / bboxSize.z) * maxQuant + 0.5);
+
+						uint32_t vertX = (vertXNormal >> shift) << shift;
+						uint32_t vertY = (vertYNormal >> shift) << shift;
+						uint32_t vertZ = (vertZNormal >> shift) << shift;
+
+						//						repoDebug << "Before: (" << vRaw[vertId].x << "," << vRaw[vertId].y << ", " << vRaw[vertId].z << ")";
+						vRaw[vertId].x = ((float)vertX) / maxQuant * bboxSize.x + bboxMin.x;
+						vRaw[vertId].y = ((float)vertY) / maxQuant * bboxSize.y + bboxMin.y;
+						vRaw[vertId].z = ((float)vertZ) / maxQuant * bboxSize.z + bboxMin.z;
+						//					repoDebug << "After: (" << vRaw[vertId].x << "," << vRaw[vertId].y << ", " << vRaw[vertId].z << ")";
+
+					}
+
+				}
+#endif
 
 			std::string bufferFileName = UUIDtoString(scene->getRevisionID());
 
@@ -918,24 +1148,6 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			std::vector<repo::lib::PropertyTree> primitives;
 			primitives.push_back(repo::lib::PropertyTree());
 
-			bool hasMat = false;
-			repoUUID matID;
-			if (hasMapping)
-			{
-				hasMat = true;
-				matID = mappings[0].material_id;
-			}
-			else
-			{
-				auto children = scene->getChildrenNodesFiltered(gType, node->getSharedID(), repo::core::model::NodeType::MATERIAL);
-				if (children.size())
-				{
-					hasMat = true;
-					matID = children[0]->getUniqueID();
-				}
-			}
-
-			
 
 			std::string binFileName = UUIDtoString(scene->getRevisionID());
 			
@@ -948,7 +1160,12 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 				{
 					std::string bufferName = meshId + "_" + GLTF_SUFFIX_FACES;
 					primitives[0].addToTree(GLTF_LABEL_INDICES, GLTF_PREFIX_ACCESSORS + "_" + bufferName);
-					addAccessors(bufferName, bufferName, tree, sFaces, 0, faces.size(), meshId);
+#if defined(DEBUG) && defined(LODLIMIT)
+					size_t triTo = (lods[0][0].size() < lodLimit ? lods[0][0].back() : lods[0][0][lodLimit - 1]) / 3;
+#else
+					size_t triTo =  faces.size();
+#endif
+					addAccessors(bufferName, faceBufferName, tree, sFaces, 0, faces.size(), meshId);
 				}
 
 				//attributes
@@ -957,14 +1174,14 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 				{
 					std::string bufferName = meshId + "_" + GLTF_SUFFIX_NORMALS;
 					primitives[0].addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_NORMAL, GLTF_PREFIX_ACCESSORS + "_" + bufferName);
-					addAccessors(bufferName, bufferName, tree, normals, 0, normals.size(), meshId);
+					addAccessors(bufferName, normBufferName, tree, normals, 0, normals.size(), meshId);
 				}
 				auto vertices = node->getVertices();
 				if (vertices.size())
 				{
 					std::string bufferName = meshId + "_" + GLTF_SUFFIX_POSITION;
 					primitives[0].addToTree(GLTF_LABEL_ATTRIBUTES + "." + GLTF_LABEL_POSITION, GLTF_PREFIX_ACCESSORS + "_" + bufferName);
-					addAccessors(bufferName, bufferName, tree, vertices, 0, vertices.size(), meshId);
+					addAccessors(bufferName, posBufferName, tree, vertices, 0, vertices.size(), meshId);
 				}
 
 				auto UVs = node->getUVChannelsSeparated();
@@ -1043,6 +1260,132 @@ void GLTFModelExport::populateWithNodes(
 	}	
 }
 
+std::vector<std::vector<std::vector<uint16_t>>> GLTFModelExport::reorderFaces(
+	      std::vector<uint16_t>                         &faces,
+	const std::vector<repo_vector_t>                    &vertices,
+	const std::vector<std::vector<repo_mesh_mapping_t>> &mapping)
+{
+	std::vector<std::vector<std::vector<uint16_t>>> lods;
+	for (size_t i = 0; i < mapping.size(); ++i)
+	{
+		lods.resize(lods.size() + 1);
+		lods.back().clear();
+		for (size_t j = 0; j < mapping[i].size(); ++j)
+		{
+			lods[i].resize(lods[i].size() + 1);
+			lods[i].back().clear();
+			std::vector<uint16_t> newFaces = reorderFaces(faces, vertices, mapping[i][j], lods[i].back());
+			std::copy(newFaces.begin(), newFaces.end(), faces.begin() + mapping[i][j].triFrom * 3);
+
+		}
+	}
+	return lods;
+
+}
+
+std::vector<uint16_t> GLTFModelExport::reorderFaces(
+	const std::vector<uint16_t>      &faces,
+	const std::vector<repo_vector_t> &vertices,
+	const repo_mesh_mapping_t        &mapping,
+	      std::vector<uint16_t>      &lods) const
+{
+	const uint32_t maxBits = 16;
+	const float maxQuant = pow(2, maxBits) - 1;
+
+	const repo_vector_t *vRaw = &vertices[mapping.vertFrom];
+	const uint16_t      *fRaw = &faces[mapping.triFrom * 3];
+
+	const size_t vCount = mapping.vertTo - mapping.vertFrom;
+	const size_t fCount = mapping.triTo - mapping.triFrom;
+
+	//use int32_t because we need to represent all values in uint16_t and also -1
+	std::vector<int32_t> vertexMap;
+	vertexMap.resize(vCount);
+
+	//Instantiate with -1s
+	std::fill(vertexMap.begin(), vertexMap.end(), -1);
+
+	std::vector<bool> validFaces;
+	validFaces.resize(fCount);
+
+	//Instantiate with false
+	std::fill(validFaces.begin(), validFaces.end(), false);
+
+	std::vector<uint16_t> reOrderedFaces;
+	reOrderedFaces.reserve(fCount * 3);
+
+	repo_vector_t bboxMin = mapping.min;
+	repo_vector_t bboxSize = { mapping.max.x - bboxMin.x, mapping.max.y - bboxMin.y, mapping.max.z - bboxMin.z };
+
+	std::vector<uint32_t> quantIndex;
+	quantIndex.resize(vCount);	
+	/**
+	* Every level of detail, we need to identify the quantized vertices 
+	* see which face should be degenerated.
+	* for all faces that are not degenerated, put them into the new face buffer
+	*/
+	for (uint32_t lod = 0; lod < maxBits; ++lod)
+	{
+		uint32_t dim = pow(2, (maxBits - lod));
+		uint32_t shift = maxBits - lodLimit;
+
+		// For all non mapped vertices compute quantization
+		for (size_t vertId = 0; vertId < vCount; ++vertId)
+		{
+			if (vertexMap[vertId] == -1)
+			{			
+				uint32_t vertXNormal = floorf(((vRaw[vertId].x - bboxMin.x) / bboxSize.x) * maxQuant + 0.5);
+				uint32_t vertYNormal = floorf(((vRaw[vertId].y - bboxMin.y) / bboxSize.y) * maxQuant + 0.5);
+				uint32_t vertZNormal = floorf(((vRaw[vertId].z - bboxMin.z) / bboxSize.z) * maxQuant + 0.5);
+
+				uint32_t vertX = (vertXNormal >> shift) << shift;
+				uint32_t vertY = (vertYNormal >> shift) << shift;
+				uint32_t vertZ = (vertZNormal >> shift) << shift;
+
+				quantIndex[vertId] = vertX + vertY * dim + vertZ * dim * dim;		
+			}
+		}
+
+		//check if any faces appear in this quantization
+		for (size_t triIdx = 0; triIdx < fCount; ++triIdx)
+		{
+			size_t startIdx = triIdx * 3;
+			//If this face has not been added from previous LODs
+			if (!validFaces[triIdx])
+			{
+				//the face should not be rendered if more than 1 vertex fall into the same quantized region
+				uint32_t currQuantX = quantIndex[fRaw[startIdx]];
+				uint32_t currQuantY = quantIndex[fRaw[startIdx + 1 ]];
+				uint32_t currQuantZ = quantIndex[fRaw[startIdx + 2 ]];
+
+				if (currQuantX != currQuantY && currQuantX != currQuantY && currQuantY != currQuantZ || lod == maxBits -1)
+				{
+					//Add this face to the new face buffer
+					reOrderedFaces.push_back(fRaw[startIdx]);
+					reOrderedFaces.push_back(fRaw[startIdx + 1]);
+					reOrderedFaces.push_back(fRaw[startIdx + 2]);
+
+					validFaces[triIdx] = true;
+				}			
+			}			
+
+		}
+
+		lods.push_back(reOrderedFaces.size());
+
+		if (reOrderedFaces.size() == fCount * 3)
+			break;
+	}
+
+	if (reOrderedFaces.size() != fCount * 3)
+	{
+		//sanity check
+		repoError << "Reordered faces (" << reOrderedFaces.size() << ") != fCount("<< fCount *3 << ")!!!";
+	}
+
+	return reOrderedFaces;
+}
+
 std::vector<uint16_t> GLTFModelExport::serialiseFaces(
 	const std::vector<repo_face_t> &faces) const
 {
@@ -1070,11 +1413,15 @@ void GLTFModelExport::writeBuffers(
 {
 	for (const auto &pair : fullDataBuffer)
 	{
-		std::string bufferFilePrefix = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/";
+#ifdef DEBUG
+		std::string bufferFilePrefix = "";
+#else
+		std::string bufferFilePrefix = "/api/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/";
+#endif
 		std::string bufferLabel = GLTF_LABEL_BUFFERS + "." + pair.first;
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_BYTE_LENGTH, pair.second.size()  * sizeof(*pair.second.data()));
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_TYPE, GLTF_ARRAY_BUFFER);
-		tree.addToTree(bufferLabel + "." + GLTF_LABEL_URI, "/api" + bufferFilePrefix + pair.first + ".bin");
+		tree.addToTree(bufferLabel + "." + GLTF_LABEL_URI, bufferFilePrefix + pair.first + ".bin");
 	}
 }
 
@@ -1103,7 +1450,7 @@ void GLTFModelExport::writeDefaultTechnique(
 	tree.addToTree(paramlabel + ".normal." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT_VEC3);
 
 	tree.addToTree(paramlabel + ".normalMatrix." + GLTF_LABEL_SEMANTIC, "MODELVIEWINVERSETRANSPOSE");
-	tree.addToTree(paramlabel + ".normalMatrix." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT_MAT3);
+	tree.addToTree(paramlabel + ".normalMatrix." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT_MAT4);
 
 	tree.addToTree(paramlabel + ".position." + GLTF_LABEL_SEMANTIC, GLTF_LABEL_POSITION);
 	tree.addToTree(paramlabel + ".position." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT_VEC3);
@@ -1129,20 +1476,23 @@ void GLTFModelExport::writeDefaultTechnique(
 	const std::string uniformLabel = label + "." +  GLTF_LABEL_UNIFORMS;
 
 	tree.addToTree(uniformLabel + ".u_diffuse"         , GLTF_LABEL_DIFFUSE);
-	tree.addToTree(uniformLabel + ".u_modelViewMatrix" , "modelViewMatrix");
-	tree.addToTree(uniformLabel + ".u_normalMatrix"    , "normalMatrix");
-	tree.addToTree(uniformLabel + ".u_projectionMatrix", "projectionMatrix");
+	tree.addToTree(uniformLabel + ".modelViewMatrix" , "modelViewMatrix");
+	tree.addToTree(uniformLabel + ".normalMatrix"    , "normalMatrix");
+	tree.addToTree(uniformLabel + ".projectionMatrix", "projectionMatrix");
 	tree.addToTree(uniformLabel + ".u_shininess"       , GLTF_LABEL_SHININESS);
 	tree.addToTree(uniformLabel + ".u_specular"        , GLTF_LABEL_SPECULAR);
 
 	const std::string attriLabel = label + "." + GLTF_LABEL_ATTRIBUTES;
-	tree.addToTree(attriLabel + ".a_normal", "normal");
-	tree.addToTree(attriLabel + ".a_position", "position");
+	tree.addToTree(attriLabel + ".normal", "normal");
+	tree.addToTree(attriLabel + ".position", "position");
 	tree.addToTree(attriLabel + ".a_texcoord0", "texcoord0");
+
+	const std::string extraLabel = label + "." + GLTF_LABEL_EXTRA;
+	tree.addToTree(extraLabel + ".varyings.v_normal." + GLTF_LABEL_TYPE, GLTF_COMP_TYPE_FLOAT_VEC3);
 
 	//========== DEFAULT PROGRAM =========
 	const std::string programLabel = GLTF_LABEL_PROGRAMS + "." + REPO_GLTF_DEFAULT_PROGRAM;
-	std::vector<std::string> programAttributes = { "a_normal", "a_position" };
+	std::vector<std::string> programAttributes = { "normal", "position" };
 	tree.addToTree(programLabel + "." + GLTF_LABEL_ATTRIBUTES , programAttributes);
 	tree.addToTree(programLabel + "." + GLTF_LABEL_SHADER_FRAG, REPO_GLTF_DEFAULT_SHADER_FRAG);
 	tree.addToTree(programLabel + "." + GLTF_LABEL_SHADER_VERT, REPO_GLTF_DEFAULT_SHADER_VERT);
@@ -1150,9 +1500,24 @@ void GLTFModelExport::writeDefaultTechnique(
 	//========== DEFAULT SHADERS =========
 	tree.addToTree(GLTF_LABEL_SHADERS + "." + REPO_GLTF_DEFAULT_SHADER_FRAG + "." + GLTF_LABEL_TYPE, GLTF_SHADER_TYPE_FRAGMENT);
 	tree.addToTree(GLTF_LABEL_SHADERS + "." + REPO_GLTF_DEFAULT_SHADER_FRAG + "." + GLTF_LABEL_URI, REPO_GLTF_DEFAULT_SHADER_FRAG_URI);
+	//x3d shader
+	std::string x3dShaderFragLabel = GLTF_LABEL_SHADERS + "." + REPO_GLTF_DEFAULT_SHADER_FRAG + "." + GLTF_LABEL_EXTRA + ".x3domShaderFunction";
+	tree.addToTree(x3dShaderFragLabel + "." + GLTF_LABEL_URI, REPO_GLTF_DEFAULT_X3DSHADER_FRAG_URI);
+	tree.addToTree(x3dShaderFragLabel + "." + GLTF_LABEL_NAME, "x3dmain");
+	std::vector<std::string> fragParameters = { "v_normal", "u_diffuse", "u_specular", "u_shininess" };
+	tree.addToTree(x3dShaderFragLabel + "." + GLTF_LABEL_PARAMETERS, fragParameters);
+	tree.addToTree(x3dShaderFragLabel + "." + "returns", "gl_FragColor");
+
 
 	tree.addToTree(GLTF_LABEL_SHADERS + "." + REPO_GLTF_DEFAULT_SHADER_VERT + "." + GLTF_LABEL_TYPE, GLTF_SHADER_TYPE_VERTEX);
 	tree.addToTree(GLTF_LABEL_SHADERS + "." + REPO_GLTF_DEFAULT_SHADER_VERT + "." + GLTF_LABEL_URI , REPO_GLTF_DEFAULT_SHADER_VERT_URI);
+	//x3d shader
+	std::string x3dShaderVertLabel = GLTF_LABEL_SHADERS + "." + REPO_GLTF_DEFAULT_SHADER_VERT + "." + GLTF_LABEL_EXTRA + ".x3domShaderFunction";
+	tree.addToTree(x3dShaderVertLabel + "." + GLTF_LABEL_URI, REPO_GLTF_DEFAULT_X3DSHADER_VERT_URI);
+	tree.addToTree(x3dShaderVertLabel + "." + GLTF_LABEL_NAME, "x3dmain");
+	std::vector<std::string> vertParameters = { "position", "normal", "v_normal", "normalMatrix", "modelViewMatrix", "projectionMatrix" };
+	tree.addToTree(x3dShaderVertLabel + "." + GLTF_LABEL_PARAMETERS, vertParameters);
+	tree.addToTree(x3dShaderVertLabel + "." + "returns", "gl_Position");
 
 
 }
