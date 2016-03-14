@@ -45,17 +45,28 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 	std::vector<repo_vector_t> vertices = getVertices();
 	std::vector<repo_vector_t> normals = getNormals();
 
-
+	repoTrace << "Applying transformation: ";
+	repoTrace << "\t" << matrix[0] << " " << matrix[1] << " " << matrix[2] << " " << matrix[3] << " ";
+	repoTrace << "\t" << matrix[4] << " " << matrix[5] << " " << matrix[6] << " " << matrix[7] << " ";
+	repoTrace << "\t" << matrix[8] << " " << matrix[9] << " " << matrix[10] << " " << matrix[11] << " ";
+	repoTrace << "\t" << matrix[12] << " " << matrix[13] << " " << matrix[14] << " " << matrix[15] << " ";
 	RepoBSONBuilder builder;
-
+	printf("translation: [%17.11f, %17.11, %17.11f]", matrix[3], matrix[7], matrix[11]);
 	if (vertices.size())
 	{
 		std::vector<repo_vector_t> resultVertice;
 		resultVertice.reserve(vertices.size());
+		FILE * fpOld = fopen("C:\\Users\\Carmen\\Desktop\\old.txt", "w");
+		FILE * fpNew = fopen("C:\\Users\\Carmen\\Desktop\\New.txt", "w");
 		for (const repo_vector_t &v : vertices)
 		{
 			resultVertice.push_back(multiplyMatVec(matrix, v));
+			fprintf(fpOld, " %17.11f %17.11f %17.11f\n", v.x, v.y, v.z);
+			fprintf(fpNew, " %17.11f %17.11f %17.11f\n", resultVertice.back().x, resultVertice.back().y, resultVertice.back().z);
 		}
+	
+		fclose(fpOld);
+		fclose(fpNew);
 
 		builder.appendBinary(REPO_NODE_MESH_LABEL_VERTICES, resultVertice.data(), resultVertice.size() * sizeof(repo_vector_t));
 	}

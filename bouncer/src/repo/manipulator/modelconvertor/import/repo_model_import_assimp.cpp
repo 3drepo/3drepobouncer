@@ -365,7 +365,8 @@ repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 	const aiMesh *assimpMesh,
 	const std::vector<repo::core::model::RepoNode *> &materials,
 	std::unordered_map < repo::core::model::RepoNode*, std::vector<repoUUID>> &matMap,
-	const bool hasTexture)
+	const bool hasTexture,
+	const std::vector<double> &offset)
 {
 
 	repo::core::model::MeshNode *meshNode = 0;
@@ -378,25 +379,33 @@ repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 	std::vector<repo_color4d_t> colors;
 	std::vector<std::vector<float>>   outline;
 
-	repo_vector_t minVertex = { assimpMesh->mVertices[0].x, assimpMesh->mVertices[0].y, assimpMesh->mVertices[0].z };
-	repo_vector_t maxVertex = { assimpMesh->mVertices[0].x, assimpMesh->mVertices[0].y, assimpMesh->mVertices[0].z };
+
 
 	/*
 	 *--------------------- Vertices (always present) -----------------------------
 	*/
+	aiVector3D offsetVec = offset.size() ? aiVector3D(offset[0], offset[1], offset[2]) : aiVector3D(0, 0, 0);
+	aiVector3D firstV = assimpMesh->mVertices[0];
+	firstV -= offsetVec;
+	repo_vector_t minVertex = { firstV.x, firstV.y, firstV.z };
+	repo_vector_t maxVertex = minVertex;
+
 	for (uint32_t i = 0; i < assimpMesh->mNumVertices; i++)
 	{
-		vertices.push_back({ assimpMesh->mVertices[i].x, assimpMesh->mVertices[i].y, assimpMesh->mVertices[i].z });
+		auto aiVertex = assimpMesh->mVertices[i];
+		aiVertex -= offsetVec;
+		vertices.push_back({ aiVertex.x, aiVertex.y, aiVertex.z });
 
-		minVertex.x = minVertex.x < assimpMesh->mVertices[i].x ? minVertex.x : assimpMesh->mVertices[i].x;
-		minVertex.y = minVertex.y < assimpMesh->mVertices[i].y ? minVertex.y : assimpMesh->mVertices[i].y;
-		minVertex.z = minVertex.z < assimpMesh->mVertices[i].z ? minVertex.z : assimpMesh->mVertices[i].z;
+		minVertex.x = minVertex.x < aiVertex.x ? minVertex.x : aiVertex.x;
+		minVertex.y = minVertex.y < aiVertex.y ? minVertex.y : aiVertex.y;
+		minVertex.z = minVertex.z < aiVertex.z ? minVertex.z : aiVertex.z;
 
-		maxVertex.x = maxVertex.x > assimpMesh->mVertices[i].x ? maxVertex.x : assimpMesh->mVertices[i].x;
-		maxVertex.y = maxVertex.y > assimpMesh->mVertices[i].y ? maxVertex.y : assimpMesh->mVertices[i].y;
-		maxVertex.z = maxVertex.z > assimpMesh->mVertices[i].z ? maxVertex.z : assimpMesh->mVertices[i].z;
+		maxVertex.x = maxVertex.x > aiVertex.x ? maxVertex.x : aiVertex.x;
+		maxVertex.y = maxVertex.y > aiVertex.y ? maxVertex.y : aiVertex.y;
+		maxVertex.z = maxVertex.z > aiVertex.z ? maxVertex.z : aiVertex.z;
 
 	}
+
 
 	/*
 	*-----------------------------------------------------------------------------
@@ -753,6 +762,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		std::unordered_map<std::string, repo::core::model::RepoNode *> camerasMap;
 		std::unordered_map<std::string, repo::core::model::RepoNode *> nameToTexture;
 
+		std::vector<std::vector<double>> sceneBbox = getSceneBoundingBox();
 		//-------------------------------------------------------------------------
 		// Textures
 		repoInfo << "Constructing Texture Nodes...";
@@ -907,12 +917,12 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 					repoInfo << "Constructing " << i << " of " << assimpScene->mNumMeshes;
 				}
 
-
 				int numTextures = assimpScene->mMaterials[assimpScene->mMeshes[i]->mMaterialIndex]->GetTextureCount(aiTextureType_DIFFUSE);
 				repo::core::model::RepoNode* mesh = createMeshRepoNode(
 					assimpScene->mMeshes[i],
 					originalOrderMaterial,
-					matParents, numTextures > 0);
+					matParents, numTextures > 0,
+					sceneBbox.size()? sceneBbox[0]: std::vector<double>());
 
 				if (!mesh)
 					repoError << "Unable to construct mesh node in Assimp Model Convertor!";
@@ -1034,33 +1044,112 @@ repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 	importer.ApplyPostProcessing(composeAssimpPostProcessingFlags());
 	scene = convertAiSceneToRepoScene(orgMap);
 
-	//if (scene)
-	//{
-	//	// Assign the unoptimized node map, and start optimization
-	//	
-
-	//	//This will generate the optimised scene graph and put it in the RepoScene referenced
-	//	repoTrace << "Converting AiScene to Optimised RepoScene";
-	//	convertAiSceneToRepoScene(optMap, scene);
-
-	//	repo::core::model::RepoNode *stashRoot =  scene->getRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED);
-
-	//	if (!populateOptimMaps(stashRoot, scene, orgMap, optMap))
-	//	{
-	//		//populateOptimMaps is false so stash is invalid. clear it out.
-	//		repoError << "Stash invalid ... clearing.";
-	//		scene->clearStash();
-	//	}
-
-	//}
-	//else
-	//{
-	//	repoError << "Failed to construct default graph scene.";
-	//}
-
-
 	return scene;
 }
+
+std::vector<std::vector<double>> AssimpModelImport::getSceneBoundingBox() const
+{
+	std::vector<std::vector<double>> bbox;
+	if (assimpScene)
+	{
+		//default constructor is identity
+		const aiMatrix4x4 identity;
+
+		getSceneBoundingBoxInternal(assimpScene->mRootNode, identity, bbox);
+	}
+
+	return bbox;
+}
+
+void AssimpModelImport::getSceneBoundingBoxInternal(
+	const aiNode                     *node, 
+	const aiMatrix4x4                &mat,
+	std::vector<std::vector<double>> &bbox) const
+{
+	const aiMatrix4x4 transformation = mat * node->mTransformation;
+
+	if (node->mNumMeshes)
+	{
+		for (size_t meshIdx = 0; meshIdx < node->mNumMeshes; ++meshIdx)
+		{ 
+			std::vector<std::vector<double>> meshBbox = getAiMeshBoundingBox(assimpScene->mMeshes[meshIdx]);
+			if (meshBbox.size() == 2)
+			{
+				aiVector3D vectorMin(meshBbox[0][0], meshBbox[0][1], meshBbox[0][2]);
+				aiVector3D scaledBoundaryMin = transformation * vectorMin;
+
+				aiVector3D vectorMax(meshBbox[1][0], meshBbox[1][1], meshBbox[1][2]);
+				aiVector3D scaledBoundaryMax = transformation * vectorMax;
+
+				if (bbox.size())
+				{
+					if (scaledBoundaryMin.x < bbox[0][0])
+						bbox[0][0] = scaledBoundaryMin.x;
+					if (scaledBoundaryMin.y < bbox[0][1])
+						bbox[0][1] = scaledBoundaryMin.y;
+					if (scaledBoundaryMin.z < bbox[0][2])
+						bbox[0][2] = scaledBoundaryMin.z;
+					
+					if (scaledBoundaryMax.x > bbox[1][0])
+						bbox[1][0] = scaledBoundaryMax.x;
+					if (scaledBoundaryMax.y > bbox[1][1])
+						bbox[1][1] = scaledBoundaryMax.y;
+					if (scaledBoundaryMax.z > bbox[1][2])
+						bbox[1][2] = scaledBoundaryMax.z;
+				}
+				else
+				{
+					bbox.push_back({ scaledBoundaryMin.x, scaledBoundaryMin.y, scaledBoundaryMin.z });
+					bbox.push_back({ scaledBoundaryMax.x, scaledBoundaryMax.y, scaledBoundaryMax.z });
+				}
+			}									
+			
+		}
+	}
+
+	for (size_t childIdx = 0; childIdx < node->mNumChildren; ++childIdx)
+	{
+		getSceneBoundingBoxInternal(node->mChildren[childIdx], transformation, bbox); 
+	}
+}
+
+std::vector<std::vector<double>> AssimpModelImport::getAiMeshBoundingBox(
+	const aiMesh *mesh) const
+{
+	std::vector<std::vector<double>> bbox;
+	if (mesh->mNumVertices)
+	{
+		bbox.push_back({ mesh->mVertices[0].x, mesh->mVertices[0].y, mesh->mVertices[0].z });
+		bbox.push_back({ mesh->mVertices[0].x, mesh->mVertices[0].y, mesh->mVertices[0].z });
+
+		for (size_t vIdx = 1; vIdx < mesh->mNumVertices; ++vIdx)
+		{
+			auto currentV = mesh->mVertices[vIdx];
+
+			if (bbox[0][0] < currentV.x)
+				bbox[0][0] = currentV.x;
+			if (bbox[0][1] < currentV.y)
+				bbox[0][1] = currentV.y;
+			if (bbox[0][2] < currentV.z)
+				bbox[0][2] = currentV.z;
+
+			if (bbox[1][0] > currentV.x)
+				bbox[1][0] = currentV.x;
+			if (bbox[1][1] > currentV.y)
+				bbox[1][1] = currentV.y;
+			if (bbox[1][2] > currentV.z)
+				bbox[1][2] = currentV.z;
+		}
+	}
+	else
+	{
+		repoWarning << "Mesh with no vertices found!";
+	}
+	
+
+	return bbox;
+}
+
 
 bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
 {
