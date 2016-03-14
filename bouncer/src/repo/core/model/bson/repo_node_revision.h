@@ -83,6 +83,12 @@ namespace repo {
 					std::string getAuthor() const;
 
 					/**
+					* Get the offset coordinates to translate the model
+					* @return return a vector of double (size of 3)
+					*/
+					std::vector<double> getCoordOffset() const;
+
+					/**
 					* Get a list of current IDs for this revision
 					* @return returns a vector of unique IDs.
 					*/
