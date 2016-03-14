@@ -32,7 +32,7 @@ using namespace repo::manipulator::modelconvertor;
 const static int lodLimit = 15; //Hack to test pop buffers, i should not be committing this!
 
 const static size_t GLTF_MAX_VERTEX_LIMIT = 65535;
-//#define DEBUG //FIXME: to remove
+#define DEBUG //FIXME: to remove
 //#define LODLIMIT
 
 static const std::string GLTF_LABEL_ACCESSORS       = "accessors";
@@ -913,9 +913,21 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			std::vector<size_t> idMapStart;
 			idMapStart.reserve(idMapBuf.size());
 
-			for (const auto &idMap : idMapBuf)
+			size_t offset = 0;
+			for (size_t idMapBufIdx = 0; idMapBufIdx < idMapBuf.size(); ++ idMapBufIdx)
 			{
-				idMapStart.push_back(addToDataBuffer(bufferFileName, idMap));
+				if (offset > 0)
+				{
+					for (size_t idMapIdx = 0; idMapIdx < idMapBuf[idMapBufIdx].size(); idMapIdx++)
+					{
+						//remove offset on subsequent supermeshes
+						idMapBuf[idMapBufIdx][idMapIdx] -= offset;
+					}
+				}
+
+				idMapStart.push_back(addToDataBuffer(bufferFileName, idMapBuf[idMapBufIdx]));
+				offset += matMap[idMapBufIdx].size();
+				repoTrace << "offset = " << offset << " matMapSize: " << matMap[idMapBufIdx].size();
 			}
 
 			std::vector<size_t> uvStart;
