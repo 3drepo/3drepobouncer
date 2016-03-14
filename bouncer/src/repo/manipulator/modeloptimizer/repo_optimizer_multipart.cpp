@@ -333,11 +333,10 @@ std::vector<repo::core::model::MeshNode*> MultipartOptimizer::createSuperMesh(
 	std::vector<std::vector<repo_mesh_mapping_t>> meshMapping;
 
 	std::vector<repo::core::model::MeshNode*> resultMeshes;
-	auto bbox = scene->getSceneBoundingBox();
-	std::vector<float> startMat = { 1, 0, 0, -bbox[0].x,
-		0, 1, 0, -bbox[0].y,
-		0, 0, 1, -bbox[0].z,
-		0, 0, 0, 1 };
+	std::vector<float> startMat = { 1, 0, 0, 0,
+									0, 1, 0, 0,
+									0, 0, 1, 0,
+									0, 0, 0, 1 };
 
 	bool success = collectMeshData(scene, scene->getRoot(defaultGraph), meshGroup, startMat,
 		vertices, normals, faces, uvChannels, colors, meshMapping);
@@ -407,11 +406,10 @@ repo::core::model::MeshNode* MultipartOptimizer::createSuperMesh(
 	repo::core::model::MeshNode* resultMesh = nullptr;
 
 	std::vector<repo::core::model::MeshNode*> resultMeshes;
-	auto bbox = scene->getSceneBoundingBox();
-	std::vector<float> startMat = { 1, 0, 0, -bbox[0].x,
-		0, 1, 0, -bbox[0].y,
-		0, 0, 1, -bbox[0].z,
-		0, 0, 0, 1 };
+	std::vector<float> startMat = { 1, 0, 0, 0,
+									0, 1, 0, 0,
+									0, 0, 1, 0,
+									0, 0, 0, 1 };
 
 	bool success = collectMeshData(scene, scene->getRoot(defaultGraph), meshGroup, startMat,
 		vertices, normals, faces, uvChannels, colors, meshMapping);
