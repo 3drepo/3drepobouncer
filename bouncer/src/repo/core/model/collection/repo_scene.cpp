@@ -605,7 +605,7 @@ bool RepoScene::commitRevisionNode(
 
 	newRevNode =
 		new RevisionNode(RepoBSONFactory::makeRevisionNode(userName, branch, uniqueIDs,
-		/*newAddedV, newRemovedV, newModifiedV,*/ fileNames, parent, message, tag));
+		/*newAddedV, newRemovedV, newModifiedV,*/ fileNames, parent, worldOffset, message, tag));
 
 	if (newRevNode)
 	{
@@ -1368,6 +1368,24 @@ void RepoScene::reorientateDirectXModel()
 		}
 
 	}
+}
+
+void RepoScene::setWorldOffset(
+	const std::vector<double> &offset)
+{
+	if (offset.size() > 0)
+	{
+		if (worldOffset.size())
+		{
+			worldOffset.clear();
+		}
+		worldOffset.insert(worldOffset.end(), offset.begin(), offset.end());
+	}
+	else
+	{
+		repoWarning << "Trying to set world off set with no values. Ignoring...";
+	}
+	
 }
 
 void RepoScene::printStatistics(std::iostream &output)

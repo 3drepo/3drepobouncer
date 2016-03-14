@@ -1012,18 +1012,11 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		* ---------------------------------------------
 		*/
 
-		//Construct the scene graph
-		if (scenePtr)
-		{
-			scenePtr->addStashGraph(cameras, meshes, materials, textures, transformations);
-		}
-		else
-		{
-			std::vector<std::string> fileVect;
-			if (!orgFile.empty())
-				fileVect.push_back(orgFile);
-			scenePtr = new repo::core::model::RepoScene(fileVect, cameras, meshes, materials, metadata, textures, transformations);
-		}
+		std::vector<std::string> fileVect;
+		if (!orgFile.empty())
+			fileVect.push_back(orgFile);
+		scenePtr = new repo::core::model::RepoScene(fileVect, cameras, meshes, materials, metadata, textures, transformations);
+		scenePtr->setWorldOffset(sceneBbox[0]);
 	}
 	else
 	{

@@ -170,7 +170,7 @@ namespace repo{
 				*/
 				std::vector<std::vector<double>> getSceneBoundingBox() const;
 
-				void AssimpModelImport::getSceneBoundingBoxInternal(
+				void getSceneBoundingBoxInternal(
 					const aiNode                     *node,
 					const aiMatrix4x4                &mat,
 					std::vector<std::vector<double>> &bbox) const;

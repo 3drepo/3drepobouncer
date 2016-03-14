@@ -377,6 +377,15 @@ namespace repo{
 					void setCommitMessage(const std::string &msg) { commitMsg = msg; }
 
 					/**
+					* Set the world offset value for the model
+					* models are often shifted for better viewing purposes
+					* this value tells us how much to shift to put it back into
+					* it's relative world coordinates.
+					*/
+					void setWorldOffset(
+						const std::vector<double> &offset);
+
+					/**
 					* Get branch name return uuid of branch there is no name
 					* return "master" if this scene is not revisioned.
 					* @return name of the branch or uuid if no name
@@ -1019,6 +1028,7 @@ namespace repo{
 					std::string jsonExt;      /*! extension for JSON graph metadata files*/
 					std::vector<std::string> refFiles;  //Original Files that created this scene
 					std::vector<RepoNode*> toRemove;
+					std::vector<double> worldOffset;
 					repoUUID   revision;
 					repoUUID   branch;
 					std::string commitMsg;

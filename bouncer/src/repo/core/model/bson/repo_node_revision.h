@@ -41,6 +41,7 @@
 #define REPO_NODE_REVISION_LABEL_BRANCH_MASTER			"master" //!< Master branch
 #define REPO_NODE_REVISION_LABEL_REF_FILE               "rFile" //!< Reference file
 #define REPO_NODE_REVISION_LABEL_INCOMPLETE             "incomplete"
+#define REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT      "coordOffset"
 #define REPO_NODE_UUID_SUFFIX_REVISION			"10" //!< uuid suffix
 //------------------------------------------------------------------------------
 
