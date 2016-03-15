@@ -45,7 +45,6 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 	std::vector<repo_vector_t> vertices = getVertices();
 	std::vector<repo_vector_t> normals = getNormals();
 
-
 	RepoBSONBuilder builder;
 
 	if (vertices.size())
@@ -56,7 +55,6 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 		{
 			resultVertice.push_back(multiplyMatVec(matrix, v));
 		}
-
 		builder.appendBinary(REPO_NODE_MESH_LABEL_VERTICES, resultVertice.data(), resultVertice.size() * sizeof(repo_vector_t));
 	}
 	else

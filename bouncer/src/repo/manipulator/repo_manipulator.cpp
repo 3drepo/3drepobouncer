@@ -359,8 +359,6 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 					<< " of " << database << "." << project;
 				if (lightFetch)
 				{
-
-
 						if (scene->loadStash(handler, errMsg))
 						{
 							repoTrace << "Stash Loaded";
@@ -368,7 +366,7 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 						else
 						{
 							//failed to load stash isn't critical, give it a warning instead of returning false
-							repoWarning << "Error loading stash" << errMsg;
+							repoWarning << "Error loading stash for " << database << "." << project << " : " << errMsg;
 							if (scene->loadScene(handler, errMsg))
 							{
 								repoTrace << "Scene Loaded";
@@ -392,7 +390,7 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 						else
 						{
 							//failed to load stash isn't critical, give it a warning instead of returning false
-							repoWarning << "Error loading stash" << errMsg;
+							repoWarning << "Error loading stash for " << database << "." << project << " : " << errMsg;
 						}
 					}
 					else{
@@ -442,7 +440,7 @@ void RepoManipulator::fetchScene(
 			else
 			{
 				if (!errMsg.empty())
-					repoError << "Error loading stash: " << errMsg;
+					repoWarning << "Error loading stash for " << scene->getDatabaseName() << "." << scene->getProjectName() << " : " << errMsg;
 			}
 
 			errMsg.clear();

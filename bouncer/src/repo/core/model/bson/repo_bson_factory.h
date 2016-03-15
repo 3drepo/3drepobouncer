@@ -302,6 +302,7 @@ public:
     //* @param modified vector of what nodes are modified (shared IDs)
     * @param files    vector of the original files for this model
     * @param parent   UUID of parent (in a vector)
+	* @param worldOffset x,y,z offset for world coordinates
     * @param message  A message to describe what this commit is for (optional)
     * @param tag      A tag for this specific revision (optional)
     * @param apiLevel API Level(optional)
@@ -317,6 +318,7 @@ public:
             //const std::vector<repoUUID>    &modified,
             const std::vector<std::string> &files = std::vector<std::string>(),
             const std::vector<repoUUID>    &parent = std::vector<repoUUID>(),
+			const std::vector<double>       &worldOffset = std::vector<double>(),
             const std::string              &message = std::string(),
             const std::string              &tag = std::string(),
             const int                      &apiLevel = REPO_NODE_API_LEVEL_1
