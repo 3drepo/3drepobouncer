@@ -849,7 +849,7 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 
 	//--------------------------------------------------------------------------
 	// Shift for world coordinates
-	if (currentNodes.size() > 0)
+	if (worldOffset.size() > 0)
 		builder.appendArray(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT, worldOffset);
 
     ////--------------------------------------------------------------------------

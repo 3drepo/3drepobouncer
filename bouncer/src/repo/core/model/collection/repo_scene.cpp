@@ -1106,10 +1106,18 @@ bool RepoScene::loadStash(
 	builder.append(REPO_NODE_STASH_REF, revNode->getUniqueID());
 
 	std::vector<RepoBSON> nodes = handler->findAllByCriteria(databaseName, projectName + "." + stashExt, builder.obj());
+	if (success = nodes.size())
+	{
+		repoInfo << "# of nodes in this stash scene = " << nodes.size();
+		success = populate(GraphType::OPTIMIZED, handler, nodes, errMsg);
+	}
+	else
+	{
+		errMsg += "stash is empty";
+	}
+	
 
-	repoInfo << "# of nodes in this stash scene = " << nodes.size();
-
-	return populate(GraphType::OPTIMIZED, handler, nodes, errMsg) && nodes.size() > 0;
+	return  success;
 
 }
 

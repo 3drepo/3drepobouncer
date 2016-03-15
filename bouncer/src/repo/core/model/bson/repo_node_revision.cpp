@@ -66,10 +66,20 @@ std::vector<double> RevisionNode::getCoordOffset() const
 	if (hasField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT))
 	{
 		auto offsetObj = getObjectField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT);
-		for (int i = 0; i < 3; ++i)
+		if (!offsetObj.isEmpty())
 		{
-			offset.push_back(offsetObj.getField(std::to_string(i)).Double());
+			for (int i = 0; i < 3; ++i)
+			{
+				offset.push_back(offsetObj.getField(std::to_string(i)).Double());
+			}
 		}
+		else
+		{
+			offset.push_back(0);
+			offset.push_back(0);
+			offset.push_back(0);
+		}
+		
 	}
 	else
 	{
