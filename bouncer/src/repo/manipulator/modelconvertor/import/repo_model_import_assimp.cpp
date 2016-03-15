@@ -667,7 +667,7 @@ const std::vector<repoUUID>						             &parent
 		}
 
 		//We need to update the translation vector with the worldOffset
-		if (worldOffset.size() /*&& assimpNode->mNumMeshes*/)
+		if (worldOffset.size())
 		{
 			for (int i = 0; i < 3; ++i)
 			{
