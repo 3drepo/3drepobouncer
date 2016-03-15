@@ -1356,14 +1356,15 @@ bool RepoScene::populate(
 		}
 
 	}
-	
+	repoTrace << "World Offset = [" << worldOffset[0] << " , " << worldOffset[1] << ", " << worldOffset[2] << " ]";
 	//Now that we know the world Offset, make sure the referenced scenes are shifted accordingly
 	for (const auto &node : g.references)
 	{
 		ReferenceNode* reference = (ReferenceNode*)node;
 		auto refScene = g.referenceToScene[reference->getSharedID()];
 		auto refOffset = refScene->getWorldOffset();
-		std::vector<double> dOffset = { -refOffset[0] - worldOffset[0], -refOffset[1] - worldOffset[1], -refOffset[2] - worldOffset[2]};
+		std::vector<double> dOffset = { refOffset[0] - worldOffset[0], refOffset[1] - worldOffset[1], refOffset[2] - worldOffset[2]};
+		repoTrace << "delta Offset = [" << dOffset[0] << " , " << dOffset[1] << ", " << dOffset[2] << " ]";
 		refScene->shiftModel(dOffset);
 
 	}
@@ -1462,9 +1463,9 @@ void RepoScene::shiftModel(
 	const std::vector<double> &offset)
 {
 	std::vector<float> transMat = { 1, 0, 0, (float)offset[0],
-									1, 0, 0, (float)offset[1],
-									1, 0, 0, (float)offset[2],
-									1, 0, 0, 0};
+									0, 1, 0, (float)offset[1],
+									0, 0, 1, (float)offset[2],
+									0, 0, 0, 1};
 	if (graph.rootNode)
 	{
 		auto translatedRoot = graph.rootNode->cloneAndApplyTransformation(transMat);

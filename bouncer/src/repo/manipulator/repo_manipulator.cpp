@@ -359,8 +359,6 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 					<< " of " << database << "." << project;
 				if (lightFetch)
 				{
-
-
 						if (scene->loadStash(handler, errMsg))
 						{
 							repoTrace << "Stash Loaded";
