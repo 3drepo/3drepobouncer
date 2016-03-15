@@ -310,6 +310,7 @@ namespace repo{
 						else 
 							return revision;
 					}
+					
 
 					static std::vector<std::string> getProjectExtensions()
 					{
@@ -323,6 +324,18 @@ namespace repo{
 					std::string getProjectName() const
 					{
 						return projectName;
+					}
+
+					/**
+					* Get the world offset shift coordinates of the model
+					* @return a vector of double denoting its offset
+					*/
+					std::vector<double> getWorldOffset() const
+					{
+						if (revNode)
+							return revNode->getCoordOffset();
+						else
+							return worldOffset.size() ? worldOffset : std::vector<double>({0, 0, 0});
 					}
 
 					/**
@@ -1011,6 +1024,14 @@ namespace repo{
 						const RepoNodeSet &references,
 						const RepoNodeSet &maps,
 						const RepoNodeSet &unknowns);
+
+					/**
+					* Shift the model by the given vector
+					* this alter the root node with the given translation
+					* @param offset a vector 3 double denoting the vector shift
+					*/
+					void shiftModel(
+						const std::vector<double> &offset);
 
 
 					/*

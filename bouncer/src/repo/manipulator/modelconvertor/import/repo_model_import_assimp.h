@@ -148,13 +148,14 @@ namespace repo{
 				* @return returns the created Metadata Node
 				*/
 				repo::core::model::RepoNodeSet createTransformationNodesRecursive(
-					const aiNode                                                     *assimpNode,
+					const aiNode                                                         *assimpNode,
 					const std::unordered_map<std::string, repo::core::model::RepoNode *> &cameras,
-					const std::vector<repo::core::model::RepoNode *>           &meshes,
-					repo::core::model::RepoNodeSet						     &metadata,
-					assimp_map													&map,
-					uint32_t &count ,
-					const std::vector<repoUUID>						             &parent = std::vector<repoUUID>()
+					const std::vector<repo::core::model::RepoNode *>                     &meshes,
+					repo::core::model::RepoNodeSet						                 &metadata,
+					assimp_map													         &map,
+					uint32_t                                                             &count ,
+					const std::vector<double>                                            &worldOffset,
+					const std::vector<repoUUID>						                     &parent = std::vector<repoUUID>()
 					);
 				
 				/**

@@ -643,6 +643,7 @@ const std::vector<repo::core::model::RepoNode *>           &meshes,
 repo::core::model::RepoNodeSet						     &metadata,
 assimp_map													&map,
 uint32_t                                               &count,
+const std::vector<double>                                &worldOffset,
 const std::vector<repoUUID>						             &parent
 
 	)
@@ -664,6 +665,18 @@ const std::vector<repoUUID>						             &parent
 			}
 			transMat.push_back(rows);
 		}
+
+		//We need to update the translation vector with the worldOffset
+		if (worldOffset.size() /*&& assimpNode->mNumMeshes*/)
+		{
+			for (int i = 0; i < 3; ++i)
+			{
+				double extraOffset = worldOffset[0] * transMat[i][0] + transMat[i][1] * worldOffset[1]
+					+ worldOffset[2] * transMat[i][2] - worldOffset[i];
+				transMat[i][3] += extraOffset;
+			}
+		}
+		
 
 
 		repo::core::model::TransformationNode * transNode =
@@ -729,7 +742,7 @@ const std::vector<repoUUID>						             &parent
 
 			repo::core::model::RepoNodeSet childMetadata;
 			repo::core::model::RepoNodeSet childSet =  createTransformationNodesRecursive(assimpNode->mChildren[i],
-				cameras, meshes, childMetadata, map, ++count, myShareID);
+				cameras, meshes, childMetadata, map, ++count, worldOffset, myShareID);
 
 			transNodes.insert(childSet.begin(), childSet.end());
 			metadata.insert(childMetadata.begin(), childMetadata.end());
@@ -905,6 +918,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		*/
 
 		repoInfo << "Constructing Mesh Nodes...";
+		repoInfo << "Scene offset : {" << sceneBbox[0][0] << "," << sceneBbox[0][1] << "," << sceneBbox[0][2] << "}";
 		/*
 		* --------------- Mesh Nodes ------------------
 		*/
@@ -1004,9 +1018,9 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		// RootNode will be the first entry in transformations vector.
 
 		uint32_t count = 0;
-		transformations = createTransformationNodesRecursive(assimpScene->mRootNode, camerasMap, originalOrderMesh, metadata, map, count);
+		transformations = createTransformationNodesRecursive(assimpScene->mRootNode, camerasMap, originalOrderMesh, metadata, map, count, sceneBbox[0]);
 
-		repoInfo << "Node Construction completed. (#transformations: " << transformations.size() << ", #Metadata" << metadata.size();
+		repoInfo << "Node Construction completed. (#transformations: " << transformations.size() << ", #Metadata" << metadata.size() << ")";
 
 		/*
 		* ---------------------------------------------

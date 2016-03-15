@@ -909,6 +909,7 @@ void RepoScene::getSceneBoundingBoxInternal(
 
 		}
 		case NodeType::MESH:
+		{
 			const MeshNode *mesh = dynamic_cast<const MeshNode*>(node);
 			auto mbbox = mesh->getBoundingBox();
 			std::vector<repo_vector_t> newmBBox;
@@ -943,6 +944,43 @@ void RepoScene::getSceneBoundingBoxInternal(
 
 			break;
 		}
+		case NodeType::REFERENCE:
+		{
+			repoGraphInstance g = gType == GraphType::DEFAULT ? graph : stashGraph;
+			auto refSceneIt = graph.referenceToScene.find(node->getSharedID());
+			if (refSceneIt != graph.referenceToScene.end())
+			{
+				const RepoScene *refScene = refSceneIt->second;
+				const std::vector<repo_vector_t> refSceneBbox = refScene->getSceneBoundingBox();
+
+				if (bbox.size())
+				{
+					if (refSceneBbox[0].x < bbox[0].x)
+						bbox[0].x = refSceneBbox[0].x;
+					if (refSceneBbox[0].y < bbox[0].y)
+						bbox[0].y = refSceneBbox[0].y;
+					if (refSceneBbox[0].z < bbox[0].z)
+						bbox[0].z = refSceneBbox[0].z;
+
+					if (refSceneBbox[1].x > bbox[1].x)
+						bbox[1].x = refSceneBbox[1].x;
+					if (refSceneBbox[1].y > bbox[1].y)
+						bbox[1].y = refSceneBbox[1].y;
+					if (refSceneBbox[1].z > bbox[1].z)
+						bbox[1].z = refSceneBbox[1].z;
+				}
+				else
+				{
+					//no bbox yet
+					bbox.push_back(refSceneBbox[0]);
+					bbox.push_back(refSceneBbox[1]);
+				}
+
+			}
+			break;
+		}
+		}
+		
 	}
 
 }
@@ -1277,6 +1315,9 @@ bool RepoScene::populate(
 
 	//deal with References
 	RepoNodeSet::iterator refIt;
+	//Make sure it is propagated into the repoScene if it exists in revision node
+	worldOffset = getWorldOffset();
+
 	for (const auto &node : g.references)
 	{
 		ReferenceNode* reference = (ReferenceNode*) node;
@@ -1292,12 +1333,33 @@ bool RepoScene::populate(
 		if (refg->loadStash(handler, errMsg) || refg->loadScene(handler, errMsg))
 		{
 			g.referenceToScene[reference->getSharedID()] = refg;
+			auto refOffset = refg->getWorldOffset();
+			if (refOffset.size() >= worldOffset.size())
+			{
+				for (size_t offIdx = 0; offIdx < worldOffset.size(); ++offIdx)
+				{
+					if (worldOffset[offIdx] > refOffset[offIdx])
+						worldOffset[offIdx] = refOffset[offIdx];
+				}
+			}
 		}
 		else{
 			repoWarning << "Failed to load reference node for ref ID" << reference->getUniqueID() << ": " << errMsg;
 		}
 
 	}
+	
+	//Now that we know the world Offset, make sure the referenced scenes are shifted accordingly
+	for (const auto &node : g.references)
+	{
+		ReferenceNode* reference = (ReferenceNode*)node;
+		auto refScene = g.referenceToScene[reference->getSharedID()];
+		auto refOffset = refScene->getWorldOffset();
+		std::vector<double> dOffset = { -refOffset[0] - worldOffset[0], -refOffset[1] - worldOffset[1], -refOffset[2] - worldOffset[2]};
+		refScene->shiftModel(dOffset);
+
+	}
+
 	return success;
 }
 
@@ -1386,6 +1448,26 @@ void RepoScene::setWorldOffset(
 		repoWarning << "Trying to set world off set with no values. Ignoring...";
 	}
 	
+}
+
+void RepoScene::shiftModel(
+	const std::vector<double> &offset)
+{
+	std::vector<float> transMat = { 1, 0, 0, (float)offset[0],
+									1, 0, 0, (float)offset[1],
+									1, 0, 0, (float)offset[2],
+									1, 0, 0, 0};
+	if (graph.rootNode)
+	{
+		auto translatedRoot = graph.rootNode->cloneAndApplyTransformation(transMat);
+		graph.rootNode->swap(translatedRoot);
+	}
+
+	if (stashGraph.rootNode)
+	{
+		auto translatedRoot = stashGraph.rootNode->cloneAndApplyTransformation(transMat);
+		stashGraph.rootNode->swap(translatedRoot);
+	}
 }
 
 void RepoScene::printStatistics(std::iostream &output)
