@@ -243,7 +243,7 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 		repo_material_t repo_material;
 
 		aiColor3D tempColor;
-		float tempFloat;
+		double tempFloat;
 
 		//--------------------------------------------------------------------------
 		// Ambient
