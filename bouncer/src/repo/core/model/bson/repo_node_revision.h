@@ -41,6 +41,7 @@
 #define REPO_NODE_REVISION_LABEL_BRANCH_MASTER			"master" //!< Master branch
 #define REPO_NODE_REVISION_LABEL_REF_FILE               "rFile" //!< Reference file
 #define REPO_NODE_REVISION_LABEL_INCOMPLETE             "incomplete"
+#define REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT      "coordOffset"
 #define REPO_NODE_UUID_SUFFIX_REVISION			"10" //!< uuid suffix
 //------------------------------------------------------------------------------
 
@@ -80,6 +81,12 @@ namespace repo {
 					* @return returns a string for message. empty string if none.
 					*/
 					std::string getAuthor() const;
+
+					/**
+					* Get the offset coordinates to translate the model
+					* @return return a vector of double (size of 3)
+					*/
+					std::vector<double> getCoordOffset() const;
 
 					/**
 					* Get a list of current IDs for this revision
