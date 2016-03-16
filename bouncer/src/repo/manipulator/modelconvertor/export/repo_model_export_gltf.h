@@ -234,6 +234,12 @@ namespace repo{
 				bool generateTreeRepresentation();
 
 				/**
+				* Generate a property tree representing the spatial partitioning
+				* @return return a property tree with adequate entries
+				*/
+				repo::lib::PropertyTree generateSpatialPartitioningTree();
+
+				/**
 				* Return the GLTF file as raw bytes buffer
 				* returns an empty vector if the export has failed
 				*/

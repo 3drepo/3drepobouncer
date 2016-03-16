@@ -29,7 +29,38 @@ AbstractSpatialPartitioner::AbstractSpatialPartitioner(
 {
 }
 
-
 AbstractSpatialPartitioner::~AbstractSpatialPartitioner()
 {
+}
+
+repo::lib::PropertyTree AbstractSpatialPartitioner::generatePropertyTreeForPartitioning()
+{	
+	return generatePropertyTreeForPartitioningInternal(partitionScene());	
+}
+
+repo::lib::PropertyTree AbstractSpatialPartitioner::generatePropertyTreeForPartitioningInternal(
+	const std::shared_ptr<PartitioningTree> &spTree) const
+{
+	repo::lib::PropertyTree tree(true);
+	if (spTree)
+	{
+
+
+		if (PartitioningTreeType::LEAF_NODE == spTree->type)
+		{
+			tree.addToTree("meshIDs", spTree->meshIDs);
+		}
+		else
+		{
+			std::string axisStr = PartitioningTreeType::PARTITION_X == spTree->type ? "X" 
+					: (PartitioningTreeType::PARTITION_Y == spTree->type ? "Y" : "Z");
+			tree.addToTree("axis", axisStr);
+			tree.addToTree("value", spTree->pValue);
+			tree.mergeSubTree("left", generatePropertyTreeForPartitioningInternal(spTree->left));
+			tree.mergeSubTree("right", generatePropertyTreeForPartitioningInternal(spTree->right));
+		}
+			
+	}
+	return tree;
+	
 }

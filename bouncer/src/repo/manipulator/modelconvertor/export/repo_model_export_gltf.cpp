@@ -20,6 +20,7 @@
 */
 
 #include "repo_model_export_gltf.h"
+#include "../../modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
 #include "../../../lib/repo_log.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "auxiliary/repo_model_export_x3d_gltf.h"
@@ -529,6 +530,9 @@ bool GLTFModelExport::constructScene(
 		tree.addToTree(GLTF_LABEL_SCENE, sceneName);
 		std::vector<std::string> treeNodes = { UUIDtoString(root->getUniqueID()) };
 		tree.addToTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_NODES, treeNodes);
+		repo::lib::PropertyTree spatialPartTree = generateSpatialPartitioningTree();
+
+		tree.mergeSubTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_EXTRA + ".partitioning", spatialPartTree);
 
 		auto splitMeshes = populateWithMeshes(tree);
 		populateWithNodes(tree, splitMeshes);
@@ -543,6 +547,12 @@ bool GLTFModelExport::constructScene(
 	}
 }
 
+repo::lib::PropertyTree GLTFModelExport::generateSpatialPartitioningTree()
+{
+	//TODO: We could take in a spatial partitioner in the constructor to allow flexibility
+	repo::manipulator::modelutility::RDTreeSpatialPartitioner rdTreePartitioner(scene);
+	return rdTreePartitioner.generatePropertyTreeForPartitioning();
+}
 
 bool GLTFModelExport::generateTreeRepresentation()
 {

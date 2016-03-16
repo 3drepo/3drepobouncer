@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "../../../lib/repo_property_tree.h"
 #include "../../../core/model/collection/repo_scene.h"
 
 namespace repo{
@@ -82,11 +83,20 @@ namespace repo{
 				virtual std::shared_ptr<PartitioningTree>
 										partitionScene() = 0;
 
+				/**
+				* Generate a property tree representing the PartitioningTree from partitionScene()
+				* @return returns the spatial partitioning information as a property tree
+				*/
+				virtual repo::lib::PropertyTree 
+							generatePropertyTreeForPartitioning();
+
 			protected:
 				const repo::core::model::RepoScene            *scene;
 				const uint32_t                                maxDepth;
 				const repo::core::model::RepoScene::GraphType gType;
 
+				repo::lib::PropertyTree generatePropertyTreeForPartitioningInternal(
+					const std::shared_ptr<PartitioningTree> &spTree) const;
 			};
 
 		}

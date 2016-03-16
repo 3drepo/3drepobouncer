@@ -43,13 +43,14 @@ std::vector<MeshEntry> RDTreeSpatialPartitioner::createMeshEntries()
 	assert(gType == repo::core::model::RepoScene::GraphType::OPTIMIZED);
 
 	auto meshes = scene->getAllMeshes(gType);
-
+	repoTrace << "meshes.size() : " << meshes.size();
 	for (const auto &node : meshes)
 	{
 		const auto mesh = dynamic_cast<repo::core::model::MeshNode*>(node);
 		if (mesh)
 		{
 			auto meshMaps = mesh->getMeshMapping();
+			repoTrace << "meshMaps.size() : " << meshMaps.size();
 			if (meshMaps.size())
 			{
 				for (const auto map : meshMaps)
@@ -95,7 +96,7 @@ std::vector<MeshEntry> RDTreeSpatialPartitioner::createMeshEntries()
 			repoWarning << "Failed to dynamically cast a mesh node, scene partitioning may be incomplete!";
 		}
 	}
-
+	repoTrace << "mesh entries : " << entries.size();
 	return entries;
 }
 
@@ -104,7 +105,7 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::createPartition(
 	const PartitioningTreeType   &axis,
 	const uint32_t               &depthCount)
 {
-	if (meshes.size() == 1 || depthCount == maxDepth)
+	if (meshes.size() == 1 || (depthCount == maxDepth && maxDepth != 0))
 	{
 		/*
 			If there is only one mesh left, or if we hit max depth count
@@ -128,13 +129,13 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::createPartition(
 	switch (axis)
 	{
 	case PartitioningTreeType::PARTITION_X:
-		PartitioningTreeType::PARTITION_Y;
+		nextAxis = PartitioningTreeType::PARTITION_Y;
 		break;
 	case PartitioningTreeType::PARTITION_Y:
-		PartitioningTreeType::PARTITION_Z;
+		nextAxis = PartitioningTreeType::PARTITION_Z;
 		break;
 	case PartitioningTreeType::PARTITION_Z:
-		PartitioningTreeType::PARTITION_X;
+		nextAxis = PartitioningTreeType::PARTITION_X;
 		break;
 	default:
 		//Only thing left is LEAF, which should never be passed in in the first place
@@ -228,7 +229,7 @@ void RDTreeSpatialPartitioner::sortMeshes(
 	else
 	{
 		//even - take the mean of the 2 middle number
-		median = sortedMeshes[sortedMeshes.size() / 2].min[axisIdx] + sortedMeshes[sortedMeshes.size() / 2 + 1].min[axisIdx] / 2.;
+		median = (sortedMeshes[sortedMeshes.size() / 2].min[axisIdx] + sortedMeshes[sortedMeshes.size() / 2 + 1].min[axisIdx]) / 2.;
 	}
 
 	//put the meshes into left and right mesh vectors

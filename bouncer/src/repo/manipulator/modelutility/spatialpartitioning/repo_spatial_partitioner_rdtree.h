@@ -33,11 +33,11 @@ namespace repo{
 				* bounding boxes.
 				* Note: currently only support scene with optimised graph!
 				* @param scene scene to divide
-				* @param depth limiting depth of the tree
+				* @param depth limiting depth of the tree (0 to disable limitation)
 				*/
 				RDTreeSpatialPartitioner(
 					const repo::core::model::RepoScene *scene,
-					const uint32_t                      &maxDepth);
+					const uint32_t                      &maxDepth = 8);
 
 				virtual ~RDTreeSpatialPartitioner();
 
