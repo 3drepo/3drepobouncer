@@ -71,7 +71,7 @@ namespace repo{
 				* @param lMeshes meshes belonging to the left child
 				* @param rMeshes meshes belonging to the right child
 				*/
-				void RDTreeSpatialPartitioner::sortMeshes(
+				void sortMeshes(
 					const std::vector<MeshEntry> &meshes,
 					const PartitioningTreeType   &axis,
 					float                        &median,
