@@ -289,6 +289,45 @@ bool MongoDatabaseHandler::dropDocument(
 	return success;
 }
 
+bool MongoDatabaseHandler::dropDocuments(
+	const repo::core::model::RepoBSON criteria,
+	const std::string &database,
+	const std::string &collection,
+	std::string &errMsg)
+{
+	bool success = false;
+	mongo::DBClientBase *worker;
+	if (!database.empty() && !collection.empty())
+	{
+		try{
+			worker = workerPool->getWorker();
+			if (success = !criteria.isEmpty())
+			{
+				worker->remove(database + "." + collection, criteria, false);
+
+			}
+			else
+			{
+				errMsg = "Failed to drop documents: empty criteria";
+			}
+
+		}
+		catch (mongo::DBException& e)
+		{
+			errMsg = "Failed to drop documents:" + std::string(e.what());		
+		}
+
+		workerPool->returnWorker(worker);
+
+	}
+	else
+	{
+		errMsg = "Failed to drop document: either database (value: " + database + ") or collection (value: " + collection + ") is empty";
+	}
+
+	return success;
+}
+
 mongo::BSONObj MongoDatabaseHandler::fieldsToReturn(
 	const std::list<std::string>& fields,
 	bool excludeIdField)
@@ -817,7 +856,6 @@ bool MongoDatabaseHandler::insertDocument(
 			worker->insert(getNamespace(database, collection), obj);
 
 			success = storeBigFiles(worker, database, collection, obj, errMsg);
-			repoTrace << "Success: " << success;
 
 		}
 		catch (mongo::DBException &e)
@@ -936,8 +974,6 @@ bool MongoDatabaseHandler::performRoleCmd(
 				mongo::BSONObj info;
 				auto cmd = cmdBuilder.obj();
 				success = worker->runCommand(role.getDatabase(), cmd, info);
-
-				repoTrace << "Role command : " << cmd;
 
 				std::string cmdError = info.getStringField("errmsg");
 				if (!cmdError.empty())

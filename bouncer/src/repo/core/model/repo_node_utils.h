@@ -284,8 +284,8 @@ static repo_vector_t multiplyMatVec(const std::vector<float> &mat, const repo_ve
 			12 13 14 15
 		*/
 
-		result.x = mat[0] * vec.x + mat[1] * vec.y + mat[2] * vec.z  + mat[3];
-		result.y = mat[4] * vec.x + mat[5] * vec.y + mat[6] * vec.z  + mat[7];
+		result.x = mat[0] * vec.x + mat[1] * vec.y + mat[2] * vec.z + mat[3];
+		result.y = mat[4] * vec.x + mat[5] * vec.y + mat[6] * vec.z + mat[7];
 		result.z = mat[8] * vec.x + mat[9] * vec.y + mat[10] * vec.z + mat[11];
 
 		float sig = 1e-5;
@@ -424,6 +424,34 @@ static std::vector<float> invertMat(const std::vector<float> &mat)
 		}
 
 
+	}
+
+	return result;
+}
+
+static std::vector<float> matMult(const std::vector<float> &mat1, const std::vector<float> &mat2)
+{
+	std::vector<float> result;
+	if (mat1.size() != mat2.size() != 16)
+	{
+		result.resize(16);
+
+		for (int i = 0; i < 4; ++i)
+		{
+			for (int j = 0; j < 4; ++j)
+			{
+				size_t resultIdx = i * 4 + j;
+				result[resultIdx] = 0;
+				for (int k = 0; k < 4; ++k)
+				{
+					result[resultIdx] += mat1[i * 4 + k] * mat2[k * 4 + j];
+				}
+			}
+		}
+	}
+	else
+	{
+		repoError << "We currently only support 4x4 matrix multiplications";
 	}
 
 	return result;

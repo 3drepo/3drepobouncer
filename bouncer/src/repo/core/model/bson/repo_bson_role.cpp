@@ -430,7 +430,25 @@ void RepoRole::updateActions(
 		{
 			vec.push_back(DBActions::INSERT);
 		}
+		else if (collectionType == "scene.files")
+		{
+			vec.push_back(DBActions::INSERT);
+		}
+		else if (collectionType == "scene.chunks")
+		{
+			vec.push_back(DBActions::INSERT);
+		}
 		else if (collectionType == "stash.3drepo")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
+		}
+		else if (collectionType == "stash.3drepo.files")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
+		}
+		else if (collectionType == "stash.3drepo.chunks")
 		{
 			vec.push_back(DBActions::INSERT);
 			vec.push_back(DBActions::REMOVE);
@@ -440,7 +458,27 @@ void RepoRole::updateActions(
 			vec.push_back(DBActions::INSERT);
 			vec.push_back(DBActions::REMOVE);
 		}
+		else if (collectionType == "stash.src.files")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
+		}
+		else if (collectionType == "stash.src.chunks")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
+		}
 		else if (collectionType == "stash.x3d")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
+		}
+		else if (collectionType == "stash.x3d.files")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
+		}
+		else if (collectionType == "stash.x3d.chunks")
 		{
 			vec.push_back(DBActions::INSERT);
 			vec.push_back(DBActions::REMOVE);
@@ -450,7 +488,25 @@ void RepoRole::updateActions(
 			vec.push_back(DBActions::INSERT);
 			vec.push_back(DBActions::REMOVE);
 		}
+		else if (collectionType == "stash.gltf.files")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
+		}
+		else if (collectionType == "stash.gltf.chunks")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
+		}
 		else if (collectionType == "history")
+		{
+			vec.push_back(DBActions::INSERT);
+		}
+		else if (collectionType == "history.files")
+		{
+			vec.push_back(DBActions::INSERT);
+		}
+		else if (collectionType == "history.chunks")
 		{
 			vec.push_back(DBActions::INSERT);
 		}

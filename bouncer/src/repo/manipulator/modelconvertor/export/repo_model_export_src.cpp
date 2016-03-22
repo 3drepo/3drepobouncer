@@ -611,6 +611,7 @@ void SRCModelExport::addMeshToExport(
 
 		}
 
+
 	}//for (size_t subMeshIdx = 0; subMeshIdx < nSubMeshes; ++subMeshIdx)
 
 	repoTrace << "Generating output buffers for " << idx;

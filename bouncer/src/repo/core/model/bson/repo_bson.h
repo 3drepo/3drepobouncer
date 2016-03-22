@@ -133,7 +133,6 @@ public:
             std::vector<uint8_t> bin = getBigBinary(field);
             if (bin.size() > 0)
             {
-                repoTrace << "Found file in extref - size of bin : " << (bin.size() / 1024 / 1024) << "MiB";
                 vec.resize(bin.size() / sizeof(T));
                 memcpy(vec.data(), &bin[0], bin.size());
                 success = true;
