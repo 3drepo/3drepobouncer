@@ -27,6 +27,7 @@ look forward to hear from you.
 
 ============================ Improvments =============================
 * (Issue #27) Increased speed of file imports
+* (Issue #29) Fix reorientation function for FBX models
 * (Issue #47) Optimised graph generation on longer relies on ASSIMP
 * (Issue #69) Fix issues with textured models
 * (Issue #70) Removed Spurious log messages during file import
