@@ -1139,14 +1139,13 @@ void RepoScene::modifyNode(
 	RepoNode updatedNode;
 
 	//generate new UUID if it  is not in list, otherwise use the current one.
-	bool isInList = gtype == GraphType::DEFAULT &&
+	bool isInList = gtype == GraphType::OPTIMIZED ||
 		( newAdded.find(sharedID) != newAdded.end() || newModified.find(sharedID) != newModified.end());
-		
 	updatedNode = overwrite ? *newNode : RepoNode(nodeToChange->cloneAndAddFields(newNode, !isInList));
 
 	repoUUID newUniqueID = updatedNode.getUniqueID();
 
-	if (!isInList)
+	if (gtype == GraphType::DEFAULT && !isInList)
 	{
 		newModified.insert(sharedID);
 		newCurrent.erase(nodeToChange->getUniqueID());
@@ -1404,12 +1403,12 @@ void RepoScene::reorientateDirectXModel()
 {
 	//Need to rotate the model by 270 degrees on the X axis
 	//This is essentially swapping the 2nd and 3rd column, negating the 2nd.
-
+	repoTrace << "Reorientating model...";
 	//Stash root and scene root should be identical!
 	if (graph.rootNode)
 	{
-		TransformationNode rootTrans = TransformationNode(*graph.rootNode);
-		std::vector<float> mat =  rootTrans.getTransMatrix();
+		auto rootTrans = dynamic_cast<TransformationNode*>(graph.rootNode);
+		std::vector<float> mat =  rootTrans->getTransMatrix();
 		if (mat.size() == 16)
 		{
 			std::vector<std::vector<float>> newMatrix;
@@ -1428,8 +1427,9 @@ void RepoScene::reorientateDirectXModel()
 
 
 
-			TransformationNode newRoot = RepoBSONFactory::makeTransformationNode(newMatrix, rootTrans.getName());
-			modifyNode(GraphType::DEFAULT, rootTrans.getSharedID(), &newRoot);
+			TransformationNode newRoot = RepoBSONFactory::makeTransformationNode(newMatrix, rootTrans->getName());
+			modifyNode(GraphType::DEFAULT, rootTrans->getSharedID(), &newRoot);
+			
 			if (stashGraph.rootNode)
 				modifyNode(GraphType::OPTIMIZED, stashGraph.rootNode->getSharedID(), &newRoot);
 		}
