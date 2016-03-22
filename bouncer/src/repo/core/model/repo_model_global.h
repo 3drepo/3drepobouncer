@@ -54,15 +54,24 @@
 #define REPO_LABEL_USER             "user"
 #define REPO_LABEL_WIDTH            "width"
 #define REPO_LABEL_TYPE             "type"
+#define REPO_LABEL_PIN_SIZE         "pinSize"
+#define REPO_LABEL_AVATAR_HEIGHT    "avatarHeight"
+#define REPO_LABEL_VISIBILITY_LIMIT "visibilityLimit"
+#define REPO_LABEL_SPEED            "speed"
+#define REPO_LABEL_ZFAR             "zFar"
+#define REPO_LABEL_ZNEAR            "zNear"
 
 #define REPO_LABEL_DESCRIPTION      "desc"
 #define REPO_LABEL_OWNER            "owner"
 #define REPO_LABEL_GROUP            "group"
-#define REPO_LABEL_PERMISSIONS      "permissions"
+#define REPO_LABEL_PROPERTIES       "properties"
 #define REPO_LABEL_USERS            "users"
 
+#define REPO_LABEL_COLOR            "color"
+#define REPO_LABEL_MODULES          "modules"
+
 // Vertex/triangle map propeties
-#define REPO_LABEL_MERGED_NODES 	"merged_nodes"
+#define REPO_LABEL_MERGED_NODES     "merged_nodes"
 
 
 #define REPO_COMMAND_UPDATE         "update"
@@ -75,12 +84,34 @@
 #define REPO_COMMAND_U              "u"
 
 #define REPO_COLLECTION_HISTORY     "history"
-#define REPO_COLLECTION_SCENE       "scene"
-#define REPO_COLLECTION_REPOSTASH   "stash.3drepo"
+#define REPO_COLLECTION_ISSUES      "issues"
 #define REPO_COLLECTION_RAW         "history"
-#define REPO_COLLECTION_SETTINGS    "settings"
+#define REPO_COLLECTION_SCENE       "scene"
+#define REPO_COLLECTION_STASH_REPO  "stash.3drepo"
+#define REPO_COLLECTION_STASH_SRC   "stash.src"
+#define REPO_COLLECTION_STASH_GLTF  "stash.gltf"
+#define REPO_COLLECTION_STASH_X3D   "stash.x3d"
+#define REPO_COLLECTION_STASH_JSON  "stash.json_mpc"
 
-#define REPO_PROJECT_TYPE_ARCHITECTURAL "architectural"
+#define REPO_COLLECTION_SETTINGS            "settings"
+
+//!!!!!!!!!!!!!!!!!!
+// FIXME: change to settings.projects once the 3drepo.io is ready!
+#define REPO_COLLECTION_SETTINGS_PROJECTS   "settings"
+//!!!!!!!!!!!!!!!!!!
+
+#define REPO_COLLECTION_SETTINGS_ROLES      "settings.roles"
+
+// Project settings
+#define REPO_DEFAULT_PROJECT_TYPE_ARCHITECTURAL "architectural"
+#define REPO_DEFAULT_PROJECT_PIN_SIZE           1.6
+#define REPO_DEFAULT_PROJECT_AVATAR_HEIGHT      1.6
+#define REPO_DEFAULT_PROJECT_VISIBILITY_LIMIT   1000.0
+#define REPO_DEFAULT_PROJECT_SPEED              5.0
+#define REPO_DEFAULT_PROJECT_ZFAR               1000.0
+#define REPO_DEFAULT_PROJECT_ZNEAR              0.001
+
+
 
 #define REPO_HISTORY_MASTER_BRANCH  "00000000-0000-0000-0000-000000000000"
 
@@ -93,9 +124,9 @@
 #define REPO_MEDIA_TYPE_GIF     "image/gif"                 //!< Graphic Interchange Format
 #define REPO_MEDIA_TYPE_JPG     "image/jpeg"                //!< Joint Photographic Experts Group
 #define REPO_MEDIA_TYPE_PNG     "image/png"                 //!< Portable Network Graphics
-#define REPO_MEDIA_TYPE_PBM     "image/x-portable-bitmap"	//!< Portable Bitmap
-#define REPO_MEDIA_TYPE_PGM     "image/x-portable-graymap"	//!< Portable Graymap
-#define REPO_MEDIA_TYPE_PPM     "image/x-portable-pixmap"	//!< Portable Pixmap
+#define REPO_MEDIA_TYPE_PBM     "image/x-portable-bitmap"   //!< Portable Bitmap
+#define REPO_MEDIA_TYPE_PGM     "image/x-portable-graymap"  //!< Portable Graymap
+#define REPO_MEDIA_TYPE_PPM     "image/x-portable-pixmap"   //!< Portable Pixmap
 #define REPO_MEDIA_TYPE_XBM     "image/x-xbitmap"           //!< X11 Bitmap
 #define REPO_MEDIA_TYPE_XPM     "image/x-xpixmap"           //!< X11 Pixmap
 #define REPO_MEDIA_TYPE_SVG     "image/svg+xml"             //!< Scalable Vector Graphics

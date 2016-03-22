@@ -56,15 +56,27 @@ RepoBSON::RepoBSON(
 
 }
 
+RepoBSON RepoBSON::cloneAndAddFields(
+	const RepoBSON *changes) const
+{
+	mongo::BSONObjBuilder builder;
+
+	builder.appendElementsUnique(*changes);
+
+	builder.appendElementsUnique(*this);
+
+	return RepoBSON(builder.obj());
+}
+
 RepoBSON RepoBSON::cloneAndShrink() const
 {
 	std::set<std::string> fields;
-
 	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>>> rawFiles(bigFiles.begin(), bigFiles.end());
 	std::string uniqueIDStr = hasField(REPO_LABEL_ID) ? UUIDtoString(getUUIDField(REPO_LABEL_ID)) : UUIDtoString(generateUUID());
-	mongo::BSONObjBuilder builder;
 
 	getFieldNames(fields);
+
+	RepoBSON resultBson = *this;
 	
 	for (const std::string &field : fields)
 	{
@@ -72,13 +84,12 @@ RepoBSON RepoBSON::cloneAndShrink() const
 		{
 			std::string fileName = uniqueIDStr + "_" + field;
 			rawFiles[field] = std::pair<std::string, std::vector<uint8_t>>(fileName, std::vector<uint8_t>());
-			getBinaryFieldAsVector(field, &rawFiles[field].second);
+			getBinaryFieldAsVector(field, rawFiles[field].second);
+			resultBson = resultBson.removeField(field);
 		}
 	}
 
-	builder.appendElementsUnique(*this);
-
-	return RepoBSON(builder.obj(), rawFiles);
+	return RepoBSON(resultBson, rawFiles);
 
 }
 
@@ -177,16 +188,16 @@ std::vector<std::pair<std::string, std::string>> RepoBSON::getFileList() const
 std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
 {
 	std::vector<float> results;
-
 	if (hasField(label))
 	{
 		RepoBSON array = getObjectField(label);
-
 		if (!array.isEmpty())
 		{
 			std::set<std::string> fields;
 			array.getFieldNames(fields);
 
+            // Pre allocate memory to speed up copying
+            results.reserve(fields.size());
 			for (auto field : fields)
 				results.push_back(array.getField(field).numberDouble());
 		}
@@ -197,6 +208,20 @@ std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
 
 	}
 	return results;
+}
+
+std::vector<std::string> RepoBSON::getStringArray(const std::string &label) const
+{
+    std::vector<std::string> results;
+    if (hasField(label))
+    {
+        std::vector<RepoBSONElement> array = getField(label).Array();
+        // Pre allocate memory to speed up copying
+        results.reserve(array.size());
+        for (auto element : array)
+            results.push_back(element.String());
+    }
+    return results;
 }
 
 int64_t RepoBSON::getTimeStampField(const std::string &label) const
@@ -248,4 +273,29 @@ std::list<std::pair<std::string, std::string> > RepoBSON::getListStringPairField
 		}
 	}
 	return list;
+}
+
+double RepoBSON::getEmbeddedDouble(
+        const std::string &embeddedObjName,
+        const std::string &fieldName,
+        const double &defaultValue) const
+{
+    double value = defaultValue;
+    if (hasEmbeddedField(embeddedObjName, fieldName))
+    {
+         value = (getObjectField(embeddedObjName)).getField(fieldName).numberDouble();
+    }
+    return value;
+}
+
+bool RepoBSON::hasEmbeddedField(
+            const std::string &embeddedObjName,
+            const std::string &fieldName) const
+{
+    bool found = false;
+    if (hasField(embeddedObjName))
+    {
+        found = (getObjectField(embeddedObjName)).hasField(fieldName);
+    }
+    return found;
 }

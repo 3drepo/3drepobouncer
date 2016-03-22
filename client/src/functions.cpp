@@ -21,6 +21,8 @@
 
 static const std::string cmdImportFile = "import"; //file import
 static const std::string cmdTestConn   = "test";   //test the connection
+static const std::string cmdVersion = "version";   //test the connection
+static const std::string cmdVersion2 = "-v";   //test the connection
 
 
 std::string helpInfo()
@@ -29,8 +31,14 @@ std::string helpInfo()
 
 	ss << cmdImportFile << "\t\tImport file to database. (args: file database project [dxrotate] [owner] [configfile])\n";
 	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
+	ss << cmdVersion << "[-v]\t\tPrints the version of Repo Bouncer Client/Library\n";
 
 	return ss.str();
+}
+
+bool isSpecialCommand(const std::string &cmd)
+{
+	return cmd == cmdVersion || cmd == cmdVersion2;
 }
 
 int32_t knownValid(const std::string &cmd)
@@ -39,41 +47,48 @@ int32_t knownValid(const std::string &cmd)
 		return 3;
 	if (cmd == cmdTestConn)
 		return 0;
+	if (cmd == cmdVersion || cmd == cmdVersion2)
+		return 0;
 	return -1;
 }
 
-bool performOperation(
+int32_t performOperation(
 	repo::RepoController *controller,
 	const repo::RepoToken      *token,
 	const repo_op_t            &command
 	)
 {
+
+	int32_t errCode = REPOERR_UNKNOWN_CMD;
+
 	if (command.command == cmdImportFile)
-	{
-		bool success = false;
-		
+	{		
 		try{
 
-			success = importFileAndCommit(controller, token, command);
+			errCode = importFileAndCommit(controller, token, command);
 		}
 		catch (const std::exception &e)
 		{
 			repoLogError("Failed to import and commit file: " + std::string(e.what()));
+			errCode = REPOERR_UNKNOWN_ERR;
 		}
-
-		return success;
 		
 	}
 	else if (command.command == cmdTestConn)
 	{
 		//This is just to test if the client is working and if the connection is working
 		//if we got a token from the controller we can assume that it worked.
-		return token;
+		return token ?  REPOERR_OK : REPOERR_AUTH_FAILED;
 	}
+	else if (command.command == cmdVersion || command.command == cmdVersion2)
+	{
+		std::cout << "3D Repo Bouncer Client v" + controller->getVersion() << std::endl;
+		errCode = REPOERR_OK;
+	}
+	else
+		repoLogError("Unrecognised command: " + command.command + ". Type --help for info");
 
-
-	repoLogError("Unrecognised command: " + command.command + ". Type --help for info");
-	return false;
+	return errCode;
 }
 
 /*
@@ -81,7 +96,7 @@ bool performOperation(
 */
 
 
-bool importFileAndCommit(
+int32_t importFileAndCommit(
 	repo::RepoController *controller,
 	const repo::RepoToken      *token,
 	const repo_op_t            &command
@@ -94,7 +109,7 @@ bool importFileAndCommit(
 	{
 		repoLogError("Number of arguments mismatch! " + cmdImportFile 
 			+ " requires 3 arguments: file database project [dxrotate] [owner] [config file]");
-		return false;
+		return REPOERR_INVALID_ARG;
 	}
 
 	std::string fileLoc = command.args[0];
@@ -158,10 +173,10 @@ bool importFileAndCommit(
 		else
 			controller->commitScene(token, graph, owner);
 		//FIXME: should make commitscene return a boolean even though GUI doesn't care...
-		return true;
+		return REPOERR_OK;
 	}
-
-	return false;
+	
+	return REPOERR_LOAD_SCENE_FAIL;
 
 
 }

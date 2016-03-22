@@ -27,6 +27,7 @@
 #include <string>
 
 #include "../model/bson/repo_bson.h"
+#include "../model/bson/repo_bson_role.h"
 #include "../model/bson/repo_bson_user.h"
 #include "../model/bson/repo_bson_collection_stats.h"
 
@@ -97,6 +98,7 @@ namespace repo{
 					const std::string                             &database,
 					const std::string                             &collection,
 					const uint64_t                                &skip = 0,
+					const uint32_t								  &limit = 0,
 					const std::list<std::string>				  &fields = std::list<std::string>(),
 					const std::string							  &sortField = std::string(),
 					const int									  &sortOrder = -1) = 0;
@@ -159,6 +161,14 @@ namespace repo{
 				*/
 
 				/**
+				* Create a collection with the name specified
+				* @param database name of the database
+				* @param name name of the collection
+				*/
+				virtual void createCollection(const std::string &database, const std::string &name) = 0;
+				
+
+				/**
 				* Insert a single document in database.collection
 				* @param database name
 				* @param collection name
@@ -174,12 +184,13 @@ namespace repo{
 
 
 				/**
-				* Insert big raw file in binary format 
+				* Insert big raw file in binary format (using GridFS)
 				* @param database name
 				* @param collection name
 				* @param fileName to insert (has to be unique)
 				* @param bin raw binary of the file
 				* @param errMsg error message if it fails
+				* @param contentType the MIME type of the object (optional)
 				* @return returns true upon success
 				*/
 				virtual bool insertRawFile(
@@ -187,8 +198,20 @@ namespace repo{
 					const std::string          &collection,
 					const std::string          &fileName,
 					const std::vector<uint8_t> &bin,
-					std::string          &errMsg
+					std::string          &errMsg,
+					const std::string          &contentType = "binary/octet-stream"
 					) = 0;
+
+
+				/**
+				* Insert a role into the database
+				* @param role role bson to insert
+				* @param errmsg error message
+				* @return returns true upon success
+				*/
+				virtual bool insertRole(
+					const repo::core::model::RepoRole       &role,
+					std::string                             &errmsg) = 0;
 
 				/**
 				* Insert a user into the database
@@ -252,6 +275,30 @@ namespace repo{
 					std::string &errMsg)=0;
 
 				/**
+				* Remove all documents satisfying a certain criteria
+				* @param criteria document to remove
+				* @param database the database the collection resides in
+				* @param collection name of the collection the document is in
+				* @param errMsg name of the database to drop
+				*/
+				virtual bool dropDocuments(
+					const repo::core::model::RepoBSON criteria,
+					const std::string &database,
+					const std::string &collection,
+					std::string &errMsg) = 0;
+
+
+				/**
+				* Remove a role from the database
+				* @param role user bson to remove
+				* @param errmsg error message
+				* @return returns true upon success
+				*/
+				virtual bool dropRole(
+					const repo::core::model::RepoRole &role,
+					std::string                       &errmsg) = 0;
+
+				/**
 				* Remove a user from the database
 				* @param user user bson to remove
 				* @param errmsg error message
@@ -259,6 +306,17 @@ namespace repo{
 				*/
 				virtual bool dropUser(
 					const repo::core::model::RepoUser &user,
+					std::string                             &errmsg) = 0;
+
+
+				/**
+				* Update a role in the database
+				* @param role role bson to update
+				* @param errmsg error message
+				* @return returns true upon success
+				*/
+				virtual bool updateRole(
+					const repo::core::model::RepoRole       &role,
 					std::string                             &errmsg) = 0;
 
 				/**
@@ -286,6 +344,20 @@ namespace repo{
 					const std::string& database,
 					const std::string& collection,
 					const repo::core::model::RepoBSON& criteria) = 0;
+
+				/**
+				* Given a search criteria,  find one documents that passes this query
+				* @param database name of database
+				* @param collection name of collection
+				* @param criteria search criteria in a bson object
+				* @param sortField field to sort
+				* @return a RepoBSON objects satisfy the given criteria
+				*/
+				virtual repo::core::model::RepoBSON findOneByCriteria(
+					const std::string& database,
+					const std::string& collection,
+					const repo::core::model::RepoBSON& criteria,
+					const std::string& sortField = "") = 0;
 
 				/**
 				* Given a list of unique IDs, find all the documents associated to them

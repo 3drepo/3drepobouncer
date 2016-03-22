@@ -75,7 +75,7 @@ TEST(RepoBSONTest, GetBinaryAsVectorEmbedded)
 	RepoBSON bson(builder);
 
 
-	EXPECT_TRUE(bson.getBinaryFieldAsVector("binDataTest", in.size(), &out));
+	EXPECT_TRUE(bson.getBinaryFieldAsVector("binDataTest", out));
 
 	EXPECT_EQ(in.size(), out.size());
 	for (size_t i = 0; i < size; ++i)
@@ -84,13 +84,12 @@ TEST(RepoBSONTest, GetBinaryAsVectorEmbedded)
 	}
 
 
-	std::vector<char> *null = nullptr;
-
+	
 	//Invalid retrieval, but they shouldn't throw exception
-	EXPECT_FALSE(bson.getBinaryFieldAsVector("binDataTest", in.size(), null));
-	EXPECT_FALSE(bson.getBinaryFieldAsVector("numTest", &out));
-	EXPECT_FALSE(bson.getBinaryFieldAsVector("stringTest", &out));
-	EXPECT_FALSE(bson.getBinaryFieldAsVector("doesn'tExist", &out));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector("numTest", out));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector("stringTest", out));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector("doesn'tExist", out));
+
 }
 
 TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
@@ -114,8 +113,8 @@ TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
 	
 	RepoBSON bson2(RepoBSON(), map);
 
-	EXPECT_TRUE(bson.getBinaryFieldAsVector("binDataTest", in.size(), &out));
-	EXPECT_FALSE(bson.getBinaryFieldAsVector(fname, in.size(), &out)); //make sure fieldname/filename are not mixed up.
+	EXPECT_TRUE(bson.getBinaryFieldAsVector("binDataTest", out));
+	EXPECT_FALSE(bson.getBinaryFieldAsVector(fname, out)); //make sure fieldname/filename are not mixed up.
 
 	ASSERT_EQ(out.size(), in.size());
 	for (size_t i = 0; i < size; ++i)
@@ -124,8 +123,8 @@ TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
 	}
 
 
-	EXPECT_TRUE(bson2.getBinaryFieldAsVector("binDataTest", in.size(), &out));
-	EXPECT_FALSE(bson2.getBinaryFieldAsVector(fname, in.size(), &out)); //make sure fieldname/filename are not mixed up.
+	EXPECT_TRUE(bson2.getBinaryFieldAsVector("binDataTest", out));
+	EXPECT_FALSE(bson2.getBinaryFieldAsVector(fname, out)); //make sure fieldname/filename are not mixed up.
 
 	ASSERT_EQ(out.size(), in.size());
 	for (size_t i = 0; i < size; ++i)
@@ -228,6 +227,12 @@ TEST(RepoBSONTest, GetUUIDField)
 	EXPECT_NE(uuid, test.getUUIDField("hello"));
 	EXPECT_NE(uuid, testBson.getUUIDField("ice"));
 	EXPECT_NE(uuid, emptyBson.getUUIDField("ice"));
+
+	//Test new UUID
+	mongo::BSONObjBuilder builder2;
+	builder2.appendBinData("uuid", uuid.size(), mongo::newUUID, (char*)uuid.data);
+	RepoBSON test2 = RepoBSON(builder2.obj());
+	EXPECT_EQ(uuid, test2.getUUIDField("uuid"));
 	
 
 }
@@ -366,7 +371,7 @@ TEST(RepoBSONTest, CloneAndShrink)
 	//shrinking a bson without any binary fields should yield an identical bson
 	RepoBSON shrunkBson = testBson.cloneAndShrink();
 
-	EXPECT_EQ(testBson.toString(), shrunkBson.toString());
+	EXPECT_EQ(testBson, shrunkBson);
 	EXPECT_EQ(testBson.getFilesMapping().size(), shrunkBson.getFilesMapping().size());
 	
 	mongo::BSONObjBuilder builder;
@@ -390,11 +395,13 @@ TEST(RepoBSONTest, CloneAndShrink)
 	outMapping = shrunkBson.getFilesMapping();
 
 	EXPECT_NE(shrunkBson, binBson);
+	EXPECT_FALSE(shrunkBson.hasField("binDataTest"));
 	EXPECT_EQ(2, outMapping.size());
 	EXPECT_TRUE(outMapping.find("orgRef") != outMapping.end());
 
 	//Check the binary still obtainable
-	EXPECT_TRUE(shrunkBson.getBinaryFieldAsVector("binDataTest", in.size(), &out));
+	EXPECT_TRUE(shrunkBson.getBinaryFieldAsVector("binDataTest", out));
+
 
 	ASSERT_EQ(in.size(), out.size());
 	for (size_t i = 0; i < out.size(); ++i)
@@ -497,4 +504,41 @@ TEST(RepoBSONTest, HasOversizeFiles)
 	EXPECT_FALSE(testBson.hasOversizeFiles());
 	EXPECT_FALSE(emptyBson.hasOversizeFiles());
 
+}
+
+TEST(RepoBSONTest, GetEmbeddedDoubleTest)
+{
+	RepoBSON empty;
+
+	//Shouldn't fail.
+	EXPECT_EQ(empty.getEmbeddedDouble("something", "somethingElse"), 0);
+	EXPECT_EQ(empty.getEmbeddedDouble("something", "somethingElse", 10), 10);
+	
+	RepoBSON hasFieldWrongTypeBson(BSON("field" << 1));
+	EXPECT_EQ(hasFieldWrongTypeBson.getEmbeddedDouble("field", "somethingElse"), 0);
+
+	RepoBSON hasFieldNoEmbeddedField(BSON("field" << testBson));
+	EXPECT_EQ(hasFieldNoEmbeddedField.getEmbeddedDouble("field", "somethingElse"), 0);
+
+	RepoBSON hasEmbeddedFieldWrongType(BSON("field" << testBson));
+	EXPECT_EQ(hasEmbeddedFieldWrongType.getEmbeddedDouble("field", "ice"), 0);
+
+	RepoBSON expectNumber(BSON("field" << testBson));
+	EXPECT_EQ(expectNumber.getEmbeddedDouble("field", "amount"), 100);
+
+	auto innerBson = BSON("amount" << 1.10101);
+	RepoBSON expectNumber2(BSON("field" << innerBson ));
+	EXPECT_EQ(expectNumber2.getEmbeddedDouble("field", "amount"), 1.10101);
+}
+
+TEST(RepoBSONTest, HasEmbeddedFieldTest)
+{
+	EXPECT_FALSE(emptyBson.hasEmbeddedField("hi", "bye"));
+
+	RepoBSON hasFieldWrongTypeBson(BSON("field" << 1));
+	EXPECT_FALSE(hasFieldWrongTypeBson.hasEmbeddedField("field", "bye"));
+
+	RepoBSON expectTrue(BSON("field" << testBson));
+	EXPECT_TRUE(expectTrue.hasEmbeddedField("field", "ice"));
+	EXPECT_FALSE(expectTrue.hasEmbeddedField("field", "NonExistent"));
 }

@@ -39,6 +39,7 @@
 #include "../model/repo_node_utils.h"
 #include "../model/bson/repo_bson.h"
 #include "../model/bson/repo_bson_builder.h"
+#include "../model/bson/repo_bson_role.h"
 #include "../model/bson/repo_bson_user.h"
 #include "../../lib/repo_stack.h"
 
@@ -76,6 +77,12 @@ namespace repo{
 				~MongoDatabaseHandler();
 
 				/**
+				* Disconnects the handler and resets the instance
+				* Must call this before trying to reconnect to another database!
+				*/
+				static void disconnectHandler();
+
+				/**
 				 * Returns the instance of MongoDatabaseHandler
 				 * @param errMsg error message if this fails
 				 * @param host hostname of the database
@@ -91,7 +98,7 @@ namespace repo{
 					const std::string &host,
 					const int         &port,
 					const uint32_t    &maxConnections,
-					const std::string &dbName,
+					const std::string &dbName = std::string(),
 					const std::string &username = std::string(),
 					const std::string &password = std::string(),
 					const bool        &pwDigested = false);
@@ -99,7 +106,6 @@ namespace repo{
 
 				/**
 				* Returns the instance of MongoDatabaseHandler
-				* @param errMsg error message if this fails
 				* @param host string containing "databaseAddress:port"
 				* @return Returns null if there is no instance available
 				*/
@@ -115,7 +121,7 @@ namespace repo{
 				* @param username user name for authentication
 				* @param password password of the user
 				* @param pwDigested true if pw is digested
-				* @return returns the constructed BSON object, or 0 if username is empty
+				* @return returns the constructed BSON object, or 0 nullptr username is empty
 				*/
 				repo::core::model::RepoBSON* createBSONCredentials(
 					const std::string &dbName,
@@ -124,7 +130,7 @@ namespace repo{
 					const bool        &pwDigested = false)
 				{
 					mongo::BSONObj *mongoBSON = createAuthBSON(dbName, username, password, pwDigested);
-					return mongoBSON? new repo::core::model::RepoBSON(*mongoBSON) : 0;
+					return mongoBSON? new repo::core::model::RepoBSON(*mongoBSON) : nullptr;
 				}
 
 
@@ -151,17 +157,18 @@ namespace repo{
 				* the first n items.
 				* @param database name of database
 				* @param collection name of collection
+				* @param skip number of maximum items to skip (default is 0)
+				* @param limit number of maximum items to return (default is 0)
 				* @param fields fields to get back from the database
 				* @param sortField field to sort upon
 				* @param sortOrder 1 ascending, -1 descending
-				* @param skip specify how many documents to skip
-				* @return list of RepoBSONs representing the documents
 				*/
 				std::vector<repo::core::model::RepoBSON>
 					getAllFromCollectionTailable(
 					const std::string                             &database,
 					const std::string                             &collection,
 					const uint64_t                                &skip = 0,
+					const uint32_t								  &limit = 0,
 					const std::list<std::string>				  &fields = std::list<std::string>(),
 					const std::string							  &sortField = std::string(),
 					const int									  &sortOrder = -1);
@@ -201,7 +208,7 @@ namespace repo{
 				 */
 				std::map<std::string, std::list<std::string> > getDatabasesWithProjects(
 					const std::list<std::string> &databases,
-					const std::string &projectExt = "scene");
+					const std::string &projectExt = "history");
 
 				/**
 				 * Get a list of projects associated with a given database (aka company account).
@@ -244,6 +251,13 @@ namespace repo{
 
 
 				/**
+				* Create a collection with the name specified
+				* @param database name of the database
+				* @param name name of the collection
+				*/
+				virtual void createCollection(const std::string &database, const std::string &name);
+
+				/**
 				* Remove a collection from the database
 				* @param database the database the collection resides in
 				* @param collection name of the collection to drop
@@ -276,6 +290,32 @@ namespace repo{
 					const std::string &database,
 					const std::string &collection,
 					std::string &errMsg);
+
+				/**
+				* Remove all documents satisfying a certain criteria
+				* @param criteria document to remove
+				* @param database the database the collection resides in
+				* @param collection name of the collection the document is in
+				* @param errMsg name of the database to drop
+				*/
+				bool dropDocuments(
+					const repo::core::model::RepoBSON criteria,
+					const std::string &database,
+					const std::string &collection,
+					std::string &errMsg);
+
+				/**
+				* Remove a role from the database
+				* @param role user bson to remove
+				* @param errmsg error message
+				* @return returns true upon success
+				*/
+				bool dropRole(
+					const repo::core::model::RepoRole &role,
+					std::string                             &errmsg)
+				{
+					return performRoleCmd(OPERATION::DROP, role, errmsg);
+				}
 
 				/**
 				* Remove a user from the database
@@ -312,6 +352,7 @@ namespace repo{
 				* @param fileName to insert (has to be unique)
 				* @param bin raw binary of the file
 				* @param errMsg error message if it fails
+				* @param contentType the MIME type of the object (optional)
 				* @return returns true upon success
 				*/
 				bool insertRawFile(
@@ -319,8 +360,23 @@ namespace repo{
 					const std::string          &collection,
 					const std::string          &fileName,
 					const std::vector<uint8_t> &bin,
-					      std::string          &errMsg
+					      std::string          &errMsg,
+					const std::string          &contentType = "binary/octet-stream"
 					);
+
+				/**
+				* Insert a role into the database
+				* @param role role bson to insert
+				* @param errmsg error message
+				* @return returns true upon success
+				*/
+				bool insertRole(
+					const repo::core::model::RepoRole       &role,
+					std::string                             &errmsg)
+				{
+					return performRoleCmd(OPERATION::INSERT, role, errmsg);
+				}
+
 
 				/**
 				* Insert a user into the database
@@ -334,6 +390,7 @@ namespace repo{
 				{
 					return performUserCmd(OPERATION::INSERT, user, errmsg);
 				}
+
 
 				/**
 				* Update/insert a single document in database.collection
@@ -351,6 +408,19 @@ namespace repo{
 					const repo::core::model::RepoBSON &obj,
 					const bool        &overwrite,
 					std::string &errMsg);
+
+				/**
+				* Update a role in the database
+				* @param role role bson to update
+				* @param errmsg error message
+				* @return returns true upon success
+				*/
+				bool updateRole(
+					const repo::core::model::RepoRole       &role,
+					std::string                             &errmsg)
+				{
+					return performRoleCmd(OPERATION::UPDATE, role, errmsg);
+				}
 
 				/**
 				* Update a user in the database
@@ -396,6 +466,21 @@ namespace repo{
 					const repo::core::model::RepoBSON& criteria);
 
 				/**
+				* Given a search criteria,  find one documents that passes this query
+				* @param database name of database
+				* @param collection name of collection
+				* @param criteria search criteria in a bson object
+				* @param sortField field to sort
+				* @return a RepoBSON objects satisfy the given criteria
+				*/
+				repo::core::model::RepoBSON findOneByCriteria(
+					const std::string& database,
+					const std::string& collection,
+					const repo::core::model::RepoBSON& criteria,
+					const std::string& sortField = ""
+					);
+
+				/**
 				*Retrieves the first document matching given Shared ID (SID), sorting is descending
 				* (newest first)
 				* @param name of database
@@ -413,9 +498,9 @@ namespace repo{
 
 				/**
 				*Retrieves the document matching given Unique ID (SID), sorting is descending
-				* @param name of database
-				* @param name of collectoin
-				* @param share id
+				* @param database name of database
+				* @param collection name of collectoin
+				* @param uuid share id
 				* @return returns the matching bson object
 				*/
 				repo::core::model::RepoBSON findOneByUniqueID(
@@ -571,6 +656,18 @@ namespace repo{
 				*/
 				std::string getProjectFromCollection(const std::string &ns, const std::string &projectExt);
 
+				/**
+				* Perform command on the user
+				* @param op (insert, drop or update)
+				* @param role user to modify
+				* @param errMsg error message if failed
+				* @return returns true upon success
+				*/
+				bool performRoleCmd(
+					const OPERATION                         &op,
+					const repo::core::model::RepoRole       &role,
+					std::string                             &errMsg);
+				
 				/**
 				* Perform command on the user
 				* @param op (insert, drop or update)

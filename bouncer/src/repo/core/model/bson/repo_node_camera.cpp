@@ -21,6 +21,9 @@
 
 #include "repo_node_camera.h"
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+
 using namespace repo::core::model;
 
 CameraNode::CameraNode() :
@@ -38,9 +41,30 @@ CameraNode::~CameraNode()
 {
 }
 
+RepoNode CameraNode::cloneAndApplyTransformation(
+	const std::vector<float> &matrix) const
+{
+	RepoBSONBuilder builder;
+	if (hasField(REPO_NODE_LABEL_LOOK_AT))
+	{
+		builder.append(REPO_NODE_LABEL_LOOK_AT, multiplyMatVec(matrix, getLookAt()));
+	}
+
+	if (hasField(REPO_NODE_LABEL_POSITION))
+	{
+		builder.append(REPO_NODE_LABEL_POSITION, multiplyMatVec(matrix, getPosition()));
+	}
+
+	if (hasField(REPO_NODE_LABEL_UP))
+	{
+		builder.append(REPO_NODE_LABEL_UP, multiplyMatVec(matrix, getUp()));
+	}
+	return CameraNode(builder.appendElementsUnique(*this));
+}
+
 repo_vector_t CameraNode::getPosition() const
 {
-	repo_vector_t vec;
+	repo_vector_t vec ;
 	if (hasField(REPO_NODE_LABEL_POSITION))
 	{
 		std::vector<float> floatArr = getFloatArray(REPO_NODE_LABEL_POSITION);
@@ -56,7 +80,7 @@ repo_vector_t CameraNode::getPosition() const
 
 repo_vector_t CameraNode::getLookAt() const
 {
-	repo_vector_t vec;
+	repo_vector_t vec = {0, 0, -1};
 	if (hasField(REPO_NODE_LABEL_LOOK_AT))
 	{
 		std::vector<float> floatArr = getFloatArray(REPO_NODE_LABEL_LOOK_AT);
@@ -67,13 +91,17 @@ repo_vector_t CameraNode::getLookAt() const
 		}
 	}
 
-	return vec;
+	// if look at is 0 0 0, treat it as non existent (FIXME: is this really correct?)
+	if (0 == vec.x == vec.y == vec.z)
+		return{ 0, 0, -1 };
+	else
+		return vec;
 }
 
 
 repo_vector_t CameraNode::getUp() const
 {
-	repo_vector_t vec;
+	repo_vector_t vec = { 0, 1, 0 };
 	if (hasField(REPO_NODE_LABEL_UP))
 	{
 		std::vector<float> floatArr = getFloatArray(REPO_NODE_LABEL_UP);
@@ -92,8 +120,6 @@ repo_vector_t CameraNode::getUp() const
 std::vector<float> CameraNode::getCameraMatrix(
 	const bool &rowMajor) const
 {
-
-	/** todo: test ... should work, but i'm not absolutely sure */
 
 	std::vector<float> mat;
 	mat.resize(16);
@@ -178,4 +204,128 @@ std::vector<float> CameraNode::getCameraMatrix(
 	mat[d4] = 1.f;
 
 	return mat;
+}
+
+std::vector<float> CameraNode::getOrientation() const
+{
+	repo_vector_t lookAt = getLookAt();
+	repo_vector_t up = getUp();
+	repo_vector_t forward = { -lookAt.x , -lookAt.y , -lookAt.z};
+	normalize(forward);
+	normalize(up);
+	repo_vector_t right = crossProduct(up, forward);
+
+	float a  = up.x - right.y;
+	float b  = forward.x - right.z;
+	float c  = forward.y - up.z;
+	float tr = right.x + up.y + forward.z;
+
+	float x = 0, y = 0, z = 0, angle = 1;
+
+	float eps = 0.0001;
+	float sqrtHalf = sqrtf(0.5);
+
+	if (fabs(a) < eps && fabs(b) < eps && fabs(c) < eps)
+	{
+		float d = up.x + right.y;
+		float e = forward.x + right.z;
+		float f = forward.y + up.z;
+
+		if(!((fabs(d) < eps) && (fabs(e) < eps) && (fabs(f) < eps) && (fabs(tr - 3.0) < eps)))
+		{
+			angle = M_PI;
+
+			float xx = (right.x + 1.) / 2.;
+			float yy = (up.y + 1.) / 2;
+			float zz = (forward.z + 1.) / 2;
+			float xy = d / 4.;
+			float xz = e / 4.;
+			float yz = f / 4.;
+
+			if ((xx - yy) > eps && (xx - zz) > eps)
+			{
+				repoDebug << " case a";
+				if (xx < eps)
+				{
+					x = 0;
+					y = sqrtHalf;
+					z = sqrtHalf;
+				}
+				else
+				{
+					x = sqrtf(xx);
+					y = xy / x;
+					z = xz / x;
+				}
+			}
+			else if ((yy - zz) > eps)
+			{
+
+				if (yy < eps)
+				{
+					x = sqrtHalf;
+					y = 0;
+					z = sqrtHalf;
+				}
+				else
+				{
+					y = sqrt(yy);
+					x = xy / y;
+					z = yz / y;
+				}
+			}
+			else
+			{
+				if (zz < eps)
+				{
+					x = sqrtHalf;
+					y = sqrtHalf;
+					z = 0;
+				}
+				else
+				{
+					z = sqrtf(zz);
+					x = xz / z;
+					y = yz / z;
+				
+				}
+			}
+				
+
+		}//if (!(fabs(d) < eps && fabs(e) < eps && fabs(f) < eps && fabs(tr - 3) < eps))
+
+	}//if (fabs(a) < eps && fabs(b) < eps && fabs(c) < eps)
+	else
+	{
+		float s = sqrtf(a*a + b*b + c*c);
+		if (s < eps)
+			s = 1;
+
+		x = -c / s;
+		y =  b / s;
+		z = -a / s;
+
+		angle = acosf((tr - 1.) / 2.);
+	}
+
+
+	return{ x, y, z, angle };
+}
+
+bool CameraNode::sEqual(const RepoNode &other) const
+{
+	if (other.getTypeAsEnum() != NodeType::CAMERA || other.getParentIDs().size() != getParentIDs().size())
+	{
+		return false;
+	}
+
+	const CameraNode otherCam = CameraNode(other);
+
+
+	std::vector<float> mat = getCameraMatrix();
+	std::vector<float> otherMat = otherCam.getCameraMatrix();
+
+
+	return !memcmp(mat.data(), otherMat.data(), mat.size() *sizeof(*mat.data()));
+
 }

@@ -16,7 +16,7 @@
 */
 
 /**
-* Creates a model(scene graph). 
+* Creates a model(scene graph).
 * Given a file, it will utilist ASSIMP library and eventually converts it into Repo world meaning
 */
 
@@ -62,7 +62,7 @@ namespace repo{
 
 				/**
 				* Generates a repo scene graph
-				* an internal representation(aiscene) needs to have 
+				* an internal representation(aiscene) needs to have
 				* been created before this call
 				* @return returns a populated RepoScene upon success.
 				*/
@@ -90,7 +90,7 @@ namespace repo{
 				repo::core::model::RepoScene* convertAiSceneToRepoScene(
 					assimp_map                    &map,
 					repo::core::model::RepoScene  *scene = nullptr);
-				
+
 				/**
 				* Create a Camera Node given the information in ASSIMP objects
 				* @param assimp camera object
@@ -103,11 +103,13 @@ namespace repo{
 				* NOTE: textures must've been populated at this point to populate references
 				* @param material assimp material object
 				* @param name name of the material
+				* @param nameToTexture a mapping of texture name to texture node
 				* @return returns the created material node
 				*/
 				repo::core::model::MaterialNode* createMaterialRepoNode(
-					aiMaterial *material,
-					std::string name);
+					const aiMaterial *material,
+					const std::string &name,
+					const std::unordered_map<std::string, repo::core::model::RepoNode *> &nameToTexture);
 
 				/**
 				* Create a Mesh Node given the information in ASSIMP objects
@@ -119,7 +121,9 @@ namespace repo{
 				repo::core::model::MeshNode* createMeshRepoNode(
 					const aiMesh *assimpMesh,
 					const std::vector<repo::core::model::RepoNode *> &materials,
-					std::map < repo::core::model::RepoNode*, std::vector<repoUUID>> &matMap);
+					std::unordered_map < repo::core::model::RepoNode*, std::vector<repoUUID>> &matMap,
+					const bool hasTexture,
+					const std::vector<double> &offset);
 
 				/**
 				* Create a Metadata Node given the information in ASSIMP objects
@@ -144,13 +148,33 @@ namespace repo{
 				* @return returns the created Metadata Node
 				*/
 				repo::core::model::RepoNodeSet createTransformationNodesRecursive(
-					const aiNode                                                     *assimpNode,
-					const std::map<std::string, repo::core::model::RepoNode *> &cameras,
-					const std::vector<repo::core::model::RepoNode *>           &meshes,
-					repo::core::model::RepoNodeSet						     &metadata,
-					assimp_map													&map,
-					const std::vector<repoUUID>						             &parent = std::vector<repoUUID>()
+					const aiNode                                                         *assimpNode,
+					const std::unordered_map<std::string, repo::core::model::RepoNode *> &cameras,
+					const std::vector<repo::core::model::RepoNode *>                     &meshes,
+					repo::core::model::RepoNodeSet						                 &metadata,
+					assimp_map													         &map,
+					uint32_t                                                             &count ,
+					const std::vector<double>                                            &worldOffset,
+					const std::vector<repoUUID>						                     &parent = std::vector<repoUUID>()
 					);
+				
+				/**
+				* Get bounding box of the aimesh
+				* @return returns the bounding box
+				*/
+				std::vector<std::vector<double>> getAiMeshBoundingBox(
+					const aiMesh *mesh) const;
+
+				/**
+				* Get bounding box of the aiscene
+				* @return returns the bounding box
+				*/
+				std::vector<std::vector<double>> getSceneBoundingBox() const;
+
+				void getSceneBoundingBoxInternal(
+					const aiNode                     *node,
+					const aiMatrix4x4                &mat,
+					std::vector<std::vector<double>> &bbox) const;
 
 				/**
 				* Load Texture within the given folder
@@ -172,27 +196,25 @@ namespace repo{
 					uint32_t flag = 0);
 
 				/**
-				* Populate the optimization linkage between the org. scene graph 
+				* Populate the optimization linkage between the org. scene graph
 				* and the optimised scene graph
 				* note: this is a recursive function
 				* @param node  node we are currently trasversing
 				* @param scene repo scene in process
-				* @param combinedMap the mapping of both opt and org mapping
+				* @param orgMap the org mapping
 				* @param optMap optimised mapping
 				* @return returns whether it has successfully mapped everything.
  				*/
 
 				bool populateOptimMaps(
 					repo::core::model::RepoNode  *node,
-					repo::core::model::RepoScene *scene, 
-					const assimp_map             &combinedMap, 
+					repo::core::model::RepoScene *scene,
+					const assimp_map             &orgMap,
 					const assimp_map             &optMap);
 
 				Assimp::Importer importer;  /*! Stores ASSIMP related settings for model import */
 				const aiScene *assimpScene; /*! ASSIMP scene representation of the model */
 				std::string orgFile; /*! orgFileName */
-				repo::core::model::RepoNodeSet textures;
-				std::map<std::string, repo::core::model::RepoNode *> nameToTexture;
 			};
 
 		} //namespace AssimpModelImport

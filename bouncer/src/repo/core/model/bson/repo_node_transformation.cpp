@@ -38,6 +38,40 @@ TransformationNode::~TransformationNode()
 {
 }
 
+RepoNode TransformationNode::cloneAndApplyTransformation(
+	const std::vector<float> &matrix) const
+{
+	RepoNode resultNode;
+	RepoBSONBuilder builder;
+	if (matrix.size() == 16)
+	{
+		auto currentTrans = getTransMatrix();
+		auto resultTrans = matMult(currentTrans, matrix);
+
+		RepoBSONBuilder rows;
+		for (uint32_t i = 0; i < 4; ++i)
+		{
+			RepoBSONBuilder columns;
+			for (uint32_t j = 0; j < 4; ++j){
+				size_t idx = i * 4 + j;
+				columns << std::to_string(j) << resultTrans[idx];
+			}
+			rows.appendArray(std::to_string(i), columns.obj());
+		}
+		builder.appendArray(REPO_NODE_LABEL_MATRIX, rows.obj());
+
+	}
+	else
+	{
+		repoError << "Failed to apply transformation onto Transformation node: the matrix is not a 4 by 4 matrix (size : !" << matrix.size();
+
+	}
+
+	builder.appendElementsUnique(*this);
+	
+	return TransformationNode(RepoBSON(builder.obj(), bigFiles));
+}
+
 std::vector<std::vector<float>> TransformationNode::identityMat()
 {
 	std::vector<std::vector<float>> idMat;
@@ -48,10 +82,40 @@ std::vector<std::vector<float>> TransformationNode::identityMat()
 	return idMat;
 }
 
+bool TransformationNode::isIdentity(const float &eps) const
+{
+	std::vector<float> mat = getTransMatrix();
+	//  00 01 02 03 
+	//  04 05 06 07
+	//  08 09 10 11
+	//  12 13 14 15
+
+	bool iden = true;
+	float threshold = fabs(eps);
+
+	for (size_t i = 0; i < mat.size(); ++i)
+	{
+		if (i % 5)
+		{
+			//This is suppose to be 0
+			iden &= fabs(mat[i]) <= threshold;
+		}
+		else
+		{
+			//This is suppose to be 1
+			iden &= mat[i] <= 1 + threshold && mat[i] >= 1 - threshold;
+		}
+	}
+
+	return iden;
+
+
+
+}
+
 std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) const
 {
 	std::vector<float> transformationMatrix;
-
 	uint32_t rowInd = 0, colInd = 0;
 	if (hasField(REPO_NODE_LABEL_MATRIX))
 	{
@@ -62,15 +126,18 @@ std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) cons
 		// matrix is stored as array of arrays
 		RepoBSON matrixObj =
 			getField(REPO_NODE_LABEL_MATRIX).embeddedObject();
+
 		std::set<std::string> mFields;
 		matrixObj.getFieldNames(mFields);
 		for (auto &field : mFields)
 		{
+			rowInd = std::stoi(field);
 			RepoBSON arrayObj = matrixObj.getField(field).embeddedObject();
 			std::set<std::string> aFields;
 			arrayObj.getFieldNames(aFields);
 			for (auto &aField : aFields)
 			{
+				colInd = std::stoi(aField);
 
 				//figure out the index depending on if it's row or col major
 				uint32_t index;
@@ -82,15 +149,43 @@ std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) cons
 				{
 					index = rowInd * 4 + colInd;
 				}
-				transArr[index] = (float)arrayObj.getField(aField).Double();
 
-				++colInd;
+				auto f =  arrayObj.getField(aField);
+				if (f.type() == ElementType::DOUBLE)
+					transArr[index] = (float)f.Double();
+				else if (f.type() == ElementType::INT)
+					transArr[index] = (float)f.Int();
+				else
+				{
+					repoError << "Unexpected type within transformation matrix!";
+				}
 			}
-			colInd = 0;
-			++rowInd;
+
 		}
 
 
 	}
+	else
+	{
+		repoError << "This transformation has no matrix field!";
+	}
 	return transformationMatrix;
+}
+
+bool TransformationNode::sEqual(const RepoNode &other) const
+{
+	if (other.getTypeAsEnum() != NodeType::TRANSFORMATION || other.getParentIDs().size() != getParentIDs().size())
+	{
+		return false;
+	}
+
+	const TransformationNode otherTrans = TransformationNode(other);
+
+
+	std::vector<float> mat = getTransMatrix();
+	std::vector<float> otherMat = otherTrans.getTransMatrix();
+
+
+	return mat.size() == otherMat.size() && !memcmp(mat.data(), otherMat.data(), mat.size() *sizeof(*mat.data()));
+
 }

@@ -32,4 +32,9 @@
 #   define REPO_API_EXPORT REPO_DECL_IMPORT
 #endif
 
+//------------------------------------------------------------------------------
+#define BOUNCER_VMAJOR 1
+#define BOUNCER_VMINOR "0b"
+//
+
 

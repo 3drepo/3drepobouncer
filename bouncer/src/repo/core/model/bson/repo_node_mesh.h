@@ -87,10 +87,93 @@ namespace repo {
 
 
 					/**
+					* Returns a number, indicating it's mesh format
+					* maximum of 32 bit, each bit represent the presents of the following
+					*  vertices faces normals colors #uvs
+					* where vertices is the LSB
+					* @return returns the mFormat flag
+					*/
+					uint32_t getMFormat() const;
+
+					/**
+					* Check if the node is position dependant.
+					* i.e. if parent transformation is merged onto the node,
+					* does the node requre to a transformation applied to it
+					* e.g. meshes and cameras are position dependant, metadata isn't
+					* Default behaviour is false. Position dependant child requires
+					* override this function.
+					* @return true if node is positionDependant.
+					*/
+					virtual bool positionDependant() { return true; }
+
+					/**
+					* Check if the node is semantically equal to another
+					* Different node should have a different interpretation of what
+					* this means.
+					* @param other node to compare with
+					* @param returns true if equal, false otherwise
+					*/
+					virtual bool sEqual(const RepoNode &other) const;
+
+					/*
+					*	------------- Delusional modifiers --------------
+					*   These are like "setters" but not. We are actually
+					*   creating a new bson object with the changed field
+					*/
+
+					/**
+					*  Create a new object with transformation applied to the node
+					* default behaviour is do nothing. Children object
+					* needs to override this function to perform their own specific behaviour.
+					* @param matrix transformation matrix to apply.
+					* @return returns a new object with transformation applied.
+					*/
+					virtual RepoNode cloneAndApplyTransformation(
+						const std::vector<float> &matrix) const;
+
+					/**
 					* Create a new copy of the node and update its mesh mapping
 					* @return returns a new meshNode with the new mappings
 					*/
-					MeshNode cloneAndUpdateMeshMapping(const std::vector<repo_mesh_mapping_t> &vec);
+					MeshNode cloneAndUpdateMeshMapping(
+						const std::vector<repo_mesh_mapping_t> &vec,
+						const bool                             &overwrite = false);
+
+					/**
+					* Remap the submeshes to fit into the vertice threshold
+					* @param verticeThreshold the maximum #vertices in a submesh
+					* @param newFaces serialised face buffers for external use
+					* @param idMapBuff index mapping for external use
+					* @param splitMap indicate the location of subMeshes after relocation
+					* @param return returns a new mesh node remapped
+					*/
+					MeshNode cloneAndRemapMeshMapping(
+						const size_t verticeThreshold,
+						std::vector<uint16_t> &newFaces,
+						std::vector<std::vector<float>> &idMapBuf,
+						std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> &splitMap) const
+					{
+						std::vector<std::vector<repo_mesh_mapping_t>> matMap;
+						return cloneAndRemapMeshMapping(verticeThreshold, 
+							newFaces, idMapBuf, splitMap, matMap);
+					}
+
+					/**
+					* Remap the submeshes to fit into the vertice threshold
+					* @param verticeThreshold the maximum #vertices in a submesh
+					* @param newFaces serialised face buffers for external use
+					* @param idMapBuff index mapping for external use
+					* @param splitMap indicate the location of subMeshes after relocation
+					* @param matMap another indication of location of subMeshes after relocation
+					* @param return returns a new mesh node remapped
+					*/
+					MeshNode cloneAndRemapMeshMapping(
+						const size_t &verticeThreshold,
+						std::vector<uint16_t> &newFaces,
+						std::vector<std::vector<float>> &idMapBuf,
+						std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> &splitMap,
+						std::vector<std::vector<repo_mesh_mapping_t>> &matMap) const;
+
 
 					
 					/**
@@ -98,14 +181,22 @@ namespace repo {
 					*/
 
 					/**
+					* Retrieve the bounding box of this mesh
+					* @return returns a vector of size 2, containing the bounding box.
+					*/
+					std::vector<repo_vector_t> getBoundingBox() const;
+
+					static std::vector<repo_vector_t> getBoundingBox(RepoBSON &bbArr);
+
+					/**
 					* Retrieve a vector of Colors from the bson object
 					*/
-					std::vector<repo_color4d_t>* getColors() const;
+					std::vector<repo_color4d_t> getColors() const;
 
 					/**
 					* Retrieve a vector of faces from the bson object
 					*/
-					std::vector<repo_face_t>* getFaces() const;
+					std::vector<repo_face_t> getFaces() const;
 
 
 					std::vector<repo_mesh_mapping_t> getMeshMapping() const;
@@ -113,23 +204,23 @@ namespace repo {
 					/**
 					* Retrieve a vector of vertices from the bson object
 					*/
-					std::vector<repo_vector_t>* getNormals() const;
+					std::vector<repo_vector_t> getNormals() const;
 
 					/**
 					* Retrieve a vector of UV Channels from the bson object
 					*/
-					std::vector<repo_vector2d_t>* getUVChannels() const;
+					std::vector<repo_vector2d_t> getUVChannels() const;
 
 					/**
 					* Retrieve a vector of UV Channels, separated by channels
 					*/
-					std::vector<std::vector<repo_vector2d_t>>* getUVChannelsSeparated() const;
+					std::vector<std::vector<repo_vector2d_t>> getUVChannelsSeparated() const;
 
 
 					/**
 					* Retrieve a vector of vertices from the bson object
 					*/
-					std::vector<repo_vector_t>* getVertices() const;
+					std::vector<repo_vector_t> getVertices() const;
 
 				private:
 					/**
@@ -138,6 +229,12 @@ namespace repo {
 					* @return return a bson object containing the mapping
 					*/
 					RepoBSON meshMappingAsBSON(const repo_mesh_mapping_t  &mapping);
+
+
+					/**
+					* Retrieve a vector of faces (serialised) from the bson object
+					*/
+					std::vector<uint32_t> getFacesSerialized() const;
 
 				};
 		} //namespace model

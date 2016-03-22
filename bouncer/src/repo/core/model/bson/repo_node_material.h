@@ -63,6 +63,14 @@ namespace repo {
 					*/
 					~MaterialNode();
 
+					/**
+					* Check if the node is semantically equal to another
+					* Different node should have a different interpretation of what
+					* this means.
+					* @param other node to compare with
+					* @param returns true if equal, false otherwise
+					*/
+					virtual bool sEqual(const RepoNode &other) const;
 
 					/**
 					* --------- Convenience functions -----------
@@ -73,6 +81,9 @@ namespace repo {
 					* @return returns a repo_material_t containing the information
 					*/
 					repo_material_t getMaterialStruct() const;
+
+				protected:
+					std::vector<float> getDataAsBuffer() const;
 
 				};
 		} //namespace model

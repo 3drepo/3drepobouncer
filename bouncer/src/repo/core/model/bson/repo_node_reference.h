@@ -59,6 +59,14 @@ namespace repo {
 					*/
 					~ReferenceNode();
 
+					/**
+					* Check if the node is semantically equal to another
+					* Different node should have a different interpretation of what
+					* this means.
+					* @param other node to compare with
+					* @param returns true if equal, false otherwise
+					*/
+					virtual bool sEqual(const RepoNode &other) const;
 
 					/*
 					*	------------- Convenience getters --------------
@@ -66,19 +74,31 @@ namespace repo {
 
 					/**
 					* Retrieve the UUID of the revision this reference node is referring to
+					* if it doesn't exist, return master branch id
 					* @return returns the UUID for this reference
 					*/
-					repoUUID getRevisionID(){
-						return getUUIDField(REPO_NODE_REFERENCE_LABEL_REVISION_ID);
+					repoUUID getRevisionID() const{
+						if(hasField(REPO_NODE_REFERENCE_LABEL_REVISION_ID))
+							return getUUIDField(REPO_NODE_REFERENCE_LABEL_REVISION_ID);
+						else
+							return stringToUUID(REPO_HISTORY_MASTER_BRANCH);
+					} 
+
+					/**
+					* Retrieve the project this reference node is referring to
+					* @return returns the project name for this reference
+					*/
+					std::string getDatabaseName() const{
+						return getStringField(REPO_NODE_REFERENCE_LABEL_OWNER);
 					}
 
 					/**
 					* Retrieve the project this reference node is referring to
 					* @return returns the project name for this reference
 					*/
-					std::string getProjectName(){
+					std::string getProjectName() const{
 						return getStringField(REPO_NODE_REFERENCE_LABEL_PROJECT);
-					}
+					} 
 
 					/**
 					* Indicates if the Revision ID from getRevisionID() 
@@ -86,14 +106,14 @@ namespace repo {
 					* @return returns true if it is a uuid of a specific 
 					* revision, otherwise it's a branch uuid
 					*/
-					bool useSpecificRevision()
+					bool useSpecificRevision() const
 					{
 						bool isUnique = false; //defaults to false.
 						if (hasField(REPO_NODE_REFERENCE_LABEL_UNIQUE))
 							isUnique =  getField(REPO_NODE_REFERENCE_LABEL_UNIQUE).boolean();
 
 						return isUnique;
-					}
+					} 
 
 				};
 		} //namespace model

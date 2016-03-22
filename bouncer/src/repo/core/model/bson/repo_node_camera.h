@@ -61,6 +61,32 @@ namespace repo {
 					*/
 					~CameraNode();
 
+					/**
+					* Check if the node is position dependant.
+					* i.e. if parent transformation is merged onto the node,
+					* does the node requre to a transformation applied to it
+					* e.g. meshes and cameras are position dependant, metadata isn't
+					* Default behaviour is false. Position dependant child requires
+					* override this function.
+					* @return true if node is positionDependant.
+					*/
+					virtual bool positionDependant() { return true; }
+
+					/*
+					*	------------- Delusional modifiers --------------
+					*   These are like "setters" but not. We are actually
+					*   creating a new bson object with the changed field
+					*/
+
+					/**
+					*  Create a new object with transformation applied to the node
+					* default behaviour is do nothing. Children object
+					* needs to override this function to perform their own specific behaviour.
+					* @param matrix transformation matrix to apply.
+					* @return returns a new object with transformation applied.
+					*/
+					virtual RepoNode cloneAndApplyTransformation(
+						const std::vector<float> &matrix) const;
 
 					/**
 					* --------- Convenience functions -----------
@@ -136,6 +162,12 @@ namespace repo {
 					repo_vector_t getLookAt() const;
 
 					/**
+					* get the orientation of the camera
+					* @return returns a vector with 4 fields, {x, y, z, angle}
+					*/
+					std::vector<float> getOrientation() const;
+
+					/**
 					* Get the position of the camera
 					* @return returns a vector of the position
 					*/
@@ -147,6 +179,14 @@ namespace repo {
 					*/
 					repo_vector_t getUp() const;
 
+					/**
+					* Check if the node is semantically equal to another
+					* Different node should have a different interpretation of what
+					* this means.
+					* @param other node to compare with
+					* @param returns true if equal, false otherwise
+					*/
+					virtual bool sEqual(const RepoNode &other) const;
 				};
 		} //namespace model
 	} //namespace core

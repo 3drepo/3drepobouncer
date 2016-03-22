@@ -16,6 +16,7 @@
 */
 
 #pragma once
+#include "error_codes.h"
 #include <stdint.h>
 #include <iostream>
 #include <repo/repo_controller.h>
@@ -41,6 +42,12 @@ struct repo_op_t{
 std::string helpInfo();
 
 /**
+* Check if the command is a special one (that can be used without database info)
+* @return returns true if it is a special command
+*/
+bool isSpecialCommand(const std::string &cmd);
+
+/**
 * Check if the command is recognised
 * @returns returns the minimal # of arguments needed for this command, 
 *          -1 if command not recognised
@@ -54,7 +61,7 @@ int32_t knownValid(const std::string &cmd);
 * @param command    command and it's arguments to perform
 * @return returns true upon success
 */
-bool performOperation(
+int32_t performOperation(
 	      repo::RepoController *controller, 
 	const repo::RepoToken      *token,
 	const repo_op_t            &command
@@ -72,7 +79,7 @@ bool performOperation(
 * @param command    command and it's arguments to perform
 * @return returns true upon success
 */
-static bool importFileAndCommit(
+static int32_t importFileAndCommit(
 	      repo::RepoController *controller,
 	const repo::RepoToken      *token,
 	const repo_op_t            &command
