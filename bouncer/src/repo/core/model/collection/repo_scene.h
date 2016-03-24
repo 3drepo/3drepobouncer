@@ -332,10 +332,8 @@ namespace repo{
 					*/
 					std::vector<double> getWorldOffset() const
 					{
-						if (revNode)
-							return revNode->getCoordOffset();
-						else
-							return worldOffset.size() ? worldOffset : std::vector<double>({0, 0, 0});
+
+						return worldOffset.size() ? worldOffset : std::vector<double>({0, 0, 0});
 					}
 
 					/**
