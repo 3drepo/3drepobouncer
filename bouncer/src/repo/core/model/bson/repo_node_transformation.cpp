@@ -39,14 +39,24 @@ TransformationNode::~TransformationNode()
 }
 
 RepoNode TransformationNode::cloneAndApplyTransformation(
-	const std::vector<float> &matrix) const
+	const std::vector<float> &matrix,
+	const bool                overwrite) const
 {
 	RepoNode resultNode;
 	RepoBSONBuilder builder;
 	if (matrix.size() == 16)
 	{
-		auto currentTrans = getTransMatrix();
-		auto resultTrans = matMult(currentTrans, matrix);
+		std::vector<float> resultTrans;
+		if (overwrite)
+		{
+			resultTrans = matrix;
+		}
+		else
+		{
+			auto currentTrans = getTransMatrix(false);
+			resultTrans = matMult(currentTrans, matrix);
+		}
+		
 
 		RepoBSONBuilder rows;
 		for (uint32_t i = 0; i < 4; ++i)

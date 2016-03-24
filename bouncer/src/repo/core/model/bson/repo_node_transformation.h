@@ -100,10 +100,12 @@ namespace repo {
 						* default behaviour is do nothing. Children object
 						* needs to override this function to perform their own specific behaviour.
 						* @param matrix transformation matrix to apply.
+						* @param overwrite overwrite the current matrix instead of doing a matmult.
 						* @return returns a new object with transformation applied.
 						*/
 						virtual RepoNode cloneAndApplyTransformation(
-							const std::vector<float> &matrix) const;
+							const std::vector<float> &matrix,
+							const bool                overwrite = false) const;
 
 						/**
 						* --------- Convenience functions -----------

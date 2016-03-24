@@ -1058,6 +1058,7 @@ bool RepoScene::loadRevision(
 	}
 	else{
 		revNode = new RevisionNode(bson);
+		worldOffset = revNode->getCoordOffset();
 	}
 
 	return success;
@@ -1411,27 +1412,25 @@ void RepoScene::reorientateDirectXModel()
 		std::vector<float> mat =  rootTrans->getTransMatrix();
 		if (mat.size() == 16)
 		{
-			std::vector<std::vector<float>> newMatrix;
-
-			for (uint32_t row = 0; row < 4; row++)
-			{
-				std::vector<float> matRow;
-				
-				matRow.push_back( mat[row * 4]);
-				matRow.push_back(-mat[row * 4 + 2]);
-				matRow.push_back( mat[row * 4 + 1]);
-				matRow.push_back( mat[row * 4 + 3]);
-
-				newMatrix.push_back(matRow);
-			}
+			//change offset relatively
+			std::vector<float> rotationMatrix = { 1, 0, 0, 0,
+													0, 0, 1, 0,
+													0, -1, 0, 0,
+													0, 0, 0, 1 };
 
 
 
-			TransformationNode newRoot = RepoBSONFactory::makeTransformationNode(newMatrix, rootTrans->getName());
+			TransformationNode newRoot = rootTrans->cloneAndApplyTransformation(rotationMatrix);
 			modifyNode(GraphType::DEFAULT, rootTrans->getSharedID(), &newRoot);
 			
 			if (stashGraph.rootNode)
 				modifyNode(GraphType::OPTIMIZED, stashGraph.rootNode->getSharedID(), &newRoot);
+			
+			//Apply the rotation on the offset
+			auto temp = worldOffset[2];
+			worldOffset[2] = -worldOffset[1];
+			worldOffset[1] = temp;
+			
 		}
 		else
 		{
