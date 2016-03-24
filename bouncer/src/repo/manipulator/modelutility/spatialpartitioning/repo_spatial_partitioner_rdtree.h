@@ -37,7 +37,7 @@ namespace repo{
 				*/
 				RDTreeSpatialPartitioner(
 					const repo::core::model::RepoScene *scene,
-					const uint32_t                      &maxDepth = 4)
+					const uint32_t                      &maxDepth = 3*8)
 					;
 
 				virtual ~RDTreeSpatialPartitioner();
@@ -60,8 +60,10 @@ namespace repo{
 				*/
 				std::shared_ptr<PartitioningTree> createPartition(
 					const std::vector<MeshEntry> &meshes,
-					const PartitioningTreeType     &axis,
-					const uint32_t               &depthCount);
+					const PartitioningTreeType   &axis,
+					const uint32_t               &depthCount,
+					const uint32_t               &failcount,
+					const std::vector<std::vector<float>>     &currentSection);
 
 
 				/**
@@ -75,6 +77,7 @@ namespace repo{
 				void sortMeshes(
 					const std::vector<MeshEntry> &meshes,
 					const PartitioningTreeType   &axis,
+					const std::vector<std::vector<float>>  &currentSection,
 					float                        &median,
 					std::vector<MeshEntry>       &lMeshes,
 					std::vector<MeshEntry>       &rMeshes

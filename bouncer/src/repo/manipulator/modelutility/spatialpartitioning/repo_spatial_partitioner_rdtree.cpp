@@ -101,15 +101,23 @@ std::vector<MeshEntry> RDTreeSpatialPartitioner::createMeshEntries()
 }
 
 std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::createPartition(
-	const std::vector<MeshEntry> &meshes,
-	const PartitioningTreeType   &axis,
-	const uint32_t               &depthCount)
+	const std::vector<MeshEntry>              &meshes,
+	const PartitioningTreeType                &axis,
+	const uint32_t                            &depthCount,
+	const uint32_t                            &failCount,
+	const std::vector<std::vector<float>>     &currentSection)
 {
-	if (meshes.size() == 1 || (depthCount == maxDepth && maxDepth != 0))
+	if (meshes.size() == 1 || (depthCount == maxDepth && maxDepth != 0) || failCount == 3)
 	{
 		/*
-			If there is only one mesh left, or if we hit max depth count
 			Create a leaf node
+
+			There are 3 possible scenario to hit this condition:
+			1. If there is only one mesh left 
+			2. If we hit max depth count
+			3. If failCount is 3, meaning we tried all 3 axis and none of them manage to split the meshes up further (we have probably hit the overlapping regions)
+
+
 			*/
 		std::vector<repoUUID> meshIDs;
 		meshIDs.reserve(meshes.size());
@@ -122,19 +130,24 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::createPartition(
 	//non leaf node, partition the meshes via the given axis and recurse
 	float median;
 	std::vector<MeshEntry> lMeshes, rMeshes;
-	sortMeshes(meshes, axis, median, lMeshes, rMeshes);
+	sortMeshes(meshes, axis, currentSection, median, lMeshes, rMeshes);
+
 
 	PartitioningTreeType nextAxis;
+	int32_t axisIdx;
 	//Enum classes are not guaranteed to be contiguous
 	switch (axis)
 	{
 	case PartitioningTreeType::PARTITION_X:
+		axisIdx = 0;
 		nextAxis = PartitioningTreeType::PARTITION_Y;
 		break;
 	case PartitioningTreeType::PARTITION_Y:
+		axisIdx = 1;
 		nextAxis = PartitioningTreeType::PARTITION_Z;
 		break;
 	case PartitioningTreeType::PARTITION_Z:
+		axisIdx = 2;
 		nextAxis = PartitioningTreeType::PARTITION_X;
 		break;
 	default:
@@ -143,10 +156,32 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::createPartition(
 
 	}
 	
-	return std::make_shared<PartitioningTree>(nextAxis, median,
-		createPartition(lMeshes, nextAxis, depthCount + 1),
-		createPartition(rMeshes, nextAxis, depthCount + 1)
-		);
+
+	if (lMeshes.size() == rMeshes.size() == meshes.size())
+	{
+		//If this partitioning did absolutely nothing, skip this node all together
+		return createPartition(meshes, nextAxis, depthCount, failCount +1, currentSection);
+	}
+	else
+	{
+		auto newSectionRight = currentSection;
+		auto newSectionLeft = currentSection;
+		newSectionRight[0][axisIdx] = median;
+		newSectionLeft[1][axisIdx] = median;
+
+		repoTrace << " right bounding box: [" << newSectionLeft[0][0] << "," << newSectionLeft[0][1] << "," << newSectionLeft[0][2] << "] "
+			<< " [" << newSectionLeft[1][0] << "," << newSectionLeft[1][1] << "," << newSectionLeft[1][2] << "] ";
+
+		repoTrace << " right bounding box: [" << newSectionRight[0][0] << "," << newSectionRight[0][1] << "," << newSectionRight[0][2] << "] "
+			<< " [" << newSectionRight[1][0] << "," << newSectionRight[1][1] << "," << newSectionRight[1][2] << "] ";
+
+		return std::make_shared<PartitioningTree>(axis, median,
+			createPartition(lMeshes, nextAxis, depthCount + 1, 0, newSectionLeft),
+			createPartition(rMeshes, nextAxis, depthCount + 1, 0, newSectionRight)
+			);
+
+	}
+
 	
 
 }
@@ -164,7 +199,15 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::partitionScene()
 			//FIXME: Using vector because i need different comparison functions for different axis. is this sane?
 			std::vector<MeshEntry> meshEntries = createMeshEntries();
 			//starts with a X partitioning
-			pTree = createPartition(meshEntries, PartitioningTreeType::PARTITION_X, 0);
+			
+			auto bbox = scene->getSceneBoundingBox();
+
+			std::vector<std::vector<float>> currentSection = {
+																{bbox[0].x, bbox[0].y, bbox[0].z},
+																{bbox[1].x, bbox[1].y, bbox[1].z}
+															};
+
+			pTree = createPartition(meshEntries, PartitioningTreeType::PARTITION_X, 0, 0, currentSection);
 		}
 		else
 		{
@@ -183,6 +226,7 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::partitionScene()
 void RDTreeSpatialPartitioner::sortMeshes(
 	const std::vector<MeshEntry> &meshes,
 	const PartitioningTreeType   &axis,
+	const std::vector<std::vector<float>>    &currentSection,
 	float                        &median,
 	std::vector<MeshEntry>       &lMeshes,
 	std::vector<MeshEntry>       &rMeshes
@@ -230,23 +274,49 @@ void RDTreeSpatialPartitioner::sortMeshes(
 	if (sortedMeshes.size() % 2)
 	{
 		//odd number
-		median = sortedMeshes[sortedMeshes.size() / 2].min[axisIdx];
+		auto medMesh = sortedMeshes[sortedMeshes.size() / 2-1];
+		median = medMesh.min[axisIdx];
+
+		if (median < currentSection[0][axisIdx])
+		{
+			median = medMesh.max[axisIdx];
+		}
 	}
 	else
 	{
 		//even - take the mean of the 2 middle number
-		median = (sortedMeshes[sortedMeshes.size() / 2 - 1].min[axisIdx] + sortedMeshes[sortedMeshes.size() / 2 ].min[axisIdx]) / 2.;
+		auto medMesh1 = sortedMeshes[sortedMeshes.size() / 2 - 1];
+		auto medMesh2 = sortedMeshes[sortedMeshes.size() / 2];
+		auto medPoint1 = medMesh1.min[axisIdx];
+		auto medPoint2 = medMesh2.min[axisIdx];
+
+		if (medPoint1 < currentSection[0][axisIdx])
+		{
+			//If med point 1 is smaller is before the bounding box then take the midpoint from the maximum
+			medPoint1 = medMesh1.max[axisIdx];
+			medPoint2 = medMesh2.max[axisIdx];
+		}
+		repoTrace << "medPoint1: " << medPoint1 << " , medPoint2: " << medPoint2;
+		median = (medPoint1 + medPoint2) / 2.;
+
+
 	}
 
+	//If median is the bounding box, then just chop the box in half..?
+	if (median == currentSection[0][axisIdx] || median == currentSection[1][axisIdx])
+	{
+		median = (currentSection[0][axisIdx] + currentSection[1][axisIdx]) / 2.;
+	}
 
 	//put the meshes into left and right mesh vectors
 	for (const auto &entry : sortedMeshes)
 	{
-		if (entry.min[axisIdx] <= median)
+		if (entry.min[axisIdx] < median)
 			lMeshes.push_back(entry);
-		if (entry.max[axisIdx] > median)
+		if (entry.max[axisIdx] >= median)
 			rMeshes.push_back(entry);
 	}
-
+	repoTrace << " Current bounding box: [" << currentSection[0][0] << "," << currentSection[0][1] << "," << currentSection[0][2] << "] "
+		<< " [" << currentSection[1][0] << "," << currentSection[1][1] << "," << currentSection[1][2] << "] ";
 	repoTrace << "Median is: " << median << " left entry size: " << lMeshes.size() << " right entry size: "<<  rMeshes.size();
 }
