@@ -71,6 +71,21 @@ namespace repo{
 				virtual repo_export_buffers_t getAllFilesExportedAsBuffer() const = 0;
 
 				/**
+				* Return the JSON file as raw bytes buffer
+				* returns an empty map if the export has failed
+				*/
+				virtual std::unordered_map<std::string, std::vector<uint8_t>> getJSONFilesAsBuffer() const;
+
+				/**
+				* Return the X3D file as raw bytes buffer
+				* returns an empty map if the export has failed
+				*/
+				std::unordered_map<std::string, std::vector<uint8_t>> getX3DFilesAsBuffer() const
+				{
+					return x3dBufs;
+				}
+
+				/**
 				* Get supported file formats for this exporter
 				*/
 				static std::string getSupportedFormats();

@@ -196,26 +196,6 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getSRCFile
 	return fileBuffers;
 }
 
-std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getJSONFilesAsBuffer() const
-{
-	std::unordered_map < std::string, std::vector<uint8_t> > fileBuffers;
-
-	for (const auto &treePair : jsonTrees)
-	{
-		
-		std::stringstream ss;
-		treePair.second.write_json(ss);
-		std::string jsonStr = ss.str();
-
-		fileBuffers[treePair.first] = std::vector<uint8_t>();
-		fileBuffers[treePair.first].resize(jsonStr.size());
-		memcpy(fileBuffers[treePair.first].data(), jsonStr.c_str(), jsonStr.size());
-
-	}
-
-	return fileBuffers;
-}
-
 repo_export_buffers_t SRCModelExport::getAllFilesExportedAsBuffer() const
 {
 	return { getSRCFilesAsBuffer(), getX3DFilesAsBuffer(), getJSONFilesAsBuffer() };

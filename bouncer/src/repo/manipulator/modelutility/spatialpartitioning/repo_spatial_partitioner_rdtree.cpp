@@ -218,7 +218,13 @@ void RDTreeSpatialPartitioner::sortMeshes(
 		//only thing left is leaf node, which we do not expect it to ever come in here
 		repoError << "Unexpected error: sorting Meshes for partitioning with an undefined axis.";
 	}
+	std::string axisStr[3] = {"X", "Y", "Z"};
+	repoTrace << "Splitting @ " << axisStr[axisIdx];
+	repoTrace << "Sorted meshes ("<< sortedMeshes.size() << "):";
 
+	for (const auto mesh : sortedMeshes)
+		repoTrace << "\t" << UUIDtoString(mesh.id) << " [" << mesh.min[0] << "," << mesh.min[1] << "," << mesh.min[2] << "] "
+		<< " [" << mesh.max[0] << "," << mesh.max[1] << "," << mesh.max[2] << "] ";
 
 	//figure out the median value
 	if (sortedMeshes.size() % 2)
@@ -229,8 +235,9 @@ void RDTreeSpatialPartitioner::sortMeshes(
 	else
 	{
 		//even - take the mean of the 2 middle number
-		median = (sortedMeshes[sortedMeshes.size() / 2].min[axisIdx] + sortedMeshes[sortedMeshes.size() / 2 + 1].min[axisIdx]) / 2.;
+		median = (sortedMeshes[sortedMeshes.size() / 2 - 1].min[axisIdx] + sortedMeshes[sortedMeshes.size() / 2 ].min[axisIdx]) / 2.;
 	}
+
 
 	//put the meshes into left and right mesh vectors
 	for (const auto &entry : sortedMeshes)
@@ -240,4 +247,6 @@ void RDTreeSpatialPartitioner::sortMeshes(
 		if (entry.max[axisIdx] > median)
 			rMeshes.push_back(entry);
 	}
+
+	repoTrace << "Median is: " << median << " left entry size: " << lMeshes.size() << " right entry size: "<<  rMeshes.size();
 }

@@ -531,8 +531,15 @@ bool GLTFModelExport::constructScene(
 		std::vector<std::string> treeNodes = { UUIDtoString(root->getUniqueID()) };
 		tree.addToTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_NODES, treeNodes);
 		repo::lib::PropertyTree spatialPartTree = generateSpatialPartitioningTree();
+#ifdef DEBUG
+		std::string jsonFilePrefix = "";
+#else
+		std::string jsonFilePrefix = "/api/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/";
+#endif
+		std::string jsonFileName = jsonFilePrefix + "sp_" + UUIDtoString(scene->getRevisionID()) + ".json";
+		tree.addToTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_EXTRA + ".partitioning." + GLTF_LABEL_URI,  jsonFileName);
 
-		tree.mergeSubTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_EXTRA + ".partitioning", spatialPartTree);
+		jsonTrees[jsonFileName] = spatialPartTree;
 
 		auto splitMeshes = populateWithMeshes(tree);
 		populateWithNodes(tree, splitMeshes);
@@ -581,12 +588,7 @@ bool GLTFModelExport::generateTreeRepresentation()
 
 repo_export_buffers_t GLTFModelExport::getAllFilesExportedAsBuffer() const
 {
-	repo_export_buffers_t results;
-
-	results.geoFiles = getGLTFFilesAsBuffer();
-	results.x3dFiles  = getX3DFilesAsBuffer();
-
-	return results;
+	return{ getGLTFFilesAsBuffer(), getX3DFilesAsBuffer(), getJSONFilesAsBuffer() };
 }
 
 std::unordered_map<std::string, std::vector<uint8_t>> GLTFModelExport::getGLTFFilesAsBuffer() const
