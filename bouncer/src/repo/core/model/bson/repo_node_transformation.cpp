@@ -45,7 +45,7 @@ RepoNode TransformationNode::cloneAndApplyTransformation(
 	RepoBSONBuilder builder;
 	if (matrix.size() == 16)
 	{
-		auto currentTrans = getTransMatrix();
+		auto currentTrans = getTransMatrix(false);
 		auto resultTrans = matMult(currentTrans, matrix);
 
 		RepoBSONBuilder rows;
