@@ -46,14 +46,40 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 	std::vector<repo_vector_t> normals = getNormals();
 
 	RepoBSONBuilder builder;
-
+	std::vector<repo_vector_t> resultVertice;
+	std::vector<repo_vector_t> newBbox;
 	if (vertices.size())
 	{
-		std::vector<repo_vector_t> resultVertice;
+
 		resultVertice.reserve(vertices.size());
 		for (const repo_vector_t &v : vertices)
 		{
 			resultVertice.push_back(multiplyMatVec(matrix, v));
+			if (newBbox.size())
+			{
+				if (resultVertice.back().x < newBbox[0].x)
+					newBbox[0].x = resultVertice.back().x;
+
+				if (resultVertice.back().y < newBbox[0].y)
+					newBbox[0].y = resultVertice.back().y;
+
+				if (resultVertice.back().z < newBbox[0].z)
+					newBbox[0].z = resultVertice.back().z;
+
+				if (resultVertice.back().x > newBbox[1].x)
+					newBbox[1].x = resultVertice.back().x;
+
+				if (resultVertice.back().y > newBbox[1].y)
+					newBbox[1].y = resultVertice.back().y;
+
+				if (resultVertice.back().z > newBbox[1].z)
+					newBbox[1].z = resultVertice.back().z;
+			}
+			else
+			{
+				newBbox.push_back(resultVertice.back());
+				newBbox.push_back(resultVertice.back());
+			}
 		}
 		builder.appendBinary(REPO_NODE_MESH_LABEL_VERTICES, resultVertice.data(), resultVertice.size() * sizeof(repo_vector_t));
 	}
@@ -79,15 +105,18 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 		builder.appendBinary(REPO_NODE_MESH_LABEL_NORMALS, resultNormals.data(), resultNormals.size() * sizeof(repo_vector_t));
 	}
 
-	std::vector<repo_vector_t> newBbox;
-	std::vector<repo_vector_t> bbox = getBoundingBox();
+	
 	RepoBSONBuilder arrayBuilder, outlineBuilder;
-	for (size_t i = 0; i < bbox.size(); ++i)
+	for (size_t i = 0; i < newBbox.size(); ++i)
 	{
-		newBbox.push_back(multiplyMatVec(matrix, bbox[i]));
-		std::vector<float> boundVec = { newBbox.back().x, newBbox.back().y, newBbox.back().z };
+		std::vector<float> boundVec = { newBbox[i].x, newBbox[i].y, newBbox[i].z };
 		arrayBuilder.appendArray(std::to_string(i), boundVec);
 
+	}
+
+	if (newBbox[0].x > newBbox[1].x || newBbox[0].z > newBbox[1].z || newBbox[0].y > newBbox[1].y)
+	{
+		repoError << "New bounding box is incorrect!!!";
 	}
 	builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, arrayBuilder.obj());
 
