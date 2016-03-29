@@ -33,8 +33,8 @@
 
 using namespace repo::core::model;
 
-const std::vector<std::string> RepoScene::collectionsInProject = { "scene", "stash.3drepo", "stash.x3d", "stash.gltf",
-"stash.src", "history", "issues", "wayfinder" };
+const std::vector<std::string> RepoScene::collectionsInProject = { "scene", "scene.files", "scene.chunks", "stash.3drepo", "stash.3drepo.files", "stash.3drepo.chunks", "stash.x3d", "stash.x3d.files",
+"stash.x3d.chunks", "stash.gltf", "stash.gltf.files", "stash.gltf.chunks", "stash.src", "stash.src.files", "stash.src.chunks", "history", "history.files", "history.chunks", "issues", "wayfinder" };
 
 RepoScene::RepoScene(
 	const std::string &database,
@@ -605,7 +605,7 @@ bool RepoScene::commitRevisionNode(
 
 	newRevNode =
 		new RevisionNode(RepoBSONFactory::makeRevisionNode(userName, branch, uniqueIDs,
-		/*newAddedV, newRemovedV, newModifiedV,*/ fileNames, parent, message, tag));
+		/*newAddedV, newRemovedV, newModifiedV,*/ fileNames, parent, worldOffset, message, tag));
 
 	if (newRevNode)
 	{
@@ -870,6 +870,121 @@ std::string RepoScene::getBranchName() const
 	return branchName;
 }
 
+std::vector<repo_vector_t> RepoScene::getSceneBoundingBox() const
+{
+	std::vector<repo_vector_t> bbox;
+	GraphType gType = stashGraph.rootNode ? GraphType::OPTIMIZED : GraphType::DEFAULT;
+	
+	std::vector<float> identity = {
+									1, 0, 0, 0,
+									0, 1, 0, 0, 
+									0, 0, 1, 0, 
+									0, 0, 0, 1, };
+
+	getSceneBoundingBoxInternal(gType, gType == GraphType::OPTIMIZED ? stashGraph.rootNode : graph.rootNode, identity ,bbox);
+	repoTrace << "Scene bounding box: {" << bbox[0].x << "," << bbox[0].y << "," << bbox[0].z << "}{" << bbox[1].x << "," << bbox[1].y << "," << bbox[1].z << "}";
+	return bbox;
+}
+
+void RepoScene::getSceneBoundingBoxInternal(
+	const GraphType            &gType,
+	const RepoNode             *node,
+	const std::vector<float>   &mat,
+	std::vector<repo_vector_t> &bbox) const
+{
+
+	if (node)
+	{
+		switch (node->getTypeAsEnum())
+		{
+		case NodeType::TRANSFORMATION:
+		{
+			const TransformationNode *trans = dynamic_cast<const TransformationNode*>(node);
+			auto matTransformed = matMult(mat, trans->getTransMatrix());
+			for (const auto & child : getChildrenAsNodes(gType, trans->getSharedID()))
+			{
+				getSceneBoundingBoxInternal(gType, child, matTransformed, bbox);
+			}
+			break;
+
+		}
+		case NodeType::MESH:
+		{
+			const MeshNode *mesh = dynamic_cast<const MeshNode*>(node);
+			auto mbbox = mesh->getBoundingBox();
+			std::vector<repo_vector_t> newmBBox;
+
+			for (size_t i = 0; i < mbbox.size(); ++i)
+			{
+				newmBBox.push_back(multiplyMatVec(mat, mbbox[i]));
+			}
+
+			if (bbox.size())
+			{
+				if (newmBBox[0].x < bbox[0].x)
+					bbox[0].x = newmBBox[0].x;
+				if (newmBBox[0].y < bbox[0].y)
+					bbox[0].y = newmBBox[0].y;
+				if (newmBBox[0].z < bbox[0].z)
+					bbox[0].z = newmBBox[0].z;
+
+				if (newmBBox[1].x > bbox[1].x)
+					bbox[1].x = newmBBox[1].x;
+				if (newmBBox[1].y > bbox[1].y)
+					bbox[1].y = newmBBox[1].y;
+				if (newmBBox[1].z > bbox[1].z)
+					bbox[1].z = newmBBox[1].z;
+			}
+			else
+			{
+				//no bbox yet
+				bbox.push_back(newmBBox[0]);
+				bbox.push_back(newmBBox[1]);
+			}
+
+			break;
+		}
+		case NodeType::REFERENCE:
+		{
+			repoGraphInstance g = gType == GraphType::DEFAULT ? graph : stashGraph;
+			auto refSceneIt = graph.referenceToScene.find(node->getSharedID());
+			if (refSceneIt != graph.referenceToScene.end())
+			{
+				const RepoScene *refScene = refSceneIt->second;
+				const std::vector<repo_vector_t> refSceneBbox = refScene->getSceneBoundingBox();
+
+				if (bbox.size())
+				{
+					if (refSceneBbox[0].x < bbox[0].x)
+						bbox[0].x = refSceneBbox[0].x;
+					if (refSceneBbox[0].y < bbox[0].y)
+						bbox[0].y = refSceneBbox[0].y;
+					if (refSceneBbox[0].z < bbox[0].z)
+						bbox[0].z = refSceneBbox[0].z;
+
+					if (refSceneBbox[1].x > bbox[1].x)
+						bbox[1].x = refSceneBbox[1].x;
+					if (refSceneBbox[1].y > bbox[1].y)
+						bbox[1].y = refSceneBbox[1].y;
+					if (refSceneBbox[1].z > bbox[1].z)
+						bbox[1].z = refSceneBbox[1].z;
+				}
+				else
+				{
+					//no bbox yet
+					bbox.push_back(refSceneBbox[0]);
+					bbox.push_back(refSceneBbox[1]);
+				}
+
+			}
+			break;
+		}
+		}
+		
+	}
+
+}
+
 std::string RepoScene::getTextureIDForMesh(
 	const GraphType &gType,
 	const repoUUID  &sharedID) const
@@ -943,6 +1058,7 @@ bool RepoScene::loadRevision(
 	}
 	else{
 		revNode = new RevisionNode(bson);
+		worldOffset = revNode->getCoordOffset();
 	}
 
 	return success;
@@ -991,10 +1107,18 @@ bool RepoScene::loadStash(
 	builder.append(REPO_NODE_STASH_REF, revNode->getUniqueID());
 
 	std::vector<RepoBSON> nodes = handler->findAllByCriteria(databaseName, projectName + "." + stashExt, builder.obj());
+	if (success = nodes.size())
+	{
+		repoInfo << "# of nodes in this stash scene = " << nodes.size();
+		success = populate(GraphType::OPTIMIZED, handler, nodes, errMsg);
+	}
+	else
+	{
+		errMsg += "stash is empty";
+	}
+	
 
-	repoInfo << "# of nodes in this stash scene = " << nodes.size();
-
-	return populate(GraphType::OPTIMIZED, handler, nodes, errMsg) && nodes.size() > 0;
+	return  success;
 
 }
 
@@ -1016,14 +1140,13 @@ void RepoScene::modifyNode(
 	RepoNode updatedNode;
 
 	//generate new UUID if it  is not in list, otherwise use the current one.
-	bool isInList = gtype == GraphType::DEFAULT &&
+	bool isInList = gtype == GraphType::OPTIMIZED ||
 		( newAdded.find(sharedID) != newAdded.end() || newModified.find(sharedID) != newModified.end());
-		
 	updatedNode = overwrite ? *newNode : RepoNode(nodeToChange->cloneAndAddFields(newNode, !isInList));
 
 	repoUUID newUniqueID = updatedNode.getUniqueID();
 
-	if (!isInList)
+	if (gtype == GraphType::DEFAULT && !isInList)
 	{
 		newModified.insert(sharedID);
 		newCurrent.erase(nodeToChange->getUniqueID());
@@ -1200,6 +1323,9 @@ bool RepoScene::populate(
 
 	//deal with References
 	RepoNodeSet::iterator refIt;
+	//Make sure it is propagated into the repoScene if it exists in revision node
+	worldOffset = getWorldOffset();
+
 	for (const auto &node : g.references)
 	{
 		ReferenceNode* reference = (ReferenceNode*) node;
@@ -1215,12 +1341,34 @@ bool RepoScene::populate(
 		if (refg->loadStash(handler, errMsg) || refg->loadScene(handler, errMsg))
 		{
 			g.referenceToScene[reference->getSharedID()] = refg;
+			auto refOffset = refg->getWorldOffset();
+			if (refOffset.size() >= worldOffset.size())
+			{
+				for (size_t offIdx = 0; offIdx < worldOffset.size(); ++offIdx)
+				{
+					if (worldOffset[offIdx] > refOffset[offIdx])
+						worldOffset[offIdx] = refOffset[offIdx];
+				}
+			}
 		}
 		else{
 			repoWarning << "Failed to load reference node for ref ID" << reference->getUniqueID() << ": " << errMsg;
 		}
 
 	}
+	repoTrace << "World Offset = [" << worldOffset[0] << " , " << worldOffset[1] << ", " << worldOffset[2] << " ]";
+	//Now that we know the world Offset, make sure the referenced scenes are shifted accordingly
+	for (const auto &node : g.references)
+	{
+		ReferenceNode* reference = (ReferenceNode*)node;
+		auto refScene = g.referenceToScene[reference->getSharedID()];
+		auto refOffset = refScene->getWorldOffset();
+		std::vector<double> dOffset = { refOffset[0] - worldOffset[0], refOffset[1] - worldOffset[1], refOffset[2] - worldOffset[2]};
+		repoTrace << "delta Offset = [" << dOffset[0] << " , " << dOffset[1] << ", " << dOffset[2] << " ]";
+		refScene->shiftModel(dOffset);
+
+	}
+
 	return success;
 }
 
@@ -1256,40 +1404,77 @@ void RepoScene::reorientateDirectXModel()
 {
 	//Need to rotate the model by 270 degrees on the X axis
 	//This is essentially swapping the 2nd and 3rd column, negating the 2nd.
-
+	repoTrace << "Reorientating model...";
 	//Stash root and scene root should be identical!
 	if (graph.rootNode)
 	{
-		TransformationNode rootTrans = TransformationNode(*graph.rootNode);
-		std::vector<float> mat =  rootTrans.getTransMatrix();
+		auto rootTrans = dynamic_cast<TransformationNode*>(graph.rootNode);
+		std::vector<float> mat =  rootTrans->getTransMatrix();
 		if (mat.size() == 16)
 		{
-			std::vector<std::vector<float>> newMatrix;
-
-			for (uint32_t row = 0; row < 4; row++)
-			{
-				std::vector<float> matRow;
-				
-				matRow.push_back( mat[row * 4]);
-				matRow.push_back(-mat[row * 4 + 2]);
-				matRow.push_back( mat[row * 4 + 1]);
-				matRow.push_back( mat[row * 4 + 3]);
-
-				newMatrix.push_back(matRow);
-			}
+			//change offset relatively
+			std::vector<float> rotationMatrix = { 1, 0, 0, 0,
+													0, 0, 1, 0,
+													0, -1, 0, 0,
+													0, 0, 0, 1 };
 
 
 
-			TransformationNode newRoot = RepoBSONFactory::makeTransformationNode(newMatrix, rootTrans.getName());
-			modifyNode(GraphType::DEFAULT, rootTrans.getSharedID(), &newRoot);
+			TransformationNode newRoot = rootTrans->cloneAndApplyTransformation(rotationMatrix);
+			modifyNode(GraphType::DEFAULT, rootTrans->getSharedID(), &newRoot);
+			
 			if (stashGraph.rootNode)
 				modifyNode(GraphType::OPTIMIZED, stashGraph.rootNode->getSharedID(), &newRoot);
+			
+			//Apply the rotation on the offset
+			auto temp = worldOffset[2];
+			worldOffset[2] = -worldOffset[1];
+			worldOffset[1] = temp;
+			
 		}
 		else
 		{
 			repoError << "Root Transformation is not a 4x4 matrix!";
 		}
 
+	}
+}
+
+void RepoScene::setWorldOffset(
+	const std::vector<double> &offset)
+{
+	if (offset.size() > 0)
+	{
+		if (worldOffset.size())
+		{
+			worldOffset.clear();
+		}
+		worldOffset.insert(worldOffset.end(), offset.begin(), offset.end());
+	}
+	else
+	{
+		repoWarning << "Trying to set world off set with no values. Ignoring...";
+	}
+	
+}
+
+void RepoScene::shiftModel(
+	const std::vector<double> &offset)
+{
+	std::vector<float> transMat = { 1, 0, 0, (float)offset[0],
+									0, 1, 0, (float)offset[1],
+									0, 0, 1, (float)offset[2],
+									0, 0, 0, 1};
+	if (graph.rootNode)
+	{
+		auto translatedRoot = graph.rootNode->cloneAndApplyTransformation(transMat);
+		graph.rootNode->swap(translatedRoot);
+	}
+
+	if (stashGraph.rootNode)
+	{
+		auto translatedRoot = stashGraph.rootNode->cloneAndApplyTransformation(transMat);
+		stashGraph.rootNode->swap(translatedRoot);
 	}
 }
 

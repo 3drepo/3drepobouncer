@@ -470,9 +470,10 @@ TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 		parents.push_back(generateUUID());
 	std::string message = "this is some random message to test message"; 
 	std::string tag = "this is a random tag to test tags";
+	std::vector<double> offset = { std::rand() / 100., std::rand() / 100., std::rand() / 100. };
 
 
-	RevisionNode rev = RepoBSONFactory::makeRevisionNode(owner, branchID, currentNodes, files, parents, message, tag);
+	RevisionNode rev = RepoBSONFactory::makeRevisionNode(owner, branchID, currentNodes, files, parents, offset, message, tag);
 	EXPECT_EQ(owner, rev.getAuthor());
 	EXPECT_EQ(branchID, rev.getSharedID());	
 	EXPECT_EQ(message, rev.getMessage());
@@ -482,10 +483,11 @@ TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 
 	EXPECT_TRUE(compareStdVectors(currentNodes, rev.getCurrentIDs()));
 	EXPECT_TRUE(compareStdVectors(parents, rev.getParentIDs()));
+	EXPECT_TRUE(compareStdVectors(offset, rev.getCoordOffset()));
 
 	//ensure no random parent being generated
 	std::vector<repoUUID> emptyParents;
-	RevisionNode rev2 = RepoBSONFactory::makeRevisionNode(owner, branchID, currentNodes, files, emptyParents, message, tag);
+	RevisionNode rev2 = RepoBSONFactory::makeRevisionNode(owner, branchID, currentNodes, files, emptyParents, offset, message, tag);
 	EXPECT_EQ(0, rev2.getParentIDs().size());
 }
 

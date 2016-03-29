@@ -38,6 +38,40 @@ TransformationNode::~TransformationNode()
 {
 }
 
+RepoNode TransformationNode::cloneAndApplyTransformation(
+	const std::vector<float> &matrix) const
+{
+	RepoNode resultNode;
+	RepoBSONBuilder builder;
+	if (matrix.size() == 16)
+	{
+		auto currentTrans = getTransMatrix(false);
+		auto resultTrans = matMult(currentTrans, matrix);
+
+		RepoBSONBuilder rows;
+		for (uint32_t i = 0; i < 4; ++i)
+		{
+			RepoBSONBuilder columns;
+			for (uint32_t j = 0; j < 4; ++j){
+				size_t idx = i * 4 + j;
+				columns << std::to_string(j) << resultTrans[idx];
+			}
+			rows.appendArray(std::to_string(i), columns.obj());
+		}
+		builder.appendArray(REPO_NODE_LABEL_MATRIX, rows.obj());
+
+	}
+	else
+	{
+		repoError << "Failed to apply transformation onto Transformation node: the matrix is not a 4 by 4 matrix (size : !" << matrix.size();
+
+	}
+
+	builder.appendElementsUnique(*this);
+	
+	return TransformationNode(RepoBSON(builder.obj(), bigFiles));
+}
+
 std::vector<std::vector<float>> TransformationNode::identityMat()
 {
 	std::vector<std::vector<float>> idMat;

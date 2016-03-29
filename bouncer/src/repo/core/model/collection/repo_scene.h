@@ -310,6 +310,7 @@ namespace repo{
 						else 
 							return revision;
 					}
+					
 
 					static std::vector<std::string> getProjectExtensions()
 					{
@@ -323,6 +324,16 @@ namespace repo{
 					std::string getProjectName() const
 					{
 						return projectName;
+					}
+
+					/**
+					* Get the world offset shift coordinates of the model
+					* @return a vector of double denoting its offset
+					*/
+					std::vector<double> getWorldOffset() const
+					{
+
+						return worldOffset.size() ? worldOffset : std::vector<double>({0, 0, 0});
 					}
 
 					/**
@@ -375,6 +386,15 @@ namespace repo{
 					* @param msg message to go with the commit
 					*/
 					void setCommitMessage(const std::string &msg) { commitMsg = msg; }
+
+					/**
+					* Set the world offset value for the model
+					* models are often shifted for better viewing purposes
+					* this value tells us how much to shift to put it back into
+					* it's relative world coordinates.
+					*/
+					void setWorldOffset(
+						const std::vector<double> &offset);
 
 					/**
 					* Get branch name return uuid of branch there is no name
@@ -716,6 +736,13 @@ namespace repo{
 					}
 
 
+					/**
+					* Get a bounding box for the entire scene
+					* @return returns bounding box for the whole graph.
+					*/
+					std::vector<repo_vector_t> getSceneBoundingBox() const;
+
+
 					size_t getTotalNodesChanged() const
 					{
 						return newRemoved.size() + newAdded.size() + newModified.size();
@@ -945,6 +972,19 @@ namespace repo{
 						std::string &errMsg);
 
 					/**
+					* Recursive function to find the scene's bounding box
+					* @param gtype type of graph to navigate
+					* @param node current node
+					* @param mat transformation matrix
+					* @param bbox boudning box (to return/update)
+					*/
+					void getSceneBoundingBoxInternal(
+						const GraphType            &gType,
+						const RepoNode             *node,
+						const std::vector<float>   &mat,
+						std::vector<repo_vector_t> &bbox) const;
+
+					/**
 					* populate the collections (cameras, meshes etc) with the given nodes
 					* @param gtype which graph to populate
 					* @param handler database handler to use for retrieval
@@ -983,6 +1023,14 @@ namespace repo{
 						const RepoNodeSet &maps,
 						const RepoNodeSet &unknowns);
 
+					/**
+					* Shift the model by the given vector
+					* this alter the root node with the given translation
+					* @param offset a vector 3 double denoting the vector shift
+					*/
+					void shiftModel(
+						const std::vector<double> &offset);
+
 
 					/*
 					* ---------------- Scene Graph settings ----------------
@@ -999,6 +1047,7 @@ namespace repo{
 					std::string jsonExt;      /*! extension for JSON graph metadata files*/
 					std::vector<std::string> refFiles;  //Original Files that created this scene
 					std::vector<RepoNode*> toRemove;
+					std::vector<double> worldOffset;
 					repoUUID   revision;
 					repoUUID   branch;
 					std::string commitMsg;

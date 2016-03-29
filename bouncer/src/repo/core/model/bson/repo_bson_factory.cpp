@@ -805,6 +805,7 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
         //const std::vector<repoUUID>    &modified,
         const std::vector<std::string> &files,
         const std::vector<repoUUID>    &parent,
+		const std::vector<double>    &worldOffset,
         const std::string              &message,
         const std::string              &tag,
         const int                      &apiLevel
@@ -842,10 +843,14 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
     if (currentNodes.size() > 0)
         builder.appendArray(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS, currentNodes);
 
-	////--------------------------------------------------------------------------
-	//// Upload In Progress flag
+	//--------------------------------------------------------------------------
+	// Upload In Progress flag
 	builder << REPO_NODE_REVISION_LABEL_INCOMPLETE << true;
 
+	//--------------------------------------------------------------------------
+	// Shift for world coordinates
+	if (worldOffset.size() > 0)
+		builder.appendArray(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT, worldOffset);
 
     ////--------------------------------------------------------------------------
     //// Added Shared IDs

@@ -556,6 +556,28 @@ namespace repo{
 				const repo::core::model::RepoBSON       &bson);
 
 			/**
+			* Remove a project from the database
+			* This removes:
+			*   1. all collections associated with the project,
+			*   2. the project entry within project settings
+			*   3. all privileges assigned to any roles, related to this project
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param database name of the datbase
+			* @param name of the project
+			* @param errMsg error message if the operation fails
+			* @return returns true upon success
+			*/
+			bool removeProject(
+				const std::string                       &databaseAd,
+				const repo::core::model::RepoBSON       *cred,
+				const std::string                        &databaseName,
+				const std::string                        &projectName,
+				std::string								 &errMsg
+				);
+
+
+			/**
 			* Reduce redundant transformations from the scene
 			* to optimise the graph
 			* @param scene RepoScene to optimize
