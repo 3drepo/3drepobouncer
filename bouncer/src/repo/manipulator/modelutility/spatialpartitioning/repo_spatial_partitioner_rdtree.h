@@ -37,7 +37,7 @@ namespace repo{
 				*/
 				RDTreeSpatialPartitioner(
 					const repo::core::model::RepoScene *scene,
-					const uint32_t                      &maxDepth = 3*8)
+					const uint32_t                      &maxDepth = 12)
 					;
 
 				virtual ~RDTreeSpatialPartitioner();

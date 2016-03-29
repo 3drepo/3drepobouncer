@@ -907,6 +907,25 @@ std::string RepoController::getNameOfAdminDatabase(const RepoToken *token)
     return name;
 }
 
+std::shared_ptr<manipulator::modelutility::PartitioningTree>
+RepoController::getScenePartitioning(
+const repo::core::model::RepoScene *scene
+)
+{
+	std::shared_ptr<manipulator::modelutility::PartitioningTree> partition(nullptr);
+
+	if (scene && scene->getRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		partition = worker->getScenePartitioning(scene);
+		workerPool.push(worker);
+	}
+	else
+		repoError << "Trying to partition an empty scene!";
+
+	return partition;
+}
+
 std::list<std::string> RepoController::getStandardDatabaseRoles(const RepoToken *token)
 {
     std::list<std::string> roles;

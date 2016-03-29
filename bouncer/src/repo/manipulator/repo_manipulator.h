@@ -27,6 +27,7 @@
 #include "modelconvertor/import/repo_model_import_assimp.h"
 #include "modelconvertor/export/repo_model_export_gltf.h"
 #include "modelconvertor/export/repo_model_export_src.h"
+#include "modelutility/spatialpartitioning/repo_spatial_partitioner_abstract.h"
 #include "diff/repo_diff_abstract.h"
 
 
@@ -450,6 +451,14 @@ namespace repo{
 				const repo::core::model::RepoBSON	*cred,
 				const std::string					&database,
 				const std::string					&uniqueRoleName
+				);
+
+			/**
+			* Get a hierachical spatial partitioning in form of a tree
+			* @param scene scene to partition
+			*/
+			std::shared_ptr<manipulator::modelutility::PartitioningTree> getScenePartitioning(
+				const repo::core::model::RepoScene *scene
 				);
 
 			/**

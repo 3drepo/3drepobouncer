@@ -31,6 +31,7 @@
 #include "modelconvertor/import/repo_metadata_import_csv.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
 #include "modeloptimizer/repo_optimizer_multipart.h"
+#include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
 
 
 
@@ -776,6 +777,15 @@ repo::core::model::RepoRoleSettings RepoManipulator::getRoleSettingByName(
 		settings = repo::core::model::RepoRoleSettings(
 			handler->findOneByCriteria(database, REPO_COLLECTION_SETTINGS_ROLES, builder.obj()));
 	return settings;
+}
+
+std::shared_ptr<modelutility::PartitioningTree> 
+		RepoManipulator::getScenePartitioning(
+			const repo::core::model::RepoScene *scene
+		)
+{
+	modelutility::RDTreeSpatialPartitioner partitioner(scene);
+	return partitioner.partitionScene();
 }
 
 std::list<std::string> RepoManipulator::getStandardDatabaseRoles(

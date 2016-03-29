@@ -107,7 +107,8 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::createPartition(
 	const uint32_t                            &failCount,
 	const std::vector<std::vector<float>>     &currentSection)
 {
-	if (meshes.size() == 1 || (depthCount == maxDepth && maxDepth != 0) || failCount == 3)
+	repoTrace << "current Depth: " << depthCount;
+	if (meshes.size() <= 1 || (depthCount == maxDepth && maxDepth != 0) || failCount == 3)
 	{
 		/*
 			Create a leaf node
@@ -241,21 +242,21 @@ void RDTreeSpatialPartitioner::sortMeshes(
 		axisIdx = 0;
 		std::sort(sortedMeshes.begin(), sortedMeshes.end(),
 			[](MeshEntry const& a, MeshEntry const& b) 
-				{ return a.min[0] < b.min[0]; }
+		{ return ((a.max[0] + a.min[0]) / 2.)  < ((b.max[0] + b.min[0]) / 2.); }
 		);		
 		break;
 	case PartitioningTreeType::PARTITION_Y:
 		axisIdx = 1;
 		std::sort(sortedMeshes.begin(), sortedMeshes.end(),
 			[](MeshEntry const& a, MeshEntry const& b)
-		{ return a.min[1] < b.min[1]; }
+		{ return ((a.max[1] + a.min[1]) / 2.)  < ((b.max[1] + b.min[1]) / 2.); }
 		);
 		break;
 	case PartitioningTreeType::PARTITION_Z:
 		axisIdx = 2;
 		std::sort(sortedMeshes.begin(), sortedMeshes.end(),
 			[](MeshEntry const& a, MeshEntry const& b)
-		{ return a.min[2] < b.min[2]; }
+		{ return ((a.max[2] + a.min[2]) / 2.)  < ((b.max[2] + b.min[2]) / 2.); }
 		);
 		break;
 	default:
@@ -275,7 +276,7 @@ void RDTreeSpatialPartitioner::sortMeshes(
 	{
 		//odd number
 		auto medMesh = sortedMeshes[sortedMeshes.size() / 2-1];
-		median = medMesh.min[axisIdx];
+		median = (medMesh.max[axisIdx] + medMesh.min[axisIdx]) / 2.;
 
 		if (median < currentSection[0][axisIdx])
 		{
@@ -287,15 +288,21 @@ void RDTreeSpatialPartitioner::sortMeshes(
 		//even - take the mean of the 2 middle number
 		auto medMesh1 = sortedMeshes[sortedMeshes.size() / 2 - 1];
 		auto medMesh2 = sortedMeshes[sortedMeshes.size() / 2];
-		auto medPoint1 = medMesh1.min[axisIdx];
-		auto medPoint2 = medMesh2.min[axisIdx];
+		auto medPoint1 = (medMesh1.max[axisIdx] + medMesh1.min[axisIdx]) / 2.;
+		auto medPoint2 = (medMesh2.max[axisIdx] + medMesh2.min[axisIdx]) / 2.;
 
 		if (medPoint1 < currentSection[0][axisIdx])
 		{
-			//If med point 1 is smaller is before the bounding box then take the midpoint from the maximum
-			medPoint1 = medMesh1.max[axisIdx];
-			medPoint2 = medMesh2.max[axisIdx];
+			//Take the bounding box as the first point if the mid point of the first mesh is beyond the bounding box
+			medPoint1 = currentSection[0][axisIdx];
 		}
+
+		if (medPoint2 < currentSection[0][axisIdx])
+		{
+			//Take the bounding box as the 2nd point if the mid point of the first mesh is beyond the bounding box
+			medPoint2 = currentSection[0][axisIdx];
+		}
+
 		repoTrace << "medPoint1: " << medPoint1 << " , medPoint2: " << medPoint2;
 		median = (medPoint1 + medPoint2) / 2.;
 
@@ -316,7 +323,20 @@ void RDTreeSpatialPartitioner::sortMeshes(
 		if (entry.max[axisIdx] >= median)
 			rMeshes.push_back(entry);
 	}
-	repoTrace << " Current bounding box: [" << currentSection[0][0] << "," << currentSection[0][1] << "," << currentSection[0][2] << "] "
-		<< " [" << currentSection[1][0] << "," << currentSection[1][1] << "," << currentSection[1][2] << "] ";
-	repoTrace << "Median is: " << median << " left entry size: " << lMeshes.size() << " right entry size: "<<  rMeshes.size();
+	
+	if (!lMeshes.size() || !rMeshes.size())
+	{
+		repoError << "Terrible median choice: axis: " << axisIdx << " median: " << median;
+		repoError << " Current bounding box: [" << currentSection[0][0] << "," << currentSection[0][1] << "," << currentSection[0][2] << "] "
+			<< " [" << currentSection[1][0] << "," << currentSection[1][1] << "," << currentSection[1][2] << "] ";
+		repoTrace << "Median is: " << median << " left entry size: " << lMeshes.size() << " right entry size: " << rMeshes.size();
+	}
+	else
+	{
+		repoTrace << " Current bounding box: [" << currentSection[0][0] << "," << currentSection[0][1] << "," << currentSection[0][2] << "] "
+			<< " [" << currentSection[1][0] << "," << currentSection[1][1] << "," << currentSection[1][2] << "] ";
+		repoTrace << "Median is: " << median << " left entry size: " << lMeshes.size() << " right entry size: " << rMeshes.size();
+
+	}
+		
 }
