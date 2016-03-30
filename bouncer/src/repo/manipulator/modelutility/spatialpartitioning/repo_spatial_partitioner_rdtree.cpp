@@ -62,6 +62,9 @@ std::vector<MeshEntry> RDTreeSpatialPartitioner::createMeshEntries()
 					entries.back().max[0] = map.max.x;
 					entries.back().max[1] = map.max.y;
 					entries.back().max[2] = map.max.z;
+					entries.back().mid[0] = (entries.back().max[0] + entries.back().min[0]) / 2.;
+					entries.back().mid[1] = (entries.back().max[1] + entries.back().min[1]) / 2.;
+					entries.back().mid[2] = (entries.back().max[2] + entries.back().min[2]) / 2.;
 				}
 				
 			}
@@ -80,6 +83,9 @@ std::vector<MeshEntry> RDTreeSpatialPartitioner::createMeshEntries()
 					entries.back().max[0] = bbox[1].x;
 					entries.back().max[1] = bbox[1].y;
 					entries.back().max[2] = bbox[1].z;
+					entries.back().mid[0] = (entries.back().max[0] + entries.back().min[0]) / 2.;
+					entries.back().mid[1] = (entries.back().max[1] + entries.back().min[1]) / 2.;
+					entries.back().mid[2] = (entries.back().max[2] + entries.back().min[2]) / 2.;
 				}
 				else
 				{
@@ -168,12 +174,6 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::createPartition(
 		newSectionRight[0][axisIdx] = median;
 		newSectionLeft[1][axisIdx] = median;
 
-		//repoTrace << " right bounding box: [" << newSectionLeft[0][0] << "," << newSectionLeft[0][1] << "," << newSectionLeft[0][2] << "] "
-		//	<< " [" << newSectionLeft[1][0] << "," << newSectionLeft[1][1] << "," << newSectionLeft[1][2] << "] ";
-
-		//repoTrace << " left bounding box: [" << newSectionRight[0][0] << "," << newSectionRight[0][1] << "," << newSectionRight[0][2] << "] "
-		//	<< " [" << newSectionRight[1][0] << "," << newSectionRight[1][1] << "," << newSectionRight[1][2] << "] ";
-
 		return std::make_shared<PartitioningTree>(axis, median,
 			createPartition(lMeshes, nextAxis, depthCount + 1, 0, newSectionLeft),
 			createPartition(rMeshes, nextAxis, depthCount + 1, 0, newSectionRight)
@@ -240,49 +240,42 @@ void RDTreeSpatialPartitioner::sortMeshes(
 		axisIdx = 0;
 		std::sort(sortedMeshes.begin(), sortedMeshes.end(),
 			[](MeshEntry const& a, MeshEntry const& b) 
-		{ return ((a.max[0] + a.min[0]) / 2.)  < ((b.max[0] + b.min[0]) / 2.); }
+		{ return a.mid[0] < b.mid[0]; }
 		);		
 		break;
 	case PartitioningTreeType::PARTITION_Y:
 		axisIdx = 1;
 		std::sort(sortedMeshes.begin(), sortedMeshes.end(),
 			[](MeshEntry const& a, MeshEntry const& b)
-		{ return ((a.max[1] + a.min[1]) / 2.)  < ((b.max[1] + b.min[1]) / 2.); }
+		{ return a.mid[1] < b.mid[1];  }
 		);
 		break;
 	case PartitioningTreeType::PARTITION_Z:
 		axisIdx = 2;
 		std::sort(sortedMeshes.begin(), sortedMeshes.end(),
 			[](MeshEntry const& a, MeshEntry const& b)
-		{ return ((a.max[2] + a.min[2]) / 2.)  < ((b.max[2] + b.min[2]) / 2.); }
+		{ return a.mid[2] < b.mid[2]; }
 		);
 		break;
 	default:
 		//only thing left is leaf node, which we do not expect it to ever come in here
 		repoError << "Unexpected error: sorting Meshes for partitioning with an undefined axis.";
 	}
-	std::string axisStr[3] = {"X", "Y", "Z"};
-	//repoTrace << "Splitting @ " << axisStr[axisIdx];
-	//repoTrace << "Sorted meshes ("<< sortedMeshes.size() << "):";
-
-	//for (const auto mesh : sortedMeshes)
-	//	repoTrace << "\t" << UUIDtoString(mesh.id) << " [" << mesh.min[0] << "," << mesh.min[1] << "," << mesh.min[2] << "] "
-	//	<< " [" << mesh.max[0] << "," << mesh.max[1] << "," << mesh.max[2] << "] ";
-
+	
 	//figure out the median value
 	if (sortedMeshes.size() % 2)
 	{
 		//odd number
 		auto medMesh = sortedMeshes[sortedMeshes.size() / 2];
-		median = (medMesh.max[axisIdx] + medMesh.min[axisIdx]) / 2.;
+		median = medMesh.mid[axisIdx];
 	}
 	else
 	{
 		//even - take the mean of the 2 middle number
 		auto medMesh1 = sortedMeshes[sortedMeshes.size() / 2 - 1];
 		auto medMesh2 = sortedMeshes[sortedMeshes.size() / 2];
-		auto medPoint1 = (medMesh1.max[axisIdx] + medMesh1.min[axisIdx]) / 2.;
-		auto medPoint2 = (medMesh2.max[axisIdx] + medMesh2.min[axisIdx]) / 2.;
+		auto medPoint1 = medMesh1.mid[axisIdx];
+		auto medPoint2 = medMesh2.mid[axisIdx];
 
 		median = (medPoint1 + medPoint2) / 2.;
 
@@ -298,6 +291,7 @@ void RDTreeSpatialPartitioner::sortMeshes(
 			if (entry.max[axisIdx] > median)
 			{
 				entry.max[axisIdx] = median;
+				entry.mid[axisIdx] = (entry.max[axisIdx] + entry.min[axisIdx]) / 2.;
 			}
 			lMeshes.push_back(entry);
 		}
@@ -308,6 +302,7 @@ void RDTreeSpatialPartitioner::sortMeshes(
 			if (entry.min[axisIdx] < median)
 			{
 				entry.min[axisIdx] = median;
+				entry.mid[axisIdx] = (entry.max[axisIdx] + entry.min[axisIdx]) / 2.;
 			}
 			rMeshes.push_back(entry);
 		}

@@ -57,6 +57,7 @@ namespace repo{
 			{
 				float min[3];
 				float max[3];
+				float mid[3]; //midpoint
 				repoUUID      id;
 
 			};
