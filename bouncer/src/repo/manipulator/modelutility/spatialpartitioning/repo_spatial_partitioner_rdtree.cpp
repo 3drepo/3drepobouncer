@@ -43,14 +43,13 @@ std::vector<MeshEntry> RDTreeSpatialPartitioner::createMeshEntries()
 	assert(gType == repo::core::model::RepoScene::GraphType::OPTIMIZED);
 
 	auto meshes = scene->getAllMeshes(gType);
-	repoTrace << "meshes.size() : " << meshes.size();
+
 	for (const auto &node : meshes)
 	{
 		const auto mesh = dynamic_cast<repo::core::model::MeshNode*>(node);
 		if (mesh)
 		{
 			auto meshMaps = mesh->getMeshMapping();
-			repoTrace << "meshMaps.size() : " << meshMaps.size();
 			if (meshMaps.size())
 			{
 				for (const auto map : meshMaps)
@@ -96,7 +95,7 @@ std::vector<MeshEntry> RDTreeSpatialPartitioner::createMeshEntries()
 			repoWarning << "Failed to dynamically cast a mesh node, scene partitioning may be incomplete!";
 		}
 	}
-	repoTrace << "mesh entries : " << entries.size();
+
 	return entries;
 }
 
@@ -107,7 +106,6 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::createPartition(
 	const uint32_t                            &failCount,
 	const std::vector<std::vector<float>>     &currentSection)
 {
-	repoTrace << "current Depth: " << depthCount;
 	if (meshes.size() <= 1 || (depthCount == maxDepth && maxDepth != 0) || failCount == 3)
 	{
 		/*
@@ -170,11 +168,11 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::createPartition(
 		newSectionRight[0][axisIdx] = median;
 		newSectionLeft[1][axisIdx] = median;
 
-		repoTrace << " right bounding box: [" << newSectionLeft[0][0] << "," << newSectionLeft[0][1] << "," << newSectionLeft[0][2] << "] "
-			<< " [" << newSectionLeft[1][0] << "," << newSectionLeft[1][1] << "," << newSectionLeft[1][2] << "] ";
+		//repoTrace << " right bounding box: [" << newSectionLeft[0][0] << "," << newSectionLeft[0][1] << "," << newSectionLeft[0][2] << "] "
+		//	<< " [" << newSectionLeft[1][0] << "," << newSectionLeft[1][1] << "," << newSectionLeft[1][2] << "] ";
 
-		repoTrace << " right bounding box: [" << newSectionRight[0][0] << "," << newSectionRight[0][1] << "," << newSectionRight[0][2] << "] "
-			<< " [" << newSectionRight[1][0] << "," << newSectionRight[1][1] << "," << newSectionRight[1][2] << "] ";
+		//repoTrace << " left bounding box: [" << newSectionRight[0][0] << "," << newSectionRight[0][1] << "," << newSectionRight[0][2] << "] "
+		//	<< " [" << newSectionRight[1][0] << "," << newSectionRight[1][1] << "," << newSectionRight[1][2] << "] ";
 
 		return std::make_shared<PartitioningTree>(axis, median,
 			createPartition(lMeshes, nextAxis, depthCount + 1, 0, newSectionLeft),
@@ -190,7 +188,7 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::createPartition(
 std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::partitionScene()
 {
 	std::shared_ptr<PartitioningTree> pTree(nullptr);
-
+	repoInfo << "Generating spatial partitioning...";
 	if (scene)
 	{
 
@@ -264,24 +262,19 @@ void RDTreeSpatialPartitioner::sortMeshes(
 		repoError << "Unexpected error: sorting Meshes for partitioning with an undefined axis.";
 	}
 	std::string axisStr[3] = {"X", "Y", "Z"};
-	repoTrace << "Splitting @ " << axisStr[axisIdx];
-	repoTrace << "Sorted meshes ("<< sortedMeshes.size() << "):";
+	//repoTrace << "Splitting @ " << axisStr[axisIdx];
+	//repoTrace << "Sorted meshes ("<< sortedMeshes.size() << "):";
 
-	for (const auto mesh : sortedMeshes)
-		repoTrace << "\t" << UUIDtoString(mesh.id) << " [" << mesh.min[0] << "," << mesh.min[1] << "," << mesh.min[2] << "] "
-		<< " [" << mesh.max[0] << "," << mesh.max[1] << "," << mesh.max[2] << "] ";
+	//for (const auto mesh : sortedMeshes)
+	//	repoTrace << "\t" << UUIDtoString(mesh.id) << " [" << mesh.min[0] << "," << mesh.min[1] << "," << mesh.min[2] << "] "
+	//	<< " [" << mesh.max[0] << "," << mesh.max[1] << "," << mesh.max[2] << "] ";
 
 	//figure out the median value
 	if (sortedMeshes.size() % 2)
 	{
 		//odd number
-		auto medMesh = sortedMeshes[sortedMeshes.size() / 2-1];
+		auto medMesh = sortedMeshes[sortedMeshes.size() / 2];
 		median = (medMesh.max[axisIdx] + medMesh.min[axisIdx]) / 2.;
-
-		if (median < currentSection[0][axisIdx])
-		{
-			median = medMesh.max[axisIdx];
-		}
 	}
 	else
 	{
@@ -291,52 +284,42 @@ void RDTreeSpatialPartitioner::sortMeshes(
 		auto medPoint1 = (medMesh1.max[axisIdx] + medMesh1.min[axisIdx]) / 2.;
 		auto medPoint2 = (medMesh2.max[axisIdx] + medMesh2.min[axisIdx]) / 2.;
 
-		if (medPoint1 < currentSection[0][axisIdx])
-		{
-			//Take the bounding box as the first point if the mid point of the first mesh is beyond the bounding box
-			medPoint1 = currentSection[0][axisIdx];
-		}
-
-		if (medPoint2 < currentSection[0][axisIdx])
-		{
-			//Take the bounding box as the 2nd point if the mid point of the first mesh is beyond the bounding box
-			medPoint2 = currentSection[0][axisIdx];
-		}
-
-		repoTrace << "medPoint1: " << medPoint1 << " , medPoint2: " << medPoint2;
 		median = (medPoint1 + medPoint2) / 2.;
 
-
-	}
-
-	//If median is the bounding box, then just chop the box in half..?
-	if (median == currentSection[0][axisIdx] || median == currentSection[1][axisIdx])
-	{
-		median = (currentSection[0][axisIdx] + currentSection[1][axisIdx]) / 2.;
 	}
 
 	//put the meshes into left and right mesh vectors
-	for (const auto &entry : sortedMeshes)
+	for (auto &entry_ : sortedMeshes)
 	{
-		if (entry.min[axisIdx] < median)
+		
+		if (entry_.min[axisIdx] <= median)
+		{
+			auto entry = entry_;
+			if (entry.max[axisIdx] > median)
+			{
+				entry.max[axisIdx] = median;
+			}
 			lMeshes.push_back(entry);
-		if (entry.max[axisIdx] >= median)
+		}
+			
+		if (entry_.max[axisIdx] > median)
+		{
+			auto entry = entry_;
+			if (entry.min[axisIdx] < median)
+			{
+				entry.min[axisIdx] = median;
+			}
 			rMeshes.push_back(entry);
+		}
+			
 	}
 	
 	if (!lMeshes.size() || !rMeshes.size())
 	{
-		repoError << "Terrible median choice: axis: " << axisIdx << " median: " << median;
-		repoError << " Current bounding box: [" << currentSection[0][0] << "," << currentSection[0][1] << "," << currentSection[0][2] << "] "
-			<< " [" << currentSection[1][0] << "," << currentSection[1][1] << "," << currentSection[1][2] << "] ";
-		repoTrace << "Median is: " << median << " left entry size: " << lMeshes.size() << " right entry size: " << rMeshes.size();
-	}
-	else
-	{
-		repoTrace << " Current bounding box: [" << currentSection[0][0] << "," << currentSection[0][1] << "," << currentSection[0][2] << "] "
-			<< " [" << currentSection[1][0] << "," << currentSection[1][1] << "," << currentSection[1][2] << "] ";
-		repoTrace << "Median is: " << median << " left entry size: " << lMeshes.size() << " right entry size: " << rMeshes.size();
+		//in no situation should the split happens where we're not getting anything on either side of the tree.
+		repoWarning << "Terrible median choice: axis: " << axisIdx << " median: " << median;
 
 	}
+
 		
 }
