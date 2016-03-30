@@ -915,7 +915,7 @@ const uint32_t                     &maxDepth
 {
 	std::shared_ptr<manipulator::modelutility::PartitioningTree> partition(nullptr);
 
-	if (scene && scene->getRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
+	if (scene && scene->getRoot(scene->getViewGraph()))
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		partition = worker->getScenePartitioning(scene, maxDepth);
