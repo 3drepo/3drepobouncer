@@ -781,10 +781,11 @@ repo::core::model::RepoRoleSettings RepoManipulator::getRoleSettingByName(
 
 std::shared_ptr<modelutility::PartitioningTree> 
 		RepoManipulator::getScenePartitioning(
-			const repo::core::model::RepoScene *scene
+		const repo::core::model::RepoScene *scene,
+		const uint32_t                     &maxDepth
 		)
 {
-	modelutility::RDTreeSpatialPartitioner partitioner(scene);
+	modelutility::RDTreeSpatialPartitioner partitioner(scene, maxDepth);
 	return partitioner.partitionScene();
 }
 

@@ -456,9 +456,11 @@ namespace repo{
 			/**
 			* Get a hierachical spatial partitioning in form of a tree
 			* @param scene scene to partition
+			* @param maxDepth max partitioning depth
 			*/
 			std::shared_ptr<manipulator::modelutility::PartitioningTree> getScenePartitioning(
-				const repo::core::model::RepoScene *scene
+				const repo::core::model::RepoScene *scene,
+				const uint32_t                     &maxDepth = 8
 				);
 
 			/**
