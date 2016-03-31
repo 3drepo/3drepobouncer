@@ -270,7 +270,7 @@ std::string X3DSRCModelExport::populateTreeWithProperties(
 			else
 			{
 				label = X3D_LABEL_MAT_TRANS;
-				tree.addFieldAttribute("", X3D_ATTR_MAT, transNode->getTransMatrix());
+				tree.addFieldAttribute("", X3D_ATTR_MAT, transNode->getTransMatrix(false));
 			}
 
 			tree.addFieldAttribute("", X3D_ATTR_ID, UUIDtoString(transNode->getUniqueID()));

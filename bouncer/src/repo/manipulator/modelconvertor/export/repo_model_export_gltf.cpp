@@ -1265,7 +1265,7 @@ void GLTFModelExport::populateWithNodes(
 		const repo::core::model::TransformationNode *transNode = (const repo::core::model::TransformationNode*) node;
 		if (!transNode->isIdentity())
 		{
-			tree.addToTree(label + "." + GLTF_LABEL_MATRIX, transNode->getTransMatrix());
+			tree.addToTree(label + "." + GLTF_LABEL_MATRIX, transNode->getTransMatrix(false));
 		}
 		processNodeChildren(node, tree, subMeshCounts);
 	}	
