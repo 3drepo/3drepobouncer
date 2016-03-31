@@ -827,6 +827,7 @@ repo::core::model::RepoScene*
 	const std::string &filePath,
 	      std::string &msg,
 	const bool &applyReduction,
+	const bool &rotateModel,
     const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
 
@@ -850,6 +851,12 @@ repo::core::model::RepoScene*
 					repoTrace << "Scene generated. Applying transformation reduction optimizer";
 					modeloptimizer::TransformationReductionOptimizer optimizer;
 					optimizer.apply(scene);
+				}
+
+				if (rotateModel)
+				{
+					repoTrace << "rotating model by 270 degress on the x axis...";
+					scene->reorientateDirectXModel();
 				}
 				
 				//Generate stash

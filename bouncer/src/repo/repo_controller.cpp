@@ -982,6 +982,7 @@ repo::core::model::RepoScene*
 RepoController::loadSceneFromFile(
         const std::string                                          &filePath,
 		const bool                                                 &applyReduction,
+		const bool                                                 &rotateModel,
         const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
 
@@ -991,7 +992,7 @@ RepoController::loadSceneFromFile(
     if (!filePath.empty())
     {
         manipulator::RepoManipulator* worker = workerPool.pop();
-        scene = worker->loadSceneFromFile(filePath, errMsg, applyReduction, config);
+        scene = worker->loadSceneFromFile(filePath, errMsg, applyReduction, rotateModel, config);
         workerPool.push(worker);
         if (!scene)
             repoError << "Failed ot load scene from file: " << errMsg;
