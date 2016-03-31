@@ -1423,14 +1423,13 @@ void RepoScene::reorientateDirectXModel()
 			TransformationNode newRoot = rootTrans->cloneAndApplyTransformation(rotationMatrix);
 			modifyNode(GraphType::DEFAULT, rootTrans->getSharedID(), &newRoot);
 			
-			if (stashGraph.rootNode)
-				modifyNode(GraphType::OPTIMIZED, stashGraph.rootNode->getSharedID(), &newRoot);
-			
-			//Apply the rotation on the offset
-			auto temp = worldOffset[2];
-			worldOffset[2] = -worldOffset[1];
-			worldOffset[1] = temp;
-			
+			/*if (stashGraph.rootNode)
+			{
+			modifyNode(GraphType::OPTIMIZED, stashGraph.rootNode->getSharedID(), &newRoot);
+			}*/
+
+			//Clear the stash as bounding boxes in mesh mappings are no longer valid like this.
+			clearStash();		
 		}
 		else
 		{

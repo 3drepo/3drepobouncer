@@ -704,12 +704,14 @@ public:
         * Load a Repo Scene from a file
         * @param filePath path to file
 		* @param apply transformation reduction (default: true)
+		* @param rotateModel rotate model by 270degrees on x (default: false)
         * @param config import settings(optional)
         * @return returns a pointer to Repo Scene upon success
         */
     repo::core::model::RepoScene* loadSceneFromFile(
             const std::string &filePath,
 			const bool &applyReduction = true,
+			const bool &rotateModel = false,
             const repo::manipulator::modelconvertor::ModelImportConfig *config
             = nullptr);
 
