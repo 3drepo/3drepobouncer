@@ -528,6 +528,7 @@ namespace repo{
 			* @param filePath path to file
 			* @param msg error message if it fails 
 			* @param apply transformation reduction optimizer (default = true)
+			* @param rotateModel rotate model by 270degrees on x (default: false)
 			* @param config import config (optional)
 			* @return returns a pointer to Repo Scene upon success
 			*/
@@ -536,6 +537,7 @@ namespace repo{
 				const std::string                                          &filePath,
 				      std::string                                          &msg,
 				const bool                                                 &applyReduction = true,
+				const bool                                                 &rotateModel = false,
 			    const repo::manipulator::modelconvertor::ModelImportConfig *config         = nullptr);
 
 			/**
