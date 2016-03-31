@@ -616,7 +616,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 				{
 					aiVector3D *vector = (static_cast<aiVector3D *>(currentValue.mData));
 
-					repo_vector_t repoVector = { vector->x, vector->y, vector->z };
+					repo_vector_t repoVector = { (float)vector->x, (float)vector->y, (float)vector->z };
 
 
 					builder.append(key, repoVector);
