@@ -33,7 +33,7 @@ using namespace repo::manipulator::modelconvertor;
 const static int lodLimit = 15; //Hack to test pop buffers, i should not be committing this!
 
 const static size_t GLTF_MAX_VERTEX_LIMIT = 65535;
-#define DEBUG //FIXME: to remove
+//#define DEBUG //FIXME: to remove
 //#define LODLIMIT
 
 static const std::string GLTF_LABEL_ACCESSORS       = "accessors";
