@@ -76,8 +76,7 @@ void RepoLog::logToFile(const std::string &filePath)
 		<< "(" << threadid << ")"
 		<< ": <" << boost::log::trivial::severity
 					<< "> " << boost::log::expressions::smessage
-					) ,
-		);
+					) );
 	boost::log::add_common_attributes();
 }
 
