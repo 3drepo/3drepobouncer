@@ -60,6 +60,8 @@ void RepoLog::log(
 	
 }
 
+BOOST_LOG_ATTRIBUTE_KEYWORD(timestamp, "TimeStamp", boost::posix_time::ptime)
+BOOST_LOG_ATTRIBUTE_KEYWORD(threadid, "ThreadID", boost::log::attributes::current_thread_id::value_type)
 void RepoLog::logToFile(const std::string &filePath)
 {
 
@@ -68,9 +70,14 @@ void RepoLog::logToFile(const std::string &filePath)
 		boost::log::keywords::file_name = filePath + "_%N",
 		boost::log::keywords::rotation_size = 10 * 1024 * 1024,
 		boost::log::keywords::time_based_rotation = boost::log::sinks::file::rotation_at_time_point(0, 0, 0),
-		boost::log::keywords::format = "[%TimeStamp%]: %Message%"
-		);
-
+		boost::log::keywords::format = (
+		boost::log::expressions::stream
+		<< "[" << boost::log::expressions::format_date_time(timestamp, "%Y-%m-%d %H:%M:%S") << "]"
+		<< "(" << threadid << ")"
+		<< ": <" << boost::log::trivial::severity
+					<< "> " << boost::log::expressions::smessage
+					) );
+	boost::log::add_common_attributes();
 }
 
 void RepoLog::setLoggingLevel(const RepoLogLevel &level)

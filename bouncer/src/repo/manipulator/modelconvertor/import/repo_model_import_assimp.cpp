@@ -243,7 +243,7 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 		repo_material_t repo_material;
 
 		aiColor3D tempColor;
-		double tempFloat;
+		auto tempFloat = tempColor.b;
 
 		//--------------------------------------------------------------------------
 		// Ambient
@@ -390,8 +390,6 @@ repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 	repo_vector_t minVertex = { firstV.x, firstV.y, firstV.z };
 	repo_vector_t maxVertex = minVertex;
 
-	//Make sure we are using 64bit (issue 4 branch) of assimp
-	static_assert(sizeof(*assimpMesh->mVertices).x == sizeof(double), "This version of 3drepobouncer requires a 64bit assimp!");
 
 	for (uint32_t i = 0; i < assimpMesh->mNumVertices; i++)
 	{
@@ -791,7 +789,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 
 			uint32_t nTex = material->GetTextureCount(aiTextureType_DIFFUSE);
 			for (uint32_t iTex = 0; iTex < nTex; ++iTex)
-			{
+		{	
 				aiString path;	// filename
 				if (AI_SUCCESS == material->GetTexture(aiTextureType_DIFFUSE, iTex, &path))
 				{
@@ -1048,6 +1046,13 @@ repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 {
 	repo::core::model::RepoScene *scene;
 	assimp_map orgMap, optMap;
+
+	//Make sure we are using 64bit (issue 4 branch) of assimp
+	aiVector3D test;
+	if (sizeof(test.x) != sizeof(double))
+	{
+		repoWarning << "Bouncer library is compiled against a 32bit assimp library. Results may be sub-optimal.";
+	}
 
 	//This will generate the non optimised scene
 	repoTrace << "Converting AiScene to repoScene";
