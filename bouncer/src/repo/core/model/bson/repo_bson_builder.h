@@ -114,9 +114,16 @@ namespace repo {
 							{
 
 							// Store data as a binary blob
-								appendBinData(
-									label, byteCount, mongo::BinDataGeneral,
-									(void *)data);
+								try{
+									appendBinData(
+										label, byteCount, mongo::BinDataGeneral,
+										(void *)data);
+								}
+								catch (std::exception &e)
+								{
+									repoError << "Failed: " << e.what();
+									exit(-1);
+								}
 
 							}
 							else
