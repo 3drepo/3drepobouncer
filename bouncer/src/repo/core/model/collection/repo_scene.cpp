@@ -1429,6 +1429,11 @@ void RepoScene::reorientateDirectXModel()
 			//Clear the stash as bounding boxes in mesh mappings are no longer valid like this.
 			clearStash();		
 
+
+			//Apply the rotation on the offset
+			auto temp = worldOffset[2];
+			worldOffset[2] = -worldOffset[1];
+			worldOffset[1] = temp;
 		}
 		else
 		{
