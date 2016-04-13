@@ -45,6 +45,8 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 	std::vector<repo_vector_t> vertices = getVertices();
 	std::vector<repo_vector_t> normals = getNormals();
 
+	auto newBigFiles = bigFiles;
+
 	RepoBSONBuilder builder;
 	std::vector<repo_vector_t> resultVertice;
 	std::vector<repo_vector_t> newBbox;
@@ -81,7 +83,14 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 				newBbox.push_back(resultVertice.back());
 			}
 		}
-		builder.appendBinary(REPO_NODE_MESH_LABEL_VERTICES, resultVertice.data(), resultVertice.size() * sizeof(repo_vector_t));
+		if (newBigFiles.find(REPO_NODE_MESH_LABEL_VERTICES) != newBigFiles.end())
+		{
+			const uint64_t verticesByteCount = resultVertice.size() * sizeof(repo_vector_t);
+			newBigFiles[REPO_NODE_MESH_LABEL_VERTICES].second.resize(verticesByteCount);
+			memcpy(newBigFiles[REPO_NODE_MESH_LABEL_VERTICES].second.data(), resultVertice.data(), verticesByteCount);			
+		}
+		else
+			builder.appendBinary(REPO_NODE_MESH_LABEL_VERTICES, resultVertice.data(), resultVertice.size() * sizeof(repo_vector_t));
 	}
 	else
 	{
@@ -101,8 +110,15 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 			normalize(transformedNormal);
 			resultNormals.push_back(transformedNormal);
 		}
-
-		builder.appendBinary(REPO_NODE_MESH_LABEL_NORMALS, resultNormals.data(), resultNormals.size() * sizeof(repo_vector_t));
+		
+		if (newBigFiles.find(REPO_NODE_MESH_LABEL_NORMALS) != newBigFiles.end())
+		{
+			const uint64_t byteCount = resultNormals.size() * sizeof(repo_vector_t);
+			newBigFiles[REPO_NODE_MESH_LABEL_NORMALS].second.resize(byteCount);
+			memcpy(newBigFiles[REPO_NODE_MESH_LABEL_NORMALS].second.data(), resultNormals.data(), byteCount);
+		}
+		else
+			builder.appendBinary(REPO_NODE_MESH_LABEL_NORMALS, resultNormals.data(), resultNormals.size() * sizeof(repo_vector_t));
 	}
 
 	
@@ -130,7 +146,7 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 	outlineBuilder.appendArray("3", outline3);
 	builder.appendArray(REPO_NODE_MESH_LABEL_OUTLINE, outlineBuilder.obj());
 
-	return MeshNode(builder.appendElementsUnique(*this), bigFiles);
+	return MeshNode(builder.appendElementsUnique(*this), newBigFiles);
 }
 
 MeshNode MeshNode::cloneAndUpdateMeshMapping(
