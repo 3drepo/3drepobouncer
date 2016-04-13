@@ -177,11 +177,11 @@ void RepoManipulator::commitScene(
 		{
 			repoInfo << "Commited scene stash successfully.";
 
-		/*	repoInfo << "Generating SRC encoding for web viewing...";
-			if (generateAndCommitSRCBuffer(databaseAd, cred, scene))
+			repoInfo << "Generating GLTF encoding for web viewing...";
+			if (generateAndCommitGLTFBuffer(databaseAd, cred, scene))
 			{
-				repoInfo << "SRC file stored into the database";
-			}			*/
+				repoInfo << "GLTF file stored into the database";
+			}
 		}
 		else
 		{

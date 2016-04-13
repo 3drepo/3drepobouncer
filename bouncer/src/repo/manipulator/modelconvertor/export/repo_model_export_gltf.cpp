@@ -532,12 +532,12 @@ bool GLTFModelExport::constructScene(
 		tree.addToTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_NODES, treeNodes);
 		repo::lib::PropertyTree spatialPartTree = generateSpatialPartitioningTree();
 #ifdef DEBUG
-		std::string jsonFilePrefix = "";
+		std::string jsonFilePrefix = "/";
 #else
-		std::string jsonFilePrefix = "/api/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/";
+		std::string jsonFilePrefix = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/";
 #endif
-		std::string jsonFileName = jsonFilePrefix + "sp_" + UUIDtoString(scene->getRevisionID()) + ".json";
-		tree.addToTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_EXTRA + ".partitioning." + GLTF_LABEL_URI,  jsonFileName);
+		std::string jsonFileName = jsonFilePrefix + "revision/" + UUIDtoString(scene->getRevisionID()) + "/partitioning.json";
+		tree.addToTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_EXTRA + ".partitioning." + GLTF_LABEL_URI,  "/api" + jsonFileName);
 
 		jsonTrees[jsonFileName] = spatialPartTree;
 
@@ -580,7 +580,7 @@ bool GLTFModelExport::generateTreeRepresentation()
 	constructScene(tree);
 	writeBuffers(tree);
 
-	std::string fname = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + UUIDtoString(scene->getRevisionID()) + ".gltf";
+	std::string fname = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/revision/" + UUIDtoString(scene->getRevisionID()) + ".gltf";
 	trees[fname] = tree;
 
 	return true;
@@ -796,7 +796,7 @@ void GLTFModelExport::populateWithMaterials(
 		{
 			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_COL_EMISSIVE, matStruct.emissive, false);
 			if (matStruct.isTwoSided)
-				tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_COL_BK_DIFFUSE, matStruct.emissive, false);
+				tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_COL_BK_EMISSIVE, matStruct.emissive, false);
 			//default technique takes on a 4d vector, we store 3d vectors
 			matStruct.emissive.push_back(1);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_EMISSIVE, matStruct.emissive);
@@ -815,7 +815,7 @@ void GLTFModelExport::populateWithMaterials(
 		{
 			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_SHININESS, matStruct.shininess);
 			if (matStruct.isTwoSided)
-				tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "" + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_BK_SHININESS, matStruct.shininess);
+				tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_BK_SHININESS, matStruct.shininess);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_SHININESS, matStruct.shininess);
 		}
 
@@ -1425,14 +1425,14 @@ void GLTFModelExport::writeBuffers(
 	for (const auto &pair : fullDataBuffer)
 	{
 #ifdef DEBUG
-		std::string bufferFilePrefix = "";
+		std::string bufferFilePrefix = "/";
 #else
-		std::string bufferFilePrefix = "/api/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/";
+		std::string bufferFilePrefix = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/";
 #endif
 		std::string bufferLabel = GLTF_LABEL_BUFFERS + "." + pair.first;
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_BYTE_LENGTH, pair.second.size()  * sizeof(*pair.second.data()));
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_TYPE, GLTF_ARRAY_BUFFER);
-		tree.addToTree(bufferLabel + "." + GLTF_LABEL_URI, bufferFilePrefix + pair.first + ".bin");
+		tree.addToTree(bufferLabel + "." + GLTF_LABEL_URI, "/api" + bufferFilePrefix + pair.first + ".bin");
 	}
 }
 

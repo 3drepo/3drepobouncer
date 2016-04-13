@@ -124,12 +124,8 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::createPartition(
 
 
 			*/
-		std::vector<repoUUID> meshIDs;
-		meshIDs.reserve(meshes.size());
-		for (const auto mesh : meshes)
-			meshIDs.push_back(mesh.id);
-
-		return std::make_shared<PartitioningTree>(meshIDs);
+			
+		return std::make_shared<PartitioningTree>(meshes);
 	}
 
 	//non leaf node, partition the meshes via the given axis and recurse

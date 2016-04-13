@@ -41,14 +41,24 @@ repo::lib::PropertyTree AbstractSpatialPartitioner::generatePropertyTreeForParti
 repo::lib::PropertyTree AbstractSpatialPartitioner::generatePropertyTreeForPartitioningInternal(
 	const std::shared_ptr<PartitioningTree> &spTree) const
 {
-	repo::lib::PropertyTree tree(true);
+	repo::lib::PropertyTree tree;
+
 	if (spTree)
 	{
-
-
 		if (PartitioningTreeType::LEAF_NODE == spTree->type)
 		{
-			tree.addToTree("meshIDs", spTree->meshIDs);
+			repo::lib::PropertyTree meshesTree;
+			
+			for(const auto &mesh: spTree->meshes)
+			{
+				std::string idString = UUIDtoString(mesh.id);
+				repo::lib::PropertyTree childTree;
+				childTree.addToTree("min", mesh.min);
+				childTree.addToTree("max", mesh.max);
+				meshesTree.mergeSubTree(idString, childTree);
+			}
+			
+			tree.mergeSubTree("meshes", meshesTree);
 		}
 		else
 		{

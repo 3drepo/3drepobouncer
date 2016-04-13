@@ -246,6 +246,11 @@ namespace repo{
 			const std::string           &value);
 
 		template <>
+		void PropertyTree::addToTree<repoUUID>(
+			const std::string           &label,
+			const repoUUID              &value);
+
+		template <>
 		void PropertyTree::addFieldAttribute(
 			const std::string &label,
 			const std::string &attribute,

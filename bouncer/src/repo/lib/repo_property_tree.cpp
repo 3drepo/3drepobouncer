@@ -97,7 +97,15 @@ void PropertyTree::addToTree<std::string>(
 		else
 			tree.add(label, value);
 	}
-	
+
+}
+
+template <>
+void PropertyTree::addToTree<repoUUID>(
+	const std::string          &label,
+	const repoUUID             &value)
+{
+	addToTree(label, boost::lexical_cast<std::string>(value));
 }
 
 

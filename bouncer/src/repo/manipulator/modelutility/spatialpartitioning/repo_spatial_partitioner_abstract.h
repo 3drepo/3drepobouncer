@@ -24,10 +24,20 @@ namespace repo{
 	namespace manipulator{
 		namespace modelutility{
 
+			struct MeshEntry
+			{
+				std::vector<float> min;
+				std::vector<float> max;
+				std::vector<float> mid;// midpoint
+				repoUUID      id;
+				
+				MeshEntry() : min(3, 0.0f), max(3, 0.0f), mid(3, 0.0f) {}
+			};
+				
 			enum class PartitioningTreeType{ PARTITION_X, PARTITION_Y, PARTITION_Z, LEAF_NODE };
 			struct PartitioningTree{
 				PartitioningTreeType    type;
-				std::vector<repoUUID> meshIDs; //mesh ids if it is a leaf node
+				std::vector<MeshEntry> meshes; //mesh ids if it is a leaf node
 				float                 pValue; //partitioning value if not
 				std::shared_ptr<PartitioningTree> left;
 				std::shared_ptr<PartitioningTree> right;	
@@ -44,22 +54,13 @@ namespace repo{
 
 				//Constructiong of leaf node
 				PartitioningTree(
-					const std::vector<repoUUID> &meshIDs)
+					const std::vector<MeshEntry> &meshes)
 					: 
 					type(PartitioningTreeType::LEAF_NODE),
-					meshIDs(meshIDs), pValue(0),
+					meshes(meshes), pValue(0),
 					left(std::shared_ptr<PartitioningTree>(nullptr)),
 					right(std::shared_ptr<PartitioningTree>(nullptr)){}
 	
-			};
-
-			struct MeshEntry
-			{
-				float min[3];
-				float max[3];
-				float mid[3]; //midpoint
-				repoUUID      id;
-
 			};
 
 			class AbstractSpatialPartitioner
