@@ -31,10 +31,15 @@ namespace repo{
 				std::vector<float> mid;// midpoint
 				repoUUID      id;
 				
-				MeshEntry() : min(3, 0.0f), max(3, 0.0f), mid(3, 0.0f) {}
+				MeshEntry() :mid({ 0, 0, 0 }) 
+				{
+					min = { 0, 0, 0 };
+					max = { 0, 0, 0 };
+				}
 			};
 				
 			enum class PartitioningTreeType{ PARTITION_X, PARTITION_Y, PARTITION_Z, LEAF_NODE };
+
 			struct PartitioningTree{
 				PartitioningTreeType    type;
 				std::vector<MeshEntry> meshes; //mesh ids if it is a leaf node
@@ -42,7 +47,7 @@ namespace repo{
 				std::shared_ptr<PartitioningTree> left;
 				std::shared_ptr<PartitioningTree> right;	
 	
-				//Constructiong of non leaf node
+				//Construction of branch node
 				PartitioningTree(
 					const PartitioningTreeType &type,
 					const float &pValue,
@@ -52,7 +57,7 @@ namespace repo{
 					left(left),
 					right(right){}
 
-				//Constructiong of leaf node
+				//Construction of leaf node
 				PartitioningTree(
 					const std::vector<MeshEntry> &meshes)
 					: 
