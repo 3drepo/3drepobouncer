@@ -130,7 +130,7 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 	outlineBuilder.appendArray("3", outline3);
 	builder.appendArray(REPO_NODE_MESH_LABEL_OUTLINE, outlineBuilder.obj());
 
-	return MeshNode(builder.appendElementsUnique(*this));
+	return MeshNode(builder.appendElementsUnique(*this), bigFiles);
 }
 
 MeshNode MeshNode::cloneAndUpdateMeshMapping(
