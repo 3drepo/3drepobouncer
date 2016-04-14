@@ -21,8 +21,9 @@
 
 static const std::string cmdImportFile = "import"; //file import
 static const std::string cmdTestConn   = "test";   //test the connection
-static const std::string cmdVersion = "version";   //test the connection
-static const std::string cmdVersion2 = "-v";   //test the connection
+static const std::string cmdGenStash = "makeRepoStash";   //test the connection
+static const std::string cmdVersion = "version";   //get version
+static const std::string cmdVersion2 = "-v";   //get version
 
 
 std::string helpInfo()
@@ -30,6 +31,7 @@ std::string helpInfo()
 	std::stringstream ss;
 
 	ss << cmdImportFile << "\t\tImport file to database. (args: file database project [dxrotate] [owner] [configfile])\n";
+	ss << cmdGenStash << "\t\tGenerate Stash for a project. (args: database project [repo|gltf|src])\n";
 	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
 	ss << cmdVersion << "[-v]\t\tPrints the version of Repo Bouncer Client/Library\n";
 
@@ -44,6 +46,8 @@ bool isSpecialCommand(const std::string &cmd)
 int32_t knownValid(const std::string &cmd)
 {
 	if (cmd == cmdImportFile)
+		return 3;
+	if (cmd == cmdGenStash)
 		return 3;
 	if (cmd == cmdTestConn)
 		return 0;
@@ -74,6 +78,18 @@ int32_t performOperation(
 		}
 		
 	}
+	else if (command.command == cmdGenStash)
+	{
+		try{
+
+			errCode = generateStash(controller, token, command);
+		}
+		catch (const std::exception &e)
+		{
+			repoLogError("Failed to generate optimised stash: " + std::string(e.what()));
+			errCode = REPOERR_UNKNOWN_ERR;
+		}
+	}
 	else if (command.command == cmdTestConn)
 	{
 		//This is just to test if the client is working and if the connection is working
@@ -95,6 +111,56 @@ int32_t performOperation(
 * ======================== Command functions ===================
 */
 
+int32_t generateStash(
+	repo::RepoController       *controller,
+	const repo::RepoToken      *token,
+	const repo_op_t            &command
+	)
+{
+	/*
+	* Check the amount of parameters matches
+	*/
+	if (command.nArgcs < 3)
+	{
+		repoLogError("Number of arguments mismatch! " + cmdGenStash
+			+ " requires 3 arguments:database project [repo|gltf|src]");
+		return REPOERR_INVALID_ARG;
+	}
+
+	std::string dbName  = command.args[0];
+	std::string project = command.args[1];
+	std::string type = command.args[2];
+
+	if (!(type == "repo" || type == "gltf" || type == "src"))
+	{
+		repoLogError("Unknown stash type: " + type);
+		return REPOERR_INVALID_ARG;
+	}
+	auto scene = controller->fetchScene(token, dbName, project);
+	if (!scene)	
+	{
+		return REPOERR_LOAD_SCENE_FAIL;
+	}
+
+	bool  success = false;
+
+	if (type == "repo")
+	{
+		success = controller->generateAndCommitStashGraph(token, scene);
+	}
+	else if (type == "gltf")
+	{
+		success = controller->generateAndCommitGLTFBuffer(token, scene);
+	}
+	else if (type == "src")
+	{
+		success = controller->generateAndCommitSRCBuffer(token, scene);
+	}
+	
+
+
+	return success ? REPOERR_OK : REPOERR_STASH_GEN_FAIL;
+}
 
 int32_t importFileAndCommit(
 	repo::RepoController *controller,
