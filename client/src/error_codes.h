@@ -27,3 +27,5 @@
 #define REPOERR_UNKNOWN_ERR 4
 //failed to import file to scene
 #define REPOERR_LOAD_SCENE_FAIL 5
+//failed to generate stash graph
+#define REPOERR_STASH_GEN_FAIL 6

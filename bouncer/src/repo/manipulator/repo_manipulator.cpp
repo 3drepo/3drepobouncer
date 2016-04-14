@@ -1159,10 +1159,31 @@ void RepoManipulator::saveOriginalFiles(
 					repoWarning << "Unable to read file " << file << " from the database. Skipping...";
 				}
 			}
-		}
-		
-
+		}	
 	}
+}
+
+void RepoManipulator::saveOriginalFiles(
+	const std::string                    &databaseAd,
+	const repo::core::model::RepoBSON	 *cred,
+	const std::string                    &database,
+	const std::string                    &project,
+	const std::string                    &directory)
+{
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	auto scene = new repo::core::model::RepoScene(database, project);
+	std::string errMsg;
+	if (scene && scene->loadRevision(handler, errMsg))
+	{
+		saveOriginalFiles(databaseAd, cred, scene, directory);
+	}
+	else
+	{
+		repoError << "Failed to fetch project from the database!" << ( errMsg.empty()? "" : errMsg);
+	}
+
+	
 }
 
 bool RepoManipulator::saveSceneToFile(
