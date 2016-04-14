@@ -21,7 +21,7 @@
 
 static const std::string cmdImportFile = "import"; //file import
 static const std::string cmdTestConn   = "test";   //test the connection
-static const std::string cmdGenStash = "makeRepoStash";   //test the connection
+static const std::string cmdGenStash = "genStash";   //test the connection
 static const std::string cmdVersion = "version";   //get version
 static const std::string cmdVersion2 = "-v";   //get version
 
