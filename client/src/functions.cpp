@@ -19,19 +19,21 @@
 
 #include <sstream>
 
+static const std::string cmdGenStash   = "genStash";   //test the connection
+static const std::string cmdGetFile    = "getFile"; //download original file
 static const std::string cmdImportFile = "import"; //file import
 static const std::string cmdTestConn   = "test";   //test the connection
-static const std::string cmdGenStash = "genStash";   //test the connection
-static const std::string cmdVersion = "version";   //get version
-static const std::string cmdVersion2 = "-v";   //get version
+static const std::string cmdVersion    = "version";   //get version
+static const std::string cmdVersion2   = "-v";   //get version
 
 
 std::string helpInfo()
 {
 	std::stringstream ss;
 
-	ss << cmdImportFile << "\t\tImport file to database. (args: file database project [dxrotate] [owner] [configfile])\n";
 	ss << cmdGenStash << "\t\tGenerate Stash for a project. (args: database project [repo|gltf|src])\n";
+	ss << cmdGetFile << "\t\tGet original file for the latest revision of the project (args: database project dir)";
+	ss << cmdImportFile << "\t\tImport file to database. (args: file database project [dxrotate] [owner] [configfile])\n";
 	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
 	ss << cmdVersion << "[-v]\t\tPrints the version of Repo Bouncer Client/Library\n";
 
@@ -48,6 +50,8 @@ int32_t knownValid(const std::string &cmd)
 	if (cmd == cmdImportFile)
 		return 3;
 	if (cmd == cmdGenStash)
+		return 3;
+	if (cmd == cmdGetFile)
 		return 3;
 	if (cmd == cmdTestConn)
 		return 0;
@@ -87,6 +91,18 @@ int32_t performOperation(
 		catch (const std::exception &e)
 		{
 			repoLogError("Failed to generate optimised stash: " + std::string(e.what()));
+			errCode = REPOERR_UNKNOWN_ERR;
+		}
+	}
+	else if (command.command == cmdGetFile)
+	{
+		try{
+
+			errCode = getFileFromProject(controller, token, command);
+		}
+		catch (const std::exception &e)
+		{
+			repoLogError("Failed to retrieve file from project: " + std::string(e.what()));
 			errCode = REPOERR_UNKNOWN_ERR;
 		}
 	}
@@ -160,6 +176,31 @@ int32_t generateStash(
 
 
 	return success ? REPOERR_OK : REPOERR_STASH_GEN_FAIL;
+}
+
+int32_t getFileFromProject(
+	repo::RepoController       *controller,
+	const repo::RepoToken      *token,
+	const repo_op_t            &command
+	)
+{
+	/*
+	* Check the amount of parameters matches
+	*/
+	if (command.nArgcs < 3)
+	{
+		repoLogError("Number of arguments mismatch! " + cmdGenStash
+			+ " requires 3 arguments:database project dir");
+		return REPOERR_INVALID_ARG;
+	}
+
+	std::string dbName = command.args[0];
+	std::string project = command.args[1];
+	std::string dir = command.args[2];
+
+	controller->saveOriginalFiles(token, dbName, project, dir);
+
+	return REPOERR_OK;
 }
 
 int32_t importFileAndCommit(
