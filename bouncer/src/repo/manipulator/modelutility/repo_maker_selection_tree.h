@@ -21,8 +21,7 @@
 namespace repo{
 	namespace manipulator{
 		namespace modelutility{
-			//FIXME: remove export tag
-			class REPO_API_EXPORT SelectionTreeMaker
+			class SelectionTreeMaker
 			{
 			public:
 				/**

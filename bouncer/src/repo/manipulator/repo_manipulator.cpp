@@ -31,6 +31,7 @@
 #include "modelconvertor/import/repo_metadata_import_csv.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
 #include "modeloptimizer/repo_optimizer_multipart.h"
+#include "modelutility/repo_maker_selection_tree.h"
 
 
 
@@ -185,6 +186,11 @@ void RepoManipulator::commitScene(
 		else
 		{
 			repoError << "Failed to commit scene stash : " << msg;
+		}
+		repoInfo << "Generating Selection Tree JSON...";
+		if (generateAndCommitSelectionTree(databaseAd, cred, scene))
+		{
+			repoInfo << "Selection Tree Stored into the database";
 		}
 	}
 	else
@@ -479,6 +485,45 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 {
 	return generateAndCommitWebViewBuffer(databaseAd, cred, scene, 
 		generateSRCBuffer(scene), modelconvertor::WebExportType::SRC);
+}
+
+bool RepoManipulator::generateAndCommitSelectionTree(
+	const std::string                         &databaseAd,
+	const repo::core::model::RepoBSON         *cred,
+	const repo::core::model::RepoScene        *scene
+	)
+{
+	bool success = false;
+	if (success = scene && scene->isRevisioned())
+	{
+		modelutility::SelectionTreeMaker treeMaker(scene);
+		auto buffer = treeMaker.getSelectionTreeAsBuffer();
+		if (success = buffer.size())
+		{
+			std::string databaseName = scene->getDatabaseName();
+			std::string projectName = scene->getProjectName();
+			std::string errMsg;
+			std::string fileName = "/" + databaseName + "/" + projectName + "/revision/" 
+				+ UUIDtoString(scene->getRevisionID()) + "/fulltree.json";
+			repo::core::handler::AbstractDatabaseHandler* handler =
+				repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+			if (handler && handler->insertRawFile(databaseName, projectName + "." + scene->getJSONExtension(), fileName, buffer,errMsg))
+			{
+				repoInfo << "File (" << fileName << ") added successfully.";
+			}
+			else
+			{
+				repoError << "Failed to add file  (" << fileName << "): " << errMsg;
+			}
+
+		}
+		else
+		{
+			repoError << "Failed to generate selection tree: JSON file buffer is empty!";
+		}
+		
+	}
+	return success;
 }
 
 bool RepoManipulator::removeStashGraphFromDatabase(

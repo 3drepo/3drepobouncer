@@ -261,6 +261,29 @@ repo::core::model::RepoScene* RepoController::fetchScene(
     return scene;
 }
 
+
+bool RepoController::generateAndCommitSelectionTree(
+	const RepoToken                               *token,
+	       repo::core::model::RepoScene            *scene)
+{
+	bool success = false;
+
+	if (token && scene)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		if (scene->isRevisioned() && !scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
+		{
+			repoInfo << "Unoptimised scene not loaded, trying loading unoptimised scene...";
+			worker->fetchScene(token->databaseAd, token->credentials, scene);
+		}
+
+		success = worker->generateAndCommitSelectionTree(token->databaseAd, token->credentials, scene);
+		workerPool.push(worker);
+	}
+
+	return success;
+}
+
 bool RepoController::generateAndCommitStashGraph(
 	const RepoToken              *token,
 	repo::core::model::RepoScene* scene

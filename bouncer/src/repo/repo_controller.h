@@ -693,6 +693,17 @@ public:
 		const repo::core::model::RepoScene *scene);
 
 	/**
+	* Generate and commit a selection tree for the given scene
+	* @param token token for authentication
+	* @param scene the scene to generate from
+	* @return returns true upon success
+	*/
+	bool generateAndCommitSelectionTree(
+		const RepoToken                               *token,
+		      repo::core::model::RepoScene            *scene);
+
+
+	/**
 	* Generate a SRC encoding in the form of a buffer for the given scene
 	* This requires the stash to have been generated already
 	* @param scene the scene to generate the src encoding from
