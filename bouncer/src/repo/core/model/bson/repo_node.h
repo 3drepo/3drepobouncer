@@ -81,7 +81,8 @@ namespace repo{
 						* @return new object with the field updated
 						*/
 						RepoNode cloneAndAddParent(
-							const repoUUID &parent) const;
+							const repoUUID &parent,
+							const bool     &newUniqueID = false) const;
 
 						/**
 						* Create a new object with this object's values,
