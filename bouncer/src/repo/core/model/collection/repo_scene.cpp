@@ -246,10 +246,11 @@ void RepoScene::addInheritance(
 
 void RepoScene::addMetadata(
 	RepoNodeSet &metadata,
-	const bool  &exactMatch)
+	const bool  &exactMatch,
+	const bool  &propagateData)
 {
 
-	std::unordered_map<std::string, RepoNode*> transMap;
+	std::unordered_map<std::string, std::vector<RepoNode*>> namesMap;
 	//stashed version of the graph does not need to track metadata information
 	for (RepoNode* transformation : graph.transformations)
 	{
@@ -260,8 +261,27 @@ void RepoScene::addMetadata(
 			std::transform(transformationName.begin(), transformationName.end(), transformationName.begin(), ::toupper);
 		}
 
-		transMap[transformationName] = transformation;
+		if (namesMap.find(transformationName) == namesMap.end())
+			namesMap[transformationName] = std::vector<RepoNode*>();
+
+		namesMap[transformationName].push_back(transformation);
 	}
+
+	for (RepoNode* mesh : graph.meshes)
+	{
+		std::string name = mesh->getName();
+		if (!exactMatch)
+		{
+			name = name.substr(0, name.find(" "));
+			std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+		}
+		if (namesMap.find(name) == namesMap.end())
+			namesMap[name] = std::vector<RepoNode*>();
+
+		namesMap[name].push_back(mesh);
+	}
+
+
 
 	for (RepoNode* meta : metadata)
 	{
@@ -270,22 +290,42 @@ void RepoScene::addMetadata(
 		if (!exactMatch)
 			std::transform(metaName.begin(), metaName.end(), metaName.begin(), ::toupper);
 
-		auto nameIt = transMap.find(metaName);
+		auto nameIt = namesMap.find(metaName);
 
-		if (nameIt != transMap.end())
+		if (nameIt != namesMap.end())
 		{
-			RepoNode *transformation = nameIt->second;
-			repoUUID transSharedID = transformation->getSharedID();
+
+			std::vector<repoUUID> parents;
 			repoUUID metaSharedID = meta->getSharedID();
 			repoUUID metaUniqueID = meta->getUniqueID();
+			for (auto &node : nameIt->second)
+			{
+				if (propagateData && node->getTypeAsEnum() == NodeType::TRANSFORMATION)
+				{
+					auto meshes = getAllDescendantsByType(GraphType::DEFAULT, node->getSharedID(), NodeType::MESH);
+					for (auto &mesh : meshes)
+					{
+						repoUUID parentSharedID = mesh->getSharedID();
+						if (graph.parentToChildren.find(parentSharedID) == graph.parentToChildren.end())
+							graph.parentToChildren[parentSharedID] = std::vector<RepoNode*>();
 
-			if (graph.parentToChildren.find(transSharedID) == graph.parentToChildren.end())
-				graph.parentToChildren[transSharedID] = std::vector<RepoNode*>();
+						graph.parentToChildren[parentSharedID].push_back(meta);
+						parents.push_back(parentSharedID);
+					}
+				}
+				else{
+					repoUUID parentSharedID = node->getSharedID();
+					if (graph.parentToChildren.find(parentSharedID) == graph.parentToChildren.end())
+						graph.parentToChildren[parentSharedID] = std::vector<RepoNode*>();
 
-			graph.parentToChildren[transSharedID].push_back(meta);
+					graph.parentToChildren[parentSharedID].push_back(meta);
+					parents.push_back(parentSharedID);
+				}
+				
 
-			*meta = meta->cloneAndAddParent(transSharedID);
-
+			}
+			
+			*meta = meta->cloneAndAddParent(parents);
 
 			graph.nodesByUniqueID[metaUniqueID] = meta;
 			graph.sharedIDtoUniqueID[metaSharedID] = metaUniqueID;
@@ -303,6 +343,8 @@ void RepoScene::addMetadata(
 			repoWarning << "Did not find a pairing transformation node with the same name : " << metaName;
 		}
 	}
+
+	clearStash();
 }
 
 
@@ -834,6 +876,25 @@ RepoScene::filterNodesByType(
 		}
 	}
 	return filteredNodes;
+}
+
+std::vector<RepoNode*> RepoScene::getAllDescendantsByType(
+	const GraphType &gType,
+	const repoUUID  &sharedID,
+	const NodeType  &type) const
+{
+	std::vector<RepoNode*> res;
+	const auto children = getChildrenAsNodes(gType, sharedID);
+	for (const auto &child : children)
+	{
+		auto grandChildrenRes = getAllDescendantsByType(gType, child->getSharedID(), type);
+		res.insert(res.end(), grandChildrenRes.begin(), grandChildrenRes.end());
+		if (child->getTypeAsEnum() == type)
+			res.push_back(child);
+
+	}
+
+	return res;
 }
 
 std::vector<RepoNode*> RepoScene::getParentNodesFiltered(

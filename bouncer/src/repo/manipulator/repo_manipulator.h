@@ -264,6 +264,21 @@ namespace repo{
 				repo::core::model::RepoScene              *scene);
  
 			/**
+			* Generate and commit scene's selection tree in JSON format
+			* The generated data will be
+			* also commited to the database/project set within the scene
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param scene scene to optimise
+			* @param return true upon success
+			*/
+			bool generateAndCommitSelectionTree(
+				const std::string                         &databaseAd,
+				const repo::core::model::RepoBSON         *cred,
+				const repo::core::model::RepoScene        *scene
+				);
+
+			/**
 			* Generate and commit stash graph (multipart viewing graph)
 			* The generated graph will be added into the scene provided
 			* also commited to the database/project set within the scene

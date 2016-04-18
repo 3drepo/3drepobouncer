@@ -351,10 +351,14 @@ TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest2)
 	EXPECT_EQ(name, metaNode.getName());
 	EXPECT_EQ(metaNode.getTypeAsEnum(), NodeType::METADATA);
 
+	auto metaBSON = metaNode.getObjectField(REPO_NODE_LABEL_METADATA);
+
+	ASSERT_FALSE(metaBSON.isEmpty());
+
 	for (uint32_t i = 0; i < keys.size(); ++i)
 	{
-		ASSERT_TRUE(metaNode.hasField(keys[i]));
-		EXPECT_EQ(values[i], metaNode.getStringField(keys[i]));
+		ASSERT_TRUE(metaBSON.hasField(keys[i]));
+		EXPECT_EQ(values[i], metaBSON.getStringField(keys[i]));
 	}
 }
 
