@@ -222,9 +222,9 @@ repo::core::model::CameraNode* AssimpModelImport::createCameraRepoNode(
 			assimpCamera->mClipPlaneFar,
 			assimpCamera->mClipPlaneNear,
 			assimpCamera->mHorizontalFOV,
-			{ assimpCamera->mLookAt.x, assimpCamera->mLookAt.y, assimpCamera->mLookAt.z },
-			{ assimpCamera->mPosition.x, assimpCamera->mPosition.y, assimpCamera->mPosition.z },
-			{ assimpCamera->mUp.x, assimpCamera->mUp.y, assimpCamera->mUp.z },
+			{ (float)assimpCamera->mLookAt.x, (float)assimpCamera->mLookAt.y, (float)assimpCamera->mLookAt.z },
+			{ (float)assimpCamera->mPosition.x, (float)assimpCamera->mPosition.y, (float)assimpCamera->mPosition.z },
+			{ (float)assimpCamera->mUp.x, (float)assimpCamera->mUp.y, (float)assimpCamera->mUp.z },
 			cameraName
 			));
 	}
@@ -387,7 +387,7 @@ repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 	aiVector3D offsetVec = offset.size() ? aiVector3D(offset[0], offset[1], offset[2]) : aiVector3D(0, 0, 0);
 	aiVector3D firstV = assimpMesh->mVertices[0];
 	firstV -= offsetVec;
-	repo_vector_t minVertex = { firstV.x, firstV.y, firstV.z };
+	repo_vector_t minVertex = { (float)firstV.x, (float)firstV.y, (float)firstV.z };
 	repo_vector_t maxVertex = minVertex;
 
 
@@ -435,7 +435,7 @@ repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 	{
 		for (uint32_t i = 0; i < assimpMesh->mNumVertices; i++)
 		{
-			normals.push_back({ assimpMesh->mNormals[i].x, assimpMesh->mNormals[i].y, assimpMesh->mNormals[i].z });
+			normals.push_back({ (float)assimpMesh->mNormals[i].x, (float)assimpMesh->mNormals[i].y, (float)assimpMesh->mNormals[i].z });
 		}
 	}
 	/*
@@ -476,7 +476,7 @@ repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 		std::vector<repo_vector2d_t> channelVector;
 		for (uint32_t i = 0; i < assimpMesh->mNumVertices; i++)
 		{
-			channelVector.push_back({ assimpMesh->mTextureCoords[0][i].x, assimpMesh->mTextureCoords[0][i].y });
+			channelVector.push_back({ (float)assimpMesh->mTextureCoords[0][i].x, (float)assimpMesh->mTextureCoords[0][i].y });
 		}
 		uvChannels.push_back(channelVector);
 
@@ -503,10 +503,10 @@ repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 		for (uint32_t i = 0; i < assimpMesh->mNumVertices; i++)
 		{
 			colors.push_back({
-				assimpMesh->mColors[0][i].r,
-				assimpMesh->mColors[0][i].g,
-				assimpMesh->mColors[0][i].b,
-				assimpMesh->mColors[0][i].a });
+				(float)assimpMesh->mColors[0][i].r,
+				(float)assimpMesh->mColors[0][i].g,
+				(float)assimpMesh->mColors[0][i].b,
+				(float)assimpMesh->mColors[0][i].a });
 		}
 	}
 	/*
@@ -1304,8 +1304,8 @@ bool AssimpModelImport::populateOptimMaps(
 							{
 								repoUUID materialUUID = materialIT->second->getUniqueID();
 
-								repo_vector_t min = { mMap.min.x, mMap.min.y, mMap.min.z };
-								repo_vector_t max = { mMap.max.x, mMap.max.y, mMap.max.z };
+								repo_vector_t min = { (float)mMap.min.x, (float)mMap.min.y, (float)mMap.min.z };
+								repo_vector_t max = { (float)mMap.max.x, (float)mMap.max.y, (float)mMap.max.z };
 
 
 								//check if there's already a mapping for this node
