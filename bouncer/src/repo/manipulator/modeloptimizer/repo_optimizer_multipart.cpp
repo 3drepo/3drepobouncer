@@ -411,7 +411,8 @@ std::vector<repo::core::model::MeshNode*> MultipartOptimizer::createSuperMesh(
 
 }
 #endif
-repo::core::model::MeshNode* MultipartOptimizer::createSuperMesh(
+repo::core::model::MeshNode* MultipartOptimizer::createSuperMesh
+(
 	const repo::core::model::RepoScene *scene,
 	const std::set<repoUUID>           &meshGroup,
 	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>  &matIDs)
@@ -432,7 +433,6 @@ repo::core::model::MeshNode* MultipartOptimizer::createSuperMesh(
 
 	bool success = collectMeshData(scene, scene->getRoot(defaultGraph), meshGroup, startMat,
 		vertices, normals, faces, uvChannels, colors, meshMapping, matIDs);
-
 
 	if (success && meshMapping.size())
 	{
@@ -488,7 +488,6 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 	{
 		std::unordered_map<uint32_t, std::vector<std::set<repoUUID>>> transparentMeshes, normalMeshes;
 		std::unordered_map<uint32_t, std::unordered_map<repoUUID, std::vector<std::set<repoUUID>>, RepoUUIDHasher>> texturedMeshes;
-
 		//Sort the meshes into 3 different grouping
 		sortMeshes(scene, meshes, normalMeshes, transparentMeshes, texturedMeshes);
 
@@ -502,14 +501,19 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 
 		for (const auto &groupings : normalMeshes)
 		{
-			for (const auto grouping : groupings.second )
+			for (const auto grouping : groupings.second)
+			{
 				success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, matNodes);
+			}
+			
 		}
-
 		for (const auto &groupings : transparentMeshes)
 		{
 			for (const auto grouping : groupings.second)
+			{
 				success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, matNodes);
+			}
+				
 		}
 
 		//textured meshes
@@ -794,7 +798,7 @@ void MultipartOptimizer::sortMeshes(
 		}
 		else
 		{
-			//no mesh, check if it is transparent
+			//no texture, check if it is transparent
 			const bool istransParentMesh = isTransparent(scene, mesh);
 			auto &meshMap = istransParentMesh ? transparentMeshes : normalMeshes;
 			auto &meshFCount = istransParentMesh ? transparentFCount : normalFCount;
@@ -806,7 +810,7 @@ void MultipartOptimizer::sortMeshes(
 				meshFCount[mFormat] = 0;
 			}
 			size_t faceCount = mesh->getFaces().size();
-			if (meshFCount[mFormat] + faceCount > REPO_MP_MAX_FACE_COUNT)
+			if (meshFCount[mFormat] && meshFCount[mFormat] + faceCount > REPO_MP_MAX_FACE_COUNT)
 			{
 				//Exceed max face count, create another grouping entry for this format
 				meshMap[mFormat].push_back(std::set<repoUUID>());
