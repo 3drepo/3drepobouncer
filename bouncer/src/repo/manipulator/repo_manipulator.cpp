@@ -173,14 +173,21 @@ void RepoManipulator::commitScene(
 	std::string msg;
 	if (handler && scene && scene->commit(handler, msg, owner.empty() ? cred->getStringField("user") : owner))
 	{
-		repoInfo << "Scene successfully committed to the database";
-		if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)){
-			repoInfo << "Optimised scene not found. Attempt to generate...";
-			generateAndCommitStashGraph(databaseAd, cred, scene);
-		}			
-		else if (scene->commitStash(handler, msg))
+		repoInfo << "Scene successfully committed to the database";	
+		if (!scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size())
 		{
-			repoInfo << "Commited scene stash successfully.";
+			if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)){
+				repoInfo << "Optimised scene not found. Attempt to generate...";
+				generateAndCommitStashGraph(databaseAd, cred, scene);
+			}
+			else if (scene->commitStash(handler, msg))
+			{
+				repoInfo << "Commited scene stash successfully.";
+			}
+			else
+			{
+				repoError << "Failed to commit scene stash : " << msg;
+			}
 
 			repoInfo << "Generating GLTF encoding for web viewing...";
 			if (generateAndCommitGLTFBuffer(databaseAd, cred, scene))
@@ -188,10 +195,7 @@ void RepoManipulator::commitScene(
 				repoInfo << "GLTF file stored into the database";
 			}
 		}
-		else
-		{
-			repoError << "Failed to commit scene stash : " << msg;
-		}
+
 		repoInfo << "Generating Selection Tree JSON...";
 		if (generateAndCommitSelectionTree(databaseAd, cred, scene))
 		{

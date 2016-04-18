@@ -32,7 +32,8 @@ WebModelExport::WebModelExport(
 	const repo::core::model::RepoScene *scene
 	) : AbstractModelExport(scene)
 {
-	if (convertSuccess = scene)
+	//We don't cache reference scenes
+	if (convertSuccess = scene && !scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size())
 	{
 
 		if (scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED))
