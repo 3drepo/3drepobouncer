@@ -252,7 +252,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
         const std::vector<repoUUID>     &parents,
         const int                       &apiLevel)
 {
-    RepoBSONBuilder builder;
+    RepoBSONBuilder builder, metaBuilder;
     // Compulsory fields such as _id, type, api as well as path
     // and optional name
     appendDefaults(builder, REPO_NODE_TYPE_METADATA, apiLevel, generateUUID(), name, parents);
@@ -279,7 +279,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 
             try{
                 long long valueInt = boost::lexical_cast<long long>(value);
-                builder << key << valueInt;
+				metaBuilder << key << valueInt;
             }
             catch (boost::bad_lexical_cast &)
             {
@@ -287,18 +287,20 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 
                 try{
                     double valueFloat = boost::lexical_cast<double>(value);
-                    builder << key << valueFloat;
+					metaBuilder << key << valueFloat;
                 }
                 catch (boost::bad_lexical_cast &)
                 {
                     //not an int or float, store as string
-                    builder << key << value;
+					metaBuilder << key << value;
 
                 }
             }
         }
 
     }
+
+	builder << REPO_NODE_LABEL_METADATA << metaBuilder.obj();
 
     return MetadataNode(builder.obj());
 }

@@ -173,10 +173,12 @@ namespace repo{
 					* Add metadata that has a matching name as the transformation into the scene
 					* @param metadata set of metadata to attach
 					* @param exactMatch whether the name has to be an exact match or a substring will do
+					* @param propagateData if set to true, propagate down the changes to all meshes of this subtree
 					*/
 					void addMetadata(
 						RepoNodeSet &metadata,
-						const bool        &exactMatch);
+						const bool  &exactMatch,
+						const bool  &propagateData = true);
 
 
 					/**
@@ -703,6 +705,17 @@ namespace repo{
 
 						return sharedIDs;
 					}
+
+					/**
+					* Get all desecendants, of a particular type, of this shared ID
+					* @param sharedID sharedID of the node in question
+					* @param type type of desecendants to get
+					* @return returns all child/grandchild/great grandchild etc node of type "type" for this node
+					*/
+					std::vector<RepoNode*> getAllDescendantsByType(
+						const GraphType &gType,
+						const repoUUID  &sharedID,
+						const NodeType  &type) const;
 
 					/**
 					* Get all ID of nodes which are modified since last revision
