@@ -76,7 +76,8 @@ namespace repo {
 					std::vector<std::vector<repo_face_t>>                &faces,
 					std::vector<std::vector<std::vector<repo_vector2d_t>>> &uvChannels,
 					std::vector<std::vector<repo_color4d_t>>               &colors,
-					std::vector<std::vector<repo_mesh_mapping_t>>          &meshMapping
+					std::vector<std::vector<repo_mesh_mapping_t>>          &meshMapping,
+					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>    &matIDMap
 					);
 #endif
 				bool collectMeshData(
@@ -89,7 +90,8 @@ namespace repo {
 					std::vector<repo_face_t>                  &faces,
 					std::vector<std::vector<repo_vector2d_t>> &uvChannels,
 					std::vector<repo_color4d_t>               &colors,
-					std::vector<repo_mesh_mapping_t>          &meshMapping
+					std::vector<repo_mesh_mapping_t>          &meshMapping,
+					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>    &matIDMap
 					);
 
 				/**
@@ -104,13 +106,13 @@ namespace repo {
 				std::vector<repo::core::model::MeshNode*>createSuperMesh(
 					const repo::core::model::RepoScene *scene,
 					const std::set<repoUUID>           &meshGroup,
-					std::set<repoUUID>                 &matIDs,
+					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher> &matIDs,
 					const bool                         &texture);
 #endif
 				repo::core::model::MeshNode* createSuperMesh(
 					const repo::core::model::RepoScene *scene,
 					const std::set<repoUUID>           &meshGroup,
-					std::set<repoUUID>                 &matIDs);
+					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher> &matIDs);
 
 				/**
 				* Generate the multipart scene 

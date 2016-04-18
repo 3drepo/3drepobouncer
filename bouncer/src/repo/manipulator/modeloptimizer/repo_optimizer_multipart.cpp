@@ -74,7 +74,8 @@ bool MultipartOptimizer::collectMeshData(
 	std::vector<std::vector<repo_face_t>>                &faces,
 	std::vector<std::vector<std::vector<repo_vector2d_t>>> &uvChannels,
 	std::vector<std::vector<repo_color4d_t>>               &colors,
-	std::vector<std::vector<repo_mesh_mapping_t>>          &meshMapping
+	std::vector<std::vector<repo_mesh_mapping_t>>          &meshMapping,
+	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>                 &matIDMap
 	)
 {
 	bool success = false;
@@ -90,7 +91,8 @@ bool MultipartOptimizer::collectMeshData(
 			for (const auto &child : children)
 			{
 				auto childMat = mat; //We don't want actually want to update the matrix with our children's transformation
-				success &= collectMeshData(scene, child, meshGroup, childMat, vertices, normals, faces, uvChannels, colors, meshMapping);
+				success &= collectMeshData(scene, child, meshGroup, childMat, vertices, 
+					normals, faces, uvChannels, colors, meshMapping, matIDMap);
 			}
 			break;
 		}
@@ -105,7 +107,16 @@ bool MultipartOptimizer::collectMeshData(
 				repo::core::model::MeshNode transformedMesh = mesh->cloneAndApplyTransformation(mat);
 				//this node is in the grouping, add it into the data buffers
 				repo_mesh_mapping_t meshMap;
-				meshMap.material_id = getMaterialID(scene, &transformedMesh);
+				repoUUID matID = getMaterialID(scene, &transformedMesh);
+				repoUUID newMatID;
+				if (matIDMap.find(matID) == matIDMap.end())
+				{
+					newMatID = generateUUID();
+					matIDMap[matID] = newMatID;
+				}
+				else
+					newMatID = matIDMap[matID];
+				meshMap.material_id = newMatID;
 				meshMap.mesh_id = meshUniqueID;
 				auto bbox = transformedMesh.getBoundingBox();
 				if (bbox.size() >= 2)
@@ -206,7 +217,8 @@ bool MultipartOptimizer::collectMeshData(
 	std::vector<repo_face_t>                  &faces,
 	std::vector<std::vector<repo_vector2d_t>> &uvChannels,
 	std::vector<repo_color4d_t>               &colors,
-	std::vector<repo_mesh_mapping_t>          &meshMapping
+	std::vector<repo_mesh_mapping_t>          &meshMapping,
+	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>    &matIDMap
 	)
 {
 	bool success = false;
@@ -222,7 +234,8 @@ bool MultipartOptimizer::collectMeshData(
 			for (const auto &child : children)
 			{
 				auto childMat = mat; //We don't want actually want to update the matrix with our children's transformation
-				success &= collectMeshData(scene, child, meshGroup, childMat, vertices, normals, faces, uvChannels, colors, meshMapping);
+				success &= collectMeshData(scene, child, meshGroup, childMat, 
+					vertices, normals, faces, uvChannels, colors, meshMapping, matIDMap);
 			}
 			break;
 		}
@@ -237,7 +250,16 @@ bool MultipartOptimizer::collectMeshData(
 				repo::core::model::MeshNode transformedMesh = mesh->cloneAndApplyTransformation(mat);
 				//this node is in the grouping, add it into the data buffers
 				repo_mesh_mapping_t meshMap;
-				meshMap.material_id = getMaterialID(scene, &transformedMesh);
+				repoUUID matID = getMaterialID(scene, mesh);
+				repoUUID newMatID;
+				if (matIDMap.find(matID) == matIDMap.end())
+				{
+					newMatID = generateUUID();
+					matIDMap[matID] = newMatID;
+				}					
+				else
+					newMatID = matIDMap[matID];
+				meshMap.material_id = newMatID;
 				meshMap.mesh_id = meshUniqueID;
 				auto bbox = transformedMesh.getBoundingBox();
 				if (bbox.size() >= 2)
@@ -321,10 +343,10 @@ bool MultipartOptimizer::collectMeshData(
 
 #ifdef REPO_MP_TEXTURE_WORK_AROUND
 std::vector<repo::core::model::MeshNode*> MultipartOptimizer::createSuperMesh(
-	const repo::core::model::RepoScene *scene,
-	const std::set<repoUUID>           &meshGroup,
-	std::set<repoUUID>                 &matIDs,
-	const bool                         &texture)
+	const repo::core::model::RepoScene      *scene,
+	const std::set<repoUUID>                &meshGroup,
+	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>  &matIDs,
+	const bool                              &texture)
 {
 	std::vector<std::vector<repo_vector_t>> vertices, normals;
 	std::vector<std::vector<repo_face_t>> faces;
@@ -339,7 +361,7 @@ std::vector<repo::core::model::MeshNode*> MultipartOptimizer::createSuperMesh(
 									0, 0, 0, 1 };
 
 	bool success = collectMeshData(scene, scene->getRoot(defaultGraph), meshGroup, startMat,
-		vertices, normals, faces, uvChannels, colors, meshMapping);
+		vertices, normals, faces, uvChannels, colors, meshMapping, matIDs);
 
 
 	if (success && meshMapping.size())
@@ -350,7 +372,6 @@ std::vector<repo::core::model::MeshNode*> MultipartOptimizer::createSuperMesh(
 			std::vector<repo_vector_t> bbox;
 			bbox.push_back(meshMapping[meshIdx][0].min);
 			bbox.push_back(meshMapping[meshIdx][0].max);
-			matIDs.insert(meshMapping[meshIdx][0].material_id);
 			for (int i = 1; i < meshMapping[meshIdx].size(); ++i)
 			{
 				if (bbox[0].x > meshMapping[meshIdx][i].min.x)
@@ -366,8 +387,6 @@ std::vector<repo::core::model::MeshNode*> MultipartOptimizer::createSuperMesh(
 					bbox[1].y = meshMapping[meshIdx][i].max.y;
 				if (bbox[1].z < meshMapping[meshIdx][i].max.z)
 					bbox[1].z = meshMapping[meshIdx][i].max.z;
-
-				matIDs.insert(meshMapping[meshIdx][i].material_id);
 			}
 
 			std::vector < std::vector<float> > outline;
@@ -395,7 +414,7 @@ std::vector<repo::core::model::MeshNode*> MultipartOptimizer::createSuperMesh(
 repo::core::model::MeshNode* MultipartOptimizer::createSuperMesh(
 	const repo::core::model::RepoScene *scene,
 	const std::set<repoUUID>           &meshGroup,
-	std::set<repoUUID>                 &matIDs)
+	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>  &matIDs)
 {
 	std::vector<repo_vector_t> vertices, normals;
 	std::vector<repo_face_t> faces;
@@ -412,7 +431,7 @@ repo::core::model::MeshNode* MultipartOptimizer::createSuperMesh(
 									0, 0, 0, 1 };
 
 	bool success = collectMeshData(scene, scene->getRoot(defaultGraph), meshGroup, startMat,
-		vertices, normals, faces, uvChannels, colors, meshMapping);
+		vertices, normals, faces, uvChannels, colors, meshMapping, matIDs);
 
 
 	if (success && meshMapping.size())
@@ -421,7 +440,6 @@ repo::core::model::MeshNode* MultipartOptimizer::createSuperMesh(
 		std::vector<repo_vector_t> bbox;
 		bbox.push_back(meshMapping[0].min);
 		bbox.push_back(meshMapping[0].max);
-		matIDs.insert(meshMapping[0].material_id);
 		for (int i = 1; i < meshMapping.size(); ++i)
 		{
 			if (bbox[0].x > meshMapping[i].min.x)
@@ -437,8 +455,6 @@ repo::core::model::MeshNode* MultipartOptimizer::createSuperMesh(
 				bbox[1].y = meshMapping[i].max.y;
 			if (bbox[1].z < meshMapping[i].max.z)
 				bbox[1].z = meshMapping[i].max.z;
-
-			matIDs.insert(meshMapping[i].material_id);
 		}
 
 		std::vector < std::vector<float> > outline;
@@ -517,15 +533,18 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 		{
 			//fill Material nodeset
 			for (const auto &matPair : matNodes)
-			{
+			{				
 				materials.insert(matPair.second);
 			}
 
 			//fill Texture nodeset
 			for (const auto &texture : scene->getAllTextures(defaultGraph))
 			{
-				//create new instance to avoid X contamination
-				textures.insert(new repo::core::model::TextureNode(*texture));
+				//create new instance with new UUID to avoid X contamination
+				repo::core::model::RepoBSONBuilder builder;
+				builder.append(REPO_NODE_LABEL_ID, generateUUID());
+				auto changeBSON = builder.obj();
+				textures.insert(new repo::core::model::TextureNode(texture->cloneAndAddFields(&changeBSON, false)));
 			}
 
 			scene->addStashGraph(dummy, mergedMeshes, materials, textures, trans);
@@ -611,7 +630,7 @@ bool MultipartOptimizer::processMeshGroup(
 	)
 {
 	bool success = false;
-	std::set<repoUUID> matIDs;
+	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher> matIDs;
 	auto sMeshes = createSuperMesh(scene, meshes, matIDs, texture);
 	if (success = sMeshes.size())
 	{
@@ -622,18 +641,21 @@ bool MultipartOptimizer::processMeshGroup(
 			mergedMeshes.insert(sMesh);
 
 			repoUUID sMeshSharedID = sMesh->getSharedID();
-
 			for (const auto matID : matIDs)
 			{
-				auto matIt = matNodes.find(matID);
+				auto matIt = matNodes.find(matID.second);
 				if (matIt == matNodes.end())
 				{
 					//This material hasn't beenn copied yet.
 					//clone and wipe the parent entries, insert new parents
-					auto matNode = scene->getNodeByUniqueID(defaultGraph, matID);
+					auto matNode = scene->getNodeByUniqueID(defaultGraph, matID.first);
 					repo::core::model::RepoNode clonedMat = repo::core::model::RepoNode(matNode->removeField(REPO_NODE_LABEL_PARENTS));
+					repo::core::model::RepoBSONBuilder builder;
+					builder.append(REPO_NODE_LABEL_ID, matID.second);
+					auto changeBSON = builder.obj();
+					clonedMat = clonedMat.cloneAndAddFields(&changeBSON, false);
 					clonedMat = clonedMat.cloneAndAddParent({ sMeshSharedID });
-					matNodes[matID] = new repo::core::model::MaterialNode(clonedMat);
+					matNodes[matID.second] = new repo::core::model::MaterialNode(clonedMat);
 				}
 				else
 				{
@@ -663,7 +685,7 @@ bool MultipartOptimizer::processMeshGroup(
 	)
 {
 	bool success = false;
-	std::set<repoUUID> matIDs;
+	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher> matIDs;
 	auto sMesh = createSuperMesh(scene, meshes, matIDs);
 	if (success = sMesh)
 	{
@@ -673,18 +695,21 @@ bool MultipartOptimizer::processMeshGroup(
 		mergedMeshes.insert(sMesh);
 
 		repoUUID sMeshSharedID = sMesh->getSharedID();
-
 		for (const auto matID : matIDs)
 		{
-			auto matIt = matNodes.find(matID);
+			auto matIt = matNodes.find(matID.second);
 			if (matIt == matNodes.end())
 			{
 				//This material hasn't beenn copied yet.
 				//clone and wipe the parent entries, insert new parents
-				auto matNode = scene->getNodeByUniqueID(defaultGraph, matID);
+				auto matNode = scene->getNodeByUniqueID(defaultGraph, matID.first);
 				repo::core::model::RepoNode clonedMat = repo::core::model::RepoNode(matNode->removeField(REPO_NODE_LABEL_PARENTS));
+				repo::core::model::RepoBSONBuilder builder;
+				builder.append(REPO_NODE_LABEL_ID, matID.second);
+				auto changeBSON = builder.obj();
+				clonedMat = clonedMat.cloneAndAddFields(&changeBSON, false);
 				clonedMat = clonedMat.cloneAndAddParent({ sMeshSharedID });
-				matNodes[matID] = new repo::core::model::MaterialNode(clonedMat);
+				matNodes[matID.second] = new repo::core::model::MaterialNode(clonedMat);
 			}
 			else
 			{

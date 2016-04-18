@@ -343,6 +343,8 @@ void RepoScene::addMetadata(
 			repoWarning << "Did not find a pairing transformation node with the same name : " << metaName;
 		}
 	}
+
+	clearStash();
 }
 
 

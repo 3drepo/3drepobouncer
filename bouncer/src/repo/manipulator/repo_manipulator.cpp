@@ -173,7 +173,11 @@ void RepoManipulator::commitScene(
 	if (handler && scene && scene->commit(handler, msg, owner.empty() ? cred->getStringField("user") : owner))
 	{
 		repoInfo << "Scene successfully committed to the database";
-		if (scene->commitStash(handler, msg))
+		if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)){
+			repoInfo << "Optimised scene not found. Attempt to generate...";
+			generateAndCommitStashGraph(databaseAd, cred, scene);
+		}			
+		else if (scene->commitStash(handler, msg))
 		{
 			repoInfo << "Commited scene stash successfully.";
 
