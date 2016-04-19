@@ -84,7 +84,7 @@ std::vector<std::vector<float>> TransformationNode::identityMat()
 
 bool TransformationNode::isIdentity(const float &eps) const
 {
-	std::vector<float> mat = getTransMatrix();
+	std::vector<float> mat = getTransMatrix(false);
 	//  00 01 02 03 
 	//  04 05 06 07
 	//  08 09 10 11
@@ -182,8 +182,8 @@ bool TransformationNode::sEqual(const RepoNode &other) const
 	const TransformationNode otherTrans = TransformationNode(other);
 
 
-	std::vector<float> mat = getTransMatrix();
-	std::vector<float> otherMat = otherTrans.getTransMatrix();
+	std::vector<float> mat = getTransMatrix(false);
+	std::vector<float> otherMat = otherTrans.getTransMatrix(false);
 
 
 	return mat.size() == otherMat.size() && !memcmp(mat.data(), otherMat.data(), mat.size() *sizeof(*mat.data()));

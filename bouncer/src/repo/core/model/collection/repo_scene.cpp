@@ -961,7 +961,8 @@ void RepoScene::getSceneBoundingBoxInternal(
 		case NodeType::TRANSFORMATION:
 		{
 			const TransformationNode *trans = dynamic_cast<const TransformationNode*>(node);
-			auto matTransformed = matMult(mat, trans->getTransMatrix());
+			auto matTransformed = matMult(mat, trans->getTransMatrix(false));
+			
 			for (const auto & child : getChildrenAsNodes(gType, trans->getSharedID()))
 			{
 				getSceneBoundingBoxInternal(gType, child, matTransformed, bbox);
@@ -972,13 +973,9 @@ void RepoScene::getSceneBoundingBoxInternal(
 		case NodeType::MESH:
 		{
 			const MeshNode *mesh = dynamic_cast<const MeshNode*>(node);
-			auto mbbox = mesh->getBoundingBox();
-			std::vector<repo_vector_t> newmBBox;
-
-			for (size_t i = 0; i < mbbox.size(); ++i)
-			{
-				newmBBox.push_back(multiplyMatVec(mat, mbbox[i]));
-			}
+			//FIXME: can we figure this out from the existing bounding box?
+			MeshNode transedMesh = mesh->cloneAndApplyTransformation(mat);
+			auto newmBBox = transedMesh.getBoundingBox();
 
 			if (bbox.size())
 			{
@@ -1470,7 +1467,7 @@ void RepoScene::reorientateDirectXModel()
 	if (graph.rootNode)
 	{
 		auto rootTrans = dynamic_cast<TransformationNode*>(graph.rootNode);
-		std::vector<float> mat =  rootTrans->getTransMatrix();
+		std::vector<float> mat =  rootTrans->getTransMatrix(false);
 		if (mat.size() == 16)
 		{
 			//change offset relatively
@@ -1484,6 +1481,7 @@ void RepoScene::reorientateDirectXModel()
 			TransformationNode newRoot = rootTrans->cloneAndApplyTransformation(rotationMatrix);
 			modifyNode(GraphType::DEFAULT, rootTrans->getSharedID(), &newRoot);
 			
+
 			/*if (stashGraph.rootNode)
 			{
 			modifyNode(GraphType::OPTIMIZED, stashGraph.rootNode->getSharedID(), &newRoot);

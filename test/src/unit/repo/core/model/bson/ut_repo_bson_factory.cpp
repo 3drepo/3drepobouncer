@@ -530,7 +530,7 @@ TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
 	TransformationNode trans = RepoBSONFactory::makeTransformationNode();
 
 	ASSERT_FALSE(trans.isEmpty());	
-	EXPECT_TRUE(compareStdVectors(identity, trans.getTransMatrix()));
+	EXPECT_TRUE(compareStdVectors(identity, trans.getTransMatrix(false)));
 
 	std::vector<std::vector<float>> transMat;
 	std::vector<float> transMatFlat;

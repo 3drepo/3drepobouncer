@@ -31,6 +31,7 @@
 #include "modelconvertor/import/repo_metadata_import_csv.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
 #include "modeloptimizer/repo_optimizer_multipart.h"
+#include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
 #include "modelutility/repo_maker_selection_tree.h"
 
 
@@ -172,25 +173,29 @@ void RepoManipulator::commitScene(
 	std::string msg;
 	if (handler && scene && scene->commit(handler, msg, owner.empty() ? cred->getStringField("user") : owner))
 	{
-		repoInfo << "Scene successfully committed to the database";
-		if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)){
-			repoInfo << "Optimised scene not found. Attempt to generate...";
-			generateAndCommitStashGraph(databaseAd, cred, scene);
-		}			
-		else if (scene->commitStash(handler, msg))
+		repoInfo << "Scene successfully committed to the database";	
+		if (!scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size())
 		{
-			repoInfo << "Commited scene stash successfully.";
-
-		/*	repoInfo << "Generating SRC encoding for web viewing...";
-			if (generateAndCommitSRCBuffer(databaseAd, cred, scene))
+			if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)){
+				repoInfo << "Optimised scene not found. Attempt to generate...";
+				generateAndCommitStashGraph(databaseAd, cred, scene);
+			}
+			else if (scene->commitStash(handler, msg))
 			{
-				repoInfo << "SRC file stored into the database";
-			}			*/
+				repoInfo << "Commited scene stash successfully.";
+			}
+			else
+			{
+				repoError << "Failed to commit scene stash : " << msg;
+			}
+
+			repoInfo << "Generating GLTF encoding for web viewing...";
+			if (generateAndCommitGLTFBuffer(databaseAd, cred, scene))
+			{
+				repoInfo << "GLTF file stored into the database";
+			}
 		}
-		else
-		{
-			repoError << "Failed to commit scene stash : " << msg;
-		}
+
 		repoInfo << "Generating Selection Tree JSON...";
 		if (generateAndCommitSelectionTree(databaseAd, cred, scene))
 		{
@@ -825,6 +830,16 @@ repo::core::model::RepoRoleSettings RepoManipulator::getRoleSettingByName(
 		settings = repo::core::model::RepoRoleSettings(
 			handler->findOneByCriteria(database, REPO_COLLECTION_SETTINGS_ROLES, builder.obj()));
 	return settings;
+}
+
+std::shared_ptr<modelutility::PartitioningTree> 
+		RepoManipulator::getScenePartitioning(
+		const repo::core::model::RepoScene *scene,
+		const uint32_t                     &maxDepth
+		)
+{
+	modelutility::RDTreeSpatialPartitioner partitioner(scene, maxDepth);
+	return partitioner.partitionScene();
 }
 
 std::list<std::string> RepoManipulator::getStandardDatabaseRoles(

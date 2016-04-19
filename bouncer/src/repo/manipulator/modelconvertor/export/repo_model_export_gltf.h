@@ -234,19 +234,17 @@ namespace repo{
 				bool generateTreeRepresentation();
 
 				/**
+				* Generate a property tree representing the spatial partitioning
+				* @return return a property tree with adequate entries
+				*/
+				repo::lib::PropertyTree generateSpatialPartitioningTree();
+
+				/**
 				* Return the GLTF file as raw bytes buffer
 				* returns an empty vector if the export has failed
 				*/
 				std::unordered_map<std::string, std::vector<uint8_t>> getGLTFFilesAsBuffer() const;
-
-				/**
-				* Return the X3D file as raw bytes buffer
-				* returns an empty vector if the export has failed
-				*/
-				std::unordered_map<std::string, std::vector<uint8_t>> getX3DFilesAsBuffer() const
-				{
-					return x3dBufs;
-				}
+			
 
 
 				/**

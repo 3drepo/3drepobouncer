@@ -20,6 +20,7 @@
 */
 
 #include "repo_model_export_gltf.h"
+#include "../../modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
 #include "../../../lib/repo_log.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "auxiliary/repo_model_export_x3d_gltf.h"
@@ -32,7 +33,7 @@ using namespace repo::manipulator::modelconvertor;
 const static int lodLimit = 15; //Hack to test pop buffers, i should not be committing this!
 
 const static size_t GLTF_MAX_VERTEX_LIMIT = 65535;
-#define DEBUG //FIXME: to remove
+//#define DEBUG //FIXME: to remove
 //#define LODLIMIT
 
 static const std::string GLTF_LABEL_ACCESSORS       = "accessors";
@@ -529,6 +530,16 @@ bool GLTFModelExport::constructScene(
 		tree.addToTree(GLTF_LABEL_SCENE, sceneName);
 		std::vector<std::string> treeNodes = { UUIDtoString(root->getUniqueID()) };
 		tree.addToTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_NODES, treeNodes);
+		repo::lib::PropertyTree spatialPartTree = generateSpatialPartitioningTree();
+#ifdef DEBUG
+		std::string jsonFilePrefix = "/";
+#else
+		std::string jsonFilePrefix = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/";
+#endif
+		std::string jsonFileName = jsonFilePrefix + "revision/" + UUIDtoString(scene->getRevisionID()) + "/partitioning.json";
+		tree.addToTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_EXTRA + ".partitioning." + GLTF_LABEL_URI,  "/api" + jsonFileName);
+
+		jsonTrees[jsonFileName] = spatialPartTree;
 
 		auto splitMeshes = populateWithMeshes(tree);
 		populateWithNodes(tree, splitMeshes);
@@ -543,6 +554,12 @@ bool GLTFModelExport::constructScene(
 	}
 }
 
+repo::lib::PropertyTree GLTFModelExport::generateSpatialPartitioningTree()
+{
+	//TODO: We could take in a spatial partitioner in the constructor to allow flexibility
+	repo::manipulator::modelutility::RDTreeSpatialPartitioner rdTreePartitioner(scene);
+	return rdTreePartitioner.generatePropertyTreeForPartitioning();
+}
 
 bool GLTFModelExport::generateTreeRepresentation()
 {
@@ -563,7 +580,7 @@ bool GLTFModelExport::generateTreeRepresentation()
 	constructScene(tree);
 	writeBuffers(tree);
 
-	std::string fname = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + UUIDtoString(scene->getRevisionID()) + ".gltf";
+	std::string fname = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/revision/" + UUIDtoString(scene->getRevisionID()) + ".gltf";
 	trees[fname] = tree;
 
 	return true;
@@ -571,12 +588,7 @@ bool GLTFModelExport::generateTreeRepresentation()
 
 repo_export_buffers_t GLTFModelExport::getAllFilesExportedAsBuffer() const
 {
-	repo_export_buffers_t results;
-
-	results.geoFiles = getGLTFFilesAsBuffer();
-	results.x3dFiles  = getX3DFilesAsBuffer();
-
-	return results;
+	return{ getGLTFFilesAsBuffer(), getX3DFilesAsBuffer(), getJSONFilesAsBuffer() };
 }
 
 std::unordered_map<std::string, std::vector<uint8_t>> GLTFModelExport::getGLTFFilesAsBuffer() const
@@ -784,7 +796,7 @@ void GLTFModelExport::populateWithMaterials(
 		{
 			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_COL_EMISSIVE, matStruct.emissive, false);
 			if (matStruct.isTwoSided)
-				tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_COL_BK_DIFFUSE, matStruct.emissive, false);
+				tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_COL_BK_EMISSIVE, matStruct.emissive, false);
 			//default technique takes on a 4d vector, we store 3d vectors
 			matStruct.emissive.push_back(1);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_EMISSIVE, matStruct.emissive);
@@ -803,7 +815,7 @@ void GLTFModelExport::populateWithMaterials(
 		{
 			tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_SHININESS, matStruct.shininess);
 			if (matStruct.isTwoSided)
-				tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "" + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_BK_SHININESS, matStruct.shininess);
+				tree.addToTree(matLabel + "." + GLTF_LABEL_EXTRA + "." + REPO_LABEL_X3D_MATERIAL + "." + X3D_ATTR_BK_SHININESS, matStruct.shininess);
 			tree.addToTree(valuesLabel + "." + GLTF_LABEL_SHININESS, matStruct.shininess);
 		}
 
@@ -863,7 +875,13 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 				idMapBuf,
 				splitMap,
 				matMap);
-
+			
+			if (!newFaces.size())
+			{
+				//If there is no faces, just ignore this.
+				repoWarning << "Mesh has no faces after remapping. Skipping...";
+				continue;
+			}
 			//reindex the face buffer
 			reIndexFaces(matMap, newFaces);
 
@@ -927,7 +945,6 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 
 				idMapStart.push_back(addToDataBuffer(bufferFileName, idMapBuf[idMapBufIdx]));
 				offset += matMap[idMapBufIdx].size();
-				repoTrace << "offset = " << offset << " matMapSize: " << matMap[idMapBufIdx].size();
 			}
 
 			std::vector<size_t> uvStart;
@@ -1254,7 +1271,7 @@ void GLTFModelExport::populateWithNodes(
 		const repo::core::model::TransformationNode *transNode = (const repo::core::model::TransformationNode*) node;
 		if (!transNode->isIdentity())
 		{
-			tree.addToTree(label + "." + GLTF_LABEL_MATRIX, transNode->getTransMatrix());
+			tree.addToTree(label + "." + GLTF_LABEL_MATRIX, transNode->getTransMatrix(false));
 		}
 		processNodeChildren(node, tree, subMeshCounts);
 	}	
@@ -1414,14 +1431,14 @@ void GLTFModelExport::writeBuffers(
 	for (const auto &pair : fullDataBuffer)
 	{
 #ifdef DEBUG
-		std::string bufferFilePrefix = "";
+		std::string bufferFilePrefix = "/";
 #else
-		std::string bufferFilePrefix = "/api/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/";
+		std::string bufferFilePrefix = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/";
 #endif
 		std::string bufferLabel = GLTF_LABEL_BUFFERS + "." + pair.first;
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_BYTE_LENGTH, pair.second.size()  * sizeof(*pair.second.data()));
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_TYPE, GLTF_ARRAY_BUFFER);
-		tree.addToTree(bufferLabel + "." + GLTF_LABEL_URI, bufferFilePrefix + pair.first + ".bin");
+		tree.addToTree(bufferLabel + "." + GLTF_LABEL_URI, "/api" + bufferFilePrefix + pair.first + ".bin");
 	}
 }
 

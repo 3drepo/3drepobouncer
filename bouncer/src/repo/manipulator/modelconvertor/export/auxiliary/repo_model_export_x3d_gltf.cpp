@@ -102,7 +102,7 @@ std::string X3DGLTFModelExport::populateTreeWithProperties(
 			else
 			{
 				label = X3D_LABEL_MAT_TRANS;
-				tree.addFieldAttribute("", X3D_ATTR_MAT, transNode->getTransMatrix());
+				tree.addFieldAttribute("", X3D_ATTR_MAT, transNode->getTransMatrix(false));
 			}
 
 			tree.addFieldAttribute("", X3D_ATTR_ID,  UUIDtoString(transNode->getUniqueID()));
@@ -157,8 +157,8 @@ bool X3DGLTFModelExport::writeScene(
 		sceneST.addFieldAttribute("", X3D_ATTR_ID, "scene");
 		sceneST.addFieldAttribute("", X3D_ATTR_DO_PICK_PASS, "false");
 
-		std::string gltfURL = "/api/" + scene->getDatabaseName() + "/" 
-			+ scene->getProjectName() + "/" + UUIDtoString(scene->getRevisionID()) + ".gltf";
+		std::string gltfURL = "/api/" + scene->getDatabaseName() + "/"
+			+ scene->getProjectName() + "/revision/" + UUIDtoString(scene->getRevisionID()) + ".gltf";
 		gltfST.addFieldAttribute("", X3D_ATTR_URL, gltfURL);
 		
 		sceneST.mergeSubTree(X3D_LABEL_GLTF, gltfST);

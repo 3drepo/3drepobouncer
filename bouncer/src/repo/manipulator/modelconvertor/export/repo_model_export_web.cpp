@@ -32,7 +32,8 @@ WebModelExport::WebModelExport(
 	const repo::core::model::RepoScene *scene
 	) : AbstractModelExport(scene)
 {
-	if (convertSuccess = scene)
+	//We don't cache reference scenes
+	if (convertSuccess = scene && !scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size())
 	{
 
 		if (scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED))
@@ -112,6 +113,26 @@ bool WebModelExport::exportToFile(
 			repoError << "Failed to open file for writing: " << fname;
 		}
 	}
+}
+
+std::unordered_map<std::string, std::vector<uint8_t>> WebModelExport::getJSONFilesAsBuffer() const
+{
+	std::unordered_map < std::string, std::vector<uint8_t> > fileBuffers;
+
+	for (const auto &treePair : jsonTrees)
+	{
+
+		std::stringstream ss;
+		treePair.second.write_json(ss);
+		std::string jsonStr = ss.str();
+
+		fileBuffers[treePair.first] = std::vector<uint8_t>();
+		fileBuffers[treePair.first].resize(jsonStr.size());
+		memcpy(fileBuffers[treePair.first].data(), jsonStr.c_str(), jsonStr.size());
+
+	}
+
+	return fileBuffers;
 }
 
 std::string WebModelExport::getSupportedFormats()

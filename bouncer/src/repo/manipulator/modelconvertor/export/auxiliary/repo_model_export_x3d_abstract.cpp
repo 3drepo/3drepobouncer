@@ -247,10 +247,11 @@ std::string AbstractX3DModelExport::getFileName() const
 repo::lib::PropertyTree AbstractX3DModelExport::generateDefaultViewPointTree()
 {
 	repo::lib::PropertyTree vpTree(false);
-	//FIXME: node JS gets the bounding box from the root node, root node is always a transformation?
-	//Faking a bounding box for now.
-	repo_vector_t bboxCentre = { 0, 0, 0 };
-	repo_vector_t bboxSize = { 2, 2, 2 };
+	
+	auto bbox = scene->getSceneBoundingBox();
+
+	repo_vector_t bboxCentre = { (bbox[1].x + bbox[0].x) / 2., (bbox[1].y + bbox[0].y) / 2., (bbox[1].z + bbox[0].z) / 2. };
+	repo_vector_t bboxSize = { bbox[1].x - bbox[0].x, bbox[1].y - bbox[0].y, bbox[1].z - bbox[0].z };
 	repo_vector_t vpos = bboxCentre;
 
 	float max_dim = (bboxSize.x > bboxSize.y ? bboxSize.x : bboxSize.y)*0.5f;

@@ -776,6 +776,17 @@ public:
 		repo::core::model::RepoScene* scene
 		);
 
+	/**
+	* Get a hierachical spatial partitioning in form of a tree
+	* @param scene scene to partition
+	* @param maxDepth max partitioning depth
+	*/
+	std::shared_ptr<manipulator::modelutility::PartitioningTree>
+		getScenePartitioning(
+		const repo::core::model::RepoScene *scene,
+		const uint32_t                     &maxDepth = 8
+		);
+
     /**
         * Reduce redundant transformations from the scene
         * to optimise the graph
