@@ -201,6 +201,7 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 	size_t totalVertices, totalFaces;
 	
 	std::vector<repo_vector_t> vertices = mesh.getVertices();
+	std::vector<repo_vector_t> normals = mesh.getNormals();
 	std::vector<repo_face_t> faces = mesh.getFaces();
 	std::vector<uint32_t> newFacesRepoBuf;
 
@@ -222,7 +223,7 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 	idMapBuf.back().clear();
 
 	matMap.resize(1);
-
+	repoTrace << "cloneAndRemapMeshMapping of " << getUniqueID();
 	for (const auto &mapping : mappings)
 	{
 		splitMap[mapping.mesh_id] = std::vector < uint32_t >() ;
@@ -285,152 +286,148 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 
 			//If the current subMesh in question is already bigger than the 
 			//threshold already, we need to split this submesh into 2 mappings
-			repoTrace << "Limit exceeded splitting large meshes into smaller meshes";
+			repoTrace << "Limit exceeded splitting large meshes into smaller meshes (ID: " << mapping.mesh_id <<")" ;
 
 			std::unordered_map<uint32_t, uint32_t> reIndexMap; //Vertices may be moved during the operation
-			std::vector<repo_vector_t> newVertices;
+			std::vector<repo_vector_t> newVertices, newNormals;
 			newVertices.reserve(mapping.vertTo - mapping.vertFrom);
-
+			if (normals.size())
+				newNormals.reserve(mapping.vertTo - mapping.vertFrom);
+			int stopCount = 0;
 			for (uint32_t faceIdx = 0; faceIdx < smFaces; ++faceIdx)
 			{
 				uint32_t nVerticesInFace = faces.at(fullFaceIndex).size();
 				if (nVerticesInFace != 3)
 				{
 					repoError << "Non triangulated face with " << nVerticesInFace << " vertices.";
-					--runningFTotal;
-					--subMeshFFrom;
 				}
-				else if (runningVTotal + nVerticesInFace > verticeThreshold)
-				{
-					//With this face included, the running total will exceed the threshold
-					//so close up the current subMesh and start a new one
-
-					if (faceIdx)
-						splitMap[mapping.mesh_id].push_back(newMappings.size());
-
-					//==================== END OF SUB MESH =====================
-
-
-					//NOTE: meshIDs and materials ID are not reliable due to a single 
-					//      submesh here can be multiple mesh of original scene
-					repo_mesh_mapping_t newMap;
-					newMap.vertFrom = subMeshVFrom;
-					newMap.vertTo = newMap.vertFrom + runningVTotal;
-
-					newMap.triTo = mapping.triFrom + faceIdx;
-					newMap.triFrom = subMeshFFrom;
-
-					newMap.mesh_id = mapping.mesh_id;
-					newMap.material_id = mapping.material_id;
-
-			
-					matMap.back().push_back(newMap);
-
-					if (bboxMin.size() && bboxMax.size())
+				else{
+					if (runningVTotal + nVerticesInFace > verticeThreshold)
 					{
-						newMap.min.x = bboxMin[0];
-						newMap.min.y = bboxMin[1];
-						newMap.min.z = bboxMin[2];
+						//With this face included, the running total will exceed the threshold
+						//so close up the current subMesh and start a new one
 
-						newMap.max.x = bboxMax[0];
-						newMap.max.y = bboxMax[1];
-						newMap.max.z = bboxMax[2];
-					}
-					else
-					{
-						//Shouldn't ever happen, but not fatal as bbox isn't used in current context
-						repoError << "Bounding box was not recorded using a mesh remap!";
-					}
-					idMapBuf.back().resize(runningVTotal);
-					float runningIdx_f = runningIdx;
-					std::fill(idMapBuf.back().begin(), idMapBuf.back().end(), runningIdx_f);
-					++runningIdx;
-					newMappings.push_back(newMap);
-					reIndexMap.clear();
+						if (faceIdx)
+							splitMap[mapping.mesh_id].push_back(newMappings.size());
+						
+						//==================== END OF SUB MESH =====================
+						//NOTE: meshIDs and materials ID are not reliable due to a single 
+						//      submesh here can be multiple mesh of original scene
+						
+						repo_mesh_mapping_t newMap;
+						newMap.vertFrom = subMeshVFrom;
+						newMap.vertTo = newMap.vertFrom + runningVTotal;
 
-					//================== START OF SUB MESH ========================
+						newMap.triTo = mapping.triFrom + faceIdx;
+						newMap.triFrom = subMeshFFrom;
 
-					//reset counters
-					currentVFrom += runningVTotal;
-					subMeshVFrom = currentVFrom;
-					subMeshFFrom = mapping.triFrom + faceIdx;
-					subMeshVTo = 0;
-					subMeshFTo = 0;
-					runningVTotal = 0;
-					runningFTotal = 0;
-					bboxMin.clear();
-					bboxMax.clear();
-					idMapBuf.resize(idMapBuf.size() + 1);
-					idMapBuf.back().clear();
-					matMap.resize(matMap.size() + 1);
-					matMap.back().clear();
-		
-
-				}//else if (runningVTotal + nVerticesInFace > verticeThreshold)
-
-
-				//==================== ADD CURRENT FACE TO SUB MESH =====================
-				newFacesRepoBuf.push_back(nVerticesInFace); 
-				for (uint32_t vIdx = 0; vIdx < nVerticesInFace; ++vIdx)
-				{
-					uint32_t verticeIndex = faces[fullFaceIndex][vIdx];
-
-					if (reIndexMap.find(verticeIndex) == reIndexMap.end())
-					{
-						reIndexMap[verticeIndex] = runningVTotal;
-						newFaces.push_back(runningVTotal);
-						newFacesRepoBuf.push_back(runningVTotal);
-						//Update Bounding box
-						repo_vector_t vertex = vertices[verticeIndex];
-						if (bboxMin.size())
+						newMap.mesh_id = mapping.mesh_id;
+						newMap.material_id = mapping.material_id;
+						matMap.back().push_back(newMap);
+						
+						if (bboxMin.size() && bboxMax.size())
 						{
-							if (bboxMin[0] > vertex.x)
-								bboxMin[0] = vertex.x;
+							newMap.min.x = bboxMin[0];
+							newMap.min.y = bboxMin[1];
+							newMap.min.z = bboxMin[2];
 
-							if (bboxMin[1] > vertex.y)
-								bboxMin[1] = vertex.y;
-
-							if (bboxMin[2] > vertex.z)
-								bboxMin[2] = vertex.z;
+							newMap.max.x = bboxMax[0];
+							newMap.max.y = bboxMax[1];
+							newMap.max.z = bboxMax[2];
 						}
 						else
 						{
-							bboxMin = { vertex.x, vertex.y, vertex.z };
+							//Shouldn't ever happen, but not fatal as bbox isn't used in current context
+							repoError << "Bounding box was not recorded using a mesh remap!";
 						}
+						idMapBuf.back().resize(runningVTotal);
+						float runningIdx_f = runningIdx;
+						std::fill(idMapBuf.back().begin(), idMapBuf.back().end(), runningIdx_f);
+						++runningIdx;
+						newMappings.push_back(newMap);
+						reIndexMap.clear();
 
+						//================== START OF SUB MESH ========================
 
-						if (bboxMax.size())
-						{
-							if (bboxMax[0] < vertex.x)
-								bboxMax[0] = vertex.x;
+						//reset counters
+						currentVFrom += runningVTotal;
+						subMeshVFrom = currentVFrom;
+						subMeshFFrom = mapping.triFrom + faceIdx;
+						subMeshVTo = 0;
+						subMeshFTo = 0;
+						runningVTotal = 0;
+						runningFTotal = 0;
+						bboxMin.clear();
+						bboxMax.clear();
+						idMapBuf.resize(idMapBuf.size() + 1);
+						idMapBuf.back().clear();
+						matMap.resize(matMap.size() + 1);
+						matMap.back().clear();
 
-							if (bboxMax[1] < vertex.y)
-								bboxMax[1] = vertex.y;
+					}//if (runningVTotal + nVerticesInFace > verticeThreshold)
 
-							if (bboxMax[2] < vertex.z)
-								bboxMax[2] = vertex.z;
-						}
-						else
-						{
-							bboxMax = { vertex.x, vertex.y, vertex.z };
-						}
-
-						++runningVTotal;
-						newVertices.push_back(vertex);
-
-
-					}
-					else
+					//==================== ADD CURRENT FACE TO SUB MESH =====================
+					newFacesRepoBuf.push_back(nVerticesInFace);
+					for (uint32_t vIdx = 0; vIdx < nVerticesInFace; ++vIdx)
 					{
+						uint32_t verticeIndex = faces[fullFaceIndex][vIdx];
+
+						if (reIndexMap.find(verticeIndex) == reIndexMap.end())
+						{
+							reIndexMap[verticeIndex] = runningVTotal;			
+
+							//Update Bounding box
+							repo_vector_t vertex = vertices[verticeIndex];
+							if (bboxMin.size())
+							{
+								if (bboxMin[0] > vertex.x)
+									bboxMin[0] = vertex.x;
+
+								if (bboxMin[1] > vertex.y)
+									bboxMin[1] = vertex.y;
+
+								if (bboxMin[2] > vertex.z)
+									bboxMin[2] = vertex.z;
+							}
+							else
+							{
+								bboxMin = { vertex.x, vertex.y, vertex.z };
+							}
+
+
+							if (bboxMax.size())
+							{
+								if (bboxMax[0] < vertex.x)
+									bboxMax[0] = vertex.x;
+
+								if (bboxMax[1] < vertex.y)
+									bboxMax[1] = vertex.y;
+
+								if (bboxMax[2] < vertex.z)
+									bboxMax[2] = vertex.z;
+							}
+							else
+							{
+								bboxMax = { vertex.x, vertex.y, vertex.z };
+							}
+
+							++runningVTotal;
+							newVertices.push_back(vertex);
+							if (normals.size())
+							{
+								newNormals.push_back(normals[verticeIndex]);
+							}
+								
+
+						}//if (reIndexMap.find(verticeIndex) == reIndexMap.end())
+
 						newFacesRepoBuf.push_back(reIndexMap[verticeIndex]);
 						newFaces.push_back(reIndexMap[verticeIndex]);
-					}
-
-				}//for (uint32_t vIdx = 0; vIdx < nVerticesInFace; ++vIdx)
-
-
+					}//for (uint32_t vIdx = 0; vIdx < nVerticesInFace; ++vIdx)
+					++runningFTotal;
+				}//nVerticesInFace != 3
+						
 				++fullFaceIndex;
-				++runningFTotal;
 
 			}//for (uint32_t faceIdx = 0; faceIdx < smFaces; ++faceIdx)
 
@@ -439,6 +436,9 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 
 			//Modify the vertices as it may be rearranged within this region
 			std::copy(newVertices.begin(), newVertices.end(), vertices.begin() + mapping.vertFrom);
+			if (normals.size())
+				std::copy(newNormals.begin(), newNormals.end(), normals.begin() + mapping.vertFrom);
+			
 
 			//Update the subMesh info of the last submesh occupied by this mapping
 			subMeshVTo = subMeshVFrom + runningVTotal;
@@ -589,11 +589,15 @@ MeshNode MeshNode::cloneAndRemapMeshMapping(
 	binBuffers[REPO_NODE_MESH_LABEL_VERTICES].second.resize(vertices.size() * sizeof(*vertices.data()));
 	memcpy(binBuffers[REPO_NODE_MESH_LABEL_VERTICES].second.data(), vertices.data(), vertices.size()*sizeof(*vertices.data()));
 	
+	binBuffers[REPO_NODE_MESH_LABEL_NORMALS].second.resize(normals.size() * sizeof(*normals.data()));
+	memcpy(binBuffers[REPO_NODE_MESH_LABEL_NORMALS].second.data(), normals.data(), normals.size()*sizeof(*normals.data()));
+
 
 
 	binBuffers[REPO_NODE_MESH_LABEL_FACES].second.resize(newFacesRepoBuf.size()*sizeof(*newFacesRepoBuf.data()));
 	memcpy(binBuffers[REPO_NODE_MESH_LABEL_FACES].second.data(), newFacesRepoBuf.data(), newFacesRepoBuf.size()*sizeof(*newFacesRepoBuf.data()));
 
+	
 	auto returnMesh =  MeshNode(mesh.cloneAndUpdateMeshMapping(newMappings, true), binBuffers);
 	return returnMesh;
 
