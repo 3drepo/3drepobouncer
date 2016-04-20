@@ -150,7 +150,7 @@ namespace repo{
 				* @param n number of entires
 				* @param value input value
 				*/
-				void MeshMapReorganiser::updateIDMapArray(
+				void updateIDMapArray(
 					const size_t &n,
 					const size_t &value);
 				

@@ -228,6 +228,8 @@ void MeshMapReorganiser::splitLargeMesh(
 	std::unordered_map<uint32_t, uint32_t> reIndexMap;
 	std::vector<repo_vector_t> reMappedVertices, reMappedNormals;
 
+	repoTrace << currentSubMesh.mesh_id << " Exceed the maximum amount of vertices, splitting it into multiple super meshes...";
+
 	auto currentMeshVFrom = currentSubMesh.vertFrom;
 	auto currentMeshVTo = currentSubMesh.vertTo;
 	auto currentMeshTFrom = currentSubMesh.triFrom;
@@ -324,12 +326,16 @@ void MeshMapReorganiser::splitLargeMesh(
 	
 	auto leftOverVertices = currentMeshNumVertices - totalVertexCount;
 
-	auto startingPos = newVertices.begin() + newMappings.back().vertFrom + totalVertexCount;
+	if (leftOverVertices)
+	{
+		auto startingPos = newVertices.begin() + newMappings.back().vertFrom + totalVertexCount;
+
+		//Chop out the unwanted vertices
+		newVertices.erase(startingPos, startingPos + leftOverVertices);
+		if (hasNormal)
+			newNormals.erase(startingPos, startingPos + leftOverVertices);
+	}
 	
-	//Chop out the unwanted vertices
-	newVertices.erase(startingPos, startingPos + leftOverVertices);
-	if (hasNormal)
-		newNormals.erase(startingPos, startingPos + leftOverVertices);
 
 	splitMap[currentSubMesh.mesh_id].push_back(newMappings.size());
 	finishSubMesh(newMappings.back(), bboxMin, bboxMax, splitMeshVertexCount, splitMeshFaceCount);
