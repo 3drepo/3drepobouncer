@@ -210,7 +210,7 @@ namespace repo{
 				std::iostream &stream
 				) const
 			{
-				boost::property_tree::write_json(stream, tree);
+				boost::property_tree::write_json(stream, tree, false);
 			}
 
 			/**
