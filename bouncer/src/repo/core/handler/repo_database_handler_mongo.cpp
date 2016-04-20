@@ -912,6 +912,7 @@ bool MongoDatabaseHandler::insertRawFile(
 		mongo::GridFS gfs(*worker, database, collection);
 		//FIXME: there must be errors to catch...
 		repoTrace << "storing " << fileName << " in gridfs: " << database << "." << collection;
+		gfs.removeFile(fileName);
 		mongo::BSONObj bson = gfs.storeFile((char*)&bin[0], bin.size() * sizeof(bin[0]), fileName, contentType);
 
 		repoTrace << "returned object: " << bson.toString();
