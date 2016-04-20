@@ -203,25 +203,6 @@ GLTFModelExport::GLTFModelExport(
 		//We only need a GLTF representation if there are meshes or cameras
 		if (scene->getAllMeshes(gType).size() || scene->getAllCameras(gType).size())
 			convertSuccess = generateTreeRepresentation();
-
-		if (convertSuccess)
-		{
-			repoDebug << "Generating X3D Backbone file...";
-			//Build general x3d backbone if SRC conversion was a success
-			X3DGLTFModelExport x3dExport(scene);
-
-			if (convertSuccess = x3dExport.isOk())
-			{
-				auto buffer = x3dExport.getFileAsBuffer();
-				x3dBufs[x3dExport.getFileName()] = buffer;
-			}
-			else
-			{
-				repoError << "Failed to Export x3dom backbone";
-
-			}
-		}
-
 	}
 	else
 	{
