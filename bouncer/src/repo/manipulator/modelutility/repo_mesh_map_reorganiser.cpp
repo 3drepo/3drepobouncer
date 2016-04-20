@@ -238,10 +238,13 @@ void MeshMapReorganiser::splitLargeMesh(
 	auto currentMeshNumVertices = currentMeshVTo - currentMeshVFrom;
 	auto currentMeshNumFaces = currentMeshTTo - currentMeshTFrom;
 
+	//When split mesh is called, it's guaranteed that a new mesh mapping has been created for it
+	auto newVerticesVFrom = newMappings.back().vertFrom;
+
 	const bool hasNormal = oldNormals.size();
 
 	// Split mesh information
-	bool startedLargeMeshSplit = false;
+	bool startedLargeMeshSplit = true;
 	size_t splitMeshVertexCount = 0;
 	size_t splitMeshFaceCount = 0;
 	std::vector<float> bboxMin;
@@ -312,12 +315,13 @@ void MeshMapReorganiser::splitLargeMesh(
 			newFaces.push_back(newFace);
 
 		}//else nSides != 3
+		splitMeshFaceCount++;
 	}//for (uint32_t fIdx = 0; fIdx < currentMeshNumFaces; ++fIdx)
 
 	//Modify the vertices as it may be rearranged within this region
-	std::copy(reMappedVertices.begin(), reMappedVertices.end(), newVertices.begin() + newMappings.back().vertFrom);
+	std::copy(reMappedVertices.begin(), reMappedVertices.end(), newVertices.begin() + newVerticesVFrom);
 	if (hasNormal)
-		std::copy(reMappedNormals.begin(), reMappedNormals.end(), newNormals.begin() + newMappings.back().vertFrom);
+		std::copy(reMappedNormals.begin(), reMappedNormals.end(), newNormals.begin() + newVerticesVFrom);
 
 	updateIDMapArray(splitMeshVertexCount, idMapIdx); 
 
