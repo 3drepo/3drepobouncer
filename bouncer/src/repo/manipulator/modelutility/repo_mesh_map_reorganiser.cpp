@@ -163,6 +163,7 @@ void MeshMapReorganiser::performSplitting()
 			size_t retTotalVCount, retTotalFCount;
 			splitLargeMesh(currentSubMesh, newMappings, idMapIdx, orgFaceIdx, retTotalVCount, retTotalFCount);
 			
+			++idMapIdx;
 			totalVertexCount += retTotalVCount;
 			totalFaceCount   += retTotalFCount;
 
