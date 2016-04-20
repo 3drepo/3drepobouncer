@@ -137,43 +137,7 @@ namespace repo {
 					*/
 					MeshNode cloneAndUpdateMeshMapping(
 						const std::vector<repo_mesh_mapping_t> &vec,
-						const bool                             &overwrite = false);
-
-					/**
-					* Remap the submeshes to fit into the vertice threshold
-					* @param verticeThreshold the maximum #vertices in a submesh
-					* @param newFaces serialised face buffers for external use
-					* @param idMapBuff index mapping for external use
-					* @param splitMap indicate the location of subMeshes after relocation
-					* @param return returns a new mesh node remapped
-					*/
-					MeshNode cloneAndRemapMeshMapping(
-						const size_t verticeThreshold,
-						std::vector<uint16_t> &newFaces,
-						std::vector<std::vector<float>> &idMapBuf,
-						std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> &splitMap) const
-					{
-						std::vector<std::vector<repo_mesh_mapping_t>> matMap;
-						return cloneAndRemapMeshMapping(verticeThreshold, 
-							newFaces, idMapBuf, splitMap, matMap);
-					}
-
-					/**
-					* Remap the submeshes to fit into the vertice threshold
-					* @param verticeThreshold the maximum #vertices in a submesh
-					* @param newFaces serialised face buffers for external use
-					* @param idMapBuff index mapping for external use
-					* @param splitMap indicate the location of subMeshes after relocation
-					* @param matMap another indication of location of subMeshes after relocation
-					* @param return returns a new mesh node remapped
-					*/
-					MeshNode cloneAndRemapMeshMapping(
-						const size_t &verticeThreshold,
-						std::vector<uint16_t> &newFaces,
-						std::vector<std::vector<float>> &idMapBuf,
-						std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> &splitMap,
-						std::vector<std::vector<repo_mesh_mapping_t>> &matMap) const;
-
+						const bool                             &overwrite = false);				
 
 					
 					/**

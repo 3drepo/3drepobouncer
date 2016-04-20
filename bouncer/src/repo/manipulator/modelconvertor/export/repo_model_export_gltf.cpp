@@ -20,6 +20,7 @@
 */
 
 #include "repo_model_export_gltf.h"
+#include "../../modelutility/repo_mesh_map_reorganiser.h"
 #include "../../modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
 #include "../../../lib/repo_log.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
@@ -862,19 +863,19 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 		{
 			//This is a multipart mesh node, the mesh may be too big for 
 			//webGL, split the mesh into sub meshes
-
-			std::vector<uint16_t> newFaces;
-			std::vector<std::vector<float>> idMapBuf;
-			std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> splitMap;
-			std::vector<std::vector<repo_mesh_mapping_t>> matMap;
-
 			std::string bufferFileName = UUIDtoString(mesh->getUniqueID());
 
-			repo::core::model::MeshNode splitMesh = node->cloneAndRemapMeshMapping(GLTF_MAX_VERTEX_LIMIT,
-				newFaces,
-				idMapBuf,
-				splitMap,
-				matMap);
+			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter = 
+				new repo::manipulator::modelutility::MeshMapReorganiser(node, GLTF_MAX_VERTEX_LIMIT);
+			repo::core::model::MeshNode splitMesh = reSplitter->getRemappedMesh();
+			std::vector<uint16_t> newFaces = reSplitter->getSerialisedFaces();
+			std::vector<std::vector<float>> idMapBuf = reSplitter->getIDMapArrays();
+			std::vector<std::vector<repo_mesh_mapping_t>> matMap = reSplitter->getMappingsPerSubMesh();
+
+
+			delete reSplitter;
+
+			
 			
 			if (!newFaces.size())
 			{

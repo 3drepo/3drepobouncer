@@ -189,11 +189,11 @@ void RepoManipulator::commitScene(
 				repoError << "Failed to commit scene stash : " << msg;
 			}
 
-			repoInfo << "Generating GLTF encoding for web viewing...";
+			/*repoInfo << "Generating GLTF encoding for web viewing...";
 			if (generateAndCommitGLTFBuffer(databaseAd, cred, scene))
 			{
 				repoInfo << "GLTF file stored into the database";
-			}
+			}*/
 		}
 
 		repoInfo << "Generating Selection Tree JSON...";

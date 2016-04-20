@@ -125,8 +125,6 @@ RepoNode RepoNode::cloneAndAddFields(
 		builder.append(REPO_NODE_LABEL_ID, generateUUID());
 	}
 
-	builder.append(REPO_NODE_LABEL_SHARED_ID, getSharedID());
-
 	builder.appendElementsUnique(*changes);
 
 	builder.appendElementsUnique(*this);

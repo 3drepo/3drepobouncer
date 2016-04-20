@@ -306,13 +306,13 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 }
 
 MeshNode RepoBSONFactory::makeMeshNode(
-        std::vector<repo_vector_t>                  &vertices,
-        std::vector<repo_face_t>                    &faces,
-        std::vector<repo_vector_t>                  &normals,
-        std::vector<std::vector<float>>             &boundingBox,
-        std::vector<std::vector<repo_vector2d_t>>   &uvChannels,
-        std::vector<repo_color4d_t>                 &colors,
-        std::vector<std::vector<float>>             &outline,
+        const std::vector<repo_vector_t>                  &vertices,
+		const std::vector<repo_face_t>                    &faces,
+		const std::vector<repo_vector_t>                  &normals,
+		const std::vector<std::vector<float>>             &boundingBox,
+		const std::vector<std::vector<repo_vector2d_t>>   &uvChannels,
+		const std::vector<repo_color4d_t>                 &colors,
+		const std::vector<std::vector<float>>             &outline,
         const std::string                           &name,
         const int                                   &apiLevel)
 {
@@ -506,8 +506,8 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
         std::vector<repo_vector2d_t> concatenated;
 
-        std::vector<std::vector<repo_vector2d_t>>::iterator it;
-        for (it = uvChannels.begin(); it != uvChannels.end(); ++it)
+        
+        for (auto it = uvChannels.begin(); it != uvChannels.end(); ++it)
         {
             std::vector<repo_vector2d_t> channel = *it;
 

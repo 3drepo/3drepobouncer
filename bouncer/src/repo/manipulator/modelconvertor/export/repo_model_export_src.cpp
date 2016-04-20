@@ -21,6 +21,7 @@
 
 
 #include "repo_model_export_src.h"
+#include "../../modelutility/repo_mesh_map_reorganiser.h"
 #include "../../../lib/repo_log.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "auxiliary/repo_model_export_x3d_src.h"
@@ -310,11 +311,14 @@ bool SRCModelExport::generateTreeRepresentation(
 		for (const repo::core::model::RepoNode* mesh : meshes)
 		{	
 			std::string textureID = scene->getTextureIDForMesh(gType, mesh->getSharedID());
-			std::vector<uint16_t> facebuf;
-			std::vector<std::vector<float>> idMapBuf;
-			std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> splitMapping;
-			repo::core::model::MeshNode splittedMesh =
-				((repo::core::model::MeshNode*)mesh)->cloneAndRemapMeshMapping(SRC_MAX_VERTEX_LIMIT, facebuf, idMapBuf, splitMapping);
+			
+			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter =
+				new repo::manipulator::modelutility::MeshMapReorganiser((repo::core::model::MeshNode*)mesh, SRC_MAX_VERTEX_LIMIT);
+			repo::core::model::MeshNode splittedMesh = reSplitter->getRemappedMesh();
+			std::vector<uint16_t> facebuf = reSplitter->getSerialisedFaces();
+			std::vector<std::vector<float>> idMapBuf = reSplitter->getIDMapArrays();
+			std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> splitMapping = reSplitter->getSplitMapping();
+			delete reSplitter;
 
 			std::string ext = ".src";
 			bool sepX3d; //requires a separate x3d file if it is a multipart mesh
