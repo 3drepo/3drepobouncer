@@ -117,9 +117,7 @@ public:
     * @param firstName first name of user
     * @param lastName last name of user
     * @param email  email address of the user
-    * @param projects list of projects the user has access to
     * @param roles list of roles the users are capable of
-    * @param groups list of groups the user belongs to
     * @param apiKeys a list of api keys for the user
     * @param avatar picture of the user
     * @return returns a RepoUser

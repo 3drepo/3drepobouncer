@@ -43,14 +43,10 @@ namespace repo {
 				#define REPO_USER_LABEL_OWNER                "account"
 				#define REPO_USER_LABEL_KEY                  "key"
 				#define REPO_USER_LABEL_PWD           		 "pwd"
-				#define REPO_USER_LABEL_PROJECT              "project"
-				#define REPO_USER_LABEL_PROJECTS             "projects"
 				#define REPO_USER_LABEL_USER     			"user"
 				#define REPO_USER_LABEL_DB                   "db"
 				#define REPO_USER_LABEL_ROLES                 "roles"
 				#define REPO_USER_LABEL_ROLE                 "role"
-				#define REPO_USER_LABEL_GROUP                "group"
-				#define REPO_USER_LABEL_GROUPS               "groups"
 				#define REPO_USER_LABEL_API_KEYS             "apiKeys"
 
 				class REPO_API_EXPORT RepoUser : public RepoBSON
