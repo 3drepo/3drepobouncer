@@ -747,7 +747,6 @@ RepoUser RepoBSONFactory::makeRepoUser(
     if (avatar.size())
     {
         RepoBSONBuilder avatarBuilder;
-        //FIXME: use repo image?
         avatarBuilder.appendBinary(REPO_LABEL_DATA, &avatar.at(0), sizeof(avatar.at(0))*avatar.size());
         customDataBuilder << REPO_LABEL_AVATAR << avatarBuilder.obj();
     }
