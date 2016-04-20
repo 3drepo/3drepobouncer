@@ -263,15 +263,15 @@ public:
     * @return returns a mesh node
     */
     static MeshNode makeMeshNode(
-            std::vector<repo_vector_t>                  &vertices,
-            std::vector<repo_face_t>                    &faces,
-            std::vector<repo_vector_t>                  &normals,
-            std::vector<std::vector<float>>             &boundingBox,
-            std::vector<std::vector<repo_vector2d_t>>   &uvChannels,
-            std::vector<repo_color4d_t>                 &colors,
-            std::vector<std::vector<float>>             &outline,
-            const std::string                           &name = std::string(),
-            const int                                   &apiLevel = REPO_NODE_API_LEVEL_1);
+		const std::vector<repo_vector_t>                  &vertices,
+		const std::vector<repo_face_t>                    &faces,
+		const std::vector<repo_vector_t>                  &normals,
+		const std::vector<std::vector<float>>             &boundingBox,
+		const std::vector<std::vector<repo_vector2d_t>>   &uvChannels = std::vector<std::vector<repo_vector2d_t>>(),
+		const std::vector<repo_color4d_t>                 &colors = std::vector<repo_color4d_t>(),
+		const std::vector<std::vector<float>>             &outline = std::vector<std::vector<float>>(),
+        const std::string                                 &name = std::string(),
+        const int                                         &apiLevel = REPO_NODE_API_LEVEL_1);
 
 
     /**
