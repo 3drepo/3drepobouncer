@@ -38,6 +38,40 @@ TransformationNode::~TransformationNode()
 {
 }
 
+RepoNode TransformationNode::cloneAndApplyTransformation(
+	const std::vector<float> &matrix) const
+{
+	RepoNode resultNode;
+	RepoBSONBuilder builder;
+	if (matrix.size() == 16)
+	{
+		auto currentTrans = getTransMatrix(false);
+		auto resultTrans = matMult(currentTrans, matrix);
+
+		RepoBSONBuilder rows;
+		for (uint32_t i = 0; i < 4; ++i)
+		{
+			RepoBSONBuilder columns;
+			for (uint32_t j = 0; j < 4; ++j){
+				size_t idx = i * 4 + j;
+				columns << std::to_string(j) << resultTrans[idx];
+			}
+			rows.appendArray(std::to_string(i), columns.obj());
+		}
+		builder.appendArray(REPO_NODE_LABEL_MATRIX, rows.obj());
+
+	}
+	else
+	{
+		repoError << "Failed to apply transformation onto Transformation node: the matrix is not a 4 by 4 matrix (size : !" << matrix.size();
+
+	}
+
+	builder.appendElementsUnique(*this);
+	
+	return TransformationNode(RepoBSON(builder.obj(), bigFiles));
+}
+
 std::vector<std::vector<float>> TransformationNode::identityMat()
 {
 	std::vector<std::vector<float>> idMat;
@@ -50,7 +84,7 @@ std::vector<std::vector<float>> TransformationNode::identityMat()
 
 bool TransformationNode::isIdentity(const float &eps) const
 {
-	std::vector<float> mat = getTransMatrix();
+	std::vector<float> mat = getTransMatrix(false);
 	//  00 01 02 03 
 	//  04 05 06 07
 	//  08 09 10 11
@@ -97,11 +131,13 @@ std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) cons
 		matrixObj.getFieldNames(mFields);
 		for (auto &field : mFields)
 		{
+			rowInd = std::stoi(field);
 			RepoBSON arrayObj = matrixObj.getField(field).embeddedObject();
 			std::set<std::string> aFields;
 			arrayObj.getFieldNames(aFields);
 			for (auto &aField : aFields)
 			{
+				colInd = std::stoi(aField);
 
 				//figure out the index depending on if it's row or col major
 				uint32_t index;
@@ -123,11 +159,8 @@ std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) cons
 				{
 					repoError << "Unexpected type within transformation matrix!";
 				}
-
-				++colInd;
 			}
-			colInd = 0;
-			++rowInd;
+
 		}
 
 
@@ -149,8 +182,8 @@ bool TransformationNode::sEqual(const RepoNode &other) const
 	const TransformationNode otherTrans = TransformationNode(other);
 
 
-	std::vector<float> mat = getTransMatrix();
-	std::vector<float> otherMat = otherTrans.getTransMatrix();
+	std::vector<float> mat = getTransMatrix(false);
+	std::vector<float> otherMat = otherTrans.getTransMatrix(false);
 
 
 	return mat.size() == otherMat.size() && !memcmp(mat.data(), otherMat.data(), mat.size() *sizeof(*mat.data()));

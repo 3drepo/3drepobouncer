@@ -103,12 +103,7 @@ namespace repo {
 						* @return returns a new object with transformation applied.
 						*/
 						virtual RepoNode cloneAndApplyTransformation(
-							const std::vector<float> &matrix) const
-						{
-							//TODO: currently no use case. ignore for now.
-							//"Transforming transformations are currently not supported!"
-							throw std::exception();
-						}
+							const std::vector<float> &matrix) const;
 
 						/**
 						* --------- Convenience functions -----------
@@ -119,7 +114,7 @@ namespace repo {
 						* @param true if row major (row is the fast dimension)
 						* @return returns the 4 by 4 matrix as a vector
 						*/
-						std::vector<float> getTransMatrix(const bool &rowMajor = true) const;
+						std::vector<float> getTransMatrix(const bool &rowMajor) const;
 
 
 				};

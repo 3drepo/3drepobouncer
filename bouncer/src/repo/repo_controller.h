@@ -393,6 +393,19 @@ public:
             const repo::core::model::RepoScene *scene,
             const std::string                   &directory);
 
+	/**
+	* Save the original file of the head of the project into a specified directory
+	* @param token Authentication token
+	* @param database name of database
+	* @param project  name of project
+	* @param directory directory to save into
+	*/
+	void saveOriginalFiles(
+		const RepoToken                    *token,
+		const std::string                   &database,
+		const std::string                   &project,
+		const std::string                   &directory);
+
     /*
         *	------- Database Operations (insert/delete/update) ---------
         */
@@ -485,6 +498,24 @@ public:
             const std::string                        &databaseName,
             const std::string                        &collectionName,
             const repo::core::model::RepoBSON  &bson);
+
+	/**
+	* Remove a project from the database
+	* This removes:
+	*   1. all collections associated with the project,
+	*   2. the project entry within project settings
+	*   3. all privileges assigned to any roles, related to this project
+	* @param token Authentication token
+	* @param database name of the datbase
+	* @param name of the project
+	* @param errMsg error message if the operation fails
+	* @return returns true upon success
+	*/
+	bool removeProject(
+		const RepoToken                          *token,
+		const std::string                        &databaseName,
+		const std::string                        &projectName,
+		std::string								 &errMsg);
 
     void removeProjectSettings(
             const RepoToken *token,
@@ -631,6 +662,17 @@ public:
             const repo::core::model::MapNode &mapNode);
 
 	/**
+	* Generate and commit a GLTF encoding for the given scene
+	* This requires the stash to have been generated already
+	* @param token token for authentication
+	* @param scene the scene to generate the gltf encoding from
+	* @return returns true upon success
+	*/
+	bool generateAndCommitGLTFBuffer(
+		const RepoToken                               *token,
+		const repo::core::model::RepoScene            *scene);
+
+	/**
 	* Generate and commit a SRC encoding for the given scene
 	* This requires the stash to have been generated already
 	* @param token token for authentication
@@ -642,12 +684,32 @@ public:
 		const repo::core::model::RepoScene            *scene);
 
 	/**
+	* Generate a GLTF encoding in the form of a buffer for the given scene
+	* This requires the stash to have been generated already
+	* @param scene the scene to generate the gltf encoding from
+	* @return returns a buffer in the form of a byte vector
+	*/
+	manipulator::modelconvertor::repo_export_buffers_t generateGLTFBuffer(
+		const repo::core::model::RepoScene *scene);
+
+	/**
+	* Generate and commit a selection tree for the given scene
+	* @param token token for authentication
+	* @param scene the scene to generate from
+	* @return returns true upon success
+	*/
+	bool generateAndCommitSelectionTree(
+		const RepoToken                               *token,
+		      repo::core::model::RepoScene            *scene);
+
+
+	/**
 	* Generate a SRC encoding in the form of a buffer for the given scene
 	* This requires the stash to have been generated already
 	* @param scene the scene to generate the src encoding from
 	* @return returns a buffer in the form of a byte vector
 	*/
-	std::unordered_map<std::string, std::vector<uint8_t>> generateSRCBuffer(
+	manipulator::modelconvertor::repo_export_buffers_t generateSRCBuffer(
 			const repo::core::model::RepoScene *scene);
 
     /**
@@ -666,12 +728,14 @@ public:
         * Load a Repo Scene from a file
         * @param filePath path to file
 		* @param apply transformation reduction (default: true)
+		* @param rotateModel rotate model by 270degrees on x (default: false)
         * @param config import settings(optional)
         * @return returns a pointer to Repo Scene upon success
         */
     repo::core::model::RepoScene* loadSceneFromFile(
             const std::string &filePath,
 			const bool &applyReduction = true,
+			const bool &rotateModel = false,
             const repo::manipulator::modelconvertor::ModelImportConfig *config
             = nullptr);
 
@@ -698,6 +762,30 @@ public:
     /*
         *	------------- Optimizations --------------
         */
+
+	/**
+	* Generate and commit stash graph (multipart viewing graph)
+	* The generated graph will be added into the scene provided
+	* also commited to the database/project set within the scene
+	* @param token database token
+	* @param scene scene to optimise
+	* @param return true upon success
+	*/
+	bool generateAndCommitStashGraph(
+		const RepoToken              *token,
+		repo::core::model::RepoScene* scene
+		);
+
+	/**
+	* Get a hierachical spatial partitioning in form of a tree
+	* @param scene scene to partition
+	* @param maxDepth max partitioning depth
+	*/
+	std::shared_ptr<manipulator::modelutility::PartitioningTree>
+		getScenePartitioning(
+		const repo::core::model::RepoScene *scene,
+		const uint32_t                     &maxDepth = 8
+		);
 
     /**
         * Reduce redundant transformations from the scene

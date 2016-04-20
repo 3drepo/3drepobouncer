@@ -2,6 +2,8 @@ language: cpp
 
 compiler:
      - gcc
+
+
 addons:
     apt:
         sources:
@@ -10,36 +12,43 @@ addons:
             - gcc-4.9
             - g++-4.9
 before_install:
+    - echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list
+    - sudo apt-get update
+    - sudo apt-get install mongodb-org
+    - mongod --version
+    - mkdir data
+    - mongod --dbpath data &
+    - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
+    - mongo admin --eval 'db.addUser("testUser", "3drepotest");'
+    - cd test/data/database/
+    - mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin
+    - cd ../../../
     - export CXX="g++-4.9"
     - export CC="gcc-4.9"
+    - sudo ln -sf /usr/bin/gcov-4.9 /usr/bin/gcov
+    - gcov --version
     - echo ============ BOOST  INSTALL =============
     - sudo add-apt-repository -y ppa:boost-latest/ppa
     - sudo apt-get update
     - sudo apt-get install libboost1.55-all-dev
     - echo ============ MONGO  INSTALL =============
-    - mkdir mongo
-    - cd mongo
-    - git clone --branch=legacy-1.1.0 https://github.com/mongodb/mongo-cxx-driver.git
-    - cd mongo-cxx-driver
     - ls
-    - scons -j2 --64 --mute --sharedclient --prefix=$HOME/mongo-cxx install
-    - ls $HOME/mongo-cxx
-    - cd ../../
+    - tar -zxvf tools/ext_libs/mongo-cxx-1.1.0.tgz
     - echo ============ ASSIMP INSTALL =============
-    - mkdir assimp
-    - cd assimp
-    - git clone --branch=ISSUE_1 https://github.com/3drepo/assimp.git      
-    - CXXFLAGS+=-std=c++11 cmake -DASSIMP_BUILD_TESTS=OFF assimp
-    - sudo make -j2 install
-    - cd ../
+    - tar -zxvf tools/ext_libs/assimp-install.tgz
+install:
+    - sudo pip install cpp-coveralls    
 before_script:
     - ls
-    - MONGO_ROOT=$HOME/mongo-cxx cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DCMAKE_BUILD_TYPE=Release .
+    - mkdir build && cd build
+    - export MONGO_ROOT=$PWD/../mongo-cxx-1.1.0 
+    - export ASSIMP_ROOT=$PWD/../assimp-install 
+    - cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DCMAKE_BUILD_TYPE=Release ../
 script:
     - sudo make -j2 install
-    - LD_LIBRARY_PATH=$HOME/mongo-cxx/lib/:/usr/local/lib:$LD_LIBRARY_PATH ldd /usr/local/bin/3drepobouncerTest
-    - ls /usr/local/lib
-    - LD_LIBRARY_PATH=$HOME/mongo-cxx/lib/:/usr/local/lib:$LD_LIBRARY_PATH 3drepobouncerTest
+    - LD_LIBRARY_PATH=$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$LD_LIBRARY_PATH 3drepobouncerTest
+after_success:
+    - coveralls --root ../ -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0"
 notifications:
     email: 
         recipients:

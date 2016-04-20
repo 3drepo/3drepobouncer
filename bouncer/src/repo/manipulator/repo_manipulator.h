@@ -25,7 +25,9 @@
 #include "../core/model/collection/repo_scene.h"
 #include "../core/model/bson/repo_bson_role_settings.h"
 #include "modelconvertor/import/repo_model_import_assimp.h"
+#include "modelconvertor/export/repo_model_export_gltf.h"
 #include "modelconvertor/export/repo_model_export_src.h"
+#include "modelutility/spatialpartitioning/repo_spatial_partitioner_abstract.h"
 #include "diff/repo_diff_abstract.h"
 
 
@@ -54,7 +56,7 @@ namespace repo{
 			bool connectAndAuthenticate(
 				std::string       &errMsg,
 				const std::string &address,
-				const uint32_t         &port,
+				const uint32_t    &port,
 				const uint32_t    &maxConnections,
 				const std::string &dbName,
 				const std::string &username,
@@ -91,10 +93,10 @@ namespace repo{
 			* @param owner specify the owner of the scene (by default it is the user authorised to commit)
 			*/
 			void commitScene(
-				const std::string                             &databaseAd,
+				const std::string                     &databaseAd,
 				const repo::core::model::RepoBSON 	  *cred,
-				repo::core::model::RepoScene           *scene,
-				const std::string                   &owner = "");
+				repo::core::model::RepoScene          *scene,
+				const std::string                     &owner = "");
 
 			/**
 			* Compare 2 scenes.
@@ -103,13 +105,16 @@ namespace repo{
 			* @param baseResults Diff results in the perspective of base
 			* @param compResults Diff results in the perspective of compare
 			* @param diffMode the mode to use to compare the scenes
+			* @param gType graph type to diff (default: unoptimised)
 			*/
 			void compareScenes(
-				repo::core::model::RepoScene       *base,
-				repo::core::model::RepoScene       *compare,
-				diff::DiffResult                   &baseResults,
-				diff::DiffResult                   &compResults,
-				const diff::Mode				   &diffMode);
+				repo::core::model::RepoScene                  *base,
+				repo::core::model::RepoScene                  *compare,
+				diff::DiffResult                              &baseResults,
+				diff::DiffResult                              &compResults,
+				const diff::Mode				              &diffMode,
+				const repo::core::model::RepoScene::GraphType &gType
+				= repo::core::model::RepoScene::GraphType::DEFAULT);
 
 			/**
 			* Create a bson object storing user credentials
@@ -151,7 +156,7 @@ namespace repo{
 			*/
 			uint64_t countItemsInCollection(
 				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON*	  cred,
+				const repo::core::model::RepoBSON             *cred,
 				const std::string                             &database,
 				const std::string                             &collection,
 				std::string                                   &errMsg
@@ -178,7 +183,7 @@ namespace repo{
 			*/
 			bool dropCollection(
 				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON*	  cred,
+				const repo::core::model::RepoBSON             *cred,
 				const std::string                             &databaseName,
 				const std::string                             &collectionName,
 				std::string			                          &errMsg
@@ -194,7 +199,7 @@ namespace repo{
 			*/
 			bool dropDatabase(
 				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON*	  cred,
+				const repo::core::model::RepoBSON             *cred,
 				const std::string                             &databaseName,
 				std::string			                          &errMsg
 			);
@@ -206,8 +211,8 @@ namespace repo{
 			* @return returns a list of database names
 			*/
 			std::list<std::string> fetchDatabases(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON*	  cred
+				const std::string                 &databaseAd,
+				const repo::core::model::RepoBSON *cred
 				);
 
 
@@ -219,9 +224,9 @@ namespace repo{
 			* @return a list of collection names
 			*/
 			std::list<std::string> fetchCollections(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON*	  cred,
-				const std::string                             &database
+				const std::string                 &databaseAd,
+				const repo::core::model::RepoBSON *cred,
+				const std::string                 &database
 				);
 
 			/**
@@ -239,7 +244,7 @@ namespace repo{
 			*/
 			repo::core::model::RepoScene* fetchScene(
 				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON*	  cred,
+				const repo::core::model::RepoBSON             *cred,
 				const std::string                             &database,
 				const std::string                             &collection,
 				const repoUUID                                &uuid,
@@ -259,6 +264,69 @@ namespace repo{
 				repo::core::model::RepoScene              *scene);
  
 			/**
+			* Generate and commit scene's selection tree in JSON format
+			* The generated data will be
+			* also commited to the database/project set within the scene
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param scene scene to optimise
+			* @param return true upon success
+			*/
+			bool generateAndCommitSelectionTree(
+				const std::string                         &databaseAd,
+				const repo::core::model::RepoBSON         *cred,
+				const repo::core::model::RepoScene        *scene
+				);
+
+			/**
+			* Generate and commit stash graph (multipart viewing graph)
+			* The generated graph will be added into the scene provided
+			* also commited to the database/project set within the scene
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param scene scene to optimise
+			* @param return true upon success
+			*/
+			bool generateAndCommitStashGraph(
+				const std::string                         &databaseAd,
+				const repo::core::model::RepoBSON         *cred,
+				repo::core::model::RepoScene* scene
+				);
+
+
+
+			/**
+			* Generate and commit a SRC encoding for the given scene
+			* This requires the stash to have been generated already
+			* @param databaseAd database address:portdatabase
+			* @param cred user credentials in bson form
+			* @param scene the scene to generate the src encoding from
+			* @param buffers buffers to commit to database
+			* @param exType the type of export it is 
+			* @return returns true upon success
+			*/
+			bool generateAndCommitWebViewBuffer(
+				const std::string                             &databaseAd,
+				const repo::core::model::RepoBSON	          *cred,
+				const repo::core::model::RepoScene            *scene,
+				const modelconvertor::repo_export_buffers_t   &buffers,
+				const modelconvertor::WebExportType           &exType);
+
+			/**
+			* Generate and commit a GLTF encoding for the given scene
+			* This requires the stash to have been generated already
+			* @param databaseAd database address:portdatabase
+			* @param cred user credentials in bson form
+			* @param scene the scene to generate the gltf encoding from
+			* @return returns true upon success
+			*/
+
+			bool generateAndCommitGLTFBuffer(
+				const std::string                             &databaseAd,
+				const repo::core::model::RepoBSON	          *cred,
+				const repo::core::model::RepoScene            *scene);
+
+			/**
 			* Generate and commit a SRC encoding for the given scene
 			* This requires the stash to have been generated already
 			* @param databaseAd database address:portdatabase
@@ -271,6 +339,15 @@ namespace repo{
 				const repo::core::model::RepoBSON	          *cred,
 				const repo::core::model::RepoScene            *scene);
 
+			/**
+			* Generate a gltf encoding in the form of a buffer for the given scene
+			* This requires the stash to have been generated already
+			* @param scene the scene to generate the gltf encoding from
+			* @return returns a buffer in the form of a byte vector mapped to its filename
+			*/
+			modelconvertor::repo_export_buffers_t generateGLTFBuffer(
+				const repo::core::model::RepoScene *scene);
+
 
 			/**
 			* Generate a SRC encoding in the form of a buffer for the given scene
@@ -278,9 +355,18 @@ namespace repo{
 			* @param scene the scene to generate the src encoding from
 			* @return returns a buffer in the form of a byte vector mapped to its filename
 			*/
-			modelconvertor::repo_src_export_t generateSRCBuffer(
+			modelconvertor::repo_export_buffers_t generateSRCBuffer(
 				const repo::core::model::RepoScene *scene);
 
+			/**
+			* Generate a stash graph for the given scene and populate it 
+			* into the given scene
+			* @param scene scene to generate stash graph for
+			* @return returns true upon success
+			*/
+			bool generateStashGraph(
+				repo::core::model::RepoScene              *scene
+				);
 			/**
 			* Retrieve documents from a specified collection
 			* due to limitations of the transfer protocol this might need
@@ -296,7 +382,7 @@ namespace repo{
 			std::vector<repo::core::model::RepoBSON>
 				getAllFromCollectionTailable(
 				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON*	  cred,
+				const repo::core::model::RepoBSON             *cred,
 				const std::string                             &database,
 				const std::string                             &collection,
 				const uint64_t                                &skip=0,
@@ -340,7 +426,7 @@ namespace repo{
 			*/
 			repo::core::model::CollectionStats getCollectionStats(
 				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON*	  cred,
+				const repo::core::model::RepoBSON             *cred,
 				const std::string                             &database,
 				const std::string                             &collection,
 				std::string	                                  &errMsg
@@ -356,9 +442,9 @@ namespace repo{
 			*/
 			std::map<std::string, std::list<std::string>>
 				getDatabasesWithProjects(
-					const std::string                             &databaseAd,
-					const repo::core::model::RepoBSON*	  cred,
-					const std::list<std::string> &databases);
+					const std::string                 &databaseAd,
+					const repo::core::model::RepoBSON *cred,
+					const std::list<std::string>      &databases);
 
 			/**
 			* Get a list of admin roles from the database
@@ -366,7 +452,7 @@ namespace repo{
 			* @return returns a vector of roles
 			*/
 			std::list<std::string> getAdminDatabaseRoles(
-				const std::string                             &databaseAd);
+				const std::string                     &databaseAd);
 
 			/**
 			* Get a role settings within a database
@@ -380,6 +466,16 @@ namespace repo{
 				const repo::core::model::RepoBSON	*cred,
 				const std::string					&database,
 				const std::string					&uniqueRoleName
+				);
+
+			/**
+			* Get a hierachical spatial partitioning in form of a tree
+			* @param scene scene to partition
+			* @param maxDepth max partitioning depth
+			*/
+			std::shared_ptr<manipulator::modelutility::PartitioningTree> getScenePartitioning(
+				const repo::core::model::RepoScene *scene,
+				const uint32_t                     &maxDepth = 8
 				);
 
 			/**
@@ -437,8 +533,8 @@ namespace repo{
 			* @param user user info to insert
 			*/
 			void insertUser(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON*	  cred,
+				const std::string                       &databaseAd,
+				const repo::core::model::RepoBSON       *cred,
 				const repo::core::model::RepoUser       &user);
 
 
@@ -458,16 +554,17 @@ namespace repo{
 			* @param filePath path to file
 			* @param msg error message if it fails 
 			* @param apply transformation reduction optimizer (default = true)
+			* @param rotateModel rotate model by 270degrees on x (default: false)
 			* @param config import config (optional)
 			* @return returns a pointer to Repo Scene upon success
 			*/
 			repo::core::model::RepoScene*
 				loadSceneFromFile(
-				const std::string &filePath,
-				      std::string &msg,
-				const bool &applyReduction = true,
-			    const repo::manipulator::modelconvertor::ModelImportConfig *config
-					  = nullptr);
+				const std::string                                          &filePath,
+				      std::string                                          &msg,
+				const bool                                                 &applyReduction = true,
+				const bool                                                 &rotateModel = false,
+			    const repo::manipulator::modelconvertor::ModelImportConfig *config         = nullptr);
 
 			/**
 			* remove a document from the database
@@ -480,19 +577,58 @@ namespace repo{
 			* @param bson document to remove
 			*/
 			void removeDocument(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON*	  cred,
-				const std::string                             &databaseName,
-				const std::string                             &collectionName,
+				const std::string                       &databaseAd,
+				const repo::core::model::RepoBSON       *cred,
+				const std::string                       &databaseName,
+				const std::string                       &collectionName,
 				const repo::core::model::RepoBSON       &bson);
+
+			/**
+			* Remove a project from the database
+			* This removes:
+			*   1. all collections associated with the project,
+			*   2. the project entry within project settings
+			*   3. all privileges assigned to any roles, related to this project
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param database name of the datbase
+			* @param name of the project
+			* @param errMsg error message if the operation fails
+			* @return returns true upon success
+			*/
+			bool removeProject(
+				const std::string                       &databaseAd,
+				const repo::core::model::RepoBSON       *cred,
+				const std::string                        &databaseName,
+				const std::string                        &projectName,
+				std::string								 &errMsg
+				);
+
 
 			/**
 			* Reduce redundant transformations from the scene
 			* to optimise the graph
 			* @param scene RepoScene to optimize
+			* @param gType graph type to diff (default: unoptimised)
 			*/
 			void reduceTransformations(
-				repo::core::model::RepoScene          *scene);
+				repo::core::model::RepoScene                  *scene,
+				const repo::core::model::RepoScene::GraphType &gType
+					= repo::core::model::RepoScene::GraphType::DEFAULT);
+
+			/**
+			* Remove stash graph entry for this particular revision from
+			* the database
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param scene scene reference to remove stash graph from
+			* @return returns true upon success
+			*/
+			bool removeStashGraphFromDatabase(
+				const std::string                         &databaseAd,
+				const repo::core::model::RepoBSON         *cred,
+				repo::core::model::RepoScene              *scene
+				);
 
 			/**
 			* remove a role from the database
@@ -501,8 +637,8 @@ namespace repo{
 			* @param role role info to remove
 			*/
 			void removeRole(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON*	  cred,
+				const std::string                       &databaseAd,
+				const repo::core::model::RepoBSON       *cred,
 				const repo::core::model::RepoRole       &role);
 
 			/**
@@ -530,6 +666,21 @@ namespace repo{
 				const std::string                    &directory);
 
 			/**
+			* Save the files of the original model to a specified directory
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param database name of database
+			* @param project name of project
+			* @param directory directory to save into
+			*/
+			void saveOriginalFiles(
+				const std::string                    &databaseAd,
+				const repo::core::model::RepoBSON	 *cred,
+				const std::string                    &database,
+				const std::string                    &project,
+				const std::string                    &directory);
+
+			/**
 			* Save a Repo Scene to file
 			* @param filePath path to file
 			* @param scene scene to export
@@ -546,8 +697,8 @@ namespace repo{
 			* @param role role info to modify
 			*/
 			void updateRole(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON*	  cred,
+				const std::string                       &databaseAd,
+				const repo::core::model::RepoBSON       *cred,
 				const repo::core::model::RepoRole       &role);
 
 			/**
@@ -557,8 +708,8 @@ namespace repo{
 			* @param user user info to modify
 			*/
 			void updateUser(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON*	  cred,
+				const std::string                       &databaseAd,
+				const repo::core::model::RepoBSON       *cred,
 				const repo::core::model::RepoUser       &user);
 			/**
 			* upsert a document in the database
@@ -571,10 +722,10 @@ namespace repo{
 			* @param bson document to update/insert
 			*/
 			void upsertDocument(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON*	  cred,
-				const std::string                             &databaseName,
-				const std::string                             &collectionName,
+				const std::string                       &databaseAd,
+				const repo::core::model::RepoBSON       *cred,
+				const std::string                       &databaseName,
+				const std::string                       &collectionName,
 				const repo::core::model::RepoBSON       &bson);
 
 		};

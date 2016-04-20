@@ -33,10 +33,13 @@ namespace repo{
 				* Construct a diff comparator given the 2 scenes supplied
 				* @param base base scene to compare from
 				* @param compare scene to compare against
+				* @param gType graph type to diff (default: unoptimised)
 				*/
 				DiffByName(
-					const repo::core::model::RepoScene *base,
-					const repo::core::model::RepoScene *compare);
+					const repo::core::model::RepoScene            *base,
+					const repo::core::model::RepoScene            *compare,
+					const repo::core::model::RepoScene::GraphType &gType
+						= repo::core::model::RepoScene::GraphType::DEFAULT);
 				virtual ~DiffByName();
 
 				/**
@@ -83,6 +86,7 @@ namespace repo{
 				bool ok; //Check if comparator status is ok
 				bool errorReported;
 				std::string msg; //error message if comaprator statis is false
+				
 			};
 		}
 	}

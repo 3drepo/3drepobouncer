@@ -106,11 +106,9 @@ namespace repo{
 						ss << " ";
 				}
 				std::string val = ss.str();
-				repoDebug << "Vector check: label " << attribute << ":" << val;
 				addFieldAttribute(label, attribute, val);
 			}
 			
-
 			/**
 			* Add a children onto the tree
 			* label can denote it's inheritance.
@@ -128,6 +126,14 @@ namespace repo{
 					tree.put(label, value);
 				else
 					tree.add(label, value);
+			}
+
+			template <std::size_t N>
+			void addToTree(
+				const std::string           &label,
+				const char                  (&value)[N])
+			{
+				addToTree(label, std::string(value));
 			}
 
 			/**
@@ -204,7 +210,7 @@ namespace repo{
 				std::iostream &stream
 				) const
 			{
-				boost::property_tree::write_json(stream, tree);
+				boost::property_tree::write_json(stream, tree, false);
 			}
 
 			/**
@@ -238,6 +244,17 @@ namespace repo{
 		void PropertyTree::addToTree<std::string>(
 			const std::string           &label,
 			const std::string           &value);
+
+		template <>
+		void PropertyTree::addToTree<repoUUID>(
+			const std::string           &label,
+			const repoUUID              &value);
+
+		template <>
+		void PropertyTree::addToTree(
+			const std::string                &label,
+			const std::vector<PropertyTree>  &value,
+			const bool                       &join);
 
 		template <>
 		void PropertyTree::addFieldAttribute(

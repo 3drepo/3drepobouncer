@@ -252,7 +252,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
         const std::vector<repoUUID>     &parents,
         const int                       &apiLevel)
 {
-    RepoBSONBuilder builder;
+    RepoBSONBuilder builder, metaBuilder;
     // Compulsory fields such as _id, type, api as well as path
     // and optional name
     appendDefaults(builder, REPO_NODE_TYPE_METADATA, apiLevel, generateUUID(), name, parents);
@@ -279,7 +279,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 
             try{
                 long long valueInt = boost::lexical_cast<long long>(value);
-                builder << key << valueInt;
+				metaBuilder << key << valueInt;
             }
             catch (boost::bad_lexical_cast &)
             {
@@ -287,12 +287,12 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 
                 try{
                     double valueFloat = boost::lexical_cast<double>(value);
-                    builder << key << valueFloat;
+					metaBuilder << key << valueFloat;
                 }
                 catch (boost::bad_lexical_cast &)
                 {
                     //not an int or float, store as string
-                    builder << key << value;
+					metaBuilder << key << value;
 
                 }
             }
@@ -300,17 +300,19 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 
     }
 
+	builder << REPO_NODE_LABEL_METADATA << metaBuilder.obj();
+
     return MetadataNode(builder.obj());
 }
 
 MeshNode RepoBSONFactory::makeMeshNode(
-        std::vector<repo_vector_t>                  &vertices,
-        std::vector<repo_face_t>                    &faces,
-        std::vector<repo_vector_t>                  &normals,
-        std::vector<std::vector<float>>             &boundingBox,
-        std::vector<std::vector<repo_vector2d_t>>   &uvChannels,
-        std::vector<repo_color4d_t>                 &colors,
-        std::vector<std::vector<float>>             &outline,
+        const std::vector<repo_vector_t>                  &vertices,
+		const std::vector<repo_face_t>                    &faces,
+		const std::vector<repo_vector_t>                  &normals,
+		const std::vector<std::vector<float>>             &boundingBox,
+		const std::vector<std::vector<repo_vector2d_t>>   &uvChannels,
+		const std::vector<repo_color4d_t>                 &colors,
+		const std::vector<std::vector<float>>             &outline,
         const std::string                           &name,
         const int                                   &apiLevel)
 {
@@ -504,8 +506,8 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
         std::vector<repo_vector2d_t> concatenated;
 
-        std::vector<std::vector<repo_vector2d_t>>::iterator it;
-        for (it = uvChannels.begin(); it != uvChannels.end(); ++it)
+        
+        for (auto it = uvChannels.begin(); it != uvChannels.end(); ++it)
         {
             std::vector<repo_vector2d_t> channel = *it;
 
@@ -800,11 +802,12 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
         const std::string			   &user,
         const repoUUID                 &branch,
         const std::vector<repoUUID>    &currentNodes,
-        const std::vector<repoUUID>    &added,
-        const std::vector<repoUUID>    &removed,
-        const std::vector<repoUUID>    &modified,
+        //const std::vector<repoUUID>    &added,
+        //const std::vector<repoUUID>    &removed,
+        //const std::vector<repoUUID>    &modified,
         const std::vector<std::string> &files,
         const std::vector<repoUUID>    &parent,
+		const std::vector<double>    &worldOffset,
         const std::string              &message,
         const std::string              &tag,
         const int                      &apiLevel
@@ -842,10 +845,14 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
     if (currentNodes.size() > 0)
         builder.appendArray(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS, currentNodes);
 
-	////--------------------------------------------------------------------------
-	//// Upload In Progress flag
+	//--------------------------------------------------------------------------
+	// Upload In Progress flag
 	builder << REPO_NODE_REVISION_LABEL_INCOMPLETE << true;
 
+	//--------------------------------------------------------------------------
+	// Shift for world coordinates
+	if (worldOffset.size() > 0)
+		builder.appendArray(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT, worldOffset);
 
     ////--------------------------------------------------------------------------
     //// Added Shared IDs
@@ -909,7 +916,8 @@ TextureNode RepoBSONFactory::makeTextureNode(
 	{
 		boost::filesystem::path file{ name };
 		std::string ext = file.extension().string();
-		builder << REPO_NODE_LABEL_EXTENSION << ext.substr(1, ext.size());
+		if (!ext.empty())
+			builder << REPO_NODE_LABEL_EXTENSION << ext.substr(1, ext.size());
 	}
     //
     // Data

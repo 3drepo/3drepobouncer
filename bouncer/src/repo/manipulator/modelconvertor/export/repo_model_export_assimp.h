@@ -32,29 +32,20 @@
 
 namespace repo{
 	namespace manipulator{
-		namespace modelconvertor{
+		namespace modelconvertor{//x3d shader
 			class AssimpModelExport : public AbstractModelExport
 			{	
 			public:
 				/**
 				* Default Constructor, export model with default settings
 				*/
-				AssimpModelExport();
+				AssimpModelExport(
+					const repo::core::model::RepoScene *scene);
 
 				/**
 				* Default Deconstructor
 				*/
 				virtual ~AssimpModelExport();
-
-				/**
-				* Convert repo scene to assimp interpretation
-				* @param scene repo scene to convert
-				* @param textNodes Keeps track on the textures that are used in this scene.
-				* @return returns a pointer to aiScene
-				*/
-				aiScene* convertToAssimp(
-					const repo::core::model::RepoScene *scene,
-					repo::core::model::RepoNodeSet &textNodes);
 
 				/**
 				* Export a repo scene graph to file
@@ -63,23 +54,13 @@ namespace repo{
 				* @return returns true upon success
 				*/
 				bool exportToFile(
-					const repo::core::model::RepoScene *scene,
-					const std::string &filePath);
+					const std::string                  &filePath);
 
 				/**
 				* Get supported file formats for this exporter
 				*/
 				static std::string getSupportedFormats();
 
-				/**
-				* Write an aiScene to file
-				* @param scene aiScene representation
-				* @param filePath path to destination file (including file extension)
-				* @return returns true upon success
-				*/
-				bool writeSceneToFile(
-					const aiScene *scene,
-					const std::string &filePath);
 			private:
 
 				/**
@@ -96,15 +77,18 @@ namespace repo{
 				* @param matVec  a list of aiMaterial pointers in the order that is going into aiScene
 				* @param camVec  a list of aiCamera pointers in the order that is going into aiScene
 				* @param textNodes keeps track of the texture nodes that are referenced in this scene
+				* @param gType which graph to convert (default: unoptimised)
 				*/
 
 				aiNode* constructAiSceneRecursively(
-					const repo::core::model::RepoScene *scene,
-					const repo::core::model::RepoNode   *currNode,
-					std::vector<aiMesh*>                      &meshVec,
-					std::vector<aiMaterial*>                  &matVec,
-					std::vector<aiCamera*>                    &camVec,
-					repo::core::model::RepoNodeSet &textNodes);
+					const repo::core::model::RepoScene            *scene,
+					const repo::core::model::RepoNode             *currNode,
+					std::vector<aiMesh*>                          &meshVec,
+					std::vector<aiMaterial*>                      &matVec,
+					std::vector<aiCamera*>                        &camVec,
+					repo::core::model::RepoNodeSet                &textNodes,
+					const repo::core::model::RepoScene::GraphType &gType
+					= repo::core::model::RepoScene::GraphType::DEFAULT);
 
 				/**
 				* Construct an assimp node from 3DRepo scene
@@ -123,17 +107,20 @@ namespace repo{
 				* @param materialMap a map of the uuid of the material that has been converted to aiMaterial so far
 				* @param camMap a map of the uuid of the camera that has been converted to aiCamera so far
 				* @param textNodes keeps track of the texture nodes that are referenced in this scene
+				* @param gType which graph to convert (default: unoptimised)
 				*/
 				aiNode* constructAiSceneRecursively(
-					const repo::core::model::RepoScene *scene,
-					const repo::core::model::RepoNode   *currNode,
-					std::vector<aiMesh*>                      &meshVec,
-					std::vector<aiMaterial*>                  &matVec,
-					std::vector<aiCamera*>                    &camVec,
+					const repo::core::model::RepoScene                        *scene,
+					const repo::core::model::RepoNode                         *currNode,
+					std::vector<aiMesh*>                                      &meshVec,
+					std::vector<aiMaterial*>                                  &matVec,
+					std::vector<aiCamera*>                                    &camVec,
 					std::unordered_map<repoUUID, aiMesh*, RepoUUIDHasher>     &meshMap,
 					std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher> &materialMap,
 					std::unordered_map<repoUUID, aiCamera*, RepoUUIDHasher>   &camMap,
-					repo::core::model::RepoNodeSet &textNodes);
+					repo::core::model::RepoNodeSet                            &textNodes,
+					const repo::core::model::RepoScene::GraphType             &gType
+						= repo::core::model::RepoScene::GraphType::DEFAULT);
 
 				/**
 				* Convert a camera node to aiCamera
@@ -144,20 +131,23 @@ namespace repo{
 				* @return returns a aiCamera node
 				*/
 				aiCamera* convertCamera(
-					const repo::core::model::RepoScene *scene,
+					const repo::core::model::RepoScene  *scene,
 					const repo::core::model::CameraNode *camNode,
-					const std::string                         &name = std::string());
+					const std::string                   &name = std::string());
 
 				/**
 				* Convert a material node to aiMaterial
 				* @param scene the scene the node came from
 				* @param matNode the material node itself
 				* @return returns a aiMaterial node
+				* @param gType which graph to convert (default: unoptimised)
 				*/
 				aiMaterial* convertMaterial(
-					const repo::core::model::RepoScene *scene,
-					const repo::core::model::MaterialNode *matNode,
-					repo::core::model::RepoNodeSet  &textNodes);
+					const repo::core::model::RepoScene            *scene,
+					const repo::core::model::MaterialNode         *matNode,
+					repo::core::model::RepoNodeSet                &textNodes,
+					const repo::core::model::RepoScene::GraphType &gType
+						= repo::core::model::RepoScene::GraphType::DEFAULT);
 
 				/**
 				* Convert a mesh node to aiMesh
@@ -166,15 +156,31 @@ namespace repo{
 				* @param matVec  a list of aiMaterial pointers in the order that is going into aiScene
 				* @param materialMap a map of the uuid of the material that has been converted to aiMaterial so far
 				* @param textNodes a vector of texture nodes that are referenced (will be updated if applicable)
+				* @param gType which graph to convert (default: unoptimised)
 				* @return returns a aiMesh node
 				*/
 
 				aiMesh* convertMesh(
-					const repo::core::model::RepoScene *scene,
-					const repo::core::model::MeshNode   *meshNode,
-					std::vector<aiMaterial*>                  &matVec,
-					std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher>           &matMap,
-					repo::core::model::RepoNodeSet &textNodes);
+					const repo::core::model::RepoScene                        *scene,
+					const repo::core::model::MeshNode                         *meshNode,
+					std::vector<aiMaterial*>                                  &matVec,
+					std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher> &matMap,
+					repo::core::model::RepoNodeSet                            &textNodes,
+					const repo::core::model::RepoScene::GraphType             &gType
+					= repo::core::model::RepoScene::GraphType::DEFAULT);
+
+				/**
+				* Convert repo scene to assimp interpretation
+				* @param scene repo scene to convert
+				* @param textNodes Keeps track on the textures that are used in this scene.
+				* @param gType which graph to convert (default: unoptimised)
+				* @return returns a pointer to aiScene
+				*/
+				aiScene* convertToAssimp(
+					const repo::core::model::RepoScene            *scene,
+					repo::core::model::RepoNodeSet                &textNodes,
+					const repo::core::model::RepoScene::GraphType &gType
+					= repo::core::model::RepoScene::GraphType::DEFAULT);
 
 				/**
 				* Returns the ID of the exported file type
@@ -194,22 +200,19 @@ namespace repo{
 				*/
 				bool writeTexturesToFiles(
 					const repo::core::model::RepoNodeSet &nodes,
-					const std::string &filePath);
+					const std::string                    &filePath);
 
 
 				/**
-				* Debug function to show assimp scene
+				* Write an aiScene to file
+				* @param scene aiScene representation
+				* @param filePath path to destination file (including file extension)
+				* @return returns true upon success
 				*/
-				void showDebug(
-					const aiScene *assimpScene);
-
-				void showMeshDebug(
-					const aiMesh *mesh);
-
-				void showNodeDebug(
-					const aiNode *node,
-					const uint32_t &level,
-					const aiScene *assimpScene);
+				bool writeSceneToFile(
+					const aiScene     *scene,
+					const std::string &filePath);
+				
 
 			};
 

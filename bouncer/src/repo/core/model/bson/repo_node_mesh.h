@@ -87,6 +87,15 @@ namespace repo {
 
 
 					/**
+					* Returns a number, indicating it's mesh format
+					* maximum of 32 bit, each bit represent the presents of the following
+					*  vertices faces normals colors #uvs
+					* where vertices is the LSB
+					* @return returns the mFormat flag
+					*/
+					uint32_t getMFormat() const;
+
+					/**
 					* Check if the node is position dependant.
 					* i.e. if parent transformation is merged onto the node,
 					* does the node requre to a transformation applied to it
@@ -128,17 +137,7 @@ namespace repo {
 					*/
 					MeshNode cloneAndUpdateMeshMapping(
 						const std::vector<repo_mesh_mapping_t> &vec,
-						const bool                             &overwrite = false);
-
-					/**
-					* Remap the submeshes to 
-					*/
-					MeshNode cloneAndRemapMeshMapping(
-						const size_t verticeThreshold,
-						std::vector<uint16_t> &newFaces,
-						std::vector<std::vector<float>> &idMapBuf,
-						std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> &splitMap) const;
-
+						const bool                             &overwrite = false);				
 
 					
 					/**

@@ -35,7 +35,8 @@ RepoNode::~RepoNode()
 }
 
 RepoNode RepoNode::cloneAndAddParent(
-	const repoUUID &parentID) const
+	const repoUUID &parentID,
+	const bool     &newUniqueID) const
 {
 	RepoBSONBuilder builder;
 	RepoBSONBuilder arrayBuilder;
@@ -45,6 +46,9 @@ RepoNode RepoNode::cloneAndAddParent(
 	if (std::find(currentParents.begin(), currentParents.end(), parentID) == currentParents.end())
 		currentParents.push_back(parentID);
 	builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);	
+
+	if (newUniqueID)
+		builder.append(REPO_NODE_LABEL_ID, generateUUID());
 
 	builder.appendElementsUnique(*this);
 
@@ -119,10 +123,6 @@ RepoNode RepoNode::cloneAndAddFields(
 	if (newUniqueID)
 	{
 		builder.append(REPO_NODE_LABEL_ID, generateUUID());
-	}
-	else
-	{
-		builder.append(REPO_NODE_LABEL_ID, getUniqueID());
 	}
 
 	builder.appendElementsUnique(*changes);

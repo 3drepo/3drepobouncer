@@ -121,7 +121,9 @@ namespace repo{
 				repo::core::model::MeshNode* createMeshRepoNode(
 					const aiMesh *assimpMesh,
 					const std::vector<repo::core::model::RepoNode *> &materials,
-					std::unordered_map < repo::core::model::RepoNode*, std::vector<repoUUID>> &matMap);
+					std::unordered_map < repo::core::model::RepoNode*, std::vector<repoUUID>> &matMap,
+					const bool hasTexture,
+					const std::vector<double> &offset);
 
 				/**
 				* Create a Metadata Node given the information in ASSIMP objects
@@ -146,14 +148,33 @@ namespace repo{
 				* @return returns the created Metadata Node
 				*/
 				repo::core::model::RepoNodeSet createTransformationNodesRecursive(
-					const aiNode                                                     *assimpNode,
+					const aiNode                                                         *assimpNode,
 					const std::unordered_map<std::string, repo::core::model::RepoNode *> &cameras,
-					const std::vector<repo::core::model::RepoNode *>           &meshes,
-					repo::core::model::RepoNodeSet						     &metadata,
-					assimp_map													&map,
-					uint32_t &count ,
-					const std::vector<repoUUID>						             &parent = std::vector<repoUUID>()
+					const std::vector<repo::core::model::RepoNode *>                     &meshes,
+					repo::core::model::RepoNodeSet						                 &metadata,
+					assimp_map													         &map,
+					uint32_t                                                             &count ,
+					const std::vector<double>                                            &worldOffset,
+					const std::vector<repoUUID>						                     &parent = std::vector<repoUUID>()
 					);
+				
+				/**
+				* Get bounding box of the aimesh
+				* @return returns the bounding box
+				*/
+				std::vector<std::vector<double>> getAiMeshBoundingBox(
+					const aiMesh *mesh) const;
+
+				/**
+				* Get bounding box of the aiscene
+				* @return returns the bounding box
+				*/
+				std::vector<std::vector<double>> getSceneBoundingBox() const;
+
+				void getSceneBoundingBoxInternal(
+					const aiNode                     *node,
+					const aiMatrix4x4                &mat,
+					std::vector<std::vector<double>> &bbox) const;
 
 				/**
 				* Load Texture within the given folder

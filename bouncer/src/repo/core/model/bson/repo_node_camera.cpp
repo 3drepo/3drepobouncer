@@ -91,7 +91,11 @@ repo_vector_t CameraNode::getLookAt() const
 		}
 	}
 
-	return vec;
+	// if look at is 0 0 0, treat it as non existent (FIXME: is this really correct?)
+	if (0 == vec.x == vec.y == vec.z)
+		return{ 0, 0, -1 };
+	else
+		return vec;
 }
 
 
@@ -206,7 +210,7 @@ std::vector<float> CameraNode::getOrientation() const
 {
 	repo_vector_t lookAt = getLookAt();
 	repo_vector_t up = getUp();
-	repo_vector_t forward = { lookAt.x * -1.0f, lookAt.y * -1.0f, lookAt.z*-1.0f };
+	repo_vector_t forward = { -lookAt.x , -lookAt.y , -lookAt.z};
 	normalize(forward);
 	normalize(up);
 	repo_vector_t right = crossProduct(up, forward);
@@ -227,7 +231,7 @@ std::vector<float> CameraNode::getOrientation() const
 		float e = forward.x + right.z;
 		float f = forward.y + up.z;
 
-		if (!(fabs(d) < eps && fabs(e) < eps && fabs(f) < eps && fabs(tr - 3) < eps))
+		if(!((fabs(d) < eps) && (fabs(e) < eps) && (fabs(f) < eps) && (fabs(tr - 3.0) < eps)))
 		{
 			angle = M_PI;
 
@@ -240,6 +244,7 @@ std::vector<float> CameraNode::getOrientation() const
 
 			if ((xx - yy) > eps && (xx - zz) > eps)
 			{
+				repoDebug << " case a";
 				if (xx < eps)
 				{
 					x = 0;
@@ -255,6 +260,7 @@ std::vector<float> CameraNode::getOrientation() const
 			}
 			else if ((yy - zz) > eps)
 			{
+
 				if (yy < eps)
 				{
 					x = sqrtHalf;
@@ -263,8 +269,8 @@ std::vector<float> CameraNode::getOrientation() const
 				}
 				else
 				{
-					x = xy / y;
 					y = sqrt(yy);
+					x = xy / y;
 					z = yz / y;
 				}
 			}
@@ -278,9 +284,10 @@ std::vector<float> CameraNode::getOrientation() const
 				}
 				else
 				{
+					z = sqrtf(zz);
 					x = xz / z;
 					y = yz / z;
-					z = sqrtf(zz);
+				
 				}
 			}
 				
@@ -297,7 +304,10 @@ std::vector<float> CameraNode::getOrientation() const
 		x = -c / s;
 		y =  b / s;
 		z = -a / s;
+
+		angle = acosf((tr - 1.) / 2.);
 	}
+
 
 	return{ x, y, z, angle };
 }

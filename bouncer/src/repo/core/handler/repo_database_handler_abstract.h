@@ -199,7 +199,7 @@ namespace repo{
 					const std::string          &fileName,
 					const std::vector<uint8_t> &bin,
 					std::string          &errMsg,
-					const std::string          &contentType = ""
+					const std::string          &contentType = "binary/octet-stream"
 					) = 0;
 
 
@@ -274,6 +274,19 @@ namespace repo{
 					const std::string &collection,
 					std::string &errMsg)=0;
 
+				/**
+				* Remove all documents satisfying a certain criteria
+				* @param criteria document to remove
+				* @param database the database the collection resides in
+				* @param collection name of the collection the document is in
+				* @param errMsg name of the database to drop
+				*/
+				virtual bool dropDocuments(
+					const repo::core::model::RepoBSON criteria,
+					const std::string &database,
+					const std::string &collection,
+					std::string &errMsg) = 0;
+
 
 				/**
 				* Remove a role from the database
@@ -337,12 +350,14 @@ namespace repo{
 				* @param database name of database
 				* @param collection name of collection
 				* @param criteria search criteria in a bson object
+				* @param sortField field to sort
 				* @return a RepoBSON objects satisfy the given criteria
 				*/
 				virtual repo::core::model::RepoBSON findOneByCriteria(
 					const std::string& database,
 					const std::string& collection,
-					const repo::core::model::RepoBSON& criteria) = 0;
+					const repo::core::model::RepoBSON& criteria,
+					const std::string& sortField = "") = 0;
 
 				/**
 				* Given a list of unique IDs, find all the documents associated to them

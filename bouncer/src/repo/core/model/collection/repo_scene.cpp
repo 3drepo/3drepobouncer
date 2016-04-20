@@ -33,8 +33,8 @@
 
 using namespace repo::core::model;
 
-const std::vector<std::string> RepoScene::collectionsInProject = { "scene", "stash.3drepo",
-"stash.src", "history", "issues", "wayfinder" };
+const std::vector<std::string> RepoScene::collectionsInProject = { "scene", "scene.files", "scene.chunks", "stash.3drepo", "stash.3drepo.files", "stash.3drepo.chunks", "stash.x3d", "stash.x3d.files",
+"stash.x3d.chunks", "stash.gltf", "stash.gltf.files", "stash.gltf.chunks", "stash.src", "stash.src.files", "stash.src.chunks", "history", "history.files", "history.chunks", "issues", "wayfinder" };
 
 RepoScene::RepoScene(
 	const std::string &database,
@@ -43,13 +43,21 @@ RepoScene::RepoScene(
 	const std::string &revExt,
 	const std::string &stashExt,
 	const std::string &rawExt,
-	const std::string &issuesExt)
+	const std::string &issuesExt,
+	const std::string &srcExt,
+	const std::string &gltfExt,
+	const std::string &x3dExt,
+	const std::string &jsonExt)
 	: AbstractGraph(database, projectName),
 	sceneExt(sanitizeExt(sceneExt)),
 	revExt(sanitizeExt(revExt)),
 	stashExt(sanitizeExt(stashExt)),
 	rawExt(sanitizeExt(rawExt)),
 	issuesExt(sanitizeExt(issuesExt)),
+	srcExt(sanitizeExt(srcExt)),
+	gltfExt(sanitizeExt(gltfExt)),
+	x3dExt(sanitizeExt(x3dExt)),
+	jsonExt(sanitizeExt(jsonExt)),
 	headRevision(true),
 	unRevisioned(false),
 	revNode(0)
@@ -76,7 +84,11 @@ RepoScene::RepoScene(
 	const std::string              &revExt,
 	const std::string              &stashExt,
 	const std::string              &rawExt,
-	const std::string              &issuesExt
+	const std::string              &issuesExt,
+	const std::string              &srcExt,
+	const std::string              &gltfExt,
+	const std::string              &x3dExt,
+	const std::string              &jsonExt
 	)
 	: AbstractGraph("", ""),
 	sceneExt(sanitizeExt(sceneExt)),
@@ -84,6 +96,10 @@ RepoScene::RepoScene(
 	stashExt(sanitizeExt(stashExt)),
 	rawExt(sanitizeExt(rawExt)),
 	issuesExt(sanitizeExt(issuesExt)),
+	srcExt(sanitizeExt(srcExt)),
+	gltfExt(sanitizeExt(gltfExt)),
+	x3dExt(sanitizeExt(x3dExt)),
+	jsonExt(sanitizeExt(jsonExt)),
 	headRevision(true),
 	unRevisioned(true),
 	refFiles(refFiles),
@@ -230,10 +246,11 @@ void RepoScene::addInheritance(
 
 void RepoScene::addMetadata(
 	RepoNodeSet &metadata,
-	const bool  &exactMatch)
+	const bool  &exactMatch,
+	const bool  &propagateData)
 {
 
-	std::unordered_map<std::string, RepoNode*> transMap;
+	std::unordered_map<std::string, std::vector<RepoNode*>> namesMap;
 	//stashed version of the graph does not need to track metadata information
 	for (RepoNode* transformation : graph.transformations)
 	{
@@ -244,8 +261,27 @@ void RepoScene::addMetadata(
 			std::transform(transformationName.begin(), transformationName.end(), transformationName.begin(), ::toupper);
 		}
 
-		transMap[transformationName] = transformation;
+		if (namesMap.find(transformationName) == namesMap.end())
+			namesMap[transformationName] = std::vector<RepoNode*>();
+
+		namesMap[transformationName].push_back(transformation);
 	}
+
+	for (RepoNode* mesh : graph.meshes)
+	{
+		std::string name = mesh->getName();
+		if (!exactMatch)
+		{
+			name = name.substr(0, name.find(" "));
+			std::transform(name.begin(), name.end(), name.begin(), ::toupper);
+		}
+		if (namesMap.find(name) == namesMap.end())
+			namesMap[name] = std::vector<RepoNode*>();
+
+		namesMap[name].push_back(mesh);
+	}
+
+
 
 	for (RepoNode* meta : metadata)
 	{
@@ -254,22 +290,42 @@ void RepoScene::addMetadata(
 		if (!exactMatch)
 			std::transform(metaName.begin(), metaName.end(), metaName.begin(), ::toupper);
 
-		auto nameIt = transMap.find(metaName);
+		auto nameIt = namesMap.find(metaName);
 
-		if (nameIt != transMap.end())
+		if (nameIt != namesMap.end())
 		{
-			RepoNode *transformation = nameIt->second;
-			repoUUID transSharedID = transformation->getSharedID();
+
+			std::vector<repoUUID> parents;
 			repoUUID metaSharedID = meta->getSharedID();
 			repoUUID metaUniqueID = meta->getUniqueID();
+			for (auto &node : nameIt->second)
+			{
+				if (propagateData && node->getTypeAsEnum() == NodeType::TRANSFORMATION)
+				{
+					auto meshes = getAllDescendantsByType(GraphType::DEFAULT, node->getSharedID(), NodeType::MESH);
+					for (auto &mesh : meshes)
+					{
+						repoUUID parentSharedID = mesh->getSharedID();
+						if (graph.parentToChildren.find(parentSharedID) == graph.parentToChildren.end())
+							graph.parentToChildren[parentSharedID] = std::vector<RepoNode*>();
 
-			if (graph.parentToChildren.find(transSharedID) == graph.parentToChildren.end())
-				graph.parentToChildren[transSharedID] = std::vector<RepoNode*>();
+						graph.parentToChildren[parentSharedID].push_back(meta);
+						parents.push_back(parentSharedID);
+					}
+				}
+				else{
+					repoUUID parentSharedID = node->getSharedID();
+					if (graph.parentToChildren.find(parentSharedID) == graph.parentToChildren.end())
+						graph.parentToChildren[parentSharedID] = std::vector<RepoNode*>();
 
-			graph.parentToChildren[transSharedID].push_back(meta);
+					graph.parentToChildren[parentSharedID].push_back(meta);
+					parents.push_back(parentSharedID);
+				}
+				
 
-			*meta = meta->cloneAndAddParent(transSharedID);
-
+			}
+			
+			*meta = meta->cloneAndAddParent(parents);
 
 			graph.nodesByUniqueID[metaUniqueID] = meta;
 			graph.sharedIDtoUniqueID[metaSharedID] = metaUniqueID;
@@ -287,6 +343,8 @@ void RepoScene::addMetadata(
 			repoWarning << "Did not find a pairing transformation node with the same name : " << metaName;
 		}
 	}
+
+	clearStash();
 }
 
 
@@ -519,9 +577,24 @@ bool RepoScene::commitProjectSettings(
 	RepoProjectSettings projectSettings =
 		RepoBSONFactory::makeRepoProjectSettings(projectName, userName);
 
-	bool success = handler->upsertDocument(
-		databaseName, REPO_COLLECTION_SETTINGS, projectSettings, false, errMsg);
+	bool success = handler->insertDocument(
+		databaseName, REPO_COLLECTION_SETTINGS, projectSettings, errMsg);
 
+	if (!success)
+	{
+		//check that the error occurred because of duplicated index (i.e. there's already an entry for projects)
+		RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
+
+		RepoBSON doc = handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria);
+
+		//If it already exist, that's fine.
+		success = !doc.isEmpty();
+		if (success)
+		{
+			repoTrace << "This project already has a project settings entry, skipping project settings commit...";
+			errMsg.clear();
+		}
+	}
 
 	return success;
 
@@ -574,7 +647,7 @@ bool RepoScene::commitRevisionNode(
 
 	newRevNode =
 		new RevisionNode(RepoBSONFactory::makeRevisionNode(userName, branch, uniqueIDs,
-		newAddedV, newRemovedV, newModifiedV, fileNames, parent, message, tag));
+		/*newAddedV, newRemovedV, newModifiedV,*/ fileNames, parent, worldOffset, message, tag));
 
 	if (newRevNode)
 	{
@@ -805,6 +878,25 @@ RepoScene::filterNodesByType(
 	return filteredNodes;
 }
 
+std::vector<RepoNode*> RepoScene::getAllDescendantsByType(
+	const GraphType &gType,
+	const repoUUID  &sharedID,
+	const NodeType  &type) const
+{
+	std::vector<RepoNode*> res;
+	const auto children = getChildrenAsNodes(gType, sharedID);
+	for (const auto &child : children)
+	{
+		auto grandChildrenRes = getAllDescendantsByType(gType, child->getSharedID(), type);
+		res.insert(res.end(), grandChildrenRes.begin(), grandChildrenRes.end());
+		if (child->getTypeAsEnum() == type)
+			res.push_back(child);
+
+	}
+
+	return res;
+}
+
 std::vector<RepoNode*> RepoScene::getParentNodesFiltered(
 	const GraphType &gType,
 	const RepoNode* node, 
@@ -837,6 +929,118 @@ std::string RepoScene::getBranchName() const
 	}
 
 	return branchName;
+}
+
+std::vector<repo_vector_t> RepoScene::getSceneBoundingBox() const
+{
+	std::vector<repo_vector_t> bbox;
+	GraphType gType = stashGraph.rootNode ? GraphType::OPTIMIZED : GraphType::DEFAULT;
+	
+	std::vector<float> identity = {
+									1, 0, 0, 0,
+									0, 1, 0, 0, 
+									0, 0, 1, 0, 
+									0, 0, 0, 1, };
+
+	getSceneBoundingBoxInternal(gType, gType == GraphType::OPTIMIZED ? stashGraph.rootNode : graph.rootNode, identity ,bbox);
+	repoTrace << "Scene bounding box: {" << bbox[0].x << "," << bbox[0].y << "," << bbox[0].z << "}{" << bbox[1].x << "," << bbox[1].y << "," << bbox[1].z << "}";
+	return bbox;
+}
+
+void RepoScene::getSceneBoundingBoxInternal(
+	const GraphType            &gType,
+	const RepoNode             *node,
+	const std::vector<float>   &mat,
+	std::vector<repo_vector_t> &bbox) const
+{
+
+	if (node)
+	{
+		switch (node->getTypeAsEnum())
+		{
+		case NodeType::TRANSFORMATION:
+		{
+			const TransformationNode *trans = dynamic_cast<const TransformationNode*>(node);
+			auto matTransformed = matMult(mat, trans->getTransMatrix(false));
+			
+			for (const auto & child : getChildrenAsNodes(gType, trans->getSharedID()))
+			{
+				getSceneBoundingBoxInternal(gType, child, matTransformed, bbox);
+			}
+			break;
+
+		}
+		case NodeType::MESH:
+		{
+			const MeshNode *mesh = dynamic_cast<const MeshNode*>(node);
+			//FIXME: can we figure this out from the existing bounding box?
+			MeshNode transedMesh = mesh->cloneAndApplyTransformation(mat);
+			auto newmBBox = transedMesh.getBoundingBox();
+
+			if (bbox.size())
+			{
+				if (newmBBox[0].x < bbox[0].x)
+					bbox[0].x = newmBBox[0].x;
+				if (newmBBox[0].y < bbox[0].y)
+					bbox[0].y = newmBBox[0].y;
+				if (newmBBox[0].z < bbox[0].z)
+					bbox[0].z = newmBBox[0].z;
+
+				if (newmBBox[1].x > bbox[1].x)
+					bbox[1].x = newmBBox[1].x;
+				if (newmBBox[1].y > bbox[1].y)
+					bbox[1].y = newmBBox[1].y;
+				if (newmBBox[1].z > bbox[1].z)
+					bbox[1].z = newmBBox[1].z;
+			}
+			else
+			{
+				//no bbox yet
+				bbox.push_back(newmBBox[0]);
+				bbox.push_back(newmBBox[1]);
+			}
+
+			break;
+		}
+		case NodeType::REFERENCE:
+		{
+			repoGraphInstance g = gType == GraphType::DEFAULT ? graph : stashGraph;
+			auto refSceneIt = graph.referenceToScene.find(node->getSharedID());
+			if (refSceneIt != graph.referenceToScene.end())
+			{
+				const RepoScene *refScene = refSceneIt->second;
+				const std::vector<repo_vector_t> refSceneBbox = refScene->getSceneBoundingBox();
+
+				if (bbox.size())
+				{
+					if (refSceneBbox[0].x < bbox[0].x)
+						bbox[0].x = refSceneBbox[0].x;
+					if (refSceneBbox[0].y < bbox[0].y)
+						bbox[0].y = refSceneBbox[0].y;
+					if (refSceneBbox[0].z < bbox[0].z)
+						bbox[0].z = refSceneBbox[0].z;
+
+					if (refSceneBbox[1].x > bbox[1].x)
+						bbox[1].x = refSceneBbox[1].x;
+					if (refSceneBbox[1].y > bbox[1].y)
+						bbox[1].y = refSceneBbox[1].y;
+					if (refSceneBbox[1].z > bbox[1].z)
+						bbox[1].z = refSceneBbox[1].z;
+				}
+				else
+				{
+					//no bbox yet
+					bbox.push_back(refSceneBbox[0]);
+					bbox.push_back(refSceneBbox[1]);
+				}
+
+			}
+			break;
+		}
+		}
+		
+	}
+
 }
 
 std::string RepoScene::getTextureIDForMesh(
@@ -893,8 +1097,12 @@ bool RepoScene::loadRevision(
 	RepoBSON bson;
 	repoTrace << "loading revision : " << databaseName << "." << projectName << " head Revision: " << headRevision;
 	if (headRevision){
-		bson = handler->findOneBySharedID(databaseName, projectName + "." +
-			revExt, branch, REPO_NODE_REVISION_LABEL_TIMESTAMP);
+		RepoBSONBuilder critBuilder;
+		critBuilder.append(REPO_NODE_LABEL_SHARED_ID, branch);
+		critBuilder << REPO_NODE_REVISION_LABEL_INCOMPLETE << BSON("$exists" << false);
+
+		bson = handler->findOneByCriteria(databaseName, projectName + "." +
+			revExt, critBuilder.obj(), REPO_NODE_REVISION_LABEL_TIMESTAMP);
 		repoTrace << "Fetching head of revision from branch " << UUIDtoString(branch);
 	}
 	else{
@@ -908,6 +1116,7 @@ bool RepoScene::loadRevision(
 	}
 	else{
 		revNode = new RevisionNode(bson);
+		worldOffset = revNode->getCoordOffset();
 	}
 
 	return success;
@@ -956,10 +1165,18 @@ bool RepoScene::loadStash(
 	builder.append(REPO_NODE_STASH_REF, revNode->getUniqueID());
 
 	std::vector<RepoBSON> nodes = handler->findAllByCriteria(databaseName, projectName + "." + stashExt, builder.obj());
+	if (success = nodes.size())
+	{
+		repoInfo << "# of nodes in this stash scene = " << nodes.size();
+		success = populate(GraphType::OPTIMIZED, handler, nodes, errMsg);
+	}
+	else
+	{
+		errMsg += "stash is empty";
+	}
+	
 
-	repoInfo << "# of nodes in this stash scene = " << nodes.size();
-
-	return populate(GraphType::OPTIMIZED, handler, nodes, errMsg) && nodes.size() > 0;
+	return  success;
 
 }
 
@@ -981,14 +1198,13 @@ void RepoScene::modifyNode(
 	RepoNode updatedNode;
 
 	//generate new UUID if it  is not in list, otherwise use the current one.
-	bool isInList = gtype == GraphType::DEFAULT &&
+	bool isInList = gtype == GraphType::OPTIMIZED ||
 		( newAdded.find(sharedID) != newAdded.end() || newModified.find(sharedID) != newModified.end());
-		
 	updatedNode = overwrite ? *newNode : RepoNode(nodeToChange->cloneAndAddFields(newNode, !isInList));
 
 	repoUUID newUniqueID = updatedNode.getUniqueID();
 
-	if (!isInList)
+	if (gtype == GraphType::DEFAULT && !isInList)
 	{
 		newModified.insert(sharedID);
 		newCurrent.erase(nodeToChange->getUniqueID());
@@ -1165,6 +1381,9 @@ bool RepoScene::populate(
 
 	//deal with References
 	RepoNodeSet::iterator refIt;
+	//Make sure it is propagated into the repoScene if it exists in revision node
+	worldOffset = getWorldOffset();
+
 	for (const auto &node : g.references)
 	{
 		ReferenceNode* reference = (ReferenceNode*) node;
@@ -1180,12 +1399,34 @@ bool RepoScene::populate(
 		if (refg->loadStash(handler, errMsg) || refg->loadScene(handler, errMsg))
 		{
 			g.referenceToScene[reference->getSharedID()] = refg;
+			auto refOffset = refg->getWorldOffset();
+			if (refOffset.size() >= worldOffset.size())
+			{
+				for (size_t offIdx = 0; offIdx < worldOffset.size(); ++offIdx)
+				{
+					if (worldOffset[offIdx] > refOffset[offIdx])
+						worldOffset[offIdx] = refOffset[offIdx];
+				}
+			}
 		}
 		else{
 			repoWarning << "Failed to load reference node for ref ID" << reference->getUniqueID() << ": " << errMsg;
 		}
 
 	}
+	repoTrace << "World Offset = [" << worldOffset[0] << " , " << worldOffset[1] << ", " << worldOffset[2] << " ]";
+	//Now that we know the world Offset, make sure the referenced scenes are shifted accordingly
+	for (const auto &node : g.references)
+	{
+		ReferenceNode* reference = (ReferenceNode*)node;
+		auto refScene = g.referenceToScene[reference->getSharedID()];
+		auto refOffset = refScene->getWorldOffset();
+		std::vector<double> dOffset = { refOffset[0] - worldOffset[0], refOffset[1] - worldOffset[1], refOffset[2] - worldOffset[2]};
+		repoTrace << "delta Offset = [" << dOffset[0] << " , " << dOffset[1] << ", " << dOffset[2] << " ]";
+		refScene->shiftModel(dOffset);
+
+	}
+
 	return success;
 }
 
@@ -1221,40 +1462,83 @@ void RepoScene::reorientateDirectXModel()
 {
 	//Need to rotate the model by 270 degrees on the X axis
 	//This is essentially swapping the 2nd and 3rd column, negating the 2nd.
-
+	repoTrace << "Reorientating model...";
 	//Stash root and scene root should be identical!
 	if (graph.rootNode)
 	{
-		TransformationNode rootTrans = TransformationNode(*graph.rootNode);
-		std::vector<float> mat =  rootTrans.getTransMatrix();
+		auto rootTrans = dynamic_cast<TransformationNode*>(graph.rootNode);
+		std::vector<float> mat =  rootTrans->getTransMatrix(false);
 		if (mat.size() == 16)
 		{
-			std::vector<std::vector<float>> newMatrix;
+			//change offset relatively
+			std::vector<float> rotationMatrix = { 1, 0, 0, 0,
+													0, 0, 1, 0,
+													0, -1, 0, 0,
+													0, 0, 0, 1 };
 
-			for (uint32_t row = 0; row < 4; row++)
+
+
+			TransformationNode newRoot = rootTrans->cloneAndApplyTransformation(rotationMatrix);
+			modifyNode(GraphType::DEFAULT, rootTrans->getSharedID(), &newRoot);
+			
+
+			/*if (stashGraph.rootNode)
 			{
-				std::vector<float> matRow;
-				
-				matRow.push_back( mat[row * 4]);
-				matRow.push_back(-mat[row * 4 + 2]);
-				matRow.push_back( mat[row * 4 + 1]);
-				matRow.push_back( mat[row * 4 + 3]);
+			modifyNode(GraphType::OPTIMIZED, stashGraph.rootNode->getSharedID(), &newRoot);
+			}*/
 
-				newMatrix.push_back(matRow);
-			}
+			//Clear the stash as bounding boxes in mesh mappings are no longer valid like this.
+			clearStash();		
 
 
-
-			TransformationNode newRoot = RepoBSONFactory::makeTransformationNode(newMatrix, rootTrans.getName());
-			modifyNode(GraphType::DEFAULT, rootTrans.getSharedID(), &newRoot);
-			if (stashGraph.rootNode)
-				modifyNode(GraphType::OPTIMIZED, stashGraph.rootNode->getSharedID(), &newRoot);
+			//Apply the rotation on the offset
+			auto temp = worldOffset[2];
+			worldOffset[2] = -worldOffset[1];
+			worldOffset[1] = temp;
 		}
 		else
 		{
 			repoError << "Root Transformation is not a 4x4 matrix!";
 		}
 
+	}
+}
+
+void RepoScene::setWorldOffset(
+	const std::vector<double> &offset)
+{
+	if (offset.size() > 0)
+	{
+		if (worldOffset.size())
+		{
+			worldOffset.clear();
+		}
+		worldOffset.insert(worldOffset.end(), offset.begin(), offset.end());
+	}
+	else
+	{
+		repoWarning << "Trying to set world off set with no values. Ignoring...";
+	}
+	
+}
+
+void RepoScene::shiftModel(
+	const std::vector<double> &offset)
+{
+	std::vector<float> transMat = { 1, 0, 0, (float)offset[0],
+									0, 1, 0, (float)offset[1],
+									0, 0, 1, (float)offset[2],
+									0, 0, 0, 1};
+	if (graph.rootNode)
+	{
+		auto translatedRoot = graph.rootNode->cloneAndApplyTransformation(transMat);
+		graph.rootNode->swap(translatedRoot);
+	}
+
+	if (stashGraph.rootNode)
+	{
+		auto translatedRoot = stashGraph.rootNode->cloneAndApplyTransformation(transMat);
+		stashGraph.rootNode->swap(translatedRoot);
 	}
 }
 

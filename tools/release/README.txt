@@ -1,4 +1,4 @@
-3D Repo Bouncer Library v 1.0(alpha)
+3D Repo Bouncer Library v 1.0(beta version 2)
 
 This is the internal library used for 3D Repo GUI.
 
@@ -24,3 +24,10 @@ download a copy of our desktop client - 3D Repo GUI.
 =========================== Contact ==============================
 If you need any help, please contact support@3drepo.org, we
 look forward to hear from you.
+
+============================ Improvments =============================
+* (Issue #47) Fix bounding box error on mesh mappings
+* (Issue #98) Fix FBX model imports
+
+
+

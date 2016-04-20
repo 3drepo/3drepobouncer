@@ -71,6 +71,31 @@ int32_t performOperation(
 /*
 * ======================== Command functions ===================
 */
+/**
+* Generate a particular type of stash (src/gltf/repo) for a given project
+* @param controller the controller to the bouncer library
+* @param token      token provided by the controller after authentication
+* @param command    command and it's arguments to perform
+* @return returns true upon success
+*/
+static int32_t generateStash(
+	repo::RepoController       *controller,
+	const repo::RepoToken      *token,
+	const repo_op_t            &command
+	);
+
+/**
+* Retrieve the original file for the head of the project
+* @param controller the controller to the bouncer library
+* @param token      token provided by the controller after authentication
+* @param command    command and it's arguments to perform
+* @return returns true upon success
+*/
+static int32_t getFileFromProject(
+	repo::RepoController       *controller,
+	const repo::RepoToken      *token,
+	const repo_op_t            &command
+	);
 
 /**
 * Import model from file and commit it to the database

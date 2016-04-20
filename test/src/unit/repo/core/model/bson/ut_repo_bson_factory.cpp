@@ -351,86 +351,213 @@ TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest2)
 	EXPECT_EQ(name, metaNode.getName());
 	EXPECT_EQ(metaNode.getTypeAsEnum(), NodeType::METADATA);
 
+	auto metaBSON = metaNode.getObjectField(REPO_NODE_LABEL_METADATA);
+
+	ASSERT_FALSE(metaBSON.isEmpty());
+
 	for (uint32_t i = 0; i < keys.size(); ++i)
 	{
-		ASSERT_TRUE(metaNode.hasField(keys[i]));
-		EXPECT_EQ(values[i], metaNode.getStringField(keys[i]));
+		ASSERT_TRUE(metaBSON.hasField(keys[i]));
+		EXPECT_EQ(values[i], metaBSON.getStringField(keys[i]));
 	}
 }
 
 TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 {
 
-	//uint32_t nCount = 10;
-	////using malloc to get un-initalised values to fill the memory. 
-	//repo_vector_t *rawVec = (repo_vector_t*)malloc(sizeof(*rawVec) * nCount);
-	//repo_vector_t *rawNorm = (repo_vector_t*)malloc(sizeof(*rawNorm) * nCount);
-	//repo_vector2d_t *rawUV = (repo_vector2d_t*)malloc(sizeof(*rawUV) * nCount);
-	//repo_color4d_t *rawColors = (repo_color4d_t*)malloc(sizeof(*rawColors) * nCount);
+	uint32_t nCount = 10;
+	//using malloc to get un-initalised values to fill the memory. 
+	repo_vector_t *rawVec = (repo_vector_t*)malloc(sizeof(*rawVec) * nCount);
+	repo_vector_t *rawNorm = (repo_vector_t*)malloc(sizeof(*rawNorm) * nCount);
+	repo_vector2d_t *rawUV = (repo_vector2d_t*)malloc(sizeof(*rawUV) * nCount);
+	repo_color4d_t *rawColors = (repo_color4d_t*)malloc(sizeof(*rawColors) * nCount);
 
-	//ASSERT_TRUE(rawVec != nullptr);
-	//ASSERT_TRUE(rawNorm != nullptr);
-	//ASSERT_TRUE(rawUV != nullptr);
+	ASSERT_TRUE(rawVec);
+	ASSERT_TRUE(rawNorm);
+	ASSERT_TRUE(rawUV);
 
-	////Set up faces
-	//std::vector<repo_face_t> faces;
-	//faces.reserve(nCount);
-	//for (uint32_t i = 0; i < nCount; ++i)
-	//{
-	//	repo_face_t f;
-	//	f.numIndices = 3;
-	//	f.indices = (uint32_t*)malloc(sizeof(*f.indices) * 3);
-	//}
+	//Set up faces
+	std::vector<repo_face_t> faces;
+	std::vector<repo_vector_t> vectors;
+	std::vector<repo_vector_t> normals;
+	std::vector<std::vector<repo_vector2d_t>> uvChannels;
+	std::vector<repo_color4d_t> colors;
+	uvChannels.resize(1);
+	faces.reserve(nCount);
+	vectors.reserve(nCount);
+	normals.reserve(nCount);
+	uvChannels[0].reserve(nCount);
+	colors.reserve(nCount);
+	for (uint32_t i = 0; i < nCount; ++i)
+	{
 
-	//std::vector<repo_vector_t> vectors;
-	//vectors.resize(nCount);
-	//std::vector<repo_vector_t> normals;
-	//normals.resize(nCount);
+		repo_face_t face = { (uint32_t)std::rand(), (uint32_t)std::rand(), (uint32_t)std::rand() };
+		faces.push_back(face);
 
-	//std::memcpy(vectors.data(), rawVec, nCount*sizeof(*rawVec));
-	//std::memcpy(normals.data(), rawNorm, nCount*sizeof(*rawNorm));
+		vectors.push_back({(float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f});
+		normals.push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
+		uvChannels[0].push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f});
+		colors.push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
+	}
+	
+	std::vector<std::vector<float>> boundingBox, outLine;
+	boundingBox.resize(2);
+	boundingBox[0] = { std::rand() / 100.f, std::rand() / 100.f, std::rand() / 100.f };
+	boundingBox[1] = { std::rand() / 100.f, std::rand() / 100.f, std::rand() / 100.f };
+	outLine = boundingBox;
 
-	//std::vector<std::vector<float>> boundingBox, outLine;
-	//boundingBox.resize(2);
-	//boundingBox[0] = { 1.0, 1.0, 2.0 };
-	//boundingBox[1] = { 1.5f, 10.1f, 23.1f };
-	//outLine = boundingBox;
+	
+	std::string name = "meshTest";
 
-	//std::vector<std::vector<repo_vector2d_t>> uvChannels;
-	//uvChannels.resize(1);
-	//std::memcpy(uvChannels[0].data(), rawUV, nCount*sizeof(*rawUV));
+	//End of setting up data... the actual testing happens here.
 
-	//std::vector<repo_color4d_t> colors;
-	//colors.resize(nCount);
-	//std::memcpy(colors.data(), rawColors, nCount*sizeof(*rawColors));
+	MeshNode mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, outLine, name);
 
-	//free(rawVec);
-	//free(rawNorm);
-	//free(rawUV);
-	//free(rawColors);
+	auto vOut = mesh.getVertices();
+	auto nOut = mesh.getNormals();
+	auto fOut = mesh.getFaces();
+	auto cOut = mesh.getColors();
+	auto uvOut = mesh.getUVChannelsSeparated();
+	EXPECT_TRUE(compareVectors(vectors, vOut));
+	EXPECT_TRUE(compareVectors(normals, nOut));
+	EXPECT_TRUE(compareStdVectors(faces, fOut));
+	EXPECT_TRUE(compareVectors(colors, cOut));
+	EXPECT_TRUE(compareVectors(uvChannels, uvOut));
+
+	auto bbox = mesh.getBoundingBox();
+	ASSERT_EQ(boundingBox.size(), bbox.size());
+	ASSERT_EQ(3, boundingBox[0].size());
+	ASSERT_EQ(3, boundingBox[1].size());
+
+	EXPECT_TRUE(compareVectors(bbox[0], { boundingBox[0][0], boundingBox[0][1], boundingBox[0][2] }));
+	EXPECT_TRUE(compareVectors(bbox[1], { boundingBox[1][0], boundingBox[1][1], boundingBox[1][2] }));
+	
+}
+
+TEST(RepoBSONFactoryTest, MakeReferenceNodeTest)
+{
+	std::string dbName  = "testDB";
+	std::string proName = "testProj";
+	repoUUID revId = generateUUID();
+	bool isUnique = true;
+	std::string name = "refNodeName";
+	
+	ReferenceNode ref = RepoBSONFactory::makeReferenceNode(dbName, proName, revId, isUnique, name);
+
+	ASSERT_FALSE(ref.isEmpty());
+
+	EXPECT_EQ(dbName, ref.getDatabaseName());
+	EXPECT_EQ(proName, ref.getProjectName());
+	EXPECT_EQ(revId, ref.getRevisionID());
+	EXPECT_EQ(isUnique, ref.useSpecificRevision());
+	EXPECT_EQ(name, ref.getName());
+
+	ReferenceNode ref2 = RepoBSONFactory::makeReferenceNode(dbName, proName, revId, !isUnique, name);
+	EXPECT_EQ(!isUnique, ref2.useSpecificRevision());
+}
+
+TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
+{
+
+	std::string owner = "revOwner";
+	repoUUID branchID = generateUUID();
+	std::vector<repoUUID> currentNodes;
+	size_t currCount = 10;
+	currentNodes.reserve(currCount);
+	for (size_t i = 0; i < currCount; ++i)
+		currentNodes.push_back(generateUUID());
+	std::vector<std::string> files = {"test1", "test5"};
+	std::vector<repoUUID> parents;
+	size_t parentCount = 5;
+	parents.reserve(parentCount);
+	for (size_t i = 0; i < parentCount; ++i)
+		parents.push_back(generateUUID());
+	std::string message = "this is some random message to test message"; 
+	std::string tag = "this is a random tag to test tags";
+	std::vector<double> offset = { std::rand() / 100., std::rand() / 100., std::rand() / 100. };
 
 
-	//std::string name = "meshTest";
+	RevisionNode rev = RepoBSONFactory::makeRevisionNode(owner, branchID, currentNodes, files, parents, offset, message, tag);
+	EXPECT_EQ(owner, rev.getAuthor());
+	EXPECT_EQ(branchID, rev.getSharedID());	
+	EXPECT_EQ(message, rev.getMessage());
+	EXPECT_EQ(tag, rev.getTag());
+	//fileNames changes after it gets into the bson, just check the size
+	EXPECT_EQ(files.size(), rev.getOrgFiles().size());
 
-	////End of setting up data... the actual testing happens here.
+	EXPECT_TRUE(compareStdVectors(currentNodes, rev.getCurrentIDs()));
+	EXPECT_TRUE(compareStdVectors(parents, rev.getParentIDs()));
+	EXPECT_TRUE(compareStdVectors(offset, rev.getCoordOffset()));
 
-	//MeshNode mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, outLine, name);
+	//ensure no random parent being generated
+	std::vector<repoUUID> emptyParents;
+	RevisionNode rev2 = RepoBSONFactory::makeRevisionNode(owner, branchID, currentNodes, files, emptyParents, offset, message, tag);
+	EXPECT_EQ(0, rev2.getParentIDs().size());
+}
 
-	//auto vOut = mesh.getVertices();
-	//auto nOut = mesh.getNormals();
-	////auto fOut = mesh.getFaces();
-	//EXPECT_TRUE(compareVectors(vectors, *vOut));
-	//EXPECT_TRUE(compareVectors(normals, *nOut));
-	////EXPECT_TRUE(compareVectors(faces, *fOut));
+TEST(RepoBSONFactoryTest, MakeTextureNodeTest)
+{
+	std::string ext = "jpg";
+	std::string name = "textureNode." + ext;
+	std::string data = "The value of this texture is represented by this string as all it takes is a char*";
+	int width = 100, height = 110;
 
-	//delete vOut;
-	//delete nOut;
-	////delete fOut;
+	TextureNode tex = RepoBSONFactory::makeTextureNode(name, data.c_str(), data.size(), width, height);
 
-	//for (repo_face_t face : faces)
-	//{
-	//	free(face.indices);
-	//}
+	ASSERT_FALSE(tex.isEmpty());
 
+	EXPECT_EQ(name, tex.getName());
+	EXPECT_EQ(width, tex.getField(REPO_LABEL_WIDTH).Int());
+	EXPECT_EQ(height, tex.getField(REPO_LABEL_HEIGHT).Int());
+	EXPECT_EQ(ext, tex.getFileExtension());
+	std::vector<char> rawOut = tex.getRawData();
+	ASSERT_EQ(data.size(), rawOut.size());
+	EXPECT_EQ(0, memcmp(data.c_str(), rawOut.data(), data.size()));
 
+	//make sure the code doesn't fail over if for some reason the name does not contain the extension
+	TextureNode tex2 = RepoBSONFactory::makeTextureNode("noExtensionName", data.c_str(), data.size(), width, height);
+}
+
+TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
+{
+	//If I make a transformation with no parameters, it should be identity matrix
+	std::vector<float> identity = 
+				{ 1, 0, 0, 0, 
+				  0, 1, 0, 0, 
+				  0, 0, 1, 0, 
+				  0, 0, 0, 1 };
+
+	TransformationNode trans = RepoBSONFactory::makeTransformationNode();
+
+	ASSERT_FALSE(trans.isEmpty());	
+	EXPECT_TRUE(compareStdVectors(identity, trans.getTransMatrix(false)));
+
+	std::vector<std::vector<float>> transMat;
+	std::vector<float> transMatFlat;
+	transMat.resize(4);
+	for (int i = 0; i < 4; ++i)
+		for (int j = 0; j < 4; ++j)
+	{
+		transMat[i].push_back(std::rand() / 100.);
+		transMatFlat.push_back(transMat[i][j]);
+	}
+	std::string name = "myTransTest";
+
+	std::vector<repoUUID> parents;
+	for (int i = 0; i < 10; ++i)
+		parents.push_back(generateUUID());
+
+	TransformationNode trans2 = RepoBSONFactory::makeTransformationNode(transMat, name, parents);
+
+	ASSERT_FALSE(trans2.isEmpty());
+	EXPECT_EQ(name, trans2.getName());
+	std::vector<float> matrix = trans2.getTransMatrix(false);
+	
+	EXPECT_TRUE(compareStdVectors(transMatFlat, matrix));
+	EXPECT_TRUE(compareStdVectors(parents, trans2.getParentIDs()));
+
+	//ensure random parents aren't thrown in
+	parents.clear();
+	TransformationNode trans3 = RepoBSONFactory::makeTransformationNode(transMat, name, parents);
+	EXPECT_EQ(parents.size(), trans3.getParentIDs().size());
 }

@@ -28,7 +28,7 @@ PropertyTree::PropertyTree() :
 }
 
 PropertyTree::PropertyTree(const bool &enableJSONWorkAround) :
-	hackStrings(false)
+	hackStrings(enableJSONWorkAround)
 {}
 
 
@@ -97,7 +97,15 @@ void PropertyTree::addToTree<std::string>(
 		else
 			tree.add(label, value);
 	}
-	
+
+}
+
+template <>
+void PropertyTree::addToTree<repoUUID>(
+	const std::string          &label,
+	const repoUUID             &value)
+{
+	addToTree(label, boost::lexical_cast<std::string>(value));
 }
 
 
@@ -113,4 +121,23 @@ void PropertyTree::addToTree<repo_vector_t>(
 
 
 	addToTree(label, ss.str());
+}
+
+template <>
+void PropertyTree::addToTree<PropertyTree>(
+	const std::string               &label,
+	const std::vector<PropertyTree> &value,
+	const bool                      &join)
+{
+	//join boolean is irrelevant here.
+	if (value.size())
+	{
+		boost::property_tree::ptree arrayTree;
+		for (const auto &child : value)
+		{
+			arrayTree.push_back(std::make_pair("", child.tree));
+		}
+
+		tree.add_child(label, arrayTree);
+	}
 }

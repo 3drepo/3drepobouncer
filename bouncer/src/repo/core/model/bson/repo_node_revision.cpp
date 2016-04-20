@@ -55,25 +55,61 @@ std::string RevisionNode::getMessage() const
 	return getStringField(REPO_NODE_REVISION_LABEL_MESSAGE);
 }
 
+std::string RevisionNode::getTag() const
+{
+	return getStringField(REPO_NODE_REVISION_LABEL_TAG);
+}
+
+std::vector<double> RevisionNode::getCoordOffset() const
+{
+	std::vector<double> offset;
+	if (hasField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT))
+	{
+		auto offsetObj = getObjectField(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT);
+		if (!offsetObj.isEmpty())
+		{
+			for (int i = 0; i < 3; ++i)
+			{
+				offset.push_back(offsetObj.getField(std::to_string(i)).Double());
+			}
+		}
+		else
+		{
+			offset.push_back(0);
+			offset.push_back(0);
+			offset.push_back(0);
+		}
+		
+	}
+	else
+	{
+		offset.push_back(0);
+		offset.push_back(0);
+		offset.push_back(0);
+	}
+
+	return offset;
+}
+
 std::vector<repoUUID> RevisionNode::getCurrentIDs() const
 {
 	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS);
 }
-
-std::vector<repoUUID> RevisionNode::getAddedIDs() const
-{
- 	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_ADDED_SHARED_IDS);
-}
-
-std::vector<repoUUID> RevisionNode::getModifiedIDs() const
-{
-	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_MODIFIED_SHARED_IDS);
-}
-
-std::vector<repoUUID> RevisionNode::getDeletedIDs() const
-{
-	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_DELETED_SHARED_IDS);
-}
+//
+//std::vector<repoUUID> RevisionNode::getAddedIDs() const
+//{
+// 	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_ADDED_SHARED_IDS);
+//}
+//
+//std::vector<repoUUID> RevisionNode::getModifiedIDs() const
+//{
+//	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_MODIFIED_SHARED_IDS);
+//}
+//
+//std::vector<repoUUID> RevisionNode::getDeletedIDs() const
+//{
+//	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_DELETED_SHARED_IDS);
+//}
 
 std::vector<std::string> RevisionNode::getOrgFiles() const
 {

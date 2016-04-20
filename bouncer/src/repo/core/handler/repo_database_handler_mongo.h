@@ -80,19 +80,7 @@ namespace repo{
 				* Disconnects the handler and resets the instance
 				* Must call this before trying to reconnect to another database!
 				*/
-				static void disconnectHandler()
-				{
-					if (handler)
-					{
-						repoInfo << "Disconnecting from database...";
-						delete handler;
-						handler = nullptr;
-					}
-					else
-					{
-						repoTrace << "Attempting to disconnect a handler without ever instantiating it!";
-					}
-				}
+				static void disconnectHandler();
 
 				/**
 				 * Returns the instance of MongoDatabaseHandler
@@ -110,7 +98,7 @@ namespace repo{
 					const std::string &host,
 					const int         &port,
 					const uint32_t    &maxConnections,
-					const std::string &dbName,
+					const std::string &dbName = std::string(),
 					const std::string &username = std::string(),
 					const std::string &password = std::string(),
 					const bool        &pwDigested = false);
@@ -133,7 +121,7 @@ namespace repo{
 				* @param username user name for authentication
 				* @param password password of the user
 				* @param pwDigested true if pw is digested
-				* @return returns the constructed BSON object, or 0 if username is empty
+				* @return returns the constructed BSON object, or 0 nullptr username is empty
 				*/
 				repo::core::model::RepoBSON* createBSONCredentials(
 					const std::string &dbName,
@@ -169,12 +157,11 @@ namespace repo{
 				* the first n items.
 				* @param database name of database
 				* @param collection name of collection
+				* @param skip number of maximum items to skip (default is 0)
+				* @param limit number of maximum items to return (default is 0)
 				* @param fields fields to get back from the database
 				* @param sortField field to sort upon
 				* @param sortOrder 1 ascending, -1 descending
-				* @param skip specify how many documents to skip
-				* @param limit number of maximum items to return (default is 0)
-				* @return list of RepoBSONs representing the documents
 				*/
 				std::vector<repo::core::model::RepoBSON>
 					getAllFromCollectionTailable(
@@ -221,7 +208,7 @@ namespace repo{
 				 */
 				std::map<std::string, std::list<std::string> > getDatabasesWithProjects(
 					const std::list<std::string> &databases,
-					const std::string &projectExt = "scene");
+					const std::string &projectExt = "history");
 
 				/**
 				 * Get a list of projects associated with a given database (aka company account).
@@ -305,6 +292,19 @@ namespace repo{
 					std::string &errMsg);
 
 				/**
+				* Remove all documents satisfying a certain criteria
+				* @param criteria document to remove
+				* @param database the database the collection resides in
+				* @param collection name of the collection the document is in
+				* @param errMsg name of the database to drop
+				*/
+				bool dropDocuments(
+					const repo::core::model::RepoBSON criteria,
+					const std::string &database,
+					const std::string &collection,
+					std::string &errMsg);
+
+				/**
 				* Remove a role from the database
 				* @param role user bson to remove
 				* @param errmsg error message
@@ -361,7 +361,7 @@ namespace repo{
 					const std::string          &fileName,
 					const std::vector<uint8_t> &bin,
 					      std::string          &errMsg,
-					const std::string          &contentType = ""
+					const std::string          &contentType = "binary/octet-stream"
 					);
 
 				/**
@@ -470,12 +470,15 @@ namespace repo{
 				* @param database name of database
 				* @param collection name of collection
 				* @param criteria search criteria in a bson object
+				* @param sortField field to sort
 				* @return a RepoBSON objects satisfy the given criteria
 				*/
 				repo::core::model::RepoBSON findOneByCriteria(
 					const std::string& database,
 					const std::string& collection,
-					const repo::core::model::RepoBSON& criteria);
+					const repo::core::model::RepoBSON& criteria,
+					const std::string& sortField = ""
+					);
 
 				/**
 				*Retrieves the first document matching given Shared ID (SID), sorting is descending
@@ -495,9 +498,9 @@ namespace repo{
 
 				/**
 				*Retrieves the document matching given Unique ID (SID), sorting is descending
-				* @param name of database
-				* @param name of collectoin
-				* @param share id
+				* @param database name of database
+				* @param collection name of collectoin
+				* @param uuid share id
 				* @return returns the matching bson object
 				*/
 				repo::core::model::RepoBSON findOneByUniqueID(

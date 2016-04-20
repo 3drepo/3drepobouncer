@@ -109,7 +109,12 @@ std::string RepoRole::dbActionToString(const DBActions &action)
 		return "revokeRole";
 	case DBActions::VIEW_ROLE:
 		return "viewRole";
+	case DBActions::UNKNOWN:
+		//We recognise it as unknown, so we don't need to throw an error here.
+		break;
 	default:
+		//This error is only thrown if someone added the action in enum but didn't add a case here
+		//If you see this error you should simply add a case here
 		repoError << "Unrecognised action value: " << (uint32_t)action;
 	}
     return std::string(); //only default values will fall through and return empty string.
@@ -183,7 +188,7 @@ DBActions RepoRole::stringToDBAction(const std::string &action)
     {
         return DBActions::VIEW_ROLE;
     }
-    repoWarning << "Unrecognised privileged action: " << action;
+    repoDebug << "Unrecognised privileged action: " << action << " ignoring...";
 
     return DBActions::UNKNOWN;
 
@@ -425,15 +430,83 @@ void RepoRole::updateActions(
 		{
 			vec.push_back(DBActions::INSERT);
 		}
+		else if (collectionType == "scene.files")
+		{
+			vec.push_back(DBActions::INSERT);
+		}
+		else if (collectionType == "scene.chunks")
+		{
+			vec.push_back(DBActions::INSERT);
+		}
 		else if (collectionType == "stash.3drepo")
 		{
 			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
+		}
+		else if (collectionType == "stash.3drepo.files")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
+		}
+		else if (collectionType == "stash.3drepo.chunks")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
 		}
 		else if (collectionType == "stash.src")
 		{
 			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
+		}
+		else if (collectionType == "stash.src.files")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
+		}
+		else if (collectionType == "stash.src.chunks")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
+		}
+		else if (collectionType == "stash.x3d")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
+		}
+		else if (collectionType == "stash.x3d.files")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
+		}
+		else if (collectionType == "stash.x3d.chunks")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
+		}
+		else if (collectionType == "stash.gltf")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
+		}
+		else if (collectionType == "stash.gltf.files")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
+		}
+		else if (collectionType == "stash.gltf.chunks")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
 		}
 		else if (collectionType == "history")
+		{
+			vec.push_back(DBActions::INSERT);
+		}
+		else if (collectionType == "history.files")
+		{
+			vec.push_back(DBActions::INSERT);
+		}
+		else if (collectionType == "history.chunks")
 		{
 			vec.push_back(DBActions::INSERT);
 		}

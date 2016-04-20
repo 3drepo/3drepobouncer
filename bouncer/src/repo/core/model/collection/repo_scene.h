@@ -107,9 +107,13 @@ namespace repo{
 						const std::string                                  &projectName = std::string(),
 						const std::string                                  &sceneExt = REPO_COLLECTION_SCENE,
 						const std::string                                  &revExt = REPO_COLLECTION_HISTORY,
-						const std::string                                  &stashExt = REPO_COLLECTION_REPOSTASH,
+						const std::string                                  &stashExt = REPO_COLLECTION_STASH_REPO,
 						const std::string                                  &rawExt = REPO_COLLECTION_RAW,
-						const std::string                                  &issuesExt = REPO_COLLECTION_ISSUES);
+						const std::string                                  &issuesExt = REPO_COLLECTION_ISSUES,
+						const std::string                                  &srcExt = REPO_COLLECTION_STASH_SRC,
+						const std::string                                  &gltfExt = REPO_COLLECTION_STASH_GLTF,
+						const std::string                                  &x3dExt = REPO_COLLECTION_STASH_X3D,
+						const std::string                                  &jsonExt = REPO_COLLECTION_STASH_JSON);
 
 					/**
 					* Used for constructing scene graphs from model convertors
@@ -145,9 +149,13 @@ namespace repo{
 						const RepoNodeSet              &unknowns = RepoNodeSet(),
 						const std::string              &sceneExt = REPO_COLLECTION_SCENE,
 						const std::string              &revExt = REPO_COLLECTION_HISTORY,
-						const std::string              &stashExt = REPO_COLLECTION_REPOSTASH,
+						const std::string              &stashExt = REPO_COLLECTION_STASH_REPO,
 						const std::string              &rawExt = REPO_COLLECTION_RAW,
-						const std::string              &issuesExt = REPO_COLLECTION_ISSUES);
+						const std::string              &issuesExt = REPO_COLLECTION_ISSUES,
+						const std::string              &srcExt = REPO_COLLECTION_STASH_SRC,
+						const std::string              &gltfExt = REPO_COLLECTION_STASH_GLTF,
+						const std::string              &x3dExt = REPO_COLLECTION_STASH_X3D,
+						const std::string              &jsonExt = REPO_COLLECTION_STASH_JSON);
 
 					/**
 					* Default Deconstructor
@@ -165,10 +173,12 @@ namespace repo{
 					* Add metadata that has a matching name as the transformation into the scene
 					* @param metadata set of metadata to attach
 					* @param exactMatch whether the name has to be an exact match or a substring will do
+					* @param propagateData if set to true, propagate down the changes to all meshes of this subtree
 					*/
 					void addMetadata(
 						RepoNodeSet &metadata,
-						const bool        &exactMatch);
+						const bool  &exactMatch,
+						const bool  &propagateData = true);
 
 
 					/**
@@ -238,12 +248,57 @@ namespace repo{
 					}
 
 					/**
+					* Get stash extension for this project
+					* @return returns the src extension
+					*/
+					std::string getStashExtension() const
+					{
+						return stashExt;
+					}
+
+					/**
 					* Get raw extension for this project
 					* @return returns the raw extension 
 					*/
 					std::string getRawExtension() const
 					{
 						return rawExt;
+					}
+
+					/**
+					* Get src extension for this project
+					* @return returns the src extension
+					*/
+					std::string getSRCExtension() const
+					{
+						return srcExt;
+					}
+
+					/**
+					* Get gltf extension for this project
+					* @return returns the gltf extension
+					*/
+					std::string getGLTFExtension() const
+					{
+						return gltfExt;
+					}
+
+					/**
+					* Get x3d extension for this project
+					* @return returns the x3d extension
+					*/
+					std::string getX3DExtension() const
+					{
+						return x3dExt;
+					}
+
+					/**
+					* Get json extension for this project
+					* @return returns the json extension
+					*/
+					std::string getJSONExtension() const
+					{
+						return jsonExt;
 					}
 
 					/**
@@ -257,6 +312,7 @@ namespace repo{
 						else 
 							return revision;
 					}
+					
 
 					static std::vector<std::string> getProjectExtensions()
 					{
@@ -270,6 +326,16 @@ namespace repo{
 					std::string getProjectName() const
 					{
 						return projectName;
+					}
+
+					/**
+					* Get the world offset shift coordinates of the model
+					* @return a vector of double denoting its offset
+					*/
+					std::vector<double> getWorldOffset() const
+					{
+
+						return worldOffset.size() ? worldOffset : std::vector<double>({0, 0, 0});
 					}
 
 					/**
@@ -322,6 +388,15 @@ namespace repo{
 					* @param msg message to go with the commit
 					*/
 					void setCommitMessage(const std::string &msg) { commitMsg = msg; }
+
+					/**
+					* Set the world offset value for the model
+					* models are often shifted for better viewing purposes
+					* this value tells us how much to shift to put it back into
+					* it's relative world coordinates.
+					*/
+					void setWorldOffset(
+						const std::vector<double> &offset);
 
 					/**
 					* Get branch name return uuid of branch there is no name
@@ -453,17 +528,7 @@ namespace repo{
 						const RepoNode  *parent,
 							  RepoNode  *child,
 						const bool      &noUpdate = false);
-
-					/**
-					* Get children nodes of a specified parent
-					* @param parent shared UUID of the parent node
-					* @ return a vector of pointers to children node (potentially none)
-					*/
-					std::vector<RepoNode*>
-						getChildrenAsNodes(const repoUUID &parent) const
-					{
-						return getChildrenAsNodes(GraphType::DEFAULT, parent);
-					}
+										
 
 					/**
 					* Get children nodes of a specified parent
@@ -540,7 +605,7 @@ namespace repo{
 					* @return a RepoNodeSet of materials
 					*/
 					RepoNodeSet getAllCameras(
-						const GraphType &gType = GraphType::DEFAULT) const
+						const GraphType &gType) const
 					{
 						return  gType == GraphType::OPTIMIZED ? stashGraph.cameras : graph.cameras;
 					}
@@ -550,7 +615,7 @@ namespace repo{
 					* @return a RepoNodeSet of materials
 					*/
 					RepoNodeSet getAllMaterials(
-						const GraphType &gType = GraphType::DEFAULT) const
+						const GraphType &gType) const
 					{
 						return  gType == GraphType::OPTIMIZED ? stashGraph.materials : graph.materials;
 					}
@@ -570,7 +635,7 @@ namespace repo{
 					* @return a RepoNodeSet of meshes
 					*/
 					RepoNodeSet getAllMeshes(
-						const GraphType &gType = GraphType::DEFAULT) const
+						const GraphType &gType) const
 					{
 						return  gType == GraphType::OPTIMIZED ? stashGraph.meshes : graph.meshes;
 					}
@@ -581,7 +646,7 @@ namespace repo{
 					* @return a RepoNodeSet of metadata
 					*/
 					RepoNodeSet getAllMetadata(
-						const GraphType &gType = GraphType::DEFAULT) const
+						const GraphType &gType) const
 					{
 						return  gType == GraphType::OPTIMIZED ? stashGraph.metadata : graph.metadata;
 					}
@@ -591,7 +656,7 @@ namespace repo{
 					* @return a RepoNodeSet of references
 					*/
 					RepoNodeSet getAllReferences(
-						const GraphType &gType = GraphType::DEFAULT) const
+						const GraphType &gType) const
 					{
 						return  gType == GraphType::OPTIMIZED ? stashGraph.references : graph.references;
 					}
@@ -602,7 +667,7 @@ namespace repo{
 					* @return a RepoNodeSet of textures
 					*/
 					RepoNodeSet getAllTextures(
-						const GraphType &gType = GraphType::DEFAULT) const
+						const GraphType &gType) const
 					{
 						return  gType == GraphType::OPTIMIZED ? stashGraph.textures : graph.textures;
 					}
@@ -612,7 +677,7 @@ namespace repo{
 					* @return a RepoNodeSet of transformations
 					*/
 					RepoNodeSet getAllTransformations(
-						const GraphType &gType = GraphType::DEFAULT) const
+						const GraphType &gType) const
 					{
 						return  gType == GraphType::OPTIMIZED ? stashGraph.transformations : graph.transformations;
 					}
@@ -627,16 +692,30 @@ namespace repo{
 						return std::vector<repoUUID>(newAdded.begin(), newAdded.end());
 					}
 
-					std::set<repoUUID> getAllSharedIDs() const
+					std::set<repoUUID> getAllSharedIDs(
+						const GraphType &gType) const
 					{
 						std::set<repoUUID> sharedIDs;
 
+						const auto &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+
 						boost::copy(
-							graph.sharedIDtoUniqueID | boost::adaptors::map_keys,
+							g.sharedIDtoUniqueID | boost::adaptors::map_keys,
 							std::inserter(sharedIDs, sharedIDs.begin()));
 
 						return sharedIDs;
 					}
+
+					/**
+					* Get all desecendants, of a particular type, of this shared ID
+					* @param sharedID sharedID of the node in question
+					* @param type type of desecendants to get
+					* @return returns all child/grandchild/great grandchild etc node of type "type" for this node
+					*/
+					std::vector<RepoNode*> getAllDescendantsByType(
+						const GraphType &gType,
+						const repoUUID  &sharedID,
+						const NodeType  &type) const;
 
 					/**
 					* Get all ID of nodes which are modified since last revision
@@ -670,22 +749,18 @@ namespace repo{
 					}
 
 
+					/**
+					* Get a bounding box for the entire scene
+					* @return returns bounding box for the whole graph.
+					*/
+					std::vector<repo_vector_t> getSceneBoundingBox() const;
+
+
 					size_t getTotalNodesChanged() const
 					{
 						return newRemoved.size() + newAdded.size() + newModified.size();
 					}
-
-					/**
-					* Get the node given the shared ID of this node
-					* @param sharedID shared ID of the node
-					* @return returns a pointer to the node if found.
-					*/
-					RepoNode* getNodeBySharedID(
-						const repoUUID &sharedID) const
-					{
-
-						return getNodeBySharedID(GraphType::DEFAULT, sharedID);
-					}
+					
 
 					/**
 					* Get the node given the shared ID of this node
@@ -727,11 +802,11 @@ namespace repo{
 					* check if Root Node exists
 					* @return returns true if rootNode is not null.
 					*/
-					bool hasRoot(const GraphType &gType = GraphType::DEFAULT) const {
+					bool hasRoot(const GraphType &gType) const {
 						const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph; 
 						return (bool)g.rootNode;
 					}
-					RepoNode* getRoot(const GraphType &gType = GraphType::DEFAULT) const {
+					RepoNode* getRoot(const GraphType &gType) const {
 						const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 						return g.rootNode;
 					}
@@ -741,7 +816,7 @@ namespace repo{
 					* graph representation
 					* @return number of nodes within the graph
 					*/
-					uint32_t getItemsInCurrentGraph(const GraphType &gType = GraphType::DEFAULT) {
+					uint32_t getItemsInCurrentGraph(const GraphType &gType) {
 						const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 						return g.nodesByUniqueID.size();
 					}
@@ -779,7 +854,7 @@ namespace repo{
 						RepoNode						  *newNode,
 						const bool                        &overwrite = false)
 					{
-						modifyNode(gtype, getNodeBySharedID(sharedID), newNode, overwrite);
+						modifyNode(gtype, getNodeBySharedID(gtype, sharedID), newNode, overwrite);
 					}
 
 					/**
@@ -839,20 +914,7 @@ namespace repo{
 						const RepoNodeSet nodes,
 						std::string &errMsg,
 						RepoNodeSet *collection);
-
-					/**
-					* Add node to the following maps: UniqueID -> Node, SharedID -> UniqueID,
-					* Parent->Children.
-					* It will also assign root node if the node has no parent.
-					* @param node pointer to the node to add
-					* @param errMsg error message if it returns false
-					* @return returns true if succeeded
-					*/
-					bool addNodeToMaps(RepoNode *node, std::string &errMsg)
-					{
-						//add to unoptimised graph by default
-						return addNodeToMaps(GraphType::DEFAULT, node, errMsg);
-					}
+					
 
 					/**
 					* Add node to the following maps: UniqueID -> Node, SharedID -> UniqueID,
@@ -923,6 +985,19 @@ namespace repo{
 						std::string &errMsg);
 
 					/**
+					* Recursive function to find the scene's bounding box
+					* @param gtype type of graph to navigate
+					* @param node current node
+					* @param mat transformation matrix
+					* @param bbox boudning box (to return/update)
+					*/
+					void getSceneBoundingBoxInternal(
+						const GraphType            &gType,
+						const RepoNode             *node,
+						const std::vector<float>   &mat,
+						std::vector<repo_vector_t> &bbox) const;
+
+					/**
 					* populate the collections (cameras, meshes etc) with the given nodes
 					* @param gtype which graph to populate
 					* @param handler database handler to use for retrieval
@@ -934,35 +1009,7 @@ namespace repo{
 						const GraphType &gtype,
 						repo::core::handler::AbstractDatabaseHandler *handler, 
 						std::vector<RepoBSON> nodes, 
-						std::string &errMsg);
-
-					/**
-					* Populate the collections with the given node sets
-					* This populates the scene graph information and also track the nodes that are added.
-					* i.e. this assumes the nodes did not exist in the previous revision (if any)
-					* @param cameras Repo Node set of cameras
-					* @param meshes  Repo Node set of meshes
-					* @param materials Repo Node set of materials
-					* @param metadata Repo Node set of metadata
-					* @param textures Repo Node set of textures
-					* @param transformations Repo Node set of transformations
-					* @return returns true if scene graph populated with no errors
-					*/
-					void populateAndUpdate(
-						const RepoNodeSet &cameras,
-						const RepoNodeSet &meshes,
-						const RepoNodeSet &materials,
-						const RepoNodeSet &metadata,
-						const RepoNodeSet &textures,
-						const RepoNodeSet &transformations,
-						const RepoNodeSet &references,
-						const RepoNodeSet &maps,
-						const RepoNodeSet &unknowns)
-					{
-						//populate the non optimised graph by default
-						populateAndUpdate(GraphType::DEFAULT, cameras, meshes, materials, metadata,
-							textures, transformations, references, maps, unknowns);
-					}
+						std::string &errMsg);					
 
 					/**
 					* Populate the collections with the given node sets
@@ -989,6 +1036,14 @@ namespace repo{
 						const RepoNodeSet &maps,
 						const RepoNodeSet &unknowns);
 
+					/**
+					* Shift the model by the given vector
+					* this alter the root node with the given translation
+					* @param offset a vector 3 double denoting the vector shift
+					*/
+					void shiftModel(
+						const std::vector<double> &offset);
+
 
 					/*
 					* ---------------- Scene Graph settings ----------------
@@ -999,8 +1054,13 @@ namespace repo{
 					std::string stashExt;      /*! extension for optimized graph (Default: stash.3drepo)*/
 					std::string rawExt;      /*! extension for raw file dumps (e.g. original files) (Default: raw)*/
 					std::string issuesExt;      /*! extension for issues*/
+					std::string srcExt;      /*! extension for SRC stash files*/
+					std::string gltfExt;      /*! extension for GLTF stash files*/
+					std::string x3dExt;      /*! extension for X3Dom backbone files*/
+					std::string jsonExt;      /*! extension for JSON graph metadata files*/
 					std::vector<std::string> refFiles;  //Original Files that created this scene
 					std::vector<RepoNode*> toRemove;
+					std::vector<double> worldOffset;
 					repoUUID   revision;
 					repoUUID   branch;
 					std::string commitMsg;

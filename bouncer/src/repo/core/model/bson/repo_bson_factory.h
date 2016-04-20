@@ -263,15 +263,15 @@ public:
     * @return returns a mesh node
     */
     static MeshNode makeMeshNode(
-            std::vector<repo_vector_t>                  &vertices,
-            std::vector<repo_face_t>                    &faces,
-            std::vector<repo_vector_t>                  &normals,
-            std::vector<std::vector<float>>             &boundingBox,
-            std::vector<std::vector<repo_vector2d_t>>   &uvChannels,
-            std::vector<repo_color4d_t>                 &colors,
-            std::vector<std::vector<float>>             &outline,
-            const std::string                           &name = std::string(),
-            const int                                   &apiLevel = REPO_NODE_API_LEVEL_1);
+		const std::vector<repo_vector_t>                  &vertices,
+		const std::vector<repo_face_t>                    &faces,
+		const std::vector<repo_vector_t>                  &normals,
+		const std::vector<std::vector<float>>             &boundingBox,
+		const std::vector<std::vector<repo_vector2d_t>>   &uvChannels = std::vector<std::vector<repo_vector2d_t>>(),
+		const std::vector<repo_color4d_t>                 &colors = std::vector<repo_color4d_t>(),
+		const std::vector<std::vector<float>>             &outline = std::vector<std::vector<float>>(),
+        const std::string                                 &name = std::string(),
+        const int                                         &apiLevel = REPO_NODE_API_LEVEL_1);
 
 
     /**
@@ -297,11 +297,12 @@ public:
     * @param user name of the user who is commiting this project
     * @param branch UUID of the branch
     * @param currentNodes vector of current nodes (unique IDs)
-    * @param added    vector of what nodes are added    (shared IDs)
-    * @param removed  vector of what nodes are deleted  (shared IDs)
-    * @param modified vector of what nodes are modified (shared IDs)
+    //* @param added    vector of what nodes are added    (shared IDs)
+    //* @param removed  vector of what nodes are deleted  (shared IDs)
+    //* @param modified vector of what nodes are modified (shared IDs)
     * @param files    vector of the original files for this model
     * @param parent   UUID of parent (in a vector)
+	* @param worldOffset x,y,z offset for world coordinates
     * @param message  A message to describe what this commit is for (optional)
     * @param tag      A tag for this specific revision (optional)
     * @param apiLevel API Level(optional)
@@ -312,11 +313,12 @@ public:
             const std::string			   &user,
             const repoUUID                 &branch,
             const std::vector<repoUUID>    &currentNodes,
-            const std::vector<repoUUID>    &added,
-            const std::vector<repoUUID>    &removed,
-            const std::vector<repoUUID>    &modified,
+            //const std::vector<repoUUID>    &added,
+            //const std::vector<repoUUID>    &removed,
+            //const std::vector<repoUUID>    &modified,
             const std::vector<std::string> &files = std::vector<std::string>(),
             const std::vector<repoUUID>    &parent = std::vector<repoUUID>(),
+			const std::vector<double>       &worldOffset = std::vector<double>(),
             const std::string              &message = std::string(),
             const std::string              &tag = std::string(),
             const int                      &apiLevel = REPO_NODE_API_LEVEL_1

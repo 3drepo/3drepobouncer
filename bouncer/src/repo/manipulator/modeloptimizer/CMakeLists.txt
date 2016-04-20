@@ -7,12 +7,14 @@
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_optimizer_abstract.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_optimizer_multipart.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_optimizer_trans_reduction.cpp
 	CACHE STRING "SOURCES" FORCE)
 
 set(HEADERS
 	${HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_optimizer_abstract.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_optimizer_multipart.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_optimizer_trans_reduction.h
 	CACHE STRING "HEADERS" FORCE)
 

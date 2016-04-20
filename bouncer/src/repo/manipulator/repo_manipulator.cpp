@@ -30,6 +30,10 @@
 #include "modelconvertor/export/repo_model_export_src.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
+#include "modeloptimizer/repo_optimizer_multipart.h"
+#include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
+#include "modelutility/repo_maker_selection_tree.h"
+
 
 
 using namespace repo::manipulator;
@@ -169,20 +173,33 @@ void RepoManipulator::commitScene(
 	std::string msg;
 	if (handler && scene && scene->commit(handler, msg, owner.empty() ? cred->getStringField("user") : owner))
 	{
-		repoInfo << "Scene successfully committed to the database";
-		if (scene->commitStash(handler, msg))
+		repoInfo << "Scene successfully committed to the database";	
+		if (!scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size())
 		{
-			repoInfo << "Commited scene stash successfully.";
-
-			repoInfo << "Generating SRC encoding for web viewing...";
-			if (generateAndCommitSRCBuffer(databaseAd, cred, scene))
+			if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)){
+				repoInfo << "Optimised scene not found. Attempt to generate...";
+				generateAndCommitStashGraph(databaseAd, cred, scene);
+			}
+			else if (scene->commitStash(handler, msg))
 			{
-				repoInfo << "SRC file stored into the database";
-			}			
+				repoInfo << "Commited scene stash successfully.";
+			}
+			else
+			{
+				repoError << "Failed to commit scene stash : " << msg;
+			}
+
+			/*repoInfo << "Generating GLTF encoding for web viewing...";
+			if (generateAndCommitGLTFBuffer(databaseAd, cred, scene))
+			{
+				repoInfo << "GLTF file stored into the database";
+			}*/
 		}
-		else
+
+		repoInfo << "Generating Selection Tree JSON...";
+		if (generateAndCommitSelectionTree(databaseAd, cred, scene))
 		{
-			repoError << "Failed to commit scene stash : " << msg;
+			repoInfo << "Selection Tree Stored into the database";
 		}
 	}
 	else
@@ -194,21 +211,22 @@ void RepoManipulator::commitScene(
 }
 
 void RepoManipulator::compareScenes(
-	repo::core::model::RepoScene       *base,
-	repo::core::model::RepoScene       *compare,
-	repo::manipulator::diff::DiffResult &baseResults,
-	repo::manipulator::diff::DiffResult &compResults,
-	const diff::Mode					&diffMode)
+	repo::core::model::RepoScene                  *base,
+	repo::core::model::RepoScene                  *compare,
+	repo::manipulator::diff::DiffResult           &baseResults,
+	repo::manipulator::diff::DiffResult           &compResults,
+	const diff::Mode					          &diffMode,
+	const repo::core::model::RepoScene::GraphType &gType)
 {
 	diff::AbstractDiff *diff = nullptr; 
 	
 	switch (diffMode)
 	{
 	case diff::Mode::DIFF_BY_ID:
-		diff = new diff::DiffBySharedID(base, compare);
+		diff = new diff::DiffBySharedID(base, compare, gType);
 		break;
 	case diff::Mode::DIFF_BY_NAME:
-		diff = new diff::DiffByName(base, compare);
+		diff = new diff::DiffByName(base, compare, gType);
 		break;
 	default:
 		repoError << "Unknown diff mode: " << (int)diffMode;
@@ -356,8 +374,6 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 					<< " of " << database << "." << project;
 				if (lightFetch)
 				{
-
-
 						if (scene->loadStash(handler, errMsg))
 						{
 							repoTrace << "Stash Loaded";
@@ -365,7 +381,7 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 						else
 						{
 							//failed to load stash isn't critical, give it a warning instead of returning false
-							repoWarning << "Error loading stash" << errMsg;
+							repoWarning << "Error loading stash for " << database << "." << project << " : " << errMsg;
 							if (scene->loadScene(handler, errMsg))
 							{
 								repoTrace << "Scene Loaded";
@@ -389,7 +405,7 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 						else
 						{
 							//failed to load stash isn't critical, give it a warning instead of returning false
-							repoWarning << "Error loading stash" << errMsg;
+							repoWarning << "Error loading stash for " << database << "." << project << " : " << errMsg;
 						}
 					}
 					else{
@@ -439,7 +455,7 @@ void RepoManipulator::fetchScene(
 			else
 			{
 				if (!errMsg.empty())
-					repoError << "Error loading stash: " << errMsg;
+					repoWarning << "Error loading stash for " << scene->getDatabaseName() << "." << scene->getProjectName() << " : " << errMsg;
 			}
 
 			errMsg.clear();
@@ -461,47 +477,195 @@ void RepoManipulator::fetchScene(
 	}
 }
 
+bool RepoManipulator::generateAndCommitGLTFBuffer(
+	const std::string                             &databaseAd,
+	const repo::core::model::RepoBSON	          *cred,
+	const repo::core::model::RepoScene            *scene)
+{
+	
+	return generateAndCommitWebViewBuffer(databaseAd, cred, scene, 
+		generateGLTFBuffer(scene), modelconvertor::WebExportType::GLTF);
+}
+
 bool RepoManipulator::generateAndCommitSRCBuffer(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON	          *cred,
 	const repo::core::model::RepoScene            *scene)
 {
-	bool success;
-	modelconvertor::repo_src_export_t v = generateSRCBuffer(scene);
-	if (success = (v.srcFiles.size() + v.x3dFiles.size() + v.jsonFiles.size()))
+	return generateAndCommitWebViewBuffer(databaseAd, cred, scene, 
+		generateSRCBuffer(scene), modelconvertor::WebExportType::SRC);
+}
+
+bool RepoManipulator::generateAndCommitSelectionTree(
+	const std::string                         &databaseAd,
+	const repo::core::model::RepoBSON         *cred,
+	const repo::core::model::RepoScene        *scene
+	)
+{
+	bool success = false;
+	if (success = scene && scene->isRevisioned())
+	{
+		modelutility::SelectionTreeMaker treeMaker(scene);
+		auto buffer = treeMaker.getSelectionTreeAsBuffer();
+		if (success = buffer.size())
+		{
+			std::string databaseName = scene->getDatabaseName();
+			std::string projectName = scene->getProjectName();
+			std::string errMsg;
+			std::string fileName = "/" + databaseName + "/" + projectName + "/revision/" 
+				+ UUIDtoString(scene->getRevisionID()) + "/fulltree.json";
+			repo::core::handler::AbstractDatabaseHandler* handler =
+				repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+			if (handler && handler->insertRawFile(databaseName, projectName + "." + scene->getJSONExtension(), fileName, buffer,errMsg))
+			{
+				repoInfo << "File (" << fileName << ") added successfully.";
+			}
+			else
+			{
+				repoError << "Failed to add file  (" << fileName << "): " << errMsg;
+			}
+
+		}
+		else
+		{
+			repoError << "Failed to generate selection tree: JSON file buffer is empty!";
+		}
+		
+	}
+	return success;
+}
+
+bool RepoManipulator::removeStashGraphFromDatabase(
+	const std::string                         &databaseAd,
+	const repo::core::model::RepoBSON         *cred,
+	repo::core::model::RepoScene* scene
+	)
+{
+	bool success = false;
+	if (scene && scene->isRevisioned())
+	{
+		repo::core::handler::AbstractDatabaseHandler* handler =
+			repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+		std::string errMsg;
+
+		repo::core::model::RepoBSONBuilder builder;
+		builder.append(REPO_NODE_STASH_REF, scene->getRevisionID());
+		success = handler->dropDocuments(builder.obj(), scene->getDatabaseName(), scene->getProjectName() + "." + scene->getStashExtension(), errMsg);
+	}
+
+	return success;
+}
+
+bool RepoManipulator::generateStashGraph(
+	repo::core::model::RepoScene              *scene
+	)
+{
+	bool success = false;
+	if (scene && scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
+	{
+		modeloptimizer::MultipartOptimizer mpOpt;
+		success = mpOpt.apply(scene);
+	}
+	else
+	{
+		repoError << "Failed to generate stash graph: nullptr to scene or empty scene graph!";
+	}
+
+	return success;
+}
+
+
+bool RepoManipulator::generateAndCommitStashGraph(
+	const std::string                         &databaseAd,
+	const repo::core::model::RepoBSON         *cred,
+	repo::core::model::RepoScene              *scene
+	)
+{
+	bool success = false;
+	if (scene && scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
+	{
+
+		if (success = generateStashGraph(scene))
+		{
+			repo::core::handler::AbstractDatabaseHandler* handler =
+				repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+			std::string errMsg;
+			//Remove all stash graph nodes that may have existed for this current revision
+			removeStashGraphFromDatabase(databaseAd, cred, scene);
+
+			if (success &= (bool)handler && scene->commitStash(handler, errMsg))
+			{
+				repoInfo << "Stash Graph committed successfully";
+			}
+			else
+			{
+				repoError << "Failed to commit stash graph: " << errMsg;
+			}
+		}
+		else
+		{
+			repoError << "Failed to generate stash graph.";
+		}
+	}
+	return success;
+}
+
+
+bool RepoManipulator::generateAndCommitWebViewBuffer(
+	const std::string                             &databaseAd,
+	const repo::core::model::RepoBSON	          *cred,
+	const repo::core::model::RepoScene            *scene,
+	const modelconvertor::repo_export_buffers_t   &buffers,
+	const modelconvertor::WebExportType           &exType)
+{
+	bool success = false;
+	if (success = (buffers.geoFiles.size() + buffers.x3dFiles.size() + buffers.jsonFiles.size()))
 	{
 		repo::core::handler::AbstractDatabaseHandler* handler =
 			repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 		if (success = handler)
 		{
 
-			for (const auto bufferPair : v.srcFiles)
+			std::string geoStashExt;
+			switch (exType)
 			{
-				std::string databaseName = scene->getDatabaseName();
-				std::string projectName = scene->getProjectName();
-				std::string prefix = "/" + databaseName + "/" + projectName + "/";
+			case modelconvertor::WebExportType::GLTF:
+				geoStashExt = scene->getGLTFExtension();
+				break;
+			case modelconvertor::WebExportType::SRC:
+				geoStashExt = scene->getSRCExtension();
+				break;
+			default:
+				repoError << "Unknown export type with enum:  " << (uint16_t)exType;
+				return false;
+			}
+
+			std::string x3dStashExt = scene->getX3DExtension();
+			std::string jsonStashExt = scene->getJSONExtension();
+
+
+			for (const auto &bufferPair : buffers.geoFiles)
+			{
+
 				std::string errMsg;
-				//FIXME: constant value somewhere for .stash.src?
-				std::string fileName = prefix+bufferPair.first;
-				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.src", fileName, bufferPair.second,
-					errMsg, "binary/octet-stream"))
+				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + geoStashExt, bufferPair.first, bufferPair.second,
+					errMsg))
 				{
-					repoInfo << "File ("<<fileName <<") added successfully.";
+					repoInfo << "File (" << bufferPair.first << ") added successfully.";
 				}
 				else
 				{
-					repoError << "Failed to add file  ("<<fileName <<"): " << errMsg;
+					repoError << "Failed to add file  (" << bufferPair.first << "): " << errMsg;
 				}
-			}		
-			for (const auto bufferPair : v.x3dFiles)
+			}
+			for (const auto &bufferPair : buffers.x3dFiles)
 			{
 				std::string databaseName = scene->getDatabaseName();
 				std::string projectName = scene->getProjectName();
 				std::string errMsg;
-				//FIXME: constant value somewhere for .stash.x3d?
 				std::string fileName = bufferPair.first;
-				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.x3d", fileName, bufferPair.second,
-					errMsg, "binary/octet-stream"))
+				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + x3dStashExt, fileName, bufferPair.second,
+					errMsg))
 				{
 					repoInfo << "File (" << fileName << ") added successfully.";
 				}
@@ -511,15 +675,14 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 				}
 			}
 
-			for (const auto bufferPair : v.jsonFiles)
+			for (const auto &bufferPair : buffers.jsonFiles)
 			{
 				std::string databaseName = scene->getDatabaseName();
 				std::string projectName = scene->getProjectName();
 				std::string errMsg;
-				//FIXME: constant value somewhere for .stash.x3d?
 				std::string fileName = bufferPair.first;
-				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + ".stash.json_mpc", fileName, bufferPair.second,
-					errMsg, "binary/octet-stream"))
+				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + jsonStashExt, fileName, bufferPair.second,
+					errMsg))
 				{
 					repoInfo << "File (" << fileName << ") added successfully.";
 				}
@@ -530,16 +693,32 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 			}
 		}
 	}
-
 	return success;
-
 }
 
-modelconvertor::repo_src_export_t RepoManipulator::generateSRCBuffer(
+modelconvertor::repo_export_buffers_t RepoManipulator::generateGLTFBuffer(
 	const repo::core::model::RepoScene *scene)
 {
 
-	modelconvertor::repo_src_export_t result;
+	modelconvertor::repo_export_buffers_t result;
+	modelconvertor::GLTFModelExport gltfExport(scene);
+	if (gltfExport.isOk())
+	{
+		repoTrace << "Conversion succeed.. exporting as buffer..";
+		result = gltfExport.getAllFilesExportedAsBuffer();
+	}
+	else
+		repoError << "Export to GLTF failed.";
+
+	return result;
+}
+
+
+modelconvertor::repo_export_buffers_t RepoManipulator::generateSRCBuffer(
+	const repo::core::model::RepoScene *scene)
+{
+
+	modelconvertor::repo_export_buffers_t result;
 	modelconvertor::SRCModelExport srcExport(scene);
 	if (srcExport.isOk())
 	{
@@ -653,6 +832,16 @@ repo::core::model::RepoRoleSettings RepoManipulator::getRoleSettingByName(
 	return settings;
 }
 
+std::shared_ptr<modelutility::PartitioningTree> 
+		RepoManipulator::getScenePartitioning(
+		const repo::core::model::RepoScene *scene,
+		const uint32_t                     &maxDepth
+		)
+{
+	modelutility::RDTreeSpatialPartitioner partitioner(scene, maxDepth);
+	return partitioner.partitionScene();
+}
+
 std::list<std::string> RepoManipulator::getStandardDatabaseRoles(
 	const std::string  &databaseAd)
 {
@@ -691,6 +880,7 @@ repo::core::model::RepoScene*
 	const std::string &filePath,
 	      std::string &msg,
 	const bool &applyReduction,
+	const bool &rotateModel,
     const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
 
@@ -707,11 +897,32 @@ repo::core::model::RepoScene*
 		if (modelConvertor->importModel(filePath, msg))
 		{
 			repoTrace << "model Imported, generating Repo Scene";
-			if ((scene = modelConvertor->generateRepoScene()) && applyReduction)
+			if ((scene = modelConvertor->generateRepoScene()))
 			{
-				repoTrace << "Scene generated. Applying transformation reduction optimizer";
-				modeloptimizer::TransformationReductionOptimizer optimizer;
-				optimizer.apply(scene);
+				if (applyReduction)
+				{
+					repoTrace << "Scene generated. Applying transformation reduction optimizer";
+					modeloptimizer::TransformationReductionOptimizer optimizer;
+					optimizer.apply(scene);
+				}
+
+				if (rotateModel)
+				{
+					repoTrace << "rotating model by 270 degress on the x axis...";
+					scene->reorientateDirectXModel();
+				}
+				
+				//Generate stash
+				repoInfo << "Generating stash graph for optimised viewing...";
+				if (generateStashGraph(scene))
+				{
+					repoTrace << "Stash graph generated.";
+				}
+				else
+				{
+					repoError << "Error generating stash graph";
+				}
+				
 			}
 			
 		}
@@ -800,9 +1011,10 @@ void RepoManipulator::insertUser(
 }
 
 void RepoManipulator::reduceTransformations(
-	repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene,
+	const repo::core::model::RepoScene::GraphType &gType)
 {
-	if (scene && scene->hasRoot())
+	if (scene && scene->hasRoot(gType))
 	{
 		modeloptimizer::TransformationReductionOptimizer optimizer;
 
@@ -845,6 +1057,68 @@ void RepoManipulator::removeDocument(
 		}
 	}
 
+}
+
+bool RepoManipulator::removeProject(
+	const std::string                        &databaseAd,
+	const repo::core::model::RepoBSON        *cred,
+	const std::string                        &databaseName,
+	const std::string                        &projectName,
+	std::string								 &errMsg
+	)
+{
+	bool success = true;
+	//Remove entry from project settings
+	repo::core::model::RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
+	removeDocument(databaseAd, cred, databaseName, REPO_COLLECTION_SETTINGS, criteria);
+
+
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+
+	//Remove all the collections
+	for (const auto &ext : repo::core::model::RepoScene::getProjectExtensions())
+	{
+		std::string collectionName = projectName + "." + ext;
+		bool droppedCol = dropCollection(databaseAd, cred, databaseName, collectionName, errMsg);
+		//if drop collection failed with no errMsg = failed because the collection didn't exist  should be considered as a success
+		if (!(!droppedCol && errMsg.empty()))
+		{		
+			success &= droppedCol;
+		}
+
+
+		//find all roles with a privilege of this collection and remove it
+		repo::core::model::RepoBSON privCriteria = BSON("privileges" << 
+			BSON("$elemMatch" << 
+						BSON("resource" << BSON("db" << databaseName << "collection" << collectionName))
+			)
+			);
+
+		//FIXME: should get this from handler to ensure it's correct for non mongo databases (future proof)
+		auto results = handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_ROLES, privCriteria);
+
+		for (const auto &roleBSON : results)
+		{
+			repo::core::model::RepoRole role = repo::core::model::RepoRole(roleBSON);
+			auto privilegesMap = role.getPrivilegesMapped();
+			privilegesMap.erase(databaseName + "." + collectionName);
+
+			std::vector<repo::core::model::RepoPrivilege> privilegesUpdated;
+			boost::copy(
+				privilegesMap | boost::adaptors::map_values,
+				std::back_inserter(privilegesUpdated));
+			role = role.cloneAndUpdatePrivileges(privilegesUpdated); 
+
+			success &= handler->updateRole(role, errMsg);
+
+
+		}
+		if (!success) break;
+	}
+		
+
+	return success;
 }
 
 void RepoManipulator::removeRole(
@@ -938,18 +1212,39 @@ void RepoManipulator::saveOriginalFiles(
 					repoWarning << "Unable to read file " << file << " from the database. Skipping...";
 				}
 			}
-		}
-		
-
+		}	
 	}
+}
+
+void RepoManipulator::saveOriginalFiles(
+	const std::string                    &databaseAd,
+	const repo::core::model::RepoBSON	 *cred,
+	const std::string                    &database,
+	const std::string                    &project,
+	const std::string                    &directory)
+{
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	auto scene = new repo::core::model::RepoScene(database, project);
+	std::string errMsg;
+	if (scene && scene->loadRevision(handler, errMsg))
+	{
+		saveOriginalFiles(databaseAd, cred, scene, directory);
+	}
+	else
+	{
+		repoError << "Failed to fetch project from the database!" << ( errMsg.empty()? "" : errMsg);
+	}
+
+	
 }
 
 bool RepoManipulator::saveSceneToFile(
 	const std::string &filePath,
 	const repo::core::model::RepoScene* scene)
 {
-	modelconvertor::AssimpModelExport modelExport;
-	return modelExport.exportToFile(scene, filePath);
+	modelconvertor::AssimpModelExport modelExport(scene);
+	return modelExport.exportToFile(filePath);
 }
 
 void RepoManipulator::updateRole(

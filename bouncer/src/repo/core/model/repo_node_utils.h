@@ -228,10 +228,9 @@ static float dotProduct(const repo_vector_t a, const repo_vector_t b)
 	return a.x*b.x + a.y*b.y + a.z*b.z;
 }
 
-static repo_vector_t crossProduct(const repo_vector_t a, const repo_vector_t b)
+static repo_vector_t crossProduct(const repo_vector_t &a, const repo_vector_t &b)
 {
 	repo_vector_t product;
-
 	product.x = (a.y * b.z) - (a.z * b.y);
 	product.y = (a.z * b.x) - (a.x * b.z);
 	product.z = (a.x * b.y) - (a.y * b.x);
@@ -285,13 +284,17 @@ static repo_vector_t multiplyMatVec(const std::vector<float> &mat, const repo_ve
 			12 13 14 15
 		*/
 
-		result.x = mat[0] * vec.x + mat[1] * vec.y + mat[2] * vec.z  + mat[3];
-		result.y = mat[4] * vec.x + mat[5] * vec.y + mat[6] * vec.z  + mat[7];
+		result.x = mat[0] * vec.x + mat[1] * vec.y + mat[2] * vec.z + mat[3];
+		result.y = mat[4] * vec.x + mat[5] * vec.y + mat[6] * vec.z + mat[7];
 		result.z = mat[8] * vec.x + mat[9] * vec.y + mat[10] * vec.z + mat[11];
 
-		if (!(mat[12] == mat[13] == mat[14] == 0 && 1 == mat[15]))
+		float sig = 1e-5;
+
+		if (fabs(mat[12]) > sig || fabs(mat[13]) > sig || fabs(mat[14]) > sig || fabs(mat[15] -1) > sig)
 		{
-			repoError << "Potentially incorrect transformation : does not expect the last row to have values!";
+
+			repoWarning << "Potentially incorrect transformation : does not expect the last row to have values!";
+			
 		}
 	}
 	
@@ -426,6 +429,34 @@ static std::vector<float> invertMat(const std::vector<float> &mat)
 	return result;
 }
 
+static std::vector<float> matMult(const std::vector<float> &mat1, const std::vector<float> &mat2)
+{
+	std::vector<float> result;
+	if (mat1.size() != mat2.size() != 16)
+	{
+		result.resize(16);
+
+		for (int i = 0; i < 4; ++i)
+		{
+			for (int j = 0; j < 4; ++j)
+			{
+				size_t resultIdx = i * 4 + j;
+				result[resultIdx] = 0;
+				for (int k = 0; k < 4; ++k)
+				{
+					result[resultIdx] += mat1[i * 4 + k] * mat2[k * 4 + j];
+				}
+			}
+		}
+	}
+	else
+	{
+		repoError << "We currently only support 4x4 matrix multiplications";
+	}
+
+	return result;
+}
+
 static std::vector<float> transposeMat(const std::vector<float> &mat)
 {
 	std::vector<float> result(mat.begin(), mat.end());
@@ -466,9 +497,13 @@ static void normalize(repo_vector_t &a)
 {
 	float length = std::sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
 
-	a.x /= length;
-	a.y /= length;
-	a.z /= length;
+	if (length > 0)
+	{
+		a.x /= length;
+		a.y /= length;
+		a.z /= length;
+	}
+	
 }
 
 static bool nameCheck(const char &c)
