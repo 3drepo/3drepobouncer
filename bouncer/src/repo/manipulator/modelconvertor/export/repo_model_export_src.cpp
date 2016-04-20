@@ -312,9 +312,6 @@ bool SRCModelExport::generateTreeRepresentation(
 		{	
 			std::string textureID = scene->getTextureIDForMesh(gType, mesh->getSharedID());
 			
-			/*repo::core::model::MeshNode splittedMesh =
-				((repo::core::model::MeshNode*)mesh)->cloneAndRemapMeshMapping(SRC_MAX_VERTEX_LIMIT, facebuf, idMapBuf, splitMapping);*/
-
 			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter =
 				new repo::manipulator::modelutility::MeshMapReorganiser((repo::core::model::MeshNode*)mesh, SRC_MAX_VERTEX_LIMIT);
 			repo::core::model::MeshNode splittedMesh = reSplitter->getRemappedMesh();

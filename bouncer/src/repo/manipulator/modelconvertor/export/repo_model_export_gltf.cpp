@@ -863,9 +863,6 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 		{
 			//This is a multipart mesh node, the mesh may be too big for 
 			//webGL, split the mesh into sub meshes
-
-
-
 			std::string bufferFileName = UUIDtoString(mesh->getUniqueID());
 
 			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter = 
