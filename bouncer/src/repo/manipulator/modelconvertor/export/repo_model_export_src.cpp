@@ -117,20 +117,7 @@ SRCModelExport::SRCModelExport(
 		else  if (!(convertSuccess = !scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()))
 		{
 			repoError << "Scene has no optimised graph and it is not a federation graph. SRC Exporter relies on this.";
-		}
-
-		if (convertSuccess)
-		{
-			repoDebug << "Generating X3D Backbone file...";
-			//Build general x3d backbone if SRC conversion was a success
-			X3DSRCModelExport x3dExport(scene);
-
-			if (convertSuccess = x3dExport.isOk())
-			{
-				auto buffer = x3dExport.getFileAsBuffer();
-				x3dBufs[x3dExport.getFileName()] = buffer;
-			}
-		}
+		}	
 		
 	}
 	else
