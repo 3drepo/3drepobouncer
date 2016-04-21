@@ -34,7 +34,6 @@ namespace repo{
 					const size_t                        &vertThreshold);
 				~MeshMapReorganiser();
 
-
 				/**
 				* Return idMap arrays of the modified mesh (for material mapping)
 				* @return returns a idMap arrays
@@ -73,7 +72,6 @@ namespace repo{
 					return splitMap;
 				}
 
-
 			private:
 				/**
 				* Complete a submesh by filling in the ending parts of  mesh mapping
@@ -91,6 +89,19 @@ namespace repo{
 					const size_t &nFaces
 					);
 
+				void newMatMapEntry(
+					const repo_mesh_mapping_t &mapping,
+					const size_t        &sVertices,
+					const size_t        &sFaces
+					);
+
+				void completeLastMatMapEntry(
+					const size_t        &eVertices,
+					const size_t        &eFaces,
+					std::vector<float>  &minBox = std::vector<float>(),
+					std::vector<float>  &maxBox = std::vector<float>()
+					);
+
 				/**
 				* The beginning function for the whole process.
 				* Merge or split submeshes where appropriate
@@ -98,7 +109,7 @@ namespace repo{
 				void performSplitting();
 
 				/**
-				* Split a single large sub mesh that exceeds the number of 
+				* Split a single large sub mesh that exceeds the number of
 				* vertices into multiple sub meshes
 				* @param currentSubMesh current sub mesh's mapping
 				* @param newMappings current load of new mappings (consume and update)
@@ -131,7 +142,6 @@ namespace repo{
 					const size_t        &sFaces
 					);
 
-
 				/**
 				* Update the given bounding boxes given the current sub mesh's bounding boxes
 				* @param min overall min bounding box to update
@@ -153,7 +163,7 @@ namespace repo{
 				void updateIDMapArray(
 					const size_t &n,
 					const size_t &value);
-				
+
 				const repo::core::model::MeshNode *mesh;
 				const size_t maxVertices;
 				const std::vector<repo_vector_t> oldVertices;
@@ -170,11 +180,7 @@ namespace repo{
 				std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> splitMap;
 				std::vector<std::vector<repo_mesh_mapping_t>> matMap;
 				std::vector<repo_mesh_mapping_t> reMappedMappings;
-
-
 			};
-
-
 		}
 	}
 }
