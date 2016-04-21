@@ -28,6 +28,7 @@
 
 #include <assimp/importerdesc.h>
 
+#include "../../../core/model/bson/repo_bson_builder.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../core/model/repo_node_utils.h"
 #include "../../../lib/repo_log.h"
@@ -611,7 +612,6 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 	const std::unordered_map<std::string, repo::core::model::RepoNode *> &cameras,
 	const std::vector<repo::core::model::RepoNode *>           &meshes,
 	repo::core::model::RepoNodeSet						     &metadata,
-	assimp_map													&map,
 	uint32_t                                               &count,
 	const std::vector<double>                                &worldOffset,
 	const std::vector<repoUUID>						             &parent
@@ -650,8 +650,6 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 		repo::core::model::TransformationNode * transNode =
 			new repo::core::model::TransformationNode(
 			repo::core::model::RepoBSONFactory::makeTransformationNode(transMat, transName, parent));
-
-		map.insert(assimp_map::value_type(reinterpret_cast<uintptr_t>(assimpNode), transNode));
 
 		repoUUID sharedId = transNode->getSharedID();
 		std::vector<repoUUID> myShareID;
@@ -708,7 +706,7 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 		{
 			repo::core::model::RepoNodeSet childMetadata;
 			repo::core::model::RepoNodeSet childSet = createTransformationNodesRecursive(assimpNode->mChildren[i],
-				cameras, meshes, childMetadata, map, ++count, worldOffset, myShareID);
+				cameras, meshes, childMetadata, ++count, worldOffset, myShareID);
 
 			transNodes.insert(childSet.begin(), childSet.end());
 			metadata.insert(childMetadata.begin(), childMetadata.end());
@@ -719,7 +717,6 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 }
 
 repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
-	assimp_map                    &map,
 	repo::core::model::RepoScene  *scene)
 {
 	repo::core::model::RepoScene *scenePtr = scene;
@@ -854,7 +851,6 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 					repoError << "Unable to construct material node in Assimp Model Convertor!";
 				else
 				{
-					map.insert(assimp_map::value_type(reinterpret_cast<uintptr_t>(assimpScene->mMaterials[i]), material));
 					materials.insert(material);
 				}
 
@@ -895,7 +891,6 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 					repoError << "Unable to construct mesh node in Assimp Model Convertor!";
 				else
 				{
-					map.insert(assimp_map::value_type(reinterpret_cast<uintptr_t>(assimpScene->mMeshes[i]), mesh));
 					meshes.insert(mesh);
 				}
 				originalOrderMesh.push_back(mesh);
@@ -935,7 +930,6 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 					repoError << "Unable to construct mesh node in Assimp Model Convertor!";
 				else
 				{
-					map.insert(assimp_map::value_type(reinterpret_cast<uintptr_t>(assimpScene->mCameras[i]), camera));
 					cameras.insert(camera);
 				}
 
@@ -968,7 +962,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		// RootNode will be the first entry in transformations vector.
 
 		uint32_t count = 0;
-		transformations = createTransformationNodesRecursive(assimpScene->mRootNode, camerasMap, originalOrderMesh, metadata, map, count, sceneBbox[0]);
+		transformations = createTransformationNodesRecursive(assimpScene->mRootNode, camerasMap, originalOrderMesh, metadata, count, sceneBbox[0]);
 
 		repoInfo << "Node Construction completed. (#transformations: " << transformations.size() << ", #Metadata" << metadata.size() << ")";
 
@@ -993,7 +987,6 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 {
 	repo::core::model::RepoScene *scene;
-	assimp_map orgMap, optMap;
 
 	//Make sure we are using 64bit (issue 4 branch) of assimp
 	aiVector3D test;
@@ -1005,7 +998,7 @@ repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
 	//This will generate the non optimised scene
 	repoTrace << "Converting AiScene to repoScene";
 	importer.ApplyPostProcessing(composeAssimpPostProcessingFlags());
-	scene = convertAiSceneToRepoScene(orgMap);
+	scene = convertAiSceneToRepoScene();
 
 	return scene;
 }
@@ -1153,184 +1146,6 @@ bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
 	}
 
 	return success;
-}
-
-bool AssimpModelImport::populateOptimMaps(
-	repo::core::model::RepoNode		   *current,
-	repo::core::model::RepoScene       *scene,
-	const assimp_map                   &orgMap,
-	const assimp_map                   &optMap)
-{
-	std::unordered_map<repoUUID, std::vector<repo_mesh_mapping_t>, RepoUUIDHasher> meshMapping;
-	// If this is a mesh then we the optimization map is transferred for
-	// it's parent.
-	if (current->getTypeAsEnum() == repo::core::model::NodeType::TRANSFORMATION)
-	{
-		// First find the assimp node that relates to the abstract node
-		assimp_map::right_const_iterator ait = optMap.right.find(current);
-
-		if (ait == optMap.right.end()) // Orphan part of the graph
-		{
-			repoError << "Unable to find a transformation node within the assimp mappings. Optimised graph is invalid.";
-			return false;
-		}
-
-		aiNode *node = reinterpret_cast<aiNode *>(ait->second); // All nodes in the optimized graph should exist
-
-		if (node && node->mOptimMap)
-		{
-			aiOptimMap *ai_map = node->mOptimMap;
-
-			std::vector<repoUUID> mergeMap;
-			if (ai_map->getMergeMap().size() > 0)
-				mergeMap.reserve(ai_map->getMergeMap().size());
-
-			for (uintptr_t mergedNode : ai_map->getMergeMap())
-			{
-				// Find the corresponding abstract node for an assimp
-				assimp_map::left_const_iterator nit = orgMap.left.find(mergedNode);
-
-				if (nit != orgMap.left.end())
-				{
-					repo::core::model::RepoNode *node = nit->second;
-					repoUUID mergedUUID = node->getUniqueID();
-
-					mergeMap.push_back(mergedUUID);
-				}
-				else
-				{
-					repoDebug << "Could not find the RepoNode corresponding to the assimp node!";
-				}
-			}
-
-			if (mergeMap.size() != ai_map->getMergeMap().size())
-			{
-				repoError << "Error mapping stash graph: mergeMap.size() != ai_map->getMergeMap().size()";
-				return false;
-			}
-
-			if (mergeMap.size() > 0)
-			{
-				repo::core::model::RepoNode newCurrent = current->cloneAndAddMergedNodes(mergeMap);
-				//swap contents of newCurrent onto current (it was cloned since RepoBSONs are immutable)
-				current->swap(newCurrent);
-			}
-
-			// Now populate the vertex maps
-			for (const auto &map : ai_map->getMeshMaps())
-			{
-				// First find the mesh that all the meshes were merged into
-				assimp_map::left_const_iterator mergedMeshIT = optMap.left.find(map.first);
-
-				if (mergedMeshIT != optMap.left.end())
-				{
-					boost::uuids::uuid parentUUID = mergedMeshIT->second->getUniqueID();
-
-					for (const aiMap& mMap : map.second)
-					{
-						// Search for the Unique ID for this child
-
-						assimp_map::left_const_iterator childIT = orgMap.left.find(mMap.childMesh);
-
-						if (childIT != orgMap.left.end())
-						{
-							repoUUID childUUID = childIT->second->getUniqueID();
-
-							// Now find the UUID of the material
-							assimp_map::left_const_iterator materialIT = optMap.left.find(mMap.material);
-
-							if (materialIT != orgMap.left.end())
-							{
-								repoUUID materialUUID = materialIT->second->getUniqueID();
-
-								repo_vector_t min = { (float)mMap.min.x, (float)mMap.min.y, (float)mMap.min.z };
-								repo_vector_t max = { (float)mMap.max.x, (float)mMap.max.y, (float)mMap.max.z };
-
-								//check if there's already a mapping for this node
-								if (meshMapping.find(parentUUID) == meshMapping.end())
-								{
-									meshMapping[parentUUID] = std::vector<repo_mesh_mapping_t>();
-								}
-
-								//create a repo_mesh_mapping struct and push it to the vector
-								meshMapping[parentUUID].push_back({ min, max, childUUID, materialUUID, mMap.startVertexIDX,
-									mMap.endVertexIDX, mMap.startTriangleIDX, mMap.endTriangleIDX });
-							}
-							else {
-								repoError << "populateOptimMaps: Unable to find material node from orgMap!";
-								return false;
-							}
-						}
-						else {
-							repoError << "populateOptimMaps: Unable to identify child node from aiMap!";
-							return false;
-						}
-					}
-				}
-				else {
-					repoError << "populateOptimMaps: Unable to find mesh from orgMap!";
-					return false;
-				}
-			}
-		}
-		else {
-			if (!node)
-			{
-				//it's only an error if node is null, optimMap may or may not exist
-				repoError << "populateOptimMaps: node is null pointer!";
-				return false;
-			}
-		}
-	}
-
-	const std::vector<repo::core::model::RepoNode *> &children = scene->getChildrenAsNodes(
-		repo::core::model::RepoScene::GraphType::OPTIMIZED,
-		current->getSharedID());
-
-	//--------------------------------------------------------------------------
-	// Register child transformations as children if any
-	for (repo::core::model::RepoNode *child : children)
-	{
-		if (!populateOptimMaps(child, scene, orgMap, optMap)) return false;
-
-		// If the child is a mesh then we may need to
-		// transfer the optimization map to it.
-		if (child->getTypeAsEnum() == repo::core::model::NodeType::MESH)
-		{
-			if (optMap.right.find(child) == optMap.right.end())
-			{
-				//This should never ever happen, unless the graph was tampered with between import and
-				//this call without updating the mappings.
-				repoError << "populateOptimMaps: Cannot find Mesh node in optimized graph in optMap!";
-				return false;
-			}
-			else {
-				repo::core::model::MeshNode *meshChild = (repo::core::model::MeshNode *) child;
-
-				auto meshMappingIt = meshMapping.find(child->getUniqueID());
-				if (meshMappingIt != meshMapping.end())
-				{
-					repo::core::model::MeshNode updatedChild = meshChild->cloneAndUpdateMeshMapping(meshMappingIt->second);
-					meshChild->swap(updatedChild);
-
-					// We also need to transfer the materials so that they are children of the mesh
-
-					for (const auto &rMap : meshChild->getMeshMapping())
-					{
-						repo::core::model::RepoNode *matNode =
-							scene->getNodeByUniqueID(repo::core::model::RepoScene::GraphType::OPTIMIZED, rMap.material_id);
-						if (matNode)
-						{
-							scene->addInheritance(repo::core::model::RepoScene::GraphType::OPTIMIZED,
-								child->getUniqueID(), rMap.material_id);
-						}
-					}
-				}
-			}
-		}
-	}
-
-	return true;
 }
 
 void AssimpModelImport::setAssimpProperties(){

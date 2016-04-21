@@ -20,10 +20,11 @@
 */
 
 #include "repo_model_export_assimp.h"
-#include "../../../lib/repo_log.h"
-
 #include <boost/filesystem.hpp>
 #include <fstream>
+#include "../../../core/model/bson/repo_node_texture.h"
+#include "../../../core/model/bson/repo_node_transformation.h"
+#include "../../../lib/repo_log.h"
 
 using namespace repo::manipulator::modelconvertor;
 

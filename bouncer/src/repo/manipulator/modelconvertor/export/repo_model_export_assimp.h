@@ -26,8 +26,11 @@
 #include <assimp/scene.h>
 #include <assimp/Exporter.hpp>
 
-#include "repo_model_export_abstract.h"
+#include "../../../core/model/bson/repo_node_camera.h"
+#include "../../../core/model/bson/repo_node_material.h"
+#include "../../../core/model/bson/repo_node_mesh.h"
 #include "../../../core/model/collection/repo_scene.h"
+#include "repo_model_export_abstract.h"
 
 namespace repo{
 	namespace manipulator{

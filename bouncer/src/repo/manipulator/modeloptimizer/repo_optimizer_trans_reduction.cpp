@@ -23,6 +23,7 @@
 */
 
 #include "repo_optimizer_trans_reduction.h"
+#include "../../core/model/bson/repo_node_transformation.h"
 
 using namespace repo::manipulator::modeloptimizer;
 

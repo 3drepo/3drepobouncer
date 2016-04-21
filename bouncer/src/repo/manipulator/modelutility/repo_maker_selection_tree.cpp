@@ -15,7 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "repo_maker_selection_tree.h"
-
+#include "../../core/model/bson/repo_node_reference.h"
 using namespace repo::manipulator::modelutility;
 
 SelectionTreeMaker::SelectionTreeMaker(

@@ -20,8 +20,13 @@
 */
 
 #pragma once
+#include <map>
 #include <string>
+
 #include "../core/model/bson/repo_bson_role_settings.h"
+#include "../core/model/bson/repo_node_map.h"
+#include "../core/model/bson/repo_node_reference.h"
+#include "../core/model/bson/repo_node_transformation.h"
 #include "../core/model/collection/repo_scene.h"
 #include "diff/repo_diff_abstract.h"
 #include "modelconvertor/export/repo_model_export_web.h"

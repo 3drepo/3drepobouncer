@@ -15,6 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "repo_mesh_map_reorganiser.h"
+#include "../../core/model/bson/repo_bson_builder.h"
 #include "../../core/model/bson/repo_bson_factory.h"
 
 using namespace repo::manipulator::modelutility;

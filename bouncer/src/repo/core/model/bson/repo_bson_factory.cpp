@@ -20,12 +20,12 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include "repo_bson_builder.h"
 #include "../../../lib/repo_log.h"
 
 using namespace repo::core::model;
 
-uint64_t RepoBSONFactory::appendDefaults(
-	RepoBSONBuilder &builder,
+RepoBSON RepoBSONFactory::appendDefaults(
 	const std::string &type,
 	const unsigned int api,
 	const repoUUID &sharedId,
@@ -33,6 +33,7 @@ uint64_t RepoBSONFactory::appendDefaults(
 	const std::vector<repoUUID> &parents,
 	const repoUUID &uniqueID)
 {
+	RepoBSONBuilder builder;
 	uint64_t bytesize = 0;
 
 	//--------------------------------------------------------------------------
@@ -50,22 +51,17 @@ uint64_t RepoBSONFactory::appendDefaults(
 	if (!type.empty())
 	{
 		builder << REPO_NODE_LABEL_TYPE << type;
-		bytesize += sizeof(type);
 	}
 
 	//--------------------------------------------------------------------------
 	// API level
 	builder << REPO_NODE_LABEL_API << api;
 
-	bytesize += sizeof(api);
-
 	//--------------------------------------------------------------------------
 	// Parents
 	if (parents.size() > 0)
 	{
 		builder.appendArray(REPO_NODE_LABEL_PARENTS, parents);
-
-		bytesize += parents.size() * sizeof(parents[0]);
 	}
 
 	//--------------------------------------------------------------------------
@@ -73,10 +69,9 @@ uint64_t RepoBSONFactory::appendDefaults(
 	if (!name.empty())
 	{
 		builder << REPO_NODE_LABEL_NAME << name;
-		bytesize += sizeof(name);
 	}
 
-	return bytesize;
+	return builder.obj();
 }
 
 CameraNode RepoBSONFactory::makeCameraNode(
@@ -95,7 +90,8 @@ CameraNode RepoBSONFactory::makeCameraNode(
 	//--------------------------------------------------------------------------
 	// Compulsory fields such as _id, type, api as well as path
 	// and optional name
-	appendDefaults(builder, REPO_NODE_TYPE_CAMERA, apiLevel, generateUUID(), name);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_CAMERA, apiLevel, generateUUID(), name);
+	builder.appendElements(defaults);
 
 	//--------------------------------------------------------------------------
 	// Aspect ratio
@@ -137,7 +133,8 @@ MaterialNode RepoBSONFactory::makeMaterialNode(
 
 	// Compulsory fields such as _id, type, api as well as path
 	// and optional name
-	appendDefaults(builder, REPO_NODE_TYPE_MATERIAL, apiLevel, generateUUID(), name);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_MATERIAL, apiLevel, generateUUID(), name);
+	builder.appendElements(defaults);
 
 	if (material.ambient.size() > 0)
 		builder.appendArray(REPO_NODE_MATERIAL_LABEL_AMBIENT, material.ambient);
@@ -181,7 +178,8 @@ MapNode RepoBSONFactory::makeMapNode(
 
 	// Compulsory fields such as _id, type, api as well as path
 	// and optional name
-	appendDefaults(map_builder, REPO_NODE_TYPE_MAP, apiLevel, generateUUID(), name, std::vector<repoUUID>());
+	auto defaults = appendDefaults(REPO_NODE_TYPE_MAP, apiLevel, generateUUID(), name, std::vector<repoUUID>());
+	map_builder.appendElements(defaults);
 	//--------------------------------------------------------------------------
 	// width (# of horizontal tiles)
 	map_builder << REPO_NODE_MAP_LABEL_WIDTH << width;
@@ -222,7 +220,8 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 
 	// Compulsory fields such as _id, type, api as well as path
 	// and optional name
-	appendDefaults(builder, REPO_NODE_TYPE_METADATA, apiLevel, generateUUID(), name, parents);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_METADATA, apiLevel, generateUUID(), name, parents);
+	builder.appendElements(defaults);
 
 	//--------------------------------------------------------------------------
 	// Media type
@@ -247,7 +246,8 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	RepoBSONBuilder builder, metaBuilder;
 	// Compulsory fields such as _id, type, api as well as path
 	// and optional name
-	appendDefaults(builder, REPO_NODE_TYPE_METADATA, apiLevel, generateUUID(), name, parents);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_METADATA, apiLevel, generateUUID(), name, parents);
+	builder.appendElements(defaults);
 
 	//check keys and values have the same sizes
 
@@ -308,7 +308,9 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	RepoBSONBuilder builder;
 	uint64_t bytesize = 0; //track the (approximate) size to know when we need to offload to gridFS
 	repoUUID uniqueID = generateUUID();
-	bytesize += appendDefaults(builder, REPO_NODE_TYPE_MESH, apiLevel, generateUUID(), name, std::vector<repoUUID>(), uniqueID);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_MESH, apiLevel, generateUUID(), name, std::vector<repoUUID>(), uniqueID);
+	bytesize += defaults.objsize();
+	builder.appendElements(defaults);
 
 	std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> binMapping;
 
@@ -747,7 +749,8 @@ ReferenceNode RepoBSONFactory::makeReferenceNode(
 	RepoBSONBuilder builder;
 	std::string nodeName = name.empty() ? database + "." + project : name;
 
-	appendDefaults(builder, REPO_NODE_TYPE_REFERENCE, apiLevel, generateUUID(), nodeName);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_REFERENCE, apiLevel, generateUUID(), nodeName);
+	builder.appendElements(defaults);
 
 	//--------------------------------------------------------------------------
 	// Project owner (company or individual)
@@ -793,7 +796,8 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 
 	//--------------------------------------------------------------------------
 	// Compulsory fields such as _id, type, api as well as path
-	appendDefaults(builder, REPO_NODE_TYPE_REVISION, apiLevel, branch, "", parent, uniqueID);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_REVISION, apiLevel, branch, "", parent, uniqueID);
+	builder.appendElements(defaults);
 
 	//--------------------------------------------------------------------------
 	// Author
@@ -872,7 +876,8 @@ TextureNode RepoBSONFactory::makeTextureNode(
 	const int         &apiLevel)
 {
 	RepoBSONBuilder builder;
-	appendDefaults(builder, REPO_NODE_TYPE_TEXTURE, apiLevel, generateUUID(), name);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_TEXTURE, apiLevel, generateUUID(), name);
+	builder.appendElements(defaults);
 	//
 	// Width
 	//
@@ -918,7 +923,8 @@ TransformationNode RepoBSONFactory::makeTransformationNode(
 {
 	RepoBSONBuilder builder;
 
-	appendDefaults(builder, REPO_NODE_TYPE_TRANSFORMATION, apiLevel, generateUUID(), name, parents);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_TRANSFORMATION, apiLevel, generateUUID(), name, parents);
+	builder.appendElements(defaults);
 
 	//--------------------------------------------------------------------------
 	// Store matrix as array of arrays

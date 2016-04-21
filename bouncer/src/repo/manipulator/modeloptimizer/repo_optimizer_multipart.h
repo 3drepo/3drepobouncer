@@ -23,6 +23,7 @@
 
 #include "repo_optimizer_abstract.h"
 #include "../../core/model/collection/repo_scene.h"
+#include "../../core/model/bson/repo_node_mesh.h"
 
 #define REPO_MP_TEXTURE_WORK_AROUND
 

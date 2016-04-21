@@ -19,6 +19,7 @@
 */
 
 #include "repo_node.h"
+#include "repo_bson_builder.h"
 
 using namespace repo::core::model;
 

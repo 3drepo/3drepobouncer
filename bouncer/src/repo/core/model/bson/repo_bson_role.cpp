@@ -18,6 +18,7 @@
 #include <algorithm>
 #include "repo_bson_role.h"
 #include "../collection/repo_scene.h"
+#include "repo_bson_builder.h"
 #include <boost/range/adaptor/map.hpp>
 #include <boost/range/algorithm/copy.hpp>
 

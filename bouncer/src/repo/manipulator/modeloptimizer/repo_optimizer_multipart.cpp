@@ -21,6 +21,7 @@
 
 #include "repo_optimizer_multipart.h"
 #include "../../core/model/bson/repo_bson_factory.h"
+#include "../../core/model/bson/repo_bson_builder.h"
 
 using namespace repo::manipulator::modeloptimizer;
 

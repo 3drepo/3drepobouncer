@@ -26,6 +26,7 @@
 #include "repo_model_export_web.h"
 #include "../../../lib/repo_property_tree.h"
 #include "../../../core/model/collection/repo_scene.h"
+#include "../../../core/model/bson/repo_node_mesh.h"
 
 namespace repo{
 	namespace manipulator{

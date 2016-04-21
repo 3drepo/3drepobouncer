@@ -24,6 +24,9 @@
 
 #include "repo_optimizer_abstract.h"
 
+#include "../../core/model/bson/repo_node_camera.h"
+#include "../../core/model/bson/repo_node_mesh.h"
+
 namespace repo {
 	namespace manipulator {
 		namespace modeloptimizer {

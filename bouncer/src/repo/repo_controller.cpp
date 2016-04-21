@@ -27,10 +27,13 @@ RepoController::RepoController(
 	//RepoController follows the Pimpl idiom http://www.gotw.ca/gotw/028.htm
 	//This is done to avoid high dependencies on other headers for library users
 	//Actual implementations are in _RepoControllerImpl
-	impl = std::make_unique<RepoController::_RepoControllerImpl>(listeners, numConcurrentOps, numDbConn);
+	impl = new RepoController::_RepoControllerImpl(listeners, numConcurrentOps, numDbConn);
 }
 
-RepoController::~RepoController(){}
+RepoController::~RepoController()
+{
+	if (impl) delete impl;
+}
 
 RepoController::RepoToken* RepoController::authenticateToAdminDatabaseMongo(
 	std::string       &errMsg,

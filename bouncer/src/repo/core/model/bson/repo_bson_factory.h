@@ -136,7 +136,6 @@ namespace repo {
 				/**
 				* Append default information onto the a RepoBSONBuilder
 				* This is used for children nodes to create their BSONs.
-				* @param builder the builder to append the info to
 				* @param type type of node
 				* @param api api level of this node
 				* @param shareID shared ID of this node
@@ -144,10 +143,9 @@ namespace repo {
 				* @param parents vector of shared IDs of this node's parents
 				* @param uniqueID specify unique ID for the object (do not use unless you are
 				*			sure you know what you're doing!)
-				* @ return return the size of the fields appended in bytes
+				* @ return return a bson object with the default parameters
 				*/
-				static uint64_t appendDefaults(
-					RepoBSONBuilder &builder,
+				static RepoBSON appendDefaults(
 					const std::string &type,
 					const unsigned int api = REPO_NODE_API_LEVEL_0,
 					const repoUUID &sharedId = generateUUID(),

@@ -18,6 +18,7 @@
 /**
 * A Scene graph representation of a collection
 */
+#include "repo_scene.h"
 
 #include <boost/assign.hpp>
 #include <boost/bind.hpp>
@@ -27,8 +28,8 @@
 #include <fstream>
 
 #include "../../../lib/repo_log.h"
+#include "../bson/repo_bson_builder.h"
 #include "../bson/repo_bson_factory.h"
-#include "repo_scene.h"
 
 using namespace repo::core::model;
 

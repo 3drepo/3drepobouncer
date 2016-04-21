@@ -20,10 +20,9 @@
 */
 
 #include "repo_model_export_src.h"
-#include "../../modelutility/repo_mesh_map_reorganiser.h"
-#include "../../../lib/repo_log.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
-#include "auxiliary/repo_model_export_x3d_src.h"
+#include "../../../lib/repo_log.h"
+#include "../../modelutility/repo_mesh_map_reorganiser.h"
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -312,16 +311,6 @@ bool SRCModelExport::generateTreeRepresentation(
 			if (sepX3d)
 			{
 				success &= generateJSONMapping((repo::core::model::MeshNode*)mesh, scene, splitMapping);
-
-				X3DSRCModelExport x3dExport(splittedMesh, scene);
-				if (x3dExport.isOk())
-				{
-					x3dBufs[x3dExport.getFileName()] = x3dExport.getFileAsBuffer();
-				}
-				else
-				{
-					repoError << "Failed to generate x3d representation for mesh: " << UUIDtoString(mesh->getUniqueID());
-				}
 			}
 		}
 	}

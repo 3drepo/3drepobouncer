@@ -20,7 +20,9 @@
 */
 
 #include "repo_node_mesh.h"
+
 #include "../../../lib/repo_log.h"
+#include "repo_bson_builder.h"
 using namespace repo::core::model;
 
 MeshNode::MeshNode() :

@@ -23,13 +23,17 @@
 
 #pragma once
 
-#include <string>
+#include <map>
 #include <memory>
+#include <string>
 
 #include "core/model/bson/repo_bson_project_settings.h"
 #include "core/model/bson/repo_bson_role.h"
 #include "core/model/bson/repo_bson_role_settings.h"
 #include "core/model/bson/repo_bson_user.h"
+#include "core/model/bson/repo_node_transformation.h"
+#include "core/model/bson/repo_node_reference.h"
+#include "core/model/bson/repo_node_map.h"
 #include "core/model/collection/repo_scene.h"
 #include "lib/datastructure/repo_structs.h"
 #include "lib/repo_listener_abstract.h"
@@ -812,6 +816,6 @@ namespace repo{
 
 	private:
 		class _RepoControllerImpl;
-		std::unique_ptr<_RepoControllerImpl> impl;
+		_RepoControllerImpl *impl;
 	};
 }

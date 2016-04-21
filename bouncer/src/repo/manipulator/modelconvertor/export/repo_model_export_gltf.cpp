@@ -20,14 +20,14 @@
 */
 
 #include "repo_model_export_gltf.h"
-#include "../../modelutility/repo_mesh_map_reorganiser.h"
-#include "../../modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
-#include "../../../lib/repo_log.h"
-#include "../../../core/model/bson/repo_bson_factory.h"
-#include "auxiliary/repo_model_export_x3d_gltf.h"
-#include "auxiliary/x3dom_constants.h"
 
 #include <cmath>
+
+#include "../../../core/model/bson/repo_bson_factory.h"
+#include "../../../lib/repo_log.h"
+#include "../../modelutility/repo_mesh_map_reorganiser.h"
+#include "../../modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
+#include "auxiliary/x3dom_constants.h"
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -862,7 +862,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 						vRaw[vertId].z = ((float)vertZ) / maxQuant * bboxSize.z + bboxMin.z;
 						//					repoDebug << "After: (" << vRaw[vertId].x << "," << vRaw[vertId].y << ", " << vRaw[vertId].z << ")";
 					}
-				}
+		}
 #endif
 
 			auto newMappings = splitMesh.getMeshMapping();
@@ -999,7 +999,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 				}
 				tree.addArrayObjects(label + "." + GLTF_LABEL_PRIMITIVES, primitives);
 			}
-		}
+	}
 		else
 		{
 			bool hasMapping = mappings.size();
@@ -1072,7 +1072,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 						vRaw[vertId].z = ((float)vertZ) / maxQuant * bboxSize.z + bboxMin.z;
 						//					repoDebug << "After: (" << vRaw[vertId].x << "," << vRaw[vertId].y << ", " << vRaw[vertId].z << ")";
 					}
-				}
+		}
 #endif
 
 			std::string bufferFileName = UUIDtoString(scene->getRevisionID());
@@ -1149,7 +1149,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			}
 
 			tree.addArrayObjects(label + "." + GLTF_LABEL_PRIMITIVES, primitives);
-		}
+}
 	}
 	return splitSizes;
 }
@@ -1364,7 +1364,7 @@ void GLTFModelExport::writeBuffers(
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_BYTE_LENGTH, pair.second.size()  * sizeof(*pair.second.data()));
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_TYPE, GLTF_ARRAY_BUFFER);
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_URI, "/api" + bufferFilePrefix + pair.first + ".bin");
-	}
+}
 }
 
 void GLTFModelExport::writeDefaultSampler(

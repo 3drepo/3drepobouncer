@@ -20,6 +20,7 @@
 */
 
 #include "repo_node_camera.h"
+#include "repo_bson_builder.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>

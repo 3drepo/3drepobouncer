@@ -21,22 +21,20 @@
 
 #pragma once
 
-#include <map>
-
-#include "repo_graph_abstract.h"
+#include <unordered_map>
 
 #include "../../handler/repo_database_handler_abstract.h"
-
 #include "../bson/repo_node.h"
-#include "../bson/repo_node_camera.h"
-#include "../bson/repo_node_map.h"
-#include "../bson/repo_node_material.h"
-#include "../bson/repo_node_mesh.h"
-#include "../bson/repo_node_metadata.h"
-#include "../bson/repo_node_reference.h"
+//#include "../bson/repo_node_camera.h"
+//#include "../bson/repo_node_map.h"
+//#include "../bson/repo_node_material.h"
+//#include "../bson/repo_node_mesh.h"
+//#include "../bson/repo_node_metadata.h"
+//#include "../bson/repo_node_reference.h"
 #include "../bson/repo_node_revision.h"
-#include "../bson/repo_node_texture.h"
-#include "../bson/repo_node_transformation.h"
+//#include "../bson/repo_node_texture.h"
+//#include "../bson/repo_node_transformation.h"
+#include "repo_graph_abstract.h"
 
 typedef std::unordered_map<repoUUID, std::vector<repo::core::model::RepoNode*>, RepoUUIDHasher > ParentMap;
 

@@ -20,6 +20,7 @@
 */
 
 #include "repo_node_transformation.h"
+#include "repo_bson_builder.h"
 
 using namespace repo::core::model;
 
