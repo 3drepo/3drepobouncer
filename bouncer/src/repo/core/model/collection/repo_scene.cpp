@@ -19,17 +19,16 @@
 * A Scene graph representation of a collection
 */
 
-#include <fstream>
-#include <boost/filesystem.hpp>
-#include <boost/range/adaptor/map.hpp>
 #include <boost/assign.hpp>
 #include <boost/bind.hpp>
-
+#include <boost/filesystem.hpp>
+#include <boost/range/adaptor/map.hpp>
+#include <boost/range/algorithm/copy.hpp>
 #include <fstream>
 
-#include "repo_scene.h"
-#include "../bson/repo_bson_factory.h"
 #include "../../../lib/repo_log.h"
+#include "../bson/repo_bson_factory.h"
+#include "repo_scene.h"
 
 using namespace repo::core::model;
 
@@ -989,6 +988,20 @@ void RepoScene::getSceneBoundingBoxInternal(
 		}
 		}
 	}
+}
+
+std::set<repoUUID> RepoScene::getAllSharedIDs(
+	const GraphType &gType) const
+{
+	std::set<repoUUID> sharedIDs;
+
+	const auto &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+
+	boost::copy(
+		g.sharedIDtoUniqueID | boost::adaptors::map_keys,
+		std::inserter(sharedIDs, sharedIDs.begin()));
+
+	return sharedIDs;
 }
 
 std::string RepoScene::getTextureIDForMesh(

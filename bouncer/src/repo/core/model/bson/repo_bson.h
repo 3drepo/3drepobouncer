@@ -35,16 +35,11 @@
 #include <mongo/bson/bson.h>
 #include <unordered_map>
 
-#include <boost/range/adaptor/map.hpp>
-#include <boost/range/algorithm/copy.hpp>
-
-#include "repo_bson_element.h"
-
-#include "../repo_model_global.h"
-#include "../repo_node_properties.h"
-#include "../repo_node_utils.h"
 #include "../../../lib/repo_log.h"
 #include "../../../repo_bouncer_global.h"
+#include "../repo_model_global.h"
+#include "../repo_node_utils.h"
+#include "repo_bson_element.h"
 
 #define REPO_BSON_MAX_BYTE_SIZE 16770000 //max size is 16MB,but leave a bit for buffer
 

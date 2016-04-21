@@ -678,18 +678,7 @@ namespace repo{
 				}
 
 				std::set<repoUUID> getAllSharedIDs(
-					const GraphType &gType) const
-				{
-					std::set<repoUUID> sharedIDs;
-
-					const auto &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
-
-					boost::copy(
-						g.sharedIDtoUniqueID | boost::adaptors::map_keys,
-						std::inserter(sharedIDs, sharedIDs.begin()));
-
-					return sharedIDs;
-				}
+					const GraphType &gType) const;
 
 				/**
 				* Get all desecendants, of a particular type, of this shared ID

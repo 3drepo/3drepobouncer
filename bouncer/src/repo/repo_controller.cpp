@@ -15,7 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "repo_controller_internal.cpp.inl"; //Inner class implementation
+#include "repo_controller_internal.cpp.inl" //Inner class implementation
 
 using namespace repo;
 
@@ -27,7 +27,7 @@ RepoController::RepoController(
 	//RepoController follows the Pimpl idiom http://www.gotw.ca/gotw/028.htm
 	//This is done to avoid high dependencies on other headers for library users
 	//Actual implementations are in _RepoControllerImpl
-	impl = std::make_unique<RepoController::_RepoControllerImpl>(listeners, numConcurrentOps, numDbConn);
+	impl = std::make_shared<RepoController::_RepoControllerImpl>(listeners, numConcurrentOps, numDbConn);
 }
 
 RepoController::~RepoController(){}

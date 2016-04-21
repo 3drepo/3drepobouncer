@@ -22,8 +22,6 @@
 
 #include "repo_bson.h"
 #include "repo_bson_builder.h"
-#include "../repo_node_properties.h"
-#include "../repo_node_utils.h"
 
 namespace repo{
 	namespace core{

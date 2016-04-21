@@ -25,6 +25,7 @@
 #include "../core/model/collection/repo_scene.h"
 #include "diff/repo_diff_abstract.h"
 #include "modelconvertor/export/repo_model_export_web.h"
+#include "modelconvertor/import/repo_model_import_config.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_abstract.h"
 
 namespace repo{
@@ -544,7 +545,7 @@ namespace repo{
 			repo::core::model::RepoScene*
 				loadSceneFromFile(
 				const std::string                                          &filePath,
-				std::string                                          &msg,
+				std::string                                                &msg,
 				const bool                                                 &applyReduction = true,
 				const bool                                                 &rotateModel = false,
 				const repo::manipulator::modelconvertor::ModelImportConfig *config = nullptr);

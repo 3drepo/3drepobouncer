@@ -811,6 +811,6 @@ namespace repo{
 
 	private:
 		class _RepoControllerImpl;
-		std::unique_ptr<_RepoControllerImpl> impl;
+		std::shared_pt<_RepoControllerImpl> impl;
 	};
 }
