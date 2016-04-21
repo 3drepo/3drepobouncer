@@ -21,14 +21,11 @@
 
 #pragma once
 #include <string>
-#include "../core/handler/repo_database_handler_mongo.h"
-#include "../core/model/collection/repo_scene.h"
 #include "../core/model/bson/repo_bson_role_settings.h"
-#include "modelconvertor/import/repo_model_import_assimp.h"
-#include "modelconvertor/export/repo_model_export_gltf.h"
-#include "modelconvertor/export/repo_model_export_src.h"
-#include "modelutility/spatialpartitioning/repo_spatial_partitioner_abstract.h"
+#include "../core/model/collection/repo_scene.h"
 #include "diff/repo_diff_abstract.h"
+#include "modelconvertor/export/repo_model_export_web.h"
+#include "modelutility/spatialpartitioning/repo_spatial_partitioner_abstract.h"
 
 namespace repo{
 	namespace manipulator{
@@ -163,11 +160,7 @@ namespace repo{
 			* Disconnects from the given database host
 			* @param databaseAd database address:port
 			*/
-			void disconnectFromDatabase(const std::string &databaseAd)
-			{
-				//FIXME: can only kill mongo here, but this is suppose to be a quick fix
-				core::handler::MongoDatabaseHandler::disconnectHandler();
-			}
+			void disconnectFromDatabase(const std::string &databaseAd);
 
 			/**
 			* Remove a collection from the database

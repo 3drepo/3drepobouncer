@@ -27,13 +27,14 @@
 #include "repo_bouncer_global.h"
 #include "repo_credentials.h"
 
+#include "lib/datastructure/repo_structs.h"
+
 #include "core/model/bson/repo_bson_role.h"
 #include "core/model/bson/repo_bson_role_settings.h"
 #include "core/model/bson/repo_bson_project_settings.h"
 #include "core/model/bson/repo_bson_user.h"
 
 #include "lib/repo_listener_abstract.h"
-#include "lib/datastructure/repo_structs.h"
 #include "manipulator/modelconvertor/import/repo_model_import_config.h"
 #include "core/model/collection/repo_scene.h"
 

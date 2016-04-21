@@ -45,9 +45,9 @@ struct MeshEntry
 enum class PartitioningTreeType{ PARTITION_X, PARTITION_Y, PARTITION_Z, LEAF_NODE };
 
 struct PartitioningTree{
-	PartitioningTreeType    type;
-	std::vector<MeshEntry> meshes; //mesh ids if it is a leaf node
-	float                 pValue; //partitioning value if not
+	PartitioningTreeType              type;
+	std::vector<MeshEntry>            meshes; //mesh ids if it is a leaf node
+	float                             pValue; //partitioning value if not
 	std::shared_ptr<PartitioningTree> left;
 	std::shared_ptr<PartitioningTree> right;
 

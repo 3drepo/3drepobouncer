@@ -21,18 +21,21 @@
 
 #include <boost/filesystem.hpp>
 
-#include "repo_manipulator.h"
-#include "../lib/repo_log.h"
+#include "../core/handler/repo_database_handler_mongo.h"
 #include "../core/model/bson/repo_bson_factory.h"
-#include "diff/repo_diff_sharedid.h"
+#include "../lib/repo_log.h"
 #include "diff/repo_diff_name.h"
+#include "diff/repo_diff_sharedid.h"
+#include "modelconvertor/import/repo_model_import_assimp.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
+#include "modelconvertor/export/repo_model_export_gltf.h"
 #include "modelconvertor/export/repo_model_export_src.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
-#include "modeloptimizer/repo_optimizer_trans_reduction.h"
 #include "modeloptimizer/repo_optimizer_multipart.h"
-#include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
+#include "modeloptimizer/repo_optimizer_trans_reduction.h"
 #include "modelutility/repo_maker_selection_tree.h"
+#include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
+#include "repo_manipulator.h"
 
 using namespace repo::manipulator;
 
@@ -260,6 +263,12 @@ uint64_t RepoManipulator::countItemsInCollection(
 		numItems = handler->countItemsInCollection(database, collection, errMsg);
 
 	return numItems;
+}
+
+void RepoManipulator::disconnectFromDatabase(const std::string &databaseAd)
+{
+	//FIXME: can only kill mongo here, but this is suppose to be a quick fix
+	core::handler::MongoDatabaseHandler::disconnectHandler();
 }
 
 bool RepoManipulator::dropCollection(

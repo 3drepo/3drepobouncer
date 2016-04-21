@@ -20,8 +20,6 @@
 
 #include "manipulator/modelconvertor/import/repo_model_import_assimp.h"
 #include "manipulator/modelconvertor/export/repo_model_export_assimp.h"
-#include "lib/repo_broadcaster.h"
-#include "lib/repo_log.h"
 
 RepoController::_RepoControllerImpl::_RepoControllerImpl(
 	std::vector<lib::RepoAbstractListener*> listeners,
