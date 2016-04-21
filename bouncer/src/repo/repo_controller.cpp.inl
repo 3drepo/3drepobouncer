@@ -15,9 +15,9 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #pragma once
-#include "repo_controller.h"
 #include "lib/repo_stack.h"
 #include "manipulator/repo_manipulator.h"
+#include "repo_controller.h"
 
 using namespace repo;
 
@@ -786,7 +786,7 @@ public:
 		DiffResult &compResults
 		)
 	{
-		compareScenes(token, base, compare, baseResults, compResults,DiffMode::DIFF_BY_ID);
+		compareScenes(token, base, compare, baseResults, compResults, DiffMode::DIFF_BY_ID);
 	}
 
 	/**
@@ -806,7 +806,7 @@ public:
 		DiffResult &compResults
 		)
 	{
-		compareScenes(token, base, compare, baseResults, compResults,DiffMode::DIFF_BY_NAME);
+		compareScenes(token, base, compare, baseResults, compResults, DiffMode::DIFF_BY_NAME);
 	}
 
 	/*
