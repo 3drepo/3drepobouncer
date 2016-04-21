@@ -99,8 +99,8 @@ int main(int argc, char* argv[]){
 			repoLog("successfully connected to the database!");
 			int32_t errcode = performOperation(controller, token, op);
 
-			delete controller;
-			delete token;
+			controller->destroyToken(token);
+			delete controller;			
 			return errcode;
 		}
 		else{

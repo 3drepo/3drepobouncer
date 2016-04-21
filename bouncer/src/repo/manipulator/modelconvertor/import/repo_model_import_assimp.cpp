@@ -377,7 +377,7 @@ repo::core::model::MeshNode* AssimpModelImport::createMeshRepoNode(
 	{
 		auto aiVertex = assimpMesh->mVertices[i];
 		aiVertex -= offsetVec;
-		vertices.push_back({ aiVertex.x, aiVertex.y, aiVertex.z });
+		vertices.push_back({ (float)aiVertex.x, (float)aiVertex.y, (float)aiVertex.z });
 
 		minVertex.x = minVertex.x < aiVertex.x ? minVertex.x : aiVertex.x;
 		minVertex.y = minVertex.y < aiVertex.y ? minVertex.y : aiVertex.y;

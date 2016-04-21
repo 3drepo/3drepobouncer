@@ -81,6 +81,11 @@ uint64_t RepoController::countItemsInCollection(
 	return impl->countItemsInCollection(token, database, collection);
 }
 
+void RepoController::destroyToken(RepoController::RepoToken* token)
+{
+	if (token) delete token;
+}
+
 void RepoController::disconnectFromDatabase(const RepoController::RepoToken* token)
 {
 	impl->disconnectFromDatabase(token);

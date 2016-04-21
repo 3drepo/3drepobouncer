@@ -108,6 +108,8 @@ namespace repo{
 			const bool        &pwDigested = false
 			);
 
+		void destroyToken(RepoToken* token);
+
 		/**
 			* Disconnect the controller from a database connection
 			* and destroys the token
