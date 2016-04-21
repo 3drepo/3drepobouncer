@@ -16,12 +16,13 @@
 */
 #pragma once
 #include "repo_controller.h"
+#include "lib/repo_stack.h"
+#include "manipulator/repo_manipulator.h"
 
 using namespace repo;
 
 class RepoController::RepoToken
 {
-
 public:
 
 	/**
@@ -50,7 +51,6 @@ public:
 	std::string getDatabaseHostPort() const { return databaseAd; }
 
 	std::string getDatabaseName() const { return databaseName; }
-
 
 	//private:
 
@@ -122,7 +122,6 @@ public:
 		const bool        &pwDigested = false
 		);
 
-
 	/**
 	* Disconnect the controller from a database connection
 	* and destroys the token
@@ -138,7 +137,6 @@ public:
 	* @return returns true if successful, false otherwise
 	*/
 	bool testConnection(const repo::RepoCredentials &credentials);
-
 
 	/*
 	*	------------- Database info lookup --------------
@@ -202,7 +200,6 @@ public:
 		const uint64_t               &skip = 0,
 		const uint32_t               &limit = 0);
 
-
 	/**
 	* Retrieve roles from a specified database
 	* due to limitations of the transfer protocol this might need
@@ -235,7 +232,6 @@ public:
 		const uint64_t               &skip = 0,
 		const uint32_t               &limit = 0);
 
-	
 	/**
 	* Get a role settings within a database
 	* @param token A RepoToken given at authentication
@@ -366,7 +362,6 @@ public:
 	*	------- Database Operations (insert/delete/update) ---------
 	*/
 
-
 	/**
 	* Commit a scene graph
 	* @param token Authentication token
@@ -377,7 +372,6 @@ public:
 		const RepoToken                     *token,
 		repo::core::model::RepoScene        *scene,
 		const std::string                   &owner = "");
-
 
 	/**
 	* Insert a binary file into the database (GridFS)
@@ -658,7 +652,6 @@ public:
 		const RepoToken                               *token,
 		repo::core::model::RepoScene            *scene);
 
-
 	/**
 	* Generate a SRC encoding in the form of a buffer for the given scene
 	* This requires the stash to have been generated already
@@ -713,7 +706,6 @@ public:
 	bool saveSceneToFile(
 		const std::string &filePath,
 		const repo::core::model::RepoScene* scene);
-
 
 	/*
 	*	------------- Optimizations --------------
@@ -772,11 +764,10 @@ public:
 		const RepoToken                     *token,
 		repo::core::model::RepoScene        *base,
 		repo::core::model::RepoScene        *compare,
-		repo::manipulator::diff::DiffResult &baseResults,
-		repo::manipulator::diff::DiffResult &compResults,
-		const repo::manipulator::diff::Mode       &diffMode
+		DiffResult &baseResults,
+		DiffResult &compResults,
+		const DiffMode       &diffMode
 		);
-
 
 	/**
 	* Compare 2 scenes via IDs.
@@ -791,11 +782,11 @@ public:
 		const RepoToken                     *token,
 		repo::core::model::RepoScene        *base,
 		repo::core::model::RepoScene        *compare,
-		repo::manipulator::diff::DiffResult &baseResults,
-		repo::manipulator::diff::DiffResult &compResults
+		DiffResult &baseResults,
+		DiffResult &compResults
 		)
 	{
-		compareScenes(token, base, compare, baseResults, compResults, manipulator::diff::Mode::DIFF_BY_ID);
+		compareScenes(token, base, compare, baseResults, compResults,DiffMode::DIFF_BY_ID);
 	}
 
 	/**
@@ -811,11 +802,11 @@ public:
 		const RepoToken                     *token,
 		repo::core::model::RepoScene        *base,
 		repo::core::model::RepoScene        *compare,
-		repo::manipulator::diff::DiffResult &baseResults,
-		repo::manipulator::diff::DiffResult &compResults
+		DiffResult &baseResults,
+		DiffResult &compResults
 		)
 	{
-		compareScenes(token, base, compare, baseResults, compResults, manipulator::diff::Mode::DIFF_BY_NAME);
+		compareScenes(token, base, compare, baseResults, compResults,DiffMode::DIFF_BY_NAME);
 	}
 
 	/*
@@ -836,5 +827,4 @@ private:
 
 	lib::RepoStack<manipulator::RepoManipulator*> workerPool;
 	const uint32_t numDBConnections;
-
 };

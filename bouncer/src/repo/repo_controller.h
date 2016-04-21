@@ -799,6 +799,7 @@ namespace repo{
 			DiffResult &compResults
 			)
 		{
+			compareScenes(token, base, compare, baseResults, compResults, DiffMode::DIFF_BY_NAME);
 		}
 
 		/*
