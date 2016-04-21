@@ -193,7 +193,7 @@ TEST(RepoBSONFactoryTest, AppendDefaultsTest)
 	builderWithFields << "doll" << "Kitty";
 
 	auto defaults2 = RepoBSONFactory::appendDefaults("test");
-	builder.appendElements(defaults2);
+	builderWithFields.appendElements(defaults2);
 
 	RepoNode nWithExists = builderWithFields.obj();
 	EXPECT_FALSE(nWithExists.isEmpty());
