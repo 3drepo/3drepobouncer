@@ -61,7 +61,7 @@ int32_t knownValid(const std::string &cmd)
 
 int32_t performOperation(
 	repo::RepoController *controller,
-	const repo::RepoToken      *token,
+	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
 	)
 {
@@ -123,7 +123,7 @@ int32_t performOperation(
 
 int32_t generateStash(
 	repo::RepoController       *controller,
-	const repo::RepoToken      *token,
+	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
 	)
 {
@@ -172,7 +172,7 @@ int32_t generateStash(
 
 int32_t getFileFromProject(
 	repo::RepoController       *controller,
-	const repo::RepoToken      *token,
+	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
 	)
 {
@@ -197,7 +197,7 @@ int32_t getFileFromProject(
 
 int32_t importFileAndCommit(
 	repo::RepoController *controller,
-	const repo::RepoToken      *token,
+	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
 	)
 {

@@ -93,7 +93,7 @@ int main(int argc, char* argv[]){
 		repo::RepoController *controller = instantiateController();
 
 		std::string errMsg;
-		repo::RepoToken* token = controller->authenticateToAdminDatabaseMongo(errMsg, address, port, username, password);
+		repo::RepoController::RepoToken* token = controller->authenticateToAdminDatabaseMongo(errMsg, address, port, username, password);
 		if (token)
 		{
 			repoLog("successfully connected to the database!");
