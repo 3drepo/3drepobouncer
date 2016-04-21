@@ -51,7 +51,7 @@ namespace repo{
 				* @return returns a repo_src_export_t containing all files needed for this
 				*          model to be rendered
 				*/
-				repo_export_buffers_t getAllFilesExportedAsBuffer() const;
+				repo_web_buffers_t getAllFilesExportedAsBuffer() const;
 			
 				
 			private:

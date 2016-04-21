@@ -20,11 +20,53 @@
 
 #include "manipulator/modelconvertor/import/repo_model_import_assimp.h"
 #include "manipulator/modelconvertor/export/repo_model_export_assimp.h"
+#include "lib/repo_broadcaster.h"
+#include "lib/repo_log.h"
 
 
 
 
 using namespace repo;
+
+class RepoController::RepoToken
+{
+
+public:
+
+	/**
+	* Construct a Repo token
+	* @param credentials user credentials in a bson format
+	* @param databaseHostPort database address+port as a string
+	* @param databaseName database it is authenticating against
+	*/
+	RepoToken(
+		const repo::core::model::RepoBSON* credentials = 0,
+		const std::string &databaseHostPort = std::string(),
+		const std::string &databaseName = std::string()) :
+		databaseAd(databaseHostPort),
+		credentials(credentials),
+		databaseName(databaseName) {}
+
+	~RepoToken(){
+		if (credentials)
+			delete credentials;
+	}
+
+	/**
+	* @brief getDatabaseHostPort
+	* @return database host and port in as a string
+	*/
+	std::string getDatabaseHostPort() const { return databaseAd; }
+
+	std::string getDatabaseName() const { return databaseName; }
+
+
+//private:
+
+	const repo::core::model::RepoBSON* credentials;
+	const std::string databaseAd;
+	const std::string databaseName;
+};
 
 RepoController::RepoController(
         std::vector<lib::RepoAbstractListener*> listeners,
@@ -60,7 +102,7 @@ RepoController::~RepoController()
     }
 }
 
-RepoToken* RepoController::authenticateToAdminDatabaseMongo(
+RepoController::RepoToken* RepoController::authenticateToAdminDatabaseMongo(
         std::string       &errMsg,
         const std::string &address,
         const int         &port,
@@ -96,7 +138,7 @@ RepoToken* RepoController::authenticateToAdminDatabaseMongo(
     return token;
 }
 
-RepoToken* RepoController::authenticateMongo(
+RepoController::RepoToken* RepoController::authenticateMongo(
         std::string       &errMsg,
         const std::string &address,
         const uint32_t    &port,
@@ -511,6 +553,12 @@ repo::core::model::CollectionStats RepoController::getCollectionStats(
     return stats;
 }
 
+std::string getHostAndPort(const RepoController::RepoToken *token)
+{
+	return token->getDatabaseHostPort();
+}
+
+
 std::map<std::string, std::list<std::string>>
 RepoController::getDatabasesWithProjects(
         const RepoToken *token,
@@ -863,10 +911,10 @@ bool RepoController::generateAndCommitSRCBuffer(
 }
 
 
-manipulator::modelconvertor::repo_export_buffers_t RepoController::generateGLTFBuffer(
+repo_web_buffers_t RepoController::generateGLTFBuffer(
 	const repo::core::model::RepoScene *scene)
 {
-	manipulator::modelconvertor::repo_export_buffers_t buffer;
+	repo_web_buffers_t buffer;
 	if (scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
@@ -880,10 +928,10 @@ manipulator::modelconvertor::repo_export_buffers_t RepoController::generateGLTFB
 	return buffer;
 }
 
-manipulator::modelconvertor::repo_export_buffers_t RepoController::generateSRCBuffer(
+repo_web_buffers_t RepoController::generateSRCBuffer(
 	const repo::core::model::RepoScene *scene)
 {
-	manipulator::modelconvertor::repo_export_buffers_t buffer;
+	repo_web_buffers_t buffer;
 	if (scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
@@ -930,13 +978,13 @@ std::string RepoController::getNameOfAdminDatabase(const RepoToken *token)
     return name;
 }
 
-std::shared_ptr<manipulator::modelutility::PartitioningTree>
+std::shared_ptr<PartitioningTree>
 RepoController::getScenePartitioning(
 const repo::core::model::RepoScene *scene,
 const uint32_t                     &maxDepth
 )
 {
-	std::shared_ptr<manipulator::modelutility::PartitioningTree> partition(nullptr);
+	std::shared_ptr<PartitioningTree> partition(nullptr);
 
 	if (scene && scene->getRoot(scene->getViewGraph()))
 	{

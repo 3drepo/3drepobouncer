@@ -309,7 +309,7 @@ namespace repo{
 				const std::string                             &databaseAd,
 				const repo::core::model::RepoBSON	          *cred,
 				const repo::core::model::RepoScene            *scene,
-				const modelconvertor::repo_export_buffers_t   &buffers,
+				const repo_web_buffers_t                      &buffers,
 				const modelconvertor::WebExportType           &exType);
 
 			/**
@@ -345,7 +345,7 @@ namespace repo{
 			* @param scene the scene to generate the gltf encoding from
 			* @return returns a buffer in the form of a byte vector mapped to its filename
 			*/
-			modelconvertor::repo_export_buffers_t generateGLTFBuffer(
+			repo_web_buffers_t generateGLTFBuffer(
 				const repo::core::model::RepoScene *scene);
 
 
@@ -355,7 +355,7 @@ namespace repo{
 			* @param scene the scene to generate the src encoding from
 			* @return returns a buffer in the form of a byte vector mapped to its filename
 			*/
-			modelconvertor::repo_export_buffers_t generateSRCBuffer(
+			repo_web_buffers_t generateSRCBuffer(
 				const repo::core::model::RepoScene *scene);
 
 			/**
@@ -473,7 +473,7 @@ namespace repo{
 			* @param scene scene to partition
 			* @param maxDepth max partitioning depth
 			*/
-			std::shared_ptr<manipulator::modelutility::PartitioningTree> getScenePartitioning(
+			std::shared_ptr<PartitioningTree> getScenePartitioning(
 				const repo::core::model::RepoScene *scene,
 				const uint32_t                     &maxDepth = 8
 				);

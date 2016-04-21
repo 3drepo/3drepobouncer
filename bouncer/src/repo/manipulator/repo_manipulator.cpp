@@ -615,7 +615,7 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON	          *cred,
 	const repo::core::model::RepoScene            *scene,
-	const modelconvertor::repo_export_buffers_t   &buffers,
+	const repo_web_buffers_t                        &buffers,
 	const modelconvertor::WebExportType           &exType)
 {
 	bool success = false;
@@ -696,11 +696,11 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 	return success;
 }
 
-modelconvertor::repo_export_buffers_t RepoManipulator::generateGLTFBuffer(
+repo_web_buffers_t RepoManipulator::generateGLTFBuffer(
 	const repo::core::model::RepoScene *scene)
 {
 
-	modelconvertor::repo_export_buffers_t result;
+	repo_web_buffers_t result;
 	modelconvertor::GLTFModelExport gltfExport(scene);
 	if (gltfExport.isOk())
 	{
@@ -714,11 +714,11 @@ modelconvertor::repo_export_buffers_t RepoManipulator::generateGLTFBuffer(
 }
 
 
-modelconvertor::repo_export_buffers_t RepoManipulator::generateSRCBuffer(
+repo_web_buffers_t RepoManipulator::generateSRCBuffer(
 	const repo::core::model::RepoScene *scene)
 {
 
-	modelconvertor::repo_export_buffers_t result;
+	repo_web_buffers_t result;
 	modelconvertor::SRCModelExport srcExport(scene);
 	if (srcExport.isOk())
 	{
@@ -832,7 +832,7 @@ repo::core::model::RepoRoleSettings RepoManipulator::getRoleSettingByName(
 	return settings;
 }
 
-std::shared_ptr<modelutility::PartitioningTree> 
+std::shared_ptr<PartitioningTree> 
 		RepoManipulator::getScenePartitioning(
 		const repo::core::model::RepoScene *scene,
 		const uint32_t                     &maxDepth

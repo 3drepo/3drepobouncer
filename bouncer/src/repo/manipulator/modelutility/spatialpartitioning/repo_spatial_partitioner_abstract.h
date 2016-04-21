@@ -18,55 +18,12 @@
 #pragma once
 
 #include "../../../lib/repo_property_tree.h"
+#include "../../../lib/datastructure/repo_structs.h"
 #include "../../../core/model/collection/repo_scene.h"
 
 namespace repo{
 	namespace manipulator{
 		namespace modelutility{
-
-			struct MeshEntry
-			{
-				std::vector<float> min;
-				std::vector<float> max;
-				std::vector<float> mid;// midpoint
-				repoUUID      id;
-				
-				MeshEntry() :mid({ 0, 0, 0 }) 
-				{
-					min = { 0, 0, 0 };
-					max = { 0, 0, 0 };
-				}
-			};
-				
-			enum class PartitioningTreeType{ PARTITION_X, PARTITION_Y, PARTITION_Z, LEAF_NODE };
-
-			struct PartitioningTree{
-				PartitioningTreeType    type;
-				std::vector<MeshEntry> meshes; //mesh ids if it is a leaf node
-				float                 pValue; //partitioning value if not
-				std::shared_ptr<PartitioningTree> left;
-				std::shared_ptr<PartitioningTree> right;	
-	
-				//Construction of branch node
-				PartitioningTree(
-					const PartitioningTreeType &type,
-					const float &pValue,
-					std::shared_ptr<PartitioningTree> left,
-					std::shared_ptr<PartitioningTree> right)
-					: type(type), pValue(pValue),
-					left(left),
-					right(right){}
-
-				//Construction of leaf node
-				PartitioningTree(
-					const std::vector<MeshEntry> &meshes)
-					: 
-					type(PartitioningTreeType::LEAF_NODE),
-					meshes(meshes), pValue(0),
-					left(std::shared_ptr<PartitioningTree>(nullptr)),
-					right(std::shared_ptr<PartitioningTree>(nullptr)){}
-	
-			};
 
 			class AbstractSpatialPartitioner
 			{

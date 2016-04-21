@@ -568,7 +568,7 @@ bool GLTFModelExport::generateTreeRepresentation()
 	return true;
 }
 
-repo_export_buffers_t GLTFModelExport::getAllFilesExportedAsBuffer() const
+repo_web_buffers_t GLTFModelExport::getAllFilesExportedAsBuffer() const
 {
 	return{ getGLTFFilesAsBuffer(), getX3DFilesAsBuffer(), getJSONFilesAsBuffer() };
 }

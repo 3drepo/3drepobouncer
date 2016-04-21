@@ -27,70 +27,27 @@
 #include "repo_bouncer_global.h"
 #include "repo_credentials.h"
 
-#include "core/handler/repo_database_handler_mongo.h"
 #include "core/model/bson/repo_bson.h"
 #include "core/model/bson/repo_bson_role.h"
 #include "core/model/bson/repo_bson_role_settings.h"
 #include "core/model/bson/repo_bson_project_settings.h"
 #include "core/model/bson/repo_bson_user.h"
 #include "lib/repo_stack.h"
-#include "lib/repo_broadcaster.h"
-#include "lib/repo_log.h"
 #include "lib/repo_listener_abstract.h"
-#include "manipulator/repo_manipulator.h"
+#include "lib/datastructure/repo_structs.h"
+#include "manipulator/modelconvertor/import/repo_model_import_config.h"
 #include "manipulator/diff/repo_diff_abstract.h"
-#include "core/model/collection//repo_scene.h"
+#include "core/model/collection/repo_scene.h"
+#include "manipulator/repo_manipulator.h"
 
 
 namespace repo{
-
-class REPO_API_EXPORT RepoToken
-{
-
-    friend class RepoController;
-
-public:
-
-    /**
-        * Construct a Repo token
-        * @param credentials user credentials in a bson format
-        * @param databaseHostPort database address+port as a string
-        * @param databaseName database it is authenticating against
-        */
-    RepoToken(
-            const repo::core::model::RepoBSON* credentials = 0,
-            const std::string &databaseHostPort = std::string(),
-            const std::string &databaseName = std::string()) :
-        databaseAd(databaseHostPort),
-        credentials(credentials),
-        databaseName(databaseName) {}
-
-    ~RepoToken(){
-        if (credentials)
-            delete credentials;
-    }
-
-    /**
-         * @brief getDatabaseHostPort
-         * @return database host and port in as a string
-         */
-    std::string getDatabaseHostPort() const { return databaseAd; }
-
-    std::string getDatabaseName() const { return databaseName; }
-
-
-private:
-
-    const repo::core::model::RepoBSON* credentials;
-    const std::string databaseAd;
-    const std::string databaseName;
-};
-
 
 class REPO_API_EXPORT RepoController
 {
 public:
 
+	class RepoToken;
 
     /**
         * Constructor
@@ -332,11 +289,7 @@ public:
         * @param token repo token
         * @return return a string with "databaseAddress:port"
         */
-    std::string getHostAndPort(const RepoToken *token) const
-    {
-        return token->databaseAd;
-    }
-
+	std::string getHostAndPort(const RepoToken *token);
     /**
         * Get a list of Admin roles from the database
         * @param token repo token to the database
@@ -689,7 +642,7 @@ public:
 	* @param scene the scene to generate the gltf encoding from
 	* @return returns a buffer in the form of a byte vector
 	*/
-	manipulator::modelconvertor::repo_export_buffers_t generateGLTFBuffer(
+	repo_web_buffers_t generateGLTFBuffer(
 		const repo::core::model::RepoScene *scene);
 
 	/**
@@ -709,7 +662,7 @@ public:
 	* @param scene the scene to generate the src encoding from
 	* @return returns a buffer in the form of a byte vector
 	*/
-	manipulator::modelconvertor::repo_export_buffers_t generateSRCBuffer(
+	repo_web_buffers_t generateSRCBuffer(
 			const repo::core::model::RepoScene *scene);
 
     /**
@@ -781,7 +734,7 @@ public:
 	* @param scene scene to partition
 	* @param maxDepth max partitioning depth
 	*/
-	std::shared_ptr<manipulator::modelutility::PartitioningTree>
+	std::shared_ptr<PartitioningTree>
 		getScenePartitioning(
 		const repo::core::model::RepoScene *scene,
 		const uint32_t                     &maxDepth = 8

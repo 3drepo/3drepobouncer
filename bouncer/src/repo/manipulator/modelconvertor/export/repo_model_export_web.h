@@ -26,18 +26,12 @@
 
 #include "repo_model_export_abstract.h"
 #include "../../../lib/repo_property_tree.h"
+#include "../../../lib/datastructure/repo_structs.h"
 #include "../../../core/model/collection/repo_scene.h"
 
 namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
-
-			typedef struct {
-				std::unordered_map<std::string, std::vector<uint8_t>> geoFiles; //files where geometery are stored
-				std::unordered_map<std::string, std::vector<uint8_t>> x3dFiles; //back bone x3dom files
-				std::unordered_map<std::string, std::vector<uint8_t>> jsonFiles; //JSON mapping files
-			}repo_export_buffers_t;
-
 
 			enum class WebExportType { GLTF, SRC };
 
@@ -68,7 +62,7 @@ namespace repo{
 				* @return returns a repo_src_export_t containing all files needed for this 
 				*          model to be rendered
 				*/
-				virtual repo_export_buffers_t getAllFilesExportedAsBuffer() const = 0;
+				virtual repo_web_buffers_t getAllFilesExportedAsBuffer() const = 0;
 
 				/**
 				* Return the JSON file as raw bytes buffer

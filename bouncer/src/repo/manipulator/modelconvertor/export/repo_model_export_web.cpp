@@ -62,7 +62,7 @@ bool WebModelExport::exportToFile(
 {
 	if (!convertSuccess) return convertSuccess;
 
-	const repo_export_buffers_t buffers = getAllFilesExportedAsBuffer();
+	const repo_web_buffers_t buffers = getAllFilesExportedAsBuffer();
 
 	boost::filesystem::path boostPath(filePath);
 
