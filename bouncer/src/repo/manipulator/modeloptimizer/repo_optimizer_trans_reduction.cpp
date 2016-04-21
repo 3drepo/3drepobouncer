@@ -31,8 +31,7 @@ TransformationReductionOptimizer::TransformationReductionOptimizer() : AbstractO
 {
 }
 
-
-TransformationReductionOptimizer::~TransformationReductionOptimizer() 
+TransformationReductionOptimizer::~TransformationReductionOptimizer()
 {
 }
 
@@ -48,8 +47,8 @@ bool TransformationReductionOptimizer::apply(repo::core::model::RepoScene *scene
 		size_t step = total / 10;
 		if (!step) step = total; //avoid modulo of 0;
 		for (repo::core::model::RepoNode *node : meshes)
-		{			
-			if ( ++count % step == 0)
+		{
+			if (++count % step == 0)
 			{
 				repoInfo << "Optimizer : processed " << count << " of " << total << " meshes";
 			}
@@ -65,7 +64,7 @@ bool TransformationReductionOptimizer::apply(repo::core::model::RepoScene *scene
 
 		repoInfo << "Mesh Optimisation complete. Number of transformations has been reduced from "
 			<< transNodes_pre << " to " << scene->getAllTransformations(gType).size();
-		
+
 		transNodes_pre = scene->getAllTransformations(gType).size();
 		auto cameras = scene->getAllCameras(gType);
 		count = 0;
@@ -109,10 +108,10 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 	std::vector<repo::core::model::RepoNode*> transParents =
 		scene->getParentNodesFiltered(gType,
 		mesh, repo::core::model::NodeType::TRANSFORMATION);
-	
+
 	if (transParents.size() == 1)
 	{
-		repo::core::model::TransformationNode *trans = 
+		repo::core::model::TransformationNode *trans =
 			dynamic_cast<repo::core::model::TransformationNode*>(transParents[0]);
 		if (trans)
 		{
@@ -126,18 +125,17 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 				std::vector<repo::core::model::RepoNode*> children = scene->getChildrenAsNodes(gType, parentSharedID);
 				bool singleMeshChild = scene->filterNodesByType(
 					children, repo::core::model::NodeType::MESH).size() == 1;
-				
+
 				bool noTransSiblings = (bool)!scene->filterNodesByType(
-					children, repo::core::model::NodeType::TRANSFORMATION).size() == 1;			
+					children, repo::core::model::NodeType::TRANSFORMATION).size() == 1;
 
 				std::vector<repo::core::model::RepoNode*> granTransParents =
 					scene->getParentNodesFiltered(gType,
 					trans, repo::core::model::NodeType::TRANSFORMATION);
 
-
 				if (singleMeshChild && noTransSiblings && granTransParents.size() == 1)
 				{
-					repo::core::model::TransformationNode *granTrans = 
+					repo::core::model::TransformationNode *granTrans =
 						dynamic_cast<repo::core::model::TransformationNode*>(granTransParents[0]);
 
 					if (granTrans)
@@ -152,11 +150,10 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 							//Put all children of trans node to granTrans, unless it's a metadata node
 							if (node)
 							{
-
 								scene->abandonChild(gType,
 									parentSharedID, node, false, true);
 								if (!isIdentity && node->positionDependant()){
-									//Parent is not the identity matrix, we need to reapply the transformation if 
+									//Parent is not the identity matrix, we need to reapply the transformation if
 									//the node is position dependant
 									node->swap(node->cloneAndApplyTransformation(trans->getTransMatrix(false)));
 								}
@@ -173,7 +170,7 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 
 						//change mesh name
 						repo::core::model::MeshNode newMesh = mesh->cloneAndChangeName(trans->getName(), false);
-	
+
 						scene->modifyNode(gType, mesh, &newMesh);
 
 						//remove parent from the scene.
@@ -183,10 +180,7 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 					{
 						repoError << "Failed to dynamically cast a transformation node!!!!";
 					}
-
-
 				} //(singleMeshChild && noTransSiblings && granTransParents.size() == 1)
-
 			}//(trans->getUniqueID() != scene->getRoot()->getUniqueID() && trans->isIdentity())
 		}
 		else
@@ -194,7 +188,6 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 			repoError << "Failed to dynamically cast a transformation node!!!!";
 		}
 	}
-
 }
 
 void TransformationReductionOptimizer::applyOptimOnCamera(
@@ -210,7 +203,6 @@ void TransformationReductionOptimizer::applyOptimOnCamera(
 	std::vector<repo::core::model::RepoNode*> transParents =
 		scene->getParentNodesFiltered(gType,
 		camera, repo::core::model::NodeType::TRANSFORMATION);
-
 
 	if (transParents.size() == 1)
 	{
@@ -238,7 +230,6 @@ void TransformationReductionOptimizer::applyOptimOnCamera(
 					scene->getParentNodesFiltered(gType,
 					trans, repo::core::model::NodeType::TRANSFORMATION);
 
-
 				if (sameName && noMeshSiblings && noTransSiblings && granTransParents.size() == 1)
 				{
 					repo::core::model::TransformationNode *granTrans =
@@ -256,11 +247,10 @@ void TransformationReductionOptimizer::applyOptimOnCamera(
 							//Put all children of trans node to granTrans
 							if (node)
 							{
-
 								scene->abandonChild(gType,
 									parentSharedID, node, false, true);
 								if (!isIdentity && node->positionDependant()){
-									//Parent is not the identity matrix, we need to reapply the transformation if 
+									//Parent is not the identity matrix, we need to reapply the transformation if
 									//the node is position dependant
 									node->swap(node->cloneAndApplyTransformation(trans->getTransMatrix(false)));
 								}
@@ -285,10 +275,7 @@ void TransformationReductionOptimizer::applyOptimOnCamera(
 					{
 						repoError << "Failed to dynamically cast a transformation node!!!!";
 					}
-
-
 				} //(singleMeshChild && noTransSiblings && granTransParents.size() == 1)
-
 			}//(trans->getUniqueID() != scene->getRoot()->getUniqueID() && trans->isIdentity())
 		}
 		else
@@ -296,5 +283,4 @@ void TransformationReductionOptimizer::applyOptimOnCamera(
 			repoError << "Failed to dynamically cast a transformation node!!!!";
 		}
 	}
-
 }

@@ -24,49 +24,43 @@
 namespace repo {
 	namespace core {
 		namespace model {
+			//------------------------------------------------------------------------------
+			//
+			// Fields specific to metadata only
+			//
+			//------------------------------------------------------------------------------
+#define REPO_NODE_LABEL_METADATA     			"metadata"
+			//------------------------------------------------------------------------------
 
-				//------------------------------------------------------------------------------
-				//
-				// Fields specific to metadata only
-				//
-				//------------------------------------------------------------------------------
-				#define REPO_NODE_LABEL_METADATA     			"metadata"
-				//------------------------------------------------------------------------------
+			class REPO_API_EXPORT MetadataNode :public RepoNode
+			{
+			public:
 
+				/**
+				* Default constructor
+				*/
+				MetadataNode();
 
-				class REPO_API_EXPORT MetadataNode :public RepoNode
-				{
-				public:
+				/**
+				* Construct a MetadataNode from a RepoBSON object
+				* @param RepoBSON object
+				*/
+				MetadataNode(RepoBSON bson);
 
-					/**
-					* Default constructor
-					*/
-					MetadataNode();
+				/**
+				* Default deconstructor
+				*/
+				~MetadataNode();
 
-					/**
-					* Construct a MetadataNode from a RepoBSON object
-					* @param RepoBSON object
-					*/
-					MetadataNode(RepoBSON bson);
-
-
-					/**
-					* Default deconstructor
-					*/
-					~MetadataNode();
-
-					/**
-					* Check if the node is semantically equal to another
-					* Different node should have a different interpretation of what
-					* this means.
-					* @param other node to compare with
-					* @param returns true if equal, false otherwise
-					*/
-					virtual bool sEqual(const RepoNode &other) const;
-
-				};
+				/**
+				* Check if the node is semantically equal to another
+				* Different node should have a different interpretation of what
+				* this means.
+				* @param other node to compare with
+				* @param returns true if equal, false otherwise
+				*/
+				virtual bool sEqual(const RepoNode &other) const;
+			};
 		} //namespace model
 	} //namespace core
 } //namespace repo
-
-

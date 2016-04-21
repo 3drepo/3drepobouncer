@@ -34,8 +34,8 @@ AbstractSpatialPartitioner::~AbstractSpatialPartitioner()
 }
 
 repo::lib::PropertyTree AbstractSpatialPartitioner::generatePropertyTreeForPartitioning()
-{	
-	return generatePropertyTreeForPartitioningInternal(partitionScene());	
+{
+	return generatePropertyTreeForPartitioningInternal(partitionScene());
 }
 
 repo::lib::PropertyTree AbstractSpatialPartitioner::generatePropertyTreeForPartitioningInternal(
@@ -48,8 +48,8 @@ repo::lib::PropertyTree AbstractSpatialPartitioner::generatePropertyTreeForParti
 		if (PartitioningTreeType::LEAF_NODE == spTree->type)
 		{
 			repo::lib::PropertyTree meshesTree;
-			
-			for(const auto &mesh: spTree->meshes)
+
+			for (const auto &mesh : spTree->meshes)
 			{
 				std::string idString = UUIDtoString(mesh.id);
 				repo::lib::PropertyTree childTree;
@@ -57,20 +57,18 @@ repo::lib::PropertyTree AbstractSpatialPartitioner::generatePropertyTreeForParti
 				childTree.addToTree("max", mesh.max);
 				meshesTree.mergeSubTree(idString, childTree);
 			}
-			
+
 			tree.mergeSubTree("meshes", meshesTree);
 		}
 		else
 		{
-			std::string axisStr = PartitioningTreeType::PARTITION_X == spTree->type ? "X" 
-					: (PartitioningTreeType::PARTITION_Y == spTree->type ? "Y" : "Z");
+			std::string axisStr = PartitioningTreeType::PARTITION_X == spTree->type ? "X"
+				: (PartitioningTreeType::PARTITION_Y == spTree->type ? "Y" : "Z");
 			tree.addToTree("axis", axisStr);
 			tree.addToTree("value", spTree->pValue);
 			tree.mergeSubTree("left", generatePropertyTreeForPartitioningInternal(spTree->left));
 			tree.mergeSubTree("right", generatePropertyTreeForPartitioningInternal(spTree->right));
 		}
-			
 	}
 	return tree;
-	
 }

@@ -19,13 +19,12 @@
 
 #include <sstream>
 
-static const std::string cmdGenStash   = "genStash";   //test the connection
-static const std::string cmdGetFile    = "getFile"; //download original file
+static const std::string cmdGenStash = "genStash";   //test the connection
+static const std::string cmdGetFile = "getFile"; //download original file
 static const std::string cmdImportFile = "import"; //file import
-static const std::string cmdTestConn   = "test";   //test the connection
-static const std::string cmdVersion    = "version";   //get version
-static const std::string cmdVersion2   = "-v";   //get version
-
+static const std::string cmdTestConn = "test";   //test the connection
+static const std::string cmdVersion = "version";   //get version
+static const std::string cmdVersion2 = "-v";   //get version
 
 std::string helpInfo()
 {
@@ -66,13 +65,11 @@ int32_t performOperation(
 	const repo_op_t            &command
 	)
 {
-
 	int32_t errCode = REPOERR_UNKNOWN_CMD;
 
 	if (command.command == cmdImportFile)
-	{		
+	{
 		try{
-
 			errCode = importFileAndCommit(controller, token, command);
 		}
 		catch (const std::exception &e)
@@ -80,12 +77,10 @@ int32_t performOperation(
 			repoLogError("Failed to import and commit file: " + std::string(e.what()));
 			errCode = REPOERR_UNKNOWN_ERR;
 		}
-		
 	}
 	else if (command.command == cmdGenStash)
 	{
 		try{
-
 			errCode = generateStash(controller, token, command);
 		}
 		catch (const std::exception &e)
@@ -97,7 +92,6 @@ int32_t performOperation(
 	else if (command.command == cmdGetFile)
 	{
 		try{
-
 			errCode = getFileFromProject(controller, token, command);
 		}
 		catch (const std::exception &e)
@@ -110,7 +104,7 @@ int32_t performOperation(
 	{
 		//This is just to test if the client is working and if the connection is working
 		//if we got a token from the controller we can assume that it worked.
-		return token ?  REPOERR_OK : REPOERR_AUTH_FAILED;
+		return token ? REPOERR_OK : REPOERR_AUTH_FAILED;
 	}
 	else if (command.command == cmdVersion || command.command == cmdVersion2)
 	{
@@ -143,7 +137,7 @@ int32_t generateStash(
 		return REPOERR_INVALID_ARG;
 	}
 
-	std::string dbName  = command.args[0];
+	std::string dbName = command.args[0];
 	std::string project = command.args[1];
 	std::string type = command.args[2];
 
@@ -153,7 +147,7 @@ int32_t generateStash(
 		return REPOERR_INVALID_ARG;
 	}
 	auto scene = controller->fetchScene(token, dbName, project);
-	if (!scene)	
+	if (!scene)
 	{
 		return REPOERR_LOAD_SCENE_FAIL;
 	}
@@ -172,8 +166,6 @@ int32_t generateStash(
 	{
 		success = controller->generateAndCommitSRCBuffer(token, scene);
 	}
-	
-
 
 	return success ? REPOERR_OK : REPOERR_STASH_GEN_FAIL;
 }
@@ -214,7 +206,7 @@ int32_t importFileAndCommit(
 	*/
 	if (command.nArgcs < 3)
 	{
-		repoLogError("Number of arguments mismatch! " + cmdImportFile 
+		repoLogError("Number of arguments mismatch! " + cmdImportFile
 			+ " requires 3 arguments: file database project [dxrotate] [owner] [config file]");
 		return REPOERR_INVALID_ARG;
 	}
@@ -253,13 +245,11 @@ int32_t importFileAndCommit(
 			{
 				configFile = command.args[5];
 			}
-			
 		}
 		else
 		{
 			configFile = command.args[4];
 		}
-		
 	}
 
 	repoLogDebug("File: " + fileLoc + " database: " + database
@@ -282,8 +272,6 @@ int32_t importFileAndCommit(
 		//FIXME: should make commitscene return a boolean even though GUI doesn't care...
 		return REPOERR_OK;
 	}
-	
+
 	return REPOERR_LOAD_SCENE_FAIL;
-
-
 }

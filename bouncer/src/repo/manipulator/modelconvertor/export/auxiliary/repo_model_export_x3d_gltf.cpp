@@ -25,7 +25,7 @@ using namespace repo::manipulator::modelconvertor;
 X3DGLTFModelExport::X3DGLTFModelExport(
 	const repo::core::model::RepoScene *scene
 	) : AbstractX3DModelExport(scene)
-{	
+{
 }
 
 X3DGLTFModelExport::X3DGLTFModelExport(
@@ -47,7 +47,7 @@ std::string X3DGLTFModelExport::populateTreeWithProperties(
 	if (node)
 	{
 		switch (node->getTypeAsEnum())
-		{		
+		{
 		case repo::core::model::NodeType::MAP:
 		{
 			const repo::core::model::MapNode *mapNode = (const repo::core::model::MapNode *)node;
@@ -58,12 +58,12 @@ std::string X3DGLTFModelExport::populateTreeWithProperties(
 
 			tree.addFieldAttribute("", X3D_ATTR_ID, UUIDtoString(mapNode->getUniqueID()));
 			tree.addFieldAttribute("", X3D_ATTR_DEF, UUIDtoString(mapNode->getSharedID()));
-			
+
 			auto subTree = createGoogleMapSubTree(mapNode);
 			tree.mergeSubTree(X3D_LABEL_TRANS, subTree);
 			stopRecursing = true;
 		}
-		break;	
+		break;
 		case repo::core::model::NodeType::REFERENCE:
 		{
 			label = X3D_LABEL_INLINE;
@@ -83,10 +83,10 @@ std::string X3DGLTFModelExport::populateTreeWithProperties(
 
 			url += ".x3d.mp";
 
-			tree.addFieldAttribute("", X3D_ATTR_ON_LOAD  , X3D_ON_LOAD);
-			tree.addFieldAttribute("", X3D_ATTR_URL      , url);
-			tree.addFieldAttribute("", X3D_ATTR_ID       , UUIDtoString(refNode->getUniqueID()));
-			tree.addFieldAttribute("", X3D_ATTR_DEF      , UUIDtoString(refNode->getSharedID()));
+			tree.addFieldAttribute("", X3D_ATTR_ON_LOAD, X3D_ON_LOAD);
+			tree.addFieldAttribute("", X3D_ATTR_URL, url);
+			tree.addFieldAttribute("", X3D_ATTR_ID, UUIDtoString(refNode->getUniqueID()));
+			tree.addFieldAttribute("", X3D_ATTR_DEF, UUIDtoString(refNode->getSharedID()));
 			tree.addFieldAttribute("", X3D_ATTR_NAMESPACE, refNode->getDatabaseName() + "__" + refNode->getProjectName());
 
 			//FIXME: Bounding box on reference nodes?
@@ -105,7 +105,7 @@ std::string X3DGLTFModelExport::populateTreeWithProperties(
 				tree.addFieldAttribute("", X3D_ATTR_MAT, transNode->getTransMatrix(false));
 			}
 
-			tree.addFieldAttribute("", X3D_ATTR_ID,  UUIDtoString(transNode->getUniqueID()));
+			tree.addFieldAttribute("", X3D_ATTR_ID, UUIDtoString(transNode->getUniqueID()));
 			tree.addFieldAttribute("", X3D_ATTR_DEF, UUIDtoString(transNode->getSharedID()));
 		}
 		break;
@@ -160,7 +160,7 @@ bool X3DGLTFModelExport::writeScene(
 		std::string gltfURL = "/api/" + scene->getDatabaseName() + "/"
 			+ scene->getProjectName() + "/revision/" + UUIDtoString(scene->getRevisionID()) + ".gltf";
 		gltfST.addFieldAttribute("", X3D_ATTR_URL, gltfURL);
-		
+
 		sceneST.mergeSubTree(X3D_LABEL_GLTF, gltfST);
 		sceneST.mergeSubTree(X3D_LABEL_VIEWPOINT, generateDefaultViewPointTree());
 

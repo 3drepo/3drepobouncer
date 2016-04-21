@@ -23,12 +23,11 @@ namespace repo{
 		namespace modelutility{
 			class RDTreeSpatialPartitioner : public AbstractSpatialPartitioner
 			{
-				
 			public:
 				/**
 				* RD Tree Spatial Partitioning utility class
 				* to spatially divide a scene graph base on its meshes
-				* This algorithm will produce an RD Tree with it 
+				* This algorithm will produce an RD Tree with it
 				* it's partitioning value determined by the median value of min
 				* bounding boxes.
 				* Note: currently only support scene with optimised graph!
@@ -47,7 +46,7 @@ namespace repo{
 			protected:
 
 				/**
-				* Generate a vector of mesh entries base on 
+				* Generate a vector of mesh entries base on
 				* the current scene.
 				*/
 				std::vector<MeshEntry> createMeshEntries();
@@ -65,7 +64,6 @@ namespace repo{
 					const uint32_t               &failcount,
 					const std::vector<std::vector<float>>     &currentSection);
 
-
 				/**
 				* Sort the meshes on the given axis
 				* @param meshes to sort
@@ -82,11 +80,7 @@ namespace repo{
 					std::vector<MeshEntry>       &lMeshes,
 					std::vector<MeshEntry>       &rMeshes
 					);
-
-
-
 			};
 		}
 	}
 }
-

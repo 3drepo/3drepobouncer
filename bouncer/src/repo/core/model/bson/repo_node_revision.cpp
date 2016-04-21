@@ -19,22 +19,18 @@
 * A Revision Node - storing information about a specific revision
 */
 
-
 #include "repo_node_revision.h"
 
 using namespace repo::core::model;
 
-
 RevisionNode::RevisionNode(RepoBSON bson) :
-	RepoNode(bson)
+RepoNode(bson)
 {
-
 }
 RevisionNode::RevisionNode() :
-	RepoNode()
+RepoNode()
 {
 }
-
 
 RevisionNode::~RevisionNode()
 {
@@ -79,7 +75,6 @@ std::vector<double> RevisionNode::getCoordOffset() const
 			offset.push_back(0);
 			offset.push_back(0);
 		}
-		
 	}
 	else
 	{
@@ -113,7 +108,6 @@ std::vector<repoUUID> RevisionNode::getCurrentIDs() const
 
 std::vector<std::string> RevisionNode::getOrgFiles() const
 {
-
 	std::vector<std::string> fileList;
 	if (hasField(REPO_NODE_REVISION_LABEL_REF_FILE))
 	{

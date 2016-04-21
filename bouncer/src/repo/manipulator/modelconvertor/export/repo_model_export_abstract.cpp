@@ -16,9 +16,8 @@
 */
 
 /**
-* Allows Export functionality into/output Repo world 
+* Allows Export functionality into/output Repo world
 */
-
 
 #include "repo_model_export_abstract.h"
 
@@ -33,5 +32,3 @@ AbstractModelExport::AbstractModelExport(
 AbstractModelExport::~AbstractModelExport()
 {
 }
-
-

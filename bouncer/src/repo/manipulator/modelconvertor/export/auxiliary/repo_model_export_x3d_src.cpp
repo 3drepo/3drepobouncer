@@ -25,7 +25,7 @@ using namespace repo::manipulator::modelconvertor;
 X3DSRCModelExport::X3DSRCModelExport(
 	const repo::core::model::RepoScene *scene
 	) : AbstractX3DModelExport(scene)
-{	
+{
 }
 
 X3DSRCModelExport::X3DSRCModelExport(
@@ -48,7 +48,6 @@ std::string X3DSRCModelExport::populateTreeWithProperties(
 	{
 		switch (node->getTypeAsEnum())
 		{
-
 		case repo::core::model::NodeType::CAMERA:
 		{
 			label = X3D_LABEL_VIEWPOINT;
@@ -69,7 +68,6 @@ std::string X3DSRCModelExport::populateTreeWithProperties(
 
 			tree.addFieldAttribute("", X3D_ATTR_ROT_CENTRE, centre);
 			tree.addFieldAttribute("", X3D_ATTR_ORIENTATION, camNode->getOrientation());
-
 		}
 		break;
 		case repo::core::model::NodeType::MATERIAL:
@@ -84,7 +82,6 @@ std::string X3DSRCModelExport::populateTreeWithProperties(
 				tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_COL_DIFFUSE, matStruct.diffuse, false);
 				if (matStruct.isTwoSided)
 					tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_COL_BK_DIFFUSE, matStruct.diffuse, false);
-
 			}
 
 			if (matStruct.emissive.size() > 0)
@@ -92,7 +89,6 @@ std::string X3DSRCModelExport::populateTreeWithProperties(
 				tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_COL_EMISSIVE, matStruct.emissive, false);
 				if (matStruct.isTwoSided)
 					tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_COL_BK_EMISSIVE, matStruct.emissive, false);
-
 			}
 
 			if (matStruct.shininess == matStruct.shininess)
@@ -100,7 +96,6 @@ std::string X3DSRCModelExport::populateTreeWithProperties(
 				tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_SHININESS, matStruct.shininess);
 				if (matStruct.isTwoSided)
 					tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_BK_SHININESS, matStruct.shininess);
-
 			}
 
 			if (matStruct.specular.size() > 0)
@@ -108,7 +103,6 @@ std::string X3DSRCModelExport::populateTreeWithProperties(
 				tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_COL_SPECULAR, matStruct.specular, false);
 				if (matStruct.isTwoSided)
 					tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_COL_BK_SPECULAR, matStruct.specular, false);
-
 			}
 
 			if (matStruct.opacity == matStruct.opacity)
@@ -120,8 +114,6 @@ std::string X3DSRCModelExport::populateTreeWithProperties(
 					if (matStruct.isTwoSided)
 						tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_BK_TRANSPARENCY, transparency);
 				}
-
-
 			}
 
 			tree.addFieldAttribute(X3D_LABEL_TWOSIDEMAT, X3D_ATTR_ID, UUIDtoString(matNode->getUniqueID()));
@@ -149,7 +141,6 @@ std::string X3DSRCModelExport::populateTreeWithProperties(
 			const repo::core::model::MeshNode *meshNode = (const repo::core::model::MeshNode *)node;
 			std::vector<repo_mesh_mapping_t> mappings = meshNode->getMeshMapping();
 
-
 			std::string nodeID = mappings.size() == 1 ? UUIDtoString(mappings[0].mesh_id) : UUIDtoString(meshNode->getUniqueID());
 
 			tree.addFieldAttribute("", X3D_ATTR_ID, nodeID);
@@ -168,7 +159,6 @@ std::string X3DSRCModelExport::populateTreeWithProperties(
 				tree.addFieldAttribute("", X3D_ATTR_BBOX_SIZE, boxSize);
 			}
 
-
 			if (mappings.size() > 1)
 			{
 				label = X3D_LABEL_MULTIPART;
@@ -182,7 +172,6 @@ std::string X3DSRCModelExport::populateTreeWithProperties(
 				tree.addFieldAttribute("", X3D_ATTR_NAMESPACE, nodeID);
 
 				stopRecursing = true;
-
 			}
 			else
 			{
@@ -214,7 +203,6 @@ std::string X3DSRCModelExport::populateTreeWithProperties(
 
 				tree.addFieldAttribute(X3D_LABEL_EXT_GEO, X3D_ATTR_URL, url);
 			}
-
 		}
 		break;
 		case repo::core::model::NodeType::REFERENCE:
@@ -311,7 +299,6 @@ bool X3DSRCModelExport::writeMultiPartMeshAsScene(
 		return false;
 	}
 
-
 	std::string sceneLabel = X3D_LABEL + "." + X3D_LABEL_SCENE;
 
 	//Set Scene Attributes
@@ -348,7 +335,6 @@ bool X3DSRCModelExport::writeMultiPartMeshAsScene(
 		//add empty material
 		std::string materialLabel = X3D_LABEL_APP + "." + X3D_LABEL_MAT;
 		subTree.addToTree(materialLabel, "");
-
 
 		//add external geometry (path to SRC file)
 		std::string extGeoLabel = X3D_LABEL_EXT_GEO;

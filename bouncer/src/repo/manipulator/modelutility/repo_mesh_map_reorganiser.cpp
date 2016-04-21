@@ -17,11 +17,11 @@
 #include "repo_mesh_map_reorganiser.h"
 #include "../../core/model/bson/repo_bson_factory.h"
 
-using namespace repo::manipulator::modelutility; 
+using namespace repo::manipulator::modelutility;
 
 MeshMapReorganiser::MeshMapReorganiser(
 	const repo::core::model::MeshNode *mesh,
-	const size_t                      &vertThreshold):
+	const size_t                      &vertThreshold) :
 	mesh(mesh),
 	maxVertices(vertThreshold),
 	oldFaces(mesh->getFaces()),
@@ -30,7 +30,6 @@ MeshMapReorganiser::MeshMapReorganiser(
 {
 	if (mesh && mesh->getMeshMapping().size())
 	{
-
 		newVertices = oldVertices;
 		newNormals = oldNormals;
 		performSplitting();
@@ -81,7 +80,6 @@ void MeshMapReorganiser::finishSubMesh(
 
 repo::core::model::MeshNode MeshMapReorganiser::getRemappedMesh() const
 {
-
 	auto bbox = mesh->getBoundingBox();
 	std::vector<std::vector<float>> bboxArr;
 	if (bbox.size())
@@ -89,8 +87,8 @@ repo::core::model::MeshNode MeshMapReorganiser::getRemappedMesh() const
 		bboxArr.push_back({ bbox[0].x, bbox[0].y, bbox[0].z });
 		bboxArr.push_back({ bbox[1].x, bbox[1].y, bbox[1].z });
 	}
-	
-	auto newMesh =  repo::core::model::RepoBSONFactory::makeMeshNode(newVertices, newFaces, newNormals, bboxArr);
+
+	auto newMesh = repo::core::model::RepoBSONFactory::makeMeshNode(newVertices, newFaces, newNormals, bboxArr);
 	repo::core::model::RepoBSONBuilder builder;
 	builder.append(REPO_NODE_LABEL_ID, mesh->getUniqueID());
 	builder.append(REPO_NODE_LABEL_SHARED_ID, mesh->getSharedID());
@@ -159,13 +157,12 @@ void MeshMapReorganiser::performSplitting()
 		// Now we've started a new mesh is the mesh that we're trying to add greater than
 		// the limit itself. In the case that it is, this will always flag as above.
 		if (currentMeshNumVertices > maxVertices) {
-
 			size_t retTotalVCount, retTotalFCount;
 			splitLargeMesh(currentSubMesh, newMappings, idMapIdx, orgFaceIdx, retTotalVCount, retTotalFCount);
-			
+
 			++idMapIdx;
 			totalVertexCount += retTotalVCount;
-			totalFaceCount   += retTotalFCount;
+			totalFaceCount += retTotalFCount;
 
 			finishedSubMesh = true;
 		}
@@ -174,7 +171,7 @@ void MeshMapReorganiser::performSplitting()
 			for (uint32_t fIdx = 0; fIdx < currentMeshNumFaces; fIdx++)
 			{
 				repo_face_t currentFace = oldFaces[orgFaceIdx++];
-				auto        nSides      = currentFace.size();
+				auto        nSides = currentFace.size();
 
 				if (nSides != 3)
 				{
@@ -201,10 +198,10 @@ void MeshMapReorganiser::performSplitting()
 			updateBoundingBoxes(bboxMin, bboxMax, currentSubMesh.min, currentSubMesh.max);
 
 			subMeshVertexCount += currentMeshNumVertices;
-			subMeshFaceCount   += currentMeshNumFaces;
+			subMeshFaceCount += currentMeshNumFaces;
 
 			totalVertexCount += currentMeshNumVertices;
-			totalFaceCount   += currentMeshNumFaces;
+			totalFaceCount += currentMeshNumFaces;
 
 			splitMap[currentSubMesh.mesh_id].push_back(newMappings.size());
 		}
@@ -215,7 +212,6 @@ void MeshMapReorganiser::performSplitting()
 	}
 
 	reMappedMappings = newMappings;
-
 }
 
 void MeshMapReorganiser::splitLargeMesh(
@@ -275,22 +271,20 @@ void MeshMapReorganiser::splitLargeMesh(
 				if (fIdx)
 					splitMap[currentSubMesh.mesh_id].push_back(newMappings.size());
 
-
-				if (startedLargeMeshSplit) {				
+				if (startedLargeMeshSplit) {
 					updateIDMapArray(splitMeshVertexCount, idMapIdx++);
 					finishSubMesh(newMappings.back(), bboxMin, bboxMax, splitMeshVertexCount, splitMeshFaceCount);
-
 				}
 
 				totalVertexCount += splitMeshVertexCount;
-				totalFaceCount   += splitMeshFaceCount;
+				totalFaceCount += splitMeshFaceCount;
 				startedLargeMeshSplit = true;
 				newMappings.resize(newMappings.size() + 1);
 				startSubMesh(newMappings.back(), mesh->getUniqueID(), currentSubMesh.material_id, totalVertexCount, totalFaceCount);
 				splitMeshVertexCount = 0;
 				splitMeshFaceCount = 0;
 				reIndexMap.clear();
-			}//if (((splitMeshVertexCount + nSides) > maxVertices) || !startedLargeMeshSplit) 
+			}//if (((splitMeshVertexCount + nSides) > maxVertices) || !startedLargeMeshSplit)
 
 			repo_face_t newFace;
 			for (const auto &indexValue : currentFace)
@@ -314,7 +308,6 @@ void MeshMapReorganiser::splitLargeMesh(
 				serialisedFaces.push_back(reIndexMap[indexValue]);
 			}//for (const auto &indexValue : currentFace)
 			newFaces.push_back(newFace);
-
 		}//else nSides != 3
 		splitMeshFaceCount++;
 	}//for (uint32_t fIdx = 0; fIdx < currentMeshNumFaces; ++fIdx)
@@ -324,11 +317,11 @@ void MeshMapReorganiser::splitLargeMesh(
 	if (hasNormal)
 		std::copy(reMappedNormals.begin(), reMappedNormals.end(), newNormals.begin() + newVerticesVFrom);
 
-	updateIDMapArray(splitMeshVertexCount, idMapIdx); 
+	updateIDMapArray(splitMeshVertexCount, idMapIdx);
 
 	totalVertexCount += splitMeshVertexCount;
 	totalFaceCount += splitMeshFaceCount;
-	
+
 	auto leftOverVertices = currentMeshNumVertices - totalVertexCount;
 
 	if (leftOverVertices)
@@ -340,7 +333,6 @@ void MeshMapReorganiser::splitLargeMesh(
 		if (hasNormal)
 			newNormals.erase(startingPos, startingPos + leftOverVertices);
 	}
-	
 
 	splitMap[currentSubMesh.mesh_id].push_back(newMappings.size());
 	finishSubMesh(newMappings.back(), bboxMin, bboxMax, splitMeshVertexCount, splitMeshFaceCount);
@@ -365,7 +357,6 @@ void MeshMapReorganiser::startSubMesh(
 	matMap.back().clear();
 }
 
-
 void MeshMapReorganiser::updateBoundingBoxes(
 	std::vector<float>  &min,
 	std::vector<float>  &max,
@@ -388,7 +379,6 @@ void MeshMapReorganiser::updateBoundingBoxes(
 	{
 		min = { smMin.x, smMin.y, smMin.z };
 	}
-
 
 	if (max.size())
 	{

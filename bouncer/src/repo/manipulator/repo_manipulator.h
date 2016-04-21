@@ -30,16 +30,13 @@
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_abstract.h"
 #include "diff/repo_diff_abstract.h"
 
-
 namespace repo{
 	namespace manipulator{
 		class RepoManipulator
 		{
-
 		public:
 			RepoManipulator();
 			~RepoManipulator();
-
 
 			/**
 			* Connect to the given database address/port and authenticat the user
@@ -110,9 +107,9 @@ namespace repo{
 			void compareScenes(
 				repo::core::model::RepoScene                  *base,
 				repo::core::model::RepoScene                  *compare,
-				diff::DiffResult                              &baseResults,
-				diff::DiffResult                              &compResults,
-				const diff::Mode				              &diffMode,
+				DiffResult                              &baseResults,
+				DiffResult                              &compResults,
+				const DiffMode				              &diffMode,
 				const repo::core::model::RepoScene::GraphType &gType
 				= repo::core::model::RepoScene::GraphType::DEFAULT);
 
@@ -160,7 +157,7 @@ namespace repo{
 				const std::string                             &database,
 				const std::string                             &collection,
 				std::string                                   &errMsg
-			);
+				);
 
 			/**
 			* Disconnects from the given database host
@@ -187,7 +184,7 @@ namespace repo{
 				const std::string                             &databaseName,
 				const std::string                             &collectionName,
 				std::string			                          &errMsg
-			);
+				);
 
 			/**
 			* Remove a database from the database instance
@@ -202,7 +199,7 @@ namespace repo{
 				const repo::core::model::RepoBSON             *cred,
 				const std::string                             &databaseName,
 				std::string			                          &errMsg
-			);
+				);
 
 			/**
 			* Get a list of all available databases, alphabetically sorted by default.
@@ -214,7 +211,6 @@ namespace repo{
 				const std::string                 &databaseAd,
 				const repo::core::model::RepoBSON *cred
 				);
-
 
 			/**
 			* Get a list of all available collections.
@@ -238,8 +234,8 @@ namespace repo{
 			* @param uuid if headRevision, uuid represents the branch id,
 			*              otherwise the unique id of the revision branch
 			* @param headRevision true if retrieving head revision
-			* @param lightFetch fetches only the stash (or scene if stash failed), 
-			                    reduce computation and memory usage (ideal for visualisation only)
+			* @param lightFetch fetches only the stash (or scene if stash failed),
+			reduce computation and memory usage (ideal for visualisation only)
 			* @return returns a pointer to a repoScene.
 			*/
 			repo::core::model::RepoScene* fetchScene(
@@ -262,7 +258,7 @@ namespace repo{
 				const std::string                         &databaseAd,
 				const repo::core::model::RepoBSON         *cred,
 				repo::core::model::RepoScene              *scene);
- 
+
 			/**
 			* Generate and commit scene's selection tree in JSON format
 			* The generated data will be
@@ -293,8 +289,6 @@ namespace repo{
 				repo::core::model::RepoScene* scene
 				);
 
-
-
 			/**
 			* Generate and commit a SRC encoding for the given scene
 			* This requires the stash to have been generated already
@@ -302,7 +296,7 @@ namespace repo{
 			* @param cred user credentials in bson form
 			* @param scene the scene to generate the src encoding from
 			* @param buffers buffers to commit to database
-			* @param exType the type of export it is 
+			* @param exType the type of export it is
 			* @return returns true upon success
 			*/
 			bool generateAndCommitWebViewBuffer(
@@ -348,7 +342,6 @@ namespace repo{
 			repo_web_buffers_t generateGLTFBuffer(
 				const repo::core::model::RepoScene *scene);
 
-
 			/**
 			* Generate a SRC encoding in the form of a buffer for the given scene
 			* This requires the stash to have been generated already
@@ -359,7 +352,7 @@ namespace repo{
 				const repo::core::model::RepoScene *scene);
 
 			/**
-			* Generate a stash graph for the given scene and populate it 
+			* Generate a stash graph for the given scene and populate it
 			* into the given scene
 			* @param scene scene to generate stash graph for
 			* @return returns true upon success
@@ -385,7 +378,7 @@ namespace repo{
 				const repo::core::model::RepoBSON             *cred,
 				const std::string                             &database,
 				const std::string                             &collection,
-				const uint64_t                                &skip=0,
+				const uint64_t                                &skip = 0,
 				const uint32_t                                &limit = 0);
 
 			/**
@@ -430,8 +423,7 @@ namespace repo{
 				const std::string                             &database,
 				const std::string                             &collection,
 				std::string	                                  &errMsg
-			);
-
+				);
 
 			/**
 			* Return a list of projects with the database available to the user
@@ -442,9 +434,9 @@ namespace repo{
 			*/
 			std::map<std::string, std::list<std::string>>
 				getDatabasesWithProjects(
-					const std::string                 &databaseAd,
-					const repo::core::model::RepoBSON *cred,
-					const std::list<std::string>      &databases);
+				const std::string                 &databaseAd,
+				const repo::core::model::RepoBSON *cred,
+				const std::list<std::string>      &databases);
 
 			/**
 			* Get a list of admin roles from the database
@@ -496,7 +488,6 @@ namespace repo{
 			std::string getNameOfAdminDatabase(
 				const std::string                             &databaseAd) const;
 
-
 			/**
 			* Insert a binary file into the database (GridFS)
 			* @param databaseAd database address:portdatabase
@@ -537,7 +528,6 @@ namespace repo{
 				const repo::core::model::RepoBSON       *cred,
 				const repo::core::model::RepoUser       &user);
 
-
 			/**
 			* Load metadata from a file
 			* @param filePath path to file
@@ -552,7 +542,7 @@ namespace repo{
 			/**
 			* Load a Repo Scene from a file
 			* @param filePath path to file
-			* @param msg error message if it fails 
+			* @param msg error message if it fails
 			* @param apply transformation reduction optimizer (default = true)
 			* @param rotateModel rotate model by 270degrees on x (default: false)
 			* @param config import config (optional)
@@ -561,10 +551,10 @@ namespace repo{
 			repo::core::model::RepoScene*
 				loadSceneFromFile(
 				const std::string                                          &filePath,
-				      std::string                                          &msg,
+				std::string                                          &msg,
 				const bool                                                 &applyReduction = true,
 				const bool                                                 &rotateModel = false,
-			    const repo::manipulator::modelconvertor::ModelImportConfig *config         = nullptr);
+				const repo::manipulator::modelconvertor::ModelImportConfig *config = nullptr);
 
 			/**
 			* remove a document from the database
@@ -604,7 +594,6 @@ namespace repo{
 				std::string								 &errMsg
 				);
 
-
 			/**
 			* Reduce redundant transformations from the scene
 			* to optimise the graph
@@ -614,7 +603,7 @@ namespace repo{
 			void reduceTransformations(
 				repo::core::model::RepoScene                  *scene,
 				const repo::core::model::RepoScene::GraphType &gType
-					= repo::core::model::RepoScene::GraphType::DEFAULT);
+				= repo::core::model::RepoScene::GraphType::DEFAULT);
 
 			/**
 			* Remove stash graph entry for this particular revision from
@@ -727,7 +716,6 @@ namespace repo{
 				const std::string                       &databaseName,
 				const std::string                       &collectionName,
 				const repo::core::model::RepoBSON       &bson);
-
 		};
 	}
 }

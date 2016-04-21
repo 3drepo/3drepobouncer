@@ -22,7 +22,6 @@
 * within x3dom.
 */
 
-
 #pragma once
 
 #include <string>
@@ -35,9 +34,8 @@
 namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
-
 			class X3DSRCModelExport : public AbstractX3DModelExport
-			{	
+			{
 			public:
 
 				/**
@@ -62,7 +60,6 @@ namespace repo{
 				*/
 				virtual ~X3DSRCModelExport() {};
 
-				
 			protected:
 				/**
 				* Populate the given tree with properties associated with the node
@@ -84,10 +81,7 @@ namespace repo{
 				virtual bool writeMultiPartMeshAsScene(
 					const repo::core::model::MeshNode &mesh,
 					const repo::core::model::RepoScene *scene);
-				
 			};
-
 		} //namespace modelconvertor
 	} //namespace manipulator
 } //namespace repo
-

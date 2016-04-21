@@ -26,65 +26,60 @@
 #include <Windows.h>
 
 #endif
-#include <mongo/bson/bson.h> 
+#include <mongo/bson/bson.h>
 
 #include "../../../repo_bouncer_global.h"
 
 namespace repo {
 	namespace core {
 		namespace model {
-				//type of element
-				enum class REPO_API_EXPORT ElementType{
-					ARRAY, UUID, BINARY, BOOL, DATE,
-					OBJECTID, DOUBLE, INT, LONG, OBJECT, STRING, UNKNOWN
-				};
-				class REPO_API_EXPORT RepoBSONElement :
-					public mongo::BSONElement
+			//type of element
+			enum class REPO_API_EXPORT ElementType{
+				ARRAY, UUID, BINARY, BOOL, DATE,
+				OBJECTID, DOUBLE, INT, LONG, OBJECT, STRING, UNKNOWN
+			};
+			class REPO_API_EXPORT RepoBSONElement :
+				public mongo::BSONElement
+			{
+			public:
+
+				/**
+				* Default constructor
+				*/
+				RepoBSONElement() : mongo::BSONElement(){}
+
+				/**
+				* Construct a RepoBSONElement base on a mongo element
+				* @param mongo BSON element
+				*/
+				RepoBSONElement(mongo::BSONElement ele) : mongo::BSONElement(ele){}
+
+				/**
+				* Destructor
+				*/
+				~RepoBSONElement();
+
+				/**
+				* get the type of the element
+				* @return returns the type of the element using enum Type specified above
+				*/
+				ElementType type() const;
+
+				std::vector<RepoBSONElement> Array()
 				{
+					//FIXME: potentially slow.
+					//This is done so we can hide mongo representation from the bouncer world.
+					std::vector<RepoBSONElement> arr;
+					std::vector<mongo::BSONElement> mongoArr = mongo::BSONElement::Array();
+					arr.reserve(mongoArr.size());
 
-				public:
-					
-					/**
-					* Default constructor
-					*/
-					RepoBSONElement() : mongo::BSONElement(){}
-					
-					/**
-					* Construct a RepoBSONElement base on a mongo element
-					* @param mongo BSON element
-					*/
-					RepoBSONElement(mongo::BSONElement ele) : mongo::BSONElement(ele){}
-
-					/**
-					* Destructor
-					*/
-					~RepoBSONElement();
-
-					/**
-					* get the type of the element
-					* @return returns the type of the element using enum Type specified above
-					*/
-					ElementType type() const;
-
-					std::vector<RepoBSONElement> Array()
+					for (auto const &ele : mongoArr)
 					{
-						//FIXME: potentially slow.
-						//This is done so we can hide mongo representation from the bouncer world.
-						std::vector<RepoBSONElement> arr;
-						std::vector<mongo::BSONElement> mongoArr = mongo::BSONElement::Array();
-						arr.reserve(mongoArr.size());
-
-						for (auto const &ele : mongoArr)
-						{
-							arr.push_back(RepoBSONElement(ele));
-						}
-						return arr;
+						arr.push_back(RepoBSONElement(ele));
 					}
-
-				};
+					return arr;
+				}
+			};
 		}// end namespace model
 	} // end namespace core
 } // end namespace repo
-
-
-

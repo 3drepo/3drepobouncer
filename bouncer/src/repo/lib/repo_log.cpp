@@ -17,12 +17,9 @@
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 
-
-
 using namespace repo::lib;
 
-using text_sink = boost::log::sinks::synchronous_sink< boost::log::sinks::text_ostream_backend >;
-
+using text_sink = boost::log::sinks::synchronous_sink < boost::log::sinks::text_ostream_backend > ;
 
 RepoLog::RepoLog()
 {
@@ -32,39 +29,35 @@ RepoLog::~RepoLog()
 }
 
 void RepoLog::log(
-	const RepoLogLevel &severity, 
+	const RepoLogLevel &severity,
 	const std::string  &msg)
 {
-
 	switch (severity)
 	{
-	case RepoLogLevel::TRACE :
+	case RepoLogLevel::TRACE:
 		repoTrace << msg;
 		break;
-	case RepoLogLevel::DEBUG :
+	case RepoLogLevel::DEBUG:
 		repoDebug << msg;
 		break;
-	case RepoLogLevel::INFO :
+	case RepoLogLevel::INFO:
 		repoInfo << msg;
 		break;
-	case RepoLogLevel::WARNING :
+	case RepoLogLevel::WARNING:
 		repoWarning << msg;
 		break;
-	case RepoLogLevel::ERR :
+	case RepoLogLevel::ERR:
 		repoError << msg;
 		break;
-	case RepoLogLevel::FATAL :
+	case RepoLogLevel::FATAL:
 		repoFatal << msg;
 	}
-
-	
 }
 
 BOOST_LOG_ATTRIBUTE_KEYWORD(timestamp, "TimeStamp", boost::posix_time::ptime)
 BOOST_LOG_ATTRIBUTE_KEYWORD(threadid, "ThreadID", boost::log::attributes::current_thread_id::value_type)
 void RepoLog::logToFile(const std::string &filePath)
 {
-
 	boost::log::add_file_log
 		(
 		boost::log::keywords::file_name = filePath + "_%N",
@@ -75,8 +68,8 @@ void RepoLog::logToFile(const std::string &filePath)
 		<< "[" << boost::log::expressions::format_date_time(timestamp, "%Y-%m-%d %H:%M:%S") << "]"
 		<< "(" << threadid << ")"
 		<< ": <" << boost::log::trivial::severity
-					<< "> " << boost::log::expressions::smessage
-					) );
+		<< "> " << boost::log::expressions::smessage
+		));
 	boost::log::add_common_attributes();
 }
 
@@ -106,7 +99,6 @@ void RepoLog::setLoggingLevel(const RepoLogLevel &level)
 	default:
 		repoError << "Unknown log level: " << (int)level;
 		return;
-
 	}
 
 	boost::log::core::get()->set_filter(
@@ -114,7 +106,6 @@ void RepoLog::setLoggingLevel(const RepoLogLevel &level)
 }
 
 void RepoLog::subscribeBroadcaster(RepoBroadcaster *broadcaster){
-
 	boost::iostreams::stream<RepoBroadcaster> *streamptr =
 		new boost::iostreams::stream<RepoBroadcaster>(*broadcaster);
 
@@ -126,9 +117,7 @@ void RepoLog::subscribeBroadcaster(RepoBroadcaster *broadcaster){
 		streamptr, boost::empty_deleter());
 #endif
 
-
 	boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
-
 
 	sink->set_filter(boost::log::trivial::severity >= boost::log::trivial::trace);
 	//FIXME: better format!
@@ -137,7 +126,6 @@ void RepoLog::subscribeBroadcaster(RepoBroadcaster *broadcaster){
 		boost::log::expressions::stream
 		<< "%" << boost::log::trivial::severity << "%"
 		<< boost::log::expressions::smessage);
-
 
 	sink->locked_backend()->add_stream(stream);
 	sink->locked_backend()->auto_flush(true);
@@ -148,7 +136,6 @@ void RepoLog::subscribeBroadcaster(RepoBroadcaster *broadcaster){
 	repoTrace << "Subscribed broadcaster to log";
 }
 
-
 void RepoLog::subscribeListeners(
 	const std::vector<RepoAbstractListener*> &listeners)
 {
@@ -156,12 +143,12 @@ void RepoLog::subscribeListeners(
 
 	/*
 		FIXME: ideally, we should have a single broadcaster for the application
-		       and you should only need to add the listeners when you subscribe
-			   But the whole hackery of making a broadcaster to be a ostream
-			   to tap into the boost logger made this really difficult
-			   so for now, instantiate a new broadcaster everytime.
-			   And I will review this on a braver day...
-	*/
+		and you should only need to add the listeners when you subscribe
+		But the whole hackery of making a broadcaster to be a ostream
+		to tap into the boost logger made this really difficult
+		so for now, instantiate a new broadcaster everytime.
+		And I will review this on a braver day...
+		*/
 	RepoBroadcaster *broadcaster = new RepoBroadcaster();
 
 	for (auto listener : listeners)

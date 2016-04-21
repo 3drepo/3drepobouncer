@@ -29,7 +29,6 @@ RepoController::_RepoControllerImpl::_RepoControllerImpl(
 	const uint32_t &numDbConn) :
 	numDBConnections(numDbConn)
 {
-
 	for (uint32_t i = 0; i < numConcurrentOps; i++)
 	{
 		manipulator::RepoManipulator* worker = new manipulator::RepoManipulator();
@@ -40,13 +39,10 @@ RepoController::_RepoControllerImpl::_RepoControllerImpl(
 	{
 		subscribeToLogger(listeners);
 	}
-
 }
-
 
 RepoController::_RepoControllerImpl::~_RepoControllerImpl()
 {
-
 	std::vector<manipulator::RepoManipulator*> workers = workerPool.empty();
 	std::vector<manipulator::RepoManipulator*>::iterator it;
 	for (it = workers.begin(); it != workers.end(); ++it)
@@ -78,7 +74,6 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::authenticateToAd
 
 	if (success && !username.empty())
 		cred = worker->createCredBSON(dbFullAd, username, password, pwDigested);
-
 
 	if (cred || username.empty())
 	{
@@ -170,26 +165,21 @@ void RepoController::_RepoControllerImpl::commitScene(
 				manipulator::RepoManipulator* worker = workerPool.pop();
 				worker->commitScene(token->databaseAd, token->credentials, scene, sceneOwner);
 				workerPool.push(worker);
-
 			}
 			else
 			{
 				repoError << "Trying to commit to the database without a database connection!";
 			}
-
 		}
 		else
 		{
 			repoError << "Trying to commit a scene without specifying database/project names.";
 		}
-
 	}
 	else
 	{
 		repoError << "Trying to commit an empty scene into the database";
 	}
-
-
 }
 
 uint64_t RepoController::_RepoControllerImpl::countItemsInCollection(
@@ -256,7 +246,6 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 
 	return scene;
 }
-
 
 bool RepoController::_RepoControllerImpl::generateAndCommitSelectionTree(
 	const RepoController::RepoToken                               *token,
@@ -470,7 +459,6 @@ std::list<std::string>  RepoController::_RepoControllerImpl::getCollections(
 	}
 
 	return list;
-
 }
 
 repo::core::model::CollectionStats RepoController::_RepoControllerImpl::getCollectionStats(
@@ -494,12 +482,10 @@ repo::core::model::CollectionStats RepoController::_RepoControllerImpl::getColle
 	else
 	{
 		repoError << "Trying to get collections stats without a database connection!";
-
 	}
 
 	return stats;
 }
-
 
 std::map<std::string, std::list<std::string>>
 RepoController::_RepoControllerImpl::getDatabasesWithProjects(
@@ -517,7 +503,6 @@ const std::list<std::string> &databases)
 	else
 	{
 		repoError << "Trying to get database listings without a database connection!";
-
 	}
 
 	return map;
@@ -541,7 +526,6 @@ void RepoController::_RepoControllerImpl::insertBinaryFileToDatabase(
 	else
 	{
 		repoError << "Trying to save a binary file without a database connection!";
-
 	}
 }
 
@@ -560,7 +544,6 @@ void RepoController::_RepoControllerImpl::insertRole(
 	else
 	{
 		repoError << "Trying to insert a role without a database connection!";
-
 	}
 }
 
@@ -578,9 +561,7 @@ void RepoController::_RepoControllerImpl::insertUser(
 	else
 	{
 		repoError << "Trying to insert a user without a database connection!";
-
 	}
-
 }
 
 bool RepoController::_RepoControllerImpl::removeCollection(
@@ -602,12 +583,10 @@ bool RepoController::_RepoControllerImpl::removeCollection(
 	{
 		errMsg = "Trying to fetch collections without a database connection!";
 		repoError << errMsg;
-
 	}
 
 	return success;
 }
-
 
 bool RepoController::_RepoControllerImpl::removeDatabase(
 	const RepoController::RepoToken       *token,
@@ -627,7 +606,6 @@ bool RepoController::_RepoControllerImpl::removeDatabase(
 	{
 		errMsg = "Trying to fetch collections without a database connection!";
 		repoError << errMsg;
-
 	}
 
 	return success;
@@ -650,7 +628,6 @@ void RepoController::_RepoControllerImpl::removeDocument(
 	{
 		repoError << "Trying to delete a document without a database connection!";
 	}
-
 }
 
 bool RepoController::_RepoControllerImpl::removeProject(
@@ -688,7 +665,6 @@ void RepoController::_RepoControllerImpl::removeRole(
 	else
 	{
 		repoError << "Trying to insert a user without a database connection!";
-
 	}
 }
 
@@ -706,7 +682,6 @@ void RepoController::_RepoControllerImpl::removeUser(
 	else
 	{
 		repoError << "Trying to insert a user without a database connection!";
-
 	}
 }
 
@@ -724,7 +699,6 @@ void RepoController::_RepoControllerImpl::updateRole(
 	else
 	{
 		repoError << "Trying to insert a user without a database connection!";
-
 	}
 }
 
@@ -742,10 +716,8 @@ void RepoController::_RepoControllerImpl::updateUser(
 	else
 	{
 		repoError << "Trying to insert a user without a database connection!";
-
 	}
 }
-
 
 void RepoController::_RepoControllerImpl::upsertDocument(
 	const RepoController::RepoToken                          *token,
@@ -768,9 +740,7 @@ void RepoController::_RepoControllerImpl::upsertDocument(
 
 void RepoController::_RepoControllerImpl::setLoggingLevel(const repo::lib::RepoLog::RepoLogLevel &level)
 {
-
 	repo::lib::RepoLog::getInstance().setLoggingLevel(level);
-
 }
 
 void RepoController::_RepoControllerImpl::logToFile(const std::string &filePath)
@@ -784,12 +754,9 @@ void RepoController::_RepoControllerImpl::subscribeToLogger(
 	repo::lib::RepoLog::getInstance().subscribeListeners(listeners);
 }
 
-
-
 repo::core::model::RepoScene* RepoController::_RepoControllerImpl::createFederatedScene(
 	const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap)
 {
-
 	repo::core::model::RepoScene* scene = nullptr;
 	if (fedMap.size() > 0)
 	{
@@ -833,7 +800,6 @@ bool RepoController::_RepoControllerImpl::generateAndCommitGLTFBuffer(
 	return success;
 }
 
-
 bool RepoController::_RepoControllerImpl::generateAndCommitSRCBuffer(
 	const RepoController::RepoToken                    *token,
 	const repo::core::model::RepoScene *scene)
@@ -851,7 +817,6 @@ bool RepoController::_RepoControllerImpl::generateAndCommitSRCBuffer(
 	}
 	return success;
 }
-
 
 repo_web_buffers_t RepoController::_RepoControllerImpl::generateGLTFBuffer(
 	const repo::core::model::RepoScene *scene)
@@ -969,7 +934,6 @@ std::string RepoController::_RepoControllerImpl::getSupportedImportFormats()
 	return repo::manipulator::modelconvertor::AssimpModelImport::getSupportedFormats();
 }
 
-
 repo::core::model::RepoNodeSet RepoController::_RepoControllerImpl::loadMetadataFromFile(
 	const std::string &filePath,
 	const char        &delimiter)
@@ -985,7 +949,6 @@ repo::core::model::RepoNodeSet RepoController::_RepoControllerImpl::loadMetadata
 	else
 	{
 		repoError << "Trying to load from an empty file path!";
-
 	}
 
 	return metadata;
@@ -998,7 +961,6 @@ const bool                                                 &applyReduction,
 const bool                                                 &rotateModel,
 const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
-
 	std::string errMsg;
 	repo::core::model::RepoScene *scene = nullptr;
 
@@ -1009,12 +971,10 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 		workerPool.push(worker);
 		if (!scene)
 			repoError << "Failed ot load scene from file: " << errMsg;
-
 	}
 	else
 	{
 		repoError << "Trying to load from an empty file path!";
-
 	}
 
 	return scene;
@@ -1031,12 +991,10 @@ void RepoController::_RepoControllerImpl::saveOriginalFiles(
 
 		worker->saveOriginalFiles(token->databaseAd, token->credentials, scene, directory);
 		workerPool.push(worker);
-
 	}
 	else{
 		repoError << "RepoController::_RepoControllerImpl::saveSceneToFile: NULL pointer to scene!";
 	}
-
 }
 
 void RepoController::_RepoControllerImpl::saveOriginalFiles(
@@ -1051,7 +1009,6 @@ void RepoController::_RepoControllerImpl::saveOriginalFiles(
 
 		worker->saveOriginalFiles(token->databaseAd, token->credentials, database, project, directory);
 		workerPool.push(worker);
-
 	}
 	else{
 		repoError << "RepoController::_RepoControllerImpl::saveSceneToFile: NULL pointer to scene!";
@@ -1069,7 +1026,6 @@ bool RepoController::_RepoControllerImpl::saveSceneToFile(
 
 		worker->saveSceneToFile(filePath, scene);
 		workerPool.push(worker);
-
 	}
 	else{
 		repoError << "RepoController::_RepoControllerImpl::saveSceneToFile: NULL pointer to scene!";
@@ -1098,7 +1054,6 @@ void RepoController::_RepoControllerImpl::reduceTransformations(
 
 	if (scene && scene->hasRoot(gType))
 	{
-
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		size_t transNodes_pre = scene->getAllTransformations(gType).size();
 		try{
@@ -1107,27 +1062,24 @@ void RepoController::_RepoControllerImpl::reduceTransformations(
 		catch (const std::exception &e)
 		{
 			repoError << "Caught exception whilst trying to optimise graph : " << e.what();
-
 		}
 
 		workerPool.push(worker);
 		repoInfo << "Optimization completed. Number of transformations has been reduced from "
 			<< transNodes_pre << " to " << scene->getAllTransformations(gType).size();
-
 	}
 	else{
 		repoError << "RepoController::_RepoControllerImpl::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
 	}
-
 }
 
 void RepoController::_RepoControllerImpl::compareScenes(
 	const RepoController::RepoToken                    *token,
 	repo::core::model::RepoScene       *base,
 	repo::core::model::RepoScene       *compare,
-	repo::manipulator::diff::DiffResult &baseResults,
-	repo::manipulator::diff::DiffResult &compResults,
-	const repo::manipulator::diff::Mode       &diffMode
+	DiffResult &baseResults,
+	DiffResult &compResults,
+	const DiffMode       &diffMode
 	)
 {
 	//We only do reduction optimisations on the unoptimised graph

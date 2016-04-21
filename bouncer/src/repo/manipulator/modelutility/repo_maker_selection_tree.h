@@ -48,7 +48,7 @@ namespace repo{
 				* @return returns the selection tree as a property tree
 				*/
 				std::vector<uint8_t> getSelectionTreeAsBuffer() const;
-				
+
 			private:
 				const repo::core::model::RepoScene *scene;
 
@@ -60,13 +60,10 @@ namespace repo{
 				*/
 				repo::lib::PropertyTree generatePTree(
 					const repo::core::model::RepoNode            *currentNode,
-					std::unordered_map<std::string,
-						   std::pair<std::string, std::string >> &idMaps,
+					std::unordered_map < std::string,
+					std::pair < std::string, std::string >> &idMaps,
 					const std::string                            &currentPath) const;
-
 			};
-
-
 		}
 	}
 }

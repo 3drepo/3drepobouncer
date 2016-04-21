@@ -22,7 +22,6 @@
 * within x3dom.
 */
 
-
 #pragma once
 
 #include <string>
@@ -34,9 +33,8 @@
 namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
-
 			class AbstractX3DModelExport
-			{	
+			{
 			public:
 
 				/**
@@ -76,7 +74,7 @@ namespace repo{
 				void initialize()
 				{
 					if (!initialised && sceneValid())
-					{						
+					{
 						if (fullScene)
 							convertSuccess = populateTree(scene);
 						else
@@ -99,12 +97,10 @@ namespace repo{
 
 				/**
 				* Check if scene is valid for export
-				* @return returns true if valid 
+				* @return returns true if valid
 				*/
 				bool sceneValid();
-				
 
-				
 			protected:
 				const repo::core::model::RepoScene *scene;
 				const repo::core::model::MeshNode &mesh;
@@ -112,7 +108,7 @@ namespace repo{
 				std::string fname;
 				repo::lib::PropertyTree tree;
 				bool convertSuccess, fullScene, initialised;
-			
+
 				/**
 				* Create a subTree for google map tiles
 				* @param mapNode with the information on the map tiles
@@ -146,7 +142,6 @@ namespace repo{
 				repo_vector_t getBoxSize(
 					const repo_vector_t &min,
 					const repo_vector_t &max) const;
-
 
 				/**
 				* Populate the given tree with properties associated with the node
@@ -213,10 +208,7 @@ namespace repo{
 				virtual bool writeMultiPartMeshAsScene(
 					const repo::core::model::MeshNode &mesh,
 					const repo::core::model::RepoScene *scene) = 0;
-				
 			};
-
 		} //namespace modelconvertor
 	} //namespace manipulator
 } //namespace repo
-

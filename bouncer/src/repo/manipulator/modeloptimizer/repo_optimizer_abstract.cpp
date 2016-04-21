@@ -27,7 +27,6 @@ AbstractOptimizer::AbstractOptimizer()
 {
 }
 
-
 AbstractOptimizer::~AbstractOptimizer()
 {
 }

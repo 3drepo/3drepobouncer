@@ -20,7 +20,6 @@
 * Given a file, it will utilist ASSIMP library and eventually converts it into Repo world meaning
 */
 
-
 #pragma once
 
 #include <string>
@@ -38,7 +37,7 @@
 namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
-			using assimp_map = boost::bimap<uintptr_t, repo::core::model::RepoNode*>;
+			using assimp_map = boost::bimap < uintptr_t, repo::core::model::RepoNode* > ;
 			class AssimpModelImport : public AbstractModelImport
 			{
 			public:
@@ -67,7 +66,6 @@ namespace repo{
 				* @return returns a populated RepoScene upon success.
 				*/
 				repo::core::model::RepoScene* generateRepoScene();
-
 
 				/**
 				* Import model from a given file
@@ -153,11 +151,11 @@ namespace repo{
 					const std::vector<repo::core::model::RepoNode *>                     &meshes,
 					repo::core::model::RepoNodeSet						                 &metadata,
 					assimp_map													         &map,
-					uint32_t                                                             &count ,
+					uint32_t                                                             &count,
 					const std::vector<double>                                            &worldOffset,
 					const std::vector<repoUUID>						                     &parent = std::vector<repoUUID>()
 					);
-				
+
 				/**
 				* Get bounding box of the aimesh
 				* @return returns the bounding box
@@ -204,7 +202,7 @@ namespace repo{
 				* @param orgMap the org mapping
 				* @param optMap optimised mapping
 				* @return returns whether it has successfully mapped everything.
- 				*/
+				*/
 
 				bool populateOptimMaps(
 					repo::core::model::RepoNode  *node,
@@ -216,8 +214,6 @@ namespace repo{
 				const aiScene *assimpScene; /*! ASSIMP scene representation of the model */
 				std::string orgFile; /*! orgFileName */
 			};
-
 		} //namespace AssimpModelImport
 	} //namespace manipulator
 } //namespace repo
-

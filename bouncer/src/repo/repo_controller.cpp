@@ -15,9 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include "repo_controller_internal.cpp.inl"; //Inner class implementation
-
 
 using namespace repo;
 
@@ -65,29 +63,28 @@ bool RepoController::testConnection(const repo::RepoCredentials &credentials)
 }
 
 void RepoController::commitScene(
-	const RepoController:: RepoToken    *token,
+	const RepoController::RepoToken    *token,
 	repo::core::model::RepoScene        *scene,
 	const std::string                   &owner)
 {
-
 	impl->commitScene(token, scene, owner);
 }
 
 uint64_t RepoController::countItemsInCollection(
-	const RepoController:: RepoToken            *token,
+	const RepoController::RepoToken            *token,
 	const std::string    &database,
 	const std::string    &collection)
 {
 	return impl->countItemsInCollection(token, database, collection);
 }
 
-void RepoController::disconnectFromDatabase(const RepoController:: RepoToken* token)
+void RepoController::disconnectFromDatabase(const RepoController::RepoToken* token)
 {
 	impl->disconnectFromDatabase(token);
 }
 
 repo::core::model::RepoScene* RepoController::fetchScene(
-	const RepoController:: RepoToken      *token,
+	const RepoController::RepoToken      *token,
 	const std::string    &database,
 	const std::string    &collection,
 	const std::string    &uuid,
@@ -98,15 +95,14 @@ repo::core::model::RepoScene* RepoController::fetchScene(
 }
 
 bool RepoController::generateAndCommitSelectionTree(
-	const RepoController:: RepoToken                         *token,
+	const RepoController::RepoToken                         *token,
 	repo::core::model::RepoScene            *scene)
 {
-
 	return impl->generateAndCommitSelectionTree(token, scene);
 }
 
 bool RepoController::generateAndCommitStashGraph(
-	const RepoController:: RepoToken              *token,
+	const RepoController::RepoToken              *token,
 	repo::core::model::RepoScene* scene
 	)
 {
@@ -114,32 +110,32 @@ bool RepoController::generateAndCommitStashGraph(
 }
 
 std::vector < repo::core::model::RepoBSON >
-	RepoController::getAllFromCollectionContinuous(
-		const RepoController:: RepoToken      *token,
-		const std::string    &database,
-		const std::string    &collection,
-		const uint64_t       &skip,
-		const uint32_t       &limit)
+RepoController::getAllFromCollectionContinuous(
+const RepoController::RepoToken      *token,
+const std::string    &database,
+const std::string    &collection,
+const uint64_t       &skip,
+const uint32_t       &limit)
 {
 	return impl->getAllFromCollectionContinuous(token, database, collection, skip, limit);
 }
 
 std::vector < repo::core::model::RepoBSON >
-	RepoController::getAllFromCollectionContinuous(
-		const RepoController:: RepoToken              *token,
-		const std::string            &database,
-		const std::string            &collection,
-		const std::list<std::string> &fields,
-		const std::string            &sortField,
-		const int                    &sortOrder,
-		const uint64_t               &skip,
-		const uint32_t               &limit)
+RepoController::getAllFromCollectionContinuous(
+const RepoController::RepoToken              *token,
+const std::string            &database,
+const std::string            &collection,
+const std::list<std::string> &fields,
+const std::string            &sortField,
+const int                    &sortOrder,
+const uint64_t               &skip,
+const uint32_t               &limit)
 {
 	return impl->getAllFromCollectionContinuous(token, database, collection, fields, sortField, sortOrder, skip, limit);
 }
 
 std::vector < repo::core::model::RepoRole > RepoController::getRolesFromDatabase(
-	const RepoController:: RepoToken              *token,
+	const RepoController::RepoToken              *token,
 	const std::string            &database,
 	const uint64_t               &skip,
 	const uint32_t               &limit)
@@ -147,9 +143,8 @@ std::vector < repo::core::model::RepoRole > RepoController::getRolesFromDatabase
 	return impl->getRolesFromDatabase(token, database, skip, limit);
 }
 
-
 std::vector < repo::core::model::RepoRoleSettings > RepoController::getRoleSettingsFromDatabase(
-	const RepoController:: RepoToken              *token,
+	const RepoController::RepoToken              *token,
 	const std::string            &database,
 	const uint64_t               &skip,
 	const uint32_t               &limit)
@@ -157,24 +152,22 @@ std::vector < repo::core::model::RepoRoleSettings > RepoController::getRoleSetti
 	return impl->getRoleSettingsFromDatabase(token, database, skip, limit);
 }
 
-
 repo::core::model::RepoRoleSettings RepoController::getRoleSettings(
-	const RepoController:: RepoToken *token,
+	const RepoController::RepoToken *token,
 	const repo::core::model::RepoRole &role)
 {
 	return getRoleSettings(token, role.getDatabase(), role.getName());
 }
 
 repo::core::model::RepoRoleSettings RepoController::getRoleSettings(
-	const RepoController:: RepoToken *token,
+	const RepoController::RepoToken *token,
 	const std::string &database,
 	const std::string &uniqueRoleName)
 {
 	return impl->getRoleSettings(token, database, uniqueRoleName);
 }
 
-
-std::list<std::string> RepoController::getDatabases(const RepoController:: RepoToken *token)
+std::list<std::string> RepoController::getDatabases(const RepoController::RepoToken *token)
 {
 	return impl->getDatabases(token);
 }
@@ -200,11 +193,10 @@ std::string RepoController::getHostAndPort(const RepoController::RepoToken *toke
 	return token->getDatabaseHostPort();
 }
 
-
 std::map<std::string, std::list<std::string>>
-	RepoController::getDatabasesWithProjects(
-		const RepoController::RepoToken  *token,
-		const std::list<std::string>     &databases)
+RepoController::getDatabasesWithProjects(
+const RepoController::RepoToken  *token,
+const std::list<std::string>     &databases)
 {
 	return impl->getDatabasesWithProjects(token, databases);
 }
@@ -345,7 +337,6 @@ bool RepoController::generateAndCommitSRCBuffer(
 	return impl->generateAndCommitSRCBuffer(token, scene);
 }
 
-
 repo_web_buffers_t RepoController::generateGLTFBuffer(
 	const repo::core::model::RepoScene *scene)
 {
@@ -358,7 +349,6 @@ repo_web_buffers_t RepoController::generateSRCBuffer(
 	return impl->generateSRCBuffer(scene);
 }
 
-
 std::list<std::string> RepoController::getAdminDatabaseRoles(const RepoController::RepoToken *token)
 {
 	return impl->getAdminDatabaseRoles(token);
@@ -370,9 +360,9 @@ std::string RepoController::getNameOfAdminDatabase(const RepoController::RepoTok
 }
 
 std::shared_ptr<PartitioningTree>
-	RepoController::getScenePartitioning(
-		const repo::core::model::RepoScene *scene,
-		const uint32_t                     &maxDepth
+RepoController::getScenePartitioning(
+const repo::core::model::RepoScene *scene,
+const uint32_t                     &maxDepth
 )
 {
 	return impl->getScenePartitioning(scene, maxDepth);
@@ -388,21 +378,19 @@ std::string RepoController::getSupportedExportFormats()
 	return impl->getSupportedExportFormats();
 }
 
-
 repo::core::model::RepoNodeSet RepoController::loadMetadataFromFile(
 	const std::string &filePath,
 	const char        &delimiter)
 {
-
 	return impl->loadMetadataFromFile(filePath, delimiter);
 }
 
 repo::core::model::RepoScene*
-	RepoController::loadSceneFromFile(
-		const std::string                                          &filePath,
-		const bool                                                 &applyReduction,
-		const bool                                                 &rotateModel,
-		const repo::manipulator::modelconvertor::ModelImportConfig *config)
+RepoController::loadSceneFromFile(
+const std::string                                          &filePath,
+const bool                                                 &applyReduction,
+const bool                                                 &rotateModel,
+const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
 	return impl->loadSceneFromFile(filePath, applyReduction, rotateModel, config);
 }
@@ -442,9 +430,9 @@ void RepoController::compareScenes(
 	const RepoController::RepoToken    *token,
 	repo::core::model::RepoScene       *base,
 	repo::core::model::RepoScene       *compare,
-	repo::manipulator::diff::DiffResult &baseResults,
-	repo::manipulator::diff::DiffResult &compResults,
-	const repo::manipulator::diff::Mode &diffMode
+	DiffResult                         &baseResults,
+	DiffResult                         &compResults,
+	const DiffMode                     &diffMode
 	)
 {
 	impl->compareScenes(token, base, compare, baseResults, compResults, diffMode);

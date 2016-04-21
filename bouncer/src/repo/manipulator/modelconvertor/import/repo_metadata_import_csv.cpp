@@ -25,7 +25,6 @@ MetadataImportCSV::MetadataImportCSV()
 {
 }
 
-
 MetadataImportCSV::~MetadataImportCSV()
 {
 }
@@ -66,18 +65,14 @@ repo::core::model::RepoNodeSet MetadataImportCSV::readMetadata(
 				headers = tokens;
 			else if (!tokens.empty())
 			{
-				repo::core::model::MetadataNode meta = 
+				repo::core::model::MetadataNode meta =
 					repo::core::model::RepoBSONFactory::makeMetaDataNode(headers, tokens, tokens[0]);
 				metadata.insert(new repo::core::model::MetadataNode(meta));
 
 				repoDebug << " metadata: " << meta.toString();
-
 			}
-
-
 		}
 		file.close();
-
 
 		repoTrace << "Created " << metadata.size() << " metadata nodes.";
 	}
@@ -86,6 +81,5 @@ repo::core::model::RepoNodeSet MetadataImportCSV::readMetadata(
 		repoError << "Error opening file: " << path;
 	}
 
-	
 	return metadata;
 }

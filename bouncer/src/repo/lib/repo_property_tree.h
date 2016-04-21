@@ -33,7 +33,6 @@ namespace repo{
 			PropertyTree(const bool &enableJSONWorkAround);
 			~PropertyTree();
 
-
 			/**
 			* Add an array of objects to the tree at a specified level
 			* This is used for things like arrays of objects within JSON
@@ -51,7 +50,6 @@ namespace repo{
 				}
 
 				tree.add_child(label, arraytree);
-				
 			}
 
 			/**
@@ -63,7 +61,7 @@ namespace repo{
 			* it is a qualified member of std::to_string()
 			* @param label field name to add to
 			* @param attribute name of attribute
-			* @param value value of attribute 
+			* @param value value of attribute
 			*/
 			template <typename T>
 			void addFieldAttribute(
@@ -108,7 +106,7 @@ namespace repo{
 				std::string val = ss.str();
 				addFieldAttribute(label, attribute, val);
 			}
-			
+
 			/**
 			* Add a children onto the tree
 			* label can denote it's inheritance.
@@ -131,7 +129,7 @@ namespace repo{
 			template <std::size_t N>
 			void addToTree(
 				const std::string           &label,
-				const char                  (&value)[N])
+				const char(&value)[N])
 			{
 				addToTree(label, std::string(value));
 			}
@@ -167,20 +165,20 @@ namespace repo{
 					for (size_t i = 0; i < value.size(); ++i)
 					{
 						ss << boost::lexical_cast<std::string>(value[i]);
-						if (i != value.size()-1)
+						if (i != value.size() - 1)
 							ss << " ";
 					}
 
 					std::string valueInStr = ss.str();
 					addToTree(label, valueInStr);
-				}				
+				}
 			}
 
 			/**
 			* Disable the JSON workaround for quotes
 			* There is currently a work around to allow
 			* json parser writes to remove quotes from
-			* anything that isn't a string. Calling this 
+			* anything that isn't a string. Calling this
 			* function will disable it. You might want to do this
 			* BEFORE you add any data into the tree for XML
 			* or any non JSON exports
@@ -221,7 +219,7 @@ namespace repo{
 				std::iostream &stream
 				) const
 			{
-				std::stringstream ss; 
+				std::stringstream ss;
 				boost::property_tree::write_xml(ss, tree);
 				std::string stringxml = ss.str();
 				//revert the xml_parser's utility where it swaps tabs and newlines with codes

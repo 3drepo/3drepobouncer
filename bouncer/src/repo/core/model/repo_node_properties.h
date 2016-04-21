@@ -23,11 +23,11 @@
 #define REPO_NODE_TYPES
 
 //-----------------------------------------------------------------------------
-//	
+//
 // Required fields
 //
 //-----------------------------------------------------------------------------
-#define REPO_NODE_LABEL_ID				"_id"		//!< required 
+#define REPO_NODE_LABEL_ID				"_id"		//!< required
 #define REPO_NODE_LABEL_SHARED_ID		"shared_id"	//!< required
 #define REPO_NODE_LABEL_TYPE			"type"		//!< required
 #define REPO_NODE_LABEL_API				"api"		//!< required
@@ -39,13 +39,13 @@
 #define REPO_NODE_API_LEVEL_3			3 //!< compressed api level
 
 //-----------------------------------------------------------------------------
-//	
+//
 // Optional nevertheless common fields
 //
 //-----------------------------------------------------------------------------
 #define REPO_NODE_LABEL_NAME			"name" //!< optional bson field label
 #define REPO_NODE_LABEL_PARENTS			"parents" //!< optional field label
-#define REPO_NODE_STASH_REF              "rev_id" 
+#define REPO_NODE_STASH_REF              "rev_id"
 //-----------------------------------------------------------------------------
 
 #define REPO_NODE_TYPE_ANIMATION		"animation"

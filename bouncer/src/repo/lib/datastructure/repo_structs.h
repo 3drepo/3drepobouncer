@@ -16,17 +16,17 @@
 */
 
 #pragma once
+
 #include <unordered_map>
 #include <cstdint>
 #include "../../repo_bouncer_global.h"
+#include "../../core/model/repo_node_utils.h"
 
 typedef struct {
 	std::unordered_map<std::string, std::vector<uint8_t>> geoFiles; //files where geometery are stored
 	std::unordered_map<std::string, std::vector<uint8_t>> x3dFiles; //back bone x3dom files
 	std::unordered_map<std::string, std::vector<uint8_t>> jsonFiles; //JSON mapping files
 }repo_web_buffers_t;
-
-
 
 struct MeshEntry
 {
@@ -69,5 +69,12 @@ struct PartitioningTree{
 		meshes(meshes), pValue(0),
 		left(std::shared_ptr<PartitioningTree>(nullptr)),
 		right(std::shared_ptr<PartitioningTree>(nullptr)){}
-
 };
+
+struct DiffResult{
+	std::vector<repoUUID> added; //nodes that does not exist on the other model
+	std::vector<repoUUID> modified; //nodes that exist on the other model but it is modified.
+	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher > correspondence;
+};
+
+enum class DiffMode{ DIFF_BY_ID, DIFF_BY_NAME };

@@ -24,63 +24,58 @@
 namespace repo {
 	namespace core {
 		namespace model {
+			//------------------------------------------------------------------------------
+			//
+			// Fields specific to texture only
+			//
+			//------------------------------------------------------------------------------
+#define REPO_NODE_TYPE_TEXTURE				"texture"
+#define REPO_NODE_LABEL_BIT_DEPTH			"bit_depth"
+#define REPO_NODE_LABEL_EXTENSION			"extension"
+#define REPO_NODE_LABEL_DATA_BYTE_COUNT		"data_byte_count"
+			//------------------------------------------------------------------------------
 
-				//------------------------------------------------------------------------------
-				//
-				// Fields specific to texture only
-				//
-				//------------------------------------------------------------------------------
-				#define REPO_NODE_TYPE_TEXTURE				"texture"
-				#define REPO_NODE_LABEL_BIT_DEPTH			"bit_depth"
-				#define REPO_NODE_LABEL_EXTENSION			"extension"
-				#define REPO_NODE_LABEL_DATA_BYTE_COUNT		"data_byte_count"
-				//------------------------------------------------------------------------------
+			class REPO_API_EXPORT TextureNode :public RepoNode
+			{
+			public:
 
-				class REPO_API_EXPORT TextureNode :public RepoNode
-				{
-				public:
+				/**
+				* Default constructor
+				*/
+				TextureNode();
 
-					/**
-					* Default constructor
-					*/
-					TextureNode();
+				/**
+				* Construct a TextureNode from a RepoBSON object
+				* @param RepoBSON object
+				*/
+				TextureNode(RepoBSON bson);
 
-					/**
-					* Construct a TextureNode from a RepoBSON object
-					* @param RepoBSON object
-					*/
-					TextureNode(RepoBSON bson);
+				/**
+				* Default deconstructor
+				*/
+				~TextureNode();
 
+				/**
+				* Check if the node is semantically equal to another
+				* Different node should have a different interpretation of what
+				* this means.
+				* @param other node to compare with
+				* @param returns true if equal, false otherwise
+				*/
+				virtual bool sEqual(const RepoNode &other) const;
 
-					/**
-					* Default deconstructor
-					*/
-					~TextureNode();
+				/**
+				* --------- Convenience functions -----------
+				*/
 
-					/**
-					* Check if the node is semantically equal to another
-					* Different node should have a different interpretation of what
-					* this means.
-					* @param other node to compare with
-					* @param returns true if equal, false otherwise
-					*/
-					virtual bool sEqual(const RepoNode &other) const;
+				/**
+				* Retrieve texture image as raw data
+				* @return returns a pointer to the image (represented as char)
+				*/
+				std::vector<char> getRawData() const;
 
-					/**
-					* --------- Convenience functions -----------
-					*/
-
-					/**
-					* Retrieve texture image as raw data
-					* @return returns a pointer to the image (represented as char)
-					*/
-					std::vector<char> getRawData() const;
-
-					std::string getFileExtension() const;
-
-				};
+				std::string getFileExtension() const;
+			};
 		} //namespace model
 	} //namespace core
 } //namespace repo
-
-

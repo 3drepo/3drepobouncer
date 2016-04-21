@@ -24,7 +24,6 @@
 namespace repo{
 	namespace manipulator{
 		namespace modelutility{
-
 			class AbstractSpatialPartitioner
 			{
 			public:
@@ -45,14 +44,14 @@ namespace repo{
 				* @return returns the spatial partitioning information as a tree
 				*/
 				virtual std::shared_ptr<PartitioningTree>
-										partitionScene() = 0;
+					partitionScene() = 0;
 
 				/**
 				* Generate a property tree representing the PartitioningTree from partitionScene()
 				* @return returns the spatial partitioning information as a property tree
 				*/
-				virtual repo::lib::PropertyTree 
-							generatePropertyTreeForPartitioning();
+				virtual repo::lib::PropertyTree
+					generatePropertyTreeForPartitioning();
 
 			protected:
 				const repo::core::model::RepoScene            *scene;
@@ -62,8 +61,6 @@ namespace repo{
 				repo::lib::PropertyTree generatePropertyTreeForPartitioningInternal(
 					const std::shared_ptr<PartitioningTree> &spTree) const;
 			};
-
 		}
 	}
 }
-

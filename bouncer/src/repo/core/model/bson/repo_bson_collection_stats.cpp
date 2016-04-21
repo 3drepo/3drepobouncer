@@ -6,11 +6,9 @@ CollectionStats::CollectionStats() : RepoBSON()
 {
 }
 
-
 CollectionStats::~CollectionStats()
 {
 }
-
 
 uint64_t repo::core::model::CollectionStats::getActualSizeOnDisk() const
 {

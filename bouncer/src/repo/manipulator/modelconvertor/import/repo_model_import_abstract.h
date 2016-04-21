@@ -19,7 +19,6 @@
 * Abstract Model convertor(Import)
 */
 
-
 #pragma once
 
 #include <string>
@@ -64,7 +63,7 @@ namespace repo{
 				/**
 				* Import model from a given file
 				* This does not generate the Repo Scene Graph
-				* Use getRepoScene() to generate a Repo Scene Graph. 
+				* Use getRepoScene() to generate a Repo Scene Graph.
 				* @param path to the file
 				* @param error message if failed
 				* @return returns true upon success
@@ -90,10 +89,7 @@ namespace repo{
 
 				const ModelImportConfig *settings; /*! Stores related settings for model import */
 				bool destroySettings; //only destroy settings if it is constructed by this object
-
 			};
-
 		} //namespace modelconvertor
 	} //namespace manipulator
 } //namespace repo
-

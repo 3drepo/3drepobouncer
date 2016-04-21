@@ -27,7 +27,6 @@ struct repo_op_t{
 	uint32_t nArgcs;
 };
 
-
 /*
 * =========== HOW TO ADD A NEW COMMAND ===========
 * 1. write the command under command functions
@@ -49,7 +48,7 @@ bool isSpecialCommand(const std::string &cmd);
 
 /**
 * Check if the command is recognised
-* @returns returns the minimal # of arguments needed for this command, 
+* @returns returns the minimal # of arguments needed for this command,
 *          -1 if command not recognised
 */
 int32_t knownValid(const std::string &cmd);
@@ -62,11 +61,10 @@ int32_t knownValid(const std::string &cmd);
 * @return returns true upon success
 */
 int32_t performOperation(
-	      repo::RepoController *controller, 
+	repo::RepoController *controller,
 	const repo::RepoToken      *token,
 	const repo_op_t            &command
 	);
-
 
 /*
 * ======================== Command functions ===================
@@ -105,7 +103,7 @@ static int32_t getFileFromProject(
 * @return returns true upon success
 */
 static int32_t importFileAndCommit(
-	      repo::RepoController *controller,
+	repo::RepoController *controller,
 	const repo::RepoToken      *token,
 	const repo_op_t            &command
 	);

@@ -35,4 +35,3 @@ namespace repo{
 		}//namespace graph
 	}//namespace manipulator
 }//namespace repo
-

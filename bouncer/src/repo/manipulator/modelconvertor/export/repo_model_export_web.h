@@ -19,7 +19,6 @@
 * Allows Export functionality from 3D Repo World to SRC
 */
 
-
 #pragma once
 
 #include <string>
@@ -32,11 +31,10 @@
 namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
-
 			enum class WebExportType { GLTF, SRC };
 
 			class WebModelExport : public AbstractModelExport
-			{	
+			{
 			public:
 				/**
 				* Default Constructor, export model with default settings
@@ -59,7 +57,7 @@ namespace repo{
 
 				/**
 				* Export all necessary files as buffers
-				* @return returns a repo_src_export_t containing all files needed for this 
+				* @return returns a repo_src_export_t containing all files needed for this
 				*          model to be rendered
 				*/
 				virtual repo_web_buffers_t getAllFilesExportedAsBuffer() const = 0;
@@ -94,7 +92,6 @@ namespace repo{
 					return convertSuccess;
 				}
 
-				
 			protected:
 				bool convertSuccess;
 				repo::core::model::RepoScene::GraphType gType;
@@ -106,8 +103,6 @@ namespace repo{
 				std::string sanitizeFileName(
 					const std::string &name) const;
 			};
-
 		} //namespace modelconvertor
 	} //namespace manipulator
 } //namespace repo
-

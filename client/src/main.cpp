@@ -56,8 +56,6 @@ repo::RepoController* instantiateController()
 }
 
 int main(int argc, char* argv[]){
-
-	
 	if (argc < minArgs){
 		if (argc == 2 && isSpecialCommand(argv[1]))
 		{
@@ -68,7 +66,7 @@ int main(int argc, char* argv[]){
 			repo::RepoController *controller = instantiateController();
 
 			int32_t errcode = performOperation(controller, nullptr, op);
-			
+
 			delete controller;
 			return errcode;
 		}
@@ -92,7 +90,6 @@ int main(int argc, char* argv[]){
 	int32_t cmdnArgs = knownValid(op.command);
 	if (cmdnArgs <= op.nArgcs)
 	{
-
 		repo::RepoController *controller = instantiateController();
 
 		std::string errMsg;
@@ -110,9 +107,6 @@ int main(int argc, char* argv[]){
 			repoLogError("Failed to authenticate to the database: " + errMsg);
 			return REPOERR_AUTH_FAILED;
 		}
-			
-
-		
 	}
 	else
 	{
@@ -121,9 +115,7 @@ int main(int argc, char* argv[]){
 		return REPOERR_INVALID_ARG;
 	}
 
-
 	std::cout << "Unknown command: " << op.command << std::endl;
 	printHelp();
 	return REPOERR_UNKNOWN_CMD;
-	
 }

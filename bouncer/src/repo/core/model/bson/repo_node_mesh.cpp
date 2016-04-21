@@ -30,9 +30,8 @@ RepoNode()
 
 MeshNode::MeshNode(RepoBSON bson,
 	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>&binMapping) :
-RepoNode(bson, binMapping)
+	RepoNode(bson, binMapping)
 {
-
 }
 
 MeshNode::~MeshNode()
@@ -52,7 +51,6 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 	std::vector<repo_vector_t> newBbox;
 	if (vertices.size())
 	{
-
 		resultVertice.reserve(vertices.size());
 		for (const repo_vector_t &v : vertices)
 		{
@@ -87,7 +85,7 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 		{
 			const uint64_t verticesByteCount = resultVertice.size() * sizeof(repo_vector_t);
 			newBigFiles[REPO_NODE_MESH_LABEL_VERTICES].second.resize(verticesByteCount);
-			memcpy(newBigFiles[REPO_NODE_MESH_LABEL_VERTICES].second.data(), resultVertice.data(), verticesByteCount);			
+			memcpy(newBigFiles[REPO_NODE_MESH_LABEL_VERTICES].second.data(), resultVertice.data(), verticesByteCount);
 		}
 		else
 			builder.appendBinary(REPO_NODE_MESH_LABEL_VERTICES, resultVertice.data(), resultVertice.size() * sizeof(repo_vector_t));
@@ -110,7 +108,7 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 			normalize(transformedNormal);
 			resultNormals.push_back(transformedNormal);
 		}
-		
+
 		if (newBigFiles.find(REPO_NODE_MESH_LABEL_NORMALS) != newBigFiles.end())
 		{
 			const uint64_t byteCount = resultNormals.size() * sizeof(repo_vector_t);
@@ -121,13 +119,11 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 			builder.appendBinary(REPO_NODE_MESH_LABEL_NORMALS, resultNormals.data(), resultNormals.size() * sizeof(repo_vector_t));
 	}
 
-	
 	RepoBSONBuilder arrayBuilder, outlineBuilder;
 	for (size_t i = 0; i < newBbox.size(); ++i)
 	{
 		std::vector<float> boundVec = { newBbox[i].x, newBbox[i].y, newBbox[i].z };
 		arrayBuilder.appendArray(std::to_string(i), boundVec);
-
 	}
 
 	if (newBbox[0].x > newBbox[1].x || newBbox[0].z > newBbox[1].z || newBbox[0].y > newBbox[1].y)
@@ -154,7 +150,7 @@ MeshNode MeshNode::cloneAndUpdateMeshMapping(
 	const bool                             &overwrite)
 {
 	RepoBSONBuilder builder, mapbuilder;
-	uint32_t index = 0; 
+	uint32_t index = 0;
 	std::vector<repo_mesh_mapping_t> mappings;
 	RepoBSON mapArray = getObjectField(REPO_NODE_MESH_LABEL_MERGE_MAP);
 	if (!overwrite && !mapArray.isEmpty())
@@ -167,7 +163,7 @@ MeshNode MeshNode::cloneAndUpdateMeshMapping(
 
 	for (uint32_t i = 0; i < vec.size(); ++i)
 	{
-		mapbuilder << std::to_string(index+i) << meshMappingAsBSON(vec[i]);
+		mapbuilder << std::to_string(index + i) << meshMappingAsBSON(vec[i]);
 	}
 	//append the rest of the array onto this new map bson
 	if (!overwrite) mapbuilder.appendElementsUnique(mapArray);
@@ -177,12 +173,11 @@ MeshNode MeshNode::cloneAndUpdateMeshMapping(
 	//append the rest of the mesh onto this new bson
 	builder.appendElementsUnique(*this);
 
-	
 	return MeshNode(builder.obj(), bigFiles);
 }
 
 std::vector<repo_vector_t> MeshNode::getBoundingBox() const
-{	
+{
 	RepoBSON bbArr = getObjectField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
 
 	std::vector<repo_vector_t> bbox = getBoundingBox(bbArr);
@@ -210,7 +205,7 @@ std::vector<repo_vector_t> MeshNode::getBoundingBox(RepoBSON &bbArr)
 					vector.x = bbVectorBson.getField("0").Double();
 					vector.y = bbVectorBson.getField("1").Double();
 					vector.z = bbVectorBson.getField("2").Double();
-					
+
 					bbox.push_back(vector);
 				}
 				else
@@ -234,7 +229,6 @@ std::vector<repo_vector_t> MeshNode::getBoundingBox(RepoBSON &bbArr)
 
 std::vector<repo_color4d_t> MeshNode::getColors() const
 {
-
 	std::vector<repo_color4d_t> colors = std::vector<repo_color4d_t>();
 	if (hasBinField(REPO_NODE_MESH_LABEL_COLORS))
 	{
@@ -250,7 +244,6 @@ std::vector<repo_vector_t> MeshNode::getVertices() const
 	if (hasBinField(REPO_NODE_MESH_LABEL_VERTICES))
 	{
 		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_VERTICES, vertices);
-
 	}
 	else
 	{
@@ -266,15 +259,14 @@ uint32_t MeshNode::getMFormat() const
 	 * maximum of 32 bit, each bit represent the presents of the following
 	 * vertices faces normals colors #uvs
 	 */
-	
-	uint32_t vBit = (uint32_t) hasBinField(REPO_NODE_MESH_LABEL_VERTICES);
-	uint32_t fBit = (uint32_t) hasBinField(REPO_NODE_MESH_LABEL_FACES)    << 1;
-	uint32_t nBit = (uint32_t) hasBinField(REPO_NODE_MESH_LABEL_NORMALS)  << 2;
-	uint32_t cBit = (uint32_t) hasBinField(REPO_NODE_MESH_LABEL_COLORS)   << 3;
-	uint32_t uvBits = (hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT) ?  getField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT).numberInt() : 0) << 4;
+
+	uint32_t vBit = (uint32_t)hasBinField(REPO_NODE_MESH_LABEL_VERTICES);
+	uint32_t fBit = (uint32_t)hasBinField(REPO_NODE_MESH_LABEL_FACES) << 1;
+	uint32_t nBit = (uint32_t)hasBinField(REPO_NODE_MESH_LABEL_NORMALS) << 2;
+	uint32_t cBit = (uint32_t)hasBinField(REPO_NODE_MESH_LABEL_COLORS) << 3;
+	uint32_t uvBits = (hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT) ? getField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT).numberInt() : 0) << 4;
 
 	return vBit | fBit | nBit | cBit | uvBits;
-
 }
 
 std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
@@ -291,15 +283,15 @@ std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
 			repo_mesh_mapping_t mapping;
 			RepoBSON mappingObj = mapArray.getObjectField(name);
 
-			mapping.mesh_id     = mappingObj.getUUIDField(REPO_NODE_MESH_LABEL_MAP_ID);
+			mapping.mesh_id = mappingObj.getUUIDField(REPO_NODE_MESH_LABEL_MAP_ID);
 			mapping.material_id = mappingObj.getUUIDField(REPO_NODE_MESH_LABEL_MATERIAL_ID);
-			mapping.vertFrom    = mappingObj.getField(REPO_NODE_MESH_LABEL_VERTEX_FROM).Int();
-			mapping.vertTo      = mappingObj.getField(REPO_NODE_MESH_LABEL_VERTEX_TO).Int();
-			mapping.triFrom     = mappingObj.getField(REPO_NODE_MESH_LABEL_TRIANGLE_FROM).Int();
-			mapping.triTo       = mappingObj.getField(REPO_NODE_MESH_LABEL_TRIANGLE_TO).Int();
+			mapping.vertFrom = mappingObj.getField(REPO_NODE_MESH_LABEL_VERTEX_FROM).Int();
+			mapping.vertTo = mappingObj.getField(REPO_NODE_MESH_LABEL_VERTEX_TO).Int();
+			mapping.triFrom = mappingObj.getField(REPO_NODE_MESH_LABEL_TRIANGLE_FROM).Int();
+			mapping.triTo = mappingObj.getField(REPO_NODE_MESH_LABEL_TRIANGLE_TO).Int();
 
 			RepoBSON boundingBox = mappingObj.getObjectField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
-			
+
 			std::vector<repo_vector_t> bboxVec = getBoundingBox(boundingBox);
 			mapping.min.x = bboxVec[0].x;
 			mapping.min.y = bboxVec[0].y;
@@ -310,9 +302,7 @@ std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
 			mapping.max.z = bboxVec[1].z;
 
 			mappings[std::stoi(name)] = mapping;
-
 		}
-
 	}
 	return mappings;
 }
@@ -328,16 +318,13 @@ std::vector<repo_vector_t> MeshNode::getNormals() const
 	return normals;
 }
 
-
 std::vector<repo_vector2d_t> MeshNode::getUVChannels() const
 {
 	std::vector<repo_vector2d_t> channels;
 	if (hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT))
 	{
-		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_UV_CHANNELS, channels);		
+		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_UV_CHANNELS, channels);
 	}
-
-
 
 	return channels;
 }
@@ -362,7 +349,6 @@ std::vector<std::vector<repo_vector2d_t>> MeshNode::getUVChannelsSeparated() con
 			uint32_t offset = i*vecPerChannel;
 			channels[i].insert(channels[i].begin(), serialisedChannels.begin() + offset,
 				serialisedChannels.begin() + offset + vecPerChannel);
-
 		}
 	}
 	return channels;
@@ -370,7 +356,6 @@ std::vector<std::vector<repo_vector2d_t>> MeshNode::getUVChannelsSeparated() con
 
 std::vector<uint32_t> MeshNode::getFacesSerialized() const
 {
-
 	std::vector <uint32_t> serializedFaces;
 	if (hasBinField(REPO_NODE_MESH_LABEL_FACES))
 		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_FACES, serializedFaces);
@@ -389,16 +374,15 @@ std::vector<repo_face_t> MeshNode::getFaces() const
 		faces.reserve(facesCount);
 
 		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_FACES, serializedFaces);
-		
+
 		// Retrieve numbers of vertices for each face and subsequent
 		// indices into the vertex array.
 		// In API level 1, mesh is represented as
 		// [n1, v1, v2, ..., n2, v1, v2...]
-		
+
 		int mNumIndicesIndex = 0;
 		while (serializedFaces.size() > mNumIndicesIndex)
 		{
-
 			int mNumIndices = serializedFaces[mNumIndicesIndex];
 			if (serializedFaces.size() > mNumIndicesIndex + mNumIndices)
 			{
@@ -447,7 +431,6 @@ bool MeshNode::sEqual(const RepoNode &other) const
 
 	MeshNode otherMesh = MeshNode(other);
 
-
 	std::vector<repo_vector_t> vertices, vertices2, normals, normals2;
 	std::vector<repo_vector2d_t> uvChannels, uvChannels2;
 	std::vector<uint32_t> facesSerialized, facesSerialized2;
@@ -470,14 +453,13 @@ bool MeshNode::sEqual(const RepoNode &other) const
 
 	//check all the sizes match first, as comparing the content will be costly
 	bool success = vertices.size() == vertices2.size()
- 	               && normals.size() == normals2.size()
-				   && uvChannels.size() == uvChannels2.size()
-				   && facesSerialized.size() == facesSerialized2.size()
-				   && colors.size() == colors2.size();
-	
+		&& normals.size() == normals2.size()
+		&& uvChannels.size() == uvChannels2.size()
+		&& facesSerialized.size() == facesSerialized2.size()
+		&& colors.size() == colors2.size();
+
 	if (success)
 	{
-
 		if (vertices.size())
 		{
 			success &= !memcmp(vertices.data(), vertices2.data(), vertices.size() * sizeof(*vertices.data()));
@@ -503,7 +485,6 @@ bool MeshNode::sEqual(const RepoNode &other) const
 			success &= !memcmp(facesSerialized.data(), facesSerialized.data(), facesSerialized.size() * sizeof(*facesSerialized.data()));
 		}
 	}
-
 
 	return success;
 }

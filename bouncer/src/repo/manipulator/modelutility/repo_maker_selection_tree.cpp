@@ -16,19 +16,18 @@
 */
 #include "repo_maker_selection_tree.h"
 
-using namespace repo::manipulator::modelutility; 
+using namespace repo::manipulator::modelutility;
 
 SelectionTreeMaker::SelectionTreeMaker(
 	const repo::core::model::RepoScene *scene)
 	: scene(scene)
 {
-
 }
 
 repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 	const repo::core::model::RepoNode            *currentNode,
-	std::unordered_map<std::string, 
-	        std::pair<std::string, std::string>> &idMaps,
+	std::unordered_map < std::string,
+	std::pair < std::string, std::string >> &idMaps,
 	const std::string                            &currentPath) const
 {
 	repo::lib::PropertyTree tree;
@@ -36,8 +35,7 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 	{
 		std::string idString = UUIDtoString(currentNode->getUniqueID());
 		repoUUID sharedID = currentNode->getSharedID();
-		std::string childPath = currentPath.empty()? idString : currentPath + "__" + idString;
-
+		std::string childPath = currentPath.empty() ? idString : currentPath + "__" + idString;
 
 		auto children = scene->getChildrenAsNodes(repo::core::model::RepoScene::GraphType::DEFAULT, sharedID);
 		std::vector<repo::lib::PropertyTree> childrenTrees;
@@ -52,32 +50,29 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 				case repo::core::model::NodeType::TRANSFORMATION:
 				case repo::core::model::NodeType::CAMERA:
 				case repo::core::model::NodeType::REFERENCE:
-					childrenTrees.push_back(generatePTree(child, idMaps, childPath));				
+					childrenTrees.push_back(generatePTree(child, idMaps, childPath));
 				}
-
 			}
 			else
 			{
 				repoDebug << "Null pointer for child node at generatePTree, current path : " << currentPath;
 				repoError << "Unexpected error at selection tree generation, the tree may not be complete.";
-
 			}
 		}
 
 		std::string name = currentNode->getName();
 		if (repo::core::model::NodeType::REFERENCE == currentNode->getTypeAsEnum())
-		{			
+		{
 			if (auto refNode = dynamic_cast<const repo::core::model::ReferenceNode*>(currentNode))
 			{
 				auto refDb = refNode->getDatabaseName();
 				name = (scene->getDatabaseName() == refDb ? "" : (refDb + "/")) + refNode->getProjectName();
 			}
-				
 		}
 
 		if (name.empty())
 			name = idString;
-				
+
 		tree.addToTree("account", scene->getDatabaseName());
 		tree.addToTree("project", scene->getProjectName());
 		tree.addToTree("name", name);
@@ -86,14 +81,11 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 		tree.addToTree("shared_id", UUIDtoString(sharedID));
 		tree.addToTree("children", childrenTrees);
 		idMaps[idString] = { name, childPath };
-		
-		
 	}
 	else
 	{
 		repoDebug << "Null pointer at generatePTree, current path : " << currentPath;
 		repoError << "Unexpected error at selection tree generation, the tree may not be complete.";
-
 	}
 
 	return tree;
@@ -107,7 +99,7 @@ std::vector<uint8_t> SelectionTreeMaker::getSelectionTreeAsBuffer() const
 	std::string jsonString = ss.str();
 	auto buffer = std::vector<uint8_t>();
 	if (!jsonString.empty())
-	{				
+	{
 		size_t byteLength = jsonString.size() * sizeof(*jsonString.data());
 		buffer.resize(byteLength);
 		memcpy(buffer.data(), jsonString.data(), byteLength);
@@ -143,7 +135,6 @@ repo::lib::PropertyTree  SelectionTreeMaker::getSelectionTreeAsPropertyTree() co
 
 	return tree;
 }
-
 
 SelectionTreeMaker::~SelectionTreeMaker()
 {

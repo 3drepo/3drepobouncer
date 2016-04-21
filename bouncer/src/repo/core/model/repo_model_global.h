@@ -36,7 +36,6 @@
 #pragma warning( disable : 4100 )
 #pragma warning( disable : 4005 )
 
-
 //------------------------------------------------------------------------------
 // Constants
 #define REPO_ADMIN                  "admin"             //!< Admin database
@@ -72,7 +71,6 @@
 
 // Vertex/triangle map propeties
 #define REPO_LABEL_MERGED_NODES     "merged_nodes"
-
 
 #define REPO_COMMAND_UPDATE         "update"
 #define REPO_COMMAND_UPDATES        "updates"
@@ -111,8 +109,6 @@
 #define REPO_DEFAULT_PROJECT_ZFAR               1000.0
 #define REPO_DEFAULT_PROJECT_ZNEAR              0.001
 
-
-
 #define REPO_HISTORY_MASTER_BRANCH  "00000000-0000-0000-0000-000000000000"
 
 //------------------------------------------------------------------------------
@@ -135,6 +131,5 @@
 #define REPO_MEDIA_TYPE_JSON    "application/json"          //!< JavaScript Object Notation
 
 //------------------------------------------------------------------------------
-
 
 #endif // REPO_CORE_GLOBAL_H

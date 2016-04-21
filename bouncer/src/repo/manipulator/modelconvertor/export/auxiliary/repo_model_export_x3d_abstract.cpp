@@ -22,21 +22,18 @@
 
 using namespace repo::manipulator::modelconvertor;
 
-
-
 AbstractX3DModelExport::AbstractX3DModelExport(
 	const repo::core::model::RepoScene *scene
-	) : 
+	) :
 	fullScene(true),
 	scene(scene),
 	mesh(repo::core::model::MeshNode()),
 	initialised(false),
 	convertSuccess(false)
-	
+
 {
 	tree.disableJSONWorkaround();
 	fname = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/revision/" + UUIDtoString(scene->getRevisionID());
-	
 }
 
 AbstractX3DModelExport::AbstractX3DModelExport(
@@ -50,7 +47,7 @@ AbstractX3DModelExport::AbstractX3DModelExport(
 	initialised(false),
 	convertSuccess(false)
 {
-	tree.disableJSONWorkaround();	
+	tree.disableJSONWorkaround();
 }
 
 repo::lib::PropertyTree AbstractX3DModelExport::createGoogleMapSubTree(
@@ -60,14 +57,13 @@ repo::lib::PropertyTree AbstractX3DModelExport::createGoogleMapSubTree(
 
 	if (mapNode)
 	{
-
 		repo_vector_t centrePoint = mapNode->getCentre();
 		repo::lib::PropertyTree yrotTrans(false), shapeTrans(false), tileGroup(false);
 		gmtree.addFieldAttribute("", X3D_ATTR_ID, "mapPosition");
 		gmtree.addFieldAttribute("", X3D_ATTR_TRANSLATION, centrePoint);
 		gmtree.addFieldAttribute("", X3D_ATTR_SCALE, "1,1,1");
 
-		yrotTrans.addFieldAttribute("", X3D_ATTR_ID      , "mapRotation");
+		yrotTrans.addFieldAttribute("", X3D_ATTR_ID, "mapRotation");
 		yrotTrans.addFieldAttribute("", X3D_ATTR_ROTATION, "0,1,0," + std::to_string(mapNode->getYRot()));
 
 		shapeTrans.addFieldAttribute("", X3D_ATTR_ROTATION, "1,0,0,4.7124");
@@ -85,12 +81,11 @@ repo::lib::PropertyTree AbstractX3DModelExport::createGoogleMapSubTree(
 
 		float centY = 128.0 + 0.5 * log((1.0 + s) / (1.0 - s)) * (-256.0 / (2.0 * M_PI));
 
-
 		size_t zoom = mapNode->getZoom();
 		size_t nTiles = 1 << zoom;
 
 		std::string mapType = mapNode->getMapType();
-		
+
 		if (mapType.empty()) mapType = "satellite";
 
 		for (int32_t x = -halfWidth; x < halfWidth; ++x)
@@ -106,15 +101,14 @@ repo::lib::PropertyTree AbstractX3DModelExport::createGoogleMapSubTree(
 				float tileCentY = centY * nTiles + yPos;
 
 				float tileLat = (2.0 * atan(exp(((tileCentY / nTiles) - 128.0) / -(256.0 / (2.0 * M_PI)))) - M_PI / 2.0) / (M_PI / 180.0);
-				
+
 				float tileLong = ((tileCentX / nTiles) - 128.) / (256. / 360.);
 
 				std::stringstream ss;
-				ss << "https://maps.googleapis.com/maps/api/staticmap?center=" << tileLat << "," 
+				ss << "https://maps.googleapis.com/maps/api/staticmap?center=" << tileLat << ","
 					<< tileLong << "&size=" << GOOGLE_TILE_SIZE << "x" << GOOGLE_TILE_SIZE
 					<< "&zoom=" << zoom << "&key=" << mapNode->getAPIKey() << "&maptype=" << mapType;
 				std::string googleMapsURL = ss.str();
-
 
 				if (mapNode->isTwoSided())
 				{
@@ -136,42 +130,42 @@ repo::lib::PropertyTree AbstractX3DModelExport::createGoogleMapSubTree(
 
 					vertShaderPt.addFieldAttribute("", X3D_ATTR_TYPE, "VERTEX");
 					vertShaderPt.addToTree("", "\n\
-							attribute vec3 position;\n\
-							attribute vec2 texcoord;\n\
-							varying vec2 fragTexCoord;\n\
-							uniform mat4 modelViewProjectionMatrix;\n\
-							\n\
-							void main()\n\
-							{\n\
-								fragTexCoord = vec2(texcoord.x, 1.0 - texcoord.y);\n\
-								gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n\
-							}\n\
-							")			;
+											   											   							attribute vec3 position;\n\
+																																																						attribute vec2 texcoord;\n\
+																																																																																						varying vec2 fragTexCoord;\n\
+																																																																																																																													uniform mat4 modelViewProjectionMatrix;\n\
+																																																																																																																																																																											\n\
+																																																																																																																																																																																																																																void main()\n\
+																																																																																																																																																																																																																																																																																												{\n\
+																																																																																																																																																																																																																																																																																																																																																																fragTexCoord = vec2(texcoord.x, 1.0 - texcoord.y);\n\
+																																																																																																																																																																																																																																																																																																																																																																																																																																												gl_Position = modelViewProjectionMatrix * vec4(position, 1.0);\n\
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																															}\n\
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																									");
 					shaderPt.mergeSubTree(X3D_LABEL_SHADER_PART, vertShaderPt);
 
 					fragShaderPt.addFieldAttribute("", X3D_ATTR_TYPE, "FRAGMENT");
 					fragShaderPt.addToTree("", " \
-							#ifdef GL_ES\n\
-								precision highp float;\n\
-							#endif\n\
-							\n\
-							varying vec2 fragTexCoord;\n\
-							\n\
-							uniform float alpha;\n\
-							uniform sampler2D map;\n\
-							\n\
-							void main()\n\
-							{\n\
-								vec4 mapCol = texture2D(map, fragTexCoord);\n\
-								gl_FragColor.rgba = vec4(mapCol.rgb, alpha);\n\
-							}\n\
-							");
+											   											   							#ifdef GL_ES\n\
+																																																							precision highp float;\n\
+																																																																																								#endif\n\
+																																																																																																																																\n\
+																																																																																																																																																																															varying vec2 fragTexCoord;\n\
+																																																																																																																																																																																																																																					\n\
+																																																																																																																																																																																																																																																																																																		uniform float alpha;\n\
+																																																																																																																																																																																																																																																																																																																																																																						uniform sampler2D map;\n\
+																																																																																																																																																																																																																																																																																																																																																																																																																																																	\n\
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																			void main()\n\
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																												{\n\
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																													vec4 mapCol = texture2D(map, fragTexCoord);\n\
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																						gl_FragColor.rgba = vec4(mapCol.rgb, alpha);\n\
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																						}\n\
+																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																																													");
 
 					shaderPt.mergeSubTree(X3D_LABEL_SHADER_PART, fragShaderPt);
 					tileTree.mergeSubTree(X3D_LABEL_COMPOSED_SHADER, shaderPt);
-				}				
+				}
 
-				tileTree.addFieldAttribute(X3D_LABEL_IMG_TEXTURE,  X3D_ATTR_URL , googleMapsURL);
+				tileTree.addFieldAttribute(X3D_LABEL_IMG_TEXTURE, X3D_ATTR_URL, googleMapsURL);
 
 				repo::lib::PropertyTree planePt(false);
 				float worldTileSize = mapNode->getTileSize();
@@ -184,7 +178,6 @@ repo::lib::PropertyTree AbstractX3DModelExport::createGoogleMapSubTree(
 				tileTreeWithPlane.mergeSubTree(X3D_LABEL_PLANE, planePt);
 
 				tileGroup.mergeSubTree(X3D_LABEL_SHAPE, tileTreeWithPlane);
-
 			}
 		}
 		repoDebug << "Exited...";
@@ -205,14 +198,14 @@ repo_vector_t AbstractX3DModelExport::getBoxCentre(
 	const repo_vector_t &min,
 	const repo_vector_t &max) const
 {
-	return { (min.x + max.x) / 2.0f, (min.y + max.y) / 2.0f, (min.z + max.z) / 2.0f };
+	return{ (min.x + max.x) / 2.0f, (min.y + max.y) / 2.0f, (min.z + max.z) / 2.0f };
 }
 
 repo_vector_t AbstractX3DModelExport::getBoxSize(
 	const repo_vector_t &min,
 	const repo_vector_t &max) const
 {
-	return { max.x - min.x, max.y - min.y, max.z - min.z};
+	return{ max.x - min.x, max.y - min.y, max.z - min.z };
 }
 
 std::vector<uint8_t> AbstractX3DModelExport::getFileAsBuffer()
@@ -228,26 +221,24 @@ std::vector<uint8_t> AbstractX3DModelExport::getFileAsBuffer()
 		xmlBuf.resize(xmlFile.size());
 		//repoTrace << "FILE: " << fname << " : " << xmlFile;
 		memcpy(xmlBuf.data(), xmlFile.c_str(), xmlFile.size());
-
 	}
-	
+
 	return xmlBuf;
 }
 
 std::string AbstractX3DModelExport::getFileName() const
 {
-	std::string fullName =  fname + ".x3d.mp";
+	std::string fullName = fname + ".x3d.mp";
 	if (!fullScene)
 		fullName += "c";
 
 	return fullName;
 }
 
-
 repo::lib::PropertyTree AbstractX3DModelExport::generateDefaultViewPointTree()
 {
 	repo::lib::PropertyTree vpTree(false);
-	
+
 	auto bbox = scene->getSceneBoundingBox();
 
 	repo_vector_t bboxCentre = { (bbox[1].x + bbox[0].x) / 2., (bbox[1].y + bbox[0].y) / 2., (bbox[1].z + bbox[0].z) / 2. };
@@ -295,7 +286,6 @@ bool AbstractX3DModelExport::sceneValid()
 		return false;
 	}
 
-
 	gType = repo::core::model::RepoScene::GraphType::OPTIMIZED;
 
 	if (!scene->hasRoot(gType))
@@ -314,7 +304,6 @@ bool AbstractX3DModelExport::sceneValid()
 bool AbstractX3DModelExport::writeScene(
 	const repo::core::model::RepoScene *scene)
 {
-
 	repoDebug << "Writing scene...";
 
 	repo::lib::PropertyTree rootGrpST(false), sceneST(false);
@@ -325,18 +314,15 @@ bool AbstractX3DModelExport::writeScene(
 	sceneST.addFieldAttribute("", X3D_ATTR_ID, "scene");
 	sceneST.addFieldAttribute("", X3D_ATTR_DO_PICK_PASS, "false");
 
-
 	//Set root group attributes
 	rootGrpST.addFieldAttribute("", X3D_ATTR_ON_LOAD, X3D_ON_LOAD);
-	rootGrpST.addFieldAttribute("", X3D_ATTR_ID     , "root");
-	rootGrpST.addFieldAttribute("", X3D_ATTR_DEF    , "root");
-	rootGrpST.addFieldAttribute("", X3D_ATTR_RENDER , "true");
+	rootGrpST.addFieldAttribute("", X3D_ATTR_ID, "root");
+	rootGrpST.addFieldAttribute("", X3D_ATTR_DEF, "root");
+	rootGrpST.addFieldAttribute("", X3D_ATTR_RENDER, "true");
 
 	repo::lib::PropertyTree subTree(false);
 
-
 	std::string label = populateTreeWithProperties(scene->getRoot(gType), scene, subTree);
-
 
 	rootGrpST.mergeSubTree(label, subTree);
 	sceneST.mergeSubTree(X3D_LABEL_GROUP, rootGrpST);
@@ -347,11 +333,8 @@ bool AbstractX3DModelExport::writeScene(
 
 	tree.mergeSubTree(sceneLabel, sceneST);
 
-
-
 	return true;
 }
-
 
 bool AbstractX3DModelExport::populateTree(
 	const repo::core::model::RepoScene *scene)
@@ -360,7 +343,6 @@ bool AbstractX3DModelExport::populateTree(
 	bool success = includeHeader();
 
 	success &= writeScene(scene);
-
 
 	return success;
 }
@@ -372,8 +354,7 @@ bool AbstractX3DModelExport::populateTree(
 	//Write xml header
 	bool success = includeHeader();
 
-	success &= writeMultiPartMeshAsScene(mesh, scene);	
-
+	success &= writeMultiPartMeshAsScene(mesh, scene);
 
 	return success;
 }

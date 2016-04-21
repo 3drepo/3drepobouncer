@@ -20,17 +20,17 @@
 using namespace repo;
 
 RepoCredentials::RepoCredentials(
-        std::string alias,
-        std::string host,
-        int port,
-        std::string authenticationDatabase,
-        std::string username,
-        std::string password)
-    : alias(alias)
-    , host(host)
-    , port(port)
-    , authenticationDatabase(authenticationDatabase)
-    , username(username)
-    , password(password)
+	std::string alias,
+	std::string host,
+	int port,
+	std::string authenticationDatabase,
+	std::string username,
+	std::string password)
+	: alias(alias)
+	, host(host)
+	, port(port)
+	, authenticationDatabase(authenticationDatabase)
+	, username(username)
+	, password(password)
 {
 }

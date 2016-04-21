@@ -25,7 +25,7 @@ using namespace repo::core::model;
 
 RepoRole RepoRole::cloneAndUpdatePermissions(
 	const std::vector<RepoPermission> &permissions
-    ) const
+	) const
 {
 	//Remove all project access related privileges, then add the new ones in.
 	std::vector<RepoPermission> oldPermissions = getProjectAccessRights();
@@ -37,7 +37,7 @@ RepoRole RepoRole::cloneAndUpdatePermissions(
 	for (const auto &p : oldPriv)
 	{
 		mapped_privileges.erase(p.first);
-	}	
+	}
 
 	auto newPriv = getPrivilegesMapped(translatePermissions(permissions));
 
@@ -50,12 +50,11 @@ RepoRole RepoRole::cloneAndUpdatePermissions(
 		std::back_inserter(privilegesUpdated));
 
 	return cloneAndUpdatePrivileges(privilegesUpdated);
-
 }
 
 RepoRole RepoRole::cloneAndUpdatePrivileges(
 	const std::vector<RepoPrivilege> &privileges
-    ) const
+	) const
 {
 	RepoBSONBuilder builder;
 	if (privileges.size() > 0)
@@ -82,11 +81,10 @@ RepoRole RepoRole::cloneAndUpdatePrivileges(
 
 	auto change = builder.obj();
 	return RepoRole(cloneAndAddFields(&change));
-
 }
 
 std::string RepoRole::dbActionToString(const DBActions &action)
-{	
+{
 	switch (action)
 	{
 	case DBActions::INSERT:
@@ -117,93 +115,91 @@ std::string RepoRole::dbActionToString(const DBActions &action)
 		//If you see this error you should simply add a case here
 		repoError << "Unrecognised action value: " << (uint32_t)action;
 	}
-    return std::string(); //only default values will fall through and return empty string.
+	return std::string(); //only default values will fall through and return empty string.
 }
 
 std::vector<std::string> RepoRole::dbActionsToStrings(
-        const std::vector<DBActions> &actions)
+	const std::vector<DBActions> &actions)
 {
-    std::vector<std::string> strings(actions.size());
-    std::vector<std::string>::size_type i = 0;
-    for (DBActions action : actions)
-    {
-        strings[i++] = dbActionToString(action);
-    }
-    return strings;
+	std::vector<std::string> strings(actions.size());
+	std::vector<std::string>::size_type i = 0;
+	for (DBActions action : actions)
+	{
+		strings[i++] = dbActionToString(action);
+	}
+	return strings;
 }
-
 
 DBActions RepoRole::stringToDBAction(const std::string &action)
 {
-    std::string actionUpperCase = action;
+	std::string actionUpperCase = action;
 
-    std::transform(actionUpperCase.begin(), actionUpperCase.end(), actionUpperCase.begin(), ::toupper);
+	std::transform(actionUpperCase.begin(), actionUpperCase.end(), actionUpperCase.begin(), ::toupper);
 
-    if (actionUpperCase == "FIND")
-    {
-        return DBActions::FIND;
-    }
+	if (actionUpperCase == "FIND")
+	{
+		return DBActions::FIND;
+	}
 
-    if (actionUpperCase == "REMOVE")
-    {
-        return DBActions::REMOVE;
-    }
+	if (actionUpperCase == "REMOVE")
+	{
+		return DBActions::REMOVE;
+	}
 
-    if (actionUpperCase == "INSERT")
-    {
-        return DBActions::INSERT;
-    }
+	if (actionUpperCase == "INSERT")
+	{
+		return DBActions::INSERT;
+	}
 
-    if (actionUpperCase == "UPDATE")
-    {
-        return DBActions::UPDATE;
-    }
+	if (actionUpperCase == "UPDATE")
+	{
+		return DBActions::UPDATE;
+	}
 
-    if (actionUpperCase == "CREATEUSER")
-    {
-        return DBActions::CREATE_USER;
-    }
+	if (actionUpperCase == "CREATEUSER")
+	{
+		return DBActions::CREATE_USER;
+	}
 
-    if (actionUpperCase == "CREATEROLE")
-    {
-        return DBActions::CREATE_ROLE;
-    }
+	if (actionUpperCase == "CREATEROLE")
+	{
+		return DBActions::CREATE_ROLE;
+	}
 
-    if (actionUpperCase == "DROPROLE")
-    {
-        return DBActions::DROP_ROLE;
-    }
+	if (actionUpperCase == "DROPROLE")
+	{
+		return DBActions::DROP_ROLE;
+	}
 
-    if (actionUpperCase == "GRANTROLE")
-    {
-        return DBActions::GRANT_ROLE;
-    }
+	if (actionUpperCase == "GRANTROLE")
+	{
+		return DBActions::GRANT_ROLE;
+	}
 
-    if (actionUpperCase == "REVOKEROLE")
-    {
-        return DBActions::REVOKE_ROLE;
-    }
+	if (actionUpperCase == "REVOKEROLE")
+	{
+		return DBActions::REVOKE_ROLE;
+	}
 
-    if (actionUpperCase == "VIEWROLE")
-    {
-        return DBActions::VIEW_ROLE;
-    }
-    repoDebug << "Unrecognised privileged action: " << action << " ignoring...";
+	if (actionUpperCase == "VIEWROLE")
+	{
+		return DBActions::VIEW_ROLE;
+	}
+	repoDebug << "Unrecognised privileged action: " << action << " ignoring...";
 
-    return DBActions::UNKNOWN;
-
+	return DBActions::UNKNOWN;
 }
 
 std::vector<DBActions> RepoRole::stringsToDBActions(
-        const std::vector<std::string> &strings)
+	const std::vector<std::string> &strings)
 {
-    std::vector<DBActions> actions(strings.size());
-    std::vector<DBActions>::size_type i = 0;
-    for (std::string string : strings)
-    {
-        actions[i++] = stringToDBAction(string);
-    }
-    return actions;
+	std::vector<DBActions> actions(strings.size());
+	std::vector<DBActions>::size_type i = 0;
+	for (std::string string : strings)
+	{
+		actions[i++] = stringToDBAction(string);
+	}
+	return actions;
 }
 
 std::vector<DBActions> RepoRole::getActions(RepoBSON actionArr) const
@@ -224,7 +220,7 @@ std::vector<std::pair<std::string, std::string>> RepoRole::getInheritedRoles() c
 {
 	std::vector<std::pair<std::string, std::string>> roles;
 
-	RepoBSON parentRoles = getObjectField(REPO_ROLE_LABEL_INHERITED_ROLES); 
+	RepoBSON parentRoles = getObjectField(REPO_ROLE_LABEL_INHERITED_ROLES);
 
 	std::set<std::string> fieldNames;
 	parentRoles.getFieldNames(fieldNames);
@@ -241,10 +237,9 @@ std::vector<std::pair<std::string, std::string>> RepoRole::getInheritedRoles() c
 		{
 			std::pair<std::string, std::string> pairing;
 			pairing.first = db;
-			pairing.second = role; 
+			pairing.second = role;
 			roles.push_back(pairing);
 		}
-			
 	}
 
 	return roles;
@@ -263,7 +258,7 @@ std::vector<RepoPrivilege> RepoRole::getPrivileges() const
 		for (const auto &field : fieldNames)
 		{
 			RepoBSON privilege = pbson.getObjectField(field);
-			if (privilege.hasField(REPO_ROLE_LABEL_RESOURCE) 
+			if (privilege.hasField(REPO_ROLE_LABEL_RESOURCE)
 				&& privilege.hasField(REPO_ROLE_LABEL_ACTIONS))
 			{
 				std::vector<DBActions> actions = getActions(privilege.getObjectField(REPO_ROLE_LABEL_ACTIONS));
@@ -290,7 +285,6 @@ std::unordered_map<std::string, RepoPrivilege> RepoRole::getPrivilegesMapped(con
 	return map;
 }
 
-
 std::vector<RepoPrivilege> RepoRole::translatePermissions(
 	const std::vector<RepoPermission> &permissions)
 {
@@ -303,17 +297,16 @@ std::vector<RepoPrivilege> RepoRole::translatePermissions(
 		translate that into db actions. One project maps to different collections,
 		and different collections would require different actions to read/write.
 		for e.g.:
-		write access to .scene would mean insert but not update, 
+		write access to .scene would mean insert but not update,
 		as you are not suppose to alter any objects.
-		but for .issues, you should have write permission (update AND insert) 
+		but for .issues, you should have write permission (update AND insert)
 		even if you only have read privileges
 		For project settings (settings collection), it will be an update and insert operation.
-	*/
+		*/
 	for (const RepoPermission &p : permissions)
 	{
 		if (!p.project.empty())
 		{
-
 			for (const std::string &postfix : RepoScene::getProjectExtensions())
 			{
 				RepoPrivilege privilege;
@@ -326,8 +319,6 @@ std::vector<RepoPrivilege> RepoRole::translatePermissions(
 			//FIXME: If you have write access to a project, do you
 			//need write access to settings? or should the project be created by an admin already
 			//and people who can upload to the project has no right to alter the settings?
-
-
 		}
 	}
 
@@ -337,9 +328,8 @@ std::vector<RepoPrivilege> RepoRole::translatePermissions(
 std::vector<RepoPermission> RepoRole::translatePrivileges(
 	const std::vector<RepoPrivilege> &privileges)
 {
-
 	std::vector<RepoPermission> permissions;
-	
+
 	for (const RepoPrivilege &p : privileges)
 	{
 		size_t lastDot = p.collection.find_last_of('.');
@@ -369,12 +359,12 @@ std::vector<RepoPermission> RepoRole::translatePrivileges(
 		}
 		else
 		{
-			std::string postfix = p.collection.substr(lastDot +1);
+			std::string postfix = p.collection.substr(lastDot + 1);
 			/*
 				Making an assumption here that all valid projects has a
 				history collection. so we only look for .history when we are looking for a project
 				to check for permissions
-			*/
+				*/
 			if (postfix == "history")
 			{
 				RepoPermission perm;
@@ -389,7 +379,7 @@ std::vector<RepoPermission> RepoRole::translatePrivileges(
 				}
 				else if (hasWrite)
 				{
-					perm.permission = AccessRight::WRITE; 
+					perm.permission = AccessRight::WRITE;
 				}
 				else
 				{
@@ -397,7 +387,6 @@ std::vector<RepoPermission> RepoRole::translatePrivileges(
 				}
 				permissions.push_back(perm);
 			}
-
 		}
 	}
 
@@ -410,7 +399,6 @@ void RepoRole::updateActions(
 	std::vector<DBActions> &vec
 	)
 {
-	
 	//READ PERMISSIONS:
 	if (permission == AccessRight::READ || permission == AccessRight::READ_WRITE)
 	{
@@ -526,8 +514,6 @@ void RepoRole::updateActions(
 		{
 			repoError << "Failed to update privileges: unknown collection type: " << collectionType;
 		}
-
-
 	}
 
 	//Prune possible duplicates

@@ -23,119 +23,115 @@
 #include "repo_bson.h"
 
 namespace repo {
-namespace core {
-namespace model {
+	namespace core {
+		namespace model {
+			// TODO: make into header only
 
-// TODO: make into header only
+			class REPO_API_EXPORT RepoProjectSettings : public RepoBSON
+			{
+			public:
 
-class REPO_API_EXPORT RepoProjectSettings : public RepoBSON
-{
+				RepoProjectSettings() : RepoBSON() {}
 
-public:
+				RepoProjectSettings(RepoBSON bson) : RepoBSON(bson){}
 
-    RepoProjectSettings() : RepoBSON() {}
+				~RepoProjectSettings() {}
 
-    RepoProjectSettings(RepoBSON bson) : RepoBSON(bson){}
+			public:
 
-    ~RepoProjectSettings() {}
+				/**
+				 * Get the avatar height if present or default value if not.
+				 * @brief getAvatarHeight
+				 * @return returns avatar height as double.
+				 */
+				double getAvatarHeight() const
+				{
+					return getEmbeddedDouble(
+						REPO_LABEL_PROPERTIES,
+						REPO_LABEL_AVATAR_HEIGHT,
+						(double)REPO_DEFAULT_PROJECT_AVATAR_HEIGHT);
+				}
 
-public :
+				/**
+				* Get the description of the project for this settings
+				* @return returns project description as string
+				*/
+				std::string getDescription() const
+				{
+					return getStringField(REPO_LABEL_DESCRIPTION);
+				}
 
-    /**
-     * Get the avatar height if present or default value if not.
-     * @brief getAvatarHeight
-     * @return returns avatar height as double.
-     */
-    double getAvatarHeight() const
-    {
-        return getEmbeddedDouble(
-                    REPO_LABEL_PROPERTIES,
-                    REPO_LABEL_AVATAR_HEIGHT,
-                    (double) REPO_DEFAULT_PROJECT_AVATAR_HEIGHT);
-    }
+				/**
+				* Get the owner of the project for this settings
+				* @return returns owner name as string
+				*/
+				std::string getOwner() const
+				{
+					return getStringField(REPO_LABEL_OWNER);
+				}
 
-    /**
-    * Get the description of the project for this settings
-    * @return returns project description as string
-    */
-    std::string getDescription() const
-    {
-        return getStringField(REPO_LABEL_DESCRIPTION);
-    }
+				double getPinSize() const
+				{
+					return getEmbeddedDouble(
+						REPO_LABEL_PROPERTIES,
+						REPO_LABEL_PIN_SIZE,
+						REPO_DEFAULT_PROJECT_PIN_SIZE);
+				}
 
-    /**
-    * Get the owner of the project for this settings
-    * @return returns owner name as string
-    */
-    std::string getOwner() const
-    {
-        return getStringField(REPO_LABEL_OWNER);
-    }
+				/**
+				* Get the name of the project for this settings
+				* @return returns project name as string
+				*/
+				std::string getProjectName() const
+				{
+					return getStringField(REPO_LABEL_ID);
+				}
 
-    double getPinSize() const
-    {
-        return getEmbeddedDouble(
-                    REPO_LABEL_PROPERTIES,
-                    REPO_LABEL_PIN_SIZE,
-                    REPO_DEFAULT_PROJECT_PIN_SIZE);
-    }
+				double getSpeed() const
+				{
+					return getEmbeddedDouble(
+						REPO_LABEL_PROPERTIES,
+						REPO_LABEL_SPEED,
+						REPO_DEFAULT_PROJECT_SPEED);
+				}
 
-    /**
-    * Get the name of the project for this settings
-    * @return returns project name as string
-    */
-    std::string getProjectName() const
-    {
-        return getStringField(REPO_LABEL_ID);
-    }
+				/**
+				* Get the type of the project for this settings
+				* @return returns project type as string
+				*/
+				std::string getType() const
+				{
+					return getStringField(REPO_LABEL_TYPE);
+				}
 
-    double getSpeed() const
-    {
-        return getEmbeddedDouble(
-                    REPO_LABEL_PROPERTIES,
-                    REPO_LABEL_SPEED,
-                    REPO_DEFAULT_PROJECT_SPEED);
-    }
+				double getVisibilityLimit() const
+				{
+					return getEmbeddedDouble(
+						REPO_LABEL_PROPERTIES,
+						REPO_LABEL_VISIBILITY_LIMIT,
+						REPO_DEFAULT_PROJECT_VISIBILITY_LIMIT);
+				}
 
-    /**
-    * Get the type of the project for this settings
-    * @return returns project type as string
-    */
-    std::string getType() const
-    {
-        return getStringField(REPO_LABEL_TYPE);
-    }
+				double getZFar() const
+				{
+					return getEmbeddedDouble(
+						REPO_LABEL_PROPERTIES,
+						REPO_LABEL_ZFAR,
+						REPO_DEFAULT_PROJECT_ZFAR);
+				}
 
-    double getVisibilityLimit() const
-    {
-        return getEmbeddedDouble(
-                    REPO_LABEL_PROPERTIES,
-                    REPO_LABEL_VISIBILITY_LIMIT,
-                    REPO_DEFAULT_PROJECT_VISIBILITY_LIMIT);
-    }
-
-    double getZFar() const
-    {
-        return getEmbeddedDouble(
-                    REPO_LABEL_PROPERTIES,
-                    REPO_LABEL_ZFAR,
-                    REPO_DEFAULT_PROJECT_ZFAR);
-    }
-
-    /**
-    * Get the zNear of the project for this settings
-    * @return returns project zNear as double
-    */
-    double getZNear() const
-    {
-        return getEmbeddedDouble(
-                    REPO_LABEL_PROPERTIES,
-                    REPO_LABEL_ZNEAR,
-                    REPO_DEFAULT_PROJECT_ZNEAR);
-    }
-
-};
-}// end namespace model
-} // end namespace core
+				/**
+				* Get the zNear of the project for this settings
+				* @return returns project zNear as double
+				*/
+				double getZNear() const
+				{
+					return getEmbeddedDouble(
+						REPO_LABEL_PROPERTIES,
+						REPO_LABEL_ZNEAR,
+						REPO_DEFAULT_PROJECT_ZNEAR);
+				}
+			};
+		}// end namespace model
+	} // end namespace core
 } // end namespace repo
-

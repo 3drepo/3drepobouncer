@@ -25,59 +25,56 @@
 #include <string>
 
 namespace repo {
-namespace core {
-namespace model {
+	namespace core {
+		namespace model {
+			class REPO_API_EXPORT RepoRoleSettings : public RepoBSON
+			{
+			public:
 
-class REPO_API_EXPORT RepoRoleSettings : public RepoBSON
-{
+				RepoRoleSettings();
 
-public:
+				RepoRoleSettings(RepoBSON bson);
 
-    RepoRoleSettings();
+				~RepoRoleSettings();
 
-    RepoRoleSettings(RepoBSON bson);
+			public:
 
-    ~RepoRoleSettings();
+				/**
+				* Get the color of the role from this settings
+				* @return returns role color as #hex string
+				*/
+				std::string getColor() const
+				{
+					return getStringField(REPO_LABEL_COLOR);
+				}
 
-public :
+				/**
+				* Get the description of the role from this settings
+				* @return returns role description as string
+				*/
+				std::string getDescription() const
+				{
+					return getStringField(REPO_LABEL_DESCRIPTION);
+				}
 
-    /**
-    * Get the color of the role from this settings
-    * @return returns role color as #hex string
-    */
-    std::string getColor() const
-    {
-        return getStringField(REPO_LABEL_COLOR);
-    }
+				/**
+				* Get the vector of available modules from this settings
+				* @return returns modules as vector of strings
+				*/
+				std::vector<std::string> getModules() const
+				{
+					return getStringArray(REPO_LABEL_MODULES);
+				}
 
-    /**
-    * Get the description of the role from this settings
-    * @return returns role description as string
-    */
-    std::string getDescription() const
-    {
-        return getStringField(REPO_LABEL_DESCRIPTION);
-    }
-
-    /**
-    * Get the vector of available modules from this settings
-    * @return returns modules as vector of strings
-    */
-    std::vector<std::string> getModules() const
-    {
-        return getStringArray(REPO_LABEL_MODULES);
-    }
-
-    /**
-    * Get the name of the role for this settings
-    * @return returns role name as string
-    */
-    std::string getName() const
-    {
-        return getStringField(REPO_LABEL_ID);
-    }
-};
-}// end namespace model
-} // end namespace core
+				/**
+				* Get the name of the role for this settings
+				* @return returns role name as string
+				*/
+				std::string getName() const
+				{
+					return getStringField(REPO_LABEL_ID);
+				}
+			};
+		}// end namespace model
+	} // end namespace core
 } // end namespace repo
-

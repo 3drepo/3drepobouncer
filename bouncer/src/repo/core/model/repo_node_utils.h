@@ -25,16 +25,15 @@
 
 #include <boost/functional/hash.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/uuid/uuid.hpp> 
+#include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
-
 
 #include <sstream>
 
 #include "../../lib/repo_log.h"
 
-//abstract out the use of boost inside the node codes 
+//abstract out the use of boost inside the node codes
 //incase we want to change it in the future
 typedef boost::uuids::uuid repoUUID;
 
@@ -58,30 +57,25 @@ typedef struct{
 	bool isTwoSided;
 }repo_material_t;
 
-
 typedef struct{
 	float r;
 	float g;
 	float b;
 	float a;
-
 }repo_color4d_t;
 
 typedef struct{
 	float x;
 	float y;
 	float z;
-
 }repo_vector_t;
 
 typedef struct{
 	float x;
 	float y;
-
 }repo_vector2d_t;
 
 typedef std::vector<uint32_t> repo_face_t;
-
 
 //This is used to map info for multipart optimization
 typedef struct{
@@ -256,7 +250,7 @@ static std::string printMat(const std::vector<float> &mat)
 static std::string printVec(const repo_vector_t &vec)
 {
 	std::stringstream ss;
-	ss << "[ " << vec.x << ", "<< vec.y << " ," << vec.z << " ]";
+	ss << "[ " << vec.x << ", " << vec.y << " ," << vec.z << " ]";
 
 	return ss.str();
 }
@@ -265,7 +259,7 @@ static std::string printVec(const repo_vector_t &vec)
 * Matrix x vector multiplication
 * NOTE: this assumes matrix has row as fast dimension!
 * @param mat 4x4 matrix
-* @param vec vector 
+* @param vec vector
 * @return returns the resulting vector.
 */
 static repo_vector_t multiplyMatVec(const std::vector<float> &mat, const repo_vector_t &vec)
@@ -274,7 +268,6 @@ static repo_vector_t multiplyMatVec(const std::vector<float> &mat, const repo_ve
 	if (mat.size() != 16)
 	{
 		repoError << "Trying to perform a matrix x vector multiplation with unexpected matrix size(" << mat.size() << ")";
-
 	}
 	else{
 		/*
@@ -282,7 +275,7 @@ static repo_vector_t multiplyMatVec(const std::vector<float> &mat, const repo_ve
 			04 05 06 07
 			08 09 10 11
 			12 13 14 15
-		*/
+			*/
 
 		result.x = mat[0] * vec.x + mat[1] * vec.y + mat[2] * vec.z + mat[3];
 		result.y = mat[4] * vec.x + mat[5] * vec.y + mat[6] * vec.z + mat[7];
@@ -290,14 +283,12 @@ static repo_vector_t multiplyMatVec(const std::vector<float> &mat, const repo_ve
 
 		float sig = 1e-5;
 
-		if (fabs(mat[12]) > sig || fabs(mat[13]) > sig || fabs(mat[14]) > sig || fabs(mat[15] -1) > sig)
+		if (fabs(mat[12]) > sig || fabs(mat[13]) > sig || fabs(mat[14]) > sig || fabs(mat[15] - 1) > sig)
 		{
-
 			repoWarning << "Potentially incorrect transformation : does not expect the last row to have values!";
-			
 		}
 	}
-	
+
 	return result;
 }
 
@@ -315,7 +306,6 @@ static repo_vector_t multiplyMatVecFake3x3(const std::vector<float> &mat, const 
 	if (mat.size() != 16)
 	{
 		repoError << "Trying to perform a matrix x vector multiplation with unexpected matrix size(" << mat.size() << ")";
-
 	}
 	else{
 		/*
@@ -347,31 +337,26 @@ static float calculateDeterminant(std::vector<float> mat)
 	float c1 = mat[8], c2 = mat[9], c3 = mat[10], c4 = mat[11];
 	float d1 = mat[12], d2 = mat[13], d3 = mat[14], d4 = mat[15];
 
-	float a1b2 =  (a1 * b2) *(c3 * d4 - c4 * d3);
-	float a1b3 =  (a1 * b3) *(c4 * d2 - c2 * d4);
-	float a1b4 =  (a1 * b4) *(c2 * d3 - c3 * d2);
+	float a1b2 = (a1 * b2) *(c3 * d4 - c4 * d3);
+	float a1b3 = (a1 * b3) *(c4 * d2 - c2 * d4);
+	float a1b4 = (a1 * b4) *(c2 * d3 - c3 * d2);
 
 	float a2b1 = -(a2 * b1) *(c3 * d4 - c4 * d3);
 	float a2b3 = -(a2 * b3) *(c4 * d1 - c1 * d4);
 	float a2b4 = -(a2 * b4) *(c1 * d3 - c3 * d1);
 
-	float a3b1 =  (a3 * b1) *(c2 * d4 - c4 * d2);
-	float a3b2 =  (a3 * b2) *(c4 * d1 - c1 * d4);
-	float a3b4 =  (a3 * b4) *(c1 * d2 - c2 * d1);
+	float a3b1 = (a3 * b1) *(c2 * d4 - c4 * d2);
+	float a3b2 = (a3 * b2) *(c4 * d1 - c1 * d4);
+	float a3b4 = (a3 * b4) *(c1 * d2 - c2 * d1);
 
 	float a4b1 = -(a4 * b1) *(c2 * d3 - c3 * d2);
 	float a4b2 = -(a4 * b2) *(c3 * d1 - c1 * d3);
 	float a4b3 = -(a4 * b3) *(c1 * d2 - c2 * d1);
 
-
-	
 	return a1b2 + a1b3 + a1b4
 		+ a2b1 + a2b3 + a2b4
 		+ a3b1 + a3b2 + a3b4
 		+ a4b1 + a4b2 + a4b3;
-
-	
-
 }
 
 static std::vector<float> invertMat(const std::vector<float> &mat)
@@ -381,8 +366,7 @@ static std::vector<float> invertMat(const std::vector<float> &mat)
 
 	if (mat.size() != 16)
 	{
-		repoError << "Unsupported vector size ("<< mat.size() << ")!";
-		
+		repoError << "Unsupported vector size (" << mat.size() << ")!";
 	}
 	else
 	{
@@ -390,7 +374,6 @@ static std::vector<float> invertMat(const std::vector<float> &mat)
 		if (det == 0)
 		{
 			repoError << "Trying to invert a matrix with determinant = 0!";
-		
 		}
 		else
 		{
@@ -401,29 +384,26 @@ static std::vector<float> invertMat(const std::vector<float> &mat)
 			float c1 = mat[8], c2 = mat[9], c3 = mat[10], c4 = mat[11];
 			float d1 = mat[12], d2 = mat[13], d3 = mat[14], d4 = mat[15];
 
+			result[0] = inv_det * (b2 * (c3 * d4 - c4 * d3) + b3 * (c4 * d2 - c2 * d4) + b4 * (c2 * d3 - c3 * d2));
+			result[1] = -inv_det * (a2 * (c3 * d4 - c4 * d3) + a3 * (c4 * d2 - c2 * d4) + a4 * (c2 * d3 - c3 * d2));
+			result[2] = inv_det * (a2 * (b3 * d4 - b4 * d3) + a3 * (b4 * d2 - b2 * d4) + a4 * (b2 * d3 - b3 * d2));
+			result[3] = -inv_det * (a2 * (b3 * c4 - b4 * c3) + a3 * (b4 * c2 - b2 * c4) + a4 * (b2 * c3 - b3 * c2));
 
-			result[ 0] =  inv_det * (b2 * (c3 * d4 - c4 * d3) + b3 * (c4 * d2 - c2 * d4) + b4 * (c2 * d3 - c3 * d2));
-			result[ 1] = -inv_det * (a2 * (c3 * d4 - c4 * d3) + a3 * (c4 * d2 - c2 * d4) + a4 * (c2 * d3 - c3 * d2));
-			result[ 2] =  inv_det * (a2 * (b3 * d4 - b4 * d3) + a3 * (b4 * d2 - b2 * d4) + a4 * (b2 * d3 - b3 * d2));
-			result[ 3] = -inv_det * (a2 * (b3 * c4 - b4 * c3) + a3 * (b4 * c2 - b2 * c4) + a4 * (b2 * c3 - b3 * c2));
-			
-			result[ 4] = -inv_det * (b1 * (c3 * d4 - c4 * d3) + b3 * (c4 * d1 - c1 * d4) + b4 * (c1 * d3 - c3 * d1));
-			result[ 5] =  inv_det * (a1 * (c3 * d4 - c4 * d3) + a3 * (c4 * d1 - c1 * d4) + a4 * (c1 * d3 - c3 * d1));
-			result[ 6] = -inv_det * (a1 * (b3 * d4 - b4 * d3) + a3 * (b4 * d1 - b1 * d4) + a4 * (b1 * d3 - b3 * d1));
-			result[ 7] =  inv_det * (a1 * (b3 * c4 - b4 * c3) + a3 * (b4 * c1 - b1 * c4) + a4 * (b1 * c3 - b3 * c1));
+			result[4] = -inv_det * (b1 * (c3 * d4 - c4 * d3) + b3 * (c4 * d1 - c1 * d4) + b4 * (c1 * d3 - c3 * d1));
+			result[5] = inv_det * (a1 * (c3 * d4 - c4 * d3) + a3 * (c4 * d1 - c1 * d4) + a4 * (c1 * d3 - c3 * d1));
+			result[6] = -inv_det * (a1 * (b3 * d4 - b4 * d3) + a3 * (b4 * d1 - b1 * d4) + a4 * (b1 * d3 - b3 * d1));
+			result[7] = inv_det * (a1 * (b3 * c4 - b4 * c3) + a3 * (b4 * c1 - b1 * c4) + a4 * (b1 * c3 - b3 * c1));
 
-			result[ 8] =  inv_det * (b1 * (c2 * d4 - c4 * d2) + b2 * (c4 * d1 - c1 * d4) + b4 * (c1 * d2 - c2 * d1));
-			result[ 9] = -inv_det * (a1 * (c2 * d4 - c4 * d2) + a2 * (c4 * d1 - c1 * d4) + a4 * (c1 * d2 - c2 * d1));
-			result[10] =  inv_det * (a1 * (b2 * d4 - b4 * d2) + a2 * (b4 * d1 - b1 * d4) + a4 * (b1 * d2 - b2 * d1));
+			result[8] = inv_det * (b1 * (c2 * d4 - c4 * d2) + b2 * (c4 * d1 - c1 * d4) + b4 * (c1 * d2 - c2 * d1));
+			result[9] = -inv_det * (a1 * (c2 * d4 - c4 * d2) + a2 * (c4 * d1 - c1 * d4) + a4 * (c1 * d2 - c2 * d1));
+			result[10] = inv_det * (a1 * (b2 * d4 - b4 * d2) + a2 * (b4 * d1 - b1 * d4) + a4 * (b1 * d2 - b2 * d1));
 			result[11] = -inv_det * (a1 * (b2 * c4 - b4 * c2) + a2 * (b4 * c1 - b1 * c4) + a4 * (b1 * c2 - b2 * c1));
 
 			result[12] = -inv_det * (b1 * (c2 * d3 - c3 * d2) + b2 * (c3 * d1 - c1 * d3) + b3 * (c1 * d2 - c2 * d1));
-			result[13] =  inv_det * (a1 * (c2 * d3 - c3 * d2) + a2 * (c3 * d1 - c1 * d3) + a3 * (c1 * d2 - c2 * d1));
+			result[13] = inv_det * (a1 * (c2 * d3 - c3 * d2) + a2 * (c3 * d1 - c1 * d3) + a3 * (c1 * d2 - c2 * d1));
 			result[14] = -inv_det * (a1 * (b2 * d3 - b3 * d2) + a2 * (b3 * d1 - b1 * d3) + a3 * (b1 * d2 - b2 * d1));
-			result[15] =  inv_det * (a1 * (b2 * c3 - b3 * c2) + a2 * (b3 * c1 - b1 * c3) + a3 * (b1 * c2 - b2 * c1));
+			result[15] = inv_det * (a1 * (b2 * c3 - b3 * c2) + a2 * (b3 * c1 - b1 * c3) + a3 * (b1 * c2 - b2 * c1));
 		}
-
-
 	}
 
 	return result;
@@ -464,7 +444,6 @@ static std::vector<float> transposeMat(const std::vector<float> &mat)
 	if (mat.size() != 16)
 	{
 		repoError << "Unsupported vector size (" << mat.size() << ")!";
-
 	}
 	else
 	{
@@ -484,10 +463,9 @@ static std::vector<float> transposeMat(const std::vector<float> &mat)
 		result[6] = mat[9];
 		result[9] = mat[6];
 		result[7] = mat[13];
-		result[13] = mat[7];	
+		result[13] = mat[7];
 		result[11] = mat[14];
 		result[14] = mat[11];
-
 	}
 
 	return result;
@@ -503,7 +481,6 @@ static void normalize(repo_vector_t &a)
 		a.y /= length;
 		a.z /= length;
 	}
-	
 }
 
 static bool nameCheck(const char &c)
@@ -542,7 +519,7 @@ static std::string sanitizeName(const std::string& name)
 	std::string newName(name);
 	std::replace_if(newName.begin(), newName.end(), nameCheck, '_');
 	auto strPos = newName.find("system.");
-	if ( strPos != std::string::npos)
+	if (strPos != std::string::npos)
 	{
 		newName.replace(strPos, sizeof("system."), "");
 	}

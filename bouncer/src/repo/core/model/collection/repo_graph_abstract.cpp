@@ -8,10 +8,8 @@ AbstractGraph::AbstractGraph(
 	databaseName(sanitizeDatabaseName(databaseName)),
 	projectName(sanitizeName(projectName))
 {
-
 }
 
 AbstractGraph::~AbstractGraph()
 {
 }
-

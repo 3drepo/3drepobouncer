@@ -26,7 +26,6 @@ RDTreeSpatialPartitioner::RDTreeSpatialPartitioner(
 {
 }
 
-
 RDTreeSpatialPartitioner::~RDTreeSpatialPartitioner()
 {
 }
@@ -36,10 +35,10 @@ std::vector<MeshEntry> RDTreeSpatialPartitioner::createMeshEntries()
 	std::vector<MeshEntry> entries;
 
 	/*
-		We only cater for scene graph with pretransformed vertices so 
-		non multiparted graph will bound to fail (unless it has pretransformed 
+		We only cater for scene graph with pretransformed vertices so
+		non multiparted graph will bound to fail (unless it has pretransformed
 		vertices, which is not expected)
-	*/
+		*/
 	assert(gType == repo::core::model::RepoScene::GraphType::OPTIMIZED);
 
 	auto meshes = scene->getAllMeshes(gType);
@@ -66,7 +65,6 @@ std::vector<MeshEntry> RDTreeSpatialPartitioner::createMeshEntries()
 					entries.back().mid[1] = (entries.back().max[1] + entries.back().min[1]) / 2.;
 					entries.back().mid[2] = (entries.back().max[2] + entries.back().min[2]) / 2.;
 				}
-				
 			}
 			else
 			{
@@ -92,8 +90,6 @@ std::vector<MeshEntry> RDTreeSpatialPartitioner::createMeshEntries()
 					repoWarning << "Could not find bounding box for " << UUIDtoString(mesh->getUniqueID()) << ". Skipping...";
 					entries.pop_back();
 				}
-				
-				
 			}
 		}
 		else
@@ -118,13 +114,12 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::createPartition(
 			Create a leaf node
 
 			There are 3 possible scenario to hit this condition:
-			1. If there is only one mesh left 
+			1. If there is only one mesh left
 			2. If we hit max depth count
 			3. If failCount is 3, meaning we tried all 3 axis and none of them manage to split the meshes up further (we have probably hit the overlapping regions)
 
-
 			*/
-			
+
 		return std::make_shared<PartitioningTree>(meshes);
 	}
 
@@ -132,7 +127,6 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::createPartition(
 	float median;
 	std::vector<MeshEntry> lMeshes, rMeshes;
 	sortMeshes(meshes, axis, currentSection, median, lMeshes, rMeshes);
-
 
 	PartitioningTreeType nextAxis;
 	int32_t axisIdx;
@@ -154,14 +148,12 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::createPartition(
 	default:
 		//Only thing left is LEAF, which should never be passed in in the first place
 		repoError << "Unexpected Partition Tree type!";
-
 	}
-	
 
 	if (lMeshes.size() == rMeshes.size() == meshes.size())
 	{
 		//If this partitioning did absolutely nothing, skip this node all together
-		return createPartition(meshes, nextAxis, depthCount, failCount +1, currentSection);
+		return createPartition(meshes, nextAxis, depthCount, failCount + 1, currentSection);
 	}
 	else
 	{
@@ -174,11 +166,7 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::createPartition(
 			createPartition(lMeshes, nextAxis, depthCount + 1, 0, newSectionLeft),
 			createPartition(rMeshes, nextAxis, depthCount + 1, 0, newSectionRight)
 			);
-
 	}
-
-	
-
 }
 
 std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::partitionScene()
@@ -187,20 +175,19 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::partitionScene()
 	repoInfo << "Generating spatial partitioning...";
 	if (scene)
 	{
-
 		if (scene->hasRoot(gType))
 		{
 			//sort the meshes
 			//FIXME: Using vector because i need different comparison functions for different axis. is this sane?
 			std::vector<MeshEntry> meshEntries = createMeshEntries();
 			//starts with a X partitioning
-			
+
 			auto bbox = scene->getSceneBoundingBox();
 
 			std::vector<std::vector<float>> currentSection = {
-																{bbox[0].x, bbox[0].y, bbox[0].z},
-																{bbox[1].x, bbox[1].y, bbox[1].z}
-															};
+				{ bbox[0].x, bbox[0].y, bbox[0].z },
+				{ bbox[1].x, bbox[1].y, bbox[1].z }
+			};
 
 			pTree = createPartition(meshEntries, PartitioningTreeType::PARTITION_X, 0, 0, currentSection);
 		}
@@ -208,7 +195,6 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::partitionScene()
 		{
 			repoError << "Failed to perform spatial partitioning: optimised graph not found";
 		}
-
 	}
 	else
 	{
@@ -225,7 +211,7 @@ void RDTreeSpatialPartitioner::sortMeshes(
 	float                        &median,
 	std::vector<MeshEntry>       &lMeshes,
 	std::vector<MeshEntry>       &rMeshes
-	) 
+	)
 {
 	std::vector<MeshEntry> sortedMeshes = meshes;
 	uint32_t axisIdx;
@@ -235,9 +221,9 @@ void RDTreeSpatialPartitioner::sortMeshes(
 	case PartitioningTreeType::PARTITION_X:
 		axisIdx = 0;
 		std::sort(sortedMeshes.begin(), sortedMeshes.end(),
-			[](MeshEntry const& a, MeshEntry const& b) 
+			[](MeshEntry const& a, MeshEntry const& b)
 		{ return a.mid[0] < b.mid[0]; }
-		);		
+		);
 		break;
 	case PartitioningTreeType::PARTITION_Y:
 		axisIdx = 1;
@@ -257,7 +243,7 @@ void RDTreeSpatialPartitioner::sortMeshes(
 		//only thing left is leaf node, which we do not expect it to ever come in here
 		repoError << "Unexpected error: sorting Meshes for partitioning with an undefined axis.";
 	}
-	
+
 	//figure out the median value
 	if (sortedMeshes.size() % 2)
 	{
@@ -274,13 +260,11 @@ void RDTreeSpatialPartitioner::sortMeshes(
 		auto medPoint2 = medMesh2.mid[axisIdx];
 
 		median = (medPoint1 + medPoint2) / 2.;
-
 	}
 
 	//put the meshes into left and right mesh vectors
 	for (auto &entry_ : sortedMeshes)
 	{
-		
 		if (entry_.min[axisIdx] <= median)
 		{
 			auto entry = entry_;
@@ -291,7 +275,7 @@ void RDTreeSpatialPartitioner::sortMeshes(
 			}
 			lMeshes.push_back(entry);
 		}
-			
+
 		if (entry_.max[axisIdx] > median)
 		{
 			auto entry = entry_;
@@ -302,15 +286,11 @@ void RDTreeSpatialPartitioner::sortMeshes(
 			}
 			rMeshes.push_back(entry);
 		}
-			
 	}
-	
+
 	if (!lMeshes.size() || !rMeshes.size())
 	{
 		//in no situation should the split happens where we're not getting anything on either side of the tree.
 		repoWarning << "Terrible median choice: axis: " << axisIdx << " median: " << median;
-
 	}
-
-		
 }

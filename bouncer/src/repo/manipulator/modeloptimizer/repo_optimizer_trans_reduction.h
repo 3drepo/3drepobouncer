@@ -28,7 +28,6 @@ namespace repo {
 	namespace manipulator {
 		namespace modeloptimizer {
 			class TransformationReductionOptimizer : AbstractOptimizer{
-
 			public:
 				/**
 				* Default constructor
@@ -40,14 +39,12 @@ namespace repo {
 				*/
 				virtual ~TransformationReductionOptimizer();
 
-
 				/**
 				* Apply optimisation on the given repoScene
 				* @param scene takes in a repoScene to optimise
 				* @return returns true upon success
 				*/
 				virtual bool apply(repo::core::model::RepoScene *scene);
-
 
 			private:
 				const repo::core::model::RepoScene::GraphType gType;
