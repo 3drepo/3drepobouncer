@@ -376,6 +376,11 @@ std::list<std::string> RepoController::getStandardDatabaseRoles(const RepoContro
 	return impl->getStandardDatabaseRoles(token);
 }
 
+std::string RepoController::getSupportedImportFormats()
+{
+	return impl->getSupportedImportFormats();
+}
+
 std::string RepoController::getSupportedExportFormats()
 {
 	return impl->getSupportedExportFormats();
