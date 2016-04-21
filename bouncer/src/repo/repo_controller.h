@@ -24,6 +24,7 @@
 #pragma once
 
 #include <string>
+#include <memory>
 
 #include "core/model/bson/repo_bson_project_settings.h"
 #include "core/model/bson/repo_bson_role.h"
@@ -811,6 +812,6 @@ namespace repo{
 
 	private:
 		class _RepoControllerImpl;
-		std::shared_pt<_RepoControllerImpl> impl;
+		std::unique_ptr<_RepoControllerImpl> impl;
 	};
 }
