@@ -16,1217 +16,441 @@
 */
 
 
-#include "repo_controller.h"
-
-#include "manipulator/modelconvertor/import/repo_model_import_assimp.h"
-#include "manipulator/modelconvertor/export/repo_model_export_assimp.h"
-#include "lib/repo_broadcaster.h"
-#include "lib/repo_log.h"
-
-
+#include "repo_controller_internal.cpp.inl"; //Inner class implementation
 
 
 using namespace repo;
 
-class RepoController::RepoToken
-{
-
-public:
-
-	/**
-	* Construct a Repo token
-	* @param credentials user credentials in a bson format
-	* @param databaseHostPort database address+port as a string
-	* @param databaseName database it is authenticating against
-	*/
-	RepoToken(
-		const repo::core::model::RepoBSON* credentials = 0,
-		const std::string &databaseHostPort = std::string(),
-		const std::string &databaseName = std::string()) :
-		databaseAd(databaseHostPort),
-		credentials(credentials),
-		databaseName(databaseName) {}
-
-	~RepoToken(){
-		if (credentials)
-			delete credentials;
-	}
-
-	/**
-	* @brief getDatabaseHostPort
-	* @return database host and port in as a string
-	*/
-	std::string getDatabaseHostPort() const { return databaseAd; }
-
-	std::string getDatabaseName() const { return databaseName; }
-
-
-//private:
-
-	const repo::core::model::RepoBSON* credentials;
-	const std::string databaseAd;
-	const std::string databaseName;
-};
-
 RepoController::RepoController(
-        std::vector<lib::RepoAbstractListener*> listeners,
-        const uint32_t &numConcurrentOps,
-        const uint32_t &numDbConn) :
-    numDBConnections(numDbConn)
+	std::vector<lib::RepoAbstractListener*> listeners,
+	const uint32_t &numConcurrentOps,
+	const uint32_t &numDbConn)
 {
-
-    for (uint32_t i = 0; i < numConcurrentOps; i++)
-    {
-        manipulator::RepoManipulator* worker = new manipulator::RepoManipulator();
-        workerPool.push(worker);
-    }
-
-    if (listeners.size() > 0)
-    {
-        subscribeToLogger(listeners);
-    }
-
+	//RepoController follows the Pimpl idiom http://www.gotw.ca/gotw/028.htm
+	//This is done to avoid high dependencies on other headers for library users
+	//Actual implementations are in _RepoControllerImpl
+	impl = std::make_unique<RepoController::_RepoControllerImpl>(listeners, numConcurrentOps, numDbConn);
 }
 
-
-RepoController::~RepoController()
-{
-
-    std::vector<manipulator::RepoManipulator*> workers = workerPool.empty();
-    std::vector<manipulator::RepoManipulator*>::iterator it;
-    for (it = workers.begin(); it != workers.end(); ++it)
-    {
-        manipulator::RepoManipulator* man = *it;
-        if (man)
-            delete man;
-    }
-}
+RepoController::~RepoController(){}
 
 RepoController::RepoToken* RepoController::authenticateToAdminDatabaseMongo(
-        std::string       &errMsg,
-        const std::string &address,
-        const int         &port,
-        const std::string &username,
-        const std::string &password,
-        const bool        &pwDigested
-        )
+	std::string       &errMsg,
+	const std::string &address,
+	const int         &port,
+	const std::string &username,
+	const std::string &password,
+	const bool        &pwDigested
+	)
 {
-    manipulator::RepoManipulator* worker = workerPool.pop();
-
-    core::model::RepoBSON* cred = 0;
-    RepoToken *token = 0;
-
-    std::string dbFullAd = address + ":" + std::to_string(port);
-
-    bool success = worker->connectAndAuthenticateWithAdmin(errMsg, address, port,
-                                                           numDBConnections, username, password, pwDigested);
-
-    if (success && !username.empty())
-        cred = worker->createCredBSON(dbFullAd, username, password, pwDigested);
-
-
-    if (cred || username.empty())
-    {
-        token = new RepoToken(cred, dbFullAd, worker->getNameOfAdminDatabase(dbFullAd));
-
-        repoInfo << "Successfully connected to the " << dbFullAd;
-        if (!username.empty())
-            repoInfo << username << " is authenticated to " << dbFullAd;
-    }
-
-    workerPool.push(worker);
-    return token;
+	return impl->authenticateToAdminDatabaseMongo(errMsg, address, port, username, password, pwDigested);
 }
 
 RepoController::RepoToken* RepoController::authenticateMongo(
-        std::string       &errMsg,
-        const std::string &address,
-        const uint32_t    &port,
-        const std::string &dbName,
-        const std::string &username,
-        const std::string &password,
-        const bool        &pwDigested
-        )
+	std::string       &errMsg,
+	const std::string &address,
+	const uint32_t    &port,
+	const std::string &dbName,
+	const std::string &username,
+	const std::string &password,
+	const bool        &pwDigested
+	)
 {
-    manipulator::RepoManipulator* worker = workerPool.pop();
-
-    core::model::RepoBSON* cred = 0;
-    RepoToken *token = 0;
-
-    std::string dbFullAd = address + ":" + std::to_string(port);
-
-    bool success = worker->connectAndAuthenticate(errMsg, address, port,
-                                                  numDBConnections, dbName, username, password, pwDigested);
-
-    if (success && !username.empty())
-        cred = worker->createCredBSON(dbFullAd, username, password, pwDigested);
-    workerPool.push(worker);
-
-    if (cred || username.empty())
-    {
-        token = new RepoToken(cred, dbFullAd, dbName);
-    }
-    return token ;
+	return impl->authenticateMongo(errMsg, address, port, dbName, username, password, pwDigested);
 }
 
 bool RepoController::testConnection(const repo::RepoCredentials &credentials)
 {
-    std::string errMsg;
-    bool isConnected = false;
-    RepoToken* token = nullptr;
-    if (token = authenticateMongo(
-                errMsg,
-                credentials.getHost(),
-                credentials.getPort(),
-                credentials.getAuthenticationDatabase(),
-                credentials.getUsername(),
-                credentials.getPassword(),
-                false))
-    {
-        repoTrace << "Connection established.";
-        disconnectFromDatabase(token);
-        isConnected = true;
-        delete token;
-    }
-    else
-    {
-        //connection/authentication failed
-        repoError << "Failed to connect/authenticate.";
-        repoError << errMsg;
-    }
-    return isConnected;
+	return impl->testConnection(credentials);
 }
 
 void RepoController::commitScene(
-        const RepoToken                     *token,
-        repo::core::model::RepoScene        *scene,
-        const std::string                   &owner)
+	const RepoController:: RepoToken    *token,
+	repo::core::model::RepoScene        *scene,
+	const std::string                   &owner)
 {
-	if (scene)
-	{
-		if (!(scene->getDatabaseName().empty() || scene->getProjectName().empty()))
-		{
-			if (token)
-			{
-				std::string sceneOwner = owner;
-				if (!token->credentials)
-				{
-					sceneOwner = "ANONYMOUS USER";
-				}
-				manipulator::RepoManipulator* worker = workerPool.pop();
-				worker->commitScene(token->databaseAd, token->credentials, scene, sceneOwner);
-				workerPool.push(worker);
 
-			}
-			else
-			{
-				repoError << "Trying to commit to the database without a database connection!";
-			}
-
-		}
-		else
-		{
-			repoError << "Trying to commit a scene without specifying database/project names.";
-		}
-		
-	}
-	else
-	{
-		repoError << "Trying to commit an empty scene into the database";
-	}
-
-    
+	impl->commitScene(token, scene, owner);
 }
 
 uint64_t RepoController::countItemsInCollection(
-        const RepoToken            *token,
-        const std::string    &database,
-        const std::string    &collection)
+	const RepoController:: RepoToken            *token,
+	const std::string    &database,
+	const std::string    &collection)
 {
-    uint64_t numItems = 0;
-    repoTrace << "Controller: Counting number of items in the collection";
-
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        std::string errMsg;
-        numItems = worker->countItemsInCollection(token->databaseAd, token->credentials, database, collection, errMsg);
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to fetch database without a database connection!";
-    }
-
-    return numItems;
+	return impl->countItemsInCollection(token, database, collection);
 }
 
-void RepoController::disconnectFromDatabase(const RepoToken* token)
+void RepoController::disconnectFromDatabase(const RepoController:: RepoToken* token)
 {
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-
-        worker->disconnectFromDatabase(token->databaseAd);
-
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to disconnect from database with an invalid token!";
-    }
+	impl->disconnectFromDatabase(token);
 }
 
 repo::core::model::RepoScene* RepoController::fetchScene(
-        const RepoToken      *token,
-        const std::string    &database,
-        const std::string    &collection,
-        const std::string    &uuid,
-        const bool           &headRevision,
-        const bool           &lightFetch)
+	const RepoController:: RepoToken      *token,
+	const std::string    &database,
+	const std::string    &collection,
+	const std::string    &uuid,
+	const bool           &headRevision,
+	const bool           &lightFetch)
 {
-    repo::core::model::RepoScene* scene = 0;
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-
-        scene = worker->fetchScene(token->databaseAd, token->credentials,
-                                   database, collection, stringToUUID(uuid), headRevision, lightFetch);
-
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to fetch scene without a database connection!";
-    }
-
-    return scene;
+	return impl->fetchScene(token, database, collection, uuid, headRevision, lightFetch);
 }
 
-
 bool RepoController::generateAndCommitSelectionTree(
-	const RepoToken                               *token,
-	       repo::core::model::RepoScene            *scene)
+	const RepoController:: RepoToken                         *token,
+	repo::core::model::RepoScene            *scene)
 {
-	bool success = false;
 
-	if (token && scene)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		if (scene->isRevisioned() && !scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
-		{
-			repoInfo << "Unoptimised scene not loaded, trying loading unoptimised scene...";
-			worker->fetchScene(token->databaseAd, token->credentials, scene);
-		}
-
-		success = worker->generateAndCommitSelectionTree(token->databaseAd, token->credentials, scene);
-		workerPool.push(worker);
-	}
-
-	return success;
+	return impl->generateAndCommitSelectionTree(token, scene);
 }
 
 bool RepoController::generateAndCommitStashGraph(
-	const RepoToken              *token,
+	const RepoController:: RepoToken              *token,
 	repo::core::model::RepoScene* scene
 	)
 {
-	bool success = false;
-
-	if (token && scene)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-
-		if (scene->isRevisioned() && !scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
-		{
-			//If the unoptimised graph isn't fetched, try to fetch full scene before beginning
-			//This should be safe considering if it has not loaded the unoptimised graph it shouldn't have
-			//any uncommited changes.
-			repoInfo << "Unoptimised scene not loaded, trying loading unoptimised scene...";
-			worker->fetchScene(token->databaseAd, token->credentials, scene);
-		}
-		
-		success = worker->generateAndCommitStashGraph(token->databaseAd, token->credentials,
-			scene);
-
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Failed to generate stash graph: nullptr to scene or token!";
-	}
-
-	return success;
+	return impl->generateAndCommitStashGraph(token, scene);
 }
 
 std::vector < repo::core::model::RepoBSON >
-RepoController::getAllFromCollectionContinuous(
-        const RepoToken      *token,
-        const std::string    &database,
-        const std::string    &collection,
-        const uint64_t       &skip,
-        const uint32_t       &limit)
+	RepoController::getAllFromCollectionContinuous(
+		const RepoController:: RepoToken      *token,
+		const std::string    &database,
+		const std::string    &collection,
+		const uint64_t       &skip,
+		const uint32_t       &limit)
 {
-    repoTrace << "Controller: Fetching BSONs from "
-              << database << "."  << collection << "....";
-    std::vector<repo::core::model::RepoBSON> vector;
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-
-        vector = worker->getAllFromCollectionTailable(token->databaseAd, token->credentials,
-                                                      database, collection, skip, limit);
-
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to fetch data from a collection without a database connection!";
-    }
-
-    repoTrace << "Obtained " << vector.size() << " bson objects.";
-
-    return vector;
+	return impl->getAllFromCollectionContinuous(token, database, collection, skip, limit);
 }
 
 std::vector < repo::core::model::RepoBSON >
-RepoController::getAllFromCollectionContinuous(
-        const RepoToken              *token,
-        const std::string            &database,
-        const std::string            &collection,
-        const std::list<std::string> &fields,
-        const std::string            &sortField,
-        const int                    &sortOrder,
-        const uint64_t               &skip,
-        const uint32_t               &limit)
+	RepoController::getAllFromCollectionContinuous(
+		const RepoController:: RepoToken              *token,
+		const std::string            &database,
+		const std::string            &collection,
+		const std::list<std::string> &fields,
+		const std::string            &sortField,
+		const int                    &sortOrder,
+		const uint64_t               &skip,
+		const uint32_t               &limit)
 {
-    repoTrace << "Controller: Fetching BSONs from "
-              << database << "." << collection << "....";
-    std::vector<repo::core::model::RepoBSON> vector;
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        vector = worker->getAllFromCollectionTailable(token->databaseAd, token->credentials,
-                                                      database, collection, fields, sortField, sortOrder, skip, limit);
-
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to fetch data from a collection without a database connection!";
-    }
-
-    repoTrace << "Obtained " << vector.size() << " bson objects.";
-
-    return vector;
+	return impl->getAllFromCollectionContinuous(token, database, collection, fields, sortField, sortOrder, skip, limit);
 }
 
 std::vector < repo::core::model::RepoRole > RepoController::getRolesFromDatabase(
-        const RepoToken              *token,
-        const std::string            &database,
-        const uint64_t               &skip,
-        const uint32_t               &limit)
+	const RepoController:: RepoToken              *token,
+	const std::string            &database,
+	const uint64_t               &skip,
+	const uint32_t               &limit)
 {
-    auto bsons = getAllFromCollectionContinuous(token, database, REPO_SYSTEM_ROLES, skip, limit);
-    std::vector<repo::core::model::RepoRole> roles;
-    for (const auto &b : bsons)
-    {
-        roles.push_back(repo::core::model::RepoRole(b));
-    }
-
-    return roles;
+	return impl->getRolesFromDatabase(token, database, skip, limit);
 }
+
 
 std::vector < repo::core::model::RepoRoleSettings > RepoController::getRoleSettingsFromDatabase(
-        const RepoToken              *token,
-        const std::string            &database,
-        const uint64_t               &skip,
-        const uint32_t               &limit)
+	const RepoController:: RepoToken              *token,
+	const std::string            &database,
+	const uint64_t               &skip,
+	const uint32_t               &limit)
 {
-    auto bsons = getAllFromCollectionContinuous(token, database, REPO_COLLECTION_SETTINGS_ROLES, skip, limit);
-    std::vector<repo::core::model::RepoRoleSettings > roleSettings;
-    for (const auto &b : bsons)
-    {
-        roleSettings.push_back(repo::core::model::RepoRoleSettings(b));
-    }
-    return roleSettings;
+	return impl->getRoleSettingsFromDatabase(token, database, skip, limit);
+}
+
+
+repo::core::model::RepoRoleSettings RepoController::getRoleSettings(
+	const RepoController:: RepoToken *token,
+	const repo::core::model::RepoRole &role)
+{
+	return getRoleSettings(token, role.getDatabase(), role.getName());
 }
 
 repo::core::model::RepoRoleSettings RepoController::getRoleSettings(
-        const RepoToken *token,
-        const repo::core::model::RepoRole &role)
+	const RepoController:: RepoToken *token,
+	const std::string &database,
+	const std::string &uniqueRoleName)
 {
-    return getRoleSettings(token, role.getDatabase(), role.getName());
+	return impl->getRoleSettings(token, database, uniqueRoleName);
 }
 
-repo::core::model::RepoRoleSettings RepoController::getRoleSettings(
-        const RepoToken *token,
-        const std::string &database,
-        const std::string &uniqueRoleName)
-{
-	repo::core::model::RepoRoleSettings res;
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		res = worker->getRoleSettingByName(token->databaseAd, token->credentials, database, uniqueRoleName);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to retrieve Role setting from database without a valid token!";
-	}
-	return res;
-}
 
-std::list<std::string> RepoController::getDatabases(const RepoToken *token)
+std::list<std::string> RepoController::getDatabases(const RepoController:: RepoToken *token)
 {
-    repoTrace << "Controller: Fetching Database....";
-    std::list<std::string> list;
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        if (token->databaseName == worker->getNameOfAdminDatabase(token->databaseAd))
-        {
-            list = worker->fetchDatabases(token->databaseAd, token->credentials);
-        }
-        else
-        {
-            //If the user is only authenticated against a single
-            //database then just return the database he/she is authenticated against.
-            list.push_back(token->databaseName);
-        }
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to fetch database without a database connection!";
-    }
-
-    return list;
+	return impl->getDatabases(token);
 }
 
 std::list<std::string>  RepoController::getCollections(
-        const RepoToken       *token,
-        const std::string     &databaseName
-        )
+	const RepoController::RepoToken       *token,
+	const std::string     &databaseName
+	)
 {
-    std::list<std::string> list;
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        list = worker->fetchCollections(token->databaseAd, token->credentials, databaseName);
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to fetch collections without a database connection!";
-    }
-
-    return list;
-
+	return impl->getCollections(token, databaseName);
 }
 
 repo::core::model::CollectionStats RepoController::getCollectionStats(
-        const RepoToken      *token,
-        const std::string    &database,
-        const std::string    &collection)
+	const RepoController::RepoToken      *token,
+	const std::string                    &database,
+	const std::string                    &collection)
 {
-    repo::core::model::CollectionStats stats;
-
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        std::string errMsg;
-        stats = worker->getCollectionStats(token->databaseAd,
-                                           token->credentials, database, collection, errMsg);
-        workerPool.push(worker);
-
-        if (!errMsg.empty())
-            repoError << errMsg;
-    }
-    else
-    {
-        repoError << "Trying to get collections stats without a database connection!";
-
-    }
-
-    return stats;
+	return impl->getCollectionStats(token, database, collection);
 }
 
-std::string getHostAndPort(const RepoController::RepoToken *token)
+std::string RepoController::getHostAndPort(const RepoController::RepoToken *token)
 {
 	return token->getDatabaseHostPort();
 }
 
 
 std::map<std::string, std::list<std::string>>
-RepoController::getDatabasesWithProjects(
-        const RepoToken *token,
-        const std::list<std::string> &databases)
+	RepoController::getDatabasesWithProjects(
+		const RepoController::RepoToken  *token,
+		const std::list<std::string>     &databases)
 {
-    std::map<std::string, std::list<std::string> > map;
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        map = worker->getDatabasesWithProjects(token->databaseAd,
-                                               token->credentials, databases);
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to get database listings without a database connection!";
-
-    }
-
-    return map;
+	return impl->getDatabasesWithProjects(token, databases);
 }
 
 void RepoController::insertBinaryFileToDatabase(
-	const RepoToken            *token,
+	const RepoController::RepoToken            *token,
 	const std::string          &database,
 	const std::string          &collection,
 	const std::string          &name,
 	const std::vector<uint8_t> &rawData,
 	const std::string          &mimeType)
 {
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		worker->insertBinaryFileToDatabase(token->databaseAd,
-			token->credentials, database, collection, name, rawData, mimeType);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to save a binary file without a database connection!";
-
-	}
+	impl->insertBinaryFileToDatabase(token, database, collection, name, rawData, mimeType);
 }
 
 void RepoController::insertRole(
-        const RepoToken                   *token,
-        const repo::core::model::RepoRole &role
-        )
+	const RepoController::RepoToken   *token,
+	const repo::core::model::RepoRole &role
+	)
 {
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        worker->insertRole(token->databaseAd,
-                           token->credentials, role);
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to insert a role without a database connection!";
-
-    }
+	impl->insertRole(token, role);
 }
 
 void RepoController::insertUser(
-        const RepoToken                          *token,
-        const repo::core::model::RepoUser  &user)
+	const RepoController::RepoToken    *token,
+	const repo::core::model::RepoUser  &user)
 {
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        worker->insertUser(token->databaseAd,
-                           token->credentials, user);
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to insert a user without a database connection!";
-
-    }
-
+	impl->insertUser(token, user);
 }
 
 bool RepoController::removeCollection(
-        const RepoToken             *token,
-        const std::string     &databaseName,
-        const std::string     &collectionName,
-        std::string			  &errMsg
-        )
+	const RepoController::RepoToken             *token,
+	const std::string     &databaseName,
+	const std::string     &collectionName,
+	std::string			  &errMsg
+	)
 {
-    bool success = false;
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        success = worker->dropCollection(token->databaseAd,
-                                         token->credentials, databaseName, collectionName, errMsg);
-        workerPool.push(worker);
-    }
-    else
-    {
-        errMsg = "Trying to fetch collections without a database connection!";
-        repoError << errMsg;
-
-    }
-
-    return success;
+	return impl->removeCollection(token, databaseName, collectionName, errMsg);
 }
 
-
 bool RepoController::removeDatabase(
-        const RepoToken       *token,
-        const std::string     &databaseName,
-        std::string			  &errMsg
-        )
+	const RepoController::RepoToken       *token,
+	const std::string     &databaseName,
+	std::string			  &errMsg
+	)
 {
-    bool success = false;
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        success = worker->dropDatabase(token->databaseAd,
-                                       token->credentials, databaseName, errMsg);
-        workerPool.push(worker);
-    }
-    else
-    {
-        errMsg = "Trying to fetch collections without a database connection!";
-        repoError << errMsg;
-
-    }
-
-    return success;
+	return impl->removeDatabase(token, databaseName, errMsg);
 }
 
 void RepoController::removeDocument(
-        const RepoToken                          *token,
-        const std::string                        &databaseName,
-        const std::string                        &collectionName,
-        const repo::core::model::RepoBSON  &bson)
+	const RepoController::RepoToken          *token,
+	const std::string                        &databaseName,
+	const std::string                        &collectionName,
+	const repo::core::model::RepoBSON        &bson)
 {
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        worker->removeDocument(token->databaseAd,
-                               token->credentials, databaseName, collectionName, bson);
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to delete a document without a database connection!";
-    }
-
+	impl->removeDocument(token, databaseName, collectionName, bson);
 }
 
 bool RepoController::removeProject(
-	const RepoToken                          *token,
+	const RepoController::RepoToken          *token,
 	const std::string                        &databaseName,
 	const std::string                        &projectName,
 	std::string								 &errMsg)
 {
-	bool result = false;
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		result = worker->removeProject(token->databaseAd,
-			token->credentials, databaseName, projectName, errMsg);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to delete a document without a database connection!";
-	}
-	return result; 
+	return impl->removeProject(token, databaseName, projectName, errMsg);
 }
 
 void RepoController::removeRole(
-        const RepoToken                          *token,
-        const repo::core::model::RepoRole        &role)
+	const RepoController::RepoToken          *token,
+	const repo::core::model::RepoRole        &role)
 {
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        worker->removeRole(token->databaseAd,
-                           token->credentials, role);
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to insert a user without a database connection!";
-
-    }
+	impl->removeRole(token, role);
 }
 
 void RepoController::removeUser(
-        const RepoToken                          *token,
-        const repo::core::model::RepoUser  &user)
+	const RepoController::RepoToken    *token,
+	const repo::core::model::RepoUser  &user)
 {
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        worker->removeUser(token->databaseAd,
-                           token->credentials, user);
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to insert a user without a database connection!";
-
-    }
+	impl->removeUser(token, user);
 }
 
 void RepoController::updateRole(
-        const RepoToken                          *token,
-        const repo::core::model::RepoRole        &role)
+	const RepoController::RepoToken          *token,
+	const repo::core::model::RepoRole        &role)
 {
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        worker->updateRole(token->databaseAd,
-                           token->credentials, role);
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to insert a user without a database connection!";
-
-    }
+	impl->updateRole(token, role);
 }
 
 void RepoController::updateUser(
-        const RepoToken                          *token,
-        const repo::core::model::RepoUser  &user)
+	const RepoController::RepoToken    *token,
+	const repo::core::model::RepoUser  &user)
 {
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        worker->updateUser(token->databaseAd,
-                           token->credentials, user);
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to insert a user without a database connection!";
-
-    }
+	impl->updateUser(token, user);
 }
 
-
 void RepoController::upsertDocument(
-        const RepoToken                          *token,
-        const std::string                        &databaseName,
-        const std::string                        &collectionName,
-        const repo::core::model::RepoBSON  &bson)
+	const RepoController::RepoToken          *token,
+	const std::string                        &databaseName,
+	const std::string                        &collectionName,
+	const repo::core::model::RepoBSON        &bson)
 {
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        worker->upsertDocument(token->databaseAd,
-                               token->credentials, databaseName, collectionName, bson);
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to upsert a document without a database connection!";
-    }
+	impl->upsertDocument(token, databaseName, collectionName, bson);
 }
 
 void RepoController::setLoggingLevel(const repo::lib::RepoLog::RepoLogLevel &level)
 {
-
-    repo::lib::RepoLog::getInstance().setLoggingLevel(level);
-
+	impl->setLoggingLevel(level);
 }
 
 void RepoController::logToFile(const std::string &filePath)
 {
-    repo::lib::RepoLog::getInstance().logToFile(filePath);
+	impl->logToFile(filePath);
 }
-
-void RepoController::subscribeToLogger(
-        std::vector<lib::RepoAbstractListener*> listeners)
-{
-    repo::lib::RepoLog::getInstance().subscribeListeners(listeners);
-}
-
-
 
 repo::core::model::RepoScene* RepoController::createFederatedScene(
-        const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap)
+	const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap)
 {
-
-    repo::core::model::RepoScene* scene = nullptr;
-    if (fedMap.size() > 0)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        scene = worker->createFederatedScene(fedMap);
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to federate a new scene graph with no references!";
-    }
-
-    return scene;
+	return impl->createFederatedScene(fedMap);
 }
 
 repo::core::model::RepoScene* RepoController::createMapScene(
-        const repo::core::model::MapNode &mapNode)
+	const repo::core::model::MapNode &mapNode)
 {
-    manipulator::RepoManipulator* worker = workerPool.pop();
-    repo::core::model::RepoScene* scene = worker->createMapScene(mapNode);
-    workerPool.push(worker);
-
-    return scene;
+	return impl->createMapScene(mapNode);
 }
 
 bool RepoController::generateAndCommitGLTFBuffer(
-	const RepoToken                    *token,
+	const RepoController::RepoToken    *token,
 	const repo::core::model::RepoScene *scene)
 {
-	bool success;
-	if (success = token && scene)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		success = worker->generateAndCommitGLTFBuffer(token->databaseAd, token->credentials, scene);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Failed to generate GLTF Buffer.";
-	}
-	return success;
+	return impl->generateAndCommitGLTFBuffer(token, scene);
 }
 
-
 bool RepoController::generateAndCommitSRCBuffer(
-	const RepoToken                    *token,
+	const RepoController::RepoToken    *token,
 	const repo::core::model::RepoScene *scene)
 {
-	bool success;
-	if (success = token && scene)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		success = worker->generateAndCommitSRCBuffer(token->databaseAd, token->credentials, scene);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Failed to generate SRC Buffer.";
-	}
-	return success;
+	return impl->generateAndCommitSRCBuffer(token, scene);
 }
 
 
 repo_web_buffers_t RepoController::generateGLTFBuffer(
 	const repo::core::model::RepoScene *scene)
 {
-	repo_web_buffers_t buffer;
-	if (scene)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		buffer = worker->generateGLTFBuffer(scene);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Failed to generate SRC Buffer.";
-	}
-	return buffer;
+	return impl->generateGLTFBuffer(scene);
 }
 
 repo_web_buffers_t RepoController::generateSRCBuffer(
 	const repo::core::model::RepoScene *scene)
 {
-	repo_web_buffers_t buffer;
-	if (scene)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		buffer = worker->generateSRCBuffer(scene);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Failed to generate SRC Buffer.";
-	}
-	return buffer;
+	return impl->generateSRCBuffer(scene);
 }
 
-std::list<std::string> RepoController::getAdminDatabaseRoles(const RepoToken *token)
-{
-    std::list<std::string> roles;
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        roles = worker->getAdminDatabaseRoles(token->databaseAd);
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to get database roles without a database connection!";
-    }
 
-    return roles;
+std::list<std::string> RepoController::getAdminDatabaseRoles(const RepoController::RepoToken *token)
+{
+	return impl->getAdminDatabaseRoles(token);
 }
 
-std::string RepoController::getNameOfAdminDatabase(const RepoToken *token)
+std::string RepoController::getNameOfAdminDatabase(const RepoController::RepoToken *token)
 {
-    std::string name;
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        name = worker->getNameOfAdminDatabase(token->databaseAd);
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to get database roles without a token!";
-    }
-    return name;
+	return impl->getNameOfAdminDatabase(token);
 }
 
 std::shared_ptr<PartitioningTree>
-RepoController::getScenePartitioning(
-const repo::core::model::RepoScene *scene,
-const uint32_t                     &maxDepth
+	RepoController::getScenePartitioning(
+		const repo::core::model::RepoScene *scene,
+		const uint32_t                     &maxDepth
 )
 {
-	std::shared_ptr<PartitioningTree> partition(nullptr);
-
-	if (scene && scene->getRoot(scene->getViewGraph()))
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		partition = worker->getScenePartitioning(scene, maxDepth);
-		workerPool.push(worker);
-	}
-	else
-		repoError << "Trying to partition an empty scene!";
-
-	return partition;
+	return impl->getScenePartitioning(scene, maxDepth);
 }
 
-std::list<std::string> RepoController::getStandardDatabaseRoles(const RepoToken *token)
+std::list<std::string> RepoController::getStandardDatabaseRoles(const RepoController::RepoToken *token)
 {
-    std::list<std::string> roles;
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        roles = worker->getStandardDatabaseRoles(token->databaseAd);
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to get database roles without a token!";
-    }
-
-    return roles;
+	return impl->getStandardDatabaseRoles(token);
 }
 
 std::string RepoController::getSupportedExportFormats()
 {
-    //This needs to be updated if we support more than assimp
-    return repo::manipulator::modelconvertor::AssimpModelExport::getSupportedFormats();
-}
-
-std::string RepoController::getSupportedImportFormats()
-{
-    //This needs to be updated if we support more than assimp
-    return repo::manipulator::modelconvertor::AssimpModelImport::getSupportedFormats();
+	return impl->getSupportedExportFormats();
 }
 
 
 repo::core::model::RepoNodeSet RepoController::loadMetadataFromFile(
-        const std::string &filePath,
-        const char        &delimiter)
+	const std::string &filePath,
+	const char        &delimiter)
 {
-    repo::core::model::RepoNodeSet metadata;
 
-    if (!filePath.empty())
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        metadata = worker->loadMetadataFromFile(filePath, delimiter);
-        workerPool.push(worker);
-    }
-    else
-    {
-        repoError << "Trying to load from an empty file path!";
-
-    }
-
-    return metadata;
+	return impl->loadMetadataFromFile(filePath, delimiter);
 }
 
 repo::core::model::RepoScene*
-RepoController::loadSceneFromFile(
-        const std::string                                          &filePath,
+	RepoController::loadSceneFromFile(
+		const std::string                                          &filePath,
 		const bool                                                 &applyReduction,
 		const bool                                                 &rotateModel,
-        const repo::manipulator::modelconvertor::ModelImportConfig *config)
+		const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
-
-    std::string errMsg;
-    repo::core::model::RepoScene *scene = nullptr;
-
-    if (!filePath.empty())
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        scene = worker->loadSceneFromFile(filePath, errMsg, applyReduction, rotateModel, config);
-        workerPool.push(worker);
-        if (!scene)
-            repoError << "Failed ot load scene from file: " << errMsg;
-
-    }
-    else
-    {
-        repoError << "Trying to load from an empty file path!";
-
-    }
-
-    return scene;
+	return impl->loadSceneFromFile(filePath, applyReduction, rotateModel, config);
 }
 
 void RepoController::saveOriginalFiles(
-        const RepoToken                    *token,
-        const repo::core::model::RepoScene *scene,
-        const std::string                   &directory)
+	const RepoController::RepoToken    *token,
+	const repo::core::model::RepoScene *scene,
+	const std::string                   &directory)
 {
-    if (scene)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-
-        worker->saveOriginalFiles(token->databaseAd, token->credentials, scene, directory);
-        workerPool.push(worker);
-
-    }
-    else{
-        repoError << "RepoController::saveSceneToFile: NULL pointer to scene!";
-    }
-
+	return impl->saveOriginalFiles(token, scene, directory);
 }
 
 void RepoController::saveOriginalFiles(
-	const RepoToken                    *token,
+	const RepoController::RepoToken     *token,
 	const std::string                   &database,
 	const std::string                   &project,
 	const std::string                   &directory)
 {
-	if (!(database.empty() || project.empty()))
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-
-		worker->saveOriginalFiles(token->databaseAd, token->credentials, database, project, directory);
-		workerPool.push(worker);
-
-	}
-	else{
-		repoError << "RepoController::saveSceneToFile: NULL pointer to scene!";
-	}
+	return impl->saveOriginalFiles(token, database, project, directory);
 }
 
 bool RepoController::saveSceneToFile(
-        const std::string &filePath,
-        const repo::core::model::RepoScene* scene)
+	const std::string &filePath,
+	const repo::core::model::RepoScene* scene)
 {
-    bool success = true;
-    if (scene)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-
-        worker->saveSceneToFile(filePath, scene);
-        workerPool.push(worker);
-
-    }
-    else{
-        repoError << "RepoController::saveSceneToFile: NULL pointer to scene!";
-        success = false;
-    }
-
-    return success;
+	return impl->saveSceneToFile(filePath, scene);
 }
 
 void RepoController::reduceTransformations(
-        const RepoToken              *token,
-        repo::core::model::RepoScene *scene)
+	const RepoController::RepoToken              *token,
+	repo::core::model::RepoScene *scene)
 {
-	//We only do reduction optimisations on the unoptimised graph
-	const repo::core::model::RepoScene::GraphType gType = repo::core::model::RepoScene::GraphType::DEFAULT;
-	if (token && scene && scene->isRevisioned() && !scene->hasRoot(gType))
-    {
-        //If the unoptimised graph isn't fetched, try to fetch full scene before beginning
-        //This should be safe considering if it has not loaded the unoptimised graph it shouldn't have
-        //any uncommited changes.
-        repoInfo << "Unoptimised scene not loaded, trying loading unoptimised scene...";
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        worker->fetchScene(token->databaseAd, token->credentials, scene);
-        workerPool.push(worker);
-    }
-
-	if (scene && scene->hasRoot(gType))
-    {
-
-        manipulator::RepoManipulator* worker = workerPool.pop();
-		size_t transNodes_pre = scene->getAllTransformations(gType).size();
-        try{
-			worker->reduceTransformations(scene, gType);
-        }
-        catch (const std::exception &e)
-        {
-            repoError << "Caught exception whilst trying to optimise graph : " << e.what();
-
-        }
-
-        workerPool.push(worker);
-        repoInfo << "Optimization completed. Number of transformations has been reduced from "
-			<< transNodes_pre << " to " << scene->getAllTransformations(gType).size();
-
-    }
-    else{
-        repoError << "RepoController::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
-    }
-
+	impl->reduceTransformations(token, scene);
 }
 
 void RepoController::compareScenes(
-        const RepoToken                    *token,
-        repo::core::model::RepoScene       *base,
-        repo::core::model::RepoScene       *compare,
-        repo::manipulator::diff::DiffResult &baseResults,
-        repo::manipulator::diff::DiffResult &compResults,
-		const repo::manipulator::diff::Mode       &diffMode
-        )
+	const RepoController::RepoToken    *token,
+	repo::core::model::RepoScene       *base,
+	repo::core::model::RepoScene       *compare,
+	repo::manipulator::diff::DiffResult &baseResults,
+	repo::manipulator::diff::DiffResult &compResults,
+	const repo::manipulator::diff::Mode &diffMode
+	)
 {
-	//We only do reduction optimisations on the unoptimised graph
-	const repo::core::model::RepoScene::GraphType gType = repo::core::model::RepoScene::GraphType::DEFAULT;
-    if (token && base && compare)
-    {
-        //If the unoptimised graph isn't fetched, try to fetch full scene before beginning
-        //This should be safe considering if it has not loaded the unoptimised graph it shouldn't have
-        //any uncommited changes.
-		if (base->isRevisioned() && !base->hasRoot(gType))
-        {
-            repoInfo << "Unoptimised base scene not loaded, trying loading unoptimised scene...";
-            manipulator::RepoManipulator* worker = workerPool.pop();
-            worker->fetchScene(token->databaseAd, token->credentials, base);
-            workerPool.push(worker);
-        }
-
-		if (compare->isRevisioned() && !compare->hasRoot(gType))
-        {
-            repoInfo << "Unoptimised compare scene not loaded, trying loading unoptimised scene...";
-            manipulator::RepoManipulator* worker = workerPool.pop();
-            worker->fetchScene(token->databaseAd, token->credentials, compare);
-            workerPool.push(worker);
-        }
-    }
-
-	if (base && base->hasRoot(gType) && compare && compare->hasRoot(gType))
-    {
-        repoInfo << "Comparing scenes...";
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        worker->compareScenes(base, compare, baseResults, compResults, diffMode, gType);
-        workerPool.push(worker);
-    }
-    else{
-        repoError << "RepoController::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
-    }
+	impl->compareScenes(token, base, compare, baseResults, compResults, diffMode);
 }
 
 std::string RepoController::getVersion()
 {
-	std::stringstream ss;
-	ss << BOUNCER_VMAJOR << "." << BOUNCER_VMINOR;
-	return ss.str();
-} 
+	return impl->getVersion();
+}

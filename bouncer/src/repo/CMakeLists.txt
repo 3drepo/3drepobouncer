@@ -10,6 +10,8 @@ add_subdirectory(manipulator)
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_controller.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_controller.cpp.inl
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_controller_internal.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_credentials.cpp
 	CACHE STRING "SOURCES" FORCE)
 

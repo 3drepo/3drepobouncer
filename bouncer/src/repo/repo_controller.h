@@ -824,20 +824,10 @@ public:
 	std::string getVersion();
 
 private:
+	class _RepoControllerImpl;
+	std::unique_ptr<_RepoControllerImpl> impl;
 
-
-    /**
-        * Subscribe a RepoAbstractLister to logging messages
-        * @param listener object to subscribe
-        */
-    void subscribeToLogger(
-            std::vector<lib::RepoAbstractListener*> listeners);
-
-    lib::RepoStack<manipulator::RepoManipulator*> workerPool;
-    const uint32_t numDBConnections;
 
 };
-
-
 
 }
