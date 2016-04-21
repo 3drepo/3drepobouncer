@@ -92,8 +92,8 @@ void MeshMapReorganiser::newMatMapEntry(
 void MeshMapReorganiser::completeLastMatMapEntry(
 	const size_t        &eVertices,
 	const size_t        &eFaces,
-	std::vector<float>  &minBox,
-	std::vector<float>  &maxBox
+	const std::vector<float>  &minBox,
+	const std::vector<float>  &maxBox
 	)
 {
 	matMap.back().back().vertTo = eVertices;

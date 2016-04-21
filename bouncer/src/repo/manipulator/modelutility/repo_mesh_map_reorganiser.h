@@ -98,8 +98,8 @@ namespace repo{
 				void completeLastMatMapEntry(
 					const size_t        &eVertices,
 					const size_t        &eFaces,
-					std::vector<float>  &minBox = std::vector<float>(),
-					std::vector<float>  &maxBox = std::vector<float>()
+					const std::vector<float>  &minBox = std::vector<float>(),
+					const std::vector<float>  &maxBox = std::vector<float>()
 					);
 
 				/**
