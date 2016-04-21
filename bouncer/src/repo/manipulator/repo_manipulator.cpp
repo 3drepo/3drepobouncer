@@ -209,19 +209,19 @@ void RepoManipulator::commitScene(
 void RepoManipulator::compareScenes(
 	repo::core::model::RepoScene                  *base,
 	repo::core::model::RepoScene                  *compare,
-	DiffResult           &baseResults,
-	DiffResult           &compResults,
-	const DiffMode					          &diffMode,
+	repo_diff_result_t           &baseResults,
+	repo_diff_result_t           &compResults,
+	const repo::DiffMode					          &diffMode,
 	const repo::core::model::RepoScene::GraphType &gType)
 {
 	diff::AbstractDiff *diff = nullptr;
 
 	switch (diffMode)
 	{
-	case DiffMode::DIFF_BY_ID:
+	case repo::DiffMode::DIFF_BY_ID:
 		diff = new diff::DiffBySharedID(base, compare, gType);
 		break;
-	case DiffMode::DIFF_BY_NAME:
+	case repo::DiffMode::DIFF_BY_NAME:
 		diff = new diff::DiffByName(base, compare, gType);
 		break;
 	default:
@@ -234,8 +234,8 @@ void RepoManipulator::compareScenes(
 
 		if (diff->isOk(msg))
 		{
-			baseResults = diff->getDiffResultForBase();
-			compResults = diff->getDiffResultForComp();
+			baseResults = diff->getrepo_diff_result_tForBase();
+			compResults = diff->getrepo_diff_result_tForComp();
 		}
 		else
 		{
@@ -815,7 +815,7 @@ repo::core::model::RepoRoleSettings RepoManipulator::getRoleSettingByName(
 	return settings;
 }
 
-std::shared_ptr<PartitioningTree>
+std::shared_ptr<repo_partitioning_tree_t>
 RepoManipulator::getScenePartitioning(
 const repo::core::model::RepoScene *scene,
 const uint32_t                     &maxDepth

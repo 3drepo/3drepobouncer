@@ -362,7 +362,7 @@ std::string RepoController::getNameOfAdminDatabase(const RepoController::RepoTok
 	return impl->getNameOfAdminDatabase(token);
 }
 
-std::shared_ptr<PartitioningTree>
+std::shared_ptr<repo_partitioning_tree_t>
 RepoController::getScenePartitioning(
 const repo::core::model::RepoScene *scene,
 const uint32_t                     &maxDepth
@@ -433,9 +433,9 @@ void RepoController::compareScenes(
 	const RepoController::RepoToken    *token,
 	repo::core::model::RepoScene       *base,
 	repo::core::model::RepoScene       *compare,
-	DiffResult                         &baseResults,
-	DiffResult                         &compResults,
-	const DiffMode                     &diffMode
+	repo_diff_result_t                         &baseResults,
+	repo_diff_result_t                         &compResults,
+	const repo::DiffMode                     &diffMode
 	)
 {
 	impl->compareScenes(token, base, compare, baseResults, compResults, diffMode);

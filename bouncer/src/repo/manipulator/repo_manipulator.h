@@ -104,15 +104,15 @@ namespace repo{
 			* @param compare scene to compare base scene against
 			* @param baseResults Diff results in the perspective of base
 			* @param compResults Diff results in the perspective of compare
-			* @param diffMode the mode to use to compare the scenes
+			* @param repo::DiffMode the mode to use to compare the scenes
 			* @param gType graph type to diff (default: unoptimised)
 			*/
 			void compareScenes(
 				repo::core::model::RepoScene                  *base,
 				repo::core::model::RepoScene                  *compare,
-				DiffResult                              &baseResults,
-				DiffResult                              &compResults,
-				const DiffMode				              &diffMode,
+				repo_diff_result_t                              &baseResults,
+				repo_diff_result_t                              &compResults,
+				const repo::DiffMode				            &diffMode,
 				const repo::core::model::RepoScene::GraphType &gType
 				= repo::core::model::RepoScene::GraphType::DEFAULT);
 
@@ -464,7 +464,7 @@ namespace repo{
 			* @param scene scene to partition
 			* @param maxDepth max partitioning depth
 			*/
-			std::shared_ptr<PartitioningTree> getScenePartitioning(
+			std::shared_ptr<repo_partitioning_tree_t> getScenePartitioning(
 				const repo::core::model::RepoScene *scene,
 				const uint32_t                     &maxDepth = 8
 				);

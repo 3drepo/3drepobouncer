@@ -883,13 +883,13 @@ std::string RepoController::_RepoControllerImpl::getNameOfAdminDatabase(const Re
 	return name;
 }
 
-std::shared_ptr<PartitioningTree>
+std::shared_ptr<repo_partitioning_tree_t>
 RepoController::_RepoControllerImpl::getScenePartitioning(
 const repo::core::model::RepoScene *scene,
 const uint32_t                     &maxDepth
 )
 {
-	std::shared_ptr<PartitioningTree> partition(nullptr);
+	std::shared_ptr<repo_partitioning_tree_t> partition(nullptr);
 
 	if (scene && scene->getRoot(scene->getViewGraph()))
 	{
@@ -1075,9 +1075,9 @@ void RepoController::_RepoControllerImpl::compareScenes(
 	const RepoController::RepoToken                    *token,
 	repo::core::model::RepoScene       *base,
 	repo::core::model::RepoScene       *compare,
-	DiffResult &baseResults,
-	DiffResult &compResults,
-	const DiffMode       &diffMode
+	repo_diff_result_t &baseResults,
+	repo_diff_result_t &compResults,
+	const repo::DiffMode       &diffMode
 	)
 {
 	//We only do reduction optimisations on the unoptimised graph

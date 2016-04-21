@@ -43,7 +43,7 @@ namespace repo{
 				* Obtain the diff result in the perspective of the base scene
 				* @return return the diff result for base scene
 				*/
-				DiffResult getDiffResultForBase()
+				repo_diff_result_t getrepo_diff_result_tForBase()
 				{
 					return baseRes;
 				}
@@ -52,7 +52,7 @@ namespace repo{
 				* Obtain the diff result in the perspective of the compare scene
 				* @return return the diff result for compare scene
 				*/
-				DiffResult getDiffResultForComp()
+				repo_diff_result_t getrepo_diff_result_tForComp()
 				{
 					return compRes;
 				}
@@ -68,7 +68,7 @@ namespace repo{
 				const repo::core::model::RepoScene           *baseScene;
 				const repo::core::model::RepoScene           *compareScene;
 				const repo::core::model::RepoScene::GraphType gType;
-				DiffResult baseRes, compRes;
+				repo_diff_result_t baseRes, compRes;
 			};
 		}
 	}

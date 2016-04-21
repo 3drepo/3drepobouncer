@@ -31,9 +31,9 @@ RDTreeSpatialPartitioner::~RDTreeSpatialPartitioner()
 {
 }
 
-std::vector<MeshEntry> RDTreeSpatialPartitioner::createMeshEntries()
+std::vector<repo_mesh_entry_t> RDTreeSpatialPartitioner::createMeshEntries()
 {
-	std::vector<MeshEntry> entries;
+	std::vector<repo_mesh_entry_t> entries;
 
 	/*
 		We only cater for scene graph with pretransformed vertices so
@@ -102,9 +102,9 @@ std::vector<MeshEntry> RDTreeSpatialPartitioner::createMeshEntries()
 	return entries;
 }
 
-std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::createPartition(
-	const std::vector<MeshEntry>              &meshes,
-	const PartitioningTreeType                &axis,
+std::shared_ptr<repo_partitioning_tree_t> RDTreeSpatialPartitioner::createPartition(
+	const std::vector<repo_mesh_entry_t>              &meshes,
+	const repo::PartitioningTreeType                &axis,
 	const uint32_t                            &depthCount,
 	const uint32_t                            &failCount,
 	const std::vector<std::vector<float>>     &currentSection)
@@ -121,30 +121,30 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::createPartition(
 
 			*/
 
-		return std::make_shared<PartitioningTree>(meshes);
+		return std::make_shared<repo_partitioning_tree_t>(meshes);
 	}
 
 	//non leaf node, partition the meshes via the given axis and recurse
 	float median;
-	std::vector<MeshEntry> lMeshes, rMeshes;
+	std::vector<repo_mesh_entry_t> lMeshes, rMeshes;
 	sortMeshes(meshes, axis, currentSection, median, lMeshes, rMeshes);
 
-	PartitioningTreeType nextAxis;
+	repo::PartitioningTreeType nextAxis;
 	int32_t axisIdx;
 	//Enum classes are not guaranteed to be contiguous
 	switch (axis)
 	{
-	case PartitioningTreeType::PARTITION_X:
+	case repo::PartitioningTreeType::PARTITION_X:
 		axisIdx = 0;
-		nextAxis = PartitioningTreeType::PARTITION_Y;
+		nextAxis = repo::PartitioningTreeType::PARTITION_Y;
 		break;
-	case PartitioningTreeType::PARTITION_Y:
+	case repo::PartitioningTreeType::PARTITION_Y:
 		axisIdx = 1;
-		nextAxis = PartitioningTreeType::PARTITION_Z;
+		nextAxis = repo::PartitioningTreeType::PARTITION_Z;
 		break;
-	case PartitioningTreeType::PARTITION_Z:
+	case repo::PartitioningTreeType::PARTITION_Z:
 		axisIdx = 2;
-		nextAxis = PartitioningTreeType::PARTITION_X;
+		nextAxis = repo::PartitioningTreeType::PARTITION_X;
 		break;
 	default:
 		//Only thing left is LEAF, which should never be passed in in the first place
@@ -163,16 +163,16 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::createPartition(
 		newSectionRight[0][axisIdx] = median;
 		newSectionLeft[1][axisIdx] = median;
 
-		return std::make_shared<PartitioningTree>(axis, median,
+		return std::make_shared<repo_partitioning_tree_t>(axis, median,
 			createPartition(lMeshes, nextAxis, depthCount + 1, 0, newSectionLeft),
 			createPartition(rMeshes, nextAxis, depthCount + 1, 0, newSectionRight)
 			);
 	}
 }
 
-std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::partitionScene()
+std::shared_ptr<repo_partitioning_tree_t> RDTreeSpatialPartitioner::partitionScene()
 {
-	std::shared_ptr<PartitioningTree> pTree(nullptr);
+	std::shared_ptr<repo_partitioning_tree_t> pTree(nullptr);
 	repoInfo << "Generating spatial partitioning...";
 	if (scene)
 	{
@@ -180,7 +180,7 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::partitionScene()
 		{
 			//sort the meshes
 			//FIXME: Using vector because i need different comparison functions for different axis. is this sane?
-			std::vector<MeshEntry> meshEntries = createMeshEntries();
+			std::vector<repo_mesh_entry_t> meshEntries = createMeshEntries();
 			//starts with a X partitioning
 
 			auto bbox = scene->getSceneBoundingBox();
@@ -190,7 +190,7 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::partitionScene()
 				{ bbox[1].x, bbox[1].y, bbox[1].z }
 			};
 
-			pTree = createPartition(meshEntries, PartitioningTreeType::PARTITION_X, 0, 0, currentSection);
+			pTree = createPartition(meshEntries, repo::PartitioningTreeType::PARTITION_X, 0, 0, currentSection);
 		}
 		else
 		{
@@ -206,37 +206,37 @@ std::shared_ptr<PartitioningTree> RDTreeSpatialPartitioner::partitionScene()
 }
 
 void RDTreeSpatialPartitioner::sortMeshes(
-	const std::vector<MeshEntry> &meshes,
-	const PartitioningTreeType   &axis,
+	const std::vector<repo_mesh_entry_t> &meshes,
+	const repo::PartitioningTreeType   &axis,
 	const std::vector<std::vector<float>>    &currentSection,
 	float                        &median,
-	std::vector<MeshEntry>       &lMeshes,
-	std::vector<MeshEntry>       &rMeshes
+	std::vector<repo_mesh_entry_t>       &lMeshes,
+	std::vector<repo_mesh_entry_t>       &rMeshes
 	)
 {
-	std::vector<MeshEntry> sortedMeshes = meshes;
+	std::vector<repo_mesh_entry_t> sortedMeshes = meshes;
 	uint32_t axisIdx;
 
 	//Sort the meshes and determine axis index
 	switch (axis){
-	case PartitioningTreeType::PARTITION_X:
+	case repo::PartitioningTreeType::PARTITION_X:
 		axisIdx = 0;
 		std::sort(sortedMeshes.begin(), sortedMeshes.end(),
-			[](MeshEntry const& a, MeshEntry const& b)
+			[](repo_mesh_entry_t const& a, repo_mesh_entry_t const& b)
 		{ return a.mid[0] < b.mid[0]; }
 		);
 		break;
-	case PartitioningTreeType::PARTITION_Y:
+	case repo::PartitioningTreeType::PARTITION_Y:
 		axisIdx = 1;
 		std::sort(sortedMeshes.begin(), sortedMeshes.end(),
-			[](MeshEntry const& a, MeshEntry const& b)
+			[](repo_mesh_entry_t const& a, repo_mesh_entry_t const& b)
 		{ return a.mid[1] < b.mid[1];  }
 		);
 		break;
-	case PartitioningTreeType::PARTITION_Z:
+	case repo::PartitioningTreeType::PARTITION_Z:
 		axisIdx = 2;
 		std::sort(sortedMeshes.begin(), sortedMeshes.end(),
-			[](MeshEntry const& a, MeshEntry const& b)
+			[](repo_mesh_entry_t const& a, repo_mesh_entry_t const& b)
 		{ return a.mid[2] < b.mid[2]; }
 		);
 		break;

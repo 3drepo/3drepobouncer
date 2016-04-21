@@ -726,7 +726,7 @@ namespace repo{
 		* @param scene scene to partition
 		* @param maxDepth max partitioning depth
 		*/
-		std::shared_ptr<PartitioningTree>
+		std::shared_ptr<repo_partitioning_tree_t>
 			getScenePartitioning(
 			const repo::core::model::RepoScene *scene,
 			const uint32_t                     &maxDepth = 8
@@ -755,15 +755,15 @@ namespace repo{
 		* @param compare scene to compare base scene against
 		* @param baseResults Diff results in the perspective of base
 		* @param compResults Diff results in the perspective of compare
-		* @param diffMode mode to use on comparison
+		* @param repo::DiffMode mode to use on comparison
 		*/
 		void compareScenes(
 			const RepoToken                     *token,
 			repo::core::model::RepoScene        *base,
 			repo::core::model::RepoScene        *compare,
-			DiffResult &baseResults,
-			DiffResult &compResults,
-			const DiffMode       &diffMode
+			repo_diff_result_t &baseResults,
+			repo_diff_result_t &compResults,
+			const repo::DiffMode       &diffMode
 			);
 
 		/**
@@ -779,11 +779,11 @@ namespace repo{
 			const RepoToken                     *token,
 			repo::core::model::RepoScene        *base,
 			repo::core::model::RepoScene        *compare,
-			DiffResult                          &baseResults,
-			DiffResult                          &compResults
+			repo_diff_result_t                          &baseResults,
+			repo_diff_result_t                          &compResults
 			)
 		{
-			compareScenes(token, base, compare, baseResults, compResults, DiffMode::DIFF_BY_ID);
+			compareScenes(token, base, compare, baseResults, compResults, repo::DiffMode::DIFF_BY_ID);
 		}
 
 		/**
@@ -799,11 +799,11 @@ namespace repo{
 			const RepoToken                     *token,
 			repo::core::model::RepoScene        *base,
 			repo::core::model::RepoScene        *compare,
-			DiffResult &baseResults,
-			DiffResult &compResults
+			repo_diff_result_t &baseResults,
+			repo_diff_result_t &compResults
 			)
 		{
-			compareScenes(token, base, compare, baseResults, compResults, DiffMode::DIFF_BY_NAME);
+			compareScenes(token, base, compare, baseResults, compResults, repo::DiffMode::DIFF_BY_NAME);
 		}
 
 		/*

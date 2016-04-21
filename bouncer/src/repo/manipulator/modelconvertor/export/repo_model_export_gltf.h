@@ -230,7 +230,7 @@ namespace repo{
 				* Generate a property tree representing the spatial partitioning
 				* @return return a property tree with adequate entries
 				*/
-				repo::lib::PropertyTree generateSpatialPartitioningTree();
+				repo::lib::PropertyTree generateSpatialrepo_partitioning_tree_t();
 
 				/**
 				* Return the GLTF file as raw bytes buffer

@@ -495,7 +495,7 @@ bool GLTFModelExport::constructScene(
 		tree.addToTree(GLTF_LABEL_SCENE, sceneName);
 		std::vector<std::string> treeNodes = { UUIDtoString(root->getUniqueID()) };
 		tree.addToTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_NODES, treeNodes);
-		repo::lib::PropertyTree spatialPartTree = generateSpatialPartitioningTree();
+		repo::lib::PropertyTree spatialPartTree = generateSpatialrepo_partitioning_tree_t();
 #ifdef DEBUG
 		std::string jsonFilePrefix = "/";
 #else
@@ -518,7 +518,7 @@ bool GLTFModelExport::constructScene(
 	}
 }
 
-repo::lib::PropertyTree GLTFModelExport::generateSpatialPartitioningTree()
+repo::lib::PropertyTree GLTFModelExport::generateSpatialrepo_partitioning_tree_t()
 {
 	//TODO: We could take in a spatial partitioner in the constructor to allow flexibility
 	repo::manipulator::modelutility::RDTreeSpatialPartitioner rdTreePartitioner(scene);

@@ -28,53 +28,54 @@ typedef struct {
 	std::unordered_map<std::string, std::vector<uint8_t>> jsonFiles; //JSON mapping files
 }repo_web_buffers_t;
 
-struct MeshEntry
+struct repo_mesh_entry_t
 {
 	std::vector<float> min;
 	std::vector<float> max;
 	std::vector<float> mid;// midpoint
 	repoUUID      id;
 
-	MeshEntry() :mid({ 0, 0, 0 })
+	repo_mesh_entry_t() :mid({ 0, 0, 0 })
 	{
 		min = { 0, 0, 0 };
 		max = { 0, 0, 0 };
 	}
 };
 
-enum class PartitioningTreeType{ PARTITION_X, PARTITION_Y, PARTITION_Z, LEAF_NODE };
+namespace repo{
+	enum class PartitioningTreeType{ PARTITION_X, PARTITION_Y, PARTITION_Z, LEAF_NODE };
+	enum class DiffMode{ DIFF_BY_ID, DIFF_BY_NAME };
+}
 
-struct PartitioningTree{
-	PartitioningTreeType              type;
-	std::vector<MeshEntry>            meshes; //mesh ids if it is a leaf node
+struct repo_partitioning_tree_t{
+	repo::PartitioningTreeType              type;
+	std::vector<repo_mesh_entry_t>            meshes; //mesh ids if it is a leaf node
 	float                             pValue; //partitioning value if not
-	std::shared_ptr<PartitioningTree> left;
-	std::shared_ptr<PartitioningTree> right;
+	std::shared_ptr<repo_partitioning_tree_t> left;
+	std::shared_ptr<repo_partitioning_tree_t> right;
 
 	//Construction of branch node
-	PartitioningTree(
-		const PartitioningTreeType &type,
+	repo_partitioning_tree_t(
+		const repo::PartitioningTreeType &type,
 		const float &pValue,
-		std::shared_ptr<PartitioningTree> left,
-		std::shared_ptr<PartitioningTree> right)
+		std::shared_ptr<repo_partitioning_tree_t> left,
+		std::shared_ptr<repo_partitioning_tree_t> right)
 		: type(type), pValue(pValue),
 		left(left),
 		right(right){}
 
 	//Construction of leaf node
-	PartitioningTree(
-		const std::vector<MeshEntry> &meshes)
+	repo_partitioning_tree_t(
+		const std::vector<repo_mesh_entry_t> &meshes)
 		:
-		type(PartitioningTreeType::LEAF_NODE),
+		type(repo::PartitioningTreeType::LEAF_NODE),
 		meshes(meshes), pValue(0),
-		left(std::shared_ptr<PartitioningTree>(nullptr)),
-		right(std::shared_ptr<PartitioningTree>(nullptr)){}
+		left(std::shared_ptr<repo_partitioning_tree_t>(nullptr)),
+		right(std::shared_ptr<repo_partitioning_tree_t>(nullptr)){}
 };
 
-struct DiffResult{
+struct repo_diff_result_t{
 	std::vector<repoUUID> added; //nodes that does not exist on the other model
 	std::vector<repoUUID> modified; //nodes that exist on the other model but it is modified.
 	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher > correspondence;
 };
-
-enum class DiffMode{ DIFF_BY_ID, DIFF_BY_NAME };
