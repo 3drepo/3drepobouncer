@@ -19,15 +19,14 @@
 */
 
 #include "repo_node.h"
+#include "repo_bson_builder.h"
 
 using namespace repo::core::model;
 
 RepoNode::RepoNode(RepoBSON bson,
 	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping) : RepoBSON(bson, binMapping){
-	
 	if (binMapping.size() == 0)
 		bigFiles = bson.getFilesMapping();
-
 }
 
 RepoNode::~RepoNode()
@@ -41,11 +40,10 @@ RepoNode RepoNode::cloneAndAddParent(
 	RepoBSONBuilder builder;
 	RepoBSONBuilder arrayBuilder;
 
-
 	std::vector<repoUUID> currentParents = getParentIDs();
 	if (std::find(currentParents.begin(), currentParents.end(), parentID) == currentParents.end())
 		currentParents.push_back(parentID);
-	builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);	
+	builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);
 
 	if (newUniqueID)
 		builder.append(REPO_NODE_LABEL_ID, generateUUID());
@@ -60,7 +58,6 @@ RepoNode RepoNode::cloneAndAddParent(
 {
 	RepoBSONBuilder builder;
 	RepoBSONBuilder arrayBuilder;
-
 
 	std::vector<repoUUID> currentParents = getParentIDs();
 	currentParents.insert(currentParents.end(), parentIDs.begin(), parentIDs.end());
@@ -83,7 +80,6 @@ RepoNode RepoNode::cloneAndRemoveParent(
 {
 	RepoBSONBuilder builder;
 	RepoBSONBuilder arrayBuilder;
-
 
 	std::vector<repoUUID> currentParents = getParentIDs();
 	auto parentIdx = std::find(currentParents.begin(), currentParents.end(), parentID);
@@ -109,9 +105,6 @@ RepoNode RepoNode::cloneAndRemoveParent(
 		builder.appendElementsUnique(removeField(REPO_NODE_LABEL_PARENTS));
 	}
 
-
-
-
 	return RepoNode(builder.obj(), bigFiles);
 }
 
@@ -135,7 +128,6 @@ RepoNode RepoNode::cloneAndAddFields(
 RepoNode RepoNode::cloneAndAddMergedNodes(
 	const std::vector<repoUUID> &mergeMap) const
 {
-
 	RepoNode newNode;
 	if (mergeMap.size() > 0)
 	{
@@ -166,10 +158,9 @@ std::vector<repoUUID> RepoNode::getParentIDs() const
 	return getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
 }
 
-
 NodeType RepoNode::getTypeAsEnum() const
-{ 
-	std::string type = getType(); 
+{
+	std::string type = getType();
 
 	NodeType enumType = NodeType::UNKNOWN;
 
@@ -193,5 +184,4 @@ NodeType RepoNode::getTypeAsEnum() const
 		enumType = NodeType::TRANSFORMATION;
 
 	return enumType;
-
 }

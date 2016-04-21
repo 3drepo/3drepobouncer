@@ -15,23 +15,14 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
 
+#include "../../lib/datastructure/repo_structs.h"
 #include "../../core/model/collection/repo_scene.h"
 
 namespace repo{
 	namespace manipulator{
 		namespace diff{
-
-			struct DiffResult{
-				std::vector<repoUUID> added; //nodes that does not exist on the other model
-				std::vector<repoUUID> modified; //nodes that exist on the other model but it is modified.
-				std::unordered_map<repoUUID, repoUUID, boost::hash<boost::uuids::uuid> > correspondence;
-			};
-
-			enum class Mode{ DIFF_BY_ID, DIFF_BY_NAME };
-
 			class AbstractDiff
 			{
 			public:
@@ -52,16 +43,16 @@ namespace repo{
 				* Obtain the diff result in the perspective of the base scene
 				* @return return the diff result for base scene
 				*/
-				DiffResult getDiffResultForBase()
+				repo_diff_result_t getrepo_diff_result_tForBase()
 				{
 					return baseRes;
 				}
-				
+
 				/**
 				* Obtain the diff result in the perspective of the compare scene
 				* @return return the diff result for compare scene
 				*/
-				DiffResult getDiffResultForComp()
+				repo_diff_result_t getrepo_diff_result_tForComp()
 				{
 					return compRes;
 				}
@@ -73,17 +64,12 @@ namespace repo{
 				*/
 				virtual bool isOk(std::string &msg) const = 0;
 
-
 			protected:
 				const repo::core::model::RepoScene           *baseScene;
 				const repo::core::model::RepoScene           *compareScene;
 				const repo::core::model::RepoScene::GraphType gType;
-				DiffResult baseRes, compRes;
-
+				repo_diff_result_t baseRes, compRes;
 			};
 		}
 	}
 }
-
-
-

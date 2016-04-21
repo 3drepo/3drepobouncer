@@ -16,22 +16,22 @@
 */
 
 /**
-*  Transformation node 
+*  Transformation node
 */
 
 #include "repo_node_transformation.h"
+#include "repo_bson_builder.h"
 
 using namespace repo::core::model;
 
 TransformationNode::TransformationNode() :
-	RepoNode()
+RepoNode()
 {
 }
 
 TransformationNode::TransformationNode(RepoBSON bson) :
-	RepoNode(bson)
+RepoNode(bson)
 {
-
 }
 
 TransformationNode::~TransformationNode()
@@ -59,16 +59,14 @@ RepoNode TransformationNode::cloneAndApplyTransformation(
 			rows.appendArray(std::to_string(i), columns.obj());
 		}
 		builder.appendArray(REPO_NODE_LABEL_MATRIX, rows.obj());
-
 	}
 	else
 	{
 		repoError << "Failed to apply transformation onto Transformation node: the matrix is not a 4 by 4 matrix (size : !" << matrix.size();
-
 	}
 
 	builder.appendElementsUnique(*this);
-	
+
 	return TransformationNode(RepoBSON(builder.obj(), bigFiles));
 }
 
@@ -85,7 +83,7 @@ std::vector<std::vector<float>> TransformationNode::identityMat()
 bool TransformationNode::isIdentity(const float &eps) const
 {
 	std::vector<float> mat = getTransMatrix(false);
-	//  00 01 02 03 
+	//  00 01 02 03
 	//  04 05 06 07
 	//  08 09 10 11
 	//  12 13 14 15
@@ -108,9 +106,6 @@ bool TransformationNode::isIdentity(const float &eps) const
 	}
 
 	return iden;
-
-
-
 }
 
 std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) const
@@ -119,10 +114,9 @@ std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) cons
 	uint32_t rowInd = 0, colInd = 0;
 	if (hasField(REPO_NODE_LABEL_MATRIX))
 	{
-
 		transformationMatrix.resize(16);
 		float *transArr = &transformationMatrix.at(0);
-	
+
 		// matrix is stored as array of arrays
 		RepoBSON matrixObj =
 			getField(REPO_NODE_LABEL_MATRIX).embeddedObject();
@@ -150,7 +144,7 @@ std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) cons
 					index = rowInd * 4 + colInd;
 				}
 
-				auto f =  arrayObj.getField(aField);
+				auto f = arrayObj.getField(aField);
 				if (f.type() == ElementType::DOUBLE)
 					transArr[index] = (float)f.Double();
 				else if (f.type() == ElementType::INT)
@@ -160,10 +154,7 @@ std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) cons
 					repoError << "Unexpected type within transformation matrix!";
 				}
 			}
-
 		}
-
-
 	}
 	else
 	{
@@ -181,11 +172,8 @@ bool TransformationNode::sEqual(const RepoNode &other) const
 
 	const TransformationNode otherTrans = TransformationNode(other);
 
-
 	std::vector<float> mat = getTransMatrix(false);
 	std::vector<float> otherMat = otherTrans.getTransMatrix(false);
 
-
 	return mat.size() == otherMat.size() && !memcmp(mat.data(), otherMat.data(), mat.size() *sizeof(*mat.data()));
-
 }

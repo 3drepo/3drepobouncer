@@ -31,18 +31,15 @@ RepoNode()
 MaterialNode::MaterialNode(RepoBSON bson) :
 RepoNode(bson)
 {
-
 }
 
 MaterialNode::~MaterialNode()
 {
 }
 
-
 repo_material_t MaterialNode::getMaterialStruct() const
 {
 	repo_material_t mat;
-
 
 	std::vector<float> tempVec = getFloatArray(REPO_NODE_MATERIAL_LABEL_AMBIENT);
 	if (tempVec.size() > 0)
@@ -60,7 +57,7 @@ repo_material_t MaterialNode::getMaterialStruct() const
 	if (tempVec.size() > 0)
 		mat.emissive.insert(mat.emissive.end(), tempVec.begin(), tempVec.end());
 
-	mat.isWireframe = hasField(REPO_NODE_MATERIAL_LABEL_WIREFRAME) && 
+	mat.isWireframe = hasField(REPO_NODE_MATERIAL_LABEL_WIREFRAME) &&
 		getField(REPO_NODE_MATERIAL_LABEL_WIREFRAME).boolean();
 
 	mat.isTwoSided = hasField(REPO_NODE_MATERIAL_LABEL_TWO_SIDED) &&
@@ -87,24 +84,22 @@ std::vector<float> MaterialNode::getDataAsBuffer() const
 
 	//flatten the material struct
 	std::vector<float> buffer;
-	buffer.reserve(sizeof(mat)/sizeof(float)); //FIXME: bigger than this, since we have 4 vector points with each having 3 members.
-	
+	buffer.reserve(sizeof(mat) / sizeof(float)); //FIXME: bigger than this, since we have 4 vector points with each having 3 members.
+
 	for (const float &n : mat.ambient)
 	{
 		buffer.push_back(n);
 	}
-	
+
 	for (const float &n : mat.diffuse)
 	{
 		buffer.push_back(n);
 	}
 
-
 	for (const float &n : mat.specular)
 	{
 		buffer.push_back(n);
 	}
-
 
 	for (const float &n : mat.emissive)
 	{
@@ -119,7 +114,6 @@ std::vector<float> MaterialNode::getDataAsBuffer() const
 	buffer.push_back((float)mask);
 
 	return buffer;
-
 }
 
 bool MaterialNode::sEqual(const RepoNode &other) const
@@ -128,10 +122,9 @@ bool MaterialNode::sEqual(const RepoNode &other) const
 	{
 		return false;
 	}
-	
+
 	auto mat = getDataAsBuffer();
 	auto otherMat = MaterialNode(other).getDataAsBuffer();
 
 	return mat.size() == otherMat.size() && !memcmp(mat.data(), otherMat.data(), mat.size() * sizeof(*mat.data()));
-
 }

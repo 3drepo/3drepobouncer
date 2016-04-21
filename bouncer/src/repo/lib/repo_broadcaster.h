@@ -27,13 +27,11 @@
 #include <vector>
 #include <iostream>
 
-
 #include <algorithm>                       // copy, min
 #include <iosfwd>                          // streamsize
 #include <boost/iostreams/categories.hpp>  // sink_tag
 
-
-#include <boost/iostreams/concepts.hpp> 
+#include <boost/iostreams/concepts.hpp>
 #include <boost/iostreams/stream_buffer.hpp>
 
 #include "repo_listener_abstract.h"
@@ -66,15 +64,9 @@ namespace repo{
 			*/
 			std::streamsize write(const char* s, std::streamsize n);
 
-
-
 		private:
 
-
 			std::vector<RepoAbstractListener *> subscribers;
-			
 		};
 	}
 }
-
-

@@ -21,6 +21,7 @@
 
 #include <repo/core/model/bson/repo_node.h>
 #include <repo/core/model/bson/repo_node_mesh.h>
+#include <repo/core/model/bson/repo_bson_builder.h>
 
 using namespace repo::core::model;
 
@@ -106,7 +107,6 @@ TEST(RepoNodeTest, CloneAndAddParentTest)
 	EXPECT_NE(node, nodeWithParent);
 	EXPECT_NE(node.toString(), nodeWithParent.toString());
 
-
 	RepoBSONElement parentField = nodeWithParent.getField(REPO_NODE_LABEL_PARENTS);
 	ASSERT_EQ(ElementType::ARRAY, parentField.type());
 
@@ -133,7 +133,6 @@ TEST(RepoNodeTest, CloneAndAddParentTest)
 	EXPECT_EQ(parent, parentsOut[0]);
 	EXPECT_EQ(parent2, parentsOut[1]);
 
-
 	//ensure extref files are retained
 	std::vector<uint8_t> file1;
 	std::vector<uint8_t> file2;
@@ -152,7 +151,6 @@ TEST(RepoNodeTest, CloneAndAddParentTest)
 	EXPECT_TRUE(clonedNodeWithFiles.hasOversizeFiles());
 	auto mappingOut = clonedNodeWithFiles.getFilesMapping();
 	EXPECT_EQ(2, mappingOut.size());
-
 }
 
 TEST(RepoNodeTest, CloneAndAddParentTest_MultipleParents)
@@ -169,13 +167,11 @@ TEST(RepoNodeTest, CloneAndAddParentTest_MultipleParents)
 		parent.push_back(generateUUID());
 	}
 
-
 	RepoNode nodeWithParent = node.cloneAndAddParent(parent);
 
 	ASSERT_TRUE(nodeWithParent.hasField(REPO_NODE_LABEL_PARENTS));
 	EXPECT_NE(node, nodeWithParent);
 	EXPECT_NE(node.toString(), nodeWithParent.toString());
-
 
 	RepoBSONElement parentField = nodeWithParent.getField(REPO_NODE_LABEL_PARENTS);
 	ASSERT_EQ(ElementType::ARRAY, parentField.type());
@@ -191,7 +187,6 @@ TEST(RepoNodeTest, CloneAndAddParentTest_MultipleParents)
 		EXPECT_NE(parentsOut.end(), it);
 		parentsOut.erase(it);
 	}
-
 
 	EXPECT_EQ(0, parentsOut.size());
 
@@ -221,15 +216,14 @@ TEST(RepoNodeTest, CloneAndAddParentTest_MultipleParents)
 		parent2.push_back(generateUUID());
 	}
 
-
 	RepoNode secondParentNode = nodeWithParent.cloneAndAddParent(parent2);
 	parentsOut = secondParentNode.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
 
-	ASSERT_EQ(2*nParents, parentsOut.size());
+	ASSERT_EQ(2 * nParents, parentsOut.size());
 
-	std::vector<repoUUID> fullParents = parent;	
-	fullParents.insert(fullParents.end(),parent2.begin(), parent2.end());
-	for (size_t i = 0; i < nParents*2; ++i)
+	std::vector<repoUUID> fullParents = parent;
+	fullParents.insert(fullParents.end(), parent2.begin(), parent2.end());
+	for (size_t i = 0; i < nParents * 2; ++i)
 	{
 		//EXPECT_EQ(parent[i], parentsOut[i]);
 		auto it = std::find(parentsOut.begin(), parentsOut.end(), fullParents[i]);
@@ -256,7 +250,6 @@ TEST(RepoNodeTest, CloneAndAddParentTest_MultipleParents)
 	auto mappingOut = clonedNodeWithFiles.getFilesMapping();
 	EXPECT_EQ(2, mappingOut.size());
 }
-
 
 TEST(RepoNodeTest, CloneAndApplyTransformationTest)
 {
@@ -304,7 +297,6 @@ TEST(RepoNodeTest, CloneAndChangeNameTest)
 	EXPECT_NE(emptyNodeWithName.getUniqueID(), anotherNameNode.getUniqueID());
 	EXPECT_EQ(emptyNodeWithName.getUniqueID(), emptyNodeWithName.cloneAndChangeName(name2, false).getUniqueID());
 
-
 	//ensure extref files are retained
 	std::vector<uint8_t> file1;
 	std::vector<uint8_t> file2;
@@ -327,7 +319,6 @@ TEST(RepoNodeTest, CloneAndChangeNameTest)
 
 TEST(RepoNodeTest, CloneAndRemoveParentTest)
 {
-
 	RepoNode stillEmpty = emptyNode.cloneAndRemoveParent(generateUUID());
 	EXPECT_TRUE(stillEmpty.isEmpty());
 
@@ -358,7 +349,6 @@ TEST(RepoNodeTest, CloneAndRemoveParentTest)
 
 	EXPECT_NE(manyParentsNode.getUniqueID(), parentRemovedNode.getUniqueID());
 	EXPECT_EQ(manyParentsNode.getUniqueID(), manyParentsNode.cloneAndRemoveParent(parents[indToRemove], false).getUniqueID());
-
 
 	//ensure extref files are retained
 	std::vector<uint8_t> file1;
@@ -408,7 +398,6 @@ TEST(RepoNodeTest, CloneAndAddFieldTest)
 	RepoNode replaceField = nodeFieldAdded.cloneAndAddFields(changeBson3);
 	EXPECT_EQ(name2, replaceField.getStringField(field));
 
-
 	//ensure extref files are retained
 	std::vector<uint8_t> file1;
 	std::vector<uint8_t> file2;
@@ -433,7 +422,6 @@ TEST(RepoNodeTest, CloneAndAddFieldTest)
 	delete changeBson3;
 }
 
-
 TEST(RepoNodeTest, CloneAndAddMergedNodesTest)
 {
 	std::vector<repoUUID> mergeMap;
@@ -453,7 +441,6 @@ TEST(RepoNodeTest, CloneAndAddMergedNodesTest)
 	{
 		EXPECT_EQ(mergeMapOut[i], mergeMap[i]);
 	}
-
 
 	//ensure extref files are retained
 	std::vector<uint8_t> file1;
@@ -481,7 +468,6 @@ TEST(RepoNodeTest, GetNameTest)
 
 	EXPECT_EQ(node.getName(), typicalName);
 	EXPECT_EQ(emptyNode.getName(), "");
-
 }
 
 TEST(RepoNodeTest, GetSharedIDTest)
@@ -489,10 +475,9 @@ TEST(RepoNodeTest, GetSharedIDTest)
 	RepoNode node = makeTypicalNode();
 
 	EXPECT_EQ(node.getSharedID(), typicalSharedID);
-	
+
 	//Ensure no exception is thrown if not found
 	emptyNode.getSharedID();
-
 }
 
 TEST(RepoNodeTest, GetUniqueIDTest)
@@ -503,7 +488,6 @@ TEST(RepoNodeTest, GetUniqueIDTest)
 
 	//Ensure no exception is thrown if not found
 	emptyNode.getUniqueID();
-
 }
 
 TEST(RepoNodeTest, GetTypeTest)
@@ -513,7 +497,6 @@ TEST(RepoNodeTest, GetTypeTest)
 	RepoNode node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << type));
 
 	EXPECT_EQ(type, node.getType());
-
 }
 
 TEST(RepoNodeTest, GetTypeAsEnumTest)
@@ -553,8 +536,6 @@ TEST(RepoNodeTest, GetTypeAsEnumTest)
 	//transformation
 	node = RepoNode(BSON(REPO_NODE_LABEL_TYPE << REPO_NODE_TYPE_TRANSFORMATION));
 	EXPECT_EQ(NodeType::TRANSFORMATION, node.getTypeAsEnum());
-
-
 }
 
 TEST(RepoNodeTest, GetParentsIDTest)
@@ -598,7 +579,7 @@ TEST(RepoNodeTest, OperatorEqualTest)
 TEST(RepoNodeTest, OperatorCompareTest)
 {
 	RepoNode typicalNode = makeTypicalNode();
-	EXPECT_FALSE(typicalNode>typicalNode);
+	EXPECT_FALSE(typicalNode > typicalNode);
 
 	repoUUID sharedID = generateUUID();
 	repoUUID uniqueID = generateUUID();
@@ -624,6 +605,4 @@ TEST(RepoNodeTest, OperatorCompareTest)
 	EXPECT_EQ(uniqueID < uniqueID2, makeNode(uniqueID, sharedID, "14") < makeNode(uniqueID2, sharedID, "14"));
 	EXPECT_EQ(uniqueID < uniqueID2, makeNode(uniqueID, sharedID, "15") < makeNode(uniqueID2, sharedID, "15"));
 	EXPECT_EQ(uniqueID < uniqueID2, makeNode(uniqueID, sharedID, "16") < makeNode(uniqueID2, sharedID, "16"));
-
-
 }

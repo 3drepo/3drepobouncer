@@ -24,19 +24,15 @@
 
 #include "../repo_bouncer_global.h"
 
-
 namespace repo{
 	namespace lib{
 		class REPO_API_EXPORT RepoAbstractListener
 		{
-
 		public:
 			RepoAbstractListener() {}
 			~RepoAbstractListener(){};
 
 			virtual void messageGenerated(const std::string &message) = 0;
-
-
 		};
 	}
 }

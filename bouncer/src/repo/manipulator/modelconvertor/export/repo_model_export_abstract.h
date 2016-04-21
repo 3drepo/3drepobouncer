@@ -19,7 +19,6 @@
 * Abstract Model convertor(Export)
 */
 
-
 #pragma once
 
 #include <string>
@@ -53,10 +52,7 @@ namespace repo{
 
 			protected:
 				const repo::core::model::RepoScene *scene;
-
 			};
-
 		} //namespace modelconvertor
 	} //namespace manipulator
 } //namespace repo
-

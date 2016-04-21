@@ -19,88 +19,85 @@
 * Allows Export functionality from 3D Repo World to SRC
 */
 
-
 #include "repo_model_export_src.h"
-#include "../../modelutility/repo_mesh_map_reorganiser.h"
-#include "../../../lib/repo_log.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
-#include "auxiliary/repo_model_export_x3d_src.h"
+#include "../../../lib/repo_log.h"
+#include "../../modelutility/repo_mesh_map_reorganiser.h"
 
 using namespace repo::manipulator::modelconvertor;
 
-const static uint32_t SRC_MAGIC_BIT      = 23;
-const static uint32_t SRC_VERSION        = 42;
+const static uint32_t SRC_MAGIC_BIT = 23;
+const static uint32_t SRC_VERSION = 42;
 const static size_t SRC_MAX_VERTEX_LIMIT = 65535;
-const static size_t SRC_X3DOM_FLOAT      = 5126;
-const static size_t SRC_X3DOM_USHORT     = 5123;
-const static size_t SRC_X3DOM_TRIANGLE   = 4;
-const static std::string SRC_VECTOR_2D   = "VEC2";
-const static std::string SRC_VECTOR_3D   = "VEC3";
-const static std::string SRC_SCALAR      = "SCALAR";
+const static size_t SRC_X3DOM_FLOAT = 5126;
+const static size_t SRC_X3DOM_USHORT = 5123;
+const static size_t SRC_X3DOM_TRIANGLE = 4;
+const static std::string SRC_VECTOR_2D = "VEC2";
+const static std::string SRC_VECTOR_3D = "VEC3";
+const static std::string SRC_SCALAR = "SCALAR";
 
-
-const static std::string SRC_LABEL_ACCESSORS            = "accessors";
+const static std::string SRC_LABEL_ACCESSORS = "accessors";
 const static std::string SRC_LABEL_ACCESSORS_ATTR_VIEWS = "attributeViews";
-const static std::string SRC_LABEL_BUFFER_CHUNKS        = "bufferChunks";
-const static std::string SRC_LABEL_BUFF_VIEWS           = "bufferViews";
-const static std::string SRC_LABEL_INDEX_VIEWS          = "indexViews";
+const static std::string SRC_LABEL_BUFFER_CHUNKS = "bufferChunks";
+const static std::string SRC_LABEL_BUFF_VIEWS = "bufferViews";
+const static std::string SRC_LABEL_INDEX_VIEWS = "indexViews";
 
-const static std::string SRC_LABEL_ATTRS                = "attributes";
-const static std::string SRC_LABEL_BUFFVIEW             = "bufferView";
-const static std::string SRC_LABEL_BYTE_LENGTH          = "byteLength";
-const static std::string SRC_LABEL_BYTE_OFFSET          = "byteOffset";
-const static std::string SRC_LABEL_BYTE_STRIDE          = "byteStride";
-const static std::string SRC_LABEL_COMP_TYPE            = "componentType";
-const static std::string SRC_LABEL_TYPE                 = "type";
-const static std::string SRC_LABEL_CHUNKS               = "chunks";
-const static std::string SRC_LABEL_COUNT                = "count";
-const static std::string SRC_LABEL_DECODE_OFFSET        = "decodeOffset";
-const static std::string SRC_LABEL_DECODE_SCALE         = "decodeScale";
-const static std::string SRC_LABEL_ID                   = "id";
-const static std::string SRC_LABEL_INDICIES             = "indices";
-const static std::string SRC_LABEL_PRIMITIVE            = "primitive";
-const static std::string SRC_LABEL_MESHES               = "meshes";
-const static std::string SRC_LABEL_NORMAL               = "normal";
-const static std::string SRC_LABEL_POSITION             = "position";
-const static std::string SRC_LABEL_TEX_COORD            = "texcoord";
+const static std::string SRC_LABEL_ATTRS = "attributes";
+const static std::string SRC_LABEL_BUFFVIEW = "bufferView";
+const static std::string SRC_LABEL_BYTE_LENGTH = "byteLength";
+const static std::string SRC_LABEL_BYTE_OFFSET = "byteOffset";
+const static std::string SRC_LABEL_BYTE_STRIDE = "byteStride";
+const static std::string SRC_LABEL_COMP_TYPE = "componentType";
+const static std::string SRC_LABEL_TYPE = "type";
+const static std::string SRC_LABEL_CHUNKS = "chunks";
+const static std::string SRC_LABEL_COUNT = "count";
+const static std::string SRC_LABEL_DECODE_OFFSET = "decodeOffset";
+const static std::string SRC_LABEL_DECODE_SCALE = "decodeScale";
+const static std::string SRC_LABEL_ID = "id";
+const static std::string SRC_LABEL_INDICIES = "indices";
+const static std::string SRC_LABEL_PRIMITIVE = "primitive";
+const static std::string SRC_LABEL_MESHES = "meshes";
+const static std::string SRC_LABEL_NORMAL = "normal";
+const static std::string SRC_LABEL_POSITION = "position";
+const static std::string SRC_LABEL_TEX_COORD = "texcoord";
 
 const static std::string SRC_PREFIX_POSITION_ATTR_VIEW = "p";
-const static std::string SRC_PREFIX_NORMAL_ATTR_VIEW   = "n";
-const static std::string SRC_PREFIX_UV_ATTR_VIEW       = "u";
-const static std::string SRC_PREFIX_IDMAP_ATTR_VIEW    = "id";
-const static std::string SRC_PREFIX_IDX_VIEW           = "i";
+const static std::string SRC_PREFIX_NORMAL_ATTR_VIEW = "n";
+const static std::string SRC_PREFIX_UV_ATTR_VIEW = "u";
+const static std::string SRC_PREFIX_IDMAP_ATTR_VIEW = "id";
+const static std::string SRC_PREFIX_IDX_VIEW = "i";
 
 const static std::string SRC_PREFIX_POSITION_BUFF_VIEW = "pb";
-const static std::string SRC_PREFIX_NORMAL_BUFF_VIEW   = "nb";
-const static std::string SRC_PREFIX_TEX_BUFF_VIEW      = "tb";
-const static std::string SRC_PREFIX_UV_BUFF_VIEW       = "ub";
-const static std::string SRC_PREFIX_IDX_BUFF_VIEW      = "ib";
-const static std::string SRC_PREFIX_IDMAP_BUFF_VIEW    = "idb";
+const static std::string SRC_PREFIX_NORMAL_BUFF_VIEW = "nb";
+const static std::string SRC_PREFIX_TEX_BUFF_VIEW = "tb";
+const static std::string SRC_PREFIX_UV_BUFF_VIEW = "ub";
+const static std::string SRC_PREFIX_IDX_BUFF_VIEW = "ib";
+const static std::string SRC_PREFIX_IDMAP_BUFF_VIEW = "idb";
 
-const static std::string SRC_PREFIX_POSITION_BUFF_CHK  = "pc";
-const static std::string SRC_PREFIX_IDX_BUFF_CHK       = "ic";
-const static std::string SRC_PREFIX_NORMAL_BUFF_CHK    = "nc";
-const static std::string SRC_PREFIX_TEX_BUFF_CHK       = "tc";
-const static std::string SRC_PREFIX_UV_BUFF_CHK        = "uc";
-const static std::string SRC_PREFIX_IDMAP_BUFF_CHK     = "idc";
+const static std::string SRC_PREFIX_POSITION_BUFF_CHK = "pc";
+const static std::string SRC_PREFIX_IDX_BUFF_CHK = "ic";
+const static std::string SRC_PREFIX_NORMAL_BUFF_CHK = "nc";
+const static std::string SRC_PREFIX_TEX_BUFF_CHK = "tc";
+const static std::string SRC_PREFIX_UV_BUFF_CHK = "uc";
+const static std::string SRC_PREFIX_IDMAP_BUFF_CHK = "idc";
 
-const static std::string SRC_PREFIX_IDMAP              = "idMap";
+const static std::string SRC_PREFIX_IDMAP = "idMap";
 
 //Labels for multipart JSON descriptor files
-const static std::string MP_LABEL_APPEARANCE       = "appearance";
-const static std::string MP_LABEL_MAT_DIFFUSE      = "diffuseColor";
-const static std::string MP_LABEL_MAT_EMISSIVE     = "emissiveColor";
-const static std::string MP_LABEL_MATERIAL         = "material";
-const static std::string MP_LABEL_MAPPING          = "mapping";
-const static std::string MP_LABEL_MAT_SHININESS    = "shininess";
-const static std::string MP_LABEL_MAT_SPECULAR     = "specularColor";
+const static std::string MP_LABEL_APPEARANCE = "appearance";
+const static std::string MP_LABEL_MAT_DIFFUSE = "diffuseColor";
+const static std::string MP_LABEL_MAT_EMISSIVE = "emissiveColor";
+const static std::string MP_LABEL_MATERIAL = "material";
+const static std::string MP_LABEL_MAPPING = "mapping";
+const static std::string MP_LABEL_MAT_SHININESS = "shininess";
+const static std::string MP_LABEL_MAT_SPECULAR = "specularColor";
 const static std::string MP_LABEL_MAT_TRANSPARENCY = "transparency";
-const static std::string MP_LABEL_MAX              = "max";
-const static std::string MP_LABEL_MAX_GEO_COUNT    = "maxGeoCount";
-const static std::string MP_LABEL_MIN              = "min";
-const static std::string MP_LABEL_NAME             = "name";
-const static std::string MP_LABEL_NUM_IDs          = "numberOfIDs";
-const static std::string MP_LABEL_USAGE            = "usage";
+const static std::string MP_LABEL_MAX = "max";
+const static std::string MP_LABEL_MAX_GEO_COUNT = "maxGeoCount";
+const static std::string MP_LABEL_MIN = "min";
+const static std::string MP_LABEL_NAME = "name";
+const static std::string MP_LABEL_NUM_IDs = "numberOfIDs";
+const static std::string MP_LABEL_USAGE = "usage";
 
 SRCModelExport::SRCModelExport(
 	const repo::core::model::RepoScene *scene
@@ -112,19 +109,16 @@ SRCModelExport::SRCModelExport(
 		if (gType == repo::core::model::RepoScene::GraphType::OPTIMIZED)
 		{
 			convertSuccess = generateTreeRepresentation();
-
 		}
 		else  if (!(convertSuccess = !scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()))
 		{
 			repoError << "Scene has no optimised graph and it is not a federation graph. SRC Exporter relies on this.";
-		}	
-		
+		}
 	}
 	else
 	{
 		repoError << "Unable to export to SRC : Empty scene graph!";
 	}
-
 }
 
 SRCModelExport::~SRCModelExport()
@@ -138,13 +132,13 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getSRCFile
 	for (const auto &treePair : trees)
 	{
 		std::vector<uint8_t> buffer;
-		std::string fName = treePair.first;		
+		std::string fName = treePair.first;
 
 		std::stringstream ss;
 		treePair.second.write_json(ss);
-		std::string jsonStr = ss.str();		
+		std::string jsonStr = ss.str();
 
-		//one char is one byte, 12bytes for Magic Bit(4), SRC Version (4), Header Length(4)	
+		//one char is one byte, 12bytes for Magic Bit(4), SRC Version (4), Header Length(4)
 		size_t jsonByteSize = jsonStr.size()*sizeof(*jsonStr.c_str());
 		size_t headerSize = 12 + jsonByteSize;
 
@@ -165,10 +159,10 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getSRCFile
 		memcpy(&buffer[buffPtr], jsonStr.c_str(), jsonByteSize);
 
 		buffPtr += jsonByteSize;
-		
+
 		const auto fdIt = fullDataBuffer.find(fName);
 
-		if (fdIt  != fullDataBuffer.end())
+		if (fdIt != fullDataBuffer.end())
 		{
 			//Add data buffer to the full buffer
 			buffer.insert(buffer.end(), fdIt->second.begin(), fdIt->second.end());
@@ -178,15 +172,14 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getSRCFile
 		{
 			repoError << " Failed to find data buffer for " << fName;
 		}
-
 	}
 
 	return fileBuffers;
 }
 
-repo_export_buffers_t SRCModelExport::getAllFilesExportedAsBuffer() const
+repo_web_buffers_t SRCModelExport::getAllFilesExportedAsBuffer() const
 {
-	return { getSRCFilesAsBuffer(), getX3DFilesAsBuffer(), getJSONFilesAsBuffer() };
+	return{ getSRCFilesAsBuffer(), getX3DFilesAsBuffer(), getJSONFilesAsBuffer() };
 }
 
 bool SRCModelExport::generateJSONMapping(
@@ -207,7 +200,7 @@ bool SRCModelExport::generateJSONMapping(
 		jsonTree.addToTree(MP_LABEL_NUM_IDs, mappingLength);
 		jsonTree.addToTree(MP_LABEL_MAX_GEO_COUNT, mappingLength);
 
-		std::vector<repo::core::model::RepoNode*> matChild = 
+		std::vector<repo::core::model::RepoNode*> matChild =
 			scene->getChildrenNodesFiltered(gType, mesh->getSharedID(), repo::core::model::NodeType::MATERIAL);
 
 		std::vector <repo::lib::PropertyTree> matChildrenTrees;
@@ -234,21 +227,18 @@ bool SRCModelExport::generateJSONMapping(
 				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_TRANSPARENCY, 1.0 - matStruct.opacity);
 
 			matChildrenTrees.push_back(matTree);
-
 		}
 
 		jsonTree.addArrayObjects(MP_LABEL_APPEARANCE, matChildrenTrees);
 
-		
 		std::vector<repo::lib::PropertyTree> mappingTrees;
 		std::string meshUID = UUIDtoString(mesh->getUniqueID());
 		//Could get the mesh split function to pass a mapping out so we don't do this again.
 		for (size_t i = 0; i < mappingLength; ++i)
 		{
-			auto mapIt  = splitMapping.find(mappings[i].mesh_id);
+			auto mapIt = splitMapping.find(mappings[i].mesh_id);
 			if (mapIt != splitMapping.end())
 			{
-
 				for (const uint32_t &subMeshID : mapIt->second)
 				{
 					repo::lib::PropertyTree mappingTree;
@@ -262,18 +252,16 @@ bool SRCModelExport::generateJSONMapping(
 
 					mappingTrees.push_back(mappingTree);
 				}
-				
 			}
 			else
 			{
 				repoError << "Failed to find split mapping for id: " << UUIDtoString(mappings[i].mesh_id);
 			}
-			
 		}
 
 		jsonTree.addArrayObjects(MP_LABEL_MAPPING, mappingTrees);
 
-		std::string jsonFileName = "/" +  scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + UUIDtoString(mesh->getUniqueID()) + ".json.mpc";
+		std::string jsonFileName = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + UUIDtoString(mesh->getUniqueID()) + ".json.mpc";
 
 		jsonTrees[jsonFileName] = jsonTree;
 	}
@@ -296,9 +284,9 @@ bool SRCModelExport::generateTreeRepresentation(
 		//Every mesh is a new SRC file
 		fullDataBuffer.reserve(meshes.size());
 		for (const repo::core::model::RepoNode* mesh : meshes)
-		{	
+		{
 			std::string textureID = scene->getTextureIDForMesh(gType, mesh->getSharedID());
-			
+
 			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter =
 				new repo::manipulator::modelutility::MeshMapReorganiser((repo::core::model::MeshNode*)mesh, SRC_MAX_VERTEX_LIMIT);
 			repo::core::model::MeshNode splittedMesh = reSplitter->getRemappedMesh();
@@ -323,23 +311,11 @@ bool SRCModelExport::generateTreeRepresentation(
 			if (sepX3d)
 			{
 				success &= generateJSONMapping((repo::core::model::MeshNode*)mesh, scene, splitMapping);
-
-				X3DSRCModelExport x3dExport(splittedMesh, scene);
-				if (x3dExport.isOk())
-				{
-					x3dBufs[x3dExport.getFileName()] = x3dExport.getFileAsBuffer();
-				}
-				else
-				{
-					repoError << "Failed to generate x3d representation for mesh: " << UUIDtoString(mesh->getUniqueID());
-				}
 			}
-		}		
+		}
 	}
 
 	return success;
-
-
 }
 
 void SRCModelExport::addMeshToExport(
@@ -351,12 +327,11 @@ void SRCModelExport::addMeshToExport(
 	)
 {
 	std::vector<repo_mesh_mapping_t> mapping = mesh.getMeshMapping();
-	
 
 	auto vertices = mesh.getVertices();
 	auto normals = mesh.getNormals();
 	auto uvs = mesh.getUVChannels();
-	
+
 	//Define starting position of buffers
 	size_t bufPos = 0; //In bytes
 	size_t vertexWritePosition = bufPos;
@@ -417,7 +392,6 @@ void SRCModelExport::addMeshToExport(
 		std::string srcAccessors_AttributeViews = SRC_LABEL_ACCESSORS + "." + SRC_LABEL_ACCESSORS_ATTR_VIEWS;
 		std::string srcMesh_MeshID = SRC_LABEL_MESHES + "." + meshID + ".";
 
-
 		size_t vCount = mapping[subMeshIdx].vertTo - mapping[subMeshIdx].vertFrom;
 		size_t fCount = mapping[subMeshIdx].triTo - mapping[subMeshIdx].triFrom;
 
@@ -437,12 +411,11 @@ void SRCModelExport::addMeshToExport(
 			tree.addToTree(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_DECODE_OFFSET, offsetArr);
 			tree.addToTree(srcAccessors_AttrViews_positionAttrView + SRC_LABEL_DECODE_SCALE, scaleArr);
 
-
 			std::string srcBufferChunks_positionBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + positionBufferChunk + ".";
 			size_t verticeBufferLength = vCount * sizeof(*vertices.data());
 
 			tree.addToTree(srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_OFFSET, vertexWritePosition);
-			tree.addToTree(srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_LENGTH, verticeBufferLength); 
+			tree.addToTree(srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_LENGTH, verticeBufferLength);
 
 			vertexWritePosition += verticeBufferLength;
 
@@ -470,15 +443,13 @@ void SRCModelExport::addMeshToExport(
 			tree.addToTree(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_DECODE_OFFSET, offsetArr);
 			tree.addToTree(srcAccessors_AttrViews_normalAttrView + SRC_LABEL_DECODE_SCALE, scaleArr);
 
-
 			std::string srcBufferChunks_positionBufferChunks = SRC_LABEL_BUFFER_CHUNKS + "." + normalBufferChunk + ".";
 			size_t verticeBufferLength = vCount * sizeof(*normals.data());
 
 			tree.addToTree(srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_OFFSET, normalWritePosition);
-			tree.addToTree(srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_LENGTH, verticeBufferLength); 
+			tree.addToTree(srcBufferChunks_positionBufferChunks + SRC_LABEL_BYTE_LENGTH, verticeBufferLength);
 
 			normalWritePosition += verticeBufferLength;
-
 
 			std::string srcBufferViews_normalBufferView = SRC_LABEL_BUFF_VIEWS + "." + normalBufferView + ".";
 
@@ -486,7 +457,6 @@ void SRCModelExport::addMeshToExport(
 			tree.addToTree(srcBufferViews_normalBufferView + SRC_LABEL_CHUNKS, chunksArray);
 
 			tree.addToTree(srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_NORMAL, normalAttributeView);
-
 		}
 
 		// Index View
@@ -514,7 +484,6 @@ void SRCModelExport::addMeshToExport(
 
 			tree.addToTree(srcMesh_MeshID + SRC_LABEL_INDICIES, indexView);
 			tree.addToTree(srcMesh_MeshID + SRC_LABEL_PRIMITIVE, SRC_X3DOM_TRIANGLE);
-
 		}
 
 		if (idMapBuf.size() && idMapBuf[subMeshIdx].size())
@@ -579,10 +548,7 @@ void SRCModelExport::addMeshToExport(
 			tree.addToTree(srcBufferViews_uvBufferView + SRC_LABEL_CHUNKS, chunksArray);
 
 			tree.addToTree(srcMesh_MeshID + SRC_LABEL_ATTRS + "." + SRC_LABEL_TEX_COORD, uvAttributeView);
-
 		}
-
-
 	}//for (size_t subMeshIdx = 0; subMeshIdx < nSubMeshes; ++subMeshIdx)
 
 	repoTrace << "Generating output buffers for " << idx;
@@ -596,7 +562,6 @@ void SRCModelExport::addMeshToExport(
 			idMapBufFull.insert(idMapBufFull.end(), subMesh.begin(), subMesh.end());
 		}
 	}
-	
 
 	size_t bufferSize = vertices.size() * sizeof(*vertices.data())
 		+ normals.size() * sizeof(*normals.data())
@@ -645,7 +610,6 @@ void SRCModelExport::addMeshToExport(
 		repoTrace << "Written idMapBuff: byte Size " << byteSize << " bufferPtr is " << bufferPtr;
 	}
 
-
 	if (uvs.size()) {
 		size_t byteSize = uvs.size() * sizeof(*uvs.data());
 		memcpy(&dataBuffer[bufferPtr], uvs.data(), byteSize);
@@ -653,10 +617,8 @@ void SRCModelExport::addMeshToExport(
 		repoTrace << "Written UVs: byte Size " << byteSize << " bufferPtr is " << bufferPtr;
 	}
 
-
 	std::string fname = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + meshId + fileExt;
-	
+
 	trees[fname] = tree;
 	fullDataBuffer[fname] = dataBuffer;
-
 }

@@ -18,56 +18,12 @@
 #pragma once
 
 #include "../../../lib/repo_property_tree.h"
+#include "../../../lib/datastructure/repo_structs.h"
 #include "../../../core/model/collection/repo_scene.h"
 
 namespace repo{
 	namespace manipulator{
 		namespace modelutility{
-
-			struct MeshEntry
-			{
-				std::vector<float> min;
-				std::vector<float> max;
-				std::vector<float> mid;// midpoint
-				repoUUID      id;
-				
-				MeshEntry() :mid({ 0, 0, 0 }) 
-				{
-					min = { 0, 0, 0 };
-					max = { 0, 0, 0 };
-				}
-			};
-				
-			enum class PartitioningTreeType{ PARTITION_X, PARTITION_Y, PARTITION_Z, LEAF_NODE };
-
-			struct PartitioningTree{
-				PartitioningTreeType    type;
-				std::vector<MeshEntry> meshes; //mesh ids if it is a leaf node
-				float                 pValue; //partitioning value if not
-				std::shared_ptr<PartitioningTree> left;
-				std::shared_ptr<PartitioningTree> right;	
-	
-				//Construction of branch node
-				PartitioningTree(
-					const PartitioningTreeType &type,
-					const float &pValue,
-					std::shared_ptr<PartitioningTree> left,
-					std::shared_ptr<PartitioningTree> right)
-					: type(type), pValue(pValue),
-					left(left),
-					right(right){}
-
-				//Construction of leaf node
-				PartitioningTree(
-					const std::vector<MeshEntry> &meshes)
-					: 
-					type(PartitioningTreeType::LEAF_NODE),
-					meshes(meshes), pValue(0),
-					left(std::shared_ptr<PartitioningTree>(nullptr)),
-					right(std::shared_ptr<PartitioningTree>(nullptr)){}
-	
-			};
-
 			class AbstractSpatialPartitioner
 			{
 			public:
@@ -87,15 +43,15 @@ namespace repo{
 				* Partition the scene
 				* @return returns the spatial partitioning information as a tree
 				*/
-				virtual std::shared_ptr<PartitioningTree>
-										partitionScene() = 0;
+				virtual std::shared_ptr<repo_partitioning_tree_t>
+					partitionScene() = 0;
 
 				/**
-				* Generate a property tree representing the PartitioningTree from partitionScene()
+				* Generate a property tree representing the repo_partitioning_tree_t from partitionScene()
 				* @return returns the spatial partitioning information as a property tree
 				*/
-				virtual repo::lib::PropertyTree 
-							generatePropertyTreeForPartitioning();
+				virtual repo::lib::PropertyTree
+					generatePropertyTreeForPartitioning();
 
 			protected:
 				const repo::core::model::RepoScene            *scene;
@@ -103,10 +59,8 @@ namespace repo{
 				const repo::core::model::RepoScene::GraphType gType;
 
 				repo::lib::PropertyTree generatePropertyTreeForPartitioningInternal(
-					const std::shared_ptr<PartitioningTree> &spTree) const;
+					const std::shared_ptr<repo_partitioning_tree_t> &spTree) const;
 			};
-
 		}
 	}
 }
-

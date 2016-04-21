@@ -15,7 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include "repo_diff_sharedid.h"
 
 using namespace repo::manipulator::diff;
@@ -25,10 +24,8 @@ DiffBySharedID::DiffBySharedID(
 	const repo::core::model::RepoScene            *compare,
 	const repo::core::model::RepoScene::GraphType &gType) : AbstractDiff(base, compare, gType)
 {
-
 	ok = this->compare(msg);
 }
-
 
 DiffBySharedID::~DiffBySharedID()
 {
@@ -40,7 +37,6 @@ bool DiffBySharedID::compare(
 	bool res = false;
 	if (baseScene && compareScene && baseScene->hasRoot(gType) && compareScene->hasRoot(gType))
 	{
-
 		std::set<repoUUID> baseIDs = baseScene->getAllSharedIDs(gType);
 		std::set<repoUUID> compIDs = compareScene->getAllSharedIDs(gType);
 		for (const repoUUID &sharedID : baseIDs)
@@ -78,7 +74,7 @@ bool DiffBySharedID::compare(
 			{
 				//doesn't exist - add to deleted
 				baseRes.added.push_back(sharedID);
-			}			
+			}
 		}
 
 		//any remaining items within compIDs doesn't exist in base.
@@ -93,5 +89,4 @@ bool DiffBySharedID::compare(
 	}
 
 	return res;
-
 }

@@ -23,12 +23,11 @@ namespace repo{
 		namespace modelutility{
 			class RDTreeSpatialPartitioner : public AbstractSpatialPartitioner
 			{
-				
 			public:
 				/**
 				* RD Tree Spatial Partitioning utility class
 				* to spatially divide a scene graph base on its meshes
-				* This algorithm will produce an RD Tree with it 
+				* This algorithm will produce an RD Tree with it
 				* it's partitioning value determined by the median value of min
 				* bounding boxes.
 				* Note: currently only support scene with optimised graph!
@@ -42,15 +41,15 @@ namespace repo{
 
 				virtual ~RDTreeSpatialPartitioner();
 
-				virtual std::shared_ptr<PartitioningTree> partitionScene();
+				virtual std::shared_ptr<repo_partitioning_tree_t> partitionScene();
 
 			protected:
 
 				/**
-				* Generate a vector of mesh entries base on 
+				* Generate a vector of mesh entries base on
 				* the current scene.
 				*/
-				std::vector<MeshEntry> createMeshEntries();
+				std::vector<repo_mesh_entry_t> createMeshEntries();
 
 				/**
 				* Create a partitioning with the given meshes
@@ -58,13 +57,12 @@ namespace repo{
 				* @param axis which axis to divide
 				* @param depthCount current depth
 				*/
-				std::shared_ptr<PartitioningTree> createPartition(
-					const std::vector<MeshEntry> &meshes,
-					const PartitioningTreeType   &axis,
+				std::shared_ptr<repo_partitioning_tree_t> createPartition(
+					const std::vector<repo_mesh_entry_t> &meshes,
+					const repo::PartitioningTreeType   &axis,
 					const uint32_t               &depthCount,
 					const uint32_t               &failcount,
 					const std::vector<std::vector<float>>     &currentSection);
-
 
 				/**
 				* Sort the meshes on the given axis
@@ -75,18 +73,14 @@ namespace repo{
 				* @param rMeshes meshes belonging to the right child
 				*/
 				void sortMeshes(
-					const std::vector<MeshEntry> &meshes,
-					const PartitioningTreeType   &axis,
+					const std::vector<repo_mesh_entry_t> &meshes,
+					const repo::PartitioningTreeType   &axis,
 					const std::vector<std::vector<float>>  &currentSection,
 					float                        &median,
-					std::vector<MeshEntry>       &lMeshes,
-					std::vector<MeshEntry>       &rMeshes
+					std::vector<repo_mesh_entry_t>       &lMeshes,
+					std::vector<repo_mesh_entry_t>       &rMeshes
 					);
-
-
-
 			};
 		}
 	}
 }
-

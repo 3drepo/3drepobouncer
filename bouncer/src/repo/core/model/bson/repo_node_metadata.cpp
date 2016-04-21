@@ -31,7 +31,6 @@ RepoNode()
 MetadataNode::MetadataNode(RepoBSON bson) :
 RepoNode(bson)
 {
-
 }
 
 MetadataNode::~MetadataNode()
@@ -46,7 +45,7 @@ bool MetadataNode::sEqual(const RepoNode &other) const
 	}
 
 	std::set<std::string> fieldNames, otherFieldNames;
-	
+
 	bool match = false;
 	if (match = (getFieldNames(fieldNames) == other.getFieldNames(otherFieldNames)))
 	{

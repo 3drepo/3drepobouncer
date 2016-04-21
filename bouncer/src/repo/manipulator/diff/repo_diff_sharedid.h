@@ -51,10 +51,10 @@ namespace repo{
 				* @param msg error message should boolean returns false
 				* @return returns true if comparator operated successfully
 				*/
-				virtual bool isOk(std::string &msg) const 
+				virtual bool isOk(std::string &msg) const
 				{
 					msg = this->msg;
-					return ok; 
+					return ok;
 				};
 
 			private:
@@ -64,13 +64,9 @@ namespace repo{
 				bool compare(
 					std::string &msg);
 
-
 				bool ok; //Check if comparator status is ok
 				std::string msg; //error message if comaprator statis is false
 			};
 		}
 	}
 }
-
-
-

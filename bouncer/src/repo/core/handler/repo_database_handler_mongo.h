@@ -26,10 +26,10 @@
 #include <sstream>
 
 #if defined(_WIN32) || defined(_WIN64)
-	#include <WinSock2.h>
-	#include <Windows.h>
+#include <WinSock2.h>
+#include <Windows.h>
 
-	#define strcasecmp _stricmp
+#define strcasecmp _stricmp
 #endif
 
 #include <mongo/client/dbclient.h>
@@ -46,7 +46,6 @@
 namespace repo{
 	namespace core{
 		namespace handler {
-
 			class MongoDatabaseHandler : public AbstractDatabaseHandler{
 				enum class OPERATION { DROP, INSERT, UPDATE };
 			public:
@@ -103,7 +102,6 @@ namespace repo{
 					const std::string &password = std::string(),
 					const bool        &pwDigested = false);
 
-
 				/**
 				* Returns the instance of MongoDatabaseHandler
 				* @param host string containing "databaseAddress:port"
@@ -130,9 +128,8 @@ namespace repo{
 					const bool        &pwDigested = false)
 				{
 					mongo::BSONObj *mongoBSON = createAuthBSON(dbName, username, password, pwDigested);
-					return mongoBSON? new repo::core::model::RepoBSON(*mongoBSON) : nullptr;
+					return mongoBSON ? new repo::core::model::RepoBSON(*mongoBSON) : nullptr;
 				}
-
 
 				/*
 				*	------------- Database info lookup --------------
@@ -173,7 +170,6 @@ namespace repo{
 					const std::string							  &sortField = std::string(),
 					const int									  &sortOrder = -1);
 
-
 				/**
 				* Get a list of all available collections.
 				* Use mongo.nsGetCollection() to remove database from the returned string.
@@ -193,7 +189,6 @@ namespace repo{
 					const std::string    &database,
 					const std::string    &collection,
 					std::string          &errMsg);
-
 
 				/**
 				 * Get a list of all available databases, alphabetically sorted by default.
@@ -249,7 +244,6 @@ namespace repo{
 				*	------------- Database operations (insert/delete/update) --------------
 				*/
 
-
 				/**
 				* Create a collection with the name specified
 				* @param database name of the database
@@ -276,7 +270,6 @@ namespace repo{
 				bool dropDatabase(
 					const std::string &database,
 					std::string &errMsg);
-
 
 				/**
 				* Remove a document from the mongo database
@@ -330,7 +323,6 @@ namespace repo{
 					return performUserCmd(OPERATION::DROP, user, errmsg);
 				}
 
-
 				/**
 				 * Insert a single document in database.collection
 				 * @param database name
@@ -360,7 +352,7 @@ namespace repo{
 					const std::string          &collection,
 					const std::string          &fileName,
 					const std::vector<uint8_t> &bin,
-					      std::string          &errMsg,
+					std::string          &errMsg,
 					const std::string          &contentType = "binary/octet-stream"
 					);
 
@@ -377,7 +369,6 @@ namespace repo{
 					return performRoleCmd(OPERATION::INSERT, role, errmsg);
 				}
 
-
 				/**
 				* Insert a user into the database
 				* @param user user bson to insert
@@ -390,7 +381,6 @@ namespace repo{
 				{
 					return performUserCmd(OPERATION::INSERT, user, errmsg);
 				}
-
 
 				/**
 				* Update/insert a single document in database.collection
@@ -435,7 +425,6 @@ namespace repo{
 					return performUserCmd(OPERATION::UPDATE, user, errmsg);
 				}
 
-
 				/*
 				*	------------- Query operations --------------
 				*/
@@ -451,7 +440,6 @@ namespace repo{
 					const std::string& database,
 					const std::string& collection,
 					const repo::core::model::RepoBSON& uuids);
-
 
 				/**
 				* Given a search criteria,  find all the documents that passes this query
@@ -508,7 +496,6 @@ namespace repo{
 					const std::string& collection,
 					const repoUUID& uuid);
 
-
 				/**
 				* Get raw binary file from database
 				* @param database name of database
@@ -520,12 +507,11 @@ namespace repo{
 					const std::string& database,
 					const std::string& collection,
 					const std::string& fname
-					) ;
+					);
 
 				/*
 				 *	=============================================================================================
 				 */
-
 
 			protected:
 				/*
@@ -623,7 +609,6 @@ namespace repo{
 				 */
 				std::string getCollectionFromNamespace(const std::string &ns);
 
-
 				/**
 				* Get large file off GridFS
 				* @param worker the worker to operate with
@@ -667,7 +652,7 @@ namespace repo{
 					const OPERATION                         &op,
 					const repo::core::model::RepoRole       &role,
 					std::string                             &errMsg);
-				
+
 				/**
 				* Perform command on the user
 				* @param op (insert, drop or update)
@@ -679,7 +664,6 @@ namespace repo{
 					const OPERATION                         &op,
 					const repo::core::model::RepoUser &user,
 					std::string                       &errMsg);
-
 
 				/**
 				* check if the bson object contains any big binary files
@@ -709,10 +693,7 @@ namespace repo{
 				/*
 				*	=========================================================================================
 				*/
-
 			};
-
 		} /* namespace handler */
 	}
 }
-

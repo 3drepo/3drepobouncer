@@ -1,8 +1,8 @@
 // ----------------------------------------------------------------------------
 // Copyright (C) 2002-2006 Marcin Kalicinski
 //
-// Distributed under the Boost Software License, Version 1.0. 
-// (See accompanying file LICENSE_1_0.txt or copy at 
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 // For more information, see www.boost.org
@@ -27,7 +27,6 @@ namespace boost {
 	namespace property_tree {
 		namespace json_parser
 		{
-
 			/**
 			* Read JSON from a the given stream and translate it to a property tree.
 			* @note Clears existing contents of property tree.  In case of error the
@@ -43,7 +42,7 @@ namespace boost {
 			* @param[out] pt The property tree to populate.
 			*/
 			template<class Ptree>
-			void read_json(std::basic_istream<
+			void read_json(std::basic_istream <
 				typename Ptree::key_type::value_type
 			> &stream,
 			Ptree &pt)
@@ -95,7 +94,7 @@ namespace boost {
 			*               compatibility.
 			*/
 			template<class Ptree>
-			void write_json(std::basic_ostream<
+			void write_json(std::basic_ostream <
 				typename Ptree::key_type::value_type
 			> &stream,
 			const Ptree &pt,
@@ -132,7 +131,6 @@ namespace boost {
 				stream.imbue(loc);
 				write_json_internal(stream, pt, filename, pretty);
 			}
-
 		}
 	}
 }

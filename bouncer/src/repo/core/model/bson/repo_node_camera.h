@@ -24,172 +24,166 @@
 namespace repo {
 	namespace core {
 		namespace model {
+			//------------------------------------------------------------------------------
+			//
+			// Fields specific to camera only
+			//
+			//------------------------------------------------------------------------------
+#define REPO_NODE_LABEL_ASPECT_RATIO		"aspect_ratio"
+#define REPO_NODE_LABEL_FAR					"far"
+#define REPO_NODE_LABEL_NEAR				"near"
+#define REPO_NODE_LABEL_FOV					"fov"
+#define REPO_NODE_LABEL_LOOK_AT				"look_at"
+#define REPO_NODE_LABEL_POSITION			"position"
+#define REPO_NODE_LABEL_UP					"up"
+			//------------------------------------------------------------------------------
 
-				//------------------------------------------------------------------------------
-				//
-				// Fields specific to camera only
-				//
-				//------------------------------------------------------------------------------
-				#define REPO_NODE_LABEL_ASPECT_RATIO		"aspect_ratio"
-				#define REPO_NODE_LABEL_FAR					"far"
-				#define REPO_NODE_LABEL_NEAR				"near"
-				#define REPO_NODE_LABEL_FOV					"fov"
-				#define REPO_NODE_LABEL_LOOK_AT				"look_at"
-				#define REPO_NODE_LABEL_POSITION			"position"
-				#define REPO_NODE_LABEL_UP					"up"
-				//------------------------------------------------------------------------------
+			class REPO_API_EXPORT CameraNode :public RepoNode
+			{
+			public:
 
+				/**
+				* Default constructor
+				*/
+				CameraNode();
 
-				class REPO_API_EXPORT CameraNode :public RepoNode
+				/**
+				* Construct a CameraNode from a RepoBSON object
+				* @param RepoBSON object
+				*/
+				CameraNode(RepoBSON bson);
+
+				/**
+				* Default deconstructor
+				*/
+				~CameraNode();
+
+				/**
+				* Check if the node is position dependant.
+				* i.e. if parent transformation is merged onto the node,
+				* does the node requre to a transformation applied to it
+				* e.g. meshes and cameras are position dependant, metadata isn't
+				* Default behaviour is false. Position dependant child requires
+				* override this function.
+				* @return true if node is positionDependant.
+				*/
+				virtual bool positionDependant() { return true; }
+
+				/*
+				*	------------- Delusional modifiers --------------
+				*   These are like "setters" but not. We are actually
+				*   creating a new bson object with the changed field
+				*/
+
+				/**
+				*  Create a new object with transformation applied to the node
+				* default behaviour is do nothing. Children object
+				* needs to override this function to perform their own specific behaviour.
+				* @param matrix transformation matrix to apply.
+				* @return returns a new object with transformation applied.
+				*/
+				virtual RepoNode cloneAndApplyTransformation(
+					const std::vector<float> &matrix) const;
+
+				/**
+				* --------- Convenience functions -----------
+				*/
+
+				/**
+				* Get aspect ratio
+				* @return returns the 4 by 4 matrix as a vector
+				*/
+				float getAspectRatio() const
 				{
-				public:
+					return hasField(REPO_NODE_LABEL_ASPECT_RATIO) ?
+						(float)getField(REPO_NODE_LABEL_ASPECT_RATIO).numberDouble() :
+						1.;
+				}
 
-					/**
-					* Default constructor
-					*/
-					CameraNode();
+				/**
+				* Get horiztonal FOV
+				* @return returns the 4 by 4 matrix as a vector
+				*/
+				float getHorizontalFOV() const
+				{
+					return hasField(REPO_NODE_LABEL_FOV) ?
+						(float)getField(REPO_NODE_LABEL_FOV).numberDouble() :
+						1.;
+				}
 
-					/**
-					* Construct a CameraNode from a RepoBSON object
-					* @param RepoBSON object
-					*/
-					CameraNode(RepoBSON bson);
+				/**
+				* Get the 4 by 4 camera matrix
+				* @param true if row major (row is the fast dimension)
+				* @return returns the 4 by 4 matrix as a vector
+				*/
+				std::vector<float> getCameraMatrix(const bool &rowMajor = true) const;
 
+				/**
+				* Return the value for far clipping plane
+				* @return returns the value for far clipping plane
+				*/
+				float getFarClippingPlane() const
+				{
+					return hasField(REPO_NODE_LABEL_FAR) ?
+						(float)getField(REPO_NODE_LABEL_FAR).numberDouble() :
+						1.;
+				}
 
-					/**
-					* Default deconstructor
-					*/
-					~CameraNode();
+				/**
+				* Return the value for field of view
+				* @return returns the value for fieldOfView
+				*/
+				float getFieldOfView() const
+				{
+					return hasField(REPO_NODE_LABEL_FOV) ?
+						(float)getField(REPO_NODE_LABEL_FOV).numberDouble() :
+						1.;
+				}
 
-					/**
-					* Check if the node is position dependant.
-					* i.e. if parent transformation is merged onto the node,
-					* does the node requre to a transformation applied to it
-					* e.g. meshes and cameras are position dependant, metadata isn't
-					* Default behaviour is false. Position dependant child requires
-					* override this function.
-					* @return true if node is positionDependant.
-					*/
-					virtual bool positionDependant() { return true; }
+				/**
+				* Return the value for near clipping plane
+				* @return returns the value for near clipping plane
+				*/
+				float getNearClippingPlane() const
+				{
+					return hasField(REPO_NODE_LABEL_NEAR) ?
+						(float)getField(REPO_NODE_LABEL_NEAR).numberDouble() :
+						1.;
+				}
 
-					/*
-					*	------------- Delusional modifiers --------------
-					*   These are like "setters" but not. We are actually
-					*   creating a new bson object with the changed field
-					*/
+				/**
+				* Get the Look At vector of the camera
+				* @return returns a vector of the "Look At"
+				*/
+				repo_vector_t getLookAt() const;
 
-					/**
-					*  Create a new object with transformation applied to the node
-					* default behaviour is do nothing. Children object
-					* needs to override this function to perform their own specific behaviour.
-					* @param matrix transformation matrix to apply.
-					* @return returns a new object with transformation applied.
-					*/
-					virtual RepoNode cloneAndApplyTransformation(
-						const std::vector<float> &matrix) const;
+				/**
+				* get the orientation of the camera
+				* @return returns a vector with 4 fields, {x, y, z, angle}
+				*/
+				std::vector<float> getOrientation() const;
 
-					/**
-					* --------- Convenience functions -----------
-					*/
+				/**
+				* Get the position of the camera
+				* @return returns a vector of the position
+				*/
+				repo_vector_t getPosition() const;
 
-					/**
-					* Get aspect ratio
-					* @return returns the 4 by 4 matrix as a vector
-					*/
-					float getAspectRatio() const
-					{
-						return hasField(REPO_NODE_LABEL_ASPECT_RATIO) ?
-							(float) getField(REPO_NODE_LABEL_ASPECT_RATIO).numberDouble() :
-							1.;
-					}
+				/**
+				* Get the up vector of the camera
+				* @return returns a vector of up
+				*/
+				repo_vector_t getUp() const;
 
-					/**
-					* Get horiztonal FOV
-					* @return returns the 4 by 4 matrix as a vector
-					*/
-					float getHorizontalFOV() const
-					{
-						return hasField(REPO_NODE_LABEL_FOV) ?
-							(float) getField(REPO_NODE_LABEL_FOV).numberDouble() :
-							1.;
-					}
-
-					/**
-					* Get the 4 by 4 camera matrix
-					* @param true if row major (row is the fast dimension)
-					* @return returns the 4 by 4 matrix as a vector
-					*/
-					std::vector<float> getCameraMatrix(const bool &rowMajor = true) const;
-
-					/**
-					* Return the value for far clipping plane
-					* @return returns the value for far clipping plane
-					*/
-					float getFarClippingPlane() const
-					{
-						return hasField(REPO_NODE_LABEL_FAR) ?
-							(float)getField(REPO_NODE_LABEL_FAR).numberDouble() :
-							1.;
-					}
-
-
-					/**
-					* Return the value for field of view
-					* @return returns the value for fieldOfView
-					*/
-					float getFieldOfView() const
-					{
-						return hasField(REPO_NODE_LABEL_FOV) ?
-							(float)getField(REPO_NODE_LABEL_FOV).numberDouble() :
-							1.;
-					}
-
-					/**
-					* Return the value for near clipping plane
-					* @return returns the value for near clipping plane
-					*/
-					float getNearClippingPlane() const
-					{
-						return hasField(REPO_NODE_LABEL_NEAR) ?
-							(float)getField(REPO_NODE_LABEL_NEAR).numberDouble() :
-							1.;
-					}
-
-					/**
-					* Get the Look At vector of the camera
-					* @return returns a vector of the "Look At" 
-					*/
-					repo_vector_t getLookAt() const;
-
-					/**
-					* get the orientation of the camera
-					* @return returns a vector with 4 fields, {x, y, z, angle}
-					*/
-					std::vector<float> getOrientation() const;
-
-					/**
-					* Get the position of the camera
-					* @return returns a vector of the position
-					*/
-					repo_vector_t getPosition() const;
-
-					/**
-					* Get the up vector of the camera
-					* @return returns a vector of up
-					*/
-					repo_vector_t getUp() const;
-
-					/**
-					* Check if the node is semantically equal to another
-					* Different node should have a different interpretation of what
-					* this means.
-					* @param other node to compare with
-					* @param returns true if equal, false otherwise
-					*/
-					virtual bool sEqual(const RepoNode &other) const;
-				};
+				/**
+				* Check if the node is semantically equal to another
+				* Different node should have a different interpretation of what
+				* this means.
+				* @param other node to compare with
+				* @param returns true if equal, false otherwise
+				*/
+				virtual bool sEqual(const RepoNode &other) const;
+			};
 		} //namespace model
 	} //namespace core
 } //namespace repo
-
-

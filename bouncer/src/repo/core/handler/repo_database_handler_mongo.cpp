@@ -27,7 +27,7 @@
 
 using namespace repo::core::handler;
 
-static uint64_t MAX_MONGO_BSON_SIZE=16777216L;
+static uint64_t MAX_MONGO_BSON_SIZE = 16777216L;
 //------------------------------------------------------------------------------
 
 const std::string repo::core::handler::MongoDatabaseHandler::ID = "_id";
@@ -74,7 +74,6 @@ bool MongoDatabaseHandler::caseInsensitiveStringCompare(
 	return strcasecmp(s1.c_str(), s2.c_str()) <= 0;
 }
 
-
 uint64_t MongoDatabaseHandler::countItemsInCollection(
 	const std::string &database,
 	const std::string &collection,
@@ -87,13 +86,12 @@ uint64_t MongoDatabaseHandler::countItemsInCollection(
 		errMsg = "Failed to count num. items in collection: database name or collection name was not specified";
 	}
 	try{
-
 		worker = workerPool->getWorker();
 		numItems = worker->count(database + "." + collection);
 	}
 	catch (mongo::DBException& e)
 	{
-		errMsg =  "Failed to count num. items within "
+		errMsg = "Failed to count num. items within "
 			+ database + "." + collection + ":" + e.what();
 		repoError << errMsg;
 	}
@@ -101,19 +99,17 @@ uint64_t MongoDatabaseHandler::countItemsInCollection(
 	workerPool->returnWorker(worker);
 
 	return numItems;
-
 }
 
 mongo::BSONObj* MongoDatabaseHandler::createAuthBSON(
 	const std::string &database,
-	const std::string &username, 
+	const std::string &username,
 	const std::string &password,
 	const bool        &pwDigested)
 {
 	mongo::BSONObj* authBson = nullptr;
 	if (!username.empty() && !database.empty() && !password.empty())
 	{
-
 		std::string passwordDigest = pwDigested ?
 		password : mongo::DBClientWithCommands::createPasswordDigest(username, password);
 		authBson = new mongo::BSONObj(BSON("user" << username <<
@@ -131,7 +127,6 @@ void MongoDatabaseHandler::createCollection(const std::string &database, const s
 	if (!(database.empty() || name.empty()))
 	{
 		try{
-
 			worker = workerPool->getWorker();
 			worker->createCollection(database + "." + name);
 		}
@@ -146,8 +141,7 @@ void MongoDatabaseHandler::createCollection(const std::string &database, const s
 	else
 	{
 		repoError << "Failed to create collection: database(value: " << database << ")/collection(value: " << name << ") name is empty!";
-	}	
-
+	}
 }
 
 repo::core::model::RepoBSON MongoDatabaseHandler::createRepoBSON(
@@ -190,13 +184,11 @@ bool MongoDatabaseHandler::dropCollection(
 	const std::string &collection,
 	std::string &errMsg)
 {
-
 	bool success = false;
 	mongo::DBClientBase *worker;
 	if (!database.empty() || collection.empty())
 	{
 		try{
-
 			worker = workerPool->getWorker();
 			success = worker->dropCollection(database + "." + collection);
 		}
@@ -207,7 +199,6 @@ bool MongoDatabaseHandler::dropCollection(
 		}
 
 		workerPool->returnWorker(worker);
-
 	}
 	else
 	{
@@ -226,7 +217,6 @@ bool MongoDatabaseHandler::dropDatabase(
 	if (!database.empty())
 	{
 		try{
-
 			worker = workerPool->getWorker();
 			success = worker->dropDatabase(database);
 		}
@@ -241,7 +231,6 @@ bool MongoDatabaseHandler::dropDatabase(
 	{
 		errMsg = "Failed to drop database: name of database is unspecified!";
 	}
-	
 
 	return success;
 }
@@ -264,13 +253,11 @@ bool MongoDatabaseHandler::dropDocument(
 			{
 				mongo::Query query = MONGO_QUERY("_id" << bsonID);
 				worker->remove(database + "." + collection, query, true);
-
 			}
 			else
 			{
 				errMsg = "Failed to drop document: id not found";
 			}
-
 		}
 		catch (mongo::DBException& e)
 		{
@@ -279,13 +266,12 @@ bool MongoDatabaseHandler::dropDocument(
 		}
 
 		workerPool->returnWorker(worker);
-
 	}
 	else
 	{
 		errMsg = "Failed to drop document: either database (value: " + database + ") or collection (value: " + collection + ") is empty";
 	}
-	
+
 	return success;
 }
 
@@ -304,21 +290,18 @@ bool MongoDatabaseHandler::dropDocuments(
 			if (success = !criteria.isEmpty())
 			{
 				worker->remove(database + "." + collection, criteria, false);
-
 			}
 			else
 			{
 				errMsg = "Failed to drop documents: empty criteria";
 			}
-
 		}
 		catch (mongo::DBException& e)
 		{
-			errMsg = "Failed to drop documents:" + std::string(e.what());		
+			errMsg = "Failed to drop documents:" + std::string(e.what());
 		}
 
 		workerPool->returnWorker(worker);
-
 	}
 	else
 	{
@@ -372,7 +355,6 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 					data.push_back(createRepoBSON(worker, database, collection, cursor->nextSafe().copy()));
 				}
 			} while (cursor.get() && cursor->more());
-
 		}
 		catch (mongo::DBException& e)
 		{
@@ -402,11 +384,10 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 			auto query = mongo::Query(criteria);
 			if (!sortField.empty())
 				query = query.sort(sortField, -1);
-			
+
 			data = repo::core::model::RepoBSON(worker->findOne(
 				database + "." + collection,
 				query));
-
 		}
 		catch (mongo::DBException& e)
 		{
@@ -423,7 +404,6 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 	const std::string& database,
 	const std::string& collection,
 	const repo::core::model::RepoBSON& uuids){
-
 	std::vector<repo::core::model::RepoBSON> data;
 
 	mongo::BSONArray array = mongo::BSONArray(uuids);
@@ -437,7 +417,6 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 			worker = workerPool->getWorker();
 			do
 			{
-
 				mongo::BSONObjBuilder query;
 				query << ID << BSON("$in" << array);
 
@@ -454,7 +433,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 			} while (cursor.get() && cursor->more());
 
 			if (fieldsCount != retrieved){
-				repoWarning << "Number of documents("<< retrieved<<") retreived by findAllByUniqueIDs did not match the number of unique IDs(" <<  fieldsCount <<")!";
+				repoWarning << "Number of documents(" << retrieved << ") retreived by findAllByUniqueIDs did not match the number of unique IDs(" << fieldsCount << ")!";
 			}
 		}
 		catch (mongo::DBException& e)
@@ -465,8 +444,6 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 		workerPool->returnWorker(worker);
 	}
 
-
-
 	return data;
 }
 
@@ -476,7 +453,6 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 	const repoUUID& uuid,
 	const std::string& sortField)
 {
-
 	repo::core::model::RepoBSON bson;
 	mongo::DBClientBase *worker;
 	try
@@ -484,7 +460,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 		repo::core::model::RepoBSONBuilder queryBuilder;
 		queryBuilder.append("shared_id", uuid);
 		//----------------------------------------------------------------------
-	
+
 		worker = workerPool->getWorker();
 		auto query = mongo::Query(queryBuilder.obj());
 		if (!sortField.empty())
@@ -498,7 +474,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 	}
 	catch (mongo::DBException& e)
 	{
-		repoError << "Error querying the database: "<< std::string(e.what());
+		repoError << "Error querying the database: " << std::string(e.what());
 	}
 
 	workerPool->returnWorker(worker);
@@ -509,7 +485,6 @@ repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
 	const std::string& database,
 	const std::string& collection,
 	const repoUUID& uuid){
-
 	repo::core::model::RepoBSON bson;
 	mongo::DBClientBase *worker;
 	try
@@ -533,22 +508,21 @@ repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
 }
 
 std::vector<repo::core::model::RepoBSON>
-	MongoDatabaseHandler::getAllFromCollectionTailable(
-		const std::string                             &database,
-		const std::string                             &collection,
-		const uint64_t                                &skip,
-		const uint32_t                                &limit,
-		const std::list<std::string>				  &fields,
-		const std::string							  &sortField,
-		const int									  &sortOrder)
+MongoDatabaseHandler::getAllFromCollectionTailable(
+const std::string                             &database,
+const std::string                             &collection,
+const uint64_t                                &skip,
+const uint32_t                                &limit,
+const std::list<std::string>				  &fields,
+const std::string							  &sortField,
+const int									  &sortOrder)
 {
 	std::vector<repo::core::model::RepoBSON> bsons;
 	mongo::DBClientBase *worker;
 	try
 	{
-
 		worker = workerPool->getWorker();
-		
+
 		mongo::BSONObj tmp = fieldsToReturn(fields);
 
 		std::auto_ptr<mongo::DBClientCursor> cursor = worker->query(
@@ -571,7 +545,6 @@ std::vector<repo::core::model::RepoBSON>
 
 	workerPool->returnWorker(worker);
 	return bsons;
-
 }
 
 std::list<std::string> MongoDatabaseHandler::getCollections(
@@ -605,7 +578,7 @@ repo::core::model::CollectionStats MongoDatabaseHandler::getCollectionStats(
 		try {
 			mongo::BSONObjBuilder builder;
 			builder.append("collstats", collection);
-			builder.append("scale", 1); // 1024 == KB 		
+			builder.append("scale", 1); // 1024 == KB
 
 			worker = workerPool->getWorker();
 			worker->runCommand(database, builder.obj(), info);
@@ -623,7 +596,7 @@ repo::core::model::CollectionStats MongoDatabaseHandler::getCollectionStats(
 	{
 		errMsg = "Failed to retrieve collection stats: empty database name/collection name";
 	}
-	
+
 	return repo::core::model::CollectionStats(info);
 }
 
@@ -664,26 +637,24 @@ std::vector<uint8_t> MongoDatabaseHandler::getBigFile(
 		tmpFile.write(oss);
 
 		std::string fileStr = oss.str();
-		
+
 		assert(sizeof(*fileStr.c_str()) == sizeof(uint8_t));
 
 		if (!fileStr.empty())
 		{
 			bin.resize(fileStr.size());
 			memcpy(&bin[0], fileStr.c_str(), fileStr.size());
-
 		}
 		else
 		{
-			repoError << "GridFS file : " << fileName << " in " 
+			repoError << "GridFS file : " << fileName << " in "
 				<< database << "." << collection << " is empty.";
- 		}
+		}
 	}
 	else
 	{
 		repoError << "Failed to find file within GridFS";
 	}
-
 
 	return bin;
 }
@@ -723,7 +694,7 @@ std::map<std::string, std::list<std::string> > MongoDatabaseHandler::getDatabase
 
 MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
 	std::string       &errMsg,
-	const std::string &host, 
+	const std::string &host,
 	const int         &port,
 	const uint32_t    &maxConnections,
 	const std::string &dbName,
@@ -731,15 +702,13 @@ MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
 	const std::string &password,
 	const bool        &pwDigested)
 {
-
 	std::ostringstream connectionString;
 
 	mongo::HostAndPort hostAndPort = mongo::HostAndPort(host, port >= 0 ? port : -1);
 
 	mongo::ConnectionString mongoConnectionString = mongo::ConnectionString(hostAndPort);
 
-
-	if(!handler){
+	if (!handler){
 		//initialise the mongo client
 		repoTrace << "Handler not present for " << mongoConnectionString.toString() << " instantiating new handler...";
 		try{
@@ -759,14 +728,13 @@ MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
 		repoTrace << "Found handler, returning existing handler";
 	}
 
-
 	return handler;
 }
 
 std::string MongoDatabaseHandler::getNamespace(
-	const std::string &database, 
+	const std::string &database,
 	const std::string &collection)
-{	
+{
 	return database + "." + collection;
 }
 
@@ -791,7 +759,6 @@ std::vector<uint8_t> MongoDatabaseHandler::getRawFile(
 	const std::string& fname
 	)
 {
-	
 	std::vector<uint8_t> bin;
 
 	mongo::DBClientBase *worker;
@@ -815,7 +782,6 @@ std::vector<uint8_t> MongoDatabaseHandler::getRawFile(
 			{
 				bin.resize(fileStr.size());
 				memcpy(&bin[0], fileStr.c_str(), fileStr.size());
-
 			}
 			else
 			{
@@ -827,14 +793,11 @@ std::vector<uint8_t> MongoDatabaseHandler::getRawFile(
 		{
 			repoError << "Failed to find file within GridFS";
 		}
-
 	}
 	catch (mongo::DBException e)
 	{
-
 		repoError << "Error fetching raw file: " << e.what();
 	}
-	
 
 	workerPool->returnWorker(worker);
 
@@ -856,7 +819,6 @@ bool MongoDatabaseHandler::insertDocument(
 			worker->insert(getNamespace(database, collection), obj);
 
 			success = storeBigFiles(worker, database, collection, obj, errMsg);
-
 		}
 		catch (mongo::DBException &e)
 		{
@@ -879,7 +841,7 @@ bool MongoDatabaseHandler::insertRawFile(
 	const std::string          &collection,
 	const std::string          &fileName,
 	const std::vector<uint8_t> &bin,
-	      std::string          &errMsg,
+	std::string          &errMsg,
 	const std::string          &contentType
 	)
 {
@@ -962,7 +924,6 @@ bool MongoDatabaseHandler::performRoleCmd(
 
 				if (op != OPERATION::DROP)
 				{
-
 					repo::core::model::RepoBSON privileges = role.getObjectField(REPO_ROLE_LABEL_PRIVILEGES);
 					cmdBuilder.appendArray("privileges", privileges);
 
@@ -970,7 +931,6 @@ bool MongoDatabaseHandler::performRoleCmd(
 
 					cmdBuilder.appendArray("roles", inheritedRoles);
 				}
-
 
 				mongo::BSONObj info;
 				auto cmd = cmdBuilder.obj();
@@ -982,8 +942,6 @@ bool MongoDatabaseHandler::performRoleCmd(
 					success = false;
 					errMsg += cmdError;
 				}
-
-
 			}
 			catch (mongo::DBException &e)
 			{
@@ -994,13 +952,11 @@ bool MongoDatabaseHandler::performRoleCmd(
 
 			workerPool->returnWorker(worker);
 		}
-		
 	}
 	else
 	{
 		errMsg += "Role bson is empty";
 	}
-
 
 	return success;
 }
@@ -1044,7 +1000,6 @@ bool MongoDatabaseHandler::performUserCmd(
 				//compulsory, so no point checking if it's empty
 				cmdBuilder.appendArray("roles", user.getRolesBSON());
 			}
-	
 
 			mongo::BSONObj info;
 			success = worker->runCommand(ADMIN_DATABASE, cmdBuilder.obj(), info);
@@ -1055,7 +1010,6 @@ bool MongoDatabaseHandler::performUserCmd(
 				success = false;
 				errMsg += cmdError;
 			}
-
 		}
 		catch (mongo::DBException &e)
 		{
@@ -1069,7 +1023,6 @@ bool MongoDatabaseHandler::performUserCmd(
 	{
 		errMsg += "User bson is empty";
 	}
-
 
 	return success;
 }
@@ -1088,7 +1041,6 @@ bool MongoDatabaseHandler::upsertDocument(
 	try{
 		worker = workerPool->getWorker();
 
-	
 		repo::core::model::RepoBSONBuilder queryBuilder;
 		queryBuilder << ID << obj.getField(ID);
 
@@ -1103,7 +1055,6 @@ bool MongoDatabaseHandler::upsertDocument(
 			upsert = true;
 		}
 
-		
 		if (upsert)
 		{
 			mongo::Query query;
@@ -1135,8 +1086,6 @@ bool MongoDatabaseHandler::upsertDocument(
 
 		if (success)
 			success = storeBigFiles(worker, database, collection, obj, errMsg);
-
-			
 	}
 	catch (mongo::DBException &e)
 	{
@@ -1149,7 +1098,6 @@ bool MongoDatabaseHandler::upsertDocument(
 	return success;
 }
 
-
 bool MongoDatabaseHandler::storeBigFiles(
 	mongo::DBClientBase *worker,
 	const std::string &database,
@@ -1160,11 +1108,10 @@ bool MongoDatabaseHandler::storeBigFiles(
 {
 	bool success = true;
 
-
 	//insert files into gridFS if applicable
 	if (obj.hasOversizeFiles())
 	{
-		const std::vector<std::pair<std::string,std::string>> fNames = obj.getFileList();
+		const std::vector<std::pair<std::string, std::string>> fNames = obj.getFileList();
 		repoTrace << "storeBigFiles: #oversized files: " << fNames.size();
 
 		for (const auto &file : fNames)
@@ -1175,11 +1122,10 @@ bool MongoDatabaseHandler::storeBigFiles(
 				//store the big biary file within GridFS
 				mongo::GridFS gfs(*worker, database, collection);
 				//FIXME: there must be errors to catch...
-				repoTrace << "storing " << file.second << "("<< file.first << ") in gridfs: " << database << "." << collection;
+				repoTrace << "storing " << file.second << "(" << file.first << ") in gridfs: " << database << "." << collection;
 				mongo::BSONObj bson = gfs.storeFile((char*)&binary[0], binary.size() * sizeof(binary[0]), file.second);
 
 				repoTrace << "returned object: " << bson.toString();
-
 			}
 			else
 			{

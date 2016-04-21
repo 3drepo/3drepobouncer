@@ -39,7 +39,7 @@ namespace repo{
 					const repo::core::model::RepoScene            *base,
 					const repo::core::model::RepoScene            *compare,
 					const repo::core::model::RepoScene::GraphType &gType
-						= repo::core::model::RepoScene::GraphType::DEFAULT);
+					= repo::core::model::RepoScene::GraphType::DEFAULT);
 				virtual ~DiffByName();
 
 				/**
@@ -47,10 +47,10 @@ namespace repo{
 				* @param msg error message should boolean returns false
 				* @return returns true if comparator operated successfully
 				*/
-				virtual bool isOk(std::string &msg) const 
+				virtual bool isOk(std::string &msg) const
 				{
 					msg = this->msg;
-					return ok; 
+					return ok;
 				};
 
 			private:
@@ -78,19 +78,14 @@ namespace repo{
 				* @param nodes repoNodeSet to convert from
 				* @return returns an undered map containing key value of name and RepoNode*
 				*/
-				std::unordered_map<std::string, repo::core::model::RepoNode*> 
+				std::unordered_map<std::string, repo::core::model::RepoNode*>
 					createNodeMap(
-						const repo::core::model::RepoNodeSet &nodes);
-
+					const repo::core::model::RepoNodeSet &nodes);
 
 				bool ok; //Check if comparator status is ok
 				bool errorReported;
 				std::string msg; //error message if comaprator statis is false
-				
 			};
 		}
 	}
 }
-
-
-

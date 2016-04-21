@@ -27,18 +27,14 @@
 
 #include "../../../repo_bouncer_global.h"
 
-
 namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
-
 			class REPO_API_EXPORT ModelImportConfig
 			{
 			public:
 				ModelImportConfig(const std::string &configFile = std::string());
 				~ModelImportConfig();
-
-
 
 				/**
 				* ---------------- Getters -------------------------
@@ -239,7 +235,6 @@ namespace repo{
 				*/
 				virtual int getLimitBoneWeightsMaxWeight() const
 				{
-
 					return intSettings.at(LIMIT_BONE_WEIGHTS_MAX_WEIGHTS);
 				}
 
@@ -821,7 +816,6 @@ namespace repo{
 					setValue(VALIDATE_DATA_STRUCTURES, on);
 				}
 
-
 			protected:
 				/**
 				* Resets all the settings to default
@@ -856,12 +850,10 @@ namespace repo{
 					stringSettings[label] = value;
 				}
 
-
 				std::map<std::string, bool> boolSettings;
 				std::map<std::string, int32_t> intSettings;
 				std::map<std::string, float> floatSettings;
 				std::map<std::string, std::string> stringSettings;
-
 
 				static const std::string CALCULATE_TANGENT_SPACE;
 				static const std::string CALCULATE_TANGENT_SPACE_MAX_SMOOTHING_ANGLE;
@@ -918,7 +910,6 @@ namespace repo{
 				static const std::string SPLIT_LARGE_MESHES_VERTEX_LIMIT;
 				static const std::string TRIANGULATE;
 				static const std::string VALIDATE_DATA_STRUCTURES;
-
 			};
 		}//namespace modelconvertor
 	}//namespace manipulator
