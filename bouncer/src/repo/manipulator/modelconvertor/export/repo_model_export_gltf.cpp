@@ -637,7 +637,6 @@ void GLTFModelExport::reIndexFaces(
 				faces[i] -= offset;
 			}
 		}
-
 	}
 }
 
@@ -808,7 +807,6 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 		const std::vector<repo_mesh_mapping_t> mappings = node->getMeshMapping();
 
 		std::string meshUUID = UUIDtoString(node->getUniqueID());
-
 
 		std::vector<repo_vector_t> normals;
 		std::vector<repo_vector_t> vertices = node->getVertices();
@@ -1015,10 +1013,9 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 				}
 				tree.addArrayObjects(label + "." + GLTF_LABEL_PRIMITIVES, primitives);
 			}
-	}
+		}
 		else
 		{
-
 			normals = node->getNormals();
 			vertices = node->getVertices();
 			UVs = node->getUVChannelsSeparated();
@@ -1095,9 +1092,8 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 						vRaw[vertId].z = ((float)vertZ) / maxQuant * bboxSize.z + bboxMin.z;
 						//					repoDebug << "After: (" << vRaw[vertId].x << "," << vRaw[vertId].y << ", " << vRaw[vertId].z << ")";
 					}
-
 				}
-
+#endif
 			std::string bufferFileName = UUIDtoString(scene->getRevisionID());
 
 			size_t vStart = addToDataBuffer(bufferFileName, vertices);
@@ -1387,7 +1383,7 @@ void GLTFModelExport::writeBuffers(
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_BYTE_LENGTH, pair.second.size()  * sizeof(*pair.second.data()));
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_TYPE, GLTF_ARRAY_BUFFER);
 		tree.addToTree(bufferLabel + "." + GLTF_LABEL_URI, "/api" + bufferFilePrefix + pair.first + ".bin");
-}
+	}
 }
 
 void GLTFModelExport::writeDefaultSampler(
