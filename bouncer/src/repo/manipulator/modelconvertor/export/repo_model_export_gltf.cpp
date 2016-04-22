@@ -621,9 +621,13 @@ void GLTFModelExport::reIndexFaces(
 	size_t verticesOffset = 0;
 	for (const auto &subMeshMap : matMap)
 	{
+		//Faces given are already offset by subMeshes. we need to know the start of the vertices
+		verticesOffset = subMeshMap.front().vertFrom;
 		for (const auto &mapping : subMeshMap)
 		{
-			uint16_t offset = mapping.vertFrom - verticesOffset;
+			auto offset = mapping.vertFrom - verticesOffset;
+
+			auto maximum = mapping.vertTo - mapping.vertFrom;
 			//This will totally fall apart if the faces are not triangulated
 			//But at this stage all faces should be triangulated.
 			for (size_t i = mapping.triFrom * 3; i < mapping.triTo * 3; ++i)
@@ -631,8 +635,7 @@ void GLTFModelExport::reIndexFaces(
 				faces[i] -= offset;
 			}
 		}
-		//Faces given are already offset by subMeshes. we need to know the start of the vertices
-		verticesOffset = subMeshMap.back().vertTo;
+
 	}
 }
 
@@ -804,9 +807,10 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 
 		std::string meshUUID = UUIDtoString(node->getUniqueID());
 
-		auto normals = node->getNormals();
-		auto vertices = node->getVertices();
-		auto UVs = node->getUVChannelsSeparated();
+
+		std::vector<repo_vector_t> normals;
+		std::vector<repo_vector_t> vertices = node->getVertices();
+		std::vector<std::vector<repo_vector2d_t>> UVs;
 
 		if (mappings.size() > 1 || vertices.size() > GLTF_MAX_VERTEX_LIMIT)
 		{
@@ -816,6 +820,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 
 			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter =
 				new repo::manipulator::modelutility::MeshMapReorganiser(node, GLTF_MAX_VERTEX_LIMIT);
+			repoTrace << "Splitting Complete";
 			repo::core::model::MeshNode splitMesh = reSplitter->getRemappedMesh();
 			std::vector<uint16_t> newFaces = reSplitter->getSerialisedFaces();
 			std::vector<std::vector<float>> idMapBuf = reSplitter->getIDMapArrays();
@@ -823,15 +828,19 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 
 			delete reSplitter;
 
+			auto normals = splitMesh.getNormals();
+			auto vertices = splitMesh.getVertices();
+
 			if (!newFaces.size())
 			{
 				//If there is no faces, just ignore this.
 				repoWarning << "Mesh has no faces after remapping. Skipping...";
 				continue;
 			}
+			repoTrace << "Reindexing Faces...";
 			//reindex the face buffer
 			reIndexFaces(matMap, newFaces);
-
+			repoTrace << "Reordering Faces...";
 			auto lods = reorderFaces(newFaces, vertices, matMap);
 #if defined(DEBUG) && defined(LODLIMIT)
 			for (size_t i = 0; i < matMap.size(); ++i)
@@ -862,7 +871,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 						vRaw[vertId].z = ((float)vertZ) / maxQuant * bboxSize.z + bboxMin.z;
 						//					repoDebug << "After: (" << vRaw[vertId].x << "," << vRaw[vertId].y << ", " << vRaw[vertId].z << ")";
 					}
-		}
+				}
 #endif
 
 			auto newMappings = splitMesh.getMeshMapping();
@@ -903,6 +912,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 				//every mapping is a mesh
 				std::string meshId = meshUUID + "_" + std::to_string(i);
 				std::string label = GLTF_LABEL_MESHES + "." + meshId;
+				repoTrace << "Generatinng GLTF entry for mapping : " << label;
 				std::vector<repo::lib::PropertyTree> primitives;
 				size_t count = 0;
 
@@ -1002,9 +1012,16 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 	}
 		else
 		{
+
+			normals = node->getNormals();
+			vertices = node->getVertices();
+			UVs = node->getUVChannelsSeparated();
+
 			bool hasMapping = mappings.size();
 			std::string meshId = hasMapping ? UUIDtoString(mappings[0].mesh_id) : UUIDtoString(node->getUniqueID());
 			std::string label = GLTF_LABEL_MESHES + "." + UUIDtoString(node->getUniqueID());
+
+			repoTrace << "Generatinng GLTF entry for : " << label;
 			std::string name = node->getName();
 			if (!name.empty())
 				tree.addToTree(label + "." + GLTF_LABEL_NAME, node->getName());
@@ -1072,8 +1089,8 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 						vRaw[vertId].z = ((float)vertZ) / maxQuant * bboxSize.z + bboxMin.z;
 						//					repoDebug << "After: (" << vRaw[vertId].x << "," << vRaw[vertId].y << ", " << vRaw[vertId].z << ")";
 					}
-		}
-#endif
+
+				}
 
 			std::string bufferFileName = UUIDtoString(scene->getRevisionID());
 
@@ -1149,7 +1166,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			}
 
 			tree.addArrayObjects(label + "." + GLTF_LABEL_PRIMITIVES, primitives);
-}
+		}
 	}
 	return splitSizes;
 }

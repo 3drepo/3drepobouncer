@@ -33,6 +33,7 @@ MeshMapReorganiser::MeshMapReorganiser(
 	{
 		newVertices = oldVertices;
 		newNormals = oldNormals;
+		newFaces.reserve(oldFaces.size());
 		performSplitting();
 	}
 	else
@@ -66,7 +67,7 @@ void MeshMapReorganiser::finishSubMesh(
 
 	if (maxBox.size() == 3)
 	{
-		mapping.min = { maxBox[0], maxBox[1], maxBox[2] };
+		mapping.max = { maxBox[0], maxBox[1], maxBox[2] };
 	}
 	else
 	{
@@ -75,8 +76,34 @@ void MeshMapReorganiser::finishSubMesh(
 
 	minBox.clear();
 	maxBox.clear();
+}
 
+void MeshMapReorganiser::newMatMapEntry(
+	const repo_mesh_mapping_t &mapping,
+	const size_t        &sVertices,
+	const size_t        &sFaces
+	)
+{
 	matMap.back().push_back(mapping);
+
+	matMap.back().back().vertFrom = sVertices;
+	matMap.back().back().triFrom = sFaces;
+}
+
+void MeshMapReorganiser::completeLastMatMapEntry(
+	const size_t        &eVertices,
+	const size_t        &eFaces,
+	const std::vector<float>  &minBox,
+	const std::vector<float>  &maxBox
+	)
+{
+
+	matMap.back().back().vertTo = eVertices;
+	matMap.back().back().triTo = eFaces;
+	if (minBox.size())
+		matMap.back().back().min = { minBox[0], minBox[1], minBox[2] };
+	if (maxBox.size())
+		matMap.back().back().max = { maxBox[0], maxBox[1], maxBox[2] };
 }
 
 repo::core::model::MeshNode MeshMapReorganiser::getRemappedMesh() const
@@ -123,8 +150,13 @@ void MeshMapReorganiser::performSplitting()
 	repoUUID superMeshID = mesh->getUniqueID();
 
 	repoTrace << "Performing splitting on mesh: " << mesh->getUniqueID();
+	size_t nMappings = orgMappings.size();
+	size_t tenths = orgMappings.size() / 10;
+	size_t count = 0;
 	for (const auto &currentSubMesh : orgMappings)
 	{
+		if (++count % tenths == 0)
+			repoTrace << "Progress: " << (count / tenths) << "0%";
 		splitMap[currentSubMesh.mesh_id] = std::vector < uint32_t >();
 
 		auto currentMeshVFrom = currentSubMesh.vertFrom;
@@ -169,6 +201,7 @@ void MeshMapReorganiser::performSplitting()
 		}
 		else
 		{
+			newMatMapEntry(currentSubMesh, totalVertexCount, totalFaceCount);
 			for (uint32_t fIdx = 0; fIdx < currentMeshNumFaces; fIdx++)
 			{
 				repo_face_t currentFace = oldFaces[orgFaceIdx++];
@@ -205,6 +238,7 @@ void MeshMapReorganiser::performSplitting()
 			totalFaceCount += currentMeshNumFaces;
 
 			splitMap[currentSubMesh.mesh_id].push_back(newMappings.size());
+			completeLastMatMapEntry(totalVertexCount, totalFaceCount);
 		}
 	}
 
@@ -253,7 +287,7 @@ void MeshMapReorganiser::splitLargeMesh(
 
 	// Perform quick and dirty splitting algorithm
 	// Loop over all faces in the giant mesh
-
+	newMatMapEntry(currentSubMesh, totalVertexCount, totalFaceCount);
 	for (uint32_t fIdx = 0; fIdx < currentMeshNumFaces; ++fIdx) {
 		repo_face_t currentFace = oldFaces[orgFaceIdx++];
 		auto        nSides = currentFace.size();
@@ -275,6 +309,8 @@ void MeshMapReorganiser::splitLargeMesh(
 				if (startedLargeMeshSplit) {
 					updateIDMapArray(splitMeshVertexCount, idMapIdx++);
 					finishSubMesh(newMappings.back(), bboxMin, bboxMax, splitMeshVertexCount, splitMeshFaceCount);
+					completeLastMatMapEntry(splitMeshVertexCount, splitMeshFaceCount, bboxMin, bboxMax);
+
 				}
 
 				totalVertexCount += splitMeshVertexCount;
@@ -337,6 +373,7 @@ void MeshMapReorganiser::splitLargeMesh(
 
 	splitMap[currentSubMesh.mesh_id].push_back(newMappings.size());
 	finishSubMesh(newMappings.back(), bboxMin, bboxMax, splitMeshVertexCount, splitMeshFaceCount);
+	completeLastMatMapEntry(splitMeshVertexCount, splitMeshFaceCount, bboxMin, bboxMax);
 }
 
 void MeshMapReorganiser::startSubMesh(
@@ -348,7 +385,7 @@ void MeshMapReorganiser::startSubMesh(
 	)
 {
 	mapping.vertFrom = sVertices;
-	mapping.vertFrom = sFaces;
+	mapping.triFrom = sFaces;
 	mapping.material_id = matID; //Not a reliable source. Just filled in for completeness
 	mapping.mesh_id = meshID;
 

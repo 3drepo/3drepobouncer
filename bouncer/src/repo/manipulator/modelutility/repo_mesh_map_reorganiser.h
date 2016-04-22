@@ -89,6 +89,19 @@ namespace repo{
 					const size_t &nFaces
 					);
 
+				void newMatMapEntry(
+					const repo_mesh_mapping_t &mapping,
+					const size_t        &sVertices,
+					const size_t        &sFaces
+					);
+
+				void completeLastMatMapEntry(
+					const size_t        &eVertices,
+					const size_t        &eFaces,
+					const std::vector<float>  &minBox = std::vector<float>(),
+					const std::vector<float>  &maxBox = std::vector<float>()
+					);
+
 				/**
 				* The beginning function for the whole process.
 				* Merge or split submeshes where appropriate
