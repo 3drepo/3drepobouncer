@@ -266,7 +266,7 @@ void GLTFModelExport::addAccessors(
 {
 	std::vector<float> min, max;
 	size_t offsetIdx = addrFrom - offset;
-	if (data.size() >= (addrTo - addrFrom) + offsetIdx)
+	if (data.size() >= addrTo - offset)
 	{
 		//This is idmapbuff accessor, it's already offseted to the submesh
 		min.push_back(data[offsetIdx]);
@@ -274,7 +274,7 @@ void GLTFModelExport::addAccessors(
 	}
 	else
 	{
-		repoError << "Failed to add accessor for " << accName << " #data (" << data.size() << ") does not match it's range (" << addrFrom << "," << addrTo << " ," << offset << ")!";
+		repoError << "Failed to add accessor for " << accName << " #data (" << data.size() << ") does not match it's range (" << addrFrom << "," << addrTo << " ," << offset << ", " << offsetIdx << ")!";
 		return;
 	}
 	for (size_t i = offsetIdx + 1; i < addrTo - addrFrom; ++i)
@@ -512,6 +512,13 @@ bool GLTFModelExport::constructScene(
 		tree.addToTree(GLTF_LABEL_SCENE, sceneName);
 		std::vector<std::string> treeNodes = { UUIDtoString(root->getUniqueID()) };
 		tree.addToTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_NODES, treeNodes);
+
+		auto splitMeshes = populateWithMeshes(tree);
+		populateWithNodes(tree, splitMeshes);
+		populateWithMaterials(tree);
+		populateWithTextures(tree);
+		populateWithCameras(tree);
+
 		repo::lib::PropertyTree spatialPartTree = generateSpatialPartitioningTree();
 #ifdef DEBUG
 		std::string jsonFilePrefix = "/";
@@ -522,12 +529,6 @@ bool GLTFModelExport::constructScene(
 		tree.addToTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_EXTRA + ".partitioning." + GLTF_LABEL_URI, "/api" + jsonFileName);
 
 		jsonTrees[jsonFileName] = spatialPartTree;
-
-		auto splitMeshes = populateWithMeshes(tree);
-		populateWithNodes(tree, splitMeshes);
-		populateWithMaterials(tree);
-		populateWithTextures(tree);
-		populateWithCameras(tree);
 	}
 	else
 	{
@@ -831,7 +832,6 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			//This is a multipart mesh node, the mesh may be too big for
 			//webGL, split the mesh into sub meshes
 			std::string bufferFileName = UUIDtoString(mesh->getUniqueID());
-
 			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter =
 				new repo::manipulator::modelutility::MeshMapReorganiser(node, GLTF_MAX_VERTEX_LIMIT);
 			repoTrace << "Splitting Complete";
@@ -959,6 +959,11 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 				size_t subMeshOffset_f = newMappings[i].triFrom;
 
 				auto lodIterator = lods[i].begin();
+				size_t nVertices = newMappings[i].vertTo - newMappings[i].vertFrom;
+				if (nVertices != idMapBuf[i].size())
+				{
+					repoError << "Mismatched nvertices (" << nVertices << ") != idmapbuf ( " << idMapBuf[i].size() << "). Skipping...";
+				}
 
 				//For each sub mesh...
 				for (const repo_mesh_mapping_t & meshMap : matMap[i])
