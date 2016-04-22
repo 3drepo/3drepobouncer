@@ -315,6 +315,7 @@ void MeshMapReorganiser::splitLargeMesh(
 				startedLargeMeshSplit = true;
 				newMappings.resize(newMappings.size() + 1);
 				startSubMesh(newMappings.back(), mesh->getUniqueID(), currentSubMesh.material_id, totalVertexCount, totalFaceCount);
+				newMatMapEntry(currentSubMesh, totalVertexCount, totalFaceCount);
 				splitMeshVertexCount = 0;
 				splitMeshFaceCount = 0;
 				reIndexMap.clear();
@@ -365,7 +366,10 @@ void MeshMapReorganiser::splitLargeMesh(
 		//Chop out the unwanted vertices
 		newVertices.erase(startingPos, startingPos + leftOverVertices);
 		if (hasNormal)
-			newNormals.erase(startingPos, startingPos + leftOverVertices);
+		{
+			auto startingPosN = newNormals.begin() + newMappings.back().vertFrom + totalVertexCount;
+			newNormals.erase(startingPosN, startingPosN + leftOverVertices);
+		}
 	}
 
 	splitMap[currentSubMesh.mesh_id].push_back(newMappings.size());
