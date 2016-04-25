@@ -35,6 +35,14 @@ RepoController::~RepoController()
 	if (impl) delete impl;
 }
 
+void RepoController::addAlias(
+	RepoController::RepoToken         *token,
+	const std::string &alias)
+{
+	if (token)
+		token->alias = alias;
+}
+
 RepoController::RepoToken* RepoController::authenticateToAdminDatabaseMongo(
 	std::string       &errMsg,
 	const std::string &address,
@@ -87,6 +95,18 @@ uint64_t RepoController::countItemsInCollection(
 	const std::string    &collection)
 {
 	return impl->countItemsInCollection(token, database, collection);
+}
+
+RepoController::RepoToken* RepoController::createTokenFromSerialised(
+	const std::vector<char> &data) const
+{
+	auto token = new RepoController::RepoToken(RepoController::RepoToken::createTokenFromRawData(data));
+	if (!token->valid())
+	{
+		token = nullptr;
+	}
+
+	return token;
 }
 
 void RepoController::destroyToken(RepoController::RepoToken* token)
@@ -438,6 +458,12 @@ bool RepoController::saveSceneToFile(
 	const repo::core::model::RepoScene* scene)
 {
 	return impl->saveSceneToFile(filePath, scene);
+}
+
+std::vector<char> RepoController::serialiseToken(
+	const RepoController::RepoToken* token) const
+{
+	return token->serialiseToken();
 }
 
 void RepoController::reduceTransformations(

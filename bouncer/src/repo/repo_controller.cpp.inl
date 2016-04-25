@@ -22,9 +22,16 @@
 
 using namespace repo;
 
+const std::string credLabel = "CRED";
+const std::string dbAddLabel = "DBADD";
+const std::string dbPortLabel = "DBPORT";
+const std::string dbNameLabel = "DBNAME";
+const std::string aliasLabel = "ALIAS";
+
 class RepoController::RepoToken
 {
 	friend class RepoController;
+
 public:
 
 	/**
@@ -46,15 +53,21 @@ public:
 		databaseName(databaseName),
 		alias(alias){}
 
-	RepoToken(
-		const repo::core::model::RepoBSON &bson)
-		: credentials(bson.hasField(credLabel) ? new repo::core::model::RepoBSON(bson.getObjectField(credLabel)) : nullptr)
-		, databaseHost(bson.getStringField(dbAddLabel))
-		, databasePort(bson.getField(dbPortLabel).Int())
-		, databaseAd(databaseHost + std::to_string(databasePort))
-		, databaseName(bson.getStringField(dbNameLabel))
-		, alias(bson.getStringField(aliasLabel))
-	{}
+	static RepoToken createTokenFromRawData(
+		const std::vector<char> &data)
+	{
+		auto bson = repo::core::model::RepoBSON(data);
+		repo::core::model::RepoBSON *cred = nullptr;
+		if (bson.hasField(credLabel))
+		{
+			cred = new repo::core::model::RepoBSON(bson.getObjectField(credLabel));
+		}
+		std::string databaseHost = bson.getStringField(dbAddLabel);
+		uint32_t databasePort = bson.getField(dbPortLabel).Int();
+		std::string databaseName = bson.getStringField(dbNameLabel);
+		std::string alias = bson.getStringField(aliasLabel);
+		return RepoToken(cred, databaseHost, databasePort, databaseName, alias);
+	}
 
 	~RepoToken(){
 		if (credentials)
@@ -70,11 +83,23 @@ public:
 		builder << dbPortLabel << databasePort;
 		builder << dbNameLabel << databaseName;
 		builder << aliasLabel << alias;
+
+		auto tokenBson = builder.obj();
+		std::vector<char> data;
+		auto tokenSize = tokenBson.objsize();
+
+		if (tokenSize)
+		{
+			data.resize(tokenSize);
+			memcpy(data.data(), tokenBson.objdata(), tokenSize);
+		}
+
+		return data;
 	}
 
 	bool valid() const
 	{
-		return !(databaseAd.empty() || databaseName.empty());
+		return !(databaseHost.empty());
 	}
 
 private:
@@ -84,11 +109,6 @@ private:
 	const uint32_t databasePort;
 	const std::string databaseName;
 	std::string alias;
-	const std::string credLabel = "CRED";
-	const std::string dbAddLabel = "DBADD";
-	const std::string dbPortLabel = "DBPORT";
-	const std::string dbNameLabel = "DBNAME";
-	const std::string aliasLabel = "ALIAS";
 };
 
 class RepoController::_RepoControllerImpl{

@@ -117,8 +117,6 @@ namespace repo{
 			const bool        &pwDigested = false
 			);
 
-		void destroyToken(RepoToken* token);
-
 		/**
 			* Disconnect the controller from a database connection
 			* and destroys the token
@@ -134,6 +132,41 @@ namespace repo{
 			 * @return returns true if successful, false otherwise
 			 */
 		bool testConnection(const RepoToken *token);
+
+		/*
+		*	------------- Token operations --------------
+		*/
+
+		/**
+		* Add an alias to the repo token
+		* @param token token
+		* @param alias alias to add
+		*/
+		void addAlias(
+			RepoToken         *token,
+			const std::string &alias);
+
+		/**
+		* Re-create a repo token given the serialised data
+		* @param data serialised data from serialiseToken()
+		* @return returns  RepoToken upon success
+		*/
+		RepoToken* createTokenFromSerialised(
+			const std::vector<char> &data) const;
+
+		/**
+		* Destroy token from memory
+		* @param token token to destroy
+		*/
+		void destroyToken(RepoToken* token);
+
+		/**
+		* Serialise the given token
+		* @param token token
+		* @return return the token in serialised form
+		*/
+		std::vector<char> serialiseToken(
+			const RepoToken* token) const;
 
 		/*
 		*	------------- Database info lookup --------------
