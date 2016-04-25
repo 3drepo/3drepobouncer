@@ -312,6 +312,10 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	bytesize += defaults.objsize();
 	builder.appendElements(defaults);
 
+	if (!vertices.size() || !faces.size())
+	{
+		repoWarning << "Creating a mesh (" << defaults.getUUIDField(REPO_NODE_LABEL_ID) << ") with no vertices/faces!";
+	}
 	std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> binMapping;
 
 	if (boundingBox.size() > 0)
