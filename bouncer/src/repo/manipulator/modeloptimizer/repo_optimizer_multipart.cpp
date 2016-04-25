@@ -507,8 +507,8 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 					success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, matNodes);
 #endif
 				}
+				}
 			}
-		}
 
 		if (success)
 		{
@@ -534,14 +534,14 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 		{
 			repoError << "Failed to process Mesh Groups";
 		}
-	}
+		}
 	else
 	{
 		repoError << "Cannot generate a multipart scene for a scene with no meshes";
 	}
 
 	return success;
-}
+	}
 
 repoUUID MultipartOptimizer::getMaterialID(
 	const repo::core::model::RepoScene *scene,
@@ -711,6 +711,11 @@ void MultipartOptimizer::sortMeshes(
 	for (const auto &node : meshes)
 	{
 		auto mesh = (repo::core::model::MeshNode*) node;
+		if (!mesh->getVertices().size() || !mesh->getFaces().size())
+		{
+			repoWarning << "mesh " << mesh->getUniqueID() << " has no vertices/faces, skipping...";
+			continue;
+		}
 		/**
 		* 1 - figure out it's mFormat (what buffers does it have)
 		* 2 - check if it has texture
@@ -781,5 +786,5 @@ void MultipartOptimizer::sortMeshes(
 			meshMap[mFormat].back().insert(mesh->getUniqueID());
 			meshFCount[mFormat] += mesh->getFaces().size();
 		}
+		}
 	}
-}

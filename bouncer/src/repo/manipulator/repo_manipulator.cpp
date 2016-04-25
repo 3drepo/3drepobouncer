@@ -187,11 +187,12 @@ void RepoManipulator::commitScene(
 				repoError << "Failed to commit scene stash : " << msg;
 			}
 
-			/*repoInfo << "Generating GLTF encoding for web viewing...";
+			repoInfo << "Generating GLTF encoding for web viewing...";
 			if (generateAndCommitGLTFBuffer(databaseAd, cred, scene))
 			{
-			repoInfo << "GLTF file stored into the database";
-			}*/
+				repoInfo << "GLTF file stored into the database";
+			}
+
 		}
 
 		repoInfo << "Generating Selection Tree JSON...";
@@ -700,6 +701,7 @@ repo_web_buffers_t RepoManipulator::generateGLTFBuffer(
 	return result;
 }
 
+
 repo_web_buffers_t RepoManipulator::generateSRCBuffer(
 	const repo::core::model::RepoScene *scene)
 {
@@ -814,6 +816,7 @@ repo::core::model::RepoRoleSettings RepoManipulator::getRoleSettingByName(
 		handler->findOneByCriteria(database, REPO_COLLECTION_SETTINGS_ROLES, builder.obj()));
 	return settings;
 }
+
 
 std::shared_ptr<repo_partitioning_tree_t>
 RepoManipulator::getScenePartitioning(

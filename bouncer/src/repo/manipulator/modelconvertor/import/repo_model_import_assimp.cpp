@@ -867,7 +867,14 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		*/
 
 		repoInfo << "Constructing Mesh Nodes...";
-		repoInfo << "Scene offset : {" << sceneBbox[0][0] << "," << sceneBbox[0][1] << "," << sceneBbox[0][2] << "}";
+		if (sceneBbox.size())
+			repoInfo << "Scene offset : {" << sceneBbox[0][0] << "," << sceneBbox[0][1] << "," << sceneBbox[0][2] << "}";
+		else
+		{
+			repoError << "Could not calculate scene offset, num.Meshes = " << assimpScene->mNumMeshes;
+			sceneBbox.push_back({ 0, 0, 0 });
+			sceneBbox.push_back({ 0, 0, 0 });
+		}
 		/*
 		* --------------- Mesh Nodes ------------------
 		*/
