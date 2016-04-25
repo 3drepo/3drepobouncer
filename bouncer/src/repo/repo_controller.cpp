@@ -60,9 +60,17 @@ RepoController::RepoToken* RepoController::authenticateMongo(
 	return impl->authenticateMongo(errMsg, address, port, dbName, username, password, pwDigested);
 }
 
-bool RepoController::testConnection(const repo::RepoCredentials &credentials)
+bool RepoController::authenticateMongo(
+	std::string                       &errMsg,
+	const RepoController::RepoToken   *token
+	)
 {
-	return impl->testConnection(credentials);
+	return impl->authenticateMongo(errMsg, token);
+}
+
+bool RepoController::testConnection(const RepoController::RepoToken *token)
+{
+	return impl->testConnection(token);
 }
 
 void RepoController::commitScene(
@@ -198,7 +206,7 @@ repo::core::model::CollectionStats RepoController::getCollectionStats(
 
 std::string RepoController::getHostAndPort(const RepoController::RepoToken *token)
 {
-	return token->getDatabaseHostPort();
+	return token->databaseAd;
 }
 
 std::map<std::string, std::list<std::string>>

@@ -75,7 +75,7 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::authenticateToAd
 
 	if (cred || username.empty())
 	{
-		token = new RepoController::RepoToken(cred, dbFullAd, worker->getNameOfAdminDatabase(dbFullAd));
+		token = new RepoController::RepoToken(cred, address, port, worker->getNameOfAdminDatabase(dbFullAd));
 
 		repoInfo << "Successfully connected to the " << dbFullAd;
 		if (!username.empty())
@@ -112,29 +112,43 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::authenticateMong
 
 	if (cred || username.empty())
 	{
-		token = new RepoController::RepoToken(cred, dbFullAd, dbName);
+		token = new RepoController::RepoToken(cred, address, port, dbName);
 	}
 	return token;
 }
 
-bool RepoController::_RepoControllerImpl::testConnection(const repo::RepoCredentials &credentials)
+bool RepoController::_RepoControllerImpl::authenticateMongo(
+	std::string                       &errMsg,
+	const RepoController::RepoToken   *token
+	)
+{
+	bool success = false;
+	if (success = token && token->valid())
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		success = worker->connectAndAuthenticate(errMsg, token->databaseHost, token->databasePort,
+			numDBConnections, token->databaseName, token->credentials);
+		workerPool.push(worker);
+	}
+	else
+	{
+		errMsg = "Token is invalid!";
+	}
+
+	return success;
+}
+
+bool RepoController::_RepoControllerImpl::testConnection(const RepoController::RepoToken *token)
 {
 	std::string errMsg;
 	bool isConnected = false;
-	RepoToken* token = nullptr;
-	if (token = authenticateMongo(
+	if (authenticateMongo(
 		errMsg,
-		credentials.getHost(),
-		credentials.getPort(),
-		credentials.getAuthenticationDatabase(),
-		credentials.getUsername(),
-		credentials.getPassword(),
-		false))
+		token))
 	{
 		repoTrace << "Connection established.";
 		disconnectFromDatabase(token);
 		isConnected = true;
-		delete token;
 	}
 	else
 	{

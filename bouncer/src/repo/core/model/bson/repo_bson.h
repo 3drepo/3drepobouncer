@@ -73,6 +73,12 @@ namespace repo {
 				RepoBSON(mongo::BSONObjBuilder &builder) : mongo::BSONObj(builder.obj()) {}
 
 				/**
+				* Constructor from raw data buffer.
+				* @param rawData raw data
+				*/
+				RepoBSON(const std::vector<char> &rawData) : mongo::BSONObj(rawData.data()) {}
+
+				/**
 				* Default empty deconstructor.
 				*/
 				virtual ~RepoBSON() {}

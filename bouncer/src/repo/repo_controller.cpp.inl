@@ -18,11 +18,13 @@
 #include "lib/repo_stack.h"
 #include "manipulator/repo_manipulator.h"
 #include "repo_controller.h"
+#include "core/model/bson/repo_bson_builder.h"
 
 using namespace repo;
 
 class RepoController::RepoToken
 {
+	friend class RepoController;
 public:
 
 	/**
@@ -32,31 +34,61 @@ public:
 	* @param databaseName database it is authenticating against
 	*/
 	RepoToken(
-		const repo::core::model::RepoBSON* credentials = 0,
-		const std::string &databaseHostPort = std::string(),
-		const std::string &databaseName = std::string()) :
-		databaseAd(databaseHostPort),
+		const repo::core::model::RepoBSON *credentials = nullptr,
+		const std::string                 &databaseHost = std::string(),
+		const uint32_t                    &port = 27017,
+		const std::string                 &databaseName = std::string(),
+		const std::string                 &alias = std::string()) :
+		databaseHost(databaseHost),
+		databasePort(port),
+		databaseAd(databaseHost + std::to_string(port)),
 		credentials(credentials),
-		databaseName(databaseName) {}
+		databaseName(databaseName),
+		alias(alias){}
+
+	RepoToken(
+		const repo::core::model::RepoBSON &bson)
+		: credentials(bson.hasField(credLabel) ? new repo::core::model::RepoBSON(bson.getObjectField(credLabel)) : nullptr)
+		, databaseHost(bson.getStringField(dbAddLabel))
+		, databasePort(bson.getField(dbPortLabel).Int())
+		, databaseAd(databaseHost + std::to_string(databasePort))
+		, databaseName(bson.getStringField(dbNameLabel))
+		, alias(bson.getStringField(aliasLabel))
+	{}
 
 	~RepoToken(){
 		if (credentials)
 			delete credentials;
 	}
 
-	/**
-	* @brief getDatabaseHostPort
-	* @return database host and port in as a string
-	*/
-	std::string getDatabaseHostPort() const { return databaseAd; }
+	std::vector<char> serialiseToken() const
+	{
+		repo::core::model::RepoBSONBuilder builder;
+		if (credentials)
+			builder << credLabel << *credentials;
+		builder << dbAddLabel << databaseHost;
+		builder << dbPortLabel << databasePort;
+		builder << dbNameLabel << databaseName;
+		builder << aliasLabel << alias;
+	}
 
-	std::string getDatabaseName() const { return databaseName; }
+	bool valid() const
+	{
+		return !(databaseAd.empty() || databaseName.empty());
+	}
 
-	//private:
-
+private:
 	const repo::core::model::RepoBSON* credentials;
 	const std::string databaseAd;
+	const std::string databaseHost;
+	const uint32_t databasePort;
 	const std::string databaseName;
+	std::string alias;
+	const std::string credLabel = "CRED";
+	const std::string dbAddLabel = "DBADD";
+	const std::string dbPortLabel = "DBPORT";
+	const std::string dbNameLabel = "DBNAME";
+	const std::string aliasLabel = "ALIAS";
 };
 
 class RepoController::_RepoControllerImpl{
@@ -106,6 +138,17 @@ public:
 	/**
 	* Connect to a mongo database, authenticate by the admin database
 	* @param errMsg error message if failed
+	* @param token authentication token
+	* @param returns true upon success
+	*/
+	bool authenticateMongo(
+		std::string       &errMsg,
+		const RepoToken   *token
+		);
+
+	/**
+	* Connect to a mongo database, authenticate by the admin database
+	* @param errMsg error message if failed
 	* @param address address of the database
 	* @param port port number
 	* @param username user login name
@@ -133,10 +176,10 @@ public:
 	/**
 	* Checks whether given credentials permit successful connection to a
 	* given database.
-	* @param credentials user credentials
+	* @param token token
 	* @return returns true if successful, false otherwise
 	*/
-	bool testConnection(const repo::RepoCredentials &credentials);
+	bool testConnection(const RepoToken *token);
 
 	/*
 	*	------------- Database info lookup --------------
