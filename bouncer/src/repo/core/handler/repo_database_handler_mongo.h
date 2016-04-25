@@ -96,7 +96,7 @@ namespace repo{
 					std::string &errMsg,
 					const std::string &host,
 					const int         &port,
-					const uint32_t    &maxConnections,
+					const uint32_t    &maxConnections = 1,
 					const std::string &dbName = std::string(),
 					const std::string &username = std::string(),
 					const std::string &password = std::string(),
