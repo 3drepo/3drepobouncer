@@ -39,7 +39,6 @@
 #include "lib/repo_listener_abstract.h"
 #include "manipulator/modelconvertor/import/repo_model_import_config.h"
 #include "repo_bouncer_global.h"
-#include "repo_credentials.h"
 
 namespace repo{
 	class REPO_API_EXPORT RepoController
@@ -77,7 +76,7 @@ namespace repo{
 			* @param username user login name
 			* @param password user password
 			* @param pwDigested is given password digested (default: false)
-			* @return * @return returns a void pointer to a token
+			* @return returns a void pointer to a token
 			*/
 		RepoToken* authenticateMongo(
 			std::string       &errMsg,
@@ -87,6 +86,16 @@ namespace repo{
 			const std::string &username,
 			const std::string &password,
 			const bool        &pwDigested = false
+			);
+
+		/**
+		* Connect to a mongo database, authenticate by the admin database
+		* @param errMsg error message if failed
+		* @param token authentication token
+		*/
+		bool authenticateMongo(
+			std::string       &errMsg,
+			const RepoToken   *token
 			);
 
 		/**
@@ -108,8 +117,6 @@ namespace repo{
 			const bool        &pwDigested = false
 			);
 
-		void destroyToken(RepoToken* token);
-
 		/**
 			* Disconnect the controller from a database connection
 			* and destroys the token
@@ -121,10 +128,45 @@ namespace repo{
 		/**
 			 * Checks whether given credentials permit successful connection to a
 			 * given database.
-			 * @param credentials user credentials
+			 * @param token token
 			 * @return returns true if successful, false otherwise
 			 */
-		bool testConnection(const repo::RepoCredentials &credentials);
+		bool testConnection(const RepoToken *token);
+
+		/*
+		*	------------- Token operations --------------
+		*/
+
+		/**
+		* Add an alias to the repo token
+		* @param token token
+		* @param alias alias to add
+		*/
+		void addAlias(
+			RepoToken         *token,
+			const std::string &alias);
+
+		/**
+		* Re-create a repo token given the serialised data
+		* @param data serialised data from serialiseToken()
+		* @return returns  RepoToken upon success
+		*/
+		RepoToken* createTokenFromSerialised(
+			const std::vector<char> &data) const;
+
+		/**
+		* Destroy token from memory
+		* @param token token to destroy
+		*/
+		void destroyToken(RepoToken* token);
+
+		/**
+		* Serialise the given token
+		* @param token token
+		* @return return the token in serialised form
+		*/
+		std::vector<char> serialiseToken(
+			const RepoToken* token) const;
 
 		/*
 		*	------------- Database info lookup --------------
