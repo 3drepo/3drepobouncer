@@ -19,7 +19,7 @@ def createCMakeList(dirName, files, subDirList, sourceName, headerName):
 	sources = {}
 	headers = {}
 	for fname in sorted(files):
-		if fname.lower().endswith('.cpp'):
+		if fname.lower().endswith('.cpp') or fname.lower().endswith('.cpp.inl'):
 			sources[cppInd] = fname
 			cppInd+=1
 		if fname.lower().endswith('.h'):

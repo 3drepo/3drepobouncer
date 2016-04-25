@@ -20,10 +20,9 @@
 #include <gtest/gtest.h>
 #include "../../../../repo_test_utils.h"
 #include <repo/core/model/bson/repo_bson_factory.h>
-
+#include <repo/core/model/bson/repo_bson_builder.h>
 
 using namespace repo::core::model;
-
 
 TEST(RepoBSONFactoryTest, MakeRepoProjectSettingsTest)
 {
@@ -31,10 +30,10 @@ TEST(RepoBSONFactoryTest, MakeRepoProjectSettingsTest)
 	std::string owner = "repo";
 	std::string type = "Structural";
 	std::string description = "testing project";
-    // TODO: add test values for pinSize, avatarHeight, visibilityLimit, speed, zNear, zFar
+	// TODO: add test values for pinSize, avatarHeight, visibilityLimit, speed, zNear, zFar
 
-    RepoProjectSettings settings = RepoBSONFactory::makeRepoProjectSettings(projectName, owner, type,
-        description);
+	RepoProjectSettings settings = RepoBSONFactory::makeRepoProjectSettings(projectName, owner, type,
+		description);
 
 	EXPECT_EQ(projectName, settings.getProjectName());
 	EXPECT_EQ(description, settings.getDescription());
@@ -68,7 +67,7 @@ TEST(RepoBSONFactoryTest, MakeRepoRoleTest)
 
 	EXPECT_EQ(databaseName, role.getDatabase());
 	EXPECT_EQ(roleName, role.getName());
-	EXPECT_EQ(0, role.getInheritedRoles().size()); 
+	EXPECT_EQ(0, role.getInheritedRoles().size());
 
 	std::vector<RepoPermission> accessRights = role.getProjectAccessRights();
 
@@ -78,12 +77,12 @@ TEST(RepoBSONFactoryTest, MakeRepoRoleTest)
 	{
 		//Order is not guaranteed, this is a long winded way to find the same permission again
 		//but it should be fine as it's only 3 members
-		bool found = false; 
+		bool found = false;
 		for (int j = 0; j < permissions.size(); ++j)
 		{
-			found |=  permissions[j].database == accessRights[i].database
-						&& permissions[j].project == accessRights[i].project
-						&& permissions[j].permission == accessRights[i].permission;
+			found |= permissions[j].database == accessRights[i].database
+				&& permissions[j].project == accessRights[i].project
+				&& permissions[j].permission == accessRights[i].permission;
 		}
 		EXPECT_TRUE(found);
 	}
@@ -96,7 +95,7 @@ TEST(RepoBSONFactoryTest, MakeRepoRoleTest2)
 	std::vector<RepoPrivilege> privileges;
 	std::vector <std::pair<std::string, std::string>> inheritedRoles;
 
-	privileges.push_back({ "db1", "col1", {DBActions::FIND} });
+	privileges.push_back({ "db1", "col1", { DBActions::FIND } });
 	privileges.push_back({ "db2", "col2", { DBActions::INSERT, DBActions::CREATE_USER } });
 	privileges.push_back({ "db1", "col2", { DBActions::FIND, DBActions::DROP_ROLE } });
 
@@ -104,10 +103,9 @@ TEST(RepoBSONFactoryTest, MakeRepoRoleTest2)
 
 	RepoRole role = RepoBSONFactory::_makeRepoRole(roleName, databaseName, privileges, inheritedRoles);
 
-
 	EXPECT_EQ(databaseName, role.getDatabase());
 	EXPECT_EQ(roleName, role.getName());
-	
+
 	auto inheritedRolesOut = role.getInheritedRoles();
 
 	ASSERT_EQ(inheritedRoles.size(), inheritedRolesOut.size());
@@ -117,7 +115,6 @@ TEST(RepoBSONFactoryTest, MakeRepoRoleTest2)
 		EXPECT_EQ(inheritedRolesOut[i].first, inheritedRoles[i].first);
 		EXPECT_EQ(inheritedRolesOut[i].second, inheritedRoles[i].second);
 	}
-
 
 	auto privOut = role.getPrivileges();
 
@@ -142,7 +139,6 @@ TEST(RepoBSONFactoryTest, MakeRepoUserTest)
 	std::list<std::pair<std::string, std::string>>   apiKeys;
 	std::vector<char>                                avatar;
 
-
 	roles.push_back(std::pair<std::string, std::string >("database", "roleName"));
 	apiKeys.push_back(std::pair<std::string, std::string >("database", "apiKey"));
 	avatar.resize(10);
@@ -157,7 +153,6 @@ TEST(RepoBSONFactoryTest, MakeRepoUserTest)
 	auto rolesOut = user.getRolesList();
 	auto apiOut = user.getAPIKeysList();
 	auto avatarOut = user.getAvatarAsRawData();
-
 
 	EXPECT_EQ(roles.size(), rolesOut.size());
 	EXPECT_EQ(apiKeys.size(), apiOut.size());
@@ -176,14 +171,14 @@ TEST(RepoBSONFactoryTest, AppendDefaultsTest)
 {
 	RepoBSONBuilder builder;
 
-	RepoBSONFactory::appendDefaults(
-		builder, "test");
+	auto defaults = RepoBSONFactory::appendDefaults("test");
+	builder.appendElements(defaults);
 
 	RepoNode n = builder.obj();
 
 	EXPECT_FALSE(n.isEmpty());
 
-	EXPECT_EQ(4, n.nFields()); 
+	EXPECT_EQ(4, n.nFields());
 
 	EXPECT_TRUE(n.hasField(REPO_NODE_LABEL_ID));
 	EXPECT_TRUE(n.hasField(REPO_NODE_LABEL_SHARED_ID));
@@ -197,8 +192,8 @@ TEST(RepoBSONFactoryTest, AppendDefaultsTest)
 	builderWithFields << "Number" << 1023;
 	builderWithFields << "doll" << "Kitty";
 
-	RepoBSONFactory::appendDefaults(
-		builderWithFields, "test");
+	auto defaults2 = RepoBSONFactory::appendDefaults("test");
+	builderWithFields.appendElements(defaults2);
 
 	RepoNode nWithExists = builderWithFields.obj();
 	EXPECT_FALSE(nWithExists.isEmpty());
@@ -214,9 +209,7 @@ TEST(RepoBSONFactoryTest, AppendDefaultsTest)
 	EXPECT_EQ("Kitty", std::string(nWithExists.getStringField("doll")));
 	EXPECT_TRUE(nWithExists.hasField("Number"));
 	EXPECT_EQ(nWithExists.getField("Number").Int(), 1023);
-
 }
-
 
 TEST(RepoBSONFactoryTest, MakeCameraNodeTest)
 {
@@ -237,15 +230,14 @@ TEST(RepoBSONFactoryTest, MakeCameraNodeTest)
 	EXPECT_EQ(fCP, camera.getFarClippingPlane());
 	EXPECT_EQ(nCP, camera.getNearClippingPlane());
 	EXPECT_EQ(fov, camera.getFieldOfView());
-	
+
 	EXPECT_TRUE(compareVectors(lookAt, camera.getLookAt()));
 	EXPECT_TRUE(compareVectors(position, camera.getPosition()));
 	EXPECT_TRUE(compareVectors(up, camera.getUp()));
-	
+
 	EXPECT_EQ(name, camera.getName());
 
 	EXPECT_EQ(camera.getTypeAsEnum(), NodeType::CAMERA);
-
 }
 
 TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
@@ -269,19 +261,17 @@ TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
 	EXPECT_EQ(name, material.getName());
 	EXPECT_EQ(material.getTypeAsEnum(), NodeType::MATERIAL);
 
-
 	auto matOut = material.getMaterialStruct();
 
 	compareMaterialStructs(mat_struct, matOut);
 
 	repo_material_t emptyStruct;
 
-	//See if it breaks if the vectors in the struct is never filled 
+	//See if it breaks if the vectors in the struct is never filled
 	MaterialNode material2 = RepoBSONFactory::makeMaterialNode(emptyStruct, name);
 	EXPECT_FALSE(material2.isEmpty());
 	EXPECT_EQ(name, material2.getName());
 	EXPECT_EQ(material2.getTypeAsEnum(), NodeType::MATERIAL);
-
 }
 
 TEST(RepoBSONFactoryTest, MakeMapNodeTest)
@@ -305,7 +295,7 @@ TEST(RepoBSONFactoryTest, MakeMapNodeTest)
 	EXPECT_EQ(tilt, map.getYRot());
 	EXPECT_EQ(longit, map.getField(REPO_NODE_MAP_LABEL_LONG).Double());
 	EXPECT_EQ(latit, map.getField(REPO_NODE_MAP_LABEL_LAT).Double());
-	
+
 	repo_vector_t vec;
 	if (map.hasField(REPO_NODE_MAP_LABEL_TRANS))
 	{
@@ -318,7 +308,6 @@ TEST(RepoBSONFactoryTest, MakeMapNodeTest)
 	}
 
 	EXPECT_TRUE(compareVectors(centrePoint, vec));
-
 }
 
 TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
@@ -340,8 +329,7 @@ TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 
 TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest2)
 {
-	std::vector<std::string> keys({ "one", "two", "three", "four", "five" }), values({"!", "!!", "!!!", "!!!!", "!!!!!"});
-
+	std::vector<std::string> keys({ "one", "two", "three", "four", "five" }), values({ "!", "!!", "!!!", "!!!!", "!!!!!" });
 
 	std::string name = "MetaTest";
 
@@ -364,9 +352,8 @@ TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest2)
 
 TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 {
-
 	uint32_t nCount = 10;
-	//using malloc to get un-initalised values to fill the memory. 
+	//using malloc to get un-initalised values to fill the memory.
 	repo_vector_t *rawVec = (repo_vector_t*)malloc(sizeof(*rawVec) * nCount);
 	repo_vector_t *rawNorm = (repo_vector_t*)malloc(sizeof(*rawNorm) * nCount);
 	repo_vector2d_t *rawUV = (repo_vector2d_t*)malloc(sizeof(*rawUV) * nCount);
@@ -390,23 +377,21 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	colors.reserve(nCount);
 	for (uint32_t i = 0; i < nCount; ++i)
 	{
-
 		repo_face_t face = { (uint32_t)std::rand(), (uint32_t)std::rand(), (uint32_t)std::rand() };
 		faces.push_back(face);
 
-		vectors.push_back({(float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f});
+		vectors.push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
 		normals.push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
-		uvChannels[0].push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f});
+		uvChannels[0].push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
 		colors.push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
 	}
-	
+
 	std::vector<std::vector<float>> boundingBox, outLine;
 	boundingBox.resize(2);
 	boundingBox[0] = { std::rand() / 100.f, std::rand() / 100.f, std::rand() / 100.f };
 	boundingBox[1] = { std::rand() / 100.f, std::rand() / 100.f, std::rand() / 100.f };
 	outLine = boundingBox;
 
-	
 	std::string name = "meshTest";
 
 	//End of setting up data... the actual testing happens here.
@@ -431,17 +416,16 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 
 	EXPECT_TRUE(compareVectors(bbox[0], { boundingBox[0][0], boundingBox[0][1], boundingBox[0][2] }));
 	EXPECT_TRUE(compareVectors(bbox[1], { boundingBox[1][0], boundingBox[1][1], boundingBox[1][2] }));
-	
 }
 
 TEST(RepoBSONFactoryTest, MakeReferenceNodeTest)
 {
-	std::string dbName  = "testDB";
+	std::string dbName = "testDB";
 	std::string proName = "testProj";
 	repoUUID revId = generateUUID();
 	bool isUnique = true;
 	std::string name = "refNodeName";
-	
+
 	ReferenceNode ref = RepoBSONFactory::makeReferenceNode(dbName, proName, revId, isUnique, name);
 
 	ASSERT_FALSE(ref.isEmpty());
@@ -458,7 +442,6 @@ TEST(RepoBSONFactoryTest, MakeReferenceNodeTest)
 
 TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 {
-
 	std::string owner = "revOwner";
 	repoUUID branchID = generateUUID();
 	std::vector<repoUUID> currentNodes;
@@ -466,20 +449,19 @@ TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 	currentNodes.reserve(currCount);
 	for (size_t i = 0; i < currCount; ++i)
 		currentNodes.push_back(generateUUID());
-	std::vector<std::string> files = {"test1", "test5"};
+	std::vector<std::string> files = { "test1", "test5" };
 	std::vector<repoUUID> parents;
 	size_t parentCount = 5;
 	parents.reserve(parentCount);
 	for (size_t i = 0; i < parentCount; ++i)
 		parents.push_back(generateUUID());
-	std::string message = "this is some random message to test message"; 
+	std::string message = "this is some random message to test message";
 	std::string tag = "this is a random tag to test tags";
 	std::vector<double> offset = { std::rand() / 100., std::rand() / 100., std::rand() / 100. };
 
-
 	RevisionNode rev = RepoBSONFactory::makeRevisionNode(owner, branchID, currentNodes, files, parents, offset, message, tag);
 	EXPECT_EQ(owner, rev.getAuthor());
-	EXPECT_EQ(branchID, rev.getSharedID());	
+	EXPECT_EQ(branchID, rev.getSharedID());
 	EXPECT_EQ(message, rev.getMessage());
 	EXPECT_EQ(tag, rev.getTag());
 	//fileNames changes after it gets into the bson, just check the size
@@ -521,15 +503,15 @@ TEST(RepoBSONFactoryTest, MakeTextureNodeTest)
 TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
 {
 	//If I make a transformation with no parameters, it should be identity matrix
-	std::vector<float> identity = 
-				{ 1, 0, 0, 0, 
-				  0, 1, 0, 0, 
-				  0, 0, 1, 0, 
-				  0, 0, 0, 1 };
+	std::vector<float> identity =
+	{ 1, 0, 0, 0,
+	0, 1, 0, 0,
+	0, 0, 1, 0,
+	0, 0, 0, 1 };
 
 	TransformationNode trans = RepoBSONFactory::makeTransformationNode();
 
-	ASSERT_FALSE(trans.isEmpty());	
+	ASSERT_FALSE(trans.isEmpty());
 	EXPECT_TRUE(compareStdVectors(identity, trans.getTransMatrix(false)));
 
 	std::vector<std::vector<float>> transMat;
@@ -537,10 +519,10 @@ TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
 	transMat.resize(4);
 	for (int i = 0; i < 4; ++i)
 		for (int j = 0; j < 4; ++j)
-	{
-		transMat[i].push_back(std::rand() / 100.);
-		transMatFlat.push_back(transMat[i][j]);
-	}
+		{
+			transMat[i].push_back(std::rand() / 100.);
+			transMatFlat.push_back(transMat[i][j]);
+		}
 	std::string name = "myTransTest";
 
 	std::vector<repoUUID> parents;
@@ -552,7 +534,7 @@ TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
 	ASSERT_FALSE(trans2.isEmpty());
 	EXPECT_EQ(name, trans2.getName());
 	std::vector<float> matrix = trans2.getTransMatrix(false);
-	
+
 	EXPECT_TRUE(compareStdVectors(transMatFlat, matrix));
 	EXPECT_TRUE(compareStdVectors(parents, trans2.getParentIDs()));
 

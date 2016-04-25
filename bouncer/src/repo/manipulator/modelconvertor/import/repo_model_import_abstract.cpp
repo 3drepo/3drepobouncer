@@ -19,7 +19,6 @@
 * Allows Import/Export functionality into/output Repo world using ASSIMP
 */
 
-
 #include "repo_model_import_abstract.h"
 #include <boost/filesystem.hpp>
 
@@ -37,7 +36,7 @@ settings(settings), destroySettings(false)
 	{
 		//settings is null, use default
 		this->settings = new ModelImportConfig();
-		destroySettings = true; 
+		destroySettings = true;
 	}
 }
 

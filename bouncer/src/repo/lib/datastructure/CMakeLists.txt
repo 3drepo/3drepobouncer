@@ -6,6 +6,6 @@
 
 set(HEADERS
 	${HEADERS}
-	${CMAKE_CURRENT_SOURCE_DIR}/x3dom_constants.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_structs.h
 	CACHE STRING "HEADERS" FORCE)
 

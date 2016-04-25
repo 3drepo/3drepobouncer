@@ -21,19 +21,18 @@
 
 #include "repo_optimizer_multipart.h"
 #include "../../core/model/bson/repo_bson_factory.h"
+#include "../../core/model/bson/repo_bson_builder.h"
 
 using namespace repo::manipulator::modeloptimizer;
 
 auto defaultGraph = repo::core::model::RepoScene::GraphType::DEFAULT;
 
-
 static const size_t  REPO_MP_MAX_FACE_COUNT = 500000;
 
-MultipartOptimizer::MultipartOptimizer() : 
-	AbstractOptimizer()
+MultipartOptimizer::MultipartOptimizer() :
+AbstractOptimizer()
 {
 }
-
 
 MultipartOptimizer::~MultipartOptimizer()
 {
@@ -53,7 +52,7 @@ bool MultipartOptimizer::apply(repo::core::model::RepoScene *scene)
 		repoError << "Failed to create Optimised scene: scene is empty!";
 		return false;
 	}
-	
+
 	if (scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED))
 	{
 		repoInfo << "The scene already has a stash graph, removing...";
@@ -61,7 +60,6 @@ bool MultipartOptimizer::apply(repo::core::model::RepoScene *scene)
 	}
 
 	return generateMultipartScene(scene);
-
 }
 #ifdef REPO_MP_TEXTURE_WORK_AROUND
 bool MultipartOptimizer::collectMeshData(
@@ -91,12 +89,12 @@ bool MultipartOptimizer::collectMeshData(
 			for (const auto &child : children)
 			{
 				auto childMat = mat; //We don't want actually want to update the matrix with our children's transformation
-				success &= collectMeshData(scene, child, meshGroup, childMat, vertices, 
+				success &= collectMeshData(scene, child, meshGroup, childMat, vertices,
 					normals, faces, uvChannels, colors, meshMapping, matIDMap);
 			}
 			break;
 		}
-		
+
 		case repo::core::model::NodeType::MESH:
 		{
 			repoUUID meshUniqueID = node->getUniqueID();
@@ -126,8 +124,8 @@ bool MultipartOptimizer::collectMeshData(
 				}
 
 				std::vector<repo_vector_t> submVertices = transformedMesh.getVertices();
-				std::vector<repo_vector_t> submNormals  = transformedMesh.getNormals();
-				std::vector<repo_face_t>   submFaces    = transformedMesh.getFaces();
+				std::vector<repo_vector_t> submNormals = transformedMesh.getNormals();
+				std::vector<repo_face_t>   submFaces = transformedMesh.getFaces();
 				std::vector<repo_color4d_t> submColors = transformedMesh.getColors();
 				std::vector<std::vector<repo_vector2d_t>> submUVs = transformedMesh.getUVChannelsSeparated();
 
@@ -140,13 +138,11 @@ bool MultipartOptimizer::collectMeshData(
 					faces.push_back(std::vector<repo_face_t>());
 					meshMapping.push_back(std::vector<repo_mesh_mapping_t>());
 
-
-
 					meshMap.vertFrom = vertices.back().size();
 					meshMap.vertTo = meshMap.vertFrom + submVertices.size();
 					meshMap.triFrom = faces.back().size();
 					meshMap.triTo = faces.back().size() + submFaces.size();
-				
+
 					meshMapping.back().push_back(meshMap);
 
 					vertices.back().insert(vertices.back().end(), submVertices.begin(), submVertices.end());
@@ -179,24 +175,19 @@ bool MultipartOptimizer::collectMeshData(
 						}
 					}
 					else
-					{ 
+					{
 						//This shouldn't happen, if it does, then it means the mFormat isn't set correctly
 						repoError << "Unexpected transformedMesh format mismatch occured!";
 					}
-					
 				}
 				else
 				{
 					repoError << "Failed merging meshes: Vertices or faces cannot be null!";
 				}
-				
-
 			}
 			break;
 		}
-		
 		}
-		
 	}
 	else
 	{
@@ -234,7 +225,7 @@ bool MultipartOptimizer::collectMeshData(
 			for (const auto &child : children)
 			{
 				auto childMat = mat; //We don't want actually want to update the matrix with our children's transformation
-				success &= collectMeshData(scene, child, meshGroup, childMat, 
+				success &= collectMeshData(scene, child, meshGroup, childMat,
 					vertices, normals, faces, uvChannels, colors, meshMapping, matIDMap);
 			}
 			break;
@@ -256,7 +247,7 @@ bool MultipartOptimizer::collectMeshData(
 				{
 					newMatID = generateUUID();
 					matIDMap[matID] = newMatID;
-				}					
+				}
 				else
 					newMatID = matIDMap[matID];
 				meshMap.material_id = newMatID;
@@ -317,20 +308,15 @@ bool MultipartOptimizer::collectMeshData(
 						//This shouldn't happen, if it does, then it means the mFormat isn't set correctly
 						repoError << "Unexpected transformedMesh format mismatch occured!";
 					}
-
 				}
 				else
 				{
 					repoError << "Failed merging meshes: Vertices or faces cannot be null!";
 				}
-
-
 			}
 			break;
 		}
-
 		}
-
 	}
 	else
 	{
@@ -339,7 +325,6 @@ bool MultipartOptimizer::collectMeshData(
 
 	return success;
 }
-
 
 #ifdef REPO_MP_TEXTURE_WORK_AROUND
 std::vector<repo::core::model::MeshNode*> MultipartOptimizer::createSuperMesh(
@@ -356,13 +341,12 @@ std::vector<repo::core::model::MeshNode*> MultipartOptimizer::createSuperMesh(
 
 	std::vector<repo::core::model::MeshNode*> resultMeshes;
 	std::vector<float> startMat = { 1, 0, 0, 0,
-									0, 1, 0, 0,
-									0, 0, 1, 0,
-									0, 0, 0, 1 };
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1 };
 
 	bool success = collectMeshData(scene, scene->getRoot(defaultGraph), meshGroup, startMat,
 		vertices, normals, faces, uvChannels, colors, meshMapping, matIDs);
-
 
 	if (success && meshMapping.size())
 	{
@@ -400,7 +384,6 @@ std::vector<repo::core::model::MeshNode*> MultipartOptimizer::createSuperMesh(
 			repo::core::model::MeshNode superMesh = repo::core::model::RepoBSONFactory::makeMeshNode(vertices[meshIdx], faces[meshIdx], normals[meshIdx], bboxVec, uvChannels[meshIdx], colors[meshIdx], outline);
 			resultMeshes.push_back(new repo::core::model::MeshNode(superMesh.cloneAndUpdateMeshMapping(meshMapping[meshIdx], true)));
 		}
-		
 	}
 	else
 	{
@@ -408,14 +391,13 @@ std::vector<repo::core::model::MeshNode*> MultipartOptimizer::createSuperMesh(
 	}
 
 	return resultMeshes;
-
 }
 #endif
 repo::core::model::MeshNode* MultipartOptimizer::createSuperMesh
 (
-	const repo::core::model::RepoScene *scene,
-	const std::set<repoUUID>           &meshGroup,
-	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>  &matIDs)
+const repo::core::model::RepoScene *scene,
+const std::set<repoUUID>           &meshGroup,
+std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>  &matIDs)
 {
 	std::vector<repo_vector_t> vertices, normals;
 	std::vector<repo_face_t> faces;
@@ -427,9 +409,9 @@ repo::core::model::MeshNode* MultipartOptimizer::createSuperMesh
 
 	std::vector<repo::core::model::MeshNode*> resultMeshes;
 	std::vector<float> startMat = { 1, 0, 0, 0,
-									0, 1, 0, 0,
-									0, 0, 1, 0,
-									0, 0, 0, 1 };
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1 };
 
 	bool success = collectMeshData(scene, scene->getRoot(defaultGraph), meshGroup, startMat,
 		vertices, normals, faces, uvChannels, colors, meshMapping, matIDs);
@@ -474,14 +456,11 @@ repo::core::model::MeshNode* MultipartOptimizer::createSuperMesh
 	}
 
 	return resultMesh;
-
 }
-
-
 
 bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *scene)
 {
-	bool success = false;	
+	bool success = false;
 
 	auto meshes = scene->getAllMeshes(defaultGraph);
 	if (success = meshes.size())
@@ -505,7 +484,6 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 			{
 				success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, matNodes);
 			}
-			
 		}
 		for (const auto &groupings : transparentMeshes)
 		{
@@ -513,7 +491,6 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 			{
 				success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, matNodes);
 			}
-				
 		}
 
 		//textured meshes
@@ -522,22 +499,22 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 			for (const auto &groupings : textureMeshMap.second)
 			{
 				for (const auto grouping : groupings.second)
-				{					
+				{
 #ifdef REPO_MP_TEXTURE_WORK_AROUND
 
-					success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, matNodes, true);				
+					success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, matNodes, true);
 #else
 					success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, matNodes);
 #endif
 				}
-			}			
-		}
+				}
+			}
 
 		if (success)
 		{
 			//fill Material nodeset
 			for (const auto &matPair : matNodes)
-			{				
+			{
 				materials.insert(matPair.second);
 			}
 
@@ -557,17 +534,14 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 		{
 			repoError << "Failed to process Mesh Groups";
 		}
-	
-
-	}
+		}
 	else
 	{
 		repoError << "Cannot generate a multipart scene for a scene with no meshes";
 	}
 
-
 	return success;
-}
+	}
 
 repoUUID MultipartOptimizer::getMaterialID(
 	const repo::core::model::RepoScene *scene,
@@ -589,7 +563,6 @@ bool MultipartOptimizer::hasTexture(
 	const repo::core::model::MeshNode  *mesh,
 	repoUUID                           &texID)
 {
-
 	bool hasText = false;
 	const auto mat = scene->getChildrenNodesFiltered(defaultGraph, mesh->getSharedID(), repo::core::model::NodeType::MATERIAL);
 	if (mat.size())
@@ -601,16 +574,13 @@ bool MultipartOptimizer::hasTexture(
 		}
 	}
 
-
 	return hasText;
 }
-
 
 bool MultipartOptimizer::isTransparent(
 	const repo::core::model::RepoScene *scene,
 	const repo::core::model::MeshNode  *mesh)
 {
-
 	bool isTransparent = false;
 	const auto mat = scene->getChildrenNodesFiltered(defaultGraph, mesh->getSharedID(), repo::core::model::NodeType::MATERIAL);
 	if (mat.size())
@@ -669,14 +639,12 @@ bool MultipartOptimizer::processMeshGroup(
 				}
 			}
 		}
-		
 	}
 	else
 	{
 		repoError << "Failed to create super mesh (nullptr returned)";
 	}
 	return success;
-	
 }
 #endif
 
@@ -693,7 +661,6 @@ bool MultipartOptimizer::processMeshGroup(
 	auto sMesh = createSuperMesh(scene, meshes, matIDs);
 	if (success = sMesh)
 	{
-
 		auto sMeshWithParent = sMesh->cloneAndAddParent({ rootID });
 		sMesh->swap(sMeshWithParent);
 		mergedMeshes.insert(sMesh);
@@ -722,14 +689,12 @@ bool MultipartOptimizer::processMeshGroup(
 				matIt->second->swap(addedParentMat);
 			}
 		}
-
 	}
 	else
 	{
 		repoError << "Failed to create super mesh (nullptr returned)";
 	}
 	return success;
-
 }
 
 void MultipartOptimizer::sortMeshes(
@@ -737,16 +702,20 @@ void MultipartOptimizer::sortMeshes(
 	const repo::core::model::RepoNodeSet                                    &meshes,
 	std::unordered_map<uint32_t, std::vector<std::set<repoUUID>>>						&normalMeshes,
 	std::unordered_map<uint32_t, std::vector<std::set<repoUUID>>>						&transparentMeshes,
-	std::unordered_map<uint32_t, std::unordered_map<repoUUID, 
-									   std::vector<std::set<repoUUID>>, RepoUUIDHasher>> &texturedMeshes)
+	std::unordered_map < uint32_t, std::unordered_map < repoUUID,
+	std::vector<std::set<repoUUID>>, RepoUUIDHasher >> &texturedMeshes)
 {
-
 	std::unordered_map<uint32_t, size_t> normalFCount, transparentFCount;
 	std::unordered_map<uint32_t, std::unordered_map<repoUUID, size_t, RepoUUIDHasher> > texturedFCount;
 
 	for (const auto &node : meshes)
 	{
 		auto mesh = (repo::core::model::MeshNode*) node;
+		if (!mesh->getVertices().size() || !mesh->getFaces().size())
+		{
+			repoWarning << "mesh " << mesh->getUniqueID() << " has no vertices/faces, skipping...";
+			continue;
+		}
 		/**
 		* 1 - figure out it's mFormat (what buffers does it have)
 		* 2 - check if it has texture
@@ -789,12 +758,10 @@ void MultipartOptimizer::sortMeshes(
 				//Exceed max face count, create another grouping entry for this format
 				texturedMeshes[mFormat][texID].push_back(std::set<repoUUID>());
 				texturedFCount[mFormat][texID] = 0;
-
 			}
 			texturedMeshes[mFormat][texID].back().insert(mesh->getUniqueID());
 			texturedFCount[mFormat][texID] += mesh->getFaces().size();
 #endif
-			
 		}
 		else
 		{
@@ -815,11 +782,9 @@ void MultipartOptimizer::sortMeshes(
 				//Exceed max face count, create another grouping entry for this format
 				meshMap[mFormat].push_back(std::set<repoUUID>());
 				meshFCount[mFormat] = 0;
-
 			}
 			meshMap[mFormat].back().insert(mesh->getUniqueID());
 			meshFCount[mFormat] += mesh->getFaces().size();
 		}
-
+		}
 	}
-}

@@ -20,19 +20,24 @@
 */
 
 #include <boost/filesystem.hpp>
+#include <boost/range/adaptor/map.hpp>
+#include <boost/range/algorithm/copy.hpp>
 
-#include "repo_manipulator.h"
-#include "../lib/repo_log.h"
+#include "../core/handler/repo_database_handler_mongo.h"
 #include "../core/model/bson/repo_bson_factory.h"
-#include "diff/repo_diff_sharedid.h"
+#include "../lib/repo_log.h"
 #include "diff/repo_diff_name.h"
+#include "diff/repo_diff_sharedid.h"
+#include "modelconvertor/import/repo_model_import_assimp.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
+#include "modelconvertor/export/repo_model_export_gltf.h"
 #include "modelconvertor/export/repo_model_export_src.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
-#include "modeloptimizer/repo_optimizer_trans_reduction.h"
 #include "modeloptimizer/repo_optimizer_multipart.h"
-#include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
+#include "modeloptimizer/repo_optimizer_trans_reduction.h"
 #include "modelutility/repo_maker_selection_tree.h"
+#include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
+#include "repo_manipulator.h"
 
 using namespace repo::manipulator;
 
@@ -187,6 +192,7 @@ void RepoManipulator::commitScene(
 			{
 				repoInfo << "GLTF file stored into the database";
 			}
+
 		}
 
 		repoInfo << "Generating Selection Tree JSON...";
@@ -204,19 +210,19 @@ void RepoManipulator::commitScene(
 void RepoManipulator::compareScenes(
 	repo::core::model::RepoScene                  *base,
 	repo::core::model::RepoScene                  *compare,
-	repo::manipulator::diff::DiffResult           &baseResults,
-	repo::manipulator::diff::DiffResult           &compResults,
-	const diff::Mode					          &diffMode,
+	repo_diff_result_t           &baseResults,
+	repo_diff_result_t           &compResults,
+	const repo::DiffMode					          &diffMode,
 	const repo::core::model::RepoScene::GraphType &gType)
 {
 	diff::AbstractDiff *diff = nullptr;
 
 	switch (diffMode)
 	{
-	case diff::Mode::DIFF_BY_ID:
+	case repo::DiffMode::DIFF_BY_ID:
 		diff = new diff::DiffBySharedID(base, compare, gType);
 		break;
-	case diff::Mode::DIFF_BY_NAME:
+	case repo::DiffMode::DIFF_BY_NAME:
 		diff = new diff::DiffByName(base, compare, gType);
 		break;
 	default:
@@ -229,8 +235,8 @@ void RepoManipulator::compareScenes(
 
 		if (diff->isOk(msg))
 		{
-			baseResults = diff->getDiffResultForBase();
-			compResults = diff->getDiffResultForComp();
+			baseResults = diff->getrepo_diff_result_tForBase();
+			compResults = diff->getrepo_diff_result_tForComp();
 		}
 		else
 		{
@@ -260,6 +266,12 @@ uint64_t RepoManipulator::countItemsInCollection(
 		numItems = handler->countItemsInCollection(database, collection, errMsg);
 
 	return numItems;
+}
+
+void RepoManipulator::disconnectFromDatabase(const std::string &databaseAd)
+{
+	//FIXME: can only kill mongo here, but this is suppose to be a quick fix
+	core::handler::MongoDatabaseHandler::disconnectHandler();
 }
 
 bool RepoManipulator::dropCollection(
@@ -595,7 +607,7 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON	          *cred,
 	const repo::core::model::RepoScene            *scene,
-	const modelconvertor::repo_export_buffers_t   &buffers,
+	const repo_web_buffers_t                        &buffers,
 	const modelconvertor::WebExportType           &exType)
 {
 	bool success = false;
@@ -673,10 +685,10 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 	return success;
 }
 
-modelconvertor::repo_export_buffers_t RepoManipulator::generateGLTFBuffer(
+repo_web_buffers_t RepoManipulator::generateGLTFBuffer(
 	const repo::core::model::RepoScene *scene)
 {
-	modelconvertor::repo_export_buffers_t result;
+	repo_web_buffers_t result;
 	modelconvertor::GLTFModelExport gltfExport(scene);
 	if (gltfExport.isOk())
 	{
@@ -689,10 +701,11 @@ modelconvertor::repo_export_buffers_t RepoManipulator::generateGLTFBuffer(
 	return result;
 }
 
-modelconvertor::repo_export_buffers_t RepoManipulator::generateSRCBuffer(
+
+repo_web_buffers_t RepoManipulator::generateSRCBuffer(
 	const repo::core::model::RepoScene *scene)
 {
-	modelconvertor::repo_export_buffers_t result;
+	repo_web_buffers_t result;
 	modelconvertor::SRCModelExport srcExport(scene);
 	if (srcExport.isOk())
 	{
@@ -804,7 +817,8 @@ repo::core::model::RepoRoleSettings RepoManipulator::getRoleSettingByName(
 	return settings;
 }
 
-std::shared_ptr<modelutility::PartitioningTree>
+
+std::shared_ptr<repo_partitioning_tree_t>
 RepoManipulator::getScenePartitioning(
 const repo::core::model::RepoScene *scene,
 const uint32_t                     &maxDepth

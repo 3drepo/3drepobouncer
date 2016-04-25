@@ -20,7 +20,6 @@
 
 #include <string>
 
-
 static const bool        repoDefaultCalculateTangentSpace = false;
 static const bool        repoDefaultConvertToUVCoordinates = false;
 static const bool        repoDefaultDegeneratesToPointsLines = false;

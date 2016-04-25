@@ -7,7 +7,6 @@ RepoBSONBuilder::RepoBSONBuilder()
 {
 }
 
-
 RepoBSONBuilder::~RepoBSONBuilder()
 {
 }
@@ -17,7 +16,6 @@ void RepoBSONBuilder::appendUUID(
 	const repoUUID &uuid)
 {
 	appendBinData(label, uuid.size(), mongo::bdtUUID, (char*)uuid.data);
-
 }
 
 void RepoBSONBuilder::appendArrayPair(
@@ -43,10 +41,7 @@ void RepoBSONBuilder::appendArrayPair(
 	{
 		repoWarning << "Trying to append an empty array pair with label:" << label;
 	}
-	
-
 }
-
 
 RepoBSON RepoBSONBuilder::obj()
 {
@@ -54,23 +49,20 @@ RepoBSON RepoBSONBuilder::obj()
 	return RepoBSON(mongo::BSONObjBuilder::obj());
 }
 
-template<> void repo::core::model::RepoBSONBuilder::append<repoUUID>
-(
-	const std::string &label,
-	const repoUUID &uuid
-)
+template<> void repo::core::model::RepoBSONBuilder::append < repoUUID >
+	(
+		const std::string &label,
+		const repoUUID &uuid
+		)
 {
 	appendUUID(label, uuid);
 }
 
-template<> void repo::core::model::RepoBSONBuilder::append<repo_vector_t>
-	(
-		const std::string &label,
-		const repo_vector_t &vec
-		)
-{
-	appendArray(label, std::vector<float>({ vec.x, vec.y, vec.z }));
-}
-
-
-
+	template<> void repo::core::model::RepoBSONBuilder::append < repo_vector_t >
+		(
+			const std::string &label,
+			const repo_vector_t &vec
+			)
+	{
+		appendArray(label, std::vector<float>({ vec.x, vec.y, vec.z }));
+	}

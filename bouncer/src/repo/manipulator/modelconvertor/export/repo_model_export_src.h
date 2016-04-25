@@ -19,7 +19,6 @@
 * Allows Export functionality from 3D Repo World to SRC
 */
 
-
 #pragma once
 
 #include <string>
@@ -27,13 +26,13 @@
 #include "repo_model_export_web.h"
 #include "../../../lib/repo_property_tree.h"
 #include "../../../core/model/collection/repo_scene.h"
+#include "../../../core/model/bson/repo_node_mesh.h"
 
 namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
-
 			class SRCModelExport : public WebModelExport
-			{	
+			{
 			public:
 				/**
 				* Default Constructor, export model with default settings
@@ -45,17 +44,16 @@ namespace repo{
 				* Default Destructor
 				*/
 				virtual ~SRCModelExport();
-				
+
 				/**
 				* Export all necessary files as buffers
-				* @return returns a repo_src_export_t containing all files needed for this 
+				* @return returns a repo_src_export_t containing all files needed for this
 				*          model to be rendered
 				*/
-				repo_export_buffers_t getAllFilesExportedAsBuffer() const;
-			
+				repo_web_buffers_t getAllFilesExportedAsBuffer() const;
+
 			private:
 				std::unordered_map<std::string, std::vector<uint8_t>> fullDataBuffer;
-
 
 				/**
 				* Convert a Mesh Node into src format
@@ -75,7 +73,7 @@ namespace repo{
 
 				/**
 				* Generate JSON mapping for multipart meshes
-				* And add it into the object 
+				* And add it into the object
 				* @param mesh mesh to generate with
 				* @param scene scene for reference
 				* @param splitMapping how the mapping is split after subMesh split
@@ -84,7 +82,6 @@ namespace repo{
 					const repo::core::model::MeshNode *mesh,
 					const repo::core::model::RepoScene *scene,
 					const std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> &splitMapping);
-
 
 				/**
 				* Create a tree representation for the graph
@@ -98,13 +95,7 @@ namespace repo{
 				* returns an empty vector if the export has failed
 				*/
 				std::unordered_map<std::string, std::vector<uint8_t>> getSRCFilesAsBuffer() const;
-
 			};
-
-
-
-
 		} //namespace modelconvertor
 	} //namespace manipulator
 } //namespace repo
-

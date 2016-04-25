@@ -6,7 +6,6 @@ RepoBroadcaster::RepoBroadcaster()
 {
 }
 
-
 RepoBroadcaster::~RepoBroadcaster()
 {
 }
@@ -17,7 +16,6 @@ RepoBroadcaster::~RepoBroadcaster()
 //	static RepoBroadcaster *broadCaster = new RepoBroadcaster();
 //	return broadCaster;
 //}
-
 
 std::streamsize RepoBroadcaster::write(const char* s, std::streamsize n)
 {
@@ -30,18 +28,15 @@ std::streamsize RepoBroadcaster::write(const char* s, std::streamsize n)
 	if (firstPos != std::string::npos && secPos != std::string::npos)
 	{
 		actualMessage = msg.substr(secPos + 1);
-
 	}
-	
-	boost::trim(actualMessage); //remove trailing spaces/carriage returns 
 
+	boost::trim(actualMessage); //remove trailing spaces/carriage returns
 
 	if (actualMessage.empty()) return n; //don't bother broadcasting if the actual message is empty
 
 	for (const auto &listener : subscribers)
 	{
 		listener->messageGenerated(msg);
-
 	}
 	return n;
 }

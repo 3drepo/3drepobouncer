@@ -25,132 +25,124 @@
 namespace repo {
 	namespace core {
 		namespace model {
+			//------------------------------------------------------------------------------
+			//
+			// Fields specific to user only
+			//
+			//------------------------------------------------------------------------------
+#define REPO_USER_LABEL_AVATAR               "avatar"
+#define REPO_USER_LABEL_CREDENTIALS          "credentials"
+#define REPO_USER_LABEL_CUSTOM_DATA          "customData"
+#define REPO_USER_LABEL_EMAIL     			"email"
+#define REPO_USER_LABEL_FIRST_NAME     		"firstName"
+#define REPO_USER_LABEL_LAST_NAME     		"lastName"
+#define REPO_USER_LABEL_ENCRYPTION           "MONGODB-CR"
+#define REPO_USER_LABEL_CLEARTEXT            "cleartext"
+#define REPO_USER_LABEL_LABEL                "label"
+#define REPO_USER_LABEL_OWNER                "account"
+#define REPO_USER_LABEL_KEY                  "key"
+#define REPO_USER_LABEL_PWD           		 "pwd"
+#define REPO_USER_LABEL_USER     			"user"
+#define REPO_USER_LABEL_DB                   "db"
+#define REPO_USER_LABEL_ROLES                 "roles"
+#define REPO_USER_LABEL_ROLE                 "role"
+#define REPO_USER_LABEL_API_KEYS             "apiKeys"
 
-				//------------------------------------------------------------------------------
-				//
-				// Fields specific to user only
-				//
-				//------------------------------------------------------------------------------
-				#define REPO_USER_LABEL_AVATAR               "avatar"
-				#define REPO_USER_LABEL_CREDENTIALS          "credentials"
-				#define REPO_USER_LABEL_CUSTOM_DATA          "customData"
-				#define REPO_USER_LABEL_EMAIL     			"email"
-				#define REPO_USER_LABEL_FIRST_NAME     		"firstName"
-				#define REPO_USER_LABEL_LAST_NAME     		"lastName"
-				#define REPO_USER_LABEL_ENCRYPTION           "MONGODB-CR"
-				#define REPO_USER_LABEL_CLEARTEXT            "cleartext"
-				#define REPO_USER_LABEL_LABEL                "label"
-				#define REPO_USER_LABEL_OWNER                "account"
-				#define REPO_USER_LABEL_KEY                  "key"
-				#define REPO_USER_LABEL_PWD           		 "pwd"
-				#define REPO_USER_LABEL_PROJECT              "project"
-				#define REPO_USER_LABEL_PROJECTS             "projects"
-				#define REPO_USER_LABEL_USER     			"user"
-				#define REPO_USER_LABEL_DB                   "db"
-				#define REPO_USER_LABEL_ROLES                 "roles"
-				#define REPO_USER_LABEL_ROLE                 "role"
-				#define REPO_USER_LABEL_GROUP                "group"
-				#define REPO_USER_LABEL_GROUPS               "groups"
-				#define REPO_USER_LABEL_API_KEYS             "apiKeys"
+			class REPO_API_EXPORT RepoUser : public RepoBSON
+			{
+			public:
+				RepoUser();
 
-				class REPO_API_EXPORT RepoUser : public RepoBSON
+				RepoUser(RepoBSON bson) : RepoBSON(bson){}
+
+				~RepoUser();
+
+				/**
+				* --------- Convenience functions -----------
+				*/
+
+				/**
+				* Get all api keys associated with this user as a list of (label, key) pairs
+				* @return returns a list of label,key pairs
+				*/
+				std::list<std::pair<std::string, std::string> > getAPIKeysList() const;
+
+				/**
+				* Get avatar image as a vector of char
+				* @return returns a vector of char representing the binary image
+				*/
+				std::vector<char> getAvatarAsRawData() const;
+
+				/**
+				* Get the clear text password of the user
+				* @return returns the clear text password
+				*/
+				std::string getCleartextPassword() const;
+
+				/**
+				* Get the custom data within the user bson as a bson
+				* @return returns a bson with custom data in it
+				*/
+				RepoBSON getCustomDataBSON() const;
+
+				/**
+				* Get the roles within the user bson as a bson
+				* @return returns a bson with roles in it
+				*/
+				RepoBSON getRolesBSON() const;
+
+				/**
+				* Get the first name of this user
+				* @return returns first name of the user, empty string if none
+				*/
+				std::string getFirstName() const
 				{
-				public:
-					RepoUser();
+					RepoBSON customData = getCustomDataBSON();
+					return customData.isEmpty() ? "" : customData.getStringField(REPO_USER_LABEL_FIRST_NAME);
+				}
 
-					RepoUser(RepoBSON bson) : RepoBSON(bson){}
+				/**
+				* Get the last name of this user
+				* @return returns last name of the user, empty string if none
+				*/
+				std::string getLastName() const
+				{
+					RepoBSON customData = getCustomDataBSON();
+					return customData.isEmpty() ? "" : customData.getStringField(REPO_USER_LABEL_LAST_NAME);
+				}
 
-					~RepoUser();
+				/**
+				* Get the username from this user
+				* @return returns user name of the user, empty string if none
+				*/
+				std::string getUserName() const
+				{
+					return getStringField(REPO_USER_LABEL_USER);
+				}
 
-					/**
-					* --------- Convenience functions -----------
-					*/
+				/**
+				* Get the email of this user
+				* @return returns email of the user, empty string if none
+				*/
+				std::string getEmail() const
+				{
+					RepoBSON customData = getCustomDataBSON();
+					return customData.isEmpty() ? "" : customData.getStringField(REPO_USER_LABEL_EMAIL);
+				}
 
-					/**
-					* Get all api keys associated with this user as a list of (label, key) pairs
-					* @return returns a list of label,key pairs
-					*/
-					std::list<std::pair<std::string, std::string> > getAPIKeysList() const;
+				/**
+				* Get the password of this user
+				* @return returns masked password of the user
+				*/
+				std::string getPassword() const;
 
-					/**
-					* Get avatar image as a vector of char
-					* @return returns a vector of char representing the binary image
-					*/
-					std::vector<char> getAvatarAsRawData() const;
-
-					/**
-					* Get the clear text password of the user
-					* @return returns the clear text password
-					*/
-					std::string getCleartextPassword() const;
-
-					/**
-					* Get the custom data within the user bson as a bson
-					* @return returns a bson with custom data in it
-					*/
-					RepoBSON getCustomDataBSON() const;
-
-					/**
-					* Get the roles within the user bson as a bson
-					* @return returns a bson with roles in it
-					*/
-					RepoBSON getRolesBSON() const;
-
-					/**
-					* Get the first name of this user
-					* @return returns first name of the user, empty string if none
-					*/
-					std::string getFirstName() const
-					{
-						RepoBSON customData = getCustomDataBSON();
-						return customData.isEmpty() ? "" : customData.getStringField(REPO_USER_LABEL_FIRST_NAME);
-					}
-
-					/**
-					* Get the last name of this user
-					* @return returns last name of the user, empty string if none
-					*/
-					std::string getLastName() const
-					{
-						RepoBSON customData = getCustomDataBSON();
-						return customData.isEmpty() ? "" : customData.getStringField(REPO_USER_LABEL_LAST_NAME);
-					}
-
-					/**
-					* Get the username from this user
-					* @return returns user name of the user, empty string if none
-					*/
-					std::string getUserName() const
-					{
-						return getStringField(REPO_USER_LABEL_USER);
-					}
-
-					/**
-					* Get the email of this user
-					* @return returns email of the user, empty string if none
-					*/
-					std::string getEmail() const
-					{
-						RepoBSON customData = getCustomDataBSON();
-						return customData.isEmpty() ? "" : customData.getStringField(REPO_USER_LABEL_EMAIL);
-					}
-
-					/**
-					* Get the password of this user
-					* @return returns masked password of the user
-					*/
-					std::string getPassword() const;
-
-					/**
-					* Get list of roles
-					* @return returns a vector of string pairs (database, roles)
-					*/
-					std::list<std::pair<std::string, std::string>>
-						getRolesList() const;
-
-
-				};
+				/**
+				* Get list of roles
+				* @return returns a vector of string pairs (database, roles)
+				*/
+				std::list<std::pair<std::string, std::string>>
+					getRolesList() const;
+			};
 		}// end namespace model
 	} // end namespace core
 } // end namespace repo
-

@@ -2,7 +2,6 @@
 
 using namespace repo::core::model;
 
-
 RevisionGraph::~RevisionGraph()
 {
 }

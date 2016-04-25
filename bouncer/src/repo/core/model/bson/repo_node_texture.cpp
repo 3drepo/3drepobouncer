@@ -33,17 +33,14 @@ RepoNode()
 TextureNode::TextureNode(RepoBSON bson) :
 RepoNode(bson)
 {
-
 }
 
 TextureNode::~TextureNode()
 {
 }
 
-
 std::vector<char> TextureNode::getRawData() const
 {
-
 	std::vector<char> dataVec;
 	if (hasField(REPO_LABEL_DATA))
 	{
@@ -78,11 +75,10 @@ bool TextureNode::sEqual(const RepoNode &other) const
 		raw = getRawData();
 		raw2 = otherText.getRawData();
 
-		if (equal = (raw.size() == raw2.size()) )
+		if (equal = (raw.size() == raw2.size()))
 		{
 			equal = !memcmp(raw.data(), raw2.data(), raw.size() * sizeof(*raw.data()));
 		}
-
 	}
 
 	return equal;

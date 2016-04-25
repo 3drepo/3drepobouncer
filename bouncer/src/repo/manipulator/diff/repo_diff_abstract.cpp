@@ -15,7 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include "repo_diff_abstract.h"
 
 using namespace repo::manipulator::diff;
@@ -29,7 +28,6 @@ AbstractDiff::AbstractDiff(
 	gType(gType)
 {
 }
-
 
 AbstractDiff::~AbstractDiff()
 {

@@ -20,14 +20,14 @@
 */
 
 #include "repo_model_export_gltf.h"
-#include "../../modelutility/repo_mesh_map_reorganiser.h"
-#include "../../modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
-#include "../../../lib/repo_log.h"
-#include "../../../core/model/bson/repo_bson_factory.h"
-#include "auxiliary/repo_model_export_x3d_gltf.h"
-#include "auxiliary/x3dom_constants.h"
 
 #include <cmath>
+
+#include "../../../core/model/bson/repo_bson_factory.h"
+#include "../../../lib/repo_log.h"
+#include "../../modelutility/repo_mesh_map_reorganiser.h"
+#include "../../modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
+#include "auxiliary/x3dom_constants.h"
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -197,23 +197,6 @@ GLTFModelExport::GLTFModelExport(
 		//We only need a GLTF representation if there are meshes or cameras
 		if (scene->getAllMeshes(gType).size() || scene->getAllCameras(gType).size())
 			convertSuccess = generateTreeRepresentation();
-
-		if (convertSuccess)
-		{
-			repoDebug << "Generating X3D Backbone file...";
-			//Build general x3d backbone if SRC conversion was a success
-			X3DGLTFModelExport x3dExport(scene);
-
-			if (convertSuccess = x3dExport.isOk())
-			{
-				auto buffer = x3dExport.getFileAsBuffer();
-				x3dBufs[x3dExport.getFileName()] = buffer;
-			}
-			else
-			{
-				repoError << "Failed to Export x3dom backbone";
-			}
-		}
 	}
 	else
 	{
@@ -519,7 +502,8 @@ bool GLTFModelExport::constructScene(
 		populateWithTextures(tree);
 		populateWithCameras(tree);
 
-		repo::lib::PropertyTree spatialPartTree = generateSpatialPartitioningTree();
+		repo::lib::PropertyTree spatialPartTree = generateSpatialrepo_partitioning_tree_t();
+
 #ifdef DEBUG
 		std::string jsonFilePrefix = "/";
 #else
@@ -536,7 +520,7 @@ bool GLTFModelExport::constructScene(
 	}
 }
 
-repo::lib::PropertyTree GLTFModelExport::generateSpatialPartitioningTree()
+repo::lib::PropertyTree GLTFModelExport::generateSpatialrepo_partitioning_tree_t()
 {
 	//TODO: We could take in a spatial partitioner in the constructor to allow flexibility
 	repo::manipulator::modelutility::RDTreeSpatialPartitioner rdTreePartitioner(scene);
@@ -568,7 +552,7 @@ bool GLTFModelExport::generateTreeRepresentation()
 	return true;
 }
 
-repo_export_buffers_t GLTFModelExport::getAllFilesExportedAsBuffer() const
+repo_web_buffers_t GLTFModelExport::getAllFilesExportedAsBuffer() const
 {
 	return{ getGLTFFilesAsBuffer(), getX3DFilesAsBuffer(), getJSONFilesAsBuffer() };
 }
@@ -827,6 +811,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 		std::vector<repo_vector_t> normals;
 		std::vector<repo_vector_t> vertices = node->getVertices();
 		std::vector<std::vector<repo_vector2d_t>> UVs;
+
 		if (mappings.size() > 1 || vertices.size() > GLTF_MAX_VERTEX_LIMIT)
 		{
 			//This is a multipart mesh node, the mesh may be too big for
@@ -839,6 +824,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			std::vector<uint16_t> newFaces = reSplitter->getSerialisedFaces();
 			std::vector<std::vector<float>> idMapBuf = reSplitter->getIDMapArrays();
 			std::vector<std::vector<repo_mesh_mapping_t>> matMap = reSplitter->getMappingsPerSubMesh();
+
 			delete reSplitter;
 
 			auto normals = splitMesh.getNormals();
@@ -886,6 +872,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 					}
 				}
 #endif
+
 			auto newMappings = splitMesh.getMeshMapping();
 
 			splitSizes[node->getUniqueID()] = newMappings.size();
@@ -1032,6 +1019,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			normals = node->getNormals();
 			vertices = node->getVertices();
 			UVs = node->getUVChannelsSeparated();
+
 			bool hasMapping = mappings.size();
 			std::string meshId = hasMapping ? UUIDtoString(mappings[0].mesh_id) : UUIDtoString(node->getUniqueID());
 			std::string label = GLTF_LABEL_MESHES + "." + UUIDtoString(node->getUniqueID());
@@ -1106,7 +1094,6 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 					}
 				}
 #endif
-
 			std::string bufferFileName = UUIDtoString(scene->getRevisionID());
 
 			size_t vStart = addToDataBuffer(bufferFileName, vertices);

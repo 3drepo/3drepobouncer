@@ -1,8 +1,8 @@
 // ----------------------------------------------------------------------------
 // Copyright (C) 2002-2006 Marcin Kalicinski
 //
-// Distributed under the Boost Software License, Version 1.0. 
-// (See accompanying file LICENSE_1_0.txt or copy at 
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE_1_0.txt or copy at
 // http://www.boost.org/LICENSE_1_0.txt)
 //
 // For more information, see www.boost.org
@@ -27,7 +27,6 @@ namespace boost {
 	namespace property_tree {
 		namespace json_parser
 		{
-
 			// Create necessary escape sequences from illegal characters
 			template<class Ch>
 			std::basic_string<Ch> create_escapes(const std::basic_string<Ch> &s)
@@ -77,7 +76,6 @@ namespace boost {
 				const Ptree &pt,
 				int indent, bool pretty)
 			{
-
 				typedef typename Ptree::key_type::value_type Ch;
 				typedef typename std::basic_string<Ch> Str;
 
@@ -88,7 +86,6 @@ namespace boost {
 					Str data = create_escapes(pt.template get_value<Str>());
 					//stream << Ch('"') << data << Ch('"');
 					stream << data;
-
 				}
 				else if (indent > 0 && pt.count(Str()) == pt.size())
 				{
@@ -106,7 +103,6 @@ namespace boost {
 					}
 					if (pretty) stream << Str(4 * indent, Ch(' '));
 					stream << Ch(']');
-
 				}
 				else
 				{
@@ -127,14 +123,12 @@ namespace boost {
 					if (pretty) stream << Str(4 * indent, Ch(' '));
 					stream << Ch('}');
 				}
-
 			}
 
 			// Verify if ptree does not contain information that cannot be written to json
 			template<class Ptree>
 			bool verify_json(const Ptree &pt, int depth)
 			{
-
 				typedef typename Ptree::key_type::value_type Ch;
 				typedef typename std::basic_string<Ch> Str;
 
@@ -154,7 +148,6 @@ namespace boost {
 
 				// Success
 				return true;
-
 			}
 
 			// Write ptree to json stream
@@ -171,7 +164,6 @@ namespace boost {
 				if (!stream.good())
 					BOOST_PROPERTY_TREE_THROW(json_parser_error("write error", filename, 0));
 			}
-
 		}
 	}
 }

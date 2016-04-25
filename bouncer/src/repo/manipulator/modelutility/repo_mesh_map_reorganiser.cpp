@@ -15,6 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "repo_mesh_map_reorganiser.h"
+#include "../../core/model/bson/repo_bson_builder.h"
 #include "../../core/model/bson/repo_bson_factory.h"
 
 using namespace repo::manipulator::modelutility;
@@ -96,6 +97,7 @@ void MeshMapReorganiser::completeLastMatMapEntry(
 	const std::vector<float>  &maxBox
 	)
 {
+
 	matMap.back().back().vertTo = eVertices;
 	matMap.back().back().triTo = eFaces;
 	if (minBox.size())
@@ -150,6 +152,10 @@ void MeshMapReorganiser::performSplitting()
 	repoTrace << "Performing splitting on mesh: " << mesh->getUniqueID();
 	size_t nMappings = orgMappings.size();
 	size_t tenths = orgMappings.size() / 10;
+	if (!tenths)
+	{
+		tenths = nMappings;
+	}
 	size_t count = 0;
 	for (const auto &currentSubMesh : orgMappings)
 	{
@@ -307,6 +313,7 @@ void MeshMapReorganiser::splitLargeMesh(
 				if (startedLargeMeshSplit) {
 					updateIDMapArray(splitMeshVertexCount, idMapIdx++);
 					finishSubMesh(newMappings.back(), bboxMin, bboxMax, splitMeshVertexCount, splitMeshFaceCount);
+
 					completeLastMatMapEntry(matMap.back().back().vertFrom + splitMeshVertexCount,
 						matMap.back().back().triFrom + splitMeshFaceCount, bboxMin, bboxMax);
 				}

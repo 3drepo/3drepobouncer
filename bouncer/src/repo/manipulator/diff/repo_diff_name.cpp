@@ -15,7 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include "repo_diff_name.h"
 
 using namespace repo::manipulator::diff;
@@ -23,14 +22,12 @@ using namespace repo::manipulator::diff;
 DiffByName::DiffByName(
 	const repo::core::model::RepoScene            *base,
 	const repo::core::model::RepoScene            *compare,
-	const repo::core::model::RepoScene::GraphType &gType) 
+	const repo::core::model::RepoScene::GraphType &gType)
 	: AbstractDiff(base, compare, gType)
 	, errorReported(false)
 {
-
 	ok = this->compare(msg);
 }
-
 
 DiffByName::~DiffByName()
 {
@@ -42,10 +39,9 @@ bool DiffByName::compare(
 	bool res = false;
 	if (baseScene && compareScene && baseScene->hasRoot(gType) && compareScene->hasRoot(gType))
 	{
-
 		std::set<repoUUID> baseIDs = baseScene->getAllSharedIDs(gType);
 		std::set<repoUUID> compIDs = compareScene->getAllSharedIDs(gType);
-	
+
 		//Compare meshes
 		compareNodes(baseIDs, compIDs, baseScene->getAllMeshes(gType), compareScene->getAllMeshes(gType));
 
@@ -85,7 +81,6 @@ bool DiffByName::compare(
 	}
 
 	return res;
-
 }
 
 void DiffByName::compareNodes(
@@ -100,7 +95,7 @@ void DiffByName::compareNodes(
 	const std::unordered_map<std::string, repo::core::model::RepoNode*> compNodeMap =
 		createNodeMap(compNodes);
 
-	for (const auto pair: baseNodeMap)
+	for (const auto pair : baseNodeMap)
 	{
 		//Try to find the same name in compNodeMap
 		auto mapIt = compNodeMap.find(pair.first);
@@ -121,9 +116,7 @@ void DiffByName::compareNodes(
 				repoLogError("Found multiple potential correspondence for " + UUIDtoString(baseId));
 			}
 
-
 			//Compare to see if it is modified
-
 
 			if (!pair.second->sEqual(*mapIt->second))
 			{
@@ -133,11 +126,10 @@ void DiffByName::compareNodes(
 			}
 			else
 
-			compIDs.erase(compId);
+				compIDs.erase(compId);
 		}
 		else
 		{
-
 			baseRes.added.push_back(baseId);
 		}
 		baseIDs.erase(baseId);

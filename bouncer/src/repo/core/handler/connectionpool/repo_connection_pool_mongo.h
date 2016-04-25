@@ -15,12 +15,10 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
 
 #include "../../../lib/repo_stack.h"
 #include "../../../lib/repo_log.h"
-
 
 #if defined(_WIN32) || defined(_WIN64)
 #include <WinSock2.h>
@@ -35,7 +33,7 @@ namespace repo{
 	namespace core{
 		namespace handler {
 			namespace connectionPool{
-				class MongoConnectionPool : repo::lib::RepoStack <mongo::DBClientBase * >
+				class MongoConnectionPool : repo::lib::RepoStack < mongo::DBClientBase * >
 				{
 				public:
 					/**
@@ -69,7 +67,6 @@ namespace repo{
 									{
 										throw mongo::DBException(errMsg, mongo::ErrorCodes::AuthenticationFailed);
 									}
-
 								}
 								else
 								{
@@ -83,14 +80,9 @@ namespace repo{
 							repoDebug << "Failed to connect: " << errMsg;
 							throw mongo::DBException(errMsg, 1000);
 						}
-
-
-
-
 					}
 
-					MongoConnectionPool():maxSize(0){}
-
+					MongoConnectionPool() :maxSize(0){}
 
 					~MongoConnectionPool()
 					{
@@ -155,15 +147,11 @@ namespace repo{
 						return worker;
 					}
 
-
 					const uint32_t maxSize;
 					const mongo::ConnectionString dbAddress;
 					const mongo::BSONObj *auth;
-
 				};
-
 			}
 		} /* namespace handler */
 	}
 }
-

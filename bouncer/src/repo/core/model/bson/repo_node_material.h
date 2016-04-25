@@ -24,70 +24,64 @@
 namespace repo {
 	namespace core {
 		namespace model {
+			//------------------------------------------------------------------------------
+			//
+			// Fields specific to mesh only
+			//
+			//------------------------------------------------------------------------------
+#define REPO_NODE_MATERIAL_LABEL_AMBIENT					"ambient"
+#define REPO_NODE_MATERIAL_LABEL_DIFFUSE					"diffuse"
+#define REPO_NODE_MATERIAL_LABEL_SPECULAR				"specular"
+#define REPO_NODE_MATERIAL_LABEL_EMISSIVE				"emissive"
+#define REPO_NODE_MATERIAL_LABEL_WIREFRAME				"wireframe"
+#define REPO_NODE_MATERIAL_LABEL_TWO_SIDED				"two_sided"
+#define REPO_NODE_MATERIAL_LABEL_OPACITY					"opacity"
+#define REPO_NODE_MATERIAL_LABEL_SHININESS				"shininess"
+#define REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH		"shininess_strength"
+			//------------------------------------------------------------------------------
 
-				//------------------------------------------------------------------------------
-				//
-				// Fields specific to mesh only
-				//
-				//------------------------------------------------------------------------------
-				#define REPO_NODE_MATERIAL_LABEL_AMBIENT					"ambient"
-				#define REPO_NODE_MATERIAL_LABEL_DIFFUSE					"diffuse"
-				#define REPO_NODE_MATERIAL_LABEL_SPECULAR				"specular"
-				#define REPO_NODE_MATERIAL_LABEL_EMISSIVE				"emissive"
-				#define REPO_NODE_MATERIAL_LABEL_WIREFRAME				"wireframe"
-				#define REPO_NODE_MATERIAL_LABEL_TWO_SIDED				"two_sided"
-				#define REPO_NODE_MATERIAL_LABEL_OPACITY					"opacity"
-				#define REPO_NODE_MATERIAL_LABEL_SHININESS				"shininess"
-				#define REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH		"shininess_strength"
-				//------------------------------------------------------------------------------
+			class REPO_API_EXPORT MaterialNode :public RepoNode
+			{
+			public:
 
+				/**
+				* Default constructor
+				*/
+				MaterialNode();
 
-				class REPO_API_EXPORT MaterialNode :public RepoNode
-				{
-				public:
+				/**
+				* Construct a MaterialNode from a RepoBSON object
+				* @param RepoBSON object
+				*/
+				MaterialNode(RepoBSON bson);
 
-					/**
-					* Default constructor
-					*/
-					MaterialNode();
+				/**
+				* Default deconstructor
+				*/
+				~MaterialNode();
 
-					/**
-					* Construct a MaterialNode from a RepoBSON object
-					* @param RepoBSON object
-					*/
-					MaterialNode(RepoBSON bson);
+				/**
+				* Check if the node is semantically equal to another
+				* Different node should have a different interpretation of what
+				* this means.
+				* @param other node to compare with
+				* @param returns true if equal, false otherwise
+				*/
+				virtual bool sEqual(const RepoNode &other) const;
 
+				/**
+				* --------- Convenience functions -----------
+				*/
 
-					/**
-					* Default deconstructor
-					*/
-					~MaterialNode();
+				/**
+				* Get material information from the node as a struct
+				* @return returns a repo_material_t containing the information
+				*/
+				repo_material_t getMaterialStruct() const;
 
-					/**
-					* Check if the node is semantically equal to another
-					* Different node should have a different interpretation of what
-					* this means.
-					* @param other node to compare with
-					* @param returns true if equal, false otherwise
-					*/
-					virtual bool sEqual(const RepoNode &other) const;
-
-					/**
-					* --------- Convenience functions -----------
-					*/
-
-					/**
-					* Get material information from the node as a struct
-					* @return returns a repo_material_t containing the information
-					*/
-					repo_material_t getMaterialStruct() const;
-
-				protected:
-					std::vector<float> getDataAsBuffer() const;
-
-				};
+			protected:
+				std::vector<float> getDataAsBuffer() const;
+			};
 		} //namespace model
 	} //namespace core
 } //namespace repo
-
-

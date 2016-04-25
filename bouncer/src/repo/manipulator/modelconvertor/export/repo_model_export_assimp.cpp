@@ -19,12 +19,12 @@
 * Allows Export functionality into/output Repo world
 */
 
-
 #include "repo_model_export_assimp.h"
-#include "../../../lib/repo_log.h"
-
 #include <boost/filesystem.hpp>
 #include <fstream>
+#include "../../../core/model/bson/repo_node_texture.h"
+#include "../../../core/model/bson/repo_node_transformation.h"
+#include "../../../lib/repo_log.h"
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -44,9 +44,7 @@ aiScene* AssimpModelExport::convertToAssimp(
 	repo::core::model::RepoNodeSet                &textNodes,
 	const repo::core::model::RepoScene::GraphType &gType)
 {
-
-
-	aiScene *assimpScene =nullptr;
+	aiScene *assimpScene = nullptr;
 	std::vector<aiMesh*>                      meshVec;
 	std::vector<aiMaterial*>                  matVec;
 	std::vector<aiCamera*>                    camVec;
@@ -57,7 +55,6 @@ aiScene* AssimpModelExport::convertToAssimp(
 
 	if (rootNode)
 	{
-
 		assimpScene = new aiScene();
 		assimpScene->mFlags = 0; //getPostProcessingFlags(); // TODO FIX ME!
 
@@ -90,19 +87,16 @@ aiScene* AssimpModelExport::convertToAssimp(
 				repoTrace << " mesh #" << i - 1 << " #vertices = " << mesh->mNumVertices;
 				if (mesh->mNumVertices > 0)
 					repoTrace << " First vertex = " << mesh->mVertices[0].x << ", "
-						<< mesh->mVertices[0].y << "," << mesh->mVertices[0].z;
+					<< mesh->mVertices[0].y << "," << mesh->mVertices[0].z;
 			}
 		}
 
 		//FIXME: do i need to fill in the texture ones?
 
-
 		assimpScene->mRootNode = rootNode;
 	}
 
-
 	return assimpScene;
-
 }
 
 aiNode* AssimpModelExport::constructAiSceneRecursively(
@@ -170,71 +164,66 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 					repoError << "AssimpModelExport: Failed to obtain Transformation matrix from Transformation Node!";
 				}
 
-
 				// Find Mesh/Camera childs
 				std::vector<uint32_t> meshIndices;
 				for (const auto & child : scene->getChildrenAsNodes(gType, currNode->getSharedID()))
 				{
 					repoUUID childSharedID = child->getSharedID();
 
-
 					//==================MESH============================
 					switch (child->getTypeAsEnum())
 					{
-						case repo::core::model::NodeType::MESH:
+					case repo::core::model::NodeType::MESH:
+					{
+						auto it = meshMap.find(childSharedID);
+						aiMesh *assimpMesh;
+
+						if (it == meshMap.end())
 						{
-							auto it = meshMap.find(childSharedID);
-							aiMesh *assimpMesh;
-
-							if (it == meshMap.end())
-							{
-								//mesh isn't in the map yet - create a new entry
-								assimpMesh = convertMesh(scene, (repo::core::model::MeshNode *)child, matVec, matMap, textNodes);
-								meshMap[childSharedID] = assimpMesh;
-								meshVec.push_back(assimpMesh);
-							}
-							else{
-								assimpMesh = it->second;
-							}
-
-							//Find index within the map
-							uint32_t index = std::distance(meshVec.begin(), std::find(meshVec.begin(), meshVec.end(), assimpMesh));
-							meshIndices.push_back(index);
+							//mesh isn't in the map yet - create a new entry
+							assimpMesh = convertMesh(scene, (repo::core::model::MeshNode *)child, matVec, matMap, textNodes);
+							meshMap[childSharedID] = assimpMesh;
+							meshVec.push_back(assimpMesh);
 						}
-						break;
-
-						//--------------------------------------------------------------------------
-						// Cameras
-						// Unlike meshes, cameras are not pointed to by index from transformations.
-						// Instead, corresponding camera shares the same name with transformation in Assimp.
-						case repo::core::model::NodeType::CAMERA:
-						{
-							auto it = camMap.find(childSharedID);
-							aiCamera *assimpCam;
-
-							if (it == camMap.end())
-							{
-								//mesh isn't in the map yet - create a new entry
-								assimpCam = convertCamera(scene, (repo::core::model::CameraNode *)child, currNode->getName());
-								camMap[childSharedID] = assimpCam;
-								camVec.push_back(assimpCam);
-							}
-							else{
-								assimpCam = it->second;
-							}
-
-							//Find index within the map
-							uint32_t index = std::distance(camVec.begin(), std::find(camVec.begin(), camVec.end(), assimpCam));
-
+						else{
+							assimpMesh = it->second;
 						}
+
+						//Find index within the map
+						uint32_t index = std::distance(meshVec.begin(), std::find(meshVec.begin(), meshVec.end(), assimpMesh));
+						meshIndices.push_back(index);
 					}
+					break;
 
+					//--------------------------------------------------------------------------
+					// Cameras
+					// Unlike meshes, cameras are not pointed to by index from transformations.
+					// Instead, corresponding camera shares the same name with transformation in Assimp.
+					case repo::core::model::NodeType::CAMERA:
+					{
+						auto it = camMap.find(childSharedID);
+						aiCamera *assimpCam;
+
+						if (it == camMap.end())
+						{
+							//mesh isn't in the map yet - create a new entry
+							assimpCam = convertCamera(scene, (repo::core::model::CameraNode *)child, currNode->getName());
+							camMap[childSharedID] = assimpCam;
+							camVec.push_back(assimpCam);
+						}
+						else{
+							assimpCam = it->second;
+						}
+
+						//Find index within the map
+						uint32_t index = std::distance(camVec.begin(), std::find(camVec.begin(), camVec.end(), assimpCam));
+					}
+					}
 				} //end of looping for mesh/camera
 
 				node->mMeshes = new unsigned int[meshIndices.size()];
 				std::copy(meshIndices.begin(), meshIndices.end(), node->mMeshes);
 				node->mNumMeshes = meshIndices.size();
-
 			}
 		}
 		break;
@@ -246,7 +235,7 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 			node = constructAiSceneRecursively(refScene, refScene->getRoot(gType),
 				meshVec, matVec, camVec, meshMap, matMap, camMap, textNodes);
 		}
-			break;
+		break;
 		} //end of switch
 
 		//FIXME: this doesn't work if there's randomly a transformation again after other nodes (like meshes, textures etc)
@@ -277,7 +266,6 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 	}
 
 	return node;
-
 }
 
 aiCamera* AssimpModelExport::convertCamera(
@@ -326,7 +314,6 @@ aiCamera* AssimpModelExport::convertCamera(
 	aiCam->mUp = aiVector3D(up.x, up.y, up.z);
 
 	return aiCam;
-
 }
 
 aiMaterial* AssimpModelExport::convertMaterial(
@@ -335,7 +322,6 @@ aiMaterial* AssimpModelExport::convertMaterial(
 	repo::core::model::RepoNodeSet                &textNodes,
 	const repo::core::model::RepoScene::GraphType &gType)
 {
-
 	if (!matNode || !scene) return nullptr;
 
 	aiMaterial * aiMat = new aiMaterial();
@@ -436,7 +422,7 @@ aiMesh* AssimpModelExport::convertMesh(
 
 	assimpMesh->mName = aiString(meshNode->getName());
 
-	std::vector<repo_face_t> faces =  meshNode->getFaces();
+	std::vector<repo_face_t> faces = meshNode->getFaces();
 	//--------------------------------------------------------------------------
 	// Faces
 	if (faces.size())
@@ -450,7 +436,6 @@ aiMesh* AssimpModelExport::convertMesh(
 				assimpMesh->mFaces[i].mIndices = (unsigned int*)face.data();
 				assimpMesh->mFaces[i].mNumIndices = face.size();
 				i++;
-
 			}
 			assimpMesh->mNumFaces = faces.size();
 			assimpMesh->mPrimitiveTypes = 4; // TODO: work out the exact primitive type of each mesh!
@@ -477,7 +462,6 @@ aiMesh* AssimpModelExport::convertMesh(
 			i++;
 		}
 		assimpMesh->mNumVertices = vertices.size();
-
 	}
 	else
 	{
@@ -527,7 +511,6 @@ aiMesh* AssimpModelExport::convertMesh(
 			}
 			assimpMesh->mNumUVComponents[i] = 2; // UV
 		}
-
 	}
 
 	std::vector<repo_color4d_t> colors = meshNode->getColors();
@@ -545,7 +528,6 @@ aiMesh* AssimpModelExport::convertMesh(
 			assimpMesh->mColors[0][i].b = color.b;
 			assimpMesh->mColors[0][i].a = color.a;
 			i++;
-
 		}
 	}
 
@@ -617,8 +599,8 @@ bool AssimpModelExport::writeSceneToFile(
 		Assimp::Exporter exporter;
 		std::string extension = boostPath.extension().string();
 
-		std::string exportFormat = getExportFormatID(extension.substr(1, extension.size()-1));
-		repoTrace << "Exporting repo scene using ASSIMP: export format = " << exportFormat  << " to " << filePath;
+		std::string exportFormat = getExportFormatID(extension.substr(1, extension.size() - 1));
+		repoTrace << "Exporting repo scene using ASSIMP: export format = " << exportFormat << " to " << filePath;
 		if (exportFormat.empty())
 		{
 			repoError << "Unrecognised export format: " << boostPath.extension().string();
@@ -643,15 +625,12 @@ bool AssimpModelExport::writeSceneToFile(
 			}
 			success = (ret == aiReturn_SUCCESS);
 		}
-
-
 	}
 	else{
 		repoError << "Trying to write a null pointer assimp scene!";
 	}
 
 	return success;
-
 }
 
 bool AssimpModelExport::exportToFile(
@@ -669,7 +648,6 @@ bool AssimpModelExport::exportToFile(
 		//FIXME: this is breaking on my assimp.dll but works on assimpd.dll...?
 		//problem seems to be related to meshes/materials
 		delete assimpScene;
-
 	}
 	else
 	{
@@ -746,7 +724,6 @@ bool AssimpModelExport::writeTexturesToFiles(
 			repoError << "Unable to open file to write texture! File path: " << fullPath;
 			success = false;
 		}
-
 	}
 
 	return success;

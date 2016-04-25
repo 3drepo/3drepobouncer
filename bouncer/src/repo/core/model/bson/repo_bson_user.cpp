@@ -22,13 +22,11 @@
 #include "repo_bson_builder.h"
 #include "repo_bson_user.h"
 
-
 using namespace repo::core::model;
 
 RepoUser::RepoUser() : RepoBSON()
 {
 }
-
 
 RepoUser::~RepoUser()
 {
@@ -36,7 +34,6 @@ RepoUser::~RepoUser()
 
 std::list<std::pair<std::string, std::string> > RepoUser::getAPIKeysList() const
 {
-
 	RepoBSON customData = getCustomDataBSON();
 
 	return customData.getListStringPairField(REPO_USER_LABEL_API_KEYS, REPO_USER_LABEL_LABEL, REPO_USER_LABEL_KEY);
@@ -97,11 +94,10 @@ std::string RepoUser::getPassword() const
 }
 
 std::list<std::pair<std::string, std::string>>
-	RepoUser::getRolesList() const
+RepoUser::getRolesList() const
 {
 	std::list<std::pair<std::string, std::string>> result;
 	result = getListStringPairField(REPO_USER_LABEL_ROLES, REPO_USER_LABEL_DB, REPO_USER_LABEL_ROLE);
 
 	return result;
 }
-
