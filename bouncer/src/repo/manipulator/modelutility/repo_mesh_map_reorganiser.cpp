@@ -152,6 +152,10 @@ void MeshMapReorganiser::performSplitting()
 	repoTrace << "Performing splitting on mesh: " << mesh->getUniqueID();
 	size_t nMappings = orgMappings.size();
 	size_t tenths = orgMappings.size() / 10;
+	if (!tenths)
+	{
+		tenths = nMappings;
+	}
 	size_t count = 0;
 	for (const auto &currentSubMesh : orgMappings)
 	{
