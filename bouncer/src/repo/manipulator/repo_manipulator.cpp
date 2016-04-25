@@ -65,7 +65,22 @@ bool RepoManipulator::connectAndAuthenticate(
 		repo::core::handler::MongoDatabaseHandler::getHandler(
 		errMsg, address, port, maxConnections, dbName, username, password, pwDigested);
 
-	return handler != 0;
+	return handler;
+}
+bool RepoManipulator::connectAndAuthenticate(
+	std::string       &errMsg,
+	const std::string &address,
+	const uint32_t    &port,
+	const uint32_t    &maxConnections,
+	const std::string &dbName,
+	const repo::core::model::RepoBSON *credentials
+	)
+{
+	repo::core::handler::AbstractDatabaseHandler *handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(
+		errMsg, address, port, maxConnections, dbName, credentials);
+
+	return handler;
 }
 
 bool RepoManipulator::connectAndAuthenticateWithAdmin(
@@ -192,7 +207,6 @@ void RepoManipulator::commitScene(
 			{
 				repoInfo << "GLTF file stored into the database";
 			}
-
 		}
 
 		repoInfo << "Generating Selection Tree JSON...";
@@ -701,7 +715,6 @@ repo_web_buffers_t RepoManipulator::generateGLTFBuffer(
 	return result;
 }
 
-
 repo_web_buffers_t RepoManipulator::generateSRCBuffer(
 	const repo::core::model::RepoScene *scene)
 {
@@ -816,7 +829,6 @@ repo::core::model::RepoRoleSettings RepoManipulator::getRoleSettingByName(
 		handler->findOneByCriteria(database, REPO_COLLECTION_SETTINGS_ROLES, builder.obj()));
 	return settings;
 }
-
 
 std::shared_ptr<repo_partitioning_tree_t>
 RepoManipulator::getScenePartitioning(

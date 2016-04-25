@@ -65,6 +65,25 @@ namespace repo{
 				);
 
 			/**
+			* Connect to the given database address/port and authenticat the user
+			* @param errMsg error message if the function returns false
+			* @param address mongo database address
+			* @param port port number
+			* @param maxConnections maxmimum number of concurrent connections allowed to the database
+			* @param dbName database name to authenticate against
+			* @param credentials user credentials
+			* @return returns true upon success
+			*/
+			bool connectAndAuthenticate(
+				std::string       &errMsg,
+				const std::string &address,
+				const uint32_t    &port,
+				const uint32_t    &maxConnections,
+				const std::string &dbName,
+				const repo::core::model::RepoBSON *credentials
+				);
+
+			/**
 			* Connect to the given database address/port and authenticat the user using Admin database
 			* @param errMsg error message if the function returns false
 			* @param address mongo database address

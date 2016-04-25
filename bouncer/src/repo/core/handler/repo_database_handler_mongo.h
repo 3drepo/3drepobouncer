@@ -96,11 +96,29 @@ namespace repo{
 					std::string &errMsg,
 					const std::string &host,
 					const int         &port,
-					const uint32_t    &maxConnections,
+					const uint32_t    &maxConnections = 1,
 					const std::string &dbName = std::string(),
 					const std::string &username = std::string(),
 					const std::string &password = std::string(),
 					const bool        &pwDigested = false);
+
+				/**
+				* Returns the instance of MongoDatabaseHandler
+				* @param errMsg error message if this fails
+				* @param host hostname of the database
+				* @param port port number
+				* @param number of maximum simultaneous connections
+				* @param dbName authentication database
+				* @param credentials user credentials
+				* @return Returns the single instance
+				*/
+				static MongoDatabaseHandler* getHandler(
+					std::string           &errMsg,
+					const std::string     &host,
+					const int             &port,
+					const uint32_t        &maxConnections,
+					const std::string     &dbName = std::string(),
+					const model::RepoBSON *credentials = nullptr);
 
 				/**
 				* Returns the instance of MongoDatabaseHandler
@@ -561,6 +579,19 @@ namespace repo{
 					const std::string             &username = std::string(),
 					const std::string             &password = std::string(),
 					const bool                    &pwDigested = false);
+
+				/**
+				* Constructor is private because this class follows the singleton pattern
+				* @param dbAddress ConnectionString that holds the address to the mongo database
+				* @param maxConnections max. number of connections to the database
+				* @param dbName authentication database
+				* @param cred credentials
+				*/
+				MongoDatabaseHandler(
+					const mongo::ConnectionString &dbAddress,
+					const uint32_t                &maxConnections,
+					const std::string             &dbName,
+					const model::RepoBSON         *cred);
 
 				/**
 				* Create a Repo BSON and populate all relevant data

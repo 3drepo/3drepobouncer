@@ -18,11 +18,20 @@
 #include "lib/repo_stack.h"
 #include "manipulator/repo_manipulator.h"
 #include "repo_controller.h"
+#include "core/model/bson/repo_bson_builder.h"
 
 using namespace repo;
 
+const std::string credLabel = "CRED";
+const std::string dbAddLabel = "DBADD";
+const std::string dbPortLabel = "DBPORT";
+const std::string dbNameLabel = "DBNAME";
+const std::string aliasLabel = "ALIAS";
+
 class RepoController::RepoToken
 {
+	friend class RepoController;
+
 public:
 
 	/**
@@ -32,31 +41,74 @@ public:
 	* @param databaseName database it is authenticating against
 	*/
 	RepoToken(
-		const repo::core::model::RepoBSON* credentials = 0,
-		const std::string &databaseHostPort = std::string(),
-		const std::string &databaseName = std::string()) :
-		databaseAd(databaseHostPort),
+		const repo::core::model::RepoBSON *credentials = nullptr,
+		const std::string                 &databaseHost = std::string(),
+		const uint32_t                    &port = 27017,
+		const std::string                 &databaseName = std::string(),
+		const std::string                 &alias = std::string()) :
+		databaseHost(databaseHost),
+		databasePort(port),
+		databaseAd(databaseHost + std::to_string(port)),
 		credentials(credentials),
-		databaseName(databaseName) {}
+		databaseName(databaseName),
+		alias(alias){}
+
+	static RepoToken createTokenFromRawData(
+		const std::vector<char> &data)
+	{
+		auto bson = repo::core::model::RepoBSON(data);
+		repo::core::model::RepoBSON *cred = nullptr;
+		if (bson.hasField(credLabel))
+		{
+			cred = new repo::core::model::RepoBSON(bson.getObjectField(credLabel));
+		}
+		std::string databaseHost = bson.getStringField(dbAddLabel);
+		uint32_t databasePort = bson.getField(dbPortLabel).Int();
+		std::string databaseName = bson.getStringField(dbNameLabel);
+		std::string alias = bson.getStringField(aliasLabel);
+		return RepoToken(cred, databaseHost, databasePort, databaseName, alias);
+	}
 
 	~RepoToken(){
 		if (credentials)
 			delete credentials;
 	}
 
-	/**
-	* @brief getDatabaseHostPort
-	* @return database host and port in as a string
-	*/
-	std::string getDatabaseHostPort() const { return databaseAd; }
+	std::vector<char> serialiseToken() const
+	{
+		repo::core::model::RepoBSONBuilder builder;
+		if (credentials)
+			builder << credLabel << *credentials;
+		builder << dbAddLabel << databaseHost;
+		builder << dbPortLabel << databasePort;
+		builder << dbNameLabel << databaseName;
+		builder << aliasLabel << alias;
 
-	std::string getDatabaseName() const { return databaseName; }
+		auto tokenBson = builder.obj();
+		std::vector<char> data;
+		auto tokenSize = tokenBson.objsize();
 
-	//private:
+		if (tokenSize)
+		{
+			data.resize(tokenSize);
+			memcpy(data.data(), tokenBson.objdata(), tokenSize);
+		}
 
+		return data;
+	}
+
+	bool valid() const
+	{
+		return !(databaseHost.empty());
+	}
+
+private:
 	const repo::core::model::RepoBSON* credentials;
 	const std::string databaseAd;
+	const std::string databaseHost;
+	const uint32_t databasePort;
 	const std::string databaseName;
+	std::string alias;
 };
 
 class RepoController::_RepoControllerImpl{
@@ -106,6 +158,17 @@ public:
 	/**
 	* Connect to a mongo database, authenticate by the admin database
 	* @param errMsg error message if failed
+	* @param token authentication token
+	* @param returns true upon success
+	*/
+	bool authenticateMongo(
+		std::string       &errMsg,
+		const RepoToken   *token
+		);
+
+	/**
+	* Connect to a mongo database, authenticate by the admin database
+	* @param errMsg error message if failed
 	* @param address address of the database
 	* @param port port number
 	* @param username user login name
@@ -133,10 +196,10 @@ public:
 	/**
 	* Checks whether given credentials permit successful connection to a
 	* given database.
-	* @param credentials user credentials
+	* @param token token
 	* @return returns true if successful, false otherwise
 	*/
-	bool testConnection(const repo::RepoCredentials &credentials);
+	bool testConnection(const RepoToken *token);
 
 	/*
 	*	------------- Database info lookup --------------

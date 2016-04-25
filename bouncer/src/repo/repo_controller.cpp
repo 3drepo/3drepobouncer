@@ -35,6 +35,14 @@ RepoController::~RepoController()
 	if (impl) delete impl;
 }
 
+void RepoController::addAlias(
+	RepoController::RepoToken         *token,
+	const std::string &alias)
+{
+	if (token)
+		token->alias = alias;
+}
+
 RepoController::RepoToken* RepoController::authenticateToAdminDatabaseMongo(
 	std::string       &errMsg,
 	const std::string &address,
@@ -60,9 +68,17 @@ RepoController::RepoToken* RepoController::authenticateMongo(
 	return impl->authenticateMongo(errMsg, address, port, dbName, username, password, pwDigested);
 }
 
-bool RepoController::testConnection(const repo::RepoCredentials &credentials)
+bool RepoController::authenticateMongo(
+	std::string                       &errMsg,
+	const RepoController::RepoToken   *token
+	)
 {
-	return impl->testConnection(credentials);
+	return impl->authenticateMongo(errMsg, token);
+}
+
+bool RepoController::testConnection(const RepoController::RepoToken *token)
+{
+	return impl->testConnection(token);
 }
 
 void RepoController::commitScene(
@@ -79,6 +95,18 @@ uint64_t RepoController::countItemsInCollection(
 	const std::string    &collection)
 {
 	return impl->countItemsInCollection(token, database, collection);
+}
+
+RepoController::RepoToken* RepoController::createTokenFromSerialised(
+	const std::vector<char> &data) const
+{
+	auto token = new RepoController::RepoToken(RepoController::RepoToken::createTokenFromRawData(data));
+	if (!token->valid())
+	{
+		token = nullptr;
+	}
+
+	return token;
 }
 
 void RepoController::destroyToken(RepoController::RepoToken* token)
@@ -198,7 +226,7 @@ repo::core::model::CollectionStats RepoController::getCollectionStats(
 
 std::string RepoController::getHostAndPort(const RepoController::RepoToken *token)
 {
-	return token->getDatabaseHostPort();
+	return token->databaseAd;
 }
 
 std::map<std::string, std::list<std::string>>
@@ -430,6 +458,12 @@ bool RepoController::saveSceneToFile(
 	const repo::core::model::RepoScene* scene)
 {
 	return impl->saveSceneToFile(filePath, scene);
+}
+
+std::vector<char> RepoController::serialiseToken(
+	const RepoController::RepoToken* token) const
+{
+	return token->serialiseToken();
 }
 
 void RepoController::reduceTransformations(

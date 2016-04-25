@@ -58,6 +58,17 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 	workerPool = new connectionPool::MongoConnectionPool(maxConnections, dbAddress, createAuthBSON(dbName, username, password, pwDigested));
 }
 
+MongoDatabaseHandler::MongoDatabaseHandler(
+	const mongo::ConnectionString &dbAddress,
+	const uint32_t                &maxConnections,
+	const std::string             &dbName,
+	const repo::core::model::RepoBSON  *cred) :
+	AbstractDatabaseHandler(MAX_MONGO_BSON_SIZE)
+{
+	mongo::client::initialize();
+	workerPool = new connectionPool::MongoConnectionPool(maxConnections, dbAddress, (mongo::BSONObj*)cred);
+}
+
 /**
 * A Deconstructor
 */
@@ -713,6 +724,43 @@ MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
 		repoTrace << "Handler not present for " << mongoConnectionString.toString() << " instantiating new handler...";
 		try{
 			handler = new MongoDatabaseHandler(mongoConnectionString, maxConnections, dbName, username, password, pwDigested);
+		}
+		catch (mongo::DBException e)
+		{
+			if (handler)
+				delete handler;
+			handler = 0;
+			errMsg = std::string(e.what());
+			repoError << "Error establishing Mongo Handler: " << errMsg;
+		}
+	}
+	else
+	{
+		repoTrace << "Found handler, returning existing handler";
+	}
+
+	return handler;
+}
+
+MongoDatabaseHandler* MongoDatabaseHandler::getHandler(
+	std::string                       &errMsg,
+	const std::string                 &host,
+	const int                         &port,
+	const uint32_t                    &maxConnections,
+	const std::string                 &dbName,
+	const repo::core::model::RepoBSON *credentials)
+{
+	std::ostringstream connectionString;
+
+	mongo::HostAndPort hostAndPort = mongo::HostAndPort(host, port >= 0 ? port : -1);
+
+	mongo::ConnectionString mongoConnectionString = mongo::ConnectionString(hostAndPort);
+
+	if (!handler){
+		//initialise the mongo client
+		repoTrace << "Handler not present for " << mongoConnectionString.toString() << " instantiating new handler...";
+		try{
+			handler = new MongoDatabaseHandler(mongoConnectionString, maxConnections, dbName, credentials);
 		}
 		catch (mongo::DBException e)
 		{
