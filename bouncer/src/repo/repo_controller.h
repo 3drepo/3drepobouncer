@@ -139,7 +139,7 @@ namespace repo{
 
 		/**
 		* Add an alias to the repo token
-		* @param token token
+		* @param token tokeng
 		* @param alias alias to add
 		*/
 		void addAlias(
@@ -179,7 +179,7 @@ namespace repo{
 			uint32_t        &port,
 			std::string     &username,
 			std::string     &authDB
-			);
+			) const;
 
 		/**
 		* Serialise the given token

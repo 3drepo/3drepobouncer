@@ -41,7 +41,7 @@ public:
 	* @param databaseName database it is authenticating against
 	*/
 	RepoToken(
-		const repo::core::model::RepoBSON *credentials = nullptr,
+		const repo::core::model::RepoBSON &credentials,
 		const std::string                 &databaseHost = std::string(),
 		const uint32_t                    &port = 27017,
 		const std::string                 &databaseName = std::string(),
@@ -49,44 +49,50 @@ public:
 		databaseHost(databaseHost),
 		databasePort(port),
 		databaseAd(databaseHost + std::to_string(port)),
-		credentials(credentials),
+		credentials(credentials.copy()),
 		databaseName(databaseName),
 		alias(alias)
 	{
-		repoTrace << "@constructor: cred = " << credentials->toString();
+		if (!credentials.isEmpty())
+		{
+			repoTrace << "@constructor: cred = " << credentials.toString();
+		}
 	}
 
 	static RepoToken* createTokenFromRawData(
-		const std::vector<char> &data)
+		const std::vector<char> &rawData)
 	{
+		int *raw = (int*)rawData.data();
+		int objSize = raw[0];
+		repoTrace << "Unpack: object size is " << objSize;
+		std::vector<char> data(rawData.data() + sizeof(int), rawData.data() + sizeof(int) + objSize);
+		repoTrace << "Sanity: data size is " << data.size();
 		auto bson = repo::core::model::RepoBSON(data);
-		repo::core::model::RepoBSON *cred = nullptr;
-		if (bson.hasField(credLabel))
-		{
-			auto obj = bson.getObjectField(credLabel);
-			repoTrace << "unpack: " << obj.toString();
-			if (!obj.isEmpty())
-				cred = new repo::core::model::RepoBSON(obj);
-		}
+
+		repoTrace << bson;
+
 		std::string databaseHost = bson.getStringField(dbAddLabel);
 		uint32_t databasePort = bson.getField(dbPortLabel).Int();
 		std::string databaseName = bson.getStringField(dbNameLabel);
 		std::string alias = bson.getStringField(aliasLabel);
-		return new RepoToken(cred, databaseHost, databasePort, databaseName, alias);
+		auto res = new RepoToken(bson.getObjectField(credLabel), databaseHost, databasePort, databaseName, "auto");
+		return res;
 	}
 
 	~RepoToken(){
-		if (credentials)
-			delete credentials;
+	}
+
+	const repo::core::model::RepoBSON* getCredentials() const
+	{
+		return credentials.isEmpty() ? nullptr : &credentials;
 	}
 
 	std::vector<char> serialiseToken() const
 	{
 		repo::core::model::RepoBSONBuilder builder;
-		if (credentials)
+		if (!credentials.isEmpty())
 		{
-			//builder.appendBinary(credLabel, credentials->objdata(), credentials->objsize());
-			builder << credLabel << *credentials;
+			builder << credLabel << credentials;
 		}
 		builder << dbAddLabel << databaseHost;
 		builder << dbPortLabel << databasePort;
@@ -97,12 +103,13 @@ public:
 		std::vector<char> data;
 		auto tokenSize = tokenBson.objsize();
 
-		repoTrace << "pack: " << tokenBson.getObjectField(credLabel).toString();
-
 		if (tokenSize)
 		{
-			data.resize(tokenSize);
-			memcpy(data.data(), tokenBson.objdata(), tokenSize);
+			data.resize(tokenSize + sizeof(int));
+			int *raw = (int*)data.data();
+			raw[0] = tokenSize;
+			repoTrace << "Pack: object size is " << tokenSize;
+			memcpy(&data[sizeof(int)], tokenBson.objdata(), tokenSize);
 		}
 
 		return data;
@@ -114,7 +121,7 @@ public:
 	}
 
 private:
-	const repo::core::model::RepoBSON* credentials;
+	const repo::core::model::RepoBSON credentials;
 	const std::string databaseAd;
 	const std::string databaseHost;
 	const uint32_t databasePort;

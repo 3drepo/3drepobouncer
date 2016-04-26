@@ -116,8 +116,14 @@ RepoController::RepoToken* RepoController::createTokenFromSerialised(
 	if (data.size())
 	{
 		token = RepoController::RepoToken::createTokenFromRawData(data);
+		std::string aliasStr, host, authDB, username;
+		uint32_t port;
+		getInfoFromToken(token, aliasStr, host, port, username, authDB);
+
+		repoTrace << "Alias: " << aliasStr << " host: " << host << " port: " << port << " username: " << username << " auth:" << authDB;
 		if (token && !token->valid())
 		{
+			delete token;
 			token = nullptr;
 		}
 	}
@@ -193,15 +199,19 @@ void RepoController::getInfoFromToken(
 	uint32_t                        &port,
 	std::string                     &username,
 	std::string                     &authDB
-	)
+	) const
 {
 	if (token)
 	{
 		alias = token->alias;
 		host = token->databaseHost;
 		port = token->databasePort;
-		if (token->credentials)
-			username = token->credentials->getStringField("user");
+		if (token->getCredentials())
+			username = token->credentials.getStringField("user");
+		else
+		{
+			repoTrace << "This token has no credentials , really?" << token->credentials.isEmpty();
+		}
 		authDB = token->databaseName;
 	}
 	else
