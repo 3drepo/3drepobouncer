@@ -115,7 +115,7 @@ RepoController::RepoToken* RepoController::createTokenFromSerialised(
 	RepoController::RepoToken* token = nullptr;
 	if (data.size())
 	{
-		auto token = RepoController::RepoToken::createTokenFromRawData(data);
+		token = RepoController::RepoToken::createTokenFromRawData(data);
 		if (token && !token->valid())
 		{
 			token = nullptr;
@@ -203,6 +203,10 @@ void RepoController::getInfoFromToken(
 		if (token->credentials)
 			username = token->credentials->getStringField("user");
 		authDB = token->databaseName;
+	}
+	else
+	{
+		repoError << "Token is invalid!";
 	}
 }
 
