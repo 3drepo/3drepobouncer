@@ -17,6 +17,8 @@
 
 #include "repo_bson.h"
 
+#include <mongo/client/dbclient.h>
+
 using namespace repo::core::model;
 
 RepoBSON::RepoBSON(
@@ -48,6 +50,11 @@ RepoBSON::RepoBSON(
 		*this = builder.obj();
 		bigFiles = binMapping;
 	}
+}
+
+RepoBSON RepoBSON::fromJSON(const std::string &json)
+{
+	return RepoBSON(mongo::fromjson(json));
 }
 
 RepoBSON RepoBSON::cloneAndAddFields(

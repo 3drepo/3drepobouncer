@@ -164,7 +164,7 @@ namespace repo{
 		* @return returns  RepoToken upon success
 		*/
 		RepoToken* createTokenFromSerialised(
-			const std::vector<char> &data) const;
+			const std::string &data) const;
 
 		/**
 		* Destroy token from memory
@@ -186,7 +186,7 @@ namespace repo{
 		* @param token token
 		* @return return the token in serialised form
 		*/
-		std::vector<char> serialiseToken(
+		std::string serialiseToken(
 			const RepoToken* token) const;
 
 		/*

@@ -32,6 +32,7 @@
 
 #define strcasecmp _stricmp
 #endif
+
 #include <mongo/bson/bson.h>
 #include <unordered_map>
 
@@ -82,6 +83,11 @@ namespace repo {
 				* Default empty deconstructor.
 				*/
 				virtual ~RepoBSON() {}
+
+				/**
+				* Construct a repobson from a json string
+				*/
+				static RepoBSON fromJSON(const std::string &json);
 
 				/**
 				* Override the equals operator to perform the swap just like mongo bson

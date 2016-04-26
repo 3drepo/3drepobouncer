@@ -110,7 +110,7 @@ RepoController::RepoToken* RepoController::createToken(
 }
 
 RepoController::RepoToken* RepoController::createTokenFromSerialised(
-	const std::vector<char> &data) const
+	const std::string &data) const
 {
 	RepoController::RepoToken* token = nullptr;
 	if (data.size())
@@ -510,7 +510,7 @@ bool RepoController::saveSceneToFile(
 	return impl->saveSceneToFile(filePath, scene);
 }
 
-std::vector<char> RepoController::serialiseToken(
+std::string RepoController::serialiseToken(
 	const RepoController::RepoToken* token) const
 {
 	if (token)
@@ -518,7 +518,7 @@ std::vector<char> RepoController::serialiseToken(
 	else
 	{
 		repoError << "Cannot serialise token : token is empty!";
-		return std::vector<char>();
+		return std::string();
 	}
 }
 

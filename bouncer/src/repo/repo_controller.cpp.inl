@@ -60,14 +60,10 @@ public:
 	}
 
 	static RepoToken* createTokenFromRawData(
-		const std::vector<char> &rawData)
+		const std::string &data)
 	{
-		int *raw = (int*)rawData.data();
-		int objSize = raw[0];
-		repoTrace << "Unpack: object size is " << objSize;
-		std::vector<char> data(rawData.data() + sizeof(int), rawData.data() + sizeof(int) + objSize);
 		repoTrace << "Sanity: data size is " << data.size();
-		auto bson = repo::core::model::RepoBSON(data);
+		auto bson = repo::core::model::RepoBSON::fromJSON(data);
 
 		repoTrace << bson;
 
@@ -87,7 +83,7 @@ public:
 		return credentials.isEmpty() ? nullptr : &credentials;
 	}
 
-	std::vector<char> serialiseToken() const
+	std::string serialiseToken() const
 	{
 		repo::core::model::RepoBSONBuilder builder;
 		if (!credentials.isEmpty())
@@ -99,20 +95,7 @@ public:
 		builder << dbNameLabel << databaseName;
 		builder << aliasLabel << alias;
 
-		auto tokenBson = builder.obj();
-		std::vector<char> data;
-		auto tokenSize = tokenBson.objsize();
-
-		if (tokenSize)
-		{
-			data.resize(tokenSize + sizeof(int));
-			int *raw = (int*)data.data();
-			raw[0] = tokenSize;
-			repoTrace << "Pack: object size is " << tokenSize;
-			memcpy(&data[sizeof(int)], tokenBson.objdata(), tokenSize);
-		}
-
-		return data;
+		return builder.obj().toString();
 	}
 
 	bool valid() const
