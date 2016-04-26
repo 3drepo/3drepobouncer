@@ -99,6 +99,7 @@ public:
 
 	bool valid() const
 	{
+		repoTrace << "Token validation: address - " << databaseHost;
 		return !(databaseHost.empty());
 	}
 
@@ -200,6 +201,17 @@ public:
 	* @return returns true if successful, false otherwise
 	*/
 	bool testConnection(const RepoToken *token);
+
+	/**
+	* create a token base on the information given
+	*/
+	RepoToken* createToken(
+		const std::string &address,
+		const int         &port,
+		const std::string &dbName,
+		const std::string &username,
+		const std::string &password
+		);
 
 	/*
 	*	------------- Database info lookup --------------

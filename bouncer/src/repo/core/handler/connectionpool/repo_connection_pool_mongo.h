@@ -46,7 +46,7 @@ namespace repo{
 						mongo::BSONObj* auth) :
 						maxSize(numConnections),
 						dbAddress(dbAddress),
-						auth(auth)
+						auth(auth? new mongo::BSONObj(*auth) : nullptr)
 					{
 						repoDebug << "Instantiating Mongo connection pool with " << maxSize << " connections...";
 						//push one connected worker to ensure valid connection
@@ -63,6 +63,7 @@ namespace repo{
 								mongo::DBClientBase *worker = dbAddress.connect(errMsg);
 								if (auth)
 								{
+									repoTrace << auth->toString();
 									if (!worker->auth(auth->getStringField("db"), auth->getStringField("user"), auth->getStringField("pwd"), errMsg, auth->getField("digestPassword").boolean()))
 									{
 										throw mongo::DBException(errMsg, mongo::ErrorCodes::AuthenticationFailed);

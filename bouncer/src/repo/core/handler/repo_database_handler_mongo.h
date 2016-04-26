@@ -139,7 +139,7 @@ namespace repo{
 				* @param pwDigested true if pw is digested
 				* @return returns the constructed BSON object, or 0 nullptr username is empty
 				*/
-				repo::core::model::RepoBSON* createBSONCredentials(
+				static repo::core::model::RepoBSON* createBSONCredentials(
 					const std::string &dbName,
 					const std::string &username,
 					const std::string &password,
@@ -618,7 +618,7 @@ namespace repo{
 				* @param pwDigested true if pw is digested
 				* @return returns the constructed BSON object, or 0 if username is empty
 				*/
-				mongo::BSONObj* createAuthBSON(
+				static mongo::BSONObj* createAuthBSON(
 					const std::string &database,
 					const std::string &username,
 					const std::string &password,
