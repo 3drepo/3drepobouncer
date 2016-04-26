@@ -159,6 +159,7 @@ bool RepoController::_RepoControllerImpl::testConnection(const RepoController::R
 }
 
 RepoController::RepoToken* RepoController::_RepoControllerImpl::createToken(
+	const std::string &alias,
 	const std::string &address,
 	const int         &port,
 	const std::string &dbName,
@@ -178,7 +179,7 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::createToken(
 
 	if (cred || username.empty())
 	{
-		token = new RepoController::RepoToken(cred, address, port, dbName);
+		token = new RepoController::RepoToken(cred, address, port, dbName, alias);
 	}
 
 	return token && token->valid() ? token : nullptr;

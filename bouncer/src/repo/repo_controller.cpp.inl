@@ -51,22 +51,28 @@ public:
 		databaseAd(databaseHost + std::to_string(port)),
 		credentials(credentials),
 		databaseName(databaseName),
-		alias(alias){}
+		alias(alias)
+	{
+		repoTrace << "@constructor: cred = " << credentials->toString();
+	}
 
-	static RepoToken createTokenFromRawData(
+	static RepoToken* createTokenFromRawData(
 		const std::vector<char> &data)
 	{
 		auto bson = repo::core::model::RepoBSON(data);
 		repo::core::model::RepoBSON *cred = nullptr;
 		if (bson.hasField(credLabel))
 		{
-			cred = new repo::core::model::RepoBSON(bson.getObjectField(credLabel));
+			auto obj = bson.getObjectField(credLabel);
+			repoTrace << "unpack: " << obj.toString();
+			if (!obj.isEmpty())
+				cred = new repo::core::model::RepoBSON(obj);
 		}
 		std::string databaseHost = bson.getStringField(dbAddLabel);
 		uint32_t databasePort = bson.getField(dbPortLabel).Int();
 		std::string databaseName = bson.getStringField(dbNameLabel);
 		std::string alias = bson.getStringField(aliasLabel);
-		return RepoToken(cred, databaseHost, databasePort, databaseName, alias);
+		return new RepoToken(cred, databaseHost, databasePort, databaseName, alias);
 	}
 
 	~RepoToken(){
@@ -78,7 +84,10 @@ public:
 	{
 		repo::core::model::RepoBSONBuilder builder;
 		if (credentials)
+		{
+			//builder.appendBinary(credLabel, credentials->objdata(), credentials->objsize());
 			builder << credLabel << *credentials;
+		}
 		builder << dbAddLabel << databaseHost;
 		builder << dbPortLabel << databasePort;
 		builder << dbNameLabel << databaseName;
@@ -87,6 +96,8 @@ public:
 		auto tokenBson = builder.obj();
 		std::vector<char> data;
 		auto tokenSize = tokenBson.objsize();
+
+		repoTrace << "pack: " << tokenBson.getObjectField(credLabel).toString();
 
 		if (tokenSize)
 		{
@@ -99,7 +110,6 @@ public:
 
 	bool valid() const
 	{
-		repoTrace << "Token validation: address - " << databaseHost;
 		return !(databaseHost.empty());
 	}
 
@@ -206,6 +216,7 @@ public:
 	* create a token base on the information given
 	*/
 	RepoToken* createToken(
+		const std::string &alias,
 		const std::string &address,
 		const int         &port,
 		const std::string &dbName,

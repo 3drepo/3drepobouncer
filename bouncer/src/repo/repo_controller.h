@@ -150,6 +150,7 @@ namespace repo{
 		* create a token base on the information given
 		*/
 		RepoToken* createToken(
+			const std::string &alias,
 			const std::string &address,
 			const int         &port,
 			const std::string &dbName,

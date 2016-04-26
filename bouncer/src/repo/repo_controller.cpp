@@ -98,6 +98,7 @@ uint64_t RepoController::countItemsInCollection(
 }
 
 RepoController::RepoToken* RepoController::createToken(
+	const std::string &alias,
 	const std::string &address,
 	const int         &port,
 	const std::string &dbName,
@@ -105,7 +106,7 @@ RepoController::RepoToken* RepoController::createToken(
 	const std::string &password
 	)
 {
-	return impl->createToken(address, port, dbName, username, password);
+	return impl->createToken(alias, address, port, dbName, username, password);
 }
 
 RepoController::RepoToken* RepoController::createTokenFromSerialised(
@@ -114,7 +115,7 @@ RepoController::RepoToken* RepoController::createTokenFromSerialised(
 	RepoController::RepoToken* token = nullptr;
 	if (data.size())
 	{
-		token = new RepoController::RepoToken(RepoController::RepoToken::createTokenFromRawData(data));
+		auto token = RepoController::RepoToken::createTokenFromRawData(data);
 		if (token && !token->valid())
 		{
 			token = nullptr;
@@ -505,7 +506,6 @@ std::vector<char> RepoController::serialiseToken(
 		repoError << "Cannot serialise token : token is empty!";
 		return std::vector<char>();
 	}
-		
 }
 
 void RepoController::reduceTransformations(
