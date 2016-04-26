@@ -139,7 +139,7 @@ namespace repo{
 
 		/**
 		* Add an alias to the repo token
-		* @param token token
+		* @param token tokeng
 		* @param alias alias to add
 		*/
 		void addAlias(
@@ -150,6 +150,7 @@ namespace repo{
 		* create a token base on the information given
 		*/
 		RepoToken* createToken(
+			const std::string &alias,
 			const std::string &address,
 			const int         &port,
 			const std::string &dbName,
@@ -163,7 +164,7 @@ namespace repo{
 		* @return returns  RepoToken upon success
 		*/
 		RepoToken* createTokenFromSerialised(
-			const std::vector<char> &data) const;
+			const std::string &data) const;
 
 		/**
 		* Destroy token from memory
@@ -178,14 +179,14 @@ namespace repo{
 			uint32_t        &port,
 			std::string     &username,
 			std::string     &authDB
-			);
+			) const;
 
 		/**
 		* Serialise the given token
 		* @param token token
 		* @return return the token in serialised form
 		*/
-		std::vector<char> serialiseToken(
+		std::string serialiseToken(
 			const RepoToken* token) const;
 
 		/*

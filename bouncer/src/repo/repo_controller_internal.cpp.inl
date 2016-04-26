@@ -75,8 +75,8 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::authenticateToAd
 
 	if (cred || username.empty())
 	{
-		token = new RepoController::RepoToken(cred, address, port, worker->getNameOfAdminDatabase(dbFullAd));
-
+		token = new RepoController::RepoToken(*cred, address, port, worker->getNameOfAdminDatabase(dbFullAd));
+		if (cred) delete cred;
 		repoInfo << "Successfully connected to the " << dbFullAd;
 		if (!username.empty())
 			repoInfo << username << " is authenticated to " << dbFullAd;
@@ -112,7 +112,8 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::authenticateMong
 
 	if (cred || username.empty())
 	{
-		token = new RepoController::RepoToken(cred, address, port, dbName);
+		token = new RepoController::RepoToken(*cred, address, port, dbName);
+		if (cred) delete cred;
 	}
 	return token;
 }
@@ -127,7 +128,7 @@ bool RepoController::_RepoControllerImpl::authenticateMongo(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		success = worker->connectAndAuthenticate(errMsg, token->databaseHost, token->databasePort,
-			numDBConnections, token->databaseName, token->credentials);
+			numDBConnections, token->databaseName, token->getCredentials());
 		workerPool.push(worker);
 	}
 	else
@@ -159,6 +160,7 @@ bool RepoController::_RepoControllerImpl::testConnection(const RepoController::R
 }
 
 RepoController::RepoToken* RepoController::_RepoControllerImpl::createToken(
+	const std::string &alias,
 	const std::string &address,
 	const int         &port,
 	const std::string &dbName,
@@ -178,7 +180,8 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::createToken(
 
 	if (cred || username.empty())
 	{
-		token = new RepoController::RepoToken(cred, address, port, dbName);
+		token = new RepoController::RepoToken(*cred, address, port, dbName, alias);
+		if (cred)delete cred;
 	}
 
 	return token && token->valid() ? token : nullptr;
@@ -196,12 +199,12 @@ void RepoController::_RepoControllerImpl::commitScene(
 			if (token)
 			{
 				std::string sceneOwner = owner;
-				if (!token->credentials)
+				if (!token->getCredentials())
 				{
 					sceneOwner = "ANONYMOUS USER";
 				}
 				manipulator::RepoManipulator* worker = workerPool.pop();
-				worker->commitScene(token->databaseAd, token->credentials, scene, sceneOwner);
+				worker->commitScene(token->databaseAd, token->getCredentials(), scene, sceneOwner);
 				workerPool.push(worker);
 			}
 			else
@@ -232,7 +235,7 @@ uint64_t RepoController::_RepoControllerImpl::countItemsInCollection(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		std::string errMsg;
-		numItems = worker->countItemsInCollection(token->databaseAd, token->credentials, database, collection, errMsg);
+		numItems = worker->countItemsInCollection(token->databaseAd, token->getCredentials(), database, collection, errMsg);
 		workerPool.push(worker);
 	}
 	else
@@ -272,7 +275,7 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
-		scene = worker->fetchScene(token->databaseAd, token->credentials,
+		scene = worker->fetchScene(token->databaseAd, token->getCredentials(),
 			database, collection, stringToUUID(uuid), headRevision, lightFetch);
 
 		workerPool.push(worker);
@@ -297,10 +300,10 @@ bool RepoController::_RepoControllerImpl::generateAndCommitSelectionTree(
 		if (scene->isRevisioned() && !scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
 		{
 			repoInfo << "Unoptimised scene not loaded, trying loading unoptimised scene...";
-			worker->fetchScene(token->databaseAd, token->credentials, scene);
+			worker->fetchScene(token->databaseAd, token->getCredentials(), scene);
 		}
 
-		success = worker->generateAndCommitSelectionTree(token->databaseAd, token->credentials, scene);
+		success = worker->generateAndCommitSelectionTree(token->databaseAd, token->getCredentials(), scene);
 		workerPool.push(worker);
 	}
 
@@ -324,10 +327,10 @@ bool RepoController::_RepoControllerImpl::generateAndCommitStashGraph(
 			//This should be safe considering if it has not loaded the unoptimised graph it shouldn't have
 			//any uncommited changes.
 			repoInfo << "Unoptimised scene not loaded, trying loading unoptimised scene...";
-			worker->fetchScene(token->databaseAd, token->credentials, scene);
+			worker->fetchScene(token->databaseAd, token->getCredentials(), scene);
 		}
 
-		success = worker->generateAndCommitStashGraph(token->databaseAd, token->credentials,
+		success = worker->generateAndCommitStashGraph(token->databaseAd, token->getCredentials(),
 			scene);
 
 		workerPool.push(worker);
@@ -355,7 +358,7 @@ const uint32_t       &limit)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
-		vector = worker->getAllFromCollectionTailable(token->databaseAd, token->credentials,
+		vector = worker->getAllFromCollectionTailable(token->databaseAd, token->getCredentials(),
 			database, collection, skip, limit);
 
 		workerPool.push(worker);
@@ -387,7 +390,7 @@ const uint32_t               &limit)
 	if (token)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		vector = worker->getAllFromCollectionTailable(token->databaseAd, token->credentials,
+		vector = worker->getAllFromCollectionTailable(token->databaseAd, token->getCredentials(),
 			database, collection, fields, sortField, sortOrder, skip, limit);
 
 		workerPool.push(worker);
@@ -442,7 +445,7 @@ repo::core::model::RepoRoleSettings RepoController::_RepoControllerImpl::getRole
 	if (token)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		res = worker->getRoleSettingByName(token->databaseAd, token->credentials, database, uniqueRoleName);
+		res = worker->getRoleSettingByName(token->databaseAd, token->getCredentials(), database, uniqueRoleName);
 		workerPool.push(worker);
 	}
 	else
@@ -461,7 +464,7 @@ std::list<std::string> RepoController::_RepoControllerImpl::getDatabases(const R
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		if (token->databaseName == worker->getNameOfAdminDatabase(token->databaseAd))
 		{
-			list = worker->fetchDatabases(token->databaseAd, token->credentials);
+			list = worker->fetchDatabases(token->databaseAd, token->getCredentials());
 		}
 		else
 		{
@@ -488,7 +491,7 @@ std::list<std::string>  RepoController::_RepoControllerImpl::getCollections(
 	if (token)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		list = worker->fetchCollections(token->databaseAd, token->credentials, databaseName);
+		list = worker->fetchCollections(token->databaseAd, token->getCredentials(), databaseName);
 		workerPool.push(worker);
 	}
 	else
@@ -511,7 +514,7 @@ repo::core::model::CollectionStats RepoController::_RepoControllerImpl::getColle
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		std::string errMsg;
 		stats = worker->getCollectionStats(token->databaseAd,
-			token->credentials, database, collection, errMsg);
+			token->getCredentials(), database, collection, errMsg);
 		workerPool.push(worker);
 
 		if (!errMsg.empty())
@@ -535,7 +538,7 @@ const std::list<std::string> &databases)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		map = worker->getDatabasesWithProjects(token->databaseAd,
-			token->credentials, databases);
+			token->getCredentials(), databases);
 		workerPool.push(worker);
 	}
 	else
@@ -558,7 +561,7 @@ void RepoController::_RepoControllerImpl::insertBinaryFileToDatabase(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		worker->insertBinaryFileToDatabase(token->databaseAd,
-			token->credentials, database, collection, name, rawData, mimeType);
+			token->getCredentials(), database, collection, name, rawData, mimeType);
 		workerPool.push(worker);
 	}
 	else
@@ -576,7 +579,7 @@ void RepoController::_RepoControllerImpl::insertRole(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		worker->insertRole(token->databaseAd,
-			token->credentials, role);
+			token->getCredentials(), role);
 		workerPool.push(worker);
 	}
 	else
@@ -593,7 +596,7 @@ void RepoController::_RepoControllerImpl::insertUser(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		worker->insertUser(token->databaseAd,
-			token->credentials, user);
+			token->getCredentials(), user);
 		workerPool.push(worker);
 	}
 	else
@@ -614,7 +617,7 @@ bool RepoController::_RepoControllerImpl::removeCollection(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		success = worker->dropCollection(token->databaseAd,
-			token->credentials, databaseName, collectionName, errMsg);
+			token->getCredentials(), databaseName, collectionName, errMsg);
 		workerPool.push(worker);
 	}
 	else
@@ -637,7 +640,7 @@ bool RepoController::_RepoControllerImpl::removeDatabase(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		success = worker->dropDatabase(token->databaseAd,
-			token->credentials, databaseName, errMsg);
+			token->getCredentials(), databaseName, errMsg);
 		workerPool.push(worker);
 	}
 	else
@@ -659,7 +662,7 @@ void RepoController::_RepoControllerImpl::removeDocument(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		worker->removeDocument(token->databaseAd,
-			token->credentials, databaseName, collectionName, bson);
+			token->getCredentials(), databaseName, collectionName, bson);
 		workerPool.push(worker);
 	}
 	else
@@ -679,7 +682,7 @@ bool RepoController::_RepoControllerImpl::removeProject(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		result = worker->removeProject(token->databaseAd,
-			token->credentials, databaseName, projectName, errMsg);
+			token->getCredentials(), databaseName, projectName, errMsg);
 		workerPool.push(worker);
 	}
 	else
@@ -697,7 +700,7 @@ void RepoController::_RepoControllerImpl::removeRole(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		worker->removeRole(token->databaseAd,
-			token->credentials, role);
+			token->getCredentials(), role);
 		workerPool.push(worker);
 	}
 	else
@@ -714,7 +717,7 @@ void RepoController::_RepoControllerImpl::removeUser(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		worker->removeUser(token->databaseAd,
-			token->credentials, user);
+			token->getCredentials(), user);
 		workerPool.push(worker);
 	}
 	else
@@ -731,7 +734,7 @@ void RepoController::_RepoControllerImpl::updateRole(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		worker->updateRole(token->databaseAd,
-			token->credentials, role);
+			token->getCredentials(), role);
 		workerPool.push(worker);
 	}
 	else
@@ -748,7 +751,7 @@ void RepoController::_RepoControllerImpl::updateUser(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		worker->updateUser(token->databaseAd,
-			token->credentials, user);
+			token->getCredentials(), user);
 		workerPool.push(worker);
 	}
 	else
@@ -767,7 +770,7 @@ void RepoController::_RepoControllerImpl::upsertDocument(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		worker->upsertDocument(token->databaseAd,
-			token->credentials, databaseName, collectionName, bson);
+			token->getCredentials(), databaseName, collectionName, bson);
 		workerPool.push(worker);
 	}
 	else
@@ -828,7 +831,7 @@ bool RepoController::_RepoControllerImpl::generateAndCommitGLTFBuffer(
 	if (success = token && scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		success = worker->generateAndCommitGLTFBuffer(token->databaseAd, token->credentials, scene);
+		success = worker->generateAndCommitGLTFBuffer(token->databaseAd, token->getCredentials(), scene);
 		workerPool.push(worker);
 	}
 	else
@@ -846,7 +849,7 @@ bool RepoController::_RepoControllerImpl::generateAndCommitSRCBuffer(
 	if (success = token && scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		success = worker->generateAndCommitSRCBuffer(token->databaseAd, token->credentials, scene);
+		success = worker->generateAndCommitSRCBuffer(token->databaseAd, token->getCredentials(), scene);
 		workerPool.push(worker);
 	}
 	else
@@ -1027,7 +1030,7 @@ void RepoController::_RepoControllerImpl::saveOriginalFiles(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
-		worker->saveOriginalFiles(token->databaseAd, token->credentials, scene, directory);
+		worker->saveOriginalFiles(token->databaseAd, token->getCredentials(), scene, directory);
 		workerPool.push(worker);
 	}
 	else{
@@ -1045,7 +1048,7 @@ void RepoController::_RepoControllerImpl::saveOriginalFiles(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
-		worker->saveOriginalFiles(token->databaseAd, token->credentials, database, project, directory);
+		worker->saveOriginalFiles(token->databaseAd, token->getCredentials(), database, project, directory);
 		workerPool.push(worker);
 	}
 	else{
@@ -1086,7 +1089,7 @@ void RepoController::_RepoControllerImpl::reduceTransformations(
 		//any uncommited changes.
 		repoInfo << "Unoptimised scene not loaded, trying loading unoptimised scene...";
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		worker->fetchScene(token->databaseAd, token->credentials, scene);
+		worker->fetchScene(token->databaseAd, token->getCredentials(), scene);
 		workerPool.push(worker);
 	}
 
@@ -1131,7 +1134,7 @@ void RepoController::_RepoControllerImpl::compareScenes(
 		{
 			repoInfo << "Unoptimised base scene not loaded, trying loading unoptimised scene...";
 			manipulator::RepoManipulator* worker = workerPool.pop();
-			worker->fetchScene(token->databaseAd, token->credentials, base);
+			worker->fetchScene(token->databaseAd, token->getCredentials(), base);
 			workerPool.push(worker);
 		}
 
@@ -1139,7 +1142,7 @@ void RepoController::_RepoControllerImpl::compareScenes(
 		{
 			repoInfo << "Unoptimised compare scene not loaded, trying loading unoptimised scene...";
 			manipulator::RepoManipulator* worker = workerPool.pop();
-			worker->fetchScene(token->databaseAd, token->credentials, compare);
+			worker->fetchScene(token->databaseAd, token->getCredentials(), compare);
 			workerPool.push(worker);
 		}
 	}
