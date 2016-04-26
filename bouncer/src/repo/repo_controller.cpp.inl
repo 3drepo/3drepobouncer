@@ -49,29 +49,22 @@ public:
 		databaseHost(databaseHost),
 		databasePort(port),
 		databaseAd(databaseHost + std::to_string(port)),
-		credentials(credentials.copy()),
+		credentials(credentials.isEmpty() ? repo::core::model::RepoBSON() : credentials.copy()),
 		databaseName(databaseName),
 		alias(alias)
 	{
-		if (!credentials.isEmpty())
-		{
-			repoTrace << "@constructor: cred = " << credentials.toString();
-		}
 	}
 
 	static RepoToken* createTokenFromRawData(
 		const std::string &data)
 	{
-		repoTrace << "Sanity: data size is " << data.size();
 		auto bson = repo::core::model::RepoBSON::fromJSON(data);
-
-		repoTrace << bson;
 
 		std::string databaseHost = bson.getStringField(dbAddLabel);
 		uint32_t databasePort = bson.getField(dbPortLabel).Int();
 		std::string databaseName = bson.getStringField(dbNameLabel);
 		std::string alias = bson.getStringField(aliasLabel);
-		auto res = new RepoToken(bson.getObjectField(credLabel), databaseHost, databasePort, databaseName, "auto");
+		auto res = new RepoToken(bson.getObjectField(credLabel), databaseHost, databasePort, databaseName, alias);
 		return res;
 	}
 
@@ -212,6 +205,14 @@ public:
 		const std::string &dbName,
 		const std::string &username,
 		const std::string &password
+		);
+
+	RepoController::RepoToken* createToken(
+		const std::string &alias,
+		const std::string &address,
+		const int         &port,
+		const std::string &dbName,
+		const RepoController::RepoToken *token
 		);
 
 	/*

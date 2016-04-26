@@ -158,6 +158,14 @@ namespace repo{
 			const std::string &password
 			);
 
+		RepoToken* createToken(
+			const std::string &alias,
+			const std::string &address,
+			const int         &port,
+			const std::string &dbName,
+			const RepoController::RepoToken *token
+			);
+
 		/**
 		* Re-create a repo token given the serialised data
 		* @param data serialised data from serialiseToken()

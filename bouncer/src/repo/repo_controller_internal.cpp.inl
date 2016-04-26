@@ -179,10 +179,26 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::createToken(
 	workerPool.push(worker);
 
 	if (cred || username.empty())
-	{
-		token = new RepoController::RepoToken(*cred, address, port, dbName, alias);
+	{		
+		token = new RepoController::RepoToken(cred ? *cred : repo::core::model::RepoBSON(), address, port, dbName, alias);
 		if (cred)delete cred;
 	}
+
+	return token && token->valid() ? token : nullptr;
+}
+
+RepoController::RepoToken* RepoController::_RepoControllerImpl::createToken(
+	const std::string &alias,
+	const std::string &address,
+	const int         &port,
+	const std::string &dbName,
+	const RepoController::RepoToken *credToken
+	)
+{
+	RepoController::RepoToken *token = nullptr;
+	std::string dbFullAd = address + ":" + std::to_string(port);
+
+	token = new RepoController::RepoToken(credToken->credentials, address, port, dbName, alias);
 
 	return token && token->valid() ? token : nullptr;
 }

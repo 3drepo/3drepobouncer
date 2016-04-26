@@ -109,6 +109,17 @@ RepoController::RepoToken* RepoController::createToken(
 	return impl->createToken(alias, address, port, dbName, username, password);
 }
 
+RepoController::RepoToken* RepoController::createToken(
+	const std::string &alias,
+	const std::string &address,
+	const int         &port,
+	const std::string &dbName,
+	const RepoController::RepoToken *token
+	)
+{
+	return impl->createToken(alias, address, port, dbName, token);
+}
+
 RepoController::RepoToken* RepoController::createTokenFromSerialised(
 	const std::string &data) const
 {
@@ -116,11 +127,7 @@ RepoController::RepoToken* RepoController::createTokenFromSerialised(
 	if (data.size())
 	{
 		token = RepoController::RepoToken::createTokenFromRawData(data);
-		std::string aliasStr, host, authDB, username;
-		uint32_t port;
-		getInfoFromToken(token, aliasStr, host, port, username, authDB);
 
-		repoTrace << "Alias: " << aliasStr << " host: " << host << " port: " << port << " username: " << username << " auth:" << authDB;
 		if (token && !token->valid())
 		{
 			delete token;
@@ -208,15 +215,12 @@ void RepoController::getInfoFromToken(
 		port = token->databasePort;
 		if (token->getCredentials())
 			username = token->credentials.getStringField("user");
-		else
-		{
-			repoTrace << "This token has no credentials , really?" << token->credentials.isEmpty();
-		}
+
 		authDB = token->databaseName;
 	}
 	else
 	{
-		repoError << "Token is invalid!";
+		repoError << "Failed to obtain information from token: token is invalid!";
 	}
 }
 
