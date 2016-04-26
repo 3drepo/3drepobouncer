@@ -109,12 +109,8 @@ repo::core::model::RepoBSON* RepoManipulator::createCredBSON(
 	const std::string &password,
 	const bool        &pwDigested)
 {
-	core::model::RepoBSON* bson = 0;
-
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-		bson = handler->createBSONCredentials(databaseAd, username, password, pwDigested);
+	core::model::RepoBSON* bson =
+		repo::core::handler::MongoDatabaseHandler::createBSONCredentials(databaseAd, username, password, pwDigested);
 
 	return bson;
 }

@@ -97,13 +97,28 @@ uint64_t RepoController::countItemsInCollection(
 	return impl->countItemsInCollection(token, database, collection);
 }
 
+RepoController::RepoToken* RepoController::createToken(
+	const std::string &address,
+	const int         &port,
+	const std::string &dbName,
+	const std::string &username,
+	const std::string &password
+	)
+{
+	return impl->createToken(address, port, dbName, username, password);
+}
+
 RepoController::RepoToken* RepoController::createTokenFromSerialised(
 	const std::vector<char> &data) const
 {
-	auto token = new RepoController::RepoToken(RepoController::RepoToken::createTokenFromRawData(data));
-	if (!token->valid())
+	RepoController::RepoToken* token = nullptr;
+	if (data.size())
 	{
-		token = nullptr;
+		token = new RepoController::RepoToken(RepoController::RepoToken::createTokenFromRawData(data));
+		if (token && !token->valid())
+		{
+			token = nullptr;
+		}
 	}
 
 	return token;
@@ -168,6 +183,26 @@ const uint64_t               &skip,
 const uint32_t               &limit)
 {
 	return impl->getAllFromCollectionContinuous(token, database, collection, fields, sortField, sortOrder, skip, limit);
+}
+
+void RepoController::getInfoFromToken(
+	const RepoController::RepoToken *token,
+	std::string                     &alias,
+	std::string                     &host,
+	uint32_t                        &port,
+	std::string                     &username,
+	std::string                     &authDB
+	)
+{
+	if (token)
+	{
+		alias = token->alias;
+		host = token->databaseHost;
+		port = token->databasePort;
+		if (token->credentials)
+			username = token->credentials->getStringField("user");
+		authDB = token->databaseName;
+	}
 }
 
 std::vector < repo::core::model::RepoRole > RepoController::getRolesFromDatabase(
@@ -463,7 +498,14 @@ bool RepoController::saveSceneToFile(
 std::vector<char> RepoController::serialiseToken(
 	const RepoController::RepoToken* token) const
 {
-	return token->serialiseToken();
+	if (token)
+		return token->serialiseToken();
+	else
+	{
+		repoError << "Cannot serialise token : token is empty!";
+		return std::vector<char>();
+	}
+		
 }
 
 void RepoController::reduceTransformations(

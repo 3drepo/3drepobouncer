@@ -71,7 +71,7 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::authenticateToAd
 		numDBConnections, username, password, pwDigested);
 
 	if (success && !username.empty())
-		cred = worker->createCredBSON(dbFullAd, username, password, pwDigested);
+		cred = worker->createCredBSON("admin", username, password, pwDigested);
 
 	if (cred || username.empty())
 	{
@@ -107,7 +107,7 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::authenticateMong
 		numDBConnections, dbName, username, password, pwDigested);
 
 	if (success && !username.empty())
-		cred = worker->createCredBSON(dbFullAd, username, password, pwDigested);
+		cred = worker->createCredBSON(dbName, username, password, pwDigested);
 	workerPool.push(worker);
 
 	if (cred || username.empty())
@@ -156,6 +156,32 @@ bool RepoController::_RepoControllerImpl::testConnection(const RepoController::R
 		repoError << "Failed to connect/authenticate: " << errMsg;
 	}
 	return isConnected;
+}
+
+RepoController::RepoToken* RepoController::_RepoControllerImpl::createToken(
+	const std::string &address,
+	const int         &port,
+	const std::string &dbName,
+	const std::string &username,
+	const std::string &password
+	)
+{
+	manipulator::RepoManipulator* worker = workerPool.pop();
+
+	RepoController::RepoToken *token = nullptr;
+
+	std::string dbFullAd = address + ":" + std::to_string(port);
+	repo::core::model::RepoBSON *cred = nullptr;
+	if (!username.empty())
+		cred = worker->createCredBSON(dbName, username, password, false);
+	workerPool.push(worker);
+
+	if (cred || username.empty())
+	{
+		token = new RepoController::RepoToken(cred, address, port, dbName);
+	}
+
+	return token && token->valid() ? token : nullptr;
 }
 
 void RepoController::_RepoControllerImpl::commitScene(

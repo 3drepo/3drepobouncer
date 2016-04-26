@@ -147,6 +147,17 @@ namespace repo{
 			const std::string &alias);
 
 		/**
+		* create a token base on the information given
+		*/
+		RepoToken* createToken(
+			const std::string &address,
+			const int         &port,
+			const std::string &dbName,
+			const std::string &username,
+			const std::string &password
+			);
+
+		/**
 		* Re-create a repo token given the serialised data
 		* @param data serialised data from serialiseToken()
 		* @return returns  RepoToken upon success
@@ -159,6 +170,15 @@ namespace repo{
 		* @param token token to destroy
 		*/
 		void destroyToken(RepoToken* token);
+
+		void getInfoFromToken(
+			const RepoToken *token,
+			std::string     &alias,
+			std::string     &host,
+			uint32_t        &port,
+			std::string     &username,
+			std::string     &authDB
+			);
 
 		/**
 		* Serialise the given token
