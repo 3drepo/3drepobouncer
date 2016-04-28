@@ -15,6 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <repo/lib/repo_listener_stdout.h>
 #include "functions.h"
 
 static const uint32_t minArgs = 6;  //exe address port username password command
@@ -34,7 +35,9 @@ void printHelp()
 
 repo::RepoController* instantiateController()
 {
-	repo::RepoController *controller = new repo::RepoController();
+	repo::lib::LogToStdout *stdOutListener = new repo::lib::LogToStdout();
+	std::vector<repo::lib::RepoAbstractListener*> listeners = { stdOutListener };
+	repo::RepoController *controller = new repo::RepoController(listeners);
 
 	char* debug = getenv("REPO_DEBUG");
 	char* verbose = getenv("REPO_VERBOSE");
@@ -52,18 +55,18 @@ repo::RepoController* instantiateController()
 		controller->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::INFO);
 	}
 
+	controller->logToFile("./log/");
 	return controller;
 }
 
 int main(int argc, char* argv[]){
+	repo::RepoController *controller = instantiateController();
 	if (argc < minArgs){
 		if (argc == 2 && isSpecialCommand(argv[1]))
 		{
 			repo_op_t op;
 			op.command = argv[1];
 			op.nArgcs = 0;
-
-			repo::RepoController *controller = instantiateController();
 
 			int32_t errcode = performOperation(controller, nullptr, op);
 
@@ -72,6 +75,7 @@ int main(int argc, char* argv[]){
 		}
 
 		printHelp();
+		repoLogError("Invalid number of arguments");
 		return REPOERR_INVALID_ARG;
 	}
 
@@ -90,8 +94,6 @@ int main(int argc, char* argv[]){
 	int32_t cmdnArgs = knownValid(op.command);
 	if (cmdnArgs <= op.nArgcs)
 	{
-		repo::RepoController *controller = instantiateController();
-
 		std::string errMsg;
 		repo::RepoController::RepoToken* token = controller->authenticateToAdminDatabaseMongo(errMsg, address, port, username, password);
 		if (token)
@@ -100,22 +102,25 @@ int main(int argc, char* argv[]){
 			int32_t errcode = performOperation(controller, token, op);
 
 			controller->destroyToken(token);
-			delete controller;			
+			delete controller;
 			return errcode;
 		}
 		else{
 			repoLogError("Failed to authenticate to the database: " + errMsg);
+			delete controller;
 			return REPOERR_AUTH_FAILED;
 		}
 	}
 	else
 	{
-		std::cout << "Not enough arguments for command: " << op.command << std::endl;
+		repoLogError("Not enough arguments for command: " + op.command);
 		printHelp();
+		delete controller;
 		return REPOERR_INVALID_ARG;
 	}
 
-	std::cout << "Unknown command: " << op.command << std::endl;
+	repoLogError("Unknown command: " + op.command);
 	printHelp();
+	delete controller;
 	return REPOERR_UNKNOWN_CMD;
 }
