@@ -1,21 +1,23 @@
 #include "repo_log.h"
 
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <boost/log/expressions.hpp>
-#include <boost/log/sinks/sync_frontend.hpp>
-#include <boost/log/sinks/text_ostream_backend.hpp>
-#include <boost/log/sources/severity_logger.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-#include <boost/log/support/date_time.hpp>
 #if BOOST_VERSION > 105700
 #include <boost/core/null_deleter.hpp>
 #else
 #include <boost/utility/empty_deleter.hpp>
 #endif
-#include <boost/log/utility/setup/file.hpp>
+
+#include <boost/iostreams/stream.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/sinks/sync_frontend.hpp>
+#include <boost/log/sinks/text_ostream_backend.hpp>
+#include <boost/log/sources/record_ostream.hpp>
+#include <boost/log/sources/severity_logger.hpp>
+#include <boost/log/support/date_time.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/shared_ptr.hpp>
+#include <ctime>
 
 using namespace repo::lib;
 
@@ -56,19 +58,39 @@ void RepoLog::log(
 
 BOOST_LOG_ATTRIBUTE_KEYWORD(timestamp, "TimeStamp", boost::posix_time::ptime)
 BOOST_LOG_ATTRIBUTE_KEYWORD(threadid, "ThreadID", boost::log::attributes::current_thread_id::value_type)
+
+static std::string getTimeAsString()
+{
+	time_t rawtime;
+	struct tm * timeinfo;
+	char buffer[80];
+
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+
+	strftime(buffer, 80, "%d-%m-%Y_%Ih%Mm%S", timeinfo);
+	return std::string(buffer);
+}
+
 void RepoLog::logToFile(const std::string &filePath)
 {
+	boost::filesystem::path logPath(filePath);
+	std::string fileName;
+	// a directory is given
+	std::string name = getTimeAsString() + "_%N.log";
+	fileName = (logPath.parent_path() / name).string();
+
 	boost::log::add_file_log
 		(
-		boost::log::keywords::file_name = filePath + "_%N",
+		boost::log::keywords::file_name = fileName,
 		boost::log::keywords::rotation_size = 10 * 1024 * 1024,
 		boost::log::keywords::time_based_rotation = boost::log::sinks::file::rotation_at_time_point(0, 0, 0),
 		boost::log::keywords::format = (
 		boost::log::expressions::stream
 		<< "[" << boost::log::expressions::format_date_time(timestamp, "%Y-%m-%d %H:%M:%S") << "]"
-		<< "(" << threadid << ")"
-		<< ": <" << boost::log::trivial::severity
-		<< "> " << boost::log::expressions::smessage
+		<< "(" << threadid << ") <" << boost::log::trivial::severity
+		<< ">"
+		<< ": " << boost::log::expressions::smessage
 		));
 	boost::log::add_common_attributes();
 }
@@ -139,8 +161,6 @@ void RepoLog::subscribeBroadcaster(RepoBroadcaster *broadcaster){
 void RepoLog::subscribeListeners(
 	const std::vector<RepoAbstractListener*> &listeners)
 {
-	repoTrace << "Adding new subscriber(s) to the log";
-
 	/*
 		FIXME: ideally, we should have a single broadcaster for the application
 		and you should only need to add the listeners when you subscribe

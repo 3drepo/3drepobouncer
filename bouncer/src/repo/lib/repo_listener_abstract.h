@@ -23,6 +23,7 @@
 #pragma once
 
 #include "../repo_bouncer_global.h"
+#include <string>
 
 namespace repo{
 	namespace lib{
