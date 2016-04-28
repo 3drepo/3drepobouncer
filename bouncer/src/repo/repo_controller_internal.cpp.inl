@@ -73,7 +73,7 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::authenticateToAd
 	if (success && !username.empty())
 		cred = worker->createCredBSON("admin", username, password, pwDigested);
 
-	if (cred || username.empty())
+	if (success && (cred || username.empty()))
 	{
 		token = new RepoController::RepoToken(*cred, address, port, worker->getNameOfAdminDatabase(dbFullAd));
 		if (cred) delete cred;
@@ -179,7 +179,7 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::createToken(
 	workerPool.push(worker);
 
 	if (cred || username.empty())
-	{		
+	{
 		token = new RepoController::RepoToken(cred ? *cred : repo::core::model::RepoBSON(), address, port, dbName, alias);
 		if (cred)delete cred;
 	}
