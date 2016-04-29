@@ -154,8 +154,6 @@ void RepoLog::subscribeBroadcaster(RepoBroadcaster *broadcaster){
 
 	// Register the sink in the logging core
 	boost::log::core::get()->add_sink(sink);
-
-	repoTrace << "Subscribed broadcaster to log";
 }
 
 void RepoLog::subscribeListeners(
