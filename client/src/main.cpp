@@ -31,6 +31,11 @@ void printHelp()
 	std::cout << std::endl;
 	std::cout << "Supported Commands:" << std::endl;
 	std::cout << helpInfo() << std::endl;
+	std::cout << std::endl;
+	std::cout << "Environmental Variables:" << std::endl;
+	std::cout << "REPO_DEBUG\tEnable debug logging" << std::endl;
+	std::cout << "REPO_LOG_DIR\tSpecify the log directory (default is ./log)" << std::endl;
+	std::cout << "REPO_VERBOSE\tEnable verbose logging" << std::endl;
 }
 
 repo::RepoController* instantiateController()
@@ -41,6 +46,7 @@ repo::RepoController* instantiateController()
 
 	char* debug = getenv("REPO_DEBUG");
 	char* verbose = getenv("REPO_VERBOSE");
+	char* logDir = getenv("REPO_LOG_DIR");
 
 	if (verbose)
 	{
@@ -55,7 +61,13 @@ repo::RepoController* instantiateController()
 		controller->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::INFO);
 	}
 
-	controller->logToFile("./log/");
+	std::string logPath;
+	if (logDir)
+		logPath = std::string(logDir);
+	else
+		logPath = "./log/";
+
+	controller->logToFile(logPath);
 	return controller;
 }
 
@@ -73,9 +85,12 @@ int main(int argc, char* argv[]){
 			delete controller;
 			return errcode;
 		}
-
+		else
+		{
+		}
 		printHelp();
-		repoLogError("Invalid number of arguments");
+		if (argv[1] == "-h")
+			repoLogError("Invalid number of arguments");
 		return REPOERR_INVALID_ARG;
 	}
 

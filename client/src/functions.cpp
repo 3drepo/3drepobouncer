@@ -30,11 +30,11 @@ std::string helpInfo()
 {
 	std::stringstream ss;
 
-	ss << cmdGenStash << "\t\tGenerate Stash for a project. (args: database project [repo|gltf|src])\n";
+	ss << cmdGenStash << "\tGenerate Stash for a project. (args: database project [repo|gltf|src])\n";
 	ss << cmdGetFile << "\t\tGet original file for the latest revision of the project (args: database project dir)\n";
 	ss << cmdImportFile << "\t\tImport file to database. (args: file database project [dxrotate] [owner] [configfile])\n";
 	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
-	ss << cmdVersion << "[-v]\t\tPrints the version of Repo Bouncer Client/Library\n";
+	ss << cmdVersion << "[-v]\tPrints the version of Repo Bouncer Client/Library\n";
 
 	return ss.str();
 }
@@ -60,6 +60,7 @@ int32_t knownValid(const std::string &cmd)
 }
 
 int32_t performOperation(
+
 	repo::RepoController *controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
