@@ -638,7 +638,7 @@ RepoRole RepoBSONFactory::_makeRepoRole(
 	}
 	else
 	{
-		repoWarning << "Creating a role with no privileges!";
+		repoDebug << "Creating a role with no privileges!";
 	}
 
 	//====== Add Inherited Roles ========

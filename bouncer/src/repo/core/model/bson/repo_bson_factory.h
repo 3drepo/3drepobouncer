@@ -81,7 +81,7 @@ namespace repo {
 				static RepoRole makeRepoRole(
 					const std::string &roleName,
 					const std::string &database,
-					const std::vector<RepoPermission> &permissions,
+					const std::vector<RepoPermission> &permissions = std::vector<RepoPermission>(),
 					const RepoRole &oldRole = RepoRole());
 
 				/**
