@@ -198,8 +198,13 @@ void RepoManipulator::createAndAssignOwnerRole(
 	const std::string                      &user
 	)
 {
-	auto role = repo::core::model::RepoBSONFactory::makeRepoRole(REPO_DEFAULT_OWNER_ROLE, dbName);
-	insertRole(databaseAd, cred, role);
+	auto role = findRole(databaseAd, cred, dbName, REPO_DEFAULT_OWNER_ROLE);
+	if (role.isEmpty())
+	{
+		auto role = repo::core::model::RepoBSONFactory::makeRepoRole(REPO_DEFAULT_OWNER_ROLE, dbName);
+		insertRole(databaseAd, cred, role);
+	}
+
 	auto userBSON = findUser(databaseAd, cred, user);
 	if (userBSON.isEmpty())
 	{
@@ -228,7 +233,7 @@ void RepoManipulator::commitScene(
 	{
 		repoError << "Failed to commit scene : database name or project name is empty!";
 	}
-	if (!hasDatabase(databaseAd, cred, dbName))
+	if (!hasDatabase(databaseAd, cred, dbName) || findRole(databaseAd, cred, dbName, REPO_DEFAULT_OWNER_ROLE).isEmpty())
 	{
 		repoTrace << dbName << " doesn't exist, create a owner role and assign it to " << projOwner;
 		createAndAssignOwnerRole(databaseAd, cred, dbName, projOwner);
