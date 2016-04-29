@@ -506,6 +506,24 @@ namespace repo{
 			std::string getNameOfAdminDatabase(
 				const std::string                             &databaseAd) const;
 
+			bool RepoManipulator::hasCollection(
+				const std::string                      &databaseAd,
+				const repo::core::model::RepoBSON 	   *cred,
+				const std::string                      &dbName,
+				const std::string                      &project);
+
+			/**
+			* Check if the database exist in the given database address
+			* @param databaseAd database address
+			* @param cred credentials
+			* @param dbName name of the database
+			* @return returns true if found
+			*/
+			bool hasDatabase(
+				const std::string                      &databaseAd,
+				const repo::core::model::RepoBSON 	   *cred,
+				const std::string                      &dbName);
+
 			/**
 			* Insert a binary file into the database (GridFS)
 			* @param databaseAd database address:portdatabase
@@ -734,6 +752,66 @@ namespace repo{
 				const std::string                       &databaseName,
 				const std::string                       &collectionName,
 				const repo::core::model::RepoBSON       &bson);
+
+		private:
+			/**
+			* Add read write permission for a project to a role
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param dbName database name
+			* @param projectName name of the project
+			* @param role role to add permission to
+			*/
+			void addRWToRole(
+				const std::string                      &databaseAd,
+				const repo::core::model::RepoBSON 	   *cred,
+				const std::string                      &dbName,
+				const std::string                      &projectName,
+				const repo::core::model::RepoRole      &role
+				);
+
+			/**
+			* Create the default owner role and assign it to the specified user
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param dbName database name
+			* @param user username to grant the role to
+			*/
+			void createAndAssignOwnerRole(
+				const std::string                      &databaseAd,
+				const repo::core::model::RepoBSON 	   *cred,
+				const std::string                      &dbName,
+				const std::string                      &user
+				);
+
+			/**
+			* Find the role given the role name
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param dbName database name
+			* @param roleName name of the role
+			* @return returns the Role as RepoRole if found
+			*/
+			repo::core::model::RepoRole findRole(
+				const std::string                      &databaseAd,
+				const repo::core::model::RepoBSON 	   *cred,
+				const std::string                      &dbName,
+				const std::string                      &roleName
+				);
+
+			/**
+			* Find the user given the user name
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param dbName database name
+			* @param username name of the role
+			* @return returns the Role as RepoUser if found
+			*/
+			repo::core::model::RepoUser findUser(
+				const std::string                      &databaseAd,
+				const repo::core::model::RepoBSON 	   *cred,
+				const std::string                      &username
+				);
 		};
 	}
 }

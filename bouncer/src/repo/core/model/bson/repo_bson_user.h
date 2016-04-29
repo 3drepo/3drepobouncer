@@ -58,6 +58,14 @@ namespace repo {
 				~RepoUser();
 
 				/**
+				* Clone and modify
+				*/
+
+				RepoUser cloneAndAddRole(
+					const std::string &dbName,
+					const std::string &role) const;
+
+				/**
 				* --------- Convenience functions -----------
 				*/
 

@@ -49,6 +49,27 @@ RepoManipulator::~RepoManipulator()
 {
 }
 
+void RepoManipulator::addRWToRole(
+	const std::string                      &databaseAd,
+	const repo::core::model::RepoBSON 	   *cred,
+	const std::string                      &dbName,
+	const std::string                      &projectName,
+	const repo::core::model::RepoRole      &role
+	)
+{
+	repo::core::model::RepoPermission newPermission;
+	newPermission.database = dbName;
+	newPermission.project = projectName;
+	newPermission.permission = repo::core::model::AccessRight::READ_WRITE;
+
+	auto accessRights = role.getProjectAccessRights();
+	accessRights.push_back(newPermission);
+	repoTrace << "Owner role looks like this: " << role.toString();
+	auto modRole = role.cloneAndUpdatePermissions(accessRights);
+	repoTrace << "Mod role looks like this: " << modRole.toString();
+	updateRole(databaseAd, cred, modRole);
+}
+
 bool RepoManipulator::connectAndAuthenticate(
 	std::string       &errMsg,
 	const std::string &address,
@@ -170,6 +191,25 @@ repo::core::model::RepoScene* RepoManipulator::createMapScene(
 	return scene;
 }
 
+void RepoManipulator::createAndAssignOwnerRole(
+	const std::string                      &databaseAd,
+	const repo::core::model::RepoBSON 	   *cred,
+	const std::string                      &dbName,
+	const std::string                      &user
+	)
+{
+	auto role = repo::core::model::RepoBSONFactory::makeRepoRole(REPO_DEFAULT_OWNER_ROLE, dbName);
+	insertRole(databaseAd, cred, role);
+	auto userBSON = findUser(databaseAd, cred, user);
+	if (userBSON.isEmpty())
+	{
+		repoError << "Cannot find user: " << user;
+	}
+	else
+	{
+		updateUser(databaseAd, cred, userBSON.cloneAndAddRole(dbName, REPO_DEFAULT_OWNER_ROLE));
+	}
+}
 void RepoManipulator::commitScene(
 	const std::string                      &databaseAd,
 	const repo::core::model::RepoBSON 	   *cred,
@@ -178,9 +218,35 @@ void RepoManipulator::commitScene(
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	std::string projOwner = owner.empty() ? cred->getStringField("user") : owner;
 
 	std::string msg;
-	if (handler && scene && scene->commit(handler, msg, owner.empty() ? cred->getStringField("user") : owner))
+	//Check if database exists
+	std::string dbName = scene->getDatabaseName();
+	std::string projectName = scene->getProjectName();
+	if (dbName.empty() || projectName.empty())
+	{
+		repoError << "Failed to commit scene : database name or project name is empty!";
+	}
+	if (!hasDatabase(databaseAd, cred, dbName))
+	{
+		repoTrace << dbName << " doesn't exist, create a owner role and assign it to " << projOwner;
+		createAndAssignOwnerRole(databaseAd, cred, dbName, projOwner);
+	}
+
+	if (!hasCollection(databaseAd, cred, dbName, projectName))
+	{
+		repoTrace << "First commit for this project, assigning owner with read/write permissions...";
+		auto ownerRole = findRole(databaseAd, cred, dbName, REPO_DEFAULT_OWNER_ROLE);
+		if (!ownerRole.isEmpty())
+			addRWToRole(databaseAd, cred, dbName, projectName, ownerRole);
+		else
+		{
+			repoError << "Could not find owner role!";
+		}
+	}
+
+	if (handler && scene && scene->commit(handler, msg, projOwner))
 	{
 		repoInfo << "Scene successfully committed to the database";
 		if (!scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size())
@@ -483,6 +549,57 @@ void RepoManipulator::fetchScene(
 	{
 		repoError << "Cannot populate a scene that doesn't exist. Use the other function if you wish to fully load a scene from scratch";
 	}
+}
+
+repo::core::model::RepoRole RepoManipulator::findRole(
+	const std::string                      &databaseAd,
+	const repo::core::model::RepoBSON 	   *cred,
+	const std::string                      &dbName,
+	const std::string                      &roleName
+	)
+{
+	repo::core::model::RepoRole role;
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (!handler)
+	{
+		repoError << "Failed to retrieve database handler to perform the operation!";
+	}
+	else
+	{
+		repo::core::model::RepoBSONBuilder builder;
+		builder << REPO_LABEL_ROLE << roleName;
+
+		role = repo::core::model::RepoRole(
+			handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_ROLES, builder.obj()));
+	}
+
+	return role;
+}
+
+repo::core::model::RepoUser RepoManipulator::findUser(
+	const std::string                      &databaseAd,
+	const repo::core::model::RepoBSON 	   *cred,
+	const std::string                      &username
+	)
+{
+	repo::core::model::RepoUser user;
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (!handler)
+	{
+		repoError << "Failed to retrieve database handler to perform the operation!";
+	}
+	else
+	{
+		repo::core::model::RepoBSONBuilder builder;
+		builder << REPO_LABEL_USER << username;
+
+		user = repo::core::model::RepoUser(
+			handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, builder.obj()));
+	}
+
+	return user;
 }
 
 bool RepoManipulator::generateAndCommitGLTFBuffer(
@@ -929,6 +1046,30 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 	return scene;
 }
 
+bool RepoManipulator::hasCollection(
+	const std::string                      &databaseAd,
+	const repo::core::model::RepoBSON 	   *cred,
+	const std::string                      &dbName,
+	const std::string                      &project)
+{
+	std::list<std::string> dList = { dbName };
+	auto databaseList = getDatabasesWithProjects(databaseAd, cred, dList);
+	if (!databaseList.size()) return false;
+	auto collectionList = databaseList.begin()->second;
+	auto findIt = std::find(collectionList.begin(), collectionList.end(), project);
+	return findIt != collectionList.end();
+}
+
+bool RepoManipulator::hasDatabase(
+	const std::string                      &databaseAd,
+	const repo::core::model::RepoBSON 	   *cred,
+	const std::string &dbName)
+{
+	auto databaseList = fetchDatabases(databaseAd, cred);
+	auto findIt = std::find(databaseList.begin(), databaseList.end(), dbName);
+	return findIt != databaseList.end();
+}
+
 void RepoManipulator::insertBinaryFileToDatabase(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON	          *cred,
@@ -1238,6 +1379,7 @@ void RepoManipulator::updateRole(
 		else
 		{
 			repoError << "Failed to update role : " << errMsg;
+			repoTrace << role.toString();
 		}
 	}
 }

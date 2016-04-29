@@ -32,6 +32,21 @@ RepoUser::~RepoUser()
 {
 }
 
+RepoUser RepoUser::cloneAndAddRole(
+	const std::string &dbName,
+	const std::string &role) const
+{
+	std::list<std::pair<std::string, std::string>> currentRoles = getRolesList();
+	std::pair<std::string, std::string> newEntry = { dbName, role };
+	currentRoles.push_back(newEntry);
+
+	RepoBSONBuilder builder;
+	builder.appendArrayPair(REPO_USER_LABEL_ROLES, currentRoles, REPO_USER_LABEL_DB, REPO_USER_LABEL_ROLE);
+	builder.appendElementsUnique(*this);
+
+	return RepoUser(builder.obj());
+}
+
 std::list<std::pair<std::string, std::string> > RepoUser::getAPIKeysList() const
 {
 	RepoBSON customData = getCustomDataBSON();
