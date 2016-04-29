@@ -3,6 +3,11 @@
 
 3DRepoBouncer is essentially the refactored 3DRepoCore and (parts of) 3DRepoGUI. It is a C++ library providing 3D Repo Scene Graph definition, repository management and manipulation logic as well as direct MongoDB databse access.
 
+### Latest Releases
+* 05 Apr 2016 [3D Repo Bouncer 1.0b2](https://github.com/3drepo/3drepobouncer/releases/tag/v1.0b2)
+* 22 Mar 2016 [3D Repo Bouncer 1.0b](https://github.com/3drepo/3drepobouncer/releases/tag/v1.0b) 
+* 07 Jan 2016 [3D Repo Bouncer 1.0a](https://github.com/3drepo/3drepobouncer/releases/tag/v1.0a) 
+
 ## Licenses
 This project is Copyright of [3D Repo Ltd](http://3drepo.org), a company registered in England and Wales No. 09014101, and is released under the open source [GNU Affero General Public License v3](http://www.gnu.org/licenses/agpl-3.0.en.html). Should you require a commercial license, please contact [support@3drepo.org](mailto:support@3drepo.org). All contributors are required to sign either the [3D Repo Individual](https://gist.github.com/jozefdobos/e177af804c9bcd217b73) or the [3D Repo Entity](https://gist.github.com/jozefdobos/c7c4c1c18cfb211c45d2) [Contributor License Agreement (CLA)](https://en.wikipedia.org/wiki/Contributor_License_Agreement).
 
