@@ -506,7 +506,7 @@ namespace repo{
 			std::string getNameOfAdminDatabase(
 				const std::string                             &databaseAd) const;
 
-			bool RepoManipulator::hasCollection(
+			bool hasCollection(
 				const std::string                      &databaseAd,
 				const repo::core::model::RepoBSON 	   *cred,
 				const std::string                      &dbName,
