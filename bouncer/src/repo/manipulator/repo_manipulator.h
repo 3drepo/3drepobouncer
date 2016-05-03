@@ -42,6 +42,20 @@ namespace repo{
 			~RepoManipulator();
 
 			/**
+			* Clean up any incomplete commits within the project
+			* @param address mongo database address
+			* @param port port number
+			* @param dbName name of the database
+			* @param projectName name of the project
+			*/
+			void cleanUp(
+				const std::string                      &databaseAd,
+				const repo::core::model::RepoBSON 	   *cred,
+				const std::string                      &dbName,
+				const std::string                      &projectName
+				);
+
+			/**
 			* Connect to the given database address/port and authenticat the user
 			* @param errMsg error message if the function returns false
 			* @param address mongo database address

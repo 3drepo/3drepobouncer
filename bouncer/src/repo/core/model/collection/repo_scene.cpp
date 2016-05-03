@@ -478,7 +478,7 @@ bool RepoScene::commit(
 		return false;
 	}
 
-	if (databaseName.empty() | projectName.empty())
+	if (databaseName.empty() || projectName.empty())
 	{
 		errMsg = "Cannot commit to the database - databaseName or projectName is empty (database: "
 			+ databaseName

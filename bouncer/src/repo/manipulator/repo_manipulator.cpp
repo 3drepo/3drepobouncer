@@ -70,6 +70,15 @@ void RepoManipulator::addRWToRole(
 	updateRole(databaseAd, cred, modRole);
 }
 
+void RepoManipulator::cleanUp(
+	const std::string                      &databaseAd,
+	const repo::core::model::RepoBSON 	   *cred,
+	const std::string                      &dbName,
+	const std::string                      &projectName
+	)
+{
+}
+
 bool RepoManipulator::connectAndAuthenticate(
 	std::string       &errMsg,
 	const std::string &address,
