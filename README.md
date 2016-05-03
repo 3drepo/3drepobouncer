@@ -4,6 +4,7 @@
 3DRepoBouncer is essentially the refactored 3DRepoCore and (parts of) 3DRepoGUI. It is a C++ library providing 3D Repo Scene Graph definition, repository management and manipulation logic as well as direct MongoDB databse access.
 
 ### Latest Releases
+* 03 May 2016 [3D Repo Bouncer 1.0rc1](https://github.com/3drepo/3drepobouncer/releases/tag/v1.0-rc1)
 * 05 Apr 2016 [3D Repo Bouncer 1.0b2](https://github.com/3drepo/3drepobouncer/releases/tag/v1.0b2)
 * 22 Mar 2016 [3D Repo Bouncer 1.0b](https://github.com/3drepo/3drepobouncer/releases/tag/v1.0b) 
 * 07 Jan 2016 [3D Repo Bouncer 1.0a](https://github.com/3drepo/3drepobouncer/releases/tag/v1.0a) 

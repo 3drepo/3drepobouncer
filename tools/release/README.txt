@@ -1,4 +1,4 @@
-3D Repo Bouncer Library v 1.0(beta version 2)
+3D Repo Bouncer Library v 1.0(Release Candidate 1)
 
 This is the internal library used for 3D Repo GUI.
 
@@ -25,9 +25,24 @@ download a copy of our desktop client - 3D Repo GUI.
 If you need any help, please contact support@3drepo.org, we
 look forward to hear from you.
 
-============================ Improvments =============================
-* (Issue #47) Fix bounding box error on mesh mappings
-* (Issue #98) Fix FBX model imports
+========================= Improvements =========================
+* (ISSUE #111) Token is no longer created if the database connection fails no credentials
+* (ISSUE #108) Removed unneccessary header includes and obscured RepoController implementation from view
+* (ISSUE #106) Split Mesh has been fixed for large meshes and Mesh remapping has been moved to its own class
+* (ISSUE #100, #101, #105) Multipart(Optimised graph) fixes
+* (ISSUE #59) User refactoring to remove obsoleted fields
+
+========================= New Features =========================
+* (ISSUE #113) A default "owner role is automatically created with project commits
+* (ISSUE #110) RepoClient will now log to file
+* (ISSUE #109) RepoToken and RepoCredentials have now merged into a single class
+* (ISSUE #107) X3D generation is removed from bouncer as it is no longer neccessary
+* (ISSUE #104) Metadata improvements
+* (ISSUE #103) The selection tree is now stored in GridFS upon commit
+* (ISSUE #102) More controller functionality has been exposed on the client
+* (ISSUE #99) Bouncer now supports 32bit Assimp again, with a warning message
+* (ISSUE #93) Faces re-ordering for buffer support
+* (ISSUE #75) GLTF generation
 
 
 
