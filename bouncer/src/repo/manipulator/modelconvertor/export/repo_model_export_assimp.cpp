@@ -85,9 +85,6 @@ aiScene* AssimpModelExport::convertToAssimp(
 			{
 				assimpScene->mMeshes[i++] = mesh;
 				repoTrace << " mesh #" << i - 1 << " #vertices = " << mesh->mNumVertices;
-				if (mesh->mNumVertices > 0)
-					repoTrace << " First vertex = " << mesh->mVertices[0].x << ", "
-					<< mesh->mVertices[0].y << "," << mesh->mVertices[0].z;
 			}
 		}
 
