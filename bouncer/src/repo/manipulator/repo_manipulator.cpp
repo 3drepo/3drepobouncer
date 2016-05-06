@@ -36,6 +36,7 @@
 #include "modeloptimizer/repo_optimizer_multipart.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
 #include "modelutility/repo_maker_selection_tree.h"
+#include "modelutility/repo_scene_cleaner.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
 #include "repo_manipulator.h"
 
@@ -64,9 +65,7 @@ void RepoManipulator::addRWToRole(
 
 	auto accessRights = role.getProjectAccessRights();
 	accessRights.push_back(newPermission);
-	repoTrace << "Owner role looks like this: " << role.toString();
 	auto modRole = role.cloneAndUpdatePermissions(accessRights);
-	repoTrace << "Mod role looks like this: " << modRole.toString();
 	updateRole(databaseAd, cred, modRole);
 }
 
@@ -77,6 +76,17 @@ void RepoManipulator::cleanUp(
 	const std::string                      &projectName
 	)
 {
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	modelutility::SceneCleaner cleaner(dbName, projectName, handler);
+	if (cleaner.execute())
+	{
+		repoInfo << dbName << "." << projectName << " has been cleaned up successfully.";
+	}
+	else
+	{
+		repoError << "Clean up failed on " << dbName << "." << projectName;
+	}
 }
 
 bool RepoManipulator::connectAndAuthenticate(

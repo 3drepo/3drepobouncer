@@ -159,6 +159,29 @@ bool RepoController::_RepoControllerImpl::testConnection(const RepoController::R
 	return isConnected;
 }
 
+void  RepoController::_RepoControllerImpl::cleanUp(
+	const RepoController::RepoToken        *token,
+	const std::string                      &dbName,
+	const std::string                      &projectName
+	)
+{
+	if (!token)
+	{
+		repoError << "Failed to clean up project: empty token to database";
+		return;
+	}
+
+	if (dbName.empty() || projectName.empty())
+	{
+		repoError << "Failed to clean up project: database or project name is empty!";
+		return;
+	}
+
+	manipulator::RepoManipulator* worker = workerPool.pop();
+	worker->cleanUp(token->databaseAd, token->getCredentials(), dbName, projectName);
+	workerPool.push(worker);
+}
+
 RepoController::RepoToken* RepoController::_RepoControllerImpl::createToken(
 	const std::string &alias,
 	const std::string &address,

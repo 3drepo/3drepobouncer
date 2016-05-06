@@ -385,6 +385,19 @@ namespace repo{
 			*/
 
 		/**
+		* Clean up any incomplete commits within the project
+		* @param address mongo database address
+		* @param port port number
+		* @param dbName name of the database
+		* @param projectName name of the project
+		*/
+		void cleanUp(
+			const RepoToken      *token,
+			const std::string                      &dbName,
+			const std::string                      &projectName
+			);
+
+		/**
 			* Retrieve a RepoScene with a specific revision loaded.
 			* @param token Authentication token
 			* @param database the database the collection resides in

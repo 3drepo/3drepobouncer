@@ -9,11 +9,13 @@ set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_maker_selection_tree.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_mesh_map_reorganiser.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_scene_cleaner.cpp
 	CACHE STRING "SOURCES" FORCE)
 
 set(HEADERS
 	${HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_maker_selection_tree.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_mesh_map_reorganiser.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_scene_cleaner.h
 	CACHE STRING "HEADERS" FORCE)
 

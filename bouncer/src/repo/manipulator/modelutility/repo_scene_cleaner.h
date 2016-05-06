@@ -16,6 +16,7 @@
 */
 #pragma once
 #include <string>
+#include "../../core/model/bson/repo_node_revision.h"
 #include "../../core/handler/repo_database_handler_abstract.h"
 
 namespace repo{
@@ -48,7 +49,7 @@ namespace repo{
 				* Remove the revision given from the database
 				* @param revNode revision bson
 				*/
-				void cleanUpRevision(
+				bool SceneCleaner::cleanUpRevision(
 					const repo::core::model::RevisionNode &revNode);
 
 				/**

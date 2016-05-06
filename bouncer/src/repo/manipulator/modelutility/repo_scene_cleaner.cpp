@@ -33,7 +33,18 @@ SceneCleaner::SceneCleaner(
 bool SceneCleaner::cleanUpRevision(
 	const repo::core::model::RevisionNode &revNode)
 {
-	revNode.
+	auto currentField = revNode.getObjectField(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS);
+	repo::core::model::RepoBSON criteria = BSON(REPO_NODE_LABEL_ID << BSON("$in" << currentField));
+	std::string errMsg;
+	handler->dropDocuments(criteria, dbName, projectName + "." + REPO_COLLECTION_SCENE, errMsg);
+	if (errMsg.empty())
+		return true;
+	else
+	{
+		repoError << "Failed to clean up revision " << revNode.getUniqueID() << " : " << errMsg;
+		return false;
+	}
+	//Stash isn't commited until the revision flag is set to complete, so there shouldn't be anything to clean up
 }
 
 bool SceneCleaner::execute()
@@ -54,7 +65,7 @@ bool SceneCleaner::execute()
 		auto unfinishedRevisions = getIncompleteRevisions();
 		for (const auto &bson : unfinishedRevisions)
 		{
-			cleanUpRevision(repo::core::model::RevisionNode(bson));
+			success &= cleanUpRevision(repo::core::model::RevisionNode(bson));
 		}
 	}
 
@@ -63,8 +74,8 @@ bool SceneCleaner::execute()
 
 std::vector<repo::core::model::RepoBSON> SceneCleaner::getIncompleteRevisions()
 {
-	repo::core::model::RepoBSON criteria = BSON(REPO_NODE_REVISION_LABEL_INCOMPLETE << BSON(<< "$exists" << true));
-	return handler->findAllByCriteria(dbName, projName + "." + REPO_COLLECTION_HISTORY, criteria);
+	repo::core::model::RepoBSON criteria = BSON(REPO_NODE_REVISION_LABEL_INCOMPLETE << BSON("$exists" << true));
+	return handler->findAllByCriteria(dbName, projectName + "." + REPO_COLLECTION_HISTORY, criteria);
 }
 
 SceneCleaner::~SceneCleaner()
