@@ -43,9 +43,11 @@ function testClient(callback){
 	console.log("Checking status of client...");
 	exec(path.normalize(conf.bouncer.path) + ' ' + conf.bouncer.dbhost + ' ' + conf.bouncer.dbport + ' ' + conf.bouncer.username + ' ' + conf.bouncer.password + ' test', function(error, stdout, stderr){
 		if(error !== null){
+			console.log("bouncer call errored");
 			console.log(stdout);
 		}
 		else{
+			console.log("bouncer call passed");
 			callback();
 		}
 	});
@@ -75,19 +77,27 @@ function exeCommand(cmd, callback){
 
 function connectQ(){
 	amqp.connect(conf.rabbitmq.host, function(err,conn){
-		conn.createChannel(function(err, ch){
-			ch.assertQueue(conf.rabbitmq.worker_queue, {durable: true});
-			console.log("Bouncer Client Queue started. Waiting for messages in %s of %s....", conf.rabbitmq.worker_queue, conf.rabbitmq.host);
-			ch.prefetch(1);
-			ch.consume(conf.rabbitmq.worker_queue, function(msg){
-				console.log(" [x] Received %s", msg.content.toString());
-				exeCommand(msg.content.toString(), function(reply){
-					console.log("sending to reply queue(%s): %s", msg.properties.replyTo, reply);
-					ch.sendToQueue(msg.properties.replyTo, new Buffer(reply),
-						{correlationId: msg.properties.correlationId});	
-				});		
-			}, {noAck: true});
-		});
+		if(err != null)
+		{
+			console.log("failed to establish connection to rabbit mq");
+		}
+		else
+		{
+
+			conn.createChannel(function(err, ch){
+				ch.assertQueue(conf.rabbitmq.worker_queue, {durable: true});
+				console.log("Bouncer Client Queue started. Waiting for messages in %s of %s....", conf.rabbitmq.worker_queue, conf.rabbitmq.host);
+				ch.prefetch(1);
+				ch.consume(conf.rabbitmq.worker_queue, function(msg){
+					console.log(" [x] Received %s", msg.content.toString());
+					exeCommand(msg.content.toString(), function(reply){
+						console.log("sending to reply queue(%s): %s", conf.rabbitmq.callback_queue, reply);
+						ch.sendToQueue(conf.rabbitmq.callback_queue, new Buffer(reply),
+							{correlationId: msg.properties.correlationId});	
+					});		
+				}, {noAck: true});
+			});
+		}
 	});
 }
 
