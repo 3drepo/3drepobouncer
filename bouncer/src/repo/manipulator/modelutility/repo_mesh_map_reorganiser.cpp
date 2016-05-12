@@ -27,12 +27,16 @@ MeshMapReorganiser::MeshMapReorganiser(
 	maxVertices(vertThreshold),
 	oldFaces(mesh->getFaces()),
 	oldVertices(mesh->getVertices()),
-	oldNormals(mesh->getNormals())
+	oldNormals(mesh->getNormals()),
+	oldUVs(mesh->getUVChannelsSeparated()),
+	oldColors(mesh->getColors())
 {
 	if (mesh && mesh->getMeshMapping().size())
 	{
 		newVertices = oldVertices;
 		newNormals = oldNormals;
+		newColors = oldColors;
+		newUVs = oldUVs;
 		newFaces.reserve(oldFaces.size());
 		performSplitting();
 	}
@@ -97,7 +101,6 @@ void MeshMapReorganiser::completeLastMatMapEntry(
 	const std::vector<float>  &maxBox
 	)
 {
-
 	matMap.back().back().vertTo = eVertices;
 	matMap.back().back().triTo = eFaces;
 	if (minBox.size())
@@ -116,7 +119,7 @@ repo::core::model::MeshNode MeshMapReorganiser::getRemappedMesh() const
 		bboxArr.push_back({ bbox[1].x, bbox[1].y, bbox[1].z });
 	}
 
-	auto newMesh = repo::core::model::RepoBSONFactory::makeMeshNode(newVertices, newFaces, newNormals, bboxArr);
+	auto newMesh = repo::core::model::RepoBSONFactory::makeMeshNode(newVertices, newFaces, newNormals, bboxArr, newUVs, newColors);
 	repo::core::model::RepoBSONBuilder builder;
 	builder.append(REPO_NODE_LABEL_ID, mesh->getUniqueID());
 	builder.append(REPO_NODE_LABEL_SHARED_ID, mesh->getSharedID());
@@ -264,6 +267,10 @@ void MeshMapReorganiser::splitLargeMesh(
 {
 	std::unordered_map<uint32_t, uint32_t> reIndexMap;
 	std::vector<repo_vector_t> reMappedVertices, reMappedNormals;
+	std::vector<repo_color4d_t> reMappedCols;
+	std::vector<std::vector<repo_vector2d_t>> reMappedUVs;
+	if (oldUVs.size())
+		reMappedUVs.resize(oldUVs.size());
 
 	repoTrace << currentSubMesh.mesh_id << " Exceed the maximum amount of vertices, splitting it into multiple super meshes...";
 
@@ -279,6 +286,8 @@ void MeshMapReorganiser::splitLargeMesh(
 	auto newVerticesVFrom = newMappings.back().vertFrom;
 
 	const bool hasNormal = oldNormals.size();
+	const bool hasColor = oldColors.size();
+	const bool hasUV = oldUVs.size();
 
 	// Split mesh information
 	bool startedLargeMeshSplit = true;
@@ -344,6 +353,17 @@ void MeshMapReorganiser::splitLargeMesh(
 						reMappedNormals.push_back(oldNormals[indexValue]);
 					}
 
+					if (hasColor)
+					{
+						reMappedCols.push_back(oldColors[indexValue]);
+					}
+
+					if (hasUV)
+					{
+						for (int iUV = 0; iUV < oldUVs.size(); ++iUV)
+							reMappedUVs[iUV].push_back(oldUVs[iUV][indexValue]);
+					}
+
 					updateBoundingBoxes(bboxMin, bboxMax, vertex, vertex);
 					splitMeshVertexCount++;
 				}
@@ -359,6 +379,13 @@ void MeshMapReorganiser::splitLargeMesh(
 	std::copy(reMappedVertices.begin(), reMappedVertices.end(), newVertices.begin() + newVerticesVFrom);
 	if (hasNormal)
 		std::copy(reMappedNormals.begin(), reMappedNormals.end(), newNormals.begin() + newVerticesVFrom);
+
+	if (hasUV)
+		for (int iUV = 0; iUV < oldUVs.size(); ++iUV)
+			std::copy(reMappedUVs[iUV].begin(), reMappedUVs[iUV].end(), newUVs[iUV].begin() + newVerticesVFrom);
+
+	if (hasColor)
+		std::copy(reMappedCols.begin(), reMappedCols.end(), newColors.begin() + newVerticesVFrom);
 
 	updateIDMapArray(splitMeshVertexCount, idMapIdx);
 
@@ -377,6 +404,21 @@ void MeshMapReorganiser::splitLargeMesh(
 		{
 			auto startingPosN = newNormals.begin() + newMappings.back().vertFrom + totalVertexCount;
 			newNormals.erase(startingPosN, startingPosN + leftOverVertices);
+		}
+
+		if (hasColor)
+		{
+			auto startingPosN = newColors.begin() + newMappings.back().vertFrom + totalVertexCount;
+			newColors.erase(startingPosN, startingPosN + leftOverVertices);
+		}
+
+		if (hasUV)
+		{
+			for (int iUV = 0; iUV < oldUVs.size(); ++iUV)
+			{
+				auto startingPosN = newUVs[iUV].begin() + newMappings.back().vertFrom + totalVertexCount;
+				newUVs[iUV].erase(startingPosN, startingPosN + leftOverVertices);
+			}
 		}
 	}
 
