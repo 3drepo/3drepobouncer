@@ -283,12 +283,17 @@ bool SRCModelExport::generateTreeRepresentation(
 		size_t index = 0;
 		//Every mesh is a new SRC file
 		fullDataBuffer.reserve(meshes.size());
-		for (const repo::core::model::RepoNode* mesh : meshes)
+		for (const repo::core::model::RepoNode* node : meshes)
 		{
+			auto mesh = dynamic_cast<const repo::core::model::MeshNode*>(node);
+			if (!mesh)
+			{
+				repoError << "Failed to cast a Repo Node of type mesh into a MeshNode(" << node->getUniqueID() << "). Skipping...";
+			}
 			std::string textureID = scene->getTextureIDForMesh(gType, mesh->getSharedID());
 
 			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter =
-				new repo::manipulator::modelutility::MeshMapReorganiser((repo::core::model::MeshNode*)mesh, SRC_MAX_VERTEX_LIMIT);
+				new repo::manipulator::modelutility::MeshMapReorganiser(mesh, SRC_MAX_VERTEX_LIMIT);
 			repo::core::model::MeshNode splittedMesh = reSplitter->getRemappedMesh();
 			std::vector<uint16_t> facebuf = reSplitter->getSerialisedFaces();
 			std::vector<std::vector<float>> idMapBuf = reSplitter->getIDMapArrays();
@@ -297,7 +302,7 @@ bool SRCModelExport::generateTreeRepresentation(
 
 			std::string ext = ".src";
 			bool sepX3d; //requires a separate x3d file if it is a multipart mesh
-			if (sepX3d = ((repo::core::model::MeshNode*)mesh)->getMeshMapping().size() > 1)
+			if (sepX3d = mesh->getMeshMapping().size() > 1)
 			{
 				ext += ".mpc";
 			}
@@ -310,7 +315,7 @@ bool SRCModelExport::generateTreeRepresentation(
 			addMeshToExport(splittedMesh, index++, facebuf, idMapBuf, ext);
 			if (sepX3d)
 			{
-				success &= generateJSONMapping((repo::core::model::MeshNode*)mesh, scene, splitMapping);
+				success &= generateJSONMapping(mesh, scene, splitMapping);
 			}
 		}
 	}
