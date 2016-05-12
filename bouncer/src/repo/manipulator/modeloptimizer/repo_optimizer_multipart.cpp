@@ -477,19 +477,20 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 		repoUUID rootID = rootNode->getSharedID();
 
 		std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> matNodes;
+		std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher> matIDs;
 
 		for (const auto &groupings : normalMeshes)
 		{
 			for (const auto grouping : groupings.second)
 			{
-				success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, matNodes);
+				success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, matNodes, matIDs);
 			}
 		}
 		for (const auto &groupings : transparentMeshes)
 		{
 			for (const auto grouping : groupings.second)
 			{
-				success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, matNodes);
+				success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, matNodes, matIDs);
 			}
 		}
 
@@ -502,13 +503,13 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 				{
 #ifdef REPO_MP_TEXTURE_WORK_AROUND
 
-					success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, matNodes, true);
+					success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, matNodes, matIDs, true);
 #else
-					success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, matNodes);
+					success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, matNodes, matIDs);
 #endif
 				}
-				}
 			}
+		}
 
 		if (success)
 		{
@@ -534,14 +535,14 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 		{
 			repoError << "Failed to process Mesh Groups";
 		}
-		}
+	}
 	else
 	{
 		repoError << "Cannot generate a multipart scene for a scene with no meshes";
 	}
 
 	return success;
-	}
+}
 
 repoUUID MultipartOptimizer::getMaterialID(
 	const repo::core::model::RepoScene *scene,
@@ -600,11 +601,11 @@ bool MultipartOptimizer::processMeshGroup(
 	const repoUUID                                                             &rootID,
 	repo::core::model::RepoNodeSet                                             &mergedMeshes,
 	std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> &matNodes,
+	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>                      &matIDs,
 	const bool																   &texture
 	)
 {
 	bool success = false;
-	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher> matIDs;
 	auto sMeshes = createSuperMesh(scene, meshes, matIDs, texture);
 	if (success = sMeshes.size())
 	{
@@ -653,11 +654,11 @@ bool MultipartOptimizer::processMeshGroup(
 	const  std::set<repoUUID>                                                  &meshes,
 	const repoUUID                                                             &rootID,
 	repo::core::model::RepoNodeSet                                             &mergedMeshes,
-	std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> &matNodes
+	std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> &matNodes,
+	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>                     &matIDs
 	)
 {
 	bool success = false;
-	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher> matIDs;
 	auto sMesh = createSuperMesh(scene, meshes, matIDs);
 	if (success = sMesh)
 	{
@@ -786,5 +787,5 @@ void MultipartOptimizer::sortMeshes(
 			meshMap[mFormat].back().insert(mesh->getUniqueID());
 			meshFCount[mFormat] += mesh->getFaces().size();
 		}
-		}
 	}
+}
