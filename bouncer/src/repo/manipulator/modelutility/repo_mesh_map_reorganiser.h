@@ -168,11 +168,15 @@ namespace repo{
 				const size_t maxVertices;
 				const std::vector<repo_vector_t> oldVertices;
 				const std::vector<repo_vector_t> oldNormals;
+				const std::vector<std::vector<repo_vector2d_t>> oldUVs;
 				const std::vector<repo_face_t>   oldFaces;
+				const std::vector<repo_color4d_t>   oldColors;
 
 				std::vector<repo_vector_t> newVertices;
 				std::vector<repo_vector_t> newNormals;
 				std::vector<repo_face_t>   newFaces;
+				std::vector<repo_color4d_t>   newColors;
+				std::vector<std::vector<repo_vector2d_t>> newUVs;
 
 				std::vector<uint16_t> serialisedFaces;
 
