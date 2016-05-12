@@ -616,8 +616,24 @@ bool MultipartOptimizer::processMeshGroup(
 			mergedMeshes.insert(sMesh);
 
 			repoUUID sMeshSharedID = sMesh->getSharedID();
+			std::set<repoUUID> currentMats;
+			for (const auto &map : sMesh->getMeshMapping())
+			{
+				currentMats.insert(map.material_id);
+			}
+
+			/**
+			* FIXME: since there's multiple sMeshes, we need to make sure we only process the ones
+			* that are within the current sMesh. This is really inefficient to loop through all the matIDs
+			* but it will do for now. To do it properly we need a bi-directional map to find the original matID base
+			* on the new one
+			* This should all go away once we have proper texture support
+			*/
 			for (const auto matID : matIDs)
 			{
+				//Skip the material if it's not used in the current supermesh
+				if (currentMats.find(matID.second) == currentMats.end()) continue;
+
 				auto matIt = matNodes.find(matID.second);
 				if (matIt == matNodes.end())
 				{
