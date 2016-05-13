@@ -1,0 +1,13 @@
+{
+  "name": "3drepobouncerWorker",
+  "private": true,
+  "scripts": {
+    "start": "forever start bouncer_worker.js",
+    "stop": "forever stop bouncer_worker.js",
+    "restart": "npm stop; npm start"
+  },
+  "dependencies": {
+    "amqplib": "0.4.1",
+	"forever": "*"
+  }
+}
