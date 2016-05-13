@@ -93,6 +93,8 @@ void RepoLog::logToFile(const std::string &filePath)
 		<< ": " << boost::log::expressions::smessage
 		));
 	boost::log::add_common_attributes();
+
+	repoInfo << "Log file registered: " << filePath;
 }
 
 void RepoLog::setLoggingLevel(const RepoLogLevel &level)
