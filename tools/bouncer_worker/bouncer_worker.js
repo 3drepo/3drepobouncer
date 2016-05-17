@@ -62,7 +62,7 @@ function exeCommand(cmd, rid, callback){
 	var logRootDir = conf.bouncer.log_dir;
 	if(logRootDir == null)
 		logRootDir = './log';
-	var logDir = logRootDir + "/" +  rid.toString();
+	var logDir = logRootDir + "/" +  rid.toString() + "/";
 
 
 	exec('REPO_LOG_DIR=' + logDir +' '+path.normalize(conf.bouncer.path) + ' ' + conf.bouncer.dbhost + ' ' + conf.bouncer.dbport + ' ' + conf.bouncer.username + ' ' + conf.bouncer.password + ' ' + cmd, function(error, stdout, stderr){
