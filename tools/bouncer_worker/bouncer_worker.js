@@ -58,10 +58,14 @@ function testClient(callback){
 /**
  * Execute the Command and provide a reply message to the callback function
  */
-function exeCommand(cmd, callback){
+function exeCommand(cmd, rid, callback){
+	var logRootDir = conf.bouncer.log_dir;
+	if(logRootDir == null)
+		logRootDir = './log';
+	var logDir = logRootDir + "/" +  rid.toString();
 
 
-	exec(path.normalize(conf.bouncer.path) + ' ' + conf.bouncer.dbhost + ' ' + conf.bouncer.dbport + ' ' + conf.bouncer.username + ' ' + conf.bouncer.password + ' ' + cmd, function(error, stdout, stderr){
+	exec('REPO_LOG_DIR=' + logDir +' '+path.normalize(conf.bouncer.path) + ' ' + conf.bouncer.dbhost + ' ' + conf.bouncer.dbport + ' ' + conf.bouncer.username + ' ' + conf.bouncer.password + ' ' + cmd, function(error, stdout, stderr){
 		var reply = {};
 		if(error != null){
 		
@@ -90,7 +94,7 @@ function connectQ(){
 				ch.prefetch(1);
 				ch.consume(conf.rabbitmq.worker_queue, function(msg){
 					console.log(" [x] Received %s", msg.content.toString());
-					exeCommand(msg.content.toString(), function(reply){
+					exeCommand(msg.content.toString(), msg.properties.correlationId, function(reply){
 						console.log("sending to reply queue(%s): %s", conf.rabbitmq.callback_queue, reply);
 						ch.sendToQueue(conf.rabbitmq.callback_queue, new Buffer(reply),
 							{correlationId: msg.properties.correlationId});	

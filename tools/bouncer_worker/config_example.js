@@ -9,7 +9,8 @@ module.exports = {
 		dbhost :'localhost',
 		dbport: 27017,
 		username : 'username',
-		password : 'password'
+		password : 'password',
+		log_dir : '/var/log/3drepo/bouncer/';
 	}
 
 }
