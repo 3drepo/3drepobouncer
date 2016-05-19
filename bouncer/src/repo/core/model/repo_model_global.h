@@ -40,7 +40,6 @@
 #define REPO_ADMIN                  "admin"             //!< Admin database
 #define REPO_SYSTEM_USERS           "system.users"      //!< Users collection
 #define REPO_SYSTEM_ROLES           "system.roles"      //!< Roles collection
-#define REPO_DEFAULT_OWNER_ROLE     "owner"
 
 #define REPO_LABEL_ID               "_id"
 #define REPO_LABEL_OVERSIZED_FILES  "_extRef"
