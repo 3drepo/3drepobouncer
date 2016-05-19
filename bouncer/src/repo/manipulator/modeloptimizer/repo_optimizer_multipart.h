@@ -168,6 +168,7 @@ namespace repo {
 					const repoUUID                                                             &rootID,
 					repo::core::model::RepoNodeSet                                             &mergedMeshes,
 					std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> &matNodes,
+					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>                     &matIDs,
 					const bool                                                                 &texture
 					);
 #endif
@@ -176,7 +177,8 @@ namespace repo {
 					const std::set<repoUUID>							                       & meshes,
 					const repoUUID                                                             &rootID,
 					repo::core::model::RepoNodeSet                                             &mergedMeshes,
-					std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> &matNodes);
+					std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> &matNodes,
+					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>                    &matIDs);
 
 				/**
 				* Sort the given RepoNodeSet of meshes for multipart merging

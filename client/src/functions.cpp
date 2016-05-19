@@ -147,6 +147,7 @@ int32_t generateStash(
 		repoLogError("Unknown stash type: " + type);
 		return REPOERR_INVALID_ARG;
 	}
+
 	auto scene = controller->fetchScene(token, dbName, project);
 	if (!scene)
 	{

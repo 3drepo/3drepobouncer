@@ -768,35 +768,6 @@ namespace repo{
 				const repo::core::model::RepoBSON       &bson);
 
 		private:
-			/**
-			* Add read write permission for a project to a role
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
-			* @param dbName database name
-			* @param projectName name of the project
-			* @param role role to add permission to
-			*/
-			void addRWToRole(
-				const std::string                      &databaseAd,
-				const repo::core::model::RepoBSON 	   *cred,
-				const std::string                      &dbName,
-				const std::string                      &projectName,
-				const repo::core::model::RepoRole      &role
-				);
-
-			/**
-			* Create the default owner role and assign it to the specified user
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
-			* @param dbName database name
-			* @param user username to grant the role to
-			*/
-			void createAndAssignOwnerRole(
-				const std::string                      &databaseAd,
-				const repo::core::model::RepoBSON 	   *cred,
-				const std::string                      &dbName,
-				const std::string                      &user
-				);
 
 			/**
 			* Find the role given the role name

@@ -50,25 +50,6 @@ RepoManipulator::~RepoManipulator()
 {
 }
 
-void RepoManipulator::addRWToRole(
-	const std::string                      &databaseAd,
-	const repo::core::model::RepoBSON 	   *cred,
-	const std::string                      &dbName,
-	const std::string                      &projectName,
-	const repo::core::model::RepoRole      &role
-	)
-{
-	repo::core::model::RepoPermission newPermission;
-	newPermission.database = dbName;
-	newPermission.project = projectName;
-	newPermission.permission = repo::core::model::AccessRight::READ_WRITE;
-
-	auto accessRights = role.getProjectAccessRights();
-	accessRights.push_back(newPermission);
-	auto modRole = role.cloneAndUpdatePermissions(accessRights);
-	updateRole(databaseAd, cred, modRole);
-}
-
 void RepoManipulator::cleanUp(
 	const std::string                      &databaseAd,
 	const repo::core::model::RepoBSON 	   *cred,
@@ -210,30 +191,6 @@ repo::core::model::RepoScene* RepoManipulator::createMapScene(
 	return scene;
 }
 
-void RepoManipulator::createAndAssignOwnerRole(
-	const std::string                      &databaseAd,
-	const repo::core::model::RepoBSON 	   *cred,
-	const std::string                      &dbName,
-	const std::string                      &user
-	)
-{
-	auto role = findRole(databaseAd, cred, dbName, REPO_DEFAULT_OWNER_ROLE);
-	if (role.isEmpty())
-	{
-		auto role = repo::core::model::RepoBSONFactory::makeRepoRole(REPO_DEFAULT_OWNER_ROLE, dbName);
-		insertRole(databaseAd, cred, role);
-	}
-
-	auto userBSON = findUser(databaseAd, cred, user);
-	if (userBSON.isEmpty())
-	{
-		repoError << "Cannot find user: " << user;
-	}
-	else
-	{
-		updateUser(databaseAd, cred, userBSON.cloneAndAddRole(dbName, REPO_DEFAULT_OWNER_ROLE));
-	}
-}
 void RepoManipulator::commitScene(
 	const std::string                      &databaseAd,
 	const repo::core::model::RepoBSON 	   *cred,
@@ -251,23 +208,6 @@ void RepoManipulator::commitScene(
 	if (dbName.empty() || projectName.empty())
 	{
 		repoError << "Failed to commit scene : database name or project name is empty!";
-	}
-	if (!hasDatabase(databaseAd, cred, dbName) || findRole(databaseAd, cred, dbName, REPO_DEFAULT_OWNER_ROLE).isEmpty())
-	{
-		repoTrace << dbName << " doesn't exist, create a owner role and assign it to " << projOwner;
-		createAndAssignOwnerRole(databaseAd, cred, dbName, projOwner);
-	}
-
-	if (!hasCollection(databaseAd, cred, dbName, projectName))
-	{
-		repoTrace << "First commit for this project, assigning owner with read/write permissions...";
-		auto ownerRole = findRole(databaseAd, cred, dbName, REPO_DEFAULT_OWNER_ROLE);
-		if (!ownerRole.isEmpty())
-			addRWToRole(databaseAd, cred, dbName, projectName, ownerRole);
-		else
-		{
-			repoError << "Could not find owner role!";
-		}
 	}
 
 	if (handler && scene && scene->commit(handler, msg, projOwner))

@@ -22,7 +22,7 @@ static const uint32_t minArgs = 6;  //exe address port username password command
 
 void printHelp()
 {
-	std::cout << "Usage: repobouncerclient <address> <port> <username> <password> <command> [<args>]" << std::endl;
+	std::cout << "Usage: 3drepobouncerClient <address> <port> <username> <password> <command> [<args>]" << std::endl;
 	std::cout << std::endl;
 	std::cout << "address\t\tAddress of database instance" << std::endl;
 	std::cout << "port\t\tPort of database instance" << std::endl;
@@ -71,6 +71,21 @@ repo::RepoController* instantiateController()
 	return controller;
 }
 
+void logCommand(int argc, char* argv[])
+{
+	for (int i = 5; i < argc; ++i)
+	{
+		if (i == 5)
+		{
+			repoLog("Operation: " + std::string(argv[i]));
+		}
+		else
+		{
+			repoLog("Arg " + std::to_string(i - 5) + ": " + std::string(argv[i]));
+		}
+	}
+}
+
 int main(int argc, char* argv[]){
 	repo::RepoController *controller = instantiateController();
 	if (argc < minArgs){
@@ -83,13 +98,11 @@ int main(int argc, char* argv[]){
 			int32_t errcode = performOperation(controller, nullptr, op);
 
 			delete controller;
+
 			return errcode;
 		}
-		else
-		{
-		}
 		printHelp();
-		if (argv[1] == "-h")
+		if (argv[1] != "-h")
 			repoLogError("Invalid number of arguments");
 		return REPOERR_INVALID_ARG;
 	}
@@ -99,6 +112,7 @@ int main(int argc, char* argv[]){
 	std::string username = argv[3];
 	std::string password = argv[4];
 
+	logCommand(argc, argv);
 	repo_op_t op;
 	op.command = argv[5];
 	if (argc > minArgs)
