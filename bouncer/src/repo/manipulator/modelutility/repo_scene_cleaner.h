@@ -49,7 +49,7 @@ namespace repo{
 				* Remove the revision given from the database
 				* @param revNode revision bson
 				*/
-				bool SceneCleaner::cleanUpRevision(
+				bool cleanUpRevision(
 					const repo::core::model::RevisionNode &revNode);
 
 				/**
