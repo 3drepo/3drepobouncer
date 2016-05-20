@@ -303,7 +303,7 @@ namespace repo{
 			bool generateAndCommitSelectionTree(
 				const std::string                         &databaseAd,
 				const repo::core::model::RepoBSON         *cred,
-				const repo::core::model::RepoScene        *scene
+				repo::core::model::RepoScene              *scene
 				);
 
 			/**
@@ -334,7 +334,7 @@ namespace repo{
 			bool generateAndCommitWebViewBuffer(
 				const std::string                             &databaseAd,
 				const repo::core::model::RepoBSON	          *cred,
-				const repo::core::model::RepoScene            *scene,
+				repo::core::model::RepoScene                  *scene,
 				const repo_web_buffers_t                      &buffers,
 				const modelconvertor::WebExportType           &exType);
 
@@ -350,7 +350,7 @@ namespace repo{
 			bool generateAndCommitGLTFBuffer(
 				const std::string                             &databaseAd,
 				const repo::core::model::RepoBSON	          *cred,
-				const repo::core::model::RepoScene            *scene);
+				repo::core::model::RepoScene                  *scene);
 
 			/**
 			* Generate and commit a SRC encoding for the given scene
@@ -363,7 +363,7 @@ namespace repo{
 			bool generateAndCommitSRCBuffer(
 				const std::string                             &databaseAd,
 				const repo::core::model::RepoBSON	          *cred,
-				const repo::core::model::RepoScene            *scene);
+				repo::core::model::RepoScene                  *scene);
 
 			/**
 			* Generate a gltf encoding in the form of a buffer for the given scene

@@ -33,10 +33,20 @@ SceneCleaner::SceneCleaner(
 bool SceneCleaner::cleanUpRevision(
 	const repo::core::model::RevisionNode &revNode)
 {
-	auto currentField = revNode.getObjectField(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS);
+	repoInfo << "Removing revision with id: " << revNode.getUniqueID();
+	//FIXME: avoid using mongo object field
+	auto currentField = mongo::BSONArray(revNode.getObjectField(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS));
 	repo::core::model::RepoBSON criteria = BSON(REPO_NODE_LABEL_ID << BSON("$in" << currentField));
 	std::string errMsg;
+	//clean up scene
 	handler->dropDocuments(criteria, dbName, projectName + "." + REPO_COLLECTION_SCENE, errMsg);
+
+	//remove the original files attached to the revision
+	auto orgFileNames = revNode.getOrgFiles();
+	for (const auto &file : orgFileNames)
+		handler->dropRawFile(dbName, projectName + "." + REPO_COLLECTION_HISTORY, file, errMsg);
+	//delete the revision itself
+	handler->dropDocument(revNode, dbName, projectName + "." + REPO_COLLECTION_HISTORY, errMsg);
 	if (errMsg.empty())
 		return true;
 	else
@@ -55,14 +65,15 @@ bool SceneCleaner::execute()
 		repoError << "Failed to instantiate scene cleaner: null pointer to the database!";
 	}
 
-	if (success &= !(dbName.empty() || projectName.empty()))
+	if (!(success &= !(dbName.empty() || projectName.empty())))
 	{
-		repoError << "Failed to instantiate scene cleaner: datbase name or project name is empty!";
+		repoError << "Failed to instantiate scene cleaner: database name or project name is empty!";
 	}
 
 	if (success)
 	{
 		auto unfinishedRevisions = getIncompleteRevisions();
+		repoInfo << unfinishedRevisions.size() << " incomplete revisions found.";
 		for (const auto &bson : unfinishedRevisions)
 		{
 			success &= cleanUpRevision(repo::core::model::RevisionNode(bson));

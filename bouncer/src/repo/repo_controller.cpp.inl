@@ -710,7 +710,7 @@ public:
 	*/
 	bool generateAndCommitGLTFBuffer(
 		const RepoToken                               *token,
-		const repo::core::model::RepoScene            *scene);
+		repo::core::model::RepoScene            *scene);
 
 	/**
 	* Generate and commit a SRC encoding for the given scene
@@ -721,7 +721,7 @@ public:
 	*/
 	bool generateAndCommitSRCBuffer(
 		const RepoToken                               *token,
-		const repo::core::model::RepoScene            *scene);
+		repo::core::model::RepoScene            *scene);
 
 	/**
 	* Generate a GLTF encoding in the form of a buffer for the given scene

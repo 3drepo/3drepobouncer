@@ -703,7 +703,7 @@ namespace repo{
 		*/
 		bool generateAndCommitGLTFBuffer(
 			const RepoToken                               *token,
-			const repo::core::model::RepoScene            *scene);
+			repo::core::model::RepoScene            *scene);
 
 		/**
 		* Generate and commit a SRC encoding for the given scene
@@ -714,7 +714,7 @@ namespace repo{
 		*/
 		bool generateAndCommitSRCBuffer(
 			const RepoToken                               *token,
-			const repo::core::model::RepoScene            *scene);
+			repo::core::model::RepoScene            *scene);
 
 		/**
 		* Generate a GLTF encoding in the form of a buffer for the given scene
@@ -830,8 +830,8 @@ namespace repo{
 			repo::core::model::RepoScene *scene);
 
 		/*
-			*	------------- 3D Diff --------------
-			*/
+		*	------------- 3D Diff --------------
+		*/
 
 		/**
 		* Compare 2 scenes via IDs.

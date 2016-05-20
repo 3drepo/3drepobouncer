@@ -829,10 +829,6 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 		builder.appendArray(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS, currentNodes);
 
 	//--------------------------------------------------------------------------
-	// Upload In Progress flag
-	builder << REPO_NODE_REVISION_LABEL_INCOMPLETE << true;
-
-	//--------------------------------------------------------------------------
 	// Shift for world coordinates
 	if (worldOffset.size() > 0)
 		builder.appendArray(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT, worldOffset);

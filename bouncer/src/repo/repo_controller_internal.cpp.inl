@@ -864,7 +864,7 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::createMapScen
 
 bool RepoController::_RepoControllerImpl::generateAndCommitGLTFBuffer(
 	const RepoController::RepoToken                    *token,
-	const repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene)
 {
 	bool success;
 	if (success = token && scene)
@@ -882,7 +882,7 @@ bool RepoController::_RepoControllerImpl::generateAndCommitGLTFBuffer(
 
 bool RepoController::_RepoControllerImpl::generateAndCommitSRCBuffer(
 	const RepoController::RepoToken                    *token,
-	const repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene)
 {
 	bool success;
 	if (success = token && scene)

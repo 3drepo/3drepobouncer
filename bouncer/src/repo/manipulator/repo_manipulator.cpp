@@ -569,8 +569,11 @@ repo::core::model::RepoUser RepoManipulator::findUser(
 bool RepoManipulator::generateAndCommitGLTFBuffer(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON	          *cred,
-	const repo::core::model::RepoScene            *scene)
+	repo::core::model::RepoScene                  *scene)
 {
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_WEB_STASH);
 	return generateAndCommitWebViewBuffer(databaseAd, cred, scene,
 		generateGLTFBuffer(scene), modelconvertor::WebExportType::GLTF);
 }
@@ -578,8 +581,11 @@ bool RepoManipulator::generateAndCommitGLTFBuffer(
 bool RepoManipulator::generateAndCommitSRCBuffer(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON	          *cred,
-	const repo::core::model::RepoScene            *scene)
+	repo::core::model::RepoScene                  *scene)
 {
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_WEB_STASH);
 	return generateAndCommitWebViewBuffer(databaseAd, cred, scene,
 		generateSRCBuffer(scene), modelconvertor::WebExportType::SRC);
 }
@@ -587,12 +593,15 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 bool RepoManipulator::generateAndCommitSelectionTree(
 	const std::string                         &databaseAd,
 	const repo::core::model::RepoBSON         *cred,
-	const repo::core::model::RepoScene        *scene
+	repo::core::model::RepoScene              *scene
 	)
 {
 	bool success = false;
 	if (success = scene && scene->isRevisioned())
 	{
+		repo::core::handler::AbstractDatabaseHandler* handler =
+			repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+		scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_SEL_TREE);
 		modelutility::SelectionTreeMaker treeMaker(scene);
 		auto buffer = treeMaker.getSelectionTreeAsBuffer();
 		if (success = buffer.size())
@@ -602,8 +611,7 @@ bool RepoManipulator::generateAndCommitSelectionTree(
 			std::string errMsg;
 			std::string fileName = "/" + databaseName + "/" + projectName + "/revision/"
 				+ UUIDtoString(scene->getRevisionID()) + "/fulltree.json";
-			repo::core::handler::AbstractDatabaseHandler* handler =
-				repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+
 			if (handler && handler->insertRawFile(databaseName, projectName + "." + scene->getJSONExtension(), fileName, buffer, errMsg))
 			{
 				repoInfo << "File (" << fileName << ") added successfully.";
@@ -617,7 +625,9 @@ bool RepoManipulator::generateAndCommitSelectionTree(
 		{
 			repoError << "Failed to generate selection tree: JSON file buffer is empty!";
 		}
+		if (success) scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
 	}
+
 	return success;
 }
 
@@ -669,10 +679,11 @@ bool RepoManipulator::generateAndCommitStashGraph(
 	bool success = false;
 	if (scene && scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
 	{
+		repo::core::handler::AbstractDatabaseHandler* handler =
+			repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+		scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_REPO_STASH);
 		if (success = generateStashGraph(scene))
 		{
-			repo::core::handler::AbstractDatabaseHandler* handler =
-				repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 			std::string errMsg;
 			//Remove all stash graph nodes that may have existed for this current revision
 			removeStashGraphFromDatabase(databaseAd, cred, scene);
@@ -697,15 +708,16 @@ bool RepoManipulator::generateAndCommitStashGraph(
 bool RepoManipulator::generateAndCommitWebViewBuffer(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON	          *cred,
-	const repo::core::model::RepoScene            *scene,
+	repo::core::model::RepoScene                  *scene,
 	const repo_web_buffers_t                        &buffers,
 	const modelconvertor::WebExportType           &exType)
 {
 	bool success = false;
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+
 	if (success = (buffers.geoFiles.size() + buffers.x3dFiles.size() + buffers.jsonFiles.size()))
 	{
-		repo::core::handler::AbstractDatabaseHandler* handler =
-			repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 		if (success = handler)
 		{
 			std::string geoStashExt;
@@ -773,6 +785,9 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 			}
 		}
 	}
+
+	if (success)
+		scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
 	return success;
 }
 

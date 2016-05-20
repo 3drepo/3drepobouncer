@@ -424,14 +424,14 @@ repo::core::model::RepoScene* RepoController::createMapScene(
 
 bool RepoController::generateAndCommitGLTFBuffer(
 	const RepoController::RepoToken    *token,
-	const repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene)
 {
 	return impl->generateAndCommitGLTFBuffer(token, scene);
 }
 
 bool RepoController::generateAndCommitSRCBuffer(
 	const RepoController::RepoToken    *token,
-	const repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene)
 {
 	return impl->generateAndCommitSRCBuffer(token, scene);
 }

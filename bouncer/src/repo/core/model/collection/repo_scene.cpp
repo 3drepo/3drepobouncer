@@ -508,12 +508,6 @@ bool RepoScene::commit(
 				{
 					delete revNode;
 				}
-				auto completeRevNode = newRevNode->cloneAndRemoveIncompleteFlag();
-
-				//update revision node
-				handler->upsertDocument(databaseName, projectName + "." + revExt, completeRevNode, true, errMsg);
-
-				newRevNode->swap(completeRevNode);
 
 				revNode = newRevNode;
 				revision = newRevNode->getUniqueID();
@@ -533,6 +527,7 @@ bool RepoScene::commit(
 			}
 		}
 	}
+	if (success) updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
 	//Create and Commit revision node
 	return success;
 }
@@ -614,6 +609,7 @@ bool RepoScene::commitRevisionNode(
 	newRevNode =
 		new RevisionNode(RepoBSONFactory::makeRevisionNode(userName, branch, uniqueIDs,
 		/*newAddedV, newRemovedV, newModifiedV,*/ fileNames, parent, worldOffset, message, tag));
+	*newRevNode = newRevNode->cloneAndUpdateStatus(RevisionNode::UploadStatus::GEN_DEFAULT);
 
 	if (newRevNode)
 	{
@@ -772,6 +768,7 @@ bool RepoScene::commitStash(
 	}
 	if (stashGraph.rootNode)
 	{
+		updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_REPO_STASH);
 		//Add rev id onto the stash nodes before committing.
 		std::vector<repoUUID> nodes;
 		RepoBSONBuilder builder;
@@ -784,7 +781,11 @@ bool RepoScene::commitStash(
 			*pair.second = pair.second->cloneAndAddFields(&revID, false);
 		}
 
-		return commitNodes(handler, nodes, GraphType::OPTIMIZED, errMsg);
+		auto success = commitNodes(handler, nodes, GraphType::OPTIMIZED, errMsg);
+		if (success)
+			updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
+
+		return success;
 	}
 	else
 	{
@@ -1475,6 +1476,30 @@ void RepoScene::shiftModel(
 	{
 		auto translatedRoot = stashGraph.rootNode->cloneAndApplyTransformation(transMat);
 		stashGraph.rootNode->swap(translatedRoot);
+	}
+}
+
+void RepoScene::updateRevisionStatus(
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	const RevisionNode::UploadStatus &status)
+{
+	if (revNode)
+	{
+		auto updatedRev = revNode->cloneAndUpdateStatus(status);
+
+		if (handler)
+		{
+			//update revision node
+			std::string errMsg;
+			handler->upsertDocument(databaseName, projectName + "." + revExt, updatedRev, true, errMsg);
+		}
+
+		revNode->swap(updatedRev);
+		repoInfo << "rev node status is: " << (int)revNode->getUploadStatus();
+	}
+	else
+	{
+		repoError << "Trying to update the status of a revision when the scene is not revisioned!";
 	}
 }
 
