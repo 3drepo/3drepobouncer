@@ -899,7 +899,7 @@ bool RepoController::_RepoControllerImpl::generateAndCommitSRCBuffer(
 }
 
 repo_web_buffers_t RepoController::_RepoControllerImpl::generateGLTFBuffer(
-	const repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene)
 {
 	repo_web_buffers_t buffer;
 	if (scene)
@@ -916,7 +916,7 @@ repo_web_buffers_t RepoController::_RepoControllerImpl::generateGLTFBuffer(
 }
 
 repo_web_buffers_t RepoController::_RepoControllerImpl::generateSRCBuffer(
-	const repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene)
 {
 	repo_web_buffers_t buffer;
 	if (scene)

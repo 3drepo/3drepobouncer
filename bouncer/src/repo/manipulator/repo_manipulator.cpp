@@ -30,13 +30,10 @@
 #include "diff/repo_diff_sharedid.h"
 #include "modelconvertor/import/repo_model_import_assimp.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
-#include "modelconvertor/export/repo_model_export_gltf.h"
-#include "modelconvertor/export/repo_model_export_src.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
-#include "modeloptimizer/repo_optimizer_multipart.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
-#include "modelutility/repo_maker_selection_tree.h"
 #include "modelutility/repo_scene_cleaner.h"
+#include "modelutility/repo_scene_manager.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
 #include "repo_manipulator.h"
 
@@ -212,14 +209,15 @@ void RepoManipulator::commitScene(
 
 	if (handler && scene && scene->commit(handler, msg, projOwner))
 	{
+		bool success = false;
 		repoInfo << "Scene successfully committed to the database";
-		if (!scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size())
+		if (!(success = (scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size())))
 		{
 			if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)){
 				repoInfo << "Optimised scene not found. Attempt to generate...";
-				generateAndCommitStashGraph(databaseAd, cred, scene);
+				success = generateAndCommitStashGraph(databaseAd, cred, scene);
 			}
-			else if (scene->commitStash(handler, msg))
+			else if (success = scene->commitStash(handler, msg))
 			{
 				repoInfo << "Commited scene stash successfully.";
 			}
@@ -228,17 +226,27 @@ void RepoManipulator::commitScene(
 				repoError << "Failed to commit scene stash : " << msg;
 			}
 
-			repoInfo << "Generating SRC encoding for web viewing...";
-			if (generateAndCommitSRCBuffer(databaseAd, cred, scene))
+			if (success)
 			{
-				repoInfo << "SRC file stored into the database";
+				repoInfo << "Generating SRC encoding for web viewing...";
+				if (success = generateAndCommitSRCBuffer(databaseAd, cred, scene))
+				{
+					repoInfo << "SRC file stored into the database";
+				}
+				else
+				{
+					repoError << "Failed to generate and commit SRC buffer for this project.";
+				}
 			}
 		}
 
-		repoInfo << "Generating Selection Tree JSON...";
-		if (generateAndCommitSelectionTree(databaseAd, cred, scene))
+		if (success)
 		{
-			repoInfo << "Selection Tree Stored into the database";
+			repoInfo << "Generating Selection Tree JSON...";
+			if (generateAndCommitSelectionTree(databaseAd, cred, scene))
+				repoInfo << "Selection Tree Stored into the database";
+			else
+				repoError << "failed to commit selection tree";
 		}
 	}
 	else
@@ -382,91 +390,17 @@ std::list<std::string> RepoManipulator::fetchCollections(
 
 repo::core::model::RepoScene* RepoManipulator::fetchScene(
 	const std::string                             &databaseAd,
-	const repo::core::model::RepoBSON*	  cred,
+	const repo::core::model::RepoBSON             *cred,
 	const std::string                             &database,
 	const std::string                             &project,
 	const repoUUID                                &uuid,
 	const bool                                    &headRevision,
 	const bool                                    &lightFetch)
 {
-	repo::core::model::RepoScene* scene = nullptr;
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-	{
-		//not setting a scene if we don't have a handler since we
-		//can't retreive anything from the database.
-		scene = new repo::core::model::RepoScene(database, project);
-		if (scene)
-		{
-			if (headRevision)
-				scene->setBranch(uuid);
-			else
-				scene->setRevision(uuid);
-
-			std::string errMsg;
-			if (scene->loadRevision(handler, errMsg))
-			{
-				repoInfo << "Loaded " <<
-					(headRevision ? (" head revision of branch " + UUIDtoString(uuid))
-					: (" revision " + UUIDtoString(uuid)))
-					<< " of " << database << "." << project;
-				if (lightFetch)
-				{
-					if (scene->loadStash(handler, errMsg))
-					{
-						repoTrace << "Stash Loaded";
-					}
-					else
-					{
-						//failed to load stash isn't critical, give it a warning instead of returning false
-						repoWarning << "Error loading stash for " << database << "." << project << " : " << errMsg;
-						if (scene->loadScene(handler, errMsg))
-						{
-							repoTrace << "Scene Loaded";
-						}
-						else{
-							delete scene;
-							scene = nullptr;
-						}
-					}
-				}
-				else
-				{
-					if (scene->loadScene(handler, errMsg))
-					{
-						repoTrace << "Loaded Scene";
-
-						if (scene->loadStash(handler, errMsg))
-						{
-							repoTrace << "Stash Loaded";
-						}
-						else
-						{
-							//failed to load stash isn't critical, give it a warning instead of returning false
-							repoWarning << "Error loading stash for " << database << "." << project << " : " << errMsg;
-						}
-					}
-					else{
-						delete scene;
-						scene = nullptr;
-					}
-				}
-			}
-			else
-			{
-				repoError << "Failed to load revision for "
-					<< database << "." << project << " : " << errMsg;
-				delete scene;
-				scene = nullptr;
-			}
-		}
-		else{
-			repoError << "Failed to create a RepoScene(out of memory?)!";
-		}
-	}
-
-	return scene;
+	modelutility::SceneManager sceneManager;
+	return sceneManager.fetchScene(handler, database, project, uuid, headRevision, lightFetch);
 }
 
 void RepoManipulator::fetchScene(
@@ -474,45 +408,10 @@ void RepoManipulator::fetchScene(
 	const repo::core::model::RepoBSON     *cred,
 	repo::core::model::RepoScene          *scene)
 {
-	if (scene)
-	{
-		if (scene->isRevisioned())
-		{
-			repo::core::handler::AbstractDatabaseHandler* handler =
-				repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-			if (!handler)
-			{
-				repoError << "Failed to retrieve database handler to perform the operation!";
-			}
-
-			std::string errMsg;
-			if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED) && scene->loadStash(handler, errMsg))
-			{
-				repoTrace << "Stash Loaded";
-			}
-			else
-			{
-				if (!errMsg.empty())
-					repoWarning << "Error loading stash for " << scene->getDatabaseName() << "." << scene->getProjectName() << " : " << errMsg;
-			}
-
-			errMsg.clear();
-
-			if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT) && scene->loadScene(handler, errMsg))
-			{
-				repoTrace << "Scene Loaded";
-			}
-			else
-			{
-				if (!errMsg.empty())
-					repoError << "Error loading scene: " << errMsg;
-			}
-		}
-	}
-	else
-	{
-		repoError << "Cannot populate a scene that doesn't exist. Use the other function if you wish to fully load a scene from scratch";
-	}
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	modelutility::SceneManager sceneManager;
+	return sceneManager.fetchScene(handler, scene);
 }
 
 repo::core::model::RepoRole RepoManipulator::findRole(
@@ -571,11 +470,9 @@ bool RepoManipulator::generateAndCommitGLTFBuffer(
 	const repo::core::model::RepoBSON	          *cred,
 	repo::core::model::RepoScene                  *scene)
 {
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_WEB_STASH);
+	repo_web_buffers_t buffers;
 	return generateAndCommitWebViewBuffer(databaseAd, cred, scene,
-		generateGLTFBuffer(scene), modelconvertor::WebExportType::GLTF);
+		buffers, modelconvertor::WebExportType::GLTF);
 }
 
 bool RepoManipulator::generateAndCommitSRCBuffer(
@@ -583,11 +480,9 @@ bool RepoManipulator::generateAndCommitSRCBuffer(
 	const repo::core::model::RepoBSON	          *cred,
 	repo::core::model::RepoScene                  *scene)
 {
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_WEB_STASH);
+	repo_web_buffers_t buffers;
 	return generateAndCommitWebViewBuffer(databaseAd, cred, scene,
-		generateSRCBuffer(scene), modelconvertor::WebExportType::SRC);
+		buffers, modelconvertor::WebExportType::SRC);
 }
 
 bool RepoManipulator::generateAndCommitSelectionTree(
@@ -596,39 +491,10 @@ bool RepoManipulator::generateAndCommitSelectionTree(
 	repo::core::model::RepoScene              *scene
 	)
 {
-	bool success = false;
-	if (success = scene && scene->isRevisioned())
-	{
-		repo::core::handler::AbstractDatabaseHandler* handler =
-			repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-		scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_SEL_TREE);
-		modelutility::SelectionTreeMaker treeMaker(scene);
-		auto buffer = treeMaker.getSelectionTreeAsBuffer();
-		if (success = buffer.size())
-		{
-			std::string databaseName = scene->getDatabaseName();
-			std::string projectName = scene->getProjectName();
-			std::string errMsg;
-			std::string fileName = "/" + databaseName + "/" + projectName + "/revision/"
-				+ UUIDtoString(scene->getRevisionID()) + "/fulltree.json";
-
-			if (handler && handler->insertRawFile(databaseName, projectName + "." + scene->getJSONExtension(), fileName, buffer, errMsg))
-			{
-				repoInfo << "File (" << fileName << ") added successfully.";
-			}
-			else
-			{
-				repoError << "Failed to add file  (" << fileName << "): " << errMsg;
-			}
-		}
-		else
-		{
-			repoError << "Failed to generate selection tree: JSON file buffer is empty!";
-		}
-		if (success) scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
-	}
-
-	return success;
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	modelutility::SceneManager SceneManager;
+	return SceneManager.generateAndCommitSelectionTree(scene, handler);
 }
 
 bool RepoManipulator::removeStashGraphFromDatabase(
@@ -637,37 +503,18 @@ bool RepoManipulator::removeStashGraphFromDatabase(
 	repo::core::model::RepoScene* scene
 	)
 {
-	bool success = false;
-	if (scene && scene->isRevisioned())
-	{
-		repo::core::handler::AbstractDatabaseHandler* handler =
-			repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-		std::string errMsg;
-
-		repo::core::model::RepoBSONBuilder builder;
-		builder.append(REPO_NODE_STASH_REF, scene->getRevisionID());
-		success = handler->dropDocuments(builder.obj(), scene->getDatabaseName(), scene->getProjectName() + "." + scene->getStashExtension(), errMsg);
-	}
-
-	return success;
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	modelutility::SceneManager SceneManager;
+	return SceneManager.removeStashGraph(scene, handler);
 }
 
 bool RepoManipulator::generateStashGraph(
 	repo::core::model::RepoScene              *scene
 	)
 {
-	bool success = false;
-	if (scene && scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
-	{
-		modeloptimizer::MultipartOptimizer mpOpt;
-		success = mpOpt.apply(scene);
-	}
-	else
-	{
-		repoError << "Failed to generate stash graph: nullptr to scene or empty scene graph!";
-	}
-
-	return success;
+	modelutility::SceneManager SceneManager;
+	return SceneManager.generateStashGraph(scene, nullptr);
 }
 
 bool RepoManipulator::generateAndCommitStashGraph(
@@ -676,151 +523,41 @@ bool RepoManipulator::generateAndCommitStashGraph(
 	repo::core::model::RepoScene              *scene
 	)
 {
-	bool success = false;
-	if (scene && scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT))
-	{
-		repo::core::handler::AbstractDatabaseHandler* handler =
-			repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-		scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_REPO_STASH);
-		if (success = generateStashGraph(scene))
-		{
-			std::string errMsg;
-			//Remove all stash graph nodes that may have existed for this current revision
-			removeStashGraphFromDatabase(databaseAd, cred, scene);
-
-			if (success &= (bool)handler && scene->commitStash(handler, errMsg))
-			{
-				repoInfo << "Stash Graph committed successfully";
-			}
-			else
-			{
-				repoError << "Failed to commit stash graph: " << errMsg;
-			}
-		}
-		else
-		{
-			repoError << "Failed to generate stash graph.";
-		}
-	}
-	return success;
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	modelutility::SceneManager SceneManager;
+	return SceneManager.generateStashGraph(scene, handler);
 }
 
 bool RepoManipulator::generateAndCommitWebViewBuffer(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON	          *cred,
 	repo::core::model::RepoScene                  *scene,
-	const repo_web_buffers_t                        &buffers,
+	repo_web_buffers_t                            &buffers,
 	const modelconvertor::WebExportType           &exType)
 {
-	bool success = false;
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-
-	if (success = (buffers.geoFiles.size() + buffers.x3dFiles.size() + buffers.jsonFiles.size()))
-	{
-		if (success = handler)
-		{
-			std::string geoStashExt;
-			switch (exType)
-			{
-			case modelconvertor::WebExportType::GLTF:
-				geoStashExt = scene->getGLTFExtension();
-				break;
-			case modelconvertor::WebExportType::SRC:
-				geoStashExt = scene->getSRCExtension();
-				break;
-			default:
-				repoError << "Unknown export type with enum:  " << (uint16_t)exType;
-				return false;
-			}
-
-			std::string x3dStashExt = scene->getX3DExtension();
-			std::string jsonStashExt = scene->getJSONExtension();
-
-			for (const auto &bufferPair : buffers.geoFiles)
-			{
-				std::string errMsg;
-				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + geoStashExt, bufferPair.first, bufferPair.second,
-					errMsg))
-				{
-					repoInfo << "File (" << bufferPair.first << ") added successfully.";
-				}
-				else
-				{
-					repoError << "Failed to add file  (" << bufferPair.first << "): " << errMsg;
-				}
-			}
-			for (const auto &bufferPair : buffers.x3dFiles)
-			{
-				std::string databaseName = scene->getDatabaseName();
-				std::string projectName = scene->getProjectName();
-				std::string errMsg;
-				std::string fileName = bufferPair.first;
-				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + x3dStashExt, fileName, bufferPair.second,
-					errMsg))
-				{
-					repoInfo << "File (" << fileName << ") added successfully.";
-				}
-				else
-				{
-					repoError << "Failed to add file  (" << fileName << "): " << errMsg;
-				}
-			}
-
-			for (const auto &bufferPair : buffers.jsonFiles)
-			{
-				std::string databaseName = scene->getDatabaseName();
-				std::string projectName = scene->getProjectName();
-				std::string errMsg;
-				std::string fileName = bufferPair.first;
-				if (handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + jsonStashExt, fileName, bufferPair.second,
-					errMsg))
-				{
-					repoInfo << "File (" << fileName << ") added successfully.";
-				}
-				else
-				{
-					repoError << "Failed to add file  (" << fileName << "): " << errMsg;
-				}
-			}
-		}
-	}
-
-	if (success)
-		scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
-	return success;
+	modelutility::SceneManager SceneManager;
+	return SceneManager.generateWebViewBuffers(scene, exType, buffers, handler);
 }
 
 repo_web_buffers_t RepoManipulator::generateGLTFBuffer(
-	const repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene)
 {
-	repo_web_buffers_t result;
-	modelconvertor::GLTFModelExport gltfExport(scene);
-	if (gltfExport.isOk())
-	{
-		repoTrace << "Conversion succeed.. exporting as buffer..";
-		result = gltfExport.getAllFilesExportedAsBuffer();
-	}
-	else
-		repoError << "Export to GLTF failed.";
-
-	return result;
+	repo_web_buffers_t buffers;
+	modelutility::SceneManager SceneManager;
+	SceneManager.generateWebViewBuffers(scene, modelconvertor::WebExportType::GLTF, buffers, nullptr);
+	return buffers;
 }
 
 repo_web_buffers_t RepoManipulator::generateSRCBuffer(
-	const repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene)
 {
-	repo_web_buffers_t result;
-	modelconvertor::SRCModelExport srcExport(scene);
-	if (srcExport.isOk())
-	{
-		repoTrace << "Conversion succeed.. exporting as buffer..";
-		result = srcExport.getAllFilesExportedAsBuffer();
-	}
-	else
-		repoError << "Export to SRC failed.";
-
-	return result;
+	repo_web_buffers_t buffers;
+	modelutility::SceneManager SceneManager;
+	SceneManager.generateWebViewBuffers(scene, modelconvertor::WebExportType::SRC, buffers, nullptr);
+	return buffers;
 }
 
 std::vector<repo::core::model::RepoBSON>

@@ -322,12 +322,12 @@ namespace repo{
 				);
 
 			/**
-			* Generate and commit a SRC encoding for the given scene
+			* Generate and commit a `exType` encoding for the given scene
 			* This requires the stash to have been generated already
 			* @param databaseAd database address:portdatabase
 			* @param cred user credentials in bson form
 			* @param scene the scene to generate the src encoding from
-			* @param buffers buffers to commit to database
+			* @param buffers buffers that are geneated and commited
 			* @param exType the type of export it is
 			* @return returns true upon success
 			*/
@@ -335,7 +335,7 @@ namespace repo{
 				const std::string                             &databaseAd,
 				const repo::core::model::RepoBSON	          *cred,
 				repo::core::model::RepoScene                  *scene,
-				const repo_web_buffers_t                      &buffers,
+				repo_web_buffers_t                            &buffers,
 				const modelconvertor::WebExportType           &exType);
 
 			/**
@@ -372,7 +372,7 @@ namespace repo{
 			* @return returns a buffer in the form of a byte vector mapped to its filename
 			*/
 			repo_web_buffers_t generateGLTFBuffer(
-				const repo::core::model::RepoScene *scene);
+				repo::core::model::RepoScene *scene);
 
 			/**
 			* Generate a SRC encoding in the form of a buffer for the given scene
@@ -381,7 +381,7 @@ namespace repo{
 			* @return returns a buffer in the form of a byte vector mapped to its filename
 			*/
 			repo_web_buffers_t generateSRCBuffer(
-				const repo::core::model::RepoScene *scene);
+				repo::core::model::RepoScene *scene);
 
 			/**
 			* Generate a stash graph for the given scene and populate it

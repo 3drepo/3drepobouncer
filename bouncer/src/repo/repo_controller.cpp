@@ -437,13 +437,13 @@ bool RepoController::generateAndCommitSRCBuffer(
 }
 
 repo_web_buffers_t RepoController::generateGLTFBuffer(
-	const repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene)
 {
 	return impl->generateGLTFBuffer(scene);
 }
 
 repo_web_buffers_t RepoController::generateSRCBuffer(
-	const repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene)
 {
 	return impl->generateSRCBuffer(scene);
 }

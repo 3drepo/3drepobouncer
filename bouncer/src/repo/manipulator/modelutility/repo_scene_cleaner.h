@@ -46,7 +46,8 @@ namespace repo{
 				repo::core::handler::AbstractDatabaseHandler *handler;
 
 				/**
-				* Remove the revision given from the database
+				* Depending on the status of the revision node given,
+				* either repair the revision or delete it
 				* @param revNode revision bson
 				*/
 				bool cleanUpRevision(
@@ -57,6 +58,20 @@ namespace repo{
 				* incomplete revisions contains a flag "incomplete" within the bson
 				*/
 				std::vector<repo::core::model::RepoBSON> getIncompleteRevisions();
+
+				/**
+				* Given a list of IDs in BSON format, find all of its gridFS references and
+				* remove them
+				*/
+				void removeAllGridFSReference(
+					const repo::core::model::RepoBSON &idArray);
+
+				/**
+				* Remove the revision given from the database
+				* @param revNode revision bson
+				*/
+				bool removeRevision(
+					const repo::core::model::RevisionNode &revNode);
 			};
 		}
 	}

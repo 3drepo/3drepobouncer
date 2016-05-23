@@ -730,7 +730,7 @@ public:
 	* @return returns a buffer in the form of a byte vector
 	*/
 	repo_web_buffers_t generateGLTFBuffer(
-		const repo::core::model::RepoScene *scene);
+		repo::core::model::RepoScene *scene);
 
 	/**
 	* Generate and commit a selection tree for the given scene
@@ -749,7 +749,7 @@ public:
 	* @return returns a buffer in the form of a byte vector
 	*/
 	repo_web_buffers_t generateSRCBuffer(
-		const repo::core::model::RepoScene *scene);
+		repo::core::model::RepoScene *scene);
 
 	/**
 	* Get a string of supported file formats for file export
