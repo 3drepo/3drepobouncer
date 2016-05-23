@@ -159,6 +159,29 @@ bool RepoController::_RepoControllerImpl::testConnection(const RepoController::R
 	return isConnected;
 }
 
+void  RepoController::_RepoControllerImpl::cleanUp(
+	const RepoController::RepoToken        *token,
+	const std::string                      &dbName,
+	const std::string                      &projectName
+	)
+{
+	if (!token)
+	{
+		repoError << "Failed to clean up project: empty token to database";
+		return;
+	}
+
+	if (dbName.empty() || projectName.empty())
+	{
+		repoError << "Failed to clean up project: database or project name is empty!";
+		return;
+	}
+
+	manipulator::RepoManipulator* worker = workerPool.pop();
+	worker->cleanUp(token->databaseAd, token->getCredentials(), dbName, projectName);
+	workerPool.push(worker);
+}
+
 RepoController::RepoToken* RepoController::_RepoControllerImpl::createToken(
 	const std::string &alias,
 	const std::string &address,
@@ -841,7 +864,7 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::createMapScen
 
 bool RepoController::_RepoControllerImpl::generateAndCommitGLTFBuffer(
 	const RepoController::RepoToken                    *token,
-	const repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene)
 {
 	bool success;
 	if (success = token && scene)
@@ -859,7 +882,7 @@ bool RepoController::_RepoControllerImpl::generateAndCommitGLTFBuffer(
 
 bool RepoController::_RepoControllerImpl::generateAndCommitSRCBuffer(
 	const RepoController::RepoToken                    *token,
-	const repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene)
 {
 	bool success;
 	if (success = token && scene)
@@ -876,7 +899,7 @@ bool RepoController::_RepoControllerImpl::generateAndCommitSRCBuffer(
 }
 
 repo_web_buffers_t RepoController::_RepoControllerImpl::generateGLTFBuffer(
-	const repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene)
 {
 	repo_web_buffers_t buffer;
 	if (scene)
@@ -893,7 +916,7 @@ repo_web_buffers_t RepoController::_RepoControllerImpl::generateGLTFBuffer(
 }
 
 repo_web_buffers_t RepoController::_RepoControllerImpl::generateSRCBuffer(
-	const repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene)
 {
 	repo_web_buffers_t buffer;
 	if (scene)

@@ -76,6 +76,15 @@ bool RepoController::authenticateMongo(
 	return impl->authenticateMongo(errMsg, token);
 }
 
+void RepoController::cleanUp(
+	const RepoToken      *token,
+	const std::string                      &dbName,
+	const std::string                      &projectName
+	)
+{
+	return impl->cleanUp(token, dbName, projectName);
+}
+
 bool RepoController::testConnection(const RepoController::RepoToken *token)
 {
 	return impl->testConnection(token);
@@ -415,26 +424,26 @@ repo::core::model::RepoScene* RepoController::createMapScene(
 
 bool RepoController::generateAndCommitGLTFBuffer(
 	const RepoController::RepoToken    *token,
-	const repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene)
 {
 	return impl->generateAndCommitGLTFBuffer(token, scene);
 }
 
 bool RepoController::generateAndCommitSRCBuffer(
 	const RepoController::RepoToken    *token,
-	const repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene)
 {
 	return impl->generateAndCommitSRCBuffer(token, scene);
 }
 
 repo_web_buffers_t RepoController::generateGLTFBuffer(
-	const repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene)
 {
 	return impl->generateGLTFBuffer(scene);
 }
 
 repo_web_buffers_t RepoController::generateSRCBuffer(
-	const repo::core::model::RepoScene *scene)
+	repo::core::model::RepoScene *scene)
 {
 	return impl->generateSRCBuffer(scene);
 }

@@ -42,6 +42,20 @@ namespace repo{
 			~RepoManipulator();
 
 			/**
+			* Clean up any incomplete commits within the project
+			* @param address mongo database address
+			* @param port port number
+			* @param dbName name of the database
+			* @param projectName name of the project
+			*/
+			void cleanUp(
+				const std::string                      &databaseAd,
+				const repo::core::model::RepoBSON 	   *cred,
+				const std::string                      &dbName,
+				const std::string                      &projectName
+				);
+
+			/**
 			* Connect to the given database address/port and authenticat the user
 			* @param errMsg error message if the function returns false
 			* @param address mongo database address
@@ -289,7 +303,7 @@ namespace repo{
 			bool generateAndCommitSelectionTree(
 				const std::string                         &databaseAd,
 				const repo::core::model::RepoBSON         *cred,
-				const repo::core::model::RepoScene        *scene
+				repo::core::model::RepoScene              *scene
 				);
 
 			/**
@@ -308,20 +322,20 @@ namespace repo{
 				);
 
 			/**
-			* Generate and commit a SRC encoding for the given scene
+			* Generate and commit a `exType` encoding for the given scene
 			* This requires the stash to have been generated already
 			* @param databaseAd database address:portdatabase
 			* @param cred user credentials in bson form
 			* @param scene the scene to generate the src encoding from
-			* @param buffers buffers to commit to database
+			* @param buffers buffers that are geneated and commited
 			* @param exType the type of export it is
 			* @return returns true upon success
 			*/
 			bool generateAndCommitWebViewBuffer(
 				const std::string                             &databaseAd,
 				const repo::core::model::RepoBSON	          *cred,
-				const repo::core::model::RepoScene            *scene,
-				const repo_web_buffers_t                      &buffers,
+				repo::core::model::RepoScene                  *scene,
+				repo_web_buffers_t                            &buffers,
 				const modelconvertor::WebExportType           &exType);
 
 			/**
@@ -336,7 +350,7 @@ namespace repo{
 			bool generateAndCommitGLTFBuffer(
 				const std::string                             &databaseAd,
 				const repo::core::model::RepoBSON	          *cred,
-				const repo::core::model::RepoScene            *scene);
+				repo::core::model::RepoScene                  *scene);
 
 			/**
 			* Generate and commit a SRC encoding for the given scene
@@ -349,7 +363,7 @@ namespace repo{
 			bool generateAndCommitSRCBuffer(
 				const std::string                             &databaseAd,
 				const repo::core::model::RepoBSON	          *cred,
-				const repo::core::model::RepoScene            *scene);
+				repo::core::model::RepoScene                  *scene);
 
 			/**
 			* Generate a gltf encoding in the form of a buffer for the given scene
@@ -358,7 +372,7 @@ namespace repo{
 			* @return returns a buffer in the form of a byte vector mapped to its filename
 			*/
 			repo_web_buffers_t generateGLTFBuffer(
-				const repo::core::model::RepoScene *scene);
+				repo::core::model::RepoScene *scene);
 
 			/**
 			* Generate a SRC encoding in the form of a buffer for the given scene
@@ -367,7 +381,7 @@ namespace repo{
 			* @return returns a buffer in the form of a byte vector mapped to its filename
 			*/
 			repo_web_buffers_t generateSRCBuffer(
-				const repo::core::model::RepoScene *scene);
+				repo::core::model::RepoScene *scene);
 
 			/**
 			* Generate a stash graph for the given scene and populate it

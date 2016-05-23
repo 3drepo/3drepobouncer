@@ -322,6 +322,48 @@ bool MongoDatabaseHandler::dropDocuments(
 	return success;
 }
 
+bool MongoDatabaseHandler::dropRawFile(
+	const std::string &database,
+	const std::string &collection,
+	const std::string &fileName,
+	std::string &errMsg
+	)
+{
+	bool success = true;
+	mongo::DBClientBase *worker;
+
+	if (fileName.empty())
+	{
+		errMsg = "Cannot  remove a raw file from the database with no file name!";
+		return false;
+	}
+
+	if (database.empty() || collection.empty())
+	{
+		errMsg = "Cannot remove a raw file: database(value: " + database + ") or collection name(value: " + collection + ") is not specified!";
+		return false;
+	}
+
+	try{
+		worker = workerPool->getWorker();
+		//store the big biary file within GridFS
+		mongo::GridFS gfs(*worker, database, collection);
+		//FIXME: there must be errors to catch...
+		repoTrace << "removing " << fileName << " in gridfs: " << database << "." << collection;
+		gfs.removeFile(fileName);
+	}
+	catch (mongo::DBException &e)
+	{
+		success = false;
+		std::string errString(e.what());
+		errMsg += errString;
+	}
+
+	workerPool->returnWorker(worker);
+
+	return success;
+}
+
 mongo::BSONObj MongoDatabaseHandler::fieldsToReturn(
 	const std::list<std::string>& fields,
 	bool excludeIdField)
@@ -355,6 +397,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 			worker = workerPool->getWorker();
 			do
 			{
+				repoTrace << " Querying " << database << "." << collection << " with : " << criteria.toString();
 				cursor = worker->query(
 					database + "." + collection,
 					criteria,
@@ -374,7 +417,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 
 		workerPool->returnWorker(worker);
 	}
-
+	repoInfo << "data size: " << data.size();
 	return data;
 }
 

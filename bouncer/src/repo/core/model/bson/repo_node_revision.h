@@ -49,6 +49,7 @@ namespace repo {
 			class REPO_API_EXPORT RevisionNode : public RepoNode
 			{
 			public:
+				enum class UploadStatus{ COMPLETE = 0, GEN_DEFAULT = 1, GEN_REPO_STASH = 2, GEN_WEB_STASH = 3, GEN_SEL_TREE = 4, UNKNOWN = 5 };
 
 				/**
 				* Constructor
@@ -61,11 +62,15 @@ namespace repo {
 				~RevisionNode();
 
 				/**
-				* Clone the revision node, remove the incomplete flag
-				* during the process
-				* @return a clone of the revision node without the flag
+				* Update the status flag with the given status
+				* NOTE: the status flags denotes what it is currently doing
+				*       not what has been done. e.g. GEN_DEFAULT denotes the
+				*       revision does not have a fully commited default scene graph
+				* @param status the status to set to
+				* @return returns a clone of this node with updated status flag
 				*/
-				RevisionNode cloneAndRemoveIncompleteFlag() const;
+				RevisionNode cloneAndUpdateStatus(
+					const UploadStatus &status) const;
 
 				/**
 				* --------- Convenience functions -----------
@@ -118,6 +123,12 @@ namespace repo {
 				* @return returns a string for tag. empty string if none.
 				*/
 				std::string getTag() const;
+
+				/**
+				* Get the status of the upload for this revision
+				* @returns the upload status of the revision
+				*/
+				UploadStatus getUploadStatus() const;
 
 				/**
 				* Get the original file(s) the scene original created from

@@ -316,6 +316,19 @@ namespace repo{
 					std::string &errMsg);
 
 				/**
+				* Remove a file from raw file storage (gridFS)
+				* @param database the database the collection resides in
+				* @param collection name of the collection the document is in
+				* @param filename name of the file
+				* @param errMsg name of the database to drop
+				*/
+				bool dropRawFile(
+					const std::string &database,
+					const std::string &collection,
+					const std::string &fileName,
+					std::string &errMsg);
+
+				/**
 				* Remove a role from the database
 				* @param role user bson to remove
 				* @param errmsg error message

@@ -19,6 +19,7 @@
 
 #include <sstream>
 
+static const std::string cmdCleanProj = "clean"; //clean up a specified project
 static const std::string cmdGenStash = "genStash";   //test the connection
 static const std::string cmdGetFile = "getFile"; //download original file
 static const std::string cmdImportFile = "import"; //file import
@@ -33,6 +34,7 @@ std::string helpInfo()
 	ss << cmdGenStash << "\tGenerate Stash for a project. (args: database project [repo|gltf|src])\n";
 	ss << cmdGetFile << "\t\tGet original file for the latest revision of the project (args: database project dir)\n";
 	ss << cmdImportFile << "\t\tImport file to database. (args: file database project [dxrotate] [owner] [configfile])\n";
+	ss << cmdCleanProj << "\t\tClean up a specified project removing/repairing corrupted revisions. (args: database project)\n";
 	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
 	ss << cmdVersion << "[-v]\tPrints the version of Repo Bouncer Client/Library\n";
 
@@ -50,6 +52,8 @@ int32_t knownValid(const std::string &cmd)
 		return 3;
 	if (cmd == cmdGenStash)
 		return 3;
+	if (cmd == cmdCleanProj)
+		return 2;
 	if (cmd == cmdGetFile)
 		return 3;
 	if (cmd == cmdTestConn)
@@ -90,6 +94,17 @@ int32_t performOperation(
 			errCode = REPOERR_UNKNOWN_ERR;
 		}
 	}
+	else if (command.command == cmdCleanProj)
+	{
+		try{
+			errCode = cleanUpProject(controller, token, command);
+		}
+		catch (const std::exception &e)
+		{
+			repoLogError("Failed to generate optimised stash: " + std::string(e.what()));
+			errCode = REPOERR_UNKNOWN_ERR;
+		}
+	}
 	else if (command.command == cmdGetFile)
 	{
 		try{
@@ -121,6 +136,30 @@ int32_t performOperation(
 /*
 * ======================== Command functions ===================
 */
+
+int32_t cleanUpProject(
+	repo::RepoController       *controller,
+	const repo::RepoController::RepoToken      *token,
+	const repo_op_t            &command
+	)
+{
+	/*
+	* Check the amount of parameters matches
+	*/
+	if (command.nArgcs < 2)
+	{
+		repoLogError("Number of arguments mismatch! " + cmdCleanProj
+			+ " requires 2 arguments:database project");
+		return REPOERR_INVALID_ARG;
+	}
+
+	std::string dbName = command.args[0];
+	std::string project = command.args[1];
+
+	controller->cleanUp(token, dbName, project);
+
+	return REPOERR_OK;
+}
 
 int32_t generateStash(
 	repo::RepoController       *controller,

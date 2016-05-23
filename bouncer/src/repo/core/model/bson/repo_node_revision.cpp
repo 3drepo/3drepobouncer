@@ -36,9 +36,20 @@ RevisionNode::~RevisionNode()
 {
 }
 
-RevisionNode RevisionNode::cloneAndRemoveIncompleteFlag() const
+RevisionNode RevisionNode::cloneAndUpdateStatus(
+	const UploadStatus &status) const
 {
-	return RepoNode(removeField(REPO_NODE_REVISION_LABEL_INCOMPLETE), bigFiles);
+	switch (status)
+	{
+	case UploadStatus::COMPLETE:
+		return RepoNode(removeField(REPO_NODE_REVISION_LABEL_INCOMPLETE), bigFiles);
+	case UploadStatus::UNKNOWN:
+		repoError << "Cannot set the status flag to Unknown state!";
+		return *this;
+	default:
+		RepoBSON bsonChange = BSON(REPO_NODE_REVISION_LABEL_INCOMPLETE << (int)status);
+		return cloneAndAddFields(&bsonChange, false);
+	}
 }
 
 std::string RevisionNode::getAuthor() const
@@ -123,6 +134,17 @@ std::vector<std::string> RevisionNode::getOrgFiles() const
 	}
 
 	return fileList;
+}
+
+RevisionNode::UploadStatus RevisionNode::getUploadStatus() const
+{
+	UploadStatus status = UploadStatus::COMPLETE;
+	if (hasField(REPO_NODE_REVISION_LABEL_INCOMPLETE))
+	{
+		status = (UploadStatus)getField(REPO_NODE_REVISION_LABEL_INCOMPLETE).Int();
+	}
+
+	return status;
 }
 
 int64_t RevisionNode::getTimestampInt64() const

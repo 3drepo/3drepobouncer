@@ -392,6 +392,19 @@ public:
 	*/
 
 	/**
+	* Clean up any incomplete commits within the project
+	* @param address mongo database address
+	* @param port port number
+	* @param dbName name of the database
+	* @param projectName name of the project
+	*/
+	void cleanUp(
+		const RepoToken                        *token,
+		const std::string                      &dbName,
+		const std::string                      &projectName
+		);
+
+	/**
 	* Retrieve a RepoScene with a specific revision loaded.
 	* @param token Authentication token
 	* @param database the database the collection resides in
@@ -697,7 +710,7 @@ public:
 	*/
 	bool generateAndCommitGLTFBuffer(
 		const RepoToken                               *token,
-		const repo::core::model::RepoScene            *scene);
+		repo::core::model::RepoScene            *scene);
 
 	/**
 	* Generate and commit a SRC encoding for the given scene
@@ -708,7 +721,7 @@ public:
 	*/
 	bool generateAndCommitSRCBuffer(
 		const RepoToken                               *token,
-		const repo::core::model::RepoScene            *scene);
+		repo::core::model::RepoScene            *scene);
 
 	/**
 	* Generate a GLTF encoding in the form of a buffer for the given scene
@@ -717,7 +730,7 @@ public:
 	* @return returns a buffer in the form of a byte vector
 	*/
 	repo_web_buffers_t generateGLTFBuffer(
-		const repo::core::model::RepoScene *scene);
+		repo::core::model::RepoScene *scene);
 
 	/**
 	* Generate and commit a selection tree for the given scene
@@ -736,7 +749,7 @@ public:
 	* @return returns a buffer in the form of a byte vector
 	*/
 	repo_web_buffers_t generateSRCBuffer(
-		const repo::core::model::RepoScene *scene);
+		repo::core::model::RepoScene *scene);
 
 	/**
 	* Get a string of supported file formats for file export

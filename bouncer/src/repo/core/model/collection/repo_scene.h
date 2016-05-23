@@ -435,6 +435,16 @@ namespace repo{
 					std::string &errMsg);
 
 				/**
+				* Update revision status, if the scene is revisioned
+				* This will also update the record within the database
+				* should a handler is supplied
+				* @param status status of the revision
+				*/
+				void updateRevisionStatus(
+					repo::core::handler::AbstractDatabaseHandler *handler,
+					const RevisionNode::UploadStatus &status);
+
+				/**
 				* Prints the statics of this Scene graph to an IO stream
 				* This is mostly a debugging function to check the scene graph has done
 				* what you have expected.
