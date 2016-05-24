@@ -173,15 +173,17 @@ bool SceneManager::generateStashGraph(
 		removeStashGraph(scene, handler);
 		repoInfo << "Generating stash graph...";
 		repo::manipulator::modeloptimizer::MultipartOptimizer mpOpt;
-		success = mpOpt.apply(scene);
-		if (toCommit & success)
+		if (success = mpOpt.apply(scene))
 		{
-			repoInfo << "Committing stash graph to " << scene->getDatabaseName() << "." << scene->getProjectName() << "...";
-			std::string errMsg;
-			//commit stash will set uploadstatus to complete if succeed
-			if (!(success = scene->commitStash(handler, errMsg)))
+			if (toCommit)
 			{
-				repoError << "Failed to commit stash graph: " << errMsg;
+				repoInfo << "Committing stash graph to " << scene->getDatabaseName() << "." << scene->getProjectName() << "...";
+				std::string errMsg;
+				//commit stash will set uploadstatus to complete if succeed
+				if (!(success = scene->commitStash(handler, errMsg)))
+				{
+					repoError << "Failed to commit stash graph: " << errMsg;
+				}
 			}
 		}
 		else

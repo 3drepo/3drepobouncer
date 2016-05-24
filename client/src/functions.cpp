@@ -311,6 +311,8 @@ int32_t importFileAndCommit(
 		else
 			controller->commitScene(token, graph, owner);
 		//FIXME: should make commitscene return a boolean even though GUI doesn't care...
+		if (graph->isMissingTexture())
+			return REPOERR_LOAD_SCENE_MISSING_TEXTURE;
 		return REPOERR_OK;
 	}
 
