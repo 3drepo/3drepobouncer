@@ -83,14 +83,10 @@ namespace repo{
 
 				/**
 				* Convert the assimp scene into Repo Scene
-				* If scene is null, construct a new repo scene
-				* if scene already exists, this must be a stash representation
-				* thus add it into the existing scene
-				* @param scene Repo Scene (if exists)
-				* @return return a pointer to the scene (same pointer if scene != nullptr)
+				* @param errMsg error message if an error occured
+				* @return return a pointer to the scene
 				*/
-				repo::core::model::RepoScene* convertAiSceneToRepoScene(
-					repo::core::model::RepoScene  *scene = nullptr);
+				repo::core::model::RepoScene* convertAiSceneToRepoScene();
 
 				/**
 				* Create a Camera Node given the information in ASSIMP objects

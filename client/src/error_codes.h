@@ -29,3 +29,5 @@
 #define REPOERR_LOAD_SCENE_FAIL 5
 //failed to generate stash graph
 #define REPOERR_STASH_GEN_FAIL 6
+//Scene uploaded, but missing texture
+#define REPOERR_LOAD_SCENE_MISSING_TEXTURE 7

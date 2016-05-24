@@ -716,10 +716,9 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 	return transNodes;
 }
 
-repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
-	repo::core::model::RepoScene  *scene)
+repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 {
-	repo::core::model::RepoScene *scenePtr = scene;
+	repo::core::model::RepoScene *scenePtr = nullptr;
 
 	if (assimpScene)
 	{
@@ -741,6 +740,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		//-------------------------------------------------------------------------
 		// Textures
 		repoInfo << "Constructing Texture Nodes...";
+		bool missingTextures = false;
 		for (uint32_t m = 0; m < assimpScene->mNumMaterials; ++m)
 		{
 			int texIndex = 0;
@@ -780,31 +780,32 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 							//External texture
 							std::ifstream::pos_type size;
 							std::string dirPath = getDirPath(orgFile);
-							char *memblock;
 							boost::filesystem::path filePath = boost::filesystem::path(dirPath) / boost::filesystem::path(texName);
 							std::ifstream file(filePath.string(), std::ios::in | std::ios::binary | std::ios::ate);
+							char *memblock = nullptr;
 							if (!file.is_open())
 							{
 								repoError << "Could not open texture: " << dirPath << texName << std::endl;
+								missingTextures = true;
 							}
 							else
 							{
-								std::ifstream::pos_type size = file.tellg();
-								char *memblock = new char[size];
+								size = file.tellg();
+								memblock = new char[size];
 								file.seekg(0, std::ios::beg);
 								file.read(memblock, size);
 								file.close();
-
-								textureNode = new repo::core::model::TextureNode(repo::core::model::RepoBSONFactory::makeTextureNode(
-									texName,
-									memblock,
-									size,
-									size,
-									0,
-									REPO_NODE_API_LEVEL_1));
-
-								delete[] memblock;
 							}
+
+							textureNode = new repo::core::model::TextureNode(repo::core::model::RepoBSONFactory::makeTextureNode(
+								texName,
+								memblock,
+								size,
+								size,
+								0,
+								REPO_NODE_API_LEVEL_1));
+
+							if (memblock)delete[] memblock;
 						}
 
 						if (textureNode)
@@ -981,6 +982,10 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene(
 		if (!orgFile.empty())
 			fileVect.push_back(orgFile);
 		scenePtr = new repo::core::model::RepoScene(fileVect, cameras, meshes, materials, metadata, textures, transformations);
+		if (missingTextures)
+		{
+			scenePtr->setMissingTexture();
+		}
 		scenePtr->setWorldOffset(sceneBbox[0]);
 	}
 	else

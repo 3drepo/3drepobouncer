@@ -60,7 +60,8 @@ RepoScene::RepoScene(
 	jsonExt(sanitizeExt(jsonExt)),
 	headRevision(true),
 	unRevisioned(false),
-	revNode(0)
+	revNode(0),
+	status(0)
 {
 	graph.rootNode = nullptr;
 	stashGraph.rootNode = nullptr;
@@ -102,7 +103,8 @@ RepoScene::RepoScene(
 	headRevision(true),
 	unRevisioned(true),
 	refFiles(refFiles),
-	revNode(0)
+	revNode(0),
+	status(0)
 {
 	graph.rootNode = nullptr;
 	stashGraph.rootNode = nullptr;

@@ -65,6 +65,7 @@ namespace repo{
 				};
 
 				static const std::vector<std::string> collectionsInProject;
+				static const uint16_t REPO_SCENE_TEXTURE_BIT = 0x0001;
 			public:
 
 				/**
@@ -154,6 +155,28 @@ namespace repo{
 				static std::vector<RepoNode*> filterNodesByType(
 					const std::vector<RepoNode*> nodes,
 					const NodeType filter);
+
+				/**
+				* Check if the default scene graph is ok.
+				* @return returns true if it is healthy
+				*/
+				bool isOK() const{
+					return !status;
+				}
+
+				/**
+				* Check if default scene graph is missing texture
+				* @return returns true if missing textures
+				*/
+				bool isMissingTexture() const{
+					return status & REPO_SCENE_TEXTURE_BIT;
+				}
+				/**
+				* Flag missing texture bit on status.
+				*/
+				void setMissingTexture(){
+					status |= REPO_SCENE_TEXTURE_BIT;
+				}
 
 				/**
 				* Add metadata that has a matching name as the transformation into the scene
@@ -1043,6 +1066,7 @@ namespace repo{
 
 				repoGraphInstance graph; //current state of the graph, given the branch/revision
 				repoGraphInstance stashGraph; //current state of the optimized graph, given the branch/revision
+				uint16_t status; //health of the scene, 0 denotes healthy
 			};
 		}//namespace graph
 	}//namespace manipulator

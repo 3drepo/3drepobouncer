@@ -902,14 +902,14 @@ TextureNode RepoBSONFactory::makeTextureNode(
 	// Data
 	//
 
-	if (NULL != data && byteCount > 0)
+	if (data && byteCount)
 		builder.appendBinary(
 		REPO_LABEL_DATA,
 		data,
 		byteCount);
 	else
 	{
-		repoWarning << " data is null or byteCount(" << byteCount << ") is 0!";
+		repoWarning << " Creating a texture node with no texture!";
 	}
 
 	return TextureNode(builder.obj());
