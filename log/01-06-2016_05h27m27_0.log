@@ -1,0 +1,7 @@
+[2016-06-01 17:27:27](0x00000d14) <info>: Log file registered: ./log/
+[2016-06-01 17:27:27](0x00000d14) <info>: Operation: import
+[2016-06-01 17:27:27](0x00000d14) <info>: Arg 1: C:\Users\Carmen\3D Repo\Repo\3drepobouncer\test\data\models\cube.obj
+[2016-06-01 17:27:27](0x00000d14) <info>: Arg 2: stUpload
+[2016-06-01 17:27:27](0x00000d14) <info>: Arg 3: failEg
+[2016-06-01 17:27:27](0x00000d14) <error>: Error establishing Mongo Handler: couldn't initialize connection to host invalidAdd, address is invalid
+[2016-06-01 17:27:27](0x00000d14) <error>: Failed to authenticate to the database: couldn't initialize connection to host invalidAdd, address is invalid

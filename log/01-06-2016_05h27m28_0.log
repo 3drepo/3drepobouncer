@@ -1,0 +1,48 @@
+[2016-06-01 17:27:28](0x00002eb0) <info>: Log file registered: ./log/
+[2016-06-01 17:27:28](0x00002eb0) <info>: Operation: import
+[2016-06-01 17:27:28](0x00002eb0) <info>: Arg 1: C:\Users\Carmen\3D Repo\Repo\3drepobouncer\test\data\models\cube.obj
+[2016-06-01 17:27:28](0x00002eb0) <info>: Arg 2: stUpload
+[2016-06-01 17:27:28](0x00002eb0) <info>: Arg 3: cube
+[2016-06-01 17:27:28](0x00002eb0) <info>: Successfully connected to the localhost:27017
+[2016-06-01 17:27:28](0x00002eb0) <info>: testUser is authenticated to localhost:27017
+[2016-06-01 17:27:28](0x00002eb0) <info>: successfully connected to the database!
+[2016-06-01 17:27:28](0x00002eb0) <info>: IMPORT [cube.obj]
+[2016-06-01 17:27:28](0x00002eb0) <info>: === IMPORTING MODEL WITH ASSIMP MODEL CONVERTOR ===
+[2016-06-01 17:27:28](0x00002eb0) <info>: Loaded cube.obj with 6 polygons in 1 mesh
+[2016-06-01 17:27:28](0x00002eb0) <info>: Constructing Texture Nodes...
+[2016-06-01 17:27:28](0x00002eb0) <info>: Constructing Material Nodes...
+[2016-06-01 17:27:28](0x00002eb0) <info>: Constructing 0 of 1
+[2016-06-01 17:27:28](0x00002eb0) <info>: Constructing Mesh Nodes...
+[2016-06-01 17:27:28](0x00002eb0) <info>: Scene offset : {1,1,1}
+[2016-06-01 17:27:28](0x00002eb0) <info>: Constructing 0 of 1
+[2016-06-01 17:27:28](0x00002eb0) <info>: Constructing Camera Nodes...
+[2016-06-01 17:27:28](0x00002eb0) <info>: Constructing Transformation Nodes...
+[2016-06-01 17:27:28](0x00002eb0) <info>: Constructing transformation #0
+[2016-06-01 17:27:28](0x00002eb0) <info>: Node Construction completed. (#transformations: 2, #Metadata0)
+[2016-06-01 17:27:28](0x00002eb0) <info>: Optimizer : processed 1 of 1 meshes
+[2016-06-01 17:27:28](0x00002eb0) <info>: Mesh Optimisation complete. Number of transformations has been reduced from 2 to 1
+[2016-06-01 17:27:28](0x00002eb0) <info>: Camera Optimisation complete. Number of transformations has been reduced from 1 to 1
+[2016-06-01 17:27:28](0x00002eb0) <info>: Generating stash graph for optimised viewing...
+[2016-06-01 17:27:28](0x00002eb0) <info>: Generating stash graph...
+[2016-06-01 17:27:28](0x00002eb0) <info>: Trying to commit this scene to database as stUpload.cube
+[2016-06-01 17:27:28](0x00002eb0) <info>: Commited project settings, commiting revision...
+[2016-06-01 17:27:28](0x00002eb0) <info>: Commited revision node, commiting scene nodes...
+[2016-06-01 17:27:28](0x00002eb0) <info>: Committing 3 nodes...
+[2016-06-01 17:27:28](0x00002eb0) <info>: Committing 2 of 3
+[2016-06-01 17:27:28](0x00002eb0) <info>: rev node status is: 0
+[2016-06-01 17:27:28](0x00002eb0) <info>: Scene successfully committed to the database
+[2016-06-01 17:27:28](0x00002eb0) <info>: rev node status is: 2
+[2016-06-01 17:27:28](0x00002eb0) <info>: Committing 3 nodes...
+[2016-06-01 17:27:28](0x00002eb0) <info>: Committing 2 of 3
+[2016-06-01 17:27:28](0x00002eb0) <info>: rev node status is: 0
+[2016-06-01 17:27:28](0x00002eb0) <info>: Commited scene stash successfully.
+[2016-06-01 17:27:28](0x00002eb0) <info>: Generating SRC encoding for web viewing...
+[2016-06-01 17:27:28](0x00002eb0) <info>: rev node status is: 3
+[2016-06-01 17:27:28](0x00002eb0) <info>: File (/stUpload/cube/eb97ac28-3796-4e6b-a157-a55b8655d926.src) added successfully.
+[2016-06-01 17:27:28](0x00002eb0) <info>: rev node status is: 0
+[2016-06-01 17:27:28](0x00002eb0) <info>: SRC file stored into the database
+[2016-06-01 17:27:28](0x00002eb0) <info>: Generating Selection Tree JSON...
+[2016-06-01 17:27:29](0x00002eb0) <info>: rev node status is: 4
+[2016-06-01 17:27:29](0x00002eb0) <info>: File (/stUpload/cube/revision/c82be6c2-15fa-4b13-9ef2-400e4ffb327a/fulltree.json) added successfully.
+[2016-06-01 17:27:29](0x00002eb0) <info>: rev node status is: 0
+[2016-06-01 17:27:29](0x00002eb0) <info>: Selection Tree Stored into the database

@@ -1,0 +1,11 @@
+[2016-06-01 17:26:56](0x00000eb4) <info>: Log file registered: ./log/
+[2016-06-01 17:26:56](0x00000eb4) <info>: Operation: import
+[2016-06-01 17:26:56](0x00000eb4) <info>: Arg 1: C:\Users\Carmen\3D Repo\Repo\3drepobouncer\test\data\models\cube.exe
+[2016-06-01 17:26:56](0x00000eb4) <info>: Arg 2: stUpload
+[2016-06-01 17:26:56](0x00000eb4) <info>: Arg 3: failEg
+[2016-06-01 17:26:56](0x00000eb4) <info>: Successfully connected to the localhost:27017
+[2016-06-01 17:26:56](0x00000eb4) <info>: testUser is authenticated to localhost:27017
+[2016-06-01 17:26:56](0x00000eb4) <info>: successfully connected to the database!
+[2016-06-01 17:26:56](0x00000eb4) <info>: IMPORT [cube.exe]
+[2016-06-01 17:26:56](0x00000eb4) <error>: Failed to import model :  Failed to convert file to aiScene : 
+[2016-06-01 17:26:56](0x00000eb4) <error>: Failed ot load scene from file:  Failed to convert file to aiScene : 

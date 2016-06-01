@@ -30,6 +30,7 @@
 const static std::string clientExe = "3drepobouncerClient";
 const static std::string simpleModel = "cube.obj";
 const static std::string badExtensionFile = "cube.exe";
+const static std::string texturedModel = "texturedPlane.dae";
 
 static std::string getClientExePath()
 {
@@ -159,4 +160,10 @@ TEST(RepoClientTest, UploadTest)
 	ASSERT_FALSE(goodUpload.empty());
 
 	EXPECT_EQ((int)REPOERR_OK, system(goodUpload.c_str()));
+
+	//Test Textured Upload
+	std::string texUpload = produceUploadArgs("stUpload", "textured", getDataPath(texturedModel));
+	ASSERT_FALSE(texUpload.empty());
+
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, system(texUpload.c_str()));
 }

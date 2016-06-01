@@ -1,0 +1,11 @@
+[2016-06-01 17:24:44](0x00000568) <info>: Log file registered: ./log/
+[2016-06-01 17:24:44](0x00000568) <info>: Operation: import
+[2016-06-01 17:24:44](0x00000568) <info>: Arg 1: nonExistentFile.obj
+[2016-06-01 17:24:44](0x00000568) <info>: Arg 2: stUpload
+[2016-06-01 17:24:44](0x00000568) <info>: Arg 3: failEg
+[2016-06-01 17:24:44](0x00000568) <info>: Successfully connected to the localhost:27017
+[2016-06-01 17:24:44](0x00000568) <info>: testUser is authenticated to localhost:27017
+[2016-06-01 17:24:44](0x00000568) <info>: successfully connected to the database!
+[2016-06-01 17:24:45](0x00000568) <info>: IMPORT [nonExistentFile.obj]
+[2016-06-01 17:24:45](0x00000568) <error>: Failed to import model : File doesn't exist (nonExistentFile.obj)
+[2016-06-01 17:24:45](0x00000568) <error>: Failed ot load scene from file: File doesn't exist (nonExistentFile.obj)
