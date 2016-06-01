@@ -26,10 +26,10 @@
 #include <sstream>
 
 #if defined(_WIN32) || defined(_WIN64)
-	#include <WinSock2.h>
-	#include <Windows.h>
+#include <WinSock2.h>
+#include <Windows.h>
 
-	#define strcasecmp _stricmp
+#define strcasecmp _stricmp
 #endif
 
 #include <mongo/client/dbclient.h>
@@ -46,7 +46,6 @@
 namespace repo{
 	namespace core{
 		namespace handler {
-
 			class MongoDatabaseHandler : public AbstractDatabaseHandler{
 				enum class OPERATION { DROP, INSERT, UPDATE };
 			public:
@@ -97,12 +96,29 @@ namespace repo{
 					std::string &errMsg,
 					const std::string &host,
 					const int         &port,
-					const uint32_t    &maxConnections,
+					const uint32_t    &maxConnections = 1,
 					const std::string &dbName = std::string(),
 					const std::string &username = std::string(),
 					const std::string &password = std::string(),
 					const bool        &pwDigested = false);
 
+				/**
+				* Returns the instance of MongoDatabaseHandler
+				* @param errMsg error message if this fails
+				* @param host hostname of the database
+				* @param port port number
+				* @param number of maximum simultaneous connections
+				* @param dbName authentication database
+				* @param credentials user credentials
+				* @return Returns the single instance
+				*/
+				static MongoDatabaseHandler* getHandler(
+					std::string           &errMsg,
+					const std::string     &host,
+					const int             &port,
+					const uint32_t        &maxConnections,
+					const std::string     &dbName = std::string(),
+					const model::RepoBSON *credentials = nullptr);
 
 				/**
 				* Returns the instance of MongoDatabaseHandler
@@ -123,16 +139,15 @@ namespace repo{
 				* @param pwDigested true if pw is digested
 				* @return returns the constructed BSON object, or 0 nullptr username is empty
 				*/
-				repo::core::model::RepoBSON* createBSONCredentials(
+				static repo::core::model::RepoBSON* createBSONCredentials(
 					const std::string &dbName,
 					const std::string &username,
 					const std::string &password,
 					const bool        &pwDigested = false)
 				{
 					mongo::BSONObj *mongoBSON = createAuthBSON(dbName, username, password, pwDigested);
-					return mongoBSON? new repo::core::model::RepoBSON(*mongoBSON) : nullptr;
+					return mongoBSON ? new repo::core::model::RepoBSON(*mongoBSON) : nullptr;
 				}
-
 
 				/*
 				*	------------- Database info lookup --------------
@@ -173,7 +188,6 @@ namespace repo{
 					const std::string							  &sortField = std::string(),
 					const int									  &sortOrder = -1);
 
-
 				/**
 				* Get a list of all available collections.
 				* Use mongo.nsGetCollection() to remove database from the returned string.
@@ -193,7 +207,6 @@ namespace repo{
 					const std::string    &database,
 					const std::string    &collection,
 					std::string          &errMsg);
-
 
 				/**
 				 * Get a list of all available databases, alphabetically sorted by default.
@@ -249,7 +262,6 @@ namespace repo{
 				*	------------- Database operations (insert/delete/update) --------------
 				*/
 
-
 				/**
 				* Create a collection with the name specified
 				* @param database name of the database
@@ -276,7 +288,6 @@ namespace repo{
 				bool dropDatabase(
 					const std::string &database,
 					std::string &errMsg);
-
 
 				/**
 				* Remove a document from the mongo database
@@ -305,6 +316,19 @@ namespace repo{
 					std::string &errMsg);
 
 				/**
+				* Remove a file from raw file storage (gridFS)
+				* @param database the database the collection resides in
+				* @param collection name of the collection the document is in
+				* @param filename name of the file
+				* @param errMsg name of the database to drop
+				*/
+				bool dropRawFile(
+					const std::string &database,
+					const std::string &collection,
+					const std::string &fileName,
+					std::string &errMsg);
+
+				/**
 				* Remove a role from the database
 				* @param role user bson to remove
 				* @param errmsg error message
@@ -329,7 +353,6 @@ namespace repo{
 				{
 					return performUserCmd(OPERATION::DROP, user, errmsg);
 				}
-
 
 				/**
 				 * Insert a single document in database.collection
@@ -360,7 +383,7 @@ namespace repo{
 					const std::string          &collection,
 					const std::string          &fileName,
 					const std::vector<uint8_t> &bin,
-					      std::string          &errMsg,
+					std::string          &errMsg,
 					const std::string          &contentType = "binary/octet-stream"
 					);
 
@@ -377,7 +400,6 @@ namespace repo{
 					return performRoleCmd(OPERATION::INSERT, role, errmsg);
 				}
 
-
 				/**
 				* Insert a user into the database
 				* @param user user bson to insert
@@ -390,7 +412,6 @@ namespace repo{
 				{
 					return performUserCmd(OPERATION::INSERT, user, errmsg);
 				}
-
 
 				/**
 				* Update/insert a single document in database.collection
@@ -435,7 +456,6 @@ namespace repo{
 					return performUserCmd(OPERATION::UPDATE, user, errmsg);
 				}
 
-
 				/*
 				*	------------- Query operations --------------
 				*/
@@ -451,7 +471,6 @@ namespace repo{
 					const std::string& database,
 					const std::string& collection,
 					const repo::core::model::RepoBSON& uuids);
-
 
 				/**
 				* Given a search criteria,  find all the documents that passes this query
@@ -508,7 +527,6 @@ namespace repo{
 					const std::string& collection,
 					const repoUUID& uuid);
 
-
 				/**
 				* Get raw binary file from database
 				* @param database name of database
@@ -520,12 +538,11 @@ namespace repo{
 					const std::string& database,
 					const std::string& collection,
 					const std::string& fname
-					) ;
+					);
 
 				/*
 				 *	=============================================================================================
 				 */
-
 
 			protected:
 				/*
@@ -577,6 +594,19 @@ namespace repo{
 					const bool                    &pwDigested = false);
 
 				/**
+				* Constructor is private because this class follows the singleton pattern
+				* @param dbAddress ConnectionString that holds the address to the mongo database
+				* @param maxConnections max. number of connections to the database
+				* @param dbName authentication database
+				* @param cred credentials
+				*/
+				MongoDatabaseHandler(
+					const mongo::ConnectionString &dbAddress,
+					const uint32_t                &maxConnections,
+					const std::string             &dbName,
+					const model::RepoBSON         *cred);
+
+				/**
 				* Create a Repo BSON and populate all relevant data
 				* this includes getting data from GridFS
 				* NOTE: the handler will only get the data from GridFS if it is
@@ -601,7 +631,7 @@ namespace repo{
 				* @param pwDigested true if pw is digested
 				* @return returns the constructed BSON object, or 0 if username is empty
 				*/
-				mongo::BSONObj* createAuthBSON(
+				static mongo::BSONObj* createAuthBSON(
 					const std::string &database,
 					const std::string &username,
 					const std::string &password,
@@ -622,7 +652,6 @@ namespace repo{
 				 * @return returns a string with just the collection name
 				 */
 				std::string getCollectionFromNamespace(const std::string &ns);
-
 
 				/**
 				* Get large file off GridFS
@@ -667,7 +696,7 @@ namespace repo{
 					const OPERATION                         &op,
 					const repo::core::model::RepoRole       &role,
 					std::string                             &errMsg);
-				
+
 				/**
 				* Perform command on the user
 				* @param op (insert, drop or update)
@@ -679,7 +708,6 @@ namespace repo{
 					const OPERATION                         &op,
 					const repo::core::model::RepoUser &user,
 					std::string                       &errMsg);
-
 
 				/**
 				* check if the bson object contains any big binary files
@@ -709,10 +737,7 @@ namespace repo{
 				/*
 				*	=========================================================================================
 				*/
-
 			};
-
 		} /* namespace handler */
 	}
 }
-

@@ -21,14 +21,12 @@
 
 #pragma once
 
-#include <string> 
+#include <string>
 #include <boost/log/trivial.hpp>
 
 #include "repo_broadcaster.h"
 #include "repo_listener_abstract.h"
 #include "../repo_bouncer_global.h"
-
-
 
 //------------------------------------------------------------------------------
 // Logging macros - to avoid having to write all that everytime to log something
@@ -48,12 +46,9 @@
 
 namespace repo{
 	namespace lib{
-
-
 		class REPO_API_EXPORT RepoLog
 		{
 		public:
-
 
 			/**
 			* LOGGING LEVEL
@@ -62,9 +57,9 @@ namespace repo{
 
 			~RepoLog();
 
-			static RepoLog &getInstance() 
-			{ 
-				static RepoLog log = RepoLog(); 
+			static RepoLog &getInstance()
+			{
+				static RepoLog log = RepoLog();
 				return log;
 			}
 
@@ -74,7 +69,7 @@ namespace repo{
 			* @msg message itself
 			*/
 			void log(
-				const RepoLogLevel &severity, 
+				const RepoLogLevel &severity,
 				const std::string  &msg);
 
 			/**
@@ -110,15 +105,9 @@ namespace repo{
 			void subscribeListeners(
 				const std::vector<RepoAbstractListener*> &listeners);
 
-
-
-
 		private:
 
 			RepoLog();
-			
 		};
 	}
 }
-
-

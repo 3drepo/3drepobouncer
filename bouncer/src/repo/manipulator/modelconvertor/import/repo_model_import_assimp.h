@@ -20,7 +20,6 @@
 * Given a file, it will utilist ASSIMP library and eventually converts it into Repo world meaning
 */
 
-
 #pragma once
 
 #include <string>
@@ -34,11 +33,15 @@
 
 #include "repo_model_import_abstract.h"
 #include "../../../core/model/collection/repo_scene.h"
+#include "../../../core/model/bson/repo_node_camera.h"
+#include "../../../core/model/bson/repo_node_material.h"
+#include "../../../core/model/bson/repo_node_mesh.h"
+#include "../../../core/model/bson/repo_node_metadata.h"
+#include "../../../core/model/bson/repo_node_transformation.h"
 
 namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
-			using assimp_map = boost::bimap<uintptr_t, repo::core::model::RepoNode*>;
 			class AssimpModelImport : public AbstractModelImport
 			{
 			public:
@@ -68,7 +71,6 @@ namespace repo{
 				*/
 				repo::core::model::RepoScene* generateRepoScene();
 
-
 				/**
 				* Import model from a given file
 				* @param path to the file
@@ -81,15 +83,10 @@ namespace repo{
 
 				/**
 				* Convert the assimp scene into Repo Scene
-				* If scene is null, construct a new repo scene
-				* if scene already exists, this must be a stash representation
-				* thus add it into the existing scene
-				* @param scene Repo Scene (if exists)
-				* @return return a pointer to the scene (same pointer if scene != nullptr)
+				* @param errMsg error message if an error occured
+				* @return return a pointer to the scene
 				*/
-				repo::core::model::RepoScene* convertAiSceneToRepoScene(
-					assimp_map                    &map,
-					repo::core::model::RepoScene  *scene = nullptr);
+				repo::core::model::RepoScene* convertAiSceneToRepoScene();
 
 				/**
 				* Create a Camera Node given the information in ASSIMP objects
@@ -152,12 +149,11 @@ namespace repo{
 					const std::unordered_map<std::string, repo::core::model::RepoNode *> &cameras,
 					const std::vector<repo::core::model::RepoNode *>                     &meshes,
 					repo::core::model::RepoNodeSet						                 &metadata,
-					assimp_map													         &map,
-					uint32_t                                                             &count ,
+					uint32_t                                                             &count,
 					const std::vector<double>                                            &worldOffset,
 					const std::vector<repoUUID>						                     &parent = std::vector<repoUUID>()
 					);
-				
+
 				/**
 				* Get bounding box of the aimesh
 				* @return returns the bounding box
@@ -195,29 +191,10 @@ namespace repo{
 				uint32_t composeAssimpPostProcessingFlags(
 					uint32_t flag = 0);
 
-				/**
-				* Populate the optimization linkage between the org. scene graph
-				* and the optimised scene graph
-				* note: this is a recursive function
-				* @param node  node we are currently trasversing
-				* @param scene repo scene in process
-				* @param orgMap the org mapping
-				* @param optMap optimised mapping
-				* @return returns whether it has successfully mapped everything.
- 				*/
-
-				bool populateOptimMaps(
-					repo::core::model::RepoNode  *node,
-					repo::core::model::RepoScene *scene,
-					const assimp_map             &orgMap,
-					const assimp_map             &optMap);
-
 				Assimp::Importer importer;  /*! Stores ASSIMP related settings for model import */
 				const aiScene *assimpScene; /*! ASSIMP scene representation of the model */
 				std::string orgFile; /*! orgFileName */
 			};
-
 		} //namespace AssimpModelImport
 	} //namespace manipulator
 } //namespace repo
-

@@ -19,7 +19,6 @@
 * Allows Export functionality from 3D Repo World to SRC
 */
 
-
 #pragma once
 
 #include <string>
@@ -31,9 +30,8 @@
 namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
-
 			class GLTFModelExport : public WebModelExport
-			{	
+			{
 			public:
 				/**
 				* Default Constructor, export model with default settings
@@ -51,9 +49,8 @@ namespace repo{
 				* @return returns a repo_src_export_t containing all files needed for this
 				*          model to be rendered
 				*/
-				repo_export_buffers_t getAllFilesExportedAsBuffer() const;
-			
-				
+				repo_web_buffers_t getAllFilesExportedAsBuffer() const;
+
 			private:
 				std::unordered_map<std::string, std::vector<uint8_t>> fullDataBuffer;
 
@@ -67,7 +64,7 @@ namespace repo{
 					const std::string              &refId = std::string(),
 					const std::vector<uint16_t>    &lod = std::vector<uint16_t>(),
 					const size_t                   &offset = 0);
-				
+
 				void addAccessors(
 					const std::string              &accName,
 					const std::string              &buffViewName,
@@ -124,7 +121,7 @@ namespace repo{
 					const std::vector<float>       &max,
 					const std::string              &refId = std::string(),
 					const std::vector<uint16_t>    &lod = std::vector<uint16_t>());
-				
+
 				/**
 				* Add a buffer view into a buffer,
 				* also provide this partial buffer to add into the
@@ -163,7 +160,6 @@ namespace repo{
 					const std::string                   &refId = std::string()
 					);
 
-
 				void addBufferView(
 					const std::string                   &name,
 					const std::string                   &fileName,
@@ -193,13 +189,11 @@ namespace repo{
 					const std::string                   &refId = std::string()
 					);
 
-
-
 				/**
 				* Add a buffer into the given data buffer
 				* @param bufferName name of the buffer to add to
 				* @param the buffer to append at the back
-				* @param byteLength length of the buffer to append				
+				* @param byteLength length of the buffer to append
 				* @return returns the offset where the added buffer starts
 				*/
 				size_t addToDataBuffer(
@@ -217,7 +211,6 @@ namespace repo{
 					return addToDataBuffer(bufferName, (uint8_t*)buffer.data(), buffer.size() * sizeof(T));
 				}
 
-
 				/**
 				* Construct JSON document about the scene
 				* @param tree tree to place the info
@@ -234,20 +227,16 @@ namespace repo{
 				bool generateTreeRepresentation();
 
 				/**
+				* Generate a property tree representing the spatial partitioning
+				* @return return a property tree with adequate entries
+				*/
+				repo::lib::PropertyTree generateSpatialrepo_partitioning_tree_t();
+
+				/**
 				* Return the GLTF file as raw bytes buffer
 				* returns an empty vector if the export has failed
 				*/
 				std::unordered_map<std::string, std::vector<uint8_t>> getGLTFFilesAsBuffer() const;
-
-				/**
-				* Return the X3D file as raw bytes buffer
-				* returns an empty vector if the export has failed
-				*/
-				std::unordered_map<std::string, std::vector<uint8_t>> getX3DFilesAsBuffer() const
-				{
-					return x3dBufs;
-				}
-
 
 				/**
 				* Reindex the given faces base on the given information
@@ -287,7 +276,7 @@ namespace repo{
 				/**
 				* @param tree tree to populate
 				*/
-				std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> 
+				std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher>
 					populateWithMeshes(
 					repo::lib::PropertyTree           &tree);
 
@@ -305,7 +294,7 @@ namespace repo{
 				void populateWithNodes(
 					repo::lib::PropertyTree          &tree,
 					const std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> &subMeshCounts);
-		
+
 				std::vector<std::vector<std::vector<uint16_t>>> reorderFaces(
 					std::vector<uint16_t>                               &faces,
 					const std::vector<repo_vector_t>                    &vertices,
@@ -322,7 +311,7 @@ namespace repo{
 					const std::vector<uint16_t>      &faces,
 					const std::vector<repo_vector_t> &vertices,
 					const repo_mesh_mapping_t        &mapping,
-					      std::vector<uint16_t>      &lods) const;
+					std::vector<uint16_t>      &lods) const;
 
 				std::vector<uint16_t> serialiseFaces(
 					const std::vector<repo_face_t> &faces) const;
@@ -347,21 +336,17 @@ namespace repo{
 					);
 
 				/**
-				* Write the default shading technique into the 
+				* Write the default shading technique into the
 				* property tree. Unless specified, all materials
 				* will be rendered using this technique
-				* Note: there is currently no way to specify 
+				* Note: there is currently no way to specify
 				* your own specific technique/shader
 				* @param tree tree to write into
 				*/
 				void writeDefaultTechnique(
 					repo::lib::PropertyTree &tree
 					);
-
-				
 			};
-
 		} //namespace modelconvertor
 	} //namespace manipulator
 } //namespace repo
-

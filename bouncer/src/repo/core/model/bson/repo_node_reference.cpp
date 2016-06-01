@@ -31,7 +31,6 @@ RepoNode()
 ReferenceNode::ReferenceNode(RepoBSON bson) :
 RepoNode(bson)
 {
-
 }
 
 ReferenceNode::~ReferenceNode()

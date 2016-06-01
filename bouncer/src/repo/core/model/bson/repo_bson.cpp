@@ -15,9 +15,9 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include "repo_bson.h"
 
+#include <mongo/client/dbclient.h>
 
 using namespace repo::core::model;
 
@@ -44,16 +44,17 @@ RepoBSON::RepoBSON(
 			arrbuilder.appendElementsUnique(obj.getObjectField(REPO_LABEL_OVERSIZED_FILES));
 		}
 
-
 		builder.append(REPO_LABEL_OVERSIZED_FILES, arrbuilder.obj());
 		builder.appendElementsUnique(obj);
 
 		*this = builder.obj();
 		bigFiles = binMapping;
 	}
-	
+}
 
-
+RepoBSON RepoBSON::fromJSON(const std::string &json)
+{
+	return RepoBSON(mongo::fromjson(json));
 }
 
 RepoBSON RepoBSON::cloneAndAddFields(
@@ -77,7 +78,7 @@ RepoBSON RepoBSON::cloneAndShrink() const
 	getFieldNames(fields);
 
 	RepoBSON resultBson = *this;
-	
+
 	for (const std::string &field : fields)
 	{
 		if (getField(field).type() == ElementType::BINARY)
@@ -90,14 +91,12 @@ RepoBSON RepoBSON::cloneAndShrink() const
 	}
 
 	return RepoBSON(resultBson, rawFiles);
-
 }
 
 repoUUID RepoBSON::getUUIDField(const std::string &label) const{
 	repoUUID uuid;
 	if (hasField(label))
 	{
-
 		const mongo::BSONElement bse = getField(label);
 		if (bse.type() == mongo::BSONType::BinData && (bse.binDataType() == mongo::bdtUUID ||
 			bse.binDataType() == mongo::newUUID))
@@ -121,7 +120,6 @@ repoUUID RepoBSON::getUUIDField(const std::string &label) const{
 	return uuid;
 }
 
-
 std::vector<repoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) const{
 	std::vector<repoUUID> results;
 
@@ -142,10 +140,8 @@ std::vector<repoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) cons
 		{
 			repoError << "getUUIDFieldArray: field " << label << " is an empty bson or wrong type!";
 		}
-
-
 	}
-	
+
 	return results;
 }
 
@@ -196,8 +192,8 @@ std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
 			std::set<std::string> fields;
 			array.getFieldNames(fields);
 
-            // Pre allocate memory to speed up copying
-            results.reserve(fields.size());
+			// Pre allocate memory to speed up copying
+			results.reserve(fields.size());
 			for (auto field : fields)
 				results.push_back(array.getField(field).numberDouble());
 		}
@@ -205,23 +201,22 @@ std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
 		{
 			repoError << "getFloatArray: field " << label << " is an empty bson or wrong type!";
 		}
-
 	}
 	return results;
 }
 
 std::vector<std::string> RepoBSON::getStringArray(const std::string &label) const
 {
-    std::vector<std::string> results;
-    if (hasField(label))
-    {
-        std::vector<RepoBSONElement> array = getField(label).Array();
-        // Pre allocate memory to speed up copying
-        results.reserve(array.size());
-        for (auto element : array)
-            results.push_back(element.String());
-    }
-    return results;
+	std::vector<std::string> results;
+	if (hasField(label))
+	{
+		std::vector<RepoBSONElement> array = getField(label).Array();
+		// Pre allocate memory to speed up copying
+		results.reserve(array.size());
+		for (auto element : array)
+			results.push_back(element.String());
+	}
+	return results;
 }
 
 int64_t RepoBSON::getTimeStampField(const std::string &label) const
@@ -237,13 +232,11 @@ int64_t RepoBSON::getTimeStampField(const std::string &label) const
 		{
 			repoError << "GetTimeStampField: field " << label << " is not of type Date!";
 		}
-
 	}
 	return time;
 }
 
-
-std::list<std::pair<std::string, std::string> > RepoBSON::getListStringPairField (
+std::list<std::pair<std::string, std::string> > RepoBSON::getListStringPairField(
 	const std::string &arrLabel,
 	const std::string &fstLabel,
 	const std::string &sndLabel) const
@@ -276,26 +269,26 @@ std::list<std::pair<std::string, std::string> > RepoBSON::getListStringPairField
 }
 
 double RepoBSON::getEmbeddedDouble(
-        const std::string &embeddedObjName,
-        const std::string &fieldName,
-        const double &defaultValue) const
+	const std::string &embeddedObjName,
+	const std::string &fieldName,
+	const double &defaultValue) const
 {
-    double value = defaultValue;
-    if (hasEmbeddedField(embeddedObjName, fieldName))
-    {
-         value = (getObjectField(embeddedObjName)).getField(fieldName).numberDouble();
-    }
-    return value;
+	double value = defaultValue;
+	if (hasEmbeddedField(embeddedObjName, fieldName))
+	{
+		value = (getObjectField(embeddedObjName)).getField(fieldName).numberDouble();
+	}
+	return value;
 }
 
 bool RepoBSON::hasEmbeddedField(
-            const std::string &embeddedObjName,
-            const std::string &fieldName) const
+	const std::string &embeddedObjName,
+	const std::string &fieldName) const
 {
-    bool found = false;
-    if (hasField(embeddedObjName))
-    {
-        found = (getObjectField(embeddedObjName)).hasField(fieldName);
-    }
-    return found;
+	bool found = false;
+	if (hasField(embeddedObjName))
+	{
+		found = (getObjectField(embeddedObjName)).hasField(fieldName);
+	}
+	return found;
 }

@@ -37,7 +37,6 @@ namespace repo{
 			class AbstractDatabaseHandler {
 			public:
 
-
 				/**
 				 * A Deconstructor
 				 */
@@ -46,27 +45,25 @@ namespace repo{
 				/**
 				* returns the size limit of each document(record) in bytes
 				* @return returns size limit in bytes.
- 				*/
+				*/
 				uint64_t documentSizeLimit() { return maxDocumentSize; };
 
-
-				/**
-				* Generates a BSON object containing user credentials
-				* @param username user name for authentication
-				* @param password password of the user
-				* @param pwDigested true if pw is digested
-				* @return returns the constructed BSON object, or 0 if username is empty
-				*/
-				virtual repo::core::model::RepoBSON* createBSONCredentials(
-					const std::string &dbAddress,
-					const std::string &username,
-					const std::string &password,
-					const bool        &pwDigested = false)=0;
+				///**
+				//* Generates a BSON object containing user credentials
+				//* @param username user name for authentication
+				//* @param password password of the user
+				//* @param pwDigested true if pw is digested
+				//* @return returns the constructed BSON object, or 0 if username is empty
+				//*/
+				//sta repo::core::model::RepoBSON* createBSONCredentials(
+				//	const std::string &dbAddress,
+				//	const std::string &username,
+				//	const std::string &password,
+				//	const bool        &pwDigested = false) = 0;
 
 				/*
 				*	------------- Database info lookup --------------
 				*/
-
 
 				/**
 				* Count the number of documents within the collection
@@ -78,7 +75,7 @@ namespace repo{
 				virtual uint64_t countItemsInCollection(
 					const std::string &database,
 					const std::string &collection,
-					      std::string &errMsg) = 0;
+					std::string &errMsg) = 0;
 
 				/**
 				* Retrieve documents from a specified collection
@@ -106,7 +103,7 @@ namespace repo{
 				/**
 				* Get a list of all available collections
 				*/
-				virtual std::list<std::string> getCollections(const std::string &database)=0;
+				virtual std::list<std::string> getCollections(const std::string &database) = 0;
 
 				/**
 				* Get the collection statistics of the given collection
@@ -125,7 +122,7 @@ namespace repo{
 				* @param sort the database
 				* @return returns a list of database names
 				*/
-				virtual std::list<std::string> getDatabases(const bool &sorted = true)=0;
+				virtual std::list<std::string> getDatabases(const bool &sorted = true) = 0;
 
 				/** get the associated projects for the list of database.
 				* @param list of database
@@ -141,7 +138,7 @@ namespace repo{
 				* @param extension that indicates it is a project (.scene)
 				* @return list of projects for the database
 				*/
-				virtual std::list<std::string> getProjects(const std::string &database, const std::string &projectExt)=0;
+				virtual std::list<std::string> getProjects(const std::string &database, const std::string &projectExt) = 0;
 
 				/**
 				* Return a list of Admin database roles
@@ -149,12 +146,11 @@ namespace repo{
 				*/
 				virtual std::list<std::string> getAdminDatabaseRoles() = 0;
 
-
 				/**
 				* Return a list of standard database roles
 				* @return a vector of standard database roles
 				*/
-				virtual  std::list<std::string> getStandardDatabaseRoles()=0;
+				virtual  std::list<std::string> getStandardDatabaseRoles() = 0;
 
 				/*
 				*	------------- Database operations (insert/delete/update) --------------
@@ -166,7 +162,6 @@ namespace repo{
 				* @param name name of the collection
 				*/
 				virtual void createCollection(const std::string &database, const std::string &name) = 0;
-				
 
 				/**
 				* Insert a single document in database.collection
@@ -181,7 +176,6 @@ namespace repo{
 					const std::string &collection,
 					const repo::core::model::RepoBSON &obj,
 					std::string &errMsg) = 0;
-
 
 				/**
 				* Insert big raw file in binary format (using GridFS)
@@ -201,7 +195,6 @@ namespace repo{
 					std::string          &errMsg,
 					const std::string          &contentType = "binary/octet-stream"
 					) = 0;
-
 
 				/**
 				* Insert a role into the database
@@ -223,7 +216,6 @@ namespace repo{
 					const repo::core::model::RepoUser &user,
 					std::string                             &errmsg) = 0;
 
-
 				/**
 				* Update/insert a single document in database.collection
 				* If the document exists, update it, if it doesn't, insert it
@@ -239,7 +231,7 @@ namespace repo{
 					const std::string &collection,
 					const repo::core::model::RepoBSON &obj,
 					const bool        &overwrite,
-					std::string &errMsg)=0;
+					std::string &errMsg) = 0;
 
 				/**
 				* Remove a collection from the database
@@ -250,7 +242,7 @@ namespace repo{
 				virtual bool dropCollection(
 					const std::string &database,
 					const std::string &collection,
-					std::string &errMsg)=0;
+					std::string &errMsg) = 0;
 
 				/**
 				* Remove a database from the database instance
@@ -259,7 +251,7 @@ namespace repo{
 				*/
 				virtual bool dropDatabase(
 					const std::string &database,
-					std::string &errMsg)=0;
+					std::string &errMsg) = 0;
 
 				/**
 				* Remove a document from the mongo database
@@ -272,7 +264,7 @@ namespace repo{
 					const repo::core::model::RepoBSON bson,
 					const std::string &database,
 					const std::string &collection,
-					std::string &errMsg)=0;
+					std::string &errMsg) = 0;
 
 				/**
 				* Remove all documents satisfying a certain criteria
@@ -287,6 +279,18 @@ namespace repo{
 					const std::string &collection,
 					std::string &errMsg) = 0;
 
+				/**
+				* Remove a file from raw file storage (gridFS)
+				* @param database the database the collection resides in
+				* @param collection name of the collection the document is in
+				* @param filename name of the file
+				* @param errMsg name of the database to drop
+				*/
+				virtual bool dropRawFile(
+					const std::string &database,
+					const std::string &collection,
+					const std::string &fileName,
+					std::string &errMsg) = 0;
 
 				/**
 				* Remove a role from the database
@@ -307,7 +311,6 @@ namespace repo{
 				virtual bool dropUser(
 					const repo::core::model::RepoUser &user,
 					std::string                             &errmsg) = 0;
-
 
 				/**
 				* Update a role in the database
@@ -331,7 +334,6 @@ namespace repo{
 				/*
 				*	------------- Query operations --------------
 				*/
-
 
 				/**
 				* Given a search criteria,  find all the documents that passes this query
@@ -384,7 +386,7 @@ namespace repo{
 					const std::string& database,
 					const std::string& collection,
 					const repoUUID& uuid,
-					const std::string& sortField)=0;
+					const std::string& sortField) = 0;
 
 				/**
 				*Retrieves the document matching given Unique ID (SID), sorting is descending
@@ -416,11 +418,10 @@ namespace repo{
 				* Default constructor
 				* @param size maximum size of documents(records) in bytes
 				*/
-				AbstractDatabaseHandler(uint64_t size):maxDocumentSize(size){};
+				AbstractDatabaseHandler(uint64_t size) :maxDocumentSize(size){};
 
 				const uint64_t maxDocumentSize;
 			};
-
 		}
 	}
 }

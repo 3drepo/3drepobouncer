@@ -20,6 +20,7 @@
 */
 
 #include "repo_node_camera.h"
+#include "repo_bson_builder.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -34,7 +35,6 @@ RepoNode()
 CameraNode::CameraNode(RepoBSON bson) :
 RepoNode(bson)
 {
-
 }
 
 CameraNode::~CameraNode()
@@ -64,14 +64,14 @@ RepoNode CameraNode::cloneAndApplyTransformation(
 
 repo_vector_t CameraNode::getPosition() const
 {
-	repo_vector_t vec ;
+	repo_vector_t vec;
 	if (hasField(REPO_NODE_LABEL_POSITION))
 	{
 		std::vector<float> floatArr = getFloatArray(REPO_NODE_LABEL_POSITION);
 		if (floatArr.size() >= 3)
 		{
 			//repo_vector_t is effectively float[3]
-			std::copy(floatArr.begin(), floatArr.begin() + 3, (float*) &vec);
+			std::copy(floatArr.begin(), floatArr.begin() + 3, (float*)&vec);
 		}
 	}
 
@@ -80,7 +80,7 @@ repo_vector_t CameraNode::getPosition() const
 
 repo_vector_t CameraNode::getLookAt() const
 {
-	repo_vector_t vec = {0, 0, -1};
+	repo_vector_t vec = { 0, 0, -1 };
 	if (hasField(REPO_NODE_LABEL_LOOK_AT))
 	{
 		std::vector<float> floatArr = getFloatArray(REPO_NODE_LABEL_LOOK_AT);
@@ -98,7 +98,6 @@ repo_vector_t CameraNode::getLookAt() const
 		return vec;
 }
 
-
 repo_vector_t CameraNode::getUp() const
 {
 	repo_vector_t vec = { 0, 1, 0 };
@@ -108,19 +107,16 @@ repo_vector_t CameraNode::getUp() const
 		if (floatArr.size() >= 3)
 		{
 			//repo_vector_t is effectively float[3]
-			std::copy(floatArr.begin(), floatArr.begin() + 3, (float*) &vec);
+			std::copy(floatArr.begin(), floatArr.begin() + 3, (float*)&vec);
 		}
 	}
 
 	return vec;
 }
 
-
-
 std::vector<float> CameraNode::getCameraMatrix(
 	const bool &rowMajor) const
 {
-
 	std::vector<float> mat;
 	mat.resize(16);
 
@@ -174,9 +170,9 @@ std::vector<float> CameraNode::getCameraMatrix(
 	}
 
 	/** We don't know whether these vectors are already normalized ...*/
-	repo_vector_t zaxis = getLookAt();  
-	repo_vector_t yaxis = getUp();      
-	repo_vector_t xaxis = crossProduct(yaxis, zaxis);  
+	repo_vector_t zaxis = getLookAt();
+	repo_vector_t yaxis = getUp();
+	repo_vector_t xaxis = crossProduct(yaxis, zaxis);
 
 	normalize(zaxis);
 	normalize(yaxis);
@@ -210,14 +206,14 @@ std::vector<float> CameraNode::getOrientation() const
 {
 	repo_vector_t lookAt = getLookAt();
 	repo_vector_t up = getUp();
-	repo_vector_t forward = { -lookAt.x , -lookAt.y , -lookAt.z};
+	repo_vector_t forward = { -lookAt.x, -lookAt.y, -lookAt.z };
 	normalize(forward);
 	normalize(up);
 	repo_vector_t right = crossProduct(up, forward);
 
-	float a  = up.x - right.y;
-	float b  = forward.x - right.z;
-	float c  = forward.y - up.z;
+	float a = up.x - right.y;
+	float b = forward.x - right.z;
+	float c = forward.y - up.z;
 	float tr = right.x + up.y + forward.z;
 
 	float x = 0, y = 0, z = 0, angle = 1;
@@ -231,7 +227,7 @@ std::vector<float> CameraNode::getOrientation() const
 		float e = forward.x + right.z;
 		float f = forward.y + up.z;
 
-		if(!((fabs(d) < eps) && (fabs(e) < eps) && (fabs(f) < eps) && (fabs(tr - 3.0) < eps)))
+		if (!((fabs(d) < eps) && (fabs(e) < eps) && (fabs(f) < eps) && (fabs(tr - 3.0) < eps)))
 		{
 			angle = M_PI;
 
@@ -260,7 +256,6 @@ std::vector<float> CameraNode::getOrientation() const
 			}
 			else if ((yy - zz) > eps)
 			{
-
 				if (yy < eps)
 				{
 					x = sqrtHalf;
@@ -287,13 +282,9 @@ std::vector<float> CameraNode::getOrientation() const
 					z = sqrtf(zz);
 					x = xz / z;
 					y = yz / z;
-				
 				}
 			}
-				
-
 		}//if (!(fabs(d) < eps && fabs(e) < eps && fabs(f) < eps && fabs(tr - 3) < eps))
-
 	}//if (fabs(a) < eps && fabs(b) < eps && fabs(c) < eps)
 	else
 	{
@@ -302,12 +293,11 @@ std::vector<float> CameraNode::getOrientation() const
 			s = 1;
 
 		x = -c / s;
-		y =  b / s;
+		y = b / s;
 		z = -a / s;
 
 		angle = acosf((tr - 1.) / 2.);
 	}
-
 
 	return{ x, y, z, angle };
 }
@@ -321,11 +311,8 @@ bool CameraNode::sEqual(const RepoNode &other) const
 
 	const CameraNode otherCam = CameraNode(other);
 
-
 	std::vector<float> mat = getCameraMatrix();
 	std::vector<float> otherMat = otherCam.getCameraMatrix();
 
-
 	return !memcmp(mat.data(), otherMat.data(), mat.size() *sizeof(*mat.data()));
-
 }

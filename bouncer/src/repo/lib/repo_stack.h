@@ -40,7 +40,6 @@ namespace repo{
 				stack.push_back(item);
 			}
 			T pop() {
-
 				//order potentially matters. Think before shuffling!
 				boost::mutex::scoped_lock popLock(popMutex); //stopping anyone from popping
 				boost::mutex::scoped_lock pushLock(pushMutex); //stopping anyone from pushing
@@ -48,7 +47,7 @@ namespace repo{
 				while (stack.empty())
 				{
 					//stack is empty. Release the push lock and try again in 50ms
-					pushLock.unlock();							
+					pushLock.unlock();
 					boost::this_thread::sleep(boost::posix_time::milliseconds(50));
 					pushLock.lock();
 				}
@@ -75,10 +74,6 @@ namespace repo{
 			std::vector<T> stack;
 			mutable boost::mutex pushMutex;
 			mutable boost::mutex popMutex;
-
-
 		};
 	}
 }
-
-

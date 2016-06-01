@@ -27,7 +27,6 @@ struct repo_op_t{
 	uint32_t nArgcs;
 };
 
-
 /*
 * =========== HOW TO ADD A NEW COMMAND ===========
 * 1. write the command under command functions
@@ -49,7 +48,7 @@ bool isSpecialCommand(const std::string &cmd);
 
 /**
 * Check if the command is recognised
-* @returns returns the minimal # of arguments needed for this command, 
+* @returns returns the minimal # of arguments needed for this command,
 *          -1 if command not recognised
 */
 int32_t knownValid(const std::string &cmd);
@@ -62,15 +61,54 @@ int32_t knownValid(const std::string &cmd);
 * @return returns true upon success
 */
 int32_t performOperation(
-	      repo::RepoController *controller, 
-	const repo::RepoToken      *token,
+	repo::RepoController *controller,
+	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
 	);
-
 
 /*
 * ======================== Command functions ===================
 */
+
+/**
+* Check all revisions within a project for status information,
+* If the revision is deemed corrupted, attempt to repair, otherwise delete.
+* @param controller the controller to the bouncer library
+* @param token      token provided by the controller after authentication
+* @param command    command and it's arguments to perform
+* @return returns true upon success
+*/
+static int32_t cleanUpProject(
+	repo::RepoController       *controller,
+	const repo::RepoController::RepoToken      *token,
+	const repo_op_t            &command
+	);
+
+/**
+* Generate a particular type of stash (src/gltf/repo) for a given project
+* @param controller the controller to the bouncer library
+* @param token      token provided by the controller after authentication
+* @param command    command and it's arguments to perform
+* @return returns true upon success
+*/
+static int32_t generateStash(
+	repo::RepoController       *controller,
+	const repo::RepoController::RepoToken      *token,
+	const repo_op_t            &command
+	);
+
+/**
+* Retrieve the original file for the head of the project
+* @param controller the controller to the bouncer library
+* @param token      token provided by the controller after authentication
+* @param command    command and it's arguments to perform
+* @return returns true upon success
+*/
+static int32_t getFileFromProject(
+	repo::RepoController       *controller,
+	const repo::RepoController::RepoToken      *token,
+	const repo_op_t            &command
+	);
 
 /**
 * Import model from file and commit it to the database
@@ -80,7 +118,7 @@ int32_t performOperation(
 * @return returns true upon success
 */
 static int32_t importFileAndCommit(
-	      repo::RepoController *controller,
-	const repo::RepoToken      *token,
+	repo::RepoController *controller,
+	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
 	);

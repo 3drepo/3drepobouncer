@@ -23,14 +23,13 @@ using namespace repo::lib;
 static const std::string XML_ATTR_TAG = "<xmlattr>";
 
 PropertyTree::PropertyTree() :
-	hackStrings(true)
+hackStrings(true)
 {
 }
 
 PropertyTree::PropertyTree(const bool &enableJSONWorkAround) :
-	hackStrings(false)
+hackStrings(enableJSONWorkAround)
 {}
-
 
 PropertyTree::~PropertyTree()
 {
@@ -61,7 +60,6 @@ void PropertyTree::addFieldAttribute(
 	addToTree(actualLabel + "." + attribute, value);
 }
 
-
 template <>
 void PropertyTree::addFieldAttribute(
 	const std::string  &label,
@@ -69,14 +67,11 @@ void PropertyTree::addFieldAttribute(
 	const repo_vector_t &value
 	)
 {
-
 	std::stringstream ss;
-	ss << value.x << "," << value.y << "," << value.z ;
-
+	ss << value.x << "," << value.y << "," << value.z;
 
 	addFieldAttribute(label, attribute, ss.str());
 }
-
 
 template <>
 void PropertyTree::addToTree<std::string>(
@@ -97,9 +92,15 @@ void PropertyTree::addToTree<std::string>(
 		else
 			tree.add(label, value);
 	}
-	
 }
 
+template <>
+void PropertyTree::addToTree<repoUUID>(
+	const std::string          &label,
+	const repoUUID             &value)
+{
+	addToTree(label, boost::lexical_cast<std::string>(value));
+}
 
 template <>
 void PropertyTree::addToTree<repo_vector_t>(
@@ -107,10 +108,27 @@ void PropertyTree::addToTree<repo_vector_t>(
 	const repo_vector_t &value
 	)
 {
-
 	std::stringstream ss;
 	ss << value.x << " " << value.y << " " << value.z;
 
-
 	addToTree(label, ss.str());
+}
+
+template <>
+void PropertyTree::addToTree<PropertyTree>(
+	const std::string               &label,
+	const std::vector<PropertyTree> &value,
+	const bool                      &join)
+{
+	//join boolean is irrelevant here.
+	if (value.size())
+	{
+		boost::property_tree::ptree arrayTree;
+		for (const auto &child : value)
+		{
+			arrayTree.push_back(std::make_pair("", child.tree));
+		}
+
+		tree.add_child(label, arrayTree);
+	}
 }

@@ -26,7 +26,6 @@
 #include "../bson/repo_node.h"
 #include "../../handler/repo_database_handler_abstract.h"
 
-
 namespace repo{
 	namespace core{
 		namespace model{
@@ -51,13 +50,9 @@ namespace repo{
 				*/
 				virtual ~AbstractGraph();
 
-
-
 			protected:
 				std::string databaseName;/*! name of the database */
 				std::string projectName; /*! name of the project */
-
-
 			};
 		}//namespace graph
 	}//namespace manipulator

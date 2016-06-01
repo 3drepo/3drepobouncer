@@ -19,7 +19,6 @@
 * Assimp Model convertor(Export)
 */
 
-
 #pragma once
 
 #include <string>
@@ -27,14 +26,17 @@
 #include <assimp/scene.h>
 #include <assimp/Exporter.hpp>
 
-#include "repo_model_export_abstract.h"
+#include "../../../core/model/bson/repo_node_camera.h"
+#include "../../../core/model/bson/repo_node_material.h"
+#include "../../../core/model/bson/repo_node_mesh.h"
 #include "../../../core/model/collection/repo_scene.h"
+#include "repo_model_export_abstract.h"
 
 namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{//x3d shader
 			class AssimpModelExport : public AbstractModelExport
-			{	
+			{
 			public:
 				/**
 				* Default Constructor, export model with default settings
@@ -65,7 +67,7 @@ namespace repo{
 
 				/**
 				* Construct an assimp node from 3DRepo scene
-				* this is a recursive function call and will 
+				* this is a recursive function call and will
 				* construct aiNodes from its children
 				* NB: The reason why we have meshVec/meshMap etc is because map is a sorted container
 				*     and thus order will change as we add items in it. We need a vector container
@@ -120,13 +122,13 @@ namespace repo{
 					std::unordered_map<repoUUID, aiCamera*, RepoUUIDHasher>   &camMap,
 					repo::core::model::RepoNodeSet                            &textNodes,
 					const repo::core::model::RepoScene::GraphType             &gType
-						= repo::core::model::RepoScene::GraphType::DEFAULT);
+					= repo::core::model::RepoScene::GraphType::DEFAULT);
 
 				/**
 				* Convert a camera node to aiCamera
 				* @param scene the scene the node came from
 				* @param camNode the camera node itself
-				* @param name override in assimp node to this 
+				* @param name override in assimp node to this
 				*             (used to ensure it has the same name as the transformation it's attached to)
 				* @return returns a aiCamera node
 				*/
@@ -147,7 +149,7 @@ namespace repo{
 					const repo::core::model::MaterialNode         *matNode,
 					repo::core::model::RepoNodeSet                &textNodes,
 					const repo::core::model::RepoScene::GraphType &gType
-						= repo::core::model::RepoScene::GraphType::DEFAULT);
+					= repo::core::model::RepoScene::GraphType::DEFAULT);
 
 				/**
 				* Convert a mesh node to aiMesh
@@ -190,7 +192,6 @@ namespace repo{
 				std::string getExportFormatID(
 					const std::string &fileExtension);
 
-
 				/**
 				* Write textures to file. Textures are written in the format
 				* they were originally written from.  (default: jpg)
@@ -202,7 +203,6 @@ namespace repo{
 					const repo::core::model::RepoNodeSet &nodes,
 					const std::string                    &filePath);
 
-
 				/**
 				* Write an aiScene to file
 				* @param scene aiScene representation
@@ -212,13 +212,7 @@ namespace repo{
 				bool writeSceneToFile(
 					const aiScene     *scene,
 					const std::string &filePath);
-				
-
 			};
-
-
-
 		} //namespace modelconvertor
 	} //namespace manipulator
 } //namespace repo
-

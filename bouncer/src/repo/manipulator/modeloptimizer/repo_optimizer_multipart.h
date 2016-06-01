@@ -23,6 +23,7 @@
 
 #include "repo_optimizer_abstract.h"
 #include "../../core/model/collection/repo_scene.h"
+#include "../../core/model/bson/repo_node_mesh.h"
 
 #define REPO_MP_TEXTURE_WORK_AROUND
 
@@ -41,7 +42,6 @@ namespace repo {
 				* Default deconstructor
 				*/
 				virtual ~MultipartOptimizer();
-
 
 				/**
 				* Apply optimisation on the given repoScene
@@ -76,7 +76,8 @@ namespace repo {
 					std::vector<std::vector<repo_face_t>>                &faces,
 					std::vector<std::vector<std::vector<repo_vector2d_t>>> &uvChannels,
 					std::vector<std::vector<repo_color4d_t>>               &colors,
-					std::vector<std::vector<repo_mesh_mapping_t>>          &meshMapping
+					std::vector<std::vector<repo_mesh_mapping_t>>          &meshMapping,
+					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>    &matIDMap
 					);
 #endif
 				bool collectMeshData(
@@ -89,7 +90,8 @@ namespace repo {
 					std::vector<repo_face_t>                  &faces,
 					std::vector<std::vector<repo_vector2d_t>> &uvChannels,
 					std::vector<repo_color4d_t>               &colors,
-					std::vector<repo_mesh_mapping_t>          &meshMapping
+					std::vector<repo_mesh_mapping_t>          &meshMapping,
+					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>    &matIDMap
 					);
 
 				/**
@@ -104,16 +106,16 @@ namespace repo {
 				std::vector<repo::core::model::MeshNode*>createSuperMesh(
 					const repo::core::model::RepoScene *scene,
 					const std::set<repoUUID>           &meshGroup,
-					std::set<repoUUID>                 &matIDs,
+					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher> &matIDs,
 					const bool                         &texture);
 #endif
 				repo::core::model::MeshNode* createSuperMesh(
 					const repo::core::model::RepoScene *scene,
 					const std::set<repoUUID>           &meshGroup,
-					std::set<repoUUID>                 &matIDs);
+					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher> &matIDs);
 
 				/**
-				* Generate the multipart scene 
+				* Generate the multipart scene
 				* @param scene scene to base on, this will also be modified to store the stash graph
 				* @return returns true upon success
 				*/
@@ -150,7 +152,7 @@ namespace repo {
 				*/
 				bool isTransparent(
 					const repo::core::model::RepoScene *scene,
-					const repo::core::model::MeshNode  *mesh); 
+					const repo::core::model::MeshNode  *mesh);
 
 				/**
 				* Process a mesh grouping, great a merged mesh base on the information
@@ -166,6 +168,7 @@ namespace repo {
 					const repoUUID                                                             &rootID,
 					repo::core::model::RepoNodeSet                                             &mergedMeshes,
 					std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> &matNodes,
+					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>                     &matIDs,
 					const bool                                                                 &texture
 					);
 #endif
@@ -174,7 +177,8 @@ namespace repo {
 					const std::set<repoUUID>							                       & meshes,
 					const repoUUID                                                             &rootID,
 					repo::core::model::RepoNodeSet                                             &mergedMeshes,
-					std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> &matNodes);
+					std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> &matNodes,
+					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>                    &matIDs);
 
 				/**
 				* Sort the given RepoNodeSet of meshes for multipart merging
@@ -189,13 +193,9 @@ namespace repo {
 					const repo::core::model::RepoNodeSet                                    &meshes,
 					std::unordered_map<uint32_t, std::vector<std::set<repoUUID>>>			&normalMeshes,
 					std::unordered_map<uint32_t, std::vector<std::set<repoUUID>>>			&transparentMeshes,
-					std::unordered_map<uint32_t, std::unordered_map<repoUUID,
-										 std::vector<std::set<repoUUID>>, RepoUUIDHasher >> &texturedMeshes);
-
+					std::unordered_map < uint32_t, std::unordered_map < repoUUID,
+					std::vector<std::set<repoUUID>>, RepoUUIDHasher >> &texturedMeshes);
 			};
-
-
-
 		}
 	}
 }

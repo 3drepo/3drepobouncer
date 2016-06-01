@@ -19,7 +19,6 @@
 * Allows Export functionality from 3D Repo World to SRC
 */
 
-
 #include "repo_model_export_web.h"
 #include "../../../lib/repo_log.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
@@ -32,9 +31,9 @@ WebModelExport::WebModelExport(
 	const repo::core::model::RepoScene *scene
 	) : AbstractModelExport(scene)
 {
-	if (convertSuccess = scene)
+	//We don't cache reference scenes
+	if (convertSuccess = scene && !scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size())
 	{
-
 		if (scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED))
 		{
 			gType = repo::core::model::RepoScene::GraphType::OPTIMIZED;
@@ -55,13 +54,12 @@ WebModelExport::~WebModelExport()
 {
 }
 
-
 bool WebModelExport::exportToFile(
 	const std::string &filePath)
 {
 	if (!convertSuccess) return convertSuccess;
 
-	const repo_export_buffers_t buffers = getAllFilesExportedAsBuffer();
+	const repo_web_buffers_t buffers = getAllFilesExportedAsBuffer();
 
 	boost::filesystem::path boostPath(filePath);
 
@@ -114,6 +112,24 @@ bool WebModelExport::exportToFile(
 	}
 }
 
+std::unordered_map<std::string, std::vector<uint8_t>> WebModelExport::getJSONFilesAsBuffer() const
+{
+	std::unordered_map < std::string, std::vector<uint8_t> > fileBuffers;
+
+	for (const auto &treePair : jsonTrees)
+	{
+		std::stringstream ss;
+		treePair.second.write_json(ss);
+		std::string jsonStr = ss.str();
+
+		fileBuffers[treePair.first] = std::vector<uint8_t>();
+		fileBuffers[treePair.first].resize(jsonStr.size());
+		memcpy(fileBuffers[treePair.first].data(), jsonStr.c_str(), jsonStr.size());
+	}
+
+	return fileBuffers;
+}
+
 std::string WebModelExport::getSupportedFormats()
 {
 	return ".src, .gltf";
@@ -124,7 +140,7 @@ std::string WebModelExport::sanitizeFileName(
 {
 	std::string res = name;
 	std::replace(res.begin(), res.end(), '\\', '_');
-	std::replace(res.begin(), res.end(),  '/', '_');
+	std::replace(res.begin(), res.end(), '/', '_');
 
 	return res;
 }

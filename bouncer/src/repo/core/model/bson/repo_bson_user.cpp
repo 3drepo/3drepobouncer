@@ -22,21 +22,33 @@
 #include "repo_bson_builder.h"
 #include "repo_bson_user.h"
 
-
 using namespace repo::core::model;
 
 RepoUser::RepoUser() : RepoBSON()
 {
 }
 
-
 RepoUser::~RepoUser()
 {
 }
 
+RepoUser RepoUser::cloneAndAddRole(
+	const std::string &dbName,
+	const std::string &role) const
+{
+	std::list<std::pair<std::string, std::string>> currentRoles = getRolesList();
+	std::pair<std::string, std::string> newEntry = { dbName, role };
+	currentRoles.push_back(newEntry);
+
+	RepoBSONBuilder builder;
+	builder.appendArrayPair(REPO_USER_LABEL_ROLES, currentRoles, REPO_USER_LABEL_DB, REPO_USER_LABEL_ROLE);
+	builder.appendElementsUnique(*this);
+
+	return RepoUser(builder.obj());
+}
+
 std::list<std::pair<std::string, std::string> > RepoUser::getAPIKeysList() const
 {
-
 	RepoBSON customData = getCustomDataBSON();
 
 	return customData.getListStringPairField(REPO_USER_LABEL_API_KEYS, REPO_USER_LABEL_LABEL, REPO_USER_LABEL_KEY);
@@ -97,11 +109,10 @@ std::string RepoUser::getPassword() const
 }
 
 std::list<std::pair<std::string, std::string>>
-	RepoUser::getRolesList() const
+RepoUser::getRolesList() const
 {
 	std::list<std::pair<std::string, std::string>> result;
 	result = getListStringPairField(REPO_USER_LABEL_ROLES, REPO_USER_LABEL_DB, REPO_USER_LABEL_ROLE);
 
 	return result;
 }
-

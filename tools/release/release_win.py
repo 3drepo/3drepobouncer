@@ -12,11 +12,11 @@
 githubRepo = "https://github.com/3drepo/3drepobouncer"
 
 #Release tag (Also used to name the folder)
-releaseTag = "v1.0b"
+releaseTag = "v1.0rc1"
 
 #name
 projName = "3drepobouncer"
-bouncerdll = "3drepobouncer_1_0b.dll"
+bouncerdll = "3drepobouncer_1_0rc1.dll"
 
 #Visual Studio Version (Tag as you expect to type to -G on Cmake)
 vsVersion = "\"Visual Studio 12 Win64\""

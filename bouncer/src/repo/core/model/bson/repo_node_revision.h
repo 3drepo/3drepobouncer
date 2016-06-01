@@ -19,10 +19,8 @@
 * A Revision Node - storing information about a specific revision
 */
 
-
 #pragma once
 #include "repo_node.h"
-
 
 //------------------------------------------------------------------------------
 //
@@ -48,98 +46,102 @@
 namespace repo {
 	namespace core {
 		namespace model {
+			class REPO_API_EXPORT RevisionNode : public RepoNode
+			{
+			public:
+				enum class UploadStatus{ COMPLETE = 0, GEN_DEFAULT = 1, GEN_REPO_STASH = 2, GEN_WEB_STASH = 3, GEN_SEL_TREE = 4, UNKNOWN = 5 };
 
-				class REPO_API_EXPORT RevisionNode : public RepoNode
-				{
-				public:
+				/**
+				* Constructor
+				* Construct a RepoNode base on a RepoBSON object
+				* @param replicate this bson object
+				*/
+				RevisionNode(RepoBSON bson);
 
-					/**
-					* Constructor
-					* Construct a RepoNode base on a RepoBSON object
-					* @param replicate this bson object
-					*/
-					RevisionNode(RepoBSON bson);
+				RevisionNode();
+				~RevisionNode();
 
+				/**
+				* Update the status flag with the given status
+				* NOTE: the status flags denotes what it is currently doing
+				*       not what has been done. e.g. GEN_DEFAULT denotes the
+				*       revision does not have a fully commited default scene graph
+				* @param status the status to set to
+				* @return returns a clone of this node with updated status flag
+				*/
+				RevisionNode cloneAndUpdateStatus(
+					const UploadStatus &status) const;
 
-					RevisionNode();
-					~RevisionNode();
+				/**
+				* --------- Convenience functions -----------
+				*/
 
+				/**
+				* Get the author commited the revision
+				* @return returns a string for message. empty string if none.
+				*/
+				std::string getAuthor() const;
 
-					/**
-					* Clone the revision node, remove the incomplete flag
-					* during the process
-					* @return a clone of the revision node without the flag
-					*/
-					RevisionNode cloneAndRemoveIncompleteFlag() const;
+				/**
+				* Get the offset coordinates to translate the model
+				* @return return a vector of double (size of 3)
+				*/
+				std::vector<double> getCoordOffset() const;
 
-					/**
-					* --------- Convenience functions -----------
-					*/
+				/**
+				* Get a list of current IDs for this revision
+				* @return returns a vector of unique IDs.
+				*/
+				std::vector<repoUUID> getCurrentIDs() const;
 
-					/**
-					* Get the author commited the revision
-					* @return returns a string for message. empty string if none.
-					*/
-					std::string getAuthor() const;
+				///**
+				//* Get a list of IDs of nodes which were Added for this revision
+				//* @return returns a vector of shared IDs.
+				//*/
+				//std::vector<repoUUID> getAddedIDs() const;
 
-					/**
-					* Get the offset coordinates to translate the model
-					* @return return a vector of double (size of 3)
-					*/
-					std::vector<double> getCoordOffset() const;
+				///**
+				//* Get a list of IDs of nodes which were deleted for this revision
+				//* @return returns a vector of shared IDs.
+				//*/
+				//std::vector<repoUUID> getDeletedIDs() const;
 
-					/**
-					* Get a list of current IDs for this revision
-					* @return returns a vector of unique IDs.
-					*/
-					std::vector<repoUUID> getCurrentIDs() const;
+				///**
+				//* Get a list of IDs of nodes which were modified for this revision
+				//* @return returns a vector of shared IDs.
+				//*/
+				//std::vector<repoUUID> getModifiedIDs() const;
 
-					///**
-					//* Get a list of IDs of nodes which were Added for this revision
-					//* @return returns a vector of shared IDs.
-					//*/
-					//std::vector<repoUUID> getAddedIDs() const;
+				/**
+				* Get the message commited with the revision
+				* @return returns a string for message. empty string if none.
+				*/
+				std::string getMessage() const;
 
-					///**
-					//* Get a list of IDs of nodes which were deleted for this revision
-					//* @return returns a vector of shared IDs.
-					//*/
-					//std::vector<repoUUID> getDeletedIDs() const;
+				/**
+				* Get the tag commited with the revision
+				* @return returns a string for tag. empty string if none.
+				*/
+				std::string getTag() const;
 
-					///**
-					//* Get a list of IDs of nodes which were modified for this revision
-					//* @return returns a vector of shared IDs.
-					//*/
-					//std::vector<repoUUID> getModifiedIDs() const;
+				/**
+				* Get the status of the upload for this revision
+				* @returns the upload status of the revision
+				*/
+				UploadStatus getUploadStatus() const;
 
-					/**
-					* Get the message commited with the revision
-					* @return returns a string for message. empty string if none.
-					*/
-					std::string getMessage() const;
+				/**
+				* Get the original file(s) the scene original created from
+				* @return returns a vector of string of files
+				*/
+				std::vector<std::string> getOrgFiles() const;
 
-					/**
-					* Get the tag commited with the revision
-					* @return returns a string for tag. empty string if none.
-					*/
-					std::string getTag() const;
-
-					/**
-					* Get the original file(s) the scene original created from
-					* @return returns a vector of string of files
-					*/
-					std::vector<std::string> getOrgFiles() const;
-
-					/**
-					* Get the timestamp as int when this revision was commited
-					* @return returns a timestamp
-					*/
-					int64_t getTimestampInt64() const;
-
-
-
-
-				};
+				/**
+				* Get the timestamp as int when this revision was commited
+				* @return returns a timestamp
+				*/
+				int64_t getTimestampInt64() const;
+			};
 		}// end namespace model
 	} // end namespace core
 } // end namespace repo

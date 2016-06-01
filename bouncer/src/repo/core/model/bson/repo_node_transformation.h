@@ -24,102 +24,95 @@
 namespace repo {
 	namespace core {
 		namespace model {
+			//------------------------------------------------------------------------------
+			//
+			// Fields specific to transformation only
+			//
+			//------------------------------------------------------------------------------
 
-				//------------------------------------------------------------------------------
-				//
-				// Fields specific to transformation only
-				//
-				//------------------------------------------------------------------------------
+#define REPO_NODE_LABEL_MATRIX						"matrix"
+			//------------------------------------------------------------------------------
 
-				#define REPO_NODE_LABEL_MATRIX						"matrix"
-				//------------------------------------------------------------------------------
+			class REPO_API_EXPORT TransformationNode :public RepoNode
+			{
+			public:
 
-				class REPO_API_EXPORT TransformationNode :public RepoNode
-				{
-					public:
+				/**
+				* Default constructor
+				*/
+				TransformationNode();
 
-						/**
-						* Default constructor
-						*/
-						TransformationNode();
+				/**
+				* Construct a TransformationNode from a RepoBSON object
+				* @param RepoBSON object
+				*/
+				TransformationNode(RepoBSON bson);
 
-						/**
-						* Construct a TransformationNode from a RepoBSON object
-						* @param RepoBSON object 
-						*/
-						TransformationNode(RepoBSON bson);
+				/**
+				* Default deconstructor
+				*/
+				~TransformationNode();
 
+				/**
+				* Check if the transformation matrix is the identity matrix
+				* This checks with a small epsilon to counter floating point inaccuracies
+				* @param eps epsilon value for accepting inaccuracies (default 10e-5)
+				* @return returns true if it is the identity matrix
+				*/
+				bool isIdentity(const float &eps = 10e-5) const;
+				/**
+				* Create an Identity matrix
+				* @return returns a 4 by 4 identity matrix
+				*/
+				static std::vector<std::vector<float>> identityMat();
 
-						/**
-						* Default deconstructor
-						*/
-						~TransformationNode();
+				/**
+				* Check if the node is position dependant.
+				* i.e. if parent transformation is merged onto the node,
+				* does the node requre to a transformation applied to it
+				* e.g. meshes and cameras are position dependant, metadata isn't
+				* Default behaviour is false. Position dependant child requires
+				* override this function.
+				* @return true if node is positionDependant.
+				*/
+				virtual bool positionDependant() { return true; }
 
-						/**
-						* Check if the transformation matrix is the identity matrix
-						* This checks with a small epsilon to counter floating point inaccuracies
-						* @param eps epsilon value for accepting inaccuracies (default 10e-5)
-						* @return returns true if it is the identity matrix
-						*/
-						bool isIdentity(const float &eps = 10e-5) const;
-						/**
-						* Create an Identity matrix
-						* @return returns a 4 by 4 identity matrix
-						*/
-						static std::vector<std::vector<float>> identityMat();
+				/**
+				* Check if the node is semantically equal to another
+				* Different node should have a different interpretation of what
+				* this means.
+				* @param other node to compare with
+				* @param returns true if equal, false otherwise
+				*/
+				virtual bool sEqual(const RepoNode &other) const;
 
-						/**
-						* Check if the node is position dependant.
-						* i.e. if parent transformation is merged onto the node,
-						* does the node requre to a transformation applied to it
-						* e.g. meshes and cameras are position dependant, metadata isn't
-						* Default behaviour is false. Position dependant child requires
-						* override this function.
-						* @return true if node is positionDependant.
-						*/
-						virtual bool positionDependant() { return true; }
+				/*
+				*	------------- Delusional modifiers --------------
+				*   These are like "setters" but not. We are actually
+				*   creating a new bson object with the changed field
+				*/
 
-						/**
-						* Check if the node is semantically equal to another
-						* Different node should have a different interpretation of what
-						* this means.
-						* @param other node to compare with
-						* @param returns true if equal, false otherwise
-						*/
-						virtual bool sEqual(const RepoNode &other) const;
+				/**
+				*  Create a new object with transformation applied to the node
+				* default behaviour is do nothing. Children object
+				* needs to override this function to perform their own specific behaviour.
+				* @param matrix transformation matrix to apply.
+				* @return returns a new object with transformation applied.
+				*/
+				virtual RepoNode cloneAndApplyTransformation(
+					const std::vector<float> &matrix) const;
 
+				/**
+				* --------- Convenience functions -----------
+				*/
 
-						/*
-						*	------------- Delusional modifiers --------------
-						*   These are like "setters" but not. We are actually
-						*   creating a new bson object with the changed field
-						*/
-
-						/**
-						*  Create a new object with transformation applied to the node
-						* default behaviour is do nothing. Children object
-						* needs to override this function to perform their own specific behaviour.
-						* @param matrix transformation matrix to apply.
-						* @return returns a new object with transformation applied.
-						*/
-						virtual RepoNode cloneAndApplyTransformation(
-							const std::vector<float> &matrix) const;
-
-						/**
-						* --------- Convenience functions -----------
-						*/
-
-						/**
-						* Get the 4 by 4 transformation matrix
-						* @param true if row major (row is the fast dimension)
-						* @return returns the 4 by 4 matrix as a vector
-						*/
-						std::vector<float> getTransMatrix(const bool &rowMajor = true) const;
-
-
-				};
+				/**
+				* Get the 4 by 4 transformation matrix
+				* @param true if row major (row is the fast dimension)
+				* @return returns the 4 by 4 matrix as a vector
+				*/
+				std::vector<float> getTransMatrix(const bool &rowMajor) const;
+			};
 		} //namespace model
 	} //namespace core
 } //namespace repo
-
-

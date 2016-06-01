@@ -17,8 +17,8 @@
 
 //Success
 #define REPOERR_OK 0
-//invalid arguments to function
-#define REPOERR_INVALID_ARG 1
+//Bouncer failed to start - this never gets returned by bouncer client, but bouncer worker will return this
+#define REPOERR_LAUNCHING_COMPUTE_CLIENT 1
 //authentication to database failed
 #define REPOERR_AUTH_FAILED 2
 //unrecognised command
@@ -27,3 +27,9 @@
 #define REPOERR_UNKNOWN_ERR 4
 //failed to import file to scene
 #define REPOERR_LOAD_SCENE_FAIL 5
+//failed to generate stash graph
+#define REPOERR_STASH_GEN_FAIL 6
+//Scene uploaded, but missing texture
+#define REPOERR_LOAD_SCENE_MISSING_TEXTURE 7
+//invalid arguments to function
+#define REPOERR_INVALID_ARG 8

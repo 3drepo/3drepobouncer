@@ -39,7 +39,6 @@ namespace repo {
 				*/
 				virtual ~AbstractOptimizer();
 
-
 				/**
 				* Apply optimisation on the given repoScene
 				* @param scene takes in a repoScene to optimise
@@ -47,9 +46,6 @@ namespace repo {
 				*/
 				virtual bool apply(repo::core::model::RepoScene *scene) = 0;
 			};
-
-
-
 		}
 	}
 }

@@ -24,6 +24,3 @@
 #include "../../../lib/repo_log.h"
 
 using namespace repo::core::model;
-
-
-

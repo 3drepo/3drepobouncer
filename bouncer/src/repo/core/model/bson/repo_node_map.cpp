@@ -31,7 +31,6 @@ RepoNode()
 MapNode::MapNode(RepoBSON bson) :
 RepoNode(bson)
 {
-
 }
 
 MapNode::~MapNode()
@@ -47,19 +46,17 @@ repo_vector_t MapNode::getCentre() const
 		size_t nVec = centreArr.nFields();
 		int32_t nFields = centreArr.nFields();
 
-			if (nFields >= 3)
-			{
-				centre.x = centreArr.getField("0").Double();
-				centre.y = centreArr.getField("1").Double();
-				centre.z = centreArr.getField("2").Double();
-
-			}
-			else
-			{
-				repoError << "Insufficient amount of elements within centre point! #fields: " << nFields;
-			}
-
-	}	
+		if (nFields >= 3)
+		{
+			centre.x = centreArr.getField("0").Double();
+			centre.y = centreArr.getField("1").Double();
+			centre.z = centreArr.getField("2").Double();
+		}
+		else
+		{
+			repoError << "Insufficient amount of elements within centre point! #fields: " << nFields;
+		}
+	}
 	else
 	{
 		repoError << "Failed to fetch centre point from Map Node!";
@@ -112,7 +109,6 @@ uint32_t MapNode::getWidth() const
 	{
 		width = getField(REPO_NODE_MAP_LABEL_WIDTH).Int();
 	}
-
 
 	return width;
 }
