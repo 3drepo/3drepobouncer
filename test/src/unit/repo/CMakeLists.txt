@@ -6,3 +6,8 @@
 
 add_subdirectory(core)
 add_subdirectory(manipulator)
+set(TEST_SOURCES
+	${TEST_SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_controller.cpp
+	CACHE STRING "TEST_SOURCES" FORCE)
+

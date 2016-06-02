@@ -23,42 +23,9 @@
 #include <cstdlib>
 #include <stdlib.h>
 #include <gtest/gtest.h>
-#include <boost/filesystem.hpp>
 #include <error_codes.h>
 #include <repo/repo_controller.h>
 #include "../unit/repo_test_database_info.h"
-
-const static std::string clientExe = "3drepobouncerClient";
-const static std::string simpleModel = "cube.obj";
-const static std::string badExtensionFile = "cube.exe";
-const static std::string texturedModel = "texturedPlane.dae";
-
-static std::string getClientExePath()
-{
-	char* path = getenv("REPO_CLIENT_PATH");
-	std::string returnPath = clientExe;
-	if (path)
-	{
-		boost::filesystem::path fileDir(path);
-		auto fullPath = fileDir / boost::filesystem::path(clientExe);
-		returnPath = fullPath.string();
-	}
-	return returnPath;
-}
-
-static std::string getDataPath(
-	const std::string &file)
-{
-	char* path = getenv("REPO_MODEL_PATH");
-	std::string returnPath = simpleModel;
-	if (path)
-	{
-		boost::filesystem::path fileDir(path);
-		auto fullPath = fileDir / boost::filesystem::path(file);
-		returnPath = fullPath.string();
-	}
-	return returnPath;
-}
 
 static std::string getSuccessFilePath()
 {
