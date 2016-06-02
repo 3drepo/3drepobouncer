@@ -167,7 +167,8 @@ TEST(RepoClientTest, UploadTest)
 
 #ifndef _WIN32
 	//Linux, use WIFEXITED(status) as for some reason it wasn't returning the right code
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, WEXITSTATUS(system(texUpload.c_str())));
+	int status = WEXITSTATUS(system(texUpload.c_str()));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, status);
 #else
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, system(texUpload.c_str()));
 #endif
