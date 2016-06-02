@@ -303,13 +303,12 @@ int32_t importFileAndCommit(
 
 	repo::manipulator::modelconvertor::ModelImportConfig config(configFile);
 
-	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, &config);
+	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, true, rotate, &config);
 	if (graph)
 	{
 		repoLog("Trying to commit this scene to database as " + database + "." + project);
 		graph->setDatabaseAndProjectName(database, project);
-		if (rotate)
-			graph->reorientateDirectXModel();
+
 		if (owner.empty())
 			controller->commitScene(token, graph);
 		else
