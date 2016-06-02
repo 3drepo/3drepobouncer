@@ -24,13 +24,11 @@
 
 using namespace repo::core::model;
 
-
 /**
 * Construct from mongo builder and mongo bson should give me the same bson
 */
 TEST(RepoBSONElementTest, ConstructorTest)
 {
-
 	RepoBSONElement empty;
 
 	EXPECT_TRUE(empty.eoo());
@@ -43,13 +41,13 @@ TEST(RepoBSONElementTest, ConstructorTest)
 	EXPECT_EQ(mongoBson.getField("BoolField").Bool(), RepoBSONElement(mongoBson.getField("BoolField")).Bool());
 }
 
-TEST(RepoBSONElementTest, ConstructorTest)
-{
-	RepoBSONElement empty;
-
-	EXPECT_EQ(ElementType::UNKNOWN);
-
-	RepoBSONBuilder builder;
-	builder << "string" << "stringField";
-	builder << "string" << "stringField";
-}
+//TEST(RepoBSONElementTest, ConstructorTest2)
+//{
+//	RepoBSONElement empty;
+//
+//	EXPECT_EQ(ElementType::UNKNOWN);
+//
+//	RepoBSONBuilder builder;
+//	builder << "string" << "stringField";
+//	builder << "string" << "stringField";
+//}
