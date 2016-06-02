@@ -123,9 +123,8 @@ static int runProcess(
 {
 	int status = system(cmd.c_str());
 #ifndef _WIN32
-	//Linux, use WIFEXITED(status) as for some reason it wasn't returning the right code
+	//Linux, use WIFEXITED(status) to get the real exit code
 	return WEXITSTATUS(status);
-
 #else
 	return status;
 #endif
@@ -133,6 +132,7 @@ static int runProcess(
 
 TEST(RepoClientTest, UploadTest)
 {
+	//this ensures we can run processes
 	ASSERT_TRUE(system(nullptr));
 
 	//Test failing to connect to database
