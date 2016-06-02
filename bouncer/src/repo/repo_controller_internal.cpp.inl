@@ -226,11 +226,12 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::createToken(
 	return token && token->valid() ? token : nullptr;
 }
 
-void RepoController::_RepoControllerImpl::commitScene(
+bool RepoController::_RepoControllerImpl::commitScene(
 	const RepoController::RepoToken                     *token,
 	repo::core::model::RepoScene        *scene,
 	const std::string                   &owner)
 {
+	bool success = false;
 	if (scene)
 	{
 		if (!(scene->getDatabaseName().empty() || scene->getProjectName().empty()))
@@ -243,7 +244,7 @@ void RepoController::_RepoControllerImpl::commitScene(
 					sceneOwner = "ANONYMOUS USER";
 				}
 				manipulator::RepoManipulator* worker = workerPool.pop();
-				worker->commitScene(token->databaseAd, token->getCredentials(), scene, sceneOwner);
+				success = worker->commitScene(token->databaseAd, token->getCredentials(), scene, sceneOwner);
 				workerPool.push(worker);
 			}
 			else
@@ -260,6 +261,7 @@ void RepoController::_RepoControllerImpl::commitScene(
 	{
 		repoError << "Trying to commit an empty scene into the database";
 	}
+	return success;
 }
 
 uint64_t RepoController::_RepoControllerImpl::countItemsInCollection(

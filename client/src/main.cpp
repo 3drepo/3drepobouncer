@@ -132,6 +132,7 @@ int main(int argc, char* argv[]){
 
 			controller->destroyToken(token);
 			delete controller;
+			repoLog("Process completed, returning with error code: " + std::to_string(errcode));
 			return errcode;
 		}
 		else{

@@ -188,12 +188,14 @@ repo::core::model::RepoScene* RepoManipulator::createMapScene(
 	return scene;
 }
 
-void RepoManipulator::commitScene(
+bool RepoManipulator::commitScene(
 	const std::string                      &databaseAd,
 	const repo::core::model::RepoBSON 	   *cred,
 	repo::core::model::RepoScene           *scene,
 	const std::string                      &owner)
 {
+	repoLog("Manipulator: Committing model to database");
+	bool success = false;
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	std::string projOwner = owner.empty() ? cred->getStringField("user") : owner;
@@ -209,7 +211,6 @@ void RepoManipulator::commitScene(
 
 	if (handler && scene && scene->commit(handler, msg, projOwner))
 	{
-		bool success = false;
 		repoInfo << "Scene successfully committed to the database";
 		if (!(success = (scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size())))
 		{
@@ -251,8 +252,14 @@ void RepoManipulator::commitScene(
 	}
 	else
 	{
+		if (!handler)
+			msg += "Failed to connect to database";
+		if (!scene)
+			msg += "Trying to commit a scene that does not exist!";
 		repoError << "Error committing scene to the database : " << msg;
 	}
+
+	return success;
 }
 
 void RepoManipulator::compareScenes(
