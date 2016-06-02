@@ -50,11 +50,13 @@ const static size_t REPO_GTEST_RAWFILE_FETCH_SIZE = 6050508;
 
 static std::string getClientExePath()
 {
-	std::string path = getenv("REPO_CLIENT_PATH");
+	char* pathChr = getenv("REPO_CLIENT_PATH");
 	std::string returnPath = clientExe;
-	path.erase(std::remove(path.begin(), path.end(), '"'), path.end());
-	if (!path.empty())
+
+	if (pathChr)
 	{
+		std::string path = pathChr;
+		path.erase(std::remove(path.begin(), path.end(), '"'), path.end());
 		boost::filesystem::path fileDir(path);
 		auto fullPath = fileDir / boost::filesystem::path(clientExe);
 		returnPath = fullPath.string();
@@ -65,11 +67,13 @@ static std::string getClientExePath()
 static std::string getDataPath(
 	const std::string &file)
 {
-	std::string  path = getenv("REPO_MODEL_PATH");
+	char* pathChr = getenv("REPO_MODEL_PATH");
 	std::string returnPath = simpleModel;
-	path.erase(std::remove(path.begin(), path.end(), '"'), path.end());
-	if (!path.empty())
+
+	if (pathChr)
 	{
+		std::string path = pathChr;
+		path.erase(std::remove(path.begin(), path.end(), '"'), path.end());
 		boost::filesystem::path fileDir(path);
 		auto fullPath = fileDir / boost::filesystem::path(file);
 		returnPath = fullPath.string();
