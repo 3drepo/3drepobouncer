@@ -118,58 +118,49 @@ static std::string produceUploadArgs(
 		database, project, filePath);
 }
 
+static int runProcess(
+	const std::string &cmd)
+{
+	int status = system(cmd.c_str());
+#ifndef _WIN32
+	//Linux, use WIFEXITED(status) as for some reason it wasn't returning the right code
+	return WEXITSTATUS(status);
+
+#else
+	return status;
+#endif
+}
+
 TEST(RepoClientTest, UploadTest)
 {
 	ASSERT_TRUE(system(nullptr));
 
 	//Test failing to connect to database
 	std::string failToConnect = produceUploadArgs("invalidAdd", 12345, "stUpload", "failEg", getSuccessFilePath());
-	ASSERT_FALSE(failToConnect.empty());
-
-	int exeFailDBConnRes = system(failToConnect.c_str());
-	EXPECT_EQ((int)REPOERR_AUTH_FAILED, exeFailDBConnRes);
+	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToConnect));
 
 	//Test Bad authentication
 	std::string failToAuth = produceUploadArgs("blah", "blah", "stUpload", "failEg", getSuccessFilePath());
-	ASSERT_FALSE(failToAuth.empty());
-
-	int exeFailDBAuthRes = system(failToAuth.c_str());
-	EXPECT_EQ((int)REPOERR_AUTH_FAILED, exeFailDBAuthRes);
+	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToAuth));
 
 	//Test Bad FilePath
 	std::string badFilePath = produceUploadArgs("stUpload", "failEg", "nonExistentFile.obj");
-	ASSERT_FALSE(badFilePath.empty());
-
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, system(badFilePath.c_str()));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(badFilePath));
 
 	//Test Bad FilePath
 	std::string badExt = produceUploadArgs("stUpload", "failEg", getDataPath(badExtensionFile));
-	ASSERT_FALSE(badExt.empty());
-
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, system(badExt.c_str()));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(badExt));
 
 	//Insufficient arguments
 	std::string lackArg = getClientExePath() + " " + REPO_GTEST_DBADDRESS + " " + std::to_string(REPO_GTEST_DBPORT) + " "
 		+ REPO_GTEST_DBUSER + " " + REPO_GTEST_DBPW + " import " + getSuccessFilePath();
-	ASSERT_FALSE(lackArg.empty());
-
-	EXPECT_EQ((int)REPOERR_INVALID_ARG, system(lackArg.c_str()));
+	EXPECT_EQ((int)REPOERR_INVALID_ARG, runProcess(lackArg));
 
 	//Test Good Upload
 	std::string goodUpload = produceUploadArgs("stUpload", "cube", getSuccessFilePath());
-	ASSERT_FALSE(goodUpload.empty());
-
-	EXPECT_EQ((int)REPOERR_OK, system(goodUpload.c_str()));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(goodUpload));
 
 	//Test Textured Upload
 	std::string texUpload = produceUploadArgs("stUpload", "textured", getDataPath(texturedModel));
-	ASSERT_FALSE(texUpload.empty());
-
-#ifndef _WIN32
-	//Linux, use WIFEXITED(status) as for some reason it wasn't returning the right code
-	int status = WEXITSTATUS(system(texUpload.c_str()));
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, status);
-#else
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, system(texUpload.c_str()));
-#endif
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(texUpload));
 }
