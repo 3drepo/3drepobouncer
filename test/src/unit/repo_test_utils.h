@@ -18,11 +18,37 @@
 #pragma once
 #include <repo/core/model/repo_node_utils.h>
 
+static bool projectExists(
+	const std::string &db,
+	const std::string &project)
+{
+	bool res = false;
+	repo::RepoController *controller = new repo::RepoController();
+	std::string errMsg;
+	repo::RepoController::RepoToken *token =
+		controller->authenticateToAdminDatabaseMongo(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+	if (token)
+	{
+		std::list<std::string> dbList;
+		dbList.push_back(db);
+		auto dbMap = controller->getDatabasesWithProjects(token, dbList);
+		auto dbMapIt = dbMap.find(db);
+		if (dbMapIt != dbMap.end())
+		{
+			std::list<std::string> projects = dbMapIt->second;
+			res = std::find(projects.begin(), projects.end(), project) != projects.end();
+		}
+	}
+	controller->disconnectFromDatabase(token);
+	delete controller;
+	return res;
+}
+
 static bool compareVectors(const repo_vector2d_t &v1, const repo_vector2d_t &v2)
 {
 	return v1.x == v2.x && v1.y == v2.y;
 }
-
 
 static bool compareVectors(const repo_vector_t &v1, const repo_vector_t &v2)
 {
@@ -77,6 +103,5 @@ static bool compareMaterialStructs(const repo_material_t &m1, const repo_materia
 		&& m1.shininess == m2.shininess
 		&& m1.shininessStrength == m2.shininessStrength
 		&& m1.isWireframe == m2.isWireframe
-		&& m1.isTwoSided == m2.isTwoSided;	
+		&& m1.isTwoSided == m2.isTwoSided;
 }
-

@@ -90,12 +90,12 @@ bool RepoController::testConnection(const RepoController::RepoToken *token)
 	return impl->testConnection(token);
 }
 
-void RepoController::commitScene(
+bool RepoController::commitScene(
 	const RepoController::RepoToken    *token,
 	repo::core::model::RepoScene        *scene,
 	const std::string                   &owner)
 {
-	impl->commitScene(token, scene, owner);
+	return impl->commitScene(token, scene, owner);
 }
 
 uint64_t RepoController::countItemsInCollection(

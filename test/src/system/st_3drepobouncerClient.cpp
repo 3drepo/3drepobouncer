@@ -26,6 +26,7 @@
 #include <error_codes.h>
 #include <repo/repo_controller.h>
 #include "../unit/repo_test_database_info.h"
+#include "../unit/repo_test_utils.h"
 
 static std::string getSuccessFilePath()
 {
@@ -96,33 +97,6 @@ static int runProcess(
 #else
 	return status;
 #endif
-}
-
-bool projectExists(
-	const std::string &db,
-	const std::string &project)
-{
-	bool res = false;
-	repo::RepoController *controller = new repo::RepoController();
-	std::string errMsg;
-	repo::RepoController::RepoToken *token =
-		controller->authenticateToAdminDatabaseMongo(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
-		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
-	if (token)
-	{
-		std::list<std::string> dbList;
-		dbList.push_back(db);
-		auto dbMap = controller->getDatabasesWithProjects(token, dbList);
-		auto dbMapIt = dbMap.find(db);
-		if (dbMapIt != dbMap.end())
-		{
-			std::list<std::string> projects = dbMapIt->second;
-			res = std::find(projects.begin(), projects.end(), project) != projects.end();
-		}
-	}
-	controller->disconnectFromDatabase(token);
-	delete controller;
-	return res;
 }
 
 TEST(RepoClientTest, UploadTest)

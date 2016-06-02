@@ -19,6 +19,7 @@
 #include <gtest/gtest.h>
 #include <repo/repo_controller.h>
 #include "../repo_test_database_info.h"
+#include "../repo_test_utils.h"
 
 using namespace repo;
 
@@ -34,11 +35,49 @@ static RepoController::RepoToken* getToken()
 {
 	auto controller = getController();
 	std::string errMsg;
-	auto token = controller->authenticateToAdminDatabaseMongo(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+	return controller->authenticateToAdminDatabaseMongo(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
 		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
 }
 
 TEST(RepoControllerTest, CommitScene){
+	auto controller = getController();
+	auto token = getToken();
+	//Try to commit a scene without setting db/project name
+	auto scene = controller->loadSceneFromFile(getDataPath(simpleModel));
+	EXPECT_FALSE(controller->commitScene(token, scene));
+	EXPECT_FALSE(scene->isRevisioned());
+
+	//Trying to commit a scene with empty db and project name should also fail
+	scene->setDatabaseAndProjectName("", "");
+	EXPECT_FALSE(controller->commitScene(token, scene));
+	EXPECT_FALSE(scene->isRevisioned());
+
+	scene->setDatabaseAndProjectName("balh", "");
+	EXPECT_FALSE(controller->commitScene(token, scene));
+	EXPECT_FALSE(scene->isRevisioned());
+
+	scene->setDatabaseAndProjectName("", "blah");
+	EXPECT_FALSE(controller->commitScene(token, scene));
+	EXPECT_FALSE(scene->isRevisioned());
+
+	//Setting the db name and project name should allow commit successfully
+	scene->setDatabaseAndProjectName("commitSceneTest", "commitCube");
+	EXPECT_TRUE(controller->commitScene(getToken(), scene));
+	EXPECT_TRUE(scene->isRevisioned());
+	EXPECT_TRUE(projectExists("commitSceneTest", "commitCube"));
+	EXPECT_EQ(scene->getOwner(), REPO_GTEST_DBUSER);
+
+	auto scene2 = controller->loadSceneFromFile(getDataPath(simpleModel));
+	std::string owner = "dog";
+	scene2->setDatabaseAndProjectName("commitSceneTest", "commitCube2");
+	EXPECT_TRUE(controller->commitScene(getToken(), scene2, owner));
+	EXPECT_TRUE(scene2->isRevisioned());
+	EXPECT_TRUE(projectExists("commitSceneTest", "commitCube2"));
+	EXPECT_EQ(scene2->getOwner(), owner);
+
+	//null pointer checks
+	EXPECT_FALSE(controller->commitScene(token, nullptr));
+	EXPECT_FALSE(controller->commitScene(nullptr, scene));
 }
 
 TEST(RepoControllerTest, LoadSceneFromFile){
@@ -52,6 +91,7 @@ TEST(RepoControllerTest, LoadSceneFromFile){
 	ASSERT_TRUE(scene->getRoot(defaultG));
 	ASSERT_TRUE(scene->getRoot(optG));
 	EXPECT_FALSE(scene->isMissingTexture());
+	EXPECT_FALSE(scene->isRevisioned());
 	EXPECT_TRUE(dynamic_cast<core::model::TransformationNode*>(scene->getRoot(defaultG))->isIdentity());
 
 	//Import the scene with no transformation reduction

@@ -321,6 +321,20 @@ namespace repo{
 						return revision;
 				}
 
+				/**
+				* If the scene is revisioned, get the owner of the model
+				* if the scene is not revisioned, this function will return
+				* an empty string
+				* @return returns the owner, or empty string.
+				*/
+				std::string getOwner() const
+				{
+					if (revNode)
+						return revNode->getAuthor();
+					else
+						return "";
+				}
+
 				static std::vector<std::string> getProjectExtensions()
 				{
 					return collectionsInProject;
