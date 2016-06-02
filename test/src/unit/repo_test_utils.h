@@ -17,6 +17,7 @@
 
 #pragma once
 #include <repo/core/model/repo_node_utils.h>
+#include <repo/repo_controller.h>
 
 static bool projectExists(
 	const std::string &db,
