@@ -165,5 +165,10 @@ TEST(RepoClientTest, UploadTest)
 	std::string texUpload = produceUploadArgs("stUpload", "textured", getDataPath(texturedModel));
 	ASSERT_FALSE(texUpload.empty());
 
+#ifndef _WIN32
+	//Linux, use WIFEXITED(status) as for some reason it wasn't returning the right code
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, WEXITSTATUS(system(texUpload.c_str())));
+#else
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, system(texUpload.c_str()));
+#endif
 }
