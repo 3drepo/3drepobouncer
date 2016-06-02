@@ -25,6 +25,7 @@
 #include <gtest/gtest.h>
 #include <boost/filesystem.hpp>
 #include <error_codes.h>
+#include <repo/repo_controller.h>
 #include "../unit/repo_test_database_info.h"
 
 const static std::string clientExe = "3drepobouncerClient";
@@ -130,26 +131,58 @@ static int runProcess(
 #endif
 }
 
+bool projectExists(
+	const std::string &db,
+	const std::string &project)
+{
+	bool res = false;
+	repo::RepoController *controller = new repo::RepoController();
+	std::string errMsg;
+	repo::RepoController::RepoToken *token =
+		controller->authenticateToAdminDatabaseMongo(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+	if (token)
+	{
+		std::list<std::string> dbList;
+		dbList.push_back(db);
+		auto dbMap = controller->getDatabasesWithProjects(token, dbList);
+		auto dbMapIt = dbMap.find(db);
+		if (dbMapIt != dbMap.end())
+		{
+			std::list<std::string> projects = dbMapIt->second;
+			res = std::find(projects.begin(), projects.end(), project) != projects.end();
+		}
+	}
+	controller->disconnectFromDatabase(token);
+	delete controller;
+	return res;
+}
+
 TEST(RepoClientTest, UploadTest)
 {
 	//this ensures we can run processes
 	ASSERT_TRUE(system(nullptr));
 
 	//Test failing to connect to database
-	std::string failToConnect = produceUploadArgs("invalidAdd", 12345, "stUpload", "failEg", getSuccessFilePath());
+	std::string db = "stUpload";
+	std::string failToConnect = produceUploadArgs("invalidAdd", 12345, db, "failConn", getSuccessFilePath());
 	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToConnect));
+	EXPECT_FALSE(projectExists(db, "failConn"));
 
 	//Test Bad authentication
-	std::string failToAuth = produceUploadArgs("blah", "blah", "stUpload", "failEg", getSuccessFilePath());
+	std::string failToAuth = produceUploadArgs("blah", "blah", db, "failAuth", getSuccessFilePath());
 	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToAuth));
+	EXPECT_FALSE(projectExists(db, "failAuth"));
 
 	//Test Bad FilePath
-	std::string badFilePath = produceUploadArgs("stUpload", "failEg", "nonExistentFile.obj");
+	std::string badFilePath = produceUploadArgs(db, "failPath", "nonExistentFile.obj");
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(badFilePath));
+	EXPECT_FALSE(projectExists(db, "failPath"));
 
-	//Test Bad FilePath
-	std::string badExt = produceUploadArgs("stUpload", "failEg", getDataPath(badExtensionFile));
+	//Test Bad extension
+	std::string badExt = produceUploadArgs(db, "failExt", getDataPath(badExtensionFile));
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(badExt));
+	EXPECT_FALSE(projectExists(db, "failExt"));
 
 	//Insufficient arguments
 	std::string lackArg = getClientExePath() + " " + REPO_GTEST_DBADDRESS + " " + std::to_string(REPO_GTEST_DBPORT) + " "
@@ -157,10 +190,12 @@ TEST(RepoClientTest, UploadTest)
 	EXPECT_EQ((int)REPOERR_INVALID_ARG, runProcess(lackArg));
 
 	//Test Good Upload
-	std::string goodUpload = produceUploadArgs("stUpload", "cube", getSuccessFilePath());
+	std::string goodUpload = produceUploadArgs(db, "cube", getSuccessFilePath());
 	EXPECT_EQ((int)REPOERR_OK, runProcess(goodUpload));
+	EXPECT_TRUE(projectExists(db, "cube"));
 
 	//Test Textured Upload
-	std::string texUpload = produceUploadArgs("stUpload", "textured", getDataPath(texturedModel));
+	std::string texUpload = produceUploadArgs(db, "textured", getDataPath(texturedModel));
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(texUpload));
+	EXPECT_TRUE(projectExists(db, "textured"));
 }
