@@ -488,7 +488,7 @@ bool GLTFModelExport::constructScene(
 	repo::lib::PropertyTree &tree)
 {
 	repo::core::model::RepoNode* root = scene->getRoot(gType);
-
+	bool success = false;
 	if (scene && root)
 	{
 		std::string sceneName = "defaultScene";
@@ -497,30 +497,30 @@ bool GLTFModelExport::constructScene(
 		tree.addToTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_NODES, treeNodes);
 
 		auto splitMeshes = populateWithMeshes(tree);
-		populateWithNodes(tree, splitMeshes);
-		populateWithMaterials(tree);
-		populateWithTextures(tree);
-		populateWithCameras(tree);
+		if (success = splitMeshes.size())
+		{
+			populateWithNodes(tree, splitMeshes);
+			populateWithMaterials(tree);
+			populateWithTextures(tree);
+			populateWithCameras(tree);
 
-		repo::lib::PropertyTree spatialPartTree = generateSpatialrepo_partitioning_tree_t();
+			repo::lib::PropertyTree spatialPartTree = generateSpatialPartitioning();
 
 #ifdef DEBUG
-		std::string jsonFilePrefix = "/";
+			std::string jsonFilePrefix = "/";
 #else
-		std::string jsonFilePrefix = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/";
+			std::string jsonFilePrefix = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/";
 #endif
-		std::string jsonFileName = jsonFilePrefix + "revision/" + UUIDtoString(scene->getRevisionID()) + "/partitioning.json";
-		tree.addToTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_EXTRA + ".partitioning." + GLTF_LABEL_URI, "/api" + jsonFileName);
+			std::string jsonFileName = jsonFilePrefix + "revision/" + UUIDtoString(scene->getRevisionID()) + "/partitioning.json";
+			tree.addToTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_EXTRA + ".partitioning." + GLTF_LABEL_URI, "/api" + jsonFileName);
 
-		jsonTrees[jsonFileName] = spatialPartTree;
+			jsonTrees[jsonFileName] = spatialPartTree;
+		}
 	}
-	else
-	{
-		return false;
-	}
+	return success;
 }
 
-repo::lib::PropertyTree GLTFModelExport::generateSpatialrepo_partitioning_tree_t()
+repo::lib::PropertyTree GLTFModelExport::generateSpatialPartitioning()
 {
 	//TODO: We could take in a spatial partitioner in the constructor to allow flexibility
 	repo::manipulator::modelutility::RDTreeSpatialPartitioner rdTreePartitioner(scene);
@@ -529,6 +529,7 @@ repo::lib::PropertyTree GLTFModelExport::generateSpatialrepo_partitioning_tree_t
 
 bool GLTFModelExport::generateTreeRepresentation()
 {
+	bool success = false;
 	if (!scene)
 	{
 		//Sanity check, shouldn't be calling this function with nullptr anyway
@@ -543,13 +544,13 @@ bool GLTFModelExport::generateTreeRepresentation()
 	tree.addToTree(GLTF_LABEL_ASSET + "." + GLTF_LABEL_VERSION, GLTF_VERSION);
 	//FIXME: SHADER- Premultiplied alpha?
 
-	constructScene(tree);
+	success = constructScene(tree);
 	writeBuffers(tree);
 
 	std::string fname = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/revision/" + UUIDtoString(scene->getRevisionID()) + ".gltf";
 	trees[fname] = tree;
 
-	return true;
+	return success;
 }
 
 repo_web_buffers_t GLTFModelExport::getAllFilesExportedAsBuffer() const
@@ -616,28 +617,51 @@ std::unordered_map<std::string, std::vector<uint8_t>> GLTFModelExport::getGLTFFi
 * Once we stop support for SRC, the faces should be remapped during the
 * meshsplit functionality within MeshNode.
 */
-void GLTFModelExport::reIndexFaces(
+bool GLTFModelExport::reIndexFaces(
 	const std::vector<std::vector<repo_mesh_mapping_t>> &matMap,
 	std::vector<uint16_t>                               &faces)
 {
 	size_t verticesOffset = 0;
+	size_t verticesLastIndex = 0;
+	size_t facesLastIndex = 0;
 	for (const auto &subMeshMap : matMap)
 	{
 		//Faces given are already offset by subMeshes. we need to know the start of the vertices
 		verticesOffset = subMeshMap.front().vertFrom;
 		for (const auto &mapping : subMeshMap)
 		{
-			auto offset = mapping.vertFrom - verticesOffset;
+			if (mapping.vertFrom > verticesLastIndex)
+			{
+				repoError << "Backtracking on vertices detected on sub mesh " << mapping.mesh_id << ". This is not expected";
+				return false;
+			}
 
+			if (mapping.triFrom > facesLastIndex)
+			{
+				repoError << "Backtracking on vertices detected on sub mesh " << mapping.mesh_id << ". This is not expected";
+				return false;
+			}
+
+			auto offset = mapping.vertFrom - verticesOffset;
 			auto maximum = mapping.vertTo - mapping.vertFrom;
+
+			if (offset < 0 || maximum < 0)
+			{
+				repoError << "Negative offset within " << mapping.mesh_id << " - This is not expected.";
+				return false;
+			}
 			//This will totally fall apart if the faces are not triangulated
 			//But at this stage all faces should be triangulated.
 			for (size_t i = mapping.triFrom * 3; i < mapping.triTo * 3; ++i)
 			{
 				faces[i] -= offset;
 			}
+
+			verticesLastIndex = mapping.vertTo;
+			facesLastIndex = mapping.triTo;
 		}
 	}
+	return true;
 }
 
 void GLTFModelExport::processNodeChildren(
@@ -819,8 +843,15 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			std::string bufferFileName = UUIDtoString(mesh->getUniqueID());
 			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter =
 				new repo::manipulator::modelutility::MeshMapReorganiser(node, GLTF_MAX_VERTEX_LIMIT);
-			repoTrace << "Splitting Complete";
+
 			repo::core::model::MeshNode splitMesh = reSplitter->getRemappedMesh();
+			if (splitMesh.isEmpty())
+			{
+				repoError << "Failed to generate remappings for mesh: " << mesh->getUniqueID();
+				splitSizes.clear();
+				delete reSplitter;
+				return splitSizes;
+			}
 			std::vector<uint16_t> newFaces = reSplitter->getSerialisedFaces();
 			std::vector<std::vector<float>> idMapBuf = reSplitter->getIDMapArrays();
 			std::vector<std::vector<repo_mesh_mapping_t>> matMap = reSplitter->getMappingsPerSubMesh();
@@ -830,6 +861,13 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			auto normals = splitMesh.getNormals();
 			auto vertices = splitMesh.getVertices();
 
+			if (!vertices.size())
+			{
+				repoError << "Mesh " << mesh->getUniqueID() << " has no vertices after remapping!";
+				splitSizes.clear();
+				return splitSizes;
+			}
+
 			if (!newFaces.size())
 			{
 				//If there is no faces, just ignore this.
@@ -837,8 +875,12 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 				continue;
 			}
 			repoTrace << "Reindexing Faces...";
-			//reindex the face buffer
-			reIndexFaces(matMap, newFaces);
+			//reindex the face buffer also check validity of the indices
+			if (!reIndexFaces(matMap, newFaces))
+			{
+				splitSizes.clear();
+				return splitSizes;
+			}
 			repoTrace << "Reordering Faces...";
 			auto lods = reorderFaces(newFaces, vertices, matMap);
 #if defined(DEBUG) && defined(LODLIMIT)

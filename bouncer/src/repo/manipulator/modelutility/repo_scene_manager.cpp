@@ -231,58 +231,61 @@ bool SceneManager::generateWebViewBuffers(
 			return false;
 		}
 
-		if (toCommit)
+		if (success = resultBuffers.geoFiles.size())
 		{
-			//Upload the files
-			for (const auto &bufferPair : resultBuffers.geoFiles)
+			if (toCommit)
 			{
-				std::string errMsg;
-				if (success &= handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + geoStashExt, bufferPair.first, bufferPair.second,
-					errMsg))
+				//Upload the files
+				for (const auto &bufferPair : resultBuffers.geoFiles)
 				{
-					repoInfo << "File (" << bufferPair.first << ") added successfully.";
+					std::string errMsg;
+					if (success &= handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + geoStashExt, bufferPair.first, bufferPair.second,
+						errMsg))
+					{
+						repoInfo << "File (" << bufferPair.first << ") added successfully.";
+					}
+					else
+					{
+						repoError << "Failed to add file  (" << bufferPair.first << "): " << errMsg;
+					}
 				}
-				else
+				for (const auto &bufferPair : resultBuffers.x3dFiles)
 				{
-					repoError << "Failed to add file  (" << bufferPair.first << "): " << errMsg;
+					std::string databaseName = scene->getDatabaseName();
+					std::string projectName = scene->getProjectName();
+					std::string errMsg;
+					std::string fileName = bufferPair.first;
+					if (success &= handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + x3dStashExt, fileName, bufferPair.second,
+						errMsg))
+					{
+						repoInfo << "File (" << fileName << ") added successfully.";
+					}
+					else
+					{
+						repoError << "Failed to add file  (" << fileName << "): " << errMsg;
+					}
 				}
-			}
-			for (const auto &bufferPair : resultBuffers.x3dFiles)
-			{
-				std::string databaseName = scene->getDatabaseName();
-				std::string projectName = scene->getProjectName();
-				std::string errMsg;
-				std::string fileName = bufferPair.first;
-				if (success &= handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + x3dStashExt, fileName, bufferPair.second,
-					errMsg))
-				{
-					repoInfo << "File (" << fileName << ") added successfully.";
-				}
-				else
-				{
-					repoError << "Failed to add file  (" << fileName << "): " << errMsg;
-				}
-			}
 
-			for (const auto &bufferPair : resultBuffers.jsonFiles)
-			{
-				std::string databaseName = scene->getDatabaseName();
-				std::string projectName = scene->getProjectName();
-				std::string errMsg;
-				std::string fileName = bufferPair.first;
-				if (success &= handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + jsonStashExt, fileName, bufferPair.second,
-					errMsg))
+				for (const auto &bufferPair : resultBuffers.jsonFiles)
 				{
-					repoInfo << "File (" << fileName << ") added successfully.";
+					std::string databaseName = scene->getDatabaseName();
+					std::string projectName = scene->getProjectName();
+					std::string errMsg;
+					std::string fileName = bufferPair.first;
+					if (success &= handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + jsonStashExt, fileName, bufferPair.second,
+						errMsg))
+					{
+						repoInfo << "File (" << fileName << ") added successfully.";
+					}
+					else
+					{
+						repoError << "Failed to add file  (" << fileName << "): " << errMsg;
+					}
 				}
-				else
-				{
-					repoError << "Failed to add file  (" << fileName << "): " << errMsg;
-				}
-			}
 
-			if (success)
-				scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
+				if (success)
+					scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
+			}
 		}
 	}
 	else
