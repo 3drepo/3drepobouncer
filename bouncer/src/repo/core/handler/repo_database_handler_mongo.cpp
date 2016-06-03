@@ -417,7 +417,6 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 
 		workerPool->returnWorker(worker);
 	}
-	repoInfo << "data size: " << data.size();
 	return data;
 }
 
