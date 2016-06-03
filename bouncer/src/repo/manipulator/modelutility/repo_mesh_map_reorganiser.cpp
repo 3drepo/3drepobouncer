@@ -125,7 +125,59 @@ repo::core::model::MeshNode MeshMapReorganiser::getRemappedMesh() const
 	builder.append(REPO_NODE_LABEL_SHARED_ID, mesh->getSharedID());
 	auto changes = builder.obj();
 	newMesh = newMesh.cloneAndAddFields(&changes, false);
-	return newMesh.cloneAndUpdateMeshMapping(reMappedMappings, true);
+	auto returnMesh = newMesh.cloneAndUpdateMeshMapping(reMappedMappings, true);
+
+	//sanity check
+	/*auto mapping = returnMesh.getMeshMapping();
+	auto faces = returnMesh.getFaces();
+	auto vertices = returnMesh.getVertices();
+	repoTrace << "Checking mesh(" << returnMesh.getUniqueID() << ")'s health...";
+
+	int iCount = 0;
+	int lastMapS = 0, lastMapE = 0;
+	for (const auto &map : mapping)
+	{
+	auto sMeshMap = matMap[iCount];
+
+	for (const auto &smMap : sMeshMap)
+	{
+	bool broken = false;
+	if (smMap.triFrom < lastMapE)
+	{
+	repoError << "BackTracking faces!!!! last tri was " << lastMapE << " current face is " << smMap.triFrom;
+	exit(0);
+	}
+	for (int iFace = smMap.triFrom; iFace < smMap.triTo; ++iFace)
+	{
+	auto face = faces[iFace];
+	for (const auto &fIndex : face)
+	{
+	auto shiftedIndex = fIndex + map.vertFrom;
+	if (broken = shiftedIndex < smMap.vertFrom || shiftedIndex > smMap.vertTo - 1)
+	{
+	repoError << "[" << iCount << "][ " << iFace << "(" << (iFace - smMap.triFrom) << ")]("
+	<< map.mesh_id
+	<< ", "
+	<< smMap.mesh_id
+	<< ") Face index is out of range: "
+	<< "index - " << shiftedIndex << "(" << fIndex << ")"
+	<< " face range is : " << smMap.triFrom << "- " << smMap.triTo
+	<< " allowed range is : " << smMap.vertFrom << " - " << smMap.vertTo;
+
+	exit(0);
+	break;
+	}
+	}
+	if (broken) break;
+	}
+	lastMapS = smMap.triFrom;
+	lastMapE = smMap.triTo;
+	}
+	++iCount;
+	}
+	repoTrace << "done.";*/
+
+	return returnMesh;
 }
 
 void MeshMapReorganiser::performSplitting()
@@ -330,9 +382,11 @@ void MeshMapReorganiser::splitLargeMesh(
 				totalVertexCount += splitMeshVertexCount;
 				totalFaceCount += splitMeshFaceCount;
 				startedLargeMeshSplit = true;
+				auto lastMap = newMappings.back();
 				newMappings.resize(newMappings.size() + 1);
-				startSubMesh(newMappings.back(), mesh->getUniqueID(), currentSubMesh.material_id, totalVertexCount, totalFaceCount);
-				newMatMapEntry(currentSubMesh, totalVertexCount, totalFaceCount);
+
+				startSubMesh(newMappings.back(), mesh->getUniqueID(), currentSubMesh.material_id, lastMap.vertTo, lastMap.triTo);
+				newMatMapEntry(currentSubMesh, lastMap.vertTo, lastMap.triTo);
 				splitMeshVertexCount = 0;
 				splitMeshFaceCount = 0;
 				reIndexMap.clear();
@@ -367,9 +421,16 @@ void MeshMapReorganiser::splitLargeMesh(
 					updateBoundingBoxes(bboxMin, bboxMax, vertex, vertex);
 					splitMeshVertexCount++;
 				}
+				if (splitMeshVertexCount < reIndexMap[indexValue])
+				{
+					repoError << "SplitMesh Vertex count(" << splitMeshVertexCount << ") "
+						<< "is smaller than remapped index value(" << reIndexMap[indexValue] << ")! potentially out of range!";
+				}
+
 				newFace.push_back(reIndexMap[indexValue]);
 				serialisedFaces.push_back(reIndexMap[indexValue]);
 			}//for (const auto &indexValue : currentFace)
+
 			newFaces.push_back(newFace);
 		}//else nSides != 3
 		splitMeshFaceCount++;
@@ -396,19 +457,19 @@ void MeshMapReorganiser::splitLargeMesh(
 
 	if (leftOverVertices)
 	{
-		auto startingPos = newVertices.begin() + newMappings.back().vertFrom + totalVertexCount;
+		auto startingPos = newVertices.begin() + newMappings.back().vertFrom + splitMeshVertexCount;
 
 		//Chop out the unwanted vertices
 		newVertices.erase(startingPos, startingPos + leftOverVertices);
 		if (hasNormal)
 		{
-			auto startingPosN = newNormals.begin() + newMappings.back().vertFrom + totalVertexCount;
+			auto startingPosN = newNormals.begin() + newMappings.back().vertFrom + splitMeshVertexCount;
 			newNormals.erase(startingPosN, startingPosN + leftOverVertices);
 		}
 
 		if (hasColor)
 		{
-			auto startingPosN = newColors.begin() + newMappings.back().vertFrom + totalVertexCount;
+			auto startingPosN = newColors.begin() + newMappings.back().vertFrom + splitMeshVertexCount;
 			newColors.erase(startingPosN, startingPosN + leftOverVertices);
 		}
 
@@ -416,7 +477,7 @@ void MeshMapReorganiser::splitLargeMesh(
 		{
 			for (int iUV = 0; iUV < oldUVs.size(); ++iUV)
 			{
-				auto startingPosN = newUVs[iUV].begin() + newMappings.back().vertFrom + totalVertexCount;
+				auto startingPosN = newUVs[iUV].begin() + newMappings.back().vertFrom + splitMeshVertexCount;
 				newUVs[iUV].erase(startingPosN, startingPosN + leftOverVertices);
 			}
 		}

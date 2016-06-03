@@ -312,7 +312,8 @@ bool SRCModelExport::generateTreeRepresentation(
 				ext += "?tex_uuid=" + textureID;
 			}
 
-			addMeshToExport(splittedMesh, index++, facebuf, idMapBuf, ext);
+			addMeshToExport(splittedMesh, index, facebuf, idMapBuf, ext);
+			++index;
 			if (sepX3d)
 			{
 				success &= generateJSONMapping(mesh, scene, splitMapping);
