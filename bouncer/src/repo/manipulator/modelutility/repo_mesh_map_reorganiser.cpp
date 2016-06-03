@@ -251,11 +251,9 @@ void MeshMapReorganiser::performSplitting()
 		if (currentMeshNumVertices > maxVertices) {
 			size_t retTotalVCount, retTotalFCount;
 			newMatMapEntry(currentSubMesh, totalVertexCount, totalFaceCount);
-			splitLargeMesh(currentSubMesh, newMappings, idMapIdx, orgFaceIdx, retTotalVCount, retTotalFCount);
+			splitLargeMesh(currentSubMesh, newMappings, idMapIdx, orgFaceIdx, totalVertexCount, totalFaceCount);
 
 			++idMapIdx;
-			totalVertexCount += retTotalVCount;
-			totalFaceCount += retTotalFCount;
 
 			finishedSubMesh = true;
 		}
@@ -348,8 +346,7 @@ void MeshMapReorganiser::splitLargeMesh(
 	std::vector<float> bboxMin;
 	std::vector<float> bboxMax;
 
-	totalVertexCount = 0;
-	totalFaceCount = 0;
+	size_t totalLargeMeshVertexCount = 0;
 
 	// Perform quick and dirty splitting algorithm
 	// Loop over all faces in the giant mesh
@@ -381,12 +378,12 @@ void MeshMapReorganiser::splitLargeMesh(
 
 				totalVertexCount += splitMeshVertexCount;
 				totalFaceCount += splitMeshFaceCount;
+				totalLargeMeshVertexCount += splitMeshVertexCount;
 				startedLargeMeshSplit = true;
-				auto lastMap = newMappings.back();
 				newMappings.resize(newMappings.size() + 1);
 
-				startSubMesh(newMappings.back(), mesh->getUniqueID(), currentSubMesh.material_id, lastMap.vertTo, lastMap.triTo);
-				newMatMapEntry(currentSubMesh, lastMap.vertTo, lastMap.triTo);
+				startSubMesh(newMappings.back(), mesh->getUniqueID(), currentSubMesh.material_id, totalVertexCount, totalFaceCount);
+				newMatMapEntry(currentSubMesh, totalVertexCount, totalFaceCount);
 				splitMeshVertexCount = 0;
 				splitMeshFaceCount = 0;
 				reIndexMap.clear();
@@ -451,9 +448,10 @@ void MeshMapReorganiser::splitLargeMesh(
 	updateIDMapArray(splitMeshVertexCount, idMapIdx);
 
 	totalVertexCount += splitMeshVertexCount;
+	totalLargeMeshVertexCount += splitMeshVertexCount;
 	totalFaceCount += splitMeshFaceCount;
 
-	auto leftOverVertices = currentMeshNumVertices - totalVertexCount;
+	auto leftOverVertices = currentMeshNumVertices - totalLargeMeshVertexCount;
 
 	if (leftOverVertices)
 	{
