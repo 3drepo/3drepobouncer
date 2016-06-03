@@ -29,7 +29,8 @@ MeshMapReorganiser::MeshMapReorganiser(
 	oldVertices(mesh->getVertices()),
 	oldNormals(mesh->getNormals()),
 	oldUVs(mesh->getUVChannelsSeparated()),
-	oldColors(mesh->getColors())
+	oldColors(mesh->getColors()),
+	reMapSuccess(false)
 {
 	if (mesh && mesh->getMeshMapping().size())
 	{
@@ -38,7 +39,21 @@ MeshMapReorganiser::MeshMapReorganiser(
 		newColors = oldColors;
 		newUVs = oldUVs;
 		newFaces.reserve(oldFaces.size());
-		performSplitting();
+		serialisedFaces.reserve(oldFaces.size() * 3);
+		if (!(reMapSuccess = performSplitting()))
+		{
+			//mission failed clear up the memory
+			newVertices.clear();
+			newNormals.clear();
+			newColors.clear();
+			newUVs.clear();
+			newFaces.clear();
+			matMap.clear();
+			serialisedFaces.clear();
+			reMappedMappings.clear();
+			splitMap.clear();
+			idMapBuf.clear();
+		}
 	}
 	else
 	{
@@ -109,78 +124,52 @@ void MeshMapReorganiser::completeLastMatMapEntry(
 		matMap.back().back().max = { maxBox[0], maxBox[1], maxBox[2] };
 }
 
-repo::core::model::MeshNode MeshMapReorganiser::getRemappedMesh() const
-{
-	auto bbox = mesh->getBoundingBox();
-	std::vector<std::vector<float>> bboxArr;
-	if (bbox.size())
-	{
-		bboxArr.push_back({ bbox[0].x, bbox[0].y, bbox[0].z });
-		bboxArr.push_back({ bbox[1].x, bbox[1].y, bbox[1].z });
-	}
-
-	auto newMesh = repo::core::model::RepoBSONFactory::makeMeshNode(newVertices, newFaces, newNormals, bboxArr, newUVs, newColors);
-	repo::core::model::RepoBSONBuilder builder;
-	builder.append(REPO_NODE_LABEL_ID, mesh->getUniqueID());
-	builder.append(REPO_NODE_LABEL_SHARED_ID, mesh->getSharedID());
-	auto changes = builder.obj();
-	newMesh = newMesh.cloneAndAddFields(&changes, false);
-	auto returnMesh = newMesh.cloneAndUpdateMeshMapping(reMappedMappings, true);
-
-	//sanity check
-	/*auto mapping = returnMesh.getMeshMapping();
-	auto faces = returnMesh.getFaces();
-	auto vertices = returnMesh.getVertices();
-	repoTrace << "Checking mesh(" << returnMesh.getUniqueID() << ")'s health...";
-
-	int iCount = 0;
-	int lastMapS = 0, lastMapE = 0;
-	for (const auto &map : mapping)
-	{
-	auto sMeshMap = matMap[iCount];
-
-	for (const auto &smMap : sMeshMap)
-	{
-	bool broken = false;
-	if (smMap.triFrom < lastMapE)
-	{
-	repoError << "BackTracking faces!!!! last tri was " << lastMapE << " current face is " << smMap.triFrom;
-	exit(0);
-	}
-	for (int iFace = smMap.triFrom; iFace < smMap.triTo; ++iFace)
-	{
-	auto face = faces[iFace];
-	for (const auto &fIndex : face)
-	{
-	auto shiftedIndex = fIndex + map.vertFrom;
-	if (broken = shiftedIndex < smMap.vertFrom || shiftedIndex > smMap.vertTo - 1)
-	{
-	repoError << "[" << iCount << "][ " << iFace << "(" << (iFace - smMap.triFrom) << ")]("
-	<< map.mesh_id
-	<< ", "
-	<< smMap.mesh_id
-	<< ") Face index is out of range: "
-	<< "index - " << shiftedIndex << "(" << fIndex << ")"
-	<< " face range is : " << smMap.triFrom << "- " << smMap.triTo
-	<< " allowed range is : " << smMap.vertFrom << " - " << smMap.vertTo;
-
-	exit(0);
-	break;
-	}
-	}
-	if (broken) break;
-	}
-	lastMapS = smMap.triFrom;
-	lastMapE = smMap.triTo;
-	}
-	++iCount;
-	}
-	repoTrace << "done.";*/
-
-	return returnMesh;
+std::vector<std::vector<float>> MeshMapReorganiser::getIDMapArrays() const {
+	return reMapSuccess ? idMapBuf : std::vector<std::vector<float>>();
 }
 
-void MeshMapReorganiser::performSplitting()
+std::vector<std::vector<repo_mesh_mapping_t>>
+MeshMapReorganiser::getMappingsPerSubMesh() const {
+	return reMapSuccess ? matMap : std::vector<std::vector<repo_mesh_mapping_t>>();
+}
+
+std::vector<uint16_t> MeshMapReorganiser::getSerialisedFaces() const {
+	return reMapSuccess ? serialisedFaces : std::vector<uint16_t>();
+}
+
+std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher>
+MeshMapReorganiser::getSplitMapping() const {
+	return reMapSuccess ? splitMap : std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher>();
+}
+
+repo::core::model::MeshNode MeshMapReorganiser::getRemappedMesh() const
+{
+	if (reMapSuccess)
+	{
+		auto bbox = mesh->getBoundingBox();
+		std::vector<std::vector<float>> bboxArr;
+		if (bbox.size())
+		{
+			bboxArr.push_back({ bbox[0].x, bbox[0].y, bbox[0].z });
+			bboxArr.push_back({ bbox[1].x, bbox[1].y, bbox[1].z });
+		}
+
+		auto newMesh = repo::core::model::RepoBSONFactory::makeMeshNode(newVertices, newFaces, newNormals, bboxArr, newUVs, newColors);
+		repo::core::model::RepoBSONBuilder builder;
+		builder.append(REPO_NODE_LABEL_ID, mesh->getUniqueID());
+		builder.append(REPO_NODE_LABEL_SHARED_ID, mesh->getSharedID());
+		auto changes = builder.obj();
+		newMesh = newMesh.cloneAndAddFields(&changes, false);
+
+		return newMesh.cloneAndUpdateMeshMapping(reMappedMappings, true);
+	}
+	else
+	{
+		return repo::core::model::MeshNode();
+	}
+}
+
+bool MeshMapReorganiser::performSplitting()
 {
 	std::vector<repo_mesh_mapping_t> newMappings;
 	std::vector<repo_mesh_mapping_t> orgMappings = mesh->getMeshMapping();
@@ -251,7 +240,10 @@ void MeshMapReorganiser::performSplitting()
 		if (currentMeshNumVertices > maxVertices) {
 			size_t retTotalVCount, retTotalFCount;
 			newMatMapEntry(currentSubMesh, totalVertexCount, totalFaceCount);
-			splitLargeMesh(currentSubMesh, newMappings, idMapIdx, orgFaceIdx, totalVertexCount, totalFaceCount);
+			if (!splitLargeMesh(currentSubMesh, newMappings, idMapIdx, orgFaceIdx, totalVertexCount, totalFaceCount))
+			{
+				return false;
+			}
 
 			++idMapIdx;
 
@@ -305,9 +297,10 @@ void MeshMapReorganiser::performSplitting()
 	}
 
 	reMappedMappings = newMappings;
+	return true;
 }
 
-void MeshMapReorganiser::splitLargeMesh(
+bool MeshMapReorganiser::splitLargeMesh(
 	const repo_mesh_mapping_t        currentSubMesh,
 	std::vector<repo_mesh_mapping_t> &newMappings,
 	size_t                           &idMapIdx,
@@ -421,7 +414,8 @@ void MeshMapReorganiser::splitLargeMesh(
 				if (splitMeshVertexCount < reIndexMap[indexValue])
 				{
 					repoError << "SplitMesh Vertex count(" << splitMeshVertexCount << ") "
-						<< "is smaller than remapped index value(" << reIndexMap[indexValue] << ")! potentially out of range!";
+						<< "is smaller than remapped index value(" << reIndexMap[indexValue] << ") -  potentially out of range.";
+					return false;
 				}
 
 				newFace.push_back(reIndexMap[indexValue]);
@@ -452,6 +446,14 @@ void MeshMapReorganiser::splitLargeMesh(
 	totalFaceCount += splitMeshFaceCount;
 
 	auto leftOverVertices = currentMeshNumVertices - totalLargeMeshVertexCount;
+
+	if (leftOverVertices < 0)
+	{
+		//If totalLargeMeshVertexCount is bigger than currentMeshNumVertices
+		//then it means we have somehow expanded the range. this is unexpected
+		repoError << "Whilst splitting a large, the number of vertices has increased.";
+		return false;
+	}
 
 	if (leftOverVertices)
 	{
@@ -486,6 +488,7 @@ void MeshMapReorganiser::splitLargeMesh(
 	completeLastMatMapEntry(matMap.back().back().vertFrom + splitMeshVertexCount,
 		matMap.back().back().triFrom + splitMeshFaceCount, bboxMin, bboxMax);
 	repoTrace << "Completed Large Mesh Split";
+	return true;
 }
 
 void MeshMapReorganiser::startSubMesh(

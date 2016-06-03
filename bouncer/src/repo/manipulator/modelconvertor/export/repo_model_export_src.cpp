@@ -295,28 +295,43 @@ bool SRCModelExport::generateTreeRepresentation(
 			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter =
 				new repo::manipulator::modelutility::MeshMapReorganiser(mesh, SRC_MAX_VERTEX_LIMIT);
 			repo::core::model::MeshNode splittedMesh = reSplitter->getRemappedMesh();
-			std::vector<uint16_t> facebuf = reSplitter->getSerialisedFaces();
-			std::vector<std::vector<float>> idMapBuf = reSplitter->getIDMapArrays();
-			std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> splitMapping = reSplitter->getSplitMapping();
-			delete reSplitter;
-
-			std::string ext = ".src";
-			bool sepX3d; //requires a separate x3d file if it is a multipart mesh
-			if (sepX3d = mesh->getMeshMapping().size() > 1)
+			if (success = !(splittedMesh.isEmpty()))
 			{
-				ext += ".mpc";
+				std::vector<uint16_t> facebuf = reSplitter->getSerialisedFaces();
+				std::vector<std::vector<float>> idMapBuf = reSplitter->getIDMapArrays();
+				std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> splitMapping = reSplitter->getSplitMapping();
+				delete reSplitter;
+
+				std::string ext = ".src";
+				bool sepX3d; //requires a separate x3d file if it is a multipart mesh
+				if (sepX3d = mesh->getMeshMapping().size() > 1)
+				{
+					ext += ".mpc";
+				}
+
+				if (!textureID.empty())
+				{
+					ext += "?tex_uuid=" + textureID;
+				}
+
+				if (success = addMeshToExport(splittedMesh, index, facebuf, idMapBuf, ext))
+				{
+					++index;
+					if (sepX3d)
+					{
+						success &= generateJSONMapping(mesh, scene, splitMapping);
+					}
+				}
+				else
+				{
+					repoError << "Failed to export mesh " << splittedMesh.getUniqueID() << " into SRC format.";
+					break;
+				}
 			}
-
-			if (!textureID.empty())
+			else
 			{
-				ext += "?tex_uuid=" + textureID;
-			}
-
-			addMeshToExport(splittedMesh, index, facebuf, idMapBuf, ext);
-			++index;
-			if (sepX3d)
-			{
-				success &= generateJSONMapping(mesh, scene, splitMapping);
+				repoError << "Failed to generate a remapped mesh for mesh with ID : " << mesh->getUniqueID();
+				break;
 			}
 		}
 	}
@@ -324,7 +339,7 @@ bool SRCModelExport::generateTreeRepresentation(
 	return success;
 }
 
-void SRCModelExport::addMeshToExport(
+bool SRCModelExport::addMeshToExport(
 	const repo::core::model::MeshNode      &mesh,
 	const size_t                           &idx,
 	const std::vector<uint16_t>            &faceBuf,
@@ -337,6 +352,12 @@ void SRCModelExport::addMeshToExport(
 	auto vertices = mesh.getVertices();
 	auto normals = mesh.getNormals();
 	auto uvs = mesh.getUVChannels();
+
+	if (!vertices.size())
+	{
+		repoError << "Mesh " << mesh.getUniqueID() << " has no vertices!";
+		return false;
+	}
 
 	//Define starting position of buffers
 	size_t bufPos = 0; //In bytes
@@ -359,7 +380,7 @@ void SRCModelExport::addMeshToExport(
 	std::string meshId = UUIDtoString(mesh.getUniqueID());
 
 	repo::lib::PropertyTree tree;
-
+	size_t lastV = 0, lastF = 0;
 	repoTrace << "Looping Through submeshes (#submeshes : " << nSubMeshes << ")";
 	for (size_t subMeshIdx = 0; subMeshIdx < nSubMeshes; ++subMeshIdx)
 	{
@@ -400,6 +421,17 @@ void SRCModelExport::addMeshToExport(
 
 		size_t vCount = mapping[subMeshIdx].vertTo - mapping[subMeshIdx].vertFrom;
 		size_t fCount = mapping[subMeshIdx].triTo - mapping[subMeshIdx].triFrom;
+
+		if (vCount < 0 || fCount < 0)
+		{
+			repoError << "Negative #faces (" << fCount << ") or #vertices(" << vCount << ")!";
+			return false;
+		}
+		if (lastV >  mapping[subMeshIdx].vertFrom || lastF > mapping[subMeshIdx].triFrom)
+		{
+			repoError << "Submeshes are backtracking on " << (lastV > mapping[subMeshIdx].vertFrom ? "vertices" : "faces") << " buffer! this is not expected";
+			return false;
+		}
 
 		// SRC Header for this mesh
 		if (vertices.size())
@@ -627,4 +659,6 @@ void SRCModelExport::addMeshToExport(
 
 	trees[fname] = tree;
 	fullDataBuffer[fname] = dataBuffer;
+
+	return true;
 }
