@@ -26,6 +26,8 @@ namespace repo{
 			public:
 				/**
 				* Construct a mesh reorganiser
+				* if the reorganiser failed to generate
+				* a remapped mesh, it will return an empty meshNode.
 				* @param mesh the mesh to reorganise
 				* @param vertThreshold maximum vertices
 				*/
@@ -38,17 +40,13 @@ namespace repo{
 				* Return idMap arrays of the modified mesh (for material mapping)
 				* @return returns a idMap arrays
 				*/
-				std::vector<std::vector<float>> getIDMapArrays() const {
-					return idMapBuf;
-				}
+				std::vector<std::vector<float>> getIDMapArrays() const;
 
 				/**
 				* Get all mesh mapping, grouped by the sub meshes they belong to
 				* @return a vector (new submeshes) of vector of mesh mappings(original submeshes)
 				*/
-				std::vector<std::vector<repo_mesh_mapping_t>> getMappingsPerSubMesh() const {
-					return matMap;
-				}
+				std::vector<std::vector<repo_mesh_mapping_t>> getMappingsPerSubMesh() const;
 
 				/**
 				* Get the mesh, with mesh mappings and buffers modified
@@ -60,17 +58,13 @@ namespace repo{
 				* Return serialised faces of the modified mesh
 				* @return returns a serialised buffer of faces
 				*/
-				std::vector<uint16_t> getSerialisedFaces() const {
-					return serialisedFaces;
-				}
+				std::vector<uint16_t> getSerialisedFaces() const;
 
 				/**
 				* Get the mapping between submeshes UUID to new super mesh index
 				* @return sub mesh to super mesh(es) mapping
 				*/
-				std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> getSplitMapping() const {
-					return splitMap;
-				}
+				std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> getSplitMapping() const;
 
 			private:
 				/**
@@ -106,7 +100,7 @@ namespace repo{
 				* The beginning function for the whole process.
 				* Merge or split submeshes where appropriate
 				*/
-				void performSplitting();
+				bool performSplitting();
 
 				/**
 				* Split a single large sub mesh that exceeds the number of
@@ -118,7 +112,7 @@ namespace repo{
 				* @param totalVertexCount total vertice count (consume and update)
 				* @param totalFaceCount total face count      (consume and update)
 				*/
-				void splitLargeMesh(
+				bool splitLargeMesh(
 					const repo_mesh_mapping_t        currentSubMesh,
 					std::vector<repo_mesh_mapping_t> &newMappings,
 					size_t                           &idMapIdx,
@@ -163,6 +157,8 @@ namespace repo{
 				void updateIDMapArray(
 					const size_t &n,
 					const size_t &value);
+
+				bool reMapSuccess;
 
 				const repo::core::model::MeshNode *mesh;
 				const size_t maxVertices;

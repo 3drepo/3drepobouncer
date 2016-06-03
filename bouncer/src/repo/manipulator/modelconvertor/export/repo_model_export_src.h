@@ -63,7 +63,7 @@ namespace repo{
 				* @param idMapBuf idMapping for each sub meshes
 				* @param fileExt file extension required for this SRC file (*.src/.src.mpc/.src?<query>)
 				*/
-				void addMeshToExport(
+				bool addMeshToExport(
 					const repo::core::model::MeshNode &mesh,
 					const size_t &idx,
 					const std::vector<uint16_t> &faceBuf,
