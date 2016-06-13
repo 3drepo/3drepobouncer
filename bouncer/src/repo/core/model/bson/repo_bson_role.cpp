@@ -457,6 +457,16 @@ void RepoRole::updateActions(
 			vec.push_back(DBActions::INSERT);
 			vec.push_back(DBActions::REMOVE);
 		}
+		else if (collectionType == "stash.json_mpc.files")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
+		}
+		else if (collectionType == "stash.json_mpc.chunks")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::REMOVE);
+		}
 		else if (collectionType == "stash.x3d")
 		{
 			vec.push_back(DBActions::INSERT);

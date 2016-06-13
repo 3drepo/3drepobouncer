@@ -55,10 +55,9 @@ static RepoBSON buildRoleExample()
 
 	builder.appendArray(REPO_ROLE_LABEL_PRIVILEGES, privilegesBuilder.obj());
 
-
 	//====== Add Inherited Roles ========
 
-	RepoBSON inheritedRole = BSON( "role" << "readWrite" << "db" << "canarywharf");
+	RepoBSON inheritedRole = BSON("role" << "readWrite" << "db" << "canarywharf");
 	RepoBSONBuilder inheritedRolesBuilder;
 
 	inheritedRolesBuilder << "0" << inheritedRole;
@@ -96,7 +95,7 @@ static RepoBSON buildRoleExample2()
 	RepoBSON resource2 = BSON(REPO_ROLE_LABEL_DATABASE << "testdb" << REPO_ROLE_LABEL_COLLECTION << "project.history");
 	innerBsonBuilder << REPO_ROLE_LABEL_RESOURCE << resource2;
 
-	std::vector<std::string> actions2 = {"find"};
+	std::vector<std::string> actions2 = { "find" };
 
 	for (size_t aCount = 0; aCount < actions2.size(); ++aCount)
 	{
@@ -106,7 +105,6 @@ static RepoBSON buildRoleExample2()
 	innerBsonBuilder.appendArray(REPO_ROLE_LABEL_ACTIONS, actionBuilder.obj());
 
 	builder.appendArray(REPO_ROLE_LABEL_PRIVILEGES, privilegesBuilder.obj());
-
 
 	//====== Add Inherited Roles ========
 
@@ -147,7 +145,7 @@ TEST(RepoRoleTest, DBActionToStringTest)
 	//so loop through until we hit UNKNOWN and make sure every enum returns a valid string
 
 	uint32_t i = 0;
-	for (; i < (uint32_t)DBActions::UNKNOWN-1; ++i)
+	for (; i < (uint32_t)DBActions::UNKNOWN - 1; ++i)
 	{
 		EXPECT_NE("", RepoRole::dbActionToString((DBActions)i));
 	}
@@ -162,7 +160,7 @@ TEST(RepoRoleTest, TranslatePermissionsTest_READ)
 	std::vector<RepoPermission> permissions;
 
 	std::string projectName = "project";
-	permissions.push_back({"test", projectName, AccessRight::READ});
+	permissions.push_back({ "test", projectName, AccessRight::READ });
 
 	std::vector<RepoPrivilege> privileges = RepoRole::translatePermissions(permissions);
 
@@ -211,6 +209,16 @@ TEST(RepoRoleTest, TranslatePermissionsTest_READ)
 			EXPECT_EQ(DBActions::FIND, p.actions[0]);
 		}
 		else if (p.collection == (projectName + ".stash.src.chunks"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.json_mpc.files"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.json_mpc.chunks"))
 		{
 			EXPECT_EQ(1, p.actions.size());
 			EXPECT_EQ(DBActions::FIND, p.actions[0]);
@@ -274,7 +282,7 @@ TEST(RepoRoleTest, TranslatePermissionsTest_READ)
 		}
 		else
 		{
-			//There is an extension the test doesn't know about. Make sure 
+			//There is an extension the test doesn't know about. Make sure
 			//this extension is catered for within the roles function
 			//and add it as another case here.
 			FAIL();
@@ -348,6 +356,18 @@ TEST(RepoRoleTest, TranslatePermissionsTest_WRITE)
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
 		}
+		else if (p.collection == (projectName + ".stash.json_mpc.files"))
+		{
+			EXPECT_EQ(2, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
+		}
+		else if (p.collection == (projectName + ".stash.json_mpc.chunks"))
+		{
+			EXPECT_EQ(2, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
+		}
 		else if (p.collection == (projectName + ".stash.gltf"))
 		{
 			EXPECT_EQ(2, p.actions.size());
@@ -391,7 +411,6 @@ TEST(RepoRoleTest, TranslatePermissionsTest_WRITE)
 		}
 		else if (p.collection == (projectName + ".history.files"))
 		{
-
 			EXPECT_EQ(1, p.actions.size());
 			EXPECT_EQ(DBActions::INSERT, p.actions[0]);
 		}
@@ -415,7 +434,7 @@ TEST(RepoRoleTest, TranslatePermissionsTest_WRITE)
 		}
 		else
 		{
-			//There is an extension the test doesn't know about. Make sure 
+			//There is an extension the test doesn't know about. Make sure
 			//this extension is catered for within the roles function
 			//and add it as another case here.
 			FAIL();
@@ -491,6 +510,20 @@ TEST(RepoRoleTest, TranslatePermissionsTest_READWRITE)
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
 		}
+		else if (p.collection == (projectName + ".stash.json_mpc.files"))
+		{
+			EXPECT_EQ(3, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
+		}
+		else if (p.collection == (projectName + ".stash.json_mpc.chunks"))
+		{
+			EXPECT_EQ(3, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
+		}
 		else if (p.collection == (projectName + ".stash.src.chunks"))
 		{
 			EXPECT_EQ(3, p.actions.size());
@@ -498,7 +531,7 @@ TEST(RepoRoleTest, TranslatePermissionsTest_READWRITE)
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
 		}
-		else if(p.collection == (projectName + ".stash.x3d"))
+		else if (p.collection == (projectName + ".stash.x3d"))
 		{
 			EXPECT_EQ(3, p.actions.size());
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
@@ -519,7 +552,7 @@ TEST(RepoRoleTest, TranslatePermissionsTest_READWRITE)
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
 		}
-		else if(p.collection == (projectName + ".stash.gltf"))
+		else if (p.collection == (projectName + ".stash.gltf"))
 		{
 			EXPECT_EQ(3, p.actions.size());
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
@@ -575,7 +608,7 @@ TEST(RepoRoleTest, TranslatePermissionsTest_READWRITE)
 		}
 		else
 		{
-			//There is an extension the test doesn't know about. Make sure 
+			//There is an extension the test doesn't know about. Make sure
 			//this extension is catered for within the roles function
 			//and add it as another case here.
 			repoError << "Unknown collection: " << p.collection;
@@ -600,7 +633,6 @@ TEST(RepoRoleTest, UpdateActions)
 	EXPECT_EQ(1, vec.size());
 	EXPECT_EQ(DBActions::FIND, vec[0]);
 
-
 	RepoRole::updateActions("scene", AccessRight::WRITE, vec);
 	EXPECT_EQ(2, vec.size());
 	EXPECT_TRUE(std::find(vec.begin(), vec.end(), DBActions::FIND) != vec.end());
@@ -611,7 +643,6 @@ TEST(RepoRoleTest, UpdateActions)
 	EXPECT_EQ(2, vec.size());
 
 	vec.clear();
-	
 }
 
 TEST(RepoRoleTest, GetDatabaseTest)
@@ -631,7 +662,7 @@ TEST(RepoRoleTest, GetInheritedRolesTest)
 	std::vector<std::pair<std::string, std::string>> inheritedRoles = role.getInheritedRoles();
 
 	ASSERT_EQ(1, inheritedRoles.size());
-	EXPECT_EQ("canarywharf",inheritedRoles[0].first);
+	EXPECT_EQ("canarywharf", inheritedRoles[0].first);
 	EXPECT_EQ("readWrite", inheritedRoles[0].second);
 
 	EXPECT_EQ(0, empty.getInheritedRoles().size());
@@ -648,7 +679,6 @@ TEST(RepoRoleTest, GetNameTest)
 
 TEST(RepoRoleTest, GetPrivilegesTest)
 {
-
 	RepoRole empty;
 	RepoRole role(buildRoleExample());
 
@@ -660,9 +690,7 @@ TEST(RepoRoleTest, GetPrivilegesTest)
 	EXPECT_TRUE(std::find(privileges[0].actions.begin(), privileges[0].actions.end(), DBActions::UPDATE) != privileges[0].actions.end());
 	EXPECT_TRUE(std::find(privileges[0].actions.begin(), privileges[0].actions.end(), DBActions::FIND) != privileges[0].actions.end());
 
-
 	EXPECT_EQ(0, empty.getPrivileges().size());
-
 }
 
 TEST(RepoRoleTest, GetProjectAccessRightsTest)
@@ -690,12 +718,11 @@ TEST(RepoRoleTest, GetProjectAccessRightsTest)
 
 TEST(RepoRoleTest, CloneAndAddPermissionsTest)
 {
-
 	std::vector<RepoPermission> permissions;
 	permissions.push_back({ "testdb", "testcol2", AccessRight::WRITE });
 	permissions.push_back({ "testdb", "testcol", AccessRight::WRITE });
 	RepoRole role = RepoBSONFactory::makeRepoRole("roleTest", "testDB", permissions);
-	
+
 	RepoRole newRole = role.cloneAndUpdatePermissions(std::vector<RepoPermission>());
 
 	ASSERT_EQ(role.getPrivileges().size(), newRole.getPrivileges().size());
@@ -708,7 +735,7 @@ TEST(RepoRoleTest, CloneAndAddPermissionsTest)
 	EXPECT_TRUE(empty.cloneAndUpdatePermissions(std::vector<RepoPermission>()).isEmpty());
 
 	std::vector<RepoPermission> newPermissions;
-	newPermissions.push_back({ "db", "col", AccessRight::READ }); 
+	newPermissions.push_back({ "db", "col", AccessRight::READ });
 	newPermissions.push_back({ "db", "col2", AccessRight::WRITE });
 	newPermissions.push_back({ "testdb", "testcol", AccessRight::READ }); //Modify existing
 
@@ -720,13 +747,12 @@ TEST(RepoRoleTest, CloneAndAddPermissionsTest)
 	repoTrace << "new role : " << newRole2.toString();
 
 	ASSERT_EQ(accessRights.size(), newPermissions.size());
-	
+
 	for (const auto p : newPermissions)
 	{
 		bool found = false;
 		for (const auto a : accessRights)
 		{
-			
 			if (found |= a.database == p.database
 				&& a.project == p.project
 				&& a.permission == p.permission) break;
@@ -737,7 +763,6 @@ TEST(RepoRoleTest, CloneAndAddPermissionsTest)
 	EXPECT_EQ(role.getName(), newRole2.getName());
 	EXPECT_EQ(role.getDatabase(), newRole2.getDatabase());
 	EXPECT_EQ(role.getInheritedRoles().size(), newRole2.getInheritedRoles().size());
-
 }
 
 TEST(RepoRoleTest, CloneAndAddPermissionsTest2)
@@ -765,5 +790,4 @@ TEST(RepoRoleTest, CloneAndAddPermissionsTest2)
 
 	EXPECT_NE(std::find(actions.begin(), actions.end(), DBActions::FIND), actions.end());
 	EXPECT_NE(std::find(actions.begin(), actions.end(), DBActions::UPDATE), actions.end());
-
 }
