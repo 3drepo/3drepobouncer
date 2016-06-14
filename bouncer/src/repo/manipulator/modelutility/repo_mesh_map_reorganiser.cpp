@@ -287,7 +287,7 @@ bool MeshMapReorganiser::performSplitting()
 			totalVertexCount += currentMeshNumVertices;
 			totalFaceCount += currentMeshNumFaces;
 
-			splitMap[currentSubMesh.mesh_id].push_back(newMappings.size());
+			splitMap[currentSubMesh.mesh_id].push_back(newMappings.size() - 1);
 			completeLastMatMapEntry(totalVertexCount, totalFaceCount);
 		}
 	}
@@ -359,7 +359,7 @@ bool MeshMapReorganiser::splitLargeMesh(
 				// greater than the required number of vertices
 
 				if (fIdx)
-					splitMap[currentSubMesh.mesh_id].push_back(newMappings.size());
+					splitMap[currentSubMesh.mesh_id].push_back(newMappings.size() - 1);
 
 				if (startedLargeMeshSplit) {
 					updateIDMapArray(splitMeshVertexCount, idMapIdx++);
@@ -483,7 +483,7 @@ bool MeshMapReorganiser::splitLargeMesh(
 		}
 	}
 
-	splitMap[currentSubMesh.mesh_id].push_back(newMappings.size());
+	splitMap[currentSubMesh.mesh_id].push_back(newMappings.size() - 1);
 	finishSubMesh(newMappings.back(), bboxMin, bboxMax, splitMeshVertexCount, splitMeshFaceCount);
 	completeLastMatMapEntry(matMap.back().back().vertFrom + splitMeshVertexCount,
 		matMap.back().back().triFrom + splitMeshFaceCount, bboxMin, bboxMax);
