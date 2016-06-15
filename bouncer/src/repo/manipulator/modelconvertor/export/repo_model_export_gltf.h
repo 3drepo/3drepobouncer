@@ -230,7 +230,7 @@ namespace repo{
 				* Generate a property tree representing the spatial partitioning
 				* @return return a property tree with adequate entries
 				*/
-				repo::lib::PropertyTree generateSpatialrepo_partitioning_tree_t();
+				repo::lib::PropertyTree generateSpatialPartitioning();
 
 				/**
 				* Return the GLTF file as raw bytes buffer
@@ -243,7 +243,7 @@ namespace repo{
 				* @param matMap materialMapping as reference
 				* @param faces the faces to remap
 				*/
-				void reIndexFaces(
+				bool reIndexFaces(
 					const std::vector<std::vector<repo_mesh_mapping_t>> &matMap,
 					std::vector<uint16_t>                               &faces);
 
