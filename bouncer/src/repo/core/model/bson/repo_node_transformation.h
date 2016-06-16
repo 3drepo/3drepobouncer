@@ -67,6 +67,24 @@ namespace repo {
 				static std::vector<std::vector<float>> identityMat();
 
 				/**
+				* Get the type of node
+				* @return returns the type as a string
+				*/
+				virtual std::string getType() const
+				{
+					return REPO_NODE_TYPE_TRANSFORMATION;
+				}
+
+				/**
+				* Get the type of node as an enum
+				* @return returns type as enum.
+				*/
+				virtual NodeType getTypeAsEnum() const
+				{
+					return NodeType::TRANSFORMATION;
+				}
+
+				/**
 				* Check if the node is position dependant.
 				* i.e. if parent transformation is merged onto the node,
 				* does the node requre to a transformation applied to it

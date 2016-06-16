@@ -167,6 +167,7 @@ bool TransformationNode::sEqual(const RepoNode &other) const
 {
 	if (other.getTypeAsEnum() != NodeType::TRANSFORMATION || other.getParentIDs().size() != getParentIDs().size())
 	{
+		repoTrace << "Failed at start";
 		return false;
 	}
 
@@ -175,5 +176,8 @@ bool TransformationNode::sEqual(const RepoNode &other) const
 	std::vector<float> mat = getTransMatrix(false);
 	std::vector<float> otherMat = otherTrans.getTransMatrix(false);
 
-	return mat.size() == otherMat.size() && !memcmp(mat.data(), otherMat.data(), mat.size() *sizeof(*mat.data()));
+	repoTrace << "map size: " << mat.size() << " vs " << otherMat.size();
+	repoTrace << " first condition: " << (mat.size() + otherMat.size() == 0);
+
+	return (mat.size() + otherMat.size() == 0) || (mat.size() == otherMat.size() && !memcmp(mat.data(), otherMat.data(), mat.size() *sizeof(*mat.data())));
 }
