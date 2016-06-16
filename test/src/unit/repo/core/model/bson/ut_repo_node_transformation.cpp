@@ -32,10 +32,10 @@ std::vector<float> identity =
 0, 0, 0, 1 };
 
 std::vector<float> notId =
-{ 1, 0, 0, 0,
-0, 1, 0, 0,
-2, 0.3f, 1, 0,
-0, 0, 0.6f, 1 };
+{ 1, 2, 3, 4,
+5, 6, 7, 8,
+9, 0.3f, 10, 11,
+5342, 31, 0.6f, 12 };
 
 std::vector<float> idInBoundary =
 { 1, 0, 0, 0,
@@ -149,11 +149,34 @@ TEST(RepoTransformationNodeTest, CloneAndApplyTransformationTest)
 
 	TransformationNode modifiedEmpty = empty.cloneAndApplyTransformation(notId);
 
-	EXPECT_EQ(0, empty.getTransMatrix(false).size());
+	EXPECT_TRUE(compareStdVectors(empty.getTransMatrix(false), identity));
 	EXPECT_TRUE(compareStdVectors(modifiedEmpty.getTransMatrix(false), notId));
 
 	auto filled = makeTransformationNode(notId);
 	TransformationNode modifiedFilled = filled.cloneAndApplyTransformation(std::vector<float>());
 
 	EXPECT_TRUE(compareStdVectors(modifiedFilled.getTransMatrix(false), notId));
+}
+
+TEST(RepoTransformationNodeTest, GetTransMatrixTest)
+{
+	TransformationNode empty = TransformationNode();
+	EXPECT_TRUE(compareStdVectors(identity, empty.getTransMatrix(false)));
+
+	TransformationNode notEmpty = makeTransformationNode(notId);
+	EXPECT_TRUE(compareStdVectors(notId, notEmpty.getTransMatrix(false)));
+
+	//check transpose is done correctly
+	auto notIdTransposed = notEmpty.getTransMatrix(true);
+
+	ASSERT_EQ(notId.size(), notIdTransposed.size());
+	for (int i = 0; i < 4; ++i)
+	{
+		for (int j = 0; j < 4; ++j)
+		{
+			int index = i * 4 + j;
+			int transIndex = j * 4 + i;
+			EXPECT_EQ(notId[index], notIdTransposed[transIndex]);
+		}
+	}
 }
