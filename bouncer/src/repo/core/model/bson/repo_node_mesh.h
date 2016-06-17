@@ -93,6 +93,24 @@ namespace repo {
 				uint32_t getMFormat() const;
 
 				/**
+				* Get the type of node
+				* @return returns the type as a string
+				*/
+				virtual std::string getType() const
+				{
+					return REPO_NODE_TYPE_MESH;
+				}
+
+				/**
+				* Get the type of node as an enum
+				* @return returns type as enum.
+				*/
+				virtual NodeType getTypeAsEnum() const
+				{
+					return NodeType::MESH;
+				}
+
+				/**
 				* Check if the node is position dependant.
 				* i.e. if parent transformation is merged onto the node,
 				* does the node requre to a transformation applied to it
