@@ -303,25 +303,22 @@ int32_t importFileAndCommit(
 
 	repo::manipulator::modelconvertor::ModelImportConfig config(configFile);
 
-	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, &config);
+	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, true, rotate, &config);
 	if (graph)
 	{
 		repoLog("Trying to commit this scene to database as " + database + "." + project);
 		graph->setDatabaseAndProjectName(database, project);
-		if (rotate)
-			graph->reorientateDirectXModel();
-		if (owner.empty())
-			controller->commitScene(token, graph);
-		else
-			controller->commitScene(token, graph, owner);
-		//FIXME: should make commitscene return a boolean even though GUI doesn't care...
-		if (graph->isMissingTexture())
+
+		if (controller->commitScene(token, graph, owner))
 		{
-			repoLog("Missing texture detected!");
-			return REPOERR_LOAD_SCENE_MISSING_TEXTURE;
+			if (graph->isMissingTexture())
+			{
+				repoLog("Missing texture detected!");
+				return REPOERR_LOAD_SCENE_MISSING_TEXTURE;
+			}
+			else
+				return REPOERR_OK;
 		}
-		else
-			return REPOERR_OK;
 	}
 
 	return REPOERR_LOAD_SCENE_FAIL;

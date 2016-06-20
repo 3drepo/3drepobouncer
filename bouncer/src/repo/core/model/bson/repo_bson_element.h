@@ -29,7 +29,7 @@
 #include <mongo/bson/bson.h>
 
 #include "../../../repo_bouncer_global.h"
-
+#include "../../../lib/repo_log.h"
 namespace repo {
 	namespace core {
 		namespace model {
@@ -67,16 +67,22 @@ namespace repo {
 
 				std::vector<RepoBSONElement> Array()
 				{
+					repoInfo << " HI";
 					//FIXME: potentially slow.
 					//This is done so we can hide mongo representation from the bouncer world.
 					std::vector<RepoBSONElement> arr;
-					std::vector<mongo::BSONElement> mongoArr = mongo::BSONElement::Array();
-					arr.reserve(mongoArr.size());
 
-					for (auto const &ele : mongoArr)
+					if (!eoo())
 					{
-						arr.push_back(RepoBSONElement(ele));
+						std::vector<mongo::BSONElement> mongoArr = mongo::BSONElement::Array();
+						arr.reserve(mongoArr.size());
+
+						for (auto const &ele : mongoArr)
+						{
+							arr.push_back(RepoBSONElement(ele));
+						}
 					}
+
 					return arr;
 				}
 			};

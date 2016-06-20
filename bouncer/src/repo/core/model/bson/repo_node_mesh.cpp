@@ -91,60 +91,61 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 		}
 		else
 			builder.appendBinary(REPO_NODE_MESH_LABEL_VERTICES, resultVertice.data(), resultVertice.size() * sizeof(repo_vector_t));
+
+		if (normals.size())
+		{
+			auto matInverse = invertMat(matrix);
+			auto worldMat = transposeMat(matInverse);
+
+			std::vector<repo_vector_t> resultNormals;
+			resultNormals.reserve(normals.size());
+			for (const repo_vector_t &v : normals)
+			{
+				auto transformedNormal = multiplyMatVecFake3x3(worldMat, v);
+				normalize(transformedNormal);
+				resultNormals.push_back(transformedNormal);
+			}
+
+			if (newBigFiles.find(REPO_NODE_MESH_LABEL_NORMALS) != newBigFiles.end())
+			{
+				const uint64_t byteCount = resultNormals.size() * sizeof(repo_vector_t);
+				newBigFiles[REPO_NODE_MESH_LABEL_NORMALS].second.resize(byteCount);
+				memcpy(newBigFiles[REPO_NODE_MESH_LABEL_NORMALS].second.data(), resultNormals.data(), byteCount);
+			}
+			else
+				builder.appendBinary(REPO_NODE_MESH_LABEL_NORMALS, resultNormals.data(), resultNormals.size() * sizeof(repo_vector_t));
+		}
+
+		RepoBSONBuilder arrayBuilder, outlineBuilder;
+		for (size_t i = 0; i < newBbox.size(); ++i)
+		{
+			std::vector<float> boundVec = { newBbox[i].x, newBbox[i].y, newBbox[i].z };
+			arrayBuilder.appendArray(std::to_string(i), boundVec);
+		}
+
+		if (newBbox[0].x > newBbox[1].x || newBbox[0].z > newBbox[1].z || newBbox[0].y > newBbox[1].y)
+		{
+			repoError << "New bounding box is incorrect!!!";
+		}
+		builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, arrayBuilder.obj());
+
+		std::vector<float> outline0 = { newBbox[0].x, newBbox[0].y };
+		std::vector<float> outline1 = { newBbox[1].x, newBbox[0].y };
+		std::vector<float> outline2 = { newBbox[1].x, newBbox[1].y };
+		std::vector<float> outline3 = { newBbox[0].x, newBbox[1].y };
+		outlineBuilder.appendArray("0", outline0);
+		outlineBuilder.appendArray("1", outline1);
+		outlineBuilder.appendArray("2", outline2);
+		outlineBuilder.appendArray("3", outline3);
+		builder.appendArray(REPO_NODE_MESH_LABEL_OUTLINE, outlineBuilder.obj());
+
+		return MeshNode(builder.appendElementsUnique(*this), newBigFiles);
 	}
 	else
 	{
 		repoError << "Unable to apply transformation: Cannot find vertices within a mesh!";
+		return  RepoNode(this->copy(), bigFiles);
 	}
-
-	if (normals.size())
-	{
-		auto matInverse = invertMat(matrix);
-		auto worldMat = transposeMat(matInverse);
-
-		std::vector<repo_vector_t> resultNormals;
-		resultNormals.reserve(normals.size());
-		for (const repo_vector_t &v : normals)
-		{
-			auto transformedNormal = multiplyMatVecFake3x3(worldMat, v);
-			normalize(transformedNormal);
-			resultNormals.push_back(transformedNormal);
-		}
-
-		if (newBigFiles.find(REPO_NODE_MESH_LABEL_NORMALS) != newBigFiles.end())
-		{
-			const uint64_t byteCount = resultNormals.size() * sizeof(repo_vector_t);
-			newBigFiles[REPO_NODE_MESH_LABEL_NORMALS].second.resize(byteCount);
-			memcpy(newBigFiles[REPO_NODE_MESH_LABEL_NORMALS].second.data(), resultNormals.data(), byteCount);
-		}
-		else
-			builder.appendBinary(REPO_NODE_MESH_LABEL_NORMALS, resultNormals.data(), resultNormals.size() * sizeof(repo_vector_t));
-	}
-
-	RepoBSONBuilder arrayBuilder, outlineBuilder;
-	for (size_t i = 0; i < newBbox.size(); ++i)
-	{
-		std::vector<float> boundVec = { newBbox[i].x, newBbox[i].y, newBbox[i].z };
-		arrayBuilder.appendArray(std::to_string(i), boundVec);
-	}
-
-	if (newBbox[0].x > newBbox[1].x || newBbox[0].z > newBbox[1].z || newBbox[0].y > newBbox[1].y)
-	{
-		repoError << "New bounding box is incorrect!!!";
-	}
-	builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, arrayBuilder.obj());
-
-	std::vector<float> outline0 = { newBbox[0].x, newBbox[0].y };
-	std::vector<float> outline1 = { newBbox[1].x, newBbox[0].y };
-	std::vector<float> outline2 = { newBbox[1].x, newBbox[1].y };
-	std::vector<float> outline3 = { newBbox[0].x, newBbox[1].y };
-	outlineBuilder.appendArray("0", outline0);
-	outlineBuilder.appendArray("1", outline1);
-	outlineBuilder.appendArray("2", outline2);
-	outlineBuilder.appendArray("3", outline3);
-	builder.appendArray(REPO_NODE_MESH_LABEL_OUTLINE, outlineBuilder.obj());
-
-	return MeshNode(builder.appendElementsUnique(*this), newBigFiles);
 }
 
 MeshNode MeshNode::cloneAndUpdateMeshMapping(

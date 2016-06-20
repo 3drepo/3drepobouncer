@@ -44,7 +44,6 @@ TEST(RepoBSONTest, ConstructFromMongo)
 	EXPECT_EQ(bson1, bson2);
 	EXPECT_EQ(bson1.toString(), bson2.toString());
 	EXPECT_NE(bson1, bsonDiff);
-
 }
 
 TEST(RepoBSONTest, GetField)
@@ -74,7 +73,6 @@ TEST(RepoBSONTest, GetBinaryAsVectorEmbedded)
 
 	RepoBSON bson(builder);
 
-
 	EXPECT_TRUE(bson.getBinaryFieldAsVector("binDataTest", out));
 
 	EXPECT_EQ(in.size(), out.size());
@@ -83,13 +81,10 @@ TEST(RepoBSONTest, GetBinaryAsVectorEmbedded)
 		EXPECT_EQ(in[i], out[i]);
 	}
 
-
-	
 	//Invalid retrieval, but they shouldn't throw exception
 	EXPECT_FALSE(bson.getBinaryFieldAsVector("numTest", out));
 	EXPECT_FALSE(bson.getBinaryFieldAsVector("stringTest", out));
 	EXPECT_FALSE(bson.getBinaryFieldAsVector("doesn'tExist", out));
-
 }
 
 TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
@@ -105,12 +100,11 @@ TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
 
 	std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> map;
 	std::string fname = "testingfile";
-	map["binDataTest"] = std::pair<std::string, std::vector<uint8_t>>(fname,in);
-
+	map["binDataTest"] = std::pair<std::string, std::vector<uint8_t>>(fname, in);
 
 	//FIXME: This needs to work until we stop supporting it
 	RepoBSON bson(BSON("binDataTest" << fname), map);
-	
+
 	RepoBSON bson2(RepoBSON(), map);
 
 	EXPECT_TRUE(bson.getBinaryFieldAsVector("binDataTest", out));
@@ -122,7 +116,6 @@ TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
 		EXPECT_EQ(in[i], out[i]);
 	}
 
-
 	EXPECT_TRUE(bson2.getBinaryFieldAsVector("binDataTest", out));
 	EXPECT_FALSE(bson2.getBinaryFieldAsVector(fname, out)); //make sure fieldname/filename are not mixed up.
 
@@ -131,7 +124,6 @@ TEST(RepoBSONTest, GetBinaryAsVectorReferenced)
 	{
 		EXPECT_EQ(in[i], out[i]);
 	}
-
 }
 
 TEST(RepoBSONTest, AssignOperator)
@@ -141,21 +133,20 @@ TEST(RepoBSONTest, AssignOperator)
 	EXPECT_TRUE(test.toString() == testBson.toString());
 
 	EXPECT_EQ(test.getFilesMapping().size(), testBson.getFilesMapping().size());
-	
+
 	//Test with bigfile mapping
 	std::vector < uint8_t > in;
 
 	in.resize(100);
 
 	std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> map, mapout;
-	map["testingfile"] = std::pair<std::string, std::vector<uint8_t>>( "field", in);
+	map["testingfile"] = std::pair<std::string, std::vector<uint8_t>>("field", in);
 
 	RepoBSON test2(testBson, map);
 
-
 	mapout = test2.getFilesMapping();
 	ASSERT_EQ(mapout.size(), map.size());
-	
+
 	auto mapIt = map.begin();
 	auto mapoutIt = mapout.begin();
 
@@ -166,10 +157,9 @@ TEST(RepoBSONTest, AssignOperator)
 		std::vector<uint8_t> dataOut = mapoutIt->second.second;
 		std::vector<uint8_t> dataIn = mapIt->second.second;
 		EXPECT_EQ(dataOut.size(), dataIn.size());
-		if (dataIn.size()>0)
+		if (dataIn.size() > 0)
 			EXPECT_EQ(0, strncmp((char*)&dataOut[0], (char*)&dataIn[0], dataIn.size()));
 	}
-
 }
 
 TEST(RepoBSONTest, Swap)
@@ -190,10 +180,8 @@ TEST(RepoBSONTest, Swap)
 	EXPECT_TRUE(testDiff_org.toString() == testDiff.toString());
 	EXPECT_TRUE(testDiff_org.getFilesMapping().size() == testDiff.getFilesMapping().size());
 
-
 	test.swap(testDiff);
 	EXPECT_EQ(testDiff_org.toString(), test.toString());
-
 
 	mapout = test.getFilesMapping();
 	ASSERT_EQ(map.size(), mapout.size());
@@ -208,14 +196,13 @@ TEST(RepoBSONTest, Swap)
 		std::vector<uint8_t> dataOut = mapoutIt->second.second;
 		std::vector<uint8_t> dataIn = mapIt->second.second;
 		EXPECT_EQ(dataIn.size(), dataOut.size());
-		if (dataIn.size()>0)
+		if (dataIn.size() > 0)
 			EXPECT_EQ(0, strncmp((char*)dataOut.data(), (char*)dataIn.data(), dataIn.size()));
 	}
 }
 
 TEST(RepoBSONTest, GetUUIDField)
 {
-
 	repoUUID uuid = generateUUID();
 	mongo::BSONObjBuilder builder;
 	builder.appendBinData("uuid", uuid.size(), mongo::bdtUUID, (char*)uuid.data);
@@ -233,10 +220,7 @@ TEST(RepoBSONTest, GetUUIDField)
 	builder2.appendBinData("uuid", uuid.size(), mongo::newUUID, (char*)uuid.data);
 	RepoBSON test2 = RepoBSON(builder2.obj());
 	EXPECT_EQ(uuid, test2.getUUIDField("uuid"));
-	
-
 }
-
 
 TEST(RepoBSONTest, GetUUIDFieldArray)
 {
@@ -268,7 +252,6 @@ TEST(RepoBSONTest, GetUUIDFieldArray)
 	EXPECT_EQ(0, bson.getUUIDFieldArray("hello").size());
 	EXPECT_EQ(0, testBson.getUUIDFieldArray("ice").size());
 	EXPECT_EQ(0, emptyBson.getUUIDFieldArray("ice").size());
-
 }
 
 TEST(RepoBSONTest, GetFloatArray)
@@ -281,7 +264,7 @@ TEST(RepoBSONTest, GetFloatArray)
 	floatArrIn.reserve(size);
 	for (size_t i = 0; i < size; ++i)
 	{
-		floatArrIn.push_back((float)rand()/100.);
+		floatArrIn.push_back((float)rand() / 100.);
 		arrbuilder << std::to_string(i) << floatArrIn[i];
 	}
 
@@ -307,9 +290,9 @@ TEST(RepoBSONTest, GetFloatArray)
 TEST(RepoBSONTest, GetTimeStampField)
 {
 	mongo::BSONObjBuilder builder;
-	
+
 	mongo::Date_t date = mongo::Date_t(time(NULL) * 1000);
-	
+
 	builder.append("ts", date);
 
 	RepoBSON tsBson = builder.obj();
@@ -343,7 +326,7 @@ TEST(RepoBSONTest, GetListStringPairField)
 
 	RepoBSON bson = builder.obj();
 
-	std::list<std::pair<std::string, std::string>> vecOut = 
+	std::list<std::pair<std::string, std::string>> vecOut =
 		bson.getListStringPairField("bsonArr", "first", "second");
 
 	EXPECT_EQ(vecIn.size(), vecOut.size());
@@ -351,11 +334,9 @@ TEST(RepoBSONTest, GetListStringPairField)
 
 	for (size_t i = 0; i < size; i++)
 	{
-
 		EXPECT_EQ(vecIn[i][0], listIt->first);
 		EXPECT_EQ(vecIn[i][1], listIt->second);
 		++listIt;
-
 	}
 
 	//Shouldn't fail if trying to get a uuid field that doesn't exist
@@ -373,10 +354,10 @@ TEST(RepoBSONTest, CloneAndShrink)
 
 	EXPECT_EQ(testBson, shrunkBson);
 	EXPECT_EQ(testBson.getFilesMapping().size(), shrunkBson.getFilesMapping().size());
-	
+
 	mongo::BSONObjBuilder builder;
 	std::vector < uint8_t > in, out, ref;
-	
+
 	size_t size = 100;
 
 	in.resize(size);
@@ -402,7 +383,6 @@ TEST(RepoBSONTest, CloneAndShrink)
 	//Check the binary still obtainable
 	EXPECT_TRUE(shrunkBson.getBinaryFieldAsVector("binDataTest", out));
 
-
 	ASSERT_EQ(in.size(), out.size());
 	for (size_t i = 0; i < out.size(); ++i)
 	{
@@ -410,13 +390,12 @@ TEST(RepoBSONTest, CloneAndShrink)
 	}
 
 	//Check the out referenced bigfile is still sane
-	
+
 	EXPECT_EQ(ref.size(), outMapping["orgRef"].second.size());
 	for (size_t i = 0; i < ref.size(); ++i)
 	{
 		EXPECT_EQ(ref[i], outMapping["orgRef"].second[i]);
 	}
-
 }
 
 TEST(RepoBSONTest, GetBigBinary)
@@ -481,11 +460,9 @@ TEST(RepoBSONTest, GetFilesMapping)
 	EXPECT_EQ(1, outMapping.size());
 	EXPECT_FALSE(outMapping.find("orgRef") == outMapping.end());
 
-
 	EXPECT_EQ(0, testBson.getFilesMapping().size());
 	EXPECT_EQ(0, emptyBson.getFilesMapping().size());
 }
-
 
 TEST(RepoBSONTest, HasOversizeFiles)
 {
@@ -503,7 +480,6 @@ TEST(RepoBSONTest, HasOversizeFiles)
 	EXPECT_TRUE(binBson.hasOversizeFiles());
 	EXPECT_FALSE(testBson.hasOversizeFiles());
 	EXPECT_FALSE(emptyBson.hasOversizeFiles());
-
 }
 
 TEST(RepoBSONTest, GetEmbeddedDoubleTest)
@@ -513,7 +489,7 @@ TEST(RepoBSONTest, GetEmbeddedDoubleTest)
 	//Shouldn't fail.
 	EXPECT_EQ(empty.getEmbeddedDouble("something", "somethingElse"), 0);
 	EXPECT_EQ(empty.getEmbeddedDouble("something", "somethingElse", 10), 10);
-	
+
 	RepoBSON hasFieldWrongTypeBson(BSON("field" << 1));
 	EXPECT_EQ(hasFieldWrongTypeBson.getEmbeddedDouble("field", "somethingElse"), 0);
 
@@ -527,7 +503,7 @@ TEST(RepoBSONTest, GetEmbeddedDoubleTest)
 	EXPECT_EQ(expectNumber.getEmbeddedDouble("field", "amount"), 100);
 
 	auto innerBson = BSON("amount" << 1.10101);
-	RepoBSON expectNumber2(BSON("field" << innerBson ));
+	RepoBSON expectNumber2(BSON("field" << innerBson));
 	EXPECT_EQ(expectNumber2.getEmbeddedDouble("field", "amount"), 1.10101);
 }
 

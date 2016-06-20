@@ -158,7 +158,8 @@ std::vector<float> TransformationNode::getTransMatrix(const bool &rowMajor) cons
 	}
 	else
 	{
-		repoError << "This transformation has no matrix field!";
+		repoWarning << "This transformation has no matrix field, returning identity";
+		transformationMatrix = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
 	}
 	return transformationMatrix;
 }
@@ -167,6 +168,7 @@ bool TransformationNode::sEqual(const RepoNode &other) const
 {
 	if (other.getTypeAsEnum() != NodeType::TRANSFORMATION || other.getParentIDs().size() != getParentIDs().size())
 	{
+		repoTrace << "Failed at start";
 		return false;
 	}
 
@@ -175,5 +177,5 @@ bool TransformationNode::sEqual(const RepoNode &other) const
 	std::vector<float> mat = getTransMatrix(false);
 	std::vector<float> otherMat = otherTrans.getTransMatrix(false);
 
-	return mat.size() == otherMat.size() && !memcmp(mat.data(), otherMat.data(), mat.size() *sizeof(*mat.data()));
+	return (mat.size() + otherMat.size() == 0) || (mat.size() == otherMat.size() && !memcmp(mat.data(), otherMat.data(), mat.size() *sizeof(*mat.data())));
 }

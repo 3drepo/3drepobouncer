@@ -41,13 +41,38 @@ TEST(RepoBSONElementTest, ConstructorTest)
 	EXPECT_EQ(mongoBson.getField("BoolField").Bool(), RepoBSONElement(mongoBson.getField("BoolField")).Bool());
 }
 
-//TEST(RepoBSONElementTest, ConstructorTest2)
-//{
-//	RepoBSONElement empty;
-//
-//	EXPECT_EQ(ElementType::UNKNOWN);
-//
-//	RepoBSONBuilder builder;
-//	builder << "string" << "stringField";
-//	builder << "string" << "stringField";
-//}
+TEST(RepoBSONElementTest, TypeTest)
+{
+	RepoBSONElement empty;
+	EXPECT_EQ(ElementType::UNKNOWN, empty.type());
+
+	RepoBSON bson = BSON("stringField" << "String" << "IntField" << std::rand() << "DoubleField" << (double)std::rand() / 100. << "BoolField" << true);
+
+	EXPECT_EQ(ElementType::STRING, bson.getField("stringField").type());
+	EXPECT_EQ(ElementType::INT, bson.getField("IntField").type());
+	EXPECT_EQ(ElementType::DOUBLE, bson.getField("DoubleField").type());
+	EXPECT_EQ(ElementType::BOOL, bson.getField("BoolField").type());
+}
+
+TEST(RepoBSONElementTest, ArrayTest)
+{
+	RepoBSONElement empty;
+
+	auto elementArrEmpty = empty.Array();
+
+	EXPECT_EQ(0, elementArrEmpty.size());
+
+	std::vector<int> intVect = { 1, 2, 3, 4, 5, 6, 7, 8 };
+
+	RepoBSONBuilder builder;
+	builder.appendArray("intArr", intVect);
+
+	auto bson = builder.obj();
+	auto intEleArr = bson.getField("intArr").Array();
+	ASSERT_EQ(intEleArr.size(), intVect.size());
+	for (int i = 0; i < intEleArr.size(); ++i)
+	{
+		EXPECT_EQ(ElementType::INT, intEleArr[i].type());
+		EXPECT_EQ(intEleArr[i].Int(), intVect[i]);
+	}
+}
