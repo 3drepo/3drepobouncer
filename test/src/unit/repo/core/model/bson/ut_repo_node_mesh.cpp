@@ -245,3 +245,109 @@ TEST(MeshNodeTest, CloneAndApplyTransformation)
 	EXPECT_FALSE(compareVectors(changedMesh.getNormals(), v));
 	EXPECT_FALSE(compareVectors(changedMesh.getNormals(), changedMesh.getVertices()));
 }
+
+TEST(MeshNodeTest, CloneAndApplyMeshMapping)
+{
+	MeshNode empty;
+	std::vector<repo_mesh_mapping_t> mapping;
+
+	mapping.resize(5);
+
+	for (auto &map : mapping)
+	{
+		map.min = { rand() / 100.0f, rand() / 100.0f, rand() / 100.0f };
+		map.max = { rand() / 100.0f, rand() / 100.0f, rand() / 100.0f };
+		map.mesh_id = generateUUID();
+		map.material_id = generateUUID();
+		map.vertFrom = rand();
+		map.vertTo = rand();
+		map.triFrom = rand();
+		map.triTo = rand();
+	}
+
+	auto withMappings = empty.cloneAndUpdateMeshMapping(mapping);
+
+	auto meshMappings = withMappings.getMeshMapping();
+
+	ASSERT_EQ(meshMappings.size(), mapping.size());
+	for (int i = 0; i < meshMappings.size(); ++i)
+	{
+		EXPECT_TRUE(compareVectors(meshMappings[i].min, mapping[i].min));
+		EXPECT_TRUE(compareVectors(meshMappings[i].max, mapping[i].max));
+		EXPECT_EQ(meshMappings[i].mesh_id, mapping[i].mesh_id);
+		EXPECT_EQ(meshMappings[i].material_id, mapping[i].material_id);
+		EXPECT_EQ(meshMappings[i].vertFrom, mapping[i].vertFrom);
+		EXPECT_EQ(meshMappings[i].vertTo, mapping[i].vertTo);
+		EXPECT_EQ(meshMappings[i].triFrom, mapping[i].triFrom);
+		EXPECT_EQ(meshMappings[i].triTo, mapping[i].triTo);
+	}
+
+	std::vector<repo_mesh_mapping_t> moreMappings;
+	moreMappings.resize(2);
+
+	for (auto &map : moreMappings)
+	{
+		map.min = { rand() / 100.0f, rand() / 100.0f, rand() / 100.0f };
+		map.max = { rand() / 100.0f, rand() / 100.0f, rand() / 100.0f };
+		map.mesh_id = generateUUID();
+		map.material_id = generateUUID();
+		map.vertFrom = rand();
+		map.vertTo = rand();
+		map.triFrom = rand();
+		map.triTo = rand();
+	}
+
+	auto updatedMappings = withMappings.cloneAndUpdateMeshMapping(moreMappings);
+	EXPECT_EQ(updatedMappings.getMeshMapping().size(), mapping.size() + moreMappings.size());
+
+	auto overwriteMappings = withMappings.cloneAndUpdateMeshMapping(moreMappings, true);
+	EXPECT_EQ(overwriteMappings.getMeshMapping().size(), moreMappings.size());
+}
+
+TEST(MeshNodeTest, Getters)
+{
+	MeshNode empty;
+
+	std::vector<repo_vector_t> v, n;
+	std::vector<repo_face_t> f;
+	std::vector<std::vector<float>> bbox;
+	std::vector<std::vector<repo_vector2d_t>> uvs;
+	std::vector<repo_color4d_t> cols;
+
+	uvs.resize(2);
+	for (int i = 0; i < 10; ++i)
+	{
+		v.push_back({ rand() / 100.0f, rand() / 100.0f, rand() / 100.0f });
+		n.push_back({ rand() / 100.0f, rand() / 100.0f, rand() / 100.0f });
+		uvs[0].push_back({ rand() / 100.0f, rand() / 100.0f });
+		uvs[1].push_back({ rand() / 100.0f, rand() / 100.0f });
+		cols.push_back({ rand() / 100.0f, rand() / 100.0f, rand() / 100.0f, rand() / 100.0f });
+		f.push_back({ (uint32_t)rand(), (uint32_t)rand(), (uint32_t)rand() });
+	}
+	bbox.push_back({ rand() / 100.0f, rand() / 100.0f, rand() / 100.0f });
+	bbox.push_back({ rand() / 100.0f, rand() / 100.0f, rand() / 100.0f });
+
+	auto mesh = RepoBSONFactory::makeMeshNode(v, f, n, bbox, uvs, cols);
+
+	EXPECT_EQ(0, empty.getVertices().size());
+	auto resVertices = mesh.getVertices();
+	EXPECT_EQ(v.size(), resVertices.size());
+	EXPECT_TRUE(compareVectors(v, resVertices));
+
+	EXPECT_EQ(0, empty.getFaces().size());
+	auto resFaces = mesh.getFaces();
+	EXPECT_EQ(f.size(), resFaces.size());
+	//EXPECT_TRUE(compareStdVectors(resFaces, f));
+
+	EXPECT_EQ(0, empty.getNormals().size());
+	auto resNormals = mesh.getNormals();
+	EXPECT_EQ(n.size(), resNormals.size());
+	EXPECT_TRUE(compareVectors(resNormals, n));
+
+	EXPECT_EQ(0, empty.getUVChannelsSeparated().size());
+
+	EXPECT_EQ(uvs.size(), mesh.getUVChannelsSeparated().size());
+
+	EXPECT_EQ(0, empty.getColors().size());
+	EXPECT_EQ(cols.size(), mesh.getColors().size());
+}
