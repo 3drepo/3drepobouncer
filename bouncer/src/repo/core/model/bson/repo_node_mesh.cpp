@@ -144,7 +144,7 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 	else
 	{
 		repoError << "Unable to apply transformation: Cannot find vertices within a mesh!";
-		return *this;
+		return  (RepoNode)*this;
 	}
 }
 
