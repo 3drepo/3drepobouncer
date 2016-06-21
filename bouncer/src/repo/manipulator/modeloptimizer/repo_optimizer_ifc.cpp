@@ -20,6 +20,7 @@
 */
 
 #include "repo_optimizer_ifc.h"
+#include "../../core/model/bson/repo_node_transformation.h"
 #include <algorithm>
 
 using namespace repo::manipulator::modeloptimizer;
@@ -72,6 +73,26 @@ bool IFCOptimzer::optimizeIFCMappedItems(
 		{
 			auto parents = mappedItemNode->getParentIDs();
 			auto children = scene->getChildrenAsNodes(defaultG, mappedItemNode->getSharedID());
+
+			repo::core::model::TransformationNode *transNode = dynamic_cast<repo::core::model::TransformationNode*>(mappedItemNode);
+
+			if (transNode)
+			{
+				if (!transNode->isIdentity())
+				{
+					repoError << IFC_MAPPED_ITEM << " "
+						<< transNode->getUniqueID() << " is not an identity transformation - this is not expected!";
+					success = false;
+					continue;
+				}
+			}
+			else
+			{
+				repoError << IFC_MAPPED_ITEM << " "
+					<< transNode->getUniqueID() << " is not a transformation node - this is not expected!";
+				success = false;
+				continue;
+			}
 
 			if (!(parents.size() && children.size()))
 			{
