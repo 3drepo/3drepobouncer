@@ -65,6 +65,17 @@ namespace repo {
 					const uint32_t                           &maxDepth = 2);
 
 				/**
+				* Remove Transformations that contains the names given
+				* @param scene takes in a repoScene to optimise
+				* @param transByName mapping of transformation and their name (capitalized)
+				* @param names list of names to remove
+				*/
+				bool removeTransformationsWithNames(
+					repo::core::model::RepoScene *scene,
+					const std::unordered_map<std::string, std::vector<repo::core::model::RepoNode*>>  &transByName,
+					const std::vector<std::string> &names);
+
+				/**
 				* Optimize away the IFC Mapped Items.
 				* It is an IFC keyword to group meshes with same metadata
 				* @param scene takes in a repoScene to optimise

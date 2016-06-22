@@ -27,8 +27,11 @@
 
 using namespace repo::manipulator::modeloptimizer;
 
-TransformationReductionOptimizer::TransformationReductionOptimizer() : AbstractOptimizer()
-, gType(repo::core::model::RepoScene::GraphType::DEFAULT) //we only perform optimisation on default graphs
+TransformationReductionOptimizer::TransformationReductionOptimizer(
+	const bool strictMode) :
+	AbstractOptimizer()
+	, gType(repo::core::model::RepoScene::GraphType::DEFAULT) //we only perform optimisation on default graphs
+	, strictMode(strictMode)
 {
 }
 
@@ -124,8 +127,9 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 			if (!isRoot)
 			{
 				std::vector<repo::core::model::RepoNode*> children = scene->getChildrenAsNodes(gType, parentSharedID);
-				bool singleMeshChild = scene->filterNodesByType(
-					children, repo::core::model::NodeType::MESH).size() == 1;
+
+				auto meshVector = scene->getChildrenNodesFiltered(gType,
+					parentSharedID, repo::core::model::NodeType::MESH);
 
 				bool noTransSiblings = (bool)!scene->filterNodesByType(
 					children, repo::core::model::NodeType::TRANSFORMATION).size() == 1;
@@ -134,52 +138,68 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 					scene->getParentNodesFiltered(gType,
 					trans, repo::core::model::NodeType::TRANSFORMATION);
 
-				if (singleMeshChild && noTransSiblings && granTransParents.size() == 1)
+				bool absorbTrans = (meshVector.size() == 1) && noTransSiblings && granTransParents.size() == 1;
+
+				if ((!strictMode && meshVector.size() || absorbTrans))
 				{
-					repo::core::model::TransformationNode *granTrans =
-						dynamic_cast<repo::core::model::TransformationNode*>(granTransParents[0]);
+					auto metaVector = scene->getChildrenNodesFiltered(gType,
+						parentSharedID, repo::core::model::NodeType::METADATA);
 
-					if (granTrans)
+					//connect all metadata to children mesh
+					for (auto &meta : metaVector)
 					{
-						repoUUID granSharedID = granTrans->getSharedID();
-						repoUUID meshSharedID = mesh->getSharedID();
-						//Disconnect grandparent from parent
-						scene->abandonChild(gType,
-							granSharedID, trans, true, false);
-						for (repo::core::model::RepoNode *node : children)
-						{
-							//Put all children of trans node to granTrans, unless it's a metadata node
-							if (node)
-							{
-								scene->abandonChild(gType,
-									parentSharedID, node, false, true);
-								if (!isIdentity && node->positionDependant()){
-									//Parent is not the identity matrix, we need to reapply the transformation if
-									//the node is position dependant
-									node->swap(node->cloneAndApplyTransformation(trans->getTransMatrix(false)));
-								}
-
-								//metadata should be assigned under the mesh
-								scene->addInheritance(gType,
-									node->getTypeAsEnum() == repo::core::model::NodeType::METADATA ? (repo::core::model::RepoNode*)mesh
-									: (repo::core::model::RepoNode*) granTrans,
-									node,
-									false
-									);
-							}
-						}
-
-						//change mesh name
-						repo::core::model::MeshNode newMesh = mesh->cloneAndChangeName(trans->getName(), false);
-
-						scene->modifyNode(gType, mesh, &newMesh);
-
-						//remove parent from the scene.
-						scene->removeNode(gType, parentSharedID);
+						scene->addInheritance(gType, mesh, meta);
 					}
-					else
+
+					if (absorbTrans)
 					{
-						repoError << "Failed to dynamically cast a transformation node!!!!";
+						repo::core::model::TransformationNode *granTrans =
+							dynamic_cast<repo::core::model::TransformationNode*>(granTransParents[0]);
+
+						if (granTrans)
+						{
+							repoUUID granSharedID = granTrans->getSharedID();
+							repoUUID meshSharedID = mesh->getSharedID();
+
+							//Disconnect grandparent from parent
+							scene->abandonChild(gType,
+								granSharedID, trans, true, false);
+							for (repo::core::model::RepoNode *node : children)
+							{
+								//Put all children of trans node to granTrans, unless it's a metadata node
+								if (node)
+								{
+									scene->abandonChild(gType,
+										parentSharedID, node, false, true);
+									if (!isIdentity && node->positionDependant()){
+										//Parent is not the identity matrix, we need to reapply the transformation if
+										//the node is position dependant
+										node->swap(node->cloneAndApplyTransformation(trans->getTransMatrix(false)));
+									}
+
+									if (node->getTypeAsEnum() != repo::core::model::NodeType::METADATA)
+									{
+										scene->addInheritance(gType,
+											(repo::core::model::RepoNode*) granTrans,
+											node,
+											false
+											);
+									}
+								}
+							}
+
+							//change mesh name
+							repo::core::model::MeshNode newMesh = mesh->cloneAndChangeName(trans->getName(), false);
+
+							scene->modifyNode(gType, mesh, &newMesh);
+
+							//remove parent from the scene.
+							scene->removeNode(gType, parentSharedID);
+						}
+						else
+						{
+							repoError << "Failed to dynamically cast a transformation node!!!!";
+						}
 					}
 				} //(singleMeshChild && noTransSiblings && granTransParents.size() == 1)
 			}//(trans->getUniqueID() != scene->getRoot()->getUniqueID() && trans->isIdentity())
