@@ -75,11 +75,16 @@ namespace repo{
 				* and add another parent into this new object
 				* NOTE: this object is unchanged!
 				* @param parentID the shared uuid of the parent
+				* @param newUniqueID assign a new unique ID
+				* @param newSharedID assign a new shared ID
+				* @param overwrite overwrite the current parenting information
 				* @return new object with the field updated
 				*/
 				RepoNode cloneAndAddParent(
 					const repoUUID &parent,
-					const bool     &newUniqueID = false) const;
+					const bool     &newUniqueID = false,
+					const bool     &newSharedID = false,
+					const bool     &overwrite = false) const;
 
 				/**
 				* Create a new object with this object's values,
