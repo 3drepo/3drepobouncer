@@ -45,7 +45,9 @@ namespace repo {
 				* Construct a MetadataNode from a RepoBSON object
 				* @param RepoBSON object
 				*/
-				MetadataNode(RepoBSON bson);
+				MetadataNode(RepoBSON bson,
+					const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping =
+					std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>());
 
 				/**
 				* Default deconstructor
@@ -60,6 +62,14 @@ namespace repo {
 				* @param returns true if equal, false otherwise
 				*/
 				virtual bool sEqual(const RepoNode &other) const;
+
+				/**
+				* Append the given metadata to the list of currently existing metadata
+				* @param metadata the metadata to add
+				* @return returns a cloned version with updated metadata
+				*/
+				MetadataNode cloneAndAddMetadata(
+					const RepoBSON &metadata) const;
 			};
 		} //namespace model
 	} //namespace core

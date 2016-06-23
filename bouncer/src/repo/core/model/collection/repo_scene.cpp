@@ -361,6 +361,16 @@ bool RepoScene::addNodeToScene(
 	return success;
 }
 
+void RepoScene::addNodes(
+	const std::vector<RepoNode *> &nodes)
+{
+	std::string errMsg;
+	for (auto &node : nodes)
+	{
+		addNodeToMaps(GraphType::DEFAULT, node, errMsg);
+	}
+}
+
 bool RepoScene::addNodeToMaps(
 	const GraphType &gType,
 	RepoNode *node,
@@ -1187,79 +1197,86 @@ void RepoScene::removeNode(
 {
 	repoGraphInstance &g = gtype == GraphType::OPTIMIZED ? stashGraph : graph;
 	RepoNode *node = getNodeBySharedID(gtype, sharedID);
-	//Remove entry from everything.
-	g.nodesByUniqueID.erase(node->getUniqueID());
-	g.sharedIDtoUniqueID.erase(sharedID);
-	g.parentToChildren.erase(sharedID);
-
-	bool keepNode = false;
-	if (gtype == GraphType::DEFAULT)
+	if (node)
 	{
-		//If this node was in newAdded or newModified, remove it
-		std::set<repoUUID>::iterator iterator;
-		if ((iterator = newAdded.find(sharedID)) != newAdded.end())
+		//Remove entry from everything.
+		g.nodesByUniqueID.erase(node->getUniqueID());
+		g.sharedIDtoUniqueID.erase(sharedID);
+		g.parentToChildren.erase(sharedID);
+
+		bool keepNode = false;
+		if (gtype == GraphType::DEFAULT)
 		{
-			newAdded.erase(iterator);
+			//If this node was in newAdded or newModified, remove it
+			std::set<repoUUID>::iterator iterator;
+			if ((iterator = newAdded.find(sharedID)) != newAdded.end())
+			{
+				newAdded.erase(iterator);
+			}
+			else
+			{
+				if ((iterator = newModified.find(sharedID)) != newModified.end())
+				{
+					newModified.erase(iterator);
+				}
+
+				newRemoved.insert(sharedID);
+				keepNode = true;
+			}
+		}
+
+		//remove from the nodes sets
+		switch (node->getTypeAsEnum())
+		{
+		case NodeType::CAMERA:
+			g.cameras.erase(node);
+			break;
+		case NodeType::MAP:
+			g.maps.erase(node);
+			break;
+		case NodeType::MATERIAL:
+			g.materials.erase(node);
+			break;
+		case NodeType::MESH:
+			g.meshes.erase(node);
+			break;
+		case NodeType::METADATA:
+			g.metadata.erase(node);
+			break;
+		case NodeType::REFERENCE:
+		{
+			g.references.erase(node);
+			//Since it's reference node, also delete the referenced scene
+			RepoScene *s = g.referenceToScene[sharedID];
+			delete s;
+			g.referenceToScene.erase(sharedID);
+		}
+		break;
+		case NodeType::TEXTURE:
+			g.textures.erase(node);
+			break;
+		case NodeType::TRANSFORMATION:
+			g.transformations.erase(node);
+			break;
+		case NodeType::UNKNOWN:
+			g.unknowns.erase(node);
+			break;
+		default:
+			repoError << "Unexpected node type: " << (int)node->getTypeAsEnum();
+		}
+
+		if (keepNode)
+		{
+			//add node onto the toRemove list
+			toRemove.push_back(node);
 		}
 		else
-		{
-			if ((iterator = newModified.find(sharedID)) != newModified.end())
-			{
-				newModified.erase(iterator);
-			}
-
-			newRemoved.insert(sharedID);
-			keepNode = true;
-		}
-	}
-
-	//remove from the nodes sets
-	switch (node->getTypeAsEnum())
-	{
-	case NodeType::CAMERA:
-		g.cameras.erase(node);
-		break;
-	case NodeType::MAP:
-		g.maps.erase(node);
-		break;
-	case NodeType::MATERIAL:
-		g.materials.erase(node);
-		break;
-	case NodeType::MESH:
-		g.meshes.erase(node);
-		break;
-	case NodeType::METADATA:
-		g.metadata.erase(node);
-		break;
-	case NodeType::REFERENCE:
-	{
-		g.references.erase(node);
-		//Since it's reference node, also delete the referenced scene
-		RepoScene *s = g.referenceToScene[sharedID];
-		delete s;
-		g.referenceToScene.erase(sharedID);
-	}
-	break;
-	case NodeType::TEXTURE:
-		g.textures.erase(node);
-		break;
-	case NodeType::TRANSFORMATION:
-		g.transformations.erase(node);
-		break;
-	case NodeType::UNKNOWN:
-		g.unknowns.erase(node);
-		break;
-	default:
-		repoError << "Unexpected node type: " << (int)node->getTypeAsEnum();
-	}
-
-	if (keepNode)
-	{
-		//add node onto the toRemove list
-		toRemove.push_back(node);
+			delete node;
 	}
 	else
-		delete node;
+	{
+		repoError << "Trying to delete a node that doesn't exist!";
+	}
 }
 
 bool RepoScene::populate(

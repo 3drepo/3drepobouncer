@@ -34,8 +34,11 @@ namespace repo {
 			public:
 				/**
 				* Default constructor
+				* if strictMode is set to true, only single trans
+				* to single meta/mesh will be optimised
 				*/
-				TransformationReductionOptimizer();
+				TransformationReductionOptimizer(
+					const bool strictMode = false);
 
 				/**
 				* Default deconstructor
@@ -51,6 +54,7 @@ namespace repo {
 
 			private:
 				const repo::core::model::RepoScene::GraphType gType;
+				const bool strictMode;
 
 				/**
 				* Apply optimization on the mesh, given

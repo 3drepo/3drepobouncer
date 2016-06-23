@@ -35,18 +35,28 @@ RepoNode::~RepoNode()
 
 RepoNode RepoNode::cloneAndAddParent(
 	const repoUUID &parentID,
-	const bool     &newUniqueID) const
+	const bool     &newUniqueID,
+	const bool     &newSharedID,
+	const bool     &overwrite) const
 {
 	RepoBSONBuilder builder;
 	RepoBSONBuilder arrayBuilder;
 
-	std::vector<repoUUID> currentParents = getParentIDs();
+	std::vector<repoUUID> currentParents;
+	if (!overwrite)
+	{
+		currentParents = getParentIDs();
+	}
+
 	if (std::find(currentParents.begin(), currentParents.end(), parentID) == currentParents.end())
 		currentParents.push_back(parentID);
 	builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);
 
 	if (newUniqueID)
 		builder.append(REPO_NODE_LABEL_ID, generateUUID());
+
+	if (newSharedID)
+		builder.append(REPO_NODE_LABEL_SHARED_ID, generateUUID());
 
 	builder.appendElementsUnique(*this);
 
