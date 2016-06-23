@@ -361,6 +361,16 @@ bool RepoScene::addNodeToScene(
 	return success;
 }
 
+void RepoScene::addNodes(
+	const std::vector<RepoNode *> &nodes)
+{
+	std::string errMsg;
+	for (auto &node : nodes)
+	{
+		addNodeToMaps(GraphType::DEFAULT, node, errMsg);
+	}
+}
+
 bool RepoScene::addNodeToMaps(
 	const GraphType &gType,
 	RepoNode *node,
@@ -1267,7 +1277,6 @@ void RepoScene::removeNode(
 	{
 		repoError << "Trying to delete a node that doesn't exist!";
 	}
-	
 }
 
 bool RepoScene::populate(

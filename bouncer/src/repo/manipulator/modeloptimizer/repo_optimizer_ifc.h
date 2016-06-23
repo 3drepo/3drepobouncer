@@ -48,27 +48,13 @@ namespace repo {
 				virtual bool apply(repo::core::model::RepoScene *scene);
 
 			private:
-				/**
-				* Determine if the branch has no useful information in it
-				* @param scene the scene in question
-				* @param node root node of this sub branch
-				* @param ids ids within this subBranch (not exhaustive if false is returned
-				* @param currentDepth current depth of this recursive search
-				* @param maxDepth maximum depth before giving up
-				* @return returns true if all it contains is transformations, false otherwise or given up
-				*/
-				bool isBranchMeaningless(
-					const repo::core::model::RepoScene *scene,
-					const repo::core::model::RepoNode  *node,
-					std::vector<repoUUID>              &ids,
-					const uint32_t                           &currentDepth = 0,
-					const uint32_t                           &maxDepth = 2);
 
 				/**
 				* Remove Transformations that contains the names given
 				* @param scene takes in a repoScene to optimise
 				* @param transByName mapping of transformation and their name (capitalized)
 				* @param names list of names to remove
+				* @return true upon success
 				*/
 				bool removeTransformationsWithNames(
 					repo::core::model::RepoScene *scene,
@@ -76,27 +62,12 @@ namespace repo {
 					const std::vector<std::string> &names);
 
 				/**
-				* Optimize away the IFC Mapped Items.
-				* It is an IFC keyword to group meshes with same metadata
-				* @param scene takes in a repoScene to optimise
-				* @param transByName mapping of transformation and their name (capitalized)
-				* @return returns true upon success
+				* Sanitise the transformations to remove IFC specific keywords
+				* @param scene scene to examine
+				* @return true upon success
 				*/
-				bool optimizeIFCMappedItems(
-					repo::core::model::RepoScene *scene,
-					const std::unordered_map<std::string, std::vector<repo::core::model::RepoNode*>>  &transByName);
-
-				/**
-				* Optimize away the IfcRelVoidsElement.
-				* It is an IFC Keyword to identify a hole in a geometry, which
-				* is redundant after assimp processing and holds no information
-				* @param scene takes in a repoScene to optimise
-				* @param transByName mapping of transformation and their name (capitalized)
-				* @return returns true upon success
-				*/
-				bool optimizeRelVoidElements(
-					repo::core::model::RepoScene *scene,
-					const std::unordered_map<std::string, std::vector<repo::core::model::RepoNode*>>  &transByName);
+				bool sanitiseTransformationNames(
+					repo::core::model::RepoScene *scene);
 			};
 		}
 	}

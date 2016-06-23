@@ -840,7 +840,7 @@ namespace repo{
 				* Tracks the modification for commit
 				* @param vector of nodes to insert.
 				*/
-				void addNodes(std::vector<RepoNode *> nodes);
+				void addNodes(const std::vector<RepoNode *> &nodes);
 
 				/**
 				* Modify a node with the information within the new node.

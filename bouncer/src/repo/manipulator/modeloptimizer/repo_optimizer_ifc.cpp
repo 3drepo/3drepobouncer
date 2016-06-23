@@ -19,9 +19,8 @@
 * Abstract optimizer class
 */
 
-//#define DEBUG_ME
-
 #include "repo_optimizer_ifc.h"
+#include "../../core/model/bson/repo_bson_factory.h"
 #include "../../core/model/bson/repo_node_transformation.h"
 #include <algorithm>
 
@@ -61,7 +60,9 @@ bool IFCOptimzer::apply(repo::core::model::RepoScene *scene)
 	}
 
 	std::vector<std::string> transToRemove = { IFC_MAPPED_ITEM, IFC_RELVOID_ELE, IFC_RELVOID_ELE2, IFC_RELAGGREGATES };
-	removeTransformationsWithNames(scene, transByName, transToRemove);
+	success = removeTransformationsWithNames(scene, transByName, transToRemove);
+	//TODO: group
+	success &= sanitiseTransformationNames(scene);
 
 	return success;
 }
@@ -110,13 +111,6 @@ bool IFCOptimzer::removeTransformationsWithNames(
 				//Remove self from parent and  patch children to parents
 				for (const auto &parent : parents)
 				{
-#ifdef DEBUG_ME
-					for (auto &meta : scene->getChildrenNodesFiltered(defaultG,
-						parent, repo::core::model::NodeType::METADATA))
-					{
-						scene->abandonChild(defaultG, parent, meta);
-					}
-#endif
 					auto parentNode = scene->getNodeBySharedID(defaultG, parent);
 
 					if (parentNode)
@@ -140,4 +134,51 @@ bool IFCOptimzer::removeTransformationsWithNames(
 		}
 	}
 	return success;
+}
+
+bool IFCOptimzer::sanitiseTransformationNames(
+	repo::core::model::RepoScene *scene)
+{
+	auto transformations = scene->getAllTransformations(defaultG);
+	for (auto &trans : transformations)
+	{
+		//format of names: IFCTYPE_NAME_GUID
+		auto name = trans->getName();
+		auto posFirstUnderScore = name.find_first_of('_');
+		auto posGuid = name.size() - 22;
+
+		auto ifcType = name.substr(0, posFirstUnderScore);
+		auto realName = name.substr(posFirstUnderScore + 1, posGuid - (posFirstUnderScore + 2));
+		auto guid = name.substr(posGuid);
+
+		repoTrace << "Original : " << name << " Name : " << realName << ", ifc type : " << ifcType << " guid : " << guid;
+
+		auto newTrans = trans->cloneAndChangeName(realName, false);
+		scene->modifyNode(defaultG, trans, &newTrans, true);
+
+		repo::core::model::RepoBSON newMeta = BSON("IFC Type" << ifcType << "IFC GUID" << guid);
+
+		//Check for metadata
+		auto metas = scene->getChildrenNodesFiltered(defaultG, trans->getSharedID(), repo::core::model::NodeType::METADATA);
+		if (metas.size())
+		{
+			//Metadata exists, append to them
+			for (auto &meta : metas)
+			{
+				auto metaNode = dynamic_cast<repo::core::model::MetadataNode*>(meta);
+				repo::core::model::RepoNode updatedMeta = metaNode->cloneAndAddMetadata(newMeta);
+				scene->modifyNode(defaultG, meta, &updatedMeta, false);
+			}
+		}
+		else
+		{
+			//no metadata, create one
+			auto metaNode = new repo::core::model::MetadataNode(
+				repo::core::model::RepoBSONFactory::makeMetaDataNode(newMeta, "", realName, { trans->getSharedID() }));
+			std::vector<repo::core::model::RepoNode*> metaVec = { metaNode };
+			scene->addNodes(metaVec);
+		}
+	}
+
+	return true;
 }
