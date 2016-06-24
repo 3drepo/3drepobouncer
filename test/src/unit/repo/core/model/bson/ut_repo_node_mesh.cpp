@@ -337,7 +337,10 @@ TEST(MeshNodeTest, Getters)
 	EXPECT_EQ(0, empty.getFaces().size());
 	auto resFaces = mesh.getFaces();
 	EXPECT_EQ(f.size(), resFaces.size());
-	//EXPECT_TRUE(compareStdVectors(resFaces, f));
+	for (int i = 0; i < resFaces.size(); ++i)
+	{
+		EXPECT_TRUE(compareStdVectors(resFaces[i], f[i]));
+	}
 
 	EXPECT_EQ(0, empty.getNormals().size());
 	auto resNormals = mesh.getNormals();
@@ -347,7 +350,21 @@ TEST(MeshNodeTest, Getters)
 	EXPECT_EQ(0, empty.getUVChannelsSeparated().size());
 
 	EXPECT_EQ(uvs.size(), mesh.getUVChannelsSeparated().size());
+	for (int i = 0; i < uvs.size(); ++i)
+	{
+		auto uvChannel = mesh.getUVChannelsSeparated().at(i);
+		EXPECT_TRUE(compareVectors(uvs[i], uvChannel));
+	}
 
 	EXPECT_EQ(0, empty.getColors().size());
 	EXPECT_EQ(cols.size(), mesh.getColors().size());
+	EXPECT_TRUE(compareVectors(cols, mesh.getColors()));
+
+	auto retBbox = mesh.getBoundingBox();
+	std::vector<repo_vector_t> bboxInVect;
+	for (int i = 0; i < bbox.size(); ++i)
+	{
+		bboxInVect.push_back({ bbox[i][0], bbox[i][1], bbox[i][2] });
+	}
+	EXPECT_TRUE(compareVectors(retBbox, bboxInVect));
 }
