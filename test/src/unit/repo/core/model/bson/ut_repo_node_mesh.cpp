@@ -249,7 +249,7 @@ TEST(MeshNodeTest, CloneAndApplyTransformation)
 TEST(MeshNodeTest, CloneAndApplyMeshMapping)
 {
 	MeshNode empty;
-	std::vector<repo_mesh_mapping_t> mapping;
+	std::vector<repo_mesh_mapping_t> mapping, emptyMapping;
 
 	mapping.resize(5);
 
@@ -267,7 +267,10 @@ TEST(MeshNodeTest, CloneAndApplyMeshMapping)
 
 	auto withMappings = empty.cloneAndUpdateMeshMapping(mapping);
 
+	auto withMappings2 = empty.cloneAndUpdateMeshMapping(emptyMapping);
+
 	auto meshMappings = withMappings.getMeshMapping();
+	EXPECT_EQ(meshMappings, withMappings2.getMeshMapping());
 
 	ASSERT_EQ(meshMappings.size(), mapping.size());
 	for (int i = 0; i < meshMappings.size(); ++i)
