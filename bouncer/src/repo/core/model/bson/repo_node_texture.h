@@ -56,6 +56,24 @@ namespace repo {
 				~TextureNode();
 
 				/**
+				* Get the type of node
+				* @return returns the type as a string
+				*/
+				virtual std::string getType() const
+				{
+					return REPO_NODE_TYPE_TEXTURE;
+				}
+
+				/**
+				* Get the type of node as an enum
+				* @return returns type as enum.
+				*/
+				virtual NodeType getTypeAsEnum() const
+				{
+					return NodeType::TEXTURE;
+				}
+
+				/**
 				* Check if the node is semantically equal to another
 				* Different node should have a different interpretation of what
 				* this means.
