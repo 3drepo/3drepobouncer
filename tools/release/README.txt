@@ -1,4 +1,4 @@
-3D Repo Bouncer Library v 1.0(Release Candidate 1)
+3D Repo Bouncer Library v1.1.0
 
 This is the internal library used for 3D Repo GUI.
 
@@ -26,23 +26,22 @@ If you need any help, please contact support@3drepo.org, we
 look forward to hear from you.
 
 ========================= Improvements =========================
-* (ISSUE #111) Token is no longer created if the database connection fails no credentials
-* (ISSUE #108) Removed unneccessary header includes and obscured RepoController implementation from view
-* (ISSUE #106) Split Mesh has been fixed for large meshes and Mesh remapping has been moved to its own class
-* (ISSUE #100, #101, #105) Multipart(Optimised graph) fixes
-* (ISSUE #59) User refactoring to remove obsoleted fields
+* (ISSUE #116) UV coordinates are now retained during SRC export
+* (ISSUE #121) Remove automatic owner assignment
+* (ISSUE #125) Fixed triangulation on SRC export
+* (ISSUE #126) project.stash.json_mpc.[files|chunks] are now removed if project is deleted
+* (ISSUE #127) Fixed material mapping on the json export.
+
 
 ========================= New Features =========================
-* (ISSUE #113) A default "owner role is automatically created with project commits
-* (ISSUE #110) RepoClient will now log to file
-* (ISSUE #109) RepoToken and RepoCredentials have now merged into a single class
-* (ISSUE #107) X3D generation is removed from bouncer as it is no longer neccessary
-* (ISSUE #104) Metadata improvements
-* (ISSUE #103) The selection tree is now stored in GridFS upon commit
-* (ISSUE #102) More controller functionality has been exposed on the client
-* (ISSUE #99) Bouncer now supports 32bit Assimp again, with a warning message
-* (ISSUE #93) Faces re-ordering for buffer support
-* (ISSUE #75) GLTF generation
-
+* (ISSUE #80) Ability to revert(clean up) a commit if an error occurred
+* (ISSUE #115) Mesh Instancing is no longer supported (meshes are duplicated)
+* (ISSUE #118) The directory where the log is written is now displayed
+* (ISSUE #119) The bouncer worker now puts log files under a folder with request ID as name
+* (ISSUE #120) Missing textures is now indicated during import
+* (ISSUE #123) Selection Tree generation can now be called using 3drepobouncerClient.
+* (ISSUE #124) Improved error reporting on Bouncer worker.
+* (ISSUE #129) Added support for BOOST 1.61
+* (ISSUE #130) Improved support for IFC.
 
 

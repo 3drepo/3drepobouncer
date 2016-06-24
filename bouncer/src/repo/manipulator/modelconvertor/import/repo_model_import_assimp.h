@@ -115,7 +115,7 @@ namespace repo{
 				* @param materials RepoNodeSet of material objects (to add reference)
 				* @return returns the created Mesh Node
 				*/
-				repo::core::model::MeshNode* createMeshRepoNode(
+				repo::core::model::MeshNode createMeshRepoNode(
 					const aiMesh *assimpMesh,
 					const std::vector<repo::core::model::RepoNode *> &materials,
 					std::unordered_map < repo::core::model::RepoNode*, std::vector<repoUUID>> &matMap,
@@ -139,6 +139,7 @@ namespace repo{
 				* @param assimpNode assimp Transformation object
 				* @param cameras a map of camera name to camera objects
 				* @param meshes A vector fo mesh nodes in its original ASSIMP object order
+				* @param newMeshes newly produced meshes based on original ordered meshes
 				* @param metadata a RepoNode Set to store metadata nodes generated within this function
 				* @param map keeps track of the mapping between assimp pointer and repoNode
 				* @param parent a vector of parents to this node (optional)
@@ -147,12 +148,26 @@ namespace repo{
 				repo::core::model::RepoNodeSet createTransformationNodesRecursive(
 					const aiNode                                                         *assimpNode,
 					const std::unordered_map<std::string, repo::core::model::RepoNode *> &cameras,
-					const std::vector<repo::core::model::RepoNode *>                     &meshes,
+					const std::vector<repo::core::model::RepoNode >                      &meshes,
+					const std::unordered_map<repoUUID, repo::core::model::RepoNode *, RepoUUIDHasher>    &meshToMat,
+					std::unordered_map<repo::core::model::RepoNode *, std::vector<repoUUID>> &matParents,
+					repo::core::model::RepoNodeSet                                       &newMeshes,
 					repo::core::model::RepoNodeSet						                 &metadata,
 					uint32_t                                                             &count,
 					const std::vector<double>                                            &worldOffset,
 					const std::vector<repoUUID>						                     &parent = std::vector<repoUUID>()
 					);
+
+				/**
+				* Duplicate the given mesh and assign a new parent
+				* Also create a new unique ID and shared ID for the mesh
+				* @return returns a pointer to the newly constructed mesh
+				*/
+				repo::core::model::RepoNode* duplicateMesh(
+					repoUUID                    &newParent,
+					repo::core::model::RepoNode &mesh,
+					const std::unordered_map<repoUUID, repo::core::model::RepoNode *, RepoUUIDHasher>    &meshToMat,
+					std::unordered_map<repo::core::model::RepoNode *, std::vector<repoUUID>> &matParents);
 
 				/**
 				* Get bounding box of the aimesh

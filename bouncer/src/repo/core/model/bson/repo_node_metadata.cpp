@@ -20,6 +20,7 @@
 */
 
 #include "repo_node_metadata.h"
+#include "repo_bson_builder.h"
 
 using namespace repo::core::model;
 
@@ -28,13 +29,31 @@ RepoNode()
 {
 }
 
-MetadataNode::MetadataNode(RepoBSON bson) :
-RepoNode(bson)
+MetadataNode::MetadataNode(RepoBSON bson,
+	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping) :
+	RepoNode(bson, binMapping)
 {
 }
 
 MetadataNode::~MetadataNode()
 {
+}
+
+MetadataNode MetadataNode::cloneAndAddMetadata(
+	const RepoBSON &metadata) const
+{
+	RepoBSONBuilder metaBuilder, bsonBuilder;
+	metaBuilder.appendElements(metadata);
+	if (hasField(REPO_NODE_LABEL_METADATA))
+	{
+		auto metaBson = getObjectField(REPO_NODE_LABEL_METADATA);
+		if (!metaBson.isEmpty())
+			metaBuilder.appendElementsUnique(metaBson);
+	}
+
+	bsonBuilder << REPO_NODE_LABEL_METADATA << metaBuilder.obj();
+	bsonBuilder.appendElementsUnique(*this);
+	return MetadataNode(bsonBuilder.obj(), bigFiles);
 }
 
 bool MetadataNode::sEqual(const RepoNode &other) const

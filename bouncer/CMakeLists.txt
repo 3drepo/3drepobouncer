@@ -3,7 +3,7 @@
 add_subdirectory(src)
 
 set(VERSION_MAJOR 1)
-set(VERSION_MINOR 0rc1)
+set(VERSION_MINOR 1_0)
 
 include_directories(${Boost_INCLUDE_DIRS} ${MONGO_INCLUDE_DIR} ${ASSIMP_INCLUDE_DIR} src)
 add_definitions(-DREPO_API_LIBRARY)	
