@@ -147,14 +147,6 @@ namespace repo{
 					const RepoBSON *changes,
 					const bool     &newUniqueID = true) const;
 
-				/**
-				* Clone the object with a new added merge nodes field
-				* @param mergeMap A vector of nodes merged
-				* @return returns a new object with field updated
-				*/
-				RepoNode cloneAndAddMergedNodes(
-					const std::vector<repoUUID> &mergeMap) const;
-
 				/*
 				*	------------- Convenience getters --------------
 				*/

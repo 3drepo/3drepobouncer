@@ -12,7 +12,12 @@ set(TEST_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_factory.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_role.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_material.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_mesh.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_metadata.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_reference.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_revision.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_texture.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_transformation.cpp
 	CACHE STRING "TEST_SOURCES" FORCE)
 
