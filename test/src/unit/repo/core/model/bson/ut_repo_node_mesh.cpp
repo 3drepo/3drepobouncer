@@ -270,7 +270,7 @@ TEST(MeshNodeTest, CloneAndApplyMeshMapping)
 	auto withMappings2 = empty.cloneAndUpdateMeshMapping(emptyMapping);
 
 	auto meshMappings = withMappings.getMeshMapping();
-	EXPECT_EQ(meshMappings, withMappings2.getMeshMapping());
+	EXPECT_EQ(meshMappings.size(), withMappings2.getMeshMapping().size());
 
 	ASSERT_EQ(meshMappings.size(), mapping.size());
 	for (int i = 0; i < meshMappings.size(); ++i)
