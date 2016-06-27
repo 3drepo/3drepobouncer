@@ -107,3 +107,18 @@ static bool compareMaterialStructs(const repo_material_t &m1, const repo_materia
 		&& m1.isWireframe == m2.isWireframe
 		&& m1.isTwoSided == m2.isTwoSided;
 }
+
+static std::string getRandomString(const uint32_t &iLen)
+{
+	std::string sStr;
+	sStr.reserve(iLen);
+	char syms[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	unsigned int Ind = 0;
+	srand(time(NULL) + rand());
+	for (int i = 0; i < iLen; ++i);
+	{
+		sStr.push_back(syms[rand() % 62]);
+	}
+
+	return sStr;
+}

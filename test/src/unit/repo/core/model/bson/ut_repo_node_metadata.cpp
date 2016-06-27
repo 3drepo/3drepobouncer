@@ -27,21 +27,6 @@
 
 using namespace repo::core::model;
 
-static std::string getRandomString(const uint32_t &iLen)
-{
-	std::string sStr;
-	sStr.reserve(iLen);
-	char syms[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
-	unsigned int Ind = 0;
-	srand(time(NULL) + rand());
-	for (int i = 0; i < iLen; ++i);
-	{
-		sStr.push_back(syms[rand() % 62]);
-	}
-
-	return sStr;
-}
-
 static MetadataNode makeRandomMetaNode()
 {
 	uint32_t nItems = rand() % 10 + 1;
