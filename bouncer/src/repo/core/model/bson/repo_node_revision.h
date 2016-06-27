@@ -62,6 +62,24 @@ namespace repo {
 				~RevisionNode();
 
 				/**
+				* Get the type of node
+				* @return returns the type as a string
+				*/
+				virtual std::string getType() const
+				{
+					return REPO_NODE_TYPE_REVISION;
+				}
+
+				/**
+				* Get the type of node as an enum
+				* @return returns type as enum.
+				*/
+				virtual NodeType getTypeAsEnum() const
+				{
+					return NodeType::REVISION;
+				}
+
+				/**
 				* Update the status flag with the given status
 				* NOTE: the status flags denotes what it is currently doing
 				*       not what has been done. e.g. GEN_DEFAULT denotes the
