@@ -107,6 +107,8 @@ TEST(MetaNodeTest, CloneAndAddMetadataTest)
 
 	for (const auto &fieldName : fieldNames1)
 	{
+		//Skip the ones that would be overwritten
+		if (meta2.hasField(fieldName)) continue;
 		ASSERT_TRUE(resMeta.hasField(fieldName));
 		EXPECT_EQ(resMeta.getField(fieldName), meta1.getField(fieldName));
 	}
