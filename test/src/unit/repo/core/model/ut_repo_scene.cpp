@@ -25,7 +25,10 @@
 #include <repo/core/model/bson/repo_bson_factory.h>
 #include <repo/core/model/collection/repo_scene.h>
 
+#include "../../../repo_test_utils.h"
+
 using namespace repo::core::model;
+
 
 static RepoBSON makeRandomNode(
 	const std::string &name = "")
@@ -103,19 +106,52 @@ TEST(RepoSceneTest, StatusCheck)
 	EXPECT_FALSE(emptyScene.isOK());
 	EXPECT_TRUE(emptyScene.isMissingTexture());
 }
-//
-//TEST(RepoSceneTest, AddMetadata)
-//{
-//	RepoNodeSet transNodes;
-//	RepoNodeSet meshNodes;
-//
-//	auto root = TransformationNode(makeRandomNode());
-//
-//	auto t1 = TransformationNode(makeRandomNode(root.getSharedID));
-//	auto t2 = TransformationNode(makeRandomNode(root.getSharedID));
-//	auto t3 = TransformationNode(makeRandomNode(root.getSharedID));
-//
-//	auto m1 = MeshNode(makeRandomNode(t1.getSharedID()));
-//	auto m2 = MeshNode(makeRandomNode(t1.getSharedID()));
-//	auto m3 = MeshNode(makeRandomNode(t2.getSharedID()));
-//}
+
+TEST(RepoSceneTest, AddMetadata)
+{
+	RepoNodeSet transNodes;
+	RepoNodeSet meshNodes;
+	RepoNodeSet metaNodes;
+	RepoNodeSet empty;
+
+	auto root = TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+
+	auto t1 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 10 + 1)));
+	auto t2 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 10 + 1)));
+	auto t3 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 10 + 1)));
+
+	auto m1 = MeshNode(makeRandomNode(t1.getSharedID()));
+	auto m2 = MeshNode(makeRandomNode(t1.getSharedID()));
+	auto m3 = MeshNode(makeRandomNode(t2.getSharedID()));
+
+	auto mm1 = MetadataNode(makeRandomNode(t1.getSharedID(), t1.getName()));
+	auto mm2 = MetadataNode(makeRandomNode(t2.getSharedID(), t2.getName()));
+	auto mm3 = MetadataNode(makeRandomNode(t3.getSharedID(), t3.getName()));
+
+	transNodes.insert(&t1);
+	transNodes.insert(&t2);
+	transNodes.insert(&t3);
+
+	meshNodes.insert(&m1);
+	meshNodes.insert(&m2);
+	meshNodes.insert(&m3);
+
+	metaNodes.insert(&mm1);
+	metaNodes.insert(&mm2);
+	metaNodes.insert(&mm3);
+
+	/*
+		Root - t1  - m1, m2
+
+		- t2  - m3
+		- t3
+		*/
+
+		scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, empty, transNodes),
+		scene3(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, empty, transNodes);
+	scene.addMetadata(metaNodes, true);
+	scene2.addMetadata(metaNodes, true, false); //no propagation check
+	scene3.addMetadata(metaNodes, true, true); //propagation check
+	EXPECT_EQ(0, scene.getAllMetadata(defaultG).size());
+	//TODO: check meta
+}
