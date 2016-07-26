@@ -29,6 +29,7 @@
 
 using namespace repo::core::model;
 
+const static RepoScene::GraphType defaultG = RepoScene::GraphType::DEFAULT;
 
 static RepoBSON makeRandomNode(
 	const std::string &name = "")
@@ -147,11 +148,13 @@ TEST(RepoSceneTest, AddMetadata)
 		- t3
 		*/
 
+	/*RepoScene scene,
 		scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, empty, transNodes),
 		scene3(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, empty, transNodes);
 	scene.addMetadata(metaNodes, true);
 	scene2.addMetadata(metaNodes, true, false); //no propagation check
 	scene3.addMetadata(metaNodes, true, true); //propagation check
 	EXPECT_EQ(0, scene.getAllMetadata(defaultG).size());
+*/
 	//TODO: check meta
 }
