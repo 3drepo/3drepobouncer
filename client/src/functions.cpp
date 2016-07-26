@@ -275,17 +275,16 @@ int32_t generateFederation(
 
 				if (x != 16)
 				{
+					//no matrix/invalid input, assume identity
 					if (x)
 						repoLogError("Transformation was inserted for " + spDatabase + ":" + spProject 
 						+ " but it is not a 4x4 matrix(size found: " + std::to_string(x)+"). Using identity...");
-					//no matrix/invalid input, assume identity
 					matrix = repo::core::model::TransformationNode::identityMat();
 				}
 
 				
 				std::string nodeNames = spDatabase + ":" + spProject;
 				auto transNode = repo::core::model::RepoBSONFactory::makeTransformationNode(matrix, nodeNames);
-				repoLog("subProject: " + spDatabase + ":" + spProject + " uuid: " + uuid + " is Rev Id? " +(isRevID? "true" : "false"));
 				auto refNode = repo::core::model::RepoBSONFactory::makeReferenceNode(spDatabase, spProject, stringToUUID(uuid), isRevID, nodeNames);
 				refMap[transNode] = refNode;
 			}
