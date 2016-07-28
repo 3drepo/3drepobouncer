@@ -112,6 +112,7 @@ RepoUser RepoUser::cloneAndUpdateLicenseCount(
 		for (int i = 0; i < diff; ++i)
 		{
 			subs.push_back(createDefaultSub(expDate));
+
 			if (firstLicense)
 			{
 				//We're adding a first license, make sure it's assigned to the user
@@ -175,10 +176,10 @@ RepoUser RepoUser::cloneAndUpdateSubscriptions(
 
 		RepoBSONBuilder limitsBuilder;
 		limitsBuilder << REPO_USER_LABEL_SUBS_LIMITS_COLLAB << sub.collaboratorLimit;
-		limitsBuilder << REPO_USER_LABEL_SUBS_LIMITS_SPACE << sub.spaceLimit;
+		limitsBuilder.appendNumber(REPO_USER_LABEL_SUBS_LIMITS_SPACE, sub.spaceLimit);
 		builder.append(REPO_USER_LABEL_SUBS_LIMITS, limitsBuilder.obj());
-
 		auto subBson = builder.obj();
+
 		subArrayBson.push_back(subBson);
 	}
 
@@ -206,7 +207,7 @@ RepoUser::SubscriptionInfo RepoUser::createDefaultSub(
 	sub.active = true;
 	sub.pendingDelete = false;
 	sub.collaboratorLimit = 1;
-	sub.spaceLimit = 10737418240.;//10GB
+	sub.spaceLimit = 10737418240.0;//10GB
 
 	return sub;
 }
@@ -333,9 +334,18 @@ std::vector<RepoUser::SubscriptionInfo> RepoUser::getSubscriptionInfo() const
 					else
 					{
 						auto nCollab = limitsBson.getIntField(REPO_USER_LABEL_SUBS_LIMITS_COLLAB);
-						auto nSpace = limitsBson.getIntField(REPO_USER_LABEL_SUBS_LIMITS_SPACE);
+						double nSpace = 0;
+						if (limitsBson.hasField(REPO_USER_LABEL_SUBS_LIMITS_SPACE))
+						{
+							RepoBSONElement spaceLimit = limitsBson.getField(REPO_USER_LABEL_SUBS_LIMITS_SPACE);
+
+							if (spaceLimit.type() == ElementType::DOUBLE)
+								nSpace = spaceLimit.Double();
+							else
+								nSpace = spaceLimit.Int();
+						}
 						result.back().collaboratorLimit = nCollab == INT_MIN ? 0 : nCollab;
-						result.back().spaceLimit = nSpace == INT_MIN ? 0 : nSpace;
+						result.back().spaceLimit = nSpace;
 					}
 				}
 			}
@@ -358,9 +368,9 @@ uint32_t RepoUser::getNCollaborators() const
 	return nCollab;
 }
 
-uint64_t RepoUser::getQuota() const
+double RepoUser::getQuota() const
 {
-	uint64_t quota = 0;
+	double quota = 0;
 	auto subs = getSubscriptionInfo();
 	for (const auto &sub : subs)
 	{

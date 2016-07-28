@@ -242,7 +242,7 @@ namespace repo {
 				* Get the current quota of the user
 				* @return returns the quota available to the user
 				*/
-				uint64_t getQuota() const;
+				double getQuota() const;
 
 			private:
 				/**
