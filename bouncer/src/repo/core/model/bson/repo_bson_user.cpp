@@ -47,6 +47,20 @@ RepoUser RepoUser::cloneAndAddRole(
 	return RepoUser(builder.obj());
 }
 
+RepoUser RepoUser::cloneAndMergeUserInfo(
+	const RepoUser &newUserInfo) const
+{
+	RepoBSONBuilder newUserBuilder, customDataBuilder;
+	customDataBuilder.appendElementsUnique(newUserInfo.getCustomDataBSON());
+	customDataBuilder.appendElementsUnique(getCustomDataBSON());
+	newUserBuilder.append(REPO_USER_LABEL_CUSTOM_DATA, customDataBuilder.obj());
+
+	newUserBuilder.appendElementsUnique(newUserInfo);
+	newUserBuilder.appendElementsUnique(*this);
+
+	return newUserBuilder.obj();
+}
+
 RepoUser RepoUser::cloneAndUpdateLicenseCount(
 	const int &diff,
 	const int64_t expDate

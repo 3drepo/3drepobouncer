@@ -110,6 +110,14 @@ namespace repo {
 					const std::string &role) const;
 
 				/**
+				* Clone and merge new user info into the existing info
+				* @newUserInfo new info that needs ot be added/updated
+				* @return returns a new user with fields updated
+				*/
+				RepoUser cloneAndMergeUserInfo(
+					const RepoUser &newUserInfo) const;
+
+				/**
 				* Clone and increase/decrease license count
 				* if diff is positive, it will add new default licenses
 				* If we are trying to decrease n licenses, there has to be n unassigned, active licenses.
