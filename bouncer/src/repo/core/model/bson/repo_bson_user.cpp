@@ -333,7 +333,7 @@ std::vector<RepoUser::SubscriptionInfo> RepoUser::getSubscriptionInfo() const
 					else
 					{
 						auto nCollab = limitsBson.getIntField(REPO_USER_LABEL_SUBS_LIMITS_COLLAB);
-						auto nSpace = limitsBson.hasField(REPO_USER_LABEL_SUBS_LIMITS_SPACE) ? limitsBson.getField(REPO_USER_LABEL_SUBS_LIMITS_SPACE).Long() : 0;
+						auto nSpace = limitsBson.getIntField(REPO_USER_LABEL_SUBS_LIMITS_SPACE);
 						result.back().collaboratorLimit = nCollab == INT_MIN ? 0 : nCollab;
 						result.back().spaceLimit = nSpace == INT_MIN ? 0 : nSpace;
 					}
@@ -375,5 +375,5 @@ uint64_t RepoUser::getQuota() const
 
 bool RepoUser::isSubActive(const RepoUser::SubscriptionInfo &sub) const
 {
-	return sub.expiresAt >= RepoBSON::getCurrentTimestamp() || sub.expiresAt == -1;
+	return (sub.expiresAt >= RepoBSON::getCurrentTimestamp() || sub.expiresAt == -1) && sub.active;
 }
