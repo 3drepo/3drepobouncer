@@ -82,8 +82,8 @@ namespace repo {
 					std::string assignedUser;
 					std::string token;
 					std::string planName;
-					int64_t collaboratorLimit;
-					int64_t spaceLimit;
+					int collaboratorLimit;
+					double spaceLimit;
 				};
 
 				RepoUser();

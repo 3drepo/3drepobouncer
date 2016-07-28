@@ -206,7 +206,7 @@ RepoUser::SubscriptionInfo RepoUser::createDefaultSub(
 	sub.active = true;
 	sub.pendingDelete = false;
 	sub.collaboratorLimit = 1;
-	sub.spaceLimit = 10737418240l;//10GB
+	sub.spaceLimit = 10737418240.;//10GB
 
 	return sub;
 }
