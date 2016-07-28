@@ -65,6 +65,24 @@ RepoUser RepoUser::cloneAndUpdateLicenseCount(
 				//Can only delete it if it is not the free account, it's active and it's not assigned.
 				subs.erase(subs.begin() + i);
 				--i; //decrease the counter as we have just removed the current item.
+				if (orgCount + diff == subs.size()) break;
+			}
+		}
+
+		if (orgCount + diff == subs.size() - 1)
+		{
+			// We're missing one license - the self assigned license
+			// go round again and removed the last license that is assigned to yourself
+			//FIXME: Probably a better way to do this..
+			for (int i = 0; i < subs.size(); ++i)
+			{
+				if (subs[i].planName != REPO_USER_SUBS_STANDARD_FREE
+					&& isSubActive(subs[i]) && subs[i].assignedUser == getUserName())
+				{
+					//Can only delete it if it is not the free account, it's active and it's not assigned.
+					subs.erase(subs.begin() + i);
+					--i; //decrease the counter as we have just removed the current item.
+				}
 			}
 		}
 
@@ -147,7 +165,6 @@ RepoUser RepoUser::cloneAndUpdateSubscriptions(
 		builder.append(REPO_USER_LABEL_SUBS_LIMITS, limitsBuilder.obj());
 
 		auto subBson = builder.obj();
-		repoInfo << " new subscription: " << subBson.toString();
 		subArrayBson.push_back(subBson);
 	}
 
