@@ -128,7 +128,11 @@ namespace repo {
 				}
 
 				void appendTimeStamp(std::string label){
-					mongo::Date_t date = mongo::Date_t(time(NULL) * 1000);
+					appendTime(label, time(NULL) * 1000);
+				}
+
+				void appendTime(std::string label, const int64_t &ts){
+					mongo::Date_t date = mongo::Date_t(ts);
 					mongo::BSONObjBuilder::append(label, date);
 				}
 
