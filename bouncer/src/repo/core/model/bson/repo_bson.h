@@ -108,6 +108,11 @@ namespace repo {
 				}
 
 				/**
+				* Returns the current time in the form of int64 timestamp
+				*/
+				static int64_t getCurrentTimestamp();
+
+				/**
 				* returns a field from the BSON
 				* @param label name of the field to retrieve
 				* @return returns a RepoBSONElement

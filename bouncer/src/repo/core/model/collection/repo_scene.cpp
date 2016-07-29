@@ -1351,13 +1351,14 @@ bool RepoScene::populate(
 	RepoNodeSet::iterator refIt;
 	//Make sure it is propagated into the repoScene if it exists in revision node
 	worldOffset = getWorldOffset();
-
 	for (const auto &node : g.references)
 	{
 		ReferenceNode* reference = (ReferenceNode*)node;
 
 		//construct a new RepoScene with the information from reference node and append this g to the Scene
-		RepoScene *refg = new RepoScene(databaseName, reference->getProjectName(), sceneExt, revExt);
+		std::string spDbName = reference->getDatabaseName();
+		if (spDbName.empty()) spDbName = databaseName;
+		RepoScene *refg = new RepoScene(spDbName, reference->getProjectName(), sceneExt, revExt);
 		if (reference->useSpecificRevision())
 			refg->setRevision(reference->getRevisionID());
 		else
