@@ -68,6 +68,7 @@ RepoUser RepoUser::cloneAndUpdateLicenseCount(
 {
 	auto subs = getSubscriptionInfo();
 	int orgCount = subs.size();
+	int licenseCount = getLicenseAssignment().size();
 	if (diff < 0)
 	{
 		//Removing license
@@ -79,13 +80,14 @@ RepoUser RepoUser::cloneAndUpdateLicenseCount(
 				//Can only delete it if it is not the free account, it's active and it's not assigned.
 				subs.erase(subs.begin() + i);
 				--i; //decrease the counter as we have just removed the current item.
+				--licenseCount;
 				if (orgCount + diff == subs.size()) break;
 			}
 		}
 
-		if (orgCount + diff == subs.size() - 1)
+		if (orgCount + diff != subs.size() && licenseCount == 1)
 		{
-			// We're missing one license - the self assigned license
+			// We're missing one license and there is only 1 license left - the self assigned license
 			// go round again and removed the last license that is assigned to yourself
 			//FIXME: Probably a better way to do this..
 			for (int i = 0; i < subs.size(); ++i)
