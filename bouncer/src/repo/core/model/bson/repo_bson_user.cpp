@@ -164,17 +164,17 @@ RepoUser RepoUser::cloneAndUpdateSubscriptions(
 		if (sub.createdAt != -1)
 			builder.appendTime(REPO_USER_LABEL_SUBS_CREATED_AT, sub.createdAt);
 		else
-			builder << REPO_USER_LABEL_SUBS_CREATED_AT << mongo::BSONNULL;
+			builder.appendNull(REPO_USER_LABEL_SUBS_CREATED_AT);
 
 		if (sub.updatedAt != -1)
 			builder.appendTime(REPO_USER_LABEL_SUBS_UPDATED_AT, sub.updatedAt);
 		else
-			builder << REPO_USER_LABEL_SUBS_UPDATED_AT << mongo::BSONNULL;
+			builder.appendNull(REPO_USER_LABEL_SUBS_UPDATED_AT);
 
 		if (sub.expiresAt != -1)
 			builder.appendTime(REPO_USER_LABEL_SUBS_EXPIRES_AT, sub.expiresAt);
 		else
-			builder << REPO_USER_LABEL_SUBS_EXPIRES_AT << mongo::BSONNULL;
+			builder.appendNull(REPO_USER_LABEL_SUBS_EXPIRES_AT);
 
 		RepoBSONBuilder limitsBuilder;
 		limitsBuilder << REPO_USER_LABEL_SUBS_LIMITS_COLLAB << sub.collaboratorLimit;
