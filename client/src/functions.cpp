@@ -17,9 +17,16 @@
 
 #include "functions.h"
 
+#include <repo/core/model/bson/repo_bson_factory.h>
+
 #include <sstream>
+#include <fstream>
+
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 static const std::string cmdCleanProj = "clean"; //clean up a specified project
+static const std::string cmdCreateFed = "genFed"; //create a federation
 static const std::string cmdGenStash = "genStash";   //test the connection
 static const std::string cmdGetFile = "getFile"; //download original file
 static const std::string cmdImportFile = "import"; //file import
@@ -34,6 +41,7 @@ std::string helpInfo()
 	ss << cmdGenStash << "\tGenerate Stash for a project. (args: database project [repo|gltf|src|tree])\n";
 	ss << cmdGetFile << "\t\tGet original file for the latest revision of the project (args: database project dir)\n";
 	ss << cmdImportFile << "\t\tImport file to database. (args: file database project [dxrotate] [owner] [configfile])\n";
+	ss << cmdCreateFed << "\t\tGenerate a federation. (args: fedDetails [owner])\n";
 	ss << cmdCleanProj << "\t\tClean up a specified project removing/repairing corrupted revisions. (args: database project)\n";
 	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
 	ss << cmdVersion << "[-v]\tPrints the version of Repo Bouncer Client/Library\n";
@@ -52,6 +60,8 @@ int32_t knownValid(const std::string &cmd)
 		return 3;
 	if (cmd == cmdGenStash)
 		return 3;
+	if (cmd == cmdCreateFed)
+		return 1;
 	if (cmd == cmdCleanProj)
 		return 2;
 	if (cmd == cmdGetFile)
@@ -91,6 +101,17 @@ int32_t performOperation(
 		catch (const std::exception &e)
 		{
 			repoLogError("Failed to generate optimised stash: " + std::string(e.what()));
+			errCode = REPOERR_UNKNOWN_ERR;
+		}
+	}
+	else if (command.command == cmdCreateFed)
+	{
+		try{
+			errCode = generateFederation(controller, token, command);
+		}
+		catch (const std::exception &e)
+		{
+			repoLogError("Failed to generate federation: " + std::string(e.what()));
 			errCode = REPOERR_UNKNOWN_ERR;
 		}
 	}
@@ -159,6 +180,143 @@ int32_t cleanUpProject(
 	controller->cleanUp(token, dbName, project);
 
 	return REPOERR_OK;
+}
+
+int32_t generateFederation(
+	repo::RepoController       *controller,
+	const repo::RepoController::RepoToken      *token,
+	const repo_op_t            &command
+	)
+{
+	/*
+	* Check the amount of parameters matches
+	*/
+	if (command.nArgcs < 1)
+	{
+		repoLogError("Number of arguments mismatch! " + cmdCreateFed
+			+ " requires 1 argument: fedDetails");
+		return REPOERR_INVALID_ARG;
+	}
+
+	std::string fedFile = command.args[0];
+	std::string owner;
+	if (command.nArgcs > 1)
+		owner = command.args[1];
+
+	repoLog("Federation configuration file: " + fedFile);
+	
+	bool  success = true;
+
+	boost::property_tree::ptree jsonTree;
+	try{
+		boost::property_tree::read_json(fedFile, jsonTree);
+
+		/*
+		* The file should look something like this:
+		 {
+			database: "databaseName",
+			project: "projectName",
+			subProjects: [
+							{
+								"database": "databaseName", //If this is empty, assume federation's database
+								"project" : "project",
+								"revId"   : "UUID in string", //Optional, defaults as head of master
+								"isRevId": true/false, //Optional if revId is empty (true = revision id, false = branch id)
+								"transformation": [...] //4by4 matrix, optional. defaults to identity
+							},
+							{...},
+							{...}				
+						 ]
+		 }
+		*/
+
+		const std::string database = jsonTree.get<std::string>("database", "");
+		const std::string project = jsonTree.get<std::string>("project", "");
+		std::map< repo::core::model::TransformationNode, repo::core::model::ReferenceNode> refMap;
+		
+		if (database.empty() || project.empty())
+		{
+			repoLogError("Failed to generate federation: database name(" + database + ") or project name(" 
+				+ project + ") was not specified!");
+		}
+		else
+		{
+
+			for (const auto &subPro : jsonTree.get_child("subProjects"))
+			{
+				// ===== Get project info =====
+				const std::string spDatabase = subPro.second.get<std::string>("database", database);
+				const std::string spProject = subPro.second.get<std::string>("project", "");
+				const std::string uuid = subPro.second.get<std::string>("revId", REPO_HISTORY_MASTER_BRANCH);
+				const bool isRevID = subPro.second.get<bool>("isRevId", false);
+				if (spProject.empty())
+				{
+					repoLogError("Failed to generate federation: One or more sub projects does not have a project name");
+					success = false;
+					break;
+				}
+
+				// ===== Get Transformation =====
+				std::vector<std::vector<float>> matrix;
+				int x = 0;
+				if (subPro.second.count("transformation"))
+				{
+
+					for (const auto &value : subPro.second.get_child("transformation"))
+					{
+						if (!(matrix.size() % 4))
+						{
+							matrix.push_back(std::vector<float>());
+						}
+						matrix.back().push_back(value.second.get_value<float>());
+						++x;
+					}
+				}
+
+				if (x != 16)
+				{
+					//no matrix/invalid input, assume identity
+					if (x)
+						repoLogError("Transformation was inserted for " + spDatabase + ":" + spProject 
+						+ " but it is not a 4x4 matrix(size found: " + std::to_string(x)+"). Using identity...");
+					matrix = repo::core::model::TransformationNode::identityMat();
+				}
+
+				
+				std::string nodeNames = spDatabase + ":" + spProject;
+				auto transNode = repo::core::model::RepoBSONFactory::makeTransformationNode(matrix, nodeNames);
+				auto refNode = repo::core::model::RepoBSONFactory::makeReferenceNode(spDatabase, spProject, stringToUUID(uuid), isRevID, nodeNames);
+				refMap[transNode] = refNode;
+			}
+
+			//Create the reference scene
+			if (success = refMap.size())
+			{
+				auto scene = controller->createFederatedScene(refMap);
+				if (success = scene)
+				{
+					scene->setDatabaseAndProjectName(database, project);
+					success = controller->commitScene(token, scene, owner);
+				}
+			}
+			else
+			{
+				repoLogError("Failed to generate federation: Invalid/no sub-project declared");
+			}
+		}
+
+		
+
+
+	}
+	catch (std::exception &e)
+	{
+		success = false;
+		repoLogError("Failed to generate Federation: " + std::string(e.what()));
+	}
+	
+
+	return success ? REPOERR_OK : REPOERR_FED_GEN_FAIL;
 }
 
 int32_t generateStash(

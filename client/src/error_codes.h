@@ -33,3 +33,5 @@
 #define REPOERR_LOAD_SCENE_MISSING_TEXTURE 7
 //invalid arguments to function
 #define REPOERR_INVALID_ARG 8
+//failed to generate federation
+#define REPOERR_FED_GEN_FAIL 9
