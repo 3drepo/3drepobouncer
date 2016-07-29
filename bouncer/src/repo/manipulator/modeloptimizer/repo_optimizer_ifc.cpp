@@ -151,8 +151,6 @@ bool IFCOptimzer::sanitiseTransformationNames(
 		auto realName = name.substr(posFirstUnderScore + 1, posGuid - (posFirstUnderScore + 2));
 		auto guid = name.substr(posGuid);
 
-		repoTrace << "Original : " << name << " Name : " << realName << ", ifc type : " << ifcType << " guid : " << guid;
-
 		auto newTrans = trans->cloneAndChangeName(realName, false);
 		scene->modifyNode(defaultG, trans, &newTrans, true);
 
