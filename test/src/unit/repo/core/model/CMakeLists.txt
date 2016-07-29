@@ -5,3 +5,8 @@
 
 
 add_subdirectory(bson)
+set(TEST_SOURCES
+	${TEST_SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_scene.cpp
+	CACHE STRING "TEST_SOURCES" FORCE)
+

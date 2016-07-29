@@ -1,0 +1,18 @@
+{
+	"database" : "genFedTest",
+	"project" : "fedTest"
+	"subProjects" : [
+		{
+			"database" : "test",
+			"project": "bimLogo"
+		},
+		{
+			"database" : "buildingsmart",
+			"project": "Clinic_MEP_20110906"
+		},
+		{
+			"database" : "buildingsmart",
+			"project": "Clinic_S_20110715"
+		}
+	]
+}

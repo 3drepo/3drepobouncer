@@ -204,8 +204,8 @@ int32_t generateFederation(
 		owner = command.args[1];
 
 	repoLog("Federation configuration file: " + fedFile);
-	
-	bool  success = true;
+
+	bool  success = false;
 
 	boost::property_tree::ptree jsonTree;
 	try{
@@ -213,35 +213,34 @@ int32_t generateFederation(
 
 		/*
 		* The file should look something like this:
-		 {
-			database: "databaseName",
-			project: "projectName",
-			subProjects: [
-							{
-								"database": "databaseName", //If this is empty, assume federation's database
-								"project" : "project",
-								"revId"   : "UUID in string", //Optional, defaults as head of master
-								"isRevId": true/false, //Optional if revId is empty (true = revision id, false = branch id)
-								"transformation": [...] //4by4 matrix, optional. defaults to identity
-							},
-							{...},
-							{...}				
-						 ]
-		 }
+		{
+		database: "databaseName",
+		project: "projectName",
+		subProjects: [
+		{
+		"database": "databaseName", //If this is empty, assume federation's database
+		"project" : "project",
+		"revId"   : "UUID in string", //Optional, defaults as head of master
+		"isRevId": true/false, //Optional if revId is empty (true = revision id, false = branch id)
+		"transformation": [...] //4by4 matrix, optional. defaults to identity
+		},
+		{...},
+		{...}
+		]
+		}
 		*/
 
 		const std::string database = jsonTree.get<std::string>("database", "");
 		const std::string project = jsonTree.get<std::string>("project", "");
 		std::map< repo::core::model::TransformationNode, repo::core::model::ReferenceNode> refMap;
-		
+
 		if (database.empty() || project.empty())
 		{
-			repoLogError("Failed to generate federation: database name(" + database + ") or project name(" 
+			repoLogError("Failed to generate federation: database name(" + database + ") or project name("
 				+ project + ") was not specified!");
 		}
 		else
 		{
-
 			for (const auto &subPro : jsonTree.get_child("subProjects"))
 			{
 				// ===== Get project info =====
@@ -252,7 +251,6 @@ int32_t generateFederation(
 				if (spProject.empty())
 				{
 					repoLogError("Failed to generate federation: One or more sub projects does not have a project name");
-					success = false;
 					break;
 				}
 
@@ -261,7 +259,6 @@ int32_t generateFederation(
 				int x = 0;
 				if (subPro.second.count("transformation"))
 				{
-
 					for (const auto &value : subPro.second.get_child("transformation"))
 					{
 						if (!(matrix.size() % 4))
@@ -277,12 +274,11 @@ int32_t generateFederation(
 				{
 					//no matrix/invalid input, assume identity
 					if (x)
-						repoLogError("Transformation was inserted for " + spDatabase + ":" + spProject 
-						+ " but it is not a 4x4 matrix(size found: " + std::to_string(x)+"). Using identity...");
+						repoLogError("Transformation was inserted for " + spDatabase + ":" + spProject
+						+ " but it is not a 4x4 matrix(size found: " + std::to_string(x) + "). Using identity...");
 					matrix = repo::core::model::TransformationNode::identityMat();
 				}
 
-				
 				std::string nodeNames = spDatabase + ":" + spProject;
 				auto transNode = repo::core::model::RepoBSONFactory::makeTransformationNode(matrix, nodeNames);
 				auto refNode = repo::core::model::RepoBSONFactory::makeReferenceNode(spDatabase, spProject, stringToUUID(uuid), isRevID, nodeNames);
@@ -304,17 +300,12 @@ int32_t generateFederation(
 				repoLogError("Failed to generate federation: Invalid/no sub-project declared");
 			}
 		}
-
-		
-
-
 	}
 	catch (std::exception &e)
 	{
 		success = false;
 		repoLogError("Failed to generate Federation: " + std::string(e.what()));
 	}
-	
 
 	return success ? REPOERR_OK : REPOERR_FED_GEN_FAIL;
 }
