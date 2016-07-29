@@ -1,6 +1,6 @@
 {
-	"database" : "genFedTest",
-	"project" : "fedTest",
+	"database" : "buildingsmart",
+	"project" : "",
 	"subProjects" : [
 		{
 			"database" : "test",

@@ -188,4 +188,22 @@ TEST(RepoClientTest, CreateFedTest)
 	//Test json file with no sub projects
 	std::string noSPFilePath = produceCreateFedArgs(getDataPath(noSubProjectJSONFile));
 	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(noSPFilePath));
+	EXPECT_FALSE(projectExists(genFedDB, genFedNoSubProName));
+
+	//Test json file with empty string as database name
+	std::string noDBFilePath = produceCreateFedArgs(getDataPath(noDbNameJSONFile));
+	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(noDBFilePath));
+
+	//Test json file with empty string as project name
+	std::string noProFilePath = produceCreateFedArgs(getDataPath(noProNameJSONFile));
+	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(noProFilePath));
+
+	//Test badly formatted JSON file
+	std::string invalidJSONFilePath = produceCreateFedArgs(getDataPath(invalidJSONFile));
+	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(invalidJSONFilePath));
+
+	//Test success
+	std::string goodFilePath = produceCreateFedArgs(getDataPath(validGenFedJSONFile));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(goodFilePath));
+	EXPECT_TRUE(projectExists(genFedDB, genFedSuccessName));
 }

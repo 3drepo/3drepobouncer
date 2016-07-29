@@ -1,6 +1,6 @@
 {
 	"database" : "genFedTest",
-	"project" : "fedTest",
+	"project" : "fedTest"
 	"subProjects" : [
 		{
 			"database" : "test",

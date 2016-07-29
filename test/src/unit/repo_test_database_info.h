@@ -41,6 +41,10 @@ const static std::string badExtensionFile = "cube.exe";
 const static std::string emptyFile = "empty.json";
 const static std::string emptyJSONFile = "empty2.json";
 const static std::string noSubProjectJSONFile = "noSubPro.json";
+const static std::string noDbNameJSONFile = "noDb.json";
+const static std::string noProNameJSONFile = "noPro.json";
+const static std::string invalidJSONFile = "invalid.json";
+const static std::string validGenFedJSONFile = "validFed.json";
 
 const static std::string genFedDB = "genFedTest";
 const static std::string genFedNoSubProName = "noSubPro";
