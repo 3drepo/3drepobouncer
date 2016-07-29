@@ -74,7 +74,7 @@ RepoUser RepoUser::cloneAndUpdateLicenseCount(
 		for (int i = 0; i < subs.size(); ++i)
 		{
 			if (subs[i].planName != REPO_USER_SUBS_STANDARD_FREE
-				&& isSubActive(subs[i]) && subs[i].assignedUser.empty())
+				&& isSubActive(subs[i]) && subs[i].assignedUser.empty() && !subs[i].inCurrentAgreement)
 			{
 				//Can only delete it if it is not the free account, it's active and it's not assigned.
 				subs.erase(subs.begin() + i);
@@ -91,7 +91,7 @@ RepoUser RepoUser::cloneAndUpdateLicenseCount(
 			for (int i = 0; i < subs.size(); ++i)
 			{
 				if (subs[i].planName != REPO_USER_SUBS_STANDARD_FREE
-					&& isSubActive(subs[i]) && subs[i].assignedUser == getUserName())
+					&& isSubActive(subs[i]) && subs[i].assignedUser == getUserName() && !subs[i].inCurrentAgreement)
 				{
 					//Can only delete it if it is not the free account, it's active and it's not assigned.
 					subs.erase(subs.begin() + i);
@@ -102,7 +102,7 @@ RepoUser RepoUser::cloneAndUpdateLicenseCount(
 
 		if (orgCount + diff != subs.size())
 		{
-			repoError << "Failed to remove " << diff << " licenses. Licenses cannot be removed if assigned";
+			repoError << "Failed to remove " << diff << " licenses. Licenses cannot be removed if assigned or in a paypal agreement";
 		}
 	}
 	else
@@ -202,7 +202,7 @@ RepoUser::SubscriptionInfo RepoUser::createDefaultSub(
 	sub.planName = "THE-100-QUID-PLAN";
 	sub.createdAt = sub.updatedAt = ts;
 	sub.expiresAt = expireTS;
-	sub.inCurrentAgreement = true;
+	sub.inCurrentAgreement = false;
 	sub.id = mongo::OID::gen().toString();
 	sub.active = true;
 	sub.pendingDelete = false;
