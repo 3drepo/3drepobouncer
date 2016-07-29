@@ -38,6 +38,14 @@ const static std::string texturedModel = "texturedPlane.dae";
 const static std::string texturedModel2 = "texturedPlane2.dae"; //With Texture
 const static std::string badExtensionFile = "cube.exe";
 
+const static std::string emptyFile = "empty.json";
+const static std::string emptyJSONFile = "empty2.json";
+const static std::string noSubProjectJSONFile = "noSubPro.json";
+
+const static std::string genFedDB = "genFedTest";
+const static std::string genFedNoSubProName = "noSubPro";
+const static std::string genFedSuccessName = "fedTest";
+
 const static mongo::BSONObj REPO_GTEST_DROPROLETEST = BSON("db" << REPO_GTEST_DBNAME_ROLEUSERTEST << "role" << "dropRoleTest");
 const static mongo::BSONObj REPO_GTEST_DROPUSERTEST = BSON("db" << "admin" << "user" << "dropUserTest");
 const static mongo::BSONObj REPO_GTEST_UPDATEROLETEST = BSON("db" << REPO_GTEST_DBNAME_ROLEUSERTEST << "role" << "updateRole");
