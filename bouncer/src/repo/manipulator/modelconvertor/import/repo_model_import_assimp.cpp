@@ -1174,6 +1174,7 @@ bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
 	}
 
 	importer.SetPropertyInteger(AI_CONFIG_GLOB_MEASURE_TIME, 1);
+	importer.SetPropertyBool(AI_CONFIG_IMPORT_IFC_SKIP_SPACE_REPRESENTATIONS, settings->getSkipIFCSpaceRepresentation());
 	assimpScene = importer.ReadFile(filePath, 0);
 
 	if (!assimpScene){
