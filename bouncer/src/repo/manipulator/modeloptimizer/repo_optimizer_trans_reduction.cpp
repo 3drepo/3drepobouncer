@@ -151,6 +151,12 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 						scene->addInheritance(gType, mesh, meta);
 					}
 
+					//change mesh name
+					if (absorbTrans || mesh->getName().empty())
+					{
+						repo::core::model::MeshNode newMesh = mesh->cloneAndChangeName(trans->getName(), false);
+						scene->modifyNode(gType, mesh, &newMesh);
+					}
 					if (absorbTrans)
 					{
 						repo::core::model::TransformationNode *granTrans =
@@ -187,11 +193,6 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 									}
 								}
 							}
-
-							//change mesh name
-							repo::core::model::MeshNode newMesh = mesh->cloneAndChangeName(trans->getName(), false);
-
-							scene->modifyNode(gType, mesh, &newMesh);
 
 							//remove parent from the scene.
 							scene->removeNode(gType, parentSharedID);
