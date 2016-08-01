@@ -29,6 +29,8 @@ const static std::string IFC_MAPPED_ITEM = "IFCMAPPEDITEM";
 const static std::string IFC_RELVOID_ELE = "$RELVOIDSELEMENT";
 const static std::string IFC_RELVOID_ELE2 = "IFCRELVOIDSELEMENT";
 const static std::string IFC_RELAGGREGATES = "$RELAGGREGATES";
+const static std::string IFC_TYPE_SPACE = "IFCSPACE";
+const static std::string IFC_TYPE_SPACE_LABEL = "IFC Space";
 
 auto defaultG = repo::core::model::RepoScene::GraphType::DEFAULT;
 
@@ -150,6 +152,15 @@ bool IFCOptimzer::sanitiseTransformationNames(
 		auto ifcType = name.substr(0, posFirstUnderScore);
 		auto realName = name.substr(posFirstUnderScore + 1, posGuid - (posFirstUnderScore + 2));
 		auto guid = name.substr(posGuid);
+
+		auto ifcTypeUpper = ifcType;
+
+		std::transform(ifcTypeUpper.begin(), ifcTypeUpper.end(), ifcTypeUpper.begin(), ::toupper);
+
+		if (ifcTypeUpper == IFC_TYPE_SPACE)
+		{
+			realName += " (" + IFC_TYPE_SPACE_LABEL + ")";
+		}
 
 		auto newTrans = trans->cloneAndChangeName(realName, false);
 		scene->modifyNode(defaultG, trans, &newTrans, true);
