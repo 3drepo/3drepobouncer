@@ -25,7 +25,7 @@
 #include <repo/core/model/bson/repo_bson_factory.h>
 #include <repo/core/model/collection/repo_scene.h>
 
-#include "../../../repo_test_utils.h"
+#include "../../../../repo_test_utils.h"
 
 using namespace repo::core::model;
 
@@ -125,21 +125,21 @@ TEST(RepoSceneTest, AddMetadata)
 	auto m2 = MeshNode(makeRandomNode(t1.getSharedID()));
 	auto m3 = MeshNode(makeRandomNode(t2.getSharedID()));
 
-	auto mm1 = MetadataNode(makeRandomNode(t1.getSharedID(), t1.getName()));
-	auto mm2 = MetadataNode(makeRandomNode(t2.getSharedID(), t2.getName()));
-	auto mm3 = MetadataNode(makeRandomNode(t3.getSharedID(), t3.getName()));
+	auto mm1 = MetadataNode(makeRandomNode(t1.getName()));
+	auto mm2 = MetadataNode(makeRandomNode(t2.getName()));
+	auto mm3 = MetadataNode(makeRandomNode(t3.getName()));
 
-	transNodes.insert(&t1);
-	transNodes.insert(&t2);
-	transNodes.insert(&t3);
+	transNodes.insert(new TransformationNode(t1));
+	transNodes.insert(new TransformationNode(t2));
+	transNodes.insert(new TransformationNode(t3));
 
-	meshNodes.insert(&m1);
-	meshNodes.insert(&m2);
-	meshNodes.insert(&m3);
+	meshNodes.insert(new MeshNode(m1));
+	meshNodes.insert(new MeshNode(m2));
+	meshNodes.insert(new MeshNode(m3));
 
-	metaNodes.insert(&mm1);
-	metaNodes.insert(&mm2);
-	metaNodes.insert(&mm3);
+	metaNodes.insert(new MetadataNode(mm1));
+	metaNodes.insert(new MetadataNode(mm2));
+	metaNodes.insert(new MetadataNode(mm3));
 
 	/*
 		Root - t1  - m1, m2
@@ -148,13 +148,17 @@ TEST(RepoSceneTest, AddMetadata)
 		- t3
 		*/
 
-	/*RepoScene scene,
-		scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, empty, transNodes),
-		scene3(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, empty, transNodes);
+	for (const auto node : transNodes)
+	{
+		repoInfo << "Trans  : " << node->getName();
+	}
+	RepoScene scene,
+		scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, empty, transNodes);
 	scene.addMetadata(metaNodes, true);
-	scene2.addMetadata(metaNodes, true, false); //no propagation check
-	scene3.addMetadata(metaNodes, true, true); //propagation check
 	EXPECT_EQ(0, scene.getAllMetadata(defaultG).size());
-*/
+	//scene2.addMetadata(metaNodes, true, false); //no propagation check
+	//EXPECT_EQ(metaNodes.size(), scene2.getAllMetadata(defaultG).size());
+	//scene3.addMetadata(metaNodes, true, true); //propagation check
+	//FIXME: the names aren't being matched - transformations apparently has no name?
 	//TODO: check meta
 }

@@ -254,6 +254,7 @@ void RepoScene::addMetadata(
 		if (namesMap.find(transformationName) == namesMap.end())
 			namesMap[transformationName] = std::vector<RepoNode*>();
 
+		repoInfo << "Pushing " << transformationName << " into namesMap";
 		namesMap[transformationName].push_back(transformation);
 	}
 
@@ -268,6 +269,7 @@ void RepoScene::addMetadata(
 		if (namesMap.find(name) == namesMap.end())
 			namesMap[name] = std::vector<RepoNode*>();
 
+		repoInfo << "Pushing " << name << " into namesMap";
 		namesMap[name].push_back(mesh);
 	}
 
