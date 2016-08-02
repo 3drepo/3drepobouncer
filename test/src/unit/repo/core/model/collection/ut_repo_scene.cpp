@@ -141,13 +141,6 @@ TEST(RepoSceneTest, AddMetadata)
 	metaNodes.insert(new MetadataNode(mm2));
 	metaNodes.insert(new MetadataNode(mm3));
 
-	/*
-		Root - t1  - m1, m2
-
-		- t2  - m3
-		- t3
-		*/
-
 	RepoScene scene,
 		scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
 	scene.addMetadata(metaNodes, true);
@@ -204,4 +197,60 @@ TEST(RepoSceneTest, AddMetadata)
 			}
 		}
 	}
+}
+
+TEST(RepoSceneTest, AddAndClearStashGraph)
+{
+	RepoScene scene;
+	RepoNodeSet empty;
+	auto stashGraph = RepoScene::GraphType::OPTIMIZED;
+
+	EXPECT_FALSE(scene.hasRoot(stashGraph));
+	scene.addStashGraph(empty, empty, empty, empty, empty);
+	EXPECT_FALSE(scene.hasRoot(stashGraph));
+
+	RepoNodeSet transNodes;
+	RepoNodeSet meshNodes;
+	RepoNodeSet metaNodes;
+
+	auto root = TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+
+	auto t1 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 10 + 1)));
+	auto t2 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 10 + 1)));
+	auto t3 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 10 + 1)));
+
+	auto m1 = MeshNode(makeRandomNode(t1.getSharedID()));
+	auto m2 = MeshNode(makeRandomNode(t1.getSharedID()));
+	auto m3 = MeshNode(makeRandomNode(t2.getSharedID()));
+
+	auto rootNode = new TransformationNode(root);
+	transNodes.insert(rootNode);
+	transNodes.insert(new TransformationNode(t1));
+	transNodes.insert(new TransformationNode(t2));
+	transNodes.insert(new TransformationNode(t3));
+
+	meshNodes.insert(new MeshNode(m1));
+	meshNodes.insert(new MeshNode(m2));
+	meshNodes.insert(new MeshNode(m3));
+
+	scene.addStashGraph(empty, meshNodes, empty, empty, transNodes);
+	EXPECT_EQ(0, scene.getAllCameras(stashGraph).size());
+	EXPECT_EQ(0, scene.getAllTextures(stashGraph).size());
+	EXPECT_EQ(0, scene.getAllMaterials(stashGraph).size());
+	EXPECT_EQ(meshNodes.size(), scene.getAllMeshes(stashGraph).size());
+	EXPECT_EQ(transNodes.size(), scene.getAllTransformations(stashGraph).size());
+	EXPECT_TRUE(scene.hasRoot(stashGraph));
+	EXPECT_FALSE(scene.hasRoot(RepoScene::GraphType::DEFAULT));
+	EXPECT_EQ(rootNode, scene.getRoot(stashGraph));
+
+	scene.clearStash();
+
+	EXPECT_EQ(0, scene.getAllCameras(stashGraph).size());
+	EXPECT_EQ(0, scene.getAllTextures(stashGraph).size());
+	EXPECT_EQ(0, scene.getAllMaterials(stashGraph).size());
+	EXPECT_EQ(0, scene.getAllMeshes(stashGraph).size());
+	EXPECT_EQ(0, scene.getAllTransformations(stashGraph).size());
+	EXPECT_FALSE(scene.hasRoot(stashGraph));
+	EXPECT_FALSE(scene.hasRoot(RepoScene::GraphType::DEFAULT));
+	EXPECT_EQ(nullptr, scene.getRoot(stashGraph));
 }
