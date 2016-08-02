@@ -30,7 +30,6 @@ const static std::string IFC_RELVOID_ELE = "$RELVOIDSELEMENT";
 const static std::string IFC_RELVOID_ELE2 = "IFCRELVOIDSELEMENT";
 const static std::string IFC_RELAGGREGATES = "$RELAGGREGATES";
 const static std::string IFC_TYPE_SPACE = "IFCSPACE";
-const static std::string IFC_TYPE_SPACE_LABEL = "IFC Space";
 
 auto defaultG = repo::core::model::RepoScene::GraphType::DEFAULT;
 
@@ -159,7 +158,7 @@ bool IFCOptimzer::sanitiseTransformationNames(
 
 		if (ifcTypeUpper == IFC_TYPE_SPACE)
 		{
-			realName += " (" + IFC_TYPE_SPACE_LABEL + ")";
+			realName += " " + IFC_TYPE_SPACE_LABEL;
 		}
 
 		auto newTrans = trans->cloneAndChangeName(realName, false);
