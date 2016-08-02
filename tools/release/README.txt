@@ -1,4 +1,4 @@
-3D Repo Bouncer Library v1.3.0
+3D Repo Bouncer Library v1.3.1
 
 This is the internal library used for 3D Repo GUI.
 
@@ -26,11 +26,8 @@ If you need any help, please contact support@3drepo.org, we
 look forward to hear from you.
 
 ========================= Improvements =========================
-* (ISSUE #133) Fixed problems with cross database federations 
+* (ISSUE #131) Improvements to IFC Tree representation
 
 
-========================= New Features =========================
-* (ISSUE #132) Can now create federation through 3drepobouncerClient
-* (ISSUE #134) Licensing information can be retrieved from RepoUser
 
 
