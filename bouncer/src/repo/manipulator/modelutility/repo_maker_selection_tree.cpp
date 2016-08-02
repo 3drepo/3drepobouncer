@@ -16,6 +16,8 @@
 */
 #include "repo_maker_selection_tree.h"
 #include "../../core/model/bson/repo_node_reference.h"
+#include "../modeloptimizer/repo_optimizer_ifc.h"
+
 using namespace repo::manipulator::modelutility;
 
 SelectionTreeMaker::SelectionTreeMaker(
@@ -40,26 +42,38 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 		auto children = scene->getChildrenAsNodes(repo::core::model::RepoScene::GraphType::DEFAULT, sharedID);
 		std::vector<repo::lib::PropertyTree> childrenTrees;
 
+		std::vector<repo::core::model::RepoNode*> childrenTypes[2];
 		for (const auto &child : children)
 		{
-			if (child)
-			{
-				switch (child->getTypeAsEnum())
-				{
-				case repo::core::model::NodeType::MESH:
-				case repo::core::model::NodeType::TRANSFORMATION:
-				case repo::core::model::NodeType::CAMERA:
-				case repo::core::model::NodeType::REFERENCE:
-					childrenTrees.push_back(generatePTree(child, idMaps, childPath));
-				}
-			}
+			//Ensure IFC Space (if any) are put into the tree first.
+			if (child->getName().find(IFC_TYPE_SPACE_LABEL) != std::string::npos)
+				childrenTypes[0].push_back(child);
 			else
-			{
-				repoDebug << "Null pointer for child node at generatePTree, current path : " << currentPath;
-				repoError << "Unexpected error at selection tree generation, the tree may not be complete.";
-			}
+				childrenTypes[1].push_back(child);
 		}
 
+		for (const auto childrenSet : childrenTypes)
+		{
+			for (const auto &child : childrenSet)
+			{
+				if (child)
+				{
+					switch (child->getTypeAsEnum())
+					{
+					case repo::core::model::NodeType::MESH:
+					case repo::core::model::NodeType::TRANSFORMATION:
+					case repo::core::model::NodeType::CAMERA:
+					case repo::core::model::NodeType::REFERENCE:
+						childrenTrees.push_back(generatePTree(child, idMaps, childPath));
+					}
+				}
+				else
+				{
+					repoDebug << "Null pointer for child node at generatePTree, current path : " << currentPath;
+					repoError << "Unexpected error at selection tree generation, the tree may not be complete.";
+				}
+			}
+		}
 		std::string name = currentNode->getName();
 		if (repo::core::model::NodeType::REFERENCE == currentNode->getTypeAsEnum())
 		{
@@ -80,6 +94,13 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 		tree.addToTree("_id", idString);
 		tree.addToTree("shared_id", UUIDtoString(sharedID));
 		tree.addToTree("children", childrenTrees);
+
+		if (name.find(IFC_TYPE_SPACE_LABEL) != std::string::npos
+			&& currentNode->getTypeAsEnum() == repo::core::model::NodeType::MESH)
+		{
+			tree.addToTree("hiddenOnLoad", true);
+		}
+
 		idMaps[idString] = { name, childPath };
 	}
 	else
