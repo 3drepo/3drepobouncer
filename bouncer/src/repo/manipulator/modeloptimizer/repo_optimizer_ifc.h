@@ -24,6 +24,8 @@
 #include "../../core/model/collection/repo_scene.h"
 #include "repo_optimizer_abstract.h"
 
+const static std::string IFC_TYPE_SPACE_LABEL = "(IFC Space)";
+
 namespace repo {
 	namespace manipulator {
 		namespace modeloptimizer {
