@@ -94,6 +94,13 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 		tree.addToTree("_id", idString);
 		tree.addToTree("shared_id", UUIDtoString(sharedID));
 		tree.addToTree("children", childrenTrees);
+
+		if (name.find(IFC_TYPE_SPACE_LABEL) != std::string::npos
+			&& currentNode->getTypeAsEnum() == repo::core::model::NodeType::MESH)
+		{
+			tree.addToTree("toggleState", "invisible");
+		}
+
 		idMaps[idString] = { name, childPath };
 	}
 	else
