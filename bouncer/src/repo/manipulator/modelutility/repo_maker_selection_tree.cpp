@@ -98,7 +98,7 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 		if (name.find(IFC_TYPE_SPACE_LABEL) != std::string::npos
 			&& currentNode->getTypeAsEnum() == repo::core::model::NodeType::MESH)
 		{
-			tree.addToTree("toggleState", "invisible");
+			tree.addToTree("hiddenOnLoad", true);
 		}
 
 		idMaps[idString] = { name, childPath };
