@@ -175,7 +175,7 @@ bool IFCOptimzer::sanitiseTransformationNames(
 			{
 				auto metaNode = dynamic_cast<repo::core::model::MetadataNode*>(meta);
 				repo::core::model::RepoNode updatedMeta = metaNode->cloneAndAddMetadata(newMeta);
-				updatedMeta = metaNode->cloneAndChangeName(realName, false);
+				updatedMeta = updatedMeta.cloneAndChangeName(realName, false);
 				scene->modifyNode(defaultG, meta, &updatedMeta, false);
 			}
 		}
