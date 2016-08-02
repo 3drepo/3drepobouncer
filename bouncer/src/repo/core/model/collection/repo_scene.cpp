@@ -289,9 +289,9 @@ void RepoScene::addMetadata(
 			repoUUID metaUniqueID = meta->getUniqueID();
 			for (auto &node : nameIt->second)
 			{
-				if (propagateData && node->getTypeAsEnum() == NodeType::TRANSFORMATION)
+				auto meshes = getAllDescendantsByType(GraphType::DEFAULT, node->getSharedID(), NodeType::MESH);
+				if (propagateData && node->getTypeAsEnum() == NodeType::TRANSFORMATION && meshes.size())
 				{
-					auto meshes = getAllDescendantsByType(GraphType::DEFAULT, node->getSharedID(), NodeType::MESH);
 					for (auto &mesh : meshes)
 					{
 						repoUUID parentSharedID = mesh->getSharedID();
@@ -321,8 +321,6 @@ void RepoScene::addMetadata(
 			newAdded.insert(metaSharedID);
 			newCurrent.insert(metaUniqueID);
 			graph.metadata.insert(meta);
-
-			repoTrace << "Found pairing transformation! Metadata " << metaName << " added into the scene graph.";
 		}
 		else
 		{
