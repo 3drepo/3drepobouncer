@@ -45,6 +45,7 @@ const std::string ModelImportConfig::GENERATE_NORMALS = "generateNormals";
 const std::string ModelImportConfig::GENERATE_NORMALS_FLAT = "generateNormalsFlat";
 const std::string ModelImportConfig::GENERATE_NORMALS_SMOOTH = "generateNormalsSmooth";
 const std::string ModelImportConfig::GENERATE_NORMALS_SMOOTH_CREASE_ANGLE = "generateNormalsSmoothCreaseAngle";
+const std::string ModelImportConfig::IFC_SKIP_SPACE_REPRESENTATIONS = "skipIFCSpaceRepresentations";
 const std::string ModelImportConfig::IMPROVE_CACHE_LOCALITY = "improveCacheLocality";
 const std::string ModelImportConfig::IMPROVE_CACHE_LOCALITY_VERTEX_CACHE_SIZE = "improveCacheLocalityVertexCacheSize";
 const std::string ModelImportConfig::JOIN_IDENTICAL_VERTICES = "joinIdenticalVertices";
@@ -211,6 +212,7 @@ void ModelImportConfig::reset()
 	boolSettings[GENERATE_NORMALS] = repoDefaultGenerateNormals;
 	boolSettings[GENERATE_NORMALS_FLAT] = repoDefaultGenerateNormalsFlat;
 	boolSettings[GENERATE_NORMALS_SMOOTH] = repoDefaultGenerateNormalsSmooth;
+	boolSettings[IFC_SKIP_SPACE_REPRESENTATIONS] = repoDefaultIfcSkipSpaceRepresentation;
 	boolSettings[IMPROVE_CACHE_LOCALITY] = repoDefaultImproveCacheLocality;
 	boolSettings[JOIN_IDENTICAL_VERTICES] = repoDefaultJoinIdenticalVertices;
 	boolSettings[LIMIT_BONE_WEIGHTS] = repoDefaultLimitBoneWeights;
