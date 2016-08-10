@@ -1,4 +1,4 @@
-3D Repo Bouncer Library v1.1.0
+3D Repo Bouncer Library v1.2.0
 
 This is the internal library used for 3D Repo GUI.
 
