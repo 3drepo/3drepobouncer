@@ -24,6 +24,9 @@
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
+#include <boost/filesystem.hpp>
+
+static const std::string FBX_EXTENSION = ".FBX";
 
 static const std::string cmdCleanProj = "clean"; //clean up a specified project
 static const std::string cmdCreateFed = "genFed"; //create a federation
@@ -211,25 +214,6 @@ int32_t generateFederation(
 	try{
 		boost::property_tree::read_json(fedFile, jsonTree);
 
-		/*
-		* The file should look something like this:
-		{
-		database: "databaseName",
-		project: "projectName",
-		subProjects: [
-		{
-		"database": "databaseName", //If this is empty, assume federation's database
-		"project" : "project",
-		"revId"   : "UUID in string", //Optional, defaults as head of master
-		"isRevId": true/false, //Optional if revId is empty (true = revision id, false = branch id)
-		"transformation": [...] //4by4 matrix, optional. defaults to identity
-		},
-		{...},
-		{...}
-		]
-		}
-		*/
-
 		const std::string database = jsonTree.get<std::string>("database", "");
 		const std::string project = jsonTree.get<std::string>("project", "");
 		std::map< repo::core::model::TransformationNode, repo::core::model::ReferenceNode> refMap;
@@ -405,15 +389,20 @@ int32_t importFileAndCommit(
 		return REPOERR_INVALID_ARG;
 	}
 
-	std::string fileLoc = command.args[0];
-	std::string database = command.args[1];
-	std::string project = command.args[2];
+	const std::string fileLoc = command.args[0];
+	const std::string database = command.args[1];
+	const std::string project = command.args[2];
 	std::string configFile;
 	std::string owner;
+	boost::filesystem::path filePath(fileLoc);
+	std::string fileExt = filePath.extension().string();
+	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
 	bool rotate = false;
 
 	//FIXME: This is getting complicated, we should consider using boost::program_options and start utilising flags...
 	//Something like this: http://stackoverflow.com/questions/15541498/how-to-implement-subcommands-using-boost-program-options
+
+	rotate = fileExt == FBX_EXTENSION;
 	if (command.nArgcs > 3)
 	{
 		//If 3rd argument is "dxrotate", we need to rotate the X axis
