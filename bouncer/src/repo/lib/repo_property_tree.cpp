@@ -78,19 +78,21 @@ void PropertyTree::addToTree<std::string>(
 	const std::string           &label,
 	const std::string           &value)
 {
+	const std::string labelSanitized = sanitizeStr(label);
+	const std::string valueSanitized = sanitizeStr(value);
 	if (hackStrings)
 	{
 		if (label.empty())
-			tree.put(label, value, stringTranslator());
+			tree.put(label, valueSanitized, stringTranslator());
 		else
-			tree.add(label, value, stringTranslator());
+			tree.add(label, valueSanitized, stringTranslator());
 	}
 	else
 	{
 		if (label.empty())
-			tree.put(label, value);
+			tree.put(label, valueSanitized);
 		else
-			tree.add(label, value);
+			tree.add(label, valueSanitized);
 	}
 }
 
@@ -131,4 +133,61 @@ void PropertyTree::addToTree<PropertyTree>(
 
 		tree.add_child(label, arrayTree);
 	}
+}
+
+std::string PropertyTree::sanitizeStr(
+	const std::string &value)
+{
+	int startIndex = 0;
+	std::string word = value;
+	while ((startIndex = findBackSlash(word, startIndex)) != std::string::npos)
+	{
+		char newWord[2];
+		newWord[1] = word[startIndex];
+		newWord[0] = '\\';
+		word.erase(word.begin() + startIndex);
+		word.insert(startIndex, newWord);
+
+		startIndex += 2; //skip the newly added "\" and also the first character of the special word
+	}
+	startIndex = 0;
+	while ((startIndex = findSpecialWords(word, startIndex)) != std::string::npos)
+	{
+		char newWord[2];
+		newWord[1] = word[startIndex];
+		newWord[0] = '\\';
+		word.erase(word.begin() + startIndex);
+		word.insert(startIndex, newWord);
+
+		startIndex += 2; //skip the newly added "\" and also the first character of the special word
+	}
+
+	return word;
+}
+
+int PropertyTree::findBackSlash(
+	const std::string &value,
+	const int         &start)
+{
+	return  value.find("\\", start);
+}
+
+int PropertyTree::findSpecialWords(
+	const std::string &value,
+	const int         &start)
+{
+	size_t ret = std::string::npos;
+
+	auto firstCr = value.find("\n", start);
+	auto firstDoubleQuote = value.find("\"", start);
+	auto _firstDoubleQuote = value.find("\\\"", start);
+	while (_firstDoubleQuote != std::string::npos &&  firstDoubleQuote > _firstDoubleQuote)
+	{
+		firstDoubleQuote = value.find("\"", _firstDoubleQuote + 2);
+		_firstDoubleQuote = value.find("\\\"", _firstDoubleQuote + 2);
+	}
+
+	ret = firstDoubleQuote > firstCr ? firstCr : firstDoubleQuote;
+
+	return ret;
 }
