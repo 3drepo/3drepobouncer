@@ -52,11 +52,20 @@ RepoUser RepoUser::cloneAndMergeUserInfo(
 {
 	RepoBSONBuilder newUserBuilder, customDataBuilder;
 	customDataBuilder.appendElementsUnique(newUserInfo.getCustomDataBSON());
-	customDataBuilder.appendElementsUnique(getCustomDataBSON());
+	//We need to preserve the fact that if some fields are removed, they are removed.
+	//So throw away some fields that should have been updated.
+	auto currentCustomData = getCustomDataBSON();
+	currentCustomData = currentCustomData.removeField(REPO_LABEL_AVATAR);
+	currentCustomData = currentCustomData.removeField(REPO_USER_LABEL_API_KEYS);
+	currentCustomData = currentCustomData.removeField(REPO_USER_LABEL_EMAIL);
+	currentCustomData = currentCustomData.removeField(REPO_USER_LABEL_FIRST_NAME);
+	currentCustomData = currentCustomData.removeField(REPO_USER_LABEL_LAST_NAME);
+	customDataBuilder.appendElementsUnique(currentCustomData);
 	newUserBuilder.append(REPO_USER_LABEL_CUSTOM_DATA, customDataBuilder.obj());
 
 	newUserBuilder.appendElementsUnique(newUserInfo);
-	newUserBuilder.appendElementsUnique(*this);
+	auto thisWithNoRoles = removeField(REPO_USER_LABEL_ROLES);
+	newUserBuilder.appendElementsUnique(thisWithNoRoles);
 
 	return newUserBuilder.obj();
 }
