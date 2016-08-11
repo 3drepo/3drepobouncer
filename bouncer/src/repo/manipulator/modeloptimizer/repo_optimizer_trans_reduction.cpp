@@ -24,6 +24,7 @@
 
 #include "repo_optimizer_trans_reduction.h"
 #include "../../core/model/bson/repo_node_transformation.h"
+#include "../modeloptimizer/repo_optimizer_ifc.h"
 
 using namespace repo::manipulator::modeloptimizer;
 
@@ -151,8 +152,8 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 						scene->addInheritance(gType, mesh, meta);
 					}
 
-					//change mesh name
-					if (absorbTrans || mesh->getName().empty())
+					//change mesh name FIXME: this is a bit hacky.
+					if (absorbTrans || (mesh->getName().empty() && trans->getName().find(IFC_TYPE_SPACE_LABEL) != std::string::npos))
 					{
 						repo::core::model::MeshNode newMesh = mesh->cloneAndChangeName(trans->getName(), false);
 						scene->modifyNode(gType, mesh, &newMesh);
