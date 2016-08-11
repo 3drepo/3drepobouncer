@@ -51,7 +51,7 @@ namespace boost {
 					else if (*b == Ch('\t')) result += Ch('\\'), result += Ch('t');
 					else if (*b == Ch('/')) result += Ch('\\'), result += Ch('/');
 					//else if (*b == Ch('"'))  result += Ch('\\'), result += Ch('"');
-					else if (*b == Ch('\\')) result += Ch('\\'), result += Ch('\\');
+					else if (*b == Ch('\\')) result += Ch('\\')/*, result += Ch('\\')*/;
 					else
 					{
 						const char *hexdigits = "0123456789ABCDEF";

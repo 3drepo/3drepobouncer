@@ -161,6 +161,9 @@ bool IFCOptimzer::sanitiseTransformationNames(
 			realName += " " + IFC_TYPE_SPACE_LABEL;
 		}
 
+		if (realName.empty())
+			realName = "(" + ifcType + ")";
+
 		auto newTrans = trans->cloneAndChangeName(realName, false);
 		scene->modifyNode(defaultG, trans, &newTrans, true);
 
