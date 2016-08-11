@@ -86,7 +86,7 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 
 		tree.addToTree("account", scene->getDatabaseName());
 		tree.addToTree("project", scene->getProjectName());
-		if (name.empty())
+		if (!name.empty())
 			tree.addToTree("name", name);
 		tree.addToTree("path", childPath);
 		tree.addToTree("_id", idString);
