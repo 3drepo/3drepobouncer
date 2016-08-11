@@ -84,12 +84,10 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 			}
 		}
 
-		if (name.empty())
-			name = idString;
-
 		tree.addToTree("account", scene->getDatabaseName());
 		tree.addToTree("project", scene->getProjectName());
-		tree.addToTree("name", name);
+		if (name.empty())
+			tree.addToTree("name", name);
 		tree.addToTree("path", childPath);
 		tree.addToTree("_id", idString);
 		tree.addToTree("shared_id", UUIDtoString(sharedID));
