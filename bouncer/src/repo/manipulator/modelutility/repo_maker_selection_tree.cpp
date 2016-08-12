@@ -58,6 +58,7 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 				childrenTypes[1].push_back(child);
 		}
 
+		bool hasHiddenChildren = false;
 		for (const auto childrenSet : childrenTypes)
 		{
 			for (const auto &child : childrenSet)
@@ -71,9 +72,11 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 					case repo::core::model::NodeType::CAMERA:
 					case repo::core::model::NodeType::REFERENCE:
 					{
-						bool hiddenChild;
+						bool hiddenChild = false;
 						childrenTrees.push_back(generatePTree(child, idMaps, childPath, hiddenChild));
-						hiddenOnDefault &= hiddenChild;
+						if (hiddenChild)
+							repoInfo << "Child is hidden..." << std::endl;
+						hasHiddenChildren = hasHiddenChildren || hiddenChild;
 					}
 					}
 				}
@@ -107,11 +110,13 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 			&& currentNode->getTypeAsEnum() == repo::core::model::NodeType::MESH)
 		{
 			tree.addToTree(REPO_LABEL_VISIBILITY_STATE, REPO_VISIBILITY_STATE_HIDDEN);
+			repoTrace << "hidden on default found" << std::endl;
 			hiddenOnDefault = true;
 		}
-		else if (hiddenOnDefault)
+		else if (hiddenOnDefault = hiddenOnDefault || hasHiddenChildren)
 		{
 			tree.addToTree(REPO_LABEL_VISIBILITY_STATE, REPO_VISIBILITY_STATE_HALF_HIDDEN);
+			repoTrace << "Half hidden guy spotted!" << std::endl;
 		}
 		else
 		{
