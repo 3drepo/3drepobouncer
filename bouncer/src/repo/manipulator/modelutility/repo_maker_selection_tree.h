@@ -57,12 +57,14 @@ namespace repo{
 				* @param currentNode node to parse
 				* @param idMap a map of pairs of id to name mapping (to insert)
 				* @param currentPath the current path that leads to this node.
+				* @param hiddenOnDefault (return value) shows if the subtree has hidden nodes
 				*/
 				repo::lib::PropertyTree generatePTree(
 					const repo::core::model::RepoNode            *currentNode,
 					std::unordered_map < std::string,
 					std::pair < std::string, std::string >> &idMaps,
-					const std::string                            &currentPath) const;
+					const std::string                            &currentPath,
+					bool                                         &hiddenOnDefault) const;
 			};
 		}
 	}
