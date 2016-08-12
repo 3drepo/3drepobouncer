@@ -20,6 +20,11 @@
 
 using namespace repo::manipulator::modelutility;
 
+const static std::string REPO_LABEL_VISIBILITY_STATE = "toggleState";
+const static std::string REPO_VISIBILITY_STATE_SHOW = "visible";
+const static std::string REPO_VISIBILITY_STATE_HIDDEN = "invisible";
+const static std::string REPO_VISIBILITY_STATE_HALF_HIDDEN = "parentOfInvisible";
+
 SelectionTreeMaker::SelectionTreeMaker(
 	const repo::core::model::RepoScene *scene)
 	: scene(scene)
@@ -30,7 +35,8 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 	const repo::core::model::RepoNode            *currentNode,
 	std::unordered_map < std::string,
 	std::pair < std::string, std::string >> &idMaps,
-	const std::string                            &currentPath) const
+	const std::string                            &currentPath,
+	bool                                         &hiddenOnDefault) const
 {
 	repo::lib::PropertyTree tree;
 	if (currentNode)
@@ -64,7 +70,11 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 					case repo::core::model::NodeType::TRANSFORMATION:
 					case repo::core::model::NodeType::CAMERA:
 					case repo::core::model::NodeType::REFERENCE:
-						childrenTrees.push_back(generatePTree(child, idMaps, childPath));
+					{
+						bool hiddenChild;
+						childrenTrees.push_back(generatePTree(child, idMaps, childPath, hiddenChild));
+						hiddenOnDefault &= hiddenChild;
+					}
 					}
 				}
 				else
@@ -96,7 +106,16 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 		if (name.find(IFC_TYPE_SPACE_LABEL) != std::string::npos
 			&& currentNode->getTypeAsEnum() == repo::core::model::NodeType::MESH)
 		{
-			tree.addToTree("hiddenOnLoad", true);
+			tree.addToTree(REPO_LABEL_VISIBILITY_STATE, REPO_VISIBILITY_STATE_HIDDEN);
+			hiddenOnDefault = true;
+		}
+		else if (hiddenOnDefault)
+		{
+			tree.addToTree(REPO_LABEL_VISIBILITY_STATE, REPO_VISIBILITY_STATE_HALF_HIDDEN);
+		}
+		else
+		{
+			tree.addToTree(REPO_LABEL_VISIBILITY_STATE, REPO_VISIBILITY_STATE_SHOW);
 		}
 
 		idMaps[idString] = { name, childPath };
@@ -139,7 +158,8 @@ repo::lib::PropertyTree  SelectionTreeMaker::getSelectionTreeAsPropertyTree() co
 	if (scene && (root = scene->getRoot(repo::core::model::RepoScene::GraphType::DEFAULT)))
 	{
 		std::unordered_map< std::string, std::pair<std::string, std::string>> map;
-		tree.mergeSubTree("nodes", generatePTree(root, map, ""));
+		bool dummy;
+		tree.mergeSubTree("nodes", generatePTree(root, map, "", dummy));
 		for (const auto pair : map)
 		{
 			//if there's an entry in maps it must have an entry in paths
