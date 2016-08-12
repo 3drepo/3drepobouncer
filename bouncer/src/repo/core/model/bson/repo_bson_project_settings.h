@@ -37,7 +37,12 @@ namespace repo {
 
 				~RepoProjectSettings() {}
 
-			public:
+				/**
+				* Clone and merge new project settings into the existing info
+				* @proj new info that needs ot be added/updated
+				* @return returns a new project settings with fields updated
+				*/
+				RepoProjectSettings cloneAndMergeProjectSettings(const RepoProjectSettings &proj) const;
 
 				/**
 				 * Get the avatar height if present or default value if not.
