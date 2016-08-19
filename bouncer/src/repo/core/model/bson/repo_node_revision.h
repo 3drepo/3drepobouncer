@@ -28,7 +28,7 @@
 //
 //------------------------------------------------------------------------------
 #define REPO_NODE_REVISION_LABEL_AUTHOR					"author" //!< Author
-#define REPO_NODE_REVISION_LABEL_MESSAGE					"message" //!< Message
+#define REPO_NODE_REVISION_LABEL_MESSAGE					"desc" //!< Message
 #define REPO_NODE_REVISION_LABEL_TAG						"tag" //!< Tag
 #define REPO_NODE_REVISION_LABEL_TIMESTAMP				"timestamp" //!< Timestamp
 #define REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS		"current" //!< Current UIDs

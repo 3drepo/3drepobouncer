@@ -193,7 +193,9 @@ bool RepoManipulator::commitScene(
 	const std::string                      &databaseAd,
 	const repo::core::model::RepoBSON 	   *cred,
 	repo::core::model::RepoScene           *scene,
-	const std::string                      &owner)
+	const std::string                      &owner,
+	const std::string                      &tag,
+	const std::string                      &desc)
 {
 	repoLog("Manipulator: Committing model to database");
 	bool success = false;
@@ -210,7 +212,7 @@ bool RepoManipulator::commitScene(
 		repoError << "Failed to commit scene : database name or project name is empty!";
 	}
 
-	if (handler && scene && scene->commit(handler, msg, projOwner))
+	if (handler && scene && scene->commit(handler, msg, projOwner, desc, tag))
 	{
 		repoInfo << "Scene successfully committed to the database";
 		if (!(success = (scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size())))

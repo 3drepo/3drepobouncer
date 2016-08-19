@@ -93,9 +93,11 @@ bool RepoController::testConnection(const RepoController::RepoToken *token)
 bool RepoController::commitScene(
 	const RepoController::RepoToken    *token,
 	repo::core::model::RepoScene        *scene,
-	const std::string                   &owner)
+	const std::string                   &owner,
+	const std::string                      &tag,
+	const std::string                      &desc)
 {
-	return impl->commitScene(token, scene, owner);
+	return impl->commitScene(token, scene, owner, tag, desc);
 }
 
 uint64_t RepoController::countItemsInCollection(
