@@ -383,8 +383,6 @@ int32_t importFileAndCommit(
 	* Check the amount of parameters matches
 	*/
 	bool usingSettingFiles = command.nArgcs == 2 && std::string(command.args[0]) == "-f";
-	repoLog("nArgcs = " + std::to_string(command.nArgcs) + " using SettingFiles = " + std::to_string(usingSettingFiles)
-		+ " first arg is: |" + command.args[0] + "| one: " + std::to_string(command.nArgcs == 2));
 	if (command.nArgcs < 3 && !usingSettingFiles)
 	{
 		repoLogError("Number of arguments mismatch! " + cmdImportFile
