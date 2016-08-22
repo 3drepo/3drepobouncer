@@ -39,7 +39,7 @@ namespace repo{
 				* or the default graph is not loaded.
 				* @return returns the selection tree as a property tree
 				*/
-				repo::lib::PropertyTree getSelectionTreeAsPropertyTree() const;
+				std::map<std::string, repo::lib::PropertyTree> getSelectionTreeAsPropertyTree() const;
 
 				/**
 				* Construct and return the selection tree as a Property Tree As a buffer
@@ -47,7 +47,7 @@ namespace repo{
 				* or the default graph is not loaded.
 				* @return returns the selection tree as a property tree
 				*/
-				std::vector<uint8_t> getSelectionTreeAsBuffer() const;
+				std::map<std::string, std::vector<uint8_t>> getSelectionTreeAsBuffer() const;
 
 			private:
 				const repo::core::model::RepoScene *scene;
@@ -58,13 +58,15 @@ namespace repo{
 				* @param idMap a map of pairs of id to name mapping (to insert)
 				* @param currentPath the current path that leads to this node.
 				* @param hiddenOnDefault (return value) shows if the subtree has hidden nodes
+				* @param hiddenNode A list of vector of nodes that are hidden by default
 				*/
 				repo::lib::PropertyTree generatePTree(
 					const repo::core::model::RepoNode            *currentNode,
 					std::unordered_map < std::string,
 					std::pair < std::string, std::string >> &idMaps,
 					const std::string                            &currentPath,
-					bool                                         &hiddenOnDefault) const;
+					bool                                         &hiddenOnDefault,
+					std::vector<std::string>                     &hiddenNode) const;
 			};
 		}
 	}
