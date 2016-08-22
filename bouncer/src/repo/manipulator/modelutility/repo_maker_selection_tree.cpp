@@ -141,9 +141,6 @@ std::map<std::string, std::vector<uint8_t>> SelectionTreeMaker::getSelectionTree
 		std::stringstream ss;
 		tree.second.write_json(ss);
 		std::string jsonString = ss.str();
-
-		if (tree.first == "modelProperties.json")
-			repoInfo << jsonString;
 		if (!jsonString.empty())
 		{
 			size_t byteLength = jsonString.size() * sizeof(*jsonString.data());
