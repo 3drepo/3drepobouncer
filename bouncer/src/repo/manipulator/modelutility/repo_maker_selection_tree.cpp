@@ -178,9 +178,14 @@ std::map<std::string, repo::lib::PropertyTree>  SelectionTreeMaker::getSelection
 			tree.addToTree("idToName." + pair.first, pair.second.first);
 			tree.addToTree("idToPath." + pair.first, pair.second.second);
 		}
-		settingsTree.addToTree("hiddenNodes", hiddenNodes);
+
 		trees["fulltree.json"] = tree;
-		trees["modelProperties.json"] = settingsTree;
+
+		if (hiddenNodes.size())
+		{
+			settingsTree.addToTree("hiddenNodes", hiddenNodes);
+			trees["modelProperties.json"] = settingsTree;
+		}
 	}
 	else
 	{
