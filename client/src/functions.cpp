@@ -43,7 +43,7 @@ std::string helpInfo()
 
 	ss << cmdGenStash << "\tGenerate Stash for a project. (args: database project [repo|gltf|src|tree])\n";
 	ss << cmdGetFile << "\t\tGet original file for the latest revision of the project (args: database project dir)\n";
-	ss << cmdImportFile << "\t\tImport file to database. (args: file database project [dxrotate] [owner] [configfile])\n";
+	ss << cmdImportFile << "\t\tImport file to database. (args: {file database project [dxrotate] [owner] [configfile]} or {-f parameterFile} )\n";
 	ss << cmdCreateFed << "\t\tGenerate a federation. (args: fedDetails [owner])\n";
 	ss << cmdCleanProj << "\t\tClean up a specified project removing/repairing corrupted revisions. (args: database project)\n";
 	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
@@ -60,7 +60,7 @@ bool isSpecialCommand(const std::string &cmd)
 int32_t knownValid(const std::string &cmd)
 {
 	if (cmd == cmdImportFile)
-		return 3;
+		return 2;
 	if (cmd == cmdGenStash)
 		return 3;
 	if (cmd == cmdCreateFed)
@@ -382,58 +382,93 @@ int32_t importFileAndCommit(
 	/*
 	* Check the amount of parameters matches
 	*/
-	if (command.nArgcs < 3)
+	bool usingSettingFiles = command.nArgcs == 2 && std::string(command.args[0]) == "-f";
+	if (command.nArgcs < 3 && !usingSettingFiles)
 	{
 		repoLogError("Number of arguments mismatch! " + cmdImportFile
-			+ " requires 3 arguments: file database project [dxrotate] [owner] [config file]");
+			+ " requires 3 arguments: file database project [dxrotate] [owner] [config file] or 2 arguments: -f <path to json settings>");
 		return REPOERR_INVALID_ARG;
 	}
 
-	const std::string fileLoc = command.args[0];
-	const std::string database = command.args[1];
-	const std::string project = command.args[2];
-	std::string configFile;
-	std::string owner;
+	std::string fileLoc;
+	std::string database;
+	std::string project;
+	std::string configFile, owner, tag, desc;
+
 	boost::filesystem::path filePath(fileLoc);
 	std::string fileExt = filePath.extension().string();
 	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
-	bool rotate = false;
+	bool rotate = fileExt == FBX_EXTENSION;;
+	bool success = true;
+	if (usingSettingFiles)
+	{
+		//if we're using settles file then arg[1] must be file path
+		boost::property_tree::ptree jsonTree;
+		try{
+			boost::property_tree::read_json(command.args[1], jsonTree);
+
+			database = jsonTree.get<std::string>("database", "");
+			project = jsonTree.get<std::string>("project", "");
+
+			if (database.empty() || project.empty())
+			{
+				success = false;
+			}
+
+			owner = jsonTree.get<std::string>("owner", "");
+			configFile = jsonTree.get<std::string>("configfile", "");
+			tag = jsonTree.get<std::string>("tag", "");
+			desc = jsonTree.get<std::string>("desc", "");
+			rotate = jsonTree.get<bool>("dxrotate", rotate);
+			fileLoc = jsonTree.get<std::string>("file", "");
+		}
+		catch (std::exception &e)
+		{
+			success = false;
+			repoLogError("Failed to import file: " + std::string(e.what()));
+		}
+	}
+	else
+	{
+		fileLoc = command.args[0];
+		database = command.args[1];
+		project = command.args[2];
+
+		if (command.nArgcs > 3)
+		{
+			//If 3rd argument is "dxrotate", we need to rotate the X axis
+			//Otherwise the user is trying to name the owner, rotate is false.
+			std::string arg3 = command.args[3];
+			if (arg3 == "dxrotate")
+			{
+				rotate = true;
+			}
+			else
+			{
+				owner = command.args[3];
+			}
+		}
+		if (command.nArgcs > 4)
+		{
+			//If the last argument is rotate, this is owner
+			//otherwise this is configFile (confusing, I know.)
+			if (rotate)
+			{
+				owner = command.args[4];
+				if (command.nArgcs > 5)
+				{
+					configFile = command.args[5];
+				}
+			}
+			else
+			{
+				configFile = command.args[4];
+			}
+		}
+	}
 
 	//FIXME: This is getting complicated, we should consider using boost::program_options and start utilising flags...
 	//Something like this: http://stackoverflow.com/questions/15541498/how-to-implement-subcommands-using-boost-program-options
-
-	rotate = fileExt == FBX_EXTENSION;
-	if (command.nArgcs > 3)
-	{
-		//If 3rd argument is "dxrotate", we need to rotate the X axis
-		//Otherwise the user is trying to name the owner, rotate is false.
-		std::string arg3 = command.args[3];
-		if (arg3 == "dxrotate")
-		{
-			rotate = true;
-		}
-		else
-		{
-			owner = command.args[3];
-		}
-	}
-	if (command.nArgcs > 4)
-	{
-		//If the last argument is rotate, this is owner
-		//otherwise this is configFile (confusing, I know.)
-		if (rotate)
-		{
-			owner = command.args[4];
-			if (command.nArgcs > 5)
-			{
-				configFile = command.args[5];
-			}
-		}
-		else
-		{
-			configFile = command.args[4];
-		}
-	}
 
 	repoLogDebug("File: " + fileLoc + " database: " + database
 		+ " project: " + project + " rotate:"
@@ -447,7 +482,7 @@ int32_t importFileAndCommit(
 		repoLog("Trying to commit this scene to database as " + database + "." + project);
 		graph->setDatabaseAndProjectName(database, project);
 
-		if (controller->commitScene(token, graph, owner))
+		if (controller->commitScene(token, graph, owner, tag, desc))
 		{
 			if (graph->isMissingTexture())
 			{

@@ -74,8 +74,6 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 					{
 						bool hiddenChild = false;
 						childrenTrees.push_back(generatePTree(child, idMaps, childPath, hiddenChild));
-						if (hiddenChild)
-							repoInfo << "Child is hidden..." << std::endl;
 						hasHiddenChildren = hasHiddenChildren || hiddenChild;
 					}
 					}
