@@ -61,6 +61,9 @@ bool IFCModelImport::generateGeometry(std::string filePath, std::string &errMsg)
 	IfcGeom::IteratorSettings settings;
 	settings.set(IfcGeom::IteratorSettings::APPLY_DEFAULT_MATERIALS, true);
 	settings.set(IfcGeom::IteratorSettings::DISABLE_OPENING_SUBTRACTIONS, false);
+	settings.set(IfcGeom::IteratorSettings::NO_NORMALS, false);
+	settings.set(IfcGeom::IteratorSettings::WELD_VERTICES, false);
+	settings.set(IfcGeom::IteratorSettings::GENERATE_UVS, true);
 
 	IfcGeom::Iterator<double> context_iterator(settings, filePath);
 
@@ -100,6 +103,7 @@ bool IFCModelImport::generateGeometry(std::string filePath, std::string &errMsg)
 			auto faces = ob_geo->geometry().faces();
 			auto vertices = ob_geo->geometry().verts();
 			auto normals = ob_geo->geometry().normals();
+			repoTrace << "#normals: " << normals.size();
 			auto uvs = ob_geo->geometry().uvs();
 			auto trans = ob_geo->transformation();
 
@@ -200,6 +204,7 @@ repo::core::model::RepoScene* IFCModelImport::generateRepoScene()
 	}
 
 	auto scene = new repo::core::model::RepoScene({ ifcFile }, dummy, meshNodes, dummy, dummy, dummy, transNodes);
+	scene->setWorldOffset(offset);
 	return scene;
 }
 
