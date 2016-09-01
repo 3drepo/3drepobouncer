@@ -742,7 +742,7 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 			repoTrace << "model Imported, generating Repo Scene";
 			if ((scene = modelConvertor->generateRepoScene()))
 			{
-				if (rotateModel)
+				if (rotateModel || isIFC)
 				{
 					repoTrace << "rotating model by 270 degress on the x axis...";
 					scene->reorientateDirectXModel();
