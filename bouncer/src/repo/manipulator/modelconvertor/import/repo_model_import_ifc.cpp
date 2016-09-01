@@ -85,7 +85,7 @@ bool IFCModelImport::generateGeometry(std::string filePath, std::string &errMsg)
 	}
 
 	int meshCount = 0;
-	std::vector<std::vector<int>> allFaces;
+	std::vector<std::vector<repo_face_t>> allFaces;
 	std::vector<std::vector<double>> allVertices;
 	std::vector<std::vector<double>> allNormals;
 	std::vector<std::vector<double>> allUVs;
@@ -105,9 +105,13 @@ bool IFCModelImport::generateGeometry(std::string filePath, std::string &errMsg)
 			auto normals = ob_geo->geometry().normals();
 			auto uvs = ob_geo->geometry().uvs();
 			auto trans = ob_geo->transformation();
+			std::unordered_map<int, std::unordered_map<int, int>>  indexMapping;
+			std::unordered_map<int, int> vertexCount;
 
-			allIds.push_back(ob_geo->guid());
-			allNames.push_back(ob_geo->name());
+			std::unordered_map<int, std::vector<double>> post_vertices, post_normals, post_uvs;
+			std::unordered_map<int, std::vector<repo_face_t>> post_faces;
+
+			auto matIndIt = ob_geo->geometry().material_ids().begin();
 
 			for (int i = 0; i < vertices.size(); i += 3)
 			{
@@ -127,60 +131,109 @@ bool IFCModelImport::generateGeometry(std::string filePath, std::string &errMsg)
 				}
 			}
 
-			allVertices.push_back(vertices);
-			allFaces.push_back(faces);
-			allNormals.push_back(normals);
-			allUVs.push_back(uvs);
-
-			//Get material
-			if (ob_geo->geometry().material_ids().size())
+			for (int iface = 0; iface < faces.size(); iface += 3)
 			{
-				auto matIndex = ob_geo->geometry().material_ids().front(); //We only support one material per mesh
-				auto material = ob_geo->geometry().materials()[matIndex];
-				std::string matName = settings.get(IfcGeom::IteratorSettings::USE_MATERIAL_NAMES) ? material.original_name() : material.name();
-				allMaterials.push_back(matName);
-				if (materials.find(matName) == materials.end())
+				auto matInd = *matIndIt;
+				if (indexMapping.find(matInd) == indexMapping.end())
 				{
-					//new material, add it to the vector
-					repo_material_t matProp;
-					if (material.hasDiffuse())
-					{
-						auto diffuse = material.diffuse();
-						matProp.diffuse = { (float)diffuse[0], (float)diffuse[1], (float)diffuse[2] };
-					}
+					//new material
+					indexMapping[matInd] = std::unordered_map<int, int>();
+					vertexCount[matInd] = 0;
 
-					if (material.hasSpecular())
-					{
-						auto specular = material.specular();
-						matProp.specular = { (float)specular[0], (float)specular[1], (float)specular[2] };
-					}
+					std::unordered_map<int, std::vector<double>> post_vertices, post_normals, post_uvs;
+					std::unordered_map<int, std::vector<repo_face_t>> post_faces;
 
-					if (material.hasSpecularity())
-					{
-						matProp.shininess = material.specularity();
-					}
-					else
-					{
-						matProp.shininess = NAN;
-					}
+					post_vertices[matInd] = std::vector<double>();
+					post_normals[matInd] = std::vector<double>();
+					post_uvs[matInd] = std::vector<double>();
+					post_faces[matInd] = std::vector<repo_face_t>();
 
-					matProp.shininessStrength = NAN;
-
-					if (material.hasTransparency())
+					auto material = ob_geo->geometry().materials()[matInd];
+					std::string matName = settings.get(IfcGeom::IteratorSettings::USE_MATERIAL_NAMES) ? material.original_name() : material.name();
+					allMaterials.push_back(matName);
+					if (materials.find(matName) == materials.end())
 					{
-						matProp.opacity = 1. - material.transparency();
-					}
-					else
-					{
-						matProp.opacity = 1.;
-					}
+						//new material, add it to the vector
+						repo_material_t matProp;
+						if (material.hasDiffuse())
+						{
+							auto diffuse = material.diffuse();
+							matProp.diffuse = { (float)diffuse[0], (float)diffuse[1], (float)diffuse[2] };
+						}
 
-					materials[matName] = new repo::core::model::MaterialNode(repo::core::model::RepoBSONFactory::makeMaterialNode(matProp, matName));
+						if (material.hasSpecular())
+						{
+							auto specular = material.specular();
+							matProp.specular = { (float)specular[0], (float)specular[1], (float)specular[2] };
+						}
+
+						if (material.hasSpecularity())
+						{
+							matProp.shininess = material.specularity();
+						}
+						else
+						{
+							matProp.shininess = NAN;
+						}
+
+						matProp.shininessStrength = NAN;
+
+						if (material.hasTransparency())
+						{
+							matProp.opacity = 1. - material.transparency();
+						}
+						else
+						{
+							matProp.opacity = 1.;
+						}
+
+						materials[matName] = new repo::core::model::MaterialNode(repo::core::model::RepoBSONFactory::makeMaterialNode(matProp, matName));
+					}
 				}
+
+				repo_face_t face;
+				for (int j = 0; j < 3; ++j)
+				{
+					auto vIndex = faces[iface + j];
+					if (indexMapping[matInd].find(vIndex) == indexMapping[matInd].end())
+					{
+						//new index. create a mapping
+						indexMapping[matInd][vIndex] = vertexCount[matInd]++;
+						for (int ivert = 0; ivert < 3; ++ivert)
+						{
+							auto bufferInd = ivert + vIndex * 3;
+							post_vertices[matInd].push_back(vertices[bufferInd]);
+
+							if (normals.size())
+								post_normals[matInd].push_back(normals[bufferInd]);
+
+							if (uvs.size())
+							{
+								auto uvbufferInd = ivert + vIndex * 2;
+								post_uvs[matInd].push_back(uvs[uvbufferInd]);
+							}
+						}
+					}
+					face.push_back(indexMapping[matInd][vIndex]);
+				}
+
+				post_faces[matInd].push_back(face);
+
+				++matIndIt;
 			}
-			else
+
+			auto guid = ob_geo->guid();
+			auto name = ob_geo->name();
+			for (const auto& pair : post_faces)
 			{
-				allMaterials.push_back("");
+				auto index = pair.first;
+				allVertices.push_back(post_vertices[index]);
+				allNormals.push_back(post_normals[index]);
+				allFaces.push_back(pair.second);
+				allUVs.push_back(post_uvs[index]);
+
+				allIds.push_back(guid);
+				allNames.push_back(name);
 			}
 		}
 	} while (context_iterator.next());
@@ -219,11 +272,6 @@ bool IFCModelImport::generateGeometry(std::string filePath, std::string &errMsg)
 			}
 		}
 
-		for (int j = 0; j < allFaces[i].size(); j += 3)
-		{
-			faces.push_back({ (unsigned int)allFaces[i][j], (unsigned int)allFaces[i][j + 1], (unsigned int)allFaces[i][j + 2] });
-		}
-
 		for (int j = 0; j < allUVs[i].size(); j += 2)
 		{
 			uvs.push_back({ allUVs[i][j], allUVs[i][j + 1] });
@@ -233,9 +281,14 @@ bool IFCModelImport::generateGeometry(std::string filePath, std::string &errMsg)
 		if (uvs.size())
 			uvChannels.push_back(uvs);
 
-		auto mesh = repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces, normals, boundingBox, uvChannels,
+		auto mesh = repo::core::model::RepoBSONFactory::makeMeshNode(vertices, allFaces[i], normals, boundingBox, uvChannels,
 			std::vector<repo_color4d_t>(), std::vector<std::vector<float>>(), allNames[i]);
-		meshes[allIds[i]] = new repo::core::model::MeshNode(mesh);
+
+		if (meshes.find(allIds[i]) == meshes.end())
+		{
+			meshes[allIds[i]] = std::vector<repo::core::model::MeshNode*>();
+		}
+		meshes[allIds[i]].push_back(new repo::core::model::MeshNode(mesh));
 
 		if (allMaterials[i] != "")
 		{
@@ -258,10 +311,13 @@ repo::core::model::RepoScene* IFCModelImport::generateRepoScene()
 	transNodes.insert(rootNode);
 	auto rootSharedID = rootNode->getSharedID();
 
-	for (auto &mesh : meshes)
+	for (const auto &id : meshes)
 	{
-		*(mesh.second) = mesh.second->cloneAndAddParent(rootSharedID);
-		meshNodes.insert(mesh.second);
+		for (auto &mesh : id.second)
+		{
+			*mesh = mesh->cloneAndAddParent(rootSharedID);
+			meshNodes.insert(mesh);
+		}
 	}
 
 	for (auto &mat : materials)
