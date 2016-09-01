@@ -133,13 +133,10 @@ bool IFCModelImport::generateGeometry(std::string filePath, std::string &errMsg)
 			allUVs.push_back(uvs);
 
 			//Get material
-			if (ob_geo->geometry().materials().size() > 1)
+			if (ob_geo->geometry().material_ids().size())
 			{
-				repoWarning << "3D Repo only support single material per mesh. Taking the first one and ignoring the rest.";
-			}
-			else if (ob_geo->geometry().materials().size())
-			{
-				auto material = ob_geo->geometry().materials().front();
+				auto matIndex = ob_geo->geometry().material_ids().front(); //We only support one material per mesh
+				auto material = ob_geo->geometry().materials()[matIndex];
 				std::string matName = settings.get(IfcGeom::IteratorSettings::USE_MATERIAL_NAMES) ? material.original_name() : material.name();
 				allMaterials.push_back(matName);
 				if (materials.find(matName) == materials.end())
