@@ -11,6 +11,10 @@ addons:
         packages:
             - gcc-4.9
             - g++-4.9
+
+branches:
+    except:
+        - ISSUE_145
 before_install:
     - echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list
     - sudo apt-get update
