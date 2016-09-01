@@ -89,7 +89,7 @@ bool IFCModelImport::generateGeometry(std::string filePath, std::string &errMsg)
 	std::vector<std::vector<double>> allVertices;
 	std::vector<std::vector<double>> allNormals;
 	std::vector<std::vector<double>> allUVs;
-	std::vector<std::string> allIds, allNames;
+	std::vector<std::string> allIds, allNames, allMaterials;
 
 	//FIXME: need to do materials
 
@@ -103,7 +103,6 @@ bool IFCModelImport::generateGeometry(std::string filePath, std::string &errMsg)
 			auto faces = ob_geo->geometry().faces();
 			auto vertices = ob_geo->geometry().verts();
 			auto normals = ob_geo->geometry().normals();
-			repoTrace << "#normals: " << normals.size();
 			auto uvs = ob_geo->geometry().uvs();
 			auto trans = ob_geo->transformation();
 
@@ -132,12 +131,67 @@ bool IFCModelImport::generateGeometry(std::string filePath, std::string &errMsg)
 			allFaces.push_back(faces);
 			allNormals.push_back(normals);
 			allUVs.push_back(uvs);
+
+			//Get material
+			if (ob_geo->geometry().materials().size() > 1)
+			{
+				repoWarning << "3D Repo only support single material per mesh. Taking the first one and ignoring the rest.";
+			}
+			else if (ob_geo->geometry().materials().size())
+			{
+				auto material = ob_geo->geometry().materials().front();
+				std::string matName = settings.get(IfcGeom::IteratorSettings::USE_MATERIAL_NAMES) ? material.original_name() : material.name();
+				allMaterials.push_back(matName);
+				if (materials.find(matName) == materials.end())
+				{
+					//new material, add it to the vector
+					repo_material_t matProp;
+					if (material.hasDiffuse())
+					{
+						auto diffuse = material.diffuse();
+						matProp.diffuse = { (float)diffuse[0], (float)diffuse[1], (float)diffuse[2] };
+					}
+
+					if (material.hasSpecular())
+					{
+						auto specular = material.specular();
+						matProp.specular = { (float)specular[0], (float)specular[1], (float)specular[2] };
+					}
+
+					if (material.hasSpecularity())
+					{
+						matProp.shininess = material.specularity();
+					}
+					else
+					{
+						matProp.shininess = NAN;
+					}
+
+					matProp.shininessStrength = NAN;
+
+					if (material.hasTransparency())
+					{
+						matProp.opacity = 1. - material.transparency();
+					}
+					else
+					{
+						matProp.opacity = 1.;
+					}
+
+					materials[matName] = new repo::core::model::MaterialNode(repo::core::model::RepoBSONFactory::makeMaterialNode(matProp, matName));
+				}
+			}
+			else
+			{
+				allMaterials.push_back("");
+			}
 		}
 	} while (context_iterator.next());
 
 	//now we have found all meshes, take the minimum bounding box of the scene as offset
 	//and create repo meshes
 	repoTrace << "Finished iterating. number of meshes found: " << allVertices.size();
+	repoTrace << "Finished iterating. number of materials found: " << materials.size();
 	for (int i = 0; i < allVertices.size(); ++i)
 	{
 		std::vector<repo_vector_t> vertices, normals;
@@ -185,6 +239,16 @@ bool IFCModelImport::generateGeometry(std::string filePath, std::string &errMsg)
 		auto mesh = repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces, normals, boundingBox, uvChannels,
 			std::vector<repo_color4d_t>(), std::vector<std::vector<float>>(), allNames[i]);
 		meshes[allIds[i]] = new repo::core::model::MeshNode(mesh);
+
+		if (allMaterials[i] != "")
+		{
+			//FIXME: probably slow. should do in bulk
+			auto matIt = materials.find(allMaterials[i]);
+			if (matIt != materials.end())
+			{
+				*(matIt->second) = matIt->second->cloneAndAddParent(mesh.getSharedID());
+			}
+		}
 	}
 
 	return true;
@@ -192,7 +256,7 @@ bool IFCModelImport::generateGeometry(std::string filePath, std::string &errMsg)
 
 repo::core::model::RepoScene* IFCModelImport::generateRepoScene()
 {
-	repo::core::model::RepoNodeSet transNodes, meshNodes, dummy;
+	repo::core::model::RepoNodeSet transNodes, meshNodes, matNodes, dummy;
 	auto rootNode = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
 	transNodes.insert(rootNode);
 	auto rootSharedID = rootNode->getSharedID();
@@ -203,7 +267,10 @@ repo::core::model::RepoScene* IFCModelImport::generateRepoScene()
 		meshNodes.insert(mesh.second);
 	}
 
-	auto scene = new repo::core::model::RepoScene({ ifcFile }, dummy, meshNodes, dummy, dummy, dummy, transNodes);
+	for (auto &mat : materials)
+		matNodes.insert(mat.second);
+
+	auto scene = new repo::core::model::RepoScene({ ifcFile }, dummy, meshNodes, matNodes, dummy, dummy, transNodes);
 	scene->setWorldOffset(offset);
 	return scene;
 }
@@ -214,7 +281,7 @@ bool IFCModelImport::importModel(std::string filePath, std::string &errMsg)
 	std::string fileName = getFileName(filePath);
 
 	repoInfo << "IMPORT [" << fileName << "]";
-	repoInfo << "=== IMPORTING MODEL WITH OPEN IFC SHELL ===";
+	repoInfo << "=== IMPORTING MODEL WITH IFC OPEN SHELL ===";
 	bool success = false;
 
 	if (success = generateGeometry(filePath, errMsg))

@@ -23,6 +23,7 @@
 
 #include <string>
 #include "repo_model_import_abstract.h"
+#include "../../../core/model/bson/repo_node_material.h"
 #include "../../../core/model/bson/repo_node_mesh.h"
 
 namespace repo{
@@ -76,6 +77,7 @@ namespace repo{
 				bool generateGeometry(std::string filePath, std::string &errMsg);
 
 				std::unordered_map<std::string, repo::core::model::MeshNode*> meshes;
+				std::unordered_map<std::string, repo::core::model::MaterialNode*> materials;
 				std::vector<double> offset;
 				std::string ifcFile;
 			};
