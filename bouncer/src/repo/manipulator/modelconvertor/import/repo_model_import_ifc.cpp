@@ -43,17 +43,6 @@ IFCModelImport::~IFCModelImport()
 {
 }
 
-static void convertVertex(double* vertices, const IfcGeom::Transformation<double> &trans)
-{
-	auto transVector = trans.matrix().data();
-	auto temp1 = transVector[0] * vertices[0] + transVector[3] * vertices[1] + transVector[6] * vertices[2] + transVector[9];
-	auto temp2 = transVector[1] * vertices[0] + transVector[4] * vertices[1] + transVector[7] * vertices[2] + transVector[10];
-	auto temp3 = transVector[2] * vertices[0] + transVector[5] * vertices[1] + transVector[8] * vertices[2] + transVector[11];
-	vertices[0] = temp1;
-	vertices[1] = temp2;
-	vertices[2] = temp3;
-}
-
 bool IFCModelImport::generateGeometry(std::string filePath, std::string &errMsg)
 {
 	repoInfo << "Initialising Geometry....." << std::endl;
@@ -64,6 +53,7 @@ bool IFCModelImport::generateGeometry(std::string filePath, std::string &errMsg)
 	settings.set(IfcGeom::IteratorSettings::NO_NORMALS, false);
 	settings.set(IfcGeom::IteratorSettings::WELD_VERTICES, false);
 	settings.set(IfcGeom::IteratorSettings::GENERATE_UVS, true);
+	settings.set(IfcGeom::IteratorSettings::USE_WORLD_COORDS, true);
 
 	IfcGeom::Iterator<double> context_iterator(settings, filePath);
 
@@ -104,7 +94,6 @@ bool IFCModelImport::generateGeometry(std::string filePath, std::string &errMsg)
 			auto vertices = ob_geo->geometry().verts();
 			auto normals = ob_geo->geometry().normals();
 			auto uvs = ob_geo->geometry().uvs();
-			auto trans = ob_geo->transformation();
 			std::unordered_map<int, std::unordered_map<int, int>>  indexMapping;
 			std::unordered_map<int, int> vertexCount;
 
@@ -115,8 +104,6 @@ bool IFCModelImport::generateGeometry(std::string filePath, std::string &errMsg)
 
 			for (int i = 0; i < vertices.size(); i += 3)
 			{
-				convertVertex(&vertices[i], trans);
-
 				for (int j = 0; j < 3; ++j)
 				{
 					int index = j + i;
