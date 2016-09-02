@@ -231,6 +231,8 @@ bool IFCModelImport::generateGeometry(std::string filePath, std::string &errMsg)
 	//and create repo meshes
 	repoTrace << "Finished iterating. number of meshes found: " << allVertices.size();
 	repoTrace << "Finished iterating. number of materials found: " << materials.size();
+
+	std::map<std::string, std::vector<repoUUID>> materialParent;
 	for (int i = 0; i < allVertices.size(); ++i)
 	{
 		std::vector<repo_vector_t> vertices, normals;
@@ -281,12 +283,23 @@ bool IFCModelImport::generateGeometry(std::string filePath, std::string &errMsg)
 
 		if (allMaterials[i] != "")
 		{
-			//FIXME: probably slow. should do in bulk
-			auto matIt = materials.find(allMaterials[i]);
-			if (matIt != materials.end())
+			if (materialParent.find(allMaterials[i]) == materialParent.end())
 			{
-				*(matIt->second) = matIt->second->cloneAndAddParent(mesh.getSharedID());
+				materialParent[allMaterials[i]] = std::vector<repoUUID>();
 			}
+
+			materialParent[allMaterials[i]].push_back(mesh.getSharedID());
+		}
+	}
+
+	repoTrace << "Meshes constructed. Wiring materials to parents...";
+
+	for (const auto &pair : materialParent)
+	{
+		auto matIt = materials.find(pair.first);
+		if (matIt != materials.end())
+		{
+			*(matIt->second) = matIt->second->cloneAndAddParent(pair.second);
 		}
 	}
 
