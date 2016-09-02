@@ -16,7 +16,7 @@
 */
 
 /**
-* Abstract Model convertor(Import)
+* IFC Geometry convertor(Import)
 */
 
 #pragma once

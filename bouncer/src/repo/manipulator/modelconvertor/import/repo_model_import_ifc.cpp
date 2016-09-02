@@ -16,7 +16,7 @@
 */
 
 /**
-* Allows Import/Export functionality into/output Repo world using ASSIMP
+* Allows Import/Export functionality into/output Repo world using IFCOpenShell
 */
 
 #include "repo_model_import_ifc.h"

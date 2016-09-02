@@ -16,7 +16,7 @@
 */
 
 /**
-* Allows Import/Export functionality into/output Repo world using ASSIMP
+* Allows geometry creation using ifcopenshell
 */
 
 #include "repo_ifc_utils_geometry.h"
