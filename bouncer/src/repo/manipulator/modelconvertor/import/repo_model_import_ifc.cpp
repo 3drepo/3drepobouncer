@@ -223,6 +223,8 @@ bool IFCModelImport::generateGeometry(std::string filePath, std::string &errMsg)
 				allNames.push_back(name);
 			}
 		}
+		if (allIds.size() % 1000 == 0)
+			repoInfo << allIds.size() << " meshes created";
 	} while (context_iterator.next());
 
 	//now we have found all meshes, take the minimum bounding box of the scene as offset
