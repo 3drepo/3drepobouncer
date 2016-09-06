@@ -317,7 +317,7 @@ void IFCUtilsGeometry::retrieveGeometryFromIterator(
 				allNames.push_back(name);
 			}
 		}
-		if (allIds.size() % 1000 == 0)
+		if (allIds.size() % 100 == 0)
 			repoInfo << allIds.size() << " meshes created";
 	} while (contextIterator.next());
 }
