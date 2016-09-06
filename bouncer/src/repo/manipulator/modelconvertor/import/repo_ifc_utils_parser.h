@@ -69,7 +69,8 @@ namespace repo{
 				repo::core::model::RepoNodeSet createTransformations(
 					IfcParse::IfcFile &ifcfile,
 					std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> &meshes,
-					std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials
+					std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
+					repo::core::model::RepoNodeSet											   &metaSet
 					);
 
 				repo::core::model::RepoNodeSet createTransformationsRecursive(
@@ -77,6 +78,7 @@ namespace repo{
 					const IfcUtil::IfcBaseClass *element,
 					std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> &meshes,
 					std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
+					repo::core::model::RepoNodeSet											   &metaSet,
 					const repoUUID																&parentID,
 					const std::set<int>													       &ancestorsID = std::set<int>()
 					);

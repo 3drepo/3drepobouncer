@@ -169,7 +169,6 @@ bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
 
 		if (meshes.find(allIds[i]) == meshes.end())
 		{
-			repoTrace << "ID with Mesh: " << allIds[i];
 			meshes[allIds[i]] = std::vector<repo::core::model::MeshNode*>();
 		}
 		meshes[allIds[i]].push_back(new repo::core::model::MeshNode(mesh));
