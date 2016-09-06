@@ -169,6 +169,7 @@ bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
 
 		if (meshes.find(allIds[i]) == meshes.end())
 		{
+			repoTrace << "ID with Mesh: " << allIds[i];
 			meshes[allIds[i]] = std::vector<repo::core::model::MeshNode*>();
 		}
 		meshes[allIds[i]].push_back(new repo::core::model::MeshNode(mesh));
@@ -287,7 +288,7 @@ void IFCUtilsGeometry::retrieveGeometryFromIterator(
 							if (normals.size())
 								post_normals[matInd].push_back(normals[bufferInd]);
 
-							if (uvs.size())
+							if (uvs.size() && ivert < 2)
 							{
 								auto uvbufferInd = ivert + vIndex * 2;
 								post_uvs[matInd].push_back(uvs[uvbufferInd]);

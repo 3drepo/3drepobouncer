@@ -67,7 +67,7 @@ repo::core::model::RepoScene* IFCModelImport::generateRepoScene()
 	std::string errMsg;
 	auto scene = parserUtil.generateRepoScene(errMsg, meshes, materials, offset);
 	if (!scene)
-		repoError << errMsg;
+		repoError << "Failed to generate Repo Scene: " << errMsg;
 	return scene;
 }
 

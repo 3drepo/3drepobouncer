@@ -77,7 +77,8 @@ namespace repo{
 					const IfcUtil::IfcBaseClass *element,
 					std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> &meshes,
 					std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
-					const repoUUID																&parentID
+					const repoUUID																&parentID,
+					const std::set<int>													       &ancestorsID = std::set<int>()
 					);
 
 				const std::string file;

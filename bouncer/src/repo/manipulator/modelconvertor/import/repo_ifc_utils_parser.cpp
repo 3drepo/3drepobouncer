@@ -28,6 +28,7 @@
 #include <ifcparse/IfcFile.h>
 
 const static std::string IFC_ARGUMENT_GLOBAL_ID = "GlobalId";
+const static std::string IFC_ARGUMENT_NAME = "Name";
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -59,7 +60,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformations(
 	if (initialElements->size())
 	{
 		repoTrace << "Initial elements: " << initialElements->size();
-		repoUUID parentID;
+		repoUUID parentID = stringToUUID(REPO_HISTORY_MASTER_BRANCH);
 		if (initialElements->size() > 1)
 		{
 			//More than one starting nodes. create a rootNode
@@ -88,51 +89,163 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	const IfcUtil::IfcBaseClass *element,
 	std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> &meshes,
 	std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
-	const repoUUID															   &parentID
+	const repoUUID															   &parentID,
+	const std::set<int>													       &ancestorsID
 	)
 {
-	switch (element->type())
-	{
-		//TODO: Need to filter out unwanted IFC nodes
-	}
+	bool createElement = true; //create a transformation for this element
+	bool traverseChildren = true; //keep recursing its children
+	std::vector<int> extraChildren; //children outside of reference
 
-	//create a transformation for the entry, and loop through it's children
-	auto name = element->entity->toString();
 	auto id = element->entity->id();
-	std::string guid;
+	std::string guid, name;
 	for (int i = 0; i < element->getArgumentCount(); ++i)
 	{
 		if (element->getArgumentName(i) == IFC_ARGUMENT_GLOBAL_ID)
-			guid = element->getArgument(i)->toString();
-	}
-
-	std::vector<repoUUID> parents;
-	if (!parentID.is_nil()) parents.push_back(parentID);
-
-	auto transNode = repo::core::model::RepoBSONFactory::makeTransformationNode(repo::core::model::TransformationNode::identityMat(), name, parents);
-	auto transID = transNode.getSharedID();
-
-	repo::core::model::RepoNodeSet transNodeSet;
-	transNodeSet.insert(new repo::core::model::TransformationNode(transNode));
-
-	if (meshes.find(guid) != meshes.end())
-	{
-		//has meshes associated with it. append parent
-		for (auto &mesh : meshes[guid])
 		{
-			*mesh = mesh->cloneAndAddParent(transID);
+			//It comes with single quotes. remove those
+			guid = element->getArgument(i)->toString().erase(0, 1);
+			guid = guid.erase(guid.size() - 1, 1);
+		}
+
+		if (element->getArgumentName(i) == IFC_ARGUMENT_NAME)
+		{
+			name = element->getArgument(i)->toString();
+			if (name == "$")
+			{
+				createElement = false;
+			}
+			else {
+				name = name.erase(0, 1);;
+				name = name.erase(name.size() - 1, 1);
+				if (name.empty())
+				{
+					name = "<no name>";
+				}
+			}
 		}
 	}
 
-	auto childrenElements = ifcfile.entitiesByReference(id);
-	repoTrace << "My id is: " << id << " name: " << name;
-	repoTrace << "Getting childnre. children size: " << childrenElements->size();
-	for (auto &element : *childrenElements)
+	repoTrace << "My id is: " << id << " name: " << name << " type:" << element->entity->datatype();
+	switch (element->type())
 	{
-		repoTrace << "Looping children...";
-		repoTrace << "Recursing";
-		auto childTransNodes = createTransformationsRecursive(ifcfile, element, meshes, materials, transID);
-		transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
+	case Ifc2x3::Type::IfcProject:
+	case Ifc2x3::Type::IfcRelDefinesByProperties:
+		//TODO: This is a metadata
+		createElement = false;
+		traverseChildren = false;
+		break;
+	case Ifc2x3::Type::IfcRelContainedInSpatialStructure:
+	{
+		auto relCS = static_cast<const IfcSchema::IfcRelContainedInSpatialStructure *>(element);
+		createElement = false;
+		if (relCS)
+		{
+			repoTrace << "Spatial Structure: " << element->entity->toString();
+			auto relatedObjects = relCS->RelatedElements();
+			if (relatedObjects)
+			{
+				for (auto &e : *relatedObjects)
+				{
+					extraChildren.push_back(e->entity->id());
+					repoTrace << "Related Objects: " << e->entity->toString();
+				}
+			}
+			else
+			{
+				repoError << "Nullptr to relatedObjects!!!";
+			}
+		}
+		else
+		{
+			repoError << "Failed to convert a Rel Aggregate element into a Rel Aggregate class.";
+		}
+		break;
+	}
+	case Ifc2x3::Type::IfcRelAggregates:
+	{
+		auto relAgg = static_cast<const IfcSchema::IfcRelAggregates *>(element);
+		createElement = false;
+		if (relAgg)
+		{
+			auto relatedObjects = relAgg->RelatedObjects();
+			if (relatedObjects)
+			{
+				for (auto &e : *relatedObjects)
+				{
+					extraChildren.push_back(e->entity->id());
+					repoTrace << "Related Objects: " << e->entity->toString();
+				}
+			}
+			else
+			{
+				repoError << "Nullptr to relatedObjects!!!";
+			}
+		}
+		else
+		{
+			repoError << "Failed to convert a Rel Aggregate element into a Rel Aggregate class.";
+		}
+		break;
+	}
+	}
+
+	repoUUID transID = parentID;
+	repo::core::model::RepoNodeSet transNodeSet;
+	if (createElement)
+	{
+		std::vector<repoUUID> parents;
+		if (UUIDtoString(parentID) != REPO_HISTORY_MASTER_BRANCH) parents.push_back(parentID);
+
+		auto transNode = repo::core::model::RepoBSONFactory::makeTransformationNode(repo::core::model::TransformationNode::identityMat(), name, parents);
+		transID = transNode.getSharedID();
+
+		transNodeSet.insert(new repo::core::model::TransformationNode(transNode));
+
+		if (meshes.find(guid) != meshes.end())
+		{
+			repoTrace << "found meshes!";
+			//has meshes associated with it. append parent
+			for (auto &mesh : meshes[guid])
+			{
+				*mesh = mesh->cloneAndAddParent(transID);
+			}
+		}
+		else
+		{
+			repoTrace << "No meshes found for " << guid << " size of mesh?" << meshes.size();
+			for (const auto &pair : meshes)
+			{
+				repoTrace << "mesh id :  " << pair.first << " comparing to " << guid << " :  " << (guid == pair.first);
+			}
+		}
+	}
+
+	if (traverseChildren)
+	{
+		auto childrenElements = ifcfile.entitiesByReference(id);
+		std::set<int> childrenAncestors(ancestorsID);
+		childrenAncestors.insert(id);
+		if (childrenElements)
+		{
+			for (auto &element : *childrenElements)
+			{
+				if (ancestorsID.find(element->entity->id()) == ancestorsID.end())
+				{
+					auto childTransNodes = createTransformationsRecursive(ifcfile, element, meshes, materials, transID, childrenAncestors);
+					transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
+				}
+			}
+		}
+
+		for (const auto &childrenId : extraChildren)
+		{
+			if (ancestorsID.find(childrenId) == ancestorsID.end())
+			{
+				auto childTransNodes = createTransformationsRecursive(ifcfile, ifcfile.entityById(childrenId), meshes, materials, transID, childrenAncestors);
+				transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
+			}
+		}
 	}
 
 	return transNodeSet;
@@ -169,6 +282,7 @@ repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
 	}
 
 	std::vector<std::string> files = { file };
+	repoTrace << "#transformations: " << transNodes.size();
 	repo::core::model::RepoScene *scene = new repo::core::model::RepoScene(files, dummy, meshSet, matSet, dummy, dummy, transNodes);
 	scene->setWorldOffset(offset);
 
