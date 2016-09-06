@@ -97,6 +97,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 {
 	bool createElement = true; //create a transformation for this element
 	bool traverseChildren = true; //keep recursing its children
+	bool isIFCSpace = false;
 	std::vector<int> extraChildren; //children outside of reference
 
 	auto id = element->entity->id();
@@ -133,9 +134,11 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	switch (element->type())
 	{
 		//FIXME: need to relay these information
+	case Ifc2x3::Type::IfcSpace:
+		isIFCSpace = true;
 	case Ifc2x3::Type::IfcProject:
 	case Ifc2x3::Type::IfcRelDefinesByProperties:
-	case Ifc2x3::Type::IfcRelAssignsToGroup: //This is group
+	case Ifc2x3::Type::IfcRelAssignsToGroup: //This is group!
 	case Ifc2x3::Type::IfcRelSpaceBoundary: //This is group?
 	case Ifc2x3::Type::IfcRelAssociatesClassification:
 		//TODO: This is a metadata
@@ -212,6 +215,8 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 			for (auto &mesh : meshes[guid])
 			{
 				*mesh = mesh->cloneAndAddParent(transID);
+				if (isIFCSpace)
+					*mesh = mesh->cloneAndChangeName(name);
 			}
 		}
 	}

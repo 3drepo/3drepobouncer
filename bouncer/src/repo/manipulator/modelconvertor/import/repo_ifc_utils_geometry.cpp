@@ -96,7 +96,7 @@ bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
 	std::set<std::string> exclude_entities;
 	//Do not generate geometry for openings and spaces
 	exclude_entities.insert("IfcOpeningElement");
-	exclude_entities.insert("IfcSpace");
+	//exclude_entities.insert("IfcSpace");
 	contextIterator.excludeEntities(exclude_entities);
 
 	repoTrace << "Initialising Geom iterator";
