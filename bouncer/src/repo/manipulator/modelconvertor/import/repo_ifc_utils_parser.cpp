@@ -29,6 +29,8 @@
 
 const static std::string IFC_ARGUMENT_GLOBAL_ID = "GlobalId";
 const static std::string IFC_ARGUMENT_NAME = "Name";
+const static std::string REPO_LABEL_IFC_TYPE = "IFC Type";
+const static std::string REPO_LABEL_IFC_GUID = "IFC GUID";
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -136,6 +138,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 		//FIXME: need to relay these information
 	case Ifc2x3::Type::IfcSpace:
 		isIFCSpace = true;
+		break;
 	case Ifc2x3::Type::IfcProject:
 	case Ifc2x3::Type::IfcRelDefinesByProperties:
 	case Ifc2x3::Type::IfcRelAssignsToGroup: //This is group!
@@ -251,8 +254,8 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	if (createElement)
 	{
 		std::vector<std::string> keys, values;
-		keys.push_back("IFC Type");
-		keys.push_back("IFC GUID");
+		keys.push_back(REPO_LABEL_IFC_TYPE);
+		keys.push_back(REPO_LABEL_IFC_GUID);
 		values.push_back(ifcType);
 		values.push_back(guid);
 		metaSet.insert(new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(keys, values, name, { transID })));
