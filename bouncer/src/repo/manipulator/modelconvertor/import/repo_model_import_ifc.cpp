@@ -74,6 +74,7 @@ repo::core::model::RepoScene* IFCModelImport::generateRepoScene()
 bool IFCModelImport::importModel(std::string filePath, std::string &errMsg)
 {
 	ifcFile = filePath;
+	return true;
 	std::string fileName = getFileName(filePath);
 
 	repoInfo << "IMPORT [" << fileName << "]";
