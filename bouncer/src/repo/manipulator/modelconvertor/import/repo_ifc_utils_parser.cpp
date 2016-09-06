@@ -139,14 +139,14 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	switch (element->type())
 	{
 		//FIXME: need to relay these information
-	case Ifc2x3::Type::IfcProject:
-	case Ifc2x3::Type::IfcRelDefinesByProperties:
-	case Ifc2x3::Type::IfcRelAssignsToGroup: //This is group!
-	case Ifc2x3::Type::IfcRelSpaceBoundary: //This is group?
+	case IfcSchema::Type::IfcProject:
+	case IfcSchema::Type::IfcRelDefinesByProperties:
+	case IfcSchema::Type::IfcRelAssignsToGroup: //This is group!
+	case IfcSchema::Type::IfcRelSpaceBoundary: //This is group?
 		createElement = false;
 		traverseChildren = false;
 		break;
-	case Ifc2x3::Type::IfcRelAssociatesClassification:
+	case IfcSchema::Type::IfcRelAssociatesClassification:
 	{
 		auto relCS = static_cast<const IfcSchema::IfcRelAssociatesClassification *>(element);
 		createElement = false;
@@ -161,11 +161,11 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 				if (relatedClassification)
 				{
 					//A classifcation can either be a classification notation or reference
-					if (relatedClassification->type() == Ifc2x3::Type::IfcClassificationNotation)
+					if (relatedClassification->type() == IfcSchema::Type::IfcClassificationNotation)
 					{
 						auto notation = static_cast<const IfcSchema::IfcClassificationNotation *>(relatedClassification);
 						auto facets = notation->NotationFacets();
-						for (Ifc2x3::IfcClassificationNotationFacet *facet : *facets)
+						for (IfcSchema::IfcClassificationNotationFacet *facet : *facets)
 						{
 							if (!classValue.empty()) classValue += ", ";
 							classValue += facet->NotationValue();
@@ -201,7 +201,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 		}
 		break;
 	}
-	case Ifc2x3::Type::IfcRelContainedInSpatialStructure:
+	case IfcSchema::Type::IfcRelContainedInSpatialStructure:
 	{
 		auto relCS = static_cast<const IfcSchema::IfcRelContainedInSpatialStructure *>(element);
 		createElement = false;
@@ -226,7 +226,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 		}
 		break;
 	}
-	case Ifc2x3::Type::IfcRelAggregates:
+	case IfcSchema::Type::IfcRelAggregates:
 	{
 		auto relAgg = static_cast<const IfcSchema::IfcRelAggregates *>(element);
 		createElement = false;
@@ -251,7 +251,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 		}
 		break;
 	}
-	case Ifc2x3::Type::IfcSpace:
+	case IfcSchema::Type::IfcSpace:
 		isIFCSpace = true;
 		break;
 	}
