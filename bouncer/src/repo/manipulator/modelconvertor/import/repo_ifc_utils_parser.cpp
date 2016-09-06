@@ -107,6 +107,8 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 
 	auto id = element->entity->id();
 	std::string guid, name;
+	std::string ifcType = element->entity->datatype();
+
 	for (int i = 0; i < element->getArgumentCount(); ++i)
 	{
 		if (element->getArgumentName(i) == IFC_ARGUMENT_GLOBAL_ID)
@@ -128,12 +130,11 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 				name = name.erase(name.size() - 1, 1);
 				if (name.empty())
 				{
-					name = "<no name>";
+					name = "(" + ifcType + ")";
 				}
 			}
 		}
 	}
-	std::string ifcType = element->entity->datatype();
 
 	//repoTrace << "My id is: " << id << " name: " << name << " type:" << element->entity->datatype();
 	switch (element->type())
