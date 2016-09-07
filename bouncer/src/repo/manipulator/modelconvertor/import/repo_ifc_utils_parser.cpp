@@ -148,6 +148,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	case IfcSchema::Type::IfcRelSpaceBoundary: //This is group?
 	case IfcSchema::Type::IfcElementQuantity:
 	case IfcSchema::Type::IfcRelConnectsPathElements:
+	case IfcSchema::Type::IfcAnnotation:
 		createElement = false;
 		traverseChildren = false;
 		break;
