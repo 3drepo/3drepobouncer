@@ -141,6 +141,8 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	{
 	case IfcSchema::Type::IfcRelAssignsToGroup: //This is group!
 	case IfcSchema::Type::IfcRelSpaceBoundary: //This is group?
+	case IfcSchema::Type::IfcElementQuantity:
+	case IfcSchema::Type::IfcRelConnectsPathElements:
 		createElement = false;
 		traverseChildren = false;
 		break;
@@ -189,7 +191,34 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 					value = std::to_string(int(*static_cast<const IfcSchema::IfcInteger *>(nomValue)));
 					break;
 				case IfcSchema::Type::IfcReal:
-					value = std::to_string(float(*static_cast<const IfcSchema::IfcReal *>(nomValue)));
+					value = std::to_string(double(*static_cast<const IfcSchema::IfcReal *>(nomValue)));
+					break;
+				case IfcSchema::Type::IfcLengthMeasure:
+					value = std::to_string(double(*static_cast<const IfcSchema::IfcLengthMeasure *>(nomValue)));
+					break;
+				case IfcSchema::Type::IfcAreaMeasure:
+					value = std::to_string(double(*static_cast<const IfcSchema::IfcAreaMeasure *>(nomValue)));
+					break;
+				case IfcSchema::Type::IfcPowerMeasure:
+					value = std::to_string(double(*static_cast<const IfcSchema::IfcPowerMeasure *>(nomValue)));
+					break;
+				case IfcSchema::Type::IfcVolumeMeasure:
+					value = std::to_string(double(*static_cast<const IfcSchema::IfcVolumeMeasure *>(nomValue)));
+					break;
+				case IfcSchema::Type::IfcPlaneAngleMeasure:
+					value = std::to_string(double(*static_cast<const IfcSchema::IfcPlaneAngleMeasure *>(nomValue)));
+					break;
+				case IfcSchema::Type::IfcNumericMeasure:
+					value = std::to_string(double(*static_cast<const IfcSchema::IfcNumericMeasure *>(nomValue)));
+					break;
+				case IfcSchema::Type::IfcPositiveLengthMeasure:
+					value = std::to_string(double(*static_cast<const IfcSchema::IfcPositiveLengthMeasure *>(nomValue)));
+					break;
+				case IfcSchema::Type::IfcPositivePlaneAngleMeasure:
+					value = std::to_string(double(*static_cast<const IfcSchema::IfcPositivePlaneAngleMeasure *>(nomValue)));
+					break;
+				case IfcSchema::Type::IfcPositiveRatioMeasure:
+					value = std::to_string(double(*static_cast<const IfcSchema::IfcPositiveRatioMeasure *>(nomValue)));
 					break;
 				case IfcSchema::Type::IfcText:
 					value = std::string(*static_cast<const IfcSchema::IfcText *>(nomValue));
