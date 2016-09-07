@@ -23,6 +23,7 @@
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../core/model/collection/repo_scene.h"
 #include <boost/filesystem.hpp>
+#include <algorithm>
 
 #include <ifcparse/IfcParse.h>
 #include <ifcparse/IfcFile.h>
@@ -109,6 +110,9 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	auto id = element->entity->id();
 	std::string guid, name;
 	std::string ifcType = element->entity->datatype();
+	std::string ifcTypeUpper = ifcType;
+	std::transform(ifcType.begin(), ifcType.end(), ifcTypeUpper.begin(), ::toupper);
+	createElement = ifcTypeUpper.find("IFCREL") == std::string::npos;
 
 	for (int i = 0; i < element->getArgumentCount(); ++i)
 	{
@@ -122,11 +126,8 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 		if (element->getArgumentName(i) == IFC_ARGUMENT_NAME)
 		{
 			name = element->getArgument(i)->toString();
-			if (name == "$")
+			if (name != "$")
 			{
-				createElement = false;
-			}
-			else {
 				name = name.erase(0, 1);;
 				name = name.erase(name.size() - 1, 1);
 				if (name.empty())
@@ -134,10 +135,13 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 					name = "(" + ifcType + ")";
 				}
 			}
+			else
+			{
+				name = "(" + ifcType + ")";;
+			}
 		}
 	}
 
-	//repoTrace << "My id is: " << id << " name: " << name << " type:" << element->entity->datatype();
 	switch (element->type())
 	{
 	case IfcSchema::Type::IfcRelAssignsToGroup: //This is group!
