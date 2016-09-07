@@ -139,14 +139,110 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	//repoTrace << "My id is: " << id << " name: " << name << " type:" << element->entity->datatype();
 	switch (element->type())
 	{
-		//FIXME: need to relay these information
-	case IfcSchema::Type::IfcProject:
-	case IfcSchema::Type::IfcRelDefinesByProperties:
 	case IfcSchema::Type::IfcRelAssignsToGroup: //This is group!
 	case IfcSchema::Type::IfcRelSpaceBoundary: //This is group?
 		createElement = false;
 		traverseChildren = false;
 		break;
+
+	case IfcSchema::Type::IfcProject:
+	{
+		auto project = static_cast<const IfcSchema::IfcProject *>(element);
+		if (project)
+		{
+			if (project->hasName())
+			{
+				myMetaValues.first.push_back("Project Name");
+				myMetaValues.second.push_back(project->Name());
+			}
+			if (project->hasDescription())
+			{
+				myMetaValues.first.push_back("Project Description");
+				myMetaValues.second.push_back(project->Description());
+			}
+		}
+
+		createElement = false;
+		traverseChildren = false;
+		break;
+	}
+	case IfcSchema::Type::IfcPropertySingleValue:
+	{
+		auto propVal = static_cast<const IfcSchema::IfcPropertySingleValue *>(element);
+		if (propVal)
+		{
+			myMetaValues.first.push_back(propVal->Name());
+
+			std::string value = "n/a";
+			if (propVal->hasNominalValue())
+			{
+				auto nomValue = propVal->NominalValue();
+				switch (nomValue->type())
+				{
+				case IfcSchema::Type::IfcLabel:
+					value = std::string(*static_cast<const IfcSchema::IfcLabel *>(nomValue));
+					break;
+				case IfcSchema::Type::IfcBoolean:
+					value = bool(*static_cast<const IfcSchema::IfcBoolean *>(nomValue)) ? "True" : "False";
+					break;
+				case IfcSchema::Type::IfcInteger:
+					value = std::to_string(int(*static_cast<const IfcSchema::IfcInteger *>(nomValue)));
+					break;
+				case IfcSchema::Type::IfcReal:
+					value = std::to_string(float(*static_cast<const IfcSchema::IfcReal *>(nomValue)));
+					break;
+				case IfcSchema::Type::IfcText:
+					value = std::string(*static_cast<const IfcSchema::IfcText *>(nomValue));
+					break;
+				case IfcSchema::Type::IfcIdentifier:
+					value = std::string(*static_cast<const IfcSchema::IfcIdentifier *>(nomValue));
+					break;
+				case IfcSchema::Type::IfcLogical:
+					value = std::to_string(bool(*static_cast<const IfcSchema::IfcLogical *>(nomValue)));
+					break;
+
+				default:
+					repoWarning << propVal->entity->toString();
+					repoWarning << "Unrecognised IFC Property value type : " << nomValue->type();
+				}
+			}
+
+			if (propVal->hasUnit())
+			{
+				repoTrace << propVal->entity->toString();
+				repoTrace << "Property has units!";
+				//FIXME: units
+				auto units = propVal->Unit();
+			}
+
+			myMetaValues.second.push_back(value);
+		}
+		createElement = false;
+		traverseChildren = false;
+		break;
+	}
+	case IfcSchema::Type::IfcRelDefinesByProperties:
+	{
+		auto defByProp = static_cast<const IfcSchema::IfcRelDefinesByProperties *>(element);
+		if (defByProp)
+		{
+			extraChildren.push_back(defByProp->RelatingPropertyDefinition()->entity->id());
+		}
+		createElement = false;
+		break;
+	}
+	case IfcSchema::Type::IfcPropertySet:
+	{
+		auto propSet = static_cast<const IfcSchema::IfcPropertySet *>(element);
+		auto propDefs = propSet->HasProperties();
+
+		for (auto &pd : *propDefs)
+		{
+			extraChildren.push_back(pd->entity->id());
+		}
+		createElement = false;
+		break;
+	}
 	case IfcSchema::Type::IfcRelAssociatesClassification:
 	{
 		auto relCS = static_cast<const IfcSchema::IfcRelAssociatesClassification *>(element);
@@ -195,6 +291,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 				//This will throw an exception if there is no relating classification.
 				classValue = "n/a";
 			}
+			metaValue.second.push_back(classValue);
 		}
 		else
 		{
