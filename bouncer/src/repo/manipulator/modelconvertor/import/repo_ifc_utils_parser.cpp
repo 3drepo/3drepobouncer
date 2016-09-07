@@ -31,6 +31,7 @@ const static std::string IFC_ARGUMENT_GLOBAL_ID = "GlobalId";
 const static std::string IFC_ARGUMENT_NAME = "Name";
 const static std::string REPO_LABEL_IFC_TYPE = "IFC Type";
 const static std::string REPO_LABEL_IFC_GUID = "IFC GUID";
+const static std::string IFC_TYPE_SPACE_LABEL = "(IFC Space)";
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -380,6 +381,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	}
 	case IfcSchema::Type::IfcSpace:
 		isIFCSpace = true;
+		name += " " + IFC_TYPE_SPACE_LABEL;
 		break;
 	}
 
