@@ -38,10 +38,12 @@ if(DEFINED ENV{OCCT_ROOT})
 		set(OCCT_LIB_DIR $ENV{OCCT_LIB_DIR})
 		message(STATUS "$OCCT_LIB_DIR defined: ${OCCT_LIB_DIR}")
 	endif()
-	find_path(OCCT_INCLUDE_DIR include inc opencascade
-		${OCCT_ROOT}
+	find_path(OCCT_INCLUDE_DIR  NAMES opencascade
+		PATHS
 		${OCCT_ROOT}/include
-		)   
+		${OCCT_ROOT}/include/opencascade
+		${OCCT_ROOT}/inc
+		)  
 	foreach(libName ${OCCT_LIB_NAMES})
 		find_library(libPathRelease${libName} NAMES ${libName}
 			PATHS
@@ -67,7 +69,7 @@ if(OCCT_INCLUDE_DIR AND OCCT_LIBRARIES)
 	set(OCCT_FOUND TRUE)
 
 else(OCCT_INCLUDE_DIR AND OCCT_LIBRARIES)
-	find_path(OCCT_INCLUDE_DIR opencascade
+	find_path(OCCT_INCLUDE_DIR gp_pnt.hxx 
 		/usr/include
 		/usr/local/include
 		/opt/local/include
@@ -83,7 +85,7 @@ else(OCCT_INCLUDE_DIR AND OCCT_LIBRARIES)
 		set(OCCT_LIBRARIES_RELEASE ${OCCT_LIBRARIES_RELEASE} ${libPathRelease${libName}})
 		find_library(libPathDebug${libName} NAMES ${libName}
 			PATHS
-			${OCCT_DEBUG_LIB_DIR
+			${OCCT_DEBUG_LIB_DIR}
 	    	/usr/lib/
     		/usr/local/lib/
 	    	/opt/local/lib/}
