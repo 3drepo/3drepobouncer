@@ -24,6 +24,12 @@ SET(OCCT_LIB_NAMES
 	TKFillet TKSTEP TKSTEPBase TKSTEPAttr TKXSBase TKSTEP209 TKIGES TKOffset
 )
 
+if(DEFINED ENV{OCCT_DEBUG_LIB_DIR})
+	set(OCCT_DEBUG_LIB_DIR $ENV{OCCT_DEBUG_LIB_DIR})
+	message(STATUS "$OCCT_DEBUG_LIB_DIR defined: ${OCCT_DEBUG_LIB_DIR}")
+else(DEFINED ENV{OCCT_DEBUG_LIB_DIR})
+	set(OCCT_DEBUG_LIB_DIR ${OCCT_LIB_DIR})
+endif()
 
 if(DEFINED ENV{OCCT_ROOT})
 	set(OCCT_ROOT $ENV{OCCT_ROOT})
@@ -31,12 +37,6 @@ if(DEFINED ENV{OCCT_ROOT})
 	if(DEFINED ENV{OCCT_LIB_DIR})
 		set(OCCT_LIB_DIR $ENV{OCCT_LIB_DIR})
 		message(STATUS "$OCCT_LIB_DIR defined: ${OCCT_LIB_DIR}")
-	endif()
-	if(DEFINED ENV{OCCT_DEBUG_LIB_DIR})
-		set(OCCT_DEBUG_LIB_DIR $ENV{OCCT_DEBUG_LIB_DIR})
-		message(STATUS "$OCCT_DEBUG_LIB_DIR defined: ${OCCT_DEBUG_LIB_DIR}")
-	else(DEFINED ENV{OCCT_DEBUG_LIB_DIR})
-		set(OCCT_DEBUG_LIB_DIR ${OCCT_LIB_DIR})
 	endif()
 	find_path(OCCT_INCLUDE_DIR include inc opencascade
 		${OCCT_ROOT}
@@ -81,7 +81,10 @@ else(OCCT_INCLUDE_DIR AND OCCT_LIBRARIES)
 		set(OCCT_LIBRARIES_RELEASE ${OCCT_LIBRARIES_RELEASE} ${libPathRelease${libName}})
 		find_library(libPathDebug${libName} NAMES ${libName}
 			PATHS
-			${OCCT_DEBUG_LIB_DIR}
+			${OCCT_DEBUG_LIB_DIR
+	    	/usr/lib/
+    		/usr/local/lib/
+	    	/opt/local/lib/}
 		)
 		set(OCCT_LIBRARIES_DEBUG ${OCCT_LIBRARIES_DEBUG} ${libPathDebug${libName}})
 	endforeach()

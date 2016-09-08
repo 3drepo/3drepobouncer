@@ -70,14 +70,14 @@ else(IFCOPENSHELL_INCLUDE_DIR AND IFCOPENSHELL_LIBRARIES)
     	/opt/local/lib/
     )
 	
-	find_library(IFCOPENSHELL_PARSE_LIBRARIES_DEBUG NAMES IfcParse_d
+	find_library(IFCOPENSHELL_PARSE_LIBRARIES_DEBUG NAMES IfcParse_d IfcParse
     	PATHS
     	/usr/lib/
     	/usr/local/lib/
     	/opt/local/lib/
     )
 	
-	find_library(IFCOPENSHELL_GEOM_LIBRARIES_DEBUG NAMES IfcGeom_d
+	find_library(IFCOPENSHELL_GEOM_LIBRARIES_DEBUG NAMES IfcGeom_d IfcGeom
     	PATHS
     	/usr/lib/
     	/usr/local/lib/
