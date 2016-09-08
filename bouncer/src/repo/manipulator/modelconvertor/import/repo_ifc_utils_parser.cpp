@@ -142,6 +142,126 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 		}
 	}
 
+	determineActionsByElementType(ifcfile, element, myMetaValues, createElement, traverseChildren, isIFCSpace, extraChildren);
+
+	repoUUID transID = parentID;
+	repo::core::model::RepoNodeSet transNodeSet;
+
+	if (isIFCSpace) name += " " + IFC_TYPE_SPACE_LABEL;
+
+	if (createElement)
+	{
+		std::vector<repoUUID> parents;
+		if (UUIDtoString(parentID) != REPO_HISTORY_MASTER_BRANCH) parents.push_back(parentID);
+
+		auto transNode = repo::core::model::RepoBSONFactory::makeTransformationNode(repo::core::model::TransformationNode::identityMat(), name, parents);
+		transID = transNode.getSharedID();
+
+		transNodeSet.insert(new repo::core::model::TransformationNode(transNode));
+
+		if (meshes.find(guid) != meshes.end())
+		{
+			//has meshes associated with it. append parent
+			for (auto &mesh : meshes[guid])
+			{
+				*mesh = mesh->cloneAndAddParent(transID);
+				if (isIFCSpace)
+					*mesh = mesh->cloneAndChangeName(name);
+			}
+		}
+	}
+
+	if (traverseChildren)
+	{
+		auto childrenElements = ifcfile.entitiesByReference(id);
+		std::set<int> childrenAncestors(ancestorsID);
+		childrenAncestors.insert(id);
+		if (childrenElements)
+		{
+			for (auto &element : *childrenElements)
+			{
+				if (ancestorsID.find(element->entity->id()) == ancestorsID.end())
+				{
+					auto childTransNodes = createTransformationsRecursive(ifcfile, element, meshes, materials, metaSet, myMetaValues, transID, childrenAncestors);
+					transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
+				}
+			}
+		}
+
+		for (const auto &childrenId : extraChildren)
+		{
+			if (ancestorsID.find(childrenId) == ancestorsID.end())
+			{
+				auto childTransNodes = createTransformationsRecursive(ifcfile, ifcfile.entityById(childrenId), meshes, materials, metaSet, myMetaValues, transID, childrenAncestors);
+				transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
+			}
+		}
+	}
+
+	//If we created an element, add a metanode to it. if not, add them to our parent's meta info
+	if (createElement)
+	{
+		myMetaValues.first.insert(myMetaValues.first.begin(), REPO_LABEL_IFC_GUID);
+		myMetaValues.second.insert(myMetaValues.second.begin(), guid);
+		myMetaValues.first.insert(myMetaValues.first.begin(), REPO_LABEL_IFC_TYPE);
+		myMetaValues.second.insert(myMetaValues.second.begin(), ifcType);
+
+		metaSet.insert(new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(myMetaValues.first, myMetaValues.second, name, { transID })));
+	}
+	else
+	{
+		metaValue.first.insert(metaValue.first.end(), myMetaValues.first.begin(), myMetaValues.first.end());
+		metaValue.second.insert(metaValue.second.end(), myMetaValues.second.begin(), myMetaValues.second.end());
+	}
+	return transNodeSet;
+}
+
+repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
+	std::string                                                                &errMsg,
+	std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> &meshes,
+	std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
+	const std::vector<double>                                                  &offset
+	)
+{
+	IfcParse::IfcFile ifcfile;
+	if (!ifcfile.Init(file))
+	{
+		errMsg = "Failed initialising " + file;
+		return nullptr;
+	}
+
+	repoInfo << "IFC Parser initialised.";
+
+	repoInfo << "Creating Transformations...";
+	repo::core::model::RepoNodeSet dummy, meshSet, matSet, metaSet;
+	repo::core::model::RepoNodeSet transNodes = createTransformations(ifcfile, meshes, materials, metaSet);
+	for (auto &m : meshes)
+	{
+		for (auto &mesh : m.second)
+			meshSet.insert(mesh);
+	}
+
+	for (auto &m : materials)
+	{
+		matSet.insert(m.second);
+	}
+
+	std::vector<std::string> files = { file };
+	repo::core::model::RepoScene *scene = new repo::core::model::RepoScene(files, dummy, meshSet, matSet, metaSet, dummy, transNodes);
+	scene->setWorldOffset(offset);
+
+	return scene;
+}
+
+void IFCUtilsParser::determineActionsByElementType(
+	IfcParse::IfcFile &ifcfile,
+	const IfcUtil::IfcBaseClass *element,
+	std::pair<std::vector<std::string>, std::vector<std::string>> &metaValues,
+	bool                                                          &createElement,
+	bool                                                          &traverseChildren,
+	bool                                                          &isIFCSpace,
+	std::vector<int>                                              &extraChildren)
+{
 	switch (element->type())
 	{
 	case IfcSchema::Type::IfcRelAssignsToGroup: //This is group!
@@ -160,13 +280,13 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 		{
 			if (project->hasName())
 			{
-				myMetaValues.first.push_back("Project Name");
-				myMetaValues.second.push_back(project->Name());
+				metaValues.first.push_back("Project Name");
+				metaValues.second.push_back(project->Name());
 			}
 			if (project->hasDescription())
 			{
-				myMetaValues.first.push_back("Project Description");
-				myMetaValues.second.push_back(project->Description());
+				metaValues.first.push_back("Project Description");
+				metaValues.second.push_back(project->Description());
 			}
 		}
 
@@ -179,78 +299,23 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 		auto propVal = static_cast<const IfcSchema::IfcPropertySingleValue *>(element);
 		if (propVal)
 		{
-			myMetaValues.first.push_back(propVal->Name());
+			metaValues.first.push_back(propVal->Name());
 
 			std::string value = "n/a";
 			if (propVal->hasNominalValue())
 			{
-				auto nomValue = propVal->NominalValue();
-				switch (nomValue->type())
-				{
-				case IfcSchema::Type::IfcLabel:
-					value = std::string(*static_cast<const IfcSchema::IfcLabel *>(nomValue));
-					break;
-				case IfcSchema::Type::IfcBoolean:
-					value = bool(*static_cast<const IfcSchema::IfcBoolean *>(nomValue)) ? "True" : "False";
-					break;
-				case IfcSchema::Type::IfcInteger:
-					value = std::to_string(int(*static_cast<const IfcSchema::IfcInteger *>(nomValue)));
-					break;
-				case IfcSchema::Type::IfcReal:
-					value = std::to_string(double(*static_cast<const IfcSchema::IfcReal *>(nomValue)));
-					break;
-				case IfcSchema::Type::IfcLengthMeasure:
-					value = std::to_string(double(*static_cast<const IfcSchema::IfcLengthMeasure *>(nomValue)));
-					break;
-				case IfcSchema::Type::IfcAreaMeasure:
-					value = std::to_string(double(*static_cast<const IfcSchema::IfcAreaMeasure *>(nomValue)));
-					break;
-				case IfcSchema::Type::IfcPowerMeasure:
-					value = std::to_string(double(*static_cast<const IfcSchema::IfcPowerMeasure *>(nomValue)));
-					break;
-				case IfcSchema::Type::IfcVolumeMeasure:
-					value = std::to_string(double(*static_cast<const IfcSchema::IfcVolumeMeasure *>(nomValue)));
-					break;
-				case IfcSchema::Type::IfcPlaneAngleMeasure:
-					value = std::to_string(double(*static_cast<const IfcSchema::IfcPlaneAngleMeasure *>(nomValue)));
-					break;
-				case IfcSchema::Type::IfcNumericMeasure:
-					value = std::to_string(double(*static_cast<const IfcSchema::IfcNumericMeasure *>(nomValue)));
-					break;
-				case IfcSchema::Type::IfcPositiveLengthMeasure:
-					value = std::to_string(double(*static_cast<const IfcSchema::IfcPositiveLengthMeasure *>(nomValue)));
-					break;
-				case IfcSchema::Type::IfcPositivePlaneAngleMeasure:
-					value = std::to_string(double(*static_cast<const IfcSchema::IfcPositivePlaneAngleMeasure *>(nomValue)));
-					break;
-				case IfcSchema::Type::IfcPositiveRatioMeasure:
-					value = std::to_string(double(*static_cast<const IfcSchema::IfcPositiveRatioMeasure *>(nomValue)));
-					break;
-				case IfcSchema::Type::IfcText:
-					value = std::string(*static_cast<const IfcSchema::IfcText *>(nomValue));
-					break;
-				case IfcSchema::Type::IfcIdentifier:
-					value = std::string(*static_cast<const IfcSchema::IfcIdentifier *>(nomValue));
-					break;
-				case IfcSchema::Type::IfcLogical:
-					value = std::to_string(bool(*static_cast<const IfcSchema::IfcLogical *>(nomValue)));
-					break;
-
-				default:
-					repoWarning << propVal->entity->toString();
-					repoWarning << "Unrecognised IFC Property value type : " << nomValue->type();
-				}
+				value = getValueAsString(propVal->NominalValue());
 			}
 
 			if (propVal->hasUnit())
 			{
 				repoTrace << propVal->entity->toString();
-				repoTrace << "Property has units!";
+				repoTrace << "Property has units - We are currently not supporting this.";
 				//FIXME: units
 				auto units = propVal->Unit();
 			}
 
-			myMetaValues.second.push_back(value);
+			metaValues.second.push_back(value);
 		}
 		createElement = false;
 		traverseChildren = false;
@@ -285,7 +350,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 		traverseChildren = false;
 		if (relCS)
 		{
-			metaValue.first.push_back(name);
+			metaValues.first.push_back(relCS->Name());
 			std::string classValue;
 			try
 			{
@@ -326,7 +391,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 				//This will throw an exception if there is no relating classification.
 				classValue = "n/a";
 			}
-			metaValue.second.push_back(classValue);
+			metaValues.second.push_back(classValue);
 		}
 		else
 		{
@@ -386,111 +451,72 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	}
 	case IfcSchema::Type::IfcSpace:
 		isIFCSpace = true;
-		name += " " + IFC_TYPE_SPACE_LABEL;
 		break;
 	}
-
-	repoUUID transID = parentID;
-	repo::core::model::RepoNodeSet transNodeSet;
-	if (createElement)
-	{
-		std::vector<repoUUID> parents;
-		if (UUIDtoString(parentID) != REPO_HISTORY_MASTER_BRANCH) parents.push_back(parentID);
-
-		auto transNode = repo::core::model::RepoBSONFactory::makeTransformationNode(repo::core::model::TransformationNode::identityMat(), name, parents);
-		transID = transNode.getSharedID();
-
-		transNodeSet.insert(new repo::core::model::TransformationNode(transNode));
-
-		if (meshes.find(guid) != meshes.end())
-		{
-			//has meshes associated with it. append parent
-			for (auto &mesh : meshes[guid])
-			{
-				*mesh = mesh->cloneAndAddParent(transID);
-				if (isIFCSpace)
-					*mesh = mesh->cloneAndChangeName(name);
-			}
-		}
-	}
-
-	if (traverseChildren)
-	{
-		auto childrenElements = ifcfile.entitiesByReference(id);
-		std::set<int> childrenAncestors(ancestorsID);
-		childrenAncestors.insert(id);
-		if (childrenElements)
-		{
-			for (auto &element : *childrenElements)
-			{
-				if (ancestorsID.find(element->entity->id()) == ancestorsID.end())
-				{
-					auto childTransNodes = createTransformationsRecursive(ifcfile, element, meshes, materials, metaSet, myMetaValues, transID, childrenAncestors);
-					transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
-				}
-			}
-		}
-
-		for (const auto &childrenId : extraChildren)
-		{
-			if (ancestorsID.find(childrenId) == ancestorsID.end())
-			{
-				auto childTransNodes = createTransformationsRecursive(ifcfile, ifcfile.entityById(childrenId), meshes, materials, metaSet, myMetaValues, transID, childrenAncestors);
-				transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
-			}
-		}
-	}
-
-	if (createElement)
-	{
-		myMetaValues.first.insert(myMetaValues.first.begin(), REPO_LABEL_IFC_TYPE);
-		myMetaValues.second.insert(myMetaValues.second.begin(), ifcType);
-		myMetaValues.first.insert(myMetaValues.first.begin(), REPO_LABEL_IFC_GUID);
-		myMetaValues.second.insert(myMetaValues.second.begin(), guid);
-
-		metaSet.insert(new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(myMetaValues.first, myMetaValues.second, name, { transID })));
-	}
-	else
-	{
-		metaValue.first.insert(metaValue.first.end(), myMetaValues.first.begin(), myMetaValues.first.end());
-		metaValue.second.insert(metaValue.second.end(), myMetaValues.second.begin(), myMetaValues.second.end());
-	}
-	return transNodeSet;
 }
 
-repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
-	std::string                                                                &errMsg,
-	std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> &meshes,
-	std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
-	const std::vector<double>                                                  &offset
-	)
+std::string IFCUtilsParser::getValueAsString(
+	const IfcSchema::IfcValue    *ifcValue)
 {
-	IfcParse::IfcFile ifcfile;
-	if (!ifcfile.Init(file))
+	std::string value = "n/a";
+	//FIXME: should change this on IFCOpenShell to be an inheritance with a toString() function
+	if (ifcValue)
 	{
-		errMsg = "Failed initialising " + file;
-		return nullptr;
+		switch (ifcValue->type())
+		{
+		case IfcSchema::Type::IfcLabel:
+			value = std::string(*static_cast<const IfcSchema::IfcLabel *>(ifcValue));
+			break;
+		case IfcSchema::Type::IfcBoolean:
+			value = bool(*static_cast<const IfcSchema::IfcBoolean *>(ifcValue)) ? "True" : "False";
+			break;
+		case IfcSchema::Type::IfcInteger:
+			value = std::to_string(int(*static_cast<const IfcSchema::IfcInteger *>(ifcValue)));
+			break;
+		case IfcSchema::Type::IfcReal:
+			value = std::to_string(double(*static_cast<const IfcSchema::IfcReal *>(ifcValue)));
+			break;
+		case IfcSchema::Type::IfcLengthMeasure:
+			value = std::to_string(double(*static_cast<const IfcSchema::IfcLengthMeasure *>(ifcValue)));
+			break;
+		case IfcSchema::Type::IfcAreaMeasure:
+			value = std::to_string(double(*static_cast<const IfcSchema::IfcAreaMeasure *>(ifcValue)));
+			break;
+		case IfcSchema::Type::IfcPowerMeasure:
+			value = std::to_string(double(*static_cast<const IfcSchema::IfcPowerMeasure *>(ifcValue)));
+			break;
+		case IfcSchema::Type::IfcVolumeMeasure:
+			value = std::to_string(double(*static_cast<const IfcSchema::IfcVolumeMeasure *>(ifcValue)));
+			break;
+		case IfcSchema::Type::IfcPlaneAngleMeasure:
+			value = std::to_string(double(*static_cast<const IfcSchema::IfcPlaneAngleMeasure *>(ifcValue)));
+			break;
+		case IfcSchema::Type::IfcNumericMeasure:
+			value = std::to_string(double(*static_cast<const IfcSchema::IfcNumericMeasure *>(ifcValue)));
+			break;
+		case IfcSchema::Type::IfcPositiveLengthMeasure:
+			value = std::to_string(double(*static_cast<const IfcSchema::IfcPositiveLengthMeasure *>(ifcValue)));
+			break;
+		case IfcSchema::Type::IfcPositivePlaneAngleMeasure:
+			value = std::to_string(double(*static_cast<const IfcSchema::IfcPositivePlaneAngleMeasure *>(ifcValue)));
+			break;
+		case IfcSchema::Type::IfcPositiveRatioMeasure:
+			value = std::to_string(double(*static_cast<const IfcSchema::IfcPositiveRatioMeasure *>(ifcValue)));
+			break;
+		case IfcSchema::Type::IfcText:
+			value = std::string(*static_cast<const IfcSchema::IfcText *>(ifcValue));
+			break;
+		case IfcSchema::Type::IfcIdentifier:
+			value = std::string(*static_cast<const IfcSchema::IfcIdentifier *>(ifcValue));
+			break;
+		case IfcSchema::Type::IfcLogical:
+			value = std::to_string(bool(*static_cast<const IfcSchema::IfcLogical *>(ifcValue)));
+			break;
+
+		default:
+			repoWarning << "Unrecognised IFC Property value type : " << ifcValue->type();
+		}
 	}
 
-	repoInfo << "IFC Parser initialised.";
-
-	repoInfo << "Creating Transformations...";
-	repo::core::model::RepoNodeSet dummy, meshSet, matSet, metaSet;
-	repo::core::model::RepoNodeSet transNodes = createTransformations(ifcfile, meshes, materials, metaSet);
-	for (auto &m : meshes)
-	{
-		for (auto &mesh : m.second)
-			meshSet.insert(mesh);
-	}
-
-	for (auto &m : materials)
-	{
-		matSet.insert(m.second);
-	}
-
-	std::vector<std::string> files = { file };
-	repo::core::model::RepoScene *scene = new repo::core::model::RepoScene(files, dummy, meshSet, matSet, metaSet, dummy, transNodes);
-	scene->setWorldOffset(offset);
-
-	return scene;
+	return value;
 }

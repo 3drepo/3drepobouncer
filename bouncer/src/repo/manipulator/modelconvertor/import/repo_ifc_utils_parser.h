@@ -84,6 +84,18 @@ namespace repo{
 					const std::set<int>													       &ancestorsID = std::set<int>()
 					);
 
+				void determineActionsByElementType(
+					IfcParse::IfcFile &ifcfile,
+					const IfcUtil::IfcBaseClass *element,
+					std::pair<std::vector<std::string>, std::vector<std::string>> &metaValues,
+					bool                                                          &createElement,
+					bool                                                          &traverseChildren,
+					bool                                                          &isIFCSpace,
+					std::vector<int>                                              &extraChildren);
+
+				std::string getValueAsString(
+					const IfcSchema::IfcValue    *ifcValue);
+
 				const std::string file;
 			};
 		} //namespace modelconvertor
