@@ -7,6 +7,7 @@
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_ifc_utils_geometry.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_ifc_utils_parser.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_metadata_import_csv.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_abstract.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_assimp.cpp
@@ -17,6 +18,7 @@ set(SOURCES
 set(HEADERS
 	${HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_ifc_utils_geometry.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_ifc_utils_parser.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_metadata_import_csv.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_abstract.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_assimp.h
