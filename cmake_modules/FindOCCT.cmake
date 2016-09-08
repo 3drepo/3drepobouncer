@@ -40,6 +40,7 @@ if(DEFINED ENV{OCCT_ROOT})
 	endif()
 	find_path(OCCT_INCLUDE_DIR include inc opencascade
 		${OCCT_ROOT}
+		${OCCT_ROOT}/include
 		)   
 	foreach(libName ${OCCT_LIB_NAMES})
 		find_library(libPathRelease${libName} NAMES ${libName}
