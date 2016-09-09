@@ -38,7 +38,7 @@ if(DEFINED ENV{OCCT_ROOT})
 		set(OCCT_LIB_DIR $ENV{OCCT_LIB_DIR})
 		message(STATUS "$OCCT_LIB_DIR defined: ${OCCT_LIB_DIR}")
 	endif()
-	find_path(OCCT_INCLUDE_DIR  NAMES opencascade
+	find_path(OCCT_INCLUDE_DIR  NAMES gp_Pnt.hxx
 		PATHS
 		${OCCT_ROOT}/include
 		${OCCT_ROOT}/include/opencascade
