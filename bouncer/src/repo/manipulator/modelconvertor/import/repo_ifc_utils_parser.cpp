@@ -512,6 +512,11 @@ std::string IFCUtilsParser::getValueAsString(
 		case IfcSchema::Type::IfcLogical:
 			value = std::to_string(bool(*static_cast<const IfcSchema::IfcLogical *>(ifcValue)));
 			break;
+		case IfcSchema::Type::IfcThermalTransmittanceMeasure:
+			value = std::to_string(bool(*static_cast<const IfcSchema::IfcThermalTransmittanceMeasure *>(ifcValue)));
+		case IfcSchema::Type::IfcCountMeasure:
+			value = std::to_string(bool(*static_cast<const IfcSchema::IfcCountMeasure *>(ifcValue)));
+			break;
 
 		default:
 			repoWarning << "Unrecognised IFC Property value type : " << ifcValue->type();
