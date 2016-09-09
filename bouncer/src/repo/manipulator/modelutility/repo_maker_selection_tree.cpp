@@ -36,7 +36,8 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 	std::unordered_map < std::string,
 	std::pair < std::string, std::string >> &idMaps,
 	const std::string                            &currentPath,
-	bool                                         &hiddenOnDefault) const
+	bool                                         &hiddenOnDefault,
+	std::vector<std::string>                     &hiddenNode) const
 {
 	repo::lib::PropertyTree tree;
 	if (currentNode)
@@ -73,7 +74,7 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 					case repo::core::model::NodeType::REFERENCE:
 					{
 						bool hiddenChild = false;
-						childrenTrees.push_back(generatePTree(child, idMaps, childPath, hiddenChild));
+						childrenTrees.push_back(generatePTree(child, idMaps, childPath, hiddenChild, hiddenNode));
 						hasHiddenChildren = hasHiddenChildren || hiddenChild;
 					}
 					}
@@ -108,13 +109,12 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 			&& currentNode->getTypeAsEnum() == repo::core::model::NodeType::MESH)
 		{
 			tree.addToTree(REPO_LABEL_VISIBILITY_STATE, REPO_VISIBILITY_STATE_HIDDEN);
-			repoTrace << "hidden on default found" << std::endl;
 			hiddenOnDefault = true;
+			hiddenNode.push_back(idString);
 		}
 		else if (hiddenOnDefault = hiddenOnDefault || hasHiddenChildren)
 		{
 			tree.addToTree(REPO_LABEL_VISIBILITY_STATE, REPO_VISIBILITY_STATE_HALF_HIDDEN);
-			repoTrace << "Half hidden guy spotted!" << std::endl;
 		}
 		else
 		{
@@ -132,42 +132,56 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 	return tree;
 }
 
-std::vector<uint8_t> SelectionTreeMaker::getSelectionTreeAsBuffer() const
+std::map<std::string, std::vector<uint8_t>> SelectionTreeMaker::getSelectionTreeAsBuffer() const
 {
-	auto tree = getSelectionTreeAsPropertyTree();
-	std::stringstream ss;
-	tree.write_json(ss);
-	std::string jsonString = ss.str();
-	auto buffer = std::vector<uint8_t>();
-	if (!jsonString.empty())
+	auto trees = getSelectionTreeAsPropertyTree();
+	std::map<std::string, std::vector<uint8_t>> buffer;
+	for (const auto &tree : trees)
 	{
-		size_t byteLength = jsonString.size() * sizeof(*jsonString.data());
-		buffer.resize(byteLength);
-		memcpy(buffer.data(), jsonString.data(), byteLength);
-	}
-	else
-	{
-		repoError << "Failed to write selection tree into the buffer: JSON string is empty.";
+		std::stringstream ss;
+		tree.second.write_json(ss);
+		std::string jsonString = ss.str();
+		if (!jsonString.empty())
+		{
+			size_t byteLength = jsonString.size() * sizeof(*jsonString.data());
+			buffer[tree.first] = std::vector<uint8_t>();
+			buffer[tree.first].resize(byteLength);
+			memcpy(buffer[tree.first].data(), jsonString.data(), byteLength);
+		}
+		else
+		{
+			repoError << "Failed to write selection tree into the buffer: JSON string is empty.";
+		}
 	}
 
 	return buffer;
 }
 
-repo::lib::PropertyTree  SelectionTreeMaker::getSelectionTreeAsPropertyTree() const
+std::map<std::string, repo::lib::PropertyTree>  SelectionTreeMaker::getSelectionTreeAsPropertyTree() const
 {
-	repo::lib::PropertyTree tree;
+	std::map<std::string, repo::lib::PropertyTree> trees;
 
 	repo::core::model::RepoNode *root;
 	if (scene && (root = scene->getRoot(repo::core::model::RepoScene::GraphType::DEFAULT)))
 	{
 		std::unordered_map< std::string, std::pair<std::string, std::string>> map;
+		std::vector<std::string> hiddenNodes;
 		bool dummy;
-		tree.mergeSubTree("nodes", generatePTree(root, map, "", dummy));
+		repo::lib::PropertyTree tree, settingsTree;
+		tree.mergeSubTree("nodes", generatePTree(root, map, "", dummy, hiddenNodes));
 		for (const auto pair : map)
 		{
 			//if there's an entry in maps it must have an entry in paths
 			tree.addToTree("idToName." + pair.first, pair.second.first);
 			tree.addToTree("idToPath." + pair.first, pair.second.second);
+		}
+
+		trees["fulltree.json"] = tree;
+
+		if (hiddenNodes.size())
+		{
+			settingsTree.addToTree("hiddenNodes", hiddenNodes);
+			trees["modelProperties.json"] = settingsTree;
 		}
 	}
 	else
@@ -175,7 +189,7 @@ repo::lib::PropertyTree  SelectionTreeMaker::getSelectionTreeAsPropertyTree() co
 		repoError << "Failed to generate selection tree: scene is empty or default scene is not loaded";
 	}
 
-	return tree;
+	return trees;
 }
 
 SelectionTreeMaker::~SelectionTreeMaker()
