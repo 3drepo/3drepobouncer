@@ -74,10 +74,10 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformations(
 		}
 
 		repoTrace << "Looping through Elements";
-		for (auto &it = initialElements->begin(); initialElements->end() != it; ++it)
+		for (auto &element : *initialElements)
 		{
-			auto element = *it;
-			std::pair<std::vector<std::string>, std::vector<std::string>>               metaValue({ std::vector<std::string>(), std::vector<std::string>() });
+			//auto element = *it;
+			std::pair<std::vector<std::string>, std::vector<std::string>> metaValue({ std::vector<std::string>(), std::vector<std::string>() });
 			auto childTransNodes = createTransformationsRecursive(ifcfile, element, meshes, materials, metaSet, metaValue, parentID);
 			transNodes.insert(childTransNodes.begin(), childTransNodes.end());
 		}
@@ -511,6 +511,11 @@ std::string IFCUtilsParser::getValueAsString(
 			break;
 		case IfcSchema::Type::IfcLogical:
 			value = std::to_string(bool(*static_cast<const IfcSchema::IfcLogical *>(ifcValue)));
+			break;
+		case IfcSchema::Type::IfcThermalTransmittanceMeasure:
+			value = std::to_string(bool(*static_cast<const IfcSchema::IfcThermalTransmittanceMeasure *>(ifcValue)));
+		case IfcSchema::Type::IfcCountMeasure:
+			value = std::to_string(bool(*static_cast<const IfcSchema::IfcCountMeasure *>(ifcValue)));
 			break;
 
 		default:
