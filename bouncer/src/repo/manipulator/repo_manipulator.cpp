@@ -29,6 +29,7 @@
 #include "diff/repo_diff_name.h"
 #include "diff/repo_diff_sharedid.h"
 #include "modelconvertor/import/repo_model_import_assimp.h"
+#include "modelconvertor/import/repo_model_import_ifc.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
@@ -721,14 +722,17 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
 	repo::core::model::RepoScene* scene = nullptr;
 
-	repo::manipulator::modelconvertor::AssimpModelImport*
-		modelConvertor = new repo::manipulator::modelconvertor::AssimpModelImport(config);
-
 	boost::filesystem::path filePathP(filePath);
 	std::string fileExt = filePathP.extension().string();
 	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
 
 	bool isIFC = fileExt == ".IFC";
+	repo::manipulator::modelconvertor::AbstractModelImport* modelConvertor = nullptr;
+
+	if (isIFC)
+		modelConvertor = new repo::manipulator::modelconvertor::IFCModelImport(config);
+	else
+		modelConvertor = new repo::manipulator::modelconvertor::AssimpModelImport(config);
 
 	if (modelConvertor)
 	{
@@ -738,16 +742,10 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 			repoTrace << "model Imported, generating Repo Scene";
 			if ((scene = modelConvertor->generateRepoScene()))
 			{
-				if (rotateModel)
+				if (rotateModel || isIFC)
 				{
 					repoTrace << "rotating model by 270 degress on the x axis...";
 					scene->reorientateDirectXModel();
-				}
-
-				if (isIFC)
-				{
-					modeloptimizer::IFCOptimzer optimiser;
-					optimiser.apply(scene);
 				}
 
 				if (applyReduction)

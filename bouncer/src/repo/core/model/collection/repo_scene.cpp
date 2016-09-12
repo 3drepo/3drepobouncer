@@ -1452,9 +1452,13 @@ void RepoScene::reorientateDirectXModel()
 			clearStash();
 
 			//Apply the rotation on the offset
-			auto temp = worldOffset[2];
-			worldOffset[2] = -worldOffset[1];
-			worldOffset[1] = temp;
+			if (worldOffset.size())
+			{
+				auto temp = worldOffset[2];
+				worldOffset[2] = -worldOffset[1];
+				worldOffset[1] = temp;
+			}
+			
 		}
 		else
 		{
