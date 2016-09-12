@@ -459,63 +459,301 @@ std::string IFCUtilsParser::getValueAsString(
 	const IfcSchema::IfcValue    *ifcValue)
 {
 	std::string value = "n/a";
-	//FIXME: should change this on IFCOpenShell to be an inheritance with a toString() function
+	//FIXME: should change this on IFCOpenShell to be an inheritance with a toString() function - but this is easier said than done due ot crazy inheritance (or lack of ) in the code
 	if (ifcValue)
 	{
 		switch (ifcValue->type())
 		{
-		case IfcSchema::Type::IfcLabel:
-			value = std::string(*static_cast<const IfcSchema::IfcLabel *>(ifcValue));
+		case IfcSchema::Type::IfcAbsorbedDoseMeasure:
+			value = static_cast<const IfcSchema::IfcAbsorbedDoseMeasure *>(ifcValue)->valueAsString();
 			break;
-		case IfcSchema::Type::IfcBoolean:
-			value = bool(*static_cast<const IfcSchema::IfcBoolean *>(ifcValue)) ? "True" : "False";
+		case IfcSchema::Type::IfcAccelerationMeasure:
+			value = static_cast<const IfcSchema::IfcAccelerationMeasure *>(ifcValue)->valueAsString();
 			break;
-		case IfcSchema::Type::IfcInteger:
-			value = std::to_string(int(*static_cast<const IfcSchema::IfcInteger *>(ifcValue)));
+		case IfcSchema::Type::IfcAmountOfSubstanceMeasure:
+			value = static_cast<const IfcSchema::IfcAmountOfSubstanceMeasure *>(ifcValue)->valueAsString();
 			break;
-		case IfcSchema::Type::IfcReal:
-			value = std::to_string(double(*static_cast<const IfcSchema::IfcReal *>(ifcValue)));
-			break;
-		case IfcSchema::Type::IfcLengthMeasure:
-			value = std::to_string(double(*static_cast<const IfcSchema::IfcLengthMeasure *>(ifcValue)));
+		case IfcSchema::Type::IfcAngularVelocityMeasure:
+			value = static_cast<const IfcSchema::IfcAngularVelocityMeasure *>(ifcValue)->valueAsString();
 			break;
 		case IfcSchema::Type::IfcAreaMeasure:
-			value = std::to_string(double(*static_cast<const IfcSchema::IfcAreaMeasure *>(ifcValue)));
+			value = static_cast<const IfcSchema::IfcAreaMeasure *>(ifcValue)->valueAsString();
 			break;
-		case IfcSchema::Type::IfcPowerMeasure:
-			value = std::to_string(double(*static_cast<const IfcSchema::IfcPowerMeasure *>(ifcValue)));
+		case IfcSchema::Type::IfcBoolean:
+			value = static_cast<const IfcSchema::IfcBoolean *>(ifcValue)->valueAsString();
 			break;
-		case IfcSchema::Type::IfcVolumeMeasure:
-			value = std::to_string(double(*static_cast<const IfcSchema::IfcVolumeMeasure *>(ifcValue)));
+		case IfcSchema::Type::IfcComplexNumber:
+			value = static_cast<const IfcSchema::IfcComplexNumber *>(ifcValue)->valueAsString();
 			break;
-		case IfcSchema::Type::IfcPlaneAngleMeasure:
-			value = std::to_string(double(*static_cast<const IfcSchema::IfcPlaneAngleMeasure *>(ifcValue)));
+		case IfcSchema::Type::IfcCompoundPlaneAngleMeasure:
+			value = static_cast<const IfcSchema::IfcCompoundPlaneAngleMeasure *>(ifcValue)->valueAsString();
 			break;
-		case IfcSchema::Type::IfcNumericMeasure:
-			value = std::to_string(double(*static_cast<const IfcSchema::IfcNumericMeasure *>(ifcValue)));
+		case IfcSchema::Type::IfcContextDependentMeasure:
+			value = static_cast<const IfcSchema::IfcContextDependentMeasure *>(ifcValue)->valueAsString();
 			break;
-		case IfcSchema::Type::IfcPositiveLengthMeasure:
-			value = std::to_string(double(*static_cast<const IfcSchema::IfcPositiveLengthMeasure *>(ifcValue)));
+		case IfcSchema::Type::IfcCountMeasure:
+			value = static_cast<const IfcSchema::IfcCountMeasure *>(ifcValue)->valueAsString();
 			break;
-		case IfcSchema::Type::IfcPositivePlaneAngleMeasure:
-			value = std::to_string(double(*static_cast<const IfcSchema::IfcPositivePlaneAngleMeasure *>(ifcValue)));
+		case IfcSchema::Type::IfcCurvatureMeasure:
+			value = static_cast<const IfcSchema::IfcCurvatureMeasure *>(ifcValue)->valueAsString();
 			break;
-		case IfcSchema::Type::IfcPositiveRatioMeasure:
-			value = std::to_string(double(*static_cast<const IfcSchema::IfcPositiveRatioMeasure *>(ifcValue)));
+		case IfcSchema::Type::IfcDescriptiveMeasure:
+			value = static_cast<const IfcSchema::IfcDescriptiveMeasure *>(ifcValue)->valueAsString();
 			break;
-		case IfcSchema::Type::IfcText:
-			value = std::string(*static_cast<const IfcSchema::IfcText *>(ifcValue));
+		case IfcSchema::Type::IfcDoseEquivalentMeasure:
+			value = static_cast<const IfcSchema::IfcDoseEquivalentMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcDynamicViscosityMeasure:
+			value = static_cast<const IfcSchema::IfcDynamicViscosityMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcElectricCapacitanceMeasure:
+			value = static_cast<const IfcSchema::IfcElectricCapacitanceMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcElectricChargeMeasure:
+			value = static_cast<const IfcSchema::IfcElectricChargeMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcElectricConductanceMeasure:
+			value = static_cast<const IfcSchema::IfcElectricConductanceMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcElectricCurrentMeasure:
+			value = static_cast<const IfcSchema::IfcElectricCurrentMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcElectricResistanceMeasure:
+			value = static_cast<const IfcSchema::IfcElectricResistanceMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcElectricVoltageMeasure:
+			value = static_cast<const IfcSchema::IfcElectricVoltageMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcEnergyMeasure:
+			value = static_cast<const IfcSchema::IfcEnergyMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcForceMeasure:
+			value = static_cast<const IfcSchema::IfcForceMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcFrequencyMeasure:
+			value = static_cast<const IfcSchema::IfcFrequencyMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcHeatFluxDensityMeasure:
+			value = static_cast<const IfcSchema::IfcHeatFluxDensityMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcHeatingValueMeasure:
+			value = static_cast<const IfcSchema::IfcHeatingValueMeasure *>(ifcValue)->valueAsString();
 			break;
 		case IfcSchema::Type::IfcIdentifier:
-			value = std::string(*static_cast<const IfcSchema::IfcIdentifier *>(ifcValue));
+			value = static_cast<const IfcSchema::IfcIdentifier *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcIlluminanceMeasure:
+			value = static_cast<const IfcSchema::IfcIlluminanceMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcInductanceMeasure:
+			value = static_cast<const IfcSchema::IfcInductanceMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcInteger:
+			value = static_cast<const IfcSchema::IfcInteger *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcIntegerCountRateMeasure:
+			value = static_cast<const IfcSchema::IfcIntegerCountRateMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcIonConcentrationMeasure:
+			value = static_cast<const IfcSchema::IfcIonConcentrationMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcIsothermalMoistureCapacityMeasure:
+			value = static_cast<const IfcSchema::IfcIsothermalMoistureCapacityMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcKinematicViscosityMeasure:
+			value = static_cast<const IfcSchema::IfcKinematicViscosityMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcLabel:
+			value = static_cast<const IfcSchema::IfcLabel *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcLengthMeasure:
+			value = static_cast<const IfcSchema::IfcLengthMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcLinearForceMeasure:
+			value = static_cast<const IfcSchema::IfcLinearForceMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcLinearMomentMeasure:
+			value = static_cast<const IfcSchema::IfcLinearMomentMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcLinearStiffnessMeasure:
+			value = static_cast<const IfcSchema::IfcLinearStiffnessMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcLinearVelocityMeasure:
+			value = static_cast<const IfcSchema::IfcLinearVelocityMeasure *>(ifcValue)->valueAsString();
 			break;
 		case IfcSchema::Type::IfcLogical:
-			value = std::to_string(bool(*static_cast<const IfcSchema::IfcLogical *>(ifcValue)));
+			value = static_cast<const IfcSchema::IfcLogical *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcLuminousFluxMeasure:
+			value = static_cast<const IfcSchema::IfcLuminousFluxMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcLuminousIntensityDistributionMeasure:
+			value = static_cast<const IfcSchema::IfcLuminousIntensityDistributionMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcLuminousIntensityMeasure:
+			value = static_cast<const IfcSchema::IfcLuminousIntensityMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcMagneticFluxDensityMeasure:
+			value = static_cast<const IfcSchema::IfcMagneticFluxDensityMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcMagneticFluxMeasure:
+			value = static_cast<const IfcSchema::IfcMagneticFluxMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcMassDensityMeasure:
+			value = static_cast<const IfcSchema::IfcMassDensityMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcMassFlowRateMeasure:
+			value = static_cast<const IfcSchema::IfcMassFlowRateMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcMassMeasure:
+			value = static_cast<const IfcSchema::IfcMassMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcMassPerLengthMeasure:
+			value = static_cast<const IfcSchema::IfcMassPerLengthMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcModulusOfElasticityMeasure:
+			value = static_cast<const IfcSchema::IfcModulusOfElasticityMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcModulusOfLinearSubgradeReactionMeasure:
+			value = static_cast<const IfcSchema::IfcModulusOfLinearSubgradeReactionMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcModulusOfRotationalSubgradeReactionMeasure:
+			value = static_cast<const IfcSchema::IfcModulusOfRotationalSubgradeReactionMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcModulusOfSubgradeReactionMeasure:
+			value = static_cast<const IfcSchema::IfcModulusOfSubgradeReactionMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcMoistureDiffusivityMeasure:
+			value = static_cast<const IfcSchema::IfcMoistureDiffusivityMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcMolecularWeightMeasure:
+			value = static_cast<const IfcSchema::IfcMolecularWeightMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcMomentOfInertiaMeasure:
+			value = static_cast<const IfcSchema::IfcMomentOfInertiaMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcMonetaryMeasure:
+			value = static_cast<const IfcSchema::IfcMonetaryMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcNumericMeasure:
+			value = static_cast<const IfcSchema::IfcNumericMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcPHMeasure:
+			value = static_cast<const IfcSchema::IfcPHMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcParameterValue:
+			value = static_cast<const IfcSchema::IfcParameterValue *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcPlanarForceMeasure:
+			value = static_cast<const IfcSchema::IfcPlanarForceMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcPlaneAngleMeasure:
+			value = static_cast<const IfcSchema::IfcPlaneAngleMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcPositiveLengthMeasure:
+			value = static_cast<const IfcSchema::IfcPositiveLengthMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcPowerMeasure:
+			value = static_cast<const IfcSchema::IfcPowerMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcPressureMeasure:
+			value = static_cast<const IfcSchema::IfcPressureMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcRadioActivityMeasure:
+			value = static_cast<const IfcSchema::IfcRadioActivityMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcRatioMeasure:
+			value = static_cast<const IfcSchema::IfcRatioMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcReal:
+			value = static_cast<const IfcSchema::IfcReal *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcRotationalFrequencyMeasure:
+			value = static_cast<const IfcSchema::IfcRotationalFrequencyMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcRotationalMassMeasure:
+			value = static_cast<const IfcSchema::IfcRotationalMassMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcRotationalStiffnessMeasure:
+			value = static_cast<const IfcSchema::IfcRotationalStiffnessMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcSectionModulusMeasure:
+			value = static_cast<const IfcSchema::IfcSectionModulusMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcSectionalAreaIntegralMeasure:
+			value = static_cast<const IfcSchema::IfcSectionalAreaIntegralMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcShearModulusMeasure:
+			value = static_cast<const IfcSchema::IfcShearModulusMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcSolidAngleMeasure:
+			value = static_cast<const IfcSchema::IfcSolidAngleMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcSoundPowerMeasure:
+			value = static_cast<const IfcSchema::IfcSoundPowerMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcSoundPressureMeasure:
+			value = static_cast<const IfcSchema::IfcSoundPressureMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcSpecificHeatCapacityMeasure:
+			value = static_cast<const IfcSchema::IfcSpecificHeatCapacityMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcTemperatureGradientMeasure:
+			value = static_cast<const IfcSchema::IfcTemperatureGradientMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcText:
+			value = static_cast<const IfcSchema::IfcText *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcThermalAdmittanceMeasure:
+			value = static_cast<const IfcSchema::IfcThermalAdmittanceMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcThermalConductivityMeasure:
+			value = static_cast<const IfcSchema::IfcThermalConductivityMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcThermalExpansionCoefficientMeasure:
+			value = static_cast<const IfcSchema::IfcThermalExpansionCoefficientMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcThermalResistanceMeasure:
+			value = static_cast<const IfcSchema::IfcThermalResistanceMeasure *>(ifcValue)->valueAsString();
 			break;
 		case IfcSchema::Type::IfcThermalTransmittanceMeasure:
-			value = std::to_string(bool(*static_cast<const IfcSchema::IfcThermalTransmittanceMeasure *>(ifcValue)));
-		case IfcSchema::Type::IfcCountMeasure:
-			value = std::to_string(bool(*static_cast<const IfcSchema::IfcCountMeasure *>(ifcValue)));
+			value = static_cast<const IfcSchema::IfcThermalTransmittanceMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcThermodynamicTemperatureMeasure:
+			value = static_cast<const IfcSchema::IfcThermodynamicTemperatureMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcTimeMeasure:
+			value = static_cast<const IfcSchema::IfcTimeMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcTimeStamp:
+			value = static_cast<const IfcSchema::IfcTimeStamp *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcTorqueMeasure:
+			value = static_cast<const IfcSchema::IfcTorqueMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcVaporPermeabilityMeasure:
+			value = static_cast<const IfcSchema::IfcVaporPermeabilityMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcVolumeMeasure:
+			value = static_cast<const IfcSchema::IfcVolumeMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcVolumetricFlowRateMeasure:
+			value = static_cast<const IfcSchema::IfcVolumetricFlowRateMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcWarpingConstantMeasure:
+			value = static_cast<const IfcSchema::IfcWarpingConstantMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcWarpingMomentMeasure:
+			value = static_cast<const IfcSchema::IfcWarpingMomentMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcPositivePlaneAngleMeasure:
+			value = static_cast<const IfcSchema::IfcPositivePlaneAngleMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcNormalisedRatioMeasure:
+			value = static_cast<const IfcSchema::IfcNormalisedRatioMeasure *>(ifcValue)->valueAsString();
+			break;
+		case IfcSchema::Type::IfcPositiveRatioMeasure:
+			value = static_cast<const IfcSchema::IfcPositiveRatioMeasure *>(ifcValue)->valueAsString();
 			break;
 
 		default:
