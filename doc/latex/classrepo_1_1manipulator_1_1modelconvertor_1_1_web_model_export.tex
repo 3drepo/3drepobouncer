@@ -1,0 +1,143 @@
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export}{}\section{repo\+:\+:manipulator\+:\+:modelconvertor\+:\+:Web\+Model\+Export Class Reference}
+\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export}\index{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export}}
+Inheritance diagram for repo\+:\+:manipulator\+:\+:modelconvertor\+:\+:Web\+Model\+Export\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.507463cm]{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_a26b2b03d3e9b1dd659058f8c21f7355d}{Web\+Model\+Export} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+virtual \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_a10097ae71b25979330a9a8e5ad403e55}{$\sim$\+Web\+Model\+Export} ()
+\item 
+virtual bool \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_a7ce7f209d57bf5cd48499cf3dbbb25d0}{export\+To\+File} (const std\+::string \&file\+Path)
+\item 
+virtual \hyperlink{structrepo__web__buffers__t}{repo\+\_\+web\+\_\+buffers\+\_\+t} \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_ad9e20343a2e8a21fb9de2e89ba14bf05}{get\+All\+Files\+Exported\+As\+Buffer} () const =0
+\item 
+virtual std\+::unordered\+\_\+map$<$ std\+::string, std\+::vector$<$ uint8\+\_\+t $>$ $>$ \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_afdbd1aa2c77d6493c038cbd52ebcf185}{get\+J\+S\+O\+N\+Files\+As\+Buffer} () const 
+\item 
+std\+::unordered\+\_\+map$<$ std\+::string, std\+::vector$<$ uint8\+\_\+t $>$ $>$ \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_acde7b100e2cd2654853a20c0e39304a6}{get\+X3\+D\+Files\+As\+Buffer} () const 
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_ac284fe40fa97587feb44e9e2fb2a7b15}{is\+Ok} () const 
+\end{DoxyCompactItemize}
+\subsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static std\+::string \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_af6a4e5186a24090b1b7ee48cbdda0ce9}{get\+Supported\+Formats} ()
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_a72e7693f58cff85bc1aeffeed5783b4e}{}bool {\bfseries convert\+Success}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_a72e7693f58cff85bc1aeffeed5783b4e}
+
+\item 
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_a63ff812eb4ab1186b9b3ea65b5fb5727}{}\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{repo\+::core\+::model\+::\+Repo\+Scene\+::\+Graph\+Type} {\bfseries g\+Type}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_a63ff812eb4ab1186b9b3ea65b5fb5727}
+
+\item 
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_a0adc529948d18959652955e5de28d2ab}{}std\+::unordered\+\_\+map$<$ std\+::string, \hyperlink{classrepo_1_1lib_1_1_property_tree}{repo\+::lib\+::\+Property\+Tree} $>$ {\bfseries trees}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_a0adc529948d18959652955e5de28d2ab}
+
+\item 
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_a56ad22341ac91a135104b3ee666623e0}{}std\+::unordered\+\_\+map$<$ std\+::string, std\+::vector$<$ uint8\+\_\+t $>$ $>$ {\bfseries x3d\+Bufs}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_a56ad22341ac91a135104b3ee666623e0}
+
+\item 
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_a255c9dc7ba9db65a72c716015ab855b7}{}std\+::unordered\+\_\+map$<$ std\+::string, \hyperlink{classrepo_1_1lib_1_1_property_tree}{repo\+::lib\+::\+Property\+Tree} $>$ {\bfseries json\+Trees}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_a255c9dc7ba9db65a72c716015ab855b7}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_a26b2b03d3e9b1dd659058f8c21f7355d}{}\index{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export}!Web\+Model\+Export@{Web\+Model\+Export}}
+\index{Web\+Model\+Export@{Web\+Model\+Export}!repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export}}
+\subsubsection[{Web\+Model\+Export}]{\setlength{\rightskip}{0pt plus 5cm}Web\+Model\+Export\+::\+Web\+Model\+Export (
+\begin{DoxyParamCaption}
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_a26b2b03d3e9b1dd659058f8c21f7355d}
+Default Constructor, export model with default settings 
+\begin{DoxyParams}{Parameters}
+{\em scene} & repo scene to convert \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_a10097ae71b25979330a9a8e5ad403e55}{}\index{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export}!````~Web\+Model\+Export@{$\sim$\+Web\+Model\+Export}}
+\index{````~Web\+Model\+Export@{$\sim$\+Web\+Model\+Export}!repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export}}
+\subsubsection[{$\sim$\+Web\+Model\+Export}]{\setlength{\rightskip}{0pt plus 5cm}Web\+Model\+Export\+::$\sim$\+Web\+Model\+Export (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_a10097ae71b25979330a9a8e5ad403e55}
+Default Destructor 
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_a7ce7f209d57bf5cd48499cf3dbbb25d0}{}\index{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export}!export\+To\+File@{export\+To\+File}}
+\index{export\+To\+File@{export\+To\+File}!repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export}}
+\subsubsection[{export\+To\+File}]{\setlength{\rightskip}{0pt plus 5cm}bool Web\+Model\+Export\+::export\+To\+File (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{file\+Path}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_a7ce7f209d57bf5cd48499cf3dbbb25d0}
+Export the repo scene graph to file 
+\begin{DoxyParams}{Parameters}
+{\em file\+Path} & path to destination file \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_export_a305f2967d8112c5417b80fd3e8b8902a}{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Export}.
+
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_ad9e20343a2e8a21fb9de2e89ba14bf05}{}\index{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export}!get\+All\+Files\+Exported\+As\+Buffer@{get\+All\+Files\+Exported\+As\+Buffer}}
+\index{get\+All\+Files\+Exported\+As\+Buffer@{get\+All\+Files\+Exported\+As\+Buffer}!repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export}}
+\subsubsection[{get\+All\+Files\+Exported\+As\+Buffer}]{\setlength{\rightskip}{0pt plus 5cm}virtual {\bf repo\+\_\+web\+\_\+buffers\+\_\+t} repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export\+::get\+All\+Files\+Exported\+As\+Buffer (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [pure virtual]}}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_ad9e20343a2e8a21fb9de2e89ba14bf05}
+Export all necessary files as buffers \begin{DoxyReturn}{Returns}
+returns a repo\+\_\+src\+\_\+export\+\_\+t containing all files needed for this model to be rendered 
+\end{DoxyReturn}
+
+
+Implemented in \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_s_r_c_model_export_aabc41be1f3f75ab3cba44df16e40850e}{repo\+::manipulator\+::modelconvertor\+::\+S\+R\+C\+Model\+Export}, and \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_g_l_t_f_model_export_af46ede52b996784ab8b7ff15977d186d}{repo\+::manipulator\+::modelconvertor\+::\+G\+L\+T\+F\+Model\+Export}.
+
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_afdbd1aa2c77d6493c038cbd52ebcf185}{}\index{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export}!get\+J\+S\+O\+N\+Files\+As\+Buffer@{get\+J\+S\+O\+N\+Files\+As\+Buffer}}
+\index{get\+J\+S\+O\+N\+Files\+As\+Buffer@{get\+J\+S\+O\+N\+Files\+As\+Buffer}!repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export}}
+\subsubsection[{get\+J\+S\+O\+N\+Files\+As\+Buffer}]{\setlength{\rightskip}{0pt plus 5cm}std\+::unordered\+\_\+map$<$ std\+::string, std\+::vector$<$ uint8\+\_\+t $>$ $>$ Web\+Model\+Export\+::get\+J\+S\+O\+N\+Files\+As\+Buffer (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_afdbd1aa2c77d6493c038cbd52ebcf185}
+Return the J\+S\+O\+N file as raw bytes buffer returns an empty map if the export has failed \hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_af6a4e5186a24090b1b7ee48cbdda0ce9}{}\index{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export}!get\+Supported\+Formats@{get\+Supported\+Formats}}
+\index{get\+Supported\+Formats@{get\+Supported\+Formats}!repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export}}
+\subsubsection[{get\+Supported\+Formats}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string Web\+Model\+Export\+::get\+Supported\+Formats (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [static]}}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_af6a4e5186a24090b1b7ee48cbdda0ce9}
+Get supported file formats for this exporter \hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_acde7b100e2cd2654853a20c0e39304a6}{}\index{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export}!get\+X3\+D\+Files\+As\+Buffer@{get\+X3\+D\+Files\+As\+Buffer}}
+\index{get\+X3\+D\+Files\+As\+Buffer@{get\+X3\+D\+Files\+As\+Buffer}!repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export}}
+\subsubsection[{get\+X3\+D\+Files\+As\+Buffer}]{\setlength{\rightskip}{0pt plus 5cm}std\+::unordered\+\_\+map$<$std\+::string, std\+::vector$<$uint8\+\_\+t$>$ $>$ repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export\+::get\+X3\+D\+Files\+As\+Buffer (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_acde7b100e2cd2654853a20c0e39304a6}
+Return the X3\+D file as raw bytes buffer returns an empty map if the export has failed \hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_ac284fe40fa97587feb44e9e2fb2a7b15}{}\index{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export}!is\+Ok@{is\+Ok}}
+\index{is\+Ok@{is\+Ok}!repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export}}
+\subsubsection[{is\+Ok}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export\+::is\+Ok (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_ac284fe40fa97587feb44e9e2fb2a7b15}
+Returns the status of the converter, whether it has successfully converted the model \begin{DoxyReturn}{Returns}
+returns true if success 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/manipulator/modelconvertor/export/repo\+\_\+model\+\_\+export\+\_\+web.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/manipulator/modelconvertor/export/repo\+\_\+model\+\_\+export\+\_\+web.\+cpp\end{DoxyCompactItemize}

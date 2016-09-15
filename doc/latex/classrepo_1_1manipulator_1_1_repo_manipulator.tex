@@ -1,0 +1,1252 @@
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator}{}\section{repo\+:\+:manipulator\+:\+:Repo\+Manipulator Class Reference}
+\label{classrepo_1_1manipulator_1_1_repo_manipulator}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a5c82f46fb127c100d8335b6a7e128174}{clean\+Up} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const std\+::string \&db\+Name, const std\+::string \&project\+Name)
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a8d2ed018a2af9218689c3ea63504f3f1}{connect\+And\+Authenticate} (std\+::string \&err\+Msg, const std\+::string \&address, const uint32\+\_\+t \&port, const uint32\+\_\+t \&max\+Connections, const std\+::string \&db\+Name, const std\+::string \&username, const std\+::string \&password, const bool \&pw\+Digested=false)
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_ae31236c3f6506ae9cd7c307ce965d715}{connect\+And\+Authenticate} (std\+::string \&err\+Msg, const std\+::string \&address, const uint32\+\_\+t \&port, const uint32\+\_\+t \&max\+Connections, const std\+::string \&db\+Name, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$credentials)
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a0fa775b650c6ac63e171e0047dae0387}{connect\+And\+Authenticate\+With\+Admin} (std\+::string \&err\+Msg, const std\+::string \&address, const uint32\+\_\+t \&port, const uint32\+\_\+t \&max\+Connections, const std\+::string \&username, const std\+::string \&password, const bool \&pw\+Digested=false)
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a9e8ac2e2c3af8c1a93a4a9d3e2c8348b}{commit\+Scene} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene, const std\+::string \&owner=\char`\"{}\char`\"{}, const std\+::string \&tag=\char`\"{}\char`\"{}, const std\+::string \&desc=\char`\"{}\char`\"{})
+\item 
+void \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_abc5131e039d15e0e935269202512b921}{compare\+Scenes} (\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$base, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$compare, \hyperlink{structrepo__diff__result__t}{repo\+\_\+diff\+\_\+result\+\_\+t} \&base\+Results, \hyperlink{structrepo__diff__result__t}{repo\+\_\+diff\+\_\+result\+\_\+t} \&comp\+Results, const repo\+::\+Diff\+Mode \&diff\+Mode, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{repo\+::core\+::model\+::\+Repo\+Scene\+::\+Graph\+Type} \&g\+Type=repo\+::core\+::model\+::\+Repo\+Scene\+::\+Graph\+Type\+::\+D\+E\+F\+A\+U\+L\+T)
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$ \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_abc1ece0dc5c222664c716c01b5cf9f7c}{create\+Cred\+B\+S\+O\+N} (const std\+::string \&database\+Ad, const std\+::string \&username, const std\+::string \&password, const bool \&pw\+Digested)
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a604630a3c0926f5971a305fcd42454dd}{create\+Federated\+Scene} (const std\+::map$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_transformation_node}{repo\+::core\+::model\+::\+Transformation\+Node}, \hyperlink{classrepo_1_1core_1_1model_1_1_reference_node}{repo\+::core\+::model\+::\+Reference\+Node} $>$ \&fed\+Map)
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a93d82f484d5b61e611d2594a208b255c}{create\+Map\+Scene} (const \hyperlink{classrepo_1_1core_1_1model_1_1_map_node}{repo\+::core\+::model\+::\+Map\+Node} \&map\+Node)
+\item 
+uint64\+\_\+t \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a1c0f152c45ee4c91ae3bd2ce12e8b79a}{count\+Items\+In\+Collection} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const std\+::string \&database, const std\+::string \&collection, std\+::string \&err\+Msg)
+\item 
+void \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a98712acdd65c6ec4b2eb7d12269467cc}{disconnect\+From\+Database} (const std\+::string \&database\+Ad)
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a8a24f7bb9d8abbb3fc852d61b9eee5cc}{drop\+Collection} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const std\+::string \&database\+Name, const std\+::string \&collection\+Name, std\+::string \&err\+Msg)
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a83b078b648218f271c2ea793c0e23d48}{drop\+Database} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const std\+::string \&database\+Name, std\+::string \&err\+Msg)
+\item 
+std\+::list$<$ std\+::string $>$ \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_ae668256201fbaf733c579e78986d3049}{fetch\+Databases} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred)
+\item 
+std\+::list$<$ std\+::string $>$ \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a0fa334bdd79ae7b402fb9a0b8c91e3f3}{fetch\+Collections} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const std\+::string \&database)
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_aad9651797157bcc3285316ca9d92ae1d}{fetch\+Scene} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const std\+::string \&database, const std\+::string \&collection, const repo\+U\+U\+I\+D \&uuid, const bool \&head\+Revision=false, const bool \&light\+Fetch=false)
+\item 
+void \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a471f3ea5c0601b7170e78c945b1960e9}{fetch\+Scene} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a62497cff06ac6c294b156a18841a0e84}{generate\+And\+Commit\+Selection\+Tree} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a1a095b9f7aabde18f82d42fa063e5a35}{generate\+And\+Commit\+Stash\+Graph} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a6a788a9c9dcffc41d41e2a3e3a437d01}{generate\+And\+Commit\+Web\+View\+Buffer} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene, \hyperlink{structrepo__web__buffers__t}{repo\+\_\+web\+\_\+buffers\+\_\+t} \&buffers, const modelconvertor\+::\+Web\+Export\+Type \&ex\+Type)
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a06bfa2fdc314751c97b45692782dbb1f}{generate\+And\+Commit\+G\+L\+T\+F\+Buffer} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a9d02f1f41f76b9140dbb81b5bf413941}{generate\+And\+Commit\+S\+R\+C\+Buffer} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+\hyperlink{structrepo__web__buffers__t}{repo\+\_\+web\+\_\+buffers\+\_\+t} \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_afae7f20e2a8e12197fb29a89e9191077}{generate\+G\+L\+T\+F\+Buffer} (\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+\hyperlink{structrepo__web__buffers__t}{repo\+\_\+web\+\_\+buffers\+\_\+t} \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a3b14104b60d95c19be1b7b1ab507450a}{generate\+S\+R\+C\+Buffer} (\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_ac301ad067f763595fc68a902a4249c35}{generate\+Stash\+Graph} (\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+std\+::vector$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $>$ \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a843070b9d4063b6f01e8287df7855e3c}{get\+All\+From\+Collection\+Tailable} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const std\+::string \&database, const std\+::string \&collection, const uint64\+\_\+t \&skip=0, const uint32\+\_\+t \&limit=0)
+\item 
+std\+::vector$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $>$ \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a097c73ccc24132242effc95d8359d960}{get\+All\+From\+Collection\+Tailable} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const std\+::string \&database, const std\+::string \&collection, const std\+::list$<$ std\+::string $>$ \&fields, const std\+::string \&sort\+Field=std\+::string(), const int \&sort\+Order=-\/1, const uint64\+\_\+t \&skip=0, const uint32\+\_\+t \&limit=0)
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_collection_stats}{repo\+::core\+::model\+::\+Collection\+Stats} \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a0eb5c3ceb82cd51a1bac0542c320c42e}{get\+Collection\+Stats} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const std\+::string \&database, const std\+::string \&collection, std\+::string \&err\+Msg)
+\item 
+std\+::map$<$ std\+::string, std\+::list$<$ std\+::string $>$ $>$ \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a00ca257f791f0ee957004d83d1b449c0}{get\+Databases\+With\+Projects} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const std\+::list$<$ std\+::string $>$ \&databases)
+\item 
+std\+::list$<$ std\+::string $>$ \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a4c559d09f639d420f929c5f0fec074b5}{get\+Admin\+Database\+Roles} (const std\+::string \&database\+Ad)
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_settings}{repo\+::core\+::model\+::\+Repo\+Role\+Settings} \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a432a4e4e724d4f1dcb2c864b799c8f78}{get\+Role\+Setting\+By\+Name} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const std\+::string \&database, const std\+::string \&unique\+Role\+Name)
+\item 
+std\+::shared\+\_\+ptr$<$ \hyperlink{structrepo__partitioning__tree__t}{repo\+\_\+partitioning\+\_\+tree\+\_\+t} $>$ \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_ab1e8a704d99997793cce72d1d6f371e3}{get\+Scene\+Partitioning} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene, const uint32\+\_\+t \&max\+Depth=8)
+\item 
+std\+::list$<$ std\+::string $>$ \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a2e221e47db368a794187a134678aa83e}{get\+Standard\+Database\+Roles} (const std\+::string \&database\+Ad)
+\item 
+std\+::string \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a9ad9ece3b9a29293f5c40682a2d3fcd3}{get\+Name\+Of\+Admin\+Database} (const std\+::string \&database\+Ad) const 
+\item 
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_af2a2e0162850ce339b950b0e3b6f3420}{}bool {\bfseries has\+Collection} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const std\+::string \&db\+Name, const std\+::string \&project)\label{classrepo_1_1manipulator_1_1_repo_manipulator_af2a2e0162850ce339b950b0e3b6f3420}
+
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_ac090e9012cc803711efc1e3f35ab440a}{has\+Database} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const std\+::string \&db\+Name)
+\item 
+void \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a84615f299d0e24aea6b6677d8de28311}{insert\+Binary\+File\+To\+Database} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const std\+::string \&database, const std\+::string \&collection, const std\+::string \&name, const std\+::vector$<$ uint8\+\_\+t $>$ \&raw\+Data, const std\+::string \&mime\+Type=\char`\"{}\char`\"{})
+\item 
+void \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_ad71033c3f687ec6641e0670807f6dc9c}{insert\+Role} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role}{repo\+::core\+::model\+::\+Repo\+Role} \&role)
+\item 
+void \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a554161b98fa956eecf336e90b54055b8}{insert\+User} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user}{repo\+::core\+::model\+::\+Repo\+User} \&user)
+\item 
+repo\+::core\+::model\+::\+Repo\+Node\+Set \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_ac8aa3dc193f99717777016107f9f9e48}{load\+Metadata\+From\+File} (const std\+::string \&file\+Path, const char \&delimiter= \textquotesingle{},\textquotesingle{})
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a3084292164f952c449ba32ee38877dc3}{load\+Scene\+From\+File} (const std\+::string \&file\+Path, std\+::string \&msg, const bool \&apply\+Reduction=true, const bool \&rotate\+Model=false, const \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_model_import_config}{repo\+::manipulator\+::modelconvertor\+::\+Model\+Import\+Config} $\ast$config=nullptr)
+\item 
+void \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a81065d2986d422e8f67692041d343905}{remove\+Document} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const std\+::string \&database\+Name, const std\+::string \&collection\+Name, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \&bson)
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a07ce72512829cc15c2550c505925fc25}{remove\+Project} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const std\+::string \&database\+Name, const std\+::string \&project\+Name, std\+::string \&err\+Msg)
+\item 
+void \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a98b4b3a2bbf96b4c6c2a2f024cda4e43}{reduce\+Transformations} (\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{repo\+::core\+::model\+::\+Repo\+Scene\+::\+Graph\+Type} \&g\+Type=repo\+::core\+::model\+::\+Repo\+Scene\+::\+Graph\+Type\+::\+D\+E\+F\+A\+U\+L\+T)
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_aead90d3abe4bbbb4b13df661b4968067}{remove\+Stash\+Graph\+From\+Database} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+void \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a06242a6564f5f18ce3c3a21bc6faf6c5}{remove\+Role} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role}{repo\+::core\+::model\+::\+Repo\+Role} \&role)
+\item 
+void \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a9398ab884c08d8068495376e1a8f43ca}{remove\+User} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user}{repo\+::core\+::model\+::\+Repo\+User} \&user)
+\item 
+void \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a423c50def32d9610011578095a2895ef}{save\+Original\+Files} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene, const std\+::string \&directory)
+\item 
+void \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_abe406f89bd26947ba572907c615904d6}{save\+Original\+Files} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const std\+::string \&database, const std\+::string \&project, const std\+::string \&directory)
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a5b2eb9343995c851060881d5bf8809b5}{save\+Scene\+To\+File} (const std\+::string \&file\+Path, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+void \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_ab7f41fa63bc40207368b147ad02f9899}{update\+Role} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role}{repo\+::core\+::model\+::\+Repo\+Role} \&role)
+\item 
+void \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_a47d020aa3670a5ba61d430959f5414f5}{update\+User} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user}{repo\+::core\+::model\+::\+Repo\+User} \&user)
+\item 
+void \hyperlink{classrepo_1_1manipulator_1_1_repo_manipulator_ab982734dbade0d224aaa53f9ab4eba2a}{upsert\+Document} (const std\+::string \&database\+Ad, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$cred, const std\+::string \&database\+Name, const std\+::string \&collection\+Name, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \&bson)
+\end{DoxyCompactItemize}
+
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a5c82f46fb127c100d8335b6a7e128174}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!clean\+Up@{clean\+Up}}
+\index{clean\+Up@{clean\+Up}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{clean\+Up}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Manipulator\+::clean\+Up (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const std\+::string \&}]{db\+Name, }
+\item[{const std\+::string \&}]{project\+Name}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a5c82f46fb127c100d8335b6a7e128174}
+Clean up any incomplete commits within the project 
+\begin{DoxyParams}{Parameters}
+{\em address} & mongo database address \\
+\hline
+{\em port} & port number \\
+\hline
+{\em db\+Name} & name of the database \\
+\hline
+{\em project\+Name} & name of the project \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a9e8ac2e2c3af8c1a93a4a9d3e2c8348b}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!commit\+Scene@{commit\+Scene}}
+\index{commit\+Scene@{commit\+Scene}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{commit\+Scene}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Manipulator\+::commit\+Scene (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene, }
+\item[{const std\+::string \&}]{owner = {\ttfamily \char`\"{}\char`\"{}}, }
+\item[{const std\+::string \&}]{tag = {\ttfamily \char`\"{}\char`\"{}}, }
+\item[{const std\+::string \&}]{desc = {\ttfamily \char`\"{}\char`\"{}}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a9e8ac2e2c3af8c1a93a4a9d3e2c8348b}
+Commit a scene graph 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em scene} & scene to commit \\
+\hline
+{\em owner} & specify the owner of the scene (by default it is the user authorised to commit) \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_abc5131e039d15e0e935269202512b921}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!compare\+Scenes@{compare\+Scenes}}
+\index{compare\+Scenes@{compare\+Scenes}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{compare\+Scenes}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Manipulator\+::compare\+Scenes (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{base, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{compare, }
+\item[{{\bf repo\+\_\+diff\+\_\+result\+\_\+t} \&}]{base\+Results, }
+\item[{{\bf repo\+\_\+diff\+\_\+result\+\_\+t} \&}]{comp\+Results, }
+\item[{const repo\+::\+Diff\+Mode \&}]{diff\+Mode, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Scene\+::\+Graph\+Type} \&}]{g\+Type = {\ttfamily repo\+:\+:core\+:\+:model\+:\+:RepoScene\+:\+:GraphType\+:\+:DEFAULT}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_abc5131e039d15e0e935269202512b921}
+Compare 2 scenes. 
+\begin{DoxyParams}{Parameters}
+{\em base} & base scene to compare against \\
+\hline
+{\em compare} & scene to compare base scene against \\
+\hline
+{\em base\+Results} & Diff results in the perspective of base \\
+\hline
+{\em comp\+Results} & Diff results in the perspective of compare \\
+\hline
+{\em repo\+::\+Diff\+Mode} & the mode to use to compare the scenes \\
+\hline
+{\em g\+Type} & graph type to diff (default\+: unoptimised) \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a8d2ed018a2af9218689c3ea63504f3f1}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!connect\+And\+Authenticate@{connect\+And\+Authenticate}}
+\index{connect\+And\+Authenticate@{connect\+And\+Authenticate}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{connect\+And\+Authenticate}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Manipulator\+::connect\+And\+Authenticate (
+\begin{DoxyParamCaption}
+\item[{std\+::string \&}]{err\+Msg, }
+\item[{const std\+::string \&}]{address, }
+\item[{const uint32\+\_\+t \&}]{port, }
+\item[{const uint32\+\_\+t \&}]{max\+Connections, }
+\item[{const std\+::string \&}]{db\+Name, }
+\item[{const std\+::string \&}]{username, }
+\item[{const std\+::string \&}]{password, }
+\item[{const bool \&}]{pw\+Digested = {\ttfamily false}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a8d2ed018a2af9218689c3ea63504f3f1}
+Connect to the given database address/port and authenticat the user 
+\begin{DoxyParams}{Parameters}
+{\em err\+Msg} & error message if the function returns false \\
+\hline
+{\em address} & mongo database address \\
+\hline
+{\em port} & port number \\
+\hline
+{\em max\+Connections} & maxmimum number of concurrent connections allowed to the database \\
+\hline
+{\em db\+Name} & database name to authenticate against \\
+\hline
+{\em username} & user name \\
+\hline
+{\em password} & password of the user \\
+\hline
+{\em pw\+Digested} & is the password provided in digested form (default\+: false) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_ae31236c3f6506ae9cd7c307ce965d715}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!connect\+And\+Authenticate@{connect\+And\+Authenticate}}
+\index{connect\+And\+Authenticate@{connect\+And\+Authenticate}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{connect\+And\+Authenticate}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Manipulator\+::connect\+And\+Authenticate (
+\begin{DoxyParamCaption}
+\item[{std\+::string \&}]{err\+Msg, }
+\item[{const std\+::string \&}]{address, }
+\item[{const uint32\+\_\+t \&}]{port, }
+\item[{const uint32\+\_\+t \&}]{max\+Connections, }
+\item[{const std\+::string \&}]{db\+Name, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{credentials}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_ae31236c3f6506ae9cd7c307ce965d715}
+Connect to the given database address/port and authenticat the user 
+\begin{DoxyParams}{Parameters}
+{\em err\+Msg} & error message if the function returns false \\
+\hline
+{\em address} & mongo database address \\
+\hline
+{\em port} & port number \\
+\hline
+{\em max\+Connections} & maxmimum number of concurrent connections allowed to the database \\
+\hline
+{\em db\+Name} & database name to authenticate against \\
+\hline
+{\em credentials} & user credentials \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a0fa775b650c6ac63e171e0047dae0387}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!connect\+And\+Authenticate\+With\+Admin@{connect\+And\+Authenticate\+With\+Admin}}
+\index{connect\+And\+Authenticate\+With\+Admin@{connect\+And\+Authenticate\+With\+Admin}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{connect\+And\+Authenticate\+With\+Admin}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Manipulator\+::connect\+And\+Authenticate\+With\+Admin (
+\begin{DoxyParamCaption}
+\item[{std\+::string \&}]{err\+Msg, }
+\item[{const std\+::string \&}]{address, }
+\item[{const uint32\+\_\+t \&}]{port, }
+\item[{const uint32\+\_\+t \&}]{max\+Connections, }
+\item[{const std\+::string \&}]{username, }
+\item[{const std\+::string \&}]{password, }
+\item[{const bool \&}]{pw\+Digested = {\ttfamily false}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a0fa775b650c6ac63e171e0047dae0387}
+Connect to the given database address/port and authenticat the user using Admin database 
+\begin{DoxyParams}{Parameters}
+{\em err\+Msg} & error message if the function returns false \\
+\hline
+{\em address} & mongo database address \\
+\hline
+{\em port} & port number \\
+\hline
+{\em max\+Connections} & maxmimum number of concurrent connections allowed to the database \\
+\hline
+{\em username} & user name \\
+\hline
+{\em password} & password of the user \\
+\hline
+{\em pw\+Digested} & is the password provided in digested form (default\+: false) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a1c0f152c45ee4c91ae3bd2ce12e8b79a}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!count\+Items\+In\+Collection@{count\+Items\+In\+Collection}}
+\index{count\+Items\+In\+Collection@{count\+Items\+In\+Collection}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{count\+Items\+In\+Collection}]{\setlength{\rightskip}{0pt plus 5cm}uint64\+\_\+t Repo\+Manipulator\+::count\+Items\+In\+Collection (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a1c0f152c45ee4c91ae3bd2ce12e8b79a}
+Count the number of documents within the collection 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em database} & name of database \\
+\hline
+{\em collection} & name of collection \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+number of documents within the specified collection 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_abc1ece0dc5c222664c716c01b5cf9f7c}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!create\+Cred\+B\+S\+O\+N@{create\+Cred\+B\+S\+O\+N}}
+\index{create\+Cred\+B\+S\+O\+N@{create\+Cred\+B\+S\+O\+N}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{create\+Cred\+B\+S\+O\+N}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$ Repo\+Manipulator\+::create\+Cred\+B\+S\+O\+N (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const std\+::string \&}]{username, }
+\item[{const std\+::string \&}]{password, }
+\item[{const bool \&}]{pw\+Digested}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_abc1ece0dc5c222664c716c01b5cf9f7c}
+Create a bson object storing user credentials 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em username} & user name \\
+\hline
+{\em password} & password of the user \\
+\hline
+{\em pw\+Digested} & is the password provided in digested form (default\+: false) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a604630a3c0926f5971a305fcd42454dd}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!create\+Federated\+Scene@{create\+Federated\+Scene}}
+\index{create\+Federated\+Scene@{create\+Federated\+Scene}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{create\+Federated\+Scene}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ Repo\+Manipulator\+::create\+Federated\+Scene (
+\begin{DoxyParamCaption}
+\item[{const std\+::map$<$ {\bf repo\+::core\+::model\+::\+Transformation\+Node}, {\bf repo\+::core\+::model\+::\+Reference\+Node} $>$ \&}]{fed\+Map}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a604630a3c0926f5971a305fcd42454dd}
+Create a federated scene with the given scene collections 
+\begin{DoxyParams}{Parameters}
+{\em fed\+Map} & a map of reference scene and transformation from root where the scene should lie \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a constructed scene graph with the reference. 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a93d82f484d5b61e611d2594a208b255c}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!create\+Map\+Scene@{create\+Map\+Scene}}
+\index{create\+Map\+Scene@{create\+Map\+Scene}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{create\+Map\+Scene}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ Repo\+Manipulator\+::create\+Map\+Scene (
+\begin{DoxyParamCaption}
+\item[{const {\bf repo\+::core\+::model\+::\+Map\+Node} \&}]{map\+Node}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a93d82f484d5b61e611d2594a208b255c}
+Create a map scene with the given map 
+\begin{DoxyParams}{Parameters}
+{\em map\+Node} & the map node to create the scene with \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a constructed scene graph with the map. 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a98712acdd65c6ec4b2eb7d12269467cc}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!disconnect\+From\+Database@{disconnect\+From\+Database}}
+\index{disconnect\+From\+Database@{disconnect\+From\+Database}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{disconnect\+From\+Database}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Manipulator\+::disconnect\+From\+Database (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a98712acdd65c6ec4b2eb7d12269467cc}
+Disconnects from the given database host 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & database address\+:port \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a8a24f7bb9d8abbb3fc852d61b9eee5cc}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!drop\+Collection@{drop\+Collection}}
+\index{drop\+Collection@{drop\+Collection}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{drop\+Collection}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Manipulator\+::drop\+Collection (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const std\+::string \&}]{database\+Name, }
+\item[{const std\+::string \&}]{collection\+Name, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a8a24f7bb9d8abbb3fc852d61b9eee5cc}
+Remove a collection from the database 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em database} & the database the collection resides in \\
+\hline
+{\em collection} & name of the collection to drop \\
+\hline
+{\em err\+Msg} & error message if failed \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a83b078b648218f271c2ea793c0e23d48}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!drop\+Database@{drop\+Database}}
+\index{drop\+Database@{drop\+Database}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{drop\+Database}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Manipulator\+::drop\+Database (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const std\+::string \&}]{database\+Name, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a83b078b648218f271c2ea793c0e23d48}
+Remove a database from the database instance 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em database} & the database the collection resides in \\
+\hline
+{\em err\+Msg} & error message if failed \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a0fa334bdd79ae7b402fb9a0b8c91e3f3}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!fetch\+Collections@{fetch\+Collections}}
+\index{fetch\+Collections@{fetch\+Collections}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{fetch\+Collections}]{\setlength{\rightskip}{0pt plus 5cm}std\+::list$<$ std\+::string $>$ Repo\+Manipulator\+::fetch\+Collections (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const std\+::string \&}]{database}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a0fa334bdd79ae7b402fb9a0b8c91e3f3}
+Get a list of all available collections. 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em database} & database name \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+a list of collection names 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_ae668256201fbaf733c579e78986d3049}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!fetch\+Databases@{fetch\+Databases}}
+\index{fetch\+Databases@{fetch\+Databases}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{fetch\+Databases}]{\setlength{\rightskip}{0pt plus 5cm}std\+::list$<$ std\+::string $>$ Repo\+Manipulator\+::fetch\+Databases (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_ae668256201fbaf733c579e78986d3049}
+Get a list of all available databases, alphabetically sorted by default. 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a list of database names 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_aad9651797157bcc3285316ca9d92ae1d}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!fetch\+Scene@{fetch\+Scene}}
+\index{fetch\+Scene@{fetch\+Scene}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{fetch\+Scene}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ Repo\+Manipulator\+::fetch\+Scene (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{const repo\+U\+U\+I\+D \&}]{uuid, }
+\item[{const bool \&}]{head\+Revision = {\ttfamily false}, }
+\item[{const bool \&}]{light\+Fetch = {\ttfamily false}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_aad9651797157bcc3285316ca9d92ae1d}
+Retrieve a Repo\+Scene with a specific revision loaded. 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em database} & the database the collection resides in \\
+\hline
+{\em project} & name of the project \\
+\hline
+{\em uuid} & if head\+Revision, uuid represents the branch id, otherwise the unique id of the revision branch \\
+\hline
+{\em head\+Revision} & true if retrieving head revision \\
+\hline
+{\em light\+Fetch} & fetches only the stash (or scene if stash failed), reduce computation and memory usage (ideal for visualisation only) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a pointer to a repo\+Scene. 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a471f3ea5c0601b7170e78c945b1960e9}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!fetch\+Scene@{fetch\+Scene}}
+\index{fetch\+Scene@{fetch\+Scene}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{fetch\+Scene}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Manipulator\+::fetch\+Scene (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a471f3ea5c0601b7170e78c945b1960e9}
+Retrieve all Repo\+Scene representations given a partially loaded scene. 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em scene} & scene to fully load \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a06bfa2fdc314751c97b45692782dbb1f}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!generate\+And\+Commit\+G\+L\+T\+F\+Buffer@{generate\+And\+Commit\+G\+L\+T\+F\+Buffer}}
+\index{generate\+And\+Commit\+G\+L\+T\+F\+Buffer@{generate\+And\+Commit\+G\+L\+T\+F\+Buffer}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{generate\+And\+Commit\+G\+L\+T\+F\+Buffer}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Manipulator\+::generate\+And\+Commit\+G\+L\+T\+F\+Buffer (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a06bfa2fdc314751c97b45692782dbb1f}
+Generate and commit a G\+L\+T\+F encoding for the given scene This requires the stash to have been generated already 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & database address\+:portdatabase \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em scene} & the scene to generate the gltf encoding from \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a62497cff06ac6c294b156a18841a0e84}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!generate\+And\+Commit\+Selection\+Tree@{generate\+And\+Commit\+Selection\+Tree}}
+\index{generate\+And\+Commit\+Selection\+Tree@{generate\+And\+Commit\+Selection\+Tree}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{generate\+And\+Commit\+Selection\+Tree}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Manipulator\+::generate\+And\+Commit\+Selection\+Tree (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a62497cff06ac6c294b156a18841a0e84}
+Generate and commit scene\textquotesingle{}s selection tree in J\+S\+O\+N format The generated data will be also commited to the database/project set within the scene 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em scene} & scene to optimise \\
+\hline
+{\em return} & true upon success \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a9d02f1f41f76b9140dbb81b5bf413941}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!generate\+And\+Commit\+S\+R\+C\+Buffer@{generate\+And\+Commit\+S\+R\+C\+Buffer}}
+\index{generate\+And\+Commit\+S\+R\+C\+Buffer@{generate\+And\+Commit\+S\+R\+C\+Buffer}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{generate\+And\+Commit\+S\+R\+C\+Buffer}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Manipulator\+::generate\+And\+Commit\+S\+R\+C\+Buffer (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a9d02f1f41f76b9140dbb81b5bf413941}
+Generate and commit a S\+R\+C encoding for the given scene This requires the stash to have been generated already 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & database address\+:portdatabase \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em scene} & the scene to generate the src encoding from \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a1a095b9f7aabde18f82d42fa063e5a35}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!generate\+And\+Commit\+Stash\+Graph@{generate\+And\+Commit\+Stash\+Graph}}
+\index{generate\+And\+Commit\+Stash\+Graph@{generate\+And\+Commit\+Stash\+Graph}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{generate\+And\+Commit\+Stash\+Graph}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Manipulator\+::generate\+And\+Commit\+Stash\+Graph (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a1a095b9f7aabde18f82d42fa063e5a35}
+Generate and commit stash graph (multipart viewing graph) The generated graph will be added into the scene provided also commited to the database/project set within the scene 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em scene} & scene to optimise \\
+\hline
+{\em return} & true upon success \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a6a788a9c9dcffc41d41e2a3e3a437d01}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!generate\+And\+Commit\+Web\+View\+Buffer@{generate\+And\+Commit\+Web\+View\+Buffer}}
+\index{generate\+And\+Commit\+Web\+View\+Buffer@{generate\+And\+Commit\+Web\+View\+Buffer}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{generate\+And\+Commit\+Web\+View\+Buffer}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Manipulator\+::generate\+And\+Commit\+Web\+View\+Buffer (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene, }
+\item[{{\bf repo\+\_\+web\+\_\+buffers\+\_\+t} \&}]{buffers, }
+\item[{const modelconvertor\+::\+Web\+Export\+Type \&}]{ex\+Type}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a6a788a9c9dcffc41d41e2a3e3a437d01}
+Generate and commit a {\ttfamily ex\+Type} encoding for the given scene This requires the stash to have been generated already 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & database address\+:portdatabase \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em scene} & the scene to generate the src encoding from \\
+\hline
+{\em buffers} & buffers that are geneated and commited \\
+\hline
+{\em ex\+Type} & the type of export it is \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_afae7f20e2a8e12197fb29a89e9191077}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!generate\+G\+L\+T\+F\+Buffer@{generate\+G\+L\+T\+F\+Buffer}}
+\index{generate\+G\+L\+T\+F\+Buffer@{generate\+G\+L\+T\+F\+Buffer}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{generate\+G\+L\+T\+F\+Buffer}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+\_\+web\+\_\+buffers\+\_\+t} Repo\+Manipulator\+::generate\+G\+L\+T\+F\+Buffer (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_afae7f20e2a8e12197fb29a89e9191077}
+Generate a gltf encoding in the form of a buffer for the given scene This requires the stash to have been generated already 
+\begin{DoxyParams}{Parameters}
+{\em scene} & the scene to generate the gltf encoding from \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a buffer in the form of a byte vector mapped to its filename 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a3b14104b60d95c19be1b7b1ab507450a}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!generate\+S\+R\+C\+Buffer@{generate\+S\+R\+C\+Buffer}}
+\index{generate\+S\+R\+C\+Buffer@{generate\+S\+R\+C\+Buffer}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{generate\+S\+R\+C\+Buffer}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+\_\+web\+\_\+buffers\+\_\+t} Repo\+Manipulator\+::generate\+S\+R\+C\+Buffer (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a3b14104b60d95c19be1b7b1ab507450a}
+Generate a S\+R\+C encoding in the form of a buffer for the given scene This requires the stash to have been generated already 
+\begin{DoxyParams}{Parameters}
+{\em scene} & the scene to generate the src encoding from \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a buffer in the form of a byte vector mapped to its filename 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_ac301ad067f763595fc68a902a4249c35}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!generate\+Stash\+Graph@{generate\+Stash\+Graph}}
+\index{generate\+Stash\+Graph@{generate\+Stash\+Graph}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{generate\+Stash\+Graph}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Manipulator\+::generate\+Stash\+Graph (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_ac301ad067f763595fc68a902a4249c35}
+Generate a stash graph for the given scene and populate it into the given scene 
+\begin{DoxyParams}{Parameters}
+{\em scene} & scene to generate stash graph for \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a4c559d09f639d420f929c5f0fec074b5}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!get\+Admin\+Database\+Roles@{get\+Admin\+Database\+Roles}}
+\index{get\+Admin\+Database\+Roles@{get\+Admin\+Database\+Roles}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{get\+Admin\+Database\+Roles}]{\setlength{\rightskip}{0pt plus 5cm}std\+::list$<$ std\+::string $>$ Repo\+Manipulator\+::get\+Admin\+Database\+Roles (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a4c559d09f639d420f929c5f0fec074b5}
+Get a list of admin roles from the database 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & database address\+:portdatabase \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a vector of roles 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a843070b9d4063b6f01e8287df7855e3c}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!get\+All\+From\+Collection\+Tailable@{get\+All\+From\+Collection\+Tailable}}
+\index{get\+All\+From\+Collection\+Tailable@{get\+All\+From\+Collection\+Tailable}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{get\+All\+From\+Collection\+Tailable}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $>$ Repo\+Manipulator\+::get\+All\+From\+Collection\+Tailable (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{const uint64\+\_\+t \&}]{skip = {\ttfamily 0}, }
+\item[{const uint32\+\_\+t \&}]{limit = {\ttfamily 0}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a843070b9d4063b6f01e8287df7855e3c}
+Retrieve documents from a specified collection due to limitations of the transfer protocol this might need to be called multiple times, utilising the skip index to skip the first n items. 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em collection} & name of collection \\
+\hline
+{\em skip} & specify how many documents to skip \\
+\hline
+{\em limit} & limits the max amount of documents to retrieve (0 = no limit) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+list of Repo\+B\+S\+O\+Ns representing the documents 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a097c73ccc24132242effc95d8359d960}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!get\+All\+From\+Collection\+Tailable@{get\+All\+From\+Collection\+Tailable}}
+\index{get\+All\+From\+Collection\+Tailable@{get\+All\+From\+Collection\+Tailable}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{get\+All\+From\+Collection\+Tailable}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $>$ Repo\+Manipulator\+::get\+All\+From\+Collection\+Tailable (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{const std\+::list$<$ std\+::string $>$ \&}]{fields, }
+\item[{const std\+::string \&}]{sort\+Field = {\ttfamily std\+:\+:string()}, }
+\item[{const int \&}]{sort\+Order = {\ttfamily -\/1}, }
+\item[{const uint64\+\_\+t \&}]{skip = {\ttfamily 0}, }
+\item[{const uint32\+\_\+t \&}]{limit = {\ttfamily 0}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a097c73ccc24132242effc95d8359d960}
+Retrieve documents from a specified collection due to limitations of the transfer protocol this might need to be called multiple times, utilising the skip index to skip the first n items. 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em collection} & name of collection \\
+\hline
+{\em fields} & fields to get back from the database \\
+\hline
+{\em sort\+Field} & field to sort upon \\
+\hline
+{\em sort\+Order} & 1 ascending, -\/1 descending \\
+\hline
+{\em skip} & specify how many documents to skip \\
+\hline
+{\em limit} & limits the max amount of documents to retrieve (0 = no limit) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+list of Repo\+B\+S\+O\+Ns representing the documents 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a0eb5c3ceb82cd51a1bac0542c320c42e}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!get\+Collection\+Stats@{get\+Collection\+Stats}}
+\index{get\+Collection\+Stats@{get\+Collection\+Stats}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{get\+Collection\+Stats}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+::core\+::model\+::\+Collection\+Stats} Repo\+Manipulator\+::get\+Collection\+Stats (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a0eb5c3ceb82cd51a1bac0542c320c42e}
+Get the collection statistics of the given collection 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em database} & Name of database \\
+\hline
+{\em collection} & Name of collection \\
+\hline
+{\em err\+Msg} & error message when error occurs \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a bson object with statistical info. 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a00ca257f791f0ee957004d83d1b449c0}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!get\+Databases\+With\+Projects@{get\+Databases\+With\+Projects}}
+\index{get\+Databases\+With\+Projects@{get\+Databases\+With\+Projects}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{get\+Databases\+With\+Projects}]{\setlength{\rightskip}{0pt plus 5cm}std\+::map$<$ std\+::string, std\+::list$<$ std\+::string $>$ $>$ Repo\+Manipulator\+::get\+Databases\+With\+Projects (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const std\+::list$<$ std\+::string $>$ \&}]{databases}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a00ca257f791f0ee957004d83d1b449c0}
+Return a list of projects with the database available to the user 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em databases} & list of databases to look up \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a list of database names 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a9ad9ece3b9a29293f5c40682a2d3fcd3}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!get\+Name\+Of\+Admin\+Database@{get\+Name\+Of\+Admin\+Database}}
+\index{get\+Name\+Of\+Admin\+Database@{get\+Name\+Of\+Admin\+Database}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{get\+Name\+Of\+Admin\+Database}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string Repo\+Manipulator\+::get\+Name\+Of\+Admin\+Database (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a9ad9ece3b9a29293f5c40682a2d3fcd3}
+Get the name of the admin database note it is done this way to support different admin database names for different handlers (which may be of different database types) 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & database address\+:portdatabase \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns the name of the admin database 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a432a4e4e724d4f1dcb2c864b799c8f78}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!get\+Role\+Setting\+By\+Name@{get\+Role\+Setting\+By\+Name}}
+\index{get\+Role\+Setting\+By\+Name@{get\+Role\+Setting\+By\+Name}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{get\+Role\+Setting\+By\+Name}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+::core\+::model\+::\+Repo\+Role\+Settings} Repo\+Manipulator\+::get\+Role\+Setting\+By\+Name (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{unique\+Role\+Name}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a432a4e4e724d4f1dcb2c864b799c8f78}
+Get a role settings within a database 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em database} & name of database \\
+\hline
+{\em unique\+Role\+Name} & name of the role to look for \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_ab1e8a704d99997793cce72d1d6f371e3}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!get\+Scene\+Partitioning@{get\+Scene\+Partitioning}}
+\index{get\+Scene\+Partitioning@{get\+Scene\+Partitioning}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{get\+Scene\+Partitioning}]{\setlength{\rightskip}{0pt plus 5cm}std\+::shared\+\_\+ptr$<$ {\bf repo\+\_\+partitioning\+\_\+tree\+\_\+t} $>$ Repo\+Manipulator\+::get\+Scene\+Partitioning (
+\begin{DoxyParamCaption}
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene, }
+\item[{const uint32\+\_\+t \&}]{max\+Depth = {\ttfamily 8}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_ab1e8a704d99997793cce72d1d6f371e3}
+Get a hierachical spatial partitioning in form of a tree 
+\begin{DoxyParams}{Parameters}
+{\em scene} & scene to partition \\
+\hline
+{\em max\+Depth} & max partitioning depth \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a2e221e47db368a794187a134678aa83e}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!get\+Standard\+Database\+Roles@{get\+Standard\+Database\+Roles}}
+\index{get\+Standard\+Database\+Roles@{get\+Standard\+Database\+Roles}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{get\+Standard\+Database\+Roles}]{\setlength{\rightskip}{0pt plus 5cm}std\+::list$<$ std\+::string $>$ Repo\+Manipulator\+::get\+Standard\+Database\+Roles (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a2e221e47db368a794187a134678aa83e}
+Get a list of standard roles from the database 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & database address\+:portdatabase \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a vector of roles 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_ac090e9012cc803711efc1e3f35ab440a}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!has\+Database@{has\+Database}}
+\index{has\+Database@{has\+Database}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{has\+Database}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Manipulator\+::has\+Database (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const std\+::string \&}]{db\+Name}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_ac090e9012cc803711efc1e3f35ab440a}
+Check if the database exist in the given database address 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & database address \\
+\hline
+{\em cred} & credentials \\
+\hline
+{\em db\+Name} & name of the database \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true if found 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a84615f299d0e24aea6b6677d8de28311}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!insert\+Binary\+File\+To\+Database@{insert\+Binary\+File\+To\+Database}}
+\index{insert\+Binary\+File\+To\+Database@{insert\+Binary\+File\+To\+Database}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{insert\+Binary\+File\+To\+Database}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Manipulator\+::insert\+Binary\+File\+To\+Database (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{const std\+::string \&}]{name, }
+\item[{const std\+::vector$<$ uint8\+\_\+t $>$ \&}]{raw\+Data, }
+\item[{const std\+::string \&}]{mime\+Type = {\ttfamily \char`\"{}\char`\"{}}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a84615f299d0e24aea6b6677d8de28311}
+Insert a binary file into the database (Grid\+F\+S) 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & database address\+:portdatabase \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em database} & name of the database \\
+\hline
+{\em collection} & name of the collection (it\textquotesingle{}ll be saved into $\ast$.files, $\ast$.chunks) \\
+\hline
+{\em raw\+Data} & data in the form of byte vector \\
+\hline
+{\em mime\+Type} & the M\+I\+M\+E type of the data (optional) \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_ad71033c3f687ec6641e0670807f6dc9c}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!insert\+Role@{insert\+Role}}
+\index{insert\+Role@{insert\+Role}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{insert\+Role}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Manipulator\+::insert\+Role (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Role} \&}]{role}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_ad71033c3f687ec6641e0670807f6dc9c}
+Insert a new role into the database 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & database address\+:portdatabase \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em role} & role info to insert \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a554161b98fa956eecf336e90b54055b8}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!insert\+User@{insert\+User}}
+\index{insert\+User@{insert\+User}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{insert\+User}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Manipulator\+::insert\+User (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+User} \&}]{user}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a554161b98fa956eecf336e90b54055b8}
+Insert a new user into the database 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & database address\+:portdatabase \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em user} & user info to insert \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_ac8aa3dc193f99717777016107f9f9e48}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!load\+Metadata\+From\+File@{load\+Metadata\+From\+File}}
+\index{load\+Metadata\+From\+File@{load\+Metadata\+From\+File}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{load\+Metadata\+From\+File}]{\setlength{\rightskip}{0pt plus 5cm}repo\+::core\+::model\+::\+Repo\+Node\+Set Repo\+Manipulator\+::load\+Metadata\+From\+File (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{file\+Path, }
+\item[{const char \&}]{delimiter = {\ttfamily \textquotesingle{},\textquotesingle{}}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_ac8aa3dc193f99717777016107f9f9e48}
+Load metadata from a file 
+\begin{DoxyParams}{Parameters}
+{\em file\+Path} & path to file \\
+\hline
+{\em delimiter} & \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a pointer to Repo Scene upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a3084292164f952c449ba32ee38877dc3}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!load\+Scene\+From\+File@{load\+Scene\+From\+File}}
+\index{load\+Scene\+From\+File@{load\+Scene\+From\+File}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{load\+Scene\+From\+File}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ Repo\+Manipulator\+::load\+Scene\+From\+File (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{file\+Path, }
+\item[{std\+::string \&}]{msg, }
+\item[{const bool \&}]{apply\+Reduction = {\ttfamily true}, }
+\item[{const bool \&}]{rotate\+Model = {\ttfamily false}, }
+\item[{const {\bf repo\+::manipulator\+::modelconvertor\+::\+Model\+Import\+Config} $\ast$}]{config = {\ttfamily nullptr}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a3084292164f952c449ba32ee38877dc3}
+Load a Repo Scene from a file 
+\begin{DoxyParams}{Parameters}
+{\em file\+Path} & path to file \\
+\hline
+{\em msg} & error message if it fails \\
+\hline
+{\em apply} & transformation reduction optimizer (default = true) \\
+\hline
+{\em rotate\+Model} & rotate model by 270degrees on x (default\+: false) \\
+\hline
+{\em config} & import config (optional) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a pointer to Repo Scene upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a98b4b3a2bbf96b4c6c2a2f024cda4e43}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!reduce\+Transformations@{reduce\+Transformations}}
+\index{reduce\+Transformations@{reduce\+Transformations}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{reduce\+Transformations}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Manipulator\+::reduce\+Transformations (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Scene\+::\+Graph\+Type} \&}]{g\+Type = {\ttfamily repo\+:\+:core\+:\+:model\+:\+:RepoScene\+:\+:GraphType\+:\+:DEFAULT}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a98b4b3a2bbf96b4c6c2a2f024cda4e43}
+Reduce redundant transformations from the scene to optimise the graph 
+\begin{DoxyParams}{Parameters}
+{\em scene} & Repo\+Scene to optimize \\
+\hline
+{\em g\+Type} & graph type to diff (default\+: unoptimised) \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a81065d2986d422e8f67692041d343905}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!remove\+Document@{remove\+Document}}
+\index{remove\+Document@{remove\+Document}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{remove\+Document}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Manipulator\+::remove\+Document (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const std\+::string \&}]{database\+Name, }
+\item[{const std\+::string \&}]{collection\+Name, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \&}]{bson}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a81065d2986d422e8f67692041d343905}
+remove a document from the database N\+O\+T\+E\+: this should never be called for a Repo\+Node family as you should never remove a node from a scene graph like this. 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em database} & the database the collection resides in \\
+\hline
+{\em collection} & name of the collection to drop \\
+\hline
+{\em bson} & document to remove \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a07ce72512829cc15c2550c505925fc25}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!remove\+Project@{remove\+Project}}
+\index{remove\+Project@{remove\+Project}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{remove\+Project}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Manipulator\+::remove\+Project (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const std\+::string \&}]{database\+Name, }
+\item[{const std\+::string \&}]{project\+Name, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a07ce72512829cc15c2550c505925fc25}
+Remove a project from the database This removes\+:
+\begin{DoxyEnumerate}
+\item all collections associated with the project,
+\item the project entry within project settings
+\item all privileges assigned to any roles, related to this project 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em database} & name of the datbase \\
+\hline
+{\em name} & of the project \\
+\hline
+{\em err\+Msg} & error message if the operation fails \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+
+\end{DoxyEnumerate}\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a06242a6564f5f18ce3c3a21bc6faf6c5}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!remove\+Role@{remove\+Role}}
+\index{remove\+Role@{remove\+Role}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{remove\+Role}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Manipulator\+::remove\+Role (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Role} \&}]{role}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a06242a6564f5f18ce3c3a21bc6faf6c5}
+remove a role from the database 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em role} & role info to remove \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_aead90d3abe4bbbb4b13df661b4968067}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!remove\+Stash\+Graph\+From\+Database@{remove\+Stash\+Graph\+From\+Database}}
+\index{remove\+Stash\+Graph\+From\+Database@{remove\+Stash\+Graph\+From\+Database}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{remove\+Stash\+Graph\+From\+Database}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Manipulator\+::remove\+Stash\+Graph\+From\+Database (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_aead90d3abe4bbbb4b13df661b4968067}
+Remove stash graph entry for this particular revision from the database 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em scene} & scene reference to remove stash graph from \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a9398ab884c08d8068495376e1a8f43ca}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!remove\+User@{remove\+User}}
+\index{remove\+User@{remove\+User}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{remove\+User}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Manipulator\+::remove\+User (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+User} \&}]{user}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a9398ab884c08d8068495376e1a8f43ca}
+remove a user from the database 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em user} & user info to remove \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a423c50def32d9610011578095a2895ef}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!save\+Original\+Files@{save\+Original\+Files}}
+\index{save\+Original\+Files@{save\+Original\+Files}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{save\+Original\+Files}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Manipulator\+::save\+Original\+Files (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene, }
+\item[{const std\+::string \&}]{directory}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a423c50def32d9610011578095a2895ef}
+Save the files of the original model to a specified directory 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em scene} & Repo Scene to save \\
+\hline
+{\em directory} & directory to save into \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_abe406f89bd26947ba572907c615904d6}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!save\+Original\+Files@{save\+Original\+Files}}
+\index{save\+Original\+Files@{save\+Original\+Files}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{save\+Original\+Files}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Manipulator\+::save\+Original\+Files (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{project, }
+\item[{const std\+::string \&}]{directory}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_abe406f89bd26947ba572907c615904d6}
+Save the files of the original model to a specified directory 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em database} & name of database \\
+\hline
+{\em project} & name of project \\
+\hline
+{\em directory} & directory to save into \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a5b2eb9343995c851060881d5bf8809b5}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!save\+Scene\+To\+File@{save\+Scene\+To\+File}}
+\index{save\+Scene\+To\+File@{save\+Scene\+To\+File}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{save\+Scene\+To\+File}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Manipulator\+::save\+Scene\+To\+File (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{file\+Path, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a5b2eb9343995c851060881d5bf8809b5}
+Save a Repo Scene to file 
+\begin{DoxyParams}{Parameters}
+{\em file\+Path} & path to file \\
+\hline
+{\em scene} & scene to export \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_ab7f41fa63bc40207368b147ad02f9899}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!update\+Role@{update\+Role}}
+\index{update\+Role@{update\+Role}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{update\+Role}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Manipulator\+::update\+Role (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Role} \&}]{role}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_ab7f41fa63bc40207368b147ad02f9899}
+Update a role on the database 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em role} & role info to modify \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_a47d020aa3670a5ba61d430959f5414f5}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!update\+User@{update\+User}}
+\index{update\+User@{update\+User}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{update\+User}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Manipulator\+::update\+User (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+User} \&}]{user}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_a47d020aa3670a5ba61d430959f5414f5}
+Update a user on the database 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em user} & user info to modify \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1_repo_manipulator_ab982734dbade0d224aaa53f9ab4eba2a}{}\index{repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}!upsert\+Document@{upsert\+Document}}
+\index{upsert\+Document@{upsert\+Document}!repo\+::manipulator\+::\+Repo\+Manipulator@{repo\+::manipulator\+::\+Repo\+Manipulator}}
+\subsubsection[{upsert\+Document}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Manipulator\+::upsert\+Document (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database\+Ad, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{cred, }
+\item[{const std\+::string \&}]{database\+Name, }
+\item[{const std\+::string \&}]{collection\+Name, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \&}]{bson}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1_repo_manipulator_ab982734dbade0d224aaa53f9ab4eba2a}
+upsert a document in the database N\+O\+T\+E\+: this should never be called for a bson from Repo\+Node family as you should never update a node from a scene graph like this. 
+\begin{DoxyParams}{Parameters}
+{\em database\+Ad} & mongo database address\+:port \\
+\hline
+{\em cred} & user credentials in bson form \\
+\hline
+{\em database} & the database the collection resides in \\
+\hline
+{\em collection} & name of the collection \\
+\hline
+{\em bson} & document to update/insert \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/manipulator/repo\+\_\+manipulator.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/manipulator/repo\+\_\+manipulator.\+cpp\end{DoxyCompactItemize}

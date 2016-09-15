@@ -1,0 +1,248 @@
+\hypertarget{classrepo_1_1core_1_1model_1_1_mesh_node}{}\section{repo\+:\+:core\+:\+:model\+:\+:Mesh\+Node Class Reference}
+\label{classrepo_1_1core_1_1model_1_1_mesh_node}\index{repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}}
+Inheritance diagram for repo\+:\+:core\+:\+:model\+:\+:Mesh\+Node\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=4.000000cm]{classrepo_1_1core_1_1model_1_1_mesh_node}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_ab525cdafcb942a4c79eb517b7ef0f5c7}{Mesh\+Node} ()
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_a2612d3a4561a24d3b31a9a7de87daf3c}{Mesh\+Node} (\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} bson, const std\+::unordered\+\_\+map$<$ std\+::string, std\+::pair$<$ std\+::string, std\+::vector$<$ uint8\+\_\+t $>$$>$$>$ \&bin\+Mapping=std\+::unordered\+\_\+map$<$ std\+::string, std\+::pair$<$ std\+::string, std\+::vector$<$ uint8\+\_\+t $>$$>$$>$())
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_abf8b858b11632dc9827b3ffa1cdc8c9b}{$\sim$\+Mesh\+Node} ()
+\item 
+uint32\+\_\+t \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_af55de353138ad754ad2ce9b237010354}{get\+M\+Format} () const 
+\item 
+virtual std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_afb8fedac41e86bce0f74509efa6d9614}{get\+Type} () const 
+\item 
+virtual Node\+Type \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_aba656559a131b00514ca844a7e8a595c}{get\+Type\+As\+Enum} () const 
+\item 
+virtual bool \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_a636fc543dbbeca60698e8719c11f945d}{position\+Dependant} ()
+\item 
+virtual bool \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_a58dbc8bb0cdcbbae2e0c6e7558eaef70}{s\+Equal} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} \&other) const 
+\item 
+virtual \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_a8f65c14c0c964ee17197135e95e30e3c}{clone\+And\+Apply\+Transformation} (const std\+::vector$<$ float $>$ \&matrix) const 
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node}{Mesh\+Node} \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_a7a0ed7c54172f0bab82732c884b8199d}{clone\+And\+Update\+Mesh\+Mapping} (const std\+::vector$<$ \hyperlink{structrepo__mesh__mapping__t}{repo\+\_\+mesh\+\_\+mapping\+\_\+t} $>$ \&vec, const bool \&overwrite=false)
+\item 
+std\+::vector$<$ \hyperlink{structrepo__vector__t}{repo\+\_\+vector\+\_\+t} $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_a9a8d98653f384b8a0a642aec5f14665b}{get\+Bounding\+Box} () const 
+\item 
+std\+::vector$<$ \hyperlink{structrepo__color4d__t}{repo\+\_\+color4d\+\_\+t} $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_a0fbecdd9cde9c11e4faae613657040b1}{get\+Colors} () const 
+\item 
+std\+::vector$<$ repo\+\_\+face\+\_\+t $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_ab542b62a7ef4ea7f45a49769e679e999}{get\+Faces} () const 
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_mesh_node_acfb7939da55a97f8f070503fd03bbef5}{}std\+::vector$<$ \hyperlink{structrepo__mesh__mapping__t}{repo\+\_\+mesh\+\_\+mapping\+\_\+t} $>$ {\bfseries get\+Mesh\+Mapping} () const \label{classrepo_1_1core_1_1model_1_1_mesh_node_acfb7939da55a97f8f070503fd03bbef5}
+
+\item 
+std\+::vector$<$ \hyperlink{structrepo__vector__t}{repo\+\_\+vector\+\_\+t} $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_a4cc4020f392b6ff3f033a65fc6ae95d9}{get\+Normals} () const 
+\item 
+std\+::vector$<$ \hyperlink{structrepo__vector2d__t}{repo\+\_\+vector2d\+\_\+t} $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_a339a7467aba5856f31114dcae49f688b}{get\+U\+V\+Channels} () const 
+\item 
+std\+::vector$<$ std\+::vector$<$ \hyperlink{structrepo__vector2d__t}{repo\+\_\+vector2d\+\_\+t} $>$ $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_ac3b3b4fc307f3eb64fde27ce39f8daed}{get\+U\+V\+Channels\+Separated} () const 
+\item 
+std\+::vector$<$ \hyperlink{structrepo__vector__t}{repo\+\_\+vector\+\_\+t} $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_a2b03157eecf7bdf41534db3068178d05}{get\+Vertices} () const 
+\end{DoxyCompactItemize}
+\subsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_mesh_node_a77196efc86472f9ec298935f89d78ac8}{}static std\+::vector$<$ \hyperlink{structrepo__vector__t}{repo\+\_\+vector\+\_\+t} $>$ {\bfseries get\+Bounding\+Box} (\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} \&bb\+Arr)\label{classrepo_1_1core_1_1model_1_1_mesh_node_a77196efc86472f9ec298935f89d78ac8}
+
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classrepo_1_1core_1_1model_1_1_mesh_node_ab525cdafcb942a4c79eb517b7ef0f5c7}{}\index{repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}!Mesh\+Node@{Mesh\+Node}}
+\index{Mesh\+Node@{Mesh\+Node}!repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}}
+\subsubsection[{Mesh\+Node}]{\setlength{\rightskip}{0pt plus 5cm}Mesh\+Node\+::\+Mesh\+Node (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_mesh_node_ab525cdafcb942a4c79eb517b7ef0f5c7}
+Default constructor \hypertarget{classrepo_1_1core_1_1model_1_1_mesh_node_a2612d3a4561a24d3b31a9a7de87daf3c}{}\index{repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}!Mesh\+Node@{Mesh\+Node}}
+\index{Mesh\+Node@{Mesh\+Node}!repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}}
+\subsubsection[{Mesh\+Node}]{\setlength{\rightskip}{0pt plus 5cm}Mesh\+Node\+::\+Mesh\+Node (
+\begin{DoxyParamCaption}
+\item[{{\bf Repo\+B\+S\+O\+N}}]{bson, }
+\item[{const std\+::unordered\+\_\+map$<$ std\+::string, std\+::pair$<$ std\+::string, std\+::vector$<$ uint8\+\_\+t $>$$>$$>$ \&}]{bin\+Mapping = {\ttfamily std\+:\+:unordered\+\_\+map$<$std\+:\+:string,~std\+:\+:pair$<$std\+:\+:string,~std\+:\+:vector$<$uint8\+\_\+t$>$$>$$>$()}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_mesh_node_a2612d3a4561a24d3b31a9a7de87daf3c}
+Construct a \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node}{Mesh\+Node} from a \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} object 
+\begin{DoxyParams}{Parameters}
+{\em \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N}} & object \\
+\hline
+{\em bin\+Mapping} & binary mapping of fields that are too big to fit within the bson \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_mesh_node_abf8b858b11632dc9827b3ffa1cdc8c9b}{}\index{repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}!````~Mesh\+Node@{$\sim$\+Mesh\+Node}}
+\index{````~Mesh\+Node@{$\sim$\+Mesh\+Node}!repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}}
+\subsubsection[{$\sim$\+Mesh\+Node}]{\setlength{\rightskip}{0pt plus 5cm}Mesh\+Node\+::$\sim$\+Mesh\+Node (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_mesh_node_abf8b858b11632dc9827b3ffa1cdc8c9b}
+Default deconstructor 
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1core_1_1model_1_1_mesh_node_a8f65c14c0c964ee17197135e95e30e3c}{}\index{repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}!clone\+And\+Apply\+Transformation@{clone\+And\+Apply\+Transformation}}
+\index{clone\+And\+Apply\+Transformation@{clone\+And\+Apply\+Transformation}!repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}}
+\subsubsection[{clone\+And\+Apply\+Transformation}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+Node} Mesh\+Node\+::clone\+And\+Apply\+Transformation (
+\begin{DoxyParamCaption}
+\item[{const std\+::vector$<$ float $>$ \&}]{matrix}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1model_1_1_mesh_node_a8f65c14c0c964ee17197135e95e30e3c}
+Create a new object with transformation applied to the node default behaviour is do nothing. Children object needs to override this function to perform their own specific behaviour. 
+\begin{DoxyParams}{Parameters}
+{\em matrix} & transformation matrix to apply. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a new object with transformation applied. 
+\end{DoxyReturn}
+
+
+Reimplemented from \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_ac31acdb9774bce9296cb5005286db83d}{repo\+::core\+::model\+::\+Repo\+Node}.
+
+\hypertarget{classrepo_1_1core_1_1model_1_1_mesh_node_a7a0ed7c54172f0bab82732c884b8199d}{}\index{repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}!clone\+And\+Update\+Mesh\+Mapping@{clone\+And\+Update\+Mesh\+Mapping}}
+\index{clone\+And\+Update\+Mesh\+Mapping@{clone\+And\+Update\+Mesh\+Mapping}!repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}}
+\subsubsection[{clone\+And\+Update\+Mesh\+Mapping}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Mesh\+Node} Mesh\+Node\+::clone\+And\+Update\+Mesh\+Mapping (
+\begin{DoxyParamCaption}
+\item[{const std\+::vector$<$ {\bf repo\+\_\+mesh\+\_\+mapping\+\_\+t} $>$ \&}]{vec, }
+\item[{const bool \&}]{overwrite = {\ttfamily false}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_mesh_node_a7a0ed7c54172f0bab82732c884b8199d}
+Create a new copy of the node and update its mesh mapping \begin{DoxyReturn}{Returns}
+returns a new mesh\+Node with the new mappings 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_mesh_node_a9a8d98653f384b8a0a642aec5f14665b}{}\index{repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}!get\+Bounding\+Box@{get\+Bounding\+Box}}
+\index{get\+Bounding\+Box@{get\+Bounding\+Box}!repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}}
+\subsubsection[{get\+Bounding\+Box}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf repo\+\_\+vector\+\_\+t} $>$ Mesh\+Node\+::get\+Bounding\+Box (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_mesh_node_a9a8d98653f384b8a0a642aec5f14665b}
+-\/-\/-\/------ Convenience functions -\/-\/-\/-\/-\/------ Retrieve the bounding box of this mesh \begin{DoxyReturn}{Returns}
+returns a vector of size 2, containing the bounding box. 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_mesh_node_a0fbecdd9cde9c11e4faae613657040b1}{}\index{repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}!get\+Colors@{get\+Colors}}
+\index{get\+Colors@{get\+Colors}!repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}}
+\subsubsection[{get\+Colors}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf repo\+\_\+color4d\+\_\+t} $>$ Mesh\+Node\+::get\+Colors (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_mesh_node_a0fbecdd9cde9c11e4faae613657040b1}
+Retrieve a vector of Colors from the bson object \hypertarget{classrepo_1_1core_1_1model_1_1_mesh_node_ab542b62a7ef4ea7f45a49769e679e999}{}\index{repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}!get\+Faces@{get\+Faces}}
+\index{get\+Faces@{get\+Faces}!repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}}
+\subsubsection[{get\+Faces}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ repo\+\_\+face\+\_\+t $>$ Mesh\+Node\+::get\+Faces (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_mesh_node_ab542b62a7ef4ea7f45a49769e679e999}
+Retrieve a vector of faces from the bson object \hypertarget{classrepo_1_1core_1_1model_1_1_mesh_node_af55de353138ad754ad2ce9b237010354}{}\index{repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}!get\+M\+Format@{get\+M\+Format}}
+\index{get\+M\+Format@{get\+M\+Format}!repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}}
+\subsubsection[{get\+M\+Format}]{\setlength{\rightskip}{0pt plus 5cm}uint32\+\_\+t Mesh\+Node\+::get\+M\+Format (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_mesh_node_af55de353138ad754ad2ce9b237010354}
+Returns a number, indicating it\textquotesingle{}s mesh format maximum of 32 bit, each bit represent the presents of the following vertices faces normals colors \#uvs where vertices is the L\+S\+B \begin{DoxyReturn}{Returns}
+returns the m\+Format flag 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_mesh_node_a4cc4020f392b6ff3f033a65fc6ae95d9}{}\index{repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}!get\+Normals@{get\+Normals}}
+\index{get\+Normals@{get\+Normals}!repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}}
+\subsubsection[{get\+Normals}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf repo\+\_\+vector\+\_\+t} $>$ Mesh\+Node\+::get\+Normals (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_mesh_node_a4cc4020f392b6ff3f033a65fc6ae95d9}
+Retrieve a vector of vertices from the bson object \hypertarget{classrepo_1_1core_1_1model_1_1_mesh_node_afb8fedac41e86bce0f74509efa6d9614}{}\index{repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}!get\+Type@{get\+Type}}
+\index{get\+Type@{get\+Type}!repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}}
+\subsubsection[{get\+Type}]{\setlength{\rightskip}{0pt plus 5cm}virtual std\+::string repo\+::core\+::model\+::\+Mesh\+Node\+::get\+Type (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}\label{classrepo_1_1core_1_1model_1_1_mesh_node_afb8fedac41e86bce0f74509efa6d9614}
+Get the type of node \begin{DoxyReturn}{Returns}
+returns the type as a string 
+\end{DoxyReturn}
+
+
+Reimplemented from \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_a4380ba349235b5d9b13b41e41975805e}{repo\+::core\+::model\+::\+Repo\+Node}.
+
+\hypertarget{classrepo_1_1core_1_1model_1_1_mesh_node_aba656559a131b00514ca844a7e8a595c}{}\index{repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}!get\+Type\+As\+Enum@{get\+Type\+As\+Enum}}
+\index{get\+Type\+As\+Enum@{get\+Type\+As\+Enum}!repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}}
+\subsubsection[{get\+Type\+As\+Enum}]{\setlength{\rightskip}{0pt plus 5cm}virtual Node\+Type repo\+::core\+::model\+::\+Mesh\+Node\+::get\+Type\+As\+Enum (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}\label{classrepo_1_1core_1_1model_1_1_mesh_node_aba656559a131b00514ca844a7e8a595c}
+Get the type of node as an enum \begin{DoxyReturn}{Returns}
+returns type as enum. 
+\end{DoxyReturn}
+
+
+Reimplemented from \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_ad8d5295248dc9beb0b91efb2ce3b61f4}{repo\+::core\+::model\+::\+Repo\+Node}.
+
+\hypertarget{classrepo_1_1core_1_1model_1_1_mesh_node_a339a7467aba5856f31114dcae49f688b}{}\index{repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}!get\+U\+V\+Channels@{get\+U\+V\+Channels}}
+\index{get\+U\+V\+Channels@{get\+U\+V\+Channels}!repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}}
+\subsubsection[{get\+U\+V\+Channels}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf repo\+\_\+vector2d\+\_\+t} $>$ Mesh\+Node\+::get\+U\+V\+Channels (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_mesh_node_a339a7467aba5856f31114dcae49f688b}
+Retrieve a vector of U\+V Channels from the bson object \hypertarget{classrepo_1_1core_1_1model_1_1_mesh_node_ac3b3b4fc307f3eb64fde27ce39f8daed}{}\index{repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}!get\+U\+V\+Channels\+Separated@{get\+U\+V\+Channels\+Separated}}
+\index{get\+U\+V\+Channels\+Separated@{get\+U\+V\+Channels\+Separated}!repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}}
+\subsubsection[{get\+U\+V\+Channels\+Separated}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ std\+::vector$<$ {\bf repo\+\_\+vector2d\+\_\+t} $>$ $>$ Mesh\+Node\+::get\+U\+V\+Channels\+Separated (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_mesh_node_ac3b3b4fc307f3eb64fde27ce39f8daed}
+Retrieve a vector of U\+V Channels, separated by channels \hypertarget{classrepo_1_1core_1_1model_1_1_mesh_node_a2b03157eecf7bdf41534db3068178d05}{}\index{repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}!get\+Vertices@{get\+Vertices}}
+\index{get\+Vertices@{get\+Vertices}!repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}}
+\subsubsection[{get\+Vertices}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf repo\+\_\+vector\+\_\+t} $>$ Mesh\+Node\+::get\+Vertices (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_mesh_node_a2b03157eecf7bdf41534db3068178d05}
+Retrieve a vector of vertices from the bson object \hypertarget{classrepo_1_1core_1_1model_1_1_mesh_node_a636fc543dbbeca60698e8719c11f945d}{}\index{repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}!position\+Dependant@{position\+Dependant}}
+\index{position\+Dependant@{position\+Dependant}!repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}}
+\subsubsection[{position\+Dependant}]{\setlength{\rightskip}{0pt plus 5cm}virtual bool repo\+::core\+::model\+::\+Mesh\+Node\+::position\+Dependant (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}\label{classrepo_1_1core_1_1model_1_1_mesh_node_a636fc543dbbeca60698e8719c11f945d}
+Check if the node is position dependant. i.\+e. if parent transformation is merged onto the node, does the node requre to a transformation applied to it e.\+g. meshes and cameras are position dependant, metadata isn\textquotesingle{}t Default behaviour is false. Position dependant child requires override this function. \begin{DoxyReturn}{Returns}
+true if node is position\+Dependant. 
+\end{DoxyReturn}
+
+
+Reimplemented from \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_aa3e0f98690dc8bfe082d2fc57b904798}{repo\+::core\+::model\+::\+Repo\+Node}.
+
+\hypertarget{classrepo_1_1core_1_1model_1_1_mesh_node_a58dbc8bb0cdcbbae2e0c6e7558eaef70}{}\index{repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}!s\+Equal@{s\+Equal}}
+\index{s\+Equal@{s\+Equal}!repo\+::core\+::model\+::\+Mesh\+Node@{repo\+::core\+::model\+::\+Mesh\+Node}}
+\subsubsection[{s\+Equal}]{\setlength{\rightskip}{0pt plus 5cm}bool Mesh\+Node\+::s\+Equal (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Node} \&}]{other}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1model_1_1_mesh_node_a58dbc8bb0cdcbbae2e0c6e7558eaef70}
+Check if the node is semantically equal to another Different node should have a different interpretation of what this means. 
+\begin{DoxyParams}{Parameters}
+{\em other} & node to compare with \\
+\hline
+{\em returns} & true if equal, false otherwise \\
+\hline
+\end{DoxyParams}
+
+
+Reimplemented from \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_a7c98830a876ee6516587a8f07c7015a5}{repo\+::core\+::model\+::\+Repo\+Node}.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/core/model/bson/repo\+\_\+node\+\_\+mesh.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/core/model/bson/repo\+\_\+node\+\_\+mesh.\+cpp\end{DoxyCompactItemize}

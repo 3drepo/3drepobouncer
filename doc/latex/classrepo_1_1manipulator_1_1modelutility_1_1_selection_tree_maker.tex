@@ -1,0 +1,50 @@
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_selection_tree_maker}{}\section{repo\+:\+:manipulator\+:\+:modelutility\+:\+:Selection\+Tree\+Maker Class Reference}
+\label{classrepo_1_1manipulator_1_1modelutility_1_1_selection_tree_maker}\index{repo\+::manipulator\+::modelutility\+::\+Selection\+Tree\+Maker@{repo\+::manipulator\+::modelutility\+::\+Selection\+Tree\+Maker}}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_selection_tree_maker_a5998b7384ca939372fff25fb06484f7e}{Selection\+Tree\+Maker} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+std\+::map$<$ std\+::string, \hyperlink{classrepo_1_1lib_1_1_property_tree}{repo\+::lib\+::\+Property\+Tree} $>$ \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_selection_tree_maker_a376c460146f83c4eefb09f1990a32f9c}{get\+Selection\+Tree\+As\+Property\+Tree} () const 
+\item 
+std\+::map$<$ std\+::string, std\+::vector$<$ uint8\+\_\+t $>$ $>$ \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_selection_tree_maker_a4f885f52e0deac5798edc3e74a54704d}{get\+Selection\+Tree\+As\+Buffer} () const 
+\end{DoxyCompactItemize}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_selection_tree_maker_a5998b7384ca939372fff25fb06484f7e}{}\index{repo\+::manipulator\+::modelutility\+::\+Selection\+Tree\+Maker@{repo\+::manipulator\+::modelutility\+::\+Selection\+Tree\+Maker}!Selection\+Tree\+Maker@{Selection\+Tree\+Maker}}
+\index{Selection\+Tree\+Maker@{Selection\+Tree\+Maker}!repo\+::manipulator\+::modelutility\+::\+Selection\+Tree\+Maker@{repo\+::manipulator\+::modelutility\+::\+Selection\+Tree\+Maker}}
+\subsubsection[{Selection\+Tree\+Maker}]{\setlength{\rightskip}{0pt plus 5cm}Selection\+Tree\+Maker\+::\+Selection\+Tree\+Maker (
+\begin{DoxyParamCaption}
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1modelutility_1_1_selection_tree_maker_a5998b7384ca939372fff25fb06484f7e}
+Create a selection tree maker. The scene must be a valid pointer with Default graph loaded  scene scene to construct from 
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_selection_tree_maker_a4f885f52e0deac5798edc3e74a54704d}{}\index{repo\+::manipulator\+::modelutility\+::\+Selection\+Tree\+Maker@{repo\+::manipulator\+::modelutility\+::\+Selection\+Tree\+Maker}!get\+Selection\+Tree\+As\+Buffer@{get\+Selection\+Tree\+As\+Buffer}}
+\index{get\+Selection\+Tree\+As\+Buffer@{get\+Selection\+Tree\+As\+Buffer}!repo\+::manipulator\+::modelutility\+::\+Selection\+Tree\+Maker@{repo\+::manipulator\+::modelutility\+::\+Selection\+Tree\+Maker}}
+\subsubsection[{get\+Selection\+Tree\+As\+Buffer}]{\setlength{\rightskip}{0pt plus 5cm}std\+::map$<$ std\+::string, std\+::vector$<$ uint8\+\_\+t $>$ $>$ Selection\+Tree\+Maker\+::get\+Selection\+Tree\+As\+Buffer (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1manipulator_1_1modelutility_1_1_selection_tree_maker_a4f885f52e0deac5798edc3e74a54704d}
+Construct and return the selection tree as a Property Tree As a buffer The method will return an empty tree if the scene is null or the default graph is not loaded. \begin{DoxyReturn}{Returns}
+returns the selection tree as a property tree 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_selection_tree_maker_a376c460146f83c4eefb09f1990a32f9c}{}\index{repo\+::manipulator\+::modelutility\+::\+Selection\+Tree\+Maker@{repo\+::manipulator\+::modelutility\+::\+Selection\+Tree\+Maker}!get\+Selection\+Tree\+As\+Property\+Tree@{get\+Selection\+Tree\+As\+Property\+Tree}}
+\index{get\+Selection\+Tree\+As\+Property\+Tree@{get\+Selection\+Tree\+As\+Property\+Tree}!repo\+::manipulator\+::modelutility\+::\+Selection\+Tree\+Maker@{repo\+::manipulator\+::modelutility\+::\+Selection\+Tree\+Maker}}
+\subsubsection[{get\+Selection\+Tree\+As\+Property\+Tree}]{\setlength{\rightskip}{0pt plus 5cm}std\+::map$<$ std\+::string, {\bf repo\+::lib\+::\+Property\+Tree} $>$ Selection\+Tree\+Maker\+::get\+Selection\+Tree\+As\+Property\+Tree (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1manipulator_1_1modelutility_1_1_selection_tree_maker_a376c460146f83c4eefb09f1990a32f9c}
+Construct and return the selection tree as a Property Tree The method will return an empty tree if the scene is null or the default graph is not loaded. \begin{DoxyReturn}{Returns}
+returns the selection tree as a property tree 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/manipulator/modelutility/repo\+\_\+maker\+\_\+selection\+\_\+tree.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/manipulator/modelutility/repo\+\_\+maker\+\_\+selection\+\_\+tree.\+cpp\end{DoxyCompactItemize}

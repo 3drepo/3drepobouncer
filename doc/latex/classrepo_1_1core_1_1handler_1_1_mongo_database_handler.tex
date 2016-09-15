@@ -1,0 +1,995 @@
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler}{}\section{repo\+:\+:core\+:\+:handler\+:\+:Mongo\+Database\+Handler Class Reference}
+\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+Inheritance diagram for repo\+:\+:core\+:\+:handler\+:\+:Mongo\+Database\+Handler\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classrepo_1_1core_1_1handler_1_1_mongo_database_handler}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a5a8444437b564686632dce0ec6f592fb}{$\sim$\+Mongo\+Database\+Handler} ()
+\item 
+uint64\+\_\+t \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ad69882e8c3573be494c5b6eca6a53827}{count\+Items\+In\+Collection} (const std\+::string \&database, const std\+::string \&collection, std\+::string \&err\+Msg)
+\item 
+std\+::vector$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $>$ \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a3083dc4c2983681aa2b356c87bcaeca3}{get\+All\+From\+Collection\+Tailable} (const std\+::string \&database, const std\+::string \&collection, const uint64\+\_\+t \&skip=0, const uint32\+\_\+t \&limit=0, const std\+::list$<$ std\+::string $>$ \&fields=std\+::list$<$ std\+::string $>$(), const std\+::string \&sort\+Field=std\+::string(), const int \&sort\+Order=-\/1)
+\item 
+std\+::list$<$ std\+::string $>$ \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ad51771cf9bca612634c4e761266c5d32}{get\+Collections} (const std\+::string \&database)
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_collection_stats}{repo\+::core\+::model\+::\+Collection\+Stats} \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a61020c951e94df65b9afb29bcd5472d7}{get\+Collection\+Stats} (const std\+::string \&database, const std\+::string \&collection, std\+::string \&err\+Msg)
+\item 
+std\+::list$<$ std\+::string $>$ \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ad87a0ae0ba7fb783479d399b6f98ee67}{get\+Databases} (const bool \&sorted=true)
+\item 
+std\+::map$<$ std\+::string, std\+::list$<$ std\+::string $>$ $>$ \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_aa6ad44a0cde0f642d52cc92a61178739}{get\+Databases\+With\+Projects} (const std\+::list$<$ std\+::string $>$ \&databases, const std\+::string \&project\+Ext=\char`\"{}history\char`\"{})
+\item 
+std\+::list$<$ std\+::string $>$ \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a84c34b3c1f0ba3227d4a159176bdfb7f}{get\+Projects} (const std\+::string \&database, const std\+::string \&project\+Ext)
+\item 
+std\+::list$<$ std\+::string $>$ \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_afeaa95dcb44d7a1276fa1e90a5987f6d}{get\+Admin\+Database\+Roles} ()
+\item 
+std\+::list$<$ std\+::string $>$ \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a9974cd3f7f955793cbe56eab74ced573}{get\+Standard\+Database\+Roles} ()
+\item 
+virtual void \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_abeaad0e73b0e274755e7ee2baab002ae}{create\+Collection} (const std\+::string \&database, const std\+::string \&name)
+\item 
+bool \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a7c4cdb628a1b3c59caba6b397fe20375}{drop\+Collection} (const std\+::string \&database, const std\+::string \&collection, std\+::string \&err\+Msg)
+\item 
+bool \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ac982e4d73ee5c69d333030437eebabf6}{drop\+Database} (const std\+::string \&database, std\+::string \&err\+Msg)
+\item 
+bool \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a7e1a68ada64088e53ded91c738fadcd6}{drop\+Document} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} bson, const std\+::string \&database, const std\+::string \&collection, std\+::string \&err\+Msg)
+\item 
+bool \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a15263c0497c215798ac7398ff89bb4d3}{drop\+Documents} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} criteria, const std\+::string \&database, const std\+::string \&collection, std\+::string \&err\+Msg)
+\item 
+bool \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a847556c14e85da5e17f8d21c70ab23d0}{drop\+Raw\+File} (const std\+::string \&database, const std\+::string \&collection, const std\+::string \&file\+Name, std\+::string \&err\+Msg)
+\item 
+bool \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ade2b069da1314566c63a48a3b61ad451}{drop\+Role} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role}{repo\+::core\+::model\+::\+Repo\+Role} \&role, std\+::string \&errmsg)
+\item 
+bool \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ad5e1716d61ffe74086453ae4d0bbad24}{drop\+User} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user}{repo\+::core\+::model\+::\+Repo\+User} \&user, std\+::string \&errmsg)
+\item 
+bool \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a8b25a7efcb68ee809fd6b6ea20cb06ae}{insert\+Document} (const std\+::string \&database, const std\+::string \&collection, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \&obj, std\+::string \&err\+Msg)
+\item 
+bool \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_abaeb1612b1beb0945c72b153932d274f}{insert\+Raw\+File} (const std\+::string \&database, const std\+::string \&collection, const std\+::string \&file\+Name, const std\+::vector$<$ uint8\+\_\+t $>$ \&bin, std\+::string \&err\+Msg, const std\+::string \&content\+Type=\char`\"{}binary/octet-\/stream\char`\"{})
+\item 
+bool \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a1366832cc771fd306b0058ba4e1dcf30}{insert\+Role} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role}{repo\+::core\+::model\+::\+Repo\+Role} \&role, std\+::string \&errmsg)
+\item 
+bool \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_acf2b49877a7d8a914e1a1d2aeb1b60e8}{insert\+User} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user}{repo\+::core\+::model\+::\+Repo\+User} \&user, std\+::string \&errmsg)
+\item 
+bool \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a81743d1af17889ad66a76b7ede0f420e}{upsert\+Document} (const std\+::string \&database, const std\+::string \&collection, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \&obj, const bool \&overwrite, std\+::string \&err\+Msg)
+\item 
+bool \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a14c38b79dedf9e26bf802771367ebace}{update\+Role} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role}{repo\+::core\+::model\+::\+Repo\+Role} \&role, std\+::string \&errmsg)
+\item 
+bool \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a7fae7458d4261fc61a7415262813183d}{update\+User} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user}{repo\+::core\+::model\+::\+Repo\+User} \&user, std\+::string \&errmsg)
+\item 
+std\+::vector$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $>$ \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a26cca6e23ce8e218fe5c6106bc91425a}{find\+All\+By\+Unique\+I\+Ds} (const std\+::string \&database, const std\+::string \&collection, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \&uuids)
+\item 
+std\+::vector$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $>$ \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_af8bc6c5531e6669b9ac278c6fc64ec3e}{find\+All\+By\+Criteria} (const std\+::string \&database, const std\+::string \&collection, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \&criteria)
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a9e13fe73ff838e388378d82673964e20}{find\+One\+By\+Criteria} (const std\+::string \&database, const std\+::string \&collection, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \&criteria, const std\+::string \&sort\+Field=\char`\"{}\char`\"{})
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_aae7c0539fcdbad26c307c9f63877d536}{find\+One\+By\+Shared\+I\+D} (const std\+::string \&database, const std\+::string \&collection, const repo\+U\+U\+I\+D \&uuid, const std\+::string \&sort\+Field)
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ac016547468fc0049c859d775e270e17a}{find\+One\+By\+Unique\+I\+D} (const std\+::string \&database, const std\+::string \&collection, const repo\+U\+U\+I\+D \&uuid)
+\item 
+std\+::vector$<$ uint8\+\_\+t $>$ \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_abcdf4cc7cbc0bbee8b9236349bde8364}{get\+Raw\+File} (const std\+::string \&database, const std\+::string \&collection, const std\+::string \&fname)
+\end{DoxyCompactItemize}
+\subsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static void \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_adad19607d035f2cd335f8fa2b7afa94f}{disconnect\+Handler} ()
+\item 
+static \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler}{Mongo\+Database\+Handler} $\ast$ \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a3efffd91168321728dcb28fc80eabd0a}{get\+Handler} (std\+::string \&err\+Msg, const std\+::string \&host, const int \&port, const uint32\+\_\+t \&max\+Connections=1, const std\+::string \&db\+Name=std\+::string(), const std\+::string \&username=std\+::string(), const std\+::string \&password=std\+::string(), const bool \&pw\+Digested=false)
+\item 
+static \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler}{Mongo\+Database\+Handler} $\ast$ \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a0432cb604d05dba64424f71bf4df6d39}{get\+Handler} (std\+::string \&err\+Msg, const std\+::string \&host, const int \&port, const uint32\+\_\+t \&max\+Connections, const std\+::string \&db\+Name=std\+::string(), const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{model\+::\+Repo\+B\+S\+O\+N} $\ast$credentials=nullptr)
+\item 
+static \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler}{Mongo\+Database\+Handler} $\ast$ \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ac7eda2da76c1fbe02bf523e207cf9d4d}{get\+Handler} (const std\+::string \&host)
+\item 
+static \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $\ast$ \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a5605412c0f2586385dec3d279ba7591d}{create\+B\+S\+O\+N\+Credentials} (const std\+::string \&db\+Name, const std\+::string \&username, const std\+::string \&password, const bool \&pw\+Digested=false)
+\item 
+static std\+::string \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ae0e35b94deb711a346459ec88a57199c}{get\+Admin\+Database\+Name} ()
+\end{DoxyCompactItemize}
+\subsection*{Static Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ab55d3d2e445e6b56b8b2aeaefcf41c07}{}static const std\+::string {\bfseries I\+D} = \char`\"{}\+\_\+id\char`\"{}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ab55d3d2e445e6b56b8b2aeaefcf41c07}
+
+\item 
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a75e5efc0b9ec2e40fa23bf46fd7af53b}{}static const std\+::string \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a75e5efc0b9ec2e40fa23bf46fd7af53b}{U\+U\+I\+D} = \char`\"{}uuid\char`\"{}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a75e5efc0b9ec2e40fa23bf46fd7af53b}
+
+\begin{DoxyCompactList}\small\item\em \char`\"{}\+\_\+id\char`\"{} \end{DoxyCompactList}\item 
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a62321508d0b278c72036d7be7b138f9c}{}static const std\+::string \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a62321508d0b278c72036d7be7b138f9c}{A\+D\+M\+I\+N\+\_\+\+D\+A\+T\+A\+B\+A\+S\+E} = \char`\"{}admin\char`\"{}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a62321508d0b278c72036d7be7b138f9c}
+
+\begin{DoxyCompactList}\small\item\em \char`\"{}uuid\char`\"{} \end{DoxyCompactList}\item 
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ada63d3d522b76c50732b17a461224c9a}{}static const std\+::string \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ada63d3d522b76c50732b17a461224c9a}{S\+Y\+S\+T\+E\+M\+\_\+\+R\+O\+L\+E\+S\+\_\+\+C\+O\+L\+L\+E\+C\+T\+I\+O\+N} = \char`\"{}system.\+roles\char`\"{}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ada63d3d522b76c50732b17a461224c9a}
+
+\begin{DoxyCompactList}\small\item\em \char`\"{}admin\char`\"{} \end{DoxyCompactList}\item 
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a6a6c5aac7181c5190920fc7b4f250b97}{}static const std\+::string \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a6a6c5aac7181c5190920fc7b4f250b97}{A\+U\+T\+H\+\_\+\+M\+E\+C\+H}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a6a6c5aac7181c5190920fc7b4f250b97}
+
+\begin{DoxyCompactList}\small\item\em \char`\"{}system.\+roles\char`\"{} \end{DoxyCompactList}\item 
+static const std\+::list$<$ std\+::string $>$ \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a963d231d4bb42ae5ac36f70eddbb8068}{A\+N\+Y\+\_\+\+D\+A\+T\+A\+B\+A\+S\+E\+\_\+\+R\+O\+L\+E\+S}
+\begin{DoxyCompactList}\small\item\em Built in any database roles. See \href{http://docs.mongodb.org/manual/reference/built-in-roles/}{\tt http\+://docs.\+mongodb.\+org/manual/reference/built-\/in-\/roles/}. \end{DoxyCompactList}\item 
+static const std\+::list$<$ std\+::string $>$ \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_aef93abfc2e7cdf3108aa8cc170c2cc69}{A\+D\+M\+I\+N\+\_\+\+O\+N\+L\+Y\+\_\+\+D\+A\+T\+A\+B\+A\+S\+E\+\_\+\+R\+O\+L\+E\+S}
+\begin{DoxyCompactList}\small\item\em Built in admin database roles. See \href{http://docs.mongodb.org/manual/reference/built-in-roles/}{\tt http\+://docs.\+mongodb.\+org/manual/reference/built-\/in-\/roles/}. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Static Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a98e94b48236aea664f31f22698885396}{}static \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler}{Mongo\+Database\+Handler} $\ast$ {\bfseries handler} = N\+U\+L\+L\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a98e94b48236aea664f31f22698885396}
+
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a5a8444437b564686632dce0ec6f592fb}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!````~Mongo\+Database\+Handler@{$\sim$\+Mongo\+Database\+Handler}}
+\index{````~Mongo\+Database\+Handler@{$\sim$\+Mongo\+Database\+Handler}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{$\sim$\+Mongo\+Database\+Handler}]{\setlength{\rightskip}{0pt plus 5cm}Mongo\+Database\+Handler\+::$\sim$\+Mongo\+Database\+Handler (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a5a8444437b564686632dce0ec6f592fb}
+A Deconstructor 
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ad69882e8c3573be494c5b6eca6a53827}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!count\+Items\+In\+Collection@{count\+Items\+In\+Collection}}
+\index{count\+Items\+In\+Collection@{count\+Items\+In\+Collection}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{count\+Items\+In\+Collection}]{\setlength{\rightskip}{0pt plus 5cm}uint64\+\_\+t Mongo\+Database\+Handler\+::count\+Items\+In\+Collection (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ad69882e8c3573be494c5b6eca6a53827}
+Count the number of documents within the collection 
+\begin{DoxyParams}{Parameters}
+{\em database} & name of database \\
+\hline
+{\em collection} & name of collection \\
+\hline
+{\em err\+Msg} & err\+Msg if failed \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+number of documents within the specified collection 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_a862cb79b547fbd5a524a2f75ae114907}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a5605412c0f2586385dec3d279ba7591d}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!create\+B\+S\+O\+N\+Credentials@{create\+B\+S\+O\+N\+Credentials}}
+\index{create\+B\+S\+O\+N\+Credentials@{create\+B\+S\+O\+N\+Credentials}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{create\+B\+S\+O\+N\+Credentials}]{\setlength{\rightskip}{0pt plus 5cm}static {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}$\ast$ repo\+::core\+::handler\+::\+Mongo\+Database\+Handler\+::create\+B\+S\+O\+N\+Credentials (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{db\+Name, }
+\item[{const std\+::string \&}]{username, }
+\item[{const std\+::string \&}]{password, }
+\item[{const bool \&}]{pw\+Digested = {\ttfamily false}}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a5605412c0f2586385dec3d279ba7591d}
+Generates a B\+S\+O\+N object containing user credentials 
+\begin{DoxyParams}{Parameters}
+{\em db\+Name} & name of the database to authenticate against \\
+\hline
+{\em username} & user name for authentication \\
+\hline
+{\em password} & password of the user \\
+\hline
+{\em pw\+Digested} & true if pw is digested \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns the constructed B\+S\+O\+N object, or 0 nullptr username is empty 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_abeaad0e73b0e274755e7ee2baab002ae}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!create\+Collection@{create\+Collection}}
+\index{create\+Collection@{create\+Collection}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{create\+Collection}]{\setlength{\rightskip}{0pt plus 5cm}void Mongo\+Database\+Handler\+::create\+Collection (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{name}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_abeaad0e73b0e274755e7ee2baab002ae}
+Create a collection with the name specified 
+\begin{DoxyParams}{Parameters}
+{\em database} & name of the database \\
+\hline
+{\em name} & name of the collection \\
+\hline
+\end{DoxyParams}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_a55a28fe47b164cb4578cb4e682759439}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_adad19607d035f2cd335f8fa2b7afa94f}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!disconnect\+Handler@{disconnect\+Handler}}
+\index{disconnect\+Handler@{disconnect\+Handler}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{disconnect\+Handler}]{\setlength{\rightskip}{0pt plus 5cm}void Mongo\+Database\+Handler\+::disconnect\+Handler (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [static]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_adad19607d035f2cd335f8fa2b7afa94f}
+Disconnects the handler and resets the instance Must call this before trying to reconnect to another database! \hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a7c4cdb628a1b3c59caba6b397fe20375}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!drop\+Collection@{drop\+Collection}}
+\index{drop\+Collection@{drop\+Collection}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{drop\+Collection}]{\setlength{\rightskip}{0pt plus 5cm}bool Mongo\+Database\+Handler\+::drop\+Collection (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a7c4cdb628a1b3c59caba6b397fe20375}
+Remove a collection from the database 
+\begin{DoxyParams}{Parameters}
+{\em database} & the database the collection resides in \\
+\hline
+{\em collection} & name of the collection to drop \\
+\hline
+{\em err\+Msg} & name of the collection to drop \\
+\hline
+\end{DoxyParams}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_ab268b2a7d4e0ae0499d016d3311767e7}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ac982e4d73ee5c69d333030437eebabf6}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!drop\+Database@{drop\+Database}}
+\index{drop\+Database@{drop\+Database}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{drop\+Database}]{\setlength{\rightskip}{0pt plus 5cm}bool Mongo\+Database\+Handler\+::drop\+Database (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ac982e4d73ee5c69d333030437eebabf6}
+Remove a database from the mongo database 
+\begin{DoxyParams}{Parameters}
+{\em database} & name of the database to drop \\
+\hline
+{\em err\+Msg} & name of the database to drop \\
+\hline
+\end{DoxyParams}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_ad169812ef62d6d21a02d5545633492c0}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a7e1a68ada64088e53ded91c738fadcd6}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!drop\+Document@{drop\+Document}}
+\index{drop\+Document@{drop\+Document}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{drop\+Document}]{\setlength{\rightskip}{0pt plus 5cm}bool Mongo\+Database\+Handler\+::drop\+Document (
+\begin{DoxyParamCaption}
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}]{bson, }
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a7e1a68ada64088e53ded91c738fadcd6}
+Remove a document from the mongo database 
+\begin{DoxyParams}{Parameters}
+{\em bson} & document to remove \\
+\hline
+{\em database} & the database the collection resides in \\
+\hline
+{\em collection} & name of the collection the document is in \\
+\hline
+{\em err\+Msg} & name of the database to drop \\
+\hline
+\end{DoxyParams}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_a189685c88cbadb3f239829d65d4dcb3b}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a15263c0497c215798ac7398ff89bb4d3}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!drop\+Documents@{drop\+Documents}}
+\index{drop\+Documents@{drop\+Documents}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{drop\+Documents}]{\setlength{\rightskip}{0pt plus 5cm}bool Mongo\+Database\+Handler\+::drop\+Documents (
+\begin{DoxyParamCaption}
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}]{criteria, }
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a15263c0497c215798ac7398ff89bb4d3}
+Remove all documents satisfying a certain criteria 
+\begin{DoxyParams}{Parameters}
+{\em criteria} & document to remove \\
+\hline
+{\em database} & the database the collection resides in \\
+\hline
+{\em collection} & name of the collection the document is in \\
+\hline
+{\em err\+Msg} & name of the database to drop \\
+\hline
+\end{DoxyParams}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_a8b8cdc64a009b872ece09a4f91cdad0c}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a847556c14e85da5e17f8d21c70ab23d0}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!drop\+Raw\+File@{drop\+Raw\+File}}
+\index{drop\+Raw\+File@{drop\+Raw\+File}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{drop\+Raw\+File}]{\setlength{\rightskip}{0pt plus 5cm}bool Mongo\+Database\+Handler\+::drop\+Raw\+File (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{const std\+::string \&}]{file\+Name, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a847556c14e85da5e17f8d21c70ab23d0}
+Remove a file from raw file storage (grid\+F\+S) 
+\begin{DoxyParams}{Parameters}
+{\em database} & the database the collection resides in \\
+\hline
+{\em collection} & name of the collection the document is in \\
+\hline
+{\em filename} & name of the file \\
+\hline
+{\em err\+Msg} & name of the database to drop \\
+\hline
+\end{DoxyParams}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_a4806eb978154c4b4bab85eb99d457318}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ade2b069da1314566c63a48a3b61ad451}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!drop\+Role@{drop\+Role}}
+\index{drop\+Role@{drop\+Role}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{drop\+Role}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::core\+::handler\+::\+Mongo\+Database\+Handler\+::drop\+Role (
+\begin{DoxyParamCaption}
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Role} \&}]{role, }
+\item[{std\+::string \&}]{errmsg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ade2b069da1314566c63a48a3b61ad451}
+Remove a role from the database 
+\begin{DoxyParams}{Parameters}
+{\em role} & user bson to remove \\
+\hline
+{\em errmsg} & error message \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_a65822a2183bec303c08008fadb1d17d2}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ad5e1716d61ffe74086453ae4d0bbad24}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!drop\+User@{drop\+User}}
+\index{drop\+User@{drop\+User}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{drop\+User}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::core\+::handler\+::\+Mongo\+Database\+Handler\+::drop\+User (
+\begin{DoxyParamCaption}
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+User} \&}]{user, }
+\item[{std\+::string \&}]{errmsg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ad5e1716d61ffe74086453ae4d0bbad24}
+Remove a user from the database 
+\begin{DoxyParams}{Parameters}
+{\em user} & user bson to remove \\
+\hline
+{\em errmsg} & error message \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_a07bd15002e4c23c138a39d3b47af3882}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_af8bc6c5531e6669b9ac278c6fc64ec3e}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!find\+All\+By\+Criteria@{find\+All\+By\+Criteria}}
+\index{find\+All\+By\+Criteria@{find\+All\+By\+Criteria}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{find\+All\+By\+Criteria}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $>$ Mongo\+Database\+Handler\+::find\+All\+By\+Criteria (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \&}]{criteria}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_af8bc6c5531e6669b9ac278c6fc64ec3e}
+Given a search criteria, find all the documents that passes this query 
+\begin{DoxyParams}{Parameters}
+{\em database} & name of database \\
+\hline
+{\em collection} & name of collection \\
+\hline
+{\em criteria} & search criteria in a bson object \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+a vector of Repo\+B\+S\+O\+N objects satisfy the given criteria 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_ad964d9c80fcddf1444edcf7021c81e50}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a26cca6e23ce8e218fe5c6106bc91425a}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!find\+All\+By\+Unique\+I\+Ds@{find\+All\+By\+Unique\+I\+Ds}}
+\index{find\+All\+By\+Unique\+I\+Ds@{find\+All\+By\+Unique\+I\+Ds}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{find\+All\+By\+Unique\+I\+Ds}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $>$ Mongo\+Database\+Handler\+::find\+All\+By\+Unique\+I\+Ds (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \&}]{uuids}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a26cca6e23ce8e218fe5c6106bc91425a}
+Given a list of unique I\+Ds, find all the documents associated to them 
+\begin{DoxyParams}{Parameters}
+{\em name} & of database \\
+\hline
+{\em name} & of collection \\
+\hline
+{\em array} & of uuids in a B\+S\+O\+N object \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+a vector of Repo\+B\+S\+O\+N objects associated with the U\+U\+I\+Ds given 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_ad62823283064682c08acd1bd6f1414f8}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a9e13fe73ff838e388378d82673964e20}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!find\+One\+By\+Criteria@{find\+One\+By\+Criteria}}
+\index{find\+One\+By\+Criteria@{find\+One\+By\+Criteria}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{find\+One\+By\+Criteria}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} Mongo\+Database\+Handler\+::find\+One\+By\+Criteria (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \&}]{criteria, }
+\item[{const std\+::string \&}]{sort\+Field = {\ttfamily \char`\"{}\char`\"{}}}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a9e13fe73ff838e388378d82673964e20}
+Given a search criteria, find one documents that passes this query 
+\begin{DoxyParams}{Parameters}
+{\em database} & name of database \\
+\hline
+{\em collection} & name of collection \\
+\hline
+{\em criteria} & search criteria in a bson object \\
+\hline
+{\em sort\+Field} & field to sort \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+a Repo\+B\+S\+O\+N objects satisfy the given criteria 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_a321cc0160469e94b12fa5fe800c6c1c5}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_aae7c0539fcdbad26c307c9f63877d536}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!find\+One\+By\+Shared\+I\+D@{find\+One\+By\+Shared\+I\+D}}
+\index{find\+One\+By\+Shared\+I\+D@{find\+One\+By\+Shared\+I\+D}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{find\+One\+By\+Shared\+I\+D}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} Mongo\+Database\+Handler\+::find\+One\+By\+Shared\+I\+D (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{const repo\+U\+U\+I\+D \&}]{uuid, }
+\item[{const std\+::string \&}]{sort\+Field}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_aae7c0539fcdbad26c307c9f63877d536}
+Retrieves the first document matching given Shared I\+D (S\+I\+D), sorting is descending (newest first) 
+\begin{DoxyParams}{Parameters}
+{\em name} & of database \\
+\hline
+{\em name} & of collectoin \\
+\hline
+{\em share} & id \\
+\hline
+{\em field} & to sort by \\
+\hline
+{\em fields} & to retrieve \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a bson object containing those fields 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_ab83477a74036a6e608620ab53b67df58}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ac016547468fc0049c859d775e270e17a}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!find\+One\+By\+Unique\+I\+D@{find\+One\+By\+Unique\+I\+D}}
+\index{find\+One\+By\+Unique\+I\+D@{find\+One\+By\+Unique\+I\+D}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{find\+One\+By\+Unique\+I\+D}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} Mongo\+Database\+Handler\+::find\+One\+By\+Unique\+I\+D (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{const repo\+U\+U\+I\+D \&}]{uuid}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ac016547468fc0049c859d775e270e17a}
+Retrieves the document matching given Unique I\+D (S\+I\+D), sorting is descending 
+\begin{DoxyParams}{Parameters}
+{\em database} & name of database \\
+\hline
+{\em collection} & name of collectoin \\
+\hline
+{\em uuid} & share id \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns the matching bson object 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_af6cae49e44df081b5895cbf7b7ff6652}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ae0e35b94deb711a346459ec88a57199c}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!get\+Admin\+Database\+Name@{get\+Admin\+Database\+Name}}
+\index{get\+Admin\+Database\+Name@{get\+Admin\+Database\+Name}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{get\+Admin\+Database\+Name}]{\setlength{\rightskip}{0pt plus 5cm}static std\+::string repo\+::core\+::handler\+::\+Mongo\+Database\+Handler\+::get\+Admin\+Database\+Name (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ae0e35b94deb711a346459ec88a57199c}
+Return the name of admin database \begin{DoxyReturn}{Returns}
+name of admin database 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_afeaa95dcb44d7a1276fa1e90a5987f6d}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!get\+Admin\+Database\+Roles@{get\+Admin\+Database\+Roles}}
+\index{get\+Admin\+Database\+Roles@{get\+Admin\+Database\+Roles}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{get\+Admin\+Database\+Roles}]{\setlength{\rightskip}{0pt plus 5cm}std\+::list$<$std\+::string$>$ repo\+::core\+::handler\+::\+Mongo\+Database\+Handler\+::get\+Admin\+Database\+Roles (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_afeaa95dcb44d7a1276fa1e90a5987f6d}
+Return a list of Admin database roles \begin{DoxyReturn}{Returns}
+a vector of Admin database roles 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_a144930566b6a49042b2f17300716ec0f}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a3083dc4c2983681aa2b356c87bcaeca3}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!get\+All\+From\+Collection\+Tailable@{get\+All\+From\+Collection\+Tailable}}
+\index{get\+All\+From\+Collection\+Tailable@{get\+All\+From\+Collection\+Tailable}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{get\+All\+From\+Collection\+Tailable}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $>$ Mongo\+Database\+Handler\+::get\+All\+From\+Collection\+Tailable (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{const uint64\+\_\+t \&}]{skip = {\ttfamily 0}, }
+\item[{const uint32\+\_\+t \&}]{limit = {\ttfamily 0}, }
+\item[{const std\+::list$<$ std\+::string $>$ \&}]{fields = {\ttfamily std\+:\+:list$<$std\+:\+:string$>$()}, }
+\item[{const std\+::string \&}]{sort\+Field = {\ttfamily std\+:\+:string()}, }
+\item[{const int \&}]{sort\+Order = {\ttfamily -\/1}}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a3083dc4c2983681aa2b356c87bcaeca3}
+Retrieve documents from a specified collection due to limitations of the transfer protocol this might need to be called multiple times, utilising the skip index to skip the first n items. 
+\begin{DoxyParams}{Parameters}
+{\em database} & name of database \\
+\hline
+{\em collection} & name of collection \\
+\hline
+{\em skip} & number of maximum items to skip (default is 0) \\
+\hline
+{\em limit} & number of maximum items to return (default is 0) \\
+\hline
+{\em fields} & fields to get back from the database \\
+\hline
+{\em sort\+Field} & field to sort upon \\
+\hline
+{\em sort\+Order} & 1 ascending, -\/1 descending \\
+\hline
+\end{DoxyParams}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_abbd7b86134fc60822b2ae6b9933624ca}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ad51771cf9bca612634c4e761266c5d32}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!get\+Collections@{get\+Collections}}
+\index{get\+Collections@{get\+Collections}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{get\+Collections}]{\setlength{\rightskip}{0pt plus 5cm}std\+::list$<$ std\+::string $>$ Mongo\+Database\+Handler\+::get\+Collections (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ad51771cf9bca612634c4e761266c5d32}
+Get a list of all available collections. Use mongo.\+ns\+Get\+Collection() to remove database from the returned string. 
+\begin{DoxyParams}{Parameters}
+{\em name} & of the database \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+a list of collection names 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_ac2007585bdd3c625fd02e61e305f3229}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a61020c951e94df65b9afb29bcd5472d7}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!get\+Collection\+Stats@{get\+Collection\+Stats}}
+\index{get\+Collection\+Stats@{get\+Collection\+Stats}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{get\+Collection\+Stats}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+::core\+::model\+::\+Collection\+Stats} Mongo\+Database\+Handler\+::get\+Collection\+Stats (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a61020c951e94df65b9afb29bcd5472d7}
+Get the collection statistics of the given collection 
+\begin{DoxyParams}{Parameters}
+{\em database} & Name of database \\
+\hline
+{\em collection} & Name of collection \\
+\hline
+{\em err\+Msg} & error message when error occurs \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a bson object with statistical info. 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_a4b1991d2ea832bebab6ffaac81d12350}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ad87a0ae0ba7fb783479d399b6f98ee67}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!get\+Databases@{get\+Databases}}
+\index{get\+Databases@{get\+Databases}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{get\+Databases}]{\setlength{\rightskip}{0pt plus 5cm}std\+::list$<$ std\+::string $>$ Mongo\+Database\+Handler\+::get\+Databases (
+\begin{DoxyParamCaption}
+\item[{const bool \&}]{sorted = {\ttfamily true}}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ad87a0ae0ba7fb783479d399b6f98ee67}
+Get a list of all available databases, alphabetically sorted by default. 
+\begin{DoxyParams}{Parameters}
+{\em sort} & the database \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a list of database names 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_a68d7749c249111292974a00822a0e637}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_aa6ad44a0cde0f642d52cc92a61178739}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!get\+Databases\+With\+Projects@{get\+Databases\+With\+Projects}}
+\index{get\+Databases\+With\+Projects@{get\+Databases\+With\+Projects}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{get\+Databases\+With\+Projects}]{\setlength{\rightskip}{0pt plus 5cm}std\+::map$<$ std\+::string, std\+::list$<$ std\+::string $>$ $>$ Mongo\+Database\+Handler\+::get\+Databases\+With\+Projects (
+\begin{DoxyParamCaption}
+\item[{const std\+::list$<$ std\+::string $>$ \&}]{databases, }
+\item[{const std\+::string \&}]{project\+Ext = {\ttfamily \char`\"{}history\char`\"{}}}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_aa6ad44a0cde0f642d52cc92a61178739}
+get the associated projects for the list of database. 
+\begin{DoxyParams}{Parameters}
+{\em list} & of database \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a map of database -\/$>$ list of projects 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_ab7a050e1fac238a15d782efac324aaf4}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a3efffd91168321728dcb28fc80eabd0a}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!get\+Handler@{get\+Handler}}
+\index{get\+Handler@{get\+Handler}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{get\+Handler}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Mongo\+Database\+Handler} $\ast$ Mongo\+Database\+Handler\+::get\+Handler (
+\begin{DoxyParamCaption}
+\item[{std\+::string \&}]{err\+Msg, }
+\item[{const std\+::string \&}]{host, }
+\item[{const int \&}]{port, }
+\item[{const uint32\+\_\+t \&}]{max\+Connections = {\ttfamily 1}, }
+\item[{const std\+::string \&}]{db\+Name = {\ttfamily std\+:\+:string()}, }
+\item[{const std\+::string \&}]{username = {\ttfamily std\+:\+:string()}, }
+\item[{const std\+::string \&}]{password = {\ttfamily std\+:\+:string()}, }
+\item[{const bool \&}]{pw\+Digested = {\ttfamily false}}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [static]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a3efffd91168321728dcb28fc80eabd0a}
+Returns the instance of \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler}{Mongo\+Database\+Handler} 
+\begin{DoxyParams}{Parameters}
+{\em err\+Msg} & error message if this fails \\
+\hline
+{\em host} & hostname of the database \\
+\hline
+{\em port} & port number \\
+\hline
+{\em number} & of maximum simultaneous connections \\
+\hline
+{\em username} & username for authentication \\
+\hline
+{\em password} & for authentication \\
+\hline
+{\em pw\+Digested} & true if password is digested \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Returns the single instance 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a0432cb604d05dba64424f71bf4df6d39}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!get\+Handler@{get\+Handler}}
+\index{get\+Handler@{get\+Handler}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{get\+Handler}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Mongo\+Database\+Handler} $\ast$ Mongo\+Database\+Handler\+::get\+Handler (
+\begin{DoxyParamCaption}
+\item[{std\+::string \&}]{err\+Msg, }
+\item[{const std\+::string \&}]{host, }
+\item[{const int \&}]{port, }
+\item[{const uint32\+\_\+t \&}]{max\+Connections, }
+\item[{const std\+::string \&}]{db\+Name = {\ttfamily std\+:\+:string()}, }
+\item[{const {\bf model\+::\+Repo\+B\+S\+O\+N} $\ast$}]{credentials = {\ttfamily nullptr}}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [static]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a0432cb604d05dba64424f71bf4df6d39}
+Returns the instance of \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler}{Mongo\+Database\+Handler} 
+\begin{DoxyParams}{Parameters}
+{\em err\+Msg} & error message if this fails \\
+\hline
+{\em host} & hostname of the database \\
+\hline
+{\em port} & port number \\
+\hline
+{\em number} & of maximum simultaneous connections \\
+\hline
+{\em db\+Name} & authentication database \\
+\hline
+{\em credentials} & user credentials \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Returns the single instance 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ac7eda2da76c1fbe02bf523e207cf9d4d}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!get\+Handler@{get\+Handler}}
+\index{get\+Handler@{get\+Handler}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{get\+Handler}]{\setlength{\rightskip}{0pt plus 5cm}static {\bf Mongo\+Database\+Handler}$\ast$ repo\+::core\+::handler\+::\+Mongo\+Database\+Handler\+::get\+Handler (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{host}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [static]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_ac7eda2da76c1fbe02bf523e207cf9d4d}
+Returns the instance of \hyperlink{classrepo_1_1core_1_1handler_1_1_mongo_database_handler}{Mongo\+Database\+Handler} 
+\begin{DoxyParams}{Parameters}
+{\em host} & string containing \char`\"{}database\+Address\+:port\char`\"{} \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Returns null if there is no instance available 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a84c34b3c1f0ba3227d4a159176bdfb7f}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!get\+Projects@{get\+Projects}}
+\index{get\+Projects@{get\+Projects}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{get\+Projects}]{\setlength{\rightskip}{0pt plus 5cm}std\+::list$<$ std\+::string $>$ Mongo\+Database\+Handler\+::get\+Projects (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{project\+Ext}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a84c34b3c1f0ba3227d4a159176bdfb7f}
+Get a list of projects associated with a given database (aka company account). It will filter out any collections without that isn\textquotesingle{}t $\ast$.project\+Ext 
+\begin{DoxyParams}{Parameters}
+{\em list} & of database \\
+\hline
+{\em extension} & that determines it is a project (scene) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+list of projects for the database 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_a1470a0e85e9b219d44567b38132e719d}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_abcdf4cc7cbc0bbee8b9236349bde8364}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!get\+Raw\+File@{get\+Raw\+File}}
+\index{get\+Raw\+File@{get\+Raw\+File}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{get\+Raw\+File}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ uint8\+\_\+t $>$ Mongo\+Database\+Handler\+::get\+Raw\+File (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{const std\+::string \&}]{fname}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_abcdf4cc7cbc0bbee8b9236349bde8364}
+Get raw binary file from database 
+\begin{DoxyParams}{Parameters}
+{\em database} & name of database \\
+\hline
+{\em collection} & name of collection \\
+\hline
+{\em fname} & name of the file \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+return the raw binary as a vector of uint8\+\_\+t (if found) 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_af3d3e2d5d3013ab51675247b202ed488}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a9974cd3f7f955793cbe56eab74ced573}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!get\+Standard\+Database\+Roles@{get\+Standard\+Database\+Roles}}
+\index{get\+Standard\+Database\+Roles@{get\+Standard\+Database\+Roles}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{get\+Standard\+Database\+Roles}]{\setlength{\rightskip}{0pt plus 5cm}std\+::list$<$std\+::string$>$ repo\+::core\+::handler\+::\+Mongo\+Database\+Handler\+::get\+Standard\+Database\+Roles (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a9974cd3f7f955793cbe56eab74ced573}
+Return a list of standard database roles \begin{DoxyReturn}{Returns}
+a vector of standard database roles 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_af626a68ca19507b2ff02b52cf1194110}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a8b25a7efcb68ee809fd6b6ea20cb06ae}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!insert\+Document@{insert\+Document}}
+\index{insert\+Document@{insert\+Document}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{insert\+Document}]{\setlength{\rightskip}{0pt plus 5cm}bool Mongo\+Database\+Handler\+::insert\+Document (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \&}]{obj, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a8b25a7efcb68ee809fd6b6ea20cb06ae}
+Insert a single document in database.\+collection 
+\begin{DoxyParams}{Parameters}
+{\em database} & name \\
+\hline
+{\em collection} & name \\
+\hline
+{\em document} & to insert \\
+\hline
+{\em err\+Msg} & error message should it fail \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_a46cffb1fa82f8f5265727ed04cdbfe30}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_abaeb1612b1beb0945c72b153932d274f}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!insert\+Raw\+File@{insert\+Raw\+File}}
+\index{insert\+Raw\+File@{insert\+Raw\+File}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{insert\+Raw\+File}]{\setlength{\rightskip}{0pt plus 5cm}bool Mongo\+Database\+Handler\+::insert\+Raw\+File (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{const std\+::string \&}]{file\+Name, }
+\item[{const std\+::vector$<$ uint8\+\_\+t $>$ \&}]{bin, }
+\item[{std\+::string \&}]{err\+Msg, }
+\item[{const std\+::string \&}]{content\+Type = {\ttfamily \char`\"{}binary/octet-\/stream\char`\"{}}}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_abaeb1612b1beb0945c72b153932d274f}
+Insert big raw file in binary format (using Grid\+F\+S) 
+\begin{DoxyParams}{Parameters}
+{\em database} & name \\
+\hline
+{\em collection} & name \\
+\hline
+{\em file\+Name} & to insert (has to be unique) \\
+\hline
+{\em bin} & raw binary of the file \\
+\hline
+{\em err\+Msg} & error message if it fails \\
+\hline
+{\em content\+Type} & the M\+I\+M\+E type of the object (optional) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_a83ad94918c161f5511abab7cac99a5f2}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a1366832cc771fd306b0058ba4e1dcf30}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!insert\+Role@{insert\+Role}}
+\index{insert\+Role@{insert\+Role}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{insert\+Role}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::core\+::handler\+::\+Mongo\+Database\+Handler\+::insert\+Role (
+\begin{DoxyParamCaption}
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Role} \&}]{role, }
+\item[{std\+::string \&}]{errmsg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a1366832cc771fd306b0058ba4e1dcf30}
+Insert a role into the database 
+\begin{DoxyParams}{Parameters}
+{\em role} & role bson to insert \\
+\hline
+{\em errmsg} & error message \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_a93ddebde4c94ca15d0146463e506d063}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_acf2b49877a7d8a914e1a1d2aeb1b60e8}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!insert\+User@{insert\+User}}
+\index{insert\+User@{insert\+User}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{insert\+User}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::core\+::handler\+::\+Mongo\+Database\+Handler\+::insert\+User (
+\begin{DoxyParamCaption}
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+User} \&}]{user, }
+\item[{std\+::string \&}]{errmsg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_acf2b49877a7d8a914e1a1d2aeb1b60e8}
+Insert a user into the database 
+\begin{DoxyParams}{Parameters}
+{\em user} & user bson to insert \\
+\hline
+{\em errmsg} & error message \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_a1264f8caf3b3e968632dca720002dab6}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a14c38b79dedf9e26bf802771367ebace}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!update\+Role@{update\+Role}}
+\index{update\+Role@{update\+Role}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{update\+Role}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::core\+::handler\+::\+Mongo\+Database\+Handler\+::update\+Role (
+\begin{DoxyParamCaption}
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Role} \&}]{role, }
+\item[{std\+::string \&}]{errmsg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a14c38b79dedf9e26bf802771367ebace}
+Update a role in the database 
+\begin{DoxyParams}{Parameters}
+{\em role} & role bson to update \\
+\hline
+{\em errmsg} & error message \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_a7253300babe9db40658616b9c227c9e7}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a7fae7458d4261fc61a7415262813183d}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!update\+User@{update\+User}}
+\index{update\+User@{update\+User}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{update\+User}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::core\+::handler\+::\+Mongo\+Database\+Handler\+::update\+User (
+\begin{DoxyParamCaption}
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+User} \&}]{user, }
+\item[{std\+::string \&}]{errmsg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a7fae7458d4261fc61a7415262813183d}
+Update a user in the database 
+\begin{DoxyParams}{Parameters}
+{\em user} & user bson to update \\
+\hline
+{\em errmsg} & error message \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_a28b9829e0888e2cb4568f6bb13c95d93}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a81743d1af17889ad66a76b7ede0f420e}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!upsert\+Document@{upsert\+Document}}
+\index{upsert\+Document@{upsert\+Document}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{upsert\+Document}]{\setlength{\rightskip}{0pt plus 5cm}bool Mongo\+Database\+Handler\+::upsert\+Document (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \&}]{obj, }
+\item[{const bool \&}]{overwrite, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a81743d1af17889ad66a76b7ede0f420e}
+Update/insert a single document in database.\+collection If the document exists, update it, if it doesn\textquotesingle{}t, insert it 
+\begin{DoxyParams}{Parameters}
+{\em database} & name \\
+\hline
+{\em collection} & name \\
+\hline
+{\em document} & to insert \\
+\hline
+{\em if} & it is an update, overwrites the document instead of updating the fields it has \\
+\hline
+{\em err\+Msg} & error message should it fail \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler_a5387adf2593b59bdca51290270299b16}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler}.
+
+
+
+\subsection{Member Data Documentation}
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_aef93abfc2e7cdf3108aa8cc170c2cc69}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!A\+D\+M\+I\+N\+\_\+\+O\+N\+L\+Y\+\_\+\+D\+A\+T\+A\+B\+A\+S\+E\+\_\+\+R\+O\+L\+E\+S@{A\+D\+M\+I\+N\+\_\+\+O\+N\+L\+Y\+\_\+\+D\+A\+T\+A\+B\+A\+S\+E\+\_\+\+R\+O\+L\+E\+S}}
+\index{A\+D\+M\+I\+N\+\_\+\+O\+N\+L\+Y\+\_\+\+D\+A\+T\+A\+B\+A\+S\+E\+\_\+\+R\+O\+L\+E\+S@{A\+D\+M\+I\+N\+\_\+\+O\+N\+L\+Y\+\_\+\+D\+A\+T\+A\+B\+A\+S\+E\+\_\+\+R\+O\+L\+E\+S}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{A\+D\+M\+I\+N\+\_\+\+O\+N\+L\+Y\+\_\+\+D\+A\+T\+A\+B\+A\+S\+E\+\_\+\+R\+O\+L\+E\+S}]{\setlength{\rightskip}{0pt plus 5cm}const std\+::list$<$ std\+::string $>$ repo\+::core\+::handler\+::\+Mongo\+Database\+Handler\+::\+A\+D\+M\+I\+N\+\_\+\+O\+N\+L\+Y\+\_\+\+D\+A\+T\+A\+B\+A\+S\+E\+\_\+\+R\+O\+L\+E\+S\hspace{0.3cm}{\ttfamily [static]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_aef93abfc2e7cdf3108aa8cc170c2cc69}
+{\bfseries Initial value\+:}
+\begin{DoxyCode}
+=
+\{ \textcolor{stringliteral}{"backup"}, \textcolor{stringliteral}{"clusterAdmin"}, \textcolor{stringliteral}{"clusterManager"}, \textcolor{stringliteral}{"clusterMonitor"}, \textcolor{stringliteral}{"dbAdminAnyDatabase"},
+\textcolor{stringliteral}{"hostManager"}, \textcolor{stringliteral}{"readAnyDatabase"}, \textcolor{stringliteral}{"readWriteAnyDatabase"}, \textcolor{stringliteral}{"restore"}, \textcolor{stringliteral}{"root"},
+\textcolor{stringliteral}{"userAdminAnyDatabase"} \}
+\end{DoxyCode}
+
+
+Built in admin database roles. See \href{http://docs.mongodb.org/manual/reference/built-in-roles/}{\tt http\+://docs.\+mongodb.\+org/manual/reference/built-\/in-\/roles/}. 
+
+\hypertarget{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a963d231d4bb42ae5ac36f70eddbb8068}{}\index{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}!A\+N\+Y\+\_\+\+D\+A\+T\+A\+B\+A\+S\+E\+\_\+\+R\+O\+L\+E\+S@{A\+N\+Y\+\_\+\+D\+A\+T\+A\+B\+A\+S\+E\+\_\+\+R\+O\+L\+E\+S}}
+\index{A\+N\+Y\+\_\+\+D\+A\+T\+A\+B\+A\+S\+E\+\_\+\+R\+O\+L\+E\+S@{A\+N\+Y\+\_\+\+D\+A\+T\+A\+B\+A\+S\+E\+\_\+\+R\+O\+L\+E\+S}!repo\+::core\+::handler\+::\+Mongo\+Database\+Handler@{repo\+::core\+::handler\+::\+Mongo\+Database\+Handler}}
+\subsubsection[{A\+N\+Y\+\_\+\+D\+A\+T\+A\+B\+A\+S\+E\+\_\+\+R\+O\+L\+E\+S}]{\setlength{\rightskip}{0pt plus 5cm}const std\+::list$<$ std\+::string $>$ repo\+::core\+::handler\+::\+Mongo\+Database\+Handler\+::\+A\+N\+Y\+\_\+\+D\+A\+T\+A\+B\+A\+S\+E\+\_\+\+R\+O\+L\+E\+S\hspace{0.3cm}{\ttfamily [static]}}\label{classrepo_1_1core_1_1handler_1_1_mongo_database_handler_a963d231d4bb42ae5ac36f70eddbb8068}
+{\bfseries Initial value\+:}
+\begin{DoxyCode}
+=
+\{ \textcolor{stringliteral}{"dbAdmin"}, \textcolor{stringliteral}{"dbOwner"}, \textcolor{stringliteral}{"read"}, \textcolor{stringliteral}{"readWrite"}, \textcolor{stringliteral}{"userAdmin"} \}
+\end{DoxyCode}
+
+
+Built in any database roles. See \href{http://docs.mongodb.org/manual/reference/built-in-roles/}{\tt http\+://docs.\+mongodb.\+org/manual/reference/built-\/in-\/roles/}. 
+
+Authentication mechanism. currently M\+O\+N\+G\+O-\/\+C\+R since mongo v2.\+6 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/core/handler/repo\+\_\+database\+\_\+handler\+\_\+mongo.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/core/handler/repo\+\_\+database\+\_\+handler\+\_\+mongo.\+cpp\end{DoxyCompactItemize}

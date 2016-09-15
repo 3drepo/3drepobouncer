@@ -1,0 +1,118 @@
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_r_d_tree_spatial_partitioner}{}\section{repo\+:\+:manipulator\+:\+:modelutility\+:\+:R\+D\+Tree\+Spatial\+Partitioner Class Reference}
+\label{classrepo_1_1manipulator_1_1modelutility_1_1_r_d_tree_spatial_partitioner}\index{repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner@{repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner}}
+Inheritance diagram for repo\+:\+:manipulator\+:\+:modelutility\+:\+:R\+D\+Tree\+Spatial\+Partitioner\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classrepo_1_1manipulator_1_1modelutility_1_1_r_d_tree_spatial_partitioner}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_r_d_tree_spatial_partitioner_a4a6e0cdf7349cb359a867c1aceb709f1}{R\+D\+Tree\+Spatial\+Partitioner} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene, const uint32\+\_\+t \&max\+Depth=12)
+\item 
+virtual std\+::shared\+\_\+ptr$<$ \hyperlink{structrepo__partitioning__tree__t}{repo\+\_\+partitioning\+\_\+tree\+\_\+t} $>$ \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_r_d_tree_spatial_partitioner_a768852ef54d357e43b86a70897002623}{partition\+Scene} ()
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+std\+::vector$<$ \hyperlink{structrepo__mesh__entry__t}{repo\+\_\+mesh\+\_\+entry\+\_\+t} $>$ \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_r_d_tree_spatial_partitioner_a86a33d1ea3b1c82606d4542d3cd82de3}{create\+Mesh\+Entries} ()
+\item 
+std\+::shared\+\_\+ptr$<$ \hyperlink{structrepo__partitioning__tree__t}{repo\+\_\+partitioning\+\_\+tree\+\_\+t} $>$ \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_r_d_tree_spatial_partitioner_ad4b1863028ddec9a1e50b083a4ec656e}{create\+Partition} (const std\+::vector$<$ \hyperlink{structrepo__mesh__entry__t}{repo\+\_\+mesh\+\_\+entry\+\_\+t} $>$ \&meshes, const repo\+::\+Partitioning\+Tree\+Type \&axis, const uint32\+\_\+t \&depth\+Count, const uint32\+\_\+t \&failcount, const std\+::vector$<$ std\+::vector$<$ float $>$$>$ \&current\+Section)
+\item 
+void \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_r_d_tree_spatial_partitioner_ada2a7684178144f06dfea923647ae9e8}{sort\+Meshes} (const std\+::vector$<$ \hyperlink{structrepo__mesh__entry__t}{repo\+\_\+mesh\+\_\+entry\+\_\+t} $>$ \&meshes, const repo\+::\+Partitioning\+Tree\+Type \&axis, const std\+::vector$<$ std\+::vector$<$ float $>$$>$ \&current\+Section, float \&median, std\+::vector$<$ \hyperlink{structrepo__mesh__entry__t}{repo\+\_\+mesh\+\_\+entry\+\_\+t} $>$ \&l\+Meshes, std\+::vector$<$ \hyperlink{structrepo__mesh__entry__t}{repo\+\_\+mesh\+\_\+entry\+\_\+t} $>$ \&r\+Meshes)
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_r_d_tree_spatial_partitioner_a4a6e0cdf7349cb359a867c1aceb709f1}{}\index{repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner@{repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner}!R\+D\+Tree\+Spatial\+Partitioner@{R\+D\+Tree\+Spatial\+Partitioner}}
+\index{R\+D\+Tree\+Spatial\+Partitioner@{R\+D\+Tree\+Spatial\+Partitioner}!repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner@{repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner}}
+\subsubsection[{R\+D\+Tree\+Spatial\+Partitioner}]{\setlength{\rightskip}{0pt plus 5cm}R\+D\+Tree\+Spatial\+Partitioner\+::\+R\+D\+Tree\+Spatial\+Partitioner (
+\begin{DoxyParamCaption}
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene, }
+\item[{const uint32\+\_\+t \&}]{max\+Depth = {\ttfamily 12}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1modelutility_1_1_r_d_tree_spatial_partitioner_a4a6e0cdf7349cb359a867c1aceb709f1}
+R\+D Tree Spatial Partitioning utility class to spatially divide a scene graph base on its meshes This algorithm will produce an R\+D Tree with it it\textquotesingle{}s partitioning value determined by the median value of min bounding boxes. Note\+: currently only support scene with optimised graph! 
+\begin{DoxyParams}{Parameters}
+{\em scene} & scene to divide \\
+\hline
+{\em depth} & limiting depth of the tree (0 to disable limitation) \\
+\hline
+\end{DoxyParams}
+
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_r_d_tree_spatial_partitioner_a86a33d1ea3b1c82606d4542d3cd82de3}{}\index{repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner@{repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner}!create\+Mesh\+Entries@{create\+Mesh\+Entries}}
+\index{create\+Mesh\+Entries@{create\+Mesh\+Entries}!repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner@{repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner}}
+\subsubsection[{create\+Mesh\+Entries}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf repo\+\_\+mesh\+\_\+entry\+\_\+t} $>$ R\+D\+Tree\+Spatial\+Partitioner\+::create\+Mesh\+Entries (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1manipulator_1_1modelutility_1_1_r_d_tree_spatial_partitioner_a86a33d1ea3b1c82606d4542d3cd82de3}
+Generate a vector of mesh entries base on the current scene. \hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_r_d_tree_spatial_partitioner_ad4b1863028ddec9a1e50b083a4ec656e}{}\index{repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner@{repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner}!create\+Partition@{create\+Partition}}
+\index{create\+Partition@{create\+Partition}!repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner@{repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner}}
+\subsubsection[{create\+Partition}]{\setlength{\rightskip}{0pt plus 5cm}std\+::shared\+\_\+ptr$<$ {\bf repo\+\_\+partitioning\+\_\+tree\+\_\+t} $>$ R\+D\+Tree\+Spatial\+Partitioner\+::create\+Partition (
+\begin{DoxyParamCaption}
+\item[{const std\+::vector$<$ {\bf repo\+\_\+mesh\+\_\+entry\+\_\+t} $>$ \&}]{meshes, }
+\item[{const repo\+::\+Partitioning\+Tree\+Type \&}]{axis, }
+\item[{const uint32\+\_\+t \&}]{depth\+Count, }
+\item[{const uint32\+\_\+t \&}]{failcount, }
+\item[{const std\+::vector$<$ std\+::vector$<$ float $>$$>$ \&}]{current\+Section}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1manipulator_1_1modelutility_1_1_r_d_tree_spatial_partitioner_ad4b1863028ddec9a1e50b083a4ec656e}
+Create a partitioning with the given meshes 
+\begin{DoxyParams}{Parameters}
+{\em meshes} & meshes to divide \\
+\hline
+{\em axis} & which axis to divide \\
+\hline
+{\em depth\+Count} & current depth \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_r_d_tree_spatial_partitioner_a768852ef54d357e43b86a70897002623}{}\index{repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner@{repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner}!partition\+Scene@{partition\+Scene}}
+\index{partition\+Scene@{partition\+Scene}!repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner@{repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner}}
+\subsubsection[{partition\+Scene}]{\setlength{\rightskip}{0pt plus 5cm}std\+::shared\+\_\+ptr$<$ {\bf repo\+\_\+partitioning\+\_\+tree\+\_\+t} $>$ R\+D\+Tree\+Spatial\+Partitioner\+::partition\+Scene (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1manipulator_1_1modelutility_1_1_r_d_tree_spatial_partitioner_a768852ef54d357e43b86a70897002623}
+Partition the scene \begin{DoxyReturn}{Returns}
+returns the spatial partitioning information as a tree 
+\end{DoxyReturn}
+
+
+Implements \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner_af1e6e3540698ff0f4ec52cd758260aba}{repo\+::manipulator\+::modelutility\+::\+Abstract\+Spatial\+Partitioner}.
+
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_r_d_tree_spatial_partitioner_ada2a7684178144f06dfea923647ae9e8}{}\index{repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner@{repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner}!sort\+Meshes@{sort\+Meshes}}
+\index{sort\+Meshes@{sort\+Meshes}!repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner@{repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner}}
+\subsubsection[{sort\+Meshes}]{\setlength{\rightskip}{0pt plus 5cm}void R\+D\+Tree\+Spatial\+Partitioner\+::sort\+Meshes (
+\begin{DoxyParamCaption}
+\item[{const std\+::vector$<$ {\bf repo\+\_\+mesh\+\_\+entry\+\_\+t} $>$ \&}]{meshes, }
+\item[{const repo\+::\+Partitioning\+Tree\+Type \&}]{axis, }
+\item[{const std\+::vector$<$ std\+::vector$<$ float $>$$>$ \&}]{current\+Section, }
+\item[{float \&}]{median, }
+\item[{std\+::vector$<$ {\bf repo\+\_\+mesh\+\_\+entry\+\_\+t} $>$ \&}]{l\+Meshes, }
+\item[{std\+::vector$<$ {\bf repo\+\_\+mesh\+\_\+entry\+\_\+t} $>$ \&}]{r\+Meshes}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1manipulator_1_1modelutility_1_1_r_d_tree_spatial_partitioner_ada2a7684178144f06dfea923647ae9e8}
+Sort the meshes on the given axis 
+\begin{DoxyParams}{Parameters}
+{\em meshes} & to sort \\
+\hline
+{\em axis} & to sort on \\
+\hline
+{\em median} & value to split on \\
+\hline
+{\em l\+Meshes} & meshes belonging to the left child \\
+\hline
+{\em r\+Meshes} & meshes belonging to the right child \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/manipulator/modelutility/spatialpartitioning/repo\+\_\+spatial\+\_\+partitioner\+\_\+rdtree.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/manipulator/modelutility/spatialpartitioning/repo\+\_\+spatial\+\_\+partitioner\+\_\+rdtree.\+cpp\end{DoxyCompactItemize}

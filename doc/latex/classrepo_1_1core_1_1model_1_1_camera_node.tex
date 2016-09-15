@@ -1,0 +1,238 @@
+\hypertarget{classrepo_1_1core_1_1model_1_1_camera_node}{}\section{repo\+:\+:core\+:\+:model\+:\+:Camera\+Node Class Reference}
+\label{classrepo_1_1core_1_1model_1_1_camera_node}\index{repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}}
+Inheritance diagram for repo\+:\+:core\+:\+:model\+:\+:Camera\+Node\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=4.000000cm]{classrepo_1_1core_1_1model_1_1_camera_node}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_camera_node_a6e93f1af26050fe9ec35645785e29824}{Camera\+Node} ()
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_camera_node_a78aa6c32e17a3688e8490b69d7bb471a}{Camera\+Node} (\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} bson)
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_camera_node_ab3a466dc9357b5200fb6843a6d64c5c8}{$\sim$\+Camera\+Node} ()
+\item 
+virtual bool \hyperlink{classrepo_1_1core_1_1model_1_1_camera_node_a5ff50e052f4266842e5d4e4840fe0c37}{position\+Dependant} ()
+\item 
+virtual \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} \hyperlink{classrepo_1_1core_1_1model_1_1_camera_node_a98b1b2260da36fb75ff894c98df901cf}{clone\+And\+Apply\+Transformation} (const std\+::vector$<$ float $>$ \&matrix) const 
+\item 
+float \hyperlink{classrepo_1_1core_1_1model_1_1_camera_node_a49b27f160ea40eeb77e11c88e3a913d9}{get\+Aspect\+Ratio} () const 
+\item 
+float \hyperlink{classrepo_1_1core_1_1model_1_1_camera_node_a82d9fd39b1140e2d7e1ad3b6a4c1b753}{get\+Horizontal\+F\+O\+V} () const 
+\item 
+std\+::vector$<$ float $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_camera_node_a7907960b05c955e3b56772bd09d9a919}{get\+Camera\+Matrix} (const bool \&row\+Major=true) const 
+\item 
+float \hyperlink{classrepo_1_1core_1_1model_1_1_camera_node_a321ee8fdfacf5705788b02c36b7cd391}{get\+Far\+Clipping\+Plane} () const 
+\item 
+float \hyperlink{classrepo_1_1core_1_1model_1_1_camera_node_aba3a69203e5c273a81d56a628498e21f}{get\+Field\+Of\+View} () const 
+\item 
+float \hyperlink{classrepo_1_1core_1_1model_1_1_camera_node_a7aae7ebc82db8fb039ab153bdd547cba}{get\+Near\+Clipping\+Plane} () const 
+\item 
+\hyperlink{structrepo__vector__t}{repo\+\_\+vector\+\_\+t} \hyperlink{classrepo_1_1core_1_1model_1_1_camera_node_a8cc4988da42d2eeaff46ed88c2291422}{get\+Look\+At} () const 
+\item 
+std\+::vector$<$ float $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_camera_node_a34ada4c2ec02b855a188ee5007b8b606}{get\+Orientation} () const 
+\item 
+\hyperlink{structrepo__vector__t}{repo\+\_\+vector\+\_\+t} \hyperlink{classrepo_1_1core_1_1model_1_1_camera_node_a11441690bcd3f06884e084a1afc65ceb}{get\+Position} () const 
+\item 
+\hyperlink{structrepo__vector__t}{repo\+\_\+vector\+\_\+t} \hyperlink{classrepo_1_1core_1_1model_1_1_camera_node_a8812358773b363e5a30374b2344d3d71}{get\+Up} () const 
+\item 
+virtual bool \hyperlink{classrepo_1_1core_1_1model_1_1_camera_node_a4d4a8875d7929aa92beedd9bd0eeea63}{s\+Equal} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} \&other) const 
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classrepo_1_1core_1_1model_1_1_camera_node_a6e93f1af26050fe9ec35645785e29824}{}\index{repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}!Camera\+Node@{Camera\+Node}}
+\index{Camera\+Node@{Camera\+Node}!repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}}
+\subsubsection[{Camera\+Node}]{\setlength{\rightskip}{0pt plus 5cm}Camera\+Node\+::\+Camera\+Node (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_camera_node_a6e93f1af26050fe9ec35645785e29824}
+Default constructor \hypertarget{classrepo_1_1core_1_1model_1_1_camera_node_a78aa6c32e17a3688e8490b69d7bb471a}{}\index{repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}!Camera\+Node@{Camera\+Node}}
+\index{Camera\+Node@{Camera\+Node}!repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}}
+\subsubsection[{Camera\+Node}]{\setlength{\rightskip}{0pt plus 5cm}Camera\+Node\+::\+Camera\+Node (
+\begin{DoxyParamCaption}
+\item[{{\bf Repo\+B\+S\+O\+N}}]{bson}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_camera_node_a78aa6c32e17a3688e8490b69d7bb471a}
+Construct a \hyperlink{classrepo_1_1core_1_1model_1_1_camera_node}{Camera\+Node} from a \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} object 
+\begin{DoxyParams}{Parameters}
+{\em \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N}} & object \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_camera_node_ab3a466dc9357b5200fb6843a6d64c5c8}{}\index{repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}!````~Camera\+Node@{$\sim$\+Camera\+Node}}
+\index{````~Camera\+Node@{$\sim$\+Camera\+Node}!repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}}
+\subsubsection[{$\sim$\+Camera\+Node}]{\setlength{\rightskip}{0pt plus 5cm}Camera\+Node\+::$\sim$\+Camera\+Node (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_camera_node_ab3a466dc9357b5200fb6843a6d64c5c8}
+Default deconstructor 
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1core_1_1model_1_1_camera_node_a98b1b2260da36fb75ff894c98df901cf}{}\index{repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}!clone\+And\+Apply\+Transformation@{clone\+And\+Apply\+Transformation}}
+\index{clone\+And\+Apply\+Transformation@{clone\+And\+Apply\+Transformation}!repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}}
+\subsubsection[{clone\+And\+Apply\+Transformation}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+Node} Camera\+Node\+::clone\+And\+Apply\+Transformation (
+\begin{DoxyParamCaption}
+\item[{const std\+::vector$<$ float $>$ \&}]{matrix}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1model_1_1_camera_node_a98b1b2260da36fb75ff894c98df901cf}
+Create a new object with transformation applied to the node default behaviour is do nothing. Children object needs to override this function to perform their own specific behaviour. 
+\begin{DoxyParams}{Parameters}
+{\em matrix} & transformation matrix to apply. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a new object with transformation applied. 
+\end{DoxyReturn}
+
+
+Reimplemented from \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_ac31acdb9774bce9296cb5005286db83d}{repo\+::core\+::model\+::\+Repo\+Node}.
+
+\hypertarget{classrepo_1_1core_1_1model_1_1_camera_node_a49b27f160ea40eeb77e11c88e3a913d9}{}\index{repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}!get\+Aspect\+Ratio@{get\+Aspect\+Ratio}}
+\index{get\+Aspect\+Ratio@{get\+Aspect\+Ratio}!repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}}
+\subsubsection[{get\+Aspect\+Ratio}]{\setlength{\rightskip}{0pt plus 5cm}float repo\+::core\+::model\+::\+Camera\+Node\+::get\+Aspect\+Ratio (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_camera_node_a49b27f160ea40eeb77e11c88e3a913d9}
+-\/-\/-\/------ Convenience functions -\/-\/-\/-\/-\/------ Get aspect ratio \begin{DoxyReturn}{Returns}
+returns the 4 by 4 matrix as a vector 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_camera_node_a7907960b05c955e3b56772bd09d9a919}{}\index{repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}!get\+Camera\+Matrix@{get\+Camera\+Matrix}}
+\index{get\+Camera\+Matrix@{get\+Camera\+Matrix}!repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}}
+\subsubsection[{get\+Camera\+Matrix}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ float $>$ Camera\+Node\+::get\+Camera\+Matrix (
+\begin{DoxyParamCaption}
+\item[{const bool \&}]{row\+Major = {\ttfamily true}}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_camera_node_a7907960b05c955e3b56772bd09d9a919}
+Get the 4 by 4 camera matrix 
+\begin{DoxyParams}{Parameters}
+{\em true} & if row major (row is the fast dimension) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns the 4 by 4 matrix as a vector 
+\end{DoxyReturn}
+We don\textquotesingle{}t know whether these vectors are already normalized ... \hypertarget{classrepo_1_1core_1_1model_1_1_camera_node_a321ee8fdfacf5705788b02c36b7cd391}{}\index{repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}!get\+Far\+Clipping\+Plane@{get\+Far\+Clipping\+Plane}}
+\index{get\+Far\+Clipping\+Plane@{get\+Far\+Clipping\+Plane}!repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}}
+\subsubsection[{get\+Far\+Clipping\+Plane}]{\setlength{\rightskip}{0pt plus 5cm}float repo\+::core\+::model\+::\+Camera\+Node\+::get\+Far\+Clipping\+Plane (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_camera_node_a321ee8fdfacf5705788b02c36b7cd391}
+Return the value for far clipping plane \begin{DoxyReturn}{Returns}
+returns the value for far clipping plane 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_camera_node_aba3a69203e5c273a81d56a628498e21f}{}\index{repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}!get\+Field\+Of\+View@{get\+Field\+Of\+View}}
+\index{get\+Field\+Of\+View@{get\+Field\+Of\+View}!repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}}
+\subsubsection[{get\+Field\+Of\+View}]{\setlength{\rightskip}{0pt plus 5cm}float repo\+::core\+::model\+::\+Camera\+Node\+::get\+Field\+Of\+View (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_camera_node_aba3a69203e5c273a81d56a628498e21f}
+Return the value for field of view \begin{DoxyReturn}{Returns}
+returns the value for field\+Of\+View 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_camera_node_a82d9fd39b1140e2d7e1ad3b6a4c1b753}{}\index{repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}!get\+Horizontal\+F\+O\+V@{get\+Horizontal\+F\+O\+V}}
+\index{get\+Horizontal\+F\+O\+V@{get\+Horizontal\+F\+O\+V}!repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}}
+\subsubsection[{get\+Horizontal\+F\+O\+V}]{\setlength{\rightskip}{0pt plus 5cm}float repo\+::core\+::model\+::\+Camera\+Node\+::get\+Horizontal\+F\+O\+V (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_camera_node_a82d9fd39b1140e2d7e1ad3b6a4c1b753}
+Get horiztonal F\+O\+V \begin{DoxyReturn}{Returns}
+returns the 4 by 4 matrix as a vector 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_camera_node_a8cc4988da42d2eeaff46ed88c2291422}{}\index{repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}!get\+Look\+At@{get\+Look\+At}}
+\index{get\+Look\+At@{get\+Look\+At}!repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}}
+\subsubsection[{get\+Look\+At}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+\_\+vector\+\_\+t} Camera\+Node\+::get\+Look\+At (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_camera_node_a8cc4988da42d2eeaff46ed88c2291422}
+Get the Look At vector of the camera \begin{DoxyReturn}{Returns}
+returns a vector of the \char`\"{}\+Look At\char`\"{} 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_camera_node_a7aae7ebc82db8fb039ab153bdd547cba}{}\index{repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}!get\+Near\+Clipping\+Plane@{get\+Near\+Clipping\+Plane}}
+\index{get\+Near\+Clipping\+Plane@{get\+Near\+Clipping\+Plane}!repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}}
+\subsubsection[{get\+Near\+Clipping\+Plane}]{\setlength{\rightskip}{0pt plus 5cm}float repo\+::core\+::model\+::\+Camera\+Node\+::get\+Near\+Clipping\+Plane (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_camera_node_a7aae7ebc82db8fb039ab153bdd547cba}
+Return the value for near clipping plane \begin{DoxyReturn}{Returns}
+returns the value for near clipping plane 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_camera_node_a34ada4c2ec02b855a188ee5007b8b606}{}\index{repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}!get\+Orientation@{get\+Orientation}}
+\index{get\+Orientation@{get\+Orientation}!repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}}
+\subsubsection[{get\+Orientation}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ float $>$ Camera\+Node\+::get\+Orientation (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_camera_node_a34ada4c2ec02b855a188ee5007b8b606}
+get the orientation of the camera \begin{DoxyReturn}{Returns}
+returns a vector with 4 fields, \{x, y, z, angle\} 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_camera_node_a11441690bcd3f06884e084a1afc65ceb}{}\index{repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}!get\+Position@{get\+Position}}
+\index{get\+Position@{get\+Position}!repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}}
+\subsubsection[{get\+Position}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+\_\+vector\+\_\+t} Camera\+Node\+::get\+Position (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_camera_node_a11441690bcd3f06884e084a1afc65ceb}
+Get the position of the camera \begin{DoxyReturn}{Returns}
+returns a vector of the position 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_camera_node_a8812358773b363e5a30374b2344d3d71}{}\index{repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}!get\+Up@{get\+Up}}
+\index{get\+Up@{get\+Up}!repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}}
+\subsubsection[{get\+Up}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+\_\+vector\+\_\+t} Camera\+Node\+::get\+Up (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_camera_node_a8812358773b363e5a30374b2344d3d71}
+Get the up vector of the camera \begin{DoxyReturn}{Returns}
+returns a vector of up 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_camera_node_a5ff50e052f4266842e5d4e4840fe0c37}{}\index{repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}!position\+Dependant@{position\+Dependant}}
+\index{position\+Dependant@{position\+Dependant}!repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}}
+\subsubsection[{position\+Dependant}]{\setlength{\rightskip}{0pt plus 5cm}virtual bool repo\+::core\+::model\+::\+Camera\+Node\+::position\+Dependant (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}\label{classrepo_1_1core_1_1model_1_1_camera_node_a5ff50e052f4266842e5d4e4840fe0c37}
+Check if the node is position dependant. i.\+e. if parent transformation is merged onto the node, does the node requre to a transformation applied to it e.\+g. meshes and cameras are position dependant, metadata isn\textquotesingle{}t Default behaviour is false. Position dependant child requires override this function. \begin{DoxyReturn}{Returns}
+true if node is position\+Dependant. 
+\end{DoxyReturn}
+
+
+Reimplemented from \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_aa3e0f98690dc8bfe082d2fc57b904798}{repo\+::core\+::model\+::\+Repo\+Node}.
+
+\hypertarget{classrepo_1_1core_1_1model_1_1_camera_node_a4d4a8875d7929aa92beedd9bd0eeea63}{}\index{repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}!s\+Equal@{s\+Equal}}
+\index{s\+Equal@{s\+Equal}!repo\+::core\+::model\+::\+Camera\+Node@{repo\+::core\+::model\+::\+Camera\+Node}}
+\subsubsection[{s\+Equal}]{\setlength{\rightskip}{0pt plus 5cm}bool Camera\+Node\+::s\+Equal (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Node} \&}]{other}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1model_1_1_camera_node_a4d4a8875d7929aa92beedd9bd0eeea63}
+Check if the node is semantically equal to another Different node should have a different interpretation of what this means. 
+\begin{DoxyParams}{Parameters}
+{\em other} & node to compare with \\
+\hline
+{\em returns} & true if equal, false otherwise \\
+\hline
+\end{DoxyParams}
+
+
+Reimplemented from \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_a7c98830a876ee6516587a8f07c7015a5}{repo\+::core\+::model\+::\+Repo\+Node}.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/core/model/bson/repo\+\_\+node\+\_\+camera.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/core/model/bson/repo\+\_\+node\+\_\+camera.\+cpp\end{DoxyCompactItemize}

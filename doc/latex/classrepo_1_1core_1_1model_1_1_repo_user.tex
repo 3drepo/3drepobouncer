@@ -1,0 +1,276 @@
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user}{}\section{repo\+:\+:core\+:\+:model\+:\+:Repo\+User Class Reference}
+\label{classrepo_1_1core_1_1model_1_1_repo_user}\index{repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}}
+Inheritance diagram for repo\+:\+:core\+:\+:model\+:\+:Repo\+User\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=3.000000cm]{classrepo_1_1core_1_1model_1_1_repo_user}
+\end{center}
+\end{figure}
+\subsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structrepo_1_1core_1_1model_1_1_repo_user_1_1_subscription_info}{Subscription\+Info}
+\end{DoxyCompactItemize}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_aea1084a6836596ae2d6b27659c16414a}{}{\bfseries Repo\+User} (\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} bson)\label{classrepo_1_1core_1_1model_1_1_repo_user_aea1084a6836596ae2d6b27659c16414a}
+
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_user}{Repo\+User} \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user_a978b5e38fa9b11b40ecd22f16e9cebc4}{clone\+And\+Add\+Role} (const std\+::string \&db\+Name, const std\+::string \&role) const 
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_user}{Repo\+User} \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user_a2cdeca59b63e766e326df7b7c3c759dd}{clone\+And\+Merge\+User\+Info} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user}{Repo\+User} \&new\+User\+Info) const 
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_user}{Repo\+User} \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user_a90a5c1918e73e66d3b23614e0696f00d}{clone\+And\+Update\+License\+Count} (const int \&diff, const int64\+\_\+t exp\+Date=-\/1) const 
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_a8a71e9f1c1831f78eec3334e86538480}{}\hyperlink{classrepo_1_1core_1_1model_1_1_repo_user}{Repo\+User} {\bfseries clone\+And\+Update\+Subscriptions} (const std\+::vector$<$ \hyperlink{structrepo_1_1core_1_1model_1_1_repo_user_1_1_subscription_info}{Subscription\+Info} $>$ \&subs) const \label{classrepo_1_1core_1_1model_1_1_repo_user_a8a71e9f1c1831f78eec3334e86538480}
+
+\item 
+std\+::list$<$ std\+::pair$<$ std\+::string, std\+::string $>$ $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user_a0b7fc82e2b6fbdc20d35716f1fe728ec}{get\+A\+P\+I\+Keys\+List} () const 
+\item 
+std\+::vector$<$ char $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user_a3d74ec156cfbe972b29024a44eb40d1d}{get\+Avatar\+As\+Raw\+Data} () const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user_ae9ad66fb853addbd37b73105018b25da}{get\+Cleartext\+Password} () const 
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user_ab1042e8a4bb197795dcd42ecca44e770}{get\+Custom\+Data\+B\+S\+O\+N} () const 
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user_adf71588560ad5d318f12db604ce1762a}{get\+Roles\+B\+S\+O\+N} () const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user_a3f010f00fdf8880e88d786a697832840}{get\+First\+Name} () const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user_ab6fca4716968d3bff91c517092b471a8}{get\+Last\+Name} () const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user_a60eff8abee2614b2ff3bad137fad2634}{get\+User\+Name} () const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user_ad4ebb8b43b1b54f8460d2c074fac0d92}{get\+Email} () const 
+\item 
+std\+::list$<$ std\+::pair$<$ std\+::string, std\+::string $>$ $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user_ae87706868f82a0e4b1e630e7b0af158d}{get\+License\+Assignment} () const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user_a429fcd98aec55a529c6e5d6a7f56104d}{get\+Password} () const 
+\item 
+std\+::list$<$ std\+::pair$<$ std\+::string, std\+::string $>$ $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user_a3ce3188cb264f053f7508f68210b301c}{get\+Roles\+List} () const 
+\item 
+std\+::vector$<$ \hyperlink{structrepo_1_1core_1_1model_1_1_repo_user_1_1_subscription_info}{Subscription\+Info} $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user_a252c008f819e4992ae277e99035167a7}{get\+Subscription\+Info} () const 
+\item 
+uint32\+\_\+t \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user_a6a1396bb826507640c817a87db045608}{get\+N\+Collaborators} () const 
+\item 
+double \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user_ab2eca743fef5572c5eec150c5e60262f}{get\+Quota} () const 
+\end{DoxyCompactItemize}
+\subsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static \hyperlink{structrepo_1_1core_1_1model_1_1_repo_user_1_1_subscription_info}{Subscription\+Info} \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user_a5ce1dc8d8b741324d0d2ce5c637f7265}{create\+Default\+Sub} (const int64\+\_\+t \&expire\+T\+S=-\/1)
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_a978b5e38fa9b11b40ecd22f16e9cebc4}{}\index{repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}!clone\+And\+Add\+Role@{clone\+And\+Add\+Role}}
+\index{clone\+And\+Add\+Role@{clone\+And\+Add\+Role}!repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}}
+\subsubsection[{clone\+And\+Add\+Role}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+User} Repo\+User\+::clone\+And\+Add\+Role (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{db\+Name, }
+\item[{const std\+::string \&}]{role}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_user_a978b5e38fa9b11b40ecd22f16e9cebc4}
+Clone and add roles into this use bson 
+\begin{DoxyParams}{Parameters}
+{\em db\+Name} & name of the database for the role \\
+\hline
+{\em role} & name of the role \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a cloned repo\+User bson with role added 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_a2cdeca59b63e766e326df7b7c3c759dd}{}\index{repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}!clone\+And\+Merge\+User\+Info@{clone\+And\+Merge\+User\+Info}}
+\index{clone\+And\+Merge\+User\+Info@{clone\+And\+Merge\+User\+Info}!repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}}
+\subsubsection[{clone\+And\+Merge\+User\+Info}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+User} Repo\+User\+::clone\+And\+Merge\+User\+Info (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+User} \&}]{new\+User\+Info}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_user_a2cdeca59b63e766e326df7b7c3c759dd}
+Clone and merge new user info into the existing info  new info that needs ot be added/updated \begin{DoxyReturn}{Returns}
+returns a new user with fields updated 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_a90a5c1918e73e66d3b23614e0696f00d}{}\index{repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}!clone\+And\+Update\+License\+Count@{clone\+And\+Update\+License\+Count}}
+\index{clone\+And\+Update\+License\+Count@{clone\+And\+Update\+License\+Count}!repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}}
+\subsubsection[{clone\+And\+Update\+License\+Count}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+User} Repo\+User\+::clone\+And\+Update\+License\+Count (
+\begin{DoxyParamCaption}
+\item[{const int \&}]{diff, }
+\item[{const int64\+\_\+t}]{exp\+Date = {\ttfamily -\/1}}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_user_a90a5c1918e73e66d3b23614e0696f00d}
+Clone and increase/decrease license count if diff is positive, it will add new default licenses If we are trying to decrease n licenses, there has to be n unassigned, active licenses. 
+\begin{DoxyParams}{Parameters}
+{\em diff} & the increase or decrease of license (-\/1 to remove 1, 1 to add 1) \\
+\hline
+{\em exp\+Date} & specify the expiry date of the license (default is -\/1, which never expires) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+a cloned version of repo\+User with subscription information updated 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_a5ce1dc8d8b741324d0d2ce5c637f7265}{}\index{repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}!create\+Default\+Sub@{create\+Default\+Sub}}
+\index{create\+Default\+Sub@{create\+Default\+Sub}!repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}}
+\subsubsection[{create\+Default\+Sub}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+User\+::\+Subscription\+Info} Repo\+User\+::create\+Default\+Sub (
+\begin{DoxyParamCaption}
+\item[{const int64\+\_\+t \&}]{expire\+T\+S = {\ttfamily -\/1}}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [static]}}\label{classrepo_1_1core_1_1model_1_1_repo_user_a5ce1dc8d8b741324d0d2ce5c637f7265}
+Generate a default subscription \hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_a0b7fc82e2b6fbdc20d35716f1fe728ec}{}\index{repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}!get\+A\+P\+I\+Keys\+List@{get\+A\+P\+I\+Keys\+List}}
+\index{get\+A\+P\+I\+Keys\+List@{get\+A\+P\+I\+Keys\+List}!repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}}
+\subsubsection[{get\+A\+P\+I\+Keys\+List}]{\setlength{\rightskip}{0pt plus 5cm}std\+::list$<$ std\+::pair$<$ std\+::string, std\+::string $>$ $>$ Repo\+User\+::get\+A\+P\+I\+Keys\+List (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_user_a0b7fc82e2b6fbdc20d35716f1fe728ec}
+-\/-\/-\/------ Convenience functions -\/-\/-\/-\/-\/------ Get all api keys associated with this user as a list of (label, key) pairs \begin{DoxyReturn}{Returns}
+returns a list of label,key pairs 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_a3d74ec156cfbe972b29024a44eb40d1d}{}\index{repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}!get\+Avatar\+As\+Raw\+Data@{get\+Avatar\+As\+Raw\+Data}}
+\index{get\+Avatar\+As\+Raw\+Data@{get\+Avatar\+As\+Raw\+Data}!repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}}
+\subsubsection[{get\+Avatar\+As\+Raw\+Data}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ char $>$ Repo\+User\+::get\+Avatar\+As\+Raw\+Data (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_user_a3d74ec156cfbe972b29024a44eb40d1d}
+Get avatar image as a vector of char \begin{DoxyReturn}{Returns}
+returns a vector of char representing the binary image 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_ae9ad66fb853addbd37b73105018b25da}{}\index{repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}!get\+Cleartext\+Password@{get\+Cleartext\+Password}}
+\index{get\+Cleartext\+Password@{get\+Cleartext\+Password}!repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}}
+\subsubsection[{get\+Cleartext\+Password}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string Repo\+User\+::get\+Cleartext\+Password (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_user_ae9ad66fb853addbd37b73105018b25da}
+Get the clear text password of the user \begin{DoxyReturn}{Returns}
+returns the clear text password 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_ab1042e8a4bb197795dcd42ecca44e770}{}\index{repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}!get\+Custom\+Data\+B\+S\+O\+N@{get\+Custom\+Data\+B\+S\+O\+N}}
+\index{get\+Custom\+Data\+B\+S\+O\+N@{get\+Custom\+Data\+B\+S\+O\+N}!repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}}
+\subsubsection[{get\+Custom\+Data\+B\+S\+O\+N}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+B\+S\+O\+N} Repo\+User\+::get\+Custom\+Data\+B\+S\+O\+N (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_user_ab1042e8a4bb197795dcd42ecca44e770}
+Get the custom data within the user bson as a bson \begin{DoxyReturn}{Returns}
+returns a bson with custom data in it 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_ad4ebb8b43b1b54f8460d2c074fac0d92}{}\index{repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}!get\+Email@{get\+Email}}
+\index{get\+Email@{get\+Email}!repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}}
+\subsubsection[{get\+Email}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+User\+::get\+Email (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_user_ad4ebb8b43b1b54f8460d2c074fac0d92}
+Get the email of this user \begin{DoxyReturn}{Returns}
+returns email of the user, empty string if none 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_a3f010f00fdf8880e88d786a697832840}{}\index{repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}!get\+First\+Name@{get\+First\+Name}}
+\index{get\+First\+Name@{get\+First\+Name}!repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}}
+\subsubsection[{get\+First\+Name}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+User\+::get\+First\+Name (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_user_a3f010f00fdf8880e88d786a697832840}
+Get the first name of this user \begin{DoxyReturn}{Returns}
+returns first name of the user, empty string if none 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_ab6fca4716968d3bff91c517092b471a8}{}\index{repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}!get\+Last\+Name@{get\+Last\+Name}}
+\index{get\+Last\+Name@{get\+Last\+Name}!repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}}
+\subsubsection[{get\+Last\+Name}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+User\+::get\+Last\+Name (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_user_ab6fca4716968d3bff91c517092b471a8}
+Get the last name of this user \begin{DoxyReturn}{Returns}
+returns last name of the user, empty string if none 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_ae87706868f82a0e4b1e630e7b0af158d}{}\index{repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}!get\+License\+Assignment@{get\+License\+Assignment}}
+\index{get\+License\+Assignment@{get\+License\+Assignment}!repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}}
+\subsubsection[{get\+License\+Assignment}]{\setlength{\rightskip}{0pt plus 5cm}std\+::list$<$ std\+::pair$<$ std\+::string, std\+::string $>$ $>$ Repo\+User\+::get\+License\+Assignment (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_user_ae87706868f82a0e4b1e630e7b0af158d}
+Get information on how the licenses are assigned If the license isn\textquotesingle{}t assigned, returns an empty string \begin{DoxyReturn}{Returns}
+returns a list of pair \{license plan name, assignment\} 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_a6a1396bb826507640c817a87db045608}{}\index{repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}!get\+N\+Collaborators@{get\+N\+Collaborators}}
+\index{get\+N\+Collaborators@{get\+N\+Collaborators}!repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}}
+\subsubsection[{get\+N\+Collaborators}]{\setlength{\rightskip}{0pt plus 5cm}uint32\+\_\+t Repo\+User\+::get\+N\+Collaborators (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_user_a6a1396bb826507640c817a87db045608}
+Get the current collaborator limit of the user \begin{DoxyReturn}{Returns}
+returns the number of collaborators available to the user 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_a429fcd98aec55a529c6e5d6a7f56104d}{}\index{repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}!get\+Password@{get\+Password}}
+\index{get\+Password@{get\+Password}!repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}}
+\subsubsection[{get\+Password}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string Repo\+User\+::get\+Password (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_user_a429fcd98aec55a529c6e5d6a7f56104d}
+Get the password of this user \begin{DoxyReturn}{Returns}
+returns masked password of the user 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_ab2eca743fef5572c5eec150c5e60262f}{}\index{repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}!get\+Quota@{get\+Quota}}
+\index{get\+Quota@{get\+Quota}!repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}}
+\subsubsection[{get\+Quota}]{\setlength{\rightskip}{0pt plus 5cm}double Repo\+User\+::get\+Quota (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_user_ab2eca743fef5572c5eec150c5e60262f}
+Get the current quota of the user \begin{DoxyReturn}{Returns}
+returns the quota available to the user 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_adf71588560ad5d318f12db604ce1762a}{}\index{repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}!get\+Roles\+B\+S\+O\+N@{get\+Roles\+B\+S\+O\+N}}
+\index{get\+Roles\+B\+S\+O\+N@{get\+Roles\+B\+S\+O\+N}!repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}}
+\subsubsection[{get\+Roles\+B\+S\+O\+N}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+B\+S\+O\+N} Repo\+User\+::get\+Roles\+B\+S\+O\+N (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_user_adf71588560ad5d318f12db604ce1762a}
+Get the roles within the user bson as a bson \begin{DoxyReturn}{Returns}
+returns a bson with roles in it 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_a3ce3188cb264f053f7508f68210b301c}{}\index{repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}!get\+Roles\+List@{get\+Roles\+List}}
+\index{get\+Roles\+List@{get\+Roles\+List}!repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}}
+\subsubsection[{get\+Roles\+List}]{\setlength{\rightskip}{0pt plus 5cm}std\+::list$<$ std\+::pair$<$ std\+::string, std\+::string $>$ $>$ Repo\+User\+::get\+Roles\+List (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_user_a3ce3188cb264f053f7508f68210b301c}
+Get list of roles \begin{DoxyReturn}{Returns}
+returns a vector of string pairs (database, roles) 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_a252c008f819e4992ae277e99035167a7}{}\index{repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}!get\+Subscription\+Info@{get\+Subscription\+Info}}
+\index{get\+Subscription\+Info@{get\+Subscription\+Info}!repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}}
+\subsubsection[{get\+Subscription\+Info}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf Repo\+User\+::\+Subscription\+Info} $>$ Repo\+User\+::get\+Subscription\+Info (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_user_a252c008f819e4992ae277e99035167a7}
+Get list of subscription info \begin{DoxyReturn}{Returns}
+returns a vector of subscription info 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_user_a60eff8abee2614b2ff3bad137fad2634}{}\index{repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}!get\+User\+Name@{get\+User\+Name}}
+\index{get\+User\+Name@{get\+User\+Name}!repo\+::core\+::model\+::\+Repo\+User@{repo\+::core\+::model\+::\+Repo\+User}}
+\subsubsection[{get\+User\+Name}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+User\+::get\+User\+Name (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_user_a60eff8abee2614b2ff3bad137fad2634}
+Get the username from this user \begin{DoxyReturn}{Returns}
+returns user name of the user, empty string if none 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/core/model/bson/repo\+\_\+bson\+\_\+user.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/core/model/bson/repo\+\_\+bson\+\_\+user.\+cpp\end{DoxyCompactItemize}

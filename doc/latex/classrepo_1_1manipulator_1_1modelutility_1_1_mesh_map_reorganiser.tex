@@ -1,0 +1,94 @@
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_mesh_map_reorganiser}{}\section{repo\+:\+:manipulator\+:\+:modelutility\+:\+:Mesh\+Map\+Reorganiser Class Reference}
+\label{classrepo_1_1manipulator_1_1modelutility_1_1_mesh_map_reorganiser}\index{repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser@{repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser}}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_mesh_map_reorganiser_a99f778aa78ba17e05caa3e22e4839f40}{Mesh\+Map\+Reorganiser} (const \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node}{repo\+::core\+::model\+::\+Mesh\+Node} $\ast$mesh, const size\+\_\+t \&vert\+Threshold)
+\item 
+std\+::vector$<$ std\+::vector$<$ float $>$ $>$ \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_mesh_map_reorganiser_a30cbd2f8b0e24bc294be5e9def11b591}{get\+I\+D\+Map\+Arrays} () const 
+\item 
+std\+::vector$<$ std\+::vector$<$ \hyperlink{structrepo__mesh__mapping__t}{repo\+\_\+mesh\+\_\+mapping\+\_\+t} $>$ $>$ \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_mesh_map_reorganiser_a7e05160f88ad0a1103cd7426f8aacd0d}{get\+Mappings\+Per\+Sub\+Mesh} () const 
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node}{repo\+::core\+::model\+::\+Mesh\+Node} \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_mesh_map_reorganiser_a29db789d0ad170041a5ecf4fd0dbd583}{get\+Remapped\+Mesh} () const 
+\item 
+std\+::vector$<$ uint16\+\_\+t $>$ \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_mesh_map_reorganiser_a60fb9fad7e304bcfe6abfd5db1182b8b}{get\+Serialised\+Faces} () const 
+\item 
+std\+::unordered\+\_\+map$<$ repo\+U\+U\+I\+D, std\+::vector$<$ uint32\+\_\+t $>$, \hyperlink{struct_repo_u_u_i_d_hasher}{Repo\+U\+U\+I\+D\+Hasher} $>$ \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_mesh_map_reorganiser_a8041d2c041c05563dfa0dd7528f09014}{get\+Split\+Mapping} () const 
+\end{DoxyCompactItemize}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_mesh_map_reorganiser_a99f778aa78ba17e05caa3e22e4839f40}{}\index{repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser@{repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser}!Mesh\+Map\+Reorganiser@{Mesh\+Map\+Reorganiser}}
+\index{Mesh\+Map\+Reorganiser@{Mesh\+Map\+Reorganiser}!repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser@{repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser}}
+\subsubsection[{Mesh\+Map\+Reorganiser}]{\setlength{\rightskip}{0pt plus 5cm}Mesh\+Map\+Reorganiser\+::\+Mesh\+Map\+Reorganiser (
+\begin{DoxyParamCaption}
+\item[{const {\bf repo\+::core\+::model\+::\+Mesh\+Node} $\ast$}]{mesh, }
+\item[{const size\+\_\+t \&}]{vert\+Threshold}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1modelutility_1_1_mesh_map_reorganiser_a99f778aa78ba17e05caa3e22e4839f40}
+Construct a mesh reorganiser if the reorganiser failed to generate a remapped mesh, it will return an empty mesh\+Node. 
+\begin{DoxyParams}{Parameters}
+{\em mesh} & the mesh to reorganise \\
+\hline
+{\em vert\+Threshold} & maximum vertices \\
+\hline
+\end{DoxyParams}
+
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_mesh_map_reorganiser_a30cbd2f8b0e24bc294be5e9def11b591}{}\index{repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser@{repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser}!get\+I\+D\+Map\+Arrays@{get\+I\+D\+Map\+Arrays}}
+\index{get\+I\+D\+Map\+Arrays@{get\+I\+D\+Map\+Arrays}!repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser@{repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser}}
+\subsubsection[{get\+I\+D\+Map\+Arrays}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ std\+::vector$<$ float $>$ $>$ Mesh\+Map\+Reorganiser\+::get\+I\+D\+Map\+Arrays (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1manipulator_1_1modelutility_1_1_mesh_map_reorganiser_a30cbd2f8b0e24bc294be5e9def11b591}
+Return id\+Map arrays of the modified mesh (for material mapping) \begin{DoxyReturn}{Returns}
+returns a id\+Map arrays 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_mesh_map_reorganiser_a7e05160f88ad0a1103cd7426f8aacd0d}{}\index{repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser@{repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser}!get\+Mappings\+Per\+Sub\+Mesh@{get\+Mappings\+Per\+Sub\+Mesh}}
+\index{get\+Mappings\+Per\+Sub\+Mesh@{get\+Mappings\+Per\+Sub\+Mesh}!repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser@{repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser}}
+\subsubsection[{get\+Mappings\+Per\+Sub\+Mesh}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ std\+::vector$<$ {\bf repo\+\_\+mesh\+\_\+mapping\+\_\+t} $>$ $>$ Mesh\+Map\+Reorganiser\+::get\+Mappings\+Per\+Sub\+Mesh (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1manipulator_1_1modelutility_1_1_mesh_map_reorganiser_a7e05160f88ad0a1103cd7426f8aacd0d}
+Get all mesh mapping, grouped by the sub meshes they belong to \begin{DoxyReturn}{Returns}
+a vector (new submeshes) of vector of mesh mappings(original submeshes) 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_mesh_map_reorganiser_a29db789d0ad170041a5ecf4fd0dbd583}{}\index{repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser@{repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser}!get\+Remapped\+Mesh@{get\+Remapped\+Mesh}}
+\index{get\+Remapped\+Mesh@{get\+Remapped\+Mesh}!repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser@{repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser}}
+\subsubsection[{get\+Remapped\+Mesh}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+::core\+::model\+::\+Mesh\+Node} Mesh\+Map\+Reorganiser\+::get\+Remapped\+Mesh (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1manipulator_1_1modelutility_1_1_mesh_map_reorganiser_a29db789d0ad170041a5ecf4fd0dbd583}
+Get the mesh, with mesh mappings and buffers modified \begin{DoxyReturn}{Returns}
+returns the modified mesh 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_mesh_map_reorganiser_a60fb9fad7e304bcfe6abfd5db1182b8b}{}\index{repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser@{repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser}!get\+Serialised\+Faces@{get\+Serialised\+Faces}}
+\index{get\+Serialised\+Faces@{get\+Serialised\+Faces}!repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser@{repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser}}
+\subsubsection[{get\+Serialised\+Faces}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ uint16\+\_\+t $>$ Mesh\+Map\+Reorganiser\+::get\+Serialised\+Faces (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1manipulator_1_1modelutility_1_1_mesh_map_reorganiser_a60fb9fad7e304bcfe6abfd5db1182b8b}
+Return serialised faces of the modified mesh \begin{DoxyReturn}{Returns}
+returns a serialised buffer of faces 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_mesh_map_reorganiser_a8041d2c041c05563dfa0dd7528f09014}{}\index{repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser@{repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser}!get\+Split\+Mapping@{get\+Split\+Mapping}}
+\index{get\+Split\+Mapping@{get\+Split\+Mapping}!repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser@{repo\+::manipulator\+::modelutility\+::\+Mesh\+Map\+Reorganiser}}
+\subsubsection[{get\+Split\+Mapping}]{\setlength{\rightskip}{0pt plus 5cm}std\+::unordered\+\_\+map$<$ repo\+U\+U\+I\+D, std\+::vector$<$ uint32\+\_\+t $>$, {\bf Repo\+U\+U\+I\+D\+Hasher} $>$ Mesh\+Map\+Reorganiser\+::get\+Split\+Mapping (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1manipulator_1_1modelutility_1_1_mesh_map_reorganiser_a8041d2c041c05563dfa0dd7528f09014}
+Get the mapping between submeshes U\+U\+I\+D to new super mesh index \begin{DoxyReturn}{Returns}
+sub mesh to super mesh(es) mapping 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/manipulator/modelutility/repo\+\_\+mesh\+\_\+map\+\_\+reorganiser.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/manipulator/modelutility/repo\+\_\+mesh\+\_\+map\+\_\+reorganiser.\+cpp\end{DoxyCompactItemize}

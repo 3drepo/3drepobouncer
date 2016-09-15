@@ -1,0 +1,351 @@
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{}\section{repo\+:\+:core\+:\+:model\+:\+:Repo\+B\+S\+O\+N Class Reference}
+\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+Inheritance diagram for repo\+:\+:core\+:\+:model\+:\+:Repo\+B\+S\+O\+N\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=4.725739cm]{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a354d143bf35f8bc6c4224835f6ba9ca5}{Repo\+B\+S\+O\+N} ()
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_aabc885b5853e080d67b40f1a5e246844}{Repo\+B\+S\+O\+N} (const mongo\+::\+B\+S\+O\+N\+Obj \&obj, const std\+::unordered\+\_\+map$<$ std\+::string, std\+::pair$<$ std\+::string, std\+::vector$<$ uint8\+\_\+t $>$$>$$>$ \&bin\+Mapping=std\+::unordered\+\_\+map$<$ std\+::string, std\+::pair$<$ std\+::string, std\+::vector$<$ uint8\+\_\+t $>$$>$$>$())
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_aa06f776e2e40cfdc2987b862830ac0d9}{Repo\+B\+S\+O\+N} (mongo\+::\+B\+S\+O\+N\+Obj\+Builder \&builder)
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a24345f6cbb37297891d438137392d14a}{Repo\+B\+S\+O\+N} (const std\+::vector$<$ char $>$ \&raw\+Data)
+\item 
+virtual \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a67460b346bf65fab93b57fdaf8b3048c}{$\sim$\+Repo\+B\+S\+O\+N} ()
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} \& \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a57637989afe6afdad35530365d8881c4}{operator=} (\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} other\+Copy)
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a55fbe89c9c724ea6f2413c60d7510afc}{swap} (\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} other\+Copy)
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_element}{Repo\+B\+S\+O\+N\+Element} \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_aa2352078eb863b969d3a858166e22803}{get\+Field} (const std\+::string \&label) const 
+\item 
+{\footnotesize template$<$class T $>$ }\\bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a6264631f8009beb55f7402f486fd63f8}{get\+Binary\+Field\+As\+Vector} (const std\+::string \&field, std\+::vector$<$ T $>$ \&vec) const 
+\item 
+repo\+U\+U\+I\+D \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_abc38f95304405ad3c5f988473fb6e62d}{get\+U\+U\+I\+D\+Field} (const std\+::string \&label) const 
+\item 
+std\+::vector$<$ repo\+U\+U\+I\+D $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_ac42db2ae14159fb1e625bfe7d5578733}{get\+U\+U\+I\+D\+Field\+Array} (const std\+::string \&label) const 
+\item 
+std\+::vector$<$ float $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_aef8f7857b6d4a317d128b627d41a6c7c}{get\+Float\+Array} (const std\+::string \&label) const 
+\item 
+std\+::vector$<$ std\+::string $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a1f6ee4d979027c5ccd521a8cc90291e5}{get\+String\+Array} (const std\+::string \&label) const 
+\item 
+int64\+\_\+t \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_afebb889f385500484149529f93d05179}{get\+Time\+Stamp\+Field} (const std\+::string \&label) const 
+\item 
+std\+::list$<$ std\+::pair$<$ std\+::string, std\+::string $>$ $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_ab4568b7a3f53275af3c0925a8b822137}{get\+List\+String\+Pair\+Field} (const std\+::string \&arr\+Label, const std\+::string \&fst\+Label, const std\+::string \&snd\+Label) const 
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a0a7279d5d7e3c09a8276e26d18ef4ba4}{}double \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a0a7279d5d7e3c09a8276e26d18ef4ba4}{get\+Embedded\+Double} (const std\+::string \&embedded\+Obj\+Name, const std\+::string \&field\+Name, const double \&default\+Value=0) const \label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a0a7279d5d7e3c09a8276e26d18ef4ba4}
+
+\begin{DoxyCompactList}\small\item\em Gets double from embedded sub-\/object based on name fields. \end{DoxyCompactList}\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a3e49b65ed21750fb260f100ed640bec4}{}bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a3e49b65ed21750fb260f100ed640bec4}{has\+Embedded\+Field} (const std\+::string \&embedded\+Obj\+Name, const std\+::string \&field\+Name) const \label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a3e49b65ed21750fb260f100ed640bec4}
+
+\begin{DoxyCompactList}\small\item\em Returns true if embedded object contains given field\+Name. \end{DoxyCompactList}\item 
+bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a0ad5a02a94a02313e22bd8826c1db8cc}{has\+Bin\+Field} (const std\+::string \&label) const 
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a08eb34b8ed7ecb5546e6f99e4708c3be}{}virtual \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} {\bfseries clone\+And\+Add\+Fields} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} $\ast$changes) const \label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a08eb34b8ed7ecb5546e6f99e4708c3be}
+
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_ac4825e1c7c40c46fc9f5b1ba2ff1e8bf}{clone\+And\+Shrink} () const 
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_ab47dba25bea609596e1201d65163df80}{}std\+::vector$<$ uint8\+\_\+t $>$ {\bfseries get\+Big\+Binary} (const std\+::string \&key) const \label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_ab47dba25bea609596e1201d65163df80}
+
+\item 
+std\+::vector$<$ std\+::pair$<$ std\+::string, std\+::string $>$ $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_af6fcb689bfd5fb93e43a3e6879332fbb}{get\+File\+List} () const 
+\item 
+std\+::unordered\+\_\+map$<$ std\+::string, std\+::pair$<$ std\+::string, std\+::vector$<$ uint8\+\_\+t $>$ $>$ $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_ae61dbbcf6f836bffda5f5bb6cd596145}{get\+Files\+Mapping} () const 
+\item 
+bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a75e57c9424a02f7e71ff755bc06d933b}{has\+Oversize\+Files} () const 
+\end{DoxyCompactItemize}
+\subsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_ab46a47cac46bc975bf6fde6702ba0f7d}{from\+J\+S\+O\+N} (const std\+::string \&json)
+\item 
+static int64\+\_\+t \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a2c7f83c92e6a293162ccc6814bf0aa9c}{get\+Current\+Timestamp} ()
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a8c8cbce2af3478baec967ec854ac4ff0}{}std\+::unordered\+\_\+map$<$ std\+::string, std\+::pair$<$ std\+::string, std\+::vector$<$ uint8\+\_\+t $>$ $>$ $>$ {\bfseries big\+Files}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a8c8cbce2af3478baec967ec854ac4ff0}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a354d143bf35f8bc6c4224835f6ba9ca5}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!Repo\+B\+S\+O\+N@{Repo\+B\+S\+O\+N}}
+\index{Repo\+B\+S\+O\+N@{Repo\+B\+S\+O\+N}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{Repo\+B\+S\+O\+N}]{\setlength{\rightskip}{0pt plus 5cm}repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N\+::\+Repo\+B\+S\+O\+N (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a354d143bf35f8bc6c4224835f6ba9ca5}
+Default empty constructor. \hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_aabc885b5853e080d67b40f1a5e246844}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!Repo\+B\+S\+O\+N@{Repo\+B\+S\+O\+N}}
+\index{Repo\+B\+S\+O\+N@{Repo\+B\+S\+O\+N}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{Repo\+B\+S\+O\+N}]{\setlength{\rightskip}{0pt plus 5cm}Repo\+B\+S\+O\+N\+::\+Repo\+B\+S\+O\+N (
+\begin{DoxyParamCaption}
+\item[{const mongo\+::\+B\+S\+O\+N\+Obj \&}]{obj, }
+\item[{const std\+::unordered\+\_\+map$<$ std\+::string, std\+::pair$<$ std\+::string, std\+::vector$<$ uint8\+\_\+t $>$$>$$>$ \&}]{bin\+Mapping = {\ttfamily std\+:\+:unordered\+\_\+map$<$std\+:\+:string,~std\+:\+:pair$<$std\+:\+:string,~std\+:\+:vector$<$uint8\+\_\+t$>$$>$$>$()}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_aabc885b5853e080d67b40f1a5e246844}
+Constructor from Mongo B\+S\+O\+N object. 
+\begin{DoxyParams}{Parameters}
+{\em mongo} & B\+S\+O\+N object \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_aa06f776e2e40cfdc2987b862830ac0d9}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!Repo\+B\+S\+O\+N@{Repo\+B\+S\+O\+N}}
+\index{Repo\+B\+S\+O\+N@{Repo\+B\+S\+O\+N}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{Repo\+B\+S\+O\+N}]{\setlength{\rightskip}{0pt plus 5cm}repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N\+::\+Repo\+B\+S\+O\+N (
+\begin{DoxyParamCaption}
+\item[{mongo\+::\+B\+S\+O\+N\+Obj\+Builder \&}]{builder}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_aa06f776e2e40cfdc2987b862830ac0d9}
+Constructor from Mongo B\+S\+O\+N object builder. 
+\begin{DoxyParams}{Parameters}
+{\em mongo} & B\+S\+O\+N object builder \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a24345f6cbb37297891d438137392d14a}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!Repo\+B\+S\+O\+N@{Repo\+B\+S\+O\+N}}
+\index{Repo\+B\+S\+O\+N@{Repo\+B\+S\+O\+N}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{Repo\+B\+S\+O\+N}]{\setlength{\rightskip}{0pt plus 5cm}repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N\+::\+Repo\+B\+S\+O\+N (
+\begin{DoxyParamCaption}
+\item[{const std\+::vector$<$ char $>$ \&}]{raw\+Data}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a24345f6cbb37297891d438137392d14a}
+Constructor from raw data buffer. 
+\begin{DoxyParams}{Parameters}
+{\em raw\+Data} & raw data \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a67460b346bf65fab93b57fdaf8b3048c}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!````~Repo\+B\+S\+O\+N@{$\sim$\+Repo\+B\+S\+O\+N}}
+\index{````~Repo\+B\+S\+O\+N@{$\sim$\+Repo\+B\+S\+O\+N}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{$\sim$\+Repo\+B\+S\+O\+N}]{\setlength{\rightskip}{0pt plus 5cm}virtual repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N\+::$\sim$\+Repo\+B\+S\+O\+N (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a67460b346bf65fab93b57fdaf8b3048c}
+Default empty deconstructor. 
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_ac4825e1c7c40c46fc9f5b1ba2ff1e8bf}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!clone\+And\+Shrink@{clone\+And\+Shrink}}
+\index{clone\+And\+Shrink@{clone\+And\+Shrink}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{clone\+And\+Shrink}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+B\+S\+O\+N} Repo\+B\+S\+O\+N\+::clone\+And\+Shrink (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_ac4825e1c7c40c46fc9f5b1ba2ff1e8bf}
+Clone and attempt the shrink the bson by offloading binary files to big file storage \begin{DoxyReturn}{Returns}
+returns the shrunk B\+S\+O\+N 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_ab46a47cac46bc975bf6fde6702ba0f7d}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!from\+J\+S\+O\+N@{from\+J\+S\+O\+N}}
+\index{from\+J\+S\+O\+N@{from\+J\+S\+O\+N}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{from\+J\+S\+O\+N}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+B\+S\+O\+N} Repo\+B\+S\+O\+N\+::from\+J\+S\+O\+N (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{json}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [static]}}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_ab46a47cac46bc975bf6fde6702ba0f7d}
+Construct a repobson from a json string \hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a6264631f8009beb55f7402f486fd63f8}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!get\+Binary\+Field\+As\+Vector@{get\+Binary\+Field\+As\+Vector}}
+\index{get\+Binary\+Field\+As\+Vector@{get\+Binary\+Field\+As\+Vector}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{get\+Binary\+Field\+As\+Vector}]{\setlength{\rightskip}{0pt plus 5cm}template$<$class T $>$ bool repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N\+::get\+Binary\+Field\+As\+Vector (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{field, }
+\item[{std\+::vector$<$ T $>$ \&}]{vec}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a6264631f8009beb55f7402f486fd63f8}
+get a binary field in the form of vector of T 
+\begin{DoxyParams}{Parameters}
+{\em field} & field name \\
+\hline
+{\em vec} & pointer to a vector to store this data \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success. 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a2c7f83c92e6a293162ccc6814bf0aa9c}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!get\+Current\+Timestamp@{get\+Current\+Timestamp}}
+\index{get\+Current\+Timestamp@{get\+Current\+Timestamp}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{get\+Current\+Timestamp}]{\setlength{\rightskip}{0pt plus 5cm}int64\+\_\+t Repo\+B\+S\+O\+N\+::get\+Current\+Timestamp (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [static]}}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a2c7f83c92e6a293162ccc6814bf0aa9c}
+Returns the current time in the form of int64 timestamp \hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_aa2352078eb863b969d3a858166e22803}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!get\+Field@{get\+Field}}
+\index{get\+Field@{get\+Field}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{get\+Field}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+B\+S\+O\+N\+Element} repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N\+::get\+Field (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{label}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_aa2352078eb863b969d3a858166e22803}
+returns a field from the B\+S\+O\+N 
+\begin{DoxyParams}{Parameters}
+{\em label} & name of the field to retrieve \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_element}{Repo\+B\+S\+O\+N\+Element} 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_af6fcb689bfd5fb93e43a3e6879332fbb}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!get\+File\+List@{get\+File\+List}}
+\index{get\+File\+List@{get\+File\+List}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{get\+File\+List}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ std\+::pair$<$ std\+::string, std\+::string $>$ $>$ Repo\+B\+S\+O\+N\+::get\+File\+List (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_af6fcb689bfd5fb93e43a3e6879332fbb}
+Get the list of file names for the big files needs to be stored for this bson \begin{DoxyReturn}{Returns}
+returns a list of \{field name, file name\} needed to be stored 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_ae61dbbcf6f836bffda5f5bb6cd596145}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!get\+Files\+Mapping@{get\+Files\+Mapping}}
+\index{get\+Files\+Mapping@{get\+Files\+Mapping}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{get\+Files\+Mapping}]{\setlength{\rightskip}{0pt plus 5cm}std\+::unordered\+\_\+map$<$ std\+::string, std\+::pair$<$std\+::string, std\+::vector$<$uint8\+\_\+t$>$ $>$ $>$ repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N\+::get\+Files\+Mapping (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_ae61dbbcf6f836bffda5f5bb6cd596145}
+Get the mapping files from the bson object \begin{DoxyReturn}{Returns}
+returns the map of external (grid\+F\+S) files 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_aef8f7857b6d4a317d128b627d41a6c7c}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!get\+Float\+Array@{get\+Float\+Array}}
+\index{get\+Float\+Array@{get\+Float\+Array}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{get\+Float\+Array}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ float $>$ Repo\+B\+S\+O\+N\+::get\+Float\+Array (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{label}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_aef8f7857b6d4a317d128b627d41a6c7c}
+Get an array of fields given an element label 
+\begin{DoxyParams}{Parameters}
+{\em label} & name of the array element \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns the array element in their respective type 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_ab4568b7a3f53275af3c0925a8b822137}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!get\+List\+String\+Pair\+Field@{get\+List\+String\+Pair\+Field}}
+\index{get\+List\+String\+Pair\+Field@{get\+List\+String\+Pair\+Field}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{get\+List\+String\+Pair\+Field}]{\setlength{\rightskip}{0pt plus 5cm}std\+::list$<$ std\+::pair$<$ std\+::string, std\+::string $>$ $>$ Repo\+B\+S\+O\+N\+::get\+List\+String\+Pair\+Field (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{arr\+Label, }
+\item[{const std\+::string \&}]{fst\+Label, }
+\item[{const std\+::string \&}]{snd\+Label}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_ab4568b7a3f53275af3c0925a8b822137}
+Get a field as a List of string pairs This is for scenarios were there is an element that is an array of objects and you want to get 2 fields within all the objects. 
+\begin{DoxyParams}{Parameters}
+{\em arr\+Label} & the element where this data is stored \\
+\hline
+{\em fst\+Label} & label for \#1 in pair \\
+\hline
+{\em snd\+Label} & label for \#2 in pair \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+a List of pairs of strings 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a1f6ee4d979027c5ccd521a8cc90291e5}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!get\+String\+Array@{get\+String\+Array}}
+\index{get\+String\+Array@{get\+String\+Array}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{get\+String\+Array}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ std\+::string $>$ Repo\+B\+S\+O\+N\+::get\+String\+Array (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{label}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a1f6ee4d979027c5ccd521a8cc90291e5}
+Get an array of fields given an element label 
+\begin{DoxyParams}{Parameters}
+{\em label} & name of the array element \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns the array element in their respective type 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_afebb889f385500484149529f93d05179}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!get\+Time\+Stamp\+Field@{get\+Time\+Stamp\+Field}}
+\index{get\+Time\+Stamp\+Field@{get\+Time\+Stamp\+Field}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{get\+Time\+Stamp\+Field}]{\setlength{\rightskip}{0pt plus 5cm}int64\+\_\+t Repo\+B\+S\+O\+N\+::get\+Time\+Stamp\+Field (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{label}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_afebb889f385500484149529f93d05179}
+Get a field as timestamp 
+\begin{DoxyParams}{Parameters}
+{\em label} & name of the element \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns timestamp as int64, return -\/1 if not found 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_abc38f95304405ad3c5f988473fb6e62d}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!get\+U\+U\+I\+D\+Field@{get\+U\+U\+I\+D\+Field}}
+\index{get\+U\+U\+I\+D\+Field@{get\+U\+U\+I\+D\+Field}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{get\+U\+U\+I\+D\+Field}]{\setlength{\rightskip}{0pt plus 5cm}repo\+U\+U\+I\+D Repo\+B\+S\+O\+N\+::get\+U\+U\+I\+D\+Field (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{label}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_abc38f95304405ad3c5f988473fb6e62d}
+Overload of get\+Field function to retreve repo\+U\+U\+I\+D 
+\begin{DoxyParams}{Parameters}
+{\em label} & name of the field \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a repo\+U\+U\+I\+D from that field 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_ac42db2ae14159fb1e625bfe7d5578733}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!get\+U\+U\+I\+D\+Field\+Array@{get\+U\+U\+I\+D\+Field\+Array}}
+\index{get\+U\+U\+I\+D\+Field\+Array@{get\+U\+U\+I\+D\+Field\+Array}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{get\+U\+U\+I\+D\+Field\+Array}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ repo\+U\+U\+I\+D $>$ Repo\+B\+S\+O\+N\+::get\+U\+U\+I\+D\+Field\+Array (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{label}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_ac42db2ae14159fb1e625bfe7d5578733}
+Get an array of fields given an array element 
+\begin{DoxyParams}{Parameters}
+{\em label} & name of the array element \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns the array element in their respective type 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a0ad5a02a94a02313e22bd8826c1db8cc}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!has\+Bin\+Field@{has\+Bin\+Field}}
+\index{has\+Bin\+Field@{has\+Bin\+Field}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{has\+Bin\+Field}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N\+::has\+Bin\+Field (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{label}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a0ad5a02a94a02313e22bd8826c1db8cc}
+Checks if a binary field exists within the \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} This differs from has\+Field() as it also checks the big\+Files mapping where the field is stored outside in Grid\+F\+S. 
+\begin{DoxyParams}{Parameters}
+{\em label} & field name in question \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true if found 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a75e57c9424a02f7e71ff755bc06d933b}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!has\+Oversize\+Files@{has\+Oversize\+Files}}
+\index{has\+Oversize\+Files@{has\+Oversize\+Files}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{has\+Oversize\+Files}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N\+::has\+Oversize\+Files (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a75e57c9424a02f7e71ff755bc06d933b}
+Check if this bson object has oversized files \begin{DoxyReturn}{Returns}
+returns true if there are oversized files 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a57637989afe6afdad35530365d8881c4}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!operator=@{operator=}}
+\index{operator=@{operator=}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{operator=}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+B\+S\+O\+N}\& repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N\+::operator= (
+\begin{DoxyParamCaption}
+\item[{{\bf Repo\+B\+S\+O\+N}}]{other\+Copy}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a57637989afe6afdad35530365d8881c4}
+Override the equals operator to perform the swap just like mongo bson but also retrieve the mapping information \hypertarget{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a55fbe89c9c724ea6f2413c60d7510afc}{}\index{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}!swap@{swap}}
+\index{swap@{swap}!repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N@{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N}}
+\subsubsection[{swap}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N\+::swap (
+\begin{DoxyParamCaption}
+\item[{{\bf Repo\+B\+S\+O\+N}}]{other\+Copy}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n_a55fbe89c9c724ea6f2413c60d7510afc}
+Override the swap operator to perform the swap just like mongo bson but also carry over the mapping information 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/core/model/bson/repo\+\_\+bson.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/core/model/bson/repo\+\_\+bson.\+cpp\end{DoxyCompactItemize}

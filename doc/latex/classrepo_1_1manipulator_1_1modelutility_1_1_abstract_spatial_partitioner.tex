@@ -1,0 +1,86 @@
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner}{}\section{repo\+:\+:manipulator\+:\+:modelutility\+:\+:Abstract\+Spatial\+Partitioner Class Reference}
+\label{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner}\index{repo\+::manipulator\+::modelutility\+::\+Abstract\+Spatial\+Partitioner@{repo\+::manipulator\+::modelutility\+::\+Abstract\+Spatial\+Partitioner}}
+Inheritance diagram for repo\+:\+:manipulator\+:\+:modelutility\+:\+:Abstract\+Spatial\+Partitioner\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner_a9fb21ce83e682d89be17768c7b02cdf3}{Abstract\+Spatial\+Partitioner} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene, const uint32\+\_\+t \&max\+Depth)
+\item 
+virtual std\+::shared\+\_\+ptr$<$ \hyperlink{structrepo__partitioning__tree__t}{repo\+\_\+partitioning\+\_\+tree\+\_\+t} $>$ \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner_af1e6e3540698ff0f4ec52cd758260aba}{partition\+Scene} ()=0
+\item 
+virtual \hyperlink{classrepo_1_1lib_1_1_property_tree}{repo\+::lib\+::\+Property\+Tree} \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner_a46d182fa325b972a66b65009975e5980}{generate\+Property\+Tree\+For\+Partitioning} ()
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner_a712a25e95b83e7de662e2e92b9c931c2}{}\hyperlink{classrepo_1_1lib_1_1_property_tree}{repo\+::lib\+::\+Property\+Tree} {\bfseries generate\+Property\+Tree\+For\+Partitioning\+Internal} (const std\+::shared\+\_\+ptr$<$ \hyperlink{structrepo__partitioning__tree__t}{repo\+\_\+partitioning\+\_\+tree\+\_\+t} $>$ \&sp\+Tree) const \label{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner_a712a25e95b83e7de662e2e92b9c931c2}
+
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner_acc5184e4cdcbded21d68bdfb661ce4c4}{}const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ {\bfseries scene}\label{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner_acc5184e4cdcbded21d68bdfb661ce4c4}
+
+\item 
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner_a8f3d011aeb4f2b8c546cf8c470ac362e}{}const uint32\+\_\+t {\bfseries max\+Depth}\label{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner_a8f3d011aeb4f2b8c546cf8c470ac362e}
+
+\item 
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner_abc8b608e271174e8cb1ef539a2dfe80d}{}const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{repo\+::core\+::model\+::\+Repo\+Scene\+::\+Graph\+Type} {\bfseries g\+Type}\label{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner_abc8b608e271174e8cb1ef539a2dfe80d}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner_a9fb21ce83e682d89be17768c7b02cdf3}{}\index{repo\+::manipulator\+::modelutility\+::\+Abstract\+Spatial\+Partitioner@{repo\+::manipulator\+::modelutility\+::\+Abstract\+Spatial\+Partitioner}!Abstract\+Spatial\+Partitioner@{Abstract\+Spatial\+Partitioner}}
+\index{Abstract\+Spatial\+Partitioner@{Abstract\+Spatial\+Partitioner}!repo\+::manipulator\+::modelutility\+::\+Abstract\+Spatial\+Partitioner@{repo\+::manipulator\+::modelutility\+::\+Abstract\+Spatial\+Partitioner}}
+\subsubsection[{Abstract\+Spatial\+Partitioner}]{\setlength{\rightskip}{0pt plus 5cm}Abstract\+Spatial\+Partitioner\+::\+Abstract\+Spatial\+Partitioner (
+\begin{DoxyParamCaption}
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene, }
+\item[{const uint32\+\_\+t \&}]{max\+Depth}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner_a9fb21ce83e682d89be17768c7b02cdf3}
+Abstract Spatial Partitioning utility class to spatially divide a scene graph base on its meshes Note\+: currently only support scene with optimised graph! 
+\begin{DoxyParams}{Parameters}
+{\em scene} & scene to divide \\
+\hline
+{\em depth} & limiting depth of the tree \\
+\hline
+\end{DoxyParams}
+
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner_a46d182fa325b972a66b65009975e5980}{}\index{repo\+::manipulator\+::modelutility\+::\+Abstract\+Spatial\+Partitioner@{repo\+::manipulator\+::modelutility\+::\+Abstract\+Spatial\+Partitioner}!generate\+Property\+Tree\+For\+Partitioning@{generate\+Property\+Tree\+For\+Partitioning}}
+\index{generate\+Property\+Tree\+For\+Partitioning@{generate\+Property\+Tree\+For\+Partitioning}!repo\+::manipulator\+::modelutility\+::\+Abstract\+Spatial\+Partitioner@{repo\+::manipulator\+::modelutility\+::\+Abstract\+Spatial\+Partitioner}}
+\subsubsection[{generate\+Property\+Tree\+For\+Partitioning}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+::lib\+::\+Property\+Tree} Abstract\+Spatial\+Partitioner\+::generate\+Property\+Tree\+For\+Partitioning (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner_a46d182fa325b972a66b65009975e5980}
+Generate a property tree representing the \hyperlink{structrepo__partitioning__tree__t}{repo\+\_\+partitioning\+\_\+tree\+\_\+t} from \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner_af1e6e3540698ff0f4ec52cd758260aba}{partition\+Scene()} \begin{DoxyReturn}{Returns}
+returns the spatial partitioning information as a property tree 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner_af1e6e3540698ff0f4ec52cd758260aba}{}\index{repo\+::manipulator\+::modelutility\+::\+Abstract\+Spatial\+Partitioner@{repo\+::manipulator\+::modelutility\+::\+Abstract\+Spatial\+Partitioner}!partition\+Scene@{partition\+Scene}}
+\index{partition\+Scene@{partition\+Scene}!repo\+::manipulator\+::modelutility\+::\+Abstract\+Spatial\+Partitioner@{repo\+::manipulator\+::modelutility\+::\+Abstract\+Spatial\+Partitioner}}
+\subsubsection[{partition\+Scene}]{\setlength{\rightskip}{0pt plus 5cm}virtual std\+::shared\+\_\+ptr$<${\bf repo\+\_\+partitioning\+\_\+tree\+\_\+t}$>$ repo\+::manipulator\+::modelutility\+::\+Abstract\+Spatial\+Partitioner\+::partition\+Scene (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [pure virtual]}}\label{classrepo_1_1manipulator_1_1modelutility_1_1_abstract_spatial_partitioner_af1e6e3540698ff0f4ec52cd758260aba}
+Partition the scene \begin{DoxyReturn}{Returns}
+returns the spatial partitioning information as a tree 
+\end{DoxyReturn}
+
+
+Implemented in \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_r_d_tree_spatial_partitioner_a768852ef54d357e43b86a70897002623}{repo\+::manipulator\+::modelutility\+::\+R\+D\+Tree\+Spatial\+Partitioner}.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/manipulator/modelutility/spatialpartitioning/repo\+\_\+spatial\+\_\+partitioner\+\_\+abstract.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/manipulator/modelutility/spatialpartitioning/repo\+\_\+spatial\+\_\+partitioner\+\_\+abstract.\+cpp\end{DoxyCompactItemize}

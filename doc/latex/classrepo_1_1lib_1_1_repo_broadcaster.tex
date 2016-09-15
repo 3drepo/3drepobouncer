@@ -1,0 +1,56 @@
+\hypertarget{classrepo_1_1lib_1_1_repo_broadcaster}{}\section{repo\+:\+:lib\+:\+:Repo\+Broadcaster Class Reference}
+\label{classrepo_1_1lib_1_1_repo_broadcaster}\index{repo\+::lib\+::\+Repo\+Broadcaster@{repo\+::lib\+::\+Repo\+Broadcaster}}
+Inheritance diagram for repo\+:\+:lib\+:\+:Repo\+Broadcaster\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classrepo_1_1lib_1_1_repo_broadcaster}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classrepo_1_1lib_1_1_repo_broadcaster_aee1e729b0da691e2ce0de046a5b2bc8d}{Repo\+Broadcaster} ()
+\item 
+void \hyperlink{classrepo_1_1lib_1_1_repo_broadcaster_ad369dbbcd5cf62a71840a361119b9308}{subscribe} (\hyperlink{classrepo_1_1lib_1_1_repo_abstract_listener}{Repo\+Abstract\+Listener} $\ast$subscriber)
+\item 
+std\+::streamsize \hyperlink{classrepo_1_1lib_1_1_repo_broadcaster_a655a000a33c1f471de202b35ea3d4623}{write} (const char $\ast$s, std\+::streamsize n)
+\end{DoxyCompactItemize}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classrepo_1_1lib_1_1_repo_broadcaster_aee1e729b0da691e2ce0de046a5b2bc8d}{}\index{repo\+::lib\+::\+Repo\+Broadcaster@{repo\+::lib\+::\+Repo\+Broadcaster}!Repo\+Broadcaster@{Repo\+Broadcaster}}
+\index{Repo\+Broadcaster@{Repo\+Broadcaster}!repo\+::lib\+::\+Repo\+Broadcaster@{repo\+::lib\+::\+Repo\+Broadcaster}}
+\subsubsection[{Repo\+Broadcaster}]{\setlength{\rightskip}{0pt plus 5cm}Repo\+Broadcaster\+::\+Repo\+Broadcaster (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1lib_1_1_repo_broadcaster_aee1e729b0da691e2ce0de046a5b2bc8d}
+F\+I\+X\+M\+E\+: should be a private constructor -\/ singleton class. 
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1lib_1_1_repo_broadcaster_ad369dbbcd5cf62a71840a361119b9308}{}\index{repo\+::lib\+::\+Repo\+Broadcaster@{repo\+::lib\+::\+Repo\+Broadcaster}!subscribe@{subscribe}}
+\index{subscribe@{subscribe}!repo\+::lib\+::\+Repo\+Broadcaster@{repo\+::lib\+::\+Repo\+Broadcaster}}
+\subsubsection[{subscribe}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::lib\+::\+Repo\+Broadcaster\+::subscribe (
+\begin{DoxyParamCaption}
+\item[{{\bf Repo\+Abstract\+Listener} $\ast$}]{subscriber}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1lib_1_1_repo_broadcaster_ad369dbbcd5cf62a71840a361119b9308}
+Subscribe to the broadcaster 
+\begin{DoxyParams}{Parameters}
+{\em subscriber} & An object to notify when there are new messages \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1lib_1_1_repo_broadcaster_a655a000a33c1f471de202b35ea3d4623}{}\index{repo\+::lib\+::\+Repo\+Broadcaster@{repo\+::lib\+::\+Repo\+Broadcaster}!write@{write}}
+\index{write@{write}!repo\+::lib\+::\+Repo\+Broadcaster@{repo\+::lib\+::\+Repo\+Broadcaster}}
+\subsubsection[{write}]{\setlength{\rightskip}{0pt plus 5cm}std\+::streamsize Repo\+Broadcaster\+::write (
+\begin{DoxyParamCaption}
+\item[{const char $\ast$}]{s, }
+\item[{std\+::streamsize}]{n}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1lib_1_1_repo_broadcaster_a655a000a33c1f471de202b35ea3d4623}
+When called, it will notify all subscribers of the message. 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/lib/repo\+\_\+broadcaster.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/lib/repo\+\_\+broadcaster.\+cpp\end{DoxyCompactItemize}

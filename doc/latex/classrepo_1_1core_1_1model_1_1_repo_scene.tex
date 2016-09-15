@@ -1,0 +1,1507 @@
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene}{}\section{repo\+:\+:core\+:\+:model\+:\+:Repo\+Scene Class Reference}
+\label{classrepo_1_1core_1_1model_1_1_repo_scene}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+Inheritance diagram for repo\+:\+:core\+:\+:model\+:\+:Repo\+Scene\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classrepo_1_1core_1_1model_1_1_repo_scene}
+\end{center}
+\end{figure}
+\subsection*{Public Types}
+\begin{DoxyCompactItemize}
+\item 
+enum \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \{ {\bfseries D\+E\+F\+A\+U\+L\+T}, 
+{\bfseries O\+P\+T\+I\+M\+I\+Z\+E\+D}
+ \}
+\end{DoxyCompactItemize}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_ae56a2c2f4932c2391fb6d9a31031f26c}{Repo\+Scene} (const std\+::string \&database=std\+::string(), const std\+::string \&\hyperlink{classrepo_1_1core_1_1model_1_1_abstract_graph_a8d6f646d8c8d0e5c14b31bbff17a1f1d}{project\+Name}=std\+::string(), const std\+::string \&scene\+Ext=R\+E\+P\+O\+\_\+\+C\+O\+L\+L\+E\+C\+T\+I\+O\+N\+\_\+\+S\+C\+E\+N\+E, const std\+::string \&\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_ab33974cb8caec149fdd9743339f4d2ab}{rev\+Ext}=R\+E\+P\+O\+\_\+\+C\+O\+L\+L\+E\+C\+T\+I\+O\+N\+\_\+\+H\+I\+S\+T\+O\+R\+Y, const std\+::string \&\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a9e1ec4f9fa275647a75838361b3d2a5d}{stash\+Ext}=R\+E\+P\+O\+\_\+\+C\+O\+L\+L\+E\+C\+T\+I\+O\+N\+\_\+\+S\+T\+A\+S\+H\+\_\+\+R\+E\+P\+O, const std\+::string \&\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a19be566f3815da34dea4447f4d5b2dba}{raw\+Ext}=R\+E\+P\+O\+\_\+\+C\+O\+L\+L\+E\+C\+T\+I\+O\+N\+\_\+\+R\+A\+W, const std\+::string \&\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_ade467377ddb29a8b7ea7347ed81ad0a4}{issues\+Ext}=R\+E\+P\+O\+\_\+\+C\+O\+L\+L\+E\+C\+T\+I\+O\+N\+\_\+\+I\+S\+S\+U\+E\+S, const std\+::string \&\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aaa568af1ee2cde77df38f4c3badb5981}{src\+Ext}=R\+E\+P\+O\+\_\+\+C\+O\+L\+L\+E\+C\+T\+I\+O\+N\+\_\+\+S\+T\+A\+S\+H\+\_\+\+S\+R\+C, const std\+::string \&\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a0de6d5d1c514db0e859b150feb312337}{gltf\+Ext}=R\+E\+P\+O\+\_\+\+C\+O\+L\+L\+E\+C\+T\+I\+O\+N\+\_\+\+S\+T\+A\+S\+H\+\_\+\+G\+L\+T\+F, const std\+::string \&\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_ac55e20f143934e73afbca758b8d3d626}{x3d\+Ext}=R\+E\+P\+O\+\_\+\+C\+O\+L\+L\+E\+C\+T\+I\+O\+N\+\_\+\+S\+T\+A\+S\+H\+\_\+\+X3\+D, const std\+::string \&\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a979903ee1680863f4c67cf524bbc6e9f}{json\+Ext}=R\+E\+P\+O\+\_\+\+C\+O\+L\+L\+E\+C\+T\+I\+O\+N\+\_\+\+S\+T\+A\+S\+H\+\_\+\+J\+S\+O\+N)
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a2747698490e0fd5db21fdedb2b910b56}{Repo\+Scene} (const std\+::vector$<$ std\+::string $>$ \&\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a72ff48bdd737480c5dd98edb4a39a557}{ref\+Files}, const Repo\+Node\+Set \&cameras, const Repo\+Node\+Set \&meshes, const Repo\+Node\+Set \&materials, const Repo\+Node\+Set \&metadata, const Repo\+Node\+Set \&textures, const Repo\+Node\+Set \&transformations, const Repo\+Node\+Set \&references=Repo\+Node\+Set(), const Repo\+Node\+Set \&maps=Repo\+Node\+Set(), const Repo\+Node\+Set \&unknowns=Repo\+Node\+Set(), const std\+::string \&scene\+Ext=R\+E\+P\+O\+\_\+\+C\+O\+L\+L\+E\+C\+T\+I\+O\+N\+\_\+\+S\+C\+E\+N\+E, const std\+::string \&\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_ab33974cb8caec149fdd9743339f4d2ab}{rev\+Ext}=R\+E\+P\+O\+\_\+\+C\+O\+L\+L\+E\+C\+T\+I\+O\+N\+\_\+\+H\+I\+S\+T\+O\+R\+Y, const std\+::string \&\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a9e1ec4f9fa275647a75838361b3d2a5d}{stash\+Ext}=R\+E\+P\+O\+\_\+\+C\+O\+L\+L\+E\+C\+T\+I\+O\+N\+\_\+\+S\+T\+A\+S\+H\+\_\+\+R\+E\+P\+O, const std\+::string \&\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a19be566f3815da34dea4447f4d5b2dba}{raw\+Ext}=R\+E\+P\+O\+\_\+\+C\+O\+L\+L\+E\+C\+T\+I\+O\+N\+\_\+\+R\+A\+W, const std\+::string \&\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_ade467377ddb29a8b7ea7347ed81ad0a4}{issues\+Ext}=R\+E\+P\+O\+\_\+\+C\+O\+L\+L\+E\+C\+T\+I\+O\+N\+\_\+\+I\+S\+S\+U\+E\+S, const std\+::string \&\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aaa568af1ee2cde77df38f4c3badb5981}{src\+Ext}=R\+E\+P\+O\+\_\+\+C\+O\+L\+L\+E\+C\+T\+I\+O\+N\+\_\+\+S\+T\+A\+S\+H\+\_\+\+S\+R\+C, const std\+::string \&\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a0de6d5d1c514db0e859b150feb312337}{gltf\+Ext}=R\+E\+P\+O\+\_\+\+C\+O\+L\+L\+E\+C\+T\+I\+O\+N\+\_\+\+S\+T\+A\+S\+H\+\_\+\+G\+L\+T\+F, const std\+::string \&\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_ac55e20f143934e73afbca758b8d3d626}{x3d\+Ext}=R\+E\+P\+O\+\_\+\+C\+O\+L\+L\+E\+C\+T\+I\+O\+N\+\_\+\+S\+T\+A\+S\+H\+\_\+\+X3\+D, const std\+::string \&\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a979903ee1680863f4c67cf524bbc6e9f}{json\+Ext}=R\+E\+P\+O\+\_\+\+C\+O\+L\+L\+E\+C\+T\+I\+O\+N\+\_\+\+S\+T\+A\+S\+H\+\_\+\+J\+S\+O\+N)
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aadddd2971dbdde53d01d736d77aebedf}{$\sim$\+Repo\+Scene} ()
+\item 
+bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a2ae2f478f17fe7dfeb20ad8befb3b2ee}{is\+O\+K} () const 
+\item 
+bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a826242a71e6bf69893d3287d635442a7}{is\+Missing\+Texture} () const 
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a412be676a80bf9f2594b98bba1924332}{set\+Missing\+Texture} ()
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a0bb2c49fbd8d6c5534b6ef2cf33a45da}{add\+Metadata} (Repo\+Node\+Set \&metadata, const bool \&exact\+Match, const bool \&propagate\+Data=true)
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_abd7f9cdc8564aafe868928c467fd0b78}{add\+Stash\+Graph} (const Repo\+Node\+Set \&cameras, const Repo\+Node\+Set \&meshes, const Repo\+Node\+Set \&materials, const Repo\+Node\+Set \&textures, const Repo\+Node\+Set \&transformations)
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_ad211f115d0a6d8f398c034ce23384cf1}{clear\+Stash} ()
+\item 
+bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a41aa37ffba3fcd4b2dea7b23a1762644}{commit} (\hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$handler, std\+::string \&err\+Msg, const std\+::string \&user\+Name, const std\+::string \&message=std\+::string(), const std\+::string \&tag=std\+::string())
+\item 
+bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a7ec2fae544505ae7d73c458e7c847cd5}{commit\+Stash} (\hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$handler, std\+::string \&err\+Msg)
+\item 
+repo\+U\+U\+I\+D \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aa4ac0636da7d8d27d9615bd6e23ac484}{get\+Branch\+I\+D} () const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a21ac57fcfca6cedcc2aeddce7938c809}{get\+Database\+Name} () const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a6307f0c0df32f10d603028a75afb8e50}{get\+Stash\+Extension} () const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a4606af3c279123479cd7b2bf120c7bbe}{get\+Raw\+Extension} () const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a1a5748642960ad1ae321046eaf7c92eb}{get\+S\+R\+C\+Extension} () const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a656d124c4a6fcb3ea4725928cccc17b6}{get\+G\+L\+T\+F\+Extension} () const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aff5298094e5c75f27b71a9369300f028}{get\+X3\+D\+Extension} () const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aa348500c35ed75184ba4b49c0ecab775}{get\+J\+S\+O\+N\+Extension} () const 
+\item 
+repo\+U\+U\+I\+D \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aae6865fe4b3c52ab55d04f162ca1b7bf}{get\+Revision\+I\+D} () const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a9d43a9e2ff7e75bc759f475b09d38b70}{get\+Owner} () const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_abfdb99dde6895c7226c3514218728bca}{get\+Project\+Name} () const 
+\item 
+std\+::vector$<$ double $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_ad577dfbbb9da631406933437bc456f37}{get\+World\+Offset} () const 
+\item 
+bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a3c6968fb82e20a6694c1be5170a0bc2b}{is\+Head\+Revision} () const 
+\item 
+bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a8d69fafb52e9a73548d7c22ebbcb562c}{is\+Revisioned} () const 
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a01d7c23a6df5b726b636c518a5a72a35}{set\+Database\+And\+Project\+Name} (std\+::string new\+Database\+Name, std\+::string new\+Project\+Name)
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a0782d1edcdf37539614f93fe7a1fdc0f}{set\+Revision} (repo\+U\+U\+I\+D revision\+I\+D)
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_ac2caff05d438979474b4e393edce1ccd}{set\+Branch} (repo\+U\+U\+I\+D branch\+I\+D)
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a346ae9182f19ed55b48c377523dc35ee}{set\+Commit\+Message} (const std\+::string \&msg)
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a617eb9c5266a174cf6f9f0a41dfb115e}{set\+World\+Offset} (const std\+::vector$<$ double $>$ \&offset)
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a045fd45a5c75176bb193a470f0fcf618}{get\+Branch\+Name} () const 
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a740ff35cf44e9a39a068bdc4a1353cf0}{get\+View\+Graph} () const 
+\item 
+bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a383afae13ad7cd1b64302191b0e4cdd7}{load\+Revision} (\hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$handler, std\+::string \&err\+Msg)
+\item 
+bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aae5c18cc8197d8fcd26cc252e4ef9dcc}{load\+Scene} (\hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$handler, std\+::string \&err\+Msg)
+\item 
+bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a6affae3bf21f89793b98e883bc084298}{load\+Stash} (\hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$handler, std\+::string \&err\+Msg)
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_ac85354a3447d62bfc8aad76c5e51d187}{update\+Revision\+Status} (\hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$handler, const Revision\+Node\+::\+Upload\+Status \&status)
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_addb2548a816916c09d57a9ff5cb54aea}{print\+Statistics} (std\+::iostream \&output)
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aa35a3fdeec65b4ce71b50291cb6732e4}{abandon\+Child} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type, const repo\+U\+U\+I\+D \&parent, const repo\+U\+U\+I\+D \&child, const bool \&modify\+Parent=true, const bool \&modify\+Child=true)
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_abbcb804184b739134a091c2893b350a5}{abandon\+Child} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type, const repo\+U\+U\+I\+D \&parent, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$child, const bool \&modify\+Parent=true, const bool \&modify\+Child=true)
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a2c207776463353a6eafd430914838a97}{add\+Inheritance} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type, const repo\+U\+U\+I\+D \&parent, const repo\+U\+U\+I\+D \&child, const bool \&no\+Update=false)
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a7a4c10fe8521f9c06f492b11ab6a825c}{add\+Inheritance} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$parent, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$child, const bool \&no\+Update=false)
+\item 
+std\+::vector$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$ $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a829df4beb0d3edcdfbb9c6445f8a4704}{get\+Children\+As\+Nodes} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g, const repo\+U\+U\+I\+D \&parent) const 
+\item 
+std\+::vector$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$ $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a0b2a95dc5643d39fd2d65f65ccbecbc4}{get\+Children\+Nodes\+Filtered} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g, const repo\+U\+U\+I\+D \&parent, const Node\+Type \&type) const 
+\item 
+std\+::vector$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$ $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a722d51e5ef017ca8ea56632f8783b26d}{get\+Parent\+Nodes\+Filtered} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$node, const Node\+Type \&type) const 
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{Repo\+Scene} $\ast$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a189b939059994f16c99b67409bdcebf5}{get\+Scene\+From\+Reference} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type, const repo\+U\+U\+I\+D \&reference) const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a781f11c7e9f9e561772581fbc8ecd51f}{get\+Texture\+I\+D\+For\+Mesh} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type, const repo\+U\+U\+I\+D \&shared\+I\+D) const 
+\item 
+Repo\+Node\+Set \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a22211b64fc734e3ad198fc3a3ba9cb8c}{get\+All\+Cameras} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type) const 
+\item 
+Repo\+Node\+Set \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_adabb0d805be8ec6d7434503ca30d5190}{get\+All\+Materials} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type) const 
+\item 
+Repo\+Node\+Set \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a19e434c83664ce8495b6228d558abbe9}{get\+All\+Maps} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type=Graph\+Type\+::\+D\+E\+F\+A\+U\+L\+T) const 
+\item 
+Repo\+Node\+Set \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_add6e2061525f8068419f8179b19ff67b}{get\+All\+Meshes} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type) const 
+\item 
+Repo\+Node\+Set \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a71138b088048664ef380a4b92c800570}{get\+All\+Metadata} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type) const 
+\item 
+Repo\+Node\+Set \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a6dafc1e4f714a1b01cf75609a8c273a2}{get\+All\+References} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type) const 
+\item 
+Repo\+Node\+Set \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a3278ebb3963f43cf1b978cf6cfa7e28a}{get\+All\+Textures} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type) const 
+\item 
+Repo\+Node\+Set \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a2f60a1976f3c0b26f48f88a2e9ea9532}{get\+All\+Transformations} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type) const 
+\item 
+std\+::vector$<$ repo\+U\+U\+I\+D $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a196bf70ee860e58e79cf4338e61d4aed}{get\+Added\+Nodes\+I\+D} () const 
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_acddce29a3142eea2ae7d16dd24688013}{}std\+::set$<$ repo\+U\+U\+I\+D $>$ {\bfseries get\+All\+Shared\+I\+Ds} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type) const \label{classrepo_1_1core_1_1model_1_1_repo_scene_acddce29a3142eea2ae7d16dd24688013}
+
+\item 
+std\+::vector$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$ $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a6ca791f3a220139683a483c77b117205}{get\+All\+Descendants\+By\+Type} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type, const repo\+U\+U\+I\+D \&shared\+I\+D, const Node\+Type \&type) const 
+\item 
+std\+::vector$<$ repo\+U\+U\+I\+D $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a38b387913f5f84bd0b6948b88b5b2a09}{get\+Modified\+Nodes\+I\+D} () const 
+\item 
+std\+::vector$<$ repo\+U\+U\+I\+D $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a5eab7b960b71528e609187848c39bec6}{get\+Removed\+Nodes\+I\+D} () const 
+\item 
+std\+::vector$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$ $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a59dd8d61c75867f3b42430c578bbec1f}{get\+Removed\+Nodes} () const 
+\item 
+std\+::vector$<$ \hyperlink{structrepo__vector__t}{repo\+\_\+vector\+\_\+t} $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a7de6b4892cf101adf864a4b88cc1984b}{get\+Scene\+Bounding\+Box} () const 
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_afbca108bafcccbf86660c424afdd1fef}{}size\+\_\+t {\bfseries get\+Total\+Nodes\+Changed} () const \label{classrepo_1_1core_1_1model_1_1_repo_scene_afbca108bafcccbf86660c424afdd1fef}
+
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_ada8d3c259b08a83a2f80b3337b95416d}{get\+Node\+By\+Shared\+I\+D} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type, const repo\+U\+U\+I\+D \&shared\+I\+D) const 
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aa15d3e1283014d74816e2aaaec2896f6}{get\+Node\+By\+Unique\+I\+D} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type, const repo\+U\+U\+I\+D \&unique\+I\+D) const 
+\item 
+bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a089803365c0d98a9050f36fc0b7b24e4}{has\+Root} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type) const 
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a29df82d7ec425aeac62bb23c0e5a04a9}{}\hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$ {\bfseries get\+Root} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type) const \label{classrepo_1_1core_1_1model_1_1_repo_scene_a29df82d7ec425aeac62bb23c0e5a04a9}
+
+\item 
+uint32\+\_\+t \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a924528da9d4453284e722b0dc0ca0076}{get\+Items\+In\+Current\+Graph} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type)
+\item 
+std\+::vector$<$ std\+::string $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a70ca262465b114957590e563b9a0b2d8}{get\+Original\+Files} () const 
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_ae0c048bf0904aab3b1f162082724b640}{add\+Nodes} (const std\+::vector$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$ $>$ \&nodes)
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_acf00d158389dc84cc227f2208f053c9b}{modify\+Node} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&gtype, const repo\+U\+U\+I\+D \&shared\+I\+D, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$new\+Node, const bool \&overwrite=false)
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a932e31fc1448fe8d2bf57c1165cad076}{modify\+Node} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&gtype, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$node, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$new\+Node, const bool \&overwrite=false)
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aa51d6a21aaed1aa223ea5413c5c7c853}{remove\+Node} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&gtype, const repo\+U\+U\+I\+D \&shared\+I\+D)
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a49f78b7c17b6e7b4f37a4837edc44e64}{reorientate\+Direct\+X\+Model} ()
+\end{DoxyCompactItemize}
+\subsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a6dd9444bcaf520efbfe085d0193eeab9}{}static std\+::vector$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$ $>$ {\bfseries filter\+Nodes\+By\+Type} (const std\+::vector$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$ $>$ nodes, const Node\+Type filter)\label{classrepo_1_1core_1_1model_1_1_repo_scene_a6dd9444bcaf520efbfe085d0193eeab9}
+
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a7207ff3cea12594804131bfc74fa1e01}{}static std\+::vector$<$ std\+::string $>$ {\bfseries get\+Project\+Extensions} ()\label{classrepo_1_1core_1_1model_1_1_repo_scene_a7207ff3cea12594804131bfc74fa1e01}
+
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aee067257987618315ab9674684c375a1}{add\+Node\+To\+Scene} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type, const Repo\+Node\+Set nodes, std\+::string \&err\+Msg, Repo\+Node\+Set $\ast$collection)
+\item 
+bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a1005f9eaa9e3a0bdeb03814b3ed688f9}{add\+Node\+To\+Maps} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$node, std\+::string \&err\+Msg)
+\item 
+bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a37e3a23d88ff4e24bdef2c224c1f6d3f}{commit\+Nodes} (\hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$handler, const std\+::vector$<$ repo\+U\+U\+I\+D $>$ \&nodes\+To\+Commit, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type, std\+::string \&err\+Msg)
+\item 
+bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a3656d3d7e00d3d5513e6a8f356e99bc7}{commit\+Project\+Settings} (\hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$handler, std\+::string \&err\+Msg, const std\+::string \&user\+Name)
+\item 
+bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a998e632854f0652dd2a6033055b33c12}{commit\+Revision\+Node} (\hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$handler, std\+::string \&err\+Msg, \hyperlink{classrepo_1_1core_1_1model_1_1_revision_node}{Revision\+Node} $\ast$\&new\+Rev\+Node, const std\+::string \&user\+Name, const std\+::string \&message, const std\+::string \&tag)
+\item 
+bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_ac00889d23e2887fccad4e57d47bd6356}{commit\+Scene\+Changes} (\hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$handler, std\+::string \&err\+Msg)
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_af4324820733d5dae30ee3e8e2580af71}{get\+Scene\+Bounding\+Box\+Internal} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$node, const std\+::vector$<$ float $>$ \&mat, std\+::vector$<$ \hyperlink{structrepo__vector__t}{repo\+\_\+vector\+\_\+t} $>$ \&bbox) const 
+\item 
+bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a35e5705f991f40cdd1e5e16419bcf244}{populate} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&gtype, \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$handler, std\+::vector$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} $>$ nodes, std\+::string \&err\+Msg)
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a06729da0c472896cac79f0b0ac91d78f}{populate\+And\+Update} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{Graph\+Type} \&g\+Type, const Repo\+Node\+Set \&cameras, const Repo\+Node\+Set \&meshes, const Repo\+Node\+Set \&materials, const Repo\+Node\+Set \&metadata, const Repo\+Node\+Set \&textures, const Repo\+Node\+Set \&transformations, const Repo\+Node\+Set \&references, const Repo\+Node\+Set \&maps, const Repo\+Node\+Set \&unknowns)
+\item 
+void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_adb2dadf1167735dc3116a9265d6b69ee}{shift\+Model} (const std\+::vector$<$ double $>$ \&offset)
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_ac8fb04fbc037c6f0836b081d3b47bb26}{}std\+::string {\bfseries scene\+Ext}\label{classrepo_1_1core_1_1model_1_1_repo_scene_ac8fb04fbc037c6f0836b081d3b47bb26}
+
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_ab33974cb8caec149fdd9743339f4d2ab}{rev\+Ext}
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a9e1ec4f9fa275647a75838361b3d2a5d}{stash\+Ext}
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a19be566f3815da34dea4447f4d5b2dba}{raw\+Ext}
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_ade467377ddb29a8b7ea7347ed81ad0a4}{issues\+Ext}
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aaa568af1ee2cde77df38f4c3badb5981}{src\+Ext}
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a0de6d5d1c514db0e859b150feb312337}{gltf\+Ext}
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_ac55e20f143934e73afbca758b8d3d626}{x3d\+Ext}
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a979903ee1680863f4c67cf524bbc6e9f}{json\+Ext}
+\item 
+std\+::vector$<$ std\+::string $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a72ff48bdd737480c5dd98edb4a39a557}{ref\+Files}
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a7944b62e4b2398cc0dd6041fce738219}{}std\+::vector$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} $\ast$ $>$ {\bfseries to\+Remove}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a7944b62e4b2398cc0dd6041fce738219}
+
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_ac1d1bedbb3f3e9f54eedcb11f7ec86da}{}std\+::vector$<$ double $>$ {\bfseries world\+Offset}\label{classrepo_1_1core_1_1model_1_1_repo_scene_ac1d1bedbb3f3e9f54eedcb11f7ec86da}
+
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a50b6fa08981d93be82dbb749dd4537ec}{}repo\+U\+U\+I\+D {\bfseries revision}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a50b6fa08981d93be82dbb749dd4537ec}
+
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_ae5ebd80162176d41936afe9f798cf34e}{}repo\+U\+U\+I\+D {\bfseries branch}\label{classrepo_1_1core_1_1model_1_1_repo_scene_ae5ebd80162176d41936afe9f798cf34e}
+
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a7984f01694ca36bb810fc76d9e68e34d}{}std\+::string {\bfseries commit\+Msg}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a7984f01694ca36bb810fc76d9e68e34d}
+
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a0eb03888196694950f9890eb3d658d28}{}bool {\bfseries head\+Revision}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a0eb03888196694950f9890eb3d658d28}
+
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a340652907790cb31c3513a4171a52ad1}{}bool {\bfseries un\+Revisioned}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a340652907790cb31c3513a4171a52ad1}
+
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_revision_node}{Revision\+Node} $\ast$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a8c14ab145d410fb70f0cecec10f8d162}{rev\+Node}
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a04915db5b5900d10bcc3bb5f4348276d}{}std\+::set$<$ repo\+U\+U\+I\+D $>$ {\bfseries new\+Current}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a04915db5b5900d10bcc3bb5f4348276d}
+
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a22f146c74245de5112667a178762f7f0}{}std\+::set$<$ repo\+U\+U\+I\+D $>$ {\bfseries new\+Added}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a22f146c74245de5112667a178762f7f0}
+
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a34b581fdb004afc82edb7edd0e2f39d4}{}std\+::set$<$ repo\+U\+U\+I\+D $>$ {\bfseries new\+Removed}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a34b581fdb004afc82edb7edd0e2f39d4}
+
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a80edbb12f455e0ed8d9e9876462bb3e2}{}std\+::set$<$ repo\+U\+U\+I\+D $>$ {\bfseries new\+Modified}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a80edbb12f455e0ed8d9e9876462bb3e2}
+
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a5e10c6cbad07b182d8ee54692b0d003b}{}repo\+Graph\+Instance {\bfseries graph}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a5e10c6cbad07b182d8ee54692b0d003b}
+
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a07a6a53d21f38dce5df162124f07690a}{}repo\+Graph\+Instance {\bfseries stash\+Graph}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a07a6a53d21f38dce5df162124f07690a}
+
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a626174255cd4dcb4072e46d5603ca833}{}uint16\+\_\+t {\bfseries status}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a626174255cd4dcb4072e46d5603ca833}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Member Enumeration Documentation}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!Graph\+Type@{Graph\+Type}}
+\index{Graph\+Type@{Graph\+Type}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{Graph\+Type}]{\setlength{\rightskip}{0pt plus 5cm}enum {\bf repo\+::core\+::model\+::\+Repo\+Scene\+::\+Graph\+Type}\hspace{0.3cm}{\ttfamily [strong]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}
+D\+E\+F\+A\+U\+L\+T -\/ The graph that is revisioned -\/ should be (close to) identical to original model O\+P\+T\+I\+M\+I\+Z\+E\+D -\/ The optimized version of the graph -\/ for quick visualization purposes 
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_ae56a2c2f4932c2391fb6d9a31031f26c}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!Repo\+Scene@{Repo\+Scene}}
+\index{Repo\+Scene@{Repo\+Scene}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{Repo\+Scene}]{\setlength{\rightskip}{0pt plus 5cm}Repo\+Scene\+::\+Repo\+Scene (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{database = {\ttfamily std\+:\+:string()}, }
+\item[{const std\+::string \&}]{project\+Name = {\ttfamily std\+:\+:string()}, }
+\item[{const std\+::string \&}]{scene\+Ext = {\ttfamily REPO\+\_\+COLLECTION\+\_\+SCENE}, }
+\item[{const std\+::string \&}]{rev\+Ext = {\ttfamily REPO\+\_\+COLLECTION\+\_\+HISTORY}, }
+\item[{const std\+::string \&}]{stash\+Ext = {\ttfamily REPO\+\_\+COLLECTION\+\_\+STASH\+\_\+REPO}, }
+\item[{const std\+::string \&}]{raw\+Ext = {\ttfamily REPO\+\_\+COLLECTION\+\_\+RAW}, }
+\item[{const std\+::string \&}]{issues\+Ext = {\ttfamily REPO\+\_\+COLLECTION\+\_\+ISSUES}, }
+\item[{const std\+::string \&}]{src\+Ext = {\ttfamily REPO\+\_\+COLLECTION\+\_\+STASH\+\_\+SRC}, }
+\item[{const std\+::string \&}]{gltf\+Ext = {\ttfamily REPO\+\_\+COLLECTION\+\_\+STASH\+\_\+GLTF}, }
+\item[{const std\+::string \&}]{x3d\+Ext = {\ttfamily REPO\+\_\+COLLECTION\+\_\+STASH\+\_\+X3D}, }
+\item[{const std\+::string \&}]{json\+Ext = {\ttfamily REPO\+\_\+COLLECTION\+\_\+STASH\+\_\+JSON}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_scene_ae56a2c2f4932c2391fb6d9a31031f26c}
+Used for loading scene graphs from database Constructor -\/ instantiates a new scene graph representation. Branch is set to master and Revision is set to head Use \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_a0782d1edcdf37539614f93fe7a1fdc0f}{set\+Revision()} and \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_ac2caff05d438979474b4e393edce1ccd}{set\+Branch()} to specify which revision to load N\+O\+T\+E\+: This merely sets up the settings of the scene graph the graph itself is not loaded until \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aae5c18cc8197d8fcd26cc252e4ef9dcc}{load\+Scene()} is called!
+
+
+\begin{DoxyParams}{Parameters}
+{\em database} & name of the database \\
+\hline
+{\em project\+Name} & name of the project \\
+\hline
+{\em scene\+Ext} & extension name of the scene graph (Default\+: \char`\"{}scene\char`\"{}) \\
+\hline
+{\em rev\+Ext} & extension name of the revision graph (Default\+: \char`\"{}history\char`\"{}) \\
+\hline
+{\em stash\+Ext} & extension name of the stash (Default\+: \char`\"{}stash.\+3drepo\char`\"{}) \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a2747698490e0fd5db21fdedb2b910b56}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!Repo\+Scene@{Repo\+Scene}}
+\index{Repo\+Scene@{Repo\+Scene}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{Repo\+Scene}]{\setlength{\rightskip}{0pt plus 5cm}Repo\+Scene\+::\+Repo\+Scene (
+\begin{DoxyParamCaption}
+\item[{const std\+::vector$<$ std\+::string $>$ \&}]{ref\+Files, }
+\item[{const Repo\+Node\+Set \&}]{cameras, }
+\item[{const Repo\+Node\+Set \&}]{meshes, }
+\item[{const Repo\+Node\+Set \&}]{materials, }
+\item[{const Repo\+Node\+Set \&}]{metadata, }
+\item[{const Repo\+Node\+Set \&}]{textures, }
+\item[{const Repo\+Node\+Set \&}]{transformations, }
+\item[{const Repo\+Node\+Set \&}]{references = {\ttfamily RepoNodeSet()}, }
+\item[{const Repo\+Node\+Set \&}]{maps = {\ttfamily RepoNodeSet()}, }
+\item[{const Repo\+Node\+Set \&}]{unknowns = {\ttfamily RepoNodeSet()}, }
+\item[{const std\+::string \&}]{scene\+Ext = {\ttfamily REPO\+\_\+COLLECTION\+\_\+SCENE}, }
+\item[{const std\+::string \&}]{rev\+Ext = {\ttfamily REPO\+\_\+COLLECTION\+\_\+HISTORY}, }
+\item[{const std\+::string \&}]{stash\+Ext = {\ttfamily REPO\+\_\+COLLECTION\+\_\+STASH\+\_\+REPO}, }
+\item[{const std\+::string \&}]{raw\+Ext = {\ttfamily REPO\+\_\+COLLECTION\+\_\+RAW}, }
+\item[{const std\+::string \&}]{issues\+Ext = {\ttfamily REPO\+\_\+COLLECTION\+\_\+ISSUES}, }
+\item[{const std\+::string \&}]{src\+Ext = {\ttfamily REPO\+\_\+COLLECTION\+\_\+STASH\+\_\+SRC}, }
+\item[{const std\+::string \&}]{gltf\+Ext = {\ttfamily REPO\+\_\+COLLECTION\+\_\+STASH\+\_\+GLTF}, }
+\item[{const std\+::string \&}]{x3d\+Ext = {\ttfamily REPO\+\_\+COLLECTION\+\_\+STASH\+\_\+X3D}, }
+\item[{const std\+::string \&}]{json\+Ext = {\ttfamily REPO\+\_\+COLLECTION\+\_\+STASH\+\_\+JSON}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a2747698490e0fd5db21fdedb2b910b56}
+Used for constructing scene graphs from model convertors Constructor -\/ instantiates a new scene graph representation. This scene will be flagged as not revisioned. A database handler will need to be set before it can be commited into the database N\+O\+T\+E\+: database handler, project name, database name will need to be set before this scene graph can be commited to the database. 
+\begin{DoxyParams}{Parameters}
+{\em ref\+Files} & vector of files created this scene \\
+\hline
+{\em cameras} & Repo Node set of cameras \\
+\hline
+{\em meshes} & Repo Node set of meshes \\
+\hline
+{\em materials} & Repo Node set of materials \\
+\hline
+{\em metadata} & Repo Node set of metadata \\
+\hline
+{\em textures} & Repo Node set of textures \\
+\hline
+{\em transformations} & Repo Node set of transformations \\
+\hline
+{\em references} & Repo Node set of references (optional) \\
+\hline
+{\em maps} & Repo Node set of maps (optional) \\
+\hline
+{\em unknowns} & Repo Node set of unknowns (optional) \\
+\hline
+{\em scene\+Ext} & extension name of the scene when it is saved into the database (optional) \\
+\hline
+{\em rev\+Ext} & extension name of the revision when it is saved into the database (optional) \\
+\hline
+{\em stash\+Ext} & extension name of the stash (Default\+: \char`\"{}stash.\+3drepo\char`\"{}) \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_aadddd2971dbdde53d01d736d77aebedf}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!````~Repo\+Scene@{$\sim$\+Repo\+Scene}}
+\index{````~Repo\+Scene@{$\sim$\+Repo\+Scene}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{$\sim$\+Repo\+Scene}]{\setlength{\rightskip}{0pt plus 5cm}Repo\+Scene\+::$\sim$\+Repo\+Scene (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_scene_aadddd2971dbdde53d01d736d77aebedf}
+Default Deconstructor Please note that destroying the scene graph will also destroy all nodes created by the scene graph and also its child graphs 
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_aa35a3fdeec65b4ce71b50291cb6732e4}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!abandon\+Child@{abandon\+Child}}
+\index{abandon\+Child@{abandon\+Child}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{abandon\+Child}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::core\+::model\+::\+Repo\+Scene\+::abandon\+Child (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type, }
+\item[{const repo\+U\+U\+I\+D \&}]{parent, }
+\item[{const repo\+U\+U\+I\+D \&}]{child, }
+\item[{const bool \&}]{modify\+Parent = {\ttfamily true}, }
+\item[{const bool \&}]{modify\+Child = {\ttfamily true}}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_aa35a3fdeec65b4ce71b50291cb6732e4}
+-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/------ Node Relationship -\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/------ Abandon child from parent (disjoint 2 nodes within the scene) 
+\begin{DoxyParams}{Parameters}
+{\em parent} & shared I\+D of parent \\
+\hline
+{\em child} & shared I\+D of child \\
+\hline
+{\em modify\+Parent} & modify parent to relay the information (not needed if this node is to be removed) \\
+\hline
+{\em modify\+Child} & modify child node to relay this information (not needed if this node is to be removed) \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_abbcb804184b739134a091c2893b350a5}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!abandon\+Child@{abandon\+Child}}
+\index{abandon\+Child@{abandon\+Child}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{abandon\+Child}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Scene\+::abandon\+Child (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type, }
+\item[{const repo\+U\+U\+I\+D \&}]{parent, }
+\item[{{\bf Repo\+Node} $\ast$}]{child, }
+\item[{const bool \&}]{modify\+Parent = {\ttfamily true}, }
+\item[{const bool \&}]{modify\+Child = {\ttfamily true}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_scene_abbcb804184b739134a091c2893b350a5}
+Abandon child from parent (disjoint 2 nodes within the scene) 
+\begin{DoxyParams}{Parameters}
+{\em parent} & shared I\+D of parent \\
+\hline
+{\em child} & node of child \\
+\hline
+{\em modify\+Node} & modify child node to relay this information (not needed if this node is to be removed) \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a2c207776463353a6eafd430914838a97}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!add\+Inheritance@{add\+Inheritance}}
+\index{add\+Inheritance@{add\+Inheritance}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{add\+Inheritance}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::core\+::model\+::\+Repo\+Scene\+::add\+Inheritance (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type, }
+\item[{const repo\+U\+U\+I\+D \&}]{parent, }
+\item[{const repo\+U\+U\+I\+D \&}]{child, }
+\item[{const bool \&}]{no\+Update = {\ttfamily false}}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a2c207776463353a6eafd430914838a97}
+Introduce parentship to 2 nodes that already reside within the scene. If either of the nodes are not found, it does nothing If they already share an inheritance, it does nothing 
+\begin{DoxyParams}{Parameters}
+{\em g\+Type} & which graph are the nodes \\
+\hline
+{\em parent} & U\+N\+I\+Q\+U\+E uuid of the parent \\
+\hline
+{\em child} & U\+N\+I\+Q\+U\+E uuid of the child \\
+\hline
+{\em no\+Update} & if true, it will not be treated as a change that is needed to be commited (only valid for default graph) \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a7a4c10fe8521f9c06f492b11ab6a825c}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!add\+Inheritance@{add\+Inheritance}}
+\index{add\+Inheritance@{add\+Inheritance}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{add\+Inheritance}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Scene\+::add\+Inheritance (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type, }
+\item[{const {\bf Repo\+Node} $\ast$}]{parent, }
+\item[{{\bf Repo\+Node} $\ast$}]{child, }
+\item[{const bool \&}]{no\+Update = {\ttfamily false}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a7a4c10fe8521f9c06f492b11ab6a825c}
+Introduce parentship to 2 nodes that already reside within the scene. If either of the nodes are not found, it does nothing If they already share an inheritance, it does nothing 
+\begin{DoxyParams}{Parameters}
+{\em g\+Type} & which graph are the nodes \\
+\hline
+{\em parent} & parent Node \\
+\hline
+{\em child} & child node \\
+\hline
+{\em no\+Update} & if true, it will not be treated as a change that is needed to be commited (only valid for default graph) \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a0bb2c49fbd8d6c5534b6ef2cf33a45da}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!add\+Metadata@{add\+Metadata}}
+\index{add\+Metadata@{add\+Metadata}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{add\+Metadata}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Scene\+::add\+Metadata (
+\begin{DoxyParamCaption}
+\item[{Repo\+Node\+Set \&}]{metadata, }
+\item[{const bool \&}]{exact\+Match, }
+\item[{const bool \&}]{propagate\+Data = {\ttfamily true}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a0bb2c49fbd8d6c5534b6ef2cf33a45da}
+Add metadata that has a matching name as the transformation into the scene 
+\begin{DoxyParams}{Parameters}
+{\em metadata} & set of metadata to attach \\
+\hline
+{\em exact\+Match} & whether the name has to be an exact match or a substring will do \\
+\hline
+{\em propagate\+Data} & if set to true, propagate down the changes to all meshes of this subtree \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_ae0c048bf0904aab3b1f162082724b640}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!add\+Nodes@{add\+Nodes}}
+\index{add\+Nodes@{add\+Nodes}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{add\+Nodes}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Scene\+::add\+Nodes (
+\begin{DoxyParamCaption}
+\item[{const std\+::vector$<$ {\bf Repo\+Node} $\ast$ $>$ \&}]{nodes}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_scene_ae0c048bf0904aab3b1f162082724b640}
+-\/-\/-\/-\/-\/-\/-\/-\/------ Scene Modification Functions -\/-\/-\/-\/-\/-\/-\/-\/------ Add a vector of nodes into the unoptimized scene graph Tracks the modification for commit 
+\begin{DoxyParams}{Parameters}
+{\em vector} & of nodes to insert. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a1005f9eaa9e3a0bdeb03814b3ed688f9}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!add\+Node\+To\+Maps@{add\+Node\+To\+Maps}}
+\index{add\+Node\+To\+Maps@{add\+Node\+To\+Maps}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{add\+Node\+To\+Maps}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Scene\+::add\+Node\+To\+Maps (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type, }
+\item[{{\bf Repo\+Node} $\ast$}]{node, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a1005f9eaa9e3a0bdeb03814b3ed688f9}
+Add node to the following maps\+: Unique\+I\+D -\/$>$ Node, Shared\+I\+D -\/$>$ Unique\+I\+D, Parent-\/$>$Children. It will also assign root node if the node has no parent. 
+\begin{DoxyParams}{Parameters}
+{\em g} & which graph to insert into \\
+\hline
+{\em node} & pointer to the node to add \\
+\hline
+{\em err\+Msg} & error message if it returns false \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true if succeeded 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_aee067257987618315ab9674684c375a1}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!add\+Node\+To\+Scene@{add\+Node\+To\+Scene}}
+\index{add\+Node\+To\+Scene@{add\+Node\+To\+Scene}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{add\+Node\+To\+Scene}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Scene\+::add\+Node\+To\+Scene (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type, }
+\item[{const Repo\+Node\+Set}]{nodes, }
+\item[{std\+::string \&}]{err\+Msg, }
+\item[{Repo\+Node\+Set $\ast$}]{collection}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_aee067257987618315ab9674684c375a1}
+
+
+
+
+Add Nodes to scene. 
+\begin{DoxyParams}{Parameters}
+{\em g\+Type} & which graph to add the nodes onto (default or optimized) \\
+\hline
+{\em node} & pointer to the node to add \\
+\hline
+{\em err\+Msg} & error message if it returns false \\
+\hline
+{\em collection} & the collection for the node type if known. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true if succeeded 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_abd7f9cdc8564aafe868928c467fd0b78}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!add\+Stash\+Graph@{add\+Stash\+Graph}}
+\index{add\+Stash\+Graph@{add\+Stash\+Graph}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{add\+Stash\+Graph}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Scene\+::add\+Stash\+Graph (
+\begin{DoxyParamCaption}
+\item[{const Repo\+Node\+Set \&}]{cameras, }
+\item[{const Repo\+Node\+Set \&}]{meshes, }
+\item[{const Repo\+Node\+Set \&}]{materials, }
+\item[{const Repo\+Node\+Set \&}]{textures, }
+\item[{const Repo\+Node\+Set \&}]{transformations}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_scene_abd7f9cdc8564aafe868928c467fd0b78}
+Add a stash graph (optimised graph) for the corresponding scene graph 
+\begin{DoxyParams}{Parameters}
+{\em camera} & set of cameras \\
+\hline
+{\em meshes} & set of meshes \\
+\hline
+{\em materials} & set of materials \\
+\hline
+{\em textures} & set of textures \\
+\hline
+{\em transformations} & set of transformations \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_ad211f115d0a6d8f398c034ce23384cf1}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!clear\+Stash@{clear\+Stash}}
+\index{clear\+Stash@{clear\+Stash}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{clear\+Stash}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Scene\+::clear\+Stash (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_scene_ad211f115d0a6d8f398c034ce23384cf1}
+Clears the contents within the Stash (if there is one) \hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a41aa37ffba3fcd4b2dea7b23a1762644}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!commit@{commit}}
+\index{commit@{commit}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{commit}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Scene\+::commit (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$}]{handler, }
+\item[{std\+::string \&}]{err\+Msg, }
+\item[{const std\+::string \&}]{user\+Name, }
+\item[{const std\+::string \&}]{message = {\ttfamily std\+:\+:string()}, }
+\item[{const std\+::string \&}]{tag = {\ttfamily std\+:\+:string()}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a41aa37ffba3fcd4b2dea7b23a1762644}
+Commit changes on the default graph into the database This commits an update to project settings, a new revision node and the changes within this scene 
+\begin{DoxyParams}{Parameters}
+{\em err\+Msg} & error message if this failed \\
+\hline
+{\em user\+Name} & name of the author \\
+\hline
+{\em message} & message for this commit (optional) \\
+\hline
+{\em tag} & tag for this commit (optional) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a37e3a23d88ff4e24bdef2c224c1f6d3f}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!commit\+Nodes@{commit\+Nodes}}
+\index{commit\+Nodes@{commit\+Nodes}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{commit\+Nodes}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Scene\+::commit\+Nodes (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$}]{handler, }
+\item[{const std\+::vector$<$ repo\+U\+U\+I\+D $>$ \&}]{nodes\+To\+Commit, }
+\item[{const {\bf Graph\+Type} \&}]{g\+Type, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a37e3a23d88ff4e24bdef2c224c1f6d3f}
+Commit a vector of nodes into the database 
+\begin{DoxyParams}{Parameters}
+{\em handler} & database handler to perform the commit \\
+\hline
+{\em nodes\+To\+Commit} & vector of uuids of nodes to commit \\
+\hline
+{\em graph\+Type} & which graph did the nodes come from \\
+\hline
+{\em err\+Msg} & error message if this failed \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a3656d3d7e00d3d5513e6a8f356e99bc7}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!commit\+Project\+Settings@{commit\+Project\+Settings}}
+\index{commit\+Project\+Settings@{commit\+Project\+Settings}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{commit\+Project\+Settings}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Scene\+::commit\+Project\+Settings (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$}]{handler, }
+\item[{std\+::string \&}]{err\+Msg, }
+\item[{const std\+::string \&}]{user\+Name}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a3656d3d7e00d3d5513e6a8f356e99bc7}
+Commit a project settings base on the changes on this scene 
+\begin{DoxyParams}{Parameters}
+{\em err\+Msg} & error message if this failed \\
+\hline
+{\em user\+Name} & user name of the owner \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a998e632854f0652dd2a6033055b33c12}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!commit\+Revision\+Node@{commit\+Revision\+Node}}
+\index{commit\+Revision\+Node@{commit\+Revision\+Node}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{commit\+Revision\+Node}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Scene\+::commit\+Revision\+Node (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$}]{handler, }
+\item[{std\+::string \&}]{err\+Msg, }
+\item[{{\bf Revision\+Node} $\ast$\&}]{new\+Rev\+Node, }
+\item[{const std\+::string \&}]{user\+Name, }
+\item[{const std\+::string \&}]{message, }
+\item[{const std\+::string \&}]{tag}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a998e632854f0652dd2a6033055b33c12}
+Commit a revision node into project.\+rev\+Ext base on the changes on this scene 
+\begin{DoxyParams}{Parameters}
+{\em err\+Msg} & error message if this failed \\
+\hline
+{\em new\+Rev\+Node} & a reference to the rev\+Node that will be created in this function \\
+\hline
+{\em user\+Name} & name of the author \\
+\hline
+{\em message} & message describing this commit \\
+\hline
+{\em tag} & tag for this commit \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_ac00889d23e2887fccad4e57d47bd6356}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!commit\+Scene\+Changes@{commit\+Scene\+Changes}}
+\index{commit\+Scene\+Changes@{commit\+Scene\+Changes}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{commit\+Scene\+Changes}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Scene\+::commit\+Scene\+Changes (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$}]{handler, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_ac00889d23e2887fccad4e57d47bd6356}
+Commit a new nodes into project.\+scene\+Ext base on the changes on this scene 
+\begin{DoxyParams}{Parameters}
+{\em err\+Msg} & error message if this failed \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a7ec2fae544505ae7d73c458e7c847cd5}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!commit\+Stash@{commit\+Stash}}
+\index{commit\+Stash@{commit\+Stash}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{commit\+Stash}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Scene\+::commit\+Stash (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$}]{handler, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a7ec2fae544505ae7d73c458e7c847cd5}
+Commit the stash representation into the database This can only happen if there is a stash representation and the graph is already commited (i.\+e. there is a revision node) 
+\begin{DoxyParams}{Parameters}
+{\em err\+Msg} & error message if this failed \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a196bf70ee860e58e79cf4338e61d4aed}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Added\+Nodes\+I\+D@{get\+Added\+Nodes\+I\+D}}
+\index{get\+Added\+Nodes\+I\+D@{get\+Added\+Nodes\+I\+D}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Added\+Nodes\+I\+D}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$repo\+U\+U\+I\+D$>$ repo\+::core\+::model\+::\+Repo\+Scene\+::get\+Added\+Nodes\+I\+D (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a196bf70ee860e58e79cf4338e61d4aed}
+Get all I\+D of nodes which are added since last revision \begin{DoxyReturn}{Returns}
+returns a vector of node I\+Ds 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a22211b64fc734e3ad198fc3a3ba9cb8c}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+All\+Cameras@{get\+All\+Cameras}}
+\index{get\+All\+Cameras@{get\+All\+Cameras}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+All\+Cameras}]{\setlength{\rightskip}{0pt plus 5cm}Repo\+Node\+Set repo\+::core\+::model\+::\+Repo\+Scene\+::get\+All\+Cameras (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a22211b64fc734e3ad198fc3a3ba9cb8c}
+-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/------ Scene Lookup -\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/-\/------ Get all camera nodes within current scene revision \begin{DoxyReturn}{Returns}
+a Repo\+Node\+Set of materials 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a6ca791f3a220139683a483c77b117205}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+All\+Descendants\+By\+Type@{get\+All\+Descendants\+By\+Type}}
+\index{get\+All\+Descendants\+By\+Type@{get\+All\+Descendants\+By\+Type}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+All\+Descendants\+By\+Type}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf Repo\+Node} $\ast$ $>$ Repo\+Scene\+::get\+All\+Descendants\+By\+Type (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type, }
+\item[{const repo\+U\+U\+I\+D \&}]{shared\+I\+D, }
+\item[{const Node\+Type \&}]{type}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a6ca791f3a220139683a483c77b117205}
+Get all desecendants, of a particular type, of this shared I\+D 
+\begin{DoxyParams}{Parameters}
+{\em shared\+I\+D} & shared\+I\+D of the node in question \\
+\hline
+{\em type} & type of desecendants to get \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns all child/grandchild/great grandchild etc node of type \char`\"{}type\char`\"{} for this node 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a19e434c83664ce8495b6228d558abbe9}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+All\+Maps@{get\+All\+Maps}}
+\index{get\+All\+Maps@{get\+All\+Maps}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+All\+Maps}]{\setlength{\rightskip}{0pt plus 5cm}Repo\+Node\+Set repo\+::core\+::model\+::\+Repo\+Scene\+::get\+All\+Maps (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type = {\ttfamily GraphType\+:\+:DEFAULT}}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a19e434c83664ce8495b6228d558abbe9}
+Get all map nodes within current scene revision \begin{DoxyReturn}{Returns}
+a Repo\+Node\+Set of map 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_adabb0d805be8ec6d7434503ca30d5190}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+All\+Materials@{get\+All\+Materials}}
+\index{get\+All\+Materials@{get\+All\+Materials}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+All\+Materials}]{\setlength{\rightskip}{0pt plus 5cm}Repo\+Node\+Set repo\+::core\+::model\+::\+Repo\+Scene\+::get\+All\+Materials (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_adabb0d805be8ec6d7434503ca30d5190}
+Get all material nodes within current scene revision \begin{DoxyReturn}{Returns}
+a Repo\+Node\+Set of materials 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_add6e2061525f8068419f8179b19ff67b}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+All\+Meshes@{get\+All\+Meshes}}
+\index{get\+All\+Meshes@{get\+All\+Meshes}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+All\+Meshes}]{\setlength{\rightskip}{0pt plus 5cm}Repo\+Node\+Set repo\+::core\+::model\+::\+Repo\+Scene\+::get\+All\+Meshes (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_add6e2061525f8068419f8179b19ff67b}
+Get all mesh nodes within current scene revision \begin{DoxyReturn}{Returns}
+a Repo\+Node\+Set of meshes 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a71138b088048664ef380a4b92c800570}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+All\+Metadata@{get\+All\+Metadata}}
+\index{get\+All\+Metadata@{get\+All\+Metadata}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+All\+Metadata}]{\setlength{\rightskip}{0pt plus 5cm}Repo\+Node\+Set repo\+::core\+::model\+::\+Repo\+Scene\+::get\+All\+Metadata (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a71138b088048664ef380a4b92c800570}
+Get all metadata nodes within current scene revision \begin{DoxyReturn}{Returns}
+a Repo\+Node\+Set of metadata 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a6dafc1e4f714a1b01cf75609a8c273a2}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+All\+References@{get\+All\+References}}
+\index{get\+All\+References@{get\+All\+References}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+All\+References}]{\setlength{\rightskip}{0pt plus 5cm}Repo\+Node\+Set repo\+::core\+::model\+::\+Repo\+Scene\+::get\+All\+References (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a6dafc1e4f714a1b01cf75609a8c273a2}
+Get all reference nodes within current scene revision \begin{DoxyReturn}{Returns}
+a Repo\+Node\+Set of references 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a3278ebb3963f43cf1b978cf6cfa7e28a}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+All\+Textures@{get\+All\+Textures}}
+\index{get\+All\+Textures@{get\+All\+Textures}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+All\+Textures}]{\setlength{\rightskip}{0pt plus 5cm}Repo\+Node\+Set repo\+::core\+::model\+::\+Repo\+Scene\+::get\+All\+Textures (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a3278ebb3963f43cf1b978cf6cfa7e28a}
+Get all texture nodes within current scene revision \begin{DoxyReturn}{Returns}
+a Repo\+Node\+Set of textures 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a2f60a1976f3c0b26f48f88a2e9ea9532}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+All\+Transformations@{get\+All\+Transformations}}
+\index{get\+All\+Transformations@{get\+All\+Transformations}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+All\+Transformations}]{\setlength{\rightskip}{0pt plus 5cm}Repo\+Node\+Set repo\+::core\+::model\+::\+Repo\+Scene\+::get\+All\+Transformations (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a2f60a1976f3c0b26f48f88a2e9ea9532}
+Get all transformation nodes within current scene revision \begin{DoxyReturn}{Returns}
+a Repo\+Node\+Set of transformations 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_aa4ac0636da7d8d27d9615bd6e23ac484}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Branch\+I\+D@{get\+Branch\+I\+D}}
+\index{get\+Branch\+I\+D@{get\+Branch\+I\+D}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Branch\+I\+D}]{\setlength{\rightskip}{0pt plus 5cm}repo\+U\+U\+I\+D repo\+::core\+::model\+::\+Repo\+Scene\+::get\+Branch\+I\+D (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_aa4ac0636da7d8d27d9615bd6e23ac484}
+Get the branch I\+D of this scene graph \begin{DoxyReturn}{Returns}
+returns the branch I\+D of this scene 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a045fd45a5c75176bb193a470f0fcf618}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Branch\+Name@{get\+Branch\+Name}}
+\index{get\+Branch\+Name@{get\+Branch\+Name}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Branch\+Name}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string Repo\+Scene\+::get\+Branch\+Name (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a045fd45a5c75176bb193a470f0fcf618}
+Get branch name return uuid of branch there is no name return \char`\"{}master\char`\"{} if this scene is not revisioned. \begin{DoxyReturn}{Returns}
+name of the branch or uuid if no name 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a829df4beb0d3edcdfbb9c6445f8a4704}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Children\+As\+Nodes@{get\+Children\+As\+Nodes}}
+\index{get\+Children\+As\+Nodes@{get\+Children\+As\+Nodes}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Children\+As\+Nodes}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf Repo\+Node} $\ast$ $>$ Repo\+Scene\+::get\+Children\+As\+Nodes (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g, }
+\item[{const repo\+U\+U\+I\+D \&}]{parent}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a829df4beb0d3edcdfbb9c6445f8a4704}
+Get children nodes of a specified parent 
+\begin{DoxyParams}{Parameters}
+{\em g} & graph to retrieve from \\
+\hline
+{\em parent} & shared U\+U\+I\+D of the parent node @ return a vector of pointers to children node (potentially none) \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a0b2a95dc5643d39fd2d65f65ccbecbc4}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Children\+Nodes\+Filtered@{get\+Children\+Nodes\+Filtered}}
+\index{get\+Children\+Nodes\+Filtered@{get\+Children\+Nodes\+Filtered}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Children\+Nodes\+Filtered}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf Repo\+Node} $\ast$ $>$ Repo\+Scene\+::get\+Children\+Nodes\+Filtered (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g, }
+\item[{const repo\+U\+U\+I\+D \&}]{parent, }
+\item[{const Node\+Type \&}]{type}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a0b2a95dc5643d39fd2d65f65ccbecbc4}
+Get children nodes of a specified parent that satisfy the filtering condition 
+\begin{DoxyParams}{Parameters}
+{\em g} & graph to retrieve from \\
+\hline
+{\em parent} & shared U\+U\+I\+D of the parent node \\
+\hline
+{\em type} & the type of nodes to obtain @ return a vector of pointers to children node (potentially none) \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a21ac57fcfca6cedcc2aeddce7938c809}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Database\+Name@{get\+Database\+Name}}
+\index{get\+Database\+Name@{get\+Database\+Name}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Database\+Name}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+Scene\+::get\+Database\+Name (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a21ac57fcfca6cedcc2aeddce7938c809}
+Get name of the database \begin{DoxyReturn}{Returns}
+returns name of the database if available 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a656d124c4a6fcb3ea4725928cccc17b6}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+G\+L\+T\+F\+Extension@{get\+G\+L\+T\+F\+Extension}}
+\index{get\+G\+L\+T\+F\+Extension@{get\+G\+L\+T\+F\+Extension}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+G\+L\+T\+F\+Extension}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+Scene\+::get\+G\+L\+T\+F\+Extension (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a656d124c4a6fcb3ea4725928cccc17b6}
+Get gltf extension for this project \begin{DoxyReturn}{Returns}
+returns the gltf extension 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a924528da9d4453284e722b0dc0ca0076}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Items\+In\+Current\+Graph@{get\+Items\+In\+Current\+Graph}}
+\index{get\+Items\+In\+Current\+Graph@{get\+Items\+In\+Current\+Graph}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Items\+In\+Current\+Graph}]{\setlength{\rightskip}{0pt plus 5cm}uint32\+\_\+t repo\+::core\+::model\+::\+Repo\+Scene\+::get\+Items\+In\+Current\+Graph (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a924528da9d4453284e722b0dc0ca0076}
+Return the number of nodes within the current graph representation \begin{DoxyReturn}{Returns}
+number of nodes within the graph 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_aa348500c35ed75184ba4b49c0ecab775}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+J\+S\+O\+N\+Extension@{get\+J\+S\+O\+N\+Extension}}
+\index{get\+J\+S\+O\+N\+Extension@{get\+J\+S\+O\+N\+Extension}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+J\+S\+O\+N\+Extension}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+Scene\+::get\+J\+S\+O\+N\+Extension (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_aa348500c35ed75184ba4b49c0ecab775}
+Get json extension for this project \begin{DoxyReturn}{Returns}
+returns the json extension 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a38b387913f5f84bd0b6948b88b5b2a09}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Modified\+Nodes\+I\+D@{get\+Modified\+Nodes\+I\+D}}
+\index{get\+Modified\+Nodes\+I\+D@{get\+Modified\+Nodes\+I\+D}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Modified\+Nodes\+I\+D}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$repo\+U\+U\+I\+D$>$ repo\+::core\+::model\+::\+Repo\+Scene\+::get\+Modified\+Nodes\+I\+D (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a38b387913f5f84bd0b6948b88b5b2a09}
+Get all I\+D of nodes which are modified since last revision \begin{DoxyReturn}{Returns}
+returns a vector of node I\+Ds 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_ada8d3c259b08a83a2f80b3337b95416d}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Node\+By\+Shared\+I\+D@{get\+Node\+By\+Shared\+I\+D}}
+\index{get\+Node\+By\+Shared\+I\+D@{get\+Node\+By\+Shared\+I\+D}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Node\+By\+Shared\+I\+D}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+Node}$\ast$ repo\+::core\+::model\+::\+Repo\+Scene\+::get\+Node\+By\+Shared\+I\+D (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type, }
+\item[{const repo\+U\+U\+I\+D \&}]{shared\+I\+D}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_ada8d3c259b08a83a2f80b3337b95416d}
+Get the node given the shared I\+D of this node 
+\begin{DoxyParams}{Parameters}
+{\em g} & instance of the graph to search from \\
+\hline
+{\em shared\+I\+D} & shared I\+D of the node \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a pointer to the node if found. 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_aa15d3e1283014d74816e2aaaec2896f6}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Node\+By\+Unique\+I\+D@{get\+Node\+By\+Unique\+I\+D}}
+\index{get\+Node\+By\+Unique\+I\+D@{get\+Node\+By\+Unique\+I\+D}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Node\+By\+Unique\+I\+D}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+Node}$\ast$ repo\+::core\+::model\+::\+Repo\+Scene\+::get\+Node\+By\+Unique\+I\+D (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type, }
+\item[{const repo\+U\+U\+I\+D \&}]{unique\+I\+D}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_aa15d3e1283014d74816e2aaaec2896f6}
+Get the node given the Unique I\+D of this node 
+\begin{DoxyParams}{Parameters}
+{\em g} & instance of the graph to search from \\
+\hline
+{\em shared\+I\+D} & Unique I\+D of the node \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a pointer to the node if found. 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a70ca262465b114957590e563b9a0b2d8}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Original\+Files@{get\+Original\+Files}}
+\index{get\+Original\+Files@{get\+Original\+Files}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Original\+Files}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ std\+::string $>$ Repo\+Scene\+::get\+Original\+Files (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a70ca262465b114957590e563b9a0b2d8}
+Get the file names of the original files that are stored within the database \begin{DoxyReturn}{Returns}
+returns a vector of file names 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a9d43a9e2ff7e75bc759f475b09d38b70}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Owner@{get\+Owner}}
+\index{get\+Owner@{get\+Owner}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Owner}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+Scene\+::get\+Owner (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a9d43a9e2ff7e75bc759f475b09d38b70}
+If the scene is revisioned, get the owner of the model if the scene is not revisioned, this function will return an empty string \begin{DoxyReturn}{Returns}
+returns the owner, or empty string. 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a722d51e5ef017ca8ea56632f8783b26d}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Parent\+Nodes\+Filtered@{get\+Parent\+Nodes\+Filtered}}
+\index{get\+Parent\+Nodes\+Filtered@{get\+Parent\+Nodes\+Filtered}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Parent\+Nodes\+Filtered}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf Repo\+Node} $\ast$ $>$ Repo\+Scene\+::get\+Parent\+Nodes\+Filtered (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type, }
+\item[{const {\bf Repo\+Node} $\ast$}]{node, }
+\item[{const Node\+Type \&}]{type}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a722d51e5ef017ca8ea56632f8783b26d}
+Get the list of parent nodes that satisfy the filtering condition 
+\begin{DoxyParams}{Parameters}
+{\em g\+Type} & graph\+Type \\
+\hline
+{\em node} & node in question \\
+\hline
+{\em type} & the type of nodes to obtain \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a vector of transformation nodes 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_abfdb99dde6895c7226c3514218728bca}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Project\+Name@{get\+Project\+Name}}
+\index{get\+Project\+Name@{get\+Project\+Name}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Project\+Name}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+Scene\+::get\+Project\+Name (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_abfdb99dde6895c7226c3514218728bca}
+Get name of the project \begin{DoxyReturn}{Returns}
+returns name of the project if available 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a4606af3c279123479cd7b2bf120c7bbe}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Raw\+Extension@{get\+Raw\+Extension}}
+\index{get\+Raw\+Extension@{get\+Raw\+Extension}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Raw\+Extension}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+Scene\+::get\+Raw\+Extension (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a4606af3c279123479cd7b2bf120c7bbe}
+Get raw extension for this project \begin{DoxyReturn}{Returns}
+returns the raw extension 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a59dd8d61c75867f3b42430c578bbec1f}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Removed\+Nodes@{get\+Removed\+Nodes}}
+\index{get\+Removed\+Nodes@{get\+Removed\+Nodes}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Removed\+Nodes}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<${\bf Repo\+Node}$\ast$$>$ repo\+::core\+::model\+::\+Repo\+Scene\+::get\+Removed\+Nodes (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a59dd8d61c75867f3b42430c578bbec1f}
+Get allnodes which are removed since last revision \begin{DoxyReturn}{Returns}
+returns a vector of node removed from scene 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a5eab7b960b71528e609187848c39bec6}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Removed\+Nodes\+I\+D@{get\+Removed\+Nodes\+I\+D}}
+\index{get\+Removed\+Nodes\+I\+D@{get\+Removed\+Nodes\+I\+D}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Removed\+Nodes\+I\+D}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$repo\+U\+U\+I\+D$>$ repo\+::core\+::model\+::\+Repo\+Scene\+::get\+Removed\+Nodes\+I\+D (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a5eab7b960b71528e609187848c39bec6}
+Get all I\+D of nodes which are removed since last revision \begin{DoxyReturn}{Returns}
+returns a vector of node I\+Ds 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_aae6865fe4b3c52ab55d04f162ca1b7bf}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Revision\+I\+D@{get\+Revision\+I\+D}}
+\index{get\+Revision\+I\+D@{get\+Revision\+I\+D}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Revision\+I\+D}]{\setlength{\rightskip}{0pt plus 5cm}repo\+U\+U\+I\+D repo\+::core\+::model\+::\+Repo\+Scene\+::get\+Revision\+I\+D (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_aae6865fe4b3c52ab55d04f162ca1b7bf}
+Get the revision I\+D of this scene graph \begin{DoxyReturn}{Returns}
+returns the revision I\+D of this scene 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a7de6b4892cf101adf864a4b88cc1984b}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Scene\+Bounding\+Box@{get\+Scene\+Bounding\+Box}}
+\index{get\+Scene\+Bounding\+Box@{get\+Scene\+Bounding\+Box}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Scene\+Bounding\+Box}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf repo\+\_\+vector\+\_\+t} $>$ Repo\+Scene\+::get\+Scene\+Bounding\+Box (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a7de6b4892cf101adf864a4b88cc1984b}
+Get a bounding box for the entire scene \begin{DoxyReturn}{Returns}
+returns bounding box for the whole graph. 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_af4324820733d5dae30ee3e8e2580af71}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Scene\+Bounding\+Box\+Internal@{get\+Scene\+Bounding\+Box\+Internal}}
+\index{get\+Scene\+Bounding\+Box\+Internal@{get\+Scene\+Bounding\+Box\+Internal}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Scene\+Bounding\+Box\+Internal}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Scene\+::get\+Scene\+Bounding\+Box\+Internal (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type, }
+\item[{const {\bf Repo\+Node} $\ast$}]{node, }
+\item[{const std\+::vector$<$ float $>$ \&}]{mat, }
+\item[{std\+::vector$<$ {\bf repo\+\_\+vector\+\_\+t} $>$ \&}]{bbox}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_af4324820733d5dae30ee3e8e2580af71}
+Recursive function to find the scene\textquotesingle{}s bounding box 
+\begin{DoxyParams}{Parameters}
+{\em gtype} & type of graph to navigate \\
+\hline
+{\em node} & current node \\
+\hline
+{\em mat} & transformation matrix \\
+\hline
+{\em bbox} & boudning box (to return/update) \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a189b939059994f16c99b67409bdcebf5}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Scene\+From\+Reference@{get\+Scene\+From\+Reference}}
+\index{get\+Scene\+From\+Reference@{get\+Scene\+From\+Reference}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Scene\+From\+Reference}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+Scene}$\ast$ repo\+::core\+::model\+::\+Repo\+Scene\+::get\+Scene\+From\+Reference (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type, }
+\item[{const repo\+U\+U\+I\+D \&}]{reference}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a189b939059994f16c99b67409bdcebf5}
+Get Scene from reference node \hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a1a5748642960ad1ae321046eaf7c92eb}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+S\+R\+C\+Extension@{get\+S\+R\+C\+Extension}}
+\index{get\+S\+R\+C\+Extension@{get\+S\+R\+C\+Extension}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+S\+R\+C\+Extension}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+Scene\+::get\+S\+R\+C\+Extension (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a1a5748642960ad1ae321046eaf7c92eb}
+Get src extension for this project \begin{DoxyReturn}{Returns}
+returns the src extension 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a6307f0c0df32f10d603028a75afb8e50}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Stash\+Extension@{get\+Stash\+Extension}}
+\index{get\+Stash\+Extension@{get\+Stash\+Extension}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Stash\+Extension}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+Scene\+::get\+Stash\+Extension (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a6307f0c0df32f10d603028a75afb8e50}
+Get stash extension for this project \begin{DoxyReturn}{Returns}
+returns the src extension 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a781f11c7e9f9e561772581fbc8ecd51f}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+Texture\+I\+D\+For\+Mesh@{get\+Texture\+I\+D\+For\+Mesh}}
+\index{get\+Texture\+I\+D\+For\+Mesh@{get\+Texture\+I\+D\+For\+Mesh}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+Texture\+I\+D\+For\+Mesh}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string Repo\+Scene\+::get\+Texture\+I\+D\+For\+Mesh (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type, }
+\item[{const repo\+U\+U\+I\+D \&}]{shared\+I\+D}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a781f11c7e9f9e561772581fbc8ecd51f}
+Get the texture I\+D that is associated with the given mesh if the mesh has no texture, it returns an empty string 
+\begin{DoxyParams}{Parameters}
+{\em g\+Type} & the graph type to search through \\
+\hline
+{\em shared\+I\+D} & shared I\+D of the mesh \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a string consisting of texture I\+D 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a740ff35cf44e9a39a068bdc4a1353cf0}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+View\+Graph@{get\+View\+Graph}}
+\index{get\+View\+Graph@{get\+View\+Graph}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+View\+Graph}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Graph\+Type} repo\+::core\+::model\+::\+Repo\+Scene\+::get\+View\+Graph (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a740ff35cf44e9a39a068bdc4a1353cf0}
+Return the best graph type availalble for viewing if stash is loaded, returns stash, otherwise default \begin{DoxyReturn}{Returns}
+returns either optimised or default 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_ad577dfbbb9da631406933437bc456f37}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+World\+Offset@{get\+World\+Offset}}
+\index{get\+World\+Offset@{get\+World\+Offset}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+World\+Offset}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$double$>$ repo\+::core\+::model\+::\+Repo\+Scene\+::get\+World\+Offset (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_ad577dfbbb9da631406933437bc456f37}
+Get the world offset shift coordinates of the model \begin{DoxyReturn}{Returns}
+a vector of double denoting its offset 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_aff5298094e5c75f27b71a9369300f028}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!get\+X3\+D\+Extension@{get\+X3\+D\+Extension}}
+\index{get\+X3\+D\+Extension@{get\+X3\+D\+Extension}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{get\+X3\+D\+Extension}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+Scene\+::get\+X3\+D\+Extension (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_aff5298094e5c75f27b71a9369300f028}
+Get x3d extension for this project \begin{DoxyReturn}{Returns}
+returns the x3d extension 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a089803365c0d98a9050f36fc0b7b24e4}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!has\+Root@{has\+Root}}
+\index{has\+Root@{has\+Root}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{has\+Root}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::core\+::model\+::\+Repo\+Scene\+::has\+Root (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a089803365c0d98a9050f36fc0b7b24e4}
+check if Root Node exists \begin{DoxyReturn}{Returns}
+returns true if root\+Node is not null. 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a3c6968fb82e20a6694c1be5170a0bc2b}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!is\+Head\+Revision@{is\+Head\+Revision}}
+\index{is\+Head\+Revision@{is\+Head\+Revision}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{is\+Head\+Revision}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::core\+::model\+::\+Repo\+Scene\+::is\+Head\+Revision (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a3c6968fb82e20a6694c1be5170a0bc2b}
+Return if it the scene is of a head revision \begin{DoxyReturn}{Returns}
+returns true if it is head of a branch 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a826242a71e6bf69893d3287d635442a7}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!is\+Missing\+Texture@{is\+Missing\+Texture}}
+\index{is\+Missing\+Texture@{is\+Missing\+Texture}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{is\+Missing\+Texture}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::core\+::model\+::\+Repo\+Scene\+::is\+Missing\+Texture (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a826242a71e6bf69893d3287d635442a7}
+Check if default scene graph is missing texture \begin{DoxyReturn}{Returns}
+returns true if missing textures 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a2ae2f478f17fe7dfeb20ad8befb3b2ee}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!is\+O\+K@{is\+O\+K}}
+\index{is\+O\+K@{is\+O\+K}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{is\+O\+K}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::core\+::model\+::\+Repo\+Scene\+::is\+O\+K (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a2ae2f478f17fe7dfeb20ad8befb3b2ee}
+Check if the default scene graph is ok. \begin{DoxyReturn}{Returns}
+returns true if it is healthy 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a8d69fafb52e9a73548d7c22ebbcb562c}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!is\+Revisioned@{is\+Revisioned}}
+\index{is\+Revisioned@{is\+Revisioned}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{is\+Revisioned}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::core\+::model\+::\+Repo\+Scene\+::is\+Revisioned (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a8d69fafb52e9a73548d7c22ebbcb562c}
+Check if this scene is revisioned \begin{DoxyReturn}{Returns}
+returns true if the scene is revisioned 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a383afae13ad7cd1b64302191b0e4cdd7}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!load\+Revision@{load\+Revision}}
+\index{load\+Revision@{load\+Revision}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{load\+Revision}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Scene\+::load\+Revision (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$}]{handler, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a383afae13ad7cd1b64302191b0e4cdd7}
+Load revision information of the configured branch/revision If set\+Project\+Revision() and set\+Project\+Branch was never called, it will load master/head. 
+\begin{DoxyParams}{Parameters}
+{\em handler} & database handler to perform this action \\
+\hline
+{\em err\+Msg} & message if it failed \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+return true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_aae5c18cc8197d8fcd26cc252e4ef9dcc}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!load\+Scene@{load\+Scene}}
+\index{load\+Scene@{load\+Scene}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{load\+Scene}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Scene\+::load\+Scene (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$}]{handler, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_scene_aae5c18cc8197d8fcd26cc252e4ef9dcc}
+Load Scene into Scene graph object base on the revision/branch setting. 
+\begin{DoxyParams}{Parameters}
+{\em handler} & database handler to perform this action \\
+\hline
+{\em err\+Msg} & message if it failed \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+return true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a6affae3bf21f89793b98e883bc084298}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!load\+Stash@{load\+Stash}}
+\index{load\+Stash@{load\+Stash}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{load\+Stash}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Scene\+::load\+Stash (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$}]{handler, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a6affae3bf21f89793b98e883bc084298}
+Load stash into scene base on the revision setting 
+\begin{DoxyParams}{Parameters}
+{\em handler} & database handler to perform this action \\
+\hline
+{\em err\+Msg} & message if it failed \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+return true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_acf00d158389dc84cc227f2208f053c9b}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!modify\+Node@{modify\+Node}}
+\index{modify\+Node@{modify\+Node}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{modify\+Node}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::core\+::model\+::\+Repo\+Scene\+::modify\+Node (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{gtype, }
+\item[{const repo\+U\+U\+I\+D \&}]{shared\+I\+D, }
+\item[{{\bf Repo\+Node} $\ast$}]{new\+Node, }
+\item[{const bool \&}]{overwrite = {\ttfamily false}}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_acf00d158389dc84cc227f2208f053c9b}
+Modify a node with the information within the new node. This will also update revision related information within the scene (if necessary) 
+\begin{DoxyParams}{Parameters}
+{\em shared\+I\+D} & of the node to modify \\
+\hline
+{\em new\+Node} & modified version node \\
+\hline
+{\em overwrite} & if true, overwrite the node with modified version, otherwise just update with its contents (default\+: false) \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a932e31fc1448fe8d2bf57c1165cad076}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!modify\+Node@{modify\+Node}}
+\index{modify\+Node@{modify\+Node}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{modify\+Node}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Scene\+::modify\+Node (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{gtype, }
+\item[{{\bf Repo\+Node} $\ast$}]{node, }
+\item[{{\bf Repo\+Node} $\ast$}]{new\+Node, }
+\item[{const bool \&}]{overwrite = {\ttfamily false}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a932e31fc1448fe8d2bf57c1165cad076}
+Modify a node with the information within the new node. This will also update revision related information within the scene (if necessary) 
+\begin{DoxyParams}{Parameters}
+{\em shared\+I\+D} & of the node to modify \\
+\hline
+{\em node} & node to change \\
+\hline
+{\em new\+Node} & modified node(or modifications) \\
+\hline
+{\em overwrite} & if true, overwrite the node with modified version, otherwise just update with its contents (default\+: false) \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a35e5705f991f40cdd1e5e16419bcf244}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!populate@{populate}}
+\index{populate@{populate}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{populate}]{\setlength{\rightskip}{0pt plus 5cm}bool Repo\+Scene\+::populate (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{gtype, }
+\item[{{\bf repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$}]{handler, }
+\item[{std\+::vector$<$ {\bf Repo\+B\+S\+O\+N} $>$}]{nodes, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a35e5705f991f40cdd1e5e16419bcf244}
+populate the collections (cameras, meshes etc) with the given nodes 
+\begin{DoxyParams}{Parameters}
+{\em gtype} & which graph to populate \\
+\hline
+{\em handler} & database handler to use for retrieval \\
+\hline
+{\em nodes} & the nodes to populate with \\
+\hline
+{\em err\+Msg} & error message when this function returns false \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true if scene graph populated with no errors 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a06729da0c472896cac79f0b0ac91d78f}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!populate\+And\+Update@{populate\+And\+Update}}
+\index{populate\+And\+Update@{populate\+And\+Update}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{populate\+And\+Update}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Scene\+::populate\+And\+Update (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{g\+Type, }
+\item[{const Repo\+Node\+Set \&}]{cameras, }
+\item[{const Repo\+Node\+Set \&}]{meshes, }
+\item[{const Repo\+Node\+Set \&}]{materials, }
+\item[{const Repo\+Node\+Set \&}]{metadata, }
+\item[{const Repo\+Node\+Set \&}]{textures, }
+\item[{const Repo\+Node\+Set \&}]{transformations, }
+\item[{const Repo\+Node\+Set \&}]{references, }
+\item[{const Repo\+Node\+Set \&}]{maps, }
+\item[{const Repo\+Node\+Set \&}]{unknowns}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a06729da0c472896cac79f0b0ac91d78f}
+Populate the collections with the given node sets This populates the scene graph information and also track the nodes that are added. i.\+e. this assumes the nodes did not exist in the previous revision (if any) 
+\begin{DoxyParams}{Parameters}
+{\em g\+Type} & specify which graph (graph or stash) to insert into \\
+\hline
+{\em cameras} & Repo Node set of cameras \\
+\hline
+{\em meshes} & Repo Node set of meshes \\
+\hline
+{\em materials} & Repo Node set of materials \\
+\hline
+{\em metadata} & Repo Node set of metadata \\
+\hline
+{\em textures} & Repo Node set of textures \\
+\hline
+{\em transformations} & Repo Node set of transformations \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true if scene graph populated with no errors 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_addb2548a816916c09d57a9ff5cb54aea}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!print\+Statistics@{print\+Statistics}}
+\index{print\+Statistics@{print\+Statistics}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{print\+Statistics}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Scene\+::print\+Statistics (
+\begin{DoxyParamCaption}
+\item[{std\+::iostream \&}]{output}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_scene_addb2548a816916c09d57a9ff5cb54aea}
+Prints the statics of this Scene graph to an I\+O stream This is mostly a debugging function to check the scene graph has done what you have expected. 
+\begin{DoxyParams}{Parameters}
+{\em the} & file stream to print the info into \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_aa51d6a21aaed1aa223ea5413c5c7c853}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!remove\+Node@{remove\+Node}}
+\index{remove\+Node@{remove\+Node}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{remove\+Node}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Scene\+::remove\+Node (
+\begin{DoxyParamCaption}
+\item[{const {\bf Graph\+Type} \&}]{gtype, }
+\item[{const repo\+U\+U\+I\+D \&}]{shared\+I\+D}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_scene_aa51d6a21aaed1aa223ea5413c5c7c853}
+Remove a node from the scene W\+A\+R\+N\+I\+N\+G\+: Ensure all relationships are patched up, or you may end up with orphaned nodes/disjoint trees! This function will not try to patch up any orphaned children The node will be deleted from memory after this call! 
+\begin{DoxyParams}{Parameters}
+{\em gtype} & graph type \\
+\hline
+{\em shared\+I\+D} & of the node to remove \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a49f78b7c17b6e7b4f37a4837edc44e64}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!reorientate\+Direct\+X\+Model@{reorientate\+Direct\+X\+Model}}
+\index{reorientate\+Direct\+X\+Model@{reorientate\+Direct\+X\+Model}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{reorientate\+Direct\+X\+Model}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Scene\+::reorientate\+Direct\+X\+Model (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a49f78b7c17b6e7b4f37a4837edc44e64}
+Rotates the model by 270 degrees to compensate the different axis orientation in direct\+X. Commonly happens in fbx models \hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_ac2caff05d438979474b4e393edce1ccd}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!set\+Branch@{set\+Branch}}
+\index{set\+Branch@{set\+Branch}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{set\+Branch}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::core\+::model\+::\+Repo\+Scene\+::set\+Branch (
+\begin{DoxyParamCaption}
+\item[{repo\+U\+U\+I\+D}]{branch\+I\+D}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_ac2caff05d438979474b4e393edce1ccd}
+Set Branch 
+\begin{DoxyParams}{Parameters}
+{\em uuid} & of branch \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a346ae9182f19ed55b48c377523dc35ee}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!set\+Commit\+Message@{set\+Commit\+Message}}
+\index{set\+Commit\+Message@{set\+Commit\+Message}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{set\+Commit\+Message}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::core\+::model\+::\+Repo\+Scene\+::set\+Commit\+Message (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{msg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a346ae9182f19ed55b48c377523dc35ee}
+Set commit message 
+\begin{DoxyParams}{Parameters}
+{\em msg} & message to go with the commit \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a01d7c23a6df5b726b636c518a5a72a35}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!set\+Database\+And\+Project\+Name@{set\+Database\+And\+Project\+Name}}
+\index{set\+Database\+And\+Project\+Name@{set\+Database\+And\+Project\+Name}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{set\+Database\+And\+Project\+Name}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::core\+::model\+::\+Repo\+Scene\+::set\+Database\+And\+Project\+Name (
+\begin{DoxyParamCaption}
+\item[{std\+::string}]{new\+Database\+Name, }
+\item[{std\+::string}]{new\+Project\+Name}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a01d7c23a6df5b726b636c518a5a72a35}
+Set project and database names. This will overwrite the current ones 
+\begin{DoxyParams}{Parameters}
+{\em new\+Database\+Name} & new name of database. \\
+\hline
+{\em new\+Project\+Mame} & new name of the project \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a412be676a80bf9f2594b98bba1924332}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!set\+Missing\+Texture@{set\+Missing\+Texture}}
+\index{set\+Missing\+Texture@{set\+Missing\+Texture}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{set\+Missing\+Texture}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::core\+::model\+::\+Repo\+Scene\+::set\+Missing\+Texture (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a412be676a80bf9f2594b98bba1924332}
+Flag missing texture bit on status. \hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a0782d1edcdf37539614f93fe7a1fdc0f}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!set\+Revision@{set\+Revision}}
+\index{set\+Revision@{set\+Revision}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{set\+Revision}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::core\+::model\+::\+Repo\+Scene\+::set\+Revision (
+\begin{DoxyParamCaption}
+\item[{repo\+U\+U\+I\+D}]{revision\+I\+D}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a0782d1edcdf37539614f93fe7a1fdc0f}
+Set project revision 
+\begin{DoxyParams}{Parameters}
+{\em uuid} & of the revision. \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a617eb9c5266a174cf6f9f0a41dfb115e}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!set\+World\+Offset@{set\+World\+Offset}}
+\index{set\+World\+Offset@{set\+World\+Offset}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{set\+World\+Offset}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Scene\+::set\+World\+Offset (
+\begin{DoxyParamCaption}
+\item[{const std\+::vector$<$ double $>$ \&}]{offset}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a617eb9c5266a174cf6f9f0a41dfb115e}
+Set the world offset value for the model models are often shifted for better viewing purposes this value tells us how much to shift to put it back into it\textquotesingle{}s relative world coordinates. \hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_adb2dadf1167735dc3116a9265d6b69ee}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!shift\+Model@{shift\+Model}}
+\index{shift\+Model@{shift\+Model}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{shift\+Model}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Scene\+::shift\+Model (
+\begin{DoxyParamCaption}
+\item[{const std\+::vector$<$ double $>$ \&}]{offset}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_adb2dadf1167735dc3116a9265d6b69ee}
+Shift the model by the given vector this alter the root node with the given translation 
+\begin{DoxyParams}{Parameters}
+{\em offset} & a vector 3 double denoting the vector shift \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_ac85354a3447d62bfc8aad76c5e51d187}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!update\+Revision\+Status@{update\+Revision\+Status}}
+\index{update\+Revision\+Status@{update\+Revision\+Status}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{update\+Revision\+Status}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Scene\+::update\+Revision\+Status (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$}]{handler, }
+\item[{const Revision\+Node\+::\+Upload\+Status \&}]{status}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_scene_ac85354a3447d62bfc8aad76c5e51d187}
+Update revision status, if the scene is revisioned This will also update the record within the database should a handler is supplied 
+\begin{DoxyParams}{Parameters}
+{\em status} & status of the revision \\
+\hline
+\end{DoxyParams}
+
+
+\subsection{Member Data Documentation}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a0de6d5d1c514db0e859b150feb312337}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!gltf\+Ext@{gltf\+Ext}}
+\index{gltf\+Ext@{gltf\+Ext}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{gltf\+Ext}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+Scene\+::gltf\+Ext\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a0de6d5d1c514db0e859b150feb312337}
+extension for S\+R\+C stash files \hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_ade467377ddb29a8b7ea7347ed81ad0a4}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!issues\+Ext@{issues\+Ext}}
+\index{issues\+Ext@{issues\+Ext}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{issues\+Ext}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+Scene\+::issues\+Ext\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_ade467377ddb29a8b7ea7347ed81ad0a4}
+extension for raw file dumps (e.\+g. original files) (Default\+: raw) \hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a979903ee1680863f4c67cf524bbc6e9f}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!json\+Ext@{json\+Ext}}
+\index{json\+Ext@{json\+Ext}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{json\+Ext}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+Scene\+::json\+Ext\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a979903ee1680863f4c67cf524bbc6e9f}
+extension for X3\+Dom backbone files \hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a19be566f3815da34dea4447f4d5b2dba}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!raw\+Ext@{raw\+Ext}}
+\index{raw\+Ext@{raw\+Ext}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{raw\+Ext}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+Scene\+::raw\+Ext\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a19be566f3815da34dea4447f4d5b2dba}
+extension for optimized graph (Default\+: stash.\+3drepo) \hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a72ff48bdd737480c5dd98edb4a39a557}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!ref\+Files@{ref\+Files}}
+\index{ref\+Files@{ref\+Files}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{ref\+Files}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$std\+::string$>$ repo\+::core\+::model\+::\+Repo\+Scene\+::ref\+Files\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a72ff48bdd737480c5dd98edb4a39a557}
+extension for J\+S\+O\+N graph metadata files \hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_ab33974cb8caec149fdd9743339f4d2ab}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!rev\+Ext@{rev\+Ext}}
+\index{rev\+Ext@{rev\+Ext}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{rev\+Ext}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+Scene\+::rev\+Ext\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_ab33974cb8caec149fdd9743339f4d2ab}
+extension for scene graph (Default\+: scene) \hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a8c14ab145d410fb70f0cecec10f8d162}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!rev\+Node@{rev\+Node}}
+\index{rev\+Node@{rev\+Node}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{rev\+Node}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Revision\+Node}$\ast$ repo\+::core\+::model\+::\+Repo\+Scene\+::rev\+Node\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a8c14ab145d410fb70f0cecec10f8d162}
+Flag to indicate if the scene graph is revisioned (true for scene graphs from model convertor) \hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_aaa568af1ee2cde77df38f4c3badb5981}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!src\+Ext@{src\+Ext}}
+\index{src\+Ext@{src\+Ext}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{src\+Ext}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+Scene\+::src\+Ext\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_aaa568af1ee2cde77df38f4c3badb5981}
+extension for issues \hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_a9e1ec4f9fa275647a75838361b3d2a5d}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!stash\+Ext@{stash\+Ext}}
+\index{stash\+Ext@{stash\+Ext}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{stash\+Ext}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+Scene\+::stash\+Ext\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_a9e1ec4f9fa275647a75838361b3d2a5d}
+extension for history graph (Default\+: history) \hypertarget{classrepo_1_1core_1_1model_1_1_repo_scene_ac55e20f143934e73afbca758b8d3d626}{}\index{repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}!x3d\+Ext@{x3d\+Ext}}
+\index{x3d\+Ext@{x3d\+Ext}!repo\+::core\+::model\+::\+Repo\+Scene@{repo\+::core\+::model\+::\+Repo\+Scene}}
+\subsubsection[{x3d\+Ext}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+Scene\+::x3d\+Ext\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1core_1_1model_1_1_repo_scene_ac55e20f143934e73afbca758b8d3d626}
+extension for G\+L\+T\+F stash files 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/core/model/collection/repo\+\_\+scene.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/core/model/collection/repo\+\_\+scene.\+cpp\end{DoxyCompactItemize}

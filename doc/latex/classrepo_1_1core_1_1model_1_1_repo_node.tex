@@ -1,0 +1,305 @@
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_node}{}\section{repo\+:\+:core\+:\+:model\+:\+:Repo\+Node Class Reference}
+\label{classrepo_1_1core_1_1model_1_1_repo_node}\index{repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}}
+Inheritance diagram for repo\+:\+:core\+:\+:model\+:\+:Repo\+Node\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=12.000000cm]{classrepo_1_1core_1_1model_1_1_repo_node}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_abec87b9a166ec42041ceced9315acee1}{Repo\+Node} (\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} bson, const std\+::unordered\+\_\+map$<$ std\+::string, std\+::pair$<$ std\+::string, std\+::vector$<$ uint8\+\_\+t $>$$>$$>$ \&bin\+Mapping=std\+::unordered\+\_\+map$<$ std\+::string, std\+::pair$<$ std\+::string, std\+::vector$<$ uint8\+\_\+t $>$$>$$>$())
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_a798034b80fc19d1a83ac60611dad86ea}{Repo\+Node} ()
+\item 
+virtual \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_a9d2bfe67f3d2ac044d722bedc5ecdd82}{$\sim$\+Repo\+Node} ()
+\item 
+virtual bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_aa3e0f98690dc8bfe082d2fc57b904798}{position\+Dependant} ()
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_abfab119eae3bdc008811dbfe8c2182df}{clone\+And\+Add\+Parent} (const repo\+U\+U\+I\+D \&parent, const bool \&new\+Unique\+I\+D=false, const bool \&new\+Shared\+I\+D=false, const bool \&overwrite=false) const 
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_afd4ca3df329125f9c1baf654fcdd0b6f}{clone\+And\+Add\+Parent} (const std\+::vector$<$ repo\+U\+U\+I\+D $>$ \&parents) const 
+\item 
+virtual \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_ac31acdb9774bce9296cb5005286db83d}{clone\+And\+Apply\+Transformation} (const std\+::vector$<$ float $>$ \&matrix) const 
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_a8a6beeff42135007ead59649613df38a}{clone\+And\+Change\+Name} (const std\+::string \&new\+Name, const bool \&new\+Unique\+I\+D=true) const 
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_ac1b7d9076b255eb4117a6d5a0318fe68}{clone\+And\+Remove\+Parent} (const repo\+U\+U\+I\+D \&parent, const bool \&new\+Unique\+I\+D=true) const 
+\item 
+virtual \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_aed3611c21562e98e2a0d5d715548f496}{clone\+And\+Add\+Fields} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} $\ast$changes, const bool \&new\+Unique\+I\+D=true) const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_a001c5d809e79efaab4d4949fe466a619}{get\+Name} () const 
+\item 
+repo\+U\+U\+I\+D \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_a3d596341d346f03b7a7716ff629b7ce1}{get\+Shared\+I\+D} () const 
+\item 
+virtual std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_a4380ba349235b5d9b13b41e41975805e}{get\+Type} () const 
+\item 
+virtual Node\+Type \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_ad8d5295248dc9beb0b91efb2ce3b61f4}{get\+Type\+As\+Enum} () const 
+\item 
+repo\+U\+U\+I\+D \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_aa8a31489284049610e5f472c88a387bd}{get\+Unique\+I\+D} () const 
+\item 
+std\+::vector$<$ repo\+U\+U\+I\+D $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_a20e3664bab40526d592805d910358f09}{get\+Parent\+I\+Ds} () const 
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_aad580ff0ae7dabaef420e52122bf73d6}{}bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_aad580ff0ae7dabaef420e52122bf73d6}{operator==} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} \&other) const \label{classrepo_1_1core_1_1model_1_1_repo_node_aad580ff0ae7dabaef420e52122bf73d6}
+
+\begin{DoxyCompactList}\small\item\em Returns true if the node is the same, false otherwise. \end{DoxyCompactList}\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_a48d57aecd2edd37df9898b75eeda9ca9}{}bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_a48d57aecd2edd37df9898b75eeda9ca9}{operator$<$} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} \&other) const \label{classrepo_1_1core_1_1model_1_1_repo_node_a48d57aecd2edd37df9898b75eeda9ca9}
+
+\begin{DoxyCompactList}\small\item\em Returns true if the other node is greater than this one, false otherwise. \end{DoxyCompactList}\item 
+virtual bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_a7c98830a876ee6516587a8f07c7015a5}{s\+Equal} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} \&other) const 
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_a79bf797a38615a8a01013f27b82d1075}{}bool \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_a79bf797a38615a8a01013f27b82d1075}{operator$>$} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} \&other) const \label{classrepo_1_1core_1_1model_1_1_repo_node_a79bf797a38615a8a01013f27b82d1075}
+
+\begin{DoxyCompactList}\small\item\em Returns true if the other node is greater than this one, false otherwise. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_a72eab96d654f3f62db12bd7dc3042b7f}{}std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_a72eab96d654f3f62db12bd7dc3042b7f}{type}\label{classrepo_1_1core_1_1model_1_1_repo_node_a72eab96d654f3f62db12bd7dc3042b7f}
+
+\begin{DoxyCompactList}\small\item\em Compulsory type of this document. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_abec87b9a166ec42041ceced9315acee1}{}\index{repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}!Repo\+Node@{Repo\+Node}}
+\index{Repo\+Node@{Repo\+Node}!repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}}
+\subsubsection[{Repo\+Node}]{\setlength{\rightskip}{0pt plus 5cm}Repo\+Node\+::\+Repo\+Node (
+\begin{DoxyParamCaption}
+\item[{{\bf Repo\+B\+S\+O\+N}}]{bson, }
+\item[{const std\+::unordered\+\_\+map$<$ std\+::string, std\+::pair$<$ std\+::string, std\+::vector$<$ uint8\+\_\+t $>$$>$$>$ \&}]{bin\+Mapping = {\ttfamily std\+:\+:unordered\+\_\+map$<$std\+:\+:string,~std\+:\+:pair$<$std\+:\+:string,~std\+:\+:vector$<$uint8\+\_\+t$>$$>$$>$()}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_repo_node_abec87b9a166ec42041ceced9315acee1}
+Constructor Construct a \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} base on a \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} object \hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_a798034b80fc19d1a83ac60611dad86ea}{}\index{repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}!Repo\+Node@{Repo\+Node}}
+\index{Repo\+Node@{Repo\+Node}!repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}}
+\subsubsection[{Repo\+Node}]{\setlength{\rightskip}{0pt plus 5cm}repo\+::core\+::model\+::\+Repo\+Node\+::\+Repo\+Node (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_node_a798034b80fc19d1a83ac60611dad86ea}
+Empty Constructor \hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_a9d2bfe67f3d2ac044d722bedc5ecdd82}{}\index{repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}!````~Repo\+Node@{$\sim$\+Repo\+Node}}
+\index{````~Repo\+Node@{$\sim$\+Repo\+Node}!repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}}
+\subsubsection[{$\sim$\+Repo\+Node}]{\setlength{\rightskip}{0pt plus 5cm}Repo\+Node\+::$\sim$\+Repo\+Node (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1model_1_1_repo_node_a9d2bfe67f3d2ac044d722bedc5ecdd82}
+Default Deconstructor 
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_aed3611c21562e98e2a0d5d715548f496}{}\index{repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}!clone\+And\+Add\+Fields@{clone\+And\+Add\+Fields}}
+\index{clone\+And\+Add\+Fields@{clone\+And\+Add\+Fields}!repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}}
+\subsubsection[{clone\+And\+Add\+Fields}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+Node} Repo\+Node\+::clone\+And\+Add\+Fields (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+B\+S\+O\+N} $\ast$}]{changes, }
+\item[{const bool \&}]{new\+Unique\+I\+D = {\ttfamily true}}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1model_1_1_repo_node_aed3611c21562e98e2a0d5d715548f496}
+Create a new object with fields within the change node (excluding parent\+I\+D, unique I\+D and shared I\+D) N\+O\+T\+E this object is unchanged! 
+\begin{DoxyParams}{Parameters}
+{\em changes} & a repobson containing the fields to change \\
+\hline
+{\em new\+Unique\+I\+D} & generate a new unique I\+D if set to true \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a new object with fields updated 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_abfab119eae3bdc008811dbfe8c2182df}{}\index{repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}!clone\+And\+Add\+Parent@{clone\+And\+Add\+Parent}}
+\index{clone\+And\+Add\+Parent@{clone\+And\+Add\+Parent}!repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}}
+\subsubsection[{clone\+And\+Add\+Parent}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+Node} Repo\+Node\+::clone\+And\+Add\+Parent (
+\begin{DoxyParamCaption}
+\item[{const repo\+U\+U\+I\+D \&}]{parent, }
+\item[{const bool \&}]{new\+Unique\+I\+D = {\ttfamily false}, }
+\item[{const bool \&}]{new\+Shared\+I\+D = {\ttfamily false}, }
+\item[{const bool \&}]{overwrite = {\ttfamily false}}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_node_abfab119eae3bdc008811dbfe8c2182df}
+Create a new object with this object\textquotesingle{}s values, and add another parent into this new object N\+O\+T\+E\+: this object is unchanged! 
+\begin{DoxyParams}{Parameters}
+{\em parent\+I\+D} & the shared uuid of the parent \\
+\hline
+{\em new\+Unique\+I\+D} & assign a new unique I\+D \\
+\hline
+{\em new\+Shared\+I\+D} & assign a new shared I\+D \\
+\hline
+{\em overwrite} & overwrite the current parenting information \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+new object with the field updated 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_afd4ca3df329125f9c1baf654fcdd0b6f}{}\index{repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}!clone\+And\+Add\+Parent@{clone\+And\+Add\+Parent}}
+\index{clone\+And\+Add\+Parent@{clone\+And\+Add\+Parent}!repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}}
+\subsubsection[{clone\+And\+Add\+Parent}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+Node} Repo\+Node\+::clone\+And\+Add\+Parent (
+\begin{DoxyParamCaption}
+\item[{const std\+::vector$<$ repo\+U\+U\+I\+D $>$ \&}]{parents}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_node_afd4ca3df329125f9c1baf654fcdd0b6f}
+Create a new object with this object\textquotesingle{}s values, and add other parents into this new object N\+O\+T\+E\+: this object is unchanged! 
+\begin{DoxyParams}{Parameters}
+{\em parent\+I\+D} & the shared uuid of the parent \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+new object with the field updated 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_ac31acdb9774bce9296cb5005286db83d}{}\index{repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}!clone\+And\+Apply\+Transformation@{clone\+And\+Apply\+Transformation}}
+\index{clone\+And\+Apply\+Transformation@{clone\+And\+Apply\+Transformation}!repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}}
+\subsubsection[{clone\+And\+Apply\+Transformation}]{\setlength{\rightskip}{0pt plus 5cm}virtual {\bf Repo\+Node} repo\+::core\+::model\+::\+Repo\+Node\+::clone\+And\+Apply\+Transformation (
+\begin{DoxyParamCaption}
+\item[{const std\+::vector$<$ float $>$ \&}]{matrix}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}\label{classrepo_1_1core_1_1model_1_1_repo_node_ac31acdb9774bce9296cb5005286db83d}
+Create a new object with transformation applied to the node default behaviour is do nothing. Children object needs to override this function to perform their own specific behaviour. 
+\begin{DoxyParams}{Parameters}
+{\em matrix} & transformation matrix to apply. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a new object with transformation applied. 
+\end{DoxyReturn}
+
+
+Reimplemented in \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_a8f65c14c0c964ee17197135e95e30e3c}{repo\+::core\+::model\+::\+Mesh\+Node}, \hyperlink{classrepo_1_1core_1_1model_1_1_transformation_node_ad7ee2c9234712c2c697e06c02b34ed9b}{repo\+::core\+::model\+::\+Transformation\+Node}, and \hyperlink{classrepo_1_1core_1_1model_1_1_camera_node_a98b1b2260da36fb75ff894c98df901cf}{repo\+::core\+::model\+::\+Camera\+Node}.
+
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_a8a6beeff42135007ead59649613df38a}{}\index{repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}!clone\+And\+Change\+Name@{clone\+And\+Change\+Name}}
+\index{clone\+And\+Change\+Name@{clone\+And\+Change\+Name}!repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}}
+\subsubsection[{clone\+And\+Change\+Name}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+Node} repo\+::core\+::model\+::\+Repo\+Node\+::clone\+And\+Change\+Name (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{new\+Name, }
+\item[{const bool \&}]{new\+Unique\+I\+D = {\ttfamily true}}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_node_a8a6beeff42135007ead59649613df38a}
+Create a new object with this object\textquotesingle{}s values, but a different name 
+\begin{DoxyParams}{Parameters}
+{\em new\+Name} & new name \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns an object with the change 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_ac1b7d9076b255eb4117a6d5a0318fe68}{}\index{repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}!clone\+And\+Remove\+Parent@{clone\+And\+Remove\+Parent}}
+\index{clone\+And\+Remove\+Parent@{clone\+And\+Remove\+Parent}!repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}}
+\subsubsection[{clone\+And\+Remove\+Parent}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+Node} Repo\+Node\+::clone\+And\+Remove\+Parent (
+\begin{DoxyParamCaption}
+\item[{const repo\+U\+U\+I\+D \&}]{parent, }
+\item[{const bool \&}]{new\+Unique\+I\+D = {\ttfamily true}}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_node_ac1b7d9076b255eb4117a6d5a0318fe68}
+Create a new object with this object\textquotesingle{}s values, and remove a parent into this new object N\+O\+T\+E\+: this object is unchanged! 
+\begin{DoxyParams}{Parameters}
+{\em parent\+I\+D} & the shared uuid of the parent \\
+\hline
+{\em new\+Unique\+I\+D} & generate a new unique I\+D if set to true \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+new object with the field updated 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_a001c5d809e79efaab4d4949fe466a619}{}\index{repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}!get\+Name@{get\+Name}}
+\index{get\+Name@{get\+Name}!repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}}
+\subsubsection[{get\+Name}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+Node\+::get\+Name (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_node_a001c5d809e79efaab4d4949fe466a619}
+Get the name of the node \begin{DoxyReturn}{Returns}
+returns name or \char`\"{}\char`\"{} if no name 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_a20e3664bab40526d592805d910358f09}{}\index{repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}!get\+Parent\+I\+Ds@{get\+Parent\+I\+Ds}}
+\index{get\+Parent\+I\+Ds@{get\+Parent\+I\+Ds}!repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}}
+\subsubsection[{get\+Parent\+I\+Ds}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ repo\+U\+U\+I\+D $>$ Repo\+Node\+::get\+Parent\+I\+Ds (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_node_a20e3664bab40526d592805d910358f09}
+Get the list of parent I\+Ds \begin{DoxyReturn}{Returns}
+returns a set of parent I\+Ds 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_a3d596341d346f03b7a7716ff629b7ce1}{}\index{repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}!get\+Shared\+I\+D@{get\+Shared\+I\+D}}
+\index{get\+Shared\+I\+D@{get\+Shared\+I\+D}!repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}}
+\subsubsection[{get\+Shared\+I\+D}]{\setlength{\rightskip}{0pt plus 5cm}repo\+U\+U\+I\+D repo\+::core\+::model\+::\+Repo\+Node\+::get\+Shared\+I\+D (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_node_a3d596341d346f03b7a7716ff629b7ce1}
+Get the shared I\+D from the object \begin{DoxyReturn}{Returns}
+returns the shared I\+D of the object 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_a4380ba349235b5d9b13b41e41975805e}{}\index{repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}!get\+Type@{get\+Type}}
+\index{get\+Type@{get\+Type}!repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}}
+\subsubsection[{get\+Type}]{\setlength{\rightskip}{0pt plus 5cm}virtual std\+::string repo\+::core\+::model\+::\+Repo\+Node\+::get\+Type (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}\label{classrepo_1_1core_1_1model_1_1_repo_node_a4380ba349235b5d9b13b41e41975805e}
+Get the type of node \begin{DoxyReturn}{Returns}
+returns the type as a string 
+\end{DoxyReturn}
+
+
+Reimplemented in \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_afb8fedac41e86bce0f74509efa6d9614}{repo\+::core\+::model\+::\+Mesh\+Node}, \hyperlink{classrepo_1_1core_1_1model_1_1_transformation_node_a7e0b577dccbdbcab1e833b4da3121e83}{repo\+::core\+::model\+::\+Transformation\+Node}, \hyperlink{classrepo_1_1core_1_1model_1_1_revision_node_ac597aa317c2516be9f204e43ef896af4}{repo\+::core\+::model\+::\+Revision\+Node}, \hyperlink{classrepo_1_1core_1_1model_1_1_material_node_af0debb10133049af18a7c1e45942b606}{repo\+::core\+::model\+::\+Material\+Node}, \hyperlink{classrepo_1_1core_1_1model_1_1_reference_node_a1f1b1c966eb936b31b92f05247df58d0}{repo\+::core\+::model\+::\+Reference\+Node}, \hyperlink{classrepo_1_1core_1_1model_1_1_texture_node_aaae4c87e4e841d8bddc105e29e759d2a}{repo\+::core\+::model\+::\+Texture\+Node}, and \hyperlink{classrepo_1_1core_1_1model_1_1_metadata_node_aad51dc79d63495aa6b4b8fd02307786f}{repo\+::core\+::model\+::\+Metadata\+Node}.
+
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_ad8d5295248dc9beb0b91efb2ce3b61f4}{}\index{repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}!get\+Type\+As\+Enum@{get\+Type\+As\+Enum}}
+\index{get\+Type\+As\+Enum@{get\+Type\+As\+Enum}!repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}}
+\subsubsection[{get\+Type\+As\+Enum}]{\setlength{\rightskip}{0pt plus 5cm}Node\+Type Repo\+Node\+::get\+Type\+As\+Enum (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1core_1_1model_1_1_repo_node_ad8d5295248dc9beb0b91efb2ce3b61f4}
+Get the type of node as an enum \begin{DoxyReturn}{Returns}
+returns type as enum. 
+\end{DoxyReturn}
+
+
+Reimplemented in \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_aba656559a131b00514ca844a7e8a595c}{repo\+::core\+::model\+::\+Mesh\+Node}, \hyperlink{classrepo_1_1core_1_1model_1_1_transformation_node_ae24b2692960c32fed8b8b1ebf732a333}{repo\+::core\+::model\+::\+Transformation\+Node}, \hyperlink{classrepo_1_1core_1_1model_1_1_revision_node_ae632d941e5a9bc2d8275c53bb1c41805}{repo\+::core\+::model\+::\+Revision\+Node}, \hyperlink{classrepo_1_1core_1_1model_1_1_material_node_aa971c1eb43b76f95f28c063dac9919bc}{repo\+::core\+::model\+::\+Material\+Node}, \hyperlink{classrepo_1_1core_1_1model_1_1_reference_node_abe69afbcb44f14ad6a9a821819a2cf85}{repo\+::core\+::model\+::\+Reference\+Node}, \hyperlink{classrepo_1_1core_1_1model_1_1_texture_node_a78fadf9b11659cf83c24d367b66a6772}{repo\+::core\+::model\+::\+Texture\+Node}, and \hyperlink{classrepo_1_1core_1_1model_1_1_metadata_node_abc913943e7ce90649aa0d94ef70552ce}{repo\+::core\+::model\+::\+Metadata\+Node}.
+
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_aa8a31489284049610e5f472c88a387bd}{}\index{repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}!get\+Unique\+I\+D@{get\+Unique\+I\+D}}
+\index{get\+Unique\+I\+D@{get\+Unique\+I\+D}!repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}}
+\subsubsection[{get\+Unique\+I\+D}]{\setlength{\rightskip}{0pt plus 5cm}repo\+U\+U\+I\+D repo\+::core\+::model\+::\+Repo\+Node\+::get\+Unique\+I\+D (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_node_aa8a31489284049610e5f472c88a387bd}
+Get the unique I\+D from the object \begin{DoxyReturn}{Returns}
+returns the unique I\+D of the object 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_aa3e0f98690dc8bfe082d2fc57b904798}{}\index{repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}!position\+Dependant@{position\+Dependant}}
+\index{position\+Dependant@{position\+Dependant}!repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}}
+\subsubsection[{position\+Dependant}]{\setlength{\rightskip}{0pt plus 5cm}virtual bool repo\+::core\+::model\+::\+Repo\+Node\+::position\+Dependant (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}\label{classrepo_1_1core_1_1model_1_1_repo_node_aa3e0f98690dc8bfe082d2fc57b904798}
+Check if the node is position dependant. i.\+e. if parent transformation is merged onto the node, does the node requre to a transformation applied to it e.\+g. meshes and cameras are position dependant, metadata isn\textquotesingle{}t Default behaviour is false. Position dependant child requires override this function. \begin{DoxyReturn}{Returns}
+true if node is position\+Dependant. 
+\end{DoxyReturn}
+
+
+Reimplemented in \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_a636fc543dbbeca60698e8719c11f945d}{repo\+::core\+::model\+::\+Mesh\+Node}, \hyperlink{classrepo_1_1core_1_1model_1_1_transformation_node_aef0c61c652ac425139a063c5e5c1832b}{repo\+::core\+::model\+::\+Transformation\+Node}, and \hyperlink{classrepo_1_1core_1_1model_1_1_camera_node_a5ff50e052f4266842e5d4e4840fe0c37}{repo\+::core\+::model\+::\+Camera\+Node}.
+
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_node_a7c98830a876ee6516587a8f07c7015a5}{}\index{repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}!s\+Equal@{s\+Equal}}
+\index{s\+Equal@{s\+Equal}!repo\+::core\+::model\+::\+Repo\+Node@{repo\+::core\+::model\+::\+Repo\+Node}}
+\subsubsection[{s\+Equal}]{\setlength{\rightskip}{0pt plus 5cm}virtual bool repo\+::core\+::model\+::\+Repo\+Node\+::s\+Equal (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Node} \&}]{other}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}\label{classrepo_1_1core_1_1model_1_1_repo_node_a7c98830a876ee6516587a8f07c7015a5}
+Check if the node is semantically equal to another Different node should have a different interpretation of what this means. 
+\begin{DoxyParams}{Parameters}
+{\em other} & node to compare with \\
+\hline
+{\em returns} & true if equal, false otherwise \\
+\hline
+\end{DoxyParams}
+
+
+Reimplemented in \hyperlink{classrepo_1_1core_1_1model_1_1_camera_node_a4d4a8875d7929aa92beedd9bd0eeea63}{repo\+::core\+::model\+::\+Camera\+Node}, \hyperlink{classrepo_1_1core_1_1model_1_1_map_node_ac27593deef8281f9d70324f2f1f994e9}{repo\+::core\+::model\+::\+Map\+Node}, \hyperlink{classrepo_1_1core_1_1model_1_1_mesh_node_a58dbc8bb0cdcbbae2e0c6e7558eaef70}{repo\+::core\+::model\+::\+Mesh\+Node}, \hyperlink{classrepo_1_1core_1_1model_1_1_transformation_node_ae580f6d1f6e6d331180ab6bb408f7e66}{repo\+::core\+::model\+::\+Transformation\+Node}, \hyperlink{classrepo_1_1core_1_1model_1_1_material_node_a65fe37720ba763de81789f5c4f66039a}{repo\+::core\+::model\+::\+Material\+Node}, \hyperlink{classrepo_1_1core_1_1model_1_1_reference_node_abc948b4ed5437871142d57498a12cf2d}{repo\+::core\+::model\+::\+Reference\+Node}, \hyperlink{classrepo_1_1core_1_1model_1_1_texture_node_acc560eb9f51e63bb83d35e859ee4f4c4}{repo\+::core\+::model\+::\+Texture\+Node}, and \hyperlink{classrepo_1_1core_1_1model_1_1_metadata_node_a1fd8134ef9585578597b4a8145aebe1d}{repo\+::core\+::model\+::\+Metadata\+Node}.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/core/model/bson/repo\+\_\+node.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/core/model/bson/repo\+\_\+node.\+cpp\end{DoxyCompactItemize}

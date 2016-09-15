@@ -1,0 +1,190 @@
+\hypertarget{classrepo_1_1lib_1_1_property_tree}{}\section{repo\+:\+:lib\+:\+:Property\+Tree Class Reference}
+\label{classrepo_1_1lib_1_1_property_tree}\index{repo\+::lib\+::\+Property\+Tree@{repo\+::lib\+::\+Property\+Tree}}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classrepo_1_1lib_1_1_property_tree_a6b9bba9357c593e3f5078782a9cdfb3d}{}{\bfseries Property\+Tree} (const bool \&enable\+J\+S\+O\+N\+Work\+Around)\label{classrepo_1_1lib_1_1_property_tree_a6b9bba9357c593e3f5078782a9cdfb3d}
+
+\item 
+void \hyperlink{classrepo_1_1lib_1_1_property_tree_afede341c65d0add71623545e123170ef}{add\+Array\+Objects} (const std\+::string \&label, const std\+::vector$<$ \hyperlink{classrepo_1_1lib_1_1_property_tree}{Property\+Tree} $>$ \&value)
+\item 
+{\footnotesize template$<$typename T $>$ }\\void \hyperlink{classrepo_1_1lib_1_1_property_tree_a5f27875958fdc8b1e0434a6d73ba2b1a}{add\+Field\+Attribute} (const std\+::string \&label, const std\+::string \&attribute, const T \&value)
+\item 
+{\footnotesize template$<$typename T $>$ }\\void \hyperlink{classrepo_1_1lib_1_1_property_tree_aa63cfcbb32ddb2d7b73609b929379676}{add\+Field\+Attribute} (const std\+::string \&label, const std\+::string \&attribute, const std\+::vector$<$ T $>$ \&value, const bool \&use\+Delimiter=true)
+\item 
+{\footnotesize template$<$typename T $>$ }\\void \hyperlink{classrepo_1_1lib_1_1_property_tree_a79fae0e843120797f2eca9a8dc5d9eba}{add\+To\+Tree} (const std\+::string \&label, const T \&value)
+\item 
+\hypertarget{classrepo_1_1lib_1_1_property_tree_a9c85a9eec0431b10d760f29a1c5c9615}{}{\footnotesize template$<$std\+::size\+\_\+t N$>$ }\\void {\bfseries add\+To\+Tree} (const std\+::string \&label, const char(\&value)\mbox{[}N\mbox{]})\label{classrepo_1_1lib_1_1_property_tree_a9c85a9eec0431b10d760f29a1c5c9615}
+
+\item 
+{\footnotesize template$<$typename T $>$ }\\void \hyperlink{classrepo_1_1lib_1_1_property_tree_aff24090893254b6bacb4a87a3dc463b1}{add\+To\+Tree} (const std\+::string \&label, const std\+::vector$<$ T $>$ \&value, const bool \&join=true)
+\item 
+void \hyperlink{classrepo_1_1lib_1_1_property_tree_ac830c1a733589cb5add54a7894dc9417}{disable\+J\+S\+O\+N\+Workaround} ()
+\item 
+void \hyperlink{classrepo_1_1lib_1_1_property_tree_ace335b74ffb3d113d44cdc92ebd83121}{merge\+Sub\+Tree} (const std\+::string \&label, const \hyperlink{classrepo_1_1lib_1_1_property_tree}{Property\+Tree} \&sub\+Tree)
+\item 
+void \hyperlink{classrepo_1_1lib_1_1_property_tree_a7839bcc54f771858ef1d046cea234cce}{write\+\_\+json} (std\+::iostream \&stream) const 
+\item 
+void \hyperlink{classrepo_1_1lib_1_1_property_tree_a22397eaf6fe50716a5a99c64dbde2294}{write\+\_\+xml} (std\+::iostream \&stream) const 
+\item 
+\hypertarget{classrepo_1_1lib_1_1_property_tree_a5bc49d8b8e5f5cac2e6cf921cd1c2874}{}{\footnotesize template$<$$>$ }\\void {\bfseries add\+Field\+Attribute} (const std\+::string \&label, const std\+::string \&attribute, const std\+::string \&value)\label{classrepo_1_1lib_1_1_property_tree_a5bc49d8b8e5f5cac2e6cf921cd1c2874}
+
+\item 
+\hypertarget{classrepo_1_1lib_1_1_property_tree_af3e02bc7144d85e6e39e2d2f1cfe8eb1}{}{\footnotesize template$<$$>$ }\\void {\bfseries add\+Field\+Attribute} (const std\+::string \&label, const std\+::string \&attribute, const \hyperlink{structrepo__vector__t}{repo\+\_\+vector\+\_\+t} \&value)\label{classrepo_1_1lib_1_1_property_tree_af3e02bc7144d85e6e39e2d2f1cfe8eb1}
+
+\item 
+\hypertarget{classrepo_1_1lib_1_1_property_tree_a48c7654533f0ae36866ea4b373760396}{}{\footnotesize template$<$$>$ }\\void {\bfseries add\+To\+Tree} (const std\+::string \&label, const repo\+U\+U\+I\+D \&value)\label{classrepo_1_1lib_1_1_property_tree_a48c7654533f0ae36866ea4b373760396}
+
+\item 
+\hypertarget{classrepo_1_1lib_1_1_property_tree_aae4dc92fcc99e294066995f2f2499de2}{}{\footnotesize template$<$$>$ }\\void {\bfseries add\+To\+Tree} (const std\+::string \&label, const \hyperlink{structrepo__vector__t}{repo\+\_\+vector\+\_\+t} \&value)\label{classrepo_1_1lib_1_1_property_tree_aae4dc92fcc99e294066995f2f2499de2}
+
+\item 
+\hypertarget{classrepo_1_1lib_1_1_property_tree_a1b11948aef1f85a44adc3153168a08cb}{}{\footnotesize template$<$$>$ }\\void {\bfseries add\+To\+Tree} (const std\+::string \&label, const std\+::vector$<$ \hyperlink{classrepo_1_1lib_1_1_property_tree}{Property\+Tree} $>$ \&value, const bool \&join)\label{classrepo_1_1lib_1_1_property_tree_a1b11948aef1f85a44adc3153168a08cb}
+
+\item 
+\hypertarget{classrepo_1_1lib_1_1_property_tree_aae4dc92fcc99e294066995f2f2499de2}{}{\footnotesize template$<$$>$ }\\void {\bfseries add\+To\+Tree} (const std\+::string \&label, const \hyperlink{structrepo__vector__t}{repo\+\_\+vector\+\_\+t} \&value)\label{classrepo_1_1lib_1_1_property_tree_aae4dc92fcc99e294066995f2f2499de2}
+
+\item 
+\hypertarget{classrepo_1_1lib_1_1_property_tree_a48c7654533f0ae36866ea4b373760396}{}{\footnotesize template$<$$>$ }\\void {\bfseries add\+To\+Tree} (const std\+::string \&label, const repo\+U\+U\+I\+D \&value)\label{classrepo_1_1lib_1_1_property_tree_a48c7654533f0ae36866ea4b373760396}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1lib_1_1_property_tree_afede341c65d0add71623545e123170ef}{}\index{repo\+::lib\+::\+Property\+Tree@{repo\+::lib\+::\+Property\+Tree}!add\+Array\+Objects@{add\+Array\+Objects}}
+\index{add\+Array\+Objects@{add\+Array\+Objects}!repo\+::lib\+::\+Property\+Tree@{repo\+::lib\+::\+Property\+Tree}}
+\subsubsection[{add\+Array\+Objects}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::lib\+::\+Property\+Tree\+::add\+Array\+Objects (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{label, }
+\item[{const std\+::vector$<$ {\bf Property\+Tree} $>$ \&}]{value}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1lib_1_1_property_tree_afede341c65d0add71623545e123170ef}
+Add an array of objects to the tree at a specified level This is used for things like arrays of objects within J\+S\+O\+N 
+\begin{DoxyParams}{Parameters}
+{\em label} & indicating where the child lives in the tree \\
+\hline
+{\em value} & vector of children to add \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1lib_1_1_property_tree_a5f27875958fdc8b1e0434a6d73ba2b1a}{}\index{repo\+::lib\+::\+Property\+Tree@{repo\+::lib\+::\+Property\+Tree}!add\+Field\+Attribute@{add\+Field\+Attribute}}
+\index{add\+Field\+Attribute@{add\+Field\+Attribute}!repo\+::lib\+::\+Property\+Tree@{repo\+::lib\+::\+Property\+Tree}}
+\subsubsection[{add\+Field\+Attribute}]{\setlength{\rightskip}{0pt plus 5cm}template$<$typename T $>$ void repo\+::lib\+::\+Property\+Tree\+::add\+Field\+Attribute (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{label, }
+\item[{const std\+::string \&}]{attribute, }
+\item[{const T \&}]{value}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1lib_1_1_property_tree_a5f27875958fdc8b1e0434a6d73ba2b1a}
+Add an attribute to the field This is very xml specific it is to achieve things like $<$\+F\+I\+E\+L\+D name=\char`\"{}\+Hi\char`\"{}$>$ instead of $<$\+F\+I\+E\+L\+D$>$\char`\"{}\+Hi\char`\"{}$<$/\+F\+I\+E\+L\+D$>$ The type fo the value can be of any type as long as it is a qualified member of std\+::to\+\_\+string() 
+\begin{DoxyParams}{Parameters}
+{\em label} & field name to add to \\
+\hline
+{\em attribute} & name of attribute \\
+\hline
+{\em value} & value of attribute \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1lib_1_1_property_tree_aa63cfcbb32ddb2d7b73609b929379676}{}\index{repo\+::lib\+::\+Property\+Tree@{repo\+::lib\+::\+Property\+Tree}!add\+Field\+Attribute@{add\+Field\+Attribute}}
+\index{add\+Field\+Attribute@{add\+Field\+Attribute}!repo\+::lib\+::\+Property\+Tree@{repo\+::lib\+::\+Property\+Tree}}
+\subsubsection[{add\+Field\+Attribute}]{\setlength{\rightskip}{0pt plus 5cm}template$<$typename T $>$ void repo\+::lib\+::\+Property\+Tree\+::add\+Field\+Attribute (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{label, }
+\item[{const std\+::string \&}]{attribute, }
+\item[{const std\+::vector$<$ T $>$ \&}]{value, }
+\item[{const bool \&}]{use\+Delimiter = {\ttfamily true}}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1lib_1_1_property_tree_aa63cfcbb32ddb2d7b73609b929379676}
+Add an attribute to the field This is very xml specific it is to achieve things like $<$\+F\+I\+E\+L\+D name=\char`\"{}\+Hi\char`\"{}$>$ instead of $<$\+F\+I\+E\+L\+D$>$\char`\"{}\+Hi\char`\"{}$<$/\+F\+I\+E\+L\+D$>$ The type of the vector can be of any type as long as it is a qualified member of std\+::to\+\_\+string() 
+\begin{DoxyParams}{Parameters}
+{\em label} & field name to add to \\
+\hline
+{\em attribute} & name of attribute \\
+\hline
+{\em value} & value of attribute \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1lib_1_1_property_tree_a79fae0e843120797f2eca9a8dc5d9eba}{}\index{repo\+::lib\+::\+Property\+Tree@{repo\+::lib\+::\+Property\+Tree}!add\+To\+Tree@{add\+To\+Tree}}
+\index{add\+To\+Tree@{add\+To\+Tree}!repo\+::lib\+::\+Property\+Tree@{repo\+::lib\+::\+Property\+Tree}}
+\subsubsection[{add\+To\+Tree}]{\setlength{\rightskip}{0pt plus 5cm}template$<$typename T $>$ void repo\+::lib\+::\+Property\+Tree\+::add\+To\+Tree (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{label, }
+\item[{const T \&}]{value}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1lib_1_1_property_tree_a79fae0e843120797f2eca9a8dc5d9eba}
+Add a children onto the tree label can denote it\textquotesingle{}s inheritance. for e.\+g. trunk.\+branch.\+leaf would denote the child name is leaf, with parent branch and grandparent trunk. 
+\begin{DoxyParams}{Parameters}
+{\em label} & indicating where the child lives in the tree \\
+\hline
+{\em value} & value of the children \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1lib_1_1_property_tree_aff24090893254b6bacb4a87a3dc463b1}{}\index{repo\+::lib\+::\+Property\+Tree@{repo\+::lib\+::\+Property\+Tree}!add\+To\+Tree@{add\+To\+Tree}}
+\index{add\+To\+Tree@{add\+To\+Tree}!repo\+::lib\+::\+Property\+Tree@{repo\+::lib\+::\+Property\+Tree}}
+\subsubsection[{add\+To\+Tree}]{\setlength{\rightskip}{0pt plus 5cm}template$<$typename T $>$ void repo\+::lib\+::\+Property\+Tree\+::add\+To\+Tree (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{label, }
+\item[{const std\+::vector$<$ T $>$ \&}]{value, }
+\item[{const bool \&}]{join = {\ttfamily true}}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1lib_1_1_property_tree_aff24090893254b6bacb4a87a3dc463b1}
+Add an array of values to the tree at a specified level This is used for things like arrays within J\+S\+O\+N 
+\begin{DoxyParams}{Parameters}
+{\em label} & indicating where the child lives in the tree \\
+\hline
+{\em value} & vector of children to add \\
+\hline
+{\em join} & merge vector into a string value instead of putting in a vector \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1lib_1_1_property_tree_ac830c1a733589cb5add54a7894dc9417}{}\index{repo\+::lib\+::\+Property\+Tree@{repo\+::lib\+::\+Property\+Tree}!disable\+J\+S\+O\+N\+Workaround@{disable\+J\+S\+O\+N\+Workaround}}
+\index{disable\+J\+S\+O\+N\+Workaround@{disable\+J\+S\+O\+N\+Workaround}!repo\+::lib\+::\+Property\+Tree@{repo\+::lib\+::\+Property\+Tree}}
+\subsubsection[{disable\+J\+S\+O\+N\+Workaround}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::lib\+::\+Property\+Tree\+::disable\+J\+S\+O\+N\+Workaround (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1lib_1_1_property_tree_ac830c1a733589cb5add54a7894dc9417}
+Disable the J\+S\+O\+N workaround for quotes There is currently a work around to allow json parser writes to remove quotes from anything that isn\textquotesingle{}t a string. Calling this function will disable it. You might want to do this B\+E\+F\+O\+R\+E you add any data into the tree for X\+M\+L or any non J\+S\+O\+N exports \hypertarget{classrepo_1_1lib_1_1_property_tree_ace335b74ffb3d113d44cdc92ebd83121}{}\index{repo\+::lib\+::\+Property\+Tree@{repo\+::lib\+::\+Property\+Tree}!merge\+Sub\+Tree@{merge\+Sub\+Tree}}
+\index{merge\+Sub\+Tree@{merge\+Sub\+Tree}!repo\+::lib\+::\+Property\+Tree@{repo\+::lib\+::\+Property\+Tree}}
+\subsubsection[{merge\+Sub\+Tree}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::lib\+::\+Property\+Tree\+::merge\+Sub\+Tree (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{label, }
+\item[{const {\bf Property\+Tree} \&}]{sub\+Tree}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1lib_1_1_property_tree_ace335b74ffb3d113d44cdc92ebd83121}
+Merging sub tree into this tree 
+\begin{DoxyParams}{Parameters}
+{\em label} & label where the sub\+Tree goes \\
+\hline
+{\em sub\+Tree} & the sub tree to add \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1lib_1_1_property_tree_a7839bcc54f771858ef1d046cea234cce}{}\index{repo\+::lib\+::\+Property\+Tree@{repo\+::lib\+::\+Property\+Tree}!write\+\_\+json@{write\+\_\+json}}
+\index{write\+\_\+json@{write\+\_\+json}!repo\+::lib\+::\+Property\+Tree@{repo\+::lib\+::\+Property\+Tree}}
+\subsubsection[{write\+\_\+json}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::lib\+::\+Property\+Tree\+::write\+\_\+json (
+\begin{DoxyParamCaption}
+\item[{std\+::iostream \&}]{stream}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1lib_1_1_property_tree_a7839bcc54f771858ef1d046cea234cce}
+Write tree data onto a stream 
+\begin{DoxyParams}{Parameters}
+{\em stream} & stream to write onto \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1lib_1_1_property_tree_a22397eaf6fe50716a5a99c64dbde2294}{}\index{repo\+::lib\+::\+Property\+Tree@{repo\+::lib\+::\+Property\+Tree}!write\+\_\+xml@{write\+\_\+xml}}
+\index{write\+\_\+xml@{write\+\_\+xml}!repo\+::lib\+::\+Property\+Tree@{repo\+::lib\+::\+Property\+Tree}}
+\subsubsection[{write\+\_\+xml}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::lib\+::\+Property\+Tree\+::write\+\_\+xml (
+\begin{DoxyParamCaption}
+\item[{std\+::iostream \&}]{stream}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1lib_1_1_property_tree_a22397eaf6fe50716a5a99c64dbde2294}
+Write tree data onto a stream 
+\begin{DoxyParams}{Parameters}
+{\em stream} & stream to write onto \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/lib/repo\+\_\+property\+\_\+tree.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/lib/repo\+\_\+property\+\_\+tree.\+cpp\end{DoxyCompactItemize}

@@ -1,0 +1,203 @@
+\hypertarget{classrepo_1_1core_1_1model_1_1_revision_node}{}\section{repo\+:\+:core\+:\+:model\+:\+:Revision\+Node Class Reference}
+\label{classrepo_1_1core_1_1model_1_1_revision_node}\index{repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}}
+Inheritance diagram for repo\+:\+:core\+:\+:model\+:\+:Revision\+Node\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=4.000000cm]{classrepo_1_1core_1_1model_1_1_revision_node}
+\end{center}
+\end{figure}
+\subsection*{Public Types}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_revision_node_ae0b95edf7e0e59bce7365ad979c2704a}{}enum {\bfseries Upload\+Status} \{ \\*
+{\bfseries C\+O\+M\+P\+L\+E\+T\+E} = 0, 
+{\bfseries G\+E\+N\+\_\+\+D\+E\+F\+A\+U\+L\+T} = 1, 
+{\bfseries G\+E\+N\+\_\+\+R\+E\+P\+O\+\_\+\+S\+T\+A\+S\+H} = 2, 
+{\bfseries G\+E\+N\+\_\+\+W\+E\+B\+\_\+\+S\+T\+A\+S\+H} = 3, 
+\\*
+{\bfseries G\+E\+N\+\_\+\+S\+E\+L\+\_\+\+T\+R\+E\+E} = 4, 
+{\bfseries U\+N\+K\+N\+O\+W\+N} = 5
+ \}\label{classrepo_1_1core_1_1model_1_1_revision_node_ae0b95edf7e0e59bce7365ad979c2704a}
+
+\end{DoxyCompactItemize}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_revision_node_ad92597d9731079e4d0bdf690f532e56e}{Revision\+Node} (\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} bson)
+\item 
+virtual std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_revision_node_ac597aa317c2516be9f204e43ef896af4}{get\+Type} () const 
+\item 
+virtual Node\+Type \hyperlink{classrepo_1_1core_1_1model_1_1_revision_node_ae632d941e5a9bc2d8275c53bb1c41805}{get\+Type\+As\+Enum} () const 
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_revision_node}{Revision\+Node} \hyperlink{classrepo_1_1core_1_1model_1_1_revision_node_afabdf3d38019948f68e331610671583a}{clone\+And\+Update\+Status} (const Upload\+Status \&status) const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_revision_node_af5a787130259c6744bcbf90eb7e23d65}{get\+Author} () const 
+\item 
+std\+::vector$<$ double $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_revision_node_a5990bdfccf6db7f3fdf6167a51fd8f36}{get\+Coord\+Offset} () const 
+\item 
+std\+::vector$<$ repo\+U\+U\+I\+D $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_revision_node_a90c58bc79e6a209907de191207b5e7fa}{get\+Current\+I\+Ds} () const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_revision_node_a955d01925d470a40911b85b432a30c32}{get\+Message} () const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_revision_node_aa8c67c1cb49adb80e0a746276cd560c8}{get\+Tag} () const 
+\item 
+Upload\+Status \hyperlink{classrepo_1_1core_1_1model_1_1_revision_node_ac0a4532dc10c44db48ed2e8a0ae29f30}{get\+Upload\+Status} () const 
+\item 
+std\+::vector$<$ std\+::string $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_revision_node_a5c51b2bdfb7bbc1b291c4e6e84b46511}{get\+Org\+Files} () const 
+\item 
+int64\+\_\+t \hyperlink{classrepo_1_1core_1_1model_1_1_revision_node_ac7a14a78c8ab2372026b5f13e1f0e931}{get\+Timestamp\+Int64} () const 
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classrepo_1_1core_1_1model_1_1_revision_node_ad92597d9731079e4d0bdf690f532e56e}{}\index{repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}!Revision\+Node@{Revision\+Node}}
+\index{Revision\+Node@{Revision\+Node}!repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}}
+\subsubsection[{Revision\+Node}]{\setlength{\rightskip}{0pt plus 5cm}Revision\+Node\+::\+Revision\+Node (
+\begin{DoxyParamCaption}
+\item[{{\bf Repo\+B\+S\+O\+N}}]{bson}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1core_1_1model_1_1_revision_node_ad92597d9731079e4d0bdf690f532e56e}
+Constructor Construct a \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node}{Repo\+Node} base on a \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} object 
+\begin{DoxyParams}{Parameters}
+{\em replicate} & this bson object \\
+\hline
+\end{DoxyParams}
+
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1core_1_1model_1_1_revision_node_afabdf3d38019948f68e331610671583a}{}\index{repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}!clone\+And\+Update\+Status@{clone\+And\+Update\+Status}}
+\index{clone\+And\+Update\+Status@{clone\+And\+Update\+Status}!repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}}
+\subsubsection[{clone\+And\+Update\+Status}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Revision\+Node} Revision\+Node\+::clone\+And\+Update\+Status (
+\begin{DoxyParamCaption}
+\item[{const Upload\+Status \&}]{status}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_revision_node_afabdf3d38019948f68e331610671583a}
+Update the status flag with the given status N\+O\+T\+E\+: the status flags denotes what it is currently doing not what has been done. e.\+g. G\+E\+N\+\_\+\+D\+E\+F\+A\+U\+L\+T denotes the revision does not have a fully commited default scene graph 
+\begin{DoxyParams}{Parameters}
+{\em status} & the status to set to \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a clone of this node with updated status flag 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_revision_node_af5a787130259c6744bcbf90eb7e23d65}{}\index{repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}!get\+Author@{get\+Author}}
+\index{get\+Author@{get\+Author}!repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}}
+\subsubsection[{get\+Author}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string Revision\+Node\+::get\+Author (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_revision_node_af5a787130259c6744bcbf90eb7e23d65}
+-\/-\/-\/------ Convenience functions -\/-\/-\/-\/-\/------ Get the author commited the revision \begin{DoxyReturn}{Returns}
+returns a string for message. empty string if none. 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_revision_node_a5990bdfccf6db7f3fdf6167a51fd8f36}{}\index{repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}!get\+Coord\+Offset@{get\+Coord\+Offset}}
+\index{get\+Coord\+Offset@{get\+Coord\+Offset}!repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}}
+\subsubsection[{get\+Coord\+Offset}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ double $>$ Revision\+Node\+::get\+Coord\+Offset (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_revision_node_a5990bdfccf6db7f3fdf6167a51fd8f36}
+Get the offset coordinates to translate the model \begin{DoxyReturn}{Returns}
+return a vector of double (size of 3) 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_revision_node_a90c58bc79e6a209907de191207b5e7fa}{}\index{repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}!get\+Current\+I\+Ds@{get\+Current\+I\+Ds}}
+\index{get\+Current\+I\+Ds@{get\+Current\+I\+Ds}!repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}}
+\subsubsection[{get\+Current\+I\+Ds}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ repo\+U\+U\+I\+D $>$ Revision\+Node\+::get\+Current\+I\+Ds (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_revision_node_a90c58bc79e6a209907de191207b5e7fa}
+Get a list of current I\+Ds for this revision \begin{DoxyReturn}{Returns}
+returns a vector of unique I\+Ds. 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_revision_node_a955d01925d470a40911b85b432a30c32}{}\index{repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}!get\+Message@{get\+Message}}
+\index{get\+Message@{get\+Message}!repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}}
+\subsubsection[{get\+Message}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string Revision\+Node\+::get\+Message (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_revision_node_a955d01925d470a40911b85b432a30c32}
+Get a list of I\+Ds of nodes which were Added for this revision \begin{DoxyReturn}{Returns}
+returns a vector of shared I\+Ds. Get a list of I\+Ds of nodes which were deleted for this revision 
+
+returns a vector of shared I\+Ds. Get a list of I\+Ds of nodes which were modified for this revision 
+
+returns a vector of shared I\+Ds. Get the message commited with the revision 
+
+returns a string for message. empty string if none. 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_revision_node_a5c51b2bdfb7bbc1b291c4e6e84b46511}{}\index{repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}!get\+Org\+Files@{get\+Org\+Files}}
+\index{get\+Org\+Files@{get\+Org\+Files}!repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}}
+\subsubsection[{get\+Org\+Files}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ std\+::string $>$ Revision\+Node\+::get\+Org\+Files (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_revision_node_a5c51b2bdfb7bbc1b291c4e6e84b46511}
+Get the original file(s) the scene original created from \begin{DoxyReturn}{Returns}
+returns a vector of string of files 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_revision_node_aa8c67c1cb49adb80e0a746276cd560c8}{}\index{repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}!get\+Tag@{get\+Tag}}
+\index{get\+Tag@{get\+Tag}!repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}}
+\subsubsection[{get\+Tag}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string Revision\+Node\+::get\+Tag (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_revision_node_aa8c67c1cb49adb80e0a746276cd560c8}
+Get the tag commited with the revision \begin{DoxyReturn}{Returns}
+returns a string for tag. empty string if none. 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_revision_node_ac7a14a78c8ab2372026b5f13e1f0e931}{}\index{repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}!get\+Timestamp\+Int64@{get\+Timestamp\+Int64}}
+\index{get\+Timestamp\+Int64@{get\+Timestamp\+Int64}!repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}}
+\subsubsection[{get\+Timestamp\+Int64}]{\setlength{\rightskip}{0pt plus 5cm}int64\+\_\+t Revision\+Node\+::get\+Timestamp\+Int64 (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_revision_node_ac7a14a78c8ab2372026b5f13e1f0e931}
+Get the timestamp as int when this revision was commited \begin{DoxyReturn}{Returns}
+returns a timestamp 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_revision_node_ac597aa317c2516be9f204e43ef896af4}{}\index{repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}!get\+Type@{get\+Type}}
+\index{get\+Type@{get\+Type}!repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}}
+\subsubsection[{get\+Type}]{\setlength{\rightskip}{0pt plus 5cm}virtual std\+::string repo\+::core\+::model\+::\+Revision\+Node\+::get\+Type (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}\label{classrepo_1_1core_1_1model_1_1_revision_node_ac597aa317c2516be9f204e43ef896af4}
+Get the type of node \begin{DoxyReturn}{Returns}
+returns the type as a string 
+\end{DoxyReturn}
+
+
+Reimplemented from \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_a4380ba349235b5d9b13b41e41975805e}{repo\+::core\+::model\+::\+Repo\+Node}.
+
+\hypertarget{classrepo_1_1core_1_1model_1_1_revision_node_ae632d941e5a9bc2d8275c53bb1c41805}{}\index{repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}!get\+Type\+As\+Enum@{get\+Type\+As\+Enum}}
+\index{get\+Type\+As\+Enum@{get\+Type\+As\+Enum}!repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}}
+\subsubsection[{get\+Type\+As\+Enum}]{\setlength{\rightskip}{0pt plus 5cm}virtual Node\+Type repo\+::core\+::model\+::\+Revision\+Node\+::get\+Type\+As\+Enum (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}, {\ttfamily [virtual]}}\label{classrepo_1_1core_1_1model_1_1_revision_node_ae632d941e5a9bc2d8275c53bb1c41805}
+Get the type of node as an enum \begin{DoxyReturn}{Returns}
+returns type as enum. 
+\end{DoxyReturn}
+
+
+Reimplemented from \hyperlink{classrepo_1_1core_1_1model_1_1_repo_node_ad8d5295248dc9beb0b91efb2ce3b61f4}{repo\+::core\+::model\+::\+Repo\+Node}.
+
+\hypertarget{classrepo_1_1core_1_1model_1_1_revision_node_ac0a4532dc10c44db48ed2e8a0ae29f30}{}\index{repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}!get\+Upload\+Status@{get\+Upload\+Status}}
+\index{get\+Upload\+Status@{get\+Upload\+Status}!repo\+::core\+::model\+::\+Revision\+Node@{repo\+::core\+::model\+::\+Revision\+Node}}
+\subsubsection[{get\+Upload\+Status}]{\setlength{\rightskip}{0pt plus 5cm}Revision\+Node\+::\+Upload\+Status Revision\+Node\+::get\+Upload\+Status (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_revision_node_ac0a4532dc10c44db48ed2e8a0ae29f30}
+Get the status of the upload for this revision \begin{DoxyReturn}{Returns}
+the upload status of the revision 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/core/model/bson/repo\+\_\+node\+\_\+revision.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/core/model/bson/repo\+\_\+node\+\_\+revision.\+cpp\end{DoxyCompactItemize}

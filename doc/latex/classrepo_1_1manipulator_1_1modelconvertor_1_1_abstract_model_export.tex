@@ -1,0 +1,70 @@
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_export}{}\section{repo\+:\+:manipulator\+:\+:modelconvertor\+:\+:Abstract\+Model\+Export Class Reference}
+\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_export}\index{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Export}}
+Inheritance diagram for repo\+:\+:manipulator\+:\+:modelconvertor\+:\+:Abstract\+Model\+Export\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=1.671642cm]{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_export}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_export_a3e6a25bf60432759ce8be3837e46f309}{Abstract\+Model\+Export} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+virtual \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_export_aecc655342a092127ed432a05da375291}{$\sim$\+Abstract\+Model\+Export} ()
+\item 
+virtual bool \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_export_a305f2967d8112c5417b80fd3e8b8902a}{export\+To\+File} (const std\+::string \&file\+Path)=0
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_export_a7eb8d447b8a3a5687c682369dff23a70}{}const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ {\bfseries scene}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_export_a7eb8d447b8a3a5687c682369dff23a70}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_export_a3e6a25bf60432759ce8be3837e46f309}{}\index{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Export}!Abstract\+Model\+Export@{Abstract\+Model\+Export}}
+\index{Abstract\+Model\+Export@{Abstract\+Model\+Export}!repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Export}}
+\subsubsection[{Abstract\+Model\+Export}]{\setlength{\rightskip}{0pt plus 5cm}Abstract\+Model\+Export\+::\+Abstract\+Model\+Export (
+\begin{DoxyParamCaption}
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_export_a3e6a25bf60432759ce8be3837e46f309}
+Default Constructor, export model with default settings \hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_export_aecc655342a092127ed432a05da375291}{}\index{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Export}!````~Abstract\+Model\+Export@{$\sim$\+Abstract\+Model\+Export}}
+\index{````~Abstract\+Model\+Export@{$\sim$\+Abstract\+Model\+Export}!repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Export}}
+\subsubsection[{$\sim$\+Abstract\+Model\+Export}]{\setlength{\rightskip}{0pt plus 5cm}Abstract\+Model\+Export\+::$\sim$\+Abstract\+Model\+Export (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_export_aecc655342a092127ed432a05da375291}
+Default Deconstructor 
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_export_a305f2967d8112c5417b80fd3e8b8902a}{}\index{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Export}!export\+To\+File@{export\+To\+File}}
+\index{export\+To\+File@{export\+To\+File}!repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Export@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Export}}
+\subsubsection[{export\+To\+File}]{\setlength{\rightskip}{0pt plus 5cm}virtual bool repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Export\+::export\+To\+File (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{file\+Path}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [pure virtual]}}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_export_a305f2967d8112c5417b80fd3e8b8902a}
+Export a repo scene graph to file 
+\begin{DoxyParams}{Parameters}
+{\em scene} & repo scene representation \\
+\hline
+{\em file\+Path} & path to destination file \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+
+
+Implemented in \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_assimp_model_export_afdf745f16a3d2f751ae236936111a875}{repo\+::manipulator\+::modelconvertor\+::\+Assimp\+Model\+Export}, and \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_web_model_export_a7ce7f209d57bf5cd48499cf3dbbb25d0}{repo\+::manipulator\+::modelconvertor\+::\+Web\+Model\+Export}.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/manipulator/modelconvertor/export/repo\+\_\+model\+\_\+export\+\_\+abstract.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/manipulator/modelconvertor/export/repo\+\_\+model\+\_\+export\+\_\+abstract.\+cpp\end{DoxyCompactItemize}

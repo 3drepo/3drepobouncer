@@ -1,0 +1,148 @@
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager}{}\section{repo\+:\+:manipulator\+:\+:modelutility\+:\+:Scene\+Manager Class Reference}
+\label{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager}\index{repo\+::manipulator\+::modelutility\+::\+Scene\+Manager@{repo\+::manipulator\+::modelutility\+::\+Scene\+Manager}}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager_a393159e2171e330dff17c601022b59e6}{fetch\+Scene} (\hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$handler, const std\+::string \&database, const std\+::string \&project, const repo\+U\+U\+I\+D \&uuid, const bool \&head\+Revision=true, const bool \&light\+Fetch=false)
+\item 
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager_a42ef4939c4d06427ba863eb38acd7399}{}\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ {\bfseries fetch\+Scene} (\hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$handler, const std\+::string \&database, const std\+::string \&project)\label{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager_a42ef4939c4d06427ba863eb38acd7399}
+
+\item 
+void \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager_a48727470d70808f4798c88d6ed4537c5}{fetch\+Scene} (\hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$handler, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager_a6d46d5e7e950bb7fdb7d33dbcb68288b}{generate\+And\+Commit\+Selection\+Tree} (\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene, \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$handler)
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager_a41c0fbd6443b3df78aa922b303963f49}{generate\+Stash\+Graph} (\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene, \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$handler=nullptr)
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager_a56d372073aa4d37c3b2f45d02b930929}{generate\+Web\+View\+Buffers} (\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene, const repo\+::manipulator\+::modelconvertor\+::\+Web\+Export\+Type \&ex\+Type, \hyperlink{structrepo__web__buffers__t}{repo\+\_\+web\+\_\+buffers\+\_\+t} \&result\+Buffers, \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$handler=nullptr)
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager_a58af7cd9d7f5f0b0f080914495b82083}{remove\+Stash\+Graph} (\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene, \hyperlink{classrepo_1_1core_1_1handler_1_1_abstract_database_handler}{repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$handler=nullptr)
+\end{DoxyCompactItemize}
+
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager_a393159e2171e330dff17c601022b59e6}{}\index{repo\+::manipulator\+::modelutility\+::\+Scene\+Manager@{repo\+::manipulator\+::modelutility\+::\+Scene\+Manager}!fetch\+Scene@{fetch\+Scene}}
+\index{fetch\+Scene@{fetch\+Scene}!repo\+::manipulator\+::modelutility\+::\+Scene\+Manager@{repo\+::manipulator\+::modelutility\+::\+Scene\+Manager}}
+\subsubsection[{fetch\+Scene}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ Scene\+Manager\+::fetch\+Scene (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$}]{handler, }
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{project, }
+\item[{const repo\+U\+U\+I\+D \&}]{uuid, }
+\item[{const bool \&}]{head\+Revision = {\ttfamily true}, }
+\item[{const bool \&}]{light\+Fetch = {\ttfamily false}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager_a393159e2171e330dff17c601022b59e6}
+Retrieve a Repo\+Scene with a specific revision loaded. 
+\begin{DoxyParams}{Parameters}
+{\em handler} & hander to the database \\
+\hline
+{\em database} & the database the collection resides in \\
+\hline
+{\em project} & name of the project \\
+\hline
+{\em uuid} & if head\+Revision, uuid represents the branch id, otherwise the unique id of the revision branch \\
+\hline
+{\em head\+Revision} & true if retrieving head revision \\
+\hline
+{\em light\+Fetch} & fetches only the stash (or scene if stash failed), reduce computation and memory usage (ideal for visualisation only) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a pointer to a repo\+Scene. 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager_a48727470d70808f4798c88d6ed4537c5}{}\index{repo\+::manipulator\+::modelutility\+::\+Scene\+Manager@{repo\+::manipulator\+::modelutility\+::\+Scene\+Manager}!fetch\+Scene@{fetch\+Scene}}
+\index{fetch\+Scene@{fetch\+Scene}!repo\+::manipulator\+::modelutility\+::\+Scene\+Manager@{repo\+::manipulator\+::modelutility\+::\+Scene\+Manager}}
+\subsubsection[{fetch\+Scene}]{\setlength{\rightskip}{0pt plus 5cm}void Scene\+Manager\+::fetch\+Scene (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$}]{handler, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager_a48727470d70808f4798c88d6ed4537c5}
+Retrieve all Repo\+Scene representations given a partially loaded scene. 
+\begin{DoxyParams}{Parameters}
+{\em handler} & database handler \\
+\hline
+{\em scene} & scene to fully load \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager_a6d46d5e7e950bb7fdb7d33dbcb68288b}{}\index{repo\+::manipulator\+::modelutility\+::\+Scene\+Manager@{repo\+::manipulator\+::modelutility\+::\+Scene\+Manager}!generate\+And\+Commit\+Selection\+Tree@{generate\+And\+Commit\+Selection\+Tree}}
+\index{generate\+And\+Commit\+Selection\+Tree@{generate\+And\+Commit\+Selection\+Tree}!repo\+::manipulator\+::modelutility\+::\+Scene\+Manager@{repo\+::manipulator\+::modelutility\+::\+Scene\+Manager}}
+\subsubsection[{generate\+And\+Commit\+Selection\+Tree}]{\setlength{\rightskip}{0pt plus 5cm}bool Scene\+Manager\+::generate\+And\+Commit\+Selection\+Tree (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene, }
+\item[{{\bf repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$}]{handler}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager_a6d46d5e7e950bb7fdb7d33dbcb68288b}
+Generate and commit scene\textquotesingle{}s selection tree in J\+S\+O\+N format The generated data will be also commited to the database/project set within the scene 
+\begin{DoxyParams}{Parameters}
+{\em scene} & scene to optimise \\
+\hline
+{\em handler} & hander to the database \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+return true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager_a41c0fbd6443b3df78aa922b303963f49}{}\index{repo\+::manipulator\+::modelutility\+::\+Scene\+Manager@{repo\+::manipulator\+::modelutility\+::\+Scene\+Manager}!generate\+Stash\+Graph@{generate\+Stash\+Graph}}
+\index{generate\+Stash\+Graph@{generate\+Stash\+Graph}!repo\+::manipulator\+::modelutility\+::\+Scene\+Manager@{repo\+::manipulator\+::modelutility\+::\+Scene\+Manager}}
+\subsubsection[{generate\+Stash\+Graph}]{\setlength{\rightskip}{0pt plus 5cm}bool Scene\+Manager\+::generate\+Stash\+Graph (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene, }
+\item[{{\bf repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$}]{handler = {\ttfamily nullptr}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager_a41c0fbd6443b3df78aa922b303963f49}
+Generate a stash graph for the given scene and populate it into the given scene If a databasehandler is given and the scene is revisioned, it will commit the stash to database 
+\begin{DoxyParams}{Parameters}
+{\em scene} & scene to generate stash graph for \\
+\hline
+{\em handler} & hander to the database \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager_a56d372073aa4d37c3b2f45d02b930929}{}\index{repo\+::manipulator\+::modelutility\+::\+Scene\+Manager@{repo\+::manipulator\+::modelutility\+::\+Scene\+Manager}!generate\+Web\+View\+Buffers@{generate\+Web\+View\+Buffers}}
+\index{generate\+Web\+View\+Buffers@{generate\+Web\+View\+Buffers}!repo\+::manipulator\+::modelutility\+::\+Scene\+Manager@{repo\+::manipulator\+::modelutility\+::\+Scene\+Manager}}
+\subsubsection[{generate\+Web\+View\+Buffers}]{\setlength{\rightskip}{0pt plus 5cm}bool Scene\+Manager\+::generate\+Web\+View\+Buffers (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene, }
+\item[{const repo\+::manipulator\+::modelconvertor\+::\+Web\+Export\+Type \&}]{ex\+Type, }
+\item[{{\bf repo\+\_\+web\+\_\+buffers\+\_\+t} \&}]{result\+Buffers, }
+\item[{{\bf repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$}]{handler = {\ttfamily nullptr}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager_a56d372073aa4d37c3b2f45d02b930929}
+Generate a {\ttfamily ex\+Type} encoding for the given scene if a database handler is provided, it will also commit the buffers into the database This requires the repo stash to have been generated already 
+\begin{DoxyParams}{Parameters}
+{\em scene} & the scene to generate the src encoding from \\
+\hline
+{\em ex\+Type} & the type of export it is \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns repo\+\_\+web\+\_\+buffers upon success 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager_a58af7cd9d7f5f0b0f080914495b82083}{}\index{repo\+::manipulator\+::modelutility\+::\+Scene\+Manager@{repo\+::manipulator\+::modelutility\+::\+Scene\+Manager}!remove\+Stash\+Graph@{remove\+Stash\+Graph}}
+\index{remove\+Stash\+Graph@{remove\+Stash\+Graph}!repo\+::manipulator\+::modelutility\+::\+Scene\+Manager@{repo\+::manipulator\+::modelutility\+::\+Scene\+Manager}}
+\subsubsection[{remove\+Stash\+Graph}]{\setlength{\rightskip}{0pt plus 5cm}bool Scene\+Manager\+::remove\+Stash\+Graph (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene, }
+\item[{{\bf repo\+::core\+::handler\+::\+Abstract\+Database\+Handler} $\ast$}]{handler = {\ttfamily nullptr}}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1modelutility_1_1_scene_manager_a58af7cd9d7f5f0b0f080914495b82083}
+Remove stash graph entry for the given scene Will also remove it from the database should handler exist 
+\begin{DoxyParams}{Parameters}
+{\em scene} & scene reference to remove stash graph from \\
+\hline
+{\em handler} & hander to the database \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/manipulator/modelutility/repo\+\_\+scene\+\_\+manager.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/manipulator/modelutility/repo\+\_\+scene\+\_\+manager.\+cpp\end{DoxyCompactItemize}

@@ -1,0 +1,146 @@
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import}{}\section{repo\+:\+:manipulator\+:\+:modelconvertor\+:\+:Abstract\+Model\+Import Class Reference}
+\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import}\index{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import}}
+Inheritance diagram for repo\+:\+:manipulator\+:\+:modelconvertor\+:\+:Abstract\+Model\+Import\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_a45ba12f9052b3cca1f1564bd5a05a8d8}{Abstract\+Model\+Import} ()
+\item 
+\hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_aed08f039d5132cde96f8c651f33b7877}{Abstract\+Model\+Import} (const \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_model_import_config}{Model\+Import\+Config} $\ast$settings)
+\item 
+virtual \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_a264ed6f9684aa0cf2216743e9f3c47cc}{$\sim$\+Abstract\+Model\+Import} ()
+\item 
+virtual \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_a0a0761d0a92ca05542b569a079f99c8f}{generate\+Repo\+Scene} ()=0
+\item 
+virtual bool \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_a2b6296ea483d39f7ce6fe1e8a78124fd}{import\+Model} (std\+::string file\+Path, std\+::string \&err\+Msg)=0
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+std\+::string \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_a60b7f33101fe224ed25bd6b5d3f28ed5}{get\+Dir\+Path} (std\+::string full\+Path)
+\item 
+std\+::string \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_adc928030621a646bee974229e741d43c}{get\+File\+Name} (std\+::string full\+Path)
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_ac32521c869840f34fbba44484d1d8ba5}{}const \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_model_import_config}{Model\+Import\+Config} $\ast$ {\bfseries settings}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_ac32521c869840f34fbba44484d1d8ba5}
+
+\item 
+bool \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_a9fd7153ec1348d4836f542f5bd51bfa5}{destroy\+Settings}
+\end{DoxyCompactItemize}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_a45ba12f9052b3cca1f1564bd5a05a8d8}{}\index{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import}!Abstract\+Model\+Import@{Abstract\+Model\+Import}}
+\index{Abstract\+Model\+Import@{Abstract\+Model\+Import}!repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import}}
+\subsubsection[{Abstract\+Model\+Import}]{\setlength{\rightskip}{0pt plus 5cm}Abstract\+Model\+Import\+::\+Abstract\+Model\+Import (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_a45ba12f9052b3cca1f1564bd5a05a8d8}
+Default Constructor, generate model with default settings \hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_aed08f039d5132cde96f8c651f33b7877}{}\index{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import}!Abstract\+Model\+Import@{Abstract\+Model\+Import}}
+\index{Abstract\+Model\+Import@{Abstract\+Model\+Import}!repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import}}
+\subsubsection[{Abstract\+Model\+Import}]{\setlength{\rightskip}{0pt plus 5cm}Abstract\+Model\+Import\+::\+Abstract\+Model\+Import (
+\begin{DoxyParamCaption}
+\item[{const {\bf Model\+Import\+Config} $\ast$}]{settings}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_aed08f039d5132cde96f8c651f33b7877}
+Create \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import}{Abstract\+Model\+Import} with specific settings N\+O\+T\+E\+: The destructor will destroy the settings object referenced in this object! 
+\begin{DoxyParams}{Parameters}
+{\em settings} & \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_a264ed6f9684aa0cf2216743e9f3c47cc}{}\index{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import}!````~Abstract\+Model\+Import@{$\sim$\+Abstract\+Model\+Import}}
+\index{````~Abstract\+Model\+Import@{$\sim$\+Abstract\+Model\+Import}!repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import}}
+\subsubsection[{$\sim$\+Abstract\+Model\+Import}]{\setlength{\rightskip}{0pt plus 5cm}Abstract\+Model\+Import\+::$\sim$\+Abstract\+Model\+Import (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [virtual]}}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_a264ed6f9684aa0cf2216743e9f3c47cc}
+Default Deconstructor N\+O\+T\+E\+: The destructor will destroy the settings object referenced in this object! 
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_a0a0761d0a92ca05542b569a079f99c8f}{}\index{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import}!generate\+Repo\+Scene@{generate\+Repo\+Scene}}
+\index{generate\+Repo\+Scene@{generate\+Repo\+Scene}!repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import}}
+\subsubsection[{generate\+Repo\+Scene}]{\setlength{\rightskip}{0pt plus 5cm}virtual {\bf repo\+::core\+::model\+::\+Repo\+Scene}$\ast$ repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import\+::generate\+Repo\+Scene (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [pure virtual]}}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_a0a0761d0a92ca05542b569a079f99c8f}
+Generates a repo scene graph an internal representation needs to have been created before this call (e.\+g. by means of \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_a2b6296ea483d39f7ce6fe1e8a78124fd}{import\+Model()}) \begin{DoxyReturn}{Returns}
+returns a populated Repo\+Scene upon success. 
+\end{DoxyReturn}
+
+
+Implemented in \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_assimp_model_import_a5e51038056aee890d4860190ce8d5847}{repo\+::manipulator\+::modelconvertor\+::\+Assimp\+Model\+Import}.
+
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_a60b7f33101fe224ed25bd6b5d3f28ed5}{}\index{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import}!get\+Dir\+Path@{get\+Dir\+Path}}
+\index{get\+Dir\+Path@{get\+Dir\+Path}!repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import}}
+\subsubsection[{get\+Dir\+Path}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string Abstract\+Model\+Import\+::get\+Dir\+Path (
+\begin{DoxyParamCaption}
+\item[{std\+::string}]{full\+Path}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_a60b7f33101fe224ed25bd6b5d3f28ed5}
+Retrieve the directory to the file e.\+g /home/user/file.txt would return /home/user 
+\begin{DoxyParams}{Parameters}
+{\em full} & path of the file \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns the path of the directory 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_adc928030621a646bee974229e741d43c}{}\index{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import}!get\+File\+Name@{get\+File\+Name}}
+\index{get\+File\+Name@{get\+File\+Name}!repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import}}
+\subsubsection[{get\+File\+Name}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string Abstract\+Model\+Import\+::get\+File\+Name (
+\begin{DoxyParamCaption}
+\item[{std\+::string}]{full\+Path}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_adc928030621a646bee974229e741d43c}
+Retrieve the filename from a full path e.\+g /home/user/file.txt would return file.\+txt 
+\begin{DoxyParams}{Parameters}
+{\em full} & path of the file \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns the file name 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_a2b6296ea483d39f7ce6fe1e8a78124fd}{}\index{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import}!import\+Model@{import\+Model}}
+\index{import\+Model@{import\+Model}!repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import}}
+\subsubsection[{import\+Model}]{\setlength{\rightskip}{0pt plus 5cm}virtual bool repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import\+::import\+Model (
+\begin{DoxyParamCaption}
+\item[{std\+::string}]{file\+Path, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [pure virtual]}}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_a2b6296ea483d39f7ce6fe1e8a78124fd}
+Import model from a given file This does not generate the Repo Scene Graph Use get\+Repo\+Scene() to generate a Repo Scene Graph. 
+\begin{DoxyParams}{Parameters}
+{\em path} & to the file \\
+\hline
+{\em error} & message if failed \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+
+
+Implemented in \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_assimp_model_import_aefdfec79f7be00e1ad452ee22555b64a}{repo\+::manipulator\+::modelconvertor\+::\+Assimp\+Model\+Import}.
+
+
+
+\subsection{Member Data Documentation}
+\hypertarget{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_a9fd7153ec1348d4836f542f5bd51bfa5}{}\index{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import}!destroy\+Settings@{destroy\+Settings}}
+\index{destroy\+Settings@{destroy\+Settings}!repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import@{repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import}}
+\subsubsection[{destroy\+Settings}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::manipulator\+::modelconvertor\+::\+Abstract\+Model\+Import\+::destroy\+Settings\hspace{0.3cm}{\ttfamily [protected]}}\label{classrepo_1_1manipulator_1_1modelconvertor_1_1_abstract_model_import_a9fd7153ec1348d4836f542f5bd51bfa5}
+Stores related settings for model import 
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/manipulator/modelconvertor/import/repo\+\_\+model\+\_\+import\+\_\+abstract.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/manipulator/modelconvertor/import/repo\+\_\+model\+\_\+import\+\_\+abstract.\+cpp\end{DoxyCompactItemize}

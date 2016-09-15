@@ -1,0 +1,1257 @@
+\hypertarget{class_repo_controller_1_1___repo_controller_impl}{}\section{repo\+:\+:Repo\+Controller\+:\+:\+\_\+\+Repo\+Controller\+Impl Class Reference}
+\label{class_repo_controller_1_1___repo_controller_impl}\index{repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{class_repo_controller_1_1___repo_controller_impl_a3f3c778a5a66db21dae228343c0df2c6}{\+\_\+\+Repo\+Controller\+Impl} (std\+::vector$<$ \hyperlink{classrepo_1_1lib_1_1_repo_abstract_listener}{lib\+::\+Repo\+Abstract\+Listener} $\ast$ $>$ listeners=std\+::vector$<$ \hyperlink{classrepo_1_1lib_1_1_repo_abstract_listener}{lib\+::\+Repo\+Abstract\+Listener} $\ast$ $>$(), const uint32\+\_\+t \&num\+Concurrent\+Ops=1, const uint32\+\_\+t \&num\+Db\+Conn=1)
+\item 
+\hyperlink{class_repo_controller_1_1___repo_controller_impl_ac501d5b36baa6cac51caf834943aa3c2}{$\sim$\+\_\+\+Repo\+Controller\+Impl} ()
+\item 
+\hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$ \hyperlink{class_repo_controller_1_1___repo_controller_impl_af4552a181af4c8923d01e1f5d304f478}{authenticate\+Mongo} (std\+::string \&err\+Msg, const std\+::string \&address, const uint32\+\_\+t \&port, const std\+::string \&db\+Name, const std\+::string \&username, const std\+::string \&password, const bool \&pw\+Digested=false)
+\item 
+bool \hyperlink{class_repo_controller_1_1___repo_controller_impl_a0a6492d281dd01930584af7166656e8a}{authenticate\+Mongo} (std\+::string \&err\+Msg, const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token)
+\item 
+\hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$ \hyperlink{class_repo_controller_1_1___repo_controller_impl_adcd38275158f9b923eb040ba7c86a6dc}{authenticate\+To\+Admin\+Database\+Mongo} (std\+::string \&err\+Msg, const std\+::string \&address, const int \&port, const std\+::string \&username, const std\+::string \&password, const bool \&pw\+Digested=false)
+\item 
+void \hyperlink{class_repo_controller_1_1___repo_controller_impl_aa0570180571cc2817f8e2532109241cc}{disconnect\+From\+Database} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token)
+\item 
+bool \hyperlink{class_repo_controller_1_1___repo_controller_impl_a9059a32af25fa8208df178134d6a67b5}{test\+Connection} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token)
+\item 
+\hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$ \hyperlink{class_repo_controller_1_1___repo_controller_impl_a19680de90765086cb585affd15c084ee}{create\+Token} (const std\+::string \&alias, const std\+::string \&address, const int \&port, const std\+::string \&db\+Name, const std\+::string \&username, const std\+::string \&password)
+\item 
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a4b95f6b09a6375fae2f5511c06593b51}{}\hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Controller\+::\+Repo\+Token} $\ast$ {\bfseries create\+Token} (const std\+::string \&alias, const std\+::string \&address, const int \&port, const std\+::string \&db\+Name, const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Controller\+::\+Repo\+Token} $\ast$token)\label{class_repo_controller_1_1___repo_controller_impl_a4b95f6b09a6375fae2f5511c06593b51}
+
+\item 
+uint64\+\_\+t \hyperlink{class_repo_controller_1_1___repo_controller_impl_a57dc96a55a3dda0f9d62f13a100ee1cb}{count\+Items\+In\+Collection} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&database, const std\+::string \&collection)
+\item 
+std\+::vector$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $>$ \hyperlink{class_repo_controller_1_1___repo_controller_impl_ab1aba8bba47dc9075515af4213b28e51}{get\+All\+From\+Collection\+Continuous} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&database, const std\+::string \&collection, const uint64\+\_\+t \&skip=0, const uint32\+\_\+t \&limit=0)
+\item 
+std\+::vector$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $>$ \hyperlink{class_repo_controller_1_1___repo_controller_impl_afef3917eea5dce76a6aa6ee7d07d35e2}{get\+All\+From\+Collection\+Continuous} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&database, const std\+::string \&collection, const std\+::list$<$ std\+::string $>$ \&fields, const std\+::string \&sort\+Field, const int \&sort\+Order=-\/1, const uint64\+\_\+t \&skip=0, const uint32\+\_\+t \&limit=0)
+\item 
+std\+::vector$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role}{repo\+::core\+::model\+::\+Repo\+Role} $>$ \hyperlink{class_repo_controller_1_1___repo_controller_impl_a224964ef041d64c75188069d5d3922d6}{get\+Roles\+From\+Database} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&database, const uint64\+\_\+t \&skip=0, const uint32\+\_\+t \&limit=0)
+\item 
+std\+::vector$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_settings}{repo\+::core\+::model\+::\+Repo\+Role\+Settings} $>$ \hyperlink{class_repo_controller_1_1___repo_controller_impl_a795906bcede3c32c1d2c4e01f052f8a9}{get\+Role\+Settings\+From\+Database} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&database, const uint64\+\_\+t \&skip=0, const uint32\+\_\+t \&limit=0)
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_settings}{repo\+::core\+::model\+::\+Repo\+Role\+Settings} \hyperlink{class_repo_controller_1_1___repo_controller_impl_a22e8b8a068e7130a86f85f80ba5d51bd}{get\+Role\+Settings} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&database, const std\+::string \&unique\+Role\+Name)
+\item 
+std\+::list$<$ std\+::string $>$ \hyperlink{class_repo_controller_1_1___repo_controller_impl_ae0cdcabbd58286f7d3d0bb9f9961fac4}{get\+Collections} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&database\+Name)
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_collection_stats}{repo\+::core\+::model\+::\+Collection\+Stats} \hyperlink{class_repo_controller_1_1___repo_controller_impl_a5d1d5b242280cbc54d7bb9f9705e37d7}{get\+Collection\+Stats} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&database, const std\+::string \&collection)
+\item 
+std\+::list$<$ std\+::string $>$ \hyperlink{class_repo_controller_1_1___repo_controller_impl_a5b814cf8781cfbaa135fb4c1095d15a1}{get\+Databases} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token)
+\item 
+std\+::map$<$ std\+::string, std\+::list$<$ std\+::string $>$ $>$ \hyperlink{class_repo_controller_1_1___repo_controller_impl_a79bb9b99be1a8aef1accfee709b71b80}{get\+Databases\+With\+Projects} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::list$<$ std\+::string $>$ \&databases)
+\item 
+std\+::list$<$ std\+::string $>$ \hyperlink{class_repo_controller_1_1___repo_controller_impl_a72b4cbf7b4bc1d9f17ce638152a8a160}{get\+Admin\+Database\+Roles} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token)
+\item 
+std\+::string \hyperlink{class_repo_controller_1_1___repo_controller_impl_aa1bac682bc4fa699955bf7768d23d731}{get\+Name\+Of\+Admin\+Database} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token)
+\item 
+std\+::list$<$ std\+::string $>$ \hyperlink{class_repo_controller_1_1___repo_controller_impl_a2f82e03f7d90a152e13fd4ad0e105f27}{get\+Standard\+Database\+Roles} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token)
+\item 
+void \hyperlink{class_repo_controller_1_1___repo_controller_impl_abeffe6e2eabc53bce17260b4b21724ef}{clean\+Up} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&db\+Name, const std\+::string \&project\+Name)
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ \hyperlink{class_repo_controller_1_1___repo_controller_impl_abf64e733912708232475533b46020dee}{fetch\+Scene} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&database, const std\+::string \&project, const std\+::string \&uuid=R\+E\+P\+O\+\_\+\+H\+I\+S\+T\+O\+R\+Y\+\_\+\+M\+A\+S\+T\+E\+R\+\_\+\+B\+R\+A\+N\+C\+H, const bool \&head\+Revision=true, const bool \&light\+Fetch=false)
+\item 
+void \hyperlink{class_repo_controller_1_1___repo_controller_impl_a29d7a60011fd77d580a9ae403ad172a3}{save\+Original\+Files} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene, const std\+::string \&directory)
+\item 
+void \hyperlink{class_repo_controller_1_1___repo_controller_impl_a716d0d63630f5f02897754f788713244}{save\+Original\+Files} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&database, const std\+::string \&project, const std\+::string \&directory)
+\item 
+bool \hyperlink{class_repo_controller_1_1___repo_controller_impl_aa2d5597cd017075632c1aa2086ca1ae1}{commit\+Scene} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene, const std\+::string \&owner=\char`\"{}\char`\"{}, const std\+::string \&tag=\char`\"{}\char`\"{}, const std\+::string \&desc=\char`\"{}\char`\"{})
+\item 
+void \hyperlink{class_repo_controller_1_1___repo_controller_impl_a44b43dd3976afa7d6cc1bf4a319a3ac2}{insert\+Binary\+File\+To\+Database} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&database, const std\+::string \&collection, const std\+::string \&name, const std\+::vector$<$ uint8\+\_\+t $>$ \&raw\+Data, const std\+::string \&mime\+Type=\char`\"{}\char`\"{})
+\item 
+void \hyperlink{class_repo_controller_1_1___repo_controller_impl_a4c23846cfb0ba6cd0397b2f76d9fa2b1}{insert\+Role} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role}{repo\+::core\+::model\+::\+Repo\+Role} \&role)
+\item 
+void \hyperlink{class_repo_controller_1_1___repo_controller_impl_ad64a3b64b0568d812c5cbbe8df572463}{insert\+User} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user}{repo\+::core\+::model\+::\+Repo\+User} \&user)
+\item 
+bool \hyperlink{class_repo_controller_1_1___repo_controller_impl_a6832bf065a472552d77f052d91392508}{remove\+Collection} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&database\+Name, const std\+::string \&collection\+Name, std\+::string \&err\+Msg)
+\item 
+bool \hyperlink{class_repo_controller_1_1___repo_controller_impl_a937aee3f9eb3a6626a35bbc4dcb313e3}{remove\+Database} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&database\+Name, std\+::string \&err\+Msg)
+\item 
+void \hyperlink{class_repo_controller_1_1___repo_controller_impl_a80dd49411609a80ae46cca65590fa23c}{remove\+Document} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&database\+Name, const std\+::string \&collection\+Name, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \&bson)
+\item 
+bool \hyperlink{class_repo_controller_1_1___repo_controller_impl_aaff4d27ebe95d777d2a4145e78806e2f}{remove\+Project} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&database\+Name, const std\+::string \&project\+Name, std\+::string \&err\+Msg)
+\item 
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a7b305d0eb964ff4f464b3eb05986c82f}{}void {\bfseries remove\+Project\+Settings} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&database, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_project_settings}{repo\+::core\+::model\+::\+Repo\+Project\+Settings} \&project\+Settings)\label{class_repo_controller_1_1___repo_controller_impl_a7b305d0eb964ff4f464b3eb05986c82f}
+
+\item 
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a31049396ed80a8a07ee06d17c9c6eb9a}{}void {\bfseries remove\+Role\+Settings} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&database, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_settings}{repo\+::core\+::model\+::\+Repo\+Role\+Settings} \&role\+Settings)\label{class_repo_controller_1_1___repo_controller_impl_a31049396ed80a8a07ee06d17c9c6eb9a}
+
+\item 
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_acd09f7f74c1fbee18e23684416c63adb}{}void {\bfseries remove\+Role\+Settings} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role}{repo\+::core\+::model\+::\+Repo\+Role} \&role, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_settings}{repo\+::core\+::model\+::\+Repo\+Role\+Settings} \&settings)\label{class_repo_controller_1_1___repo_controller_impl_acd09f7f74c1fbee18e23684416c63adb}
+
+\item 
+void \hyperlink{class_repo_controller_1_1___repo_controller_impl_a31e89a7217f0234c083730b62036b7b0}{remove\+Role} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role}{repo\+::core\+::model\+::\+Repo\+Role} \&role)
+\item 
+void \hyperlink{class_repo_controller_1_1___repo_controller_impl_a5db323a3e6056220240c61813ff5b762}{remove\+User} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user}{repo\+::core\+::model\+::\+Repo\+User} \&user)
+\item 
+void \hyperlink{class_repo_controller_1_1___repo_controller_impl_aa389a2c23b500a350f0e3530781903f4}{update\+Role} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role}{repo\+::core\+::model\+::\+Repo\+Role} \&role)
+\item 
+void \hyperlink{class_repo_controller_1_1___repo_controller_impl_a12fd59a7cbb6774728545f6ae80749b7}{update\+User} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_user}{repo\+::core\+::model\+::\+Repo\+User} \&user)
+\item 
+void \hyperlink{class_repo_controller_1_1___repo_controller_impl_ae50efbdcf4e8be39fccbea81399307cd}{upsert\+Document} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&database\+Name, const std\+::string \&collection\+Name, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \&bson)
+\item 
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_afaa82c4fe544bc8c29e0a529a01d5818}{}void {\bfseries upsert\+Role\+Settings} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&database, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_settings}{repo\+::core\+::model\+::\+Repo\+Role\+Settings} \&role\+Settings)\label{class_repo_controller_1_1___repo_controller_impl_afaa82c4fe544bc8c29e0a529a01d5818}
+
+\item 
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a8c62230d750b48a1b6493d26e032406f}{}void {\bfseries upsert\+Role\+Settings} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role}{repo\+::core\+::model\+::\+Repo\+Role} \&role, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_settings}{repo\+::core\+::model\+::\+Repo\+Role\+Settings} \&settings)\label{class_repo_controller_1_1___repo_controller_impl_a8c62230d750b48a1b6493d26e032406f}
+
+\item 
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a5bf9a708e0881befe63ee7ca9c77564e}{}void {\bfseries upsert\+Project\+Settings} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, const std\+::string \&database, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_project_settings}{repo\+::core\+::model\+::\+Repo\+Project\+Settings} \&project\+Settings)\label{class_repo_controller_1_1___repo_controller_impl_a5bf9a708e0881befe63ee7ca9c77564e}
+
+\item 
+void \hyperlink{class_repo_controller_1_1___repo_controller_impl_a3225af2cde1772f8ff2c9c9472edc107}{set\+Logging\+Level} (const \hyperlink{classrepo_1_1lib_1_1_repo_log_ad1d3f8148a47d718e4bf86a9d1edff81}{repo\+::lib\+::\+Repo\+Log\+::\+Repo\+Log\+Level} \&level)
+\item 
+void \hyperlink{class_repo_controller_1_1___repo_controller_impl_afb442442442102a59fb9e54995f530d2}{log\+To\+File} (const std\+::string \&file\+Path)
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ \hyperlink{class_repo_controller_1_1___repo_controller_impl_ab29956ef42024c97c8cfdf87d34cb7ca}{create\+Federated\+Scene} (const std\+::map$<$ \hyperlink{classrepo_1_1core_1_1model_1_1_transformation_node}{repo\+::core\+::model\+::\+Transformation\+Node}, \hyperlink{classrepo_1_1core_1_1model_1_1_reference_node}{repo\+::core\+::model\+::\+Reference\+Node} $>$ \&fed\+Map)
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ \hyperlink{class_repo_controller_1_1___repo_controller_impl_a31df61ff9e8f5d73e1481556aca5625f}{create\+Map\+Scene} (const \hyperlink{classrepo_1_1core_1_1model_1_1_map_node}{repo\+::core\+::model\+::\+Map\+Node} \&map\+Node)
+\item 
+bool \hyperlink{class_repo_controller_1_1___repo_controller_impl_abd4a39657a5efeda41c23ea09779c258}{generate\+And\+Commit\+G\+L\+T\+F\+Buffer} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+bool \hyperlink{class_repo_controller_1_1___repo_controller_impl_a5835ddd087bbc3090ac8d022843d71c6}{generate\+And\+Commit\+S\+R\+C\+Buffer} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+\hyperlink{structrepo__web__buffers__t}{repo\+\_\+web\+\_\+buffers\+\_\+t} \hyperlink{class_repo_controller_1_1___repo_controller_impl_aed03fc24e4dd110f15bd4b6be107b732}{generate\+G\+L\+T\+F\+Buffer} (\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+bool \hyperlink{class_repo_controller_1_1___repo_controller_impl_a0ae1a2789c4ff637b6578f372630cbdd}{generate\+And\+Commit\+Selection\+Tree} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+\hyperlink{structrepo__web__buffers__t}{repo\+\_\+web\+\_\+buffers\+\_\+t} \hyperlink{class_repo_controller_1_1___repo_controller_impl_ae34610e33c3acb775a8a6d2eb3a8474a}{generate\+S\+R\+C\+Buffer} (\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+std\+::string \hyperlink{class_repo_controller_1_1___repo_controller_impl_a41dd45129cf941a698906ce4078549b1}{get\+Supported\+Export\+Formats} ()
+\item 
+std\+::string \hyperlink{class_repo_controller_1_1___repo_controller_impl_a2e6d9e9a575c6302f2c887afd190190f}{get\+Supported\+Import\+Formats} ()
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ \hyperlink{class_repo_controller_1_1___repo_controller_impl_a5cf378dadbbb99c1163b29bf5f7d7e12}{load\+Scene\+From\+File} (const std\+::string \&file\+Path, const bool \&apply\+Reduction=true, const bool \&rotate\+Model=false, const \hyperlink{classrepo_1_1manipulator_1_1modelconvertor_1_1_model_import_config}{repo\+::manipulator\+::modelconvertor\+::\+Model\+Import\+Config} $\ast$config=nullptr)
+\item 
+repo\+::core\+::model\+::\+Repo\+Node\+Set \hyperlink{class_repo_controller_1_1___repo_controller_impl_a4da645a6f9993e50a8cd5bd913287aa5}{load\+Metadata\+From\+File} (const std\+::string \&file\+Path, const char \&delimiter= \textquotesingle{},\textquotesingle{})
+\item 
+bool \hyperlink{class_repo_controller_1_1___repo_controller_impl_a9068443a12ea798165e4dab48db9b337}{save\+Scene\+To\+File} (const std\+::string \&file\+Path, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+bool \hyperlink{class_repo_controller_1_1___repo_controller_impl_ad24bb05af8bc5288dbf5516f0438d9f3}{generate\+And\+Commit\+Stash\+Graph} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+std\+::shared\+\_\+ptr$<$ \hyperlink{structrepo__partitioning__tree__t}{repo\+\_\+partitioning\+\_\+tree\+\_\+t} $>$ \hyperlink{class_repo_controller_1_1___repo_controller_impl_a62aeadf5f695550429bb65403be5e6db}{get\+Scene\+Partitioning} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene, const uint32\+\_\+t \&max\+Depth=8)
+\item 
+void \hyperlink{class_repo_controller_1_1___repo_controller_impl_a12a402fb6e881616d0a10ee1d291d960}{reduce\+Transformations} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$scene)
+\item 
+void \hyperlink{class_repo_controller_1_1___repo_controller_impl_af212f934dcb88fbfdd3756aa203f386c}{compare\+Scenes} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$base, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$compare, \hyperlink{structrepo__diff__result__t}{repo\+\_\+diff\+\_\+result\+\_\+t} \&base\+Results, \hyperlink{structrepo__diff__result__t}{repo\+\_\+diff\+\_\+result\+\_\+t} \&comp\+Results, const repo\+::\+Diff\+Mode \&diff\+Mode)
+\item 
+void \hyperlink{class_repo_controller_1_1___repo_controller_impl_a81f8dd6e1730e1ed8514658bbe0da82d}{compare\+Scenes\+By\+I\+Ds} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$base, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$compare, \hyperlink{structrepo__diff__result__t}{repo\+\_\+diff\+\_\+result\+\_\+t} \&base\+Results, \hyperlink{structrepo__diff__result__t}{repo\+\_\+diff\+\_\+result\+\_\+t} \&comp\+Results)
+\item 
+void \hyperlink{class_repo_controller_1_1___repo_controller_impl_ae94cea6a945be6a2ad0d340cd70aa58e}{compare\+Scenes\+By\+Names} (const \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} $\ast$token, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$base, \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$compare, \hyperlink{structrepo__diff__result__t}{repo\+\_\+diff\+\_\+result\+\_\+t} \&base\+Results, \hyperlink{structrepo__diff__result__t}{repo\+\_\+diff\+\_\+result\+\_\+t} \&comp\+Results)
+\item 
+std\+::string \hyperlink{class_repo_controller_1_1___repo_controller_impl_ab92bf6bc49510b3694d5ad065882dc07}{get\+Version} ()
+\end{DoxyCompactItemize}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a3f3c778a5a66db21dae228343c0df2c6}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!\+\_\+\+Repo\+Controller\+Impl@{\+\_\+\+Repo\+Controller\+Impl}}
+\index{\+\_\+\+Repo\+Controller\+Impl@{\+\_\+\+Repo\+Controller\+Impl}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{\+\_\+\+Repo\+Controller\+Impl}]{\setlength{\rightskip}{0pt plus 5cm}repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::\+\_\+\+Repo\+Controller\+Impl (
+\begin{DoxyParamCaption}
+\item[{std\+::vector$<$ {\bf lib\+::\+Repo\+Abstract\+Listener} $\ast$ $>$}]{listeners = {\ttfamily std\+:\+:vector$<${\bf lib\+::\+Repo\+Abstract\+Listener}~$\ast$$>$()}, }
+\item[{const uint32\+\_\+t \&}]{num\+Concurrent\+Ops = {\ttfamily 1}, }
+\item[{const uint32\+\_\+t \&}]{num\+Db\+Conn = {\ttfamily 1}}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a3f3c778a5a66db21dae228343c0df2c6}
+Constructor 
+\begin{DoxyParams}{Parameters}
+{\em listeners} & a list of listeners subscribing to the log \\
+\hline
+{\em num\+Concurrent\+Ops} & maximum number of requests it can handle concurrently \\
+\hline
+{\em num\+D\+B\+Conn} & number of concurrent connections to the database\\
+\hline
+\end{DoxyParams}
+Copyright (C) 2015 3\+D Repo Ltd
+
+This program is free software\+: you can redistribute it and/or modify it under the terms of the G\+N\+U Affero General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but W\+I\+T\+H\+O\+U\+T A\+N\+Y W\+A\+R\+R\+A\+N\+T\+Y; without even the implied warranty of M\+E\+R\+C\+H\+A\+N\+T\+A\+B\+I\+L\+I\+T\+Y or F\+I\+T\+N\+E\+S\+S F\+O\+R A P\+A\+R\+T\+I\+C\+U\+L\+A\+R P\+U\+R\+P\+O\+S\+E. See the G\+N\+U Affero General Public License for more details.
+
+You should have received a copy of the G\+N\+U Affero General Public License along with this program. If not, see \href{http://www.gnu.org/licenses/}{\tt http\+://www.\+gnu.\+org/licenses/}. \hypertarget{class_repo_controller_1_1___repo_controller_impl_ac501d5b36baa6cac51caf834943aa3c2}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!````~\+\_\+\+Repo\+Controller\+Impl@{$\sim$\+\_\+\+Repo\+Controller\+Impl}}
+\index{````~\+\_\+\+Repo\+Controller\+Impl@{$\sim$\+\_\+\+Repo\+Controller\+Impl}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{$\sim$\+\_\+\+Repo\+Controller\+Impl}]{\setlength{\rightskip}{0pt plus 5cm}repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::$\sim$\+\_\+\+Repo\+Controller\+Impl (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_ac501d5b36baa6cac51caf834943aa3c2}
+Destructor 
+
+\subsection{Member Function Documentation}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_af4552a181af4c8923d01e1f5d304f478}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!authenticate\+Mongo@{authenticate\+Mongo}}
+\index{authenticate\+Mongo@{authenticate\+Mongo}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{authenticate\+Mongo}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+Controller\+::\+Repo\+Token} $\ast$ repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::authenticate\+Mongo (
+\begin{DoxyParamCaption}
+\item[{std\+::string \&}]{err\+Msg, }
+\item[{const std\+::string \&}]{address, }
+\item[{const uint32\+\_\+t \&}]{port, }
+\item[{const std\+::string \&}]{db\+Name, }
+\item[{const std\+::string \&}]{username, }
+\item[{const std\+::string \&}]{password, }
+\item[{const bool \&}]{pw\+Digested = {\ttfamily false}}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_af4552a181af4c8923d01e1f5d304f478}
+Connect to a mongo database, authenticate by the admin database 
+\begin{DoxyParams}{Parameters}
+{\em err\+Msg} & error message if failed \\
+\hline
+{\em address} & address of the database \\
+\hline
+{\em port} & port number \\
+\hline
+{\em db\+Name} & name of the database within mongo to connect to \\
+\hline
+{\em username} & user login name \\
+\hline
+{\em password} & user password \\
+\hline
+{\em pw\+Digested} & is given password digested (default\+: false) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+$\ast$ 
+
+returns a void pointer to a token 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a0a6492d281dd01930584af7166656e8a}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!authenticate\+Mongo@{authenticate\+Mongo}}
+\index{authenticate\+Mongo@{authenticate\+Mongo}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{authenticate\+Mongo}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::authenticate\+Mongo (
+\begin{DoxyParamCaption}
+\item[{std\+::string \&}]{err\+Msg, }
+\item[{const {\bf Repo\+Token} $\ast$}]{token}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a0a6492d281dd01930584af7166656e8a}
+Connect to a mongo database, authenticate by the admin database 
+\begin{DoxyParams}{Parameters}
+{\em err\+Msg} & error message if failed \\
+\hline
+{\em token} & authentication token \\
+\hline
+{\em returns} & true upon success \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_adcd38275158f9b923eb040ba7c86a6dc}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!authenticate\+To\+Admin\+Database\+Mongo@{authenticate\+To\+Admin\+Database\+Mongo}}
+\index{authenticate\+To\+Admin\+Database\+Mongo@{authenticate\+To\+Admin\+Database\+Mongo}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{authenticate\+To\+Admin\+Database\+Mongo}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+Controller\+::\+Repo\+Token} $\ast$ repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::authenticate\+To\+Admin\+Database\+Mongo (
+\begin{DoxyParamCaption}
+\item[{std\+::string \&}]{err\+Msg, }
+\item[{const std\+::string \&}]{address, }
+\item[{const int \&}]{port, }
+\item[{const std\+::string \&}]{username, }
+\item[{const std\+::string \&}]{password, }
+\item[{const bool \&}]{pw\+Digested = {\ttfamily false}}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_adcd38275158f9b923eb040ba7c86a6dc}
+Connect to a mongo database, authenticate by the admin database 
+\begin{DoxyParams}{Parameters}
+{\em err\+Msg} & error message if failed \\
+\hline
+{\em address} & address of the database \\
+\hline
+{\em port} & port number \\
+\hline
+{\em username} & user login name \\
+\hline
+{\em password} & user password \\
+\hline
+{\em pw\+Digested} & is given password digested (default\+: false) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a void pointer to a token 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_abeffe6e2eabc53bce17260b4b21724ef}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!clean\+Up@{clean\+Up}}
+\index{clean\+Up@{clean\+Up}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{clean\+Up}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::clean\+Up (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const std\+::string \&}]{db\+Name, }
+\item[{const std\+::string \&}]{project\+Name}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_abeffe6e2eabc53bce17260b4b21724ef}
+Clean up any incomplete commits within the project 
+\begin{DoxyParams}{Parameters}
+{\em address} & mongo database address \\
+\hline
+{\em port} & port number \\
+\hline
+{\em db\+Name} & name of the database \\
+\hline
+{\em project\+Name} & name of the project \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_aa2d5597cd017075632c1aa2086ca1ae1}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!commit\+Scene@{commit\+Scene}}
+\index{commit\+Scene@{commit\+Scene}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{commit\+Scene}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::commit\+Scene (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene, }
+\item[{const std\+::string \&}]{owner = {\ttfamily \char`\"{}\char`\"{}}, }
+\item[{const std\+::string \&}]{tag = {\ttfamily \char`\"{}\char`\"{}}, }
+\item[{const std\+::string \&}]{desc = {\ttfamily \char`\"{}\char`\"{}}}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_aa2d5597cd017075632c1aa2086ca1ae1}
+Commit a scene graph 
+\begin{DoxyParams}{Parameters}
+{\em token} & Authentication token \\
+\hline
+{\em scene} & Repo\+Scene to commit \\
+\hline
+{\em owner} & specify the owner of the scene (by default it is the user authorised to commit) \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_af212f934dcb88fbfdd3756aa203f386c}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!compare\+Scenes@{compare\+Scenes}}
+\index{compare\+Scenes@{compare\+Scenes}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{compare\+Scenes}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::compare\+Scenes (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{base, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{compare, }
+\item[{{\bf repo\+\_\+diff\+\_\+result\+\_\+t} \&}]{base\+Results, }
+\item[{{\bf repo\+\_\+diff\+\_\+result\+\_\+t} \&}]{comp\+Results, }
+\item[{const repo\+::\+Diff\+Mode \&}]{diff\+Mode}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_af212f934dcb88fbfdd3756aa203f386c}
+Compare 2 scenes via I\+Ds. 
+\begin{DoxyParams}{Parameters}
+{\em token} & to load full scene from database if required (if not required, a nullptr can be passed in) \\
+\hline
+{\em base} & base scene to compare against \\
+\hline
+{\em compare} & scene to compare base scene against \\
+\hline
+{\em base\+Results} & Diff results in the perspective of base \\
+\hline
+{\em comp\+Results} & Diff results in the perspective of compare \\
+\hline
+{\em repo\+::\+Diff\+Mode} & mode to use on comparison \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a81f8dd6e1730e1ed8514658bbe0da82d}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!compare\+Scenes\+By\+I\+Ds@{compare\+Scenes\+By\+I\+Ds}}
+\index{compare\+Scenes\+By\+I\+Ds@{compare\+Scenes\+By\+I\+Ds}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{compare\+Scenes\+By\+I\+Ds}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::compare\+Scenes\+By\+I\+Ds (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{base, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{compare, }
+\item[{{\bf repo\+\_\+diff\+\_\+result\+\_\+t} \&}]{base\+Results, }
+\item[{{\bf repo\+\_\+diff\+\_\+result\+\_\+t} \&}]{comp\+Results}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{class_repo_controller_1_1___repo_controller_impl_a81f8dd6e1730e1ed8514658bbe0da82d}
+Compare 2 scenes via I\+Ds. 
+\begin{DoxyParams}{Parameters}
+{\em token} & to load full scene from database if required (if not required, a nullptr can be passed in) \\
+\hline
+{\em base} & base scene to compare against \\
+\hline
+{\em compare} & scene to compare base scene against \\
+\hline
+{\em base\+Results} & Diff results in the perspective of base \\
+\hline
+{\em comp\+Results} & Diff results in the perspective of compare \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_ae94cea6a945be6a2ad0d340cd70aa58e}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!compare\+Scenes\+By\+Names@{compare\+Scenes\+By\+Names}}
+\index{compare\+Scenes\+By\+Names@{compare\+Scenes\+By\+Names}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{compare\+Scenes\+By\+Names}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::compare\+Scenes\+By\+Names (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{base, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{compare, }
+\item[{{\bf repo\+\_\+diff\+\_\+result\+\_\+t} \&}]{base\+Results, }
+\item[{{\bf repo\+\_\+diff\+\_\+result\+\_\+t} \&}]{comp\+Results}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{class_repo_controller_1_1___repo_controller_impl_ae94cea6a945be6a2ad0d340cd70aa58e}
+Compare 2 scenes via Names. 
+\begin{DoxyParams}{Parameters}
+{\em token} & to load full scene from database if required (if not required, a nullptr can be passed in) \\
+\hline
+{\em base} & base scene to compare against \\
+\hline
+{\em compare} & scene to compare base scene against \\
+\hline
+{\em base\+Results} & Diff results in the perspective of base \\
+\hline
+{\em comp\+Results} & Diff results in the perspective of compare \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a57dc96a55a3dda0f9d62f13a100ee1cb}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!count\+Items\+In\+Collection@{count\+Items\+In\+Collection}}
+\index{count\+Items\+In\+Collection@{count\+Items\+In\+Collection}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{count\+Items\+In\+Collection}]{\setlength{\rightskip}{0pt plus 5cm}uint64\+\_\+t repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::count\+Items\+In\+Collection (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a57dc96a55a3dda0f9d62f13a100ee1cb}
+Count the number of documents within the collection 
+\begin{DoxyParams}{Parameters}
+{\em token} & A \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} given at authentication \\
+\hline
+{\em database} & name of database \\
+\hline
+{\em collection} & name of collection \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+number of documents within the specified collection 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_ab29956ef42024c97c8cfdf87d34cb7ca}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!create\+Federated\+Scene@{create\+Federated\+Scene}}
+\index{create\+Federated\+Scene@{create\+Federated\+Scene}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{create\+Federated\+Scene}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::create\+Federated\+Scene (
+\begin{DoxyParamCaption}
+\item[{const std\+::map$<$ {\bf repo\+::core\+::model\+::\+Transformation\+Node}, {\bf repo\+::core\+::model\+::\+Reference\+Node} $>$ \&}]{fed\+Map}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_ab29956ef42024c97c8cfdf87d34cb7ca}
+Create a federated scene with the given scene collections 
+\begin{DoxyParams}{Parameters}
+{\em fed\+Map} & a map of reference scene and transformation from root where the scene should lie \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a constructed scene graph with the reference. 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a31df61ff9e8f5d73e1481556aca5625f}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!create\+Map\+Scene@{create\+Map\+Scene}}
+\index{create\+Map\+Scene@{create\+Map\+Scene}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{create\+Map\+Scene}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::create\+Map\+Scene (
+\begin{DoxyParamCaption}
+\item[{const {\bf repo\+::core\+::model\+::\+Map\+Node} \&}]{map\+Node}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a31df61ff9e8f5d73e1481556aca5625f}
+Create a create a map scene with the given map node This is essentially a scene creation with a trans node (identity matrix) and the map 
+\begin{DoxyParams}{Parameters}
+{\em map\+Node} & the map node to create the scene with \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a constructed scene graph with the reference. 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a19680de90765086cb585affd15c084ee}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!create\+Token@{create\+Token}}
+\index{create\+Token@{create\+Token}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{create\+Token}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+Controller\+::\+Repo\+Token} $\ast$ repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::create\+Token (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{alias, }
+\item[{const std\+::string \&}]{address, }
+\item[{const int \&}]{port, }
+\item[{const std\+::string \&}]{db\+Name, }
+\item[{const std\+::string \&}]{username, }
+\item[{const std\+::string \&}]{password}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a19680de90765086cb585affd15c084ee}
+create a token base on the information given \hypertarget{class_repo_controller_1_1___repo_controller_impl_aa0570180571cc2817f8e2532109241cc}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!disconnect\+From\+Database@{disconnect\+From\+Database}}
+\index{disconnect\+From\+Database@{disconnect\+From\+Database}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{disconnect\+From\+Database}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::disconnect\+From\+Database (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_aa0570180571cc2817f8e2532109241cc}
+Disconnect the controller from a database connection and destroys the token F\+I\+X\+M\+E\+: C\+U\+R\+R\+E\+N\+T\+L\+Y N\+O\+T T\+H\+R\+E\+A\+D S\+A\+F\+E! P\+O\+T\+E\+N\+T\+I\+A\+L\+L\+Y D\+A\+N\+G\+E\+R\+O\+U\+S 
+\begin{DoxyParams}{Parameters}
+{\em token} & token to the database \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_abf64e733912708232475533b46020dee}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!fetch\+Scene@{fetch\+Scene}}
+\index{fetch\+Scene@{fetch\+Scene}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{fetch\+Scene}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::fetch\+Scene (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{project, }
+\item[{const std\+::string \&}]{uuid = {\ttfamily REPO\+\_\+HISTORY\+\_\+MASTER\+\_\+BRANCH}, }
+\item[{const bool \&}]{head\+Revision = {\ttfamily true}, }
+\item[{const bool \&}]{light\+Fetch = {\ttfamily false}}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_abf64e733912708232475533b46020dee}
+Retrieve a Repo\+Scene with a specific revision loaded. 
+\begin{DoxyParams}{Parameters}
+{\em token} & Authentication token \\
+\hline
+{\em database} & the database the collection resides in \\
+\hline
+{\em project} & name of the project \\
+\hline
+{\em uuid} & if head\+Revision, uuid represents the branch id, otherwise the unique id of the revision branch \\
+\hline
+{\em head\+Revision} & true if retrieving head revision \\
+\hline
+{\em light\+Fetch} & fetches only the stash (or scene if stash failed), reduce computation and memory usage (ideal for visualisation) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a pointer to a repo\+Scene. 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_abd4a39657a5efeda41c23ea09779c258}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!generate\+And\+Commit\+G\+L\+T\+F\+Buffer@{generate\+And\+Commit\+G\+L\+T\+F\+Buffer}}
+\index{generate\+And\+Commit\+G\+L\+T\+F\+Buffer@{generate\+And\+Commit\+G\+L\+T\+F\+Buffer}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{generate\+And\+Commit\+G\+L\+T\+F\+Buffer}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::generate\+And\+Commit\+G\+L\+T\+F\+Buffer (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_abd4a39657a5efeda41c23ea09779c258}
+Generate and commit a G\+L\+T\+F encoding for the given scene This requires the stash to have been generated already 
+\begin{DoxyParams}{Parameters}
+{\em token} & token for authentication \\
+\hline
+{\em scene} & the scene to generate the gltf encoding from \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a0ae1a2789c4ff637b6578f372630cbdd}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!generate\+And\+Commit\+Selection\+Tree@{generate\+And\+Commit\+Selection\+Tree}}
+\index{generate\+And\+Commit\+Selection\+Tree@{generate\+And\+Commit\+Selection\+Tree}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{generate\+And\+Commit\+Selection\+Tree}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::generate\+And\+Commit\+Selection\+Tree (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a0ae1a2789c4ff637b6578f372630cbdd}
+Generate and commit a selection tree for the given scene 
+\begin{DoxyParams}{Parameters}
+{\em token} & token for authentication \\
+\hline
+{\em scene} & the scene to generate from \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a5835ddd087bbc3090ac8d022843d71c6}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!generate\+And\+Commit\+S\+R\+C\+Buffer@{generate\+And\+Commit\+S\+R\+C\+Buffer}}
+\index{generate\+And\+Commit\+S\+R\+C\+Buffer@{generate\+And\+Commit\+S\+R\+C\+Buffer}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{generate\+And\+Commit\+S\+R\+C\+Buffer}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::generate\+And\+Commit\+S\+R\+C\+Buffer (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a5835ddd087bbc3090ac8d022843d71c6}
+Generate and commit a S\+R\+C encoding for the given scene This requires the stash to have been generated already 
+\begin{DoxyParams}{Parameters}
+{\em token} & token for authentication \\
+\hline
+{\em scene} & the scene to generate the src encoding from \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_ad24bb05af8bc5288dbf5516f0438d9f3}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!generate\+And\+Commit\+Stash\+Graph@{generate\+And\+Commit\+Stash\+Graph}}
+\index{generate\+And\+Commit\+Stash\+Graph@{generate\+And\+Commit\+Stash\+Graph}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{generate\+And\+Commit\+Stash\+Graph}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::generate\+And\+Commit\+Stash\+Graph (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_ad24bb05af8bc5288dbf5516f0438d9f3}
+Generate and commit stash graph (multipart viewing graph) The generated graph will be added into the scene provided also commited to the database/project set within the scene 
+\begin{DoxyParams}{Parameters}
+{\em token} & database token \\
+\hline
+{\em scene} & scene to optimise \\
+\hline
+{\em return} & true upon success \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_aed03fc24e4dd110f15bd4b6be107b732}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!generate\+G\+L\+T\+F\+Buffer@{generate\+G\+L\+T\+F\+Buffer}}
+\index{generate\+G\+L\+T\+F\+Buffer@{generate\+G\+L\+T\+F\+Buffer}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{generate\+G\+L\+T\+F\+Buffer}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+\_\+web\+\_\+buffers\+\_\+t} repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::generate\+G\+L\+T\+F\+Buffer (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_aed03fc24e4dd110f15bd4b6be107b732}
+Generate a G\+L\+T\+F encoding in the form of a buffer for the given scene This requires the stash to have been generated already 
+\begin{DoxyParams}{Parameters}
+{\em scene} & the scene to generate the gltf encoding from \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a buffer in the form of a byte vector 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_ae34610e33c3acb775a8a6d2eb3a8474a}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!generate\+S\+R\+C\+Buffer@{generate\+S\+R\+C\+Buffer}}
+\index{generate\+S\+R\+C\+Buffer@{generate\+S\+R\+C\+Buffer}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{generate\+S\+R\+C\+Buffer}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+\_\+web\+\_\+buffers\+\_\+t} repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::generate\+S\+R\+C\+Buffer (
+\begin{DoxyParamCaption}
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_ae34610e33c3acb775a8a6d2eb3a8474a}
+Generate a S\+R\+C encoding in the form of a buffer for the given scene This requires the stash to have been generated already 
+\begin{DoxyParams}{Parameters}
+{\em scene} & the scene to generate the src encoding from \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a buffer in the form of a byte vector 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a72b4cbf7b4bc1d9f17ce638152a8a160}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!get\+Admin\+Database\+Roles@{get\+Admin\+Database\+Roles}}
+\index{get\+Admin\+Database\+Roles@{get\+Admin\+Database\+Roles}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{get\+Admin\+Database\+Roles}]{\setlength{\rightskip}{0pt plus 5cm}std\+::list$<$ std\+::string $>$ repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::get\+Admin\+Database\+Roles (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a72b4cbf7b4bc1d9f17ce638152a8a160}
+Get a list of Admin roles from the database 
+\begin{DoxyParams}{Parameters}
+{\em token} & repo token to the database \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a vector of roles 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_ab1aba8bba47dc9075515af4213b28e51}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!get\+All\+From\+Collection\+Continuous@{get\+All\+From\+Collection\+Continuous}}
+\index{get\+All\+From\+Collection\+Continuous@{get\+All\+From\+Collection\+Continuous}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{get\+All\+From\+Collection\+Continuous}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $>$ repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::get\+All\+From\+Collection\+Continuous (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{const uint64\+\_\+t \&}]{skip = {\ttfamily 0}, }
+\item[{const uint32\+\_\+t \&}]{limit = {\ttfamily 0}}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_ab1aba8bba47dc9075515af4213b28e51}
+Retrieve documents from a specified collection due to limitations of the transfer protocol this might need to be called multiple times, utilising the skip index to skip the first n items. 
+\begin{DoxyParams}{Parameters}
+{\em token} & A \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} given at authentication \\
+\hline
+{\em database} & name of database \\
+\hline
+{\em collection} & name of collection \\
+\hline
+{\em skip} & specify how many documents to skip \\
+\hline
+{\em limit} & specifiy max. number of documents to retrieve (0 = no limit) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+list of Repo\+B\+S\+O\+Ns representing the documents 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_afef3917eea5dce76a6aa6ee7d07d35e2}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!get\+All\+From\+Collection\+Continuous@{get\+All\+From\+Collection\+Continuous}}
+\index{get\+All\+From\+Collection\+Continuous@{get\+All\+From\+Collection\+Continuous}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{get\+All\+From\+Collection\+Continuous}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} $>$ repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::get\+All\+From\+Collection\+Continuous (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{const std\+::list$<$ std\+::string $>$ \&}]{fields, }
+\item[{const std\+::string \&}]{sort\+Field, }
+\item[{const int \&}]{sort\+Order = {\ttfamily -\/1}, }
+\item[{const uint64\+\_\+t \&}]{skip = {\ttfamily 0}, }
+\item[{const uint32\+\_\+t \&}]{limit = {\ttfamily 0}}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_afef3917eea5dce76a6aa6ee7d07d35e2}
+Retrieve documents from a specified collection, returning only the specified fields due to limitations of the transfer protocol this might need to be called multiple times, utilising the skip index to skip the first n items. 
+\begin{DoxyParams}{Parameters}
+{\em token} & A \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} given at authentication \\
+\hline
+{\em database} & name of database \\
+\hline
+{\em collection} & name of collection \\
+\hline
+{\em fields} & fields to get back from the database \\
+\hline
+{\em sort\+Field} & field to sort upon \\
+\hline
+{\em sort\+Order} & 1 ascending, -\/1 descending \\
+\hline
+{\em skip} & specify how many documents to skip (see description above) \\
+\hline
+{\em limit} & specifiy max. number of documents to retrieve (0 = no limit) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+list of Repo\+B\+S\+O\+Ns representing the documents 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_ae0cdcabbd58286f7d3d0bb9f9961fac4}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!get\+Collections@{get\+Collections}}
+\index{get\+Collections@{get\+Collections}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{get\+Collections}]{\setlength{\rightskip}{0pt plus 5cm}std\+::list$<$ std\+::string $>$ repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::get\+Collections (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const std\+::string \&}]{database\+Name}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_ae0cdcabbd58286f7d3d0bb9f9961fac4}
+Return a list of collections within the database 
+\begin{DoxyParams}{Parameters}
+{\em token} & A \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} given at authentication \\
+\hline
+{\em database\+Name} & database to get collections from \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a list of collection names 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a5d1d5b242280cbc54d7bb9f9705e37d7}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!get\+Collection\+Stats@{get\+Collection\+Stats}}
+\index{get\+Collection\+Stats@{get\+Collection\+Stats}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{get\+Collection\+Stats}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+::core\+::model\+::\+Collection\+Stats} repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::get\+Collection\+Stats (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a5d1d5b242280cbc54d7bb9f9705e37d7}
+Return a Collection\+Stats B\+S\+O\+N containing statistics about this collection 
+\begin{DoxyParams}{Parameters}
+{\em token} & A \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} given at authentication \\
+\hline
+{\em database} & name of database \\
+\hline
+{\em collection} & name of collection \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a B\+S\+O\+N object containing this information 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a5b814cf8781cfbaa135fb4c1095d15a1}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!get\+Databases@{get\+Databases}}
+\index{get\+Databases@{get\+Databases}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{get\+Databases}]{\setlength{\rightskip}{0pt plus 5cm}std\+::list$<$ std\+::string $>$ repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::get\+Databases (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a5b814cf8781cfbaa135fb4c1095d15a1}
+Return a list of database available to the user 
+\begin{DoxyParams}{Parameters}
+{\em token} & A \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} given at authentication \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a list of database names 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a79bb9b99be1a8aef1accfee709b71b80}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!get\+Databases\+With\+Projects@{get\+Databases\+With\+Projects}}
+\index{get\+Databases\+With\+Projects@{get\+Databases\+With\+Projects}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{get\+Databases\+With\+Projects}]{\setlength{\rightskip}{0pt plus 5cm}std\+::map$<$ std\+::string, std\+::list$<$ std\+::string $>$ $>$ repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::get\+Databases\+With\+Projects (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const std\+::list$<$ std\+::string $>$ \&}]{databases}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a79bb9b99be1a8aef1accfee709b71b80}
+Return a list of projects with the database available to the user 
+\begin{DoxyParams}{Parameters}
+{\em token} & A \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} given at authentication \\
+\hline
+{\em databases} & list of databases to look up \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a list of database names 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_aa1bac682bc4fa699955bf7768d23d731}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!get\+Name\+Of\+Admin\+Database@{get\+Name\+Of\+Admin\+Database}}
+\index{get\+Name\+Of\+Admin\+Database@{get\+Name\+Of\+Admin\+Database}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{get\+Name\+Of\+Admin\+Database}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::get\+Name\+Of\+Admin\+Database (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_aa1bac682bc4fa699955bf7768d23d731}
+Get the name of the admin database 
+\begin{DoxyParams}{Parameters}
+{\em token} & repo token to the database \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns the name of the admin database 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a22e8b8a068e7130a86f85f80ba5d51bd}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!get\+Role\+Settings@{get\+Role\+Settings}}
+\index{get\+Role\+Settings@{get\+Role\+Settings}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{get\+Role\+Settings}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+::core\+::model\+::\+Repo\+Role\+Settings} repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::get\+Role\+Settings (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{unique\+Role\+Name}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a22e8b8a068e7130a86f85f80ba5d51bd}
+Get a role settings within a database 
+\begin{DoxyParams}{Parameters}
+{\em token} & A \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} given at authentication \\
+\hline
+{\em database} & name of database \\
+\hline
+{\em unique\+Role\+Name} & name of the role to look for \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a795906bcede3c32c1d2c4e01f052f8a9}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!get\+Role\+Settings\+From\+Database@{get\+Role\+Settings\+From\+Database}}
+\index{get\+Role\+Settings\+From\+Database@{get\+Role\+Settings\+From\+Database}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{get\+Role\+Settings\+From\+Database}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf repo\+::core\+::model\+::\+Repo\+Role\+Settings} $>$ repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::get\+Role\+Settings\+From\+Database (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const std\+::string \&}]{database, }
+\item[{const uint64\+\_\+t \&}]{skip = {\ttfamily 0}, }
+\item[{const uint32\+\_\+t \&}]{limit = {\ttfamily 0}}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a795906bcede3c32c1d2c4e01f052f8a9}
+Get all role settings within a database 
+\begin{DoxyParams}{Parameters}
+{\em token} & A \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} given at authentication \\
+\hline
+{\em database} & name of database \\
+\hline
+{\em skip} & specify how many documents to skip (see description above) \\
+\hline
+{\em limit} & specifiy max. number of documents to retrieve (0 = no limit) \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a224964ef041d64c75188069d5d3922d6}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!get\+Roles\+From\+Database@{get\+Roles\+From\+Database}}
+\index{get\+Roles\+From\+Database@{get\+Roles\+From\+Database}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{get\+Roles\+From\+Database}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf repo\+::core\+::model\+::\+Repo\+Role} $>$ repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::get\+Roles\+From\+Database (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const std\+::string \&}]{database, }
+\item[{const uint64\+\_\+t \&}]{skip = {\ttfamily 0}, }
+\item[{const uint32\+\_\+t \&}]{limit = {\ttfamily 0}}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a224964ef041d64c75188069d5d3922d6}
+Retrieve roles from a specified database due to limitations of the transfer protocol this might need to be called multiple times, utilising the skip index to skip the first n items. 
+\begin{DoxyParams}{Parameters}
+{\em token} & A \hyperlink{class_repo_controller_1_1_repo_token}{Repo\+Token} given at authentication \\
+\hline
+{\em database} & name of database \\
+\hline
+{\em skip} & specify how many documents to skip (see description above) \\
+\hline
+{\em limit} & specifiy max. number of documents to retrieve (0 = no limit) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+list of Repo\+Role representing the roles 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a62aeadf5f695550429bb65403be5e6db}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!get\+Scene\+Partitioning@{get\+Scene\+Partitioning}}
+\index{get\+Scene\+Partitioning@{get\+Scene\+Partitioning}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{get\+Scene\+Partitioning}]{\setlength{\rightskip}{0pt plus 5cm}std\+::shared\+\_\+ptr$<$ {\bf repo\+\_\+partitioning\+\_\+tree\+\_\+t} $>$ repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::get\+Scene\+Partitioning (
+\begin{DoxyParamCaption}
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene, }
+\item[{const uint32\+\_\+t \&}]{max\+Depth = {\ttfamily 8}}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a62aeadf5f695550429bb65403be5e6db}
+Get a hierachical spatial partitioning in form of a tree 
+\begin{DoxyParams}{Parameters}
+{\em scene} & scene to partition \\
+\hline
+{\em max\+Depth} & max partitioning depth \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a2f82e03f7d90a152e13fd4ad0e105f27}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!get\+Standard\+Database\+Roles@{get\+Standard\+Database\+Roles}}
+\index{get\+Standard\+Database\+Roles@{get\+Standard\+Database\+Roles}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{get\+Standard\+Database\+Roles}]{\setlength{\rightskip}{0pt plus 5cm}std\+::list$<$ std\+::string $>$ repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::get\+Standard\+Database\+Roles (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a2f82e03f7d90a152e13fd4ad0e105f27}
+Get a list of standard roles from the database 
+\begin{DoxyParams}{Parameters}
+{\em token} & repo token to the database \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a vector of roles 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a41dd45129cf941a698906ce4078549b1}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!get\+Supported\+Export\+Formats@{get\+Supported\+Export\+Formats}}
+\index{get\+Supported\+Export\+Formats@{get\+Supported\+Export\+Formats}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{get\+Supported\+Export\+Formats}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::get\+Supported\+Export\+Formats (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a41dd45129cf941a698906ce4078549b1}
+Get a string of supported file formats for file export \begin{DoxyReturn}{Returns}
+returns a string with list of supported file formats 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a2e6d9e9a575c6302f2c887afd190190f}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!get\+Supported\+Import\+Formats@{get\+Supported\+Import\+Formats}}
+\index{get\+Supported\+Import\+Formats@{get\+Supported\+Import\+Formats}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{get\+Supported\+Import\+Formats}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::get\+Supported\+Import\+Formats (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a2e6d9e9a575c6302f2c887afd190190f}
+Get a string of supported file formats for file import \begin{DoxyReturn}{Returns}
+returns a string with list of supported file formats 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_ab92bf6bc49510b3694d5ad065882dc07}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!get\+Version@{get\+Version}}
+\index{get\+Version@{get\+Version}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{get\+Version}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::get\+Version (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_ab92bf6bc49510b3694d5ad065882dc07}
+Get bouncer version in the form of a string \hypertarget{class_repo_controller_1_1___repo_controller_impl_a44b43dd3976afa7d6cc1bf4a319a3ac2}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!insert\+Binary\+File\+To\+Database@{insert\+Binary\+File\+To\+Database}}
+\index{insert\+Binary\+File\+To\+Database@{insert\+Binary\+File\+To\+Database}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{insert\+Binary\+File\+To\+Database}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::insert\+Binary\+File\+To\+Database (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{collection, }
+\item[{const std\+::string \&}]{name, }
+\item[{const std\+::vector$<$ uint8\+\_\+t $>$ \&}]{raw\+Data, }
+\item[{const std\+::string \&}]{mime\+Type = {\ttfamily \char`\"{}\char`\"{}}}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a44b43dd3976afa7d6cc1bf4a319a3ac2}
+Insert a binary file into the database (Grid\+F\+S) 
+\begin{DoxyParams}{Parameters}
+{\em token} & Authentication token \\
+\hline
+{\em database} & name of the database \\
+\hline
+{\em collection} & name of the collection (it\textquotesingle{}ll be saved into $\ast$.files, $\ast$.chunks) \\
+\hline
+{\em raw\+Data} & data in the form of byte vector \\
+\hline
+{\em mime\+Type} & the M\+I\+M\+E type of the data (optional) \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a4c23846cfb0ba6cd0397b2f76d9fa2b1}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!insert\+Role@{insert\+Role}}
+\index{insert\+Role@{insert\+Role}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{insert\+Role}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::insert\+Role (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Role} \&}]{role}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a4c23846cfb0ba6cd0397b2f76d9fa2b1}
+Insert a new role into the database 
+\begin{DoxyParams}{Parameters}
+{\em token} & Authentication token \\
+\hline
+{\em role} & role info to insert \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_ad64a3b64b0568d812c5cbbe8df572463}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!insert\+User@{insert\+User}}
+\index{insert\+User@{insert\+User}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{insert\+User}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::insert\+User (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+User} \&}]{user}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_ad64a3b64b0568d812c5cbbe8df572463}
+Insert a new user into the database 
+\begin{DoxyParams}{Parameters}
+{\em token} & Authentication token \\
+\hline
+{\em user} & user info to insert \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a4da645a6f9993e50a8cd5bd913287aa5}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!load\+Metadata\+From\+File@{load\+Metadata\+From\+File}}
+\index{load\+Metadata\+From\+File@{load\+Metadata\+From\+File}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{load\+Metadata\+From\+File}]{\setlength{\rightskip}{0pt plus 5cm}repo\+::core\+::model\+::\+Repo\+Node\+Set repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::load\+Metadata\+From\+File (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{file\+Path, }
+\item[{const char \&}]{delimiter = {\ttfamily \textquotesingle{},\textquotesingle{}}}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a4da645a6f9993e50a8cd5bd913287aa5}
+Load metadata from a file 
+\begin{DoxyParams}{Parameters}
+{\em file\+Path} & path to file \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a set of metadata nodes read from the file 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a5cf378dadbbb99c1163b29bf5f7d7e12}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!load\+Scene\+From\+File@{load\+Scene\+From\+File}}
+\index{load\+Scene\+From\+File@{load\+Scene\+From\+File}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{load\+Scene\+From\+File}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::load\+Scene\+From\+File (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{file\+Path, }
+\item[{const bool \&}]{apply\+Reduction = {\ttfamily true}, }
+\item[{const bool \&}]{rotate\+Model = {\ttfamily false}, }
+\item[{const {\bf repo\+::manipulator\+::modelconvertor\+::\+Model\+Import\+Config} $\ast$}]{config = {\ttfamily nullptr}}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a5cf378dadbbb99c1163b29bf5f7d7e12}
+Load a Repo Scene from a file 
+\begin{DoxyParams}{Parameters}
+{\em file\+Path} & path to file \\
+\hline
+{\em apply} & transformation reduction (default\+: true) \\
+\hline
+{\em rotate\+Model} & rotate model by 270degrees on x (default\+: false) \\
+\hline
+{\em config} & import settings(optional) \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a pointer to Repo Scene upon success 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_afb442442442102a59fb9e54995f530d2}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!log\+To\+File@{log\+To\+File}}
+\index{log\+To\+File@{log\+To\+File}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{log\+To\+File}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::log\+To\+File (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{file\+Path}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_afb442442442102a59fb9e54995f530d2}
+Log to a specific file 
+\begin{DoxyParams}{Parameters}
+{\em file\+Path} & path to file \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a12a402fb6e881616d0a10ee1d291d960}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!reduce\+Transformations@{reduce\+Transformations}}
+\index{reduce\+Transformations@{reduce\+Transformations}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{reduce\+Transformations}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::reduce\+Transformations (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{{\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a12a402fb6e881616d0a10ee1d291d960}
+Reduce redundant transformations from the scene to optimise the graph 
+\begin{DoxyParams}{Parameters}
+{\em token} & to load full scene from database if required (if not required, a nullptr can be passed in) \\
+\hline
+{\em scene} & Repo\+Scene to optimize \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a6832bf065a472552d77f052d91392508}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!remove\+Collection@{remove\+Collection}}
+\index{remove\+Collection@{remove\+Collection}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{remove\+Collection}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::remove\+Collection (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const std\+::string \&}]{database\+Name, }
+\item[{const std\+::string \&}]{collection\+Name, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a6832bf065a472552d77f052d91392508}
+Remove a collection from the database 
+\begin{DoxyParams}{Parameters}
+{\em token} & Authentication token \\
+\hline
+{\em database} & the database the collection resides in \\
+\hline
+{\em collection} & name of the collection to drop \\
+\hline
+{\em err\+Msg} & error message if failed \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a937aee3f9eb3a6626a35bbc4dcb313e3}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!remove\+Database@{remove\+Database}}
+\index{remove\+Database@{remove\+Database}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{remove\+Database}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::remove\+Database (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const std\+::string \&}]{database\+Name, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a937aee3f9eb3a6626a35bbc4dcb313e3}
+Remove a database 
+\begin{DoxyParams}{Parameters}
+{\em token} & Authentication token \\
+\hline
+{\em database} & the database the collection resides in \\
+\hline
+{\em err\+Msg} & error message if failed \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a80dd49411609a80ae46cca65590fa23c}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!remove\+Document@{remove\+Document}}
+\index{remove\+Document@{remove\+Document}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{remove\+Document}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::remove\+Document (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const std\+::string \&}]{database\+Name, }
+\item[{const std\+::string \&}]{collection\+Name, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \&}]{bson}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a80dd49411609a80ae46cca65590fa23c}
+remove a document from the database N\+O\+T\+E\+: this should never be called for a bson from Repo\+Node family as you should never remove a node from a scene graph like this. 
+\begin{DoxyParams}{Parameters}
+{\em token} & Authentication token \\
+\hline
+{\em database} & the database the collection resides in \\
+\hline
+{\em collection} & name of the collection to drop \\
+\hline
+{\em bson} & document to remove \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_aaff4d27ebe95d777d2a4145e78806e2f}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!remove\+Project@{remove\+Project}}
+\index{remove\+Project@{remove\+Project}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{remove\+Project}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::remove\+Project (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const std\+::string \&}]{database\+Name, }
+\item[{const std\+::string \&}]{project\+Name, }
+\item[{std\+::string \&}]{err\+Msg}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_aaff4d27ebe95d777d2a4145e78806e2f}
+Remove a project from the database This removes\+:
+\begin{DoxyEnumerate}
+\item all collections associated with the project,
+\item the project entry within project settings
+\item all privileges assigned to any roles, related to this project 
+\begin{DoxyParams}{Parameters}
+{\em token} & Authentication token \\
+\hline
+{\em database} & name of the datbase \\
+\hline
+{\em name} & of the project \\
+\hline
+{\em err\+Msg} & error message if the operation fails \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+
+\end{DoxyEnumerate}\hypertarget{class_repo_controller_1_1___repo_controller_impl_a31e89a7217f0234c083730b62036b7b0}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!remove\+Role@{remove\+Role}}
+\index{remove\+Role@{remove\+Role}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{remove\+Role}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::remove\+Role (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Role} \&}]{role}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a31e89a7217f0234c083730b62036b7b0}
+remove a user from the database 
+\begin{DoxyParams}{Parameters}
+{\em token} & Authentication token \\
+\hline
+{\em role} & role to remove \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a5db323a3e6056220240c61813ff5b762}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!remove\+User@{remove\+User}}
+\index{remove\+User@{remove\+User}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{remove\+User}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::remove\+User (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+User} \&}]{user}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a5db323a3e6056220240c61813ff5b762}
+remove a user from the database 
+\begin{DoxyParams}{Parameters}
+{\em token} & Authentication token \\
+\hline
+{\em user} & user info to remove \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a29d7a60011fd77d580a9ae403ad172a3}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!save\+Original\+Files@{save\+Original\+Files}}
+\index{save\+Original\+Files@{save\+Original\+Files}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{save\+Original\+Files}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::save\+Original\+Files (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene, }
+\item[{const std\+::string \&}]{directory}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a29d7a60011fd77d580a9ae403ad172a3}
+Save the files of the original model to a specified directory 
+\begin{DoxyParams}{Parameters}
+{\em token} & Authentication token \\
+\hline
+{\em scene} & Repo Scene to save \\
+\hline
+{\em directory} & directory to save into \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a716d0d63630f5f02897754f788713244}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!save\+Original\+Files@{save\+Original\+Files}}
+\index{save\+Original\+Files@{save\+Original\+Files}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{save\+Original\+Files}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::save\+Original\+Files (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const std\+::string \&}]{database, }
+\item[{const std\+::string \&}]{project, }
+\item[{const std\+::string \&}]{directory}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a716d0d63630f5f02897754f788713244}
+Save the original file of the head of the project into a specified directory 
+\begin{DoxyParams}{Parameters}
+{\em token} & Authentication token \\
+\hline
+{\em database} & name of database \\
+\hline
+{\em project} & name of project \\
+\hline
+{\em directory} & directory to save into \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a9068443a12ea798165e4dab48db9b337}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!save\+Scene\+To\+File@{save\+Scene\+To\+File}}
+\index{save\+Scene\+To\+File@{save\+Scene\+To\+File}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{save\+Scene\+To\+File}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::save\+Scene\+To\+File (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{file\+Path, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{scene}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a9068443a12ea798165e4dab48db9b337}
+Save a Repo Scene to file 
+\begin{DoxyParams}{Parameters}
+{\em file\+Path} & path to file \\
+\hline
+{\em scene} & scene to export \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true upon success 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a3225af2cde1772f8ff2c9c9472edc107}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!set\+Logging\+Level@{set\+Logging\+Level}}
+\index{set\+Logging\+Level@{set\+Logging\+Level}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{set\+Logging\+Level}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::set\+Logging\+Level (
+\begin{DoxyParamCaption}
+\item[{const {\bf repo\+::lib\+::\+Repo\+Log\+::\+Repo\+Log\+Level} \&}]{level}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a3225af2cde1772f8ff2c9c9472edc107}
+Configure how verbose the log should be The levels of verbosity are\+: T\+R\+A\+C\+E -\/ log all messages D\+E\+B\+U\+G -\/ log messages of level debug or above (use for debugging) I\+N\+F\+O -\/ log messages of level info or above (use to filter debugging messages but want informative logging) W\+A\+R\+N\+I\+N\+G -\/ log messages of level warning or above E\+R\+R\+O\+R -\/ log messages of level error or above F\+A\+T\+A\+L -\/ log messages of level fatal or above 
+\begin{DoxyParams}{Parameters}
+{\em level} & specify logging level \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a9059a32af25fa8208df178134d6a67b5}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!test\+Connection@{test\+Connection}}
+\index{test\+Connection@{test\+Connection}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{test\+Connection}]{\setlength{\rightskip}{0pt plus 5cm}bool repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::test\+Connection (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a9059a32af25fa8208df178134d6a67b5}
+Checks whether given credentials permit successful connection to a given database. 
+\begin{DoxyParams}{Parameters}
+{\em token} & token \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true if successful, false otherwise 
+\end{DoxyReturn}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_aa389a2c23b500a350f0e3530781903f4}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!update\+Role@{update\+Role}}
+\index{update\+Role@{update\+Role}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{update\+Role}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::update\+Role (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Role} \&}]{role}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_aa389a2c23b500a350f0e3530781903f4}
+Update a role on the database 
+\begin{DoxyParams}{Parameters}
+{\em token} & Authentication token \\
+\hline
+{\em role} & role info to modify \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_a12fd59a7cbb6774728545f6ae80749b7}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!update\+User@{update\+User}}
+\index{update\+User@{update\+User}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{update\+User}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::update\+User (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+User} \&}]{user}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_a12fd59a7cbb6774728545f6ae80749b7}
+Update a user on the database 
+\begin{DoxyParams}{Parameters}
+{\em token} & Authentication token \\
+\hline
+{\em user} & user info to modify \\
+\hline
+\end{DoxyParams}
+\hypertarget{class_repo_controller_1_1___repo_controller_impl_ae50efbdcf4e8be39fccbea81399307cd}{}\index{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}!upsert\+Document@{upsert\+Document}}
+\index{upsert\+Document@{upsert\+Document}!Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl@{Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl}}
+\subsubsection[{upsert\+Document}]{\setlength{\rightskip}{0pt plus 5cm}void repo\+::\+Repo\+Controller\+::\+\_\+\+Repo\+Controller\+Impl\+::upsert\+Document (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Token} $\ast$}]{token, }
+\item[{const std\+::string \&}]{database\+Name, }
+\item[{const std\+::string \&}]{collection\+Name, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+B\+S\+O\+N} \&}]{bson}
+\end{DoxyParamCaption}
+)}\label{class_repo_controller_1_1___repo_controller_impl_ae50efbdcf4e8be39fccbea81399307cd}
+upsert a document in the database N\+O\+T\+E\+: this should never be called for a bson from Repo\+Node family as you should never update a node from a scene graph like this. 
+\begin{DoxyParams}{Parameters}
+{\em token} & Authentication token \\
+\hline
+{\em database} & the database the collection resides in \\
+\hline
+{\em collection} & name of the collection \\
+\hline
+{\em bson} & document to update/insert \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/repo\+\_\+controller.\+cpp.\+inl\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/repo\+\_\+controller\+\_\+internal.\+cpp.\+inl\end{DoxyCompactItemize}

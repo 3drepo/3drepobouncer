@@ -1,0 +1,110 @@
+\hypertarget{classrepo_1_1lib_1_1_repo_log}{}\section{repo\+:\+:lib\+:\+:Repo\+Log Class Reference}
+\label{classrepo_1_1lib_1_1_repo_log}\index{repo\+::lib\+::\+Repo\+Log@{repo\+::lib\+::\+Repo\+Log}}
+\subsection*{Public Types}
+\begin{DoxyCompactItemize}
+\item 
+enum \hyperlink{classrepo_1_1lib_1_1_repo_log_ad1d3f8148a47d718e4bf86a9d1edff81}{Repo\+Log\+Level} \{ \\*
+{\bfseries T\+R\+A\+C\+E}, 
+{\bfseries D\+E\+B\+U\+G}, 
+{\bfseries I\+N\+F\+O}, 
+{\bfseries W\+A\+R\+N\+I\+N\+G}, 
+\\*
+{\bfseries E\+R\+R}, 
+{\bfseries F\+A\+T\+A\+L}
+ \}
+\end{DoxyCompactItemize}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classrepo_1_1lib_1_1_repo_log_a27e4e0551856aa81044dda5ec5a073e3}{log} (const \hyperlink{classrepo_1_1lib_1_1_repo_log_ad1d3f8148a47d718e4bf86a9d1edff81}{Repo\+Log\+Level} \&severity, const std\+::string \&msg)
+\item 
+void \hyperlink{classrepo_1_1lib_1_1_repo_log_a93aa205cf29a757cfa714e1ca08eecb6}{log\+To\+File} (const std\+::string \&file\+Path)
+\item 
+void \hyperlink{classrepo_1_1lib_1_1_repo_log_a81089747b8922fdb2681f2c4263c98db}{set\+Logging\+Level} (const \hyperlink{classrepo_1_1lib_1_1_repo_log_ad1d3f8148a47d718e4bf86a9d1edff81}{Repo\+Log\+Level} \&level)
+\item 
+void \hyperlink{classrepo_1_1lib_1_1_repo_log_a7b938c8325a418ed59f743d0e7fa7c7d}{subscribe\+Broadcaster} (\hyperlink{classrepo_1_1lib_1_1_repo_broadcaster}{Repo\+Broadcaster} $\ast$broadcaster)
+\item 
+void \hyperlink{classrepo_1_1lib_1_1_repo_log_a82b7b3ff9930e5b35408785f2e0ed8a6}{subscribe\+Listeners} (const std\+::vector$<$ \hyperlink{classrepo_1_1lib_1_1_repo_abstract_listener}{Repo\+Abstract\+Listener} $\ast$ $>$ \&listeners)
+\end{DoxyCompactItemize}
+\subsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classrepo_1_1lib_1_1_repo_log_a6fad5fb15ee3971641fff8a4f0ab12d1}{}static \hyperlink{classrepo_1_1lib_1_1_repo_log}{Repo\+Log} \& {\bfseries get\+Instance} ()\label{classrepo_1_1lib_1_1_repo_log_a6fad5fb15ee3971641fff8a4f0ab12d1}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Member Enumeration Documentation}
+\hypertarget{classrepo_1_1lib_1_1_repo_log_ad1d3f8148a47d718e4bf86a9d1edff81}{}\index{repo\+::lib\+::\+Repo\+Log@{repo\+::lib\+::\+Repo\+Log}!Repo\+Log\+Level@{Repo\+Log\+Level}}
+\index{Repo\+Log\+Level@{Repo\+Log\+Level}!repo\+::lib\+::\+Repo\+Log@{repo\+::lib\+::\+Repo\+Log}}
+\subsubsection[{Repo\+Log\+Level}]{\setlength{\rightskip}{0pt plus 5cm}enum {\bf repo\+::lib\+::\+Repo\+Log\+::\+Repo\+Log\+Level}\hspace{0.3cm}{\ttfamily [strong]}}\label{classrepo_1_1lib_1_1_repo_log_ad1d3f8148a47d718e4bf86a9d1edff81}
+L\+O\+G\+G\+I\+N\+G L\+E\+V\+E\+L 
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1lib_1_1_repo_log_a27e4e0551856aa81044dda5ec5a073e3}{}\index{repo\+::lib\+::\+Repo\+Log@{repo\+::lib\+::\+Repo\+Log}!log@{log}}
+\index{log@{log}!repo\+::lib\+::\+Repo\+Log@{repo\+::lib\+::\+Repo\+Log}}
+\subsubsection[{log}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Log\+::log (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Log\+Level} \&}]{severity, }
+\item[{const std\+::string \&}]{msg}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1lib_1_1_repo_log_a27e4e0551856aa81044dda5ec5a073e3}
+Log a message(carriage return is not needed!) 
+\begin{DoxyParams}{Parameters}
+{\em severity} & severity of the message  message itself \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1lib_1_1_repo_log_a93aa205cf29a757cfa714e1ca08eecb6}{}\index{repo\+::lib\+::\+Repo\+Log@{repo\+::lib\+::\+Repo\+Log}!log\+To\+File@{log\+To\+File}}
+\index{log\+To\+File@{log\+To\+File}!repo\+::lib\+::\+Repo\+Log@{repo\+::lib\+::\+Repo\+Log}}
+\subsubsection[{log\+To\+File}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Log\+::log\+To\+File (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{file\+Path}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1lib_1_1_repo_log_a93aa205cf29a757cfa714e1ca08eecb6}
+Log to a specific file 
+\begin{DoxyParams}{Parameters}
+{\em file\+Path} & path to file \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1lib_1_1_repo_log_a81089747b8922fdb2681f2c4263c98db}{}\index{repo\+::lib\+::\+Repo\+Log@{repo\+::lib\+::\+Repo\+Log}!set\+Logging\+Level@{set\+Logging\+Level}}
+\index{set\+Logging\+Level@{set\+Logging\+Level}!repo\+::lib\+::\+Repo\+Log@{repo\+::lib\+::\+Repo\+Log}}
+\subsubsection[{set\+Logging\+Level}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Log\+::set\+Logging\+Level (
+\begin{DoxyParamCaption}
+\item[{const {\bf Repo\+Log\+Level} \&}]{level}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1lib_1_1_repo_log_a81089747b8922fdb2681f2c4263c98db}
+Configure how verbose the log should be The levels of verbosity are\+: T\+R\+A\+C\+E -\/ log all messages D\+E\+B\+U\+G -\/ log messages of level debug or above (use for debugging) I\+N\+F\+O -\/ log messages of level info or above (use to filter debugging messages but want informative logging) W\+A\+R\+N\+I\+N\+G -\/ log messages of level warning or above E\+R\+R\+O\+R -\/ log messages of level error or above F\+A\+T\+A\+L -\/ log messages of level fatal or above 
+\begin{DoxyParams}{Parameters}
+{\em level} & specify logging level \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1lib_1_1_repo_log_a7b938c8325a418ed59f743d0e7fa7c7d}{}\index{repo\+::lib\+::\+Repo\+Log@{repo\+::lib\+::\+Repo\+Log}!subscribe\+Broadcaster@{subscribe\+Broadcaster}}
+\index{subscribe\+Broadcaster@{subscribe\+Broadcaster}!repo\+::lib\+::\+Repo\+Log@{repo\+::lib\+::\+Repo\+Log}}
+\subsubsection[{subscribe\+Broadcaster}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Log\+::subscribe\+Broadcaster (
+\begin{DoxyParamCaption}
+\item[{{\bf Repo\+Broadcaster} $\ast$}]{broadcaster}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1lib_1_1_repo_log_a7b938c8325a418ed59f743d0e7fa7c7d}
+Subscribe the given broadcaster to the logging system 
+\begin{DoxyParams}{Parameters}
+{\em broadcaster} & the broadcaster to subscribe \\
+\hline
+\end{DoxyParams}
+\hypertarget{classrepo_1_1lib_1_1_repo_log_a82b7b3ff9930e5b35408785f2e0ed8a6}{}\index{repo\+::lib\+::\+Repo\+Log@{repo\+::lib\+::\+Repo\+Log}!subscribe\+Listeners@{subscribe\+Listeners}}
+\index{subscribe\+Listeners@{subscribe\+Listeners}!repo\+::lib\+::\+Repo\+Log@{repo\+::lib\+::\+Repo\+Log}}
+\subsubsection[{subscribe\+Listeners}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Log\+::subscribe\+Listeners (
+\begin{DoxyParamCaption}
+\item[{const std\+::vector$<$ {\bf Repo\+Abstract\+Listener} $\ast$ $>$ \&}]{listeners}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1lib_1_1_repo_log_a82b7b3ff9930e5b35408785f2e0ed8a6}
+Subscribe a Repo\+Abstract\+Lister to logging messages 
+\begin{DoxyParams}{Parameters}
+{\em listener} & object to subscribe \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/lib/repo\+\_\+log.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/lib/repo\+\_\+log.\+cpp\end{DoxyCompactItemize}

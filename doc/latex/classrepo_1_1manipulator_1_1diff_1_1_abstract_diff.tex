@@ -1,0 +1,106 @@
+\hypertarget{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff}{}\section{repo\+:\+:manipulator\+:\+:diff\+:\+:Abstract\+Diff Class Reference}
+\label{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff}\index{repo\+::manipulator\+::diff\+::\+Abstract\+Diff@{repo\+::manipulator\+::diff\+::\+Abstract\+Diff}}
+Inheritance diagram for repo\+:\+:manipulator\+:\+:diff\+:\+:Abstract\+Diff\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hyperlink{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_a749b6fb18947b6bf78e6b1a59917ef86}{Abstract\+Diff} (const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$base, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$compare, const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{repo\+::core\+::model\+::\+Repo\+Scene\+::\+Graph\+Type} \&g\+Type)
+\item 
+\hyperlink{structrepo__diff__result__t}{repo\+\_\+diff\+\_\+result\+\_\+t} \hyperlink{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_aac1a749709ed41868bdcce6277a1039a}{getrepo\+\_\+diff\+\_\+result\+\_\+t\+For\+Base} ()
+\item 
+\hyperlink{structrepo__diff__result__t}{repo\+\_\+diff\+\_\+result\+\_\+t} \hyperlink{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_a1393fd4cade1766b43d2644990efbf14}{getrepo\+\_\+diff\+\_\+result\+\_\+t\+For\+Comp} ()
+\item 
+virtual bool \hyperlink{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_a0c1780f099a434120e65835bd1514ebf}{is\+Ok} (std\+::string \&msg) const =0
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_a8802318cb00d911138bb22e7ca174d32}{}const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ {\bfseries base\+Scene}\label{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_a8802318cb00d911138bb22e7ca174d32}
+
+\item 
+\hypertarget{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_a78910dd93c9a275198113faf6f2f99be}{}const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene}{repo\+::core\+::model\+::\+Repo\+Scene} $\ast$ {\bfseries compare\+Scene}\label{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_a78910dd93c9a275198113faf6f2f99be}
+
+\item 
+\hypertarget{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_ac2d749de6ca04418cdaa8ea8f7f0b2c0}{}const \hyperlink{classrepo_1_1core_1_1model_1_1_repo_scene_aefcacd6eb4c7774ac1bfe3a6b223337c}{repo\+::core\+::model\+::\+Repo\+Scene\+::\+Graph\+Type} {\bfseries g\+Type}\label{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_ac2d749de6ca04418cdaa8ea8f7f0b2c0}
+
+\item 
+\hypertarget{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_aafc9a406ae0d81c3fa22ce360f6ae977}{}\hyperlink{structrepo__diff__result__t}{repo\+\_\+diff\+\_\+result\+\_\+t} {\bfseries base\+Res}\label{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_aafc9a406ae0d81c3fa22ce360f6ae977}
+
+\item 
+\hypertarget{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_a76f8b662a075357d1b2700fdff728764}{}\hyperlink{structrepo__diff__result__t}{repo\+\_\+diff\+\_\+result\+\_\+t} {\bfseries comp\+Res}\label{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_a76f8b662a075357d1b2700fdff728764}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_a749b6fb18947b6bf78e6b1a59917ef86}{}\index{repo\+::manipulator\+::diff\+::\+Abstract\+Diff@{repo\+::manipulator\+::diff\+::\+Abstract\+Diff}!Abstract\+Diff@{Abstract\+Diff}}
+\index{Abstract\+Diff@{Abstract\+Diff}!repo\+::manipulator\+::diff\+::\+Abstract\+Diff@{repo\+::manipulator\+::diff\+::\+Abstract\+Diff}}
+\subsubsection[{Abstract\+Diff}]{\setlength{\rightskip}{0pt plus 5cm}Abstract\+Diff\+::\+Abstract\+Diff (
+\begin{DoxyParamCaption}
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{base, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Scene} $\ast$}]{compare, }
+\item[{const {\bf repo\+::core\+::model\+::\+Repo\+Scene\+::\+Graph\+Type} \&}]{g\+Type}
+\end{DoxyParamCaption}
+)}\label{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_a749b6fb18947b6bf78e6b1a59917ef86}
+Construct a diff comparator given the 2 scenes supplied 
+\begin{DoxyParams}{Parameters}
+{\em base} & base scene to compare from \\
+\hline
+{\em compare} & scene to compare against \\
+\hline
+{\em g\+Type} & graph type to diff \\
+\hline
+\end{DoxyParams}
+
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_aac1a749709ed41868bdcce6277a1039a}{}\index{repo\+::manipulator\+::diff\+::\+Abstract\+Diff@{repo\+::manipulator\+::diff\+::\+Abstract\+Diff}!getrepo\+\_\+diff\+\_\+result\+\_\+t\+For\+Base@{getrepo\+\_\+diff\+\_\+result\+\_\+t\+For\+Base}}
+\index{getrepo\+\_\+diff\+\_\+result\+\_\+t\+For\+Base@{getrepo\+\_\+diff\+\_\+result\+\_\+t\+For\+Base}!repo\+::manipulator\+::diff\+::\+Abstract\+Diff@{repo\+::manipulator\+::diff\+::\+Abstract\+Diff}}
+\subsubsection[{getrepo\+\_\+diff\+\_\+result\+\_\+t\+For\+Base}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+\_\+diff\+\_\+result\+\_\+t} repo\+::manipulator\+::diff\+::\+Abstract\+Diff\+::getrepo\+\_\+diff\+\_\+result\+\_\+t\+For\+Base (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_aac1a749709ed41868bdcce6277a1039a}
+Obtain the diff result in the perspective of the base scene \begin{DoxyReturn}{Returns}
+return the diff result for base scene 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_a1393fd4cade1766b43d2644990efbf14}{}\index{repo\+::manipulator\+::diff\+::\+Abstract\+Diff@{repo\+::manipulator\+::diff\+::\+Abstract\+Diff}!getrepo\+\_\+diff\+\_\+result\+\_\+t\+For\+Comp@{getrepo\+\_\+diff\+\_\+result\+\_\+t\+For\+Comp}}
+\index{getrepo\+\_\+diff\+\_\+result\+\_\+t\+For\+Comp@{getrepo\+\_\+diff\+\_\+result\+\_\+t\+For\+Comp}!repo\+::manipulator\+::diff\+::\+Abstract\+Diff@{repo\+::manipulator\+::diff\+::\+Abstract\+Diff}}
+\subsubsection[{getrepo\+\_\+diff\+\_\+result\+\_\+t\+For\+Comp}]{\setlength{\rightskip}{0pt plus 5cm}{\bf repo\+\_\+diff\+\_\+result\+\_\+t} repo\+::manipulator\+::diff\+::\+Abstract\+Diff\+::getrepo\+\_\+diff\+\_\+result\+\_\+t\+For\+Comp (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_a1393fd4cade1766b43d2644990efbf14}
+Obtain the diff result in the perspective of the compare scene \begin{DoxyReturn}{Returns}
+return the diff result for compare scene 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_a0c1780f099a434120e65835bd1514ebf}{}\index{repo\+::manipulator\+::diff\+::\+Abstract\+Diff@{repo\+::manipulator\+::diff\+::\+Abstract\+Diff}!is\+Ok@{is\+Ok}}
+\index{is\+Ok@{is\+Ok}!repo\+::manipulator\+::diff\+::\+Abstract\+Diff@{repo\+::manipulator\+::diff\+::\+Abstract\+Diff}}
+\subsubsection[{is\+Ok}]{\setlength{\rightskip}{0pt plus 5cm}virtual bool repo\+::manipulator\+::diff\+::\+Abstract\+Diff\+::is\+Ok (
+\begin{DoxyParamCaption}
+\item[{std\+::string \&}]{msg}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [pure virtual]}}\label{classrepo_1_1manipulator_1_1diff_1_1_abstract_diff_a0c1780f099a434120e65835bd1514ebf}
+Check if comparator functioned fine 
+\begin{DoxyParams}{Parameters}
+{\em msg} & error message should boolean returns false \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns true if comparator operated successfully 
+\end{DoxyReturn}
+
+
+Implemented in \hyperlink{classrepo_1_1manipulator_1_1diff_1_1_diff_by_shared_i_d_afc3b71c3c85050b703c6ca3412c275e2}{repo\+::manipulator\+::diff\+::\+Diff\+By\+Shared\+I\+D}, and \hyperlink{classrepo_1_1manipulator_1_1diff_1_1_diff_by_name_a4cb80e41c9543f130903d83d43d78f98}{repo\+::manipulator\+::diff\+::\+Diff\+By\+Name}.
+
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/manipulator/diff/repo\+\_\+diff\+\_\+abstract.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/manipulator/diff/repo\+\_\+diff\+\_\+abstract.\+cpp\end{DoxyCompactItemize}

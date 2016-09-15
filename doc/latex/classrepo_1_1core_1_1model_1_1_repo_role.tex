@@ -1,0 +1,258 @@
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_role}{}\section{repo\+:\+:core\+:\+:model\+:\+:Repo\+Role Class Reference}
+\label{classrepo_1_1core_1_1model_1_1_repo_role}\index{repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}}
+Inheritance diagram for repo\+:\+:core\+:\+:model\+:\+:Repo\+Role\+:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=3.000000cm]{classrepo_1_1core_1_1model_1_1_repo_role}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_role_af9ddc044e897b262065504697e87d756}{}{\bfseries Repo\+Role} (\hyperlink{classrepo_1_1core_1_1model_1_1_repo_b_s_o_n}{Repo\+B\+S\+O\+N} bson)\label{classrepo_1_1core_1_1model_1_1_repo_role_af9ddc044e897b262065504697e87d756}
+
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_role}{Repo\+Role} \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_abdb1f705fc8aa347ffdfbb382fa36160}{clone\+And\+Update\+Permissions} (const std\+::vector$<$ \hyperlink{structrepo_1_1core_1_1model_1_1_repo_permission}{Repo\+Permission} $>$ \&permissions) const 
+\item 
+\hyperlink{classrepo_1_1core_1_1model_1_1_repo_role}{Repo\+Role} \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_ac4e6810785f991ba81a93303237755b8}{clone\+And\+Update\+Privileges} (const std\+::vector$<$ \hyperlink{structrepo_1_1core_1_1model_1_1_repo_privilege}{Repo\+Privilege} $>$ \&privileges) const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_a81cff4cca13d027e88e7020338b004f3}{get\+Database} () const 
+\item 
+std\+::vector$<$ std\+::pair$<$ std\+::string, std\+::string $>$ $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_a6b7b3309caf6cd2bf0aec3b3f8ed68a4}{get\+Inherited\+Roles} () const 
+\item 
+std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_ac57aefb6a3ae9fdf9f7796d604a674ac}{get\+Name} () const 
+\item 
+std\+::vector$<$ \hyperlink{structrepo_1_1core_1_1model_1_1_repo_privilege}{Repo\+Privilege} $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_a6e4e64c76b02513aef77ab5f4af9ff59}{get\+Privileges} () const 
+\item 
+std\+::unordered\+\_\+map$<$ std\+::string, \hyperlink{structrepo_1_1core_1_1model_1_1_repo_privilege}{Repo\+Privilege} $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_a793296fd3b70c40528bb30550f71c4b9}{get\+Privileges\+Mapped} () const 
+\item 
+std\+::vector$<$ \hyperlink{structrepo_1_1core_1_1model_1_1_repo_permission}{Repo\+Permission} $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_a8058f6f6ac80ec95a6306a18e761b9eb}{get\+Project\+Access\+Rights} () const 
+\end{DoxyCompactItemize}
+\subsection*{Static Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+static std\+::string \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_a258f33ddeaf2335b1aabdcc59ba5521e}{db\+Action\+To\+String} (const D\+B\+Actions \&action)
+\item 
+static std\+::vector$<$ std\+::string $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_ae59519f477d028545399dbe2a68a95f8}{db\+Actions\+To\+Strings} (const std\+::vector$<$ D\+B\+Actions $>$ \&actions)
+\item 
+static D\+B\+Actions \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_a8f8e3344e117cced8a36b12096a360b4}{string\+To\+D\+B\+Action} (const std\+::string \&action)
+\item 
+static std\+::vector$<$ D\+B\+Actions $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_af58cbbb10e2278d1f50eb963b8701ee9}{strings\+To\+D\+B\+Actions} (const std\+::vector$<$ std\+::string $>$ \&strings)
+\item 
+static std\+::vector$<$ \hyperlink{structrepo_1_1core_1_1model_1_1_repo_privilege}{Repo\+Privilege} $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_a8978e7154d7f5acaa0db07c21084429b}{translate\+Permissions} (const std\+::vector$<$ \hyperlink{structrepo_1_1core_1_1model_1_1_repo_permission}{Repo\+Permission} $>$ \&permissions)
+\item 
+static std\+::vector$<$ \hyperlink{structrepo_1_1core_1_1model_1_1_repo_permission}{Repo\+Permission} $>$ \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_a1fa588241e2ad568d144cd2684c0b652}{translate\+Privileges} (const std\+::vector$<$ \hyperlink{structrepo_1_1core_1_1model_1_1_repo_privilege}{Repo\+Privilege} $>$ \&permissions)
+\item 
+static void \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role_ab6690ec79ef6ce80db77814b84b4537d}{update\+Actions} (const std\+::string \&collection\+Type, const Access\+Right \&permission, std\+::vector$<$ D\+B\+Actions $>$ \&vec)
+\item 
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_role_a613bd0dc586e4f104a2015cd497fb8b3}{}static std\+::unordered\+\_\+map$<$ std\+::string, \hyperlink{structrepo_1_1core_1_1model_1_1_repo_privilege}{Repo\+Privilege} $>$ {\bfseries get\+Privileges\+Mapped} (const std\+::vector$<$ \hyperlink{structrepo_1_1core_1_1model_1_1_repo_privilege}{Repo\+Privilege} $>$ \&ps)\label{classrepo_1_1core_1_1model_1_1_repo_role_a613bd0dc586e4f104a2015cd497fb8b3}
+
+\end{DoxyCompactItemize}
+\subsection*{Additional Inherited Members}
+
+
+\subsection{Member Function Documentation}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_role_abdb1f705fc8aa347ffdfbb382fa36160}{}\index{repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}!clone\+And\+Update\+Permissions@{clone\+And\+Update\+Permissions}}
+\index{clone\+And\+Update\+Permissions@{clone\+And\+Update\+Permissions}!repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}}
+\subsubsection[{clone\+And\+Update\+Permissions}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+Role} Repo\+Role\+::clone\+And\+Update\+Permissions (
+\begin{DoxyParamCaption}
+\item[{const std\+::vector$<$ {\bf Repo\+Permission} $>$ \&}]{permissions}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_role_abdb1f705fc8aa347ffdfbb382fa36160}
+-\/-\/-\/------ Pretentious Edit functions -\/-\/-\/-\/-\/------ Make a copy of this role and update the access rights on the new role N\+O\+T\+E1\+: this function does N\+O\+T alter the existing \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role}{Repo\+Role} N\+O\+T\+E2\+: if the role already has privilege on the project in question the privileges will be overwritten! N\+O\+T\+E3\+: Access rights that used to exist but not specified in this list will be removed 
+\begin{DoxyParams}{Parameters}
+{\em permissions} & new permissions list \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns the cloned and updated \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role}{Repo\+Role} 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_role_ac4e6810785f991ba81a93303237755b8}{}\index{repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}!clone\+And\+Update\+Privileges@{clone\+And\+Update\+Privileges}}
+\index{clone\+And\+Update\+Privileges@{clone\+And\+Update\+Privileges}!repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}}
+\subsubsection[{clone\+And\+Update\+Privileges}]{\setlength{\rightskip}{0pt plus 5cm}{\bf Repo\+Role} Repo\+Role\+::clone\+And\+Update\+Privileges (
+\begin{DoxyParamCaption}
+\item[{const std\+::vector$<$ {\bf Repo\+Privilege} $>$ \&}]{privileges}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_role_ac4e6810785f991ba81a93303237755b8}
+Make a copy of the role and alter privileges to the set provided 
+\begin{DoxyParams}{Parameters}
+{\em privileges} & new privileges \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns the cloned and updated \hyperlink{classrepo_1_1core_1_1model_1_1_repo_role}{Repo\+Role} 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_role_ae59519f477d028545399dbe2a68a95f8}{}\index{repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}!db\+Actions\+To\+Strings@{db\+Actions\+To\+Strings}}
+\index{db\+Actions\+To\+Strings@{db\+Actions\+To\+Strings}!repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}}
+\subsubsection[{db\+Actions\+To\+Strings}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ std\+::string $>$ Repo\+Role\+::db\+Actions\+To\+Strings (
+\begin{DoxyParamCaption}
+\item[{const std\+::vector$<$ D\+B\+Actions $>$ \&}]{actions}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [static]}}\label{classrepo_1_1core_1_1model_1_1_repo_role_ae59519f477d028545399dbe2a68a95f8}
+Convert a given D\+B\+Action vector to a vector of string commands 
+\begin{DoxyParams}{Parameters}
+{\em actions} & the vector of D\+B\+Action enums to convert from \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+vector of strings that represents the D\+B\+Actions 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_role_a258f33ddeaf2335b1aabdcc59ba5521e}{}\index{repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}!db\+Action\+To\+String@{db\+Action\+To\+String}}
+\index{db\+Action\+To\+String@{db\+Action\+To\+String}!repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}}
+\subsubsection[{db\+Action\+To\+String}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string Repo\+Role\+::db\+Action\+To\+String (
+\begin{DoxyParamCaption}
+\item[{const D\+B\+Actions \&}]{action}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [static]}}\label{classrepo_1_1core_1_1model_1_1_repo_role_a258f33ddeaf2335b1aabdcc59ba5521e}
+Convert a given D\+B\+Action to a string command 
+\begin{DoxyParams}{Parameters}
+{\em action} & the D\+B\+Action enum to convert from \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+a string that represents the D\+B\+Action, empty string if unknown action 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_role_a81cff4cca13d027e88e7020338b004f3}{}\index{repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}!get\+Database@{get\+Database}}
+\index{get\+Database@{get\+Database}!repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}}
+\subsubsection[{get\+Database}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+Role\+::get\+Database (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_role_a81cff4cca13d027e88e7020338b004f3}
+-\/-\/-\/------ Convenience functions -\/-\/-\/-\/-\/------ Get the name of the database which this role belongs to \begin{DoxyReturn}{Returns}
+returns the name of the database 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_role_a6b7b3309caf6cd2bf0aec3b3f8ed68a4}{}\index{repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}!get\+Inherited\+Roles@{get\+Inherited\+Roles}}
+\index{get\+Inherited\+Roles@{get\+Inherited\+Roles}!repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}}
+\subsubsection[{get\+Inherited\+Roles}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ std\+::pair$<$ std\+::string, std\+::string $>$ $>$ Repo\+Role\+::get\+Inherited\+Roles (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_role_a6b7b3309caf6cd2bf0aec3b3f8ed68a4}
+Get the list of roles this role inherited as a vector of \{database, role\} \begin{DoxyReturn}{Returns}
+returns a vector of pairs \{database, role\} 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_role_ac57aefb6a3ae9fdf9f7796d604a674ac}{}\index{repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}!get\+Name@{get\+Name}}
+\index{get\+Name@{get\+Name}!repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}}
+\subsubsection[{get\+Name}]{\setlength{\rightskip}{0pt plus 5cm}std\+::string repo\+::core\+::model\+::\+Repo\+Role\+::get\+Name (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_role_ac57aefb6a3ae9fdf9f7796d604a674ac}
+Get the name of the role \begin{DoxyReturn}{Returns}
+returns the name of the role 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_role_a6e4e64c76b02513aef77ab5f4af9ff59}{}\index{repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}!get\+Privileges@{get\+Privileges}}
+\index{get\+Privileges@{get\+Privileges}!repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}}
+\subsubsection[{get\+Privileges}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf Repo\+Privilege} $>$ Repo\+Role\+::get\+Privileges (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const}\label{classrepo_1_1core_1_1model_1_1_repo_role_a6e4e64c76b02513aef77ab5f4af9ff59}
+Get the list of privileges as a vector \begin{DoxyReturn}{Returns}
+returns a vector of privileges 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_role_a793296fd3b70c40528bb30550f71c4b9}{}\index{repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}!get\+Privileges\+Mapped@{get\+Privileges\+Mapped}}
+\index{get\+Privileges\+Mapped@{get\+Privileges\+Mapped}!repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}}
+\subsubsection[{get\+Privileges\+Mapped}]{\setlength{\rightskip}{0pt plus 5cm}std\+::unordered\+\_\+map$<$std\+::string, {\bf Repo\+Privilege}$>$ repo\+::core\+::model\+::\+Repo\+Role\+::get\+Privileges\+Mapped (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_role_a793296fd3b70c40528bb30550f71c4b9}
+Get the list of privileges as a map of database.\+collection, privileges \begin{DoxyReturn}{Returns}
+returns a map of privileges 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_role_a8058f6f6ac80ec95a6306a18e761b9eb}{}\index{repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}!get\+Project\+Access\+Rights@{get\+Project\+Access\+Rights}}
+\index{get\+Project\+Access\+Rights@{get\+Project\+Access\+Rights}!repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}}
+\subsubsection[{get\+Project\+Access\+Rights}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<${\bf Repo\+Permission}$>$ repo\+::core\+::model\+::\+Repo\+Role\+::get\+Project\+Access\+Rights (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+) const\hspace{0.3cm}{\ttfamily [inline]}}\label{classrepo_1_1core_1_1model_1_1_repo_role_a8058f6f6ac80ec95a6306a18e761b9eb}
+Get the list of project access rights as a vector \begin{DoxyReturn}{Returns}
+returns a vector of permissions 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_role_af58cbbb10e2278d1f50eb963b8701ee9}{}\index{repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}!strings\+To\+D\+B\+Actions@{strings\+To\+D\+B\+Actions}}
+\index{strings\+To\+D\+B\+Actions@{strings\+To\+D\+B\+Actions}!repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}}
+\subsubsection[{strings\+To\+D\+B\+Actions}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ D\+B\+Actions $>$ Repo\+Role\+::strings\+To\+D\+B\+Actions (
+\begin{DoxyParamCaption}
+\item[{const std\+::vector$<$ std\+::string $>$ \&}]{strings}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [static]}}\label{classrepo_1_1core_1_1model_1_1_repo_role_af58cbbb10e2278d1f50eb963b8701ee9}
+Given a vector of strings representing db\+Actions, returns a vector of corresponding enum\+Types 
+\begin{DoxyParams}{Parameters}
+{\em actions} & vector of actions in strings \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns vector of action types in D\+B\+Actions 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_role_a8f8e3344e117cced8a36b12096a360b4}{}\index{repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}!string\+To\+D\+B\+Action@{string\+To\+D\+B\+Action}}
+\index{string\+To\+D\+B\+Action@{string\+To\+D\+B\+Action}!repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}}
+\subsubsection[{string\+To\+D\+B\+Action}]{\setlength{\rightskip}{0pt plus 5cm}D\+B\+Actions Repo\+Role\+::string\+To\+D\+B\+Action (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{action}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [static]}}\label{classrepo_1_1core_1_1model_1_1_repo_role_a8f8e3344e117cced8a36b12096a360b4}
+Given a string representing a db\+Action, returns the enum\+Type 
+\begin{DoxyParams}{Parameters}
+{\em action} & action in string \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns Action type in D\+B\+Action 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_role_a8978e7154d7f5acaa0db07c21084429b}{}\index{repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}!translate\+Permissions@{translate\+Permissions}}
+\index{translate\+Permissions@{translate\+Permissions}!repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}}
+\subsubsection[{translate\+Permissions}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf Repo\+Privilege} $>$ Repo\+Role\+::translate\+Permissions (
+\begin{DoxyParamCaption}
+\item[{const std\+::vector$<$ {\bf Repo\+Permission} $>$ \&}]{permissions}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [static]}}\label{classrepo_1_1core_1_1model_1_1_repo_role_a8978e7154d7f5acaa0db07c21084429b}
+Translate \hyperlink{structrepo_1_1core_1_1model_1_1_repo_permission}{Repo\+Permission} of projects into Repo\+Privileges for collections 
+\begin{DoxyParams}{Parameters}
+{\em permission} & a vector of permissions to translate \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a vector of privileges for the corresponding collections 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_role_a1fa588241e2ad568d144cd2684c0b652}{}\index{repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}!translate\+Privileges@{translate\+Privileges}}
+\index{translate\+Privileges@{translate\+Privileges}!repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}}
+\subsubsection[{translate\+Privileges}]{\setlength{\rightskip}{0pt plus 5cm}std\+::vector$<$ {\bf Repo\+Permission} $>$ Repo\+Role\+::translate\+Privileges (
+\begin{DoxyParamCaption}
+\item[{const std\+::vector$<$ {\bf Repo\+Privilege} $>$ \&}]{permissions}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [static]}}\label{classrepo_1_1core_1_1model_1_1_repo_role_a1fa588241e2ad568d144cd2684c0b652}
+Translate \hyperlink{structrepo_1_1core_1_1model_1_1_repo_permission}{Repo\+Permission} of projects into Repo\+Privileges for collections 
+\begin{DoxyParams}{Parameters}
+{\em permission} & a vector of permissions to translate \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+returns a vector of privileges for the corresponding collections 
+\end{DoxyReturn}
+\hypertarget{classrepo_1_1core_1_1model_1_1_repo_role_ab6690ec79ef6ce80db77814b84b4537d}{}\index{repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}!update\+Actions@{update\+Actions}}
+\index{update\+Actions@{update\+Actions}!repo\+::core\+::model\+::\+Repo\+Role@{repo\+::core\+::model\+::\+Repo\+Role}}
+\subsubsection[{update\+Actions}]{\setlength{\rightskip}{0pt plus 5cm}void Repo\+Role\+::update\+Actions (
+\begin{DoxyParamCaption}
+\item[{const std\+::string \&}]{collection\+Type, }
+\item[{const Access\+Right \&}]{permission, }
+\item[{std\+::vector$<$ D\+B\+Actions $>$ \&}]{vec}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily [static]}}\label{classrepo_1_1core_1_1model_1_1_repo_role_ab6690ec79ef6ce80db77814b84b4537d}
+Update the vector of actions with the appropriate action gien the access information 
+\begin{DoxyParams}{Parameters}
+{\em collection\+Type} & the type of collection in question (e.\+g \char`\"{}history\char`\"{}, \char`\"{}scene\char`\"{}, \char`\"{}issues\char`\"{}) \\
+\hline
+{\em permission} & the access right for this collection type \\
+\hline
+{\em vec} & the vector to update \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/core/model/bson/repo\+\_\+bson\+\_\+role.\+h\item 
+C\+:/\+Users/\+Carmen/3\+D Repo/\+Repo/3drepobouncer/bouncer/src/repo/core/model/bson/repo\+\_\+bson\+\_\+role.\+cpp\end{DoxyCompactItemize}
