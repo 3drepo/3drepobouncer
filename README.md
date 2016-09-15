@@ -15,6 +15,9 @@ This project is Copyright of [3D Repo Ltd](http://3drepo.org), a company registe
 ### Contributing
 We very much encourage contributions to the 3D Repo project. Firstly, fork the desired repository and commit your modifications there. Once happy with the changes, you can generate a [pull request](https://help.github.com/articles/using-pull-requests/) and our team will integrate it upstream after a review.
 
+### API Documentation
+Doxygen documentation can be found [here](http://3drepo.github.io/3drepobouncer/doc/html/)
+
 Your pull requests should:
 
 1. Follow the style of the existing code
