@@ -37,6 +37,7 @@ const static std::string simpleModel = "cube.obj";
 const static std::string texturedModel = "texturedPlane.dae";
 const static std::string texturedModel2 = "texturedPlane2.dae"; //With Texture
 const static std::string badExtensionFile = "cube.exe";
+const static std::string ifcModel = "duplex.ifc";
 
 const static std::string emptyFile = "empty.json";
 const static std::string emptyJSONFile = "empty2.json";
