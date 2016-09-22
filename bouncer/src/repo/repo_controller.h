@@ -453,7 +453,9 @@ namespace repo{
 		bool commitScene(
 			const RepoToken                     *token,
 			repo::core::model::RepoScene        *scene,
-			const std::string                   &owner = "");
+			const std::string                   &owner = "",
+			const std::string                      &tag = "",
+			const std::string                      &desc = "");
 
 		/**
 		* Insert a binary file into the database (GridFS)
