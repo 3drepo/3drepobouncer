@@ -157,6 +157,11 @@ TEST(RepoClientTest, UploadTest)
 	std::string texUpload = produceUploadArgs(db, "textured", getDataPath(texturedModel));
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(texUpload));
 	EXPECT_TRUE(projectExists(db, "textured"));
+
+	//Upload IFCFile
+	std::string ifcUpload = produceUploadArgs(db, "ifcTest", getDataPath(ifcModel));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(ifcUpload));
+	EXPECT_TRUE(projectExists(db, "ifcTest"));
 }
 
 TEST(RepoClientTest, CreateFedTest)

@@ -133,9 +133,9 @@ bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
 		std::vector<std::vector<float>> boundingBox;
 		for (int j = 0; j < allVertices[i].size(); j += 3)
 		{
-			vertices.push_back({ allVertices[i][j] - offset[0], allVertices[i][j + 1] - offset[1], allVertices[i][j + 2] - offset[2] });
+			vertices.push_back({ (float)(allVertices[i][j] - offset[0]), (float)(allVertices[i][j + 1] - offset[1]), (float)(allVertices[i][j + 2] - offset[2]) });
 			if (allNormals[i].size())
-				normals.push_back({ allNormals[i][j], allNormals[i][j + 1], allNormals[i][j + 2] });
+				normals.push_back({ (float)allNormals[i][j], (float)allNormals[i][j + 1], (float)allNormals[i][j + 2] });
 
 			auto vertex = vertices.back();
 			if (j == 0)
@@ -157,7 +157,7 @@ bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
 
 		for (int j = 0; j < allUVs[i].size(); j += 2)
 		{
-			uvs.push_back({ allUVs[i][j], allUVs[i][j + 1] });
+			uvs.push_back({ (float)allUVs[i][j], (float)allUVs[i][j + 1] });
 		}
 
 		std::vector < std::vector<repo_vector2d_t>> uvChannels;
