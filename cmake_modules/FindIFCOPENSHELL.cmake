@@ -32,11 +32,11 @@ if(DEFINED ENV{IFCOPENSHELL_ROOT})
 		PATHS
 		${IFCOPENSHELL_ROOT}/lib
 	)	
-	find_library(IFCOPENSHELL_PARSE_LIBRARIES_DEBUG NAMES IfcParse_d
+	find_library(IFCOPENSHELL_PARSE_LIBRARIES_DEBUG NAMES IfcParse_d IfcParse
 		PATHS
 		${IFCOPENSHELL_ROOT}/lib
 	)
-	find_library(IFCOPENSHELL_GEOM_LIBRARIES_DEBUG NAMES IfcGeom_d
+find_library(IFCOPENSHELL_GEOM_LIBRARIES_DEBUG NAMES IfcGeom_d IfcGeom
 		PATHS
 		${IFCOPENSHELL_ROOT}/lib
 	)
@@ -74,14 +74,14 @@ else(IFCOPENSHELL_INCLUDE_DIR AND IFCOPENSHELL_PARSERLIB AND IFCOPENSHELL_GEOMLI
     	/opt/local/lib/
     )
 	
-	find_library(IFCOPENSHELL_PARSE_LIBRARIES_DEBUG NAMES IfcParse_d
+	find_library(IFCOPENSHELL_PARSE_LIBRARIES_DEBUG NAMES IfcParse_d IfcParse
     	PATHS
     	/usr/lib/
     	/usr/local/lib/
     	/opt/local/lib/
     )
 	
-	find_library(IFCOPENSHELL_GEOM_LIBRARIES_DEBUG NAMES IfcGeom_d
+	find_library(IFCOPENSHELL_GEOM_LIBRARIES_DEBUG NAMES IfcGeom_d IfcGeom
     	PATHS
     	/usr/lib/
     	/usr/local/lib/
