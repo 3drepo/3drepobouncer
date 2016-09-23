@@ -69,10 +69,10 @@ if(OCCT_INCLUDE_DIR AND OCCT_LIBRARIES)
 	set(OCCT_FOUND TRUE)
 
 else(OCCT_INCLUDE_DIR AND OCCT_LIBRARIES)
-	find_path(OCCT_INCLUDE_DIR gp_pnt.hxx 
-		/usr/include
-		/usr/local/include
-		/opt/local/include
+	find_path(OCCT_INCLUDE_DIR gp_Pnt.hxx 
+		/usr/include/opencascade
+		/usr/local/include/opencascade
+		/opt/local/include/opencascade
     )
 
 	foreach(libName ${OCCT_LIB_NAMES})
@@ -101,6 +101,8 @@ endif(OCCT_INCLUDE_DIR AND OCCT_LIBRARIES)
 
 
 
+	message(STATUS "OCCT_INCLUDE_DIR: ${OCCT_INCLUDE_DIR}")
+	message(STATUS "OCCT_LIBRARIES: ${OCCT_LIBRARIES}")
 if(OCCT_INCLUDE_DIR AND OCCT_LIBRARIES)
 	set(OCCTM_FOUND TRUE)
 	message(STATUS "OCCT installation found.")
