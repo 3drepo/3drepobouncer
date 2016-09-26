@@ -409,7 +409,7 @@ namespace repo{
 				*/
 				void setDatabaseAndProjectName(std::string newDatabaseName, std::string newProjectName)
 				{
-					databaseName = sanitizeName(newDatabaseName);
+					databaseName = sanitizeDatabaseName(newDatabaseName);
 					projectName = sanitizeName(newProjectName);
 				}
 

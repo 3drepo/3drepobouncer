@@ -774,6 +774,11 @@ bool RepoScene::commitStash(
 	*/
 
 	repoUUID rev;
+	if (!handler)
+	{
+		errMsg += "Cannot commit stash graph - nullptr to database handler.";
+		return false;
+	}
 	if (!revNode)
 	{
 		errMsg += "Revision node not found, make sure the default scene graph is commited";
@@ -799,6 +804,7 @@ bool RepoScene::commitStash(
 		}
 
 		auto success = commitNodes(handler, nodes, GraphType::OPTIMIZED, errMsg);
+
 		if (success)
 			updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
 
