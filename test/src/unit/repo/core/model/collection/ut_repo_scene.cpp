@@ -26,6 +26,7 @@
 #include <repo/core/model/collection/repo_scene.h>
 
 #include "../../../../repo_test_utils.h"
+#include "../../../../repo_test_database_info.h"
 
 using namespace repo::core::model;
 
@@ -253,4 +254,19 @@ TEST(RepoSceneTest, AddAndClearStashGraph)
 	EXPECT_FALSE(scene.hasRoot(stashGraph));
 	EXPECT_FALSE(scene.hasRoot(RepoScene::GraphType::DEFAULT));
 	EXPECT_EQ(nullptr, scene.getRoot(stashGraph));
+}
+
+TEST(RepoSceneTest, CommitScene)
+{
+	RepoScene scene;
+	std::string errMsg;
+	std::string commitUser = "me";
+
+	//Commiting an empty scene should fail (fails on empty project/database name)
+	EXPECT_FALSE(scene.commit(getHandler(), errMsg, commitUser));
+	EXPECT_FALSE(errMsg.empty());
+
+	scene.setDatabaseAndProjectName("sceneCommit", "test1");
+	EXPECT_FALSE(scene.commit(getHandler(), errMsg, commitUser));
+	EXPECT_FALSE(errMsg.empty());
 }
