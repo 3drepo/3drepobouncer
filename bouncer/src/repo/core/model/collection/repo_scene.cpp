@@ -497,6 +497,12 @@ bool RepoScene::commit(
 		return false;
 	}
 
+	if (!graph.rootNode)
+	{
+		errMsg = "Cannot commit to the database - Scene is empty!.";
+		return false;
+	}
+
 	if (success &= commitProjectSettings(handler, errMsg, userName))
 	{
 		repoInfo << "Commited project settings, commiting revision...";
@@ -1456,7 +1462,6 @@ void RepoScene::reorientateDirectXModel()
 				worldOffset[2] = -worldOffset[1];
 				worldOffset[1] = temp;
 			}
-			
 		}
 		else
 		{

@@ -16,7 +16,7 @@
 */
 
 #pragma once
-
+#include <repo/core/handler/repo_database_handler_mongo.h>
 #include <repo/core/model/bson/repo_bson_builder.h>
 #include <boost/filesystem.hpp>
 
@@ -60,6 +60,15 @@ const static std::vector<repoUUID> uuidsToSearch = { stringToUUID("0ab45528-9258
 const static std::pair<std::string, std::string> REPO_GTEST_DROPCOL_TESTCASE = { "sampleDataRW", "collectionToDrop" };
 const static std::string REPO_GTEST_RAWFILE_FETCH_TEST = "5be1aca9-e4d0-4cec-987d-80d2fde3dade3DrepoBIM_obj";
 const static size_t REPO_GTEST_RAWFILE_FETCH_SIZE = 6050508;
+
+static repo::core::handler::MongoDatabaseHandler* getHandler()
+{
+	std::string errMsg;
+	return 	repo::core::handler::MongoDatabaseHandler::getHandler(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+		1,
+		REPO_GTEST_AUTH_DATABASE,
+		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+}
 
 static std::string getClientExePath()
 {
