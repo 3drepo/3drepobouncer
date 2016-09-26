@@ -265,8 +265,43 @@ TEST(RepoSceneTest, CommitScene)
 	//Commiting an empty scene should fail (fails on empty project/database name)
 	EXPECT_FALSE(scene.commit(getHandler(), errMsg, commitUser));
 	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
 
 	scene.setDatabaseAndProjectName("sceneCommit", "test1");
 	EXPECT_FALSE(scene.commit(getHandler(), errMsg, commitUser));
 	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+
+	RepoNodeSet transNodes;
+	RepoNodeSet meshNodes, empty;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+
+	auto t1 = new TransformationNode(makeRandomNode(root->getSharedID(), getRandomString(rand() % 10 + 1)));
+
+	auto m1 = new MeshNode(makeRandomNode(t1->getSharedID()));
+	auto m2 = new MeshNode(makeRandomNode(t1->getSharedID()));
+
+	transNodes.insert(root);
+	transNodes.insert(t1);
+
+	meshNodes.insert(m1);
+	meshNodes.insert(m2);
+
+	RepoScene scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+	scene2.setDatabaseAndProjectName("sceneCommit", "test2");
+	EXPECT_FALSE(scene2.commit(nullptr, errMsg, commitUser));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+
+	std::string commitMsg = "this is a commit message for this commit.";
+	std::string commitTag = "test";
+
+	EXPECT_TRUE(scene2.commit(getHandler(), errMsg, commitUser, commitMsg, commitTag));
+	EXPECT_TRUE(errMsg.empty());
+
+	EXPECT_TRUE(scene2.isRevisioned());
+	EXPECT_EQ(scene2.getOwner(), commitUser);
+	EXPECT_EQ(scene2.getTag(), commitTag);
+	EXPECT_EQ(scene2.getMessage(), commitMsg);
 }
