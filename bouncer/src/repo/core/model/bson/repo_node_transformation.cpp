@@ -70,6 +70,27 @@ RepoNode TransformationNode::cloneAndApplyTransformation(
 	return TransformationNode(RepoBSON(builder.obj(), bigFiles));
 }
 
+TransformationNode TransformationNode::cloneAndResetMatrix() const
+{
+	RepoNode resultNode;
+	RepoBSONBuilder builder;
+
+	RepoBSONBuilder rows;
+	for (uint32_t i = 0; i < 4; ++i)
+	{
+		RepoBSONBuilder columns;
+		for (uint32_t j = 0; j < 4; ++j){
+			columns << std::to_string(j) << (i == j ? 1.0 : 0.0);
+		}
+		rows.appendArray(std::to_string(i), columns.obj());
+	}
+	builder.appendArray(REPO_NODE_LABEL_MATRIX, rows.obj());
+
+	builder.appendElementsUnique(*this);
+
+	return TransformationNode(RepoBSON(builder.obj(), bigFiles));
+}
+
 std::vector<std::vector<float>> TransformationNode::identityMat()
 {
 	std::vector<std::vector<float>> idMat;
