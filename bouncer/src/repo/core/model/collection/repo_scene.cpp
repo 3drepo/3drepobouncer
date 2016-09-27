@@ -497,6 +497,12 @@ bool RepoScene::commit(
 		return false;
 	}
 
+	if (!graph.rootNode)
+	{
+		errMsg = "Cannot commit to the database - Scene is empty!.";
+		return false;
+	}
+
 	if (success &= commitProjectSettings(handler, errMsg, userName))
 	{
 		repoInfo << "Commited project settings, commiting revision...";
@@ -768,6 +774,11 @@ bool RepoScene::commitStash(
 	*/
 
 	repoUUID rev;
+	if (!handler)
+	{
+		errMsg += "Cannot commit stash graph - nullptr to database handler.";
+		return false;
+	}
 	if (!revNode)
 	{
 		errMsg += "Revision node not found, make sure the default scene graph is commited";
@@ -793,6 +804,7 @@ bool RepoScene::commitStash(
 		}
 
 		auto success = commitNodes(handler, nodes, GraphType::OPTIMIZED, errMsg);
+
 		if (success)
 			updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
 
@@ -1456,7 +1468,6 @@ void RepoScene::reorientateDirectXModel()
 				worldOffset[2] = -worldOffset[1];
 				worldOffset[1] = temp;
 			}
-			
 		}
 		else
 		{

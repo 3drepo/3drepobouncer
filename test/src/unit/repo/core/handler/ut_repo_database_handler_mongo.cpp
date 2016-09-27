@@ -22,15 +22,6 @@
 
 using namespace repo::core::handler;
 
-MongoDatabaseHandler* getHandler()
-{
-	std::string errMsg;
-	return 	MongoDatabaseHandler::getHandler(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
-		1,
-		REPO_GTEST_AUTH_DATABASE,
-		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
-}
-
 TEST(MongoDatabaseHandlerTest, GetHandlerDisconnectHandler)
 {
 	std::string errMsg;

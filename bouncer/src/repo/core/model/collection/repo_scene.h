@@ -335,6 +335,32 @@ namespace repo{
 						return "";
 				}
 
+				/**
+				* If the scene is revisioned, get the tag associated with the revision
+				* if the reivison is not tagged or the scene is not revisioned, return empty string
+				* @return returns the tag, or empty string.
+				*/
+				std::string getTag() const
+				{
+					if (revNode)
+						return revNode->getTag();
+					else
+						return "";
+				}
+
+				/**
+				* If the scene is revisioned, get the commit message associated with the revision
+				* if the reivison does not have a commit message or the scene is not revisioned, return empty string
+				* @return returns the tag, or empty string.
+				*/
+				std::string getMessage() const
+				{
+					if (revNode)
+						return revNode->getMessage();
+					else
+						return "";
+				}
+
 				static std::vector<std::string> getProjectExtensions()
 				{
 					return collectionsInProject;
@@ -383,7 +409,7 @@ namespace repo{
 				*/
 				void setDatabaseAndProjectName(std::string newDatabaseName, std::string newProjectName)
 				{
-					databaseName = sanitizeName(newDatabaseName);
+					databaseName = sanitizeDatabaseName(newDatabaseName);
 					projectName = sanitizeName(newProjectName);
 				}
 

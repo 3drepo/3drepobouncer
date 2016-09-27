@@ -26,6 +26,7 @@
 #include <repo/core/model/collection/repo_scene.h>
 
 #include "../../../../repo_test_utils.h"
+#include "../../../../repo_test_database_info.h"
 
 using namespace repo::core::model;
 
@@ -253,4 +254,122 @@ TEST(RepoSceneTest, AddAndClearStashGraph)
 	EXPECT_FALSE(scene.hasRoot(stashGraph));
 	EXPECT_FALSE(scene.hasRoot(RepoScene::GraphType::DEFAULT));
 	EXPECT_EQ(nullptr, scene.getRoot(stashGraph));
+}
+
+TEST(RepoSceneTest, CommitScene)
+{
+	RepoScene scene;
+	std::string errMsg;
+	std::string commitUser = "me";
+
+	//Commiting an empty scene should fail (fails on empty project/database name)
+	EXPECT_FALSE(scene.commit(getHandler(), errMsg, commitUser));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+
+	scene.setDatabaseAndProjectName("sceneCommit", "test1");
+	EXPECT_FALSE(scene.commit(getHandler(), errMsg, commitUser));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+
+	RepoNodeSet transNodes;
+	RepoNodeSet meshNodes, empty;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+
+	auto t1 = new TransformationNode(makeRandomNode(root->getSharedID(), getRandomString(rand() % 10 + 1)));
+
+	auto m1 = new MeshNode(makeRandomNode(t1->getSharedID()));
+	auto m2 = new MeshNode(makeRandomNode(t1->getSharedID()));
+
+	transNodes.insert(root);
+	transNodes.insert(t1);
+
+	meshNodes.insert(m1);
+	meshNodes.insert(m2);
+
+	RepoScene scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+	scene2.setDatabaseAndProjectName("sceneCommit", "test2");
+	EXPECT_FALSE(scene2.commit(nullptr, errMsg, commitUser));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+
+	std::string commitMsg = "this is a commit message for this commit.";
+	std::string commitTag = "test";
+
+	EXPECT_TRUE(scene2.commit(getHandler(), errMsg, commitUser, commitMsg, commitTag));
+	EXPECT_TRUE(errMsg.empty());
+
+	EXPECT_TRUE(scene2.isRevisioned());
+	EXPECT_EQ(scene2.getOwner(), commitUser);
+	EXPECT_EQ(scene2.getTag(), commitTag);
+	EXPECT_EQ(scene2.getMessage(), commitMsg);
+}
+
+TEST(RepoSceneTest, CommitStash)
+{
+	RepoScene scene;
+	std::string errMsg;
+	EXPECT_FALSE(scene.commitStash(getHandler(), errMsg));
+	errMsg.clear();
+
+	RepoNodeSet transNodes, transNodes2;
+	RepoNodeSet meshNodes, meshNodes2, empty;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+
+	auto t1 = new TransformationNode(makeRandomNode(root->getSharedID(), getRandomString(rand() % 10 + 1)));
+
+	auto m1 = new MeshNode(makeRandomNode(t1->getSharedID()));
+	auto m2 = new MeshNode(makeRandomNode(t1->getSharedID()));
+
+	transNodes.insert(root);
+	transNodes.insert(t1);
+
+	meshNodes.insert(m1);
+	meshNodes.insert(m2);
+
+	transNodes2.insert(new TransformationNode(*root));
+	transNodes2.insert(new TransformationNode(*t1));
+
+	meshNodes2.insert(new MeshNode(*m1));
+	meshNodes2.insert(new MeshNode(*m2));
+
+	RepoScene scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+	scene2.setDatabaseAndProjectName("stashCommit", "test");
+	ASSERT_TRUE(scene2.commit(getHandler(), errMsg, "blah"));
+	errMsg.clear();
+	//Empty stash shouldn't have commit but should return true(apparently)
+	EXPECT_TRUE(scene2.commitStash(getHandler(), errMsg));
+	errMsg.clear();
+	scene2.addStashGraph(empty, meshNodes2, empty, empty, transNodes2);
+	EXPECT_FALSE(scene2.commitStash(nullptr, errMsg));
+	errMsg.clear();
+	EXPECT_TRUE(scene2.commitStash(getHandler(), errMsg));
+}
+
+TEST(RepoSceneTest, GetSetDatabaseProjectName)
+{
+	RepoScene scene;
+	EXPECT_TRUE(scene.getDatabaseName().empty());
+	EXPECT_TRUE(scene.getProjectName().empty());
+	std::string dbName = "dbName1245";
+	std::string projName = "dbprobabba";
+	scene.setDatabaseAndProjectName(dbName, projName);
+	EXPECT_EQ(dbName, scene.getDatabaseName());
+	EXPECT_EQ(projName, scene.getProjectName());
+
+	RepoScene scene2(dbName, projName);
+	EXPECT_EQ(dbName, scene2.getDatabaseName());
+	EXPECT_EQ(projName, scene2.getProjectName());
+
+	std::string badDbName = "system.h$<>:|/\.a?";
+	std::string badProjName = "p r o j e c t$...";
+	scene2.setDatabaseAndProjectName(badDbName, badProjName);
+	EXPECT_EQ("system_h_______a_", scene2.getDatabaseName());
+	EXPECT_EQ("p_r_o_j_e_c_t____", scene2.getProjectName());
+
+	RepoScene scene3(badDbName, badProjName);
+	EXPECT_EQ("system_h_______a_", scene3.getDatabaseName());
+	EXPECT_EQ("p_r_o_j_e_c_t____", scene3.getProjectName());
 }
