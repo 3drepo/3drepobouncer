@@ -16,7 +16,7 @@ releaseTag = "v1.3.3"
 
 #name
 projName = "3drepobouncer"
-bouncerdll = "3drepobouncer_1_3_3.dll"
+bouncerdll = "3drepobouncer_1_3_6.dll"
 
 #Visual Studio Version (Tag as you expect to type to -G on Cmake)
 vsVersion = "\"Visual Studio 12 Win64\""
