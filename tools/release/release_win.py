@@ -64,7 +64,7 @@ os.system("rmdir \""+ workSpaceDir + "\" /S /Q")
 
 #Copy libraries
 fpMongodll = os.environ["MONGO_ROOT"] + "\\lib\\" + mongodll
-fpAssimpdll = os.environ["ASSIMP_ROOT"] + "\\lib\\" + assimpdll
+fpAssimpdll = os.environ["ASSIMP_ROOT"] + "\\bin\\" + assimpdll
 
 os.system("copy \"" + fpMongodll + "\" \"" + installDir + "\\bin\"")
 os.system("copy \"" + fpAssimpdll + "\" \"" + installDir + "\\bin\"")
