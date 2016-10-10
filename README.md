@@ -27,7 +27,7 @@ Doxygen documentation can be found [here](http://3drepo.github.io/3drepobouncer/
 Dependencies
 ------------
 3DRepoBouncer relies on the following libraries:
-* [Boost Library v1.55.0+](http://www.boost.org/)  
+* [Boost Library v1.55.0 - v1.58.0](http://www.boost.org/)  
 See also [pre-built binaries for Windows](http://sourceforge.net/projects/boost/files/boost-binaries/)
 and [modular Boost](https://svn.boost.org/trac/boost/wiki/ModularBoost)
 on [GitHub](https://github.com/boostorg)
