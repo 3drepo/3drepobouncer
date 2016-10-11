@@ -47,7 +47,6 @@ RepoScene::RepoScene(
 	const std::string &issuesExt,
 	const std::string &srcExt,
 	const std::string &gltfExt,
-	const std::string &x3dExt,
 	const std::string &jsonExt)
 	: AbstractGraph(database, projectName),
 	sceneExt(sanitizeExt(sceneExt)),
@@ -57,7 +56,6 @@ RepoScene::RepoScene(
 	issuesExt(sanitizeExt(issuesExt)),
 	srcExt(sanitizeExt(srcExt)),
 	gltfExt(sanitizeExt(gltfExt)),
-	x3dExt(sanitizeExt(x3dExt)),
 	jsonExt(sanitizeExt(jsonExt)),
 	headRevision(true),
 	unRevisioned(false),
@@ -88,7 +86,6 @@ RepoScene::RepoScene(
 	const std::string              &issuesExt,
 	const std::string              &srcExt,
 	const std::string              &gltfExt,
-	const std::string              &x3dExt,
 	const std::string              &jsonExt
 	)
 	: AbstractGraph("", ""),
@@ -99,7 +96,6 @@ RepoScene::RepoScene(
 	issuesExt(sanitizeExt(issuesExt)),
 	srcExt(sanitizeExt(srcExt)),
 	gltfExt(sanitizeExt(gltfExt)),
-	x3dExt(sanitizeExt(x3dExt)),
 	jsonExt(sanitizeExt(jsonExt)),
 	headRevision(true),
 	unRevisioned(true),

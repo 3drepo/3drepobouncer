@@ -79,22 +79,6 @@ bool WebModelExport::exportToFile(
 		}
 	}
 
-	for (const auto &buff : buffers.x3dFiles)
-	{
-		std::string fname = sanitizeFileName(buff.first);
-		boostPath /= fname;
-		FILE* fp = fopen(boostPath.string().c_str(), "wb");
-		if (fp)
-		{
-			fwrite(buff.second.data(), sizeof(*buff.second.data()), buff.second.size(), fp);
-			fclose(fp);
-		}
-		else
-		{
-			repoError << "Failed to open file for writing: " << fname;
-		}
-	}
-
 	for (const auto &buff : buffers.jsonFiles)
 	{
 		std::string fname = sanitizeFileName(buff.first);

@@ -116,11 +116,11 @@ TEST(RepoSceneTest, AddMetadata)
 	RepoNodeSet metaNodes;
 	RepoNodeSet empty;
 
-	auto root = TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto root = TransformationNode(makeRandomNode(getRandomString(rand() % 100 + 1)));
 
-	auto t1 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 10 + 1)));
-	auto t2 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 10 + 1)));
-	auto t3 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 10 + 1)));
+	auto t1 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 100 + 1)));
+	auto t2 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 100 + 1)));
+	auto t3 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 100 + 1)));
 
 	auto m1 = MeshNode(makeRandomNode(t1.getSharedID()));
 	auto m2 = MeshNode(makeRandomNode(t1.getSharedID()));
@@ -372,4 +372,75 @@ TEST(RepoSceneTest, GetSetDatabaseProjectName)
 	RepoScene scene3(badDbName, badProjName);
 	EXPECT_EQ("system_h_______a_", scene3.getDatabaseName());
 	EXPECT_EQ("p_r_o_j_e_c_t____", scene3.getProjectName());
+}
+
+TEST(RepoSceneTest, getExtensions)
+{
+	RepoScene scene;
+	EXPECT_EQ(scene.getStashExtension(), REPO_COLLECTION_STASH_REPO);
+	EXPECT_EQ(scene.getRawExtension(), REPO_COLLECTION_RAW);
+	EXPECT_EQ(scene.getSRCExtension(), REPO_COLLECTION_STASH_SRC);
+	EXPECT_EQ(scene.getGLTFExtension(), REPO_COLLECTION_STASH_GLTF);
+	EXPECT_EQ(scene.getJSONExtension(), REPO_COLLECTION_STASH_JSON);
+
+	RepoScene scene2("db", "proj", "scene", "rev", "stash", "raw", "iss", "src", "gltf", "json");
+
+	EXPECT_EQ(scene2.getStashExtension(), "stash");
+	EXPECT_EQ(scene2.getRawExtension(), "raw");
+	EXPECT_EQ(scene2.getSRCExtension(), "src");
+	EXPECT_EQ(scene2.getGLTFExtension(), "gltf");
+	EXPECT_EQ(scene2.getJSONExtension(), "json");
+}
+
+TEST(RepoSceneTest, getSetRevisionID)
+{
+	RepoScene scene;
+	EXPECT_TRUE(scene.isHeadRevision());
+	repoUUID id = generateUUID();
+	scene.setRevision(id);
+	EXPECT_EQ(id, scene.getRevisionID());
+	EXPECT_FALSE(scene.isHeadRevision());
+}
+
+TEST(RepoSceneTest, getRevisionProperties)
+{
+	RepoScene scene;
+
+	EXPECT_TRUE(scene.getOwner().empty());
+	EXPECT_TRUE(scene.getTag().empty());
+	EXPECT_TRUE(scene.getMessage().empty());
+	EXPECT_TRUE(compareStdVectors(scene.getWorldOffset(), std::vector<double>({ 0, 0, 0 })));
+
+	//commit a scene and try again
+	std::string errMsg;
+	std::string commitUser = "me";
+	std::string commitMessage = "message for my commit";
+	std::string commitTag = "tagggg";
+
+	RepoNodeSet transNodes;
+	RepoNodeSet meshNodes, empty;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+
+	auto t1 = new TransformationNode(makeRandomNode(root->getSharedID(), getRandomString(rand() % 10 + 1)));
+
+	auto m1 = new MeshNode(makeRandomNode(t1->getSharedID()));
+	auto m2 = new MeshNode(makeRandomNode(t1->getSharedID()));
+
+	transNodes.insert(root);
+	transNodes.insert(t1);
+
+	meshNodes.insert(m1);
+	meshNodes.insert(m2);
+	std::vector<double> offset({ rand() / 1000., rand() / 1000., rand() / 1000. });
+
+	RepoScene scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+	scene2.setDatabaseAndProjectName("sceneCommit", "test2");
+	ASSERT_TRUE(scene2.commit(getHandler(), errMsg, commitUser, commitMessage, commitTag));
+
+	scene2.setWorldOffset(offset);
+	EXPECT_EQ(scene2.getOwner(), commitUser);
+	EXPECT_EQ(scene2.getTag(), commitTag);
+	EXPECT_EQ(scene2.getMessage(), commitMessage);
+	EXPECT_TRUE(compareStdVectors(scene2.getWorldOffset(), offset));
 }

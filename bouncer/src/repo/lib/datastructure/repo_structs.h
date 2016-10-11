@@ -24,7 +24,6 @@
 
 typedef struct {
 	std::unordered_map<std::string, std::vector<uint8_t>> geoFiles; //files where geometery are stored
-	std::unordered_map<std::string, std::vector<uint8_t>> x3dFiles; //back bone x3dom files
 	std::unordered_map<std::string, std::vector<uint8_t>> jsonFiles; //JSON mapping files
 }repo_web_buffers_t;
 

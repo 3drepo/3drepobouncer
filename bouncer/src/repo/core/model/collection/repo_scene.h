@@ -99,7 +99,6 @@ namespace repo{
 					const std::string                                  &issuesExt = REPO_COLLECTION_ISSUES,
 					const std::string                                  &srcExt = REPO_COLLECTION_STASH_SRC,
 					const std::string                                  &gltfExt = REPO_COLLECTION_STASH_GLTF,
-					const std::string                                  &x3dExt = REPO_COLLECTION_STASH_X3D,
 					const std::string                                  &jsonExt = REPO_COLLECTION_STASH_JSON);
 
 				/**
@@ -141,7 +140,6 @@ namespace repo{
 					const std::string              &issuesExt = REPO_COLLECTION_ISSUES,
 					const std::string              &srcExt = REPO_COLLECTION_STASH_SRC,
 					const std::string              &gltfExt = REPO_COLLECTION_STASH_GLTF,
-					const std::string              &x3dExt = REPO_COLLECTION_STASH_X3D,
 					const std::string              &jsonExt = REPO_COLLECTION_STASH_JSON);
 
 				/**
@@ -257,7 +255,7 @@ namespace repo{
 
 				/**
 				* Get stash extension for this project
-				* @return returns the src extension
+				* @return returns the repo stash extension
 				*/
 				std::string getStashExtension() const
 				{
@@ -289,15 +287,6 @@ namespace repo{
 				std::string getGLTFExtension() const
 				{
 					return gltfExt;
-				}
-
-				/**
-				* Get x3d extension for this project
-				* @return returns the x3d extension
-				*/
-				std::string getX3DExtension() const
-				{
-					return x3dExt;
 				}
 
 				/**
@@ -1081,7 +1070,6 @@ namespace repo{
 				std::string issuesExt;      /*! extension for issues*/
 				std::string srcExt;      /*! extension for SRC stash files*/
 				std::string gltfExt;      /*! extension for GLTF stash files*/
-				std::string x3dExt;      /*! extension for X3Dom backbone files*/
 				std::string jsonExt;      /*! extension for JSON graph metadata files*/
 				std::vector<std::string> refFiles;  //Original Files that created this scene
 				std::vector<RepoNode*> toRemove;
