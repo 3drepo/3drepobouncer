@@ -121,6 +121,13 @@ namespace repo {
 					const std::vector<float> &matrix) const;
 
 				/**
+				* Create a new object with the same values, but the transformation being reset
+				* identity matrix
+				* @return returns a new transformation node with identity matrix
+				*/
+				virtual TransformationNode cloneAndResetMatrix() const;
+
+				/**
 				* --------- Convenience functions -----------
 				*/
 

@@ -1,4 +1,4 @@
-3D Repo Bouncer Library v1.3.3
+3D Repo Bouncer Library v1.6.0
 
 This is the internal library used for 3D Repo GUI.
 
@@ -26,7 +26,20 @@ If you need any help, please contact support@3drepo.org, we
 look forward to hear from you.
 
 ========================= Improvements =========================
-* (ISSUE #131) Improvements to IFC Tree representation
+* (ISSUE #133) Bug Fix cross database federation
+* (ISSUE #138) User BSON values will no longer be lost when modified
+* (ISSUE #131, #137, #139, #140) Improved selection tree support
+* (ISSUE #141) Project settings values will no longer be lost when modified
+* (ISSUE #143) Command line file imports now accepts commit tag/description
+* (ISSUE #147) Fixed camera positions
+* (ISSUE #151) Fixed offset calculations on federated projects
+
+========================= New Features =========================
+* (ISSUE #132) Federation creation API exposed on client
+* (ISSUE #134) Ability to read/update user licensing  information
+* (ISSUE #136) FBX imports will be automatically rotated
+* (ISSUE #142) Supports "hidden by default" geometries
+* (ISSUE #144, #145, #152) Improved IFC geometry support
 
 
 
