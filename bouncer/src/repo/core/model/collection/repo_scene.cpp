@@ -1072,7 +1072,10 @@ bool RepoScene::loadRevision(
 	bool success = true;
 
 	if (!handler)
+	{
+		errMsg = "Cannot load revision with an empty database handler";
 		return false;
+	}
 
 	RepoBSON bson;
 	repoTrace << "loading revision : " << databaseName << "." << projectName << " head Revision: " << headRevision;
@@ -1107,7 +1110,11 @@ bool RepoScene::loadScene(
 	std::string &errMsg){
 	bool success = true;
 
-	if (!handler) return false;
+	if (!handler)
+	{
+		errMsg = "Cannot load revision with an empty database handler";
+		return false;
+	}
 
 	if (!revNode){
 		//try to load revision node first.

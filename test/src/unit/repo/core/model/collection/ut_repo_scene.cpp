@@ -130,6 +130,10 @@ TEST(RepoSceneTest, AddMetadata)
 	auto mm2 = MetadataNode(makeRandomNode(t2.getName()));
 	auto mm3 = MetadataNode(makeRandomNode(t3.getName()));
 
+	repoTrace << "t1 name: " << t1.getName();
+	repoTrace << "t2 name: " << t2.getName();
+	repoTrace << "t3 name: " << t3.getName();
+
 	transNodes.insert(new TransformationNode(t1));
 	transNodes.insert(new TransformationNode(t2));
 	transNodes.insert(new TransformationNode(t3));
@@ -155,6 +159,7 @@ TEST(RepoSceneTest, AddMetadata)
 		EXPECT_EQ(1, parents.size());
 		for (const auto &parent : parents)
 		{
+			repoTrace << "parent: " << UUIDtoString(parent);
 			auto node = scene2.getNodeBySharedID(RepoScene::GraphType::DEFAULT, parent);
 			EXPECT_EQ(NodeType::TRANSFORMATION, node->getTypeAsEnum());
 			EXPECT_EQ(s2meta->getName(), node->getName());
@@ -443,4 +448,116 @@ TEST(RepoSceneTest, getRevisionProperties)
 	EXPECT_EQ(scene2.getTag(), commitTag);
 	EXPECT_EQ(scene2.getMessage(), commitMessage);
 	EXPECT_TRUE(compareStdVectors(scene2.getWorldOffset(), offset));
+}
+
+TEST(RepoSceneTest, getSetBranchID)
+{
+	RepoScene scene;
+	EXPECT_EQ(UUIDtoString(scene.getBranchID()), REPO_HISTORY_MASTER_BRANCH);
+
+	repoUUID newBranch = generateUUID();
+	scene.setBranch(newBranch);
+
+	EXPECT_EQ(scene.getBranchID(), newBranch);
+}
+
+TEST(RepoSceneTest, setCommitMessage)
+{
+	RepoScene scene;
+	EXPECT_TRUE(scene.getMessage().empty());
+
+	auto message = getRandomString(rand() % 10 + 1);
+	scene.setCommitMessage(message);
+	EXPECT_EQ(scene.getMessage(), message);
+}
+
+TEST(RepoSceneTest, getBranchName)
+{
+	RepoScene scene;
+	EXPECT_EQ(scene.getBranchName(), "master");
+}
+
+TEST(RepoSceneTest, getViewGraph)
+{
+	RepoScene scene;
+
+	EXPECT_EQ(scene.getViewGraph(), RepoScene::GraphType::DEFAULT);
+
+	RepoNodeSet transNodes, transNodes2;
+	RepoNodeSet meshNodes, meshNodes2, empty;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+
+	auto t1 = new TransformationNode(makeRandomNode(root->getSharedID(), getRandomString(rand() % 10 + 1)));
+
+	auto m1 = new MeshNode(makeRandomNode(t1->getSharedID()));
+	auto m2 = new MeshNode(makeRandomNode(t1->getSharedID()));
+
+	transNodes.insert(root);
+	transNodes.insert(t1);
+
+	meshNodes.insert(m1);
+	meshNodes.insert(m2);
+
+	transNodes2.insert(new TransformationNode(*root));
+	transNodes2.insert(new TransformationNode(*t1));
+
+	meshNodes2.insert(new MeshNode(*m1));
+	meshNodes2.insert(new MeshNode(*m2));
+
+	RepoScene scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+	scene2.addStashGraph(empty, meshNodes2, empty, empty, transNodes2);
+
+	EXPECT_EQ(scene2.getViewGraph(), RepoScene::GraphType::OPTIMIZED);
+}
+
+TEST(RepoSceneTest, loadRevision)
+{
+	std::string errMsg;
+	EXPECT_FALSE(RepoScene().loadRevision(getHandler(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_TRUE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadRevision(getHandler(), errMsg));
+	EXPECT_TRUE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(RepoScene("nonexistantDatabase", "NonExistantProject").loadRevision(getHandler(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadRevision(nullptr, errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+}
+
+TEST(RepoSceneTest, loadScene)
+{
+	std::string errMsg;
+	EXPECT_FALSE(RepoScene().loadScene(getHandler(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_TRUE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadScene(getHandler(), errMsg));
+	EXPECT_TRUE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(RepoScene("nonexistantDatabase", "NonExistantProject").loadScene(getHandler(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadScene(nullptr, errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+}
+
+TEST(RepoSceneTest, loadStash)
+{
+	std::string errMsg;
+	EXPECT_FALSE(RepoScene().loadStash(getHandler(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_TRUE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadStash(getHandler(), errMsg));
+	EXPECT_TRUE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(RepoScene("nonexistantDatabase", "NonExistantProject").loadStash(getHandler(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadStash(nullptr, errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
 }

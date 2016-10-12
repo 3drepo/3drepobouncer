@@ -347,7 +347,7 @@ namespace repo{
 					if (revNode)
 						return revNode->getMessage();
 					else
-						return "";
+						return commitMsg;
 				}
 
 				static std::vector<std::string> getProjectExtensions()
