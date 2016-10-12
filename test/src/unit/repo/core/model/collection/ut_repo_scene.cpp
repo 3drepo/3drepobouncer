@@ -561,3 +561,11 @@ TEST(RepoSceneTest, loadStash)
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
 }
+
+TEST(RepoSceneTest, updateRevisionStatus)
+{
+	RepoScene scene;
+
+	EXPECT_FALSE(scene.updateRevisionStatus(getHandler(), RevisionNode::UploadStatus::GEN_DEFAULT));
+	EXPECT_FALSE(scene.updateRevisionStatus(nullptr, RevisionNode::UploadStatus::GEN_DEFAULT));
+}

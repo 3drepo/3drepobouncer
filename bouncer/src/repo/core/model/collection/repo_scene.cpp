@@ -1540,10 +1540,11 @@ void RepoScene::shiftModel(
 	}
 }
 
-void RepoScene::updateRevisionStatus(
+bool RepoScene::updateRevisionStatus(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	const RevisionNode::UploadStatus &status)
 {
+	bool success = false;
 	if (revNode)
 	{
 		auto updatedRev = revNode->cloneAndUpdateStatus(status);
@@ -1552,7 +1553,11 @@ void RepoScene::updateRevisionStatus(
 		{
 			//update revision node
 			std::string errMsg;
-			handler->upsertDocument(databaseName, projectName + "." + revExt, updatedRev, true, errMsg);
+			success = handler->upsertDocument(databaseName, projectName + "." + revExt, updatedRev, true, errMsg);
+		}
+		else
+		{
+			repoError << "Cannot update revision status without a database handler";
 		}
 
 		revNode->swap(updatedRev);
@@ -1562,6 +1567,8 @@ void RepoScene::updateRevisionStatus(
 	{
 		repoError << "Trying to update the status of a revision when the scene is not revisioned!";
 	}
+
+	return success;
 }
 
 void RepoScene::printStatistics(std::iostream &output)

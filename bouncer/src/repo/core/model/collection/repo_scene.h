@@ -492,7 +492,7 @@ namespace repo{
 				* should a handler is supplied
 				* @param status status of the revision
 				*/
-				void updateRevisionStatus(
+				bool updateRevisionStatus(
 					repo::core::handler::AbstractDatabaseHandler *handler,
 					const RevisionNode::UploadStatus &status);
 
