@@ -26,87 +26,93 @@
   *  - node bouncer_worker.js
   */
 
+/*jshint esversion: 6 */
 
-var amqp = require('amqplib/callback_api')
-var conf = require('./config.js')
-var path = require('path');
-var exec = require('child_process').exec;
+() => {
+	"use strict";
 
+	const amqp = require("amqplib/callback_api");
+	const conf = require("./config.js");
+	const path = require("path");
+	const exec = require("child_process").exec;
 
-/**
- * Test that the client is working and
- * it is able to connect to the database
- * Takes a callback function to with 
- * indication of success or failure
- */
-function testClient(callback){
-	console.log("Checking status of client...");
-	exec(path.normalize(conf.bouncer.path) + ' ' + conf.bouncer.dbhost + ' ' + conf.bouncer.dbport + ' ' + conf.bouncer.username + ' ' + conf.bouncer.password + ' test', function(error, stdout, stderr){
-		if(error !== null){
-			console.log("bouncer call errored");
-			console.log(stdout);
+	/**
+	 * Test that the client is working and
+	 * it is able to connect to the database
+	 * Takes a callback function to with
+	 * indication of success or failure
+	 */
+	function testClient(callback){
+		console.log("Checking status of client...");
+
+		exec(path.normalize(conf.bouncer.path) + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " test", function(error, stdout, stderr){
+			if(error !== null){
+				console.log("bouncer call errored");
+				console.log(stdout);
+			}
+			else{
+				console.log("bouncer call passed");
+				callback();
+			}
+		});
+	}
+
+	/**
+	 * Execute the Command and provide a reply message to the callback function
+	 */
+	function exeCommand(cmd, rid, callback){
+		let logRootDir = conf.bouncer.log_dir;
+
+		if(logRootDir === null) {
+			logRootDir = "./log";
 		}
-		else{
-			console.log("bouncer call passed");
-			callback();
-		}
-	});
 
-}
+		let logDir = logRootDir + "/" +  rid.toString() + "/";
 
+		exec("REPO_LOG_DIR=" + logDir + " " +path.normalize(conf.bouncer.path) + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + cmd, function(error, stdout, stderr){
+			let reply = {};
 
-/**
- * Execute the Command and provide a reply message to the callback function
- */
-function exeCommand(cmd, rid, callback){
-	var logRootDir = conf.bouncer.log_dir;
-	if(logRootDir == null)
-		logRootDir = './log';
-	var logDir = logRootDir + "/" +  rid.toString() + "/";
+			if(error !== null){
+				reply.value = error.code;
+			}
+			else
+				reply.value = 0;
 
+			console.log("Executed command: " + path.normalize(conf.bouncer.path) + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + cmd, reply);
+			callback(JSON.stringify(reply));
+		});
+	}
 
-	exec('REPO_LOG_DIR=' + logDir +' '+path.normalize(conf.bouncer.path) + ' ' + conf.bouncer.dbhost + ' ' + conf.bouncer.dbport + ' ' + conf.bouncer.username + ' ' + conf.bouncer.password + ' ' + cmd, function(error, stdout, stderr){
-		var reply = {};
-		if(error != null){
-		
-			reply.value = error.code;
-		}
-		else
-			reply.value = 0;
+	function connectQ(){
+		amqp.connect(conf.rabbitmq.host, function(err,conn){
+			if(err !== null)
+			{
+				console.log("failed to establish connection to rabbit mq");
+			}
+			else
+			{
+				conn.createChannel(function(err, ch){
+					ch.assertExchange(conf.rabbitmq.callback_queue, 'direct', { durable: true });
 
-		console.log("Executed command: ", reply);
-		callback(JSON.stringify(reply));
-	});
-}
+					ch.assertQueue(conf.rabbitmq.worker_queue, {durable: true});
+					console.log("Bouncer Client Queue started. Waiting for messages in %s of %s....", conf.rabbitmq.worker_queue, conf.rabbitmq.host);
+					ch.prefetch(1);
+					ch.consume(conf.rabbitmq.worker_queue, function(msg){
+						console.log(" [x] Received %s", msg.content.toString());
 
-function connectQ(){
-	amqp.connect(conf.rabbitmq.host, function(err,conn){
-		if(err != null)
-		{
-			console.log("failed to establish connection to rabbit mq");
-		}
-		else
-		{
+						exeCommand(msg.content.toString(), msg.properties.correlationId, function(reply){
+							console.log("sending to reply queue(%s): %s", conf.rabbitmq.callback_queue, reply);
+							ch.publish(conf.rabbitmq.callback_queue, msg.properties.appId, new Buffer(reply),
+								{correlationId: msg.properties.correlationId});
+						});
+					}, {noAck: true});
+				});
+			}
+		});
+	}
 
-			conn.createChannel(function(err, ch){
-				ch.assertQueue(conf.rabbitmq.worker_queue, {durable: true});
-				console.log("Bouncer Client Queue started. Waiting for messages in %s of %s....", conf.rabbitmq.worker_queue, conf.rabbitmq.host);
-				ch.prefetch(1);
-				ch.consume(conf.rabbitmq.worker_queue, function(msg){
-					console.log(" [x] Received %s", msg.content.toString());
-					exeCommand(msg.content.toString(), msg.properties.correlationId, function(reply){
-						console.log("sending to reply queue(%s): %s", conf.rabbitmq.callback_queue, reply);
-						ch.sendToQueue(conf.rabbitmq.callback_queue, new Buffer(reply),
-							{correlationId: msg.properties.correlationId});	
-					});		
-				}, {noAck: true});
-			});
-		}
-	});
-}
+	console.log("Initialising bouncer client queue...");
+	testClient(connectQ);
 
-
-console.log("Initialising bouncer client queue...");
-testClient(connectQ);
-
+}();
 
