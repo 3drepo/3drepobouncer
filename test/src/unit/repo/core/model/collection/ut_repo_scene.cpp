@@ -568,4 +568,94 @@ TEST(RepoSceneTest, updateRevisionStatus)
 
 	EXPECT_FALSE(scene.updateRevisionStatus(getHandler(), RevisionNode::UploadStatus::GEN_DEFAULT));
 	EXPECT_FALSE(scene.updateRevisionStatus(nullptr, RevisionNode::UploadStatus::GEN_DEFAULT));
+
+	scene = RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
+	std::string errMsg;
+	scene.loadRevision(getHandler(), errMsg);
+	EXPECT_TRUE(scene.updateRevisionStatus(getHandler(), RevisionNode::UploadStatus::GEN_DEFAULT));
+	EXPECT_TRUE(scene.updateRevisionStatus(getHandler(), RevisionNode::UploadStatus::COMPLETE));
+}
+
+TEST(RepoSceneTest, printStats)
+{
+	RepoScene scene;
+	//Not much to test, just make sure it doesn't crash.
+	std::stringstream ss;
+	scene.printStatistics(ss);
+
+	scene = RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
+	scene.printStatistics(ss);
+}
+
+TEST(RepoSceneTest, abandonChild)
+{
+	RepoNodeSet transNodes, meshNodes, empty;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+
+	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
+
+	transNodes.insert(root);
+
+	meshNodes.insert(m1);
+
+	RepoScene scene(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+	auto parentIDs = m1->getParentIDs();
+	ASSERT_TRUE(std::find(parentIDs.begin(), parentIDs.end(), root->getSharedID()) != parentIDs.end());
+	auto children = scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, root->getSharedID());
+	ASSERT_TRUE(children.size() == 1 && children[0] == m1);
+
+	scene.abandonChild(RepoScene::GraphType::DEFAULT, root->getSharedID(), m1, false, false);
+
+	parentIDs = m1->getParentIDs();
+	EXPECT_TRUE(std::find(parentIDs.begin(), parentIDs.end(), root->getSharedID()) != parentIDs.end());
+	children = scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, root->getSharedID());
+	EXPECT_TRUE(children.size() == 1 && children[0] == m1);
+
+	scene.abandonChild(RepoScene::GraphType::DEFAULT, root->getSharedID(), m1, true, false);
+
+	parentIDs = m1->getParentIDs();
+	EXPECT_TRUE(std::find(parentIDs.begin(), parentIDs.end(), root->getSharedID()) != parentIDs.end());
+	children = scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, root->getSharedID());
+	EXPECT_FALSE(children.size());
+
+	scene.abandonChild(RepoScene::GraphType::DEFAULT, root->getSharedID(), m1, false, true);
+
+	parentIDs = m1->getParentIDs();
+	EXPECT_FALSE(std::find(parentIDs.begin(), parentIDs.end(), root->getSharedID()) != parentIDs.end());
+
+	scene.abandonChild(RepoScene::GraphType::DEFAULT, generateUUID(), m1, false, false); //shoudln't work with unrecognised parent
+	scene.abandonChild(RepoScene::GraphType::DEFAULT, root->getSharedID(), nullptr, false, false); //shoudln't work with unrecognised parent
+}
+
+TEST(RepoSceneTest, addInheritance)
+{
+	RepoNodeSet transNodes, meshNodes, empty;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+
+	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
+	auto m2 = new MeshNode(makeRandomNode(root->getSharedID()));
+
+	transNodes.insert(root);
+	meshNodes.insert(m1);
+	meshNodes.insert(m2);
+
+	RepoScene scene(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+
+	scene.addInheritance(RepoScene::GraphType::DEFAULT, nullptr, nullptr); //nothing should happen and should not crash
+	scene.addInheritance(RepoScene::GraphType::DEFAULT, generateUUID(), generateUUID()); //nothing should happen and should not crash
+
+	scene.addInheritance(RepoScene::GraphType::DEFAULT, root->getUniqueID(), m1->getUniqueID()); //this already exist
+	EXPECT_EQ(1, m1->getParentIDs().size());
+	EXPECT_EQ(2, scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, root->getSharedID()).size());
+
+	scene.addInheritance(RepoScene::GraphType::DEFAULT, m1->getUniqueID(), m2->getUniqueID());
+	auto parentIDs = m2->getParentIDs();
+	EXPECT_EQ(2, parentIDs.size());
+	EXPECT_TRUE(std::find(parentIDs.begin(), parentIDs.end(), m1->getSharedID()) != parentIDs.end());
+
+	auto childrenOfM1 = scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, m1->getSharedID());
+	EXPECT_EQ(1, childrenOfM1.size());
+	EXPECT_EQ(m2, childrenOfM1[0]);
 }
