@@ -118,9 +118,9 @@ TEST(RepoSceneTest, AddMetadata)
 
 	auto root = TransformationNode(makeRandomNode(getRandomString(rand() % 100 + 1)));
 
-	auto t1 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 100 + 1)));
-	auto t2 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 100 + 1)));
-	auto t3 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 100 + 1)));
+	auto t1 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 100 + 1) + root.getName()));
+	auto t2 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 100 + 1) + t1.getName()));
+	auto t3 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 100 + 1) + t2.getName()));
 
 	auto m1 = MeshNode(makeRandomNode(t1.getSharedID()));
 	auto m2 = MeshNode(makeRandomNode(t1.getSharedID()));
@@ -658,4 +658,62 @@ TEST(RepoSceneTest, addInheritance)
 	auto childrenOfM1 = scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, m1->getSharedID());
 	EXPECT_EQ(1, childrenOfM1.size());
 	EXPECT_EQ(m2, childrenOfM1[0]);
+}
+
+TEST(RepoSceneTest, getChildrenAsNodes)
+{
+	RepoNodeSet transNodes, meshNodes, empty;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+
+	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
+	auto m2 = new MeshNode(makeRandomNode(root->getSharedID()));
+
+	transNodes.insert(root);
+	meshNodes.insert(m1);
+	meshNodes.insert(m2);
+
+	RepoScene scene(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+
+	auto children = scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, root->getSharedID());
+	EXPECT_EQ(2, children.size());
+	EXPECT_TRUE(std::find(children.begin(), children.end(), m1) != children.end());
+	EXPECT_TRUE(std::find(children.begin(), children.end(), m2) != children.end());
+
+	EXPECT_EQ(0, scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, m1->getSharedID()).size());
+	EXPECT_EQ(0, scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, m2->getSharedID()).size());
+	EXPECT_EQ(0, scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, generateUUID()).size());
+
+	children = scene.getChildrenNodesFiltered(RepoScene::GraphType::DEFAULT, root->getSharedID(), NodeType::MESH);
+	EXPECT_EQ(2, children.size());
+	EXPECT_TRUE(std::find(children.begin(), children.end(), m1) != children.end());
+	EXPECT_TRUE(std::find(children.begin(), children.end(), m2) != children.end());
+
+	EXPECT_EQ(0, scene.getChildrenNodesFiltered(RepoScene::GraphType::DEFAULT, root->getSharedID(), NodeType::UNKNOWN).size());
+	EXPECT_EQ(0, scene.getChildrenNodesFiltered(RepoScene::GraphType::DEFAULT, root->getSharedID(), NodeType::TRANSFORMATION).size());
+}
+
+TEST(RepoSceneTest, getParentAsNodesFiltered)
+{
+	RepoNodeSet transNodes, meshNodes, empty;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+
+	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
+	auto m2 = new MeshNode(makeRandomNode(root->getSharedID()));
+
+	transNodes.insert(root);
+	meshNodes.insert(m1);
+	meshNodes.insert(m2);
+
+	RepoScene scene(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+
+	auto parents = scene.getParentNodesFiltered(RepoScene::GraphType::DEFAULT, nullptr, NodeType::MESH);
+	EXPECT_EQ(0, parents.size());
+
+	parents = scene.getParentNodesFiltered(RepoScene::GraphType::DEFAULT, m1, NodeType::TRANSFORMATION);
+	EXPECT_EQ(1, parents.size());
+	EXPECT_EQ(root, parents[0]);
+
+	EXPECT_EQ(0, scene.getParentNodesFiltered(RepoScene::GraphType::DEFAULT, m1, NodeType::MESH).size());
 }

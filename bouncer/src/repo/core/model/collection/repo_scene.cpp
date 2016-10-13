@@ -875,15 +875,23 @@ std::vector<RepoNode*> RepoScene::getParentNodesFiltered(
 	const RepoNode* node,
 	const NodeType &type) const
 {
-	std::vector<repoUUID> parentIDs = node->getParentIDs();
 	std::vector<RepoNode*> results;
-	for (const repoUUID &id : parentIDs)
+	if (node)
 	{
-		RepoNode* node = getNodeBySharedID(gType, id);
-		if (node && node->getTypeAsEnum() == type)
+		std::vector<repoUUID> parentIDs = node->getParentIDs();
+
+		for (const repoUUID &id : parentIDs)
 		{
-			results.push_back(node);
+			RepoNode* node = getNodeBySharedID(gType, id);
+			if (node && node->getTypeAsEnum() == type)
+			{
+				results.push_back(node);
+			}
 		}
+	}
+	else
+	{
+		repoError << "Trying to retrieve parent nodes from a null ptr child node";
 	}
 
 	return results;
