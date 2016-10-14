@@ -395,11 +395,8 @@ int32_t importFileAndCommit(
 	std::string project;
 	std::string configFile, owner, tag, desc;
 
-	boost::filesystem::path filePath(fileLoc);
-	std::string fileExt = filePath.extension().string();
-	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
-	bool rotate = fileExt == FBX_EXTENSION;;
 	bool success = true;
+	bool rotate = false;
 	if (usingSettingFiles)
 	{
 		//if we're using settles file then arg[1] must be file path
@@ -467,10 +464,15 @@ int32_t importFileAndCommit(
 		}
 	}
 
+	boost::filesystem::path filePath(fileLoc);
+	std::string fileExt = filePath.extension().string();
+	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
+	rotate |= fileExt == FBX_EXTENSION;
+
 	//FIXME: This is getting complicated, we should consider using boost::program_options and start utilising flags...
 	//Something like this: http://stackoverflow.com/questions/15541498/how-to-implement-subcommands-using-boost-program-options
 
-	repoLogDebug("File: " + fileLoc + " database: " + database
+	repoLog("File: " + fileLoc + " database: " + database
 		+ " project: " + project + " rotate:"
 		+ (rotate ? "true" : "false") + " owner :" + owner + " configFile: " + configFile);
 
