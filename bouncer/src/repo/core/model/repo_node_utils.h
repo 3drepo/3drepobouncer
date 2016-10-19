@@ -412,7 +412,7 @@ static std::vector<float> invertMat(const std::vector<float> &mat)
 static std::vector<float> matMult(const std::vector<float> &mat1, const std::vector<float> &mat2)
 {
 	std::vector<float> result;
-	if (mat1.size() != mat2.size() != 16)
+	if ((mat1.size() == mat2.size()) && mat1.size() == 16)
 	{
 		result.resize(16);
 
