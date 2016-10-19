@@ -69,15 +69,6 @@ namespace repo{
 				virtual std::unordered_map<std::string, std::vector<uint8_t>> getJSONFilesAsBuffer() const;
 
 				/**
-				* Return the X3D file as raw bytes buffer
-				* returns an empty map if the export has failed
-				*/
-				std::unordered_map<std::string, std::vector<uint8_t>> getX3DFilesAsBuffer() const
-				{
-					return x3dBufs;
-				}
-
-				/**
 				* Get supported file formats for this exporter
 				*/
 				static std::string getSupportedFormats();
@@ -96,7 +87,6 @@ namespace repo{
 				bool convertSuccess;
 				repo::core::model::RepoScene::GraphType gType;
 				std::unordered_map<std::string, repo::lib::PropertyTree> trees;
-				std::unordered_map<std::string, std::vector<uint8_t>> x3dBufs;
 				std::unordered_map<std::string, repo::lib::PropertyTree> jsonTrees;
 
 			private:

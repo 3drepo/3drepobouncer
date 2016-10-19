@@ -555,7 +555,7 @@ bool GLTFModelExport::generateTreeRepresentation()
 
 repo_web_buffers_t GLTFModelExport::getAllFilesExportedAsBuffer() const
 {
-	return{ getGLTFFilesAsBuffer(), getX3DFilesAsBuffer(), getJSONFilesAsBuffer() };
+	return{ getGLTFFilesAsBuffer(), getJSONFilesAsBuffer() };
 }
 
 std::unordered_map<std::string, std::vector<uint8_t>> GLTFModelExport::getGLTFFilesAsBuffer() const

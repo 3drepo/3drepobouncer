@@ -116,11 +116,11 @@ TEST(RepoSceneTest, AddMetadata)
 	RepoNodeSet metaNodes;
 	RepoNodeSet empty;
 
-	auto root = TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto root = TransformationNode(makeRandomNode(getRandomString(rand() % 100 + 1)));
 
-	auto t1 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 10 + 1)));
-	auto t2 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 10 + 1)));
-	auto t3 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 10 + 1)));
+	auto t1 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 100 + 1) + root.getName()));
+	auto t2 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 100 + 1) + t1.getName()));
+	auto t3 = TransformationNode(makeRandomNode(root.getSharedID(), getRandomString(rand() % 100 + 1) + t2.getName()));
 
 	auto m1 = MeshNode(makeRandomNode(t1.getSharedID()));
 	auto m2 = MeshNode(makeRandomNode(t1.getSharedID()));
@@ -129,6 +129,10 @@ TEST(RepoSceneTest, AddMetadata)
 	auto mm1 = MetadataNode(makeRandomNode(t1.getName()));
 	auto mm2 = MetadataNode(makeRandomNode(t2.getName()));
 	auto mm3 = MetadataNode(makeRandomNode(t3.getName()));
+
+	repoTrace << "t1 name: " << t1.getName();
+	repoTrace << "t2 name: " << t2.getName();
+	repoTrace << "t3 name: " << t3.getName();
 
 	transNodes.insert(new TransformationNode(t1));
 	transNodes.insert(new TransformationNode(t2));
@@ -155,6 +159,7 @@ TEST(RepoSceneTest, AddMetadata)
 		EXPECT_EQ(1, parents.size());
 		for (const auto &parent : parents)
 		{
+			repoTrace << "parent: " << UUIDtoString(parent);
 			auto node = scene2.getNodeBySharedID(RepoScene::GraphType::DEFAULT, parent);
 			EXPECT_EQ(NodeType::TRANSFORMATION, node->getTypeAsEnum());
 			EXPECT_EQ(s2meta->getName(), node->getName());
@@ -372,4 +377,343 @@ TEST(RepoSceneTest, GetSetDatabaseProjectName)
 	RepoScene scene3(badDbName, badProjName);
 	EXPECT_EQ("system_h_______a_", scene3.getDatabaseName());
 	EXPECT_EQ("p_r_o_j_e_c_t____", scene3.getProjectName());
+}
+
+TEST(RepoSceneTest, getExtensions)
+{
+	RepoScene scene;
+	EXPECT_EQ(scene.getStashExtension(), REPO_COLLECTION_STASH_REPO);
+	EXPECT_EQ(scene.getRawExtension(), REPO_COLLECTION_RAW);
+	EXPECT_EQ(scene.getSRCExtension(), REPO_COLLECTION_STASH_SRC);
+	EXPECT_EQ(scene.getGLTFExtension(), REPO_COLLECTION_STASH_GLTF);
+	EXPECT_EQ(scene.getJSONExtension(), REPO_COLLECTION_STASH_JSON);
+
+	RepoScene scene2("db", "proj", "scene", "rev", "stash", "raw", "iss", "src", "gltf", "json");
+
+	EXPECT_EQ(scene2.getStashExtension(), "stash");
+	EXPECT_EQ(scene2.getRawExtension(), "raw");
+	EXPECT_EQ(scene2.getSRCExtension(), "src");
+	EXPECT_EQ(scene2.getGLTFExtension(), "gltf");
+	EXPECT_EQ(scene2.getJSONExtension(), "json");
+}
+
+TEST(RepoSceneTest, getSetRevisionID)
+{
+	RepoScene scene;
+	EXPECT_TRUE(scene.isHeadRevision());
+	repoUUID id = generateUUID();
+	scene.setRevision(id);
+	EXPECT_EQ(id, scene.getRevisionID());
+	EXPECT_FALSE(scene.isHeadRevision());
+}
+
+TEST(RepoSceneTest, getRevisionProperties)
+{
+	RepoScene scene;
+
+	EXPECT_TRUE(scene.getOwner().empty());
+	EXPECT_TRUE(scene.getTag().empty());
+	EXPECT_TRUE(scene.getMessage().empty());
+	EXPECT_TRUE(compareStdVectors(scene.getWorldOffset(), std::vector<double>({ 0, 0, 0 })));
+
+	//commit a scene and try again
+	std::string errMsg;
+	std::string commitUser = "me";
+	std::string commitMessage = "message for my commit";
+	std::string commitTag = "tagggg";
+
+	RepoNodeSet transNodes;
+	RepoNodeSet meshNodes, empty;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+
+	auto t1 = new TransformationNode(makeRandomNode(root->getSharedID(), getRandomString(rand() % 10 + 1)));
+
+	auto m1 = new MeshNode(makeRandomNode(t1->getSharedID()));
+	auto m2 = new MeshNode(makeRandomNode(t1->getSharedID()));
+
+	transNodes.insert(root);
+	transNodes.insert(t1);
+
+	meshNodes.insert(m1);
+	meshNodes.insert(m2);
+	std::vector<double> offset({ rand() / 1000., rand() / 1000., rand() / 1000. });
+
+	RepoScene scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+	scene2.setDatabaseAndProjectName("sceneCommit", "test2");
+	ASSERT_TRUE(scene2.commit(getHandler(), errMsg, commitUser, commitMessage, commitTag));
+
+	scene2.setWorldOffset(offset);
+	EXPECT_EQ(scene2.getOwner(), commitUser);
+	EXPECT_EQ(scene2.getTag(), commitTag);
+	EXPECT_EQ(scene2.getMessage(), commitMessage);
+	EXPECT_TRUE(compareStdVectors(scene2.getWorldOffset(), offset));
+}
+
+TEST(RepoSceneTest, getSetBranchID)
+{
+	RepoScene scene;
+	EXPECT_EQ(UUIDtoString(scene.getBranchID()), REPO_HISTORY_MASTER_BRANCH);
+
+	repoUUID newBranch = generateUUID();
+	scene.setBranch(newBranch);
+
+	EXPECT_EQ(scene.getBranchID(), newBranch);
+}
+
+TEST(RepoSceneTest, setCommitMessage)
+{
+	RepoScene scene;
+	EXPECT_TRUE(scene.getMessage().empty());
+
+	auto message = getRandomString(rand() % 10 + 1);
+	scene.setCommitMessage(message);
+	EXPECT_EQ(scene.getMessage(), message);
+}
+
+TEST(RepoSceneTest, getBranchName)
+{
+	RepoScene scene;
+	EXPECT_EQ(scene.getBranchName(), "master");
+}
+
+TEST(RepoSceneTest, getViewGraph)
+{
+	RepoScene scene;
+
+	EXPECT_EQ(scene.getViewGraph(), RepoScene::GraphType::DEFAULT);
+
+	RepoNodeSet transNodes, transNodes2;
+	RepoNodeSet meshNodes, meshNodes2, empty;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+
+	auto t1 = new TransformationNode(makeRandomNode(root->getSharedID(), getRandomString(rand() % 10 + 1)));
+
+	auto m1 = new MeshNode(makeRandomNode(t1->getSharedID()));
+	auto m2 = new MeshNode(makeRandomNode(t1->getSharedID()));
+
+	transNodes.insert(root);
+	transNodes.insert(t1);
+
+	meshNodes.insert(m1);
+	meshNodes.insert(m2);
+
+	transNodes2.insert(new TransformationNode(*root));
+	transNodes2.insert(new TransformationNode(*t1));
+
+	meshNodes2.insert(new MeshNode(*m1));
+	meshNodes2.insert(new MeshNode(*m2));
+
+	RepoScene scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+	scene2.addStashGraph(empty, meshNodes2, empty, empty, transNodes2);
+
+	EXPECT_EQ(scene2.getViewGraph(), RepoScene::GraphType::OPTIMIZED);
+}
+
+TEST(RepoSceneTest, loadRevision)
+{
+	std::string errMsg;
+	EXPECT_FALSE(RepoScene().loadRevision(getHandler(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_TRUE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadRevision(getHandler(), errMsg));
+	EXPECT_TRUE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(RepoScene("nonexistantDatabase", "NonExistantProject").loadRevision(getHandler(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadRevision(nullptr, errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+}
+
+TEST(RepoSceneTest, loadScene)
+{
+	std::string errMsg;
+	EXPECT_FALSE(RepoScene().loadScene(getHandler(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_TRUE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadScene(getHandler(), errMsg));
+	EXPECT_TRUE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(RepoScene("nonexistantDatabase", "NonExistantProject").loadScene(getHandler(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadScene(nullptr, errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+}
+
+TEST(RepoSceneTest, loadStash)
+{
+	std::string errMsg;
+	EXPECT_FALSE(RepoScene().loadStash(getHandler(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_TRUE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadStash(getHandler(), errMsg));
+	EXPECT_TRUE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(RepoScene("nonexistantDatabase", "NonExistantProject").loadStash(getHandler(), errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+	EXPECT_FALSE(RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ).loadStash(nullptr, errMsg));
+	EXPECT_FALSE(errMsg.empty());
+	errMsg.clear();
+}
+
+TEST(RepoSceneTest, updateRevisionStatus)
+{
+	RepoScene scene;
+
+	EXPECT_FALSE(scene.updateRevisionStatus(getHandler(), RevisionNode::UploadStatus::GEN_DEFAULT));
+	EXPECT_FALSE(scene.updateRevisionStatus(nullptr, RevisionNode::UploadStatus::GEN_DEFAULT));
+
+	scene = RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
+	std::string errMsg;
+	scene.loadRevision(getHandler(), errMsg);
+	EXPECT_TRUE(scene.updateRevisionStatus(getHandler(), RevisionNode::UploadStatus::GEN_DEFAULT));
+	EXPECT_TRUE(scene.updateRevisionStatus(getHandler(), RevisionNode::UploadStatus::COMPLETE));
+}
+
+TEST(RepoSceneTest, printStats)
+{
+	RepoScene scene;
+	//Not much to test, just make sure it doesn't crash.
+	std::stringstream ss;
+	scene.printStatistics(ss);
+
+	scene = RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
+	scene.printStatistics(ss);
+}
+
+TEST(RepoSceneTest, abandonChild)
+{
+	RepoNodeSet transNodes, meshNodes, empty;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+
+	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
+
+	transNodes.insert(root);
+
+	meshNodes.insert(m1);
+
+	RepoScene scene(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+	auto parentIDs = m1->getParentIDs();
+	ASSERT_TRUE(std::find(parentIDs.begin(), parentIDs.end(), root->getSharedID()) != parentIDs.end());
+	auto children = scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, root->getSharedID());
+	ASSERT_TRUE(children.size() == 1 && children[0] == m1);
+
+	scene.abandonChild(RepoScene::GraphType::DEFAULT, root->getSharedID(), m1, false, false);
+
+	parentIDs = m1->getParentIDs();
+	EXPECT_TRUE(std::find(parentIDs.begin(), parentIDs.end(), root->getSharedID()) != parentIDs.end());
+	children = scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, root->getSharedID());
+	EXPECT_TRUE(children.size() == 1 && children[0] == m1);
+
+	scene.abandonChild(RepoScene::GraphType::DEFAULT, root->getSharedID(), m1, true, false);
+
+	parentIDs = m1->getParentIDs();
+	EXPECT_TRUE(std::find(parentIDs.begin(), parentIDs.end(), root->getSharedID()) != parentIDs.end());
+	children = scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, root->getSharedID());
+	EXPECT_FALSE(children.size());
+
+	scene.abandonChild(RepoScene::GraphType::DEFAULT, root->getSharedID(), m1, false, true);
+
+	parentIDs = m1->getParentIDs();
+	EXPECT_FALSE(std::find(parentIDs.begin(), parentIDs.end(), root->getSharedID()) != parentIDs.end());
+
+	scene.abandonChild(RepoScene::GraphType::DEFAULT, generateUUID(), m1, false, false); //shoudln't work with unrecognised parent
+	scene.abandonChild(RepoScene::GraphType::DEFAULT, root->getSharedID(), nullptr, false, false); //shoudln't work with unrecognised parent
+}
+
+TEST(RepoSceneTest, addInheritance)
+{
+	RepoNodeSet transNodes, meshNodes, empty;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+
+	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
+	auto m2 = new MeshNode(makeRandomNode(root->getSharedID()));
+
+	transNodes.insert(root);
+	meshNodes.insert(m1);
+	meshNodes.insert(m2);
+
+	RepoScene scene(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+
+	scene.addInheritance(RepoScene::GraphType::DEFAULT, nullptr, nullptr); //nothing should happen and should not crash
+	scene.addInheritance(RepoScene::GraphType::DEFAULT, generateUUID(), generateUUID()); //nothing should happen and should not crash
+
+	scene.addInheritance(RepoScene::GraphType::DEFAULT, root->getUniqueID(), m1->getUniqueID()); //this already exist
+	EXPECT_EQ(1, m1->getParentIDs().size());
+	EXPECT_EQ(2, scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, root->getSharedID()).size());
+
+	scene.addInheritance(RepoScene::GraphType::DEFAULT, m1->getUniqueID(), m2->getUniqueID());
+	auto parentIDs = m2->getParentIDs();
+	EXPECT_EQ(2, parentIDs.size());
+	EXPECT_TRUE(std::find(parentIDs.begin(), parentIDs.end(), m1->getSharedID()) != parentIDs.end());
+
+	auto childrenOfM1 = scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, m1->getSharedID());
+	EXPECT_EQ(1, childrenOfM1.size());
+	EXPECT_EQ(m2, childrenOfM1[0]);
+}
+
+TEST(RepoSceneTest, getChildrenAsNodes)
+{
+	RepoNodeSet transNodes, meshNodes, empty;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+
+	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
+	auto m2 = new MeshNode(makeRandomNode(root->getSharedID()));
+
+	transNodes.insert(root);
+	meshNodes.insert(m1);
+	meshNodes.insert(m2);
+
+	RepoScene scene(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+
+	auto children = scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, root->getSharedID());
+	EXPECT_EQ(2, children.size());
+	EXPECT_TRUE(std::find(children.begin(), children.end(), m1) != children.end());
+	EXPECT_TRUE(std::find(children.begin(), children.end(), m2) != children.end());
+
+	EXPECT_EQ(0, scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, m1->getSharedID()).size());
+	EXPECT_EQ(0, scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, m2->getSharedID()).size());
+	EXPECT_EQ(0, scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, generateUUID()).size());
+
+	children = scene.getChildrenNodesFiltered(RepoScene::GraphType::DEFAULT, root->getSharedID(), NodeType::MESH);
+	EXPECT_EQ(2, children.size());
+	EXPECT_TRUE(std::find(children.begin(), children.end(), m1) != children.end());
+	EXPECT_TRUE(std::find(children.begin(), children.end(), m2) != children.end());
+
+	EXPECT_EQ(0, scene.getChildrenNodesFiltered(RepoScene::GraphType::DEFAULT, root->getSharedID(), NodeType::UNKNOWN).size());
+	EXPECT_EQ(0, scene.getChildrenNodesFiltered(RepoScene::GraphType::DEFAULT, root->getSharedID(), NodeType::TRANSFORMATION).size());
+}
+
+TEST(RepoSceneTest, getParentAsNodesFiltered)
+{
+	RepoNodeSet transNodes, meshNodes, empty;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+
+	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
+	auto m2 = new MeshNode(makeRandomNode(root->getSharedID()));
+
+	transNodes.insert(root);
+	meshNodes.insert(m1);
+	meshNodes.insert(m2);
+
+	RepoScene scene(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
+
+	auto parents = scene.getParentNodesFiltered(RepoScene::GraphType::DEFAULT, nullptr, NodeType::MESH);
+	EXPECT_EQ(0, parents.size());
+
+	parents = scene.getParentNodesFiltered(RepoScene::GraphType::DEFAULT, m1, NodeType::TRANSFORMATION);
+	EXPECT_EQ(1, parents.size());
+	EXPECT_EQ(root, parents[0]);
+
+	EXPECT_EQ(0, scene.getParentNodesFiltered(RepoScene::GraphType::DEFAULT, m1, NodeType::MESH).size());
 }

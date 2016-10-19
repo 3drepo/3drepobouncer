@@ -213,7 +213,6 @@ bool SceneManager::generateWebViewBuffers(
 			scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_WEB_STASH);
 
 		std::string geoStashExt;
-		std::string x3dStashExt = scene->getX3DExtension();
 		std::string jsonStashExt = scene->getJSONExtension();
 
 		switch (exType)
@@ -247,22 +246,6 @@ bool SceneManager::generateWebViewBuffers(
 					else
 					{
 						repoError << "Failed to add file  (" << bufferPair.first << "): " << errMsg;
-					}
-				}
-				for (const auto &bufferPair : resultBuffers.x3dFiles)
-				{
-					std::string databaseName = scene->getDatabaseName();
-					std::string projectName = scene->getProjectName();
-					std::string errMsg;
-					std::string fileName = bufferPair.first;
-					if (success &= handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + x3dStashExt, fileName, bufferPair.second,
-						errMsg))
-					{
-						repoInfo << "File (" << fileName << ") added successfully.";
-					}
-					else
-					{
-						repoError << "Failed to add file  (" << fileName << "): " << errMsg;
 					}
 				}
 

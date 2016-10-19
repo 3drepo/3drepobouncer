@@ -179,7 +179,7 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getSRCFile
 
 repo_web_buffers_t SRCModelExport::getAllFilesExportedAsBuffer() const
 {
-	return{ getSRCFilesAsBuffer(), getX3DFilesAsBuffer(), getJSONFilesAsBuffer() };
+	return{ getSRCFilesAsBuffer(), getJSONFilesAsBuffer() };
 }
 
 bool SRCModelExport::generateJSONMapping(
