@@ -192,8 +192,16 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 		{
 			if (ancestorsID.find(childrenId) == ancestorsID.end())
 			{
-				auto childTransNodes = createTransformationsRecursive(ifcfile, ifcfile.entityById(childrenId), meshes, materials, metaSet, myMetaValues, transID, childrenAncestors);
-				transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
+				try{
+					auto childEntity = ifcfile.entityById(childrenId);
+					auto childTransNodes = createTransformationsRecursive(ifcfile, childEntity, meshes, materials, metaSet, myMetaValues, transID, childrenAncestors);
+					transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
+				}
+				catch (IfcParse::IfcException &e)
+				{
+					repoError << "Failed to find child entity " << childrenId << " ("<< e.what() <<")";
+				}
+				
 			}
 		}
 	}
