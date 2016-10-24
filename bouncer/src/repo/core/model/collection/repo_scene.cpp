@@ -35,7 +35,7 @@ using namespace repo::core::model;
 
 const std::vector<std::string> RepoScene::collectionsInProject = { "scene", "scene.files", "scene.chunks", "stash.3drepo", "stash.3drepo.files", "stash.3drepo.chunks", "stash.x3d", "stash.x3d.files",
 "stash.json_mpc.files", "stash.json_mpc.chunks", "stash.x3d.chunks", "stash.gltf", "stash.gltf.files", "stash.gltf.chunks", "stash.src", "stash.src.files", "stash.src.chunks", "history",
-"history.files", "history.chunks", "issues", "wayfinder" };
+"history.files", "history.chunks", "issues", "wayfinder" , "groups"};
 
 RepoScene::RepoScene(
 	const std::string &database,
