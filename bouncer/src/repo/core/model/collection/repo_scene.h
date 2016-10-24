@@ -66,6 +66,7 @@ namespace repo{
 
 				static const std::vector<std::string> collectionsInProject;
 				static const uint16_t REPO_SCENE_TEXTURE_BIT = 0x0001;
+				static const uint16_t REPO_SCENE_ENTITIES_BIT = 0x0002;
 			public:
 
 				/**
@@ -169,11 +170,26 @@ namespace repo{
 				bool isMissingTexture() const{
 					return status & REPO_SCENE_TEXTURE_BIT;
 				}
+
+				/**
+				* Check if default scene graph is missing some nodes due to failed import
+				* @return returns true if missing nodes
+				*/
+				bool isMissingNodes() const{
+					return status & REPO_SCENE_ENTITIES_BIT;
+				}
 				/**
 				* Flag missing texture bit on status.
 				*/
 				void setMissingTexture(){
 					status |= REPO_SCENE_TEXTURE_BIT;
+				}
+
+				/**
+				* Flag missing nodes due to import failures
+				*/
+				void setMissingNodes(){
+					status |= REPO_SCENE_ENTITIES_BIT;
 				}
 
 				/**
