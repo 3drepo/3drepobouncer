@@ -405,7 +405,7 @@ void RepoRole::updateActions(
 	{
 		vec.push_back(DBActions::FIND);
 
-		if (collectionType == "issues")
+		if (collectionType == "issues" || collectionType == "groups")
 		{
 			vec.push_back(DBActions::INSERT);
 			vec.push_back(DBActions::UPDATE);
@@ -510,6 +510,11 @@ void RepoRole::updateActions(
 			vec.push_back(DBActions::INSERT);
 		}
 		else if (collectionType == "issues")
+		{
+			vec.push_back(DBActions::INSERT);
+			vec.push_back(DBActions::UPDATE);
+		}
+		else if (collectionType == "groups")
 		{
 			vec.push_back(DBActions::INSERT);
 			vec.push_back(DBActions::UPDATE);

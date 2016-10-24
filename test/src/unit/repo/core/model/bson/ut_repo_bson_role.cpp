@@ -280,6 +280,13 @@ TEST(RepoRoleTest, TranslatePermissionsTest_READ)
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::UPDATE) != p.actions.end());
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
 		}
+		else if (p.collection == (projectName + ".groups"))
+		{
+			EXPECT_EQ(3, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::UPDATE) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+		}
 		else
 		{
 			//There is an extension the test doesn't know about. Make sure
@@ -427,6 +434,12 @@ TEST(RepoRoleTest, TranslatePermissionsTest_WRITE)
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
 		}
 		else if (p.collection == (projectName + ".issues"))
+		{
+			EXPECT_EQ(2, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::UPDATE) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+		}
+		else if (p.collection == (projectName + ".groups"))
 		{
 			EXPECT_EQ(2, p.actions.size());
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::UPDATE) != p.actions.end());
@@ -600,6 +613,13 @@ TEST(RepoRoleTest, TranslatePermissionsTest_READWRITE)
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
 		}
 		else if (p.collection == (projectName + ".issues"))
+		{
+			EXPECT_EQ(3, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::UPDATE) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+		}
+		else if (p.collection == (projectName + ".groups"))
 		{
 			EXPECT_EQ(3, p.actions.size());
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
