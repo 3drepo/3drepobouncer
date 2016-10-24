@@ -491,6 +491,11 @@ int32_t importFileAndCommit(
 				repoLog("Missing texture detected!");
 				return REPOERR_LOAD_SCENE_MISSING_TEXTURE;
 			}
+			else if (graph->isMissingNodes())
+			{
+				repoLog("Missing nodes detected!");
+				return REPOERR_LOAD_SCENE_MISSING_NODES;
+			}
 			else
 				return REPOERR_OK;
 		}

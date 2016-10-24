@@ -37,7 +37,8 @@ const static std::string IFC_TYPE_SPACE_LABEL = "(IFC Space)";
 using namespace repo::manipulator::modelconvertor;
 
 IFCUtilsParser::IFCUtilsParser(const std::string &file) :
-file(file)
+file(file),
+missingEntities(false)
 {
 }
 
@@ -192,8 +193,17 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 		{
 			if (ancestorsID.find(childrenId) == ancestorsID.end())
 			{
-				auto childTransNodes = createTransformationsRecursive(ifcfile, ifcfile.entityById(childrenId), meshes, materials, metaSet, myMetaValues, transID, childrenAncestors);
-				transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
+				try{
+					auto childEntity = ifcfile.entityById(childrenId);
+					auto childTransNodes = createTransformationsRecursive(ifcfile, childEntity, meshes, materials, metaSet, myMetaValues, transID, childrenAncestors);
+					transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
+				}
+				catch (IfcParse::IfcException &e)
+				{
+					repoError << "Failed to find child entity " << childrenId << " ("<< e.what() <<")";
+					missingEntities = true;
+				}
+				
 			}
 		}
 	}
@@ -249,6 +259,9 @@ repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
 	std::vector<std::string> files = { file };
 	repo::core::model::RepoScene *scene = new repo::core::model::RepoScene(files, dummy, meshSet, matSet, metaSet, dummy, transNodes);
 	scene->setWorldOffset(offset);
+
+	if (missingEntities)
+		scene->setMissingNodes();
 
 	return scene;
 }

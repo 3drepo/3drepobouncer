@@ -97,6 +97,7 @@ namespace repo{
 					const IfcSchema::IfcValue    *ifcValue);
 
 				const std::string file;
+				bool missingEntities;
 			};
 		} //namespace modelconvertor
 	} //namespace manipulator
