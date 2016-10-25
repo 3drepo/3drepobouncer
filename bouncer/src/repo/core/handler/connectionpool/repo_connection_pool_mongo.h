@@ -43,61 +43,12 @@ namespace repo{
 					MongoConnectionPool(
 						const int &numConnections,
 						mongo::ConnectionString dbAddress,
-						mongo::BSONObj* auth) :
-						maxSize(numConnections),
-						dbAddress(dbAddress),
-						auth(auth? new mongo::BSONObj(*auth) : nullptr)
-					{
-						repoDebug << "Instantiating Mongo connection pool with " << maxSize << " connections...";
-						//push one connected worker to ensure valid connection
-						//so the caller can handle the exceptions appropriately
-						std::string errMsg;
-
-						mongo::DBClientBase *worker = dbAddress.connect(errMsg);
-
-						if (worker)
-						{
-							repoDebug << "Connected to database, trying authentication..";
-							for (int i = 0; i < numConnections; i++)
-							{
-								mongo::DBClientBase *worker = dbAddress.connect(errMsg);
-								if (auth)
-								{
-									repoTrace << auth->toString();
-									if (!worker->auth(auth->getStringField("db"), auth->getStringField("user"), auth->getStringField("pwd"), errMsg, auth->getField("digestPassword").boolean()))
-									{
-										throw mongo::DBException(errMsg, mongo::ErrorCodes::AuthenticationFailed);
-									}
-								}
-								else
-								{
-									repoWarning << "No credentials found. User is not authenticated against the database!";
-								}
-								push(worker);
-							}
-						}
-						else
-						{
-							repoDebug << "Failed to connect: " << errMsg;
-							throw mongo::DBException(errMsg, 1000);
-						}
-					}
+						mongo::BSONObj* auth) ;
 
 					MongoConnectionPool() :maxSize(0){}
 
-					~MongoConnectionPool()
-					{
-						delete auth;
-						//free workers within the pool
-						std::vector<mongo::DBClientBase*> workers = empty();
-						std::vector<mongo::DBClientBase*>::iterator it;
-						for (it = workers.begin(); it != workers.end(); ++it)
-						{
-							mongo::DBClientBase* worker = *it;
-							if (worker)
-								delete worker;
-						}
-					}
+					~MongoConnectionPool();
+
 
 					mongo::DBClientBase* getWorker()
 					{
@@ -109,28 +60,8 @@ namespace repo{
 						push(worker);
 					}
 
-					mongo::DBClientBase* pop()
-					{
-						mongo::DBClientBase* worker = RepoStack::pop();
+					mongo::DBClientBase* pop();
 
-						if (!worker)
-						{
-							//worker was never used, instantiate it with a connection
-							std::string tmp;
-							worker = connectWorker(tmp);
-						}
-						else
-						{
-							//check worker is still connected
-							if (!worker->isStillConnected())
-							{
-								std::string tmp;
-								worker = connectWorker(tmp);
-							}
-						}
-
-						return worker;
-					}
 
 					void push(mongo::DBClientBase *worker)
 					{
@@ -138,15 +69,7 @@ namespace repo{
 							RepoStack::push(worker);
 					}
 				private:
-					mongo::DBClientBase* connectWorker(std::string &errMsg)
-					{
-						mongo::DBClientBase *worker = dbAddress.connect(errMsg);
-						if (auth && !worker->auth(auth->getStringField("db"), auth->getStringField("user"), auth->getStringField("pwd"), errMsg, auth->getField("digestPassword").boolean()))
-						{
-							throw mongo::DBException(errMsg, mongo::ErrorCodes::AuthenticationFailed);
-						}
-						return worker;
-					}
+					mongo::DBClientBase* connectWorker(std::string &errMsg);
 
 					const uint32_t maxSize;
 					const mongo::ConnectionString dbAddress;
