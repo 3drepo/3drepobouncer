@@ -935,7 +935,7 @@ bool MongoDatabaseHandler::insertRawFile(
 	const std::string          &contentType
 	)
 {
-	bool success = true;
+	bool success = false;
 	mongo::DBClientBase *worker;
 
 	repoTrace << "writing raw file: " << fileName;
@@ -958,25 +958,42 @@ bool MongoDatabaseHandler::insertRawFile(
 		return false;
 	}
 
-	try{
-		worker = workerPool->getWorker();
-		//store the big biary file within GridFS
-		mongo::GridFS gfs(*worker, database, collection);
-		//FIXME: there must be errors to catch...
-		repoTrace << "storing " << fileName << " in gridfs: " << database << "." << collection;
-		gfs.removeFile(fileName);
-		mongo::BSONObj bson = gfs.storeFile((char*)&bin[0], bin.size() * sizeof(bin[0]), fileName, contentType);
-
-		repoTrace << "returned object: " << bson.toString();
-	}
-	catch (mongo::DBException &e)
+	int retry = 0;
+	while (!success && retry < 5)
 	{
-		success = false;
-		std::string errString(e.what());
-		errMsg += errString;
-	}
+		try{
+			worker = workerPool->getWorker();
+			//store the big biary file within GridFS
+			if (worker)
+			{
+				mongo::GridFS gfs(*worker, database, collection);
+				//FIXME: there must be errors to catch...
+				repoTrace << "storing " << fileName << " in gridfs: " << database << "." << collection;
+				gfs.removeFile(fileName);
+				mongo::BSONObj bson = gfs.storeFile((char*)&bin[0], bin.size() * sizeof(bin[0]), fileName, contentType);
+				repoTrace << "returned object: " << bson.toString();
+				success = true;
+			}
+			else
+			{
+				repoError << "Failed to obtain a connection with the database";
+			}
 
-	workerPool->returnWorker(worker);
+		}
+		catch (mongo::DBException &e)
+		{
+			success = false;
+			std::string errString(e.what());
+			errMsg = errString;
+			repoError << "Failed to upload gridFS file : " << errString << " retrying in 5s...";
+			boost::this_thread::sleep(boost::posix_time::seconds(5));
+			retry++;
+		}
+		workerPool->returnWorker(worker);
+
+	}
+	
+
 
 	return success;
 }
