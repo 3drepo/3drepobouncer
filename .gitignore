@@ -1,4 +1,5 @@
 build
+log
 
 #nodeJS stuff
 tools/bouncer_worker/config.js

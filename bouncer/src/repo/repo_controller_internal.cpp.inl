@@ -229,7 +229,9 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::createToken(
 bool RepoController::_RepoControllerImpl::commitScene(
 	const RepoController::RepoToken                     *token,
 	repo::core::model::RepoScene        *scene,
-	const std::string                   &owner)
+	const std::string                   &owner,
+	const std::string                      &tag,
+	const std::string                      &desc)
 {
 	bool success = false;
 	if (scene)
@@ -244,7 +246,7 @@ bool RepoController::_RepoControllerImpl::commitScene(
 					sceneOwner = "ANONYMOUS USER";
 				}
 				manipulator::RepoManipulator* worker = workerPool.pop();
-				success = worker->commitScene(token->databaseAd, token->getCredentials(), scene, sceneOwner);
+				success = worker->commitScene(token->databaseAd, token->getCredentials(), scene, sceneOwner, tag, desc);
 				workerPool.push(worker);
 			}
 			else

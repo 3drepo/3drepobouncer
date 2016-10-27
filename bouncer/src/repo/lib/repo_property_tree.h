@@ -231,6 +231,28 @@ namespace repo{
 		private:
 			bool hackStrings;
 			boost::property_tree::ptree tree;
+
+			/**
+			* Sanitize the names, adding escape keys where required
+			* @param value the word to sanitize
+			* @return returns a sanitized version of the word
+			*/
+
+			std::string sanitizeStr(const std::string &value);
+
+			/**
+			* Locate the first location of a special phrase that needs escaping
+			* @param value the word to search through
+			* @param start the starting index to search from
+			* @return reutnrs the index of the special word, std::string::npos otherwise
+			*/
+			int findSpecialWords(
+				const std::string &value,
+				const int         &start);
+
+			int findBackSlash(
+				const std::string &value,
+				const int         &start);
 		};
 		// Template specialization
 		template <>

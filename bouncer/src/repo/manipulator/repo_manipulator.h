@@ -129,7 +129,9 @@ namespace repo{
 				const std::string                     &databaseAd,
 				const repo::core::model::RepoBSON 	  *cred,
 				repo::core::model::RepoScene          *scene,
-				const std::string                     &owner = "");
+				const std::string                     &owner = "",
+				const std::string                     &tag = "",
+				const std::string                     &desc = "");
 
 			/**
 			* Compare 2 scenes.

@@ -4,10 +4,7 @@
 3DRepoBouncer is essentially the refactored 3DRepoCore and (parts of) 3DRepoGUI. It is a C++ library providing 3D Repo Scene Graph definition, repository management and manipulation logic as well as direct MongoDB databse access.
 
 ### Latest Releases
-* 03 May 2016 [3D Repo Bouncer 1.0rc1](https://github.com/3drepo/3drepobouncer/releases/tag/v1.0-rc1)
-* 05 Apr 2016 [3D Repo Bouncer 1.0b2](https://github.com/3drepo/3drepobouncer/releases/tag/v1.0b2)
-* 22 Mar 2016 [3D Repo Bouncer 1.0b](https://github.com/3drepo/3drepobouncer/releases/tag/v1.0b) 
-* 07 Jan 2016 [3D Repo Bouncer 1.0a](https://github.com/3drepo/3drepobouncer/releases/tag/v1.0a) 
+We always recommend using the [Latest stable release](https://github.com/3drepo/3drepobouncer/releases). However, to access cutting-edge development versions, check out the [tags](https://github.com/3drepo/3drepobouncer/tags).
 
 ## Licenses
 This project is Copyright of [3D Repo Ltd](http://3drepo.org), a company registered in England and Wales No. 09014101, and is released under the open source [GNU Affero General Public License v3](http://www.gnu.org/licenses/agpl-3.0.en.html). Should you require a commercial license, please contact [support@3drepo.org](mailto:support@3drepo.org). All contributors are required to sign either the [3D Repo Individual](https://gist.github.com/jozefdobos/e177af804c9bcd217b73) or the [3D Repo Entity](https://gist.github.com/jozefdobos/c7c4c1c18cfb211c45d2) [Contributor License Agreement (CLA)](https://en.wikipedia.org/wiki/Contributor_License_Agreement).
@@ -24,10 +21,13 @@ Your pull requests should:
 5. Rebase your branch against [upstream's master](https://help.github.com/articles/merging-an-upstream-repository-into-your-fork/) so that we don't pull redundant commits
 6. Sign our [3D Repo Individual CLA](https://gist.github.com/jozefdobos/e177af804c9bcd217b73) or if you are representing a legal entity, sign the [3D Repo Entity CLA](https://gist.github.com/jozefdobos/c7c4c1c18cfb211c45d2)
 
+## API Documentation
+Doxygen documentation can be found [here](http://3drepo.github.io/3drepobouncer/doc/html/)
+
 Dependencies
 ------------
 3DRepoBouncer relies on the following libraries:
-* [Boost Library v1.55.0+](http://www.boost.org/)  
+* [Boost Library v1.55.0 - v1.58.0](http://www.boost.org/)  
 See also [pre-built binaries for Windows](http://sourceforge.net/projects/boost/files/boost-binaries/)
 and [modular Boost](https://svn.boost.org/trac/boost/wiki/ModularBoost)
 on [GitHub](https://github.com/boostorg)
@@ -35,6 +35,8 @@ on [GitHub](https://github.com/boostorg)
 See [3D Repo guide for compiling MongoDB](https://github.com/3drepo/3drepobouncer/wiki/Compiling-MongoDB-CXX-Driver)
 * [3D Repo ASSIMP library fork](https://github.com/3drepo/assimp)
 See [3D Repo guide for compiling ASSIMP](https://github.com/3drepo/3drepobouncer/wiki/Compiling-ASSIMP)
+* [3D Repo IFCOpenShell Fork](https://github.com/3drepo/IfcOpenShell)
+This relies on 3D Repo's fork of [OCCT](https://github.com/3drepo/occt)
 
 To compile and install the library, the following are used:
 * [Python v2.x](https://www.python.org/)

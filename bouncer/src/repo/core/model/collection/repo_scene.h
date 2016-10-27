@@ -66,6 +66,7 @@ namespace repo{
 
 				static const std::vector<std::string> collectionsInProject;
 				static const uint16_t REPO_SCENE_TEXTURE_BIT = 0x0001;
+				static const uint16_t REPO_SCENE_ENTITIES_BIT = 0x0002;
 			public:
 
 				/**
@@ -99,7 +100,6 @@ namespace repo{
 					const std::string                                  &issuesExt = REPO_COLLECTION_ISSUES,
 					const std::string                                  &srcExt = REPO_COLLECTION_STASH_SRC,
 					const std::string                                  &gltfExt = REPO_COLLECTION_STASH_GLTF,
-					const std::string                                  &x3dExt = REPO_COLLECTION_STASH_X3D,
 					const std::string                                  &jsonExt = REPO_COLLECTION_STASH_JSON);
 
 				/**
@@ -141,7 +141,6 @@ namespace repo{
 					const std::string              &issuesExt = REPO_COLLECTION_ISSUES,
 					const std::string              &srcExt = REPO_COLLECTION_STASH_SRC,
 					const std::string              &gltfExt = REPO_COLLECTION_STASH_GLTF,
-					const std::string              &x3dExt = REPO_COLLECTION_STASH_X3D,
 					const std::string              &jsonExt = REPO_COLLECTION_STASH_JSON);
 
 				/**
@@ -171,11 +170,26 @@ namespace repo{
 				bool isMissingTexture() const{
 					return status & REPO_SCENE_TEXTURE_BIT;
 				}
+
+				/**
+				* Check if default scene graph is missing some nodes due to failed import
+				* @return returns true if missing nodes
+				*/
+				bool isMissingNodes() const{
+					return status & REPO_SCENE_ENTITIES_BIT;
+				}
 				/**
 				* Flag missing texture bit on status.
 				*/
 				void setMissingTexture(){
 					status |= REPO_SCENE_TEXTURE_BIT;
+				}
+
+				/**
+				* Flag missing nodes due to import failures
+				*/
+				void setMissingNodes(){
+					status |= REPO_SCENE_ENTITIES_BIT;
 				}
 
 				/**
@@ -257,7 +271,7 @@ namespace repo{
 
 				/**
 				* Get stash extension for this project
-				* @return returns the src extension
+				* @return returns the repo stash extension
 				*/
 				std::string getStashExtension() const
 				{
@@ -289,15 +303,6 @@ namespace repo{
 				std::string getGLTFExtension() const
 				{
 					return gltfExt;
-				}
-
-				/**
-				* Get x3d extension for this project
-				* @return returns the x3d extension
-				*/
-				std::string getX3DExtension() const
-				{
-					return x3dExt;
 				}
 
 				/**
@@ -333,6 +338,32 @@ namespace repo{
 						return revNode->getAuthor();
 					else
 						return "";
+				}
+
+				/**
+				* If the scene is revisioned, get the tag associated with the revision
+				* if the reivison is not tagged or the scene is not revisioned, return empty string
+				* @return returns the tag, or empty string.
+				*/
+				std::string getTag() const
+				{
+					if (revNode)
+						return revNode->getTag();
+					else
+						return "";
+				}
+
+				/**
+				* If the scene is revisioned, get the commit message associated with the revision
+				* if the reivison does not have a commit message or the scene is not revisioned, return empty string
+				* @return returns the tag, or empty string.
+				*/
+				std::string getMessage() const
+				{
+					if (revNode)
+						return revNode->getMessage();
+					else
+						return commitMsg;
 				}
 
 				static std::vector<std::string> getProjectExtensions()
@@ -383,7 +414,7 @@ namespace repo{
 				*/
 				void setDatabaseAndProjectName(std::string newDatabaseName, std::string newProjectName)
 				{
-					databaseName = sanitizeName(newDatabaseName);
+					databaseName = sanitizeDatabaseName(newDatabaseName);
 					projectName = sanitizeName(newProjectName);
 				}
 
@@ -477,7 +508,7 @@ namespace repo{
 				* should a handler is supplied
 				* @param status status of the revision
 				*/
-				void updateRevisionStatus(
+				bool updateRevisionStatus(
 					repo::core::handler::AbstractDatabaseHandler *handler,
 					const RevisionNode::UploadStatus &status);
 
@@ -1055,7 +1086,6 @@ namespace repo{
 				std::string issuesExt;      /*! extension for issues*/
 				std::string srcExt;      /*! extension for SRC stash files*/
 				std::string gltfExt;      /*! extension for GLTF stash files*/
-				std::string x3dExt;      /*! extension for X3Dom backbone files*/
 				std::string jsonExt;      /*! extension for JSON graph metadata files*/
 				std::vector<std::string> refFiles;  //Original Files that created this scene
 				std::vector<RepoNode*> toRemove;

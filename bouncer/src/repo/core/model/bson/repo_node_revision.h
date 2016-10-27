@@ -28,7 +28,7 @@
 //
 //------------------------------------------------------------------------------
 #define REPO_NODE_REVISION_LABEL_AUTHOR					"author" //!< Author
-#define REPO_NODE_REVISION_LABEL_MESSAGE					"message" //!< Message
+#define REPO_NODE_REVISION_LABEL_MESSAGE					"desc" //!< Message
 #define REPO_NODE_REVISION_LABEL_TAG						"tag" //!< Tag
 #define REPO_NODE_REVISION_LABEL_TIMESTAMP				"timestamp" //!< Timestamp
 #define REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS		"current" //!< Current UIDs
@@ -60,6 +60,24 @@ namespace repo {
 
 				RevisionNode();
 				~RevisionNode();
+
+				/**
+				* Get the type of node
+				* @return returns the type as a string
+				*/
+				virtual std::string getType() const
+				{
+					return REPO_NODE_TYPE_REVISION;
+				}
+
+				/**
+				* Get the type of node as an enum
+				* @return returns type as enum.
+				*/
+				virtual NodeType getTypeAsEnum() const
+				{
+					return NodeType::REVISION;
+				}
 
 				/**
 				* Update the status flag with the given status

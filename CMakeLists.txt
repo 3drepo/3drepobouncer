@@ -46,33 +46,52 @@ unset(Boost_LIBRARY_DIRS CACHE)
 find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options regex)
 add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
 
+if(NOT ${Boost_FOUND})
+	message(FATAL_ERROR "Cannot find boost")
+endif()
+
+
 #================MONGO SETTINGS=======================
 find_package(Mongo REQUIRED)
+if(NOT ${MONGO_FOUND})
+	message(FATAL_ERROR "Cannot find mongo cxx driver")
+endif()
 
 
 #================ASSIMP SETTINGS=======================
 find_package(ASSIMPM REQUIRED)
+if(NOT ${ASSIMPM_FOUND})
+	message(FATAL_ERROR "Cannot find assimp")
+endif()
+
+#===============IFCOPENSHELL SETTINGS==================
+find_package(OCCT REQUIRED)
+find_package(IFCOPENSHELL REQUIRED)
+if(NOT ${OCCT_FOUND})
+	message(FATAL_ERROR "Cannot find OCCT")
+endif()
+if(NOT ${IFCOPENSHELL_FOUND})
+	message(FATAL_ERROR "Cannot find IFCOpenShell")
+endif()
 
 #================COMPILE 3D REPO BOUNCER ==============
 option (REPO_BUILD_CLIENT "If the Command Line Client is built in addition to the library" ON)
 option (REPO_BUILD_TESTS "If the test suite is built in addition to the library" OFF)
 add_definitions( -DWIN32_LEAN_AND_MEAN )
-if(${Boost_FOUND} AND ${MONGO_FOUND} AND ${ASSIMPM_FOUND})
 
-	#bouncer library
-	add_subdirectory(bouncer)
+#bouncer library
+add_subdirectory(bouncer)
 
 
-	#client exe
-	if (REPO_BUILD_CLIENT)
-		add_subdirectory(client)
-	endif()
+#client exe
+if (REPO_BUILD_CLIENT)
+	add_subdirectory(client)
+endif()
 
-	#test exe
-	if (REPO_BUILD_TESTS)
-		set(gtest_force_shared_crt ON CACHE BOOL "Build gtest as shared library" FORCE)
-		add_subdirectory(submodules/googletest)
-		add_subdirectory(test)
-	endif()
+#test exe
+if (REPO_BUILD_TESTS)
+	set(gtest_force_shared_crt ON CACHE BOOL "Build gtest as shared library" FORCE)
+	add_subdirectory(submodules/googletest)
+	add_subdirectory(test)
 endif()
 

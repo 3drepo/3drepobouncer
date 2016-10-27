@@ -52,6 +52,12 @@ RepoBSON::RepoBSON(
 	}
 }
 
+int64_t RepoBSON::getCurrentTimestamp()
+{
+	mongo::Date_t date = mongo::Date_t(time(NULL) * 1000);
+	return date.asInt64();
+}
+
 RepoBSON RepoBSON::fromJSON(const std::string &json)
 {
 	return RepoBSON(mongo::fromjson(json));
@@ -98,8 +104,8 @@ repoUUID RepoBSON::getUUIDField(const std::string &label) const{
 	if (hasField(label))
 	{
 		const mongo::BSONElement bse = getField(label);
-		if (bse.type() == mongo::BSONType::BinData && (bse.binDataType() == mongo::bdtUUID ||
-			bse.binDataType() == mongo::newUUID))
+		if ((bse.type() == mongo::BSONType::BinData && (bse.binDataType() == mongo::bdtUUID ||
+			bse.binDataType() == mongo::newUUID)))
 		{
 			int len = static_cast<int>(bse.size() * sizeof(boost::uint8_t));
 			const char *binData = bse.binData(len);
@@ -107,7 +113,7 @@ repoUUID RepoBSON::getUUIDField(const std::string &label) const{
 		}
 		else
 		{
-			repoError << "Field  " << label << " is not of type UUID!";
+			repoError << "Field  " << label << " is not of type UUID! Bin data: " << (int)bse.type() << " enum: " << ((bse.type() == mongo::BSONType::BinData) ? (int)bse.binDataType() : 0);
 			uuid = generateUUID();  // failsafe
 		}
 	}
@@ -228,7 +234,7 @@ int64_t RepoBSON::getTimeStampField(const std::string &label) const
 		auto field = getField(label);
 		if (field.type() == ElementType::DATE)
 			time = field.date().asInt64();
-		else
+		else if (!field.isNull())
 		{
 			repoError << "GetTimeStampField: field " << label << " is not of type Date!";
 		}

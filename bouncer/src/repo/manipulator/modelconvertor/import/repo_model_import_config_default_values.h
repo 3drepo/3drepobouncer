@@ -34,6 +34,7 @@ static const bool        repoDefaultFlipWindingOrder = false;
 static const bool        repoDefaultGenerateNormals = true;
 static const bool        repoDefaultGenerateNormalsFlat = true;
 static const bool        repoDefaultGenerateNormalsSmooth = false;
+static const bool        repoDefaultIfcSkipSpaceRepresentation = false;
 static const bool        repoDefaultImproveCacheLocality = false;
 static const bool        repoDefaultJoinIdenticalVertices = false;
 static const bool        repoDefaultLimitBoneWeights = false;

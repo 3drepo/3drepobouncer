@@ -135,34 +135,6 @@ RepoNode RepoNode::cloneAndAddFields(
 	return RepoNode(builder.obj(), bigFiles);
 }
 
-RepoNode RepoNode::cloneAndAddMergedNodes(
-	const std::vector<repoUUID> &mergeMap) const
-{
-	RepoNode newNode;
-	if (mergeMap.size() > 0)
-	{
-		RepoBSONBuilder builder;
-		builder.appendArray(REPO_LABEL_MERGED_NODES, mergeMap);
-		RepoBSON *change = new RepoBSON(builder.obj());
-		newNode = cloneAndAddFields(change, false);
-
-		delete change;
-	}
-	else
-	{
-		repoWarning << "Trying to add a merge map of size 0!";
-		newNode = RepoNode(copy(), bigFiles);
-	}
-
-	return newNode;
-	//RepoBSONBuilder builder;
-	//builder.appendArray(REPO_LABEL_MERGED_NODES, mergeMap);
-
-	//builder.appendElementsUnique(*this);
-
-	//return RepoNode(builder.obj(), bigFiles);
-}
-
 std::vector<repoUUID> RepoNode::getParentIDs() const
 {
 	return getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);

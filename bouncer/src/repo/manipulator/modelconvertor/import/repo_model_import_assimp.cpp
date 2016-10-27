@@ -203,12 +203,21 @@ uint32_t AssimpModelImport::composeAssimpPostProcessingFlags(
 }
 
 repo::core::model::CameraNode* AssimpModelImport::createCameraRepoNode(
-	const aiCamera *assimpCamera)
+	const aiCamera *assimpCamera,
+	const std::vector<double> &worldOffset)
 {
 	std::string cameraName(assimpCamera->mName.data);
 
 	repo::core::model::CameraNode * cameraNode;
-
+	std::vector<double> offset;
+	if (worldOffset.size())
+	{
+		offset = worldOffset;
+	}
+	else
+	{
+		offset = { 0, 0, 0 };
+	}
 	if (assimpCamera)
 	{
 		cameraNode = new repo::core::model::CameraNode(repo::core::model::RepoBSONFactory::makeCameraNode(
@@ -216,9 +225,9 @@ repo::core::model::CameraNode* AssimpModelImport::createCameraRepoNode(
 			assimpCamera->mClipPlaneFar,
 			assimpCamera->mClipPlaneNear,
 			assimpCamera->mHorizontalFOV,
-			{ (float)assimpCamera->mLookAt.x, (float)assimpCamera->mLookAt.y, (float)assimpCamera->mLookAt.z },
-			{ (float)assimpCamera->mPosition.x, (float)assimpCamera->mPosition.y, (float)assimpCamera->mPosition.z },
-			{ (float)assimpCamera->mUp.x, (float)assimpCamera->mUp.y, (float)assimpCamera->mUp.z },
+			{ (float)(assimpCamera->mLookAt.x - offset[0]), (float)(assimpCamera->mLookAt.y - offset[1]), (float)(assimpCamera->mLookAt.z - offset[2]) },
+			{ (float)(assimpCamera->mPosition.x), (float)(assimpCamera->mPosition.y - offset[1]), (float)(assimpCamera->mPosition.z - offset[2]) },
+			{ (float)(assimpCamera->mUp.x - offset[0]), (float)(assimpCamera->mUp.y - offset[1]), (float)(assimpCamera->mUp.z - offset[2]) },
 			cameraName
 			));
 	}
@@ -939,7 +948,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 					repoInfo << "Constructing " << i << " of " << assimpScene->mNumCameras;
 				}
 				std::string cameraName(assimpScene->mCameras[i]->mName.data);
-				repo::core::model::RepoNode* camera = createCameraRepoNode(assimpScene->mCameras[i]);
+				repo::core::model::RepoNode* camera = createCameraRepoNode(assimpScene->mCameras[i], sceneBbox.size() ? sceneBbox[0] : std::vector<double>());
 				if (!camera)
 					repoError << "Unable to construct mesh node in Assimp Model Convertor!";
 				else
@@ -1174,6 +1183,7 @@ bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
 	}
 
 	importer.SetPropertyInteger(AI_CONFIG_GLOB_MEASURE_TIME, 1);
+	importer.SetPropertyBool(AI_CONFIG_IMPORT_IFC_SKIP_SPACE_REPRESENTATIONS, settings->getSkipIFCSpaceRepresentation());
 	assimpScene = importer.ReadFile(filePath, 0);
 
 	if (!assimpScene){

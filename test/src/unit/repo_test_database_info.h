@@ -16,7 +16,7 @@
 */
 
 #pragma once
-
+#include <repo/core/handler/repo_database_handler_mongo.h>
 #include <repo/core/model/bson/repo_bson_builder.h>
 #include <boost/filesystem.hpp>
 
@@ -37,6 +37,19 @@ const static std::string simpleModel = "cube.obj";
 const static std::string texturedModel = "texturedPlane.dae";
 const static std::string texturedModel2 = "texturedPlane2.dae"; //With Texture
 const static std::string badExtensionFile = "cube.exe";
+const static std::string ifcModel = "duplex.ifc";
+
+const static std::string emptyFile = "empty.json";
+const static std::string emptyJSONFile = "empty2.json";
+const static std::string noSubProjectJSONFile = "noSubPro.json";
+const static std::string noDbNameJSONFile = "noDb.json";
+const static std::string noProNameJSONFile = "noPro.json";
+const static std::string invalidJSONFile = "invalid.json";
+const static std::string validGenFedJSONFile = "validFed.json";
+
+const static std::string genFedDB = "genFedTest";
+const static std::string genFedNoSubProName = "noSubPro";
+const static std::string genFedSuccessName = "fedTest";
 
 const static mongo::BSONObj REPO_GTEST_DROPROLETEST = BSON("db" << REPO_GTEST_DBNAME_ROLEUSERTEST << "role" << "dropRoleTest");
 const static mongo::BSONObj REPO_GTEST_DROPUSERTEST = BSON("db" << "admin" << "user" << "dropUserTest");
@@ -47,6 +60,15 @@ const static std::vector<repoUUID> uuidsToSearch = { stringToUUID("0ab45528-9258
 const static std::pair<std::string, std::string> REPO_GTEST_DROPCOL_TESTCASE = { "sampleDataRW", "collectionToDrop" };
 const static std::string REPO_GTEST_RAWFILE_FETCH_TEST = "5be1aca9-e4d0-4cec-987d-80d2fde3dade3DrepoBIM_obj";
 const static size_t REPO_GTEST_RAWFILE_FETCH_SIZE = 6050508;
+
+static repo::core::handler::MongoDatabaseHandler* getHandler()
+{
+	std::string errMsg;
+	return 	repo::core::handler::MongoDatabaseHandler::getHandler(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+		1,
+		REPO_GTEST_AUTH_DATABASE,
+		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+}
 
 static std::string getClientExePath()
 {

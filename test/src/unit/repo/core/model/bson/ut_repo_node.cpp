@@ -422,46 +422,6 @@ TEST(RepoNodeTest, CloneAndAddFieldTest)
 	delete changeBson3;
 }
 
-TEST(RepoNodeTest, CloneAndAddMergedNodesTest)
-{
-	std::vector<repoUUID> mergeMap;
-
-	size_t size = 100;
-	mergeMap.resize(size);
-
-	RepoNode node = emptyNode.cloneAndAddMergedNodes(mergeMap);
-
-	EXPECT_FALSE(node.isEmpty());
-	EXPECT_TRUE(node.hasField(REPO_LABEL_MERGED_NODES));
-
-	std::vector<repoUUID> mergeMapOut = node.getUUIDFieldArray(REPO_LABEL_MERGED_NODES);
-
-	ASSERT_EQ(mergeMapOut.size(), mergeMap.size());
-	for (size_t i = 0; i < mergeMapOut.size(); ++i)
-	{
-		EXPECT_EQ(mergeMapOut[i], mergeMap[i]);
-	}
-
-	//ensure extref files are retained
-	std::vector<uint8_t> file1;
-	std::vector<uint8_t> file2;
-
-	size_t fileSize = 32876;
-	file1.resize(fileSize);
-	file2.resize(fileSize);
-
-	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>>> files;
-	files["field1"] = std::pair<std::string, std::vector<uint8_t>>("file1", file1);
-	files["field2"] = std::pair<std::string, std::vector<uint8_t>>("file2", file2);
-
-	RepoNode nodeWithFiles = RepoNode(emptyNode, files);
-	RepoNode clonedNodeWithFiles = nodeWithFiles.cloneAndAddMergedNodes(mergeMap);
-
-	EXPECT_TRUE(clonedNodeWithFiles.hasOversizeFiles());
-	auto mappingOut = clonedNodeWithFiles.getFilesMapping();
-	EXPECT_EQ(2, mappingOut.size());
-}
-
 TEST(RepoNodeTest, GetNameTest)
 {
 	RepoNode node = makeTypicalNode();

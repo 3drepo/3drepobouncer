@@ -24,3 +24,31 @@
 #include "../../../lib/repo_log.h"
 
 using namespace repo::core::model;
+
+RepoProjectSettings RepoProjectSettings::cloneAndMergeProjectSettings
+(const RepoProjectSettings &proj) const
+{
+	RepoBSONBuilder newProjBuilder, propertiesBuilder;
+
+	auto currentProperties = getObjectField(REPO_LABEL_PROPERTIES);
+	propertiesBuilder.appendElements(proj.getObjectField(REPO_LABEL_PROPERTIES));
+
+	currentProperties = currentProperties.removeField(REPO_LABEL_PIN_SIZE);
+	currentProperties = currentProperties.removeField(REPO_LABEL_AVATAR_HEIGHT);
+	currentProperties = currentProperties.removeField(REPO_LABEL_VISIBILITY_LIMIT);
+	currentProperties = currentProperties.removeField(REPO_LABEL_SPEED);
+	currentProperties = currentProperties.removeField(REPO_LABEL_ZNEAR);
+	currentProperties = currentProperties.removeField(REPO_LABEL_ZFAR);
+
+	propertiesBuilder.appendElementsUnique(currentProperties);
+	newProjBuilder << REPO_LABEL_PROPERTIES << propertiesBuilder.obj();
+
+	newProjBuilder.appendElementsUnique(proj);
+
+	auto currentProjectSettings = removeField(REPO_LABEL_OWNER);
+	currentProjectSettings = currentProjectSettings.removeField(REPO_LABEL_TYPE);
+	currentProjectSettings = currentProjectSettings.removeField(REPO_LABEL_DESCRIPTION);
+	newProjBuilder.appendElementsUnique(currentProjectSettings);
+
+	return newProjBuilder.obj();
+}

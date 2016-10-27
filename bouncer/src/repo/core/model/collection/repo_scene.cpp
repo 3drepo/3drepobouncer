@@ -47,7 +47,6 @@ RepoScene::RepoScene(
 	const std::string &issuesExt,
 	const std::string &srcExt,
 	const std::string &gltfExt,
-	const std::string &x3dExt,
 	const std::string &jsonExt)
 	: AbstractGraph(database, projectName),
 	sceneExt(sanitizeExt(sceneExt)),
@@ -57,7 +56,6 @@ RepoScene::RepoScene(
 	issuesExt(sanitizeExt(issuesExt)),
 	srcExt(sanitizeExt(srcExt)),
 	gltfExt(sanitizeExt(gltfExt)),
-	x3dExt(sanitizeExt(x3dExt)),
 	jsonExt(sanitizeExt(jsonExt)),
 	headRevision(true),
 	unRevisioned(false),
@@ -88,7 +86,6 @@ RepoScene::RepoScene(
 	const std::string              &issuesExt,
 	const std::string              &srcExt,
 	const std::string              &gltfExt,
-	const std::string              &x3dExt,
 	const std::string              &jsonExt
 	)
 	: AbstractGraph("", ""),
@@ -99,7 +96,6 @@ RepoScene::RepoScene(
 	issuesExt(sanitizeExt(issuesExt)),
 	srcExt(sanitizeExt(srcExt)),
 	gltfExt(sanitizeExt(gltfExt)),
-	x3dExt(sanitizeExt(x3dExt)),
 	jsonExt(sanitizeExt(jsonExt)),
 	headRevision(true),
 	unRevisioned(true),
@@ -287,9 +283,9 @@ void RepoScene::addMetadata(
 			repoUUID metaUniqueID = meta->getUniqueID();
 			for (auto &node : nameIt->second)
 			{
-				if (propagateData && node->getTypeAsEnum() == NodeType::TRANSFORMATION)
+				auto meshes = getAllDescendantsByType(GraphType::DEFAULT, node->getSharedID(), NodeType::MESH);
+				if (propagateData && node->getTypeAsEnum() == NodeType::TRANSFORMATION && meshes.size())
 				{
-					auto meshes = getAllDescendantsByType(GraphType::DEFAULT, node->getSharedID(), NodeType::MESH);
 					for (auto &mesh : meshes)
 					{
 						repoUUID parentSharedID = mesh->getSharedID();
@@ -319,8 +315,6 @@ void RepoScene::addMetadata(
 			newAdded.insert(metaSharedID);
 			newCurrent.insert(metaUniqueID);
 			graph.metadata.insert(meta);
-
-			repoTrace << "Found pairing transformation! Metadata " << metaName << " added into the scene graph.";
 		}
 		else
 		{
@@ -496,6 +490,12 @@ bool RepoScene::commit(
 		errMsg = "Cannot commit to the database - databaseName or projectName is empty (database: "
 			+ databaseName
 			+ " project: " + projectName + " ).";
+		return false;
+	}
+
+	if (!graph.rootNode)
+	{
+		errMsg = "Cannot commit to the database - Scene is empty!.";
 		return false;
 	}
 
@@ -770,6 +770,11 @@ bool RepoScene::commitStash(
 	*/
 
 	repoUUID rev;
+	if (!handler)
+	{
+		errMsg += "Cannot commit stash graph - nullptr to database handler.";
+		return false;
+	}
 	if (!revNode)
 	{
 		errMsg += "Revision node not found, make sure the default scene graph is commited";
@@ -795,6 +800,7 @@ bool RepoScene::commitStash(
 		}
 
 		auto success = commitNodes(handler, nodes, GraphType::OPTIMIZED, errMsg);
+
 		if (success)
 			updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
 
@@ -869,15 +875,23 @@ std::vector<RepoNode*> RepoScene::getParentNodesFiltered(
 	const RepoNode* node,
 	const NodeType &type) const
 {
-	std::vector<repoUUID> parentIDs = node->getParentIDs();
 	std::vector<RepoNode*> results;
-	for (const repoUUID &id : parentIDs)
+	if (node)
 	{
-		RepoNode* node = getNodeBySharedID(gType, id);
-		if (node && node->getTypeAsEnum() == type)
+		std::vector<repoUUID> parentIDs = node->getParentIDs();
+
+		for (const repoUUID &id : parentIDs)
 		{
-			results.push_back(node);
+			RepoNode* node = getNodeBySharedID(gType, id);
+			if (node && node->getTypeAsEnum() == type)
+			{
+				results.push_back(node);
+			}
 		}
+	}
+	else
+	{
+		repoError << "Trying to retrieve parent nodes from a null ptr child node";
 	}
 
 	return results;
@@ -1066,7 +1080,10 @@ bool RepoScene::loadRevision(
 	bool success = true;
 
 	if (!handler)
+	{
+		errMsg = "Cannot load revision with an empty database handler";
 		return false;
+	}
 
 	RepoBSON bson;
 	repoTrace << "loading revision : " << databaseName << "." << projectName << " head Revision: " << headRevision;
@@ -1101,7 +1118,11 @@ bool RepoScene::loadScene(
 	std::string &errMsg){
 	bool success = true;
 
-	if (!handler) return false;
+	if (!handler)
+	{
+		errMsg = "Cannot load revision with an empty database handler";
+		return false;
+	}
 
 	if (!revNode){
 		//try to load revision node first.
@@ -1350,14 +1371,16 @@ bool RepoScene::populate(
 	//deal with References
 	RepoNodeSet::iterator refIt;
 	//Make sure it is propagated into the repoScene if it exists in revision node
-	worldOffset = getWorldOffset();
 
+	if (g.references.size()) worldOffset.clear();
 	for (const auto &node : g.references)
 	{
 		ReferenceNode* reference = (ReferenceNode*)node;
 
 		//construct a new RepoScene with the information from reference node and append this g to the Scene
-		RepoScene *refg = new RepoScene(databaseName, reference->getProjectName(), sceneExt, revExt);
+		std::string spDbName = reference->getDatabaseName();
+		if (spDbName.empty()) spDbName = databaseName;
+		RepoScene *refg = new RepoScene(spDbName, reference->getProjectName(), sceneExt, revExt);
 		if (reference->useSpecificRevision())
 			refg->setRevision(reference->getRevisionID());
 		else
@@ -1368,13 +1391,9 @@ bool RepoScene::populate(
 		{
 			g.referenceToScene[reference->getSharedID()] = refg;
 			auto refOffset = refg->getWorldOffset();
-			if (refOffset.size() >= worldOffset.size())
+			if (!worldOffset.size())
 			{
-				for (size_t offIdx = 0; offIdx < worldOffset.size(); ++offIdx)
-				{
-					if (worldOffset[offIdx] > refOffset[offIdx])
-						worldOffset[offIdx] = refOffset[offIdx];
-				}
+				worldOffset = refOffset;
 			}
 		}
 		else{
@@ -1386,11 +1405,38 @@ bool RepoScene::populate(
 	for (const auto &node : g.references)
 	{
 		ReferenceNode* reference = (ReferenceNode*)node;
+		auto parent = reference->getParentIDs().at(0);
 		auto refScene = g.referenceToScene[reference->getSharedID()];
 		auto refOffset = refScene->getWorldOffset();
-		std::vector<double> dOffset = { refOffset[0] - worldOffset[0], refOffset[1] - worldOffset[1], refOffset[2] - worldOffset[2] };
-		repoTrace << "delta Offset = [" << dOffset[0] << " , " << dOffset[1] << ", " << dOffset[2] << " ]";
-		refScene->shiftModel(dOffset);
+		//Back to world coord of subProject
+		std::vector<std::vector<float>> backToSubWorld =
+		{ { 1., 0., 0., (float)refOffset[0] },
+		{ 0., 1., 0., (float)refOffset[1] },
+		{ 0., 0., 1., (float)refOffset[2] },
+		{ 0., 0., 0., 1 } };
+		std::vector<std::vector<float>> toFedWorldTrans =
+		{ { 1., 0., 0., (float)-worldOffset[0] },
+		{ 0., 1., 0., (float)-worldOffset[1] },
+		{ 0., 0., 1., (float)-worldOffset[2] },
+		{ 0., 0., 0., 1. } };
+
+		//parent - ref
+		//Becomes: toFedWorld - parent - toSubWorld - ref
+
+		auto parentNode = getNodeBySharedID(GraphType::DEFAULT, parent);
+		auto grandParent = parentNode->getParentIDs().at(0);
+		auto grandParentNode = getNodeBySharedID(GraphType::DEFAULT, grandParent);
+		auto toFedWorld = new TransformationNode(RepoBSONFactory::makeTransformationNode(toFedWorldTrans, "trans", { grandParent }));
+		auto toSubWorld = new TransformationNode(RepoBSONFactory::makeTransformationNode(backToSubWorld, "trans", { parent }));
+		std::vector<RepoNode*> newNodes;
+		newNodes.push_back(toFedWorld);
+		newNodes.push_back(toSubWorld);
+		addNodes(newNodes);
+		addInheritance(GraphType::DEFAULT, toSubWorld, reference);
+		addInheritance(GraphType::DEFAULT, toFedWorld, parentNode);
+		abandonChild(GraphType::DEFAULT, grandParent, parentNode);
+		abandonChild(GraphType::DEFAULT, parent, reference);
+		newModified.clear(); //We're still loading the scene, there shouldn't be anything here anyway.
 	}
 
 	return success;
@@ -1451,9 +1497,12 @@ void RepoScene::reorientateDirectXModel()
 			clearStash();
 
 			//Apply the rotation on the offset
-			auto temp = worldOffset[2];
-			worldOffset[2] = -worldOffset[1];
-			worldOffset[1] = temp;
+			if (worldOffset.size())
+			{
+				auto temp = worldOffset[2];
+				worldOffset[2] = -worldOffset[1];
+				worldOffset[1] = temp;
+			}
 		}
 		else
 		{
@@ -1499,10 +1548,11 @@ void RepoScene::shiftModel(
 	}
 }
 
-void RepoScene::updateRevisionStatus(
+bool RepoScene::updateRevisionStatus(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	const RevisionNode::UploadStatus &status)
 {
+	bool success = false;
 	if (revNode)
 	{
 		auto updatedRev = revNode->cloneAndUpdateStatus(status);
@@ -1511,7 +1561,11 @@ void RepoScene::updateRevisionStatus(
 		{
 			//update revision node
 			std::string errMsg;
-			handler->upsertDocument(databaseName, projectName + "." + revExt, updatedRev, true, errMsg);
+			success = handler->upsertDocument(databaseName, projectName + "." + revExt, updatedRev, true, errMsg);
+		}
+		else
+		{
+			repoError << "Cannot update revision status without a database handler";
 		}
 
 		revNode->swap(updatedRev);
@@ -1521,6 +1575,8 @@ void RepoScene::updateRevisionStatus(
 	{
 		repoError << "Trying to update the status of a revision when the scene is not revisioned!";
 	}
+
+	return success;
 }
 
 void RepoScene::printStatistics(std::iostream &output)

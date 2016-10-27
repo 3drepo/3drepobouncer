@@ -29,6 +29,7 @@ const static std::string IFC_MAPPED_ITEM = "IFCMAPPEDITEM";
 const static std::string IFC_RELVOID_ELE = "$RELVOIDSELEMENT";
 const static std::string IFC_RELVOID_ELE2 = "IFCRELVOIDSELEMENT";
 const static std::string IFC_RELAGGREGATES = "$RELAGGREGATES";
+const static std::string IFC_TYPE_SPACE = "IFCSPACE";
 
 auto defaultG = repo::core::model::RepoScene::GraphType::DEFAULT;
 
@@ -151,7 +152,17 @@ bool IFCOptimzer::sanitiseTransformationNames(
 		auto realName = name.substr(posFirstUnderScore + 1, posGuid - (posFirstUnderScore + 2));
 		auto guid = name.substr(posGuid);
 
-		repoTrace << "Original : " << name << " Name : " << realName << ", ifc type : " << ifcType << " guid : " << guid;
+		auto ifcTypeUpper = ifcType;
+
+		std::transform(ifcTypeUpper.begin(), ifcTypeUpper.end(), ifcTypeUpper.begin(), ::toupper);
+
+		if (ifcTypeUpper == IFC_TYPE_SPACE)
+		{
+			realName += " " + IFC_TYPE_SPACE_LABEL;
+		}
+
+		if (realName.empty())
+			realName = "(" + ifcType + ")";
 
 		auto newTrans = trans->cloneAndChangeName(realName, false);
 		scene->modifyNode(defaultG, trans, &newTrans, true);
@@ -167,6 +178,7 @@ bool IFCOptimzer::sanitiseTransformationNames(
 			{
 				auto metaNode = dynamic_cast<repo::core::model::MetadataNode*>(meta);
 				repo::core::model::RepoNode updatedMeta = metaNode->cloneAndAddMetadata(newMeta);
+				updatedMeta = updatedMeta.cloneAndChangeName(realName, false);
 				scene->modifyNode(defaultG, meta, &updatedMeta, false);
 			}
 		}

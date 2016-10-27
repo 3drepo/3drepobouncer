@@ -94,7 +94,8 @@ namespace repo{
 				* @return returns a pointer to the created camera node
 				*/
 				repo::core::model::CameraNode* createCameraRepoNode(
-					const aiCamera *assimpCamera);
+					const aiCamera *assimpCamera,
+					const std::vector<double> &offset);
 				/**
 				* Create a Material Node given the information in ASSIMP objects
 				* NOTE: textures must've been populated at this point to populate references

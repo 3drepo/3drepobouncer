@@ -61,6 +61,24 @@ namespace repo {
 				~MaterialNode();
 
 				/**
+				* Get the type of node
+				* @return returns the type as a string
+				*/
+				virtual std::string getType() const
+				{
+					return REPO_NODE_TYPE_MATERIAL;
+				}
+
+				/**
+				* Get the type of node as an enum
+				* @return returns type as enum.
+				*/
+				virtual NodeType getTypeAsEnum() const
+				{
+					return NodeType::MATERIAL;
+				}
+
+				/**
 				* Check if the node is semantically equal to another
 				* Different node should have a different interpretation of what
 				* this means.

@@ -185,7 +185,7 @@ namespace repo {
 				*/
 				static MaterialNode makeMaterialNode(
 					const repo_material_t &material,
-					const std::string     &name,
+					const std::string     &name = std::string(),
 					const int             &apiLevel = REPO_NODE_API_LEVEL_1);
 
 				/**

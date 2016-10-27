@@ -213,7 +213,6 @@ bool SceneManager::generateWebViewBuffers(
 			scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_WEB_STASH);
 
 		std::string geoStashExt;
-		std::string x3dStashExt = scene->getX3DExtension();
 		std::string jsonStashExt = scene->getJSONExtension();
 
 		switch (exType)
@@ -247,22 +246,6 @@ bool SceneManager::generateWebViewBuffers(
 					else
 					{
 						repoError << "Failed to add file  (" << bufferPair.first << "): " << errMsg;
-					}
-				}
-				for (const auto &bufferPair : resultBuffers.x3dFiles)
-				{
-					std::string databaseName = scene->getDatabaseName();
-					std::string projectName = scene->getProjectName();
-					std::string errMsg;
-					std::string fileName = bufferPair.first;
-					if (success &= handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + x3dStashExt, fileName, bufferPair.second,
-						errMsg))
-					{
-						repoInfo << "File (" << fileName << ") added successfully.";
-					}
-					else
-					{
-						repoError << "Failed to add file  (" << fileName << "): " << errMsg;
 					}
 				}
 
@@ -323,21 +306,27 @@ bool SceneManager::generateAndCommitSelectionTree(
 		scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_SEL_TREE);
 		SelectionTreeMaker treeMaker(scene);
 		auto buffer = treeMaker.getSelectionTreeAsBuffer();
+
 		if (success = buffer.size())
 		{
 			std::string databaseName = scene->getDatabaseName();
 			std::string projectName = scene->getProjectName();
 			std::string errMsg;
-			std::string fileName = "/" + databaseName + "/" + projectName + "/revision/"
-				+ UUIDtoString(scene->getRevisionID()) + "/fulltree.json";
+			std::string fileNamePrefix = "/" + databaseName + "/" + projectName + "/revision/"
+				+ UUIDtoString(scene->getRevisionID()) + "/";
 
-			if (handler && handler->insertRawFile(databaseName, projectName + "." + scene->getJSONExtension(), fileName, buffer, errMsg))
+			for (const auto & file : buffer)
 			{
-				repoInfo << "File (" << fileName << ") added successfully.";
-			}
-			else
-			{
-				repoError << "Failed to add file  (" << fileName << "): " << errMsg;
+				std::string fileName = fileNamePrefix + file.first;
+
+				if (handler && handler->insertRawFile(databaseName, projectName + "." + scene->getJSONExtension(), fileName, file.second, errMsg))
+				{
+					repoInfo << "File (" << fileName << ") added successfully.";
+				}
+				else
+				{
+					repoError << "Failed to add file  (" << fileName << "): " << errMsg;
+				}
 			}
 		}
 		else

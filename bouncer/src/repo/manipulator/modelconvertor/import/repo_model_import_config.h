@@ -427,6 +427,11 @@ namespace repo{
 					return stringSettings.at(REMOVE_REDUNDANT_NODES_SKIP);
 				}
 
+				virtual bool getSkipIFCSpaceRepresentation() const
+				{
+					return boolSettings.at(IFC_SKIP_SPACE_REPRESENTATIONS);
+				}
+
 				/*!
 				* Returns ture if sort and remove is checked in settings, false otherwise.
 				* Defaults to false.
@@ -756,6 +761,11 @@ namespace repo{
 					setValue(REMOVE_REDUNDANT_NODES_SKIP, skip);
 				}
 
+				virtual void getSkipIFCSpaceRepresentation(const bool &skip)
+				{
+					setValue(IFC_SKIP_SPACE_REPRESENTATIONS, skip);
+				}
+
 				virtual void setSortAndRemove(bool on)
 				{
 					setValue(SORT_AND_REMOVE, on);
@@ -872,6 +882,7 @@ namespace repo{
 				static const std::string GENERATE_NORMALS_FLAT;
 				static const std::string GENERATE_NORMALS_SMOOTH;
 				static const std::string GENERATE_NORMALS_SMOOTH_CREASE_ANGLE;
+				static const std::string IFC_SKIP_SPACE_REPRESENTATIONS;
 				static const std::string IMPROVE_CACHE_LOCALITY;
 				static const std::string IMPROVE_CACHE_LOCALITY_VERTEX_CACHE_SIZE;
 				static const std::string JOIN_IDENTICAL_VERTICES;

@@ -47,10 +47,45 @@ namespace repo {
 #define REPO_USER_LABEL_ROLES                 "roles"
 #define REPO_USER_LABEL_ROLE                 "role"
 #define REPO_USER_LABEL_API_KEYS             "apiKeys"
+#define REPO_USER_LABEL_SUBS				 "subscriptions"
+#define REPO_USER_LABEL_SUBS_PLAN			 "plan"
+#define REPO_USER_LABEL_SUBS_ID				 "_id"
+#define REPO_USER_LABEL_SUBS_ACTIVE			 "active"
+#define REPO_USER_LABEL_SUBS_CURRENT_AGREE   "inCurrentAgreement"
+#define REPO_USER_LABEL_SUBS_PENDING_DEL     "pendingDelete"
+#define REPO_USER_LABEL_SUBS_TOKEN           "token"
+#define REPO_USER_LABEL_SUBS_CREATED_AT      "createdAt"
+#define REPO_USER_LABEL_SUBS_UPDATED_AT      "updatedAt"
+#define REPO_USER_LABEL_SUBS_EXPIRES_AT      "expiredAt"
+#define REPO_USER_LABEL_SUBS_BILLING_USER	 "billingUser"
+#define REPO_USER_LABEL_SUBS_ASSIGNED_USER	 "assignedUser"
+#define REPO_USER_LABEL_SUBS_LIMITS			 "limits"
+#define REPO_USER_LABEL_SUBS_LIMITS_COLLAB	 "collaboratorLimit"
+#define REPO_USER_LABEL_SUBS_LIMITS_SPACE	 "spaceLimit"
+
+			//name of free user plan
+#define REPO_USER_SUBS_STANDARD_FREE   "BASIC"
 
 			class REPO_API_EXPORT RepoUser : public RepoBSON
 			{
 			public:
+				struct SubscriptionInfo
+				{
+					std::string id;
+					bool active;
+					bool inCurrentAgreement;
+					bool pendingDelete;
+					int64_t updatedAt;
+					int64_t createdAt;
+					int64_t expiresAt;
+					std::string billingUser;
+					std::string assignedUser;
+					std::string token;
+					std::string planName;
+					int collaboratorLimit;
+					double spaceLimit;
+				};
+
 				RepoUser();
 
 				RepoUser(RepoBSON bson) : RepoBSON(bson){}
@@ -58,12 +93,45 @@ namespace repo {
 				~RepoUser();
 
 				/**
-				* Clone and modify
+				* Generate a default subscription
+				*/
+				static SubscriptionInfo createDefaultSub(
+					const int64_t &expireTS = -1);
+
+				/**
+				* Clone and add roles into this use bson
+				* @param dbName name of the database for the role
+				* @param role name of the role
+				* @return returns a cloned repoUser bson with role added
 				*/
 
 				RepoUser cloneAndAddRole(
 					const std::string &dbName,
 					const std::string &role) const;
+
+				/**
+				* Clone and merge new user info into the existing info
+				* @newUserInfo new info that needs ot be added/updated
+				* @return returns a new user with fields updated
+				*/
+				RepoUser cloneAndMergeUserInfo(
+					const RepoUser &newUserInfo) const;
+
+				/**
+				* Clone and increase/decrease license count
+				* if diff is positive, it will add new default licenses
+				* If we are trying to decrease n licenses, there has to be n unassigned, active licenses.
+				* @param diff the increase or decrease of license (-1 to remove 1, 1 to add 1)
+				* @param expDate specify the expiry date of the license (default is -1, which never expires)
+				* @returns a cloned version of repoUser with subscription information updated
+				*/
+				RepoUser cloneAndUpdateLicenseCount(
+					const int &diff,
+					const int64_t expDate = -1
+					) const;
+
+				RepoUser cloneAndUpdateSubscriptions(
+					const std::vector<SubscriptionInfo> &subs) const;
 
 				/**
 				* --------- Convenience functions -----------
@@ -139,6 +207,13 @@ namespace repo {
 				}
 
 				/**
+				* Get information on how the licenses are assigned
+				* If the license isn't assigned, returns an empty string
+				* @return returns a list of pair {license plan name, assignment}
+				*/
+				std::list<std::pair<std::string, std::string>> getLicenseAssignment() const;
+
+				/**
 				* Get the password of this user
 				* @return returns masked password of the user
 				*/
@@ -150,6 +225,32 @@ namespace repo {
 				*/
 				std::list<std::pair<std::string, std::string>>
 					getRolesList() const;
+
+				/**
+				* Get list of subscription info
+				* @return returns a vector of subscription info
+				*/
+				std::vector<SubscriptionInfo> getSubscriptionInfo() const;
+
+				/**
+				* Get the current collaborator limit of the user
+				* @return returns the number of collaborators available to the user
+				*/
+				uint32_t getNCollaborators() const;
+
+				/**
+				* Get the current quota of the user
+				* @return returns the quota available to the user
+				*/
+				double getQuota() const;
+
+			private:
+				/**
+				* determine if the subscription is active
+				* @param sub subscription to examine
+				* @return returns true if it is active, false otherwise
+				*/
+				bool isSubActive(const RepoUser::SubscriptionInfo &sub) const;
 			};
 		}// end namespace model
 	} // end namespace core

@@ -243,6 +243,7 @@ bool MultipartOptimizer::collectMeshData(
 				repo_mesh_mapping_t meshMap;
 				repoUUID matID = getMaterialID(scene, mesh);
 				repoUUID newMatID;
+
 				if (matIDMap.find(matID) == matIDMap.end())
 				{
 					newMatID = generateUUID();
@@ -549,7 +550,7 @@ repoUUID MultipartOptimizer::getMaterialID(
 	const repo::core::model::MeshNode  *mesh
 	)
 {
-	repoUUID matID;
+	repoUUID matID = stringToUUID(REPO_HISTORY_MASTER_BRANCH);
 	const auto mat = scene->getChildrenNodesFiltered(defaultGraph, mesh->getSharedID(), repo::core::model::NodeType::MATERIAL);
 	if (mat.size())
 	{
@@ -707,13 +708,16 @@ bool MultipartOptimizer::processMeshGroup(
 				//This material hasn't beenn copied yet.
 				//clone and wipe the parent entries, insert new parents
 				auto matNode = scene->getNodeByUniqueID(defaultGraph, matID.first);
-				repo::core::model::RepoNode clonedMat = repo::core::model::RepoNode(matNode->removeField(REPO_NODE_LABEL_PARENTS));
-				repo::core::model::RepoBSONBuilder builder;
-				builder.append(REPO_NODE_LABEL_ID, matID.second);
-				auto changeBSON = builder.obj();
-				clonedMat = clonedMat.cloneAndAddFields(&changeBSON, false);
-				clonedMat = clonedMat.cloneAndAddParent({ sMeshSharedID });
-				matNodes[matID.second] = new repo::core::model::MaterialNode(clonedMat);
+				if (matNode)
+				{
+					repo::core::model::RepoNode clonedMat = repo::core::model::RepoNode(matNode->removeField(REPO_NODE_LABEL_PARENTS));
+					repo::core::model::RepoBSONBuilder builder;
+					builder.append(REPO_NODE_LABEL_ID, matID.second);
+					auto changeBSON = builder.obj();
+					clonedMat = clonedMat.cloneAndAddFields(&changeBSON, false);
+					clonedMat = clonedMat.cloneAndAddParent({ sMeshSharedID });
+					matNodes[matID.second] = new repo::core::model::MaterialNode(clonedMat);
+				}
 			}
 			else
 			{
