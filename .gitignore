@@ -1,6 +1,8 @@
 build
 log
 
+tools/testScripts
+
 #nodeJS stuff
 tools/bouncer_worker/config.js
 tools/bouncer_worker/node_modules
