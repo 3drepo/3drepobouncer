@@ -34,13 +34,14 @@ look forward to hear from you.
 * (ISSUE #147) Fixed camera positions
 * (ISSUE #151) Fixed offset calculations on federated projects
 * (ISSUE #153) Fixed fbx rotations that went wrong after #143
+* (ISSUE #154) Small bug fix on Matrix Vector multiplication
 
 ========================= New Features =========================
 * (ISSUE #132) Federation creation API exposed on client
 * (ISSUE #134) Ability to read/update user licensing  information
 * (ISSUE #136) FBX imports will be automatically rotated
 * (ISSUE #142) Supports "hidden by default" geometries
-* (ISSUE #144, #145, #152) Improved IFC geometry support
+* (ISSUE #144, #145, #152, #156, #158) Improved IFC geometry support
 
 
 
