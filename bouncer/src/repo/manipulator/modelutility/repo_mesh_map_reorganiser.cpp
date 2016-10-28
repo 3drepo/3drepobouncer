@@ -290,6 +290,7 @@ bool MeshMapReorganiser::performSplitting()
 			splitMap[currentSubMesh.mesh_id].push_back(newMappings.size() - 1);
 			completeLastMatMapEntry(totalVertexCount, totalFaceCount);
 		}
+
 	}
 
 	if (subMeshVertexCount) {
@@ -427,36 +428,15 @@ bool MeshMapReorganiser::splitLargeMesh(
 		splitMeshFaceCount++;
 	}//for (uint32_t fIdx = 0; fIdx < currentMeshNumFaces; ++fIdx)
 
-	//Modify the vertices as it may be rearranged within this region
-	std::copy(reMappedVertices.begin(), reMappedVertices.end(), newVertices.begin() + newVerticesVFrom);
-	if (hasNormal)
-		std::copy(reMappedNormals.begin(), reMappedNormals.end(), newNormals.begin() + newVerticesVFrom);
-
-	if (hasUV)
-		for (int iUV = 0; iUV < oldUVs.size(); ++iUV)
-			std::copy(reMappedUVs[iUV].begin(), reMappedUVs[iUV].end(), newUVs[iUV].begin() + newVerticesVFrom);
-
-	if (hasColor)
-		std::copy(reMappedCols.begin(), reMappedCols.end(), newColors.begin() + newVerticesVFrom);
-
 	updateIDMapArray(splitMeshVertexCount, idMapIdx);
-
 	totalVertexCount += splitMeshVertexCount;
 	totalLargeMeshVertexCount += splitMeshVertexCount;
 	totalFaceCount += splitMeshFaceCount;
 
-	auto leftOverVertices = currentMeshNumVertices - totalLargeMeshVertexCount;
-
-	if (leftOverVertices < 0)
+	if (currentMeshNumVertices > totalLargeMeshVertexCount)
 	{
-		//If totalLargeMeshVertexCount is bigger than currentMeshNumVertices
-		//then it means we have somehow expanded the range. this is unexpected
-		repoError << "Whilst splitting a large, the number of vertices has increased.";
-		return false;
-	}
+		auto leftOverVertices = currentMeshNumVertices - totalLargeMeshVertexCount;
 
-	if (leftOverVertices)
-	{
 		auto startingPos = newVertices.begin() + newMappings.back().vertFrom + splitMeshVertexCount;
 
 		//Chop out the unwanted vertices
@@ -482,6 +462,57 @@ bool MeshMapReorganiser::splitLargeMesh(
 			}
 		}
 	}
+	else if (currentMeshNumVertices < totalLargeMeshVertexCount)
+	{
+		auto extraVertices = totalLargeMeshVertexCount - currentMeshNumVertices;
+		auto startingPos = newVertices.begin() + newMappings.back().vertFrom;
+
+		//Chop out the unwanted vertices
+		std::vector<repo_vector_t> extraVs;
+		extraVs.resize(extraVertices);
+		newVertices.insert(startingPos, extraVs.begin(), extraVs.end());
+		if (hasNormal)
+		{
+			auto startingPosN = newNormals.begin() + newMappings.back().vertFrom;
+			newNormals.insert(startingPosN, extraVs.begin(), extraVs.end());
+		}
+
+		if (hasColor)
+		{
+			auto startingPosN = newColors.begin() + newMappings.back().vertFrom;
+			std::vector<repo_color4d_t> extras;
+			extras.resize(extraVertices);
+			newColors.insert(startingPosN, extras.begin(), extras.end());
+
+		}
+
+		if (hasUV)
+		{
+			for (int iUV = 0; iUV < oldUVs.size(); ++iUV)
+			{
+				auto startingPosN = newUVs[iUV].begin() + newMappings.back().vertFrom;
+				std::vector<repo_vector2d_t> extras;
+				extras.resize(extraVertices);
+				newUVs[iUV].insert(startingPosN, extras.begin(), extras.end());
+			}
+		}
+	}
+
+
+
+	//Modify the vertices as it may be rearranged within this region
+	std::copy(reMappedVertices.begin(), reMappedVertices.end(), newVertices.begin() + newVerticesVFrom);
+	if (hasNormal)
+		std::copy(reMappedNormals.begin(), reMappedNormals.end(), newNormals.begin() + newVerticesVFrom);
+
+	if (hasUV)
+		for (int iUV = 0; iUV < oldUVs.size(); ++iUV)
+			std::copy(reMappedUVs[iUV].begin(), reMappedUVs[iUV].end(), newUVs[iUV].begin() + newVerticesVFrom);
+
+	if (hasColor)
+		std::copy(reMappedCols.begin(), reMappedCols.end(), newColors.begin() + newVerticesVFrom);
+
+
 
 	splitMap[currentSubMesh.mesh_id].push_back(newMappings.size() - 1);
 	finishSubMesh(newMappings.back(), bboxMin, bboxMax, splitMeshVertexCount, splitMeshFaceCount);
