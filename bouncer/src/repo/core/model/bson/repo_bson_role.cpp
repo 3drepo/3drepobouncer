@@ -378,7 +378,6 @@ std::vector<RepoPermission> RepoRole::translatePrivileges(
 					permTracker[projectFullName] = { false, false };
 
 				permTracker[projectFullName].first = hasWrite;
-				repoDebug << "Tracked " << (hasWrite ? "WRITE" : "READ") << "on " << projectFullName << "." << postfix;
 
 
 			}
@@ -394,7 +393,6 @@ std::vector<RepoPermission> RepoRole::translatePrivileges(
 					permTracker[projectFullName] = { false, false };
 
 				permTracker[projectFullName].second = hasWrite;
-				repoDebug << "Tracked " << (hasWrite ? "WRITE" : "READ") << "on " << projectFullName << "." << postfix;
 			}
 		}
 	}
@@ -405,28 +403,22 @@ std::vector<RepoPermission> RepoRole::translatePrivileges(
 		auto firstDot = projList.first.find_first_of('.');
 		perm.database = projList.first.substr(0, firstDot);
 		perm.project = projList.first.substr(firstDot+1);
-		std::string debug;
 		if (projList.second.first)
 		{
 			perm.permission = AccessRight::READ_WRITE;
-			debug = "READWRITE";
 		}
 		else
 		{
 			if (projList.second.second)
 			{
 				perm.permission = AccessRight::READ_AND_COMMENT;
-				debug = "READANDCOMMENT";
 			}
 			else
 			{
 				perm.permission = AccessRight::READ_ONLY;
-				debug = "READNOCOMMENT";
 			}
 
 		}
-
-		repoDebug << "Translated: " << perm.database << "." << perm.project << " : " << debug;
 
 		permissions.push_back(perm);
 	}
