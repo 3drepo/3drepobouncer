@@ -45,6 +45,7 @@ unset(Boost_LIBRARY_DIRS CACHE)
 
 find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options regex)
 add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
+add_definitions(-DBOOST_OPTIONAL_USE_OLD_DEFINITION_OF_NONE)
 
 if(NOT ${Boost_FOUND})
 	message(FATAL_ERROR "Cannot find boost")
