@@ -25,7 +25,7 @@ namespace repo {
 				INSERT, UPDATE, REMOVE, FIND, CREATE_USER, CREATE_ROLE,
 				DROP_ROLE, GRANT_ROLE, REVOKE_ROLE, VIEW_ROLE, UNKNOWN
 			};
-			enum class AccessRight { READ, WRITE, READ_WRITE };
+			enum class AccessRight { READ_AND_COMMENT, READ_ONLY, READ_WRITE };
 
 			struct RepoPrivilege
 			{
