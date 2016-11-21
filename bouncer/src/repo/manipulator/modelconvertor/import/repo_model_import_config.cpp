@@ -85,6 +85,9 @@ const std::string ModelImportConfig::SPLIT_LARGE_MESHES_VERTEX_LIMIT = "splitLar
 const std::string ModelImportConfig::TRIANGULATE = "triangulate";
 const std::string ModelImportConfig::VALIDATE_DATA_STRUCTURES = "validateDataStructures";
 
+//IFCOpenShell settings
+const std::string ModelImportConfig::USE_IFC_OPEN_SHELL = "useIfcOpenShell";
+
 ModelImportConfig::ModelImportConfig(
 	const std::string &configFile)
 {
@@ -157,6 +160,7 @@ void ModelImportConfig::readConfig(
 		(SPLIT_LARGE_MESHES.c_str(), boost::program_options::value<bool>(&boolSettings[SPLIT_LARGE_MESHES]), "SPLIT_LARGE_MESHES")
 		(TRIANGULATE.c_str(), boost::program_options::value<bool>(&boolSettings[TRIANGULATE]), "TRIANGULATE")
 		(VALIDATE_DATA_STRUCTURES.c_str(), boost::program_options::value<bool>(&boolSettings[VALIDATE_DATA_STRUCTURES]), "VALIDATE_DATA_STRUCTURES")
+		(USE_IFC_OPEN_SHELL.c_str(), boost::program_options::value<bool>(&boolSettings[USE_IFC_OPEN_SHELL]), "USE_IFC_OPEN_SHELL")
 
 		(LIMIT_BONE_WEIGHTS_MAX_WEIGHTS.c_str(), boost::program_options::value<int32_t>(&intSettings[LIMIT_BONE_WEIGHTS_MAX_WEIGHTS]), "LIMIT_BONE_WEIGHTS_MAX_WEIGHTS")
 		(IMPROVE_CACHE_LOCALITY_VERTEX_CACHE_SIZE.c_str(), boost::program_options::value<int32_t>(&intSettings[IMPROVE_CACHE_LOCALITY_VERTEX_CACHE_SIZE]), "IMPROVE_CACHE_LOCALITY_VERTEX_CACHE_SIZE")
@@ -244,6 +248,7 @@ void ModelImportConfig::reset()
 	boolSettings[SPLIT_LARGE_MESHES] = repoDefaultSplitLargeMeshes;
 	boolSettings[TRIANGULATE] = repoDefaultTriangulate;
 	boolSettings[VALIDATE_DATA_STRUCTURES] = repoDefaultValidateDataStructures;
+	boolSettings[USE_IFC_OPEN_SHELL] = repoDefaultUseIfcOpenShell;
 
 	/**
 	* ----------------- int fields ----------------------

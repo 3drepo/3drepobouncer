@@ -37,7 +37,7 @@ namespace repo{
 				~ModelImportConfig();
 
 				/**
-				* ---------------- Getters -------------------------
+				* ---------------- Getters (ASSIMP)-------------------------
 				*/
 				/*!
 				* Returns true if calculate tangent space is checked in settings, false
@@ -541,7 +541,19 @@ namespace repo{
 				}
 
 				/**
-				* ---------------- Setters -------------------------
+				* ---------------- Getters (IFC OpenShell)-------------------------
+				*/
+				/**
+				* Returns true if the system should use IFCOpenShell for IFCs, false
+				* otherwise. Defaults to true.
+				*/
+				virtual bool getUseIFCOpenShell() const
+				{
+					return boolSettings.at(USE_IFC_OPEN_SHELL);
+				}
+
+				/**
+				* ---------------- Setters (ASSIMP) -------------------------
 				*/
 
 				//! Sets the calculate tangent space to settings.
@@ -826,6 +838,14 @@ namespace repo{
 					setValue(VALIDATE_DATA_STRUCTURES, on);
 				}
 
+				/**
+				* ---------------- Setters (IFCOpenShell) -------------------------
+				*/
+				virtual void setUseIFCOpenShell(bool on)
+				{
+					setValue(USE_IFC_OPEN_SHELL, on);
+				}
+
 			protected:
 				/**
 				* Resets all the settings to default
@@ -921,6 +941,8 @@ namespace repo{
 				static const std::string SPLIT_LARGE_MESHES_VERTEX_LIMIT;
 				static const std::string TRIANGULATE;
 				static const std::string VALIDATE_DATA_STRUCTURES;
+
+				static const std::string USE_IFC_OPEN_SHELL;
 			};
 		}//namespace modelconvertor
 	}//namespace manipulator

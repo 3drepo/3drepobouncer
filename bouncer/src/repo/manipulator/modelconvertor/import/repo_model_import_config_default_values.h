@@ -76,3 +76,6 @@ static const float       repoDefaultDeboneThreshold = 1.0f;
 static const float       repoDefaultGenerateNormalsSmoothCreaseAngle = 175.0f;
 static const std::string repoDefaultRemoveRedundantMaterialsSkip = "";
 static const std::string repoDefaultRemoveRedundantNodesSkip = "";
+
+//IfcOpenShell settings
+static const bool		repoDefaultUseIfcOpenShell = true;
