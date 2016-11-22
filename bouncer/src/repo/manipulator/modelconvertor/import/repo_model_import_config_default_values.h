@@ -19,6 +19,7 @@
 */
 
 #include <string>
+#include <vector>
 
 static const bool        repoDefaultCalculateTangentSpace = false;
 static const bool        repoDefaultConvertToUVCoordinates = false;
@@ -79,3 +80,6 @@ static const std::string repoDefaultRemoveRedundantNodesSkip = "";
 
 //IfcOpenShell settings
 static const bool		repoDefaultUseIfcOpenShell = true;
+static const bool		repoDefaultIOSUseFilter = true;
+static const bool		repoDefaultIsExclusion = true;
+static const std::vector<std::string> repoDefaultIfcOpenShellFilterList = { "IfcOpeningElement", "IfcMember" };

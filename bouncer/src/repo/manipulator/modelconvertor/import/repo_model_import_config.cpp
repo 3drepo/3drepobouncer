@@ -87,6 +87,9 @@ const std::string ModelImportConfig::VALIDATE_DATA_STRUCTURES = "validateDataStr
 
 //IFCOpenShell settings
 const std::string ModelImportConfig::USE_IFC_OPEN_SHELL = "useIfcOpenShell";
+const std::string ModelImportConfig::IOS_USE_FILTER = "useElementsFiltering";
+const std::string ModelImportConfig::IOS_FILTER_EXCLUSION = "filterByExclusion";
+const std::string ModelImportConfig::IOS_FILTER_LIST = "filterList";
 
 ModelImportConfig::ModelImportConfig(
 	const std::string &configFile)
@@ -249,6 +252,8 @@ void ModelImportConfig::reset()
 	boolSettings[TRIANGULATE] = repoDefaultTriangulate;
 	boolSettings[VALIDATE_DATA_STRUCTURES] = repoDefaultValidateDataStructures;
 	boolSettings[USE_IFC_OPEN_SHELL] = repoDefaultUseIfcOpenShell;
+	boolSettings[IOS_USE_FILTER] = repoDefaultIOSUseFilter;
+	boolSettings[IOS_FILTER_EXCLUSION] = repoDefaultIsExclusion;
 
 	/**
 	* ----------------- int fields ----------------------
@@ -271,4 +276,9 @@ void ModelImportConfig::reset()
 	*/
 	stringSettings[REMOVE_REDUNDANT_MATERIALS_SKIP] = repoDefaultRemoveRedundantMaterialsSkip;
 	stringSettings[REMOVE_REDUNDANT_NODES_SKIP] = repoDefaultRemoveRedundantNodesSkip;
+
+	/**
+	* ----------------- vector string fields ----------------------
+	*/
+	stringVecSettings[IOS_FILTER_LIST] = repoDefaultIfcOpenShellFilterList;
 }

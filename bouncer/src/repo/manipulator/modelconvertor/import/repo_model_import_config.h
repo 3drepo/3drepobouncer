@@ -23,6 +23,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 #include <stdint.h>
 
 #include "../../../repo_bouncer_global.h"
@@ -553,6 +554,34 @@ namespace repo{
 				}
 
 				/**
+				* Returns true if the system should be filtering out elements for IFCOpenShell, false
+				* otherwise. Defaults to true.
+				*/
+				virtual bool getUseElementsFiltering() const
+				{
+					return boolSettings.at(IOS_USE_FILTER);
+				}
+
+				/**
+				* Returns true if the system should be filtering out elements by excluding specified elementsfor IFCOpenShell, false
+				* otherwise. Defaults to true.
+				*/
+				virtual bool getIsExclusionFilter() const
+				{
+					return boolSettings.at(IOS_FILTER_EXCLUSION);
+				}
+
+
+				/**
+				* Returns the list of keywords being filtered
+				*/
+				virtual std::vector<std::string> getFilteringKeywords() const
+				{
+					return stringVecSettings.at(IOS_FILTER_LIST);
+				}
+
+
+				/**
 				* ---------------- Setters (ASSIMP) -------------------------
 				*/
 
@@ -846,6 +875,21 @@ namespace repo{
 					setValue(USE_IFC_OPEN_SHELL, on);
 				}
 
+				virtual void setUseElementsFiltering(bool on)
+				{
+					setValue(IOS_USE_FILTER, on);
+				}
+
+				virtual void setIsExclusionFilter(bool on)
+				{
+					setValue(IOS_FILTER_EXCLUSION, on);
+				}
+
+				virtual void setFilterKeywords(const std::vector<std::string> &keywords)
+				{
+					setValue(IOS_FILTER_LIST, keywords);
+				}
+
 			protected:
 				/**
 				* Resets all the settings to default
@@ -860,30 +904,36 @@ namespace repo{
 				void readConfig(
 					std::ifstream &conf);
 
-				void setValue(std::string label, bool value)
+				void setValue(std::string label, const bool value)
 				{
 					boolSettings[label] = value;
 				}
 
-				void setValue(std::string label, int32_t value)
+				void setValue(std::string label, const int32_t &value)
 				{
 					intSettings[label] = value;
 				}
 
-				void setValue(std::string label, float value)
+				void setValue(std::string label, const float &value)
 				{
 					floatSettings[label] = value;
 				}
 
-				void setValue(std::string label, std::string value)
+				void setValue(std::string label, const std::string &value)
 				{
 					stringSettings[label] = value;
+				}
+
+				void setValue(std::string label, const std::vector<std::string> &value)
+				{
+					stringVecSettings[label] = value;
 				}
 
 				std::map<std::string, bool> boolSettings;
 				std::map<std::string, int32_t> intSettings;
 				std::map<std::string, float> floatSettings;
 				std::map<std::string, std::string> stringSettings;
+				std::map<std::string, std::vector<std::string>> stringVecSettings;
 
 				static const std::string CALCULATE_TANGENT_SPACE;
 				static const std::string CALCULATE_TANGENT_SPACE_MAX_SMOOTHING_ANGLE;
@@ -942,7 +992,10 @@ namespace repo{
 				static const std::string TRIANGULATE;
 				static const std::string VALIDATE_DATA_STRUCTURES;
 
+				static const std::string IOS_USE_FILTER;
 				static const std::string USE_IFC_OPEN_SHELL;
+				static const std::string IOS_FILTER_EXCLUSION;
+				static const std::string IOS_FILTER_LIST;
 			};
 		}//namespace modelconvertor
 	}//namespace manipulator
