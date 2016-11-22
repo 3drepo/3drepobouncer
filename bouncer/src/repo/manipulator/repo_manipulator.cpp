@@ -624,6 +624,21 @@ repo::core::model::CollectionStats RepoManipulator::getCollectionStats(
 	return stats;
 }
 
+repo::core::model::DatabaseStats RepoManipulator::getDatabaseStats(
+        const std::string                             &databaseAd,
+        const repo::core::model::RepoBSON*	  cred,
+        const std::string                             &database,
+        std::string                                   &errMsg)
+{
+        repo::core::model::DatabaseStats stats;
+        repo::core::handler::AbstractDatabaseHandler* handler =
+                repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+        if (handler)
+                stats = handler->getDatabaseStats(database, errMsg);
+
+        return stats;
+}
+
 std::map<std::string, std::list<std::string>>
 RepoManipulator::getDatabasesWithProjects(
 const std::string                             &databaseAd,

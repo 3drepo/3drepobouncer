@@ -341,6 +341,17 @@ namespace repo{
 		//FIXME: vectors are much better than list for traversal efficiency...
 		// (but they also require large continuos memory allocation should they be massive)
 
+                /**
+                        * Return a DatabaseStats BSON containing statistics about
+                        * this database
+                        * @param token A RepoToken given at authentication
+                        * @param database name of database
+                        * @return returns a BSON object containing this information
+                        */
+                repo::core::model::DatabaseStats getDatabaseStats(
+                        const RepoToken *token,
+                        const std::string &database);
+
 		/**
 			* Return a list of projects with the database available to the user
 			* @param token A RepoToken given at authentication
