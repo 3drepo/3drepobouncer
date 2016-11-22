@@ -581,6 +581,97 @@ namespace repo{
 				}
 
 
+				virtual bool getWieldVertices() const
+				{
+					return boolSettings.at(IOS_WIELD_VERTICES);
+				}
+
+				virtual bool getUseWorldCoords() const
+				{
+					return boolSettings.at(IOS_USE_WORLD_COORDS);
+				}
+
+				virtual bool getConvertUnits() const
+				{
+					return boolSettings.at(IOS_CONVERT_UNITS);
+				}
+
+				virtual bool getUseBRepData() const
+				{
+					return boolSettings.at(IOS_USE_BREP_DATA);
+				}
+
+				virtual bool getSewShells() const
+				{
+					return boolSettings.at(IOS_SEW_SHELLS);
+				}
+
+				virtual bool getFasterBooleans() const
+				{
+					return boolSettings.at(IOS_FASTER_BOOLEANS);
+				}
+
+				virtual bool getNoOpeningSubtractions() const
+				{
+					return boolSettings.at(IOS_NO_OPENING_SUB);
+				}
+
+				virtual bool getNoTriangulation() const
+				{
+					return boolSettings.at(IOS_NO_TRIANGULATE);
+				}
+
+				virtual bool getUseDefaultMaterials() const
+				{
+					return boolSettings.at(IOS_USE_DEFAULT_MATS);
+				}
+
+				virtual bool getIncludeAllCurves() const
+				{
+					return boolSettings.at(IOS_INCLUDE_CURVES);
+				}
+
+				virtual bool getDisableSolidSurfaces() const
+				{
+					return boolSettings.at(IOS_NO_SOLIDS_SURFACES);
+				}
+
+				virtual bool getNoNormals() const
+				{
+					return boolSettings.at(IOS_NO_NORMALS);
+				}
+
+				virtual bool getUseElementGuids() const
+				{
+					return boolSettings.at(IOS_USE_ELEMENT_GUIDS);
+				}
+
+				virtual bool getUseElementNames() const
+				{
+					return boolSettings.at(IOS_USE_ELEMENT_NAMES);
+				}
+
+				virtual bool getUseMaterialNames() const
+				{
+					return boolSettings.at(IOS_USE_MAT_NAMES);
+				}
+
+				virtual bool getCentreModels() const
+				{
+					return boolSettings.at(IOS_CENTRE_MODEL);
+				}
+
+				virtual bool getGenerateUVs() const
+				{
+					return boolSettings.at(IOS_GENERATE_UVS);
+				}
+
+				virtual bool getApplyLayerSets() const
+				{
+					return boolSettings.at(IOS_APPLY_LAYER_SETS);
+				}
+
+
 				/**
 				* ---------------- Setters (ASSIMP) -------------------------
 				*/
@@ -890,6 +981,96 @@ namespace repo{
 					setValue(IOS_FILTER_LIST, keywords);
 				}
 
+				virtual void setWieldVertices(bool on)
+				{
+					setValue(IOS_WIELD_VERTICES, on);
+				}
+
+				virtual void setUseWorldCoords(bool on)
+				{
+					setValue(IOS_USE_WORLD_COORDS, on);
+				}
+
+				virtual void setConvertUnits(bool on)
+				{
+					setValue(IOS_CONVERT_UNITS, on);
+				}
+
+				virtual void setUseBRepData(bool on)
+				{
+					setValue(IOS_USE_BREP_DATA, on);
+				}
+
+				virtual void setSewShells(bool on)
+				{
+					setValue(IOS_SEW_SHELLS, on);
+				}
+
+				virtual void setFasterBooleans(bool on)
+				{
+					setValue(IOS_FASTER_BOOLEANS, on);
+				}
+
+				virtual void setNoOpeningSubtractions(bool on)
+				{
+					setValue(IOS_NO_OPENING_SUB, on);
+				}
+
+				virtual void setNoTriangulation(bool on)
+				{
+					setValue(IOS_NO_TRIANGULATE, on);
+				}
+
+				virtual void setUseDefaultMaterials(bool on)
+				{
+					setValue(IOS_USE_DEFAULT_MATS, on);
+				}
+
+				virtual void setIncludeAllCurves(bool on)
+				{
+					setValue(IOS_INCLUDE_CURVES, on);
+				}
+
+				virtual void setDisableSolidSurfaces(bool on)
+				{
+					setValue(IOS_NO_SOLIDS_SURFACES, on);
+				}
+
+				virtual void setNoNormals(bool on)
+				{
+					setValue(IOS_NO_NORMALS, on);
+				}
+
+				virtual void setUseElementGuids(bool on)
+				{
+					setValue(IOS_USE_ELEMENT_GUIDS, on);
+				}
+
+				virtual void setUseElementNames(bool on)
+				{
+					setValue(IOS_USE_ELEMENT_NAMES, on);
+				}
+
+				virtual void setUseMaterialNames(bool on)
+				{
+					setValue(IOS_USE_MAT_NAMES, on);
+				}
+
+				virtual void setCentreModels(bool on)
+				{
+					setValue(IOS_CENTRE_MODEL, on);
+				}
+
+				virtual void setGenerateUVs(bool on)
+				{
+					setValue(IOS_GENERATE_UVS, on);
+				}
+
+				virtual void setApplyLayerSets(bool on)
+				{
+					setValue(IOS_APPLY_LAYER_SETS, on);
+				}
+
 			protected:
 				/**
 				* Resets all the settings to default
@@ -996,6 +1177,24 @@ namespace repo{
 				static const std::string USE_IFC_OPEN_SHELL;
 				static const std::string IOS_FILTER_EXCLUSION;
 				static const std::string IOS_FILTER_LIST;
+				static const std::string IOS_WIELD_VERTICES;
+				static const std::string IOS_USE_WORLD_COORDS;
+				static const std::string IOS_CONVERT_UNITS;
+				static const std::string IOS_USE_BREP_DATA;
+				static const std::string IOS_SEW_SHELLS;
+				static const std::string IOS_FASTER_BOOLEANS;
+				static const std::string IOS_NO_OPENING_SUB;
+				static const std::string IOS_NO_TRIANGULATE;
+				static const std::string IOS_USE_DEFAULT_MATS;
+				static const std::string IOS_INCLUDE_CURVES;
+				static const std::string IOS_NO_SOLIDS_SURFACES;
+				static const std::string IOS_NO_NORMALS;
+				static const std::string IOS_USE_ELEMENT_GUIDS;
+				static const std::string IOS_USE_ELEMENT_NAMES;
+				static const std::string IOS_USE_MAT_NAMES;
+				static const std::string IOS_CENTRE_MODEL;
+				static const std::string IOS_GENERATE_UVS;
+				static const std::string IOS_APPLY_LAYER_SETS;
 			};
 		}//namespace modelconvertor
 	}//namespace manipulator

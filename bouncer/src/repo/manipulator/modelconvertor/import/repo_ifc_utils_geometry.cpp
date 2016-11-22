@@ -25,8 +25,9 @@
 
 using namespace repo::manipulator::modelconvertor;
 
-IFCUtilsGeometry::IFCUtilsGeometry(const std::string &file) :
-file(file)
+IFCUtilsGeometry::IFCUtilsGeometry(const std::string &file, const ModelImportConfig *settings) :
+file(file),
+settings(settings)
 {
 }
 
@@ -74,29 +75,55 @@ repo_material_t IFCUtilsGeometry::createMaterial(
 
 IfcGeom::IteratorSettings IFCUtilsGeometry::createSettings()
 {
-	IfcGeom::IteratorSettings settings;
-	settings.set(IfcGeom::IteratorSettings::APPLY_DEFAULT_MATERIALS, true);
-	settings.set(IfcGeom::IteratorSettings::DISABLE_OPENING_SUBTRACTIONS, false);
-	settings.set(IfcGeom::IteratorSettings::NO_NORMALS, false);
-	settings.set(IfcGeom::IteratorSettings::WELD_VERTICES, false);
-	settings.set(IfcGeom::IteratorSettings::GENERATE_UVS, true);
-	settings.set(IfcGeom::IteratorSettings::USE_WORLD_COORDS, true);
+	IfcGeom::IteratorSettings itSettings;
+	
+	itSettings.set(IfcGeom::IteratorSettings::WELD_VERTICES, settings->getWieldVertices());
+	itSettings.set(IfcGeom::IteratorSettings::USE_WORLD_COORDS, settings->getUseWorldCoords());
+	itSettings.set(IfcGeom::IteratorSettings::CONVERT_BACK_UNITS, settings->getConvertUnits());
+	itSettings.set(IfcGeom::IteratorSettings::USE_BREP_DATA, settings->getUseBRepData());
+	itSettings.set(IfcGeom::IteratorSettings::SEW_SHELLS, settings->getSewShells());
+	itSettings.set(IfcGeom::IteratorSettings::FASTER_BOOLEANS, settings->getFasterBooleans());
+	itSettings.set(IfcGeom::IteratorSettings::DISABLE_OPENING_SUBTRACTIONS, settings->getNoOpeningSubtractions());
+	itSettings.set(IfcGeom::IteratorSettings::DISABLE_TRIANGULATION, settings->getNoTriangulation());
+	itSettings.set(IfcGeom::IteratorSettings::APPLY_DEFAULT_MATERIALS, settings->getUseDefaultMaterials());
+	itSettings.set(IfcGeom::IteratorSettings::EXCLUDE_SOLIDS_AND_SURFACES, settings->getDisableSolidSurfaces());
+	itSettings.set(IfcGeom::IteratorSettings::NO_NORMALS, settings->getNoNormals());
+	itSettings.set(IfcGeom::IteratorSettings::USE_ELEMENT_NAMES, settings->getUseElementNames());
+	itSettings.set(IfcGeom::IteratorSettings::USE_ELEMENT_GUIDS, settings->getUseElementGuids());
+	itSettings.set(IfcGeom::IteratorSettings::USE_MATERIAL_NAMES, settings->getUseMaterialNames());
+	itSettings.set(IfcGeom::IteratorSettings::CENTER_MODEL, settings->getCentreModels());
+	itSettings.set(IfcGeom::IteratorSettings::GENERATE_UVS, settings->getGenerateUVs());
+	itSettings.set(IfcGeom::IteratorSettings::APPLY_LAYERSETS, settings->getApplyLayerSets());
 
-	return settings;
+
+	return itSettings;
 }
 
 bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
 {
 	repoInfo << "Initialising Geometry....." << std::endl;
 
-	auto settings = createSettings();
+	auto itSettings = createSettings();
 
-	IfcGeom::Iterator<double> contextIterator(settings, file);
+	IfcGeom::Iterator<double> contextIterator(itSettings, file);
 
-	std::set<std::string> exclude_entities;
-	exclude_entities.insert("IfcOpeningElement");
-	exclude_entities.insert("IfcMember");
-	contextIterator.excludeEntities(exclude_entities);
+	//auto filter = settings->getFilteringKeywords();
+	//if (settings->getUseElementsFiltering() &&  filter.size())
+	//{
+	//	std::set<std::string> filterSet(filter.begin(), filter.end());
+
+	//	if (settings->getIsExclusionFilter())
+	//	{
+	//		contextIterator.excludeEntities(filterSet);
+	//	}
+	//	else
+	//	{
+	//		contextIterator.includeEntities(filterSet);
+	//	}
+	//}
+	//
+	
+	
 
 	repoTrace << "Initialising Geom iterator";
 	if (contextIterator.initialize())
@@ -115,7 +142,7 @@ bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
 	std::vector<std::vector<double>> allUVs;
 	std::vector<std::string> allIds, allNames, allMaterials;
 
-	retrieveGeometryFromIterator(contextIterator, settings.get(IfcGeom::IteratorSettings::USE_MATERIAL_NAMES),
+	retrieveGeometryFromIterator(contextIterator, itSettings.get(IfcGeom::IteratorSettings::USE_MATERIAL_NAMES),
 		allVertices, allFaces, allNormals, allUVs, allIds, allNames, allMaterials);
 
 	//now we have found all meshes, take the minimum bounding box of the scene as offset

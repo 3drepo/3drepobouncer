@@ -90,6 +90,24 @@ const std::string ModelImportConfig::USE_IFC_OPEN_SHELL = "useIfcOpenShell";
 const std::string ModelImportConfig::IOS_USE_FILTER = "useElementsFiltering";
 const std::string ModelImportConfig::IOS_FILTER_EXCLUSION = "filterByExclusion";
 const std::string ModelImportConfig::IOS_FILTER_LIST = "filterList";
+const std::string ModelImportConfig::IOS_WIELD_VERTICES = "wieldVertices";
+const std::string ModelImportConfig::IOS_USE_WORLD_COORDS = "useWorldCoords";
+const std::string ModelImportConfig::IOS_CONVERT_UNITS = "convertUnits";
+const std::string ModelImportConfig::IOS_USE_BREP_DATA = "useBrepData";
+const std::string ModelImportConfig::IOS_SEW_SHELLS = "sewShells";
+const std::string ModelImportConfig::IOS_FASTER_BOOLEANS = "fasterBooleans";
+const std::string ModelImportConfig::IOS_NO_OPENING_SUB = "noOpeningSub";
+const std::string ModelImportConfig::IOS_NO_TRIANGULATE = "noTriangulate";
+const std::string ModelImportConfig::IOS_USE_DEFAULT_MATS = "useDefaultMats";
+const std::string ModelImportConfig::IOS_INCLUDE_CURVES = "includeCurves";
+const std::string ModelImportConfig::IOS_NO_SOLIDS_SURFACES = "noSolidSurfaces";
+const std::string ModelImportConfig::IOS_NO_NORMALS = "noNormals";
+const std::string ModelImportConfig::IOS_USE_ELEMENT_GUIDS = "useElementGuids";
+const std::string ModelImportConfig::IOS_USE_ELEMENT_NAMES = "useElementNames";
+const std::string ModelImportConfig::IOS_USE_MAT_NAMES = "useMatNames";
+const std::string ModelImportConfig::IOS_CENTRE_MODEL = "centreModel";
+const std::string ModelImportConfig::IOS_GENERATE_UVS = "generateUVs";
+const std::string ModelImportConfig::IOS_APPLY_LAYER_SETS = "applyLayerSets";
 
 ModelImportConfig::ModelImportConfig(
 	const std::string &configFile)
@@ -254,6 +272,24 @@ void ModelImportConfig::reset()
 	boolSettings[USE_IFC_OPEN_SHELL] = repoDefaultUseIfcOpenShell;
 	boolSettings[IOS_USE_FILTER] = repoDefaultIOSUseFilter;
 	boolSettings[IOS_FILTER_EXCLUSION] = repoDefaultIsExclusion;
+	boolSettings[IOS_WIELD_VERTICES] = repoDefaultIOSWieldVertices;
+	boolSettings[IOS_USE_WORLD_COORDS] = repoDefaultIOSUseWorldCoords;
+	boolSettings[IOS_CONVERT_UNITS] = repoDefaultIOSConvertBackUnits;
+	boolSettings[IOS_USE_BREP_DATA] = repoDefaultIOSUseBrepData;
+	boolSettings[IOS_SEW_SHELLS] = repoDefaultIOSSewShells;
+	boolSettings[IOS_FASTER_BOOLEANS] = repoDefaultIOSFasterBooleans;
+	boolSettings[IOS_NO_OPENING_SUB] = repoDefaultIOSDisableOpeningSubtractions;
+	boolSettings[IOS_NO_TRIANGULATE] = repoDefaultIOSDisableTriangulate;
+	boolSettings[IOS_USE_DEFAULT_MATS] = repoDefaultIOSApplyDefaultMaterials;
+	boolSettings[IOS_INCLUDE_CURVES] = repoDefaultIOSIncludesCurves;
+	boolSettings[IOS_NO_SOLIDS_SURFACES] = repoDefaultIOSExcludesSolidsAndSurfaces;
+	boolSettings[IOS_NO_NORMALS] = repoDefaultIOSNoNormals;
+	boolSettings[IOS_USE_ELEMENT_GUIDS] = repoDefaultIOSUseElementGuids;
+	boolSettings[IOS_USE_ELEMENT_NAMES] = repoDefaultIOSUseElementNames;
+	boolSettings[IOS_USE_MAT_NAMES] = repoDefaultIOSUseMatNames;
+	boolSettings[IOS_CENTRE_MODEL] = repoDefaultIOSCentreModel;
+	boolSettings[IOS_GENERATE_UVS] = repoDefaultIOSGenerateUVs;
+	boolSettings[IOS_APPLY_LAYER_SETS] = repoDefaultIOSApplyLayerSets;
 
 	/**
 	* ----------------- int fields ----------------------
