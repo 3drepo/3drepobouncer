@@ -37,14 +37,14 @@ os.system("sed -i 's/VERSION_MAJOR [^ ]*/VERSION_MAJOR " + majorV + ")/' bouncer
 
 minorTag = minor1V +"_"+minor2V
 
-os.system("sed -i 's/VERSION_MAJOR [^ ]*/VERSION_MINOR " + minorTag + ")/' bouncer/CMakeLists.txt")
+os.system("sed -i 's/VERSION_MINOR [^ ]*/VERSION_MINOR " + minorTag + ")/' bouncer/CMakeLists.txt")
 
 os.system("sed -i 's/BOUNCER_VMAJOR [^ ]*/BOUNCER_VMAJOR " + majorV + "/' bouncer/src/repo/repo_bouncer_global.h")
 minorVersion = minor1V + "." + minor2V
 os.system("sed -i 's/BOUNCER_VMINOR [^ ]*/BOUNCER_VMINOR \"" + minorVersion + "\"/' bouncer/src/repo/repo_bouncer_global.h")
 
 
-os.system("git add bouncer/CMakeLists.txt bouncer/src/repo/repobouncer_global.h")
+os.system("git add bouncer/CMakeLists.txt bouncer/src/repo/repo_bouncer_global.h")
 os.system("git clean -f -d")
 
 os.system("git commit -m \"Version string update\"")
