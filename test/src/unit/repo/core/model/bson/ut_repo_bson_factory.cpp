@@ -49,11 +49,11 @@ TEST(RepoBSONFactoryTest, MakeRepoRoleTest)
 
 	std::string proDB1 = "database";
 	std::string proName1 = "project1";
-	AccessRight proAccess1 = AccessRight::READ;
+	AccessRight proAccess1 = AccessRight::READ_AND_COMMENT;
 
 	std::string proDB2 = "databaseb";
 	std::string proName2 = "project2";
-	AccessRight proAccess2 = AccessRight::WRITE;
+	AccessRight proAccess2 = AccessRight::READ_ONLY;
 
 	std::string proDB3 = "databasec";
 	std::string proName3 = "project3";
