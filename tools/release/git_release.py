@@ -9,7 +9,7 @@ def fatalError(message):
 
 numArguments = len(sys.argv)
 
-if numArguments < 4:
+if numArguments < 5:
     fatalError("Usage: " + sys.argv[0] + " <prod/dev> <major> <minor1> <minor2>")
 
 release_type = sys.argv[1]
@@ -31,7 +31,6 @@ if code:
 if code:
     fatalError("git force add failed")
 
-os.system("git commit -m \"Version " + version + "\"")
 
 os.system("sed -i 's/VERSION_MAJOR [^ ]*/VERSION_MAJOR " + majorV + ")/' bouncer/CMakeLists.txt")
 
@@ -47,7 +46,7 @@ os.system("sed -i 's/BOUNCER_VMINOR [^ ]*/BOUNCER_VMINOR \"" + minorVersion + "\
 os.system("git add bouncer/CMakeLists.txt bouncer/src/repo/repo_bouncer_global.h")
 os.system("git clean -f -d")
 
-os.system("git commit -m \"Version string update\"")
+os.system("git commit -m \"Version " + version + "\"")
 
 os.system("git push origin :refs/tags/" + version)
 os.system("git tag -fa " + version + " -m \" Version " + version + " \"")
