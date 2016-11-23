@@ -30,10 +30,6 @@ using namespace repo::manipulator::modelconvertor;
 IFCModelImport::IFCModelImport(const ModelImportConfig *settings) :
 AbstractModelImport(settings)
 {
-	if (settings)
-	{
-		repoWarning << "IFC importer currently ignores all import settings. Any bespoke configurations will be ignored.";
-	}
 }
 
 IFCModelImport::~IFCModelImport()
@@ -59,7 +55,7 @@ bool IFCModelImport::importModel(std::string filePath, std::string &errMsg)
 	repoInfo << "=== IMPORTING MODEL WITH IFC OPEN SHELL ===";
 	bool success = false;
 
-	IFCUtilsGeometry geoUtil(filePath);
+	IFCUtilsGeometry geoUtil(filePath, settings);
 	if (success = geoUtil.generateGeometry(errMsg))
 	{
 		//generate tree;

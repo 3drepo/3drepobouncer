@@ -85,6 +85,30 @@ const std::string ModelImportConfig::SPLIT_LARGE_MESHES_VERTEX_LIMIT = "splitLar
 const std::string ModelImportConfig::TRIANGULATE = "triangulate";
 const std::string ModelImportConfig::VALIDATE_DATA_STRUCTURES = "validateDataStructures";
 
+//IFCOpenShell settings
+const std::string ModelImportConfig::USE_IFC_OPEN_SHELL = "useIfcOpenShell";
+const std::string ModelImportConfig::IOS_USE_FILTER = "useElementsFiltering";
+const std::string ModelImportConfig::IOS_FILTER_EXCLUSION = "filterByExclusion";
+const std::string ModelImportConfig::IOS_FILTER_LIST = "filterList";
+const std::string ModelImportConfig::IOS_WIELD_VERTICES = "wieldVertices";
+const std::string ModelImportConfig::IOS_USE_WORLD_COORDS = "useWorldCoords";
+const std::string ModelImportConfig::IOS_CONVERT_UNITS = "convertUnits";
+const std::string ModelImportConfig::IOS_USE_BREP_DATA = "useBrepData";
+const std::string ModelImportConfig::IOS_SEW_SHELLS = "sewShells";
+const std::string ModelImportConfig::IOS_FASTER_BOOLEANS = "fasterBooleans";
+const std::string ModelImportConfig::IOS_NO_OPENING_SUB = "noOpeningSub";
+const std::string ModelImportConfig::IOS_NO_TRIANGULATE = "noTriangulate";
+const std::string ModelImportConfig::IOS_USE_DEFAULT_MATS = "useDefaultMats";
+const std::string ModelImportConfig::IOS_INCLUDE_CURVES = "includeCurves";
+const std::string ModelImportConfig::IOS_NO_SOLIDS_SURFACES = "noSolidSurfaces";
+const std::string ModelImportConfig::IOS_NO_NORMALS = "noNormals";
+const std::string ModelImportConfig::IOS_USE_ELEMENT_GUIDS = "useElementGuids";
+const std::string ModelImportConfig::IOS_USE_ELEMENT_NAMES = "useElementNames";
+const std::string ModelImportConfig::IOS_USE_MAT_NAMES = "useMatNames";
+const std::string ModelImportConfig::IOS_CENTRE_MODEL = "centreModel";
+const std::string ModelImportConfig::IOS_GENERATE_UVS = "generateUVs";
+const std::string ModelImportConfig::IOS_APPLY_LAYER_SETS = "applyLayerSets";
+
 ModelImportConfig::ModelImportConfig(
 	const std::string &configFile)
 {
@@ -157,6 +181,7 @@ void ModelImportConfig::readConfig(
 		(SPLIT_LARGE_MESHES.c_str(), boost::program_options::value<bool>(&boolSettings[SPLIT_LARGE_MESHES]), "SPLIT_LARGE_MESHES")
 		(TRIANGULATE.c_str(), boost::program_options::value<bool>(&boolSettings[TRIANGULATE]), "TRIANGULATE")
 		(VALIDATE_DATA_STRUCTURES.c_str(), boost::program_options::value<bool>(&boolSettings[VALIDATE_DATA_STRUCTURES]), "VALIDATE_DATA_STRUCTURES")
+		(USE_IFC_OPEN_SHELL.c_str(), boost::program_options::value<bool>(&boolSettings[USE_IFC_OPEN_SHELL]), "USE_IFC_OPEN_SHELL")
 
 		(LIMIT_BONE_WEIGHTS_MAX_WEIGHTS.c_str(), boost::program_options::value<int32_t>(&intSettings[LIMIT_BONE_WEIGHTS_MAX_WEIGHTS]), "LIMIT_BONE_WEIGHTS_MAX_WEIGHTS")
 		(IMPROVE_CACHE_LOCALITY_VERTEX_CACHE_SIZE.c_str(), boost::program_options::value<int32_t>(&intSettings[IMPROVE_CACHE_LOCALITY_VERTEX_CACHE_SIZE]), "IMPROVE_CACHE_LOCALITY_VERTEX_CACHE_SIZE")
@@ -244,6 +269,27 @@ void ModelImportConfig::reset()
 	boolSettings[SPLIT_LARGE_MESHES] = repoDefaultSplitLargeMeshes;
 	boolSettings[TRIANGULATE] = repoDefaultTriangulate;
 	boolSettings[VALIDATE_DATA_STRUCTURES] = repoDefaultValidateDataStructures;
+	boolSettings[USE_IFC_OPEN_SHELL] = repoDefaultUseIfcOpenShell;
+	boolSettings[IOS_USE_FILTER] = repoDefaultIOSUseFilter;
+	boolSettings[IOS_FILTER_EXCLUSION] = repoDefaultIsExclusion;
+	boolSettings[IOS_WIELD_VERTICES] = repoDefaultIOSWieldVertices;
+	boolSettings[IOS_USE_WORLD_COORDS] = repoDefaultIOSUseWorldCoords;
+	boolSettings[IOS_CONVERT_UNITS] = repoDefaultIOSConvertBackUnits;
+	boolSettings[IOS_USE_BREP_DATA] = repoDefaultIOSUseBrepData;
+	boolSettings[IOS_SEW_SHELLS] = repoDefaultIOSSewShells;
+	boolSettings[IOS_FASTER_BOOLEANS] = repoDefaultIOSFasterBooleans;
+	boolSettings[IOS_NO_OPENING_SUB] = repoDefaultIOSDisableOpeningSubtractions;
+	boolSettings[IOS_NO_TRIANGULATE] = repoDefaultIOSDisableTriangulate;
+	boolSettings[IOS_USE_DEFAULT_MATS] = repoDefaultIOSApplyDefaultMaterials;
+	boolSettings[IOS_INCLUDE_CURVES] = repoDefaultIOSIncludesCurves;
+	boolSettings[IOS_NO_SOLIDS_SURFACES] = repoDefaultIOSExcludesSolidsAndSurfaces;
+	boolSettings[IOS_NO_NORMALS] = repoDefaultIOSNoNormals;
+	boolSettings[IOS_USE_ELEMENT_GUIDS] = repoDefaultIOSUseElementGuids;
+	boolSettings[IOS_USE_ELEMENT_NAMES] = repoDefaultIOSUseElementNames;
+	boolSettings[IOS_USE_MAT_NAMES] = repoDefaultIOSUseMatNames;
+	boolSettings[IOS_CENTRE_MODEL] = repoDefaultIOSCentreModel;
+	boolSettings[IOS_GENERATE_UVS] = repoDefaultIOSGenerateUVs;
+	boolSettings[IOS_APPLY_LAYER_SETS] = repoDefaultIOSApplyLayerSets;
 
 	/**
 	* ----------------- int fields ----------------------
@@ -266,4 +312,9 @@ void ModelImportConfig::reset()
 	*/
 	stringSettings[REMOVE_REDUNDANT_MATERIALS_SKIP] = repoDefaultRemoveRedundantMaterialsSkip;
 	stringSettings[REMOVE_REDUNDANT_NODES_SKIP] = repoDefaultRemoveRedundantNodesSkip;
+
+	/**
+	* ----------------- vector string fields ----------------------
+	*/
+	stringVecSettings[IOS_FILTER_LIST] = repoDefaultIfcOpenShellFilterList;
 }
