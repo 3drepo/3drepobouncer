@@ -22,7 +22,7 @@ before_install:
       #    - git config core.sparseCheckout true
       #    - echo "cplusplus/bouncer" > .git/info/sparse-checkout
       #    - git pull --depth=1 origin master
-    - svn export --username $TESTUSER --password $TESTPW https://github.com/3drepo/tests/trunk/cplusplus/bouncer
+    - svn --no-auth-cache export --username $TESTUSER --password $TESTPW https://github.com/3drepo/tests/trunk/cplusplus/bouncer
     - ls 
     - cd ../
     - mkdir data
