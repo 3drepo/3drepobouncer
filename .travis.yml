@@ -29,7 +29,7 @@ before_install:
     - mongod --dbpath data &
     - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
     - mongo admin --eval 'db.addUser("testUser", "3drepotest");'
-    - cd  testData/cplusplus/bouncer/data/database/
+    - cd  testData/bouncer/data/database/
     - mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin
     - cd ../../../../
     - export CXX="g++-4.9"
@@ -41,12 +41,12 @@ before_install:
     - sudo apt-get update
     - sudo apt-get install libboost1.55-all-dev
     - echo ============ MONGO  INSTALL =============
-    - tar -zxvf testData/cplusplus/bouncer/ext_libs/mongo-cxx-1.1.0.tgz
+    - tar -zxvf testData/bouncer/ext_libs/mongo-cxx-1.1.0.tgz
     - echo ============ ASSIMP INSTALL =============
-    - tar -zxvf testData/cplusplus/bouncer/ext_libs/assimp-install.tgz
+    - tar -zxvf testData/bouncer/ext_libs/assimp-install.tgz
     - echo ============ IFCOPENSHELL INSTALL =============
-    - tar -zxvf testData/cplusplus/bouncer/ext_libs/occt.tgz
-    - tar -zxvf testData/cplusplus/bouncer/ext_libs/ifcopenshell.tgz
+    - tar -zxvf testData/bouncer/ext_libs/occt.tgz
+    - tar -zxvf testData/bouncer/ext_libs/ifcopenshell.tgz
     - sudo apt-get install libvtk5-dev libxmu-dev libxi-dev
 install:
     - sudo pip install cpp-coveralls    
@@ -60,7 +60,7 @@ before_script:
     - cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DCMAKE_BUILD_TYPE=Release ../
 script:
     - sudo make -j2 install
-    - REPO_MODEL_PATH=$PWD/../testData/cplusplus/bouncer/data/models LD_LIBRARY_PATH=$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$LD_LIBRARY_PATH 3drepobouncerTest
+    - REPO_MODEL_PATH=$PWD/../testData/bouncer/data/models LD_LIBRARY_PATH=$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$LD_LIBRARY_PATH 3drepobouncerTest
 after_success:
     - coveralls --root ../ -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0"
 notifications:
