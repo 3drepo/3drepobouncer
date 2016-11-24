@@ -674,6 +674,39 @@ std::list<std::string> MongoDatabaseHandler::getDatabases(
 	return list;
 }
 
+repo::core::model::DatabaseStats MongoDatabaseHandler::getDatabaseStats(
+        const std::string    &database,
+        std::string          &errMsg)
+{
+        mongo::BSONObj info;
+        mongo::DBClientBase *worker;
+        if (!database.empty())
+        {
+                try {
+                        mongo::BSONObjBuilder builder;
+                        builder.append("dbStats", 1);
+                        builder.append("scale", 1); // 1024 == KB
+
+                        worker = workerPool->getWorker();
+                        worker->runCommand(database, builder.obj(), info);
+                }
+                catch (mongo::DBException &e)
+                {
+                        errMsg = e.what();
+                        repoError << "Failed to retreive database stats for" << database
+                                << " : " << errMsg;
+                }
+
+                workerPool->returnWorker(worker);
+        }
+        else
+        {
+                errMsg = "Failed to retrieve collection stats: empty database name/collection name";
+        }
+
+        return repo::core::model::DatabaseStats(info);
+}
+
 std::vector<uint8_t> MongoDatabaseHandler::getBigFile(
 	mongo::DBClientBase *worker,
 	const std::string &database,
