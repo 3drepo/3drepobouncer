@@ -923,6 +923,12 @@ namespace repo{
 					const repoUUID                    &sharedID);
 
 				/**
+				* Reset the change set of this RepoScene.
+				* turn everything into newly added and set it as unrevisioned
+				*/
+				void resetChangeSet();
+
+				/**
 				* Rotates the model by 270 degrees to compensate the different axis orientation
 				* in directX. Commonly happens in fbx models
 				*/
