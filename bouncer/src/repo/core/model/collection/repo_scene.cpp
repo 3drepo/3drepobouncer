@@ -1511,6 +1511,22 @@ void RepoScene::reorientateDirectXModel()
 	}
 }
 
+void RepoScene::resetChangeSet()
+{
+	newRemoved.clear();
+	newModified.clear();
+	newAdded.clear();
+	newCurrent.clear();
+	std::vector<repoUUID> sharedIds;
+	//boost::copy(graph.nodesByUniqueID | boost::adaptors::map_keys, std::back_inserter(newCurrent));
+	boost::copy(graph.sharedIDtoUniqueID | boost::adaptors::map_keys, std::back_inserter(sharedIds));
+	newAdded.insert(sharedIds.begin(), sharedIds.end());
+	revNode = nullptr;
+	unRevisioned = true;
+	databaseName = projectName = "";
+
+}
+
 void RepoScene::setWorldOffset(
 	const std::vector<double> &offset)
 {
