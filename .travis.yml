@@ -17,13 +17,17 @@ before_install:
     - sudo apt-get update
     - sudo apt-get install mongodb-org
     - mongod --version
+    - mkdir testData && cd testData
+    - svn --no-auth-cache export --username $TESTUSER --password $TESTPW https://github.com/3drepo/tests/trunk/cplusplus/bouncer
+    - ls 
+    - cd ../
     - mkdir data
     - mongod --dbpath data &
     - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
     - mongo admin --eval 'db.addUser("testUser", "3drepotest");'
-    - cd test/data/database/
+    - cd  testData/bouncer/data/database/
     - mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin
-    - cd ../../../
+    - cd ../../../../
     - export CXX="g++-4.9"
     - export CC="gcc-4.9"
     - sudo ln -sf /usr/bin/gcov-4.9 /usr/bin/gcov
@@ -33,13 +37,12 @@ before_install:
     - sudo apt-get update
     - sudo apt-get install libboost1.55-all-dev
     - echo ============ MONGO  INSTALL =============
-    - ls
-    - tar -zxvf tools/ext_libs/mongo-cxx-1.1.0.tgz
+    - tar -zxvf testData/bouncer/ext_libs/mongo-cxx-1.1.0.tgz
     - echo ============ ASSIMP INSTALL =============
-    - tar -zxvf tools/ext_libs/assimp-install.tgz
+    - tar -zxvf testData/bouncer/ext_libs/assimp-install.tgz
     - echo ============ IFCOPENSHELL INSTALL =============
-    - tar -zxvf tools/ext_libs/occt.tgz
-    - tar -zxvf tools/ext_libs/ifcopenshell.tgz
+    - tar -zxvf testData/bouncer/ext_libs/occt.tgz
+    - tar -zxvf testData/bouncer/ext_libs/ifcopenshell.tgz
     - sudo apt-get install libvtk5-dev libxmu-dev libxi-dev
 install:
     - sudo pip install cpp-coveralls    
@@ -53,7 +56,7 @@ before_script:
     - cmake -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DCMAKE_BUILD_TYPE=Release ../
 script:
     - sudo make -j2 install
-    - REPO_MODEL_PATH=$PWD/../test/data/models LD_LIBRARY_PATH=$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$LD_LIBRARY_PATH 3drepobouncerTest
+    - REPO_MODEL_PATH=$PWD/../testData/bouncer/data/models LD_LIBRARY_PATH=$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$LD_LIBRARY_PATH 3drepobouncerTest
 after_success:
     - coveralls --root ../ -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0"
 notifications:

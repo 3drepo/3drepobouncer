@@ -35,7 +35,7 @@ using namespace repo::core::model;
 
 const std::vector<std::string> RepoScene::collectionsInProject = { "scene", "scene.files", "scene.chunks", "stash.3drepo", "stash.3drepo.files", "stash.3drepo.chunks", "stash.x3d", "stash.x3d.files",
 "stash.json_mpc.files", "stash.json_mpc.chunks", "stash.x3d.chunks", "stash.gltf", "stash.gltf.files", "stash.gltf.chunks", "stash.src", "stash.src.files", "stash.src.chunks", "history",
-"history.files", "history.chunks", "issues", "wayfinder" };
+"history.files", "history.chunks", "issues", "wayfinder" , "groups"};
 
 RepoScene::RepoScene(
 	const std::string &database,
@@ -1509,6 +1509,22 @@ void RepoScene::reorientateDirectXModel()
 			repoError << "Root Transformation is not a 4x4 matrix!";
 		}
 	}
+}
+
+void RepoScene::resetChangeSet()
+{
+	newRemoved.clear();
+	newModified.clear();
+	newAdded.clear();
+	newCurrent.clear();
+	std::vector<repoUUID> sharedIds;
+	//boost::copy(graph.nodesByUniqueID | boost::adaptors::map_keys, std::back_inserter(newCurrent));
+	boost::copy(graph.sharedIDtoUniqueID | boost::adaptors::map_keys, std::back_inserter(sharedIds));
+	newAdded.insert(sharedIds.begin(), sharedIds.end());
+	revNode = nullptr;
+	unRevisioned = true;
+	databaseName = projectName = "";
+
 }
 
 void RepoScene::setWorldOffset(

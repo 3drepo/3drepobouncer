@@ -674,6 +674,39 @@ std::list<std::string> MongoDatabaseHandler::getDatabases(
 	return list;
 }
 
+repo::core::model::DatabaseStats MongoDatabaseHandler::getDatabaseStats(
+        const std::string    &database,
+        std::string          &errMsg)
+{
+        mongo::BSONObj info;
+        mongo::DBClientBase *worker;
+        if (!database.empty())
+        {
+                try {
+                        mongo::BSONObjBuilder builder;
+                        builder.append("dbStats", 1);
+                        builder.append("scale", 1); // 1024 == KB
+
+                        worker = workerPool->getWorker();
+                        worker->runCommand(database, builder.obj(), info);
+                }
+                catch (mongo::DBException &e)
+                {
+                        errMsg = e.what();
+                        repoError << "Failed to retreive database stats for" << database
+                                << " : " << errMsg;
+                }
+
+                workerPool->returnWorker(worker);
+        }
+        else
+        {
+                errMsg = "Failed to retrieve collection stats: empty database name/collection name";
+        }
+
+        return repo::core::model::DatabaseStats(info);
+}
+
 std::vector<uint8_t> MongoDatabaseHandler::getBigFile(
 	mongo::DBClientBase *worker,
 	const std::string &database,
@@ -935,7 +968,7 @@ bool MongoDatabaseHandler::insertRawFile(
 	const std::string          &contentType
 	)
 {
-	bool success = true;
+	bool success = false;
 	mongo::DBClientBase *worker;
 
 	repoTrace << "writing raw file: " << fileName;
@@ -958,25 +991,42 @@ bool MongoDatabaseHandler::insertRawFile(
 		return false;
 	}
 
-	try{
-		worker = workerPool->getWorker();
-		//store the big biary file within GridFS
-		mongo::GridFS gfs(*worker, database, collection);
-		//FIXME: there must be errors to catch...
-		repoTrace << "storing " << fileName << " in gridfs: " << database << "." << collection;
-		gfs.removeFile(fileName);
-		mongo::BSONObj bson = gfs.storeFile((char*)&bin[0], bin.size() * sizeof(bin[0]), fileName, contentType);
-
-		repoTrace << "returned object: " << bson.toString();
-	}
-	catch (mongo::DBException &e)
+	int retry = 0;
+	while (!success && retry < 5)
 	{
-		success = false;
-		std::string errString(e.what());
-		errMsg += errString;
-	}
+		try{
+			worker = workerPool->getWorker();
+			//store the big biary file within GridFS
+			if (worker)
+			{
+				mongo::GridFS gfs(*worker, database, collection);
+				//FIXME: there must be errors to catch...
+				repoTrace << "storing " << fileName << " in gridfs: " << database << "." << collection;
+				gfs.removeFile(fileName);
+				mongo::BSONObj bson = gfs.storeFile((char*)&bin[0], bin.size() * sizeof(bin[0]), fileName, contentType);
+				repoTrace << "returned object: " << bson.toString();
+				success = true;
+			}
+			else
+			{
+				repoError << "Failed to obtain a connection with the database";
+			}
 
-	workerPool->returnWorker(worker);
+		}
+		catch (mongo::DBException &e)
+		{
+			success = false;
+			std::string errString(e.what());
+			errMsg = errString;
+			repoError << "Failed to upload gridFS file : " << errString << " retrying in 5s...";
+			boost::this_thread::sleep(boost::posix_time::seconds(5));
+			retry++;
+		}
+		workerPool->returnWorker(worker);
+
+	}
+	
+
 
 	return success;
 }

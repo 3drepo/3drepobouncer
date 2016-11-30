@@ -624,6 +624,21 @@ repo::core::model::CollectionStats RepoManipulator::getCollectionStats(
 	return stats;
 }
 
+repo::core::model::DatabaseStats RepoManipulator::getDatabaseStats(
+        const std::string                             &databaseAd,
+        const repo::core::model::RepoBSON*	  cred,
+        const std::string                             &database,
+        std::string                                   &errMsg)
+{
+        repo::core::model::DatabaseStats stats;
+        repo::core::handler::AbstractDatabaseHandler* handler =
+                repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+        if (handler)
+                stats = handler->getDatabaseStats(database, errMsg);
+
+        return stats;
+}
+
 std::map<std::string, std::list<std::string>>
 RepoManipulator::getDatabasesWithProjects(
 const std::string                             &databaseAd,
@@ -726,10 +741,11 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 	std::string fileExt = filePathP.extension().string();
 	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
 
-	bool isIFC = fileExt == ".IFC";
 	repo::manipulator::modelconvertor::AbstractModelImport* modelConvertor = nullptr;
 
-	if (isIFC)
+	bool useIFCImporter = fileExt == ".IFC" && (!config || config->getUseIFCOpenShell());
+
+	if (useIFCImporter)
 		modelConvertor = new repo::manipulator::modelconvertor::IFCModelImport(config);
 	else
 		modelConvertor = new repo::manipulator::modelconvertor::AssimpModelImport(config);
@@ -742,7 +758,7 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 			repoTrace << "model Imported, generating Repo Scene";
 			if ((scene = modelConvertor->generateRepoScene()))
 			{
-				if (rotateModel || isIFC)
+				if (rotateModel || useIFCImporter)
 				{
 					repoTrace << "rotating model by 270 degress on the x axis...";
 					scene->reorientateDirectXModel();

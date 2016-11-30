@@ -1,4 +1,4 @@
-3D Repo Bouncer Library v1.6.0
+3D Repo Bouncer Library v1.8.0
 
 This is the internal library used for 3D Repo GUI.
 
@@ -33,6 +33,7 @@ look forward to hear from you.
 * (ISSUE #143) Command line file imports now accepts commit tag/description
 * (ISSUE #147) Fixed camera positions
 * (ISSUE #151) Fixed offset calculations on federated projects
+* (ISSUE #153) Fixed fbx rotations that went wrong after #143
 
 ========================= New Features =========================
 * (ISSUE #132) Federation creation API exposed on client

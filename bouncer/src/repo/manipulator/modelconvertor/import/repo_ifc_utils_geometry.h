@@ -27,8 +27,10 @@
 #include <ifcgeom/IfcGeom.h>
 #include <ifcgeom/IfcGeomIterator.h>
 
+#include "repo_model_import_config.h"
 #include "../../../core/model/bson/repo_node_material.h"
 #include "../../../core/model/bson/repo_node_mesh.h"
+
 
 namespace repo{
 	namespace manipulator{
@@ -42,7 +44,7 @@ namespace repo{
 				* in this object!
 				* @param file IFC file location
 				*/
-				IFCUtilsGeometry(const std::string &file);
+				IFCUtilsGeometry(const std::string &file, const ModelImportConfig *settings);
 
 				/**
 				* Default Deconstructor
@@ -126,6 +128,7 @@ namespace repo{
 					std::vector<std::string> &allMaterials);
 
 				const std::string file;
+				const ModelImportConfig *settings;
 				std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> meshes;
 				std::unordered_map<std::string, repo::core::model::MaterialNode*> materials;
 				std::vector<double> offset;

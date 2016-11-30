@@ -160,7 +160,147 @@ TEST(RepoRoleTest, TranslatePermissionsTest_READ)
 	std::vector<RepoPermission> permissions;
 
 	std::string projectName = "project";
-	permissions.push_back({ "test", projectName, AccessRight::READ });
+	permissions.push_back({ "test", projectName, AccessRight::READ_ONLY });
+
+	std::vector<RepoPrivilege> privileges = RepoRole::translatePermissions(permissions);
+
+	EXPECT_EQ(RepoScene::getProjectExtensions().size(), privileges.size());
+
+	for (const auto &p : privileges)
+	{
+		if (p.collection == (projectName + ".scene"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".scene.files"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".scene.chunks"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.3drepo"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.3drepo.files"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.3drepo.chunks"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.src"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.src.files"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.src.chunks"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.json_mpc.files"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.json_mpc.chunks"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.gltf"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.gltf.files"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.gltf.chunks"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.x3d"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.x3d.files"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".stash.x3d.chunks"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".history"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".history.files"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".history.chunks"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".wayfinder"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".issues"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else if (p.collection == (projectName + ".groups"))
+		{
+			EXPECT_EQ(1, p.actions.size());
+			EXPECT_EQ(DBActions::FIND, p.actions[0]);
+		}
+		else
+		{
+			//There is an extension the test doesn't know about. Make sure
+			//this extension is catered for within the roles function
+			//and add it as another case here.
+			FAIL();
+		}
+	}
+
+	EXPECT_EQ(0, RepoRole::translatePermissions(std::vector<RepoPermission>()).size());
+}
+
+TEST(RepoRoleTest, TranslatePermissionsTest_READANDCOMMENT)
+{
+	std::vector<RepoPermission> permissions;
+
+	std::string projectName = "project";
+	permissions.push_back({ "test", projectName, AccessRight::READ_AND_COMMENT });
 
 	std::vector<RepoPrivilege> privileges = RepoRole::translatePermissions(permissions);
 
@@ -280,155 +420,10 @@ TEST(RepoRoleTest, TranslatePermissionsTest_READ)
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::UPDATE) != p.actions.end());
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
 		}
-		else
-		{
-			//There is an extension the test doesn't know about. Make sure
-			//this extension is catered for within the roles function
-			//and add it as another case here.
-			FAIL();
-		}
-	}
-
-	EXPECT_EQ(0, RepoRole::translatePermissions(std::vector<RepoPermission>()).size());
-}
-
-TEST(RepoRoleTest, TranslatePermissionsTest_WRITE)
-{
-	std::vector<RepoPermission> permissions;
-
-	std::string projectName = "project";
-	permissions.push_back({ "test", projectName, AccessRight::WRITE });
-
-	std::vector<RepoPrivilege> privileges = RepoRole::translatePermissions(permissions);
-
-	EXPECT_EQ(RepoScene::getProjectExtensions().size(), privileges.size());
-
-	for (const auto &p : privileges)
-	{
-		if (p.collection == (projectName + ".scene"))
-		{
-			EXPECT_EQ(1, p.actions.size());
-			EXPECT_EQ(DBActions::INSERT, p.actions[0]);
-		}
-		else if (p.collection == (projectName + ".scene.files"))
-		{
-			EXPECT_EQ(1, p.actions.size());
-			EXPECT_EQ(DBActions::INSERT, p.actions[0]);
-		}
-		else if (p.collection == (projectName + ".scene.chunks"))
-		{
-			EXPECT_EQ(1, p.actions.size());
-			EXPECT_EQ(DBActions::INSERT, p.actions[0]);
-		}
-		else if (p.collection == (projectName + ".stash.3drepo"))
-		{
-			EXPECT_EQ(2, p.actions.size());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
-		}
-		else if (p.collection == (projectName + ".stash.3drepo.files"))
-		{
-			EXPECT_EQ(2, p.actions.size());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
-		}
-		else if (p.collection == (projectName + ".stash.3drepo.chunks"))
-		{
-			EXPECT_EQ(2, p.actions.size());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
-		}
-		else if (p.collection == (projectName + ".stash.src"))
-		{
-			EXPECT_EQ(2, p.actions.size());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
-		}
-		else if (p.collection == (projectName + ".stash.src.files"))
-		{
-			EXPECT_EQ(2, p.actions.size());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
-		}
-		else if (p.collection == (projectName + ".stash.src.chunks"))
-		{
-			EXPECT_EQ(2, p.actions.size());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
-		}
-		else if (p.collection == (projectName + ".stash.json_mpc.files"))
-		{
-			EXPECT_EQ(2, p.actions.size());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
-		}
-		else if (p.collection == (projectName + ".stash.json_mpc.chunks"))
-		{
-			EXPECT_EQ(2, p.actions.size());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
-		}
-		else if (p.collection == (projectName + ".stash.gltf"))
-		{
-			EXPECT_EQ(2, p.actions.size());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
-		}
-		else if (p.collection == (projectName + ".stash.gltf.files"))
-		{
-			EXPECT_EQ(2, p.actions.size());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
-		}
-		else if (p.collection == (projectName + ".stash.gltf.chunks"))
-		{
-			EXPECT_EQ(2, p.actions.size());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
-		}
-		else if (p.collection == (projectName + ".stash.x3d"))
-		{
-			EXPECT_EQ(2, p.actions.size());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
-		}
-		else if (p.collection == (projectName + ".stash.x3d.files"))
-		{
-			EXPECT_EQ(2, p.actions.size());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
-		}
-		else if (p.collection == (projectName + ".stash.x3d.chunks"))
-		{
-			EXPECT_EQ(2, p.actions.size());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
-		}
-		else if (p.collection == (projectName + ".history"))
-		{
-			EXPECT_EQ(1, p.actions.size());
-			EXPECT_EQ(DBActions::INSERT, p.actions[0]);
-		}
-		else if (p.collection == (projectName + ".history.files"))
-		{
-			EXPECT_EQ(1, p.actions.size());
-			EXPECT_EQ(DBActions::INSERT, p.actions[0]);
-		}
-		else if (p.collection == (projectName + ".history.chunks"))
-		{
-			EXPECT_EQ(1, p.actions.size());
-			EXPECT_EQ(DBActions::INSERT, p.actions[0]);
-		}
-		else if (p.collection == (projectName + ".wayfinder"))
+		else if (p.collection == (projectName + ".groups"))
 		{
 			EXPECT_EQ(3, p.actions.size());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::REMOVE) != p.actions.end());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::UPDATE) != p.actions.end());
-			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
-		}
-		else if (p.collection == (projectName + ".issues"))
-		{
-			EXPECT_EQ(2, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::UPDATE) != p.actions.end());
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
 		}
@@ -443,6 +438,7 @@ TEST(RepoRoleTest, TranslatePermissionsTest_WRITE)
 
 	EXPECT_EQ(0, RepoRole::translatePermissions(std::vector<RepoPermission>()).size());
 }
+
 
 TEST(RepoRoleTest, TranslatePermissionsTest_READWRITE)
 {
@@ -606,6 +602,13 @@ TEST(RepoRoleTest, TranslatePermissionsTest_READWRITE)
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::UPDATE) != p.actions.end());
 			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
 		}
+		else if (p.collection == (projectName + ".groups"))
+		{
+			EXPECT_EQ(3, p.actions.size());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::UPDATE) != p.actions.end());
+			EXPECT_TRUE(std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end());
+		}
 		else
 		{
 			//There is an extension the test doesn't know about. Make sure
@@ -624,22 +627,22 @@ TEST(RepoRoleTest, UpdateActions)
 	//This is already tested via translatePermissions. If the above passes this function has to run fine.
 	std::vector<DBActions> vec;
 
-	RepoRole::updateActions("scene", AccessRight::READ, vec);
+	RepoRole::updateActions("scene", AccessRight::READ_ONLY, vec);
 	EXPECT_EQ(1, vec.size());
 	EXPECT_EQ(DBActions::FIND, vec[0]);
 
 	//Expect no duplicates (check the [A, A] will become [A])
-	RepoRole::updateActions("scene", AccessRight::READ, vec);
+	RepoRole::updateActions("scene", AccessRight::READ_ONLY, vec);
 	EXPECT_EQ(1, vec.size());
 	EXPECT_EQ(DBActions::FIND, vec[0]);
 
-	RepoRole::updateActions("scene", AccessRight::WRITE, vec);
+	RepoRole::updateActions("scene", AccessRight::READ_WRITE, vec);
 	EXPECT_EQ(2, vec.size());
 	EXPECT_TRUE(std::find(vec.begin(), vec.end(), DBActions::FIND) != vec.end());
 	EXPECT_TRUE(std::find(vec.begin(), vec.end(), DBActions::INSERT) != vec.end());
 
 	//again, expect no duplicates (check the [A, B, A] will become [A, B])
-	RepoRole::updateActions("scene", AccessRight::READ, vec);
+	RepoRole::updateActions("scene", AccessRight::READ_ONLY, vec);
 	EXPECT_EQ(2, vec.size());
 
 	vec.clear();
@@ -719,8 +722,8 @@ TEST(RepoRoleTest, GetProjectAccessRightsTest)
 TEST(RepoRoleTest, CloneAndAddPermissionsTest)
 {
 	std::vector<RepoPermission> permissions;
-	permissions.push_back({ "testdb", "testcol2", AccessRight::WRITE });
-	permissions.push_back({ "testdb", "testcol", AccessRight::WRITE });
+	permissions.push_back({ "testdb", "testcol2", AccessRight::READ_WRITE});
+	permissions.push_back({ "testdb", "testcol", AccessRight::READ_WRITE });
 	RepoRole role = RepoBSONFactory::makeRepoRole("roleTest", "testDB", permissions);
 
 	RepoRole newRole = role.cloneAndUpdatePermissions(std::vector<RepoPermission>());
@@ -735,16 +738,13 @@ TEST(RepoRoleTest, CloneAndAddPermissionsTest)
 	EXPECT_TRUE(empty.cloneAndUpdatePermissions(std::vector<RepoPermission>()).isEmpty());
 
 	std::vector<RepoPermission> newPermissions;
-	newPermissions.push_back({ "db", "col", AccessRight::READ });
-	newPermissions.push_back({ "db", "col2", AccessRight::WRITE });
-	newPermissions.push_back({ "testdb", "testcol", AccessRight::READ }); //Modify existing
+	newPermissions.push_back({ "db", "col", AccessRight::READ_ONLY });
+	newPermissions.push_back({ "db", "col2", AccessRight::READ_WRITE });
+	newPermissions.push_back({ "testdb", "testcol", AccessRight::READ_ONLY }); //Modify existing
 
 	RepoRole newRole2 = role.cloneAndUpdatePermissions(newPermissions);
 
 	auto accessRights = newRole2.getProjectAccessRights();
-
-	repoTrace << "role : " << role.toString();
-	repoTrace << "new role : " << newRole2.toString();
 
 	ASSERT_EQ(accessRights.size(), newPermissions.size());
 
@@ -772,9 +772,9 @@ TEST(RepoRoleTest, CloneAndAddPermissionsTest2)
 	RepoRole role = buildRoleExample();
 
 	std::vector<RepoPermission> newPermissions;
-	newPermissions.push_back({ "db", "col", AccessRight::READ });
-	newPermissions.push_back({ "db", "col2", AccessRight::WRITE });
-	newPermissions.push_back({ "testdb", "testcol", AccessRight::READ }); //Modify existing
+	newPermissions.push_back({ "db", "col", AccessRight::READ_ONLY });
+	newPermissions.push_back({ "db", "col2", AccessRight::READ_WRITE });
+	newPermissions.push_back({ "testdb", "testcol", AccessRight::READ_ONLY }); //Modify existing
 
 	RepoRole newRole = role.cloneAndUpdatePermissions(newPermissions);
 

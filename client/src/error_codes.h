@@ -35,3 +35,5 @@
 #define REPOERR_INVALID_ARG 8
 //failed to generate federation
 #define REPOERR_FED_GEN_FAIL 9
+//Scene uploaded but missing some nodes
+#define REPOERR_LOAD_SCENE_MISSING_NODES 10

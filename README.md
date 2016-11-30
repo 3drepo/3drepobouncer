@@ -36,7 +36,7 @@ See [3D Repo guide for compiling MongoDB](https://github.com/3drepo/3drepobounce
 * [3D Repo ASSIMP library fork](https://github.com/3drepo/assimp)
 See [3D Repo guide for compiling ASSIMP](https://github.com/3drepo/3drepobouncer/wiki/Compiling-ASSIMP)
 * [3D Repo IFCOpenShell Fork](https://github.com/3drepo/IfcOpenShell)
-This relies on 3D Repo's fork of [OCCT](https://github.com/3drepo/occt)
+This relies on 3D Repo's fork of [OCCT](https://github.com/3drepo/occt). See [3D Repo guide for compiling IFCOpenShell](https://github.com/3drepo/3drepobouncer/wiki/Compiling-IFCOpenShell)
 
 To compile and install the library, the following are used:
 * [Python v2.x](https://www.python.org/)
