@@ -145,7 +145,9 @@ static std::vector<std::string> getCollectionList(
 {
 	if (databaseName == REPO_GTEST_DBNAME1)
 	{
-		return{ "3drepoBIM.history", "3drepoBIM.history.chunks", "3drepoBIM.history.files", "3drepoBIM.issues", "3drepoBIM.scene", "3drepoBIM.stash.3drepo", "settings", "system.indexes" };
+		return{ "3drepoBIM.history", "3drepoBIM.history.chunks", "3drepoBIM.history.files", "3drepoBIM.issues", "3drepoBIM.scene", "3drepoBIM.stash.3drepo",
+			"fedTest.history", "fedTest.issues", "fedTest.scene"
+			, "settings", "system.indexes" };
 	}
 	else
 	{
