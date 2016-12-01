@@ -158,6 +158,11 @@ TEST(RepoClientTest, UploadTest)
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(texUpload));
 	EXPECT_TRUE(projectExists(db, "textured"));
 
+	//Test missing nodes Upload
+	std::string misUpload = produceUploadArgs(db, "missing", getDataPath(missingNodesModel));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_NODES, runProcess(misUpload));
+	EXPECT_TRUE(projectExists(db, "missing"));
+
 	//Upload IFCFile
 	std::string ifcUpload = produceUploadArgs(db, "ifcTest", getDataPath(ifcModel));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(ifcUpload));
