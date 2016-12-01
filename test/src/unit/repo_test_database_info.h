@@ -49,6 +49,30 @@ const static std::string noProNameJSONFile = "noPro.json";
 const static std::string invalidJSONFile = "invalid.json";
 const static std::string validGenFedJSONFile = "validFed.json";
 
+const static std::string  importSuccess = "successFileImport.json";
+const static std::string  importSuccess2 = "successFileImport2.json";
+const static std::string  importNoFile = "importNoFile.json";
+const static std::string  importbadDir = "importBadDir.json";
+const static std::string  importbadDir2 = "importBadDir2.json";
+const static std::string  importNoDatabase = "importNoDatabase.json";
+const static std::string  importNoDatabase2 = "importNoDatabase2.json";
+const static std::string  importNoProject = "importNoProject.json";
+const static std::string  importNoProject2 = "importNoProject2.json";
+const static std::string  importNoOwner = "importNoOwner.json";
+const static std::string  importNoOwner2 = "importNoOwner2.json";
+
+const static std::string  importSuccessPro = "success1";
+const static std::string  importSuccessPro2 = "success2";
+const static std::string  importSuccess2Tag = "taggg";
+const static std::string  importSuccess2Desc = "desccc";
+const static std::string  importNoOwnerPro = "owner1";
+const static std::string  importNoOwnerProTag = "thisTag";
+const static std::string  importNoOwnerProDesc = "MyUpload";
+const static std::string  importNoOwnerPro2 = "owner2";
+const static std::string  importNoOwnerPro2Tag = "thisTag";
+const static std::string  importNoOwnerPro2Tag = "MyUpload";
+
+
 const static std::string genFedDB = "genFedTest";
 const static std::string genFedNoSubProName = "noSubPro";
 const static std::string genFedSuccessName = "fedTest";

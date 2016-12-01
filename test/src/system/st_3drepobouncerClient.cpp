@@ -51,6 +51,21 @@ static std::string produceCreateFedArgs(
 		+ owner;
 }
 
+static std::string produceUploadFileArgs(	
+	const std::string &filePath,
+	const std::string &dbAdd = REPO_GTEST_DBADDRESS,
+	const int         &port = REPO_GTEST_DBPORT,
+	const std::string &username = REPO_GTEST_DBUSER,
+	const std::string &password = REPO_GTEST_DBPW)
+{
+	return  getClientExePath() + " " + dbAdd + " "
+		+ std::to_string(port) + " "
+		+ username + " "
+		+ password
+		+ " import -f \""
+		+ filePath + "\"";
+}
+
 static std::string produceUploadArgs(
 	const std::string &dbAdd,
 	const int         &port,
@@ -167,6 +182,29 @@ TEST(RepoClientTest, UploadTest)
 	std::string ifcUpload = produceUploadArgs(db, "ifcTest", getDataPath(ifcModel));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(ifcUpload));
 	EXPECT_TRUE(projectExists(db, "ifcTest"));
+
+	//JSON AS argument
+	//Empty JSON
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(emptyFile)));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(emptyJSONFile)));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(importNoFile)));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(importbadDir)));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(importbadDir2)));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(importNoDatabase)));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(importNoDatabase2)));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(importNoProject)));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(importNoProject2)));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(importNoOwner)));
+	EXPECT_TRUE(projectExists(db, importNoOwnerPro));
+	
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(importNoOwner2)));
+	EXPECT_TRUE(projectExists(db, importNoOwnerPro2));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(importSuccess)));
+	EXPECT_TRUE(projectExists(db, importSuccessPro));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(importSuccess2)));
+	EXPECT_TRUE(projectExists(db, importSuccessPro2));
+
+
 }
 
 TEST(RepoClientTest, CreateFedTest)

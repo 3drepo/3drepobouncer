@@ -46,6 +46,26 @@ static bool projectExists(
 	delete controller;
 	return res;
 }
+//
+//static bool checkTagAndDesc(
+//	const std::string &db,
+//	const std::string &project)
+//{
+//	bool res = false;
+//	repo::RepoController *controller = new repo::RepoController();
+//	std::string errMsg;
+//	repo::RepoController::RepoToken *token =
+//		controller->authenticateToAdminDatabaseMongo(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+//		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+//	if (token)
+//	{
+//
+//	}
+//	controller->disconnectFromDatabase(token);
+//	delete controller;
+//	return res;
+//}
+
 
 static bool compareVectors(const repo_vector2d_t &v1, const repo_vector2d_t &v2)
 {
