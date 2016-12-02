@@ -368,7 +368,7 @@ TEST(RepoSceneTest, GetSetDatabaseProjectName)
 	EXPECT_EQ(dbName, scene2.getDatabaseName());
 	EXPECT_EQ(projName, scene2.getProjectName());
 
-	std::string badDbName = "system.h$<>:|/\.a?";
+	std::string badDbName = "system.h$<>:|/\\.a?";
 	std::string badProjName = "p r o j e c t$...";
 	scene2.setDatabaseAndProjectName(badDbName, badProjName);
 	EXPECT_EQ("system_h_______a_", scene2.getDatabaseName());
@@ -716,4 +716,13 @@ TEST(RepoSceneTest, getParentAsNodesFiltered)
 	EXPECT_EQ(root, parents[0]);
 
 	EXPECT_EQ(0, scene.getParentNodesFiltered(RepoScene::GraphType::DEFAULT, m1, NodeType::MESH).size());
+}
+
+TEST(RepoSceneTest, getSceneFromReference)
+{
+	//REPO_GTEST_DBNAME1_FED
+	RepoScene scene;
+	EXPECT_FALSE(scene.getSceneFromReference(defaultG, generateUUID()));
+
+
 }
