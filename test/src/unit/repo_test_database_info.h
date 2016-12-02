@@ -70,7 +70,7 @@ const static std::string  importNoOwnerProTag = "thisTag";
 const static std::string  importNoOwnerProDesc = "MyUpload";
 const static std::string  importNoOwnerPro2 = "owner2";
 const static std::string  importNoOwnerPro2Tag = "thisTag";
-const static std::string  importNoOwnerPro2Tag = "MyUpload";
+const static std::string  importNoOwnerPro2Desc = "MyUpload";
 
 
 const static std::string genFedDB = "genFedTest";
