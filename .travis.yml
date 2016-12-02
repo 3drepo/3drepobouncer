@@ -47,7 +47,6 @@ before_install:
 install:
     - sudo pip install cpp-coveralls    
 before_script:
-    - ls
     - mkdir build && cd build
     - export MONGO_ROOT=$PWD/../mongo-cxx-1.1.0 
     - export ASSIMP_ROOT=$PWD/../assimp-install 
