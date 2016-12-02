@@ -195,14 +195,14 @@ TEST(RepoClientTest, UploadTest)
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importNoProject))));
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(importNoProject2)));
 	
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_NODES, runProcess(produceUploadFileArgs(getDataPath(importNoOwner))));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importNoOwner))));
 	EXPECT_TRUE(projectExists("testDB", importNoOwnerPro));
 	
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_NODES, runProcess(produceUploadFileArgs(getDataPath(importNoOwner2))));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importNoOwner2))));
 	EXPECT_TRUE(projectExists("testDB", importNoOwnerPro2));
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_NODES, runProcess(produceUploadFileArgs(getDataPath(importSuccess))));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importSuccess))));
 	EXPECT_TRUE(projectExists("testDB", importSuccessPro));
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_NODES, runProcess(produceUploadFileArgs(getDataPath(importSuccess2))));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importSuccess2))));
 	EXPECT_TRUE(projectExists("testDB", importSuccessPro2));
 
 
