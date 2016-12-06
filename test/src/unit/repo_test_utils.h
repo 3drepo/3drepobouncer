@@ -90,11 +90,17 @@ static bool filesCompare(
 	{
 		std::string lineA, lineB;
 		bool endofA, endofB;
+		int i = 0; 
 		while ((endofA = (bool)std::getline(fA, lineA)) && (endofB = (bool)std::getline(fB, lineB)))
 		{
 			match = lineA == lineB;
-			if(!match) std::cerr << "Failed match : " << lineA << " - " << lineB << std::endl;
-			if (!match) break;
+			++i;
+			if (!match)
+			{
+				std::cerr << "Failed match : " << lineA << " - " << lineB << std::endl;
+				break;
+			}
+
 		}
 		
 		if (!endofA)
@@ -104,7 +110,7 @@ static bool filesCompare(
 		}
 			
 		match &= (!endofA && !endofB);
-		std::cout << "End of A? " << endofA << " end of B? " << endofB;
+		std::cout << "End of A? " << endofA << " end of B? " << endofB << " #lines scanned: " << i << std::endl;
 	}
 
 	return match;
