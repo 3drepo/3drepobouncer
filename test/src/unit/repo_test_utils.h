@@ -97,7 +97,9 @@ static bool filesCompare(
 			++i;
 			if (!match)
 			{
-				std::cerr << "Failed match : " << lineA << " - " << lineB << std::endl;
+				std::cout << "Failed match. " << std::endl;
+				std::cout << "line A: " << lineA << std::endl;
+				std::cout << "line B: " << lineB << std::endl;
 				break;
 			}
 
