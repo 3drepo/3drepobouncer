@@ -20,6 +20,7 @@
 #include <repo/repo_controller.h>
 #include "repo_test_database_info.h"
 #include <fstream>
+#include <boost/iostreams/device/mapped_file.hpp>
 
 static bool projectExists(
 	const std::string &db,
@@ -125,44 +126,49 @@ static bool filesCompare(
 	//	std::cout << "End of A? " << endofA << " end of B? " << endofB << " #lines scanned: " << i << std::endl;
 	//}
 
-	FILE *afile = fopen(fileA.c_str(), "r");
-	FILE *bfile = fopen(fileB.c_str(), "r");
-	if (afile && bfile)
-	{
-		std::vector<char> bufferA, bufferB;
-		bufferA.resize(1024000);
-		bufferB.resize(1024000);
-		size_t sizeA, sizeB;
-		int count = 0;
-		do{
-			sizeA = fread(bufferA.data(), bufferA.size(), 1, afile);
-			sizeB = fread(bufferB.data(), bufferB.size(), 1, bfile);
-			if (sizeA == sizeB)
-			{
-				for (int i = 0; i < bufferA.size(); ++i)
-				{
-					match = bufferA[i] == bufferB[i];
-					if (!match)
-					{
-						std::cout << "Count: " << i + count*bufferA.size() << " mistatched! a: " << bufferA[i] << " b: " << bufferB[i] << std::endl;
-						break;
-					}
-				}
-			}
-			else
-			{
-				std::cout << " count mismatched: sizeA : " << sizeA << ", " << sizeB << std::endl;
-				match = false;
-				break;
-			}
-			count++;
-		} while (sizeA > 0);
+	//FILE *afile = fopen(fileA.c_str(), "r");
+	//FILE *bfile = fopen(fileB.c_str(), "r");
+	//if (afile && bfile)
+	//{
+	//	std::vector<char> bufferA, bufferB;
+	//	bufferA.resize(1024000);
+	//	bufferB.resize(1024000);
+	//	size_t sizeA, sizeB;
+	//	int count = 0;
+	//	do{
+	//		sizeA = fread(bufferA.data(), bufferA.size(), 1, afile);
+	//		sizeB = fread(bufferB.data(), bufferB.size(), 1, bfile);
+	//		if (sizeA == sizeB)
+	//		{
+	//			for (int i = 0; i < bufferA.size(); ++i)
+	//			{
+	//				match = bufferA[i] == bufferB[i];
+	//				if (!match)
+	//				{
+	//					std::cout << "Count: " << i + count*bufferA.size() << " mistatched! a: " << bufferA[i] << " b: " << bufferB[i] << std::endl;
+	//					break;
+	//				}
+	//			}
+	//		}
+	//		else
+	//		{
+	//			std::cout << " count mismatched: sizeA : " << sizeA << ", " << sizeB << std::endl;
+	//			match = false;
+	//			break;
+	//		}
+	//		count++;
+	//	} while (sizeA > 0);
 
-		fclose(afile);
-		fclose(bfile);
-	}
+	//	fclose(afile);
+	//	fclose(bfile);
+	//}
 
-	return match;
+	boost::iostreams::mapped_file_source f1(fileA);
+	boost::iostreams::mapped_file_source f2(fileB);
+
+	return f1.size() == f2.size()
+		&& std::equal(f1.data(), f1.data() + f1.size(), f2.data());
+	
 }
 
 static bool compareVectors(const repo_vector2d_t &v1, const repo_vector2d_t &v2)
