@@ -104,6 +104,7 @@ static bool filesCompare(
 		}
 			
 		match &= (!endofA && !endofB);
+		std::cout << "End of A? " << endofA << " end of B? " << endofB;
 	}
 
 	return match;
