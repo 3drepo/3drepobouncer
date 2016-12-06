@@ -1088,39 +1088,44 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 	return scene;
 }
 
-void RepoController::_RepoControllerImpl::saveOriginalFiles(
+bool RepoController::_RepoControllerImpl::saveOriginalFiles(
 	const RepoController::RepoToken                    *token,
 	const repo::core::model::RepoScene *scene,
 	const std::string                   &directory)
 {
+	bool success = false;
 	if (scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
-		worker->saveOriginalFiles(token->databaseAd, token->getCredentials(), scene, directory);
+		success = worker->saveOriginalFiles(token->databaseAd, token->getCredentials(), scene, directory);
 		workerPool.push(worker);
 	}
 	else{
 		repoError << "RepoController::_RepoControllerImpl::saveSceneToFile: NULL pointer to scene!";
 	}
+	return success;
 }
 
-void RepoController::_RepoControllerImpl::saveOriginalFiles(
+bool RepoController::_RepoControllerImpl::saveOriginalFiles(
 	const RepoController::RepoToken                    *token,
 	const std::string                   &database,
 	const std::string                   &project,
 	const std::string                   &directory)
 {
+	bool success = false;
 	if (!(database.empty() || project.empty()))
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
-		worker->saveOriginalFiles(token->databaseAd, token->getCredentials(), database, project, directory);
+		success = worker->saveOriginalFiles(token->databaseAd, token->getCredentials(), database, project, directory);
 		workerPool.push(worker);
 	}
 	else{
 		repoError << "RepoController::_RepoControllerImpl::saveSceneToFile: NULL pointer to scene!";
 	}
+
+	return success;
 }
 
 bool RepoController::_RepoControllerImpl::saveSceneToFile(

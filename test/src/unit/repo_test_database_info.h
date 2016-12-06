@@ -72,6 +72,8 @@ const static std::string  importNoOwnerPro2 = "owner2";
 const static std::string  importNoOwnerPro2Tag = "thisTag";
 const static std::string  importNoOwnerPro2Desc = "MyUpload";
 
+const static std::string getFileFileName = "5be1aca9-e4d0-4cec-987d-80d2fde3dade3DrepoBIM_obj";
+
 
 const static std::string genFedDB = "genFedTest";
 const static std::string genFedNoSubProName = "noSubPro";

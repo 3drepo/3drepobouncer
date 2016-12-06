@@ -368,9 +368,9 @@ int32_t getFileFromProject(
 	std::string project = command.args[1];
 	std::string dir = command.args[2];
 
-	controller->saveOriginalFiles(token, dbName, project, dir);
+	bool success  = controller->saveOriginalFiles(token, dbName, project, dir);
 
-	return REPOERR_OK;
+	return success ? REPOERR_OK : REPOERR_GET_FILE_FAILED;
 }
 
 int32_t importFileAndCommit(

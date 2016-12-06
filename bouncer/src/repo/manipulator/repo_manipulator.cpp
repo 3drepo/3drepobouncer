@@ -1035,7 +1035,7 @@ void RepoManipulator::removeUser(
 	}
 }
 
-void RepoManipulator::saveOriginalFiles(
+bool RepoManipulator::saveOriginalFiles(
 	const std::string                    &databaseAd,
 	const repo::core::model::RepoBSON	 *cred,
 	const repo::core::model::RepoScene   *scene,
@@ -1043,18 +1043,15 @@ void RepoManipulator::saveOriginalFiles(
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	bool success = false;
 	if (handler && scene)
 	{
 		std::string errMsg;
 
 		const std::vector<std::string> files = scene->getOriginalFiles();
-		if (files.size() > 0)
+		if (success = files.size() > 0)
 		{
 			boost::filesystem::path dir(directory);
-			/*if (boost::filesystem::create_directory(dir))
-			{
-			repoTrace << "Directory created: " << directory;
-			}*/
 
 			for (const std::string &file : files)
 			{
@@ -1069,11 +1066,12 @@ void RepoManipulator::saveOriginalFiles(
 					if (out.good())
 					{
 						out.write((char*)rawFile.data(), rawFile.size());
-						out.close();
+						out.close();						
 					}
 					else
 					{
 						repoError << " Failed to open file to write: " << fullPath.string();
+						success = false;
 					}
 				}
 				else
@@ -1083,9 +1081,11 @@ void RepoManipulator::saveOriginalFiles(
 			}
 		}
 	}
+
+	return success;
 }
 
-void RepoManipulator::saveOriginalFiles(
+bool RepoManipulator::saveOriginalFiles(
 	const std::string                    &databaseAd,
 	const repo::core::model::RepoBSON	 *cred,
 	const std::string                    &database,
@@ -1094,16 +1094,18 @@ void RepoManipulator::saveOriginalFiles(
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	bool success = false;
 	auto scene = new repo::core::model::RepoScene(database, project);
 	std::string errMsg;
 	if (scene && scene->loadRevision(handler, errMsg))
 	{
-		saveOriginalFiles(databaseAd, cred, scene, directory);
+		success = saveOriginalFiles(databaseAd, cred, scene, directory);
 	}
 	else
 	{
 		repoError << "Failed to fetch project from the database!" << (errMsg.empty() ? "" : errMsg);
 	}
+	return success;
 }
 
 bool RepoManipulator::saveSceneToFile(

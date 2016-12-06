@@ -717,7 +717,7 @@ namespace repo{
 			* @param scene Repo Scene to save
 			* @param directory directory to save into
 			*/
-			void saveOriginalFiles(
+			bool saveOriginalFiles(
 				const std::string                    &databaseAd,
 				const repo::core::model::RepoBSON	 *cred,
 				const repo::core::model::RepoScene   *scene,
@@ -731,7 +731,7 @@ namespace repo{
 			* @param project name of project
 			* @param directory directory to save into
 			*/
-			void saveOriginalFiles(
+			bool saveOriginalFiles(
 				const std::string                    &databaseAd,
 				const repo::core::model::RepoBSON	 *cred,
 				const std::string                    &database,

@@ -33,6 +33,26 @@ static std::string getSuccessFilePath()
 	return getDataPath(simpleModel);
 }
 
+static std::string produceGetFileArgs(
+	const std::string &file,
+	const std::string &database,
+	const std::string &project,
+	const std::string &dbAdd = REPO_GTEST_DBADDRESS,
+	const int         &port = REPO_GTEST_DBPORT,
+	const std::string &username = REPO_GTEST_DBUSER,
+	const std::string &password = REPO_GTEST_DBPW
+	)
+{
+	return  getClientExePath() + " " + dbAdd + " "
+		+ std::to_string(port) + " "
+		+ username + " "
+		+ password + " "
+		+ "getFile "
+		+ database + " "
+		+ project + " \""
+		+ file + "\"";
+}
+
 static std::string produceCreateFedArgs(
 	const std::string &file,
 	const std::string &owner = std::string(),
@@ -260,4 +280,15 @@ TEST(RepoClientTest, CreateFedTest)
 	std::string goodFilePath = produceCreateFedArgs(getDataPath(validGenFedJSONFile));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(goodFilePath));
 	EXPECT_TRUE(projectExists(genFedDB, genFedSuccessName));
+}
+
+TEST(RepoClientTest, GetFileTest)
+{
+
+	EXPECT_EQ((int)REPOERR_GET_FILE_FAILED, runProcess(produceGetFileArgs(".", "nonExistent1", "nonExistent2")));
+	EXPECT_EQ((int)REPOERR_GET_FILE_FAILED, runProcess(produceGetFileArgs(".", REPO_GTEST_DBNAME1, "nonExistent2")));
+
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGetFileArgs(".", REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ)));
+	EXPECT_TRUE(fileExists(getFileFileName));
+	EXPECT_TRUE(filesCompare(getFileFileName, getDataPath("3DrepoBIM.obj")));
 }

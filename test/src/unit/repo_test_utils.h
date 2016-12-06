@@ -19,6 +19,7 @@
 #include <repo/core/model/repo_node_utils.h>
 #include <repo/repo_controller.h>
 #include "repo_test_database_info.h"
+#include <fstream>
 
 static bool projectExists(
 	const std::string &db,
@@ -62,6 +63,7 @@ static bool projectSettingsCheck(
 		if (scene)
 		{
 			res = scene->getOwner() == owner && scene->getTag() == tag && scene->getMessage() == desc;
+			delete scene;
 		}
 	}
 	controller->disconnectFromDatabase(token);
@@ -69,6 +71,43 @@ static bool projectSettingsCheck(
 	return res;
 }
 
+static bool fileExists(
+	const std::string &file)
+{
+	std::ifstream ofs(file);
+	const bool valid = ofs.good();
+	ofs.close();
+	return valid;
+}
+
+static bool filesCompare(
+	const std::string &fileA,
+	const std::string &fileB )
+{
+	std::ifstream fA(fileA), fB(fileB);
+	bool match = false;
+	if (fA.good() && fB.good())
+	{
+		std::string lineA, lineB;
+		bool endofA, endofB;
+		while ((endofA = (bool)std::getline(fA, lineA)) && (endofB = (bool)std::getline(fB, lineB)))
+		{
+			match = lineA == lineB;
+			if(!match) std::cerr << "Failed match : " << lineA << " - " << lineB << std::endl;
+			if (!match) break;
+		}
+		
+		if (!endofA)
+		{
+			//if endofA is false then end of B won't be found as getline wouldn't have ran for fB
+			endofB = (bool)std::getline(fB, lineB);
+		}
+			
+		match &= (!endofA && !endofB);
+	}
+
+	return match;
+}
 
 static bool compareVectors(const repo_vector2d_t &v1, const repo_vector2d_t &v2)
 {
