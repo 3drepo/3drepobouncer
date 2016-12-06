@@ -46,25 +46,28 @@ static bool projectExists(
 	delete controller;
 	return res;
 }
-//
-//static bool checkTagAndDesc(
-//	const std::string &db,
-//	const std::string &project)
-//{
-//	bool res = false;
-//	repo::RepoController *controller = new repo::RepoController();
-//	std::string errMsg;
-//	repo::RepoController::RepoToken *token =
-//		controller->authenticateToAdminDatabaseMongo(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
-//		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
-//	if (token)
-//	{
-//
-//	}
-//	controller->disconnectFromDatabase(token);
-//	delete controller;
-//	return res;
-//}
+
+static bool projectSettingsCheck(
+	const std::string  &dbName, const std::string  &projectName, const std::string  &owner, const std::string  &tag, const std::string  &desc)
+{
+	bool res = false;
+	repo::RepoController *controller = new repo::RepoController();
+	std::string errMsg;
+	repo::RepoController::RepoToken *token =
+		controller->authenticateToAdminDatabaseMongo(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+	if (token)
+	{
+		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true);
+		if (scene)
+		{
+			res = scene->getOwner() == owner && scene->getTag() == tag && scene->getMessage() == desc;
+		}
+	}
+	controller->disconnectFromDatabase(token);
+	delete controller;
+	return res;
+}
 
 
 static bool compareVectors(const repo_vector2d_t &v1, const repo_vector2d_t &v2)
