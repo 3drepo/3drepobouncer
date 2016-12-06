@@ -100,6 +100,12 @@ static bool filesCompare(
 				std::cout << "Failed match. " << std::endl;
 				std::cout << "line A: " << lineA << std::endl;
 				std::cout << "line B: " << lineB << std::endl;
+				std::cout << "lines match ? " << (lineA == lineB) << std::endl;
+				std::cout << "size: " << lineA.size() << " , " << lineB.size() << std::endl;
+				for (int i = 0; i < lineA.size(); ++i)
+				{
+					std::cout << lineA[i] << " , " << lineB[i] << std::endl;
+				}
 				break;
 			}
 
