@@ -133,6 +133,7 @@ static bool filesCompare(
 		bufferA.resize(1024000);
 		bufferB.resize(1024000);
 		size_t sizeA, sizeB;
+		int count = 0;
 		do{
 			sizeA = fread(bufferA.data(), bufferA.size(), 1, afile);
 			sizeB = fread(bufferB.data(), bufferB.size(), 1, bfile);
@@ -141,15 +142,20 @@ static bool filesCompare(
 				for (int i = 0; i < bufferA.size(); ++i)
 				{
 					match = bufferA[i] == bufferB[i];
-					if (!match) break;
+					if (!match)
+					{
+						std::cout << "Count: " << i + count*bufferA.size() << " mistatched! a: " << bufferA[i] << " b: " << bufferB[i] << std::endl;
+						break;
+					}
 				}
 			}
 			else
 			{
+				std::cout << " count mismatched: sizeA : " << sizeA << ", " << sizeB << std::endl;
 				match = false;
 				break;
 			}
-			
+			count++;
 		} while (sizeA > 0);
 
 		fclose(afile);
