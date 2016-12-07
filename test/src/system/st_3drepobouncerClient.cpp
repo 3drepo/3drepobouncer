@@ -151,136 +151,136 @@ static int runProcess(
 	return status;
 #endif
 }
-//
-//TEST(RepoClientTest, UploadTest)
-//{
-//	//this ensures we can run processes
-//	ASSERT_TRUE(system(nullptr));
-//
-//	//Test failing to connect to database
-//	std::string db = "stUpload";
-//	std::string failToConnect = produceUploadArgs("invalidAdd", 12345, db, "failConn", getSuccessFilePath());
-//	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToConnect));
-//	EXPECT_FALSE(projectExists(db, "failConn"));
-//
-//	//Test Bad authentication
-//	std::string failToAuth = produceUploadArgs("blah", "blah", db, "failAuth", getSuccessFilePath());
-//	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToAuth));
-//	EXPECT_FALSE(projectExists(db, "failAuth"));
-//
-//	//Test Bad FilePath
-//	std::string badFilePath = produceUploadArgs(db, "failPath", "nonExistentFile.obj");
-//	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(badFilePath));
-//	EXPECT_FALSE(projectExists(db, "failPath"));
-//
-//	//Test Bad extension
-//	std::string badExt = produceUploadArgs(db, "failExt", getDataPath(badExtensionFile));
-//	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(badExt));
-//	EXPECT_FALSE(projectExists(db, "failExt"));
-//
-//	//Insufficient arguments
-//	std::string lackArg = getClientExePath() + " " + REPO_GTEST_DBADDRESS + " " + std::to_string(REPO_GTEST_DBPORT) + " "
-//		+ REPO_GTEST_DBUSER + " " + REPO_GTEST_DBPW + " import " + getSuccessFilePath();
-//	EXPECT_EQ((int)REPOERR_INVALID_ARG, runProcess(lackArg));
-//
-//	//Test Good Upload
-//	std::string goodUpload = produceUploadArgs(db, "cube", getSuccessFilePath());
-//	EXPECT_EQ((int)REPOERR_OK, runProcess(goodUpload));
-//	EXPECT_TRUE(projectExists(db, "cube"));
-//
-//	//Test Textured Upload
-//	std::string texUpload = produceUploadArgs(db, "textured", getDataPath(texturedModel));
-//	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(texUpload));
-//	EXPECT_TRUE(projectExists(db, "textured"));
-//
-//	//Test missing nodes Upload
-//	std::string misUpload = produceUploadArgs(db, "missing", getDataPath(missingNodesModel));
-//	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_NODES, runProcess(misUpload));
-//	EXPECT_TRUE(projectExists(db, "missing"));
-//
-//	//Upload IFCFile
-//	std::string ifcUpload = produceUploadArgs(db, "ifcTest", getDataPath(ifcModel));
-//	EXPECT_EQ((int)REPOERR_OK, runProcess(ifcUpload));
-//	EXPECT_TRUE(projectExists(db, "ifcTest"));
-//
-//	//JSON AS argument
-//	//Empty JSON
-//	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(emptyFile))));
-//	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importNoFile))));
-//	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(emptyJSONFile))));
-//	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importbadDir))));
-//	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importbadDir2))));
-//	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importNoDatabase))));
-//	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importNoDatabase2))));
-//	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importNoProject))));
-//	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(importNoProject2)));
-//	
-//	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importNoOwner))));
-//	EXPECT_TRUE(projectExists("testDB", importNoOwnerPro));
-//	EXPECT_TRUE(projectSettingsCheck("testDB", importNoOwnerPro, REPO_GTEST_DBUSER, "thisTag", "MyUpload"));
-//	
-//	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importNoOwner2))));
-//	EXPECT_TRUE(projectExists("testDB", importNoOwnerPro2));
-//	EXPECT_TRUE(projectSettingsCheck("testDB", importNoOwnerPro2, REPO_GTEST_DBUSER, "thisTag", "MyUpload"));
-//
-//	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importSuccess))));
-//	EXPECT_TRUE(projectExists("testDB", importSuccessPro));
-//	EXPECT_TRUE(projectSettingsCheck("testDB", importSuccessPro, "owner", "", ""));
-//
-//	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importSuccess2))));
-//	EXPECT_TRUE(projectExists("testDB", importSuccessPro2));
-//	EXPECT_TRUE(projectSettingsCheck("testDB", importSuccessPro2, "owner", "taggg", "desccc"));
-//
-//}
-//
-//TEST(RepoClientTest, CreateFedTest)
-//{
-//	//this ensures we can run processes
-//	ASSERT_TRUE(system(nullptr));
-//
-//	//Test failing to connect to database
-//	std::string db = "stFed";
-//	std::string failToConnect = produceCreateFedArgs("whatever", "", "invalidAdd", 12345);
-//	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToConnect));
-//
-//	//Test Bad authentication
-//	std::string failToAuth = produceCreateFedArgs("whatever", "", REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT, "badUser", "invalidPasswrd2");
-//	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToAuth));
-//
-//	//Test Bad FilePath
-//	std::string badFilePath = produceCreateFedArgs("nonExistentFile.json");
-//	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(badFilePath));
-//
-//	//Test Completely empty file
-//	std::string emptyFilePath = produceCreateFedArgs(getDataPath(emptyFile));
-//	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(emptyFilePath));
-//
-//	//Test json file with {}
-//	std::string empty2FilePath = produceCreateFedArgs(getDataPath(emptyJSONFile));
-//	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(empty2FilePath));
-//
-//	//Test json file with no sub projects
-//	std::string noSPFilePath = produceCreateFedArgs(getDataPath(noSubProjectJSONFile));
-//	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(noSPFilePath));
-//	EXPECT_FALSE(projectExists(genFedDB, genFedNoSubProName));
-//
-//	//Test json file with empty string as database name
-//	std::string noDBFilePath = produceCreateFedArgs(getDataPath(noDbNameJSONFile));
-//	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(noDBFilePath));
-//
-//	//Test json file with empty string as project name
-//	std::string noProFilePath = produceCreateFedArgs(getDataPath(noProNameJSONFile));
-//	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(noProFilePath));
-//
-//	//Test badly formatted JSON file
-//	std::string invalidJSONFilePath = produceCreateFedArgs(getDataPath(invalidJSONFile));
-//	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(invalidJSONFilePath));
-//
-//	//Test success
-//	std::string goodFilePath = produceCreateFedArgs(getDataPath(validGenFedJSONFile));
-//	EXPECT_EQ((int)REPOERR_OK, runProcess(goodFilePath));
-//	EXPECT_TRUE(projectExists(genFedDB, genFedSuccessName));
-//}
+
+TEST(RepoClientTest, UploadTest)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+
+	//Test failing to connect to database
+	std::string db = "stUpload";
+	std::string failToConnect = produceUploadArgs("invalidAdd", 12345, db, "failConn", getSuccessFilePath());
+	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToConnect));
+	EXPECT_FALSE(projectExists(db, "failConn"));
+
+	//Test Bad authentication
+	std::string failToAuth = produceUploadArgs("blah", "blah", db, "failAuth", getSuccessFilePath());
+	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToAuth));
+	EXPECT_FALSE(projectExists(db, "failAuth"));
+
+	//Test Bad FilePath
+	std::string badFilePath = produceUploadArgs(db, "failPath", "nonExistentFile.obj");
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(badFilePath));
+	EXPECT_FALSE(projectExists(db, "failPath"));
+
+	//Test Bad extension
+	std::string badExt = produceUploadArgs(db, "failExt", getDataPath(badExtensionFile));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(badExt));
+	EXPECT_FALSE(projectExists(db, "failExt"));
+
+	//Insufficient arguments
+	std::string lackArg = getClientExePath() + " " + REPO_GTEST_DBADDRESS + " " + std::to_string(REPO_GTEST_DBPORT) + " "
+		+ REPO_GTEST_DBUSER + " " + REPO_GTEST_DBPW + " import " + getSuccessFilePath();
+	EXPECT_EQ((int)REPOERR_INVALID_ARG, runProcess(lackArg));
+
+	//Test Good Upload
+	std::string goodUpload = produceUploadArgs(db, "cube", getSuccessFilePath());
+	EXPECT_EQ((int)REPOERR_OK, runProcess(goodUpload));
+	EXPECT_TRUE(projectExists(db, "cube"));
+
+	//Test Textured Upload
+	std::string texUpload = produceUploadArgs(db, "textured", getDataPath(texturedModel));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(texUpload));
+	EXPECT_TRUE(projectExists(db, "textured"));
+
+	//Test missing nodes Upload
+	std::string misUpload = produceUploadArgs(db, "missing", getDataPath(missingNodesModel));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_NODES, runProcess(misUpload));
+	EXPECT_TRUE(projectExists(db, "missing"));
+
+	//Upload IFCFile
+	std::string ifcUpload = produceUploadArgs(db, "ifcTest", getDataPath(ifcModel));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(ifcUpload));
+	EXPECT_TRUE(projectExists(db, "ifcTest"));
+
+	//JSON AS argument
+	//Empty JSON
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(emptyFile))));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importNoFile))));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(emptyJSONFile))));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importbadDir))));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importbadDir2))));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importNoDatabase))));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importNoDatabase2))));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importNoProject))));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(importNoProject2)));
+	
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importNoOwner))));
+	EXPECT_TRUE(projectExists("testDB", importNoOwnerPro));
+	EXPECT_TRUE(projectSettingsCheck("testDB", importNoOwnerPro, REPO_GTEST_DBUSER, "thisTag", "MyUpload"));
+	
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importNoOwner2))));
+	EXPECT_TRUE(projectExists("testDB", importNoOwnerPro2));
+	EXPECT_TRUE(projectSettingsCheck("testDB", importNoOwnerPro2, REPO_GTEST_DBUSER, "thisTag", "MyUpload"));
+
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importSuccess))));
+	EXPECT_TRUE(projectExists("testDB", importSuccessPro));
+	EXPECT_TRUE(projectSettingsCheck("testDB", importSuccessPro, "owner", "", ""));
+
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importSuccess2))));
+	EXPECT_TRUE(projectExists("testDB", importSuccessPro2));
+	EXPECT_TRUE(projectSettingsCheck("testDB", importSuccessPro2, "owner", "taggg", "desccc"));
+
+}
+
+TEST(RepoClientTest, CreateFedTest)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+
+	//Test failing to connect to database
+	std::string db = "stFed";
+	std::string failToConnect = produceCreateFedArgs("whatever", "", "invalidAdd", 12345);
+	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToConnect));
+
+	//Test Bad authentication
+	std::string failToAuth = produceCreateFedArgs("whatever", "", REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT, "badUser", "invalidPasswrd2");
+	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToAuth));
+
+	//Test Bad FilePath
+	std::string badFilePath = produceCreateFedArgs("nonExistentFile.json");
+	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(badFilePath));
+
+	//Test Completely empty file
+	std::string emptyFilePath = produceCreateFedArgs(getDataPath(emptyFile));
+	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(emptyFilePath));
+
+	//Test json file with {}
+	std::string empty2FilePath = produceCreateFedArgs(getDataPath(emptyJSONFile));
+	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(empty2FilePath));
+
+	//Test json file with no sub projects
+	std::string noSPFilePath = produceCreateFedArgs(getDataPath(noSubProjectJSONFile));
+	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(noSPFilePath));
+	EXPECT_FALSE(projectExists(genFedDB, genFedNoSubProName));
+
+	//Test json file with empty string as database name
+	std::string noDBFilePath = produceCreateFedArgs(getDataPath(noDbNameJSONFile));
+	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(noDBFilePath));
+
+	//Test json file with empty string as project name
+	std::string noProFilePath = produceCreateFedArgs(getDataPath(noProNameJSONFile));
+	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(noProFilePath));
+
+	//Test badly formatted JSON file
+	std::string invalidJSONFilePath = produceCreateFedArgs(getDataPath(invalidJSONFile));
+	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(invalidJSONFilePath));
+
+	//Test success
+	std::string goodFilePath = produceCreateFedArgs(getDataPath(validGenFedJSONFile));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(goodFilePath));
+	EXPECT_TRUE(projectExists(genFedDB, genFedSuccessName));
+}
 
 TEST(RepoClientTest, GetFileTest)
 {
