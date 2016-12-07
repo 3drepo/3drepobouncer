@@ -346,10 +346,8 @@ TEST(RepoClientTest, GenStashTest)
 		if (scene)
 		{
 			stashRoot = scene->getRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)->getUniqueID();
-
 			delete scene;
 		}
-
 	}
 
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("sampleDataRW", "cube", "src")));

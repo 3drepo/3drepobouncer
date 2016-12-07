@@ -720,9 +720,16 @@ TEST(RepoSceneTest, getParentAsNodesFiltered)
 
 TEST(RepoSceneTest, getSceneFromReference)
 {
-	//REPO_GTEST_DBNAME1_FED
 	RepoScene scene;
 	EXPECT_FALSE(scene.getSceneFromReference(defaultG, generateUUID()));
+	scene = RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_FED);
+	std::string errMsg;
+	scene.loadScene(getHandler(), errMsg);
+	ASSERT_TRUE(errMsg.empty());
 
-
+	auto references = scene.getAllReferences(defaultG);
+	ASSERT_TRUE(references.size());
+	for (const auto &ref : references)
+		EXPECT_TRUE(scene.getSceneFromReference(defaultG, ref->getSharedID()));
+	EXPECT_FALSE(scene.getSceneFromReference(defaultG, generateUUID()));
 }
