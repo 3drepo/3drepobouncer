@@ -733,3 +733,33 @@ TEST(RepoSceneTest, getSceneFromReference)
 		EXPECT_TRUE(scene.getSceneFromReference(defaultG, ref->getSharedID()));
 	EXPECT_FALSE(scene.getSceneFromReference(defaultG, generateUUID()));
 }
+
+TEST(RepoSceneTest, getTextureIDForMesh)
+{
+	RepoScene scene;
+	EXPECT_TRUE(scene.getTextureIDForMesh(defaultG, generateUUID()).empty());
+
+
+	RepoNodeSet transNodes, meshNodes, empty, matNodes, texNodes;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
+	auto m2 = new MeshNode(makeRandomNode(root->getSharedID()));
+	auto mat1 = new MaterialNode(makeRandomNode(m1->getSharedID()));
+	auto mat2 = new MaterialNode(makeRandomNode(m2->getSharedID()));
+	auto tex1 = new TextureNode(makeRandomNode(mat1->getSharedID()));
+
+	transNodes.insert(root);
+	meshNodes.insert(m1);
+	meshNodes.insert(m2);
+
+	matNodes.insert(mat1);
+	matNodes.insert(mat2);
+	texNodes.insert(tex1);
+
+	auto scene2 = RepoScene(std::vector<std::string>(), empty, meshNodes, matNodes, empty, texNodes, transNodes);
+
+	EXPECT_EQ(UUIDtoString(tex1->getUniqueID()), scene2.getTextureIDForMesh(defaultG, m1->getSharedID()));
+	EXPECT_TRUE(scene2.getTextureIDForMesh(defaultG, m2->getSharedID()).empty());
+}
+
