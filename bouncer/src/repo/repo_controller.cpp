@@ -76,7 +76,7 @@ bool RepoController::authenticateMongo(
 	return impl->authenticateMongo(errMsg, token);
 }
 
-void RepoController::cleanUp(
+bool RepoController::cleanUp(
 	const RepoToken      *token,
 	const std::string                      &dbName,
 	const std::string                      &projectName

@@ -323,7 +323,7 @@ int32_t generateStash(
 	auto scene = controller->fetchScene(token, dbName, project);
 	if (!scene)
 	{
-		return REPOERR_LOAD_SCENE_FAIL;
+		return REPOERR_STASH_GEN_FAIL;
 	}
 
 	bool  success = false;

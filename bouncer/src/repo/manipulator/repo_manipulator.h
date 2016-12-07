@@ -49,7 +49,7 @@ namespace repo{
 			* @param dbName name of the database
 			* @param projectName name of the project
 			*/
-			void cleanUp(
+			bool cleanUp(
 				const std::string                      &databaseAd,
 				const repo::core::model::RepoBSON 	   *cred,
 				const std::string                      &dbName,

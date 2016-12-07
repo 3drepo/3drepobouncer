@@ -20,7 +20,6 @@
 #include <repo/repo_controller.h>
 #include "repo_test_database_info.h"
 #include <fstream>
-#include <boost/iostreams/device/mapped_file.hpp>
 
 static bool projectExists(
 	const std::string &db,
@@ -72,6 +71,28 @@ static bool projectSettingsCheck(
 	return res;
 }
 
+static bool projectHasValidRevision(
+	const std::string  &dbName, const std::string  &projectName)
+{
+	bool res = false;
+	repo::RepoController *controller = new repo::RepoController();
+	std::string errMsg;
+	repo::RepoController::RepoToken *token =
+		controller->authenticateToAdminDatabaseMongo(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+	if (token)
+	{
+		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true);
+		if (res = scene)
+		{			
+			delete scene;
+		}
+	}
+	controller->disconnectFromDatabase(token);
+	delete controller;
+	return res;
+}
+
 static bool fileExists(
 	const std::string &file)
 {
@@ -91,26 +112,15 @@ static bool filesCompare(
 	{
 		std::string lineA, lineB;
 		bool endofA, endofB;
-		int i = 0; 
 		while ((endofA = (bool)std::getline(fA, lineA)) && (endofB = (bool)std::getline(fB, lineB)))
 		{
-			if (lineA.size() != lineB.size())
-			{
 
-			}
 			match = lineA == lineB;
-			++i;
 			if (!match)
 			{
 				std::cout << "Failed match. " << std::endl;
 				std::cout << "line A: " << lineA << std::endl;
 				std::cout << "line B: " << lineB << std::endl;
-				std::cout << "lines match ? " << (lineA == lineB) << std::endl;
-				std::cout << "size: " << lineA.size() << " , " << lineB.size() << std::endl;
-				for (int i = 0; i < lineA.size(); ++i)
-				{
-					std::cout << lineA[i] << " , " << lineB[i] << std::endl;
-				}
 				break;
 			}
 
@@ -123,54 +133,9 @@ static bool filesCompare(
 		}
 			
 		match &= (!endofA && !endofB);
-		std::cout << "End of A? " << endofA << " end of B? " << endofB << " #lines scanned: " << i << std::endl;
 	}
 
 	return match;
-
-	//FILE *afile = fopen(fileA.c_str(), "r");
-	//FILE *bfile = fopen(fileB.c_str(), "r");
-	//if (afile && bfile)
-	//{
-	//	std::vector<char> bufferA, bufferB;
-	//	bufferA.resize(1024000);
-	//	bufferB.resize(1024000);
-	//	size_t sizeA, sizeB;
-	//	int count = 0;
-	//	do{
-	//		sizeA = fread(bufferA.data(), bufferA.size(), 1, afile);
-	//		sizeB = fread(bufferB.data(), bufferB.size(), 1, bfile);
-	//		if (sizeA == sizeB)
-	//		{
-	//			for (int i = 0; i < bufferA.size(); ++i)
-	//			{
-	//				match = bufferA[i] == bufferB[i];
-	//				if (!match)
-	//				{
-	//					std::cout << "Count: " << i + count*bufferA.size() << " mistatched! a: " << bufferA[i] << " b: " << bufferB[i] << std::endl;
-	//					break;
-	//				}
-	//			}
-	//		}
-	//		else
-	//		{
-	//			std::cout << " count mismatched: sizeA : " << sizeA << ", " << sizeB << std::endl;
-	//			match = false;
-	//			break;
-	//		}
-	//		count++;
-	//	} while (sizeA > 0);
-
-	//	fclose(afile);
-	//	fclose(bfile);
-	//}
-
-	//boost::iostreams::mapped_file_source f1(fileA);
-	//boost::iostreams::mapped_file_source f2(fileB);
-
-	//return f1.size() == f2.size()
-	//	&& std::equal(f1.data(), f1.data() + f1.size(), f2.data());
-	
 }
 
 static bool compareVectors(const repo_vector2d_t &v1, const repo_vector2d_t &v2)

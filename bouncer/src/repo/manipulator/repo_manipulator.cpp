@@ -49,17 +49,18 @@ RepoManipulator::~RepoManipulator()
 {
 }
 
-void RepoManipulator::cleanUp(
+bool RepoManipulator::cleanUp(
 	const std::string                      &databaseAd,
 	const repo::core::model::RepoBSON 	   *cred,
 	const std::string                      &dbName,
 	const std::string                      &projectName
 	)
 {
+	bool success;
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	modelutility::SceneCleaner cleaner(dbName, projectName, handler);
-	if (cleaner.execute())
+	if (success  = cleaner.execute())
 	{
 		repoInfo << dbName << "." << projectName << " has been cleaned up successfully.";
 	}
@@ -67,6 +68,7 @@ void RepoManipulator::cleanUp(
 	{
 		repoError << "Clean up failed on " << dbName << "." << projectName;
 	}
+	return success;
 }
 
 bool RepoManipulator::connectAndAuthenticate(

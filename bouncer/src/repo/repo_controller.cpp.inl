@@ -409,7 +409,7 @@ public:
 	* @param dbName name of the database
 	* @param projectName name of the project
 	*/
-	void cleanUp(
+	bool cleanUp(
 		const RepoToken                        *token,
 		const std::string                      &dbName,
 		const std::string                      &projectName
