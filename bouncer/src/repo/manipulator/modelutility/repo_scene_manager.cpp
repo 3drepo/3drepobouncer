@@ -270,6 +270,10 @@ bool SceneManager::generateWebViewBuffers(
 					scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
 			}
 		}
+		else
+		{
+			repoError << "Failed to generate web buffers: no geometry file generated";
+		}
 	}
 	else
 	{

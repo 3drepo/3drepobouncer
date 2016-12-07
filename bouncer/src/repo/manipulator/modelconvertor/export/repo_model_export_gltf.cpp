@@ -516,6 +516,10 @@ bool GLTFModelExport::constructScene(
 
 			jsonTrees[jsonFileName] = spatialPartTree;
 		}
+		else
+		{
+			repoError << "Failed to split Meshes";
+		}
 	}
 	return success;
 }
@@ -533,6 +537,7 @@ bool GLTFModelExport::generateTreeRepresentation()
 	if (!scene)
 	{
 		//Sanity check, shouldn't be calling this function with nullptr anyway
+		repoError << "Nullptr to scene";
 		return false;
 	}
 
@@ -1061,6 +1066,8 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			normals = node->getNormals();
 			vertices = node->getVertices();
 			UVs = node->getUVChannelsSeparated();
+
+			splitSizes[node->getUniqueID()] = 1;
 
 			bool hasMapping = mappings.size();
 			std::string meshId = hasMapping ? UUIDtoString(mappings[0].mesh_id) : UUIDtoString(node->getUniqueID());

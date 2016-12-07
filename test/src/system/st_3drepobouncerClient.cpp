@@ -337,7 +337,7 @@ TEST(RepoClientTest, GenStashTest)
 
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("sampleDataRW", "cube", "src")));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("sampleDataRW", "cube", "tree")));
-	//EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("sampleDataRW", "cube", "gltf")));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("sampleDataRW", "cube", "gltf")));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("sampleDataRW", "cube", "repo")));
 
 	if (token)
@@ -349,7 +349,6 @@ TEST(RepoClientTest, GenStashTest)
 
 			delete scene;
 		}
-
 	}
 
 	controller->disconnectFromDatabase(token);
