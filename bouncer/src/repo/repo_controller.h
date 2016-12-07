@@ -433,7 +433,7 @@ namespace repo{
 			* @param scene Repo Scene to save
 			* @param directory directory to save into
 			*/
-		void saveOriginalFiles(
+		bool saveOriginalFiles(
 			const RepoToken                    *token,
 			const repo::core::model::RepoScene *scene,
 			const std::string                   &directory);
@@ -445,7 +445,7 @@ namespace repo{
 		* @param project  name of project
 		* @param directory directory to save into
 		*/
-		void saveOriginalFiles(
+		bool saveOriginalFiles(
 			const RepoToken                    *token,
 			const std::string                   &database,
 			const std::string                   &project,

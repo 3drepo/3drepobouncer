@@ -30,11 +30,13 @@ const static std::string REPO_GTEST_DBNAME1 = "sampleDataReadOnly";
 const static std::string REPO_GTEST_DBNAME2 = "sampleDataReadOnly2";
 const static std::string REPO_GTEST_DBNAME1_PROJ = "3drepoBIM";
 const static std::string REPO_GTEST_DBNAME2_PROJ = "sphere";
+const static std::string REPO_GTEST_DBNAME1_FED = "genTest";
 const static std::string REPO_GTEST_DBNAME_ROLEUSERTEST = "sampleDataRWRolesUsers";
 
 const static std::string clientExe = "3drepobouncerClient";
 const static std::string simpleModel = "cube.obj";
 const static std::string texturedModel = "texturedPlane.dae";
+const static std::string missingNodesModel = "Wall.ifc";
 const static std::string texturedModel2 = "texturedPlane2.dae"; //With Texture
 const static std::string badExtensionFile = "cube.exe";
 const static std::string ifcModel = "duplex.ifc";
@@ -46,6 +48,32 @@ const static std::string noDbNameJSONFile = "noDb.json";
 const static std::string noProNameJSONFile = "noPro.json";
 const static std::string invalidJSONFile = "invalid.json";
 const static std::string validGenFedJSONFile = "validFed.json";
+
+const static std::string  importSuccess = "successFileImport.json";
+const static std::string  importSuccess2 = "successFileImport2.json";
+const static std::string  importNoFile = "importNoFile.json";
+const static std::string  importbadDir = "importBadDir.json";
+const static std::string  importbadDir2 = "importBadDir2.json";
+const static std::string  importNoDatabase = "importNoDatabase.json";
+const static std::string  importNoDatabase2 = "importNoDatabase2.json";
+const static std::string  importNoProject = "importNoProject.json";
+const static std::string  importNoProject2 = "importNoProject2.json";
+const static std::string  importNoOwner = "importNoOwner.json";
+const static std::string  importNoOwner2 = "importNoOwner2.json";
+
+const static std::string  importSuccessPro = "success1";
+const static std::string  importSuccessPro2 = "success2";
+const static std::string  importSuccess2Tag = "taggg";
+const static std::string  importSuccess2Desc = "desccc";
+const static std::string  importNoOwnerPro = "owner1";
+const static std::string  importNoOwnerProTag = "thisTag";
+const static std::string  importNoOwnerProDesc = "MyUpload";
+const static std::string  importNoOwnerPro2 = "owner2";
+const static std::string  importNoOwnerPro2Tag = "thisTag";
+const static std::string  importNoOwnerPro2Desc = "MyUpload";
+
+const static std::string getFileFileName = "a0205d17-e73c-4d3f-ad1b-8b875cb5f342cube_obj";
+
 
 const static std::string genFedDB = "genFedTest";
 const static std::string genFedNoSubProName = "noSubPro";
@@ -143,7 +171,9 @@ static std::vector<std::string> getCollectionList(
 {
 	if (databaseName == REPO_GTEST_DBNAME1)
 	{
-		return{ "3drepoBIM.history", "3drepoBIM.history.chunks", "3drepoBIM.history.files", "3drepoBIM.issues", "3drepoBIM.scene", "3drepoBIM.stash.3drepo", "settings", "system.indexes" };
+		return{ "3drepoBIM.history", "3drepoBIM.history.chunks", "3drepoBIM.history.files", "3drepoBIM.issues", "3drepoBIM.scene", "3drepoBIM.stash.3drepo",
+			"fedTest.history", "fedTest.issues", "fedTest.scene"
+			, "settings", "system.indexes" };
 	}
 	else
 	{

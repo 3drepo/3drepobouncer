@@ -290,7 +290,7 @@ TEST(MongoDatabaseHandlerTest, GetDatabasesWithProjects)
 	EXPECT_FALSE(dbWithProjects.find(REPO_GTEST_DBNAME2) == dbWithProjects.end());
 	EXPECT_FALSE(dbWithProjects.find(fakeDB) == dbWithProjects.end());
 
-	EXPECT_EQ(dbWithProjects[REPO_GTEST_DBNAME1].size(), 1);
+	EXPECT_EQ(dbWithProjects[REPO_GTEST_DBNAME1].size(), 2);
 	EXPECT_EQ(dbWithProjects[REPO_GTEST_DBNAME2].size(), 1);
 	EXPECT_EQ(dbWithProjects[fakeDB].size(), 0);
 
@@ -314,7 +314,7 @@ TEST(MongoDatabaseHandlerTest, GetProjects)
 	ASSERT_TRUE(handler);
 
 	auto projects = handler->getProjects(REPO_GTEST_DBNAME1, "history");
-	ASSERT_EQ(projects.size(), 1);
+	ASSERT_EQ(projects.size(), 2);
 	EXPECT_EQ(projects.front(), REPO_GTEST_DBNAME1_PROJ);
 
 	projects = handler->getProjects(REPO_GTEST_DBNAME1, "blah");

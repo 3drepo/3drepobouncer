@@ -507,7 +507,7 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 	return impl->loadSceneFromFile(filePath, applyReduction, rotateModel, config);
 }
 
-void RepoController::saveOriginalFiles(
+bool RepoController::saveOriginalFiles(
 	const RepoController::RepoToken    *token,
 	const repo::core::model::RepoScene *scene,
 	const std::string                   &directory)
@@ -515,7 +515,7 @@ void RepoController::saveOriginalFiles(
 	return impl->saveOriginalFiles(token, scene, directory);
 }
 
-void RepoController::saveOriginalFiles(
+bool RepoController::saveOriginalFiles(
 	const RepoController::RepoToken     *token,
 	const std::string                   &database,
 	const std::string                   &project,
