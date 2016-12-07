@@ -33,6 +33,28 @@ static std::string getSuccessFilePath()
 	return getDataPath(simpleModel);
 }
 
+
+
+static std::string produceGenStashArgs(
+	const std::string &database,
+	const std::string &project,
+	const std::string &type,
+	const std::string &dbAdd = REPO_GTEST_DBADDRESS,
+	const int         &port = REPO_GTEST_DBPORT,
+	const std::string &username = REPO_GTEST_DBUSER,
+	const std::string &password = REPO_GTEST_DBPW
+	)
+{
+	return  getClientExePath() + " " + dbAdd + " "
+		+ std::to_string(port) + " "
+		+ username + " "
+		+ password + " "
+		+ "genStash "
+		+ database + " "
+		+ project + " "
+		+ type ;
+}
+
 static std::string produceGetFileArgs(
 	const std::string &file,
 	const std::string &database,
@@ -291,4 +313,51 @@ TEST(RepoClientTest, GetFileTest)
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGetFileArgs(".", "sampleDataRW", "cube")));
 	EXPECT_TRUE(fileExists(getFileFileName));
 	EXPECT_TRUE(filesCompare(getFileFileName, getDataPath("cube.obj")));
+}
+
+TEST(RepoClientTest, GenStashTest)
+{
+	repo::RepoController *controller = new repo::RepoController();
+	std::string errMsg;
+	repo::RepoController::RepoToken *token =
+		controller->authenticateToAdminDatabaseMongo(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+	repoUUID stashRoot;
+	if (token)
+	{
+		auto scene = controller->fetchScene(token, "sampleDataRW", "cube");
+		if (scene)
+		{
+			stashRoot = scene->getRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)->getUniqueID();
+
+			delete scene;
+		}
+
+	}
+
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("sampleDataRW", "cube", "src")));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("sampleDataRW", "cube", "tree")));
+	//EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("sampleDataRW", "cube", "gltf")));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGenStashArgs("sampleDataRW", "cube", "repo")));
+
+	if (token)
+	{
+		auto scene = controller->fetchScene(token, "sampleDataRW", "cube");
+		if (scene)
+		{
+			EXPECT_NE(scene->getRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)->getUniqueID(), stashRoot);
+
+			delete scene;
+		}
+
+	}
+
+	controller->disconnectFromDatabase(token);
+	EXPECT_EQ((int)REPOERR_STASH_GEN_FAIL, runProcess(produceGenStashArgs("blash", "blah", "tree")));
+	EXPECT_EQ((int)REPOERR_STASH_GEN_FAIL, runProcess(produceGenStashArgs("blash", "blah", "src")));
+	EXPECT_EQ((int)REPOERR_STASH_GEN_FAIL, runProcess(produceGenStashArgs("blash", "blah", "gltf")));
+
+	delete controller;
+
+		
 }
