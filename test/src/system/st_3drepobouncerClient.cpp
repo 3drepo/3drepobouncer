@@ -33,6 +33,23 @@ static std::string getSuccessFilePath()
 	return getDataPath(simpleModel);
 }
 
+static std::string produceCleanArgs(
+	const std::string &database,
+	const std::string &project,
+	const std::string &dbAdd = REPO_GTEST_DBADDRESS,
+	const int         &port = REPO_GTEST_DBPORT,
+	const std::string &username = REPO_GTEST_DBUSER,
+	const std::string &password = REPO_GTEST_DBPW
+	)
+{
+	return  getClientExePath() + " " + dbAdd + " "
+		+ std::to_string(port) + " "
+		+ username + " "
+		+ password + " "
+		+ "clean "
+		+ database + " "
+		+ project;
+}
 
 
 static std::string produceGenStashArgs(
@@ -356,7 +373,23 @@ TEST(RepoClientTest, GenStashTest)
 	EXPECT_EQ((int)REPOERR_STASH_GEN_FAIL, runProcess(produceGenStashArgs("blash", "blah", "src")));
 	EXPECT_EQ((int)REPOERR_STASH_GEN_FAIL, runProcess(produceGenStashArgs("blash", "blah", "gltf")));
 
-	delete controller;
+	delete controller;		
+}
 
-		
+
+TEST(RepoClientTest, CleanTest)
+{
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceCleanArgs("sampleDataRW", "cleanTest1")));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceCleanArgs("sampleDataRW", "cleanTest2")));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceCleanArgs("sampleDataRW", "cleanTest3")));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceCleanArgs("sampleDataRW", "cleanTest4")));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceCleanArgs("sampleDataRW", "cleanTest5")));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceCleanArgs("sampleDataRW", "nonExistentbadfsd")));
+
+	EXPECT_FALSE(projectHasValidRevision("sampleDataRW", "cleanTest1"));
+	EXPECT_TRUE(projectHasValidRevision("sampleDataRW", "cleanTest2"));
+	EXPECT_TRUE(projectHasValidRevision("sampleDataRW", "cleanTest3")); 
+	EXPECT_TRUE(projectHasValidRevision("sampleDataRW", "cleanTest4"));
+	EXPECT_TRUE(projectHasValidRevision("sampleDataRW", "cleanTest5"));
+
 }

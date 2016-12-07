@@ -71,6 +71,28 @@ static bool projectSettingsCheck(
 	return res;
 }
 
+static bool projectHasValidRevision(
+	const std::string  &dbName, const std::string  &projectName)
+{
+	bool res = false;
+	repo::RepoController *controller = new repo::RepoController();
+	std::string errMsg;
+	repo::RepoController::RepoToken *token =
+		controller->authenticateToAdminDatabaseMongo(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+	if (token)
+	{
+		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true);
+		if (res = scene)
+		{			
+			delete scene;
+		}
+	}
+	controller->disconnectFromDatabase(token);
+	delete controller;
+	return res;
+}
+
 static bool fileExists(
 	const std::string &file)
 {
