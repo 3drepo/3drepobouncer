@@ -288,7 +288,7 @@ TEST(RepoClientTest, GetFileTest)
 	EXPECT_EQ((int)REPOERR_GET_FILE_FAILED, runProcess(produceGetFileArgs(".", "nonExistent1", "nonExistent2")));
 	EXPECT_EQ((int)REPOERR_GET_FILE_FAILED, runProcess(produceGetFileArgs(".", REPO_GTEST_DBNAME1, "nonExistent2")));
 
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGetFileArgs(".", REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ)));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceGetFileArgs(".", "sampleDataRW", "cube")));
 	EXPECT_TRUE(fileExists(getFileFileName));
-	EXPECT_TRUE(filesCompare(getFileFileName, getDataPath("3DrepoBIM.obj")));
+	EXPECT_TRUE(filesCompare(getFileFileName, getDataPath("cube.obj")));
 }

@@ -86,45 +86,47 @@ static bool filesCompare(
 	const std::string &fileB )
 {
 	bool match = false;
-	//std::ifstream fA(fileA), fB(fileB);
-	//if (fA.good() && fB.good())
-	//{
-	//	std::string lineA, lineB;
-	//	bool endofA, endofB;
-	//	int i = 0; 
-	//	while ((endofA = (bool)std::getline(fA, lineA)) && (endofB = (bool)std::getline(fB, lineB)))
-	//	{
-	//		if (lineA.size() != lineB.size())
-	//		{
+	std::ifstream fA(fileA), fB(fileB);
+	if (fA.good() && fB.good())
+	{
+		std::string lineA, lineB;
+		bool endofA, endofB;
+		int i = 0; 
+		while ((endofA = (bool)std::getline(fA, lineA)) && (endofB = (bool)std::getline(fB, lineB)))
+		{
+			if (lineA.size() != lineB.size())
+			{
 
-	//		}
-	//		match = lineA == lineB;
-	//		++i;
-	//		if (!match)
-	//		{
-	//			std::cout << "Failed match. " << std::endl;
-	//			std::cout << "line A: " << lineA << std::endl;
-	//			std::cout << "line B: " << lineB << std::endl;
-	//			std::cout << "lines match ? " << (lineA == lineB) << std::endl;
-	//			std::cout << "size: " << lineA.size() << " , " << lineB.size() << std::endl;
-	//			for (int i = 0; i < lineA.size(); ++i)
-	//			{
-	//				std::cout << lineA[i] << " , " << lineB[i] << std::endl;
-	//			}
-	//			break;
-	//		}
+			}
+			match = lineA == lineB;
+			++i;
+			if (!match)
+			{
+				std::cout << "Failed match. " << std::endl;
+				std::cout << "line A: " << lineA << std::endl;
+				std::cout << "line B: " << lineB << std::endl;
+				std::cout << "lines match ? " << (lineA == lineB) << std::endl;
+				std::cout << "size: " << lineA.size() << " , " << lineB.size() << std::endl;
+				for (int i = 0; i < lineA.size(); ++i)
+				{
+					std::cout << lineA[i] << " , " << lineB[i] << std::endl;
+				}
+				break;
+			}
 
-	//	}
-	//	
-	//	if (!endofA)
-	//	{
-	//		//if endofA is false then end of B won't be found as getline wouldn't have ran for fB
-	//		endofB = (bool)std::getline(fB, lineB);
-	//	}
-	//		
-	//	match &= (!endofA && !endofB);
-	//	std::cout << "End of A? " << endofA << " end of B? " << endofB << " #lines scanned: " << i << std::endl;
-	//}
+		}
+		
+		if (!endofA)
+		{
+			//if endofA is false then end of B won't be found as getline wouldn't have ran for fB
+			endofB = (bool)std::getline(fB, lineB);
+		}
+			
+		match &= (!endofA && !endofB);
+		std::cout << "End of A? " << endofA << " end of B? " << endofB << " #lines scanned: " << i << std::endl;
+	}
+
+	return match;
 
 	//FILE *afile = fopen(fileA.c_str(), "r");
 	//FILE *bfile = fopen(fileB.c_str(), "r");
@@ -163,11 +165,11 @@ static bool filesCompare(
 	//	fclose(bfile);
 	//}
 
-	boost::iostreams::mapped_file_source f1(fileA);
-	boost::iostreams::mapped_file_source f2(fileB);
+	//boost::iostreams::mapped_file_source f1(fileA);
+	//boost::iostreams::mapped_file_source f2(fileB);
 
-	return f1.size() == f2.size()
-		&& std::equal(f1.data(), f1.data() + f1.size(), f2.data());
+	//return f1.size() == f2.size()
+	//	&& std::equal(f1.data(), f1.data() + f1.size(), f2.data());
 	
 }
 
