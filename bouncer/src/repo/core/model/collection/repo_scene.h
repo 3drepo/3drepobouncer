@@ -736,15 +736,6 @@ namespace repo{
 					return  gType == GraphType::OPTIMIZED ? stashGraph.transformations : graph.transformations;
 				}
 
-				/**
-				* Get all ID of nodes which are added since last revision
-				* @return returns a vector of node IDs
-				*/
-				std::vector<repoUUID> getAddedNodesID() const
-				{
-					return std::vector<repoUUID>(newAdded.begin(), newAdded.end());
-				}
-
 				std::set<repoUUID> getAllSharedIDs(
 					const GraphType &gType) const;
 
@@ -758,24 +749,6 @@ namespace repo{
 					const GraphType &gType,
 					const repoUUID  &sharedID,
 					const NodeType  &type) const;
-
-				/**
-				* Get all ID of nodes which are modified since last revision
-				* @return returns a vector of node IDs
-				*/
-				std::vector<repoUUID> getModifiedNodesID() const
-				{
-					return std::vector<repoUUID>(newModified.begin(), newModified.end());
-				}
-
-				/**
-				* Get all ID of nodes which are removed since last revision
-				* @return returns a vector of node IDs
-				*/
-				std::vector<repoUUID> getRemovedNodesID() const
-				{
-					return std::vector<repoUUID>(newRemoved.begin(), newRemoved.end());
-				}
 
 				/**
 				* Get allnodes which are removed since last revision
