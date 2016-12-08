@@ -98,6 +98,11 @@ static repo::core::handler::MongoDatabaseHandler* getHandler()
 		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
 }
 
+static std::vector<repo_vector_t> getGoldenDataForBBoxTest()
+{
+	return{ { -30.00954627990722700, -15.00000476837158200, -0.00000199999999495 }, { 30.05025100708007800, 60.69493103027343800, 30.00000953674316400 } };
+}
+
 static std::string getClientExePath()
 {
 	char* pathChr = getenv("REPO_CLIENT_PATH");

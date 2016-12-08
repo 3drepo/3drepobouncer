@@ -250,7 +250,8 @@ static std::string printMat(const std::vector<float> &mat)
 static std::string printVec(const repo_vector_t &vec)
 {
 	std::stringstream ss;
-	ss << "[ " << vec.x << ", " << vec.y << " ," << vec.z << " ]";
+	ss.precision(17);
+	ss << "[ " << std::fixed << vec.x << ", " << std::fixed << vec.y << " ," << std::fixed << vec.z << " ]";
 
 	return ss.str();
 }

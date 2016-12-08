@@ -750,14 +750,6 @@ namespace repo{
 					const repoUUID  &sharedID,
 					const NodeType  &type) const;
 
-				/**
-				* Get allnodes which are removed since last revision
-				* @return returns a vector of node removed from scene
-				*/
-				std::vector<RepoNode*> getRemovedNodes() const
-				{
-					return toRemove;
-				}
 
 				/**
 				* Get a bounding box for the entire scene
