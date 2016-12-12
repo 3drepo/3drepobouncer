@@ -1124,18 +1124,36 @@ TEST(RepoSceneTest, getOriginalFiles)
 		EXPECT_TRUE(std::find(orgFilesOut.begin(), orgFilesOut.end(), orgFiles[i]) != orgFilesOut.end());
 	}
 
-	auto scene4 = RepoScene("sampleDataRW", "cube");
+	auto scene4 = RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
 	std::string errMsg;
 	scene4.loadScene(getHandler(), errMsg);
 	repoTrace << errMsg;
 	ASSERT_TRUE(errMsg.empty());
 	auto orgFilesOut2 = scene4.getOriginalFiles();
 	EXPECT_EQ(1, orgFilesOut2.size());
-	EXPECT_EQ(getFileFileName, orgFilesOut2[0]);
+	EXPECT_EQ(getFileNameBIMModel, orgFilesOut2[0]);
 }
 
 
 TEST(RepoSceneTest, addNodes)
 {
+	std::vector<RepoNode *> newNodes;
+
+	RepoScene scene;
+	scene.addNodes(newNodes);
+	EXPECT_EQ(0, scene.getItemsInCurrentGraph(defaultG));
+
+	newNodes.push_back(new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1))));
+	newNodes.push_back(new TransformationNode(makeRandomNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new MeshNode(makeRandomNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new MeshNode(makeRandomNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new MaterialNode(makeRandomNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new MaterialNode(makeRandomNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new TextureNode(makeRandomNode(newNodes.back()->getSharedID())));
+
+	scene.addNodes(newNodes);
+	EXPECT_EQ(newNodes.size(), scene.getItemsInCurrentGraph(defaultG));
+
+
 
 }
