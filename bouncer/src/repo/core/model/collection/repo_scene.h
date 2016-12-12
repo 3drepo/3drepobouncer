@@ -757,11 +757,6 @@ namespace repo{
 				*/
 				std::vector<repo_vector_t> getSceneBoundingBox() const;
 
-				size_t getTotalNodesChanged() const
-				{
-					return newRemoved.size() + newAdded.size() + newModified.size();
-				}
-
 				/**
 				* Get the node given the shared ID of this node
 				* @param g instance of the graph to search from
