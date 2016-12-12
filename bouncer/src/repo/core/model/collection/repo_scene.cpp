@@ -924,7 +924,6 @@ std::vector<repo_vector_t> RepoScene::getSceneBoundingBox() const
 		0, 0, 0, 1, };
 
 	getSceneBoundingBoxInternal(gType, gType == GraphType::OPTIMIZED ? stashGraph.rootNode : graph.rootNode, identity, bbox);
-	repoTrace << "Scene bounding box: {" << bbox[0].x << "," << bbox[0].y << "," << bbox[0].z << "}{" << bbox[1].x << "," << bbox[1].y << "," << bbox[1].z << "}";
 	return bbox;
 }
 
@@ -1071,7 +1070,8 @@ std::vector<std::string> RepoScene::getOriginalFiles() const
 	{
 		return revNode->getOrgFiles();
 	}
-	return std::vector<std::string>();
+
+	return refFiles;
 }
 
 bool RepoScene::loadRevision(

@@ -733,3 +733,402 @@ TEST(RepoSceneTest, getSceneFromReference)
 		EXPECT_TRUE(scene.getSceneFromReference(defaultG, ref->getSharedID()));
 	EXPECT_FALSE(scene.getSceneFromReference(defaultG, generateUUID()));
 }
+
+TEST(RepoSceneTest, getTextureIDForMesh)
+{
+	RepoScene scene;
+	EXPECT_TRUE(scene.getTextureIDForMesh(defaultG, generateUUID()).empty());
+
+
+	RepoNodeSet transNodes, meshNodes, empty, matNodes, texNodes;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
+	auto m2 = new MeshNode(makeRandomNode(root->getSharedID()));
+	auto mat1 = new MaterialNode(makeRandomNode(m1->getSharedID()));
+	auto mat2 = new MaterialNode(makeRandomNode(m2->getSharedID()));
+	auto tex1 = new TextureNode(makeRandomNode(mat1->getSharedID()));
+
+	transNodes.insert(root);
+	meshNodes.insert(m1);
+	meshNodes.insert(m2);
+
+	matNodes.insert(mat1);
+	matNodes.insert(mat2);
+	texNodes.insert(tex1);
+
+	auto scene2 = RepoScene(std::vector<std::string>(), empty, meshNodes, matNodes, empty, texNodes, transNodes);
+
+	EXPECT_EQ(UUIDtoString(tex1->getUniqueID()), scene2.getTextureIDForMesh(defaultG, m1->getSharedID()));
+	EXPECT_TRUE(scene2.getTextureIDForMesh(defaultG, m2->getSharedID()).empty());
+}
+
+TEST(RepoSceneTest, getAllNodes)
+{
+	RepoScene scene;
+	EXPECT_EQ(0, scene.getAllCameras(defaultG).size());
+	EXPECT_EQ(0, scene.getAllCameras(RepoScene::GraphType::OPTIMIZED).size());
+	EXPECT_EQ(0, scene.getAllMeshes(defaultG).size());
+	EXPECT_EQ(0, scene.getAllMeshes(RepoScene::GraphType::OPTIMIZED).size());
+	EXPECT_EQ(0, scene.getAllMaterials(defaultG).size());
+	EXPECT_EQ(0, scene.getAllMaterials(RepoScene::GraphType::OPTIMIZED).size());
+	EXPECT_EQ(0, scene.getAllTextures(defaultG).size());
+	EXPECT_EQ(0, scene.getAllTextures(RepoScene::GraphType::OPTIMIZED).size());
+	EXPECT_EQ(0, scene.getAllTransformations(defaultG).size());
+	EXPECT_EQ(0, scene.getAllTransformations(RepoScene::GraphType::OPTIMIZED).size());
+	EXPECT_EQ(0, scene.getAllMetadata(defaultG).size());
+	EXPECT_EQ(0, scene.getAllMetadata(RepoScene::GraphType::OPTIMIZED).size());
+	EXPECT_EQ(0, scene.getAllReferences(defaultG).size());
+	EXPECT_EQ(0, scene.getAllReferences(RepoScene::GraphType::OPTIMIZED).size());
+	EXPECT_EQ(0, scene.getAllMaps(defaultG).size());
+	EXPECT_EQ(0, scene.getAllMaps(RepoScene::GraphType::OPTIMIZED).size());
+
+	RepoNodeSet transNodes, meshNodes, metaNodes, matNodes, texNodes, camNodes, refNodes, mapsNodes;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	meshNodes.insert(new MeshNode(makeRandomNode(root->getSharedID())));
+	meshNodes.insert(new MeshNode(makeRandomNode(root->getSharedID())));
+	matNodes.insert(new MaterialNode(makeRandomNode(root->getSharedID())));
+	matNodes.insert(new MaterialNode(makeRandomNode(root->getSharedID())));
+	texNodes.insert(new TextureNode(makeRandomNode(root->getSharedID())));
+	camNodes.insert(new CameraNode(makeRandomNode(root->getSharedID())));
+	camNodes.insert(new CameraNode(makeRandomNode(root->getSharedID())));
+	metaNodes.insert(new MetadataNode(makeRandomNode(root->getSharedID())));
+	metaNodes.insert(new MetadataNode(makeRandomNode(root->getSharedID())));
+	metaNodes.insert(new MetadataNode(makeRandomNode(root->getSharedID())));
+	refNodes.insert(new ReferenceNode(makeRandomNode(root->getSharedID())));
+	mapsNodes.insert(new MapNode(makeRandomNode(root->getSharedID())));
+	mapsNodes.insert(new MapNode(makeRandomNode(root->getSharedID())));
+	mapsNodes.insert(new MapNode(makeRandomNode(root->getSharedID())));
+	
+	transNodes.insert(root);
+
+	auto scene2 = RepoScene(std::vector<std::string>(), camNodes, meshNodes, matNodes, metaNodes, texNodes, transNodes, refNodes, mapsNodes);
+
+	auto allSharedIDs = scene2.getAllSharedIDs(defaultG);
+	EXPECT_EQ(0, scene2.getAllSharedIDs(RepoScene::GraphType::OPTIMIZED).size());
+
+	auto cams = scene2.getAllCameras(defaultG);
+	EXPECT_EQ(camNodes.size(), cams.size());
+	EXPECT_EQ(0, scene2.getAllCameras(RepoScene::GraphType::OPTIMIZED).size());
+	for (const auto cam : cams)
+	{
+		EXPECT_NE(camNodes.end(), camNodes.find(cam));
+		EXPECT_NE(allSharedIDs.end(), allSharedIDs.find(cam->getSharedID()));
+	}
+
+	auto meshes = scene2.getAllMeshes(defaultG);
+	EXPECT_EQ(meshNodes.size(), meshes.size());
+	EXPECT_EQ(0, scene2.getAllMeshes(RepoScene::GraphType::OPTIMIZED).size());
+	for (const auto mesh : meshes)
+	{
+		EXPECT_NE(meshes.end(), meshes.find(mesh));
+		EXPECT_NE(allSharedIDs.end(), allSharedIDs.find(mesh->getSharedID()));
+	}
+
+
+	auto mats = scene2.getAllMaterials(defaultG);
+	EXPECT_EQ(matNodes.size(), mats.size());
+	EXPECT_EQ(0, scene2.getAllMaterials(RepoScene::GraphType::OPTIMIZED).size());
+	for (const auto mat : mats)
+	{
+		EXPECT_NE(mats.end(), mats.find(mat));
+		EXPECT_NE(allSharedIDs.end(), allSharedIDs.find(mat->getSharedID()));
+	}
+
+	auto texts = scene2.getAllTextures(defaultG);
+	EXPECT_EQ(texNodes.size(), texts.size());
+	EXPECT_EQ(0, scene2.getAllTextures(RepoScene::GraphType::OPTIMIZED).size());
+	for (const auto tex : texts)
+	{
+		EXPECT_NE(texts.end(), texts.find(tex));
+		EXPECT_NE(allSharedIDs.end(), allSharedIDs.find(tex->getSharedID()));
+	}
+
+	auto trans = scene2.getAllTransformations(defaultG);
+	EXPECT_EQ(transNodes.size(), trans.size());
+	EXPECT_EQ(0, scene2.getAllTransformations(RepoScene::GraphType::OPTIMIZED).size());
+	for (const auto tran : trans)
+	{
+		EXPECT_NE(trans.end(), trans.find(tran));
+		EXPECT_NE(allSharedIDs.end(), allSharedIDs.find(tran->getSharedID()));
+	}
+
+
+	auto metas = scene2.getAllMetadata(defaultG);
+	EXPECT_EQ(metaNodes.size(), metas.size());
+	EXPECT_EQ(0, scene2.getAllMetadata(RepoScene::GraphType::OPTIMIZED).size());
+	for (const auto meta : metas)
+	{
+		EXPECT_NE(metas.end(), metas.find(meta));
+		EXPECT_NE(allSharedIDs.end(), allSharedIDs.find(meta->getSharedID()));
+	}
+
+	auto refs = scene2.getAllReferences(defaultG);
+	EXPECT_EQ(refNodes.size(), refs.size());
+	EXPECT_EQ(0, scene2.getAllReferences(RepoScene::GraphType::OPTIMIZED).size());
+	for (const auto ref : refs)
+	{
+		EXPECT_NE(refs.end(), refs.find(ref));
+		EXPECT_NE(allSharedIDs.end(), allSharedIDs.find(ref->getSharedID()));
+	}
+
+	auto maps = scene2.getAllMaps(defaultG);
+	EXPECT_EQ(mapsNodes.size(), maps.size());
+	EXPECT_EQ(0, scene2.getAllMaps(RepoScene::GraphType::OPTIMIZED).size());
+	for (const auto map : maps)
+	{
+		EXPECT_NE(maps.end(), maps.find(map));
+		EXPECT_NE(allSharedIDs.end(), allSharedIDs.find(map->getSharedID()));
+	}	
+}
+
+TEST(RepoSceneTest, getAllDescendantsByType)
+{
+	RepoScene scene;
+	EXPECT_EQ(0, scene.getAllDescendantsByType(defaultG, generateUUID(), NodeType::CAMERA).size());
+	EXPECT_EQ(0, scene.getAllDescendantsByType(RepoScene::GraphType::OPTIMIZED, generateUUID(), NodeType::CAMERA).size());
+
+	RepoNodeSet transNodes, meshNodes, empty, matNodes, texNodes;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto trans2 = new TransformationNode(makeRandomNode(root->getSharedID()));
+	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
+	auto m2 = new MeshNode(makeRandomNode(trans2->getSharedID()));
+	auto mat1 = new MaterialNode(makeRandomNode(m1->getSharedID()));
+	auto mat2 = new MaterialNode(makeRandomNode(m2->getSharedID()));
+	auto tex1 = new TextureNode(makeRandomNode(mat1->getSharedID()));
+
+	transNodes.insert(root);
+	transNodes.insert(trans2);
+	meshNodes.insert(m1);
+	meshNodes.insert(m2);
+
+	matNodes.insert(mat1);
+	matNodes.insert(mat2);
+	texNodes.insert(tex1);
+
+	auto scene2 = RepoScene(std::vector<std::string>(), empty, meshNodes, matNodes, empty, texNodes, transNodes);
+	auto trans = scene2.getAllDescendantsByType(defaultG, root->getSharedID(), NodeType::TRANSFORMATION);
+	ASSERT_EQ(1, trans.size());
+	EXPECT_EQ(trans2, trans[0]);
+	EXPECT_EQ(0, scene2.getAllDescendantsByType(defaultG, trans2->getSharedID(), NodeType::TRANSFORMATION).size());
+
+	auto meshes = scene2.getAllDescendantsByType(defaultG, root->getSharedID(), NodeType::MESH);
+	ASSERT_EQ(2, meshes.size());
+	EXPECT_FALSE( std::find(meshes.begin(), meshes.end(), m1) == meshes.end());
+	EXPECT_FALSE(std::find(meshes.begin(), meshes.end(), m2) == meshes.end());
+
+	meshes = scene2.getAllDescendantsByType(defaultG, trans2->getSharedID(), NodeType::MESH);
+	ASSERT_EQ(1, meshes.size());
+	EXPECT_TRUE(std::find(meshes.begin(), meshes.end(), m1) == meshes.end());
+	EXPECT_FALSE(std::find(meshes.begin(), meshes.end(), m2) == meshes.end());
+
+	auto texes = scene2.getAllDescendantsByType(defaultG, root->getSharedID(), NodeType::TEXTURE);
+	ASSERT_EQ(1, texes.size());
+	EXPECT_EQ(texes[0], tex1);
+}
+
+TEST(RepoSceneTest, getSceneBoundingBox)
+{
+	RepoScene scene;
+	EXPECT_EQ(0, scene.getSceneBoundingBox().size());
+
+	std::string errMsg;
+	RepoScene scene2(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
+	scene2.loadScene(getHandler(), errMsg);
+	auto bb = scene2.getSceneBoundingBox();
+	EXPECT_TRUE(compareVectors(bb, getGoldenDataForBBoxTest()));
+}
+
+TEST(RepoSceneTest, getNodeBySharedID)
+{
+	RepoNodeSet transNodes, meshNodes, empty, matNodes, texNodes;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto trans2 = new TransformationNode(makeRandomNode(root->getSharedID()));
+	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
+	auto m2 = new MeshNode(makeRandomNode(trans2->getSharedID()));
+	auto mat1 = new MaterialNode(makeRandomNode(m1->getSharedID()));
+	auto mat2 = new MaterialNode(makeRandomNode(m2->getSharedID()));
+	auto tex1 = new TextureNode(makeRandomNode(mat1->getSharedID()));
+
+	transNodes.insert(root);
+	transNodes.insert(trans2);
+	meshNodes.insert(m1);
+	meshNodes.insert(m2);
+
+	matNodes.insert(mat1);
+	matNodes.insert(mat2);
+	texNodes.insert(tex1);
+
+	auto rootst = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto trans2st = new TransformationNode(makeRandomNode(rootst->getSharedID()));
+	auto m1st = new MeshNode(makeRandomNode(rootst->getSharedID()));
+	auto m2st = new MeshNode(makeRandomNode(trans2st->getSharedID()));
+	auto mat1st = new MaterialNode(makeRandomNode(m1st->getSharedID()));
+	auto mat2st = new MaterialNode(makeRandomNode(m2st->getSharedID()));
+	auto tex1st = new TextureNode(makeRandomNode(mat1st->getSharedID()));
+
+	transNodes.insert(rootst);
+	transNodes.insert(trans2st);
+	meshNodes.insert(m1st);
+	meshNodes.insert(m2st);
+
+	matNodes.insert(mat1st);
+	matNodes.insert(mat2st);
+	texNodes.insert(tex1st);
+
+	auto scene2 = RepoScene(std::vector<std::string>(), empty, meshNodes, matNodes, empty, texNodes, transNodes);
+
+	EXPECT_EQ(root, scene2.getNodeBySharedID(defaultG, root->getSharedID()));
+	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(defaultG, generateUUID()));
+	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(RepoScene::GraphType::OPTIMIZED, m2st->getSharedID()));
+
+}
+
+TEST(RepoSceneTest, getNodeByUniqueID)
+{
+	RepoNodeSet transNodes, meshNodes, empty, matNodes, texNodes;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto trans2 = new TransformationNode(makeRandomNode(root->getSharedID()));
+	auto m1 = new MeshNode(makeRandomNode(root->getSharedID()));
+	auto m2 = new MeshNode(makeRandomNode(trans2->getSharedID()));
+	auto mat1 = new MaterialNode(makeRandomNode(m1->getSharedID()));
+	auto mat2 = new MaterialNode(makeRandomNode(m2->getSharedID()));
+	auto tex1 = new TextureNode(makeRandomNode(mat1->getSharedID()));
+
+	transNodes.insert(root);
+	transNodes.insert(trans2);
+	meshNodes.insert(m1);
+	meshNodes.insert(m2);
+
+	matNodes.insert(mat1);
+	matNodes.insert(mat2);
+	texNodes.insert(tex1);
+
+	auto rootst = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto trans2st = new TransformationNode(makeRandomNode(rootst->getSharedID()));
+	auto m1st = new MeshNode(makeRandomNode(rootst->getSharedID()));
+	auto m2st = new MeshNode(makeRandomNode(trans2st->getSharedID()));
+	auto mat1st = new MaterialNode(makeRandomNode(m1st->getSharedID()));
+	auto mat2st = new MaterialNode(makeRandomNode(m2st->getSharedID()));
+	auto tex1st = new TextureNode(makeRandomNode(mat1st->getSharedID()));
+
+	transNodes.insert(rootst);
+	transNodes.insert(trans2st);
+	meshNodes.insert(m1st);
+	meshNodes.insert(m2st);
+
+	matNodes.insert(mat1st);
+	matNodes.insert(mat2st);
+	texNodes.insert(tex1st);
+
+	auto scene2 = RepoScene(std::vector<std::string>(), empty, meshNodes, matNodes, empty, texNodes, transNodes);
+
+	EXPECT_EQ(root, scene2.getNodeByUniqueID(defaultG, root->getUniqueID()));
+	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(defaultG, generateUUID()));
+	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(RepoScene::GraphType::OPTIMIZED, m2st->getUniqueID()));
+
+}
+
+TEST(RepoSceneTest, hasRoot)
+{
+	RepoScene scene;
+	EXPECT_FALSE(scene.hasRoot(defaultG));
+	EXPECT_FALSE(scene.hasRoot(RepoScene::GraphType::OPTIMIZED));
+
+	RepoNodeSet transNodes, transNodesStash, empty;
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto rootStash = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	transNodes.insert(root);
+	transNodesStash.insert(rootStash);
+
+	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, empty, transNodes);
+	EXPECT_TRUE(scene2.hasRoot(defaultG));
+	EXPECT_FALSE(scene2.hasRoot(RepoScene::GraphType::OPTIMIZED));
+	scene2.addStashGraph(empty, empty, empty, empty, transNodesStash);
+	EXPECT_TRUE(scene2.hasRoot(RepoScene::GraphType::OPTIMIZED));
+
+	scene2.clearStash();
+	EXPECT_FALSE(scene2.hasRoot(RepoScene::GraphType::OPTIMIZED));
+}
+
+TEST(RepoSceneTest, getRoot)
+{
+	RepoScene scene;
+	EXPECT_EQ(nullptr, scene.getRoot(defaultG));
+	EXPECT_EQ(nullptr, scene.getRoot(RepoScene::GraphType::OPTIMIZED));
+
+	RepoNodeSet transNodes, transNodesStash, empty;
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto rootStash = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	transNodes.insert(root);
+	transNodesStash.insert(rootStash);
+
+	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, empty, transNodes);
+	EXPECT_EQ(root, scene2.getRoot(defaultG));
+	EXPECT_EQ(nullptr, scene2.getRoot(RepoScene::GraphType::OPTIMIZED));
+	scene2.addStashGraph(empty, empty, empty, empty, transNodesStash);
+	EXPECT_EQ(rootStash, scene2.getRoot(RepoScene::GraphType::OPTIMIZED));
+
+	scene2.clearStash();
+	EXPECT_EQ(nullptr, scene2.getRoot(RepoScene::GraphType::OPTIMIZED));
+}
+
+TEST(RepoSceneTest, getItemsInCurrentGraph)
+{
+	RepoScene scene;
+	EXPECT_EQ(0, scene.getItemsInCurrentGraph(defaultG));
+	EXPECT_EQ(0, scene.getItemsInCurrentGraph(RepoScene::GraphType::OPTIMIZED));
+
+	RepoNodeSet transNodes, transNodesStash, empty;
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto rootStash = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	transNodes.insert(root);
+	transNodesStash.insert(rootStash);
+
+	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, empty, transNodes);
+	EXPECT_EQ(1, scene2.getItemsInCurrentGraph(defaultG));
+	EXPECT_EQ(0, scene2.getItemsInCurrentGraph(RepoScene::GraphType::OPTIMIZED));
+	scene2.addStashGraph(empty, empty, empty, empty, transNodesStash);
+	EXPECT_EQ(1, scene2.getItemsInCurrentGraph(RepoScene::GraphType::OPTIMIZED));
+
+	scene2.clearStash();
+	EXPECT_EQ(0, scene2.getItemsInCurrentGraph(RepoScene::GraphType::OPTIMIZED));
+}
+
+TEST(RepoSceneTest, getOriginalFiles)
+{
+	RepoScene scene;
+	EXPECT_EQ(0, scene.getOriginalFiles().size());
+
+	RepoNodeSet empty;
+	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, empty, empty);
+	EXPECT_EQ(0, scene2.getOriginalFiles().size());
+
+
+	std::vector<std::string> orgFiles;
+	for (int i = 0; i < rand() % 10 + 1; ++i)
+	{
+		orgFiles.push_back(getRandomString(rand() % 10 + 1));
+	}
+
+	auto scene3 = RepoScene(orgFiles, empty, empty, empty, empty, empty, empty);
+	auto orgFilesOut = scene3.getOriginalFiles();
+	ASSERT_EQ(orgFiles.size(), orgFilesOut.size());
+
+	for (int i = 0; i < orgFilesOut.size(); ++i)
+	{
+		EXPECT_TRUE(std::find(orgFilesOut.begin(), orgFilesOut.end(), orgFiles[i]) != orgFilesOut.end());
+	}
+
+	auto scene4 = RepoScene("sampleDataRW", "cube");
+	std::string errMsg;
+	scene4.loadScene(getHandler(), errMsg);
+	ASSERT_TRUE(errMsg.empty());
+	auto orgFilesOut2 = scene4.getOriginalFiles();
+	EXPECT_EQ(1, orgFilesOut2.size());
+	EXPECT_EQ(getFileFileName, orgFilesOut2[0]);
+}
