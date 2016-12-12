@@ -1127,7 +1127,6 @@ TEST(RepoSceneTest, getOriginalFiles)
 	auto scene4 = RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
 	std::string errMsg;
 	scene4.loadScene(getHandler(), errMsg);
-	repoTrace << errMsg;
 	ASSERT_TRUE(errMsg.empty());
 	auto orgFilesOut2 = scene4.getOriginalFiles();
 	EXPECT_EQ(1, orgFilesOut2.size());
@@ -1155,5 +1154,90 @@ TEST(RepoSceneTest, addNodes)
 	EXPECT_EQ(newNodes.size(), scene.getItemsInCurrentGraph(defaultG));
 
 
+	int currentSize = newNodes.size();
+	newNodes.clear();
+	newNodes.push_back(new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1))));
+	newNodes.push_back(new TransformationNode(makeRandomNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new MeshNode(makeRandomNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new MeshNode(makeRandomNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new MaterialNode(makeRandomNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new MaterialNode(makeRandomNode(newNodes.back()->getSharedID())));
+	newNodes.push_back(new TextureNode(makeRandomNode(newNodes.back()->getSharedID())));
+
+	scene.addNodes(newNodes);
+	EXPECT_EQ(newNodes.size() + currentSize, scene.getItemsInCurrentGraph(defaultG));
+}
+
+TEST(RepoSceneTest, modifyNode)
+{
+	RepoScene scene;
+	scene.modifyNode(defaultG, nullptr, nullptr);
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	scene.addNodes({ root });
+	RepoNode newFields = BSON("name" << "cream");
+	scene.modifyNode(defaultG, root, &newFields);
+
+
+	EXPECT_EQ(newFields.getName(), root->getName());
+
+	RepoNode removedName = root->removeField("name");
+	scene.modifyNode(defaultG, root, &removedName, true);
+	EXPECT_FALSE(root->hasField("name"));
+	scene.modifyNode(defaultG, root, nullptr, true);
+}
+
+TEST(RepoSceneTest, removeNode)
+{
+	RepoScene scene;
+	scene.removeNode(defaultG, generateUUID());
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	scene.addNodes({ root });
+	scene.removeNode(defaultG, root->getSharedID());
+	scene.removeNode(defaultG, root->getSharedID());
+
+	delete root;
+}
+
+TEST(RepoSceneTest, resetChangeSet)
+{
+	RepoScene scene;
+	scene.resetChangeSet();
+
+	auto scene2 = RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
+	std::string errMsg;
+	scene2.loadScene(getHandler(), errMsg);
+	EXPECT_TRUE(scene2.isRevisioned());
+	scene2.resetChangeSet();
+	EXPECT_FALSE(scene2.isRevisioned());
+}
+
+TEST(RepoSceneTest, reorientateDirectXModel)
+{
+	RepoScene scene;
+	scene.reorientateDirectXModel();
+	EXPECT_FALSE(scene.hasRoot(defaultG));
+	EXPECT_FALSE(scene.hasRoot(RepoScene::GraphType::OPTIMIZED));
+
+	RepoNodeSet transNodes, transNodesStash, empty;
+	auto root = new TransformationNode( RepoBSONFactory::makeTransformationNode());
+	auto rootStash =new TransformationNode( RepoBSONFactory::makeTransformationNode());
+	transNodes.insert(root);
+	transNodesStash.insert(rootStash);
+
+	ASSERT_TRUE(root->isIdentity());
+	ASSERT_TRUE(rootStash->isIdentity());
+	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, empty, transNodes);	
+	scene2.addStashGraph(empty, empty, empty, empty, transNodesStash);
+	scene2.reorientateDirectXModel();
+	std::vector<float> rotatedMat =
+	{
+		1, 0, 0, 0,
+		0, 0, 1, 0,
+		0, -1, 0, 0,
+		0, 0, 0, 1
+	};
+
+	EXPECT_TRUE(compareStdVectors(rotatedMat, root->getTransMatrix(false)));
+	EXPECT_FALSE(scene2.hasRoot(RepoScene::GraphType::OPTIMIZED));
 
 }
