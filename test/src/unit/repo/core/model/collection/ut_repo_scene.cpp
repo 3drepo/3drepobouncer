@@ -1076,3 +1076,59 @@ TEST(RepoSceneTest, getRoot)
 	scene2.clearStash();
 	EXPECT_EQ(nullptr, scene2.getRoot(RepoScene::GraphType::OPTIMIZED));
 }
+
+TEST(RepoSceneTest, getItemsInCurrentGraph)
+{
+	RepoScene scene;
+	EXPECT_EQ(0, scene.getItemsInCurrentGraph(defaultG));
+	EXPECT_EQ(0, scene.getItemsInCurrentGraph(RepoScene::GraphType::OPTIMIZED));
+
+	RepoNodeSet transNodes, transNodesStash, empty;
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	auto rootStash = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
+	transNodes.insert(root);
+	transNodesStash.insert(rootStash);
+
+	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, empty, transNodes);
+	EXPECT_EQ(1, scene2.getItemsInCurrentGraph(defaultG));
+	EXPECT_EQ(0, scene2.getItemsInCurrentGraph(RepoScene::GraphType::OPTIMIZED));
+	scene2.addStashGraph(empty, empty, empty, empty, transNodesStash);
+	EXPECT_EQ(1, scene2.getItemsInCurrentGraph(RepoScene::GraphType::OPTIMIZED));
+
+	scene2.clearStash();
+	EXPECT_EQ(0, scene2.getItemsInCurrentGraph(RepoScene::GraphType::OPTIMIZED));
+}
+
+TEST(RepoSceneTest, getOriginalFiles)
+{
+	RepoScene scene;
+	EXPECT_EQ(0, scene.getOriginalFiles().size());
+
+	RepoNodeSet empty;
+	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, empty, empty);
+	EXPECT_EQ(0, scene2.getOriginalFiles().size());
+
+
+	std::vector<std::string> orgFiles;
+	for (int i = 0; i < rand() % 10 + 1; ++i)
+	{
+		orgFiles.push_back(getRandomString(rand() % 10 + 1));
+	}
+
+	auto scene3 = RepoScene(orgFiles, empty, empty, empty, empty, empty, empty);
+	auto orgFilesOut = scene3.getOriginalFiles();
+	ASSERT_EQ(orgFiles.size(), orgFilesOut.size());
+
+	for (int i = 0; i < orgFilesOut.size(); ++i)
+	{
+		EXPECT_TRUE(std::find(orgFilesOut.begin(), orgFilesOut.end(), orgFiles[i]) != orgFilesOut.end());
+	}
+
+	auto scene4 = RepoScene("sampleDataRW", "cube");
+	std::string errMsg;
+	scene4.loadScene(getHandler(), errMsg);
+	ASSERT_TRUE(errMsg.empty());
+	auto orgFilesOut2 = scene4.getOriginalFiles();
+	EXPECT_EQ(1, orgFilesOut2.size());
+	EXPECT_EQ(getFileFileName, orgFilesOut2[0]);
+}

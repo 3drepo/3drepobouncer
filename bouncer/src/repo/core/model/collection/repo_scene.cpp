@@ -1070,7 +1070,8 @@ std::vector<std::string> RepoScene::getOriginalFiles() const
 	{
 		return revNode->getOrgFiles();
 	}
-	return std::vector<std::string>();
+
+	return refFiles;
 }
 
 bool RepoScene::loadRevision(
