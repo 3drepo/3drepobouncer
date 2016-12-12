@@ -1163,7 +1163,7 @@ TEST(RepoSceneTest, modifyNode)
 	scene.modifyNode(defaultG, nullptr, nullptr);
 	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
 	scene.addNodes({ root });
-	RepoNode newFields = BSON("name" << "cream");
+	RepoNode newFields = RepoBSON(BSON("name" << "cream"));
 	scene.modifyNode(defaultG, root, &newFields);
 
 
