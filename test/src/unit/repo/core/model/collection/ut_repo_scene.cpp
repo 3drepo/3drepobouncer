@@ -576,17 +576,6 @@ TEST(RepoSceneTest, updateRevisionStatus)
 	EXPECT_TRUE(scene.updateRevisionStatus(getHandler(), RevisionNode::UploadStatus::COMPLETE));
 }
 
-TEST(RepoSceneTest, printStats)
-{
-	RepoScene scene;
-	//Not much to test, just make sure it doesn't crash.
-	std::stringstream ss;
-	scene.printStatistics(ss);
-
-	scene = RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
-	scene.printStatistics(ss);
-}
-
 TEST(RepoSceneTest, abandonChild)
 {
 	RepoNodeSet transNodes, meshNodes, empty;
