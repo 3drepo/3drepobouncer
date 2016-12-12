@@ -1127,8 +1127,15 @@ TEST(RepoSceneTest, getOriginalFiles)
 	auto scene4 = RepoScene("sampleDataRW", "cube");
 	std::string errMsg;
 	scene4.loadScene(getHandler(), errMsg);
+	repoTrace << errMsg;
 	ASSERT_TRUE(errMsg.empty());
 	auto orgFilesOut2 = scene4.getOriginalFiles();
 	EXPECT_EQ(1, orgFilesOut2.size());
 	EXPECT_EQ(getFileFileName, orgFilesOut2[0]);
+}
+
+
+TEST(RepoSceneTest, addNodes)
+{
+
 }
