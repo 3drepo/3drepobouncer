@@ -512,14 +512,7 @@ namespace repo{
 					repo::core::handler::AbstractDatabaseHandler *handler,
 					const RevisionNode::UploadStatus &status);
 
-				/**
-				* Prints the statics of this Scene graph to an IO stream
-				* This is mostly a debugging function to check the scene graph has done
-				* what you have expected.
-				* @param the file stream to print the info into
-				*/
-				void printStatistics(std::iostream &output);
-
+				
 				/**
 				* --------------------- Node Relationship ----------------------
 				*/

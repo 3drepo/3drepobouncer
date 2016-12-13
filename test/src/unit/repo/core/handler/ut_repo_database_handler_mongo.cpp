@@ -118,20 +118,7 @@ TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
 		goldenData.first.first, goldenData.first.second);
 
 	ASSERT_EQ(bsons.size(), goldenData.second.size());
-	/*auto goldenDataDisposable = goldenData.second;
-	for (int i = 0; i < bsons.size(); ++i)
-	{
-	bool foundMatch = false;
-	for (int j = 0; j< goldenDataDisposable.size(); ++j)
-	{
-	if (foundMatch = bsons[i].toString() == goldenDataDisposable[j])
-	{
-	goldenDataDisposable.erase(goldenDataDisposable.begin() + j);
-	break;
-	}
-	}
-	EXPECT_TRUE(foundMatch);
-	}*/
+
 
 	//Test limit and skip
 	std::vector<repo::core::model::RepoBSON> bsonsLimitSkip = handler->getAllFromCollectionTailable(
