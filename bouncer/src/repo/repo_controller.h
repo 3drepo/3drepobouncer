@@ -33,7 +33,6 @@
 #include "core/model/bson/repo_bson_user.h"
 #include "core/model/bson/repo_node_transformation.h"
 #include "core/model/bson/repo_node_reference.h"
-#include "core/model/bson/repo_node_map.h"
 #include "core/model/collection/repo_scene.h"
 #include "lib/datastructure/repo_structs.h"
 #include "lib/repo_listener_abstract.h"
@@ -696,15 +695,6 @@ namespace repo{
 			*/
 		repo::core::model::RepoScene* createFederatedScene(
 			const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap);
-
-		/**
-			* Create a create a map scene with the given map node
-			* This is essentially a scene creation with a trans node (identity matrix) and the map
-			* @param mapNode the map node to create the scene with
-			* @return returns a constructed scene graph with the reference.
-			*/
-		repo::core::model::RepoScene* createMapScene(
-			const repo::core::model::MapNode &mapNode);
 
 		/**
 		* Generate and commit a GLTF encoding for the given scene

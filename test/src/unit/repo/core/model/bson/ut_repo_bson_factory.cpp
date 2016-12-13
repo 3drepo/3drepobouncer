@@ -274,41 +274,6 @@ TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
 	EXPECT_EQ(material2.getTypeAsEnum(), NodeType::MATERIAL);
 }
 
-TEST(RepoBSONFactoryTest, MakeMapNodeTest)
-{
-	uint32_t width = 1, zoom = 19;
-	float tilt = 2.0, tileSize = 10.5, longit = 2.3546, latit = 5.3235;
-	repo_vector_t centrePoint = { 3.12345, 54.3536, 435.32 };
-	std::string name = "mapTest";
-	std::string apiKey = "apiKey";
-
-	MapNode map = RepoBSONFactory::makeMapNode(width, zoom, tilt, tileSize, longit, latit, centrePoint, apiKey, name);
-
-	EXPECT_FALSE(map.isEmpty());
-	EXPECT_EQ(name, map.getName());
-	EXPECT_EQ(apiKey, map.getAPIKey());
-	EXPECT_EQ(map.getTypeAsEnum(), NodeType::MAP);
-
-	EXPECT_EQ(width, map.getWidth());
-	EXPECT_EQ(zoom, map.getZoom());
-	EXPECT_EQ(tileSize, map.getTileSize());
-	EXPECT_EQ(tilt, map.getYRot());
-	EXPECT_EQ(longit, map.getField(REPO_NODE_MAP_LABEL_LONG).Double());
-	EXPECT_EQ(latit, map.getField(REPO_NODE_MAP_LABEL_LAT).Double());
-
-	repo_vector_t vec;
-	if (map.hasField(REPO_NODE_MAP_LABEL_TRANS))
-	{
-		std::vector<float> floatArr = map.getFloatArray(REPO_NODE_MAP_LABEL_TRANS);
-		if (floatArr.size() >= 3)
-		{
-			//repo_vector_t is effectively float[3]
-			std::copy(floatArr.begin(), floatArr.begin() + 3, (float*)&vec);
-		}
-	}
-
-	EXPECT_TRUE(compareVectors(centrePoint, vec));
-}
 
 TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 {

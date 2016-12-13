@@ -24,7 +24,6 @@
 #include <string>
 
 #include "../core/model/bson/repo_bson_role_settings.h"
-#include "../core/model/bson/repo_node_map.h"
 #include "../core/model/bson/repo_node_reference.h"
 #include "../core/model/bson/repo_node_transformation.h"
 #include "../core/model/bson/repo_bson_database_stats.h"
@@ -173,14 +172,6 @@ namespace repo{
 			*/
 			repo::core::model::RepoScene* createFederatedScene(
 				const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap);
-
-			/**
-			* Create a map scene with the given map
-			* @param mapNode the map node to create the scene with
-			* @return returns a constructed scene graph with the map.
-			*/
-			repo::core::model::RepoScene* createMapScene(
-				const repo::core::model::MapNode &mapNode);
 
 			/**
 			* Count the number of documents within the collection

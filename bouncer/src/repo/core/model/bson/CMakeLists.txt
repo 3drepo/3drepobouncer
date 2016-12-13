@@ -18,7 +18,6 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_user.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_camera.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_map.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_material.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_mesh.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_metadata.cpp
@@ -42,7 +41,6 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_user.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_camera.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_map.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_material.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_mesh.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_metadata.h

@@ -77,7 +77,6 @@ RepoScene::RepoScene(
 	const RepoNodeSet              &textures,
 	const RepoNodeSet              &transformations,
 	const RepoNodeSet              &references,
-	const RepoNodeSet              &maps,
 	const RepoNodeSet              &unknowns,
 	const std::string              &sceneExt,
 	const std::string              &revExt,
@@ -106,7 +105,7 @@ RepoScene::RepoScene(
 	graph.rootNode = nullptr;
 	stashGraph.rootNode = nullptr;
 	branch = stringToUUID(REPO_HISTORY_MASTER_BRANCH);
-	populateAndUpdate(GraphType::DEFAULT, cameras, meshes, materials, metadata, textures, transformations, references, maps, unknowns);
+	populateAndUpdate(GraphType::DEFAULT, cameras, meshes, materials, metadata, textures, transformations, references, unknowns);
 }
 
 RepoScene::~RepoScene()
@@ -441,7 +440,7 @@ void RepoScene::addStashGraph(
 	const RepoNodeSet &transformations)
 {
 	populateAndUpdate(GraphType::OPTIMIZED, cameras, meshes, materials, RepoNodeSet(),
-		textures, transformations, RepoNodeSet(), RepoNodeSet(), RepoNodeSet());
+		textures, transformations, RepoNodeSet(),RepoNodeSet());
 }
 
 void RepoScene::clearStash()
@@ -455,7 +454,6 @@ void RepoScene::clearStash()
 	stashGraph.cameras.clear();
 	stashGraph.meshes.clear();
 	stashGraph.materials.clear();
-	stashGraph.maps.clear();
 	stashGraph.metadata.clear();
 	stashGraph.references.clear();
 	stashGraph.textures.clear();
@@ -1252,9 +1250,6 @@ void RepoScene::removeNode(
 		case NodeType::CAMERA:
 			g.cameras.erase(node);
 			break;
-		case NodeType::MAP:
-			g.maps.erase(node);
-			break;
 		case NodeType::MATERIAL:
 			g.materials.erase(node);
 			break;
@@ -1353,12 +1348,7 @@ bool RepoScene::populate(
 		{
 			node = new MetadataNode(obj);
 			g.metadata.insert(node);
-		}
-		else if (REPO_NODE_TYPE_MAP == nodeType)
-		{
-			node = new MapNode(obj);
-			g.maps.insert(node);
-		}
+		}		
 		else{
 			//UNKNOWN TYPE - instantiate it with generic RepoNode
 			node = new RepoNode(obj);
@@ -1451,7 +1441,6 @@ void RepoScene::populateAndUpdate(
 	const RepoNodeSet &textures,
 	const RepoNodeSet &transformations,
 	const RepoNodeSet &references,
-	const RepoNodeSet &maps,
 	const RepoNodeSet &unknowns)
 {
 	std::string errMsg;
@@ -1463,7 +1452,6 @@ void RepoScene::populateAndUpdate(
 	addNodeToScene(gType, textures, errMsg, &(instance.textures));
 	addNodeToScene(gType, transformations, errMsg, &(instance.transformations));
 	addNodeToScene(gType, references, errMsg, &(instance.references));
-	addNodeToScene(gType, maps, errMsg, &(instance.maps));
 	addNodeToScene(gType, unknowns, errMsg, &(instance.unknowns));
 }
 

@@ -49,7 +49,6 @@ namespace repo{
 					RepoNodeSet cameras; //!< Cameras
 					RepoNodeSet meshes; //!< Meshes
 					RepoNodeSet materials; //!< Materials
-					RepoNodeSet maps; //!< Maps
 					RepoNodeSet metadata; //!< Metadata
 					RepoNodeSet references; //!< References
 					RepoNodeSet textures; //!< Textures
@@ -117,7 +116,6 @@ namespace repo{
 				* @param textures Repo Node set of textures
 				* @param transformations Repo Node set of transformations
 				* @param references Repo Node set of references (optional)
-				* @param maps Repo Node set of maps (optional)
 				* @param unknowns Repo Node set of unknowns (optional)
 				* @param sceneExt extension name of the scene when it is saved into the database (optional)
 				* @param revExt   extension name of the revision when it is saved into the database (optional)
@@ -132,7 +130,6 @@ namespace repo{
 					const RepoNodeSet              &textures,
 					const RepoNodeSet              &transformations,
 					const RepoNodeSet              &references = RepoNodeSet(),
-					const RepoNodeSet              &maps = RepoNodeSet(),
 					const RepoNodeSet              &unknowns = RepoNodeSet(),
 					const std::string              &sceneExt = REPO_COLLECTION_SCENE,
 					const std::string              &revExt = REPO_COLLECTION_HISTORY,
@@ -669,15 +666,6 @@ namespace repo{
 					return  gType == GraphType::OPTIMIZED ? stashGraph.materials : graph.materials;
 				}
 
-				/**
-				* Get all map nodes within current scene revision
-				* @return a RepoNodeSet of map
-				*/
-				RepoNodeSet getAllMaps(
-					const GraphType &gType = GraphType::DEFAULT) const
-				{
-					return  gType == GraphType::OPTIMIZED ? stashGraph.maps : graph.maps;
-				}
 
 				/**
 				* Get all mesh nodes within current scene revision
@@ -1054,7 +1042,6 @@ namespace repo{
 					const RepoNodeSet &textures,
 					const RepoNodeSet &transformations,
 					const RepoNodeSet &references,
-					const RepoNodeSet &maps,
 					const RepoNodeSet &unknowns);
 
 				/**

@@ -169,29 +169,6 @@ repo::core::model::RepoScene* RepoManipulator::createFederatedScene(
 	return scene;
 }
 
-repo::core::model::RepoScene* RepoManipulator::createMapScene(
-	const repo::core::model::MapNode &mapNode)
-{
-	repo::core::model::RepoNodeSet transNodes;
-	repo::core::model::RepoNodeSet mapNodes;
-	repo::core::model::RepoNodeSet emptySet;
-
-	repo::core::model::TransformationNode rootNode =
-		repo::core::model::RepoBSONFactory::makeTransformationNode(
-		repo::core::model::TransformationNode::identityMat(), "<root>");
-
-	transNodes.insert(new repo::core::model::TransformationNode(rootNode));
-
-	mapNodes.insert(new repo::core::model::MapNode(mapNode.cloneAndAddParent(rootNode.getSharedID())));
-
-	//federate scene has no referenced files
-	std::vector<std::string> empty;
-	repo::core::model::RepoScene *scene =
-		new repo::core::model::RepoScene(empty, emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, emptySet, mapNodes);
-
-	return scene;
-}
-
 bool RepoManipulator::commitScene(
 	const std::string                      &databaseAd,
 	const repo::core::model::RepoBSON 	   *cred,
