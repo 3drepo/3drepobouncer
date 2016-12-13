@@ -751,6 +751,37 @@ namespace repo{
 				std::vector<repo_vector_t> getSceneBoundingBox() const;
 
 				/**
+				* Get all ID of nodes which are added since last revision
+				* @return returns a vector of node IDs
+				*/
+				std::vector<repoUUID> getAddedNodesID() const
+				{
+					return std::vector<repoUUID>(newAdded.begin(), newAdded.end());
+				}
+				/**
+				* Get all ID of nodes which are modified since last revision
+				* @return returns a vector of node IDs
+				*/
+				std::vector<repoUUID> getModifiedNodesID() const
+				{
+					return std::vector<repoUUID>(newModified.begin(), newModified.end());
+				}
+
+				/**
+				* Get all ID of nodes which are removed since last revision
+				* @return returns a vector of node IDs
+				*/
+				std::vector<repoUUID> getRemovedNodesID() const
+				{
+					return std::vector<repoUUID>(newRemoved.begin(), newRemoved.end());
+				}
+
+				size_t getTotalNodesChanged() const
+				{
+					return newRemoved.size() + newAdded.size() + newModified.size();
+				}
+
+				/**
 				* Get the node given the shared ID of this node
 				* @param g instance of the graph to search from
 				* @param sharedID shared ID of the node
