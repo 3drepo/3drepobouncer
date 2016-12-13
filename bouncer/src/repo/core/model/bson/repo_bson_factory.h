@@ -31,7 +31,6 @@
 #include "repo_node_camera.h"
 #include "repo_node_metadata.h"
 #include "repo_node_material.h"
-#include "repo_node_map.h"
 #include "repo_node_mesh.h"
 #include "repo_node_reference.h"
 #include "repo_node_revision.h"
@@ -188,23 +187,6 @@ namespace repo {
 					const std::string     &name = std::string(),
 					const int             &apiLevel = REPO_NODE_API_LEVEL_1);
 
-				/**
-				* Create a Map Node
-				* @param a struct that contains the info about the material
-				* @param name of the Map
-				* @return returns a Map node
-				*/
-				static MapNode makeMapNode(
-					const uint32_t        &width,
-					const uint32_t        &zoom,
-					const float           &tilt,
-					const float           &tileSize,
-					const float           &longitude,
-					const float           &latitude,
-					const repo_vector_t   &centrePoint,
-					const std::string     &apiKey = std::string(),
-					const std::string     &name = std::string(),
-					const int             &apiLevel = REPO_NODE_API_LEVEL_1);
 
 				/**
 				* Create a Metadata Node

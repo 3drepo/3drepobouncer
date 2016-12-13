@@ -162,53 +162,6 @@ MaterialNode RepoBSONFactory::makeMaterialNode(
 	return MaterialNode(builder.obj());
 }
 
-MapNode RepoBSONFactory::makeMapNode(
-	const uint32_t        &width,
-	const uint32_t        &zoom,
-	const float           &tilt,
-	const float           &tileSize,
-	const float           &longitude,
-	const float           &latitude,
-	const repo_vector_t   &centrePoint,
-	const std::string     &apiKey,
-	const std::string     &name,
-	const int             &apiLevel)
-{
-	RepoBSONBuilder map_builder;
-
-	// Compulsory fields such as _id, type, api as well as path
-	// and optional name
-	auto defaults = appendDefaults(REPO_NODE_TYPE_MAP, apiLevel, generateUUID(), name, std::vector<repoUUID>());
-	map_builder.appendElements(defaults);
-	//--------------------------------------------------------------------------
-	// width (# of horizontal tiles)
-	map_builder << REPO_NODE_MAP_LABEL_WIDTH << width;
-	//--------------------------------------------------------------------------
-	// yrot (tilt on y axis in radians)
-	map_builder << REPO_NODE_MAP_LABEL_YROT << tilt;
-	//--------------------------------------------------------------------------
-	// world tile size (size of tiles)
-	map_builder << REPO_NODE_MAP_LABEL_TILESIZE << tileSize;
-	//--------------------------------------------------------------------------
-	// longitude
-	map_builder << REPO_NODE_MAP_LABEL_LONG << longitude;
-	//--------------------------------------------------------------------------
-	// latitude
-	map_builder << REPO_NODE_MAP_LABEL_LAT << latitude;
-	//--------------------------------------------------------------------------
-	// zoom
-	map_builder << REPO_NODE_MAP_LABEL_ZOOM << zoom;
-	//--------------------------------------------------------------------------
-	// trans
-	map_builder << REPO_NODE_MAP_LABEL_TRANS << BSON_ARRAY(centrePoint.x << centrePoint.y << centrePoint.z);
-	//--------------------------------------------------------------------------
-	// API Key (temporary, needs to be removed when x3dom can plug it in on the fly.
-	if (!apiKey.empty())
-		map_builder << REPO_NODE_MAP_LABEL_APIKEY << apiKey;
-	//--------------------------------------------------------------------------
-	return map_builder.obj();
-}
-
 MetadataNode RepoBSONFactory::makeMetaDataNode(
 	RepoBSON			          &metadata,
 	const std::string             &mimeType,

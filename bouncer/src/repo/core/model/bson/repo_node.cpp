@@ -148,8 +148,6 @@ NodeType RepoNode::getTypeAsEnum() const
 
 	if (REPO_NODE_TYPE_CAMERA == type)
 		enumType = NodeType::CAMERA;
-	else if (REPO_NODE_TYPE_MAP == type)
-		enumType = NodeType::MAP;
 	else if (REPO_NODE_TYPE_MATERIAL == type)
 		enumType = NodeType::MATERIAL;
 	else if (REPO_NODE_TYPE_MESH == type)
