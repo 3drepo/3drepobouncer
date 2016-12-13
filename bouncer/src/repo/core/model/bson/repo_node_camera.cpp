@@ -64,7 +64,7 @@ RepoNode CameraNode::cloneAndApplyTransformation(
 
 repo_vector_t CameraNode::getPosition() const
 {
-	repo_vector_t vec;
+	repo_vector_t vec = { 0, 0, 0};
 	if (hasField(REPO_NODE_LABEL_POSITION))
 	{
 		std::vector<float> floatArr = getFloatArray(REPO_NODE_LABEL_POSITION);
