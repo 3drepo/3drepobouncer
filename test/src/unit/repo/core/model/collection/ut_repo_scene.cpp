@@ -1169,7 +1169,7 @@ TEST(RepoSceneTest, modifyNode)
 
 	EXPECT_EQ(newFields.getName(), root->getName());
 
-	RepoNode removedName = root->removeField("name");
+	RepoNode removedName = RepoBSON(root->removeField("name"));
 	scene.modifyNode(defaultG, root, &removedName, true);
 	EXPECT_FALSE(root->hasField("name"));
 	scene.modifyNode(defaultG, root, nullptr, true);
