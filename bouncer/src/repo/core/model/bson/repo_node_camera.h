@@ -69,6 +69,24 @@ namespace repo {
 				*/
 				virtual bool positionDependant() { return true; }
 
+				/**
+				* Get the type of node
+				* @return returns the type as a string
+				*/
+				virtual std::string getType() const
+				{
+					return REPO_NODE_TYPE_CAMERA;
+				}
+
+				/**
+				* Get the type of node as an enum
+				* @return returns type as enum.
+				*/
+				virtual NodeType getTypeAsEnum() const
+				{
+					return NodeType::CAMERA;
+				}
+
 				/*
 				*	------------- Delusional modifiers --------------
 				*   These are like "setters" but not. We are actually
