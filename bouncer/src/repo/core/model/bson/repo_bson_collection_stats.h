@@ -45,46 +45,67 @@ namespace repo {
 
 				//--------------------------------------------------------------------------
 
-				//! Actual size on disk.
+				/**
+				* Get the actual size on disk.
+				* @returns the size of disk in bytes
+				*/
 				uint64_t getActualSizeOnDisk() const;
 
-				//! Returns database.
+				/*
+				* Get the database name of this collection stats
+				* @returns the name of the database
+				*/
 				std::string getDatabase() const;
 
-				//! Returns the number of objects or documents in this collection.
+				/**
+				* Get the number of objects or documents in this collection.
+				* @returns number of documents
+				*/
 				uint64_t getCount() const;
 
-				//! Returns collection.
+				/*
+				* Get the name of the collection
+				* @returns collection name
+				*/
 				std::string getCollection() const;
 
-
-				//! Returns namespace.
+				/*
+				* Get the namespace from the stats (database.collection)
+				* @returns namespace string.
+				*/
 				std::string getNs() const;
 
-				//! Returns different sizes depending on name.
+				/*
+				* Get the size of the field given
+				* @params name name of the field
+				* @returns the size of the field given, 0 if not found
+				*/
 				uint64_t getSize(const std::string& name) const;
 
-				/*!
-				* Returns the total size of all records in a collection. This value does
+				/**
+				* get the total size of all records in a collection. This value does
 				* not include the record header, which is 16 bytes per record, but does
 				* include the record’s padding. Additionally, size does not include
 				* the size of any indexes associated with the collection, which the
 				* totalIndexSize field reports.
 				*
 				* See http://docs.mongodb.org/manual/reference/command/collStats/#collStats.size
+				* @returns the size of all records in collection in bytes
 				*/
 				uint64_t getSize() const;
 
-				/*!
-				* Returns the total amount of storage allocated to this collection for
+				/**
+				* get the total amount of storage allocated to this collection for
 				* document storage.
 				*
 				* See: http://docs.mongodb.org/manual/reference/command/collStats/#collStats.storageSize
+				* @returns the amount of storage allocated in bytes
 				*/
 				uint64_t getStorageSize() const;
 
-				/*!
-				* Returns the total size of all indexes.
+				/**
+				* get the total size of all indices.
+				* @return size of all indices
 				*/
 				uint64_t getTotalIndexSize() const;
 			};
