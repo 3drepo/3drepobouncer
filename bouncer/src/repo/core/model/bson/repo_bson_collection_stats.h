@@ -48,9 +48,6 @@ namespace repo {
 				//! Actual size on disk.
 				uint64_t getActualSizeOnDisk() const;
 
-				//! Returns database from given namespace.
-				static std::string getDatabase(const std::string& ns);
-
 				//! Returns database.
 				std::string getDatabase() const;
 
@@ -60,8 +57,6 @@ namespace repo {
 				//! Returns collection.
 				std::string getCollection() const;
 
-				//! Returns collection from given namespace.
-				static std::string getCollection(const std::string &ns);
 
 				//! Returns namespace.
 				std::string getNs() const;

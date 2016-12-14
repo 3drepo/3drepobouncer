@@ -17,11 +17,7 @@ uint64_t repo::core::model::CollectionStats::getActualSizeOnDisk() const
 
 std::string repo::core::model::CollectionStats::getDatabase() const
 {
-	return getDatabase(getNs());
-}
-
-std::string repo::core::model::CollectionStats::getDatabase(const std::string& ns)
-{
+	std::string ns = getNs();
 	std::string database = ns;
 	const char *str = ns.c_str();
 	const char *p;
@@ -30,6 +26,7 @@ std::string repo::core::model::CollectionStats::getDatabase(const std::string& n
 	return database;
 }
 
+
 uint64_t repo::core::model::CollectionStats::getCount() const
 {
 	return getSize("count");
@@ -37,17 +34,14 @@ uint64_t repo::core::model::CollectionStats::getCount() const
 
 std::string repo::core::model::CollectionStats::getCollection() const
 {
-	return getCollection(getNs());
-}
-
-std::string repo::core::model::CollectionStats::getCollection(const std::string& ns)
-{
+	std::string ns = getNs();
 	std::string collection = ns;
 	const char *p;
 	if (ns.find('.') != std::string::npos && (p = strchr(ns.c_str(), '.')))
 		collection = p + 1;
 	return collection;
 }
+
 
 std::string repo::core::model::CollectionStats::getNs() const
 {
