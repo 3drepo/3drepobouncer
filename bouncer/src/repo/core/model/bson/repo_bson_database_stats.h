@@ -27,156 +27,175 @@
 namespace repo {
 	namespace core {
 		namespace model {
-                        class REPO_API_EXPORT DatabaseStats :
-				public RepoBSON
+			class REPO_API_EXPORT DatabaseStats : public RepoBSON
 			{
 			public:
 				/**
 				* Default Constructor
 				*/
-                                DatabaseStats();
+				DatabaseStats();
 
-                                DatabaseStats(RepoBSON bson) : RepoBSON(bson) {}
+				DatabaseStats(RepoBSON bson) : RepoBSON(bson) {}
 
 				/**
 				* Destructor
 				*/
-                                ~DatabaseStats();
+				~DatabaseStats();
 
 				//--------------------------------------------------------------------------
 
-                                //! Returns database.
-                                std::string getDatabase() const;
+				/*
+				* Get the database name of this collection stats
+				* @returns the name of the database
+				*/
+				std::string getDatabase() const;
 
-                                //! Returns a count of the number of collections in the database.
-                                uint64_t getCollectionsCount() const;
+				/*
+				* Get the number of collections in the database.
+				* @returns the number of collections in this database
+				*/
+				uint64_t getCollectionsCount() const;
 
-                                /**
-                                 * Returns a count of the number of objects
-                                 * (i.e. documents) in the database across all
-                                 * collections.
-                                 */
-                                uint64_t getObjectsCount() const;
+				/**
+				 * Get the number of objects
+				 * (i.e. documents) in the database across all
+				 * collections.
+				 * @returns returns the number of documents within the database
+				 */
+				uint64_t getObjectsCount() const;
 
-                                /**
-                                 * The average size of each document in bytes.
-                                 * This is the dataSize divided by the number
-                                 * of documents.
-                                 */
-                                uint64_t getAvgObjSize() const;
+				/**
+				 * This is the dataSize divided by the number
+				 * of documents.
+				 * @returns The average size of each document in bytes.
+				 *
+				 */
+				uint64_t getAvgObjSize() const;
 
-                                /**
-                                 * Returns the total size in bytes of the uncompressed
-                                 * data held in this database. The scale argument
-                                 * affects this value. The dataSize will
-                                 * decrease when you remove documents.
-                                 * For databases using the MMAPv1 storage engine,
-                                 * dataSize includes preallocated space and the
-                                 * padding factor. The dataSize will not
-                                 * decrease when documents shrink.
-                                 * For databases using the WiredTiger storage
-                                 * engine, dataSize may be larger than
-                                 * storageSize if compression is enabled.
-                                 * The dataSize will decrease when documents
-                                 * shrink.
-                                 */
-                                uint64_t getDataSize() const;
+				/**
+				 * Get the total size in bytes of the uncompressed
+				 * data held in this database. The scale argument
+				 * affects this value. The dataSize will
+				 * decrease when you remove documents.
+				 * For databases using the MMAPv1 storage engine,
+				 * dataSize includes preallocated space and the
+				 * padding factor. The dataSize will not
+				 * decrease when documents shrink.
+				 * For databases using the WiredTiger storage
+				 * engine, dataSize may be larger than
+				 * storageSize if compression is enabled.
+				 * The dataSize will decrease when documents
+				 * shrink.
+				 * @return data size in bytes
+				 */
+				uint64_t getDataSize() const;
 
-                                /**
-                                 * Returns the total amount of space in bytes
-                                 * allocated to collections in this database for
-                                 * document storage. The scale argument affects
-                                 * this value. The storageSize does not decrease
-                                 * as you remove or shrink documents. This value
-                                 * may be smaller than dataSize for databases
-                                 * using the WiredTiger storage engine with
-                                 * compression enabled.
-                                 * @return
-                                 */
-                                uint64_t getStorageSize() const;
+				/**
+				 * the total amount of space in bytes
+				 * allocated to collections in this database for
+				 * document storage. The scale argument affects
+				 * this value. The storageSize does not decrease
+				 * as you remove or shrink documents. This value
+				 * may be smaller than dataSize for databases
+				 * using the WiredTiger storage engine with
+				 * compression enabled.
+				 * @returns the amount of storage allocated in bytes
+				 */
+				uint64_t getStorageSize() const;
 
-                                /**
-                                 * Returns a count of the number of extents in
-                                 * the database across all collections.
-                                 */
-                                uint64_t getNumExtents() const;
+				/**
+				 * Get a count of the number of extents in
+				 * the database across all collections.
+				 * @returns the number of extents
+				 */
+				uint64_t getNumExtents() const;
 
-                                /**
-                                 * Returns a count of the total number of
-                                 * indexes across all collections in the database.
-                                 */
-                                uint64_t getIndexesCount() const;
+				/**
+				* get the total count of all indices.
+				* @return count of all indices
+				*/
+				uint64_t getIndexesCount() const;
 
-                                /**
-                                 * Returns the total size in bytes of all
-                                 * indexes created on this database. The scale
-                                 * arguments affects this value.
-                                 */
-                                uint64_t getIndexSize() const;
+				/**
+				* get the total size of all indices.
+				* @return size of all indices
+				*/
+				uint64_t getIndexSize() const;
 
-                                /**
-                                 * Returns the total size in bytes of the data
-                                 * files that hold the database. This value
-                                 * includes preallocated space and the padding
-                                 * factor. The value of fileSize only reflects
-                                 * the size of the data files for the database
-                                 * and not the namespace file.
-                                 * The scale argument affects this value. Only
-                                 * present when using the mmapv1 storage engine.
-                                 */
-                                uint64_t getFileSize() const;
+				/**
+				 * Get the total size in bytes of the data
+				 * files that hold the database. This value
+				 * includes preallocated space and the padding
+				 * factor. The value of fileSize only reflects
+				 * the size of the data files for the database
+				 * and not the namespace file.
+				 * The scale argument affects this value. Only
+				 * present when using the mmapv1 storage engine.
+				 * @returns the total file size
+				 */
+				uint64_t getFileSize() const;
 
-                                /**
-                                 * Returns the total size of the namespace files
-                                 * (i.e. that end with .ns) for this database.
-                                 * You cannot change the size of the namespace
-                                 * file after creating a database, but you can
-                                 * change the default size for all new namespace
-                                 * files with the nsSize runtime option.
-                                 * Only present when using the mmapv1 storage engine.
-                                 */
-                                uint64_t getNsSizeMB() const;
+				/**
+				 * Get  the total size of the namespace files
+				 * (i.e. that end with .ns) for this database.
+				 * You cannot change the size of the namespace
+				 * file after creating a database, but you can
+				 * change the default size for all new namespace
+				 * files with the nsSize runtime option.
+				 * Only present when using the mmapv1 storage engine.
+				 * @returns the namespace size
+				 */
+				uint64_t getNsSizeMB() const;
 
-                                /**
-                                 * Returns document that contains information
-                                 * about the on-disk format of the data files
-                                 * for the database. Only present when using the
-                                 * mmapv1 storage engine.
-                                 */
-                                std::string getDataFileVersion() const;
+				/**
+				 * GetThe major version number for the on-disk format
+				 * of the data files for the database. Only
+				 * present when using the mmapv1 storage engine.
+				 * @returns the major number, 0 if not mmapv1
+				 */
+				uint64_t getDataFileVersionMajor() const;
 
-                                /**
-                                 * The major version number for the on-disk format
-                                 * of the data files for the database. Only
-                                 * present when using the mmapv1 storage engine.
-                                 */
-                                uint64_t getDataFileVersionMajor() const;
+				/**
+				 * Get the minor version number for the on-disk
+				 * format of the data files for the database.
+				 * Only present when using the mmapv1 storage
+				 * engine.
+				 * @returns the minor number, 0 if not mmapv1
+				 */
+				uint64_t getDataFileVersionMinor() const;
 
-                                /**
-                                 * The minor version number for the on-disk
-                                 * format of the data files for the database.
-                                 * Only present when using the mmapv1 storage
-                                 * engine.
-                                 */
-                                uint64_t getDataFileVersionMinor() const;
+				/**
+				 * Number of extents in the freelist. Only
+				 * present when using the mmapv1 storage engine.
+				 * @returns number of extentFreeList
+				 */
+				uint64_t getExtentFreeListNum() const;
 
-                                std::string getExtentFreeList() const;
+				/**
+				 * Total size of the extents on the freelist.
+				 * The scale argument affects this value. Only
+				 * present when using the mmapv1 storage engine.
+				 * @returns the total size of extents on freelist in bytes
+				 */
+				uint64_t getExtentFreeListSize() const;
 
-                                /**
-                                 * Number of extents in the freelist. Only
-                                 * present when using the mmapv1 storage engine.
-                                 */
-                                uint64_t getExtentFreeListNum() const;
+			private:
+				/*
+				* Get the size of the field given
+				* @params name name of the field
+				* @returns the size of the field given, 0 if not found
+				*/
+				uint64_t getSize(const std::string& name) const;
 
-                                /**
-                                 * Total size of the extents on the freelist.
-                                 * The scale argument affects this value. Only
-                                 * present when using the mmapv1 storage engine.
-                                 */
-                                uint64_t getExtentFreeListSize() const;
-
-                                uint64_t getSize(const std::string& name) const;
-
+				/**
+				* Get a number(long) from an embedded bson field
+				* @params embeddedObj name of the embedded obj
+				* @params name name of the field
+				* @returns the value of the embedded bson number, 0 if not found
+				*/
+				uint64_t getEmbeddedNumber(
+					const std::string &embeddedObj,
+					const std::string& name) const;
 			};
 		}// end namespace model
 	} // end namespace core
