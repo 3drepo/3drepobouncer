@@ -63,9 +63,6 @@ bool DiffByName::compare(
 		//Compare referebces
 		compareNodes(baseIDs, compIDs, baseScene->getAllReferences(gType), compareScene->getAllReferences(gType));
 
-		//Compare maps
-		compareNodes(baseIDs, compIDs, baseScene->getAllMaps(gType), compareScene->getAllMaps(gType));
-
 		//NOTE: can't semantically compare unknowns, leave them for now.
 
 		//any remaining items within compIDs doesn't exist in base.

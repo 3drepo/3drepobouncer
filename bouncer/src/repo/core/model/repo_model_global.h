@@ -163,7 +163,6 @@
 #define REPO_NODE_TYPE_COMMENT			"comment"
 #define REPO_NODE_TYPE_LIGHT			"light"
 #define REPO_NODE_TYPE_LOCK				"lock"
-#define REPO_NODE_TYPE_MAP          	"map"
 #define REPO_NODE_TYPE_MATERIAL			"material"
 #define REPO_NODE_TYPE_MESH          	"mesh"
 #define REPO_NODE_TYPE_METADATA     	"meta"

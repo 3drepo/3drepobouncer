@@ -424,12 +424,6 @@ repo::core::model::RepoScene* RepoController::createFederatedScene(
 	return impl->createFederatedScene(fedMap);
 }
 
-repo::core::model::RepoScene* RepoController::createMapScene(
-	const repo::core::model::MapNode &mapNode)
-{
-	return impl->createMapScene(mapNode);
-}
-
 bool RepoController::generateAndCommitGLTFBuffer(
 	const RepoController::RepoToken    *token,
 	repo::core::model::RepoScene *scene)

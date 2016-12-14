@@ -61,7 +61,7 @@ TEST(RepoSceneTest, FilterNodesByType)
 	MeshNode meshNode;
 	TransformationNode transNode;
 	//Check empty vector doesn't crash
-	EXPECT_EQ(0, RepoScene::filterNodesByType(nodes, NodeType::MAP).size());
+	EXPECT_EQ(0, RepoScene::filterNodesByType(nodes, NodeType::REFERENCE).size());
 
 	int nMeshes = rand() % 10 + 1;
 	int nTrans = rand() % 10 + 1;
@@ -769,10 +769,8 @@ TEST(RepoSceneTest, getAllNodes)
 	EXPECT_EQ(0, scene.getAllMetadata(RepoScene::GraphType::OPTIMIZED).size());
 	EXPECT_EQ(0, scene.getAllReferences(defaultG).size());
 	EXPECT_EQ(0, scene.getAllReferences(RepoScene::GraphType::OPTIMIZED).size());
-	EXPECT_EQ(0, scene.getAllMaps(defaultG).size());
-	EXPECT_EQ(0, scene.getAllMaps(RepoScene::GraphType::OPTIMIZED).size());
 
-	RepoNodeSet transNodes, meshNodes, metaNodes, matNodes, texNodes, camNodes, refNodes, mapsNodes;
+	RepoNodeSet transNodes, meshNodes, metaNodes, matNodes, texNodes, camNodes, refNodes;
 
 	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
 	meshNodes.insert(new MeshNode(makeRandomNode(root->getSharedID())));
@@ -786,13 +784,10 @@ TEST(RepoSceneTest, getAllNodes)
 	metaNodes.insert(new MetadataNode(makeRandomNode(root->getSharedID())));
 	metaNodes.insert(new MetadataNode(makeRandomNode(root->getSharedID())));
 	refNodes.insert(new ReferenceNode(makeRandomNode(root->getSharedID())));
-	mapsNodes.insert(new MapNode(makeRandomNode(root->getSharedID())));
-	mapsNodes.insert(new MapNode(makeRandomNode(root->getSharedID())));
-	mapsNodes.insert(new MapNode(makeRandomNode(root->getSharedID())));
 	
 	transNodes.insert(root);
 
-	auto scene2 = RepoScene(std::vector<std::string>(), camNodes, meshNodes, matNodes, metaNodes, texNodes, transNodes, refNodes, mapsNodes);
+	auto scene2 = RepoScene(std::vector<std::string>(), camNodes, meshNodes, matNodes, metaNodes, texNodes, transNodes, refNodes);
 
 	auto allSharedIDs = scene2.getAllSharedIDs(defaultG);
 	EXPECT_EQ(0, scene2.getAllSharedIDs(RepoScene::GraphType::OPTIMIZED).size());
@@ -862,14 +857,6 @@ TEST(RepoSceneTest, getAllNodes)
 		EXPECT_NE(allSharedIDs.end(), allSharedIDs.find(ref->getSharedID()));
 	}
 
-	auto maps = scene2.getAllMaps(defaultG);
-	EXPECT_EQ(mapsNodes.size(), maps.size());
-	EXPECT_EQ(0, scene2.getAllMaps(RepoScene::GraphType::OPTIMIZED).size());
-	for (const auto map : maps)
-	{
-		EXPECT_NE(maps.end(), maps.find(map));
-		EXPECT_NE(allSharedIDs.end(), allSharedIDs.find(map->getSharedID()));
-	}	
 }
 
 TEST(RepoSceneTest, getAllDescendantsByType)

@@ -881,16 +881,6 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::createFederat
 	return scene;
 }
 
-repo::core::model::RepoScene* RepoController::_RepoControllerImpl::createMapScene(
-	const repo::core::model::MapNode &mapNode)
-{
-	manipulator::RepoManipulator* worker = workerPool.pop();
-	repo::core::model::RepoScene* scene = worker->createMapScene(mapNode);
-	workerPool.push(worker);
-
-	return scene;
-}
-
 bool RepoController::_RepoControllerImpl::generateAndCommitGLTFBuffer(
 	const RepoController::RepoToken                    *token,
 	repo::core::model::RepoScene *scene)
