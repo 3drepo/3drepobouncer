@@ -919,6 +919,6 @@ private:
 	void subscribeToLogger(
 		std::vector<lib::RepoAbstractListener*> listeners);
 
-	lib::RepoStack<manipulator::RepoManipulator*> workerPool;
+	lib::RepoStack<manipulator::RepoManipulator> workerPool;
 	const uint32_t numDBConnections;
 };

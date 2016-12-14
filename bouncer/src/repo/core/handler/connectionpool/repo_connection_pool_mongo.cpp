@@ -22,11 +22,15 @@ using namespace repo::core::handler::connectionPool;
 MongoConnectionPool::MongoConnectionPool(
 	const int &numConnections,
 	mongo::ConnectionString dbAddress,
-	mongo::BSONObj* auth) :
-	maxSize(numConnections),
+	mongo::BSONObj* auth,
+	const int32_t &maxRetry,
+	const uint32_t &msTimeOut) :
+	RepoStack(maxRetry, msTimeOut),
+	maxSize(numConnections < 1? 1 : numConnections),
 	dbAddress(dbAddress),
 	auth(auth ? new mongo::BSONObj(*auth) : nullptr)
 {
+
 	repoDebug << "Instantiating Mongo connection pool with " << maxSize << " connections...";
 	//push one connected worker to ensure valid connection
 	//so the caller can handle the exceptions appropriately
@@ -37,7 +41,7 @@ MongoConnectionPool::MongoConnectionPool(
 	if (worker)
 	{
 		repoDebug << "Connected to database, trying authentication..";
-		for (int i = 0; i < numConnections; i++)
+		for (int i = 0; i < maxSize; i++)
 		{
 			mongo::DBClientBase *worker = dbAddress.connect(errMsg);
 			if (auth)
@@ -80,13 +84,7 @@ mongo::DBClientBase* MongoConnectionPool::pop()
 {
 	mongo::DBClientBase* worker = RepoStack::pop();
 
-	if (!worker)
-	{
-		//worker was never used, instantiate it with a connection
-		std::string tmp;
-		worker = connectWorker(tmp);
-	}
-	else
+	if (worker)
 	{
 		//check worker is still connected
 		int attempts = 0;

@@ -33,7 +33,7 @@ namespace repo{
 	namespace core{
 		namespace handler {
 			namespace connectionPool{
-				class MongoConnectionPool : repo::lib::RepoStack < mongo::DBClientBase * >
+				class MongoConnectionPool : repo::lib::RepoStack < mongo::DBClientBase >
 				{
 				public:
 					/**
@@ -43,9 +43,10 @@ namespace repo{
 					MongoConnectionPool(
 						const int &numConnections,
 						mongo::ConnectionString dbAddress,
-						mongo::BSONObj* auth) ;
+						mongo::BSONObj* auth,
+						const int32_t &maxRetry = -1,
+						const uint32_t &msTimeOut = 50);
 
-					MongoConnectionPool() :maxSize(0){}
 
 					~MongoConnectionPool();
 
@@ -55,22 +56,27 @@ namespace repo{
 						return pop();
 					}
 
-					void returnWorker(mongo::DBClientBase *worker)
+					void returnWorker(mongo::DBClientBase *&worker)
 					{
 						push(worker);
 					}
 
+
+				private:
 					mongo::DBClientBase* pop();
 
 
-					void push(mongo::DBClientBase *worker)
+					void push(mongo::DBClientBase *&worker)
 					{
 						if (worker)
+						{
 							RepoStack::push(worker);
-					}
-				private:
-					mongo::DBClientBase* connectWorker(std::string &errMsg);
+							worker = nullptr;
+						}
 
+					}
+
+					mongo::DBClientBase* connectWorker(std::string &errMsg);
 					const uint32_t maxSize;
 					const mongo::ConnectionString dbAddress;
 					const mongo::BSONObj *auth;
