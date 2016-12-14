@@ -148,15 +148,6 @@ namespace repo {
 				uint64_t getNsSizeMB() const;
 
 				/**
-				 * Get document that contains information
-				 * about the on-disk format of the data files
-				 * for the database. Only present when using the
-				 * mmapv1 storage engine.
-				 * @returns data file version, empty string if not mmapv1
-				 */
-				std::string getDataFileVersion() const;
-
-				/**
 				 * GetThe major version number for the on-disk format
 				 * of the data files for the database. Only
 				 * present when using the mmapv1 storage engine.
@@ -173,8 +164,6 @@ namespace repo {
 				 */
 				uint64_t getDataFileVersionMinor() const;
 
-				std::string getExtentFreeList() const;
-
 				/**
 				 * Number of extents in the freelist. Only
 				 * present when using the mmapv1 storage engine.
@@ -190,12 +179,23 @@ namespace repo {
 				 */
 				uint64_t getExtentFreeListSize() const;
 
+			private:
 				/*
 				* Get the size of the field given
 				* @params name name of the field
 				* @returns the size of the field given, 0 if not found
 				*/
 				uint64_t getSize(const std::string& name) const;
+
+				/**
+				* Get a number(long) from an embedded bson field
+				* @params embeddedObj name of the embedded obj
+				* @params name name of the field
+				* @returns the value of the embedded bson number, 0 if not found
+				*/
+				uint64_t getEmbeddedNumber(
+					const std::string &embeddedObj,
+					const std::string& name) const;
 			};
 		}// end namespace model
 	} // end namespace core

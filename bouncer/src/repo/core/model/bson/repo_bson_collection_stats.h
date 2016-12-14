@@ -75,13 +75,6 @@ namespace repo {
 				*/
 				std::string getNs() const;
 
-				/*
-				* Get the size of the field given
-				* @params name name of the field
-				* @returns the size of the field given, 0 if not found
-				*/
-				uint64_t getSize(const std::string& name) const;
-
 				/**
 				* get the total size of all records in a collection. This value does
 				* not include the record header, which is 16 bytes per record, but does
@@ -108,6 +101,15 @@ namespace repo {
 				* @return size of all indices
 				*/
 				uint64_t getTotalIndexSize() const;
+
+			private:
+
+				/*
+				* Get the size of the field given
+				* @params name name of the field
+				* @returns the size of the field given, 0 if not found
+				*/
+				uint64_t getSize(const std::string& name) const;
 			};
 		}// end namespace model
 	} // end namespace core

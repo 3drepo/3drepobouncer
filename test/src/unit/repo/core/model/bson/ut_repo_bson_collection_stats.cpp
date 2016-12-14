@@ -26,7 +26,6 @@
 
 using namespace repo::core::model;
 
-
 TEST(CollectionStatsTest, Constructor)
 {
 	auto cs = CollectionStats();
@@ -40,16 +39,12 @@ TEST(CollectionStatsTest, Constructor)
 	EXPECT_EQ(cs3.toString(), bson.toString());
 }
 
-
 TEST(CollectionStatsTest, getStats)
 {
-
 	auto emptyStats = CollectionStats();
 	EXPECT_EQ(0, emptyStats.getActualSizeOnDisk());
 	EXPECT_EQ(0, emptyStats.getCount());
 	EXPECT_EQ(0, emptyStats.getSize());
-	EXPECT_EQ(0, emptyStats.getSize(getRandomString(rand() % 20 + 1)));
-	EXPECT_EQ(0, emptyStats.getSize(""));
 	EXPECT_EQ(0, emptyStats.getStorageSize());
 	EXPECT_EQ(0, emptyStats.getTotalIndexSize());
 	EXPECT_TRUE(emptyStats.getCollection().empty());
@@ -67,13 +62,9 @@ TEST(CollectionStatsTest, getStats)
 	EXPECT_EQ(14, stats.getCount());
 	EXPECT_EQ(18918176, stats.getSize());
 	EXPECT_EQ(0, stats.getSize(getRandomString(rand() % 20 + 1)));
-	EXPECT_EQ(0, stats.getSize(""));
-	EXPECT_EQ(1, stats.getSize("userFlags"));
-	EXPECT_EQ(0, stats.getSize("indexSizes"));
 	EXPECT_EQ(67248128, stats.getStorageSize());
 	EXPECT_EQ(8176, stats.getTotalIndexSize());
 	EXPECT_EQ(collection, stats.getCollection());
 	EXPECT_EQ(REPO_GTEST_DBNAME1, stats.getDatabase());
 	EXPECT_EQ(REPO_GTEST_DBNAME1 + "." + collection, stats.getNs());
-
 }

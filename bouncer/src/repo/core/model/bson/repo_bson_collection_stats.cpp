@@ -26,7 +26,6 @@ std::string repo::core::model::CollectionStats::getDatabase() const
 	return database;
 }
 
-
 uint64_t repo::core::model::CollectionStats::getCount() const
 {
 	return getSize("count");
@@ -42,13 +41,9 @@ std::string repo::core::model::CollectionStats::getCollection() const
 	return collection;
 }
 
-
 std::string repo::core::model::CollectionStats::getNs() const
 {
-	std::string ns;
-	if (hasField("ns"))
-		ns = getField("ns").String();
-	return ns;
+	return getStringField("ns");
 }
 
 uint64_t repo::core::model::CollectionStats::getSize(const std::string& name) const
