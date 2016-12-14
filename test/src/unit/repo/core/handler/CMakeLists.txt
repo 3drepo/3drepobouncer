@@ -6,6 +6,7 @@
 
 set(TEST_SOURCES
 	${TEST_SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_connection_pool_mongo.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_database_handler_mongo.cpp
 	CACHE STRING "TEST_SOURCES" FORCE)
 
