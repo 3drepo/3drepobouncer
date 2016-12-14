@@ -61,7 +61,6 @@ TEST(CollectionStatsTest, getStats)
 	EXPECT_EQ(18926576, stats.getActualSizeOnDisk());
 	EXPECT_EQ(14, stats.getCount());
 	EXPECT_EQ(18918176, stats.getSize());
-	EXPECT_EQ(0, stats.getSize(getRandomString(rand() % 20 + 1)));
 	EXPECT_EQ(67248128, stats.getStorageSize());
 	EXPECT_EQ(8176, stats.getTotalIndexSize());
 	EXPECT_EQ(collection, stats.getCollection());
