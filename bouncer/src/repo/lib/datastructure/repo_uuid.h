@@ -18,13 +18,11 @@
 #pragma once
 
 #include <boost/uuid/uuid.hpp>
+#include "../../core/model/bson/repo_bson_element.h"
 
 namespace repo{
 	namespace lib{
-		struct RepoUUIDHasher
-		{
-			std::size_t operator()(const RepoUUID& uid) const;
-		};
+
 		class RepoUUID
 		{
 		public:
@@ -32,10 +30,21 @@ namespace repo{
 			RepoUUID(const boost::uuids::uuid &id) : id(id) {}
 
 			RepoUUID(const RepoUUID &other) : id(other.id) {}
+			
 
 			RepoUUID(const std::string &stringRep = defaultValue);
 
 			static RepoUUID createUUID();
+			static RepoUUID fromBSONElement(const repo::core::model::RepoBSONElement &ele);
+
+			/**
+			* Get the underlying binary data from the UUID
+			* @returns the UUID in binary format
+			*/
+			std::vector<uint8_t> data() const { return std::vector<uint8_t>(std::begin(id.data), std::end(id.data));  }
+
+			size_t getHash() const;
+
 
 			/**
 			* Converts a RepoUUID to string
@@ -43,12 +52,44 @@ namespace repo{
 			*/
 			std::string toString() const;
 
-			const static std::string defaultValue;
+			static const std::string defaultValue;
 
-		private:
+			RepoUUID& operator=(const RepoUUID& uuid);
+
+
 			const boost::uuids::uuid id;
 		};
 
-		std::ostream& operator<<(std::ostream& stream, const RepoUUID& uuid);
+		
+		inline std::ostream& operator<<(std::ostream& stream, const RepoUUID& uuid)
+		{
+			stream << uuid.toString();
+			return stream;
+		}
+
+		inline bool operator==(const RepoUUID& id1, const RepoUUID& id2)
+		{
+			return id1.id == id2.id;
+		}
+
+		inline bool operator!=(const RepoUUID& id1, const RepoUUID& id2)
+		{
+			return !(id1.id == id2.id);
+		}
+
+		inline bool operator>(const RepoUUID& id1, const RepoUUID& id2)
+		{
+			return id1.id > id2.id;
+		}
+
+		inline bool operator<(const RepoUUID& id1, const RepoUUID& id2)
+		{
+			return id1.id < id2.id;
+		}
+
+		struct RepoUUIDHasher
+		{
+			std::size_t operator()(const RepoUUID& uid) const;
+		};
 	}
 }

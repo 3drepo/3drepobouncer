@@ -20,6 +20,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/algorithm/string/replace.hpp>
+#include <boost/lexical_cast.hpp>
 //#include <boost/property_tree/json_parser.hpp>
 #include "json_parser.h"
 #include "../core/model/repo_node_utils.h"
@@ -266,9 +267,9 @@ namespace repo{
 			const std::string           &value);
 
 		template <>
-		void PropertyTree::addToTree<repoUUID>(
+		void PropertyTree::addToTree<repo::lib::RepoUUID>(
 			const std::string           &label,
-			const repoUUID              &value);
+			const repo::lib::RepoUUID              &value);
 
 		template <>
 		void PropertyTree::addToTree(

@@ -137,9 +137,9 @@ std::vector<uint16_t> MeshMapReorganiser::getSerialisedFaces() const {
 	return reMapSuccess ? serialisedFaces : std::vector<uint16_t>();
 }
 
-std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher>
+std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher>
 MeshMapReorganiser::getSplitMapping() const {
-	return reMapSuccess ? splitMap : std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher>();
+	return reMapSuccess ? splitMap : std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher>();
 }
 
 repo::core::model::MeshNode MeshMapReorganiser::getRemappedMesh() const
@@ -191,7 +191,7 @@ bool MeshMapReorganiser::performSplitting()
 	std::vector<float> bboxMax;
 
 	//Resources
-	repoUUID superMeshID = mesh->getUniqueID();
+	repo::lib::RepoUUID superMeshID = mesh->getUniqueID();
 
 	repoTrace << "Performing splitting on mesh: " << mesh->getUniqueID();
 	size_t nMappings = orgMappings.size();
@@ -524,8 +524,8 @@ bool MeshMapReorganiser::splitLargeMesh(
 
 void MeshMapReorganiser::startSubMesh(
 	repo_mesh_mapping_t &mapping,
-	const repoUUID      &meshID,
-	const repoUUID      &matID,
+	const repo::lib::RepoUUID      &meshID,
+	const repo::lib::RepoUUID      &matID,
 	const size_t        &sVertices,
 	const size_t        &sFaces
 	)

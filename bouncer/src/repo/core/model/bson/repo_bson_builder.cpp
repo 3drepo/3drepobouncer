@@ -13,9 +13,10 @@ RepoBSONBuilder::~RepoBSONBuilder()
 
 void RepoBSONBuilder::appendUUID(
 	const std::string &label,
-	const repoUUID &uuid)
+	const repo::lib::RepoUUID &uuid)
 {
-	appendBinData(label, uuid.size(), mongo::bdtUUID, (char*)uuid.data);
+	auto uuidData = uuid.data();
+	appendBinData(label, uuidData.size(), mongo::bdtUUID, (char*)uuidData.data());
 }
 
 void RepoBSONBuilder::appendArrayPair(
@@ -49,10 +50,10 @@ RepoBSON RepoBSONBuilder::obj()
 	return RepoBSON(mongo::BSONObjBuilder::obj());
 }
 
-template<> void repo::core::model::RepoBSONBuilder::append < repoUUID >
+template<> void repo::core::model::RepoBSONBuilder::append < repo::lib::RepoUUID >
 	(
 		const std::string &label,
-		const repoUUID &uuid
+		const repo::lib::RepoUUID &uuid
 		)
 {
 	appendUUID(label, uuid);

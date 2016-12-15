@@ -51,7 +51,7 @@ repo::lib::PropertyTree AbstractSpatialPartitioner::generatePropertyTreeForParti
 
 			for (const auto &mesh : spTree->meshes)
 			{
-				std::string idString = UUIDtoString(mesh.id);
+				std::string idString = mesh.id.toString();
 				repo::lib::PropertyTree childTree;
 				childTree.addToTree("min", mesh.min);
 				childTree.addToTree("max", mesh.max);

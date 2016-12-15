@@ -359,7 +359,7 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 	const aiMesh *assimpMesh,
 	const std::vector<repo::core::model::RepoNode *> &materials,
-	std::unordered_map < repo::core::model::RepoNode*, std::vector<repoUUID>> &matMap,
+	std::unordered_map < repo::core::model::RepoNode*, std::vector<repo::lib::RepoUUID>> &matMap,
 	const bool hasTexture,
 	const std::vector<double> &offset)
 {
@@ -548,7 +548,7 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 	const aiMetadata             *assimpMeta,
 	const std::string            &metadataName,
-	const std::vector<repoUUID> &parents)
+	const std::vector<repo::lib::RepoUUID> &parents)
 {
 	repo::core::model::MetadataNode *metaNode;
 	std::string val;
@@ -620,13 +620,13 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 	const aiNode                                                     *assimpNode,
 	const std::unordered_map<std::string, repo::core::model::RepoNode *> &cameras,
 	const std::vector<repo::core::model::RepoNode>           &meshes,
-	const std::unordered_map<repoUUID, repo::core::model::RepoNode *, RepoUUIDHasher>    &meshToMat,
-	std::unordered_map<repo::core::model::RepoNode *, std::vector<repoUUID>> &matParents,
+	const std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode *, repo::lib::RepoUUIDHasher>    &meshToMat,
+	std::unordered_map<repo::core::model::RepoNode *, std::vector<repo::lib::RepoUUID>> &matParents,
 	repo::core::model::RepoNodeSet			                 &newMeshes,
 	repo::core::model::RepoNodeSet						     &metadata,
 	uint32_t                                               &count,
 	const std::vector<double>                                &worldOffset,
-	const std::vector<repoUUID>						             &parent
+	const std::vector<repo::lib::RepoUUID>						             &parent
 
 	)
 {
@@ -663,8 +663,8 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 			new repo::core::model::TransformationNode(
 			repo::core::model::RepoBSONFactory::makeTransformationNode(transMat, transName, parent));
 
-		repoUUID sharedId = transNode->getSharedID();
-		std::vector<repoUUID> myShareID;
+		repo::lib::RepoUUID sharedId = transNode->getSharedID();
+		std::vector<repo::lib::RepoUUID> myShareID;
 		myShareID.push_back(sharedId);
 
 		//--------------------------------------------------------------------------
@@ -742,8 +742,8 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 		repo::core::model::RepoNodeSet textures;
 
 		std::vector<repo::core::model::RepoNode *> originalOrderMaterial; //vector that keeps track original order for assimp indices
-		std::unordered_map<repo::core::model::RepoNode *, std::vector<repoUUID>> matParents;//Tracks material parents
-		std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> meshToMat;
+		std::unordered_map<repo::core::model::RepoNode *, std::vector<repo::lib::RepoUUID>> matParents;//Tracks material parents
+		std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> meshToMat;
 		std::vector<repo::core::model::RepoNode> originalOrderMesh; //vector that keeps track original order for assimp indices
 		std::unordered_map<std::string, repo::core::model::RepoNode *> camerasMap;
 		std::unordered_map<std::string, repo::core::model::RepoNode *> nameToTexture;
@@ -868,9 +868,9 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 				}
 
 				originalOrderMaterial.push_back(material);
-				std::pair<repo::core::model::RepoNode *, std::vector<repoUUID>> a;
+				std::pair<repo::core::model::RepoNode *, std::vector<repo::lib::RepoUUID>> a;
 				a.first = material;
-				a.second = std::vector<repoUUID>();
+				a.second = std::vector<repo::lib::RepoUUID>();
 				matParents.insert(a);
 			}
 		}
@@ -1023,17 +1023,17 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 }
 
 repo::core::model::RepoNode* AssimpModelImport::duplicateMesh(
-	repoUUID                    &newParent,
+	repo::lib::RepoUUID                    &newParent,
 	repo::core::model::RepoNode &mesh,
-	const std::unordered_map<repoUUID, repo::core::model::RepoNode *, RepoUUIDHasher>    &meshToMat,
-	std::unordered_map<repo::core::model::RepoNode *, std::vector<repoUUID>> &matParents)
+	const std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode *, repo::lib::RepoUUIDHasher>    &meshToMat,
+	std::unordered_map<repo::core::model::RepoNode *, std::vector<repo::lib::RepoUUID>> &matParents)
 {
 	auto newMesh = new repo::core::model::MeshNode(mesh.cloneAndAddParent(newParent, true, true, true));
 	auto it = meshToMat.find(mesh.getSharedID());
 	if (it != meshToMat.end() && it->second)
 	{
 		if (matParents.find(it->second) == matParents.end())
-			matParents[it->second] = std::vector<repoUUID>();
+			matParents[it->second] = std::vector<repo::lib::RepoUUID>();
 
 		matParents[it->second].push_back(newMesh->getSharedID());
 	}

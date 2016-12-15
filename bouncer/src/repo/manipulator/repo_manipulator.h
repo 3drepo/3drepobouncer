@@ -269,7 +269,7 @@ namespace repo{
 				const repo::core::model::RepoBSON             *cred,
 				const std::string                             &database,
 				const std::string                             &collection,
-				const repoUUID                                &uuid,
+				const repo::lib::RepoUUID                                &uuid,
 				const bool                                    &headRevision = false,
 				const bool                                    &lightFetch = false);
 

@@ -81,7 +81,7 @@ namespace repo{
 				bool generateJSONMapping(
 					const repo::core::model::MeshNode *mesh,
 					const repo::core::model::RepoScene *scene,
-					const std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> &splitMapping);
+					const std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> &splitMapping);
 
 				/**
 				* Create a tree representation for the graph

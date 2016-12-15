@@ -147,10 +147,10 @@ namespace repo {
 				static RepoBSON appendDefaults(
 					const std::string &type,
 					const unsigned int api = REPO_NODE_API_LEVEL_0,
-					const repoUUID &sharedId = generateUUID(),
+					const repo::lib::RepoUUID &sharedId = repo::lib::RepoUUID::createUUID(),
 					const std::string &name = std::string(),
-					const std::vector<repoUUID> &parents = std::vector<repoUUID>(),
-					const repoUUID &uniqueID = generateUUID());
+					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>(),
+					const repo::lib::RepoUUID &uniqueID = repo::lib::RepoUUID::createUUID());
 
 				/**
 				* Create a Camera Node
@@ -201,7 +201,7 @@ namespace repo {
 					RepoBSON			         &metadata,
 					const std::string            &mimeType = std::string(),
 					const std::string            &name = std::string(),
-					const std::vector<repoUUID> &parents = std::vector<repoUUID>(),
+					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>(),
 					const int                    &apiLevel = REPO_NODE_API_LEVEL_1);
 
 				/**
@@ -217,7 +217,7 @@ namespace repo {
 					const std::vector<std::string>  &keys,
 					const std::vector<std::string>  &values,
 					const std::string               &name = std::string(),
-					const std::vector<repoUUID>     &parents = std::vector<repoUUID>(),
+					const std::vector<repo::lib::RepoUUID>     &parents = std::vector<repo::lib::RepoUUID>(),
 					const int                       &apiLevel = REPO_NODE_API_LEVEL_1);
 				/**
 				* Create a Mesh Node
@@ -256,7 +256,7 @@ namespace repo {
 				static ReferenceNode makeReferenceNode(
 					const std::string &database,
 					const std::string &project,
-					const repoUUID    &revisionID = stringToUUID(REPO_HISTORY_MASTER_BRANCH),
+					const repo::lib::RepoUUID    &revisionID = repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH),
 					const bool        &isUniqueID = false,
 					const std::string &name = std::string(),
 					const int         &apiLevel = REPO_NODE_API_LEVEL_1);
@@ -280,13 +280,13 @@ namespace repo {
 
 				static RevisionNode makeRevisionNode(
 					const std::string			   &user,
-					const repoUUID                 &branch,
-					const std::vector<repoUUID>    &currentNodes,
-					//const std::vector<repoUUID>    &added,
-					//const std::vector<repoUUID>    &removed,
-					//const std::vector<repoUUID>    &modified,
+					const repo::lib::RepoUUID                 &branch,
+					const std::vector<repo::lib::RepoUUID>    &currentNodes,
+					//const std::vector<repo::lib::RepoUUID>    &added,
+					//const std::vector<repo::lib::RepoUUID>    &removed,
+					//const std::vector<repo::lib::RepoUUID>    &modified,
 					const std::vector<std::string> &files = std::vector<std::string>(),
-					const std::vector<repoUUID>    &parent = std::vector<repoUUID>(),
+					const std::vector<repo::lib::RepoUUID>    &parent = std::vector<repo::lib::RepoUUID>(),
 					const std::vector<double>       &worldOffset = std::vector<double>(),
 					const std::string              &message = std::string(),
 					const std::string              &tag = std::string(),
@@ -322,7 +322,7 @@ namespace repo {
 				static TransformationNode makeTransformationNode(
 					const std::vector<std::vector<float>> &transMatrix = TransformationNode::identityMat(),
 					const std::string                     &name = "<transformation>",
-					const std::vector<repoUUID>		      &parents = std::vector<repoUUID>(),
+					const std::vector<repo::lib::RepoUUID>		      &parents = std::vector<repo::lib::RepoUUID>(),
 					const int                             &apiLevel = REPO_NODE_API_LEVEL_1);
 			};
 		} //namespace model

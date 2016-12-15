@@ -110,25 +110,25 @@ namespace repo {
 				* Get a list of current IDs for this revision
 				* @return returns a vector of unique IDs.
 				*/
-				std::vector<repoUUID> getCurrentIDs() const;
+				std::vector<repo::lib::RepoUUID> getCurrentIDs() const;
 
 				///**
 				//* Get a list of IDs of nodes which were Added for this revision
 				//* @return returns a vector of shared IDs.
 				//*/
-				//std::vector<repoUUID> getAddedIDs() const;
+				//std::vector<repo::lib::RepoUUID> getAddedIDs() const;
 
 				///**
 				//* Get a list of IDs of nodes which were deleted for this revision
 				//* @return returns a vector of shared IDs.
 				//*/
-				//std::vector<repoUUID> getDeletedIDs() const;
+				//std::vector<repo::lib::RepoUUID> getDeletedIDs() const;
 
 				///**
 				//* Get a list of IDs of nodes which were modified for this revision
 				//* @return returns a vector of shared IDs.
 				//*/
-				//std::vector<repoUUID> getModifiedIDs() const;
+				//std::vector<repo::lib::RepoUUID> getModifiedIDs() const;
 
 				/**
 				* Get the message commited with the revision

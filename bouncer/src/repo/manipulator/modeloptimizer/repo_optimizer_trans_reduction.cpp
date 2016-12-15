@@ -120,9 +120,9 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 			dynamic_cast<repo::core::model::TransformationNode*>(transParents[0]);
 		if (trans)
 		{
-			repoUUID parentUniqueID = trans->getUniqueID();
-			repoUUID parentSharedID = trans->getSharedID();
-			repoUUID rootUniqueID = scene->getRoot(gType)->getUniqueID();
+			repo::lib::RepoUUID parentUniqueID = trans->getUniqueID();
+			repo::lib::RepoUUID parentSharedID = trans->getSharedID();
+			repo::lib::RepoUUID rootUniqueID = scene->getRoot(gType)->getUniqueID();
 			bool isRoot = parentUniqueID == rootUniqueID;
 			bool isIdentity = trans->isIdentity();
 			if (!isRoot)
@@ -165,8 +165,8 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 
 						if (granTrans)
 						{
-							repoUUID granSharedID = granTrans->getSharedID();
-							repoUUID meshSharedID = mesh->getSharedID();
+							repo::lib::RepoUUID granSharedID = granTrans->getSharedID();
+							repo::lib::RepoUUID meshSharedID = mesh->getSharedID();
 
 							//Disconnect grandparent from parent
 							scene->abandonChild(gType,
@@ -233,9 +233,9 @@ void TransformationReductionOptimizer::applyOptimOnCamera(
 			dynamic_cast<repo::core::model::TransformationNode*>(transParents[0]);
 		if (trans)
 		{
-			repoUUID parentUniqueID = trans->getUniqueID();
-			repoUUID parentSharedID = trans->getSharedID();
-			repoUUID rootUniqueID = scene->getRoot(gType)->getUniqueID();
+			repo::lib::RepoUUID parentUniqueID = trans->getUniqueID();
+			repo::lib::RepoUUID parentSharedID = trans->getSharedID();
+			repo::lib::RepoUUID rootUniqueID = scene->getRoot(gType)->getUniqueID();
 			bool isRoot = parentUniqueID == rootUniqueID;
 			bool isIdentity = trans->isIdentity();
 			if (!isRoot)
@@ -260,8 +260,8 @@ void TransformationReductionOptimizer::applyOptimOnCamera(
 
 					if (granTrans)
 					{
-						repoUUID granSharedID = granTrans->getSharedID();
-						repoUUID camSharedID = camera->getSharedID();
+						repo::lib::RepoUUID granSharedID = granTrans->getSharedID();
+						repo::lib::RepoUUID camSharedID = camera->getSharedID();
 						//Disconnect grandparent from parent
 						scene->abandonChild(gType,
 							granSharedID, trans, true, false);

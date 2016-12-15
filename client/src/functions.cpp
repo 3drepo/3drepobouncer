@@ -265,7 +265,7 @@ int32_t generateFederation(
 
 				std::string nodeNames = spDatabase + ":" + spProject;
 				auto transNode = repo::core::model::RepoBSONFactory::makeTransformationNode(matrix, nodeNames);
-				auto refNode = repo::core::model::RepoBSONFactory::makeReferenceNode(spDatabase, spProject, stringToUUID(uuid), isRevID, nodeNames);
+				auto refNode = repo::core::model::RepoBSONFactory::makeReferenceNode(spDatabase, spProject, repo::lib::RepoUUID(uuid), isRevID, nodeNames);
 				refMap[transNode] = refNode;
 			}
 

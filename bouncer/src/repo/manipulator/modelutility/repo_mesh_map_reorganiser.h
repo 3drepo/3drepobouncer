@@ -64,7 +64,7 @@ namespace repo{
 				* Get the mapping between submeshes UUID to new super mesh index
 				* @return sub mesh to super mesh(es) mapping
 				*/
-				std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> getSplitMapping() const;
+				std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> getSplitMapping() const;
 
 			private:
 				/**
@@ -130,8 +130,8 @@ namespace repo{
 				*/
 				void startSubMesh(
 					repo_mesh_mapping_t &mapping,
-					const repoUUID      &meshID,
-					const repoUUID      &matID,
+					const repo::lib::RepoUUID      &meshID,
+					const repo::lib::RepoUUID      &matID,
 					const size_t        &sVertices,
 					const size_t        &sFaces
 					);
@@ -177,7 +177,7 @@ namespace repo{
 				std::vector<uint16_t> serialisedFaces;
 
 				std::vector<std::vector<float>> idMapBuf;
-				std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> splitMap;
+				std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> splitMap;
 				std::vector<std::vector<repo_mesh_mapping_t>> matMap;
 				std::vector<repo_mesh_mapping_t> reMappedMappings;
 			};

@@ -105,9 +105,9 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 	repo::core::model::RepoNodeSet                &textNodes,
 	const repo::core::model::RepoScene::GraphType &gType)
 {
-	std::unordered_map<repoUUID, aiMesh*, RepoUUIDHasher>     meshMap;
-	std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher> matMap;
-	std::unordered_map<repoUUID, aiCamera*, RepoUUIDHasher>   camMap;
+	std::unordered_map<repo::lib::RepoUUID, aiMesh*, repo::lib::RepoUUIDHasher>     meshMap;
+	std::unordered_map<repo::lib::RepoUUID, aiMaterial*, repo::lib::RepoUUIDHasher> matMap;
+	std::unordered_map<repo::lib::RepoUUID, aiCamera*, repo::lib::RepoUUIDHasher>   camMap;
 
 	return constructAiSceneRecursively(scene, currNode, meshVec, matVec, camVec,
 		meshMap, matMap, camMap, textNodes, gType);
@@ -119,9 +119,9 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 	std::vector<aiMesh*>                                      &meshVec,
 	std::vector<aiMaterial*>                                  &matVec,
 	std::vector<aiCamera*>                                    &camVec,
-	std::unordered_map<repoUUID, aiMesh*, RepoUUIDHasher>     &meshMap,
-	std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher> &matMap,
-	std::unordered_map<repoUUID, aiCamera*, RepoUUIDHasher>   &camMap,
+	std::unordered_map<repo::lib::RepoUUID, aiMesh*, repo::lib::RepoUUIDHasher>     &meshMap,
+	std::unordered_map<repo::lib::RepoUUID, aiMaterial*, repo::lib::RepoUUIDHasher> &matMap,
+	std::unordered_map<repo::lib::RepoUUID, aiCamera*, repo::lib::RepoUUIDHasher>   &camMap,
 	repo::core::model::RepoNodeSet                            &textNodes,
 	const repo::core::model::RepoScene::GraphType             &gType)
 {
@@ -165,7 +165,7 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 				std::vector<uint32_t> meshIndices;
 				for (const auto & child : scene->getChildrenAsNodes(gType, currNode->getSharedID()))
 				{
-					repoUUID childSharedID = child->getSharedID();
+					repo::lib::RepoUUID childSharedID = child->getSharedID();
 
 					//==================MESH============================
 					switch (child->getTypeAsEnum())
@@ -409,7 +409,7 @@ aiMesh* AssimpModelExport::convertMesh(
 	const repo::core::model::RepoScene                        *scene,
 	const repo::core::model::MeshNode                         *meshNode,
 	std::vector<aiMaterial*>                                  &matVec,
-	std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher> &matMap,
+	std::unordered_map<repo::lib::RepoUUID, aiMaterial*, repo::lib::RepoUUIDHasher> &matMap,
 	repo::core::model::RepoNodeSet                            &textNodes,
 	const repo::core::model::RepoScene::GraphType             &gType)
 {

@@ -38,7 +38,7 @@ bool SceneCleaner::cleanUpRevision(
 	bool success = false;
 	repo::core::model::RevisionNode::UploadStatus status = revNode.getUploadStatus();
 	repo::core::model::RepoScene *scene = nullptr;
-	repoUUID revID = revNode.getUniqueID();
+	repo::lib::RepoUUID revID = revNode.getUniqueID();
 	SceneManager manager;
 	switch (status)
 	{

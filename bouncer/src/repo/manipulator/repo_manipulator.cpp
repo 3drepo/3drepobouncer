@@ -383,7 +383,7 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 	const repo::core::model::RepoBSON             *cred,
 	const std::string                             &database,
 	const std::string                             &project,
-	const repoUUID                                &uuid,
+	const repo::lib::RepoUUID                                &uuid,
 	const bool                                    &headRevision,
 	const bool                                    &lightFetch)
 {

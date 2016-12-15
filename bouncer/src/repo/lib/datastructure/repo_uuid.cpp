@@ -28,7 +28,7 @@ using namespace repo::lib;
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
-const std::string defaultValue = "00000000-0000-0000-0000-000000000000";
+const std::string RepoUUID::defaultValue = "00000000-0000-0000-0000-000000000000";
 
 /*!
 * Returns a valid uuid representation of a given string. If empty, returns
@@ -48,7 +48,7 @@ static boost::uuids::uuid stringToUUID(
 {
 	boost::uuids::uuid uuid;
 	if (text.empty())
-		return stringToUUID(defaultValue);
+		return stringToUUID(RepoUUID::defaultValue);
 	else
 	{
 		try
@@ -79,9 +79,15 @@ static boost::uuids::uuid stringToUUID(
 	return uuid;
 }
 
+size_t RepoUUID::getHash() const
+{
+	return boost::hash<boost::uuids::uuid>()(id);
+}
+
+
 size_t RepoUUIDHasher::operator()(const RepoUUID& uid) const
 {
-	return boost::hash<boost::uuids::uuid>()(uid);
+	return uid.getHash();
 }
 
 RepoUUID::RepoUUID(const std::string &stringRep)
@@ -89,7 +95,26 @@ RepoUUID::RepoUUID(const std::string &stringRep)
 {
 }
 
-RepoUUID createUUID()
+RepoUUID RepoUUID::fromBSONElement(const repo::core::model::RepoBSONElement &ele)
+{
+	boost::uuids::uuid id;
+	
+	if (ele.type() == repo::core::model::ElementType::UUID)
+	{
+		int len = static_cast<int>(ele.size() * sizeof(uint8_t));
+		const char *binData = ele.binData(len);
+		memcpy(id.data, binData, len);
+		return RepoUUID(id);
+	}
+	else
+	{
+		repoError << "Field  is not of type UUID! Bin data: " << (int)ele.type() << " enum: " << ((ele.type() == repo::core::model::ElementType::UUID) ? (int)ele.binDataType() : 0);
+		return createUUID();  // failsafe
+	}
+
+}
+
+RepoUUID RepoUUID::createUUID()
 {
 	static boost::uuids::random_generator gen;
 	return RepoUUID(gen());
@@ -100,7 +125,9 @@ std::string RepoUUID::toString() const
 	return boost::lexical_cast<std::string>(id);
 }
 
-std::ostream& operator<<(std::ostream& stream, const RepoUUID& uuid)
+RepoUUID& RepoUUID::operator =(const RepoUUID& uuid)
 {
-	stream << uuid.toString();
+	*this = RepoUUID(uuid.id);
+	return *this;
+
 }

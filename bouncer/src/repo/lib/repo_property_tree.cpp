@@ -97,11 +97,11 @@ void PropertyTree::addToTree<std::string>(
 }
 
 template <>
-void PropertyTree::addToTree<repoUUID>(
+void PropertyTree::addToTree<repo::lib::RepoUUID>(
 	const std::string          &label,
-	const repoUUID             &value)
+	const repo::lib::RepoUUID             &value)
 {
-	addToTree(label, boost::lexical_cast<std::string>(value));
+	addToTree(label, value.toString());
 }
 
 template <>

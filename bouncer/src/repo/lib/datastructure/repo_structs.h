@@ -32,7 +32,7 @@ struct repo_mesh_entry_t
 	std::vector<float> min;
 	std::vector<float> max;
 	std::vector<float> mid;// midpoint
-	repoUUID      id;
+	repo::lib::RepoUUID      id;
 
 	repo_mesh_entry_t() :mid({ 0, 0, 0 })
 	{
@@ -74,7 +74,7 @@ struct repo_partitioning_tree_t{
 };
 
 struct repo_diff_result_t{
-	std::vector<repoUUID> added; //nodes that does not exist on the other model
-	std::vector<repoUUID> modified; //nodes that exist on the other model but it is modified.
-	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher > correspondence;
+	std::vector<repo::lib::RepoUUID> added; //nodes that does not exist on the other model
+	std::vector<repo::lib::RepoUUID> modified; //nodes that exist on the other model but it is modified.
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher > correspondence;
 };

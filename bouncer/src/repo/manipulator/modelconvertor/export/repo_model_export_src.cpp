@@ -185,7 +185,7 @@ repo_web_buffers_t SRCModelExport::getAllFilesExportedAsBuffer() const
 bool SRCModelExport::generateJSONMapping(
 	const repo::core::model::MeshNode  *mesh,
 	const repo::core::model::RepoScene *scene,
-	const std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> &splitMapping)
+	const std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> &splitMapping)
 {
 	bool success;
 	if (success = mesh)
@@ -208,7 +208,7 @@ bool SRCModelExport::generateJSONMapping(
 		{
 			repo::lib::PropertyTree matTree;
 			const repo::core::model::MaterialNode *matNode = (const repo::core::model::MaterialNode *) matChild[i];
-			matTree.addToTree(MP_LABEL_NAME, UUIDtoString(matNode->getUniqueID()));
+			matTree.addToTree(MP_LABEL_NAME, matNode->getUniqueID().toString());
 			repo_material_t matStruct = matNode->getMaterialStruct();
 
 			if (matStruct.diffuse.size())
@@ -232,7 +232,7 @@ bool SRCModelExport::generateJSONMapping(
 		jsonTree.addArrayObjects(MP_LABEL_APPEARANCE, matChildrenTrees);
 
 		std::vector<repo::lib::PropertyTree> mappingTrees;
-		std::string meshUID = UUIDtoString(mesh->getUniqueID());
+		std::string meshUID = mesh->getUniqueID().toString();
 		//Could get the mesh split function to pass a mapping out so we don't do this again.
 		for (size_t i = 0; i < mappingLength; ++i)
 		{
@@ -243,8 +243,8 @@ bool SRCModelExport::generateJSONMapping(
 				{
 					repo::lib::PropertyTree mappingTree;
 
-					mappingTree.addToTree(MP_LABEL_NAME, UUIDtoString(mappings[i].mesh_id));
-					mappingTree.addToTree(MP_LABEL_APPEARANCE, UUIDtoString(mappings[i].material_id));
+					mappingTree.addToTree(MP_LABEL_NAME, mappings[i].mesh_id.toString());
+					mappingTree.addToTree(MP_LABEL_APPEARANCE, mappings[i].material_id.toString());
 					mappingTree.addToTree(MP_LABEL_MIN, mappings[i].min);
 					mappingTree.addToTree(MP_LABEL_MAX, mappings[i].max);
 					std::vector<std::string> usageArr = { meshUID + "_" + std::to_string(subMeshID) };
@@ -255,13 +255,13 @@ bool SRCModelExport::generateJSONMapping(
 			}
 			else
 			{
-				repoError << "Failed to find split mapping for id: " << UUIDtoString(mappings[i].mesh_id);
+				repoError << "Failed to find split mapping for id: " << mappings[i].mesh_id;
 			}
 		}
 
 		jsonTree.addArrayObjects(MP_LABEL_MAPPING, mappingTrees);
 
-		std::string jsonFileName = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + UUIDtoString(mesh->getUniqueID()) + ".json.mpc";
+		std::string jsonFileName = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + mesh->getUniqueID().toString() + ".json.mpc";
 
 		jsonTrees[jsonFileName] = jsonTree;
 	}
@@ -299,7 +299,7 @@ bool SRCModelExport::generateTreeRepresentation(
 			{
 				std::vector<uint16_t> facebuf = reSplitter->getSerialisedFaces();
 				std::vector<std::vector<float>> idMapBuf = reSplitter->getIDMapArrays();
-				std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> splitMapping = reSplitter->getSplitMapping();
+				std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> splitMapping = reSplitter->getSplitMapping();
 				delete reSplitter;
 
 				std::string ext = ".src";
@@ -377,7 +377,7 @@ bool SRCModelExport::addMeshToExport(
 	size_t uvWritePosition = bufPos;
 	size_t nSubMeshes = mapping.size();
 
-	std::string meshId = UUIDtoString(mesh.getUniqueID());
+	std::string meshId = mesh.getUniqueID().toString();
 
 	repo::lib::PropertyTree tree;
 	size_t lastV = 0, lastF = 0;

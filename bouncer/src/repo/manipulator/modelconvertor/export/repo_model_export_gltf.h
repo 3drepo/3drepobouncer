@@ -256,7 +256,7 @@ namespace repo{
 				void processNodeChildren(
 					const repo::core::model::RepoNode *node,
 					repo::lib::PropertyTree          &tree,
-					const std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> &subMeshCounts
+					const std::unordered_map<repo::lib::RepoUUID, uint32_t, repo::lib::RepoUUIDHasher> &subMeshCounts
 					);
 
 				/**
@@ -276,7 +276,7 @@ namespace repo{
 				/**
 				* @param tree tree to populate
 				*/
-				std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher>
+				std::unordered_map<repo::lib::RepoUUID, uint32_t, repo::lib::RepoUUIDHasher>
 					populateWithMeshes(
 					repo::lib::PropertyTree           &tree);
 
@@ -293,7 +293,7 @@ namespace repo{
 				*/
 				void populateWithNodes(
 					repo::lib::PropertyTree          &tree,
-					const std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> &subMeshCounts);
+					const std::unordered_map<repo::lib::RepoUUID, uint32_t, repo::lib::RepoUUIDHasher> &subMeshCounts);
 
 				std::vector<std::vector<std::vector<uint16_t>>> reorderFaces(
 					std::vector<uint16_t>                               &faces,

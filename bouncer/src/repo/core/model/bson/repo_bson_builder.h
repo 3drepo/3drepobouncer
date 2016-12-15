@@ -152,14 +152,14 @@ namespace repo {
 				*/
 				void appendUUID(
 					const std::string &label,
-					const repoUUID &uuid);
+					const repo::lib::RepoUUID &uuid);
 			};
 
 			// Template specialization
-			template<> void RepoBSONBuilder::append < repoUUID >
+			template<> void RepoBSONBuilder::append < repo::lib::RepoUUID >
 				(
 					const std::string &label,
-					const repoUUID &uuid
+					const repo::lib::RepoUUID &uuid
 					);
 
 				template<> void RepoBSONBuilder::append < repo_vector_t >

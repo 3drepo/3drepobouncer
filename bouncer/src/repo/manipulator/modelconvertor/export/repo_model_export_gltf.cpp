@@ -493,7 +493,7 @@ bool GLTFModelExport::constructScene(
 	{
 		std::string sceneName = "defaultScene";
 		tree.addToTree(GLTF_LABEL_SCENE, sceneName);
-		std::vector<std::string> treeNodes = { UUIDtoString(root->getUniqueID()) };
+		std::vector<std::string> treeNodes = { root->getUniqueID().toString() };
 		tree.addToTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_NODES, treeNodes);
 
 		auto splitMeshes = populateWithMeshes(tree);
@@ -511,7 +511,7 @@ bool GLTFModelExport::constructScene(
 #else
 			std::string jsonFilePrefix = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/";
 #endif
-			std::string jsonFileName = jsonFilePrefix + "revision/" + UUIDtoString(scene->getRevisionID()) + "/partitioning.json";
+			std::string jsonFileName = jsonFilePrefix + "revision/" + scene->getRevisionID().toString() + "/partitioning.json";
 			tree.addToTree(GLTF_LABEL_SCENES + ".defaultScene." + GLTF_LABEL_EXTRA + ".partitioning." + GLTF_LABEL_URI, "/api" + jsonFileName);
 
 			jsonTrees[jsonFileName] = spatialPartTree;
@@ -552,7 +552,7 @@ bool GLTFModelExport::generateTreeRepresentation()
 	success = constructScene(tree);
 	writeBuffers(tree);
 
-	std::string fname = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/revision/" + UUIDtoString(scene->getRevisionID()) + ".gltf";
+	std::string fname = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/revision/" + scene->getRevisionID().toString() + ".gltf";
 	trees[fname] = tree;
 
 	return success;
@@ -672,7 +672,7 @@ bool GLTFModelExport::reIndexFaces(
 void GLTFModelExport::processNodeChildren(
 	const repo::core::model::RepoNode                            *node,
 	repo::lib::PropertyTree                                      &tree,
-	const std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> &subMeshCounts
+	const std::unordered_map<repo::lib::RepoUUID, uint32_t, repo::lib::RepoUUIDHasher> &subMeshCounts
 	)
 {
 	std::vector<std::string> trans, meshes, cameras;
@@ -683,15 +683,15 @@ void GLTFModelExport::processNodeChildren(
 		switch (child->getTypeAsEnum())
 		{
 		case repo::core::model::NodeType::CAMERA:
-			cameras.push_back(UUIDtoString(child->getUniqueID()));
+			cameras.push_back(child->getUniqueID().toString());
 			break;
 		case repo::core::model::NodeType::MESH:
 		{
-			repoUUID meshId = child->getUniqueID();
+			repo::lib::RepoUUID meshId = child->getUniqueID();
 			auto meshIt = subMeshCounts.find(meshId);
 			if (meshIt != subMeshCounts.end())
 			{
-				std::string meshIdStr = UUIDtoString(meshId);
+				std::string meshIdStr = meshId.toString();
 				for (uint32_t i = 0; i < meshIt->second; ++i)
 				{
 					meshes.push_back(meshIdStr + "_" + std::to_string(i));
@@ -699,16 +699,16 @@ void GLTFModelExport::processNodeChildren(
 			}
 			else
 			{
-				meshes.push_back(UUIDtoString(child->getUniqueID()));
+				meshes.push_back(child->getUniqueID().toString());
 			}
 		}
 		break;
 		case repo::core::model::NodeType::TRANSFORMATION:
-			trans.push_back(UUIDtoString(child->getUniqueID()));
+			trans.push_back(child->getUniqueID().toString());
 			break;
 		}
 	}
-	std::string prefix = GLTF_LABEL_NODES + "." + UUIDtoString(node->getUniqueID()) + ".";
+	std::string prefix = GLTF_LABEL_NODES + "." + node->getUniqueID().toString() + ".";
 	//Add the children arrays into the node
 	if (trans.size())
 		tree.addToTree(prefix + GLTF_LABEL_CHILDREN, trans);
@@ -725,7 +725,7 @@ void GLTFModelExport::populateWithCameras(
 	for (const auto &cam : cameras)
 	{
 		const repo::core::model::CameraNode *node = (const repo::core::model::CameraNode *)cam;
-		const std::string label = GLTF_LABEL_CAMERAS + "." + UUIDtoString(node->getUniqueID());
+		const std::string label = GLTF_LABEL_CAMERAS + "." + node->getUniqueID().toString();
 		//All our viewpoints are perspective..?
 		tree.addToTree(label + "." + GLTF_LABEL_TYPE, GLTF_CAM_TYPE_PERSPECTIVE);
 		std::string name = node->getName();
@@ -752,7 +752,7 @@ void GLTFModelExport::populateWithMaterials(
 	{
 		const repo::core::model::MaterialNode *node = (const repo::core::model::MaterialNode *)mat;
 		repo_material_t matStruct = node->getMaterialStruct();
-		std::string matLabel = GLTF_LABEL_MATERIALS + "." + UUIDtoString(node->getUniqueID());
+		std::string matLabel = GLTF_LABEL_MATERIALS + "." + node->getUniqueID().toString();
 		tree.addToTree(matLabel + "." + GLTF_LABEL_TECHNIQUE, REPO_GLTF_DEFAULT_TECHNIQUE);
 
 		std::string valuesLabel = matLabel + "." + GLTF_LABEL_VALUES;
@@ -768,7 +768,7 @@ void GLTFModelExport::populateWithMaterials(
 		if (childrenNodes.size())
 		{
 			//should only ever have 1 texture to a material
-			tree.addToTree(valuesLabel + "." + GLTF_LABEL_DIFFUSE, UUIDtoString(childrenNodes[0]->getUniqueID()));
+			tree.addToTree(valuesLabel + "." + GLTF_LABEL_DIFFUSE, childrenNodes[0]->getUniqueID().toString());
 		}
 		else if (matStruct.diffuse.size())
 		{
@@ -825,17 +825,17 @@ void GLTFModelExport::populateWithMaterials(
 	}
 }
 
-std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populateWithMeshes(
+std::unordered_map<repo::lib::RepoUUID, uint32_t, repo::lib::RepoUUIDHasher> GLTFModelExport::populateWithMeshes(
 	repo::lib::PropertyTree           &tree)
 {
 	repo::core::model::RepoNodeSet meshes = scene->getAllMeshes(gType);
-	std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> splitSizes;
+	std::unordered_map<repo::lib::RepoUUID, uint32_t, repo::lib::RepoUUIDHasher> splitSizes;
 	for (const auto &mesh : meshes)
 	{
 		const repo::core::model::MeshNode *node = (const repo::core::model::MeshNode *)mesh;
 		const std::vector<repo_mesh_mapping_t> mappings = node->getMeshMapping();
 
-		std::string meshUUID = UUIDtoString(node->getUniqueID());
+		std::string meshUUID = node->getUniqueID().toString();
 
 		std::vector<repo_vector_t> normals;
 		std::vector<repo_vector_t> vertices = node->getVertices();
@@ -845,7 +845,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 		{
 			//This is a multipart mesh node, the mesh may be too big for
 			//webGL, split the mesh into sub meshes
-			std::string bufferFileName = UUIDtoString(mesh->getUniqueID());
+			std::string bufferFileName = mesh->getUniqueID().toString();
 			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter =
 				new repo::manipulator::modelutility::MeshMapReorganiser(node, GLTF_MAX_VERTEX_LIMIT);
 
@@ -1002,10 +1002,10 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 				//For each sub mesh...
 				for (const repo_mesh_mapping_t & meshMap : matMap[i])
 				{
-					std::string subMeshID = UUIDtoString(meshMap.mesh_id);
+					std::string subMeshID = meshMap.mesh_id.toString();
 
 					primitives.push_back(repo::lib::PropertyTree());
-					primitives.back().addToTree(GLTF_LABEL_MATERIAL, UUIDtoString(meshMap.material_id));
+					primitives.back().addToTree(GLTF_LABEL_MATERIAL, meshMap.material_id.toString());
 					primitives.back().addToTree(GLTF_LABEL_PRIMITIVE, GLTF_PRIM_TYPE_TRIANGLE);
 
 					std::string subMeshName = meshId + "_m" + std::to_string(count++);
@@ -1070,8 +1070,8 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			splitSizes[node->getUniqueID()] = 1;
 
 			bool hasMapping = mappings.size();
-			std::string meshId = hasMapping ? UUIDtoString(mappings[0].mesh_id) : UUIDtoString(node->getUniqueID());
-			std::string label = GLTF_LABEL_MESHES + "." + UUIDtoString(node->getUniqueID());
+			std::string meshId = (hasMapping ? mappings[0].mesh_id : node->getUniqueID()).toString();
+			std::string label = GLTF_LABEL_MESHES + "." + node->getUniqueID().toString();
 
 			repoTrace << "Generatinng GLTF entry for : " << label;
 			std::string name = node->getName();
@@ -1082,7 +1082,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			std::vector<uint16_t> sFaces = serialiseFaces(faces);
 
 			bool hasMat = false;
-			repoUUID matID;
+			repo::lib::RepoUUID matID;
 			if (hasMapping)
 			{
 				hasMat = true;
@@ -1143,7 +1143,7 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 					}
 				}
 #endif
-			std::string bufferFileName = UUIDtoString(scene->getRevisionID());
+			std::string bufferFileName = scene->getRevisionID().toString();
 
 			size_t vStart = addToDataBuffer(bufferFileName, vertices);
 			size_t nStart = addToDataBuffer(bufferFileName, vertices);
@@ -1168,11 +1168,11 @@ std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> GLTFModelExport::populate
 			std::vector<repo::lib::PropertyTree> primitives;
 			primitives.push_back(repo::lib::PropertyTree());
 
-			std::string binFileName = UUIDtoString(scene->getRevisionID());
+			std::string binFileName = scene->getRevisionID().toString();
 
 			if (hasMat)
 			{
-				primitives[0].addToTree(GLTF_LABEL_MATERIAL, UUIDtoString(matID));
+				primitives[0].addToTree(GLTF_LABEL_MATERIAL, matID.toString());
 				primitives[0].addToTree(GLTF_LABEL_PRIMITIVE, GLTF_PRIM_TYPE_TRIANGLE);
 
 				if (faces.size())
@@ -1232,7 +1232,7 @@ void GLTFModelExport::populateWithTextures(
 	for (const auto &texture : textures)
 	{
 		const repo::core::model::TextureNode *node = (const repo::core::model::TextureNode *)texture;
-		const std::string textureID = UUIDtoString(node->getUniqueID());
+		const std::string textureID = node->getUniqueID().toString();
 		const std::string label = GLTF_LABEL_TEXTURES + "." + textureID;
 		const std::string imageName = GLTF_PREFIX_TEXTURE + "_" + textureID;
 		tree.addToTree(label + "." + GLTF_LABEL_FORMAT, GLTF_FORMAT_RGBA);
@@ -1253,14 +1253,14 @@ void GLTFModelExport::populateWithTextures(
 
 void GLTFModelExport::populateWithNodes(
 	repo::lib::PropertyTree          &tree,
-	const std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> &subMeshCounts)
+	const std::unordered_map<repo::lib::RepoUUID, uint32_t, repo::lib::RepoUUIDHasher> &subMeshCounts)
 {
 	repo::core::model::RepoNodeSet trans = scene->getAllTransformations(gType);
 	for (const auto &tran : trans)
 	{
 		const repo::core::model::TransformationNode *node = (const repo::core::model::TransformationNode *)tran;
 		//add to list of nodes
-		std::string label = GLTF_LABEL_NODES + "." + UUIDtoString(node->getUniqueID());
+		std::string label = GLTF_LABEL_NODES + "." + node->getUniqueID().toString();
 		std::string name = node->getName();
 		if (!name.empty())
 			tree.addToTree(label + "." + GLTF_LABEL_NAME, node->getName());

@@ -28,18 +28,11 @@
 #include "../bson/repo_node_revision.h"
 #include "repo_graph_abstract.h"
 
-typedef std::unordered_map<repoUUID, std::vector<repo::core::model::RepoNode*>, RepoUUIDHasher > ParentMap;
+typedef std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::RepoNode*>, repo::lib::RepoUUIDHasher> ParentMap;
 
 namespace repo{
 	namespace core{
 		namespace model{
-			struct RepoUUIDHasher
-			{
-				std::size_t operator()(const repoUUID& uid) const
-				{
-					return boost::hash<boost::uuids::uuid>()(uid);
-				}
-			};
 
 			class REPO_API_EXPORT RepoScene : public AbstractGraph
 			{
@@ -57,10 +50,10 @@ namespace repo{
 
 					RepoNode *rootNode;
 					//! A lookup map for the all nodes the graph contains.
-					std::unordered_map<repoUUID, RepoNode*, RepoUUIDHasher > nodesByUniqueID;
-					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher > sharedIDtoUniqueID; //** mapping of shared ID to Unique ID
+					std::unordered_map<repo::lib::RepoUUID, RepoNode*, repo::lib::RepoUUIDHasher> nodesByUniqueID;
+					std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher> sharedIDtoUniqueID; //** mapping of shared ID to Unique ID
 					ParentMap parentToChildren; //** mapping of shared id to its children's shared id
-					std::unordered_map<repoUUID, RepoScene*, RepoUUIDHasher > referenceToScene; //** mapping of reference ID to it's scene graph
+					std::unordered_map<repo::lib::RepoUUID, RepoScene*, repo::lib::RepoUUIDHasher> referenceToScene; //** mapping of reference ID to it's scene graph
 				};
 
 				static const std::vector<std::string> collectionsInProject;
@@ -252,7 +245,7 @@ namespace repo{
 				* Get the branch ID of this scene graph
 				* @return returns the branch ID of this scene
 				*/
-				repoUUID getBranchID() const
+				repo::lib::RepoUUID getBranchID() const
 				{
 					return branch;
 				}
@@ -315,7 +308,7 @@ namespace repo{
 				* Get the revision ID of this scene graph
 				* @return returns the revision ID of this scene
 				*/
-				repoUUID getRevisionID() const
+				repo::lib::RepoUUID getRevisionID() const
 				{
 					if (revNode)
 						return revNode->getUniqueID();
@@ -419,7 +412,7 @@ namespace repo{
 				* Set project revision
 				* @param uuid of the revision.
 				*/
-				void setRevision(repoUUID revisionID)
+				void setRevision(repo::lib::RepoUUID revisionID)
 				{
 					headRevision = false;
 					revision = revisionID;
@@ -429,7 +422,7 @@ namespace repo{
 				* Set Branch
 				* @param uuid of branch
 				*/
-				void setBranch(repoUUID branchID){ branch = branchID; }
+				void setBranch(repo::lib::RepoUUID branchID){ branch = branchID; }
 
 				/**
 				* Set commit message
@@ -523,8 +516,8 @@ namespace repo{
 				*/
 				void abandonChild(
 					const GraphType &gType,
-					const repoUUID  &parent,
-					const repoUUID  &child,
+					const repo::lib::RepoUUID  &parent,
+					const repo::lib::RepoUUID  &child,
 					const bool      &modifyParent = true,
 					const bool      &modifyChild = true)
 				{
@@ -539,7 +532,7 @@ namespace repo{
 				*/
 				void abandonChild(
 					const GraphType &gType,
-					const repoUUID  &parent,
+					const repo::lib::RepoUUID  &parent,
 					RepoNode  *child,
 					const bool      &modifyParent = true,
 					const bool      &modifyChild = true);
@@ -556,8 +549,8 @@ namespace repo{
 				*/
 				void addInheritance(
 					const GraphType &gType,
-					const repoUUID  &parent,
-					const repoUUID  &child,
+					const repo::lib::RepoUUID  &parent,
+					const repo::lib::RepoUUID  &child,
 					const bool      &noUpdate = false)
 				{
 					addInheritance(gType, getNodeByUniqueID(gType, parent), getNodeByUniqueID(gType, child), noUpdate);
@@ -588,7 +581,7 @@ namespace repo{
 				std::vector<RepoNode*>
 					getChildrenAsNodes(
 					const GraphType &g,
-					const repoUUID &parent) const;
+					const repo::lib::RepoUUID &parent) const;
 
 				/**
 				* Get children nodes of a specified parent that satisfy the filtering condition
@@ -600,7 +593,7 @@ namespace repo{
 				std::vector<RepoNode*>
 					getChildrenNodesFiltered(
 					const GraphType &g,
-					const repoUUID &parent,
+					const repo::lib::RepoUUID &parent,
 					const NodeType  &type) const;
 
 				/**
@@ -620,12 +613,12 @@ namespace repo{
 				*/
 				RepoScene* getSceneFromReference(
 					const GraphType &gType,
-					const repoUUID  &reference) const
+					const repo::lib::RepoUUID  &reference) const
 				{
 					const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 					RepoScene* refScene = nullptr;
 
-					std::unordered_map<repoUUID, RepoScene*, boost::hash<boost::uuids::uuid> >::const_iterator it = g.referenceToScene.find(reference);
+					std::unordered_map<repo::lib::RepoUUID, RepoScene*, repo::lib::RepoUUIDHasher >::const_iterator it = g.referenceToScene.find(reference);
 					if (it != g.referenceToScene.end())
 						refScene = it->second;
 					return refScene;
@@ -640,7 +633,7 @@ namespace repo{
 				*/
 				std::string getTextureIDForMesh(
 					const GraphType &gType,
-					const repoUUID  &sharedID) const;
+					const repo::lib::RepoUUID  &sharedID) const;
 
 				/**
 				* --------------------- Scene Lookup ----------------------
@@ -717,7 +710,7 @@ namespace repo{
 					return  gType == GraphType::OPTIMIZED ? stashGraph.transformations : graph.transformations;
 				}
 
-				std::set<repoUUID> getAllSharedIDs(
+				std::set<repo::lib::RepoUUID> getAllSharedIDs(
 					const GraphType &gType) const;
 
 				/**
@@ -728,7 +721,7 @@ namespace repo{
 				*/
 				std::vector<RepoNode*> getAllDescendantsByType(
 					const GraphType &gType,
-					const repoUUID  &sharedID,
+					const repo::lib::RepoUUID  &sharedID,
 					const NodeType  &type) const;
 
 
@@ -742,26 +735,26 @@ namespace repo{
 				* Get all ID of nodes which are added since last revision
 				* @return returns a vector of node IDs
 				*/
-				std::vector<repoUUID> getAddedNodesID() const
+				std::vector<repo::lib::RepoUUID> getAddedNodesID() const
 				{
-					return std::vector<repoUUID>(newAdded.begin(), newAdded.end());
+					return std::vector<repo::lib::RepoUUID>(newAdded.begin(), newAdded.end());
 				}
 				/**
 				* Get all ID of nodes which are modified since last revision
 				* @return returns a vector of node IDs
 				*/
-				std::vector<repoUUID> getModifiedNodesID() const
+				std::vector<repo::lib::RepoUUID> getModifiedNodesID() const
 				{
-					return std::vector<repoUUID>(newModified.begin(), newModified.end());
+					return std::vector<repo::lib::RepoUUID>(newModified.begin(), newModified.end());
 				}
 
 				/**
 				* Get all ID of nodes which are removed since last revision
 				* @return returns a vector of node IDs
 				*/
-				std::vector<repoUUID> getRemovedNodesID() const
+				std::vector<repo::lib::RepoUUID> getRemovedNodesID() const
 				{
-					return std::vector<repoUUID>(newRemoved.begin(), newRemoved.end());
+					return std::vector<repo::lib::RepoUUID>(newRemoved.begin(), newRemoved.end());
 				}
 
 				/**
@@ -786,7 +779,7 @@ namespace repo{
 				*/
 				RepoNode* getNodeBySharedID(
 					const GraphType &gType,
-					const repoUUID &sharedID) const
+					const repo::lib::RepoUUID &sharedID) const
 				{
 					const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 					auto it = g.sharedIDtoUniqueID.find(sharedID);
@@ -804,7 +797,7 @@ namespace repo{
 				*/
 				RepoNode* getNodeByUniqueID(
 					const GraphType &gType,
-					const repoUUID &uniqueID) const
+					const repo::lib::RepoUUID &uniqueID) const
 				{
 					const repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 					auto it = g.nodesByUniqueID.find(uniqueID);
@@ -866,7 +859,7 @@ namespace repo{
 
 				void modifyNode(
 					const GraphType                   &gtype,
-					const repoUUID                    &sharedID,
+					const repo::lib::RepoUUID                    &sharedID,
 					RepoNode						  *newNode,
 					const bool                        &overwrite = false)
 				{
@@ -901,7 +894,7 @@ namespace repo{
 				*/
 				void removeNode(
 					const GraphType                   &gtype,
-					const repoUUID                    &sharedID);
+					const repo::lib::RepoUUID                    &sharedID);
 
 				/**
 				* Reset the change set of this RepoScene.
@@ -958,7 +951,7 @@ namespace repo{
 				*/
 				bool commitNodes(
 					repo::core::handler::AbstractDatabaseHandler *handler,
-					const std::vector<repoUUID> &nodesToCommit,
+					const std::vector<repo::lib::RepoUUID> &nodesToCommit,
 					const GraphType &gType,
 					std::string &errMsg);
 
@@ -1076,8 +1069,8 @@ namespace repo{
 				std::vector<std::string> refFiles;  //Original Files that created this scene
 				std::vector<RepoNode*> toRemove;
 				std::vector<double> worldOffset;
-				repoUUID   revision;
-				repoUUID   branch;
+				repo::lib::RepoUUID   revision;
+				repo::lib::RepoUUID   branch;
 				std::string commitMsg;
 				bool headRevision;
 				bool unRevisioned;       /*! Flag to indicate if the scene graph is revisioned (true for scene graphs from model convertor)*/
@@ -1089,10 +1082,10 @@ namespace repo{
 				*/
 
 				//Change trackers
-				std::set<repoUUID> newCurrent; //new list of current (unique IDs)
-				std::set<repoUUID> newAdded; //list of nodes added to the new revision (shared ID)
-				std::set<repoUUID> newRemoved; //list of nodes removed for this revision (shared ID)
-				std::set<repoUUID> newModified; // list of nodes modified during this revision  (shared ID)
+				std::set<repo::lib::RepoUUID> newCurrent; //new list of current (unique IDs)
+				std::set<repo::lib::RepoUUID> newAdded; //list of nodes added to the new revision (shared ID)
+				std::set<repo::lib::RepoUUID> newRemoved; //list of nodes removed for this revision (shared ID)
+				std::set<repo::lib::RepoUUID> newModified; // list of nodes modified during this revision  (shared ID)
 
 				repoGraphInstance graph; //current state of the graph, given the branch/revision
 				repoGraphInstance stashGraph; //current state of the optimized graph, given the branch/revision
