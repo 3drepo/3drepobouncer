@@ -23,27 +23,10 @@
 #include <iostream>
 #include <algorithm>
 
-#include <boost/functional/hash.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_generators.hpp>
-#include <boost/uuid/uuid_io.hpp>
-
 #include <sstream>
 
 #include "../../lib/repo_log.h"
-
-//abstract out the use of boost inside the node codes
-//incase we want to change it in the future
-typedef boost::uuids::uuid repoUUID;
-
-struct RepoUUIDHasher
-{
-	std::size_t operator()(const repoUUID& uid) const
-	{
-		return boost::hash<boost::uuids::uuid>()(uid);
-	}
-};
+#include "../../lib/datastructure/repo_uuid.h"
 
 typedef struct{
 	std::vector<float> ambient;
@@ -81,80 +64,13 @@ typedef std::vector<uint32_t> repo_face_t;
 typedef struct{
 	repo_vector_t min;
 	repo_vector_t max;
-	repoUUID      mesh_id;
-	repoUUID      material_id;
+	repo::lib::RepoUUID  mesh_id;
+	repo::lib::RepoUUID  material_id;
 	int32_t       vertFrom;
 	int32_t       vertTo;
 	int32_t       triFrom;
 	int32_t       triTo;
 }repo_mesh_mapping_t;
-
-static boost::uuids::random_generator gen;
-
-static repoUUID generateUUID(){
-	return gen();
-}
-
-//FIXME: scope this
-
-/*!
-* Returns a valid uuid representation of a given string. If empty, returns
-* a randomly generated uuid. If the string is not a uuid representation,
-* the string is hashed and appended with given suffix to prevent
-* uuid clashes in cases where two objects such as a mesh and a
-* transformation share the same name.
-*
-* \param text Can be any string including a valid UUID representation
-*             without '{' and '}'.
-* \param suffix Numerical suffix to prevent name clashes, eg "01".
-* \return valid uuid
-*/
-static repoUUID stringToUUID(
-	const std::string &text,
-	const std::string &suffix = std::string())
-{
-	boost::uuids::uuid uuid;
-	if (text.empty())
-		uuid = generateUUID();
-	else
-	{
-		try
-		{
-			boost::uuids::string_generator gen;
-			if (text.substr(0, 1) != "{")
-				uuid = gen("{" + text + "}");
-			else
-				uuid = gen(text);
-		}
-		catch (std::runtime_error e)
-		{
-			// uniformly distributed hash
-			boost::hash<std::string> string_hash;
-			std::string hashedUUID;
-			std::stringstream str;
-			str << string_hash(text);
-			str >> hashedUUID;
-
-			// uuid: 8 + 4 + 4 + 4 + 12 = 32
-			// pad with zero, leave last places empty for suffix
-			while (hashedUUID.size() < 32 - suffix.size())
-				hashedUUID.append("0");
-			hashedUUID.append(suffix);
-			uuid = stringToUUID(hashedUUID, suffix);
-		}
-	}
-	return uuid;
-}
-
-/**
-* Converts a RepoUUID to string
-* @param id repoUUID to convert
-* @return a string representation of repoUUID
-*/
-static std::string UUIDtoString(const repoUUID &id)
-{
-	return boost::lexical_cast<std::string>(id);
-}
 
 static std::string toString(const repo_face_t &f)
 {
