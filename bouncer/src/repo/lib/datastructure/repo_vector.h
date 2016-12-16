@@ -34,7 +34,7 @@ namespace repo{
 		}
 
 		template <class T>
-		bool operator==(const _RepoVector2D<T> &a, const _RepoVector2D<T> &b)
+		bool operator!=(const _RepoVector2D<T> &a, const _RepoVector2D<T> &b)
 		{
 			return !(a == b);
 		}
@@ -47,7 +47,7 @@ namespace repo{
 		}
 
 		template <class T>
-		bool operator==(const _RepoVector3D<T> &a, const _RepoVector3D<T> &b)
+		bool operator!=(const _RepoVector3D<T> &a, const _RepoVector3D<T> &b)
 		{
 			return !(a == b);
 		}
