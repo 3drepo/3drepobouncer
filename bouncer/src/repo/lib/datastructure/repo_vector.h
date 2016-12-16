@@ -34,9 +34,22 @@ namespace repo{
 		}
 
 		template <class T>
+		bool operator==(const _RepoVector2D<T> &a, const _RepoVector2D<T> &b)
+		{
+			return !(a == b);
+		}
+
+
+		template <class T>
 		bool operator==(const _RepoVector3D<T> &a, const _RepoVector3D<T> &b)
 		{
 			return a.x == b.x && a.y == b.y && a.z == b.z;
+		}
+
+		template <class T>
+		bool operator==(const _RepoVector3D<T> &a, const _RepoVector3D<T> &b)
+		{
+			return !(a == b);
 		}
 	}
 	

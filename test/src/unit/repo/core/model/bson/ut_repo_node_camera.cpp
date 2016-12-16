@@ -89,9 +89,9 @@ TEST(CameraTest, CloneAndApplyTransformation)
 
 	CameraNode transformedNode = camNode.cloneAndApplyTransformation(random);
 
-	EXPECT_EQ(repo::lib::RepoVector3D({ -939.04425048828125000f, 1107.97045898437500000f, -973.92999267578125000f }), transformedNode.getLookAt());
-	EXPECT_EQ(repo::lib::RepoVector3D({ 10855.86132812500000000f, 24589.66992187500000000f, 9059.35351562500000000f }), transformedNode.getPosition());
-	EXPECT_EQ(repo::lib::RepoVector3D({ -1031.21862792968750000f, 1033.17773437500000000f, -1032.46386718750000000f }), transformedNode.getUp());
+	EXPECT_EQ(repo::lib::RepoVector3D( -939.04425048828125000f, 1107.97045898437500000f, -973.92999267578125000f ), transformedNode.getLookAt());
+	EXPECT_EQ(repo::lib::RepoVector3D( 10855.86132812500000000f, 24589.66992187500000000f, 9059.35351562500000000f ), transformedNode.getPosition());
+	EXPECT_EQ(repo::lib::RepoVector3D( -1031.21862792968750000f, 1033.17773437500000000f, -1032.46386718750000000f ), transformedNode.getUp());
 }
 
 TEST(CameraTest, GetFields)
@@ -102,8 +102,8 @@ TEST(CameraTest, GetFields)
 	EXPECT_EQ(1.0, camEmpty.getFieldOfView());
 	EXPECT_EQ(1.0, camEmpty.getNearClippingPlane());
 	EXPECT_EQ(1.0, camEmpty.getFarClippingPlane());
-	EXPECT_EQ(repo::lib::RepoVector3D({ 0, 0, -1 }), camEmpty.getLookAt());
-	EXPECT_EQ(repo::lib::RepoVector3D({ 0, 1, 0 }), camEmpty.getUp());
+	EXPECT_EQ(repo::lib::RepoVector3D( 0, 0, -1), camEmpty.getLookAt());
+	EXPECT_EQ(repo::lib::RepoVector3D( 0, 1, 0), camEmpty.getUp());
 	EXPECT_EQ(repo::lib::RepoVector3D({ 0, 0, 0 }), camEmpty.getPosition());
 	EXPECT_TRUE(camEmpty.getName().empty());
 
