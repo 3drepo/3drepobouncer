@@ -68,7 +68,7 @@ TEST(RepoBSONBuilderTest, AppendGeneric)
 	int intT = 64;
 	long long longT = 123412452141L;
 	float floatT = 1.2345678;
-	repoUUID idT = generateUUID();
+	repo::lib::RepoUUID idT = repo::lib::RepoUUID::createUUID();
 	repo_vector_t rvecT = { 0.1234, 1.2345, 2.34567 };
 	//TODO: add more if more comes up!
 
@@ -98,7 +98,7 @@ TEST(RepoBSONBuilderTest, AppendGeneric)
 
 TEST(RepoBSONBuilderTest, AppendUUID)
 {
-	repoUUID uuid = generateUUID();
+	repo::lib::RepoUUID uuid = repo::lib::RepoUUID::createUUID();
 	RepoBSONBuilder builder;
 	builder.append("uuidTest", uuid);
 	RepoBSON bson = builder.obj();

@@ -257,8 +257,8 @@ TEST(MeshNodeTest, CloneAndApplyMeshMapping)
 	{
 		map.min = { rand() / 100.0f, rand() / 100.0f, rand() / 100.0f };
 		map.max = { rand() / 100.0f, rand() / 100.0f, rand() / 100.0f };
-		map.mesh_id = generateUUID();
-		map.material_id = generateUUID();
+		map.mesh_id = repo::lib::RepoUUID::createUUID();
+		map.material_id = repo::lib::RepoUUID::createUUID();
 		map.vertFrom = rand();
 		map.vertTo = rand();
 		map.triFrom = rand();
@@ -292,8 +292,8 @@ TEST(MeshNodeTest, CloneAndApplyMeshMapping)
 	{
 		map.min = { rand() / 100.0f, rand() / 100.0f, rand() / 100.0f };
 		map.max = { rand() / 100.0f, rand() / 100.0f, rand() / 100.0f };
-		map.mesh_id = generateUUID();
-		map.material_id = generateUUID();
+		map.mesh_id = repo::lib::RepoUUID::createUUID();
+		map.material_id = repo::lib::RepoUUID::createUUID();
 		map.vertFrom = rand();
 		map.vertTo = rand();
 		map.triFrom = rand();

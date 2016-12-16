@@ -29,8 +29,8 @@ static const RepoNode testNode = RepoNode(BSON("ice" << "lolly" << "amount" << 1
 static const RepoNode emptyNode;
 
 static const std::string typicalName = "3drepo";
-static const repoUUID typicalUniqueID = generateUUID();
-static const repoUUID typicalSharedID = generateUUID();
+static const repo::lib::RepoUUID typicalUniqueID = repo::lib::RepoUUID::createUUID();
+static const repo::lib::RepoUUID typicalSharedID = repo::lib::RepoUUID::createUUID();
 
 RepoNode makeTypicalNode()
 {
@@ -47,13 +47,13 @@ RepoNode makeRandomNode()
 {
 	RepoBSONBuilder builder;
 
-	builder.append(REPO_NODE_LABEL_ID, generateUUID());
-	builder.append(REPO_NODE_LABEL_SHARED_ID, generateUUID());
+	builder.append(REPO_NODE_LABEL_ID, repo::lib::RepoUUID::createUUID());
+	builder.append(REPO_NODE_LABEL_SHARED_ID, repo::lib::RepoUUID::createUUID());
 
 	return RepoNode(builder.obj());
 }
 
-RepoNode makeNode(const repoUUID &unqiueID, const repoUUID &sharedID, const std::string &name = "")
+RepoNode makeNode(const repo::lib::RepoUUID &unqiueID, const repo::lib::RepoUUID &sharedID, const std::string &name = "")
 {
 	RepoBSONBuilder builder;
 
@@ -100,7 +100,7 @@ TEST(RepoNodeTest, CloneAndAddParentTest)
 
 	EXPECT_FALSE(node.hasField(REPO_NODE_LABEL_PARENTS));
 
-	repoUUID parent = generateUUID();
+	repo::lib::RepoUUID parent = repo::lib::RepoUUID::createUUID();
 	RepoNode nodeWithParent = node.cloneAndAddParent(parent);
 
 	ASSERT_TRUE(nodeWithParent.hasField(REPO_NODE_LABEL_PARENTS));
@@ -110,7 +110,7 @@ TEST(RepoNodeTest, CloneAndAddParentTest)
 	RepoBSONElement parentField = nodeWithParent.getField(REPO_NODE_LABEL_PARENTS);
 	ASSERT_EQ(ElementType::ARRAY, parentField.type());
 
-	std::vector<repoUUID> parentsOut = nodeWithParent.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
+	std::vector<repo::lib::RepoUUID> parentsOut = nodeWithParent.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
 
 	EXPECT_EQ(1, parentsOut.size());
 	EXPECT_EQ(parent, parentsOut[0]);
@@ -124,7 +124,7 @@ TEST(RepoNodeTest, CloneAndAddParentTest)
 	EXPECT_EQ(parent, parentsOut[0]);
 
 	//Try to add a parent when there's already a vector
-	repoUUID parent2 = generateUUID();
+	repo::lib::RepoUUID parent2 = repo::lib::RepoUUID::createUUID();
 
 	RepoNode secondParentNode = nodeWithParent.cloneAndAddParent(parent2);
 	parentsOut = secondParentNode.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
@@ -159,12 +159,12 @@ TEST(RepoNodeTest, CloneAndAddParentTest_MultipleParents)
 
 	EXPECT_FALSE(node.hasField(REPO_NODE_LABEL_PARENTS));
 
-	std::vector<repoUUID> parent;
+	std::vector<repo::lib::RepoUUID> parent;
 	size_t nParents = 10;
 
 	for (size_t i = 0; i < nParents; ++i)
 	{
-		parent.push_back(generateUUID());
+		parent.push_back(repo::lib::RepoUUID::createUUID());
 	}
 
 	RepoNode nodeWithParent = node.cloneAndAddParent(parent);
@@ -176,7 +176,7 @@ TEST(RepoNodeTest, CloneAndAddParentTest_MultipleParents)
 	RepoBSONElement parentField = nodeWithParent.getField(REPO_NODE_LABEL_PARENTS);
 	ASSERT_EQ(ElementType::ARRAY, parentField.type());
 
-	std::vector<repoUUID> parentsOut = nodeWithParent.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
+	std::vector<repo::lib::RepoUUID> parentsOut = nodeWithParent.getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
 
 	EXPECT_EQ(nParents, parentsOut.size());
 
@@ -209,11 +209,11 @@ TEST(RepoNodeTest, CloneAndAddParentTest_MultipleParents)
 	EXPECT_EQ(0, parentsOut.size());
 
 	//Try to add a parent when there's already a vector
-	std::vector<repoUUID> parent2;
+	std::vector<repo::lib::RepoUUID> parent2;
 
 	for (size_t i = 0; i < nParents; ++i)
 	{
-		parent2.push_back(generateUUID());
+		parent2.push_back(repo::lib::RepoUUID::createUUID());
 	}
 
 	RepoNode secondParentNode = nodeWithParent.cloneAndAddParent(parent2);
@@ -221,7 +221,7 @@ TEST(RepoNodeTest, CloneAndAddParentTest_MultipleParents)
 
 	ASSERT_EQ(2 * nParents, parentsOut.size());
 
-	std::vector<repoUUID> fullParents = parent;
+	std::vector<repo::lib::RepoUUID> fullParents = parent;
 	fullParents.insert(fullParents.end(), parent2.begin(), parent2.end());
 	for (size_t i = 0; i < nParents * 2; ++i)
 	{
@@ -319,23 +319,23 @@ TEST(RepoNodeTest, CloneAndChangeNameTest)
 
 TEST(RepoNodeTest, CloneAndRemoveParentTest)
 {
-	RepoNode stillEmpty = emptyNode.cloneAndRemoveParent(generateUUID());
+	RepoNode stillEmpty = emptyNode.cloneAndRemoveParent(repo::lib::RepoUUID::createUUID());
 	EXPECT_TRUE(stillEmpty.isEmpty());
 
 	RepoBSONBuilder builder;
-	builder.append("_id", generateUUID());
+	builder.append("_id", repo::lib::RepoUUID::createUUID());
 	RepoNode startNode = RepoNode(builder.obj());
 
-	repoUUID singleParent = generateUUID();
+	repo::lib::RepoUUID singleParent = repo::lib::RepoUUID::createUUID();
 	RepoNode oneParentNode = startNode.cloneAndAddParent(singleParent);
 	//Ensure the field is removed all together if there is no parent left
 	EXPECT_FALSE(oneParentNode.cloneAndRemoveParent(singleParent).hasField(REPO_NODE_LABEL_PARENTS));
 
-	std::vector<repoUUID> parents;
+	std::vector<repo::lib::RepoUUID> parents;
 	size_t nParents = 10;
 	for (int i = 0; i < nParents; ++i)
 	{
-		parents.push_back(generateUUID());
+		parents.push_back(repo::lib::RepoUUID::createUUID());
 	}
 
 	RepoNode manyParentsNode = startNode.cloneAndAddParent(parents);
@@ -344,7 +344,7 @@ TEST(RepoNodeTest, CloneAndRemoveParentTest)
 
 	RepoNode parentRemovedNode = manyParentsNode.cloneAndRemoveParent(parents[indToRemove]);
 
-	std::vector<repoUUID> parentsOut = parentRemovedNode.getParentIDs();
+	std::vector<repo::lib::RepoUUID> parentsOut = parentRemovedNode.getParentIDs();
 	EXPECT_EQ(parentsOut.end(), std::find(parentsOut.begin(), parentsOut.end(), parents[indToRemove]));
 
 	EXPECT_NE(manyParentsNode.getUniqueID(), parentRemovedNode.getUniqueID());
@@ -498,19 +498,19 @@ TEST(RepoNodeTest, GetParentsIDTest)
 {
 	EXPECT_EQ(0, emptyNode.getParentIDs().size());
 
-	std::vector<repoUUID> parent;
+	std::vector<repo::lib::RepoUUID> parent;
 	size_t nParents = 10;
 
 	for (size_t i = 0; i < nParents; ++i)
 	{
-		parent.push_back(generateUUID());
+		parent.push_back(repo::lib::RepoUUID::createUUID());
 	}
 
 	RepoBSONBuilder builder;
 	builder.appendArray(REPO_NODE_LABEL_PARENTS, parent);
 	RepoNode node = builder.obj();
 
-	std::vector<repoUUID> parentOut = node.getParentIDs();
+	std::vector<repo::lib::RepoUUID> parentOut = node.getParentIDs();
 
 	ASSERT_EQ(nParents, parentOut.size());
 
@@ -527,9 +527,9 @@ TEST(RepoNodeTest, OperatorEqualTest)
 	EXPECT_NE(makeRandomNode(), makeRandomNode());
 	EXPECT_EQ(typicalNode, typicalNode);
 
-	repoUUID sharedID = generateUUID();
-	EXPECT_NE(makeNode(generateUUID(), sharedID), makeNode(generateUUID(), sharedID));
-	EXPECT_NE(makeNode(sharedID, generateUUID()), makeNode(sharedID, generateUUID()));
+	repo::lib::RepoUUID sharedID = repo::lib::RepoUUID::createUUID();
+	EXPECT_NE(makeNode(repo::lib::RepoUUID::createUUID(), sharedID), makeNode(repo::lib::RepoUUID::createUUID(), sharedID));
+	EXPECT_NE(makeNode(sharedID, repo::lib::RepoUUID::createUUID()), makeNode(sharedID, repo::lib::RepoUUID::createUUID()));
 }
 
 TEST(RepoNodeTest, OperatorCompareTest)
@@ -537,10 +537,10 @@ TEST(RepoNodeTest, OperatorCompareTest)
 	RepoNode typicalNode = makeTypicalNode();
 	EXPECT_FALSE(typicalNode > typicalNode);
 
-	repoUUID sharedID = generateUUID();
-	repoUUID uniqueID = generateUUID();
-	repoUUID sharedID2 = generateUUID();
-	repoUUID uniqueID2 = generateUUID();
+	repo::lib::RepoUUID sharedID = repo::lib::RepoUUID::createUUID();
+	repo::lib::RepoUUID uniqueID = repo::lib::RepoUUID::createUUID();
+	repo::lib::RepoUUID sharedID2 = repo::lib::RepoUUID::createUUID();
+	repo::lib::RepoUUID uniqueID2 = repo::lib::RepoUUID::createUUID();
 
 	EXPECT_EQ(uniqueID > uniqueID, makeNode(uniqueID, sharedID, "1") > makeNode(uniqueID, sharedID, "1"));
 	EXPECT_EQ(sharedID > sharedID2, makeNode(uniqueID, sharedID, "2") > makeNode(uniqueID, sharedID2, "2"));

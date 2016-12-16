@@ -62,14 +62,14 @@ TEST(RefNodeTest, PositionDependantTest)
 TEST(RefNodeTest, GetterTest)
 {
 	ReferenceNode empty;
-	EXPECT_EQ(stringToUUID(REPO_HISTORY_MASTER_BRANCH), empty.getRevisionID());
+	EXPECT_EQ(repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), empty.getRevisionID());
 	EXPECT_TRUE(empty.getDatabaseName().empty());
 	EXPECT_TRUE(empty.getProjectName().empty());
 	EXPECT_FALSE(empty.useSpecificRevision());
 
 	auto dbName = getRandomString(rand() % 10 + 1);
 	auto projName = getRandomString(rand() % 10 + 1);
-	auto revId = generateUUID();
+	auto revId = repo::lib::RepoUUID::createUUID();
 	auto refNode1 = RepoBSONFactory::makeReferenceNode(dbName, projName, revId, true);
 
 	auto dbName2 = getRandomString(rand() % 10 + 1);
@@ -83,6 +83,6 @@ TEST(RefNodeTest, GetterTest)
 
 	EXPECT_EQ(dbName2, refNode2.getDatabaseName());
 	EXPECT_EQ(projName2, refNode2.getProjectName());
-	EXPECT_EQ(stringToUUID(REPO_HISTORY_MASTER_BRANCH), refNode2.getRevisionID());
+	EXPECT_EQ(repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), refNode2.getRevisionID());
 	EXPECT_FALSE(refNode2.useSpecificRevision());
 }

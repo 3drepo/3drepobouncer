@@ -35,14 +35,14 @@ const static RepoScene::GraphType defaultG = RepoScene::GraphType::DEFAULT;
 static RepoBSON makeRandomNode(
 	const std::string &name = "")
 {
-	return RepoBSONFactory::appendDefaults("", 0U, generateUUID(), name);
+	return RepoBSONFactory::appendDefaults("", 0U, repo::lib::RepoUUID::createUUID(), name);
 }
 
 static RepoBSON makeRandomNode(
-	const repoUUID &parent,
+	const repo::lib::RepoUUID &parent,
 	const std::string &name = "")
 {
-	return RepoBSONFactory::appendDefaults("", 0U, generateUUID(), name, { parent });
+	return RepoBSONFactory::appendDefaults("", 0U, repo::lib::RepoUUID::createUUID(), name, { parent });
 }
 
 TEST(RepoSceneTest, Constructor)
@@ -159,7 +159,6 @@ TEST(RepoSceneTest, AddMetadata)
 		EXPECT_EQ(1, parents.size());
 		for (const auto &parent : parents)
 		{
-			repoTrace << "parent: " << UUIDtoString(parent);
 			auto node = scene2.getNodeBySharedID(RepoScene::GraphType::DEFAULT, parent);
 			EXPECT_EQ(NodeType::TRANSFORMATION, node->getTypeAsEnum());
 			EXPECT_EQ(s2meta->getName(), node->getName());
@@ -401,7 +400,7 @@ TEST(RepoSceneTest, getSetRevisionID)
 {
 	RepoScene scene;
 	EXPECT_TRUE(scene.isHeadRevision());
-	repoUUID id = generateUUID();
+	repo::lib::RepoUUID id = repo::lib::RepoUUID::createUUID();
 	scene.setRevision(id);
 	EXPECT_EQ(id, scene.getRevisionID());
 	EXPECT_FALSE(scene.isHeadRevision());
@@ -453,9 +452,9 @@ TEST(RepoSceneTest, getRevisionProperties)
 TEST(RepoSceneTest, getSetBranchID)
 {
 	RepoScene scene;
-	EXPECT_EQ(UUIDtoString(scene.getBranchID()), REPO_HISTORY_MASTER_BRANCH);
+	EXPECT_EQ(scene.getBranchID().toString(), REPO_HISTORY_MASTER_BRANCH);
 
-	repoUUID newBranch = generateUUID();
+	repo::lib::RepoUUID newBranch = repo::lib::RepoUUID::createUUID();
 	scene.setBranch(newBranch);
 
 	EXPECT_EQ(scene.getBranchID(), newBranch);
@@ -613,7 +612,7 @@ TEST(RepoSceneTest, abandonChild)
 	parentIDs = m1->getParentIDs();
 	EXPECT_FALSE(std::find(parentIDs.begin(), parentIDs.end(), root->getSharedID()) != parentIDs.end());
 
-	scene.abandonChild(RepoScene::GraphType::DEFAULT, generateUUID(), m1, false, false); //shoudln't work with unrecognised parent
+	scene.abandonChild(RepoScene::GraphType::DEFAULT, repo::lib::RepoUUID::createUUID(), m1, false, false); //shoudln't work with unrecognised parent
 	scene.abandonChild(RepoScene::GraphType::DEFAULT, root->getSharedID(), nullptr, false, false); //shoudln't work with unrecognised parent
 }
 
@@ -633,7 +632,7 @@ TEST(RepoSceneTest, addInheritance)
 	RepoScene scene(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
 
 	scene.addInheritance(RepoScene::GraphType::DEFAULT, nullptr, nullptr); //nothing should happen and should not crash
-	scene.addInheritance(RepoScene::GraphType::DEFAULT, generateUUID(), generateUUID()); //nothing should happen and should not crash
+	scene.addInheritance(RepoScene::GraphType::DEFAULT, repo::lib::RepoUUID::createUUID(), repo::lib::RepoUUID::createUUID()); //nothing should happen and should not crash
 
 	scene.addInheritance(RepoScene::GraphType::DEFAULT, root->getUniqueID(), m1->getUniqueID()); //this already exist
 	EXPECT_EQ(1, m1->getParentIDs().size());
@@ -671,7 +670,7 @@ TEST(RepoSceneTest, getChildrenAsNodes)
 
 	EXPECT_EQ(0, scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, m1->getSharedID()).size());
 	EXPECT_EQ(0, scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, m2->getSharedID()).size());
-	EXPECT_EQ(0, scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, generateUUID()).size());
+	EXPECT_EQ(0, scene.getChildrenAsNodes(RepoScene::GraphType::DEFAULT, repo::lib::RepoUUID::createUUID()).size());
 
 	children = scene.getChildrenNodesFiltered(RepoScene::GraphType::DEFAULT, root->getSharedID(), NodeType::MESH);
 	EXPECT_EQ(2, children.size());
@@ -710,7 +709,7 @@ TEST(RepoSceneTest, getParentAsNodesFiltered)
 TEST(RepoSceneTest, getSceneFromReference)
 {
 	RepoScene scene;
-	EXPECT_FALSE(scene.getSceneFromReference(defaultG, generateUUID()));
+	EXPECT_FALSE(scene.getSceneFromReference(defaultG, repo::lib::RepoUUID::createUUID()));
 	scene = RepoScene(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_FED);
 	std::string errMsg;
 	scene.loadScene(getHandler(), errMsg);
@@ -720,13 +719,13 @@ TEST(RepoSceneTest, getSceneFromReference)
 	ASSERT_TRUE(references.size());
 	for (const auto &ref : references)
 		EXPECT_TRUE(scene.getSceneFromReference(defaultG, ref->getSharedID()));
-	EXPECT_FALSE(scene.getSceneFromReference(defaultG, generateUUID()));
+	EXPECT_FALSE(scene.getSceneFromReference(defaultG, repo::lib::RepoUUID::createUUID()));
 }
 
 TEST(RepoSceneTest, getTextureIDForMesh)
 {
 	RepoScene scene;
-	EXPECT_TRUE(scene.getTextureIDForMesh(defaultG, generateUUID()).empty());
+	EXPECT_TRUE(scene.getTextureIDForMesh(defaultG, repo::lib::RepoUUID::createUUID()).empty());
 
 
 	RepoNodeSet transNodes, meshNodes, empty, matNodes, texNodes;
@@ -748,7 +747,7 @@ TEST(RepoSceneTest, getTextureIDForMesh)
 
 	auto scene2 = RepoScene(std::vector<std::string>(), empty, meshNodes, matNodes, empty, texNodes, transNodes);
 
-	EXPECT_EQ(UUIDtoString(tex1->getUniqueID()), scene2.getTextureIDForMesh(defaultG, m1->getSharedID()));
+	EXPECT_EQ(tex1->getUniqueID().toString(), scene2.getTextureIDForMesh(defaultG, m1->getSharedID()));
 	EXPECT_TRUE(scene2.getTextureIDForMesh(defaultG, m2->getSharedID()).empty());
 }
 
@@ -862,8 +861,8 @@ TEST(RepoSceneTest, getAllNodes)
 TEST(RepoSceneTest, getAllDescendantsByType)
 {
 	RepoScene scene;
-	EXPECT_EQ(0, scene.getAllDescendantsByType(defaultG, generateUUID(), NodeType::CAMERA).size());
-	EXPECT_EQ(0, scene.getAllDescendantsByType(RepoScene::GraphType::OPTIMIZED, generateUUID(), NodeType::CAMERA).size());
+	EXPECT_EQ(0, scene.getAllDescendantsByType(defaultG, repo::lib::RepoUUID::createUUID(), NodeType::CAMERA).size());
+	EXPECT_EQ(0, scene.getAllDescendantsByType(RepoScene::GraphType::OPTIMIZED, repo::lib::RepoUUID::createUUID(), NodeType::CAMERA).size());
 
 	RepoNodeSet transNodes, meshNodes, empty, matNodes, texNodes;
 
@@ -958,7 +957,7 @@ TEST(RepoSceneTest, getNodeBySharedID)
 	auto scene2 = RepoScene(std::vector<std::string>(), empty, meshNodes, matNodes, empty, texNodes, transNodes);
 
 	EXPECT_EQ(root, scene2.getNodeBySharedID(defaultG, root->getSharedID()));
-	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(defaultG, generateUUID()));
+	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(defaultG, repo::lib::RepoUUID::createUUID()));
 	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(RepoScene::GraphType::OPTIMIZED, m2st->getSharedID()));
 
 }
@@ -1004,7 +1003,7 @@ TEST(RepoSceneTest, getNodeByUniqueID)
 	auto scene2 = RepoScene(std::vector<std::string>(), empty, meshNodes, matNodes, empty, texNodes, transNodes);
 
 	EXPECT_EQ(root, scene2.getNodeByUniqueID(defaultG, root->getUniqueID()));
-	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(defaultG, generateUUID()));
+	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(defaultG, repo::lib::RepoUUID::createUUID()));
 	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(RepoScene::GraphType::OPTIMIZED, m2st->getUniqueID()));
 
 }
@@ -1165,7 +1164,7 @@ TEST(RepoSceneTest, modifyNode)
 TEST(RepoSceneTest, removeNode)
 {
 	RepoScene scene;
-	scene.removeNode(defaultG, generateUUID());
+	scene.removeNode(defaultG, repo::lib::RepoUUID::createUUID());
 	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
 	scene.addNodes({ root });
 	scene.removeNode(defaultG, root->getSharedID());

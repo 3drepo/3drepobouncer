@@ -132,7 +132,7 @@ TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
 	auto bsonsProjected = handler->getAllFromCollectionTailable(
 		goldenData.first.first, goldenData.first.second, 0, 0, { "_id", "shared_id" });
 
-	std::vector<repoUUID> ids;
+	std::vector<repo::lib::RepoUUID> ids;
 
 	ASSERT_EQ(bsonsProjected.size(), bsons.size());
 	for (int i = 0; i < bsons.size(); ++i)
@@ -583,7 +583,7 @@ TEST(MongoDatabaseHandlerTest, UpsertDocument)
 	ASSERT_TRUE(handler);
 	std::string errMsg;
 
-	repo::core::model::RepoBSON testCase = BSON("_id" << UUIDtoString(generateUUID()) << "anotherField" << std::rand());
+	repo::core::model::RepoBSON testCase = BSON("_id" << repo::lib::RepoUUID::createUUID().toString() << "anotherField" << std::rand());
 	std::string database = "sandbox";
 	std::string collection = "sbCollection";
 	EXPECT_TRUE(handler->upsertDocument(database, collection, testCase, false, errMsg));
@@ -751,17 +751,17 @@ TEST(MongoDatabaseHandlerTest, FindOneBySharedID)
 	auto handler = getHandler();
 	ASSERT_TRUE(handler);
 
-	repo::core::model::RepoNode result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "sampleProject.history", stringToUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
+	repo::core::model::RepoNode result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "sampleProject.history", repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
 	EXPECT_FALSE(result.isEmpty());
-	EXPECT_EQ(result.getSharedID(), stringToUUID(REPO_HISTORY_MASTER_BRANCH));
+	EXPECT_EQ(result.getSharedID(), repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH));
 
-	result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "sampleProject.history", stringToUUID(REPO_HISTORY_MASTER_BRANCH), "");
+	result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "sampleProject.history", repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), "");
 	EXPECT_FALSE(result.isEmpty());
-	EXPECT_EQ(result.getSharedID(), stringToUUID(REPO_HISTORY_MASTER_BRANCH));
+	EXPECT_EQ(result.getSharedID(), repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH));
 
-	result = handler->findOneBySharedID("", "sampleProject", stringToUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
+	result = handler->findOneBySharedID("", "sampleProject", repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
 	EXPECT_TRUE(result.isEmpty());
-	result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "", stringToUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
+	result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "", repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
 	EXPECT_TRUE(result.isEmpty());
 }
 

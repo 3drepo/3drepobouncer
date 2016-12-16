@@ -387,7 +387,7 @@ TEST(RepoBSONFactoryTest, MakeReferenceNodeTest)
 {
 	std::string dbName = "testDB";
 	std::string proName = "testProj";
-	repoUUID revId = generateUUID();
+	repo::lib::RepoUUID revId = repo::lib::RepoUUID::createUUID();
 	bool isUnique = true;
 	std::string name = "refNodeName";
 
@@ -408,18 +408,18 @@ TEST(RepoBSONFactoryTest, MakeReferenceNodeTest)
 TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 {
 	std::string owner = "revOwner";
-	repoUUID branchID = generateUUID();
-	std::vector<repoUUID> currentNodes;
+	repo::lib::RepoUUID branchID = repo::lib::RepoUUID::createUUID();
+	std::vector<repo::lib::RepoUUID> currentNodes;
 	size_t currCount = 10;
 	currentNodes.reserve(currCount);
 	for (size_t i = 0; i < currCount; ++i)
-		currentNodes.push_back(generateUUID());
+		currentNodes.push_back(repo::lib::RepoUUID::createUUID());
 	std::vector<std::string> files = { "test1", "test5" };
-	std::vector<repoUUID> parents;
+	std::vector<repo::lib::RepoUUID> parents;
 	size_t parentCount = 5;
 	parents.reserve(parentCount);
 	for (size_t i = 0; i < parentCount; ++i)
-		parents.push_back(generateUUID());
+		parents.push_back(repo::lib::RepoUUID::createUUID());
 	std::string message = "this is some random message to test message";
 	std::string tag = "this is a random tag to test tags";
 	std::vector<double> offset = { std::rand() / 100., std::rand() / 100., std::rand() / 100. };
@@ -437,7 +437,7 @@ TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 	EXPECT_TRUE(compareStdVectors(offset, rev.getCoordOffset()));
 
 	//ensure no random parent being generated
-	std::vector<repoUUID> emptyParents;
+	std::vector<repo::lib::RepoUUID> emptyParents;
 	RevisionNode rev2 = RepoBSONFactory::makeRevisionNode(owner, branchID, currentNodes, files, emptyParents, offset, message, tag);
 	EXPECT_EQ(0, rev2.getParentIDs().size());
 }
@@ -490,9 +490,9 @@ TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
 		}
 	std::string name = "myTransTest";
 
-	std::vector<repoUUID> parents;
+	std::vector<repo::lib::RepoUUID> parents;
 	for (int i = 0; i < 10; ++i)
-		parents.push_back(generateUUID());
+		parents.push_back(repo::lib::RepoUUID::createUUID());
 
 	TransformationNode trans2 = RepoBSONFactory::makeTransformationNode(transMat, name, parents);
 

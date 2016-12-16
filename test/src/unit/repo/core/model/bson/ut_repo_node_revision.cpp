@@ -86,13 +86,13 @@ TEST(RevisionNodeTest, GetterTest)
 	EXPECT_EQ(-1, empty.getTimestampInt64());
 
 	auto user = getRandomString(rand() % 10 + 1);
-	auto branch = generateUUID();
-	std::vector<repoUUID> currentNodes, parents;
+	auto branch = repo::lib::RepoUUID::createUUID();
+	std::vector<repo::lib::RepoUUID> currentNodes, parents;
 
 	for (int i = 0; i < rand() % 10 + 1; ++i)
 	{
-		currentNodes.push_back(generateUUID());
-		parents.push_back(generateUUID());
+		currentNodes.push_back(repo::lib::RepoUUID::createUUID());
+		parents.push_back(repo::lib::RepoUUID::createUUID());
 	}
 
 	std::vector<std::string> files = { getRandomString(rand() % 10 + 1), getRandomString(rand() % 10 + 1) };
