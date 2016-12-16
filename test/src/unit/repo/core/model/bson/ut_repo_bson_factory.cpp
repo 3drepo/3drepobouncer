@@ -379,8 +379,8 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	ASSERT_EQ(3, boundingBox[0].size());
 	ASSERT_EQ(3, boundingBox[1].size());
 
-	EXPECT_EQ(bbox[0], repo::lib::RepoVector3D({ boundingBox[0][0], boundingBox[0][1], boundingBox[0][2] }));
-	EXPECT_EQ(bbox[1], repo::lib::RepoVector3D({ boundingBox[1][0], boundingBox[1][1], boundingBox[1][2] }));
+	EXPECT_EQ(bbox[0], repo::lib::RepoVector3D( boundingBox[0][0], boundingBox[0][1], boundingBox[0][2] ));
+	EXPECT_EQ(bbox[1], repo::lib::RepoVector3D( boundingBox[1][0], boundingBox[1][1], boundingBox[1][2] ));
 }
 
 TEST(RepoBSONFactoryTest, MakeReferenceNodeTest)
