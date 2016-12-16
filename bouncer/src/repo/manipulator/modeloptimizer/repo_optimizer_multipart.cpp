@@ -67,10 +67,10 @@ bool MultipartOptimizer::collectMeshData(
 	const repo::core::model::RepoNode         *node,
 	const std::set<repo::lib::RepoUUID>                  &meshGroup,
 	std::vector<float>                        &mat,
-	std::vector<std::vector<repo_vector_t>>                &vertices,
-	std::vector<std::vector<repo_vector_t>>               &normals,
+	std::vector<std::vector<repo::lib::RepoVector3D>>                &vertices,
+	std::vector<std::vector<repo::lib::RepoVector3D>>               &normals,
 	std::vector<std::vector<repo_face_t>>                &faces,
-	std::vector<std::vector<std::vector<repo_vector2d_t>>> &uvChannels,
+	std::vector<std::vector<std::vector<repo::lib::RepoVector2D>>> &uvChannels,
 	std::vector<std::vector<repo_color4d_t>>               &colors,
 	std::vector<std::vector<repo_mesh_mapping_t>>          &meshMapping,
 	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>                 &matIDMap
@@ -123,18 +123,18 @@ bool MultipartOptimizer::collectMeshData(
 					meshMap.max = bbox[1];
 				}
 
-				std::vector<repo_vector_t> submVertices = transformedMesh.getVertices();
-				std::vector<repo_vector_t> submNormals = transformedMesh.getNormals();
+				std::vector<repo::lib::RepoVector3D> submVertices = transformedMesh.getVertices();
+				std::vector<repo::lib::RepoVector3D> submNormals = transformedMesh.getNormals();
 				std::vector<repo_face_t>   submFaces = transformedMesh.getFaces();
 				std::vector<repo_color4d_t> submColors = transformedMesh.getColors();
-				std::vector<std::vector<repo_vector2d_t>> submUVs = transformedMesh.getUVChannelsSeparated();
+				std::vector<std::vector<repo::lib::RepoVector2D>> submUVs = transformedMesh.getUVChannelsSeparated();
 
 				if (success = submVertices.size() && submFaces.size())
 				{
-					vertices.push_back(std::vector<repo_vector_t>());
-					normals.push_back(std::vector<repo_vector_t>());
+					vertices.push_back(std::vector<repo::lib::RepoVector3D>());
+					normals.push_back(std::vector<repo::lib::RepoVector3D>());
 					colors.push_back(std::vector<repo_color4d_t>());
-					uvChannels.push_back(std::vector<std::vector<repo_vector2d_t>>());
+					uvChannels.push_back(std::vector<std::vector<repo::lib::RepoVector2D>>());
 					faces.push_back(std::vector<repo_face_t>());
 					meshMapping.push_back(std::vector<repo_mesh_mapping_t>());
 
@@ -203,10 +203,10 @@ bool MultipartOptimizer::collectMeshData(
 	const repo::core::model::RepoNode         *node,
 	const std::set<repo::lib::RepoUUID>                  &meshGroup,
 	std::vector<float>                        &mat,
-	std::vector<repo_vector_t>                &vertices,
-	std::vector<repo_vector_t>                &normals,
+	std::vector<repo::lib::RepoVector3D>                &vertices,
+	std::vector<repo::lib::RepoVector3D>                &normals,
 	std::vector<repo_face_t>                  &faces,
-	std::vector<std::vector<repo_vector2d_t>> &uvChannels,
+	std::vector<std::vector<repo::lib::RepoVector2D>> &uvChannels,
 	std::vector<repo_color4d_t>               &colors,
 	std::vector<repo_mesh_mapping_t>          &meshMapping,
 	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>    &matIDMap
@@ -260,11 +260,11 @@ bool MultipartOptimizer::collectMeshData(
 					meshMap.max = bbox[1];
 				}
 
-				std::vector<repo_vector_t> submVertices = transformedMesh.getVertices();
-				std::vector<repo_vector_t> submNormals = transformedMesh.getNormals();
+				std::vector<repo::lib::RepoVector3D> submVertices = transformedMesh.getVertices();
+				std::vector<repo::lib::RepoVector3D> submNormals = transformedMesh.getNormals();
 				std::vector<repo_face_t>   submFaces = transformedMesh.getFaces();
 				std::vector<repo_color4d_t> submColors = transformedMesh.getColors();
-				std::vector<std::vector<repo_vector2d_t>> submUVs = transformedMesh.getUVChannelsSeparated();
+				std::vector<std::vector<repo::lib::RepoVector2D>> submUVs = transformedMesh.getUVChannelsSeparated();
 
 				if (success = submVertices.size() && submFaces.size())
 				{
@@ -334,9 +334,9 @@ std::vector<repo::core::model::MeshNode*> MultipartOptimizer::createSuperMesh(
 	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>  &matIDs,
 	const bool                              &texture)
 {
-	std::vector<std::vector<repo_vector_t>> vertices, normals;
+	std::vector<std::vector<repo::lib::RepoVector3D>> vertices, normals;
 	std::vector<std::vector<repo_face_t>> faces;
-	std::vector<std::vector<std::vector<repo_vector2d_t>>> uvChannels;
+	std::vector<std::vector<std::vector<repo::lib::RepoVector2D>>> uvChannels;
 	std::vector<std::vector<repo_color4d_t>> colors;
 	std::vector<std::vector<repo_mesh_mapping_t>> meshMapping;
 
@@ -354,7 +354,7 @@ std::vector<repo::core::model::MeshNode*> MultipartOptimizer::createSuperMesh(
 		for (int meshIdx = 0; meshIdx < meshMapping.size(); ++meshIdx)
 		{
 			//workout bbox and outline from meshMapping
-			std::vector<repo_vector_t> bbox;
+			std::vector<repo::lib::RepoVector3D> bbox;
 			bbox.push_back(meshMapping[meshIdx][0].min);
 			bbox.push_back(meshMapping[meshIdx][0].max);
 			for (int i = 1; i < meshMapping[meshIdx].size(); ++i)
@@ -400,9 +400,9 @@ const repo::core::model::RepoScene *scene,
 const std::set<repo::lib::RepoUUID>           &meshGroup,
 std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>  &matIDs)
 {
-	std::vector<repo_vector_t> vertices, normals;
+	std::vector<repo::lib::RepoVector3D> vertices, normals;
 	std::vector<repo_face_t> faces;
-	std::vector<std::vector<repo_vector2d_t>> uvChannels;
+	std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
 	std::vector<repo_color4d_t> colors;
 	std::vector<repo_mesh_mapping_t> meshMapping;
 
@@ -420,7 +420,7 @@ std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUID
 	if (success && meshMapping.size())
 	{
 		//workout bbox and outline from meshMapping
-		std::vector<repo_vector_t> bbox;
+		std::vector<repo::lib::RepoVector3D> bbox;
 		bbox.push_back(meshMapping[0].min);
 		bbox.push_back(meshMapping[0].max);
 		for (int i = 1; i < meshMapping.size(); ++i)

@@ -913,7 +913,7 @@ TEST(RepoSceneTest, getSceneBoundingBox)
 	RepoScene scene2(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ);
 	scene2.loadScene(getHandler(), errMsg);
 	auto bb = scene2.getSceneBoundingBox();
-	EXPECT_TRUE(compareVectors(bb, getGoldenDataForBBoxTest()));
+	EXPECT_TRUE(compareStdVectors(bb, getGoldenDataForBBoxTest()));
 }
 
 TEST(RepoSceneTest, getNodeBySharedID)

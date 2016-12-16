@@ -162,9 +162,9 @@ namespace repo {
 				* Retrieve the bounding box of this mesh
 				* @return returns a vector of size 2, containing the bounding box.
 				*/
-				std::vector<repo_vector_t> getBoundingBox() const;
+				std::vector<repo::lib::RepoVector3D> getBoundingBox() const;
 
-				static std::vector<repo_vector_t> getBoundingBox(RepoBSON &bbArr);
+				static std::vector<repo::lib::RepoVector3D> getBoundingBox(RepoBSON &bbArr);
 
 				/**
 				* Retrieve a vector of Colors from the bson object
@@ -181,22 +181,22 @@ namespace repo {
 				/**
 				* Retrieve a vector of vertices from the bson object
 				*/
-				std::vector<repo_vector_t> getNormals() const;
+				std::vector<repo::lib::RepoVector3D> getNormals() const;
 
 				/**
 				* Retrieve a vector of UV Channels from the bson object
 				*/
-				std::vector<repo_vector2d_t> getUVChannels() const;
+				std::vector<repo::lib::RepoVector2D> getUVChannels() const;
 
 				/**
 				* Retrieve a vector of UV Channels, separated by channels
 				*/
-				std::vector<std::vector<repo_vector2d_t>> getUVChannelsSeparated() const;
+				std::vector<std::vector<repo::lib::RepoVector2D>> getUVChannelsSeparated() const;
 
 				/**
 				* Retrieve a vector of vertices from the bson object
 				*/
-				std::vector<repo_vector_t> getVertices() const;
+				std::vector<repo::lib::RepoVector3D> getVertices() const;
 
 			private:
 				/**

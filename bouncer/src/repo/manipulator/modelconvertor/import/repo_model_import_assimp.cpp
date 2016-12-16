@@ -366,10 +366,10 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 	repo::core::model::MeshNode meshNode;
 
 	//Avoid using assimp objects everywhere -> converting assimp objects into repo structs
-	std::vector<repo_vector_t> vertices;
+	std::vector<repo::lib::RepoVector3D> vertices;
 	std::vector<repo_face_t> faces;
-	std::vector<repo_vector_t> normals;
-	std::vector<std::vector<repo_vector2d_t>> uvChannels;
+	std::vector<repo::lib::RepoVector3D> normals;
+	std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
 	std::vector<repo_color4d_t> colors;
 	std::vector<std::vector<float>>   outline;
 
@@ -379,8 +379,8 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 	aiVector3D offsetVec = offset.size() ? aiVector3D(offset[0], offset[1], offset[2]) : aiVector3D(0, 0, 0);
 	aiVector3D firstV = assimpMesh->mVertices[0];
 	firstV -= offsetVec;
-	repo_vector_t minVertex = { (float)firstV.x, (float)firstV.y, (float)firstV.z };
-	repo_vector_t maxVertex = minVertex;
+	repo::lib::RepoVector3D minVertex = { (float)firstV.x, (float)firstV.y, (float)firstV.z };
+	repo::lib::RepoVector3D maxVertex = minVertex;
 
 	for (uint32_t i = 0; i < assimpMesh->mNumVertices; i++)
 	{
@@ -458,7 +458,7 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 	// TODO: add support for all UV channels.
 	if (assimpMesh->HasTextureCoords(0))
 	{
-		std::vector<repo_vector2d_t> channelVector;
+		std::vector<repo::lib::RepoVector2D> channelVector;
 		for (uint32_t i = 0; i < assimpMesh->mNumVertices; i++)
 		{
 			channelVector.push_back({ (float)assimpMesh->mTextureCoords[0][i].x, (float)assimpMesh->mTextureCoords[0][i].y });
@@ -468,13 +468,13 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 	else if (hasTexture)
 	{
 		//Has texture but no UV coordinates, attempt to fabricate some
-		std::vector<repo_vector2d_t> channelVector;
+		std::vector<repo::lib::RepoVector2D> channelVector;
 
-		repo_vector_t bboxSize = { fabsf(maxVertex.x - minVertex.x), fabsf(maxVertex.y - minVertex.y), fabsf(maxVertex.z - minVertex.z) };
+		repo::lib::RepoVector3D bboxSize = { fabsf(maxVertex.x - minVertex.x), fabsf(maxVertex.y - minVertex.y), fabsf(maxVertex.z - minVertex.z) };
 
 		for (const auto & v : vertices)
 		{
-			repo_vector_t dVector = { fabsf(v.x - minVertex.x), fabsf(v.y - minVertex.y), fabsf(v.z - minVertex.z) };
+			repo::lib::RepoVector3D dVector = { fabsf(v.x - minVertex.x), fabsf(v.y - minVertex.y), fabsf(v.z - minVertex.z) };
 			channelVector.push_back({ dVector.x / bboxSize.x, dVector.y / bboxSize.y });
 		}
 		uvChannels.push_back(channelVector);
@@ -595,7 +595,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 			{
 				aiVector3D *vector = (static_cast<aiVector3D *>(currentValue.mData));
 
-				repo_vector_t repoVector = { (float)vector->x, (float)vector->y, (float)vector->z };
+				repo::lib::RepoVector3D repoVector = { (float)vector->x, (float)vector->y, (float)vector->z };
 
 				builder.append(key, repoVector);
 			}

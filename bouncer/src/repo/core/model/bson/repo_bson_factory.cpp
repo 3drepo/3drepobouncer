@@ -79,9 +79,9 @@ CameraNode RepoBSONFactory::makeCameraNode(
 	const float         &farClippingPlane,
 	const float         &nearClippingPlane,
 	const float         &fieldOfView,
-	const repo_vector_t &lookAt,
-	const repo_vector_t &position,
-	const repo_vector_t &up,
+	const repo::lib::RepoVector3D &lookAt,
+	const repo::lib::RepoVector3D &position,
+	const repo::lib::RepoVector3D &up,
 	const std::string   &name,
 	const int           &apiLevel)
 {
@@ -248,11 +248,11 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 }
 
 MeshNode RepoBSONFactory::makeMeshNode(
-	const std::vector<repo_vector_t>                  &vertices,
+	const std::vector<repo::lib::RepoVector3D>                  &vertices,
 	const std::vector<repo_face_t>                    &faces,
-	const std::vector<repo_vector_t>                  &normals,
+	const std::vector<repo::lib::RepoVector3D>                  &normals,
 	const std::vector<std::vector<float>>             &boundingBox,
-	const std::vector<std::vector<repo_vector2d_t>>   &uvChannels,
+	const std::vector<std::vector<repo::lib::RepoVector2D>>   &uvChannels,
 	const std::vector<repo_color4d_t>                 &colors,
 	const std::vector<std::vector<float>>             &outline,
 	const std::string                           &name,
@@ -443,13 +443,13 @@ MeshNode RepoBSONFactory::makeMeshNode(
 		// Could be unsigned __int64 if BSON had such construct (the closest is only __int64)
 		builder << REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT << (uint32_t)(uvChannels.size());
 
-		std::vector<repo_vector2d_t> concatenated;
+		std::vector<repo::lib::RepoVector2D> concatenated;
 
 		for (auto it = uvChannels.begin(); it != uvChannels.end(); ++it)
 		{
-			std::vector<repo_vector2d_t> channel = *it;
+			std::vector<repo::lib::RepoVector2D> channel = *it;
 
-			std::vector<repo_vector2d_t>::iterator cit;
+			std::vector<repo::lib::RepoVector2D>::iterator cit;
 			for (cit = channel.begin(); cit != channel.end(); ++cit)
 			{
 				concatenated.push_back(*cit);

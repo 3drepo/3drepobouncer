@@ -23,7 +23,7 @@
 namespace repo{
 	namespace lib{
 
-		class RepoUUID
+		class REPO_API_EXPORT RepoUUID
 		{
 		public:
 

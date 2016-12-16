@@ -257,9 +257,9 @@ namespace repo{
 		};
 		// Template specialization
 		template <>
-		void PropertyTree::addToTree<repo_vector_t>(
-			const std::string           &label,
-			const repo_vector_t         &value);
+		void PropertyTree::addToTree<repo::lib::RepoVector3D>(
+			const std::string             &label,
+			const repo::lib::RepoVector3D &value);
 
 		template <>
 		void PropertyTree::addToTree<std::string>(
@@ -288,7 +288,7 @@ namespace repo{
 		void PropertyTree::addFieldAttribute(
 			const std::string  &label,
 			const std::string  &attribute,
-			const repo_vector_t &value
+			const repo::lib::RepoVector3D &value
 			);
 	}
 }

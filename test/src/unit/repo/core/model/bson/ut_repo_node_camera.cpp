@@ -77,20 +77,21 @@ TEST(CameraTest, CloneAndApplyTransformation)
 
 	CameraNode camEmpty;
 	camEmpty.cloneAndApplyTransformation(empty);
-	repo_vector_t lookat = { 30, 54, 13.235 };
-	repo_vector_t position = { 1.234, 23450, 356.43 };
-	repo_vector_t up = { 0.01345, 1.0, 0.5654 };
+	repo::lib::RepoVector3D lookat = { 30, 54, 13.235f };
+	repo::lib::RepoVector3D position = { 1.234f, 23450, 356.43f };
+	repo::lib::RepoVector3D up = { 0.01345f, 1.0, 0.5654f };
 	auto camNode = RepoBSONFactory::makeCameraNode(1.0, 1.0, 1.0, 1.0, lookat, position, up);
 
 	CameraNode sameNode = camNode.cloneAndApplyTransformation(identity);
-	compareVectors(lookat, sameNode.getLookAt());
-	compareVectors(position, sameNode.getPosition());
-	compareVectors(up, sameNode.getUp());
+	EXPECT_EQ(lookat, sameNode.getLookAt());
+	EXPECT_EQ(position, sameNode.getPosition());
+	EXPECT_EQ(up, sameNode.getUp());
 
 	CameraNode transformedNode = camNode.cloneAndApplyTransformation(random);
-	compareVectors({ -939.044, 1107.971, -973.93 }, transformedNode.getLookAt());
-	compareVectors({ 10855.86, 24589.67, 9059.354 }, transformedNode.getPosition());
-	compareVectors({ -1031.22, 1033.178, -1032.46 }, transformedNode.getUp());
+
+	EXPECT_EQ(repo::lib::RepoVector3D({ -939.04425048828125000f, 1107.97045898437500000f, -973.92999267578125000f }), transformedNode.getLookAt());
+	EXPECT_EQ(repo::lib::RepoVector3D({ 10855.86132812500000000f, 24589.66992187500000000f, 9059.35351562500000000f }), transformedNode.getPosition());
+	EXPECT_EQ(repo::lib::RepoVector3D({ -1031.21862792968750000f, 1033.17773437500000000f, -1032.46386718750000000f }), transformedNode.getUp());
 }
 
 TEST(CameraTest, GetFields)
@@ -101,9 +102,9 @@ TEST(CameraTest, GetFields)
 	EXPECT_EQ(1.0, camEmpty.getFieldOfView());
 	EXPECT_EQ(1.0, camEmpty.getNearClippingPlane());
 	EXPECT_EQ(1.0, camEmpty.getFarClippingPlane());
-	EXPECT_TRUE(compareVectors({ 0, 0, -1 }, camEmpty.getLookAt()));
-	EXPECT_TRUE(compareVectors({ 0, 1, 0 }, camEmpty.getUp()));
-	EXPECT_TRUE(compareVectors({ 0, 0, 0 }, camEmpty.getPosition()));
+	EXPECT_EQ(repo::lib::RepoVector3D({ 0, 0, -1 }), camEmpty.getLookAt());
+	EXPECT_EQ(repo::lib::RepoVector3D({ 0, 1, 0 }), camEmpty.getUp());
+	EXPECT_EQ(repo::lib::RepoVector3D({ 0, 0, 0 }), camEmpty.getPosition());
 	EXPECT_TRUE(camEmpty.getName().empty());
 
 
@@ -113,9 +114,9 @@ TEST(CameraTest, GetFields)
 	float nearClip = rand() % 1000 / 1000.;
 	float farClip = rand() % 1000 / 1000.;
 	std::string name = getRandomString(10);
-	repo_vector_t lookat = { rand() % 1000 / 1000., rand() % 1000 / 1000., rand() % 1000 / 1000. };
-	repo_vector_t position = { rand() % 1000 / 1000., rand() % 1000 / 1000., rand() % 1000 / 1000. };
-	repo_vector_t up = { rand() % 1000 / 1000., rand() % 1000 / 1000., rand() % 1000 / 1000. };
+	repo::lib::RepoVector3D lookat = { rand() % 1000 / 1000.f, rand() % 1000 / 1000.f, rand() % 1000 / 1000.f };
+	repo::lib::RepoVector3D position = { rand() % 1000 / 1000.f, rand() % 1000 / 1000.f, rand() % 1000 / 1000.f };
+	repo::lib::RepoVector3D up = { rand() % 1000 / 1000.f, rand() % 1000 / 1000.f, rand() % 1000 / 1000.f };
 	auto camNode = RepoBSONFactory::makeCameraNode(aspRat, farClip, nearClip, fov, lookat, position, up, name);
 
 	EXPECT_EQ(aspRat, camNode.getAspectRatio());
@@ -125,9 +126,9 @@ TEST(CameraTest, GetFields)
 	EXPECT_EQ(farClip, camNode.getFarClippingPlane());
 	EXPECT_EQ(name, camNode.getName());
 
-	EXPECT_TRUE(compareVectors(lookat, camNode.getLookAt()));
-	EXPECT_TRUE(compareVectors(up, camNode.getUp()));
-	EXPECT_TRUE(compareVectors(position, camNode.getPosition()));
+	EXPECT_EQ(lookat, camNode.getLookAt());
+	EXPECT_EQ(up, camNode.getUp());
+	EXPECT_EQ(position, camNode.getPosition());
 
 
 }
@@ -139,9 +140,9 @@ TEST(CameraTest, GetOrientation)
 	std::vector<float> expectedEmptyVector = { 0, 0, 0, 1 };
 	EXPECT_TRUE(compareStdVectors(expectedEmptyVector, camEmpty.getOrientation()));
 
-	repo_vector_t lookat = { 30, 54, 13.235 };
-	repo_vector_t position = { 1.234, 23450, 356.43 };
-	repo_vector_t up = { 0.01345, 1.0, 0.5654 };
+	repo::lib::RepoVector3D lookat = { 30, 54, 13.235f };
+	repo::lib::RepoVector3D position = { 1.234f, 23450, 356.43f };
+	repo::lib::RepoVector3D up = { 0.01345f, 1.0f, 0.5654f };
 	auto camNode = RepoBSONFactory::makeCameraNode(0.4, 0.6, 0.1, 0.9, lookat, position, up);
 	std::vector<float> expectedOrientation = { 0.82826995849609375f, -0.54004347324371338f, -0.14940512180328369f, 1.62119138240814210f };
 	EXPECT_TRUE(compareStdVectors(expectedOrientation, camNode.getOrientation()));
@@ -162,9 +163,9 @@ TEST(CameraTest, GetCameraMatrix)
 	EXPECT_TRUE(compareStdVectors(goldenDataEmpty, emptyCam.getCameraMatrix(false)));
 	EXPECT_TRUE(compareStdVectors(goldenDataEmpty, emptyCam.getCameraMatrix(true)));
 
-	repo_vector_t lookat = { 30, 54, 13.235 };
-	repo_vector_t position = { 1.234, 23450, 356.43 };
-	repo_vector_t up = { 0.01345, 1.0, 0.5654 };
+	repo::lib::RepoVector3D lookat = { 30, 54, 13.235f };
+	repo::lib::RepoVector3D position = { 1.234f, 23450, 356.43f };
+	repo::lib::RepoVector3D up = { 0.01345f, 1.0, 0.5654f };
 	auto camNode = RepoBSONFactory::makeCameraNode(0.4, 0.6, 0.1, 0.9, lookat, position, up);
 
 	auto matrix = camNode.getCameraMatrix(true);
@@ -203,9 +204,9 @@ TEST(CameraTest, SEqual)
 	float nearClip = rand() % 1000 / 1000.;
 	float farClip = rand() % 1000 / 1000.;
 	std::string name = getRandomString(10);
-	repo_vector_t lookat = { rand() % 1000 / 1000., rand() % 1000 / 1000., rand() % 1000 / 1000. };
-	repo_vector_t position = { rand() % 1000 / 1000., rand() % 1000 / 1000., rand() % 1000 / 1000. };
-	repo_vector_t up = { rand() % 1000 / 1000., rand() % 1000 / 1000., rand() % 1000 / 1000. };
+	repo::lib::RepoVector3D lookat = { rand() % 1000 / 1000.f, rand() % 1000 / 1000.f, rand() % 1000 / 1000.f };
+	repo::lib::RepoVector3D position = { rand() % 1000 / 1000.f, rand() % 1000 / 1000.f, rand() % 1000 / 1000.f };
+	repo::lib::RepoVector3D up = { rand() % 1000 / 1000.f, rand() % 1000 / 1000.f, rand() % 1000 / 1000.f };
 	auto camNode = RepoBSONFactory::makeCameraNode(aspRat, farClip, nearClip, fov, lookat, position, up, name);
 	auto camNode2 = RepoBSONFactory::makeCameraNode(aspRat, farClip, nearClip, fov, lookat, position, up, name);
 

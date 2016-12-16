@@ -59,11 +59,11 @@ template<> void repo::core::model::RepoBSONBuilder::append < repo::lib::RepoUUID
 	appendUUID(label, uuid);
 }
 
-	template<> void repo::core::model::RepoBSONBuilder::append < repo_vector_t >
+	template<> void repo::core::model::RepoBSONBuilder::append < repo::lib::RepoVector3D >
 		(
 			const std::string &label,
-			const repo_vector_t &vec
+			const repo::lib::RepoVector3D &vec
 			)
 	{
-		appendArray(label, std::vector<float>({ vec.x, vec.y, vec.z }));
+		appendArray(label, vec.toStdVector());
 	}

@@ -63,10 +63,10 @@ TEST(MeshNodeTest, PositionDependantTest)
 TEST(MeshNodeTest, GetMFormatTest)
 {
 	//Better to not rely on RepoBSONFactory, but it's so much easier...
-	std::vector<repo_vector_t> emptyV, v;
+	std::vector<repo::lib::RepoVector3D> emptyV, v;
 	std::vector<repo_face_t> f;
 	std::vector<std::vector<float>> bbox;
-	std::vector<std::vector<repo_vector2d_t>> emptyUV, uvs;
+	std::vector<std::vector<repo::lib::RepoVector2D>> emptyUV, uvs;
 	std::vector<repo_color4d_t> emptyCol, cols;
 	v.resize(10);
 	f.resize(10);
@@ -158,10 +158,10 @@ TEST(MeshNodeTest, SEqualTest)
 	EXPECT_FALSE(mesh.sEqual(node));
 	EXPECT_TRUE(mesh.sEqual(mesh));
 
-	std::vector<repo_vector_t> emptyV, v;
+	std::vector<repo::lib::RepoVector3D> emptyV, v;
 	std::vector<repo_face_t> f;
 	std::vector<std::vector<float>> bbox;
-	std::vector<std::vector<repo_vector2d_t>> emptyUV, uvs;
+	std::vector<std::vector<repo::lib::RepoVector2D>> emptyUV, uvs;
 	std::vector<repo_color4d_t> emptyCol, cols;
 	v.resize(10);
 	f.resize(10);
@@ -186,7 +186,7 @@ TEST(MeshNodeTest, SEqualTest)
 	auto mesh2 = RepoBSONFactory::makeMeshNode(v, f, v, bbox, emptyUV, emptyCol);
 	EXPECT_FALSE(mesh2.sEqual(mesh1changedF));
 
-	v[1] = { 0.0, 0.6, 0.0 };
+	v[1] = { 0.0f, 0.6f, 0.0f };
 	auto mesh2changedN = RepoBSONFactory::makeMeshNode(v, f, v, bbox, emptyUV, emptyCol);
 	EXPECT_FALSE(mesh2.sEqual(mesh2changedN));
 
@@ -196,7 +196,7 @@ TEST(MeshNodeTest, SEqualTest)
 
 	EXPECT_FALSE(mesh1changedF.sEqual(mesh3));
 
-	uvs[0][3] = { 0.3, 0.1 };
+	uvs[0][3] = { 0.3f, 0.1f };
 	auto mesh3ChangedUV = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol);
 
 	EXPECT_FALSE(mesh3ChangedUV.sEqual(mesh3));
@@ -228,22 +228,22 @@ TEST(MeshNodeTest, CloneAndApplyTransformation)
 	MeshNode newEmpty = empty.cloneAndApplyTransformation(identity);
 	EXPECT_TRUE(newEmpty.isEmpty());
 
-	std::vector<repo_vector_t> v;
+	std::vector<repo::lib::RepoVector3D> v;
 	std::vector<repo_face_t> f;
 	std::vector<std::vector<float>> bbox;
 
-	v = { { 0.1, 0.2, 0.3 }, { 0.4, 0.5, 0.6 } };
+	v = { { 0.1f, 0.2f, 0.3f }, { 0.4f, 0.5f, 0.6f } };
 	f.resize(1);
 
 	auto mesh = RepoBSONFactory::makeMeshNode(v, f, v, bbox);
 	MeshNode unchangedMesh = mesh.cloneAndApplyTransformation(identity);
 
-	EXPECT_TRUE(compareVectors(v, unchangedMesh.getVertices()));
+	EXPECT_TRUE(compareStdVectors(v, unchangedMesh.getVertices()));
 
 	MeshNode changedMesh = mesh.cloneAndApplyTransformation(notId);
-	EXPECT_FALSE(compareVectors(v, changedMesh.getVertices()));
-	EXPECT_FALSE(compareVectors(changedMesh.getNormals(), v));
-	EXPECT_FALSE(compareVectors(changedMesh.getNormals(), changedMesh.getVertices()));
+	EXPECT_FALSE(compareStdVectors(v, changedMesh.getVertices()));
+	EXPECT_FALSE(compareStdVectors(changedMesh.getNormals(), v));
+	EXPECT_FALSE(compareStdVectors(changedMesh.getNormals(), changedMesh.getVertices()));
 }
 
 TEST(MeshNodeTest, CloneAndApplyMeshMapping)
@@ -275,8 +275,8 @@ TEST(MeshNodeTest, CloneAndApplyMeshMapping)
 	ASSERT_EQ(meshMappings.size(), mapping.size());
 	for (int i = 0; i < meshMappings.size(); ++i)
 	{
-		EXPECT_TRUE(compareVectors(meshMappings[i].min, mapping[i].min));
-		EXPECT_TRUE(compareVectors(meshMappings[i].max, mapping[i].max));
+		EXPECT_EQ(meshMappings[i].min, mapping[i].min);
+		EXPECT_EQ(meshMappings[i].max, mapping[i].max);
 		EXPECT_EQ(meshMappings[i].mesh_id, mapping[i].mesh_id);
 		EXPECT_EQ(meshMappings[i].material_id, mapping[i].material_id);
 		EXPECT_EQ(meshMappings[i].vertFrom, mapping[i].vertFrom);
@@ -311,10 +311,10 @@ TEST(MeshNodeTest, Getters)
 {
 	MeshNode empty;
 
-	std::vector<repo_vector_t> v, n;
+	std::vector<repo::lib::RepoVector3D> v, n;
 	std::vector<repo_face_t> f;
 	std::vector<std::vector<float>> bbox;
-	std::vector<std::vector<repo_vector2d_t>> uvs;
+	std::vector<std::vector<repo::lib::RepoVector2D>> uvs;
 	std::vector<repo_color4d_t> cols;
 
 	uvs.resize(2);
@@ -335,7 +335,7 @@ TEST(MeshNodeTest, Getters)
 	EXPECT_EQ(0, empty.getVertices().size());
 	auto resVertices = mesh.getVertices();
 	EXPECT_EQ(v.size(), resVertices.size());
-	EXPECT_TRUE(compareVectors(v, resVertices));
+	EXPECT_TRUE(compareStdVectors(v, resVertices));
 
 	EXPECT_EQ(0, empty.getFaces().size());
 	auto resFaces = mesh.getFaces();
@@ -348,7 +348,7 @@ TEST(MeshNodeTest, Getters)
 	EXPECT_EQ(0, empty.getNormals().size());
 	auto resNormals = mesh.getNormals();
 	EXPECT_EQ(n.size(), resNormals.size());
-	EXPECT_TRUE(compareVectors(resNormals, n));
+	EXPECT_TRUE(compareStdVectors(resNormals, n));
 
 	EXPECT_EQ(0, empty.getUVChannelsSeparated().size());
 
@@ -356,7 +356,7 @@ TEST(MeshNodeTest, Getters)
 	for (int i = 0; i < uvs.size(); ++i)
 	{
 		auto uvChannel = mesh.getUVChannelsSeparated().at(i);
-		EXPECT_TRUE(compareVectors(uvs[i], uvChannel));
+		EXPECT_TRUE(compareStdVectors(uvs[i], uvChannel));
 	}
 
 	EXPECT_EQ(0, empty.getColors().size());
@@ -364,10 +364,10 @@ TEST(MeshNodeTest, Getters)
 	EXPECT_TRUE(compareVectors(cols, mesh.getColors()));
 
 	auto retBbox = mesh.getBoundingBox();
-	std::vector<repo_vector_t> bboxInVect;
+	std::vector<repo::lib::RepoVector3D> bboxInVect;
 	for (int i = 0; i < bbox.size(); ++i)
 	{
 		bboxInVect.push_back({ bbox[i][0], bbox[i][1], bbox[i][2] });
 	}
-	EXPECT_TRUE(compareVectors(retBbox, bboxInVect));
+	EXPECT_TRUE(compareStdVectors(retBbox, bboxInVect));
 }

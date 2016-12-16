@@ -162,10 +162,10 @@ namespace repo {
 					const repo::lib::RepoUUID &uuid
 					);
 
-				template<> void RepoBSONBuilder::append < repo_vector_t >
+				template<> void RepoBSONBuilder::append < repo::lib::RepoVector3D >
 					(
 						const std::string &label,
-						const repo_vector_t &vec
+						const repo::lib::RepoVector3D &vec
 						);
 		}// end namespace model
 	} // end namespace core

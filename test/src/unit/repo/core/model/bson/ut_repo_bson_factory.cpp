@@ -217,9 +217,9 @@ TEST(RepoBSONFactoryTest, MakeCameraNodeTest)
 	float fCP = 10;
 	float nCP = 100;
 	float fov = 500;
-	repo_vector_t lookAt = { 1.0, 2.0, 3.0 };
-	repo_vector_t position = { 3.1, 2.2, 3.5 };
-	repo_vector_t up = { 4.1, 12.2, 23.5 };
+	repo::lib::RepoVector3D lookAt = { 1.0f, 2.0f, 3.0f };
+	repo::lib::RepoVector3D position = { 3.1f, 2.2f, 3.5f };
+	repo::lib::RepoVector3D up = { 4.1f, 12.2f, 23.5f };
 
 	std::string name = "CamTest";
 
@@ -231,9 +231,9 @@ TEST(RepoBSONFactoryTest, MakeCameraNodeTest)
 	EXPECT_EQ(nCP, camera.getNearClippingPlane());
 	EXPECT_EQ(fov, camera.getFieldOfView());
 
-	EXPECT_TRUE(compareVectors(lookAt, camera.getLookAt()));
-	EXPECT_TRUE(compareVectors(position, camera.getPosition()));
-	EXPECT_TRUE(compareVectors(up, camera.getUp()));
+	EXPECT_EQ(lookAt, camera.getLookAt());
+	EXPECT_EQ(position, camera.getPosition());
+	EXPECT_EQ(up, camera.getUp());
 
 	EXPECT_EQ(name, camera.getName());
 
@@ -319,9 +319,9 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 {
 	uint32_t nCount = 10;
 	//using malloc to get un-initalised values to fill the memory.
-	repo_vector_t *rawVec = (repo_vector_t*)malloc(sizeof(*rawVec) * nCount);
-	repo_vector_t *rawNorm = (repo_vector_t*)malloc(sizeof(*rawNorm) * nCount);
-	repo_vector2d_t *rawUV = (repo_vector2d_t*)malloc(sizeof(*rawUV) * nCount);
+	repo::lib::RepoVector3D *rawVec = (repo::lib::RepoVector3D*)malloc(sizeof(*rawVec) * nCount);
+	repo::lib::RepoVector3D *rawNorm = (repo::lib::RepoVector3D*)malloc(sizeof(*rawNorm) * nCount);
+	repo::lib::RepoVector2D *rawUV = (repo::lib::RepoVector2D*)malloc(sizeof(*rawUV) * nCount);
 	repo_color4d_t *rawColors = (repo_color4d_t*)malloc(sizeof(*rawColors) * nCount);
 
 	ASSERT_TRUE(rawVec);
@@ -330,9 +330,9 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 
 	//Set up faces
 	std::vector<repo_face_t> faces;
-	std::vector<repo_vector_t> vectors;
-	std::vector<repo_vector_t> normals;
-	std::vector<std::vector<repo_vector2d_t>> uvChannels;
+	std::vector<repo::lib::RepoVector3D> vectors;
+	std::vector<repo::lib::RepoVector3D> normals;
+	std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
 	std::vector<repo_color4d_t> colors;
 	uvChannels.resize(1);
 	faces.reserve(nCount);
@@ -368,19 +368,19 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	auto fOut = mesh.getFaces();
 	auto cOut = mesh.getColors();
 	auto uvOut = mesh.getUVChannelsSeparated();
-	EXPECT_TRUE(compareVectors(vectors, vOut));
-	EXPECT_TRUE(compareVectors(normals, nOut));
+	EXPECT_TRUE(compareStdVectors(vectors, vOut));
+	EXPECT_TRUE(compareStdVectors(normals, nOut));
 	EXPECT_TRUE(compareStdVectors(faces, fOut));
 	EXPECT_TRUE(compareVectors(colors, cOut));
-	EXPECT_TRUE(compareVectors(uvChannels, uvOut));
+	EXPECT_TRUE(compareStdVectors(uvChannels, uvOut));
 
 	auto bbox = mesh.getBoundingBox();
 	ASSERT_EQ(boundingBox.size(), bbox.size());
 	ASSERT_EQ(3, boundingBox[0].size());
 	ASSERT_EQ(3, boundingBox[1].size());
 
-	EXPECT_TRUE(compareVectors(bbox[0], { boundingBox[0][0], boundingBox[0][1], boundingBox[0][2] }));
-	EXPECT_TRUE(compareVectors(bbox[1], { boundingBox[1][0], boundingBox[1][1], boundingBox[1][2] }));
+	EXPECT_EQ(bbox[0], repo::lib::RepoVector3D({ boundingBox[0][0], boundingBox[0][1], boundingBox[0][2] }));
+	EXPECT_EQ(bbox[1], repo::lib::RepoVector3D({ boundingBox[1][0], boundingBox[1][1], boundingBox[1][2] }));
 }
 
 TEST(RepoBSONFactoryTest, MakeReferenceNodeTest)

@@ -43,18 +43,18 @@ MeshNode::~MeshNode()
 RepoNode MeshNode::cloneAndApplyTransformation(
 	const std::vector<float> &matrix) const
 {
-	std::vector<repo_vector_t> vertices = getVertices();
-	std::vector<repo_vector_t> normals = getNormals();
+	std::vector<repo::lib::RepoVector3D> vertices = getVertices();
+	std::vector<repo::lib::RepoVector3D> normals = getNormals();
 
 	auto newBigFiles = bigFiles;
 
 	RepoBSONBuilder builder;
-	std::vector<repo_vector_t> resultVertice;
-	std::vector<repo_vector_t> newBbox;
+	std::vector<repo::lib::RepoVector3D> resultVertice;
+	std::vector<repo::lib::RepoVector3D> newBbox;
 	if (vertices.size())
 	{
 		resultVertice.reserve(vertices.size());
-		for (const repo_vector_t &v : vertices)
+		for (const repo::lib::RepoVector3D &v : vertices)
 		{
 			resultVertice.push_back(multiplyMatVec(matrix, v));
 			if (newBbox.size())
@@ -85,35 +85,35 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 		}
 		if (newBigFiles.find(REPO_NODE_MESH_LABEL_VERTICES) != newBigFiles.end())
 		{
-			const uint64_t verticesByteCount = resultVertice.size() * sizeof(repo_vector_t);
+			const uint64_t verticesByteCount = resultVertice.size() * sizeof(repo::lib::RepoVector3D);
 			newBigFiles[REPO_NODE_MESH_LABEL_VERTICES].second.resize(verticesByteCount);
 			memcpy(newBigFiles[REPO_NODE_MESH_LABEL_VERTICES].second.data(), resultVertice.data(), verticesByteCount);
 		}
 		else
-			builder.appendBinary(REPO_NODE_MESH_LABEL_VERTICES, resultVertice.data(), resultVertice.size() * sizeof(repo_vector_t));
+			builder.appendBinary(REPO_NODE_MESH_LABEL_VERTICES, resultVertice.data(), resultVertice.size() * sizeof(repo::lib::RepoVector3D));
 
 		if (normals.size())
 		{
 			auto matInverse = invertMat(matrix);
 			auto worldMat = transposeMat(matInverse);
 
-			std::vector<repo_vector_t> resultNormals;
+			std::vector<repo::lib::RepoVector3D> resultNormals;
 			resultNormals.reserve(normals.size());
-			for (const repo_vector_t &v : normals)
+			for (const repo::lib::RepoVector3D &v : normals)
 			{
 				auto transformedNormal = multiplyMatVecFake3x3(worldMat, v);
-				normalize(transformedNormal);
+				transformedNormal.normalize();
 				resultNormals.push_back(transformedNormal);
 			}
 
 			if (newBigFiles.find(REPO_NODE_MESH_LABEL_NORMALS) != newBigFiles.end())
 			{
-				const uint64_t byteCount = resultNormals.size() * sizeof(repo_vector_t);
+				const uint64_t byteCount = resultNormals.size() * sizeof(repo::lib::RepoVector3D);
 				newBigFiles[REPO_NODE_MESH_LABEL_NORMALS].second.resize(byteCount);
 				memcpy(newBigFiles[REPO_NODE_MESH_LABEL_NORMALS].second.data(), resultNormals.data(), byteCount);
 			}
 			else
-				builder.appendBinary(REPO_NODE_MESH_LABEL_NORMALS, resultNormals.data(), resultNormals.size() * sizeof(repo_vector_t));
+				builder.appendBinary(REPO_NODE_MESH_LABEL_NORMALS, resultNormals.data(), resultNormals.size() * sizeof(repo::lib::RepoVector3D));
 		}
 
 		RepoBSONBuilder arrayBuilder, outlineBuilder;
@@ -179,18 +179,18 @@ MeshNode MeshNode::cloneAndUpdateMeshMapping(
 	return MeshNode(builder.obj(), bigFiles);
 }
 
-std::vector<repo_vector_t> MeshNode::getBoundingBox() const
+std::vector<repo::lib::RepoVector3D> MeshNode::getBoundingBox() const
 {
 	RepoBSON bbArr = getObjectField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
 
-	std::vector<repo_vector_t> bbox = getBoundingBox(bbArr);
+	std::vector<repo::lib::RepoVector3D> bbox = getBoundingBox(bbArr);
 
 	return bbox;
 }
 
-std::vector<repo_vector_t> MeshNode::getBoundingBox(RepoBSON &bbArr)
+std::vector<repo::lib::RepoVector3D> MeshNode::getBoundingBox(RepoBSON &bbArr)
 {
-	std::vector<repo_vector_t> bbox;
+	std::vector<repo::lib::RepoVector3D> bbox;
 	if (!bbArr.isEmpty() && bbArr.couldBeArray())
 	{
 		size_t nVec = bbArr.nFields();
@@ -204,7 +204,7 @@ std::vector<repo_vector_t> MeshNode::getBoundingBox(RepoBSON &bbArr)
 
 				if (nFields >= 3)
 				{
-					repo_vector_t vector;
+					repo::lib::RepoVector3D vector;
 					vector.x = bbVectorBson.getField("0").Double();
 					vector.y = bbVectorBson.getField("1").Double();
 					vector.z = bbVectorBson.getField("2").Double();
@@ -241,9 +241,9 @@ std::vector<repo_color4d_t> MeshNode::getColors() const
 	return colors;
 }
 
-std::vector<repo_vector_t> MeshNode::getVertices() const
+std::vector<repo::lib::RepoVector3D> MeshNode::getVertices() const
 {
-	std::vector<repo_vector_t> vertices;
+	std::vector<repo::lib::RepoVector3D> vertices;
 	if (hasBinField(REPO_NODE_MESH_LABEL_VERTICES))
 	{
 		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_VERTICES, vertices);
@@ -295,7 +295,7 @@ std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
 
 			RepoBSON boundingBox = mappingObj.getObjectField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
 
-			std::vector<repo_vector_t> bboxVec = getBoundingBox(boundingBox);
+			std::vector<repo::lib::RepoVector3D> bboxVec = getBoundingBox(boundingBox);
 			mapping.min.x = bboxVec[0].x;
 			mapping.min.y = bboxVec[0].y;
 			mapping.min.z = bboxVec[0].z;
@@ -310,9 +310,9 @@ std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
 	return mappings;
 }
 
-std::vector<repo_vector_t> MeshNode::getNormals() const
+std::vector<repo::lib::RepoVector3D> MeshNode::getNormals() const
 {
-	std::vector<repo_vector_t> normals;
+	std::vector<repo::lib::RepoVector3D> normals;
 	if (hasBinField(REPO_NODE_MESH_LABEL_NORMALS))
 	{
 		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_NORMALS, normals);
@@ -321,9 +321,9 @@ std::vector<repo_vector_t> MeshNode::getNormals() const
 	return normals;
 }
 
-std::vector<repo_vector2d_t> MeshNode::getUVChannels() const
+std::vector<repo::lib::RepoVector2D> MeshNode::getUVChannels() const
 {
-	std::vector<repo_vector2d_t> channels;
+	std::vector<repo::lib::RepoVector2D> channels;
 	if (hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT))
 	{
 		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_UV_CHANNELS, channels);
@@ -332,11 +332,11 @@ std::vector<repo_vector2d_t> MeshNode::getUVChannels() const
 	return channels;
 }
 
-std::vector<std::vector<repo_vector2d_t>> MeshNode::getUVChannelsSeparated() const
+std::vector<std::vector<repo::lib::RepoVector2D>> MeshNode::getUVChannelsSeparated() const
 {
-	std::vector<std::vector<repo_vector2d_t>> channels;
+	std::vector<std::vector<repo::lib::RepoVector2D>> channels;
 
-	std::vector<repo_vector2d_t> serialisedChannels = getUVChannels();
+	std::vector<repo::lib::RepoVector2D> serialisedChannels = getUVChannels();
 
 	if (serialisedChannels.size())
 	{
@@ -346,7 +346,7 @@ std::vector<std::vector<repo_vector2d_t>> MeshNode::getUVChannelsSeparated() con
 		channels.reserve(nChannels);
 		for (uint32_t i = 0; i < nChannels; i++)
 		{
-			channels.push_back(std::vector<repo_vector2d_t>());
+			channels.push_back(std::vector<repo::lib::RepoVector2D>());
 			channels[i].reserve(vecPerChannel);
 
 			uint32_t offset = i*vecPerChannel;
@@ -434,8 +434,8 @@ bool MeshNode::sEqual(const RepoNode &other) const
 
 	MeshNode otherMesh = MeshNode(other);
 
-	std::vector<repo_vector_t> vertices, vertices2, normals, normals2;
-	std::vector<repo_vector2d_t> uvChannels, uvChannels2;
+	std::vector<repo::lib::RepoVector3D> vertices, vertices2, normals, normals2;
+	std::vector<repo::lib::RepoVector2D> uvChannels, uvChannels2;
 	std::vector<uint32_t> facesSerialized, facesSerialized2;
 	std::vector<repo_color4d_t> colors, colors2;
 

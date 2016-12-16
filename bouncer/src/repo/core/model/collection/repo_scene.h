@@ -729,7 +729,7 @@ namespace repo{
 				* Get a bounding box for the entire scene
 				* @return returns bounding box for the whole graph.
 				*/
-				std::vector<repo_vector_t> getSceneBoundingBox() const;
+				std::vector<repo::lib::RepoVector3D> getSceneBoundingBox() const;
 
 				/**
 				* Get all ID of nodes which are added since last revision
@@ -1006,7 +1006,7 @@ namespace repo{
 					const GraphType            &gType,
 					const RepoNode             *node,
 					const std::vector<float>   &mat,
-					std::vector<repo_vector_t> &bbox) const;
+					std::vector<repo::lib::RepoVector3D> &bbox) const;
 
 				/**
 				* populate the collections (cameras, meshes etc) with the given nodes

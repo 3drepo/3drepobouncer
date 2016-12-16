@@ -310,9 +310,9 @@ bool MeshMapReorganiser::splitLargeMesh(
 	size_t                           &totalFaceCount)
 {
 	std::unordered_map<uint32_t, uint32_t> reIndexMap;
-	std::vector<repo_vector_t> reMappedVertices, reMappedNormals;
+	std::vector<repo::lib::RepoVector3D> reMappedVertices, reMappedNormals;
 	std::vector<repo_color4d_t> reMappedCols;
-	std::vector<std::vector<repo_vector2d_t>> reMappedUVs;
+	std::vector<std::vector<repo::lib::RepoVector2D>> reMappedUVs;
 	if (oldUVs.size())
 		reMappedUVs.resize(oldUVs.size());
 
@@ -390,7 +390,7 @@ bool MeshMapReorganiser::splitLargeMesh(
 				if (it == reIndexMap.end())
 				{
 					reIndexMap[indexValue] = splitMeshVertexCount;
-					repo_vector_t vertex = oldVertices[indexValue];
+					repo::lib::RepoVector3D vertex = oldVertices[indexValue];
 					reMappedVertices.push_back(vertex);
 
 					if (hasNormal)
@@ -468,7 +468,7 @@ bool MeshMapReorganiser::splitLargeMesh(
 		auto startingPos = newVertices.begin() + newMappings.back().vertFrom;
 
 		//Chop out the unwanted vertices
-		std::vector<repo_vector_t> extraVs;
+		std::vector<repo::lib::RepoVector3D> extraVs;
 		extraVs.resize(extraVertices);
 		newVertices.insert(startingPos, extraVs.begin(), extraVs.end());
 		if (hasNormal)
@@ -491,7 +491,7 @@ bool MeshMapReorganiser::splitLargeMesh(
 			for (int iUV = 0; iUV < oldUVs.size(); ++iUV)
 			{
 				auto startingPosN = newUVs[iUV].begin() + newMappings.back().vertFrom;
-				std::vector<repo_vector2d_t> extras;
+				std::vector<repo::lib::RepoVector2D> extras;
 				extras.resize(extraVertices);
 				newUVs[iUV].insert(startingPosN, extras.begin(), extras.end());
 			}
@@ -544,8 +544,8 @@ void MeshMapReorganiser::startSubMesh(
 void MeshMapReorganiser::updateBoundingBoxes(
 	std::vector<float>  &min,
 	std::vector<float>  &max,
-	const repo_vector_t &smMin,
-	const repo_vector_t &smMax)
+	const repo::lib::RepoVector3D &smMin,
+	const repo::lib::RepoVector3D &smMax)
 {
 	//Update Bounding box
 	if (min.size())

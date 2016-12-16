@@ -27,6 +27,7 @@
 
 #include "../../lib/repo_log.h"
 #include "../../lib/datastructure/repo_uuid.h"
+#include "../../lib/datastructure/repo_vector.h"
 
 typedef struct{
 	std::vector<float> ambient;
@@ -47,23 +48,13 @@ typedef struct{
 	float a;
 }repo_color4d_t;
 
-typedef struct{
-	float x;
-	float y;
-	float z;
-}repo_vector_t;
-
-typedef struct{
-	float x;
-	float y;
-}repo_vector2d_t;
 
 typedef std::vector<uint32_t> repo_face_t;
 
 //This is used to map info for multipart optimization
 typedef struct{
-	repo_vector_t min;
-	repo_vector_t max;
+	repo::lib::RepoVector3D min;
+	repo::lib::RepoVector3D max;
 	repo::lib::RepoUUID  mesh_id;
 	repo::lib::RepoUUID  material_id;
 	int32_t       vertFrom;
@@ -95,19 +86,6 @@ static std::string toString(const repo_color4d_t &color)
 	return sstr.str();
 }
 
-static std::string toString(const repo_vector_t &vec)
-{
-	std::stringstream sstr;
-	sstr << "[" << vec.x << ", " << vec.y << ", " << vec.z << "]";
-	return sstr.str();
-}
-
-static std::string toString(const repo_vector2d_t &vec)
-{
-	std::stringstream sstr;
-	sstr << "[" << vec.x << ", " << vec.y << "]";
-	return sstr.str();
-}
 
 /**
 * \brief Returns a compacted string representation of a given vector
@@ -133,21 +111,6 @@ static std::string vectorToString(const std::vector<T> &vec)
 	}
 }
 
-static float dotProduct(const repo_vector_t a, const repo_vector_t b)
-{
-	return a.x*b.x + a.y*b.y + a.z*b.z;
-}
-
-static repo_vector_t crossProduct(const repo_vector_t &a, const repo_vector_t &b)
-{
-	repo_vector_t product;
-	product.x = (a.y * b.z) - (a.z * b.y);
-	product.y = (a.z * b.x) - (a.x * b.z);
-	product.z = (a.x * b.y) - (a.y * b.x);
-
-	return product;
-}
-
 static std::string printMat(const std::vector<float> &mat)
 {
 	std::stringstream ss;
@@ -163,14 +126,6 @@ static std::string printMat(const std::vector<float> &mat)
 	return ss.str();
 }
 
-static std::string printVec(const repo_vector_t &vec)
-{
-	std::stringstream ss;
-	ss.precision(17);
-	ss << "[ " << std::fixed << vec.x << ", " << std::fixed << vec.y << " ," << std::fixed << vec.z << " ]";
-
-	return ss.str();
-}
 
 /**
 * Matrix x vector multiplication
@@ -179,9 +134,9 @@ static std::string printVec(const repo_vector_t &vec)
 * @param vec vector
 * @return returns the resulting vector.
 */
-static repo_vector_t multiplyMatVec(const std::vector<float> &mat, const repo_vector_t &vec)
+static repo::lib::RepoVector3D multiplyMatVec(const std::vector<float> &mat, const repo::lib::RepoVector3D &vec)
 {
-	repo_vector_t result;
+	repo::lib::RepoVector3D result;
 	if (mat.size() != 16)
 	{
 		repoError << "Trying to perform a matrix x vector multiplation with unexpected matrix size(" << mat.size() << ")";
@@ -217,9 +172,9 @@ static repo_vector_t multiplyMatVec(const std::vector<float> &mat, const repo_ve
 * @param vec vector
 * @return returns the resulting vector.
 */
-static repo_vector_t multiplyMatVecFake3x3(const std::vector<float> &mat, const repo_vector_t &vec)
+static repo::lib::RepoVector3D multiplyMatVecFake3x3(const std::vector<float> &mat, const repo::lib::RepoVector3D &vec)
 {
-	repo_vector_t result;
+	repo::lib::RepoVector3D result;
 	if (mat.size() != 16)
 	{
 		repoError << "Trying to perform a matrix x vector multiplation with unexpected matrix size(" << mat.size() << ")";
@@ -386,18 +341,6 @@ static std::vector<float> transposeMat(const std::vector<float> &mat)
 	}
 
 	return result;
-}
-
-static void normalize(repo_vector_t &a)
-{
-	float length = std::sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
-
-	if (length > 0)
-	{
-		a.x /= length;
-		a.y /= length;
-		a.z /= length;
-	}
 }
 
 static bool nameCheck(const char &c)

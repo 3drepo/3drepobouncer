@@ -170,9 +170,9 @@ namespace repo {
 					const float         &farClippingPlane,
 					const float         &nearClippingPlane,
 					const float         &fieldOfView,
-					const repo_vector_t &lookAt,
-					const repo_vector_t &position,
-					const repo_vector_t &up,
+					const repo::lib::RepoVector3D &lookAt,
+					const repo::lib::RepoVector3D &position,
+					const repo::lib::RepoVector3D &up,
 					const std::string   &name = std::string(),
 					const int           &apiLevel = REPO_NODE_API_LEVEL_1);
 
@@ -233,11 +233,11 @@ namespace repo {
 				* @return returns a mesh node
 				*/
 				static MeshNode makeMeshNode(
-					const std::vector<repo_vector_t>                  &vertices,
+					const std::vector<repo::lib::RepoVector3D>                  &vertices,
 					const std::vector<repo_face_t>                    &faces,
-					const std::vector<repo_vector_t>                  &normals,
+					const std::vector<repo::lib::RepoVector3D>                  &normals,
 					const std::vector<std::vector<float>>             &boundingBox,
-					const std::vector<std::vector<repo_vector2d_t>>   &uvChannels = std::vector<std::vector<repo_vector2d_t>>(),
+					const std::vector<std::vector<repo::lib::RepoVector2D>>   &uvChannels = std::vector<std::vector<repo::lib::RepoVector2D>>(),
 					const std::vector<repo_color4d_t>                 &colors = std::vector<repo_color4d_t>(),
 					const std::vector<std::vector<float>>             &outline = std::vector<std::vector<float>>(),
 					const std::string                                 &name = std::string(),

@@ -69,7 +69,7 @@ TEST(RepoBSONBuilderTest, AppendGeneric)
 	long long longT = 123412452141L;
 	float floatT = 1.2345678;
 	repo::lib::RepoUUID idT = repo::lib::RepoUUID::createUUID();
-	repo_vector_t rvecT = { 0.1234, 1.2345, 2.34567 };
+	repo::lib::RepoVector3D rvecT = { 0.1234f, 1.2345f, 2.34567f };
 	//TODO: add more if more comes up!
 
 
@@ -109,7 +109,7 @@ TEST(RepoBSONBuilderTest, AppendUUID)
 
 TEST(RepoBSONBuilderTest, AppendRepoVectorT)
 {
-	repo_vector_t vector3d = { 1.0, 2.0, 3.0 };
+	repo::lib::RepoVector3D vector3d = { 1.0, 2.0, 3.0 };
 	RepoBSONBuilder builder;
 	builder.append("vectorTest", vector3d);
 	RepoBSON bson = builder.obj();

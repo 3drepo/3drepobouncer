@@ -274,7 +274,7 @@ void GLTFModelExport::addAccessors(
 	const std::string                  &accName,
 	const std::string                  &buffViewName,
 	repo::lib::PropertyTree            &tree,
-	const std::vector<repo_vector2d_t> &buffer,
+	const std::vector<repo::lib::RepoVector2D> &buffer,
 	const uint32_t                     &addrFrom,
 	const uint32_t                     &addrTo,
 	const std::string                  &refId,
@@ -312,7 +312,7 @@ void GLTFModelExport::addAccessors(
 	const std::string                &accName,
 	const std::string                &buffViewName,
 	repo::lib::PropertyTree          &tree,
-	const std::vector<repo_vector_t> &buffer,
+	const std::vector<repo::lib::RepoVector3D> &buffer,
 	const uint32_t                   &addrFrom,
 	const uint32_t                   &addrTo,
 	const std::string                &refId,
@@ -421,7 +421,7 @@ void GLTFModelExport::addBufferView(
 	const std::string                   &name,
 	const std::string                   &fileName,
 	repo::lib::PropertyTree             &tree,
-	const std::vector<repo_vector_t>    &buffer,
+	const std::vector<repo::lib::RepoVector3D>    &buffer,
 	const size_t                        &offset,
 	const size_t                        &count,
 	const std::string                   &refId)
@@ -433,7 +433,7 @@ void GLTFModelExport::addBufferView(
 	const std::string                   &name,
 	const std::string                   &fileName,
 	repo::lib::PropertyTree             &tree,
-	const std::vector<repo_vector2d_t>  &buffer,
+	const std::vector<repo::lib::RepoVector2D>  &buffer,
 	const size_t                        &offset,
 	const size_t                        &count,
 	const std::string                   &refId)
@@ -837,9 +837,9 @@ std::unordered_map<repo::lib::RepoUUID, uint32_t, repo::lib::RepoUUIDHasher> GLT
 
 		std::string meshUUID = node->getUniqueID().toString();
 
-		std::vector<repo_vector_t> normals;
-		std::vector<repo_vector_t> vertices = node->getVertices();
-		std::vector<std::vector<repo_vector2d_t>> UVs;
+		std::vector<repo::lib::RepoVector3D> normals;
+		std::vector<repo::lib::RepoVector3D> vertices = node->getVertices();
+		std::vector<std::vector<repo::lib::RepoVector2D>> UVs;
 
 		if (mappings.size() > 1 || vertices.size() > GLTF_MAX_VERTEX_LIMIT)
 		{
@@ -898,9 +898,9 @@ std::unordered_map<repo::lib::RepoUUID, uint32_t, repo::lib::RepoUUIDHasher> GLT
 					const size_t vCount = mapping.vertTo - mapping.vertFrom;
 					uint32_t dim = pow(2, (maxBits - lodLimit));
 					uint32_t shift = maxBits - lodLimit;
-					repo_vector_t *vRaw = &vertices[mapping.vertFrom];
-					repo_vector_t bboxMin = mapping.min;
-					repo_vector_t bboxSize = { mapping.max.x - bboxMin.x, mapping.max.y - bboxMin.y, mapping.max.z - bboxMin.z };
+					repo::lib::RepoVector3D *vRaw = &vertices[mapping.vertFrom];
+					repo::lib::RepoVector3D bboxMin = mapping.min;
+					repo::lib::RepoVector3D bboxSize = { mapping.max.x - bboxMin.x, mapping.max.y - bboxMin.y, mapping.max.z - bboxMin.z };
 					for (size_t vertId = 0; vertId < vCount; ++vertId)
 					{
 						uint32_t vertXNormal = floorf(((vRaw[vertId].x - bboxMin.x) / bboxSize.x) * maxQuant + 0.5);
@@ -972,10 +972,10 @@ std::unordered_map<repo::lib::RepoUUID, uint32_t, repo::lib::RepoUUIDHasher> GLT
 
 				//for each mesh we need to add a bufferView for each buffer
 				addBufferView(normBufferName, bufferFileName, tree, normals, nStart, vcount, meshId);
-				nStart += vcount * sizeof(repo_vector_t);
+				nStart += vcount * sizeof(repo::lib::RepoVector3D);
 
 				addBufferView(posBufferName, bufferFileName, tree, vertices, vStart, vcount, meshId);
-				vStart += vcount * sizeof(repo_vector_t);
+				vStart += vcount * sizeof(repo::lib::RepoVector3D);
 
 				addBufferView(faceBufferName, bufferFileName, tree, newFaces, fStart, fcount, meshId);
 				fStart += fcount * 3 * sizeof(uint16_t); //faces are triangulated
@@ -986,7 +986,7 @@ std::unordered_map<repo::lib::RepoUUID, uint32_t, repo::lib::RepoUUIDHasher> GLT
 				{
 					std::string uvBufferName = meshId + "_" + GLTF_SUFFIX_TEX_COORD + "_" + std::to_string(iUV);
 					addBufferView(uvBufferName, bufferFileName, tree, UVs[iUV], uvStart[iUV], vcount, meshId);
-					uvStart[iUV] += vcount*sizeof(repo_vector2d_t);
+					uvStart[iUV] += vcount*sizeof(repo::lib::RepoVector2D);
 				}
 
 				size_t subMeshOffset_v = newMappings[i].vertFrom;
@@ -1122,9 +1122,9 @@ std::unordered_map<repo::lib::RepoUUID, uint32_t, repo::lib::RepoUUIDHasher> GLT
 					const size_t vCount = mapping.vertTo - mapping.vertFrom;
 					uint32_t dim = pow(2, (maxBits - lodLimit));
 					uint32_t shift = maxBits - lodLimit;
-					repo_vector_t *vRaw = &vertices[mapping.vertFrom];
-					repo_vector_t bboxMin = mapping.min;
-					repo_vector_t bboxSize = { mapping.max.x - bboxMin.x, mapping.max.y - bboxMin.y, mapping.max.z - bboxMin.z };
+					repo::lib::RepoVector3D *vRaw = &vertices[mapping.vertFrom];
+					repo::lib::RepoVector3D bboxMin = mapping.min;
+					repo::lib::RepoVector3D bboxSize = { mapping.max.x - bboxMin.x, mapping.max.y - bboxMin.y, mapping.max.z - bboxMin.z };
 					for (size_t vertId = 0; vertId < vCount; ++vertId)
 					{
 						uint32_t vertXNormal = floorf(((vRaw[vertId].x - bboxMin.x) / bboxSize.x) * maxQuant + 0.5);
@@ -1275,7 +1275,7 @@ void GLTFModelExport::populateWithNodes(
 
 std::vector<std::vector<std::vector<uint16_t>>> GLTFModelExport::reorderFaces(
 	std::vector<uint16_t>                         &faces,
-	const std::vector<repo_vector_t>                    &vertices,
+	const std::vector<repo::lib::RepoVector3D>                    &vertices,
 	const std::vector<std::vector<repo_mesh_mapping_t>> &mapping)
 {
 	std::vector<std::vector<std::vector<uint16_t>>> lods;
@@ -1296,14 +1296,14 @@ std::vector<std::vector<std::vector<uint16_t>>> GLTFModelExport::reorderFaces(
 
 std::vector<uint16_t> GLTFModelExport::reorderFaces(
 	const std::vector<uint16_t>      &faces,
-	const std::vector<repo_vector_t> &vertices,
+	const std::vector<repo::lib::RepoVector3D> &vertices,
 	const repo_mesh_mapping_t        &mapping,
 	std::vector<uint16_t>      &lods) const
 {
 	const uint32_t maxBits = 16;
 	const float maxQuant = pow(2, maxBits) - 1;
 
-	const repo_vector_t *vRaw = &vertices[mapping.vertFrom];
+	const repo::lib::RepoVector3D *vRaw = &vertices[mapping.vertFrom];
 	const uint16_t      *fRaw = &faces[mapping.triFrom * 3];
 
 	const size_t vCount = mapping.vertTo - mapping.vertFrom;
@@ -1325,8 +1325,8 @@ std::vector<uint16_t> GLTFModelExport::reorderFaces(
 	std::vector<uint16_t> reOrderedFaces;
 	reOrderedFaces.reserve(fCount * 3);
 
-	repo_vector_t bboxMin = mapping.min;
-	repo_vector_t bboxSize = { mapping.max.x - bboxMin.x, mapping.max.y - bboxMin.y, mapping.max.z - bboxMin.z };
+	repo::lib::RepoVector3D bboxMin = mapping.min;
+	repo::lib::RepoVector3D bboxSize = { mapping.max.x - bboxMin.x, mapping.max.y - bboxMin.y, mapping.max.z - bboxMin.z };
 
 	std::vector<uint32_t> quantIndex;
 	quantIndex.resize(vCount);

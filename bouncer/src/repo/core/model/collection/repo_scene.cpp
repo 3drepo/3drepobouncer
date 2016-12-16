@@ -910,9 +910,9 @@ std::string RepoScene::getBranchName() const
 	return branchName;
 }
 
-std::vector<repo_vector_t> RepoScene::getSceneBoundingBox() const
+std::vector<repo::lib::RepoVector3D> RepoScene::getSceneBoundingBox() const
 {
-	std::vector<repo_vector_t> bbox;
+	std::vector<repo::lib::RepoVector3D> bbox;
 	GraphType gType = stashGraph.rootNode ? GraphType::OPTIMIZED : GraphType::DEFAULT;
 
 	std::vector<float> identity = {
@@ -929,7 +929,7 @@ void RepoScene::getSceneBoundingBoxInternal(
 	const GraphType            &gType,
 	const RepoNode             *node,
 	const std::vector<float>   &mat,
-	std::vector<repo_vector_t> &bbox) const
+	std::vector<repo::lib::RepoVector3D> &bbox) const
 {
 	if (node)
 	{
@@ -985,7 +985,7 @@ void RepoScene::getSceneBoundingBoxInternal(
 			if (refSceneIt != graph.referenceToScene.end())
 			{
 				const RepoScene *refScene = refSceneIt->second;
-				const std::vector<repo_vector_t> refSceneBbox = refScene->getSceneBoundingBox();
+				const std::vector<repo::lib::RepoVector3D> refSceneBbox = refScene->getSceneBoundingBox();
 
 				if (bbox.size())
 				{

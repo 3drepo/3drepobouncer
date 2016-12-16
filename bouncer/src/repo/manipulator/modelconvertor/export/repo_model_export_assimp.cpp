@@ -297,17 +297,17 @@ aiCamera* AssimpModelExport::convertCamera(
 
 	//--------------------------------------------------------------------------
 	// Look at vector
-	repo_vector_t lookAt = camNode->getLookAt();
+	repo::lib::RepoVector3D lookAt = camNode->getLookAt();
 	aiCam->mLookAt = aiVector3D(lookAt.x, lookAt.y, lookAt.z);
 
 	//--------------------------------------------------------------------------
 	// Position vector
-	repo_vector_t position = camNode->getPosition();
+	repo::lib::RepoVector3D position = camNode->getPosition();
 	aiCam->mPosition = aiVector3D(position.x, position.y, position.z);;
 
 	//--------------------------------------------------------------------------
 	// Up vector
-	repo_vector_t up = camNode->getUp();
+	repo::lib::RepoVector3D up = camNode->getUp();
 	aiCam->mUp = aiVector3D(up.x, up.y, up.z);
 
 	return aiCam;
@@ -446,7 +446,7 @@ aiMesh* AssimpModelExport::convertMesh(
 	//--------------------------------------------------------------------------
 	// Vertices
 	// Make a copy of vertices
-	std::vector<repo_vector_t> vertices = meshNode->getVertices();
+	std::vector<repo::lib::RepoVector3D> vertices = meshNode->getVertices();
 	assimpMesh->mVertices = new aiVector3D[vertices.size()];
 	if (assimpMesh->mVertices)
 	{
@@ -468,7 +468,7 @@ aiMesh* AssimpModelExport::convertMesh(
 	//--------------------------------------------------------------------------
 	// Normals
 	// Make a copy of normals
-	std::vector<repo_vector_t> normals = meshNode->getNormals();
+	std::vector<repo::lib::RepoVector3D> normals = meshNode->getNormals();
 	if (normals.size())
 	{
 		assimpMesh->mNormals = new aiVector3D[normals.size()];
@@ -489,7 +489,7 @@ aiMesh* AssimpModelExport::convertMesh(
 	// Texture coordinates
 	//
 	// TODO: change to support U and UVW, not just UV as done now.
-	std::vector<std::vector<repo_vector2d_t>> uvChannels = meshNode->getUVChannelsSeparated();
+	std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels = meshNode->getUVChannelsSeparated();
 	if (uvChannels.size())
 	{
 		//figure out the number of channels, then split the serialised uvChannel vector to
