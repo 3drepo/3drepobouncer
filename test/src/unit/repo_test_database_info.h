@@ -101,8 +101,8 @@ static repo::core::handler::MongoDatabaseHandler* getHandler()
 
 static std::vector<repo::lib::RepoVector3D> getGoldenDataForBBoxTest()
 {
-	return{ repo::lib::RepoVector3D({ -30.00954627990722700f, -15.00000476837158200f, -0.00000199999999495f }), 
-			repo::lib::RepoVector3D({ 30.05025100708007800f, 60.69493103027343800f, 30.00000953674316400f }) };
+	return{ repo::lib::RepoVector3D( -30.00954627990722700f, -15.00000476837158200f, -0.00000199999999495f ), 
+			repo::lib::RepoVector3D( 30.05025100708007800f, 60.69493103027343800f, 30.00000953674316400f ) };
 }
 
 static std::string getClientExePath()
