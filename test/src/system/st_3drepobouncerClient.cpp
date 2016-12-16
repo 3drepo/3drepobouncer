@@ -339,7 +339,7 @@ TEST(RepoClientTest, GenStashTest)
 	repo::RepoController::RepoToken *token =
 		controller->authenticateToAdminDatabaseMongo(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
 		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
-	repoUUID stashRoot;
+	repo::lib::RepoUUID stashRoot;
 	if (token)
 	{
 		auto scene = controller->fetchScene(token, "sampleDataRW", "cube");

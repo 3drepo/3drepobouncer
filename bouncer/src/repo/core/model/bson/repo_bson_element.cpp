@@ -15,7 +15,7 @@ ElementType RepoBSONElement::type() const
 		elementType = ElementType::ARRAY;
 		break;
 	case mongo::BinData: // binary data
-		if (mongo::bdtUUID == binDataType())
+		if (mongo::bdtUUID == binDataType() || mongo::newUUID == binDataType())
 		{
 			elementType = ElementType::UUID;
 		}

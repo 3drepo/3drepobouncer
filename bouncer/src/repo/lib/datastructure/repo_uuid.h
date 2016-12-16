@@ -45,7 +45,6 @@ namespace repo{
 
 			size_t getHash() const;
 
-
 			/**
 			* Converts a RepoUUID to string
 			* @return a string representation of repoUUID
@@ -56,8 +55,10 @@ namespace repo{
 
 			RepoUUID& operator=(const RepoUUID& uuid);
 
+			boost::uuids::uuid getInternalID() const { return id; }
 
-			const boost::uuids::uuid id;
+		private:
+			boost::uuids::uuid id;
 		};
 
 		
@@ -69,22 +70,32 @@ namespace repo{
 
 		inline bool operator==(const RepoUUID& id1, const RepoUUID& id2)
 		{
-			return id1.id == id2.id;
-		}
-
-		inline bool operator!=(const RepoUUID& id1, const RepoUUID& id2)
-		{
-			return !(id1.id == id2.id);
-		}
-
-		inline bool operator>(const RepoUUID& id1, const RepoUUID& id2)
-		{
-			return id1.id > id2.id;
+			return id1.getInternalID() == id2.getInternalID();
 		}
 
 		inline bool operator<(const RepoUUID& id1, const RepoUUID& id2)
 		{
-			return id1.id < id2.id;
+			return id1.getInternalID() < id2.getInternalID();
+		}
+
+		inline bool operator!=(const RepoUUID& id1, const RepoUUID& id2)
+		{
+			return !(id1 == id2);
+		}
+
+		inline bool operator>(const RepoUUID& id1, const RepoUUID& id2)
+		{
+			return id2 < id1;
+		}		
+
+		inline bool operator<=(const RepoUUID& id1, const RepoUUID& id2)
+		{
+			return !(id2 < id1);
+		}
+
+		inline bool operator>=(const RepoUUID& id1, const RepoUUID& id2)
+		{
+			return !(id1 < id2);
 		}
 
 		struct RepoUUIDHasher

@@ -127,7 +127,7 @@ std::string RepoUUID::toString() const
 
 RepoUUID& RepoUUID::operator =(const RepoUUID& uuid)
 {
-	*this = RepoUUID(uuid.id);
+	id = uuid.id;
 	return *this;
 
 }

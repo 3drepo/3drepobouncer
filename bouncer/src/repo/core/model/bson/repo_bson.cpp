@@ -100,15 +100,18 @@ RepoBSON RepoBSON::cloneAndShrink() const
 }
 
 repo::lib::RepoUUID RepoBSON::getUUIDField(const std::string &label) const{
-	repo::lib::RepoUUID id = repo::lib::RepoUUID::createUUID();
+
 	
 	if (hasField(label))
 	{
 		const mongo::BSONElement bse = getField(label);
-		id = repo::lib::RepoUUID::fromBSONElement(bse);		
+		return repo::lib::RepoUUID::fromBSONElement(bse);		
 	}	
+	else
+	{
+		return repo::lib::RepoUUID::createUUID();
+	}
 
-	return id;
 }
 
 std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) const{
