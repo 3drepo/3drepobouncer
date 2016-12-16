@@ -64,7 +64,7 @@ namespace repo{
 				}
 			}
 
-			_RepoVector3D<T>& operator=(const _RepoVector3D<T> &other)
+			inline _RepoVector3D<T>& operator=(const _RepoVector3D<T> &other)
 			{
 				x = other.x;
 				y = other.y;

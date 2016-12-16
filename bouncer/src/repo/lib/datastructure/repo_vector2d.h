@@ -36,7 +36,7 @@ namespace repo{
 				y = (v.size() > 1) ? v[1] : 0;
 			}
 
-			_RepoVector2D<T>& operator=(const _RepoVector2D<T> &other)
+			inline _RepoVector2D<T>& operator=(const _RepoVector2D<T> &other)
 			{
 				x = other.x;
 				y = other.y;
