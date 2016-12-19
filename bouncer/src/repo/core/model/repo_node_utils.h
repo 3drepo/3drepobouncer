@@ -29,52 +29,7 @@
 #include "../../lib/datastructure/repo_uuid.h"
 #include "../../lib/datastructure/repo_vector.h"
 
-typedef struct{
-	std::vector<float> ambient;
-	std::vector<float> diffuse;
-	std::vector<float> specular;
-	std::vector<float> emissive;
-	float opacity;
-	float shininess;
-	float shininessStrength;
-	bool isWireframe;
-	bool isTwoSided;
-}repo_material_t;
 
-typedef struct{
-	float r;
-	float g;
-	float b;
-	float a;
-}repo_color4d_t;
-
-
-typedef std::vector<uint32_t> repo_face_t;
-
-
-
-static std::string toString(const repo_face_t &f)
-{
-	std::string str;
-	unsigned int mNumIndices = f.size();
-
-	str += "[";
-	for (unsigned int i = 0; i < mNumIndices; i++)
-	{
-		str += std::to_string(f[i]);
-		if (i != mNumIndices - 1)
-			str += ", ";
-	}
-	str += "]";
-	return str;
-}
-
-static std::string toString(const repo_color4d_t &color)
-{
-	std::stringstream sstr;
-	sstr << "[" << color.r << ", " << color.g << ", " << color.b << ", " << color.a << "]";
-	return sstr.str();
-}
 
 
 /**
