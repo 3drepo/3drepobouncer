@@ -27,26 +27,23 @@ namespace repo{
 		using RepoVector3D = _RepoVector3D < float >;
 		using RepoVector3D64 = _RepoVector3D < double >;
 
-		inline template <class T>
+		
 		bool operator==(const _RepoVector2D<T> &a, const _RepoVector2D<T> &b)
 		{
 			return a.x == b.x && a.y == b.y;
 		}
 
-		inline template <class T>
 		bool operator!=(const _RepoVector2D<T> &a, const _RepoVector2D<T> &b)
 		{
 			return !(a == b);
 		}
 
 
-		inline template <class T>
 		bool operator==(const _RepoVector3D<T> &a, const _RepoVector3D<T> &b)
 		{
 			return a.x == b.x && a.y == b.y && a.z == b.z;
 		}
 
-		inline template <class T>
 		bool operator!=(const _RepoVector3D<T> &a, const _RepoVector3D<T> &b)
 		{
 			return !(a == b);

@@ -104,7 +104,7 @@ TEST(CameraTest, GetFields)
 	EXPECT_EQ(1.0, camEmpty.getFarClippingPlane());
 	EXPECT_EQ(repo::lib::RepoVector3D( 0, 0, -1), camEmpty.getLookAt());
 	EXPECT_EQ(repo::lib::RepoVector3D( 0, 1, 0), camEmpty.getUp());
-	EXPECT_EQ(repo::lib::RepoVector3D({ 0, 0, 0 }), camEmpty.getPosition());
+	EXPECT_EQ(repo::lib::RepoVector3D( 0, 0, 0 ), camEmpty.getPosition());
 	EXPECT_TRUE(camEmpty.getName().empty());
 
 
