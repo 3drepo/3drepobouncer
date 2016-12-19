@@ -113,7 +113,7 @@ namespace repo{
 				* @param totalFaceCount total face count      (consume and update)
 				*/
 				bool splitLargeMesh(
-					const repo_mesh_mapping_t        currentSubMesh,
+					const repo_mesh_mapping_t        &currentSubMesh,
 					std::vector<repo_mesh_mapping_t> &newMappings,
 					size_t                           &idMapIdx,
 					size_t                           &orgFaceIdx,

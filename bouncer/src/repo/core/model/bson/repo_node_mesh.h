@@ -22,6 +22,7 @@
 #include "repo_node.h"
 
 #include "../../../repo_bouncer_global.h"
+#include "../../../lib/datastructure/repo_structs.h"
 
 namespace repo {
 	namespace core {
@@ -58,6 +59,7 @@ namespace repo {
 #define REPO_NODE_MESH_LABEL_MATERIAL_ID		        "mat_id"
 #define REPO_NODE_MESH_LABEL_MERGE_MAP		        "m_map"
 			//------------------------------------------------------------------------------
+
 
 			class REPO_API_EXPORT MeshNode :public RepoNode
 			{

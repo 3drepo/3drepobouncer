@@ -1000,7 +1000,7 @@ std::unordered_map<repo::lib::RepoUUID, uint32_t, repo::lib::RepoUUIDHasher> GLT
 				}
 
 				//For each sub mesh...
-				for (const repo_mesh_mapping_t & meshMap : matMap[i])
+				for (const auto & meshMap : matMap[i])
 				{
 					std::string subMeshID = meshMap.mesh_id.toString();
 

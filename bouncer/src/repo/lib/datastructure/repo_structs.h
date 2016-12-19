@@ -27,6 +27,19 @@ typedef struct {
 	std::unordered_map<std::string, std::vector<uint8_t>> jsonFiles; //JSON mapping files
 }repo_web_buffers_t;
 
+//This is used to map info for multipart optimization
+typedef struct{
+	repo::lib::RepoVector3D min;
+	repo::lib::RepoVector3D max;
+	repo::lib::RepoUUID  mesh_id;
+	repo::lib::RepoUUID  material_id;
+	int32_t       vertFrom;
+	int32_t       vertTo;
+	int32_t       triFrom;
+	int32_t       triTo;
+}repo_mesh_mapping_t;
+
+
 struct repo_mesh_entry_t
 {
 	std::vector<float> min;

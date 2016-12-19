@@ -51,17 +51,7 @@ typedef struct{
 
 typedef std::vector<uint32_t> repo_face_t;
 
-//This is used to map info for multipart optimization
-typedef struct{
-	repo::lib::RepoVector3D min;
-	repo::lib::RepoVector3D max;
-	repo::lib::RepoUUID  mesh_id;
-	repo::lib::RepoUUID  material_id;
-	int32_t       vertFrom;
-	int32_t       vertTo;
-	int32_t       triFrom;
-	int32_t       triTo;
-}repo_mesh_mapping_t;
+
 
 static std::string toString(const repo_face_t &f)
 {
