@@ -21,6 +21,7 @@
 
 #include <vector>
 #include <sstream>
+#include <cmath>
 
 namespace repo{
 	namespace lib{
