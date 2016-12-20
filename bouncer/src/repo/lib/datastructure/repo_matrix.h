@@ -27,24 +27,24 @@ namespace repo{
 		{
 		public:
 
-			RepoMatrix::RepoMatrix();
+			RepoMatrix();
 
-			RepoMatrix::RepoMatrix(const std::vector<float> &mat);
+			RepoMatrix(const std::vector<float> &mat);
 
-			RepoMatrix::RepoMatrix(const std::vector<std::vector<float>> &mat);
+			RepoMatrix(const std::vector<std::vector<float>> &mat);
 
 
-			float RepoMatrix::determinant() const;
+			float determinant() const;
 
-			bool RepoMatrix::equals(const RepoMatrix &other) const;
+			bool equals(const RepoMatrix &other) const;
 
 			std::vector<float> getData() const { return data; }
 
-			RepoMatrix RepoMatrix::invert() const;
+			RepoMatrix invert() const;
 
-			std::string RepoMatrix::toString() const;
+			std::string toString() const;
 
-			RepoMatrix RepoMatrix::transpose() const;
+			RepoMatrix transpose() const;
 
 
 		private:
