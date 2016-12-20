@@ -21,6 +21,7 @@
 #pragma once
 
 #include "repo_bson.h"
+#include "../../../lib/datastructure/repo_matrix.h"
 
 namespace repo{
 	namespace core{
@@ -104,7 +105,7 @@ namespace repo{
 				* @return returns a new object with transformation applied.
 				*/
 				virtual RepoNode cloneAndApplyTransformation(
-					const std::vector<float> &matrix) const
+					const repo::lib::RepoMatrix &matrix) const
 				{
 					return RepoNode(copy(), bigFiles);
 				}

@@ -1005,7 +1005,7 @@ namespace repo{
 				void getSceneBoundingBoxInternal(
 					const GraphType            &gType,
 					const RepoNode             *node,
-					const std::vector<float>   &mat,
+					const repo::lib::RepoMatrix   &mat,
 					std::vector<repo::lib::RepoVector3D> &bbox) const;
 
 				/**

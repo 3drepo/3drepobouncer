@@ -118,7 +118,7 @@ namespace repo {
 				* @return returns a new object with transformation applied.
 				*/
 				virtual RepoNode cloneAndApplyTransformation(
-					const std::vector<float> &matrix) const;
+					const repo::lib::RepoMatrix &matrix) const;
 
 				/**
 				* Create a new object with the same values, but the transformation being reset
@@ -136,7 +136,7 @@ namespace repo {
 				* @param true if row major (row is the fast dimension)
 				* @return returns the 4 by 4 matrix as a vector
 				*/
-				std::vector<float> getTransMatrix(const bool &rowMajor) const;
+				repo::lib::RepoMatrix getTransMatrix(const bool &rowMajor) const;
 			};
 		} //namespace model
 	} //namespace core

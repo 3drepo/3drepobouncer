@@ -101,7 +101,7 @@ namespace repo {
 				* @return returns a new object with transformation applied.
 				*/
 				virtual RepoNode cloneAndApplyTransformation(
-					const std::vector<float> &matrix) const;
+					const repo::lib::RepoMatrix &matrix) const;
 
 				/**
 				* --------- Convenience functions -----------

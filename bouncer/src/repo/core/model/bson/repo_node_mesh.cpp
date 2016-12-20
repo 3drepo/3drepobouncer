@@ -41,7 +41,7 @@ MeshNode::~MeshNode()
 }
 
 RepoNode MeshNode::cloneAndApplyTransformation(
-	const std::vector<float> &matrix) const
+	const repo::lib::RepoMatrix &matrix) const
 {
 	std::vector<repo::lib::RepoVector3D> vertices = getVertices();
 	std::vector<repo::lib::RepoVector3D> normals = getNormals();
@@ -56,7 +56,7 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 		resultVertice.reserve(vertices.size());
 		for (const repo::lib::RepoVector3D &v : vertices)
 		{
-			resultVertice.push_back(multiplyMatVec(matrix, v));
+			resultVertice.push_back(matrix * v);
 			if (newBbox.size())
 			{
 				if (resultVertice.back().x < newBbox[0].x)
@@ -94,8 +94,8 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 
 		if (normals.size())
 		{
-			auto matInverse = invertMat(matrix);
-			auto worldMat = transposeMat(matInverse);
+			auto matInverse = matrix.invert();
+			auto worldMat = matInverse.transpose();
 
 			std::vector<repo::lib::RepoVector3D> resultNormals;
 			resultNormals.reserve(normals.size());

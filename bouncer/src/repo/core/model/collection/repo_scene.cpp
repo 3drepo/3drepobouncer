@@ -928,7 +928,7 @@ std::vector<repo::lib::RepoVector3D> RepoScene::getSceneBoundingBox() const
 void RepoScene::getSceneBoundingBoxInternal(
 	const GraphType            &gType,
 	const RepoNode             *node,
-	const std::vector<float>   &mat,
+	const repo::lib::RepoMatrix   &mat,
 	std::vector<repo::lib::RepoVector3D> &bbox) const
 {
 	if (node)
@@ -938,7 +938,7 @@ void RepoScene::getSceneBoundingBoxInternal(
 		case NodeType::TRANSFORMATION:
 		{
 			const TransformationNode *trans = dynamic_cast<const TransformationNode*>(node);
-			auto matTransformed = matMult(mat, trans->getTransMatrix(false));
+			auto matTransformed = mat * trans->getTransMatrix(false);
 
 			for (const auto & child : getChildrenAsNodes(gType, trans->getSharedID()))
 			{
@@ -1464,39 +1464,28 @@ void RepoScene::reorientateDirectXModel()
 	if (graph.rootNode)
 	{
 		auto rootTrans = dynamic_cast<TransformationNode*>(graph.rootNode);
-		std::vector<float> mat = rootTrans->getTransMatrix(false);
-		if (mat.size() == 16)
+
+		//change offset relatively
+		std::vector<float> rotationMatrix = { 1, 0, 0, 0,
+			0, 0, 1, 0,
+			0, -1, 0, 0,
+			0, 0, 0, 1 };
+
+		TransformationNode newRoot = rootTrans->cloneAndApplyTransformation(repo::lib::RepoMatrix(rotationMatrix));
+		modifyNode(GraphType::DEFAULT, rootTrans->getSharedID(), &newRoot);
+
+		//Clear the stash as bounding boxes in mesh mappings are no longer valid like this.
+		clearStash();
+
+		//Apply the rotation on the offset
+		if (worldOffset.size())
 		{
-			//change offset relatively
-			std::vector<float> rotationMatrix = { 1, 0, 0, 0,
-				0, 0, 1, 0,
-				0, -1, 0, 0,
-				0, 0, 0, 1 };
-
-			TransformationNode newRoot = rootTrans->cloneAndApplyTransformation(rotationMatrix);
-			modifyNode(GraphType::DEFAULT, rootTrans->getSharedID(), &newRoot);
-
-			/*if (stashGraph.rootNode)
-			{
-			modifyNode(GraphType::OPTIMIZED, stashGraph.rootNode->getSharedID(), &newRoot);
-			}*/
-
-			//Clear the stash as bounding boxes in mesh mappings are no longer valid like this.
-			clearStash();
-
-			//Apply the rotation on the offset
-			if (worldOffset.size())
-			{
-				auto temp = worldOffset[2];
-				worldOffset[2] = -worldOffset[1];
-				worldOffset[1] = temp;
-			}
-		}
-		else
-		{
-			repoError << "Root Transformation is not a 4x4 matrix!";
+			auto temp = worldOffset[2];
+			worldOffset[2] = -worldOffset[1];
+			worldOffset[1] = temp;
 		}
 	}
+		
 }
 
 void RepoScene::resetChangeSet()

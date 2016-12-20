@@ -150,7 +150,7 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 				repo::core::model::TransformationNode *currNodeTrans =
 					(repo::core::model::TransformationNode*) currNode;
 				node->mName = aiString(currNodeTrans->getName());
-				std::vector<float> transMat = currNodeTrans->getTransMatrix(false);
+				auto transMat = currNodeTrans->getTransMatrix(false).getData();
 				if (transMat.size() >= 16)
 					node->mTransformation = aiMatrix4x4(transMat[0], transMat[1], transMat[2], transMat[3],
 					transMat[4], transMat[5], transMat[6], transMat[7],

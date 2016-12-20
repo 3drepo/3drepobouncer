@@ -66,7 +66,7 @@ bool MultipartOptimizer::collectMeshData(
 	const repo::core::model::RepoScene        *scene,
 	const repo::core::model::RepoNode         *node,
 	const std::set<repo::lib::RepoUUID>                  &meshGroup,
-	std::vector<float>                        &mat,
+	repo::lib::RepoMatrix                        &mat,
 	std::vector<std::vector<repo::lib::RepoVector3D>>                &vertices,
 	std::vector<std::vector<repo::lib::RepoVector3D>>               &normals,
 	std::vector<std::vector<repo_face_t>>                &faces,
@@ -84,7 +84,7 @@ bool MultipartOptimizer::collectMeshData(
 		case repo::core::model::NodeType::TRANSFORMATION:
 		{
 			auto trans = (repo::core::model::TransformationNode *) node;
-			mat = matMult(mat, trans->getTransMatrix(false));
+			mat = mat * trans->getTransMatrix(false);
 			auto children = scene->getChildrenAsNodes(defaultGraph, trans->getSharedID());
 			for (const auto &child : children)
 			{
@@ -202,7 +202,7 @@ bool MultipartOptimizer::collectMeshData(
 	const repo::core::model::RepoScene        *scene,
 	const repo::core::model::RepoNode         *node,
 	const std::set<repo::lib::RepoUUID>                  &meshGroup,
-	std::vector<float>                        &mat,
+	repo::lib::RepoMatrix                       &mat,
 	std::vector<repo::lib::RepoVector3D>                &vertices,
 	std::vector<repo::lib::RepoVector3D>                &normals,
 	std::vector<repo_face_t>                  &faces,
@@ -220,7 +220,7 @@ bool MultipartOptimizer::collectMeshData(
 		case repo::core::model::NodeType::TRANSFORMATION:
 		{
 			auto trans = (repo::core::model::TransformationNode *) node;
-			mat = matMult(mat, trans->getTransMatrix(false));
+			mat = mat * trans->getTransMatrix(false);
 			auto children = scene->getChildrenAsNodes(defaultGraph, trans->getSharedID());
 			for (const auto &child : children)
 			{
@@ -341,10 +341,7 @@ std::vector<repo::core::model::MeshNode*> MultipartOptimizer::createSuperMesh(
 	std::vector<std::vector<repo_mesh_mapping_t>> meshMapping;
 
 	std::vector<repo::core::model::MeshNode*> resultMeshes;
-	std::vector<float> startMat = { 1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		0, 0, 0, 1 };
+	repo::lib::RepoMatrix startMat;
 
 	bool success = collectMeshData(scene, scene->getRoot(defaultGraph), meshGroup, startMat,
 		vertices, normals, faces, uvChannels, colors, meshMapping, matIDs);
@@ -409,10 +406,7 @@ std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUID
 	repo::core::model::MeshNode* resultMesh = nullptr;
 
 	std::vector<repo::core::model::MeshNode*> resultMeshes;
-	std::vector<float> startMat = { 1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		0, 0, 0, 1 };
+	repo::lib::RepoMatrix startMat;
 
 	bool success = collectMeshData(scene, scene->getRoot(defaultGraph), meshGroup, startMat,
 		vertices, normals, faces, uvChannels, colors, meshMapping, matIDs);

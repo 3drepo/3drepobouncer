@@ -477,7 +477,7 @@ TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
 	TransformationNode trans = RepoBSONFactory::makeTransformationNode();
 
 	ASSERT_FALSE(trans.isEmpty());
-	EXPECT_TRUE(compareStdVectors(identity, trans.getTransMatrix(false)));
+	EXPECT_TRUE(compareStdVectors(identity, trans.getTransMatrix(false).getData()));
 
 	std::vector<std::vector<float>> transMat;
 	std::vector<float> transMatFlat;
@@ -498,9 +498,9 @@ TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
 
 	ASSERT_FALSE(trans2.isEmpty());
 	EXPECT_EQ(name, trans2.getName());
-	std::vector<float> matrix = trans2.getTransMatrix(false);
+	auto matrix = trans2.getTransMatrix(false);
 
-	EXPECT_TRUE(compareStdVectors(transMatFlat, matrix));
+	EXPECT_TRUE(compareStdVectors(transMatFlat, matrix.getData()));
 	EXPECT_TRUE(compareStdVectors(parents, trans2.getParentIDs()));
 
 	//ensure random parents aren't thrown in

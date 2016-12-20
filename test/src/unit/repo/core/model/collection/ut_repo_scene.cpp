@@ -1212,7 +1212,7 @@ TEST(RepoSceneTest, reorientateDirectXModel)
 		0, 0, 0, 1
 	};
 
-	EXPECT_TRUE(compareStdVectors(rotatedMat, root->getTransMatrix(false)));
+	EXPECT_EQ(rotatedMat, root->getTransMatrix(false));
 	EXPECT_FALSE(scene2.hasRoot(RepoScene::GraphType::OPTIMIZED));
 
 }

@@ -42,22 +42,22 @@ CameraNode::~CameraNode()
 }
 
 RepoNode CameraNode::cloneAndApplyTransformation(
-	const std::vector<float> &matrix) const
+	const repo::lib::RepoMatrix &matrix) const
 {
 	RepoBSONBuilder builder;
 	if (hasField(REPO_NODE_LABEL_LOOK_AT))
 	{
-		builder.append(REPO_NODE_LABEL_LOOK_AT, multiplyMatVec(matrix, getLookAt()));
+		builder.append(REPO_NODE_LABEL_LOOK_AT, matrix * getLookAt());
 	}
 
 	if (hasField(REPO_NODE_LABEL_POSITION))
 	{
-		builder.append(REPO_NODE_LABEL_POSITION, multiplyMatVec(matrix, getPosition()));
+		builder.append(REPO_NODE_LABEL_POSITION, matrix * getPosition());
 	}
 
 	if (hasField(REPO_NODE_LABEL_UP))
 	{
-		builder.append(REPO_NODE_LABEL_UP, multiplyMatVec(matrix, getUp()));
+		builder.append(REPO_NODE_LABEL_UP, matrix * getUp());
 	}
 	return CameraNode(builder.appendElementsUnique(*this));
 }
