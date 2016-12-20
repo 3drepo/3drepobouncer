@@ -155,7 +155,7 @@ TEST(RepoTransformationNodeTest, CloneAndApplyTransformationTest)
 	auto filled = makeTransformationNode(notId);
 	TransformationNode modifiedFilled = filled.cloneAndApplyTransformation(std::vector<float>());
 
-	EXPECT_EQ(modifiedFilled.getTransMatrix(false), notId);
+	EXPECT_EQ(modifiedFilled.getTransMatrix(false).getData(), notId);
 }
 
 TEST(RepoTransformationNodeTest, GetTransMatrixTest)
