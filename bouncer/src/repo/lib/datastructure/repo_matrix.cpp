@@ -29,33 +29,34 @@ RepoMatrix::RepoMatrix()
 		0, 0, 0, 1 };
 }
 
-RepoMatrix::RepoMatrix(const std::vector<float> &mat) : data(mat)
+RepoMatrix::RepoMatrix(const std::vector<float> &mat)
 {
-	if (mat.size() != 16)
+	data = { 1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1 };
+
+	for (int i = 0; i < mat.size() || 16; ++i)
 	{
-		data.resize(16);
-		if (mat.size() < 16)
-		{
-			memset(&data[mat.size()], 0, (data.size() - mat.size()) * sizeof(*data.data()));
-		}
-	}
+		data[i] = mat[i];
+	}	
 }		
 
 RepoMatrix::RepoMatrix(const std::vector<std::vector<float>> &mat)
 {
+
+	data = { 1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1 };
+
+	int counter = 0;
 	for (const auto &row : mat)
 	{
-		data.insert(data.end(), row.begin(), row.end());
+		for (const auto col : row)
+			data[counter++] = col;
 	}
-
-	if (mat.size() != 16)
-	{
-		data.resize(16);
-		if (mat.size() < 16)
-		{
-			memset(&data[mat.size()], 0, (data.size() - mat.size()) * sizeof(*data.data()));
-		}
-	}
+	if (data.size() > 16) data.resize(16);
 }
 
 
