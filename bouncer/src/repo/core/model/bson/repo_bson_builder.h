@@ -167,6 +167,12 @@ namespace repo {
 						const std::string &label,
 						const repo::lib::RepoVector3D &vec
 						);
+
+					template<> void RepoBSONBuilder::append < repo::lib::RepoMatrix >
+						(
+							const std::string &label,
+							const repo::lib::RepoMatrix &mat
+							);
 		}// end namespace model
 	} // end namespace core
 } // end namespace repo

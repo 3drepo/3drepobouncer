@@ -67,3 +67,22 @@ template<> void repo::core::model::RepoBSONBuilder::append < repo::lib::RepoUUID
 	{
 		appendArray(label, vec.toStdVector());
 	}
+
+		template<> void repo::core::model::RepoBSONBuilder::append < repo::lib::RepoMatrix >
+			(
+				const std::string &label,
+				const repo::lib::RepoMatrix &mat
+				)
+		{
+			RepoBSONBuilder rows;
+			auto data = mat.getData();
+			for (uint32_t i = 0; i < 4; ++i)
+			{
+				RepoBSONBuilder columns;
+				for (uint32_t j = 0; j < 4; ++j){
+					columns << std::to_string(j) << data[i * 4 + j];
+				}
+				rows.appendArray(std::to_string(i), columns.obj());
+			}
+			appendArray(label, rows.obj());;
+		}

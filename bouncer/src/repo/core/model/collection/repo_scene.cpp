@@ -35,7 +35,7 @@ using namespace repo::core::model;
 
 const std::vector<std::string> RepoScene::collectionsInProject = { "scene", "scene.files", "scene.chunks", "stash.3drepo", "stash.3drepo.files", "stash.3drepo.chunks", "stash.x3d", "stash.x3d.files",
 "stash.json_mpc.files", "stash.json_mpc.chunks", "stash.x3d.chunks", "stash.gltf", "stash.gltf.files", "stash.gltf.chunks", "stash.src", "stash.src.files", "stash.src.chunks", "history",
-"history.files", "history.chunks", "issues", "wayfinder" , "groups"};
+"history.files", "history.chunks", "issues", "wayfinder", "groups" };
 
 RepoScene::RepoScene(
 	const std::string &database,
@@ -440,7 +440,7 @@ void RepoScene::addStashGraph(
 	const RepoNodeSet &transformations)
 {
 	populateAndUpdate(GraphType::OPTIMIZED, cameras, meshes, materials, RepoNodeSet(),
-		textures, transformations, RepoNodeSet(),RepoNodeSet());
+		textures, transformations, RepoNodeSet(), RepoNodeSet());
 }
 
 void RepoScene::clearStash()
@@ -1348,7 +1348,7 @@ bool RepoScene::populate(
 		{
 			node = new MetadataNode(obj);
 			g.metadata.insert(node);
-		}		
+		}
 		else{
 			//UNKNOWN TYPE - instantiate it with generic RepoNode
 			node = new RepoNode(obj);
@@ -1416,8 +1416,8 @@ bool RepoScene::populate(
 		auto parentNode = getNodeBySharedID(GraphType::DEFAULT, parent);
 		auto grandParent = parentNode->getParentIDs().at(0);
 		auto grandParentNode = getNodeBySharedID(GraphType::DEFAULT, grandParent);
-		auto toFedWorld = new TransformationNode(RepoBSONFactory::makeTransformationNode(toFedWorldTrans, "trans", { grandParent }));
-		auto toSubWorld = new TransformationNode(RepoBSONFactory::makeTransformationNode(backToSubWorld, "trans", { parent }));
+		auto toFedWorld = new TransformationNode(RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(toFedWorldTrans), "trans", { grandParent }));
+		auto toSubWorld = new TransformationNode(RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(backToSubWorld), "trans", { parent }));
 		std::vector<RepoNode*> newNodes;
 		newNodes.push_back(toFedWorld);
 		newNodes.push_back(toSubWorld);
@@ -1485,7 +1485,6 @@ void RepoScene::reorientateDirectXModel()
 			worldOffset[1] = temp;
 		}
 	}
-		
 }
 
 void RepoScene::resetChangeSet()
@@ -1501,7 +1500,6 @@ void RepoScene::resetChangeSet()
 	revNode = nullptr;
 	unRevisioned = true;
 	databaseName = projectName = "";
-
 }
 
 void RepoScene::setWorldOffset(

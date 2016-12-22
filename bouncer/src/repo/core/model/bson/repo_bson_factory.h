@@ -187,7 +187,6 @@ namespace repo {
 					const std::string     &name = std::string(),
 					const int             &apiLevel = REPO_NODE_API_LEVEL_1);
 
-
 				/**
 				* Create a Metadata Node
 				* @param metadata Metadata itself in RepoBSON format
@@ -320,7 +319,7 @@ namespace repo {
 				* @return returns a Transformation node
 				*/
 				static TransformationNode makeTransformationNode(
-					const std::vector<std::vector<float>> &transMatrix = TransformationNode::identityMat(),
+					const repo::lib::RepoMatrix &transMatrix = repo::lib::RepoMatrix(),
 					const std::string                     &name = "<transformation>",
 					const std::vector<repo::lib::RepoUUID>		      &parents = std::vector<repo::lib::RepoUUID>(),
 					const int                             &apiLevel = REPO_NODE_API_LEVEL_1);

@@ -155,7 +155,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 		std::vector<repo::lib::RepoUUID> parents;
 		if (parentID.toString() != REPO_HISTORY_MASTER_BRANCH) parents.push_back(parentID);
 
-		auto transNode = repo::core::model::RepoBSONFactory::makeTransformationNode(repo::core::model::TransformationNode::identityMat(), name, parents);
+		auto transNode = repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name, parents);
 		transID = transNode.getSharedID();
 
 		transNodeSet.insert(new repo::core::model::TransformationNode(transNode));
@@ -200,10 +200,9 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 				}
 				catch (IfcParse::IfcException &e)
 				{
-					repoError << "Failed to find child entity " << childrenId << " ("<< e.what() <<")";
+					repoError << "Failed to find child entity " << childrenId << " (" << e.what() << ")";
 					missingEntities = true;
 				}
-				
 			}
 		}
 	}

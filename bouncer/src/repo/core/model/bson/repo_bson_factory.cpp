@@ -869,7 +869,7 @@ TextureNode RepoBSONFactory::makeTextureNode(
 }
 
 TransformationNode RepoBSONFactory::makeTransformationNode(
-	const std::vector<std::vector<float>> &transMatrix,
+	const repo::lib::RepoMatrix &transMatrix,
 	const std::string                     &name,
 	const std::vector<repo::lib::RepoUUID>		  &parents,
 	const int                             &apiLevel)
@@ -879,19 +879,7 @@ TransformationNode RepoBSONFactory::makeTransformationNode(
 	auto defaults = appendDefaults(REPO_NODE_TYPE_TRANSFORMATION, apiLevel, repo::lib::RepoUUID::createUUID(), name, parents);
 	builder.appendElements(defaults);
 
-	//--------------------------------------------------------------------------
-	// Store matrix as array of arrays
-	uint32_t matrixSize = 4;
-	RepoBSONBuilder rows;
-	for (uint32_t i = 0; i < transMatrix.size(); ++i)
-	{
-		RepoBSONBuilder columns;
-		for (uint32_t j = 0; j < transMatrix[i].size(); ++j){
-			columns << std::to_string(j) << transMatrix[i][j];
-		}
-		rows.appendArray(std::to_string(i), columns.obj());
-	}
-	builder.appendArray(REPO_NODE_LABEL_MATRIX, rows.obj());
+	builder.append(REPO_NODE_LABEL_MATRIX, transMatrix);	
 
 	return TransformationNode(builder.obj());
 }

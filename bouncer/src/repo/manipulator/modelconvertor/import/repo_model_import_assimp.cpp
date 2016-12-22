@@ -661,7 +661,7 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 
 		repo::core::model::TransformationNode * transNode =
 			new repo::core::model::TransformationNode(
-			repo::core::model::RepoBSONFactory::makeTransformationNode(transMat, transName, parent));
+			repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(transMat), transName, parent));
 
 		repo::lib::RepoUUID sharedId = transNode->getSharedID();
 		std::vector<repo::lib::RepoUUID> myShareID;
