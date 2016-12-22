@@ -99,30 +99,8 @@ std::vector<std::vector<float>> TransformationNode::identityMat()
 
 bool TransformationNode::isIdentity(const float &eps) const
 {
-	auto mat = getTransMatrix(false).getData();
-	//  00 01 02 03
-	//  04 05 06 07
-	//  08 09 10 11
-	//  12 13 14 15
-
-	bool iden = true;
-	float threshold = fabs(eps);
-
-	for (size_t i = 0; i < mat.size(); ++i)
-	{
-		if (i % 5)
-		{
-			//This is suppose to be 0
-			iden &= fabs(mat[i]) <= threshold;
-		}
-		else
-		{
-			//This is suppose to be 1
-			iden &= mat[i] <= 1 + threshold && mat[i] >= 1 - threshold;
-		}
-	}
-
-	return iden;
+	
+	return  getTransMatrix(false).isIdentity(eps);
 }
 
 repo::lib::RepoMatrix TransformationNode::getTransMatrix(const bool &rowMajor) const

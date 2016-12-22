@@ -33,7 +33,6 @@ namespace repo{
 
 			RepoMatrix(const std::vector<std::vector<float>> &mat);
 
-
 			float determinant() const;
 
 			bool equals(const RepoMatrix &other) const;
@@ -42,14 +41,14 @@ namespace repo{
 
 			RepoMatrix invert() const;
 
+			bool isIdentity(const float &eps = 10e-5) const;
+
 			std::string toString() const;
 
 			RepoMatrix transpose() const;
 
-
 		private:
 			std::vector<float> data;
-
 			  
 		};
 
@@ -113,6 +112,11 @@ namespace repo{
 		inline bool operator==(const RepoMatrix &matrix1, const RepoMatrix &matrix2)
 		{
 			return matrix1.equals(matrix2);
+		}
+
+		inline bool operator!=(const RepoMatrix &matrix1, const RepoMatrix &matrix2)
+		{
+			return !(matrix1 == matrix2);
 		}
 
 	}	

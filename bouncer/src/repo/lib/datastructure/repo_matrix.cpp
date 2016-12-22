@@ -111,6 +111,33 @@ bool RepoMatrix::equals(const RepoMatrix &other) const
 	return equal;
 }
 
+bool RepoMatrix::isIdentity(const float &eps) const
+{
+	//  00 01 02 03
+	//  04 05 06 07
+	//  08 09 10 11
+	//  12 13 14 15
+
+	bool iden = true;
+	float threshold = fabs(eps);
+
+	for (size_t i = 0; i < data.size(); ++i)
+	{
+		if (i % 5)
+		{
+			//This is suppose to be 0
+			iden &= fabs(data[i]) <= threshold;
+		}
+		else
+		{
+			//This is suppose to be 1
+			iden &= data[i] <= 1 + threshold && data[i] >= 1 - threshold;
+		}
+	}
+
+	return iden;
+}
+
 RepoMatrix RepoMatrix::invert() const
 {
 	std::vector<float> result;
