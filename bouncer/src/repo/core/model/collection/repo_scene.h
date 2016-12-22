@@ -26,15 +26,13 @@
 #include "../../handler/repo_database_handler_abstract.h"
 #include "../bson/repo_node.h"
 #include "../bson/repo_node_revision.h"
-#include "repo_graph_abstract.h"
 
 typedef std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::RepoNode*>, repo::lib::RepoUUIDHasher> ParentMap;
 
 namespace repo{
 	namespace core{
 		namespace model{
-
-			class REPO_API_EXPORT RepoScene : public AbstractGraph
+			class REPO_API_EXPORT RepoScene
 			{
 				//FIXME: unsure as to whether i should make the graph a differen class.. struct for now.
 				struct repoGraphInstance
@@ -402,11 +400,7 @@ namespace repo{
 				* @param newDatabaseName new name of database.
 				* @param newProjectMame new name of the project
 				*/
-				void setDatabaseAndProjectName(std::string newDatabaseName, std::string newProjectName)
-				{
-					databaseName = sanitizeDatabaseName(newDatabaseName);
-					projectName = sanitizeName(newProjectName);
-				}
+				void setDatabaseAndProjectName(std::string newDatabaseName, std::string newProjectName);
 
 				/**
 				* Set project revision
@@ -502,7 +496,6 @@ namespace repo{
 					repo::core::handler::AbstractDatabaseHandler *handler,
 					const RevisionNode::UploadStatus &status);
 
-				
 				/**
 				* --------------------- Node Relationship ----------------------
 				*/
@@ -659,7 +652,6 @@ namespace repo{
 					return  gType == GraphType::OPTIMIZED ? stashGraph.materials : graph.materials;
 				}
 
-
 				/**
 				* Get all mesh nodes within current scene revision
 				* @return a RepoNodeSet of meshes
@@ -723,7 +715,6 @@ namespace repo{
 					const GraphType &gType,
 					const repo::lib::RepoUUID  &sharedID,
 					const NodeType  &type) const;
-
 
 				/**
 				* Get a bounding box for the entire scene
@@ -1074,7 +1065,8 @@ namespace repo{
 				std::string commitMsg;
 				bool headRevision;
 				bool unRevisioned;       /*! Flag to indicate if the scene graph is revisioned (true for scene graphs from model convertor)*/
-
+				std::string databaseName;/*! name of the database */
+				std::string projectName; /*! name of the project */
 				RevisionNode		 *revNode;
 
 				/*

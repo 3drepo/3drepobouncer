@@ -37,6 +37,52 @@ const std::vector<std::string> RepoScene::collectionsInProject = { "scene", "sce
 "stash.json_mpc.files", "stash.json_mpc.chunks", "stash.x3d.chunks", "stash.gltf", "stash.gltf.files", "stash.gltf.chunks", "stash.src", "stash.src.files", "stash.src.chunks", "history",
 "history.files", "history.chunks", "issues", "wayfinder", "groups" };
 
+static bool nameCheck(const char &c)
+{
+	return c == ' ' || c == '$' || c == '.';
+}
+
+static bool dbNameCheck(const char &c)
+{
+	return c == '/' || c == '\\' || c == '.' || c == ' '
+		|| c == '\"' || c == '$' || c == '*' || c == '<'
+		|| c == '>' || c == ':' || c == '?' || c == '|';
+}
+
+static bool extNameCheck(const char &c)
+{
+	return c == ' ' || c == '$';
+}
+
+static std::string sanitizeExt(const std::string& name)
+{
+	// http://docs.mongodb.org/manual/reference/limits/#Restriction-on-Collection-Names
+	std::string newName(name);
+	std::replace_if(newName.begin(), newName.end(), extNameCheck, '_');
+
+	return newName;
+}
+
+static std::string sanitizeName(const std::string& name)
+{
+	// http://docs.mongodb.org/manual/reference/limits/#Restriction-on-Collection-Names
+	std::string newName(name);
+	std::replace_if(newName.begin(), newName.end(), nameCheck, '_');
+
+	return newName;
+}
+
+static std::string sanitizeDatabaseName(const std::string& name)
+{
+	// http://docs.mongodb.org/manual/reference/limits/#naming-restrictions
+
+	// Cannot contain any of /\. "$*<>:|?
+	std::string newName(name);
+	std::replace_if(newName.begin(), newName.end(), dbNameCheck, '_');
+
+	return newName;
+}
+
 RepoScene::RepoScene(
 	const std::string &database,
 	const std::string &projectName,
@@ -48,7 +94,9 @@ RepoScene::RepoScene(
 	const std::string &srcExt,
 	const std::string &gltfExt,
 	const std::string &jsonExt)
-	: AbstractGraph(database, projectName),
+	:
+	databaseName(sanitizeDatabaseName(databaseName)),
+	projectName(sanitizeName(projectName)),
 	sceneExt(sanitizeExt(sceneExt)),
 	revExt(sanitizeExt(revExt)),
 	stashExt(sanitizeExt(stashExt)),
@@ -86,8 +134,9 @@ RepoScene::RepoScene(
 	const std::string              &srcExt,
 	const std::string              &gltfExt,
 	const std::string              &jsonExt
-	)
-	: AbstractGraph("", ""),
+	) :
+	databaseName(""),
+	projectName(""),
 	sceneExt(sanitizeExt(sceneExt)),
 	revExt(sanitizeExt(revExt)),
 	stashExt(sanitizeExt(stashExt)),
@@ -1500,6 +1549,12 @@ void RepoScene::resetChangeSet()
 	revNode = nullptr;
 	unRevisioned = true;
 	databaseName = projectName = "";
+}
+
+void RepoScene::setDatabaseAndProjectName(std::string newDatabaseName, std::string newProjectName)
+{
+	databaseName = sanitizeDatabaseName(newDatabaseName);
+	projectName = sanitizeName(newProjectName);
 }
 
 void RepoScene::setWorldOffset(
