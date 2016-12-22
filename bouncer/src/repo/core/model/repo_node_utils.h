@@ -30,9 +30,6 @@
 #include "../../lib/datastructure/repo_vector.h"
 #include "../../lib/datastructure/repo_matrix.h"
 
-
-
-
 /**
 * \brief Returns a compacted string representation of a given vector
 * as [toString(0) ... toString(n)] where only the very first and the very
@@ -56,34 +53,6 @@ static std::string vectorToString(const std::vector<T> &vec)
 		return str;
 	}
 }
-
-
-
-
-
-
-/**
-* Matrix x vector multiplication
-* NOTE: this assumes matrix has row as fast dimension!
-* This takes a 4x4 matrix but only use the 3x3 part.
-* @param mat 4x4 matrix
-* @param vec vector
-* @return returns the resulting vector.
-*/
-static repo::lib::RepoVector3D multiplyMatVecFake3x3(const repo::lib::RepoMatrix &matrix, const repo::lib::RepoVector3D &vec)
-{
-	repo::lib::RepoVector3D result;
-	
-	auto data =  matrix.getData();
-	data[3] = data[7] = data[11] = 0;
-
-	repo::lib::RepoMatrix multMat(data);
-	
-
-	return multMat * result;
-}
-
-
 
 static bool nameCheck(const char &c)
 {

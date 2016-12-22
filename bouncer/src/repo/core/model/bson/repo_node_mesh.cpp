@@ -99,9 +99,15 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 
 			std::vector<repo::lib::RepoVector3D> resultNormals;
 			resultNormals.reserve(normals.size());
+
+			auto data = worldMat.getData();
+			data[3] = data[7] = data[11] = 0;
+
+			repo::lib::RepoMatrix multMat(data);
+
 			for (const repo::lib::RepoVector3D &v : normals)
 			{
-				auto transformedNormal = multiplyMatVecFake3x3(worldMat, v);
+				auto transformedNormal = multMat * v;
 				transformedNormal.normalize();
 				resultNormals.push_back(transformedNormal);
 			}
