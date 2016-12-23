@@ -36,7 +36,6 @@
 
 #include "repo_database_handler_abstract.h"
 #include "connectionpool/repo_connection_pool_mongo.h"
-#include "../model/repo_node_utils.h"
 #include "../model/bson/repo_bson.h"
 #include "../model/bson/repo_bson_builder.h"
 #include "../model/bson/repo_bson_role.h"
@@ -216,15 +215,15 @@ namespace repo{
 				 */
 				std::list<std::string> getDatabases(const bool &sorted = true);
 
-                                /**
-                                * Get the database statistics of the given database
-                                * @param database Name of database
-                                * @param errMsg error message when error occurs
-                                * @return returns a bson object with statistical info.
-                                */
-                                repo::core::model::DatabaseStats getDatabaseStats(
-                                        const std::string    &database,
-                                        std::string          &errMsg);
+				/**
+				* Get the database statistics of the given database
+				* @param database Name of database
+				* @param errMsg error message when error occurs
+				* @return returns a bson object with statistical info.
+				*/
+				repo::core::model::DatabaseStats getDatabaseStats(
+					const std::string    &database,
+					std::string          &errMsg);
 
 				/** get the associated projects for the list of database.
 				 * @param list of database

@@ -30,7 +30,6 @@
 
 #include "../../../core/model/bson/repo_bson_builder.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
-#include "../../../core/model/repo_node_utils.h"
 #include "../../../lib/repo_log.h"
 
 using namespace repo::manipulator::modelconvertor;
