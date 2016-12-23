@@ -27,7 +27,7 @@ namespace repo{
 	namespace core{
 		namespace model{
 			enum class NodeType{
-				CAMERA,  MATERIAL, MESH, METADATA, REFERENCE,
+				CAMERA, MATERIAL, MESH, METADATA, REFERENCE,
 				REVISION, TEXTURE, TRANSFORMATION, UNKNOWN
 			};
 

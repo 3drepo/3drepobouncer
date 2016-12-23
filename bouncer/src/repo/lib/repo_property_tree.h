@@ -23,7 +23,8 @@
 #include <boost/lexical_cast.hpp>
 //#include <boost/property_tree/json_parser.hpp>
 #include "json_parser.h"
-#include "../core/model/repo_node_utils.h"
+#include "datastructure/repo_uuid.h"
+#include "datastructure/repo_vector.h"
 
 namespace repo{
 	namespace lib{

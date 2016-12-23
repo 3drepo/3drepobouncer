@@ -20,7 +20,8 @@
 #include <unordered_map>
 #include <cstdint>
 #include "../../repo_bouncer_global.h"
-#include "../../core/model/repo_node_utils.h"
+#include "repo_uuid.h"
+#include "repo_vector.h"
 
 typedef struct {
 	std::unordered_map<std::string, std::vector<uint8_t>> geoFiles; //files where geometery are stored
@@ -38,7 +39,6 @@ typedef struct{
 	int32_t       triFrom;
 	int32_t       triTo;
 }repo_mesh_mapping_t;
-
 
 struct repo_mesh_entry_t
 {
@@ -92,7 +92,6 @@ struct repo_diff_result_t{
 	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher > correspondence;
 };
 
-
 typedef struct{
 	std::vector<float> ambient;
 	std::vector<float> diffuse;
@@ -112,10 +111,7 @@ typedef struct{
 	float a;
 }repo_color4d_t;
 
-
 typedef std::vector<uint32_t> repo_face_t;
-
-
 
 static std::string toString(const repo_face_t &f)
 {

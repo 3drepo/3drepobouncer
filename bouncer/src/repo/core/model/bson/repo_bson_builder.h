@@ -32,7 +32,8 @@
 
 #include <string>
 #include <mongo/bson/bson.h>
-#include "../repo_node_utils.h"
+#include "../../../lib/datastructure/repo_matrix.h"
+#include "../../../lib/datastructure/repo_uuid.h"
 #include "repo_bson.h"
 
 namespace repo {
