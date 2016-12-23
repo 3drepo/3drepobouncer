@@ -30,26 +30,3 @@
 //#include "../../lib/datastructure/repo_vector.h"
 //#include "../../lib/datastructure/repo_matrix.h"
 //
-///**
-//* \brief Returns a compacted string representation of a given vector
-//* as [toString(0) ... toString(n)] where only the very first and the very
-//* last elements are displayed.
-//* \sa toString()
-//* @param vec vector to convert to string
-//* @return returns a string representing the vector
-//*/
-//template <class T>
-//static std::string vectorToString(const std::vector<T> &vec)
-//{
-//	{
-//		std::string str;
-//		if (vec.size() > 0)
-//		{
-//			str += "[" + toString(vec.at(0));
-//			if (vec.size() > 1)
-//				str += ", ..., " + toString(vec.at(vec.size() - 1));
-//			str += "]";
-//		}
-//		return str;
-//	}
-//}

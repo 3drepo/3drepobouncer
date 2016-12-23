@@ -1049,9 +1049,6 @@ namespace repo{
 				* ---------------- Scene utilities ----------------
 				*/
 
-				bool nameCheck(const char &c) const;
-				bool dbNameCheck(const char &c) const;
-				bool extNameCheck(const char &c) const;
 				std::string sanitizeExt(const std::string& name) const;
 				std::string sanitizeName(const std::string& name) const;
 				std::string sanitizeDatabaseName(const std::string& name) const;

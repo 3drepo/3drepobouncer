@@ -22,12 +22,24 @@
 
 namespace repo{
 	namespace lib{
+		using RepoVector2D = _RepoVector2D < float > ;
+		using RepoVector3D = _RepoVector3D < float > ;
+		using RepoVector3D64 = _RepoVector3D < double > ;
 
-		using RepoVector2D = _RepoVector2D < float >;
-		using RepoVector3D = _RepoVector3D < float >;
-		using RepoVector3D64 = _RepoVector3D < double >;
+		template <typename T>
+		std::ostream& operator<<(std::ostream& stream, const _RepoVector2D<T>& v)
+		{
+			stream << v.toString();
+			return stream;
+		}
 
-		
+		template <typename T>
+		std::ostream& operator<<(std::ostream& stream, const _RepoVector3D<T>& v)
+		{
+			stream << v.toString();
+			return stream;
+		}
+
 		template <typename T>
 		bool operator==(const _RepoVector2D<T> &a, const _RepoVector2D<T> &b)
 		{
@@ -39,7 +51,6 @@ namespace repo{
 		{
 			return !(a == b);
 		}
-
 
 		template <typename T>
 		bool operator==(const _RepoVector3D<T> &a, const _RepoVector3D<T> &b)
@@ -53,5 +64,4 @@ namespace repo{
 			return !(a == b);
 		}
 	}
-	
 }

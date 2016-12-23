@@ -37,19 +37,19 @@ const std::vector<std::string> RepoScene::collectionsInProject = { "scene", "sce
 "stash.json_mpc.files", "stash.json_mpc.chunks", "stash.x3d.chunks", "stash.gltf", "stash.gltf.files", "stash.gltf.chunks", "stash.src", "stash.src.files", "stash.src.chunks", "history",
 "history.files", "history.chunks", "issues", "wayfinder", "groups" };
 
-bool RepoScene::nameCheck(const char &c) const
+static bool nameCheck(const char &c)
 {
 	return c == ' ' || c == '$' || c == '.';
 }
 
-bool RepoScene::dbNameCheck(const char &c) const
+static bool dbNameCheck(const char &c)
 {
 	return c == '/' || c == '\\' || c == '.' || c == ' '
 		|| c == '\"' || c == '$' || c == '*' || c == '<'
 		|| c == '>' || c == ':' || c == '?' || c == '|';
 }
 
-bool RepoScene::extNameCheck(const char &c) const
+static bool extNameCheck(const char &c)
 {
 	return c == ' ' || c == '$';
 }
