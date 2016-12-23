@@ -527,27 +527,27 @@ std::list<std::string> RepoController::_RepoControllerImpl::getDatabases(const R
 }
 
 repo::core::model::DatabaseStats RepoController::_RepoControllerImpl::getDatabaseStats(
-        const RepoController::RepoToken *token,
-        const std::string &database)
+	const RepoController::RepoToken *token,
+	const std::string &database)
 {
-    repo::core::model::DatabaseStats stats;
+	repo::core::model::DatabaseStats stats;
 
-    if (token)
-    {
-        manipulator::RepoManipulator* worker = workerPool.pop();
-        std::string errMsg;
-        stats = worker->getDatabaseStats(token->databaseAd,
-                token->getCredentials(), database, errMsg);
-        workerPool.push(worker);
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		std::string errMsg;
+		stats = worker->getDatabaseStats(token->databaseAd,
+			token->getCredentials(), database, errMsg);
+		workerPool.push(worker);
 
-        if (!errMsg.empty())
-                repoError << errMsg;
-    }
-    else
-    {
-            repoError << "Trying to get database stats without a database connection!";
-    }
-    return stats;
+		if (!errMsg.empty())
+			repoError << errMsg;
+	}
+	else
+	{
+		repoError << "Trying to get database stats without a database connection!";
+	}
+	return stats;
 }
 
 std::list<std::string>  RepoController::_RepoControllerImpl::getCollections(
@@ -1069,7 +1069,7 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 		scene = worker->loadSceneFromFile(filePath, errMsg, applyReduction, rotateModel, config);
 		workerPool.push(worker);
 		if (!scene)
-			repoError << "Failed ot load scene from file: " << errMsg;
+			repoError << "Failed to load scene from file: " << errMsg;
 	}
 	else
 	{
