@@ -59,13 +59,10 @@ static bool projectSettingsCheck(
 		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
 	if (token)
 	{
-		repoTrace << "Fetching scene...";
 		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true);
-		repoTrace << "done";
 		if (scene)
 		{
 			res = scene->getOwner() == owner && scene->getTag() == tag && scene->getMessage() == desc;
-			repoTrace << "deleting scene";
 			delete scene;
 		}
 	}
