@@ -76,7 +76,7 @@ repo_material_t IFCUtilsGeometry::createMaterial(
 IfcGeom::IteratorSettings IFCUtilsGeometry::createSettings()
 {
 	IfcGeom::IteratorSettings itSettings;
-	
+
 	itSettings.set(IfcGeom::IteratorSettings::WELD_VERTICES, settings->getWieldVertices());
 	itSettings.set(IfcGeom::IteratorSettings::USE_WORLD_COORDS, settings->getUseWorldCoords());
 	itSettings.set(IfcGeom::IteratorSettings::CONVERT_BACK_UNITS, settings->getConvertUnits());
@@ -94,7 +94,6 @@ IfcGeom::IteratorSettings IFCUtilsGeometry::createSettings()
 	itSettings.set(IfcGeom::IteratorSettings::CENTER_MODEL, settings->getCentreModels());
 	itSettings.set(IfcGeom::IteratorSettings::GENERATE_UVS, settings->getGenerateUVs());
 	itSettings.set(IfcGeom::IteratorSettings::APPLY_LAYERSETS, settings->getApplyLayerSets());
-
 
 	return itSettings;
 }
@@ -122,11 +121,18 @@ bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
 	//	}
 	//}
 	//
-	
-	
 
 	repoTrace << "Initialising Geom iterator";
-	if (contextIterator.initialize())
+	bool res = false;
+	try{
+		res = contextIterator.initialize();
+	}
+	catch (const std::exception &e)
+	{
+		repoError << "Failed to initialise Geom iterator: " << e.what() << " - Corrupted IFC File?";
+	}
+
+	if (res)
 	{
 		repoTrace << "Geom Iterator initialized";
 	}
@@ -269,7 +275,7 @@ void IFCUtilsGeometry::retrieveGeometryFromIterator(
 					}
 				}
 			}
-			
+
 			for (int iface = 0; iface < faces.size(); iface += 3)
 			{
 				auto matInd = *matIndIt;
