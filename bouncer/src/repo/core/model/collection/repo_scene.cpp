@@ -37,24 +37,24 @@ const std::vector<std::string> RepoScene::collectionsInProject = { "scene", "sce
 "stash.json_mpc.files", "stash.json_mpc.chunks", "stash.x3d.chunks", "stash.gltf", "stash.gltf.files", "stash.gltf.chunks", "stash.src", "stash.src.files", "stash.src.chunks", "history",
 "history.files", "history.chunks", "issues", "wayfinder", "groups" };
 
-static bool nameCheck(const char &c)
+bool RepoScene::nameCheck(const char &c) const
 {
 	return c == ' ' || c == '$' || c == '.';
 }
 
-static bool dbNameCheck(const char &c)
+bool RepoScene::dbNameCheck(const char &c) const
 {
 	return c == '/' || c == '\\' || c == '.' || c == ' '
 		|| c == '\"' || c == '$' || c == '*' || c == '<'
 		|| c == '>' || c == ':' || c == '?' || c == '|';
 }
 
-static bool extNameCheck(const char &c)
+bool RepoScene::extNameCheck(const char &c) const
 {
 	return c == ' ' || c == '$';
 }
 
-static std::string sanitizeExt(const std::string& name)
+std::string RepoScene::sanitizeExt(const std::string& name) const
 {
 	// http://docs.mongodb.org/manual/reference/limits/#Restriction-on-Collection-Names
 	std::string newName(name);
@@ -63,7 +63,7 @@ static std::string sanitizeExt(const std::string& name)
 	return newName;
 }
 
-static std::string sanitizeName(const std::string& name)
+std::string RepoScene::sanitizeName(const std::string& name) const
 {
 	// http://docs.mongodb.org/manual/reference/limits/#Restriction-on-Collection-Names
 	std::string newName(name);
@@ -72,7 +72,7 @@ static std::string sanitizeName(const std::string& name)
 	return newName;
 }
 
-static std::string sanitizeDatabaseName(const std::string& name)
+std::string RepoScene::sanitizeDatabaseName(const std::string& name) const
 {
 	// http://docs.mongodb.org/manual/reference/limits/#naming-restrictions
 

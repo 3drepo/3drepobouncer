@@ -59,10 +59,13 @@ static bool projectSettingsCheck(
 		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
 	if (token)
 	{
+		repoTrace << "Fetching scene...";
 		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true);
+		repoTrace << "done";
 		if (scene)
 		{
 			res = scene->getOwner() == owner && scene->getTag() == tag && scene->getMessage() == desc;
+			repoTrace << "deleting scene";
 			delete scene;
 		}
 	}
@@ -84,7 +87,7 @@ static bool projectHasValidRevision(
 	{
 		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true);
 		if (res = scene)
-		{			
+		{
 			delete scene;
 		}
 	}
@@ -104,7 +107,7 @@ static bool fileExists(
 
 static bool filesCompare(
 	const std::string &fileA,
-	const std::string &fileB )
+	const std::string &fileB)
 {
 	bool match = false;
 	std::ifstream fA(fileA), fB(fileB);
@@ -114,7 +117,6 @@ static bool filesCompare(
 		bool endofA, endofB;
 		while ((endofA = (bool)std::getline(fA, lineA)) && (endofB = (bool)std::getline(fB, lineB)))
 		{
-
 			match = lineA == lineB;
 			if (!match)
 			{
@@ -123,15 +125,14 @@ static bool filesCompare(
 				std::cout << "line B: " << lineB << std::endl;
 				break;
 			}
-
 		}
-		
+
 		if (!endofA)
 		{
 			//if endofA is false then end of B won't be found as getline wouldn't have ran for fB
 			endofB = (bool)std::getline(fB, lineB);
 		}
-			
+
 		match &= (!endofA && !endofB);
 	}
 
@@ -154,7 +155,6 @@ static bool compareVectors(const std::vector<repo_color4d_t> &v1, const std::vec
 
 	return match;
 }
-
 
 template <typename T>
 static bool compareStdVectors(const std::vector<T> &v1, const std::vector<T> &v2)
