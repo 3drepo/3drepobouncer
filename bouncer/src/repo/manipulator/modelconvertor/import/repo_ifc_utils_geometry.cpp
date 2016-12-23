@@ -129,7 +129,7 @@ bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
 	}
 	catch (const std::exception &e)
 	{
-		repoError << "Failed to initialise Geom iterator: " << e.what();
+		repoError << "Failed to initialise Geom iterator: " << e.what() << " - Corrupted IFC File?";
 	}
 
 	if (res)
