@@ -1054,7 +1054,7 @@ namespace repo{
 				bool extNameCheck(const char &c) const;
 				std::string sanitizeExt(const std::string& name) const;
 				std::string sanitizeName(const std::string& name) const;
-				std::string RepoScene::sanitizeDatabaseName(const std::string& name) const;
+				std::string sanitizeDatabaseName(const std::string& name) const;
 
 				/*
 				* ---------------- Scene Graph settings ----------------
