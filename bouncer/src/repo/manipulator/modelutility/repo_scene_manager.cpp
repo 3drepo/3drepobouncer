@@ -29,7 +29,7 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	const std::string                             &database,
 	const std::string                             &project,
-	const repoUUID                                &uuid,
+	const repo::lib::RepoUUID                                &uuid,
 	const bool                                    &headRevision,
 	const bool                                    &lightFetch)
 {
@@ -50,8 +50,8 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 			if (scene->loadRevision(handler, errMsg))
 			{
 				repoInfo << "Loaded " <<
-					(headRevision ? (" head revision of branch " + UUIDtoString(uuid))
-					: (" revision " + UUIDtoString(uuid)))
+					(headRevision ? (" head revision of branch " + uuid.toString())
+					: (" revision " + uuid.toString()))
 					<< " of " << database << "." << project;
 				if (lightFetch)
 				{
@@ -317,7 +317,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 			std::string projectName = scene->getProjectName();
 			std::string errMsg;
 			std::string fileNamePrefix = "/" + databaseName + "/" + projectName + "/revision/"
-				+ UUIDtoString(scene->getRevisionID()) + "/";
+				+ scene->getRevisionID().toString() + "/";
 
 			for (const auto & file : buffer)
 			{

@@ -20,19 +20,32 @@
 #include <unordered_map>
 #include <cstdint>
 #include "../../repo_bouncer_global.h"
-#include "../../core/model/repo_node_utils.h"
+#include "repo_uuid.h"
+#include "repo_vector.h"
 
 typedef struct {
 	std::unordered_map<std::string, std::vector<uint8_t>> geoFiles; //files where geometery are stored
 	std::unordered_map<std::string, std::vector<uint8_t>> jsonFiles; //JSON mapping files
 }repo_web_buffers_t;
 
+//This is used to map info for multipart optimization
+typedef struct{
+	repo::lib::RepoVector3D min;
+	repo::lib::RepoVector3D max;
+	repo::lib::RepoUUID  mesh_id;
+	repo::lib::RepoUUID  material_id;
+	int32_t       vertFrom;
+	int32_t       vertTo;
+	int32_t       triFrom;
+	int32_t       triTo;
+}repo_mesh_mapping_t;
+
 struct repo_mesh_entry_t
 {
 	std::vector<float> min;
 	std::vector<float> max;
 	std::vector<float> mid;// midpoint
-	repoUUID      id;
+	repo::lib::RepoUUID      id;
 
 	repo_mesh_entry_t() :mid({ 0, 0, 0 })
 	{
@@ -74,7 +87,51 @@ struct repo_partitioning_tree_t{
 };
 
 struct repo_diff_result_t{
-	std::vector<repoUUID> added; //nodes that does not exist on the other model
-	std::vector<repoUUID> modified; //nodes that exist on the other model but it is modified.
-	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher > correspondence;
+	std::vector<repo::lib::RepoUUID> added; //nodes that does not exist on the other model
+	std::vector<repo::lib::RepoUUID> modified; //nodes that exist on the other model but it is modified.
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher > correspondence;
 };
+
+typedef struct{
+	std::vector<float> ambient;
+	std::vector<float> diffuse;
+	std::vector<float> specular;
+	std::vector<float> emissive;
+	float opacity;
+	float shininess;
+	float shininessStrength;
+	bool isWireframe;
+	bool isTwoSided;
+}repo_material_t;
+
+typedef struct{
+	float r;
+	float g;
+	float b;
+	float a;
+}repo_color4d_t;
+
+typedef std::vector<uint32_t> repo_face_t;
+
+static std::string toString(const repo_face_t &f)
+{
+	std::string str;
+	unsigned int mNumIndices = f.size();
+
+	str += "[";
+	for (unsigned int i = 0; i < mNumIndices; i++)
+	{
+		str += std::to_string(f[i]);
+		if (i != mNumIndices - 1)
+			str += ", ";
+	}
+	str += "]";
+	return str;
+}
+
+static std::string toString(const repo_color4d_t &color)
+{
+	std::stringstream sstr;
+	sstr << "[" << color.r << ", " << color.g << ", " << color.b << ", " << color.a << "]";
+	return sstr.str();
+}

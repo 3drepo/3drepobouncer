@@ -320,7 +320,7 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
 		scene = worker->fetchScene(token->databaseAd, token->getCredentials(),
-			database, collection, stringToUUID(uuid), headRevision, lightFetch);
+			database, collection, repo::lib::RepoUUID(uuid), headRevision, lightFetch);
 
 		workerPool.push(worker);
 	}

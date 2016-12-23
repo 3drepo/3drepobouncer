@@ -84,7 +84,7 @@ static bool projectHasValidRevision(
 	{
 		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true);
 		if (res = scene)
-		{			
+		{
 			delete scene;
 		}
 	}
@@ -104,7 +104,7 @@ static bool fileExists(
 
 static bool filesCompare(
 	const std::string &fileA,
-	const std::string &fileB )
+	const std::string &fileB)
 {
 	bool match = false;
 	std::ifstream fA(fileA), fB(fileB);
@@ -114,7 +114,6 @@ static bool filesCompare(
 		bool endofA, endofB;
 		while ((endofA = (bool)std::getline(fA, lineA)) && (endofB = (bool)std::getline(fB, lineB)))
 		{
-
 			match = lineA == lineB;
 			if (!match)
 			{
@@ -123,29 +122,18 @@ static bool filesCompare(
 				std::cout << "line B: " << lineB << std::endl;
 				break;
 			}
-
 		}
-		
+
 		if (!endofA)
 		{
 			//if endofA is false then end of B won't be found as getline wouldn't have ran for fB
 			endofB = (bool)std::getline(fB, lineB);
 		}
-			
+
 		match &= (!endofA && !endofB);
 	}
 
 	return match;
-}
-
-static bool compareVectors(const repo_vector2d_t &v1, const repo_vector2d_t &v2)
-{
-	return v1.x == v2.x && v1.y == v2.y;
-}
-
-static bool compareVectors(const repo_vector_t &v1, const repo_vector_t &v2)
-{
-	return v1.x == v2.x && v1.y == v2.y && v1.z == v2.z;
 }
 
 static bool compareVectors(const repo_color4d_t &v1, const repo_color4d_t &v2)
@@ -153,23 +141,16 @@ static bool compareVectors(const repo_color4d_t &v1, const repo_color4d_t &v2)
 	return v1.r == v2.r && v1.g == v2.g && v1.b == v2.b && v1.a == v2.a;
 }
 
-template <typename T>
-static bool compareVectors(const std::vector<T> &v1, const  std::vector<T> &v2)
+static bool compareVectors(const std::vector<repo_color4d_t> &v1, const std::vector<repo_color4d_t> &v2)
 {
-	if (v1.size() != v2.size())
+	if (v1.size() != v2.size()) return false;
+	bool match = true;
+	for (int i = 0; i < v1.size(); ++i)
 	{
-		return false;
+		match &= compareVectors(v1[i], v2[i]);
 	}
 
-	for (size_t i = 0; i < v1.size(); ++i)
-	{
-		if (!compareVectors(v1[i], v2[i]))
-		{
-			return false;
-		}
-	}
-
-	return true;
+	return match;
 }
 
 template <typename T>

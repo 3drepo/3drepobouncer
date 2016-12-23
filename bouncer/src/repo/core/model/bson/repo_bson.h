@@ -39,7 +39,7 @@
 #include "../../../lib/repo_log.h"
 #include "../../../repo_bouncer_global.h"
 #include "../repo_model_global.h"
-#include "../repo_node_utils.h"
+#include "../../../lib/datastructure/repo_uuid.h"
 #include "repo_bson_element.h"
 
 #define REPO_BSON_MAX_BYTE_SIZE 16770000 //max size is 16MB,but leave a bit for buffer
@@ -179,18 +179,18 @@ namespace repo {
 				}
 
 				/**
-				* Overload of getField function to retreve repoUUID
+				* Overload of getField function to retreve repo::lib::RepoUUID
 				* @param label name of the field
-				* @return returns a repoUUID from that field
+				* @return returns a repo::lib::RepoUUID from that field
 				*/
-				repoUUID getUUIDField(const std::string &label) const;
+				repo::lib::RepoUUID getUUIDField(const std::string &label) const;
 
 				/**
 				* Get an array of fields given an array element
 				* @param label name of the array element
 				* @return returns the array element in their respective type
 				*/
-				std::vector<repoUUID> getUUIDFieldArray(const std::string &label) const;
+				std::vector<repo::lib::RepoUUID> getUUIDFieldArray(const std::string &label) const;
 
 				/**
 				* Get an array of fields given an element label

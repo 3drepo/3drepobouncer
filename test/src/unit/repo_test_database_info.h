@@ -84,7 +84,7 @@ const static mongo::BSONObj REPO_GTEST_DROPROLETEST = BSON("db" << REPO_GTEST_DB
 const static mongo::BSONObj REPO_GTEST_DROPUSERTEST = BSON("db" << "admin" << "user" << "dropUserTest");
 const static mongo::BSONObj REPO_GTEST_UPDATEROLETEST = BSON("db" << REPO_GTEST_DBNAME_ROLEUSERTEST << "role" << "updateRole");
 const static mongo::BSONObj REPO_GTEST_UPDATEUSERTEST = BSON("db" << "admin" << "user" << "updateUserTest");
-const static std::vector<repoUUID> uuidsToSearch = { stringToUUID("0ab45528-9258-421a-927c-c51bf40fc478"), stringToUUID("126f9de3-c942-4d66-862a-16cc4f11841b") };
+const static std::vector<repo::lib::RepoUUID> uuidsToSearch = { repo::lib::RepoUUID("0ab45528-9258-421a-927c-c51bf40fc478"), repo::lib::RepoUUID("126f9de3-c942-4d66-862a-16cc4f11841b") };
 
 const static std::pair<std::string, std::string> REPO_GTEST_DROPCOL_TESTCASE = { "sampleDataRW", "collectionToDrop" };
 const static std::string REPO_GTEST_RAWFILE_FETCH_TEST = "5be1aca9-e4d0-4cec-987d-80d2fde3dade3DrepoBIM_obj";
@@ -99,9 +99,10 @@ static repo::core::handler::MongoDatabaseHandler* getHandler()
 		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
 }
 
-static std::vector<repo_vector_t> getGoldenDataForBBoxTest()
+static std::vector<repo::lib::RepoVector3D> getGoldenDataForBBoxTest()
 {
-	return{ { -30.00954627990722700, -15.00000476837158200, -0.00000199999999495 }, { 30.05025100708007800, 60.69493103027343800, 30.00000953674316400 } };
+	return{ repo::lib::RepoVector3D( -30.00954627990722700f, -15.00000476837158200f, -0.00000199999999495f ), 
+			repo::lib::RepoVector3D( 30.05025100708007800f, 60.69493103027343800f, 30.00000953674316400f ) };
 }
 
 static std::string getClientExePath()
@@ -217,7 +218,7 @@ static std::pair<std::pair<std::string, std::string>, mongo::BSONObj> getDataFor
 	std::pair<std::pair<std::string, std::string>, mongo::BSONObj> result;
 	result.first = { "sampleDataRW", "collectionToDrop" };
 	repo::core::model::RepoBSONBuilder builder;
-	builder.append("_id", stringToUUID("0ab45528-9258-421a-927c-c51bf40fc478"));
+	builder.append("_id", repo::lib::RepoUUID("0ab45528-9258-421a-927c-c51bf40fc478"));
 	result.second = builder.obj();
 
 	return result;

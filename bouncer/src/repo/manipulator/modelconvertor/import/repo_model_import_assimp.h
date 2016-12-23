@@ -119,7 +119,7 @@ namespace repo{
 				repo::core::model::MeshNode createMeshRepoNode(
 					const aiMesh *assimpMesh,
 					const std::vector<repo::core::model::RepoNode *> &materials,
-					std::unordered_map < repo::core::model::RepoNode*, std::vector<repoUUID>> &matMap,
+					std::unordered_map < repo::core::model::RepoNode*, std::vector<repo::lib::RepoUUID>> &matMap,
 					const bool hasTexture,
 					const std::vector<double> &offset);
 
@@ -133,7 +133,7 @@ namespace repo{
 				repo::core::model::MetadataNode* createMetadataRepoNode(
 					const aiMetadata             *assimpMeta,
 					const std::string            &metadataName,
-					const std::vector<repoUUID> &parents = std::vector<repoUUID>());
+					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>());
 
 				/**
 				* Create a Transformation Node given the information in ASSIMP objects
@@ -150,13 +150,13 @@ namespace repo{
 					const aiNode                                                         *assimpNode,
 					const std::unordered_map<std::string, repo::core::model::RepoNode *> &cameras,
 					const std::vector<repo::core::model::RepoNode >                      &meshes,
-					const std::unordered_map<repoUUID, repo::core::model::RepoNode *, RepoUUIDHasher>    &meshToMat,
-					std::unordered_map<repo::core::model::RepoNode *, std::vector<repoUUID>> &matParents,
+					const std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode *, repo::lib::RepoUUIDHasher>    &meshToMat,
+					std::unordered_map<repo::core::model::RepoNode *, std::vector<repo::lib::RepoUUID>> &matParents,
 					repo::core::model::RepoNodeSet                                       &newMeshes,
 					repo::core::model::RepoNodeSet						                 &metadata,
 					uint32_t                                                             &count,
 					const std::vector<double>                                            &worldOffset,
-					const std::vector<repoUUID>						                     &parent = std::vector<repoUUID>()
+					const std::vector<repo::lib::RepoUUID>						                     &parent = std::vector<repo::lib::RepoUUID>()
 					);
 
 				/**
@@ -165,10 +165,10 @@ namespace repo{
 				* @return returns a pointer to the newly constructed mesh
 				*/
 				repo::core::model::RepoNode* duplicateMesh(
-					repoUUID                    &newParent,
+					repo::lib::RepoUUID                    &newParent,
 					repo::core::model::RepoNode &mesh,
-					const std::unordered_map<repoUUID, repo::core::model::RepoNode *, RepoUUIDHasher>    &meshToMat,
-					std::unordered_map<repo::core::model::RepoNode *, std::vector<repoUUID>> &matParents);
+					const std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode *, repo::lib::RepoUUIDHasher>    &meshToMat,
+					std::unordered_map<repo::core::model::RepoNode *, std::vector<repo::lib::RepoUUID>> &matParents);
 
 				/**
 				* Get bounding box of the aimesh

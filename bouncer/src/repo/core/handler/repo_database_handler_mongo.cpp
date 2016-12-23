@@ -503,7 +503,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 	const std::string& database,
 	const std::string& collection,
-	const repoUUID& uuid,
+	const repo::lib::RepoUUID& uuid,
 	const std::string& sortField)
 {
 	repo::core::model::RepoBSON bson;
@@ -537,7 +537,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
 	const std::string& database,
 	const std::string& collection,
-	const repoUUID& uuid){
+	const repo::lib::RepoUUID& uuid){
 	repo::core::model::RepoBSON bson;
 	mongo::DBClientBase *worker;
 	try

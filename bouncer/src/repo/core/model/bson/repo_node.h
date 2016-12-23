@@ -21,12 +21,13 @@
 #pragma once
 
 #include "repo_bson.h"
+#include "../../../lib/datastructure/repo_matrix.h"
 
 namespace repo{
 	namespace core{
 		namespace model{
 			enum class NodeType{
-				CAMERA,  MATERIAL, MESH, METADATA, REFERENCE,
+				CAMERA, MATERIAL, MESH, METADATA, REFERENCE,
 				REVISION, TEXTURE, TRANSFORMATION, UNKNOWN
 			};
 
@@ -81,7 +82,7 @@ namespace repo{
 				* @return new object with the field updated
 				*/
 				RepoNode cloneAndAddParent(
-					const repoUUID &parent,
+					const repo::lib::RepoUUID &parent,
 					const bool     &newUniqueID = false,
 					const bool     &newSharedID = false,
 					const bool     &overwrite = false) const;
@@ -94,7 +95,7 @@ namespace repo{
 				* @return new object with the field updated
 				*/
 				RepoNode cloneAndAddParent(
-					const std::vector<repoUUID> &parents) const;
+					const std::vector<repo::lib::RepoUUID> &parents) const;
 
 				/**
 				*  Create a new object with transformation applied to the node
@@ -104,7 +105,7 @@ namespace repo{
 				* @return returns a new object with transformation applied.
 				*/
 				virtual RepoNode cloneAndApplyTransformation(
-					const std::vector<float> &matrix) const
+					const repo::lib::RepoMatrix &matrix) const
 				{
 					return RepoNode(copy(), bigFiles);
 				}
@@ -132,7 +133,7 @@ namespace repo{
 				* @returns new object with the field updated
 				*/
 				RepoNode cloneAndRemoveParent(
-					const repoUUID &parent,
+					const repo::lib::RepoUUID &parent,
 					const bool     &newUniqueID = true) const;
 
 				/**
@@ -164,7 +165,7 @@ namespace repo{
 				* Get the shared ID from the object
 				* @return returns the shared ID of the object
 				*/
-				repoUUID getSharedID() const { return getUUIDField(REPO_NODE_LABEL_SHARED_ID); }
+				repo::lib::RepoUUID getSharedID() const { return getUUIDField(REPO_NODE_LABEL_SHARED_ID); }
 
 				/**
 				* Get the type of node
@@ -185,13 +186,13 @@ namespace repo{
 				* Get the unique ID from the object
 				* @return returns the unique ID of the object
 				*/
-				repoUUID getUniqueID() const{ return getUUIDField(REPO_NODE_LABEL_ID); }
+				repo::lib::RepoUUID getUniqueID() const{ return getUUIDField(REPO_NODE_LABEL_ID); }
 
 				/**
 				* Get the list of parent IDs
 				* @return returns a set of parent IDs
 				*/
-				std::vector<repoUUID> getParentIDs() const;
+				std::vector<repo::lib::RepoUUID> getParentIDs() const;
 
 				/*
 				*	------------- Compare operations --------------
@@ -205,7 +206,7 @@ namespace repo{
 				//! Returns true if the other node is greater than this one, false otherwise.
 				bool operator<(const RepoNode& other) const
 				{
-					repoUUID sharedID = getSharedID();
+					repo::lib::RepoUUID sharedID = getSharedID();
 
 					if (sharedID == other.getSharedID()){
 						return getUniqueID() < other.getUniqueID();
@@ -234,7 +235,7 @@ namespace repo{
 				//! Returns true if the other node is greater than this one, false otherwise.
 				bool operator>(const RepoNode& other) const
 				{
-					repoUUID sharedID = getSharedID();
+					repo::lib::RepoUUID sharedID = getSharedID();
 
 					if (sharedID == other.getSharedID()){
 						return getUniqueID() > other.getUniqueID();

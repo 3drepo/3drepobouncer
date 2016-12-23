@@ -51,7 +51,6 @@ static std::string produceCleanArgs(
 		+ project;
 }
 
-
 static std::string produceGenStashArgs(
 	const std::string &database,
 	const std::string &project,
@@ -69,7 +68,7 @@ static std::string produceGenStashArgs(
 		+ "genStash "
 		+ database + " "
 		+ project + " "
-		+ type ;
+		+ type;
 }
 
 static std::string produceGetFileArgs(
@@ -110,7 +109,7 @@ static std::string produceCreateFedArgs(
 		+ owner;
 }
 
-static std::string produceUploadFileArgs(	
+static std::string produceUploadFileArgs(
 	const std::string &filePath,
 	const std::string &dbAdd = REPO_GTEST_DBADDRESS,
 	const int         &port = REPO_GTEST_DBPORT,
@@ -253,11 +252,11 @@ TEST(RepoClientTest, UploadTest)
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importNoDatabase2))));
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importNoProject))));
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(importNoProject2)));
-	
+
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importNoOwner))));
 	EXPECT_TRUE(projectExists("testDB", importNoOwnerPro));
 	EXPECT_TRUE(projectSettingsCheck("testDB", importNoOwnerPro, REPO_GTEST_DBUSER, "thisTag", "MyUpload"));
-	
+
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importNoOwner2))));
 	EXPECT_TRUE(projectExists("testDB", importNoOwnerPro2));
 	EXPECT_TRUE(projectSettingsCheck("testDB", importNoOwnerPro2, REPO_GTEST_DBUSER, "thisTag", "MyUpload"));
@@ -269,7 +268,6 @@ TEST(RepoClientTest, UploadTest)
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importSuccess2))));
 	EXPECT_TRUE(projectExists("testDB", importSuccessPro2));
 	EXPECT_TRUE(projectSettingsCheck("testDB", importSuccessPro2, "owner", "taggg", "desccc"));
-
 }
 
 TEST(RepoClientTest, CreateFedTest)
@@ -323,7 +321,6 @@ TEST(RepoClientTest, CreateFedTest)
 
 TEST(RepoClientTest, GetFileTest)
 {
-
 	EXPECT_EQ((int)REPOERR_GET_FILE_FAILED, runProcess(produceGetFileArgs(".", "nonExistent1", "nonExistent2")));
 	EXPECT_EQ((int)REPOERR_GET_FILE_FAILED, runProcess(produceGetFileArgs(".", REPO_GTEST_DBNAME1, "nonExistent2")));
 
@@ -339,7 +336,7 @@ TEST(RepoClientTest, GenStashTest)
 	repo::RepoController::RepoToken *token =
 		controller->authenticateToAdminDatabaseMongo(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
 		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
-	repoUUID stashRoot;
+	repo::lib::RepoUUID stashRoot;
 	if (token)
 	{
 		auto scene = controller->fetchScene(token, "sampleDataRW", "cube");
@@ -371,9 +368,8 @@ TEST(RepoClientTest, GenStashTest)
 	EXPECT_EQ((int)REPOERR_STASH_GEN_FAIL, runProcess(produceGenStashArgs("blash", "blah", "src")));
 	EXPECT_EQ((int)REPOERR_STASH_GEN_FAIL, runProcess(produceGenStashArgs("blash", "blah", "gltf")));
 
-	delete controller;		
+	delete controller;
 }
-
 
 TEST(RepoClientTest, CleanTest)
 {
@@ -386,8 +382,7 @@ TEST(RepoClientTest, CleanTest)
 
 	EXPECT_FALSE(projectHasValidRevision("sampleDataRW", "cleanTest1"));
 	EXPECT_TRUE(projectHasValidRevision("sampleDataRW", "cleanTest2"));
-	EXPECT_TRUE(projectHasValidRevision("sampleDataRW", "cleanTest3")); 
+	EXPECT_TRUE(projectHasValidRevision("sampleDataRW", "cleanTest3"));
 	EXPECT_TRUE(projectHasValidRevision("sampleDataRW", "cleanTest4"));
 	EXPECT_TRUE(projectHasValidRevision("sampleDataRW", "cleanTest5"));
-
 }

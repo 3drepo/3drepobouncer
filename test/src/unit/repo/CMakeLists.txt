@@ -5,6 +5,7 @@
 
 
 add_subdirectory(core)
+add_subdirectory(lib)
 add_subdirectory(manipulator)
 set(TEST_SOURCES
 	${TEST_SOURCES}

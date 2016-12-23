@@ -523,7 +523,7 @@ namespace repo{
 				repo::core::model::RepoBSON findOneBySharedID(
 					const std::string& database,
 					const std::string& collection,
-					const repoUUID& uuid,
+					const repo::lib::RepoUUID& uuid,
 					const std::string& sortField);
 
 				/**
@@ -536,7 +536,7 @@ namespace repo{
 				repo::core::model::RepoBSON findOneByUniqueID(
 					const std::string& database,
 					const std::string& collection,
-					const repoUUID& uuid);
+					const repo::lib::RepoUUID& uuid);
 
 				/**
 				* Get raw binary file from database

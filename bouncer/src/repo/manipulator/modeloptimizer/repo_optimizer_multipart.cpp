@@ -65,15 +65,15 @@ bool MultipartOptimizer::apply(repo::core::model::RepoScene *scene)
 bool MultipartOptimizer::collectMeshData(
 	const repo::core::model::RepoScene        *scene,
 	const repo::core::model::RepoNode         *node,
-	const std::set<repoUUID>                  &meshGroup,
-	std::vector<float>                        &mat,
-	std::vector<std::vector<repo_vector_t>>                &vertices,
-	std::vector<std::vector<repo_vector_t>>               &normals,
+	const std::set<repo::lib::RepoUUID>                  &meshGroup,
+	repo::lib::RepoMatrix                        &mat,
+	std::vector<std::vector<repo::lib::RepoVector3D>>                &vertices,
+	std::vector<std::vector<repo::lib::RepoVector3D>>               &normals,
 	std::vector<std::vector<repo_face_t>>                &faces,
-	std::vector<std::vector<std::vector<repo_vector2d_t>>> &uvChannels,
+	std::vector<std::vector<std::vector<repo::lib::RepoVector2D>>> &uvChannels,
 	std::vector<std::vector<repo_color4d_t>>               &colors,
 	std::vector<std::vector<repo_mesh_mapping_t>>          &meshMapping,
-	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>                 &matIDMap
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>                 &matIDMap
 	)
 {
 	bool success = false;
@@ -84,7 +84,7 @@ bool MultipartOptimizer::collectMeshData(
 		case repo::core::model::NodeType::TRANSFORMATION:
 		{
 			auto trans = (repo::core::model::TransformationNode *) node;
-			mat = matMult(mat, trans->getTransMatrix(false));
+			mat = mat * trans->getTransMatrix(false);
 			auto children = scene->getChildrenAsNodes(defaultGraph, trans->getSharedID());
 			for (const auto &child : children)
 			{
@@ -97,7 +97,7 @@ bool MultipartOptimizer::collectMeshData(
 
 		case repo::core::model::NodeType::MESH:
 		{
-			repoUUID meshUniqueID = node->getUniqueID();
+			repo::lib::RepoUUID meshUniqueID = node->getUniqueID();
 			if (meshGroup.find(meshUniqueID) != meshGroup.end())
 			{
 				auto mesh = (repo::core::model::MeshNode *) node;
@@ -105,11 +105,11 @@ bool MultipartOptimizer::collectMeshData(
 				repo::core::model::MeshNode transformedMesh = mesh->cloneAndApplyTransformation(mat);
 				//this node is in the grouping, add it into the data buffers
 				repo_mesh_mapping_t meshMap;
-				repoUUID matID = getMaterialID(scene, &transformedMesh);
-				repoUUID newMatID;
+				repo::lib::RepoUUID matID = getMaterialID(scene, &transformedMesh);
+				repo::lib::RepoUUID newMatID;
 				if (matIDMap.find(matID) == matIDMap.end())
 				{
-					newMatID = generateUUID();
+					newMatID = repo::lib::RepoUUID::createUUID();
 					matIDMap[matID] = newMatID;
 				}
 				else
@@ -123,18 +123,18 @@ bool MultipartOptimizer::collectMeshData(
 					meshMap.max = bbox[1];
 				}
 
-				std::vector<repo_vector_t> submVertices = transformedMesh.getVertices();
-				std::vector<repo_vector_t> submNormals = transformedMesh.getNormals();
+				std::vector<repo::lib::RepoVector3D> submVertices = transformedMesh.getVertices();
+				std::vector<repo::lib::RepoVector3D> submNormals = transformedMesh.getNormals();
 				std::vector<repo_face_t>   submFaces = transformedMesh.getFaces();
 				std::vector<repo_color4d_t> submColors = transformedMesh.getColors();
-				std::vector<std::vector<repo_vector2d_t>> submUVs = transformedMesh.getUVChannelsSeparated();
+				std::vector<std::vector<repo::lib::RepoVector2D>> submUVs = transformedMesh.getUVChannelsSeparated();
 
 				if (success = submVertices.size() && submFaces.size())
 				{
-					vertices.push_back(std::vector<repo_vector_t>());
-					normals.push_back(std::vector<repo_vector_t>());
+					vertices.push_back(std::vector<repo::lib::RepoVector3D>());
+					normals.push_back(std::vector<repo::lib::RepoVector3D>());
 					colors.push_back(std::vector<repo_color4d_t>());
-					uvChannels.push_back(std::vector<std::vector<repo_vector2d_t>>());
+					uvChannels.push_back(std::vector<std::vector<repo::lib::RepoVector2D>>());
 					faces.push_back(std::vector<repo_face_t>());
 					meshMapping.push_back(std::vector<repo_mesh_mapping_t>());
 
@@ -201,15 +201,15 @@ bool MultipartOptimizer::collectMeshData(
 bool MultipartOptimizer::collectMeshData(
 	const repo::core::model::RepoScene        *scene,
 	const repo::core::model::RepoNode         *node,
-	const std::set<repoUUID>                  &meshGroup,
-	std::vector<float>                        &mat,
-	std::vector<repo_vector_t>                &vertices,
-	std::vector<repo_vector_t>                &normals,
+	const std::set<repo::lib::RepoUUID>                  &meshGroup,
+	repo::lib::RepoMatrix                       &mat,
+	std::vector<repo::lib::RepoVector3D>                &vertices,
+	std::vector<repo::lib::RepoVector3D>                &normals,
 	std::vector<repo_face_t>                  &faces,
-	std::vector<std::vector<repo_vector2d_t>> &uvChannels,
+	std::vector<std::vector<repo::lib::RepoVector2D>> &uvChannels,
 	std::vector<repo_color4d_t>               &colors,
 	std::vector<repo_mesh_mapping_t>          &meshMapping,
-	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>    &matIDMap
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>    &matIDMap
 	)
 {
 	bool success = false;
@@ -220,7 +220,7 @@ bool MultipartOptimizer::collectMeshData(
 		case repo::core::model::NodeType::TRANSFORMATION:
 		{
 			auto trans = (repo::core::model::TransformationNode *) node;
-			mat = matMult(mat, trans->getTransMatrix(false));
+			mat = mat * trans->getTransMatrix(false);
 			auto children = scene->getChildrenAsNodes(defaultGraph, trans->getSharedID());
 			for (const auto &child : children)
 			{
@@ -233,7 +233,7 @@ bool MultipartOptimizer::collectMeshData(
 
 		case repo::core::model::NodeType::MESH:
 		{
-			repoUUID meshUniqueID = node->getUniqueID();
+			repo::lib::RepoUUID meshUniqueID = node->getUniqueID();
 			if (meshGroup.find(meshUniqueID) != meshGroup.end())
 			{
 				auto mesh = (repo::core::model::MeshNode *) node;
@@ -241,12 +241,12 @@ bool MultipartOptimizer::collectMeshData(
 				repo::core::model::MeshNode transformedMesh = mesh->cloneAndApplyTransformation(mat);
 				//this node is in the grouping, add it into the data buffers
 				repo_mesh_mapping_t meshMap;
-				repoUUID matID = getMaterialID(scene, mesh);
-				repoUUID newMatID;
+				repo::lib::RepoUUID matID = getMaterialID(scene, mesh);
+				repo::lib::RepoUUID newMatID;
 
 				if (matIDMap.find(matID) == matIDMap.end())
 				{
-					newMatID = generateUUID();
+					newMatID = repo::lib::RepoUUID::createUUID();
 					matIDMap[matID] = newMatID;
 				}
 				else
@@ -260,11 +260,11 @@ bool MultipartOptimizer::collectMeshData(
 					meshMap.max = bbox[1];
 				}
 
-				std::vector<repo_vector_t> submVertices = transformedMesh.getVertices();
-				std::vector<repo_vector_t> submNormals = transformedMesh.getNormals();
+				std::vector<repo::lib::RepoVector3D> submVertices = transformedMesh.getVertices();
+				std::vector<repo::lib::RepoVector3D> submNormals = transformedMesh.getNormals();
 				std::vector<repo_face_t>   submFaces = transformedMesh.getFaces();
 				std::vector<repo_color4d_t> submColors = transformedMesh.getColors();
-				std::vector<std::vector<repo_vector2d_t>> submUVs = transformedMesh.getUVChannelsSeparated();
+				std::vector<std::vector<repo::lib::RepoVector2D>> submUVs = transformedMesh.getUVChannelsSeparated();
 
 				if (success = submVertices.size() && submFaces.size())
 				{
@@ -330,21 +330,18 @@ bool MultipartOptimizer::collectMeshData(
 #ifdef REPO_MP_TEXTURE_WORK_AROUND
 std::vector<repo::core::model::MeshNode*> MultipartOptimizer::createSuperMesh(
 	const repo::core::model::RepoScene      *scene,
-	const std::set<repoUUID>                &meshGroup,
-	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>  &matIDs,
+	const std::set<repo::lib::RepoUUID>                &meshGroup,
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>  &matIDs,
 	const bool                              &texture)
 {
-	std::vector<std::vector<repo_vector_t>> vertices, normals;
+	std::vector<std::vector<repo::lib::RepoVector3D>> vertices, normals;
 	std::vector<std::vector<repo_face_t>> faces;
-	std::vector<std::vector<std::vector<repo_vector2d_t>>> uvChannels;
+	std::vector<std::vector<std::vector<repo::lib::RepoVector2D>>> uvChannels;
 	std::vector<std::vector<repo_color4d_t>> colors;
 	std::vector<std::vector<repo_mesh_mapping_t>> meshMapping;
 
 	std::vector<repo::core::model::MeshNode*> resultMeshes;
-	std::vector<float> startMat = { 1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		0, 0, 0, 1 };
+	repo::lib::RepoMatrix startMat;
 
 	bool success = collectMeshData(scene, scene->getRoot(defaultGraph), meshGroup, startMat,
 		vertices, normals, faces, uvChannels, colors, meshMapping, matIDs);
@@ -354,7 +351,7 @@ std::vector<repo::core::model::MeshNode*> MultipartOptimizer::createSuperMesh(
 		for (int meshIdx = 0; meshIdx < meshMapping.size(); ++meshIdx)
 		{
 			//workout bbox and outline from meshMapping
-			std::vector<repo_vector_t> bbox;
+			std::vector<repo::lib::RepoVector3D> bbox;
 			bbox.push_back(meshMapping[meshIdx][0].min);
 			bbox.push_back(meshMapping[meshIdx][0].max);
 			for (int i = 1; i < meshMapping[meshIdx].size(); ++i)
@@ -397,22 +394,19 @@ std::vector<repo::core::model::MeshNode*> MultipartOptimizer::createSuperMesh(
 repo::core::model::MeshNode* MultipartOptimizer::createSuperMesh
 (
 const repo::core::model::RepoScene *scene,
-const std::set<repoUUID>           &meshGroup,
-std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>  &matIDs)
+const std::set<repo::lib::RepoUUID>           &meshGroup,
+std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>  &matIDs)
 {
-	std::vector<repo_vector_t> vertices, normals;
+	std::vector<repo::lib::RepoVector3D> vertices, normals;
 	std::vector<repo_face_t> faces;
-	std::vector<std::vector<repo_vector2d_t>> uvChannels;
+	std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
 	std::vector<repo_color4d_t> colors;
 	std::vector<repo_mesh_mapping_t> meshMapping;
 
 	repo::core::model::MeshNode* resultMesh = nullptr;
 
 	std::vector<repo::core::model::MeshNode*> resultMeshes;
-	std::vector<float> startMat = { 1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		0, 0, 0, 1 };
+	repo::lib::RepoMatrix startMat;
 
 	bool success = collectMeshData(scene, scene->getRoot(defaultGraph), meshGroup, startMat,
 		vertices, normals, faces, uvChannels, colors, meshMapping, matIDs);
@@ -420,7 +414,7 @@ std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>  &matIDs)
 	if (success && meshMapping.size())
 	{
 		//workout bbox and outline from meshMapping
-		std::vector<repo_vector_t> bbox;
+		std::vector<repo::lib::RepoVector3D> bbox;
 		bbox.push_back(meshMapping[0].min);
 		bbox.push_back(meshMapping[0].max);
 		for (int i = 1; i < meshMapping.size(); ++i)
@@ -466,8 +460,8 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 	auto meshes = scene->getAllMeshes(defaultGraph);
 	if (success = meshes.size())
 	{
-		std::unordered_map<uint32_t, std::vector<std::set<repoUUID>>> transparentMeshes, normalMeshes;
-		std::unordered_map<uint32_t, std::unordered_map<repoUUID, std::vector<std::set<repoUUID>>, RepoUUIDHasher>> texturedMeshes;
+		std::unordered_map<uint32_t, std::vector<std::set<repo::lib::RepoUUID>>> transparentMeshes, normalMeshes;
+		std::unordered_map<uint32_t, std::unordered_map<repo::lib::RepoUUID, std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher>> texturedMeshes;
 		//Sort the meshes into 3 different grouping
 		sortMeshes(scene, meshes, normalMeshes, transparentMeshes, texturedMeshes);
 
@@ -475,10 +469,10 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 
 		auto rootNode = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
 		trans.insert(rootNode);
-		repoUUID rootID = rootNode->getSharedID();
+		repo::lib::RepoUUID rootID = rootNode->getSharedID();
 
-		std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> matNodes;
-		std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher> matIDs;
+		std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> matNodes;
+		std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher> matIDs;
 
 		for (const auto &groupings : normalMeshes)
 		{
@@ -525,7 +519,7 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 			{
 				//create new instance with new UUID to avoid X contamination
 				repo::core::model::RepoBSONBuilder builder;
-				builder.append(REPO_NODE_LABEL_ID, generateUUID());
+				builder.append(REPO_NODE_LABEL_ID, repo::lib::RepoUUID::createUUID());
 				auto changeBSON = builder.obj();
 				textures.insert(new repo::core::model::TextureNode(texture->cloneAndAddFields(&changeBSON, false)));
 			}
@@ -545,12 +539,12 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 	return success;
 }
 
-repoUUID MultipartOptimizer::getMaterialID(
+repo::lib::RepoUUID MultipartOptimizer::getMaterialID(
 	const repo::core::model::RepoScene *scene,
 	const repo::core::model::MeshNode  *mesh
 	)
 {
-	repoUUID matID = stringToUUID(REPO_HISTORY_MASTER_BRANCH);
+	repo::lib::RepoUUID matID = repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH);
 	const auto mat = scene->getChildrenNodesFiltered(defaultGraph, mesh->getSharedID(), repo::core::model::NodeType::MATERIAL);
 	if (mat.size())
 	{
@@ -563,7 +557,7 @@ repoUUID MultipartOptimizer::getMaterialID(
 bool MultipartOptimizer::hasTexture(
 	const repo::core::model::RepoScene *scene,
 	const repo::core::model::MeshNode  *mesh,
-	repoUUID                           &texID)
+	repo::lib::RepoUUID                           &texID)
 {
 	bool hasText = false;
 	const auto mat = scene->getChildrenNodesFiltered(defaultGraph, mesh->getSharedID(), repo::core::model::NodeType::MATERIAL);
@@ -598,11 +592,11 @@ bool MultipartOptimizer::isTransparent(
 #ifdef REPO_MP_TEXTURE_WORK_AROUND
 bool MultipartOptimizer::processMeshGroup(
 	const repo::core::model::RepoScene                                        *scene,
-	const  std::set<repoUUID>                                                  &meshes,
-	const repoUUID                                                             &rootID,
+	const  std::set<repo::lib::RepoUUID>                                                  &meshes,
+	const repo::lib::RepoUUID                                                             &rootID,
 	repo::core::model::RepoNodeSet                                             &mergedMeshes,
-	std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> &matNodes,
-	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>                      &matIDs,
+	std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> &matNodes,
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>                      &matIDs,
 	const bool																   &texture
 	)
 {
@@ -616,8 +610,8 @@ bool MultipartOptimizer::processMeshGroup(
 			sMesh->swap(sMeshWithParent);
 			mergedMeshes.insert(sMesh);
 
-			repoUUID sMeshSharedID = sMesh->getSharedID();
-			std::set<repoUUID> currentMats;
+			repo::lib::RepoUUID sMeshSharedID = sMesh->getSharedID();
+			std::set<repo::lib::RepoUUID> currentMats;
 			for (const auto &map : sMesh->getMeshMapping())
 			{
 				currentMats.insert(map.material_id);
@@ -668,11 +662,11 @@ bool MultipartOptimizer::processMeshGroup(
 
 bool MultipartOptimizer::processMeshGroup(
 	const repo::core::model::RepoScene                                        *scene,
-	const  std::set<repoUUID>                                                  &meshes,
-	const repoUUID                                                             &rootID,
+	const  std::set<repo::lib::RepoUUID>                                                  &meshes,
+	const repo::lib::RepoUUID                                                             &rootID,
 	repo::core::model::RepoNodeSet                                             &mergedMeshes,
-	std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> &matNodes,
-	std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>                     &matIDs
+	std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> &matNodes,
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>                     &matIDs
 	)
 {
 	bool success = false;
@@ -683,8 +677,8 @@ bool MultipartOptimizer::processMeshGroup(
 		sMesh->swap(sMeshWithParent);
 		mergedMeshes.insert(sMesh);
 
-		repoUUID sMeshSharedID = sMesh->getSharedID();
-		std::set<repoUUID> currentMats;
+		repo::lib::RepoUUID sMeshSharedID = sMesh->getSharedID();
+		std::set<repo::lib::RepoUUID> currentMats;
 		for (const auto &map : sMesh->getMeshMapping())
 		{
 			currentMats.insert(map.material_id);
@@ -737,13 +731,13 @@ bool MultipartOptimizer::processMeshGroup(
 void MultipartOptimizer::sortMeshes(
 	const repo::core::model::RepoScene                                      *scene,
 	const repo::core::model::RepoNodeSet                                    &meshes,
-	std::unordered_map<uint32_t, std::vector<std::set<repoUUID>>>						&normalMeshes,
-	std::unordered_map<uint32_t, std::vector<std::set<repoUUID>>>						&transparentMeshes,
-	std::unordered_map < uint32_t, std::unordered_map < repoUUID,
-	std::vector<std::set<repoUUID>>, RepoUUIDHasher >> &texturedMeshes)
+	std::unordered_map<uint32_t, std::vector<std::set<repo::lib::RepoUUID>>>						&normalMeshes,
+	std::unordered_map<uint32_t, std::vector<std::set<repo::lib::RepoUUID>>>						&transparentMeshes,
+	std::unordered_map < uint32_t, std::unordered_map < repo::lib::RepoUUID,
+	std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher >> &texturedMeshes)
 {
 	std::unordered_map<uint32_t, size_t> normalFCount, transparentFCount;
-	std::unordered_map<uint32_t, std::unordered_map<repoUUID, size_t, RepoUUIDHasher> > texturedFCount;
+	std::unordered_map<uint32_t, std::unordered_map<repo::lib::RepoUUID, size_t, repo::lib::RepoUUIDHasher> > texturedFCount;
 
 	for (const auto &node : meshes)
 	{
@@ -760,14 +754,14 @@ void MultipartOptimizer::sortMeshes(
 		*/
 		uint32_t mFormat = mesh->getMFormat();
 
-		repoUUID texID;
+		repo::lib::RepoUUID texID;
 		if (hasTexture(scene, mesh, texID))
 		{
 			auto it = texturedMeshes.find(mFormat);
 			if (it == texturedMeshes.end())
 			{
-				texturedMeshes[mFormat] = std::unordered_map<repoUUID, std::vector<std::set<repoUUID>>, RepoUUIDHasher>();
-				texturedFCount[mFormat] = std::unordered_map<repoUUID, size_t, RepoUUIDHasher>();
+				texturedMeshes[mFormat] = std::unordered_map<repo::lib::RepoUUID, std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher>();
+				texturedFCount[mFormat] = std::unordered_map<repo::lib::RepoUUID, size_t, repo::lib::RepoUUIDHasher>();
 			}
 			auto it2 = texturedMeshes[mFormat].find(texID);
 #ifdef REPO_MP_TEXTURE_WORK_AROUND
@@ -776,24 +770,24 @@ void MultipartOptimizer::sortMeshes(
 
 			if (it2 == texturedMeshes[mFormat].end())
 			{
-				texturedMeshes[mFormat][texID] = std::vector<std::set<repoUUID>>();
+				texturedMeshes[mFormat][texID] = std::vector<std::set<repo::lib::RepoUUID>>();
 			}
-			std::set<repoUUID> singleMeshSet;
+			std::set<repo::lib::RepoUUID> singleMeshSet;
 			singleMeshSet.insert(mesh->getUniqueID());
 			texturedMeshes[mFormat][texID].push_back(singleMeshSet);
 
 #else
 			if (it2 == texturedMeshes[mFormat].end())
 			{
-				texturedMeshes[mFormat][texID] = std::vector<std::set<repoUUID>>();
-				texturedMeshes[mFormat][texID].push_back(std::set<repoUUID>());
+				texturedMeshes[mFormat][texID] = std::vector<std::set<repo::lib::RepoUUID>>();
+				texturedMeshes[mFormat][texID].push_back(std::set<repo::lib::RepoUUID>());
 				texturedFCount[mFormat][texID] = 0;
 			}
 			size_t faceCount = mesh->getFaces().size();
 			if (texturedFCount[mFormat][texID] + faceCount > REPO_MP_MAX_FACE_COUNT)
 			{
 				//Exceed max face count, create another grouping entry for this format
-				texturedMeshes[mFormat][texID].push_back(std::set<repoUUID>());
+				texturedMeshes[mFormat][texID].push_back(std::set<repo::lib::RepoUUID>());
 				texturedFCount[mFormat][texID] = 0;
 			}
 			texturedMeshes[mFormat][texID].back().insert(mesh->getUniqueID());
@@ -809,15 +803,15 @@ void MultipartOptimizer::sortMeshes(
 			auto it = meshMap.find(mFormat);
 			if (it == meshMap.end())
 			{
-				meshMap[mFormat] = std::vector<std::set<repoUUID>>();
-				meshMap[mFormat].push_back(std::set<repoUUID>());
+				meshMap[mFormat] = std::vector<std::set<repo::lib::RepoUUID>>();
+				meshMap[mFormat].push_back(std::set<repo::lib::RepoUUID>());
 				meshFCount[mFormat] = 0;
 			}
 			size_t faceCount = mesh->getFaces().size();
 			if (meshFCount[mFormat] && meshFCount[mFormat] + faceCount > REPO_MP_MAX_FACE_COUNT)
 			{
 				//Exceed max face count, create another grouping entry for this format
-				meshMap[mFormat].push_back(std::set<repoUUID>());
+				meshMap[mFormat].push_back(std::set<repo::lib::RepoUUID>());
 				meshFCount[mFormat] = 0;
 			}
 			meshMap[mFormat].back().insert(mesh->getUniqueID());

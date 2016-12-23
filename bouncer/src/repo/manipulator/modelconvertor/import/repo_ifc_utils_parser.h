@@ -80,7 +80,7 @@ namespace repo{
 					std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
 					repo::core::model::RepoNodeSet											   &metaSet,
 					std::pair<std::vector<std::string>, std::vector<std::string>>               &metaValue,
-					const repoUUID																&parentID,
+					const repo::lib::RepoUUID																&parentID,
 					const std::set<int>													       &ancestorsID = std::set<int>()
 					);
 

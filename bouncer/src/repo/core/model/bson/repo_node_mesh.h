@@ -22,6 +22,7 @@
 #include "repo_node.h"
 
 #include "../../../repo_bouncer_global.h"
+#include "../../../lib/datastructure/repo_structs.h"
 
 namespace repo {
 	namespace core {
@@ -58,6 +59,7 @@ namespace repo {
 #define REPO_NODE_MESH_LABEL_MATERIAL_ID		        "mat_id"
 #define REPO_NODE_MESH_LABEL_MERGE_MAP		        "m_map"
 			//------------------------------------------------------------------------------
+
 
 			class REPO_API_EXPORT MeshNode :public RepoNode
 			{
@@ -144,7 +146,7 @@ namespace repo {
 				* @return returns a new object with transformation applied.
 				*/
 				virtual RepoNode cloneAndApplyTransformation(
-					const std::vector<float> &matrix) const;
+					const repo::lib::RepoMatrix &matrix) const;
 
 				/**
 				* Create a new copy of the node and update its mesh mapping
@@ -162,9 +164,9 @@ namespace repo {
 				* Retrieve the bounding box of this mesh
 				* @return returns a vector of size 2, containing the bounding box.
 				*/
-				std::vector<repo_vector_t> getBoundingBox() const;
+				std::vector<repo::lib::RepoVector3D> getBoundingBox() const;
 
-				static std::vector<repo_vector_t> getBoundingBox(RepoBSON &bbArr);
+				static std::vector<repo::lib::RepoVector3D> getBoundingBox(RepoBSON &bbArr);
 
 				/**
 				* Retrieve a vector of Colors from the bson object
@@ -181,22 +183,22 @@ namespace repo {
 				/**
 				* Retrieve a vector of vertices from the bson object
 				*/
-				std::vector<repo_vector_t> getNormals() const;
+				std::vector<repo::lib::RepoVector3D> getNormals() const;
 
 				/**
 				* Retrieve a vector of UV Channels from the bson object
 				*/
-				std::vector<repo_vector2d_t> getUVChannels() const;
+				std::vector<repo::lib::RepoVector2D> getUVChannels() const;
 
 				/**
 				* Retrieve a vector of UV Channels, separated by channels
 				*/
-				std::vector<std::vector<repo_vector2d_t>> getUVChannelsSeparated() const;
+				std::vector<std::vector<repo::lib::RepoVector2D>> getUVChannelsSeparated() const;
 
 				/**
 				* Retrieve a vector of vertices from the bson object
 				*/
-				std::vector<repo_vector_t> getVertices() const;
+				std::vector<repo::lib::RepoVector3D> getVertices() const;
 
 			private:
 				/**

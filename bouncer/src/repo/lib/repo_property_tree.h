@@ -20,9 +20,11 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/algorithm/string/replace.hpp>
+#include <boost/lexical_cast.hpp>
 //#include <boost/property_tree/json_parser.hpp>
 #include "json_parser.h"
-#include "../core/model/repo_node_utils.h"
+#include "datastructure/repo_uuid.h"
+#include "datastructure/repo_vector.h"
 
 namespace repo{
 	namespace lib{
@@ -256,9 +258,9 @@ namespace repo{
 		};
 		// Template specialization
 		template <>
-		void PropertyTree::addToTree<repo_vector_t>(
-			const std::string           &label,
-			const repo_vector_t         &value);
+		void PropertyTree::addToTree<repo::lib::RepoVector3D>(
+			const std::string             &label,
+			const repo::lib::RepoVector3D &value);
 
 		template <>
 		void PropertyTree::addToTree<std::string>(
@@ -266,9 +268,9 @@ namespace repo{
 			const std::string           &value);
 
 		template <>
-		void PropertyTree::addToTree<repoUUID>(
+		void PropertyTree::addToTree<repo::lib::RepoUUID>(
 			const std::string           &label,
-			const repoUUID              &value);
+			const repo::lib::RepoUUID              &value);
 
 		template <>
 		void PropertyTree::addToTree(
@@ -287,7 +289,7 @@ namespace repo{
 		void PropertyTree::addFieldAttribute(
 			const std::string  &label,
 			const std::string  &attribute,
-			const repo_vector_t &value
+			const repo::lib::RepoVector3D &value
 			);
 	}
 }

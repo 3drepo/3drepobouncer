@@ -64,7 +64,7 @@ template <>
 void PropertyTree::addFieldAttribute(
 	const std::string  &label,
 	const std::string  &attribute,
-	const repo_vector_t &value
+	const repo::lib::RepoVector3D &value
 	)
 {
 	std::stringstream ss;
@@ -97,17 +97,17 @@ void PropertyTree::addToTree<std::string>(
 }
 
 template <>
-void PropertyTree::addToTree<repoUUID>(
+void PropertyTree::addToTree<repo::lib::RepoUUID>(
 	const std::string          &label,
-	const repoUUID             &value)
+	const repo::lib::RepoUUID             &value)
 {
-	addToTree(label, boost::lexical_cast<std::string>(value));
+	addToTree(label, value.toString());
 }
 
 template <>
-void PropertyTree::addToTree<repo_vector_t>(
+void PropertyTree::addToTree<repo::lib::RepoVector3D>(
 	const std::string  &label,
-	const repo_vector_t &value
+	const repo::lib::RepoVector3D &value
 	)
 {
 	std::stringstream ss;

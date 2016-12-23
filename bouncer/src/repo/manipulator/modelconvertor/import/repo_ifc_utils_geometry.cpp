@@ -150,11 +150,11 @@ bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
 	repoTrace << "Finished iterating. number of meshes found: " << allVertices.size();
 	repoTrace << "Finished iterating. number of materials found: " << materials.size();
 
-	std::map<std::string, std::vector<repoUUID>> materialParent;
+	std::map<std::string, std::vector<repo::lib::RepoUUID>> materialParent;
 	for (int i = 0; i < allVertices.size(); ++i)
 	{
-		std::vector<repo_vector_t> vertices, normals;
-		std::vector<repo_vector2d_t> uvs;
+		std::vector<repo::lib::RepoVector3D> vertices, normals;
+		std::vector<repo::lib::RepoVector2D> uvs;
 		std::vector<repo_face_t> faces;
 		std::vector<std::vector<float>> boundingBox;
 		for (int j = 0; j < allVertices[i].size(); j += 3)
@@ -186,7 +186,7 @@ bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
 			uvs.push_back({ (float)allUVs[i][j], (float)allUVs[i][j + 1] });
 		}
 
-		std::vector < std::vector<repo_vector2d_t>> uvChannels;
+		std::vector < std::vector<repo::lib::RepoVector2D>> uvChannels;
 		if (uvs.size())
 			uvChannels.push_back(uvs);
 
@@ -203,7 +203,7 @@ bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
 		{
 			if (materialParent.find(allMaterials[i]) == materialParent.end())
 			{
-				materialParent[allMaterials[i]] = std::vector<repoUUID>();
+				materialParent[allMaterials[i]] = std::vector<repo::lib::RepoUUID>();
 			}
 
 			materialParent[allMaterials[i]].push_back(mesh.getSharedID());

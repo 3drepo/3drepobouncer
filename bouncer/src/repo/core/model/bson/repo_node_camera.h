@@ -101,7 +101,7 @@ namespace repo {
 				* @return returns a new object with transformation applied.
 				*/
 				virtual RepoNode cloneAndApplyTransformation(
-					const std::vector<float> &matrix) const;
+					const repo::lib::RepoMatrix &matrix) const;
 
 				/**
 				* --------- Convenience functions -----------
@@ -173,7 +173,7 @@ namespace repo {
 				* Get the Look At vector of the camera
 				* @return returns a vector of the "Look At"
 				*/
-				repo_vector_t getLookAt() const;
+				repo::lib::RepoVector3D getLookAt() const;
 
 				/**
 				* get the orientation of the camera
@@ -185,13 +185,13 @@ namespace repo {
 				* Get the position of the camera
 				* @return returns a vector of the position
 				*/
-				repo_vector_t getPosition() const;
+				repo::lib::RepoVector3D getPosition() const;
 
 				/**
 				* Get the up vector of the camera
 				* @return returns a vector of up
 				*/
-				repo_vector_t getUp() const;
+				repo::lib::RepoVector3D getUp() const;
 
 				/**
 				* Check if the node is semantically equal to another

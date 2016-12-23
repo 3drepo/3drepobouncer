@@ -149,34 +149,35 @@ TEST(RepoTransformationNodeTest, CloneAndApplyTransformationTest)
 
 	TransformationNode modifiedEmpty = empty.cloneAndApplyTransformation(notId);
 
-	EXPECT_TRUE(compareStdVectors(empty.getTransMatrix(false), identity));
-	EXPECT_TRUE(compareStdVectors(modifiedEmpty.getTransMatrix(false), notId));
+	EXPECT_EQ(empty.getTransMatrix(false), identity);
+	EXPECT_EQ(modifiedEmpty.getTransMatrix(false), notId);
 
 	auto filled = makeTransformationNode(notId);
 	TransformationNode modifiedFilled = filled.cloneAndApplyTransformation(std::vector<float>());
 
-	EXPECT_TRUE(compareStdVectors(modifiedFilled.getTransMatrix(false), notId));
+	EXPECT_EQ(modifiedFilled.getTransMatrix(false), notId);
 }
 
 TEST(RepoTransformationNodeTest, GetTransMatrixTest)
 {
 	TransformationNode empty = TransformationNode();
-	EXPECT_TRUE(compareStdVectors(identity, empty.getTransMatrix(false)));
+	EXPECT_EQ(identity, empty.getTransMatrix(false));
 
 	TransformationNode notEmpty = makeTransformationNode(notId);
-	EXPECT_TRUE(compareStdVectors(notId, notEmpty.getTransMatrix(false)));
+	EXPECT_EQ(notId, notEmpty.getTransMatrix(false));
 
 	//check transpose is done correctly
 	auto notIdTransposed = notEmpty.getTransMatrix(true);
 
-	ASSERT_EQ(notId.size(), notIdTransposed.size());
+	auto notIdTransData = notIdTransposed.getData();
+	ASSERT_EQ(notId.size(), notIdTransData.size());
 	for (int i = 0; i < 4; ++i)
 	{
 		for (int j = 0; j < 4; ++j)
 		{
 			int index = i * 4 + j;
 			int transIndex = j * 4 + i;
-			EXPECT_EQ(notId[index], notIdTransposed[transIndex]);
+			EXPECT_EQ(notId[index], notIdTransData[transIndex]);
 		}
 	}
 }

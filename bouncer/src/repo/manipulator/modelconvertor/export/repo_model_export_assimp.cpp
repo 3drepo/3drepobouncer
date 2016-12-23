@@ -105,9 +105,9 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 	repo::core::model::RepoNodeSet                &textNodes,
 	const repo::core::model::RepoScene::GraphType &gType)
 {
-	std::unordered_map<repoUUID, aiMesh*, RepoUUIDHasher>     meshMap;
-	std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher> matMap;
-	std::unordered_map<repoUUID, aiCamera*, RepoUUIDHasher>   camMap;
+	std::unordered_map<repo::lib::RepoUUID, aiMesh*, repo::lib::RepoUUIDHasher>     meshMap;
+	std::unordered_map<repo::lib::RepoUUID, aiMaterial*, repo::lib::RepoUUIDHasher> matMap;
+	std::unordered_map<repo::lib::RepoUUID, aiCamera*, repo::lib::RepoUUIDHasher>   camMap;
 
 	return constructAiSceneRecursively(scene, currNode, meshVec, matVec, camVec,
 		meshMap, matMap, camMap, textNodes, gType);
@@ -119,9 +119,9 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 	std::vector<aiMesh*>                                      &meshVec,
 	std::vector<aiMaterial*>                                  &matVec,
 	std::vector<aiCamera*>                                    &camVec,
-	std::unordered_map<repoUUID, aiMesh*, RepoUUIDHasher>     &meshMap,
-	std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher> &matMap,
-	std::unordered_map<repoUUID, aiCamera*, RepoUUIDHasher>   &camMap,
+	std::unordered_map<repo::lib::RepoUUID, aiMesh*, repo::lib::RepoUUIDHasher>     &meshMap,
+	std::unordered_map<repo::lib::RepoUUID, aiMaterial*, repo::lib::RepoUUIDHasher> &matMap,
+	std::unordered_map<repo::lib::RepoUUID, aiCamera*, repo::lib::RepoUUIDHasher>   &camMap,
 	repo::core::model::RepoNodeSet                            &textNodes,
 	const repo::core::model::RepoScene::GraphType             &gType)
 {
@@ -150,7 +150,7 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 				repo::core::model::TransformationNode *currNodeTrans =
 					(repo::core::model::TransformationNode*) currNode;
 				node->mName = aiString(currNodeTrans->getName());
-				std::vector<float> transMat = currNodeTrans->getTransMatrix(false);
+				auto transMat = currNodeTrans->getTransMatrix(false).getData();
 				if (transMat.size() >= 16)
 					node->mTransformation = aiMatrix4x4(transMat[0], transMat[1], transMat[2], transMat[3],
 					transMat[4], transMat[5], transMat[6], transMat[7],
@@ -165,7 +165,7 @@ aiNode* AssimpModelExport::constructAiSceneRecursively(
 				std::vector<uint32_t> meshIndices;
 				for (const auto & child : scene->getChildrenAsNodes(gType, currNode->getSharedID()))
 				{
-					repoUUID childSharedID = child->getSharedID();
+					repo::lib::RepoUUID childSharedID = child->getSharedID();
 
 					//==================MESH============================
 					switch (child->getTypeAsEnum())
@@ -297,17 +297,17 @@ aiCamera* AssimpModelExport::convertCamera(
 
 	//--------------------------------------------------------------------------
 	// Look at vector
-	repo_vector_t lookAt = camNode->getLookAt();
+	repo::lib::RepoVector3D lookAt = camNode->getLookAt();
 	aiCam->mLookAt = aiVector3D(lookAt.x, lookAt.y, lookAt.z);
 
 	//--------------------------------------------------------------------------
 	// Position vector
-	repo_vector_t position = camNode->getPosition();
+	repo::lib::RepoVector3D position = camNode->getPosition();
 	aiCam->mPosition = aiVector3D(position.x, position.y, position.z);;
 
 	//--------------------------------------------------------------------------
 	// Up vector
-	repo_vector_t up = camNode->getUp();
+	repo::lib::RepoVector3D up = camNode->getUp();
 	aiCam->mUp = aiVector3D(up.x, up.y, up.z);
 
 	return aiCam;
@@ -409,7 +409,7 @@ aiMesh* AssimpModelExport::convertMesh(
 	const repo::core::model::RepoScene                        *scene,
 	const repo::core::model::MeshNode                         *meshNode,
 	std::vector<aiMaterial*>                                  &matVec,
-	std::unordered_map<repoUUID, aiMaterial*, RepoUUIDHasher> &matMap,
+	std::unordered_map<repo::lib::RepoUUID, aiMaterial*, repo::lib::RepoUUIDHasher> &matMap,
 	repo::core::model::RepoNodeSet                            &textNodes,
 	const repo::core::model::RepoScene::GraphType             &gType)
 {
@@ -446,7 +446,7 @@ aiMesh* AssimpModelExport::convertMesh(
 	//--------------------------------------------------------------------------
 	// Vertices
 	// Make a copy of vertices
-	std::vector<repo_vector_t> vertices = meshNode->getVertices();
+	std::vector<repo::lib::RepoVector3D> vertices = meshNode->getVertices();
 	assimpMesh->mVertices = new aiVector3D[vertices.size()];
 	if (assimpMesh->mVertices)
 	{
@@ -468,7 +468,7 @@ aiMesh* AssimpModelExport::convertMesh(
 	//--------------------------------------------------------------------------
 	// Normals
 	// Make a copy of normals
-	std::vector<repo_vector_t> normals = meshNode->getNormals();
+	std::vector<repo::lib::RepoVector3D> normals = meshNode->getNormals();
 	if (normals.size())
 	{
 		assimpMesh->mNormals = new aiVector3D[normals.size()];
@@ -489,7 +489,7 @@ aiMesh* AssimpModelExport::convertMesh(
 	// Texture coordinates
 	//
 	// TODO: change to support U and UVW, not just UV as done now.
-	std::vector<std::vector<repo_vector2d_t>> uvChannels = meshNode->getUVChannelsSeparated();
+	std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels = meshNode->getUVChannelsSeparated();
 	if (uvChannels.size())
 	{
 		//figure out the number of channels, then split the serialised uvChannel vector to

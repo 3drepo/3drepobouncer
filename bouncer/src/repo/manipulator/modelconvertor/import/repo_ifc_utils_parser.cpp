@@ -66,7 +66,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformations(
 	if (initialElements->size())
 	{
 		repoTrace << "Initial elements: " << initialElements->size();
-		repoUUID parentID = stringToUUID(REPO_HISTORY_MASTER_BRANCH);
+		repo::lib::RepoUUID parentID = repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH);
 		if (initialElements->size() > 1)
 		{
 			//More than one starting nodes. create a rootNode
@@ -98,7 +98,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
 	repo::core::model::RepoNodeSet											   &metaSet,
 	std::pair<std::vector<std::string>, std::vector<std::string>>               &metaValue,
-	const repoUUID															   &parentID,
+	const repo::lib::RepoUUID															   &parentID,
 	const std::set<int>													       &ancestorsID
 	)
 {
@@ -145,17 +145,17 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 
 	determineActionsByElementType(ifcfile, element, myMetaValues, createElement, traverseChildren, isIFCSpace, extraChildren);
 
-	repoUUID transID = parentID;
+	repo::lib::RepoUUID transID = parentID;
 	repo::core::model::RepoNodeSet transNodeSet;
 
 	if (isIFCSpace) name += " " + IFC_TYPE_SPACE_LABEL;
 
 	if (createElement)
 	{
-		std::vector<repoUUID> parents;
-		if (UUIDtoString(parentID) != REPO_HISTORY_MASTER_BRANCH) parents.push_back(parentID);
+		std::vector<repo::lib::RepoUUID> parents;
+		if (parentID.toString() != REPO_HISTORY_MASTER_BRANCH) parents.push_back(parentID);
 
-		auto transNode = repo::core::model::RepoBSONFactory::makeTransformationNode(repo::core::model::TransformationNode::identityMat(), name, parents);
+		auto transNode = repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name, parents);
 		transID = transNode.getSharedID();
 
 		transNodeSet.insert(new repo::core::model::TransformationNode(transNode));
@@ -200,10 +200,9 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 				}
 				catch (IfcParse::IfcException &e)
 				{
-					repoError << "Failed to find child entity " << childrenId << " ("<< e.what() <<")";
+					repoError << "Failed to find child entity " << childrenId << " (" << e.what() << ")";
 					missingEntities = true;
 				}
-				
 			}
 		}
 	}

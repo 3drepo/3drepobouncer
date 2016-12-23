@@ -37,9 +37,9 @@ bool DiffBySharedID::compare(
 	bool res = false;
 	if (baseScene && compareScene && baseScene->hasRoot(gType) && compareScene->hasRoot(gType))
 	{
-		std::set<repoUUID> baseIDs = baseScene->getAllSharedIDs(gType);
-		std::set<repoUUID> compIDs = compareScene->getAllSharedIDs(gType);
-		for (const repoUUID &sharedID : baseIDs)
+		std::set<repo::lib::RepoUUID> baseIDs = baseScene->getAllSharedIDs(gType);
+		std::set<repo::lib::RepoUUID> compIDs = compareScene->getAllSharedIDs(gType);
+		for (const repo::lib::RepoUUID &sharedID : baseIDs)
 		{
 			bool existInComp = compIDs.find(sharedID) != compIDs.end();
 
@@ -58,7 +58,7 @@ bool DiffBySharedID::compare(
 				}
 				else
 				{
-					repoLogError("Found multiple potential correspondence for " + UUIDtoString(sharedID));
+					repoLogError("Found multiple potential correspondence for " + sharedID.toString());
 				}
 
 				if (baseNode->getUniqueID() != compNode->getUniqueID())

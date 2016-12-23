@@ -79,7 +79,7 @@ RepoBSON RepoBSON::cloneAndShrink() const
 {
 	std::set<std::string> fields;
 	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>>> rawFiles(bigFiles.begin(), bigFiles.end());
-	std::string uniqueIDStr = hasField(REPO_LABEL_ID) ? UUIDtoString(getUUIDField(REPO_LABEL_ID)) : UUIDtoString(generateUUID());
+	std::string uniqueIDStr = hasField(REPO_LABEL_ID) ? getUUIDField(REPO_LABEL_ID).toString() : repo::lib::RepoUUID::createUUID().toString();
 
 	getFieldNames(fields);
 
@@ -99,35 +99,23 @@ RepoBSON RepoBSON::cloneAndShrink() const
 	return RepoBSON(resultBson, rawFiles);
 }
 
-repoUUID RepoBSON::getUUIDField(const std::string &label) const{
-	repoUUID uuid;
+repo::lib::RepoUUID RepoBSON::getUUIDField(const std::string &label) const{
+
+	
 	if (hasField(label))
 	{
 		const mongo::BSONElement bse = getField(label);
-		if ((bse.type() == mongo::BSONType::BinData && (bse.binDataType() == mongo::bdtUUID ||
-			bse.binDataType() == mongo::newUUID)))
-		{
-			int len = static_cast<int>(bse.size() * sizeof(boost::uint8_t));
-			const char *binData = bse.binData(len);
-			memcpy(uuid.data, binData, len);
-		}
-		else
-		{
-			repoError << "Field  " << label << " is not of type UUID! Bin data: " << (int)bse.type() << " enum: " << ((bse.type() == mongo::BSONType::BinData) ? (int)bse.binDataType() : 0);
-			uuid = generateUUID();  // failsafe
-		}
-	}
+		return repo::lib::RepoUUID::fromBSONElement(bse);		
+	}	
 	else
 	{
-		repoError << "Field  " << label << " does not exist!";
-		uuid = generateUUID();  // failsafe
+		return repo::lib::RepoUUID::createUUID();
 	}
 
-	return uuid;
 }
 
-std::vector<repoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) const{
-	std::vector<repoUUID> results;
+std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) const{
+	std::vector<repo::lib::RepoUUID> results;
 
 	if (hasField(label))
 	{

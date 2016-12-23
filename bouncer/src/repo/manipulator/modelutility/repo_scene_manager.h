@@ -44,7 +44,7 @@ namespace repo{
 					repo::core::handler::AbstractDatabaseHandler *handler,
 					const std::string                             &database,
 					const std::string                             &project,
-					const repoUUID                                &uuid,
+					const repo::lib::RepoUUID                                &uuid,
 					const bool                                    &headRevision = true,
 					const bool                                    &lightFetch = false);
 
@@ -53,7 +53,7 @@ namespace repo{
 					const std::string                             &database,
 					const std::string                             &project)
 				{
-					repoUUID master = stringToUUID(REPO_HISTORY_MASTER_BRANCH);
+					repo::lib::RepoUUID master = repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH);
 					return fetchScene(handler, database, project, master);
 				}
 
