@@ -16,7 +16,6 @@
 */
 
 #include "repo_property_tree.h"
-#include "../core//model/repo_node_utils.h"
 
 using namespace repo::lib;
 
