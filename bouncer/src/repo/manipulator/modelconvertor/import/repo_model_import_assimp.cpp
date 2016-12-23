@@ -56,7 +56,21 @@ AssimpModelImport::~AssimpModelImport()
 		settings = nullptr;
 	}
 }
+bool AssimpModelImport::isSupportedExts(const std::string &testExt)
+{
+	std::list<std::string> res;
+	Assimp::Importer importer;
+	aiString ext;
+	importer.GetExtensionList(ext);
 
+	// all file extensions in convenient all package
+
+	std::string str(ext.C_Str());
+	std::string lowerExt(testExt);
+	std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
+
+	return str.find(lowerExt) != std::string::npos;
+}
 std::string AssimpModelImport::getSupportedFormats()
 {
 	Assimp::Importer importer;

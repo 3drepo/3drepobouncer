@@ -757,6 +757,12 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 
 	boost::filesystem::path filePathP(filePath);
 	std::string fileExt = filePathP.extension().string();
+
+	if (!repo::manipulator::modelconvertor::AssimpModelImport::isSupportedExts(fileExt))
+	{
+		msg = "Unsupported file extension";
+		return nullptr;
+	}
 	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
 
 	repo::manipulator::modelconvertor::AbstractModelImport* modelConvertor = nullptr;

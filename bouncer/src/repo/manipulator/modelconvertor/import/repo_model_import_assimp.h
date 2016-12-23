@@ -61,6 +61,8 @@ namespace repo{
 				*/
 				virtual ~AssimpModelImport();
 
+				static bool isSupportedExts(const std::string &testExt);
+
 				static std::string getSupportedFormats();
 
 				/**
