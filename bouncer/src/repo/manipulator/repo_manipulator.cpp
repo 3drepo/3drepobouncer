@@ -342,7 +342,46 @@ bool RepoManipulator::dropDatabase(
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	if (handler)
+	{
 		success = handler->dropDatabase(databaseName, errMsg);
+
+		//remove all roles belonging to this database
+		repo::core::model::RepoBSON criteria = BSON(REPO_ROLE_LABEL_DATABASE << databaseName);
+		for (const auto role : handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_ROLES, criteria))
+		{
+			removeRole(databaseAd, cred, repo::core::model::RepoRole(role));
+		}
+
+		//remove privileges associated with this db
+		std::string fieldName = REPO_ROLE_LABEL_PRIVILEGES + std::string(".") + REPO_ROLE_LABEL_RESOURCE + "." + REPO_ROLE_LABEL_DATABASE;
+		repo::core::model::RepoBSON criteria2 = BSON(fieldName << databaseName);
+		for (const auto role : handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_ROLES, criteria2))
+		{
+			auto roleBson = repo::core::model::RepoRole(role);
+			auto privileges = roleBson.getPrivileges();
+			int index = 0;
+			while (index < privileges.size())
+			{
+				if (privileges[index].database == databaseName)
+				{
+					privileges.erase(privileges.begin() + index);
+				}
+				else
+				{
+					index++;
+				}
+			}
+
+			if (privileges.size())
+			{
+				updateRole(databaseAd, cred, roleBson.cloneAndUpdatePrivileges(privileges));
+			}
+			else
+			{
+				removeRole(databaseAd, cred, roleBson);
+			}
+		}
+	}
 	else
 		errMsg = "Unable to locate database handler for " + databaseAd + ". Try reauthenticating.";
 
