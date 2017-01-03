@@ -106,21 +106,20 @@ bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
 
 	IfcGeom::Iterator<double> contextIterator(itSettings, file);
 
-	//auto filter = settings->getFilteringKeywords();
-	//if (settings->getUseElementsFiltering() &&  filter.size())
-	//{
-	//	std::set<std::string> filterSet(filter.begin(), filter.end());
+	auto filter = settings->getFilteringKeywords();
+	if (settings->getUseElementsFiltering() && filter.size())
+	{
+		std::set<std::string> filterSet(filter.begin(), filter.end());
 
-	//	if (settings->getIsExclusionFilter())
-	//	{
-	//		contextIterator.excludeEntities(filterSet);
-	//	}
-	//	else
-	//	{
-	//		contextIterator.includeEntities(filterSet);
-	//	}
-	//}
-	//
+		if (settings->getIsExclusionFilter())
+		{
+			contextIterator.excludeEntities(filterSet);
+		}
+		else
+		{
+			contextIterator.includeEntities(filterSet);
+		}
+	}
 
 	repoTrace << "Initialising Geom iterator";
 	bool res = false;
