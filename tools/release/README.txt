@@ -33,6 +33,7 @@ look forward to hear from you.
 * (ISSUE #168) Log file is flushed after every log call
 * (ISSUE #169) Map Node is no longer available as a RepoNode.
 * (ISSUE #170) Fix bouncer crashing when IFC file is corrupted
+* (ISSUE #172) Changes to subscription schema to match repo.io changes
 
 ========================= New Features =========================
 * (ISSUE #114) Roles and privileges are removed when related database is removed
