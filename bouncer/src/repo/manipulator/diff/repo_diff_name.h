@@ -68,8 +68,8 @@ namespace repo{
 				* @param compNodes nodes to compare as compare-to revision
 				*/
 				void compareNodes(
-					std::set<repoUUID> &baseIDs,
-					std::set<repoUUID> &compIDs,
+					std::set<repo::lib::RepoUUID> &baseIDs,
+					std::set<repo::lib::RepoUUID> &compIDs,
 					const repo::core::model::RepoNodeSet &baseNodes,
 					const repo::core::model::RepoNodeSet &compNodes);
 

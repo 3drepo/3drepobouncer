@@ -85,6 +85,7 @@ void RepoLog::logToFile(const std::string &filePath)
 		boost::log::keywords::file_name = fileName,
 		boost::log::keywords::rotation_size = 10 * 1024 * 1024,
 		boost::log::keywords::time_based_rotation = boost::log::sinks::file::rotation_at_time_point(0, 0, 0),
+		boost::log::keywords::auto_flush = true,
 		boost::log::keywords::format = (
 		boost::log::expressions::stream
 		<< "[" << boost::log::expressions::format_date_time(timestamp, "%Y-%m-%d %H:%M:%S") << "]"

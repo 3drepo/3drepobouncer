@@ -69,6 +69,24 @@ namespace repo {
 				*/
 				virtual bool positionDependant() { return true; }
 
+				/**
+				* Get the type of node
+				* @return returns the type as a string
+				*/
+				virtual std::string getType() const
+				{
+					return REPO_NODE_TYPE_CAMERA;
+				}
+
+				/**
+				* Get the type of node as an enum
+				* @return returns type as enum.
+				*/
+				virtual NodeType getTypeAsEnum() const
+				{
+					return NodeType::CAMERA;
+				}
+
 				/*
 				*	------------- Delusional modifiers --------------
 				*   These are like "setters" but not. We are actually
@@ -83,7 +101,7 @@ namespace repo {
 				* @return returns a new object with transformation applied.
 				*/
 				virtual RepoNode cloneAndApplyTransformation(
-					const std::vector<float> &matrix) const;
+					const repo::lib::RepoMatrix &matrix) const;
 
 				/**
 				* --------- Convenience functions -----------
@@ -155,7 +173,7 @@ namespace repo {
 				* Get the Look At vector of the camera
 				* @return returns a vector of the "Look At"
 				*/
-				repo_vector_t getLookAt() const;
+				repo::lib::RepoVector3D getLookAt() const;
 
 				/**
 				* get the orientation of the camera
@@ -167,13 +185,13 @@ namespace repo {
 				* Get the position of the camera
 				* @return returns a vector of the position
 				*/
-				repo_vector_t getPosition() const;
+				repo::lib::RepoVector3D getPosition() const;
 
 				/**
 				* Get the up vector of the camera
 				* @return returns a vector of up
 				*/
-				repo_vector_t getUp() const;
+				repo::lib::RepoVector3D getUp() const;
 
 				/**
 				* Check if the node is semantically equal to another

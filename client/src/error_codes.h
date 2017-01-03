@@ -37,3 +37,5 @@
 #define REPOERR_FED_GEN_FAIL 9
 //Scene uploaded but missing some nodes
 #define REPOERR_LOAD_SCENE_MISSING_NODES 10
+//Failed to get file from project
+#define REPOERR_GET_FILE_FAILED 11

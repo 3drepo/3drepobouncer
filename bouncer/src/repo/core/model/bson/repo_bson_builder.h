@@ -32,7 +32,8 @@
 
 #include <string>
 #include <mongo/bson/bson.h>
-#include "../repo_node_utils.h"
+#include "../../../lib/datastructure/repo_matrix.h"
+#include "../../../lib/datastructure/repo_uuid.h"
 #include "repo_bson.h"
 
 namespace repo {
@@ -152,21 +153,27 @@ namespace repo {
 				*/
 				void appendUUID(
 					const std::string &label,
-					const repoUUID &uuid);
+					const repo::lib::RepoUUID &uuid);
 			};
 
 			// Template specialization
-			template<> void RepoBSONBuilder::append < repoUUID >
+			template<> void RepoBSONBuilder::append < repo::lib::RepoUUID >
 				(
 					const std::string &label,
-					const repoUUID &uuid
+					const repo::lib::RepoUUID &uuid
 					);
 
-				template<> void RepoBSONBuilder::append < repo_vector_t >
+				template<> void RepoBSONBuilder::append < repo::lib::RepoVector3D >
 					(
 						const std::string &label,
-						const repo_vector_t &vec
+						const repo::lib::RepoVector3D &vec
 						);
+
+					template<> void RepoBSONBuilder::append < repo::lib::RepoMatrix >
+						(
+							const std::string &label,
+							const repo::lib::RepoMatrix &mat
+							);
 		}// end namespace model
 	} // end namespace core
 } // end namespace repo

@@ -42,8 +42,8 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 	repo::lib::PropertyTree tree;
 	if (currentNode)
 	{
-		std::string idString = UUIDtoString(currentNode->getUniqueID());
-		repoUUID sharedID = currentNode->getSharedID();
+		std::string idString = currentNode->getUniqueID().toString();
+		repo::lib::RepoUUID sharedID = currentNode->getSharedID();
 		std::string childPath = currentPath.empty() ? idString : currentPath + "__" + idString;
 
 		auto children = scene->getChildrenAsNodes(repo::core::model::RepoScene::GraphType::DEFAULT, sharedID);
@@ -102,7 +102,7 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 			tree.addToTree("name", name);
 		tree.addToTree("path", childPath);
 		tree.addToTree("_id", idString);
-		tree.addToTree("shared_id", UUIDtoString(sharedID));
+		tree.addToTree("shared_id", sharedID.toString());
 		tree.addToTree("children", childrenTrees);
 
 		if (name.find(IFC_TYPE_SPACE_LABEL) != std::string::npos

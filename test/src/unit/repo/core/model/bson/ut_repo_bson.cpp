@@ -203,9 +203,9 @@ TEST(RepoBSONTest, Swap)
 
 TEST(RepoBSONTest, GetUUIDField)
 {
-	repoUUID uuid = generateUUID();
+	repo::lib::RepoUUID uuid = repo::lib::RepoUUID::createUUID();
 	mongo::BSONObjBuilder builder;
-	builder.appendBinData("uuid", uuid.size(), mongo::bdtUUID, (char*)uuid.data);
+	builder.appendBinData("uuid", uuid.data().size(), mongo::bdtUUID, (char*)uuid.data().data());
 
 	RepoBSON test = RepoBSON(builder.obj());
 	EXPECT_EQ(uuid, test.getUUIDField("uuid"));
@@ -217,14 +217,14 @@ TEST(RepoBSONTest, GetUUIDField)
 
 	//Test new UUID
 	mongo::BSONObjBuilder builder2;
-	builder2.appendBinData("uuid", uuid.size(), mongo::newUUID, (char*)uuid.data);
+	builder2.appendBinData("uuid", uuid.data().size(), mongo::newUUID, (char*)uuid.data().data());
 	RepoBSON test2 = RepoBSON(builder2.obj());
 	EXPECT_EQ(uuid, test2.getUUIDField("uuid"));
 }
 
 TEST(RepoBSONTest, GetUUIDFieldArray)
 {
-	std::vector<repoUUID> uuids;
+	std::vector<repo::lib::RepoUUID> uuids;
 
 	size_t size = 10;
 	mongo::BSONObjBuilder builder, arrbuilder;
@@ -232,15 +232,15 @@ TEST(RepoBSONTest, GetUUIDFieldArray)
 	uuids.reserve(size);
 	for (size_t i = 0; i < size; ++i)
 	{
-		uuids.push_back(generateUUID());
-		arrbuilder.appendBinData(std::to_string(i), uuids[i].size(), mongo::bdtUUID, (char*)uuids[i].data);
+		uuids.push_back(repo::lib::RepoUUID::createUUID());
+		arrbuilder.appendBinData(std::to_string(i), uuids[i].data().size(), mongo::bdtUUID, (char*)uuids[i].data().data());
 	}
 
 	builder.appendArray("uuid", arrbuilder.obj());
 
 	RepoBSON bson = builder.obj();
 
-	std::vector<repoUUID> outUUIDS = bson.getUUIDFieldArray("uuid");
+	std::vector<repo::lib::RepoUUID> outUUIDS = bson.getUUIDFieldArray("uuid");
 
 	EXPECT_EQ(outUUIDS.size(), uuids.size());
 	for (size_t i = 0; i < size; i++)

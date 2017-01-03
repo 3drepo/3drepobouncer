@@ -76,7 +76,7 @@ bool RepoController::authenticateMongo(
 	return impl->authenticateMongo(errMsg, token);
 }
 
-void RepoController::cleanUp(
+bool RepoController::cleanUp(
 	const RepoToken      *token,
 	const std::string                      &dbName,
 	const std::string                      &projectName
@@ -273,6 +273,12 @@ std::list<std::string> RepoController::getDatabases(const RepoController::RepoTo
 	return impl->getDatabases(token);
 }
 
+repo::core::model::DatabaseStats RepoController::getDatabaseStats(const RepoController::RepoToken *token,
+                                      const std::string &databaseName)
+{
+    return impl->getDatabaseStats(token, databaseName);
+}
+
 std::list<std::string>  RepoController::getCollections(
 	const RepoController::RepoToken       *token,
 	const std::string     &databaseName
@@ -418,12 +424,6 @@ repo::core::model::RepoScene* RepoController::createFederatedScene(
 	return impl->createFederatedScene(fedMap);
 }
 
-repo::core::model::RepoScene* RepoController::createMapScene(
-	const repo::core::model::MapNode &mapNode)
-{
-	return impl->createMapScene(mapNode);
-}
-
 bool RepoController::generateAndCommitGLTFBuffer(
 	const RepoController::RepoToken    *token,
 	repo::core::model::RepoScene *scene)
@@ -501,7 +501,7 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 	return impl->loadSceneFromFile(filePath, applyReduction, rotateModel, config);
 }
 
-void RepoController::saveOriginalFiles(
+bool RepoController::saveOriginalFiles(
 	const RepoController::RepoToken    *token,
 	const repo::core::model::RepoScene *scene,
 	const std::string                   &directory)
@@ -509,7 +509,7 @@ void RepoController::saveOriginalFiles(
 	return impl->saveOriginalFiles(token, scene, directory);
 }
 
-void RepoController::saveOriginalFiles(
+bool RepoController::saveOriginalFiles(
 	const RepoController::RepoToken     *token,
 	const std::string                   &database,
 	const std::string                   &project,

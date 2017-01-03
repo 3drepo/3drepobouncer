@@ -355,6 +355,17 @@ public:
 	//FIXME: vectors are much better than list for traversal efficiency...
 	// (but they also require large continuos memory allocation should they be massive)
 
+        /**
+        * Return a DatabaseStats BSON containing statistics about
+        * this database
+        * @param token A RepoToken given at authentication
+        * @param database name of database
+        * @return returns a BSON object containing this information
+        */
+        repo::core::model::DatabaseStats getDatabaseStats(
+                const RepoToken *token,
+                const std::string &database);
+
 	/**
 	* Return a list of projects with the database available to the user
 	* @param token A RepoToken given at authentication
@@ -398,7 +409,7 @@ public:
 	* @param dbName name of the database
 	* @param projectName name of the project
 	*/
-	void cleanUp(
+	bool cleanUp(
 		const RepoToken                        *token,
 		const std::string                      &dbName,
 		const std::string                      &projectName
@@ -430,7 +441,7 @@ public:
 	* @param scene Repo Scene to save
 	* @param directory directory to save into
 	*/
-	void saveOriginalFiles(
+	bool saveOriginalFiles(
 		const RepoToken                    *token,
 		const repo::core::model::RepoScene *scene,
 		const std::string                   &directory);
@@ -442,7 +453,7 @@ public:
 	* @param project  name of project
 	* @param directory directory to save into
 	*/
-	void saveOriginalFiles(
+	bool saveOriginalFiles(
 		const RepoToken                    *token,
 		const std::string                   &database,
 		const std::string                   &project,
@@ -695,15 +706,6 @@ public:
 		const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap);
 
 	/**
-	* Create a create a map scene with the given map node
-	* This is essentially a scene creation with a trans node (identity matrix) and the map
-	* @param mapNode the map node to create the scene with
-	* @return returns a constructed scene graph with the reference.
-	*/
-	repo::core::model::RepoScene* createMapScene(
-		const repo::core::model::MapNode &mapNode);
-
-	/**
 	* Generate and commit a GLTF encoding for the given scene
 	* This requires the stash to have been generated already
 	* @param token token for authentication
@@ -917,6 +919,6 @@ private:
 	void subscribeToLogger(
 		std::vector<lib::RepoAbstractListener*> listeners);
 
-	lib::RepoStack<manipulator::RepoManipulator*> workerPool;
+	lib::RepoStack<manipulator::RepoManipulator> workerPool;
 	const uint32_t numDBConnections;
 };

@@ -23,6 +23,7 @@
 
 #include <string>
 #include <map>
+#include <vector>
 #include <stdint.h>
 
 #include "../../../repo_bouncer_global.h"
@@ -37,7 +38,7 @@ namespace repo{
 				~ModelImportConfig();
 
 				/**
-				* ---------------- Getters -------------------------
+				* ---------------- Getters (ASSIMP)-------------------------
 				*/
 				/*!
 				* Returns true if calculate tangent space is checked in settings, false
@@ -541,7 +542,138 @@ namespace repo{
 				}
 
 				/**
-				* ---------------- Setters -------------------------
+				* ---------------- Getters (IFC OpenShell)-------------------------
+				*/
+				/**
+				* Returns true if the system should use IFCOpenShell for IFCs, false
+				* otherwise. Defaults to true.
+				*/
+				virtual bool getUseIFCOpenShell() const
+				{
+					return boolSettings.at(USE_IFC_OPEN_SHELL);
+				}
+
+				/**
+				* Returns true if the system should be filtering out elements for IFCOpenShell, false
+				* otherwise. Defaults to true.
+				*/
+				virtual bool getUseElementsFiltering() const
+				{
+					return boolSettings.at(IOS_USE_FILTER);
+				}
+
+				/**
+				* Returns true if the system should be filtering out elements by excluding specified elementsfor IFCOpenShell, false
+				* otherwise. Defaults to true.
+				*/
+				virtual bool getIsExclusionFilter() const
+				{
+					return boolSettings.at(IOS_FILTER_EXCLUSION);
+				}
+
+
+				/**
+				* Returns the list of keywords being filtered
+				*/
+				virtual std::vector<std::string> getFilteringKeywords() const
+				{
+					return stringVecSettings.at(IOS_FILTER_LIST);
+				}
+
+
+				virtual bool getWieldVertices() const
+				{
+					return boolSettings.at(IOS_WIELD_VERTICES);
+				}
+
+				virtual bool getUseWorldCoords() const
+				{
+					return boolSettings.at(IOS_USE_WORLD_COORDS);
+				}
+
+				virtual bool getConvertUnits() const
+				{
+					return boolSettings.at(IOS_CONVERT_UNITS);
+				}
+
+				virtual bool getUseBRepData() const
+				{
+					return boolSettings.at(IOS_USE_BREP_DATA);
+				}
+
+				virtual bool getSewShells() const
+				{
+					return boolSettings.at(IOS_SEW_SHELLS);
+				}
+
+				virtual bool getFasterBooleans() const
+				{
+					return boolSettings.at(IOS_FASTER_BOOLEANS);
+				}
+
+				virtual bool getNoOpeningSubtractions() const
+				{
+					return boolSettings.at(IOS_NO_OPENING_SUB);
+				}
+
+				virtual bool getNoTriangulation() const
+				{
+					return boolSettings.at(IOS_NO_TRIANGULATE);
+				}
+
+				virtual bool getUseDefaultMaterials() const
+				{
+					return boolSettings.at(IOS_USE_DEFAULT_MATS);
+				}
+
+				virtual bool getIncludeAllCurves() const
+				{
+					return boolSettings.at(IOS_INCLUDE_CURVES);
+				}
+
+				virtual bool getDisableSolidSurfaces() const
+				{
+					return boolSettings.at(IOS_NO_SOLIDS_SURFACES);
+				}
+
+				virtual bool getNoNormals() const
+				{
+					return boolSettings.at(IOS_NO_NORMALS);
+				}
+
+				virtual bool getUseElementGuids() const
+				{
+					return boolSettings.at(IOS_USE_ELEMENT_GUIDS);
+				}
+
+				virtual bool getUseElementNames() const
+				{
+					return boolSettings.at(IOS_USE_ELEMENT_NAMES);
+				}
+
+				virtual bool getUseMaterialNames() const
+				{
+					return boolSettings.at(IOS_USE_MAT_NAMES);
+				}
+
+				virtual bool getCentreModels() const
+				{
+					return boolSettings.at(IOS_CENTRE_MODEL);
+				}
+
+				virtual bool getGenerateUVs() const
+				{
+					return boolSettings.at(IOS_GENERATE_UVS);
+				}
+
+				virtual bool getApplyLayerSets() const
+				{
+					return boolSettings.at(IOS_APPLY_LAYER_SETS);
+				}
+
+
+				/**
+				* ---------------- Setters (ASSIMP) -------------------------
 				*/
 
 				//! Sets the calculate tangent space to settings.
@@ -826,6 +958,119 @@ namespace repo{
 					setValue(VALIDATE_DATA_STRUCTURES, on);
 				}
 
+				/**
+				* ---------------- Setters (IFCOpenShell) -------------------------
+				*/
+				virtual void setUseIFCOpenShell(bool on)
+				{
+					setValue(USE_IFC_OPEN_SHELL, on);
+				}
+
+				virtual void setUseElementsFiltering(bool on)
+				{
+					setValue(IOS_USE_FILTER, on);
+				}
+
+				virtual void setIsExclusionFilter(bool on)
+				{
+					setValue(IOS_FILTER_EXCLUSION, on);
+				}
+
+				virtual void setFilterKeywords(const std::vector<std::string> &keywords)
+				{
+					setValue(IOS_FILTER_LIST, keywords);
+				}
+
+				virtual void setWieldVertices(bool on)
+				{
+					setValue(IOS_WIELD_VERTICES, on);
+				}
+
+				virtual void setUseWorldCoords(bool on)
+				{
+					setValue(IOS_USE_WORLD_COORDS, on);
+				}
+
+				virtual void setConvertUnits(bool on)
+				{
+					setValue(IOS_CONVERT_UNITS, on);
+				}
+
+				virtual void setUseBRepData(bool on)
+				{
+					setValue(IOS_USE_BREP_DATA, on);
+				}
+
+				virtual void setSewShells(bool on)
+				{
+					setValue(IOS_SEW_SHELLS, on);
+				}
+
+				virtual void setFasterBooleans(bool on)
+				{
+					setValue(IOS_FASTER_BOOLEANS, on);
+				}
+
+				virtual void setNoOpeningSubtractions(bool on)
+				{
+					setValue(IOS_NO_OPENING_SUB, on);
+				}
+
+				virtual void setNoTriangulation(bool on)
+				{
+					setValue(IOS_NO_TRIANGULATE, on);
+				}
+
+				virtual void setUseDefaultMaterials(bool on)
+				{
+					setValue(IOS_USE_DEFAULT_MATS, on);
+				}
+
+				virtual void setIncludeAllCurves(bool on)
+				{
+					setValue(IOS_INCLUDE_CURVES, on);
+				}
+
+				virtual void setDisableSolidSurfaces(bool on)
+				{
+					setValue(IOS_NO_SOLIDS_SURFACES, on);
+				}
+
+				virtual void setNoNormals(bool on)
+				{
+					setValue(IOS_NO_NORMALS, on);
+				}
+
+				virtual void setUseElementGuids(bool on)
+				{
+					setValue(IOS_USE_ELEMENT_GUIDS, on);
+				}
+
+				virtual void setUseElementNames(bool on)
+				{
+					setValue(IOS_USE_ELEMENT_NAMES, on);
+				}
+
+				virtual void setUseMaterialNames(bool on)
+				{
+					setValue(IOS_USE_MAT_NAMES, on);
+				}
+
+				virtual void setCentreModels(bool on)
+				{
+					setValue(IOS_CENTRE_MODEL, on);
+				}
+
+				virtual void setGenerateUVs(bool on)
+				{
+					setValue(IOS_GENERATE_UVS, on);
+				}
+
+				virtual void setApplyLayerSets(bool on)
+				{
+					setValue(IOS_APPLY_LAYER_SETS, on);
+				}
+
 			protected:
 				/**
 				* Resets all the settings to default
@@ -840,30 +1085,36 @@ namespace repo{
 				void readConfig(
 					std::ifstream &conf);
 
-				void setValue(std::string label, bool value)
+				void setValue(std::string label, const bool value)
 				{
 					boolSettings[label] = value;
 				}
 
-				void setValue(std::string label, int32_t value)
+				void setValue(std::string label, const int32_t &value)
 				{
 					intSettings[label] = value;
 				}
 
-				void setValue(std::string label, float value)
+				void setValue(std::string label, const float &value)
 				{
 					floatSettings[label] = value;
 				}
 
-				void setValue(std::string label, std::string value)
+				void setValue(std::string label, const std::string &value)
 				{
 					stringSettings[label] = value;
+				}
+
+				void setValue(std::string label, const std::vector<std::string> &value)
+				{
+					stringVecSettings[label] = value;
 				}
 
 				std::map<std::string, bool> boolSettings;
 				std::map<std::string, int32_t> intSettings;
 				std::map<std::string, float> floatSettings;
 				std::map<std::string, std::string> stringSettings;
+				std::map<std::string, std::vector<std::string>> stringVecSettings;
 
 				static const std::string CALCULATE_TANGENT_SPACE;
 				static const std::string CALCULATE_TANGENT_SPACE_MAX_SMOOTHING_ANGLE;
@@ -921,6 +1172,29 @@ namespace repo{
 				static const std::string SPLIT_LARGE_MESHES_VERTEX_LIMIT;
 				static const std::string TRIANGULATE;
 				static const std::string VALIDATE_DATA_STRUCTURES;
+
+				static const std::string IOS_USE_FILTER;
+				static const std::string USE_IFC_OPEN_SHELL;
+				static const std::string IOS_FILTER_EXCLUSION;
+				static const std::string IOS_FILTER_LIST;
+				static const std::string IOS_WIELD_VERTICES;
+				static const std::string IOS_USE_WORLD_COORDS;
+				static const std::string IOS_CONVERT_UNITS;
+				static const std::string IOS_USE_BREP_DATA;
+				static const std::string IOS_SEW_SHELLS;
+				static const std::string IOS_FASTER_BOOLEANS;
+				static const std::string IOS_NO_OPENING_SUB;
+				static const std::string IOS_NO_TRIANGULATE;
+				static const std::string IOS_USE_DEFAULT_MATS;
+				static const std::string IOS_INCLUDE_CURVES;
+				static const std::string IOS_NO_SOLIDS_SURFACES;
+				static const std::string IOS_NO_NORMALS;
+				static const std::string IOS_USE_ELEMENT_GUIDS;
+				static const std::string IOS_USE_ELEMENT_NAMES;
+				static const std::string IOS_USE_MAT_NAMES;
+				static const std::string IOS_CENTRE_MODEL;
+				static const std::string IOS_GENERATE_UVS;
+				static const std::string IOS_APPLY_LAYER_SETS;
 			};
 		}//namespace modelconvertor
 	}//namespace manipulator

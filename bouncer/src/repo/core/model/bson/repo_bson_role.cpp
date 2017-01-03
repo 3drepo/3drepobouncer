@@ -331,32 +331,31 @@ std::vector<RepoPermission> RepoRole::translatePrivileges(
 {
 	std::vector<RepoPermission> permissions;
 
+	std::map <std::string, std::pair<bool, bool> > permTracker;
+
 	for (const RepoPrivilege &p : privileges)
 	{
 		size_t lastDot = p.collection.find_last_of('.');
 		if (lastDot == std::string::npos)
 		{
 			//does not have a .* Regard it as a different project
-			RepoPermission perm;
-			perm.database = p.database;
-			perm.project = p.collection;
+
+
 			bool hasRead = std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end();
 			bool hasWrite = std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end();
 			hasWrite |= std::find(p.actions.begin(), p.actions.end(), DBActions::UPDATE) != p.actions.end();
 
+			std::string projectFullName = p.database + "." + p.collection;
 			if (hasRead && hasWrite)
 			{
-				perm.permission = AccessRight::READ_WRITE;
-			}
-			else if (hasWrite)
-			{
-				perm.permission = AccessRight::WRITE;
-			}
+				permTracker[projectFullName] = { true, true };
+			}			
 			else
 			{
-				perm.permission = AccessRight::READ;
+				permTracker[projectFullName] = { false, false };
+
 			}
-			permissions.push_back(perm);
+
 		}
 		else
 		{
@@ -366,29 +365,62 @@ std::vector<RepoPermission> RepoRole::translatePrivileges(
 				history collection. so we only look for .history when we are looking for a project
 				to check for permissions
 				*/
+
 			if (postfix == "history")
 			{
 				RepoPermission perm;
 				perm.database = p.database;
 				perm.project = p.collection.substr(0, lastDot);
-				bool hasRead = std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end();
 				bool hasWrite = std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end();
 
-				if (hasRead && hasWrite)
-				{
-					perm.permission = AccessRight::READ_WRITE;
-				}
-				else if (hasWrite)
-				{
-					perm.permission = AccessRight::WRITE;
-				}
-				else
-				{
-					perm.permission = AccessRight::READ;
-				}
-				permissions.push_back(perm);
+				std::string projectFullName = p.database + "." + p.collection.substr(0, lastDot);
+				if (permTracker.find(projectFullName) == permTracker.end())
+					permTracker[projectFullName] = { false, false };
+
+				permTracker[projectFullName].first = hasWrite;
+
+
+			}
+
+
+			if (postfix == "issues")
+			{
+
+				bool hasWrite = std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end();
+
+				std::string projectFullName = p.database + "." + p.collection.substr(0, lastDot);
+				if (permTracker.find(projectFullName) == permTracker.end())
+					permTracker[projectFullName] = { false, false };
+
+				permTracker[projectFullName].second = hasWrite;
 			}
 		}
+	}
+
+	for (const auto &projList : permTracker)
+	{		
+		RepoPermission perm;
+		auto firstDot = projList.first.find_first_of('.');
+		perm.database = projList.first.substr(0, firstDot);
+		perm.project = projList.first.substr(firstDot+1);
+		if (projList.second.first)
+		{
+			perm.permission = AccessRight::READ_WRITE;
+		}
+		else
+		{
+			if (projList.second.second)
+			{
+				perm.permission = AccessRight::READ_AND_COMMENT;
+			}
+			else
+			{
+				perm.permission = AccessRight::READ_ONLY;
+			}
+
+		}
+
+		permissions.push_back(perm);
 	}
 
 	return permissions;
@@ -400,20 +432,15 @@ void RepoRole::updateActions(
 	std::vector<DBActions> &vec
 	)
 {
-	//READ PERMISSIONS:
-	if (permission == AccessRight::READ || permission == AccessRight::READ_WRITE)
+	vec.push_back(DBActions::FIND);
+	if ((collectionType == "issues" || collectionType == "groups") && permission == AccessRight::READ_AND_COMMENT )
 	{
-		vec.push_back(DBActions::FIND);
-
-		if (collectionType == "issues" || collectionType == "groups")
-		{
-			vec.push_back(DBActions::INSERT);
-			vec.push_back(DBActions::UPDATE);
-		}
+		vec.push_back(DBActions::INSERT);
+		vec.push_back(DBActions::UPDATE);
 	}
 
 	//WRITE PERMISSIONS:
-	if (permission == AccessRight::WRITE || permission == AccessRight::READ_WRITE)
+	if (permission == AccessRight::READ_WRITE)
 	{
 		if (collectionType == "scene")
 		{

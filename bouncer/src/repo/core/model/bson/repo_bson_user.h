@@ -47,6 +47,7 @@ namespace repo {
 #define REPO_USER_LABEL_ROLES                 "roles"
 #define REPO_USER_LABEL_ROLE                 "role"
 #define REPO_USER_LABEL_API_KEYS             "apiKeys"
+#define REPO_USER_LABEL_BILLING				 "billing"
 #define REPO_USER_LABEL_SUBS				 "subscriptions"
 #define REPO_USER_LABEL_SUBS_PLAN			 "plan"
 #define REPO_USER_LABEL_SUBS_ID				 "_id"

@@ -88,7 +88,7 @@ std::vector<repo_mesh_entry_t> RDTreeSpatialPartitioner::createMeshEntries()
 				}
 				else
 				{
-					repoWarning << "Could not find bounding box for " << UUIDtoString(mesh->getUniqueID()) << ". Skipping...";
+					repoWarning << "Could not find bounding box for " << mesh->getUniqueID() << ". Skipping...";
 					entries.pop_back();
 				}
 			}

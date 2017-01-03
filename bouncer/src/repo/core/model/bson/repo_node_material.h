@@ -20,6 +20,7 @@
 
 #pragma once
 #include "repo_node.h"
+#include "../../../lib/datastructure/repo_structs.h"
 
 namespace repo {
 	namespace core {

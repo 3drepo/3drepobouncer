@@ -49,11 +49,11 @@ TEST(RepoBSONFactoryTest, MakeRepoRoleTest)
 
 	std::string proDB1 = "database";
 	std::string proName1 = "project1";
-	AccessRight proAccess1 = AccessRight::READ;
+	AccessRight proAccess1 = AccessRight::READ_AND_COMMENT;
 
 	std::string proDB2 = "databaseb";
 	std::string proName2 = "project2";
-	AccessRight proAccess2 = AccessRight::WRITE;
+	AccessRight proAccess2 = AccessRight::READ_ONLY;
 
 	std::string proDB3 = "databasec";
 	std::string proName3 = "project3";
@@ -217,9 +217,9 @@ TEST(RepoBSONFactoryTest, MakeCameraNodeTest)
 	float fCP = 10;
 	float nCP = 100;
 	float fov = 500;
-	repo_vector_t lookAt = { 1.0, 2.0, 3.0 };
-	repo_vector_t position = { 3.1, 2.2, 3.5 };
-	repo_vector_t up = { 4.1, 12.2, 23.5 };
+	repo::lib::RepoVector3D lookAt = { 1.0f, 2.0f, 3.0f };
+	repo::lib::RepoVector3D position = { 3.1f, 2.2f, 3.5f };
+	repo::lib::RepoVector3D up = { 4.1f, 12.2f, 23.5f };
 
 	std::string name = "CamTest";
 
@@ -231,9 +231,9 @@ TEST(RepoBSONFactoryTest, MakeCameraNodeTest)
 	EXPECT_EQ(nCP, camera.getNearClippingPlane());
 	EXPECT_EQ(fov, camera.getFieldOfView());
 
-	EXPECT_TRUE(compareVectors(lookAt, camera.getLookAt()));
-	EXPECT_TRUE(compareVectors(position, camera.getPosition()));
-	EXPECT_TRUE(compareVectors(up, camera.getUp()));
+	EXPECT_EQ(lookAt, camera.getLookAt());
+	EXPECT_EQ(position, camera.getPosition());
+	EXPECT_EQ(up, camera.getUp());
 
 	EXPECT_EQ(name, camera.getName());
 
@@ -274,41 +274,6 @@ TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
 	EXPECT_EQ(material2.getTypeAsEnum(), NodeType::MATERIAL);
 }
 
-TEST(RepoBSONFactoryTest, MakeMapNodeTest)
-{
-	uint32_t width = 1, zoom = 19;
-	float tilt = 2.0, tileSize = 10.5, longit = 2.3546, latit = 5.3235;
-	repo_vector_t centrePoint = { 3.12345, 54.3536, 435.32 };
-	std::string name = "mapTest";
-	std::string apiKey = "apiKey";
-
-	MapNode map = RepoBSONFactory::makeMapNode(width, zoom, tilt, tileSize, longit, latit, centrePoint, apiKey, name);
-
-	EXPECT_FALSE(map.isEmpty());
-	EXPECT_EQ(name, map.getName());
-	EXPECT_EQ(apiKey, map.getAPIKey());
-	EXPECT_EQ(map.getTypeAsEnum(), NodeType::MAP);
-
-	EXPECT_EQ(width, map.getWidth());
-	EXPECT_EQ(zoom, map.getZoom());
-	EXPECT_EQ(tileSize, map.getTileSize());
-	EXPECT_EQ(tilt, map.getYRot());
-	EXPECT_EQ(longit, map.getField(REPO_NODE_MAP_LABEL_LONG).Double());
-	EXPECT_EQ(latit, map.getField(REPO_NODE_MAP_LABEL_LAT).Double());
-
-	repo_vector_t vec;
-	if (map.hasField(REPO_NODE_MAP_LABEL_TRANS))
-	{
-		std::vector<float> floatArr = map.getFloatArray(REPO_NODE_MAP_LABEL_TRANS);
-		if (floatArr.size() >= 3)
-		{
-			//repo_vector_t is effectively float[3]
-			std::copy(floatArr.begin(), floatArr.begin() + 3, (float*)&vec);
-		}
-	}
-
-	EXPECT_TRUE(compareVectors(centrePoint, vec));
-}
 
 TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 {
@@ -354,9 +319,9 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 {
 	uint32_t nCount = 10;
 	//using malloc to get un-initalised values to fill the memory.
-	repo_vector_t *rawVec = (repo_vector_t*)malloc(sizeof(*rawVec) * nCount);
-	repo_vector_t *rawNorm = (repo_vector_t*)malloc(sizeof(*rawNorm) * nCount);
-	repo_vector2d_t *rawUV = (repo_vector2d_t*)malloc(sizeof(*rawUV) * nCount);
+	repo::lib::RepoVector3D *rawVec = (repo::lib::RepoVector3D*)malloc(sizeof(*rawVec) * nCount);
+	repo::lib::RepoVector3D *rawNorm = (repo::lib::RepoVector3D*)malloc(sizeof(*rawNorm) * nCount);
+	repo::lib::RepoVector2D *rawUV = (repo::lib::RepoVector2D*)malloc(sizeof(*rawUV) * nCount);
 	repo_color4d_t *rawColors = (repo_color4d_t*)malloc(sizeof(*rawColors) * nCount);
 
 	ASSERT_TRUE(rawVec);
@@ -365,9 +330,9 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 
 	//Set up faces
 	std::vector<repo_face_t> faces;
-	std::vector<repo_vector_t> vectors;
-	std::vector<repo_vector_t> normals;
-	std::vector<std::vector<repo_vector2d_t>> uvChannels;
+	std::vector<repo::lib::RepoVector3D> vectors;
+	std::vector<repo::lib::RepoVector3D> normals;
+	std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
 	std::vector<repo_color4d_t> colors;
 	uvChannels.resize(1);
 	faces.reserve(nCount);
@@ -403,26 +368,26 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	auto fOut = mesh.getFaces();
 	auto cOut = mesh.getColors();
 	auto uvOut = mesh.getUVChannelsSeparated();
-	EXPECT_TRUE(compareVectors(vectors, vOut));
-	EXPECT_TRUE(compareVectors(normals, nOut));
+	EXPECT_TRUE(compareStdVectors(vectors, vOut));
+	EXPECT_TRUE(compareStdVectors(normals, nOut));
 	EXPECT_TRUE(compareStdVectors(faces, fOut));
 	EXPECT_TRUE(compareVectors(colors, cOut));
-	EXPECT_TRUE(compareVectors(uvChannels, uvOut));
+	EXPECT_TRUE(compareStdVectors(uvChannels, uvOut));
 
 	auto bbox = mesh.getBoundingBox();
 	ASSERT_EQ(boundingBox.size(), bbox.size());
 	ASSERT_EQ(3, boundingBox[0].size());
 	ASSERT_EQ(3, boundingBox[1].size());
 
-	EXPECT_TRUE(compareVectors(bbox[0], { boundingBox[0][0], boundingBox[0][1], boundingBox[0][2] }));
-	EXPECT_TRUE(compareVectors(bbox[1], { boundingBox[1][0], boundingBox[1][1], boundingBox[1][2] }));
+	EXPECT_EQ(bbox[0], repo::lib::RepoVector3D( boundingBox[0][0], boundingBox[0][1], boundingBox[0][2] ));
+	EXPECT_EQ(bbox[1], repo::lib::RepoVector3D( boundingBox[1][0], boundingBox[1][1], boundingBox[1][2] ));
 }
 
 TEST(RepoBSONFactoryTest, MakeReferenceNodeTest)
 {
 	std::string dbName = "testDB";
 	std::string proName = "testProj";
-	repoUUID revId = generateUUID();
+	repo::lib::RepoUUID revId = repo::lib::RepoUUID::createUUID();
 	bool isUnique = true;
 	std::string name = "refNodeName";
 
@@ -443,18 +408,18 @@ TEST(RepoBSONFactoryTest, MakeReferenceNodeTest)
 TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 {
 	std::string owner = "revOwner";
-	repoUUID branchID = generateUUID();
-	std::vector<repoUUID> currentNodes;
+	repo::lib::RepoUUID branchID = repo::lib::RepoUUID::createUUID();
+	std::vector<repo::lib::RepoUUID> currentNodes;
 	size_t currCount = 10;
 	currentNodes.reserve(currCount);
 	for (size_t i = 0; i < currCount; ++i)
-		currentNodes.push_back(generateUUID());
+		currentNodes.push_back(repo::lib::RepoUUID::createUUID());
 	std::vector<std::string> files = { "test1", "test5" };
-	std::vector<repoUUID> parents;
+	std::vector<repo::lib::RepoUUID> parents;
 	size_t parentCount = 5;
 	parents.reserve(parentCount);
 	for (size_t i = 0; i < parentCount; ++i)
-		parents.push_back(generateUUID());
+		parents.push_back(repo::lib::RepoUUID::createUUID());
 	std::string message = "this is some random message to test message";
 	std::string tag = "this is a random tag to test tags";
 	std::vector<double> offset = { std::rand() / 100., std::rand() / 100., std::rand() / 100. };
@@ -472,7 +437,7 @@ TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 	EXPECT_TRUE(compareStdVectors(offset, rev.getCoordOffset()));
 
 	//ensure no random parent being generated
-	std::vector<repoUUID> emptyParents;
+	std::vector<repo::lib::RepoUUID> emptyParents;
 	RevisionNode rev2 = RepoBSONFactory::makeRevisionNode(owner, branchID, currentNodes, files, emptyParents, offset, message, tag);
 	EXPECT_EQ(0, rev2.getParentIDs().size());
 }
@@ -512,7 +477,7 @@ TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
 	TransformationNode trans = RepoBSONFactory::makeTransformationNode();
 
 	ASSERT_FALSE(trans.isEmpty());
-	EXPECT_TRUE(compareStdVectors(identity, trans.getTransMatrix(false)));
+	EXPECT_TRUE(compareStdVectors(identity, trans.getTransMatrix(false).getData()));
 
 	std::vector<std::vector<float>> transMat;
 	std::vector<float> transMatFlat;
@@ -525,17 +490,17 @@ TEST(RepoBSONFactoryTest, MakeTransformationNodeTest)
 		}
 	std::string name = "myTransTest";
 
-	std::vector<repoUUID> parents;
+	std::vector<repo::lib::RepoUUID> parents;
 	for (int i = 0; i < 10; ++i)
-		parents.push_back(generateUUID());
+		parents.push_back(repo::lib::RepoUUID::createUUID());
 
 	TransformationNode trans2 = RepoBSONFactory::makeTransformationNode(transMat, name, parents);
 
 	ASSERT_FALSE(trans2.isEmpty());
 	EXPECT_EQ(name, trans2.getName());
-	std::vector<float> matrix = trans2.getTransMatrix(false);
+	auto matrix = trans2.getTransMatrix(false);
 
-	EXPECT_TRUE(compareStdVectors(transMatFlat, matrix));
+	EXPECT_TRUE(compareStdVectors(transMatFlat, matrix.getData()));
 	EXPECT_TRUE(compareStdVectors(parents, trans2.getParentIDs()));
 
 	//ensure random parents aren't thrown in

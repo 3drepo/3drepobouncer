@@ -8,10 +8,13 @@ set(TEST_SOURCES
 	${TEST_SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_builder.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_collection_stats.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_database_stats.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_element.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_factory.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_bson_role.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_camera.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_material.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_mesh.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_node_metadata.cpp

@@ -16,9 +16,9 @@
 */
 
 #pragma once
-#include <repo/core/model/repo_node_utils.h>
 #include <repo/repo_controller.h>
 #include "repo_test_database_info.h"
+#include <fstream>
 
 static bool projectExists(
 	const std::string &db,
@@ -47,14 +47,92 @@ static bool projectExists(
 	return res;
 }
 
-static bool compareVectors(const repo_vector2d_t &v1, const repo_vector2d_t &v2)
+static bool projectSettingsCheck(
+	const std::string  &dbName, const std::string  &projectName, const std::string  &owner, const std::string  &tag, const std::string  &desc)
 {
-	return v1.x == v2.x && v1.y == v2.y;
+	bool res = false;
+	repo::RepoController *controller = new repo::RepoController();
+	std::string errMsg;
+	repo::RepoController::RepoToken *token =
+		controller->authenticateToAdminDatabaseMongo(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+	if (token)
+	{
+		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true);
+		if (scene)
+		{
+			res = scene->getOwner() == owner && scene->getTag() == tag && scene->getMessage() == desc;
+			delete scene;
+		}
+	}
+	controller->disconnectFromDatabase(token);
+	delete controller;
+	return res;
 }
 
-static bool compareVectors(const repo_vector_t &v1, const repo_vector_t &v2)
+static bool projectHasValidRevision(
+	const std::string  &dbName, const std::string  &projectName)
 {
-	return v1.x == v2.x && v1.y == v2.y && v1.z == v2.z;
+	bool res = false;
+	repo::RepoController *controller = new repo::RepoController();
+	std::string errMsg;
+	repo::RepoController::RepoToken *token =
+		controller->authenticateToAdminDatabaseMongo(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+	if (token)
+	{
+		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true);
+		if (res = scene)
+		{
+			delete scene;
+		}
+	}
+	controller->disconnectFromDatabase(token);
+	delete controller;
+	return res;
+}
+
+static bool fileExists(
+	const std::string &file)
+{
+	std::ifstream ofs(file);
+	const bool valid = ofs.good();
+	ofs.close();
+	return valid;
+}
+
+static bool filesCompare(
+	const std::string &fileA,
+	const std::string &fileB)
+{
+	bool match = false;
+	std::ifstream fA(fileA), fB(fileB);
+	if (fA.good() && fB.good())
+	{
+		std::string lineA, lineB;
+		bool endofA, endofB;
+		while ((endofA = (bool)std::getline(fA, lineA)) && (endofB = (bool)std::getline(fB, lineB)))
+		{
+			match = lineA == lineB;
+			if (!match)
+			{
+				std::cout << "Failed match. " << std::endl;
+				std::cout << "line A: " << lineA << std::endl;
+				std::cout << "line B: " << lineB << std::endl;
+				break;
+			}
+		}
+
+		if (!endofA)
+		{
+			//if endofA is false then end of B won't be found as getline wouldn't have ran for fB
+			endofB = (bool)std::getline(fB, lineB);
+		}
+
+		match &= (!endofA && !endofB);
+	}
+
+	return match;
 }
 
 static bool compareVectors(const repo_color4d_t &v1, const repo_color4d_t &v2)
@@ -62,23 +140,16 @@ static bool compareVectors(const repo_color4d_t &v1, const repo_color4d_t &v2)
 	return v1.r == v2.r && v1.g == v2.g && v1.b == v2.b && v1.a == v2.a;
 }
 
-template <typename T>
-static bool compareVectors(const std::vector<T> &v1, const  std::vector<T> &v2)
+static bool compareVectors(const std::vector<repo_color4d_t> &v1, const std::vector<repo_color4d_t> &v2)
 {
-	if (v1.size() != v2.size())
+	if (v1.size() != v2.size()) return false;
+	bool match = true;
+	for (int i = 0; i < v1.size(); ++i)
 	{
-		return false;
+		match &= compareVectors(v1[i], v2[i]);
 	}
 
-	for (size_t i = 0; i < v1.size(); ++i)
-	{
-		if (!compareVectors(v1[i], v2[i]))
-		{
-			return false;
-		}
-	}
-
-	return true;
+	return match;
 }
 
 template <typename T>

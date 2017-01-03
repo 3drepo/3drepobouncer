@@ -265,7 +265,7 @@ int32_t generateFederation(
 
 				std::string nodeNames = spDatabase + ":" + spProject;
 				auto transNode = repo::core::model::RepoBSONFactory::makeTransformationNode(matrix, nodeNames);
-				auto refNode = repo::core::model::RepoBSONFactory::makeReferenceNode(spDatabase, spProject, stringToUUID(uuid), isRevID, nodeNames);
+				auto refNode = repo::core::model::RepoBSONFactory::makeReferenceNode(spDatabase, spProject, repo::lib::RepoUUID(uuid), isRevID, nodeNames);
 				refMap[transNode] = refNode;
 			}
 
@@ -323,7 +323,7 @@ int32_t generateStash(
 	auto scene = controller->fetchScene(token, dbName, project);
 	if (!scene)
 	{
-		return REPOERR_LOAD_SCENE_FAIL;
+		return REPOERR_STASH_GEN_FAIL;
 	}
 
 	bool  success = false;
@@ -368,9 +368,9 @@ int32_t getFileFromProject(
 	std::string project = command.args[1];
 	std::string dir = command.args[2];
 
-	controller->saveOriginalFiles(token, dbName, project, dir);
+	bool success  = controller->saveOriginalFiles(token, dbName, project, dir);
 
-	return REPOERR_OK;
+	return success ? REPOERR_OK : REPOERR_GET_FILE_FAILED;
 }
 
 int32_t importFileAndCommit(

@@ -34,7 +34,7 @@ RepoNode::~RepoNode()
 }
 
 RepoNode RepoNode::cloneAndAddParent(
-	const repoUUID &parentID,
+	const repo::lib::RepoUUID &parentID,
 	const bool     &newUniqueID,
 	const bool     &newSharedID,
 	const bool     &overwrite) const
@@ -42,7 +42,7 @@ RepoNode RepoNode::cloneAndAddParent(
 	RepoBSONBuilder builder;
 	RepoBSONBuilder arrayBuilder;
 
-	std::vector<repoUUID> currentParents;
+	std::vector<repo::lib::RepoUUID> currentParents;
 	if (!overwrite)
 	{
 		currentParents = getParentIDs();
@@ -53,10 +53,10 @@ RepoNode RepoNode::cloneAndAddParent(
 	builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);
 
 	if (newUniqueID)
-		builder.append(REPO_NODE_LABEL_ID, generateUUID());
+		builder.append(REPO_NODE_LABEL_ID, repo::lib::RepoUUID::createUUID());
 
 	if (newSharedID)
-		builder.append(REPO_NODE_LABEL_SHARED_ID, generateUUID());
+		builder.append(REPO_NODE_LABEL_SHARED_ID, repo::lib::RepoUUID::createUUID());
 
 	builder.appendElementsUnique(*this);
 
@@ -64,12 +64,12 @@ RepoNode RepoNode::cloneAndAddParent(
 }
 
 RepoNode RepoNode::cloneAndAddParent(
-	const std::vector<repoUUID> &parentIDs) const
+	const std::vector<repo::lib::RepoUUID> &parentIDs) const
 {
 	RepoBSONBuilder builder;
 	RepoBSONBuilder arrayBuilder;
 
-	std::vector<repoUUID> currentParents = getParentIDs();
+	std::vector<repo::lib::RepoUUID> currentParents = getParentIDs();
 	currentParents.insert(currentParents.end(), parentIDs.begin(), parentIDs.end());
 
 	std::sort(currentParents.begin(), currentParents.end());
@@ -85,20 +85,20 @@ RepoNode RepoNode::cloneAndAddParent(
 }
 
 RepoNode RepoNode::cloneAndRemoveParent(
-	const repoUUID &parentID,
+	const repo::lib::RepoUUID &parentID,
 	const bool     &newUniqueID) const
 {
 	RepoBSONBuilder builder;
 	RepoBSONBuilder arrayBuilder;
 
-	std::vector<repoUUID> currentParents = getParentIDs();
+	std::vector<repo::lib::RepoUUID> currentParents = getParentIDs();
 	auto parentIdx = std::find(currentParents.begin(), currentParents.end(), parentID);
 	if (parentIdx != currentParents.end())
 	{
 		currentParents.erase(parentIdx);
 		if (newUniqueID)
 		{
-			builder.append(REPO_NODE_LABEL_ID, generateUUID());
+			builder.append(REPO_NODE_LABEL_ID, repo::lib::RepoUUID::createUUID());
 		}
 	}
 	else
@@ -125,7 +125,7 @@ RepoNode RepoNode::cloneAndAddFields(
 	RepoBSONBuilder builder;
 	if (newUniqueID)
 	{
-		builder.append(REPO_NODE_LABEL_ID, generateUUID());
+		builder.append(REPO_NODE_LABEL_ID, repo::lib::RepoUUID::createUUID());
 	}
 
 	builder.appendElementsUnique(*changes);
@@ -135,7 +135,7 @@ RepoNode RepoNode::cloneAndAddFields(
 	return RepoNode(builder.obj(), bigFiles);
 }
 
-std::vector<repoUUID> RepoNode::getParentIDs() const
+std::vector<repo::lib::RepoUUID> RepoNode::getParentIDs() const
 {
 	return getUUIDFieldArray(REPO_NODE_LABEL_PARENTS);
 }
@@ -148,8 +148,6 @@ NodeType RepoNode::getTypeAsEnum() const
 
 	if (REPO_NODE_TYPE_CAMERA == type)
 		enumType = NodeType::CAMERA;
-	else if (REPO_NODE_TYPE_MAP == type)
-		enumType = NodeType::MAP;
 	else if (REPO_NODE_TYPE_MATERIAL == type)
 		enumType = NodeType::MATERIAL;
 	else if (REPO_NODE_TYPE_MESH == type)

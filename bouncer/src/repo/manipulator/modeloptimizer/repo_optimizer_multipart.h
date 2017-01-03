@@ -69,29 +69,29 @@ namespace repo {
 				bool collectMeshData(
 					const repo::core::model::RepoScene        *scene,
 					const repo::core::model::RepoNode         *node,
-					const std::set<repoUUID>                  &meshGroup,
-					std::vector<float>                        &mat,
-					std::vector<std::vector<repo_vector_t>>                &vertices,
-					std::vector<std::vector<repo_vector_t>>               &normals,
+					const std::set<repo::lib::RepoUUID>                  &meshGroup,
+					repo::lib::RepoMatrix                        &mat,
+					std::vector<std::vector<repo::lib::RepoVector3D>>                &vertices,
+					std::vector<std::vector<repo::lib::RepoVector3D>>               &normals,
 					std::vector<std::vector<repo_face_t>>                &faces,
-					std::vector<std::vector<std::vector<repo_vector2d_t>>> &uvChannels,
+					std::vector<std::vector<std::vector<repo::lib::RepoVector2D>>> &uvChannels,
 					std::vector<std::vector<repo_color4d_t>>               &colors,
 					std::vector<std::vector<repo_mesh_mapping_t>>          &meshMapping,
-					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>    &matIDMap
+					std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>    &matIDMap
 					);
 #endif
 				bool collectMeshData(
 					const repo::core::model::RepoScene        *scene,
 					const repo::core::model::RepoNode         *node,
-					const std::set<repoUUID>                  &meshGroup,
-					std::vector<float>                        &mat,
-					std::vector<repo_vector_t>                &vertices,
-					std::vector<repo_vector_t>                &normals,
+					const std::set<repo::lib::RepoUUID>                  &meshGroup,
+					repo::lib::RepoMatrix                        &mat,
+					std::vector<repo::lib::RepoVector3D>                &vertices,
+					std::vector<repo::lib::RepoVector3D>                &normals,
 					std::vector<repo_face_t>                  &faces,
-					std::vector<std::vector<repo_vector2d_t>> &uvChannels,
+					std::vector<std::vector<repo::lib::RepoVector2D>> &uvChannels,
 					std::vector<repo_color4d_t>               &colors,
 					std::vector<repo_mesh_mapping_t>          &meshMapping,
-					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>    &matIDMap
+					std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>    &matIDMap
 					);
 
 				/**
@@ -105,14 +105,14 @@ namespace repo {
 #ifdef REPO_MP_TEXTURE_WORK_AROUND
 				std::vector<repo::core::model::MeshNode*>createSuperMesh(
 					const repo::core::model::RepoScene *scene,
-					const std::set<repoUUID>           &meshGroup,
-					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher> &matIDs,
+					const std::set<repo::lib::RepoUUID>           &meshGroup,
+					std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher> &matIDs,
 					const bool                         &texture);
 #endif
 				repo::core::model::MeshNode* createSuperMesh(
 					const repo::core::model::RepoScene *scene,
-					const std::set<repoUUID>           &meshGroup,
-					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher> &matIDs);
+					const std::set<repo::lib::RepoUUID>           &meshGroup,
+					std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher> &matIDs);
 
 				/**
 				* Generate the multipart scene
@@ -127,7 +127,7 @@ namespace repo {
 				* @param mesh mesh in question
 				* @return returns unqiue ID of the material
 				*/
-				repoUUID getMaterialID(
+				repo::lib::RepoUUID getMaterialID(
 					const repo::core::model::RepoScene *scene,
 					const repo::core::model::MeshNode  *mesh
 					);
@@ -142,7 +142,7 @@ namespace repo {
 				bool hasTexture(
 					const repo::core::model::RepoScene *scene,
 					const repo::core::model::MeshNode  *mesh,
-					repoUUID                           &texID);
+					repo::lib::RepoUUID                           &texID);
 
 				/**
 				* Check if the mesh is (semi) Transparent
@@ -164,21 +164,21 @@ namespace repo {
 #ifdef REPO_MP_TEXTURE_WORK_AROUND
 				bool processMeshGroup(
 					const repo::core::model::RepoScene                                         *scene,
-					const std::set<repoUUID>							                       & meshes,
-					const repoUUID                                                             &rootID,
+					const std::set<repo::lib::RepoUUID>							                       & meshes,
+					const repo::lib::RepoUUID                                                             &rootID,
 					repo::core::model::RepoNodeSet                                             &mergedMeshes,
-					std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> &matNodes,
-					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>                     &matIDs,
+					std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> &matNodes,
+					std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>                     &matIDs,
 					const bool                                                                 &texture
 					);
 #endif
 				bool processMeshGroup(
 					const repo::core::model::RepoScene                                         *scene,
-					const std::set<repoUUID>							                       & meshes,
-					const repoUUID                                                             &rootID,
+					const std::set<repo::lib::RepoUUID>							                       & meshes,
+					const repo::lib::RepoUUID                                                             &rootID,
 					repo::core::model::RepoNodeSet                                             &mergedMeshes,
-					std::unordered_map<repoUUID, repo::core::model::RepoNode*, RepoUUIDHasher> &matNodes,
-					std::unordered_map<repoUUID, repoUUID, RepoUUIDHasher>                    &matIDs);
+					std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> &matNodes,
+					std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>                    &matIDs);
 
 				/**
 				* Sort the given RepoNodeSet of meshes for multipart merging
@@ -191,10 +191,10 @@ namespace repo {
 				void sortMeshes(
 					const repo::core::model::RepoScene                                      *scene,
 					const repo::core::model::RepoNodeSet                                    &meshes,
-					std::unordered_map<uint32_t, std::vector<std::set<repoUUID>>>			&normalMeshes,
-					std::unordered_map<uint32_t, std::vector<std::set<repoUUID>>>			&transparentMeshes,
-					std::unordered_map < uint32_t, std::unordered_map < repoUUID,
-					std::vector<std::set<repoUUID>>, RepoUUIDHasher >> &texturedMeshes);
+					std::unordered_map<uint32_t, std::vector<std::set<repo::lib::RepoUUID>>>			&normalMeshes,
+					std::unordered_map<uint32_t, std::vector<std::set<repo::lib::RepoUUID>>>			&transparentMeshes,
+					std::unordered_map < uint32_t, std::unordered_map < repo::lib::RepoUUID,
+					std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher >> &texturedMeshes);
 			};
 		}
 	}

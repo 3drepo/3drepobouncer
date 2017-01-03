@@ -30,6 +30,7 @@
 #include "../model/bson/repo_bson_role.h"
 #include "../model/bson/repo_bson_user.h"
 #include "../model/bson/repo_bson_collection_stats.h"
+#include "../model/bson/repo_bson_database_stats.h"
 
 namespace repo{
 	namespace core{
@@ -40,13 +41,13 @@ namespace repo{
 				/**
 				 * A Deconstructor
 				 */
-				virtual ~AbstractDatabaseHandler(){};
+                                virtual ~AbstractDatabaseHandler(){}
 
 				/**
 				* returns the size limit of each document(record) in bytes
 				* @return returns size limit in bytes.
 				*/
-				uint64_t documentSizeLimit() { return maxDocumentSize; };
+                                uint64_t documentSizeLimit() { return maxDocumentSize; }
 
 				///**
 				//* Generates a BSON object containing user credentials
@@ -131,6 +132,16 @@ namespace repo{
 				virtual std::map<std::string, std::list<std::string> > getDatabasesWithProjects(
 					const std::list<std::string> &databases,
 					const std::string &projectExt = "scene") = 0;
+
+                                /**
+                                * Get the database statistics of the given database
+                                * @param database Name of database
+                                * @param errMsg error message when error occurs
+                                * @return returns a bson object with statistical info.
+                                */
+                                virtual repo::core::model::DatabaseStats getDatabaseStats(
+                                        const std::string    &database,
+                                        std::string          &errMsg) = 0;
 
 				/**
 				* Get a list of projects associated with a given database (aka company account).
@@ -385,7 +396,7 @@ namespace repo{
 				virtual repo::core::model::RepoBSON findOneBySharedID(
 					const std::string& database,
 					const std::string& collection,
-					const repoUUID& uuid,
+					const repo::lib::RepoUUID& uuid,
 					const std::string& sortField) = 0;
 
 				/**
@@ -398,7 +409,7 @@ namespace repo{
 				virtual repo::core::model::RepoBSON findOneByUniqueID(
 					const std::string& database,
 					const std::string& collection,
-					const repoUUID& uuid) = 0;
+					const repo::lib::RepoUUID& uuid) = 0;
 
 				/**
 				* Get raw binary file from database

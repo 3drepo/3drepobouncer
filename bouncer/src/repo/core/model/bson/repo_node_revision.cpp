@@ -97,22 +97,22 @@ std::vector<double> RevisionNode::getCoordOffset() const
 	return offset;
 }
 
-std::vector<repoUUID> RevisionNode::getCurrentIDs() const
+std::vector<repo::lib::RepoUUID> RevisionNode::getCurrentIDs() const
 {
 	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS);
 }
 //
-//std::vector<repoUUID> RevisionNode::getAddedIDs() const
+//std::vector<repo::lib::RepoUUID> RevisionNode::getAddedIDs() const
 //{
 // 	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_ADDED_SHARED_IDS);
 //}
 //
-//std::vector<repoUUID> RevisionNode::getModifiedIDs() const
+//std::vector<repo::lib::RepoUUID> RevisionNode::getModifiedIDs() const
 //{
 //	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_MODIFIED_SHARED_IDS);
 //}
 //
-//std::vector<repoUUID> RevisionNode::getDeletedIDs() const
+//std::vector<repo::lib::RepoUUID> RevisionNode::getDeletedIDs() const
 //{
 //	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_DELETED_SHARED_IDS);
 //}

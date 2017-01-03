@@ -24,9 +24,9 @@
 #include <string>
 
 #include "../core/model/bson/repo_bson_role_settings.h"
-#include "../core/model/bson/repo_node_map.h"
 #include "../core/model/bson/repo_node_reference.h"
 #include "../core/model/bson/repo_node_transformation.h"
+#include "../core/model/bson/repo_bson_database_stats.h"
 #include "../core/model/collection/repo_scene.h"
 #include "diff/repo_diff_abstract.h"
 #include "modelconvertor/export/repo_model_export_web.h"
@@ -48,7 +48,7 @@ namespace repo{
 			* @param dbName name of the database
 			* @param projectName name of the project
 			*/
-			void cleanUp(
+			bool cleanUp(
 				const std::string                      &databaseAd,
 				const repo::core::model::RepoBSON 	   *cred,
 				const std::string                      &dbName,
@@ -174,14 +174,6 @@ namespace repo{
 				const std::map<repo::core::model::TransformationNode, repo::core::model::ReferenceNode> &fedMap);
 
 			/**
-			* Create a map scene with the given map
-			* @param mapNode the map node to create the scene with
-			* @return returns a constructed scene graph with the map.
-			*/
-			repo::core::model::RepoScene* createMapScene(
-				const repo::core::model::MapNode &mapNode);
-
-			/**
 			* Count the number of documents within the collection
 			* @param databaseAd mongo database address:port
 			* @param cred user credentials in bson form
@@ -277,7 +269,7 @@ namespace repo{
 				const repo::core::model::RepoBSON             *cred,
 				const std::string                             &database,
 				const std::string                             &collection,
-				const repoUUID                                &uuid,
+				const repo::lib::RepoUUID                                &uuid,
 				const bool                                    &headRevision = false,
 				const bool                                    &lightFetch = false);
 
@@ -458,6 +450,22 @@ namespace repo{
 				const std::string                             &collection,
 				std::string	                                  &errMsg
 				);
+
+
+                        /**
+                        * Get the database statistics of the given database
+                        * @param databaseAd mongo database address:port
+                        * @param cred user credentials in bson form
+                        * @param database Name of database
+                        * @param errMsg error message when error occurs
+                        * @return returns a bson object with statistical info.
+                        */
+                        repo::core::model::DatabaseStats getDatabaseStats(
+                                const std::string                             &databaseAd,
+                                const repo::core::model::RepoBSON             *cred,
+                                const std::string                             &database,
+                                std::string	                                  &errMsg
+                                );
 
 			/**
 			* Return a list of projects with the database available to the user
@@ -700,7 +708,7 @@ namespace repo{
 			* @param scene Repo Scene to save
 			* @param directory directory to save into
 			*/
-			void saveOriginalFiles(
+			bool saveOriginalFiles(
 				const std::string                    &databaseAd,
 				const repo::core::model::RepoBSON	 *cred,
 				const repo::core::model::RepoScene   *scene,
@@ -714,7 +722,7 @@ namespace repo{
 			* @param project name of project
 			* @param directory directory to save into
 			*/
-			void saveOriginalFiles(
+			bool saveOriginalFiles(
 				const std::string                    &databaseAd,
 				const repo::core::model::RepoBSON	 *cred,
 				const std::string                    &database,

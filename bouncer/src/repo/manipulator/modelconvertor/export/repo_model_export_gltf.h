@@ -79,7 +79,7 @@ namespace repo{
 					const std::string                  &accName,
 					const std::string                  &buffViewName,
 					repo::lib::PropertyTree            &tree,
-					const std::vector<repo_vector2d_t> &buffer,
+					const std::vector<repo::lib::RepoVector2D> &buffer,
 					const uint32_t                     &addrFrom,
 					const uint32_t                     &addrTo,
 					const std::string                  &refId = std::string(),
@@ -89,7 +89,7 @@ namespace repo{
 					const std::string                &accName,
 					const std::string                &buffViewName,
 					repo::lib::PropertyTree          &tree,
-					const std::vector<repo_vector_t> &buffer,
+					const std::vector<repo::lib::RepoVector3D> &buffer,
 					const uint32_t                   &addrFrom,
 					const uint32_t                   &addrTo,
 					const std::string                &refId = std::string(),
@@ -154,7 +154,7 @@ namespace repo{
 					const std::string                   &name,
 					const std::string                   &fileName,
 					repo::lib::PropertyTree             &tree,
-					const std::vector<repo_vector_t>    &buffer,
+					const std::vector<repo::lib::RepoVector3D>    &buffer,
 					const size_t                        &offset,
 					const size_t                        &count,
 					const std::string                   &refId = std::string()
@@ -164,7 +164,7 @@ namespace repo{
 					const std::string                   &name,
 					const std::string                   &fileName,
 					repo::lib::PropertyTree             &tree,
-					const std::vector<repo_vector2d_t>  &buffer,
+					const std::vector<repo::lib::RepoVector2D>  &buffer,
 					const size_t                        &offset,
 					const size_t                        &count,
 					const std::string                   &refId = std::string()
@@ -256,7 +256,7 @@ namespace repo{
 				void processNodeChildren(
 					const repo::core::model::RepoNode *node,
 					repo::lib::PropertyTree          &tree,
-					const std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> &subMeshCounts
+					const std::unordered_map<repo::lib::RepoUUID, uint32_t, repo::lib::RepoUUIDHasher> &subMeshCounts
 					);
 
 				/**
@@ -276,7 +276,7 @@ namespace repo{
 				/**
 				* @param tree tree to populate
 				*/
-				std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher>
+				std::unordered_map<repo::lib::RepoUUID, uint32_t, repo::lib::RepoUUIDHasher>
 					populateWithMeshes(
 					repo::lib::PropertyTree           &tree);
 
@@ -293,11 +293,11 @@ namespace repo{
 				*/
 				void populateWithNodes(
 					repo::lib::PropertyTree          &tree,
-					const std::unordered_map<repoUUID, uint32_t, RepoUUIDHasher> &subMeshCounts);
+					const std::unordered_map<repo::lib::RepoUUID, uint32_t, repo::lib::RepoUUIDHasher> &subMeshCounts);
 
 				std::vector<std::vector<std::vector<uint16_t>>> reorderFaces(
 					std::vector<uint16_t>                               &faces,
-					const std::vector<repo_vector_t>                    &vertices,
+					const std::vector<repo::lib::RepoVector3D>                    &vertices,
 					const std::vector<std::vector<repo_mesh_mapping_t>> &mapping);
 
 				/**
@@ -309,7 +309,7 @@ namespace repo{
 				*/
 				std::vector<uint16_t> reorderFaces(
 					const std::vector<uint16_t>      &faces,
-					const std::vector<repo_vector_t> &vertices,
+					const std::vector<repo::lib::RepoVector3D> &vertices,
 					const repo_mesh_mapping_t        &mapping,
 					std::vector<uint16_t>      &lods) const;
 

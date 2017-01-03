@@ -30,11 +30,13 @@ const static std::string REPO_GTEST_DBNAME1 = "sampleDataReadOnly";
 const static std::string REPO_GTEST_DBNAME2 = "sampleDataReadOnly2";
 const static std::string REPO_GTEST_DBNAME1_PROJ = "3drepoBIM";
 const static std::string REPO_GTEST_DBNAME2_PROJ = "sphere";
+const static std::string REPO_GTEST_DBNAME1_FED = "fedTest";
 const static std::string REPO_GTEST_DBNAME_ROLEUSERTEST = "sampleDataRWRolesUsers";
 
 const static std::string clientExe = "3drepobouncerClient";
 const static std::string simpleModel = "cube.obj";
 const static std::string texturedModel = "texturedPlane.dae";
+const static std::string missingNodesModel = "Wall.ifc";
 const static std::string texturedModel2 = "texturedPlane2.dae"; //With Texture
 const static std::string badExtensionFile = "cube.exe";
 const static std::string ifcModel = "duplex.ifc";
@@ -47,6 +49,33 @@ const static std::string noProNameJSONFile = "noPro.json";
 const static std::string invalidJSONFile = "invalid.json";
 const static std::string validGenFedJSONFile = "validFed.json";
 
+const static std::string  importSuccess = "successFileImport.json";
+const static std::string  importSuccess2 = "successFileImport2.json";
+const static std::string  importNoFile = "importNoFile.json";
+const static std::string  importbadDir = "importBadDir.json";
+const static std::string  importbadDir2 = "importBadDir2.json";
+const static std::string  importNoDatabase = "importNoDatabase.json";
+const static std::string  importNoDatabase2 = "importNoDatabase2.json";
+const static std::string  importNoProject = "importNoProject.json";
+const static std::string  importNoProject2 = "importNoProject2.json";
+const static std::string  importNoOwner = "importNoOwner.json";
+const static std::string  importNoOwner2 = "importNoOwner2.json";
+
+const static std::string  importSuccessPro = "success1";
+const static std::string  importSuccessPro2 = "success2";
+const static std::string  importSuccess2Tag = "taggg";
+const static std::string  importSuccess2Desc = "desccc";
+const static std::string  importNoOwnerPro = "owner1";
+const static std::string  importNoOwnerProTag = "thisTag";
+const static std::string  importNoOwnerProDesc = "MyUpload";
+const static std::string  importNoOwnerPro2 = "owner2";
+const static std::string  importNoOwnerPro2Tag = "thisTag";
+const static std::string  importNoOwnerPro2Desc = "MyUpload";
+
+const static std::string getFileFileName = "a0205d17-e73c-4d3f-ad1b-8b875cb5f342cube_obj";
+const static std::string getFileNameBIMModel = "5be1aca9-e4d0-4cec-987d-80d2fde3dade3DrepoBIM_obj";
+
+
 const static std::string genFedDB = "genFedTest";
 const static std::string genFedNoSubProName = "noSubPro";
 const static std::string genFedSuccessName = "fedTest";
@@ -55,7 +84,7 @@ const static mongo::BSONObj REPO_GTEST_DROPROLETEST = BSON("db" << REPO_GTEST_DB
 const static mongo::BSONObj REPO_GTEST_DROPUSERTEST = BSON("db" << "admin" << "user" << "dropUserTest");
 const static mongo::BSONObj REPO_GTEST_UPDATEROLETEST = BSON("db" << REPO_GTEST_DBNAME_ROLEUSERTEST << "role" << "updateRole");
 const static mongo::BSONObj REPO_GTEST_UPDATEUSERTEST = BSON("db" << "admin" << "user" << "updateUserTest");
-const static std::vector<repoUUID> uuidsToSearch = { stringToUUID("0ab45528-9258-421a-927c-c51bf40fc478"), stringToUUID("126f9de3-c942-4d66-862a-16cc4f11841b") };
+const static std::vector<repo::lib::RepoUUID> uuidsToSearch = { repo::lib::RepoUUID("0ab45528-9258-421a-927c-c51bf40fc478"), repo::lib::RepoUUID("126f9de3-c942-4d66-862a-16cc4f11841b") };
 
 const static std::pair<std::string, std::string> REPO_GTEST_DROPCOL_TESTCASE = { "sampleDataRW", "collectionToDrop" };
 const static std::string REPO_GTEST_RAWFILE_FETCH_TEST = "5be1aca9-e4d0-4cec-987d-80d2fde3dade3DrepoBIM_obj";
@@ -68,6 +97,12 @@ static repo::core::handler::MongoDatabaseHandler* getHandler()
 		1,
 		REPO_GTEST_AUTH_DATABASE,
 		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+}
+
+static std::vector<repo::lib::RepoVector3D> getGoldenDataForBBoxTest()
+{
+	return{ repo::lib::RepoVector3D( -30.00954627990722700f, -15.00000476837158200f, -0.00000199999999495f ), 
+			repo::lib::RepoVector3D( 30.05025100708007800f, 60.69493103027343800f, 30.00000953674316400f ) };
 }
 
 static std::string getClientExePath()
@@ -143,7 +178,9 @@ static std::vector<std::string> getCollectionList(
 {
 	if (databaseName == REPO_GTEST_DBNAME1)
 	{
-		return{ "3drepoBIM.history", "3drepoBIM.history.chunks", "3drepoBIM.history.files", "3drepoBIM.issues", "3drepoBIM.scene", "3drepoBIM.stash.3drepo", "settings", "system.indexes" };
+		return{ "3drepoBIM.history", "3drepoBIM.history.chunks", "3drepoBIM.history.files", "3drepoBIM.issues", "3drepoBIM.scene", "3drepoBIM.stash.3drepo",
+			"fedTest.history", "fedTest.issues", "fedTest.scene"
+			, "settings", "system.indexes" };
 	}
 	else
 	{
@@ -181,7 +218,7 @@ static std::pair<std::pair<std::string, std::string>, mongo::BSONObj> getDataFor
 	std::pair<std::pair<std::string, std::string>, mongo::BSONObj> result;
 	result.first = { "sampleDataRW", "collectionToDrop" };
 	repo::core::model::RepoBSONBuilder builder;
-	builder.append("_id", stringToUUID("0ab45528-9258-421a-927c-c51bf40fc478"));
+	builder.append("_id", repo::lib::RepoUUID("0ab45528-9258-421a-927c-c51bf40fc478"));
 	result.second = builder.obj();
 
 	return result;

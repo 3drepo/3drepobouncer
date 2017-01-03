@@ -49,17 +49,18 @@ RepoManipulator::~RepoManipulator()
 {
 }
 
-void RepoManipulator::cleanUp(
+bool RepoManipulator::cleanUp(
 	const std::string                      &databaseAd,
 	const repo::core::model::RepoBSON 	   *cred,
 	const std::string                      &dbName,
 	const std::string                      &projectName
 	)
 {
+	bool success;
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	modelutility::SceneCleaner cleaner(dbName, projectName, handler);
-	if (cleaner.execute())
+	if (success = cleaner.execute())
 	{
 		repoInfo << dbName << "." << projectName << " has been cleaned up successfully.";
 	}
@@ -67,6 +68,7 @@ void RepoManipulator::cleanUp(
 	{
 		repoError << "Clean up failed on " << dbName << "." << projectName;
 	}
+	return success;
 }
 
 bool RepoManipulator::connectAndAuthenticate(
@@ -144,7 +146,7 @@ repo::core::model::RepoScene* RepoManipulator::createFederatedScene(
 
 	repo::core::model::TransformationNode rootNode =
 		repo::core::model::RepoBSONFactory::makeTransformationNode(
-		repo::core::model::TransformationNode::identityMat(), "<root>");
+		repo::lib::RepoMatrix(), "<root>");
 
 	transNodes.insert(new repo::core::model::TransformationNode(rootNode));
 
@@ -163,29 +165,6 @@ repo::core::model::RepoScene* RepoManipulator::createFederatedScene(
 	std::vector<std::string> empty;
 	repo::core::model::RepoScene *scene =
 		new repo::core::model::RepoScene(empty, emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, refNodes);
-
-	return scene;
-}
-
-repo::core::model::RepoScene* RepoManipulator::createMapScene(
-	const repo::core::model::MapNode &mapNode)
-{
-	repo::core::model::RepoNodeSet transNodes;
-	repo::core::model::RepoNodeSet mapNodes;
-	repo::core::model::RepoNodeSet emptySet;
-
-	repo::core::model::TransformationNode rootNode =
-		repo::core::model::RepoBSONFactory::makeTransformationNode(
-		repo::core::model::TransformationNode::identityMat(), "<root>");
-
-	transNodes.insert(new repo::core::model::TransformationNode(rootNode));
-
-	mapNodes.insert(new repo::core::model::MapNode(mapNode.cloneAndAddParent(rootNode.getSharedID())));
-
-	//federate scene has no referenced files
-	std::vector<std::string> empty;
-	repo::core::model::RepoScene *scene =
-		new repo::core::model::RepoScene(empty, emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, emptySet, mapNodes);
 
 	return scene;
 }
@@ -363,7 +342,46 @@ bool RepoManipulator::dropDatabase(
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	if (handler)
+	{
 		success = handler->dropDatabase(databaseName, errMsg);
+
+		//remove all roles belonging to this database
+		repo::core::model::RepoBSON criteria = BSON(REPO_ROLE_LABEL_DATABASE << databaseName);
+		for (const auto role : handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_ROLES, criteria))
+		{
+			removeRole(databaseAd, cred, repo::core::model::RepoRole(role));
+		}
+
+		//remove privileges associated with this db
+		std::string fieldName = REPO_ROLE_LABEL_PRIVILEGES + std::string(".") + REPO_ROLE_LABEL_RESOURCE + "." + REPO_ROLE_LABEL_DATABASE;
+		repo::core::model::RepoBSON criteria2 = BSON(fieldName << databaseName);
+		for (const auto role : handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_ROLES, criteria2))
+		{
+			auto roleBson = repo::core::model::RepoRole(role);
+			auto privileges = roleBson.getPrivileges();
+			int index = 0;
+			while (index < privileges.size())
+			{
+				if (privileges[index].database == databaseName)
+				{
+					privileges.erase(privileges.begin() + index);
+				}
+				else
+				{
+					index++;
+				}
+			}
+
+			if (privileges.size())
+			{
+				updateRole(databaseAd, cred, roleBson.cloneAndUpdatePrivileges(privileges));
+			}
+			else
+			{
+				removeRole(databaseAd, cred, roleBson);
+			}
+		}
+	}
 	else
 		errMsg = "Unable to locate database handler for " + databaseAd + ". Try reauthenticating.";
 
@@ -404,7 +422,7 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 	const repo::core::model::RepoBSON             *cred,
 	const std::string                             &database,
 	const std::string                             &project,
-	const repoUUID                                &uuid,
+	const repo::lib::RepoUUID                                &uuid,
 	const bool                                    &headRevision,
 	const bool                                    &lightFetch)
 {
@@ -624,6 +642,21 @@ repo::core::model::CollectionStats RepoManipulator::getCollectionStats(
 	return stats;
 }
 
+repo::core::model::DatabaseStats RepoManipulator::getDatabaseStats(
+	const std::string                             &databaseAd,
+	const repo::core::model::RepoBSON*	  cred,
+	const std::string                             &database,
+	std::string                                   &errMsg)
+{
+	repo::core::model::DatabaseStats stats;
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+		stats = handler->getDatabaseStats(database, errMsg);
+
+	return stats;
+}
+
 std::map<std::string, std::list<std::string>>
 RepoManipulator::getDatabasesWithProjects(
 const std::string                             &databaseAd,
@@ -724,12 +757,19 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 
 	boost::filesystem::path filePathP(filePath);
 	std::string fileExt = filePathP.extension().string();
+
+	if (!repo::manipulator::modelconvertor::AssimpModelImport::isSupportedExts(fileExt))
+	{
+		msg = "Unsupported file extension";
+		return nullptr;
+	}
 	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
 
-	bool isIFC = fileExt == ".IFC";
 	repo::manipulator::modelconvertor::AbstractModelImport* modelConvertor = nullptr;
 
-	if (isIFC)
+	bool useIFCImporter = fileExt == ".IFC" && (!config || config->getUseIFCOpenShell());
+
+	if (useIFCImporter)
 		modelConvertor = new repo::manipulator::modelconvertor::IFCModelImport(config);
 	else
 		modelConvertor = new repo::manipulator::modelconvertor::AssimpModelImport(config);
@@ -742,7 +782,7 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 			repoTrace << "model Imported, generating Repo Scene";
 			if ((scene = modelConvertor->generateRepoScene()))
 			{
-				if (rotateModel || isIFC)
+				if (rotateModel || useIFCImporter)
 				{
 					repoTrace << "rotating model by 270 degress on the x axis...";
 					scene->reorientateDirectXModel();
@@ -1019,7 +1059,7 @@ void RepoManipulator::removeUser(
 	}
 }
 
-void RepoManipulator::saveOriginalFiles(
+bool RepoManipulator::saveOriginalFiles(
 	const std::string                    &databaseAd,
 	const repo::core::model::RepoBSON	 *cred,
 	const repo::core::model::RepoScene   *scene,
@@ -1027,18 +1067,15 @@ void RepoManipulator::saveOriginalFiles(
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	bool success = false;
 	if (handler && scene)
 	{
 		std::string errMsg;
 
 		const std::vector<std::string> files = scene->getOriginalFiles();
-		if (files.size() > 0)
+		if (success = files.size() > 0)
 		{
 			boost::filesystem::path dir(directory);
-			/*if (boost::filesystem::create_directory(dir))
-			{
-			repoTrace << "Directory created: " << directory;
-			}*/
 
 			for (const std::string &file : files)
 			{
@@ -1058,6 +1095,7 @@ void RepoManipulator::saveOriginalFiles(
 					else
 					{
 						repoError << " Failed to open file to write: " << fullPath.string();
+						success = false;
 					}
 				}
 				else
@@ -1067,9 +1105,11 @@ void RepoManipulator::saveOriginalFiles(
 			}
 		}
 	}
+
+	return success;
 }
 
-void RepoManipulator::saveOriginalFiles(
+bool RepoManipulator::saveOriginalFiles(
 	const std::string                    &databaseAd,
 	const repo::core::model::RepoBSON	 *cred,
 	const std::string                    &database,
@@ -1078,16 +1118,18 @@ void RepoManipulator::saveOriginalFiles(
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	bool success = false;
 	auto scene = new repo::core::model::RepoScene(database, project);
 	std::string errMsg;
 	if (scene && scene->loadRevision(handler, errMsg))
 	{
-		saveOriginalFiles(databaseAd, cred, scene, directory);
+		success = saveOriginalFiles(databaseAd, cred, scene, directory);
 	}
 	else
 	{
 		repoError << "Failed to fetch project from the database!" << (errMsg.empty() ? "" : errMsg);
 	}
+	return success;
 }
 
 bool RepoManipulator::saveSceneToFile(

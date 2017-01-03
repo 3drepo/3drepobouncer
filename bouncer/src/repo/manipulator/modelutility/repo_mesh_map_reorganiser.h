@@ -64,7 +64,7 @@ namespace repo{
 				* Get the mapping between submeshes UUID to new super mesh index
 				* @return sub mesh to super mesh(es) mapping
 				*/
-				std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> getSplitMapping() const;
+				std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> getSplitMapping() const;
 
 			private:
 				/**
@@ -113,7 +113,7 @@ namespace repo{
 				* @param totalFaceCount total face count      (consume and update)
 				*/
 				bool splitLargeMesh(
-					const repo_mesh_mapping_t        currentSubMesh,
+					const repo_mesh_mapping_t        &currentSubMesh,
 					std::vector<repo_mesh_mapping_t> &newMappings,
 					size_t                           &idMapIdx,
 					size_t                           &orgFaceIdx,
@@ -130,8 +130,8 @@ namespace repo{
 				*/
 				void startSubMesh(
 					repo_mesh_mapping_t &mapping,
-					const repoUUID      &meshID,
-					const repoUUID      &matID,
+					const repo::lib::RepoUUID      &meshID,
+					const repo::lib::RepoUUID      &matID,
 					const size_t        &sVertices,
 					const size_t        &sFaces
 					);
@@ -146,8 +146,8 @@ namespace repo{
 				void updateBoundingBoxes(
 					std::vector<float>  &min,
 					std::vector<float>  &max,
-					const repo_vector_t &smMin,
-					const repo_vector_t &smMax);
+					const repo::lib::RepoVector3D &smMin,
+					const repo::lib::RepoVector3D &smMax);
 
 				/**
 				* Update the current ID Map array with the given values
@@ -162,22 +162,22 @@ namespace repo{
 
 				const repo::core::model::MeshNode *mesh;
 				const size_t maxVertices;
-				const std::vector<repo_vector_t> oldVertices;
-				const std::vector<repo_vector_t> oldNormals;
-				const std::vector<std::vector<repo_vector2d_t>> oldUVs;
+				const std::vector<repo::lib::RepoVector3D> oldVertices;
+				const std::vector<repo::lib::RepoVector3D> oldNormals;
+				const std::vector<std::vector<repo::lib::RepoVector2D>> oldUVs;
 				const std::vector<repo_face_t>   oldFaces;
 				const std::vector<repo_color4d_t>   oldColors;
 
-				std::vector<repo_vector_t> newVertices;
-				std::vector<repo_vector_t> newNormals;
+				std::vector<repo::lib::RepoVector3D> newVertices;
+				std::vector<repo::lib::RepoVector3D> newNormals;
 				std::vector<repo_face_t>   newFaces;
 				std::vector<repo_color4d_t>   newColors;
-				std::vector<std::vector<repo_vector2d_t>> newUVs;
+				std::vector<std::vector<repo::lib::RepoVector2D>> newUVs;
 
 				std::vector<uint16_t> serialisedFaces;
 
 				std::vector<std::vector<float>> idMapBuf;
-				std::unordered_map<repoUUID, std::vector<uint32_t>, RepoUUIDHasher> splitMap;
+				std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> splitMap;
 				std::vector<std::vector<repo_mesh_mapping_t>> matMap;
 				std::vector<repo_mesh_mapping_t> reMappedMappings;
 			};

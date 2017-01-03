@@ -39,8 +39,8 @@ bool DiffByName::compare(
 	bool res = false;
 	if (baseScene && compareScene && baseScene->hasRoot(gType) && compareScene->hasRoot(gType))
 	{
-		std::set<repoUUID> baseIDs = baseScene->getAllSharedIDs(gType);
-		std::set<repoUUID> compIDs = compareScene->getAllSharedIDs(gType);
+		std::set<repo::lib::RepoUUID> baseIDs = baseScene->getAllSharedIDs(gType);
+		std::set<repo::lib::RepoUUID> compIDs = compareScene->getAllSharedIDs(gType);
 
 		//Compare meshes
 		compareNodes(baseIDs, compIDs, baseScene->getAllMeshes(gType), compareScene->getAllMeshes(gType));
@@ -63,9 +63,6 @@ bool DiffByName::compare(
 		//Compare referebces
 		compareNodes(baseIDs, compIDs, baseScene->getAllReferences(gType), compareScene->getAllReferences(gType));
 
-		//Compare maps
-		compareNodes(baseIDs, compIDs, baseScene->getAllMaps(gType), compareScene->getAllMaps(gType));
-
 		//NOTE: can't semantically compare unknowns, leave them for now.
 
 		//any remaining items within compIDs doesn't exist in base.
@@ -84,8 +81,8 @@ bool DiffByName::compare(
 }
 
 void DiffByName::compareNodes(
-	std::set<repoUUID> &baseIDs,
-	std::set<repoUUID> &compIDs,
+	std::set<repo::lib::RepoUUID> &baseIDs,
+	std::set<repo::lib::RepoUUID> &compIDs,
 	const repo::core::model::RepoNodeSet &baseNodes,
 	const repo::core::model::RepoNodeSet &compNodes)
 {
@@ -99,11 +96,11 @@ void DiffByName::compareNodes(
 	{
 		//Try to find the same name in compNodeMap
 		auto mapIt = compNodeMap.find(pair.first);
-		repoUUID baseId = pair.second->getSharedID();
+		repo::lib::RepoUUID baseId = pair.second->getSharedID();
 		if (mapIt != compNodeMap.end())
 		{
 			//found a name match
-			repoUUID compId = mapIt->second->getSharedID();
+			repo::lib::RepoUUID compId = mapIt->second->getSharedID();
 			auto corrIt = baseRes.correspondence.find(baseId);
 
 			if (corrIt == baseRes.correspondence.end())
@@ -113,7 +110,8 @@ void DiffByName::compareNodes(
 			}
 			else
 			{
-				repoLogError("Found multiple potential correspondence for " + UUIDtoString(baseId));
+				repoError << 
+					"Found multiple potential correspondence for " << baseId;
 			}
 
 			//Compare to see if it is modified

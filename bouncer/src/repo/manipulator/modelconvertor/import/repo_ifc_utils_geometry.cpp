@@ -25,8 +25,9 @@
 
 using namespace repo::manipulator::modelconvertor;
 
-IFCUtilsGeometry::IFCUtilsGeometry(const std::string &file) :
-file(file)
+IFCUtilsGeometry::IFCUtilsGeometry(const std::string &file, const ModelImportConfig *settings) :
+file(file),
+settings(settings)
 {
 }
 
@@ -74,32 +75,64 @@ repo_material_t IFCUtilsGeometry::createMaterial(
 
 IfcGeom::IteratorSettings IFCUtilsGeometry::createSettings()
 {
-	IfcGeom::IteratorSettings settings;
-	settings.set(IfcGeom::IteratorSettings::APPLY_DEFAULT_MATERIALS, true);
-	settings.set(IfcGeom::IteratorSettings::DISABLE_OPENING_SUBTRACTIONS, false);
-	settings.set(IfcGeom::IteratorSettings::NO_NORMALS, false);
-	settings.set(IfcGeom::IteratorSettings::WELD_VERTICES, false);
-	settings.set(IfcGeom::IteratorSettings::GENERATE_UVS, true);
-	settings.set(IfcGeom::IteratorSettings::USE_WORLD_COORDS, true);
+	IfcGeom::IteratorSettings itSettings;
 
-	return settings;
+	itSettings.set(IfcGeom::IteratorSettings::WELD_VERTICES, settings->getWieldVertices());
+	itSettings.set(IfcGeom::IteratorSettings::USE_WORLD_COORDS, settings->getUseWorldCoords());
+	itSettings.set(IfcGeom::IteratorSettings::CONVERT_BACK_UNITS, settings->getConvertUnits());
+	itSettings.set(IfcGeom::IteratorSettings::USE_BREP_DATA, settings->getUseBRepData());
+	itSettings.set(IfcGeom::IteratorSettings::SEW_SHELLS, settings->getSewShells());
+	itSettings.set(IfcGeom::IteratorSettings::FASTER_BOOLEANS, settings->getFasterBooleans());
+	itSettings.set(IfcGeom::IteratorSettings::DISABLE_OPENING_SUBTRACTIONS, settings->getNoOpeningSubtractions());
+	itSettings.set(IfcGeom::IteratorSettings::DISABLE_TRIANGULATION, settings->getNoTriangulation());
+	itSettings.set(IfcGeom::IteratorSettings::APPLY_DEFAULT_MATERIALS, settings->getUseDefaultMaterials());
+	itSettings.set(IfcGeom::IteratorSettings::EXCLUDE_SOLIDS_AND_SURFACES, settings->getDisableSolidSurfaces());
+	itSettings.set(IfcGeom::IteratorSettings::NO_NORMALS, settings->getNoNormals());
+	itSettings.set(IfcGeom::IteratorSettings::USE_ELEMENT_NAMES, settings->getUseElementNames());
+	itSettings.set(IfcGeom::IteratorSettings::USE_ELEMENT_GUIDS, settings->getUseElementGuids());
+	itSettings.set(IfcGeom::IteratorSettings::USE_MATERIAL_NAMES, settings->getUseMaterialNames());
+	itSettings.set(IfcGeom::IteratorSettings::CENTER_MODEL, settings->getCentreModels());
+	itSettings.set(IfcGeom::IteratorSettings::GENERATE_UVS, settings->getGenerateUVs());
+	itSettings.set(IfcGeom::IteratorSettings::APPLY_LAYERSETS, settings->getApplyLayerSets());
+
+	return itSettings;
 }
 
 bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
 {
 	repoInfo << "Initialising Geometry....." << std::endl;
 
-	auto settings = createSettings();
+	auto itSettings = createSettings();
 
-	IfcGeom::Iterator<double> contextIterator(settings, file);
+	IfcGeom::Iterator<double> contextIterator(itSettings, file);
 
-	std::set<std::string> exclude_entities;
-	exclude_entities.insert("IfcOpeningElement");
-	exclude_entities.insert("IfcMember");
-	contextIterator.excludeEntities(exclude_entities);
+	//auto filter = settings->getFilteringKeywords();
+	//if (settings->getUseElementsFiltering() &&  filter.size())
+	//{
+	//	std::set<std::string> filterSet(filter.begin(), filter.end());
+
+	//	if (settings->getIsExclusionFilter())
+	//	{
+	//		contextIterator.excludeEntities(filterSet);
+	//	}
+	//	else
+	//	{
+	//		contextIterator.includeEntities(filterSet);
+	//	}
+	//}
+	//
 
 	repoTrace << "Initialising Geom iterator";
-	if (contextIterator.initialize())
+	bool res = false;
+	try{
+		res = contextIterator.initialize();
+	}
+	catch (const std::exception &e)
+	{
+		repoError << "Failed to initialise Geom iterator: " << e.what() << " - Corrupted IFC File?";
+	}
+
+	if (res)
 	{
 		repoTrace << "Geom Iterator initialized";
 	}
@@ -115,7 +148,7 @@ bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
 	std::vector<std::vector<double>> allUVs;
 	std::vector<std::string> allIds, allNames, allMaterials;
 
-	retrieveGeometryFromIterator(contextIterator, settings.get(IfcGeom::IteratorSettings::USE_MATERIAL_NAMES),
+	retrieveGeometryFromIterator(contextIterator, itSettings.get(IfcGeom::IteratorSettings::USE_MATERIAL_NAMES),
 		allVertices, allFaces, allNormals, allUVs, allIds, allNames, allMaterials);
 
 	//now we have found all meshes, take the minimum bounding box of the scene as offset
@@ -123,11 +156,11 @@ bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
 	repoTrace << "Finished iterating. number of meshes found: " << allVertices.size();
 	repoTrace << "Finished iterating. number of materials found: " << materials.size();
 
-	std::map<std::string, std::vector<repoUUID>> materialParent;
+	std::map<std::string, std::vector<repo::lib::RepoUUID>> materialParent;
 	for (int i = 0; i < allVertices.size(); ++i)
 	{
-		std::vector<repo_vector_t> vertices, normals;
-		std::vector<repo_vector2d_t> uvs;
+		std::vector<repo::lib::RepoVector3D> vertices, normals;
+		std::vector<repo::lib::RepoVector2D> uvs;
 		std::vector<repo_face_t> faces;
 		std::vector<std::vector<float>> boundingBox;
 		for (int j = 0; j < allVertices[i].size(); j += 3)
@@ -159,7 +192,7 @@ bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
 			uvs.push_back({ (float)allUVs[i][j], (float)allUVs[i][j + 1] });
 		}
 
-		std::vector < std::vector<repo_vector2d_t>> uvChannels;
+		std::vector < std::vector<repo::lib::RepoVector2D>> uvChannels;
 		if (uvs.size())
 			uvChannels.push_back(uvs);
 
@@ -176,7 +209,7 @@ bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
 		{
 			if (materialParent.find(allMaterials[i]) == materialParent.end())
 			{
-				materialParent[allMaterials[i]] = std::vector<repoUUID>();
+				materialParent[allMaterials[i]] = std::vector<repo::lib::RepoUUID>();
 			}
 
 			materialParent[allMaterials[i]].push_back(mesh.getSharedID());
@@ -242,7 +275,7 @@ void IFCUtilsGeometry::retrieveGeometryFromIterator(
 					}
 				}
 			}
-			
+
 			for (int iface = 0; iface < faces.size(); iface += 3)
 			{
 				auto matInd = *matIndIt;

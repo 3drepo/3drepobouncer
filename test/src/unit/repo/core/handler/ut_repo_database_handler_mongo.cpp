@@ -118,20 +118,7 @@ TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
 		goldenData.first.first, goldenData.first.second);
 
 	ASSERT_EQ(bsons.size(), goldenData.second.size());
-	/*auto goldenDataDisposable = goldenData.second;
-	for (int i = 0; i < bsons.size(); ++i)
-	{
-	bool foundMatch = false;
-	for (int j = 0; j< goldenDataDisposable.size(); ++j)
-	{
-	if (foundMatch = bsons[i].toString() == goldenDataDisposable[j])
-	{
-	goldenDataDisposable.erase(goldenDataDisposable.begin() + j);
-	break;
-	}
-	}
-	EXPECT_TRUE(foundMatch);
-	}*/
+
 
 	//Test limit and skip
 	std::vector<repo::core::model::RepoBSON> bsonsLimitSkip = handler->getAllFromCollectionTailable(
@@ -145,7 +132,7 @@ TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
 	auto bsonsProjected = handler->getAllFromCollectionTailable(
 		goldenData.first.first, goldenData.first.second, 0, 0, { "_id", "shared_id" });
 
-	std::vector<repoUUID> ids;
+	std::vector<repo::lib::RepoUUID> ids;
 
 	ASSERT_EQ(bsonsProjected.size(), bsons.size());
 	for (int i = 0; i < bsons.size(); ++i)
@@ -290,7 +277,7 @@ TEST(MongoDatabaseHandlerTest, GetDatabasesWithProjects)
 	EXPECT_FALSE(dbWithProjects.find(REPO_GTEST_DBNAME2) == dbWithProjects.end());
 	EXPECT_FALSE(dbWithProjects.find(fakeDB) == dbWithProjects.end());
 
-	EXPECT_EQ(dbWithProjects[REPO_GTEST_DBNAME1].size(), 1);
+	EXPECT_EQ(dbWithProjects[REPO_GTEST_DBNAME1].size(), 2);
 	EXPECT_EQ(dbWithProjects[REPO_GTEST_DBNAME2].size(), 1);
 	EXPECT_EQ(dbWithProjects[fakeDB].size(), 0);
 
@@ -314,7 +301,7 @@ TEST(MongoDatabaseHandlerTest, GetProjects)
 	ASSERT_TRUE(handler);
 
 	auto projects = handler->getProjects(REPO_GTEST_DBNAME1, "history");
-	ASSERT_EQ(projects.size(), 1);
+	ASSERT_EQ(projects.size(), 2);
 	EXPECT_EQ(projects.front(), REPO_GTEST_DBNAME1_PROJ);
 
 	projects = handler->getProjects(REPO_GTEST_DBNAME1, "blah");
@@ -596,7 +583,7 @@ TEST(MongoDatabaseHandlerTest, UpsertDocument)
 	ASSERT_TRUE(handler);
 	std::string errMsg;
 
-	repo::core::model::RepoBSON testCase = BSON("_id" << UUIDtoString(generateUUID()) << "anotherField" << std::rand());
+	repo::core::model::RepoBSON testCase = BSON("_id" << repo::lib::RepoUUID::createUUID().toString() << "anotherField" << std::rand());
 	std::string database = "sandbox";
 	std::string collection = "sbCollection";
 	EXPECT_TRUE(handler->upsertDocument(database, collection, testCase, false, errMsg));
@@ -764,17 +751,17 @@ TEST(MongoDatabaseHandlerTest, FindOneBySharedID)
 	auto handler = getHandler();
 	ASSERT_TRUE(handler);
 
-	repo::core::model::RepoNode result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "sampleProject.history", stringToUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
+	repo::core::model::RepoNode result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "sampleProject.history", repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
 	EXPECT_FALSE(result.isEmpty());
-	EXPECT_EQ(result.getSharedID(), stringToUUID(REPO_HISTORY_MASTER_BRANCH));
+	EXPECT_EQ(result.getSharedID(), repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH));
 
-	result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "sampleProject.history", stringToUUID(REPO_HISTORY_MASTER_BRANCH), "");
+	result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "sampleProject.history", repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), "");
 	EXPECT_FALSE(result.isEmpty());
-	EXPECT_EQ(result.getSharedID(), stringToUUID(REPO_HISTORY_MASTER_BRANCH));
+	EXPECT_EQ(result.getSharedID(), repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH));
 
-	result = handler->findOneBySharedID("", "sampleProject", stringToUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
+	result = handler->findOneBySharedID("", "sampleProject", repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
 	EXPECT_TRUE(result.isEmpty());
-	result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "", stringToUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
+	result = handler->findOneBySharedID(REPO_GTEST_DBNAME_ROLEUSERTEST, "", repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH), "timestamp");
 	EXPECT_TRUE(result.isEmpty());
 }
 

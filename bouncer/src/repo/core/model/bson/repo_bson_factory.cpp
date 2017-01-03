@@ -28,10 +28,10 @@ using namespace repo::core::model;
 RepoBSON RepoBSONFactory::appendDefaults(
 	const std::string &type,
 	const unsigned int api,
-	const repoUUID &sharedId,
+	const repo::lib::RepoUUID &sharedId,
 	const std::string &name,
-	const std::vector<repoUUID> &parents,
-	const repoUUID &uniqueID)
+	const std::vector<repo::lib::RepoUUID> &parents,
+	const repo::lib::RepoUUID &uniqueID)
 {
 	RepoBSONBuilder builder;
 	uint64_t bytesize = 0;
@@ -44,7 +44,7 @@ RepoBSON RepoBSONFactory::appendDefaults(
 	// Shared ID (UUID)
 	builder.append(REPO_NODE_LABEL_SHARED_ID, sharedId);
 
-	bytesize += 2 * sizeof(repoUUID);
+	bytesize += 2 * sizeof(repo::lib::RepoUUID);
 
 	//--------------------------------------------------------------------------
 	// Type
@@ -79,9 +79,9 @@ CameraNode RepoBSONFactory::makeCameraNode(
 	const float         &farClippingPlane,
 	const float         &nearClippingPlane,
 	const float         &fieldOfView,
-	const repo_vector_t &lookAt,
-	const repo_vector_t &position,
-	const repo_vector_t &up,
+	const repo::lib::RepoVector3D &lookAt,
+	const repo::lib::RepoVector3D &position,
+	const repo::lib::RepoVector3D &up,
 	const std::string   &name,
 	const int           &apiLevel)
 {
@@ -90,7 +90,7 @@ CameraNode RepoBSONFactory::makeCameraNode(
 	//--------------------------------------------------------------------------
 	// Compulsory fields such as _id, type, api as well as path
 	// and optional name
-	auto defaults = appendDefaults(REPO_NODE_TYPE_CAMERA, apiLevel, generateUUID(), name);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_CAMERA, apiLevel, repo::lib::RepoUUID::createUUID(), name);
 	builder.appendElements(defaults);
 
 	//--------------------------------------------------------------------------
@@ -133,7 +133,7 @@ MaterialNode RepoBSONFactory::makeMaterialNode(
 
 	// Compulsory fields such as _id, type, api as well as path
 	// and optional name
-	auto defaults = appendDefaults(REPO_NODE_TYPE_MATERIAL, apiLevel, generateUUID(), name);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_MATERIAL, apiLevel, repo::lib::RepoUUID::createUUID(), name);
 	builder.appendElements(defaults);
 
 	if (material.ambient.size() > 0)
@@ -162,65 +162,18 @@ MaterialNode RepoBSONFactory::makeMaterialNode(
 	return MaterialNode(builder.obj());
 }
 
-MapNode RepoBSONFactory::makeMapNode(
-	const uint32_t        &width,
-	const uint32_t        &zoom,
-	const float           &tilt,
-	const float           &tileSize,
-	const float           &longitude,
-	const float           &latitude,
-	const repo_vector_t   &centrePoint,
-	const std::string     &apiKey,
-	const std::string     &name,
-	const int             &apiLevel)
-{
-	RepoBSONBuilder map_builder;
-
-	// Compulsory fields such as _id, type, api as well as path
-	// and optional name
-	auto defaults = appendDefaults(REPO_NODE_TYPE_MAP, apiLevel, generateUUID(), name, std::vector<repoUUID>());
-	map_builder.appendElements(defaults);
-	//--------------------------------------------------------------------------
-	// width (# of horizontal tiles)
-	map_builder << REPO_NODE_MAP_LABEL_WIDTH << width;
-	//--------------------------------------------------------------------------
-	// yrot (tilt on y axis in radians)
-	map_builder << REPO_NODE_MAP_LABEL_YROT << tilt;
-	//--------------------------------------------------------------------------
-	// world tile size (size of tiles)
-	map_builder << REPO_NODE_MAP_LABEL_TILESIZE << tileSize;
-	//--------------------------------------------------------------------------
-	// longitude
-	map_builder << REPO_NODE_MAP_LABEL_LONG << longitude;
-	//--------------------------------------------------------------------------
-	// latitude
-	map_builder << REPO_NODE_MAP_LABEL_LAT << latitude;
-	//--------------------------------------------------------------------------
-	// zoom
-	map_builder << REPO_NODE_MAP_LABEL_ZOOM << zoom;
-	//--------------------------------------------------------------------------
-	// trans
-	map_builder << REPO_NODE_MAP_LABEL_TRANS << BSON_ARRAY(centrePoint.x << centrePoint.y << centrePoint.z);
-	//--------------------------------------------------------------------------
-	// API Key (temporary, needs to be removed when x3dom can plug it in on the fly.
-	if (!apiKey.empty())
-		map_builder << REPO_NODE_MAP_LABEL_APIKEY << apiKey;
-	//--------------------------------------------------------------------------
-	return map_builder.obj();
-}
-
 MetadataNode RepoBSONFactory::makeMetaDataNode(
 	RepoBSON			          &metadata,
 	const std::string             &mimeType,
 	const std::string             &name,
-	const std::vector<repoUUID>  &parents,
+	const std::vector<repo::lib::RepoUUID>  &parents,
 	const int                     &apiLevel)
 {
 	RepoBSONBuilder builder;
 
 	// Compulsory fields such as _id, type, api as well as path
 	// and optional name
-	auto defaults = appendDefaults(REPO_NODE_TYPE_METADATA, apiLevel, generateUUID(), name, parents);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_METADATA, apiLevel, repo::lib::RepoUUID::createUUID(), name, parents);
 	builder.appendElements(defaults);
 
 	//--------------------------------------------------------------------------
@@ -240,13 +193,13 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	const std::vector<std::string>  &keys,
 	const std::vector<std::string>  &values,
 	const std::string               &name,
-	const std::vector<repoUUID>     &parents,
+	const std::vector<repo::lib::RepoUUID>     &parents,
 	const int                       &apiLevel)
 {
 	RepoBSONBuilder builder, metaBuilder;
 	// Compulsory fields such as _id, type, api as well as path
 	// and optional name
-	auto defaults = appendDefaults(REPO_NODE_TYPE_METADATA, apiLevel, generateUUID(), name, parents);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_METADATA, apiLevel, repo::lib::RepoUUID::createUUID(), name, parents);
 	builder.appendElements(defaults);
 
 	//check keys and values have the same sizes
@@ -295,11 +248,11 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 }
 
 MeshNode RepoBSONFactory::makeMeshNode(
-	const std::vector<repo_vector_t>                  &vertices,
+	const std::vector<repo::lib::RepoVector3D>                  &vertices,
 	const std::vector<repo_face_t>                    &faces,
-	const std::vector<repo_vector_t>                  &normals,
+	const std::vector<repo::lib::RepoVector3D>                  &normals,
 	const std::vector<std::vector<float>>             &boundingBox,
-	const std::vector<std::vector<repo_vector2d_t>>   &uvChannels,
+	const std::vector<std::vector<repo::lib::RepoVector2D>>   &uvChannels,
 	const std::vector<repo_color4d_t>                 &colors,
 	const std::vector<std::vector<float>>             &outline,
 	const std::string                           &name,
@@ -307,8 +260,8 @@ MeshNode RepoBSONFactory::makeMeshNode(
 {
 	RepoBSONBuilder builder;
 	uint64_t bytesize = 0; //track the (approximate) size to know when we need to offload to gridFS
-	repoUUID uniqueID = generateUUID();
-	auto defaults = appendDefaults(REPO_NODE_TYPE_MESH, apiLevel, generateUUID(), name, std::vector<repoUUID>(), uniqueID);
+	repo::lib::RepoUUID uniqueID = repo::lib::RepoUUID::createUUID();
+	auto defaults = appendDefaults(REPO_NODE_TYPE_MESH, apiLevel, repo::lib::RepoUUID::createUUID(), name, std::vector<repo::lib::RepoUUID>(), uniqueID);
 	bytesize += defaults.objsize();
 	builder.appendElements(defaults);
 
@@ -358,7 +311,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 		if (verticesByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
 		{
-			std::string bName = UUIDtoString(uniqueID) + "_vertices";
+			std::string bName = uniqueID.toString() + "_vertices";
 			//inclusion of this binary exceeds the maximum, store separately
 			binMapping[REPO_NODE_MESH_LABEL_VERTICES] =
 				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
@@ -403,7 +356,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 		if (facesByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
 		{
-			std::string bName = UUIDtoString(uniqueID) + "_faces";
+			std::string bName = uniqueID.toString() + "_faces";
 			//inclusion of this binary exceeds the maximum, store separately
 			binMapping[REPO_NODE_MESH_LABEL_FACES] =
 				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
@@ -430,7 +383,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 		if (normalsByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
 		{
-			std::string bName = UUIDtoString(uniqueID) + "_normals";
+			std::string bName = uniqueID.toString() + "_normals";
 			//inclusion of this binary exceeds the maximum, store separately
 			binMapping[REPO_NODE_MESH_LABEL_NORMALS] =
 				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
@@ -464,7 +417,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 		if (colorsByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
 		{
-			std::string bName = UUIDtoString(uniqueID) + "_colors";
+			std::string bName = uniqueID.toString() + "_colors";
 			//inclusion of this binary exceeds the maximum, store separately
 			binMapping[REPO_NODE_MESH_LABEL_COLORS] =
 				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
@@ -490,13 +443,13 @@ MeshNode RepoBSONFactory::makeMeshNode(
 		// Could be unsigned __int64 if BSON had such construct (the closest is only __int64)
 		builder << REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT << (uint32_t)(uvChannels.size());
 
-		std::vector<repo_vector2d_t> concatenated;
+		std::vector<repo::lib::RepoVector2D> concatenated;
 
 		for (auto it = uvChannels.begin(); it != uvChannels.end(); ++it)
 		{
-			std::vector<repo_vector2d_t> channel = *it;
+			std::vector<repo::lib::RepoVector2D> channel = *it;
 
-			std::vector<repo_vector2d_t>::iterator cit;
+			std::vector<repo::lib::RepoVector2D>::iterator cit;
 			for (cit = channel.begin(); cit != channel.end(); ++cit)
 			{
 				concatenated.push_back(*cit);
@@ -507,7 +460,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 		if (uvByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
 		{
-			std::string bName = UUIDtoString(uniqueID) + "_uv";
+			std::string bName = uniqueID.toString() + "_uv";
 			//inclusion of this binary exceeds the maximum, store separately
 			binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS] =
 				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
@@ -704,7 +657,7 @@ RepoUser RepoBSONFactory::makeRepoUser(
 	RepoBSONBuilder builder;
 	RepoBSONBuilder customDataBuilder;
 
-	builder.append(REPO_LABEL_ID, generateUUID());
+	builder.append(REPO_LABEL_ID, repo::lib::RepoUUID::createUUID());
 	if (!userName.empty())
 		builder << REPO_USER_LABEL_USER << userName;
 
@@ -745,7 +698,7 @@ RepoUser RepoBSONFactory::makeRepoUser(
 ReferenceNode RepoBSONFactory::makeReferenceNode(
 	const std::string &database,
 	const std::string &project,
-	const repoUUID    &revisionID,
+	const repo::lib::RepoUUID    &revisionID,
 	const bool        &isUniqueID,
 	const std::string &name,
 	const int         &apiLevel)
@@ -753,7 +706,7 @@ ReferenceNode RepoBSONFactory::makeReferenceNode(
 	RepoBSONBuilder builder;
 	std::string nodeName = name.empty() ? database + "." + project : name;
 
-	auto defaults = appendDefaults(REPO_NODE_TYPE_REFERENCE, apiLevel, generateUUID(), nodeName);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_REFERENCE, apiLevel, repo::lib::RepoUUID::createUUID(), nodeName);
 	builder.appendElements(defaults);
 
 	//--------------------------------------------------------------------------
@@ -782,13 +735,13 @@ ReferenceNode RepoBSONFactory::makeReferenceNode(
 
 RevisionNode RepoBSONFactory::makeRevisionNode(
 	const std::string			   &user,
-	const repoUUID                 &branch,
-	const std::vector<repoUUID>    &currentNodes,
-	//const std::vector<repoUUID>    &added,
-	//const std::vector<repoUUID>    &removed,
-	//const std::vector<repoUUID>    &modified,
+	const repo::lib::RepoUUID                 &branch,
+	const std::vector<repo::lib::RepoUUID>    &currentNodes,
+	//const std::vector<repo::lib::RepoUUID>    &added,
+	//const std::vector<repo::lib::RepoUUID>    &removed,
+	//const std::vector<repo::lib::RepoUUID>    &modified,
 	const std::vector<std::string> &files,
-	const std::vector<repoUUID>    &parent,
+	const std::vector<repo::lib::RepoUUID>    &parent,
 	const std::vector<double>    &worldOffset,
 	const std::string              &message,
 	const std::string              &tag,
@@ -796,7 +749,7 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 	)
 {
 	RepoBSONBuilder builder;
-	repoUUID uniqueID = generateUUID();
+	repo::lib::RepoUUID uniqueID = repo::lib::RepoUUID::createUUID();
 
 	//--------------------------------------------------------------------------
 	// Compulsory fields such as _id, type, api as well as path
@@ -854,7 +807,7 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 	// original files references
 	if (files.size() > 0)
 	{
-		std::string uniqueIDStr = UUIDtoString(uniqueID);
+		std::string uniqueIDStr = uniqueID.toString();
 		mongo::BSONObjBuilder arrbuilder;
 		for (int i = 0; i < files.size(); ++i)
 		{
@@ -876,7 +829,7 @@ TextureNode RepoBSONFactory::makeTextureNode(
 	const int         &apiLevel)
 {
 	RepoBSONBuilder builder;
-	auto defaults = appendDefaults(REPO_NODE_TYPE_TEXTURE, apiLevel, generateUUID(), name);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_TEXTURE, apiLevel, repo::lib::RepoUUID::createUUID(), name);
 	builder.appendElements(defaults);
 	//
 	// Width
@@ -916,29 +869,17 @@ TextureNode RepoBSONFactory::makeTextureNode(
 }
 
 TransformationNode RepoBSONFactory::makeTransformationNode(
-	const std::vector<std::vector<float>> &transMatrix,
+	const repo::lib::RepoMatrix &transMatrix,
 	const std::string                     &name,
-	const std::vector<repoUUID>		  &parents,
+	const std::vector<repo::lib::RepoUUID>		  &parents,
 	const int                             &apiLevel)
 {
 	RepoBSONBuilder builder;
 
-	auto defaults = appendDefaults(REPO_NODE_TYPE_TRANSFORMATION, apiLevel, generateUUID(), name, parents);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_TRANSFORMATION, apiLevel, repo::lib::RepoUUID::createUUID(), name, parents);
 	builder.appendElements(defaults);
 
-	//--------------------------------------------------------------------------
-	// Store matrix as array of arrays
-	uint32_t matrixSize = 4;
-	RepoBSONBuilder rows;
-	for (uint32_t i = 0; i < transMatrix.size(); ++i)
-	{
-		RepoBSONBuilder columns;
-		for (uint32_t j = 0; j < transMatrix[i].size(); ++j){
-			columns << std::to_string(j) << transMatrix[i][j];
-		}
-		rows.appendArray(std::to_string(i), columns.obj());
-	}
-	builder.appendArray(REPO_NODE_LABEL_MATRIX, rows.obj());
+	builder.append(REPO_NODE_LABEL_MATRIX, transMatrix);	
 
 	return TransformationNode(builder.obj());
 }

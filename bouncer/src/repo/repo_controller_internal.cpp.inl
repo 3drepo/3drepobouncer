@@ -159,7 +159,7 @@ bool RepoController::_RepoControllerImpl::testConnection(const RepoController::R
 	return isConnected;
 }
 
-void  RepoController::_RepoControllerImpl::cleanUp(
+bool  RepoController::_RepoControllerImpl::cleanUp(
 	const RepoController::RepoToken        *token,
 	const std::string                      &dbName,
 	const std::string                      &projectName
@@ -168,18 +168,19 @@ void  RepoController::_RepoControllerImpl::cleanUp(
 	if (!token)
 	{
 		repoError << "Failed to clean up project: empty token to database";
-		return;
+		return false;
 	}
 
 	if (dbName.empty() || projectName.empty())
 	{
 		repoError << "Failed to clean up project: database or project name is empty!";
-		return;
+		return false;
 	}
 
 	manipulator::RepoManipulator* worker = workerPool.pop();
-	worker->cleanUp(token->databaseAd, token->getCredentials(), dbName, projectName);
+	bool success = worker->cleanUp(token->databaseAd, token->getCredentials(), dbName, projectName);
 	workerPool.push(worker);
+	return success;
 }
 
 RepoController::RepoToken* RepoController::_RepoControllerImpl::createToken(
@@ -319,7 +320,7 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
 		scene = worker->fetchScene(token->databaseAd, token->getCredentials(),
-			database, collection, stringToUUID(uuid), headRevision, lightFetch);
+			database, collection, repo::lib::RepoUUID(uuid), headRevision, lightFetch);
 
 		workerPool.push(worker);
 	}
@@ -523,6 +524,30 @@ std::list<std::string> RepoController::_RepoControllerImpl::getDatabases(const R
 	}
 
 	return list;
+}
+
+repo::core::model::DatabaseStats RepoController::_RepoControllerImpl::getDatabaseStats(
+	const RepoController::RepoToken *token,
+	const std::string &database)
+{
+	repo::core::model::DatabaseStats stats;
+
+	if (token)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		std::string errMsg;
+		stats = worker->getDatabaseStats(token->databaseAd,
+			token->getCredentials(), database, errMsg);
+		workerPool.push(worker);
+
+		if (!errMsg.empty())
+			repoError << errMsg;
+	}
+	else
+	{
+		repoError << "Trying to get database stats without a database connection!";
+	}
+	return stats;
 }
 
 std::list<std::string>  RepoController::_RepoControllerImpl::getCollections(
@@ -856,16 +881,6 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::createFederat
 	return scene;
 }
 
-repo::core::model::RepoScene* RepoController::_RepoControllerImpl::createMapScene(
-	const repo::core::model::MapNode &mapNode)
-{
-	manipulator::RepoManipulator* worker = workerPool.pop();
-	repo::core::model::RepoScene* scene = worker->createMapScene(mapNode);
-	workerPool.push(worker);
-
-	return scene;
-}
-
 bool RepoController::_RepoControllerImpl::generateAndCommitGLTFBuffer(
 	const RepoController::RepoToken                    *token,
 	repo::core::model::RepoScene *scene)
@@ -1054,7 +1069,7 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 		scene = worker->loadSceneFromFile(filePath, errMsg, applyReduction, rotateModel, config);
 		workerPool.push(worker);
 		if (!scene)
-			repoError << "Failed ot load scene from file: " << errMsg;
+			repoError << "Failed to load scene from file: " << errMsg;
 	}
 	else
 	{
@@ -1064,39 +1079,44 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 	return scene;
 }
 
-void RepoController::_RepoControllerImpl::saveOriginalFiles(
+bool RepoController::_RepoControllerImpl::saveOriginalFiles(
 	const RepoController::RepoToken                    *token,
 	const repo::core::model::RepoScene *scene,
 	const std::string                   &directory)
 {
+	bool success = false;
 	if (scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
-		worker->saveOriginalFiles(token->databaseAd, token->getCredentials(), scene, directory);
+		success = worker->saveOriginalFiles(token->databaseAd, token->getCredentials(), scene, directory);
 		workerPool.push(worker);
 	}
 	else{
 		repoError << "RepoController::_RepoControllerImpl::saveSceneToFile: NULL pointer to scene!";
 	}
+	return success;
 }
 
-void RepoController::_RepoControllerImpl::saveOriginalFiles(
+bool RepoController::_RepoControllerImpl::saveOriginalFiles(
 	const RepoController::RepoToken                    *token,
 	const std::string                   &database,
 	const std::string                   &project,
 	const std::string                   &directory)
 {
+	bool success = false;
 	if (!(database.empty() || project.empty()))
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
-		worker->saveOriginalFiles(token->databaseAd, token->getCredentials(), database, project, directory);
+		success = worker->saveOriginalFiles(token->databaseAd, token->getCredentials(), database, project, directory);
 		workerPool.push(worker);
 	}
 	else{
 		repoError << "RepoController::_RepoControllerImpl::saveSceneToFile: NULL pointer to scene!";
 	}
+
+	return success;
 }
 
 bool RepoController::_RepoControllerImpl::saveSceneToFile(

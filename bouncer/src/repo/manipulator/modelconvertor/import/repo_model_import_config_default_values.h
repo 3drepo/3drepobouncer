@@ -19,6 +19,7 @@
 */
 
 #include <string>
+#include <vector>
 
 static const bool        repoDefaultCalculateTangentSpace = false;
 static const bool        repoDefaultConvertToUVCoordinates = false;
@@ -76,3 +77,27 @@ static const float       repoDefaultDeboneThreshold = 1.0f;
 static const float       repoDefaultGenerateNormalsSmoothCreaseAngle = 175.0f;
 static const std::string repoDefaultRemoveRedundantMaterialsSkip = "";
 static const std::string repoDefaultRemoveRedundantNodesSkip = "";
+
+//IfcOpenShell settings
+static const bool		repoDefaultUseIfcOpenShell = true;
+static const bool		repoDefaultIOSUseFilter = true;
+static const bool		repoDefaultIsExclusion = true;
+static const std::vector<std::string> repoDefaultIfcOpenShellFilterList = { "IfcOpeningElement", "IfcMember" };
+static const bool       repoDefaultIOSWieldVertices = false;
+static const bool       repoDefaultIOSUseWorldCoords = true;
+static const bool       repoDefaultIOSConvertBackUnits = false;
+static const bool       repoDefaultIOSUseBrepData = false;
+static const bool       repoDefaultIOSSewShells = false;
+static const bool       repoDefaultIOSFasterBooleans = false;
+static const bool       repoDefaultIOSDisableOpeningSubtractions = false;
+static const bool       repoDefaultIOSDisableTriangulate = false;
+static const bool       repoDefaultIOSApplyDefaultMaterials = true;
+static const bool       repoDefaultIOSIncludesCurves = false;
+static const bool       repoDefaultIOSExcludesSolidsAndSurfaces = false;
+static const bool       repoDefaultIOSNoNormals = false;
+static const bool       repoDefaultIOSUseElementGuids = false;
+static const bool       repoDefaultIOSUseElementNames = false;
+static const bool       repoDefaultIOSUseMatNames = true;
+static const bool       repoDefaultIOSCentreModel = false;
+static const bool       repoDefaultIOSGenerateUVs = true;
+static const bool       repoDefaultIOSApplyLayerSets = false;

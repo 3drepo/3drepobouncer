@@ -91,11 +91,11 @@ namespace repo {
 				* if it doesn't exist, return master branch id
 				* @return returns the UUID for this reference
 				*/
-				repoUUID getRevisionID() const{
+				repo::lib::RepoUUID getRevisionID() const{
 					if (hasField(REPO_NODE_REFERENCE_LABEL_REVISION_ID))
 						return getUUIDField(REPO_NODE_REFERENCE_LABEL_REVISION_ID);
 					else
-						return stringToUUID(REPO_HISTORY_MASTER_BRANCH);
+						return repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH);
 				}
 
 				/**
