@@ -194,8 +194,9 @@ RepoUser RepoUser::cloneAndUpdateSubscriptions(
 		subArrayBson.push_back(subBson);
 	}
 
-	RepoBSONBuilder newCustomDataBuilder, newUserBSON;
-	newCustomDataBuilder.appendArray(REPO_USER_LABEL_SUBS, subArrayBson);
+	RepoBSONBuilder newCustomDataBuilder, newUserBSON, billingBuilder;
+	billingBuilder.appendArray(REPO_USER_LABEL_SUBS, subArrayBson);
+	newCustomDataBuilder.appendArray(REPO_USER_LABEL_BILLING, subArrayBson);
 	newCustomDataBuilder.appendElementsUnique(getObjectField(REPO_USER_LABEL_CUSTOM_DATA));
 
 	newUserBSON << REPO_USER_LABEL_CUSTOM_DATA << newCustomDataBuilder.obj();
@@ -315,6 +316,7 @@ std::vector<RepoUser::SubscriptionInfo> RepoUser::getSubscriptionInfo() const
 	RepoBSON customData = getCustomDataBSON();
 	if (!customData.isEmpty())
 	{
+		auto billing = customData.getObjectField(REPO_USER_LABEL_BILLING);
 		auto subs = customData.getObjectField(REPO_USER_LABEL_SUBS);
 		if (!subs.isEmpty())
 		{
