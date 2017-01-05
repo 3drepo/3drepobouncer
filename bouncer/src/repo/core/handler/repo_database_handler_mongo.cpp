@@ -207,7 +207,7 @@ bool MongoDatabaseHandler::dropCollection(
 	{
 		try{
 			worker = workerPool->getWorker();
-			if (success = worker)
+			if (worker)
 				success = worker->dropCollection(database + "." + collection);
 			else
 				errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
@@ -238,7 +238,7 @@ bool MongoDatabaseHandler::dropDatabase(
 	{
 		try{
 			worker = workerPool->getWorker();
-			if (success = worker)
+			if (success)
 				success = worker->dropDatabase(database);
 			else
 				errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
@@ -1006,7 +1006,7 @@ bool MongoDatabaseHandler::insertDocument(
 	{
 		try{
 			worker = workerPool->getWorker();
-			if (success = worker)
+			if (worker)
 			{
 				worker->insert(getNamespace(database, collection), obj);
 
