@@ -238,7 +238,7 @@ bool MongoDatabaseHandler::dropDatabase(
 	{
 		try{
 			worker = workerPool->getWorker();
-			if (success)
+			if (worker)
 				success = worker->dropDatabase(database);
 			else
 				errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
