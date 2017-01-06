@@ -36,8 +36,8 @@ namespace repo{
 			RepoStack(
 				const int32_t &maxRetry = -1,
 				const uint32_t &msTimeOut = 50)
-			: maxRetry(maxRetry)
-			, msTimeOut(msTimeOut){}
+				: maxRetry(maxRetry)
+				, msTimeOut(msTimeOut){}
 			~RepoStack(){}
 
 			void push(T*& item) {
@@ -52,7 +52,6 @@ namespace repo{
 				uint8_t count = 0;
 				while (stack.empty())
 				{
-					
 					//stack is empty. Release the push lock and try again in 50ms
 					pushLock.unlock();
 					boost::this_thread::sleep(boost::posix_time::milliseconds(msTimeOut * (count + 1 * 10)));
@@ -69,7 +68,6 @@ namespace repo{
 
 				repoTrace << "Given up. returning nullptr";
 				return nullptr;
-				
 			}
 
 			/**
@@ -87,8 +85,8 @@ namespace repo{
 
 		private:
 			std::vector<T*> stack;
-			const int32_t &maxRetry;
-			const uint32_t &msTimeOut;
+			const int32_t maxRetry;
+			const uint32_t msTimeOut;
 			mutable boost::mutex pushMutex;
 			mutable boost::mutex popMutex;
 		};
