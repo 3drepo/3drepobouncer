@@ -1251,8 +1251,11 @@ void RepoScene::modifyNode(
 	}
 
 	//update shared to unique ID  and uniqueID to node mapping
+
 	g.sharedIDtoUniqueID[sharedID] = newUniqueID;
+	repoTrace << "bye";
 	g.nodesByUniqueID.erase(nodeToChange->getUniqueID());
+	repoTrace << "hi";
 	g.nodesByUniqueID[newUniqueID] = nodeToChange;
 
 	nodeToChange->swap(updatedNode);
