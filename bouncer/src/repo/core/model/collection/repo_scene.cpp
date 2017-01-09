@@ -1233,6 +1233,7 @@ void RepoScene::modifyNode(
 	repoGraphInstance &g = gtype == GraphType::OPTIMIZED ? stashGraph : graph;
 
 	repo::lib::RepoUUID sharedID = nodeToChange->getSharedID();
+	repo::lib::RepoUUID uniqueID = nodeToChange->getUniqueID();
 
 	RepoNode updatedNode;
 
@@ -1246,16 +1247,14 @@ void RepoScene::modifyNode(
 	if (gtype == GraphType::DEFAULT && !isInList)
 	{
 		newModified.insert(sharedID);
-		newCurrent.erase(nodeToChange->getUniqueID());
+		newCurrent.erase(uniqueID);
 		newCurrent.insert(newUniqueID);
 	}
 
 	//update shared to unique ID  and uniqueID to node mapping
 
 	g.sharedIDtoUniqueID[sharedID] = newUniqueID;
-	repoTrace << "bye";
-	g.nodesByUniqueID.erase(nodeToChange->getUniqueID());
-	repoTrace << "hi";
+	g.nodesByUniqueID.erase(uniqueID);
 	g.nodesByUniqueID[newUniqueID] = nodeToChange;
 
 	nodeToChange->swap(updatedNode);
