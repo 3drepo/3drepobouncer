@@ -55,11 +55,15 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformations(
 {
 	//The ifc file shoudl always have a IFC Site as the starting tag
 	auto initialElements = ifcfile.entitiesByType(IfcSchema::Type::IfcSite);
-	if (!initialElements->size())
+	if (!initialElements || !initialElements->size())
 	{
-		repoTrace << "Could not find IFC Site tag... trying IfcBuilding";
+		repoWarning << "Could not find IFC Site tag... trying IfcBuilding";
 		//If there is no site, get the buildings
 		initialElements = ifcfile.entitiesByType(IfcSchema::Type::IfcBuilding);
+		if (!initialElements || !initialElements->size())
+		{
+			repoError << "Could not find IFCBuilding tag either. ";
+		}
 	}
 
 	repo::core::model::RepoNodeSet transNodes;
@@ -244,6 +248,12 @@ repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
 	repoInfo << "Creating Transformations...";
 	repo::core::model::RepoNodeSet dummy, meshSet, matSet, metaSet;
 	repo::core::model::RepoNodeSet transNodes = createTransformations(ifcfile, meshes, materials, metaSet);
+
+	if (!transNodes.size())
+	{
+		repoError << "Failed to generate a Tree from the IFC file.";
+		return nullptr;
+	}
 	for (auto &m : meshes)
 	{
 		for (auto &mesh : m.second)
