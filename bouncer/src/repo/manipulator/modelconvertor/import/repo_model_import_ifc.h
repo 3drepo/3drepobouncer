@@ -80,6 +80,7 @@ namespace repo{
 				std::unordered_map<std::string, repo::core::model::MaterialNode*> materials;
 				std::vector<double> offset;
 				std::string ifcFile;
+				bool partialFailure;
 			};
 		} //namespace modelconvertor
 	} //namespace manipulator

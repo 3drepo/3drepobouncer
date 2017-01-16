@@ -427,17 +427,23 @@ void IFCUtilsParser::determineActionsByElementType(
 		createElement = false;
 		if (relCS)
 		{
-			auto relatedObjects = relCS->RelatedElements();
-			if (relatedObjects)
-			{
-				for (auto &e : *relatedObjects)
+			try{
+				auto relatedObjects = relCS->RelatedElements();
+				if (relatedObjects)
 				{
-					extraChildren.push_back(e->entity->id());
+					for (auto &e : *relatedObjects)
+					{
+						extraChildren.push_back(e->entity->id());
+					}
+				}
+				else
+				{
+					repoError << "Nullptr to relatedObjects!!!";
 				}
 			}
-			else
+			catch (const IfcParse::IfcException &e)
 			{
-				repoError << "Nullptr to relatedObjects!!!";
+				repoError << "Failed to retrieve related elements from " << relCS->entity->id() << ": " << e.what();
 			}
 		}
 		else

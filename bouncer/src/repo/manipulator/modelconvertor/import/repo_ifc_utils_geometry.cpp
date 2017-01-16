@@ -98,8 +98,11 @@ IfcGeom::IteratorSettings IFCUtilsGeometry::createSettings()
 	return itSettings;
 }
 
-bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
+bool IFCUtilsGeometry::generateGeometry(
+	std::string &errMsg,
+	bool        &partialFailure)
 {
+	partialFailure = false;
 	repoInfo << "Initialising Geometry....." << std::endl;
 
 	auto itSettings = createSettings();
@@ -122,18 +125,23 @@ bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
 	}
 
 	repoTrace << "Initialising Geom iterator";
-	bool res = false;
+	int res = IFCOPENSHELL_GEO_INIT_FAILED;
 	try{
 		res = contextIterator.initialize();
 	}
 	catch (const std::exception &e)
 	{
-		repoError << "Failed to initialise Geom iterator: " << e.what() << " - Corrupted IFC File?";
+		repoError << "Failed to initialise Geom iterator: " << e.what();
 	}
 
-	if (res)
+	if (IFCOPENSHELL_GEO_INIT_SUCCESS)
 	{
 		repoTrace << "Geom Iterator initialized";
+	}
+	else if (IFCOPENSHELL_GEO_INIT_PART_SUCCESS)
+	{
+		repoWarning << "Geom Iterator initialized with part failure";
+		partialFailure = true;
 	}
 	else
 	{
