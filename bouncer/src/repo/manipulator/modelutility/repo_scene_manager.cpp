@@ -183,12 +183,14 @@ bool SceneManager::generateStashGraph(
 				if (!(success = scene->commitStash(handler, errMsg)))
 				{
 					repoError << "Failed to commit stash graph: " << errMsg;
+					success = false;
 				}
 			}
 		}
 		else
 		{
 			repoError << "Failed to generate stash graph";
+			success = false;
 		}
 	}
 	else
