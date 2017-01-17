@@ -735,7 +735,7 @@ TEST(RepoRoleTest, CloneAndAddPermissionsTest)
 
 	RepoRole empty;
 
-	EXPECT_TRUE(empty.cloneAndUpdatePermissions(std::vector<RepoPermission>()).isEmpty());
+	EXPECT_EQ(0, empty.cloneAndUpdatePermissions(std::vector<RepoPermission>()).getPrivileges().size());
 
 	std::vector<RepoPermission> newPermissions;
 	newPermissions.push_back({ "db", "col", AccessRight::READ_ONLY });
