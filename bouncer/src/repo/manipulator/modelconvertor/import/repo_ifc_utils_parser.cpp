@@ -444,6 +444,7 @@ void IFCUtilsParser::determineActionsByElementType(
 			catch (const IfcParse::IfcException &e)
 			{
 				repoError << "Failed to retrieve related elements from " << relCS->entity->id() << ": " << e.what();
+				missingEntities = true;
 			}
 		}
 		else
