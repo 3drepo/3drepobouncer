@@ -58,27 +58,25 @@ RepoRole RepoRole::cloneAndUpdatePrivileges(
 	) const
 {
 	RepoBSONBuilder builder;
-	if (privileges.size() > 0)
+
+	RepoBSONBuilder privilegesBuilder;
+	for (size_t i = 0; i < privileges.size(); ++i)
 	{
-		RepoBSONBuilder privilegesBuilder;
-		for (size_t i = 0; i < privileges.size(); ++i)
+		const auto &p = privileges[i];
+		RepoBSONBuilder innerBsonBuilder, actionBuilder;
+		RepoBSON resource = BSON(REPO_ROLE_LABEL_DATABASE << p.database << REPO_ROLE_LABEL_COLLECTION << p.collection);
+		innerBsonBuilder << REPO_ROLE_LABEL_RESOURCE << resource;
+
+		for (size_t aCount = 0; aCount < p.actions.size(); ++aCount)
 		{
-			const auto &p = privileges[i];
-			RepoBSONBuilder innerBsonBuilder, actionBuilder;
-			RepoBSON resource = BSON(REPO_ROLE_LABEL_DATABASE << p.database << REPO_ROLE_LABEL_COLLECTION << p.collection);
-			innerBsonBuilder << REPO_ROLE_LABEL_RESOURCE << resource;
-
-			for (size_t aCount = 0; aCount < p.actions.size(); ++aCount)
-			{
-				actionBuilder << std::to_string(aCount) << RepoRole::dbActionToString(p.actions[aCount]);
-			}
-
-			innerBsonBuilder.appendArray(REPO_ROLE_LABEL_ACTIONS, actionBuilder.obj());
-
-			privilegesBuilder << std::to_string(i) << innerBsonBuilder.obj();
+			actionBuilder << std::to_string(aCount) << RepoRole::dbActionToString(p.actions[aCount]);
 		}
-		builder.appendArray(REPO_ROLE_LABEL_PRIVILEGES, privilegesBuilder.obj());
+
+		innerBsonBuilder.appendArray(REPO_ROLE_LABEL_ACTIONS, actionBuilder.obj());
+
+		privilegesBuilder << std::to_string(i) << innerBsonBuilder.obj();
 	}
+	builder.appendArray(REPO_ROLE_LABEL_PRIVILEGES, privilegesBuilder.obj());
 
 	auto change = builder.obj();
 	return RepoRole(cloneAndAddFields(&change));
@@ -340,7 +338,6 @@ std::vector<RepoPermission> RepoRole::translatePrivileges(
 		{
 			//does not have a .* Regard it as a different project
 
-
 			bool hasRead = std::find(p.actions.begin(), p.actions.end(), DBActions::FIND) != p.actions.end();
 			bool hasWrite = std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end();
 			hasWrite |= std::find(p.actions.begin(), p.actions.end(), DBActions::UPDATE) != p.actions.end();
@@ -349,13 +346,11 @@ std::vector<RepoPermission> RepoRole::translatePrivileges(
 			if (hasRead && hasWrite)
 			{
 				permTracker[projectFullName] = { true, true };
-			}			
+			}
 			else
 			{
 				permTracker[projectFullName] = { false, false };
-
 			}
-
 		}
 		else
 		{
@@ -378,14 +373,10 @@ std::vector<RepoPermission> RepoRole::translatePrivileges(
 					permTracker[projectFullName] = { false, false };
 
 				permTracker[projectFullName].first = hasWrite;
-
-
 			}
-
 
 			if (postfix == "issues")
 			{
-
 				bool hasWrite = std::find(p.actions.begin(), p.actions.end(), DBActions::INSERT) != p.actions.end();
 
 				std::string projectFullName = p.database + "." + p.collection.substr(0, lastDot);
@@ -398,11 +389,11 @@ std::vector<RepoPermission> RepoRole::translatePrivileges(
 	}
 
 	for (const auto &projList : permTracker)
-	{		
+	{
 		RepoPermission perm;
 		auto firstDot = projList.first.find_first_of('.');
 		perm.database = projList.first.substr(0, firstDot);
-		perm.project = projList.first.substr(firstDot+1);
+		perm.project = projList.first.substr(firstDot + 1);
 		if (projList.second.first)
 		{
 			perm.permission = AccessRight::READ_WRITE;
@@ -417,7 +408,6 @@ std::vector<RepoPermission> RepoRole::translatePrivileges(
 			{
 				perm.permission = AccessRight::READ_ONLY;
 			}
-
 		}
 
 		permissions.push_back(perm);
@@ -433,7 +423,7 @@ void RepoRole::updateActions(
 	)
 {
 	vec.push_back(DBActions::FIND);
-	if ((collectionType == "issues" || collectionType == "groups") && permission == AccessRight::READ_AND_COMMENT )
+	if ((collectionType == "issues" || collectionType == "groups") && permission == AccessRight::READ_AND_COMMENT)
 	{
 		vec.push_back(DBActions::INSERT);
 		vec.push_back(DBActions::UPDATE);

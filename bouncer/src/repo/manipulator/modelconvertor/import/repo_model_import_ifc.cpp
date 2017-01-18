@@ -28,7 +28,8 @@
 using namespace repo::manipulator::modelconvertor;
 
 IFCModelImport::IFCModelImport(const ModelImportConfig *settings) :
-AbstractModelImport(settings)
+AbstractModelImport(settings),
+partialFailure(false)
 {
 }
 
@@ -43,6 +44,7 @@ repo::core::model::RepoScene* IFCModelImport::generateRepoScene()
 	auto scene = parserUtil.generateRepoScene(errMsg, meshes, materials, offset);
 	if (!scene)
 		repoError << "Failed to generate Repo Scene: " << errMsg;
+	if (partialFailure) scene->setMissingNodes();
 	return scene;
 }
 
@@ -56,7 +58,7 @@ bool IFCModelImport::importModel(std::string filePath, std::string &errMsg)
 	bool success = false;
 
 	IFCUtilsGeometry geoUtil(filePath, settings);
-	if (success = geoUtil.generateGeometry(errMsg))
+	if (success = geoUtil.generateGeometry(errMsg, partialFailure))
 	{
 		//generate tree;
 		repoInfo << "Geometry generated successfully";
