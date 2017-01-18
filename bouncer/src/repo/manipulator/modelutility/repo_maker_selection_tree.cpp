@@ -109,7 +109,8 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 		tree.addToTree("_id", idString);
 		tree.addToTree("shared_id", sharedID.toString());
 		tree.addToTree("children", childrenTrees);
-		tree.addToTree("meta", metaIDs);
+		if (metaIDs.size())
+			tree.addToTree("meta", metaIDs);
 
 		if (name.find(IFC_TYPE_SPACE_LABEL) != std::string::npos
 			&& currentNode->getTypeAsEnum() == repo::core::model::NodeType::MESH)
