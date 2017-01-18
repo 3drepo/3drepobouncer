@@ -98,43 +98,50 @@ IfcGeom::IteratorSettings IFCUtilsGeometry::createSettings()
 	return itSettings;
 }
 
-bool IFCUtilsGeometry::generateGeometry(std::string &errMsg)
+bool IFCUtilsGeometry::generateGeometry(
+	std::string &errMsg,
+	bool        &partialFailure)
 {
+	partialFailure = false;
 	repoInfo << "Initialising Geometry....." << std::endl;
 
 	auto itSettings = createSettings();
 
 	IfcGeom::Iterator<double> contextIterator(itSettings, file);
 
-	//auto filter = settings->getFilteringKeywords();
-	//if (settings->getUseElementsFiltering() &&  filter.size())
-	//{
-	//	std::set<std::string> filterSet(filter.begin(), filter.end());
+	auto filter = settings->getFilteringKeywords();
+	if (settings->getUseElementsFiltering() && filter.size())
+	{
+		std::set<std::string> filterSet(filter.begin(), filter.end());
 
-	//	if (settings->getIsExclusionFilter())
-	//	{
-	//		contextIterator.excludeEntities(filterSet);
-	//	}
-	//	else
-	//	{
-	//		contextIterator.includeEntities(filterSet);
-	//	}
-	//}
-	//
+		if (settings->getIsExclusionFilter())
+		{
+			contextIterator.excludeEntities(filterSet);
+		}
+		else
+		{
+			contextIterator.includeEntities(filterSet);
+		}
+	}
 
 	repoTrace << "Initialising Geom iterator";
-	bool res = false;
+	int res = IFCOPENSHELL_GEO_INIT_FAILED;
 	try{
 		res = contextIterator.initialize();
 	}
 	catch (const std::exception &e)
 	{
-		repoError << "Failed to initialise Geom iterator: " << e.what() << " - Corrupted IFC File?";
+		repoError << "Failed to initialise Geom iterator: " << e.what();
 	}
 
-	if (res)
+	if (IFCOPENSHELL_GEO_INIT_SUCCESS)
 	{
 		repoTrace << "Geom Iterator initialized";
+	}
+	else if (IFCOPENSHELL_GEO_INIT_PART_SUCCESS)
+	{
+		repoWarning << "Geom Iterator initialized with part failure";
+		partialFailure = true;
 	}
 	else
 	{
