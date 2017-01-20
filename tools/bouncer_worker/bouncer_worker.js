@@ -76,7 +76,7 @@
 				if(error.code)
 					reply.value = error.code;
 				else
-					replay.value = 12;
+					reply.value = 12;
 			}
 			else
 				reply.value = 0;
