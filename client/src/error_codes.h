@@ -39,3 +39,5 @@
 #define REPOERR_LOAD_SCENE_MISSING_NODES 10
 //Failed to get file from project
 #define REPOERR_GET_FILE_FAILED 11
+//Failed to finish (i.e. crashed)
+#define REPOERR_CRASHED 12
