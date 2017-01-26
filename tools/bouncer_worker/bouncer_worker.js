@@ -73,7 +73,10 @@
 			let reply = {};
 
 			if(error !== null){
-				reply.value = error.code;
+				if(error.code)
+					reply.value = error.code;
+				else
+					reply.value = 12;
 			}
 			else
 				reply.value = 0;
