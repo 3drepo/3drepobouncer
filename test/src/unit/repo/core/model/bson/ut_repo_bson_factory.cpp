@@ -32,13 +32,23 @@ TEST(RepoBSONFactoryTest, MakeRepoProjectSettingsTest)
 	std::string description = "testing project";
 	// TODO: add test values for pinSize, avatarHeight, visibilityLimit, speed, zNear, zFar
 
-	RepoProjectSettings settings = RepoBSONFactory::makeRepoProjectSettings(projectName, owner, type,
+	RepoProjectSettings settings = RepoBSONFactory::makeRepoProjectSettings(projectName, owner, false, type,
 		description);
 
 	EXPECT_EQ(projectName, settings.getProjectName());
 	EXPECT_EQ(description, settings.getDescription());
 	EXPECT_EQ(owner, settings.getOwner());
 	EXPECT_EQ(type, settings.getType());
+	EXPECT_FALSE(settings.isFederate());
+
+	RepoProjectSettings settings2 = RepoBSONFactory::makeRepoProjectSettings(projectName, owner, true, type,
+		description);
+
+	EXPECT_EQ(projectName, settings2.getProjectName());
+	EXPECT_EQ(description, settings2.getDescription());
+	EXPECT_EQ(owner, settings2.getOwner());
+	EXPECT_EQ(type, settings2.getType());
+	EXPECT_TRUE(settings2.isFederate());
 }
 
 TEST(RepoBSONFactoryTest, MakeRepoRoleTest)

@@ -598,7 +598,7 @@ bool RepoScene::commitProjectSettings(
 	const std::string &userName)
 {
 	RepoProjectSettings projectSettings =
-		RepoBSONFactory::makeRepoProjectSettings(projectName, userName);
+		RepoBSONFactory::makeRepoProjectSettings(projectName, userName, graph.references.size());
 
 	bool success = handler->insertDocument(
 		databaseName, REPO_COLLECTION_SETTINGS, projectSettings, errMsg);

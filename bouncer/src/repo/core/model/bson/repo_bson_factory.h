@@ -47,17 +47,16 @@ namespace repo {
 				* Create a project setting BSON
 				* @param uniqueProjectName a unique name for the project
 				* @param owner owner ofthis project
+				* @param isFederate is the project a federation
 				* @param group group with access of this project
 				* @param type  type of project
 				* @param description Short description of the project
-				* @param ownerPermissionsOctal owner's permission in POSIX
-				* @param groupPermissionsOctal group's permission in POSIX
-				* @param publicPermissionsOctal other's permission in POSIX
 				* @return returns a Project settings
 				*/
 				static RepoProjectSettings makeRepoProjectSettings(
 					const std::string &uniqueProjectName,
 					const std::string &owner,
+					const bool        &isFederate,
 					const std::string &type = REPO_DEFAULT_PROJECT_TYPE_ARCHITECTURAL,
 					const std::string &description = std::string(),
 					const double pinSize = REPO_DEFAULT_PROJECT_PIN_SIZE,
