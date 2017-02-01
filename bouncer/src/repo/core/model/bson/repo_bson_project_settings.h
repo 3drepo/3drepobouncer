@@ -27,6 +27,7 @@ namespace repo {
 		namespace model {
 			// TODO: make into header only
 
+			#define REPO_LABEL_IS_FEDERATION "federate"
 			class REPO_API_EXPORT RepoProjectSettings : public RepoBSON
 			{
 			public:
