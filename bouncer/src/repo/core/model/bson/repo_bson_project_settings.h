@@ -68,6 +68,14 @@ namespace repo {
 				}
 
 				/**
+				* @return returns true if the project setting is for a federated project
+				*/
+				bool isFederate() const
+				{
+					return getBoolField(REPO_LABEL_IS_FEDERATION);
+				}
+
+				/**
 				* Get the owner of the project for this settings
 				* @return returns owner name as string
 				*/
