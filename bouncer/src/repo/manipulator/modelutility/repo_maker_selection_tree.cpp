@@ -50,11 +50,16 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 		std::vector<repo::lib::PropertyTree> childrenTrees;
 
 		std::vector<repo::core::model::RepoNode*> childrenTypes[2];
+		std::vector<repo::lib::RepoUUID> metaIDs;
 		for (const auto &child : children)
 		{
 			//Ensure IFC Space (if any) are put into the tree first.
 			if (child->getName().find(IFC_TYPE_SPACE_LABEL) != std::string::npos)
 				childrenTypes[0].push_back(child);
+			else if (child->getTypeAsEnum() == repo::core::model::NodeType::METADATA)
+			{
+				metaIDs.push_back(child->getUniqueID());
+			}
 			else
 				childrenTypes[1].push_back(child);
 		}
@@ -104,6 +109,8 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 		tree.addToTree("_id", idString);
 		tree.addToTree("shared_id", sharedID.toString());
 		tree.addToTree("children", childrenTrees);
+		if (metaIDs.size())
+			tree.addToTree("meta", metaIDs);
 
 		if (name.find(IFC_TYPE_SPACE_LABEL) != std::string::npos
 			&& currentNode->getTypeAsEnum() == repo::core::model::NodeType::MESH)

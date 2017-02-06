@@ -27,6 +27,7 @@ namespace repo {
 		namespace model {
 			// TODO: make into header only
 
+			#define REPO_LABEL_IS_FEDERATION "federate"
 			class REPO_API_EXPORT RepoProjectSettings : public RepoBSON
 			{
 			public:
@@ -64,6 +65,14 @@ namespace repo {
 				std::string getDescription() const
 				{
 					return getStringField(REPO_LABEL_DESCRIPTION);
+				}
+
+				/**
+				* @return returns true if the project setting is for a federated project
+				*/
+				bool isFederate() const
+				{
+					return getBoolField(REPO_LABEL_IS_FEDERATION);
 				}
 
 				/**
