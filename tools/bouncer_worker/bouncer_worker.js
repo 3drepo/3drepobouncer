@@ -28,7 +28,7 @@
 
 /*jshint esversion: 6 */
 
-() => {
+(() => {
 	"use strict";
 
 	const amqp = require("amqplib/callback_api");
@@ -117,5 +117,5 @@
 	console.log("Initialising bouncer client queue...");
 	testClient(connectQ);
 
-}();
+})();
 
