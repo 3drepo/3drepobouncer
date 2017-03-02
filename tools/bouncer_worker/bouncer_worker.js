@@ -139,7 +139,7 @@
 						handleMessage(msg.content.toString(), msg.properties.correlationId, function(reply){
 							console.log("sending to reply queue(%s): %s", conf.rabbitmq.callback_queue, reply);
 							ch.publish(conf.rabbitmq.callback_queue, msg.properties.appId, new Buffer(reply),
-								{correlationId: msg.properties.correlationId});
+								{correlationId: msg.properties.correlationId, appId: msg.properties.appId});
 						});
 					}, {noAck: true});
 				});
