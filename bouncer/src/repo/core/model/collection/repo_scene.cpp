@@ -889,6 +889,9 @@ const std::vector<RepoNode*> nodes,
 const NodeType filter)
 {
 	std::vector<RepoNode*> filteredNodes;
+
+	//repoInfo << "NODES: " << nodes.size();
+
 	for (RepoNode* n : nodes)
 	{
 		if (n && n->getTypeAsEnum() == filter)
