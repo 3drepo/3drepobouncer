@@ -144,6 +144,8 @@ repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree& mesh, 
 				repo_material.opacity = 1.0f;
 			}
 
+			repo_material.shininess = 0.0f;
+
 			hasMaterial = true;
 
 			materialNode = new repo::core::model::MaterialNode(
