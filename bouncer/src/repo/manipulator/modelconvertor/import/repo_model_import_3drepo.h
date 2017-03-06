@@ -58,6 +58,7 @@ namespace repo{
 			{
 				private:
 					std::vector<repo::core::model::RepoNode *> node_map;
+					std::vector<repo::lib::RepoMatrix> trans_map;
 
 					void createObject(const boost::property_tree::ptree& tree);
 
@@ -65,7 +66,7 @@ namespace repo{
 					char *geomBuf;
 
 					repo::core::model::MetadataNode* createMetadataNode(const boost::property_tree::ptree& metadata, std::string parentName, repo::lib::RepoUUID &parentID);
-					repo::core::model::MeshNode* createMeshNode(const boost::property_tree::ptree& geometry, std::string parentName, repo::lib::RepoUUID &parentID);
+					repo::core::model::MeshNode* createMeshNode(const boost::property_tree::ptree& geometry, std::string parentName, repo::lib::RepoUUID &parentID, const repo::lib::RepoMatrix &trans);
 					void createMaterialNode(const boost::property_tree::ptree& material, std::string parentName, repo::lib::RepoUUID &parentID);
 
 					repo::core::model::RepoNodeSet cameras; //!< Cameras
@@ -76,6 +77,8 @@ namespace repo{
 					repo::core::model::RepoNodeSet textures;
 
 					std::string orgFile;
+					
+					std::vector<double> offset;
 
 				public:
 

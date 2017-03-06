@@ -94,7 +94,7 @@ std::vector<T> as_vector(ptree const& pt, ptree::key_type const& key)
     return r;
 }
 
-repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree& mesh, std::string parentName, repo::lib::RepoUUID &parentID)
+repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree& mesh, std::string parentName, repo::lib::RepoUUID &parentID, const repo::lib::RepoMatrix& trans)
 {
 	repo::core::model::MaterialNode *materialNode;
 
@@ -196,8 +196,9 @@ repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree& mesh, 
 
 	repo::lib::RepoVector3D min = vertices[0];
 	repo::lib::RepoVector3D max = vertices[0];
-	
-	for(const auto &v : vertices)
+
+
+	for(auto &v : vertices)
 	{
 		if (v.x < min.x) min.x = v.x;
 		if (v.y < min.y) min.y = v.y;
@@ -206,7 +207,39 @@ repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree& mesh, 
 		if (v.x > max.x) max.x = v.x;
 		if (v.y > max.y) max.y = v.y;
 		if (v.z > max.z) max.z = v.z;
+
+		if (!trans.isIdentity())
+		{
+			v = trans * v;
+		}
+
+		v.x -= offset[0];
+		v.y -= offset[1];
+		v.z -= offset[2];
 	}
+
+	min = trans * min;
+	max = trans * max;
+
+	/*
+	if (sceneMin.size() == 0)
+	{
+		for(int i = 0; i < 3; i++)
+		{
+			sceneMin.push_back(min[i]);
+			sceneMax.push_back(max[i]);
+		}
+	} 
+	else {
+		min.x = (sceneMin[0] < min.x) ? sceneMin[0] : min.x;
+		min.y = (sceneMin[1] < min.y) ? sceneMin[1] : min.y;
+		min.z = (sceneMin[2] < min.z) ? sceneMin[2] : min.z;
+
+		max.x = (sceneMax[0] > max.x) ? sceneMax[0] : max.x;
+		max.y = (sceneMax[1] > max.y) ? sceneMax[1] : max.y;
+		max.z = (sceneMax[2] > max.z) ? sceneMax[2] : max.z;
+	}*/
+
 		
 	std::vector<float> minBBox; // = as_vector<float>(props->second, "min");
 	std::vector<float> maxBBox; // = as_vector<float>(props->second, "max");
@@ -220,7 +253,6 @@ repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree& mesh, 
 	boundingBox.push_back(minBBox);
 	boundingBox.push_back(maxBBox);
 	
-
 	repo::core::model::MeshNode *meshNode = new repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(
 		vertices, faces, normals, boundingBox, uvChannels, colors, outline));
 
@@ -245,6 +277,7 @@ void RepoModelImport::createObject(const ptree& tree)
 	std::string transName = tree.get<std::string>("name", "");
 
 	repo::lib::RepoUUID parentSharedID = node_map[myParent]->getSharedID();
+	repo::lib::RepoMatrix parentTransform = trans_map[myParent];
 
 	std::vector<repo::lib::RepoUUID> parentIDs;
 	parentIDs.push_back(parentSharedID);
@@ -258,11 +291,15 @@ void RepoModelImport::createObject(const ptree& tree)
 		transMat = repo::lib::RepoMatrix(as_vector<float>(tree, "transformation"));
 	}
 
+	trans_map.push_back(parentTransform * transMat);
+
 	repo::core::model::TransformationNode * transNode =
 		new repo::core::model::TransformationNode(
-		repo::core::model::RepoBSONFactory::makeTransformationNode(transMat, transName, parentIDs));
+		repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), transName, parentIDs));
 
 	repo::lib::RepoUUID transID = transNode->getSharedID();
+
+	//repoInfo << "TRANS [" << node_map[myParent]->getName() << "][" << transName << "] : " << std::endl << trans_map.back().toString();
 
 	node_map.push_back(transNode);
 
@@ -278,7 +315,7 @@ void RepoModelImport::createObject(const ptree& tree)
 
 		if (props->first == REPO_IMPORT_GEOMETRY)
 		{
-			meshes.push_back(createMeshNode(props->second, transName, transID));
+			meshes.push_back(createMeshNode(props->second, transName, transID, trans_map.back()));
 		}
 	}
 
@@ -336,14 +373,31 @@ bool RepoModelImport::importModel(std::string filePath, std::string &errMsg)
 repo::core::model::RepoScene* RepoModelImport::generateRepoScene()
 {
 	ptree::assoc_iterator children = jsonHeader.find("parts");
+	
+	repo::lib::RepoMatrix mat;
 
+	
 	for(ptree::iterator child = children->second.begin(); child != children->second.end(); child++)
 	{
 		if (child->second.find("parent") == child->second.not_found())
 		{
 			std::string rootName = child->second.get<std::string>("name", "");
 
+			boost::optional< ptree& > rootBBOX = child->second.get_child_optional("bbox");
+
+			if (!rootBBOX) {
+				repoError << "No root bounding box specified.";
+				return nullptr;
+			}
+
+			offset = as_vector<double>(*rootBBOX, "min");
+
 			repoInfo << "ROOT: " << rootName;
+				
+			for(int i = 0; i < 3; i++)
+			{
+				repoInfo << "SM: " << offset[i];
+			}
 
 			boost::optional< ptree& > transMatTree = child->second.get_child_optional("transformation");
 			repo::lib::RepoMatrix transMat;
@@ -355,9 +409,10 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene()
 
 			repo::core::model::TransformationNode *rootNode =
 				new repo::core::model::TransformationNode(
-				repo::core::model::RepoBSONFactory::makeTransformationNode(transMat, rootName, std::vector<repo::lib::RepoUUID>()));
+				repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), rootName, std::vector<repo::lib::RepoUUID>()));
 
 			node_map.push_back(rootNode);
+			trans_map.push_back(transMat);
 			transformations.insert(rootNode);
 		} else {
 			createObject(child->second);
@@ -369,6 +424,8 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene()
 		fileVect.push_back(orgFile);
 
 	repo::core::model::RepoScene * scenePtr = new repo::core::model::RepoScene(fileVect, cameras, meshes, materials, metadata, textures, transformations);
+
+	scenePtr->setWorldOffset(offset);
 
 	delete[] geomBuf;
 
