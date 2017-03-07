@@ -24,6 +24,9 @@
 #include <sstream>
 #include <fstream>
 #include <iostream>
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 #include "../../../core/model/bson/repo_bson_builder.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../lib/repo_log.h"
@@ -346,7 +349,13 @@ bool RepoModelImport::importModel(std::string filePath, std::string &errMsg)
 	repoInfo << "IMPORT [" << fileName << "]";
 	repoInfo << "=== IMPORTING MODEL WITH REPO IMPORTER ===";
 	
-	std::ifstream fin(filePath, std::ios::binary);
+	std::ifstream finCompressed(filePath, std::ios_base::in | std::ios::binary);
+	boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
+
+	inbuf.push(boost::iostreams::gzip_decompressor());
+	inbuf.push(finCompressed);
+
+	std::istream fin(&inbuf);
 
 	int64_t headerSize, geometrySize;
 
@@ -366,7 +375,7 @@ bool RepoModelImport::importModel(std::string filePath, std::string &errMsg)
 	std::stringstream bufReader(jsonBuf);
 	read_json(bufReader, jsonHeader);
 
-	fin.close();
+	finCompressed.close();
 	delete[] jsonBuf;
 
 	return true;
