@@ -140,14 +140,30 @@ repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree& mesh, 
 				repo_material.diffuse = as_vector<float>(props->second, "diffuse");
 			}
 
+			if (props->second.find("specular") != props->second.not_found())
+			{
+				repo_material.specular = as_vector<float>(props->second, "specular");
+			}
+
+			if (props->second.find("emissive") != props->second.not_found())
+			{
+				repo_material.emissive = as_vector<float>(props->second, "emissive");
+			}
+
+			if (props->second.find("ambient") != props->second.not_found())
+			{
+				repo_material.ambient = as_vector<float>(props->second, "ambient");
+			}
+
 			if (props->second.find("transparency") != props->second.not_found())
 			{
 				repo_material.opacity = 1.0f - props->second.get<float>("transparency");
-			} else {
-				repo_material.opacity = 1.0f;
-			}
+			} 
 
-			repo_material.shininess = 0.0f;
+			if (props->second.find("shininess") != props->second.not_found())
+			{
+				repo_material.shininess = props->second.get<float>("shininess");
+			}
 
 			hasMaterial = true;
 
@@ -169,9 +185,6 @@ repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree& mesh, 
 				tmpVec.x = tmpVertices[i * 3];
 				tmpVec.y = tmpVertices[i * 3 + 1];
 				tmpVec.z = tmpVertices[i * 3 + 2];
-
-				//if (props->first == REPO_IMPORT_VERTICES)
-				//	repoInfo << "NV: " << numVertices << " V: " << tmpVec.x << " " << tmpVec.y << " " << tmpVec.z;
 
 				if (props->first == REPO_IMPORT_VERTICES )
 					vertices.push_back(tmpVec);
@@ -202,7 +215,6 @@ repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree& mesh, 
 	repo::lib::RepoVector3D min = vertices[0];
 	repo::lib::RepoVector3D max = vertices[0];
 
-
 	for(auto &v : vertices)
 	{
 		if (v.x < min.x) min.x = v.x;
@@ -226,6 +238,24 @@ repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree& mesh, 
 	min = trans * min;
 	max = trans * max;
 
+	if (!trans.isIdentity())
+	{
+		repo::lib::RepoMatrix invTrans;
+
+		invTrans = trans.invert().transpose();
+
+		auto data = invTrans.getData();
+		data[3] = data[7] = data[11] = 0;
+		data[12] = data[13] = data[14] = 0;
+
+		repo::lib::RepoMatrix normTrans(data);
+
+		for(auto &n : normals)
+		{
+			n = normTrans * n;
+		}	
+	}
+	
 	/*
 	if (sceneMin.size() == 0)
 	{
