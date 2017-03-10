@@ -380,35 +380,42 @@ bool RepoModelImport::importModel(std::string filePath, std::string &errMsg)
 	repoInfo << "=== IMPORTING MODEL WITH REPO IMPORTER ===";
 	
 	std::ifstream finCompressed(filePath, std::ios_base::in | std::ios::binary);
-	boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
 
-	inbuf.push(boost::iostreams::gzip_decompressor());
-	inbuf.push(finCompressed);
+	if(finCompressed)
+	{
+		boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
 
-	std::istream fin(&inbuf);
+		inbuf.push(boost::iostreams::gzip_decompressor());
+		inbuf.push(finCompressed);
 
-	int64_t headerSize, geometrySize;
+		std::istream fin(&inbuf);
 
-	fin.read((char*)&headerSize, sizeof(int64_t));
-	fin.read((char*)&geometrySize, sizeof(int64_t));
-	
-	repoInfo << "HEADER: " << headerSize << " GEOMETRY: " << geometrySize;
-	
-	char *jsonBuf = new char[headerSize];
-	fin.read(jsonBuf, headerSize);
+		int64_t headerSize, geometrySize;
 
-	//std::cout << jsonBuf << std::endl;
+		fin.read((char*)&headerSize, sizeof(int64_t));
+		fin.read((char*)&geometrySize, sizeof(int64_t));
+		
+		repoInfo << "HEADER: " << headerSize << " GEOMETRY: " << geometrySize;
+		
+		char *jsonBuf = new char[headerSize];
+		fin.read(jsonBuf, headerSize);
 
-	geomBuf = new char[geometrySize];
-	fin.read(geomBuf, geometrySize);
+		//std::cout << jsonBuf << std::endl;
 
-	std::stringstream bufReader(jsonBuf);
-	read_json(bufReader, jsonHeader);
+		geomBuf = new char[geometrySize];
+		fin.read(geomBuf, geometrySize);
 
-	finCompressed.close();
-	delete[] jsonBuf;
+		std::stringstream bufReader(jsonBuf);
+		read_json(bufReader, jsonHeader);
 
-	return true;
+		finCompressed.close();
+		delete[] jsonBuf;
+
+		return true;
+	} else {
+		repoError << "File " << fileName << " not found.";
+		return false;
+	}
 }
 
 repo::core::model::RepoScene* RepoModelImport::generateRepoScene()
