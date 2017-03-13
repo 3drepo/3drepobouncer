@@ -35,7 +35,8 @@
 	const conf = require("./config.js");
 	const path = require("path");
 	const exec = require("child_process").exec;
-
+	const importToy = require('./importToy');
+	const toyProjectDir = './toy';
 	/**
 	 * Test that the client is working and
 	 * it is able to connect to the database
@@ -58,9 +59,41 @@
 	}
 
 	/**
+	 * handle queue message
+	 */
+	function handleMessage(cmd, rid, callback){
+		// command start with importToy is handled here instead of passing it to bouncer
+		if(cmd.startsWith('importToy')){
+			
+			let args = cmd.split(' ');
+			let database = args[1];
+			let project = args[2];
+			let username = database;
+
+			importToy(conf.bouncer, toyProjectDir, username, database, project).then(() => {
+				// after importing the toy regenerate the tree as well
+				exeCommand(`genStash ${database} ${project} tree`, rid, callback);
+			}).catch(err => {
+
+				console.log("importToy module error", err, err.stack);
+
+				callback(JSON.stringify({
+					value: 12,
+					message: err.message
+				}));
+			});
+
+		} else {
+			exeCommand(cmd, rid, callback);
+		}
+
+	} 
+
+	/**
 	 * Execute the Command and provide a reply message to the callback function
 	 */
 	function exeCommand(cmd, rid, callback){
+
 		let logRootDir = conf.bouncer.log_dir;
 
 		if(logRootDir === null) {
@@ -103,10 +136,10 @@
 					ch.consume(conf.rabbitmq.worker_queue, function(msg){
 						console.log(" [x] Received %s", msg.content.toString());
 
-						exeCommand(msg.content.toString(), msg.properties.correlationId, function(reply){
+						handleMessage(msg.content.toString(), msg.properties.correlationId, function(reply){
 							console.log("sending to reply queue(%s): %s", conf.rabbitmq.callback_queue, reply);
 							ch.publish(conf.rabbitmq.callback_queue, msg.properties.appId, new Buffer(reply),
-								{correlationId: msg.properties.correlationId});
+								{correlationId: msg.properties.correlationId, appId: msg.properties.appId});
 						});
 					}, {noAck: true});
 				});
