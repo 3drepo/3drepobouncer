@@ -99,16 +99,18 @@
 
 					ch.assertQueue(conf.rabbitmq.worker_queue, {durable: true});
 					console.log("Bouncer Client Queue started. Waiting for messages in %s of %s....", conf.rabbitmq.worker_queue, conf.rabbitmq.host);
-					ch.prefetch(1);
+					let prefetchCount = conf.rabbitmq.prefetch || 1;
+					ch.prefetch(prefetchCount);
 					ch.consume(conf.rabbitmq.worker_queue, function(msg){
 						console.log(" [x] Received %s", msg.content.toString());
 
 						exeCommand(msg.content.toString(), msg.properties.correlationId, function(reply){
+							ch.ack(msg);
 							console.log("sending to reply queue(%s): %s", conf.rabbitmq.callback_queue, reply);
 							ch.publish(conf.rabbitmq.callback_queue, msg.properties.appId, new Buffer(reply),
 								{correlationId: msg.properties.correlationId});
 						});
-					}, {noAck: true});
+					}, {noAck: false});
 				});
 			}
 		});

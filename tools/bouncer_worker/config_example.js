@@ -2,7 +2,8 @@ module.exports = {
 	rabbitmq:{
 		host: 'amqp://username:password@localhost:5672',
 		worker_queue: 'jobq'
-		callback_queue: 'callbackq'
+		callback_queue: 'callbackq',
+		prefetch: 1
 	},
 	bouncer:{
 		path : 'C:/local/3drepobouncer/bin/repobouncerclient.exe',
