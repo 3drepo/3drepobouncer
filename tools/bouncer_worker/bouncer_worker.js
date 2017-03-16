@@ -70,7 +70,15 @@
 			let project = args[2];
 			let username = database;
 
-			importToy(conf.bouncer, toyProjectDir, username, database, project).then(() => {
+			let dbConfig = {
+				username: conf.bouncer.username,
+				password: conf.bouncer.password,
+				dbhost: conf.bouncer.dbhost,
+				dbport: conf.bouncer.dbport,
+				writeConcern: conf.mongoimport && conf.mongoimport.writeConcern
+			};
+
+			importToy(dbConfig, toyProjectDir, username, database, project).then(() => {
 				// after importing the toy regenerate the tree as well
 				exeCommand(`genStash ${database} ${project} tree`, rid, callback);
 			}).catch(err => {
