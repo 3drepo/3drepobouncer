@@ -311,6 +311,11 @@ void RepoModelImport::createObject(const ptree& tree)
 
 	std::string transName = tree.get<std::string>("name", "");
 
+	if (myParent > node_map.size())
+	{
+		repoError << "Invalid parent ID: " << myParent;
+	}
+
 	repo::lib::RepoUUID parentSharedID = node_map[myParent]->getSharedID();
 	repo::lib::RepoMatrix parentTransform = trans_map[myParent];
 
@@ -390,7 +395,18 @@ bool RepoModelImport::importModel(std::string filePath, std::string &errMsg)
 
 		std::istream fin(&inbuf);
 
+		char fileVersion[6];
 		int64_t headerSize, geometrySize;
+
+		fin.read(fileVersion, 6);
+
+		if (strcmp(fileVersion, supportedFileVersion) != 0)
+		{
+			repoError << "UNSUPPORTED BIM FILE VERSION " << fileVersion;
+			return false;
+		}
+
+		repoInfo << "FILE VERSION: " << fileVersion;
 
 		fin.read((char*)&headerSize, sizeof(int64_t));
 		fin.read((char*)&geometrySize, sizeof(int64_t));
@@ -420,10 +436,8 @@ bool RepoModelImport::importModel(std::string filePath, std::string &errMsg)
 
 repo::core::model::RepoScene* RepoModelImport::generateRepoScene()
 {
-	ptree::assoc_iterator children = jsonHeader.find("parts");
-	
+	ptree::assoc_iterator children = jsonHeader.find("parts");	
 	repo::lib::RepoMatrix mat;
-
 	
 	for(ptree::iterator child = children->second.begin(); child != children->second.end(); child++)
 	{

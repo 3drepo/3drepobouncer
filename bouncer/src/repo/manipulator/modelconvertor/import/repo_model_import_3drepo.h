@@ -54,6 +54,8 @@ namespace repo{
 
 			const std::string REPO_IMPORT_BBOX = "bbox";
 
+			const char supportedFileVersion[7] = "BIM001";
+			
 			class RepoModelImport : public AbstractModelImport
 			{
 				private:
