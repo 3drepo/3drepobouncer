@@ -11,6 +11,11 @@ module.exports = {
 		username : 'username',
 		password : 'password',
 		log_dir : '/var/log/3drepo/bouncer/';
+	},
+	mongoimport:{
+		writeConcern: {
+			w: 1
+		},
 	}
 
 }

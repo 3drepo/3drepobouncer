@@ -42,7 +42,7 @@ module.exports = function(dbConfig, dir, username, database, project){
 
 		let promises = [];
 		let hostString = `${dbConfig.dbhost}:${dbConfig.dbport}`;
-
+		let writeConcern = dbConfig.writeConcern || {w: 1};
 
 		//mongoimport all json first
 
@@ -53,7 +53,7 @@ module.exports = function(dbConfig, dir, username, database, project){
 			promises.push(new Promise((resolve, reject) => {
 
 				require('child_process').exec(
-				`mongoimport -j 8 --host ${hostString} --username ${dbUsername} --password ${dbPassword} --authenticationDatabase admin --db ${database} --collection ${collection} --file ${dir}/${filename}`,
+				`mongoimport -j 8 --host ${hostString} --username ${dbUsername} --password ${dbPassword} --authenticationDatabase admin --db ${database} --collection ${collection} --file ${dir}/${filename} --writeConcern '${JSON.stringify(writeConcern)}'`,
 				{
 					cwd: __dirname
 				}, function (err) {
