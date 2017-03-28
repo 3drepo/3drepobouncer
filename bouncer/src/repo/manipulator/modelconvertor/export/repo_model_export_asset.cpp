@@ -1,0 +1,206 @@
+/**
+*  Copyright (C) 2016 3D Repo Ltd
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU Affero General Public License as
+*  published by the Free Software Foundation, either version 3 of the
+*  License, or (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU Affero General Public License for more details.
+*
+*  You should have received a copy of the GNU Affero General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/**
+* Allows Export functionality from 3D Repo World to asset bundle
+*/
+
+#include "repo_model_export_asset.h"
+#include "../../../core/model/bson/repo_bson_factory.h"
+#include "../../../lib/repo_log.h"
+
+
+using namespace repo::manipulator::modelconvertor;
+const static size_t SRC_MAX_VERTEX_LIMIT = 65535;
+//Labels for multipart JSON descriptor files
+const static std::string MP_LABEL_APPEARANCE = "appearance";
+const static std::string MP_LABEL_MAT_DIFFUSE = "diffuseColor";
+const static std::string MP_LABEL_MAT_EMISSIVE = "emissiveColor";
+const static std::string MP_LABEL_MATERIAL = "material";
+const static std::string MP_LABEL_MAPPING = "mapping";
+const static std::string MP_LABEL_MAT_SHININESS = "shininess";
+const static std::string MP_LABEL_MAT_SPECULAR = "specularColor";
+const static std::string MP_LABEL_MAT_TRANSPARENCY = "transparency";
+const static std::string MP_LABEL_MAX = "max";
+const static std::string MP_LABEL_MAX_GEO_COUNT = "maxGeoCount";
+const static std::string MP_LABEL_MIN = "min";
+const static std::string MP_LABEL_NAME = "name";
+const static std::string MP_LABEL_NUM_IDs = "numberOfIDs";
+const static std::string MP_LABEL_USAGE = "usage";
+
+AssetModelExport::AssetModelExport(
+	const repo::core::model::RepoScene *scene
+	) : WebModelExport(scene)
+{
+	//Considering all newly imported models should have a stash graph, we only need to support stash graph?
+	if (convertSuccess)
+	{
+		if (gType == repo::core::model::RepoScene::GraphType::OPTIMIZED)
+		{
+			convertSuccess = generateTreeRepresentation();
+		}
+		else  if (!(convertSuccess = !scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()))
+		{
+			repoError << "Scene has no optimised graph and it is not a federation graph. SRC Exporter relies on this.";
+		}
+	}
+	else
+	{
+		repoError << "Unable to export to SRC : Empty scene graph!";
+	}
+}
+
+AssetModelExport::~AssetModelExport()
+{
+}
+
+repo_web_buffers_t AssetModelExport::getAllFilesExportedAsBuffer() const
+{
+	return{ std::unordered_map<std::string, std::vector<uint8_t>>(), getJSONFilesAsBuffer() };
+}
+
+bool AssetModelExport::generateJSONMapping(
+	const repo::core::model::MeshNode  *mesh,
+	const repo::core::model::RepoScene *scene,
+	const std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> &splitMapping)
+{
+	bool success;
+	if (success = mesh)
+	{
+		repo::lib::PropertyTree jsonTree;
+		std::vector<repo_mesh_mapping_t> mappings = mesh->getMeshMapping();
+		std::sort(mappings.begin(), mappings.end(),
+			[](repo_mesh_mapping_t const& a, repo_mesh_mapping_t const& b) { return a.vertFrom < b.vertFrom; });
+
+		size_t mappingLength = mappings.size();
+
+		jsonTree.addToTree(MP_LABEL_NUM_IDs, mappingLength);
+		jsonTree.addToTree(MP_LABEL_MAX_GEO_COUNT, mappingLength);
+
+		std::vector<repo::core::model::RepoNode*> matChild =
+			scene->getChildrenNodesFiltered(gType, mesh->getSharedID(), repo::core::model::NodeType::MATERIAL);
+
+		std::vector <repo::lib::PropertyTree> matChildrenTrees;
+		for (size_t i = 0; i < matChild.size(); ++i)
+		{
+			repo::lib::PropertyTree matTree;
+			const repo::core::model::MaterialNode *matNode = (const repo::core::model::MaterialNode *) matChild[i];
+			matTree.addToTree(MP_LABEL_NAME, matNode->getUniqueID().toString());
+			repo_material_t matStruct = matNode->getMaterialStruct();
+
+			if (matStruct.diffuse.size())
+				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_DIFFUSE, matStruct.diffuse, false);
+
+			if (matStruct.emissive.size())
+				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_EMISSIVE, matStruct.emissive, false);
+
+			if (matStruct.shininess == matStruct.shininess)
+				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_SHININESS, matStruct.shininess);
+
+			if (matStruct.specular.size())
+				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_SPECULAR, matStruct.specular, false);
+
+			if (matStruct.opacity == matStruct.opacity)
+				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_TRANSPARENCY, 1.0 - matStruct.opacity);
+
+			matChildrenTrees.push_back(matTree);
+		}
+
+		jsonTree.addArrayObjects(MP_LABEL_APPEARANCE, matChildrenTrees);
+
+		std::vector<repo::lib::PropertyTree> mappingTrees;
+		std::string meshUID = mesh->getUniqueID().toString();
+		//Could get the mesh split function to pass a mapping out so we don't do this again.
+		for (size_t i = 0; i < mappingLength; ++i)
+		{
+			auto mapIt = splitMapping.find(mappings[i].mesh_id);
+			if (mapIt != splitMapping.end())
+			{
+				for (const uint32_t &subMeshID : mapIt->second)
+				{
+					repo::lib::PropertyTree mappingTree;
+
+					mappingTree.addToTree(MP_LABEL_NAME, mappings[i].mesh_id.toString());
+					mappingTree.addToTree(MP_LABEL_APPEARANCE, mappings[i].material_id.toString());
+					mappingTree.addToTree(MP_LABEL_MIN, mappings[i].min);
+					mappingTree.addToTree(MP_LABEL_MAX, mappings[i].max);
+					std::vector<std::string> usageArr = { meshUID + "_" + std::to_string(subMeshID) };
+					mappingTree.addToTree(MP_LABEL_USAGE, usageArr);
+
+					mappingTrees.push_back(mappingTree);
+				}
+			}
+			else
+			{
+				repoError << "Failed to find split mapping for id: " << mappings[i].mesh_id;
+			}
+		}
+
+		jsonTree.addArrayObjects(MP_LABEL_MAPPING, mappingTrees);
+
+		std::string jsonFileName = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + mesh->getUniqueID().toString() + ".json.mpc";
+
+		jsonTrees[jsonFileName] = jsonTree;
+	}
+	else
+	{
+		repoError << "Unable to generate JSON file mapping : null pointer to mesh!";
+	}
+
+	return success;
+}
+
+bool AssetModelExport::generateTreeRepresentation(
+	)
+{
+	bool success;
+	if (success = scene->hasRoot(gType))
+	{
+		auto meshes = scene->getAllMeshes(gType);
+		for (const repo::core::model::RepoNode* node : meshes)
+		{
+			auto mesh = dynamic_cast<const repo::core::model::MeshNode*>(node);
+			if (!mesh)
+			{
+				repoError << "Failed to cast a Repo Node of type mesh into a MeshNode(" << node->getUniqueID() << "). Skipping...";
+			}
+			std::string textureID = scene->getTextureIDForMesh(gType, mesh->getSharedID());
+
+			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter =
+				new repo::manipulator::modelutility::MeshMapReorganiser(mesh, SRC_MAX_VERTEX_LIMIT);
+			reorganisedMeshes.push_back(std::make_shared<repo::core::model::MeshNode>(reSplitter->getRemappedMesh()));
+
+			if (success = !(reorganisedMeshes.back()->isEmpty()))
+			{
+				serialisedFaceBuf.push_back(reSplitter->getSerialisedFaces());
+				idMapBuf.push_back(reSplitter->getIDMapArrays());
+				meshMappings.push_back(reSplitter->getMappingsPerSubMesh());
+				std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> splitMapping = reSplitter->getSplitMapping();
+			
+				success &= generateJSONMapping(mesh, scene, reSplitter->getSplitMapping());							
+				delete reSplitter;
+			}
+			else
+			{
+				repoError << "Failed to generate a remapped mesh for mesh with ID : " << mesh->getUniqueID();
+				break;
+			}
+		}
+	}
+
+	return success;
+}

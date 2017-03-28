@@ -93,7 +93,8 @@ RepoScene::RepoScene(
 	const std::string &issuesExt,
 	const std::string &srcExt,
 	const std::string &gltfExt,
-	const std::string &jsonExt)
+	const std::string &jsonExt,
+	const std::string &unityExt)
 	:
 	databaseName(sanitizeDatabaseName(database)),
 	projectName(sanitizeName(projectName)),
@@ -105,6 +106,7 @@ RepoScene::RepoScene(
 	srcExt(sanitizeExt(srcExt)),
 	gltfExt(sanitizeExt(gltfExt)),
 	jsonExt(sanitizeExt(jsonExt)),
+	unityExt(sanitizeExt(unityExt)),
 	headRevision(true),
 	unRevisioned(false),
 	revNode(0),
