@@ -42,6 +42,12 @@ const static std::string MP_LABEL_NAME = "name";
 const static std::string MP_LABEL_NUM_IDs = "numberOfIDs";
 const static std::string MP_LABEL_USAGE = "usage";
 
+const static std::string MP_LABEL_ASSETS = "assets";
+const static std::string MP_LABEL_JSONS = "jsonFiles";
+const static std::string MP_LABEL_OFFSET = "offset";
+const static std::string MP_LABEL_DATABASE = "database";
+const static std::string MP_LABEL_PROJECT = "project";
+
 AssetModelExport::AssetModelExport(
 	const repo::core::model::RepoScene *scene
 	) : WebModelExport(scene)
@@ -50,7 +56,7 @@ AssetModelExport::AssetModelExport(
 	if (convertSuccess)
 	{
 		if (gType == repo::core::model::RepoScene::GraphType::OPTIMIZED)
-		{
+		{			
 			convertSuccess = generateTreeRepresentation();
 		}
 		else  if (!(convertSuccess = !scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()))
@@ -171,6 +177,8 @@ bool AssetModelExport::generateTreeRepresentation(
 	if (success = scene->hasRoot(gType))
 	{
 		auto meshes = scene->getAllMeshes(gType);
+
+		std::vector<std::string> assetFiles, jsons;
 		for (const repo::core::model::RepoNode* node : meshes)
 		{
 			auto mesh = dynamic_cast<const repo::core::model::MeshNode*>(node);
@@ -191,6 +199,10 @@ bool AssetModelExport::generateTreeRepresentation(
 				meshMappings.push_back(reSplitter->getMappingsPerSubMesh());
 				std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> splitMapping = reSplitter->getSplitMapping();
 			
+				std::string fNamePrefix = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + mesh->getUniqueID().toString();
+				assetFiles.push_back(fNamePrefix + ".unity3d");
+				jsons.push_back(fNamePrefix + ".json.mpc");
+				
 				success &= generateJSONMapping(mesh, scene, reSplitter->getSplitMapping());							
 				delete reSplitter;
 			}
@@ -200,6 +212,15 @@ bool AssetModelExport::generateTreeRepresentation(
 				break;
 			}
 		}
+
+		std::string assetListFile = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/revision/" + scene->getRevisionID().toString() + "/unityAssets.json";
+		repo::lib::PropertyTree assetListTree;
+		assetListTree.addToTree(MP_LABEL_ASSETS, assetFiles);
+		assetListTree.addToTree(MP_LABEL_JSONS, jsons);
+		assetListTree.addToTree(MP_LABEL_OFFSET, scene->getWorldOffset());
+		assetListTree.addToTree(MP_LABEL_DATABASE, scene->getDatabaseName());
+		assetListTree.addToTree(MP_LABEL_PROJECT, scene->getProjectName());
+		jsonTrees[assetListFile] = assetListTree;
 	}
 
 	return success;

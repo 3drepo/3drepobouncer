@@ -94,6 +94,7 @@ namespace repo{
 				std::vector<std::vector<uint16_t>> serialisedFaceBuf;
 				std::vector<std::vector<std::vector<float>>> idMapBuf;
 				std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> meshMappings;
+				std::string assetListFile;
 			};
 		} //namespace modelconvertor
 	} //namespace manipulator
