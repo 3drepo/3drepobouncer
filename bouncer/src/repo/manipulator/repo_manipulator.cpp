@@ -766,7 +766,7 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 		msg = "Unsupported file extension";
 		return nullptr;
 	}
-	
+
 	repo::manipulator::modelconvertor::AbstractModelImport* modelConvertor = nullptr;
 
 	bool useIFCImporter = fileExt == ".IFC" && (!config || config->getUseIFCOpenShell());

@@ -24,7 +24,6 @@
 #include <sstream>
 #include <fstream>
 #include <iostream>
-#include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/iostreams/copy.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 #include "../../../core/model/bson/repo_bson_builder.h"
@@ -37,13 +36,15 @@ using namespace boost::property_tree;
 RepoModelImport::RepoModelImport(const ModelImportConfig *settings) :
 AbstractModelImport(settings)
 {
+	fin = nullptr;
+	finCompressed = nullptr;
 }
 
 RepoModelImport::~RepoModelImport()
 {
 }
 
-repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(const ptree& metaTree, std::string parentName, repo::lib::RepoUUID &parentID)
+repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(const ptree &metaTree, const std::string &parentName, const repo::lib::RepoUUID &parentID)
 {
 	//build the metadata as a bson
 	repo::core::model::RepoBSONBuilder builder;
@@ -76,8 +77,6 @@ repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(const ptree
 	}
 
 	repo::core::model::RepoBSON metaBSON = builder.obj();
-	//std::vector<repo::lib::RepoUUID> parentIDs;
-	//parentIDs.push_back(parentID);
 
 	repo::core::model::MetadataNode *metaNode = new repo::core::model::MetadataNode(
 		repo::core::model::RepoBSONFactory::makeMetaDataNode(metaBSON, "", parentName));
@@ -87,17 +86,7 @@ repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(const ptree
 	return metaNode;
 }
 
-//http://stackoverflow.com/questions/23481262/using-boost-property-tree-to-read-int-array
-template <typename T>
-std::vector<T> as_vector(ptree const& pt, ptree::key_type const& key)
-{
-    std::vector<T> r;
-    for (auto& item : pt.get_child(key))
-        r.push_back(item.second.get_value<T>());
-    return r;
-}
-
-repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree& mesh, std::string parentName, repo::lib::RepoUUID &parentID, const repo::lib::RepoMatrix& trans)
+repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree &mesh, const std::string &parentName, const repo::lib::RepoUUID &parentID, const repo::lib::RepoMatrix &trans)
 {
 	repo::core::model::MaterialNode *materialNode;
 
@@ -105,15 +94,6 @@ repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree& mesh, 
 
 	int numIndices  = mesh.get<int>("numIndices");
 	int numVertices = mesh.get<int>("numVertices");
-
-	/*
-	std::vector<int> faces;
-	std::vector<float> vertices;
-	std::vector<float> normals;
-	std::vector<float> colors;
-	std::vector<std::vector<float>> uvChannels;
-	std::vector<std::vector<float>> outline;
-	*/
 
 	//Avoid using assimp objects everywhere -> converting assimp objects into repo structs
 	std::vector<repo::lib::RepoVector3D> vertices;
@@ -126,44 +106,29 @@ repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree& mesh, 
 	std::vector<repo_color4d_t> colors;
 	std::vector<std::vector<float> > outline;
 
-	//faces.resize(numIndices);
-	//vertices.resize(numVertices); normals.resize(numVertices); 
-
 	for(ptree::const_iterator props = mesh.begin(); props != mesh.end(); props++)
 	{
 		if (props->first == REPO_IMPORT_MATERIAL)
 		{
 			repo_material_t repo_material;
-			
+
 			if (props->second.find("diffuse") != props->second.not_found())
-			{
 				repo_material.diffuse = as_vector<float>(props->second, "diffuse");
-			}
 
 			if (props->second.find("specular") != props->second.not_found())
-			{
 				repo_material.specular = as_vector<float>(props->second, "specular");
-			}
 
 			if (props->second.find("emissive") != props->second.not_found())
-			{
 				repo_material.emissive = as_vector<float>(props->second, "emissive");
-			}
 
 			if (props->second.find("ambient") != props->second.not_found())
-			{
 				repo_material.ambient = as_vector<float>(props->second, "ambient");
-			}
 
 			if (props->second.find("transparency") != props->second.not_found())
-			{
 				repo_material.opacity = 1.0f - props->second.get<float>("transparency");
-			} 
 
 			if (props->second.find("shininess") != props->second.not_found())
-			{
 				repo_material.shininess = props->second.get<float>("shininess");
-			}
 
 			hasMaterial = true;
 
@@ -253,41 +218,18 @@ repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree& mesh, 
 		for(auto &n : normals)
 		{
 			n = normTrans * n;
-		}	
-	}
-	
-	/*
-	if (sceneMin.size() == 0)
-	{
-		for(int i = 0; i < 3; i++)
-		{
-			sceneMin.push_back(min[i]);
-			sceneMax.push_back(max[i]);
 		}
-	} 
-	else {
-		min.x = (sceneMin[0] < min.x) ? sceneMin[0] : min.x;
-		min.y = (sceneMin[1] < min.y) ? sceneMin[1] : min.y;
-		min.z = (sceneMin[2] < min.z) ? sceneMin[2] : min.z;
+	}
 
-		max.x = (sceneMax[0] > max.x) ? sceneMax[0] : max.x;
-		max.y = (sceneMax[1] > max.y) ? sceneMax[1] : max.y;
-		max.z = (sceneMax[2] > max.z) ? sceneMax[2] : max.z;
-	}*/
-
-		
-	std::vector<float> minBBox; // = as_vector<float>(props->second, "min");
-	std::vector<float> maxBBox; // = as_vector<float>(props->second, "max");
-	
-	//repoInfo << "BBOX: " << min.x << " " << min.y << " " << min.z;
-	//repoInfo << "BBOX: " << max.x << " " << max.y << " " << max.z;
+	std::vector<float> minBBox;
+	std::vector<float> maxBBox;
 
 	minBBox.push_back(min.x); minBBox.push_back(min.y); minBBox.push_back(min.z);
 	maxBBox.push_back(max.x); maxBBox.push_back(max.y); maxBBox.push_back(max.z);
 
 	boundingBox.push_back(minBBox);
 	boundingBox.push_back(maxBBox);
-	
+
 	repo::core::model::MeshNode *meshNode = new repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(
 		vertices, faces, normals, boundingBox, uvChannels, colors, outline));
 
@@ -323,7 +265,7 @@ void RepoModelImport::createObject(const ptree& tree)
 	parentIDs.push_back(parentSharedID);
 
 	boost::optional< const ptree& > transMatTree = tree.get_child_optional("transformation");
-	
+
 	repo::lib::RepoMatrix transMat;
 
 	if (transMatTree)
@@ -338,8 +280,6 @@ void RepoModelImport::createObject(const ptree& tree)
 		repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), transName, parentIDs));
 
 	repo::lib::RepoUUID transID = transNode->getSharedID();
-
-	//repoInfo << "TRANS [" << node_map[myParent]->getName() << "][" << transName << "] : " << std::endl << trans_map.back().toString();
 
 	node_map.push_back(transNode);
 
@@ -377,55 +317,87 @@ void RepoModelImport::createObject(const ptree& tree)
 	transformations.insert(transNode);
 }
 
+void RepoModelImport::skipAheadInFile(long amount)
+{
+	// Cannot use seekg on GZIP file
+	char *tmpBuf = new char[amount];
+	fin->read(tmpBuf, amount);
+	delete[] tmpBuf;
+	//sizesStart - metaSize);
+}
+
 bool RepoModelImport::importModel(std::string filePath, std::string &errMsg)
 {
 	std::string fileName = getFileName(filePath);
 
 	repoInfo << "IMPORT [" << fileName << "]";
 	repoInfo << "=== IMPORTING MODEL WITH REPO IMPORTER ===";
-	
-	std::ifstream finCompressed(filePath, std::ios_base::in | std::ios::binary);
+
+	finCompressed = new std::ifstream(filePath, std::ios_base::in | std::ios::binary);
 
 	if(finCompressed)
 	{
-		boost::iostreams::filtering_streambuf<boost::iostreams::input> inbuf;
+		inbuf = new boost::iostreams::filtering_streambuf<boost::iostreams::input>();
 
-		inbuf.push(boost::iostreams::gzip_decompressor());
-		inbuf.push(finCompressed);
+		inbuf->push(boost::iostreams::gzip_decompressor());
+		inbuf->push(*finCompressed);
 
-		std::istream fin(&inbuf);
+		fin = new std::istream(inbuf);
 
-		char fileVersion[6];
+		const int fileVersionSize = strlen(supportedFileVersion);
+		char fileVersion[fileVersionSize];
 		int64_t headerSize, geometrySize;
 
-		fin.read(fileVersion, 6);
+		fin->read(fileVersion, fileVersionSize);
 
 		if (strcmp(fileVersion, supportedFileVersion) != 0)
 		{
-			repoError << "UNSUPPORTED BIM FILE VERSION " << fileVersion;
+			repoError << "Unsupported BIM file version" << fileVersion;
 			return false;
 		}
 
-		repoInfo << "FILE VERSION: " << fileVersion;
+		repoInfo << "Loading BIM file [VERSION: " << fileVersion << "]";
 
-		fin.read((char*)&headerSize, sizeof(int64_t));
-		fin.read((char*)&geometrySize, sizeof(int64_t));
-		
-		repoInfo << "HEADER: " << headerSize << " GEOMETRY: " << geometrySize;
-		
-		char *jsonBuf = new char[headerSize];
-		fin.read(jsonBuf, headerSize);
+		// Size of metadata at start
+		size_t metaSize = fileVersionSize + sizeof(int64_t) * 5;
 
-		//std::cout << jsonBuf << std::endl;
+		fin->read((char*)&headerSize, sizeof(int64_t));
+		fin->read((char*)&geometrySize, sizeof(int64_t));
+		fin->read((char*)&sizesStart, sizeof(int64_t));
+		fin->read((char*)&sizesSize, sizeof(int64_t));
+		fin->read((char*)&numChildren, sizeof(int64_t));
+
+		repoInfo << "SIZE: header = " << headerSize << " bytes, geometry = " << geometrySize << " bytes.";
+		repoInfo << "SIZE ARRAY: location = " << sizesStart << " bytes, size = " << sizesSize << " bytes.";
+		repoInfo << "Number of parts to process : " << numChildren;
+
+		skipAheadInFile(sizesStart - metaSize);
+
+		boost::property_tree::ptree sizesObject = getNextJSON(sizesSize);
+		sizes = as_vector<long>(sizesObject, "data");
+
+		skipAheadInFile(headerSize + metaSize - (sizesStart + sizesSize));
+
+		repoInfo << "Reading geometry buffer";
 
 		geomBuf = new char[geometrySize];
-		fin.read(geomBuf, geometrySize);
+		fin->read(geomBuf, geometrySize);
 
-		std::stringstream bufReader(jsonBuf);
-		read_json(bufReader, jsonHeader);
+		finCompressed->close();
+		delete finCompressed;
 
-		finCompressed.close();
-		delete[] jsonBuf;
+		finCompressed = new std::ifstream(filePath, std::ios_base::in | std::ios::binary);
+
+		delete fin;
+
+		inbuf->reset();
+		inbuf->push(boost::iostreams::gzip_decompressor());
+		inbuf->push(*finCompressed);
+
+		fin = new std::istream(inbuf);
+
+		// Skip to the root start. No seekg for GZIPped files.
+		skipAheadInFile(sizes[0]);
 
 		return true;
 	} else {
@@ -434,51 +406,67 @@ bool RepoModelImport::importModel(std::string filePath, std::string &errMsg)
 	}
 }
 
+boost::property_tree::ptree RepoModelImport::getNextJSON(long jsonSize)
+{
+	boost::property_tree::ptree singleJSON;
+	char *jsonBuf = new char[jsonSize + 1];
+
+	fin->read(jsonBuf, jsonSize);
+	jsonBuf[jsonSize] = '\0';
+
+	std::stringstream bufReader(jsonBuf);
+	read_json(bufReader, singleJSON);
+
+	delete[] jsonBuf;
+
+	return singleJSON;
+}
+
 repo::core::model::RepoScene* RepoModelImport::generateRepoScene()
 {
-	ptree::assoc_iterator children = jsonHeader.find("parts");	
-	repo::lib::RepoMatrix mat;
-	
-	for(ptree::iterator child = children->second.begin(); child != children->second.end(); child++)
+	repoInfo << "Generating scene";
+
+	// Process root node
+	boost::property_tree::ptree root = getNextJSON(sizes[1]);
+	std::string rootName = root.get<std::string>("name", "");
+
+	boost::optional< ptree& > rootBBOX = root.get_child_optional("bbox");
+
+	if (!rootBBOX) {
+		repoError << "No root bounding box specified.";
+		return nullptr;
+	}
+
+	offset = as_vector<double>(*rootBBOX, "min");
+
+	boost::optional< ptree& > transMatTree = root.get_child_optional("transformation");
+	repo::lib::RepoMatrix transMat;
+
+	if (transMatTree)
 	{
-		if (child->second.find("parent") == child->second.not_found())
+		transMat = repo::lib::RepoMatrix(as_vector<float>(root, "transformation"));
+	}
+
+	repo::core::model::TransformationNode *rootNode =
+		new repo::core::model::TransformationNode(
+		repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), rootName, std::vector<repo::lib::RepoUUID>()));
+
+	node_map.push_back(rootNode);
+	trans_map.push_back(transMat);
+	transformations.insert(rootNode);
+
+	char comma;
+
+	for(long i = 0; i < numChildren; i++)
+	{
+		if (i % 500 == 0 || i == numChildren - 1)
 		{
-			std::string rootName = child->second.get<std::string>("name", "");
-
-			boost::optional< ptree& > rootBBOX = child->second.get_child_optional("bbox");
-
-			if (!rootBBOX) {
-				repoError << "No root bounding box specified.";
-				return nullptr;
-			}
-
-			offset = as_vector<double>(*rootBBOX, "min");
-
-			repoInfo << "ROOT: " << rootName;
-				
-			for(int i = 0; i < 3; i++)
-			{
-				repoInfo << "SM: " << offset[i];
-			}
-
-			boost::optional< ptree& > transMatTree = child->second.get_child_optional("transformation");
-			repo::lib::RepoMatrix transMat;
-
-			if (transMatTree)
-			{
-				transMat = repo::lib::RepoMatrix(as_vector<float>(child->second, "transformation"));
-			}
-
-			repo::core::model::TransformationNode *rootNode =
-				new repo::core::model::TransformationNode(
-				repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), rootName, std::vector<repo::lib::RepoUUID>()));
-
-			node_map.push_back(rootNode);
-			trans_map.push_back(transMat);
-			transformations.insert(rootNode);
-		} else {
-			createObject(child->second);
+			repoInfo << "Importing " << i << " of " << numChildren << " JSON nodes";
 		}
+
+		fin->read(&comma, 1);
+		boost::property_tree::ptree jsonTree = getNextJSON(sizes[i + 2]);
+		createObject(jsonTree);
 	}
 
 	std::vector<std::string> fileVect;
@@ -490,6 +478,12 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene()
 	scenePtr->setWorldOffset(offset);
 
 	delete[] geomBuf;
+
+	finCompressed->close();
+
+	delete fin;
+	delete inbuf;
+	delete finCompressed;
 
 	return scenePtr;
 }
