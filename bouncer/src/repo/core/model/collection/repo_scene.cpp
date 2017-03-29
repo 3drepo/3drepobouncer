@@ -890,15 +890,11 @@ const NodeType filter)
 {
 	std::vector<RepoNode*> filteredNodes;
 
-	//repoInfo << "NODES: " << nodes.size();
+	std::copy_if(nodes.begin(), nodes.end(),
+		std::back_inserter(filteredNodes),
+		[filter](const RepoNode* comp) { return comp->getTypeAsEnum() == filter; }
+	);
 
-	for (RepoNode* n : nodes)
-	{
-		if (n && n->getTypeAsEnum() == filter)
-		{
-			filteredNodes.push_back(n);
-		}
-	}
 	return filteredNodes;
 }
 

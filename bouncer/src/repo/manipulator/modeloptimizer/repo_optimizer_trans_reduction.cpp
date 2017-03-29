@@ -167,15 +167,11 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 					auto metaVector = getChildrenByIDAndType(scene, gType,
 						parentSharedID, repo::core::model::NodeType::METADATA);
 
-					//repoInfo << "THIS";
-
 					//connect all metadata to children mesh
-					for (auto &meta : metaVector)
+					for (const auto &meta : metaVector)
 					{
 						scene->addInheritance(gType, mesh, meta);
 					}
-
-					//repoInfo << "METAV: " << metaVector.size() << " AT: " << absorbTrans;
 
 					//change mesh name FIXME: this is a bit hacky.
 					if (absorbTrans || (mesh->getName().empty() && trans->getName().find(IFC_TYPE_SPACE_LABEL) != std::string::npos))
@@ -197,7 +193,6 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 							scene->abandonChild(gType,
 								granSharedID, trans, true, false);
 
-							//repoInfo << "CHILD: " << children.size();
 							for (repo::core::model::RepoNode *node : children)
 							{
 								//Put all children of trans node to granTrans, unless it's a metadata node

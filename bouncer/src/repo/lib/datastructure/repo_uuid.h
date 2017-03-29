@@ -30,7 +30,7 @@ namespace repo{
 			RepoUUID(const boost::uuids::uuid &id) : id(id) {}
 
 			RepoUUID(const RepoUUID &other) : id(other.id) {}
-			
+
 
 			RepoUUID(const std::string &stringRep = defaultValue);
 
@@ -55,13 +55,13 @@ namespace repo{
 
 			RepoUUID& operator=(const RepoUUID& uuid);
 
-			boost::uuids::uuid getInternalID() const { return id; }
+			const boost::uuids::uuid& getInternalID() const { return id; }
 
 		private:
 			boost::uuids::uuid id;
 		};
 
-		
+
 		inline std::ostream& operator<<(std::ostream& stream, const RepoUUID& uuid)
 		{
 			stream << uuid.toString();
@@ -86,7 +86,7 @@ namespace repo{
 		inline bool operator>(const RepoUUID& id1, const RepoUUID& id2)
 		{
 			return id2 < id1;
-		}		
+		}
 
 		inline bool operator<=(const RepoUUID& id1, const RepoUUID& id2)
 		{
