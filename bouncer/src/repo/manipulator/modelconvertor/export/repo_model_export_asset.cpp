@@ -97,36 +97,7 @@ bool AssetModelExport::generateJSONMapping(
 		jsonTree.addToTree(MP_LABEL_NUM_IDs, mappingLength);
 		jsonTree.addToTree(MP_LABEL_MAX_GEO_COUNT, mappingLength);
 
-		std::vector<repo::core::model::RepoNode*> matChild =
-			scene->getChildrenNodesFiltered(gType, mesh->getSharedID(), repo::core::model::NodeType::MATERIAL);
-
-		std::vector <repo::lib::PropertyTree> matChildrenTrees;
-		for (size_t i = 0; i < matChild.size(); ++i)
-		{
-			repo::lib::PropertyTree matTree;
-			const repo::core::model::MaterialNode *matNode = (const repo::core::model::MaterialNode *) matChild[i];
-			matTree.addToTree(MP_LABEL_NAME, matNode->getUniqueID().toString());
-			repo_material_t matStruct = matNode->getMaterialStruct();
-
-			if (matStruct.diffuse.size())
-				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_DIFFUSE, matStruct.diffuse, false);
-
-			if (matStruct.emissive.size())
-				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_EMISSIVE, matStruct.emissive, false);
-
-			if (matStruct.shininess == matStruct.shininess)
-				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_SHININESS, matStruct.shininess);
-
-			if (matStruct.specular.size())
-				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_SPECULAR, matStruct.specular, false);
-
-			if (matStruct.opacity == matStruct.opacity)
-				matTree.addToTree(MP_LABEL_MATERIAL + "." + MP_LABEL_MAT_TRANSPARENCY, 1.0 - matStruct.opacity);
-
-			matChildrenTrees.push_back(matTree);
-		}
-
-		jsonTree.addArrayObjects(MP_LABEL_APPEARANCE, matChildrenTrees);
+	
 
 		std::vector<repo::lib::PropertyTree> mappingTrees;
 		std::string meshUID = mesh->getUniqueID().toString();
@@ -141,12 +112,10 @@ bool AssetModelExport::generateJSONMapping(
 					repo::lib::PropertyTree mappingTree;
 
 					mappingTree.addToTree(MP_LABEL_NAME, mappings[i].mesh_id.toString());
-					mappingTree.addToTree(MP_LABEL_APPEARANCE, mappings[i].material_id.toString());
 					mappingTree.addToTree(MP_LABEL_MIN, mappings[i].min);
 					mappingTree.addToTree(MP_LABEL_MAX, mappings[i].max);
 					std::vector<std::string> usageArr = { meshUID + "_" + std::to_string(subMeshID) };
 					mappingTree.addToTree(MP_LABEL_USAGE, usageArr);
-
 					mappingTrees.push_back(mappingTree);
 				}
 			}
@@ -158,7 +127,7 @@ bool AssetModelExport::generateJSONMapping(
 
 		jsonTree.addArrayObjects(MP_LABEL_MAPPING, mappingTrees);
 
-		std::string jsonFileName = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + mesh->getUniqueID().toString() + ".json.mpc";
+		std::string jsonFileName = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + mesh->getUniqueID().toString() + "_unity.json.mpc";
 
 		jsonTrees[jsonFileName] = jsonTree;
 	}
@@ -201,7 +170,7 @@ bool AssetModelExport::generateTreeRepresentation(
 			
 				std::string fNamePrefix = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + mesh->getUniqueID().toString();
 				assetFiles.push_back(fNamePrefix + ".unity3d");
-				jsons.push_back(fNamePrefix + ".json.mpc");
+				jsons.push_back(fNamePrefix + "_unity.json.mpc");
 				
 				success &= generateJSONMapping(mesh, scene, reSplitter->getSplitMapping());							
 				delete reSplitter;
