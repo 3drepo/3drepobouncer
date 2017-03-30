@@ -112,28 +112,50 @@ repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree &mesh, 
 		{
 			repo_material_t repo_material;
 
-			if (props->second.find("diffuse") != props->second.not_found())
+			if (props->second.find("diffuse") != props->second.not_found()) 
 				repo_material.diffuse = as_vector<float>(props->second, "diffuse");
+			else
+				repo_material.diffuse.resize(3, 0.0f);
 
 			if (props->second.find("specular") != props->second.not_found())
 				repo_material.specular = as_vector<float>(props->second, "specular");
+			else
+				repo_material.specular.resize(3, 0.0f);
 
 			if (props->second.find("emissive") != props->second.not_found())
 				repo_material.emissive = as_vector<float>(props->second, "emissive");
+			else
+				repo_material.emissive.resize(3, 0.0f);
 
 			if (props->second.find("ambient") != props->second.not_found())
 				repo_material.ambient = as_vector<float>(props->second, "ambient");
+			else
+				repo_material.ambient.resize(3, 0.0f);
 
 			if (props->second.find("transparency") != props->second.not_found())
 				repo_material.opacity = 1.0f - props->second.get<float>("transparency");
+			else
+				repo_material.opacity = 1.0f;
 
 			if (props->second.find("shininess") != props->second.not_found())
 				repo_material.shininess = props->second.get<float>("shininess");
+			else
+				repo_material.shininess = 0.0f;
+
+			repo_material.shininessStrength = 1.0f;
+			repo_material.isWireframe = false;
+			repo_material.isTwoSided = false;
 
 			hasMaterial = true;
 
-			materialNode = new repo::core::model::MaterialNode(
-			repo::core::model::RepoBSONFactory::makeMaterialNode(repo_material, parentName, REPO_NODE_API_LEVEL_1));
+			if (materialMap.find(repo_material) != materialMap.end())
+			{
+				materialNode = materialMap[repo_material];
+			} else {
+				materialNode = new repo::core::model::MaterialNode(repo::core::model::RepoBSONFactory::makeMaterialNode(repo_material, parentName, REPO_NODE_API_LEVEL_1));
+				materialMap.insert(std::make_pair(repo_material, materialNode));
+				materials.insert(materialNode);
+			}
 		}
 
 
@@ -238,7 +260,6 @@ repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree &mesh, 
 	if (hasMaterial)
 	{
 		*materialNode = materialNode->cloneAndAddParent(meshNode->getSharedID());
-		materials.insert(materialNode);
 	}
 
 	meshes.insert(meshNode);
