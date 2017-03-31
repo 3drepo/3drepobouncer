@@ -86,11 +86,59 @@ repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(const ptree
 	return metaNode;
 }
 
+repo::core::model::MaterialNode *RepoModelImport::parseMaterial(const boost::property_tree::ptree &matTree)
+{
+		repo_material_t repo_material;
+
+		if (matTree.find("diffuse") != matTree.not_found()) 
+			repo_material.diffuse = as_vector<float>(matTree, "diffuse");
+		else
+			repo_material.diffuse.resize(3, 0.0f);
+
+		if (matTree.find("specular") != matTree.not_found())
+			repo_material.specular = as_vector<float>(matTree, "specular");
+		else
+			repo_material.specular.resize(3, 0.0f);
+
+		if (matTree.find("emissive") != matTree.not_found())
+			repo_material.emissive = as_vector<float>(matTree, "emissive");
+		else
+			repo_material.emissive.resize(3, 0.0f);
+
+		if (matTree.find("ambient") != matTree.not_found())
+			repo_material.ambient = as_vector<float>(matTree, "ambient");
+		else
+			repo_material.ambient.resize(3, 0.0f);
+
+		if (matTree.find("transparency") != matTree.not_found())
+			repo_material.opacity = 1.0f - matTree.get<float>("transparency");
+		else
+			repo_material.opacity = 1.0f;
+
+		if (matTree.find("shininess") != matTree.not_found())
+			repo_material.shininess = matTree.get<float>("shininess");
+		else
+			repo_material.shininess = 0.0f;
+
+		repo_material.shininessStrength = 1.0f;
+		repo_material.isWireframe = false;
+		repo_material.isTwoSided = false;
+
+		std::stringstream ss("");
+		ss << "Material." << std::setfill('0') << std::setw(5) << materials.size();
+
+		repo::core::model::MaterialNode * materialNode = new repo::core::model::MaterialNode(repo::core::model::RepoBSONFactory::makeMaterialNode(repo_material, ss.str(), REPO_NODE_API_LEVEL_1));
+		materials.insert(materialNode);
+		matNodeList.push_back(materialNode);
+
+		return materialNode;
+}
+
 repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree &mesh, const std::string &parentName, const repo::lib::RepoUUID &parentID, const repo::lib::RepoMatrix &trans)
 {
 	repo::core::model::MaterialNode *materialNode;
 
-	bool hasMaterial = false;
+	int materialID = -1;
 
 	int numIndices  = mesh.get<int>("numIndices");
 	int numVertices = mesh.get<int>("numVertices");
@@ -110,54 +158,9 @@ repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree &mesh, 
 	{
 		if (props->first == REPO_IMPORT_MATERIAL)
 		{
-			repo_material_t repo_material;
-
-			if (props->second.find("diffuse") != props->second.not_found()) 
-				repo_material.diffuse = as_vector<float>(props->second, "diffuse");
-			else
-				repo_material.diffuse.resize(3, 0.0f);
-
-			if (props->second.find("specular") != props->second.not_found())
-				repo_material.specular = as_vector<float>(props->second, "specular");
-			else
-				repo_material.specular.resize(3, 0.0f);
-
-			if (props->second.find("emissive") != props->second.not_found())
-				repo_material.emissive = as_vector<float>(props->second, "emissive");
-			else
-				repo_material.emissive.resize(3, 0.0f);
-
-			if (props->second.find("ambient") != props->second.not_found())
-				repo_material.ambient = as_vector<float>(props->second, "ambient");
-			else
-				repo_material.ambient.resize(3, 0.0f);
-
-			if (props->second.find("transparency") != props->second.not_found())
-				repo_material.opacity = 1.0f - props->second.get<float>("transparency");
-			else
-				repo_material.opacity = 1.0f;
-
-			if (props->second.find("shininess") != props->second.not_found())
-				repo_material.shininess = props->second.get<float>("shininess");
-			else
-				repo_material.shininess = 0.0f;
-
-			repo_material.shininessStrength = 1.0f;
-			repo_material.isWireframe = false;
-			repo_material.isTwoSided = false;
-
-			hasMaterial = true;
-
-			if (materialMap.find(repo_material) != materialMap.end())
-			{
-				materialNode = materialMap[repo_material];
-			} else {
-				materialNode = new repo::core::model::MaterialNode(repo::core::model::RepoBSONFactory::makeMaterialNode(repo_material, parentName, REPO_NODE_API_LEVEL_1));
-				materialMap.insert(std::make_pair(repo_material, materialNode));
-				materials.insert(materialNode);
-			}
+			materialID = props->second.get_value<int>();
+			materialNode = matNodeList[materialID];
 		}
-
 
 		if (props->first == REPO_IMPORT_VERTICES || props->first == REPO_IMPORT_NORMALS)
 		{
@@ -257,9 +260,9 @@ repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree &mesh, 
 
 	*meshNode = meshNode->cloneAndAddParent(parentID);
 
-	if (hasMaterial)
+	if (materialID >= 0)
 	{
-		*materialNode = materialNode->cloneAndAddParent(meshNode->getSharedID());
+		matParents[materialID].push_back(meshNode->getSharedID());
 	}
 
 	meshes.insert(meshNode);
@@ -340,11 +343,13 @@ void RepoModelImport::createObject(const ptree& tree)
 
 void RepoModelImport::skipAheadInFile(long amount)
 {
-	// Cannot use seekg on GZIP file
-	char *tmpBuf = new char[amount];
-	fin->read(tmpBuf, amount);
-	delete[] tmpBuf;
-	//sizesStart - metaSize);
+	if (amount > 0)
+	{
+		// Cannot use seekg on GZIP file
+		char *tmpBuf = new char[amount];
+		fin->read(tmpBuf, amount);
+		delete[] tmpBuf;
+	}
 }
 
 bool RepoModelImport::importModel(std::string filePath, std::string &errMsg)
@@ -367,7 +372,6 @@ bool RepoModelImport::importModel(std::string filePath, std::string &errMsg)
 
 		const int fileVersionSize = strlen(supportedFileVersion);
 		char fileVersion[fileVersionSize];
-		int64_t headerSize, geometrySize;
 
 		fin->read(fileVersion, fileVersionSize);
 
@@ -378,31 +382,52 @@ bool RepoModelImport::importModel(std::string filePath, std::string &errMsg)
 		}
 
 		repoInfo << "Loading BIM file [VERSION: " << fileVersion << "]";
-
+		
+		size_t metaSize = fileVersionSize + sizeof(fileMeta);
 		// Size of metadata at start
-		size_t metaSize = fileVersionSize + sizeof(int64_t) * 5;
+		fin->read((char*)&file_meta, sizeof(fileMeta));
 
-		fin->read((char*)&headerSize, sizeof(int64_t));
-		fin->read((char*)&geometrySize, sizeof(int64_t));
-		fin->read((char*)&sizesStart, sizeof(int64_t));
-		fin->read((char*)&sizesSize, sizeof(int64_t));
-		fin->read((char*)&numChildren, sizeof(int64_t));
+		repoInfo << "META size: " << metaSize;
+		repoInfo << "SIZE: header = " << file_meta.headerSize << " bytes, geometry = " << file_meta.geometrySize << " bytes.";
+		repoInfo << "SIZE ARRAY: location = " << file_meta.sizesStart << " bytes, size = " << file_meta.sizesSize << " bytes.";
+		repoInfo << "MAT ARRAY: location = " << file_meta.matStart << " bytes, size = " << file_meta.matSize << " bytes.";
+		repoInfo << "Number of parts to process : " << file_meta.numChildren;
 
-		repoInfo << "SIZE: header = " << headerSize << " bytes, geometry = " << geometrySize << " bytes.";
-		repoInfo << "SIZE ARRAY: location = " << sizesStart << " bytes, size = " << sizesSize << " bytes.";
-		repoInfo << "Number of parts to process : " << numChildren;
+		
+		if (file_meta.matStart > file_meta.sizesStart)
+		{
+			skipAheadInFile(file_meta.sizesStart - metaSize);
+			sizes = as_vector<long>(getNextJSON(file_meta.sizesSize));
 
-		skipAheadInFile(sizesStart - metaSize);
+			skipAheadInFile(file_meta.matStart - (file_meta.sizesStart + file_meta.sizesSize));
 
-		boost::property_tree::ptree sizesObject = getNextJSON(sizesSize);
-		sizes = as_vector<long>(sizesObject, "data");
+			boost::property_tree::ptree materials = getNextJSON(file_meta.matSize);
+			for (const auto& item : materials) {
+				parseMaterial(item.second);
+			}
+			matParents.resize(materials.size());
 
-		skipAheadInFile(headerSize + metaSize - (sizesStart + sizesSize));
+			skipAheadInFile(file_meta.headerSize + metaSize - (file_meta.matStart + file_meta.matSize));
+		} else {
+			skipAheadInFile(file_meta.matStart - metaSize);
+
+			boost::property_tree::ptree materialsArr = getNextJSON(file_meta.matSize);
+			for (const auto& item : materialsArr) {
+				parseMaterial(item.second);
+			}
+
+			matParents.resize(materials.size());
+
+			skipAheadInFile(file_meta.sizesStart - (file_meta.matStart + file_meta.matSize));
+			sizes = as_vector<long>(getNextJSON(file_meta.sizesSize));
+
+			skipAheadInFile(file_meta.headerSize + metaSize - (file_meta.sizesStart + file_meta.sizesSize));			
+		}
 
 		repoInfo << "Reading geometry buffer";
 
-		geomBuf = new char[geometrySize];
-		fin->read(geomBuf, geometrySize);
+		geomBuf = new char[file_meta.geometrySize];
+		fin->read(geomBuf, file_meta.geometrySize);
 
 		finCompressed->close();
 		delete finCompressed;
@@ -410,8 +435,10 @@ bool RepoModelImport::importModel(std::string filePath, std::string &errMsg)
 		finCompressed = new std::ifstream(filePath, std::ios_base::in | std::ios::binary);
 
 		delete fin;
+		delete inbuf;
 
-		inbuf->reset();
+		inbuf = new boost::iostreams::filtering_streambuf<boost::iostreams::input>();
+
 		inbuf->push(boost::iostreams::gzip_decompressor());
 		inbuf->push(*finCompressed);
 
@@ -433,7 +460,7 @@ boost::property_tree::ptree RepoModelImport::getNextJSON(long jsonSize)
 	char *jsonBuf = new char[jsonSize + 1];
 
 	fin->read(jsonBuf, jsonSize);
-	jsonBuf[jsonSize] = '\0';
+	jsonBuf[jsonSize] = '\0'; 
 
 	std::stringstream bufReader(jsonBuf);
 	read_json(bufReader, singleJSON);
@@ -478,16 +505,27 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene()
 
 	char comma;
 
-	for(long i = 0; i < numChildren; i++)
+	for(long i = 0; i < file_meta.numChildren; i++)
 	{
-		if (i % 500 == 0 || i == numChildren - 1)
+		if (i % 500 == 0 || i == file_meta.numChildren - 1)
 		{
-			repoInfo << "Importing " << i << " of " << numChildren << " JSON nodes";
+			repoInfo << "Importing " << i << " of " << file_meta.numChildren << " JSON nodes";
 		}
 
 		fin->read(&comma, 1);
 		boost::property_tree::ptree jsonTree = getNextJSON(sizes[i + 2]);
 		createObject(jsonTree);
+	}
+
+	materials.clear();
+
+	repoInfo << "Attaching materials to parents";
+	// Attach all the parents to the materials
+	for (int i = 0; i < matNodeList.size(); i++)
+	{
+		repo::core::model::MaterialNode *tmpMaterial = new repo::core::model::MaterialNode();
+		*tmpMaterial = matNodeList[i]->cloneAndAddParent(matParents[i]);
+		materials.insert(tmpMaterial);
 	}
 
 	std::vector<std::string> fileVect;

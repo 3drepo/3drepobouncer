@@ -57,57 +57,6 @@ namespace repo{
 
 			const char supportedFileVersion[7] = "BIM001";
 
-			// taken from http://stackoverflow.com/questions/6899392/generic-hash-function-for-all-stl-containers			
-			template <class T>
-			inline void hash_combine(std::size_t & seed, const T & v)
-			{
-				std::hash<T> hasher;
-				seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-			}
-
-			class MaterialHasher
-			{
-				static const int NUM_DP_POW = 1000.0f;
-
-				private:
-					static void hashColor(size_t &h, const std::vector<float> color)
-					{
-						hash_combine(h, (int)(color[0] * NUM_DP_POW));
-						hash_combine(h, (int)(color[1] * NUM_DP_POW));
-						hash_combine(h, (int)(color[2] * NUM_DP_POW));
-					}
-				public:
-					size_t operator() (repo_material_t const& key) const
-					{
-						std::hash<float> floatHasher;
-
-						size_t h = 0;
-
-						hashColor(h, key.ambient);
-						hashColor(h, key.specular);
-						hashColor(h, key.diffuse);
-						hashColor(h, key.emissive);
-
-						hash_combine(h, (int)(key.opacity * NUM_DP_POW));
-						hash_combine(h, (int)(key.shininess * NUM_DP_POW));
-						hash_combine(h, (int)(key.shininessStrength * NUM_DP_POW));
-						hash_combine(h, key.isWireframe);
-						hash_combine(h, key.isTwoSided);
-						
-						return h;
-					}
-			};
-
-			class MaterialHashEqual
-			{
-				public:
-					bool operator() (repo_material_t const& t1, repo_material_t const& t2) const
-					{
-						MaterialHasher hasher;
-						return hasher(t1) == hasher(t2);
-					}
-			};
-
 			class RepoModelImport : public AbstractModelImport
 			{
 				private:
@@ -121,11 +70,22 @@ namespace repo{
 					boost::iostreams::filtering_streambuf<boost::iostreams::input> *inbuf;
 					std::istream *fin;
 
-					int64_t sizesStart;
-					int64_t sizesSize;
-					int64_t numChildren;
+					typedef struct
+					{
+						int64_t headerSize;
+						int64_t geometrySize;
+						int64_t sizesStart;
+						int64_t sizesSize;
+						int64_t matStart;
+						int64_t matSize;
+						int64_t numChildren;
+					} fileMeta; 
+
+					fileMeta file_meta;
 
 					std::vector<long> sizes;
+
+					repo::core::model::MaterialNode* parseMaterial(const boost::property_tree::ptree &pt);
 
 					repo::core::model::MetadataNode* createMetadataNode(const boost::property_tree::ptree &metadata, const std::string &parentName, const repo::lib::RepoUUID &parentID);
 					repo::core::model::MeshNode* createMeshNode(const boost::property_tree::ptree &geometry, const std::string &parentName, const repo::lib::RepoUUID &parentID, const repo::lib::RepoMatrix &trans);
@@ -133,7 +93,8 @@ namespace repo{
 					boost::property_tree::ptree getNextJSON(long jsonSize);
 					void skipAheadInFile(long amount);
 
-					std::unordered_map<repo_material_t, repo::core::model::MaterialNode *, MaterialHasher, MaterialHashEqual> materialMap;
+					std::vector<repo::core::model::MaterialNode *> matNodeList;
+					std::vector<std::vector<repo::lib::RepoUUID>> matParents;
 
 					repo::core::model::RepoNodeSet cameras; //!< Cameras
 					repo::core::model::RepoNodeSet meshes; //!< Meshes
@@ -191,6 +152,15 @@ namespace repo{
 							r.push_back(item.second.get_value<T>());
 					return r;
 			}
+
+			template <typename T>
+			inline std::vector<T> as_vector(const boost::property_tree::ptree &pt)
+			{
+					std::vector<T> r;
+					for (const auto& item : pt)
+							r.push_back(item.second.get_value<T>());
+					return r;
+			}			
 		}
 	}
 }
