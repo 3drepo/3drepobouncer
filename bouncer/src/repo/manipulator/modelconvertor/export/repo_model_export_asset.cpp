@@ -43,6 +43,7 @@ const static std::string MP_LABEL_NUM_IDs = "numberOfIDs";
 const static std::string MP_LABEL_USAGE = "usage";
 
 const static std::string MP_LABEL_ASSETS = "assets";
+const static std::string MP_LABEL_SHARED = "sharedID";
 const static std::string MP_LABEL_JSONS = "jsonFiles";
 const static std::string MP_LABEL_OFFSET = "offset";
 const static std::string MP_LABEL_DATABASE = "database";
@@ -112,6 +113,11 @@ bool AssetModelExport::generateJSONMapping(
 					repo::lib::PropertyTree mappingTree;
 
 					mappingTree.addToTree(MP_LABEL_NAME, mappings[i].mesh_id.toString());
+
+					repo::lib::RepoUUID id(mappings[i].mesh_id.toString());
+					auto mesh = scene->getNodeByUniqueID(repo::core::model::RepoScene::GraphType::DEFAULT, id);
+					if (mesh)
+						mappingTree.addToTree(MP_LABEL_SHARED, mesh->getSharedID().toString());
 					mappingTree.addToTree(MP_LABEL_MIN, mappings[i].min);
 					mappingTree.addToTree(MP_LABEL_MAX, mappings[i].max);
 					std::vector<std::string> usageArr = { meshUID + "_" + std::to_string(subMeshID) };
