@@ -212,6 +212,7 @@ namespace repo{
 				Assimp::Importer importer;  /*! Stores ASSIMP related settings for model import */
 				const aiScene *assimpScene; /*! ASSIMP scene representation of the model */
 				std::string orgFile; /*! orgFileName */
+				bool keepMetadata;
 			};
 		} //namespace AssimpModelImport
 	} //namespace manipulator

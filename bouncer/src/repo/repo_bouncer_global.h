@@ -34,6 +34,10 @@
 
 //------------------------------------------------------------------------------
 #define BOUNCER_VMAJOR 1
+<<<<<<< HEAD
 #define BOUNCER_VMINOR "12.0"
+=======
+#define BOUNCER_VMINOR "13.0"
+>>>>>>> refs/remotes/origin/master
 
 //

@@ -205,8 +205,29 @@ repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree &mesh, 
 	repo::lib::RepoVector3D min = vertices[0];
 	repo::lib::RepoVector3D max = vertices[0];
 
+	repo::lib::RepoVector3D min_test = vertices[0];
+	repo::lib::RepoVector3D max_test = vertices[0];
+	
 	for(auto &v : vertices)
 	{
+
+		if (v.x < min_test.x) min_test.x = v.x;
+		if (v.y < min_test.y) min_test.y = v.y;
+		if (v.z < min_test.z) min_test.z = v.z;
+
+		if (v.x > max_test.x) max_test.x = v.x;
+		if (v.y > max_test.y) max_test.y = v.y;
+		if (v.z > max_test.z) max_test.z = v.z;
+		
+		v.x -= offset[0];
+		v.y -= offset[1];
+		v.z -= offset[2];
+
+		if (!trans.isIdentity())
+		{
+			v = trans * v;
+		}
+
 		if (v.x < min.x) min.x = v.x;
 		if (v.y < min.y) min.y = v.y;
 		if (v.z < min.z) min.z = v.z;
@@ -214,19 +235,7 @@ repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree &mesh, 
 		if (v.x > max.x) max.x = v.x;
 		if (v.y > max.y) max.y = v.y;
 		if (v.z > max.z) max.z = v.z;
-
-		if (!trans.isIdentity())
-		{
-			v = trans * v;
-		}
-
-		v.x -= offset[0];
-		v.y -= offset[1];
-		v.z -= offset[2];
 	}
-
-	min = trans * min;
-	max = trans * max;
 
 	if (!trans.isIdentity())
 	{
@@ -533,6 +542,19 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene()
 		fileVect.push_back(orgFile);
 
 	repo::core::model::RepoScene * scenePtr = new repo::core::model::RepoScene(fileVect, cameras, meshes, materials, metadata, textures, transformations);
+
+	// Transform offset into correct space
+	repo::lib::RepoVector3D tmpVec;
+
+	tmpVec.x = offset[0];
+	tmpVec.y = offset[1];
+	tmpVec.z = offset[2];
+
+	tmpVec = transMat * tmpVec;
+
+	offset[0] = tmpVec.x;
+	offset[1] = tmpVec.y;
+	offset[2] = tmpVec.z;
 
 	scenePtr->setWorldOffset(offset);
 
