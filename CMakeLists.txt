@@ -79,7 +79,12 @@ endif()
 option (REPO_BUILD_CLIENT "If the Command Line Client is built in addition to the library" ON)
 option (REPO_BUILD_TOOLS "If the Command Line Tool is built in addition to the library" ON)
 option (REPO_BUILD_TESTS "If the test suite is built in addition to the library" OFF)
+option (REPO_NO_GZIP "If zlib is not compiled into boost" OFF)
 add_definitions( -DWIN32_LEAN_AND_MEAN )
+
+if(REPO_NO_GZIP)
+	add_definitions(-DREPO_BOOST_NO_GZIP)
+endif()
 
 #bouncer library
 add_subdirectory(bouncer)
