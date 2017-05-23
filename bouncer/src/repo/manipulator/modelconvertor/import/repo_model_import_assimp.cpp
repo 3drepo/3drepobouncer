@@ -35,6 +35,7 @@
 using namespace repo::manipulator::modelconvertor;
 
 AssimpModelImport::AssimpModelImport()
+	: keepMetadata(false)
 {
 	//set default ASSIMP debone threshold
 	//settings->setDeboneThreshold(AI_DEBONE_THRESHOLD);
@@ -712,7 +713,7 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 
 		//--------------------------------------------------------------------------
 		// Collect metadata and add as a child
-		if (assimpNode->mMetaData)
+		if (keepMetadata && assimpNode->mMetaData)
 		{
 			std::string metadataName = assimpNode->mName.data;
 			if (metadataName == "<transformation>")
@@ -1194,6 +1195,13 @@ bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
 
 		return false;
 	}
+
+	boost::filesystem::path filePathP(filePath);
+	std::string fileExt = filePathP.extension().string();
+
+	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
+
+	keepMetadata = fileExt == ".IFC";
 
 	importer.SetPropertyInteger(AI_CONFIG_GLOB_MEASURE_TIME, 1);
 	importer.SetPropertyBool(AI_CONFIG_IMPORT_IFC_SKIP_SPACE_REPRESENTATIONS, settings->getSkipIFCSpaceRepresentation());

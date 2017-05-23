@@ -33,8 +33,7 @@ SelectionTreeMaker::SelectionTreeMaker(
 
 repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 	const repo::core::model::RepoNode            *currentNode,
-	std::unordered_map < std::string,
-	std::pair < std::string, std::string >> &idMaps,
+	std::unordered_map < std::string, std::pair < std::string, std::string >> &idMaps,
 	const std::string                            &currentPath,
 	bool                                         &hiddenOnDefault,
 	std::vector<std::string>                     &hiddenNode) const
@@ -65,7 +64,7 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 		}
 
 		bool hasHiddenChildren = false;
-		for (const auto childrenSet : childrenTypes)
+		for (const auto &childrenSet : childrenTypes)
 		{
 			for (const auto &child : childrenSet)
 			{
@@ -103,6 +102,7 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 
 		tree.addToTree("account", scene->getDatabaseName());
 		tree.addToTree("project", scene->getProjectName());
+		tree.addToTree("type", currentNode->getType());
 		if (!name.empty())
 			tree.addToTree("name", name);
 		tree.addToTree("path", childPath);

@@ -30,6 +30,7 @@
 #include "diff/repo_diff_sharedid.h"
 #include "modelconvertor/import/repo_model_import_assimp.h"
 #include "modelconvertor/import/repo_model_import_ifc.h"
+#include "modelconvertor/import/repo_model_import_3drepo.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
 #include "modelconvertor/export/repo_model_export_asset.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
@@ -771,19 +772,23 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 	boost::filesystem::path filePathP(filePath);
 	std::string fileExt = filePathP.extension().string();
 
-	if (!repo::manipulator::modelconvertor::AssimpModelImport::isSupportedExts(fileExt))
+	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
+
+	if (!repo::manipulator::modelconvertor::AssimpModelImport::isSupportedExts(fileExt) && !(fileExt == ".BIM"))
 	{
 		msg = "Unsupported file extension";
 		return nullptr;
 	}
-	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
 
 	repo::manipulator::modelconvertor::AbstractModelImport* modelConvertor = nullptr;
 
 	bool useIFCImporter = fileExt == ".IFC" && (!config || config->getUseIFCOpenShell());
+	bool useRepoImporter = fileExt == ".BIM";
 
 	if (useIFCImporter)
 		modelConvertor = new repo::manipulator::modelconvertor::IFCModelImport(config);
+	else if (useRepoImporter)
+		modelConvertor = new repo::manipulator::modelconvertor::RepoModelImport(config);
 	else
 		modelConvertor = new repo::manipulator::modelconvertor::AssimpModelImport(config);
 
