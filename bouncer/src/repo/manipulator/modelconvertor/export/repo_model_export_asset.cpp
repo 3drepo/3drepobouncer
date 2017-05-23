@@ -118,8 +118,8 @@ bool AssetModelExport::generateJSONMapping(
 					auto mesh = scene->getNodeByUniqueID(repo::core::model::RepoScene::GraphType::DEFAULT, id);
 					if (mesh)
 						mappingTree.addToTree(MP_LABEL_SHARED, mesh->getSharedID().toString());
-					mappingTree.addToTree(MP_LABEL_MIN, mappings[i].min);
-					mappingTree.addToTree(MP_LABEL_MAX, mappings[i].max);
+					mappingTree.addToTree(MP_LABEL_MIN, mappings[i].min.toStdVector());
+					mappingTree.addToTree(MP_LABEL_MAX, mappings[i].max.toStdVector());
 					std::vector<std::string> usageArr = { meshUID + "_" + std::to_string(subMeshID) };
 					mappingTree.addToTree(MP_LABEL_USAGE, usageArr);
 					mappingTrees.push_back(mappingTree);
