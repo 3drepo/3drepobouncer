@@ -374,13 +374,17 @@ bool RepoModelImport::importModel(std::string filePath, std::string &errMsg)
 	{
 		inbuf = new boost::iostreams::filtering_streambuf<boost::iostreams::input>();
 
+#ifndef REPO_BOOST_NO_GZIP
 		inbuf->push(boost::iostreams::gzip_decompressor());
+#else
+		repoWarning << "Gzip is not compiled into Boost library, .bim imports may not work as intended";
+#endif
 		inbuf->push(*finCompressed);
 
 		fin = new std::istream(inbuf);
 
 		const int fileVersionSize = strlen(supportedFileVersion);
-		char fileVersion[fileVersionSize];
+		char *fileVersion = (char*) malloc(sizeof(*fileVersion *  fileVersionSize));
 
 		fin->read(fileVersion, fileVersionSize);
 
@@ -391,6 +395,8 @@ bool RepoModelImport::importModel(std::string filePath, std::string &errMsg)
 		}
 
 		repoInfo << "Loading BIM file [VERSION: " << fileVersion << "]";
+
+		delete fileVersion;
 		
 		size_t metaSize = fileVersionSize + sizeof(fileMeta);
 		// Size of metadata at start
@@ -447,8 +453,9 @@ bool RepoModelImport::importModel(std::string filePath, std::string &errMsg)
 		delete inbuf;
 
 		inbuf = new boost::iostreams::filtering_streambuf<boost::iostreams::input>();
-
+#ifndef REPO_BOOST_NO_GZIP
 		inbuf->push(boost::iostreams::gzip_decompressor());
+#endif
 		inbuf->push(*finCompressed);
 
 		fin = new std::istream(inbuf);
