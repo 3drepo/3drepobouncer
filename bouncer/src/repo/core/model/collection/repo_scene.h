@@ -90,7 +90,8 @@ namespace repo{
 					const std::string                                  &issuesExt = REPO_COLLECTION_ISSUES,
 					const std::string                                  &srcExt = REPO_COLLECTION_STASH_SRC,
 					const std::string                                  &gltfExt = REPO_COLLECTION_STASH_GLTF,
-					const std::string                                  &jsonExt = REPO_COLLECTION_STASH_JSON);
+					const std::string                                  &jsonExt = REPO_COLLECTION_STASH_JSON,
+					const std::string                                  &unityExt = REPO_COLLECTION_STASH_UNITY);
 
 				/**
 				* Used for constructing scene graphs from model convertors
@@ -302,6 +303,14 @@ namespace repo{
 					return jsonExt;
 				}
 
+				/**
+				* Get unity extension for this project
+				* @return returns the unity extension
+				*/
+				std::string getUnityExtension() const
+				{
+					return unityExt;
+				}
 				/**
 				* Get the revision ID of this scene graph
 				* @return returns the revision ID of this scene
@@ -1065,6 +1074,7 @@ namespace repo{
 				std::string srcExt;      /*! extension for SRC stash files*/
 				std::string gltfExt;      /*! extension for GLTF stash files*/
 				std::string jsonExt;      /*! extension for JSON graph metadata files*/
+				std::string unityExt;      /*! extension for Unity files*/
 				std::vector<std::string> refFiles;  //Original Files that created this scene
 				std::vector<RepoNode*> toRemove;
 				std::vector<double> worldOffset;

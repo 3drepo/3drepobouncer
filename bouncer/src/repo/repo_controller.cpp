@@ -90,6 +90,14 @@ bool RepoController::testConnection(const RepoController::RepoToken *token)
 	return impl->testConnection(token);
 }
 
+bool RepoController::commitAssetBundleBuffers(
+	const RepoController::RepoToken *token,
+	repo::core::model::RepoScene    *scene,
+	const repo_web_buffers_t &buffers)
+{
+	return impl->commitAssetBundleBuffers(token, scene, buffers);
+}
+
 bool RepoController::commitScene(
 	const RepoController::RepoToken    *token,
 	repo::core::model::RepoScene        *scene,
@@ -482,6 +490,16 @@ std::string RepoController::getSupportedImportFormats()
 std::string RepoController::getSupportedExportFormats()
 {
 	return impl->getSupportedExportFormats();
+}
+
+std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoController::initialiseAssetBuffer(
+	repo::core::model::RepoScene *scene,
+	std::unordered_map<std::string, std::vector<uint8_t>> &jsonFiles,
+	std::vector<std::vector<uint16_t>> &serialisedFaceBuf,
+	std::vector<std::vector<std::vector<float>>> &idMapBuf,
+	std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> &meshMappings)
+{
+	return impl->initialiseAssetBuffer(scene, jsonFiles, serialisedFaceBuf, idMapBuf, meshMappings);
 }
 
 repo::core::model::RepoNodeSet RepoController::loadMetadataFromFile(

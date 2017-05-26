@@ -29,6 +29,19 @@ namespace repo{
 				~SceneManager(){}
 
 				/**
+				* Commit web buffers
+				* @param scene repo scene related to repo scene
+				* @param geoStashExt geometry stash extension
+				* @param resultBuffers buffers to write
+				* @param hander mongo handler
+				*/
+				bool commitWebBuffers(
+					repo::core::model::RepoScene                 *scene,
+					const std::string                            &geoStashExt,
+					const repo_web_buffers_t &resultBuffers,
+					repo::core::handler::AbstractDatabaseHandler *handler);
+
+				/**
 				* Retrieve a RepoScene with a specific revision loaded.
 				* @param handler hander to the database
 				* @param database the database the collection resides in
