@@ -316,8 +316,6 @@ bool MeshMapReorganiser::splitLargeMesh(
 	if (oldUVs.size())
 		reMappedUVs.resize(oldUVs.size());
 
-	repoTrace << currentSubMesh.mesh_id << " Exceed the maximum amount of vertices, splitting it into multiple super meshes...";
-
 	auto currentMeshVFrom = currentSubMesh.vertFrom;
 	auto currentMeshVTo = currentSubMesh.vertTo;
 	auto currentMeshTFrom = currentSubMesh.triFrom;

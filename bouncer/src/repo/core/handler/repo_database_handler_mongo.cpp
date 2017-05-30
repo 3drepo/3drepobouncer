@@ -1300,7 +1300,7 @@ bool MongoDatabaseHandler::upsertDocument(
 
 				if (info.hasField("writeErrors"))
 				{
-					repoError << info.getField("writeErrors").Array().at(0).embeddedObject().getField("errmsg");
+					repoError << info.getField("writeErrors").Array().at(0).embeddedObject().getStringField("errmsg");
 					success = false;
 				}
 			}
