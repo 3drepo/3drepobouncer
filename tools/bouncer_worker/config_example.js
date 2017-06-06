@@ -10,12 +10,17 @@ module.exports = {
 		dbport: 27017,
 		username : 'username',
 		password : 'password',
-		log_dir : '/var/log/3drepo/bouncer/';
+		log_dir : '/var/log/3drepo/bouncer/'
 	},
 	mongoimport:{
 		writeConcern: {
 			w: 1
 		},
+	},
+	unity:
+	{
+		project: "C:\\unity.bat",
+		batPath: 'buildBundle.bat'
 	}
 
 }

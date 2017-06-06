@@ -97,6 +97,86 @@
 
 	} 
 
+	function runBouncer(logDir, cmd,  callback)
+	{
+		let os = require('os');
+		let command = "";
+		
+		if(os.platform() === "win32")
+		{
+			
+			cmd = cmd.replace("/sharedData/", conf.rabbitmq.sharedDir);	
+			process.env['REPO_LOG_DIR']= logDir ;
+			command = path.normalize(conf.bouncer.path) + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + cmd;
+			let cmdArr = cmd.split(' ');
+			if(cmdArr[0] == "import")
+			{
+				let fs = require('fs')
+				fs.readFile(cmdArr[2], 'utf8', function (err,data) {
+				  	if (err) {
+						return console.log(err);
+  					}
+		  			let result = data.replace("/sharedData/", conf.rabbitmq.sharedDir);
+
+		  			fs.writeFile(cmdArr[2], result, 'utf8', function (err) {
+     						if (err) return console.log(err);
+  					});
+				});
+			}
+		}	
+		else
+		{	
+			command = "REPO_LOG_DIR=" + logDir + " " +path.normalize(conf.bouncer.path) + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + cmd;
+		}
+		exec(command, function(error, stdout, stderr){
+			let reply = {};
+			console.log(stdout);
+			if(error !== null){
+				if(error.code)
+					reply.value = error.code;
+				else
+					reply.value = 12;
+				callback(reply);
+				console.log("Executed command: " + command, reply);
+			}
+			else{
+				reply.value = 0;
+				console.log("Executed command: " + command, reply);
+				let cmdArr = cmd.split(' ');
+				if(conf.unity && conf.unity.project && cmdArr[0] == "import")
+				{					
+					let commandArgs = require(cmdArr[2]);
+					if(commandArgs && commandArgs.database && commandArgs.project)
+					{		
+
+						let unityCommand = conf.unity.batPath + " " + conf.unity.project + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + commandArgs.database + " " +commandArgs.project + " " + logDir.replace(/\//g, '\\');
+						console.log("running unity commnad: " + unityCommand);
+						exec(unityCommand, function( error, stdout, stderr){
+							if(error && error.code)
+							{
+								reply.value = 14;
+							}
+							console.log("Executed Unity command: " + unityCommand, reply);
+							callback(reply);
+						});
+					}
+					else
+					{
+						console.log("Failed to read " + cmdArr[2]);
+						reply.value = 13;
+						callback(reply);
+					}
+				}
+				else
+				{
+					callback(reply);
+				}
+			}
+
+		});
+
+	}
+
 	/**
 	 * Execute the Command and provide a reply message to the callback function
 	 */
@@ -110,19 +190,8 @@
 
 		let logDir = logRootDir + "/" +  rid.toString() + "/";
 
-		exec("REPO_LOG_DIR=" + logDir + " " +path.normalize(conf.bouncer.path) + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + cmd, function(error, stdout, stderr){
-			let reply = {};
-
-			if(error !== null){
-				if(error.code)
-					reply.value = error.code;
-				else
-					reply.value = 12;
-			}
-			else
-				reply.value = 0;
-
-			console.log("Executed command: " + path.normalize(conf.bouncer.path) + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + cmd, reply);
+		runBouncer(logDir, cmd,
+		 function(reply){
 			callback(JSON.stringify(reply));
 		});
 	}
