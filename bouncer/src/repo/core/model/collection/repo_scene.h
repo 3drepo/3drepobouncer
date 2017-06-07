@@ -57,6 +57,7 @@ namespace repo{
 				static const std::vector<std::string> collectionsInProject;
 				static const uint16_t REPO_SCENE_TEXTURE_BIT = 0x0001;
 				static const uint16_t REPO_SCENE_ENTITIES_BIT = 0x0002;
+				static const uint16_t REPO_SCENE_INVALID_MESH_BIT = 0x0003;
 			public:
 
 				/**
@@ -161,12 +162,29 @@ namespace repo{
 				}
 
 				/**
+				* Check if default scene graph contains invalid meshes
+				* This is usually caused non triangulated faces
+				* @return returns true invalid meshes exists
+				*/
+				bool hasInvalidMeshes() const{
+					return status & REPO_SCENE_INVALID_MESH_BIT;
+				}
+
+				/**
 				* Check if default scene graph is missing some nodes due to failed import
 				* @return returns true if missing nodes
 				*/
 				bool isMissingNodes() const{
 					return status & REPO_SCENE_ENTITIES_BIT;
 				}
+
+				/**
+				* Flag missing texture bit on status.
+				*/
+				void setHasInvalidMeshes(){
+					status |= REPO_SCENE_INVALID_MESH_BIT;
+				}
+
 				/**
 				* Flag missing texture bit on status.
 				*/
@@ -1053,6 +1071,12 @@ namespace repo{
 				*/
 				void shiftModel(
 					const std::vector<double> &offset);
+
+				/**
+				* Valid the scene, flag any necessary flags if 
+				* errors are found
+				*/
+				void validateScene();
 
 				/*
 				* ---------------- Scene utilities ----------------

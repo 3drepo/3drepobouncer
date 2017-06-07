@@ -496,6 +496,11 @@ int32_t importFileAndCommit(
 				repoLog("Missing nodes detected!");
 				return REPOERR_LOAD_SCENE_MISSING_NODES;
 			}
+			else if (graph->hasInvalidMeshes())
+			{
+				repoLog("Invalid meshes detected!");
+				return REPOERR_LOAD_SCENE_MISSING_NODES;
+			}
 			else
 				return REPOERR_OK;
 		}
