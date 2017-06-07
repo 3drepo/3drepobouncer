@@ -1519,7 +1519,7 @@ void RepoScene::validateScene()
 	for (const auto &meshNode : graph.meshes)
 	{
 		auto mesh = dynamic_cast<const MeshNode*>(meshNode);
-		for (const auto face : mesh->getFaces)
+		for (const auto face : mesh->getFaces())
 		{
 			if (invalidMesh = (face.size() != 3))
 				break;
