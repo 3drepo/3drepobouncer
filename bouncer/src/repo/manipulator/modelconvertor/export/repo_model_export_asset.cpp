@@ -174,10 +174,7 @@ bool AssetModelExport::generateTreeRepresentation(
 				serialisedFaceBuf.push_back(reSplitter->getSerialisedFaces());
 				idMapBuf.push_back(reSplitter->getIDMapArrays());
 				meshMappings.push_back(reSplitter->getMappingsPerSubMesh());
-				std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> splitMapping = reSplitter->getSplitMapping();
-				if (mesh->getUniqueID().toString() == "521c0542-60e5-45ad-aa0e-24145a2470a8" || mesh->getUniqueID().toString() == "613faae4-f10a-43d8-84dd-7eccf87f28bf")
-				repoDebug << "Reorganised mesh:" << mesh->getUniqueID() << " new mesh id: " << reorganisedMeshes.back()->getUniqueID() << " ["<< reorganisedMeshes.size()<<"]["<<
-					serialisedFaceBuf.size() <<"]["<< idMapBuf.size()<<"]["<< meshMappings.size() <<"]";
+				std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> splitMapping = reSplitter->getSplitMapping();				
 				std::string fNamePrefix = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + mesh->getUniqueID().toString();
 				assetFiles.push_back(fNamePrefix + ".unity3d");
 				jsons.push_back(fNamePrefix + "_unity.json.mpc");
