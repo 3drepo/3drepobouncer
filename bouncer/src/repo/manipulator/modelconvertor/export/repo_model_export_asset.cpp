@@ -165,15 +165,16 @@ bool AssetModelExport::generateTreeRepresentation(
 
 			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter =
 				new repo::manipulator::modelutility::MeshMapReorganiser(mesh, SRC_MAX_VERTEX_LIMIT);
-			reorganisedMeshes.push_back(std::make_shared<repo::core::model::MeshNode>(reSplitter->getRemappedMesh()));
 
-			if (success = !(reorganisedMeshes.back()->isEmpty()))
+			
+
+			if (success = !std::make_shared<repo::core::model::MeshNode>(reSplitter->getRemappedMesh())->isEmpty())
 			{
+				reorganisedMeshes.push_back(std::make_shared<repo::core::model::MeshNode>(reSplitter->getRemappedMesh()));
 				serialisedFaceBuf.push_back(reSplitter->getSerialisedFaces());
 				idMapBuf.push_back(reSplitter->getIDMapArrays());
 				meshMappings.push_back(reSplitter->getMappingsPerSubMesh());
-				std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> splitMapping = reSplitter->getSplitMapping();
-			
+				std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> splitMapping = reSplitter->getSplitMapping();				
 				std::string fNamePrefix = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + mesh->getUniqueID().toString();
 				assetFiles.push_back(fNamePrefix + ".unity3d");
 				jsons.push_back(fNamePrefix + "_unity.json.mpc");
