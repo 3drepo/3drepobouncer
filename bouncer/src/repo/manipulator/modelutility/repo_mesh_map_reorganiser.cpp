@@ -40,6 +40,7 @@ MeshMapReorganiser::MeshMapReorganiser(
 		newUVs = oldUVs;
 		newFaces.reserve(oldFaces.size());
 		serialisedFaces.reserve(oldFaces.size() * 3);
+		
 		if (!(reMapSuccess = performSplitting()))
 		{
 			//mission failed clear up the memory
@@ -54,6 +55,7 @@ MeshMapReorganiser::MeshMapReorganiser(
 			splitMap.clear();
 			idMapBuf.clear();
 		}
+	
 	}
 	else
 	{
@@ -274,6 +276,8 @@ bool MeshMapReorganiser::performSplitting()
 						serialisedFaces.push_back(newIdx);
 					}
 					newFaces.push_back(newFace);
+					++subMeshFaceCount;
+					++totalFaceCount;
 				}
 			}
 
@@ -282,10 +286,7 @@ bool MeshMapReorganiser::performSplitting()
 			updateBoundingBoxes(bboxMin, bboxMax, currentSubMesh.min, currentSubMesh.max);
 
 			subMeshVertexCount += currentMeshNumVertices;
-			subMeshFaceCount += currentMeshNumFaces;
-
 			totalVertexCount += currentMeshNumVertices;
-			totalFaceCount += currentMeshNumFaces;
 
 			splitMap[currentSubMesh.mesh_id].push_back(newMappings.size() - 1);
 			completeLastMatMapEntry(totalVertexCount, totalFaceCount);
@@ -315,8 +316,6 @@ bool MeshMapReorganiser::splitLargeMesh(
 	std::vector<std::vector<repo::lib::RepoVector2D>> reMappedUVs;
 	if (oldUVs.size())
 		reMappedUVs.resize(oldUVs.size());
-
-	repoTrace << currentSubMesh.mesh_id << " Exceed the maximum amount of vertices, splitting it into multiple super meshes...";
 
 	auto currentMeshVFrom = currentSubMesh.vertFrom;
 	auto currentMeshVTo = currentSubMesh.vertTo;
@@ -424,8 +423,9 @@ bool MeshMapReorganiser::splitLargeMesh(
 			}//for (const auto &indexValue : currentFace)
 
 			newFaces.push_back(newFace);
+			splitMeshFaceCount++;
 		}//else nSides != 3
-		splitMeshFaceCount++;
+		
 	}//for (uint32_t fIdx = 0; fIdx < currentMeshNumFaces; ++fIdx)
 
 	updateIDMapArray(splitMeshVertexCount, idMapIdx);

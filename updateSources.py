@@ -74,3 +74,4 @@ for dir, subDirList, fl in os.walk(testDir):
 
 for dir, subDirList, fl in os.walk(clientDir):
 	createCMakeList(dir, fl, subDirList, "CLIENT_SOURCES", "CLIENT_HEADERS")
+

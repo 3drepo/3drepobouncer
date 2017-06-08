@@ -102,6 +102,7 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 
 			auto data = worldMat.getData();
 			data[3] = data[7] = data[11] = 0;
+			data[12] = data[13] = data[14] = 0;
 
 			repo::lib::RepoMatrix multMat(data);
 

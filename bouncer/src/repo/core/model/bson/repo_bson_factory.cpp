@@ -486,6 +486,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 RepoProjectSettings RepoBSONFactory::makeRepoProjectSettings(
 	const std::string &uniqueProjectName,
 	const std::string &owner,
+	const bool        &isFederate,
 	const std::string &type,
 	const std::string &description,
 	const double pinSize,
@@ -516,6 +517,11 @@ RepoProjectSettings RepoBSONFactory::makeRepoProjectSettings(
 	// Type
 	if (!type.empty())
 		builder << REPO_LABEL_TYPE << type;
+
+	//--------------------------------------------------------------------------
+	// federate
+	if (isFederate)
+		builder << REPO_LABEL_IS_FEDERATION << isFederate;
 
 	//--------------------------------------------------------------------------
 	// Properties (embedded sub-bson)

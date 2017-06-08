@@ -80,6 +80,8 @@ namespace repo{
 			if (fabs(mat[12]) > sig || fabs(mat[13]) > sig || fabs(mat[14]) > sig || fabs(mat[15] - 1) > sig)
 			{
 				repoWarning << "Potentially incorrect transformation : does not expect the last row to have values!";
+				repoWarning << matrix.toString();
+				exit(0);
 			}
 
 			return result;

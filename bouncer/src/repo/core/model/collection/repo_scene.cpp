@@ -93,7 +93,8 @@ RepoScene::RepoScene(
 	const std::string &issuesExt,
 	const std::string &srcExt,
 	const std::string &gltfExt,
-	const std::string &jsonExt)
+	const std::string &jsonExt,
+	const std::string &unityExt)
 	:
 	databaseName(sanitizeDatabaseName(database)),
 	projectName(sanitizeName(projectName)),
@@ -105,6 +106,7 @@ RepoScene::RepoScene(
 	srcExt(sanitizeExt(srcExt)),
 	gltfExt(sanitizeExt(gltfExt)),
 	jsonExt(sanitizeExt(jsonExt)),
+	unityExt(sanitizeExt(unityExt)),
 	headRevision(true),
 	unRevisioned(false),
 	revNode(0),
@@ -598,7 +600,7 @@ bool RepoScene::commitProjectSettings(
 	const std::string &userName)
 {
 	RepoProjectSettings projectSettings =
-		RepoBSONFactory::makeRepoProjectSettings(projectName, userName);
+		RepoBSONFactory::makeRepoProjectSettings(projectName, userName, graph.references.size());
 
 	bool success = handler->insertDocument(
 		databaseName, REPO_COLLECTION_SETTINGS, projectSettings, errMsg);
@@ -889,13 +891,12 @@ const std::vector<RepoNode*> nodes,
 const NodeType filter)
 {
 	std::vector<RepoNode*> filteredNodes;
-	for (RepoNode* n : nodes)
-	{
-		if (n && n->getTypeAsEnum() == filter)
-		{
-			filteredNodes.push_back(n);
-		}
-	}
+
+	std::copy_if(nodes.begin(), nodes.end(),
+		std::back_inserter(filteredNodes),
+		[filter](const RepoNode* comp) { return comp->getTypeAsEnum() == filter; }
+	);
+
 	return filteredNodes;
 }
 
@@ -1233,6 +1234,7 @@ void RepoScene::modifyNode(
 	repoGraphInstance &g = gtype == GraphType::OPTIMIZED ? stashGraph : graph;
 
 	repo::lib::RepoUUID sharedID = nodeToChange->getSharedID();
+	repo::lib::RepoUUID uniqueID = nodeToChange->getUniqueID();
 
 	RepoNode updatedNode;
 
@@ -1246,13 +1248,14 @@ void RepoScene::modifyNode(
 	if (gtype == GraphType::DEFAULT && !isInList)
 	{
 		newModified.insert(sharedID);
-		newCurrent.erase(nodeToChange->getUniqueID());
+		newCurrent.erase(uniqueID);
 		newCurrent.insert(newUniqueID);
 	}
 
 	//update shared to unique ID  and uniqueID to node mapping
+
 	g.sharedIDtoUniqueID[sharedID] = newUniqueID;
-	g.nodesByUniqueID.erase(nodeToChange->getUniqueID());
+	g.nodesByUniqueID.erase(uniqueID);
 	g.nodesByUniqueID[newUniqueID] = nodeToChange;
 
 	nodeToChange->swap(updatedNode);
@@ -1446,36 +1449,39 @@ bool RepoScene::populate(
 		ReferenceNode* reference = (ReferenceNode*)node;
 		auto parent = reference->getParentIDs().at(0);
 		auto refScene = g.referenceToScene[reference->getSharedID()];
-		auto refOffset = refScene->getWorldOffset();
-		//Back to world coord of subProject
-		std::vector<std::vector<float>> backToSubWorld =
-		{ { 1., 0., 0., (float)refOffset[0] },
-		{ 0., 1., 0., (float)refOffset[1] },
-		{ 0., 0., 1., (float)refOffset[2] },
-		{ 0., 0., 0., 1 } };
-		std::vector<std::vector<float>> toFedWorldTrans =
-		{ { 1., 0., 0., (float)-worldOffset[0] },
-		{ 0., 1., 0., (float)-worldOffset[1] },
-		{ 0., 0., 1., (float)-worldOffset[2] },
-		{ 0., 0., 0., 1. } };
+		if (refScene)
+		{
+			auto refOffset = refScene->getWorldOffset();
+			//Back to world coord of subProject
+			std::vector<std::vector<float>> backToSubWorld =
+			{ { 1., 0., 0., (float)refOffset[0] },
+			{ 0., 1., 0., (float)refOffset[1] },
+			{ 0., 0., 1., (float)refOffset[2] },
+			{ 0., 0., 0., 1 } };
+			std::vector<std::vector<float>> toFedWorldTrans =
+			{ { 1., 0., 0., (float)-worldOffset[0] },
+			{ 0., 1., 0., (float)-worldOffset[1] },
+			{ 0., 0., 1., (float)-worldOffset[2] },
+			{ 0., 0., 0., 1. } };
 
-		//parent - ref
-		//Becomes: toFedWorld - parent - toSubWorld - ref
+			//parent - ref
+			//Becomes: toFedWorld - parent - toSubWorld - ref
 
-		auto parentNode = getNodeBySharedID(GraphType::DEFAULT, parent);
-		auto grandParent = parentNode->getParentIDs().at(0);
-		auto grandParentNode = getNodeBySharedID(GraphType::DEFAULT, grandParent);
-		auto toFedWorld = new TransformationNode(RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(toFedWorldTrans), "trans", { grandParent }));
-		auto toSubWorld = new TransformationNode(RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(backToSubWorld), "trans", { parent }));
-		std::vector<RepoNode*> newNodes;
-		newNodes.push_back(toFedWorld);
-		newNodes.push_back(toSubWorld);
-		addNodes(newNodes);
-		addInheritance(GraphType::DEFAULT, toSubWorld, reference);
-		addInheritance(GraphType::DEFAULT, toFedWorld, parentNode);
-		abandonChild(GraphType::DEFAULT, grandParent, parentNode);
-		abandonChild(GraphType::DEFAULT, parent, reference);
-		newModified.clear(); //We're still loading the scene, there shouldn't be anything here anyway.
+			auto parentNode = getNodeBySharedID(GraphType::DEFAULT, parent);
+			auto grandParent = parentNode->getParentIDs().at(0);
+			auto grandParentNode = getNodeBySharedID(GraphType::DEFAULT, grandParent);
+			auto toFedWorld = new TransformationNode(RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(toFedWorldTrans), "trans", { grandParent }));
+			auto toSubWorld = new TransformationNode(RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(backToSubWorld), "trans", { parent }));
+			std::vector<RepoNode*> newNodes;
+			newNodes.push_back(toFedWorld);
+			newNodes.push_back(toSubWorld);
+			addNodes(newNodes);
+			addInheritance(GraphType::DEFAULT, toSubWorld, reference);
+			addInheritance(GraphType::DEFAULT, toFedWorld, parentNode);
+			abandonChild(GraphType::DEFAULT, grandParent, parentNode);
+			abandonChild(GraphType::DEFAULT, parent, reference);
+			newModified.clear(); //We're still loading the scene, there shouldn't be anything here anyway.
+		}
 	}
 
 	return success;
@@ -1502,6 +1508,27 @@ void RepoScene::populateAndUpdate(
 	addNodeToScene(gType, transformations, errMsg, &(instance.transformations));
 	addNodeToScene(gType, references, errMsg, &(instance.references));
 	addNodeToScene(gType, unknowns, errMsg, &(instance.unknowns));
+
+	validateScene();
+}
+
+void RepoScene::validateScene()
+{
+	//Check all meshes are triangulated
+	bool invalidMesh = false;
+	for (const auto &meshNode : graph.meshes)
+	{
+		auto mesh = dynamic_cast<const MeshNode*>(meshNode);
+		for (const auto face : mesh->getFaces())
+		{
+			if (invalidMesh = (face.size() != 3))
+				break;
+		}
+		if (invalidMesh) break;
+	}
+
+	if (invalidMesh)
+		setHasInvalidMeshes();
 }
 
 void RepoScene::reorientateDirectXModel()

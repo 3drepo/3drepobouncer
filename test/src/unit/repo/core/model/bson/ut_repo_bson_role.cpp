@@ -728,14 +728,14 @@ TEST(RepoRoleTest, CloneAndAddPermissionsTest)
 
 	RepoRole newRole = role.cloneAndUpdatePermissions(std::vector<RepoPermission>());
 
-	ASSERT_EQ(role.getPrivileges().size(), newRole.getPrivileges().size());
+	ASSERT_EQ(0, newRole.getPrivileges().size());
 	EXPECT_EQ(role.getName(), newRole.getName());
 	EXPECT_EQ(role.getDatabase(), newRole.getDatabase());
 	EXPECT_EQ(role.getInheritedRoles().size(), newRole.getInheritedRoles().size());
 
 	RepoRole empty;
 
-	EXPECT_TRUE(empty.cloneAndUpdatePermissions(std::vector<RepoPermission>()).isEmpty());
+	EXPECT_EQ(0, empty.cloneAndUpdatePermissions(std::vector<RepoPermission>()).getPrivileges().size());
 
 	std::vector<RepoPermission> newPermissions;
 	newPermissions.push_back({ "db", "col", AccessRight::READ_ONLY });

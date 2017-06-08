@@ -54,6 +54,7 @@ if(DEFINED ENV{OCCT_ROOT})
 		find_library(libPathDebug${libName} NAMES ${libName}
 			PATHS
 			${OCCT_DEBUG_LIB_DIR}
+			${OCCT_LIB_DIR}
 			${OCCT_ROOT}/lib
 		)
 		set(OCCT_LIBRARIES_DEBUG ${OCCT_LIBRARIES_DEBUG} ${libPathDebug${libName}})

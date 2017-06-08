@@ -39,3 +39,12 @@
 #define REPOERR_LOAD_SCENE_MISSING_NODES 10
 //Failed to get file from project
 #define REPOERR_GET_FILE_FAILED 11
+//Failed to finish (i.e. crashed)
+#define REPOERR_CRASHED 12
+//Failed to read import parameters from file (Unity)
+#define REPOERR_FILE_READ_FAILED 13
+//Failed to generate asset bundles (Unity)
+#define REPOERR_BUNDLE_GEN_FAILED 14
+//Scene loaded, has untriangulated meshes
+#define REPOERR_LOAD_SCENE_INVALID_MESHES 15
+

@@ -30,7 +30,9 @@
 #include "diff/repo_diff_sharedid.h"
 #include "modelconvertor/import/repo_model_import_assimp.h"
 #include "modelconvertor/import/repo_model_import_ifc.h"
+#include "modelconvertor/import/repo_model_import_3drepo.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
+#include "modelconvertor/export/repo_model_export_asset.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
 #include "modeloptimizer/repo_optimizer_ifc.h"
@@ -167,6 +169,18 @@ repo::core::model::RepoScene* RepoManipulator::createFederatedScene(
 		new repo::core::model::RepoScene(empty, emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, refNodes);
 
 	return scene;
+}
+
+bool RepoManipulator::commitAssetBundleBuffers(
+	const std::string                     &databaseAd,
+	const repo::core::model::RepoBSON 	  *cred,
+	repo::core::model::RepoScene          *scene,
+	const repo_web_buffers_t              &buffers)
+{
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	modelutility::SceneManager SceneManager;
+	return SceneManager.commitWebBuffers(scene, scene->getUnityExtension(), buffers, handler);
 }
 
 bool RepoManipulator::commitScene(
@@ -758,19 +772,23 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 	boost::filesystem::path filePathP(filePath);
 	std::string fileExt = filePathP.extension().string();
 
-	if (!repo::manipulator::modelconvertor::AssimpModelImport::isSupportedExts(fileExt))
+	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
+
+	if (!repo::manipulator::modelconvertor::AssimpModelImport::isSupportedExts(fileExt) && !(fileExt == ".BIM"))
 	{
 		msg = "Unsupported file extension";
 		return nullptr;
 	}
-	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
 
 	repo::manipulator::modelconvertor::AbstractModelImport* modelConvertor = nullptr;
 
 	bool useIFCImporter = fileExt == ".IFC" && (!config || config->getUseIFCOpenShell());
+	bool useRepoImporter = fileExt == ".BIM";
 
 	if (useIFCImporter)
 		modelConvertor = new repo::manipulator::modelconvertor::IFCModelImport(config);
+	else if (useRepoImporter)
+		modelConvertor = new repo::manipulator::modelconvertor::RepoModelImport(config);
 	else
 		modelConvertor = new repo::manipulator::modelconvertor::AssimpModelImport(config);
 
@@ -844,6 +862,18 @@ bool RepoManipulator::hasDatabase(
 	auto databaseList = fetchDatabases(databaseAd, cred);
 	auto findIt = std::find(databaseList.begin(), databaseList.end(), dbName);
 	return findIt != databaseList.end();
+}
+
+std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoManipulator::initialiseAssetBuffer(
+	repo::core::model::RepoScene *scene,
+	std::unordered_map<std::string, std::vector<uint8_t>> &jsonFiles,
+	std::vector<std::vector<uint16_t>> &serialisedFaceBuf,
+	std::vector<std::vector<std::vector<float>>> &idMapBuf,
+	std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> &meshMappings)
+{
+	repo::manipulator::modelconvertor::AssetModelExport assetExport(scene);
+	jsonFiles = assetExport.getJSONFilesAsBuffer();
+	return assetExport.getReorganisedMeshes(serialisedFaceBuf, idMapBuf, meshMappings);
 }
 
 void RepoManipulator::insertBinaryFileToDatabase(

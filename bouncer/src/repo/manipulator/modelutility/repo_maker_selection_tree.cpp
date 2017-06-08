@@ -33,8 +33,7 @@ SelectionTreeMaker::SelectionTreeMaker(
 
 repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 	const repo::core::model::RepoNode            *currentNode,
-	std::unordered_map < std::string,
-	std::pair < std::string, std::string >> &idMaps,
+	std::unordered_map < std::string, std::pair < std::string, std::string >> &idMaps,
 	const std::string                            &currentPath,
 	bool                                         &hiddenOnDefault,
 	std::vector<std::string>                     &hiddenNode) const
@@ -50,17 +49,22 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 		std::vector<repo::lib::PropertyTree> childrenTrees;
 
 		std::vector<repo::core::model::RepoNode*> childrenTypes[2];
+		std::vector<repo::lib::RepoUUID> metaIDs;
 		for (const auto &child : children)
 		{
 			//Ensure IFC Space (if any) are put into the tree first.
 			if (child->getName().find(IFC_TYPE_SPACE_LABEL) != std::string::npos)
 				childrenTypes[0].push_back(child);
+			else if (child->getTypeAsEnum() == repo::core::model::NodeType::METADATA)
+			{
+				metaIDs.push_back(child->getUniqueID());
+			}
 			else
 				childrenTypes[1].push_back(child);
 		}
 
 		bool hasHiddenChildren = false;
-		for (const auto childrenSet : childrenTypes)
+		for (const auto &childrenSet : childrenTypes)
 		{
 			for (const auto &child : childrenSet)
 			{
@@ -98,12 +102,15 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 
 		tree.addToTree("account", scene->getDatabaseName());
 		tree.addToTree("project", scene->getProjectName());
+		tree.addToTree("type", currentNode->getType());
 		if (!name.empty())
 			tree.addToTree("name", name);
 		tree.addToTree("path", childPath);
 		tree.addToTree("_id", idString);
 		tree.addToTree("shared_id", sharedID.toString());
 		tree.addToTree("children", childrenTrees);
+		if (metaIDs.size())
+			tree.addToTree("meta", metaIDs);
 
 		if (name.find(IFC_TYPE_SPACE_LABEL) != std::string::npos
 			&& currentNode->getTypeAsEnum() == repo::core::model::NodeType::MESH)

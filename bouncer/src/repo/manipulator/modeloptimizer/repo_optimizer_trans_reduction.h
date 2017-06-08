@@ -27,9 +27,27 @@
 #include "../../core/model/bson/repo_node_camera.h"
 #include "../../core/model/bson/repo_node_mesh.h"
 
+#include <tuple>
+#include <unordered_map>
+
+typedef std::tuple<repo::core::model::RepoScene::GraphType, repo::lib::RepoUUID, repo::core::model::NodeType> RepoCacheTuple;
+
 namespace repo {
 	namespace manipulator {
 		namespace modeloptimizer {
+
+			struct RepoCacheHasher
+			{
+				std::size_t operator()(const RepoCacheTuple &key) const
+				{
+					std::size_t type = std::hash<int>()(static_cast<int>(std::get<0>(key)));
+					std::size_t uuid = repo::lib::RepoUUIDHasher()(static_cast<repo::lib::RepoUUID>(std::get<1>(key)));
+					std::size_t nodeType = std::hash<int>()(static_cast<int>(std::get<2>(key)));
+
+					return nodeType ^ ((type << 2) ^ (type << 1));
+				}
+			};
+
 			class TransformationReductionOptimizer : AbstractOptimizer{
 			public:
 				/**
@@ -51,6 +69,8 @@ namespace repo {
 				* @return returns true upon success
 				*/
 				virtual bool apply(repo::core::model::RepoScene *scene);
+
+				std::unordered_map<RepoCacheTuple, std::vector<repo::core::model::RepoNode *>, RepoCacheHasher> filterCache;
 
 			private:
 				const repo::core::model::RepoScene::GraphType gType;
@@ -75,6 +95,12 @@ namespace repo {
 				void applyOptimOnCamera(
 					repo::core::model::RepoScene *scene,
 					repo::core::model::CameraNode  *camera);
+
+				std::vector<repo::core::model::RepoNode *> getChildrenByIDAndType(
+					repo::core::model::RepoScene *scene,
+					const repo::core::model::RepoScene::GraphType &gType,
+					const repo::lib::RepoUUID  &parent,
+					const repo::core::model::NodeType  &type);
 			};
 		}
 	}

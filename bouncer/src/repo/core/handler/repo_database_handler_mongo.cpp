@@ -98,7 +98,10 @@ uint64_t MongoDatabaseHandler::countItemsInCollection(
 	}
 	try{
 		worker = workerPool->getWorker();
-		numItems = worker->count(database + "." + collection);
+		if (worker)
+			numItems = worker->count(database + "." + collection);
+		else
+			errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
 	}
 	catch (mongo::DBException& e)
 	{
@@ -139,7 +142,10 @@ void MongoDatabaseHandler::createCollection(const std::string &database, const s
 	{
 		try{
 			worker = workerPool->getWorker();
-			worker->createCollection(database + "." + name);
+			if (worker)
+				worker->createCollection(database + "." + name);
+			else
+				repoError << "Failed to create collection: cannot obtain a database worker from the pool";
 		}
 		catch (mongo::DBException& e)
 		{
@@ -201,7 +207,10 @@ bool MongoDatabaseHandler::dropCollection(
 	{
 		try{
 			worker = workerPool->getWorker();
-			success = worker->dropCollection(database + "." + collection);
+			if (worker)
+				success = worker->dropCollection(database + "." + collection);
+			else
+				errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
 		}
 		catch (mongo::DBException& e)
 		{
@@ -229,7 +238,10 @@ bool MongoDatabaseHandler::dropDatabase(
 	{
 		try{
 			worker = workerPool->getWorker();
-			success = worker->dropDatabase(database);
+			if (worker)
+				success = worker->dropDatabase(database);
+			else
+				errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
 		}
 		catch (mongo::DBException& e)
 		{
@@ -260,7 +272,7 @@ bool MongoDatabaseHandler::dropDocument(
 			worker = workerPool->getWorker();
 			mongo::BSONElement bsonID;
 			bson.getObjectID(bsonID);
-			if (success = !bson.isEmpty() && !bsonID.isNull())
+			if (success = worker && !bson.isEmpty() && !bsonID.isNull())
 			{
 				mongo::Query query = MONGO_QUERY("_id" << bsonID);
 				worker->remove(database + "." + collection, query, true);
@@ -298,7 +310,7 @@ bool MongoDatabaseHandler::dropDocuments(
 	{
 		try{
 			worker = workerPool->getWorker();
-			if (success = !criteria.isEmpty())
+			if (success = worker && !criteria.isEmpty())
 			{
 				worker->remove(database + "." + collection, criteria, false);
 			}
@@ -346,11 +358,16 @@ bool MongoDatabaseHandler::dropRawFile(
 
 	try{
 		worker = workerPool->getWorker();
-		//store the big biary file within GridFS
-		mongo::GridFS gfs(*worker, database, collection);
-		//FIXME: there must be errors to catch...
-		repoTrace << "removing " << fileName << " in gridfs: " << database << "." << collection;
-		gfs.removeFile(fileName);
+		if (success = worker)
+		{
+			//store the big biary file within GridFS
+			mongo::GridFS gfs(*worker, database, collection);
+			//FIXME: there must be errors to catch...
+			repoTrace << "removing " << fileName << " in gridfs: " << database << "." << collection;
+			gfs.removeFile(fileName);
+		}
+		else
+			errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
 	}
 	catch (mongo::DBException &e)
 	{
@@ -395,20 +412,25 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 			uint64_t retrieved = 0;
 			std::auto_ptr<mongo::DBClientCursor> cursor;
 			worker = workerPool->getWorker();
-			do
+			if (worker)
 			{
-				repoTrace << " Querying " << database << "." << collection << " with : " << criteria.toString();
-				cursor = worker->query(
-					database + "." + collection,
-					criteria,
-					0,
-					retrieved);
-
-				for (; cursor.get() && cursor->more(); ++retrieved)
+				do
 				{
-					data.push_back(createRepoBSON(worker, database, collection, cursor->nextSafe().copy()));
-				}
-			} while (cursor.get() && cursor->more());
+					repoTrace << " Querying " << database << "." << collection << " with : " << criteria.toString();
+					cursor = worker->query(
+						database + "." + collection,
+						criteria,
+						0,
+						retrieved);
+
+					for (; cursor.get() && cursor->more(); ++retrieved)
+					{
+						data.push_back(createRepoBSON(worker, database, collection, cursor->nextSafe().copy()));
+					}
+				} while (cursor.get() && cursor->more());
+			}
+			else
+				repoError << "Failed to count number of items in collection: cannot obtain a database worker from the pool";
 		}
 		catch (mongo::DBException& e)
 		{
@@ -434,13 +456,16 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 		try{
 			uint64_t retrieved = 0;
 			worker = workerPool->getWorker();
-			auto query = mongo::Query(criteria);
-			if (!sortField.empty())
-				query = query.sort(sortField, -1);
+			if (worker)
+			{
+				auto query = mongo::Query(criteria);
+				if (!sortField.empty())
+					query = query.sort(sortField, -1);
 
-			data = repo::core::model::RepoBSON(worker->findOne(
-				database + "." + collection,
-				query));
+				data = repo::core::model::RepoBSON(worker->findOne(
+					database + "." + collection,
+					query));
+			}
 		}
 		catch (mongo::DBException& e)
 		{
@@ -468,22 +493,29 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 			uint64_t retrieved = 0;
 			std::auto_ptr<mongo::DBClientCursor> cursor;
 			worker = workerPool->getWorker();
-			do
+			if (worker)
 			{
-				mongo::BSONObjBuilder query;
-				query << ID << BSON("$in" << array);
-
-				cursor = worker->query(
-					database + "." + collection,
-					query.obj(),
-					0,
-					retrieved);
-
-				for (; cursor.get() && cursor->more(); ++retrieved)
+				do
 				{
-					data.push_back(createRepoBSON(worker, database, collection, cursor->nextSafe().copy()));
-				}
-			} while (cursor.get() && cursor->more());
+					mongo::BSONObjBuilder query;
+					query << ID << BSON("$in" << array);
+
+					cursor = worker->query(
+						database + "." + collection,
+						query.obj(),
+						0,
+						retrieved);
+
+					for (; cursor.get() && cursor->more(); ++retrieved)
+					{
+						data.push_back(createRepoBSON(worker, database, collection, cursor->nextSafe().copy()));
+					}
+				} while (cursor.get() && cursor->more());
+			}
+			else
+			{
+				repoError << "Failed to count number of items in collection: cannot obtain a database worker from the pool";
+			}
 
 			if (fieldsCount != retrieved){
 				repoWarning << "Number of documents(" << retrieved << ") retreived by findAllByUniqueIDs did not match the number of unique IDs(" << fieldsCount << ")!";
@@ -515,15 +547,22 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 		//----------------------------------------------------------------------
 
 		worker = workerPool->getWorker();
-		auto query = mongo::Query(queryBuilder.obj());
-		if (!sortField.empty())
-			query = query.sort(sortField, -1);
+		if (worker)
+		{
+			auto query = mongo::Query(queryBuilder.obj());
+			if (!sortField.empty())
+				query = query.sort(sortField, -1);
 
-		mongo::BSONObj bsonMongo = worker->findOne(
-			getNamespace(database, collection),
-			query);
+			mongo::BSONObj bsonMongo = worker->findOne(
+				getNamespace(database, collection),
+				query);
 
-		bson = createRepoBSON(worker, database, collection, bsonMongo);
+			bson = createRepoBSON(worker, database, collection, bsonMongo);
+		}
+		else
+		{
+			repoError << "Failed to count number of items in collection: cannot obtain a database worker from the pool";
+		}
 	}
 	catch (mongo::DBException& e)
 	{
@@ -546,10 +585,15 @@ repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
 		queryBuilder.append(ID, uuid);
 
 		worker = workerPool->getWorker();
-		mongo::BSONObj bsonMongo = worker->findOne(getNamespace(database, collection),
-			mongo::Query(queryBuilder.obj()));
+		if (worker)
+		{
+			mongo::BSONObj bsonMongo = worker->findOne(getNamespace(database, collection),
+				mongo::Query(queryBuilder.obj()));
 
-		bson = createRepoBSON(worker, database, collection, bsonMongo);
+			bson = createRepoBSON(worker, database, collection, bsonMongo);
+		}
+		else
+			repoError << "Failed to count number of items in collection: cannot obtain a database worker from the pool";
 	}
 	catch (mongo::DBException& e)
 	{
@@ -575,21 +619,25 @@ const int									  &sortOrder)
 	try
 	{
 		worker = workerPool->getWorker();
-
-		mongo::BSONObj tmp = fieldsToReturn(fields);
-
-		std::auto_ptr<mongo::DBClientCursor> cursor = worker->query(
-			database + "." + collection,
-			sortField.empty() ? mongo::Query() : mongo::Query().sort(sortField, sortOrder),
-			limit,
-			skip,
-			fields.size() > 0 ? &tmp : nullptr);
-
-		while (cursor.get() && cursor->more())
+		if (worker)
 		{
-			//have to copy since the bson info gets cleaned up when cursor gets out of scope
-			bsons.push_back(createRepoBSON(worker, database, collection, cursor->nextSafe().copy()));
+			mongo::BSONObj tmp = fieldsToReturn(fields);
+
+			std::auto_ptr<mongo::DBClientCursor> cursor = worker->query(
+				database + "." + collection,
+				sortField.empty() ? mongo::Query() : mongo::Query().sort(sortField, sortOrder),
+				limit,
+				skip,
+				fields.size() > 0 ? &tmp : nullptr);
+
+			while (cursor.get() && cursor->more())
+			{
+				//have to copy since the bson info gets cleaned up when cursor gets out of scope
+				bsons.push_back(createRepoBSON(worker, database, collection, cursor->nextSafe().copy()));
+			}
 		}
+		else
+			repoError << "Failed to count number of items in collection: cannot obtain a database worker from the pool";
 	}
 	catch (mongo::DBException& e)
 	{
@@ -608,7 +656,10 @@ std::list<std::string> MongoDatabaseHandler::getCollections(
 	try
 	{
 		worker = workerPool->getWorker();
-		collections = worker->getCollectionNames(database);
+		if (worker)
+			collections = worker->getCollectionNames(database);
+		else
+			repoError << "Failed to count number of items in collection: cannot obtain a database worker from the pool";
 	}
 	catch (mongo::DBException& e)
 	{
@@ -634,7 +685,10 @@ repo::core::model::CollectionStats MongoDatabaseHandler::getCollectionStats(
 			builder.append("scale", 1); // 1024 == KB
 
 			worker = workerPool->getWorker();
-			worker->runCommand(database, builder.obj(), info);
+			if (worker)
+				worker->runCommand(database, builder.obj(), info);
+			else
+				repoError << "Failed to count number of items in collection: cannot obtain a database worker from the pool";
 		}
 		catch (mongo::DBException &e)
 		{
@@ -661,10 +715,15 @@ std::list<std::string> MongoDatabaseHandler::getDatabases(
 	try
 	{
 		worker = workerPool->getWorker();
-		list = worker->getDatabaseNames();
+		if (worker)
+		{
+			list = worker->getDatabaseNames();
 
-		if (sorted)
-			list.sort(&MongoDatabaseHandler::caseInsensitiveStringCompare);
+			if (sorted)
+				list.sort(&MongoDatabaseHandler::caseInsensitiveStringCompare);
+		}
+		else
+			repoError << "Failed to count number of items in collection: cannot obtain a database worker from the pool";
 	}
 	catch (mongo::DBException& e)
 	{
@@ -675,36 +734,39 @@ std::list<std::string> MongoDatabaseHandler::getDatabases(
 }
 
 repo::core::model::DatabaseStats MongoDatabaseHandler::getDatabaseStats(
-        const std::string    &database,
-        std::string          &errMsg)
+	const std::string    &database,
+	std::string          &errMsg)
 {
-        mongo::BSONObj info;
-        mongo::DBClientBase *worker;
-        if (!database.empty())
-        {
-                try {
-                        mongo::BSONObjBuilder builder;
-                        builder.append("dbStats", 1);
-                        builder.append("scale", 1); // 1024 == KB
+	mongo::BSONObj info;
+	mongo::DBClientBase *worker;
+	if (!database.empty())
+	{
+		try {
+			mongo::BSONObjBuilder builder;
+			builder.append("dbStats", 1);
+			builder.append("scale", 1); // 1024 == KB
 
-                        worker = workerPool->getWorker();
-                        worker->runCommand(database, builder.obj(), info);
-                }
-                catch (mongo::DBException &e)
-                {
-                        errMsg = e.what();
-                        repoError << "Failed to retreive database stats for" << database
-                                << " : " << errMsg;
-                }
+			worker = workerPool->getWorker();
+			if (worker)
+				worker->runCommand(database, builder.obj(), info);
+			else
+				repoError << "Failed to count number of items in collection: cannot obtain a database worker from the pool";
+		}
+		catch (mongo::DBException &e)
+		{
+			errMsg = e.what();
+			repoError << "Failed to retreive database stats for" << database
+				<< " : " << errMsg;
+		}
 
-                workerPool->returnWorker(worker);
-        }
-        else
-        {
-                errMsg = "Failed to retrieve collection stats: empty database name/collection name";
-        }
+		workerPool->returnWorker(worker);
+	}
+	else
+	{
+		errMsg = "Failed to retrieve collection stats: empty database name/collection name";
+	}
 
-        return repo::core::model::DatabaseStats(info);
+	return repo::core::model::DatabaseStats(info);
 }
 
 std::vector<uint8_t> MongoDatabaseHandler::getBigFile(
@@ -887,35 +949,40 @@ std::vector<uint8_t> MongoDatabaseHandler::getRawFile(
 	mongo::DBClientBase *worker;
 	try{
 		worker = workerPool->getWorker();
-		mongo::GridFS gfs(*worker, database, collection);
-		mongo::GridFile tmpFile = gfs.findFileByName(fname);
-
-		repoTrace << "Getting file from GridFS: " << fname << " in : " << database << "." << collection;
-
-		if (tmpFile.exists())
+		if (worker)
 		{
-			std::ostringstream oss;
-			tmpFile.write(oss);
+			mongo::GridFS gfs(*worker, database, collection);
+			mongo::GridFile tmpFile = gfs.findFileByName(fname);
 
-			std::string fileStr = oss.str();
+			repoTrace << "Getting file from GridFS: " << fname << " in : " << database << "." << collection;
 
-			assert(sizeof(*fileStr.c_str()) == sizeof(uint8_t));
-
-			if (!fileStr.empty())
+			if (tmpFile.exists())
 			{
-				bin.resize(fileStr.size());
-				memcpy(&bin[0], fileStr.c_str(), fileStr.size());
+				std::ostringstream oss;
+				tmpFile.write(oss);
+
+				std::string fileStr = oss.str();
+
+				assert(sizeof(*fileStr.c_str()) == sizeof(uint8_t));
+
+				if (!fileStr.empty())
+				{
+					bin.resize(fileStr.size());
+					memcpy(&bin[0], fileStr.c_str(), fileStr.size());
+				}
+				else
+				{
+					repoError << "GridFS file : " << fname << " in "
+						<< database << "." << collection << " is empty.";
+				}
 			}
 			else
 			{
-				repoError << "GridFS file : " << fname << " in "
-					<< database << "." << collection << " is empty.";
+				repoError << "Failed to find file within GridFS";
 			}
 		}
 		else
-		{
-			repoError << "Failed to find file within GridFS";
-		}
+			repoError << "Failed to count number of items in collection: cannot obtain a database worker from the pool";
 	}
 	catch (mongo::DBException e)
 	{
@@ -939,9 +1006,14 @@ bool MongoDatabaseHandler::insertDocument(
 	{
 		try{
 			worker = workerPool->getWorker();
-			worker->insert(getNamespace(database, collection), obj);
+			if (worker)
+			{
+				worker->insert(getNamespace(database, collection), obj);
 
-			success = storeBigFiles(worker, database, collection, obj, errMsg);
+				success = storeBigFiles(worker, database, collection, obj, errMsg);
+			}
+			else
+				errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
 		}
 		catch (mongo::DBException &e)
 		{
@@ -1011,7 +1083,6 @@ bool MongoDatabaseHandler::insertRawFile(
 			{
 				repoError << "Failed to obtain a connection with the database";
 			}
-
 		}
 		catch (mongo::DBException &e)
 		{
@@ -1023,10 +1094,7 @@ bool MongoDatabaseHandler::insertRawFile(
 			retry++;
 		}
 		workerPool->returnWorker(worker);
-
 	}
-	
-
 
 	return success;
 }
@@ -1048,40 +1116,45 @@ bool MongoDatabaseHandler::performRoleCmd(
 		else{
 			try{
 				worker = workerPool->getWorker();
-				mongo::BSONObjBuilder cmdBuilder;
-				std::string roleName = role.getName();
-				switch (op)
+				if (worker)
 				{
-				case OPERATION::INSERT:
-					cmdBuilder << "createRole" << roleName;
-					break;
-				case OPERATION::UPDATE:
-					cmdBuilder << "updateRole" << roleName;
-					break;
-				case OPERATION::DROP:
-					cmdBuilder << "dropRole" << roleName;
+					mongo::BSONObjBuilder cmdBuilder;
+					std::string roleName = role.getName();
+					switch (op)
+					{
+					case OPERATION::INSERT:
+						cmdBuilder << "createRole" << roleName;
+						break;
+					case OPERATION::UPDATE:
+						cmdBuilder << "updateRole" << roleName;
+						break;
+					case OPERATION::DROP:
+						cmdBuilder << "dropRole" << roleName;
+					}
+
+					if (op != OPERATION::DROP)
+					{
+						repo::core::model::RepoBSON privileges = role.getObjectField(REPO_ROLE_LABEL_PRIVILEGES);
+						cmdBuilder.appendArray("privileges", privileges);
+
+						repo::core::model::RepoBSON inheritedRoles = role.getObjectField(REPO_ROLE_LABEL_INHERITED_ROLES);
+
+						cmdBuilder.appendArray("roles", inheritedRoles);
+					}
+
+					mongo::BSONObj info;
+					auto cmd = cmdBuilder.obj();
+					success = worker->runCommand(role.getDatabase(), cmd, info);
+
+					std::string cmdError = info.getStringField("errmsg");
+					if (!cmdError.empty())
+					{
+						success = false;
+						errMsg += cmdError;
+					}
 				}
-
-				if (op != OPERATION::DROP)
-				{
-					repo::core::model::RepoBSON privileges = role.getObjectField(REPO_ROLE_LABEL_PRIVILEGES);
-					cmdBuilder.appendArray("privileges", privileges);
-
-					repo::core::model::RepoBSON inheritedRoles = role.getObjectField(REPO_ROLE_LABEL_INHERITED_ROLES);
-
-					cmdBuilder.appendArray("roles", inheritedRoles);
-				}
-
-				mongo::BSONObj info;
-				auto cmd = cmdBuilder.obj();
-				success = worker->runCommand(role.getDatabase(), cmd, info);
-
-				std::string cmdError = info.getStringField("errmsg");
-				if (!cmdError.empty())
-				{
-					success = false;
-					errMsg += cmdError;
-				}
+				else
+					repoError << "Failed to count number of items in collection: cannot obtain a database worker from the pool";
 			}
 			catch (mongo::DBException &e)
 			{
@@ -1113,42 +1186,49 @@ bool MongoDatabaseHandler::performUserCmd(
 	{
 		try{
 			worker = workerPool->getWorker();
-			repo::core::model::RepoBSONBuilder cmdBuilder;
-			std::string username = user.getUserName();
-			switch (op)
+			if (worker)
 			{
-			case OPERATION::INSERT:
-				cmdBuilder << "createUser" << username;
-				break;
-			case OPERATION::UPDATE:
-				cmdBuilder << "updateUser" << username;
-				break;
-			case OPERATION::DROP:
-				cmdBuilder << "dropUser" << username;
+				repo::core::model::RepoBSONBuilder cmdBuilder;
+				std::string username = user.getUserName();
+				switch (op)
+				{
+				case OPERATION::INSERT:
+					cmdBuilder << "createUser" << username;
+					break;
+				case OPERATION::UPDATE:
+					cmdBuilder << "updateUser" << username;
+					break;
+				case OPERATION::DROP:
+					cmdBuilder << "dropUser" << username;
+				}
+
+				if (op != OPERATION::DROP)
+				{
+					std::string pw = user.getCleartextPassword();
+					if (!pw.empty())
+						cmdBuilder << "pwd" << pw;
+
+					repo::core::model::RepoBSON customData = user.getCustomDataBSON();
+					if (!customData.isEmpty())
+						cmdBuilder << "customData" << customData;
+
+					//compulsory, so no point checking if it's empty
+					cmdBuilder.appendArray("roles", user.getRolesBSON());
+				}
+
+				mongo::BSONObj info;
+				success = worker->runCommand(ADMIN_DATABASE, cmdBuilder.obj(), info);
+
+				std::string cmdError = info.getStringField("errmsg");
+				if (!cmdError.empty())
+				{
+					success = false;
+					errMsg += cmdError;
+				}
 			}
-
-			if (op != OPERATION::DROP)
+			else
 			{
-				std::string pw = user.getCleartextPassword();
-				if (!pw.empty())
-					cmdBuilder << "pwd" << pw;
-
-				repo::core::model::RepoBSON customData = user.getCustomDataBSON();
-				if (!customData.isEmpty())
-					cmdBuilder << "customData" << customData;
-
-				//compulsory, so no point checking if it's empty
-				cmdBuilder.appendArray("roles", user.getRolesBSON());
-			}
-
-			mongo::BSONObj info;
-			success = worker->runCommand(ADMIN_DATABASE, cmdBuilder.obj(), info);
-
-			std::string cmdError = info.getStringField("errmsg");
-			if (!cmdError.empty())
-			{
-				success = false;
-				errMsg += cmdError;
+				errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
 			}
 		}
 		catch (mongo::DBException &e)
@@ -1180,52 +1260,56 @@ bool MongoDatabaseHandler::upsertDocument(
 	bool upsert = overwrite;
 	try{
 		worker = workerPool->getWorker();
-
-		repo::core::model::RepoBSONBuilder queryBuilder;
-		queryBuilder << ID << obj.getField(ID);
-
-		mongo::BSONElement bsonID;
-		obj.getObjectID(bsonID);
-		mongo::Query existQuery = MONGO_QUERY("_id" << bsonID);
-		mongo::BSONObj bsonMongo = worker->findOne(database + "." + collection, existQuery);
-
-		if (bsonMongo.isEmpty())
+		if (success = worker)
 		{
-			//document doens't exist, insert the document
-			upsert = true;
-		}
+			repo::core::model::RepoBSONBuilder queryBuilder;
+			queryBuilder << ID << obj.getField(ID);
 
-		if (upsert)
-		{
-			mongo::Query query;
-			query = BSON(REPO_LABEL_ID << bsonID);
-			repoTrace << "query = " << query.toString();
-			worker->update(getNamespace(database, collection), query, obj, true);
+			mongo::BSONElement bsonID;
+			obj.getObjectID(bsonID);
+			mongo::Query existQuery = MONGO_QUERY("_id" << bsonID);
+			mongo::BSONObj bsonMongo = worker->findOne(database + "." + collection, existQuery);
+
+			if (bsonMongo.isEmpty())
+			{
+				//document doens't exist, insert the document
+				upsert = true;
+			}
+
+			if (upsert)
+			{
+				mongo::Query query;
+				query = BSON(REPO_LABEL_ID << bsonID);
+				repoTrace << "query = " << query.toString();
+				worker->update(getNamespace(database, collection), query, obj, true);
+			}
+			else
+			{
+				//only update fields
+				mongo::BSONObjBuilder builder;
+				builder << REPO_COMMAND_UPDATE << collection;
+
+				mongo::BSONObjBuilder updateBuilder;
+				updateBuilder << REPO_COMMAND_Q << BSON(REPO_LABEL_ID << bsonID);
+				updateBuilder << REPO_COMMAND_U << BSON("$set" << obj.removeField(ID));
+				updateBuilder << REPO_COMMAND_UPSERT << true;
+
+				builder << REPO_COMMAND_UPDATES << BSON_ARRAY(updateBuilder.obj());
+				mongo::BSONObj info;
+				worker->runCommand(database, builder.obj(), info);
+
+				if (info.hasField("writeErrors"))
+				{
+					repoError << info.getField("writeErrors").Array().at(0).embeddedObject().getStringField("errmsg");
+					success = false;
+				}
+			}
+
+			if (success)
+				success = storeBigFiles(worker, database, collection, obj, errMsg);
 		}
 		else
-		{
-			//only update fields
-			mongo::BSONObjBuilder builder;
-			builder << REPO_COMMAND_UPDATE << collection;
-
-			mongo::BSONObjBuilder updateBuilder;
-			updateBuilder << REPO_COMMAND_Q << BSON(REPO_LABEL_ID << bsonID);
-			updateBuilder << REPO_COMMAND_U << BSON("$set" << obj.removeField(ID));
-			updateBuilder << REPO_COMMAND_UPSERT << true;
-
-			builder << REPO_COMMAND_UPDATES << BSON_ARRAY(updateBuilder.obj());
-			mongo::BSONObj info;
-			worker->runCommand(database, builder.obj(), info);
-
-			if (info.hasField("writeErrors"))
-			{
-				repoError << info.getField("writeErrors").Array().at(0).embeddedObject().getField("errmsg");
-				success = false;
-			}
-		}
-
-		if (success)
-			success = storeBigFiles(worker, database, collection, obj, errMsg);
+			errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
 	}
 	catch (mongo::DBException &e)
 	{
