@@ -137,7 +137,7 @@
 		exec(command, function(error, stdout, stderr){
 			let reply = {};
 			console.log(stdout);
-			if(error !== null || error.code && softFails.indexOf(error.code) == -1){
+			if(error !== null && error.code && softFails.indexOf(error.code) == -1){
 				if(error.code)
 					reply.value = error.code;
 				else
