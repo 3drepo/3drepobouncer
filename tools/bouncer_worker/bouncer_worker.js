@@ -37,6 +37,12 @@
 	const exec = require("child_process").exec;
 	const importToy = require('./importToy');
 	const toyProjectDir = './toy';
+	//Note: these error codes corresponds to error_codes.h in bouncerclient
+	const ERRCODE_BOUNCER_CRASH = 12;
+	const ERRCODE_PARAM_READ_FAIL = 13;
+	const ERRCODE_BUNDLE_GEN_FAIL = 14;
+	const softFails = [7,10,15]; //failures that should go through to generate bundle
+
 	/**
 	 * Test that the client is working and
 	 * it is able to connect to the database
@@ -86,7 +92,7 @@
 				console.log("importToy module error", err, err.stack);
 
 				callback(JSON.stringify({
-					value: 12,
+					value: ERRCODE_BOUNCER_CRASH,
 					message: err.message
 				}));
 			});
@@ -131,16 +137,19 @@
 		exec(command, function(error, stdout, stderr){
 			let reply = {};
 			console.log(stdout);
-			if(error !== null){
+			if(error !== null && error.code && softFails.indexOf(error.code) == -1){
 				if(error.code)
 					reply.value = error.code;
 				else
-					reply.value = 12;
+					reply.value = ERRCODE_BOUNCER_CRASH;
 				callback(reply);
 				console.log("Executed command: " + command, reply);
 			}
 			else{
-				reply.value = 0;
+				if(error == null)
+					reply.value = 0;
+				else
+					reply.value = error.code;
 				console.log("Executed command: " + command, reply);
 				let cmdArr = cmd.split(' ');
 				if(conf.unity && conf.unity.project && cmdArr[0] == "import")
@@ -154,7 +163,7 @@
 						exec(unityCommand, function( error, stdout, stderr){
 							if(error && error.code)
 							{
-								reply.value = 14;
+								reply.value = ERRCODE_BUNDLE_GEN_FAIL;
 							}
 							console.log("Executed Unity command: " + unityCommand, reply);
 							callback(reply);
@@ -163,7 +172,7 @@
 					else
 					{
 						console.log("Failed to read " + cmdArr[2]);
-						reply.value = 13;
+						reply.value = ERRCODE_PARAM_READ_FAIL;
 						callback(reply);
 					}
 				}
