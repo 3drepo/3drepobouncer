@@ -32,7 +32,8 @@ if(REPO_BUILD_COVERAGE)
 endif()
 
 #================BOOST SETTINGS=======================
-add_definitions(-DBOOST_ALL_NO_LIB)
+#add_definitions(-DBOOST_ALL_NO_LIB)
+add_definitions(-DBOOST_ALL_DYN_LINK)
 add_definitions(-DBOOST_LOG_DYN_LINK)
 add_definitions(-DBOOST_PROGRAM_OPTIONS_DYN_LINK)
 add_definitions(-DBOOST_UUID_NO_SIMD)
@@ -42,8 +43,11 @@ set(Boost_USE_STATIC_RUNTIME OFF)
 
 unset(Boost_INCLUDE_DIR CACHE)
 unset(Boost_LIBRARY_DIRS CACHE)
-
-find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options regex iostreams)
+if(WIN32)
+	find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options regex zlib bzip2 iostreams date_time)
+else()
+	find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options regex iostreams date_time)
+endif()
 add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
 add_definitions(-DBOOST_OPTIONAL_USE_OLD_DEFINITION_OF_NONE)
 
