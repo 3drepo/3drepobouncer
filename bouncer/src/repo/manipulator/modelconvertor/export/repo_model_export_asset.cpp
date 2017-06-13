@@ -47,7 +47,7 @@ const static std::string MP_LABEL_SHARED = "sharedID";
 const static std::string MP_LABEL_JSONS = "jsonFiles";
 const static std::string MP_LABEL_OFFSET = "offset";
 const static std::string MP_LABEL_DATABASE = "database";
-const static std::string MP_LABEL_PROJECT = "project";
+const static std::string MP_LABEL_PROJECT = "model";
 
 AssetModelExport::AssetModelExport(
 	const repo::core::model::RepoScene *scene
