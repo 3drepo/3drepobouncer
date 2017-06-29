@@ -145,7 +145,7 @@ std::string PropertyTree::sanitizeStr(
 		newWord[1] = word[startIndex];
 		newWord[0] = '\\';
 		word.erase(word.begin() + startIndex);
-		word.insert(startIndex, newWord);
+		word.insert(startIndex, newWord, 2);
 
 		startIndex += 2; //skip the newly added "\" and also the first character of the special word
 	}
@@ -156,7 +156,7 @@ std::string PropertyTree::sanitizeStr(
 		newWord[1] = word[startIndex];
 		newWord[0] = '\\';
 		word.erase(word.begin() + startIndex);
-		word.insert(startIndex, newWord);
+		word.insert(startIndex, newWord, 2);
 
 		startIndex += 2; //skip the newly added "\" and also the first character of the special word
 	}
