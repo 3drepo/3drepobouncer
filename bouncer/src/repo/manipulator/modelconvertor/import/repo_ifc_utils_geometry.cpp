@@ -164,6 +164,8 @@ bool IFCUtilsGeometry::generateGeometry(
 	repoTrace << "Finished iterating. number of materials found: " << materials.size();
 
 	std::map<std::string, std::vector<repo::lib::RepoUUID>> materialParent;
+	std::string defaultMaterialName = "_3DREPO_DEFAULT_MAT";
+	std::vector<repo::lib::RepoUUID> parentsOfDefault;
 	for (int i = 0; i < allVertices.size(); ++i)
 	{
 		std::vector<repo::lib::RepoVector3D> vertices, normals;
@@ -220,6 +222,21 @@ bool IFCUtilsGeometry::generateGeometry(
 			}
 
 			materialParent[allMaterials[i]].push_back(mesh.getSharedID());
+		}
+		else
+		{
+			//This mesh has no material, assigning a default
+			if (materials.find(defaultMaterialName) == materials.end())
+			{
+				repo_material_t matProp;
+				matProp.diffuse = { 0.5, 0.5, 0.5, 1 };
+				materials[defaultMaterialName] = (new repo::core::model::MaterialNode(repo::core::model::RepoBSONFactory::makeMaterialNode(matProp, defaultMaterialName)));
+			}
+			if (materialParent.find(defaultMaterialName) == materialParent.end())
+			{
+				materialParent[defaultMaterialName] = std::vector<repo::lib::RepoUUID>();
+			}
+			materialParent[defaultMaterialName].push_back(mesh.getSharedID());
 		}
 	}
 
