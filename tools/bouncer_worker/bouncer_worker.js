@@ -36,7 +36,7 @@
 	const path = require("path");
 	const exec = require("child_process").exec;
 	const importToy = require('./importToy');
-	const toyProjectDir = './toy';
+	const rootModelDir = './toy';
 	//Note: these error codes corresponds to error_codes.h in bouncerclient
 	const ERRCODE_BOUNCER_CRASH = 12;
 	const ERRCODE_PARAM_READ_FAIL = 13;
@@ -72,8 +72,13 @@
 		if(cmd.startsWith('importToy')){
 			
 			let args = cmd.split(' ');
+
 			let database = args[1];
-			let project = args[2];
+			let model = args[2];
+			let modelDir = args[3];
+			let skipPostProcessing = args[4];
+			skipPostProcessing = skipPostProcessing && JSON.parse(skipPostProcessing) || {};
+
 			let username = database;
 
 			let dbConfig = {
@@ -84,9 +89,16 @@
 				writeConcern: conf.mongoimport && conf.mongoimport.writeConcern
 			};
 
-			importToy(dbConfig, toyProjectDir, username, database, project).then(() => {
+			let dir = `${rootModelDir}/${modelDir}`;
+
+			importToy(dbConfig, dir, username, database, model, skipPostProcessing).then(() => {
 				// after importing the toy regenerate the tree as well
-				exeCommand(`genStash ${database} ${project} tree`, rid, callback);
+				if(skipPostProcessing.tree){
+					callback(JSON.stringify({value: 0}));
+				} else {
+					exeCommand(`genStash ${database} ${model} tree`, rid, callback);
+				}
+				
 			}).catch(err => {
 
 				console.log("importToy module error", err, err.stack);
