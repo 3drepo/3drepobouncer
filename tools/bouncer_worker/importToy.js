@@ -18,17 +18,57 @@
  */
 
 
-module.exports = function(dbConfig, dir, username, database, project){
+module.exports = function(dbConfig, modelDir, username, database, project, skipPostProcessing){
 
 	const mongodb = require('mongodb');
 	const GridFSBucket = mongodb.GridFSBucket;
 	const MongoClient = mongodb.MongoClient;
 	const fs = require('fs');
+	skipPostProcessing = skipPostProcessing || {};
+
+
+	let db;
+	const url = `mongodb://${dbConfig.username}:${dbConfig.password}@${dbConfig.dbhost}:${dbConfig.dbport}/admin`;
+
+	return MongoClient.connect(url).then(_db => {
+
+		db = _db.db(database);
+		return importJSON();
+
+	}).then(() => {
+
+
+		return !skipPostProcessing.renameStash && Promise.all([
+			renameStash(db, `${project}.stash.json_mpc`),
+			renameStash(db, `${project}.stash.src`),
+			renameStash(db, `${project}.stash.unity3d`)
+		]);
+
+	}).then(() => {
+
+		return !skipPostProcessing.history && updateHistoryAuthorAndDate(db);
+
+	}).then(() => {
+
+		return !skipPostProcessing.issues && updateIssueAuthorAndDate(db);
+
+	}).then(() => {
+
+		return !skipPostProcessing.groups && renameGroups(db);
+
+	}).then(() => {
+
+		console.log('Finish importing toy model!');
+
+	});
+
 
 	function importJSON(){
 		let importCollectionFiles = {};
 		
-		fs.readdirSync(`${__dirname}/${dir}`).forEach(file => {
+		fs.readdirSync(`${__dirname}/${modelDir}`)
+		.filter(file => file.endsWith('.bson'))
+		.forEach(file => {
 			// remove '.json' in string
 			let collectionName = file.split('.');
 			collectionName.pop();
@@ -53,7 +93,7 @@ module.exports = function(dbConfig, dir, username, database, project){
 			promises.push(new Promise((resolve, reject) => {
 
 				require('child_process').exec(
-				`mongoimport -j 8 --host ${hostString} --username ${dbUsername} --password ${dbPassword} --authenticationDatabase admin --db ${database} --collection ${collection} --file ${dir}/${filename} --writeConcern '${JSON.stringify(writeConcern)}'`,
+				`mongorestore -j 8 --host ${hostString} --username ${dbUsername} --password ${dbPassword} --authenticationDatabase admin --db ${database} --collection ${collection} --writeConcern '${JSON.stringify(writeConcern)}' ${__dirname}/${modelDir}/${filename}`,
 				{
 					cwd: __dirname
 				}, function (err) {
@@ -85,6 +125,7 @@ module.exports = function(dbConfig, dir, username, database, project){
 				newFileName[1] = database;
 				newFileName[2] = project;
 				newFileName = newFileName.join('/');
+				file.filename = newFileName;
 
 				renamePromises.push(
 
@@ -101,6 +142,11 @@ module.exports = function(dbConfig, dir, username, database, project){
 					})
 
 				);
+
+				// unityAssets.json have the path baked into the file :(
+				if(newFileName.endsWith('unityAssets.json')){
+					renamePromises.push(renameUnityAsset(bucket, file));
+				}
 
 			}, err => {
 				if(err){
@@ -156,29 +202,113 @@ module.exports = function(dbConfig, dir, username, database, project){
 		});
 	}
 
-	let db;
-	const url = `mongodb://${dbConfig.username}:${dbConfig.password}@${dbConfig.dbhost}:${dbConfig.dbport}/admin`;
+	function renameGroups(db){
+		
+		return new Promise((resolve, reject) => {
 
-	return MongoClient.connect(url).then(_db => {
+			const updateGroupPromises = [];
+			const collection = db.collection(`${project}.groups`);
 
-		db = _db.db(database);
-		return importJSON();
+			collection.find().forEach(group => {
 
-	}).then(() => {
+				group.objects && group.objects.forEach(obj => {
 
-		return Promise.all([
-			renameStash(db, `${project}.stash.json_mpc`),
-			renameStash(db, `${project}.stash.src`)
-		]);
+					const updateObjectPromises = [];
+					obj.account = database;
+					obj.model = project;
+					
+					//if model is fed model, then model id of a group should be 
+					//one of the sub models instead of the id of the fed model itself
+					updateObjectPromises.push(
+						db.collection('settings').findOne({ _id: project }).then(setting => {
+							const subModels = setting.subModels;
+							if(subModels && subModels.length){
+								return Promise.all(
+									subModels.map(subModel => 
+										db.collection(`${subModel.model}.scene`).count({ shared_id: obj.shared_id }).then(count => {
+											if(count){
+												obj.model = subModel.model;
+											}
+										})
+									)
+								);
+							}
 
-	}).then(() => {
+						})
+					);					
 
-		return updateHistoryAuthorAndDate(db);
+					updateGroupPromises.push(
+						Promise.all(updateObjectPromises).then(() => collection.updateOne({ _id: group._id }, group))
+					);
 
-	}).then(() => {
+				});
 
-		return updateIssueAuthorAndDate(db);
+			}, function done(err) {
+				if(err){
+					reject(err);
+				} else {
+					Promise.all(updateGroupPromises)
+						.then(() => resolve())
+						.catch(err => reject(err));
+				}
+			});
+		});
 
-	});
+	}
+
+	function renameUnityAsset(bucket, file){
+		new Promise((resolve, reject) => {
+
+			const rs = bucket.openDownloadStream(file._id);
+			const bufs = [];
+
+			rs.on('data', d => bufs.push(d));
+			rs.on('end', () => _finishDownload());
+			rs.on('error', err => reject(err));
+
+			function _finishDownload(){
+				const unityAsset = JSON.parse(Buffer.concat(bufs));
+				
+				unityAsset.assets = unityAsset.assets || [];
+				unityAsset.jsonFiles = unityAsset.jsonFiles || [];
+
+				[unityAsset.assets, unityAsset.jsonFiles].forEach(arr => {
+					arr.forEach(( file, i, files) => {
+						let newFileName = file.split('/');
+						newFileName[1] = database;
+						newFileName[2] = project;
+						files[i] = newFileName.join('/');
+					});
+				})
+
+				unityAsset.database = database;
+				unityAsset.model = project;
+
+				//console.log(unityAsset);
+
+				//drop the old one
+				bucket.delete(file._id, function(err){
+					
+					if(err){
+						return reject(err);
+					}
+
+					//write the updated unityasset json back to database
+					const ws = bucket.openUploadStreamWithId(file._id, file.filename);
+
+					ws.end(JSON.stringify(unityAsset), 'utf8', function(err){
+						if(err){
+							reject(err)
+						} else {
+							//console.log('finish writing to file' + file._id)
+							resolve();
+						}
+					});
+				});
+
+
+			}
+		});
+	}
 
 }
