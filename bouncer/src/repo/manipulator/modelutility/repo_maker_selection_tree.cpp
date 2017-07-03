@@ -34,6 +34,7 @@ SelectionTreeMaker::SelectionTreeMaker(
 repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 	const repo::core::model::RepoNode            *currentNode,
 	std::unordered_map < std::string, std::pair < std::string, std::string >> &idMaps,
+	std::vector<std::pair<std::string, std::string>>        &sharedIDToUniqueID,
 	const std::string                            &currentPath,
 	bool                                         &hiddenOnDefault,
 	std::vector<std::string>                     &hiddenNode) const
@@ -78,7 +79,7 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 					case repo::core::model::NodeType::REFERENCE:
 					{
 						bool hiddenChild = false;
-						childrenTrees.push_back(generatePTree(child, idMaps, childPath, hiddenChild, hiddenNode));
+						childrenTrees.push_back(generatePTree(child, idMaps, sharedIDToUniqueID, childPath, hiddenChild, hiddenNode));
 						hasHiddenChildren = hasHiddenChildren || hiddenChild;
 					}
 					}
@@ -129,6 +130,7 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 		}
 
 		idMaps[idString] = { name, childPath };
+		sharedIDToUniqueID.push_back({ idString, sharedID.toString() });
 	}
 	else
 	{
@@ -174,16 +176,23 @@ std::map<std::string, repo::lib::PropertyTree>  SelectionTreeMaker::getSelection
 		std::unordered_map< std::string, std::pair<std::string, std::string>> map;
 		std::vector<std::string> hiddenNodes;
 		bool dummy;
-		repo::lib::PropertyTree tree, settingsTree;
-		tree.mergeSubTree("nodes", generatePTree(root, map, "", dummy, hiddenNodes));
+		repo::lib::PropertyTree tree, settingsTree, treePathTree, shareIDToUniqueIDMap;
+		std::vector<std::pair<std::string, std::string>>  sharedIDToUniqueID; 
+		tree.mergeSubTree("nodes", generatePTree(root, map, sharedIDToUniqueID, "", dummy, hiddenNodes));
 		for (const auto pair : map)
 		{
 			//if there's an entry in maps it must have an entry in paths
 			tree.addToTree("idToName." + pair.first, pair.second.first);
-			tree.addToTree("idToPath." + pair.first, pair.second.second);
+			treePathTree.addToTree("idToPath." + pair.first, pair.second.second);
+		}
+		for (const auto pair : sharedIDToUniqueID)
+		{
+			shareIDToUniqueIDMap.addToTree("idMap." + pair.first, pair.second);
 		}
 
 		trees["fulltree.json"] = tree;
+		trees["tree_path.json"] = treePathTree;
+		trees["idMap.json"] = shareIDToUniqueIDMap;
 
 		if (hiddenNodes.size())
 		{
