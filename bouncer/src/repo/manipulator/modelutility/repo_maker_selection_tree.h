@@ -60,7 +60,7 @@ namespace repo{
 				* @param hiddenOnDefault (return value) shows if the subtree has hidden nodes
 				* @param hiddenNode A list of vector of nodes that are hidden by default
 				*/
-				repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
+				repo::lib::PropertyTree generatePTree(
 					const repo::core::model::RepoNode            *currentNode,
 					std::unordered_map < std::string, std::pair < std::string, std::string >> &idMaps,
 					std::vector<std::pair<std::string, std::string>>        &sharedIDToUniqueID,
