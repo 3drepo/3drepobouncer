@@ -180,7 +180,7 @@ bool RepoManipulator::commitAssetBundleBuffers(
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	modelutility::SceneManager SceneManager;
-	return SceneManager.commitWebBuffers(scene, scene->getUnityExtension(), buffers, handler);
+	return SceneManager.commitWebBuffers(scene, scene->getUnityExtension(), buffers, handler, true);
 }
 
 bool RepoManipulator::commitScene(

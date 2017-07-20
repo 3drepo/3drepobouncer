@@ -225,6 +225,17 @@ namespace repo{
 					const RepoNodeSet &textures,
 					const RepoNodeSet &transformations);
 
+
+				/**
+				* Add a timestamp to project settings. This is an indication that
+				* the scene is successfully commited and ready to view
+				* @param handler database handler to perform the commit
+				*/
+				void addTimestampToProjectSettings(
+					repo::core::handler::AbstractDatabaseHandler *handler
+					);
+
+
 				/**
 				* Clears the contents within the Stash (if there is one)
 				*/
@@ -959,6 +970,7 @@ namespace repo{
 					RepoNode *node,
 					std::string &errMsg);
 
+			
 				/**
 				* Commit a vector of nodes into the database
 				* @param handler database handler to perform the commit
