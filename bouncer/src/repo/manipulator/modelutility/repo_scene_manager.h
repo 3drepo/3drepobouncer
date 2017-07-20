@@ -34,12 +34,14 @@ namespace repo{
 				* @param geoStashExt geometry stash extension
 				* @param resultBuffers buffers to write
 				* @param hander mongo handler
+				* @param addTimestampToSettings whether we should be adding timestamp to settings upon success
 				*/
 				bool commitWebBuffers(
 					repo::core::model::RepoScene                 *scene,
 					const std::string                            &geoStashExt,
 					const repo_web_buffers_t &resultBuffers,
-					repo::core::handler::AbstractDatabaseHandler *handler);
+					repo::core::handler::AbstractDatabaseHandler *handler,
+					const bool                                    addTimestampToSettings = false);
 
 				/**
 				* Retrieve a RepoScene with a specific revision loaded.

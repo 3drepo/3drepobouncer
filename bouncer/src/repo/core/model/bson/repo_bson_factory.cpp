@@ -521,7 +521,7 @@ RepoProjectSettings RepoBSONFactory::makeRepoProjectSettings(
 	//--------------------------------------------------------------------------
 	// federate
 	if (isFederate)
-		builder << REPO_LABEL_IS_FEDERATION << isFederate;
+		builder << REPO_PROJECT_SETTINGS_LABEL_IS_FEDERATION << isFederate;
 
 	//--------------------------------------------------------------------------
 	// Properties (embedded sub-bson)
