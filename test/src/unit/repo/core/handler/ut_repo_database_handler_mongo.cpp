@@ -179,6 +179,11 @@ TEST(MongoDatabaseHandlerTest, GetCollections)
 
 	auto collections = handler->getCollections(REPO_GTEST_DBNAME1);
 
+	for (const auto &col : collections)
+	{
+		std::cout << col << std::endl;
+	}
+
 	ASSERT_EQ(goldenData.size(), collections.size());
 
 	std::sort(goldenData.begin(), goldenData.end());
