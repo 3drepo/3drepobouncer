@@ -12,7 +12,7 @@
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/version.hpp>
-#if BOOST_VERSION >= 106000
+#if BOOST_VERSION > 106000
 #include <boost/property_tree/json_parser/detail/read.hpp>
 #include <boost/property_tree/json_parser/error.hpp>
 #elif BOOST_VERSION >= 105900

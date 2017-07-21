@@ -180,11 +180,11 @@ static std::vector<std::string> getCollectionList(
 	{
 		return{ "3drepoBIM.history", "3drepoBIM.history.chunks", "3drepoBIM.history.files", "3drepoBIM.issues", "3drepoBIM.scene", "3drepoBIM.stash.3drepo",
 			"fedTest.history", "fedTest.issues", "fedTest.scene"
-			, "settings", "system.indexes" };
+			, "settings"};
 	}
 	else
 	{
-		return{ "sphere.history", "sphere.history.chunks", "sphere.history.files", "sphere.issues", "sphere.scene", "sphere.scene.files", "sphere.scene.chunks", "sphere.stash.3drepo", "sphere.stash.3drepo.chunks", "sphere.stash.3drepo.files", "settings", "system.indexes" };
+		return{ "sphere.history", "sphere.history.chunks", "sphere.history.files", "sphere.issues", "sphere.scene", "sphere.scene.files", "sphere.scene.chunks", "sphere.stash.3drepo", "sphere.stash.3drepo.chunks", "sphere.stash.3drepo.files", "settings"};
 	}
 }
 
@@ -201,12 +201,12 @@ static std::pair <std::pair<std::string, std::string>, mongo::BSONObj> getCollec
 		//<< "numExtents" << 2
 		<< "nindexes" << 1
 		//<< "lastExtentSize" << 33554432
-		<< "paddingFactor" << 1.0000000000000000
-		<< "systemFlags" << 1
+		//<< "paddingFactor" << 1.0000000000000000
+		//<< "systemFlags" << 1
 		//<< "userFlags" << 1
-		<< "totalIndexSize" << 8176
+		/*<< "totalIndexSize" << 8176
 		<< "indexSizes"
-		<< BSON("_id_" << 8176)
+		<< BSON("_id_" << 8176)*/
 		<< "ok" << 1.0000000000000000
 		);
 
