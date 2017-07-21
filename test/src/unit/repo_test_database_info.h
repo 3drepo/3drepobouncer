@@ -184,7 +184,7 @@ static std::vector<std::string> getCollectionList(
 	}
 	else
 	{
-		return{ "sphere.history", "sphere.history.chunks", "sphere.history.files", "sphere.issues", "sphere.scene", "sphere.scene.files", "sphere.scene.chunks", "sphere.stash.3drepo", "sphere.stash.3drepo.chunks", "sphere.stash.3drepo.files", "settings", "system.indexes" };
+		return{ "sphere.history", "sphere.history.chunks", "sphere.history.files", "sphere.issues", "sphere.scene", "sphere.scene.files", "sphere.scene.chunks", "sphere.stash.3drepo", "sphere.stash.3drepo.chunks", "sphere.stash.3drepo.files", "settings"};
 	}
 }
 
