@@ -201,7 +201,7 @@ static std::pair <std::pair<std::string, std::string>, mongo::BSONObj> getCollec
 		//<< "numExtents" << 2
 		<< "nindexes" << 1
 		//<< "lastExtentSize" << 33554432
-		<< "paddingFactor" << 1.0000000000000000
+		//<< "paddingFactor" << 1.0000000000000000
 		//<< "systemFlags" << 1
 		//<< "userFlags" << 1
 		/*<< "totalIndexSize" << 8176

@@ -229,7 +229,6 @@ TEST(MongoDatabaseHandlerTest, GetCollectionStats)
 
 	for (const auto &fieldName : fields)
 	{
-		std::cout << "field name:" << fieldName;
 		ASSERT_TRUE(stats.hasField(fieldName));
 		EXPECT_EQ(stats.getField(fieldName).toString(), golden.second.getField(fieldName).toString());
 	}
