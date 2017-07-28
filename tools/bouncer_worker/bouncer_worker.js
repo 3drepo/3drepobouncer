@@ -216,6 +216,22 @@
 			callback(JSON.stringify(reply));
 		});
 	}
+	
+	function listenToQueue(ch, queueName, prefetchCount)
+	{
+		ch.assertQueue(queueName, {durable: true});
+		console.log("Bouncer Client Queue started. Waiting for messages in %s of %s....", queueName, conf.rabbitmq.host);
+		ch.prefetch(prefetchCount);
+		ch.consume(conf.rabbitmq.worker_queue, function(msg){
+			console.log(" [x] Received %s", msg.content.toString());
+			handleMessage(msg.content.toString(), msg.properties.correlationId, function(reply){
+				ch.ack(msg);
+				console.log("sending to reply queue(%s): %s", conf.rabbitmq.callback_queue, reply);
+				ch.publish(conf.rabbitmq.callback_queue, msg.properties.appId, new Buffer(reply),
+					{correlationId: msg.properties.correlationId, appId: msg.properties.appId});
+			});
+		}, {noAck: false});
+	}
 
 	function connectQ(){
 		amqp.connect(conf.rabbitmq.host, function(err,conn){
@@ -227,22 +243,9 @@
 			{
 				conn.createChannel(function(err, ch){
 					ch.assertExchange(conf.rabbitmq.callback_queue, 'direct', { durable: true });
-
-					ch.assertQueue(conf.rabbitmq.worker_queue, {durable: true});
-					console.log("Bouncer Client Queue started. Waiting for messages in %s of %s....", conf.rabbitmq.worker_queue, conf.rabbitmq.host);
-					let prefetchCount = conf.rabbitmq.prefetch || 1;
-					ch.prefetch(prefetchCount);
-					ch.consume(conf.rabbitmq.worker_queue, function(msg){
-						console.log(" [x] Received %s", msg.content.toString());
-
-
-						handleMessage(msg.content.toString(), msg.properties.correlationId, function(reply){
-							ch.ack(msg);
-							console.log("sending to reply queue(%s): %s", conf.rabbitmq.callback_queue, reply);
-							ch.publish(conf.rabbitmq.callback_queue, msg.properties.appId, new Buffer(reply),
-								{correlationId: msg.properties.correlationId, appId: msg.properties.appId});
-						});
-					}, {noAck: false});
+					listenToQueue(ch, conf.rabbitmq.worker_queue, conf.rabbitmq.task_prefetch || 4);
+					listenToQueue(ch, conf.rabbitmq.model_queue,  conf.rabbitmq.model_prefetch || 1);
+	
 				});
 			}
 		});
