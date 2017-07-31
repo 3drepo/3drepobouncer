@@ -222,8 +222,8 @@
 		ch.assertQueue(queueName, {durable: true});
 		console.log("Bouncer Client Queue started. Waiting for messages in %s of %s....", queueName, conf.rabbitmq.host);
 		ch.prefetch(prefetchCount);
-		ch.consume(conf.rabbitmq.worker_queue, function(msg){
-			console.log(" [x] Received %s", msg.content.toString());
+		ch.consume(queueName, function(msg){
+			console.log(" [x] Received %s from %s", msg.content.toString(), queueName);
 			handleMessage(msg.content.toString(), msg.properties.correlationId, function(reply){
 				ch.ack(msg);
 				console.log("sending to reply queue(%s): %s", conf.rabbitmq.callback_queue, reply);
@@ -244,7 +244,7 @@
 				conn.createChannel(function(err, ch){
 					ch.assertExchange(conf.rabbitmq.callback_queue, 'direct', { durable: true });
 					listenToQueue(ch, conf.rabbitmq.worker_queue, conf.rabbitmq.task_prefetch || 4);
-					listenToQueue(ch, conf.rabbitmq.model_queue,  conf.rabbitmq.model_prefetch || 1);
+					listenToQueue(ch, conf.rabbitmq.model_queue, conf.rabbitmq.model_prefetch || 1);
 	
 				});
 			}
