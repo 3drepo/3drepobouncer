@@ -25,6 +25,14 @@
 
 using namespace repo::core::model;
 
+RepoProjectSettings RepoProjectSettings::cloneAndAddTimestamp() const
+{
+	RepoBSONBuilder builder;
+	builder.appendTimeStamp(REPO_PROJECT_SETTINGS_LABEL_TIMESTAMP);
+	builder.appendElementsUnique(*this);
+	return builder.obj();
+}
+
 RepoProjectSettings RepoProjectSettings::cloneAndMergeProjectSettings
 (const RepoProjectSettings &proj) const
 {

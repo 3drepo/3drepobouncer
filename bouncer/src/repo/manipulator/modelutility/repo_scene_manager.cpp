@@ -29,7 +29,8 @@ bool SceneManager::commitWebBuffers(
 	repo::core::model::RepoScene                 *scene,
 	const std::string                            &geoStashExt,
 	const repo_web_buffers_t                     &resultBuffers,
-	repo::core::handler::AbstractDatabaseHandler *handler)
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	const bool                                    addTimestampToSettings)
 {
 	bool success = true;
 	std::string jsonStashExt = scene->getJSONExtension();
@@ -66,7 +67,13 @@ bool SceneManager::commitWebBuffers(
 	}
 
 	if (success)
+	{
 		scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
+		if (addTimestampToSettings)
+		{
+			scene->addTimestampToProjectSettings(handler);
+		}
+	}
 
 	return success;
 }
