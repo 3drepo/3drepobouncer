@@ -36,12 +36,17 @@
 	const path = require("path");
 	const exec = require("child_process").exec;
 	const importToy = require('./importToy');
+	const winston = require('winston');
 	const rootModelDir = './toy';
 	//Note: these error codes corresponds to error_codes.h in bouncerclient
 	const ERRCODE_BOUNCER_CRASH = 12;
 	const ERRCODE_PARAM_READ_FAIL = 13;
 	const ERRCODE_BUNDLE_GEN_FAIL = 14;
 	const softFails = [7,10,15]; //failures that should go through to generate bundle
+
+	const logger = new (winston.Logger)({
+		transports: [new (winston.transports.Console)({'timestamp': true})]
+	});
 
 	/**
 	 * Test that the client is working and
@@ -50,15 +55,15 @@
 	 * indication of success or failure
 	 */
 	function testClient(callback){
-		console.log("Checking status of client...");
+		logger.info("Checking status of client...");
 
 		exec(path.normalize(conf.bouncer.path) + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " test", function(error, stdout, stderr){
 			if(error !== null){
-				console.log("bouncer call errored");
-				console.log(stdout);
+				logger.error("bouncer call errored");
+				logger.debug(stdout);
 			}
 			else{
-				console.log("bouncer call passed");
+				logger.info("bouncer call passed");
 				callback();
 			}
 		});
@@ -101,7 +106,8 @@
 				
 			}).catch(err => {
 
-				console.log("importToy module error", err, err.stack);
+				logger.error("importToy module error");
+				console.log(err, err.stack);
 
 				callback(JSON.stringify({
 					value: ERRCODE_BOUNCER_CRASH,
@@ -132,12 +138,12 @@
 				let fs = require('fs')
 				fs.readFile(cmdArr[2], 'utf8', function (err,data) {
 				  	if (err) {
-						return console.log(err);
+						return logger.error(err);
   					}
 		  			let result = data.replace("/sharedData/", conf.rabbitmq.sharedDir);
 
 		  			fs.writeFile(cmdArr[2], result, 'utf8', function (err) {
-     						if (err) return console.log(err);
+     						if (err) return logger.error(err);
   					});
 				});
 			}
@@ -148,21 +154,21 @@
 		}
 		exec(command, function(error, stdout, stderr){
 			let reply = {};
-			console.log(stdout);
+			logger.debug(stdout);
 			if(error !== null && error.code && softFails.indexOf(error.code) == -1){
 				if(error.code)
 					reply.value = error.code;
 				else
 					reply.value = ERRCODE_BOUNCER_CRASH;
 				callback(reply);
-				console.log("Executed command: " + command, reply);
+				logger.info("Executed command: " + command, reply);
 			}
 			else{
 				if(error == null)
 					reply.value = 0;
 				else
 					reply.value = error.code;
-				console.log("Executed command: " + command, reply);
+				logger.info("Executed command: " + command, reply);
 				let cmdArr = cmd.split(' ');
 				if(conf.unity && conf.unity.project && cmdArr[0] == "import")
 				{					
@@ -171,19 +177,19 @@
 					{		
 
 						let unityCommand = conf.unity.batPath + " " + conf.unity.project + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + commandArgs.database + " " +commandArgs.project + " " + logDir.replace(/\//g, '\\');
-						console.log("running unity commnad: " + unityCommand);
+						logger.info("running unity commnad: " + unityCommand);
 						exec(unityCommand, function( error, stdout, stderr){
 							if(error && error.code)
 							{
 								reply.value = ERRCODE_BUNDLE_GEN_FAIL;
 							}
-							console.log("Executed Unity command: " + unityCommand, reply);
+							logger.info("Executed Unity command: " + unityCommand, reply);
 							callback(reply);
 						});
 					}
 					else
 					{
-						console.log("Failed to read " + cmdArr[2]);
+						logger.error("Failed to read " + cmdArr[2]);
 						reply.value = ERRCODE_PARAM_READ_FAIL;
 						callback(reply);
 					}
@@ -220,13 +226,13 @@
 	function listenToQueue(ch, queueName, prefetchCount)
 	{
 		ch.assertQueue(queueName, {durable: true});
-		console.log("Bouncer Client Queue started. Waiting for messages in %s of %s....", queueName, conf.rabbitmq.host);
+		logger.info("Bouncer Client Queue started. Waiting for messages in %s of %s....", queueName, conf.rabbitmq.host);
 		ch.prefetch(prefetchCount);
 		ch.consume(queueName, function(msg){
-			console.log(" [x] Received %s from %s", msg.content.toString(), queueName);
+			logger.info(" [x] Received %s from %s", msg.content.toString(), queueName);
 			handleMessage(msg.content.toString(), msg.properties.correlationId, function(reply){
 				ch.ack(msg);
-				console.log("sending to reply queue(%s): %s", conf.rabbitmq.callback_queue, reply);
+				logger.info("sending to reply queue(%s): %s", conf.rabbitmq.callback_queue, reply);
 				ch.publish(conf.rabbitmq.callback_queue, msg.properties.appId, new Buffer(reply),
 					{correlationId: msg.properties.correlationId, appId: msg.properties.appId});
 			});
@@ -237,7 +243,7 @@
 		amqp.connect(conf.rabbitmq.host, function(err,conn){
 			if(err !== null)
 			{
-				console.log("failed to establish connection to rabbit mq");
+				logger.error("failed to establish connection to rabbit mq");
 			}
 			else
 			{
@@ -251,7 +257,7 @@
 		});
 	}
 
-	console.log("Initialising bouncer client queue...");
+	logger.info("Initialising bouncer client queue...");
 	testClient(connectQ);
 
 })();
