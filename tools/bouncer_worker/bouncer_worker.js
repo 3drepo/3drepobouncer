@@ -45,7 +45,9 @@
 	const softFails = [7,10,15]; //failures that should go through to generate bundle
 
 	const logger = new (winston.Logger)({
-		transports: [new (winston.transports.Console)({'timestamp': true})]
+		transports: [new (winston.transports.Console)({'timestamp': true}),
+		  new (winston.transports.File)({'filename': conf.logLocation? conf.logLocation : "./bouncer_worker.log"})
+		]
 	});
 
 	/**
