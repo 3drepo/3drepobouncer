@@ -594,13 +594,27 @@ bool RepoScene::commit(
 	return success;
 }
 
+void RepoScene::addErrorStatusToProjectSettings(
+	repo::core::handler::AbstractDatabaseHandler *handler
+	)
+{
+	RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
+	auto doc = RepoProjectSettings(handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria));
+	auto updatedProjectsettings = doc.cloneAndAddErrorStatus();
+	std::string errorMsg;
+	if (!handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, updatedProjectsettings, true, errorMsg))
+	{
+		repoError << "Failed to update project settings: " << errorMsg;
+	}
+}
+
 void RepoScene::addTimestampToProjectSettings(
 	repo::core::handler::AbstractDatabaseHandler *handler
 	)
 {
 	RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
 	auto doc = RepoProjectSettings(handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria));
-	auto updatedProjectsettings = doc.cloneAndAddTimestamp();
+	auto updatedProjectsettings = doc.cloneAndClearStatus();
 	std::string errorMsg;
 	if (!handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, updatedProjectsettings, true, errorMsg))
 	{

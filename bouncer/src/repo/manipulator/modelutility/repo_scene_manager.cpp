@@ -74,6 +74,10 @@ bool SceneManager::commitWebBuffers(
 			scene->addTimestampToProjectSettings(handler);
 		}
 	}
+	else
+	{
+		scene->addErrorStatusToProjectSettings(handler);
+	}
 
 	return success;
 }
@@ -365,6 +369,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 	else
 	{
 		repoError << "Failed to commit selection tree.";
+		scene->addErrorStatusToProjectSettings(handler);
 	}
 
 	return success;
