@@ -228,7 +228,7 @@ namespace repo{
 				/**
 				* Add error message to project settings
 				*/
-				void RepoScene::addErrorStatusToProjectSettings(
+				void addErrorStatusToProjectSettings(
 					repo::core::handler::AbstractDatabaseHandler *handler
 					);
 
