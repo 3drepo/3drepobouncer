@@ -82,3 +82,29 @@ static int32_t generateStash(
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
 	);
+
+/**
+* Get a list of users
+* @param controller the controller to the bouncer library
+* @param token      token provided by the controller after authentication
+* @param command    command and it's arguments to perform
+* @return returns true upon success
+*/
+static int32_t getUserList(
+	repo::RepoController       *controller,
+	const repo::RepoController::RepoToken      *token,
+	const repo_op_t            &command
+	);
+
+/**
+* Get database stats
+* @param controller the controller to the bouncer library
+* @param token      token provided by the controller after authentication
+* @param command    command and it's arguments to perform
+* @return returns true upon success
+*/
+int32_t getDBStats(
+	repo::RepoController       *controller,
+	const repo::RepoController::RepoToken      *token,
+	const repo_op_t            &command
+	);
