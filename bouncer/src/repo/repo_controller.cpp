@@ -282,9 +282,9 @@ std::list<std::string> RepoController::getDatabases(const RepoController::RepoTo
 }
 
 repo::core::model::DatabaseStats RepoController::getDatabaseStats(const RepoController::RepoToken *token,
-                                      const std::string &databaseName)
+	const std::string &databaseName)
 {
-    return impl->getDatabaseStats(token, databaseName);
+	return impl->getDatabaseStats(token, databaseName);
 }
 
 std::list<std::string>  RepoController::getCollections(
@@ -572,6 +572,20 @@ void RepoController::compareScenes(
 	)
 {
 	impl->compareScenes(token, base, compare, baseResults, compResults, diffMode);
+}
+
+void RepoController::getDatabaseStatistics(
+	const RepoController::RepoToken   *token,
+	const std::string &outputFilePath)
+{
+	impl->getDatabaseStatistics(token, outputFilePath);
+}
+
+void RepoController::getUserList(
+	const RepoController::RepoToken   *token,
+	const std::string &outputFilePath)
+{
+	impl->getUserList(token, outputFilePath);
 }
 
 std::string RepoController::getVersion()

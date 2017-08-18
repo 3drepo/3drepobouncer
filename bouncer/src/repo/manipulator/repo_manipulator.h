@@ -466,21 +466,20 @@ namespace repo{
 				std::string	                                  &errMsg
 				);
 
-
-                        /**
-                        * Get the database statistics of the given database
-                        * @param databaseAd mongo database address:port
-                        * @param cred user credentials in bson form
-                        * @param database Name of database
-                        * @param errMsg error message when error occurs
-                        * @return returns a bson object with statistical info.
-                        */
-                        repo::core::model::DatabaseStats getDatabaseStats(
-                                const std::string                             &databaseAd,
-                                const repo::core::model::RepoBSON             *cred,
-                                const std::string                             &database,
-                                std::string	                                  &errMsg
-                                );
+			/**
+			* Get the database statistics of the given database
+			* @param databaseAd mongo database address:port
+			* @param cred user credentials in bson form
+			* @param database Name of database
+			* @param errMsg error message when error occurs
+			* @return returns a bson object with statistical info.
+			*/
+			repo::core::model::DatabaseStats getDatabaseStats(
+				const std::string                             &databaseAd,
+				const repo::core::model::RepoBSON             *cred,
+				const std::string                             &database,
+				std::string	                                  &errMsg
+				);
 
 			/**
 			* Return a list of projects with the database available to the user
@@ -534,6 +533,24 @@ namespace repo{
 			*/
 			std::list<std::string> getStandardDatabaseRoles(
 				const std::string                             &databaseAd);
+
+			/**
+			* Generate database statistics and print the result in the given filepath
+			* @params outputFilePath
+			*/
+			void getDatabaseStatistics(
+				const std::string                     &databaseAd,
+				const repo::core::model::RepoBSON*	  cred,
+				const std::string &outputFilePath);
+
+			/**
+			* Get a list of users and print the result in the given filepath
+			* @params outputFilePath
+			*/
+			void getUserList(
+				const std::string                     &databaseAd,
+				const repo::core::model::RepoBSON*	  cred,
+				const std::string &outputFilePath);
 
 			/**
 			* Get the name of the admin database
