@@ -493,13 +493,14 @@ std::string RepoController::getSupportedExportFormats()
 }
 
 std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoController::initialiseAssetBuffer(
+	const RepoController::RepoToken                    *token,
 	repo::core::model::RepoScene *scene,
 	std::unordered_map<std::string, std::vector<uint8_t>> &jsonFiles,
 	std::vector<std::vector<uint16_t>> &serialisedFaceBuf,
 	std::vector<std::vector<std::vector<float>>> &idMapBuf,
 	std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> &meshMappings)
 {
-	return impl->initialiseAssetBuffer(scene, jsonFiles, serialisedFaceBuf, idMapBuf, meshMappings);
+	return impl->initialiseAssetBuffer(token, scene, jsonFiles, serialisedFaceBuf, idMapBuf, meshMappings);
 }
 
 repo::core::model::RepoNodeSet RepoController::loadMetadataFromFile(

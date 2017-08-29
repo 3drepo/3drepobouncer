@@ -109,6 +109,18 @@ namespace repo{
 					);
 
 				/**
+				* Check if the scene is VR enabled
+				* This is primarily used for determining if we need to generate
+				* VR version of the asset bundles.
+				* @param scene scene to generate stash graph for
+				* @param handler hander to the database
+				* @return returns true if VR is enabled
+				*/
+				bool isVrEnabled(
+					repo::core::model::RepoScene                 *scene,
+					repo::core::handler::AbstractDatabaseHandler *handler = nullptr) const;
+
+				/**
 				* Generate a `exType` encoding for the given scene
 				* if a database handler is provided, it will also commit the
 				* buffers into the database

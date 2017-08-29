@@ -63,6 +63,7 @@ namespace repo {
 #define REPO_USER_LABEL_SUBS_LIMITS			 "limits"
 #define REPO_USER_LABEL_SUBS_LIMITS_COLLAB	 "collaboratorLimit"
 #define REPO_USER_LABEL_SUBS_LIMITS_SPACE	 "spaceLimit"
+#define REPO_USER_LABEL_VR_ENABLED           "vrEnabled"
 
 			//name of free user plan
 #define REPO_USER_SUBS_STANDARD_FREE   "BASIC"
@@ -244,6 +245,11 @@ namespace repo {
 				* @return returns the quota available to the user
 				*/
 				double getQuota() const;
+
+				/**
+				* Check if VR is enabled for this teamspace
+				*/
+				bool isVREnabled() const;
 
 			private:
 				/**

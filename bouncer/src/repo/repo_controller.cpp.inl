@@ -785,6 +785,7 @@ public:
 	* @return returns mesh nodes reorganised for bundling
 	*/
 	std::vector<std::shared_ptr<repo::core::model::MeshNode>> initialiseAssetBuffer(
+		const RepoController::RepoToken                    *token,
 		repo::core::model::RepoScene *scene,
 		std::unordered_map<std::string, std::vector<uint8_t>> &jsonFiles,
 		std::vector<std::vector<uint16_t>> &serialisedFaceBuf,

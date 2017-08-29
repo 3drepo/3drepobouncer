@@ -888,13 +888,23 @@ bool RepoManipulator::hasDatabase(
 }
 
 std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoManipulator::initialiseAssetBuffer(
+	const std::string                             &databaseAd,
+	const repo::core::model::RepoBSON	          *cred,
 	repo::core::model::RepoScene *scene,
 	std::unordered_map<std::string, std::vector<uint8_t>> &jsonFiles,
 	std::vector<std::vector<uint16_t>> &serialisedFaceBuf,
 	std::vector<std::vector<std::vector<float>>> &idMapBuf,
 	std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> &meshMappings)
 {
-	repo::manipulator::modelconvertor::AssetModelExport assetExport(scene);
+	bool vrEnabled = false;
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	if (handler)
+	{
+		modelutility::SceneManager sceneManager;
+		vrEnabled = sceneManager.isVrEnabled(scene);
+	}
+	repo::manipulator::modelconvertor::AssetModelExport assetExport(scene, vrEnabled);
 	jsonFiles = assetExport.getJSONFilesAsBuffer();
 	return assetExport.getReorganisedMeshes(serialisedFaceBuf, idMapBuf, meshMappings);
 }

@@ -38,8 +38,10 @@ namespace repo{
 				/**
 				* Default Constructor, export model with default settings
 				* @param scene repo scene to convert
+				* @param whether the scene requires VR bundles
 				*/
-				AssetModelExport(const repo::core::model::RepoScene *scene);
+				AssetModelExport(const repo::core::model::RepoScene *scene,
+					const bool vrEnabled = false);
 
 				/**
 				* Default Destructor
@@ -59,18 +61,18 @@ namespace repo{
 				*/
 				std::vector<std::shared_ptr<repo::core::model::MeshNode>>
 					getReorganisedMeshes(
-						std::vector<std::vector<uint16_t>> &faceBuffer,
-						std::vector<std::vector<std::vector<float>>> &idMapBuffer,
-						std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> &meshMaps
-					) const { 
+					std::vector<std::vector<uint16_t>> &faceBuffer,
+					std::vector<std::vector<std::vector<float>>> &idMapBuffer,
+					std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> &meshMaps
+					) const {
 					faceBuffer = serialisedFaceBuf;
 					idMapBuffer = idMapBuf;
 					meshMaps = meshMappings;
-					return reorganisedMeshes; }
-
+					return reorganisedMeshes;
+				}
 
 			private:
-				
+
 				/**
 				* Generate JSON mapping for multipart meshes
 				* And add it into the object
@@ -95,6 +97,7 @@ namespace repo{
 				std::vector<std::vector<std::vector<float>>> idMapBuf;
 				std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> meshMappings;
 				std::string assetListFile;
+				const bool generateVR;
 			};
 		} //namespace modelconvertor
 	} //namespace manipulator
