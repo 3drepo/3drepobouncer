@@ -117,7 +117,7 @@ namespace repo{
 				* @return returns true if VR is enabled
 				*/
 				bool isVrEnabled(
-					repo::core::model::RepoScene                 *scene,
+					const repo::core::model::RepoScene                 *scene,
 					repo::core::handler::AbstractDatabaseHandler *handler = nullptr) const;
 
 				/**

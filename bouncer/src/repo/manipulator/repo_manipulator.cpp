@@ -976,6 +976,22 @@ void RepoManipulator::insertUser(
 	}
 }
 
+bool RepoManipulator::isVREnabled(
+	const std::string                       &databaseAd,
+	const repo::core::model::RepoBSON       *cred,
+	const repo::core::model::RepoScene      *scene) const
+{
+	modelutility::SceneManager manager;
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	bool isVREnabled = false;
+	if (handler)
+	{
+		isVREnabled = manager.isVrEnabled(scene, handler);
+	}
+	return isVREnabled;
+}
+
 void RepoManipulator::reduceTransformations(
 	repo::core::model::RepoScene *scene,
 	const repo::core::model::RepoScene::GraphType &gType)

@@ -640,6 +640,18 @@ namespace repo{
 				const repo::core::model::RepoUser       &user);
 
 			/**
+			* Check if a given scene is VR Enabled
+			* @param databaseAd database address:portdatabase
+			* @param cred user credentials in bson form
+			* @param scene the given scene
+			* @return returns true if the scene is VR enabled
+			*/
+			bool isVREnabled(
+				const std::string                       &databaseAd,
+				const repo::core::model::RepoBSON       *cred,
+				const repo::core::model::RepoScene      *scene) const;
+
+			/**
 			* Load metadata from a file
 			* @param filePath path to file
 			* @param delimiter
