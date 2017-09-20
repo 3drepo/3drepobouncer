@@ -118,7 +118,7 @@ namespace repo{
 				*/
 				bool isVrEnabled(
 					const repo::core::model::RepoScene                 *scene,
-					repo::core::handler::AbstractDatabaseHandler *handler = nullptr) const;
+					repo::core::handler::AbstractDatabaseHandler *handler) const;
 
 				/**
 				* Generate a `exType` encoding for the given scene

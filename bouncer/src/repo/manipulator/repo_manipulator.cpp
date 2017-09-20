@@ -902,7 +902,7 @@ std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoManipulator::initi
 	if (handler)
 	{
 		modelutility::SceneManager sceneManager;
-		vrEnabled = sceneManager.isVrEnabled(scene);
+		vrEnabled = sceneManager.isVrEnabled(scene, handler);
 	}
 	repo::manipulator::modelconvertor::AssetModelExport assetExport(scene, vrEnabled);
 	jsonFiles = assetExport.getJSONFilesAsBuffer();
