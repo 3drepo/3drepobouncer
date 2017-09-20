@@ -391,6 +391,15 @@ namespace repo{
 			*/
 		std::list<std::string> getStandardDatabaseRoles(const RepoToken *token);
 
+		/**
+		* Check if VR is enabled for this model
+		* @param token repo token to the database
+		* @param scene scene to query on
+		* @return returns true if it is enabled, false otherwise
+		*/
+		bool isVREnabled(const RepoToken *token,
+			const repo::core::model::RepoScene *scene);
+
 		/*
 			*	---------------- Database Retrieval -----------------------
 			*/

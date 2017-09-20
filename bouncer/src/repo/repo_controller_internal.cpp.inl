@@ -1089,6 +1089,23 @@ repo::core::model::RepoNodeSet RepoController::_RepoControllerImpl::loadMetadata
 	return metadata;
 }
 
+bool RepoController::_RepoControllerImpl::isVREnabled(const RepoToken *token,
+	const repo::core::model::RepoScene *scene)
+{
+	bool result = false;
+	if (scene)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+
+		result = worker->isVREnabled(token->databaseAd, token->getCredentials(), scene);
+		workerPool.push(worker);
+	}
+	else{
+		repoError << "RepoController::_RepoControllerImpl::isVREnabled: NULL pointer to scene!";
+	}
+	return result;
+}
+
 repo::core::model::RepoScene*
 RepoController::_RepoControllerImpl::loadSceneFromFile(
 const std::string                                          &filePath,

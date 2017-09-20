@@ -575,6 +575,12 @@ void RepoController::compareScenes(
 	impl->compareScenes(token, base, compare, baseResults, compResults, diffMode);
 }
 
+bool RepoController::isVREnabled(const RepoController::RepoToken *token,
+	const repo::core::model::RepoScene *scene)
+{
+	return impl->isVREnabled(token, scene);
+}
+
 void RepoController::getDatabaseStatistics(
 	const RepoController::RepoToken   *token,
 	const std::string &outputFilePath)

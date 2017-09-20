@@ -793,6 +793,15 @@ public:
 		std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> &meshMappings);
 
 	/**
+	* Check if VR is enabled for this model
+	* @param token repo token to the database
+	* @param scene scene to query on
+	* @return returns true if it is enabled, false otherwise
+	*/
+	bool isVREnabled(const RepoToken *token,
+		const repo::core::model::RepoScene *scene);
+
+	/**
 	* Load a Repo Scene from a file
 	* @param filePath path to file
 	* @param apply transformation reduction (default: true)
