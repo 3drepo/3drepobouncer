@@ -341,16 +341,16 @@ namespace repo{
 		//FIXME: vectors are much better than list for traversal efficiency...
 		// (but they also require large continuos memory allocation should they be massive)
 
-                /**
-                        * Return a DatabaseStats BSON containing statistics about
-                        * this database
-                        * @param token A RepoToken given at authentication
-                        * @param database name of database
-                        * @return returns a BSON object containing this information
-                        */
-                repo::core::model::DatabaseStats getDatabaseStats(
-                        const RepoToken *token,
-                        const std::string &database);
+		/**
+				* Return a DatabaseStats BSON containing statistics about
+				* this database
+				* @param token A RepoToken given at authentication
+				* @param database name of database
+				* @return returns a BSON object containing this information
+				*/
+		repo::core::model::DatabaseStats getDatabaseStats(
+			const RepoToken *token,
+			const std::string &database);
 
 		/**
 			* Return a list of projects with the database available to the user
@@ -919,6 +919,25 @@ namespace repo{
 		{
 			compareScenes(token, base, compare, baseResults, compResults, repo::DiffMode::DIFF_BY_NAME);
 		}
+
+		/*
+		*	------------- Statistics --------------
+		*/
+		/**
+		* Generate database statistics and print the result in the given filepath
+		* @params outputFilePath
+		*/
+		void getDatabaseStatistics(
+			const RepoToken   *token,
+			const std::string &outputFilePath);
+
+		/**
+		* Get a list of users and print the result in the given filepath
+		* @params outputFilePath
+		*/
+		void getUserList(
+			const RepoToken   *token,
+			const std::string &outputFilePath);
 
 		/*
 		*	------------- Versioning --------------

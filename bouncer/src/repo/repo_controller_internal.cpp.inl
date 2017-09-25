@@ -236,7 +236,7 @@ bool RepoController::_RepoControllerImpl::commitAssetBundleBuffers(
 	manipulator::RepoManipulator* worker = workerPool.pop();
 	success = worker->commitAssetBundleBuffers(token->databaseAd, token->getCredentials(), scene, buffers);
 	workerPool.push(worker);
-	
+
 	return success;
 }
 
@@ -1046,7 +1046,6 @@ std::string RepoController::_RepoControllerImpl::getSupportedImportFormats()
 	return repo::manipulator::modelconvertor::AssimpModelImport::getSupportedFormats();
 }
 
-
 std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoController::_RepoControllerImpl::initialiseAssetBuffer(
 	repo::core::model::RepoScene *scene,
 	std::unordered_map<std::string, std::vector<uint8_t>> &jsonFiles,
@@ -1054,7 +1053,6 @@ std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoController::_RepoC
 	std::vector<std::vector<std::vector<float>>> &idMapBuf,
 	std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> &meshMappings)
 {
-
 	std::vector<std::shared_ptr<repo::core::model::MeshNode>> res;
 	if (scene)
 	{
@@ -1257,6 +1255,24 @@ void RepoController::_RepoControllerImpl::compareScenes(
 	else{
 		repoError << "RepoController::_RepoControllerImpl::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
 	}
+}
+
+void RepoController::_RepoControllerImpl::getDatabaseStatistics(
+	const RepoController::RepoToken   *token,
+	const std::string &outputFilePath)
+{
+	manipulator::RepoManipulator* worker = workerPool.pop();
+	worker->getDatabaseStatistics(token->databaseAd, token->getCredentials(), outputFilePath);
+	workerPool.push(worker);
+}
+
+void RepoController::_RepoControllerImpl::getUserList(
+	const RepoController::RepoToken   *token,
+	const std::string &outputFilePath)
+{
+	manipulator::RepoManipulator* worker = workerPool.pop();
+	worker->getUserList(token->databaseAd, token->getCredentials(), outputFilePath);
+	workerPool.push(worker);
 }
 
 std::string RepoController::_RepoControllerImpl::getVersion()

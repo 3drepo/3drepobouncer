@@ -225,6 +225,12 @@ namespace repo{
 					const RepoNodeSet &textures,
 					const RepoNodeSet &transformations);
 
+				/**
+				* Add error message to project settings
+				*/
+				void addErrorStatusToProjectSettings(
+					repo::core::handler::AbstractDatabaseHandler *handler
+					);
 
 				/**
 				* Add a timestamp to project settings. This is an indication that

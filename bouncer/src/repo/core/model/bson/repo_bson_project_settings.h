@@ -29,6 +29,7 @@ namespace repo {
 
 			#define REPO_PROJECT_SETTINGS_LABEL_IS_FEDERATION "federate"
 			#define REPO_PROJECT_SETTINGS_LABEL_TIMESTAMP "timestamp"
+			#define REPO_PROJECT_SETTINGS_LABEL_STATUS "status"
 			class REPO_API_EXPORT RepoProjectSettings : public RepoBSON
 			{
 			public:
@@ -44,7 +45,10 @@ namespace repo {
 				* @proj new info that needs ot be added/updated
 				* @return returns a new project settings with fields updated
 				*/
-				RepoProjectSettings cloneAndAddTimestamp() const;
+				RepoProjectSettings cloneAndClearStatus() const;
+
+				RepoProjectSettings cloneAndAddErrorStatus() const;
+				
 
 				/**
 				* Clone and merge new project settings into the existing info

@@ -197,6 +197,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 		{
 			if (ancestorsID.find(childrenId) == ancestorsID.end())
 			{
+
 				try{
 					auto childEntity = ifcfile.entityById(childrenId);
 					auto childTransNodes = createTransformationsRecursive(ifcfile, childEntity, meshes, materials, metaSet, myMetaValues, transID, childrenAncestors);
@@ -207,6 +208,8 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 					repoError << "Failed to find child entity " << childrenId << " (" << e.what() << ")";
 					missingEntities = true;
 				}
+				
+				
 			}
 		}
 	}
@@ -372,7 +375,7 @@ void IFCUtilsParser::determineActionsByElementType(
 		traverseChildren = false;
 		if (relCS)
 		{
-			metaValues.first.push_back(relCS->Name());
+			metaValues.first.push_back(relCS->hasName()? relCS->Name() : "Classification (No Name)");
 			std::string classValue;
 			try
 			{

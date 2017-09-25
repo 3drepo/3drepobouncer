@@ -1,4 +1,5 @@
 module.exports = {
+	logLocation: "log.log",
 	rabbitmq:{
 		host: 'amqp://username:password@localhost:5672',
 		worker_queue: 'jobq',

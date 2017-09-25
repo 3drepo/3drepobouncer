@@ -8,6 +8,7 @@ add_subdirectory(diff)
 add_subdirectory(modelconvertor)
 add_subdirectory(modeloptimizer)
 add_subdirectory(modelutility)
+add_subdirectory(statistics)
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_manipulator.cpp
