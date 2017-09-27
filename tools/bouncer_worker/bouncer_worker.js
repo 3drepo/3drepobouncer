@@ -36,7 +36,20 @@
 	const path = require("path");
 	const exec = require("child_process").exec;
 	const importToy = require('./importToy');
-	const toyProjectDir = './toy';
+	const winston = require('winston');
+	const rootModelDir = './toy';
+	//Note: these error codes corresponds to error_codes.h in bouncerclient
+	const ERRCODE_BOUNCER_CRASH = 12;
+	const ERRCODE_PARAM_READ_FAIL = 13;
+	const ERRCODE_BUNDLE_GEN_FAIL = 14;
+	const softFails = [7,10,15]; //failures that should go through to generate bundle
+
+	const logger = new (winston.Logger)({
+		transports: [new (winston.transports.Console)({'timestamp': true}),
+		  new (winston.transports.File)({'filename': conf.logLocation? conf.logLocation : "./bouncer_worker.log"})
+		]
+	});
+
 	/**
 	 * Test that the client is working and
 	 * it is able to connect to the database
@@ -44,15 +57,15 @@
 	 * indication of success or failure
 	 */
 	function testClient(callback){
-		console.log("Checking status of client...");
+		logger.info("Checking status of client...");
 
 		exec(path.normalize(conf.bouncer.path) + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " test", function(error, stdout, stderr){
 			if(error !== null){
-				console.log("bouncer call errored");
-				console.log(stdout);
+				logger.error("bouncer call errored");
+				logger.debug(stdout);
 			}
 			else{
-				console.log("bouncer call passed");
+				logger.info("bouncer call passed");
 				callback();
 			}
 		});
@@ -66,8 +79,13 @@
 		if(cmd.startsWith('importToy')){
 			
 			let args = cmd.split(' ');
+
 			let database = args[1];
-			let project = args[2];
+			let model = args[2];
+			let modelDir = args[3];
+			let skipPostProcessing = args[4];
+			skipPostProcessing = skipPostProcessing && JSON.parse(skipPostProcessing) || {};
+
 			let username = database;
 
 			let dbConfig = {
@@ -78,15 +96,23 @@
 				writeConcern: conf.mongoimport && conf.mongoimport.writeConcern
 			};
 
-			importToy(dbConfig, toyProjectDir, username, database, project).then(() => {
+			let dir = `${rootModelDir}/${modelDir}`;
+
+			importToy(dbConfig, dir, username, database, model, skipPostProcessing).then(() => {
 				// after importing the toy regenerate the tree as well
-				exeCommand(`genStash ${database} ${project} tree`, rid, callback);
+				if(skipPostProcessing.tree){
+					callback(JSON.stringify({value: 0}));
+				} else {
+					exeCommand(`genStash ${database} ${model} tree`, rid, callback);
+				}
+				
 			}).catch(err => {
 
-				console.log("importToy module error", err, err.stack);
+				logger.error("importToy module error");
+				console.log(err, err.stack);
 
 				callback(JSON.stringify({
-					value: 12,
+					value: ERRCODE_BOUNCER_CRASH,
 					message: err.message
 				}));
 			});
@@ -96,6 +122,89 @@
 		}
 
 	} 
+
+	function runBouncer(logDir, cmd,  callback)
+	{
+		let os = require('os');
+		let command = "";
+		
+		if(os.platform() === "win32")
+		{
+			
+			cmd = cmd.replace("/sharedData/", conf.rabbitmq.sharedDir);	
+			process.env['REPO_LOG_DIR']= logDir ;
+			command = path.normalize(conf.bouncer.path) + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + cmd;
+			let cmdArr = cmd.split(' ');
+			if(cmdArr[0] == "import")
+			{
+				let fs = require('fs')
+				fs.readFile(cmdArr[2], 'utf8', function (err,data) {
+				  	if (err) {
+						return logger.error(err);
+  					}
+		  			let result = data.replace("/sharedData/", conf.rabbitmq.sharedDir);
+
+		  			fs.writeFile(cmdArr[2], result, 'utf8', function (err) {
+     						if (err) return logger.error(err);
+  					});
+				});
+			}
+		}	
+		else
+		{	
+			command = "REPO_LOG_DIR=" + logDir + " " +path.normalize(conf.bouncer.path) + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + cmd;
+		}
+		exec(command, function(error, stdout, stderr){
+			let reply = {};
+			logger.debug(stdout);
+			if(error !== null && error.code && softFails.indexOf(error.code) == -1){
+				if(error.code)
+					reply.value = error.code;
+				else
+					reply.value = ERRCODE_BOUNCER_CRASH;
+				callback(reply);
+				logger.info("Executed command: " + command, reply);
+			}
+			else{
+				if(error == null)
+					reply.value = 0;
+				else
+					reply.value = error.code;
+				logger.info("Executed command: " + command, reply);
+				let cmdArr = cmd.split(' ');
+				if(conf.unity && conf.unity.project && cmdArr[0] == "import")
+				{					
+					let commandArgs = require(cmdArr[2]);
+					if(commandArgs && commandArgs.database && commandArgs.project)
+					{		
+
+						let unityCommand = conf.unity.batPath + " " + conf.unity.project + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + commandArgs.database + " " +commandArgs.project + " " + logDir.replace(/\//g, '\\');
+						logger.info("running unity commnad: " + unityCommand);
+						exec(unityCommand, function( error, stdout, stderr){
+							if(error && error.code)
+							{
+								reply.value = ERRCODE_BUNDLE_GEN_FAIL;
+							}
+							logger.info("Executed Unity command: " + unityCommand, reply);
+							callback(reply);
+						});
+					}
+					else
+					{
+						logger.error("Failed to read " + cmdArr[2]);
+						reply.value = ERRCODE_PARAM_READ_FAIL;
+						callback(reply);
+					}
+				}
+				else
+				{
+					callback(reply);
+				}
+			}
+
+		});
+
+	}
 
 	/**
 	 * Execute the Command and provide a reply message to the callback function
@@ -110,52 +219,47 @@
 
 		let logDir = logRootDir + "/" +  rid.toString() + "/";
 
-		exec("REPO_LOG_DIR=" + logDir + " " +path.normalize(conf.bouncer.path) + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + cmd, function(error, stdout, stderr){
-			let reply = {};
-
-			if(error !== null){
-				if(error.code)
-					reply.value = error.code;
-				else
-					reply.value = 12;
-			}
-			else
-				reply.value = 0;
-
-			console.log("Executed command: " + path.normalize(conf.bouncer.path) + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + cmd, reply);
+		runBouncer(logDir, cmd,
+		 function(reply){
 			callback(JSON.stringify(reply));
 		});
+	}
+	
+	function listenToQueue(ch, queueName, prefetchCount)
+	{
+		ch.assertQueue(queueName, {durable: true});
+		logger.info("Bouncer Client Queue started. Waiting for messages in %s of %s....", queueName, conf.rabbitmq.host);
+		ch.prefetch(prefetchCount);
+		ch.consume(queueName, function(msg){
+			logger.info(" [x] Received %s from %s", msg.content.toString(), queueName);
+			handleMessage(msg.content.toString(), msg.properties.correlationId, function(reply){
+				ch.ack(msg);
+				logger.info("sending to reply queue(%s): %s", conf.rabbitmq.callback_queue, reply);
+				ch.publish(conf.rabbitmq.callback_queue, msg.properties.appId, new Buffer(reply),
+					{correlationId: msg.properties.correlationId, appId: msg.properties.appId});
+			});
+		}, {noAck: false});
 	}
 
 	function connectQ(){
 		amqp.connect(conf.rabbitmq.host, function(err,conn){
 			if(err !== null)
 			{
-				console.log("failed to establish connection to rabbit mq");
+				logger.error("failed to establish connection to rabbit mq");
 			}
 			else
 			{
 				conn.createChannel(function(err, ch){
 					ch.assertExchange(conf.rabbitmq.callback_queue, 'direct', { durable: true });
-
-					ch.assertQueue(conf.rabbitmq.worker_queue, {durable: true});
-					console.log("Bouncer Client Queue started. Waiting for messages in %s of %s....", conf.rabbitmq.worker_queue, conf.rabbitmq.host);
-					ch.prefetch(1);
-					ch.consume(conf.rabbitmq.worker_queue, function(msg){
-						console.log(" [x] Received %s", msg.content.toString());
-
-						handleMessage(msg.content.toString(), msg.properties.correlationId, function(reply){
-							console.log("sending to reply queue(%s): %s", conf.rabbitmq.callback_queue, reply);
-							ch.publish(conf.rabbitmq.callback_queue, msg.properties.appId, new Buffer(reply),
-								{correlationId: msg.properties.correlationId, appId: msg.properties.appId});
-						});
-					}, {noAck: true});
+					listenToQueue(ch, conf.rabbitmq.worker_queue, conf.rabbitmq.task_prefetch || 4);
+					listenToQueue(ch, conf.rabbitmq.model_queue, conf.rabbitmq.model_prefetch || 1);
+	
 				});
 			}
 		});
 	}
 
-	console.log("Initialising bouncer client queue...");
+	logger.info("Initialising bouncer client queue...");
 	testClient(connectQ);
 
 })();

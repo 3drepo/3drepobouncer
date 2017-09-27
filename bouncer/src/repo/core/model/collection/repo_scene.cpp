@@ -93,7 +93,8 @@ RepoScene::RepoScene(
 	const std::string &issuesExt,
 	const std::string &srcExt,
 	const std::string &gltfExt,
-	const std::string &jsonExt)
+	const std::string &jsonExt,
+	const std::string &unityExt)
 	:
 	databaseName(sanitizeDatabaseName(database)),
 	projectName(sanitizeName(projectName)),
@@ -105,6 +106,7 @@ RepoScene::RepoScene(
 	srcExt(sanitizeExt(srcExt)),
 	gltfExt(sanitizeExt(gltfExt)),
 	jsonExt(sanitizeExt(jsonExt)),
+	unityExt(sanitizeExt(unityExt)),
 	headRevision(true),
 	unRevisioned(false),
 	revNode(0),
@@ -590,6 +592,36 @@ bool RepoScene::commit(
 	if (success) updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
 	//Create and Commit revision node
 	return success;
+}
+
+void RepoScene::addErrorStatusToProjectSettings(
+	repo::core::handler::AbstractDatabaseHandler *handler
+	)
+{
+	RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
+	auto doc = RepoProjectSettings(handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria));
+	auto updatedProjectsettings = doc.cloneAndAddErrorStatus();
+	std::string errorMsg;
+	if (!handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, updatedProjectsettings, true, errorMsg))
+	{
+		repoError << "Failed to update project settings: " << errorMsg;
+	}
+}
+
+void RepoScene::addTimestampToProjectSettings(
+	repo::core::handler::AbstractDatabaseHandler *handler
+	)
+{
+	RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
+	auto doc = RepoProjectSettings(handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria));
+	auto updatedProjectsettings = doc.cloneAndClearStatus();
+	std::string errorMsg;
+	if (!handler->upsertDocument(databaseName, REPO_COLLECTION_SETTINGS, updatedProjectsettings, true, errorMsg))
+	{
+		repoError << "Failed to update project settings: " << errorMsg;
+	}
+
+
 }
 
 bool RepoScene::commitProjectSettings(
@@ -1506,6 +1538,27 @@ void RepoScene::populateAndUpdate(
 	addNodeToScene(gType, transformations, errMsg, &(instance.transformations));
 	addNodeToScene(gType, references, errMsg, &(instance.references));
 	addNodeToScene(gType, unknowns, errMsg, &(instance.unknowns));
+
+	validateScene();
+}
+
+void RepoScene::validateScene()
+{
+	//Check all meshes are triangulated
+	bool invalidMesh = false;
+	for (const auto &meshNode : graph.meshes)
+	{
+		auto mesh = dynamic_cast<const MeshNode*>(meshNode);
+		for (const auto face : mesh->getFaces())
+		{
+			if (invalidMesh = (face.size() != 3))
+				break;
+		}
+		if (invalidMesh) break;
+	}
+
+	if (invalidMesh)
+		setHasInvalidMeshes();
 }
 
 void RepoScene::reorientateDirectXModel()

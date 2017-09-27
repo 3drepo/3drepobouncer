@@ -62,8 +62,8 @@ namespace repo{
 				*/
 				repo::lib::PropertyTree generatePTree(
 					const repo::core::model::RepoNode            *currentNode,
-					std::unordered_map < std::string,
-					std::pair < std::string, std::string >> &idMaps,
+					std::unordered_map < std::string, std::pair < std::string, std::string >> &idMaps,
+					std::vector<std::pair<std::string, std::string>>        &sharedIDToUniqueID,
 					const std::string                            &currentPath,
 					bool                                         &hiddenOnDefault,
 					std::vector<std::string>                     &hiddenNode) const;

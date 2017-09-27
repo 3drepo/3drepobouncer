@@ -25,6 +25,63 @@
 
 using namespace repo::manipulator::modelutility;
 
+bool SceneManager::commitWebBuffers(
+	repo::core::model::RepoScene                 *scene,
+	const std::string                            &geoStashExt,
+	const repo_web_buffers_t                     &resultBuffers,
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	const bool                                    addTimestampToSettings)
+{
+	bool success = true;
+	std::string jsonStashExt = scene->getJSONExtension();
+	//Upload the files
+	for (const auto &bufferPair : resultBuffers.geoFiles)
+	{
+		std::string errMsg;
+		if (success &= handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + geoStashExt, bufferPair.first, bufferPair.second,
+			errMsg))
+		{
+			repoInfo << "File (" << bufferPair.first << ") added successfully.";
+		}
+		else
+		{
+			repoError << "Failed to add file  (" << bufferPair.first << "): " << errMsg;
+		}
+	}
+
+	for (const auto &bufferPair : resultBuffers.jsonFiles)
+	{
+		std::string databaseName = scene->getDatabaseName();
+		std::string projectName = scene->getProjectName();
+		std::string errMsg;
+		std::string fileName = bufferPair.first;
+		if (success &= handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + jsonStashExt, fileName, bufferPair.second,
+			errMsg))
+		{
+			repoInfo << "File (" << fileName << ") added successfully.";
+		}
+		else
+		{
+			repoError << "Failed to add file  (" << fileName << "): " << errMsg;
+		}
+	}
+
+	if (success)
+	{
+		scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
+		if (addTimestampToSettings)
+		{
+			scene->addTimestampToProjectSettings(handler);
+		}
+	}
+	else
+	{
+		scene->addErrorStatusToProjectSettings(handler);
+	}
+
+	return success;
+}
+
 repo::core::model::RepoScene* SceneManager::fetchScene(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	const std::string                             &database,
@@ -236,40 +293,7 @@ bool SceneManager::generateWebViewBuffers(
 		{
 			if (toCommit)
 			{
-				//Upload the files
-				for (const auto &bufferPair : resultBuffers.geoFiles)
-				{
-					std::string errMsg;
-					if (success &= handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + geoStashExt, bufferPair.first, bufferPair.second,
-						errMsg))
-					{
-						repoInfo << "File (" << bufferPair.first << ") added successfully.";
-					}
-					else
-					{
-						repoError << "Failed to add file  (" << bufferPair.first << "): " << errMsg;
-					}
-				}
-
-				for (const auto &bufferPair : resultBuffers.jsonFiles)
-				{
-					std::string databaseName = scene->getDatabaseName();
-					std::string projectName = scene->getProjectName();
-					std::string errMsg;
-					std::string fileName = bufferPair.first;
-					if (success &= handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + jsonStashExt, fileName, bufferPair.second,
-						errMsg))
-					{
-						repoInfo << "File (" << fileName << ") added successfully.";
-					}
-					else
-					{
-						repoError << "Failed to add file  (" << fileName << "): " << errMsg;
-					}
-				}
-
-				if (success)
-					scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
+				success = commitWebBuffers(scene, geoStashExt, resultBuffers, handler);
 			}
 		}
 		else
@@ -345,6 +369,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 	else
 	{
 		repoError << "Failed to commit selection tree.";
+		scene->addErrorStatusToProjectSettings(handler);
 	}
 
 	return success;

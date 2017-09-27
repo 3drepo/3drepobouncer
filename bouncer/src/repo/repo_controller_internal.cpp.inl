@@ -227,6 +227,19 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::createToken(
 	return token && token->valid() ? token : nullptr;
 }
 
+bool RepoController::_RepoControllerImpl::commitAssetBundleBuffers(
+	const RepoController::RepoToken *token,
+	repo::core::model::RepoScene    *scene,
+	const repo_web_buffers_t &buffers)
+{
+	bool success = false;
+	manipulator::RepoManipulator* worker = workerPool.pop();
+	success = worker->commitAssetBundleBuffers(token->databaseAd, token->getCredentials(), scene, buffers);
+	workerPool.push(worker);
+
+	return success;
+}
+
 bool RepoController::_RepoControllerImpl::commitScene(
 	const RepoController::RepoToken                     *token,
 	repo::core::model::RepoScene        *scene,
@@ -1033,6 +1046,28 @@ std::string RepoController::_RepoControllerImpl::getSupportedImportFormats()
 	return repo::manipulator::modelconvertor::AssimpModelImport::getSupportedFormats();
 }
 
+std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoController::_RepoControllerImpl::initialiseAssetBuffer(
+	repo::core::model::RepoScene *scene,
+	std::unordered_map<std::string, std::vector<uint8_t>> &jsonFiles,
+	std::vector<std::vector<uint16_t>> &serialisedFaceBuf,
+	std::vector<std::vector<std::vector<float>>> &idMapBuf,
+	std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> &meshMappings)
+{
+	std::vector<std::shared_ptr<repo::core::model::MeshNode>> res;
+	if (scene)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+		res = worker->initialiseAssetBuffer(scene, jsonFiles, serialisedFaceBuf, idMapBuf, meshMappings);
+		workerPool.push(worker);
+	}
+	else
+	{
+		repoError << "Trying to generate Asset buffer without a scene";
+	}
+
+	return res;
+}
+
 repo::core::model::RepoNodeSet RepoController::_RepoControllerImpl::loadMetadataFromFile(
 	const std::string &filePath,
 	const char        &delimiter)
@@ -1220,6 +1255,24 @@ void RepoController::_RepoControllerImpl::compareScenes(
 	else{
 		repoError << "RepoController::_RepoControllerImpl::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
 	}
+}
+
+void RepoController::_RepoControllerImpl::getDatabaseStatistics(
+	const RepoController::RepoToken   *token,
+	const std::string &outputFilePath)
+{
+	manipulator::RepoManipulator* worker = workerPool.pop();
+	worker->getDatabaseStatistics(token->databaseAd, token->getCredentials(), outputFilePath);
+	workerPool.push(worker);
+}
+
+void RepoController::_RepoControllerImpl::getUserList(
+	const RepoController::RepoToken   *token,
+	const std::string &outputFilePath)
+{
+	manipulator::RepoManipulator* worker = workerPool.pop();
+	worker->getUserList(token->databaseAd, token->getCredentials(), outputFilePath);
+	workerPool.push(worker);
 }
 
 std::string RepoController::_RepoControllerImpl::getVersion()

@@ -27,7 +27,9 @@ namespace repo {
 		namespace model {
 			// TODO: make into header only
 
-			#define REPO_LABEL_IS_FEDERATION "federate"
+			#define REPO_PROJECT_SETTINGS_LABEL_IS_FEDERATION "federate"
+			#define REPO_PROJECT_SETTINGS_LABEL_TIMESTAMP "timestamp"
+			#define REPO_PROJECT_SETTINGS_LABEL_STATUS "status"
 			class REPO_API_EXPORT RepoProjectSettings : public RepoBSON
 			{
 			public:
@@ -37,6 +39,16 @@ namespace repo {
 				RepoProjectSettings(RepoBSON bson) : RepoBSON(bson){}
 
 				~RepoProjectSettings() {}
+
+				/**
+				* Clone and merge new project settings into the existing info
+				* @proj new info that needs ot be added/updated
+				* @return returns a new project settings with fields updated
+				*/
+				RepoProjectSettings cloneAndClearStatus() const;
+
+				RepoProjectSettings cloneAndAddErrorStatus() const;
+				
 
 				/**
 				* Clone and merge new project settings into the existing info
@@ -72,7 +84,7 @@ namespace repo {
 				*/
 				bool isFederate() const
 				{
-					return getBoolField(REPO_LABEL_IS_FEDERATION);
+					return getBoolField(REPO_PROJECT_SETTINGS_LABEL_IS_FEDERATION);
 				}
 
 				/**

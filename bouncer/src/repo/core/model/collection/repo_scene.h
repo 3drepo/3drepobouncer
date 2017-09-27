@@ -57,6 +57,7 @@ namespace repo{
 				static const std::vector<std::string> collectionsInProject;
 				static const uint16_t REPO_SCENE_TEXTURE_BIT = 0x0001;
 				static const uint16_t REPO_SCENE_ENTITIES_BIT = 0x0002;
+				static const uint16_t REPO_SCENE_INVALID_MESH_BIT = 0x0003;
 			public:
 
 				/**
@@ -90,7 +91,8 @@ namespace repo{
 					const std::string                                  &issuesExt = REPO_COLLECTION_ISSUES,
 					const std::string                                  &srcExt = REPO_COLLECTION_STASH_SRC,
 					const std::string                                  &gltfExt = REPO_COLLECTION_STASH_GLTF,
-					const std::string                                  &jsonExt = REPO_COLLECTION_STASH_JSON);
+					const std::string                                  &jsonExt = REPO_COLLECTION_STASH_JSON,
+					const std::string                                  &unityExt = REPO_COLLECTION_STASH_UNITY);
 
 				/**
 				* Used for constructing scene graphs from model convertors
@@ -160,12 +162,29 @@ namespace repo{
 				}
 
 				/**
+				* Check if default scene graph contains invalid meshes
+				* This is usually caused non triangulated faces
+				* @return returns true invalid meshes exists
+				*/
+				bool hasInvalidMeshes() const{
+					return status & REPO_SCENE_INVALID_MESH_BIT;
+				}
+
+				/**
 				* Check if default scene graph is missing some nodes due to failed import
 				* @return returns true if missing nodes
 				*/
 				bool isMissingNodes() const{
 					return status & REPO_SCENE_ENTITIES_BIT;
 				}
+
+				/**
+				* Flag missing texture bit on status.
+				*/
+				void setHasInvalidMeshes(){
+					status |= REPO_SCENE_INVALID_MESH_BIT;
+				}
+
 				/**
 				* Flag missing texture bit on status.
 				*/
@@ -205,6 +224,23 @@ namespace repo{
 					const RepoNodeSet &materials,
 					const RepoNodeSet &textures,
 					const RepoNodeSet &transformations);
+
+				/**
+				* Add error message to project settings
+				*/
+				void addErrorStatusToProjectSettings(
+					repo::core::handler::AbstractDatabaseHandler *handler
+					);
+
+				/**
+				* Add a timestamp to project settings. This is an indication that
+				* the scene is successfully commited and ready to view
+				* @param handler database handler to perform the commit
+				*/
+				void addTimestampToProjectSettings(
+					repo::core::handler::AbstractDatabaseHandler *handler
+					);
+
 
 				/**
 				* Clears the contents within the Stash (if there is one)
@@ -302,6 +338,14 @@ namespace repo{
 					return jsonExt;
 				}
 
+				/**
+				* Get unity extension for this project
+				* @return returns the unity extension
+				*/
+				std::string getUnityExtension() const
+				{
+					return unityExt;
+				}
 				/**
 				* Get the revision ID of this scene graph
 				* @return returns the revision ID of this scene
@@ -932,6 +976,7 @@ namespace repo{
 					RepoNode *node,
 					std::string &errMsg);
 
+			
 				/**
 				* Commit a vector of nodes into the database
 				* @param handler database handler to perform the commit
@@ -1045,6 +1090,12 @@ namespace repo{
 				void shiftModel(
 					const std::vector<double> &offset);
 
+				/**
+				* Valid the scene, flag any necessary flags if 
+				* errors are found
+				*/
+				void validateScene();
+
 				/*
 				* ---------------- Scene utilities ----------------
 				*/
@@ -1065,6 +1116,7 @@ namespace repo{
 				std::string srcExt;      /*! extension for SRC stash files*/
 				std::string gltfExt;      /*! extension for GLTF stash files*/
 				std::string jsonExt;      /*! extension for JSON graph metadata files*/
+				std::string unityExt;      /*! extension for Unity files*/
 				std::vector<std::string> refFiles;  //Original Files that created this scene
 				std::vector<RepoNode*> toRemove;
 				std::vector<double> worldOffset;

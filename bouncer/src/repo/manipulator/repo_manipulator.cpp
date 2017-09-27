@@ -32,12 +32,14 @@
 #include "modelconvertor/import/repo_model_import_ifc.h"
 #include "modelconvertor/import/repo_model_import_3drepo.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
+#include "modelconvertor/export/repo_model_export_asset.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
 #include "modeloptimizer/repo_optimizer_ifc.h"
 #include "modelutility/repo_scene_cleaner.h"
 #include "modelutility/repo_scene_manager.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
+#include "statistics/repo_statistics_generator.h"
 #include "repo_manipulator.h"
 
 using namespace repo::manipulator;
@@ -168,6 +170,18 @@ repo::core::model::RepoScene* RepoManipulator::createFederatedScene(
 		new repo::core::model::RepoScene(empty, emptySet, emptySet, emptySet, emptySet, emptySet, transNodes, refNodes);
 
 	return scene;
+}
+
+bool RepoManipulator::commitAssetBundleBuffers(
+	const std::string                     &databaseAd,
+	const repo::core::model::RepoBSON 	  *cred,
+	repo::core::model::RepoScene          *scene,
+	const repo_web_buffers_t              &buffers)
+{
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	modelutility::SceneManager SceneManager;
+	return SceneManager.commitWebBuffers(scene, scene->getUnityExtension(), buffers, handler, true);
 }
 
 bool RepoManipulator::commitScene(
@@ -673,6 +687,28 @@ const std::list<std::string> &databases)
 	return list;
 }
 
+void RepoManipulator::getDatabaseStatistics(
+	const std::string                     &databaseAd,
+	const repo::core::model::RepoBSON*	  cred,
+	const std::string &outputFilePath)
+{
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	StatisticsGenerator statGen(handler);
+	statGen.getDatabaseStatistics(outputFilePath);
+}
+
+void RepoManipulator::getUserList(
+	const std::string                     &databaseAd,
+	const repo::core::model::RepoBSON*	  cred,
+	const std::string &outputFilePath)
+{
+	repo::core::handler::AbstractDatabaseHandler* handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	StatisticsGenerator statGen(handler);
+	statGen.getUserList(outputFilePath);
+}
+
 std::list<std::string> RepoManipulator::getAdminDatabaseRoles(
 	const std::string  &databaseAd)
 {
@@ -849,6 +885,18 @@ bool RepoManipulator::hasDatabase(
 	auto databaseList = fetchDatabases(databaseAd, cred);
 	auto findIt = std::find(databaseList.begin(), databaseList.end(), dbName);
 	return findIt != databaseList.end();
+}
+
+std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoManipulator::initialiseAssetBuffer(
+	repo::core::model::RepoScene *scene,
+	std::unordered_map<std::string, std::vector<uint8_t>> &jsonFiles,
+	std::vector<std::vector<uint16_t>> &serialisedFaceBuf,
+	std::vector<std::vector<std::vector<float>>> &idMapBuf,
+	std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> &meshMappings)
+{
+	repo::manipulator::modelconvertor::AssetModelExport assetExport(scene);
+	jsonFiles = assetExport.getJSONFilesAsBuffer();
+	return assetExport.getReorganisedMeshes(serialisedFaceBuf, idMapBuf, meshMappings);
 }
 
 void RepoManipulator::insertBinaryFileToDatabase(

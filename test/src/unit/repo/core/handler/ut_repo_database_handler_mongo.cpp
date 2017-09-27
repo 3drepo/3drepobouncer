@@ -179,6 +179,7 @@ TEST(MongoDatabaseHandlerTest, GetCollections)
 
 	auto collections = handler->getCollections(REPO_GTEST_DBNAME1);
 
+	//Some version gives you system.indexes but some others don't
 	ASSERT_EQ(goldenData.size(), collections.size());
 
 	std::sort(goldenData.begin(), goldenData.end());

@@ -25,6 +25,24 @@
 
 using namespace repo::core::model;
 
+RepoProjectSettings RepoProjectSettings::cloneAndClearStatus() const
+{
+	RepoBSONBuilder builder;
+	builder.appendTimeStamp(REPO_PROJECT_SETTINGS_LABEL_TIMESTAMP);
+	builder << REPO_PROJECT_SETTINGS_LABEL_STATUS << "ok";
+	builder.appendElementsUnique(*this);
+	return builder.obj();
+}
+
+
+RepoProjectSettings RepoProjectSettings::cloneAndAddErrorStatus() const
+{
+	RepoBSONBuilder builder;
+	builder << REPO_PROJECT_SETTINGS_LABEL_STATUS << "error";
+	builder.appendElementsUnique(*this);
+	return builder.obj();
+}
+
 RepoProjectSettings RepoProjectSettings::cloneAndMergeProjectSettings
 (const RepoProjectSettings &proj) const
 {

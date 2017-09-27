@@ -90,6 +90,14 @@ bool RepoController::testConnection(const RepoController::RepoToken *token)
 	return impl->testConnection(token);
 }
 
+bool RepoController::commitAssetBundleBuffers(
+	const RepoController::RepoToken *token,
+	repo::core::model::RepoScene    *scene,
+	const repo_web_buffers_t &buffers)
+{
+	return impl->commitAssetBundleBuffers(token, scene, buffers);
+}
+
 bool RepoController::commitScene(
 	const RepoController::RepoToken    *token,
 	repo::core::model::RepoScene        *scene,
@@ -274,9 +282,9 @@ std::list<std::string> RepoController::getDatabases(const RepoController::RepoTo
 }
 
 repo::core::model::DatabaseStats RepoController::getDatabaseStats(const RepoController::RepoToken *token,
-                                      const std::string &databaseName)
+	const std::string &databaseName)
 {
-    return impl->getDatabaseStats(token, databaseName);
+	return impl->getDatabaseStats(token, databaseName);
 }
 
 std::list<std::string>  RepoController::getCollections(
@@ -484,6 +492,16 @@ std::string RepoController::getSupportedExportFormats()
 	return impl->getSupportedExportFormats();
 }
 
+std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoController::initialiseAssetBuffer(
+	repo::core::model::RepoScene *scene,
+	std::unordered_map<std::string, std::vector<uint8_t>> &jsonFiles,
+	std::vector<std::vector<uint16_t>> &serialisedFaceBuf,
+	std::vector<std::vector<std::vector<float>>> &idMapBuf,
+	std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> &meshMappings)
+{
+	return impl->initialiseAssetBuffer(scene, jsonFiles, serialisedFaceBuf, idMapBuf, meshMappings);
+}
+
 repo::core::model::RepoNodeSet RepoController::loadMetadataFromFile(
 	const std::string &filePath,
 	const char        &delimiter)
@@ -554,6 +572,20 @@ void RepoController::compareScenes(
 	)
 {
 	impl->compareScenes(token, base, compare, baseResults, compResults, diffMode);
+}
+
+void RepoController::getDatabaseStatistics(
+	const RepoController::RepoToken   *token,
+	const std::string &outputFilePath)
+{
+	impl->getDatabaseStatistics(token, outputFilePath);
+}
+
+void RepoController::getUserList(
+	const RepoController::RepoToken   *token,
+	const std::string &outputFilePath)
+{
+	impl->getUserList(token, outputFilePath);
 }
 
 std::string RepoController::getVersion()

@@ -29,7 +29,7 @@ if(DEFINED ENV{ASSIMP_ROOT})
 		PATHS
 		${ASSIMP_ROOT}/lib
 	)	
-	find_library(ASSIMP_LIBRARIES_DEBUG NAMES assimp-vc120-mtd assimp-vc130-mtd assimpd assimp
+	find_library(ASSIMP_LIBRARIES_DEBUG NAMES assimp-vc120-mtd assimp-vc130-mtd assimp-vc130-mt assimp-vc120-mt assimpd assimp
 		PATHS
 		${ASSIMP_ROOT}/lib
 	)
