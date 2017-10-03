@@ -101,7 +101,11 @@
 			importToy(dbConfig, dir, username, database, model, skipPostProcessing).then(() => {
 				// after importing the toy regenerate the tree as well
 				if(skipPostProcessing.tree){
-					callback(JSON.stringify({value: 0}));
+					callback(JSON.stringify({
+						value: 0,
+						database: database,
+						project: model
+					}));
 				} else {
 					exeCommand(`genStash ${database} ${model} tree`, rid, callback);
 				}
@@ -113,7 +117,9 @@
 
 				callback(JSON.stringify({
 					value: ERRCODE_BOUNCER_CRASH,
-					message: err.message
+					message: err.message,
+					database: database,
+					project: model
 				}));
 			});
 
@@ -157,12 +163,43 @@
 		exec(command, function(error, stdout, stderr){
 			let reply = {};
 			logger.debug(stdout);
+
+			let cmdFile;
+			let cmdDatabase;
+			let cmdProject;
+
+			let cmdArr = cmd.split(' ');
+			
+			// Extract database and project information from command
+			switch(cmdArr[0]) {
+				case "import":
+					cmdFile = require(cmdArr[2]);
+					cmdDatabase = cmdFile.database;
+					cmdProject = cmdFile.project;
+					break;
+				case "genFed":
+					cmdFile = require(cmdArr[1]);
+					cmdDatabase = cmdFile.database;
+					cmdProject = cmdFile.project;
+					break;
+				case "importToy":
+					cmdDatabase = cmdArr[1];
+					cmdProject = cmdArr[2];
+					break;
+				default:
+					logger.error("Unexpected command: " + cmdArr[0]);
+			}
+
 			if(error !== null && error.code && softFails.indexOf(error.code) == -1){
 				if(error.code)
 					reply.value = error.code;
 				else
 					reply.value = ERRCODE_BOUNCER_CRASH;
-				callback(reply);
+				callback({
+					value: reply.value,
+					database: cmdDatabase,
+					project: cmdProject
+				});
 				logger.info("Executed command: " + command, reply);
 			}
 			else{
@@ -170,15 +207,21 @@
 					reply.value = 0;
 				else
 					reply.value = error.code;
+				console.log(error);
 				logger.info("Executed command: " + command, reply);
-				let cmdArr = cmd.split(' ');
 				if(conf.unity && conf.unity.project && cmdArr[0] == "import")
 				{					
-					let commandArgs = require(cmdArr[2]);
+					let commandArgs = cmdFile;
 					if(commandArgs && commandArgs.database && commandArgs.project)
 					{		
 
-						let unityCommand = conf.unity.batPath + " " + conf.unity.project + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + commandArgs.database + " " +commandArgs.project + " " + logDir.replace(/\//g, '\\');
+						let unityCommand; 
+						if (os.platform() === "win32") {
+							unityCommand = conf.unity.batPath + " " + conf.unity.project + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + commandArgs.database + " " +commandArgs.project + " " + logDir.replace(/\//g, '\\');
+						}
+						else {
+							unityCommand = conf.unity.unityExe + conf.unity.unityOptions + conf.unity.unityProjectPath + conf.unity.project + conf.unity.unityExecuteMethod + conf.unity.unityHost + conf.bouncer.dbhost + conf.unity.unityPort + conf.bouncer.dbport + conf.unity.unityUser + conf.bouncer.username + conf.unity.unityPassword + conf.bouncer.password + conf.unity.unityDB + commandArgs.database + conf.unity.unityProject + commandArgs.project + conf.unity.unityLog + logDir + "unity.log";
+						}
 						logger.info("running unity commnad: " + unityCommand);
 						exec(unityCommand, function( error, stdout, stderr){
 							if(error && error.code)
@@ -186,19 +229,31 @@
 								reply.value = ERRCODE_BUNDLE_GEN_FAIL;
 							}
 							logger.info("Executed Unity command: " + unityCommand, reply);
-							callback(reply);
+							callback({
+								value: reply.value,
+								database: cmdDatabase,
+								project: cmdProject
+							});
 						});
 					}
 					else
 					{
 						logger.error("Failed to read " + cmdArr[2]);
 						reply.value = ERRCODE_PARAM_READ_FAIL;
-						callback(reply);
+						callback({
+							value: reply.value,
+							database: cmdDatabase,
+							project: cmdProject
+						});
 					}
 				}
 				else
 				{
-					callback(reply);
+					callback({
+						value: reply.value,
+						database: cmdDatabase,
+						project: cmdProject
+					});
 				}
 			}
 
