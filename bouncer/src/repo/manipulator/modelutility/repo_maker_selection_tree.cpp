@@ -183,7 +183,6 @@ std::map<std::string, repo::lib::PropertyTree>  SelectionTreeMaker::getSelection
 		{
 			//if there's an entry in maps it must have an entry in paths
 			tree.addToTree("idToName." + pair.first, pair.second.first);			
-			tree.addToTree("idToPath." + pair.first, pair.second.second); //FIXME: To remove at 2.2
 			treePathTree.addToTree("idToPath." + pair.first, pair.second.second);
 		}
 		for (const auto pair : sharedIDToUniqueID)
