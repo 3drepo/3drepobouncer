@@ -400,3 +400,10 @@ bool RepoUser::isSubActive(const RepoUser::SubscriptionInfo &sub) const
 {
 	return (sub.expiresAt >= RepoBSON::getCurrentTimestamp() || sub.expiresAt == -1) && sub.active;
 }
+
+bool RepoUser::isVREnabled() const
+{
+	auto customData = getCustomDataBSON();
+
+	return customData.isEmpty() ? false : customData.getBoolField(REPO_USER_LABEL_VR_ENABLED);
+}

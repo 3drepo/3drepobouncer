@@ -23,7 +23,6 @@
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../lib/repo_log.h"
 
-
 using namespace repo::manipulator::modelconvertor;
 const static size_t SRC_MAX_VERTEX_LIMIT = 65535;
 //Labels for multipart JSON descriptor files
@@ -43,6 +42,7 @@ const static std::string MP_LABEL_NUM_IDs = "numberOfIDs";
 const static std::string MP_LABEL_USAGE = "usage";
 
 const static std::string MP_LABEL_ASSETS = "assets";
+const static std::string MP_LABEL_VR_ASSETS = "vrAssets";
 const static std::string MP_LABEL_SHARED = "sharedID";
 const static std::string MP_LABEL_JSONS = "jsonFiles";
 const static std::string MP_LABEL_OFFSET = "offset";
@@ -50,14 +50,16 @@ const static std::string MP_LABEL_DATABASE = "database";
 const static std::string MP_LABEL_PROJECT = "model";
 
 AssetModelExport::AssetModelExport(
-	const repo::core::model::RepoScene *scene
-	) : WebModelExport(scene)
+	const repo::core::model::RepoScene *scene,
+	const bool vrEnabled
+	) : WebModelExport(scene),
+	generateVR(vrEnabled)
 {
 	//Considering all newly imported models should have a stash graph, we only need to support stash graph?
 	if (convertSuccess)
 	{
 		if (gType == repo::core::model::RepoScene::GraphType::OPTIMIZED)
-		{			
+		{
 			convertSuccess = generateTreeRepresentation();
 		}
 		else  if (!(convertSuccess = !scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()))
@@ -97,8 +99,6 @@ bool AssetModelExport::generateJSONMapping(
 
 		jsonTree.addToTree(MP_LABEL_NUM_IDs, mappingLength);
 		jsonTree.addToTree(MP_LABEL_MAX_GEO_COUNT, mappingLength);
-
-	
 
 		std::vector<repo::lib::PropertyTree> mappingTrees;
 		std::string meshUID = mesh->getUniqueID().toString();
@@ -153,7 +153,7 @@ bool AssetModelExport::generateTreeRepresentation(
 	{
 		auto meshes = scene->getAllMeshes(gType);
 
-		std::vector<std::string> assetFiles, jsons;
+		std::vector<std::string> assetFiles, vrAssetFiles, jsons;
 		for (const repo::core::model::RepoNode* node : meshes)
 		{
 			auto mesh = dynamic_cast<const repo::core::model::MeshNode*>(node);
@@ -166,20 +166,20 @@ bool AssetModelExport::generateTreeRepresentation(
 			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter =
 				new repo::manipulator::modelutility::MeshMapReorganiser(mesh, SRC_MAX_VERTEX_LIMIT);
 
-			
-
 			if (success = !std::make_shared<repo::core::model::MeshNode>(reSplitter->getRemappedMesh())->isEmpty())
 			{
 				reorganisedMeshes.push_back(std::make_shared<repo::core::model::MeshNode>(reSplitter->getRemappedMesh()));
 				serialisedFaceBuf.push_back(reSplitter->getSerialisedFaces());
 				idMapBuf.push_back(reSplitter->getIDMapArrays());
 				meshMappings.push_back(reSplitter->getMappingsPerSubMesh());
-				std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> splitMapping = reSplitter->getSplitMapping();				
+				std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> splitMapping = reSplitter->getSplitMapping();
 				std::string fNamePrefix = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + mesh->getUniqueID().toString();
+				if (generateVR)
+					vrAssetFiles.push_back(fNamePrefix + "_win64.unity3d");
 				assetFiles.push_back(fNamePrefix + ".unity3d");
 				jsons.push_back(fNamePrefix + "_unity.json.mpc");
-				
-				success &= generateJSONMapping(mesh, scene, reSplitter->getSplitMapping());							
+
+				success &= generateJSONMapping(mesh, scene, reSplitter->getSplitMapping());
 				delete reSplitter;
 			}
 			else
@@ -192,6 +192,8 @@ bool AssetModelExport::generateTreeRepresentation(
 		std::string assetListFile = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/revision/" + scene->getRevisionID().toString() + "/unityAssets.json";
 		repo::lib::PropertyTree assetListTree;
 		assetListTree.addToTree(MP_LABEL_ASSETS, assetFiles);
+		if (vrAssetFiles.size())
+			assetListTree.addToTree(MP_LABEL_VR_ASSETS, vrAssetFiles);
 		assetListTree.addToTree(MP_LABEL_JSONS, jsons);
 		assetListTree.addToTree(MP_LABEL_OFFSET, scene->getWorldOffset());
 		assetListTree.addToTree(MP_LABEL_DATABASE, scene->getDatabaseName());

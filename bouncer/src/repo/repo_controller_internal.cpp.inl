@@ -1047,6 +1047,7 @@ std::string RepoController::_RepoControllerImpl::getSupportedImportFormats()
 }
 
 std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoController::_RepoControllerImpl::initialiseAssetBuffer(
+	const RepoController::RepoToken                    *token,
 	repo::core::model::RepoScene *scene,
 	std::unordered_map<std::string, std::vector<uint8_t>> &jsonFiles,
 	std::vector<std::vector<uint16_t>> &serialisedFaceBuf,
@@ -1057,7 +1058,7 @@ std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoController::_RepoC
 	if (scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		res = worker->initialiseAssetBuffer(scene, jsonFiles, serialisedFaceBuf, idMapBuf, meshMappings);
+		res = worker->initialiseAssetBuffer(token->databaseAd, token->getCredentials(), scene, jsonFiles, serialisedFaceBuf, idMapBuf, meshMappings);
 		workerPool.push(worker);
 	}
 	else
@@ -1086,6 +1087,23 @@ repo::core::model::RepoNodeSet RepoController::_RepoControllerImpl::loadMetadata
 	}
 
 	return metadata;
+}
+
+bool RepoController::_RepoControllerImpl::isVREnabled(const RepoToken *token,
+	const repo::core::model::RepoScene *scene)
+{
+	bool result = false;
+	if (scene)
+	{
+		manipulator::RepoManipulator* worker = workerPool.pop();
+
+		result = worker->isVREnabled(token->databaseAd, token->getCredentials(), scene);
+		workerPool.push(worker);
+	}
+	else{
+		repoError << "RepoController::_RepoControllerImpl::isVREnabled: NULL pointer to scene!";
+	}
+	return result;
 }
 
 repo::core::model::RepoScene*
