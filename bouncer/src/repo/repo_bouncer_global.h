@@ -33,7 +33,7 @@
 #endif
 
 //------------------------------------------------------------------------------
-#define BOUNCER_VMAJOR 1
-#define BOUNCER_VMINOR "13.8"
+#define BOUNCER_VMAJOR 2
+#define BOUNCER_VMINOR "0.0"
 
 //
