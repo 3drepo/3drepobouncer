@@ -224,7 +224,7 @@
 						}
 						logger.info("running unity commnad: " + unityCommand);
 						exec(unityCommand, function( error, stdout, stderr){
-							if(error && error.code)
+							if(error)
 							{
 								reply.value = ERRCODE_BUNDLE_GEN_FAIL;
 							}
