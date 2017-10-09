@@ -105,7 +105,7 @@
 						value: 0,
 						database: database,
 						project: model
-					}));
+					}), true);
 				} else {
 					exeCommand(`genStash ${database} ${model} tree`, rid, callback);
 				}
@@ -120,7 +120,7 @@
 					message: err.message,
 					database: database,
 					project: model
-				}));
+				}), true);
 			});
 
 		} else {
@@ -190,6 +190,13 @@
 					logger.error("Unexpected command: " + cmdArr[0]);
 			}
 
+			// Issue callback to indicate job is processing, but no ack as job not done
+			callback({
+				status: "processing",
+				database: cmdDatabase,
+				project: cmdProject
+			}, false);
+			
 			if(error !== null && error.code && softFails.indexOf(error.code) == -1){
 				if(error.code)
 					reply.value = error.code;
@@ -199,7 +206,7 @@
 					value: reply.value,
 					database: cmdDatabase,
 					project: cmdProject
-				});
+				}, true);
 				logger.info("Executed command: " + command, reply);
 			}
 			else{
@@ -222,7 +229,7 @@
 						else {
 							unityCommand = conf.unity.unityExe + conf.unity.unityOptions + conf.unity.unityProjectPath + conf.unity.project + conf.unity.unityExecuteMethod + conf.unity.unityHost + conf.bouncer.dbhost + conf.unity.unityPort + conf.bouncer.dbport + conf.unity.unityUser + conf.bouncer.username + conf.unity.unityPassword + conf.bouncer.password + conf.unity.unityDB + commandArgs.database + conf.unity.unityProject + commandArgs.project + conf.unity.unityLog + logDir + "unity.log";
 						}
-						logger.info("running unity commnad: " + unityCommand);
+						logger.info("running unity command: " + unityCommand);
 						exec(unityCommand, function( error, stdout, stderr){
 							if(error)
 							{
@@ -233,7 +240,7 @@
 								value: reply.value,
 								database: cmdDatabase,
 								project: cmdProject
-							});
+							}, true);
 						});
 					}
 					else
@@ -244,7 +251,7 @@
 							value: reply.value,
 							database: cmdDatabase,
 							project: cmdProject
-						});
+						}, true);
 					}
 				}
 				else
@@ -253,7 +260,7 @@
 						value: reply.value,
 						database: cmdDatabase,
 						project: cmdProject
-					});
+					}, true);
 				}
 			}
 
@@ -275,11 +282,14 @@
 		let logDir = logRootDir + "/" +  rid.toString() + "/";
 
 		runBouncer(logDir, cmd,
-		 function(reply){
-			callback(JSON.stringify(reply));
+		 function(reply, sendAck){
+			callback(JSON.stringify(reply), sendAck);
 		});
 	}
-	
+
+	/*
+	 * @param {sendAck} sendAck - Should an acknowledgement be sent with callback (true/false)
+	 */
 	function listenToQueue(ch, queueName, prefetchCount)
 	{
 		ch.assertQueue(queueName, {durable: true});
@@ -287,8 +297,9 @@
 		ch.prefetch(prefetchCount);
 		ch.consume(queueName, function(msg){
 			logger.info(" [x] Received %s from %s", msg.content.toString(), queueName);
-			handleMessage(msg.content.toString(), msg.properties.correlationId, function(reply){
-				ch.ack(msg);
+			handleMessage(msg.content.toString(), msg.properties.correlationId, function(reply, sendAck){
+				if (sendAck)
+					ch.ack(msg);
 				logger.info("sending to reply queue(%s): %s", conf.rabbitmq.callback_queue, reply);
 				ch.publish(conf.rabbitmq.callback_queue, msg.properties.appId, new Buffer(reply),
 					{correlationId: msg.properties.correlationId, appId: msg.properties.appId});
