@@ -13,7 +13,7 @@ addons:
             - g++-4.9
 
 before_install:
-    - echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list
+    #- echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list
     - sudo apt-get update
     - sudo apt-get install mongodb-org
     - mongod --version
@@ -46,6 +46,8 @@ before_install:
     - sudo apt-get install libvtk5-dev libxmu-dev libxi-dev
 install:
     - sudo pip install cpp-coveralls    
+services:
+    - mongodb
 before_script:
     - mkdir build && cd build
     - export MONGO_ROOT=$PWD/../mongo-cxx-1.1.0 
@@ -53,6 +55,7 @@ before_script:
     - export OCCT_ROOT=$PWD/../occt-install
     - export IFCOPENSHELL_ROOT=$PWD/../ifcopenshell
     - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DCMAKE_BUILD_TYPE=Release ../
+    - mongo mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
 script:
     - sudo make -j2 install
     - export REPO_MODEL_PATH=$PWD/../testData/bouncer/data/models
