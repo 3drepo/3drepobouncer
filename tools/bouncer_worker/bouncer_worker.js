@@ -160,7 +160,6 @@
 		{	
 			command = "REPO_LOG_DIR=" + logDir + " " +path.normalize(conf.bouncer.path) + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + cmd;
 		}
-		logger.error(command);
 		exec(command, function(error, stdout, stderr){
 			let reply = {};
 			logger.debug(stdout);
