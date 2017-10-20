@@ -160,6 +160,7 @@
 		{	
 			command = "REPO_LOG_DIR=" + logDir + " " +path.normalize(conf.bouncer.path) + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + cmd;
 		}
+		logger.error(command);
 		exec(command, function(error, stdout, stderr){
 			let reply = {};
 			logger.debug(stdout);
@@ -186,16 +187,22 @@
 					cmdDatabase = cmdArr[1];
 					cmdProject = cmdArr[2];
 					break;
+				case "genStash":
+					cmdDatabase = cmdArr[1];
+					cmdProject = cmdArr[2];
+					break;
 				default:
 					logger.error("Unexpected command: " + cmdArr[0]);
 			}
 
 			// Issue callback to indicate job is processing, but no ack as job not done
-			callback({
-				status: "processing",
-				database: cmdDatabase,
-				project: cmdProject
-			}, false);
+			if ("genFed" !== cmdArr[0]) {
+				callback({
+					status: "processing",
+					database: cmdDatabase,
+					project: cmdProject
+				}, false);
+			}
 			
 			if(error !== null && error.code && softFails.indexOf(error.code) == -1){
 				if(error.code)
