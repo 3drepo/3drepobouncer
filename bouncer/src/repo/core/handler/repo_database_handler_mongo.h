@@ -280,6 +280,14 @@ namespace repo{
 				virtual void createCollection(const std::string &database, const std::string &name);
 
 				/**
+				* Create an index within the given collection
+				* @param database name of the database
+				* @param name name of the collection
+				* @param index BSONObj specifying the index 
+				*/
+				virtual void createIndex(const std::string &database, const std::string &collection, const mongo::BSONObj & obj);
+
+				/**
 				* Remove a collection from the database
 				* @param database the database the collection resides in
 				* @param collection name of the collection to drop
