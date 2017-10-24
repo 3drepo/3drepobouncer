@@ -705,6 +705,7 @@ bool RepoScene::commitRevisionNode(
 
 	if (newRevNode)
 	{
+		handler->createIndex(databaseName, projectName + "." + revExt, BSON(REPO_NODE_REVISION_LABEL_TIMESTAMP << -1));
 		//Creation of the revision node will append unique id onto the filename (e.g. <uniqueID>chair.obj)
 		//we need to store the file in GridFS under the new name
 		std::vector<std::string> newRefFileNames = newRevNode->getOrgFiles();

@@ -161,6 +161,33 @@ void MongoDatabaseHandler::createCollection(const std::string &database, const s
 	}
 }
 
+void MongoDatabaseHandler::createIndex(const std::string &database, const std::string &collection, const mongo::BSONObj & obj)
+{
+	mongo::DBClientBase *worker;
+	if (!(database.empty() || collection.empty()))
+	{
+		repoInfo << "Creating index for :" << database << "." << collection << " : index: " << obj;
+		try{
+			worker = workerPool->getWorker();
+			if (worker)
+				worker->createIndex(database + "." + collection, obj);
+			else
+				repoError << "Failed to create collection: cannot obtain a database worker from the pool";
+		}
+		catch (mongo::DBException& e)
+		{
+			repoError << "Failed to create index ("
+				<< database << "." << collection << ":" << e.what();
+		}
+
+		workerPool->returnWorker(worker);
+	}
+	else
+	{
+		repoError << "Failed to create index: database(value: " << database << ")/collection(value: " << collection << ") name is empty!";
+	}
+}
+
 repo::core::model::RepoBSON MongoDatabaseHandler::createRepoBSON(
 	mongo::DBClientBase *worker,
 	const std::string &database,
