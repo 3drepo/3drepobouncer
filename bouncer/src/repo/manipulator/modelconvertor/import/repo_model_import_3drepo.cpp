@@ -363,6 +363,7 @@ void RepoModelImport::skipAheadInFile(long amount)
 
 bool RepoModelImport::importModel(std::string filePath, std::string &errMsg)
 {
+	orgFile = filePath;
 	std::string fileName = getFileName(filePath);
 
 	repoInfo << "IMPORT [" << fileName << "]";
