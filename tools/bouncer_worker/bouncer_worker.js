@@ -160,49 +160,49 @@
 		{	
 			command = "REPO_LOG_DIR=" + logDir + " " +path.normalize(conf.bouncer.path) + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + cmd;
 		}
+
+		let cmdFile;
+		let cmdDatabase;
+		let cmdProject;
+		let cmdArr = cmd.split(' ');
+			
+		// Extract database and project information from command
+		switch(cmdArr[0]) {
+			case "import":
+				cmdFile = require(cmdArr[2]);
+				cmdDatabase = cmdFile.database;
+				cmdProject = cmdFile.project;
+				break;
+			case "genFed":
+				cmdFile = require(cmdArr[1]);
+				cmdDatabase = cmdFile.database;
+				cmdProject = cmdFile.project;
+				break;
+			case "importToy":
+				cmdDatabase = cmdArr[1];
+				cmdProject = cmdArr[2];
+				break;
+			case "genStash":
+				cmdDatabase = cmdArr[1];
+				cmdProject = cmdArr[2];
+				break;
+			default:
+				logger.error("Unexpected command: " + cmdArr[0]);
+		}
+
+		// Issue callback to indicate job is processing, but no ack as job not done
+		if ("genFed" !== cmdArr[0]) {
+			callback({
+				status: "processing",
+				database: cmdDatabase,
+				project: cmdProject
+			}, false);
+		}
+			
 		exec(command, function(error, stdout, stderr){
 			let reply = {};
 			logger.debug(stdout);
 
-			let cmdFile;
-			let cmdDatabase;
-			let cmdProject;
-
-			let cmdArr = cmd.split(' ');
-			
-			// Extract database and project information from command
-			switch(cmdArr[0]) {
-				case "import":
-					cmdFile = require(cmdArr[2]);
-					cmdDatabase = cmdFile.database;
-					cmdProject = cmdFile.project;
-					break;
-				case "genFed":
-					cmdFile = require(cmdArr[1]);
-					cmdDatabase = cmdFile.database;
-					cmdProject = cmdFile.project;
-					break;
-				case "importToy":
-					cmdDatabase = cmdArr[1];
-					cmdProject = cmdArr[2];
-					break;
-				case "genStash":
-					cmdDatabase = cmdArr[1];
-					cmdProject = cmdArr[2];
-					break;
-				default:
-					logger.error("Unexpected command: " + cmdArr[0]);
-			}
-
-			// Issue callback to indicate job is processing, but no ack as job not done
-			if ("genFed" !== cmdArr[0]) {
-				callback({
-					status: "processing",
-					database: cmdDatabase,
-					project: cmdProject
-				}, false);
-			}
-			
 			if(error !== null && error.code && softFails.indexOf(error.code) == -1){
 				if(error.code)
 					reply.value = error.code;
