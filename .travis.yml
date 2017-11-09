@@ -66,4 +66,4 @@ after_success:
 notifications:
     email: 
         recipients:
-            - team@3drepo.org
+            - devops@3drepo.org
