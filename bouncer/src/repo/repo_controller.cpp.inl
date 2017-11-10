@@ -785,11 +785,21 @@ public:
 	* @return returns mesh nodes reorganised for bundling
 	*/
 	std::vector<std::shared_ptr<repo::core::model::MeshNode>> initialiseAssetBuffer(
+		const RepoController::RepoToken                    *token,
 		repo::core::model::RepoScene *scene,
 		std::unordered_map<std::string, std::vector<uint8_t>> &jsonFiles,
 		std::vector<std::vector<uint16_t>> &serialisedFaceBuf,
 		std::vector<std::vector<std::vector<float>>> &idMapBuf,
 		std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> &meshMappings);
+
+	/**
+	* Check if VR is enabled for this model
+	* @param token repo token to the database
+	* @param scene scene to query on
+	* @return returns true if it is enabled, false otherwise
+	*/
+	bool isVREnabled(const RepoToken *token,
+		const repo::core::model::RepoScene *scene);
 
 	/**
 	* Load a Repo Scene from a file

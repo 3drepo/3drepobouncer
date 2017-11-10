@@ -358,12 +358,14 @@ static uint64_t getNewUsersWithinDuration(
 	planInfo = BSON("plan" << "BASIC" << "createdAt" << timeRangeBuilder.obj());
 
 	auto subscriptionCriteria = BSON("$elemMatch" << planInfo);
-	repo::core::model::RepoBSON criteria = BSON("customData.billing.subscriptions" << subscriptionCriteria);
+	repo::core::model::RepoBSON criteria = BSON("customData.billing.subscriptions" << subscriptionCriteria );
 	auto users = handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, criteria);
+	std::vector<repo::core::model::RepoBSON> filteredUsers;
 	for (const auto userBson : users)
 	{
 		repo::core::model::RepoUser user(userBson);
-
+		auto custom = user.getCustomDataBSON();
+		if (custom.hasField("inactive") && custom.getBoolField("inactive")) continue;
 		auto subs = user.getSubscriptionInfo();
 		for (const auto sub : subs)
 		{
@@ -373,9 +375,10 @@ static uint64_t getNewUsersWithinDuration(
 				break;
 			}
 		}
+		filteredUsers.push_back(user);
 	}
 
-	return users.size();
+	return filteredUsers.size();
 }
 
 static void getNewUsersPerMonth(
