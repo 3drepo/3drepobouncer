@@ -35,9 +35,11 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 	const repo::core::model::RepoNode            *currentNode,
 	std::unordered_map < std::string, std::pair < std::string, std::string >> &idMaps,
 	std::vector<std::pair<std::string, std::string>>        &sharedIDToUniqueID,
+	repo::lib::PropertyTree                      &idToMeshesTree,
 	const std::string                            &currentPath,
 	bool                                         &hiddenOnDefault,
-	std::vector<std::string>                     &hiddenNode) const
+	std::vector<std::string>                     &hiddenNode,
+	std::vector<std::string>                     &meshIds) const
 {
 	repo::lib::PropertyTree tree;
 	if (currentNode)
@@ -74,13 +76,16 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 					switch (child->getTypeAsEnum())
 					{
 					case repo::core::model::NodeType::MESH:
+						meshIds.push_back(child->getUniqueID().toString());
 					case repo::core::model::NodeType::TRANSFORMATION:
 					case repo::core::model::NodeType::CAMERA:
 					case repo::core::model::NodeType::REFERENCE:
 					{
 						bool hiddenChild = false;
-						childrenTrees.push_back(generatePTree(child, idMaps, sharedIDToUniqueID, childPath, hiddenChild, hiddenNode));
+						std::vector<std::string> childrenMeshes;
+						childrenTrees.push_back(generatePTree(child, idMaps, sharedIDToUniqueID, idToMeshesTree, childPath, hiddenChild, hiddenNode, childrenMeshes));
 						hasHiddenChildren = hasHiddenChildren || hiddenChild;
+						meshIds.insert(meshIds.end(), childrenMeshes.begin(), childrenMeshes.end());
 					}
 					}
 				}
@@ -131,6 +136,12 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 
 		idMaps[idString] = { name, childPath };
 		sharedIDToUniqueID.push_back({ idString, sharedID.toString() });
+		if (meshIds.size())
+			idToMeshesTree.addToTree(idString, meshIds);
+		else if (currentNode->getTypeAsEnum() == repo::core::model::NodeType::MESH){
+			std::vector<repo::lib::RepoUUID> self = { currentNode->getUniqueID() };
+			idToMeshesTree.addToTree(idString, self);
+		}
 	}
 	else
 	{
@@ -174,11 +185,11 @@ std::map<std::string, repo::lib::PropertyTree>  SelectionTreeMaker::getSelection
 	if (scene && (root = scene->getRoot(repo::core::model::RepoScene::GraphType::DEFAULT)))
 	{
 		std::unordered_map< std::string, std::pair<std::string, std::string>> map;
-		std::vector<std::string> hiddenNodes;
+		std::vector<std::string> hiddenNodes, childrenMeshes;
 		bool dummy;
-		repo::lib::PropertyTree tree, settingsTree, treePathTree, shareIDToUniqueIDMap;
+		repo::lib::PropertyTree tree, settingsTree, treePathTree, shareIDToUniqueIDMap, idToMeshes;
 		std::vector<std::pair<std::string, std::string>>  sharedIDToUniqueID; 
-		tree.mergeSubTree("nodes", generatePTree(root, map, sharedIDToUniqueID, "", dummy, hiddenNodes));
+		tree.mergeSubTree("nodes", generatePTree(root, map, sharedIDToUniqueID, idToMeshes, "", dummy, hiddenNodes, childrenMeshes));
 		for (const auto pair : map)
 		{
 			//if there's an entry in maps it must have an entry in paths
@@ -193,6 +204,7 @@ std::map<std::string, repo::lib::PropertyTree>  SelectionTreeMaker::getSelection
 		trees["fulltree.json"] = tree;
 		trees["tree_path.json"] = treePathTree;
 		trees["idMap.json"] = shareIDToUniqueIDMap;
+		trees["idToMeshes.json"] = idToMeshes;
 
 		if (hiddenNodes.size())
 		{

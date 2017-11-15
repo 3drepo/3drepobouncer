@@ -64,9 +64,11 @@ namespace repo{
 					const repo::core::model::RepoNode            *currentNode,
 					std::unordered_map < std::string, std::pair < std::string, std::string >> &idMaps,
 					std::vector<std::pair<std::string, std::string>>        &sharedIDToUniqueID,
+					repo::lib::PropertyTree                      &idToMeshes,
 					const std::string                            &currentPath,
 					bool                                         &hiddenOnDefault,
-					std::vector<std::string>                     &hiddenNode) const;
+					std::vector<std::string>                     &hiddenNode,
+					std::vector<std::string>                     &meshIds) const;
 			};
 		}
 	}
