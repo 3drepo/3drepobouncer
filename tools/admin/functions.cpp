@@ -287,6 +287,8 @@ int32_t generateStash(
 							auto functionRes = genFn(controller, token, scene);
 							repoLog("\t\t" + node.getUniqueID().toString() + " : " + (functionRes ? "OK" : "FAILED"));
 							if (!functionRes) ++failCount;
+
+							delete scene;
 						}
 					}
 					catch (const std::exception &e)

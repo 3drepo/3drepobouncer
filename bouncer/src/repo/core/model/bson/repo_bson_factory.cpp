@@ -189,6 +189,19 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	return MetadataNode(builder.obj());
 }
 
+
+static bool keyCheck(const char &c)
+{
+	return c == '$' || c == '.';
+}
+
+static std::string sanitiseKey(const std::string &key)
+{
+	std::string cleanedKey(key);
+	std::replace_if(cleanedKey.begin(), cleanedKey.end(), keyCheck, ':');
+	return cleanedKey;
+}
+
 MetadataNode RepoBSONFactory::makeMetaDataNode(
 	const std::vector<std::string>  &keys,
 	const std::vector<std::string>  &values,
@@ -214,7 +227,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	std::vector<std::string>::const_iterator vit = values.begin();
 	for (; kit != keys.end() && vit != values.end(); ++kit, ++vit)
 	{
-		std::string key = *kit;
+		std::string key = sanitiseKey(*kit);
 		std::string value = *vit;
 
 		if (!key.empty() && !value.empty())
