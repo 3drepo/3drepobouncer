@@ -46,8 +46,7 @@ RepoModelImport::~RepoModelImport()
 
 repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(const ptree &metaTree, const std::string &parentName, const repo::lib::RepoUUID &parentID)
 {
-	//build the metadata as a bson
-	repo::core::model::RepoBSONBuilder builder;
+	std::vector<std::string> keys, values;
 
 	for(ptree::const_iterator props = metaTree.begin(); props != metaTree.end(); props++)
 	{
@@ -56,30 +55,32 @@ repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(const ptree
 		char type = origKey[0];
 		key = origKey.substr(1);
 
+		keys.push_back(key);
+		std::string value;
 		switch (type)
 		{
 			case REPO_IMPORT_TYPE_BOOL:
-				builder << key << props->second.get_value<bool>();
+				value = std::to_string(props->second.get_value<bool>());
 				break;
 
 			case REPO_IMPORT_TYPE_INT:
-				builder << key << props->second.get_value<int>();
+				value = std::to_string(props->second.get_value<int>());
 				break;
 
 			case REPO_IMPORT_TYPE_DOUBLE:
-				builder << key << props->second.get_value<double>();
+				value = std::to_string(props->second.get_value<double>());
 				break;
 
 			case REPO_IMPORT_TYPE_STRING:
-				builder << key << props->second.get_value<std::string>();
+				value = props->second.get_value<std::string>();
 				break;
 		}
+		values.push_back(value);
 	}
 
-	repo::core::model::RepoBSON metaBSON = builder.obj();
 
 	repo::core::model::MetadataNode *metaNode = new repo::core::model::MetadataNode(
-		repo::core::model::RepoBSONFactory::makeMetaDataNode(metaBSON, "", parentName));
+		repo::core::model::RepoBSONFactory::makeMetaDataNode(keys, values, parentName));
 
 	metadata.insert(metaNode);
 
