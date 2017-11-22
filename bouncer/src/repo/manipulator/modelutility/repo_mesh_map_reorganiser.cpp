@@ -465,21 +465,21 @@ bool MeshMapReorganiser::splitLargeMesh(
 	else if (currentMeshNumVertices < totalLargeMeshVertexCount)
 	{
 		auto extraVertices = totalLargeMeshVertexCount - currentMeshNumVertices;
-		auto startingPos = newVertices.begin() + newMappings.back().vertFrom;
+		auto startingPos = newVertices.begin() + newVerticesVFrom;
 
-		//Chop out the unwanted vertices
+		//Expand newVertices to include the extra vertices
 		std::vector<repo::lib::RepoVector3D> extraVs;
 		extraVs.resize(extraVertices);
 		newVertices.insert(startingPos, extraVs.begin(), extraVs.end());
 		if (hasNormal)
 		{
-			auto startingPosN = newNormals.begin() + newMappings.back().vertFrom;
+			auto startingPosN = newNormals.begin() + newVerticesVFrom;
 			newNormals.insert(startingPosN, extraVs.begin(), extraVs.end());
 		}
 
 		if (hasColor)
 		{
-			auto startingPosN = newColors.begin() + newMappings.back().vertFrom;
+			auto startingPosN = newColors.begin() + newVerticesVFrom;
 			std::vector<repo_color4d_t> extras;
 			extras.resize(extraVertices);
 			newColors.insert(startingPosN, extras.begin(), extras.end());
@@ -490,7 +490,7 @@ bool MeshMapReorganiser::splitLargeMesh(
 		{
 			for (int iUV = 0; iUV < oldUVs.size(); ++iUV)
 			{
-				auto startingPosN = newUVs[iUV].begin() + newMappings.back().vertFrom;
+				auto startingPosN = newUVs[iUV].begin() + newVerticesVFrom;
 				std::vector<repo::lib::RepoVector2D> extras;
 				extras.resize(extraVertices);
 				newUVs[iUV].insert(startingPosN, extras.begin(), extras.end());
