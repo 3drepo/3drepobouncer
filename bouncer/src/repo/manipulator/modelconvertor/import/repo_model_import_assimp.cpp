@@ -585,7 +585,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 				builder << key << *(static_cast<bool *>(currentValue.mData));
 				break;
 
-			case AI_INT:
+			case AI_INT32:
 				builder << key << *(static_cast<int *>(currentValue.mData));
 				break;
 
