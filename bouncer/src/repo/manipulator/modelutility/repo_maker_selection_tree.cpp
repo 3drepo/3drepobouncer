@@ -55,15 +55,20 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 		std::vector<repo::lib::RepoUUID> metaIDs;
 		for (const auto &child : children)
 		{
-			//Ensure IFC Space (if any) are put into the tree first.
-			if (child->getName().find(IFC_TYPE_SPACE_LABEL) != std::string::npos)
-				childrenTypes[0].push_back(child);
-			else if (child->getTypeAsEnum() == repo::core::model::NodeType::METADATA)
+			if (child->getTypeAsEnum() == repo::core::model::NodeType::METADATA)
 			{
 				metaIDs.push_back(child->getUniqueID());
 			}
 			else
-				childrenTypes[1].push_back(child);
+			{
+				//Ensure IFC Space (if any) are put into the tree first.
+				if (child->getName().find(IFC_TYPE_SPACE_LABEL) != std::string::npos)
+					childrenTypes[0].push_back(child);
+				else
+					childrenTypes[1].push_back(child);
+
+			}
+
 		}
 
 		bool hasHiddenChildren = false;
