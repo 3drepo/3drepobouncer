@@ -765,8 +765,10 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 		std::vector<std::vector<double>> sceneBbox = getSceneBoundingBox();
 		//-------------------------------------------------------------------------
 		// Textures
+
 		repoInfo << "Constructing Texture Nodes...";
 		bool missingTextures = false;
+
 		for (uint32_t m = 0; m < assimpScene->mNumMaterials; ++m)
 		{
 			int texIndex = 0;
@@ -780,18 +782,19 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 				if (AI_SUCCESS == material->GetTexture(aiTextureType_DIFFUSE, iTex, &path))
 				{
 					std::string texName(path.data);
+					repoTrace << "texture name: " << texName;
+					
 					if (!texName.empty())
 					{
 						repo::core::model::RepoNode *textureNode = nullptr;
-						if (assimpScene->HasTextures() && '*' == texName.at(0))
+						
+						const aiTexture* texture = nullptr;
+						if (texture = assimpScene->GetEmbeddedTexture(texName.c_str()))
 						{
+							
 							repoTrace << "Embedded texture name: " << texName;
 							//---------------------------------------------------------
 							// Embedded texture
-							int textureIndex = atoi(texName.substr(1, texName.size()).c_str());
-							aiTexture *texture = assimpScene->mTextures[textureIndex];
-
-							//FIXME: Untested!
 							textureNode = new repo::core::model::TextureNode(repo::core::model::RepoBSONFactory::makeTextureNode(
 								texName,
 								(char*)texture->pcData,
@@ -1205,6 +1208,7 @@ bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
 
 	importer.SetPropertyInteger(AI_CONFIG_GLOB_MEASURE_TIME, 1);
 	importer.SetPropertyBool(AI_CONFIG_IMPORT_IFC_SKIP_SPACE_REPRESENTATIONS, settings->getSkipIFCSpaceRepresentation());
+	importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_READ_TEXTURES, true);
 	assimpScene = importer.ReadFile(filePath, 0);
 
 	if (!assimpScene){
