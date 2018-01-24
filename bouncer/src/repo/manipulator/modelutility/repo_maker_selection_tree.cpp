@@ -125,8 +125,10 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 			hiddenOnDefault = true;
 			hiddenNode.push_back(idString);
 		}
-		else if (hiddenOnDefault = hiddenOnDefault || hasHiddenChildren)
+		else if (hiddenOnDefault || hasHiddenChildren)
 		{
+			hiddenOnDefault = (hiddenOnDefault || hasHiddenChildren);
+			repoDebug << "Setting " << name << " to half hidden... hiddenOnDefault: " << hiddenOnDefault << " hasHiddenChildren: " << hasHiddenChildren;
 			tree.addToTree(REPO_LABEL_VISIBILITY_STATE, REPO_VISIBILITY_STATE_HALF_HIDDEN);
 		}
 		else
@@ -186,7 +188,7 @@ std::map<std::string, repo::lib::PropertyTree>  SelectionTreeMaker::getSelection
 	{
 		std::unordered_map< std::string, std::pair<std::string, std::string>> map;
 		std::vector<std::string> hiddenNodes, childrenMeshes;
-		bool dummy;
+		bool dummy = false;
 		repo::lib::PropertyTree tree, settingsTree, treePathTree, shareIDToUniqueIDMap, idToMeshes;
 		std::vector<std::pair<std::string, std::string>>  sharedIDToUniqueID; 
 		tree.mergeSubTree("nodes", generatePTree(root, map, sharedIDToUniqueID, idToMeshes, "", dummy, hiddenNodes, childrenMeshes));
