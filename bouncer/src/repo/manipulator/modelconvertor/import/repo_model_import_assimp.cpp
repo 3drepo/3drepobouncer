@@ -311,9 +311,13 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 		//--------------------------------------------------------------------------
 		// Opacity
 		if (AI_SUCCESS == material->Get(AI_MATKEY_OPACITY, tempFloat))
-			repo_material.opacity = tempFloat;
+		{
+			//If opacity is 0, we assume it's bonkers.
+			repo_material.opacity = tempFloat == 0 ? 1 : tempFloat;		
+		}
 		else
 			repo_material.opacity = std::numeric_limits<float>::quiet_NaN();
+
 		//--------------------------------------------------------------------------
 		// Shininess
 		if (AI_SUCCESS == material->Get(AI_MATKEY_SHININESS, tempFloat))
