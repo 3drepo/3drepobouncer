@@ -795,13 +795,20 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 							repoTrace << "Embedded texture name: " << texName;
 							//---------------------------------------------------------
 							// Embedded texture
+							char *memblock = (char*)malloc(texture->mWidth);
+							memcpy(memblock, texture->pcData, texture->mWidth);
+
+							auto size = texture->mWidth * (texture->mHeight == 0 ? 1 : texture->mHeight);
 							textureNode = new repo::core::model::TextureNode(repo::core::model::RepoBSONFactory::makeTextureNode(
 								texName,
 								(char*)texture->pcData,
-								sizeof(texture->pcData) * texture->mWidth * texture->mHeight ? texture->mHeight : 1,
+								size,
 								texture->mWidth,
 								texture->mHeight,
 								REPO_NODE_API_LEVEL_1));
+
+							free(memblock);
+
 						}
 						else
 						{
@@ -855,7 +862,6 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 				}
 			}
 		}
-
 		repoInfo << "Constructing Material Nodes...";
 		/*
 		* ------------- Material Nodes -----------------
