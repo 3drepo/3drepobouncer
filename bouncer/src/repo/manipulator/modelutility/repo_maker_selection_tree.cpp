@@ -133,7 +133,6 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 		else if (hiddenOnDefault || hasHiddenChildren)
 		{
 			hiddenOnDefault = (hiddenOnDefault || hasHiddenChildren);
-			repoDebug << "Setting " << name << " to half hidden... hiddenOnDefault: " << hiddenOnDefault << " hasHiddenChildren: " << hasHiddenChildren;
 			tree.addToTree(REPO_LABEL_VISIBILITY_STATE, REPO_VISIBILITY_STATE_HALF_HIDDEN);
 		}
 		else
