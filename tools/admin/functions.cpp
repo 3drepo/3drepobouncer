@@ -280,7 +280,7 @@ int32_t generateStash(
 				if (node.getUploadStatus() == repo::core::model::RevisionNode::UploadStatus::COMPLETE)
 				{
 					try{
-						repo::core::model::RepoScene *scene = controller->fetchScene(token, database, project, node.getUniqueID().toString(), false, stashOnly);
+						repo::core::model::RepoScene *scene = controller->fetchScene(token, database, project, node.getUniqueID().toString(), false, stashOnly, true);
 						if (scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size()) break; //This project is a federation
 						if (scene)
 						{

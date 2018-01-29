@@ -320,7 +320,7 @@ int32_t generateStash(
 		return REPOERR_INVALID_ARG;
 	}
 
-	auto scene = controller->fetchScene(token, dbName, project);
+	auto scene = controller->fetchScene(token, dbName, project, REPO_HISTORY_MASTER_BRANCH, true, false, true);
 	if (!scene)
 	{
 		return REPOERR_STASH_GEN_FAIL;
