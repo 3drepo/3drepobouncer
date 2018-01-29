@@ -88,7 +88,8 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 	const std::string                             &project,
 	const repo::lib::RepoUUID                                &uuid,
 	const bool                                    &headRevision,
-	const bool                                    &lightFetch)
+	const bool                                    &lightFetch,
+	const bool                                    &ignoreRefScenes)
 {
 	repo::core::model::RepoScene* scene = nullptr;
 	if (handler)
@@ -98,6 +99,8 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 		scene = new repo::core::model::RepoScene(database, project);
 		if (scene)
 		{
+			if(ignoreRefScenes)
+				scene->ignoreReferenceScene();
 			if (headRevision)
 				scene->setBranch(uuid);
 			else

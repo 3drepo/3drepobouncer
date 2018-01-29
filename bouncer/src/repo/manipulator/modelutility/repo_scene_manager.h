@@ -61,15 +61,17 @@ namespace repo{
 					const std::string                             &project,
 					const repo::lib::RepoUUID                                &uuid,
 					const bool                                    &headRevision = true,
-					const bool                                    &lightFetch = false);
+					const bool                                    &lightFetch = false,
+					const bool                                    &ignoreRefScenes = false);
 
 				repo::core::model::RepoScene* fetchScene(
 					repo::core::handler::AbstractDatabaseHandler *handler,
 					const std::string                             &database,
-					const std::string                             &project)
+					const std::string                             &project,
+					const bool                             &ignoreRefScene = false)
 				{
 					repo::lib::RepoUUID master = repo::lib::RepoUUID(REPO_HISTORY_MASTER_BRANCH);
-					return fetchScene(handler, database, project, master);
+					return fetchScene(handler, database, project, master, true, false, ignoreRefScene);
 				}
 
 				/**

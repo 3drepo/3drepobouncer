@@ -153,6 +153,10 @@ namespace repo{
 					return !status;
 				}
 
+				void ignoreReferenceScene() {
+					ignoreReferenceNodes = true;
+				}
+
 				/**
 				* Check if default scene graph is missing texture
 				* @return returns true if missing textures
@@ -1142,6 +1146,7 @@ namespace repo{
 				repoGraphInstance graph; //current state of the graph, given the branch/revision
 				repoGraphInstance stashGraph; //current state of the optimized graph, given the branch/revision
 				uint16_t status; //health of the scene, 0 denotes healthy
+				bool ignoreReferenceNodes = false;
 			};
 		}//namespace graph
 	}//namespace manipulator

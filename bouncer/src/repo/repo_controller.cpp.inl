@@ -433,7 +433,8 @@ public:
 		const std::string    &project,
 		const std::string    &uuid = REPO_HISTORY_MASTER_BRANCH,
 		const bool           &headRevision = true,
-		const bool           &lightFetch = false);
+		const bool           &lightFetch = false,
+		const bool           &ignoreRefScene = false);
 
 	/**
 	* Save the files of the original model to a specified directory

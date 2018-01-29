@@ -286,7 +286,8 @@ namespace repo{
 				const std::string                             &collection,
 				const repo::lib::RepoUUID                                &uuid,
 				const bool                                    &headRevision = false,
-				const bool                                    &lightFetch = false);
+				const bool                                    &lightFetch = false,
+				const bool                                    &ignoreRefScene = false);
 
 			/**
 			* Retrieve all RepoScene representations given a partially loaded scene.
@@ -298,7 +299,8 @@ namespace repo{
 			void fetchScene(
 				const std::string                         &databaseAd,
 				const repo::core::model::RepoBSON         *cred,
-				repo::core::model::RepoScene              *scene);
+				repo::core::model::RepoScene              *scene,
+				const bool                                &ignoreRefScene = false);
 
 			/**
 			* Generate and commit scene's selection tree in JSON format

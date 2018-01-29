@@ -1446,33 +1446,37 @@ bool RepoScene::populate(
 	//Make sure it is propagated into the repoScene if it exists in revision node
 
 	if (g.references.size()) worldOffset.clear();
-	for (const auto &node : g.references)
+	if (!ignoreReferenceNodes)
 	{
-		ReferenceNode* reference = (ReferenceNode*)node;
-
-		//construct a new RepoScene with the information from reference node and append this g to the Scene
-		std::string spDbName = reference->getDatabaseName();
-		if (spDbName.empty()) spDbName = databaseName;
-		RepoScene *refg = new RepoScene(spDbName, reference->getProjectName(), sceneExt, revExt);
-		if (reference->useSpecificRevision())
-			refg->setRevision(reference->getRevisionID());
-		else
-			refg->setBranch(reference->getRevisionID());
-
-		//Try to load the stash first, if fail, try scene.
-		if (refg->loadStash(handler, errMsg) || refg->loadScene(handler, errMsg))
+		for (const auto &node : g.references)
 		{
-			g.referenceToScene[reference->getSharedID()] = refg;
-			auto refOffset = refg->getWorldOffset();
-			if (!worldOffset.size())
+			ReferenceNode* reference = (ReferenceNode*)node;
+
+			//construct a new RepoScene with the information from reference node and append this g to the Scene
+			std::string spDbName = reference->getDatabaseName();
+			if (spDbName.empty()) spDbName = databaseName;
+			RepoScene *refg = new RepoScene(spDbName, reference->getProjectName(), sceneExt, revExt);
+			if (reference->useSpecificRevision())
+				refg->setRevision(reference->getRevisionID());
+			else
+				refg->setBranch(reference->getRevisionID());
+
+			//Try to load the stash first, if fail, try scene.
+			if (refg->loadStash(handler, errMsg) || refg->loadScene(handler, errMsg))
 			{
-				worldOffset = refOffset;
+				g.referenceToScene[reference->getSharedID()] = refg;
+				auto refOffset = refg->getWorldOffset();
+				if (!worldOffset.size())
+				{
+					worldOffset = refOffset;
+				}
+			}
+			else {
+				repoWarning << "Failed to load reference node for ref ID" << reference->getUniqueID() << ": " << errMsg;
 			}
 		}
-		else{
-			repoWarning << "Failed to load reference node for ref ID" << reference->getUniqueID() << ": " << errMsg;
-		}
 	}
+	
 	repoTrace << "World Offset = [" << worldOffset[0] << " , " << worldOffset[1] << ", " << worldOffset[2] << " ]";
 	//Now that we know the world Offset, make sure the referenced scenes are shifted accordingly
 	for (const auto &node : g.references)

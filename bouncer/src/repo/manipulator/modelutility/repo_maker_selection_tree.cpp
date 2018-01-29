@@ -44,7 +44,10 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 	repo::lib::PropertyTree tree;
 	if (currentNode)
 	{
+		
 		std::string idString = currentNode->getUniqueID().toString();
+		repoInfo << "Processing : " << idString << "[" << currentNode->getName() << "]";
+
 		repo::lib::RepoUUID sharedID = currentNode->getSharedID();
 		std::string childPath = currentPath.empty() ? idString : currentPath + "__" + idString;
 
@@ -88,6 +91,7 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 					{
 						bool hiddenChild = false;
 						std::vector<std::string> childrenMeshes;
+						repoInfo << "Recursing with kid: " << "[" << child->getName() << "] Kid of " << idString;
 						childrenTrees.push_back(generatePTree(child, idMaps, sharedIDToUniqueID, idToMeshesTree, childPath, hiddenChild, hiddenNode, childrenMeshes));
 						hasHiddenChildren = hasHiddenChildren || hiddenChild;
 						meshIds.insert(meshIds.end(), childrenMeshes.begin(), childrenMeshes.end());
