@@ -19,16 +19,16 @@ fp.close()
 
 for model in modelList:
     model = model.replace('\n', '')
-    modelDirectory = "toy/" + model
+    modelDirectory = "toy/" + model + "/Laika0115"
     for (dirpath, dirnames, filenames) in walk(modelDirectory):
         for filename in filenames:
-            print "Before: " + filename + " after: " +  filename.replace(model + ".", "")
-            os.rename(modelDirectory+ "/" + filename, modelDirectory + "/" + filename.replace(model + ".", ""))
+            print "Before: " + filename + " after: " +  filename.replace(model + ".", "").replace("Laika0115/","")
+            os.rename(modelDirectory+ "/" + filename, modelDirectory + "/" + filename.replace(model + ".", "").replace("Laika0115/",""))
 
-modelDirectory = "toy/" + fedID
+modelDirectory = "toy/" + fedID  + "/Laika0115"
 print "fed directory: " + modelDirectory
 for (dirpath, dirnames, filenames) in walk(modelDirectory):
     for filename in filenames:
-            print "Before: " + filename + " after: " +  filename.replace(fedID + ".", "")
-            os.rename(modelDirectory+ "/" + filename, modelDirectory + "/" + filename.replace(fedID + ".", ""))
+            print "Before: " + filename + " after: " +  filename.replace(fedID + ".", "").replace("Laika0115/","")
+            os.rename(modelDirectory+ "/" + filename, modelDirectory + "/" + filename.replace(fedID + ".", "").replace("Laika0115/",""))
 
