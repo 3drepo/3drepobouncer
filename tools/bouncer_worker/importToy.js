@@ -72,6 +72,7 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 			// remove '.json' in string
 			let collectionName = file.split('.');
 			collectionName.pop();
+			collectionName.pop();
 			collectionName = collectionName.join('.');
 
 			importCollectionFiles[`${project}.${collectionName}`] = file;
@@ -85,6 +86,7 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 		let writeConcern = dbConfig.writeConcern || {w: 1};
 
 		//mongoimport all json first
+		console.log(importCollectionFiles);
 
 		Object.keys(importCollectionFiles).forEach(collection => {
 
