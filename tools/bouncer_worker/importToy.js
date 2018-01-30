@@ -67,7 +67,7 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 		let importCollectionFiles = {};
 		
 		fs.readdirSync(`${__dirname}/${modelDir}`)
-		.filter(file => file.endsWith('.bson'))
+		.filter(file => file.endsWith('.bson.gz'))
 		.forEach(file => {
 			// remove '.json' in string
 			let collectionName = file.split('.');
@@ -91,9 +91,10 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 			let filename = importCollectionFiles[collection];
 
 			promises.push(new Promise((resolve, reject) => {
-
+				var cmd = `mongorestore -j 8 --host ${hostString} --username ${dbUsername} --password ${dbPassword} --authenticationDatabase admin --db ${database} --collection ${collection} --writeConcern '${JSON.stringify(writeConcern)}' --gzip  ${__dirname}/${modelDir}/${filename}`;
+				console.log(cmd);
 				require('child_process').exec(
-				`mongorestore -j 8 --host ${hostString} --username ${dbUsername} --password ${dbPassword} --authenticationDatabase admin --db ${database} --collection ${collection} --writeConcern '${JSON.stringify(writeConcern)}' ${__dirname}/${modelDir}/${filename}`,
+				`mongorestore -j 8 --host ${hostString} --username ${dbUsername} --password ${dbPassword} --authenticationDatabase admin --db ${database} --collection ${collection} --writeConcern '${JSON.stringify(writeConcern)}' --gzip  ${__dirname}/${modelDir}/${filename}`,
 				{
 					cwd: __dirname
 				}, function (err) {
