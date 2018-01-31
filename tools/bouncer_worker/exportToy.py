@@ -31,7 +31,7 @@ for model in modelList:
     if not os.path.exists(modelDirectory):
         os.makedirs(modelDirectory)
     for ext in colsInModel:
-        cmd =  "mongodump /host:" + dbAdd + " /port:" + dbPort + " /username:" + dbUsername + " /password:" + dbPassword + " /authenticationDatabase:admin /db:" + dbName + " /collection:" + model + "." + ext  + " /gzip /out:" + modelDirectory + "/" ;
+        cmd =  "mongoexport /host:" + dbAdd + " /port:" + dbPort + " /username:" + dbUsername + " /password:" + dbPassword + " /authenticationDatabase:admin /db:" + dbName + " /collection:" + model + "." + ext  + " /out:" + modelDirectory + "/"  + ext + ".json";
         os.system(cmd)
 
 #only export groups and issues from federation
@@ -41,6 +41,6 @@ modelDirectory = "toy/" + fedID
 if not os.path.exists(modelDirectory):
     os.makedirs(modelDirectory)
 for ext in colsInFed:
-        cmd =  "mongodump /host:" + dbAdd + " /port:" + dbPort + " /username:" + dbUsername + " /password:" + dbPassword + " /authenticationDatabase:admin /db:" + dbName + " /collection:" + fedID + "." + ext  + " /gzip /out:" + modelDirectory + "/";  
+        cmd =  "mongoexport /host:" + dbAdd + " /port:" + dbPort + " /username:" + dbUsername + " /password:" + dbPassword + " /authenticationDatabase:admin /db:" + dbName + " /collection:" + fedID + "." + ext  + " /out:" + modelDirectory + "/" + ext + ".json";  
         os.system(cmd)
 
