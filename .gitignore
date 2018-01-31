@@ -2,6 +2,7 @@ build
 log
 
 tools/testScripts
+tools/bouncer_worker/toy
 
 #nodeJS stuff
 tools/bouncer_worker/config.js
