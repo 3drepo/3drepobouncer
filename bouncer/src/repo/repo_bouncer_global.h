@@ -34,6 +34,6 @@
 
 //------------------------------------------------------------------------------
 #define BOUNCER_VMAJOR 2
-#define BOUNCER_VMINOR "5.2"
+#define BOUNCER_VMINOR "5.3"
 
 //
