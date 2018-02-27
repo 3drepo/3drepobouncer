@@ -1278,10 +1278,11 @@ void RepoController::_RepoControllerImpl::compareScenes(
 
 void RepoController::_RepoControllerImpl::getDatabaseStatistics(
 	const RepoController::RepoToken   *token,
-	const std::string &outputFilePath)
+	const std::string &outputFilePath,
+	const std::list<std::string> &paidAccList)
 {
 	manipulator::RepoManipulator* worker = workerPool.pop();
-	worker->getDatabaseStatistics(token->databaseAd, token->getCredentials(), outputFilePath);
+	worker->getDatabaseStatistics(token->databaseAd, token->getCredentials(), outputFilePath, paidAccList);
 	workerPool.push(worker);
 }
 

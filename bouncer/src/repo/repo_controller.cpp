@@ -584,9 +584,10 @@ bool RepoController::isVREnabled(const RepoController::RepoToken *token,
 
 void RepoController::getDatabaseStatistics(
 	const RepoController::RepoToken   *token,
-	const std::string &outputFilePath)
+	const std::string &outputFilePath,
+	const std::list<std::string> &paidAccList)
 {
-	impl->getDatabaseStatistics(token, outputFilePath);
+	impl->getDatabaseStatistics(token, outputFilePath, paidAccList);
 }
 
 void RepoController::getUserList(

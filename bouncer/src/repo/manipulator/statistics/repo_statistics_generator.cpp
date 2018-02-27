@@ -415,7 +415,37 @@ static void getNewUsersPerMonth(
 	}
 }
 
-void StatisticsGenerator::getDatabaseStatistics(const std::string &outputFilePath)
+void getPaidForUsersCount(
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	const std::list<std::string>                     &paidAccList,
+	std::ofstream							  &oFile)
+{
+
+	oFile << "Paid Account name" << ", " << "User Count" << std::endl;
+	for (const auto &acc : paidAccList)
+	{
+		auto res = handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, BSON("user" << acc));
+		if (!res.isEmpty())
+		{
+			auto user = repo::core::model::RepoUser(res);
+			int userCount = 0;
+			for (const auto &sub : user.getSubscriptionInfo())
+			{
+				if (sub.active && !sub.assignedUser.empty() && sub.assignedUser != "support_3DRepo" && sub.planName != "BASIC")
+				{
+					++userCount;
+				}
+			}
+			if (!userCount) userCount = 1;
+			repoInfo << user.getUserName() << ", " << userCount;
+			oFile << user.getUserName() << ", " << userCount << std::endl;
+		}		
+	}
+}
+
+void StatisticsGenerator::getDatabaseStatistics(
+	const std::string &outputFilePath,
+	const std::list<std::string> &paidAccList)
 {
 	std::ofstream oFile;
 	oFile.open(outputFilePath);
@@ -428,6 +458,8 @@ void StatisticsGenerator::getDatabaseStatistics(const std::string &outputFilePat
 		getNewPaidUsersPerMonth(handler, databases, oFile);
 
 		getProjectsStatistics(databases, handler, userStartDate, oFile);
+
+		getPaidForUsersCount(handler, paidAccList,oFile);
 	}
 	else
 	{
