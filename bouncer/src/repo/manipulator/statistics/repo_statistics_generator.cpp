@@ -421,10 +421,12 @@ void getPaidForUsersCount(
 	std::ofstream							  &oFile)
 {
 
-	oFile << "Paid Account name" << ", " << "User Count" << std::endl;
+	oFile << "Paid Account, User Count , Total" <<  std::endl;
+	int totalCount = 0;
 	for (const auto &acc : paidAccList)
 	{
 		auto res = handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, BSON("user" << acc));
+
 		if (!res.isEmpty())
 		{
 			auto user = repo::core::model::RepoUser(res);
@@ -437,8 +439,9 @@ void getPaidForUsersCount(
 				}
 			}
 			if (!userCount) userCount = 1;
-			repoInfo << user.getUserName() << ", " << userCount;
-			oFile << user.getUserName() << ", " << userCount << std::endl;
+			totalCount += userCount;
+			repoInfo << user.getUserName() << ", " << userCount << "," << totalCount;
+			oFile << user.getUserName() << ", " << userCount << "," << totalCount << std::endl;
 		}		
 	}
 }
