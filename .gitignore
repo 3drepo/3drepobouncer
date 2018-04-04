@@ -32,3 +32,5 @@ Debug
 x64
 sandbox
 sandbox/sandbox.cpp
+*.db
+*.opendb

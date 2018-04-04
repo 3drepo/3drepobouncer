@@ -45,8 +45,11 @@ namespace repo{
 			/**
 			* Generate database statistics and print the result in the given filepath
 			* @params outputFilePath
+			* @param paidAccList list of paid user accounts
 			*/
-			void getDatabaseStatistics(const std::string &outputFilePath);
+			void getDatabaseStatistics(
+				const std::string &outputFilePath,
+				const std::list<std::string> &paidAccList);
 
 		private:
 			repo::core::handler::AbstractDatabaseHandler *handler;
