@@ -70,132 +70,42 @@ RepoUser RepoUser::cloneAndMergeUserInfo(
 	return newUserBuilder.obj();
 }
 
-RepoUser RepoUser::cloneAndUpdateLicenseCount(
-	const int &diff,
-	const int64_t expDate
-	) const
-{
-	auto subs = getSubscriptionInfo();
-	int orgCount = subs.size();
-	int licenseCount = getLicenseAssignment().size();
-	if (diff < 0)
-	{
-		//Removing license
-		for (int i = 0; i < subs.size(); ++i)
-		{
-			if (subs[i].planName != REPO_USER_SUBS_STANDARD_FREE
-				&& isSubActive(subs[i]) && subs[i].assignedUser.empty() && !subs[i].inCurrentAgreement)
-			{
-				//Can only delete it if it is not the free account, it's active and it's not assigned.
-				subs.erase(subs.begin() + i);
-				--i; //decrease the counter as we have just removed the current item.
-				--licenseCount;
-				if (orgCount + diff == subs.size()) break;
-			}
-		}
+RepoBSON RepoUser::createQuotaBSON(QuotaLimit quota) const {
+	RepoBSONBuilder quotaBuilder;
 
-		if (orgCount + diff != subs.size() && licenseCount == 1)
-		{
-			// We're missing one license and there is only 1 license left - the self assigned license
-			// go round again and removed the last license that is assigned to yourself
-			//FIXME: Probably a better way to do this..
-			for (int i = 0; i < subs.size(); ++i)
-			{
-				if (subs[i].planName != REPO_USER_SUBS_STANDARD_FREE
-					&& isSubActive(subs[i]) && subs[i].assignedUser == getUserName() && !subs[i].inCurrentAgreement)
-				{
-					//Can only delete it if it is not the free account, it's active and it's not assigned.
-					subs.erase(subs.begin() + i);
-					--i; //decrease the counter as we have just removed the current item.
-				}
-			}
-		}
-
-		if (orgCount + diff != subs.size())
-		{
-			repoError << "Failed to remove " << diff << " licenses. Licenses cannot be removed if assigned or in a paypal agreement";
-		}
-	}
+	if(quota.unlimitedUsers)
+		quotaBuilder << REPO_USER_LABEL_SUB_COLLABORATOR << REPO_USER_LABAL_SUB_UNLIMITED;
 	else
-	{
-		bool firstLicense = (!getLicenseAssignment().size());
+		quotaBuilder << REPO_USER_LABEL_SUB_COLLABORATOR << quota.collaborators;
 
-		for (int i = 0; i < diff; ++i)
-		{
-			subs.push_back(createDefaultSub(expDate));
+	quotaBuilder << REPO_USER_LABEL_SUB_DATA << quota.data;
+	quotaBuilder.appendTime(REPO_USER_LABEL_SUB_EXPIRY_DATE, quota.expiryDate);
+	return quotaBuilder.obj();
+}
 
-			if (firstLicense)
-			{
-				//We're adding a first license, make sure it's assigned to the user
-				subs.back().assignedUser = getUserName();
-				firstLicense = false;
-			}
-		}
-	}
+bool RepoUser::quotaEntryHasQuota(const QuotaLimit &quota) const {
 
-	return cloneAndUpdateSubscriptions(subs);
+	return quota.unlimitedUsers || quota.collaborators || quota.data;
 }
 
 RepoUser RepoUser::cloneAndUpdateSubscriptions(
-	const std::vector<RepoUser::SubscriptionInfo> &subs) const
+	const QuotaLimit &discretionary,
+	const QuotaLimit &enterprise) const
 {
-	//turn the subscription struct into a bsonArray
-	std::vector<RepoBSON> subArrayBson;
-	for (const auto &sub : subs)
-	{
-		RepoBSONBuilder builder;
-		if (sub.id.empty())
-			builder << REPO_USER_LABEL_SUBS_ID << mongo::OID::gen();
-		else
-			builder << REPO_USER_LABEL_SUBS_ID << mongo::OID(sub.id);
+	RepoBSONBuilder updatedLicenses, subscriptionsBuilder;
 
-		if (!sub.planName.empty())
-			builder << REPO_USER_LABEL_SUBS_PLAN << sub.planName;
+	if (quotaEntryHasQuota(discretionary))
+		updatedLicenses << REPO_USER_LABEL_SUB_DISCRETIONARY << createQuotaBSON(discretionary);
+	if (quotaEntryHasQuota(enterprise))
+		updatedLicenses << REPO_USER_LABEL_SUB_ENTERPRISE << createQuotaBSON(enterprise);
 
-		if (!sub.token.empty())
-			builder << REPO_USER_LABEL_SUBS_TOKEN << sub.token;
-
-		if (!sub.billingUser.empty())
-			builder << REPO_USER_LABEL_SUBS_BILLING_USER << sub.billingUser;
-
-		if (!sub.assignedUser.empty())
-			builder << REPO_USER_LABEL_SUBS_ASSIGNED_USER << sub.assignedUser;
-
-		if (sub.active)
-			builder << REPO_USER_LABEL_SUBS_ACTIVE << sub.active;
-
-		if (sub.inCurrentAgreement)
-			builder << REPO_USER_LABEL_SUBS_CURRENT_AGREE << sub.inCurrentAgreement;
-
-		if (sub.pendingDelete)
-			builder << REPO_USER_LABEL_SUBS_PENDING_DEL << sub.pendingDelete;
-
-		if (sub.createdAt != -1)
-			builder.appendTime(REPO_USER_LABEL_SUBS_CREATED_AT, sub.createdAt);
-		else
-			builder.appendNull(REPO_USER_LABEL_SUBS_CREATED_AT);
-
-		if (sub.updatedAt != -1)
-			builder.appendTime(REPO_USER_LABEL_SUBS_UPDATED_AT, sub.updatedAt);
-		else
-			builder.appendNull(REPO_USER_LABEL_SUBS_UPDATED_AT);
-
-		if (sub.expiresAt != -1)
-			builder.appendTime(REPO_USER_LABEL_SUBS_EXPIRES_AT, sub.expiresAt);
-		else
-			builder.appendNull(REPO_USER_LABEL_SUBS_EXPIRES_AT);
-
-		RepoBSONBuilder limitsBuilder;
-		limitsBuilder << REPO_USER_LABEL_SUBS_LIMITS_COLLAB << sub.collaboratorLimit;
-		limitsBuilder.appendNumber(REPO_USER_LABEL_SUBS_LIMITS_SPACE, sub.spaceLimit);
-		builder.append(REPO_USER_LABEL_SUBS_LIMITS, limitsBuilder.obj());
-		auto subBson = builder.obj();
-
-		subArrayBson.push_back(subBson);
-	}
+	auto oldSub = getSubscriptionBSON();
+	if (oldSub.hasField(REPO_USER_LABEL_SUB_PAYPAL))
+		updatedLicenses << REPO_USER_LABEL_SUB_PAYPAL << oldSub.getObjectField(REPO_USER_LABEL_SUB_PAYPAL);
+	
 
 	RepoBSONBuilder newCustomDataBuilder, newUserBSON, billingBuilder;
-	billingBuilder.appendArray(REPO_USER_LABEL_SUBS, subArrayBson);
+	billingBuilder << REPO_USER_LABEL_SUBS << updatedLicenses.obj();
 	newCustomDataBuilder.append(REPO_USER_LABEL_BILLING, billingBuilder.obj());
 	newCustomDataBuilder.appendElementsUnique(getObjectField(REPO_USER_LABEL_CUSTOM_DATA));
 
@@ -203,25 +113,6 @@ RepoUser RepoUser::cloneAndUpdateSubscriptions(
 	newUserBSON.appendElementsUnique(*this);
 
 	return newUserBSON.obj();
-}
-
-RepoUser::SubscriptionInfo RepoUser::createDefaultSub(
-	const int64_t &expireTS)
-{
-	SubscriptionInfo sub;
-
-	auto ts = RepoBSON::getCurrentTimestamp();
-	sub.planName = "THE-100-QUID-PLAN";
-	sub.createdAt = sub.updatedAt = ts;
-	sub.expiresAt = expireTS;
-	sub.inCurrentAgreement = false;
-	sub.id = mongo::OID::gen().toString();
-	sub.active = true;
-	sub.pendingDelete = false;
-	sub.collaboratorLimit = 1;
-	sub.spaceLimit = 10737418240.0;//10GB
-
-	return sub;
 }
 
 std::list<std::pair<std::string, std::string> > RepoUser::getAPIKeysList() const
@@ -263,21 +154,6 @@ RepoBSON RepoUser::getCustomDataBSON() const
 	return customData;
 }
 
-std::list<std::pair<std::string, std::string>> RepoUser::getLicenseAssignment() const
-{
-	std::list<std::pair<std::string, std::string>> results;
-
-	auto subs = getSubscriptionInfo();
-	for (const auto &sub : subs)
-	{
-		if (sub.planName != REPO_USER_SUBS_STANDARD_FREE && isSubActive(sub))
-		{
-			//skip the free plan as it's not a license
-			results.push_back({ sub.planName, sub.assignedUser });
-		}
-	}
-	return results;
-}
 
 RepoBSON RepoUser::getRolesBSON() const
 {
@@ -310,95 +186,96 @@ RepoUser::getRolesList() const
 	return result;
 }
 
-std::vector<RepoUser::SubscriptionInfo> RepoUser::getSubscriptionInfo() const
+RepoBSON RepoUser::getSubscriptionBSON() const
 {
-	std::vector<RepoUser::SubscriptionInfo> result;
 	RepoBSON customData = getCustomDataBSON();
-	if (!customData.isEmpty())
+	
+	auto billing = !customData.isEmpty()? customData.getObjectField(REPO_USER_LABEL_BILLING) : RepoBSON();	
+	return !billing.isEmpty()? billing.getObjectField(REPO_USER_LABEL_SUBS) : RepoBSON();
+	
+}
+
+RepoUser::QuotaLimit RepoUser::convertToQuotaObject(const RepoBSON &bson) const
+{
+	QuotaLimit res;
+	
+	if (!bson.isEmpty())
 	{
-		auto billing = customData.getObjectField(REPO_USER_LABEL_BILLING);
-		auto subs = billing.getObjectField(REPO_USER_LABEL_SUBS);
-		if (!subs.isEmpty())
-		{
-			for (int i = 0; i < subs.nFields(); ++i)
-			{
-				RepoBSON singleSub = subs.getObjectField(std::to_string(i));
-				if (!singleSub.isEmpty())
-				{
-					result.resize(result.size() + 1);
-					result.back().id = singleSub.hasField(REPO_USER_LABEL_SUBS_ID) ? singleSub.getField(REPO_USER_LABEL_SUBS_ID).OID().toString() : "";
-					result.back().planName = singleSub.getStringField(REPO_USER_LABEL_SUBS_PLAN);
-					result.back().token = singleSub.getStringField(REPO_USER_LABEL_SUBS_TOKEN);
-					result.back().billingUser = singleSub.getStringField(REPO_USER_LABEL_SUBS_BILLING_USER);
-					result.back().assignedUser = singleSub.getStringField(REPO_USER_LABEL_SUBS_ASSIGNED_USER);
-					result.back().active = singleSub.getBoolField(REPO_USER_LABEL_SUBS_ACTIVE);
-					result.back().inCurrentAgreement = singleSub.getBoolField(REPO_USER_LABEL_SUBS_CURRENT_AGREE);
-					result.back().pendingDelete = singleSub.getBoolField(REPO_USER_LABEL_SUBS_PENDING_DEL);
-					result.back().createdAt = singleSub.getTimeStampField(REPO_USER_LABEL_SUBS_CREATED_AT);
-					result.back().updatedAt = singleSub.getTimeStampField(REPO_USER_LABEL_SUBS_UPDATED_AT);
-					result.back().expiresAt = singleSub.getTimeStampField(REPO_USER_LABEL_SUBS_EXPIRES_AT);
+		if (bson.hasField(REPO_USER_LABEL_SUB_COLLABORATOR)) {
+			auto collaboratorStr = std::string(bson.getStringField(REPO_USER_LABEL_SUB_COLLABORATOR));
+			res.unlimitedUsers = collaboratorStr == REPO_USER_LABAL_SUB_UNLIMITED;
+			res.collaborators = res.unlimitedUsers ? -1 : bson.getIntField(REPO_USER_LABEL_SUB_COLLABORATOR);
+		}
 
-					auto limitsBson = singleSub.getObjectField(REPO_USER_LABEL_SUBS_LIMITS);
-					if (limitsBson.isEmpty())
-					{
-						result.back().collaboratorLimit = 0;
-						result.back().spaceLimit = 0;
-					}
-					else
-					{
-						auto nCollab = limitsBson.getIntField(REPO_USER_LABEL_SUBS_LIMITS_COLLAB);
-						double nSpace = 0;
-						if (limitsBson.hasField(REPO_USER_LABEL_SUBS_LIMITS_SPACE))
-						{
-							RepoBSONElement spaceLimit = limitsBson.getField(REPO_USER_LABEL_SUBS_LIMITS_SPACE);
+		res.data = bson.getIntField(REPO_USER_LABEL_SUB_DATA);
 
-							if (spaceLimit.type() == ElementType::DOUBLE)
-								nSpace = spaceLimit.Double();
-							else
-								nSpace = spaceLimit.Int();
-						}
-						result.back().collaboratorLimit = nCollab == INT_MIN ? 0 : nCollab;
-						result.back().spaceLimit = nSpace;
-					}
-				}
+		res.expiryDate = bson.getTimeStampField(REPO_USER_LABEL_SUB_EXPIRY_DATE);
+	}
+
+	return res;
+}
+
+std::vector<RepoUser::PaypalSubscription> RepoUser::convertPayPalSub(const RepoBSON &bson) const
+{
+	std::vector<PaypalSubscription> subs;
+	if (!bson.isEmpty() && bson.hasField(REPO_USER_LABEL_SUB_PAYPAL))
+	{
+		auto bsonArr = bson.getField(REPO_USER_LABEL_SUB_PAYPAL).Array();
+		for (const auto &entry : bsonArr) {
+			auto entryBson = entry.embeddedObject();
+			if (!entryBson.isEmpty()) {
+				if (entryBson.hasField(REPO_USER_LABAL_SUB_PAYPAL_PLAN) &&
+					entryBson.hasField(REPO_USER_LABAL_SUB_PAYPAL_QUANTITY) &&
+					entryBson.hasField(REPO_USER_LABEL_SUB_EXPIRY_DATE)
+				) {
+					PaypalSubscription sub;
+					sub.plan = entryBson.getStringField(REPO_USER_LABAL_SUB_PAYPAL_PLAN);
+					sub.quantity = entryBson.getIntField(REPO_USER_LABAL_SUB_PAYPAL_QUANTITY);
+					sub.expiryDate = ((RepoBSON)entryBson).getTimeStampField(REPO_USER_LABEL_SUB_EXPIRY_DATE);
+					subs.push_back(sub);
+				}		
 			}
 		}
+		
+	}
+
+	return subs;
+}
+
+RepoUser::SubscriptionInfo RepoUser::getSubscriptionInfo() const
+{
+	auto subs = getSubscriptionBSON();
+	SubscriptionInfo result;
+	std::cout << subs << std::endl;
+	if (!subs.isEmpty())
+	{
+		result.discretionary = convertToQuotaObject(subs.getObjectField(REPO_USER_LABEL_SUB_DISCRETIONARY));
+		result.enterprise = convertToQuotaObject(subs.getObjectField(REPO_USER_LABEL_SUB_ENTERPRISE));
+
+		result.paypal = convertPayPalSub(subs);		
 	}
 
 	return result;
 }
 
-uint32_t RepoUser::getNCollaborators() const
+int32_t RepoUser::getNCollaborators() const
 {
-	uint32_t nCollab = 0;
-	auto subs = getSubscriptionInfo();
-	for (const auto &sub : subs)
-	{
-		if (isSubActive(sub))
-			nCollab += sub.collaboratorLimit;
-	}
+	auto subs = getSubscriptionInfo();	
+	bool activeDis = RepoBSON::getCurrentTimestamp() > subs.discretionary.expiryDate;
+	bool activeEnt = RepoBSON::getCurrentTimestamp() > subs.enterprise.expiryDate;
 
-	return nCollab;
+	if (activeDis && subs.discretionary.unlimitedUsers || 
+		activeEnt && subs.enterprise.unlimitedUsers) return -1;
+
+	return activeDis ? subs.discretionary.collaborators : 0
+		+ activeEnt? subs.enterprise.collaborators : 0;
 }
 
 double RepoUser::getQuota() const
 {
-	double quota = 0;
 	auto subs = getSubscriptionInfo();
-	for (const auto &sub : subs)
-	{
-		if (isSubActive(sub))
-		{
-			quota += sub.spaceLimit;
-		}
-	}
 
-	return quota;
-}
-
-bool RepoUser::isSubActive(const RepoUser::SubscriptionInfo &sub) const
-{
-	return (sub.expiresAt >= RepoBSON::getCurrentTimestamp() || sub.expiresAt == -1) && sub.active;
+	return subs.discretionary.data + subs.enterprise.data;
 }
 
 bool RepoUser::isVREnabled() const
@@ -407,3 +284,4 @@ bool RepoUser::isVREnabled() const
 
 	return customData.isEmpty() ? false : customData.getBoolField(REPO_USER_LABEL_VR_ENABLED);
 }
+

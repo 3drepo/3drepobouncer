@@ -43,7 +43,7 @@ void StatisticsGenerator::getUserList(const std::string &outputFilePath)
 		if (!userBson.getCustomDataBSON().isEmpty())
 		{
 			file << userBson.getUserName() << "," << userBson.getEmail() << "," << userBson.getFirstName() << "," << userBson.getLastName() << ",";
-			auto subs = userBson.getSubscriptionInfo();
+			/*auto subs = userBson.getSubscriptionInfo();
 			for (const auto sub : subs)
 			{
 				if (sub.planName == "BASIC")
@@ -52,7 +52,8 @@ void StatisticsGenerator::getUserList(const std::string &outputFilePath)
 					file << date.toString();
 					break;
 				}
-			}
+			}*/
+			//FIXME: find createdAt
 			file << ",";
 
 			auto billing = userBson.getCustomDataBSON().getObjectField("billing");
@@ -61,7 +62,7 @@ void StatisticsGenerator::getUserList(const std::string &outputFilePath)
 				auto billingInfo = billing.getObjectField("billingInfo");
 				if (!billingInfo.isEmpty())
 				{
-					file << billingInfo.getStringField("countryCode") << "," << billingInfo.getStringField("company") << "," << billingInfo.getStringField("position");
+					file << billingInfo.getStringField("countryCode") << "," << billingInfo.getStringField("company");
 				}
 			}
 		}
@@ -366,15 +367,16 @@ static uint64_t getNewUsersWithinDuration(
 		repo::core::model::RepoUser user(userBson);
 		auto custom = user.getCustomDataBSON();
 		if (custom.hasField("inactive") && custom.getBoolField("inactive")) continue;
-		auto subs = user.getSubscriptionInfo();
-		for (const auto sub : subs)
-		{
-			if (sub.planName == "BASIC")
-			{
-				userStartDate[user.getUserName()] = sub.createdAt;
-				break;
-			}
-		}
+		//auto subs = user.getSubscriptionInfo();
+		//for (const auto sub : subs)
+		//{
+		//	if (sub.planName == "BASIC")
+		//	{
+		//		userStartDate[user.getUserName()] = sub.createdAt;
+		//		break;
+		//	}
+		//}
+		//FIXME: get createdAt
 		filteredUsers.push_back(user);
 	}
 
@@ -417,33 +419,31 @@ static void getNewUsersPerMonth(
 
 void getPaidForUsersCount(
 	repo::core::handler::AbstractDatabaseHandler *handler,
-	const std::list<std::string>                     &paidAccList,
 	std::ofstream							  &oFile)
 {
 
-	oFile << "Paid Account, User Count , Total" <<  std::endl;
+	oFile << "Enterprise Account, User Count , Total" <<  std::endl;
 	int totalCount = 0;
-	for (const auto &acc : paidAccList)
-	{
-		auto res = handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, BSON("user" << acc));
+	
+	auto results = handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, 
+		BSON(
+			"customData.billing.subscriptions.enterprise" << BSON("$exists" << true)
+		));
 
-		if (!res.isEmpty())
+	for(const auto res : results) {
+		auto user = repo::core::model::RepoUser(res);
+		int userCount = 0;
+		auto subs = user.getSubscriptionInfo();
+		if (repo::core::model::RepoBSON::getCurrentTimestamp() > subs.enterprise.expiryDate)
 		{
-			auto user = repo::core::model::RepoUser(res);
-			int userCount = 0;
-			for (const auto &sub : user.getSubscriptionInfo())
-			{
-				if (sub.active && !sub.assignedUser.empty() && sub.assignedUser != "support_3DRepo" && sub.planName != "BASIC")
-				{
-					++userCount;
-				}
-			}
-			if (!userCount) userCount = 1;
-			totalCount += userCount;
-			repoInfo << user.getUserName() << ", " << userCount << "," << totalCount;
-			oFile << user.getUserName() << ", " << userCount << "," << totalCount << std::endl;
-		}		
-	}
+			userCount += handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, BSON("roles.db" << user.getUserName())).size();
+		}
+		
+		totalCount += userCount;
+		repoInfo << user.getUserName() << ", " << userCount << "," << totalCount;
+		oFile << user.getUserName() << ", " << userCount << "," << totalCount << std::endl;
+	}		
+
 }
 
 void StatisticsGenerator::getDatabaseStatistics(
@@ -459,10 +459,10 @@ void StatisticsGenerator::getDatabaseStatistics(
 		getNewUsersPerMonth(handler, userStartDate, oFile);
 		auto databases = handler->getDatabases();
 		getNewPaidUsersPerMonth(handler, databases, oFile);
+		getPaidForUsersCount(handler, oFile);
 
 		getProjectsStatistics(databases, handler, userStartDate, oFile);
 
-		getPaidForUsersCount(handler, paidAccList,oFile);
 	}
 	else
 	{
