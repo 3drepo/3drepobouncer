@@ -86,7 +86,8 @@ RepoBSON RepoUser::createQuotaBSON(QuotaLimit quota) const {
 uint64_t RepoUser::getUserCreatedAt() const {
 	uint64_t res = 0;
 	auto customData = getCustomDataBSON();
-	if (!customData.isEmpty) {
+	if (!customData.isEmpty()) 
+	{
 		res = customData.getTimeStampField(REPO_USER_LABEL_CREATED_AT);
 	}
 	return res;

@@ -257,7 +257,7 @@ namespace repo {
 				/**
 				* Return subscription bson object
 				*/
-				RepoBSON RepoUser::getSubscriptionBSON() const;
+				RepoBSON getSubscriptionBSON() const;
 				
 				/**
 				* Determine if the given entry has any quota
