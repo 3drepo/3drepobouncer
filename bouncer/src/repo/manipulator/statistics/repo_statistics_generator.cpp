@@ -43,17 +43,10 @@ void StatisticsGenerator::getUserList(const std::string &outputFilePath)
 		if (!userBson.getCustomDataBSON().isEmpty())
 		{
 			file << userBson.getUserName() << "," << userBson.getEmail() << "," << userBson.getFirstName() << "," << userBson.getLastName() << ",";
-			/*auto subs = userBson.getSubscriptionInfo();
-			for (const auto sub : subs)
-			{
-				if (sub.planName == "BASIC")
-				{
-					mongo::Date_t date(sub.createdAt);
-					file << date.toString();
-					break;
-				}
-			}*/
-			//FIXME: find createdAt
+			if (auto createdAt = userBson.getUserCreatedAt()) {
+				mongo::Date_t date(createdAt);
+				file << date.toString();
+			}
 			file << ",";
 
 			auto billing = userBson.getCustomDataBSON().getObjectField("billing");
@@ -356,10 +349,9 @@ static uint64_t getNewUsersWithinDuration(
 	timeRangeBuilder.appendTime("$gt", from);
 
 	repo::core::model::RepoBSON planInfo;
-	planInfo = BSON("plan" << "BASIC" << "createdAt" << timeRangeBuilder.obj());
 
 	auto subscriptionCriteria = BSON("$elemMatch" << planInfo);
-	repo::core::model::RepoBSON criteria = BSON("customData.billing.subscriptions" << subscriptionCriteria );
+	repo::core::model::RepoBSON criteria = BSON("customData.createdAt" << timeRangeBuilder.obj());
 	auto users = handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, criteria);
 	std::vector<repo::core::model::RepoBSON> filteredUsers;
 	for (const auto userBson : users)
@@ -367,16 +359,10 @@ static uint64_t getNewUsersWithinDuration(
 		repo::core::model::RepoUser user(userBson);
 		auto custom = user.getCustomDataBSON();
 		if (custom.hasField("inactive") && custom.getBoolField("inactive")) continue;
-		//auto subs = user.getSubscriptionInfo();
-		//for (const auto sub : subs)
-		//{
-		//	if (sub.planName == "BASIC")
-		//	{
-		//		userStartDate[user.getUserName()] = sub.createdAt;
-		//		break;
-		//	}
-		//}
-		//FIXME: get createdAt
+		if (auto createdAt = user.getUserCreatedAt()) {
+			mongo::Date_t date(createdAt);
+			userStartDate[user.getUserName()] = createdAt;
+		}		
 		filteredUsers.push_back(user);
 	}
 

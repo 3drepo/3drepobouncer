@@ -51,6 +51,7 @@ namespace repo {
 #define REPO_USER_LABEL_SUBS						"subscriptions"
 #define REPO_USER_LABEL_SUBS_BILLING_USER			"billingUser"
 #define REPO_USER_LABEL_VR_ENABLED					"vrEnabled"
+#define REPO_USER_LABEL_CREATED_AT					"createdAt"
 #define REPO_USER_LABEL_SUB_PAYPAL					"paypal"
 #define REPO_USER_LABEL_SUB_DISCRETIONARY			"discretionary"
 #define REPO_USER_LABEL_SUB_ENTERPRISE				"enterprise"
@@ -170,6 +171,13 @@ namespace repo {
 					RepoBSON customData = getCustomDataBSON();
 					return customData.isEmpty() ? "" : customData.getStringField(REPO_USER_LABEL_LAST_NAME);
 				}
+
+				/**
+				* Get the timestamp of when the user was created
+				* @return returns timestamp value of when the user is created, 0 if unknown
+				*/
+				uint64_t getUserCreatedAt() const;
+				
 
 				/**
 				* Get the username from this user

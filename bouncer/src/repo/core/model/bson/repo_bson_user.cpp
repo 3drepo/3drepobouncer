@@ -83,6 +83,15 @@ RepoBSON RepoUser::createQuotaBSON(QuotaLimit quota) const {
 	return quotaBuilder.obj();
 }
 
+uint64_t RepoUser::getUserCreatedAt() const {
+	uint64_t res = 0;
+	auto customData = getCustomDataBSON();
+	if (!customData.isEmpty) {
+		res = customData.getTimeStampField(REPO_USER_LABEL_CREATED_AT);
+	}
+	return res;
+}
+
 bool RepoUser::quotaEntryHasQuota(const QuotaLimit &quota) const {
 
 	return quota.unlimitedUsers || quota.collaborators || quota.data;
