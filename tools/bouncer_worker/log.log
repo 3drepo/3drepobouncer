@@ -1,0 +1,5 @@
+{"level":"info","message":"Initialising bouncer client queue...","timestamp":"2018-04-11T13:32:40.697Z"}
+{"level":"info","message":"Checking status of client...","timestamp":"2018-04-11T13:32:40.698Z"}
+{"level":"info","message":"bouncer call passed","timestamp":"2018-04-11T13:32:41.098Z"}
+{"level":"info","message":"Bouncer Client Queue started. Waiting for messages in jobq of amqp://guest:guest@localhost:5672....","timestamp":"2018-04-11T13:32:41.130Z"}
+{"level":"info","message":"Bouncer Client Queue started. Waiting for messages in modelq of amqp://guest:guest@localhost:5672....","timestamp":"2018-04-11T13:32:41.130Z"}
