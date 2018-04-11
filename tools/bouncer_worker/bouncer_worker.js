@@ -167,27 +167,33 @@
 		let cmdArr = cmd.split(' ');
 			
 		// Extract database and project information from command
-		switch(cmdArr[0]) {
-			case "import":
-				cmdFile = require(cmdArr[2]);
-				cmdDatabase = cmdFile.database;
-				cmdProject = cmdFile.project;
-				break;
-			case "genFed":
-				cmdFile = require(cmdArr[1]);
-				cmdDatabase = cmdFile.database;
-				cmdProject = cmdFile.project;
-				break;
-			case "importToy":
-				cmdDatabase = cmdArr[1];
-				cmdProject = cmdArr[2];
-				break;
-			case "genStash":
-				cmdDatabase = cmdArr[1];
-				cmdProject = cmdArr[2];
-				break;
-			default:
-				logger.error("Unexpected command: " + cmdArr[0]);
+		try{
+			switch(cmdArr[0]) {
+				case "import":
+					cmdFile = require(cmdArr[2]);
+					cmdDatabase = cmdFile.database;
+					cmdProject = cmdFile.project;
+					break;
+				case "genFed":
+					cmdFile = require(cmdArr[1]);
+					cmdDatabase = cmdFile.database;
+					cmdProject = cmdFile.project;
+					break;
+				case "importToy":
+					cmdDatabase = cmdArr[1];
+					cmdProject = cmdArr[2];
+					break;
+				case "genStash":
+					cmdDatabase = cmdArr[1];
+					cmdProject = cmdArr[2];
+					break;
+				default:
+					logger.error("Unexpected command: " + cmdArr[0]);
+			}
+		}
+		catch(error) {
+			logger.error(error);
+			callback({value: 16}, true);
 		}
 
 		// Issue callback to indicate job is processing, but no ack as job not done

@@ -47,4 +47,6 @@
 #define REPOERR_BUNDLE_GEN_FAILED 14
 //Scene loaded, has untriangulated meshes
 #define REPOERR_LOAD_SCENE_INVALID_MESHES 15
+//Failed to read the fail containing model information
+#define REPOERR_ARG_FILE_FAIL 15
 
