@@ -41,3 +41,24 @@
 #define REPOERR_GET_FILE_FAILED 11
 //Failed to finish (i.e. crashed)
 #define REPOERR_CRASHED 12
+//Failed to read import parameters from file (Unity)
+#define REPOERR_PARAM_FILE_READ_FAILED 13
+//Failed to generate asset bundles (Unity)
+#define REPOERR_BUNDLE_GEN_FAILED 14
+//Scene loaded, has untriangulated meshes
+#define REPOERR_LOAD_SCENE_INVALID_MESHES 15
+//Failed to read the fail containing model information
+#define REPOERR_ARG_FILE_FAIL 16
+//The file loaded has no meshes
+#define REPOERR_NO_MESHES 17
+//Unsupported file extension
+#define REPOERR_FILE_TYPE_NOT_SUPPORTED 18
+//Failed to read model file
+#define REPOERR_MODEL_FILE_READ 19
+//Failed during assimp generation
+#define REPOERR_FILE_ASSIMP_GEN 20
+//Failed during IFC geometry generation
+#define REPOERR_FILE_IFC_GEO_GEN 21
+//Bim file version unsupported
+#define REPOERR_UNSUPPORTED_BIM_VERSION 22
+

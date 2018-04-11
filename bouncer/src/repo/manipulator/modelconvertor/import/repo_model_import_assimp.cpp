@@ -31,6 +31,7 @@
 #include "../../../core/model/bson/repo_bson_builder.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../lib/repo_log.h"
+#include "../../../error_codes.h"
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -1187,7 +1188,7 @@ std::vector<std::vector<double>> AssimpModelImport::getAiMeshBoundingBox(
 	return bbox;
 }
 
-bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
+bool AssimpModelImport::importModel(std::string filePath, uint8_t &err)
 {
 	bool success = true;
 	orgFile = filePath;
@@ -1204,7 +1205,7 @@ bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
 	std::ifstream fs(filePath);
 	if (!fs.good())
 	{
-		errMsg += "File doesn't exist (" + filePath + ")";
+		err = REPOERR_MODEL_FILE_READ;
 
 		return false;
 	}
@@ -1222,7 +1223,8 @@ bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
 	assimpScene = importer.ReadFile(filePath, 0);
 
 	if (!assimpScene){
-		errMsg = " Failed to convert file to aiScene : " + std::string(aiGetErrorString());
+		repoError << " Failed to convert file to aiScene : " + std::string(aiGetErrorString());
+		err = REPOERR_FILE_ASSIMP_GEN;
 		success = false;
 	}
 	else

@@ -23,6 +23,7 @@
 #include "repo_ifc_utils_geometry.h"
 #include "repo_ifc_utils_parser.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
+#include "../../../error_codes.h"
 #include <boost/filesystem.hpp>
 
 using namespace repo::manipulator::modelconvertor;
@@ -48,7 +49,7 @@ repo::core::model::RepoScene* IFCModelImport::generateRepoScene()
 	return scene;
 }
 
-bool IFCModelImport::importModel(std::string filePath, std::string &errMsg)
+bool IFCModelImport::importModel(std::string filePath, uint8_t &err)
 {
 	ifcFile = filePath;
 	std::string fileName = getFileName(filePath);
@@ -57,6 +58,7 @@ bool IFCModelImport::importModel(std::string filePath, std::string &errMsg)
 	repoInfo << "=== IMPORTING MODEL WITH IFC OPEN SHELL ===";
 	bool success = false;
 
+	std::string errMsg;
 	IFCUtilsGeometry geoUtil(filePath, settings);
 	if (success = geoUtil.generateGeometry(errMsg, partialFailure))
 	{
@@ -69,6 +71,7 @@ bool IFCModelImport::importModel(std::string filePath, std::string &errMsg)
 	else
 	{
 		repoError << "Failed to generate geometry: " << errMsg;
+		err = REPOERR_FILE_IFC_GEO_GEN;
 	}
 
 	return success;

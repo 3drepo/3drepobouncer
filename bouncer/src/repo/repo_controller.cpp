@@ -514,11 +514,12 @@ repo::core::model::RepoNodeSet RepoController::loadMetadataFromFile(
 repo::core::model::RepoScene*
 RepoController::loadSceneFromFile(
 const std::string                                          &filePath,
+uint8_t                                                    &err,
 const bool                                                 &applyReduction,
 const bool                                                 &rotateModel,
 const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
-	return impl->loadSceneFromFile(filePath, applyReduction, rotateModel, config);
+	return impl->loadSceneFromFile(filePath, err, applyReduction, rotateModel, config);
 }
 
 bool RepoController::saveOriginalFiles(

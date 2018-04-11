@@ -29,6 +29,7 @@
 #include "../../../core/model/bson/repo_bson_builder.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../lib/repo_log.h"
+#include "../../../error_codes.h"
 
 using namespace repo::manipulator::modelconvertor;
 using namespace boost::property_tree;
@@ -362,7 +363,7 @@ void RepoModelImport::skipAheadInFile(long amount)
 	}
 }
 
-bool RepoModelImport::importModel(std::string filePath, std::string &errMsg)
+bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 {
 	orgFile = filePath;
 	std::string fileName = getFileName(filePath);
@@ -393,6 +394,7 @@ bool RepoModelImport::importModel(std::string filePath, std::string &errMsg)
 		if (strcmp(fileVersion, supportedFileVersion) != 0)
 		{
 			repoError << "Unsupported BIM file version" << fileVersion;
+			err = REPOERR_UNSUPPORTED_BIM_VERSION;
 			return false;
 		}
 
@@ -468,6 +470,7 @@ bool RepoModelImport::importModel(std::string filePath, std::string &errMsg)
 		return true;
 	} else {
 		repoError << "File " << fileName << " not found.";
+		err = REPOERR_MODEL_FILE_READ;
 		return false;
 	}
 }

@@ -1110,20 +1110,21 @@ bool RepoController::_RepoControllerImpl::isVREnabled(const RepoToken *token,
 repo::core::model::RepoScene*
 RepoController::_RepoControllerImpl::loadSceneFromFile(
 const std::string                                          &filePath,
+uint8_t													 &err,
 const bool                                                 &applyReduction,
 const bool                                                 &rotateModel,
 const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
-	std::string errMsg;
+
 	repo::core::model::RepoScene *scene = nullptr;
 
 	if (!filePath.empty())
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		scene = worker->loadSceneFromFile(filePath, errMsg, applyReduction, rotateModel, config);
+		scene = worker->loadSceneFromFile(filePath, err, applyReduction, rotateModel, config);
 		workerPool.push(worker);
 		if (!scene)
-			repoError << "Failed to load scene from file: " << errMsg;
+			repoError << "Failed to load scene from file - error code: " << err;
 	}
 	else
 	{

@@ -25,6 +25,7 @@
 
 #include "../core/handler/repo_database_handler_mongo.h"
 #include "../core/model/bson/repo_bson_factory.h"
+#include "../error_codes.h";
 #include "../lib/repo_log.h"
 #include "diff/repo_diff_name.h"
 #include "diff/repo_diff_sharedid.h"
@@ -788,7 +789,7 @@ const char        &delimiter)
 repo::core::model::RepoScene*
 RepoManipulator::loadSceneFromFile(
 const std::string &filePath,
-std::string &msg,
+uint8_t &error,
 const bool &applyReduction,
 const bool &rotateModel,
 const repo::manipulator::modelconvertor::ModelImportConfig *config)
@@ -802,7 +803,7 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 
 	if (!repo::manipulator::modelconvertor::AssimpModelImport::isSupportedExts(fileExt) && !(fileExt == ".BIM"))
 	{
-		msg = "Unsupported file extension";
+		error = REPOERR_FILE_TYPE_NOT_SUPPORTED;
 		return nullptr;
 	}
 
@@ -821,11 +822,17 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 	if (modelConvertor)
 	{
 		repoTrace << "Importing model...";
-		if (modelConvertor->importModel(filePath, msg))
+		if (modelConvertor->importModel(filePath, error))
 		{
 			repoTrace << "model Imported, generating Repo Scene";
 			if ((scene = modelConvertor->generateRepoScene()))
 			{
+				if (!scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
+
+					delete scene;
+					error = REPOERR_NO_MESHES;
+					return nullptr;
+				}
 				if (rotateModel || useIFCImporter)
 				{
 					repoTrace << "rotating model by 270 degress on the x axis...";
@@ -848,19 +855,18 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 				else
 				{
 					repoError << "Error generating stash graph";
+					error = REPOERR_STASH_GEN_FAIL;
+					delete scene;
+					return nullptr;
 				}
 			}
-		}
-		else
-		{
-			repoError << "Failed to import model : " << msg;
-		}
+		}		
 
 		delete modelConvertor;
 	}
 	else
 	{
-		msg += "Unable to instantiate a new modelConvertor (out of memory?)";
+		error = REPOERR_UNKNOWN_ERR;
 	}
 
 	return scene;

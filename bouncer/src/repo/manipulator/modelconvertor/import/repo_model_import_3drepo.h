@@ -140,7 +140,7 @@ namespace repo{
 					* @param error message if failed
 					* @return returns true upon success
 					*/
-					virtual bool importModel(std::string filePath, std::string &errMsg);
+					virtual bool importModel(std::string filePath, uint8_t &errMsg);
 			};
 
 			//http://stackoverflow.com/questions/23481262/using-boost-property-tree-to-read-int-array

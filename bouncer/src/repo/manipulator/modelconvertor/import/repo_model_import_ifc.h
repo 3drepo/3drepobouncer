@@ -64,17 +64,9 @@ namespace repo{
 				* @param error message if failed
 				* @return returns true upon success
 				*/
-				virtual bool importModel(std::string filePath, std::string &errMsg);
+				virtual bool importModel(std::string filePath, uint8_t &err);
 
-			protected:
-				/**
-				* Generate geometry with the file given.
-				* also populates the meshes and offset fields within this object.
-				* @param filePath path to IFC file
-				* @param errMsg error message shown should the function fail
-				* @return returns true upon success
-				*/
-				bool generateGeometry(std::string filePath, std::string &errMsg);
+			protected:				
 
 				std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> meshes;
 				std::unordered_map<std::string, repo::core::model::MaterialNode*> materials;

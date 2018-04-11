@@ -812,6 +812,7 @@ public:
 	*/
 	repo::core::model::RepoScene* loadSceneFromFile(
 		const std::string &filePath,
+		uint8_t           &err,
 		const bool &applyReduction = true,
 		const bool &rotateModel = false,
 		const repo::manipulator::modelconvertor::ModelImportConfig *config

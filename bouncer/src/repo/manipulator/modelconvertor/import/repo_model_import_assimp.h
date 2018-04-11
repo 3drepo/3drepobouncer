@@ -79,7 +79,7 @@ namespace repo{
 				* @param error message if failed
 				* @return returns true upon success
 				*/
-				bool importModel(std::string filePath, std::string &errMsg);
+				bool importModel(std::string filePath, uint8_t &errMsg);
 
 			private:
 

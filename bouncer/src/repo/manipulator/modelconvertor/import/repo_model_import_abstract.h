@@ -68,7 +68,7 @@ namespace repo{
 				* @param error message if failed
 				* @return returns true upon success
 				*/
-				virtual bool importModel(std::string filePath, std::string &errMsg) = 0;
+				virtual bool importModel(std::string filePath, uint8_t &errMsg) = 0;
 
 			protected:
 				/**

@@ -677,7 +677,7 @@ namespace repo{
 			repo::core::model::RepoScene*
 				loadSceneFromFile(
 				const std::string                                          &filePath,
-				std::string                                                &msg,
+				uint8_t													   &error,
 				const bool                                                 &applyReduction = true,
 				const bool                                                 &rotateModel = false,
 				const repo::manipulator::modelconvertor::ModelImportConfig *config = nullptr);
