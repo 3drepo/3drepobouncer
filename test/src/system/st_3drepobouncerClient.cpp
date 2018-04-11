@@ -23,7 +23,7 @@
 #include <cstdlib>
 #include <stdlib.h>
 #include <gtest/gtest.h>
-#include <error_codes.h>
+#include <repo/error_codes.h>
 #include <repo/repo_controller.h>
 #include "../unit/repo_test_database_info.h"
 #include "../unit/repo_test_utils.h"
