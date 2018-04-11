@@ -25,7 +25,7 @@
 
 #include "../core/handler/repo_database_handler_mongo.h"
 #include "../core/model/bson/repo_bson_factory.h"
-#include "../error_codes.h";
+#include "../error_codes.h"
 #include "../lib/repo_log.h"
 #include "diff/repo_diff_name.h"
 #include "diff/repo_diff_sharedid.h"
