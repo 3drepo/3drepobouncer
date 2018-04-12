@@ -216,6 +216,11 @@ TEST(RepoClientTest, UploadTest)
 	EXPECT_EQ((int)REPOERR_FILE_TYPE_NOT_SUPPORTED, runProcess(badExt));
 	EXPECT_FALSE(projectExists(db, "failExt"));
 
+	//Unsupported FBX version
+	std::string badExt = produceUploadArgs(db, "failExt", getDataPath(unsupportedFBXVersion));
+	EXPECT_EQ((int)REPOERR_UNSUPPORTED_FBX_VERSION, runProcess(badExt));
+	EXPECT_FALSE(projectExists(db, "failExt"));
+
 	//Insufficient arguments
 	std::string lackArg = getClientExePath() + " " + REPO_GTEST_DBADDRESS + " " + std::to_string(REPO_GTEST_DBPORT) + " "
 		+ REPO_GTEST_DBUSER + " " + REPO_GTEST_DBPW + " import " + getSuccessFilePath();
