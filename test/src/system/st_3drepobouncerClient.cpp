@@ -208,7 +208,7 @@ TEST(RepoClientTest, UploadTest)
 
 	//Test Bad FilePath
 	std::string badFilePath = produceUploadArgs(db, "failPath", "nonExistentFile.obj");
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(badFilePath));
+	EXPECT_EQ((int)REPOERR_MODEL_FILE_READ, runProcess(badFilePath));
 	EXPECT_FALSE(projectExists(db, "failPath"));
 
 	//Test Bad extension
