@@ -61,4 +61,9 @@
 #define REPOERR_FILE_IFC_GEO_GEN 21
 //Bim file version unsupported
 #define REPOERR_UNSUPPORTED_BIM_VERSION 22
+//FBX file version unsupported
+#define REPOERR_UNSUPPORTED_FBX_VERSION 23
+//Unsupported file version (generic)
+#define REPOERR_UNSUPPORTED_VERSION 24
+
 

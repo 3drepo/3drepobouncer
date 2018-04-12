@@ -1224,8 +1224,18 @@ bool AssimpModelImport::importModel(std::string filePath, uint8_t &err)
 	assimpScene = importer.ReadFile(filePath, 0);
 
 	if (!assimpScene){
-		repoError << " Failed to convert file to aiScene : " + std::string(aiGetErrorString());
-		err = REPOERR_FILE_ASSIMP_GEN;
+		std::string errorString = importer.GetErrorString();
+		repoError << " Failed to convert file to aiScene : " << errorString;
+		if (errorString.find("format version") != std::string::npos) {
+			if (errorString.find("FBX") != std::string::npos) {
+				err = REPOERR_UNSUPPORTED_FBX_VERSION;
+			}
+			else {
+				err = REPOERR_UNSUPPORTED_VERSION;
+			}
+		}
+		else
+			err = REPOERR_FILE_ASSIMP_GEN;
 		success = false;
 	}
 	else
