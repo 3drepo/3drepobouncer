@@ -217,8 +217,8 @@ TEST(RepoClientTest, UploadTest)
 	EXPECT_FALSE(projectExists(db, "failExt"));
 
 	//Unsupported FBX version
-	std::string badExt = produceUploadArgs(db, "failExt", getDataPath(unsupportedFBXVersion));
-	EXPECT_EQ((int)REPOERR_UNSUPPORTED_FBX_VERSION, runProcess(badExt));
+	std::string unsupportedVersion = produceUploadArgs(db, "failExt", getDataPath(unsupportedFBXVersion));
+	EXPECT_EQ((int)REPOERR_UNSUPPORTED_FBX_VERSION, runProcess(unsupportedVersion));
 	EXPECT_FALSE(projectExists(db, "failExt"));
 
 	//Insufficient arguments
