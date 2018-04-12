@@ -219,7 +219,7 @@ TEST(RepoClientTest, UploadTest)
 	//Insufficient arguments
 	std::string lackArg = getClientExePath() + " " + REPO_GTEST_DBADDRESS + " " + std::to_string(REPO_GTEST_DBPORT) + " "
 		+ REPO_GTEST_DBUSER + " " + REPO_GTEST_DBPW + " import " + getSuccessFilePath();
-	EXPECT_EQ((int)REPOERR_MODEL_FILE_READ, runProcess(lackArg));
+	EXPECT_EQ((int)REPOERR_INVALID_ARG, runProcess(lackArg));
 
 	//Test Good Upload
 	std::string goodUpload = produceUploadArgs(db, "cube", getSuccessFilePath());

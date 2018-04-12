@@ -1203,8 +1203,9 @@ bool AssimpModelImport::importModel(std::string filePath, uint8_t &err)
 
 	//check if a file exist first
 	std::ifstream fs(filePath);
-	if (!fs.good())
+	if (!fs.is_open() || !fs.good())
 	{
+		repoDebug << "Failed to find file";
 		err = REPOERR_MODEL_FILE_READ;
 
 		return false;

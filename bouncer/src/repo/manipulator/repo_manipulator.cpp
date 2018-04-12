@@ -859,17 +859,18 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 					delete scene;
 					return nullptr;
 				}
+				error = REPOERR_OK;
 			}
-		}		
+			else
+			{
+				error = REPOERR_UNKNOWN_ERR;
 
-		error = REPOERR_OK;
+			}
+		}
 		delete modelConvertor;
 	}
 	else
-	{
 		error = REPOERR_UNKNOWN_ERR;
-	}
-
 	return scene;
 }
 
