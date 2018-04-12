@@ -862,6 +862,7 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 			}
 		}		
 
+		error = REPOERR_OK;
 		delete modelConvertor;
 	}
 	else

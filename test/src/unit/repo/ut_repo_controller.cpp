@@ -46,7 +46,7 @@ TEST(RepoControllerTest, CommitScene){
 	//Try to commit a scene without setting db/project name
 	uint8_t errCode;
 	auto scene = controller->loadSceneFromFile(getDataPath(simpleModel), errCode);
-	EXPECT_EQ(errCode, 0);
+	EXPECT_EQ(0, errCode);
 	EXPECT_FALSE(controller->commitScene(token, scene));
 	EXPECT_FALSE(scene->isRevisioned());
 
