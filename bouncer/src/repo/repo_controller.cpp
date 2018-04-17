@@ -174,9 +174,10 @@ repo::core::model::RepoScene* RepoController::fetchScene(
 	const std::string    &uuid,
 	const bool           &headRevision,
 	const bool           &lightFetch,
-	const bool           &ignoreRefScene)
+	const bool           &ignoreRefScene,
+	const bool           &skeletonFetch)
 {
-	return impl->fetchScene(token, database, collection, uuid, headRevision, lightFetch, ignoreRefScene);
+	return impl->fetchScene(token, database, collection, uuid, headRevision, lightFetch, ignoreRefScene, skeletonFetch);
 }
 
 bool RepoController::generateAndCommitSelectionTree(

@@ -192,18 +192,19 @@ repo::core::model::RepoBSON MongoDatabaseHandler::createRepoBSON(
 	mongo::DBClientBase *worker,
 	const std::string &database,
 	const std::string &collection,
-	const mongo::BSONObj &obj)
+	const mongo::BSONObj &obj,
+	const bool ignoreExtFile)
 {
 	repo::core::model::RepoBSON orgBson = repo::core::model::RepoBSON(obj);
-
-	std::vector<std::pair<std::string, std::string>> extFileList = orgBson.getFileList();
-
 	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>> > binMap;
 
-	for (const auto &pair : extFileList)
-	{
-		repoTrace << "Found existing GridFS reference, retrieving file @ " << database << "." << collection << ":" << pair.first;
-		binMap[pair.first] = std::pair<std::string, std::vector<uint8_t>>(pair.second, getBigFile(worker, database, collection, pair.second));
+	if (!ignoreExtFile) {
+		std::vector<std::pair<std::string, std::string>> extFileList = orgBson.getFileList();
+		for (const auto &pair : extFileList)
+		{
+			repoTrace << "Found existing GridFS reference, retrieving file @ " << database << "." << collection << ":" << pair.first;
+			binMap[pair.first] = std::pair<std::string, std::vector<uint8_t>>(pair.second, getBigFile(worker, database, collection, pair.second));
+		}
 	}
 
 	return repo::core::model::RepoBSON(obj, binMap);
@@ -508,7 +509,8 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneByCriteria(
 std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueIDs(
 	const std::string& database,
 	const std::string& collection,
-	const repo::core::model::RepoBSON& uuids){
+	const repo::core::model::RepoBSON& uuids,
+	const bool ignoreExtFiles){
 	std::vector<repo::core::model::RepoBSON> data;
 
 	mongo::BSONArray array = mongo::BSONArray(uuids);
@@ -535,7 +537,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 
 					for (; cursor.get() && cursor->more(); ++retrieved)
 					{
-						data.push_back(createRepoBSON(worker, database, collection, cursor->nextSafe().copy()));
+						data.push_back(createRepoBSON(worker, database, collection, cursor->nextSafe().copy(), ignoreExtFiles));
 					}
 				} while (cursor.get() && cursor->more());
 			}

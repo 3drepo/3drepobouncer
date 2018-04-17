@@ -326,7 +326,8 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 	const std::string    &uuid,
 	const bool           &headRevision,
 	const bool           &lightFetch,
-	const bool           &ignoreRefScene)
+	const bool           &ignoreRefScene,
+	const bool           &skeletonFetch)
 {
 	repo::core::model::RepoScene* scene = 0;
 	if (token)
@@ -334,7 +335,7 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
 		scene = worker->fetchScene(token->databaseAd, token->getCredentials(),
-			database, collection, repo::lib::RepoUUID(uuid), headRevision, lightFetch, ignoreRefScene);
+			database, collection, repo::lib::RepoUUID(uuid), headRevision, lightFetch, ignoreRefScene, skeletonFetch);
 
 		workerPool.push(worker);
 	}

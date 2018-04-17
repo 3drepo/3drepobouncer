@@ -441,19 +441,21 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 	const repo::lib::RepoUUID                                &uuid,
 	const bool                                    &headRevision,
 	const bool                                    &lightFetch,
-	const bool                                    &ignoreRefScene)
+	const bool                                    &ignoreRefScene,
+	const bool                                    &skeletonFetch)
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	modelutility::SceneManager sceneManager;
-	return sceneManager.fetchScene(handler, database, project, uuid, headRevision, lightFetch, ignoreRefScene);
+	return sceneManager.fetchScene(handler, database, project, uuid, headRevision, lightFetch, ignoreRefScene, skeletonFetch);
 }
 
 void RepoManipulator::fetchScene(
 	const std::string                     &databaseAd,
 	const repo::core::model::RepoBSON     *cred,
 	repo::core::model::RepoScene          *scene,
-	const bool                            &ignoreRefScene)
+	const bool                            &ignoreRefScene,
+	const bool                            &skeletonFetch)
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);

@@ -157,6 +157,10 @@ namespace repo{
 					ignoreReferenceNodes = true;
 				}
 
+				void skipLoadingExtFiles() {
+					loadExtFiles = false;
+				}
+
 				/**
 				* Check if default scene graph is missing texture
 				* @return returns true if missing textures
@@ -1147,6 +1151,7 @@ namespace repo{
 				repoGraphInstance stashGraph; //current state of the optimized graph, given the branch/revision
 				uint16_t status; //health of the scene, 0 denotes healthy
 				bool ignoreReferenceNodes = false;
+				bool loadExtFiles = true;
 			};
 		}//namespace graph
 	}//namespace manipulator

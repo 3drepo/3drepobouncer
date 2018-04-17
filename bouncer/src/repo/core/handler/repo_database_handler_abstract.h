@@ -390,7 +390,8 @@ namespace repo{
 				virtual std::vector<repo::core::model::RepoBSON> findAllByUniqueIDs(
 					const std::string& database,
 					const std::string& collection,
-					const repo::core::model::RepoBSON& uuid) = 0;
+					const repo::core::model::RepoBSON& uuid,
+					const bool ignoreExtFiles = false) = 0;
 
 				/**
 				*Retrieves the first document matching given Shared ID (SID), sorting is descending
