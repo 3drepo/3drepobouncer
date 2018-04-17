@@ -489,7 +489,7 @@ namespace repo{
 					const std::string& database,
 					const std::string& collection,
 					const repo::core::model::RepoBSON& uuids,
-					const bool ignoreExtFiles);
+					const bool ignoreExtFiles = false);
 
 				/**
 				* Given a search criteria,  find all the documents that passes this query
