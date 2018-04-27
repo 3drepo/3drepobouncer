@@ -435,7 +435,8 @@ namespace repo{
 			const std::string    &uuid = REPO_HISTORY_MASTER_BRANCH,
 			const bool           &headRevision = true,
 			const bool           &lightFetch = false,
-			const bool           &ignoreRefScene = false);
+			const bool           &ignoreRefScene = false,
+			const bool           &skeletonFetch = false);
 
 		/**
 			* Save the files of the original model to a specified directory
@@ -805,6 +806,7 @@ namespace repo{
 			*/
 		repo::core::model::RepoScene* loadSceneFromFile(
 			const std::string &filePath,
+			uint8_t           &err,
 			const bool &applyReduction = true,
 			const bool &rotateModel = false,
 			const repo::manipulator::modelconvertor::ModelImportConfig *config
@@ -937,10 +939,12 @@ namespace repo{
 		/**
 		* Generate database statistics and print the result in the given filepath
 		* @params outputFilePath
+		* @param paidAccList list of paid user accounts
 		*/
 		void getDatabaseStatistics(
 			const RepoToken   *token,
-			const std::string &outputFilePath);
+			const std::string &outputFilePath,
+			const std::list<std::string> &paidAccList);
 
 		/**
 		* Get a list of users and print the result in the given filepath

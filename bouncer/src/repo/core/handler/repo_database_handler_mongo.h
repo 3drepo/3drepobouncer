@@ -488,7 +488,8 @@ namespace repo{
 				std::vector<repo::core::model::RepoBSON> findAllByUniqueIDs(
 					const std::string& database,
 					const std::string& collection,
-					const repo::core::model::RepoBSON& uuids);
+					const repo::core::model::RepoBSON& uuids,
+					const bool ignoreExtFiles = false);
 
 				/**
 				* Given a search criteria,  find all the documents that passes this query
@@ -639,7 +640,8 @@ namespace repo{
 					mongo::DBClientBase *worker,
 					const std::string &database,
 					const std::string &collection,
-					const mongo::BSONObj &obj);
+					const mongo::BSONObj &obj,
+					const bool ignoreExtFile = false);
 
 				/**
 				* Generates a mongo BSON object for authentication

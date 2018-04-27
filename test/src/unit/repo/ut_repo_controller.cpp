@@ -18,6 +18,7 @@
 #include <cstdlib>
 #include <gtest/gtest.h>
 #include <repo/repo_controller.h>
+#include <repo/error_codes.h>
 #include "../repo_test_database_info.h"
 #include "../repo_test_utils.h"
 
@@ -43,7 +44,9 @@ TEST(RepoControllerTest, CommitScene){
 	auto controller = getController();
 	auto token = getToken();
 	//Try to commit a scene without setting db/project name
-	auto scene = controller->loadSceneFromFile(getDataPath(simpleModel));
+	uint8_t errCode;
+	auto scene = controller->loadSceneFromFile(getDataPath(simpleModel), errCode);
+	EXPECT_EQ(0, errCode);
 	EXPECT_FALSE(controller->commitScene(token, scene));
 	EXPECT_FALSE(scene->isRevisioned());
 
@@ -67,8 +70,9 @@ TEST(RepoControllerTest, CommitScene){
 	EXPECT_TRUE(projectExists("commitSceneTest", "commitCube"));
 	EXPECT_EQ(scene->getOwner(), REPO_GTEST_DBUSER);
 
-	auto scene2 = controller->loadSceneFromFile(getDataPath(simpleModel));
+	auto scene2 = controller->loadSceneFromFile(getDataPath(simpleModel), errCode);
 	std::string owner = "dog";
+	EXPECT_EQ(errCode, 0);
 	scene2->setDatabaseAndProjectName("commitSceneTest", "commitCube2");
 	EXPECT_TRUE(controller->commitScene(getToken(), scene2, owner));
 	EXPECT_TRUE(scene2->isRevisioned());
@@ -86,8 +90,10 @@ TEST(RepoControllerTest, LoadSceneFromFile){
 	auto optG = core::model::RepoScene::GraphType::OPTIMIZED;
 
 	//standard import
-	auto scene = controller->loadSceneFromFile(getDataPath(simpleModel));
+	uint8_t errCode;
+	auto scene = controller->loadSceneFromFile(getDataPath(simpleModel), errCode);
 	ASSERT_TRUE(scene);
+	EXPECT_EQ(errCode, 0);
 	ASSERT_TRUE(scene->getRoot(defaultG));
 	ASSERT_TRUE(scene->getRoot(optG));
 	EXPECT_FALSE(scene->isMissingTexture());
@@ -95,7 +101,8 @@ TEST(RepoControllerTest, LoadSceneFromFile){
 	EXPECT_TRUE(dynamic_cast<core::model::TransformationNode*>(scene->getRoot(defaultG))->isIdentity());
 
 	//Import the scene with no transformation reduction
-	auto sceneNoReduction = controller->loadSceneFromFile(getDataPath(simpleModel), false);
+	auto sceneNoReduction = controller->loadSceneFromFile(getDataPath(simpleModel), errCode, false);
+	EXPECT_EQ(errCode, 0);
 	EXPECT_TRUE(sceneNoReduction);
 	EXPECT_TRUE(sceneNoReduction->getRoot(defaultG));
 	EXPECT_TRUE(sceneNoReduction->getRoot(optG));
@@ -105,7 +112,8 @@ TEST(RepoControllerTest, LoadSceneFromFile){
 			> scene->getAllTransformations(defaultG).size());
 
 	//Import the scene with root trans rotated
-	auto sceneRotated = controller->loadSceneFromFile(getDataPath(simpleModel), true, true);
+	auto sceneRotated = controller->loadSceneFromFile(getDataPath(simpleModel), errCode, true, true);
+	EXPECT_EQ(errCode, 0);
 	EXPECT_TRUE(sceneRotated);
 	ASSERT_TRUE(sceneRotated->getRoot(defaultG));
 	EXPECT_TRUE(sceneRotated->getRoot(optG));
@@ -115,22 +123,26 @@ TEST(RepoControllerTest, LoadSceneFromFile){
 	EXPECT_FALSE(rootTrans->isIdentity());
 
 	//Import the scene with non existant file
-	auto sceneNoFile = controller->loadSceneFromFile("thisFileDoesntExist.obj");
+	auto sceneNoFile = controller->loadSceneFromFile("thisFileDoesntExist.obj", errCode);
+	EXPECT_EQ(errCode, REPOERR_MODEL_FILE_READ);
 	EXPECT_FALSE(sceneNoFile);
 
 	//Import the scene with bad Extension
-	auto sceneBadExt = controller->loadSceneFromFile(getDataPath(badExtensionFile));
+	auto sceneBadExt = controller->loadSceneFromFile(getDataPath(badExtensionFile), errCode);
+	EXPECT_EQ(errCode, REPOERR_FILE_TYPE_NOT_SUPPORTED);
 	EXPECT_FALSE(sceneBadExt);
 
 	//Import the scene with texture but not found
-	auto sceneNoTex = controller->loadSceneFromFile(getDataPath(texturedModel));
+	auto sceneNoTex = controller->loadSceneFromFile(getDataPath(texturedModel), errCode);
+	EXPECT_EQ(errCode, 0);
 	EXPECT_TRUE(sceneNoTex);
 	EXPECT_TRUE(sceneNoTex->getRoot(defaultG));
 	EXPECT_TRUE(sceneNoTex->getRoot(optG));
 	EXPECT_TRUE(sceneNoTex->isMissingTexture());
 
 	//Import the scene with texture but not found
-	auto sceneTex = controller->loadSceneFromFile(getDataPath(texturedModel2));
+	auto sceneTex = controller->loadSceneFromFile(getDataPath(texturedModel2), errCode);
+	EXPECT_EQ(errCode, 0);
 	EXPECT_TRUE(sceneTex);
 	EXPECT_TRUE(sceneTex->getRoot(defaultG));
 	EXPECT_TRUE(sceneTex->getRoot(optG));

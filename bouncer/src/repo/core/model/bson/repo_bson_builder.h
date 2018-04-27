@@ -39,7 +39,7 @@
 namespace repo {
 	namespace core {
 		namespace model {
-			class RepoBSONBuilder : public mongo::BSONObjBuilder
+			class REPO_API_EXPORT RepoBSONBuilder : public mongo::BSONObjBuilder
 			{
 			public:
 				RepoBSONBuilder();
@@ -157,19 +157,19 @@ namespace repo {
 			};
 
 			// Template specialization
-			template<> void RepoBSONBuilder::append < repo::lib::RepoUUID >
+			template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoUUID >
 				(
 					const std::string &label,
 					const repo::lib::RepoUUID &uuid
 					);
 
-				template<> void RepoBSONBuilder::append < repo::lib::RepoVector3D >
+				template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoVector3D >
 					(
 						const std::string &label,
 						const repo::lib::RepoVector3D &vec
 						);
 
-					template<> void RepoBSONBuilder::append < repo::lib::RepoMatrix >
+					template<> REPO_API_EXPORT void RepoBSONBuilder::append < repo::lib::RepoMatrix >
 						(
 							const std::string &label,
 							const repo::lib::RepoMatrix &mat

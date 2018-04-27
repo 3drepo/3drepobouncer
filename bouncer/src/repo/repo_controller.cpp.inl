@@ -434,7 +434,8 @@ public:
 		const std::string    &uuid = REPO_HISTORY_MASTER_BRANCH,
 		const bool           &headRevision = true,
 		const bool           &lightFetch = false,
-		const bool           &ignoreRefScene = false);
+		const bool           &ignoreRefScene = false,
+		const bool           &skeletonFetch = false);
 
 	/**
 	* Save the files of the original model to a specified directory
@@ -812,6 +813,7 @@ public:
 	*/
 	repo::core::model::RepoScene* loadSceneFromFile(
 		const std::string &filePath,
+		uint8_t           &err,
 		const bool &applyReduction = true,
 		const bool &rotateModel = false,
 		const repo::manipulator::modelconvertor::ModelImportConfig *config
@@ -948,7 +950,8 @@ public:
 	*/
 	void getDatabaseStatistics(
 		const RepoToken   *token,
-		const std::string &outputFilePath);
+		const std::string &outputFilePath,
+		const std::list<std::string> &paidAccList);
 
 	/**
 	* Get a list of users and print the result in the given filepath

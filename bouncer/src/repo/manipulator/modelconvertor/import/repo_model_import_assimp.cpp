@@ -31,6 +31,7 @@
 #include "../../../core/model/bson/repo_bson_builder.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../lib/repo_log.h"
+#include "../../../error_codes.h"
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -311,9 +312,13 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 		//--------------------------------------------------------------------------
 		// Opacity
 		if (AI_SUCCESS == material->Get(AI_MATKEY_OPACITY, tempFloat))
-			repo_material.opacity = tempFloat;
+		{
+			//If opacity is 0, we assume it's bonkers.
+			repo_material.opacity = tempFloat == 0 ? 1 : tempFloat;		
+		}
 		else
 			repo_material.opacity = std::numeric_limits<float>::quiet_NaN();
+
 		//--------------------------------------------------------------------------
 		// Shininess
 		if (AI_SUCCESS == material->Get(AI_MATKEY_SHININESS, tempFloat))
@@ -585,7 +590,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 				builder << key << *(static_cast<bool *>(currentValue.mData));
 				break;
 
-			case AI_INT:
+			case AI_INT32:
 				builder << key << *(static_cast<int *>(currentValue.mData));
 				break;
 
@@ -765,8 +770,10 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 		std::vector<std::vector<double>> sceneBbox = getSceneBoundingBox();
 		//-------------------------------------------------------------------------
 		// Textures
+
 		repoInfo << "Constructing Texture Nodes...";
 		bool missingTextures = false;
+
 		for (uint32_t m = 0; m < assimpScene->mNumMaterials; ++m)
 		{
 			int texIndex = 0;
@@ -780,25 +787,33 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 				if (AI_SUCCESS == material->GetTexture(aiTextureType_DIFFUSE, iTex, &path))
 				{
 					std::string texName(path.data);
+					repoTrace << "texture name: " << texName;
+					
 					if (!texName.empty())
 					{
 						repo::core::model::RepoNode *textureNode = nullptr;
-						if (assimpScene->HasTextures() && '*' == texName.at(0))
+						
+						const aiTexture* texture = nullptr;
+						if (texture = assimpScene->GetEmbeddedTexture(texName.c_str()))
 						{
+							
 							repoTrace << "Embedded texture name: " << texName;
 							//---------------------------------------------------------
 							// Embedded texture
-							int textureIndex = atoi(texName.substr(1, texName.size()).c_str());
-							aiTexture *texture = assimpScene->mTextures[textureIndex];
+							char *memblock = (char*)malloc(texture->mWidth);
+							memcpy(memblock, texture->pcData, texture->mWidth);
 
-							//FIXME: Untested!
+							auto size = texture->mWidth * (texture->mHeight == 0 ? 1 : texture->mHeight);
 							textureNode = new repo::core::model::TextureNode(repo::core::model::RepoBSONFactory::makeTextureNode(
 								texName,
 								(char*)texture->pcData,
-								sizeof(texture->pcData) * texture->mWidth * texture->mHeight ? texture->mHeight : 1,
+								size,
 								texture->mWidth,
 								texture->mHeight,
 								REPO_NODE_API_LEVEL_1));
+
+							free(memblock);
+
 						}
 						else
 						{
@@ -852,7 +867,6 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 				}
 			}
 		}
-
 		repoInfo << "Constructing Material Nodes...";
 		/*
 		* ------------- Material Nodes -----------------
@@ -1174,7 +1188,7 @@ std::vector<std::vector<double>> AssimpModelImport::getAiMeshBoundingBox(
 	return bbox;
 }
 
-bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
+bool AssimpModelImport::importModel(std::string filePath, uint8_t &err)
 {
 	bool success = true;
 	orgFile = filePath;
@@ -1189,9 +1203,10 @@ bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
 
 	//check if a file exist first
 	std::ifstream fs(filePath);
-	if (!fs.good())
+	if (!fs.is_open() || !fs.good())
 	{
-		errMsg += "File doesn't exist (" + filePath + ")";
+		repoDebug << "Failed to find file";
+		err = REPOERR_MODEL_FILE_READ;
 
 		return false;
 	}
@@ -1205,10 +1220,22 @@ bool AssimpModelImport::importModel(std::string filePath, std::string &errMsg)
 
 	importer.SetPropertyInteger(AI_CONFIG_GLOB_MEASURE_TIME, 1);
 	importer.SetPropertyBool(AI_CONFIG_IMPORT_IFC_SKIP_SPACE_REPRESENTATIONS, settings->getSkipIFCSpaceRepresentation());
+	importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_READ_TEXTURES, true);
 	assimpScene = importer.ReadFile(filePath, 0);
 
 	if (!assimpScene){
-		errMsg = " Failed to convert file to aiScene : " + std::string(aiGetErrorString());
+		std::string errorString = importer.GetErrorString();
+		repoError << " Failed to convert file to aiScene : " << errorString;
+		if (errorString.find("format version") != std::string::npos) {
+			if (errorString.find("FBX") != std::string::npos) {
+				err = REPOERR_UNSUPPORTED_FBX_VERSION;
+			}
+			else {
+				err = REPOERR_UNSUPPORTED_VERSION;
+			}
+		}
+		else
+			err = REPOERR_FILE_ASSIMP_GEN;
 		success = false;
 	}
 	else

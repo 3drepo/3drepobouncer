@@ -1211,7 +1211,7 @@ bool RepoScene::loadScene(
 	//Get the relevant nodes from the scene graph using the unique IDs stored in this revision node
 	RepoBSON idArray = revNode->getObjectField(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS);
 	std::vector<RepoBSON> nodes = handler->findAllByUniqueIDs(
-		databaseName, projectName + "." + sceneExt, idArray);
+		databaseName, projectName + "." + sceneExt, idArray, !loadExtFiles);
 
 	repoInfo << "# of nodes in this unoptimised scene = " << nodes.size();
 
@@ -1461,8 +1461,13 @@ bool RepoScene::populate(
 			else
 				refg->setBranch(reference->getRevisionID());
 
+			if (!loadExtFiles) {
+				refg->skipLoadingExtFiles();
+			}
+				
+
 			//Try to load the stash first, if fail, try scene.
-			if (refg->loadStash(handler, errMsg) || refg->loadScene(handler, errMsg))
+			if (loadExtFiles && refg->loadStash(handler, errMsg) || refg->loadScene(handler, errMsg))
 			{
 				g.referenceToScene[reference->getSharedID()] = refg;
 				auto refOffset = refg->getWorldOffset();

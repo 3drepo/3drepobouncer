@@ -89,7 +89,8 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 	const repo::lib::RepoUUID                                &uuid,
 	const bool                                    &headRevision,
 	const bool                                    &lightFetch,
-	const bool                                    &ignoreRefScenes)
+	const bool                                    &ignoreRefScenes,
+	const bool                                    &skeletonFetch)
 {
 	repo::core::model::RepoScene* scene = nullptr;
 	if (handler)
@@ -99,6 +100,8 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 		scene = new repo::core::model::RepoScene(database, project);
 		if (scene)
 		{
+			if (skeletonFetch)
+				scene->skipLoadingExtFiles();
 			if(ignoreRefScenes)
 				scene->ignoreReferenceScene();
 			if (headRevision)
@@ -113,7 +116,7 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 					(headRevision ? (" head revision of branch " + uuid.toString())
 					: (" revision " + uuid.toString()))
 					<< " of " << database << "." << project;
-				if (lightFetch)
+				if (lightFetch )
 				{
 					if (scene->loadStash(handler, errMsg))
 					{
@@ -139,14 +142,16 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 					{
 						repoTrace << "Loaded Scene";
 
-						if (scene->loadStash(handler, errMsg))
-						{
-							repoTrace << "Stash Loaded";
-						}
-						else
-						{
-							//failed to load stash isn't critical, give it a warning instead of returning false
-							repoWarning << "Error loading stash for " << database << "." << project << " : " << errMsg;
+						if (!skeletonFetch) {
+							if (scene->loadStash(handler, errMsg))
+							{
+								repoTrace << "Stash Loaded";
+							}
+							else
+							{
+								//failed to load stash isn't critical, give it a warning instead of returning false
+								repoWarning << "Error loading stash for " << database << "." << project << " : " << errMsg;
+							}
 						}
 					}
 					else{

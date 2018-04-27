@@ -166,8 +166,8 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 		const collection = db.collection(`${project}.history`);
 		const update = {
 			'$set':{
-				'author': username,
-				'timestamp': new Date()
+				'author': username
+//				'timestamp': new Date()
 			}
 		};
 

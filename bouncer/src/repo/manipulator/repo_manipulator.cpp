@@ -25,6 +25,7 @@
 
 #include "../core/handler/repo_database_handler_mongo.h"
 #include "../core/model/bson/repo_bson_factory.h"
+#include "../error_codes.h"
 #include "../lib/repo_log.h"
 #include "diff/repo_diff_name.h"
 #include "diff/repo_diff_sharedid.h"
@@ -440,19 +441,21 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 	const repo::lib::RepoUUID                                &uuid,
 	const bool                                    &headRevision,
 	const bool                                    &lightFetch,
-	const bool                                    &ignoreRefScene)
+	const bool                                    &ignoreRefScene,
+	const bool                                    &skeletonFetch)
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	modelutility::SceneManager sceneManager;
-	return sceneManager.fetchScene(handler, database, project, uuid, headRevision, lightFetch, ignoreRefScene);
+	return sceneManager.fetchScene(handler, database, project, uuid, headRevision, lightFetch, ignoreRefScene, skeletonFetch);
 }
 
 void RepoManipulator::fetchScene(
 	const std::string                     &databaseAd,
 	const repo::core::model::RepoBSON     *cred,
 	repo::core::model::RepoScene          *scene,
-	const bool                            &ignoreRefScene)
+	const bool                            &ignoreRefScene,
+	const bool                            &skeletonFetch)
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
@@ -692,12 +695,13 @@ const std::list<std::string> &databases)
 void RepoManipulator::getDatabaseStatistics(
 	const std::string                     &databaseAd,
 	const repo::core::model::RepoBSON*	  cred,
-	const std::string &outputFilePath)
+	const std::string &outputFilePath,
+	const std::list<std::string> &paidAccList)
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	StatisticsGenerator statGen(handler);
-	statGen.getDatabaseStatistics(outputFilePath);
+	statGen.getDatabaseStatistics(outputFilePath, paidAccList);
 }
 
 void RepoManipulator::getUserList(
@@ -787,7 +791,7 @@ const char        &delimiter)
 repo::core::model::RepoScene*
 RepoManipulator::loadSceneFromFile(
 const std::string &filePath,
-std::string &msg,
+uint8_t &error,
 const bool &applyReduction,
 const bool &rotateModel,
 const repo::manipulator::modelconvertor::ModelImportConfig *config)
@@ -801,7 +805,7 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 
 	if (!repo::manipulator::modelconvertor::AssimpModelImport::isSupportedExts(fileExt) && !(fileExt == ".BIM"))
 	{
-		msg = "Unsupported file extension";
+		error = REPOERR_FILE_TYPE_NOT_SUPPORTED;
 		return nullptr;
 	}
 
@@ -820,11 +824,17 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 	if (modelConvertor)
 	{
 		repoTrace << "Importing model...";
-		if (modelConvertor->importModel(filePath, msg))
+		if (modelConvertor->importModel(filePath, error))
 		{
 			repoTrace << "model Imported, generating Repo Scene";
 			if ((scene = modelConvertor->generateRepoScene()))
 			{
+				if (!scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
+
+					delete scene;
+					error = REPOERR_NO_MESHES;
+					return nullptr;
+				}
 				if (rotateModel || useIFCImporter)
 				{
 					repoTrace << "rotating model by 270 degress on the x axis...";
@@ -847,21 +857,22 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 				else
 				{
 					repoError << "Error generating stash graph";
+					error = REPOERR_STASH_GEN_FAIL;
+					delete scene;
+					return nullptr;
 				}
+				error = REPOERR_OK;
+			}
+			else
+			{
+				error = REPOERR_UNKNOWN_ERR;
+
 			}
 		}
-		else
-		{
-			repoError << "Failed to import model : " << msg;
-		}
-
 		delete modelConvertor;
 	}
 	else
-	{
-		msg += "Unable to instantiate a new modelConvertor (out of memory?)";
-	}
-
+		error = REPOERR_UNKNOWN_ERR;
 	return scene;
 }
 
@@ -905,6 +916,8 @@ std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoManipulator::initi
 	{
 		modelutility::SceneManager sceneManager;
 		vrEnabled = sceneManager.isVrEnabled(scene, handler);
+
+		scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_WEB_STASH);
 	}
 	repo::manipulator::modelconvertor::AssetModelExport assetExport(scene, vrEnabled);
 	jsonFiles = assetExport.getJSONFilesAsBuffer();

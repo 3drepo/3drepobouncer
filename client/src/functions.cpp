@@ -477,8 +477,8 @@ int32_t importFileAndCommit(
 		+ (rotate ? "true" : "false") + " owner :" + owner + " configFile: " + configFile);
 
 	repo::manipulator::modelconvertor::ModelImportConfig config(configFile);
-
-	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, true, rotate, &config);
+	uint8_t err;
+	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, err, true, rotate, &config);
 	if (graph)
 	{
 		repoLog("Trying to commit this scene to database as " + database + "." + project);
@@ -504,7 +504,6 @@ int32_t importFileAndCommit(
 			else
 				return REPOERR_OK;
 		}
-	}
-
-	return REPOERR_LOAD_SCENE_FAIL;
+	}	
+	return err? err : REPOERR_LOAD_SCENE_FAIL;
 }

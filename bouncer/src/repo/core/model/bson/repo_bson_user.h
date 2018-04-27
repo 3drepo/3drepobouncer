@@ -30,62 +30,62 @@ namespace repo {
 			// Fields specific to user only
 			//
 			//------------------------------------------------------------------------------
-#define REPO_USER_LABEL_AVATAR               "avatar"
-#define REPO_USER_LABEL_CREDENTIALS          "credentials"
-#define REPO_USER_LABEL_CUSTOM_DATA          "customData"
-#define REPO_USER_LABEL_EMAIL     			"email"
-#define REPO_USER_LABEL_FIRST_NAME     		"firstName"
-#define REPO_USER_LABEL_LAST_NAME     		"lastName"
-#define REPO_USER_LABEL_ENCRYPTION           "MONGODB-CR"
-#define REPO_USER_LABEL_CLEARTEXT            "cleartext"
-#define REPO_USER_LABEL_LABEL                "label"
-#define REPO_USER_LABEL_OWNER                "account"
-#define REPO_USER_LABEL_KEY                  "key"
-#define REPO_USER_LABEL_PWD           		 "pwd"
-#define REPO_USER_LABEL_USER     			"user"
-#define REPO_USER_LABEL_DB                   "db"
-#define REPO_USER_LABEL_ROLES                 "roles"
-#define REPO_USER_LABEL_ROLE                 "role"
-#define REPO_USER_LABEL_API_KEYS             "apiKeys"
-#define REPO_USER_LABEL_BILLING				 "billing"
-#define REPO_USER_LABEL_SUBS				 "subscriptions"
-#define REPO_USER_LABEL_SUBS_PLAN			 "plan"
-#define REPO_USER_LABEL_SUBS_ID				 "_id"
-#define REPO_USER_LABEL_SUBS_ACTIVE			 "active"
-#define REPO_USER_LABEL_SUBS_CURRENT_AGREE   "inCurrentAgreement"
-#define REPO_USER_LABEL_SUBS_PENDING_DEL     "pendingDelete"
-#define REPO_USER_LABEL_SUBS_TOKEN           "token"
-#define REPO_USER_LABEL_SUBS_CREATED_AT      "createdAt"
-#define REPO_USER_LABEL_SUBS_UPDATED_AT      "updatedAt"
-#define REPO_USER_LABEL_SUBS_EXPIRES_AT      "expiredAt"
-#define REPO_USER_LABEL_SUBS_BILLING_USER	 "billingUser"
-#define REPO_USER_LABEL_SUBS_ASSIGNED_USER	 "assignedUser"
-#define REPO_USER_LABEL_SUBS_LIMITS			 "limits"
-#define REPO_USER_LABEL_SUBS_LIMITS_COLLAB	 "collaboratorLimit"
-#define REPO_USER_LABEL_SUBS_LIMITS_SPACE	 "spaceLimit"
-#define REPO_USER_LABEL_VR_ENABLED           "vrEnabled"
+#define REPO_USER_LABEL_AVATAR						"avatar"
+#define REPO_USER_LABEL_CREDENTIALS					"credentials"
+#define REPO_USER_LABEL_CUSTOM_DATA					"customData"
+#define REPO_USER_LABEL_EMAIL     					"email"
+#define REPO_USER_LABEL_FIRST_NAME     				"firstName"
+#define REPO_USER_LABEL_LAST_NAME     				"lastName"
+#define REPO_USER_LABEL_ENCRYPTION					"MONGODB-CR"
+#define REPO_USER_LABEL_CLEARTEXT					"cleartext"
+#define REPO_USER_LABEL_LABEL						"label"
+#define REPO_USER_LABEL_OWNER						"account"
+#define REPO_USER_LABEL_KEY							"key"
+#define REPO_USER_LABEL_PWD           				"pwd"
+#define REPO_USER_LABEL_USER     					"user"
+#define REPO_USER_LABEL_DB							"db"
+#define REPO_USER_LABEL_ROLES						"roles"
+#define REPO_USER_LABEL_ROLE						"role"
+#define REPO_USER_LABEL_API_KEYS					"apiKeys"
+#define REPO_USER_LABEL_BILLING						"billing"
+#define REPO_USER_LABEL_SUBS						"subscriptions"
+#define REPO_USER_LABEL_SUBS_BILLING_USER			"billingUser"
+#define REPO_USER_LABEL_VR_ENABLED					"vrEnabled"
+#define REPO_USER_LABEL_CREATED_AT					"createdAt"
+#define REPO_USER_LABEL_SUB_PAYPAL					"paypal"
+#define REPO_USER_LABEL_SUB_DISCRETIONARY			"discretionary"
+#define REPO_USER_LABEL_SUB_ENTERPRISE				"enterprise"
+#define REPO_USER_LABEL_SUB_DATA					"data"
+#define REPO_USER_LABEL_SUB_COLLABORATOR			"collaborators"
+#define REPO_USER_LABEL_SUB_EXPIRY_DATE				"expiryDate"
+#define REPO_USER_LABAL_SUB_UNLIMITED				"unlimited"			
+#define REPO_USER_LABAL_SUB_PAYPAL_QUANTITY			"quantity"
+#define REPO_USER_LABAL_SUB_PAYPAL_PLAN				"plan"
 
-			//name of free user plan
-#define REPO_USER_SUBS_STANDARD_FREE   "BASIC"
 
 			class REPO_API_EXPORT RepoUser : public RepoBSON
 			{
 			public:
+				struct PaypalSubscription
+				{
+					int32_t quantity;
+					int64_t expiryDate;
+					std::string plan;					
+				};
+
+				struct QuotaLimit
+				{
+					bool unlimitedUsers = false;
+					int32_t collaborators = 0;
+					int32_t data = 0 ;
+					int64_t expiryDate = 0;
+				};
+
 				struct SubscriptionInfo
 				{
-					std::string id;
-					bool active;
-					bool inCurrentAgreement;
-					bool pendingDelete;
-					int64_t updatedAt;
-					int64_t createdAt;
-					int64_t expiresAt;
-					std::string billingUser;
-					std::string assignedUser;
-					std::string token;
-					std::string planName;
-					int collaboratorLimit;
-					double spaceLimit;
+					std::vector<PaypalSubscription> paypal;
+					QuotaLimit enterprise;
+					QuotaLimit discretionary;
 				};
 
 				RepoUser();
@@ -93,12 +93,6 @@ namespace repo {
 				RepoUser(RepoBSON bson) : RepoBSON(bson){}
 
 				~RepoUser();
-
-				/**
-				* Generate a default subscription
-				*/
-				static SubscriptionInfo createDefaultSub(
-					const int64_t &expireTS = -1);
 
 				/**
 				* Clone and add roles into this use bson
@@ -118,22 +112,11 @@ namespace repo {
 				*/
 				RepoUser cloneAndMergeUserInfo(
 					const RepoUser &newUserInfo) const;
-
-				/**
-				* Clone and increase/decrease license count
-				* if diff is positive, it will add new default licenses
-				* If we are trying to decrease n licenses, there has to be n unassigned, active licenses.
-				* @param diff the increase or decrease of license (-1 to remove 1, 1 to add 1)
-				* @param expDate specify the expiry date of the license (default is -1, which never expires)
-				* @returns a cloned version of repoUser with subscription information updated
-				*/
-				RepoUser cloneAndUpdateLicenseCount(
-					const int &diff,
-					const int64_t expDate = -1
-					) const;
+	
 
 				RepoUser cloneAndUpdateSubscriptions(
-					const std::vector<SubscriptionInfo> &subs) const;
+					const QuotaLimit &discretionary,
+					const QuotaLimit &enterprise) const;
 
 				/**
 				* --------- Convenience functions -----------
@@ -190,6 +173,13 @@ namespace repo {
 				}
 
 				/**
+				* Get the timestamp of when the user was created
+				* @return returns timestamp value of when the user is created, 0 if unknown
+				*/
+				uint64_t getUserCreatedAt() const;
+				
+
+				/**
 				* Get the username from this user
 				* @return returns user name of the user, empty string if none
 				*/
@@ -209,13 +199,6 @@ namespace repo {
 				}
 
 				/**
-				* Get information on how the licenses are assigned
-				* If the license isn't assigned, returns an empty string
-				* @return returns a list of pair {license plan name, assignment}
-				*/
-				std::list<std::pair<std::string, std::string>> getLicenseAssignment() const;
-
-				/**
 				* Get the password of this user
 				* @return returns masked password of the user
 				*/
@@ -229,20 +212,20 @@ namespace repo {
 					getRolesList() const;
 
 				/**
-				* Get list of subscription info
-				* @return returns a vector of subscription info
+				* Get subscription info
+				* @return returns subscriptionInfo struct containing all licenses this user owns
 				*/
-				std::vector<SubscriptionInfo> getSubscriptionInfo() const;
+				SubscriptionInfo getSubscriptionInfo() const;
 
 				/**
-				* Get the current collaborator limit of the user
-				* @return returns the number of collaborators available to the user
+				* Get the current collaborator limit of the user (without paypal)
+				* @return returns the number of collaborators available to the user, -1 denotes unlimited
 				*/
-				uint32_t getNCollaborators() const;
+				int32_t getNCollaborators() const;
 
 				/**
-				* Get the current quota of the user
-				* @return returns the quota available to the user
+				* Get the current quota of the user (without paypal)
+				* @return returns the quota available to the user, in MiB
 				*/
 				double getQuota() const;
 
@@ -253,11 +236,35 @@ namespace repo {
 
 			private:
 				/**
-				* determine if the subscription is active
-				* @param sub subscription to examine
-				* @return returns true if it is active, false otherwise
+				* Converts a RepoBSON object into a PaypalSubscription Object
+				* @params bson
 				*/
-				bool isSubActive(const RepoUser::SubscriptionInfo &sub) const;
+				std::vector<PaypalSubscription> convertPayPalSub(const RepoBSON &bson) const;
+
+				/**
+				* Converts a RepoBSON object into a QuotaLimit Object
+				* @params bson
+				*/
+				QuotaLimit convertToQuotaObject(const RepoBSON &bson) const;
+
+				/**
+				* Given a quota limit, construct a bson object
+				* @param quota quota struct that contains quota information
+				* @return 
+				*/
+				RepoBSON createQuotaBSON(QuotaLimit quota) const;
+
+				/**
+				* Return subscription bson object
+				*/
+				RepoBSON getSubscriptionBSON() const;
+				
+				/**
+				* Determine if the given entry has any quota
+				* @return returns true if there's quota
+				*/
+				bool quotaEntryHasQuota(const QuotaLimit &quota) const;
+
 			};
 		}// end namespace model
 	} // end namespace core

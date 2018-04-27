@@ -326,7 +326,8 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 	const std::string    &uuid,
 	const bool           &headRevision,
 	const bool           &lightFetch,
-	const bool           &ignoreRefScene)
+	const bool           &ignoreRefScene,
+	const bool           &skeletonFetch)
 {
 	repo::core::model::RepoScene* scene = 0;
 	if (token)
@@ -334,7 +335,7 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 		manipulator::RepoManipulator* worker = workerPool.pop();
 
 		scene = worker->fetchScene(token->databaseAd, token->getCredentials(),
-			database, collection, repo::lib::RepoUUID(uuid), headRevision, lightFetch, ignoreRefScene);
+			database, collection, repo::lib::RepoUUID(uuid), headRevision, lightFetch, ignoreRefScene, skeletonFetch);
 
 		workerPool.push(worker);
 	}
@@ -1110,20 +1111,21 @@ bool RepoController::_RepoControllerImpl::isVREnabled(const RepoToken *token,
 repo::core::model::RepoScene*
 RepoController::_RepoControllerImpl::loadSceneFromFile(
 const std::string                                          &filePath,
+uint8_t													 &err,
 const bool                                                 &applyReduction,
 const bool                                                 &rotateModel,
 const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
-	std::string errMsg;
+
 	repo::core::model::RepoScene *scene = nullptr;
 
 	if (!filePath.empty())
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		scene = worker->loadSceneFromFile(filePath, errMsg, applyReduction, rotateModel, config);
+		scene = worker->loadSceneFromFile(filePath, err, applyReduction, rotateModel, config);
 		workerPool.push(worker);
 		if (!scene)
-			repoError << "Failed to load scene from file: " << errMsg;
+			repoError << "Failed to load scene from file - error code: " << err;
 	}
 	else
 	{
@@ -1278,10 +1280,11 @@ void RepoController::_RepoControllerImpl::compareScenes(
 
 void RepoController::_RepoControllerImpl::getDatabaseStatistics(
 	const RepoController::RepoToken   *token,
-	const std::string &outputFilePath)
+	const std::string &outputFilePath,
+	const std::list<std::string> &paidAccList)
 {
 	manipulator::RepoManipulator* worker = workerPool.pop();
-	worker->getDatabaseStatistics(token->databaseAd, token->getCredentials(), outputFilePath);
+	worker->getDatabaseStatistics(token->databaseAd, token->getCredentials(), outputFilePath, paidAccList);
 	workerPool.push(worker);
 }
 

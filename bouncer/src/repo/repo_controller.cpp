@@ -174,9 +174,10 @@ repo::core::model::RepoScene* RepoController::fetchScene(
 	const std::string    &uuid,
 	const bool           &headRevision,
 	const bool           &lightFetch,
-	const bool           &ignoreRefScene)
+	const bool           &ignoreRefScene,
+	const bool           &skeletonFetch)
 {
-	return impl->fetchScene(token, database, collection, uuid, headRevision, lightFetch, ignoreRefScene);
+	return impl->fetchScene(token, database, collection, uuid, headRevision, lightFetch, ignoreRefScene, skeletonFetch);
 }
 
 bool RepoController::generateAndCommitSelectionTree(
@@ -514,11 +515,12 @@ repo::core::model::RepoNodeSet RepoController::loadMetadataFromFile(
 repo::core::model::RepoScene*
 RepoController::loadSceneFromFile(
 const std::string                                          &filePath,
+uint8_t                                                    &err,
 const bool                                                 &applyReduction,
 const bool                                                 &rotateModel,
 const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
-	return impl->loadSceneFromFile(filePath, applyReduction, rotateModel, config);
+	return impl->loadSceneFromFile(filePath, err, applyReduction, rotateModel, config);
 }
 
 bool RepoController::saveOriginalFiles(
@@ -584,9 +586,10 @@ bool RepoController::isVREnabled(const RepoController::RepoToken *token,
 
 void RepoController::getDatabaseStatistics(
 	const RepoController::RepoToken   *token,
-	const std::string &outputFilePath)
+	const std::string &outputFilePath,
+	const std::list<std::string> &paidAccList)
 {
-	impl->getDatabaseStatistics(token, outputFilePath);
+	impl->getDatabaseStatistics(token, outputFilePath, paidAccList);
 }
 
 void RepoController::getUserList(

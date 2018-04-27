@@ -23,7 +23,7 @@
 #include <cstdlib>
 #include <stdlib.h>
 #include <gtest/gtest.h>
-#include <error_codes.h>
+#include <repo/error_codes.h>
 #include <repo/repo_controller.h>
 #include "../unit/repo_test_database_info.h"
 #include "../unit/repo_test_utils.h"
@@ -208,12 +208,17 @@ TEST(RepoClientTest, UploadTest)
 
 	//Test Bad FilePath
 	std::string badFilePath = produceUploadArgs(db, "failPath", "nonExistentFile.obj");
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(badFilePath));
+	EXPECT_EQ((int)REPOERR_MODEL_FILE_READ, runProcess(badFilePath));
 	EXPECT_FALSE(projectExists(db, "failPath"));
 
 	//Test Bad extension
 	std::string badExt = produceUploadArgs(db, "failExt", getDataPath(badExtensionFile));
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(badExt));
+	EXPECT_EQ((int)REPOERR_FILE_TYPE_NOT_SUPPORTED, runProcess(badExt));
+	EXPECT_FALSE(projectExists(db, "failExt"));
+
+	//Unsupported FBX version
+	std::string unsupportedVersion = produceUploadArgs(db, "failExt", getDataPath(unsupportedFBXVersion));
+	EXPECT_EQ((int)REPOERR_UNSUPPORTED_FBX_VERSION, runProcess(unsupportedVersion));
 	EXPECT_FALSE(projectExists(db, "failExt"));
 
 	//Insufficient arguments
@@ -246,7 +251,7 @@ TEST(RepoClientTest, UploadTest)
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(emptyFile))));
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importNoFile))));
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(emptyJSONFile))));
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importbadDir))));
+	EXPECT_EQ((int)REPOERR_UNKNOWN_ERR, runProcess(produceUploadFileArgs(getDataPath(importbadDir))));
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importbadDir2))));
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importNoDatabase))));
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importNoDatabase2))));
