@@ -224,13 +224,21 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 							const subModels = setting.subModels;
 							if(subModels && subModels.length){
 								return Promise.all(
-									subModels.map(subModel => 
-										db.collection(`${subModel.model}.scene`).count({ shared_id: obj.shared_id }).then(count => {
-											if(count){
-												obj.model = subModel.model;
-											}
-										})
-									)
+									subModels.map(subModel => { 
+										if(obj.ifc_guids) {
+											db.collection(`${subModel.model}.scene`).count({ type: "meta",  "metadata.IFC GUID": {$in : obj.ifc_guids} }).then(count => {
+												if(count){
+													obj.model = subModel.model;
+												}
+											});
+										} else if(obj.shared_ids) {
+											db.collection(`${subModel.model}.scene`).count({ shared_id: {$in: obj.shared_ids} }).then(count => {
+												if(count) {
+													obj.model = subModel.model;
+												}
+											});
+										}
+									})
 								);
 							}
 
