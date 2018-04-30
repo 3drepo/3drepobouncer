@@ -234,8 +234,7 @@
 					if(commandArgs && commandArgs.database && commandArgs.project)
 					{		
 
-						let unityCommand; 
-						unityCommand = conf.unity.batPath + " " + conf.unity.project + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + commandArgs.database + " " +commandArgs.project + " " + logDir;
+						const unityCommand = conf.unity.batPath + " " + conf.unity.project + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + commandArgs.database + " " +commandArgs.project + " " + logDir;
 						logger.info("running unity command: " + unityCommand);
 						exec(unityCommand, function( error, stdout, stderr){
 							if(error)
