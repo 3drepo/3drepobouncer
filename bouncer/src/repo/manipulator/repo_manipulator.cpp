@@ -224,20 +224,7 @@ bool RepoManipulator::commitScene(
 			else
 			{
 				repoError << "Failed to commit scene stash : " << msg;
-			}
-
-			if (success)
-			{
-				repoInfo << "Generating SRC encoding for web viewing...";
-				if (success = generateAndCommitSRCBuffer(databaseAd, cred, scene))
-				{
-					repoInfo << "SRC file stored into the database";
-				}
-				else
-				{
-					repoError << "Failed to generate and commit SRC buffer for this project.";
-				}
-			}
+			}			
 		}
 
 		if (success)
