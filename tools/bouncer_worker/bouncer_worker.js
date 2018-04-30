@@ -235,12 +235,7 @@
 					{		
 
 						let unityCommand; 
-						if (os.platform() === "win32") {
-							unityCommand = conf.unity.batPath + " " + conf.unity.project + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + commandArgs.database + " " +commandArgs.project + " " + logDir.replace(/\//g, '\\');
-						}
-						else {
-							unityCommand = conf.unity.unityExe + conf.unity.unityOptions + conf.unity.unityProjectPath + conf.unity.project + conf.unity.unityExecuteMethod + conf.unity.unityHost + conf.bouncer.dbhost + conf.unity.unityPort + conf.bouncer.dbport + conf.unity.unityUser + conf.bouncer.username + conf.unity.unityPassword + conf.bouncer.password + conf.unity.unityDB + commandArgs.database + conf.unity.unityProject + commandArgs.project + conf.unity.unityLog + logDir + "unity.log";
-						}
+						unityCommand = conf.unity.batPath + " " + conf.unity.project + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + commandArgs.database + " " +commandArgs.project + " " + logDir;
 						logger.info("running unity command: " + unityCommand);
 						exec(unityCommand, function( error, stdout, stderr){
 							if(error)
