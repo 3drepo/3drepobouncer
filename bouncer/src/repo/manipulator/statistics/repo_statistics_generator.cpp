@@ -85,7 +85,7 @@ static void getYearMonthFromTimeStamp(
 	int &year,
 	int &month)
 {
-	auto ts = timestamp / 1000;
+	const time_t ts = timestamp / 1000;
 	auto dateTime = gmtime(&ts);
 	year = dateTime->tm_year + 1900;
 	month = dateTime->tm_mon + 1;

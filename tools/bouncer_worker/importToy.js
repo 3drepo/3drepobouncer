@@ -167,7 +167,6 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 		const update = {
 			'$set':{
 				'author': username
-//				'timestamp': new Date()
 			}
 		};
 
@@ -224,13 +223,23 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 							const subModels = setting.subModels;
 							if(subModels && subModels.length){
 								return Promise.all(
-									subModels.map(subModel => 
-										db.collection(`${subModel.model}.scene`).count({ shared_id: obj.shared_id }).then(count => {
-											if(count){
-												obj.model = subModel.model;
-											}
-										})
-									)
+									subModels.map(subModel => { 
+										if(obj.ifc_guids) {
+											const query = { type: "meta", "metadata.IFC GUID": {$in : obj.ifc_guids} };
+											const col = `${subModel.model}.scene`;
+											return db.collection(col).count(query).then(count => {
+												if(count){
+													obj.model = subModel.model;
+												}
+											})
+										} else if(obj.shared_ids) {
+											return db.collection(`${subModel.model}.scene`).count({ shared_id: {$in: obj.shared_ids} }).then(count => {
+												if(count) {
+													obj.model = subModel.model;
+												}
+											});
+										}
+									})
 								);
 							}
 
@@ -238,7 +247,10 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 					);					
 
 					updateGroupPromises.push(
-						Promise.all(updateObjectPromises).then(() => collection.updateOne({ _id: group._id }, group))
+						Promise.all(updateObjectPromises).then(() => {
+							collection.updateOne({
+							_id: group._id }, group)
+						})
 					);
 
 				});
