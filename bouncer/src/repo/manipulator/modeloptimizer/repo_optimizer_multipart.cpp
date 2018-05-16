@@ -28,6 +28,7 @@ using namespace repo::manipulator::modeloptimizer;
 auto defaultGraph = repo::core::model::RepoScene::GraphType::DEFAULT;
 
 static const size_t  REPO_MP_MAX_FACE_COUNT = 500000;
+static const size_t REPO_MP_MAX_MESHES_IN_SUPERMESH = 1000;
 
 MultipartOptimizer::MultipartOptimizer() :
 AbstractOptimizer()
@@ -498,9 +499,10 @@ void MultipartOptimizer::sortMeshes(
 				texturedFCount[mFormat][texID] = 0;
 			}
 			size_t faceCount = mesh->getFaces().size();
-			if (texturedFCount[mFormat][texID] + faceCount > REPO_MP_MAX_FACE_COUNT)
+			if (texturedFCount[mFormat][texID] + faceCount > REPO_MP_MAX_FACE_COUNT ||
+				texturedMeshes[mFormat][texID].back().size > REPO_MP_MAX_MESHES_IN_SUPERMESH)
 			{
-				//Exceed max face count, create another grouping entry for this format
+				//Exceed max face count or meshes, create another grouping entry for this format
 				texturedMeshes[mFormat][texID].push_back(std::set<repo::lib::RepoUUID>());
 				texturedFCount[mFormat][texID] = 0;
 			}
@@ -521,9 +523,10 @@ void MultipartOptimizer::sortMeshes(
 				meshFCount[mFormat] = 0;
 			}
 			size_t faceCount = mesh->getFaces().size();
-			if (meshFCount[mFormat] && meshFCount[mFormat] + faceCount > REPO_MP_MAX_FACE_COUNT)
+			if (meshFCount[mFormat] && meshFCount[mFormat] + faceCount > REPO_MP_MAX_FACE_COUNT ||
+				texturedMeshes[mFormat][texID].back().size > REPO_MP_MAX_MESHES_IN_SUPERMESH)
 			{
-				//Exceed max face count, create another grouping entry for this format
+				//Exceed max face count or meshes, create another grouping entry for this format
 				meshMap[mFormat].push_back(std::set<repo::lib::RepoUUID>());
 				meshFCount[mFormat] = 0;
 			}
