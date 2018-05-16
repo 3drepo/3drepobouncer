@@ -28,7 +28,7 @@ using namespace repo::manipulator::modeloptimizer;
 auto defaultGraph = repo::core::model::RepoScene::GraphType::DEFAULT;
 
 static const size_t  REPO_MP_MAX_FACE_COUNT = 500000;
-static const size_t REPO_MP_MAX_MESHES_IN_SUPERMESH = 1000;
+static const size_t REPO_MP_MAX_MESHES_IN_SUPERMESH = 30000;
 
 MultipartOptimizer::MultipartOptimizer() :
 AbstractOptimizer()
