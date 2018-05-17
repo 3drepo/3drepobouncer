@@ -500,7 +500,6 @@ void MultipartOptimizer::sortMeshes(
 			}
 			size_t faceCount = mesh->getFaces().size();
 			if (texturedFCount[mFormat][texID] + faceCount > REPO_MP_MAX_FACE_COUNT ||
-				texturedMeshes[mFormat][texID].size() > 0 && 
 				texturedMeshes[mFormat][texID].back().size() > REPO_MP_MAX_MESHES_IN_SUPERMESH)
 			{
 				//Exceed max face count or meshes, create another grouping entry for this format
@@ -525,7 +524,6 @@ void MultipartOptimizer::sortMeshes(
 			}
 			size_t faceCount = mesh->getFaces().size();
 			if (meshFCount[mFormat] && meshFCount[mFormat] + faceCount > REPO_MP_MAX_FACE_COUNT ||
-				meshMap[mFormat].size() &&
 				meshMap[mFormat].back().size() > REPO_MP_MAX_MESHES_IN_SUPERMESH)
 			{
 				//Exceed max face count or meshes, create another grouping entry for this format
