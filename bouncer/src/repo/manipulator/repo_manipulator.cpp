@@ -816,6 +816,12 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 			repoTrace << "model Imported, generating Repo Scene";
 			if ((scene = modelConvertor->generateRepoScene()))
 			{
+				if (scene->exceedsMaximumNodes()) {
+					delete scene;
+					error = REPOERR_MAX_NODES_EXCEEDED;
+					return nullptr;
+				}
+
 				if (!scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
 
 					delete scene;
