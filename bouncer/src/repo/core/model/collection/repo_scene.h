@@ -58,7 +58,7 @@ namespace repo{
 				static const uint16_t REPO_SCENE_TEXTURE_BIT = 0x0001;
 				static const uint16_t REPO_SCENE_ENTITIES_BIT = 0x0002;
 				static const uint16_t REPO_SCENE_INVALID_MESH_BIT = 0x0003;
-				const static uint32_t REPO_SCENE_MAX_NODES = 1000000;
+				const static uint32_t REPO_SCENE_MAX_NODES = 1030000;
 			public:
 
 				/**
