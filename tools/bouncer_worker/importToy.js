@@ -199,13 +199,13 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 		});
 	}
 
-	const subModelNameToOldID = {
-		"Lego_House_Architecture" : "ae234e5d-3b75-4b8c-b461-7529d5bec583",
-		"Lego_House_Landscape" : "39b51fe5-0fcb-4734-8e10-d8088bec9d45",
-		"Lego_House_Structure" : "3749c3cc-375d-406a-9f0d-2d059e8e782f"
-	}; 
-
 	function renameGroups(db){
+
+		const subModelNameToOldID = {
+			"Lego_House_Architecture" : "ae234e5d-3b75-4b8c-b461-7529d5bec583",
+			"Lego_House_Landscape" : "39b51fe5-0fcb-4734-8e10-d8088bec9d45",
+			"Lego_House_Structure" : "3749c3cc-375d-406a-9f0d-2d059e8e782f"
+		}; 
 		
 		return new Promise((resolve, reject) => {
 
