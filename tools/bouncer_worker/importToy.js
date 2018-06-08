@@ -217,7 +217,7 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 				const oldIdToNewId = {};
 				if(setting.subModels) {
 					const subModelList = [];
-					setting.subModelList.forEach((subModel) => {
+					setting.subModels.forEach((subModel) => {
 						subModelList.add(subModel.model);
 					});
 				
