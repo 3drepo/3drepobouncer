@@ -218,9 +218,9 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 				if(setting.subModels) {
 					const subModelList = [];
 					setting.subModels.forEach((subModel) => {
-						subModelList.add(subModel.model);
+						subModelList.push(subModel.model);
 					});
-				
+					console.log("!!!!!!!!! sub model list", subModelList); 
 					db.collection("settings").find({_id: {$in: subModelList}}).forEach( (subModelSetting) => {
 						if(subModelNameToOldID[subModelSetting.name]) {
 							oldIdToNewId[subModelNameToOldID[subModelSetting.name]] = subModelSetting._id;
@@ -229,7 +229,7 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 				} 
 
 					
-				console.log("!!!!!!!!!!!!" , oldIdToNewId);
+				console.log("!!!!!!!!!!!! ID Mapping" , oldIdToNewId);
 
 				collection.find().forEach(group => {
 					group.objects && group.objects.forEach(obj => {
