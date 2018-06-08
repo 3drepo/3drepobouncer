@@ -215,19 +215,26 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 
 			return db.collection("settings").findOne({_id: project}).then(setting => {
 				const oldIdToNewId = {};
+				let subModelPromise;
 				if(setting.subModels) {
 					const subModelList = [];
 					setting.subModels.forEach((subModel) => {
 						subModelList.push(subModel.model);
 					});
 					console.log("!!!!!!!!! sub model list", subModelList); 
-					db.collection("settings").find({_id: {$in: subModelList}}).forEach( (subModelSetting) => {
-						if(subModelNameToOldID[subModelSetting.name]) {
-							console.log(subModelSetting.name, subModelSetting._id, "=>", subModelSetting._id);
-							oldIdToNewId[subModelNameToOldID[subModelSetting.name]] = subModelSetting._id;
-						}
+					subModelPromise = db.collection("settings").find({_id: {$in: subModelList}}).toArray();
+					subModelPromise.then((arr) => {
+						arr.forEach( (subModelSetting) => {
+							if(subModelNameToOldID[subModelSetting.name]) {
+								console.log(subModelSetting.name, subModelSetting._id, "=>", subModelSetting._id);
+								oldIdToNewId[subModelNameToOldID[subModelSetting.name]] = subModelSetting._id;
+							}
+						});
 					});
 				} 
+				else {
+					subModelPromise = Promise.resolve();
+				}
 
 					
 				console.log("!!!!!!!!!!!! ID Mapping" , oldIdToNewId);
