@@ -213,7 +213,7 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 			const collection = db.collection(`${project}.groups`);
 
 
-			return db.collection("settings").find({_id: project}).then(setting => {
+			return db.collection("settings").findOne({_id: project}).then(setting => {
 				const oldIdToNewId = {};
 				if(setting.subModels) {
 					const subModelList = [];
