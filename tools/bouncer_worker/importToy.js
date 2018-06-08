@@ -222,6 +222,7 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 					});
 					console.log("!!!!!!!!! sub model list", subModelList); 
 					db.collection("settings").find({_id: {$in: subModelList}}).forEach( (subModelSetting) => {
+						console.log(subModelSetting.name, subModelSetting._id);
 						if(subModelNameToOldID[subModelSetting.name]) {
 							oldIdToNewId[subModelNameToOldID[subModelSetting.name]] = subModelSetting._id;
 						}
