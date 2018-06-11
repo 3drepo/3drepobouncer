@@ -251,11 +251,11 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 								console.log(group._id, " converted project to ", obj.model);
 							}
 							else {
+								console.log("did not find grouping for ", project, oldIdToNewId);
 								obj.model = project;
 							}
 						});
 
-						console.log(group._id);
 						return collection.updateOne({ _id: group._id }, group);
 
 
