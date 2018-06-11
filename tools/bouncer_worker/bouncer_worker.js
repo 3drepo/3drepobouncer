@@ -275,7 +275,7 @@
 						};
 						const dir = `${rootModelDir}/${toyFed}`;
 						console.log("import toy fed... ", dir);
-						importToy(dbConfig, dir, cmdDatabase, cmdDatabase, cmdModel, {tree: 1}).then(()=> {
+						importToy(dbConfig, dir, cmdDatabase, cmdDatabase, cmdProject, {tree: 1}).then(()=> {
 							callback({
 								value: reply.value,
 								database: cmdDatabase,
