@@ -236,10 +236,10 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 					subModelPromise = Promise.resolve();
 				}
 				
-				subModelPromise.then(() => {
+				return subModelPromise.then(() => {
 					console.log("!!!!!!!!!!!! ID Mapping" , oldIdToNewId);
 	
-					collection.find().forEach(group => {
+					return collection.find().forEach(group => {
 						group.objects && group.objects.forEach(obj => {
 							const updateObjectPromises = [];
 							obj.account = database;
@@ -248,12 +248,14 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 							//one of the sub models instead of the id of the fed model itself
 							if(oldIdToNewId[project]) {
 								obj.model = oldIdToNewId[project];
+								console.log(group._id, " converted project to ", obj.model);
 							}
 							else {
 								obj.model = project;
 							}
 						});
-							
+						
+						console.log(group);
 						return collection.updateOne({ _id: group._id }, group);
 
 
