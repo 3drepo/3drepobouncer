@@ -165,6 +165,7 @@
 		let cmdDatabase;
 		let cmdProject;
 		let cmdArr = cmd.split(' ');
+		let toyFed = false;
 			
 		// Extract database and project information from command
 		try{
@@ -178,6 +179,7 @@
 					cmdFile = require(cmdArr[1]);
 					cmdDatabase = cmdFile.database;
 					cmdProject = cmdFile.project;
+					toyFed = cmdFile.toyFed;
 					break;
 				case "importToy":
 					cmdDatabase = cmdArr[1];
@@ -262,11 +264,31 @@
 				}
 				else
 				{
-					callback({
-						value: reply.value,
-						database: cmdDatabase,
-						project: cmdProject
-					}, true);
+					if(toyFed) {
+						
+						const dbConfig = {
+							username: conf.bouncer.username,
+							password: conf.bouncer.password,
+							dbhost: conf.bouncer.dbhost,
+							dbport: conf.bouncer.dbport,
+							writeConcern: conf.mongoimport && conf.mongoimport.writeConcern
+						};
+						const dir = `${rootModelDir}/${toyFed}`;
+						importToy(dbConfig, dir, cmdDatabase, cmdDatabase, cmdProject, {tree: 1}).then(()=> {
+							callback({
+								value: reply.value,
+								database: cmdDatabase,
+								project: cmdProject
+							}, true);
+						});
+					} else {
+					
+						callback({
+							value: reply.value,
+							database: cmdDatabase,
+							project: cmdProject
+						}, true);
+					}
 				}
 			}
 

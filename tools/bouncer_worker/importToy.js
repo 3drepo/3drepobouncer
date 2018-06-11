@@ -84,7 +84,6 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 		let writeConcern = dbConfig.writeConcern || {w: 1};
 
 		//mongoimport all json first
-		console.log(importCollectionFiles);
 
 		Object.keys(importCollectionFiles).forEach(collection => {
 
@@ -92,7 +91,6 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 
 			promises.push(new Promise((resolve, reject) => {
 				var cmd = `mongoimport -j 8 --host ${hostString} --username ${dbUsername} --password ${dbPassword} --authenticationDatabase admin --db ${database} --collection ${collection} --writeConcern '${JSON.stringify(writeConcern)}' --file ${__dirname}/${modelDir}/${filename}`;
-				console.log(cmd);
 				require('child_process').exec(cmd,
 				{
 					cwd: __dirname
@@ -202,68 +200,75 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 	}
 
 	function renameGroups(db){
+
+		const subModelNameToOldID = {
+			"Lego_House_Architecture" : "ae234e5d-3b75-4b8c-b461-7529d5bec583",
+			"Lego_House_Landscape" : "39b51fe5-0fcb-4734-8e10-d8088bec9d45",
+			"Lego_House_Structure" : "3749c3cc-375d-406a-9f0d-2d059e8e782f"
+		}; 
 		
 		return new Promise((resolve, reject) => {
 
 			const updateGroupPromises = [];
 			const collection = db.collection(`${project}.groups`);
 
-			collection.find().forEach(group => {
 
-				group.objects && group.objects.forEach(obj => {
-
-					const updateObjectPromises = [];
-					obj.account = database;
-					obj.model = project;
-					
-					//if model is fed model, then model id of a group should be 
-					//one of the sub models instead of the id of the fed model itself
-					updateObjectPromises.push(
-						db.collection('settings').findOne({ _id: project }).then(setting => {
-							const subModels = setting.subModels;
-							if(subModels && subModels.length){
-								return Promise.all(
-									subModels.map(subModel => { 
-										if(obj.ifc_guids) {
-											const query = { type: "meta", "metadata.IFC GUID": {$in : obj.ifc_guids} };
-											const col = `${subModel.model}.scene`;
-											return db.collection(col).count(query).then(count => {
-												if(count){
-													obj.model = subModel.model;
-												}
-											})
-										} else if(obj.shared_ids) {
-											return db.collection(`${subModel.model}.scene`).count({ shared_id: {$in: obj.shared_ids} }).then(count => {
-												if(count) {
-													obj.model = subModel.model;
-												}
-											});
-										}
-									})
-								);
+			return db.collection("settings").findOne({_id: project}).then(setting => {
+				const oldIdToNewId = {};
+				let subModelPromise;
+				if(setting.subModels) {
+					const subModelList = [];
+					setting.subModels.forEach((subModel) => {
+						subModelList.push(subModel.model);
+					});
+					subModelPromise = db.collection("settings").find({_id: {$in: subModelList}}).toArray();
+					subModelPromise.then((arr) => {
+						arr.forEach( (subModelSetting) => {
+							if(subModelNameToOldID[subModelSetting.name]) {
+								oldIdToNewId[subModelNameToOldID[subModelSetting.name]] = subModelSetting._id;
 							}
+						});
+					});
+				} 
+				else {
+					subModelPromise = Promise.resolve();
+				}
+				
+				return subModelPromise.then(() => {
+					return collection.find().forEach(group => {
+						group.objects && group.objects.forEach(obj => {
+							const updateObjectPromises = [];
+							obj.account = database;
+					
+							//if model is fed model, then model id of a group should be 
+							//one of the sub models instead of the id of the fed model itself
+							if(oldIdToNewId[obj.model]) {
+								obj.model = oldIdToNewId[obj.model];
+							}
+							else {
+								obj.model = project;
+							}
+						});
 
-						})
-					);					
+						return collection.updateOne({ _id: group._id }, group);
 
-					updateGroupPromises.push(
-						Promise.all(updateObjectPromises).then(() => {
-							collection.updateOne({
-							_id: group._id }, group)
-						})
-					);
+
+					}, function done(err) {
+						if(err){
+							reject(err);
+						} else {
+							Promise.all(updateGroupPromises)
+								.then(() => resolve())
+								.catch(err => reject(err));
+						}
+					});
 
 				});
+					
 
-			}, function done(err) {
-				if(err){
-					reject(err);
-				} else {
-					Promise.all(updateGroupPromises)
-						.then(() => resolve())
-						.catch(err => reject(err));
-				}
+
 			});
+			
 		});
 
 	}
@@ -296,7 +301,6 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 				unityAsset.database = database;
 				unityAsset.model = project;
 
-				//console.log(unityAsset);
 
 				//drop the old one
 				bucket.delete(file._id, function(err){
@@ -312,7 +316,6 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 						if(err){
 							reject(err)
 						} else {
-							//console.log('finish writing to file' + file._id)
 							resolve();
 						}
 					});
