@@ -254,8 +254,9 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 								obj.model = project;
 							}
 						});
-						
-						console.log(group);
+
+						if(oldIdToNewId.length)
+							console.log(group);
 						return collection.updateOne({ _id: group._id }, group);
 
 
