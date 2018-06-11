@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "start": "pm2 start bouncer_worker.js",
-    "stop": "pm2 stop bouncer_worker.js",
+    "stop": "pm2 kill",
     "restart": "npm stop; npm start"
   },
   "dependencies": {
