@@ -91,7 +91,6 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 
 			promises.push(new Promise((resolve, reject) => {
 				var cmd = `mongoimport -j 8 --host ${hostString} --username ${dbUsername} --password ${dbPassword} --authenticationDatabase admin --db ${database} --collection ${collection} --writeConcern '${JSON.stringify(writeConcern)}' --file ${__dirname}/${modelDir}/${filename}`;
-				console.log(cmd);
 				require('child_process').exec(cmd,
 				{
 					cwd: __dirname
@@ -226,7 +225,6 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 					subModelPromise.then((arr) => {
 						arr.forEach( (subModelSetting) => {
 							if(subModelNameToOldID[subModelSetting.name]) {
-								console.log(subModelSetting.name, subModelSetting._id, "=>", subModelSetting._id);
 								oldIdToNewId[subModelNameToOldID[subModelSetting.name]] = subModelSetting._id;
 							}
 						});
@@ -237,8 +235,6 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 				}
 				
 				return subModelPromise.then(() => {
-					console.log("!!!!!!!!!!!! ID Mapping" , oldIdToNewId);
-	
 					return collection.find().forEach(group => {
 						group.objects && group.objects.forEach(obj => {
 							const updateObjectPromises = [];
@@ -248,10 +244,8 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 							//one of the sub models instead of the id of the fed model itself
 							if(oldIdToNewId[obj.model]) {
 								obj.model = oldIdToNewId[obj.model];
-								console.log(group._id, " converted project to ", obj.model);
 							}
 							else {
-								console.log("did not find grouping for ",obj.model, oldIdToNewId);
 								obj.model = project;
 							}
 						});

@@ -274,7 +274,6 @@
 							writeConcern: conf.mongoimport && conf.mongoimport.writeConcern
 						};
 						const dir = `${rootModelDir}/${toyFed}`;
-						console.log("import toy fed... ", dir);
 						importToy(dbConfig, dir, cmdDatabase, cmdDatabase, cmdProject, {tree: 1}).then(()=> {
 							callback({
 								value: reply.value,
