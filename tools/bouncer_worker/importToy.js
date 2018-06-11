@@ -235,37 +235,40 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 				else {
 					subModelPromise = Promise.resolve();
 				}
-
+				
+				subModelPromise.then(() => {
+					console.log("!!!!!!!!!!!! ID Mapping" , oldIdToNewId);
+	
+					collection.find().forEach(group => {
+						group.objects && group.objects.forEach(obj => {
+							const updateObjectPromises = [];
+							obj.account = database;
 					
-				console.log("!!!!!!!!!!!! ID Mapping" , oldIdToNewId);
+							//if model is fed model, then model id of a group should be 
+							//one of the sub models instead of the id of the fed model itself
+							if(oldIdToNewId[project]) {
+								obj.model = oldIdToNewId[project];
+							}
+							else {
+								obj.model = project;
+							}
+						});
+							
+						return collection.updateOne({ _id: group._id }, group);
 
-				collection.find().forEach(group => {
-					group.objects && group.objects.forEach(obj => {
-						const updateObjectPromises = [];
-						obj.account = database;
-					
-						//if model is fed model, then model id of a group should be 
-						//one of the sub models instead of the id of the fed model itself
-						if(oldIdToNewId[project]) {
-							obj.model = oldIdToNewId[project];
-						}
-						else {
-							obj.model = project;
+
+					}, function done(err) {
+						if(err){
+							reject(err);
+						} else {
+							Promise.all(updateGroupPromises)
+								.then(() => resolve())
+								.catch(err => reject(err));
 						}
 					});
-						
-					return collection.updateOne({ _id: group._id }, group);
 
-
-				}, function done(err) {
-					if(err){
-						reject(err);
-					} else {
-						Promise.all(updateGroupPromises)
-							.then(() => resolve())
-							.catch(err => reject(err));
-					}
 				});
+					
 
 
 			});
