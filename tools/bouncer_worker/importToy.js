@@ -91,6 +91,7 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 
 			promises.push(new Promise((resolve, reject) => {
 				var cmd = `mongoimport -j 8 --host ${hostString} --username ${dbUsername} --password ${dbPassword} --authenticationDatabase admin --db ${database} --collection ${collection} --writeConcern '${JSON.stringify(writeConcern)}' --file ${__dirname}/${modelDir}/${filename}`;
+				console.log(cmd);
 				require('child_process').exec(cmd,
 				{
 					cwd: __dirname
@@ -221,7 +222,6 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 					setting.subModels.forEach((subModel) => {
 						subModelList.push(subModel.model);
 					});
-					console.log("!!!!!!!!! sub model list", subModelList); 
 					subModelPromise = db.collection("settings").find({_id: {$in: subModelList}}).toArray();
 					subModelPromise.then((arr) => {
 						arr.forEach( (subModelSetting) => {
@@ -255,8 +255,7 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 							}
 						});
 
-						if(oldIdToNewId.length)
-							console.log(group);
+						console.log(group._id);
 						return collection.updateOne({ _id: group._id }, group);
 
 
