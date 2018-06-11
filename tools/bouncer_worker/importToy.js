@@ -246,12 +246,12 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 					
 							//if model is fed model, then model id of a group should be 
 							//one of the sub models instead of the id of the fed model itself
-							if(oldIdToNewId[project]) {
-								obj.model = oldIdToNewId[project];
+							if(oldIdToNewId[obj.model]) {
+								obj.model = oldIdToNewId[obj.model];
 								console.log(group._id, " converted project to ", obj.model);
 							}
 							else {
-								console.log("did not find grouping for ", project, oldIdToNewId);
+								console.log("did not find grouping for ",obj.model, oldIdToNewId);
 								obj.model = project;
 							}
 						});
