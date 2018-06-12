@@ -17,7 +17,7 @@
 #include "repo_statistics_generator.h"
 #include "../../core/model/bson/repo_bson_builder.h"
 #include <fstream>
-
+#include <ctime>
 using namespace repo::manipulator;
 
 StatisticsGenerator::StatisticsGenerator(
@@ -197,65 +197,70 @@ static void printMonthlyStatistic(
 	const std::string                        &prefix,
 	std::ofstream							 &oFile) {
 
+	repoInfo << "======== ["<< prefix << "] =========" << std::endl;
+	oFile <<std::endl << prefix  << std::endl;
 
-	repoInfo << "======== NEW PROJECTS PER MONTH =========";
-	oFile << "New Projects per month (" << prefix << ")" << std::endl;
-	oFile << "Year,Month,#New Projects,Total" << std::endl;
-	int nProjects = 0;
-	for (const auto yearEntry : newProjectsPerMonth)
+	std::vector<std::map <int, std::map<int, int>>> statsList;
+	
+	statsList.push_back(newProjectsPerMonth);
+	statsList.push_back(newRevisionsPerMonth);
+	statsList.push_back(newIssuesPerMonth);
+	statsList.push_back(fileSizesPerMonth);
+
+	int startYear = 3000;
+	int startMonth = 13;
+	time_t t = time(NULL);
+	tm* timePtr = localtime(&t);
+	int currYear = timePtr->tm_year + 1900;
+	int currMonth = timePtr->tm_mon +1;
+	for (const auto &stats : statsList)
 	{
-		auto year = yearEntry.first;
-		for (const auto monthEntry : yearEntry.second)
+		if (stats.size() == 0) continue;
+		auto year = stats.begin()->first;
+		auto month = stats.begin()->second.begin()->first;
+		if (startYear > year)
 		{
-			repoInfo << "Year: " << year << "\tMonth: " << monthEntry.first << " \tProjects: " << monthEntry.second;
-			nProjects += monthEntry.second;
-			oFile << year << "," << monthEntry.first << "," << monthEntry.second << "," << nProjects << std::endl;
+			startYear = year;
+			startMonth = month;
+		}
+		else if (year == startYear) {
+			if (month < startMonth)
+				startMonth = month;
 		}
 	}
+	oFile << ",Year,Month,#New Projects,#New Revisions, #New Issues, Upload Size" << std::endl;
 
-	int nRevisions = 0;
-	repoInfo << "======== NEW REVISIONS PER MONTH   =========";
-	oFile << "New revisions per month (" << prefix << ")" << std::endl;
-	oFile << "Year,Month,#New Revisions,Total" << std::endl;
-	for (const auto yearEntry : newRevisionsPerMonth)
+	for (int iYear = startYear; iYear <= currYear; ++iYear)
 	{
-		auto year = yearEntry.first;
-		for (const auto monthEntry : yearEntry.second)
-		{
-			repoInfo << "Year: " << year << "\tMonth: " << monthEntry.first << " \tRevisions: " << monthEntry.second;
-			nRevisions += monthEntry.second;
-			oFile << year << "," << monthEntry.first << "," << monthEntry.second << "," << nRevisions << std::endl;
-		}
-	}
+		int monthLoopStart = iYear == startYear ? startMonth : 1;
+		int monthLoopEnd = iYear == currYear ? currMonth : 12;
 
-	int nIssues = 0;
-	repoInfo << "======== NEW ISSUES PER MONTH   =========";
-	oFile << "New Issues per month (" << prefix << ")" << std::endl;
-	oFile << "Year,Month,#New Issues,Total" << std::endl;
-	for (const auto yearEntry : newIssuesPerMonth)
-	{
-		auto year = yearEntry.first;
-		for (const auto monthEntry : yearEntry.second)
+		repoInfo <<"iYear: " << iYear << ", month loop end: " <<  monthLoopEnd;
+		for (int iMonth = monthLoopStart; iMonth <= monthLoopEnd; ++iMonth)
 		{
-			repoInfo << "Year: " << year << "\tMonth: " << monthEntry.first << " \tIssues: " << monthEntry.second;
-			nIssues += monthEntry.second;
-			oFile << year << "," << monthEntry.first << "," << monthEntry.second << "," << nIssues << std::endl;
-		}
-	}
+			std::vector<int> values;
+			for (const auto &stats : statsList)
+			{
+				auto yearEntry = stats.find(iYear);
+				if (yearEntry != stats.end())					
+				{
+					auto monthEntry = yearEntry->second.find(iMonth);
+					if (monthEntry != yearEntry->second.end())
+					{
+						values.push_back(monthEntry->second);
+					}
+					else {
+						values.push_back(0);
+					}
+				}
+				else{
+					values.push_back(0);
+				}
+			}
 
-	repoInfo << "======== NEW FILES SIZE PER MONTH  =========";
-	int64_t fSize = 0;
-	oFile << "New file size per month (" << prefix << ")" << std::endl;
-	oFile << "Year,Month,File Size(MiB),Total" << std::endl;
-	for (const auto yearEntry : fileSizesPerMonth)
-	{
-		auto year = yearEntry.first;
-		for (const auto monthEntry : yearEntry.second)
-		{
-			fSize += monthEntry.second;
-			repoInfo << "Year: " << year << "\tMonth: " << monthEntry.first << " \tSize(MiB): " << monthEntry.second;
+			repoInfo << "Year: " << iYear << "\tMonth: " << iMonth << " \tProjects: " << values[0] << " \tRevisions: " << values[1] << " \tIssues: " << values[2] << " \tSize: " << values[3];
+			oFile << "," << iYear << "," << iMonth << "," << values[0] << "," << values[1] << "," << values[2] <<"," << values[3];
 
-			oFile << year << "," << monthEntry.first << "," << monthEntry.second << "," << fSize << std::endl;
 		}
 	}
 
@@ -282,7 +287,9 @@ static void getProjectsStatistics(
 	for (const auto &dbEntry : projects)
 	{
 		auto dbName = dbEntry.first;
-		repoInfo << "Going through DB: " << dbName << " #models: " << dbEntry.second.size();
+		count++;
+		if (count > 100) break;
+
 		int64_t dbStartDate = -1;
 		if (userStartDate.find(dbName) != userStartDate.end())
 			dbStartDate = userStartDate[dbName];
@@ -291,58 +298,63 @@ static void getProjectsStatistics(
 		const bool isDemo = discretionaryAccounts.find(dbName) != discretionaryAccounts.end();
 		const bool shouldPrint = isEnterprise || isDemo;
 
-		std::map < int, std::map<int, int> > *_newProjectsPerMonth;
-		std::map < int, std::map<int, int> > *_newRevisionsPerMonth;
-		std::map < int, std::map<int, int> > *_newIssuesPerMonth;
-		std::map < int, std::map<int, int> > *_fileSizesPerMonth;
+		repoInfo << "Going through DB: " << dbName << "("<<(isEnterprise ? " (E)" : (shouldPrint ? " (D)" : ""))<<") #models: " << dbEntry.second.size();
 
-		if (shouldPrint){
-			std::map < int, std::map<int, int> > accNewProjectsPerMonth;
-			std::map < int, std::map<int, int> > accNewRevisionsPerMonth;
-			std::map < int, std::map<int, int> > accNewIssuesPerMonth;
-			std::map < int, std::map<int, int> > accFileSizesPerMonth;
-
-			_newProjectsPerMonth = &accNewProjectsPerMonth;
-			_newRevisionsPerMonth = &accNewRevisionsPerMonth;
-			_newIssuesPerMonth = &accNewIssuesPerMonth;
-			_fileSizesPerMonth = &accFileSizesPerMonth;
-		} else
-		{
-			_newProjectsPerMonth = &newProjectsPerMonth;
-			_newRevisionsPerMonth = &newRevisionsPerMonth;
-			_newIssuesPerMonth = &newIssuesPerMonth;
-			_fileSizesPerMonth = &fileSizesPerMonth;
-		}
-		
+		std::map < int, std::map<int, int> > accNewProjectsPerMonth;
+		std::map < int, std::map<int, int> > accNewRevisionsPerMonth;
+		std::map < int, std::map<int, int> > accNewIssuesPerMonth;
+		std::map < int, std::map<int, int> > accFileSizesPerMonth;
+	
 
 		for (const auto project : dbEntry.second)
 		{
-			auto time = getTimestampOfFirstRevision(handler, dbName, project, *_newRevisionsPerMonth, *_fileSizesPerMonth);
-			if (time != -1)
+			if (shouldPrint)
 			{
-				int year = 0, month = 0;
-				getYearMonthFromTimeStamp(time, year, month);
-				if (_newProjectsPerMonth->find(year) == _newProjectsPerMonth->end())
-					(*_newProjectsPerMonth)[year] = std::map<int, int>();
-				if (*_newProjectsPerMonth[year].find(month) == *_newProjectsPerMonth[year].end())
-					(*_newProjectsPerMonth)[year][month] = 0;
+				auto time = getTimestampOfFirstRevision(handler, dbName, project, accNewRevisionsPerMonth, accFileSizesPerMonth);
+				if (time != -1)
+				{
+					int year = 0, month = 0;
+					getYearMonthFromTimeStamp(time, year, month);
+					if (accNewProjectsPerMonth.find(year) == accNewProjectsPerMonth.end())
+						(accNewProjectsPerMonth)[year] = std::map<int, int>();
+					if (accNewProjectsPerMonth[year].find(month) == accNewProjectsPerMonth[year].end())
+						(accNewProjectsPerMonth)[year][month] = 0;
 
-				++(*_newProjectsPerMonth)[year][month];
+					++accNewProjectsPerMonth[year][month];
+				}
+
+				getIssuesStatistics(handler, dbName, project, accNewIssuesPerMonth, dbStartDate);
 			}
+			else {
+				auto time = getTimestampOfFirstRevision(handler, dbName, project, newRevisionsPerMonth, fileSizesPerMonth);
+				if (time != -1)
+				{
+					int year = 0, month = 0;
+					getYearMonthFromTimeStamp(time, year, month);
+					if (newProjectsPerMonth.find(year) == newProjectsPerMonth.end())
+						(newProjectsPerMonth)[year] = std::map<int, int>();
+					if (newProjectsPerMonth[year].find(month) == newProjectsPerMonth[year].end())
+						(newProjectsPerMonth)[year][month] = 0;
 
-			getIssuesStatistics(handler, dbName, project, *_newIssuesPerMonth, dbStartDate);			
+					++newProjectsPerMonth[year][month];
+				}
+
+				getIssuesStatistics(handler, dbName, project, newIssuesPerMonth, dbStartDate);
+			}
+			
 		}
 
 		if (shouldPrint)
 		{
+			repoInfo << "Printing statistics for " << dbName;
 			printMonthlyStatistic(
-				*_newProjectsPerMonth,
-				*_newRevisionsPerMonth,
-				*_newIssuesPerMonth,
-				*_fileSizesPerMonth,
+				accNewProjectsPerMonth,
+				accNewRevisionsPerMonth,
+				accNewIssuesPerMonth,
+				accFileSizesPerMonth,
 				dbName + (isEnterprise ? " (E)" : " (D)"),
 				oFile);
-		}
+		}		
 	}
 
 	printMonthlyStatistic(
@@ -383,7 +395,7 @@ static void getNewPaidUsersPerMonth(
 			}
 		}
 	}
-
+	
 	repoInfo << "======== PAID USERS PER MONTH =========";
 	int64_t nUsers = 0;
 	oFile << "Paid users per month" << std::endl;
