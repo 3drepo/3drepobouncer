@@ -288,7 +288,6 @@ static void getProjectsStatistics(
 	{
 		auto dbName = dbEntry.first;
 		count++;
-		if (count > 100) break;
 
 		int64_t dbStartDate = -1;
 		if (userStartDate.find(dbName) != userStartDate.end())
