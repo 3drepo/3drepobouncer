@@ -215,7 +215,7 @@ static void printMonthlyStatistic(
 	int currMonth = timePtr->tm_mon +1;
 	for (const auto &stats : statsList)
 	{
-		if (stats.size() == 0) continue;
+		if (!stats.size()) continue;
 		auto year = stats.begin()->first;
 		auto month = stats.begin()->second.begin()->first;
 		if (startYear > year)
@@ -259,7 +259,7 @@ static void printMonthlyStatistic(
 			}
 
 			repoInfo << "Year: " << iYear << "\tMonth: " << iMonth << " \tProjects: " << values[0] << " \tRevisions: " << values[1] << " \tIssues: " << values[2] << " \tSize: " << values[3];
-			oFile << "," << iYear << "," << iMonth << "," << values[0] << "," << values[1] << "," << values[2] <<"," << values[3];
+			oFile << "," << iYear << "," << iMonth << "," << values[0] << "," << values[1] << "," << values[2] <<"," << values[3] << std::endl;
 
 		}
 	}
