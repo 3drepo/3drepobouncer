@@ -228,7 +228,7 @@ static void printMonthlyStatistic(
 				startMonth = month;
 		}
 	}
-	oFile << ",Year,Month,#New Projects,#New Revisions, #New Issues, Upload Size" << std::endl;
+	oFile << ",Year,Month,#New Projects,#New Revisions, #New Issues, Upload Size (MiB)" << std::endl;
 
 	for (int iYear = startYear; iYear <= currYear; ++iYear)
 	{
