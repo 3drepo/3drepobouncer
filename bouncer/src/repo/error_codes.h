@@ -65,5 +65,7 @@
 #define REPOERR_UNSUPPORTED_FBX_VERSION 23
 //Unsupported file version (generic)
 #define REPOERR_UNSUPPORTED_VERSION 24
+//Exceed the maximum amount fo nodes
+#define REPOERR_MAX_NODES_EXCEEDED 25
 
 

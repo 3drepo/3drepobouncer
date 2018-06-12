@@ -224,20 +224,7 @@ bool RepoManipulator::commitScene(
 			else
 			{
 				repoError << "Failed to commit scene stash : " << msg;
-			}
-
-			if (success)
-			{
-				repoInfo << "Generating SRC encoding for web viewing...";
-				if (success = generateAndCommitSRCBuffer(databaseAd, cred, scene))
-				{
-					repoInfo << "SRC file stored into the database";
-				}
-				else
-				{
-					repoError << "Failed to generate and commit SRC buffer for this project.";
-				}
-			}
+			}			
 		}
 
 		if (success)
@@ -829,6 +816,12 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 			repoTrace << "model Imported, generating Repo Scene";
 			if ((scene = modelConvertor->generateRepoScene()))
 			{
+				if (scene->exceedsMaximumNodes()) {
+					delete scene;
+					error = REPOERR_MAX_NODES_EXCEEDED;
+					return nullptr;
+				}
+
 				if (!scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
 
 					delete scene;
