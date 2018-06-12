@@ -188,48 +188,18 @@ static void getIssuesStatistics(
 	}
 }
 
-static void getProjectsStatistics(
-	const std::list<std::string>              &databases,
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	std::unordered_map<std::string, int64_t>  &userStartDate,
-	std::ofstream							  &oFile
-	)
-{
-	repoInfo << "Getting database projects...";
-	auto projects = handler->getDatabasesWithProjects(databases);
-	repoInfo << "done";
-	std::map < int, std::map<int, int> > newProjectsPerMonth;
-	std::map < int, std::map<int, int> > newRevisionsPerMonth;
-	std::map < int, std::map<int, int> > newIssuesPerMonth;
-	std::map < int, std::map<int, int> > fileSizesPerMonth;
-	int count = 0;
-	for (const auto &dbEntry : projects)
-	{
-		auto dbName = dbEntry.first;
-		int64_t dbStartDate = -1;
-		if (userStartDate.find(dbName) != userStartDate.end())
-			dbStartDate = userStartDate[dbName];
-		for (const auto project : dbEntry.second)
-		{
-			auto time = getTimestampOfFirstRevision(handler, dbName, project, newRevisionsPerMonth, fileSizesPerMonth);
-			if (time != -1)
-			{
-				int year = 0, month = 0;
-				getYearMonthFromTimeStamp(time, year, month);
-				if (newProjectsPerMonth.find(year) == newProjectsPerMonth.end())
-					newProjectsPerMonth[year] = std::map<int, int>();
-				if (newProjectsPerMonth[year].find(month) == newProjectsPerMonth[year].end())
-					newProjectsPerMonth[year][month] = 0;
 
-				++newProjectsPerMonth[year][month];
-			}
+static void printMonthlyStatistic(
+	const std::map <int, std::map<int, int>> &newProjectsPerMonth,
+	const std::map <int, std::map<int, int>> &newRevisionsPerMonth,
+	const std::map <int, std::map<int, int>> &newIssuesPerMonth,
+	const std::map <int, std::map<int, int>> &fileSizesPerMonth,
+	const std::string                        &prefix,
+	std::ofstream							 &oFile) {
 
-			getIssuesStatistics(handler, dbName, project, newIssuesPerMonth, dbStartDate);
-		}
-	}
 
 	repoInfo << "======== NEW PROJECTS PER MONTH =========";
-	oFile << "New Projects per month" << std::endl;
+	oFile << "New Projects per month (" << prefix << ")" << std::endl;
 	oFile << "Year,Month,#New Projects,Total" << std::endl;
 	int nProjects = 0;
 	for (const auto yearEntry : newProjectsPerMonth)
@@ -244,8 +214,8 @@ static void getProjectsStatistics(
 	}
 
 	int nRevisions = 0;
-	repoInfo << "======== NEW REVISIONS PER MONTH =========";
-	oFile << "New revisions per month" << std::endl;
+	repoInfo << "======== NEW REVISIONS PER MONTH   =========";
+	oFile << "New revisions per month (" << prefix << ")" << std::endl;
 	oFile << "Year,Month,#New Revisions,Total" << std::endl;
 	for (const auto yearEntry : newRevisionsPerMonth)
 	{
@@ -259,8 +229,8 @@ static void getProjectsStatistics(
 	}
 
 	int nIssues = 0;
-	repoInfo << "======== NEW ISSUES PER MONTH =========";
-	oFile << "New Issues per month" << std::endl;
+	repoInfo << "======== NEW ISSUES PER MONTH   =========";
+	oFile << "New Issues per month (" << prefix << ")" << std::endl;
 	oFile << "Year,Month,#New Issues,Total" << std::endl;
 	for (const auto yearEntry : newIssuesPerMonth)
 	{
@@ -273,9 +243,9 @@ static void getProjectsStatistics(
 		}
 	}
 
-	repoInfo << "======== NEW FILES SIZE PER MONTH =========";
+	repoInfo << "======== NEW FILES SIZE PER MONTH  =========";
 	int64_t fSize = 0;
-	oFile << "New file size per month" << std::endl;
+	oFile << "New file size per month (" << prefix << ")" << std::endl;
 	oFile << "Year,Month,File Size(MiB),Total" << std::endl;
 	for (const auto yearEntry : fileSizesPerMonth)
 	{
@@ -288,8 +258,101 @@ static void getProjectsStatistics(
 			oFile << year << "," << monthEntry.first << "," << monthEntry.second << "," << fSize << std::endl;
 		}
 	}
+
 }
 
+
+static void getProjectsStatistics(
+	const std::list<std::string>              &databases,
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	std::unordered_map<std::string, int64_t>  &userStartDate,
+	std::ofstream							  &oFile,
+	const std::set<std::string>					&enterpriseAccounts,
+	const std::set<std::string>					&discretionaryAccounts
+	)
+{
+	repoInfo << "Getting database projects...";
+	auto projects = handler->getDatabasesWithProjects(databases);
+	repoInfo << "done";
+	std::map < int, std::map<int, int> > newProjectsPerMonth;
+	std::map < int, std::map<int, int> > newRevisionsPerMonth;
+	std::map < int, std::map<int, int> > newIssuesPerMonth;
+	std::map < int, std::map<int, int> > fileSizesPerMonth;
+	int count = 0;
+	for (const auto &dbEntry : projects)
+	{
+		auto dbName = dbEntry.first;
+		repoInfo << "Going through DB: " << dbName << " #models: " << dbEntry.second.size();
+		int64_t dbStartDate = -1;
+		if (userStartDate.find(dbName) != userStartDate.end())
+			dbStartDate = userStartDate[dbName];
+
+		const bool isEnterprise = enterpriseAccounts.find(dbName) != enterpriseAccounts.end();
+		const bool isDemo = discretionaryAccounts.find(dbName) != discretionaryAccounts.end();
+		const bool shouldPrint = isEnterprise || isDemo;
+
+		std::map < int, std::map<int, int> > *_newProjectsPerMonth;
+		std::map < int, std::map<int, int> > *_newRevisionsPerMonth;
+		std::map < int, std::map<int, int> > *_newIssuesPerMonth;
+		std::map < int, std::map<int, int> > *_fileSizesPerMonth;
+
+		if (shouldPrint){
+			std::map < int, std::map<int, int> > accNewProjectsPerMonth;
+			std::map < int, std::map<int, int> > accNewRevisionsPerMonth;
+			std::map < int, std::map<int, int> > accNewIssuesPerMonth;
+			std::map < int, std::map<int, int> > accFileSizesPerMonth;
+
+			_newProjectsPerMonth = &accNewProjectsPerMonth;
+			_newRevisionsPerMonth = &accNewRevisionsPerMonth;
+			_newIssuesPerMonth = &accNewIssuesPerMonth;
+			_fileSizesPerMonth = &accFileSizesPerMonth;
+		} else
+		{
+			_newProjectsPerMonth = &newProjectsPerMonth;
+			_newRevisionsPerMonth = &newRevisionsPerMonth;
+			_newIssuesPerMonth = &newIssuesPerMonth;
+			_fileSizesPerMonth = &fileSizesPerMonth;
+		}
+		
+
+		for (const auto project : dbEntry.second)
+		{
+			auto time = getTimestampOfFirstRevision(handler, dbName, project, *_newRevisionsPerMonth, *_fileSizesPerMonth);
+			if (time != -1)
+			{
+				int year = 0, month = 0;
+				getYearMonthFromTimeStamp(time, year, month);
+				if (_newProjectsPerMonth->find(year) == _newProjectsPerMonth->end())
+					(*_newProjectsPerMonth)[year] = std::map<int, int>();
+				if (*_newProjectsPerMonth[year].find(month) == *_newProjectsPerMonth[year].end())
+					(*_newProjectsPerMonth)[year][month] = 0;
+
+				++(*_newProjectsPerMonth)[year][month];
+			}
+
+			getIssuesStatistics(handler, dbName, project, *_newIssuesPerMonth, dbStartDate);			
+		}
+
+		if (shouldPrint)
+		{
+			printMonthlyStatistic(
+				*_newProjectsPerMonth,
+				*_newRevisionsPerMonth,
+				*_newIssuesPerMonth,
+				*_fileSizesPerMonth,
+				dbName + (isEnterprise ? " (E)" : " (D)"),
+				oFile);
+		}
+	}
+
+	printMonthlyStatistic(
+		newProjectsPerMonth,
+		newRevisionsPerMonth,
+		newIssuesPerMonth,
+		fileSizesPerMonth,
+		"Other Users",
+		oFile);
+}
 static void getNewPaidUsersPerMonth(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	const std::list<std::string>              &databases,
@@ -403,38 +466,64 @@ static void getNewUsersPerMonth(
 	}
 }
 
-void getPaidForUsersCount(
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	std::ofstream							  &oFile)
-{
 
-	oFile << "Enterprise Account, User Count , Total" <<  std::endl;
+std::set<std::string> printUsercountStatistics(
+	const std::vector<repo::core::model::RepoBSON>	&userList,
+	repo::core::handler::AbstractDatabaseHandler	*handler,
+	std::ofstream									&oFile) {
+
+
+	std::set <std::string> accountList;
 	int totalCount = 0;
-	
-	auto results = handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, 
-		BSON(
-			"customData.billing.subscriptions.enterprise" << BSON("$exists" << true)
-		));
-
-	for(const auto res : results) {
+	for (const auto res : userList) {
 		auto user = repo::core::model::RepoUser(res);
+		accountList.insert(user.getUserName());
 		int userCount = 0;
 		auto subs = user.getSubscriptionInfo();
 		if (repo::core::model::RepoBSON::getCurrentTimestamp() > subs.enterprise.expiryDate)
 		{
 			userCount += handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, BSON("roles.db" << user.getUserName())).size();
 		}
-		
+
 		totalCount += userCount;
 		repoInfo << user.getUserName() << ", " << userCount << "," << totalCount;
 		oFile << user.getUserName() << ", " << userCount << "," << totalCount << std::endl;
-	}		
+	}
+
+	return accountList;
 
 }
 
+
+std::set<std::string> getPaidForUsersCount(
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	std::ofstream							  &oFile)
+{
+
+	oFile << "Enterprise Account, User Count , Total" << std::endl;
+
+	auto results = handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS,
+		BSON(
+			"customData.billing.subscriptions.enterprise" << BSON("$exists" << true)
+		));
+	return printUsercountStatistics(results, handler, oFile);
+}
+
+std::set<std::string> getDemoUsersCount(
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	std::ofstream							  &oFile)
+{
+
+	oFile << "Discretionary Account, User Count , Total" << std::endl;
+	auto results = handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS,
+		BSON(
+			"customData.billing.subscriptions.discretionary" << BSON("$exists" << true)
+		));
+
+	return printUsercountStatistics(results, handler, oFile);
+}
 void StatisticsGenerator::getDatabaseStatistics(
-	const std::string &outputFilePath,
-	const std::list<std::string> &paidAccList)
+	const std::string &outputFilePath)
 {
 	std::ofstream oFile;
 	oFile.open(outputFilePath);
@@ -442,12 +531,12 @@ void StatisticsGenerator::getDatabaseStatistics(
 	{
 		std::unordered_map<std::string, int64_t>  userStartDate;
 		repoInfo << "======== NEW USERS PER MONTH ==========";
-		getNewUsersPerMonth(handler, userStartDate, oFile);
 		auto databases = handler->getDatabases();
+		getNewUsersPerMonth(handler, userStartDate, oFile);
 		getNewPaidUsersPerMonth(handler, databases, oFile);
-		getPaidForUsersCount(handler, oFile);
-
-		getProjectsStatistics(databases, handler, userStartDate, oFile);
+		auto enterpriseDBs = getPaidForUsersCount(handler, oFile);
+		auto discretionaryDBs = getDemoUsersCount(handler, oFile);
+		getProjectsStatistics(databases, handler, userStartDate, oFile, enterpriseDBs, discretionaryDBs);
 
 	}
 	else
