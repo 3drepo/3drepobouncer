@@ -198,7 +198,7 @@ static void printMonthlyStatistic(
 	std::ofstream							 &oFile) {
 
 	repoInfo << "======== ["<< prefix << "] =========" << std::endl;
-	oFile <<std::endl << prefix  << std::endl;
+	
 
 	std::vector<std::map <int, std::map<int, int>>> statsList;
 	
@@ -207,35 +207,20 @@ static void printMonthlyStatistic(
 	statsList.push_back(newIssuesPerMonth);
 	statsList.push_back(fileSizesPerMonth);
 
-	int startYear = 3000;
-	int startMonth = 13;
+	int startYear = 2016;
+	int startMonth = 10;
 	time_t t = time(NULL);
 	tm* timePtr = localtime(&t);
 	int currYear = timePtr->tm_year + 1900;
-	int currMonth = timePtr->tm_mon +1;
-	for (const auto &stats : statsList)
-	{
-		if (!stats.size()) continue;
-		auto year = stats.begin()->first;
-		auto month = stats.begin()->second.begin()->first;
-		if (startYear > year)
-		{
-			startYear = year;
-			startMonth = month;
-		}
-		else if (year == startYear) {
-			if (month < startMonth)
-				startMonth = month;
-		}
-	}
-	oFile << ",Year,Month,#New Projects,#New Revisions, #New Issues, Upload Size (MiB)" << std::endl;
+	int currMonth = timePtr->tm_mon +1;	
+	oFile << std::endl << prefix << "," << prefix << "," << prefix << "," << prefix << "," << prefix << "," << prefix << std::endl;
+	oFile << "Year,Month,#New Projects,#New Revisions, #New Issues, Upload Size (MiB)" << std::endl;
 
 	for (int iYear = startYear; iYear <= currYear; ++iYear)
 	{
 		int monthLoopStart = iYear == startYear ? startMonth : 1;
 		int monthLoopEnd = iYear == currYear ? currMonth : 12;
 
-		repoInfo <<"iYear: " << iYear << ", month loop end: " <<  monthLoopEnd;
 		for (int iMonth = monthLoopStart; iMonth <= monthLoopEnd; ++iMonth)
 		{
 			std::vector<int> values;
@@ -259,7 +244,7 @@ static void printMonthlyStatistic(
 			}
 
 			repoInfo << "Year: " << iYear << "\tMonth: " << iMonth << " \tProjects: " << values[0] << " \tRevisions: " << values[1] << " \tIssues: " << values[2] << " \tSize: " << values[3];
-			oFile << "," << iYear << "," << iMonth << "," << values[0] << "," << values[1] << "," << values[2] <<"," << values[3] << std::endl;
+			oFile << iYear << "," << iMonth << "," << values[0] << "," << values[1] << "," << values[2] <<"," << values[3] << std::endl;
 
 		}
 	}
@@ -283,11 +268,9 @@ static void getProjectsStatistics(
 	std::map < int, std::map<int, int> > newRevisionsPerMonth;
 	std::map < int, std::map<int, int> > newIssuesPerMonth;
 	std::map < int, std::map<int, int> > fileSizesPerMonth;
-	int count = 0;
 	for (const auto &dbEntry : projects)
 	{
 		auto dbName = dbEntry.first;
-		count++;
 
 		int64_t dbStartDate = -1;
 		if (userStartDate.find(dbName) != userStartDate.end())
