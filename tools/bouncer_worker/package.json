@@ -9,6 +9,6 @@
   "dependencies": {
     "amqplib": "0.4.1",
     "mongodb": "2.2.24",
-    "winston": "*"
+    "winston": "2.4.0"
   }
 }
