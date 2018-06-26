@@ -107,7 +107,7 @@
 						project: model
 					}), true);
 				} else {
-					exeCommand(`genStash ${database} ${model} tree`, rid, callback);
+					exeCommand(`genStash ${database} ${model} tree all`, rid, callback);
 				}
 				
 			}).catch(err => {
