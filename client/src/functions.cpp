@@ -21,10 +21,12 @@
 
 #include <sstream>
 #include <fstream>
+#include <algorithm>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/filesystem.hpp>
+
 
 static const std::string FBX_EXTENSION = ".FBX";
 
@@ -364,19 +366,14 @@ int32_t generateStash(
 
 	bool branch = true;
 	std::string revId = REPO_HISTORY_MASTER_BRANCH;
-	bool generateAll = false;
 	if (command.nArgcs > 3) {
-		if (generateAll = command.args[3] == "all") {
-			repoLog("Regenerating all trees");
-		} else {
-			branch = false;
-			revId = command.args[3];
-		}
-
+		revId = command.args[3];
 	}
 
 	bool success = true;
-	if (generateAll)
+	std::string revToLower = revId;
+	std::transform(revToLower.begin(), revToLower.end(), revToLower.begin(), ::tolower);
+	if (revToLower == "all")
 	{
 		auto revs = controller->getAllFromCollectionContinuous(token, dbName, project + ".history");
 		for (const auto &rev : revs) {
