@@ -308,31 +308,30 @@ bool _generateStash(
 
 	repoLog("Generating stash of type " + type + " for " + dbName + "." + project + " rev: " + revID + (isBranch ? " (branch ID)" : ""));
 	auto scene = controller->fetchScene(token, dbName, project, revID, isBranch, false, true, type == "tree");
-	if (!scene)
-	{
-		return REPOERR_STASH_GEN_FAIL;
-	}
-
 	bool  success = false;
+	if (scene) {
+		if (type == "repo")
+		{
+			success = controller->generateAndCommitStashGraph(token, scene);
+		}
+		else if (type == "gltf")
+		{
+			success = controller->generateAndCommitGLTFBuffer(token, scene);
+		}
+		else if (type == "src")
+		{
+			success = controller->generateAndCommitSRCBuffer(token, scene);
+		}
+		else if (type == "tree")
+		{
+			success = controller->generateAndCommitSelectionTree(token, scene);
+		}
+		
+		delete scene;
+	}
 
-	if (type == "repo")
-	{
-		success = controller->generateAndCommitStashGraph(token, scene);
-	}
-	else if (type == "gltf")
-	{
-		success = controller->generateAndCommitGLTFBuffer(token, scene);
-	}
-	else if (type == "src")
-	{
-		success = controller->generateAndCommitSRCBuffer(token, scene);
-	}
-	else if (type == "tree")
-	{
-		success = controller->generateAndCommitSelectionTree(token, scene);
-	}
 
-	delete scene;
+
 	return success;
 }
 
