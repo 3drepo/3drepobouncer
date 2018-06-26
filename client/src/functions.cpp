@@ -368,6 +368,7 @@ int32_t generateStash(
 	std::string revId = REPO_HISTORY_MASTER_BRANCH;
 	if (command.nArgcs > 3) {
 		revId = command.args[3];
+		branch = false;
 	}
 
 	bool success = true;
