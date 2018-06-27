@@ -21,10 +21,12 @@
 
 #include <sstream>
 #include <fstream>
+#include <algorithm>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/filesystem.hpp>
+
 
 static const std::string FBX_EXTENSION = ".FBX";
 
@@ -41,7 +43,7 @@ std::string helpInfo()
 {
 	std::stringstream ss;
 
-	ss << cmdGenStash << "\tGenerate Stash for a project. (args: database project [repo|gltf|src|tree])\n";
+	ss << cmdGenStash << "\tGenerate Stash for a project. (args: database project [repo|gltf|src|tree] [all|revId])\n";
 	ss << cmdGetFile << "\t\tGet original file for the latest revision of the project (args: database project dir)\n";
 	ss << cmdImportFile << "\t\tImport file to database. (args: {file database project [dxrotate] [owner] [configfile]} or {-f parameterFile} )\n";
 	ss << cmdCreateFed << "\t\tGenerate a federation. (args: fedDetails [owner])\n";
@@ -294,6 +296,45 @@ int32_t generateFederation(
 	return success ? REPOERR_OK : REPOERR_FED_GEN_FAIL;
 }
 
+bool _generateStash(
+	repo::RepoController       *controller,
+	const repo::RepoController::RepoToken      *token, 
+	const std::string            &type,
+	const std::string            &dbName,
+	const std::string            &project,
+	const bool                   isBranch,
+	const std::string            &revID) {
+
+
+	repoLog("Generating stash of type " + type + " for " + dbName + "." + project + " rev: " + revID + (isBranch ? " (branch ID)" : ""));
+	auto scene = controller->fetchScene(token, dbName, project, revID, isBranch, false, true, type == "tree");
+	bool  success = false;
+	if (scene) {
+		if (type == "repo")
+		{
+			success = controller->generateAndCommitStashGraph(token, scene);
+		}
+		else if (type == "gltf")
+		{
+			success = controller->generateAndCommitGLTFBuffer(token, scene);
+		}
+		else if (type == "src")
+		{
+			success = controller->generateAndCommitSRCBuffer(token, scene);
+		}
+		else if (type == "tree")
+		{
+			success = controller->generateAndCommitSelectionTree(token, scene);
+		}
+		
+		delete scene;
+	}
+
+
+
+	return success;
+}
+
 int32_t generateStash(
 	repo::RepoController       *controller,
 	const repo::RepoController::RepoToken      *token,
@@ -310,9 +351,11 @@ int32_t generateStash(
 		return REPOERR_INVALID_ARG;
 	}
 
+	
 	std::string dbName = command.args[0];
 	std::string project = command.args[1];
 	std::string type = command.args[2];
+
 
 	if (!(type == "repo" || type == "gltf" || type == "src" || type == "tree"))
 	{
@@ -320,29 +363,28 @@ int32_t generateStash(
 		return REPOERR_INVALID_ARG;
 	}
 
-	auto scene = controller->fetchScene(token, dbName, project, REPO_HISTORY_MASTER_BRANCH, true, false, true);
-	if (!scene)
-	{
-		return REPOERR_STASH_GEN_FAIL;
+	bool branch = true;
+	std::string revId = REPO_HISTORY_MASTER_BRANCH;
+	if (command.nArgcs > 3) {
+		revId = command.args[3];
+		branch = false;
 	}
 
-	bool  success = false;
+	bool success = true;
+	std::string revToLower = revId;
+	std::transform(revToLower.begin(), revToLower.end(), revToLower.begin(), ::tolower);
+	if (revToLower == "all")
+	{
+		auto revs = controller->getAllFromCollectionContinuous(token, dbName, project + ".history");
+		for (const auto &rev : revs) {
+			auto revNode = (const repo::core::model::RevisionNode) rev;
+			auto revId = revNode.getUniqueID();
+			success &= _generateStash(controller, token, type, dbName, project, false, revId.toString());		
+		}
+	}
+	else {
+		success = _generateStash(controller, token, type, dbName, project, branch, revId);
 
-	if (type == "repo")
-	{
-		success = controller->generateAndCommitStashGraph(token, scene);
-	}
-	else if (type == "gltf")
-	{
-		success = controller->generateAndCommitGLTFBuffer(token, scene);
-	}
-	else if (type == "src")
-	{
-		success = controller->generateAndCommitSRCBuffer(token, scene);
-	}
-	else if (type == "tree")
-	{
-		success = controller->generateAndCommitSelectionTree(token, scene);
 	}
 
 	return success ? REPOERR_OK : REPOERR_STASH_GEN_FAIL;
