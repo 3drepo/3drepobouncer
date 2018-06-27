@@ -939,12 +939,10 @@ namespace repo{
 		/**
 		* Generate database statistics and print the result in the given filepath
 		* @params outputFilePath
-		* @param paidAccList list of paid user accounts
 		*/
 		void getDatabaseStatistics(
 			const RepoToken   *token,
-			const std::string &outputFilePath,
-			const std::list<std::string> &paidAccList);
+			const std::string &outputFilePath);
 
 		/**
 		* Get a list of users and print the result in the given filepath

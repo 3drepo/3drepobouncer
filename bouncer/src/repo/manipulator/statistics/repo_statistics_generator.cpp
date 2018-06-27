@@ -17,7 +17,7 @@
 #include "repo_statistics_generator.h"
 #include "../../core/model/bson/repo_bson_builder.h"
 #include <fstream>
-
+#include <ctime>
 using namespace repo::manipulator;
 
 StatisticsGenerator::StatisticsGenerator(
@@ -188,11 +188,77 @@ static void getIssuesStatistics(
 	}
 }
 
+
+static void printMonthlyStatistic(
+	const std::map <int, std::map<int, int>> &newProjectsPerMonth,
+	const std::map <int, std::map<int, int>> &newRevisionsPerMonth,
+	const std::map <int, std::map<int, int>> &newIssuesPerMonth,
+	const std::map <int, std::map<int, int>> &fileSizesPerMonth,
+	const std::string                        &prefix,
+	std::ofstream							 &oFile) {
+
+	repoInfo << "======== ["<< prefix << "] =========" << std::endl;
+	
+
+	std::vector<std::map <int, std::map<int, int>>> statsList;
+	
+	statsList.push_back(newProjectsPerMonth);
+	statsList.push_back(newRevisionsPerMonth);
+	statsList.push_back(newIssuesPerMonth);
+	statsList.push_back(fileSizesPerMonth);
+
+	int startYear = 2016;
+	int startMonth = 10;
+	time_t t = time(NULL);
+	tm* timePtr = localtime(&t);
+	int currYear = timePtr->tm_year + 1900;
+	int currMonth = timePtr->tm_mon +1;	
+	oFile << std::endl << prefix << "," << prefix << "," << prefix << "," << prefix << "," << prefix << "," << prefix << std::endl;
+	oFile << "Year,Month,#New Projects,#New Revisions, #New Issues, Upload Size (MiB)" << std::endl;
+
+	for (int iYear = startYear; iYear <= currYear; ++iYear)
+	{
+		int monthLoopStart = iYear == startYear ? startMonth : 1;
+		int monthLoopEnd = iYear == currYear ? currMonth : 12;
+
+		for (int iMonth = monthLoopStart; iMonth <= monthLoopEnd; ++iMonth)
+		{
+			std::vector<int> values;
+			for (const auto &stats : statsList)
+			{
+				auto yearEntry = stats.find(iYear);
+				if (yearEntry != stats.end())					
+				{
+					auto monthEntry = yearEntry->second.find(iMonth);
+					if (monthEntry != yearEntry->second.end())
+					{
+						values.push_back(monthEntry->second);
+					}
+					else {
+						values.push_back(0);
+					}
+				}
+				else{
+					values.push_back(0);
+				}
+			}
+
+			repoInfo << "Year: " << iYear << "\tMonth: " << iMonth << " \tProjects: " << values[0] << " \tRevisions: " << values[1] << " \tIssues: " << values[2] << " \tSize: " << values[3];
+			oFile << iYear << "," << iMonth << "," << values[0] << "," << values[1] << "," << values[2] <<"," << values[3] << std::endl;
+
+		}
+	}
+
+}
+
+
 static void getProjectsStatistics(
 	const std::list<std::string>              &databases,
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	std::unordered_map<std::string, int64_t>  &userStartDate,
-	std::ofstream							  &oFile
+	std::ofstream							  &oFile,
+	const std::set<std::string>					&enterpriseAccounts,
+	const std::set<std::string>					&discretionaryAccounts
 	)
 {
 	repoInfo << "Getting database projects...";
@@ -202,94 +268,85 @@ static void getProjectsStatistics(
 	std::map < int, std::map<int, int> > newRevisionsPerMonth;
 	std::map < int, std::map<int, int> > newIssuesPerMonth;
 	std::map < int, std::map<int, int> > fileSizesPerMonth;
-	int count = 0;
 	for (const auto &dbEntry : projects)
 	{
 		auto dbName = dbEntry.first;
+
 		int64_t dbStartDate = -1;
 		if (userStartDate.find(dbName) != userStartDate.end())
 			dbStartDate = userStartDate[dbName];
+
+		const bool isEnterprise = enterpriseAccounts.find(dbName) != enterpriseAccounts.end();
+		const bool isDemo = discretionaryAccounts.find(dbName) != discretionaryAccounts.end();
+		const bool shouldPrint = isEnterprise || isDemo;
+
+		repoInfo << "Going through DB: " << dbName << "("<<(isEnterprise ? " (E)" : (shouldPrint ? " (D)" : ""))<<") #models: " << dbEntry.second.size();
+
+		std::map < int, std::map<int, int> > accNewProjectsPerMonth;
+		std::map < int, std::map<int, int> > accNewRevisionsPerMonth;
+		std::map < int, std::map<int, int> > accNewIssuesPerMonth;
+		std::map < int, std::map<int, int> > accFileSizesPerMonth;
+	
+
 		for (const auto project : dbEntry.second)
 		{
-			auto time = getTimestampOfFirstRevision(handler, dbName, project, newRevisionsPerMonth, fileSizesPerMonth);
-			if (time != -1)
+			if (shouldPrint)
 			{
-				int year = 0, month = 0;
-				getYearMonthFromTimeStamp(time, year, month);
-				if (newProjectsPerMonth.find(year) == newProjectsPerMonth.end())
-					newProjectsPerMonth[year] = std::map<int, int>();
-				if (newProjectsPerMonth[year].find(month) == newProjectsPerMonth[year].end())
-					newProjectsPerMonth[year][month] = 0;
+				auto time = getTimestampOfFirstRevision(handler, dbName, project, accNewRevisionsPerMonth, accFileSizesPerMonth);
+				if (time != -1)
+				{
+					int year = 0, month = 0;
+					getYearMonthFromTimeStamp(time, year, month);
+					if (accNewProjectsPerMonth.find(year) == accNewProjectsPerMonth.end())
+						(accNewProjectsPerMonth)[year] = std::map<int, int>();
+					if (accNewProjectsPerMonth[year].find(month) == accNewProjectsPerMonth[year].end())
+						(accNewProjectsPerMonth)[year][month] = 0;
 
-				++newProjectsPerMonth[year][month];
+					++accNewProjectsPerMonth[year][month];
+				}
+
+				getIssuesStatistics(handler, dbName, project, accNewIssuesPerMonth, dbStartDate);
 			}
+			else {
+				auto time = getTimestampOfFirstRevision(handler, dbName, project, newRevisionsPerMonth, fileSizesPerMonth);
+				if (time != -1)
+				{
+					int year = 0, month = 0;
+					getYearMonthFromTimeStamp(time, year, month);
+					if (newProjectsPerMonth.find(year) == newProjectsPerMonth.end())
+						(newProjectsPerMonth)[year] = std::map<int, int>();
+					if (newProjectsPerMonth[year].find(month) == newProjectsPerMonth[year].end())
+						(newProjectsPerMonth)[year][month] = 0;
 
-			getIssuesStatistics(handler, dbName, project, newIssuesPerMonth, dbStartDate);
+					++newProjectsPerMonth[year][month];
+				}
+
+				getIssuesStatistics(handler, dbName, project, newIssuesPerMonth, dbStartDate);
+			}
+			
 		}
-	}
 
-	repoInfo << "======== NEW PROJECTS PER MONTH =========";
-	oFile << "New Projects per month" << std::endl;
-	oFile << "Year,Month,#New Projects,Total" << std::endl;
-	int nProjects = 0;
-	for (const auto yearEntry : newProjectsPerMonth)
-	{
-		auto year = yearEntry.first;
-		for (const auto monthEntry : yearEntry.second)
+		if (shouldPrint)
 		{
-			repoInfo << "Year: " << year << "\tMonth: " << monthEntry.first << " \tProjects: " << monthEntry.second;
-			nProjects += monthEntry.second;
-			oFile << year << "," << monthEntry.first << "," << monthEntry.second << "," << nProjects << std::endl;
-		}
+			repoInfo << "Printing statistics for " << dbName;
+			printMonthlyStatistic(
+				accNewProjectsPerMonth,
+				accNewRevisionsPerMonth,
+				accNewIssuesPerMonth,
+				accFileSizesPerMonth,
+				dbName + (isEnterprise ? " (E)" : " (D)"),
+				oFile);
+		}		
 	}
 
-	int nRevisions = 0;
-	repoInfo << "======== NEW REVISIONS PER MONTH =========";
-	oFile << "New revisions per month" << std::endl;
-	oFile << "Year,Month,#New Revisions,Total" << std::endl;
-	for (const auto yearEntry : newRevisionsPerMonth)
-	{
-		auto year = yearEntry.first;
-		for (const auto monthEntry : yearEntry.second)
-		{
-			repoInfo << "Year: " << year << "\tMonth: " << monthEntry.first << " \tRevisions: " << monthEntry.second;
-			nRevisions += monthEntry.second;
-			oFile << year << "," << monthEntry.first << "," << monthEntry.second << "," << nRevisions << std::endl;
-		}
-	}
-
-	int nIssues = 0;
-	repoInfo << "======== NEW ISSUES PER MONTH =========";
-	oFile << "New Issues per month" << std::endl;
-	oFile << "Year,Month,#New Issues,Total" << std::endl;
-	for (const auto yearEntry : newIssuesPerMonth)
-	{
-		auto year = yearEntry.first;
-		for (const auto monthEntry : yearEntry.second)
-		{
-			repoInfo << "Year: " << year << "\tMonth: " << monthEntry.first << " \tIssues: " << monthEntry.second;
-			nIssues += monthEntry.second;
-			oFile << year << "," << monthEntry.first << "," << monthEntry.second << "," << nIssues << std::endl;
-		}
-	}
-
-	repoInfo << "======== NEW FILES SIZE PER MONTH =========";
-	int64_t fSize = 0;
-	oFile << "New file size per month" << std::endl;
-	oFile << "Year,Month,File Size(MiB),Total" << std::endl;
-	for (const auto yearEntry : fileSizesPerMonth)
-	{
-		auto year = yearEntry.first;
-		for (const auto monthEntry : yearEntry.second)
-		{
-			fSize += monthEntry.second;
-			repoInfo << "Year: " << year << "\tMonth: " << monthEntry.first << " \tSize(MiB): " << monthEntry.second;
-
-			oFile << year << "," << monthEntry.first << "," << monthEntry.second << "," << fSize << std::endl;
-		}
-	}
+	printMonthlyStatistic(
+		newProjectsPerMonth,
+		newRevisionsPerMonth,
+		newIssuesPerMonth,
+		fileSizesPerMonth,
+		"Other Users",
+		oFile);
 }
-
 static void getNewPaidUsersPerMonth(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	const std::list<std::string>              &databases,
@@ -320,7 +377,7 @@ static void getNewPaidUsersPerMonth(
 			}
 		}
 	}
-
+	
 	repoInfo << "======== PAID USERS PER MONTH =========";
 	int64_t nUsers = 0;
 	oFile << "Paid users per month" << std::endl;
@@ -403,38 +460,64 @@ static void getNewUsersPerMonth(
 	}
 }
 
-void getPaidForUsersCount(
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	std::ofstream							  &oFile)
-{
 
-	oFile << "Enterprise Account, User Count , Total" <<  std::endl;
+std::set<std::string> printUsercountStatistics(
+	const std::vector<repo::core::model::RepoBSON>	&userList,
+	repo::core::handler::AbstractDatabaseHandler	*handler,
+	std::ofstream									&oFile) {
+
+
+	std::set <std::string> accountList;
 	int totalCount = 0;
-	
-	auto results = handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, 
-		BSON(
-			"customData.billing.subscriptions.enterprise" << BSON("$exists" << true)
-		));
-
-	for(const auto res : results) {
+	for (const auto res : userList) {
 		auto user = repo::core::model::RepoUser(res);
+		accountList.insert(user.getUserName());
 		int userCount = 0;
 		auto subs = user.getSubscriptionInfo();
 		if (repo::core::model::RepoBSON::getCurrentTimestamp() > subs.enterprise.expiryDate)
 		{
 			userCount += handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, BSON("roles.db" << user.getUserName())).size();
 		}
-		
+
 		totalCount += userCount;
 		repoInfo << user.getUserName() << ", " << userCount << "," << totalCount;
 		oFile << user.getUserName() << ", " << userCount << "," << totalCount << std::endl;
-	}		
+	}
+
+	return accountList;
 
 }
 
+
+std::set<std::string> getPaidForUsersCount(
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	std::ofstream							  &oFile)
+{
+
+	oFile << "Enterprise Account, User Count , Total" << std::endl;
+
+	auto results = handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS,
+		BSON(
+			"customData.billing.subscriptions.enterprise" << BSON("$exists" << true)
+		));
+	return printUsercountStatistics(results, handler, oFile);
+}
+
+std::set<std::string> getDemoUsersCount(
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	std::ofstream							  &oFile)
+{
+
+	oFile << "Discretionary Account, User Count , Total" << std::endl;
+	auto results = handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS,
+		BSON(
+			"customData.billing.subscriptions.discretionary" << BSON("$exists" << true)
+		));
+
+	return printUsercountStatistics(results, handler, oFile);
+}
 void StatisticsGenerator::getDatabaseStatistics(
-	const std::string &outputFilePath,
-	const std::list<std::string> &paidAccList)
+	const std::string &outputFilePath)
 {
 	std::ofstream oFile;
 	oFile.open(outputFilePath);
@@ -442,12 +525,12 @@ void StatisticsGenerator::getDatabaseStatistics(
 	{
 		std::unordered_map<std::string, int64_t>  userStartDate;
 		repoInfo << "======== NEW USERS PER MONTH ==========";
-		getNewUsersPerMonth(handler, userStartDate, oFile);
 		auto databases = handler->getDatabases();
+		getNewUsersPerMonth(handler, userStartDate, oFile);
 		getNewPaidUsersPerMonth(handler, databases, oFile);
-		getPaidForUsersCount(handler, oFile);
-
-		getProjectsStatistics(databases, handler, userStartDate, oFile);
+		auto enterpriseDBs = getPaidForUsersCount(handler, oFile);
+		auto discretionaryDBs = getDemoUsersCount(handler, oFile);
+		getProjectsStatistics(databases, handler, userStartDate, oFile, enterpriseDBs, discretionaryDBs);
 
 	}
 	else

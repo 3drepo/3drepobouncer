@@ -682,13 +682,12 @@ const std::list<std::string> &databases)
 void RepoManipulator::getDatabaseStatistics(
 	const std::string                     &databaseAd,
 	const repo::core::model::RepoBSON*	  cred,
-	const std::string &outputFilePath,
-	const std::list<std::string> &paidAccList)
+	const std::string &outputFilePath)
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	StatisticsGenerator statGen(handler);
-	statGen.getDatabaseStatistics(outputFilePath, paidAccList);
+	statGen.getDatabaseStatistics(outputFilePath);
 }
 
 void RepoManipulator::getUserList(
