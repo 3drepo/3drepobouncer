@@ -1,21 +1,5 @@
-#include <OdaCommon.h>
-#include <StaticRxObject.h>
-#include <RxInit.h>
-#include <RxDynamicModule.h>
-
-//#include "DynamicLinker.h"
-//#include "DgDatabase.h"
-//#include "RxDynamicModule.h"
-
-//#include "ExSystemServices.h"
-//#include "ExDgnServices.h"
-//#include "ExDgnHostAppServices.h"
-
-//#include "DgGiContext.h"
-//#include "DgGsManager.h"
-
 #include "repo_model_import_dgn.h"
-
+#include "dgnHelper/oda_file_processor.h"
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -38,7 +22,9 @@ repo::core::model::RepoScene* DgnModelImport::generateRepoScene()
 
 bool DgnModelImport::importModel(std::string filePath, uint8_t &err)
 {
-	OdString szSource = filePath.c_str();
+	std::cout << " Importing model file: " << filePath << std::endl;
+	OdaFileProcessor odaProcessor(filePath);
+	odaProcessor.readFile();
 
 	return true;
 }

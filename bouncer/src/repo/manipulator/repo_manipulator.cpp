@@ -30,6 +30,7 @@
 #include "diff/repo_diff_name.h"
 #include "diff/repo_diff_sharedid.h"
 #include "modelconvertor/import/repo_model_import_assimp.h"
+#include "modelconvertor/import/repo_model_import_dgn.h"
 #include "modelconvertor/import/repo_model_import_ifc.h"
 #include "modelconvertor/import/repo_model_import_3drepo.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
@@ -789,7 +790,9 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 
 	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
 
-	if (!repo::manipulator::modelconvertor::AssimpModelImport::isSupportedExts(fileExt) && !(fileExt == ".BIM"))
+	if (!repo::manipulator::modelconvertor::AssimpModelImport::isSupportedExts(fileExt) 
+		&& !(fileExt == ".BIM")
+		&& !(fileExt == ".DGN"))
 	{
 		error = REPOERR_FILE_TYPE_NOT_SUPPORTED;
 		return nullptr;
@@ -799,11 +802,14 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 
 	bool useIFCImporter = fileExt == ".IFC" && (!config || config->getUseIFCOpenShell());
 	bool useRepoImporter = fileExt == ".BIM";
+	bool useDgnImporter = fileExt == ".DGN";
 
 	if (useIFCImporter)
 		modelConvertor = new repo::manipulator::modelconvertor::IFCModelImport(config);
 	else if (useRepoImporter)
 		modelConvertor = new repo::manipulator::modelconvertor::RepoModelImport(config);
+	else if (useDgnImporter)
+		modelConvertor = new repo::manipulator::modelconvertor::DgnModelImport(); //FIXME: take in config like everything else.
 	else
 		modelConvertor = new repo::manipulator::modelconvertor::AssimpModelImport(config);
 
