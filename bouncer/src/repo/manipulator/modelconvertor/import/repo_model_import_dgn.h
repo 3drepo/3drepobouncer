@@ -19,6 +19,8 @@
 #pragma once
 
 #include "repo_model_import_abstract.h"
+#include "../../../core/model/bson/repo_node_mesh.h"
+#include <vector>
 
 namespace repo {
 	namespace manipulator {
@@ -46,6 +48,9 @@ namespace repo {
 				* @return returns true upon success
 				*/
 				virtual bool importModel(std::string filePath, uint8_t &err);
+			private:
+				std::vector<repo::core::model::MeshNode> meshes;
+				std::string filePath;
 			};
 
 		}

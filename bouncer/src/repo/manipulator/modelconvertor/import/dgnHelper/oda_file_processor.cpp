@@ -56,6 +56,7 @@ protected:
 };
 
 int OdaFileProcessor::readFile() {
+
 	int   nRes = 0;               // Return value for the function
 	OdStaticRxObject<RepoDgnServices> svcs;
 	OdString fileSource = file.c_str();
@@ -68,7 +69,6 @@ int OdaFileProcessor::readFile() {
 	odrxInitialize(&svcs);
 	odgsInitialize();
 
-	std::string outputFile = "C:\\Users\\Carmen\\Desktop\\sample.obj";
 
 	try
 	{
@@ -84,7 +84,7 @@ int OdaFileProcessor::readFile() {
 			// Set device palette from dgn color table
 
 			OdDgColorTablePtr clolortable = pDb->getColorTable();
-			OdGsDevicePtr pDevice = OdaVectoriseDevice::createObject(OdaVectoriseDevice::k3dDevice, outputFile);
+			OdGsDevicePtr pDevice = OdaVectoriseDevice::createObject(OdaVectoriseDevice::k3dDevice, &meshVector);
 
 			const ODCOLORREF* refColors = OdDgColorTable::currentPalette(pDb);
 			ODGSPALETTE pPalCpy;

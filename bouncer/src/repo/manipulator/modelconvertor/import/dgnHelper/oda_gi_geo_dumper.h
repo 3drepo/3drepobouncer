@@ -24,13 +24,17 @@
 #include <string>
 #include <fstream>
 
+#include "../../../../core/model/bson/repo_node_mesh.h"
+
+#include <vector>
+
 class OdGiConveyorGeometryDumper : public OdGiGeometrySimplifier
 {
 	OdaGiDumperPtr m_pDumper;
 	OdGiConveyorGeometryDumper();
-	std::ofstream outputStream;
-
+	
 	int m_dumpLevel;
+	std::vector<repo::core::model::MeshNode> *meshVec;
 public:
 	enum
 	{
@@ -41,7 +45,7 @@ public:
 	int dumpLevel() const { return m_dumpLevel; }
 
 	static OdSharedPtr<OdGiConveyorGeometryDumper> createObject(OdaGiDumper* m_pDumper);
-	void setOutputFile(const std::string &outputFile);
+	void setMeshCollector(std::vector<repo::core::model::MeshNode> * meshVec);
 
 
 	/**********************************************************************/

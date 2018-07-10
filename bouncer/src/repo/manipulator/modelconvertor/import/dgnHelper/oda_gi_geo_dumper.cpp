@@ -25,6 +25,7 @@
 
 
 #include "oda_gi_geo_dumper.h"
+#include "../../../../core/model/bson/repo_bson_factory.h"
 
 
 OdGiConveyorGeometryDumper::OdGiConveyorGeometryDumper()
@@ -32,8 +33,8 @@ OdGiConveyorGeometryDumper::OdGiConveyorGeometryDumper()
 {
 }
 
-void OdGiConveyorGeometryDumper::setOutputFile(const std::string &outputFile) {
-	outputStream.open(outputFile);
+void OdGiConveyorGeometryDumper::setMeshCollector(std::vector<repo::core::model::MeshNode> * _meshVec) {
+	meshVec = _meshVec;
 }
 
 OdSharedPtr<OdGiConveyorGeometryDumper> OdGiConveyorGeometryDumper::createObject(OdaGiDumper* m_pDumper)
@@ -312,16 +313,14 @@ void OdGiConveyorGeometryDumper::shellProc(OdInt32 numVertices,
 	const OdGiFaceData* pFaceData,
 	const OdGiVertexData* pVertexData)
 {
-	//m_pDumper->output(OD_T("Start shellProc"));
-	////m_pDumper->pushIndent();
 
-	////m_pDumper->output(numVertices, vertexList);
-	static int vCount = 0;
-	int lastVCount = vCount;
+	std::vector<repo::lib::RepoVector3D> vertices;
+	std::vector<repo_face_t> faces;
+	
+
 	for (OdInt32 i = 0; i < numVertices; ++i)
 	{
-		outputStream << "v " << vertexList[i].x << " " << vertexList[i].y << " " << vertexList[i].z << std::endl;
-		vCount++;
+		vertices.push_back(repo::lib::RepoVector3D(vertexList[i].x, vertexList[i].y, vertexList[i].z));
 	}
 
 	/**********************************************************************/
@@ -330,40 +329,22 @@ void OdGiConveyorGeometryDumper::shellProc(OdInt32 numVertices,
 	OdInt32 i = 0;
 	OdInt32 numFaces = 0;
 	OdInt32 numEdges = 0;
-	//m_pDumper->output(OD_T("Faces"));
-	//m_pDumper->pushIndent();
 	while (i < faceListSize)
 	{
 		OdInt32 count = faceList[i++];
 		if (count < 0) count *= -1;
-		numEdges += count;
-		outputStream << "f ";
-
+		repo_face_t face;
 		for (OdInt32 j = 0; j < count; j++, i++)
 		{
 			if (j < 3)
-				outputStream << (faceList[i] + 1 + lastVCount) << " ";
+				face.push_back(faceList[i]);
 		}
-		outputStream << std::endl;
 
+		faces.push_back(face);
 	}
-	////m_pDumper->popIndent();
 
-	//m_pDumper->outputEdgeData(pEdgeData, numEdges);
-	//m_pDumper->outputFaceData(pFaceData, numFaces);
-	//m_pDumper->outputVertexData(pVertexData, numVertices);
-
-	//if (m_dumpLevel == Maximal_Simplification)
-	//{
-	//  //m_pDumper->output(OD_T("Reduced shell data"));
-	//  //m_pDumper->pushIndent();
-	//  OdGiGeometrySimplifier::shellProc(numVertices, vertexList, 
-	//    faceListSize, faceList, pEdgeData, pFaceData, pVertexData);
-	//  //m_pDumper->popIndent();
-	//}
-
-	////m_pDumper->popIndent();
-	////m_pDumper->output(OD_T("End shellProc"));
+	meshVec->push_back(repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces));
+	std::cout << "meshVec : " << meshVec->size() << std::endl;
 }
 
 /************************************************************************/

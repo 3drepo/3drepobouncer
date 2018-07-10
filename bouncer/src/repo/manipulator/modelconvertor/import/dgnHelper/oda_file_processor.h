@@ -16,7 +16,12 @@
 */
 
 #pragma once
+#include "../../../../core/model/bson/repo_node_mesh.h"
+
+
+#include <vector>
 #include <string>
+
 
 class OdaFileProcessor
 {
@@ -26,7 +31,12 @@ public:
 
 	int readFile();
 
+	std::vector<repo::core::model::MeshNode> getMeshes() const {
+		return meshVector;
+	}
+
 private:
 	const std::string file;
+	std::vector<repo::core::model::MeshNode> meshVector;
 };
 

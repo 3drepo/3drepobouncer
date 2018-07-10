@@ -47,10 +47,10 @@ public:
 	/**********************************************************************/
 	/* Set the target data stream and the type.                           */
 	/**********************************************************************/
-	static OdGsDevicePtr createObject(DeviceType type, const std::string & outputFile);
+	static OdGsDevicePtr createObject(DeviceType type, std::vector<repo::core::model::MeshNode> * meshVec);
 
 	/**********************************************************************/
-	/* Called by the Teigha for .dwg files vectorization framework to update	*/
+	/* Called by the Teigha for .dwg files vectorization framework to update */
 	/* the GUI window for this Device object                              */
 	/*                                                                    */
 	/* pUpdatedRect specifies a rectangle to receive the region updated   */

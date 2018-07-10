@@ -20,6 +20,9 @@
 
 #include "oda_gi_dumper_impl.h"
 #include "oda_gi_geo_dumper.h"
+#include "../../../../core/model/bson/repo_node_mesh.h"
+
+#include <vector>
 
 
 #include <DgElement.h>
@@ -42,7 +45,7 @@ OdaVectoriseDevice::OdaVectoriseDevice()
 	onSize(OdGsDCRect(0, 100, 0, 100));
 }
 
-OdGsDevicePtr OdaVectoriseDevice::createObject(DeviceType type, const std::string & outputFile)
+OdGsDevicePtr OdaVectoriseDevice::createObject(DeviceType type, std::vector<repo::core::model::MeshNode> * meshVec)
 {
 	OdGsDevicePtr pRes = OdRxObjectImpl<OdaVectoriseDevice, OdGsDevice>::createObject();
 	OdaVectoriseDevice* pMyDev = static_cast<OdaVectoriseDevice*>(pRes.get());
@@ -58,7 +61,7 @@ OdGsDevicePtr OdaVectoriseDevice::createObject(DeviceType type, const std::strin
 	/* Create the destination geometry receiver                           */
 	/**********************************************************************/
 	pMyDev->m_pDestGeometry = OdGiConveyorGeometryDumper::createObject(pMyDev->m_pDumper);
-	((OdGiConveyorGeometryDumper*)pMyDev->m_pDestGeometry)->setOutputFile(outputFile);
+	((OdGiConveyorGeometryDumper*)pMyDev->m_pDestGeometry)->setMeshCollector(meshVec);
 	return pRes;
 }
 
