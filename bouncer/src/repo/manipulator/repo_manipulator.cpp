@@ -833,7 +833,7 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 					error = REPOERR_NO_MESHES;
 					return nullptr;
 				}
-				if (rotateModel || useIFCImporter)
+				if (rotateModel || useIFCImporter || useDgnImporter)
 				{
 					repoTrace << "rotating model by 270 degress on the x axis...";
 					scene->reorientateDirectXModel();

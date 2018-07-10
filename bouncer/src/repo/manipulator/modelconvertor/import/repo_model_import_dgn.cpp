@@ -26,7 +26,7 @@ repo::core::model::RepoScene* DgnModelImport::generateRepoScene()
 		
 		auto root = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
 		transSet.insert(root);
-		auto rootID = root->getUniqueID();
+		auto rootID = root->getSharedID();
 		for (const auto &mesh : meshes) {
 			
 			meshSet.insert(new repo::core::model::MeshNode(mesh.cloneAndAddParent(rootID)));
