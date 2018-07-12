@@ -27,6 +27,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
 
 
 option (REPO_BUILD_COVERAGE "Building with coverage report" OFF)
+option (ODA_SUPPORT "If ODA library is present" OFF)
 if(REPO_BUILD_COVERAGE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 --coverage")
 endif()
@@ -77,6 +78,12 @@ if(NOT ${OCCT_FOUND})
 endif()
 if(NOT ${IFCOPENSHELL_FOUND})
 	message(FATAL_ERROR "Cannot find IFCOpenShell")
+endif()
+
+#===================== ODA ============================
+if (ODA_SUPPORT)
+	add_definitions(-D_TOOLKIT_IN_DLL_)
+	find_package(ODA REQUIRED)
 endif()
 
 #================COMPILE 3D REPO BOUNCER ==============

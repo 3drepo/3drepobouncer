@@ -1,6 +1,10 @@
 #include "repo_model_import_dgn.h"
-#include "dgnHelper/oda_file_processor.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
+#include "../../../error_codes.h"
+
+#ifdef ODA_SUPPORT
+#include "odaHelper/oda_file_processor.h"
+#endif
 
 
 using namespace repo::manipulator::modelconvertor;
@@ -51,11 +55,21 @@ repo::core::model::RepoScene* DgnModelImport::generateRepoScene()
 
 bool DgnModelImport::importModel(std::string filePath, uint8_t &err)
 {
+	
+#ifdef ODA_SUPPORT
 	this->filePath = filePath;
 	OdaFileProcessor odaProcessor(filePath);
 	bool success = false;
 	if (success = odaProcessor.readFile() == 0) {
 		meshes = odaProcessor.getMeshes();
 	}
+	else {
+		err = REPOERR_LOAD_SCENE_FAIL;
+	}
 	return success;
+#else
+	//ODA support not compiled in. 
+	err = REPOERR_ODA_UNAVAILABLE;
+	return false;
+#endif
 }
