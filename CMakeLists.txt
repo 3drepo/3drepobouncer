@@ -83,6 +83,7 @@ endif()
 #===================== ODA ============================
 if (ODA_SUPPORT)
 	add_definitions(-D_TOOLKIT_IN_DLL_)
+	add_definitions(-DODA_SUPPORT)
 	find_package(ODA REQUIRED)
 endif()
 
