@@ -256,8 +256,7 @@ RepoUser::SubscriptionInfo RepoUser::getSubscriptionInfo() const
 {
 	auto subs = getSubscriptionBSON();
 	SubscriptionInfo result;
-	std::cout << subs << std::endl;
-	if (!subs.isEmpty())
+if (!subs.isEmpty())
 	{
 		result.discretionary = convertToQuotaObject(subs.getObjectField(REPO_USER_LABEL_SUB_DISCRETIONARY));
 		result.enterprise = convertToQuotaObject(subs.getObjectField(REPO_USER_LABEL_SUB_ENTERPRISE));

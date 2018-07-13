@@ -545,8 +545,7 @@ namespace repo{
 			void getDatabaseStatistics(
 				const std::string                     &databaseAd,
 				const repo::core::model::RepoBSON*	  cred,
-				const std::string &outputFilePath,
-				const std::list<std::string> &paidAccList);
+				const std::string &outputFilePath);
 
 			/**
 			* Get a list of users and print the result in the given filepath
