@@ -34,7 +34,7 @@ class OdaVectoriseDevice :
 {
 	OdGiConveyorGeometryDumperPtr m_pDestGeometry;
 	OdaGiDumperPtr                 m_pDumper;
-
+	OdaGeometryCollector * geoCollector;
 public:
 	enum DeviceType
 	{
@@ -47,7 +47,7 @@ public:
 	/**********************************************************************/
 	/* Set the target data stream and the type.                           */
 	/**********************************************************************/
-	static OdGsDevicePtr createObject(DeviceType type, std::vector<repo::core::model::MeshNode> * meshVec);
+	static OdGsDevicePtr createObject(DeviceType type, OdaGeometryCollector *const geoCollector);
 
 	/**********************************************************************/
 	/* Called by the Teigha for .dwg files vectorization framework to update */

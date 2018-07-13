@@ -20,6 +20,7 @@
 
 #include "repo_model_import_abstract.h"
 #include "../../../core/model/bson/repo_node_mesh.h"
+#include "odaHelper/oda_geometry_collector.h"
 #include <vector>
 
 namespace repo {
@@ -49,8 +50,9 @@ namespace repo {
 				*/
 				virtual bool importModel(std::string filePath, uint8_t &err);
 			private:
-				std::vector<repo::core::model::MeshNode> meshes;
 				std::string filePath;
+				OdaGeometryCollector geoCollector;
+
 			};
 
 		}

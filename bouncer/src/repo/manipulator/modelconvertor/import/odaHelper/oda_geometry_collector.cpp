@@ -15,24 +15,14 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
-#include "../../../../core/model/bson/repo_node_mesh.h"
+
 #include "oda_geometry_collector.h"
 
-#include <vector>
-#include <string>
-
-
-class OdaFileProcessor
+OdaGeometryCollector::OdaGeometryCollector()
 {
-public:
-	OdaFileProcessor(const std::string &inputFile, OdaGeometryCollector * const geoCollector);
-	~OdaFileProcessor();
+}
 
-	int readFile();
 
-private:
-	const std::string file;
-	OdaGeometryCollector const *collector;
-};
-
+OdaGeometryCollector::~OdaGeometryCollector()
+{
+}

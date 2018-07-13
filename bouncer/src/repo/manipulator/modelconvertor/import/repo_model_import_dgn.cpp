@@ -19,11 +19,18 @@ DgnModelImport::~DgnModelImport()
 {
 }
 
+static repo_material_t createDefaultMaterial() {
+	repo_material_t matStruct;
+	matStruct.diffuse = { 1, 1, 1 };
+	matStruct.opacity = 1;
+}
 
 repo::core::model::RepoScene* DgnModelImport::generateRepoScene()
 {
 	repo::core::model::RepoScene *scene = nullptr;
+	auto meshes = geoCollector.getMeshes();
 	if (meshes.size()) {
+		auto mats = geoCollector.getMaterials();
 		const repo::core::model::RepoNodeSet dummy;
 		repo::core::model::RepoNodeSet meshSet;
 		repo::core::model::RepoNodeSet transSet;
@@ -34,15 +41,18 @@ repo::core::model::RepoScene* DgnModelImport::generateRepoScene()
 		transSet.insert(root);
 		auto rootID = root->getSharedID();
 		std::vector<repo::lib::RepoUUID> meshIDs;
-		for (const auto &mesh : meshes) {
-			
+		for (int i = 0; i < meshes.size(); ++i) {
+			auto mesh = meshes[i];			
 			meshSet.insert(new repo::core::model::MeshNode(mesh.cloneAndAddParent(rootID)));
 			meshIDs.push_back(mesh.getSharedID());
+
+			if (mats.size() > i)
+			{
+				auto mat = 
+			}
 		}
 
-		repo_material_t matStruct;
-		matStruct.diffuse = { 1, 1, 1 };
-		matStruct.opacity = 1;
+		
 
 		auto mat = repo::core::model::RepoBSONFactory::makeMaterialNode(matStruct);
 
@@ -58,12 +68,10 @@ bool DgnModelImport::importModel(std::string filePath, uint8_t &err)
 	
 #ifdef ODA_SUPPORT
 	this->filePath = filePath;
-	OdaFileProcessor odaProcessor(filePath);
+	OdaFileProcessor odaProcessor(filePath, &geoCollector);
 	bool success = false;
-	if (success = odaProcessor.readFile() == 0) {
-		meshes = odaProcessor.getMeshes();
-	}
-	else {
+	success = odaProcessor.readFile() == 0;
+	if (!success) {		
 		err = REPOERR_LOAD_SCENE_FAIL;
 	}
 	return success;

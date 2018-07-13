@@ -18,6 +18,7 @@
 #pragma once
 
 #include "oda_gi_dumper.h"
+#include "oda_geometry_collector.h"
 
 #include <SharedPtr.h>
 #include <Gi/GiGeometrySimplifier.h>
@@ -34,7 +35,7 @@ class OdGiConveyorGeometryDumper : public OdGiGeometrySimplifier
 	OdGiConveyorGeometryDumper();
 	
 	int m_dumpLevel;
-	std::vector<repo::core::model::MeshNode> *meshVec;
+	OdaGeometryCollector *collector;
 public:
 	enum
 	{
@@ -45,7 +46,7 @@ public:
 	int dumpLevel() const { return m_dumpLevel; }
 
 	static OdSharedPtr<OdGiConveyorGeometryDumper> createObject(OdaGiDumper* m_pDumper);
-	void setMeshCollector(std::vector<repo::core::model::MeshNode> * meshVec);
+	void setMeshCollector(OdaGeometryCollector *const geoCollector);
 
 
 	/**********************************************************************/

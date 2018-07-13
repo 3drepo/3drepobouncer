@@ -21,6 +21,7 @@
 #include "oda_gi_dumper_impl.h"
 #include "oda_gi_geo_dumper.h"
 #include "../../../../core/model/bson/repo_node_mesh.h"
+#include "oda_geometry_collector.h"
 
 #include <vector>
 
@@ -45,9 +46,10 @@ OdaVectoriseDevice::OdaVectoriseDevice()
 	onSize(OdGsDCRect(0, 100, 0, 100));
 }
 
-OdGsDevicePtr OdaVectoriseDevice::createObject(DeviceType type, std::vector<repo::core::model::MeshNode> * meshVec)
+OdGsDevicePtr OdaVectoriseDevice::createObject(DeviceType type, OdaGeometryCollector *const geoCollector)
 {
 	OdGsDevicePtr pRes = OdRxObjectImpl<OdaVectoriseDevice, OdGsDevice>::createObject();
+	
 	OdaVectoriseDevice* pMyDev = static_cast<OdaVectoriseDevice*>(pRes.get());
 
 	pMyDev->m_type = type;
@@ -61,7 +63,8 @@ OdGsDevicePtr OdaVectoriseDevice::createObject(DeviceType type, std::vector<repo
 	/* Create the destination geometry receiver                           */
 	/**********************************************************************/
 	pMyDev->m_pDestGeometry = OdGiConveyorGeometryDumper::createObject(pMyDev->m_pDumper);
-	((OdGiConveyorGeometryDumper*)pMyDev->m_pDestGeometry)->setMeshCollector(meshVec);
+	((OdGiConveyorGeometryDumper*)pMyDev->m_pDestGeometry)->setMeshCollector(geoCollector);
+	pMyDev->geoCollector = geoCollector;
 	return pRes;
 }
 
@@ -165,7 +168,16 @@ void OdaVectoriseDevice::update(OdGsDCRect* pUpdatedRect)
 /************************************************************************/
 void OdaVectoriseDevice::draw_color(ODCOLORREF color)
 {
-	dumper()->output(OD_T("draw_color"), toRGBString(color));
+
+	
+	repo_material_t mat;
+	mat.diffuse.push_back(ODGETRED(color)/255.);
+	mat.diffuse.push_back(ODGETGREEN(color) / 255.);
+	mat.diffuse.push_back(ODGETBLUE(color) / 255.);
+	mat.opacity = ODGETALPHA(color) / 255.;
+
+	geoCollector->addMaterial(mat);
+//	dumper()->output(OD_T("draw_color"), toRGBString(color));
 }
 
 /************************************************************************/

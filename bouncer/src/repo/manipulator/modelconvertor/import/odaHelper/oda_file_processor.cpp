@@ -39,8 +39,9 @@
 #include <DgLine.h>      // This file puts OdDgLine3d in the output file
 
 
-OdaFileProcessor::OdaFileProcessor(const std::string &inputFile)
-	: file(inputFile)
+OdaFileProcessor::OdaFileProcessor(const std::string &inputFile, OdaGeometryCollector const *geoCollector)
+	: file(inputFile),
+	  collector(geoCollector)
 {
 }
 
@@ -84,7 +85,7 @@ int OdaFileProcessor::readFile() {
 			// Set device palette from dgn color table
 
 			OdDgColorTablePtr clolortable = pDb->getColorTable();
-			OdGsDevicePtr pDevice = OdaVectoriseDevice::createObject(OdaVectoriseDevice::k3dDevice, &meshVector);
+			OdGsDevicePtr pDevice = OdaVectoriseDevice::createObject(OdaVectoriseDevice::k3dDevice, collector);
 
 			const ODCOLORREF* refColors = OdDgColorTable::currentPalette(pDb);
 			ODGSPALETTE pPalCpy;

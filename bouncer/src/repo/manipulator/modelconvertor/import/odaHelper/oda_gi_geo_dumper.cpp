@@ -33,8 +33,8 @@ OdGiConveyorGeometryDumper::OdGiConveyorGeometryDumper()
 {
 }
 
-void OdGiConveyorGeometryDumper::setMeshCollector(std::vector<repo::core::model::MeshNode> * _meshVec) {
-	meshVec = _meshVec;
+void OdGiConveyorGeometryDumper::setMeshCollector(OdaGeometryCollector *const geoCollector) {
+	collector = geoCollector;
 }
 
 OdSharedPtr<OdGiConveyorGeometryDumper> OdGiConveyorGeometryDumper::createObject(OdaGiDumper* m_pDumper)
@@ -361,8 +361,7 @@ void OdGiConveyorGeometryDumper::shellProc(OdInt32 numVertices,
 		faces.push_back(face);
 	}
 
-
-	meshVec->push_back(
+	collector->addMesh(
 		repo::core::model::RepoBSONFactory::makeMeshNode(
 				vertices, 
 				faces, 
