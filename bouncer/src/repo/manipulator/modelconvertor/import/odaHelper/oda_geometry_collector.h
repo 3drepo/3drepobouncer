@@ -30,11 +30,15 @@ public:
 	OdaGeometryCollector();
 	~OdaGeometryCollector();
 
-	std::vector<const repo_material_t> getMaterials() const {
+	std::vector<uint32_t> getMaterialMappings() const {
 		return matVector;
 	}
 
-	std::vector<const repo::core::model::MeshNode> getMeshes() const {
+	std::unordered_map < uint32_t, repo::core::model::MaterialNode > getMaterialNodes() const {
+		return codeToMat;
+	}
+
+	std::vector<repo::core::model::MeshNode> getMeshes() const {
 		return meshVector;
 	}
 
@@ -42,24 +46,22 @@ public:
 		meshVector.push_back(meshNode);
 	}
 
-	int addMaterialWithColor(const uint8_t r, const uint8_t g, const uint8_t b, const uint8_t a) {
-		auto code = r | (g << 8) | (b << 16) | (a << 24);
+	void addMaterialWithColor(const uint32_t &r, const uint32_t &g, const uint32_t &b, const uint32_t &a) {
+		uint32_t code = r | (g << 8) | (b << 16) | (a << 24);
 		if (codeToMat.find(code) == codeToMat.end())
 		{
 			repo_material_t mat;
 			mat.diffuse = {r/255.f, g/255.f, b/255.f};
-			mat.opacity = a / 255.f;
-			codeToMat[code] = mat;
+			mat.opacity = 1;//a / 255.f; alpha doesn't seem to be used
+			codeToMat[code] = repo::core::model::RepoBSONFactory::makeMaterialNode(mat);
 		}
-		
 
-				//matVector.push_back(mat);
-
+		matVector.push_back(code);
 	}
 
 private:
-	std::vector<const repo::core::model::MeshNode> meshVector;
-	std::vector<> matVector;
-	std::unordered_map<uint32_t, const repo::core::model:MaterialNode> codeToMat;
+	std::vector<repo::core::model::MeshNode> meshVector;
+	std::vector<uint32_t> matVector;
+	std::unordered_map < uint32_t, repo::core::model::MaterialNode > codeToMat;
 };
 

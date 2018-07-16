@@ -39,7 +39,7 @@
 #include <DgLine.h>      // This file puts OdDgLine3d in the output file
 
 
-OdaFileProcessor::OdaFileProcessor(const std::string &inputFile, OdaGeometryCollector const *geoCollector)
+OdaFileProcessor::OdaFileProcessor(const std::string &inputFile, OdaGeometryCollector *geoCollector)
 	: file(inputFile),
 	  collector(geoCollector)
 {

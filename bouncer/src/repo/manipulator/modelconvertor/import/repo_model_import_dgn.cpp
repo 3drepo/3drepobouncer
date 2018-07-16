@@ -30,7 +30,8 @@ repo::core::model::RepoScene* DgnModelImport::generateRepoScene()
 	repo::core::model::RepoScene *scene = nullptr;
 	auto meshes = geoCollector.getMeshes();
 	if (meshes.size()) {
-		auto mats = geoCollector.getMaterials();
+		auto mats = geoCollector.getMaterialMappings();
+		std::unordered_map<uint32_t, std::vector<repo::lib::RepoUUID>> matCodeToMeshIDs;
 		const repo::core::model::RepoNodeSet dummy;
 		repo::core::model::RepoNodeSet meshSet;
 		repo::core::model::RepoNodeSet transSet;
@@ -48,15 +49,25 @@ repo::core::model::RepoScene* DgnModelImport::generateRepoScene()
 
 			if (mats.size() > i)
 			{
-				auto mat = 
+				auto code = mats[i];
+				if (matCodeToMeshIDs.find(code) == matCodeToMeshIDs.end()) {
+					matCodeToMeshIDs[code] = std::vector<repo::lib::RepoUUID>();
+				}
+
+				matCodeToMeshIDs[code].push_back(mesh.getSharedID());
 			}
 		}
 
 		
+		auto codeToMat = geoCollector.getMaterialNodes();
+		for (const auto &pair : codeToMat)
+		{
+			if (matCodeToMeshIDs.find(pair.first) != matCodeToMeshIDs.end())
+			{
+				matSet.insert(new repo::core::model::MaterialNode(pair.second.cloneAndAddParent(matCodeToMeshIDs[pair.first])));
+			}
+		}
 
-		auto mat = repo::core::model::RepoBSONFactory::makeMaterialNode(matStruct);
-
-		matSet.insert(new repo::core::model::MaterialNode(mat.cloneAndAddParent(meshIDs)));
 		scene = new repo::core::model::RepoScene({ filePath }, dummy, meshSet, matSet, dummy, dummy, transSet);
 	}
 	return scene;

@@ -26,13 +26,13 @@
 class OdaFileProcessor
 {
 public:
-	OdaFileProcessor(const std::string &inputFile, OdaGeometryCollector * const geoCollector);
+	OdaFileProcessor(const std::string &inputFile, OdaGeometryCollector * geoCollector);
 	~OdaFileProcessor();
 
 	int readFile();
 
 private:
 	const std::string file;
-	OdaGeometryCollector const *collector;
+	OdaGeometryCollector *collector;
 };
 

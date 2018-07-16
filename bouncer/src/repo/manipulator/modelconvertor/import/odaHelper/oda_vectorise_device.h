@@ -47,7 +47,7 @@ public:
 	/**********************************************************************/
 	/* Set the target data stream and the type.                           */
 	/**********************************************************************/
-	static OdGsDevicePtr createObject(DeviceType type, OdaGeometryCollector *const geoCollector);
+	static OdGsDevicePtr createObject(DeviceType type, OdaGeometryCollector * geoCollector);
 
 	/**********************************************************************/
 	/* Called by the Teigha for .dwg files vectorization framework to update */

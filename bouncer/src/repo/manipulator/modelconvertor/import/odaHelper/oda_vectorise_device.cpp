@@ -46,7 +46,7 @@ OdaVectoriseDevice::OdaVectoriseDevice()
 	onSize(OdGsDCRect(0, 100, 0, 100));
 }
 
-OdGsDevicePtr OdaVectoriseDevice::createObject(DeviceType type, OdaGeometryCollector *const geoCollector)
+OdGsDevicePtr OdaVectoriseDevice::createObject(DeviceType type, OdaGeometryCollector * geoCollector)
 {
 	OdGsDevicePtr pRes = OdRxObjectImpl<OdaVectoriseDevice, OdGsDevice>::createObject();
 	
@@ -168,16 +168,7 @@ void OdaVectoriseDevice::update(OdGsDCRect* pUpdatedRect)
 /************************************************************************/
 void OdaVectoriseDevice::draw_color(ODCOLORREF color)
 {
-
-	
-	repo_material_t mat;
-	mat.diffuse.push_back(ODGETRED(color)/255.);
-	mat.diffuse.push_back(ODGETGREEN(color) / 255.);
-	mat.diffuse.push_back(ODGETBLUE(color) / 255.);
-	mat.opacity = ODGETALPHA(color) / 255.;
-
-	geoCollector->addMaterial(mat);
-//	dumper()->output(OD_T("draw_color"), toRGBString(color));
+	geoCollector->addMaterialWithColor(ODGETRED(color), ODGETGREEN(color), ODGETBLUE(color), ODGETALPHA(color));
 }
 
 /************************************************************************/
