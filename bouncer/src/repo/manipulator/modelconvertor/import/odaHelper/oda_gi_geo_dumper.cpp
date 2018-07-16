@@ -314,21 +314,21 @@ void OdGiConveyorGeometryDumper::shellProc(OdInt32 numVertices,
 	const OdGiVertexData* pVertexData)
 {
 
-	std::vector<repo::lib::RepoVector3D> vertices;
+	std::vector<repo::lib::RepoVector3D64> vertices;
 	std::vector<repo_face_t> faces;
 	
 
 
-	std::vector<std::vector<float>> boundingBox;
+	std::vector<std::vector<double>> boundingBox;
 
 	
 	for (OdInt32 i = 0; i < numVertices; ++i)
 	{
-		vertices.push_back(repo::lib::RepoVector3D(vertexList[i].x, vertexList[i].y, vertexList[i].z));
+		vertices.push_back(repo::lib::RepoVector3D64(vertexList[i].x, vertexList[i].y, vertexList[i].z));
 
 		if (i == 0) {
-			boundingBox.push_back({ (float)vertexList[i].x, (float)vertexList[i].y, (float)vertexList[i].z });
-			boundingBox.push_back({ (float)vertexList[i].x, (float)vertexList[i].y, (float)vertexList[i].z });
+			boundingBox.push_back({ vertexList[i].x, vertexList[i].y, vertexList[i].z });
+			boundingBox.push_back({ vertexList[i].x, vertexList[i].y, vertexList[i].z });
 		}
 		else {
 			boundingBox[0][0] = boundingBox[0][0] > vertexList[i].x ? vertexList[i].x : boundingBox[0][0];
@@ -345,8 +345,6 @@ void OdGiConveyorGeometryDumper::shellProc(OdInt32 numVertices,
 	/* Count and dump faces, count edges                                  */
 	/**********************************************************************/
 	OdInt32 i = 0;
-	OdInt32 numFaces = 0;
-	OdInt32 numEdges = 0;
 	while (i < faceListSize)
 	{
 		OdInt32 count = faceList[i++];
@@ -361,13 +359,7 @@ void OdGiConveyorGeometryDumper::shellProc(OdInt32 numVertices,
 		faces.push_back(face);
 	}
 
-	collector->addMesh(
-		repo::core::model::RepoBSONFactory::makeMeshNode(
-				vertices, 
-				faces, 
-				std::vector<repo::lib::RepoVector3D>(),
-				boundingBox
-			));
+	collector->addMeshEntry(vertices, faces, boundingBox);
 }
 
 /************************************************************************/

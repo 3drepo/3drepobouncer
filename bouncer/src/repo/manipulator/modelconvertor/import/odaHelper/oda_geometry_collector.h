@@ -24,6 +24,12 @@
 #include <string>
 
 
+struct mesh_data_t {
+	const std::vector<repo::lib::RepoVector3D64> rawVertices;
+	const std::vector<repo_face_t> faces;
+	const std::vector<std::vector<float>> boundingBox;
+};
+
 class OdaGeometryCollector
 {
 public:
@@ -38,30 +44,23 @@ public:
 		return codeToMat;
 	}
 
-	std::vector<repo::core::model::MeshNode> getMeshes() const {
-		return meshVector;
+	std::vector<repo::core::model::MeshNode> getMeshes() const;
+
+	std::vector<double> getModelOffset() const {
+		return minMeshBox;
 	}
 
-	void addMesh(const repo::core::model::MeshNode &meshNode) {
-		meshVector.push_back(meshNode);
-	}
+	void addMeshEntry(const std::vector<repo::lib::RepoVector3D64> &rawVertices,
+		const std::vector<repo_face_t> &faces,
+		const std::vector<std::vector<double>> &boundingBox
+	);
 
-	void addMaterialWithColor(const uint32_t &r, const uint32_t &g, const uint32_t &b, const uint32_t &a) {
-		uint32_t code = r | (g << 8) | (b << 16) | (a << 24);
-		if (codeToMat.find(code) == codeToMat.end())
-		{
-			repo_material_t mat;
-			mat.diffuse = {r/255.f, g/255.f, b/255.f};
-			mat.opacity = 1;//a / 255.f; alpha doesn't seem to be used
-			codeToMat[code] = repo::core::model::RepoBSONFactory::makeMaterialNode(mat);
-		}
-
-		matVector.push_back(code);
-	}
+	void addMaterialWithColor(const uint32_t &r, const uint32_t &g, const uint32_t &b, const uint32_t &a);
 
 private:
-	std::vector<repo::core::model::MeshNode> meshVector;
+	std::vector<mesh_data_t> meshData;
 	std::vector<uint32_t> matVector;
 	std::unordered_map < uint32_t, repo::core::model::MaterialNode > codeToMat;
+	std::vector<double> minMeshBox;
 };
 

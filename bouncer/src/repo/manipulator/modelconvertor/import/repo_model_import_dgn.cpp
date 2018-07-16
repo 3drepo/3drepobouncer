@@ -69,6 +69,7 @@ repo::core::model::RepoScene* DgnModelImport::generateRepoScene()
 		}
 
 		scene = new repo::core::model::RepoScene({ filePath }, dummy, meshSet, matSet, dummy, dummy, transSet);
+		scene->setWorldOffset(geoCollector.getModelOffset());
 	}
 	return scene;
 }
