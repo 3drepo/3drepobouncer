@@ -28,6 +28,7 @@ static repo_material_t createDefaultMaterial() {
 repo::core::model::RepoScene* DgnModelImport::generateRepoScene()
 {
 	repo::core::model::RepoScene *scene = nullptr;
+#ifdef ODA_SUPPORT
 	auto meshes = geoCollector.getMeshes();
 	if (meshes.size()) {
 		auto mats = geoCollector.getMaterialMappings();
@@ -71,6 +72,7 @@ repo::core::model::RepoScene* DgnModelImport::generateRepoScene()
 		scene = new repo::core::model::RepoScene({ filePath }, dummy, meshSet, matSet, dummy, dummy, transSet);
 		scene->setWorldOffset(geoCollector.getModelOffset());
 	}
+#endif
 	return scene;
 }
 
