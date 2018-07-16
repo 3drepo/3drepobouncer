@@ -8,6 +8,7 @@ if(ODA_SUPPORT)
 	set(SOURCES
 		${SOURCES}
 		${CMAKE_CURRENT_SOURCE_DIR}/oda_file_processor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/oda_geometry_collector.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/oda_gi_dumper_impl.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/oda_gi_geo_dumper.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/oda_vectorise_device.cpp
@@ -18,6 +19,7 @@ if(ODA_SUPPORT)
 		${CMAKE_CURRENT_SOURCE_DIR}/od_alloc_op.h
 		${CMAKE_CURRENT_SOURCE_DIR}/oda_exsystem_services.h
 		${CMAKE_CURRENT_SOURCE_DIR}/oda_file_processor.h
+		${CMAKE_CURRENT_SOURCE_DIR}/oda_geometry_collector.h
 		${CMAKE_CURRENT_SOURCE_DIR}/oda_gi_dumper.h
 		${CMAKE_CURRENT_SOURCE_DIR}/oda_gi_dumper_impl.h
 		${CMAKE_CURRENT_SOURCE_DIR}/oda_gi_geo_dumper.h
