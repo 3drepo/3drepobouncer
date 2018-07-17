@@ -18,6 +18,8 @@
 
 #include "oda_geometry_collector.h"
 
+using namespace repo::manipulator::modelconvertor::odaHelper;
+
 OdaGeometryCollector::OdaGeometryCollector()
 {
 }

@@ -23,16 +23,24 @@
 #include <string>
 
 
-class OdaFileProcessor
-{
-public:
-	OdaFileProcessor(const std::string &inputFile, OdaGeometryCollector * geoCollector);
-	~OdaFileProcessor();
+namespace repo {
+	namespace manipulator {
+		namespace modelconvertor {
+			namespace odaHelper {
+				class OdaFileProcessor
+				{
+				public:
+					OdaFileProcessor(const std::string &inputFile, OdaGeometryCollector * geoCollector);
+					~OdaFileProcessor();
 
-	int readFile();
+					int readFile();
 
-private:
-	const std::string file;
-	OdaGeometryCollector *collector;
-};
+				private:
+					const std::string file;
+					OdaGeometryCollector *collector;
+				};
+			}
+		}
+	}
+}
 

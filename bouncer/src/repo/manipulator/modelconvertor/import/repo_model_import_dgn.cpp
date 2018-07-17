@@ -82,7 +82,7 @@ bool DgnModelImport::importModel(std::string filePath, uint8_t &err)
 	
 #ifdef ODA_SUPPORT
 	this->filePath = filePath;
-	OdaFileProcessor odaProcessor(filePath, &geoCollector);
+	odaHelper::OdaFileProcessor odaProcessor(filePath, &geoCollector);
 	bool success = false;
 	success = odaProcessor.readFile() == 0;
 	if (!success) {		

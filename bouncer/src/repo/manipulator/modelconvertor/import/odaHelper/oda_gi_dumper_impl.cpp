@@ -27,6 +27,7 @@
 #include <DgElement.h>
 #include <DgTableRecord.h>
 #include <ExDgnHostAppServices.h>
+using namespace repo::manipulator::modelconvertor::odaHelper;
 
 OdArray<OdDgStlTriangleFace> OdaGiDumper::m_arrTriangles;
 

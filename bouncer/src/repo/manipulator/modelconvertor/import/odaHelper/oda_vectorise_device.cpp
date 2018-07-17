@@ -32,6 +32,8 @@
 #include <toString.h>
 #include <DgColorTable.h>
 
+using namespace repo::manipulator::modelconvertor::odaHelper;
+
 
 OdaVectoriseDevice::OdaVectoriseDevice()
 {

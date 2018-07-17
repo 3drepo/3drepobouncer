@@ -24,43 +24,51 @@
 #include <string>
 
 
-struct mesh_data_t {
-	const std::vector<repo::lib::RepoVector3D64> rawVertices;
-	const std::vector<repo_face_t> faces;
-	const std::vector<std::vector<float>> boundingBox;
-};
+namespace repo {
+	namespace manipulator {
+		namespace modelconvertor {
+			namespace odaHelper {
+				struct mesh_data_t {
+					const std::vector<repo::lib::RepoVector3D64> rawVertices;
+					const std::vector<repo_face_t> faces;
+					const std::vector<std::vector<float>> boundingBox;
+				};
 
-class OdaGeometryCollector
-{
-public:
-	OdaGeometryCollector();
-	~OdaGeometryCollector();
+				class OdaGeometryCollector
+				{
+				public:
+					OdaGeometryCollector();
+					~OdaGeometryCollector();
 
-	std::vector<uint32_t> getMaterialMappings() const {
-		return matVector;
+					std::vector<uint32_t> getMaterialMappings() const {
+						return matVector;
+					}
+
+					std::unordered_map < uint32_t, repo::core::model::MaterialNode > getMaterialNodes() const {
+						return codeToMat;
+					}
+
+					std::vector<repo::core::model::MeshNode> getMeshes() const;
+
+					std::vector<double> getModelOffset() const {
+						return minMeshBox;
+					}
+
+					void addMeshEntry(const std::vector<repo::lib::RepoVector3D64> &rawVertices,
+						const std::vector<repo_face_t> &faces,
+						const std::vector<std::vector<double>> &boundingBox
+					);
+
+					void addMaterialWithColor(const uint32_t &r, const uint32_t &g, const uint32_t &b, const uint32_t &a);
+
+				private:
+					std::vector<mesh_data_t> meshData;
+					std::vector<uint32_t> matVector;
+					std::unordered_map < uint32_t, repo::core::model::MaterialNode > codeToMat;
+					std::vector<double> minMeshBox;
+				};
+			}
+		}
 	}
-
-	std::unordered_map < uint32_t, repo::core::model::MaterialNode > getMaterialNodes() const {
-		return codeToMat;
-	}
-
-	std::vector<repo::core::model::MeshNode> getMeshes() const;
-
-	std::vector<double> getModelOffset() const {
-		return minMeshBox;
-	}
-
-	void addMeshEntry(const std::vector<repo::lib::RepoVector3D64> &rawVertices,
-		const std::vector<repo_face_t> &faces,
-		const std::vector<std::vector<double>> &boundingBox
-	);
-
-	void addMaterialWithColor(const uint32_t &r, const uint32_t &g, const uint32_t &b, const uint32_t &a);
-
-private:
-	std::vector<mesh_data_t> meshData;
-	std::vector<uint32_t> matVector;
-	std::unordered_map < uint32_t, repo::core::model::MaterialNode > codeToMat;
-	std::vector<double> minMeshBox;
-};
+}
 

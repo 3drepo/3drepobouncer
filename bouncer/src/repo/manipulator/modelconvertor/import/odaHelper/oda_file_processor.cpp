@@ -37,7 +37,7 @@
 #include "oda_vectorise_device.h"
 
 #include <DgLine.h>      // This file puts OdDgLine3d in the output file
-
+using namespace repo::manipulator::modelconvertor::odaHelper;
 
 OdaFileProcessor::OdaFileProcessor(const std::string &inputFile, OdaGeometryCollector *geoCollector)
 	: file(inputFile),

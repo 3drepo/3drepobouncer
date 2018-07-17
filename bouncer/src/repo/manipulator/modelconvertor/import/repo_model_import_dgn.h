@@ -55,7 +55,7 @@ namespace repo {
 			private:
 				std::string filePath;
 #ifdef ODA_SUPPORT
-				OdaGeometryCollector geoCollector;
+				odaHelper::OdaGeometryCollector geoCollector;
 #endif
 			};
 

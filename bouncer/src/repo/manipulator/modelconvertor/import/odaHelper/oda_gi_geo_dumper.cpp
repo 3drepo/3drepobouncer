@@ -26,6 +26,7 @@
 
 #include "oda_gi_geo_dumper.h"
 #include "../../../../core/model/bson/repo_bson_factory.h"
+using namespace repo::manipulator::modelconvertor::odaHelper;
 
 
 OdGiConveyorGeometryDumper::OdGiConveyorGeometryDumper()
