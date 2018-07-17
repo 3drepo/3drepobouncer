@@ -20,8 +20,11 @@
 
 #include "repo_model_import_abstract.h"
 #include "../../../core/model/bson/repo_node_mesh.h"
-#include "odaHelper/oda_geometry_collector.h"
 #include <vector>
+
+#ifdef ODA_SUPPORT
+#include "odaHelper/oda_geometry_collector.h"
+#endif
 
 namespace repo {
 	namespace manipulator {
@@ -51,8 +54,9 @@ namespace repo {
 				virtual bool importModel(std::string filePath, uint8_t &err);
 			private:
 				std::string filePath;
+#ifdef ODA_SUPPORT
 				OdaGeometryCollector geoCollector;
-
+#endif
 			};
 
 		}
