@@ -57,13 +57,18 @@ void OdaGeometryCollector::addMeshEntry(const std::vector<repo::lib::RepoVector3
 	}
 	meshData.push_back({ rawVertices, faces, 
 	{{(float)boundingBox[0][0], (float)boundingBox[0][1], (float)boundingBox[0][2]},
-	{ (float)boundingBox[1][0], (float)boundingBox[1][1], (float)boundingBox[1][2] }} });
+	{ (float)boundingBox[1][0], (float)boundingBox[1][1], (float)boundingBox[1][2] }}, nextMeshName });
+	nextMeshName = "";
 }
 
 std::vector<repo::core::model::MeshNode> OdaGeometryCollector::getMeshes() const {
 	std::vector<repo::core::model::MeshNode> res;
 
 	res.reserve(meshData.size());
+	auto dummyUV = std::vector<std::vector<repo::lib::RepoVector2D>>();
+	auto dummyCol = std::vector<repo_color4d_t>();
+	auto dummyOutline = std::vector<std::vector<float>>();
+
 	for (const auto &meshEntry : meshData) {
 		std::vector<repo::lib::RepoVector3D> vertices32;
 		vertices32.reserve(meshEntry.rawVertices.size());
@@ -72,7 +77,16 @@ std::vector<repo::core::model::MeshNode> OdaGeometryCollector::getMeshes() const
 			vertices32.push_back({ (float)(v.x - minMeshBox[0]), (float)(v.y - minMeshBox[1]), (float)(v.z - minMeshBox[2]) });
 		}
 
-		res.push_back(repo::core::model::RepoBSONFactory::makeMeshNode(vertices32, meshEntry.faces, std::vector<repo::lib::RepoVector3D>(), meshEntry.boundingBox));
+		res.push_back(repo::core::model::RepoBSONFactory::makeMeshNode(
+			vertices32, 
+			meshEntry.faces, 
+			std::vector<repo::lib::RepoVector3D>(), 
+			meshEntry.boundingBox,
+			dummyUV,
+			dummyCol,
+			dummyOutline,
+			meshEntry.name
+		));
 	}
 
 	return res;

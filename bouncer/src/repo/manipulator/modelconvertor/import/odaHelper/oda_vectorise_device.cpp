@@ -271,6 +271,9 @@ void ExSimpleView::draw(const OdGiDrawable* pDrawable)
 	OdString sHandle = pElm->isDBRO() ? toString(pElm->elementId().getHandle()) : toString(OD_T("non-DbResident"));
 
 	device()->dumper()->output(OD_T("Start Drawing ") + sClassName, sHandle);
+	std::stringstream ss;
+	ss << sHandle;
+	device()->collector()->setNextMeshName(ss.str());
 	//device()->dumper()->pushIndent();
 
 	/**********************************************************************/

@@ -89,6 +89,8 @@ namespace repo {
 					/**********************************************************************/
 					OdaGiDumper* dumper();
 
+					OdaGeometryCollector* collector() { return geoCollector; }
+
 					/**********************************************************************/
 					/* Called by each associated view object to set the current RGB draw  */
 					/* color.                                                             */
