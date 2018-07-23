@@ -155,8 +155,8 @@ void OdaGiDumperImpl::output(const OdString& str)
 	OdString indent;
 	for (int i = 0; i < m_indentLevel; i++)
 		indent += ' ';
-	//FIXME: use repo log
-	std::cout << (L"%ls%ls\n", indent.c_str(), str.c_str()) << std::endl;
+	//std::cout << indent << str << std::endl;
+	//oddgPrintConsoleString(L"%ls%ls\n", indent.c_str(), str.c_str());
 }
 /************************************************************************/
 /* Output vertices                                                      */

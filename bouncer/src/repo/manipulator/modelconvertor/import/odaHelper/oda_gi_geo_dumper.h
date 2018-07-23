@@ -37,8 +37,15 @@ namespace repo {
 					OdaGiDumperPtr m_pDumper;
 					OdGiConveyorGeometryDumper();
 
-					int m_dumpLevel;
+					int m_dumpLevel = Maximal_Simplification;
 					OdaGeometryCollector *collector;
+
+					bool recordingMesh = false;
+					std::vector<repo::lib::RepoVector3D64> vertices;
+					std::vector<repo_face_t> faces;
+					std::vector<std::vector<double>> boundingBox;
+					std::unordered_map<std::string, int> vToVIndex;
+
 				public:
 					enum
 					{
@@ -56,7 +63,7 @@ namespace repo {
 					/* The overrides of OdGiConveyorGeometry.  Each view sends            */
 					/* its vectorized entity data to these functions, due to the          */
 					/* link established between the view and the device in                */
-					/* OdaVectoriseDevice::createView().                                    */
+					/* ExGsSimpleDevice::createView().                                    */
 					/**********************************************************************/
 
 					void plineProc(const OdGiPolyline& lwBuf,
@@ -187,7 +194,6 @@ namespace repo {
 
 					TD_USING(OdGiGeometrySimplifier::polylineOut);
 				};
-
 				typedef OdSharedPtr<OdGiConveyorGeometryDumper> OdGiConveyorGeometryDumperPtr;
 			}
 		}

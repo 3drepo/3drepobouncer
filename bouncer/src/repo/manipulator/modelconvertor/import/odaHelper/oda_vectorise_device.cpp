@@ -65,6 +65,7 @@ OdGsDevicePtr OdaVectoriseDevice::createObject(DeviceType type, OdaGeometryColle
 	/* Create the destination geometry receiver                           */
 	/**********************************************************************/
 	pMyDev->m_pDestGeometry = OdGiConveyorGeometryDumper::createObject(pMyDev->m_pDumper);
+	pMyDev->m_pDestGeometry->setDumpLevel(OdGiConveyorGeometryDumper::Maximal_Simplification);
 	((OdGiConveyorGeometryDumper*)pMyDev->m_pDestGeometry)->setMeshCollector(geoCollector);
 	pMyDev->geoCollector = geoCollector;
 	return pRes;

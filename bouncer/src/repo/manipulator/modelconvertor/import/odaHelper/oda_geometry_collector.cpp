@@ -18,6 +18,9 @@
 
 #include "oda_geometry_collector.h"
 
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 OdaGeometryCollector::OdaGeometryCollector()
@@ -57,7 +60,7 @@ void OdaGeometryCollector::addMeshEntry(const std::vector<repo::lib::RepoVector3
 	}
 	meshData.push_back({ rawVertices, faces, 
 	{{(float)boundingBox[0][0], (float)boundingBox[0][1], (float)boundingBox[0][2]},
-	{ (float)boundingBox[1][0], (float)boundingBox[1][1], (float)boundingBox[1][2] }}, nextMeshName });
+	{ (float)boundingBox[1][0], (float)boundingBox[1][1], (float)boundingBox[1][2] }}, nextMeshName});
 	nextMeshName = "";
 }
 
@@ -88,6 +91,7 @@ std::vector<repo::core::model::MeshNode> OdaGeometryCollector::getMeshes() const
 			meshEntry.name
 		));
 	}
+	
 
 	return res;
 }
