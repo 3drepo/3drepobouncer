@@ -257,7 +257,7 @@ float AssimpModelImport::normaliseShininess(const float &rawValue) const {
 		value = rawValue/20.;
 	}
 	else if(ext == ".OBJ") {
-		value = rawValue/1000.;
+		value = rawValue/200.;
 	}
 	else if (ext == ".DAE") {
 		value = rawValue > 128? 1 : rawValue/128;
@@ -337,7 +337,7 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 			repo_material.opacity = tempFloat == 0 ? 1 : tempFloat;		
 		}
 		else
-			repo_material.opacity = std::numeric_limits<float>::quiet_NaN();
+			repo_material.opacity = 1;
 
 		//--------------------------------------------------------------------------
 		// Shininess
