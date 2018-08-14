@@ -249,6 +249,26 @@ repo::core::model::CameraNode* AssimpModelImport::createCameraRepoNode(
 
 	return cameraNode;
 }
+
+float AssimpModelImport::normaliseShininess(const float &rawValue) const {
+	std::string ext = getFileExtension(orgFile);
+	float value;
+	if (ext == ".FBX") {
+		value = rawValue/20.;
+	}
+	else if(ext == ".OBJ") {
+		value = rawValue/1000.;
+	}
+	else if (ext == ".DAE") {
+		value = rawValue > 128? 1 : rawValue/128;
+	}
+	else {
+		value = rawValue / 1000;
+}	
+
+	return value;
+}
+
 repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 	const aiMaterial *material,
 	const std::string &name,
@@ -322,7 +342,7 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 		//--------------------------------------------------------------------------
 		// Shininess
 		if (AI_SUCCESS == material->Get(AI_MATKEY_SHININESS, tempFloat))
-			repo_material.shininess = tempFloat;
+			repo_material.shininess = normaliseShininess(tempFloat);
 		else
 			repo_material.shininess = std::numeric_limits<float>::quiet_NaN();
 		//--------------------------------------------------------------------------
@@ -1188,6 +1208,15 @@ std::vector<std::vector<double>> AssimpModelImport::getAiMeshBoundingBox(
 	return bbox;
 }
 
+std::string AssimpModelImport::getFileExtension(const std::string &filePath) const {
+	boost::filesystem::path filePathP(filePath);
+	std::string fileExt = filePathP.extension().string();
+
+	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
+
+	return fileExt;
+}
+
 bool AssimpModelImport::importModel(std::string filePath, uint8_t &err)
 {
 	bool success = true;
@@ -1211,13 +1240,7 @@ bool AssimpModelImport::importModel(std::string filePath, uint8_t &err)
 		return false;
 	}
 
-	boost::filesystem::path filePathP(filePath);
-	std::string fileExt = filePathP.extension().string();
-
-	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
-
-	keepMetadata = fileExt == ".IFC";
-
+	keepMetadata = getFileExtension(filePath) == ".IFC";
 	importer.SetPropertyInteger(AI_CONFIG_GLOB_MEASURE_TIME, 1);
 	importer.SetPropertyBool(AI_CONFIG_IMPORT_IFC_SKIP_SPACE_REPRESENTATIONS, settings->getSkipIFCSpaceRepresentation());
 	importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_READ_TEXTURES, true);
