@@ -56,7 +56,7 @@ repo_material_t IFCUtilsGeometry::createMaterial(
 
 	if (material.hasSpecularity())
 	{
-		matProp.shininess = material.specularity();
+		matProp.shininess = material.specularity() / 256;
 	}
 	else
 	{
