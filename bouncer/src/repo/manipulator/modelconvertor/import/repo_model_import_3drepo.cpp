@@ -118,11 +118,11 @@ repo::core::model::MaterialNode *RepoModelImport::parseMaterial(const boost::pro
 			repo_material.opacity = 1.0f;
 
 		if (matTree.find("shininess") != matTree.not_found())
-			repo_material.shininess = matTree.get<float>("shininess");
+			repo_material.shininess = matTree.get<float>("shininess") * 5;
 		else
 			repo_material.shininess = 0.0f;
 
-		repo_material.shininessStrength = 1.0f;
+		repo_material.shininessStrength = 0.25f;
 		repo_material.isWireframe = false;
 		repo_material.isTwoSided = false;
 
