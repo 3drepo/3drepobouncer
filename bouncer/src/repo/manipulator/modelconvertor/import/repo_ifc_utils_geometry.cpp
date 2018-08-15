@@ -50,6 +50,9 @@ repo_material_t IFCUtilsGeometry::createMaterial(
 		auto specular = material.specular();
 		matProp.specular = { (float)specular[0], (float)specular[1], (float)specular[2] };
 	}
+	else {
+		matProp.specular = { 0, 0, 0, 0};
+	}
 
 	if (material.hasSpecularity())
 	{
@@ -57,10 +60,10 @@ repo_material_t IFCUtilsGeometry::createMaterial(
 	}
 	else
 	{
-		matProp.shininess = NAN;
+		matProp.shininess = 0.5;
 	}
 
-	matProp.shininessStrength = NAN;
+	matProp.shininessStrength = 1;
 
 	if (material.hasTransparency())
 	{
