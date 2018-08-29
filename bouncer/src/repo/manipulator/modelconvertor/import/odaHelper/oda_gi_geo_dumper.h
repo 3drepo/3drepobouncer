@@ -75,6 +75,8 @@ namespace repo {
 
 					void polygonOut(OdInt32 numPoints, const OdGePoint3d* vertexList, const OdGeVector3d* pNormal = 0);
 
+					void triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal);
+
 					void circleProc(const OdGePoint3d& center,
 						double radius,
 						const OdGeVector3d& normal,
