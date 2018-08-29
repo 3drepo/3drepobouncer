@@ -25,6 +25,7 @@ using namespace repo::manipulator::modelconvertor::odaHelper;
 
 OdaGeometryCollector::OdaGeometryCollector()
 {
+	ofile.open("C:\\Users\\Carmen\\Desktop\\testDump.obj");
 }
 
 
@@ -62,6 +63,19 @@ void OdaGeometryCollector::addMeshEntry(const std::vector<repo::lib::RepoVector3
 	{{(float)boundingBox[0][0], (float)boundingBox[0][1], (float)boundingBox[0][2]},
 	{ (float)boundingBox[1][0], (float)boundingBox[1][1], (float)boundingBox[1][2] }}, nextMeshName});
 	nextMeshName = "";
+
+	for (const auto &v : rawVertices) {
+		ofile << "v " << v.x << " " << v.y << " " << v.z << std::endl;
+	}
+
+	for (const auto &f : faces) {
+		ofile << "f";
+		for (const auto &fIdx : f)
+			ofile << " " << fIdx + nVectors;
+		ofile << std::endl;
+	}
+
+	nVectors += rawVertices.size();
 }
 
 std::vector<repo::core::model::MeshNode> OdaGeometryCollector::getMeshes() const {

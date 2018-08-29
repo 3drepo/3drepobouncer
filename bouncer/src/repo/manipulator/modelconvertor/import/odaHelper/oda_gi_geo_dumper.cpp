@@ -325,22 +325,67 @@ void OdGiConveyorGeometryDumper::meshProc(OdInt32 rows,
 	m_pDumper->outputEdgeData(pEdgeData, ((rows - 1) * columns) + ((columns - 1) * rows));
 	m_pDumper->outputFaceData(pFaceData, (rows - 1) * (columns - 1));
 	m_pDumper->outputVertexData(pVertexData, rows * columns);
+	m_pDumper->popIndent();
 
-	recordingMesh = true;
-	//Call parent meshProc, which triangulates all polygon vertices (resulting faces would 
-	// appear in Polygon Out.)
-	OdGiGeometrySimplifier::meshProc(rows, columns, pVertexList, pEdgeData, pFaceData, pVertexData);
-	recordingMesh = false;
+	m_pDumper->output(OD_T("End meshProc"));
 
-	if (vertices.size() && faces.size())
-		collector->addMeshEntry(vertices, faces, boundingBox);
+	if (false/*m_dumpLevel == Maximal_Simplification*/) {
+		m_pDumper->output(OD_T("Starting Mesh Proc"));
+		recordingMesh = true;
+
+		//Call parent shellProc, which triangulates all polygon vertices (resulting faces would 
+		// appear in Polygon Out.)
+		OdGiGeometrySimplifier::meshProc(rows, columns, pVertexList, pEdgeData, pFaceData, pVertexData);
+		recordingMesh = false;
+		m_pDumper->output(OD_T("Adding entry to meshEntry"));
+		if (vertices.size() && faces.size())
+			collector->addMeshEntry(vertices, faces, boundingBox);
+		m_pDumper->output(OD_T("Done"));
+	}
+	else {
+
+		//for (OdInt32 i = 0; i < numVertices; ++i)
+		//{
+		//	vertices.push_back(repo::lib::RepoVector3D64(vertexList[i].x, vertexList[i].y, vertexList[i].z));
+
+		//	if (i == 0) {
+		//		boundingBox.push_back({ vertexList[i].x, vertexList[i].y, vertexList[i].z });
+		//		boundingBox.push_back({ vertexList[i].x, vertexList[i].y, vertexList[i].z });
+		//	}
+		//	else {
+		//		boundingBox[0][0] = boundingBox[0][0] > vertexList[i].x ? vertexList[i].x : boundingBox[0][0];
+		//		boundingBox[0][1] = boundingBox[0][1] > vertexList[i].y ? vertexList[i].y : boundingBox[0][1];
+		//		boundingBox[0][2] = boundingBox[0][2] > vertexList[i].z ? vertexList[i].z : boundingBox[0][2];
+
+		//		boundingBox[1][0] = boundingBox[1][0] < vertexList[i].x ? vertexList[i].x : boundingBox[1][0];
+		//		boundingBox[1][1] = boundingBox[1][1] < vertexList[i].y ? vertexList[i].y : boundingBox[1][1];
+		//		boundingBox[1][2] = boundingBox[1][2] < vertexList[i].z ? vertexList[i].z : boundingBox[1][2];
+		//	}
+		//}
+
+		///**********************************************************************/
+		///* Count and dump faces, count edges                                  */
+		///**********************************************************************/
+		//OdInt32 i = 0;
+		//while (i < faceListSize)
+		//{
+		//	OdInt32 count = faceList[i++];
+		//	if (count < 0) count *= -1;
+		//	repo_face_t face;
+		//	for (OdInt32 j = 0; j < count; j++, i++)
+		//	{
+		//		face.push_back(faceList[i]);
+		//	}
+		//	faces.push_back(face);
+		//}
+
+		//collector->addMeshEntry(vertices, faces, boundingBox);
+	}
+
 	vertices.clear();
 	faces.clear();
 	boundingBox.clear();
 	vToVIndex.clear();
-
-	m_pDumper->popIndent();
-	m_pDumper->output(OD_T("End meshProc"));
 }
 
 /************************************************************************/
@@ -356,7 +401,7 @@ void OdGiConveyorGeometryDumper::shellProc(OdInt32 numVertices,
 {
 
 
-	if (m_dumpLevel == Maximal_Simplification) {
+	if (false/*m_dumpLevel == Maximal_Simplification*/) {
 		m_pDumper->output(OD_T("Starting Mesh Proc"));
 		recordingMesh = true;
 

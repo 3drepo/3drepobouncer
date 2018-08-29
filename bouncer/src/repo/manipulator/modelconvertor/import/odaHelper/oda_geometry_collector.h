@@ -18,6 +18,7 @@
 #pragma once
 #include "../../../../core/model/bson/repo_bson_factory.h"
 #include "../../../../lib/datastructure/repo_structs.h"
+#include <fstream>
 
 
 #include <vector>
@@ -72,6 +73,8 @@ namespace repo {
 					std::unordered_map < uint32_t, repo::core::model::MaterialNode > codeToMat;
 					std::vector<double> minMeshBox;
 					std::string nextMeshName;
+					std::ofstream ofile;
+					int nVectors = 1;
 				};
 			}
 		}
