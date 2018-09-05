@@ -191,7 +191,7 @@ namespace repo {
 					double deviation(const OdGiDeviationType, const OdGePoint3d&) const
 					{
 						// NOTE: use some reasonable value
-						return 0.8; //0.000001; 
+						return 0;
 					}
 
 					/**********************************************************************/
