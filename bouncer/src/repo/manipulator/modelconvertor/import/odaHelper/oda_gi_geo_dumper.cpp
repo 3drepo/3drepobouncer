@@ -46,7 +46,6 @@ OdSharedPtr<OdGiConveyorGeometryDumper> OdGiConveyorGeometryDumper::createObject
 	return pNewObject;
 }
 
-
 /************************************************************************/
 /* Process OdGiPolyline data                                            */
 /************************************************************************/
@@ -108,39 +107,69 @@ void OdGiConveyorGeometryDumper::polygonOut(OdInt32 numPoints,
 		OdaGiDumper::addStlTriangle(newFace);
 	}
 	
-	if (recordingMesh)
+	repoInfo << "polygon out, recording mesh? " << recordingMesh << " #vertices: " << numPoints;
+
+	repo_face_t face;
+	unsigned int firstVertice = 0;
+	for (int i = 0; i < numPoints; ++i)
 	{
-		repo_face_t face;
-		for (int i = 0; i < numPoints; ++i)
+		std::stringstream ss;
+		ss.precision(17);
+		ss << std::fixed<<  vertexList[i].x << "," << std::fixed << vertexList[i].y << "," << std::fixed << vertexList[i].z;
+		
+		auto vStr = ss.str();
+		if (vToVIndex.find(vStr) == vToVIndex.end())
 		{
-			std::stringstream ss;
-			ss.precision(17);
-			ss << std::fixed<<  vertexList[i].x << "," << std::fixed << vertexList[i].y << "," << std::fixed << vertexList[i].z;
-			auto vStr = ss.str();
-			if (vToVIndex.find(vStr) == vToVIndex.end())
-			{
-				vToVIndex[vStr] = vertices.size();
-				vertices.push_back({ vertexList[i].x , vertexList[i].y, vertexList[i].z });
-			}
-			face.push_back(vToVIndex[vStr]);
-
-			if (boundingBox.size()) {
-				boundingBox[0][0] = boundingBox[0][0] > vertexList[i].x ? vertexList[i].x : boundingBox[0][0];
-				boundingBox[0][1] = boundingBox[0][1] > vertexList[i].y ? vertexList[i].y : boundingBox[0][1];
-				boundingBox[0][2] = boundingBox[0][2] > vertexList[i].z ? vertexList[i].z : boundingBox[0][2];
-
-				boundingBox[1][0] = boundingBox[1][0] < vertexList[i].x ? vertexList[i].x : boundingBox[1][0];
-				boundingBox[1][1] = boundingBox[1][1] < vertexList[i].y ? vertexList[i].y : boundingBox[1][1];
-				boundingBox[1][2] = boundingBox[1][2] < vertexList[i].z ? vertexList[i].z : boundingBox[1][2];
-			}
-			else {
-				boundingBox.push_back({ vertexList[i].x, vertexList[i].y, vertexList[i].z });
-				boundingBox.push_back({ vertexList[i].x, vertexList[i].y, vertexList[i].z });				
-			}
-			
+			vToVIndex[vStr] = vertices.size();
+			vertices.push_back({ vertexList[i].x , vertexList[i].y, vertexList[i].z });
 		}
-		faces.push_back(face);
+	
+		//FIXME: this is a dummy workaround for simply triangulation if numPoints > 3
+		if (i == 0) firstVertice = vToVIndex[vStr];
+
+		if (i > 3) {
+			auto lastIdx = face[face.size() - 1];
+			faces.push_back(face);
+
+			face.clear();
+			face.push_back(firstVertice);
+			face.push_back(lastIdx);
+		}
+
+		face.push_back(vToVIndex[vStr]);
+
+
+		if (boundingBox.size()) {
+			boundingBox[0][0] = boundingBox[0][0] > vertexList[i].x ? vertexList[i].x : boundingBox[0][0];
+			boundingBox[0][1] = boundingBox[0][1] > vertexList[i].y ? vertexList[i].y : boundingBox[0][1];
+			boundingBox[0][2] = boundingBox[0][2] > vertexList[i].z ? vertexList[i].z : boundingBox[0][2];
+
+			boundingBox[1][0] = boundingBox[1][0] < vertexList[i].x ? vertexList[i].x : boundingBox[1][0];
+			boundingBox[1][1] = boundingBox[1][1] < vertexList[i].y ? vertexList[i].y : boundingBox[1][1];
+			boundingBox[1][2] = boundingBox[1][2] < vertexList[i].z ? vertexList[i].z : boundingBox[1][2];
+		}
+		else {
+			boundingBox.push_back({ vertexList[i].x, vertexList[i].y, vertexList[i].z });
+			boundingBox.push_back({ vertexList[i].x, vertexList[i].y, vertexList[i].z });				
+		}		
 	}
+	faces.push_back(face);
+
+	if (numPoints > 3) {
+		std::stringstream ss;
+		ss.precision(17);
+		ss << std::fixed << vertexList[1].x << "," << std::fixed << vertexList[1].y << "," << std::fixed << vertexList[1].z;
+		faces.push_back({face[face.size()-1] , firstVertice,  vToVIndex[ss.str()] });
+	}
+
+	if(!recordingMesh) {
+		collector->addMeshEntry(vertices, faces, boundingBox);
+		vertices.clear();
+		faces.clear();
+		boundingBox.clear();
+		vToVIndex.clear();
+	}
+	
 
 }
 
@@ -354,12 +383,10 @@ void OdGiConveyorGeometryDumper::triangleOut(const OdInt32* p3Vertices, const Od
 {
 	const OdGePoint3d*  pVertexDataList = vertexDataList();
 	const OdGeVector3d* pNormals = NULL;
-
-	repoInfo << "Triangle out called";
-
-	if (recordingMesh && ((pVertexDataList + p3Vertices[0]) != (pVertexDataList + p3Vertices[1]) &&
+	
+	if ((pVertexDataList + p3Vertices[0]) != (pVertexDataList + p3Vertices[1]) &&
 		(pVertexDataList + p3Vertices[0]) != (pVertexDataList + p3Vertices[2]) &&
-		(pVertexDataList + p3Vertices[1]) != (pVertexDataList + p3Vertices[2])))
+		(pVertexDataList + p3Vertices[1]) != (pVertexDataList + p3Vertices[2]))
 	{
 		repo_face_t face;
 		for (int i = 0; i < 3; ++i)
@@ -391,6 +418,14 @@ void OdGiConveyorGeometryDumper::triangleOut(const OdInt32* p3Vertices, const Od
 			
 		}
 		faces.push_back(face);
+
+		if (!recordingMesh) {
+			collector->addMeshEntry(vertices, faces, boundingBox);
+			vertices.clear();
+			faces.clear();
+			boundingBox.clear();
+			vToVIndex.clear();
+		}
 	}
 
 }
@@ -406,66 +441,25 @@ void OdGiConveyorGeometryDumper::shellProc(OdInt32 numVertices,
 	const OdGiFaceData* pFaceData,
 	const OdGiVertexData* pVertexData)
 {
+	m_pDumper->output(OD_T("Starting Shell Proc"));
+	recordingMesh = true;
+	repoInfo << "!!! shell proc";
 
-
-	if (m_dumpLevel == Maximal_Simplification) {
-		m_pDumper->output(OD_T("Starting Mesh Proc"));
-		recordingMesh = true;
-
-		//Call parent shellProc, which triangulates all polygon vertices (resulting faces would 
-		// appear in Polygon Out.)
-		OdGiGeometrySimplifier::shellProc(
-			numVertices,
-			vertexList,
-			faceListSize,
-			faceList,
-			pEdgeData,
-			pFaceData,
-			pVertexData);
-		recordingMesh = false;
-		m_pDumper->output(OD_T("Adding entry to meshEntry"));
-		if(vertices.size() && faces.size())
-			collector->addMeshEntry(vertices, faces, boundingBox);
-		m_pDumper->output(OD_T("Done"));
-	} else {
-
-		for (OdInt32 i = 0; i < numVertices; ++i)
-		{
-			vertices.push_back(repo::lib::RepoVector3D64(vertexList[i].x, vertexList[i].y, vertexList[i].z));
-
-			if (i == 0) {
-				boundingBox.push_back({ vertexList[i].x, vertexList[i].y, vertexList[i].z });
-				boundingBox.push_back({ vertexList[i].x, vertexList[i].y, vertexList[i].z });
-			}
-			else {
-				boundingBox[0][0] = boundingBox[0][0] > vertexList[i].x ? vertexList[i].x : boundingBox[0][0];
-				boundingBox[0][1] = boundingBox[0][1] > vertexList[i].y ? vertexList[i].y : boundingBox[0][1];
-				boundingBox[0][2] = boundingBox[0][2] > vertexList[i].z ? vertexList[i].z : boundingBox[0][2];
-
-				boundingBox[1][0] = boundingBox[1][0] < vertexList[i].x ? vertexList[i].x : boundingBox[1][0];
-				boundingBox[1][1] = boundingBox[1][1] < vertexList[i].y ? vertexList[i].y : boundingBox[1][1];
-				boundingBox[1][2] = boundingBox[1][2] < vertexList[i].z ? vertexList[i].z : boundingBox[1][2];
-			}
-		}
-
-		/**********************************************************************/
-		/* Count and dump faces, count edges                                  */
-		/**********************************************************************/
-		OdInt32 i = 0;
-		while (i < faceListSize)
-		{
-			OdInt32 count = faceList[i++];
-			if (count < 0) count *= -1;
-			repo_face_t face;
-			for (OdInt32 j = 0; j < count; j++, i++)
-			{
-				face.push_back(faceList[i]);
-			}
-			faces.push_back(face);
-		}
-
+	//Call parent shellProc, which triangulates all polygon vertices (resulting faces would 
+	// appear in Polygon Out.)
+	OdGiGeometrySimplifier::shellProc(
+		numVertices,
+		vertexList,
+		faceListSize,
+		faceList,
+		pEdgeData,
+		pFaceData,
+		pVertexData);
+	recordingMesh = false;
+	m_pDumper->output(OD_T("Adding entry to meshEntry"));
+	if(vertices.size() && faces.size())
 		collector->addMeshEntry(vertices, faces, boundingBox);
-	}
+	m_pDumper->output(OD_T("Done"));
 
 	vertices.clear();
 	faces.clear();

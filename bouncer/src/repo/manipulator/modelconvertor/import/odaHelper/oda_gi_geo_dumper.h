@@ -44,7 +44,7 @@ namespace repo {
 					std::vector<repo::lib::RepoVector3D64> vertices;
 					std::vector<repo_face_t> faces;
 					std::vector<std::vector<double>> boundingBox;
-					std::unordered_map<std::string, int> vToVIndex;
+					std::unordered_map<std::string, unsigned int> vToVIndex;
 
 				public:
 					enum
