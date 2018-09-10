@@ -90,87 +90,8 @@ void OdGiConveyorGeometryDumper::polygonOut(OdInt32 numPoints,
 	const OdGePoint3d* vertexList,
 	const OdGeVector3d* pNormal)
 {
-	/*m_pDumper->output(OD_T("Start polygonOut"));
-	m_pDumper->pushIndent();
-	m_pDumper->output(OD_T("numPoints"), toString((int)numPoints));
-	m_pDumper->output(numPoints, vertexList);
-	m_pDumper->popIndent();
-	m_pDumper->output(OD_T("End polygonOut"));
-*/
-	if (numPoints == 3)
-	{
-		OdDgStlTriangleFace newFace;
-		newFace.m_pt1 = vertexList[0];
-		newFace.m_pt2 = vertexList[1];
-		newFace.m_pt3 = vertexList[2];
-
-		OdaGiDumper::addStlTriangle(newFace);
-	}
-	
-	repoInfo << "polygon out, recording mesh? " << recordingMesh << " #vertices: " << numPoints;
-
-	repo_face_t face;
-	unsigned int firstVertice = 0;
-	for (int i = 0; i < numPoints; ++i)
-	{
-		std::stringstream ss;
-		ss.precision(17);
-		ss << std::fixed<<  vertexList[i].x << "," << std::fixed << vertexList[i].y << "," << std::fixed << vertexList[i].z;
-		
-		auto vStr = ss.str();
-		if (vToVIndex.find(vStr) == vToVIndex.end())
-		{
-			vToVIndex[vStr] = vertices.size();
-			vertices.push_back({ vertexList[i].x , vertexList[i].y, vertexList[i].z });
-		}
-	
-		//FIXME: this is a dummy workaround for simply triangulation if numPoints > 3
-		if (i == 0) firstVertice = vToVIndex[vStr];
-
-		if (i > 3) {
-			auto lastIdx = face[face.size() - 1];
-			faces.push_back(face);
-
-			face.clear();
-			face.push_back(firstVertice);
-			face.push_back(lastIdx);
-		}
-
-		face.push_back(vToVIndex[vStr]);
-
-
-		if (boundingBox.size()) {
-			boundingBox[0][0] = boundingBox[0][0] > vertexList[i].x ? vertexList[i].x : boundingBox[0][0];
-			boundingBox[0][1] = boundingBox[0][1] > vertexList[i].y ? vertexList[i].y : boundingBox[0][1];
-			boundingBox[0][2] = boundingBox[0][2] > vertexList[i].z ? vertexList[i].z : boundingBox[0][2];
-
-			boundingBox[1][0] = boundingBox[1][0] < vertexList[i].x ? vertexList[i].x : boundingBox[1][0];
-			boundingBox[1][1] = boundingBox[1][1] < vertexList[i].y ? vertexList[i].y : boundingBox[1][1];
-			boundingBox[1][2] = boundingBox[1][2] < vertexList[i].z ? vertexList[i].z : boundingBox[1][2];
-		}
-		else {
-			boundingBox.push_back({ vertexList[i].x, vertexList[i].y, vertexList[i].z });
-			boundingBox.push_back({ vertexList[i].x, vertexList[i].y, vertexList[i].z });				
-		}		
-	}
-	faces.push_back(face);
-
-	if (numPoints > 3) {
-		std::stringstream ss;
-		ss.precision(17);
-		ss << std::fixed << vertexList[1].x << "," << std::fixed << vertexList[1].y << "," << std::fixed << vertexList[1].z;
-		faces.push_back({face[face.size()-1] , firstVertice,  vToVIndex[ss.str()] });
-	}
-
-	if(!recordingMesh) {
-		collector->addMeshEntry(vertices, faces, boundingBox);
-		vertices.clear();
-		faces.clear();
-		boundingBox.clear();
-		vToVIndex.clear();
-	}
-	
-
+	//All polygons needs to become triangles.
+	OdGiGeometrySimplifier::polygonOut(numPoints, vertexList, pNormal);
 }
 
 /************************************************************************/
