@@ -131,7 +131,7 @@ namespace repo {
 				/* Example client view class that demonstrates how to receive           */
 				/* geometry from the vectorization process.                             */
 				/************************************************************************/
-				class ExSimpleView : public OdGsBaseVectorizeViewDef
+				class ExSimpleView :  public OdGsBaseMaterialView
 				{
 					OdGiClipBoundary        m_eyeClip;
 				protected:
@@ -143,7 +143,13 @@ namespace repo {
 
 					OdaVectoriseDevice* device()
 					{
-						return (OdaVectoriseDevice*)OdGsBaseVectorizeView::device();
+						return (OdaVectoriseDevice*)OdGsBaseMaterialView::device();
+					}
+
+					OdGiMaterialItemPtr fillMaterialCache(OdGiMaterialItemPtr prevCache, OdDbStub* materialId, const OdGiMaterialTraitsData & materialData)
+					{
+						repoInfo << "!!!! MATERIAL CACHE!!!!";
+						return OdGiMaterialItemPtr();
 					}
 
 					ExSimpleView()
@@ -199,7 +205,7 @@ namespace repo {
 					/**********************************************************************/
 					void updateViewport();
 
-					TD_USING(OdGsBaseVectorizeViewDef::updateViewport);
+					TD_USING(OdGsBaseMaterialView::updateViewport);
 
 					/**********************************************************************/
 					/* Notification function called by the vectorization framework        */

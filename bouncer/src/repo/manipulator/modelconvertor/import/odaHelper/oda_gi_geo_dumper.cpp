@@ -292,8 +292,6 @@ void OdGiConveyorGeometryDumper::meshProc(OdInt32 rows,
 		collector->addMeshEntry(vertices, faces, boundingBox);
 	m_pDumper->output(OD_T("Done"));
 	
-	
-
 	vertices.clear();
 	faces.clear();
 	boundingBox.clear();
@@ -364,7 +362,6 @@ void OdGiConveyorGeometryDumper::shellProc(OdInt32 numVertices,
 {
 	m_pDumper->output(OD_T("Starting Shell Proc"));
 	recordingMesh = true;
-	repoInfo << "!!! shell proc";
 
 	//Call parent shellProc, which triangulates all polygon vertices (resulting faces would 
 	// appear in Polygon Out.)
