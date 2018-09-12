@@ -89,6 +89,7 @@ OdGsViewPtr OdaVectoriseDevice::createView(const OdGsClientViewInfo* pInfo,
 	/**********************************************************************/
 	OdGsViewPtr pView = ExSimpleView::createObject();
 	ExSimpleView* pMyView = static_cast<ExSimpleView*>(pView.get());
+	pMyView->setGeoCollector(geoCollector);
 
 	/**********************************************************************/
 	/* This call is required by DD 1.13+                                  */

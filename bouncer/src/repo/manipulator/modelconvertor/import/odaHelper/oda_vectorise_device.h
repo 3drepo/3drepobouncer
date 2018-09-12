@@ -19,6 +19,7 @@
 #include <Gs/GsBaseInclude.h>
 #include <RxObjectImpl.h>
 #include <iostream>
+#include <Gs/GsBaseMaterialView.h>
 #include "oda_gi_dumper.h"
 #include "oda_gi_geo_dumper.h"
 
@@ -134,6 +135,7 @@ namespace repo {
 				class ExSimpleView :  public OdGsBaseMaterialView
 				{
 					OdGiClipBoundary        m_eyeClip;
+					OdaGeometryCollector    *geoCollector;
 				protected:
 
 					/**********************************************************************/
@@ -146,9 +148,95 @@ namespace repo {
 						return (OdaVectoriseDevice*)OdGsBaseMaterialView::device();
 					}
 
+					void setGeoCollector(OdaGeometryCollector *collector) {
+						geoCollector = collector;
+					}
+
 					OdGiMaterialItemPtr fillMaterialCache(OdGiMaterialItemPtr prevCache, OdDbStub* materialId, const OdGiMaterialTraitsData & materialData)
 					{
 						repoInfo << "!!!! MATERIAL CACHE!!!!";
+
+						OdGiMaterialColor diffuseColor; OdGiMaterialMap diffuseMap;
+						OdGiMaterialColor ambientColor;
+						OdGiMaterialColor specularColor; OdGiMaterialMap specularMap; double glossFactor;
+						double opacityPercentage; OdGiMaterialMap opacityMap;
+						double refrIndex; OdGiMaterialMap refrMap;
+
+						materialData.diffuse(diffuseColor, diffuseMap);
+						materialData.ambient(ambientColor);
+						materialData.specular(specularColor, specularMap, glossFactor);
+						materialData.opacity(opacityPercentage, opacityMap);
+						materialData.refraction(refrIndex, refrMap);
+
+						OdGiMaterialMap bumpMap;
+						materialData.bump(bumpMap);
+						
+
+						ODCOLORREF colorDiffuse(0), colorAmbient(0), colorSpecular(0);
+						if (diffuseColor.color().colorMethod() == OdCmEntityColor::kByColor)
+						{
+							colorDiffuse = ODTOCOLORREF(diffuseColor.color());
+						}
+						else if (diffuseColor.color().colorMethod() == OdCmEntityColor::kByACI)
+						{
+							colorDiffuse = OdCmEntityColor::lookUpRGB((OdUInt8)diffuseColor.color().colorIndex());
+						}
+						if (ambientColor.color().colorMethod() == OdCmEntityColor::kByColor)
+						{
+							colorAmbient = ODTOCOLORREF(ambientColor.color());
+						}
+						else if (ambientColor.color().colorMethod() == OdCmEntityColor::kByACI)
+						{
+							colorAmbient = OdCmEntityColor::lookUpRGB((OdUInt8)ambientColor.color().colorIndex());
+						}
+						if (specularColor.color().colorMethod() == OdCmEntityColor::kByColor)
+						{
+							colorSpecular = ODTOCOLORREF(specularColor.color());
+						}
+						else if (specularColor.color().colorMethod() == OdCmEntityColor::kByACI)
+						{
+							colorSpecular = OdCmEntityColor::lookUpRGB((OdUInt8)specularColor.color().colorIndex());
+						}
+
+
+						OdCmEntityColor color = fixByACI(this->device()->getPalette(), effectiveTraits().trueColor());
+						repo_material_t material;
+						// diffuse
+						if (diffuseColor.method() == OdGiMaterialColor::kOverride)
+							material.diffuse = { ODGETRED(colorDiffuse) / 255.0f, ODGETGREEN(colorDiffuse) / 255.0f, ODGETBLUE(colorDiffuse) / 255.0f, 1.0f };
+						else
+							material.diffuse = { color.red() / 255.0f, color.green() / 255.0f, color.blue() / 255.0f, 1.0f };
+						/*
+						TODO: texture support
+						mData.bDiffuseChannelEnabled = (GETBIT(materialData.channelFlags(), OdGiMaterialTraits::kUseDiffuse)) ? true : false;
+						if (mData.bDiffuseChannelEnabled && diffuseMap.source() == OdGiMaterialMap::kFile && !diffuseMap.sourceFileName().isEmpty())
+						{
+							mData.bDiffuseHasTexture = true;
+							mData.sDiffuseFileSource = diffuseMap.sourceFileName();
+						}*/
+
+						// specular
+						if (specularColor.method() == OdGiMaterialColor::kOverride)
+							material.specular = { ODGETRED(colorSpecular) / 255.0f, ODGETGREEN(colorSpecular) / 255.0f, ODGETBLUE(colorSpecular) / 255.0f, 1.0f };
+						else
+							material.specular = { color.red() / 255.0f, color.green() / 255.0f, color.blue() / 255.0f, 1.0f };
+
+						material.shininessStrength = specularColor.factor();
+						material.shininess = glossFactor;
+
+						// opacity
+						material.opacity = opacityPercentage;
+
+
+						// refraction
+						/*mData.bRefractionChannelEnabled = (GETBIT(materialData.channelFlags(), OdGiMaterialTraits::kUseRefraction)) ? 1 : 0;
+						mData.dRefractionIndex = materialData.reflectivity();*/
+
+						// transclucence
+						//mData.dTranslucence = materialData.translucence();						
+						auto id = (OdUInt64)(OdIntPtr)materialId;
+						geoCollector->addMaterial(id, material);
+
 						return OdGiMaterialItemPtr();
 					}
 
@@ -223,6 +311,19 @@ namespace repo {
 						const OdGiSelfGdiDrawable* pDrawable,
 						bool bDcAligned,
 						bool bAllowClipping);
+
+					static OdCmEntityColor fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color)
+					{
+						if (color.isByACI() || color.isByDgnIndex())
+						{
+							return OdCmEntityColor(ODGETRED(ids[color.colorIndex()]), ODGETGREEN(ids[color.colorIndex()]), ODGETBLUE(ids[color.colorIndex()]));
+						}
+						else if (!color.isByColor())
+						{
+							return OdCmEntityColor(0, 0, 0);
+						}
+						return color;
+					}
 				}; // end ExSimpleView 
 
 			}

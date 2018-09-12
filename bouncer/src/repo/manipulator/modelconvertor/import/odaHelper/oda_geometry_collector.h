@@ -34,6 +34,7 @@ namespace repo {
 					const std::vector<repo_face_t> faces;
 					const std::vector<std::vector<float>> boundingBox;
 					const std::string name;
+					const uint32_t matIdx;
 				};
 
 				class OdaGeometryCollector
@@ -46,11 +47,19 @@ namespace repo {
 						return matVector;
 					}
 
-					std::unordered_map < uint32_t, repo::core::model::MaterialNode > getMaterialNodes() const {
-						return codeToMat;
+					repo::core::model::RepoNodeSet getMaterialNodes() {
+						repo::core::model::RepoNodeSet matSet;
+						for (const auto &matPair : idxToMat) {
+							auto matIdx = matPair.first;
+							if (matToMeshes.find(matIdx) != matToMeshes.end()) {
+								matSet.insert(new repo::core::model::MaterialNode(matPair.second.cloneAndAddParent(matToMeshes[matIdx])));
+							}
+						}
+
+						return matSet;
 					}
 
-					std::vector<repo::core::model::MeshNode> getMeshes() const;
+					std::vector<repo::core::model::MeshNode> getMeshes();
 
 					std::vector<double> getModelOffset() const {
 						return minMeshBox;
@@ -63,6 +72,8 @@ namespace repo {
 
 					void addMaterialWithColor(const uint32_t &r, const uint32_t &g, const uint32_t &b, const uint32_t &a);
 
+					void addMaterial(const uint64_t &matIndex, const repo_material_t &material);
+
 					void setNextMeshName(const std::string &name) {
 						nextMeshName = name;
 					}
@@ -70,9 +81,11 @@ namespace repo {
 				private:
 					std::vector<mesh_data_t> meshData;
 					std::vector<uint32_t> matVector;
-					std::unordered_map < uint32_t, repo::core::model::MaterialNode > codeToMat;
+					std::unordered_map< uint32_t, repo::core::model::MaterialNode > idxToMat, codeToMat;					
+					std::unordered_map<uint32_t, std::vector<repo::lib::RepoUUID> > matToMeshes;
 					std::vector<double> minMeshBox;
 					std::string nextMeshName;
+					uint32_t currMat;
 					std::ofstream ofile;
 					int nVectors = 1;
 				};
