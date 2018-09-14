@@ -52,6 +52,10 @@ namespace repo {
 						Minimal_Simplification
 					};
 
+					virtual double deviation(const OdGiDeviationType deviationType, const OdGePoint3d& pointOnCurve) const {
+						return 0;
+					}
+
 					OdaVectoriseDevice* device()
 					{
 						return static_cast<OdaVectoriseDevice*>(OdGsBaseVectorizeView::device());
@@ -144,8 +148,8 @@ namespace repo {
 						else
 							material.specular = { color.red() / 255.0f, color.green() / 255.0f, color.blue() / 255.0f, 1.0f };
 
-						material.shininessStrength = specularColor.factor();
-						material.shininess = glossFactor;
+						material.shininessStrength = 1 - glossFactor;
+						material.shininess = materialData.reflectivity();
 
 						// opacity
 						material.opacity = opacityPercentage;
