@@ -34,6 +34,7 @@
 
 #include "oda_file_processor.h"
 #include "oda_gi_dumper.h"
+#include "oda_gi_geo_dumper.h"
 #include "oda_vectorise_device.h"
 
 #include <DgLine.h>      // This file puts OdDgLine3d in the output file
@@ -49,6 +50,40 @@ OdaFileProcessor::OdaFileProcessor(const std::string &inputFile, OdaGeometryColl
 OdaFileProcessor::~OdaFileProcessor()
 {
 }
+
+class StubDeviceModuleText : public OdGsBaseModule
+{
+private:
+	OdaGeometryCollector *collector;
+	OdGeMatrix3d        m_matTransform;
+	const std::map<OdDbStub*, double>* m_pMapDeviations;
+
+public:
+	void init(OdaGeometryCollector* const collector)
+	{
+		this->collector = collector;
+	}
+protected:
+	OdSmartPtr<OdGsBaseVectorizeDevice> createDeviceObject()
+	{
+		return OdRxObjectImpl<OdaVectoriseDevice, OdGsBaseVectorizeDevice>::createObject();
+	}
+	OdSmartPtr<OdGsViewImpl> createViewObject()
+	{
+		OdSmartPtr<OdGsViewImpl> pP = OdRxObjectImpl<OdGiConveyorGeometryDumper, OdGsViewImpl>::createObject();
+		((OdGiConveyorGeometryDumper*)pP.get())->init(collector);
+		return pP;
+	}
+	OdSmartPtr<OdGsBaseVectorizeDevice> createBitmapDeviceObject()
+	{
+		return OdSmartPtr<OdGsBaseVectorizeDevice>();
+	}
+	OdSmartPtr<OdGsViewImpl> createBitmapViewObject()
+	{
+		return OdSmartPtr<OdGsViewImpl>();
+	}
+};
+ODRX_DEFINE_PSEUDO_STATIC_MODULE(StubDeviceModuleText);
 
 class RepoDgnServices : public OdExDgnSystemServices, public OdExDgnHostAppServices
 {
@@ -82,88 +117,167 @@ int OdaFileProcessor::readFile() {
 
 		if (!pDb.isNull())
 		{
-			// Set device palette from dgn color table
-
-			OdDgColorTablePtr clolortable = pDb->getColorTable();
-			OdGsDevicePtr pDevice = OdaVectoriseDevice::createObject(OdaVectoriseDevice::k3dDevice, collector);
 
 			const ODCOLORREF* refColors = OdDgColorTable::currentPalette(pDb);
 			ODGSPALETTE pPalCpy;
 			pPalCpy.insert(pPalCpy.begin(), refColors, refColors + 256);
-			OdDgModelPtr pModel = pDb->getActiveModelId().safeOpenObject();
+
+
+			OdDgElementId elementId = pDb->getActiveModelId();
+			if (elementId.isNull())
+			{
+				elementId = pDb->getDefaultModelId();
+				pDb->setActiveModelId(elementId);
+			}
+			OdDgElementId elementActId = pDb->getActiveModelId();
+			OdDgModelPtr pModel = elementId.safeOpenObject();
 			ODCOLORREF background = pModel->getBackground();
-			// Color with #255 always defines background. The background of the active model must be considered in the device palette.
-			pPalCpy[255] = background;
-			// Note: This method should be called to resolve "white background issue" before setting device palette
-			bool bCorrected = OdDgColorTable::correctPaletteForWhiteBackground(pPalCpy.asArrayPtr());
-			pDevice->setLogicalPalette(pPalCpy.asArrayPtr(), 256);
-			pDevice->setBackgroundColor(background);
 
-			// Find first active view.
-
-			OdDgViewPtr pView;
-
-			OdDgViewGroupPtr pViewGroup = pDb->getActiveViewGroupId().openObject(OdDg::kForRead);
-
+			OdDgElementId vectorizedViewId;
+			OdDgViewGroupPtr pViewGroup = pDb->getActiveViewGroupId().openObject();
+			if (pViewGroup.isNull())
+			{
+				//  Some files can have invalid id for View Group. Try to get & use a valid (recommended) View Group object.
+				pViewGroup = pDb->recommendActiveViewGroupId().openObject();
+				if (pViewGroup.isNull())
+				{
+					// Add View group
+					pModel->createViewGroup();
+					pModel->fitToView();
+					pViewGroup = pDb->recommendActiveViewGroupId().openObject();
+				}
+			}
 			if (!pViewGroup.isNull())
 			{
 				OdDgElementIteratorPtr pIt = pViewGroup->createIterator();
 				for (; !pIt->done(); pIt->step())
 				{
-					OdDgViewPtr pCurView = OdDgView::cast(pIt->item().openObject(OdDg::kForRead));
-
-					if (pCurView.get() && pCurView->getVisibleFlag())
+					OdDgViewPtr pView = OdDgView::cast(pIt->item().openObject());
+					if (pView.get() && pView->getVisibleFlag())
 					{
-						pView = pCurView;
+						vectorizedViewId = pIt->item();
 						break;
 					}
 				}
 			}
 
-			if (!pView.isNull())
+			if (vectorizedViewId.isNull() && !pViewGroup.isNull())
 			{
-				//create the context with OdDgView element given (to transmit some properties)
+				OdDgElementIteratorPtr pIt = pViewGroup->createIterator();
 
-				OdGiContextForDgDatabasePtr pDgnContext = OdGiContextForDgDatabase::createObject(pDb, pView);
-				pDgnContext->enableGsModel(true);
+				if (!pIt->done())
+				{
+					OdDgViewPtr pView = OdDgView::cast(pIt->item().openObject(OdDg::kForWrite));
 
-				OdDgElementId vectorizedViewId = pView->elementId();
-				OdDgElementId vectorizedModelId = pView->getModelId();
-
-				pDevice = OdGsDeviceForDgModel::setupModelView(vectorizedModelId, vectorizedViewId, pDevice, pDgnContext);
-
-				for (int iii = 0; iii < pDevice->numViews(); iii++)
-					pDevice->viewAt(iii)->setMode(OdGsView::kGouraudShaded);
-
-				OdGsDCRect screenRect(OdGsDCPoint(0, 0), OdGsDCPoint(1000, 1000));
-				pDevice->onSize(screenRect);
-
-				pDevice->update();
+					if (pView.get())
+					{
+						pView->setVisibleFlag(true);
+						vectorizedViewId = pIt->item();
+					}
+				}
 			}
 
-			OdaGiDumper::clearStlTriangles();
+			if (vectorizedViewId.isNull())
+			{
+				repoError << "Can not find an active view group or all its views are disabled";
+			}
+			else
+			{
+				OdGeExtents3d extModel;
+				pModel->getGeomExtents(vectorizedViewId, extModel);
+				// Color with #255 always defines backround. The background of the active model must be considered in the device palette.
+				pPalCpy[255] = background;
+				// Note: This method should be called to resolve "white background issue" before setting device palette
+				bool bCorrected = OdDgColorTable::correctPaletteForWhiteBackground(pPalCpy.asArrayPtr());
+
+				// Calculate deviations for dgn elements
+
+				std::map<OdDbStub*, double > mapDeviations;
+
+				OdDgElementIteratorPtr pIter = pModel->createGraphicsElementsIterator();
+
+				for (; !pIter->done(); pIter->step())
+				{
+					OdGeExtents3d extElm;
+					OdDgElementPtr pItem = pIter->item().openObject(OdDg::kForRead);
+
+					if (pItem->isKindOf(OdDgGraphicsElement::desc()))
+					{
+						pItem->getGeomExtents(extElm);
+
+						if (extElm.isValidExtents())
+							mapDeviations[pItem->elementId()] = extElm.maxPoint().distanceTo(extElm.minPoint()) / 1e4;
+					}
+				}
+
+				importDgn(pDb, pPalCpy.asArrayPtr(), 256);			
+			}
+		}
+	}
+	catch (std::exception &e)
+	{
+		repoError << "Failed: " << e.what();
+	}
+	return nRes;
+}
+
+int OdaFileProcessor::importDgn(OdDbBaseDatabase *pDb,
+	const ODCOLORREF* pPallete,
+	int numColors,
+	const OdGiDrawable* pEntity,
+	const OdGeMatrix3d& matTransform,
+	const std::map<OdDbStub*, double>* pMapDeviations)
+{
+
+	int ret = 0;
+	OdUInt32 iCurEntData = 0;
+	try
+	{
+		odgsInitialize();
+		
+		OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(StubDeviceModuleText)(OD_T("StubDeviceModuleText"));
+
+		((StubDeviceModuleText*)pGsModule.get())->init(collector);
+
+
+		OdDbBaseDatabasePEPtr pDbPE(pDb);
+		OdGiDefaultContextPtr pContext = pDbPE->createGiContext(pDb);
+		{
+			OdGsDevicePtr pDevice = pGsModule->createDevice();
+			pDevice->setLogicalPalette(pPallete, numColors);
+
+			if (pEntity)
+			{
+				//for one entity
+				OdGsViewPtr pNewView = pDevice->createView();
+				pNewView->setMode(OdGsView::kFlatShaded);
+				pDevice->addView(pNewView);
+				pNewView->add((OdGiDrawable*)pEntity, 0);
+			}
+			else
+			{
+				OdGsDevicePtr pHlpDevice = pDbPE->setupActiveLayoutViews(pDevice, pContext);
+			}
+			pDevice->setUserGiContext(pContext);
+
+			OdGsDCRect screenRect(OdGsDCPoint(0, 1000), OdGsDCPoint(1000, 0));
+			pDevice->onSize(screenRect);
+			pDevice->update();
 		}
 
-		pDb = 0;
-	}
+		pContext.release();
+		pGsModule.release();
+		
+		odgsUninitialize();
+	}	
 	catch (OdError& e)
 	{
-		//FIXME: use repo log
-		std::cerr << (L"\nTeigha(R) for .DGN Error: %ls\n", e.description().c_str());
+		ret = e.code();
+		repoError << e.description().c_str();
 	}
 	catch (...)
 	{
-		/*STD(cout) << "\n\nUnexpected error.";*/
-		nRes = -1;
-		throw;
+		ret = 1;
 	}
-
-	/**********************************************************************/
-	/* Uninitialize Runtime Extension environment                         */
-	/**********************************************************************/
-
-	odgsUninitialize();
-	::odrxUninitialize();
-
-	return nRes;
+	return ret;
 }

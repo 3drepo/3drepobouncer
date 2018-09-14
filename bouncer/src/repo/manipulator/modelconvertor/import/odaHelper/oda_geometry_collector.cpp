@@ -113,7 +113,7 @@ std::vector<repo::core::model::MeshNode> OdaGeometryCollector::getMeshes() {
 		if (matToMeshes.find(meshEntry.matIdx) == matToMeshes.end()) {
 			matToMeshes[meshEntry.matIdx] =  std::vector<repo::lib::RepoUUID>();
 		}
-		matToMeshes[meshEntry.matIdx].push_back(meshNode.getUniqueID());
+		matToMeshes[meshEntry.matIdx].push_back(meshNode.getSharedID());
 	}
 	
 

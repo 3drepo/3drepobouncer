@@ -54,8 +54,11 @@ namespace repo {
 							if (matToMeshes.find(matIdx) != matToMeshes.end()) {
 								matSet.insert(new repo::core::model::MaterialNode(matPair.second.cloneAndAddParent(matToMeshes[matIdx])));
 							}
+							else {
+								repoInfo << "Did not find matTo Meshes: " << matIdx;
+							}
 						}
-
+						repoInfo << " idxToMat: " << idxToMat.size() << " matSet: " << matSet.size();
 						return matSet;
 					}
 

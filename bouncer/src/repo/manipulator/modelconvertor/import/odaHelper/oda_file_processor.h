@@ -18,7 +18,9 @@
 #pragma once
 #include "../../../../core/model/bson/repo_node_mesh.h"
 #include "oda_geometry_collector.h"
-
+#include <OdaCommon.h>
+#include <Gs/GsBaseInclude.h>
+#include <RxObjectImpl.h>
 #include <vector>
 #include <string>
 
@@ -38,6 +40,13 @@ namespace repo {
 				private:
 					const std::string file;
 					OdaGeometryCollector *collector;
+					int importDgn(OdDbBaseDatabase *pDb,
+						const ODCOLORREF* pPallete,
+						int numColors,
+						const OdGiDrawable* pEntity = nullptr,
+						const OdGeMatrix3d& matTransform = OdGeMatrix3d::kIdentity,
+						const std::map<OdDbStub*, double>* pMapDeviations = nullptr);
+
 				};
 			}
 		}
