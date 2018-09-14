@@ -81,7 +81,8 @@ namespace repo {
 
 					OdGiMaterialItemPtr fillMaterialCache(OdGiMaterialItemPtr prevCache, OdDbStub* materialId, const OdGiMaterialTraitsData & materialData)
 					{
-						repoInfo << "!!!! MATERIAL CACHE!!!!";
+						auto id = (OdUInt64)(OdIntPtr)materialId;
+						repoInfo << "!!!! MATERIAL CACHE!!!! id: " << materialId;
 
 						OdGiMaterialColor diffuseColor; OdGiMaterialMap diffuseMap;
 						OdGiMaterialColor ambientColor;
@@ -161,7 +162,7 @@ namespace repo {
 
 						// transclucence
 						//mData.dTranslucence = materialData.translucence();						
-						auto id = (OdUInt64)(OdIntPtr)materialId;
+						
 						collector->addMaterial(id, material);
 
 						return OdGiMaterialItemPtr();
