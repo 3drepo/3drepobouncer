@@ -48,14 +48,12 @@ void OdaGeometryCollector::addMaterialWithColor(const uint32_t &r, const uint32_
 }
 
 void OdaGeometryCollector::addMaterial(const uint64_t &matIndex, const repo_material_t &material) {
-	/*if(idxToMat.find(matIndex) == idxToMat.end())
-		idxToMat[matIndex] = repo::core::model::RepoBSONFactory::makeMaterialNode(material);
-	else {
-	}*/
 
-	auto index = idxToMat.size();
-	idxToMat[index] = repo::core::model::RepoBSONFactory::makeMaterialNode(material);
-	currMat = index;
+	auto checkSum = material.checksum();
+	if(idxToMat.find(checkSum) == idxToMat.end()) {
+		idxToMat[checkSum] = repo::core::model::RepoBSONFactory::makeMaterialNode(material);
+	}
+	currMat = checkSum;	
 }
 
 void OdaGeometryCollector::addMeshEntry(const std::vector<repo::lib::RepoVector3D64> &rawVertices,

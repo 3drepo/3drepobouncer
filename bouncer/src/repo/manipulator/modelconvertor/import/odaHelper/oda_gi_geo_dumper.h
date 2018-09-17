@@ -35,7 +35,6 @@ namespace repo {
 			namespace odaHelper {
 				class OdGiConveyorGeometryDumper : public OdGiGeometrySimplifier, public OdGsBaseMaterialView
 				{
-					int m_dumpLevel = Maximal_Simplification;
 					OdaGeometryCollector *collector;
 
 					bool recordingMesh = false;
@@ -46,12 +45,7 @@ namespace repo {
 
 				public:
 					OdGiConveyorGeometryDumper();
-					enum
-					{
-						Maximal_Simplification,
-						Minimal_Simplification
-					};
-
+					
 					virtual double deviation(const OdGiDeviationType deviationType, const OdGePoint3d& pointOnCurve) const {
 						return 0;
 					}
@@ -64,6 +58,11 @@ namespace repo {
 					bool doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 					{						
 						return OdGsBaseMaterialView::doDraw(i, pDrawable);
+					}
+
+					void shellFaceOut(OdInt32 faceListSize, const OdInt32* pFaceList, const OdGeVector3d* pNormal)
+					{		
+						OdGiGeometrySimplifier::shellFaceOut(faceListSize, pFaceList, pNormal);
 					}
 
 					static OdCmEntityColor fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color)
@@ -82,7 +81,6 @@ namespace repo {
 					OdGiMaterialItemPtr fillMaterialCache(OdGiMaterialItemPtr prevCache, OdDbStub* materialId, const OdGiMaterialTraitsData & materialData)
 					{
 						auto id = (OdUInt64)(OdIntPtr)materialId;
-						repoInfo << "!!!! MATERIAL CACHE!!!! id: " << materialId;
 
 						OdGiMaterialColor diffuseColor; OdGiMaterialMap diffuseMap;
 						OdGiMaterialColor ambientColor;
@@ -168,19 +166,12 @@ namespace repo {
 						return OdGiMaterialItemPtr();
 					}
 
-
-					void setDumpLevel(int dumpLevel) { m_dumpLevel = dumpLevel; }
-					int dumpLevel() const { return m_dumpLevel; }
-
-					void setMeshCollector(OdaGeometryCollector *const geoCollector);
-
 					void init(OdaGeometryCollector *const geoCollector) {
 						collector = geoCollector;
 					}
 
 					void beginViewVectorization()
 					{
-						repoInfo << "Setting destination geometry...";
 						OdGsBaseMaterialView::beginViewVectorization();
 						setEyeToOutputTransform(getEyeToWorldTransform());
 
@@ -188,54 +179,17 @@ namespace repo {
 						output().setDestGeometry((OdGiGeometrySimplifier&)*this);
 					}
 
+					void setMode(OdGsView::RenderMode mode)
+					{
+						OdGsBaseVectorizeView::m_renderMode = kGouraudShaded;
+						m_regenerationType = kOdGiRenderCommand;
+						OdGiGeometrySimplifier::m_renderMode = OdGsBaseVectorizeView::m_renderMode;
+					}
 
-					/**********************************************************************/
-					/* The overrides of OdGiConveyorGeometry.  Each view sends            */
-					/* its vectorized entity data to these functions, due to the          */
-					/* link established between the view and the device in                */
-					/* ExGsSimpleDevice::createView().                                    */
-					/**********************************************************************/
-
-					void plineProc(const OdGiPolyline& lwBuf,
-						const OdGeMatrix3d* pXform,
-						OdUInt32 fromIndex,
-						OdUInt32 numSegs);
-
-					void polylineOut(OdInt32 numPoints, const OdGePoint3d* vertexList);
 
 					void polygonOut(OdInt32 numPoints, const OdGePoint3d* vertexList, const OdGeVector3d* pNormal = 0);
 
-					void triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal);
-
-					void circleProc(const OdGePoint3d& center,
-						double radius,
-						const OdGeVector3d& normal,
-						const OdGeVector3d* pExtrusion = 0);
-
-					void circleProc(const OdGePoint3d& firstPoint,
-						const OdGePoint3d& secondPoint,
-						const OdGePoint3d& thirdPoint,
-						const OdGeVector3d* pExtrusion = 0);
-
-					void circularArcProc(const OdGePoint3d& center,
-						double radius,
-						const OdGeVector3d& normal,
-						const OdGeVector3d& startVector,
-						double sweepAngle,
-						OdGiArcType arcType = kOdGiArcSimple, const OdGeVector3d* pExtrusion = 0);
-
-					void circularArcProc(const OdGePoint3d& firstPoint,
-						const OdGePoint3d& secondPoint,
-						const OdGePoint3d& thirdPoint,
-						OdGiArcType arcType = kOdGiArcSimple, const OdGeVector3d* pExtrusion = 0);
-
-					void polylineProc(OdInt32 numPoints, const OdGePoint3d* vertexList,
-						const OdGeVector3d* pNormal = 0,
-						const OdGeVector3d* pExtrusion = 0, OdGsMarker baseSubEntMarker = -1);
-
-					void polygonProc(OdInt32 nbPoints, const OdGePoint3d* pVertexList,
-						const OdGeVector3d* pNormal = 0,
-						const OdGeVector3d* pExtrusion = 0);
+					void triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal);	
 
 					void meshProc(OdInt32 rows,
 						OdInt32 columns,
@@ -251,80 +205,6 @@ namespace repo {
 						const OdGiEdgeData* pEdgeData = 0,
 						const OdGiFaceData* pFaceData = 0,
 						const OdGiVertexData* pVertexData = 0);
-
-					void textProc(const OdGePoint3d& position,
-						const OdGeVector3d& direction, const OdGeVector3d& upVector,
-						const OdChar* msg, OdInt32 numBytes, bool raw, const OdGiTextStyle* pTextStyle,
-						const OdGeVector3d* pExtrusion = 0);
-
-					/**********************************************************************/
-					/* The client's version of this function will not be called in        */
-					/* the current version of Teigha for .dwg files                       */
-					/**********************************************************************/
-					void shapeProc(const OdGePoint3d& position,
-						const OdGeVector3d& direction, const OdGeVector3d& upVector,
-						int shapeNumber, const OdGiTextStyle* pTextStyle,
-						const OdGeVector3d* pExtrusion = 0);
-
-					/**********************************************************************/
-					/* The client's version of this function will not be called in        */
-					/* the current version of Teigha for .dwg files                       */
-					/**********************************************************************/
-					void xlineProc(const OdGePoint3d& firstPoint, const OdGePoint3d& secondPoint);
-
-					/**********************************************************************/
-					/* The client's version of this function will not be called in        */
-					/* the current version of Teigha for .dwg files                       */
-					/**********************************************************************/
-					void rayProc(const OdGePoint3d& basePoint, const OdGePoint3d& throughPoint);
-
-					void nurbsProc(const OdGeNurbCurve3d& nurbs);
-
-					void ellipArcProc(const OdGeEllipArc3d& ellipArc,
-						const OdGePoint3d* endPointsOverrides,
-						OdGiArcType arcType = kOdGiArcSimple,
-						const OdGeVector3d* pExtrusion = 0);
-
-					void rasterImageProc(
-						const OdGePoint3d& origin,
-						const OdGeVector3d& u,
-						const OdGeVector3d& v,
-						const OdGiRasterImage* pImage, // image object
-						const OdGePoint2d* uvBoundary, // may not be null
-						OdUInt32 numBoundPts,
-						bool transparency = false,
-						double brightness = 50.0,
-						double contrast = 50.0,
-						double fade = 0.0);
-
-					void metafileProc(
-						const OdGePoint3d& origin,
-						const OdGeVector3d& u,
-						const OdGeVector3d& v,
-						const OdGiMetafile* pMetafile,
-						bool dcAligned = true,       // reserved
-						bool allowClipping = false); // reserved
-
-					void polypointProc(
-						OdInt32 numPoints,
-						const OdGePoint3d* vertexList,
-						const OdCmEntityColor* pColors,
-						const OdCmTransparency* pTransparency = 0,
-						const OdGeVector3d* pNormals = 0,
-						const OdGeVector3d* pExtrusions = 0,
-						const OdGsMarker* pSubEntMarkers = 0,
-						OdInt32 nPointSize = 0);
-
-					void rowOfDotsProc(
-						OdInt32 numPoints,
-						const OdGePoint3d& startPoint,
-						const OdGeVector3d& dirToNextPoint);
-
-					void edgeProc(
-						const OdGiEdge2dArray& edges,
-						const OdGeMatrix3d* pXform = 0);
-
-					TD_USING(OdGiGeometrySimplifier::polylineOut);
 				};
 				typedef OdSharedPtr<OdGiConveyorGeometryDumper> OdGiConveyorGeometryDumperPtr;
 			}

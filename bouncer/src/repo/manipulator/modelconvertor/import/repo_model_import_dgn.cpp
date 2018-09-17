@@ -30,6 +30,7 @@ repo::core::model::RepoScene* DgnModelImport::generateRepoScene()
 	repo::core::model::RepoScene *scene = nullptr;
 #ifdef ODA_SUPPORT
 	auto meshes = geoCollector.getMeshes();
+	repoInfo << "mesh size: " << meshes.size();
 	if (meshes.size()) {
 		auto mats = geoCollector.getMaterialMappings();
 		const repo::core::model::RepoNodeSet dummy;
@@ -47,8 +48,9 @@ repo::core::model::RepoScene* DgnModelImport::generateRepoScene()
 			meshIDs.push_back(mesh.getSharedID());			
 		}
 
-			
-		scene = new repo::core::model::RepoScene({ filePath }, dummy, meshSet, geoCollector.getMaterialNodes(), dummy, dummy, transSet);
+		auto matSet =  geoCollector.getMaterialNodes();
+		repoInfo << "# materials: " << matSet.size();
+		scene = new repo::core::model::RepoScene({ filePath }, dummy, meshSet, matSet, dummy, dummy, transSet);
 		scene->setWorldOffset(geoCollector.getModelOffset());
 	}
 #endif
@@ -66,6 +68,7 @@ bool DgnModelImport::importModel(std::string filePath, uint8_t &err)
 	success = odaProcessor.readFile() == 0;
 	if (!success) {		
 		err = REPOERR_LOAD_SCENE_FAIL;
+		repoInfo << "Failed to read file";
 	}
 	return success;
 #else
