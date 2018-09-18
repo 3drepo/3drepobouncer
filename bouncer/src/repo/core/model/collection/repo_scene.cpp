@@ -1549,7 +1549,7 @@ void RepoScene::populateAndUpdate(
 	addNodeToScene(gType, references, errMsg, &(instance.references));
 	addNodeToScene(gType, unknowns, errMsg, &(instance.unknowns));
 
-	//validateScene();
+	//validateScene(); //no longer doing this as it takes absolutely forever to go through every face.
 }
 
 void RepoScene::validateScene()

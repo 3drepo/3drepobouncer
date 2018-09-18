@@ -25,8 +25,7 @@ using namespace repo::manipulator::modelconvertor::odaHelper;
 
 OdaGeometryCollector::OdaGeometryCollector()
 {
-	ofile.open("C:\\Users\\Carmen\\Desktop\\testDump.obj");
-	ofile.precision(17);
+
 }
 
 
@@ -34,18 +33,6 @@ OdaGeometryCollector::~OdaGeometryCollector()
 {
 }
 
-void OdaGeometryCollector::addMaterialWithColor(const uint32_t &r, const uint32_t &g, const uint32_t &b, const uint32_t &a) {
-	//uint32_t code = r | (g << 8) | (b << 16) | (a << 24);
-	//if (codeToMat.find(code) == codeToMat.end())
-	//{
-	//	repo_material_t mat;
-	//	mat.diffuse = { r / 255.f, g / 255.f, b / 255.f };
-	//	mat.opacity = 1; //a / 255.f; alpha doesn't seem to be used
-	//	codeToMat[code] = repo::core::model::RepoBSONFactory::makeMaterialNode(mat);
-	//}
-
-	//matVector.push_back(code);
-}
 
 void OdaGeometryCollector::addMaterial(const uint64_t &matIndex, const repo_material_t &material) {
 
@@ -69,23 +56,11 @@ void OdaGeometryCollector::addMeshEntry(const std::vector<repo::lib::RepoVector3
 		minMeshBox[1] = boundingBox[0][1] < minMeshBox[1] ? boundingBox[0][1] : minMeshBox[1];
 		minMeshBox[2] = boundingBox[0][2] < minMeshBox[2] ? boundingBox[0][2] : minMeshBox[2];
 	}
+	std::string meshName = "mesh_" + std::to_string(meshData.size());
 	meshData.push_back({ rawVertices, faces, 
 	{{(float)boundingBox[0][0], (float)boundingBox[0][1], (float)boundingBox[0][2]},
-	{ (float)boundingBox[1][0], (float)boundingBox[1][1], (float)boundingBox[1][2] }}, nextMeshName, currMat});
-	nextMeshName = "";
+	{ (float)boundingBox[1][0], (float)boundingBox[1][1], (float)boundingBox[1][2] }}, meshName, currMat});
 
-	for (const auto &v : rawVertices) {
-		ofile << "v " << std::fixed << v.x << " " << std::fixed << v.y << " " << std::fixed << v.z << std::endl;
-	}
-
-	for (const auto &f : faces) {
-		ofile << "f";
-		for (const auto &fIdx : f)
-			ofile << " " << fIdx + nVectors;
-		ofile << std::endl;
-	}
-
-	nVectors += rawVertices.size();
 }
 
 std::vector<repo::core::model::MeshNode> OdaGeometryCollector::getMeshes() {

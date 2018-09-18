@@ -55,10 +55,9 @@ namespace repo {
 								matSet.insert(new repo::core::model::MaterialNode(matPair.second.cloneAndAddParent(matToMeshes[matIdx])));
 							}
 							else {
-								repoInfo << "Did not find matTo Meshes: " << matIdx;
+								repoDebug << "Did not find matTo Meshes: " << matIdx;
 							}
 						}
-						repoInfo << " idxToMat: " << idxToMat.size() << " matSet: " << matSet.size();
 						return matSet;
 					}
 
@@ -73,13 +72,7 @@ namespace repo {
 						const std::vector<std::vector<double>> &boundingBox
 					);
 
-					void addMaterialWithColor(const uint32_t &r, const uint32_t &g, const uint32_t &b, const uint32_t &a);
-
 					void addMaterial(const uint64_t &matIndex, const repo_material_t &material);
-
-					void setNextMeshName(const std::string &name) {
-						nextMeshName = name;
-					}
 
 				private:
 					std::vector<mesh_data_t> meshData;
@@ -87,10 +80,7 @@ namespace repo {
 					std::unordered_map< uint32_t, repo::core::model::MaterialNode > idxToMat, codeToMat;					
 					std::unordered_map<uint32_t, std::vector<repo::lib::RepoUUID> > matToMeshes;
 					std::vector<double> minMeshBox;
-					std::string nextMeshName;
 					uint32_t currMat;
-					std::ofstream ofile;
-					int nVectors = 1;
 				};
 			}
 		}
