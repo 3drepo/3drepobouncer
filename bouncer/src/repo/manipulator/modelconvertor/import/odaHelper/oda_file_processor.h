@@ -17,7 +17,7 @@
 
 #pragma once
 #include "../../../../core/model/bson/repo_node_mesh.h"
-#include "oda_geometry_collector.h"
+#include "geometry_collector.h"
 #include <OdaCommon.h>
 #include <Gs/GsBaseInclude.h>
 #include <RxObjectImpl.h>
@@ -32,14 +32,14 @@ namespace repo {
 				class OdaFileProcessor
 				{
 				public:
-					OdaFileProcessor(const std::string &inputFile, OdaGeometryCollector * geoCollector);
+					OdaFileProcessor(const std::string &inputFile, GeometryCollector * geoCollector);
 					~OdaFileProcessor();
 
 					int readFile();
 
 				private:
 					const std::string file;
-					OdaGeometryCollector *collector;
+					GeometryCollector *collector;
 					int importDgn(OdDbBaseDatabase *pDb,
 						const ODCOLORREF* pPallete,
 						int numColors,

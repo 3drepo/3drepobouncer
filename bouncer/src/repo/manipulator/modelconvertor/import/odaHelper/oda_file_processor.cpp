@@ -40,7 +40,7 @@
 #include <DgLine.h>      // This file puts OdDgLine3d in the output file
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-OdaFileProcessor::OdaFileProcessor(const std::string &inputFile, OdaGeometryCollector *geoCollector)
+OdaFileProcessor::OdaFileProcessor(const std::string &inputFile, GeometryCollector *geoCollector)
 	: file(inputFile),
 	  collector(geoCollector)
 {
@@ -54,12 +54,12 @@ OdaFileProcessor::~OdaFileProcessor()
 class StubDeviceModuleText : public OdGsBaseModule
 {
 private:
-	OdaGeometryCollector *collector;
+	GeometryCollector *collector;
 	OdGeMatrix3d        m_matTransform;
 	const std::map<OdDbStub*, double>* m_pMapDeviations;
 
 public:
-	void init(OdaGeometryCollector* const collector)
+	void init(GeometryCollector* const collector)
 	{
 		this->collector = collector;
 	}

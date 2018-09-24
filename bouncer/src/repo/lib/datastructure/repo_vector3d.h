@@ -38,6 +38,19 @@ namespace repo{
 				z = (v.size() > 2) ? v[2] : 0;
 			}
 
+			unsigned long checkSum() const
+			{
+				std::stringstream ss;
+				ss.precision(17);
+				
+				ss << std::fixed << x << std::fixed << y << std::fixed << z;
+				auto stringified = ss.str();
+
+				boost::crc_32_type crc32;
+				crc32.process_bytes(stringified.c_str(), stringified.size());
+				return crc32.checksum();
+			}
+
 			_RepoVector3D<T> crossProduct(const _RepoVector3D<T> &vec)
 			{
 				_RepoVector3D<T> product;

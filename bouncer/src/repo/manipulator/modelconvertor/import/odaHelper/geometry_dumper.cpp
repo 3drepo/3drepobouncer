@@ -33,39 +33,14 @@ void GeometryDumper::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* 
 	if ((pVertexDataList + p3Vertices[0]) != (pVertexDataList + p3Vertices[1]) &&
 		(pVertexDataList + p3Vertices[0]) != (pVertexDataList + p3Vertices[2]) &&
 		(pVertexDataList + p3Vertices[1]) != (pVertexDataList + p3Vertices[2]))
-	{
-		repo_face_t face;
+	{		
+		std::vector<repo::lib::RepoVector3D64> vertices;
 		for (int i = 0; i < 3; ++i)
-		{
-			std::stringstream ss;
-			ss.precision(17);
-			ss << std::fixed << pVertexDataList[p3Vertices[i]].x << "," << std::fixed << pVertexDataList[p3Vertices[i]].y << "," << std::fixed << pVertexDataList[p3Vertices[i]].z;
-			auto vStr = ss.str();
-			if (vToVIndex.find(vStr) == vToVIndex.end())
-			{
-				vToVIndex[vStr] = vertices.size();
-				vertices.push_back({ pVertexDataList[p3Vertices[i]].x , pVertexDataList[p3Vertices[i]].y, pVertexDataList[p3Vertices[i]].z });
-				if (boundingBox.size()) {
-					boundingBox[0][0] = boundingBox[0][0] > pVertexDataList[p3Vertices[i]].x ? pVertexDataList[p3Vertices[i]].x : boundingBox[0][0];
-					boundingBox[0][1] = boundingBox[0][1] > pVertexDataList[p3Vertices[i]].y ? pVertexDataList[p3Vertices[i]].y : boundingBox[0][1];
-					boundingBox[0][2] = boundingBox[0][2] > pVertexDataList[p3Vertices[i]].z ? pVertexDataList[p3Vertices[i]].z : boundingBox[0][2];
-
-					boundingBox[1][0] = boundingBox[1][0] < pVertexDataList[p3Vertices[i]].x ? pVertexDataList[p3Vertices[i]].x : boundingBox[1][0];
-					boundingBox[1][1] = boundingBox[1][1] < pVertexDataList[p3Vertices[i]].y ? pVertexDataList[p3Vertices[i]].y : boundingBox[1][1];
-					boundingBox[1][2] = boundingBox[1][2] < pVertexDataList[p3Vertices[i]].z ? pVertexDataList[p3Vertices[i]].z : boundingBox[1][2];
-				}
-				else {
-					boundingBox.push_back({ pVertexDataList[p3Vertices[i]].x, pVertexDataList[p3Vertices[i]].y, pVertexDataList[p3Vertices[i]].z });
-					boundingBox.push_back({ pVertexDataList[p3Vertices[i]].x, pVertexDataList[p3Vertices[i]].y, pVertexDataList[p3Vertices[i]].z });
-				}
-			}
-			face.push_back(vToVIndex[vStr]);
-
-			
+		{			
+			vertices.push_back({ pVertexDataList[p3Vertices[i]].x , pVertexDataList[p3Vertices[i]].y, pVertexDataList[p3Vertices[i]].z });						
 		}
-		faces.push_back(face);
+		collector->addFace(vertices);
 	}
-
 }
 
 double GeometryDumper::deviation(
@@ -103,14 +78,8 @@ OdGiMaterialItemPtr GeometryDumper::fillMaterialCache(
 	OdDbStub* materialId, 
 	const OdGiMaterialTraitsData & materialData
 ) {
-	if (vertices.size() && faces.size())
-		collector->addMeshEntry(vertices, faces, boundingBox);
 
-	vertices.clear();
-	faces.clear();
-	boundingBox.clear();
-	vToVIndex.clear();
-
+	
 	auto id = (OdUInt64)(OdIntPtr)materialId;
 
 	OdGiMaterialColor diffuseColor; OdGiMaterialMap diffuseMap;
@@ -192,12 +161,14 @@ OdGiMaterialItemPtr GeometryDumper::fillMaterialCache(
 	// transclucence
 	//mData.dTranslucence = materialData.translucence();						
 
-	collector->addMaterial(id, material);
+	collector->setCurrentMaterial(material);
+	collector->stopMeshEntry();
+	collector->startMeshEntry();
 
 	return OdGiMaterialItemPtr();
 }
 
-void GeometryDumper::init(OdaGeometryCollector *const geoCollector) {
+void GeometryDumper::init(GeometryCollector *const geoCollector) {
 	collector = geoCollector;
 }
 
@@ -212,8 +183,7 @@ void GeometryDumper::beginViewVectorization()
 
 void GeometryDumper::endViewVectorization()
 {
-	if (vertices.size() && faces.size())
-		collector->addMeshEntry(vertices, faces, boundingBox);
+	collector->stopMeshEntry();
 	OdGsBaseMaterialView::endViewVectorization();
 }
 

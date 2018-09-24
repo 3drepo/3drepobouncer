@@ -32,7 +32,6 @@ repo::core::model::RepoScene* DgnModelImport::generateRepoScene()
 	auto meshes = geoCollector.getMeshes();
 	repoInfo << "mesh size: " << meshes.size();
 	if (meshes.size()) {
-		auto mats = geoCollector.getMaterialMappings();
 		const repo::core::model::RepoNodeSet dummy;
 		repo::core::model::RepoNodeSet meshSet;
 		repo::core::model::RepoNodeSet transSet;		

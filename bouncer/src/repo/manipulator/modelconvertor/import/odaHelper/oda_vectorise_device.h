@@ -20,7 +20,7 @@
 #include <RxObjectImpl.h>
 #include <iostream>
 #include <Gs/GsBaseMaterialView.h>
-#include "oda_geometry_collector.h"
+#include "geometry_collector.h"
 
 
 namespace repo {
@@ -34,7 +34,7 @@ namespace repo {
 				class OdaVectoriseDevice :
 					public OdGsBaseVectorizeDevice
 				{
-					OdaGeometryCollector * geoCollector;
+					GeometryCollector * geoCollector;
 				protected:
 					ODRX_USING_HEAP_OPERATORS(OdGsBaseVectorizeDevice);
 				public:

@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "oda_geometry_collector.h"
+#include "geometry_collector.h"
 
 #include <SharedPtr.h>
 #include <Gi/GiGeometrySimplifier.h>
@@ -35,12 +35,7 @@ namespace repo {
 			namespace odaHelper {
 				class GeometryDumper : public OdGiGeometrySimplifier, public OdGsBaseMaterialView
 				{
-					OdaGeometryCollector *collector;
-					//FIXME: Should this live in collector?
-					std::vector<repo::lib::RepoVector3D64> vertices;
-					std::vector<repo_face_t> faces;
-					std::vector<std::vector<double>> boundingBox;
-					std::unordered_map<std::string, unsigned int> vToVIndex;
+					GeometryCollector *collector;				
 
 				public:
 					GeometryDumper() {}
@@ -56,7 +51,7 @@ namespace repo {
 						const OdGiDrawable* pDrawable);
 
 					void init(
-						OdaGeometryCollector *const geoCollector);
+						GeometryCollector *const geoCollector);
 
 					void beginViewVectorization();
 

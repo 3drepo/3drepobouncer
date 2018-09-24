@@ -23,7 +23,7 @@
 #include <vector>
 
 #ifdef ODA_SUPPORT
-#include "odaHelper/oda_geometry_collector.h"
+#include "odaHelper/geometry_collector.h"
 #endif
 
 namespace repo {
@@ -55,7 +55,7 @@ namespace repo {
 			private:
 				std::string filePath;
 #ifdef ODA_SUPPORT
-				odaHelper::OdaGeometryCollector geoCollector;
+				odaHelper::GeometryCollector geoCollector;
 #endif
 			};
 
