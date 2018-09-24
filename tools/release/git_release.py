@@ -19,7 +19,7 @@ minor2V      = sys.argv[4]
 version = majorV + "." + minor1V + "." + minor2V
 
 production   = (release_type == "prod")
-branch       = "release" if production else "master"
+branch       = "master" if production else "staging"
 
 os.system("cd ../..")
 

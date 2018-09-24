@@ -180,6 +180,11 @@ namespace repo{
 					const aiMesh *mesh) const;
 
 				/**
+				* Get file extension(in caps) of the given filePath
+				*/
+				std::string getFileExtension(const std::string &filePath) const;
+
+				/**
 				* Get bounding box of the aiscene
 				* @return returns the bounding box
 				*/
@@ -191,10 +196,11 @@ namespace repo{
 					std::vector<std::vector<double>> &bbox) const;
 
 				/**
-				* Load Texture within the given folder
-				* @param folderPath directory to folder
+				* Normalise shininess value base on source file type
+				* If normalisation factor is unknown for the file type, 
+				* rawValue will be returned
 				*/
-				void loadTextures(std::string folderPath);
+				float normaliseShininess(const float &rawValue) const;
 
 				/**
 				* Set ASSIMP properties on the Importer using ModelImportConfig
