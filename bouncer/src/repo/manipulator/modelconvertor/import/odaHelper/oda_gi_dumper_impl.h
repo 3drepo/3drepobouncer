@@ -19,7 +19,7 @@
 
 #include <RxObjectImpl.h>
 #include "oda_gi_dumper.h"
-#include "oda_gi_geo_dumper.h"
+#include "geometry_dumper.h"
 
 #define STL_USING_IOSTREAM
 #include "OdaSTL.h"

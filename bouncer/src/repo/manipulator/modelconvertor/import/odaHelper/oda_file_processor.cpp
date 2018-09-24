@@ -34,7 +34,7 @@
 
 #include "oda_file_processor.h"
 #include "oda_gi_dumper.h"
-#include "oda_gi_geo_dumper.h"
+#include "geometry_dumper.h"
 #include "oda_vectorise_device.h"
 
 #include <DgLine.h>      // This file puts OdDgLine3d in the output file
@@ -70,8 +70,8 @@ protected:
 	}
 	OdSmartPtr<OdGsViewImpl> createViewObject()
 	{
-		OdSmartPtr<OdGsViewImpl> pP = OdRxObjectImpl<OdGiConveyorGeometryDumper, OdGsViewImpl>::createObject();
-		((OdGiConveyorGeometryDumper*)pP.get())->init(collector);
+		OdSmartPtr<OdGsViewImpl> pP = OdRxObjectImpl<GeometryDumper, OdGsViewImpl>::createObject();
+		((GeometryDumper*)pP.get())->init(collector);
 		return pP;
 	}
 	OdSmartPtr<OdGsBaseVectorizeDevice> createBitmapDeviceObject()
