@@ -33,7 +33,6 @@
 #include <DgGsManager.h>
 
 #include "oda_file_processor.h"
-#include "oda_gi_dumper.h"
 #include "geometry_dumper.h"
 #include "oda_vectorise_device.h"
 
