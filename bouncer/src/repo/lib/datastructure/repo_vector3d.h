@@ -18,6 +18,7 @@
 #pragma once
 
 #include "../../repo_bouncer_global.h"
+#include <boost/crc.hpp>
 
 #include <vector>
 #include <sstream>
