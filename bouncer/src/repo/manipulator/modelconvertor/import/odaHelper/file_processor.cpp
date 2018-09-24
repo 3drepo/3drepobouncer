@@ -32,21 +32,21 @@
 #include <DgGiContext.h>
 #include <DgGsManager.h>
 
-#include "oda_file_processor.h"
+#include "file_processor.h"
 #include "geometry_dumper.h"
-#include "oda_vectorise_device.h"
+#include "vectorise_device.h"
 
 #include <DgLine.h>      // This file puts OdDgLine3d in the output file
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-OdaFileProcessor::OdaFileProcessor(const std::string &inputFile, GeometryCollector *geoCollector)
+FileProcessor::FileProcessor(const std::string &inputFile, GeometryCollector *geoCollector)
 	: file(inputFile),
 	  collector(geoCollector)
 {
 }
 
 
-OdaFileProcessor::~OdaFileProcessor()
+FileProcessor::~FileProcessor()
 {
 }
 
@@ -65,7 +65,7 @@ public:
 protected:
 	OdSmartPtr<OdGsBaseVectorizeDevice> createDeviceObject()
 	{
-		return OdRxObjectImpl<OdaVectoriseDevice, OdGsBaseVectorizeDevice>::createObject();
+		return OdRxObjectImpl<VectoriseDevice, OdGsBaseVectorizeDevice>::createObject();
 	}
 	OdSmartPtr<OdGsViewImpl> createViewObject()
 	{
@@ -90,7 +90,7 @@ protected:
 	ODRX_USING_HEAP_OPERATORS(OdExDgnSystemServices);
 };
 
-int OdaFileProcessor::readFile() {
+int FileProcessor::readFile() {
 
 	int   nRes = 0;               // Return value for the function
 	OdStaticRxObject<RepoDgnServices> svcs;
@@ -220,7 +220,7 @@ int OdaFileProcessor::readFile() {
 	return nRes;
 }
 
-int OdaFileProcessor::importDgn(OdDbBaseDatabase *pDb,
+int FileProcessor::importDgn(OdDbBaseDatabase *pDb,
 	const ODCOLORREF* pPallete,
 	int numColors,
 	const OdGiDrawable* pEntity,

@@ -29,11 +29,11 @@ namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-				class OdaFileProcessor
+				class FileProcessor
 				{
 				public:
-					OdaFileProcessor(const std::string &inputFile, GeometryCollector * geoCollector);
-					~OdaFileProcessor();
+					FileProcessor(const std::string &inputFile, GeometryCollector * geoCollector);
+					~FileProcessor();
 
 					int readFile();
 

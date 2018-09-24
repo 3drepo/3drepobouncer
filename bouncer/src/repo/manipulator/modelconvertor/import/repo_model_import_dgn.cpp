@@ -3,7 +3,7 @@
 #include "../../../error_codes.h"
 
 #ifdef ODA_SUPPORT
-#include "odaHelper/oda_file_processor.h"
+#include "odaHelper/file_processor.h"
 #endif
 
 
@@ -62,7 +62,7 @@ bool DgnModelImport::importModel(std::string filePath, uint8_t &err)
 	
 #ifdef ODA_SUPPORT
 	this->filePath = filePath;
-	odaHelper::OdaFileProcessor odaProcessor(filePath, &geoCollector);
+	odaHelper::FileProcessor odaProcessor(filePath, &geoCollector);
 	bool success = false;
 	success = odaProcessor.readFile() == 0;
 	if (!success) {		

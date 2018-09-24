@@ -49,9 +49,9 @@ double GeometryDumper::deviation(
 	return 0;
 }
 
-OdaVectoriseDevice* GeometryDumper::device()
+VectoriseDevice* GeometryDumper::device()
 {
-	return static_cast<OdaVectoriseDevice*>(OdGsBaseVectorizeView::device());
+	return static_cast<VectoriseDevice*>(OdGsBaseVectorizeView::device());
 }
 
 bool GeometryDumper::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)

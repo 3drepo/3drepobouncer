@@ -27,11 +27,8 @@ namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-				/************************************************************************/
-				/* OdGsBaseVectorizeDevice objects own, update, and refresh one or more */
-				/* OdGsView objects.                                                    */
-				/************************************************************************/
-				class OdaVectoriseDevice :
+
+				class VectoriseDevice :
 					public OdGsBaseVectorizeDevice
 				{
 					GeometryCollector * geoCollector;
@@ -39,8 +36,8 @@ namespace repo {
 					ODRX_USING_HEAP_OPERATORS(OdGsBaseVectorizeDevice);
 				public:
 
-					OdaVectoriseDevice(){}
-					~OdaVectoriseDevice(){}
+					VectoriseDevice(){}
+					~VectoriseDevice(){}
 				}; // end OdaVectoriseDevice			
 			}
 		}

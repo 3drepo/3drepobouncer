@@ -25,7 +25,7 @@
 #include <string>
 #include <fstream>
 
-#include "oda_vectorise_device.h"
+#include "vectorise_device.h"
 #include "../../../../core/model/bson/repo_node_mesh.h"
 
 #include <vector>
@@ -44,7 +44,7 @@ namespace repo {
 						const OdGiDeviationType deviationType, 
 						const OdGePoint3d& pointOnCurve) const;
 
-					OdaVectoriseDevice* device();
+					VectoriseDevice* device();
 
 					bool doDraw(
 						OdUInt32 i, 
