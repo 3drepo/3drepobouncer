@@ -19,7 +19,7 @@
 #ODA_LIBRARIES will point to the libraries
 
 set(ODA_LIB_NAMES
-	TD_ExamplesCommon TG_ExamplesCommon TG_Db TD_DbRoot TD_Gs TD_Gi TD_Ge TD_Root sisl TD_Alloc)
+	TD_ExamplesCommon TG_ExamplesCommon TG_Db TD_DbRoot TD_Gs TD_Gi TD_Ge TD_Root TD_Alloc)
 
 if(DEFINED ENV{ODA_LIB_DIR})
 	set(ODA_LIB_DIR $ENV{ODA_LIB_DIR})
