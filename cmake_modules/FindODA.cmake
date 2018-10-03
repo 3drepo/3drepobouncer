@@ -30,6 +30,8 @@ if(DEFINED ENV{ODA_ROOT})
 
 	message(STATUS "ODA_ROOT: ${ODA_ROOT}")
 	message(STATUS "ODA_LIB_DIR: ${ODA_LIB_DIR}")
+	string(REPLACE "lib" "bin" ODA_BIN_DIR ${ODA_LIB_DIR})
+	message(STATUS "ODA_BIN_DIR: ${ODA_BIN_DIR}")
 
 	set(ODA_INCLUDE_DIR
 			${ODA_ROOT}/ThirdParty/activation
@@ -45,6 +47,7 @@ if(DEFINED ENV{ODA_ROOT})
 		find_library(libPathRelease${libName} NAMES ${libName}
 			PATHS
 			${ODA_ROOT}/lib
+			${ODA_BIN_DIR}
 			${ODA_LIB_DIR}
 		)
 		set(ODA_LIBRARIES_RELEASE ${ODA_LIBRARIES_RELEASE} ${libPathRelease${libName}})
@@ -53,6 +56,7 @@ if(DEFINED ENV{ODA_ROOT})
 		find_library(libPathDebug${libName} NAMES ${libName}
 			PATHS
 			${ODA_ROOT}/lib
+			${ODA_BIN_DIR}
 			${ODA_LIB_DIR}
 		)
 		set(ODA_LIBRARIES_DEBUG ${ODA_LIBRARIES_DEBUG} ${libPathDebug${libName}})

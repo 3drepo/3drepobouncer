@@ -59,7 +59,7 @@ before_script:
     - export OCCT_ROOT=$PWD/../occt-install
     - export IFCOPENSHELL_ROOT=$PWD/../ifcopenshell
     - export ODA_ROOT=$PWD/../teighaLinuxGCC4.8
-    - export ODA_LIB_DIR=$ODA_ROOT/bin/lnxX64_4.8dll/
+    - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_4.8dll/
     - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_BUILD_TYPE=Release ../
     - mongo mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
 script:
