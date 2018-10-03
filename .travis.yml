@@ -46,7 +46,7 @@ before_install:
     - sudo apt-get install libvtk5-dev libxmu-dev libxi-dev
     - echo ============ TEIGHA INSTALL =============
     - wget $TEIGHA_LIBS
-    - tar -zxf teighaLinuxGCC4.8.tgz
+    - tar -zxf teighaLinuxGCC4.9.tgz
 
 install:
     - sudo pip install cpp-coveralls
@@ -58,8 +58,8 @@ before_script:
     - export ASSIMP_ROOT=$PWD/../assimp-install
     - export OCCT_ROOT=$PWD/../occt-install
     - export IFCOPENSHELL_ROOT=$PWD/../ifcopenshell
-    - export ODA_ROOT=$PWD/../teighaLinuxGCC4.8
-    - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_4.8dll/
+    - export ODA_ROOT=$PWD/../teighaLinuxGCC4.9
+    - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_4.9dll/
     - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_BUILD_TYPE=Release ../
     - mongo mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
 script:
