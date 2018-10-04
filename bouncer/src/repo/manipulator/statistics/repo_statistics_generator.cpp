@@ -35,7 +35,7 @@ void StatisticsGenerator::getUserList(const std::string &outputFilePath)
 	auto users = handler->getAllFromCollectionTailable(REPO_ADMIN, REPO_SYSTEM_USERS);
 	std::ofstream file;
 	file.open(outputFilePath);
-	file << "Username, Email, FirstName, Last Name, Date Activated, Country, Company, Position" << std::endl;
+	file << "Username, Email, FirstName, Last Name, Date Created, Country, Company, Position" << std::endl;
 	std::cout << " looking through users..." << std::endl;
 	for (const auto &user : users)
 	{
@@ -44,8 +44,11 @@ void StatisticsGenerator::getUserList(const std::string &outputFilePath)
 		{
 			file << userBson.getUserName() << "," << userBson.getEmail() << "," << userBson.getFirstName() << "," << userBson.getLastName() << ",";
 			if (auto createdAt = userBson.getUserCreatedAt()) {
-				mongo::Date_t date(createdAt);
-				file << date.toString();
+				std::time_t now = createdAt/1000;
+				std::tm * ptm = std::localtime(&now);
+				char buffer[32];
+				std::strftime(buffer, 32, "%d/%m/%Y", ptm);			
+				file << buffer;
 			}
 			file << ",";
 
