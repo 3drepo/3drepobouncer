@@ -190,7 +190,7 @@ static int runProcess(
 #endif
 }
 
-TEST(RepoClientTest, UploadTest)
+TEST(RepoClientTest, UploadTestInvalidDBConn)
 {
 	//this ensures we can run processes
 	ASSERT_TRUE(system(nullptr));
@@ -200,51 +200,133 @@ TEST(RepoClientTest, UploadTest)
 	std::string failToConnect = produceUploadArgs("invalidAdd", 12345, db, "failConn", getSuccessFilePath());
 	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToConnect));
 	EXPECT_FALSE(projectExists(db, "failConn"));
+}
+TEST(RepoClientTest, UploadTestBadDBAuth)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
 
 	//Test Bad authentication
 	std::string failToAuth = produceUploadArgs("blah", "blah", db, "failAuth", getSuccessFilePath());
 	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToAuth));
 	EXPECT_FALSE(projectExists(db, "failAuth"));
 
+}
+
+TEST(RepoClientTest, UploadTestNoFile)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
+
 	//Test Bad FilePath
 	std::string badFilePath = produceUploadArgs(db, "failPath", "nonExistentFile.obj");
 	EXPECT_EQ((int)REPOERR_MODEL_FILE_READ, runProcess(badFilePath));
 	EXPECT_FALSE(projectExists(db, "failPath"));
+}
+
+TEST(RepoClientTest, UploadTestBadExt)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
 
 	//Test Bad extension
 	std::string badExt = produceUploadArgs(db, "failExt", getDataPath(badExtensionFile));
 	EXPECT_EQ((int)REPOERR_FILE_TYPE_NOT_SUPPORTED, runProcess(badExt));
 	EXPECT_FALSE(projectExists(db, "failExt"));
+}
+
+TEST(RepoClientTest, UploadTestBadFBXVer)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
 
 	//Unsupported FBX version
 	std::string unsupportedVersion = produceUploadArgs(db, "failExt", getDataPath(unsupportedFBXVersion));
 	EXPECT_EQ((int)REPOERR_UNSUPPORTED_FBX_VERSION, runProcess(unsupportedVersion));
 	EXPECT_FALSE(projectExists(db, "failExt"));
+}
+
+TEST(RepoClientTest, UploadTestBadArgs)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
 
 	//Insufficient arguments
 	std::string lackArg = getClientExePath() + " " + REPO_GTEST_DBADDRESS + " " + std::to_string(REPO_GTEST_DBPORT) + " "
 		+ REPO_GTEST_DBUSER + " " + REPO_GTEST_DBPW + " import " + getSuccessFilePath();
 	EXPECT_EQ((int)REPOERR_INVALID_ARG, runProcess(lackArg));
+}
+
+TEST(RepoClientTest, UploadTestSuccess)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
 
 	//Test Good Upload
 	std::string goodUpload = produceUploadArgs(db, "cube", getSuccessFilePath());
 	EXPECT_EQ((int)REPOERR_OK, runProcess(goodUpload));
 	EXPECT_TRUE(projectExists(db, "cube"));
 
+
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importSuccess))));
+	EXPECT_TRUE(projectExists("testDB", importSuccessPro));
+	EXPECT_TRUE(projectSettingsCheck("testDB", importSuccessPro, "owner", "", ""));
+
+	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importSuccess2))));
+	EXPECT_TRUE(projectExists("testDB", importSuccessPro2));
+	EXPECT_TRUE(projectSettingsCheck("testDB", importSuccessPro2, "owner", "taggg", "desccc"));
+
+}
+
+TEST(RepoClientTest, UploadTestTexture)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
+
+
 	//Test Textured Upload
 	std::string texUpload = produceUploadArgs(db, "textured", getDataPath(texturedModel));
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(texUpload));
 	EXPECT_TRUE(projectExists(db, "textured"));
+}
+
+TEST(RepoClientTest, UploadTestMissingNodes)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
 
 	//Test missing nodes Upload
 	std::string misUpload = produceUploadArgs(db, "missing", getDataPath(missingNodesModel));
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_NODES, runProcess(misUpload));
 	EXPECT_TRUE(projectExists(db, "missing"));
 
+}
+
+TEST(RepoClientTest, UploadTestIFC)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
+
+
 	//Upload IFCFile
 	std::string ifcUpload = produceUploadArgs(db, "ifcTest", getDataPath(ifcModel));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(ifcUpload));
 	EXPECT_TRUE(projectExists(db, "ifcTest"));
+}
+
+TEST(RepoClientTest, UploadTestMissingFieldsInJSON)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
 
 	//JSON AS argument
 	//Empty JSON
@@ -258,22 +340,23 @@ TEST(RepoClientTest, UploadTest)
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(getDataPath(importNoProject))));
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_FAIL, runProcess(produceUploadFileArgs(importNoProject2)));
 
+}
+
+TEST(RepoClientTest, UploadTestOwner)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importNoOwner))));
 	EXPECT_TRUE(projectExists("testDB", importNoOwnerPro));
 	EXPECT_TRUE(projectSettingsCheck("testDB", importNoOwnerPro, REPO_GTEST_DBUSER, "thisTag", "MyUpload"));
-
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importNoOwner2))));
 	EXPECT_TRUE(projectExists("testDB", importNoOwnerPro2));
 	EXPECT_TRUE(projectSettingsCheck("testDB", importNoOwnerPro2, REPO_GTEST_DBUSER, "thisTag", "MyUpload"));
-
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importSuccess))));
-	EXPECT_TRUE(projectExists("testDB", importSuccessPro));
-	EXPECT_TRUE(projectSettingsCheck("testDB", importSuccessPro, "owner", "", ""));
-
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceUploadFileArgs(getDataPath(importSuccess2))));
-	EXPECT_TRUE(projectExists("testDB", importSuccessPro2));
-	EXPECT_TRUE(projectSettingsCheck("testDB", importSuccessPro2, "owner", "taggg", "desccc"));
 }
+
+	
+
 
 TEST(RepoClientTest, CreateFedTest)
 {
