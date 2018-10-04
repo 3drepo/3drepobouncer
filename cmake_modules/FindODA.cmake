@@ -21,9 +21,6 @@
 set(ODA_LIB_NAMES
 	TD_ExamplesCommon TG_ExamplesCommon TG_Db TD_DbRoot TD_Gs TD_Gi TD_Ge TD_Root TD_Alloc)
 
-if(UNIX)
-	SET(CMAKE_FIND_LIBRARY_SUFFIXES ".so" ".a" ".tx")
-endif(UNIX)
 
 if(DEFINED ENV{ODA_LIB_DIR})
 	set(ODA_LIB_DIR $ENV{ODA_LIB_DIR})
@@ -54,6 +51,22 @@ if(DEFINED ENV{ODA_ROOT})
 			${ODA_BIN_DIR}
 			${ODA_LIB_DIR}
 		)
+
+		if(NOT libPathRelease${libName} AND UNIX)
+			#check for .tx
+			SET(CMAKE_FIND_LIBRARY_PREFIXES "")
+			SET(CMAKE_FIND_LIBRARY_SUFFIXES ".tx")
+			find_library(libPathRelease${libName} NAMES ${libName}
+				PATHS
+				${ODA_ROOT}/lib
+				${ODA_BIN_DIR}
+				${ODA_LIB_DIR}
+			)		
+			
+			SET(CMAKE_FIND_LIBRARY_PREFIXES "lib")
+			SET(CMAKE_FIND_LIBRARY_SUFFIXES ".so" ".a")
+		endif()
+
 		set(ODA_LIBRARIES_RELEASE ${ODA_LIBRARIES_RELEASE} ${libPathRelease${libName}})
 
 		#There's no debug library provided
@@ -63,6 +76,21 @@ if(DEFINED ENV{ODA_ROOT})
 			${ODA_BIN_DIR}
 			${ODA_LIB_DIR}
 		)
+		
+		if(NOT libPathDebug${libName} AND UNIX)
+			#check for .tx
+			SET(CMAKE_FIND_LIBRARY_PREFIXES "")
+			SET(CMAKE_FIND_LIBRARY_SUFFIXES ".tx")
+			find_library(libPathDebug${libName} NAMES ${libName}
+				PATHS
+				${ODA_ROOT}/lib
+				${ODA_BIN_DIR}
+				${ODA_LIB_DIR}
+			)		
+			
+			SET(CMAKE_FIND_LIBRARY_PREFIXES "lib")
+			SET(CMAKE_FIND_LIBRARY_SUFFIXES ".so" ".a")
+		endif()
 		set(ODA_LIBRARIES_DEBUG ${ODA_LIBRARIES_DEBUG} ${libPathDebug${libName}})
 	endforeach()
 

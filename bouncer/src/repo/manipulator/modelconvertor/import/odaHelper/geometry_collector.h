@@ -80,7 +80,7 @@ namespace repo {
 					* Add a face to the current mesh
 					* @param vertices a vector of vertices that makes up this face
 					*/
-					void GeometryCollector::addFace(
+					void addFace(
 						const std::vector<repo::lib::RepoVector3D64> &vertices
 					);
 
