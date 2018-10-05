@@ -53,6 +53,21 @@ if(DEFINED ENV{ODA_ROOT})
 		)
 
 		if(NOT libPathRelease${libName} AND UNIX)
+			#check for .tx (unix)
+			SET(CMAKE_FIND_LIBRARY_PREFIXES "")
+			SET(CMAKE_FIND_LIBRARY_SUFFIXES ".tx")
+			find_library(libPathRelease${libName} NAMES ${libName}
+				PATHS
+				${ODA_ROOT}/lib
+				${ODA_BIN_DIR}
+				${ODA_LIB_DIR}
+			)
+
+			SET(CMAKE_FIND_LIBRARY_PREFIXES "lib")
+			SET(CMAKE_FIND_LIBRARY_SUFFIXES ".so" ".a")
+		endif()
+
+		if(NOT libPathRelease${libName} AND APPLE)
 			#check for .tx
 			SET(CMAKE_FIND_LIBRARY_PREFIXES "")
 			SET(CMAKE_FIND_LIBRARY_SUFFIXES ".tx")
@@ -61,10 +76,10 @@ if(DEFINED ENV{ODA_ROOT})
 				${ODA_ROOT}/lib
 				${ODA_BIN_DIR}
 				${ODA_LIB_DIR}
-			)		
-			
+			)
+
 			SET(CMAKE_FIND_LIBRARY_PREFIXES "lib")
-			SET(CMAKE_FIND_LIBRARY_SUFFIXES ".so" ".a")
+			SET(CMAKE_FIND_LIBRARY_SUFFIXES ".dylib" ".a")
 		endif()
 
 		set(ODA_LIBRARIES_RELEASE ${ODA_LIBRARIES_RELEASE} ${libPathRelease${libName}})
@@ -76,7 +91,7 @@ if(DEFINED ENV{ODA_ROOT})
 			${ODA_BIN_DIR}
 			${ODA_LIB_DIR}
 		)
-		
+
 		if(NOT libPathDebug${libName} AND UNIX)
 			#check for .tx
 			SET(CMAKE_FIND_LIBRARY_PREFIXES "")
@@ -86,10 +101,25 @@ if(DEFINED ENV{ODA_ROOT})
 				${ODA_ROOT}/lib
 				${ODA_BIN_DIR}
 				${ODA_LIB_DIR}
-			)		
-			
+			)
+
 			SET(CMAKE_FIND_LIBRARY_PREFIXES "lib")
 			SET(CMAKE_FIND_LIBRARY_SUFFIXES ".so" ".a")
+		endif()
+
+		if(NOT libPathDebug${libName} AND APPLE)
+			#check for .tx
+			SET(CMAKE_FIND_LIBRARY_PREFIXES "")
+			SET(CMAKE_FIND_LIBRARY_SUFFIXES ".tx")
+			find_library(libPathDebug${libName} NAMES ${libName}
+				PATHS
+				${ODA_ROOT}/lib
+				${ODA_BIN_DIR}
+				${ODA_LIB_DIR}
+			)
+
+			SET(CMAKE_FIND_LIBRARY_PREFIXES "lib")
+			SET(CMAKE_FIND_LIBRARY_SUFFIXES ".dylib" ".a")
 		endif()
 		set(ODA_LIBRARIES_DEBUG ${ODA_LIBRARIES_DEBUG} ${libPathDebug${libName}})
 	endforeach()
