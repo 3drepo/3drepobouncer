@@ -436,8 +436,7 @@ int32_t importFileAndCommit(
 	std::string database;
 	std::string project;
 	std::string configFile, owner, tag, desc;
-
-	bool success = true;
+	uint8_t err = REPOERR_OK;
 	bool rotate = false;
 	if (usingSettingFiles)
 	{
@@ -451,7 +450,7 @@ int32_t importFileAndCommit(
 
 			if (database.empty() || project.empty())
 			{
-				success = false;
+				err = REPOERR_LOAD_SCENE_FAIL;
 			}
 
 			owner = jsonTree.get<std::string>("owner", "");
@@ -463,7 +462,7 @@ int32_t importFileAndCommit(
 		}
 		catch (std::exception &e)
 		{
-			success = false;
+			err = REPOERR_LOAD_SCENE_FAIL;
 			repoLogError("Failed to import file: " + std::string(e.what()));
 		}
 	}
@@ -506,46 +505,55 @@ int32_t importFileAndCommit(
 		}
 	}
 
-	boost::filesystem::path filePath(fileLoc);
-	std::string fileExt = filePath.extension().string();
-	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
-	rotate |= fileExt == FBX_EXTENSION;
+	if (!err) {
+		boost::filesystem::path filePath(fileLoc);
+		std::string fileExt = filePath.extension().string();
+		std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
+		rotate |= fileExt == FBX_EXTENSION;
 
-	//FIXME: This is getting complicated, we should consider using boost::program_options and start utilising flags...
-	//Something like this: http://stackoverflow.com/questions/15541498/how-to-implement-subcommands-using-boost-program-options
+		//FIXME: This is getting complicated, we should consider using boost::program_options and start utilising flags...
+		//Something like this: http://stackoverflow.com/questions/15541498/how-to-implement-subcommands-using-boost-program-options
 
-	repoLog("File: " + fileLoc + " database: " + database
-		+ " project: " + project + " rotate:"
-		+ (rotate ? "true" : "false") + " owner :" + owner + " configFile: " + configFile);
+		repoLog("File: " + fileLoc + " database: " + database
+			+ " project: " + project + " rotate:"
+			+ (rotate ? "true" : "false") + " owner :" + owner + " configFile: " + configFile);
 
-	repo::manipulator::modelconvertor::ModelImportConfig config(configFile);
-	uint8_t err;
-	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, err, true, rotate, &config);
-	if (graph)
-	{
-		repoLog("Trying to commit this scene to database as " + database + "." + project);
-		graph->setDatabaseAndProjectName(database, project);
+		repo::manipulator::modelconvertor::ModelImportConfig config(configFile);
 
-		if (controller->commitScene(token, graph, owner, tag, desc))
+		repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, err, true, rotate, &config);
+		if (graph)
 		{
-			if (graph->isMissingTexture())
+			repoLog("Trying to commit this scene to database as " + database + "." + project);
+			graph->setDatabaseAndProjectName(database, project);
+
+			if (controller->commitScene(token, graph, owner, tag, desc))
 			{
-				repoLog("Missing texture detected!");
-				return REPOERR_LOAD_SCENE_MISSING_TEXTURE;
+				if (graph->isMissingTexture())
+				{
+					repoLog("Missing texture detected!");
+					err = REPOERR_LOAD_SCENE_MISSING_TEXTURE;
+				}
+				else if (graph->isMissingNodes())
+				{
+					repoLog("Missing nodes detected!");
+					err = REPOERR_LOAD_SCENE_MISSING_NODES;
+				}
+				else if (graph->hasInvalidMeshes())
+				{
+					repoLog("Invalid meshes detected!");
+					err = REPOERR_LOAD_SCENE_MISSING_NODES;
+				}
+				else
+					err =  REPOERR_OK;
 			}
-			else if (graph->isMissingNodes())
-			{
-				repoLog("Missing nodes detected!");
-				return REPOERR_LOAD_SCENE_MISSING_NODES;
+			else {
+				err = REPOERR_LOAD_SCENE_FAIL;
 			}
-			else if (graph->hasInvalidMeshes())
-			{
-				repoLog("Invalid meshes detected!");
-				return REPOERR_LOAD_SCENE_MISSING_NODES;
-			}
-			else
-				return REPOERR_OK;
 		}
-	}	
-	return err? err : REPOERR_LOAD_SCENE_FAIL;
+		else {
+			err = REPOERR_LOAD_SCENE_FAIL;
+		}
+
+	}
+	return err;
 }
