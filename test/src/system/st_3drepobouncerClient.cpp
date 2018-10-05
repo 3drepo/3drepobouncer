@@ -322,6 +322,19 @@ TEST(RepoClientTest, UploadTestIFC)
 	EXPECT_TRUE(projectExists(db, "ifcTest"));
 }
 
+TEST(RepoClientTest, UploadTestDGN)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
+
+
+	//Upload DGN file
+	std::string dgnUpload = produceUploadArgs(db, "dgnTest", getDataPath(dgnModel));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(dgnUpload));
+	EXPECT_TRUE(projectExists(db, "dgnTest"));
+}
+
 TEST(RepoClientTest, UploadTestMissingFieldsInJSON)
 {
 	//this ensures we can run processes
