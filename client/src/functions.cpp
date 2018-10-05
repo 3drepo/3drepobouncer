@@ -451,7 +451,7 @@ int32_t importFileAndCommit(
 
 			if (database.empty() || project.empty())
 			{
-				success = false;
+				return REPOERR_LOAD_SCENE_FAIL;
 			}
 
 			owner = jsonTree.get<std::string>("owner", "");
@@ -463,8 +463,7 @@ int32_t importFileAndCommit(
 		}
 		catch (std::exception &e)
 		{
-			success = false;
-			repoLogError("Failed to import file: " + std::string(e.what()));
+			return REPOERR_LOAD_SCENE_FAIL;
 		}
 	}
 	else
