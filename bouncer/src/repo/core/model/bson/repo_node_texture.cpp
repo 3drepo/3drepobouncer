@@ -42,7 +42,7 @@ TextureNode::~TextureNode()
 std::vector<char> TextureNode::getRawData() const
 {
 	std::vector<char> dataVec;
-	if (hasField(REPO_LABEL_DATA))
+	if (hasBinField(REPO_LABEL_DATA))
 	{
 		getBinaryFieldAsVector(REPO_LABEL_DATA, dataVec);
 	}
