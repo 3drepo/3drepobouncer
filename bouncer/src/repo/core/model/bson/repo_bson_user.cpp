@@ -90,7 +90,7 @@ uint64_t RepoUser::getUserCreatedAt() const {
 	{
 		res = customData.getTimeStampField(REPO_USER_LABEL_CREATED_AT);
 	}
-	return res;
+	return res == -1? 0 : res;
 }
 
 bool RepoUser::quotaEntryHasQuota(const QuotaLimit &quota) const {

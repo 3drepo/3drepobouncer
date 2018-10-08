@@ -18,6 +18,7 @@
 #pragma once
 
 #include "../../repo_bouncer_global.h"
+#include <boost/crc.hpp>
 
 #include <vector>
 #include <sstream>
@@ -36,6 +37,19 @@ namespace repo{
 				x = (v.size() > 0) ? v[0] : 0;
 				y = (v.size() > 1) ? v[1] : 0;
 				z = (v.size() > 2) ? v[2] : 0;
+			}
+
+			unsigned long checkSum() const
+			{
+				std::stringstream ss;
+				ss.precision(17);
+				
+				ss << std::fixed << x << std::fixed << y << std::fixed << z;
+				auto stringified = ss.str();
+
+				boost::crc_32_type crc32;
+				crc32.process_bytes(stringified.c_str(), stringified.size());
+				return crc32.checksum();
 			}
 
 			_RepoVector3D<T> crossProduct(const _RepoVector3D<T> &vec)

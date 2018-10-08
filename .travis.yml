@@ -19,7 +19,7 @@ before_install:
     - mongod --version
     - mkdir testData && cd testData
     - svn --no-auth-cache export --username $TESTUSER --password $TESTPW https://github.com/3drepo/tests/trunk/cplusplus/bouncer
-    - ls 
+    - ls
     - cd ../
     - mkdir data
     - mongod --dbpath data &
@@ -44,26 +44,33 @@ before_install:
     - tar -zxf testData/bouncer/ext_libs/occt.tgz
     - tar -zxf testData/bouncer/ext_libs/ifcopenshell.tgz
     - sudo apt-get install libvtk5-dev libxmu-dev libxi-dev
+    - echo ============ TEIGHA INSTALL =============
+    - wget $TEIGHA_LIBS
+    - tar -zxf teighaLinuxGCC4.9.tgz
+    - ls teighaLinuxGCC4.9/Kernel/Include
+
 install:
-    - sudo pip install cpp-coveralls    
+    - sudo pip install cpp-coveralls
 services:
     - mongodb
 before_script:
     - mkdir build && cd build
-    - export MONGO_ROOT=$PWD/../mongo-cxx-1.1.0 
-    - export ASSIMP_ROOT=$PWD/../assimp-install 
+    - export MONGO_ROOT=$PWD/../mongo-cxx-1.1.0
+    - export ASSIMP_ROOT=$PWD/../assimp-install
     - export OCCT_ROOT=$PWD/../occt-install
     - export IFCOPENSHELL_ROOT=$PWD/../ifcopenshell
-    - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DCMAKE_BUILD_TYPE=Release ../
+    - export ODA_ROOT=$PWD/../teighaLinuxGCC4.9
+    - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_4.9dll/
+    - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_BUILD_TYPE=Release ../
     - mongo mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
 script:
     - sudo make -j2 install
     - export REPO_MODEL_PATH=$PWD/../testData/bouncer/data/models
     - for f in $REPO_MODEL_PATH/*.json; do sed -i.bak -e 's|$REPO_MODEL_PATH|'$REPO_MODEL_PATH'|g' $f; done
-    - LD_LIBRARY_PATH=$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$LD_LIBRARY_PATH 3drepobouncerTest
+    - LD_LIBRARY_PATH=$ODA_ROOT/bin/lnxX64_4.9dll/:$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$LD_LIBRARY_PATH 3drepobouncerTest
 after_success:
     - coveralls --root ../ -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0"
 notifications:
-    email: 
+    email:
         recipients:
             - devops@3drepo.org

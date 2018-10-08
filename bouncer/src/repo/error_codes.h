@@ -67,5 +67,6 @@
 #define REPOERR_UNSUPPORTED_VERSION 24
 //Exceed the maximum amount fo nodes
 #define REPOERR_MAX_NODES_EXCEEDED 25
-
+//When ODA not compiled in but dgn import requested
+#define REPOERR_ODA_UNAVAILABLE 26
 

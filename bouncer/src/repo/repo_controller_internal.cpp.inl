@@ -1125,7 +1125,7 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 		scene = worker->loadSceneFromFile(filePath, err, applyReduction, rotateModel, config);
 		workerPool.push(worker);
 		if (!scene)
-			repoError << "Failed to load scene from file - error code: " << err;
+			repoError << "Failed to load scene from file - error code: " << std::to_string(err);
 	}
 	else
 	{

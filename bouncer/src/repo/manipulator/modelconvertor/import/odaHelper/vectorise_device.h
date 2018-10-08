@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2015 3D Repo Ltd
+*  Copyright (C) 2018 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -16,24 +16,30 @@
 */
 
 #pragma once
-#include <cstdint>
-#if defined(_WIN32) || defined(_WIN64)
-#   define REPO_DECL_EXPORT __declspec(dllexport)
-#   define REPO_DECL_IMPORT __declspec(dllimport)
-#else
-#   define REPO_DECL_EXPORT
-#   define REPO_DECL_IMPORT
-#endif
+#include <Gs/GsBaseInclude.h>
+#include <RxObjectImpl.h>
+#include <iostream>
+#include <Gs/GsBaseMaterialView.h>
+#include "geometry_collector.h"
 
-//------------------------------------------------------------------------------
-#if defined(REPO_API_LIBRARY)
-#   define REPO_API_EXPORT REPO_DECL_EXPORT
-#else
-#   define REPO_API_EXPORT REPO_DECL_IMPORT
-#endif
 
-//------------------------------------------------------------------------------
-#define BOUNCER_VMAJOR 2
-#define BOUNCER_VMINOR "16.0"
+namespace repo {
+	namespace manipulator {
+		namespace modelconvertor {
+			namespace odaHelper {
 
-//
+				class VectoriseDevice :
+					public OdGsBaseVectorizeDevice
+				{
+					GeometryCollector * geoCollector;
+				protected:
+					ODRX_USING_HEAP_OPERATORS(OdGsBaseVectorizeDevice);
+				public:
+
+					VectoriseDevice(){}
+					~VectoriseDevice(){}
+				}; // end OdaVectoriseDevice			
+			}
+		}
+	}
+}
