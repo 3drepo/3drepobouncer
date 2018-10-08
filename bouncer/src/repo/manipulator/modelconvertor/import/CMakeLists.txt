@@ -4,6 +4,7 @@
 #If you really need to overwrite this file, be aware that it will be overwritten if updateSources.py is executed.
 
 
+add_subdirectory(odaHelper)
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_ifc_utils_geometry.cpp
@@ -13,6 +14,7 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_abstract.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_assimp.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_config.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_dgn.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_ifc.cpp
 	CACHE STRING "SOURCES" FORCE)
 
@@ -26,6 +28,7 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_assimp.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_config.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_config_default_values.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_dgn.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_model_import_ifc.h
 	CACHE STRING "HEADERS" FORCE)
 

@@ -6,7 +6,7 @@ clientDir='client/src'
 
 
 def printHeaderForCMakeFiles(file):
-	
+
 	file.write('#THIS IS AN AUTOMATICALLY GENERATED FILE - DO NOT OVERWRITE THE CONTENT!\n')
 	file.write('#If you need to update the sources/headers/sub directory information, run updateSources.py at project root level\n')
 	file.write('#If you need to import an extra library or something clever, do it on the CMakeLists.txt at the root level\n')
@@ -18,6 +18,9 @@ def createCMakeList(dirName, files, subDirList, sourceName, headerName):
 	hInd = 0
 	sources = {}
 	headers = {}
+
+        isOdaRequired = os.path.basename(dirName) == "odaHelper"
+
 	for fname in sorted(files):
 		if fname.lower().endswith('.cpp') or fname.lower().endswith('.cpp.inl'):
 			sources[cppInd] = fname
@@ -25,37 +28,45 @@ def createCMakeList(dirName, files, subDirList, sourceName, headerName):
 		if fname.lower().endswith('.h'):
 			headers[hInd] = fname
 			hInd+=1
-		
+
 	#populate a CMake file with this info
-	
+
 	cmakeFile = open(dirName+"/CMakeLists.txt", 'w')
 	cmakeFile.truncate()
 
 	printHeaderForCMakeFiles(cmakeFile)
 
+        prefix = ""
+        if isOdaRequired :
+            cmakeFile.write("if(ODA_SUPPORT)\n")
+            prefix = "\t"
+
 	#include sub directories
 	for subDir in sorted(subDirList):
-		cmakeFile.write('add_subdirectory(' + subDir + ")\n")
+		cmakeFile.write(prefix + 'add_subdirectory(' + subDir + ")\n")
 
 	#write sources
 	if len(sources.values()) > 0 :
-		cmakeFile.write('set('+sourceName+'\n')
-		cmakeFile.write('\t${'+sourceName+'}\n')
+		cmakeFile.write(prefix + 'set('+sourceName+'\n')
+		cmakeFile.write(prefix + '\t${'+sourceName+'}\n')
 
 		for fname in sorted(sources.values()):
-			cmakeFile.write('\t${CMAKE_CURRENT_SOURCE_DIR}/' + fname + '\n')
-		
-		cmakeFile.write('\tCACHE STRING "'+sourceName+'" FORCE)\n\n')
+			cmakeFile.write(prefix + '\t${CMAKE_CURRENT_SOURCE_DIR}/' + fname + '\n')
+
+		cmakeFile.write(prefix + '\tCACHE STRING "'+sourceName+'" FORCE)\n\n')
 
 	#write headers
 	if len(headers.values()) > 0 :
-		cmakeFile.write('set('+headerName+'\n')
-		cmakeFile.write('\t${'+headerName+'}\n')
-	
+		cmakeFile.write(prefix + 'set('+headerName+'\n')
+		cmakeFile.write(prefix + '\t${'+headerName+'}\n')
+
 		for fname in sorted(headers.values()):
-			cmakeFile.write('\t${CMAKE_CURRENT_SOURCE_DIR}/' + fname + '\n')
-		
-		cmakeFile.write('\tCACHE STRING "'+headerName+'" FORCE)\n\n')
+			cmakeFile.write(prefix + '\t${CMAKE_CURRENT_SOURCE_DIR}/' + fname + '\n')
+
+		cmakeFile.write(prefix + '\tCACHE STRING "'+headerName+'" FORCE)\n\n')
+
+        if isOdaRequired :
+            cmakeFile.write("endif()")
 
 	cmakeFile.close()
 

@@ -232,8 +232,8 @@ namespace repo {
 				static MeshNode makeMeshNode(
 					const std::vector<repo::lib::RepoVector3D>                  &vertices,
 					const std::vector<repo_face_t>                    &faces,
-					const std::vector<repo::lib::RepoVector3D>                  &normals,
-					const std::vector<std::vector<float>>             &boundingBox,
+					const std::vector<repo::lib::RepoVector3D>                  &normals = std::vector<repo::lib::RepoVector3D>(),
+					const std::vector<std::vector<float>>             &boundingBox = std::vector<std::vector<float>>(),
 					const std::vector<std::vector<repo::lib::RepoVector2D>>   &uvChannels = std::vector<std::vector<repo::lib::RepoVector2D>>(),
 					const std::vector<repo_color4d_t>                 &colors = std::vector<repo_color4d_t>(),
 					const std::vector<std::vector<float>>             &outline = std::vector<std::vector<float>>(),

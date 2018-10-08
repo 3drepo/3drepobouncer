@@ -24,9 +24,12 @@ cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
-
+if(${APPLE})
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -framework Foundation")
+endif()
 
 option (REPO_BUILD_COVERAGE "Building with coverage report" OFF)
+option (ODA_SUPPORT "If ODA library is present" OFF)
 if(REPO_BUILD_COVERAGE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 --coverage")
 endif()
@@ -77,6 +80,13 @@ if(NOT ${OCCT_FOUND})
 endif()
 if(NOT ${IFCOPENSHELL_FOUND})
 	message(FATAL_ERROR "Cannot find IFCOpenShell")
+endif()
+
+#===================== ODA ============================
+if (ODA_SUPPORT)
+	add_definitions(-D_TOOLKIT_IN_DLL_)
+	add_definitions(-DODA_SUPPORT)
+	find_package(ODA REQUIRED)
 endif()
 
 #================COMPILE 3D REPO BOUNCER ==============

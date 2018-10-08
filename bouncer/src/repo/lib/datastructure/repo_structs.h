@@ -22,6 +22,8 @@
 #include "../../repo_bouncer_global.h"
 #include "repo_uuid.h"
 #include "repo_vector.h"
+#include <boost/crc.hpp>
+
 
 typedef struct {
 	std::unordered_map<std::string, std::vector<uint8_t>> geoFiles; //files where geometery are stored
@@ -97,11 +99,36 @@ typedef struct{
 	std::vector<float> diffuse;
 	std::vector<float> specular;
 	std::vector<float> emissive;
-	float opacity;
-	float shininess;
-	float shininessStrength;
-	bool isWireframe;
-	bool isTwoSided;
+	float opacity = 1;
+	float shininess = 0;
+	float shininessStrength = 0;
+	bool isWireframe = false;
+	bool isTwoSided = false;
+
+
+	unsigned int checksum() const {
+		std::stringstream ss;
+		ss.precision(17);
+		for (const auto &n : ambient) {
+			ss << std::fixed <<  n;
+		}
+		for (const auto &n : diffuse) {
+			ss << std::fixed << n;
+		}
+		for (const auto &n : specular) {
+			ss << std::fixed << n;
+		}
+		for (const auto &n : emissive) {
+			ss << std::fixed << n;
+		}
+
+		ss << opacity << shininess << shininessStrength << isWireframe << isTwoSided;
+		auto stringified = ss.str();
+
+		boost::crc_32_type crc32;
+		crc32.process_bytes(stringified.c_str(), stringified.size());
+		return crc32.checksum();
+	}
 }repo_material_t;
 
 typedef struct{

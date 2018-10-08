@@ -449,10 +449,7 @@ int32_t importFileAndCommit(
 			database = jsonTree.get<std::string>("database", "");
 			project = jsonTree.get<std::string>("project", "");
 
-			if (database.empty() || project.empty())
-			{
-				success = false;
-			}
+			
 
 			owner = jsonTree.get<std::string>("owner", "");
 			configFile = jsonTree.get<std::string>("configfile", "");
@@ -460,11 +457,15 @@ int32_t importFileAndCommit(
 			desc = jsonTree.get<std::string>("desc", "");
 			rotate = jsonTree.get<bool>("dxrotate", rotate);
 			fileLoc = jsonTree.get<std::string>("file", "");
+
+			if (database.empty() || project.empty() || fileLoc.empty())
+			{
+				return REPOERR_LOAD_SCENE_FAIL;
+			}
 		}
 		catch (std::exception &e)
 		{
-			success = false;
-			repoLogError("Failed to import file: " + std::string(e.what()));
+			return REPOERR_LOAD_SCENE_FAIL;
 		}
 	}
 	else

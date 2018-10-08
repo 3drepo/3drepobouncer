@@ -28,7 +28,7 @@ using namespace repo::manipulator::modeloptimizer;
 auto defaultGraph = repo::core::model::RepoScene::GraphType::DEFAULT;
 
 static const size_t  REPO_MP_MAX_FACE_COUNT = 500000;
-static const size_t REPO_MP_MAX_MESHES_IN_SUPERMESH = 30000;
+static const size_t REPO_MP_MAX_MESHES_IN_SUPERMESH = 5000;
 
 MultipartOptimizer::MultipartOptimizer() :
 AbstractOptimizer()
@@ -89,6 +89,7 @@ bool MultipartOptimizer::collectMeshData(
 			auto children = scene->getChildrenAsNodes(defaultGraph, trans->getSharedID());
 			for (const auto &child : children)
 			{
+				
 				auto childMat = mat; //We don't want actually want to update the matrix with our children's transformation
 				success &= collectMeshData(scene, child, meshGroup, childMat,
 					vertices, normals, faces, uvChannels, colors, meshMapping, matIDMap);
@@ -102,7 +103,6 @@ bool MultipartOptimizer::collectMeshData(
 			if (meshGroup.find(meshUniqueID) != meshGroup.end())
 			{
 				auto mesh = (repo::core::model::MeshNode *) node;
-
 				repo::core::model::MeshNode transformedMesh = mesh->cloneAndApplyTransformation(mat);
 				//this node is in the grouping, add it into the data buffers
 				repo_mesh_mapping_t meshMap;
@@ -248,7 +248,7 @@ std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUID
 	}
 	else
 	{
-		repoError << "Failed";
+		repoError << "Failed to collect mesh data ("<< success<<") , mesh mapping size: " << meshMapping.size();
 	}
 
 	return resultMesh;
