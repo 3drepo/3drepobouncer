@@ -19,6 +19,7 @@
 #include <OdString.h>
 
 #include <toString.h>
+#include <DgLevelTableRecord.h>
 
 
 #include "geometry_dumper.h"
@@ -65,6 +66,22 @@ bool GeometryDumper::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	ss << sHandle;
 	collector->setNextMeshName(ss.str());
 	return OdGsBaseMaterialView::doDraw(i, pDrawable);
+}
+
+void GeometryDumper::onTraitsModified() {
+	OdGsBaseVectorizer::onTraitsModified();
+
+	OdGiSubEntityTraitsData traits = effectiveTraits();
+	OdDgElementId idLevel = traits.layer();
+	if (!idLevel.isNull())
+	{
+		OdDgLevelTableRecordPtr pLevel = idLevel.openObject(OdDg::kForRead);
+		OdUInt32 iLevelEntry = pLevel->getEntryId();
+
+		std::stringstream ss;
+		ss << pLevel->getName();
+		collector->setLayer(ss.str());
+	}
 }
 
 OdCmEntityColor GeometryDumper::fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color)

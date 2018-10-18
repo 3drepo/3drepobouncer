@@ -29,24 +29,12 @@ repo::core::model::RepoScene* DgnModelImport::generateRepoScene()
 {
 	repo::core::model::RepoScene *scene = nullptr;
 #ifdef ODA_SUPPORT
-	auto meshes = geoCollector.getMeshes();
-	if (meshes.size()) {
+	auto meshSet = geoCollector.getMeshNodes();
+	if (meshSet.size()) {
 		const repo::core::model::RepoNodeSet dummy;
-		repo::core::model::RepoNodeSet meshSet;
-		repo::core::model::RepoNodeSet transSet;		
-		
-		auto root = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
-		
-		transSet.insert(root);
-		auto rootID = root->getSharedID();
-		std::vector<repo::lib::RepoUUID> meshIDs;
-		for (int i = 0; i < meshes.size(); ++i) {
-			auto mesh = meshes[i];			
-			meshSet.insert(new repo::core::model::MeshNode(mesh.cloneAndAddParent(rootID)));
-			meshIDs.push_back(mesh.getSharedID());			
-		}
 
 		auto matSet =  geoCollector.getMaterialNodes();
+		auto transSet = geoCollector.getTransformationNodes();
 		scene = new repo::core::model::RepoScene({ filePath }, dummy, meshSet, matSet, dummy, dummy, transSet);
 		scene->setWorldOffset(geoCollector.getModelOffset());
 	}

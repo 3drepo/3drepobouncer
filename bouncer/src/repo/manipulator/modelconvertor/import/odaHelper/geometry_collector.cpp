@@ -48,6 +48,7 @@ void  GeometryCollector::startMeshEntry() {
 	std::string meshName = nextMeshName.empty() ?  "mesh_" + std::to_string(meshData.size()) : nextMeshName;
 	entry.matIdx = currMat;
 	entry.name = meshName;
+	entry.layerName = nextLayer.empty() ? "UnknownLayer" : nextLayer;
 	meshData.push_back(entry);
 }
 
@@ -102,14 +103,17 @@ void GeometryCollector::addFace(const std::vector<repo::lib::RepoVector3D64> &ve
 }
 
 
-std::vector<repo::core::model::MeshNode> GeometryCollector::getMeshes() {
-	std::vector<repo::core::model::MeshNode> res;
-	repoInfo << "getting meshes:" << meshData.size();
-	res.reserve(meshData.size());
+repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
+	repo::core::model::RepoNodeSet res;
 	auto dummyUV = std::vector<std::vector<repo::lib::RepoVector2D>>();
 	auto dummyCol = std::vector<repo_color4d_t>();
 	auto dummyOutline = std::vector<std::vector<float>>();
 
+	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> layerToMeshes;
+
+	auto root = repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), "rootNode");
+	auto rootId = root.getSharedID();
+	repoDebug << "Mesh data: " << meshData.size();
 	for (const auto &meshEntry : meshData) {
 		std::vector<repo::lib::RepoVector3D> vertices32;
 		vertices32.reserve(meshEntry.rawVertices.size());
@@ -117,6 +121,12 @@ std::vector<repo::core::model::MeshNode> GeometryCollector::getMeshes() {
 		for (const auto &v : meshEntry.rawVertices) {
 			vertices32.push_back({ (float)(v.x - minMeshBox[0]), (float)(v.y - minMeshBox[1]), (float)(v.z - minMeshBox[2]) });
 		}
+
+		if (layerToTrans.find(meshEntry.layerName) == layerToTrans.end()) {
+			layerToTrans[meshEntry.layerName] = createTransNode(meshEntry.layerName, rootId);
+		}
+
+
 		auto meshNode = repo::core::model::RepoBSONFactory::makeMeshNode(
 			vertices32,
 			meshEntry.faces,
@@ -125,18 +135,37 @@ std::vector<repo::core::model::MeshNode> GeometryCollector::getMeshes() {
 			dummyUV,
 			dummyCol,
 			dummyOutline,
-			meshEntry.name
+			meshEntry.name,
+			{layerToTrans[meshEntry.layerName].getSharedID()}
 		);
-		res.push_back(meshNode);
+
+
+		layerToMeshes[meshEntry.layerName].push_back(meshNode.getSharedID());
+
 		if (matToMeshes.find(meshEntry.matIdx) == matToMeshes.end()) {
 			matToMeshes[meshEntry.matIdx] =  std::vector<repo::lib::RepoUUID>();
 		}
 		matToMeshes[meshEntry.matIdx].push_back(meshNode.getSharedID());
+
+		res.insert(new repo::core::model::MeshNode(meshNode));
+	}
+
+	for (const auto &layerPair : layerToMeshes) {
+		transNodes.insert(new repo::core::model::TransformationNode(layerToTrans[layerPair.first].cloneAndAddParent(layerPair.second)));
 	}
 	
-
+	transNodes.insert(new repo::core::model::TransformationNode(root));
 	return res;
 }
+
+repo::core::model::TransformationNode  GeometryCollector::createTransNode(
+	const std::string &name,
+	const repo::lib::RepoUUID &parentId
+) {	
+	return repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), "name", { parentId });
+}
+
+
 
 repo::core::model::RepoNodeSet GeometryCollector::getMaterialNodes() {
 	repo::core::model::RepoNodeSet matSet;
