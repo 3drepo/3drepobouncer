@@ -56,6 +56,14 @@ VectoriseDevice* GeometryDumper::device()
 
 bool GeometryDumper::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 {
+	OdDgElementPtr pElm = OdDgElement::cast(pDrawable);
+
+	OdString sClassName = toString(pElm->isA());
+	OdString sHandle = pElm->isDBRO() ? toString(pElm->elementId().getHandle()) : toString(OD_T("non-DbResident"));
+
+	std::stringstream ss;
+	ss << sHandle;
+	collector->setNextMeshName(ss.str());
 	return OdGsBaseMaterialView::doDraw(i, pDrawable);
 }
 

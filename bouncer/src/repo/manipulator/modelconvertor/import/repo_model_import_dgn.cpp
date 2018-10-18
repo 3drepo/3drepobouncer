@@ -30,7 +30,6 @@ repo::core::model::RepoScene* DgnModelImport::generateRepoScene()
 	repo::core::model::RepoScene *scene = nullptr;
 #ifdef ODA_SUPPORT
 	auto meshes = geoCollector.getMeshes();
-	repoInfo << "mesh size: " << meshes.size();
 	if (meshes.size()) {
 		const repo::core::model::RepoNodeSet dummy;
 		repo::core::model::RepoNodeSet meshSet;
@@ -48,10 +47,13 @@ repo::core::model::RepoScene* DgnModelImport::generateRepoScene()
 		}
 
 		auto matSet =  geoCollector.getMaterialNodes();
-		repoInfo << "# materials: " << matSet.size();
 		scene = new repo::core::model::RepoScene({ filePath }, dummy, meshSet, matSet, dummy, dummy, transSet);
 		scene->setWorldOffset(geoCollector.getModelOffset());
 	}
+	else {
+		repoError << "No meshes generated";
+	}
+	
 #endif
 	return scene;
 }

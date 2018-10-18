@@ -45,7 +45,7 @@ void GeometryCollector::setCurrentMaterial(const repo_material_t &material) {
 
 void  GeometryCollector::startMeshEntry() {
 	mesh_data_t entry;
-	std::string meshName = "mesh_" + std::to_string(meshData.size());
+	std::string meshName = nextMeshName.empty() ?  "mesh_" + std::to_string(meshData.size()) : nextMeshName;
 	entry.matIdx = currMat;
 	entry.name = meshName;
 	meshData.push_back(entry);
@@ -56,6 +56,7 @@ void  GeometryCollector::stopMeshEntry() {
 		meshData.back().vToVIndex.clear();
 		if (!meshData.back().rawVertices.size()) {
 			meshData.pop_back();
+			nextMeshName = "";
 		}		
 	}
 	

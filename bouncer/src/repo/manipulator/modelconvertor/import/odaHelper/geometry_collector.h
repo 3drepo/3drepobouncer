@@ -76,6 +76,14 @@ namespace repo {
 					*/
 					void stopMeshEntry();
 
+					/** 
+					* Set the name for the next mesh
+					* @param name name of the next mesh
+					*/
+					void setNextMeshName(const std::string &name) {
+						nextMeshName = name;
+					}
+
 					/**
 					* Add a face to the current mesh
 					* @param vertices a vector of vertices that makes up this face
@@ -92,6 +100,7 @@ namespace repo {
 
 				private:
 					std::vector<mesh_data_t> meshData;
+					std::string nextMeshName;
 					std::unordered_map< uint32_t, repo::core::model::MaterialNode > idxToMat;					
 					std::unordered_map<uint32_t, std::vector<repo::lib::RepoUUID> > matToMeshes;
 					std::vector<double> minMeshBox;
