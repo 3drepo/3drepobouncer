@@ -76,7 +76,6 @@ bool GeometryDumper::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		std::stringstream ss;
 		ss << pLevel->getName();
 		auto layerName = ss.str();
-		repoInfo << layerName;
 		collector->setLayer(layerName);
 	}
 	return OdGsBaseMaterialView::doDraw(i, pDrawable);
