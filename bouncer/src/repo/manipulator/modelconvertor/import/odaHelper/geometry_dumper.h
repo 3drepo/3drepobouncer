@@ -59,8 +59,6 @@ namespace repo {
 
 					void setMode(OdGsView::RenderMode mode);
 
-					void onTraitsModified();
-
 				protected:
 
 					OdGiMaterialItemPtr fillMaterialCache(

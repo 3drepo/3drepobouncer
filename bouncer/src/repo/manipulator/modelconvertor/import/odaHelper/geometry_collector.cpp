@@ -109,7 +109,7 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
 	auto dummyCol = std::vector<repo_color4d_t>();
 	auto dummyOutline = std::vector<std::vector<float>>();
 
-	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> layerToMeshes;
+	std::unordered_map<std::string, repo::core::model::TransformationNode*> layerToTrans;
 
 	auto root = repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), "rootNode");
 	auto rootId = root.getSharedID();
@@ -124,6 +124,7 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
 
 		if (layerToTrans.find(meshEntry.layerName) == layerToTrans.end()) {
 			layerToTrans[meshEntry.layerName] = createTransNode(meshEntry.layerName, rootId);
+			transNodes.insert(layerToTrans[meshEntry.layerName]);
 		}
 
 
@@ -136,11 +137,8 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
 			dummyCol,
 			dummyOutline,
 			meshEntry.name,
-			{layerToTrans[meshEntry.layerName].getSharedID()}
+			{layerToTrans[meshEntry.layerName]->getSharedID()}
 		);
-
-
-		layerToMeshes[meshEntry.layerName].push_back(meshNode.getSharedID());
 
 		if (matToMeshes.find(meshEntry.matIdx) == matToMeshes.end()) {
 			matToMeshes[meshEntry.matIdx] =  std::vector<repo::lib::RepoUUID>();
@@ -150,19 +148,15 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
 		res.insert(new repo::core::model::MeshNode(meshNode));
 	}
 
-	for (const auto &layerPair : layerToMeshes) {
-		transNodes.insert(new repo::core::model::TransformationNode(layerToTrans[layerPair.first].cloneAndAddParent(layerPair.second)));
-	}
-	
 	transNodes.insert(new repo::core::model::TransformationNode(root));
 	return res;
 }
 
-repo::core::model::TransformationNode  GeometryCollector::createTransNode(
+repo::core::model::TransformationNode*  GeometryCollector::createTransNode(
 	const std::string &name,
 	const repo::lib::RepoUUID &parentId
 ) {	
-	return repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), "name", { parentId });
+	return new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name, { parentId }));
 }
 
 

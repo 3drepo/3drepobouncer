@@ -65,11 +65,6 @@ bool GeometryDumper::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	std::stringstream ss;
 	ss << sHandle;
 	collector->setNextMeshName(ss.str());
-	return OdGsBaseMaterialView::doDraw(i, pDrawable);
-}
-
-void GeometryDumper::onTraitsModified() {
-	OdGsBaseVectorizer::onTraitsModified();
 
 	OdGiSubEntityTraitsData traits = effectiveTraits();
 	OdDgElementId idLevel = traits.layer();
@@ -77,12 +72,16 @@ void GeometryDumper::onTraitsModified() {
 	{
 		OdDgLevelTableRecordPtr pLevel = idLevel.openObject(OdDg::kForRead);
 		OdUInt32 iLevelEntry = pLevel->getEntryId();
-
+	
 		std::stringstream ss;
 		ss << pLevel->getName();
-		collector->setLayer(ss.str());
+		auto layerName = ss.str();
+		repoInfo << layerName;
+		collector->setLayer(layerName);
 	}
+	return OdGsBaseMaterialView::doDraw(i, pDrawable);
 }
+
 
 OdCmEntityColor GeometryDumper::fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color)
 {

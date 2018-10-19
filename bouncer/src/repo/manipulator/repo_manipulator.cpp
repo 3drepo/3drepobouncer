@@ -839,7 +839,7 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 					scene->reorientateDirectXModel();
 				}
 
-				if (applyReduction)
+				if (applyReduction && !useDgnImporter)
 				{
 					repoTrace << "Scene generated. Applying transformation reduction optimizer";
 					modeloptimizer::TransformationReductionOptimizer optimizer;

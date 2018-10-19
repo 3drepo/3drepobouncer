@@ -119,12 +119,11 @@ namespace repo {
 					std::string nextMeshName, nextLayer;
 					std::unordered_map< uint32_t, repo::core::model::MaterialNode > idxToMat;					
 					std::unordered_map<uint32_t, std::vector<repo::lib::RepoUUID> > matToMeshes;
-					std::unordered_map<std::string, repo::core::model::TransformationNode> layerToTrans;
 					repo::core::model::RepoNodeSet transNodes;
 					uint32_t currMat;
 					std::vector<double> minMeshBox;
 
-					repo::core::model::TransformationNode createTransNode(
+					repo::core::model::TransformationNode* createTransNode(
 						const std::string &name,
 						const repo::lib::RepoUUID &parentId
 					);
