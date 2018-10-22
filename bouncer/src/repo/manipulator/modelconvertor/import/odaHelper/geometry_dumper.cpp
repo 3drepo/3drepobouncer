@@ -63,7 +63,7 @@ bool GeometryDumper::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	OdString sHandle = pElm->isDBRO() ? toString(pElm->elementId().getHandle()) : toString(OD_T("non-DbResident"));
 
 	std::stringstream ss;
-	ss << sHandle;
+	ss << sHandle.c_str();
 	collector->setNextMeshName(ss.str());
 
 	OdGiSubEntityTraitsData traits = effectiveTraits();
