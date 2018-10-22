@@ -74,7 +74,7 @@ bool GeometryDumper::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		OdUInt32 iLevelEntry = pLevel->getEntryId();
 	
 		std::stringstream ss;
-		ss << pLevel->getName();
+		ss << pLevel->getName().c_str();
 		auto layerName = ss.str();
 		collector->setLayer(layerName);
 	}
