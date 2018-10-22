@@ -55,28 +55,23 @@ VectoriseDevice* GeometryDumper::device()
 	return static_cast<VectoriseDevice*>(OdGsBaseVectorizeView::device());
 }
 
+std::string convertToStdString(const OdString &value) {
+	return (LPCTSTR)value;
+}
+
 bool GeometryDumper::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 {
 	OdDgElementPtr pElm = OdDgElement::cast(pDrawable);
 
-	OdString sClassName = toString(pElm->isA());
 	OdString sHandle = pElm->isDBRO() ? toString(pElm->elementId().getHandle()) : toString(OD_T("non-DbResident"));
-
-	std::stringstream ss;
-	ss << sHandle.c_str();
-	collector->setNextMeshName(ss.str());
+	collector->setNextMeshName(convertToStdString(sHandle));
 
 	OdGiSubEntityTraitsData traits = effectiveTraits();
 	OdDgElementId idLevel = traits.layer();
 	if (!idLevel.isNull())
 	{
 		OdDgLevelTableRecordPtr pLevel = idLevel.openObject(OdDg::kForRead);
-		OdUInt32 iLevelEntry = pLevel->getEntryId();
-	
-		std::stringstream ss;
-		ss << pLevel->getName().c_str();
-		auto layerName = ss.str();
-		collector->setLayer(layerName);
+		collector->setLayer(convertToStdString(pLevel->getName()));
 	}
 	return OdGsBaseMaterialView::doDraw(i, pDrawable);
 }
