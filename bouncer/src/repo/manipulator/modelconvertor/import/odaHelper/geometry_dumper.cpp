@@ -56,7 +56,8 @@ VectoriseDevice* GeometryDumper::device()
 }
 
 std::string convertToStdString(const OdString &value) {
-	return (LPCTSTR)value;
+	const char *ansi = static_cast<const char *>(value);
+	return std::string(ansi);
 }
 
 bool GeometryDumper::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
