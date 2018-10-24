@@ -36,6 +36,7 @@ namespace repo {
 					std::unordered_map<unsigned long, int> vToVIndex;
 					std::string name;
 					std::string layerName;
+					std::string groupName;
 					uint32_t matIdx;
 				};
 
@@ -100,6 +101,14 @@ namespace repo {
 					}
 
 					/**
+					* Set next group name
+					* @param groupName group name of the next mesh
+					*/
+					void setMeshGroup(const std::string &groupName) {
+						nextGroupName = groupName;
+					}
+
+					/**
 					* Add a face to the current mesh
 					* @param vertices a vector of vertices that makes up this face
 					*/
@@ -115,18 +124,21 @@ namespace repo {
 
 
 				private:
-					std::vector<mesh_data_t> meshData;
-					std::string nextMeshName, nextLayer;
+					std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<int, mesh_data_t>>> meshData;
+					std::string nextMeshName, nextLayer, nextGroupName;
 					std::unordered_map< uint32_t, repo::core::model::MaterialNode > idxToMat;					
 					std::unordered_map<uint32_t, std::vector<repo::lib::RepoUUID> > matToMeshes;
 					repo::core::model::RepoNodeSet transNodes;
 					uint32_t currMat;
 					std::vector<double> minMeshBox;
+					mesh_data_t *currentEntry = nullptr;
 
 					repo::core::model::TransformationNode* createTransNode(
 						const std::string &name,
 						const repo::lib::RepoUUID &parentId
 					);
+
+					mesh_data_t createMeshEntry();
 				};
 			}
 		}

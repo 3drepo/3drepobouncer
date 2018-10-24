@@ -43,24 +43,42 @@ void GeometryCollector::setCurrentMaterial(const repo_material_t &material) {
 	currMat = checkSum;	
 }
 
-void  GeometryCollector::startMeshEntry() {
+mesh_data_t GeometryCollector::createMeshEntry() {
 	mesh_data_t entry;
-	std::string meshName = nextMeshName.empty() ?  "mesh_" + std::to_string(meshData.size()) : nextMeshName;
 	entry.matIdx = currMat;
-	entry.name = meshName;
+	entry.name = nextMeshName;
+	entry.groupName = nextGroupName;
 	entry.layerName = nextLayer.empty() ? "UnknownLayer" : nextLayer;
-	meshData.push_back(entry);
+
+	return entry;
+
+}
+
+void  GeometryCollector::startMeshEntry() {
+
+	nextMeshName = nextMeshName.empty() ? std::to_string(std::time(0)) : nextMeshName;
+	nextGroupName = nextGroupName.empty() ? nextMeshName : nextGroupName;
+	nextLayer = nextLayer.empty() ? nextMeshName : nextLayer;
+
+	if (meshData.find(nextGroupName) == meshData.end()) {
+		meshData[nextGroupName] = std::unordered_map<std::string, std::unordered_map<int, mesh_data_t>>();
+	}
+
+	if (meshData[nextGroupName].find(nextLayer) == meshData[nextGroupName].end()) {
+		meshData[nextGroupName][nextLayer] = std::unordered_map<int, mesh_data_t>();
+	}
+
+	if (meshData[nextGroupName][nextLayer].find(currMat) == meshData[nextGroupName][nextLayer].end()) {
+		meshData[nextGroupName][nextLayer][currMat] = createMeshEntry();
+	}
+	currentEntry = &meshData[nextGroupName][nextLayer][currMat];
+
 }
 
 void  GeometryCollector::stopMeshEntry() {
-	if (meshData.size()) {
-		meshData.back().vToVIndex.clear();
-		if (!meshData.back().rawVertices.size()) {
-			meshData.pop_back();
-			nextMeshName = "";
-		}		
-	}
-	
+	if(currentEntry)
+		currentEntry->vToVIndex.clear();		
+	nextMeshName = "";
 }
 
 void GeometryCollector::addFace(const std::vector<repo::lib::RepoVector3D64> &vertices) {
@@ -68,22 +86,22 @@ void GeometryCollector::addFace(const std::vector<repo::lib::RepoVector3D64> &ve
 	repo_face_t face;
 	for (const auto &v : vertices) {
 		auto chkSum = v.checkSum();
-		if (meshData.back().vToVIndex.find(chkSum) == meshData.back().vToVIndex.end()) {
-			meshData.back().vToVIndex[chkSum] = meshData.back().rawVertices.size();
-			meshData.back().rawVertices.push_back(v);
+		if (currentEntry->vToVIndex.find(chkSum) == currentEntry->vToVIndex.end()) {
+			currentEntry->vToVIndex[chkSum] = currentEntry->rawVertices.size();
+			currentEntry->rawVertices.push_back(v);
 
-			if (meshData.back().boundingBox.size()) {
-				meshData.back().boundingBox[0][0] = meshData.back().boundingBox[0][0] > v.x ? (float) v.x : meshData.back().boundingBox[0][0];
-				meshData.back().boundingBox[0][1] = meshData.back().boundingBox[0][1] > v.y ? (float) v.y : meshData.back().boundingBox[0][1];
-				meshData.back().boundingBox[0][2] = meshData.back().boundingBox[0][2] > v.z ? (float) v.z : meshData.back().boundingBox[0][2];
+			if (currentEntry->boundingBox.size()) {
+				currentEntry->boundingBox[0][0] = currentEntry->boundingBox[0][0] > v.x ? (float) v.x : currentEntry->boundingBox[0][0];
+				currentEntry->boundingBox[0][1] = currentEntry->boundingBox[0][1] > v.y ? (float) v.y : currentEntry->boundingBox[0][1];
+				currentEntry->boundingBox[0][2] = currentEntry->boundingBox[0][2] > v.z ? (float) v.z : currentEntry->boundingBox[0][2];
 
-				meshData.back().boundingBox[1][0] = meshData.back().boundingBox[1][0] < v.x ? (float) v.x : meshData.back().boundingBox[1][0];
-				meshData.back().boundingBox[1][1] = meshData.back().boundingBox[1][1] < v.y ? (float) v.y : meshData.back().boundingBox[1][1];
-				meshData.back().boundingBox[1][2] = meshData.back().boundingBox[1][2] < v.z ? (float) v.z : meshData.back().boundingBox[1][2];
+				currentEntry->boundingBox[1][0] = currentEntry->boundingBox[1][0] < v.x ? (float) v.x : currentEntry->boundingBox[1][0];
+				currentEntry->boundingBox[1][1] = currentEntry->boundingBox[1][1] < v.y ? (float) v.y : currentEntry->boundingBox[1][1];
+				currentEntry->boundingBox[1][2] = currentEntry->boundingBox[1][2] < v.z ? (float) v.z : currentEntry->boundingBox[1][2];
 			}
 			else {
-				meshData.back().boundingBox.push_back({ (float)v.x, (float)v.y, (float)v.z });
-				meshData.back().boundingBox.push_back({ (float)v.x, (float)v.y, (float)v.z });
+				currentEntry->boundingBox.push_back({ (float)v.x, (float)v.y, (float)v.z });
+				currentEntry->boundingBox.push_back({ (float)v.x, (float)v.y, (float)v.z });
 			}
 
 			if (minMeshBox.size()) {
@@ -95,10 +113,10 @@ void GeometryCollector::addFace(const std::vector<repo::lib::RepoVector3D64> &ve
 				minMeshBox = { v.x, v.y, v.z };
 			}
 		}
-		face.push_back(meshData.back().vToVIndex[chkSum]);
+		face.push_back(currentEntry->vToVIndex[chkSum]);
 
 	}
-	meshData.back().faces.push_back(face);
+	currentEntry->faces.push_back(face);
 
 }
 
@@ -114,38 +132,43 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
 	auto root = repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), "rootNode");
 	auto rootId = root.getSharedID();
 	repoDebug << "Mesh data: " << meshData.size();
-	for (const auto &meshEntry : meshData) {
-		std::vector<repo::lib::RepoVector3D> vertices32;
-		vertices32.reserve(meshEntry.rawVertices.size());
+	for (const auto &meshGroupEntry : meshData) {
+		for (const auto &meshLayerEntry : meshGroupEntry.second) {
+			for (const auto &meshMatEntry : meshLayerEntry.second) {
+				if (!meshMatEntry.second.rawVertices.size()) continue;
 
-		for (const auto &v : meshEntry.rawVertices) {
-			vertices32.push_back({ (float)(v.x - minMeshBox[0]), (float)(v.y - minMeshBox[1]), (float)(v.z - minMeshBox[2]) });
+				if (layerToTrans.find(meshLayerEntry.first) == layerToTrans.end()) {
+					layerToTrans[meshLayerEntry.first] = createTransNode(meshLayerEntry.first, rootId);
+					transNodes.insert(layerToTrans[meshLayerEntry.first]);
+				}
+
+				std::vector<repo::lib::RepoVector3D> vertices32;
+				vertices32.reserve(meshMatEntry.second.rawVertices.size());
+
+				for (const auto &v : meshMatEntry.second.rawVertices) {
+					vertices32.push_back({ (float)(v.x - minMeshBox[0]), (float)(v.y - minMeshBox[1]), (float)(v.z - minMeshBox[2]) });
+				}
+
+				auto meshNode = repo::core::model::RepoBSONFactory::makeMeshNode(
+					vertices32,
+					meshMatEntry.second.faces,
+					std::vector<repo::lib::RepoVector3D>(),
+					meshMatEntry.second.boundingBox,
+					dummyUV,
+					dummyCol,
+					dummyOutline,
+					meshGroupEntry.first,
+					{ layerToTrans[meshLayerEntry.first]->getSharedID() }
+				);
+
+				if (matToMeshes.find(meshMatEntry.second.matIdx) == matToMeshes.end()) {
+					matToMeshes[meshMatEntry.second.matIdx] = std::vector<repo::lib::RepoUUID>();
+				}
+				matToMeshes[meshMatEntry.second.matIdx].push_back(meshNode.getSharedID());
+
+				res.insert(new repo::core::model::MeshNode(meshNode));
+			}
 		}
-
-		if (layerToTrans.find(meshEntry.layerName) == layerToTrans.end()) {
-			layerToTrans[meshEntry.layerName] = createTransNode(meshEntry.layerName, rootId);
-			transNodes.insert(layerToTrans[meshEntry.layerName]);
-		}
-
-
-		auto meshNode = repo::core::model::RepoBSONFactory::makeMeshNode(
-			vertices32,
-			meshEntry.faces,
-			std::vector<repo::lib::RepoVector3D>(),
-			meshEntry.boundingBox,
-			dummyUV,
-			dummyCol,
-			dummyOutline,
-			meshEntry.name,
-			{layerToTrans[meshEntry.layerName]->getSharedID()}
-		);
-
-		if (matToMeshes.find(meshEntry.matIdx) == matToMeshes.end()) {
-			matToMeshes[meshEntry.matIdx] =  std::vector<repo::lib::RepoUUID>();
-		}
-		matToMeshes[meshEntry.matIdx].push_back(meshNode.getSharedID());
-
-		res.insert(new repo::core::model::MeshNode(meshNode));
 	}
 
 	transNodes.insert(new repo::core::model::TransformationNode(root));

@@ -62,6 +62,18 @@ std::string convertToStdString(const OdString &value) {
 bool GeometryDumper::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 {
 	OdDgElementPtr pElm = OdDgElement::cast(pDrawable);
+	auto currentItem = pElm;
+	auto previousItem = pElm;
+	while (currentItem->ownerId()) {
+		previousItem = currentItem;
+		auto ownerId = currentItem->ownerId();
+		auto ownerItem = OdDgElement::cast(ownerId.openObject(OdDg::kForRead));
+		currentItem = ownerItem;
+	}
+
+	//We want to group meshes together up to 1 below the top.
+	OdString groupID = toString(previousItem->elementId().getHandle());
+	collector->setMeshGroup(convertToStdString(groupID));
 
 	OdString sHandle = pElm->isDBRO() ? toString(pElm->elementId().getHandle()) : toString(OD_T("non-DbResident"));
 	collector->setNextMeshName(convertToStdString(sHandle));
