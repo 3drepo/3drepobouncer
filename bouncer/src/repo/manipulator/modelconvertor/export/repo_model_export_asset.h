@@ -41,6 +41,7 @@ namespace repo{
 				* @param whether the scene requires VR bundles
 				*/
 				AssetModelExport(const repo::core::model::RepoScene *scene,
+					repo::core::handler::AbstractDatabaseHandler *handler,
 					const bool vrEnabled = false);
 
 				/**
@@ -74,6 +75,19 @@ namespace repo{
 			private:
 
 				/**
+				 * Insert Unity asset list file database entry into database
+				 * @return returns true upon success
+				 */
+				bool commitUnityAssets(
+					repo::core::handler::AbstractDatabaseHandler *handler,
+					const repo::lib::RepoUUID &revisionID,
+					std::vector<std::string> &assets,
+					std::vector<double> offset,
+					std::vector<std::string> &vrAssetFiles,
+					std::vector<std::string> &jsonFiles,
+					std::string &errMsg);
+
+				/**
 				* Generate JSON mapping for multipart meshes
 				* And add it into the object
 				* @param mesh mesh to generate with
@@ -90,7 +104,8 @@ namespace repo{
 				* This creates the header of the SRC
 				* @return returns true upon success
 				*/
-				bool generateTreeRepresentation();
+				bool generateTreeRepresentation(
+					repo::core::handler::AbstractDatabaseHandler *handler);
 
 				std::vector<std::shared_ptr<repo::core::model::MeshNode>> reorganisedMeshes;
 				std::vector<std::vector<uint16_t>> serialisedFaceBuf;

@@ -917,7 +917,7 @@ std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoManipulator::initi
 
 		scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_WEB_STASH);
 	}
-	repo::manipulator::modelconvertor::AssetModelExport assetExport(scene, vrEnabled);
+	repo::manipulator::modelconvertor::AssetModelExport assetExport(scene, handler, vrEnabled);
 	jsonFiles = assetExport.getJSONFilesAsBuffer();
 	return assetExport.getReorganisedMeshes(serialisedFaceBuf, idMapBuf, meshMappings);
 }
