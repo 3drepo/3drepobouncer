@@ -54,9 +54,17 @@ bool DgnModelImport::importModel(std::string filePath, uint8_t &err)
 	
 #ifdef ODA_SUPPORT
 	this->filePath = filePath;
+	repoInfo << " ==== Importing with Teigha Library [" << filePath << "] ====";
 	odaHelper::FileProcessor odaProcessor(filePath, &geoCollector);
 	bool success = false;
-	success = odaProcessor.readFile() == 0;
+	try {
+		success = odaProcessor.readFile() == 0;
+	}
+	catch (...)
+	{
+		success = false;
+		repoError << "Process errored whilst ODA processor is trying to read the file";
+	}
 	if (!success) {		
 		err = REPOERR_LOAD_SCENE_FAIL;
 		repoInfo << "Failed to read file";
