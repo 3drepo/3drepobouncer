@@ -41,7 +41,6 @@ namespace repo{
 				* @param whether the scene requires VR bundles
 				*/
 				AssetModelExport(const repo::core::model::RepoScene *scene,
-					repo::core::handler::AbstractDatabaseHandler *handler,
 					const bool vrEnabled = false);
 
 				/**
@@ -71,6 +70,13 @@ namespace repo{
 					meshMaps = meshMappings;
 					return reorganisedMeshes;
 				}
+
+				/**
+				 * Export Unity assets list
+				 * @return returns a RepoUnityAssets of the Unity assets list
+				 *         for this model
+				 */
+				repo::core::model::RepoUnityAssets getUnityAssets() const;
 
 			private:
 
@@ -104,10 +110,10 @@ namespace repo{
 				* This creates the header of the SRC
 				* @return returns true upon success
 				*/
-				bool generateTreeRepresentation(
-					repo::core::handler::AbstractDatabaseHandler *handler);
+				bool generateTreeRepresentation();
 
 				std::vector<std::shared_ptr<repo::core::model::MeshNode>> reorganisedMeshes;
+				repo::core::model::RepoUnityAssets unityAssets;
 				std::vector<std::vector<uint16_t>> serialisedFaceBuf;
 				std::vector<std::vector<std::vector<float>>> idMapBuf;
 				std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> meshMappings;

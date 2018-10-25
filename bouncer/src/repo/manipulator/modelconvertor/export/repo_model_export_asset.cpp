@@ -51,7 +51,6 @@ const static std::string MP_LABEL_PROJECT = "model";
 
 AssetModelExport::AssetModelExport(
 	const repo::core::model::RepoScene *scene,
-	repo::core::handler::AbstractDatabaseHandler *handler,
 	const bool vrEnabled
 	) : WebModelExport(scene),
 	generateVR(vrEnabled)
@@ -61,7 +60,7 @@ AssetModelExport::AssetModelExport(
 	{
 		if (gType == repo::core::model::RepoScene::GraphType::OPTIMIZED)
 		{
-			convertSuccess = generateTreeRepresentation(handler);
+			convertSuccess = generateTreeRepresentation();
 		}
 		else  if (!(convertSuccess = !scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()))
 		{
@@ -78,33 +77,18 @@ AssetModelExport::~AssetModelExport()
 {
 }
 
-bool AssetModelExport::commitUnityAssets(
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	const repo::lib::RepoUUID &revisionID,
-	std::vector<std::string> &assets,
-	std::vector<double> offset,
-	std::vector<std::string> &vrAssetFiles,
-	std::vector<std::string> &jsonFiles,
-	std::string &errMsg)
-{
-	std::string databaseName = scene->getDatabaseName();
-	std::string projectName = scene->getProjectName();
-
-	core::model::RepoUnityAssets unityAssets = core::model::RepoBSONFactory::makeRepoUnityAssets(
-			revisionID,
-			assets,
-			databaseName,
-			projectName,
-			offset,
-			vrAssetFiles,
-			jsonFiles);
-
-	return handler->insertDocument(databaseName, projectName + "." + scene->getUnityExtension(), unityAssets, errMsg);
-}
-
 repo_web_buffers_t AssetModelExport::getAllFilesExportedAsBuffer() const
 {
-	return{ std::unordered_map<std::string, std::vector<uint8_t>>(), getJSONFilesAsBuffer() };
+	return {
+		std::unordered_map<std::string, std::vector<uint8_t>>(),
+		getJSONFilesAsBuffer(),
+		getUnityAssets()
+	};
+}
+
+repo::core::model::RepoUnityAssets AssetModelExport::getUnityAssets() const
+{
+	return unityAssets;
 }
 
 bool AssetModelExport::generateJSONMapping(
@@ -170,8 +154,7 @@ bool AssetModelExport::generateJSONMapping(
 	return success;
 }
 
-bool AssetModelExport::generateTreeRepresentation(
-	repo::core::handler::AbstractDatabaseHandler *handler)
+bool AssetModelExport::generateTreeRepresentation()
 {
 	bool success;
 	if (success = scene->hasRoot(gType))
@@ -225,22 +208,14 @@ bool AssetModelExport::generateTreeRepresentation(
 		assetListTree.addToTree(MP_LABEL_PROJECT, scene->getProjectName());
 		jsonTrees[assetListFile] = assetListTree;
 
-		std::string errMsg;
-		if (success &= commitUnityAssets(
-					handler,
-					scene->getRevisionID(),
-					assetFiles,
-					scene->getWorldOffset(),
-					vrAssetFiles,
-					jsons,
-					errMsg))
-		{
-			repoInfo << "Asset List File added successfully.";
-		}
-		else
-		{
-			repoError << "Failed to add asset list file: " << errMsg;
-		}
+		unityAssets = core::model::RepoBSONFactory::makeRepoUnityAssets(
+				scene->getRevisionID(),
+				assetFiles,
+				scene->getDatabaseName(),
+				scene->getProjectName(),
+				scene->getWorldOffset(),
+				vrAssetFiles,
+				jsons);
 	}
 
 	return success;

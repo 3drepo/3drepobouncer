@@ -20,6 +20,7 @@
 #include <unordered_map>
 #include <cstdint>
 #include "../../repo_bouncer_global.h"
+#include "../../core/model/bson/repo_bson_unity_assets.h"
 #include "repo_uuid.h"
 #include "repo_vector.h"
 #include <boost/crc.hpp>
@@ -28,6 +29,7 @@
 typedef struct {
 	std::unordered_map<std::string, std::vector<uint8_t>> geoFiles; //files where geometery are stored
 	std::unordered_map<std::string, std::vector<uint8_t>> jsonFiles; //JSON mapping files
+	repo::core::model::RepoUnityAssets unityAssets; //Unity assets list
 }repo_web_buffers_t;
 
 //This is used to map info for multipart optimization
