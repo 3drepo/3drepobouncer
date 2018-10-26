@@ -34,11 +34,14 @@ bool SceneManager::commitWebBuffers(
 {
 	bool success = true;
 	std::string jsonStashExt = scene->getJSONExtension();
+	std::string databaseName = scene->getDatabaseName();
+	std::string projectName = scene->getProjectName();
+
 	//Upload the files
 	for (const auto &bufferPair : resultBuffers.geoFiles)
 	{
 		std::string errMsg;
-		if (success &= handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + geoStashExt, bufferPair.first, bufferPair.second,
+		if (success &= handler->insertRawFile(databaseName, projectName + "." + geoStashExt, bufferPair.first, bufferPair.second,
 			errMsg))
 		{
 			repoInfo << "File (" << bufferPair.first << ") added successfully.";
@@ -51,11 +54,9 @@ bool SceneManager::commitWebBuffers(
 
 	for (const auto &bufferPair : resultBuffers.jsonFiles)
 	{
-		std::string databaseName = scene->getDatabaseName();
-		std::string projectName = scene->getProjectName();
 		std::string errMsg;
 		std::string fileName = bufferPair.first;
-		if (success &= handler->insertRawFile(scene->getDatabaseName(), scene->getProjectName() + "." + jsonStashExt, fileName, bufferPair.second,
+		if (success &= handler->insertRawFile(databaseName, projectName + "." + jsonStashExt, fileName, bufferPair.second,
 			errMsg))
 		{
 			repoInfo << "File (" << fileName << ") added successfully.";
@@ -64,6 +65,17 @@ bool SceneManager::commitWebBuffers(
 		{
 			repoError << "Failed to add file  (" << fileName << "): " << errMsg;
 		}
+	}
+
+	std::string errMsg;
+	if (success &= handler->insertDocument(databaseName, projectName + "." + geoStashExt, resultBuffers.unityAssets,
+			errMsg))
+	{
+		repoInfo << "Unity assets list added successfully.";
+	}
+	else
+	{
+		repoError << "Failed to add Unity assets list: " << errMsg;;
 	}
 
 	if (success)

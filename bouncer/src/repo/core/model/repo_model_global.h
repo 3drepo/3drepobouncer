@@ -45,8 +45,10 @@
 #define REPO_LABEL_OVERSIZED_FILES  "_extRef"
 #define REPO_LABEL_AVATAR           "avatar"
 #define REPO_LABEL_DATA             "data"
+#define REPO_LABEL_DATABASE         "database"
 #define REPO_LABEL_HEIGHT           "height"
 #define REPO_LABEL_MEDIA_TYPE       "mime"              //!< Media Type (mime type)
+#define REPO_LABEL_MODEL            "model"
 #define REPO_LABEL_ROLE             "role"
 #define REPO_LABEL_ROLES            "roles"
 #define REPO_LABEL_USER             "user"

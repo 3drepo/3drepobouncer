@@ -79,7 +79,16 @@ AssetModelExport::~AssetModelExport()
 
 repo_web_buffers_t AssetModelExport::getAllFilesExportedAsBuffer() const
 {
-	return{ std::unordered_map<std::string, std::vector<uint8_t>>(), getJSONFilesAsBuffer() };
+	return {
+		std::unordered_map<std::string, std::vector<uint8_t>>(),
+		getJSONFilesAsBuffer(),
+		getUnityAssets()
+	};
+}
+
+repo::core::model::RepoUnityAssets AssetModelExport::getUnityAssets() const
+{
+	return unityAssets;
 }
 
 bool AssetModelExport::generateJSONMapping(
@@ -145,8 +154,7 @@ bool AssetModelExport::generateJSONMapping(
 	return success;
 }
 
-bool AssetModelExport::generateTreeRepresentation(
-	)
+bool AssetModelExport::generateTreeRepresentation()
 {
 	bool success;
 	if (success = scene->hasRoot(gType))
@@ -199,6 +207,15 @@ bool AssetModelExport::generateTreeRepresentation(
 		assetListTree.addToTree(MP_LABEL_DATABASE, scene->getDatabaseName());
 		assetListTree.addToTree(MP_LABEL_PROJECT, scene->getProjectName());
 		jsonTrees[assetListFile] = assetListTree;
+
+		unityAssets = core::model::RepoBSONFactory::makeRepoUnityAssets(
+				scene->getRevisionID(),
+				assetFiles,
+				scene->getDatabaseName(),
+				scene->getProjectName(),
+				scene->getWorldOffset(),
+				vrAssetFiles,
+				jsons);
 	}
 
 	return success;
