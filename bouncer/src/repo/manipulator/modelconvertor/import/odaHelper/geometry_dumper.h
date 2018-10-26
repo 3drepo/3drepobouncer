@@ -58,7 +58,7 @@ namespace repo {
 					void endViewVectorization();
 
 					void setMode(OdGsView::RenderMode mode);
-				
+
 				protected:
 
 					OdGiMaterialItemPtr fillMaterialCache(

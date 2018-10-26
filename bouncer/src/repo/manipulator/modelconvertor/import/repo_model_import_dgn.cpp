@@ -29,29 +29,21 @@ repo::core::model::RepoScene* DgnModelImport::generateRepoScene()
 {
 	repo::core::model::RepoScene *scene = nullptr;
 #ifdef ODA_SUPPORT
-	auto meshes = geoCollector.getMeshes();
-	repoInfo << "mesh size: " << meshes.size();
-	if (meshes.size()) {
+	repoInfo << "Constructing Repo Scene...";
+	auto meshSet = geoCollector.getMeshNodes();
+	if (meshSet.size()) {
 		const repo::core::model::RepoNodeSet dummy;
-		repo::core::model::RepoNodeSet meshSet;
-		repo::core::model::RepoNodeSet transSet;		
-		
-		auto root = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
-		
-		transSet.insert(root);
-		auto rootID = root->getSharedID();
-		std::vector<repo::lib::RepoUUID> meshIDs;
-		for (int i = 0; i < meshes.size(); ++i) {
-			auto mesh = meshes[i];			
-			meshSet.insert(new repo::core::model::MeshNode(mesh.cloneAndAddParent(rootID)));
-			meshIDs.push_back(mesh.getSharedID());			
-		}
-
+		repoInfo << "Get material nodes... ";
 		auto matSet =  geoCollector.getMaterialNodes();
-		repoInfo << "# materials: " << matSet.size();
+		auto transSet = geoCollector.getTransformationNodes();
 		scene = new repo::core::model::RepoScene({ filePath }, dummy, meshSet, matSet, dummy, dummy, transSet);
 		scene->setWorldOffset(geoCollector.getModelOffset());
+		repoInfo << "Repo Scene constructed.";
 	}
+	else {
+		repoError << "No meshes generated";
+	}
+	
 #endif
 	return scene;
 }
@@ -62,9 +54,17 @@ bool DgnModelImport::importModel(std::string filePath, uint8_t &err)
 	
 #ifdef ODA_SUPPORT
 	this->filePath = filePath;
+	repoInfo << " ==== Importing with Teigha Library [" << filePath << "] ====";
 	odaHelper::FileProcessor odaProcessor(filePath, &geoCollector);
 	bool success = false;
-	success = odaProcessor.readFile() == 0;
+	try {
+		success = odaProcessor.readFile() == 0;
+	}
+	catch (...)
+	{
+		success = false;
+		repoError << "Process errored whilst ODA processor is trying to read the file";
+	}
 	if (!success) {		
 		err = REPOERR_LOAD_SCENE_FAIL;
 		repoInfo << "Failed to read file";

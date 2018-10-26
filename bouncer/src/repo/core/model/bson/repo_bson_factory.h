@@ -258,6 +258,7 @@ namespace repo {
 					const std::vector<repo_color4d_t>                 &colors = std::vector<repo_color4d_t>(),
 					const std::vector<std::vector<float>>             &outline = std::vector<std::vector<float>>(),
 					const std::string                                 &name = std::string(),
+					const std::vector<repo::lib::RepoUUID>            &parents = std::vector<repo::lib::RepoUUID>(),
 					const int                                         &apiLevel = REPO_NODE_API_LEVEL_1);
 
 				/**

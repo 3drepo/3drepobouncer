@@ -19,6 +19,7 @@
 #include <OdString.h>
 
 #include <toString.h>
+#include <DgLevelTableRecord.h>
 
 
 #include "geometry_dumper.h"
@@ -54,10 +55,40 @@ VectoriseDevice* GeometryDumper::device()
 	return static_cast<VectoriseDevice*>(OdGsBaseVectorizeView::device());
 }
 
+std::string convertToStdString(const OdString &value) {
+	const char *ansi = static_cast<const char *>(value);
+	return std::string(ansi);
+}
+
 bool GeometryDumper::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 {
+	OdDgElementPtr pElm = OdDgElement::cast(pDrawable);
+	auto currentItem = pElm;
+	auto previousItem = pElm;
+	while (currentItem->ownerId()) {
+		previousItem = currentItem;
+		auto ownerId = currentItem->ownerId();
+		auto ownerItem = OdDgElement::cast(ownerId.openObject(OdDg::kForRead));
+		currentItem = ownerItem;
+	}
+
+	//We want to group meshes together up to 1 below the top.
+	OdString groupID = toString(previousItem->elementId().getHandle());
+	collector->setMeshGroup(convertToStdString(groupID));
+
+	OdString sHandle = pElm->isDBRO() ? toString(pElm->elementId().getHandle()) : toString(OD_T("non-DbResident"));
+	collector->setNextMeshName(convertToStdString(sHandle));
+
+	OdGiSubEntityTraitsData traits = effectiveTraits();
+	OdDgElementId idLevel = traits.layer();
+	if (!idLevel.isNull())
+	{
+		OdDgLevelTableRecordPtr pLevel = idLevel.openObject(OdDg::kForRead);
+		collector->setLayer(convertToStdString(pLevel->getName()));
+	}
 	return OdGsBaseMaterialView::doDraw(i, pDrawable);
 }
+
 
 OdCmEntityColor GeometryDumper::fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color)
 {

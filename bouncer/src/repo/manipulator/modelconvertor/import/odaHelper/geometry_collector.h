@@ -35,6 +35,8 @@ namespace repo {
 					std::vector<std::vector<float>> boundingBox;
 					std::unordered_map<unsigned long, int> vToVIndex;
 					std::string name;
+					std::string layerName;
+					std::string groupName;
 					uint32_t matIdx;
 				};
 
@@ -51,11 +53,21 @@ namespace repo {
 					*/
 					repo::core::model::RepoNodeSet getMaterialNodes();
 
+
+					/**
+					* Get all the transformation nodes collected.
+					* This is based on the layer information
+					* @return returns a repoNodeSet containing transformation nodes
+					*/
+					repo::core::model::RepoNodeSet getTransformationNodes() {
+						return transNodes;
+					}
+
 					/**
 					* Get all mesh nodes collected.
 					* @return returns a vector of mesh nodes
 					*/
-					std::vector<repo::core::model::MeshNode> getMeshes();
+					repo::core::model::RepoNodeSet getMeshNodes();
 
 					/**
 					* Gt the model offset applied on the meshes collected
@@ -76,6 +88,26 @@ namespace repo {
 					*/
 					void stopMeshEntry();
 
+					void setLayer(const std::string &name) {
+						nextLayer = name;
+					}
+
+					/** 
+					* Set the name for the next mesh
+					* @param name name of the next mesh
+					*/
+					void setNextMeshName(const std::string &name) {
+						nextMeshName = name;
+					}
+
+					/**
+					* Set next group name
+					* @param groupName group name of the next mesh
+					*/
+					void setMeshGroup(const std::string &groupName) {
+						nextGroupName = groupName;
+					}
+
 					/**
 					* Add a face to the current mesh
 					* @param vertices a vector of vertices that makes up this face
@@ -90,12 +122,23 @@ namespace repo {
 					*/
 					void setCurrentMaterial(const repo_material_t &material);
 
+
 				private:
-					std::vector<mesh_data_t> meshData;
+					std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<int, mesh_data_t>>> meshData;
+					std::string nextMeshName, nextLayer, nextGroupName;
 					std::unordered_map< uint32_t, repo::core::model::MaterialNode > idxToMat;					
 					std::unordered_map<uint32_t, std::vector<repo::lib::RepoUUID> > matToMeshes;
-					std::vector<double> minMeshBox;
+					repo::core::model::RepoNodeSet transNodes;
 					uint32_t currMat;
+					std::vector<double> minMeshBox;
+					mesh_data_t *currentEntry = nullptr;
+
+					repo::core::model::TransformationNode* createTransNode(
+						const std::string &name,
+						const repo::lib::RepoUUID &parentId
+					);
+
+					mesh_data_t createMeshEntry();
 				};
 			}
 		}

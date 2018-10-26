@@ -269,12 +269,13 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	const std::vector<repo_color4d_t>                 &colors,
 	const std::vector<std::vector<float>>             &outline,
 	const std::string                           &name,
+	const std::vector<repo::lib::RepoUUID>      &parents,
 	const int                                   &apiLevel)
 {
 	RepoBSONBuilder builder;
 	uint64_t bytesize = 0; //track the (approximate) size to know when we need to offload to gridFS
 	repo::lib::RepoUUID uniqueID = repo::lib::RepoUUID::createUUID();
-	auto defaults = appendDefaults(REPO_NODE_TYPE_MESH, apiLevel, repo::lib::RepoUUID::createUUID(), name, std::vector<repo::lib::RepoUUID>(), uniqueID);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_MESH, apiLevel, repo::lib::RepoUUID::createUUID(), name, parents, uniqueID);
 	bytesize += defaults.objsize();
 	builder.appendElements(defaults);
 
