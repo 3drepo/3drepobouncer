@@ -903,6 +903,7 @@ std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoManipulator::initi
 	const repo::core::model::RepoBSON	          *cred,
 	repo::core::model::RepoScene *scene,
 	std::unordered_map<std::string, std::vector<uint8_t>> &jsonFiles,
+	repo::core::model::RepoUnityAssets &unityAssets,
 	std::vector<std::vector<uint16_t>> &serialisedFaceBuf,
 	std::vector<std::vector<std::vector<float>>> &idMapBuf,
 	std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> &meshMappings)
@@ -919,6 +920,7 @@ std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoManipulator::initi
 	}
 	repo::manipulator::modelconvertor::AssetModelExport assetExport(scene, vrEnabled);
 	jsonFiles = assetExport.getJSONFilesAsBuffer();
+	unityAssets = assetExport.getUnityAssets();
 	return assetExport.getReorganisedMeshes(serialisedFaceBuf, idMapBuf, meshMappings);
 }
 

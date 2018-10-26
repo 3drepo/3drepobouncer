@@ -26,6 +26,7 @@
 #include "repo_bson_role.h"
 #include "repo_bson_role_settings.h"
 #include "repo_bson_user.h"
+#include "repo_bson_unity_assets.h"
 #include "repo_node.h"
 #include "repo_node_camera.h"
 #include "repo_node_metadata.h"
@@ -115,7 +116,6 @@ namespace repo {
 				* @param avatar picture of the user
 				* @return returns a RepoUser
 				*/
-
 				static RepoUser makeRepoUser(
 					const std::string                                      &userName,
 					const std::string                                      &password,
@@ -125,6 +125,26 @@ namespace repo {
 					const std::list<std::pair<std::string, std::string>>   &roles,
 					const std::list<std::pair<std::string, std::string>>   &apiKeys,
 					const std::vector<char>                                &avatar);
+
+				/**
+				* Create a Unity assets list BSON
+				* @param revisionID uuid of the revision (default: master branch)
+				* @param assets list of Unity assets
+				* @param database name of the database to reference
+				* @param model model ID (string) to reference
+				* @param offset world offset shift coordinates of the model
+				* @param vrAssetFiles list of VR Unity assets
+				* @param jsonFiles list of JSON files
+				* @return returns a RepoUnityAssets
+				*/
+				static RepoUnityAssets makeRepoUnityAssets(
+					const repo::lib::RepoUUID                              &revisionID,
+					const std::vector<std::string>                         &assets,
+					const std::string                                      &database,
+					const std::string                                      &model,
+					const std::vector<double>                              &offset,
+					const std::vector<std::string>                         &vrAssetFiles,
+					const std::vector<std::string>                         &jsonFiles);
 
 				/*
 				* -------------------- REPO NODES ------------------------

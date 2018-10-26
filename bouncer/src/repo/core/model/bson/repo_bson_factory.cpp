@@ -715,6 +715,40 @@ RepoUser RepoBSONFactory::makeRepoUser(
 	return RepoUser(builder.obj());
 }
 
+RepoUnityAssets RepoBSONFactory::makeRepoUnityAssets(
+	const repo::lib::RepoUUID                   &revisionID,
+	const std::vector<std::string>              &assets,
+	const std::string                           &database,
+	const std::string                           &model,
+	const std::vector<double>                   &offset,
+	const std::vector<std::string>              &vrAssetFiles,
+	const std::vector<std::string>              &jsonFiles)
+{
+	RepoBSONBuilder builder;
+
+	builder.append(REPO_LABEL_ID, revisionID);
+
+	if (assets.size())
+		builder.appendArray(REPO_UNITY_ASSETS_LABEL_ASSETS, assets);
+
+	if (!database.empty())
+		builder << REPO_LABEL_DATABASE << database;
+
+	if (!model.empty())
+		builder << REPO_LABEL_MODEL << model;
+
+	if (offset.size())
+		builder.appendArray(REPO_UNITY_ASSETS_LABEL_OFFSET, offset);
+
+	if (vrAssetFiles.size())
+		builder.appendArray(REPO_UNITY_ASSETS_LABEL_VRASSETS, vrAssetFiles);
+
+	if (jsonFiles.size())
+		builder.appendArray(REPO_UNITY_ASSETS_LABEL_JSONFILES, jsonFiles);
+
+	return RepoUnityAssets(builder.obj());
+}
+
 ReferenceNode RepoBSONFactory::makeReferenceNode(
 	const std::string &database,
 	const std::string &project,
