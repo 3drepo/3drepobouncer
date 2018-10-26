@@ -81,19 +81,6 @@ namespace repo{
 			private:
 
 				/**
-				 * Insert Unity asset list file database entry into database
-				 * @return returns true upon success
-				 */
-				bool commitUnityAssets(
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					const repo::lib::RepoUUID &revisionID,
-					std::vector<std::string> &assets,
-					std::vector<double> offset,
-					std::vector<std::string> &vrAssetFiles,
-					std::vector<std::string> &jsonFiles,
-					std::string &errMsg);
-
-				/**
 				* Generate JSON mapping for multipart meshes
 				* And add it into the object
 				* @param mesh mesh to generate with
