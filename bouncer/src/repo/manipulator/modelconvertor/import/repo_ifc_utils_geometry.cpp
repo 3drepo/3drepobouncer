@@ -56,14 +56,14 @@ repo_material_t IFCUtilsGeometry::createMaterial(
 
 	if (material.hasSpecularity())
 	{
-		matProp.shininess = material.specularity() / 128.;
+		matProp.shininess = material.specularity() / 256;
 	}
 	else
 	{
 		matProp.shininess = 0.5;
 	}
 
-	matProp.shininessStrength = 1;
+	matProp.shininessStrength = 0.5;
 
 	if (material.hasTransparency())
 	{
