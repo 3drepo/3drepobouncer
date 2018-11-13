@@ -17,6 +17,7 @@
 #include "repo_scene_manager.h"
 
 #include "../../core/model/bson/repo_bson_builder.h"
+#include "../../core/model/bson/repo_bson_ref.h"
 #include "../modeloptimizer/repo_optimizer_multipart.h"
 #include "../modelconvertor/export/repo_model_export_gltf.h"
 #include "../modelconvertor/export/repo_model_export_src.h"
@@ -37,6 +38,7 @@ bool SceneManager::commitWebBuffers(
 	std::string databaseName = scene->getDatabaseName();
 	std::string projectName = scene->getProjectName();
 
+	repo::core::handler::fileservice::AbstractFileHandler *fileHandler = repo::core::handler::fileservice::S3FileHandler::getHandler();
 	//Upload the files
 	for (const auto &bufferPair : resultBuffers.geoFiles)
 	{
@@ -49,6 +51,15 @@ bool SceneManager::commitWebBuffers(
 		else
 		{
 			repoError << "Failed to add file  (" << bufferPair.first << "): " << errMsg;
+		}
+
+		if (success &= fileHandler->uploadFileAndCommit(handler, databaseName, projectName + "." + geoStashExt, bufferPair.first, bufferPair.second))
+		{
+			repoInfo << "File (" << bufferPair.first << ") added successfully to S3.";
+		}
+		else
+		{
+			repoError << "Failed to add file  (" << bufferPair.first << ") to S3: " << errMsg;
 		}
 	}
 
@@ -65,11 +76,20 @@ bool SceneManager::commitWebBuffers(
 		{
 			repoError << "Failed to add file  (" << fileName << "): " << errMsg;
 		}
+
+		if (success &= fileHandler->uploadFileAndCommit(handler, databaseName, projectName + "." + jsonStashExt, bufferPair.first, bufferPair.second))
+		{
+			repoInfo << "File (" << fileName << ") added successfully to S3.";
+		}
+		else
+		{
+			repoError << "Failed to add file  (" << fileName << ") to S3: " << errMsg;
+		}
 	}
 
 	std::string errMsg;
-	if (success &= handler->insertDocument(databaseName, projectName + "." + geoStashExt, resultBuffers.unityAssets,
-			errMsg))
+	if (success &= handler->upsertDocument(databaseName, projectName + "." + geoStashExt, resultBuffers.unityAssets,
+			true, errMsg))
 	{
 		repoInfo << "Unity assets list added successfully.";
 	}
@@ -359,6 +379,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 
 		if (success = buffer.size())
 		{
+			repo::core::handler::fileservice::AbstractFileHandler *fileHandler = repo::core::handler::fileservice::S3FileHandler::getHandler();
 			std::string databaseName = scene->getDatabaseName();
 			std::string projectName = scene->getProjectName();
 			std::string errMsg;
@@ -376,6 +397,20 @@ bool SceneManager::generateAndCommitSelectionTree(
 				else
 				{
 					repoError << "Failed to add file  (" << fileName << "): " << errMsg;
+				}
+
+				if (handler && fileHandler->uploadFileAndCommit(
+							handler,
+							databaseName,
+							projectName + "." + scene->getJSONExtension(),
+							fileName,
+							file.second))
+				{
+					repoInfo << "File (" << fileName << ") added successfully to S3.";
+				}
+				else
+				{
+					repoError << "Failed to add file  (" << fileName << ") to S3: " << errMsg;
 				}
 			}
 		}
@@ -444,3 +479,4 @@ bool SceneManager::removeStashGraph(
 
 	return success;
 }
+

@@ -89,6 +89,12 @@ if (ODA_SUPPORT)
 	find_package(ODA REQUIRED)
 endif()
 
+#==================== AWS S3 SDK ======================
+find_package(AWSSDK REQUIRED COMPONENTS transfer s3-encryption)
+if(NOT ${AWSSDK_FOUND})
+	message(FATAL_ERROR "Cannot find AWS SDK")
+endif()
+
 #================COMPILE 3D REPO BOUNCER ==============
 option (REPO_BUILD_CLIENT "If the Command Line Client is built in addition to the library" ON)
 option (REPO_BUILD_TOOLS "If the Command Line Tool is built in addition to the library" ON)

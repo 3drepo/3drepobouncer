@@ -666,6 +666,9 @@ bool RepoScene::commitRevisionNode(
 	std::vector<repo::lib::RepoUUID> parent;
 	parent.reserve(1);
 
+	repo::core::handler::fileservice::AbstractFileHandler *fileHandler =
+		repo::core::handler::fileservice::S3FileHandler::getHandler();
+
 	if (!unRevisioned && !revNode)
 	{
 		if (!loadRevision(handler, errMsg))
@@ -749,6 +752,11 @@ bool RepoScene::commitRevisionNode(
 					if (!handler->insertRawFile(databaseName, projectName + "." + rawExt, gridFSName, rawFile, errMsg))
 					{
 						repoError << "Failed to save original file into the database: " << errMsg;
+					}
+
+					if (!fileHandler->uploadFileAndCommit(handler, databaseName, projectName + "." + rawExt, gridFSName, rawFile))
+					{
+						repoError << "Failed to save original file into the S3: " << errMsg;
 					}
 				}
 				else

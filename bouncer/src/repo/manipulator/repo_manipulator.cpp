@@ -935,7 +935,9 @@ void RepoManipulator::insertBinaryFileToDatabase(
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
+	repo::core::handler::fileservice::AbstractFileHandler *fileHandler =
+		repo::core::handler::fileservice::S3FileHandler::getHandler();
+	if (handler && fileHandler)
 	{
 		std::string errMsg;
 		if (handler->insertRawFile(database, collection, name, rawData, errMsg, mimeType))
@@ -945,6 +947,15 @@ void RepoManipulator::insertBinaryFileToDatabase(
 		else
 		{
 			repoError << "Failed to add file (" << name << "): " << errMsg;
+		}
+
+		if (fileHandler->uploadFileAndCommit(handler, database, collection, name, rawData))
+		{
+			repoInfo << "File (" << name << ") added successfully to S3.";
+		}
+		else
+		{
+			repoError << "Failed to add file (" << name << ") to S3: " << errMsg;
 		}
 	}
 }
