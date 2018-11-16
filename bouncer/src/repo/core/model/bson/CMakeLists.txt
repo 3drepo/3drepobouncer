@@ -38,6 +38,7 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_project_settings.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_role.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_role_settings.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_unity_assets.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_user.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_camera.h

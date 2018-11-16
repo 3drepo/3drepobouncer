@@ -108,6 +108,27 @@ namespace repo{
 			* @param pwDigested is given password digested (default: false)
 			* @return returns a void pointer to a token
 			*/
+		RepoToken* init(
+			std::string       &errMsg,
+			const std::string &address,
+			const int         &port,
+			const std::string &username,
+			const std::string &password,
+			const std::string &bucketName,
+			const std::string &bucketRegion,
+			const bool        &pwDigested = false
+			);
+
+		/**
+			* Connect to a mongo database, authenticate by the admin database
+			* @param errMsg error message if failed
+			* @param address address of the database
+			* @param port port number
+			* @param username user login name
+			* @param password user password
+			* @param pwDigested is given password digested (default: false)
+			* @return returns a void pointer to a token
+			*/
 		RepoToken* authenticateToAdminDatabaseMongo(
 			std::string       &errMsg,
 			const std::string &address,
@@ -155,7 +176,9 @@ namespace repo{
 			const int         &port,
 			const std::string &dbName,
 			const std::string &username,
-			const std::string &password
+			const std::string &password,
+			const std::string &bucketName,
+			const std::string &bucketRegion
 			);
 
 		RepoToken* createToken(
@@ -163,6 +186,8 @@ namespace repo{
 			const std::string &address,
 			const int         &port,
 			const std::string &dbName,
+			const std::string &bucketName,
+			const std::string &bucketRegion,
 			const RepoController::RepoToken *token
 			);
 

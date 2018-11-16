@@ -59,7 +59,15 @@
 	function testClient(callback){
 		logger.info("Checking status of client...");
 
-		exec(path.normalize(conf.bouncer.path) + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " test", function(error, stdout, stderr){
+		exec("AWS_ACCESS_KEY_ID=" + conf.aws.access_key_id +
+				" AWS_SECRET_ACCESS_KEY=" + conf.aws.secret_access_key + " " +
+				path.normalize(conf.bouncer.path) + " " +
+				conf.bouncer.dbhost + " " +
+				conf.bouncer.dbport + " " +
+				conf.bouncer.username + " " +
+				conf.bouncer.password + " " +
+				conf.aws.bucket_name + " " +
+				conf.aws.bucket_region + " test", function(error, stdout, stderr){
 			if(error !== null){
 				logger.error("bouncer call errored");
 				logger.debug(stdout);
@@ -139,7 +147,15 @@
 			
 			cmd = cmd.replace("/sharedData/", conf.rabbitmq.sharedDir);	
 			process.env['REPO_LOG_DIR']= logDir ;
-			command = path.normalize(conf.bouncer.path) + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + cmd;
+			command = "AWS_ACCESS_KEY_ID=" + conf.aws.access_key_id +
+				" AWS_SECRET_ACCESS_KEY=" + conf.aws.secret_access_key + " " +
+				path.normalize(conf.bouncer.path) + " " +
+				conf.bouncer.dbhost + " " +
+				conf.bouncer.dbport + " " +
+				conf.bouncer.username + " " +
+				conf.bouncer.password + " " +
+				cmd;
+
 			let cmdArr = cmd.split(' ');
 			if(cmdArr[0] == "import")
 			{
@@ -158,7 +174,17 @@
 		}	
 		else
 		{	
-			command = "REPO_LOG_DIR=" + logDir + " " +path.normalize(conf.bouncer.path) + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + cmd;
+			command = "REPO_LOG_DIR=" + logDir + " " +
+				"AWS_ACCESS_KEY_ID=" + conf.aws.access_key_id +
+				" AWS_SECRET_ACCESS_KEY=" + conf.aws.secret_access_key + " " +
+				path.normalize(conf.bouncer.path) + " " +
+				conf.bouncer.dbhost + " " +
+				conf.bouncer.dbport + " " +
+				conf.bouncer.username + " " +
+				conf.bouncer.password + " " +
+				conf.aws.bucket_name + " " +
+				conf.aws.bucket_region + " " +
+				cmd;
 		}
 
 		let cmdFile;
@@ -236,7 +262,20 @@
 					if(commandArgs && commandArgs.database && commandArgs.project)
 					{		
 
-						const unityCommand = conf.unity.batPath + " " + conf.unity.project + " " + conf.bouncer.dbhost + " " + conf.bouncer.dbport + " " + conf.bouncer.username + " " + conf.bouncer.password + " " + commandArgs.database + " " +commandArgs.project + " " + logDir;
+						const unityCommand = "AWS_ACCESS_KEY_ID=" + conf.aws.access_key_id +
+							" AWS_SECRET_ACCESS_KEY=" + conf.aws.secret_access_key + " " +
+							conf.unity.batPath + " " +
+							conf.unity.project + " " +
+							conf.bouncer.dbhost + " " +
+							conf.bouncer.dbport + " " +
+							conf.bouncer.username + " " +
+							conf.bouncer.password + " " +
+							commandArgs.database + " " +
+							commandArgs.project + " " +
+							conf.aws.bucket_name + " " +
+							conf.aws.bucket_region + " " +
+							logDir;
+
 						logger.info("running unity command: " + unityCommand);
 						exec(unityCommand, function( error, stdout, stderr){
 							if(error)

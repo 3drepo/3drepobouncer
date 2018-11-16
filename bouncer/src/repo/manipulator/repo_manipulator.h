@@ -51,7 +51,9 @@ namespace repo{
 			*/
 			bool cleanUp(
 				const std::string                      &databaseAd,
-				const repo::core::model::RepoBSON 	   *cred,
+				const repo::core::model::RepoBSON      *cred,
+				const std::string                      &bucketName,
+				const std::string                      &bucketRegion,
 				const std::string                      &dbName,
 				const std::string                      &projectName
 				);
@@ -128,7 +130,9 @@ namespace repo{
 			*/
 			bool commitScene(
 				const std::string                     &databaseAd,
-				const repo::core::model::RepoBSON 	  *cred,
+				const repo::core::model::RepoBSON     *cred,
+				const std::string                     &bucketName,
+				const std::string                     &bucketRegion,
 				repo::core::model::RepoScene          *scene,
 				const std::string                     &owner = "",
 				const std::string                     &tag = "",
@@ -144,7 +148,9 @@ namespace repo{
 			*/
 			bool commitAssetBundleBuffers(
 				const std::string                     &databaseAd,
-				const repo::core::model::RepoBSON 	  *cred,
+				const repo::core::model::RepoBSON     *cred,
+				const std::string                     &bucketName,
+				const std::string                     &bucketRegion,
 				repo::core::model::RepoScene          *scene,
 				const repo_web_buffers_t &buffers);
 
@@ -314,9 +320,11 @@ namespace repo{
 			* @param return true upon success
 			*/
 			bool generateAndCommitSelectionTree(
-				const std::string                         &databaseAd,
-				const repo::core::model::RepoBSON         *cred,
-				repo::core::model::RepoScene              *scene
+				const std::string                     &databaseAd,
+				const repo::core::model::RepoBSON     *cred,
+				const std::string                     &bucketName,
+				const std::string                     &bucketRegion,
+				repo::core::model::RepoScene          *scene
 				);
 
 			/**
@@ -345,11 +353,13 @@ namespace repo{
 			* @return returns true upon success
 			*/
 			bool generateAndCommitWebViewBuffer(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON	          *cred,
-				repo::core::model::RepoScene                  *scene,
-				repo_web_buffers_t                            &buffers,
-				const modelconvertor::WebExportType           &exType);
+				const std::string                     &databaseAd,
+				const repo::core::model::RepoBSON     *cred,
+				const std::string                     &bucketName,
+				const std::string                     &bucketRegion,
+				repo::core::model::RepoScene          *scene,
+				repo_web_buffers_t                    &buffers,
+				const modelconvertor::WebExportType   &exType);
 
 			/**
 			* Generate and commit a GLTF encoding for the given scene
@@ -361,9 +371,11 @@ namespace repo{
 			*/
 
 			bool generateAndCommitGLTFBuffer(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON	          *cred,
-				repo::core::model::RepoScene                  *scene);
+				const std::string                     &databaseAd,
+				const repo::core::model::RepoBSON     *cred,
+				const std::string                     &bucketName,
+				const std::string                     &bucketRegion,
+				repo::core::model::RepoScene          *scene);
 
 			/**
 			* Generate and commit a SRC encoding for the given scene
@@ -374,9 +386,11 @@ namespace repo{
 			* @return returns true upon success
 			*/
 			bool generateAndCommitSRCBuffer(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON	          *cred,
-				repo::core::model::RepoScene                  *scene);
+				const std::string                     &databaseAd,
+				const repo::core::model::RepoBSON     *cred,
+				const std::string                     &bucketName,
+				const std::string                     &bucketRegion,
+				repo::core::model::RepoScene          *scene);
 
 			/**
 			* Generate a gltf encoding in the form of a buffer for the given scene
@@ -615,7 +629,9 @@ namespace repo{
 			*/
 			void insertBinaryFileToDatabase(
 				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON	          *cred,
+				const repo::core::model::RepoBSON             *cred,
+				const std::string                             &bucketName,
+				const std::string                             &bucketRegion,
 				const std::string                             &database,
 				const std::string                             &collection,
 				const std::string                             &name,
