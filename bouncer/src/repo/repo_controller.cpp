@@ -43,6 +43,23 @@ void RepoController::addAlias(
 		token->alias = alias;
 }
 
+RepoController::RepoToken* RepoController::init(
+	std::string       &errMsg,
+	const std::string &address,
+	const int         &port,
+	const std::string &username,
+	const std::string &password,
+	const std::string &bucketName,
+	const std::string &bucketRegion,
+	const bool        &pwDigested
+	)
+{
+	return impl->init(errMsg, address, port, username, password, bucketName, bucketRegion, pwDigested);
+}
+
+/**
+ * TODO: deprecate
+ */
 RepoController::RepoToken* RepoController::authenticateToAdminDatabaseMongo(
 	std::string       &errMsg,
 	const std::string &address,
@@ -122,10 +139,12 @@ RepoController::RepoToken* RepoController::createToken(
 	const int         &port,
 	const std::string &dbName,
 	const std::string &username,
-	const std::string &password
+	const std::string &password,
+	const std::string &bucketName,
+	const std::string &bucketRegion
 	)
 {
-	return impl->createToken(alias, address, port, dbName, username, password);
+	return impl->createToken(alias, address, port, dbName, username, password, bucketName, bucketRegion);
 }
 
 RepoController::RepoToken* RepoController::createToken(
@@ -133,10 +152,12 @@ RepoController::RepoToken* RepoController::createToken(
 	const std::string &address,
 	const int         &port,
 	const std::string &dbName,
+	const std::string &bucketName,
+	const std::string &bucketRegion,
 	const RepoController::RepoToken *token
 	)
 {
-	return impl->createToken(alias, address, port, dbName, token);
+	return impl->createToken(alias, address, port, dbName, bucketName, bucketRegion, token);
 }
 
 RepoController::RepoToken* RepoController::createTokenFromSerialised(

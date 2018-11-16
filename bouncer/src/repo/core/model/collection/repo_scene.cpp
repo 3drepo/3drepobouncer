@@ -520,6 +520,7 @@ void RepoScene::clearStash()
 
 bool RepoScene::commit(
 	repo::core::handler::AbstractDatabaseHandler *handler,
+	repo::core::handler::fileservice::AbstractFileHandler *fileHandler,
 	std::string &errMsg,
 	const std::string &userName,
 	const std::string &message,
@@ -555,7 +556,7 @@ bool RepoScene::commit(
 		if (!message.empty())
 			commitMsg = message;
 
-		if (success &= commitRevisionNode(handler, errMsg, newRevNode, userName, commitMsg, tag))
+		if (success &= commitRevisionNode(handler, fileHandler, errMsg, newRevNode, userName, commitMsg, tag))
 		{
 			repoInfo << "Commited revision node, commiting scene nodes...";
 			//commited the revision node, commit the modification on the scene
@@ -656,6 +657,7 @@ bool RepoScene::commitProjectSettings(
 
 bool RepoScene::commitRevisionNode(
 	repo::core::handler::AbstractDatabaseHandler *handler,
+	repo::core::handler::fileservice::AbstractFileHandler *fileHandler,
 	std::string &errMsg,
 	RevisionNode *&newRevNode,
 	const std::string &userName,
@@ -665,9 +667,6 @@ bool RepoScene::commitRevisionNode(
 	bool success = true;
 	std::vector<repo::lib::RepoUUID> parent;
 	parent.reserve(1);
-
-	repo::core::handler::fileservice::AbstractFileHandler *fileHandler =
-		repo::core::handler::fileservice::S3FileHandler::getHandler();
 
 	if (!unRevisioned && !revNode)
 	{

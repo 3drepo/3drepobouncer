@@ -38,11 +38,12 @@ namespace repo{
 				* @param addTimestampToSettings whether we should be adding timestamp to settings upon success
 				*/
 				bool commitWebBuffers(
-					repo::core::model::RepoScene                 *scene,
-					const std::string                            &geoStashExt,
-					const repo_web_buffers_t &resultBuffers,
-					repo::core::handler::AbstractDatabaseHandler *handler,
-					const bool                                    addTimestampToSettings = false);
+					repo::core::model::RepoScene                          *scene,
+					const std::string                                     &geoStashExt,
+					const repo_web_buffers_t                              &resultBuffers,
+					repo::core::handler::AbstractDatabaseHandler          *handler,
+					repo::core::handler::fileservice::AbstractFileHandler *fileHandler,
+					const bool                                            addTimestampToSettings = false);
 
 				/**
 				* Retrieve a RepoScene with a specific revision loaded.
@@ -95,8 +96,9 @@ namespace repo{
 				* @return return true upon success
 				*/
 				bool generateAndCommitSelectionTree(
-					repo::core::model::RepoScene                 *scene,
-					repo::core::handler::AbstractDatabaseHandler *handler
+					repo::core::model::RepoScene                          *scene,
+					repo::core::handler::AbstractDatabaseHandler          *handler,
+					repo::core::handler::fileservice::AbstractFileHandler *fileHandler
 					);
 
 				/**
@@ -135,10 +137,11 @@ namespace repo{
 				* @return returns repo_web_buffers upon success
 				*/
 				bool generateWebViewBuffers(
-					repo::core::model::RepoScene                 *scene,
-					const repo::manipulator::modelconvertor::WebExportType          &exType,
-					repo_web_buffers_t                           &resultBuffers,
-					repo::core::handler::AbstractDatabaseHandler *handler = nullptr);
+					repo::core::model::RepoScene                           *scene,
+					const repo::manipulator::modelconvertor::WebExportType &exType,
+					repo_web_buffers_t                                     &resultBuffers,
+					repo::core::handler::AbstractDatabaseHandler           *handler = nullptr,
+					repo::core::handler::fileservice::AbstractFileHandler  *fileHandler = nullptr);
 
 				/**
 				* Remove stash graph entry for the given scene

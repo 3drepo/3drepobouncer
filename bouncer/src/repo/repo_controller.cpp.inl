@@ -45,12 +45,16 @@ public:
 		const std::string                 &databaseHost = std::string(),
 		const uint32_t                    &port = 27017,
 		const std::string                 &databaseName = std::string(),
+		const std::string                 &bucketName = std::string(),
+		const std::string                 &bucketRegion = std::string(),
 		const std::string                 &alias = std::string()) :
 		databaseHost(databaseHost),
 		databasePort(port),
 		databaseAd(databaseHost + std::to_string(port)),
 		credentials(credentials.isEmpty() ? repo::core::model::RepoBSON() : credentials.copy()),
 		databaseName(databaseName),
+		bucketName(bucketName),
+		bucketRegion(bucketRegion),
 		alias(alias)
 	{
 	}
@@ -103,6 +107,8 @@ private:
 	const uint32_t databasePort;
 	const std::string databaseName;
 	std::string alias;
+	const std::string bucketName;
+	const std::string bucketRegion;
 };
 
 class RepoController::_RepoControllerImpl{
@@ -170,6 +176,28 @@ public:
 	* @param pwDigested is given password digested (default: false)
 	* @return returns a void pointer to a token
 	*/
+	RepoToken* init(
+		std::string       &errMsg,
+		const std::string &address,
+		const int         &port,
+		const std::string &username,
+		const std::string &password,
+		const std::string &bucketName,
+		const std::string &bucketRegion,
+		const bool        &pwDigested = false
+		);
+
+	/**
+	 * TODO: deprecate
+	* Connect to a mongo database, authenticate by the admin database
+	* @param errMsg error message if failed
+	* @param address address of the database
+	* @param port port number
+	* @param username user login name
+	* @param password user password
+	* @param pwDigested is given password digested (default: false)
+	* @return returns a void pointer to a token
+	*/
 	RepoToken* authenticateToAdminDatabaseMongo(
 		std::string       &errMsg,
 		const std::string &address,
@@ -204,7 +232,9 @@ public:
 		const int         &port,
 		const std::string &dbName,
 		const std::string &username,
-		const std::string &password
+		const std::string &password,
+		const std::string &bucketName,
+		const std::string &bucketRegion
 		);
 
 	RepoController::RepoToken* createToken(
@@ -212,6 +242,8 @@ public:
 		const std::string &address,
 		const int         &port,
 		const std::string &dbName,
+		const std::string &bucketName,
+		const std::string &bucketRegion,
 		const RepoController::RepoToken *token
 		);
 

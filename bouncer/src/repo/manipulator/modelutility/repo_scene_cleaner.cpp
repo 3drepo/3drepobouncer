@@ -22,13 +22,14 @@
 using namespace repo::manipulator::modelutility;
 
 SceneCleaner::SceneCleaner(
-	const std::string                            &dbName,
-	const std::string                            &projectName,
-	repo::core::handler::AbstractDatabaseHandler *handler
-	)
-	: dbName(dbName)
-	, projectName(projectName)
-	, handler(handler)
+	const std::string                                      &dbName,
+	const std::string                                      &projectName,
+	repo::core::handler::AbstractDatabaseHandler           *handler,
+	repo::core::handler::fileservice::AbstractFileHandler  *fileHandler) :
+	dbName(dbName),
+	projectName(projectName),
+	handler(handler),
+	fileHandler(fileHandler)
 {
 }
 
@@ -72,7 +73,7 @@ bool SceneCleaner::cleanUpRevision(
 		//corrupted selection tree, try to regenerate it
 		if (!scene)
 			scene = manager.fetchScene(handler, dbName, projectName, revID, false);
-		success = manager.generateAndCommitSelectionTree(scene, handler);
+		success = manager.generateAndCommitSelectionTree(scene, handler, fileHandler);
 
 		break;
 	default:

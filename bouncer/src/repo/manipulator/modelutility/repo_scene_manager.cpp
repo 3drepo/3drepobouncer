@@ -27,18 +27,18 @@
 using namespace repo::manipulator::modelutility;
 
 bool SceneManager::commitWebBuffers(
-	repo::core::model::RepoScene                 *scene,
-	const std::string                            &geoStashExt,
-	const repo_web_buffers_t                     &resultBuffers,
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	const bool                                    addTimestampToSettings)
+	repo::core::model::RepoScene                          *scene,
+	const std::string                                     &geoStashExt,
+	const repo_web_buffers_t                              &resultBuffers,
+	repo::core::handler::AbstractDatabaseHandler          *handler,
+	repo::core::handler::fileservice::AbstractFileHandler *fileHandler,
+	const bool                                            addTimestampToSettings)
 {
 	bool success = true;
 	std::string jsonStashExt = scene->getJSONExtension();
 	std::string databaseName = scene->getDatabaseName();
 	std::string projectName = scene->getProjectName();
 
-	repo::core::handler::fileservice::AbstractFileHandler *fileHandler = repo::core::handler::fileservice::S3FileHandler::getHandler();
 	//Upload the files
 	for (const auto &bufferPair : resultBuffers.geoFiles)
 	{
@@ -299,10 +299,11 @@ bool SceneManager::generateStashGraph(
 }
 
 bool SceneManager::generateWebViewBuffers(
-	repo::core::model::RepoScene                 *scene,
-	const repo::manipulator::modelconvertor::WebExportType          &exType,
-	repo_web_buffers_t                           &resultBuffers,
-	repo::core::handler::AbstractDatabaseHandler *handler)
+	repo::core::model::RepoScene                           *scene,
+	const repo::manipulator::modelconvertor::WebExportType &exType,
+	repo_web_buffers_t                                     &resultBuffers,
+	repo::core::handler::AbstractDatabaseHandler           *handler,
+	repo::core::handler::fileservice::AbstractFileHandler  *fileHandler)
 {
 	bool success = false;
 	if (success = (scene&& scene->isRevisioned()))
@@ -333,7 +334,7 @@ bool SceneManager::generateWebViewBuffers(
 		{
 			if (toCommit)
 			{
-				success = commitWebBuffers(scene, geoStashExt, resultBuffers, handler);
+				success = commitWebBuffers(scene, geoStashExt, resultBuffers, handler, fileHandler);
 			}
 		}
 		else
@@ -366,9 +367,9 @@ repo_web_buffers_t SceneManager::generateGLTFBuffer(
 }
 
 bool SceneManager::generateAndCommitSelectionTree(
-	repo::core::model::RepoScene                 *scene,
-	repo::core::handler::AbstractDatabaseHandler *handler
-	)
+	repo::core::model::RepoScene                           *scene,
+	repo::core::handler::AbstractDatabaseHandler           *handler,
+	repo::core::handler::fileservice::AbstractFileHandler  *fileHandler)
 {
 	bool success = false;
 	if (success = scene && scene->isRevisioned() && handler)
@@ -379,7 +380,6 @@ bool SceneManager::generateAndCommitSelectionTree(
 
 		if (success = buffer.size())
 		{
-			repo::core::handler::fileservice::AbstractFileHandler *fileHandler = repo::core::handler::fileservice::S3FileHandler::getHandler();
 			std::string databaseName = scene->getDatabaseName();
 			std::string projectName = scene->getProjectName();
 			std::string errMsg;
