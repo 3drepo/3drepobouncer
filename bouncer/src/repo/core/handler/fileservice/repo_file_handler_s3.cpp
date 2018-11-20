@@ -62,9 +62,14 @@ bool S3FileHandler::deleteFile(
 {
 	const Aws::String awsKeyName = keyName.c_str();
 
+	Aws::Client::ClientConfiguration clientConfig;
+	if (!awsBucketRegion.empty())
+		clientConfig.region = awsBucketRegion;
+	clientConfig.scheme = Aws::Http::Scheme::HTTPS;
+
 	repoTrace << "Deleting " << awsKeyName << " from S3 bucket: " << awsBucketName;
 
-	Aws::S3::S3Client s3Client;
+	Aws::S3::S3Client s3Client(clientConfig);
 
 	Aws::S3::Model::DeleteObjectRequest objectRequest;
 	objectRequest.WithBucket(awsBucketName).WithKey(awsKeyName);
@@ -87,7 +92,35 @@ bool S3FileHandler::deleteFileAndRef(
 	const std::string                            &collectionNamePrefix,
 	const std::string                            &fileName)
 {
-	return true;
+	bool success = true;
+
+	repo::core::model::RepoBSON criteria = BSON(REPO_LABEL_ID << cleanFileName(fileName));
+	repo::core::model::RepoBSON bson = handler->findOneByCriteria(
+			databaseName,
+			collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
+			criteria);
+
+	if (bson.isEmpty())
+	{
+		repoTrace << "Failed: cannot find file ref "
+			<< cleanFileName(fileName) << " from "
+			<< databaseName << "/"
+			<< collectionNamePrefix << "." << REPO_COLLECTION_EXT_REF;
+		success = false;
+	}
+	else
+	{
+		std::string keyName = bson.getField(REPO_REF_LABEL_LINK).str();
+
+		success = deleteFile(keyName) &&
+			AbstractFileHandler::dropFileRef(
+					handler,
+					bson,
+					databaseName,
+					collectionNamePrefix);
+	}
+
+	return success;
 }
 
 S3FileHandler* S3FileHandler::getHandler(

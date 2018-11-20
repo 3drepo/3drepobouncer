@@ -24,7 +24,6 @@
 
 #include "../../model/repo_model_global.h"
 #include "../../model/bson/repo_bson_builder.h"
-#include "../../model/bson/repo_bson_ref.h"
 
 using namespace repo::core::handler::fileservice;
 
@@ -41,6 +40,29 @@ std::string AbstractFileHandler::cleanFileName(
 		result = std::regex_replace(fileName, matchAllSlahes, "");
 
 	return result;
+}
+
+bool AbstractFileHandler::dropFileRef(
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	const repo::core::model::RepoBSON            bson,
+	const std::string                            &databaseName,
+	const std::string                            &collectionNamePrefix)
+{
+	std::string errMsg;
+	bool success = true;
+
+	std::string collectionName = collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF;
+
+	if (success &= handler->dropDocument(bson, databaseName, collectionName, errMsg))
+	{
+		repoInfo << "File ref for " << collectionName << " dropped.";
+	}
+	else
+	{
+		repoError << "Failed to drop " << collectionName << " file ref: " << errMsg;;
+	}
+
+	return success;
 }
 
 bool AbstractFileHandler::upsertFileRef(

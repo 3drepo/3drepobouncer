@@ -63,7 +63,7 @@ bool SceneCleaner::cleanUpRevision(
 		if (!scene)
 			scene = manager.fetchScene(handler, dbName, projectName, revID, false);
 		repo_web_buffers_t buffers;
-		if (!(success = manager.generateWebViewBuffers(scene, repo::manipulator::modelconvertor::WebExportType::SRC, buffers, handler)))
+		if (!(success = manager.generateWebViewBuffers(scene, repo::manipulator::modelconvertor::WebExportType::SRC, buffers, handler, fileHandler)))
 		{
 			//generate the rest if it is successful, only break if it failed
 			break;

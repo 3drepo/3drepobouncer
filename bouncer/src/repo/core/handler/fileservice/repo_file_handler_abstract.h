@@ -21,6 +21,8 @@
 
 #include "../repo_database_handler_abstract.h"
 
+#include "../../model/bson/repo_bson_ref.h"
+
 namespace repo{
 	namespace core{
 		namespace handler{
@@ -75,6 +77,15 @@ namespace repo{
 					 */
 					virtual bool deleteFile(
 						const std::string &fileName) = 0;
+
+					/**
+					 * Remove ref entry for file to database.
+					 */
+					bool dropFileRef(
+						repo::core::handler::AbstractDatabaseHandler *handler,
+						const repo::core::model::RepoBSON            bson,
+						const std::string                            &databaseName,
+						const std::string                            &collectionNamePrefix);
 
 					/**
 					 * Upload file.

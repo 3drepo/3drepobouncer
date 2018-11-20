@@ -22,8 +22,6 @@
 #pragma once
 
 #include <string>
-//#include <iostream>
-//#include <sstream>
 
 #include <aws/core/Aws.h>
 #include <aws/s3/S3Client.h>
