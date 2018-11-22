@@ -325,6 +325,9 @@ bool SceneManager::generateWebViewBuffers(
 			geoStashExt = scene->getSRCExtension();
 			resultBuffers = generateSRCBuffer(scene);
 			break;
+		case repo::manipulator::modelconvertor::WebExportType::UNITY:
+			repoInfo << "Skipping buffer generation for Unity assets";
+			return true;
 		default:
 			repoError << "Unknown export type with enum:  " << (uint16_t)exType;
 			return false;

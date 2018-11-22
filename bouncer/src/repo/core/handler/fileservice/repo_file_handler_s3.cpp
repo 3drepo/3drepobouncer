@@ -20,8 +20,6 @@
  */
 
 #include <aws/core/utils/memory/stl/AWSString.h>
-#include <aws/core/utils/logging/DefaultLogSystem.h>
-#include <aws/core/utils/logging/AWSLogging.h>
 
 #include "repo_file_handler_s3.h"
 
@@ -42,9 +40,6 @@ S3FileHandler* S3FileHandler::handler = NULL;
 S3FileHandler::S3FileHandler() :
 	AbstractFileHandler()
 {
-	Aws::Utils::Logging::InitializeAWSLogging(
-			Aws::MakeShared<Aws::Utils::Logging::DefaultLogSystem>(
-				"RunUnitTests", Aws::Utils::Logging::LogLevel::Trace, "aws_sdk_"));
 	Aws::InitAPI(options);
 }
 
@@ -54,7 +49,6 @@ S3FileHandler::S3FileHandler() :
 S3FileHandler::~S3FileHandler()
 {
 	Aws::ShutdownAPI(options);
-	Aws::Utils::Logging::ShutdownAWSLogging();
 }
 
 bool S3FileHandler::deleteFile(

@@ -70,6 +70,21 @@ namespace repo{
 					const repo::core::model::RepoBSON &idArray);
 
 				/**
+				* Given a list of IDs in BSON format and collection name,
+				* remove file references
+				*/
+				void removeCollectionFiles(
+					const std::vector<std::string> &documentIds,
+					const std::string &collection);
+
+				/**
+				* Given a list of IDs in BSON format, find all of its file references and
+				* remove them
+				*/
+				void removeAllFiles(
+					const std::vector<std::string> &documentIds);
+
+				/**
 				* Remove the revision given from the database
 				* @param revNode revision bson
 				*/
