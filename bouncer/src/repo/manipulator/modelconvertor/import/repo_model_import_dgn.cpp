@@ -32,7 +32,7 @@ repo::core::model::RepoScene* DgnModelImport::generateRepoScene()
 	repoInfo << "Constructing Repo Scene...";
 	const repo::core::model::RepoNodeSet dummy;
 	auto meshSet = geoCollector.getMeshNodes();
-	if (!meshSet.size()) {
+	if (meshSet.size()) {
 		repoInfo << "Get material nodes... ";
 		auto matSet =  geoCollector.getMaterialNodes();
 		auto transSet = geoCollector.getTransformationNodes();
