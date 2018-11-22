@@ -96,44 +96,6 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::init(
 /**
  * TODO: deprecate
  */
-RepoController::RepoToken* RepoController::_RepoControllerImpl::authenticateToAdminDatabaseMongo(
-	std::string       &errMsg,
-	const std::string &address,
-	const int         &port,
-	const std::string &username,
-	const std::string &password,
-	const bool        &pwDigested
-	)
-{
-	manipulator::RepoManipulator* worker = workerPool.pop();
-
-	core::model::RepoBSON* cred = 0;
-	RepoToken *token = 0;
-
-	std::string dbFullAd = address + ":" + std::to_string(port);
-
-	bool success = worker->connectAndAuthenticateWithAdmin(errMsg, address, port,
-		numDBConnections, username, password, pwDigested);
-
-	if (success && !username.empty())
-		cred = worker->createCredBSON("admin", username, password, pwDigested);
-
-	if (success && (cred || username.empty()))
-	{
-		token = new RepoController::RepoToken(*cred, address, port, worker->getNameOfAdminDatabase(dbFullAd));
-		if (cred) delete cred;
-		repoInfo << "Successfully connected to the " << dbFullAd;
-		if (!username.empty())
-			repoInfo << username << " is authenticated to " << dbFullAd;
-	}
-
-	workerPool.push(worker);
-	return token;
-}
-
-/**
- * TODO: deprecate
- */
 RepoController::RepoToken* RepoController::_RepoControllerImpl::authenticateMongo(
 	std::string       &errMsg,
 	const std::string &address,

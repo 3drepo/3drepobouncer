@@ -188,26 +188,6 @@ public:
 		);
 
 	/**
-	 * TODO: deprecate
-	* Connect to a mongo database, authenticate by the admin database
-	* @param errMsg error message if failed
-	* @param address address of the database
-	* @param port port number
-	* @param username user login name
-	* @param password user password
-	* @param pwDigested is given password digested (default: false)
-	* @return returns a void pointer to a token
-	*/
-	RepoToken* authenticateToAdminDatabaseMongo(
-		std::string       &errMsg,
-		const std::string &address,
-		const int         &port,
-		const std::string &username,
-		const std::string &password,
-		const bool        &pwDigested = false
-		);
-
-	/**
 	* Disconnect the controller from a database connection
 	* and destroys the token
 	* FIXME: CURRENTLY NOT THREAD SAFE! POTENTIALLY DANGEROUS

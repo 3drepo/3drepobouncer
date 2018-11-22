@@ -57,21 +57,6 @@ RepoController::RepoToken* RepoController::init(
 	return impl->init(errMsg, address, port, username, password, bucketName, bucketRegion, pwDigested);
 }
 
-/**
- * TODO: deprecate
- */
-RepoController::RepoToken* RepoController::authenticateToAdminDatabaseMongo(
-	std::string       &errMsg,
-	const std::string &address,
-	const int         &port,
-	const std::string &username,
-	const std::string &password,
-	const bool        &pwDigested
-	)
-{
-	return impl->authenticateToAdminDatabaseMongo(errMsg, address, port, username, password, pwDigested);
-}
-
 RepoController::RepoToken* RepoController::authenticateMongo(
 	std::string       &errMsg,
 	const std::string &address,
