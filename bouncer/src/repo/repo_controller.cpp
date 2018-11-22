@@ -57,27 +57,6 @@ RepoController::RepoToken* RepoController::init(
 	return impl->init(errMsg, address, port, username, password, bucketName, bucketRegion, pwDigested);
 }
 
-RepoController::RepoToken* RepoController::authenticateMongo(
-	std::string       &errMsg,
-	const std::string &address,
-	const uint32_t    &port,
-	const std::string &dbName,
-	const std::string &username,
-	const std::string &password,
-	const bool        &pwDigested
-	)
-{
-	return impl->authenticateMongo(errMsg, address, port, dbName, username, password, pwDigested);
-}
-
-bool RepoController::authenticateMongo(
-	std::string                       &errMsg,
-	const RepoController::RepoToken   *token
-	)
-{
-	return impl->authenticateMongo(errMsg, token);
-}
-
 bool RepoController::cleanUp(
 	const RepoToken      *token,
 	const std::string                      &dbName,
@@ -85,11 +64,6 @@ bool RepoController::cleanUp(
 	)
 {
 	return impl->cleanUp(token, dbName, projectName);
-}
-
-bool RepoController::testConnection(const RepoController::RepoToken *token)
-{
-	return impl->testConnection(token);
 }
 
 bool RepoController::commitAssetBundleBuffers(
