@@ -21,9 +21,11 @@ fp = open(fileToModelIDs, "r")
 modelList = fp.readlines()
 fp.close()
 
-colsInModel = ["groups", "history", "history.chunks", "history.files", "issues", "scene",
+colsInModel = ["groups", "history", "history.ref", "history.chunks", "history.files",
+                "issues", "risks", "views", "scene",
                 "scene.files", "scene.chunks", "stash.3drepo", "stash.3drepo.chunks", "stash.3drepo.files",
-                "stash.json_mpc.chunks", "stash.json_mpc.files", "stash.unity3d.chunks", "stash.unity3d.files"] 
+                "stash.json_mpc.ref", "stash.json_mpc.chunks", "stash.json_mpc.files", "stash.unity3d",
+                "stash.unity3d.ref", "stash.unity3d.chunks", "stash.unity3d.files"]
 
 for model in modelList:
     model = model.replace('\n', '')
@@ -41,6 +43,6 @@ modelDirectory = "toy/" + fedID
 if not os.path.exists(modelDirectory):
     os.makedirs(modelDirectory)
 for ext in colsInFed:
-        cmd =  "mongoexport /host:" + dbAdd + " /port:" + dbPort + " /username:" + dbUsername + " /password:" + dbPassword + " /authenticationDatabase:admin /db:" + dbName + " /collection:" + fedID + "." + ext  + " /out:" + modelDirectory + "/" + ext + ".json";  
+        cmd =  "mongoexport /host:" + dbAdd + " /port:" + dbPort + " /username:" + dbUsername + " /password:" + dbPassword + " /authenticationDatabase:admin /db:" + dbName + " /collection:" + fedID + "." + ext  + " /out:" + modelDirectory + "/" + ext + ".json";
         os.system(cmd)
 
