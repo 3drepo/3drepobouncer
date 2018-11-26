@@ -32,6 +32,7 @@ if(DEFINED ENV{AWSSDK_ROOT})
 		find_library(libPathRelease${libName} NAMES ${libName}
 			PATHS
 			${AWSSDK_ROOT}/lib
+			${AWSSDK_ROOT}/bin
 			${AWSSDK_LIB_DIR}
 			)
 		set(AWSSDK_LIBRARIES_RELEASE ${AWSSDK_LIBRARIES_RELEASE} ${libPathRelease${libName}})
@@ -62,7 +63,7 @@ else(AWSSDK_INCLUDE_DIR AND AWSSDK_LIBRARIES)
 		)
 		set(AWSSDK_LIBRARIES_RELEASE ${AWSSDK_LIBRARIES_RELEASE} ${libPathRelease${libName}})
 	endforeach()
-	
+
 	set(AWSSDK_LIBRARIES
 		debug ${AWSSDK_LIBRARIES_RELEASE}
 		optimized ${AWSSDK_LIBRARIES_RELEASE}
@@ -76,7 +77,7 @@ if(AWSSDK_INCLUDE_DIR AND AWSSDK_LIBRARIES)
 	message(STATUS "AWSSDK installation found.")
 	message(STATUS "AWSSDK_INCLUDE_DIR: ${AWSSDK_INCLUDE_DIR}")
 	message(STATUS "AWSSDK_LIBRARIES: ${AWSSDK_LIBRARIES}")
-	
+
 else(AWSSDK_INCLUDE_DIR AND AWSSDK_LIBRARIES)
 	set(AWSSDK_FOUND FALSE)
 	message(STATUS "AWSSDK not found. Please set AWSSDK_ROOT to your installation directory")
