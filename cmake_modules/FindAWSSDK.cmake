@@ -27,12 +27,6 @@ if(DEFINED ENV{AWSSDK_ROOT})
 	message(STATUS "$AWSSDK_ROOT defined: ${AWSSDK_ROOT}")
 	find_path(AWSSDK_INCLUDE_DIR aws
 		${AWSSDK_ROOT}/include
-		${AWSSDK_ROOT}/include/aws
-		${AWSSDK_ROOT}/include/aws/core
-		${AWSSDK_ROOT}/include/aws/kms
-		${AWSSDK_ROOT}/include/aws/s3
-		${AWSSDK_ROOT}/include/aws/s3-encryption
-		${AWSSDK_ROOT}/include/aws/transfer
 		)
 	foreach(libName ${AWSSDK_LIB_NAMES})
 		find_library(libPathRelease${libName} NAMES ${libName}
