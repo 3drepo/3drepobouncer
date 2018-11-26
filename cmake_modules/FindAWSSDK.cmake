@@ -25,7 +25,7 @@ SET(AWSSDK_LIB_NAMES
 if(DEFINED ENV{AWSSDK_ROOT})
 	set(AWSSDK_ROOT $ENV{AWSSDK_ROOT})
 	message(STATUS "$AWSSDK_ROOT defined: ${AWSSDK_ROOT}")
-	find_path(AWSSDK_INCLUDE_DIR aws
+	find_path(AWSSDK_INCLUDE_DIR aws/core aws/kms aws/s3 aws/s3-encryption aws/transfer
 		${AWSSDK_ROOT}/include
 		)
 	foreach(libName ${AWSSDK_LIB_NAMES})
