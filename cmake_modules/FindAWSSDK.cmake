@@ -26,7 +26,6 @@ if(DEFINED ENV{AWSSDK_ROOT})
 	set(AWSSDK_ROOT $ENV{AWSSDK_ROOT})
 	message(STATUS "$AWSSDK_ROOT defined: ${AWSSDK_ROOT}")
 	find_path(AWSSDK_INCLUDE_DIR aws
-		PATHS
 		${AWSSDK_ROOT}/include
 		)
 	foreach(libName ${AWSSDK_LIB_NAMES})
