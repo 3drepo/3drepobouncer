@@ -90,7 +90,7 @@ if (ODA_SUPPORT)
 endif()
 
 #==================== AWS S3 SDK ======================
-find_package(AWSSDK REQUIRED COMPONENTS transfer s3-encryption)
+find_package(AWSSDK REQUIRED)
 if(NOT ${AWSSDK_FOUND})
 	message(FATAL_ERROR "Cannot find AWS SDK")
 endif()
