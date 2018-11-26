@@ -50,7 +50,6 @@ before_install:
     - ls teighaLinuxGCC4.9/Kernel/Include
     - echo ============ AWS SDK INSTALL =============
     - tar -zxf testData/bouncer/ext_libs/aws.tgz
-    - pwd
     - ls aws-install/include/aws/core
 
 install:
