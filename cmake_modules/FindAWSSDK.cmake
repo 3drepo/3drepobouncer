@@ -22,7 +22,7 @@ SET(AWSSDK_LIB_NAMES
 	aws-cpp-sdk-core aws-cpp-sdk-s3 aws-cpp-sdk-kms aws-cpp-sdk-s3-encryption aws-cpp-sdk-transfer
 )
 
-if(DEFINED ENV{AWDSDK_ROOT})
+if(DEFINED ENV{AWSSDK_ROOT})
 	set(AWSSDK_ROOT $ENV{AWSSDK_ROOT})
 	message(STATUS "$AWSSDK_ROOT defined: ${AWSSDK_ROOT}")
 	find_path(AWSSDK_INCLUDE_DIR aws
