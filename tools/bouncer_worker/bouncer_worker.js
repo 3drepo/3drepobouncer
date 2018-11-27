@@ -157,6 +157,8 @@
 				conf.bouncer.dbport + " " +
 				conf.bouncer.username + " " +
 				conf.bouncer.password + " " +
+				conf.aws.bucket_name + " " +
+				conf.aws.bucket_region + " test";
 				cmd;
 
 			let cmdArr = cmd.split(' ');
