@@ -59,15 +59,17 @@
 	function testClient(callback){
 		logger.info("Checking status of client...");
 
-		exec("AWS_ACCESS_KEY_ID=" + conf.aws.access_key_id +
-				" AWS_SECRET_ACCESS_KEY=" + conf.aws.secret_access_key + " " +
-				path.normalize(conf.bouncer.path) + " " +
+		const cmd = path.normalize(conf.bouncer.path) + " " +
 				conf.bouncer.dbhost + " " +
 				conf.bouncer.dbport + " " +
 				conf.bouncer.username + " " +
 				conf.bouncer.password + " " +
 				conf.aws.bucket_name + " " +
-				conf.aws.bucket_region + " test", function(error, stdout, stderr){
+				conf.aws.bucket_region + " test";
+		process.env['AWS_ACCESS_KEY_ID']= conf.aws.access_key_id;
+		process.env['AWS_SECRET_ACCESS_KEY']=  conf.aws.secret_access_key;
+
+		exec(cmd, function(error, stdout, stderr){
 			if(error !== null){
 				logger.error("bouncer call errored");
 				logger.debug(stdout);
@@ -85,7 +87,7 @@
 	function handleMessage(cmd, rid, callback){
 		// command start with importToy is handled here instead of passing it to bouncer
 		if(cmd.startsWith('importToy')){
-			
+
 			let args = cmd.split(' ');
 
 			let database = args[1];
@@ -117,7 +119,7 @@
 				} else {
 					exeCommand(`genStash ${database} ${model} tree all`, rid, callback);
 				}
-				
+
 			}).catch(err => {
 
 				logger.error("importToy module error");
@@ -135,21 +137,22 @@
 			exeCommand(cmd, rid, callback);
 		}
 
-	} 
+	}
 
 	function runBouncer(logDir, cmd,  callback)
 	{
 		let os = require('os');
 		let command = "";
-		
+
 		if(os.platform() === "win32")
 		{
-			
-			cmd = cmd.replace("/sharedData/", conf.rabbitmq.sharedDir);	
+
+			cmd = cmd.replace("/sharedData/", conf.rabbitmq.sharedDir);
 			process.env['REPO_LOG_DIR']= logDir ;
-			command = "AWS_ACCESS_KEY_ID=" + conf.aws.access_key_id +
-				" AWS_SECRET_ACCESS_KEY=" + conf.aws.secret_access_key + " " +
-				path.normalize(conf.bouncer.path) + " " +
+			process.env['AWS_ACCESS_KEY_ID']= conf.aws.access_key_id;
+			process.env['AWS_SECRET_ACCESS_KEY']=  conf.aws.secret_access_key;
+
+			command = path.normalize(conf.bouncer.path) + " " +
 				conf.bouncer.dbhost + " " +
 				conf.bouncer.dbport + " " +
 				conf.bouncer.username + " " +
@@ -171,9 +174,9 @@
   					});
 				});
 			}
-		}	
+		}
 		else
-		{	
+		{
 			command = "REPO_LOG_DIR=" + logDir + " " +
 				"AWS_ACCESS_KEY_ID=" + conf.aws.access_key_id +
 				" AWS_SECRET_ACCESS_KEY=" + conf.aws.secret_access_key + " " +
@@ -192,7 +195,7 @@
 		let cmdProject;
 		let cmdArr = cmd.split(' ');
 		let toyFed = false;
-			
+
 		// Extract database and project information from command
 		try{
 			switch(cmdArr[0]) {
@@ -232,7 +235,7 @@
 				project: cmdProject
 			}, false);
 		}
-			
+
 		exec(command, function(error, stdout, stderr){
 			let reply = {};
 			logger.debug(stdout);
@@ -257,10 +260,10 @@
 				console.log(error);
 				logger.info("Executed command: " + command, reply);
 				if(conf.unity && conf.unity.project && cmdArr[0] == "import")
-				{					
+				{
 					let commandArgs = cmdFile;
 					if(commandArgs && commandArgs.database && commandArgs.project)
-					{		
+					{
 
 						const unityCommand = "AWS_ACCESS_KEY_ID=" + conf.aws.access_key_id +
 							" AWS_SECRET_ACCESS_KEY=" + conf.aws.secret_access_key + " " +
@@ -304,7 +307,7 @@
 				else
 				{
 					if(toyFed) {
-						
+
 						const dbConfig = {
 							username: conf.bouncer.username,
 							password: conf.bouncer.password,
@@ -321,7 +324,7 @@
 							}, true);
 						});
 					} else {
-					
+
 						callback({
 							value: reply.value,
 							database: cmdDatabase,
@@ -386,7 +389,7 @@
 					ch.assertExchange(conf.rabbitmq.callback_queue, 'direct', { durable: true });
 					listenToQueue(ch, conf.rabbitmq.worker_queue, conf.rabbitmq.task_prefetch || 4);
 					listenToQueue(ch, conf.rabbitmq.model_queue, conf.rabbitmq.model_prefetch || 1);
-	
+
 				});
 			}
 		});
