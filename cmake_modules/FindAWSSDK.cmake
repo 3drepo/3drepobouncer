@@ -19,7 +19,7 @@
 #AWSSDK_LIBRARIES will point to the libraries
 
 SET(AWSSDK_LIB_NAMES
-	aws-cpp-sdk-core aws-cpp-sdk-events aws-cpp-sdk-s3 aws-cpp-sdk-kms aws-cpp-sdk-s3-encryption aws-cpp-sdk-transfer
+	aws-cpp-sdk-core aws-cpp-sdk-s3 aws-cpp-sdk-kms aws-cpp-sdk-s3-encryption aws-cpp-sdk-transfer
 )
 
 if(DEFINED ENV{AWSSDK_ROOT})
