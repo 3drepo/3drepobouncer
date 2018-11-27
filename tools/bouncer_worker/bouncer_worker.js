@@ -158,7 +158,7 @@
 				conf.bouncer.username + " " +
 				conf.bouncer.password + " " +
 				conf.aws.bucket_name + " " +
-				conf.aws.bucket_region +
+				conf.aws.bucket_region + " " +
 				cmd;
 
 			let cmdArr = cmd.split(' ');
