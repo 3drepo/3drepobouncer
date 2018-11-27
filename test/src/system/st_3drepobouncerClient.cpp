@@ -197,7 +197,7 @@ TEST(RepoClientTest, UploadTestInvalidDBConn)
 
 	//Test failing to connect to database
 	std::string db = "stUpload";
-	std::string failToConnect = produceUploadArgs("invalidAdd", 12345, db, "failConn", getSuccessFilePath());
+	std::string failToConnect = produceUploadArgs("invalidAdd", 12345, db, "failConn", "3drepo-sandbox", "eu-west-2", getSuccessFilePath());
 	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToConnect));
 	EXPECT_FALSE(projectExists(db, "failConn"));
 }
