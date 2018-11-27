@@ -17,7 +17,7 @@
 #pragma once
 #include "../../core/model/collection/repo_scene.h"
 #include "../../core/handler/repo_database_handler_abstract.h"
-#include "../../core/handler/fileservice/repo_file_handler_s3.h"
+#include "../../core/handler/fileservice/repo_file_handler_abstract.h"
 #include "../modelconvertor/export/repo_model_export_web.h"
 
 namespace repo{

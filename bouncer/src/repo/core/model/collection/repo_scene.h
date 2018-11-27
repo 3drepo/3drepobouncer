@@ -24,7 +24,7 @@
 #include <unordered_map>
 
 #include "../../handler/repo_database_handler_abstract.h"
-#include "../../handler/fileservice/repo_file_handler_s3.h"
+#include "../../handler/fileservice/repo_file_handler_abstract.h"
 #include "../bson/repo_node.h"
 #include "../bson/repo_node_revision.h"
 

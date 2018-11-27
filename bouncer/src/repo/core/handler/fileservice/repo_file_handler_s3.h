@@ -23,10 +23,6 @@
 
 #include <string>
 
-#include <aws/core/Aws.h>
-#include <aws/s3/S3Client.h>
-#include <aws/s3/model/DeleteObjectRequest.h>
-#include <aws/s3/model/PutObjectRequest.h>
 #include <iostream>
 #include <fstream>
 #include <boost/interprocess/streams/bufferstream.hpp>
@@ -62,7 +58,7 @@ namespace repo{
 					 * Set bucket and region to use on S3.
 					 */
 					void setBucket(
-						const std::string &bucketName,
+						const std::string &name,
 						const std::string &region
 						);
 
@@ -116,10 +112,8 @@ namespace repo{
 					 *	=================================== Private Fields ========================================
 					 */
 
-					Aws::String awsBucketName;
-					Aws::String awsBucketRegion;
-
-					Aws::SDKOptions options;
+					std::string bucketName;
+					std::string bucketRegion;
 
 					/*
 					 *	================================= Private Functions =======================================

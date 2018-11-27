@@ -18,7 +18,7 @@
 #include <string>
 #include "../../core/model/bson/repo_node_revision.h"
 #include "../../core/handler/repo_database_handler_abstract.h"
-#include "../../core/handler/fileservice/repo_file_handler_s3.h"
+#include "../../core/handler/fileservice/repo_file_handler_abstract.h"
 
 namespace repo{
 	namespace manipulator{

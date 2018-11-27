@@ -19,7 +19,11 @@
  *  AWS S3 handler
  */
 
+#include <aws/core/Aws.h>
 #include <aws/core/utils/memory/stl/AWSString.h>
+#include <aws/s3/model/DeleteObjectRequest.h>
+#include <aws/s3/model/PutObjectRequest.h>
+#include <aws/s3/S3Client.h>
 
 #include "repo_file_handler_s3.h"
 
@@ -40,6 +44,7 @@ S3FileHandler* S3FileHandler::handler = NULL;
 S3FileHandler::S3FileHandler() :
 	AbstractFileHandler()
 {
+	Aws::SDKOptions options;
 	Aws::InitAPI(options);
 }
 
@@ -48,6 +53,7 @@ S3FileHandler::S3FileHandler() :
  */
 S3FileHandler::~S3FileHandler()
 {
+	Aws::SDKOptions options;
 	Aws::ShutdownAPI(options);
 }
 
@@ -55,6 +61,8 @@ bool S3FileHandler::deleteFile(
 	const std::string &keyName)
 {
 	const Aws::String awsKeyName = keyName.c_str();
+	const Aws::String awsBucketName = bucketName.c_str();
+	const Aws::String awsBucketRegion = bucketRegion.c_str();
 
 	Aws::Client::ClientConfiguration clientConfig;
 	if (!awsBucketRegion.empty())
@@ -143,11 +151,11 @@ S3FileHandler* S3FileHandler::getHandler()
 }
 
 void S3FileHandler::setBucket(
-	const std::string &bucketName,
+	const std::string &name,
 	const std::string &region)
 {
-	awsBucketName = bucketName.c_str();
-	awsBucketRegion = region.c_str();
+	bucketName = name;
+	bucketRegion = region;
 }
 
 bool S3FileHandler::uploadFile(
@@ -156,6 +164,8 @@ bool S3FileHandler::uploadFile(
 	)
 {
 	const Aws::String awsKeyName = keyName.c_str();
+	const Aws::String awsBucketName = bucketName.c_str();
+	const Aws::String awsBucketRegion = bucketRegion.c_str();
 
 	Aws::Client::ClientConfiguration clientConfig;
 	if (!awsBucketRegion.empty())
