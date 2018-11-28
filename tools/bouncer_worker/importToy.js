@@ -354,7 +354,7 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 				}
 
 
-			}
-			);
+			});
+		});
 	}
 }
