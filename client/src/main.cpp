@@ -77,13 +77,13 @@ void logCommand(int argc, char* argv[])
 {
 	for (int i = minArgs - 1; i < argc; ++i)
 	{
-		if (i == minArgs - 1)
+		if (i == (minArgs - 1))
 		{
 			repoLog("Operation: " + std::string(argv[i]));
 		}
 		else
 		{
-			repoLog("Arg " + std::to_string(i) + ": " + std::string(argv[i]));
+			repoLog("Arg " + std::to_string(i - (minArgs - 1)) + ": " + std::string(argv[i]));
 		}
 	}
 }
