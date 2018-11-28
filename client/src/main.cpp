@@ -22,12 +22,14 @@ static const uint32_t minArgs = 8;  //exe address port username password bucketN
 
 void printHelp()
 {
-	std::cout << "Usage: 3drepobouncerClient <address> <port> <username> <password> <command> [<args>]" << std::endl;
+	std::cout << "Usage: 3drepobouncerClient <address> <port> <username> <password> <bucketName> <bucketRegion> <command> [<args>]" << std::endl;
 	std::cout << std::endl;
 	std::cout << "address\t\tAddress of database instance" << std::endl;
 	std::cout << "port\t\tPort of database instance" << std::endl;
 	std::cout << "username\tUsername to connect to database" << std::endl;
 	std::cout << "password\tPassword of user" << std::endl;
+	std::cout << "bucketName\tName of S3 bucket" << std::endl;
+	std::cout << "bucketRegion\tLocation of bucket" << std::endl;
 	std::cout << std::endl;
 	std::cout << "Supported Commands:" << std::endl;
 	std::cout << helpInfo() << std::endl;
@@ -81,7 +83,7 @@ void logCommand(int argc, char* argv[])
 		}
 		else
 		{
-			repoLog("Arg " + std::to_string(i - minArgs - 1) + ": " + std::string(argv[i]));
+			repoLog("Arg " + std::to_string(i) + ": " + std::string(argv[i]));
 		}
 	}
 }
