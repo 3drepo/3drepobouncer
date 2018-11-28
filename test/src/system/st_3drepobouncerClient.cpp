@@ -131,12 +131,16 @@ static std::string produceUploadArgs(
 	const std::string &password,
 	const std::string &database,
 	const std::string &project,
+	const std::string &bucketName,
+	const std::string &bucketRegion,
 	const std::string &filePath)
 {
 	return  getClientExePath() + " " + dbAdd + " "
 		+ std::to_string(port) + " "
 		+ username + " "
-		+ password
+		+ password + " "
+		+ bucketName + " "
+		+ bucketRegion
 		+ " import \""
 		+ filePath + "\" "
 		+ database + " " + project;
@@ -197,7 +201,7 @@ TEST(RepoClientTest, UploadTestInvalidDBConn)
 
 	//Test failing to connect to database
 	std::string db = "stUpload";
-	std::string failToConnect = produceUploadArgs("invalidAdd", 12345, db, "failConn", "3drepo-sandbox", "eu-west-2", getSuccessFilePath());
+	std::string failToConnect = produceUploadArgs("invalidAdd", 12345, db, "failConn", "invalidBucket", "inavlidRegion", getSuccessFilePath());
 	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToConnect));
 	EXPECT_FALSE(projectExists(db, "failConn"));
 }
@@ -208,7 +212,7 @@ TEST(RepoClientTest, UploadTestBadDBAuth)
 	std::string db = "stUpload";
 
 	//Test Bad authentication
-	std::string failToAuth = produceUploadArgs("blah", "blah", db, "failAuth", getSuccessFilePath());
+	std::string failToAuth = produceUploadArgs("blah", "blah", db, "failAuth", "blah", "blah", getSuccessFilePath());
 	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToAuth));
 	EXPECT_FALSE(projectExists(db, "failAuth"));
 
