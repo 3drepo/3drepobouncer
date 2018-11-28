@@ -267,9 +267,9 @@
 					if(commandArgs && commandArgs.database && commandArgs.project)
 					{
 
-						const unityCommand = "AWS_ACCESS_KEY_ID=" + conf.aws.access_key_id +
-							" AWS_SECRET_ACCESS_KEY=" + conf.aws.secret_access_key + " " +
-							conf.unity.batPath + " " +
+						process.env['AWS_ACCESS_KEY_ID']= conf.aws.access_key_id;
+						process.env['AWS_SECRET_ACCESS_KEY']=  conf.aws.secret_access_key;
+						const unityCommand = conf.unity.batPath + " " +
 							conf.unity.project + " " +
 							conf.bouncer.dbhost + " " +
 							conf.bouncer.dbport + " " +
