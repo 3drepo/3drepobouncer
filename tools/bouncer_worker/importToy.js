@@ -332,7 +332,7 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 	){
 		return new Promise((resolve, reject) => {
 
-			const collection = db.collection(`${model}.stash.unity`);
+			const collection = db.collection(`${model}.stash.unity3d`);
 			const promises = [];
 			collection.find().forEach(entry => {
 				entry.database = database;
