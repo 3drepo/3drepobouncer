@@ -22,6 +22,7 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 
 	const mongodb = require('mongodb');
 	const MongoClient = mongodb.MongoClient;
+	const GridFSBucket = mongodb.GridFSBucket
 	const fs = require('fs');
 	skipPostProcessing = skipPostProcessing || {};
 
@@ -33,6 +34,7 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 
 		db = _db.db(database);
 		return importJSON();
+	}).then(() => {
 
 		const promises = [];
 
@@ -40,7 +42,7 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 			promises.push(renameStash(db, `${project}.stash.json_mpc`));
 			promises.push(renameStash(db, `${project}.stash.src`));
 			promises.push(renameStash(db, `${project}.stash.unity3d`));
-			promises.push(renameUnityAssetList(db, project));
+			promises.push(renameUnityAssetList(db, database, project));
 		}
 
 		if(!skipPostProcessing.history)
@@ -343,6 +345,12 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 					const dirArr = oldDir.split("/");
 					entry.jsonFiles[i] = prefix + dirArr[dirArr.length - 1];
 				}
+				for(let i = 0; i < entry.assets.length; ++i) {
+                	const oldDir = entry.assets[i];
+                    const dirArr = oldDir.split("/");
+                    entry.assets[i] = prefix + dirArr[dirArr.length - 1];
+				}
+
 				promises.push(collection.updateOne({_id: entry._id}, entry));
 			}, (err) => {
 				if(err)
