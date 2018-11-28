@@ -157,8 +157,9 @@ static std::string produceUploadArgs(
 {
 	return produceUploadArgs(dbAdd, port,
 		username, password,
+		database, project,
 		REPO_GTEST_S3_BUCKET, REPO_GTEST_S3_REGION,
-		database, project, filePath);
+		filePath);
 }
 
 static std::string produceUploadArgs(
