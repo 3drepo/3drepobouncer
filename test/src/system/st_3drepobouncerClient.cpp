@@ -46,7 +46,9 @@ static std::string produceCleanArgs(
 		+ std::to_string(port) + " "
 		+ username + " "
 		+ password + " "
-		+ "clean "
+		+ REPO_GTEST_S3_BUCKET + " "
+		+ REPO_GTEST_S3_REGION
+		+ " clean "
 		+ database + " "
 		+ project;
 }
@@ -65,7 +67,9 @@ static std::string produceGenStashArgs(
 		+ std::to_string(port) + " "
 		+ username + " "
 		+ password + " "
-		+ "genStash "
+		+ REPO_GTEST_S3_BUCKET + " "
+		+ REPO_GTEST_S3_REGION
+		+ " genStash "
 		+ database + " "
 		+ project + " "
 		+ type;
@@ -85,7 +89,9 @@ static std::string produceGetFileArgs(
 		+ std::to_string(port) + " "
 		+ username + " "
 		+ password + " "
-		+ "getFile "
+		+ REPO_GTEST_S3_BUCKET + " "
+		+ REPO_GTEST_S3_REGION
+		+ " getFile "
 		+ database + " "
 		+ project + " \""
 		+ file + "\"";
@@ -104,7 +110,9 @@ static std::string produceCreateFedArgs(
 		+ std::to_string(port) + " "
 		+ username + " "
 		+ password + " "
-		+ "genFed \""
+		+ REPO_GTEST_S3_BUCKET + " "
+		+ REPO_GTEST_S3_REGION
+		+ " genFed \""
 		+ file + "\" "
 		+ owner;
 }
@@ -119,7 +127,9 @@ static std::string produceUploadFileArgs(
 	return  getClientExePath() + " " + dbAdd + " "
 		+ std::to_string(port) + " "
 		+ username + " "
-		+ password
+		+ password + " "
+		+ REPO_GTEST_S3_BUCKET + " "
+		+ REPO_GTEST_S3_REGION
 		+ " import -f \""
 		+ filePath + "\"";
 }
