@@ -88,14 +88,17 @@ bool SceneManager::commitWebBuffers(
 	}
 
 	std::string errMsg;
-	if (REPO_COLLECTION_STASH_UNITY == geoStashExt && success &= handler->upsertDocument(databaseName, projectName + "." + geoStashExt, resultBuffers.unityAssets,
+	if (REPO_COLLECTION_STASH_UNITY == geoStashExt)
+	{
+	       if (success &= handler->upsertDocument(databaseName, projectName + "." + geoStashExt, resultBuffers.unityAssets,
 			true, errMsg))
-	{
-		repoInfo << "Unity assets list added successfully.";
-	}
-	else
-	{
-		repoError << "Failed to add Unity assets list: " << errMsg;;
+		{
+			repoInfo << "Unity assets list added successfully.";
+		}
+		else
+		{
+			repoError << "Failed to add Unity assets list: " << errMsg;;
+		}
 	}
 
 	if (success)
