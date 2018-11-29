@@ -20,6 +20,7 @@
 #include <repo/repo_controller.h>
 #include <repo/error_codes.h>
 #include "../repo_test_database_info.h"
+#include "../repo_test_fileservice_info.h"
 #include "../repo_test_utils.h"
 
 using namespace repo;
@@ -36,8 +37,8 @@ static RepoController::RepoToken* getToken()
 {
 	auto controller = getController();
 	std::string errMsg;
-	return controller->authenticateToAdminDatabaseMongo(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
-		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+	return controller->init(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+		REPO_GTEST_DBUSER, REPO_GTEST_DBPW, REPO_GTEST_S3_BUCKET, REPO_GTEST_S3_REGION);
 }
 
 TEST(RepoControllerTest, CommitScene){

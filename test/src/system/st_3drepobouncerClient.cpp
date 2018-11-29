@@ -46,7 +46,9 @@ static std::string produceCleanArgs(
 		+ std::to_string(port) + " "
 		+ username + " "
 		+ password + " "
-		+ "clean "
+		+ REPO_GTEST_S3_BUCKET + " "
+		+ REPO_GTEST_S3_REGION
+		+ " clean "
 		+ database + " "
 		+ project;
 }
@@ -65,7 +67,9 @@ static std::string produceGenStashArgs(
 		+ std::to_string(port) + " "
 		+ username + " "
 		+ password + " "
-		+ "genStash "
+		+ REPO_GTEST_S3_BUCKET + " "
+		+ REPO_GTEST_S3_REGION
+		+ " genStash "
 		+ database + " "
 		+ project + " "
 		+ type;
@@ -85,7 +89,9 @@ static std::string produceGetFileArgs(
 		+ std::to_string(port) + " "
 		+ username + " "
 		+ password + " "
-		+ "getFile "
+		+ REPO_GTEST_S3_BUCKET + " "
+		+ REPO_GTEST_S3_REGION
+		+ " getFile "
 		+ database + " "
 		+ project + " \""
 		+ file + "\"";
@@ -104,7 +110,9 @@ static std::string produceCreateFedArgs(
 		+ std::to_string(port) + " "
 		+ username + " "
 		+ password + " "
-		+ "genFed \""
+		+ REPO_GTEST_S3_BUCKET + " "
+		+ REPO_GTEST_S3_REGION
+		+ " genFed \""
 		+ file + "\" "
 		+ owner;
 }
@@ -119,7 +127,9 @@ static std::string produceUploadFileArgs(
 	return  getClientExePath() + " " + dbAdd + " "
 		+ std::to_string(port) + " "
 		+ username + " "
-		+ password
+		+ password + " "
+		+ REPO_GTEST_S3_BUCKET + " "
+		+ REPO_GTEST_S3_REGION
 		+ " import -f \""
 		+ filePath + "\"";
 }
@@ -131,15 +141,35 @@ static std::string produceUploadArgs(
 	const std::string &password,
 	const std::string &database,
 	const std::string &project,
+	const std::string &bucketName,
+	const std::string &bucketRegion,
 	const std::string &filePath)
 {
 	return  getClientExePath() + " " + dbAdd + " "
 		+ std::to_string(port) + " "
 		+ username + " "
-		+ password
+		+ password + " "
+		+ bucketName + " "
+		+ bucketRegion
 		+ " import \""
 		+ filePath + "\" "
 		+ database + " " + project;
+}
+
+static std::string produceUploadArgs(
+	const std::string &dbAdd,
+	const int         &port,
+	const std::string &username,
+	const std::string &password,
+	const std::string &database,
+	const std::string &project,
+	const std::string &filePath)
+{
+	return produceUploadArgs(dbAdd, port,
+		username, password,
+		database, project,
+		REPO_GTEST_S3_BUCKET, REPO_GTEST_S3_REGION,
+		filePath);
 }
 
 static std::string produceUploadArgs(
@@ -435,8 +465,8 @@ TEST(RepoClientTest, GenStashTest)
 	repo::RepoController *controller = new repo::RepoController();
 	std::string errMsg;
 	repo::RepoController::RepoToken *token =
-		controller->authenticateToAdminDatabaseMongo(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
-		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+		controller->init(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+		REPO_GTEST_DBUSER, REPO_GTEST_DBPW, REPO_GTEST_S3_BUCKET, REPO_GTEST_S3_REGION);
 	repo::lib::RepoUUID stashRoot;
 	if (token)
 	{
@@ -482,8 +512,8 @@ TEST(RepoClientTest, CleanTest)
 	EXPECT_EQ((int)REPOERR_OK, runProcess(produceCleanArgs("sampleDataRW", "nonExistentbadfsd")));
 
 	EXPECT_FALSE(projectHasValidRevision("sampleDataRW", "cleanTest1"));
-	EXPECT_TRUE(projectHasValidRevision("sampleDataRW", "cleanTest2"));
-	EXPECT_TRUE(projectHasValidRevision("sampleDataRW", "cleanTest3"));
-	EXPECT_TRUE(projectHasValidRevision("sampleDataRW", "cleanTest4"));
+	EXPECT_FALSE(projectHasValidRevision("sampleDataRW", "cleanTest2")); // FIXME: change dump?
+	EXPECT_FALSE(projectHasValidRevision("sampleDataRW", "cleanTest3")); // FIXME: change dump?
+	EXPECT_FALSE(projectHasValidRevision("sampleDataRW", "cleanTest4")); // FIXME: change dump?
 	EXPECT_TRUE(projectHasValidRevision("sampleDataRW", "cleanTest5"));
 }

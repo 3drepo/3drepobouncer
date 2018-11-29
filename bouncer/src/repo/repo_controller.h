@@ -72,48 +72,19 @@ namespace repo{
 			* @param errMsg error message if failed
 			* @param address address of the database
 			* @param port port number
-			* @param dbName name of the database within mongo to connect to
 			* @param username user login name
 			* @param password user password
 			* @param pwDigested is given password digested (default: false)
 			* @return returns a void pointer to a token
 			*/
-		RepoToken* authenticateMongo(
-			std::string       &errMsg,
-			const std::string &address,
-			const uint32_t    &port,
-			const std::string &dbName,
-			const std::string &username,
-			const std::string &password,
-			const bool        &pwDigested = false
-			);
-
-		/**
-		* Connect to a mongo database, authenticate by the admin database
-		* @param errMsg error message if failed
-		* @param token authentication token
-		*/
-		bool authenticateMongo(
-			std::string       &errMsg,
-			const RepoToken   *token
-			);
-
-		/**
-			* Connect to a mongo database, authenticate by the admin database
-			* @param errMsg error message if failed
-			* @param address address of the database
-			* @param port port number
-			* @param username user login name
-			* @param password user password
-			* @param pwDigested is given password digested (default: false)
-			* @return returns a void pointer to a token
-			*/
-		RepoToken* authenticateToAdminDatabaseMongo(
+		RepoToken* init(
 			std::string       &errMsg,
 			const std::string &address,
 			const int         &port,
 			const std::string &username,
 			const std::string &password,
+			const std::string &bucketName,
+			const std::string &bucketRegion,
 			const bool        &pwDigested = false
 			);
 
@@ -124,14 +95,6 @@ namespace repo{
 			* @param token token to the database
 			*/
 		void disconnectFromDatabase(const RepoToken* token);
-
-		/**
-			 * Checks whether given credentials permit successful connection to a
-			 * given database.
-			 * @param token token
-			 * @return returns true if successful, false otherwise
-			 */
-		bool testConnection(const RepoToken *token);
 
 		/*
 		*	------------- Token operations --------------
@@ -155,7 +118,9 @@ namespace repo{
 			const int         &port,
 			const std::string &dbName,
 			const std::string &username,
-			const std::string &password
+			const std::string &password,
+			const std::string &bucketName,
+			const std::string &bucketRegion
 			);
 
 		RepoToken* createToken(
@@ -163,6 +128,8 @@ namespace repo{
 			const std::string &address,
 			const int         &port,
 			const std::string &dbName,
+			const std::string &bucketName,
+			const std::string &bucketRegion,
 			const RepoController::RepoToken *token
 			);
 

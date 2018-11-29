@@ -37,6 +37,7 @@ See [3D Repo guide for compiling MongoDB](https://github.com/3drepo/3drepobounce
 See [3D Repo guide for compiling ASSIMP](https://github.com/3drepo/3drepobouncer/wiki/Compiling-ASSIMP)
 * [3D Repo IFCOpenShell Fork](https://github.com/3drepo/IfcOpenShell)
 This relies on 3D Repo's fork of [OCCT](https://github.com/3drepo/occt). See [3D Repo guide for compiling IFCOpenShell](https://github.com/3drepo/3drepobouncer/wiki/Compiling-IFCOpenShell)
+* [AWS SDK for C++](https://github.com/aws/aws-sdk-cpp)
 
 To compile and install the library, the following are used:
 * [Python v2.x](https://www.python.org/)

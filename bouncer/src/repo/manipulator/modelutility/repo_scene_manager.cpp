@@ -17,6 +17,7 @@
 #include "repo_scene_manager.h"
 
 #include "../../core/model/bson/repo_bson_builder.h"
+#include "../../core/model/bson/repo_bson_ref.h"
 #include "../modeloptimizer/repo_optimizer_multipart.h"
 #include "../modelconvertor/export/repo_model_export_gltf.h"
 #include "../modelconvertor/export/repo_model_export_src.h"
@@ -26,11 +27,12 @@
 using namespace repo::manipulator::modelutility;
 
 bool SceneManager::commitWebBuffers(
-	repo::core::model::RepoScene                 *scene,
-	const std::string                            &geoStashExt,
-	const repo_web_buffers_t                     &resultBuffers,
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	const bool                                    addTimestampToSettings)
+	repo::core::model::RepoScene                          *scene,
+	const std::string                                     &geoStashExt,
+	const repo_web_buffers_t                              &resultBuffers,
+	repo::core::handler::AbstractDatabaseHandler          *handler,
+	repo::core::handler::fileservice::AbstractFileHandler *fileHandler,
+	const bool                                            addTimestampToSettings)
 {
 	bool success = true;
 	std::string jsonStashExt = scene->getJSONExtension();
@@ -50,6 +52,15 @@ bool SceneManager::commitWebBuffers(
 		{
 			repoError << "Failed to add file  (" << bufferPair.first << "): " << errMsg;
 		}
+
+		if (success &= fileHandler->uploadFileAndCommit(handler, databaseName, projectName + "." + geoStashExt, bufferPair.first, bufferPair.second))
+		{
+			repoInfo << "File (" << bufferPair.first << ") added successfully to S3.";
+		}
+		else
+		{
+			repoError << "Failed to add file  (" << bufferPair.first << ") to S3: " << errMsg;
+		}
 	}
 
 	for (const auto &bufferPair : resultBuffers.jsonFiles)
@@ -65,17 +76,29 @@ bool SceneManager::commitWebBuffers(
 		{
 			repoError << "Failed to add file  (" << fileName << "): " << errMsg;
 		}
+
+		if (success &= fileHandler->uploadFileAndCommit(handler, databaseName, projectName + "." + jsonStashExt, bufferPair.first, bufferPair.second))
+		{
+			repoInfo << "File (" << fileName << ") added successfully to S3.";
+		}
+		else
+		{
+			repoError << "Failed to add file  (" << fileName << ") to S3: " << errMsg;
+		}
 	}
 
 	std::string errMsg;
-	if (success &= handler->insertDocument(databaseName, projectName + "." + geoStashExt, resultBuffers.unityAssets,
-			errMsg))
+	if (REPO_COLLECTION_STASH_UNITY == geoStashExt)
 	{
-		repoInfo << "Unity assets list added successfully.";
-	}
-	else
-	{
-		repoError << "Failed to add Unity assets list: " << errMsg;;
+	       if (success &= handler->upsertDocument(databaseName, projectName + "." + geoStashExt, resultBuffers.unityAssets,
+			true, errMsg))
+		{
+			repoInfo << "Unity assets list added successfully.";
+		}
+		else
+		{
+			repoError << "Failed to add Unity assets list: " << errMsg;;
+		}
 	}
 
 	if (success)
@@ -124,7 +147,7 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 			std::string errMsg;
 			if (scene->loadRevision(handler, errMsg))
 			{
-				repoInfo << "Loaded " <<
+				repoInfo << "Loaded" <<
 					(headRevision ? (" head revision of branch " + uuid.toString())
 					: (" revision " + uuid.toString()))
 					<< " of " << database << "." << project;
@@ -279,10 +302,11 @@ bool SceneManager::generateStashGraph(
 }
 
 bool SceneManager::generateWebViewBuffers(
-	repo::core::model::RepoScene                 *scene,
-	const repo::manipulator::modelconvertor::WebExportType          &exType,
-	repo_web_buffers_t                           &resultBuffers,
-	repo::core::handler::AbstractDatabaseHandler *handler)
+	repo::core::model::RepoScene                           *scene,
+	const repo::manipulator::modelconvertor::WebExportType &exType,
+	repo_web_buffers_t                                     &resultBuffers,
+	repo::core::handler::AbstractDatabaseHandler           *handler,
+	repo::core::handler::fileservice::AbstractFileHandler  *fileHandler)
 {
 	bool success = false;
 	if (success = (scene&& scene->isRevisioned()))
@@ -304,6 +328,9 @@ bool SceneManager::generateWebViewBuffers(
 			geoStashExt = scene->getSRCExtension();
 			resultBuffers = generateSRCBuffer(scene);
 			break;
+		case repo::manipulator::modelconvertor::WebExportType::UNITY:
+			repoInfo << "Skipping buffer generation for Unity assets";
+			return true;
 		default:
 			repoError << "Unknown export type with enum:  " << (uint16_t)exType;
 			return false;
@@ -313,7 +340,7 @@ bool SceneManager::generateWebViewBuffers(
 		{
 			if (toCommit)
 			{
-				success = commitWebBuffers(scene, geoStashExt, resultBuffers, handler);
+				success = commitWebBuffers(scene, geoStashExt, resultBuffers, handler, fileHandler);
 			}
 		}
 		else
@@ -346,9 +373,9 @@ repo_web_buffers_t SceneManager::generateGLTFBuffer(
 }
 
 bool SceneManager::generateAndCommitSelectionTree(
-	repo::core::model::RepoScene                 *scene,
-	repo::core::handler::AbstractDatabaseHandler *handler
-	)
+	repo::core::model::RepoScene                           *scene,
+	repo::core::handler::AbstractDatabaseHandler           *handler,
+	repo::core::handler::fileservice::AbstractFileHandler  *fileHandler)
 {
 	bool success = false;
 	if (success = scene && scene->isRevisioned() && handler)
@@ -376,6 +403,20 @@ bool SceneManager::generateAndCommitSelectionTree(
 				else
 				{
 					repoError << "Failed to add file  (" << fileName << "): " << errMsg;
+				}
+
+				if (handler && fileHandler->uploadFileAndCommit(
+							handler,
+							databaseName,
+							projectName + "." + scene->getJSONExtension(),
+							fileName,
+							file.second))
+				{
+					repoInfo << "File (" << fileName << ") added successfully to S3.";
+				}
+				else
+				{
+					repoError << "Failed to add file  (" << fileName << ") to S3: " << errMsg;
 				}
 			}
 		}
@@ -444,3 +485,4 @@ bool SceneManager::removeStashGraph(
 
 	return success;
 }
+

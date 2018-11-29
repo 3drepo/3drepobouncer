@@ -91,7 +91,8 @@
 #define REPO_COLLECTION_STASH_GLTF  "stash.gltf"
 #define REPO_COLLECTION_STASH_X3D   "stash.x3d"
 #define REPO_COLLECTION_STASH_JSON  "stash.json_mpc"
-#define REPO_COLLECTION_STASH_UNITY  "stash.unity3d"
+#define REPO_COLLECTION_STASH_UNITY "stash.unity3d"
+#define REPO_COLLECTION_EXT_REF     "ref"
 
 #define REPO_COLLECTION_SETTINGS            "settings"
 
@@ -110,6 +111,15 @@
 #define REPO_DEFAULT_PROJECT_SPEED              5.0
 #define REPO_DEFAULT_PROJECT_ZFAR               1000.0
 #define REPO_DEFAULT_PROJECT_ZNEAR              0.001
+
+#define REPO_DOCUMENT_ID_SUFFIX_FULLTREE        "fulltree.json"
+#define REPO_DOCUMENT_ID_SUFFIX_IDMAP           "idMap.json"
+#define REPO_DOCUMENT_ID_SUFFIX_IDTOMESHES      "idToMeshes.json"
+#define REPO_DOCUMENT_ID_SUFFIX_TREEPATH        "tree_path.json"
+#define REPO_DOCUMENT_ID_SUFFIX_UNITYASSETS     "unityAssets.json"
+#define REPO_DOCUMENT_ID_SUFFIX_UNITY_JSON      "_unity.json.mpc"
+#define REPO_DOCUMENT_ID_SUFFIX_UNITY3D         ".unity3d"
+#define REPO_DOCUMENT_ID_SUFFIX_UNITY3D_WIN     "_win64.unity3d"
 
 #define REPO_HISTORY_MASTER_BRANCH  "00000000-0000-0000-0000-000000000000"
 
@@ -175,4 +185,6 @@
 #define REPO_NODE_TYPE_TEXTURE			"texture"
 #define REPO_NODE_TYPE_TRANSFORMATION   "transformation"
 #define REPO_NODE_TYPE_UNKNOWN			"unknown" // reserved UUID ext 00
+//-----------------------------------------------------------------------------
+#define REPO_REF_TYPE_S3	"s3"
 //-----------------------------------------------------------------------------

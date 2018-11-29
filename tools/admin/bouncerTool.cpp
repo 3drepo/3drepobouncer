@@ -19,16 +19,18 @@
 #include <repo/lib/repo_listener_stdout.h>
 #include "functions.h"
 
-static const uint32_t minArgs = 6;  //exe address port username password command
+static const uint32_t minArgs = 8;  //exe address port username password bucketName bucketRegion command
 
 void printHelp()
 {
-	std::cout << "Usage: 3drepobouncerTool <address> <port> <username> <password> <command> [<args>]" << std::endl;
+	std::cout << "Usage: 3drepobouncerTool <address> <port> <username> <password> <bucketName> <bucketRegion> <command> [<args>]" << std::endl;
 	std::cout << std::endl;
 	std::cout << "address\t\tAddress of database instance" << std::endl;
 	std::cout << "port\t\tPort of database instance" << std::endl;
 	std::cout << "username\tUsername to connect to database" << std::endl;
 	std::cout << "password\tPassword of user" << std::endl;
+	std::cout << "bucketName\tName of AWS S3 bucket" << std::endl;
+	std::cout << "bucketRegion\tRegion of S3 bucket" << std::endl;
 	std::cout << std::endl;
 	std::cout << "Supported Commands:" << std::endl;
 	std::cout << helpInfo() << std::endl;
@@ -74,15 +76,15 @@ repo::RepoController* instantiateController()
 
 void logCommand(int argc, char* argv[])
 {
-	for (int i = 5; i < argc; ++i)
+	for (int i = minArgs - 1; i < argc; ++i)
 	{
-		if (i == 5)
+		if (i == minArgs - 1)
 		{
 			repoLog("Operation: " + std::string(argv[i]));
 		}
 		else
 		{
-			repoLog("Arg " + std::to_string(i - 5) + ": " + std::string(argv[i]));
+			repoLog("Arg " + std::to_string(i - minArgs - 1) + ": " + std::string(argv[i]));
 		}
 	}
 }
@@ -112,10 +114,12 @@ int main(int argc, char* argv[]){
 	int port = atoi(argv[2]);
 	std::string username = argv[3];
 	std::string password = argv[4];
+	std::string bucketName = argv[5];
+	std::string bucketRegion = argv[6];
 
 	logCommand(argc, argv);
 	repo_op_t op;
-	op.command = argv[5];
+	op.command = argv[7];
 	if (argc > minArgs)
 		op.args = &argv[minArgs];
 	op.nArgcs = argc - minArgs;
@@ -125,10 +129,10 @@ int main(int argc, char* argv[]){
 	if (cmdnArgs <= op.nArgcs)
 	{
 		std::string errMsg;
-		repo::RepoController::RepoToken* token = controller->authenticateToAdminDatabaseMongo(errMsg, address, port, username, password);
+		repo::RepoController::RepoToken* token = controller->init(errMsg, address, port, username, password, bucketName, bucketRegion);
 		if (token)
 		{
-			repoLog("successfully connected to the database!");
+			repoLog("successfully connected to the database and file service!");
 			int32_t errcode = performOperation(controller, token, op);
 
 			controller->destroyToken(token);

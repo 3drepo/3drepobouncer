@@ -43,37 +43,18 @@ void RepoController::addAlias(
 		token->alias = alias;
 }
 
-RepoController::RepoToken* RepoController::authenticateToAdminDatabaseMongo(
+RepoController::RepoToken* RepoController::init(
 	std::string       &errMsg,
 	const std::string &address,
 	const int         &port,
 	const std::string &username,
 	const std::string &password,
+	const std::string &bucketName,
+	const std::string &bucketRegion,
 	const bool        &pwDigested
 	)
 {
-	return impl->authenticateToAdminDatabaseMongo(errMsg, address, port, username, password, pwDigested);
-}
-
-RepoController::RepoToken* RepoController::authenticateMongo(
-	std::string       &errMsg,
-	const std::string &address,
-	const uint32_t    &port,
-	const std::string &dbName,
-	const std::string &username,
-	const std::string &password,
-	const bool        &pwDigested
-	)
-{
-	return impl->authenticateMongo(errMsg, address, port, dbName, username, password, pwDigested);
-}
-
-bool RepoController::authenticateMongo(
-	std::string                       &errMsg,
-	const RepoController::RepoToken   *token
-	)
-{
-	return impl->authenticateMongo(errMsg, token);
+	return impl->init(errMsg, address, port, username, password, bucketName, bucketRegion, pwDigested);
 }
 
 bool RepoController::cleanUp(
@@ -83,11 +64,6 @@ bool RepoController::cleanUp(
 	)
 {
 	return impl->cleanUp(token, dbName, projectName);
-}
-
-bool RepoController::testConnection(const RepoController::RepoToken *token)
-{
-	return impl->testConnection(token);
 }
 
 bool RepoController::commitAssetBundleBuffers(
@@ -122,10 +98,12 @@ RepoController::RepoToken* RepoController::createToken(
 	const int         &port,
 	const std::string &dbName,
 	const std::string &username,
-	const std::string &password
+	const std::string &password,
+	const std::string &bucketName,
+	const std::string &bucketRegion
 	)
 {
-	return impl->createToken(alias, address, port, dbName, username, password);
+	return impl->createToken(alias, address, port, dbName, username, password, bucketName, bucketRegion);
 }
 
 RepoController::RepoToken* RepoController::createToken(
@@ -133,10 +111,12 @@ RepoController::RepoToken* RepoController::createToken(
 	const std::string &address,
 	const int         &port,
 	const std::string &dbName,
+	const std::string &bucketName,
+	const std::string &bucketRegion,
 	const RepoController::RepoToken *token
 	)
 {
-	return impl->createToken(alias, address, port, dbName, token);
+	return impl->createToken(alias, address, port, dbName, bucketName, bucketRegion, token);
 }
 
 RepoController::RepoToken* RepoController::createTokenFromSerialised(

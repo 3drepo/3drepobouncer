@@ -15,6 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include "repo_scene_cleaner.h"
+#include "../../core/model/bson/repo_bson_builder.h"
 #include "../../core/model/bson/repo_node_revision.h"
 #include "../../core/model/collection/repo_scene.h"
 #include "repo_scene_manager.h"
@@ -22,13 +23,14 @@
 using namespace repo::manipulator::modelutility;
 
 SceneCleaner::SceneCleaner(
-	const std::string                            &dbName,
-	const std::string                            &projectName,
-	repo::core::handler::AbstractDatabaseHandler *handler
-	)
-	: dbName(dbName)
-	, projectName(projectName)
-	, handler(handler)
+	const std::string                                      &dbName,
+	const std::string                                      &projectName,
+	repo::core::handler::AbstractDatabaseHandler           *handler,
+	repo::core::handler::fileservice::AbstractFileHandler  *fileHandler) :
+	dbName(dbName),
+	projectName(projectName),
+	handler(handler),
+	fileHandler(fileHandler)
 {
 }
 
@@ -40,43 +42,10 @@ bool SceneCleaner::cleanUpRevision(
 	repo::core::model::RepoScene *scene = nullptr;
 	repo::lib::RepoUUID revID = revNode.getUniqueID();
 	SceneManager manager;
-	switch (status)
+	if (status != repo::core::model::RevisionNode::UploadStatus::COMPLETE)
 	{
-	case repo::core::model::RevisionNode::UploadStatus::GEN_DEFAULT:
-		//corrupted scene import, delete the revision
+		// upload incomplete, delete the revision
 		success = removeRevision(revNode);
-		break;
-	case repo::core::model::RevisionNode::UploadStatus::GEN_REPO_STASH:
-	{
-		//corrupted repo stash, try to regenerate it
-		scene = manager.fetchScene(handler, dbName, projectName, revID, false);
-		if (!(success = manager.generateStashGraph(scene, handler)))
-		{
-			//generate the rest if it is successful, only break if it failed
-			break;
-		}
-	}
-	case repo::core::model::RevisionNode::UploadStatus::GEN_WEB_STASH:
-	{
-		//corrupted web stash, try to regenerate it
-		if (!scene)
-			scene = manager.fetchScene(handler, dbName, projectName, revID, false);
-		repo_web_buffers_t buffers;
-		if (!(success = manager.generateWebViewBuffers(scene, repo::manipulator::modelconvertor::WebExportType::SRC, buffers, handler)))
-		{
-			//generate the rest if it is successful, only break if it failed
-			break;
-		}
-	}
-	case repo::core::model::RevisionNode::UploadStatus::GEN_SEL_TREE:
-		//corrupted selection tree, try to regenerate it
-		if (!scene)
-			scene = manager.fetchScene(handler, dbName, projectName, revID, false);
-		success = manager.generateAndCommitSelectionTree(scene, handler);
-
-		break;
-	default:
-		repoError << "Unrecognised upload status: " << (int)status;
 	}
 
 	return success;
@@ -88,6 +57,11 @@ bool SceneCleaner::execute()
 	if (!handler)
 	{
 		repoError << "Failed to instantiate scene cleaner: null pointer to the database!";
+	}
+
+	if (!fileHandler)
+	{
+		repoError << "Failed to instantiate scene cleaner: null pointer to the file service!";
 	}
 
 	if (!(success &= !(dbName.empty() || projectName.empty())))
@@ -128,8 +102,28 @@ void SceneCleaner::removeAllGridFSReference(
 		auto fnames = node.getFileList();
 		std::string errMsg;
 		for (const auto fname : fnames)
+		{
 			handler->dropRawFile(dbName, collection, fname.second, errMsg);
+		}
 	}
+}
+
+void SceneCleaner::removeCollectionFiles(
+	const std::vector<std::string> &documentIds,
+	const std::string &collection)
+{
+	for (const auto fname : documentIds)
+	{
+		fileHandler->deleteFileAndRef(handler, dbName, collection, fname);
+	}
+}
+
+void SceneCleaner::removeAllFiles(
+	const std::vector<std::string> &documentIds
+	)
+{
+	removeCollectionFiles(documentIds, projectName + "." + REPO_COLLECTION_STASH_JSON);
+	removeCollectionFiles(documentIds, projectName + "." + REPO_COLLECTION_STASH_UNITY);
 }
 
 bool SceneCleaner::removeRevision(
@@ -143,6 +137,28 @@ bool SceneCleaner::removeRevision(
 	auto gridFSCriteria = BSON(REPO_NODE_LABEL_ID << BSON("$in" << currentField) << REPO_LABEL_OVERSIZED_FILES << BSON("$exists" << true));
 	removeAllGridFSReference(gridFSCriteria);
 
+	core::model::RepoBSONBuilder builder;
+	builder.append(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_MESH);
+	builder.append(REPO_NODE_STASH_REF, revNode.getUniqueID());
+	auto revisionMeshes = handler->findAllByCriteria(dbName, projectName + "." + REPO_COLLECTION_STASH_REPO, builder.obj());
+
+	std::vector<std::string> documentIds;
+	documentIds.push_back("revision/" + revNode.getUniqueID().toString() + "/" + REPO_DOCUMENT_ID_SUFFIX_FULLTREE);
+	documentIds.push_back("revision/" + revNode.getUniqueID().toString() + "/" + REPO_DOCUMENT_ID_SUFFIX_IDMAP);
+	documentIds.push_back("revision/" + revNode.getUniqueID().toString() + "/" + REPO_DOCUMENT_ID_SUFFIX_IDTOMESHES);
+	documentIds.push_back("revision/" + revNode.getUniqueID().toString() + "/" + REPO_DOCUMENT_ID_SUFFIX_TREEPATH);
+	documentIds.push_back("revision/" + revNode.getUniqueID().toString() + "/" + REPO_DOCUMENT_ID_SUFFIX_UNITYASSETS);
+	for (const auto &mesh : revisionMeshes)
+	{
+		auto node = repo::core::model::RepoNode(mesh);
+		auto meshId = node.getUniqueID().toString();
+		documentIds.push_back(meshId + REPO_DOCUMENT_ID_SUFFIX_UNITY_JSON);
+		documentIds.push_back(meshId + REPO_DOCUMENT_ID_SUFFIX_UNITY3D);
+		documentIds.push_back(meshId + REPO_DOCUMENT_ID_SUFFIX_UNITY3D_WIN);
+	}
+
+	removeAllFiles(documentIds);
+
 	repo::core::model::RepoBSON criteria = BSON(REPO_NODE_LABEL_ID << BSON("$in" << currentField));
 	std::string errMsg;
 	//clean up scene
@@ -151,9 +167,13 @@ bool SceneCleaner::removeRevision(
 	//remove the original files attached to the revision
 	auto orgFileNames = revNode.getOrgFiles();
 	for (const auto &file : orgFileNames)
+	{
 		handler->dropRawFile(dbName, projectName + "." + REPO_COLLECTION_HISTORY, file, errMsg);
+		fileHandler->deleteFileAndRef(handler, dbName, projectName + "." + REPO_COLLECTION_HISTORY, file);
+	}
 	//delete the revision itself
 	handler->dropDocument(revNode, dbName, projectName + "." + REPO_COLLECTION_HISTORY, errMsg);
+
 	if (errMsg.empty())
 		return true;
 	else

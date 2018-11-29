@@ -520,6 +520,7 @@ void RepoScene::clearStash()
 
 bool RepoScene::commit(
 	repo::core::handler::AbstractDatabaseHandler *handler,
+	repo::core::handler::fileservice::AbstractFileHandler *fileHandler,
 	std::string &errMsg,
 	const std::string &userName,
 	const std::string &message,
@@ -555,7 +556,7 @@ bool RepoScene::commit(
 		if (!message.empty())
 			commitMsg = message;
 
-		if (success &= commitRevisionNode(handler, errMsg, newRevNode, userName, commitMsg, tag))
+		if (success &= commitRevisionNode(handler, fileHandler, errMsg, newRevNode, userName, commitMsg, tag))
 		{
 			repoInfo << "Commited revision node, commiting scene nodes...";
 			//commited the revision node, commit the modification on the scene
@@ -656,6 +657,7 @@ bool RepoScene::commitProjectSettings(
 
 bool RepoScene::commitRevisionNode(
 	repo::core::handler::AbstractDatabaseHandler *handler,
+	repo::core::handler::fileservice::AbstractFileHandler *fileHandler,
 	std::string &errMsg,
 	RevisionNode *&newRevNode,
 	const std::string &userName,
@@ -749,6 +751,11 @@ bool RepoScene::commitRevisionNode(
 					if (!handler->insertRawFile(databaseName, projectName + "." + rawExt, gridFSName, rawFile, errMsg))
 					{
 						repoError << "Failed to save original file into the database: " << errMsg;
+					}
+
+					if (!fileHandler->uploadFileAndCommit(handler, databaseName, projectName + "." + rawExt, gridFSName, rawFile))
+					{
+						repoError << "Failed to save original file into the S3: " << errMsg;
 					}
 				}
 				else

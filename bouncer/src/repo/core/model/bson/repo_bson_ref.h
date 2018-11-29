@@ -16,7 +16,7 @@
 */
 
 /**
-*  Unity assets BSON
+*  Ref BSON
 */
 
 #pragma once
@@ -27,22 +27,21 @@ namespace repo {
 		namespace model {
 			//------------------------------------------------------------------------------
 			//
-			// Fields specific to unity assets only
+			// Fields specific to ref only
 			//
 			//------------------------------------------------------------------------------
-			#define REPO_UNITY_ASSETS_LABEL_ASSETS "assets"
-			#define REPO_UNITY_ASSETS_LABEL_OFFSET "offset"
-			#define REPO_UNITY_ASSETS_LABEL_VRASSETS "vrAssets"
-			#define REPO_UNITY_ASSETS_LABEL_JSONFILES "jsonFiles"
-			class REPO_API_EXPORT RepoUnityAssets : public RepoBSON
+			#define REPO_REF_LABEL_LINK "link"
+			#define REPO_REF_LABEL_SIZE "size"
+
+			class REPO_API_EXPORT RepoRef : public RepoBSON
 			{
 			public:
 
-				RepoUnityAssets() : RepoBSON() {}
+				RepoRef() : RepoBSON() {}
 
-				RepoUnityAssets(RepoBSON bson) : RepoBSON(bson){}
+				RepoRef(RepoBSON bson) : RepoBSON(bson){}
 
-				~RepoUnityAssets() {}
+				~RepoRef() {}
 			};
 		}// end namespace model
 	} // end namespace core

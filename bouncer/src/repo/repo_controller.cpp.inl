@@ -45,12 +45,16 @@ public:
 		const std::string                 &databaseHost = std::string(),
 		const uint32_t                    &port = 27017,
 		const std::string                 &databaseName = std::string(),
+		const std::string                 &bucketName = std::string(),
+		const std::string                 &bucketRegion = std::string(),
 		const std::string                 &alias = std::string()) :
 		databaseHost(databaseHost),
 		databasePort(port),
 		databaseAd(databaseHost + std::to_string(port)),
 		credentials(credentials.isEmpty() ? repo::core::model::RepoBSON() : credentials.copy()),
 		databaseName(databaseName),
+		bucketName(bucketName),
+		bucketRegion(bucketRegion),
 		alias(alias)
 	{
 	}
@@ -103,6 +107,8 @@ private:
 	const uint32_t databasePort;
 	const std::string databaseName;
 	std::string alias;
+	const std::string bucketName;
+	const std::string bucketRegion;
 };
 
 class RepoController::_RepoControllerImpl{
@@ -133,49 +139,19 @@ public:
 	* @param errMsg error message if failed
 	* @param address address of the database
 	* @param port port number
-	* @param dbName name of the database within mongo to connect to
-	* @param username user login name
-	* @param password user password
-	* @param pwDigested is given password digested (default: false)
-	* @return * @return returns a void pointer to a token
-	*/
-	RepoToken* authenticateMongo(
-		std::string       &errMsg,
-		const std::string &address,
-		const uint32_t    &port,
-		const std::string &dbName,
-		const std::string &username,
-		const std::string &password,
-		const bool        &pwDigested = false
-		);
-
-	/**
-	* Connect to a mongo database, authenticate by the admin database
-	* @param errMsg error message if failed
-	* @param token authentication token
-	* @param returns true upon success
-	*/
-	bool authenticateMongo(
-		std::string       &errMsg,
-		const RepoToken   *token
-		);
-
-	/**
-	* Connect to a mongo database, authenticate by the admin database
-	* @param errMsg error message if failed
-	* @param address address of the database
-	* @param port port number
 	* @param username user login name
 	* @param password user password
 	* @param pwDigested is given password digested (default: false)
 	* @return returns a void pointer to a token
 	*/
-	RepoToken* authenticateToAdminDatabaseMongo(
+	RepoToken* init(
 		std::string       &errMsg,
 		const std::string &address,
 		const int         &port,
 		const std::string &username,
 		const std::string &password,
+		const std::string &bucketName,
+		const std::string &bucketRegion,
 		const bool        &pwDigested = false
 		);
 
@@ -188,14 +164,6 @@ public:
 	void disconnectFromDatabase(const RepoToken* token);
 
 	/**
-	* Checks whether given credentials permit successful connection to a
-	* given database.
-	* @param token token
-	* @return returns true if successful, false otherwise
-	*/
-	bool testConnection(const RepoToken *token);
-
-	/**
 	* create a token base on the information given
 	*/
 	RepoToken* createToken(
@@ -204,7 +172,9 @@ public:
 		const int         &port,
 		const std::string &dbName,
 		const std::string &username,
-		const std::string &password
+		const std::string &password,
+		const std::string &bucketName,
+		const std::string &bucketRegion
 		);
 
 	RepoController::RepoToken* createToken(
@@ -212,6 +182,8 @@ public:
 		const std::string &address,
 		const int         &port,
 		const std::string &dbName,
+		const std::string &bucketName,
+		const std::string &bucketRegion,
 		const RepoController::RepoToken *token
 		);
 

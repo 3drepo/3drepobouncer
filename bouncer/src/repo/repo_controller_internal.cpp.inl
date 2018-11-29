@@ -51,12 +51,14 @@ RepoController::_RepoControllerImpl::~_RepoControllerImpl()
 	}
 }
 
-RepoController::RepoToken* RepoController::_RepoControllerImpl::authenticateToAdminDatabaseMongo(
+RepoController::RepoToken* RepoController::_RepoControllerImpl::init(
 	std::string       &errMsg,
 	const std::string &address,
 	const int         &port,
 	const std::string &username,
 	const std::string &password,
+	const std::string &bucketName,
+	const std::string &bucketRegion,
 	const bool        &pwDigested
 	)
 {
@@ -75,7 +77,12 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::authenticateToAd
 
 	if (success && (cred || username.empty()))
 	{
-		token = new RepoController::RepoToken(*cred, address, port, worker->getNameOfAdminDatabase(dbFullAd));
+		token = new RepoController::RepoToken(*cred,
+				address,
+				port,
+				worker->getNameOfAdminDatabase(dbFullAd),
+				bucketName,
+				bucketRegion);
 		if (cred) delete cred;
 		repoInfo << "Successfully connected to the " << dbFullAd;
 		if (!username.empty())
@@ -84,79 +91,6 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::authenticateToAd
 
 	workerPool.push(worker);
 	return token;
-}
-
-RepoController::RepoToken* RepoController::_RepoControllerImpl::authenticateMongo(
-	std::string       &errMsg,
-	const std::string &address,
-	const uint32_t    &port,
-	const std::string &dbName,
-	const std::string &username,
-	const std::string &password,
-	const bool        &pwDigested
-	)
-{
-	manipulator::RepoManipulator* worker = workerPool.pop();
-
-	core::model::RepoBSON* cred = 0;
-	RepoToken *token = 0;
-
-	std::string dbFullAd = address + ":" + std::to_string(port);
-
-	bool success = worker->connectAndAuthenticate(errMsg, address, port,
-		numDBConnections, dbName, username, password, pwDigested);
-
-	if (success && !username.empty())
-		cred = worker->createCredBSON(dbName, username, password, pwDigested);
-	workerPool.push(worker);
-
-	if (cred || username.empty())
-	{
-		token = new RepoController::RepoToken(*cred, address, port, dbName);
-		if (cred) delete cred;
-	}
-	return token;
-}
-
-bool RepoController::_RepoControllerImpl::authenticateMongo(
-	std::string                       &errMsg,
-	const RepoController::RepoToken   *token
-	)
-{
-	bool success = false;
-	if (success = token && token->valid())
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		success = worker->connectAndAuthenticate(errMsg, token->databaseHost, token->databasePort,
-			numDBConnections, token->databaseName, token->getCredentials());
-		workerPool.push(worker);
-	}
-	else
-	{
-		errMsg = "Token is invalid!";
-	}
-
-	return success;
-}
-
-bool RepoController::_RepoControllerImpl::testConnection(const RepoController::RepoToken *token)
-{
-	std::string errMsg;
-	bool isConnected = false;
-	if (authenticateMongo(
-		errMsg,
-		token))
-	{
-		repoTrace << "Connection established.";
-		disconnectFromDatabase(token);
-		isConnected = true;
-	}
-	else
-	{
-		//connection/authentication failed
-		repoError << "Failed to connect/authenticate: " << errMsg;
-	}
-	return isConnected;
 }
 
 bool  RepoController::_RepoControllerImpl::cleanUp(
@@ -178,7 +112,12 @@ bool  RepoController::_RepoControllerImpl::cleanUp(
 	}
 
 	manipulator::RepoManipulator* worker = workerPool.pop();
-	bool success = worker->cleanUp(token->databaseAd, token->getCredentials(), dbName, projectName);
+	bool success = worker->cleanUp(token->databaseAd,
+			token->getCredentials(),
+			token->bucketName,
+			token->bucketRegion,
+			dbName,
+			projectName);
 	workerPool.push(worker);
 	return success;
 }
@@ -189,7 +128,9 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::createToken(
 	const int         &port,
 	const std::string &dbName,
 	const std::string &username,
-	const std::string &password
+	const std::string &password,
+	const std::string &bucketName,
+	const std::string &bucketRegion
 	)
 {
 	manipulator::RepoManipulator* worker = workerPool.pop();
@@ -204,7 +145,13 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::createToken(
 
 	if (cred || username.empty())
 	{
-		token = new RepoController::RepoToken(cred ? *cred : repo::core::model::RepoBSON(), address, port, dbName, alias);
+		token = new RepoController::RepoToken(cred ? *cred : repo::core::model::RepoBSON(),
+				address,
+				port,
+				dbName,
+				bucketName,
+				bucketRegion,
+				alias);
 		if (cred)delete cred;
 	}
 
@@ -216,13 +163,21 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::createToken(
 	const std::string &address,
 	const int         &port,
 	const std::string &dbName,
+	const std::string &bucketName,
+	const std::string &bucketRegion,
 	const RepoController::RepoToken *credToken
 	)
 {
 	RepoController::RepoToken *token = nullptr;
 	std::string dbFullAd = address + ":" + std::to_string(port);
 
-	token = new RepoController::RepoToken(credToken->credentials, address, port, dbName, alias);
+	token = new RepoController::RepoToken(credToken->credentials,
+			address,
+			port,
+			dbName,
+			bucketName,
+			bucketRegion,
+			alias);
 
 	return token && token->valid() ? token : nullptr;
 }
@@ -234,7 +189,13 @@ bool RepoController::_RepoControllerImpl::commitAssetBundleBuffers(
 {
 	bool success = false;
 	manipulator::RepoManipulator* worker = workerPool.pop();
-	success = worker->commitAssetBundleBuffers(token->databaseAd, token->getCredentials(), scene, buffers);
+	repoInfo << "token->bucketName: " << token->bucketName;
+	success = worker->commitAssetBundleBuffers(token->databaseAd,
+			token->getCredentials(),
+			token->bucketName,
+			token->bucketRegion,
+			scene,
+			buffers);
 	workerPool.push(worker);
 
 	return success;
@@ -260,7 +221,14 @@ bool RepoController::_RepoControllerImpl::commitScene(
 					sceneOwner = "ANONYMOUS USER";
 				}
 				manipulator::RepoManipulator* worker = workerPool.pop();
-				success = worker->commitScene(token->databaseAd, token->getCredentials(), scene, sceneOwner, tag, desc);
+				success = worker->commitScene(token->databaseAd,
+						token->getCredentials(),
+						token->bucketName,
+						token->bucketRegion,
+						scene,
+						sceneOwner,
+						tag,
+						desc);
 				workerPool.push(worker);
 			}
 			else
@@ -348,7 +316,7 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::fetchScene(
 }
 
 bool RepoController::_RepoControllerImpl::generateAndCommitSelectionTree(
-	const RepoController::RepoToken                               *token,
+	const RepoController::RepoToken         *token,
 	repo::core::model::RepoScene            *scene)
 {
 	bool success = false;
@@ -362,7 +330,11 @@ bool RepoController::_RepoControllerImpl::generateAndCommitSelectionTree(
 			worker->fetchScene(token->databaseAd, token->getCredentials(), scene);
 		}
 
-		success = worker->generateAndCommitSelectionTree(token->databaseAd, token->getCredentials(), scene);
+		success = worker->generateAndCommitSelectionTree(token->databaseAd,
+				token->getCredentials(),
+				token->bucketName,
+				token->bucketRegion,
+				scene);
 		workerPool.push(worker);
 	}
 
@@ -644,7 +616,14 @@ void RepoController::_RepoControllerImpl::insertBinaryFileToDatabase(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		worker->insertBinaryFileToDatabase(token->databaseAd,
-			token->getCredentials(), database, collection, name, rawData, mimeType);
+			token->getCredentials(),
+			token->bucketName,
+			token->bucketRegion,
+			database,
+			collection,
+			name,
+			rawData,
+			mimeType);
 		workerPool.push(worker);
 	}
 	else
@@ -897,14 +876,18 @@ repo::core::model::RepoScene* RepoController::_RepoControllerImpl::createFederat
 }
 
 bool RepoController::_RepoControllerImpl::generateAndCommitGLTFBuffer(
-	const RepoController::RepoToken                    *token,
-	repo::core::model::RepoScene *scene)
+	const RepoController::RepoToken *token,
+	repo::core::model::RepoScene    *scene)
 {
 	bool success;
 	if (success = token && scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		success = worker->generateAndCommitGLTFBuffer(token->databaseAd, token->getCredentials(), scene);
+		success = worker->generateAndCommitGLTFBuffer(token->databaseAd,
+				token->getCredentials(),
+				token->bucketName,
+				token->bucketRegion,
+				scene);
 		workerPool.push(worker);
 	}
 	else
@@ -915,14 +898,18 @@ bool RepoController::_RepoControllerImpl::generateAndCommitGLTFBuffer(
 }
 
 bool RepoController::_RepoControllerImpl::generateAndCommitSRCBuffer(
-	const RepoController::RepoToken                    *token,
-	repo::core::model::RepoScene *scene)
+	const RepoController::RepoToken *token,
+	repo::core::model::RepoScene    *scene)
 {
 	bool success;
 	if (success = token && scene)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		success = worker->generateAndCommitSRCBuffer(token->databaseAd, token->getCredentials(), scene);
+		success = worker->generateAndCommitSRCBuffer(token->databaseAd,
+				token->getCredentials(),
+				token->bucketName,
+				token->bucketRegion,
+				scene);
 		workerPool.push(worker);
 	}
 	else

@@ -18,6 +18,7 @@
 #pragma once
 #include <repo/repo_controller.h>
 #include "repo_test_database_info.h"
+#include "repo_test_fileservice_info.h"
 #include <fstream>
 
 static bool projectExists(
@@ -28,8 +29,8 @@ static bool projectExists(
 	repo::RepoController *controller = new repo::RepoController();
 	std::string errMsg;
 	repo::RepoController::RepoToken *token =
-		controller->authenticateToAdminDatabaseMongo(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
-		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+		controller->init(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+		REPO_GTEST_DBUSER, REPO_GTEST_DBPW, REPO_GTEST_S3_BUCKET, REPO_GTEST_S3_REGION);
 	if (token)
 	{
 		std::list<std::string> dbList;
@@ -54,8 +55,8 @@ static bool projectSettingsCheck(
 	repo::RepoController *controller = new repo::RepoController();
 	std::string errMsg;
 	repo::RepoController::RepoToken *token =
-		controller->authenticateToAdminDatabaseMongo(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
-		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+		controller->init(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+		REPO_GTEST_DBUSER, REPO_GTEST_DBPW, REPO_GTEST_S3_BUCKET, REPO_GTEST_S3_REGION);
 	if (token)
 	{
 		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true);
@@ -77,8 +78,8 @@ static bool projectHasValidRevision(
 	repo::RepoController *controller = new repo::RepoController();
 	std::string errMsg;
 	repo::RepoController::RepoToken *token =
-		controller->authenticateToAdminDatabaseMongo(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
-		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+		controller->init(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
+		REPO_GTEST_DBUSER, REPO_GTEST_DBPW, REPO_GTEST_S3_BUCKET, REPO_GTEST_S3_REGION);
 	if (token)
 	{
 		auto scene = controller->fetchScene(token, dbName, projectName, REPO_HISTORY_MASTER_BRANCH, true, true);
