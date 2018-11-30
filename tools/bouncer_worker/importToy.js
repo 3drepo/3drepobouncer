@@ -21,8 +21,8 @@
 module.exports = function(dbConfig, modelDir, username, database, project, skipPostProcessing){
 
 	const mongodb = require('mongodb');
-	const GridFSBucket = mongodb.GridFSBucket;
 	const MongoClient = mongodb.MongoClient;
+	const GridFSBucket = mongodb.GridFSBucket
 	const fs = require('fs');
 	skipPostProcessing = skipPostProcessing || {};
 
@@ -34,27 +34,27 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 
 		db = _db.db(database);
 		return importJSON();
-
 	}).then(() => {
 
+		const promises = [];
 
-		return !skipPostProcessing.renameStash && Promise.all([
-			renameStash(db, `${project}.stash.json_mpc`),
-			renameStash(db, `${project}.stash.src`),
-			renameStash(db, `${project}.stash.unity3d`)
-		]);
+		if(!skipPostProcessing.renameStash) {
+			promises.push(renameStash(db, `${project}.stash.json_mpc`));
+			promises.push(renameStash(db, `${project}.stash.src`));
+			promises.push(renameStash(db, `${project}.stash.unity3d`));
+			promises.push(renameUnityAssetList(db, database, project));
+		}
 
-	}).then(() => {
+		if(!skipPostProcessing.history)
+			promises.push(updateHistoryAuthorAndDate(db));
+		if(!skipPostProcessing.issues)
+			promises.push(updateAuthorAndDate(db, "issues"));
+		if(!skipPostProcessing.risks)
+			promises.push(updateAuthorAndDate(db, "risks"));
+		if(!skipPostProcessing.history)
+			promises.push(renameGroups(db));
 
-		return !skipPostProcessing.history && updateHistoryAuthorAndDate(db);
-
-	}).then(() => {
-
-		return !skipPostProcessing.issues && updateIssueAuthorAndDate(db);
-
-	}).then(() => {
-
-		return !skipPostProcessing.groups && renameGroups(db);
+		return Promise.all(promises);
 
 	}).then(() => {
 
@@ -65,7 +65,7 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 
 	function importJSON(){
 		let importCollectionFiles = {};
-		
+
 		fs.readdirSync(`${__dirname}/${modelDir}`)
 		.forEach(file => {
 			// remove '.json' in string
@@ -106,6 +106,47 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 		});
 
 		return Promise.all(promises);
+	}
+
+
+	function updateHistoryAuthorAndDate(db){
+
+		const collection = db.collection(`${project}.history`);
+		const update = {
+			'$set':{
+				'author': username
+			}
+		};
+
+		return collection.updateMany({}, update);
+	}
+
+	function updateAuthorAndDate(db, ext){
+
+		return new Promise((resolve, reject) => {
+
+			const promises = [];
+			const collection = db.collection(`${project}.${ext}`);
+
+			collection.find().forEach(issue => {
+
+				issue.owner = username;
+				issue.comments && issue.comments.forEach(comment => {
+					comment.owner = username;
+				});
+
+				promises.push(collection.updateOne({ _id: issue._id }, issue));
+
+			}, function done(err) {
+				if(err){
+					reject(err);
+				} else {
+					Promise.all(promises)
+						.then(() => resolve())
+						.catch(err => reject(err));
+				}
+			});
+		});
 	}
 
 	function renameStash(db, bucketName){
@@ -159,54 +200,14 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 		});
 	}
 
-	function updateHistoryAuthorAndDate(db){
-		
-		const collection = db.collection(`${project}.history`);
-		const update = {
-			'$set':{
-				'author': username
-			}
-		};
-
-		return collection.updateMany({}, update);
-	}
-
-	function updateIssueAuthorAndDate(db){
-
-		return new Promise((resolve, reject) => {
-
-			const promises = [];
-			const collection = db.collection(`${project}.issues`);
-
-			collection.find().forEach(issue => {
-
-				issue.owner = username;
-				issue.comments && issue.comments.forEach(comment => {
-					comment.owner = username;
-				});
-
-				promises.push(collection.updateOne({ _id: issue._id }, issue));
-
-			}, function done(err) {
-				if(err){
-					reject(err);
-				} else {
-					Promise.all(promises)
-						.then(() => resolve())
-						.catch(err => reject(err));
-				}
-			});
-		});
-	}
-
 	function renameGroups(db){
 
 		const subModelNameToOldID = {
-			"Lego_House_Architecture" : "ae234e5d-3b75-4b8c-b461-7529d5bec583",
-			"Lego_House_Landscape" : "39b51fe5-0fcb-4734-8e10-d8088bec9d45",
-			"Lego_House_Structure" : "3749c3cc-375d-406a-9f0d-2d059e8e782f"
-		}; 
-		
+			"Lego_House_Architecture" : "33586989-6130-4787-8ea5-b56b81286ccf",
+			"Lego_House_Landscape" : "81abd908-d0b2-46f5-a9d5-38471dbfab72",
+			"Lego_House_Structure" : "94020bb8-07d3-4811-ae29-040c961ed92f"
+		};
+
 		return new Promise((resolve, reject) => {
 
 			const updateGroupPromises = [];
@@ -229,18 +230,18 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 							}
 						});
 					});
-				} 
+				}
 				else {
 					subModelPromise = Promise.resolve();
 				}
-				
+
 				return subModelPromise.then(() => {
 					return collection.find().forEach(group => {
 						group.objects && group.objects.forEach(obj => {
 							const updateObjectPromises = [];
 							obj.account = database;
-					
-							//if model is fed model, then model id of a group should be 
+
+							//if model is fed model, then model id of a group should be
 							//one of the sub models instead of the id of the fed model itself
 							if(oldIdToNewId[obj.model]) {
 								obj.model = oldIdToNewId[obj.model];
@@ -264,11 +265,11 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 					});
 
 				});
-					
+
 
 
 			});
-			
+
 		});
 
 	}
@@ -285,7 +286,7 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 
 			function _finishDownload(){
 				const unityAsset = JSON.parse(Buffer.concat(bufs));
-				
+
 				unityAsset.assets = unityAsset.assets || [];
 				unityAsset.jsonFiles = unityAsset.jsonFiles || [];
 
@@ -304,7 +305,7 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 
 				//drop the old one
 				bucket.delete(file._id, function(err){
-					
+
 					if(err){
 						return reject(err);
 					}
@@ -326,4 +327,42 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 		});
 	}
 
+	function renameUnityAssetList(
+		db,
+		database,
+		model
+	){
+		return new Promise((resolve, reject) => {
+
+			const collection = db.collection(`${model}.stash.unity3d`);
+			const promises = [];
+			collection.find().forEach(entry => {
+				entry.database = database;
+				entry.model = model;
+				const prefix = `/${database}/${model}/`;
+				for(let i = 0; i < entry.jsonFiles.length; ++i) {
+					const oldDir = entry.jsonFiles[i];
+					const dirArr = oldDir.split("/");
+					entry.jsonFiles[i] = prefix + dirArr[dirArr.length - 1];
+				}
+				for(let i = 0; i < entry.assets.length; ++i) {
+                	const oldDir = entry.assets[i];
+                    const dirArr = oldDir.split("/");
+                    entry.assets[i] = prefix + dirArr[dirArr.length - 1];
+				}
+
+				promises.push(collection.updateOne({_id: entry._id}, entry));
+			}, (err) => {
+				if(err)
+					reject(err);
+				else {
+					Promise.all(promises)
+						.then(() => resolve())
+						.catch(err => reject(err));
+				}
+
+
+			});
+		});
+	}
 }
