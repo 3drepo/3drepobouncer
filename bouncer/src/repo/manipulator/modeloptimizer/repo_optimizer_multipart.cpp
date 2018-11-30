@@ -248,7 +248,7 @@ std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUID
 	}
 	else
 	{
-		repoError << "Failed to collect mesh data ("<< success<<") , mesh mapping size: " << meshMapping.size();
+		repoError <<  " Failed to collect mesh data ("<< success<<") , meshGroup size: " << meshGroup.size() << "mesh mapping size: " << meshMapping.size();
 	}
 
 	return resultMesh;
@@ -396,6 +396,8 @@ bool MultipartOptimizer::processMeshGroup(
 	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>                     &matIDs
 	)
 {
+	if (!meshes.size()) return true;
+
 	bool success = false;
 	auto sMesh = createSuperMesh(scene, meshes, matIDs);
 	if (success = sMesh)
