@@ -24,7 +24,9 @@
 #include <boost/range/algorithm/copy.hpp>
 
 #include "../core/handler/repo_database_handler_mongo.h"
+#ifdef S3_SUPPORT
 #include "../core/handler/fileservice/repo_file_handler_s3.h"
+#endif
 #include "../core/model/bson/repo_bson_factory.h"
 #include "../error_codes.h"
 #include "../lib/repo_log.h"
@@ -67,8 +69,10 @@ bool RepoManipulator::cleanUp(
 	bool success;
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	repo::core::handler::fileservice::AbstractFileHandler* fileHandler =
-		repo::core::handler::fileservice::S3FileHandler::getHandler(bucketName, bucketRegion);
+	repo::core::handler::fileservice::AbstractFileHandler* fileHandler;
+#ifdef S3_SUPPORT
+	fileHandler = repo::core::handler::fileservice::S3FileHandler::getHandler(bucketName, bucketRegion);
+#endif
 	modelutility::SceneCleaner cleaner(dbName, projectName, handler, fileHandler);
 	if (success = cleaner.execute())
 	{
@@ -189,8 +193,10 @@ bool RepoManipulator::commitAssetBundleBuffers(
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	repo::core::handler::fileservice::AbstractFileHandler* fileHandler =
-		repo::core::handler::fileservice::S3FileHandler::getHandler(bucketName, bucketRegion);
+	repo::core::handler::fileservice::AbstractFileHandler* fileHandler;
+#ifdef S3_SUPPORT
+	fileHandler = repo::core::handler::fileservice::S3FileHandler::getHandler(bucketName, bucketRegion);
+#endif
 	modelutility::SceneManager SceneManager;
 	return SceneManager.commitWebBuffers(scene, scene->getUnityExtension(), buffers, handler, fileHandler, true);
 }
@@ -209,8 +215,10 @@ bool RepoManipulator::commitScene(
 	bool success = false;
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	repo::core::handler::fileservice::AbstractFileHandler *fileHandler =
-		repo::core::handler::fileservice::S3FileHandler::getHandler(bucketName, bucketRegion);
+	repo::core::handler::fileservice::AbstractFileHandler *fileHandler;
+#ifdef S3_SUPPORT
+	fileHandler = repo::core::handler::fileservice::S3FileHandler::getHandler(bucketName, bucketRegion);
+#endif
 	std::string projOwner = owner.empty() ? cred->getStringField("user") : owner;
 
 	std::string msg;
@@ -549,8 +557,10 @@ bool RepoManipulator::generateAndCommitSelectionTree(
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	repo::core::handler::fileservice::AbstractFileHandler *fileHandler =
-		repo::core::handler::fileservice::S3FileHandler::getHandler(bucketName, bucketRegion);
+	repo::core::handler::fileservice::AbstractFileHandler *fileHandler;
+#ifdef S3_SUPPORT
+	fileHandler = repo::core::handler::fileservice::S3FileHandler::getHandler(bucketName, bucketRegion);
+#endif
 	modelutility::SceneManager SceneManager;
 	return SceneManager.generateAndCommitSelectionTree(scene, handler, fileHandler);
 }
@@ -598,8 +608,10 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	repo::core::handler::fileservice::AbstractFileHandler* fileHandler =
-		repo::core::handler::fileservice::S3FileHandler::getHandler(bucketName, bucketRegion);
+	repo::core::handler::fileservice::AbstractFileHandler* fileHandler;
+#ifdef S3_SUPPORT
+	fileHandler = repo::core::handler::fileservice::S3FileHandler::getHandler(bucketName, bucketRegion);
+#endif
 	modelutility::SceneManager SceneManager;
 	return SceneManager.generateWebViewBuffers(scene, exType, buffers, handler, fileHandler);
 }
@@ -962,8 +974,10 @@ void RepoManipulator::insertBinaryFileToDatabase(
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	repo::core::handler::fileservice::AbstractFileHandler* fileHandler =
-		repo::core::handler::fileservice::S3FileHandler::getHandler(bucketName, bucketRegion);
+	repo::core::handler::fileservice::AbstractFileHandler* fileHandler;
+#ifdef S3_SUPPORT
+	fileHandler = repo::core::handler::fileservice::S3FileHandler::getHandler(bucketName, bucketRegion);
+#endif
 	if (handler && fileHandler)
 	{
 		std::string errMsg;
@@ -976,6 +990,7 @@ void RepoManipulator::insertBinaryFileToDatabase(
 			repoError << "Failed to add file (" << name << "): " << errMsg;
 		}
 
+#ifdef FILESERVICE_SUPPORT
 		if (fileHandler->uploadFileAndCommit(handler, database, collection, name, rawData))
 		{
 			repoInfo << "File (" << name << ") added successfully to S3.";
@@ -984,6 +999,7 @@ void RepoManipulator::insertBinaryFileToDatabase(
 		{
 			repoError << "Failed to add file (" << name << ") to S3: " << errMsg;
 		}
+#endif
 	}
 }
 

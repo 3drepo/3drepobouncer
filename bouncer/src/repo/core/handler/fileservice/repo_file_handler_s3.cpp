@@ -19,6 +19,8 @@
  *  AWS S3 handler
  */
 
+#ifdef S3_SUPPORT
+
 #include <aws/core/Aws.h>
 #include <aws/core/utils/memory/stl/AWSString.h>
 #include <aws/s3/model/DeleteObjectRequest.h>
@@ -241,3 +243,4 @@ bool S3FileHandler::upsertFileRef(
 			size);
 }
 
+#endif

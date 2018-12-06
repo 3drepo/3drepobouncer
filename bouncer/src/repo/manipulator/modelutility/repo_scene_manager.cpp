@@ -53,6 +53,7 @@ bool SceneManager::commitWebBuffers(
 			repoError << "Failed to add file  (" << bufferPair.first << "): " << errMsg;
 		}
 
+#ifdef FILESERVICE_SUPPORT
 		if (success &= fileHandler->uploadFileAndCommit(handler, databaseName, projectName + "." + geoStashExt, bufferPair.first, bufferPair.second))
 		{
 			repoInfo << "File (" << bufferPair.first << ") added successfully to S3.";
@@ -61,6 +62,7 @@ bool SceneManager::commitWebBuffers(
 		{
 			repoError << "Failed to add file  (" << bufferPair.first << ") to S3: " << errMsg;
 		}
+#endif
 	}
 
 	for (const auto &bufferPair : resultBuffers.jsonFiles)
@@ -77,6 +79,7 @@ bool SceneManager::commitWebBuffers(
 			repoError << "Failed to add file  (" << fileName << "): " << errMsg;
 		}
 
+#ifdef FILESERVICE_SUPPORT
 		if (success &= fileHandler->uploadFileAndCommit(handler, databaseName, projectName + "." + jsonStashExt, bufferPair.first, bufferPair.second))
 		{
 			repoInfo << "File (" << fileName << ") added successfully to S3.";
@@ -85,6 +88,7 @@ bool SceneManager::commitWebBuffers(
 		{
 			repoError << "Failed to add file  (" << fileName << ") to S3: " << errMsg;
 		}
+#endif
 	}
 
 	std::string errMsg;
@@ -405,6 +409,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 					repoError << "Failed to add file  (" << fileName << "): " << errMsg;
 				}
 
+#ifdef FILESERVICE_SUPPORT
 				if (handler && fileHandler->uploadFileAndCommit(
 							handler,
 							databaseName,
@@ -418,6 +423,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 				{
 					repoError << "Failed to add file  (" << fileName << ") to S3: " << errMsg;
 				}
+#endif
 			}
 		}
 		else

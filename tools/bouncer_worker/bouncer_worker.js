@@ -59,15 +59,24 @@
 	function testClient(callback){
 		logger.info("Checking status of client...");
 
+		let awsBucketName;
+		let awsBucketRegion;
+
+		if (conf.aws)
+		{
+			process.env['AWS_ACCESS_KEY_ID'] = conf.aws.access_key_id;
+			process.env['AWS_SECRET_ACCESS_KEY'] =  conf.aws.secret_access_key;
+			awsBucketName = conf.aws.bucket_name;
+			awsBucketRegion = conf.aws.bucket_region;
+		}
+
 		const cmd = path.normalize(conf.bouncer.path) + " " +
 				conf.bouncer.dbhost + " " +
 				conf.bouncer.dbport + " " +
 				conf.bouncer.username + " " +
 				conf.bouncer.password + " " +
-				conf.aws.bucket_name + " " +
-				conf.aws.bucket_region + " test";
-		process.env['AWS_ACCESS_KEY_ID']= conf.aws.access_key_id;
-		process.env['AWS_SECRET_ACCESS_KEY']=  conf.aws.secret_access_key;
+				awsBucketName + " " +
+				awsBucketRegion + " test";
 
 		exec(cmd, function(error, stdout, stderr){
 			if(error !== null){
@@ -144,21 +153,30 @@
 		let os = require('os');
 		let command = "";
 
+		let awsBucketName;
+		let awsBucketRegion;
+
+		if (conf.aws)
+		{
+			process.env['AWS_ACCESS_KEY_ID'] = conf.aws.access_key_id;
+			process.env['AWS_SECRET_ACCESS_KEY'] =  conf.aws.secret_access_key;
+			awsBucketName = conf.aws.bucket_name;
+			awsBucketRegion = conf.aws.bucket_region;
+		}
+
 		if(os.platform() === "win32")
 		{
 
 			cmd = cmd.replace("/sharedData/", conf.rabbitmq.sharedDir);
 			process.env['REPO_LOG_DIR']= logDir ;
-			process.env['AWS_ACCESS_KEY_ID']= conf.aws.access_key_id;
-			process.env['AWS_SECRET_ACCESS_KEY']=  conf.aws.secret_access_key;
 
 			command = path.normalize(conf.bouncer.path) + " " +
 				conf.bouncer.dbhost + " " +
 				conf.bouncer.dbport + " " +
 				conf.bouncer.username + " " +
 				conf.bouncer.password + " " +
-				conf.aws.bucket_name + " " +
-				conf.aws.bucket_region + " " +
+				awsBucketName + " " +
+				awsBucketRegion + " " +
 				cmd;
 
 			let cmdArr = cmd.split(' ');
@@ -180,15 +198,13 @@
 		else
 		{
 			command = "REPO_LOG_DIR=" + logDir + " " +
-				"AWS_ACCESS_KEY_ID=" + conf.aws.access_key_id +
-				" AWS_SECRET_ACCESS_KEY=" + conf.aws.secret_access_key + " " +
 				path.normalize(conf.bouncer.path) + " " +
 				conf.bouncer.dbhost + " " +
 				conf.bouncer.dbport + " " +
 				conf.bouncer.username + " " +
 				conf.bouncer.password + " " +
-				conf.aws.bucket_name + " " +
-				conf.aws.bucket_region + " " +
+				awsBucketName + " " +
+				awsBucketRegion + " " +
 				cmd;
 		}
 
@@ -266,9 +282,17 @@
 					let commandArgs = cmdFile;
 					if(commandArgs && commandArgs.database && commandArgs.project)
 					{
+						let awsBucketName;
+						let awsBucketRegion;
 
-						process.env['AWS_ACCESS_KEY_ID']= conf.aws.access_key_id;
-						process.env['AWS_SECRET_ACCESS_KEY']=  conf.aws.secret_access_key;
+						if (conf.aws)
+						{
+							process.env['AWS_ACCESS_KEY_ID'] = conf.aws.access_key_id;
+							process.env['AWS_SECRET_ACCESS_KEY'] =  conf.aws.secret_access_key;
+							awsBucketName = conf.aws.bucket_name;
+							awsBucketRegion = conf.aws.bucket_region;
+						}
+
 						const unityCommand = conf.unity.batPath + " " +
 							conf.unity.project + " " +
 							conf.bouncer.dbhost + " " +
@@ -277,8 +301,8 @@
 							conf.bouncer.password + " " +
 							commandArgs.database + " " +
 							commandArgs.project + " " +
-							conf.aws.bucket_name + " " +
-							conf.aws.bucket_region + " " +
+							awsBucketName + " " +
+							awsBucketRegion + " " +
 							logDir;
 
 						logger.info("running unity command: " + unityCommand);

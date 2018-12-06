@@ -753,10 +753,12 @@ bool RepoScene::commitRevisionNode(
 						repoError << "Failed to save original file into the database: " << errMsg;
 					}
 
+#ifdef FILESERVICE_SUPPORT
 					if (!fileHandler->uploadFileAndCommit(handler, databaseName, projectName + "." + rawExt, gridFSName, rawFile))
 					{
 						repoError << "Failed to save original file into the S3: " << errMsg;
 					}
+#endif
 				}
 				else
 				{
