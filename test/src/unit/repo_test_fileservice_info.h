@@ -16,16 +16,28 @@
 */
 
 #pragma once
-#include <repo/core/handler/fileservice/repo_file_handler_s3.h>
+
+#include <repo/core/handler/fileservice/repo_file_handler_abstract.h>
 #include <repo/core/model/bson/repo_bson_builder.h>
 #include <boost/filesystem.hpp>
+
+#ifdef S3_SUPPORT
+#include <repo/core/handler/fileservice/repo_file_handler_s3.h>
+#endif
 
 //Test Database address
 const static std::string REPO_GTEST_S3_BUCKET = "3drepo-sandbox";
 const static std::string REPO_GTEST_S3_REGION = "eu-west-2";
 
-static repo::core::handler::fileservice::S3FileHandler* getFileHandler()
-{
-	return 	repo::core::handler::fileservice::S3FileHandler::getHandler(REPO_GTEST_S3_BUCKET, REPO_GTEST_S3_REGION);
-}
+using namespace repo::core::handler::fileservice;
 
+static AbstractFileHandler* getFileHandler()
+{
+	AbstractFileHandler* fileHandler;
+
+#ifdef S3_SUPPORT
+	fileHandler = S3FileHandler::getHandler(REPO_GTEST_S3_BUCKET, REPO_GTEST_S3_REGION);
+#endif
+
+	return fileHandler;
+}

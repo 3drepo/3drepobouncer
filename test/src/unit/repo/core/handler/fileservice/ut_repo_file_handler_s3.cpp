@@ -15,6 +15,8 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#ifdef S3_SUPPORT
+
 #include <gtest/gtest.h>
 #include <repo/core/handler/fileservice/repo_file_handler_s3.h>
 #include <repo/core/model/bson/repo_node.h>
@@ -30,3 +32,4 @@ TEST(S3FileHandlerTest, GetHandler)
 	EXPECT_TRUE(fileHandler);
 }
 
+#endif
