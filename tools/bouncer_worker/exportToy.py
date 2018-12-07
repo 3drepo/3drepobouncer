@@ -37,7 +37,7 @@ for model in modelList:
         os.system(cmd)
 
 #only export groups and issues from federation
-colsInFed = ["groups", "issues"]
+colsInFed = ["groups", "issues", "risks", "views"]
 
 modelDirectory = "toy/" + fedID
 if not os.path.exists(modelDirectory):
