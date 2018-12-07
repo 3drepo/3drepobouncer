@@ -90,13 +90,17 @@ if (ODA_SUPPORT)
 endif()
 
 #==================== AWS S3 SDK ======================
+option (S3_SUPPORT "Build with S3 support" OFF)
 if (S3_SUPPORT)
+	option (FILE_SERVICE_SUPPORT "Build with fileservice support (required if S3 support is on)" ON)
 	add_definitions(-DS3_SUPPORT)
 	add_definitions(-DFILESERVICE_SUPPORT)
 	find_package(AWSSDK REQUIRED)
 	if(NOT ${AWSSDK_FOUND})
 		message(FATAL_ERROR "Cannot find AWS SDK")
 	endif()
+else()
+	option (FILE_SERVICE_SUPPORT "Build with fileservice support (required if S3 support is on)" OFF)
 endif()
 
 #================COMPILE 3D REPO BOUNCER ==============
