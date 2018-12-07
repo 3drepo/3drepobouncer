@@ -36,8 +36,8 @@ for model in modelList:
         cmd =  "mongoexport /host:" + dbAdd + " /port:" + dbPort + " /username:" + dbUsername + " /password:" + dbPassword + " /authenticationDatabase:admin /db:" + dbName + " /collection:" + model + "." + ext  + " /out:" + modelDirectory + "/"  + ext + ".json";
         os.system(cmd)
 
-#only export groups and issues from federation
-colsInFed = ["groups", "issues"]
+#export groups, issues, risks, and views from federation
+colsInFed = ["groups", "issues", "risks", "views"]
 
 modelDirectory = "toy/" + fedID
 if not os.path.exists(modelDirectory):
