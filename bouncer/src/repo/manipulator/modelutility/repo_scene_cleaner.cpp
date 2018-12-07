@@ -59,10 +59,12 @@ bool SceneCleaner::execute()
 		repoError << "Failed to instantiate scene cleaner: null pointer to the database!";
 	}
 
+#ifdef FILESERVICE_SUPPORT
 	if (!fileHandler)
 	{
 		repoError << "Failed to instantiate scene cleaner: null pointer to the file service!";
 	}
+#endif
 
 	if (!(success &= !(dbName.empty() || projectName.empty())))
 	{
@@ -108,6 +110,7 @@ void SceneCleaner::removeAllGridFSReference(
 	}
 }
 
+#ifdef FILESERVICE_SUPPORT
 void SceneCleaner::removeCollectionFiles(
 	const std::vector<std::string> &documentIds,
 	const std::string &collection)
@@ -125,6 +128,7 @@ void SceneCleaner::removeAllFiles(
 	removeCollectionFiles(documentIds, projectName + "." + REPO_COLLECTION_STASH_JSON);
 	removeCollectionFiles(documentIds, projectName + "." + REPO_COLLECTION_STASH_UNITY);
 }
+#endif
 
 bool SceneCleaner::removeRevision(
 	const repo::core::model::RevisionNode &revNode)
@@ -157,7 +161,9 @@ bool SceneCleaner::removeRevision(
 		documentIds.push_back(meshId + REPO_DOCUMENT_ID_SUFFIX_UNITY3D_WIN);
 	}
 
+#ifdef FILESERVICE_SUPPORT
 	removeAllFiles(documentIds);
+#endif
 
 	repo::core::model::RepoBSON criteria = BSON(REPO_NODE_LABEL_ID << BSON("$in" << currentField));
 	std::string errMsg;
@@ -169,7 +175,9 @@ bool SceneCleaner::removeRevision(
 	for (const auto &file : orgFileNames)
 	{
 		handler->dropRawFile(dbName, projectName + "." + REPO_COLLECTION_HISTORY, file, errMsg);
+#ifdef FILESERVICE_SUPPORT
 		fileHandler->deleteFileAndRef(handler, dbName, projectName + "." + REPO_COLLECTION_HISTORY, file);
+#endif
 	}
 	//delete the revision itself
 	handler->dropDocument(revNode, dbName, projectName + "." + REPO_COLLECTION_HISTORY, errMsg);
