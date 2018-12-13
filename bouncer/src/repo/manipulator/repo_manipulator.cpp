@@ -36,6 +36,7 @@
 #include "modelconvertor/import/repo_model_import_dgn.h"
 #include "modelconvertor/import/repo_model_import_ifc.h"
 #include "modelconvertor/import/repo_model_import_3drepo.h"
+#include "modelconvertor/import/repo_model_import_rvt.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
 #include "modelconvertor/export/repo_model_export_asset.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
@@ -829,7 +830,9 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 
 	if (!repo::manipulator::modelconvertor::AssimpModelImport::isSupportedExts(fileExt) 
 		&& !(fileExt == ".BIM")
-		&& !(fileExt == ".DGN"))
+		&& !(fileExt == ".DGN")
+		&& !(fileExt == ".RVT")
+		&& !(fileExt == ".RFA"))
 	{
 		error = REPOERR_FILE_TYPE_NOT_SUPPORTED;
 		return nullptr;
@@ -840,6 +843,7 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 	bool useIFCImporter = fileExt == ".IFC" && (!config || config->getUseIFCOpenShell());
 	bool useRepoImporter = fileExt == ".BIM";
 	bool useDgnImporter = fileExt == ".DGN";
+	bool useRvtImporter = fileExt == ".RVT" || fileExt == ".RFA";
 
 	if (useIFCImporter)
 		modelConvertor = new repo::manipulator::modelconvertor::IFCModelImport(config);
@@ -847,6 +851,8 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 		modelConvertor = new repo::manipulator::modelconvertor::RepoModelImport(config);
 	else if (useDgnImporter)
 		modelConvertor = new repo::manipulator::modelconvertor::DgnModelImport(); //FIXME: take in config like everything else.
+	else if (useRvtImporter)
+		modelConvertor = new repo::manipulator::modelconvertor::RvtModelImport();
 	else
 		modelConvertor = new repo::manipulator::modelconvertor::AssimpModelImport(config);
 

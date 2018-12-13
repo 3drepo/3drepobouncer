@@ -8,6 +8,7 @@ if(ODA_SUPPORT)
 	set(SOURCES
 		${SOURCES}
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_rvt.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/geometry_collector.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/geometry_dumper.cpp
 		CACHE STRING "SOURCES" FORCE)
@@ -15,6 +16,7 @@ if(ODA_SUPPORT)
 	set(HEADERS
 		${HEADERS}
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor.h
+		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_rvt.h
 		${CMAKE_CURRENT_SOURCE_DIR}/geometry_collector.h
 		${CMAKE_CURRENT_SOURCE_DIR}/geometry_dumper.h
 		${CMAKE_CURRENT_SOURCE_DIR}/od_alloc_op.h
