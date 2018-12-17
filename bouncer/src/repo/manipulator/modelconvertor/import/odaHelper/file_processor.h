@@ -16,14 +16,6 @@
 */
 
 #pragma once
-#include "../../../../core/model/bson/repo_node_mesh.h"
-#include "geometry_collector.h"
-#include <OdaCommon.h>
-#include <Gs/GsBaseInclude.h>
-#include <RxObjectImpl.h>
-#include <vector>
-#include <string>
-
 
 namespace repo {
 	namespace manipulator {
@@ -32,21 +24,7 @@ namespace repo {
 				class FileProcessor
 				{
 				public:
-					FileProcessor(const std::string &inputFile, GeometryCollector * geoCollector);
-					~FileProcessor();
-
-					int readFile();
-
-				private:
-					const std::string file;
-					GeometryCollector *collector;
-					int importDgn(OdDbBaseDatabase *pDb,
-						const ODCOLORREF* pPallete,
-						int numColors,
-						const OdGiDrawable* pEntity = nullptr,
-						const OdGeMatrix3d& matTransform = OdGeMatrix3d::kIdentity,
-						const std::map<OdDbStub*, double>* pMapDeviations = nullptr);
-
+					virtual int readFile() = 0;
 				};
 			}
 		}

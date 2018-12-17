@@ -1,32 +1,23 @@
-///////////////////////////////////////////////////////////////////////////////
-// Copyright (C) 2002-2018, Open Design Alliance (the "Alliance").
-// All rights reserved.
-//
-// This software and its documentation and related materials are owned by
-// the Alliance. The software may only be incorporated into application
-// programs owned by members of the Alliance, subject to a signed
-// Membership Agreement and Supplemental Software License Agreement with the
-// Alliance. The structure and organization of this software are the valuable
-// trade secrets of the Alliance and its suppliers. The software is also
-// protected by copyright law and international treaty provisions. Application
-// programs incorporating this software must include the following statement
-// with their copyright notices:
-//
-//   This application incorporates Teigha(R) software pursuant to a license
-//   agreement with Open Design Alliance.
-//   Teigha(R) Copyright (C) 2002-2018 by Open Design Alliance.
-//   All rights reserved.
-//
-// By use of this software, its documentation or related materials, you
-// acknowledge and accept the above terms.
-///////////////////////////////////////////////////////////////////////////////
+/**
+*  Copyright (C) 2018 3D Repo Ltd
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU Affero General Public License as
+*  published by the Free Software Foundation, either version 3 of the
+*  License, or (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU Affero General Public License for more details.
+*
+*  You should have received a copy of the GNU Affero General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 
-#ifndef __ODBM_GI_CONVEYOR_GEOMETRY_DUMPER__
-#define __ODBM_GI_CONVEYOR_GEOMETRY_DUMPER__
-
+#pragma once
 #include "SharedPtr.h"
 #include "Gi/GiGeometrySimplifier.h"
-#include "BmGiDumper.h"
 #include "geometry_collector.h"
 
 using namespace repo;
@@ -34,10 +25,9 @@ using namespace manipulator;
 using namespace modelconvertor;
 using namespace odaHelper;
 
-class OdGiConveyorGeometryDumper : public OdGiGeometrySimplifier
+class ConveyorGeometryDumper : public OdGiGeometrySimplifier
 {
-  OdGiDumperPtr m_pDumper;
-  OdGiConveyorGeometryDumper();
+  ConveyorGeometryDumper();
   GeometryCollector* geometryCollector;
 
   int m_dumpLevel;
@@ -47,18 +37,12 @@ public:
     Maximal_Simplification,
     Minimal_Simplification
   };
+
   void setDumpLevel(int dumpLevel) { m_dumpLevel = dumpLevel; }
+
   int dumpLevel() const { return m_dumpLevel; }
 
-  static OdSharedPtr<OdGiConveyorGeometryDumper> createObject(OdGiDumper* m_pDumper, GeometryCollector* collector);
-
-
-  /**********************************************************************/
-  /* The overrides of OdGiConveyorGeometry.  Each view sends            */
-  /* its vectorized entity data to these functions, due to the          */
-  /* link established between the view and the device in                */
-  /* ExGsSimpleDevice::createView().                                    */
-  /**********************************************************************/
+  static OdSharedPtr<ConveyorGeometryDumper> createObject(GeometryCollector* collector);
   
   void plineProc(const OdGiPolyline& lwBuf,
                  const OdGeMatrix3d* pXform,
@@ -119,25 +103,13 @@ public:
     const OdChar* msg, OdInt32 numBytes, bool raw, const OdGiTextStyle* pTextStyle,
     const OdGeVector3d* pExtrusion = 0);
   
-  /**********************************************************************/
-  /* The client's version of this function will not be called in        */
-  /* the current version of Teigha                                      */
-  /**********************************************************************/
   void shapeProc(const OdGePoint3d& position,
     const OdGeVector3d& direction, const OdGeVector3d& upVector,
     int shapeNumber, const OdGiTextStyle* pTextStyle,
     const OdGeVector3d* pExtrusion = 0);
 
-  /**********************************************************************/
-  /* The client's version of this function will not be called in        */
-  /* the current version of Teigha                                      */
-  /**********************************************************************/
   void xlineProc(const OdGePoint3d& firstPoint, const OdGePoint3d& secondPoint);
   
-  /**********************************************************************/
-  /* The client's version of this function will not be called in        */
-  /* the current version of Teigha                                      */
-  /**********************************************************************/
   void rayProc(const OdGePoint3d& basePoint, const OdGePoint3d& throughPoint);
   
   void nurbsProc(const OdGeNurbCurve3d& nurbs);
@@ -151,8 +123,8 @@ public:
     const OdGePoint3d& origin,
     const OdGeVector3d& u,
     const OdGeVector3d& v,
-    const OdGiRasterImage* pImage, // image object
-    const OdGePoint2d* uvBoundary, // may not be null
+    const OdGiRasterImage* pImage,
+    const OdGePoint2d* uvBoundary,
     OdUInt32 numBoundPts,
     bool transparency = false,
     double brightness = 50.0,
@@ -164,8 +136,8 @@ public:
     const OdGeVector3d& u,
     const OdGeVector3d& v,
     const OdGiMetafile* pMetafile,
-    bool dcAligned = true,       // reserved
-    bool allowClipping = false); // reserved
+    bool dcAligned = true,
+    bool allowClipping = false);
 
   void polypointProc(
     OdInt32 numPoints,
@@ -189,6 +161,5 @@ public:
   TD_USING(OdGiGeometrySimplifier::polylineOut);
 };
 
-typedef OdSharedPtr<OdGiConveyorGeometryDumper> OdGiConveyorGeometryDumperPtr;
+typedef OdSharedPtr<ConveyorGeometryDumper> ConveyorGeometryDumperPtr;
 
-#endif // __ODBM_GI_CONVEYOR_GEOMETRY_DUMPER__

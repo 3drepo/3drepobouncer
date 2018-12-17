@@ -25,22 +25,28 @@
 #include <string>
 #include "file_processor.h"
 
+
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-				class FileProcessorRVT : public FileProcessor
+				class FileProcessorDGN : public FileProcessor
 				{
 				public:
-					FileProcessorRVT(const std::string& inputFile, GeometryCollector* geoCollector);
-					~FileProcessorRVT();
+					FileProcessorDGN(const std::string &inputFile, GeometryCollector * geoCollector);
+					~FileProcessorDGN();
 
 					int readFile();
 
 				private:
 					const std::string file;
-					GeometryCollector* collector;
-					int importRVT();
+					GeometryCollector *collector;
+					int importDgn(OdDbBaseDatabase *pDb,
+						const ODCOLORREF* pPallete,
+						int numColors,
+						const OdGiDrawable* pEntity = nullptr,
+						const OdGeMatrix3d& matTransform = OdGeMatrix3d::kIdentity,
+						const std::map<OdDbStub*, double>* pMapDeviations = nullptr);
 
 				};
 			}

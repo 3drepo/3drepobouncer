@@ -3,7 +3,7 @@
 #include "../../../error_codes.h"
 
 #ifdef ODA_SUPPORT
-#include "odaHelper/file_processor.h"
+#include "odaHelper/file_processor_dgn.h"
 #endif
 
 
@@ -56,7 +56,7 @@ bool DgnModelImport::importModel(std::string filePath, uint8_t &err)
 #ifdef ODA_SUPPORT
 	this->filePath = filePath;
 	repoInfo << " ==== Importing with Teigha Library [" << filePath << "] ====";
-	odaHelper::FileProcessor odaProcessor(filePath, &geoCollector);
+	odaHelper::FileProcessorDGN odaProcessor(filePath, &geoCollector);
 	bool success = false;
 	try {
 		success = odaProcessor.readFile() == 0;

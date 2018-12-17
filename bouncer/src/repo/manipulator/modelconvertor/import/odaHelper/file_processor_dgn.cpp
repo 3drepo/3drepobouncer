@@ -32,21 +32,20 @@
 #include <DgGiContext.h>
 #include <DgGsManager.h>
 
-#include "file_processor.h"
+#include "file_processor_dgn.h"
 #include "geometry_dumper.h"
 #include "vectorise_device.h"
 
 #include <DgLine.h>      // This file puts OdDgLine3d in the output file
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-FileProcessor::FileProcessor(const std::string &inputFile, GeometryCollector *geoCollector)
+FileProcessorDGN::FileProcessorDGN(const std::string &inputFile, GeometryCollector *geoCollector)
 	: file(inputFile),
 	  collector(geoCollector)
 {
 }
 
-
-FileProcessor::~FileProcessor()
+FileProcessorDGN::~FileProcessorDGN()
 {
 }
 
@@ -90,7 +89,7 @@ protected:
 	ODRX_USING_HEAP_OPERATORS(OdExDgnSystemServices);
 };
 
-int FileProcessor::readFile() {
+int FileProcessorDGN::readFile() {
 
 	int   nRes = 0;               // Return value for the function
 	OdStaticRxObject<RepoDgnServices> svcs;
@@ -220,7 +219,7 @@ int FileProcessor::readFile() {
 	return nRes;
 }
 
-int FileProcessor::importDgn(OdDbBaseDatabase *pDb,
+int FileProcessorDGN::importDgn(OdDbBaseDatabase *pDb,
 	const ODCOLORREF* pPallete,
 	int numColors,
 	const OdGiDrawable* pEntity,
@@ -280,3 +279,4 @@ int FileProcessor::importDgn(OdDbBaseDatabase *pDb,
 	}
 	return ret;
 }
+
