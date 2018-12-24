@@ -35,31 +35,28 @@
 #include "file_processor_rvt.h"
 
 //help
-#include "simple_device.h"
+#include "vectorize_device_rvt.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-class MyServices : public OdExBimSystemServices, public OdExBimHostAppServices
+class RepoRvtServices : public OdExBimSystemServices, public OdExBimHostAppServices
 {
 protected:
     ODRX_USING_HEAP_OPERATORS(OdExBimSystemServices);
 };
 
-FileProcessorRVT::FileProcessorRVT(const std::string& inputFile, GeometryCollector* geoCollector) : file(inputFile), collector(geoCollector)
-{}
-
-FileProcessorRVT::~FileProcessorRVT()
-{}
-
-int FileProcessorRVT::readFile()
+repo::manipulator::modelconvertor::odaHelper::FileProcessorRvt::~FileProcessorRvt()
+{
+}
+int FileProcessorRvt::readFile()
 {
     return importRVT();
 }
 
-int FileProcessorRVT::importRVT()
+int FileProcessorRvt::importRVT()
 {
     int nRes = 1;
-    OdStaticRxObject<MyServices> svcs;
+    OdStaticRxObject<RepoRvtServices> svcs;
     odrxInitialize(&svcs);
     OdRxModule* pModule = ::odrxDynamicLinker()->loadModule(OdBmLoaderModuleName, false);
     try
@@ -69,7 +66,8 @@ int FileProcessorRVT::importRVT()
         if (!pDb.isNull())
         {
             OdGiContextForBmDatabasePtr pBimContext = OdGiContextForBmDatabase::createObject();
-            OdGsDevicePtr pDevice = SimpleDevice::createObject(SimpleDevice::k3dDevice, collector);
+            OdGsDevicePtr pDevice = OdRxObjectImpl<VectorizeDeviceRvt, OdGsDevice>::createObject();
+            (static_cast<VectorizeDeviceRvt*>(pDevice.get()))->init(collector);;
             pBimContext->setDatabase(pDb);
             OdDbBaseDatabasePEPtr pDbPE(pDb);
             pDevice = pDbPE->setupActiveLayoutViews(pDevice, pBimContext);

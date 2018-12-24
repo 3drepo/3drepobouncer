@@ -21,12 +21,11 @@
 #include <toString.h>
 #include <DgLevelTableRecord.h>
 
-
-#include "geometry_dumper.h"
+#include "geometry_dumper_dgn.h"
 #include "../../../../core/model/bson/repo_bson_factory.h"
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-void GeometryDumper::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal)
+void GeometryDumperDgn::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal)
 {
 	const OdGePoint3d*  pVertexDataList = vertexDataList();
 	const OdGeVector3d* pNormals = NULL;
@@ -44,15 +43,15 @@ void GeometryDumper::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* 
 	}
 }
 
-double GeometryDumper::deviation(
+double GeometryDumperDgn::deviation(
 	const OdGiDeviationType deviationType, 
 	const OdGePoint3d& pointOnCurve) const {
 	return 0;
 }
 
-VectoriseDevice* GeometryDumper::device()
+VectorizeDeviceDgn* GeometryDumperDgn::device()
 {
-	return static_cast<VectoriseDevice*>(OdGsBaseVectorizeView::device());
+	return static_cast<VectorizeDeviceDgn*>(OdGsBaseVectorizeView::device());
 }
 
 std::string convertToStdString(const OdString &value) {
@@ -60,7 +59,7 @@ std::string convertToStdString(const OdString &value) {
 	return std::string(ansi);
 }
 
-bool GeometryDumper::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
+bool GeometryDumperDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 {
 	OdDgElementPtr pElm = OdDgElement::cast(pDrawable);
 	auto currentItem = pElm;
@@ -90,7 +89,7 @@ bool GeometryDumper::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 }
 
 
-OdCmEntityColor GeometryDumper::fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color)
+OdCmEntityColor GeometryDumperDgn::fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color)
 {
 	if (color.isByACI() || color.isByDgnIndex())
 	{
@@ -104,7 +103,7 @@ OdCmEntityColor GeometryDumper::fixByACI(const ODCOLORREF *ids, const OdCmEntity
 }
 
 
-OdGiMaterialItemPtr GeometryDumper::fillMaterialCache(
+OdGiMaterialItemPtr GeometryDumperDgn::fillMaterialCache(
 	OdGiMaterialItemPtr prevCache, 
 	OdDbStub* materialId, 
 	const OdGiMaterialTraitsData & materialData
@@ -199,11 +198,12 @@ OdGiMaterialItemPtr GeometryDumper::fillMaterialCache(
 	return OdGiMaterialItemPtr();
 }
 
-void GeometryDumper::init(GeometryCollector *const geoCollector) {
+void GeometryDumperDgn::init(GeometryCollector *const geoCollector) 
+{
 	collector = geoCollector;
 }
 
-void GeometryDumper::beginViewVectorization()
+void GeometryDumperDgn::beginViewVectorization()
 {
 	OdGsBaseMaterialView::beginViewVectorization();
 	setEyeToOutputTransform(getEyeToWorldTransform());
@@ -212,13 +212,13 @@ void GeometryDumper::beginViewVectorization()
 	output().setDestGeometry((OdGiGeometrySimplifier&)*this);
 }
 
-void GeometryDumper::endViewVectorization()
+void GeometryDumperDgn::endViewVectorization()
 {
 	collector->stopMeshEntry();
 	OdGsBaseMaterialView::endViewVectorization();
 }
 
-void GeometryDumper::setMode(OdGsView::RenderMode mode)
+void GeometryDumperDgn::setMode(OdGsView::RenderMode mode)
 {
 	OdGsBaseVectorizeView::m_renderMode = kGouraudShaded;
 	m_regenerationType = kOdGiRenderCommand;

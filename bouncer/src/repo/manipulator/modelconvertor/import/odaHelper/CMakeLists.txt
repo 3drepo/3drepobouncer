@@ -12,7 +12,7 @@ if(ODA_SUPPORT)
 		${CMAKE_CURRENT_SOURCE_DIR}/conveyor_geometry_dumper.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/geometry_collector.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/geometry_dumper.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/simple_device.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/vectorize_device_rvt.cpp
 		CACHE STRING "SOURCES" FORCE)
 
 	set(HEADERS
@@ -25,8 +25,8 @@ if(ODA_SUPPORT)
 		${CMAKE_CURRENT_SOURCE_DIR}/geometry_dumper.h
 		${CMAKE_CURRENT_SOURCE_DIR}/od_alloc_op.h
 		${CMAKE_CURRENT_SOURCE_DIR}/oda_exsystem_services.h
-		${CMAKE_CURRENT_SOURCE_DIR}/vectorise_device.h
-		${CMAKE_CURRENT_SOURCE_DIR}/simple_device.h
+		${CMAKE_CURRENT_SOURCE_DIR}/vectorize_device_dgn.h
+		${CMAKE_CURRENT_SOURCE_DIR}/vectorize_device_rvt.h
 		CACHE STRING "HEADERS" FORCE)
 
 endif()

@@ -25,7 +25,7 @@
 #include <string>
 #include <fstream>
 
-#include "vectorise_device.h"
+#include "vectorize_device_dgn.h"
 #include "../../../../core/model/bson/repo_node_mesh.h"
 
 #include <vector>
@@ -33,18 +33,18 @@ namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-				class GeometryDumper : public OdGiGeometrySimplifier, public OdGsBaseMaterialView
+				class GeometryDumperDgn : public OdGiGeometrySimplifier, public OdGsBaseMaterialView
 				{
-					GeometryCollector *collector;				
+					GeometryCollector *collector;
 
 				public:
-					GeometryDumper() {}
+					GeometryDumperDgn() {}
 					
 					virtual double deviation(
 						const OdGiDeviationType deviationType, 
 						const OdGePoint3d& pointOnCurve) const;
 
-					VectoriseDevice* device();
+					VectorizeDeviceDgn* device();
 
 					bool doDraw(
 						OdUInt32 i, 
@@ -74,7 +74,7 @@ namespace repo {
 					OdCmEntityColor fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color);
 
 				};
-				typedef OdSharedPtr<GeometryDumper> OdGiConveyorGeometryDumperPtr;
+				typedef OdSharedPtr<GeometryDumperDgn> OdGiConveyorGeometryDgnDumperPtr;
 			}
 		}
 	}

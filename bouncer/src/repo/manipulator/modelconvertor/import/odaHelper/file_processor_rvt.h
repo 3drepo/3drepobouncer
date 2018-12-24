@@ -16,32 +16,31 @@
 */
 
 #pragma once
+
 #include "../../../../core/model/bson/repo_node_mesh.h"
-#include "geometry_collector.h"
+
 #include <OdaCommon.h>
 #include <Gs/GsBaseInclude.h>
 #include <RxObjectImpl.h>
 #include <vector>
 #include <string>
+#include "geometry_collector.h"
 #include "file_processor.h"
 
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-				class FileProcessorRVT : public FileProcessor
+				class FileProcessorRvt : public FileProcessor
 				{
 				public:
-					FileProcessorRVT(const std::string& inputFile, GeometryCollector* geoCollector);
-					~FileProcessorRVT();
+					FileProcessorRvt(const std::string& inputFile, GeometryCollector* geoCollector) : FileProcessor(inputFile, geoCollector) {};
+					~FileProcessorRvt() override;
 
-					int readFile();
+					int readFile() override;
 
 				private:
-					const std::string file;
-					GeometryCollector* collector;
 					int importRVT();
-
 				};
 			}
 		}

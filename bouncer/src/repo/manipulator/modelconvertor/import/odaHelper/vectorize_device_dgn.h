@@ -28,7 +28,7 @@ namespace repo {
 		namespace modelconvertor {
 			namespace odaHelper {
 
-				class VectoriseDevice :
+				class VectorizeDeviceDgn :
 					public OdGsBaseVectorizeDevice
 				{
 					GeometryCollector * geoCollector;
@@ -36,9 +36,9 @@ namespace repo {
 					ODRX_USING_HEAP_OPERATORS(OdGsBaseVectorizeDevice);
 				public:
 
-					VectoriseDevice(){}
-					~VectoriseDevice(){}
-				}; // end OdaVectoriseDevice			
+					VectorizeDeviceDgn(){}
+					~VectorizeDeviceDgn(){}
+				}; // end OdaVectorizeDevice			
 			}
 		}
 	}

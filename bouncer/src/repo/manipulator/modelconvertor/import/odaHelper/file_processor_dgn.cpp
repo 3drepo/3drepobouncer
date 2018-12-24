@@ -33,21 +33,12 @@
 #include <DgGsManager.h>
 
 #include "file_processor_dgn.h"
-#include "geometry_dumper.h"
-#include "vectorise_device.h"
+#include "geometry_dumper_dgn.h"
+#include "vectorize_device_dgn.h"
 
 #include <DgLine.h>      // This file puts OdDgLine3d in the output file
+
 using namespace repo::manipulator::modelconvertor::odaHelper;
-
-FileProcessorDGN::FileProcessorDGN(const std::string &inputFile, GeometryCollector *geoCollector)
-	: file(inputFile),
-	  collector(geoCollector)
-{
-}
-
-FileProcessorDGN::~FileProcessorDGN()
-{
-}
 
 class StubDeviceModuleText : public OdGsBaseModule
 {
@@ -64,12 +55,12 @@ public:
 protected:
 	OdSmartPtr<OdGsBaseVectorizeDevice> createDeviceObject()
 	{
-		return OdRxObjectImpl<VectoriseDevice, OdGsBaseVectorizeDevice>::createObject();
+		return OdRxObjectImpl<VectorizeDeviceDgn, OdGsBaseVectorizeDevice>::createObject();
 	}
 	OdSmartPtr<OdGsViewImpl> createViewObject()
 	{
-		OdSmartPtr<OdGsViewImpl> pP = OdRxObjectImpl<GeometryDumper, OdGsViewImpl>::createObject();
-		((GeometryDumper*)pP.get())->init(collector);
+		OdSmartPtr<OdGsViewImpl> pP = OdRxObjectImpl<GeometryDumperDgn, OdGsViewImpl>::createObject();
+		((GeometryDumperDgn*)pP.get())->init(collector);
 		return pP;
 	}
 	OdSmartPtr<OdGsBaseVectorizeDevice> createBitmapDeviceObject()
@@ -89,7 +80,11 @@ protected:
 	ODRX_USING_HEAP_OPERATORS(OdExDgnSystemServices);
 };
 
-int FileProcessorDGN::readFile() {
+repo::manipulator::modelconvertor::odaHelper::FileProcessorDgn::~FileProcessorDgn()
+{
+}
+
+int FileProcessorDgn::readFile() {
 
 	int   nRes = 0;               // Return value for the function
 	OdStaticRxObject<RepoDgnServices> svcs;
@@ -219,7 +214,7 @@ int FileProcessorDGN::readFile() {
 	return nRes;
 }
 
-int FileProcessorDGN::importDgn(OdDbBaseDatabase *pDb,
+int FileProcessorDgn::importDgn(OdDbBaseDatabase *pDb,
 	const ODCOLORREF* pPallete,
 	int numColors,
 	const OdGiDrawable* pEntity,

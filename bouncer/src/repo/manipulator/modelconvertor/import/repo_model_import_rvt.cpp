@@ -51,10 +51,11 @@ bool RvtModelImport::importModel(std::string filePath, uint8_t &err)
 #ifdef ODA_SUPPORT
     this->filePath = filePath;
     repoInfo << " ==== Importing with Teigha Library [" << filePath << "] ====";
-    odaHelper::FileProcessorRVT odaProcessor(filePath, &geoCollector);
+    std::unique_ptr<odaHelper::FileProcessor> odaProcessor = odaHelper::FileProcessor::getFileProcessor(filePath, &geoCollector);
+
     bool success = false;
     try {
-        success = odaProcessor.readFile() == 0;
+        success = odaProcessor != nullptr && odaProcessor->readFile() == 0;
     }
     catch (...)
     {

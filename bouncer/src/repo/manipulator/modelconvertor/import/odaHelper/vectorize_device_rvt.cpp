@@ -15,45 +15,61 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "BimCommon.h"
-#include "Database/BmElement.h"
-#include "RxObjectImpl.h"
-#include "simple_device.h"
-#include "conveyor_geometry_dumper.h"
-#include "ColorMapping.h"
-#include "toString.h"
+#include <BimCommon.h>
+#include <Database/BmElement.h>
+#include <RxObjectImpl.h>
+#include <ColorMapping.h>
+#include <toString.h>
 
-SimpleDevice::SimpleDevice()
+#include "vectorize_device_rvt.h"
+#include "geometry_dumper_rvt.h"
+
+using namespace repo::manipulator::modelconvertor::odaHelper;
+
+VectorizeDeviceRvt::VectorizeDeviceRvt()
 {
 	setLogicalPalette(odcmAcadLightPalette(), 256);
 	onSize(OdGsDCRect(0, 100, 0, 100));
 }
 
-OdGsDevicePtr SimpleDevice::createObject(DeviceType type, GeometryCollector* gcollector)
+void VectorizeDeviceRvt::init(GeometryCollector *const geoCollector) 
 {
-	OdGsDevicePtr pRes = OdRxObjectImpl<SimpleDevice, OdGsDevice>::createObject();
-	SimpleDevice* pMyDev = static_cast<SimpleDevice*>(pRes.get());
-	pMyDev->m_type = type;
-	pMyDev->m_pDestGeometry = ConveyorGeometryDumper::createObject(gcollector);
-	return pRes;
+	destGeometryDumper = new GeometryDumperRvt();
+	destGeometryDumper->init(geoCollector);
 }
 
-OdGsViewPtr SimpleDevice::createView(const OdGsClientViewInfo* pInfo,
+OdGsViewPtr VectorizeDeviceRvt::createView(
+	const OdGsClientViewInfo* pInfo,
 	bool bEnableLayerVisibilityPerView)
 {
-	OdGsViewPtr pView = SimpleView::createObject();
-	SimpleView* pMyView = static_cast<SimpleView*>(pView.get());
+	OdGsViewPtr pView = VectorizeView::createObject();
+	VectorizeView* pMyView = static_cast<VectorizeView*>(pView.get());
 	pMyView->init(this, pInfo, bEnableLayerVisibilityPerView);
-	pMyView->output().setDestGeometry(*m_pDestGeometry);
+	pMyView->output().setDestGeometry(*destGeometryDumper);
 	return (OdGsView*)pMyView;
 }
 
-OdGiConveyorGeometry* SimpleDevice::destGeometry()
+OdGiConveyorGeometry* VectorizeDeviceRvt::destGeometry()
 {
-	return m_pDestGeometry;
+	return destGeometryDumper;
 }
 
-void SimpleView::ownerDrawDc(const OdGePoint3d& origin,
+void VectorizeDeviceRvt::setupSimplifier(const OdGiDeviation* pDeviation)
+{
+	destGeometryDumper->setDeviation(pDeviation);
+}
+
+OdGsViewPtr VectorizeView::createObject()
+{
+	return OdRxObjectImpl<VectorizeView, OdGsView>::createObject();
+}
+
+VectorizeView::VectorizeView()
+{
+	eyeClip.m_bDrawBoundary = false;
+}
+
+void VectorizeView::ownerDrawDc(const OdGePoint3d& origin,
 	const OdGeVector3d& u,
 	const OdGeVector3d& v,
 	const OdGiSelfGdiDrawable*,
@@ -65,17 +81,7 @@ void SimpleView::ownerDrawDc(const OdGePoint3d& origin,
 	OdGeVector3d uXformed(eyeToOutput * u), vXformed(eyeToOutput * v);
 }
 
-void SimpleDevice::update(OdGsDCRect* pUpdatedRect)
-{
-	OdGsBaseVectorizeDevice::update(pUpdatedRect);
-}
-
-bool SimpleView::regenAbort() const
-{
-	return false;
-}
-
-void SimpleView::draw(const OdGiDrawable* pDrawable)
+void VectorizeView::draw(const OdGiDrawable* pDrawable)
 {
 	OdString sClassName = toString(pDrawable->isA());
 	bool bDBRO = false;
@@ -86,7 +92,7 @@ void SimpleView::draw(const OdGiDrawable* pDrawable)
 	OdGsBaseVectorizer::draw(pDrawable);
 }
 
-void SimpleView::updateViewport()
+void VectorizeView::updateViewport()
 {
 	(static_cast<OdGiGeometrySimplifier*>(device()->destGeometry()))->setDrawContext(drawContext());
 
@@ -94,57 +100,54 @@ void SimpleView::updateViewport()
 	OdGeMatrix3d screen2Eye(eye2Screen.inverse());
 	setEyeToOutputTransform(eye2Screen);
 
-	m_eyeClip.m_bClippingFront = isFrontClipped();
-	m_eyeClip.m_bClippingBack = isBackClipped();
-	m_eyeClip.m_dFrontClipZ = frontClip();
-	m_eyeClip.m_dBackClipZ = backClip();
-	m_eyeClip.m_vNormal = viewDir();
-	m_eyeClip.m_ptPoint = target();
-	m_eyeClip.m_Points.clear();
+	eyeClip.m_bClippingFront = isFrontClipped();
+	eyeClip.m_bClippingBack = isBackClipped();
+	eyeClip.m_dFrontClipZ = frontClip();
+	eyeClip.m_dBackClipZ = backClip();
+	eyeClip.m_vNormal = viewDir();
+	eyeClip.m_ptPoint = target();
+	eyeClip.m_Points.clear();
 
 	OdGeVector2d halfDiagonal(fieldWidth() / 2.0, fieldHeight() / 2.0);
 
-	OdIntArray m_nrcCounts;
-	OdGePoint2dArray m_nrcPoints;
-	viewportClipRegion(m_nrcCounts, m_nrcPoints);
-	if (m_nrcCounts.size() == 1)
+	OdIntArray nrcCounts;
+	OdGePoint2dArray nrcPoints;
+	viewportClipRegion(nrcCounts, nrcPoints);
+	if (nrcCounts.size() == 1)
 	{
-		int i;
-		for (i = 0; i < m_nrcCounts[0]; i++)
+		for (int i = 0; i < nrcCounts[0]; i++)
 		{
-			OdGePoint3d screenPt(m_nrcPoints[i].x, m_nrcPoints[i].y, 0.0);
+			OdGePoint3d screenPt(nrcPoints[i].x, nrcPoints[i].y, 0.0);
 			screenPt.transformBy(screen2Eye);
-			m_eyeClip.m_Points.append(OdGePoint2d(screenPt.x, screenPt.y));
+			eyeClip.m_Points.append(OdGePoint2d(screenPt.x, screenPt.y));
 		}
 	}
 	else
 	{
-		m_eyeClip.m_Points.append(OdGePoint2d::kOrigin - halfDiagonal);
-		m_eyeClip.m_Points.append(OdGePoint2d::kOrigin + halfDiagonal);
+		eyeClip.m_Points.append(OdGePoint2d::kOrigin - halfDiagonal);
+		eyeClip.m_Points.append(OdGePoint2d::kOrigin + halfDiagonal);
 	}
 
-	m_eyeClip.m_xToClipSpace = getWorldToEyeTransform();
-	pushClipBoundary(&m_eyeClip);
+	eyeClip.m_xToClipSpace = getWorldToEyeTransform();
+	pushClipBoundary(&eyeClip);
 	OdGsBaseVectorizer::updateViewport();
 	popClipBoundary();
 }
 
-void SimpleView::onTraitsModified()
+void VectorizeView::onTraitsModified()
 {
 	OdGsBaseVectorizer::onTraitsModified();
 	const OdGiSubEntityTraitsData& currTraits = effectiveTraits();
-
 }
 
-void SimpleView::beginViewVectorization()
+void VectorizeView::beginViewVectorization()
 {
 	OdGsBaseVectorizer::beginViewVectorization();
 	device()->setupSimplifier(&m_pModelToEyeProc->eyeDeviation());
 	setDrawContextFlags(drawContextFlags(), false);
 }
 
-void SimpleDevice::setupSimplifier(const OdGiDeviation* pDeviation)
+VectorizeDeviceRvt* VectorizeView::device()
 {
-	m_pDestGeometry->setDeviation(pDeviation);
+	return (VectorizeDeviceRvt*)OdGsBaseVectorizeView::device();
 }
-

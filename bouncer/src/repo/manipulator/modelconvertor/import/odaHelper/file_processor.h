@@ -16,6 +16,8 @@
 */
 
 #pragma once
+#include "geometry_collector.h"
+#include <string>
 
 namespace repo {
 	namespace manipulator {
@@ -23,8 +25,15 @@ namespace repo {
 			namespace odaHelper {
 				class FileProcessor
 				{
+					FileProcessor(const std::string& inputFile, GeometryCollector* geoCollector);
 				public:
+					static std::unique_ptr<FileProcessor> getFileProcessor(const std::string& inputFile, GeometryCollector* geoCollector);
+					virtual ~FileProcessor();
 					virtual int readFile() = 0;
+					
+				protected:
+					const std::string file;
+					GeometryCollector *collector;
 				};
 			}
 		}
