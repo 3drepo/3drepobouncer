@@ -76,7 +76,7 @@ void GeometryDumperRvt::meshProc(
 
 	const OdGePoint3d* pV = pVertexList;
 	repo_material_t mat;
-	mat.ambient = { 0,0.5,0 };////////////////////refactoring
+	mat.ambient = { 0,0.5,0 };//TODO: Materials support implementation to be added here
 	mat.diffuse = { 1,0,0 };
 	mat.emissive = { 0,1,0 };
 	mat.specular = { 0,1,0 };
@@ -114,7 +114,7 @@ void GeometryDumperRvt::shellProc(
 	collector->stopMeshEntry();
 	collector->startMeshEntry();
 	repo_material_t mat;
-	mat.ambient = { 0,0.5,0 };////////////////////refactoring
+	mat.ambient = { 0,0.5,0 };//TODO: Materials support implementation to be added here
 	mat.diffuse = { 1,0,0 };
 	mat.emissive = { 0,1,0 };
 	mat.specular = { 0,1,0 };
