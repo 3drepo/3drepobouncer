@@ -25,6 +25,7 @@ namespace repo {
 			namespace odaHelper {
 				class FileProcessor
 				{
+				protected:
 					FileProcessor(const std::string& inputFile, GeometryCollector* geoCollector);
 				public:
 					static std::unique_ptr<FileProcessor> getFileProcessor(const std::string& inputFile, GeometryCollector* geoCollector);
