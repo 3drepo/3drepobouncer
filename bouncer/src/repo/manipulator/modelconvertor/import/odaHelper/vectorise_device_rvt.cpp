@@ -21,52 +21,58 @@
 #include <ColorMapping.h>
 #include <toString.h>
 
-#include "vectorize_device_rvt.h"
+#include "vectorise_device_rvt.h"
 #include "geometry_dumper_rvt.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-VectorizeDeviceRvt::VectorizeDeviceRvt()
+VectoriseDeviceRvt::VectoriseDeviceRvt()
 {
 	setLogicalPalette(odcmAcadLightPalette(), 256);
 	onSize(OdGsDCRect(0, 100, 0, 100));
 }
 
-void VectorizeDeviceRvt::init(GeometryCollector *const geoCollector) 
+void VectoriseDeviceRvt::init(GeometryCollector *const geoCollector, MaterialCollectorRvt& matCollector)
 {
 	destGeometryDumper = new GeometryDumperRvt();
 	destGeometryDumper->init(geoCollector);
+	geoColl = geoCollector;
+	matColl = &matCollector;
 }
 
-OdGsViewPtr VectorizeDeviceRvt::createView(
+OdGsViewPtr VectoriseDeviceRvt::createView(
 	const OdGsClientViewInfo* pInfo,
 	bool bEnableLayerVisibilityPerView)
 {
-	OdGsViewPtr pView = VectorizeView::createObject();
+	OdGsViewPtr pView = VectorizeView::createObject(geoColl, matColl);
 	VectorizeView* pMyView = static_cast<VectorizeView*>(pView.get());
 	pMyView->init(this, pInfo, bEnableLayerVisibilityPerView);
 	pMyView->output().setDestGeometry(*destGeometryDumper);
 	return (OdGsView*)pMyView;
 }
 
-OdGiConveyorGeometry* VectorizeDeviceRvt::destGeometry()
+OdGiConveyorGeometry* VectoriseDeviceRvt::destGeometry()
 {
 	return destGeometryDumper;
 }
 
-void VectorizeDeviceRvt::setupSimplifier(const OdGiDeviation* pDeviation)
+void VectoriseDeviceRvt::setupSimplifier(const OdGiDeviation* pDeviation)
 {
 	destGeometryDumper->setDeviation(pDeviation);
 }
 
-OdGsViewPtr VectorizeView::createObject()
+OdGsViewPtr VectorizeView::createObject(GeometryCollector* geoColl, MaterialCollectorRvt* matColl)
 {
-	return OdRxObjectImpl<VectorizeView, OdGsView>::createObject();
+	auto ptr = OdRxObjectImpl<VectorizeView, OdGsView>::createObject();
+	static_cast<VectorizeView*>(ptr.get())->geoColl = geoColl;
+	static_cast<VectorizeView*>(ptr.get())->matColl = matColl;
+	return ptr;
 }
 
 VectorizeView::VectorizeView()
 {
 	eyeClip.m_bDrawBoundary = false;
+	meshesCount = 0;
 }
 
 void VectorizeView::ownerDrawDc(const OdGePoint3d& origin,
@@ -83,6 +89,18 @@ void VectorizeView::ownerDrawDc(const OdGePoint3d& origin,
 
 void VectorizeView::draw(const OdGiDrawable* pDrawable)
 {
+	geoColl->stopMeshEntry();
+	geoColl->setMeshGroup(std::to_string(meshesCount));
+	geoColl->setNextMeshName(std::to_string(meshesCount));
+	geoColl->startMeshEntry();
+	meshesCount++;
+	
+	repo_material_t mat;
+	if (matColl->getMaterial(pDrawable, mat))
+	{
+		geoColl->setCurrentMaterial(mat);
+	}
+	
 	OdString sClassName = toString(pDrawable->isA());
 	bool bDBRO = false;
 	OdBmElementPtr pElem = OdBmElement::cast(pDrawable);
@@ -147,7 +165,7 @@ void VectorizeView::beginViewVectorization()
 	setDrawContextFlags(drawContextFlags(), false);
 }
 
-VectorizeDeviceRvt* VectorizeView::device()
+VectoriseDeviceRvt* VectorizeView::device()
 {
-	return (VectorizeDeviceRvt*)OdGsBaseVectorizeView::device();
+	return (VectoriseDeviceRvt*)OdGsBaseVectorizeView::device();
 }

@@ -30,42 +30,20 @@ namespace repo {
 			namespace odaHelper {
 				class GeometryDumperRvt : public OdGiGeometrySimplifier
 				{
-					GeometryCollector *collector;
-
+					GeometryCollector* collector;
+					uint64_t meshesCount;
 				public:
 					GeometryDumperRvt() {}
-					
+
 					void init(GeometryCollector *const geoCollector);
-					void polygonOut(
-						OdInt32 numPoints, 
-						const OdGePoint3d* vertexList, 
-						const OdGeVector3d* pNormal = 0);
 
-					void polygonProc(
-						OdInt32 nbPoints, 
-						const OdGePoint3d* pVertexList,
-						const OdGeVector3d* pNormal = 0,
-						const OdGeVector3d* pExtrusion = 0);
+					virtual void triangleOut(const OdInt32* vertices,
+						const OdGeVector3d* pNormal);
 
-					void meshProc(
-						OdInt32 rows,
-						OdInt32 columns,
-						const OdGePoint3d* pVertexList,
-						const OdGiEdgeData* pEdgeData = 0,
-						const OdGiFaceData* pFaceData = 0,
-						const OdGiVertexData* pVertexData = 0);
-
-					void shellProc(
-						OdInt32 numVertices,
-						const OdGePoint3d* vertexList,
-						OdInt32 faceListSize,
-						const OdInt32* faceList,
-						const OdGiEdgeData* pEdgeData,
-						const OdGiFaceData* pFaceData,
-						const OdGiVertexData* pVertexData);
 				};
-				typedef OdSharedPtr<GeometryDumperRvt> OdGiConveyorGeometryRvtDumperPtr;
+				typedef OdSharedPtr<GeometryDumperRvt> GeometryRvtDumperPtr;
 			}
 		}
 	}
 }
+

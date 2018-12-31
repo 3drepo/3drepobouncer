@@ -25,10 +25,11 @@
 #include <string>
 #include <fstream>
 
-#include "vectorize_device_dgn.h"
+#include "vectorise_device_dgn.h"
 #include "../../../../core/model/bson/repo_node_mesh.h"
 
 #include <vector>
+
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
@@ -44,7 +45,7 @@ namespace repo {
 						const OdGiDeviationType deviationType, 
 						const OdGePoint3d& pointOnCurve) const;
 
-					VectorizeDeviceDgn* device();
+					VectoriseDeviceDgn* device();
 
 					bool doDraw(
 						OdUInt32 i, 

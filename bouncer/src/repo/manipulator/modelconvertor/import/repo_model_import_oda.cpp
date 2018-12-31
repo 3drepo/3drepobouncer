@@ -1,4 +1,4 @@
-#include "repo_model_import_rvt.h"
+#include "repo_model_import_oda.h"
 #include "repo/core/model/bson/repo_bson_factory.h"
 #include "repo/error_codes.h"
 
@@ -8,11 +8,15 @@
 
 using namespace repo::manipulator::modelconvertor;
 
-RvtModelImport::RvtModelImport()
+const std::string OdaModelImport::DgnExt = ".dgn";
+const std::string OdaModelImport::RvtExt = ".rvt";
+const std::string OdaModelImport::RfaExt = ".rfa";
+
+OdaModelImport::OdaModelImport()
 {
 }
 
-RvtModelImport::~RvtModelImport()
+OdaModelImport::~OdaModelImport()
 {
 }
 
@@ -22,7 +26,17 @@ static repo_material_t createDefaultMaterial() {
     matStruct.opacity = 1;
 }
 
-repo::core::model::RepoScene* RvtModelImport::generateRepoScene()
+bool OdaModelImport::isSupportedExts(const std::string &testExt)
+{
+	std::string extensions = DgnExt + RvtExt + RfaExt;
+
+	std::string lowerExt(testExt);
+	std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
+
+	return extensions.find(lowerExt) != std::string::npos;
+}
+
+repo::core::model::RepoScene* OdaModelImport::generateRepoScene()
 {
     repo::core::model::RepoScene *scene = nullptr;
 #ifdef ODA_SUPPORT
@@ -46,13 +60,12 @@ repo::core::model::RepoScene* RvtModelImport::generateRepoScene()
     return scene;
 }
 
-bool RvtModelImport::importModel(std::string filePath, uint8_t &err)
+bool OdaModelImport::importModel(std::string filePath, uint8_t &err)
 {
 #ifdef ODA_SUPPORT
     this->filePath = filePath;
     repoInfo << " ==== Importing with Teigha Library [" << filePath << "] ====";
     std::unique_ptr<odaHelper::FileProcessor> odaProcessor = odaHelper::FileProcessor::getFileProcessor(filePath, &geoCollector);
-
     bool success = false;
     try {
         success = odaProcessor != nullptr && odaProcessor->readFile() == 0;

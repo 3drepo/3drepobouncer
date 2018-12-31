@@ -34,10 +34,9 @@
 
 #include "file_processor_dgn.h"
 #include "geometry_dumper_dgn.h"
-#include "vectorize_device_dgn.h"
+#include "vectorise_device_dgn.h"
 
 #include <DgLine.h>      // This file puts OdDgLine3d in the output file
-
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 class StubDeviceModuleText : public OdGsBaseModule
@@ -55,7 +54,7 @@ public:
 protected:
 	OdSmartPtr<OdGsBaseVectorizeDevice> createDeviceObject()
 	{
-		return OdRxObjectImpl<VectorizeDeviceDgn, OdGsBaseVectorizeDevice>::createObject();
+		return OdRxObjectImpl<VectoriseDeviceDgn, OdGsBaseVectorizeDevice>::createObject();
 	}
 	OdSmartPtr<OdGsViewImpl> createViewObject()
 	{
@@ -83,7 +82,6 @@ protected:
 repo::manipulator::modelconvertor::odaHelper::FileProcessorDgn::~FileProcessorDgn()
 {
 }
-
 int FileProcessorDgn::readFile() {
 
 	int   nRes = 0;               // Return value for the function

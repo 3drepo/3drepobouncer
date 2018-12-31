@@ -35,7 +35,7 @@
 #include "file_processor_rvt.h"
 
 //help
-#include "vectorize_device_rvt.h"
+#include "vectorise_device_rvt.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
@@ -47,7 +47,9 @@ protected:
 
 repo::manipulator::modelconvertor::odaHelper::FileProcessorRvt::~FileProcessorRvt()
 {
+
 }
+
 int FileProcessorRvt::readFile()
 {
     return importRVT();
@@ -66,12 +68,14 @@ int FileProcessorRvt::importRVT()
         if (!pDb.isNull())
         {
             OdGiContextForBmDatabasePtr pBimContext = OdGiContextForBmDatabase::createObject();
-            OdGsDevicePtr pDevice = OdRxObjectImpl<VectorizeDeviceRvt, OdGsDevice>::createObject();
-            (static_cast<VectorizeDeviceRvt*>(pDevice.get()))->init(collector);;
+
+            OdGsDevicePtr pDevice = OdRxObjectImpl<VectoriseDeviceRvt, OdGsDevice>::createObject();
+            (static_cast<VectoriseDeviceRvt*>(pDevice.get()))->init(collector, matCollector);
+           
             pBimContext->setDatabase(pDb);
             OdDbBaseDatabasePEPtr pDbPE(pDb);
             pDevice = pDbPE->setupActiveLayoutViews(pDevice, pBimContext);
-            OdGsDCRect screenRect(OdGsDCPoint(0, 0), OdGsDCPoint(1000, 1000));
+            OdGsDCRect screenRect(OdGsDCPoint(0, 0), OdGsDCPoint(1000, 1000)); //Set the screen space to the borders of the scene
             pDevice->onSize(screenRect);
             pDevice->update();
         }

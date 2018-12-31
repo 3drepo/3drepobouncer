@@ -177,8 +177,7 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
 
 repo::core::model::TransformationNode*  GeometryCollector::createTransNode(
 	const std::string &name,
-	const repo::lib::RepoUUID &parentId
-) {	
+	const repo::lib::RepoUUID &parentId) {	
 	return new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name, { parentId }));
 }
 

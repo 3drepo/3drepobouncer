@@ -49,9 +49,9 @@ double GeometryDumperDgn::deviation(
 	return 0;
 }
 
-VectorizeDeviceDgn* GeometryDumperDgn::device()
+VectoriseDeviceDgn* GeometryDumperDgn::device()
 {
-	return static_cast<VectorizeDeviceDgn*>(OdGsBaseVectorizeView::device());
+	return static_cast<VectoriseDeviceDgn*>(OdGsBaseVectorizeView::device());
 }
 
 std::string convertToStdString(const OdString &value) {

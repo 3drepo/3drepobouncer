@@ -24,8 +24,10 @@
 #include <RxObjectImpl.h>
 #include <vector>
 #include <string>
+
 #include "geometry_collector.h"
 #include "file_processor.h"
+
 
 namespace repo {
 	namespace manipulator {
@@ -46,6 +48,7 @@ namespace repo {
 						const OdGiDrawable* pEntity = nullptr,
 						const OdGeMatrix3d& matTransform = OdGeMatrix3d::kIdentity,
 						const std::map<OdDbStub*, double>* pMapDeviations = nullptr);
+
 				};
 			}
 		}

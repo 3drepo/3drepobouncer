@@ -4,11 +4,8 @@
 #If you really need to overwrite this file, be aware that it will be overwritten if updateSources.py is executed.
 
 
-add_subdirectory(repo)
-set(TEST_HEADERS
-	${TEST_HEADERS}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_database_info.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_fileservice_info.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_test_utils.h
-	CACHE STRING "TEST_HEADERS" FORCE)
+set(TEST_SOURCES
+	${TEST_SOURCES}
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_file_handler_s3.cpp
+	CACHE STRING "TEST_SOURCES" FORCE)
 

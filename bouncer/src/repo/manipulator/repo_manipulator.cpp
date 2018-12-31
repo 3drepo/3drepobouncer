@@ -33,10 +33,9 @@
 #include "diff/repo_diff_name.h"
 #include "diff/repo_diff_sharedid.h"
 #include "modelconvertor/import/repo_model_import_assimp.h"
-#include "modelconvertor/import/repo_model_import_dgn.h"
 #include "modelconvertor/import/repo_model_import_ifc.h"
 #include "modelconvertor/import/repo_model_import_3drepo.h"
-#include "modelconvertor/import/repo_model_import_rvt.h"
+#include "modelconvertor/import/repo_model_import_oda.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
 #include "modelconvertor/export/repo_model_export_asset.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
@@ -842,17 +841,16 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 
 	bool useIFCImporter = fileExt == ".IFC" && (!config || config->getUseIFCOpenShell());
 	bool useRepoImporter = fileExt == ".BIM";
-	bool useDgnImporter = fileExt == ".DGN";
-	bool useRvtImporter = fileExt == ".RVT" || fileExt == ".RFA";
+	bool useOdaImporter = repo::manipulator::modelconvertor::OdaModelImport::isSupportedExts(fileExt);
+
+	bool isDgnFormat = fileExt == ".DGN";
 
 	if (useIFCImporter)
 		modelConvertor = new repo::manipulator::modelconvertor::IFCModelImport(config);
 	else if (useRepoImporter)
 		modelConvertor = new repo::manipulator::modelconvertor::RepoModelImport(config);
-	else if (useDgnImporter)
-		modelConvertor = new repo::manipulator::modelconvertor::DgnModelImport(); //FIXME: take in config like everything else.
-	else if (useRvtImporter)
-		modelConvertor = new repo::manipulator::modelconvertor::RvtModelImport();
+	else if (useOdaImporter)
+		modelConvertor = new repo::manipulator::modelconvertor::OdaModelImport(); //FIXME: take in config like everything else.
 	else
 		modelConvertor = new repo::manipulator::modelconvertor::AssimpModelImport(config);
 
@@ -876,13 +874,13 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 					error = REPOERR_NO_MESHES;
 					return nullptr;
 				}
-				if (rotateModel || useIFCImporter || useDgnImporter)
+				if (rotateModel || useIFCImporter || isDgnFormat)
 				{
 					repoTrace << "rotating model by 270 degress on the x axis...";
 					scene->reorientateDirectXModel();
 				}
 
-				if (applyReduction && !useDgnImporter)
+				if (applyReduction && !isDgnFormat)
 				{
 					repoTrace << "Scene generated. Applying transformation reduction optimizer";
 					modeloptimizer::TransformationReductionOptimizer optimizer;

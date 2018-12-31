@@ -22,10 +22,13 @@
 #include <OdaCommon.h>
 #include <Gs/GsBaseInclude.h>
 #include <RxObjectImpl.h>
+
 #include <vector>
 #include <string>
+
 #include "geometry_collector.h"
 #include "file_processor.h"
+#include "material_collector_rvt.h"
 
 namespace repo {
 	namespace manipulator {
@@ -41,6 +44,7 @@ namespace repo {
 
 				private:
 					int importRVT();
+					MaterialCollectorRvt matCollector;
 				};
 			}
 		}

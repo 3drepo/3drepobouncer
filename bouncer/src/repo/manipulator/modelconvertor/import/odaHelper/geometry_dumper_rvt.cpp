@@ -26,101 +26,25 @@
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-void GeometryDumperRvt::init(GeometryCollector *const geoCollector) 
+void GeometryDumperRvt::init(GeometryCollector* const geoCollector)
 {
 	collector = geoCollector;
 }
 
-void GeometryDumperRvt::polygonOut(
-	OdInt32 numPoints,
-	const OdGePoint3d* vertexList,
-	const OdGeVector3d* pNormal)
+void GeometryDumperRvt::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal)
 {
-	std::vector<repo::lib::RepoVector3D64> vec;
-	repo::lib::RepoVector3D64 vec3;
-	for (int i = 0; i < numPoints; i++)
+	const OdGePoint3d*  pVertexDataList = vertexDataList();
+	const int numVertices = 3;
+
+	if ((pVertexDataList + p3Vertices[0]) != (pVertexDataList + p3Vertices[1]) &&
+		(pVertexDataList + p3Vertices[0]) != (pVertexDataList + p3Vertices[2]) &&
+		(pVertexDataList + p3Vertices[1]) != (pVertexDataList + p3Vertices[2]))
 	{
-		vec3.x = vertexList[i].x;
-		vec3.y = vertexList[i].y;
-		vec3.z = vertexList[i].z;
-		vec.push_back(vec3);
-	}
-	collector->addFace(vec);
-}
-
-void GeometryDumperRvt::polygonProc(
-	OdInt32 numPoints,
-	const OdGePoint3d* vertexList,
-	const OdGeVector3d* pNormal,
-	const OdGeVector3d* pExtrusion)
-{
-	const OdGePoint3d* vPtr = vertexList;
-	std::vector<repo::lib::RepoVector3D64> vec;
-	for (int i = 0; i < numPoints; i++)
-	{
-		vec.push_back({ vPtr->x, vPtr->y, vPtr->z });
-		vPtr++;
-	}
-	OdGiGeometrySimplifier::polygonProc(numPoints, vertexList, pNormal, pExtrusion);
-}
-
-void GeometryDumperRvt::meshProc(
-	OdInt32 rows,
-	OdInt32 columns,
-	const OdGePoint3d* pVertexList,
-	const OdGiEdgeData* pEdgeData,
-	const OdGiFaceData* pFaceData,
-	const OdGiVertexData* pVertexData)
-{
-	OdString s;
-
-	const OdGePoint3d* pV = pVertexList;
-	repo_material_t mat;
-	mat.ambient = { 0,0.5,0 };//TODO: Materials support implementation to be added here
-	mat.diffuse = { 1,0,0 };
-	mat.emissive = { 0,1,0 };
-	mat.specular = { 0,1,0 };
-
-	for (OdInt32 row = 0; row < rows; row++)
-	{
-		for (OdInt32 col = 0; col < columns; col++)
+		std::vector<repo::lib::RepoVector3D64> vertices;
+		for (int i = 0; i < numVertices; ++i)
 		{
-			s.format(OD_T("Vertex[%d, %d]"), col, row);
-
-			std::vector<repo::lib::RepoVector3D64> verts;
-			const OdGePoint3d* pVt = pV;
-			verts.push_back(repo::lib::RepoVector3D64(pV->x, pV->y, pV->z));
-			pVt++;
-			verts.push_back(repo::lib::RepoVector3D64(pV->x, pV->y, pV->z));
-			pVt++;
-			verts.push_back(repo::lib::RepoVector3D64(pV->x, pV->y, pV->z));
-
-			pV++;
+			vertices.push_back({ pVertexDataList[p3Vertices[i]].x , pVertexDataList[p3Vertices[i]].y, pVertexDataList[p3Vertices[i]].z });
 		}
+		collector->addFace(vertices);
 	}
-
-	OdGiGeometrySimplifier::meshProc(rows, columns, pVertexList, pEdgeData, pFaceData, pVertexData);
 }
-
-void GeometryDumperRvt::shellProc(
-	OdInt32 numVertices,
-	const OdGePoint3d* vertexList,
-	OdInt32 faceListSize,
-	const OdInt32* faceList,
-	const OdGiEdgeData* pEdgeData,
-	const OdGiFaceData* pFaceData,
-	const OdGiVertexData* pVertexData)
-{
-	collector->stopMeshEntry();
-	collector->startMeshEntry();
-	repo_material_t mat;
-	mat.ambient = { 0,0.5,0 };//TODO: Materials support implementation to be added here
-	mat.diffuse = { 1,0,0 };
-	mat.emissive = { 0,1,0 };
-	mat.specular = { 0,1,0 };
-	collector->setCurrentMaterial(mat);
-
-	OdGiGeometrySimplifier::shellProc(numVertices, vertexList, faceListSize, faceList, pEdgeData, pFaceData, pVertexData);
-}
-
-

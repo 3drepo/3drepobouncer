@@ -29,11 +29,20 @@
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
-			class RvtModelImport : public AbstractModelImport
+			class OdaModelImport : public AbstractModelImport
 			{
 			public:
-                RvtModelImport();
-				~RvtModelImport();
+				static const std::string DgnExt;
+				static const std::string RvtExt;
+				static const std::string RfaExt;
+
+				OdaModelImport();
+				~OdaModelImport();
+
+				/**
+				* Returns true if format is supported
+				*/
+				static bool isSupportedExts(const std::string &testExt);
 
 				/**
 				* Generates a repo scene graph

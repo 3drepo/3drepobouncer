@@ -19,19 +19,19 @@
 
 #include "Gs/GsBaseInclude.h"
 #include "geometry_dumper_rvt.h"
-
+#include "material_collector_rvt.h"
 #include <iostream>
 
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-				class VectorizeDeviceRvt : public OdGsBaseVectorizeDevice
+				class VectoriseDeviceRvt : public OdGsBaseVectorizeDevice
 				{
 				public:
-					VectorizeDeviceRvt();
+					VectoriseDeviceRvt();
 
-					void init(GeometryCollector *const geoCollector);
+					void init(GeometryCollector *const geoCollector, MaterialCollectorRvt& matCollector);
 
 					void setupSimplifier(const OdGiDeviation* pDeviation);
 
@@ -42,7 +42,10 @@ namespace repo {
 					OdGiConveyorGeometry* destGeometry();
 
 				private:
-					OdGiConveyorGeometryRvtDumperPtr destGeometryDumper;
+					GeometryRvtDumperPtr destGeometryDumper;
+
+					GeometryCollector* geoColl;
+					MaterialCollectorRvt* matColl;
 				};
 
 				class VectorizeView : public OdGsBaseVectorizeViewDef
@@ -50,11 +53,11 @@ namespace repo {
 				public:
 					VectorizeView();
 
-					static OdGsViewPtr createObject();
+					static OdGsViewPtr createObject(GeometryCollector* geoColl,	MaterialCollectorRvt* matColl);
 
 					virtual void beginViewVectorization();
 
-					VectorizeDeviceRvt* device();
+					VectoriseDeviceRvt* device();
 
 					void setEntityTraits();
 
@@ -77,6 +80,9 @@ namespace repo {
 				private:
 					OdGiClipBoundary eyeClip;
 
+					GeometryCollector* geoColl;
+					MaterialCollectorRvt* matColl;
+					uint64_t meshesCount;
 				};
 			}
 		}
