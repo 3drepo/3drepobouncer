@@ -213,6 +213,7 @@
 		let cmdProject;
 		let cmdArr = cmd.split(' ');
 		let toyFed = false;
+		let user = "";
 
 		// Extract database and project information from command
 		try{
@@ -221,12 +222,14 @@
 					cmdFile = require(cmdArr[2]);
 					cmdDatabase = cmdFile.database;
 					cmdProject = cmdFile.project;
+					user = cmdFile.owner;
 					break;
 				case "genFed":
 					cmdFile = require(cmdArr[1]);
 					cmdDatabase = cmdFile.database;
 					cmdProject = cmdFile.project;
 					toyFed = cmdFile.toyFed;
+					user = cmdFile.owner;
 					break;
 				case "importToy":
 					cmdDatabase = cmdArr[1];
@@ -266,7 +269,8 @@
 				callback({
 					value: reply.value,
 					database: cmdDatabase,
-					project: cmdProject
+					project: cmdProject,
+					user
 				}, true);
 				logger.info("Executed command: " + command, reply);
 			}
@@ -315,7 +319,8 @@
 							callback({
 								value: reply.value,
 								database: cmdDatabase,
-								project: cmdProject
+								project: cmdProject,
+								user
 							}, true);
 						});
 					}
@@ -326,7 +331,8 @@
 						callback({
 							value: reply.value,
 							database: cmdDatabase,
-							project: cmdProject
+							project: cmdProject,
+							user
 						}, true);
 					}
 				}
@@ -346,7 +352,8 @@
 							callback({
 								value: reply.value,
 								database: cmdDatabase,
-								project: cmdProject
+								project: cmdProject,
+								user
 							}, true);
 						});
 					} else {
@@ -354,7 +361,8 @@
 						callback({
 							value: reply.value,
 							database: cmdDatabase,
-							project: cmdProject
+							project: cmdProject,
+							user
 						}, true);
 					}
 				}
