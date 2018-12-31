@@ -25,10 +25,6 @@
 #include <vector>
 #include <string>
 
-// OLE
-#include "atlconv.h"
-#include "tchar.h"
-
 //ODA [ BIM BIM-EX RX DB ]
 #include "Common/BmBuildSettings.h"
 #include <OdaCommon.h>

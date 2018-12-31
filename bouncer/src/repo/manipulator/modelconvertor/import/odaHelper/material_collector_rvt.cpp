@@ -130,8 +130,6 @@ bool MaterialCollectorRvt::convertMaterialData(OdBmObjectId matId, repo_material
 	OdBmCmColor color = material->getColor();
 	double transparency = material->getTransparency();
 
-	std::wstring wStrId(std::to_wstring(id));
-	BSTR bstrId = SysAllocStringLen(wStrId.data(), wStrId.size());
 	TMaterial->diffuse = { float(color.red()) / 255.0f, float(color.green()) / 255.0f, float(color.blue()) / 255.0f };
 	TMaterial->ambient = TMaterial->diffuse;
 	TMaterial->emissive = TMaterial->diffuse;
