@@ -134,7 +134,7 @@ bool MaterialCollectorRvt::convertMaterialData(OdBmObjectId matId, repo_material
 	TMaterial->ambient = TMaterial->diffuse;
 	TMaterial->emissive = TMaterial->diffuse;
 	TMaterial->shininessStrength = SHININESS_STRENGTH_DEFAULT;
-	TMaterial->opacity = OPACITY_DEFAULT;
+	TMaterial->opacity = 1.f - transparency;
 	TMaterial->specular = SPECULAR_DEFAULT;
 	TMaterial->shininess = SHININESS_DEFAULT;
 	TMaterial->isWireframe = true;
