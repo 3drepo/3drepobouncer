@@ -24,7 +24,6 @@
 #include <DynamicLinker.h>
 #include <RxDynamicModule.h>
 #include <ExSystemServices.h>
-#include "ExBimServices.h"
 #include "ExBimHostAppServices.h"
 #include "BimCommon.h"
 #include "RxObjectImpl.h"
@@ -39,10 +38,10 @@
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-class RepoRvtServices : public OdExBimSystemServices, public OdExBimHostAppServices
+class RepoRvtServices : public ExSystemServices, public OdExBimHostAppServices
 {
 protected:
-    ODRX_USING_HEAP_OPERATORS(OdExBimSystemServices);
+    ODRX_USING_HEAP_OPERATORS(ExSystemServices);
 };
 
 repo::manipulator::modelconvertor::odaHelper::FileProcessorRvt::~FileProcessorRvt()

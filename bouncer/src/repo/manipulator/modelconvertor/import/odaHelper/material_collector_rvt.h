@@ -34,7 +34,6 @@
 #include <DynamicLinker.h>
 #include <RxDynamicModule.h>
 #include <ExSystemServices.h>
-#include "ExBimServices.h"
 #include "ExBimHostAppServices.h"
 #include "BimCommon.h"
 #include "RxObjectImpl.h"
