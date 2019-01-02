@@ -32,6 +32,13 @@ FileProcessor::FileProcessor(const std::string &inputFile, GeometryCollector *ge
 repo::manipulator::modelconvertor::odaHelper::FileProcessor::~FileProcessor()
 {
 }
+
+template<typename T, typename... Args>
+std::unique_ptr<T> makeUnique(Args&&... args) {
+	return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+
+
 std::unique_ptr<FileProcessor> FileProcessor::getFileProcessor(const std::string &inputFile, GeometryCollector * geoCollector) {
 
 	boost::filesystem::path filePathP(inputFile);
@@ -39,9 +46,9 @@ std::unique_ptr<FileProcessor> FileProcessor::getFileProcessor(const std::string
 	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
 
 	if (fileExt == ".DGN")
-		return std::make_unique<FileProcessorDgn>(inputFile, geoCollector);
+		return makeUnique<FileProcessorDgn>(inputFile, geoCollector);
 	else if (fileExt == ".RVT" || fileExt == ".RFA")
-		return std::make_unique<FileProcessorRvt>(inputFile, geoCollector);
+		return makeUnique<FileProcessorRvt>(inputFile, geoCollector);
 
 	return nullptr;
 }
