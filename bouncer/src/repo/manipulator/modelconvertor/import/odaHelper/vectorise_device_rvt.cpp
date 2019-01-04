@@ -56,11 +56,6 @@ OdGiConveyorGeometry* VectoriseDeviceRvt::destGeometry()
 	return destGeometryDumper;
 }
 
-void VectoriseDeviceRvt::setupSimplifier(const OdGiDeviation* pDeviation)
-{
-	destGeometryDumper->setDeviation(pDeviation);
-}
-
 OdGsViewPtr VectorizeView::createObject(GeometryCollector* geoColl, MaterialCollectorRvt* matColl)
 {
 	auto ptr = OdRxObjectImpl<VectorizeView, OdGsView>::createObject();
@@ -71,20 +66,7 @@ OdGsViewPtr VectorizeView::createObject(GeometryCollector* geoColl, MaterialColl
 
 VectorizeView::VectorizeView()
 {
-	eyeClip.m_bDrawBoundary = false;
 	meshesCount = 0;
-}
-
-void VectorizeView::ownerDrawDc(const OdGePoint3d& origin,
-	const OdGeVector3d& u,
-	const OdGeVector3d& v,
-	const OdGiSelfGdiDrawable*,
-	bool dcAligned,
-	bool allowClipping)
-{
-	OdGeMatrix3d eyeToOutput = eyeToOutputTransform();
-	OdGePoint3d originXformed(eyeToOutput * origin);
-	OdGeVector3d uXformed(eyeToOutput * u), vXformed(eyeToOutput * v);
 }
 
 void VectorizeView::draw(const OdGiDrawable* pDrawable)
@@ -113,43 +95,7 @@ void VectorizeView::draw(const OdGiDrawable* pDrawable)
 void VectorizeView::updateViewport()
 {
 	(static_cast<OdGiGeometrySimplifier*>(device()->destGeometry()))->setDrawContext(drawContext());
-
-	OdGeMatrix3d eye2Screen(eyeToScreenMatrix());
-	OdGeMatrix3d screen2Eye(eye2Screen.inverse());
-	setEyeToOutputTransform(eye2Screen);
-
-	eyeClip.m_bClippingFront = isFrontClipped();
-	eyeClip.m_bClippingBack = isBackClipped();
-	eyeClip.m_dFrontClipZ = frontClip();
-	eyeClip.m_dBackClipZ = backClip();
-	eyeClip.m_vNormal = viewDir();
-	eyeClip.m_ptPoint = target();
-	eyeClip.m_Points.clear();
-
-	OdGeVector2d halfDiagonal(fieldWidth() / 2.0, fieldHeight() / 2.0);
-
-	OdIntArray nrcCounts;
-	OdGePoint2dArray nrcPoints;
-	viewportClipRegion(nrcCounts, nrcPoints);
-	if (nrcCounts.size() == 1)
-	{
-		for (int i = 0; i < nrcCounts[0]; i++)
-		{
-			OdGePoint3d screenPt(nrcPoints[i].x, nrcPoints[i].y, 0.0);
-			screenPt.transformBy(screen2Eye);
-			eyeClip.m_Points.append(OdGePoint2d(screenPt.x, screenPt.y));
-		}
-	}
-	else
-	{
-		eyeClip.m_Points.append(OdGePoint2d::kOrigin - halfDiagonal);
-		eyeClip.m_Points.append(OdGePoint2d::kOrigin + halfDiagonal);
-	}
-
-	eyeClip.m_xToClipSpace = getWorldToEyeTransform();
-	pushClipBoundary(&eyeClip);
 	OdGsBaseVectorizer::updateViewport();
-	popClipBoundary();
 }
 
 void VectorizeView::onTraitsModified()
@@ -161,8 +107,7 @@ void VectorizeView::onTraitsModified()
 void VectorizeView::beginViewVectorization()
 {
 	OdGsBaseVectorizer::beginViewVectorization();
-	device()->setupSimplifier(&m_pModelToEyeProc->eyeDeviation());
-	setDrawContextFlags(drawContextFlags(), false);
+	setEyeToOutputTransform(getEyeToWorldTransform());
 }
 
 VectoriseDeviceRvt* VectorizeView::device()

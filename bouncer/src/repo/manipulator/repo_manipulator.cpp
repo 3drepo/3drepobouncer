@@ -843,8 +843,6 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 	bool useRepoImporter = fileExt == ".BIM";
 	bool useOdaImporter = repo::manipulator::modelconvertor::OdaModelImport::isSupportedExts(fileExt);
 
-	bool isDgnFormat = fileExt == ".DGN";
-
 	if (useIFCImporter)
 		modelConvertor = new repo::manipulator::modelconvertor::IFCModelImport(config);
 	else if (useRepoImporter)
@@ -874,13 +872,13 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 					error = REPOERR_NO_MESHES;
 					return nullptr;
 				}
-				if (rotateModel || useIFCImporter || isDgnFormat)
+				if (rotateModel || useIFCImporter || useOdaImporter)
 				{
 					repoTrace << "rotating model by 270 degress on the x axis...";
 					scene->reorientateDirectXModel();
 				}
 
-				if (applyReduction && !isDgnFormat)
+				if (applyReduction && !useOdaImporter)
 				{
 					repoTrace << "Scene generated. Applying transformation reduction optimizer";
 					modeloptimizer::TransformationReductionOptimizer optimizer;

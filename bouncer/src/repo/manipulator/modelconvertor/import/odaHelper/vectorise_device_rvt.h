@@ -33,8 +33,6 @@ namespace repo {
 
 					void init(GeometryCollector *const geoCollector, MaterialCollectorRvt& matCollector);
 
-					void setupSimplifier(const OdGiDeviation* pDeviation);
-
 					OdGsViewPtr createView(
 						const OdGsClientViewInfo* pInfo = 0,
 						bool bEnableLayerVisibilityPerView = false);
@@ -59,8 +57,6 @@ namespace repo {
 
 					VectoriseDeviceRvt* device();
 
-					void setEntityTraits();
-
 					void draw(const OdGiDrawable*);
 
 					void updateViewport();
@@ -69,17 +65,7 @@ namespace repo {
 
 					void onTraitsModified();
 
-					void ownerDrawDc(
-						const OdGePoint3d& origin,
-						const OdGeVector3d& u,
-						const OdGeVector3d& v,
-						const OdGiSelfGdiDrawable* pDrawable,
-						bool bDcAligned,
-						bool bAllowClipping);
-
 				private:
-					OdGiClipBoundary eyeClip;
-
 					GeometryCollector* geoColl;
 					MaterialCollectorRvt* matColl;
 					uint64_t meshesCount;
