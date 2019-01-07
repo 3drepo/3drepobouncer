@@ -28,7 +28,6 @@
 
 #include "geometry_collector.h"
 #include "file_processor.h"
-#include "material_collector_rvt.h"
 
 namespace repo {
 	namespace manipulator {
@@ -44,7 +43,6 @@ namespace repo {
 
 				private:
 					int importRVT();
-					MaterialCollectorRvt matCollector;
 				};
 			}
 		}

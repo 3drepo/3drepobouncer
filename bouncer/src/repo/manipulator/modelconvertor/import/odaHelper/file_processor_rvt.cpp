@@ -69,7 +69,7 @@ int FileProcessorRvt::importRVT()
             OdGiContextForBmDatabasePtr pBimContext = OdGiContextForBmDatabase::createObject();
 
             OdGsDevicePtr pDevice = OdRxObjectImpl<VectoriseDeviceRvt, OdGsDevice>::createObject();
-            (static_cast<VectoriseDeviceRvt*>(pDevice.get()))->init(collector, matCollector);
+            (static_cast<VectoriseDeviceRvt*>(pDevice.get()))->init(collector);
            
             pBimContext->setDatabase(pDb);
             OdDbBaseDatabasePEPtr pDbPE(pDb);

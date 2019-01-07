@@ -18,8 +18,8 @@
 #pragma once
 
 #include "Gs/GsBaseInclude.h"
+#include <Gs/GsBaseMaterialView.h>
 #include "geometry_dumper_rvt.h"
-#include "material_collector_rvt.h"
 #include <iostream>
 
 namespace repo {
@@ -31,7 +31,7 @@ namespace repo {
 				public:
 					VectoriseDeviceRvt();
 
-					void init(GeometryCollector *const geoCollector, MaterialCollectorRvt& matCollector);
+					void init(GeometryCollector *const geoCollector);
 
 					OdGsViewPtr createView(
 						const OdGsClientViewInfo* pInfo = 0,
@@ -39,19 +39,19 @@ namespace repo {
 
 					OdGiConveyorGeometry* destGeometry();
 
+					void setupSimplifier(const OdGiDeviation* pDeviation);
+
 				private:
 					GeometryRvtDumperPtr destGeometryDumper;
-
 					GeometryCollector* geoColl;
-					MaterialCollectorRvt* matColl;
 				};
 
-				class VectorizeView : public OdGsBaseVectorizeViewDef
+				class VectorizeView : public OdGsBaseMaterialView
 				{
 				public:
 					VectorizeView();
 
-					static OdGsViewPtr createObject(GeometryCollector* geoColl,	MaterialCollectorRvt* matColl);
+					static OdGsViewPtr createObject(GeometryCollector* geoColl);
 
 					virtual void beginViewVectorization();
 
@@ -61,13 +61,15 @@ namespace repo {
 
 					void updateViewport();
 
-					TD_USING(OdGsBaseVectorizeViewDef::updateViewport);
+					TD_USING(OdGsBaseMaterialView::updateViewport);
 
-					void onTraitsModified();
+					OdGiMaterialItemPtr fillMaterialCache(
+						OdGiMaterialItemPtr prevCache,
+						OdDbStub* materialId,
+						const OdGiMaterialTraitsData & materialData);
 
 				private:
 					GeometryCollector* geoColl;
-					MaterialCollectorRvt* matColl;
 					uint64_t meshesCount;
 				};
 			}
