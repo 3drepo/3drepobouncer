@@ -34,6 +34,7 @@ namespace repo {
 					std::vector<repo_face_t> faces;
 					std::vector<std::vector<float>> boundingBox;
 					std::unordered_map<unsigned long, int> vToVIndex;
+					std::vector<repo::lib::RepoVector2D> uvCoords;
 					std::string name;
 					std::string layerName;
 					std::string groupName;
@@ -46,6 +47,17 @@ namespace repo {
 					GeometryCollector();
 					~GeometryCollector();
 
+					/**
+					* Get all the texture nodes collected.
+					* @return returns a repoNodeSet containing texture nodes
+					*/
+					repo::core::model::RepoNodeSet getTextureNodes();
+
+					/**
+					* Check whether collector has missing textures.
+					* @return returns true if at least one texture is missing
+					*/
+					bool hasMissingTextures();
 
 					/**
 					* Get all the material nodes collected.
@@ -113,7 +125,8 @@ namespace repo {
 					* @param vertices a vector of vertices that makes up this face
 					*/
 					void addFace(
-						const std::vector<repo::lib::RepoVector3D64> &vertices
+						const std::vector<repo::lib::RepoVector3D64> &vertices,
+						const std::vector<repo::lib::RepoVector2D>& uvCoords = std::vector<repo::lib::RepoVector2D>()
 					);
 
 					/**
@@ -132,6 +145,7 @@ namespace repo {
 					uint32_t currMat;
 					std::vector<double> minMeshBox;
 					mesh_data_t *currentEntry = nullptr;
+					bool missingTextures = false;
 
 					repo::core::model::TransformationNode* createTransNode(
 						const std::string &name,

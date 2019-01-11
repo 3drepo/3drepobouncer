@@ -19,8 +19,13 @@
 
 #include "Gs/GsBaseInclude.h"
 #include <Gs/GsBaseMaterialView.h>
-#include "geometry_dumper_rvt.h"
-#include <iostream>
+
+#include "SharedPtr.h"
+#include "Gi/GiGeometrySimplifier.h"
+#include "Gs/GsBaseInclude.h"
+#include <Gs/GsBaseMaterialView.h>
+
+#include "geometry_collector.h"
 
 namespace repo {
 	namespace manipulator {
@@ -37,16 +42,11 @@ namespace repo {
 						const OdGsClientViewInfo* pInfo = 0,
 						bool bEnableLayerVisibilityPerView = false);
 
-					OdGiConveyorGeometry* destGeometry();
-
-					void setupSimplifier(const OdGiDeviation* pDeviation);
-
 				private:
-					GeometryRvtDumperPtr destGeometryDumper;
 					GeometryCollector* geoColl;
 				};
 
-				class VectorizeView : public OdGsBaseMaterialView
+				class VectorizeView : public OdGsBaseMaterialView, public OdGiGeometrySimplifier
 				{
 				public:
 					VectorizeView();
@@ -59,16 +59,20 @@ namespace repo {
 
 					void draw(const OdGiDrawable*);
 
-					void updateViewport();
-
-					TD_USING(OdGsBaseMaterialView::updateViewport);
+				protected:
 
 					OdGiMaterialItemPtr fillMaterialCache(
 						OdGiMaterialItemPtr prevCache,
 						OdDbStub* materialId,
 						const OdGiMaterialTraitsData & materialData);
 
+					void triangleOut(const OdInt32* vertices,
+						const OdGeVector3d* pNormal);
+
 				private:
+					void fillTexture(OdDbStub* materialId, repo_material_t& material);
+					void fillMaterial(const OdGiMaterialTraitsData & materialData, repo_material_t& material);
+
 					GeometryCollector* geoColl;
 					uint64_t meshesCount;
 				};

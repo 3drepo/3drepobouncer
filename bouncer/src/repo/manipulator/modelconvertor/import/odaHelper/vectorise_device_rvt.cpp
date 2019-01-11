@@ -15,16 +15,55 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "boost/filesystem.hpp"
+#include "OdPlatformSettings.h"
 #include <BimCommon.h>
 #include <Database/BmElement.h>
 #include <RxObjectImpl.h>
 #include <ColorMapping.h>
 #include <toString.h>
+#include "Database/Entities/BmMaterialElem.h"
+#include "Geometry/Entities/BmMaterial.h"
+#include "Database/BmAssetHelpers.h"
 
 #include "vectorise_device_rvt.h"
-#include "geometry_dumper_rvt.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
+
+const char* RVT_TEXTURES_ENV_VARIABLE = "RVT_TEXTURES";
+
+bool isFileExist(const std::string& inputPath)
+{
+	if (boost::filesystem::exists(inputPath))
+		if (boost::filesystem::is_regular_file(inputPath))
+			return true;
+
+	return false;
+}
+
+std::string extractValidTexturePath(const std::string& inputPath)
+{
+	std::string outputFilePath = inputPath;
+	
+	//..try to extract one valid paths if multiple paths are provided
+	outputFilePath = outputFilePath.substr(0, outputFilePath.find("|", 0));
+
+	if (isFileExist(outputFilePath))
+		return outputFilePath;
+
+	//..try to apply absolute path
+	char* env = std::getenv(RVT_TEXTURES_ENV_VARIABLE);
+	if (env == nullptr)
+		return std::string();
+
+	auto absolutePath = boost::filesystem::absolute(outputFilePath, env);
+	outputFilePath = absolutePath.generic_string();
+
+	if (isFileExist(outputFilePath))
+		return outputFilePath;
+
+	return std::string();
+}
 
 VectoriseDeviceRvt::VectoriseDeviceRvt()
 {
@@ -34,8 +73,6 @@ VectoriseDeviceRvt::VectoriseDeviceRvt()
 
 void VectoriseDeviceRvt::init(GeometryCollector *const geoCollector)
 {
-	destGeometryDumper = new GeometryDumperRvt();
-	destGeometryDumper->init(geoCollector);
 	geoColl = geoCollector;
 }
 
@@ -46,18 +83,8 @@ OdGsViewPtr VectoriseDeviceRvt::createView(
 	OdGsViewPtr pView = VectorizeView::createObject(geoColl);
 	VectorizeView* pMyView = static_cast<VectorizeView*>(pView.get());
 	pMyView->init(this, pInfo, bEnableLayerVisibilityPerView);
-	pMyView->output().setDestGeometry(*destGeometryDumper);
+	pMyView->output().setDestGeometry(*pMyView);
 	return (OdGsView*)pMyView;
-}
-
-void VectoriseDeviceRvt::setupSimplifier(const OdGiDeviation* pDeviation)
-{
-	destGeometryDumper->setDeviation(pDeviation);
-}
-
-OdGiConveyorGeometry* VectoriseDeviceRvt::destGeometry()
-{
-	return destGeometryDumper;
 }
 
 OdGsViewPtr VectorizeView::createObject(GeometryCollector* geoColl)
@@ -79,7 +106,7 @@ void VectorizeView::draw(const OdGiDrawable* pDrawable)
 	geoColl->setNextMeshName(std::to_string(meshesCount));
 	geoColl->startMeshEntry();
 	meshesCount++;
-	
+
 	OdString sClassName = toString(pDrawable->isA());
 	bool bDBRO = false;
 	OdBmElementPtr pElem = OdBmElement::cast(pDrawable);
@@ -89,16 +116,11 @@ void VectorizeView::draw(const OdGiDrawable* pDrawable)
 	OdGsBaseVectorizer::draw(pDrawable);
 }
 
-void VectorizeView::updateViewport()
-{
-	(static_cast<OdGiGeometrySimplifier*>(device()->destGeometry()))->setDrawContext(drawContext());
-	OdGsBaseVectorizer::updateViewport();
-}
-
 void VectorizeView::beginViewVectorization()
 {
 	OdGsBaseVectorizer::beginViewVectorization();
-	device()->setupSimplifier(&m_pModelToEyeProc->eyeDeviation());
+	OdGiGeometrySimplifier::setDrawContext(OdGsBaseMaterialView::drawContext());
+	output().setDestGeometry((OdGiGeometrySimplifier&)*this);
 	setDrawContextFlags(drawContextFlags(), false);
 	setEyeToOutputTransform(getEyeToWorldTransform());
 }
@@ -108,13 +130,71 @@ VectoriseDeviceRvt* VectorizeView::device()
 	return (VectoriseDeviceRvt*)OdGsBaseVectorizeView::device();
 }
 
+void VectorizeView::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal)
+{
+	const OdGePoint3d*  pVertexDataList = vertexDataList();
+	const int numVertices = 3;
+
+	OdGePoint3d trgPoints[numVertices] =
+	{
+		vertexDataList()[p3Vertices[0]],
+		vertexDataList()[p3Vertices[1]],
+		vertexDataList()[p3Vertices[2]]
+	};
+
+	std::vector<repo::lib::RepoVector3D64> vertices;
+
+	if ((pVertexDataList + p3Vertices[0]) != (pVertexDataList + p3Vertices[1]) &&
+		(pVertexDataList + p3Vertices[0]) != (pVertexDataList + p3Vertices[2]) &&
+		(pVertexDataList + p3Vertices[1]) != (pVertexDataList + p3Vertices[2]))
+	{
+		for (int i = 0; i < numVertices; ++i)
+		{
+			vertices.push_back({ trgPoints[i].x , trgPoints[i].y, trgPoints[i].z });
+		}
+	}
+	else
+	{
+		return;
+	}
+
+	OdGiMapperItemEntry::MapInputTriangle trg{ { trgPoints[0], trgPoints[1], trgPoints[2] } };
+	OdGiMapperItemEntry::MapOutputCoords outTex;
+
+	auto currentMap = currentMapper();
+	if (!currentMap.isNull())
+	{
+		auto diffuseMap = currentMap->diffuseMapper();
+		if (!diffuseMap.isNull())
+			diffuseMap->mapCoords(trg, outTex);
+	}
+
+	std::vector<repo::lib::RepoVector2D> uvc;
+	for (int i = 0; i < numVertices; ++i)
+		uvc.push_back({ (float)outTex.outCoord[i].x, (float)outTex.outCoord[i].y });
+
+	geoColl->addFace(vertices, uvc);
+}
+
 OdGiMaterialItemPtr VectorizeView::fillMaterialCache(
 	OdGiMaterialItemPtr prevCache,
 	OdDbStub* materialId,
 	const OdGiMaterialTraitsData & materialData)
 {
-	auto id = (OdUInt64)(OdIntPtr)materialId;
+	repo_material_t material;
 
+	fillMaterial(materialData, material);
+	fillTexture(materialId, material);
+
+	geoColl->setCurrentMaterial(material);
+	geoColl->stopMeshEntry();
+	geoColl->startMeshEntry();
+
+	return OdGiMaterialItemPtr();
+}
+
+void VectorizeView::fillMaterial(const OdGiMaterialTraitsData & materialData, repo_material_t& material)
+{
 	OdGiMaterialColor diffuseColor; OdGiMaterialMap diffuseMap;
 	OdGiMaterialColor ambientColor;
 	OdGiMaterialColor specularColor; OdGiMaterialMap specularMap; double glossFactor;
@@ -127,7 +207,7 @@ OdGiMaterialItemPtr VectorizeView::fillMaterialCache(
 	materialData.specular(specularColor, specularMap, glossFactor);
 	materialData.opacity(opacityPercentage, opacityMap);
 	materialData.emission(emissiveColor, emissiveMap);
-	
+
 	ODCOLORREF colorDiffuse(0), colorAmbient(0), colorSpecular(0), colorEmissive(0);
 	if (diffuseColor.color().colorMethod() == OdCmEntityColor::kByColor)
 	{
@@ -162,7 +242,6 @@ OdGiMaterialItemPtr VectorizeView::fillMaterialCache(
 		colorEmissive = OdCmEntityColor::lookUpRGB((OdUInt8)emissiveColor.color().colorIndex());
 	}
 
-	repo_material_t material;
 	const float norm = 255.f;
 
 	material.diffuse = { ODGETRED(colorDiffuse) / norm, ODGETGREEN(colorDiffuse) / norm, ODGETBLUE(colorDiffuse) / norm, 1.0f };
@@ -174,10 +253,40 @@ OdGiMaterialItemPtr VectorizeView::fillMaterialCache(
 	material.shininess = materialData.reflectivity();
 
 	material.opacity = opacityPercentage;
+}
 
-	geoColl->setCurrentMaterial(material);
-	geoColl->stopMeshEntry();
-	geoColl->startMeshEntry();
+void VectorizeView::fillTexture(OdDbStub* materialId, repo_material_t& material)
+{
+	OdBmObjectId matId(materialId);
+	if (!matId.isValid())
+		return;
 
-	return OdGiMaterialItemPtr();
+	OdBmObjectPtr materialPtr = matId.safeOpenObject(OdBm::kForRead);
+	OdBmMaterialElemPtr materialElem = (OdBmMaterialElem*)(materialPtr.get());
+	OdBmMaterialPtr matPtr = materialElem->getMaterial();
+	OdBmAssetPtr textureAsset = matPtr->getAsset();
+
+	if (textureAsset.isNull())
+		return;
+
+	OdBmAssetPtr bitmapAsset;
+	OdString textureFileName;
+	OdResult es = OdBmAppearanceAssetHelper::getTextureAsset(textureAsset, bitmapAsset);
+
+	if ((es != OdResult::eOk) || (bitmapAsset.isNull()))
+		return;
+
+	OdBmUnifiedBitmapSchemaHelper textureHelper(bitmapAsset);
+	es = textureHelper.getTextureFileName(textureFileName);
+
+	if (es != OdResult::eOk)
+		return;
+	
+	std::string textureName = textureFileName;
+	std::string validTextureName = extractValidTexturePath(textureName);
+
+	if (validTextureName.empty() && !textureName.empty())
+		material.missingTexture = true;
+
+	material.texturePath = validTextureName;
 }

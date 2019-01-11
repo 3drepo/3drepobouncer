@@ -39,8 +39,10 @@ void GeometryCollector::setCurrentMaterial(const repo_material_t &material) {
 	auto checkSum = material.checksum();
 	if(idxToMat.find(checkSum) == idxToMat.end()) {
 		idxToMat[checkSum] = repo::core::model::RepoBSONFactory::makeMaterialNode(material);
+		if (material.missingTexture)
+			missingTextures = true;
 	}
-	currMat = checkSum;	
+	currMat = checkSum;
 }
 
 mesh_data_t GeometryCollector::createMeshEntry() {
@@ -81,14 +83,20 @@ void  GeometryCollector::stopMeshEntry() {
 	nextMeshName = "";
 }
 
-void GeometryCollector::addFace(const std::vector<repo::lib::RepoVector3D64> &vertices) {
+void GeometryCollector::addFace(
+	const std::vector<repo::lib::RepoVector3D64> &vertices, 
+	const std::vector<repo::lib::RepoVector2D>& uvCoords) 
+{
 	if (!meshData.size()) startMeshEntry();
 	repo_face_t face;
-	for (const auto &v : vertices) {
+	for (auto i = 0; i < vertices.size(); ++i) {
+		auto& v = vertices[i];
 		auto chkSum = v.checkSum();
 		if (currentEntry->vToVIndex.find(chkSum) == currentEntry->vToVIndex.end()) {
 			currentEntry->vToVIndex[chkSum] = currentEntry->rawVertices.size();
 			currentEntry->rawVertices.push_back(v);
+			if (i < uvCoords.size())
+				currentEntry->uvCoords.push_back(uvCoords[i]);
 
 			if (currentEntry->boundingBox.size()) {
 				currentEntry->boundingBox[0][0] = currentEntry->boundingBox[0][0] > v.x ? (float) v.x : currentEntry->boundingBox[0][0];
@@ -114,16 +122,13 @@ void GeometryCollector::addFace(const std::vector<repo::lib::RepoVector3D64> &ve
 			}
 		}
 		face.push_back(currentEntry->vToVIndex[chkSum]);
-
 	}
 	currentEntry->faces.push_back(face);
-
 }
 
 
 repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
 	repo::core::model::RepoNodeSet res;
-	auto dummyUV = std::vector<std::vector<repo::lib::RepoVector2D>>();
 	auto dummyCol = std::vector<repo_color4d_t>();
 	auto dummyOutline = std::vector<std::vector<float>>();
 
@@ -137,6 +142,8 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
 			for (const auto &meshMatEntry : meshLayerEntry.second) {
 				if (!meshMatEntry.second.rawVertices.size()) continue;
 
+				auto uvChannels = std::vector<std::vector<repo::lib::RepoVector2D>>();
+
 				if (layerToTrans.find(meshLayerEntry.first) == layerToTrans.end()) {
 					layerToTrans[meshLayerEntry.first] = createTransNode(meshLayerEntry.first, rootId);
 					transNodes.insert(layerToTrans[meshLayerEntry.first]);
@@ -149,12 +156,18 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
 					vertices32.push_back({ (float)(v.x - minMeshBox[0]), (float)(v.y - minMeshBox[1]), (float)(v.z - minMeshBox[2]) });
 				}
 
+				std::vector<repo::lib::RepoVector2D> uvChannel;
+				for (auto& coordset : meshMatEntry.second.uvCoords) {
+					uvChannel.push_back({ (float)coordset.x, (float)coordset.y });
+				}
+				uvChannels.push_back(uvChannel);
+
 				auto meshNode = repo::core::model::RepoBSONFactory::makeMeshNode(
 					vertices32,
 					meshMatEntry.second.faces,
 					std::vector<repo::lib::RepoVector3D>(),
 					meshMatEntry.second.boundingBox,
-					dummyUV,
+					uvChannels,
 					dummyCol,
 					dummyOutline,
 					meshGroupEntry.first,
@@ -181,7 +194,48 @@ repo::core::model::TransformationNode*  GeometryCollector::createTransNode(
 	return new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name, { parentId }));
 }
 
+repo::core::model::RepoNodeSet GeometryCollector::getTextureNodes() {
+	repo::core::model::RepoNodeSet textSet;
+	for (const auto &matPair : idxToMat) {
+		auto mat = matPair.second.getMaterialStruct();
 
+		std::ifstream::pos_type size;
+		std::ifstream file(mat.texturePath, std::ios::in | std::ios::binary | std::ios::ate);
+		char *memblock = nullptr;
+		if (file.is_open())
+		{
+			size = file.tellg();
+			memblock = new char[size];
+			file.seekg(0, std::ios::beg);
+			file.read(memblock, size);
+			file.close();
+		}
+		else
+		{
+			continue;
+		}
+
+		auto texnode = repo::core::model::RepoBSONFactory::makeTextureNode(
+			mat.texturePath,
+			(const char*)memblock,
+			size,
+			size,
+			0,
+			REPO_NODE_API_LEVEL_1
+		);
+
+		delete[] memblock;
+
+		textSet.insert(new repo::core::model::TextureNode(texnode.cloneAndAddParent(matPair.second.getSharedID())));
+	}
+
+	return textSet;
+}
+
+bool GeometryCollector::hasMissingTextures()
+{
+	return missingTextures;
+}
 
 repo::core::model::RepoNodeSet GeometryCollector::getMaterialNodes() {
 	repo::core::model::RepoNodeSet matSet;
