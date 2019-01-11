@@ -12,7 +12,6 @@ if(ODA_SUPPORT)
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_rvt.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/geometry_collector.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/geometry_dumper_dgn.cpp
-		${CMAKE_CURRENT_SOURCE_DIR}/geometry_dumper_rvt.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/vectorise_device_rvt.cpp
 		CACHE STRING "SOURCES" FORCE)
 
@@ -23,7 +22,6 @@ if(ODA_SUPPORT)
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_rvt.h
 		${CMAKE_CURRENT_SOURCE_DIR}/geometry_collector.h
 		${CMAKE_CURRENT_SOURCE_DIR}/geometry_dumper_dgn.h
-		${CMAKE_CURRENT_SOURCE_DIR}/geometry_dumper_rvt.h
 		${CMAKE_CURRENT_SOURCE_DIR}/od_alloc_op.h
 		${CMAKE_CURRENT_SOURCE_DIR}/oda_exsystem_services.h
 		${CMAKE_CURRENT_SOURCE_DIR}/vectorise_device_dgn.h
