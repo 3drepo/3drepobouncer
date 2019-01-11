@@ -282,7 +282,7 @@ void VectorizeView::fillTexture(OdDbStub* materialId, repo_material_t& material)
 	if (es != OdResult::eOk)
 		return;
 	
-	std::string textureName = textureFileName;
+	std::string textureName((const char*)textureFileName);
 	std::string validTextureName = extractValidTexturePath(textureName);
 
 	if (validTextureName.empty() && !textureName.empty())
