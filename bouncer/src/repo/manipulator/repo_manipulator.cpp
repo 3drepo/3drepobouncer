@@ -826,22 +826,19 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 	std::string fileExt = filePathP.extension().string();
 
 	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
+	
+	repo::manipulator::modelconvertor::AbstractModelImport* modelConvertor = nullptr;
 
-	if (!repo::manipulator::modelconvertor::AssimpModelImport::isSupportedExts(fileExt) 
-		&& !(fileExt == ".BIM")
-		&& !(fileExt == ".DGN")
-		&& !(fileExt == ".RVT")
-		&& !(fileExt == ".RFA"))
+	bool useAssimpImporter = repo::manipulator::modelconvertor::AssimpModelImport::isSupportedExts(fileExt);
+	bool useIFCImporter = fileExt == ".IFC" && (!config || config->getUseIFCOpenShell());
+	bool useRepoImporter = fileExt == ".BIM";
+	bool useOdaImporter = repo::manipulator::modelconvertor::OdaModelImport::isSupportedExts(fileExt);
+
+	if (!(useAssimpImporter || useIFCImporter || useRepoImporter || useOdaImporter))
 	{
 		error = REPOERR_FILE_TYPE_NOT_SUPPORTED;
 		return nullptr;
 	}
-
-	repo::manipulator::modelconvertor::AbstractModelImport* modelConvertor = nullptr;
-
-	bool useIFCImporter = fileExt == ".IFC" && (!config || config->getUseIFCOpenShell());
-	bool useRepoImporter = fileExt == ".BIM";
-	bool useOdaImporter = repo::manipulator::modelconvertor::OdaModelImport::isSupportedExts(fileExt);
 
 	if (useIFCImporter)
 		modelConvertor = new repo::manipulator::modelconvertor::IFCModelImport(config);

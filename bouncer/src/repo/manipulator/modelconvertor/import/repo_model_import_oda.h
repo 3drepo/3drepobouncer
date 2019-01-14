@@ -32,9 +32,7 @@ namespace repo {
 			class OdaModelImport : public AbstractModelImport
 			{
 			public:
-				static const std::string DgnExt;
-				static const std::string RvtExt;
-				static const std::string RfaExt;
+				static const std::string supportedExtensions;
 
 				OdaModelImport();
 				~OdaModelImport();

@@ -40,9 +40,6 @@ namespace repo {
 					~FileProcessorRvt() override;
 
 					int readFile() override;
-
-				private:
-					int importRVT();
 				};
 			}
 		}

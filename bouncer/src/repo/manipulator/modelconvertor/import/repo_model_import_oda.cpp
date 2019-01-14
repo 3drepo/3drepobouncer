@@ -8,9 +8,7 @@
 
 using namespace repo::manipulator::modelconvertor;
 
-const std::string OdaModelImport::DgnExt = ".dgn";
-const std::string OdaModelImport::RvtExt = ".rvt";
-const std::string OdaModelImport::RfaExt = ".rfa";
+const std::string OdaModelImport::supportedExtensions = ".dgn.rvt.rfa";
 
 OdaModelImport::OdaModelImport()
 {
@@ -28,12 +26,10 @@ static repo_material_t createDefaultMaterial() {
 
 bool OdaModelImport::isSupportedExts(const std::string &testExt)
 {
-	std::string extensions = DgnExt + RvtExt + RfaExt;
-
 	std::string lowerExt(testExt);
 	std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
 
-	return extensions.find(lowerExt) != std::string::npos;
+	return supportedExtensions.find(lowerExt) != std::string::npos;
 }
 
 repo::core::model::RepoScene* OdaModelImport::generateRepoScene()

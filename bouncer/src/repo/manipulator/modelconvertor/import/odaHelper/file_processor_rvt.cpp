@@ -51,44 +51,39 @@ repo::manipulator::modelconvertor::odaHelper::FileProcessorRvt::~FileProcessorRv
 
 int FileProcessorRvt::readFile()
 {
-    return importRVT();
-}
+	int nRes = 1;
+	OdStaticRxObject<RepoRvtServices> svcs;
+	odrxInitialize(&svcs);
+	OdRxModule* pModule = ::odrxDynamicLinker()->loadModule(OdBmLoaderModuleName, false);
+	try
+	{
+		odgsInitialize();
+		OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));
+		if (!pDb.isNull())
+		{
+			OdGiContextForBmDatabasePtr pBimContext = OdGiContextForBmDatabase::createObject();
 
-int FileProcessorRvt::importRVT()
-{
-    int nRes = 1;
-    OdStaticRxObject<RepoRvtServices> svcs;
-    odrxInitialize(&svcs);
-    OdRxModule* pModule = ::odrxDynamicLinker()->loadModule(OdBmLoaderModuleName, false);
-    try
-    {
-        odgsInitialize();
-        OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));
-        if (!pDb.isNull())
-        {
-            OdGiContextForBmDatabasePtr pBimContext = OdGiContextForBmDatabase::createObject();
+			OdGsDevicePtr pDevice = OdRxObjectImpl<VectoriseDeviceRvt, OdGsDevice>::createObject();
+			(static_cast<VectoriseDeviceRvt*>(pDevice.get()))->init(collector);
 
-            OdGsDevicePtr pDevice = OdRxObjectImpl<VectoriseDeviceRvt, OdGsDevice>::createObject();
-            (static_cast<VectoriseDeviceRvt*>(pDevice.get()))->init(collector);
-           
-            pBimContext->setDatabase(pDb);
-            OdDbBaseDatabasePEPtr pDbPE(pDb);
-            pDevice = pDbPE->setupActiveLayoutViews(pDevice, pBimContext);
-            OdGsDCRect screenRect(OdGsDCPoint(0, 0), OdGsDCPoint(1000, 1000)); //Set the screen space to the borders of the scene
-            pDevice->onSize(screenRect);
-            pDevice->update();
-        }
-        nRes = 0;
-    }
-    catch (OdError& e)
-    {
-        nRes = e.code();
-        repoError << e.description().c_str();
-    }
-    catch (...)
-    {
-        nRes = 1;
-    }
-    return nRes;
+			pBimContext->setDatabase(pDb);
+			OdDbBaseDatabasePEPtr pDbPE(pDb);
+			pDevice = pDbPE->setupActiveLayoutViews(pDevice, pBimContext);
+			OdGsDCRect screenRect(OdGsDCPoint(0, 0), OdGsDCPoint(1000, 1000)); //Set the screen space to the borders of the scene
+			pDevice->onSize(screenRect);
+			pDevice->update();
+		}
+		nRes = 0;
+	}
+	catch (OdError& e)
+	{
+		nRes = e.code();
+		repoError << e.description().c_str();
+	}
+	catch (...)
+	{
+		nRes = 1;
+	}
+	return nRes;
 }
 
