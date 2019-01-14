@@ -160,7 +160,9 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
 				for (auto& coordset : meshMatEntry.second.uvCoords) {
 					uvChannel.push_back({ (float)coordset.x, (float)coordset.y });
 				}
-				uvChannels.push_back(uvChannel);
+
+				if (uvChannel.size())
+					uvChannels.push_back(uvChannel);
 
 				auto meshNode = repo::core::model::RepoBSONFactory::makeMeshNode(
 					vertices32,
