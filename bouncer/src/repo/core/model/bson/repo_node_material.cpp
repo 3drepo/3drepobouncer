@@ -74,12 +74,6 @@ repo_material_t MaterialNode::getMaterialStruct() const
 	mat.shininessStrength = hasField(REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH) ?
 		getField(REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH).numberDouble() :
 		std::numeric_limits<float>::quiet_NaN();
-	
-	mat.texturePath = hasField(REPO_NODE_MATERIAL_LABEL_TEXTURE_PATH) ?
-		getField(REPO_NODE_MATERIAL_LABEL_TEXTURE_PATH).valuestrsafe() : std::string();
-
-	mat.missingTexture = hasField(REPO_NODE_MATERIAL_LABEL_MISSING_TEXTURE) &&
-		getField(REPO_NODE_MATERIAL_LABEL_MISSING_TEXTURE).boolean();
 
 	return mat;
 }

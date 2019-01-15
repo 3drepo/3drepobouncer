@@ -42,7 +42,7 @@ namespace repo {
 						const OdGeVector3d* pNormal);
 
 				private:
-					void fillTexture(OdDbStub* materialId, repo_material_t& material);
+					void fillTexture(OdDbStub* materialId, repo_material_t& material, bool& missingTexture);
 					void fillMaterial(const OdGiMaterialTraitsData & materialData, repo_material_t& material);
 
 					GeometryCollector* geoColl;

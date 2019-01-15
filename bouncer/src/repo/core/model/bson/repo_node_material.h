@@ -39,8 +39,6 @@ namespace repo {
 #define REPO_NODE_MATERIAL_LABEL_OPACITY					"opacity"
 #define REPO_NODE_MATERIAL_LABEL_SHININESS				"shininess"
 #define REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH		"shininess_strength"
-#define REPO_NODE_MATERIAL_LABEL_TEXTURE_PATH			"texture_path"
-#define REPO_NODE_MATERIAL_LABEL_MISSING_TEXTURE		"missing_texture"
 
 			//------------------------------------------------------------------------------
 

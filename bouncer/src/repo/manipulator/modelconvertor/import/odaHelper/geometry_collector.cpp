@@ -34,13 +34,17 @@ GeometryCollector::~GeometryCollector()
 }
 
 
-void GeometryCollector::setCurrentMaterial(const repo_material_t &material) {
+void GeometryCollector::setCurrentMaterial(const repo_material_t &material, bool missingTexture) {
 
 	auto checkSum = material.checksum();
 	if(idxToMat.find(checkSum) == idxToMat.end()) {
-		idxToMat[checkSum] = repo::core::model::RepoBSONFactory::makeMaterialNode(material);
-		if (material.missingTexture)
-			missingTextures = true;
+		idxToMat[checkSum] = { 
+			repo::core::model::RepoBSONFactory::makeMaterialNode(material), 
+			createTextureNode(material.texturePath) 
+		};
+
+		if (missingTexture)
+			this->missingTextures = true;
 	}
 	currMat = checkSum;
 }
@@ -155,14 +159,10 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
 				for (const auto &v : meshMatEntry.second.rawVertices) {
 					vertices32.push_back({ (float)(v.x - minMeshBox[0]), (float)(v.y - minMeshBox[1]), (float)(v.z - minMeshBox[2]) });
 				}
+				
 
-				std::vector<repo::lib::RepoVector2D> uvChannel;
-				for (auto& coordset : meshMatEntry.second.uvCoords) {
-					uvChannel.push_back({ (float)coordset.x, (float)coordset.y });
-				}
-
-				if (uvChannel.size())
-					uvChannels.push_back(uvChannel);
+				if (meshMatEntry.second.uvCoords.size())
+					uvChannels.push_back(meshMatEntry.second.uvCoords);
 
 				auto meshNode = repo::core::model::RepoBSONFactory::makeMeshNode(
 					vertices32,
@@ -196,59 +196,60 @@ repo::core::model::TransformationNode*  GeometryCollector::createTransNode(
 	return new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name, { parentId }));
 }
 
-repo::core::model::RepoNodeSet GeometryCollector::getTextureNodes() {
-	repo::core::model::RepoNodeSet textSet;
-	for (const auto &matPair : idxToMat) {
-		auto mat = matPair.second.getMaterialStruct();
-
-		std::ifstream::pos_type size;
-		std::ifstream file(mat.texturePath, std::ios::in | std::ios::binary | std::ios::ate);
-		char *memblock = nullptr;
-		if (file.is_open())
-		{
-			size = file.tellg();
-			memblock = new char[size];
-			file.seekg(0, std::ios::beg);
-			file.read(memblock, size);
-			file.close();
-		}
-		else
-		{
-			continue;
-		}
-
-		auto texnode = repo::core::model::RepoBSONFactory::makeTextureNode(
-			mat.texturePath,
-			(const char*)memblock,
-			size,
-			size,
-			0,
-			REPO_NODE_API_LEVEL_1
-		);
-
-		delete[] memblock;
-
-		textSet.insert(new repo::core::model::TextureNode(texnode.cloneAndAddParent(matPair.second.getSharedID())));
-	}
-
-	return textSet;
-}
-
 bool GeometryCollector::hasMissingTextures()
 {
 	return missingTextures;
 }
 
-repo::core::model::RepoNodeSet GeometryCollector::getMaterialNodes() {
-	repo::core::model::RepoNodeSet matSet;
+void GeometryCollector::getMaterialNodes(repo::core::model::RepoNodeSet& materials, repo::core::model::RepoNodeSet& textures) {
+	
+	materials.clear();
+	textures.clear();
+
 	for (const auto &matPair : idxToMat) {
 		auto matIdx = matPair.first;
 		if (matToMeshes.find(matIdx) != matToMeshes.end()) {
-			matSet.insert(new repo::core::model::MaterialNode(matPair.second.cloneAndAddParent(matToMeshes[matIdx])));
+			auto& materialNode = matPair.second.first;
+			auto& textureNode = matPair.second.second;
+
+			auto matNode = new repo::core::model::MaterialNode(materialNode.cloneAndAddParent(matToMeshes[matIdx]));
+			materials.insert(matNode);
+
+			if (!textureNode.isEmpty()) {
+				auto texNode = new repo::core::model::TextureNode(textureNode.cloneAndAddParent(matNode->getSharedID()));
+				textures.insert(texNode);
+			}
 		}
 		else {
 			repoDebug << "Did not find matTo Meshes: " << matIdx;
 		}
 	}
-	return matSet;
+}
+
+repo::core::model::TextureNode GeometryCollector::createTextureNode(const std::string& texturePath)
+{
+	std::ifstream::pos_type size;
+	std::ifstream file(texturePath, std::ios::in | std::ios::binary | std::ios::ate);
+	char *memblock = nullptr;
+	if (!file.is_open())
+		return repo::core::model::TextureNode();
+
+	size = file.tellg();
+	memblock = new char[size];
+	file.seekg(0, std::ios::beg);
+	file.read(memblock, size);
+	file.close();
+
+	auto texnode = repo::core::model::RepoBSONFactory::makeTextureNode(
+		texturePath,
+		(const char*)memblock,
+		size,
+		1,
+		0,
+		REPO_NODE_API_LEVEL_1
+	);
+
+	delete[] memblock;
+
+	return texnode;
 }

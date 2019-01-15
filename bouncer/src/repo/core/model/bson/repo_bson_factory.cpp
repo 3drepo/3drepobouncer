@@ -159,12 +159,6 @@ MaterialNode RepoBSONFactory::makeMaterialNode(
 	if (material.shininessStrength == material.shininessStrength)
 		builder << REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH << material.shininessStrength;
 
-	if (!material.texturePath.empty())
-		builder << REPO_NODE_MATERIAL_LABEL_TEXTURE_PATH << material.texturePath;
-
-	if (material.missingTexture)
-		builder << REPO_NODE_MATERIAL_LABEL_MISSING_TEXTURE << material.missingTexture;
-
 	return MaterialNode(builder.obj());
 }
 

@@ -150,10 +150,11 @@ OdGiMaterialItemPtr VectorizeView::fillMaterialCache(
 {
 	repo_material_t material;
 
+	bool missingTexture = false;
 	fillMaterial(materialData, material);
-	fillTexture(materialId, material);
+	fillTexture(materialId, material, missingTexture);
 
-	geoColl->setCurrentMaterial(material);
+	geoColl->setCurrentMaterial(material, missingTexture);
 	geoColl->stopMeshEntry();
 	geoColl->startMeshEntry();
 
@@ -222,8 +223,10 @@ void VectorizeView::fillMaterial(const OdGiMaterialTraitsData & materialData, re
 	material.opacity = opacityPercentage;
 }
 
-void VectorizeView::fillTexture(OdDbStub* materialId, repo_material_t& material)
+void VectorizeView::fillTexture(OdDbStub* materialId, repo_material_t& material, bool& missingTexture)
 {
+	missingTexture = false;
+
 	OdBmObjectId matId(materialId);
 	if (!matId.isValid())
 		return;
@@ -253,7 +256,7 @@ void VectorizeView::fillTexture(OdDbStub* materialId, repo_material_t& material)
 	std::string validTextureName = extractValidTexturePath(textureName);
 
 	if (validTextureName.empty() && !textureName.empty())
-		material.missingTexture = true;
+		missingTexture = true;
 
 	material.texturePath = validTextureName;
 }

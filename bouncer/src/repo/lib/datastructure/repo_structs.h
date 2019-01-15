@@ -106,7 +106,6 @@ typedef struct{
 	float shininessStrength = 0;
 	bool isWireframe = false;
 	bool isTwoSided = false;
-	bool missingTexture = false;
 
 	std::string texturePath;
 
@@ -129,7 +128,7 @@ typedef struct{
 			ss << std::fixed << n;
 		}
 
-		ss << opacity << shininess << shininessStrength << isWireframe << isTwoSided << missingTexture;
+		ss << opacity << shininess << shininessStrength << isWireframe << isTwoSided;
 		auto stringified = ss.str();
 
 		boost::crc_32_type crc32;

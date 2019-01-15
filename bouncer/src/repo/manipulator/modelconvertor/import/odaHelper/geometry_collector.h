@@ -46,13 +46,7 @@ namespace repo {
 				public:
 					GeometryCollector();
 					~GeometryCollector();
-
-					/**
-					* Get all the texture nodes collected.
-					* @return returns a repoNodeSet containing texture nodes
-					*/
-					repo::core::model::RepoNodeSet getTextureNodes();
-
+					
 					/**
 					* Check whether collector has missing textures.
 					* @return returns true if at least one texture is missing
@@ -60,10 +54,10 @@ namespace repo {
 					bool hasMissingTextures();
 
 					/**
-					* Get all the material nodes collected.
+					* Get all the material and texture nodes collected.
 					* @return returns a repoNodeSet containing material nodes
 					*/
-					repo::core::model::RepoNodeSet getMaterialNodes();
+					void getMaterialNodes(repo::core::model::RepoNodeSet& materials, repo::core::model::RepoNodeSet& textures);
 
 
 					/**
@@ -133,13 +127,13 @@ namespace repo {
 					* Change current material to the one provided
 					* @param material material contents.
 					*/
-					void setCurrentMaterial(const repo_material_t &material);
+					void setCurrentMaterial(const repo_material_t &material, bool missingTexture = false);
 
 
 				private:
 					std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<int, mesh_data_t>>> meshData;
 					std::string nextMeshName, nextLayer, nextGroupName;
-					std::unordered_map< uint32_t, repo::core::model::MaterialNode > idxToMat;					
+					std::unordered_map< uint32_t, std::pair<repo::core::model::MaterialNode, repo::core::model::TextureNode> > idxToMat;
 					std::unordered_map<uint32_t, std::vector<repo::lib::RepoUUID> > matToMeshes;
 					repo::core::model::RepoNodeSet transNodes;
 					uint32_t currMat;
@@ -151,6 +145,8 @@ namespace repo {
 						const std::string &name,
 						const repo::lib::RepoUUID &parentId
 					);
+
+					repo::core::model::TextureNode createTextureNode(const std::string& texturePath);
 
 					mesh_data_t createMeshEntry();
 				};
