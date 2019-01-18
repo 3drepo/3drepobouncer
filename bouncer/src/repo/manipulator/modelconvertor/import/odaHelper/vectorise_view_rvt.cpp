@@ -11,6 +11,8 @@
 #include "Geometry/Entities/BmMaterial.h"
 #include "Database/BmAssetHelpers.h"
 
+#include "HostObj/Entities/BmLevel.h"
+
 #include "Main/Entities/BmDirectShape.h"
 #include "Main/Entities/BmDirectShapeCell.h"
 #include "Main/Entities/BmDirectShapeDataCell.h"
@@ -20,6 +22,17 @@
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 const char* RVT_TEXTURES_ENV_VARIABLE = "RVT_TEXTURES";
+
+std::string getElementName(OdBmElementPtr element, uint64_t id)
+{
+	std::string elName((const char*)element->getElementName());
+	if (!elName.empty())
+		elName += "_" + id;
+	else
+		elName = std::to_string(id);
+
+	return elName;
+}
 
 bool isFileExist(const std::string& inputPath)
 {
@@ -68,19 +81,8 @@ VectorizeView::VectorizeView()
 
 void VectorizeView::draw(const OdGiDrawable* pDrawable)
 {
-	geoColl->stopMeshEntry();
-	geoColl->setMeshGroup(std::to_string(meshesCount));
-	geoColl->setNextMeshName(std::to_string(meshesCount));
-	geoColl->startMeshEntry();
-	meshesCount++;
-
-	OdString sClassName = toString(pDrawable->isA());
-	bool bDBRO = false;
-	OdBmElementPtr pElem = OdBmElement::cast(pDrawable);
-	if (!pElem.isNull())
-		bDBRO = pElem->isDBRO();
-	OdString sHandle = bDBRO ? toString(pElem->objectId().getHandle()) : toString(L"non-DbResident");
-	OdGsBaseVectorizer::draw(pDrawable);
+	fillMeshGroupAndLevel(pDrawable);
+	OdGsBaseMaterialView::draw(pDrawable);
 }
 
 void VectorizeView::beginViewVectorization()
@@ -159,6 +161,36 @@ OdGiMaterialItemPtr VectorizeView::fillMaterialCache(
 	geoColl->startMeshEntry();
 
 	return OdGiMaterialItemPtr();
+}
+
+void VectorizeView::fillMeshGroupAndLevel(const OdGiDrawable* pDrawable)
+{
+	OdBmElementPtr element = OdBmElement::cast(pDrawable);
+	if (element.isNull())
+		return;
+
+	if (!element->isDBRO())
+		return;
+
+	std::string elementName = getElementName(element, meshesCount);
+
+	geoColl->setNextMeshName(elementName);
+	geoColl->setMeshGroup(elementName);
+	meshesCount++;
+
+	auto levelId = element->getAssocLevelId();
+	if (!levelId.isValid())
+		return;
+
+	auto levelObject = levelId.safeOpenObject();
+	if (levelObject.isNull())
+		return;
+
+	OdBmLevelPtr lptr = OdBmLevel::cast(levelObject);
+	if (lptr.isNull())
+		return;
+	
+	geoColl->setLayer((const char*)lptr->getElementName());
 }
 
 void VectorizeView::fillMaterial(const OdGiMaterialTraitsData & materialData, repo_material_t& material)

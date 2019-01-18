@@ -32,7 +32,7 @@ namespace repo {
 					void draw(const OdGiDrawable*);
 
 				protected:
-
+					
 					OdGiMaterialItemPtr fillMaterialCache(
 						OdGiMaterialItemPtr prevCache,
 						OdDbStub* materialId,
@@ -44,6 +44,7 @@ namespace repo {
 				private:
 					void fillTexture(OdDbStub* materialId, repo_material_t& material, bool& missingTexture);
 					void fillMaterial(const OdGiMaterialTraitsData & materialData, repo_material_t& material);
+					void fillMeshGroupAndLevel(const OdGiDrawable* element);
 
 					GeometryCollector* geoColl;
 					uint64_t meshesCount;
