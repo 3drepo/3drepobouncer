@@ -173,11 +173,12 @@ void VectorizeView::fillMeshGroupAndLevel(const OdGiDrawable* pDrawable)
 		return;
 
 	std::string elementName = getElementName(element, meshesCount);
-	std::cout << elementName << std::endl;
 
 	geoColl->setNextMeshName(elementName);
 	geoColl->setMeshGroup(elementName);
 	meshesCount++;
+
+	geoColl->setLayer("Layer Default");
 
 	auto levelId = element->getAssocLevelId();
 	if (!levelId.isValid())
