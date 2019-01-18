@@ -27,9 +27,9 @@ std::string getElementName(OdBmElementPtr element, uint64_t id)
 {
 	std::string elName((const char*)element->getElementName());
 	if (!elName.empty())
-		elName += "_" + id;
-	else
-		elName = std::to_string(id);
+		elName.append("_");
+
+	elName.append(std::to_string(id));
 
 	return elName;
 }
@@ -173,6 +173,7 @@ void VectorizeView::fillMeshGroupAndLevel(const OdGiDrawable* pDrawable)
 		return;
 
 	std::string elementName = getElementName(element, meshesCount);
+	std::cout << elementName << std::endl;
 
 	geoColl->setNextMeshName(elementName);
 	geoColl->setMeshGroup(elementName);
