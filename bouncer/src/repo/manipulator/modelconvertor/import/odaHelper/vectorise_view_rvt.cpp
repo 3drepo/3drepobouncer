@@ -1,23 +1,8 @@
-#include "vectorise_view_rvt.h"
-
 #include "boost/filesystem.hpp"
 #include "OdPlatformSettings.h"
-#include <BimCommon.h>
-#include <Database/BmElement.h>
-#include <RxObjectImpl.h>
-#include <ColorMapping.h>
-#include <toString.h>
-#include "Database/Entities/BmMaterialElem.h"
-#include "Geometry/Entities/BmMaterial.h"
-#include "Database/BmAssetHelpers.h"
-
-#include "HostObj/Entities/BmLevel.h"
-
-#include "Main/Entities/BmDirectShape.h"
-#include "Main/Entities/BmDirectShapeCell.h"
-#include "Main/Entities/BmDirectShapeDataCell.h"
 
 #include "vectorise_device_rvt.h"
+#include "vectorise_view_rvt.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
@@ -163,6 +148,35 @@ OdGiMaterialItemPtr VectorizeView::fillMaterialCache(
 	return OdGiMaterialItemPtr();
 }
 
+std::string VectorizeView::getLevel(OdBmElementPtr element, const std::string& name)
+{
+	auto levelId = element->getAssocLevelId();
+	if (levelId.isValid())
+	{
+		auto levelObject = levelId.safeOpenObject();
+		if (!levelObject.isNull())
+		{
+			OdBmLevelPtr lptr = OdBmLevel::cast(levelObject);
+			if (!lptr.isNull())
+				return std::string((const char*)lptr->getElementName());
+		}
+	}
+
+	auto owner = element->getOwningElementId();
+	if (owner.isValid())
+	{
+		auto object = owner.openObject();
+		if (!object.isNull())
+		{
+			auto parentElement = OdBmElement::cast(object);
+			if (!parentElement.isNull())
+				return getLevel(parentElement, name);
+		}
+	}
+
+	return name;
+}
+
 void VectorizeView::fillMeshGroupAndLevel(const OdGiDrawable* pDrawable)
 {
 	OdBmElementPtr element = OdBmElement::cast(pDrawable);
@@ -178,21 +192,8 @@ void VectorizeView::fillMeshGroupAndLevel(const OdGiDrawable* pDrawable)
 	geoColl->setMeshGroup(elementName);
 	meshesCount++;
 
-	geoColl->setLayer("Layer Default");
-
-	auto levelId = element->getAssocLevelId();
-	if (!levelId.isValid())
-		return;
-
-	auto levelObject = levelId.safeOpenObject();
-	if (levelObject.isNull())
-		return;
-
-	OdBmLevelPtr lptr = OdBmLevel::cast(levelObject);
-	if (lptr.isNull())
-		return;
-	
-	geoColl->setLayer((const char*)lptr->getElementName());
+	std::string layerName = getLevel(element, "Layer Default");
+	geoColl->setLayer(layerName);
 }
 
 void VectorizeView::fillMaterial(const OdGiMaterialTraitsData & materialData, repo_material_t& material)
