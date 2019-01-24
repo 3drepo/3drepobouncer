@@ -49,7 +49,7 @@ void GeometryCollector::setCurrentMaterial(const repo_material_t &material, bool
 	currMat = checkSum;
 }
 
-void repo::manipulator::modelconvertor::odaHelper::GeometryCollector::setCurrentMeta(repo::core::model::MetadataNode* meta)
+void repo::manipulator::modelconvertor::odaHelper::GeometryCollector::setCurrentMeta(const std::pair<std::vector<std::string>, std::vector<std::string>>& meta)
 {
 	currentMeta = meta;
 }
@@ -65,7 +65,7 @@ mesh_data_t GeometryCollector::createMeshEntry() {
 	entry.name = nextMeshName;
 	entry.groupName = nextGroupName;
 	entry.layerName = nextLayer.empty() ? "UnknownLayer" : nextLayer;
-	entry.metaNode = currentMeta;
+	entry.metaValues = currentMeta;
 
 	return entry;
 
@@ -187,15 +187,15 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
 					{ layerToTrans[meshLayerEntry.first]->getSharedID() }
 				);
 
-				if (meshMatEntry.second.metaNode)
-				{
-					auto node = createTransNode("metaNode", layerToTrans[meshLayerEntry.first]->getSharedID());
-					transNodes.insert(node);
-					*meshMatEntry.second.metaNode = meshMatEntry.second.metaNode->cloneAndAddParent(node->getSharedID());
-					metaSet.insert(meshMatEntry.second.metaNode);
-					meshNode = meshNode.cloneAndAddParent(node->getSharedID());
-				}
+				auto& metaValues = meshMatEntry.second.metaValues;
 
+				if (!metaValues.first.empty())
+				{
+					metaSet.insert(new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metaValues.first, metaValues.second, meshMatEntry.second.name,
+					{
+						meshNode.getSharedID()
+					})));
+				}
 
 				if (matToMeshes.find(meshMatEntry.second.matIdx) == matToMeshes.end()) {
 					matToMeshes[meshMatEntry.second.matIdx] = std::vector<repo::lib::RepoUUID>();

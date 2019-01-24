@@ -67,8 +67,9 @@ namespace repo {
 				private:
 					void fillTexture(OdDbStub* materialId, repo_material_t& material, bool& missingTexture);
 					void fillMaterial(const OdGiMaterialTraitsData & materialData, repo_material_t& material);
-					repo::core::model::MetadataNode * fillMetadata(OdBmElementPtr element);
 					void fillMeshData(const OdGiDrawable* element);
+
+					std::pair<std::vector<std::string>, std::vector<std::string>> fillMetadata(OdBmElementPtr element);
 					std::string getLevel(OdBmElementPtr element, const std::string& name);
 
 					GeometryCollector* geoColl;

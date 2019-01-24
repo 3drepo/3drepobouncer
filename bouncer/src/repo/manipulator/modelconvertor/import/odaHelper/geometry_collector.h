@@ -39,7 +39,7 @@ namespace repo {
 					std::string layerName;
 					std::string groupName;
 					uint32_t matIdx;
-					repo::core::model::MetadataNode* metaNode = nullptr;
+					std::pair<std::vector<std::string>, std::vector<std::string>> metaValues;
 				};
 
 				class GeometryCollector
@@ -134,7 +134,7 @@ namespace repo {
 					* Change current meta node to the one provided
 					* @param meta node
 					*/
-					void setCurrentMeta(repo::core::model::MetadataNode* meta);
+					void setCurrentMeta(const std::pair<std::vector<std::string>, std::vector<std::string>>& meta);
 
 					/**
 					* Get all meta nodes collected.
@@ -150,7 +150,7 @@ namespace repo {
 					std::unordered_map<uint32_t, std::vector<repo::lib::RepoUUID> > matToMeshes;
 					repo::core::model::RepoNodeSet transNodes;
 					uint32_t currMat;
-					repo::core::model::MetadataNode* currentMeta = nullptr;
+					std::pair<std::vector<std::string>, std::vector<std::string>> currentMeta;
 					repo::core::model::RepoNodeSet metaSet;
 					std::vector<double> minMeshBox;
 					mesh_data_t *currentEntry = nullptr;

@@ -227,10 +227,9 @@ void VectorizeView::fillMeshData(const OdGiDrawable* pDrawable)
 	geoColl->setLayer(layerName);
 }
 
-repo::core::model::MetadataNode* VectorizeView::fillMetadata(OdBmElementPtr element)
+std::pair<std::vector<std::string>, std::vector<std::string>> VectorizeView::fillMetadata(OdBmElementPtr element)
 {
-	repo::core::model::MetadataNode *metaNode;
-	repo::core::model::RepoBSONBuilder builder;
+	std::pair<std::vector<std::string>, std::vector<std::string>> metadata;
 
 	OdBuiltInParamArray aParams;
 	element->getListParams(aParams);
@@ -245,14 +244,14 @@ repo::core::model::MetadataNode* VectorizeView::fillMetadata(OdBmElementPtr elem
 		{
 			std::string variantValue = variantToString(value);
 			if (!variantValue.empty())
-				builder << paramName << variantValue;
+			{
+				metadata.first.push_back(paramName);
+				metadata.second.push_back(variantValue);
+			}
 		}
 	}
 
-	repo::core::model::RepoBSON metaBSON = builder.obj();
-	std::string handleStr = (const char*)(element->objectId().getHandle().ascii());
-	std::string metaName = std::string("meta[" + handleStr + "]");
-	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metaBSON, "", metaName));
+	return metadata;
 }
 
 void VectorizeView::fillMaterial(const OdGiMaterialTraitsData & materialData, repo_material_t& material)
