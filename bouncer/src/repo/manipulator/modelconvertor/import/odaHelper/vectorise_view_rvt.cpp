@@ -52,6 +52,36 @@ std::string extractValidTexturePath(const std::string& inputPath)
 	return std::string();
 }
 
+std::string variantToString(const OdTfVariant& val)
+{
+	std::string strOut;
+	switch (val.type()) {
+	case OdTfVariant::kString: 
+		strOut = (const char*)val.getString();
+		break;
+	case OdTfVariant::kBool:   
+		strOut = std::to_string(val.getBool());
+		break;
+	case OdTfVariant::kInt8:    
+		strOut = std::to_string(val.getInt8());
+		break;
+	case OdTfVariant::kInt16:   
+		strOut = std::to_string(val.getInt16());
+		break;
+	case OdTfVariant::kInt32: 
+		strOut = std::to_string(val.getInt32());
+		break;
+	case OdTfVariant::kInt64:  
+		strOut = std::to_string(val.getInt64());
+		break;
+	case OdTfVariant::kDouble: 
+		strOut = std::to_string(val.getDouble());
+		break;
+	}
+
+	return strOut;
+}
+
 OdGsViewPtr VectorizeView::createObject(GeometryCollector* geoColl)
 {
 	auto ptr = OdRxObjectImpl<VectorizeView, OdGsView>::createObject();
@@ -66,7 +96,7 @@ VectorizeView::VectorizeView()
 
 void VectorizeView::draw(const OdGiDrawable* pDrawable)
 {
-	fillMeshGroupAndLevel(pDrawable);
+	fillMeshData(pDrawable);
 	OdGsBaseMaterialView::draw(pDrawable);
 }
 
@@ -177,7 +207,7 @@ std::string VectorizeView::getLevel(OdBmElementPtr element, const std::string& n
 	return name;
 }
 
-void VectorizeView::fillMeshGroupAndLevel(const OdGiDrawable* pDrawable)
+void VectorizeView::fillMeshData(const OdGiDrawable* pDrawable)
 {
 	OdBmElementPtr element = OdBmElement::cast(pDrawable);
 	if (element.isNull())
@@ -190,10 +220,39 @@ void VectorizeView::fillMeshGroupAndLevel(const OdGiDrawable* pDrawable)
 
 	geoColl->setNextMeshName(elementName);
 	geoColl->setMeshGroup(elementName);
+	geoColl->setCurrentMeta(fillMetadata(element));
 	meshesCount++;
 
 	std::string layerName = getLevel(element, "Layer Default");
 	geoColl->setLayer(layerName);
+}
+
+repo::core::model::MetadataNode* VectorizeView::fillMetadata(OdBmElementPtr element)
+{
+	repo::core::model::MetadataNode *metaNode;
+	repo::core::model::RepoBSONBuilder builder;
+
+	OdBuiltInParamArray aParams;
+	element->getListParams(aParams);
+
+	for (OdBuiltInParamArray::iterator it = aParams.begin(); it != aParams.end(); it++)
+	{
+		std::string paramName = std::string((const char*)OdBm::BuiltInParameter(*it).toString());
+
+		OdTfVariant value;
+		OdResult res = element->getParam(*it, value);
+		if (res == eOk)
+		{
+			std::string variantValue = variantToString(value);
+			if (!variantValue.empty())
+				builder << paramName << variantValue;
+		}
+	}
+
+	repo::core::model::RepoBSON metaBSON = builder.obj();
+	std::string handleStr = (const char*)(element->objectId().getHandle().ascii());
+	std::string metaName = std::string("meta[" + handleStr + "]");
+	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metaBSON, "", metaName));
 }
 
 void VectorizeView::fillMaterial(const OdGiMaterialTraitsData & materialData, repo_material_t& material)

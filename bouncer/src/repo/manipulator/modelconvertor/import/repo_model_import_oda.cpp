@@ -46,7 +46,8 @@ repo::core::model::RepoScene* OdaModelImport::generateRepoScene()
 
 		geoCollector.getMaterialNodes(materialSet, textureSet);
         auto transSet = geoCollector.getTransformationNodes();
-        scene = new repo::core::model::RepoScene({ filePath }, dummy, meshSet, materialSet, dummy, textureSet, transSet);
+		auto metaSet = geoCollector.getMetaNodes();
+		scene = new repo::core::model::RepoScene({ filePath }, dummy, meshSet, materialSet, metaSet, textureSet, transSet);
 		if (geoCollector.hasMissingTextures())
 			scene->setMissingTexture();
         scene->setWorldOffset(geoCollector.getModelOffset());

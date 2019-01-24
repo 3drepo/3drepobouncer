@@ -18,6 +18,8 @@
 #include "Database/Entities/BmMaterialElem.h"
 #include "Geometry/Entities/BmMaterial.h"
 #include "Database/BmAssetHelpers.h"
+#include "Database/BmBuiltInParameter.h"
+#include "Database/Entities/BmParamElem.h"
 
 #include "Main/Entities/BmDirectShape.h"
 #include "Main/Entities/BmDirectShapeCell.h"
@@ -65,7 +67,8 @@ namespace repo {
 				private:
 					void fillTexture(OdDbStub* materialId, repo_material_t& material, bool& missingTexture);
 					void fillMaterial(const OdGiMaterialTraitsData & materialData, repo_material_t& material);
-					void fillMeshGroupAndLevel(const OdGiDrawable* element);
+					repo::core::model::MetadataNode * fillMetadata(OdBmElementPtr element);
+					void fillMeshData(const OdGiDrawable* element);
 					std::string getLevel(OdBmElementPtr element, const std::string& name);
 
 					GeometryCollector* geoColl;
