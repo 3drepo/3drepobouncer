@@ -103,9 +103,11 @@ namespace repo {
 					/**
 					* Set next group name
 					* @param groupName group name of the next mesh
+					* @return returns true if there's already a metadata entry for this grouping
 					*/
-					void setMeshGroup(const std::string &groupName) {
+					bool setMeshGroup(const std::string &groupName) {
 						nextGroupName = groupName;
+						return layerToMeta.find(groupName) != layerToMeta.end();
 					}
 
 					/**
@@ -122,12 +124,24 @@ namespace repo {
 					*/
 					void setCurrentMaterial(const repo_material_t &material);
 
+					/**
+					* Set metadata of a group
+					* @param groupName groupName
+					* @param metaEntry Metadata entry for groupName
+					*/
+					void setMetadata(const std::string &groupName,
+						const std::unordered_map<std::string, std::string> &metaEntry)
+					{
+						layerToMeta[groupName] = metaEntry;
+					}
+
 
 				private:
 					std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<int, mesh_data_t>>> meshData;
+					std::unordered_map<std::string, std::unordered_map<std::string, std::string> > layerToMeta;
 					std::string nextMeshName, nextLayer, nextGroupName;
 					std::unordered_map< uint32_t, repo::core::model::MaterialNode > idxToMat;					
-					std::unordered_map<uint32_t, std::vector<repo::lib::RepoUUID> > matToMeshes;
+					std::unordered_map<uint32_t, std::vector<repo::lib::RepoUUID> > matToMeshes;					
 					repo::core::model::RepoNodeSet transNodes;
 					uint32_t currMat;
 					std::vector<double> minMeshBox;

@@ -20,6 +20,12 @@
 
 #include <toString.h>
 #include <DgLevelTableRecord.h>
+#include <DgAttributeLinkage.h>
+#include <FlatMemStream.h>
+#include <OdPlatformStreamer.h>
+
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 
 #include "geometry_dumper.h"
@@ -60,6 +66,48 @@ std::string convertToStdString(const OdString &value) {
 	return std::string(ansi);
 }
 
+void printTree(const boost::property_tree::ptree &tree, 
+	std::unordered_map<std::string, std::string> &resultCollector,
+	const std::string & parentName = "",
+	const bool isXMLAttri = false)
+{
+
+	for (const auto &it : tree) {
+		const auto field = isXMLAttri ? "<xmlattr>." + it.first : it.first;
+		const bool isAttriChild = field == "<xmlattr>";		
+		const auto value = it.second.data();
+		if (!isAttriChild && !value.empty())
+		{
+			const auto fieldLabel = parentName + "::" + it.first;
+			resultCollector[fieldLabel] = value;
+		}
+
+
+		const std::string childPrefix = isAttriChild ? parentName : (parentName.empty() ? field : parentName + "::" + field);
+		printTree(it.second, resultCollector, childPrefix, isAttriChild);
+	}
+}
+
+std::unordered_map<std::string, std::string> GeometryDumper::extractXMLLinkages(OdDgElementPtr pElm) {	
+	std::unordered_map<std::string, std::string> entries;
+
+	entries["Element ID"] = convertToStdString(toString(pElm->elementId().getHandle()));
+	OdRxObjectPtrArray arrLinkages;
+	pElm->getLinkages(OdDgAttributeLinkage::kXmlLinkage, arrLinkages);
+	
+	for (OdUInt32 counter = 0; counter < arrLinkages.size(); counter++)
+	{
+		OdDgXmlLinkagePtr pXmlLinkage = arrLinkages[counter];
+		boost::property_tree::ptree tree;
+		std::stringstream ss;
+		ss << convertToStdString(pXmlLinkage->getXmlData());
+		boost::property_tree::read_xml(ss, tree);
+		printTree(tree, entries);
+	}
+
+	return entries;
+}
+
 bool GeometryDumper::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 {
 	OdDgElementPtr pElm = OdDgElement::cast(pDrawable);
@@ -71,10 +119,11 @@ bool GeometryDumper::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		auto ownerItem = OdDgElement::cast(ownerId.openObject(OdDg::kForRead));
 		currentItem = ownerItem;
 	}
-
 	//We want to group meshes together up to 1 below the top.
-	OdString groupID = toString(previousItem->elementId().getHandle());
-	collector->setMeshGroup(convertToStdString(groupID));
+	std::string groupID = convertToStdString(toString(previousItem->elementId().getHandle()));
+	if (!collector->setMeshGroup(groupID)) {
+		collector->setMetadata(groupID, extractXMLLinkages(previousItem));
+	}
 
 	OdString sHandle = pElm->isDBRO() ? toString(pElm->elementId().getHandle()) : toString(OD_T("non-DbResident"));
 	collector->setNextMeshName(convertToStdString(sHandle));
@@ -86,6 +135,8 @@ bool GeometryDumper::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		OdDgLevelTableRecordPtr pLevel = idLevel.openObject(OdDg::kForRead);
 		collector->setLayer(convertToStdString(pLevel->getName()));
 	}
+	
+
 	return OdGsBaseMaterialView::doDraw(i, pDrawable);
 }
 
