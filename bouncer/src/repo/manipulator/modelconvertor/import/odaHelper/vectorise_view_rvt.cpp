@@ -220,7 +220,16 @@ void VectorizeView::fillMeshData(const OdGiDrawable* pDrawable)
 
 	geoColl->setNextMeshName(elementName);
 	geoColl->setMeshGroup(elementName);
-	geoColl->setCurrentMeta(fillMetadata(element));
+
+	try
+	{
+		geoColl->setCurrentMeta(fillMetadata(element));
+	}
+	catch(OdError& er)
+	{
+		//..Hotfix: handle nullPtr exception (need to check updated library)
+	}
+
 	meshesCount++;
 
 	std::string layerName = getLevel(element, "Layer Default");
@@ -237,6 +246,10 @@ std::pair<std::vector<std::string>, std::vector<std::string>> VectorizeView::fil
 	for (OdBuiltInParamArray::iterator it = aParams.begin(); it != aParams.end(); it++)
 	{
 		std::string paramName = std::string((const char*)OdBm::BuiltInParameter(*it).toString());
+
+		//..Hotfix: handle access violation exception (need to check updated library)
+		if (paramName == std::string("ROOF_SLOPE"))
+			continue;
 
 		OdTfVariant value;
 		OdResult res = element->getParam(*it, value);
