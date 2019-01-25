@@ -132,7 +132,7 @@ int FileProcessor::readFile() {
 					{
 						OdDgModelPtr elem = pModelIter->item().openObject();
 						if (!elem.isNull() && elem->getType() == OdDgModel::Type::kDesignModel) {
-							repoInfo << "Setting active view to: " << elem->getName();
+							repoInfo << "Setting active view to: " << elem->getName().c_str();
 							pDb->setActiveModelId(pModelIter->item());
 							elementId = pModelIter->item();
 							break;
