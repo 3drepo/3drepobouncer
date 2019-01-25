@@ -405,7 +405,7 @@
 				if (sendAck)
 					ch.ack(msg);
 				logger.info("sending to reply queue(%s): %s", conf.rabbitmq.callback_queue, reply);
-				ch.publish(conf.rabbitmq.callback_queue, msg.properties.appId, new Buffer(reply),
+				ch.sendToQueue(conf.rabbitmq.callback_queue, new Buffer.from(reply),
 					{correlationId: msg.properties.correlationId, appId: msg.properties.appId});
 			});
 		}, {noAck: false});
@@ -420,7 +420,7 @@
 			else
 			{
 				conn.createChannel(function(err, ch){
-					ch.assertExchange(conf.rabbitmq.callback_queue, 'direct', { durable: true });
+					ch.assertQueue(conf.rabbitmq.callback_queue, { durable: true });
 					listenToQueue(ch, conf.rabbitmq.worker_queue, conf.rabbitmq.task_prefetch || 4);
 					listenToQueue(ch, conf.rabbitmq.model_queue, conf.rabbitmq.model_prefetch || 1);
 
