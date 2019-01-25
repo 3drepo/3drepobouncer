@@ -121,8 +121,27 @@ int FileProcessor::readFile() {
 			ODGSPALETTE pPalCpy;
 			pPalCpy.insert(pPalCpy.begin(), refColors, refColors + 256);
 
-
 			OdDgElementId elementId = pDb->getActiveModelId();
+
+			if (elementId.isValid()) {
+				OdDgModelPtr viewElement = elementId.openObject(OdDg::kForRead);
+				if (viewElement->getType() != OdDgModel::Type::kDesignModel)
+				{
+					OdDgElementIteratorPtr pModelIter = pDb->getModelTable()->createIterator();
+					for (; !pModelIter->done(); pModelIter->step())
+					{
+						OdDgModelPtr elem = pModelIter->item().openObject();
+						if (!elem.isNull() && elem->getType() == OdDgModel::Type::kDesignModel) {
+							repoInfo << "Setting active view to: " << elem->getName();
+							pDb->setActiveModelId(pModelIter->item());
+							elementId = pModelIter->item();
+							break;
+						}
+					}
+				}
+			}
+			
+		
 			if (elementId.isNull())
 			{
 				elementId = pDb->getDefaultModelId();
