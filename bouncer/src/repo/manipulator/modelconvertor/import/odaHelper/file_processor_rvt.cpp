@@ -44,6 +44,21 @@ protected:
     ODRX_USING_HEAP_OPERATORS(ExSystemServices);
 };
 
+OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimDatabase)
+{
+	OdRxIteratorPtr layouts = baseDatabase->layouts(bimDatabase);
+
+	for (; !layouts->done(); layouts->next())
+	{
+		OdDbBaseLayoutPEPtr pLayout(layouts->object());
+		OdString layoutName = pLayout->name(layouts->object());
+		if (layoutName.find("3D") != -1)
+			return layoutName;
+	}
+
+	return OdString();
+}
+
 repo::manipulator::modelconvertor::odaHelper::FileProcessorRvt::~FileProcessorRvt()
 {
 
@@ -61,13 +76,17 @@ int FileProcessorRvt::readFile()
 		OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));
 		if (!pDb.isNull())
 		{
+			OdDbBaseDatabasePEPtr pDbPE(pDb);
+			OdString layout = Get3DLayout(pDbPE, pDb);
+			if (!layout.isEmpty())
+				pDbPE->setCurrentLayout(pDb, layout);
+
 			OdGiContextForBmDatabasePtr pBimContext = OdGiContextForBmDatabase::createObject();
 
 			OdGsDevicePtr pDevice = OdRxObjectImpl<VectoriseDeviceRvt, OdGsDevice>::createObject();
 			(static_cast<VectoriseDeviceRvt*>(pDevice.get()))->init(collector);
 
 			pBimContext->setDatabase(pDb);
-			OdDbBaseDatabasePEPtr pDbPE(pDb);
 			pDevice = pDbPE->setupActiveLayoutViews(pDevice, pBimContext);
 			OdGsDCRect screenRect(OdGsDCPoint(0, 0), OdGsDCPoint(1000, 1000)); //Set the screen space to the borders of the scene
 			pDevice->onSize(screenRect);
