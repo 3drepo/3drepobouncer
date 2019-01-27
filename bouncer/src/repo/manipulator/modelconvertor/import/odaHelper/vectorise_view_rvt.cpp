@@ -255,10 +255,13 @@ std::pair<std::vector<std::string>, std::vector<std::string>> VectorizeView::fil
 		OdResult res = element->getParam(*it, value);
 		if (res == eOk)
 		{
+			OdBmParamElemPtr pParamElem = element->database()->getObjectId(*it).safeOpenObject();
+			OdBmParamDefPtr pDescParam = pParamElem->getParamDef();
+			
 			std::string variantValue = variantToString(value);
 			if (!variantValue.empty())
 			{
-				metadata.first.push_back(paramName);
+				metadata.first.push_back(std::string((const char*)pDescParam->getCaption()));
 				metadata.second.push_back(variantValue);
 			}
 		}
