@@ -33,10 +33,11 @@ repo::core::model::RepoScene* DgnModelImport::generateRepoScene()
 	const repo::core::model::RepoNodeSet dummy;
 	auto meshSet = geoCollector.getMeshNodes();
 	if (meshSet.size()) {
-		repoInfo << "Get material nodes... ";
 		auto matSet =  geoCollector.getMaterialNodes();
 		auto transSet = geoCollector.getTransformationNodes();
-		scene = new repo::core::model::RepoScene({ filePath }, dummy, meshSet, matSet, dummy, dummy, transSet);
+		auto metaSet = geoCollector.getMetadataNodes();
+		repoInfo << "Nodes count - Trans: " << transSet.size() << " meshes: " << meshSet.size() << " materials: " << matSet.size() << " metadata: " << metaSet.size();
+		scene = new repo::core::model::RepoScene({ filePath }, dummy, meshSet, matSet, metaSet, dummy, transSet);
 		scene->setWorldOffset(geoCollector.getModelOffset());
 		repoInfo << "Repo Scene constructed.";
 	}

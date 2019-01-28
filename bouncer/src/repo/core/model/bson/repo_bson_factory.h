@@ -221,6 +221,7 @@ namespace repo {
 					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>(),
 					const int                    &apiLevel = REPO_NODE_API_LEVEL_1);
 
+
 				/**
 				* Create a Metadata Node
 				* @param keys labels for the fields
@@ -236,6 +237,21 @@ namespace repo {
 					const std::string               &name = std::string(),
 					const std::vector<repo::lib::RepoUUID>     &parents = std::vector<repo::lib::RepoUUID>(),
 					const int                       &apiLevel = REPO_NODE_API_LEVEL_1);
+
+				/**
+				* Create a Metadata Node
+				* @param data list of key value pair
+				* @param name Name of Metadata (optional)
+				* @param parents
+				* @param apiLevel Repo Node API level (optional)
+				* @return returns a metadata node
+				*/
+				static MetadataNode makeMetaDataNode(
+					const std::unordered_map<std::string, std::string>  &data,
+					const std::string            &name = std::string(),
+					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>(),
+					const int                    &apiLevel = REPO_NODE_API_LEVEL_1);
+
 				/**
 				* Create a Mesh Node
 				* @param vertices vector of vertices

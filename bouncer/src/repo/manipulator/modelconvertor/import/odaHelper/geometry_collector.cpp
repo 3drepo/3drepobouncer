@@ -131,14 +131,13 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
 
 	auto root = repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), "rootNode");
 	auto rootId = root.getSharedID();
-	repoDebug << "Mesh data: " << meshData.size();
 	for (const auto &meshGroupEntry : meshData) {
 		for (const auto &meshLayerEntry : meshGroupEntry.second) {
 			for (const auto &meshMatEntry : meshLayerEntry.second) {
 				if (!meshMatEntry.second.rawVertices.size()) continue;
 
 				if (layerToTrans.find(meshLayerEntry.first) == layerToTrans.end()) {
-					layerToTrans[meshLayerEntry.first] = createTransNode(meshLayerEntry.first, rootId);
+					layerToTrans[meshLayerEntry.first] = createTransNode(layerIDToName[meshLayerEntry.first], rootId);
 					transNodes.insert(layerToTrans[meshLayerEntry.first]);
 				}
 
@@ -161,6 +160,10 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
 					{ layerToTrans[meshLayerEntry.first]->getSharedID() }
 				);
 
+				if (idToMeta.find(meshGroupEntry.first) != idToMeta.end()) {
+					metaNodes.insert(createMetaNode(meshGroupEntry.first, { meshNode.getSharedID() }, idToMeta[meshGroupEntry.first]));
+				}
+
 				if (matToMeshes.find(meshMatEntry.second.matIdx) == matToMeshes.end()) {
 					matToMeshes[meshMatEntry.second.matIdx] = std::vector<repo::lib::RepoUUID>();
 				}
@@ -175,11 +178,23 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
 	return res;
 }
 
+repo::core::model::MetadataNode*  GeometryCollector::createMetaNode(
+	const std::string &name,
+	const repo::lib::RepoUUID &parentId,
+	const  std::unordered_map<std::string, std::string> &metaValues
+) {
+	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metaValues, name, {parentId}));
+}
+
 repo::core::model::TransformationNode*  GeometryCollector::createTransNode(
 	const std::string &name,
 	const repo::lib::RepoUUID &parentId
 ) {	
-	return new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name, { parentId }));
+	auto transNode = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name, { parentId }));
+	if (idToMeta.find(name) != idToMeta.end()) {
+		metaNodes.insert(createMetaNode(name, transNode->getSharedID(), idToMeta[name]));
+	}
+	return transNode;
 }
 
 
