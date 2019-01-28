@@ -1,8 +1,26 @@
+/**
+*  Copyright (C) 2018 3D Repo Ltd
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU Affero General Public License as
+*  published by the Free Software Foundation, either version 3 of the
+*  License, or (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU Affero General Public License for more details.
+*
+*  You should have received a copy of the GNU Affero General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 #include "boost/filesystem.hpp"
 #include "OdPlatformSettings.h"
 
 #include "vectorise_device_rvt.h"
 #include "vectorise_view_rvt.h"
+#include "helper_functions.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
@@ -10,7 +28,7 @@ const char* RVT_TEXTURES_ENV_VARIABLE = "RVT_TEXTURES";
 
 std::string getElementName(OdBmElementPtr element, uint64_t id)
 {
-	std::string elName((const char*)element->getElementName());
+	std::string elName(convertToStdString(element->getElementName()));
 	if (!elName.empty())
 		elName.append("_");
 
@@ -57,7 +75,7 @@ std::string variantToString(const OdTfVariant& val)
 	std::string strOut;
 	switch (val.type()) {
 	case OdTfVariant::kString: 
-		strOut = (const char*)val.getString();
+		strOut = convertToStdString(val.getString());
 		break;
 	case OdTfVariant::kBool:   
 		strOut = std::to_string(val.getBool());
@@ -85,7 +103,7 @@ std::string variantToString(const OdTfVariant& val)
 OdGsViewPtr VectorizeView::createObject(GeometryCollector* geoColl)
 {
 	auto ptr = OdRxObjectImpl<VectorizeView, OdGsView>::createObject();
-	static_cast<VectorizeView*>(ptr.get())->geoColl = geoColl;
+	static_cast<VectorizeView*>(ptr.get())->collector = geoColl;
 	return ptr;
 }
 
@@ -100,49 +118,42 @@ void VectorizeView::draw(const OdGiDrawable* pDrawable)
 	OdGsBaseMaterialView::draw(pDrawable);
 }
 
-void VectorizeView::beginViewVectorization()
-{
-	OdGsBaseVectorizer::beginViewVectorization();
-	OdGiGeometrySimplifier::setDrawContext(OdGsBaseMaterialView::drawContext());
-	output().setDestGeometry((OdGiGeometrySimplifier&)*this);
-	setDrawContextFlags(drawContextFlags(), false);
-	setEyeToOutputTransform(getEyeToWorldTransform());
-}
-
 VectoriseDeviceRvt* VectorizeView::device()
 {
 	return (VectoriseDeviceRvt*)OdGsBaseVectorizeView::device();
 }
 
-void VectorizeView::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal)
+void VectorizeView::OnFillMaterialCache(
+	OdGiMaterialItemPtr prevCache,
+	OdDbStub* materialId,
+	const OdGiMaterialTraitsData & materialData,
+	const MaterialColors& matColors,
+	repo_material_t& material)
 {
-	const OdGePoint3d*  pVertexDataList = vertexDataList();
+	bool missingTexture = false;
+	fillMaterial(matColors, material);
+	fillTexture(materialId, material, missingTexture);
+
+	collector->setCurrentMaterial(material, missingTexture);
+	collector->stopMeshEntry();
+	collector->startMeshEntry();
+}
+
+void VectorizeView::OnTriangleOut(const std::vector<repo::lib::RepoVector3D64>& vertices)
+{
 	const int numVertices = 3;
-
-	OdGePoint3d trgPoints[numVertices] =
-	{
-		vertexDataList()[p3Vertices[0]],
-		vertexDataList()[p3Vertices[1]],
-		vertexDataList()[p3Vertices[2]]
-	};
-
-	std::vector<repo::lib::RepoVector3D64> vertices;
-
-	if ((pVertexDataList + p3Vertices[0]) != (pVertexDataList + p3Vertices[1]) &&
-		(pVertexDataList + p3Vertices[0]) != (pVertexDataList + p3Vertices[2]) &&
-		(pVertexDataList + p3Vertices[1]) != (pVertexDataList + p3Vertices[2]))
-	{
-		for (int i = 0; i < numVertices; ++i)
-		{
-			vertices.push_back({ trgPoints[i].x , trgPoints[i].y, trgPoints[i].z });
-		}
-	}
-	else
-	{
+	if (vertices.size() != numVertices)
 		return;
+
+	OdGiMapperItemEntry::MapInputTriangle trg;
+
+	for (int i = 0; i < vertices.size(); ++i)
+	{
+		trg.inPt[i].x = vertices[i].x;
+		trg.inPt[i].y = vertices[i].y;
+		trg.inPt[i].z = vertices[i].z;
 	}
 
-	OdGiMapperItemEntry::MapInputTriangle trg{ { trgPoints[0], trgPoints[1], trgPoints[2] } };
 	OdGiMapperItemEntry::MapOutputCoords outTex;
 
 	auto currentMap = currentMapper();
@@ -157,25 +168,7 @@ void VectorizeView::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* p
 	for (int i = 0; i < numVertices; ++i)
 		uvc.push_back({ (float)outTex.outCoord[i].x, (float)outTex.outCoord[i].y });
 
-	geoColl->addFace(vertices, uvc);
-}
-
-OdGiMaterialItemPtr VectorizeView::fillMaterialCache(
-	OdGiMaterialItemPtr prevCache,
-	OdDbStub* materialId,
-	const OdGiMaterialTraitsData & materialData)
-{
-	repo_material_t material;
-
-	bool missingTexture = false;
-	fillMaterial(materialData, material);
-	fillTexture(materialId, material, missingTexture);
-
-	geoColl->setCurrentMaterial(material, missingTexture);
-	geoColl->stopMeshEntry();
-	geoColl->startMeshEntry();
-
-	return OdGiMaterialItemPtr();
+	collector->addFace(vertices, uvc);
 }
 
 std::string VectorizeView::getLevel(OdBmElementPtr element, const std::string& name)
@@ -188,7 +181,7 @@ std::string VectorizeView::getLevel(OdBmElementPtr element, const std::string& n
 		{
 			OdBmLevelPtr lptr = OdBmLevel::cast(levelObject);
 			if (!lptr.isNull())
-				return std::string((const char*)lptr->getElementName());
+				return std::string(convertToStdString(lptr->getElementName()));
 		}
 	}
 
@@ -218,12 +211,12 @@ void VectorizeView::fillMeshData(const OdGiDrawable* pDrawable)
 
 	std::string elementName = getElementName(element, meshesCount);
 
-	geoColl->setNextMeshName(elementName);
-	geoColl->setMeshGroup(elementName);
+	collector->setNextMeshName(elementName);
+	collector->setMeshGroup(elementName);
 
 	try
 	{
-		geoColl->setCurrentMeta(fillMetadata(element));
+		collector->setCurrentMeta(fillMetadata(element));
 	}
 	catch(OdError& er)
 	{
@@ -233,7 +226,7 @@ void VectorizeView::fillMeshData(const OdGiDrawable* pDrawable)
 	meshesCount++;
 
 	std::string layerName = getLevel(element, "Layer Default");
-	geoColl->setLayer(layerName);
+	collector->setLayer(layerName);
 }
 
 std::pair<std::vector<std::string>, std::vector<std::string>> VectorizeView::fillMetadata(OdBmElementPtr element)
@@ -245,7 +238,7 @@ std::pair<std::vector<std::string>, std::vector<std::string>> VectorizeView::fil
 
 	for (OdBuiltInParamArray::iterator it = aParams.begin(); it != aParams.end(); it++)
 	{
-		std::string paramName = std::string((const char*)OdBm::BuiltInParameter(*it).toString());
+		std::string paramName = convertToStdString(OdBm::BuiltInParameter(*it).toString());
 
 		//..Hotfix: handle access violation exception (need to check updated library)
 		if (paramName == std::string("ROOF_SLOPE"))
@@ -261,7 +254,7 @@ std::pair<std::vector<std::string>, std::vector<std::string>> VectorizeView::fil
 			std::string variantValue = variantToString(value);
 			if (!variantValue.empty())
 			{
-				metadata.first.push_back(std::string((const char*)pDescParam->getCaption()));
+				metadata.first.push_back(convertToStdString(pDescParam->getCaption()));
 				metadata.second.push_back(variantValue);
 			}
 		}
@@ -270,66 +263,14 @@ std::pair<std::vector<std::string>, std::vector<std::string>> VectorizeView::fil
 	return metadata;
 }
 
-void VectorizeView::fillMaterial(const OdGiMaterialTraitsData & materialData, repo_material_t& material)
+void VectorizeView::fillMaterial(const MaterialColors& matColors, repo_material_t& material)
 {
-	OdGiMaterialColor diffuseColor; OdGiMaterialMap diffuseMap;
-	OdGiMaterialColor ambientColor;
-	OdGiMaterialColor specularColor; OdGiMaterialMap specularMap; double glossFactor;
-	OdGiMaterialColor emissiveColor; OdGiMaterialMap emissiveMap;
-
-	double opacityPercentage; OdGiMaterialMap opacityMap;
-
-	materialData.diffuse(diffuseColor, diffuseMap);
-	materialData.ambient(ambientColor);
-	materialData.specular(specularColor, specularMap, glossFactor);
-	materialData.opacity(opacityPercentage, opacityMap);
-	materialData.emission(emissiveColor, emissiveMap);
-
-	ODCOLORREF colorDiffuse(0), colorAmbient(0), colorSpecular(0), colorEmissive(0);
-	if (diffuseColor.color().colorMethod() == OdCmEntityColor::kByColor)
-	{
-		colorDiffuse = ODTOCOLORREF(diffuseColor.color());
-	}
-	else if (diffuseColor.color().colorMethod() == OdCmEntityColor::kByACI)
-	{
-		colorDiffuse = OdCmEntityColor::lookUpRGB((OdUInt8)diffuseColor.color().colorIndex());
-	}
-	if (ambientColor.color().colorMethod() == OdCmEntityColor::kByColor)
-	{
-		colorAmbient = ODTOCOLORREF(ambientColor.color());
-	}
-	else if (ambientColor.color().colorMethod() == OdCmEntityColor::kByACI)
-	{
-		colorAmbient = OdCmEntityColor::lookUpRGB((OdUInt8)ambientColor.color().colorIndex());
-	}
-	if (specularColor.color().colorMethod() == OdCmEntityColor::kByColor)
-	{
-		colorSpecular = ODTOCOLORREF(specularColor.color());
-	}
-	else if (specularColor.color().colorMethod() == OdCmEntityColor::kByACI)
-	{
-		colorSpecular = OdCmEntityColor::lookUpRGB((OdUInt8)specularColor.color().colorIndex());
-	}
-	if (emissiveColor.color().colorMethod() == OdCmEntityColor::kByColor)
-	{
-		colorEmissive = ODTOCOLORREF(emissiveColor.color());
-	}
-	else if (emissiveColor.color().colorMethod() == OdCmEntityColor::kByACI)
-	{
-		colorEmissive = OdCmEntityColor::lookUpRGB((OdUInt8)emissiveColor.color().colorIndex());
-	}
-
 	const float norm = 255.f;
 
-	material.diffuse = { ODGETRED(colorDiffuse) / norm, ODGETGREEN(colorDiffuse) / norm, ODGETBLUE(colorDiffuse) / norm, 1.0f };
-	material.specular = { ODGETRED(colorSpecular) / norm, ODGETGREEN(colorSpecular) / norm, ODGETBLUE(colorSpecular) / norm, 1.0f };
-	material.ambient = { ODGETRED(colorAmbient) / norm, ODGETGREEN(colorAmbient) / norm, ODGETBLUE(colorAmbient) / norm, 1.0f };
-	material.emissive = { ODGETRED(colorEmissive) / norm, ODGETGREEN(colorEmissive) / norm, ODGETBLUE(colorEmissive) / norm, 1.0f };
-
-	material.shininessStrength = glossFactor;
-	material.shininess = materialData.reflectivity();
-
-	material.opacity = opacityPercentage;
+	material.diffuse = { ODGETRED(matColors.colorDiffuse) / norm, ODGETGREEN(matColors.colorDiffuse) / norm, ODGETBLUE(matColors.colorDiffuse) / norm, 1.0f };
+	material.specular = { ODGETRED(matColors.colorSpecular) / norm, ODGETGREEN(matColors.colorSpecular) / norm, ODGETBLUE(matColors.colorSpecular) / norm, 1.0f };
+	material.ambient = { ODGETRED(matColors.colorAmbient) / norm, ODGETGREEN(matColors.colorAmbient) / norm, ODGETBLUE(matColors.colorAmbient) / norm, 1.0f };
+	material.emissive = { ODGETRED(matColors.colorEmissive) / norm, ODGETGREEN(matColors.colorEmissive) / norm, ODGETBLUE(matColors.colorEmissive) / norm, 1.0f };
 }
 
 void VectorizeView::fillTexture(OdDbStub* materialId, repo_material_t& material, bool& missingTexture)
@@ -361,7 +302,7 @@ void VectorizeView::fillTexture(OdDbStub* materialId, repo_material_t& material,
 	if (es != OdResult::eOk)
 		return;
 
-	std::string textureName((const char*)textureFileName);
+	std::string textureName(convertToStdString(textureFileName));
 	std::string validTextureName = extractValidTexturePath(textureName);
 
 	if (validTextureName.empty() && !textureName.empty())

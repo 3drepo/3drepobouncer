@@ -48,7 +48,7 @@ OdGsViewPtr VectoriseDeviceRvt::createView(
 {
 	OdGsViewPtr pView = VectorizeView::createObject(geoColl);
 	VectorizeView* pMyView = static_cast<VectorizeView*>(pView.get());
-	pMyView->init(this, pInfo, bEnableLayerVisibilityPerView);
+	pMyView->OdGsBaseMaterialView::init(this, pInfo, bEnableLayerVisibilityPerView);
 	pMyView->output().setDestGeometry(*pMyView);
 	return (OdGsView*)pMyView;
 }

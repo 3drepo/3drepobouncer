@@ -28,45 +28,48 @@
 #include "vectorise_device_dgn.h"
 #include "../../../../core/model/bson/repo_node_mesh.h"
 
-#include "data_collector_oda.h"
-
 #include <vector>
+#include "material_colors.h"
 
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-				class GeometryDumperDgn : public DataCollectorOda
+
+				class DataCollectorOda : public OdGiGeometrySimplifier, public OdGsBaseMaterialView
 				{
-				public:
-					GeometryDumperDgn() {}
-
-					void init(GeometryCollector *const geoCollector);
-
-					VectoriseDeviceDgn* device();
-
-					bool doDraw(OdUInt32 i,	const OdGiDrawable* pDrawable) override;
-
-					void setMode(OdGsView::RenderMode mode);
-
-					void endViewVectorization();
-
 				protected:
+					GeometryCollector *collector;
 
-					void OnFillMaterialCache(
+				public:
+					DataCollectorOda() {}
+
+					virtual double deviation(
+						const OdGiDeviationType deviationType,
+						const OdGePoint3d& pointOnCurve) const;
+					
+					void beginViewVectorization();
+
+				protected:	
+					virtual void OnTriangleOut(const std::vector<repo::lib::RepoVector3D64>& vertices) = 0;
+
+					virtual void OnFillMaterialCache(
 						OdGiMaterialItemPtr prevCache,
 						OdDbStub* materialId,
 						const OdGiMaterialTraitsData & materialData,
 						const MaterialColors& matColors,
-						repo_material_t& material) override;
-
-					void OnTriangleOut(const std::vector<repo::lib::RepoVector3D64>& vertices) override;
+						repo_material_t& material) = 0;
 
 				private:
-					OdCmEntityColor fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color);
+					void triangleOut(
+						const OdInt32* p3Vertices,
+						const OdGeVector3d* pNormal) final;
 
+					OdGiMaterialItemPtr fillMaterialCache(
+						OdGiMaterialItemPtr prevCache,
+						OdDbStub* materialId,
+						const OdGiMaterialTraitsData & materialData) final;
 				};
-				typedef OdSharedPtr<GeometryDumperDgn> OdGiConveyorGeometryDgnDumperPtr;
 			}
 		}
 	}

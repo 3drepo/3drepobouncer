@@ -1,5 +1,19 @@
-#pragma once
-
+/**
+*  Copyright (C) 2018 3D Repo Ltd
+*
+*  This program is free software: you can redistribute it and/or modify
+*  it under the terms of the GNU Affero General Public License as
+*  published by the Free Software Foundation, either version 3 of the
+*  License, or (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU Affero General Public License for more details.
+*
+*  You should have received a copy of the GNU Affero General Public License
+*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
 #pragma once
 
 #include "SharedPtr.h"
@@ -34,6 +48,7 @@
 
 #include "../../../../lib/datastructure/repo_structs.h"
 #include "geometry_collector.h"
+#include "data_collector_oda.h"
 
 namespace repo {
 	namespace manipulator {
@@ -41,14 +56,12 @@ namespace repo {
 			namespace odaHelper {
 				class VectoriseDeviceRvt;
 
-				class VectorizeView : public OdGsBaseMaterialView, public OdGiGeometrySimplifier
+				class VectorizeView : public DataCollectorOda
 				{
 				public:
 					VectorizeView();
 
 					static OdGsViewPtr createObject(GeometryCollector* geoColl);
-
-					virtual void beginViewVectorization();
 
 					VectoriseDeviceRvt* device();
 
@@ -56,23 +69,23 @@ namespace repo {
 
 				protected:
 					
-					OdGiMaterialItemPtr fillMaterialCache(
+					void OnFillMaterialCache(
 						OdGiMaterialItemPtr prevCache,
 						OdDbStub* materialId,
-						const OdGiMaterialTraitsData & materialData);
+						const OdGiMaterialTraitsData & materialData,
+						const MaterialColors& matColors,
+						repo_material_t& material) override;
 
-					void triangleOut(const OdInt32* vertices,
-						const OdGeVector3d* pNormal);
+					void OnTriangleOut(const std::vector<repo::lib::RepoVector3D64>& vertices) override;
 
 				private:
 					void fillTexture(OdDbStub* materialId, repo_material_t& material, bool& missingTexture);
-					void fillMaterial(const OdGiMaterialTraitsData & materialData, repo_material_t& material);
+					void fillMaterial(const MaterialColors& matColors, repo_material_t& material);
 					void fillMeshData(const OdGiDrawable* element);
 
 					std::pair<std::vector<std::string>, std::vector<std::string>> fillMetadata(OdBmElementPtr element);
 					std::string getLevel(OdBmElementPtr element, const std::string& name);
 
-					GeometryCollector* geoColl;
 					uint64_t meshesCount;
 				};
 			}
