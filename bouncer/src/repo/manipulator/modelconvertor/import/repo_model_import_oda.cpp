@@ -4,6 +4,7 @@
 
 #ifdef ODA_SUPPORT
 #include "repo/manipulator/modelconvertor/import/odaHelper/file_processor_rvt.h"
+#include "repo/manipulator/modelconvertor/import/odaHelper/helper_functions.h"
 #endif
 
 using namespace repo::manipulator::modelconvertor;
@@ -72,14 +73,19 @@ bool OdaModelImport::importModel(std::string filePath, uint8_t &err)
     try {
         success = odaProcessor != nullptr && odaProcessor->readFile() == 0;
     }
-    catch (...)
-    {
+    catch (OdError& error) {
         success = false;
-        repoError << "Process errored whilst ODA processor is trying to read the file";
+		repoError << "Error code: " << error.code();
+		repoError << "Error desc: " << odaHelper::convertToStdString(error.description());
     }
+	catch (std::exception& ex) {
+		success = false;
+		repoError << "Error desc: " << ex.what();
+	}
+
     if (!success) {
         err = REPOERR_LOAD_SCENE_FAIL;
-        repoInfo << "Failed to read file";
+		repoError << "Error occured while ODA processor is trying to read the file";
     }
     return success;
 #else
