@@ -29,6 +29,7 @@
 #include "RxObjectImpl.h"
 #include "Database/BmDatabase.h"
 #include "Database/GiContextForBmDatabase.h"
+#include "Database/Entities/BmDBDrawing.h"
 
 //3d repo bouncer
 #include "file_processor_rvt.h"
@@ -46,17 +47,23 @@ protected:
 
 OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimDatabase)
 {
+	OdString layoutName;
 	OdRxIteratorPtr layouts = baseDatabase->layouts(bimDatabase);
 
 	for (; !layouts->done(); layouts->next())
 	{
+		OdBmDBDrawingPtr pDBDrawing = layouts->object();
+		
+		if (pDBDrawing->getBaseViewNameFormat() != OdBm::ViewType::_3d)
+			continue;
+
 		OdDbBaseLayoutPEPtr pLayout(layouts->object());
-		OdString layoutName = pLayout->name(layouts->object());
+		layoutName = pDBDrawing->getName();
 		if (layoutName.find(L"3D") != -1)
 			return layoutName;
 	}
 
-	return OdString();
+	return layoutName;
 }
 
 repo::manipulator::modelconvertor::odaHelper::FileProcessorRvt::~FileProcessorRvt()
