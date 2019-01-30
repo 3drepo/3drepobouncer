@@ -78,11 +78,11 @@ void printTree(const boost::property_tree::ptree &tree,
 		const auto value = it.second.data();
 		if (!isAttriChild && !value.empty())
 		{
-			const auto fieldLabel = parentName + "::" + it.first;
+			const auto fieldLabel = parentName + ":" + it.first;
 			resultCollector[fieldLabel] = value;
 		}
 
-		const std::string childPrefix = isAttriChild ? parentName : (parentName.empty() ? field : parentName + "::" + field);
+		const std::string childPrefix = isAttriChild ? parentName : field;
 		printTree(it.second, resultCollector, childPrefix, isAttriChild);
 	}
 }
@@ -91,25 +91,26 @@ std::unordered_map<std::string, std::string> GeometryDumper::extractXMLLinkages(
 	std::unordered_map<std::string, std::string> entries;
 
 	entries["Element ID"] = convertToStdString(toString(pElm->elementId().getHandle()));
-	try {
-		OdRxObjectPtrArray arrLinkages;
-		pElm->getLinkages(OdDgAttributeLinkage::kXmlLinkage, arrLinkages);
+	OdRxObjectPtrArray arrLinkages;
 
-		for (OdUInt32 counter = 0; counter < arrLinkages.size(); counter++)
-		{
-			OdDgXmlLinkagePtr pXmlLinkage = arrLinkages[counter];
-			boost::property_tree::ptree tree;
-			std::stringstream ss;
-			ss << convertToStdString(pXmlLinkage->getXmlData());
-			boost::property_tree::read_xml(ss, tree);
-			printTree(tree, entries);
+	// FIXME: This is more ideal, but it's currently crashing occasionally as of Teigha 2019 Update 2
+	//pElm->getLinkages(OdDgAttributeLinkage::kXmlLinkage, arrLinkages);
+	pElm->getLinkages(arrLinkages);
+	
+	for (OdUInt32 counter = 0; counter < arrLinkages.size(); counter++)
+	{
+		OdDgAttributeLinkagePtr linkagePtr = arrLinkages[counter];
+		if (linkagePtr->getPrimaryId() == OdDgAttributeLinkage::kXmlLinkage) {
+			OdDgXmlLinkagePtr pXmlLinkage = OdDgXmlLinkage::cast(linkagePtr);
+			if (!pXmlLinkage.isNull()) {
+				boost::property_tree::ptree tree;
+				std::stringstream ss;
+				ss << convertToStdString(pXmlLinkage->getXmlData());
+				boost::property_tree::read_xml(ss, tree);
+				printTree(tree, entries);
+			}
 		}
 	}
-	catch (const std::exception &e) {
-		std::cout << "failed to extract metadata: " << e.what();
-		exit(-1);
-	}
-
 	return entries;
 }
 

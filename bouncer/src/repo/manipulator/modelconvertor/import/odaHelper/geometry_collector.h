@@ -153,12 +153,6 @@ namespace repo {
 						idToMeta[groupName] = metaEntry;
 					}
 
-					repo::core::model::MetadataNode*  GeometryCollector::createMetaNode(
-						const std::string &name,
-						const repo::lib::RepoUUID &parentId,
-						const  std::unordered_map<std::string, std::string> &metaValues
-					);
-
 
 				private:
 
@@ -175,8 +169,17 @@ namespace repo {
 
 					repo::core::model::TransformationNode* createTransNode(
 						const std::string &name,
+						const std::string &id,
 						const repo::lib::RepoUUID &parentId
 					);
+
+
+					repo::core::model::MetadataNode*  GeometryCollector::createMetaNode(
+						const std::string &name,
+						const repo::lib::RepoUUID &parentId,
+						const  std::unordered_map<std::string, std::string> &metaValues
+					);
+
 
 					mesh_data_t createMeshEntry();
 				};

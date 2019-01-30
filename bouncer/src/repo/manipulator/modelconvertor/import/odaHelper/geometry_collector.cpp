@@ -137,7 +137,7 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
 				if (!meshMatEntry.second.rawVertices.size()) continue;
 
 				if (layerToTrans.find(meshLayerEntry.first) == layerToTrans.end()) {
-					layerToTrans[meshLayerEntry.first] = createTransNode(layerIDToName[meshLayerEntry.first], rootId);
+					layerToTrans[meshLayerEntry.first] = createTransNode(layerIDToName[meshLayerEntry.first], meshLayerEntry.first,  rootId);
 					transNodes.insert(layerToTrans[meshLayerEntry.first]);
 				}
 
@@ -188,11 +188,12 @@ repo::core::model::MetadataNode*  GeometryCollector::createMetaNode(
 
 repo::core::model::TransformationNode*  GeometryCollector::createTransNode(
 	const std::string &name,
+	const std::string &id,
 	const repo::lib::RepoUUID &parentId
 ) {	
 	auto transNode = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name, { parentId }));
-	if (idToMeta.find(name) != idToMeta.end()) {
-		metaNodes.insert(createMetaNode(name, transNode->getSharedID(), idToMeta[name]));
+	if (idToMeta.find(id) != idToMeta.end()) {
+		metaNodes.insert(createMetaNode(name, transNode->getSharedID(), idToMeta[id]));
 	}
 	return transNode;
 }
