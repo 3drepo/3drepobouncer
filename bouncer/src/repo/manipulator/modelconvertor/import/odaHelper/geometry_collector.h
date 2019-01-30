@@ -174,7 +174,7 @@ namespace repo {
 					);
 
 
-					repo::core::model::MetadataNode*  GeometryCollector::createMetaNode(
+					repo::core::model::MetadataNode*  createMetaNode(
 						const std::string &name,
 						const repo::lib::RepoUUID &parentId,
 						const  std::unordered_map<std::string, std::string> &metaValues
