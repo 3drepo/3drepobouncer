@@ -45,6 +45,7 @@
 #include "HostObj/Entities/BmLevel.h"
 
 #include <Database/BmElement.h>
+#include "Database/BmLabelUtilsPE.h"
 
 #include "../../../../lib/datastructure/repo_structs.h"
 #include "geometry_collector.h"

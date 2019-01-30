@@ -70,7 +70,7 @@ std::string extractValidTexturePath(const std::string& inputPath)
 	return std::string();
 }
 
-std::string variantToString(const OdTfVariant& val)
+std::string variantToString(const OdTfVariant& val, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBmDatabase* database, OdBm::BuiltInParameterDefinition::Enum param)
 {
 	std::string strOut;
 	switch (val.type()) {
@@ -86,15 +86,42 @@ std::string variantToString(const OdTfVariant& val)
 	case OdTfVariant::kInt16:   
 		strOut = std::to_string(val.getInt16());
 		break;
-	case OdTfVariant::kInt32: 
-		strOut = std::to_string(val.getInt32());
+	case OdTfVariant::kInt32:
+		if (paramDef->getParameterType() == OdBm::ParameterType::YesNo)
+			(val.getInt32()) ? strOut = "Yes" : strOut = "No";
+		else
+			strOut = std::to_string(val.getInt32());
 		break;
 	case OdTfVariant::kInt64:  
 		strOut = std::to_string(val.getInt64());
 		break;
 	case OdTfVariant::kDouble: 
-		strOut = std::to_string(val.getDouble());
+		strOut = convertToStdString(labelUtils->format(*database->getUnits(), paramDef->getUnitType(), val.getDouble(), false));
 		break;
+	case OdTfVariant::kDbStubPtr:
+			OdDbStub* stub = val.getDbStubPtr();
+			if (stub)
+			{
+				OdBmObjectId rawValue = OdBmObjectId(stub);
+				if (param == OdBm::BuiltInParameter::ELEM_CATEGORY_PARAM || param == OdBm::BuiltInParameter::ELEM_CATEGORY_PARAM_MT)
+				{
+					OdDbHandle hdl = rawValue.getHandle();
+					if (OdBmObjectId::isRegularHandle(hdl))
+					{
+						strOut = std::to_string((OdUInt64)hdl);
+					}
+					else
+					{
+						OdBm::BuiltInCategory::Enum builtInValue = static_cast<OdBm::BuiltInCategory::Enum>((OdUInt64)rawValue.getHandle());
+						strOut = convertToStdString(OdBm::BuiltInCategory(builtInValue).toString());
+					}
+				}
+				else
+				{
+					OdBmElementPtr elem = database->getObjectId(rawValue.getHandle()).safeOpenObject();
+					strOut = (elem->getElementName() == OdString::kEmpty) ? std::to_string((OdUInt64)rawValue.getHandle()) : convertToStdString(elem->getElementName());
+				}
+			}
 	}
 
 	return strOut;
@@ -236,13 +263,23 @@ std::pair<std::vector<std::string>, std::vector<std::string>> VectorizeView::fil
 	OdBuiltInParamArray aParams;
 	element->getListParams(aParams);
 
+	OdBmLabelUtilsPEPtr labelUtils = OdBmObject::desc()->getX(OdBmLabelUtilsPE::desc());
+	if (labelUtils.isNull())
+		return metadata;
+
 	for (OdBuiltInParamArray::iterator it = aParams.begin(); it != aParams.end(); it++)
 	{
-		std::string paramName = convertToStdString(OdBm::BuiltInParameter(*it).toString());
+		std::string builtInName = convertToStdString(OdBm::BuiltInParameter(*it).toString());
 
 		//..Hotfix: handle access violation exception (need to check updated library)
-		if (paramName == std::string("ROOF_SLOPE"))
+		if (builtInName == std::string("ROOF_SLOPE"))
 			continue;
+
+		std::string paramName;
+		if (!labelUtils->getLabelFor(*it).isEmpty())
+			paramName = convertToStdString(labelUtils->getLabelFor(*it));
+		else
+			paramName = builtInName;
 
 		OdTfVariant value;
 		OdResult res = element->getParam(*it, value);
@@ -251,7 +288,7 @@ std::pair<std::vector<std::string>, std::vector<std::string>> VectorizeView::fil
 			OdBmParamElemPtr pParamElem = element->database()->getObjectId(*it).safeOpenObject();
 			OdBmParamDefPtr pDescParam = pParamElem->getParamDef();
 			
-			std::string variantValue = variantToString(value);
+			std::string variantValue = variantToString(value, labelUtils, pDescParam, element->getDatabase(), *it);
 			if (!variantValue.empty())
 			{
 				metadata.first.push_back(convertToStdString(pDescParam->getCaption()));
