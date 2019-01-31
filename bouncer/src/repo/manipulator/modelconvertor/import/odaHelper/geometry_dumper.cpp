@@ -53,7 +53,7 @@ void GeometryDumper::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* 
 double GeometryDumper::deviation(
 	const OdGiDeviationType deviationType, 
 	const OdGePoint3d& pointOnCurve) const {
-	return 0;
+	return deviationValue;
 }
 
 VectoriseDevice* GeometryDumper::device()
@@ -95,9 +95,11 @@ std::unordered_map<std::string, std::string> GeometryDumper::extractXMLLinkages(
 
 	// FIXME: This is more ideal, but it's currently crashing occasionally as of Teigha 2019 Update 2
 	//pElm->getLinkages(OdDgAttributeLinkage::kXmlLinkage, arrLinkages);
+	/*std::cout << "Getting linkages for " << entries["Element ID"] << std::endl;
 	pElm->getLinkages(arrLinkages);
+	std::cout << "done" << std::endl;*/
 	
-	for (OdUInt32 counter = 0; counter < arrLinkages.size(); counter++)
+	/*for (OdUInt32 counter = 0; counter < arrLinkages.size(); counter++)
 	{
 		OdDgAttributeLinkagePtr linkagePtr = arrLinkages[counter];
 		if (linkagePtr->getPrimaryId() == OdDgAttributeLinkage::kXmlLinkage) {
@@ -110,7 +112,7 @@ std::unordered_map<std::string, std::string> GeometryDumper::extractXMLLinkages(
 				printTree(tree, entries);
 			}
 		}
-	}
+	}*/
 	return entries;
 }
 
@@ -128,9 +130,9 @@ bool GeometryDumper::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	//We want to group meshes together up to 1 below the top.
 	std::string groupID = convertToStdString(toString(previousItem->elementId().getHandle()));
 	collector->setMeshGroup(groupID);
-	if (!collector->hasMeta(groupID)) {
+	/*if (!collector->hasMeta(groupID)) {
 		collector->setMetadata(groupID, extractXMLLinkages(previousItem));
-	}
+	}*/
 
 	OdString sHandle = pElm->isDBRO() ? toString(pElm->elementId().getHandle()) : toString(OD_T("non-DbResident"));
 	collector->setNextMeshName(convertToStdString(sHandle));
@@ -142,9 +144,9 @@ bool GeometryDumper::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		OdDgLevelTableRecordPtr pLevel = idLevel.openObject(OdDg::kForRead);
 		const auto levelID = convertToStdString(toString(idLevel.getHandle()));
 		collector->setLayer(levelID, convertToStdString(pLevel->getName()));
-		if (!collector->hasMeta(levelID)) {
-			collector->setMetadata(levelID, extractXMLLinkages(pLevel));
-		}
+		//if (!collector->hasMeta(levelID)) {
+		//	collector->setMetadata(levelID, extractXMLLinkages(pLevel));
+		//}
 
 	}
 	
@@ -262,8 +264,12 @@ OdGiMaterialItemPtr GeometryDumper::fillMaterialCache(
 	return OdGiMaterialItemPtr();
 }
 
-void GeometryDumper::init(GeometryCollector *const geoCollector) {
+void GeometryDumper::init(
+	GeometryCollector *const geoCollector, 
+	const OdGeExtents3d &extModel
+	) {
 	collector = geoCollector;
+	deviationValue = extModel.maxPoint().distanceTo(extModel.minPoint()) / 1e5;
 }
 
 void GeometryDumper::beginViewVectorization()

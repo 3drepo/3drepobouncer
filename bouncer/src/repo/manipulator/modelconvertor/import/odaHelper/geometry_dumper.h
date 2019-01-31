@@ -51,7 +51,7 @@ namespace repo {
 						const OdGiDrawable* pDrawable);
 
 					void init(
-						GeometryCollector *const geoCollector);
+						GeometryCollector *const geoCollector, const OdGeExtents3d &extModel);
 
 					void beginViewVectorization();
 
@@ -72,6 +72,7 @@ namespace repo {
 
 				private:
 					OdCmEntityColor fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color);
+					double deviationValue = 0;
 
 					std::unordered_map<std::string, std::string> extractXMLLinkages(OdDgElementPtr pElm);
 
