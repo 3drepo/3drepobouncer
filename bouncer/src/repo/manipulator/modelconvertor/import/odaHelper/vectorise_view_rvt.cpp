@@ -304,6 +304,9 @@ void VectorizeView::fillMaterial(const MaterialColors& matColors, repo_material_
 {
 	const float norm = 255.f;
 
+	material.shininess = 0.f;
+	material.shininessStrength = 0.f;
+
 	material.diffuse = { ODGETRED(matColors.colorDiffuse) / norm, ODGETGREEN(matColors.colorDiffuse) / norm, ODGETBLUE(matColors.colorDiffuse) / norm, 1.0f };
 	material.specular = { ODGETRED(matColors.colorSpecular) / norm, ODGETGREEN(matColors.colorSpecular) / norm, ODGETBLUE(matColors.colorSpecular) / norm, 1.0f };
 	material.ambient = { ODGETRED(matColors.colorAmbient) / norm, ODGETGREEN(matColors.colorAmbient) / norm, ODGETBLUE(matColors.colorAmbient) / norm, 1.0f };
