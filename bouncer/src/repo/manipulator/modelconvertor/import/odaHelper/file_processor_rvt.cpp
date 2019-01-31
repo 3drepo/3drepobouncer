@@ -60,7 +60,7 @@ OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimData
 		OdDbBaseLayoutPEPtr pLayout(layouts->object());
 		layoutName = pDBDrawing->getName();
 		if (layoutName.find(L"3D") != -1)
-			return layoutName;
+			return pLayout->name(layouts->object());
 	}
 
 	return layoutName;

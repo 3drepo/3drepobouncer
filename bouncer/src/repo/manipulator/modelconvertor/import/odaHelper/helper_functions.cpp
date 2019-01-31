@@ -15,10 +15,14 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <locale>
+#include <codecvt>
 #include "helper_functions.h"
 
 std::string repo::manipulator::modelconvertor::odaHelper::convertToStdString(const OdString &value)
 {
-	const char *ansi = static_cast<const char *>(value);
-	return std::string(ansi);
+	std::wstring wstr((wchar_t*)value.c_str());
+	std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> conv;
+	std::string str = conv.to_bytes(wstr);
+	return str;
 }
