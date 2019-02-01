@@ -157,9 +157,18 @@ void VectorizeView::OnFillMaterialCache(
 	const MaterialColors& matColors,
 	repo_material_t& material)
 {
+	OdBmObjectId matId(materialId);
+	OdBmMaterialElemPtr materialElem;
+	if (matId.isValid())
+	{
+		OdBmObjectPtr objectPtr = matId.safeOpenObject(OdBm::kForRead);
+		if (!objectPtr.isNull())
+			materialElem = OdBmMaterialElem::cast(objectPtr);
+	}
+
 	bool missingTexture = false;
-	fillMaterial(matColors, material);
-	fillTexture(materialId, material, missingTexture);
+	fillMaterial(materialElem, matColors, material);
+	fillTexture(materialElem, material, missingTexture);
 
 	collector->setCurrentMaterial(material, missingTexture);
 	collector->stopMeshEntry();
@@ -300,30 +309,27 @@ std::pair<std::vector<std::string>, std::vector<std::string>> VectorizeView::fil
 	return metadata;
 }
 
-void VectorizeView::fillMaterial(const MaterialColors& matColors, repo_material_t& material)
+void VectorizeView::fillMaterial(OdBmMaterialElemPtr materialPtr, const MaterialColors& matColors, repo_material_t& material)
 {
 	const float norm = 255.f;
-
-	material.shininess = 0.f;
-	material.shininessStrength = 0.f;
-
+	
 	material.specular = { ODGETRED(matColors.colorSpecular) / norm, ODGETGREEN(matColors.colorSpecular) / norm, ODGETBLUE(matColors.colorSpecular) / norm, 1.0f };
 	material.ambient = { ODGETRED(matColors.colorAmbient) / norm, ODGETGREEN(matColors.colorAmbient) / norm, ODGETBLUE(matColors.colorAmbient) / norm, 1.0f };
 	material.emissive = { ODGETRED(matColors.colorEmissive) / norm, ODGETGREEN(matColors.colorEmissive) / norm, ODGETBLUE(matColors.colorEmissive) / norm, 1.0f };
 	material.diffuse = material.emissive;
+
+	if (!materialPtr.isNull())
+		material.shininess = (float)materialPtr->getMaterial()->getShininess() / norm;
 }
 
-void VectorizeView::fillTexture(OdDbStub* materialId, repo_material_t& material, bool& missingTexture)
+void VectorizeView::fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t& material, bool& missingTexture)
 {
 	missingTexture = false;
 
-	OdBmObjectId matId(materialId);
-	if (!matId.isValid())
+	if (materialPtr.isNull())
 		return;
 
-	OdBmObjectPtr materialPtr = matId.safeOpenObject(OdBm::kForRead);
-	OdBmMaterialElemPtr materialElem = (OdBmMaterialElem*)(materialPtr.get());
-	OdBmMaterialPtr matPtr = materialElem->getMaterial();
+	OdBmMaterialPtr matPtr = materialPtr->getMaterial();
 	OdBmAssetPtr textureAsset = matPtr->getAsset();
 
 	if (textureAsset.isNull())

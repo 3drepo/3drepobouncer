@@ -80,8 +80,8 @@ namespace repo {
 					void OnTriangleOut(const std::vector<repo::lib::RepoVector3D64>& vertices) override;
 
 				private:
-					void fillTexture(OdDbStub* materialId, repo_material_t& material, bool& missingTexture);
-					void fillMaterial(const MaterialColors& matColors, repo_material_t& material);
+					void fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t& material, bool& missingTexture);
+					void fillMaterial(OdBmMaterialElemPtr materialPtr, const MaterialColors& matColors, repo_material_t& material);
 					void fillMeshData(const OdGiDrawable* element);
 
 					std::pair<std::vector<std::string>, std::vector<std::string>> fillMetadata(OdBmElementPtr element);
