@@ -43,6 +43,8 @@ const static std::string MP_LABEL_USAGE = "usage";
 
 const static std::string MP_LABEL_ASSETS = "assets";
 const static std::string MP_LABEL_VR_ASSETS = "vrAssets";
+const static std::string MP_LABEL_IOS_ASSETS = "iosAssets";
+
 const static std::string MP_LABEL_SHARED = "sharedID";
 const static std::string MP_LABEL_JSONS = "jsonFiles";
 const static std::string MP_LABEL_OFFSET = "offset";
@@ -161,7 +163,7 @@ bool AssetModelExport::generateTreeRepresentation()
 	{
 		auto meshes = scene->getAllMeshes(gType);
 
-		std::vector<std::string> assetFiles, vrAssetFiles, jsons;
+		std::vector<std::string> assetFiles, vrAssetFiles, iosAssetsFiles, jsons;
 		for (const repo::core::model::RepoNode* node : meshes)
 		{
 			auto mesh = dynamic_cast<const repo::core::model::MeshNode*>(node);
@@ -182,8 +184,10 @@ bool AssetModelExport::generateTreeRepresentation()
 				meshMappings.push_back(reSplitter->getMappingsPerSubMesh());
 				std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> splitMapping = reSplitter->getSplitMapping();
 				std::string fNamePrefix = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/" + mesh->getUniqueID().toString();
-				if (generateVR)
+				if (generateVR) {
 					vrAssetFiles.push_back(fNamePrefix + "_win64.unity3d");
+					iosAssetsFiles.push_back(fNamePrefix + "_ios.unity3d");
+				}
 				assetFiles.push_back(fNamePrefix + ".unity3d");
 				jsons.push_back(fNamePrefix + "_unity.json.mpc");
 
@@ -200,8 +204,12 @@ bool AssetModelExport::generateTreeRepresentation()
 		std::string assetListFile = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/revision/" + scene->getRevisionID().toString() + "/unityAssets.json";
 		repo::lib::PropertyTree assetListTree;
 		assetListTree.addToTree(MP_LABEL_ASSETS, assetFiles);
-		if (vrAssetFiles.size())
+
+		if (vrAssetFiles.size()) {
 			assetListTree.addToTree(MP_LABEL_VR_ASSETS, vrAssetFiles);
+			assetListTree.addToTree(MP_LABEL_IOS_ASSETS, iosAssetsFiles);
+		}
+
 		assetListTree.addToTree(MP_LABEL_JSONS, jsons);
 		assetListTree.addToTree(MP_LABEL_OFFSET, scene->getWorldOffset());
 		assetListTree.addToTree(MP_LABEL_DATABASE, scene->getDatabaseName());
@@ -215,6 +223,7 @@ bool AssetModelExport::generateTreeRepresentation()
 				scene->getProjectName(),
 				scene->getWorldOffset(),
 				vrAssetFiles,
+				iosAssetsFiles,
 				jsons);
 	}
 
