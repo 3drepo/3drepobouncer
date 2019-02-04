@@ -91,13 +91,11 @@ std::unordered_map<std::string, std::string> GeometryDumper::extractXMLLinkages(
 	std::unordered_map<std::string, std::string> entries;
 
 	entries["Element ID"] = convertToStdString(toString(pElm->elementId().getHandle()));
-	OdRxObjectPtrArray arrLinkages;
-
-	// FIXME: This is more ideal, but it's currently crashing occasionally as of Teigha 2019 Update 2
+	
+	
+	//it's currently crashing occasionally as of Teigha 2019 Update 2
+	//OdRxObjectPtrArray arrLinkages;
 	//pElm->getLinkages(OdDgAttributeLinkage::kXmlLinkage, arrLinkages);
-	/*std::cout << "Getting linkages for " << entries["Element ID"] << std::endl;
-	pElm->getLinkages(arrLinkages);
-	std::cout << "done" << std::endl;*/
 	
 	/*for (OdUInt32 counter = 0; counter < arrLinkages.size(); counter++)
 	{
@@ -113,6 +111,8 @@ std::unordered_map<std::string, std::string> GeometryDumper::extractXMLLinkages(
 			}
 		}
 	}*/
+
+
 	return entries;
 }
 
@@ -130,10 +130,10 @@ bool GeometryDumper::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	//We want to group meshes together up to 1 below the top.
 	std::string groupID = convertToStdString(toString(previousItem->elementId().getHandle()));
 	collector->setMeshGroup(groupID);
-	/*if (!collector->hasMeta(groupID)) {
+	if (!collector->hasMeta(groupID)) {
 		collector->setMetadata(groupID, extractXMLLinkages(previousItem));
-	}*/
-
+	}
+	
 	OdString sHandle = pElm->isDBRO() ? toString(pElm->elementId().getHandle()) : toString(OD_T("non-DbResident"));
 	collector->setNextMeshName(convertToStdString(sHandle));
 
@@ -144,9 +144,9 @@ bool GeometryDumper::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 		OdDgLevelTableRecordPtr pLevel = idLevel.openObject(OdDg::kForRead);
 		const auto levelID = convertToStdString(toString(idLevel.getHandle()));
 		collector->setLayer(levelID, convertToStdString(pLevel->getName()));
-		//if (!collector->hasMeta(levelID)) {
-		//	collector->setMetadata(levelID, extractXMLLinkages(pLevel));
-		//}
+		if (!collector->hasMeta(levelID)) {
+			collector->setMetadata(levelID, extractXMLLinkages(pLevel));
+		}
 
 	}
 	
