@@ -40,6 +40,10 @@ namespace repo {
 					~FileProcessorRvt() override;
 
 					int readFile() override;
+
+				private:
+					//.. adjust triangulation options
+					void setMaxEdgeLength(double edgeLength);
 				};
 			}
 		}

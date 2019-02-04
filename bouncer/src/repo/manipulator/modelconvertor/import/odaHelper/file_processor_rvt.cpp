@@ -30,6 +30,8 @@
 #include "Database/BmDatabase.h"
 #include "Database/GiContextForBmDatabase.h"
 #include "Database/Entities/BmDBDrawing.h"
+#include "ModelerGeometry/BmModelerModule.h"
+#include "Wr/wrTriangulationParams.h"
 
 //3d repo bouncer
 #include "file_processor_rvt.h"
@@ -38,6 +40,8 @@
 #include "vectorise_device_rvt.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
+
+const double TRIANGULATION_EDGE_LENGTH = 1.0;
 
 class RepoRvtServices : public ExSystemServices, public OdExBimHostAppServices
 {
@@ -71,6 +75,20 @@ repo::manipulator::modelconvertor::odaHelper::FileProcessorRvt::~FileProcessorRv
 
 }
 
+void FileProcessorRvt::setMaxEdgeLength(double edgeLength)
+{
+	OdSmartPtr<BmModelerModule> pModModule;
+	wrTriangulationParams TriangulationParams;
+	OdRxModulePtr pModule = odrxDynamicLinker()->loadModule(OdBmModelerModuleName);
+	if (pModule.get())
+	{
+		pModModule = BmModelerModule::cast(pModule);
+		pModModule->getTriangulationParams(TriangulationParams);
+		TriangulationParams.maxFacetEdgeLength = edgeLength; //.. we may adjust triangulation options. sometimes it creates a lot of triangles
+		pModModule->setTriangulationParams(TriangulationParams);
+	}
+}
+
 int FileProcessorRvt::readFile()
 {
 	int nRes = 1;
@@ -79,6 +97,8 @@ int FileProcessorRvt::readFile()
 	OdRxModule* pModule = ::odrxDynamicLinker()->loadModule(OdBmLoaderModuleName, false);
 	try
 	{
+		setMaxEdgeLength(TRIANGULATION_EDGE_LENGTH);
+
 		odgsInitialize();
 		OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));
 		if (!pDb.isNull())
