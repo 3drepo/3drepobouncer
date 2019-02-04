@@ -207,6 +207,9 @@ bool AssetModelExport::generateTreeRepresentation()
 
 		if (vrAssetFiles.size()) {
 			assetListTree.addToTree(MP_LABEL_VR_ASSETS, vrAssetFiles);
+		}
+
+		if (iosAssetsFiles.size()) {
 			assetListTree.addToTree(MP_LABEL_IOS_ASSETS, iosAssetsFiles);
 		}
 
