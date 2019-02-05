@@ -32,6 +32,9 @@
 #include "Database/Entities/BmDBDrawing.h"
 #include "ModelerGeometry/BmModelerModule.h"
 #include "Wr/wrTriangulationParams.h"
+#include "Database/Entities/BmUnitsElem.h"
+#include "Database/BmUnitUtils.h"
+#include "Database/Managers/BmUnitsTracking.h"
 
 //3d repo bouncer
 #include "file_processor_rvt.h"
@@ -42,6 +45,7 @@
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 const double TRIANGULATION_EDGE_LENGTH = 1.0;
+const double ROUNDING_ACCURACY = 0.000001;
 
 class RepoRvtServices : public ExSystemServices, public OdExBimHostAppServices
 {
@@ -89,6 +93,28 @@ void FileProcessorRvt::setMaxEdgeLength(double edgeLength)
 	}
 }
 
+void setupUnitsFormat(OdBmDatabasePtr pDb, double accuracy)
+{
+	OdBmUnitsTrackingPtr pUnitsTracking = pDb->getAppInfo(OdBm::ManagerType::UnitsTracking);
+	OdBmUnitsElemPtr pUnitsElem = pUnitsTracking->getUnitsElemId().safeOpenObject();
+	if (pUnitsElem.isNull()) 
+		return;
+	
+	OdBmAUnitsPtr units = pUnitsElem->getUnits();
+	if (units.isNull()) 
+		return;
+
+	OdBmFormatOptionsPtrArray formatOptionsArr;
+	units->getFormatOptionsArr(formatOptionsArr);
+	for (uint32_t i = 0; i < formatOptionsArr.size(); i++)
+	{
+		OdBmFormatOptions* formatOptions = formatOptionsArr[i];
+		//.. here the format of units is configured
+		formatOptions->setAccuracy(accuracy);
+		formatOptions->setRoundingMethod(OdBm::RoundingMethod::Nearest);
+	}
+}
+
 int FileProcessorRvt::readFile()
 {
 	int nRes = 1;
@@ -117,6 +143,7 @@ int FileProcessorRvt::readFile()
 			pDevice = pDbPE->setupActiveLayoutViews(pDevice, pBimContext);
 			OdGsDCRect screenRect(OdGsDCPoint(0, 0), OdGsDCPoint(1000, 1000)); //Set the screen space to the borders of the scene
 			pDevice->onSize(screenRect);
+			setupUnitsFormat(pDb, ROUNDING_ACCURACY);
 			pDevice->update();
 		}
 		nRes = 0;
