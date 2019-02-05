@@ -133,7 +133,7 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 				std::vector<repo::core::model::RepoNode*> meshVector, metaVector;
 				int transSiblingCount = 0;
 
-				for (auto *child : children)
+				for (auto child : children)
 				{
 					switch (child->getTypeAsEnum())
 					{
