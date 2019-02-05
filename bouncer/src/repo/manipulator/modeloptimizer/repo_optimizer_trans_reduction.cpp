@@ -100,27 +100,6 @@ bool TransformationReductionOptimizer::apply(repo::core::model::RepoScene *scene
 	return success;
 }
 
-std::vector<repo::core::model::RepoNode *> TransformationReductionOptimizer::getChildrenByIDAndType(
-	repo::core::model::RepoScene *scene,
-	const repo::core::model::RepoScene::GraphType &gType,
-	const repo::lib::RepoUUID  &parent,
-	const repo::core::model::NodeType  &type)
-{
-	auto searchTerm = std::make_tuple(gType, parent, type);
-	auto cacheSearch = filterCache.find(searchTerm);
-
-	if (cacheSearch != filterCache.end())
-	{
-		return cacheSearch->second;
-	} else {
-		std::vector<repo::core::model::RepoNode*> children = scene->getChildrenNodesFiltered(gType, parent, type);
-
-		filterCache.insert(std::make_pair(searchTerm, children));
-
-		return children;
-	}
-}
-
 void TransformationReductionOptimizer::applyOptimOnMesh(
 	repo::core::model::RepoScene *scene,
 	repo::core::model::MeshNode  *mesh)
@@ -151,10 +130,23 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 			{
 				std::vector<repo::core::model::RepoNode*> children = scene->getChildrenAsNodes(gType, parentSharedID);
 
-				auto meshVector =  getChildrenByIDAndType(scene, gType,
-					parentSharedID, repo::core::model::NodeType::MESH);
+				std::vector<repo::core::model::RepoNode*> meshVector, metaVector;
+				int transSiblingCount = 0;
 
-				bool noTransSiblings = (bool)!getChildrenByIDAndType(scene, gType, parentSharedID, repo::core::model::NodeType::TRANSFORMATION).size() == 1;
+				for (auto *child : children) {
+
+					if (child->getTypeAsEnum() == repo::core::model::NodeType::TRANSFORMATION) {
+						++transSiblingCount;
+					}
+					else if (child->getTypeAsEnum() == repo::core::model::NodeType::MESH){
+						meshVector.push_back(child);
+					}
+					else if (child->getTypeAsEnum() == repo::core::model::NodeType::METADATA) {
+						metaVector.push_back(child);
+					}
+				}
+
+				bool noTransSiblings = transSiblingCount == 0;
 
 				std::vector<repo::core::model::RepoNode*> granTransParents =
 					scene->getParentNodesFiltered(gType,
@@ -162,10 +154,8 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 
 				bool absorbTrans = (meshVector.size() == 1) && noTransSiblings && granTransParents.size() == 1;
 
-				if ((!strictMode && meshVector.size() || absorbTrans))
+				if (!strictMode && meshVector.size() || absorbTrans)
 				{
-					auto metaVector = getChildrenByIDAndType(scene, gType,
-						parentSharedID, repo::core::model::NodeType::METADATA);
 
 					//connect all metadata to children mesh
 					for (const auto &meta : metaVector)
@@ -199,7 +189,7 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 								if (node)
 								{
 									scene->abandonChild(gType,
-										parentSharedID, node, false, true);
+										parentSharedID, node, false, true);		
 
 									if (!isIdentity && node->positionDependant()){
 										//Parent is not the identity matrix, we need to reapply the transformation if
