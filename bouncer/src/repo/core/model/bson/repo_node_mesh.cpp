@@ -43,120 +43,121 @@ MeshNode::~MeshNode()
 RepoNode MeshNode::cloneAndApplyTransformation(
 	const repo::lib::RepoMatrix &matrix) const
 {
-	if (!matrix.isIdentity()) {
-		std::vector<repo::lib::RepoVector3D> vertices = getVertices();
-		std::vector<repo::lib::RepoVector3D> normals = getNormals();
-
-		auto newBigFiles = bigFiles;
-
+	if(matrix.isIdentity()) {
 		RepoBSONBuilder builder;
-		std::vector<repo::lib::RepoVector3D> resultVertice;
-		std::vector<repo::lib::RepoVector3D> newBbox;
-		if (vertices.size())
+		return MeshNode(builder.appendElementsUnique(*this), bigFiles);
+	}
+
+	std::vector<repo::lib::RepoVector3D> vertices = getVertices();
+	std::vector<repo::lib::RepoVector3D> normals = getNormals();
+
+	auto newBigFiles = bigFiles;
+
+	RepoBSONBuilder builder;
+	std::vector<repo::lib::RepoVector3D> resultVertice;
+	std::vector<repo::lib::RepoVector3D> newBbox;
+	if (vertices.size())
+	{
+		resultVertice.reserve(vertices.size());
+		for (const repo::lib::RepoVector3D &v : vertices)
 		{
-			resultVertice.reserve(vertices.size());
-			for (const repo::lib::RepoVector3D &v : vertices)
+			resultVertice.push_back(matrix * v);
+			if (newBbox.size())
 			{
-				resultVertice.push_back(matrix * v);
-				if (newBbox.size())
-				{
-					if (resultVertice.back().x < newBbox[0].x)
-						newBbox[0].x = resultVertice.back().x;
+				if (resultVertice.back().x < newBbox[0].x)
+					newBbox[0].x = resultVertice.back().x;
 
-					if (resultVertice.back().y < newBbox[0].y)
-						newBbox[0].y = resultVertice.back().y;
+				if (resultVertice.back().y < newBbox[0].y)
+					newBbox[0].y = resultVertice.back().y;
 
-					if (resultVertice.back().z < newBbox[0].z)
-						newBbox[0].z = resultVertice.back().z;
+				if (resultVertice.back().z < newBbox[0].z)
+					newBbox[0].z = resultVertice.back().z;
 
-					if (resultVertice.back().x > newBbox[1].x)
-						newBbox[1].x = resultVertice.back().x;
+				if (resultVertice.back().x > newBbox[1].x)
+					newBbox[1].x = resultVertice.back().x;
 
-					if (resultVertice.back().y > newBbox[1].y)
-						newBbox[1].y = resultVertice.back().y;
+				if (resultVertice.back().y > newBbox[1].y)
+					newBbox[1].y = resultVertice.back().y;
 
-					if (resultVertice.back().z > newBbox[1].z)
-						newBbox[1].z = resultVertice.back().z;
-				}
-				else
-				{
-					newBbox.push_back(resultVertice.back());
-					newBbox.push_back(resultVertice.back());
-				}
-			}
-			if (newBigFiles.find(REPO_NODE_MESH_LABEL_VERTICES) != newBigFiles.end())
-			{
-				const uint64_t verticesByteCount = resultVertice.size() * sizeof(repo::lib::RepoVector3D);
-				newBigFiles[REPO_NODE_MESH_LABEL_VERTICES].second.resize(verticesByteCount);
-				memcpy(newBigFiles[REPO_NODE_MESH_LABEL_VERTICES].second.data(), resultVertice.data(), verticesByteCount);
+				if (resultVertice.back().z > newBbox[1].z)
+					newBbox[1].z = resultVertice.back().z;
 			}
 			else
-				builder.appendBinary(REPO_NODE_MESH_LABEL_VERTICES, resultVertice.data(), resultVertice.size() * sizeof(repo::lib::RepoVector3D));
-
-			if (normals.size())
 			{
-				auto matInverse = matrix.invert();
-				auto worldMat = matInverse.transpose();
-
-				std::vector<repo::lib::RepoVector3D> resultNormals;
-				resultNormals.reserve(normals.size());
-
-				auto data = worldMat.getData();
-				data[3] = data[7] = data[11] = 0;
-				data[12] = data[13] = data[14] = 0;
-
-				repo::lib::RepoMatrix multMat(data);
-
-				for (const repo::lib::RepoVector3D &v : normals)
-				{
-					auto transformedNormal = multMat * v;
-					transformedNormal.normalize();
-					resultNormals.push_back(transformedNormal);
-				}
-
-				if (newBigFiles.find(REPO_NODE_MESH_LABEL_NORMALS) != newBigFiles.end())
-				{
-					const uint64_t byteCount = resultNormals.size() * sizeof(repo::lib::RepoVector3D);
-					newBigFiles[REPO_NODE_MESH_LABEL_NORMALS].second.resize(byteCount);
-					memcpy(newBigFiles[REPO_NODE_MESH_LABEL_NORMALS].second.data(), resultNormals.data(), byteCount);
-				}
-				else
-					builder.appendBinary(REPO_NODE_MESH_LABEL_NORMALS, resultNormals.data(), resultNormals.size() * sizeof(repo::lib::RepoVector3D));
+				newBbox.push_back(resultVertice.back());
+				newBbox.push_back(resultVertice.back());
 			}
-
-			RepoBSONBuilder arrayBuilder, outlineBuilder;
-			for (size_t i = 0; i < newBbox.size(); ++i)
-			{
-				std::vector<float> boundVec = { newBbox[i].x, newBbox[i].y, newBbox[i].z };
-				arrayBuilder.appendArray(std::to_string(i), boundVec);
-			}
-
-			if (newBbox[0].x > newBbox[1].x || newBbox[0].z > newBbox[1].z || newBbox[0].y > newBbox[1].y)
-			{
-				repoError << "New bounding box is incorrect!!!";
-			}
-			builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, arrayBuilder.obj());
-
-			std::vector<float> outline0 = { newBbox[0].x, newBbox[0].y };
-			std::vector<float> outline1 = { newBbox[1].x, newBbox[0].y };
-			std::vector<float> outline2 = { newBbox[1].x, newBbox[1].y };
-			std::vector<float> outline3 = { newBbox[0].x, newBbox[1].y };
-			outlineBuilder.appendArray("0", outline0);
-			outlineBuilder.appendArray("1", outline1);
-			outlineBuilder.appendArray("2", outline2);
-			outlineBuilder.appendArray("3", outline3);
-			builder.appendArray(REPO_NODE_MESH_LABEL_OUTLINE, outlineBuilder.obj());
-
-			return MeshNode(builder.appendElementsUnique(*this), newBigFiles);
+		}
+		if (newBigFiles.find(REPO_NODE_MESH_LABEL_VERTICES) != newBigFiles.end())
+		{
+			const uint64_t verticesByteCount = resultVertice.size() * sizeof(repo::lib::RepoVector3D);
+			newBigFiles[REPO_NODE_MESH_LABEL_VERTICES].second.resize(verticesByteCount);
+			memcpy(newBigFiles[REPO_NODE_MESH_LABEL_VERTICES].second.data(), resultVertice.data(), verticesByteCount);
 		}
 		else
+			builder.appendBinary(REPO_NODE_MESH_LABEL_VERTICES, resultVertice.data(), resultVertice.size() * sizeof(repo::lib::RepoVector3D));
+
+		if (normals.size())
 		{
-			repoError << "Unable to apply transformation: Cannot find vertices within a mesh!";
-			return  RepoNode(this->copy(), bigFiles);
+			auto matInverse = matrix.invert();
+			auto worldMat = matInverse.transpose();
+
+			std::vector<repo::lib::RepoVector3D> resultNormals;
+			resultNormals.reserve(normals.size());
+
+			auto data = worldMat.getData();
+			data[3] = data[7] = data[11] = 0;
+			data[12] = data[13] = data[14] = 0;
+
+			repo::lib::RepoMatrix multMat(data);
+
+			for (const repo::lib::RepoVector3D &v : normals)
+			{
+				auto transformedNormal = multMat * v;
+				transformedNormal.normalize();
+				resultNormals.push_back(transformedNormal);
+			}
+
+			if (newBigFiles.find(REPO_NODE_MESH_LABEL_NORMALS) != newBigFiles.end())
+			{
+				const uint64_t byteCount = resultNormals.size() * sizeof(repo::lib::RepoVector3D);
+				newBigFiles[REPO_NODE_MESH_LABEL_NORMALS].second.resize(byteCount);
+				memcpy(newBigFiles[REPO_NODE_MESH_LABEL_NORMALS].second.data(), resultNormals.data(), byteCount);
+			}
+			else
+				builder.appendBinary(REPO_NODE_MESH_LABEL_NORMALS, resultNormals.data(), resultNormals.size() * sizeof(repo::lib::RepoVector3D));
 		}
-	} 
-	RepoBSONBuilder builder;
-	return MeshNode(builder.appendElementsUnique(*this), bigFiles);
+
+		RepoBSONBuilder arrayBuilder, outlineBuilder;
+		for (size_t i = 0; i < newBbox.size(); ++i)
+		{
+			std::vector<float> boundVec = { newBbox[i].x, newBbox[i].y, newBbox[i].z };
+			arrayBuilder.appendArray(std::to_string(i), boundVec);
+		}
+
+		if (newBbox[0].x > newBbox[1].x || newBbox[0].z > newBbox[1].z || newBbox[0].y > newBbox[1].y)
+		{
+			repoError << "New bounding box is incorrect!!!";
+		}
+		builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, arrayBuilder.obj());
+
+		std::vector<float> outline0 = { newBbox[0].x, newBbox[0].y };
+		std::vector<float> outline1 = { newBbox[1].x, newBbox[0].y };
+		std::vector<float> outline2 = { newBbox[1].x, newBbox[1].y };
+		std::vector<float> outline3 = { newBbox[0].x, newBbox[1].y };
+		outlineBuilder.appendArray("0", outline0);
+		outlineBuilder.appendArray("1", outline1);
+		outlineBuilder.appendArray("2", outline2);
+		outlineBuilder.appendArray("3", outline3);
+		builder.appendArray(REPO_NODE_MESH_LABEL_OUTLINE, outlineBuilder.obj());
+
+		return MeshNode(builder.appendElementsUnique(*this), newBigFiles);
+	}
+	else
+	{
+		repoError << "Unable to apply transformation: Cannot find vertices within a mesh!";
+		return  RepoNode(this->copy(), bigFiles);
+	}
 }
 
 MeshNode MeshNode::cloneAndUpdateMeshMapping(
