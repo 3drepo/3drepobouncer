@@ -133,17 +133,20 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 				std::vector<repo::core::model::RepoNode*> meshVector, metaVector;
 				int transSiblingCount = 0;
 
-				for (auto *child : children) {
-
-					if (child->getTypeAsEnum() == repo::core::model::NodeType::TRANSFORMATION) {
-						++transSiblingCount;
-					}
-					else if (child->getTypeAsEnum() == repo::core::model::NodeType::MESH){
-						meshVector.push_back(child);
-					}
-					else if (child->getTypeAsEnum() == repo::core::model::NodeType::METADATA) {
-						metaVector.push_back(child);
-					}
+				for (auto *child : children)
+				{
+					switch (child->getTypeAsEnum())
+					{
+						case repo::core::model::NodeType::TRANSFORMATION:
+							++transSiblingCount;
+							break;
+						case repo::core::model::NodeType::MESH:
+							meshVector.push_back(child);
+							break;
+						case repo::core::model::NodeType::METADATA:
+							metaVector.push_back(child);
+							break;
+					}					
 				}
 
 				bool noTransSiblings = transSiblingCount == 0;
