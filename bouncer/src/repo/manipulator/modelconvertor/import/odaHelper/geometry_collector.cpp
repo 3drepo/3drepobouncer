@@ -157,7 +157,10 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
 			for (const auto &meshMatEntry : meshLayerEntry.second) {
 				if (!meshMatEntry.second.rawVertices.size()) continue;
 
-				auto uvChannels = std::vector<std::vector<repo::lib::RepoVector2D>>();
+				auto uvChannels = meshMatEntry.second.uvCoords.size() ? 
+					std::vector<std::vector<repo::lib::RepoVector2D>>{meshMatEntry.second.uvCoords} :
+					std::vector<std::vector<repo::lib::RepoVector2D>>();
+
 
 				if (layerToTrans.find(meshLayerEntry.first) == layerToTrans.end()) {
 					layerToTrans[meshLayerEntry.first] = createTransNode(meshLayerEntry.first, rootId);
@@ -170,10 +173,6 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
 				for (const auto &v : meshMatEntry.second.rawVertices) {
 					vertices32.push_back({ (float)(v.x - minMeshBox[0]), (float)(v.y - minMeshBox[1]), (float)(v.z - minMeshBox[2]) });
 				}
-				
-
-				if (meshMatEntry.second.uvCoords.size())
-					uvChannels.push_back(meshMatEntry.second.uvCoords);
 
 				auto meshNode = repo::core::model::RepoBSONFactory::makeMeshNode(
 					vertices32,
@@ -222,7 +221,7 @@ bool GeometryCollector::hasMissingTextures()
 	return missingTextures;
 }
 
-void GeometryCollector::getMaterialNodes(repo::core::model::RepoNodeSet& materials, repo::core::model::RepoNodeSet& textures) {
+void GeometryCollector::getMaterialAndTextureNodes(repo::core::model::RepoNodeSet& materials, repo::core::model::RepoNodeSet& textures) {
 	
 	materials.clear();
 	textures.clear();

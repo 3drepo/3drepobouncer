@@ -28,7 +28,7 @@
 #include "vectorise_device_dgn.h"
 #include "../../../../core/model/bson/repo_node_mesh.h"
 
-#include "data_collector_oda.h"
+#include "data_processor.h"
 
 #include <vector>
 
@@ -36,7 +36,7 @@ namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-				class GeometryDumperDgn : public DataCollectorOda
+				class GeometryDumperDgn : public DataProcessor
 				{
 				public:
 					GeometryDumperDgn() {}
@@ -53,14 +53,13 @@ namespace repo {
 
 				protected:
 
-					void OnFillMaterialCache(
+					void convertTo3DRepoMaterial(
 						OdGiMaterialItemPtr prevCache,
 						OdDbStub* materialId,
 						const OdGiMaterialTraitsData & materialData,
-						const MaterialColors& matColors,
-						repo_material_t& material) override;
-
-					void OnTriangleOut(const std::vector<repo::lib::RepoVector3D64>& vertices) override;
+						MaterialColors& matColors,
+						repo_material_t& material,
+						bool& missingTexture) override;
 
 				private:
 					OdCmEntityColor fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color);

@@ -31,11 +31,6 @@ VectoriseDeviceDgn* GeometryDumperDgn::device()
 	return static_cast<VectoriseDeviceDgn*>(OdGsBaseVectorizeView::device());
 }
 
-void GeometryDumperDgn::OnTriangleOut(const std::vector<repo::lib::RepoVector3D64>& vertices)
-{
-	collector->addFace(vertices);
-}
-
 bool GeometryDumperDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 {
 	OdDgElementPtr pElm = OdDgElement::cast(pDrawable);
@@ -65,13 +60,16 @@ bool GeometryDumperDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	return OdGsBaseMaterialView::doDraw(i, pDrawable);
 }
 
-void GeometryDumperDgn::OnFillMaterialCache(
+void GeometryDumperDgn::convertTo3DRepoMaterial(
 	OdGiMaterialItemPtr prevCache,
 	OdDbStub* materialId,
 	const OdGiMaterialTraitsData & materialData,
-	const MaterialColors& matColors,
-	repo_material_t& material)
+	MaterialColors& matColors,
+	repo_material_t& material,
+	bool& missingTexture)
 {
+	DataProcessor::convertTo3DRepoMaterial(prevCache, materialId, materialData, matColors, material, missingTexture);
+
 	OdCmEntityColor color = fixByACI(this->device()->getPalette(), effectiveTraits().trueColor());
 	// diffuse
 	if (matColors.colorDiffuseOverride)
@@ -85,10 +83,6 @@ void GeometryDumperDgn::OnFillMaterialCache(
 		material.specular = { color.red() / 255.0f, color.green() / 255.0f, color.blue() / 255.0f, 1.0f };
 
 	material.shininessStrength = 1 - material.shininessStrength;
-
-	collector->setCurrentMaterial(material);
-	collector->stopMeshEntry();
-	collector->startMeshEntry();
 }
 
 void GeometryDumperDgn::init(GeometryCollector *const geoCollector)

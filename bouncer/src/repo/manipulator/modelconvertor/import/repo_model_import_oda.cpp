@@ -3,7 +3,9 @@
 #include "repo/error_codes.h"
 
 #ifdef ODA_SUPPORT
-#include "repo/manipulator/modelconvertor/import/odaHelper/file_processor_rvt.h"
+#include <OdaCommon.h>
+#include <Gs/GsBaseInclude.h>
+#include "repo/manipulator/modelconvertor/import/odaHelper/file_processor.h"
 #include "repo/manipulator/modelconvertor/import/odaHelper/helper_functions.h"
 #endif
 
@@ -45,7 +47,7 @@ repo::core::model::RepoScene* OdaModelImport::generateRepoScene()
 
 		repo::core::model::RepoNodeSet materialSet, textureSet;
 
-		geoCollector.getMaterialNodes(materialSet, textureSet);
+		geoCollector.getMaterialAndTextureNodes(materialSet, textureSet);
         auto transSet = geoCollector.getTransformationNodes();
 		auto metaSet = geoCollector.getMetaNodes();
 		scene = new repo::core::model::RepoScene({ filePath }, dummy, meshSet, materialSet, metaSet, textureSet, transSet);

@@ -834,20 +834,27 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 	bool useRepoImporter = fileExt == ".BIM";
 	bool useOdaImporter = repo::manipulator::modelconvertor::OdaModelImport::isSupportedExts(fileExt);
 
-	if (!(useAssimpImporter || useIFCImporter || useRepoImporter || useOdaImporter))
+	if (useIFCImporter)
+	{
+		modelConvertor = new repo::manipulator::modelconvertor::IFCModelImport(config);
+	}
+	else if (useRepoImporter)
+	{
+		modelConvertor = new repo::manipulator::modelconvertor::RepoModelImport(config);
+	}
+	else if (useOdaImporter)
+	{
+		modelConvertor = new repo::manipulator::modelconvertor::OdaModelImport(); //FIXME: take in config like everything else.
+	}
+	else if (useAssimpImporter)
+	{
+		modelConvertor = new repo::manipulator::modelconvertor::AssimpModelImport(config);
+	}
+	else
 	{
 		error = REPOERR_FILE_TYPE_NOT_SUPPORTED;
 		return nullptr;
 	}
-
-	if (useIFCImporter)
-		modelConvertor = new repo::manipulator::modelconvertor::IFCModelImport(config);
-	else if (useRepoImporter)
-		modelConvertor = new repo::manipulator::modelconvertor::RepoModelImport(config);
-	else if (useOdaImporter)
-		modelConvertor = new repo::manipulator::modelconvertor::OdaModelImport(); //FIXME: take in config like everything else.
-	else
-		modelConvertor = new repo::manipulator::modelconvertor::AssimpModelImport(config);
 
 	if (modelConvertor)
 	{

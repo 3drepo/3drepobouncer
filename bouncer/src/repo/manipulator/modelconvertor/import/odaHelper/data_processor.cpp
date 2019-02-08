@@ -1,5 +1,3 @@
-#include "data_collector_oda.h"
-
 /**
 *  Copyright (C) 2018 3D Repo Ltd
 *
@@ -24,9 +22,14 @@
 #include <DgLevelTableRecord.h>
 
 #include "../../../../core/model/bson/repo_bson_factory.h"
+#include "data_processor.h"
+
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-void DataCollectorOda::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal)
+void DataProcessor::convertTo3DRepoVertices(
+	const OdInt32* p3Vertices, 
+	std::vector<repo::lib::RepoVector3D64>& verticesOut,
+	std::vector<repo::lib::RepoVector2D>& uvOut)
 {
 	const OdGePoint3d*  pVertexDataList = vertexDataList();
 	const OdGeVector3d* pNormals = NULL;
@@ -35,28 +38,38 @@ void DataCollectorOda::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d
 		(pVertexDataList + p3Vertices[0]) != (pVertexDataList + p3Vertices[2]) &&
 		(pVertexDataList + p3Vertices[1]) != (pVertexDataList + p3Vertices[2]))
 	{
-		std::vector<repo::lib::RepoVector3D64> vertices;
 		for (int i = 0; i < 3; ++i)
 		{
-			vertices.push_back({ pVertexDataList[p3Vertices[i]].x , pVertexDataList[p3Vertices[i]].y, pVertexDataList[p3Vertices[i]].z });
+			verticesOut.push_back({ pVertexDataList[p3Vertices[i]].x , pVertexDataList[p3Vertices[i]].y, pVertexDataList[p3Vertices[i]].z });
 		}
-		OnTriangleOut(vertices);
 	}
 }
 
-double DataCollectorOda::deviation(
+void DataProcessor::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal)
+{
+	std::vector<repo::lib::RepoVector3D64> vertices;
+	std::vector<repo::lib::RepoVector2D> uv;
+
+	convertTo3DRepoVertices(p3Vertices, vertices, uv);
+
+	if (vertices.size())
+		collector->addFace(vertices, uv);
+}
+
+double DataProcessor::deviation(
 	const OdGiDeviationType deviationType,
 	const OdGePoint3d& pointOnCurve) const {
 	return 0;
 }
 
-OdGiMaterialItemPtr DataCollectorOda::fillMaterialCache(
+void DataProcessor::convertTo3DRepoMaterial(
 	OdGiMaterialItemPtr prevCache,
 	OdDbStub* materialId,
-	const OdGiMaterialTraitsData & materialData
-) {
-	repo_material_t material;
-
+	const OdGiMaterialTraitsData & materialData,
+	MaterialColors& matColors,
+	repo_material_t& material,
+	bool& missingTexture)
+{
 	OdGiMaterialColor diffuseColor; OdGiMaterialMap diffuseMap;
 	OdGiMaterialColor ambientColor;
 	OdGiMaterialColor specularColor; OdGiMaterialMap specularMap; double glossFactor;
@@ -70,56 +83,68 @@ OdGiMaterialItemPtr DataCollectorOda::fillMaterialCache(
 	materialData.opacity(opacityPercentage, opacityMap);
 	materialData.emission(emissiveColor, emissiveMap);
 
-	MaterialColors colors;
-
 	if (diffuseColor.color().colorMethod() == OdCmEntityColor::kByColor)
 	{
-		colors.colorDiffuse = ODTOCOLORREF(diffuseColor.color());
+		matColors.colorDiffuse = ODTOCOLORREF(diffuseColor.color());
 	}
 	else if (diffuseColor.color().colorMethod() == OdCmEntityColor::kByACI)
 	{
-		colors.colorDiffuse = OdCmEntityColor::lookUpRGB((OdUInt8)diffuseColor.color().colorIndex());
+		matColors.colorDiffuse = OdCmEntityColor::lookUpRGB((OdUInt8)diffuseColor.color().colorIndex());
 	}
 	if (ambientColor.color().colorMethod() == OdCmEntityColor::kByColor)
 	{
-		colors.colorAmbient = ODTOCOLORREF(ambientColor.color());
+		matColors.colorAmbient = ODTOCOLORREF(ambientColor.color());
 	}
 	else if (ambientColor.color().colorMethod() == OdCmEntityColor::kByACI)
 	{
-		colors.colorAmbient = OdCmEntityColor::lookUpRGB((OdUInt8)ambientColor.color().colorIndex());
+		matColors.colorAmbient = OdCmEntityColor::lookUpRGB((OdUInt8)ambientColor.color().colorIndex());
 	}
 	if (specularColor.color().colorMethod() == OdCmEntityColor::kByColor)
 	{
-		colors.colorSpecular = ODTOCOLORREF(specularColor.color());
+		matColors.colorSpecular = ODTOCOLORREF(specularColor.color());
 	}
 	else if (specularColor.color().colorMethod() == OdCmEntityColor::kByACI)
 	{
-		colors.colorSpecular = OdCmEntityColor::lookUpRGB((OdUInt8)specularColor.color().colorIndex());
+		matColors.colorSpecular = OdCmEntityColor::lookUpRGB((OdUInt8)specularColor.color().colorIndex());
 	}
 	if (emissiveColor.color().colorMethod() == OdCmEntityColor::kByColor)
 	{
-		colors.colorEmissive = ODTOCOLORREF(emissiveColor.color());
+		matColors.colorEmissive = ODTOCOLORREF(emissiveColor.color());
 	}
 	else if (emissiveColor.color().colorMethod() == OdCmEntityColor::kByACI)
 	{
-		colors.colorEmissive = OdCmEntityColor::lookUpRGB((OdUInt8)emissiveColor.color().colorIndex());
+		matColors.colorEmissive = OdCmEntityColor::lookUpRGB((OdUInt8)emissiveColor.color().colorIndex());
 	}
-	
-	colors.colorDiffuseOverride = diffuseColor.method() == OdGiMaterialColor::kOverride ? true : false;
-	colors.colorAmbientOverride = ambientColor.method() == OdGiMaterialColor::kOverride ? true : false;
-	colors.colorSpecularOverride = specularColor.method() == OdGiMaterialColor::kOverride ? true : false;
-	colors.colorEmissiveOverride = emissiveColor.method() == OdGiMaterialColor::kOverride ? true : false;
+
+	matColors.colorDiffuseOverride = diffuseColor.method() == OdGiMaterialColor::kOverride ? true : false;
+	matColors.colorAmbientOverride = ambientColor.method() == OdGiMaterialColor::kOverride ? true : false;
+	matColors.colorSpecularOverride = specularColor.method() == OdGiMaterialColor::kOverride ? true : false;
+	matColors.colorEmissiveOverride = emissiveColor.method() == OdGiMaterialColor::kOverride ? true : false;
 
 	material.shininessStrength = glossFactor;
 	material.shininess = materialData.reflectivity();
 	material.opacity = opacityPercentage;
+}
 
-	OnFillMaterialCache(prevCache, materialId, materialData, colors, material);
+OdGiMaterialItemPtr DataProcessor::fillMaterialCache(
+	OdGiMaterialItemPtr prevCache,
+	OdDbStub* materialId,
+	const OdGiMaterialTraitsData & materialData
+) {
+	MaterialColors colors;
+	repo_material_t material;
+	bool missingTexture = false;
+
+	convertTo3DRepoMaterial(prevCache, materialId, materialData, colors, material, missingTexture);
+
+	collector->setCurrentMaterial(material, missingTexture);
+	collector->stopMeshEntry();
+	collector->startMeshEntry();
 
 	return OdGiMaterialItemPtr();
 }
 
-void DataCollectorOda::beginViewVectorization()
+void DataProcessor::beginViewVectorization()
 {
 	OdGsBaseVectorizer::beginViewVectorization();
 	OdGiGeometrySimplifier::setDrawContext(OdGsBaseMaterialView::drawContext());

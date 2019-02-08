@@ -49,7 +49,7 @@
 
 #include "../../../../lib/datastructure/repo_structs.h"
 #include "geometry_collector.h"
-#include "data_collector_oda.h"
+#include "data_processor.h"
 
 namespace repo {
 	namespace manipulator {
@@ -57,7 +57,7 @@ namespace repo {
 			namespace odaHelper {
 				class VectoriseDeviceRvt;
 
-				class VectorizeView : public DataCollectorOda
+				class VectorizeView : public DataProcessor
 				{
 				public:
 					VectorizeView();
@@ -69,15 +69,18 @@ namespace repo {
 					void draw(const OdGiDrawable*);
 
 				protected:
-					
-					void OnFillMaterialCache(
+					void convertTo3DRepoMaterial(
 						OdGiMaterialItemPtr prevCache,
 						OdDbStub* materialId,
 						const OdGiMaterialTraitsData & materialData,
-						const MaterialColors& matColors,
-						repo_material_t& material) override;
+						MaterialColors& matColors,
+						repo_material_t& material,
+						bool& missingTexture) override;
 
-					void OnTriangleOut(const std::vector<repo::lib::RepoVector3D64>& vertices) override;
+					void convertTo3DRepoVertices(
+						const OdInt32* p3Vertices, 
+						std::vector<repo::lib::RepoVector3D64>& verticesOut,
+						std::vector<repo::lib::RepoVector2D>& uvOut) override;
 
 				private:
 					void fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t& material, bool& missingTexture);

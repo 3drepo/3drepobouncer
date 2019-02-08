@@ -36,13 +36,13 @@ namespace repo {
 		namespace modelconvertor {
 			namespace odaHelper {
 
-				class DataCollectorOda : public OdGiGeometrySimplifier, public OdGsBaseMaterialView
+				class DataProcessor : public OdGiGeometrySimplifier, public OdGsBaseMaterialView
 				{
 				protected:
 					GeometryCollector *collector;
 
 				public:
-					DataCollectorOda() {}
+					DataProcessor() {}
 
 					virtual double deviation(
 						const OdGiDeviationType deviationType,
@@ -50,15 +50,19 @@ namespace repo {
 					
 					void beginViewVectorization();
 
-				protected:	
-					virtual void OnTriangleOut(const std::vector<repo::lib::RepoVector3D64>& vertices) = 0;
-
-					virtual void OnFillMaterialCache(
+				protected:
+					virtual void convertTo3DRepoMaterial(
 						OdGiMaterialItemPtr prevCache,
 						OdDbStub* materialId,
 						const OdGiMaterialTraitsData & materialData,
-						const MaterialColors& matColors,
-						repo_material_t& material) = 0;
+						MaterialColors& matColors,
+						repo_material_t& material,
+						bool& missingTexture);
+
+					virtual void convertTo3DRepoVertices(
+						const OdInt32* p3Vertices, 
+						std::vector<repo::lib::RepoVector3D64>& verticesOut,
+						std::vector<repo::lib::RepoVector2D>& uvOut);
 
 				private:
 					void triangleOut(

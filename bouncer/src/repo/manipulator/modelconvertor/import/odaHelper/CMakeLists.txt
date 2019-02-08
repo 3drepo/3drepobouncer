@@ -7,7 +7,7 @@
 if(ODA_SUPPORT)
 	set(SOURCES
 		${SOURCES}
-		${CMAKE_CURRENT_SOURCE_DIR}/data_collector_oda.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/data_processor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_dgn.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_rvt.cpp
@@ -20,7 +20,7 @@ if(ODA_SUPPORT)
 
 	set(HEADERS
 		${HEADERS}
-		${CMAKE_CURRENT_SOURCE_DIR}/data_collector_oda.h
+		${CMAKE_CURRENT_SOURCE_DIR}/data_processor.h
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor.h
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_dgn.h
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_rvt.h

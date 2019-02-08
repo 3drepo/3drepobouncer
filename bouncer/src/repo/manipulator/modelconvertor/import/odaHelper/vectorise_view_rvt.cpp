@@ -150,13 +150,16 @@ VectoriseDeviceRvt* VectorizeView::device()
 	return (VectoriseDeviceRvt*)OdGsBaseVectorizeView::device();
 }
 
-void VectorizeView::OnFillMaterialCache(
+void VectorizeView::convertTo3DRepoMaterial(
 	OdGiMaterialItemPtr prevCache,
 	OdDbStub* materialId,
 	const OdGiMaterialTraitsData & materialData,
-	const MaterialColors& matColors,
-	repo_material_t& material)
+	MaterialColors& matColors,
+	repo_material_t& material,
+	bool& missingTexture)
 {
+	DataProcessor::convertTo3DRepoMaterial(prevCache, materialId, materialData, matColors, material, missingTexture);
+
 	OdBmObjectId matId(materialId);
 	OdBmMaterialElemPtr materialElem;
 	if (matId.isValid())
@@ -166,28 +169,28 @@ void VectorizeView::OnFillMaterialCache(
 			materialElem = OdBmMaterialElem::cast(objectPtr);
 	}
 
-	bool missingTexture = false;
 	fillMaterial(materialElem, matColors, material);
 	fillTexture(materialElem, material, missingTexture);
-
-	collector->setCurrentMaterial(material, missingTexture);
-	collector->stopMeshEntry();
-	collector->startMeshEntry();
 }
 
-void VectorizeView::OnTriangleOut(const std::vector<repo::lib::RepoVector3D64>& vertices)
+void VectorizeView::convertTo3DRepoVertices(
+	const OdInt32* p3Vertices,
+	std::vector<repo::lib::RepoVector3D64>& verticesOut,
+	std::vector<repo::lib::RepoVector2D>& uvOut)
 {
+	DataProcessor::convertTo3DRepoVertices(p3Vertices, verticesOut, uvOut);
+
 	const int numVertices = 3;
-	if (vertices.size() != numVertices)
+	if (verticesOut.size() != numVertices)
 		return;
 
 	OdGiMapperItemEntry::MapInputTriangle trg;
 
-	for (int i = 0; i < vertices.size(); ++i)
+	for (int i = 0; i < verticesOut.size(); ++i)
 	{
-		trg.inPt[i].x = vertices[i].x;
-		trg.inPt[i].y = vertices[i].y;
-		trg.inPt[i].z = vertices[i].z;
+		trg.inPt[i].x = verticesOut[i].x;
+		trg.inPt[i].y = verticesOut[i].y;
+		trg.inPt[i].z = verticesOut[i].z;
 	}
 
 	OdGiMapperItemEntry::MapOutputCoords outTex;
@@ -200,11 +203,9 @@ void VectorizeView::OnTriangleOut(const std::vector<repo::lib::RepoVector3D64>& 
 			diffuseMap->mapCoords(trg, outTex);
 	}
 
-	std::vector<repo::lib::RepoVector2D> uvc;
+	uvOut.clear();
 	for (int i = 0; i < numVertices; ++i)
-		uvc.push_back({ (float)outTex.outCoord[i].x, (float)outTex.outCoord[i].y });
-
-	collector->addFace(vertices, uvc);
+		uvOut.push_back({ (float)outTex.outCoord[i].x, (float)outTex.outCoord[i].y });
 }
 
 std::string VectorizeView::getLevel(OdBmElementPtr element, const std::string& name)

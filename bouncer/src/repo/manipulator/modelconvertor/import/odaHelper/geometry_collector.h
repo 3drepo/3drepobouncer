@@ -58,7 +58,7 @@ namespace repo {
 					* Get all the material and texture nodes collected.
 					* @return returns a repoNodeSet containing material nodes
 					*/
-					void getMaterialNodes(repo::core::model::RepoNodeSet& materials, repo::core::model::RepoNodeSet& textures);
+					void getMaterialAndTextureNodes(repo::core::model::RepoNodeSet& materials, repo::core::model::RepoNodeSet& textures);
 
 
 					/**

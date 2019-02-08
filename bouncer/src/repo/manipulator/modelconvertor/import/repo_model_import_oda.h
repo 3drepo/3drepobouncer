@@ -18,8 +18,8 @@
 
 #pragma once
 
-#include "repo/manipulator/modelconvertor/import/repo_model_import_abstract.h"
-#include "repo/core/model/bson/repo_node_mesh.h"
+#include "repo_model_import_abstract.h"
+#include "../../../core/model/bson/repo_node_mesh.h"
 #include <vector>
 
 #ifdef ODA_SUPPORT
