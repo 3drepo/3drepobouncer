@@ -266,16 +266,31 @@ void VectorizeView::fillMeshData(const OdGiDrawable* pDrawable)
 	collector->setLayer(layerName);
 }
 
-std::pair<std::vector<std::string>, std::vector<std::string>> VectorizeView::fillMetadata(OdBmElementPtr element)
+void VectorizeView::fillMetadataById(
+	OdBmObjectId id,
+	std::pair<std::vector<std::string>, std::vector<std::string>>& metadata)
 {
-	std::pair<std::vector<std::string>, std::vector<std::string>> metadata;
+	if (id.isNull())
+		return;
+	
+	OdBmObjectPtr ptr = id.safeOpenObject();
+	
+	if (ptr.isNull()) 
+		return;
+	
+	fillMetadataByElemPtr(ptr, metadata);
+}
 
+void VectorizeView::fillMetadataByElemPtr(
+	OdBmElementPtr element,
+	std::pair<std::vector<std::string>, std::vector<std::string>>& metadata)
+{
 	OdBuiltInParamArray aParams;
 	element->getListParams(aParams);
 
 	OdBmLabelUtilsPEPtr labelUtils = OdBmObject::desc()->getX(OdBmLabelUtilsPE::desc());
 	if (labelUtils.isNull())
-		return metadata;
+		return;
 
 	for (OdBuiltInParamArray::iterator it = aParams.begin(); it != aParams.end(); it++)
 	{
@@ -297,7 +312,7 @@ std::pair<std::vector<std::string>, std::vector<std::string>> VectorizeView::fil
 		{
 			OdBmParamElemPtr pParamElem = element->database()->getObjectId(*it).safeOpenObject();
 			OdBmParamDefPtr pDescParam = pParamElem->getParamDef();
-			
+
 			std::string variantValue = variantToString(value, labelUtils, pDescParam, element->getDatabase(), *it);
 			if (!variantValue.empty())
 			{
@@ -306,7 +321,15 @@ std::pair<std::vector<std::string>, std::vector<std::string>> VectorizeView::fil
 			}
 		}
 	}
+}
 
+std::pair<std::vector<std::string>, std::vector<std::string>> VectorizeView::fillMetadata(OdBmElementPtr element)
+{
+	std::pair<std::vector<std::string>, std::vector<std::string>> metadata;
+	fillMetadataByElemPtr(element, metadata);
+	fillMetadataById(element->getFamId(), metadata);
+	fillMetadataById(element->getTypeID(), metadata);
+	fillMetadataById(element->getCategroryId(), metadata);
 	return metadata;
 }
 

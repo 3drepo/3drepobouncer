@@ -87,6 +87,14 @@ namespace repo {
 					void fillMaterial(OdBmMaterialElemPtr materialPtr, const MaterialColors& matColors, repo_material_t& material);
 					void fillMeshData(const OdGiDrawable* element);
 
+					void fillMetadataById(
+						OdBmObjectId id, 
+						std::pair<std::vector<std::string>, std::vector<std::string>>& metadata);
+
+					void fillMetadataByElemPtr(
+						OdBmElementPtr element, 
+						std::pair<std::vector<std::string>, std::vector<std::string>>& metadata);
+
 					std::pair<std::vector<std::string>, std::vector<std::string>> fillMetadata(OdBmElementPtr element);
 					std::string getLevel(OdBmElementPtr element, const std::string& name);
 
