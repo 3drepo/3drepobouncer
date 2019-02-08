@@ -144,6 +144,7 @@ namespace repo {
 					const std::string                                      &model,
 					const std::vector<double>                              &offset,
 					const std::vector<std::string>                         &vrAssetFiles,
+					const std::vector<std::string>                         &iosAssetFiles,
 					const std::vector<std::string>                         &jsonFiles);
 
 				/*
