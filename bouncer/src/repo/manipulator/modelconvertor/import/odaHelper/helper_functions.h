@@ -21,11 +21,36 @@
 #include <SharedPtr.h>
 #include <OdString.h>
 
+#include "../../../../lib/datastructure/repo_structs.h"
+
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
 				std::string convertToStdString(const OdString &value);
+
+				template <class T>
+				struct _RepoVector3DSortComparator 
+				{
+					bool operator()(const T& vec1, const T& vec2) const
+					{
+						if (vec1.x > vec2.x)
+							return true;
+						if (vec1.x < vec2.x)
+							return false;
+						if (vec1.y > vec2.y)
+							return true;
+						if (vec1.y < vec2.y)
+							return false;
+						if (vec1.z > vec2.z)
+							return true;
+
+						return false;
+					}
+				};
+
+				using RepoVector3DSortComparator = _RepoVector3DSortComparator < repo::lib::RepoVector3D >;
+				using RepoVector3D64SortComparator = _RepoVector3DSortComparator < repo::lib::RepoVector3D64 >;
 			}
 		}
 	}

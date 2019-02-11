@@ -106,9 +106,8 @@ void GeometryCollector::addFace(
 	repo_face_t face;
 	for (auto i = 0; i < vertices.size(); ++i) {
 		auto& v = vertices[i];
-		auto chkSum = v.checkSum();
-		if (currentEntry->vToVIndex.find(chkSum) == currentEntry->vToVIndex.end()) {
-			currentEntry->vToVIndex[chkSum] = currentEntry->rawVertices.size();
+		if (currentEntry->vToVIndex.find(v) == currentEntry->vToVIndex.end()) {
+			currentEntry->vToVIndex[v] = currentEntry->rawVertices.size();
 			currentEntry->rawVertices.push_back(v);
 			if (i < uvCoords.size())
 				currentEntry->uvCoords.push_back(uvCoords[i]);
@@ -136,7 +135,7 @@ void GeometryCollector::addFace(
 				minMeshBox = { v.x, v.y, v.z };
 			}
 		}
-		face.push_back(currentEntry->vToVIndex[chkSum]);
+		face.push_back(currentEntry->vToVIndex[v]);
 	}
 	currentEntry->faces.push_back(face);
 }

@@ -19,6 +19,7 @@
 
 #include "../../../../core/model/bson/repo_bson_factory.h"
 #include "../../../../lib/datastructure/repo_structs.h"
+#include "helper_functions.h"
 
 #include <fstream>
 #include <vector>
@@ -33,7 +34,7 @@ namespace repo {
 					std::vector<repo::lib::RepoVector3D64> rawVertices;
 					std::vector<repo_face_t> faces;
 					std::vector<std::vector<float>> boundingBox;
-					std::unordered_map<unsigned long, int> vToVIndex;
+					std::map<repo::lib::RepoVector3D64, int, RepoVector3D64SortComparator> vToVIndex;
 					std::vector<repo::lib::RepoVector2D> uvCoords;
 					std::string name;
 					std::string layerName;
