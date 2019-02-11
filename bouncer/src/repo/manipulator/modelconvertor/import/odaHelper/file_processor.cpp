@@ -90,6 +90,12 @@ protected:
 	ODRX_USING_HEAP_OPERATORS(OdExDgnSystemServices);
 };
 
+//TODO: merge with geometry dumper's function
+std::string convertToString(const OdString &value) {
+	const char *ansi = static_cast<const char *>(value);
+	return std::string(ansi);
+}
+
 int FileProcessor::readFile() {
 
 	int   nRes = 0;               // Return value for the function
@@ -121,8 +127,30 @@ int FileProcessor::readFile() {
 			ODGSPALETTE pPalCpy;
 			pPalCpy.insert(pPalCpy.begin(), refColors, refColors + 256);
 
-
 			OdDgElementId elementId = pDb->getActiveModelId();
+
+			if (elementId.isValid()) {
+				OdDgModelPtr viewElement = elementId.openObject(OdDg::kForRead);
+				auto activeViewName = convertToString(viewElement->getName());
+				if (viewElement->getType() != OdDgModel::Type::kDesignModel || activeViewName == "Title")
+				{
+					OdDgElementIteratorPtr pModelIter = pDb->getModelTable()->createIterator();
+					for (; !pModelIter->done(); pModelIter->step())
+					{
+						OdDgModelPtr elem = pModelIter->item().openObject();
+						auto viewName = convertToString(elem->getName());
+						if (!elem.isNull() && elem->getType() == OdDgModel::Type::kDesignModel &&  
+							viewName != "Title") {
+							repoInfo << "Setting active view to: " << viewName;
+							pDb->setActiveModelId(pModelIter->item());
+							elementId = pModelIter->item();
+							break;
+						}
+					}
+				}
+			}
+			
+		
 			if (elementId.isNull())
 			{
 				elementId = pDb->getDefaultModelId();
