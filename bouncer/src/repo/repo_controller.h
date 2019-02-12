@@ -83,8 +83,8 @@ namespace repo{
 			const int         &port,
 			const std::string &username,
 			const std::string &password,
-			const std::string &bucketName,
-			const std::string &bucketRegion,
+			const std::string &bucketName = "",
+			const std::string &bucketRegion = "",
 			const bool        &pwDigested = false
 			);
 
