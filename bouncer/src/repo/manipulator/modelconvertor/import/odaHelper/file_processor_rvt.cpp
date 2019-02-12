@@ -137,7 +137,7 @@ int FileProcessorRvt::readFile()
 			OdGiContextForBmDatabasePtr pBimContext = OdGiContextForBmDatabase::createObject();
 
 			OdGsDevicePtr pDevice = OdRxObjectImpl<VectoriseDeviceRvt, OdGsDevice>::createObject();
-			(static_cast<VectoriseDeviceRvt*>(pDevice.get()))->init(collector);
+			(static_cast<VectoriseDeviceRvt*>(pDevice.get()))->init(collector, pDb);
 
 			pBimContext->setDatabase(pDb);
 			pDevice = pDbPE->setupActiveLayoutViews(pDevice, pBimContext);

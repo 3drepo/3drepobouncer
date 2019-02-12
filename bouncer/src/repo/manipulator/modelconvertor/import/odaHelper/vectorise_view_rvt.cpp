@@ -127,16 +127,30 @@ std::string variantToString(const OdTfVariant& val, OdBmLabelUtilsPEPtr labelUti
 	return strOut;
 }
 
-OdGsViewPtr VectorizeView::createObject(GeometryCollector* geoColl)
+OdGsViewPtr VectorizeView::createObject(GeometryCollector* geoColl, OdBmDatabasePtr database)
 {
 	auto ptr = OdRxObjectImpl<VectorizeView, OdGsView>::createObject();
 	static_cast<VectorizeView*>(ptr.get())->collector = geoColl;
+	static_cast<VectorizeView*>(ptr.get())->database = database;
 	return ptr;
 }
 
 VectorizeView::VectorizeView()
 {
 	meshesCount = 0;
+}
+
+void repo::manipulator::modelconvertor::odaHelper::VectorizeView::beginViewVectorization()
+{
+	DataProcessor::beginViewVectorization();
+	OdBm::DisplayUnitType::Enum lengthUnits = getUnits(database);
+	double scale = 1.0 / getUnitsCoef(lengthUnits);
+	repo::lib::RepoMatrix mat({ (float)scale,0,0,0,
+		0,(float)scale,0,0,
+		0,0,(float)scale,0,
+		0,0,0,1 });
+	collector->setRootMatrix(mat);
+	setEyeToOutputTransform(getEyeToWorldTransform());
 }
 
 void VectorizeView::draw(const OdGiDrawable* pDrawable)
@@ -379,4 +393,19 @@ void VectorizeView::fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t
 		missingTexture = true;
 
 	material.texturePath = validTextureName;
+}
+
+OdBm::DisplayUnitType::Enum VectorizeView::getUnits(OdBmDatabasePtr database)
+{
+	OdBmFormatOptionsPtrArray aFormatOptions;
+	OdBmUnitsTrackingPtr pUnitsTracking = database->getAppInfo(OdBm::ManagerType::UnitsTracking);
+	OdBmUnitsElemPtr pUnitsElem = pUnitsTracking->getUnitsElemId().safeOpenObject();
+	OdBmAUnitsPtr ptrAUnits = pUnitsElem->getUnits().get();
+	OdBmFormatOptionsPtr formatOptionsLength = ptrAUnits->getFormatOptions(OdBm::UnitType::Enum::UT_Length);
+	return formatOptionsLength->getDisplayUnits();
+}
+
+double repo::manipulator::modelconvertor::odaHelper::VectorizeView::getUnitsCoef(OdBm::DisplayUnitType::Enum unitType)
+{
+	return BmUnitUtils::getDisplayUnitTypeInfo(unitType)->inIntUnitsCoeff;
 }

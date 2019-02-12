@@ -143,6 +143,11 @@ namespace repo {
 					*/
 					repo::core::model::RepoNodeSet getMetaNodes();
 
+					/**
+					* Set transformation matrix for rootNode
+					* @param transformation matrix for rootNode
+					*/
+					void setRootMatrix(repo::lib::RepoMatrix matrix);
 
 				private:
 					std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<int, mesh_data_t>>> meshData;
@@ -156,6 +161,7 @@ namespace repo {
 					std::vector<double> minMeshBox;
 					mesh_data_t *currentEntry = nullptr;
 					bool missingTextures = false;
+					repo::lib::RepoMatrix rootMatrix;
 
 					repo::core::model::TransformationNode* createTransNode(
 						const std::string &name,

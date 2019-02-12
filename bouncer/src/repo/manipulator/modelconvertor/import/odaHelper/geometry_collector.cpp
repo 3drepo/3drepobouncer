@@ -148,7 +148,7 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
 
 	std::unordered_map<std::string, repo::core::model::TransformationNode*> layerToTrans;
 
-	auto root = repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), "rootNode");
+	auto root = repo::core::model::RepoBSONFactory::makeTransformationNode(rootMatrix, "rootNode");
 	auto rootId = root.getSharedID();
 	repoDebug << "Mesh data: " << meshData.size();
 	for (const auto &meshGroupEntry : meshData) {
@@ -213,6 +213,11 @@ repo::core::model::TransformationNode*  GeometryCollector::createTransNode(
 	const std::string &name,
 	const repo::lib::RepoUUID &parentId) {	
 	return new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name, { parentId }));
+}
+
+void repo::manipulator::modelconvertor::odaHelper::GeometryCollector::setRootMatrix(repo::lib::RepoMatrix matrix)
+{
+	rootMatrix = matrix;
 }
 
 bool GeometryCollector::hasMissingTextures()

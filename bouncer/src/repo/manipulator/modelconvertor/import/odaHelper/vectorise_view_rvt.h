@@ -46,6 +46,10 @@
 
 #include <Database/BmElement.h>
 #include "Database/BmLabelUtilsPE.h"
+#include "Database/Entities/BmAUnits.h"
+#include "Database/BmUnitUtils.h"
+#include "Database/Managers/BmUnitsTracking.h"
+#include "Database/Entities/BmUnitsElem.h"
 
 #include "../../../../lib/datastructure/repo_structs.h"
 #include "geometry_collector.h"
@@ -62,13 +66,15 @@ namespace repo {
 				public:
 					VectorizeView();
 
-					static OdGsViewPtr createObject(GeometryCollector* geoColl);
+					static OdGsViewPtr createObject(GeometryCollector* geoColl, OdBmDatabasePtr database);
 
 					VectoriseDeviceRvt* device();
-
-					void draw(const OdGiDrawable*);
-
+					
 				protected:
+					void draw(const OdGiDrawable*) override;
+
+					void beginViewVectorization() override;
+
 					void convertTo3DRepoMaterial(
 						OdGiMaterialItemPtr prevCache,
 						OdDbStub* materialId,
@@ -97,8 +103,11 @@ namespace repo {
 
 					std::pair<std::vector<std::string>, std::vector<std::string>> fillMetadata(OdBmElementPtr element);
 					std::string getLevel(OdBmElementPtr element, const std::string& name);
+					OdBm::DisplayUnitType::Enum getUnits(OdBmDatabasePtr database);
+					double getUnitsCoef(OdBm::DisplayUnitType::Enum unitType);
 
 					uint64_t meshesCount;
+					OdBmDatabasePtr database;
 				};
 			}
 		}

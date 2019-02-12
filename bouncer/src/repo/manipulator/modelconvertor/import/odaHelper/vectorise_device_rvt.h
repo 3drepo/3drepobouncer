@@ -24,6 +24,11 @@
 #include "Gs/GsBaseInclude.h"
 #include <Gs/GsBaseMaterialView.h>
 #include "geometry_collector.h"
+#include "Common/BmBuildSettings.h"
+#include <OdaCommon.h>
+#include "BimCommon.h"
+#include "RxObjectImpl.h"
+#include "Database/BmDatabase.h"
 
 namespace repo {
 	namespace manipulator {
@@ -35,7 +40,7 @@ namespace repo {
 				public:
 					VectoriseDeviceRvt();
 
-					void init(GeometryCollector *const geoCollector);
+					void init(GeometryCollector *const geoCollector, OdBmDatabasePtr database);
 
 					OdGsViewPtr createView(
 						const OdGsClientViewInfo* pInfo = 0,
@@ -43,6 +48,7 @@ namespace repo {
 
 				private:
 					GeometryCollector* geoColl;
+					OdBmDatabasePtr database;
 				};
 			}
 		}

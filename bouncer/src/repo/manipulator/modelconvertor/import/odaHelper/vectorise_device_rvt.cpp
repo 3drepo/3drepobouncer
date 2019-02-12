@@ -37,16 +37,17 @@ VectoriseDeviceRvt::VectoriseDeviceRvt()
 	onSize(OdGsDCRect(0, 100, 0, 100));
 }
 
-void VectoriseDeviceRvt::init(GeometryCollector *const geoCollector)
+void VectoriseDeviceRvt::init(GeometryCollector *const geoCollector, OdBmDatabasePtr database)
 {
 	geoColl = geoCollector;
+	this->database = database;
 }
 
 OdGsViewPtr VectoriseDeviceRvt::createView(
 	const OdGsClientViewInfo* pInfo,
 	bool bEnableLayerVisibilityPerView)
 {
-	OdGsViewPtr pView = VectorizeView::createObject(geoColl);
+	OdGsViewPtr pView = VectorizeView::createObject(geoColl, database);
 	VectorizeView* pMyView = static_cast<VectorizeView*>(pView.get());
 	pMyView->OdGsBaseMaterialView::init(this, pInfo, bEnableLayerVisibilityPerView);
 	pMyView->output().setDestGeometry(*pMyView);
