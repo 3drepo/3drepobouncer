@@ -26,6 +26,19 @@ using namespace repo::manipulator::modelconvertor::odaHelper;
 
 const char* RVT_TEXTURES_ENV_VARIABLE = "RVT_TEXTURES";
 
+repo_material_t GetDefaultMaterial()
+{
+	repo_material_t material;
+	material.shininess = 0.5;
+	material.shininessStrength = 0.5;
+	material.opacity = 1;
+	material.specular = { 0, 0, 0, 0 };
+	material.diffuse = { 0.2f, 0.2f, 0.2f, 0 };
+	material.emissive = material.diffuse;
+
+	return material;
+}
+
 std::string getElementName(OdBmElementPtr element, uint64_t id)
 {
 	std::string elName(convertToStdString(element->getElementName()));
@@ -268,6 +281,9 @@ void VectorizeView::fillMeshData(const OdGiDrawable* pDrawable)
 	try
 	{
 		collector->setCurrentMeta(fillMetadata(element));
+
+		//..for some objects material is not set. set default here
+		collector->setCurrentMaterial(GetDefaultMaterial());
 	}
 	catch(OdError& er)
 	{
@@ -278,6 +294,8 @@ void VectorizeView::fillMeshData(const OdGiDrawable* pDrawable)
 
 	std::string layerName = getLevel(element, "Layer Default");
 	collector->setLayer(layerName);
+	collector->stopMeshEntry();
+	collector->startMeshEntry();
 }
 
 void VectorizeView::fillMetadataById(
