@@ -39,7 +39,7 @@ namespace repo {
 					FileProcessorDgn(const std::string &inputFile, GeometryCollector * geoCollector) : FileProcessor(inputFile, geoCollector) {};
 					~FileProcessorDgn() override;
 
-					int readFile() override;
+					uint8_t readFile() override;
 
 				private:
 					int importDgn(OdDbBaseDatabase *pDb,

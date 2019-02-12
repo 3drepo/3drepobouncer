@@ -61,14 +61,18 @@ OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimData
 	for (; !layouts->done(); layouts->next())
 	{
 		OdBmDBDrawingPtr pDBDrawing = layouts->object();
-		
-		if (pDBDrawing->getBaseViewNameFormat() != OdBm::ViewType::_3d)
-			continue;
-
 		OdDbBaseLayoutPEPtr pLayout(layouts->object());
-		layoutName = pDBDrawing->getName();
-		if (layoutName.find(L"3D") != -1)
-			return pLayout->name(layouts->object());
+		
+		if (pDBDrawing->getBaseViewNameFormat() == OdBm::ViewType::_3d)
+		{
+			//.. set first 3D view available
+			if (layoutName.isEmpty())
+				layoutName = pLayout->name(layouts->object());
+			
+			//.. try to find 3D view with a valid default name
+			if (pDBDrawing->getName().find(L"3D") != -1)
+				return pLayout->name(layouts->object());
+		}
 	}
 
 	return layoutName;
@@ -115,9 +119,9 @@ void setupUnitsFormat(OdBmDatabasePtr pDb, double accuracy)
 	}
 }
 
-int FileProcessorRvt::readFile()
+uint8_t FileProcessorRvt::readFile()
 {
-	int nRes = 1;
+	int nRes = REPOERR_OK;
 	OdStaticRxObject<RepoRvtServices> svcs;
 	odrxInitialize(&svcs);
 	OdRxModule* pModule = ::odrxDynamicLinker()->loadModule(OdBmLoaderModuleName, false);
@@ -131,8 +135,10 @@ int FileProcessorRvt::readFile()
 		{
 			OdDbBaseDatabasePEPtr pDbPE(pDb);
 			OdString layout = Get3DLayout(pDbPE, pDb);
-			if (!layout.isEmpty())
-				pDbPE->setCurrentLayout(pDb, layout);
+			if (layout.isEmpty())
+				return REPOERR_VALID_3D_VIEW_NOT_FOUND;
+
+			pDbPE->setCurrentLayout(pDb, layout);
 
 			OdGiContextForBmDatabasePtr pBimContext = OdGiContextForBmDatabase::createObject();
 
@@ -146,17 +152,13 @@ int FileProcessorRvt::readFile()
 			setupUnitsFormat(pDb, ROUNDING_ACCURACY);
 			pDevice->update();
 		}
-		nRes = 0;
 	}
 	catch (OdError& e)
 	{
-		nRes = e.code();
+		nRes = REPOERR_LOAD_SCENE_FAIL;
 		repoError << e.description().c_str();
 	}
-	catch (...)
-	{
-		nRes = 1;
-	}
+
 	return nRes;
 }
 

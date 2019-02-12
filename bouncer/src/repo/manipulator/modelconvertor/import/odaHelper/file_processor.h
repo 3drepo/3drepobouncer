@@ -17,6 +17,7 @@
 
 #pragma once
 #include "geometry_collector.h"
+#include "repo/error_codes.h"
 #include <string>
 
 namespace repo {
@@ -30,7 +31,7 @@ namespace repo {
 				public:
 					static std::unique_ptr<FileProcessor> getFileProcessor(const std::string& inputFile, GeometryCollector* geoCollector);
 					virtual ~FileProcessor();
-					virtual int readFile() = 0;
+					virtual uint8_t readFile() = 0;
 					
 				protected:
 					const std::string file;

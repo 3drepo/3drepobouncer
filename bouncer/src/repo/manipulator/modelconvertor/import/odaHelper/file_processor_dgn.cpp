@@ -83,9 +83,9 @@ protected:
 repo::manipulator::modelconvertor::odaHelper::FileProcessorDgn::~FileProcessorDgn()
 {
 }
-int FileProcessorDgn::readFile() {
+uint8_t FileProcessorDgn::readFile() {
 
-	int   nRes = 0;               // Return value for the function
+	uint8_t nRes = 0;               // Return value for the function
 	OdStaticRxObject<RepoDgnServices> svcs;
 	OdString fileSource = file.c_str();
 	OdString strStlFilename = OdString::kEmpty;

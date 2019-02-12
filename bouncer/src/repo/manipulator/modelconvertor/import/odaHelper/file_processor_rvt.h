@@ -39,7 +39,7 @@ namespace repo {
 					FileProcessorRvt(const std::string& inputFile, GeometryCollector* geoCollector) : FileProcessor(inputFile, geoCollector) {};
 					~FileProcessorRvt() override;
 
-					int readFile() override;
+					uint8_t readFile() override;
 
 				private:
 					//.. adjust triangulation options

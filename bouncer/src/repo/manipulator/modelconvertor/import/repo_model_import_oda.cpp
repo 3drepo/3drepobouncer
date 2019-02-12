@@ -72,22 +72,18 @@ bool OdaModelImport::importModel(std::string filePath, uint8_t &err)
     repoInfo << " ==== Importing with Teigha Library [" << filePath << "] ====";
     std::unique_ptr<odaHelper::FileProcessor> odaProcessor = odaHelper::FileProcessor::getFileProcessor(filePath, &geoCollector);
     bool success = false;
+	err = REPOERR_OK;
     try {
-        success = odaProcessor != nullptr && odaProcessor->readFile() == 0;
-    }
-    catch (OdError& error) {
-        success = false;
-		repoError << "Error code: " << error.code();
-		repoError << "Error desc: " << odaHelper::convertToStdString(error.description());
+		err = odaProcessor->readFile();
+        success = odaProcessor != nullptr && err == REPOERR_OK;
     }
 	catch (std::exception& ex) {
 		success = false;
-		repoError << "Error desc: " << ex.what();
+		err = REPOERR_LOAD_SCENE_FAIL;
 	}
 
     if (!success) {
-        err = REPOERR_LOAD_SCENE_FAIL;
-		repoError << "Error occured while ODA processor is trying to read the file";
+		repoError << repo::get3DRepoErrorDescription(err);
     }
     return success;
 #else

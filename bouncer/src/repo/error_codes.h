@@ -15,6 +15,8 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <string>
+
 //Success
 #define REPOERR_OK 0
 //Bouncer failed to start - this never gets returned by bouncer client, but bouncer worker will return this
@@ -69,4 +71,10 @@
 #define REPOERR_MAX_NODES_EXCEEDED 25
 //When ODA not compiled in but dgn import requested
 #define REPOERR_ODA_UNAVAILABLE 26
+//No valid 3D view found (for Revit format)
+#define REPOERR_VALID_3D_VIEW_NOT_FOUND 27
 
+namespace repo
+{
+	std::string get3DRepoErrorDescription(uint8_t errorCode);
+}
