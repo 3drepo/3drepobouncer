@@ -35,6 +35,7 @@
 #include "file_processor_dgn.h"
 #include "geometry_dumper_dgn.h"
 #include "vectorise_device_dgn.h"
+#include "helper_functions.h"
 
 #include <DgLine.h>      // This file puts OdDgLine3d in the output file
 using namespace repo::manipulator::modelconvertor::odaHelper;
@@ -113,8 +114,29 @@ int FileProcessorDgn::readFile() {
 			ODGSPALETTE pPalCpy;
 			pPalCpy.insert(pPalCpy.begin(), refColors, refColors + 256);
 
-
 			OdDgElementId elementId = pDb->getActiveModelId();
+
+			if (elementId.isValid()) {
+				OdDgModelPtr viewElement = elementId.openObject(OdDg::kForRead);
+				auto activeViewName = convertToStdString(viewElement->getName());
+				if (viewElement->getType() != OdDgModel::Type::kDesignModel || activeViewName == "Title")
+				{
+					OdDgElementIteratorPtr pModelIter = pDb->getModelTable()->createIterator();
+					for (; !pModelIter->done(); pModelIter->step())
+					{
+						OdDgModelPtr elem = pModelIter->item().openObject();
+						auto viewName = convertToStdString(elem->getName());
+						if (!elem.isNull() && elem->getType() == OdDgModel::Type::kDesignModel &&
+							viewName != "Title") {
+							repoInfo << "Setting active view to: " << viewName;
+							pDb->setActiveModelId(pModelIter->item());
+							elementId = pModelIter->item();
+							break;
+						}
+					}
+				}
+			}
+
 			if (elementId.isNull())
 			{
 				elementId = pDb->getDefaultModelId();
