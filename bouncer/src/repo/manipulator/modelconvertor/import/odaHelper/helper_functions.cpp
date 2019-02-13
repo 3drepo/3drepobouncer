@@ -15,14 +15,14 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <locale>
-#include <codecvt>
+#include <boost/locale/encoding_utf.hpp>
 #include "helper_functions.h"
+
+using namespace boost::locale::conv;
 
 std::string repo::manipulator::modelconvertor::odaHelper::convertToStdString(const OdString &value)
 {
 	std::wstring wstr((wchar_t*)value.c_str());
-	std::wstring_convert<std::codecvt_utf8<wchar_t>, wchar_t> conv;
-	std::string str = conv.to_bytes(wstr);
+	std::string str = utf_to_utf<char>(wstr.c_str(), wstr.c_str() + wstr.size());
 	return str;
 }
