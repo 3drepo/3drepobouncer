@@ -30,6 +30,20 @@ namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
+
+				struct camera_t
+				{
+					float aspectRatio;
+					float farClipPlane;
+					float nearClipPlane;
+					float FOV;
+					repo::lib::RepoVector3D eye;
+					repo::lib::RepoVector3D pos;
+					repo::lib::RepoVector3D up;
+					std::string name;
+				};
+
+
 				struct mesh_data_t {
 					std::vector<repo::lib::RepoVector3D64> rawVertices;
 					std::vector<repo_face_t> faces;
@@ -75,7 +89,7 @@ namespace repo {
 					* Get all mesh nodes collected.
 					* @return returns a vector of mesh nodes
 					*/
-					repo::core::model::RepoNodeSet getMeshNodes();
+					repo::core::model::RepoNodeSet getMeshNodes(const repo::core::model::TransformationNode& root);
 
 					/**
 					* Gt the model offset applied on the meshes collected
@@ -149,6 +163,29 @@ namespace repo {
 					*/
 					void setRootMatrix(repo::lib::RepoMatrix matrix);
 
+					/**
+					* Set additional camera for scene
+					* @param camera node
+					*/
+					void addCameraNode(repo::manipulator::modelconvertor::odaHelper::camera_t node);
+
+					/**
+					* Returns true if cameras are available
+					*/
+					bool hasCemaraNodes();
+
+					/**
+					* Get cameras for scene
+					* @return cameras
+					*/
+					repo::core::model::RepoNodeSet getCameraNodes(repo::lib::RepoUUID parentID);
+					
+					/**
+					* Create transformation root node
+					* @return root transformation node
+					*/
+					repo::core::model::TransformationNode createRootNode();
+
 				private:
 					std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<int, mesh_data_t>>> meshData;
 					std::string nextMeshName, nextLayer, nextGroupName;
@@ -162,6 +199,7 @@ namespace repo {
 					mesh_data_t *currentEntry = nullptr;
 					bool missingTextures = false;
 					repo::lib::RepoMatrix rootMatrix;
+					std::vector<repo::manipulator::modelconvertor::odaHelper::camera_t> cameras;
 
 					repo::core::model::TransformationNode* createTransNode(
 						const std::string &name,

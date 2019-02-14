@@ -42,9 +42,10 @@ namespace repo {
 
 					void init(GeometryCollector *const geoCollector, OdBmDatabasePtr database);
 
+				protected:
 					OdGsViewPtr createView(
 						const OdGsClientViewInfo* pInfo = 0,
-						bool bEnableLayerVisibilityPerView = false);
+						bool bEnableLayerVisibilityPerView = false) override;
 
 				private:
 					GeometryCollector* geoColl;

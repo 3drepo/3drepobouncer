@@ -41,7 +41,8 @@ repo::core::model::RepoScene* OdaModelImport::generateRepoScene()
 #ifdef ODA_SUPPORT
     repoInfo << "Constructing Repo Scene...";
     const repo::core::model::RepoNodeSet dummy;
-    auto meshSet = geoCollector.getMeshNodes();
+	auto rootNode = geoCollector.createRootNode();
+    auto meshSet = geoCollector.getMeshNodes(rootNode);
     if (meshSet.size()) {
         repoInfo << "Get material nodes... ";
 
@@ -50,7 +51,8 @@ repo::core::model::RepoScene* OdaModelImport::generateRepoScene()
 		geoCollector.getMaterialAndTextureNodes(materialSet, textureSet);
         auto transSet = geoCollector.getTransformationNodes();
 		auto metaSet = geoCollector.getMetaNodes();
-		scene = new repo::core::model::RepoScene({ filePath }, dummy, meshSet, materialSet, metaSet, textureSet, transSet);
+		auto cameraSet = geoCollector.getCameraNodes(rootNode.getSharedID());
+		scene = new repo::core::model::RepoScene({ filePath }, cameraSet, meshSet, materialSet, metaSet, textureSet, transSet);
 		if (geoCollector.hasMissingTextures())
 			scene->setMissingTexture();
         scene->setWorldOffset(geoCollector.getModelOffset());

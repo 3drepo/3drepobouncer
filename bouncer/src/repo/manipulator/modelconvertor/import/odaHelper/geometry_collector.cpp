@@ -33,6 +33,35 @@ GeometryCollector::~GeometryCollector()
 {
 }
 
+repo::core::model::CameraNode generateCameraNode(camera_t camera, repo::lib::RepoUUID parentID)
+{
+	auto node = repo::core::model::RepoBSONFactory::makeCameraNode(camera.aspectRatio, camera.farClipPlane, camera.nearClipPlane, camera.FOV, camera.eye, camera.pos, camera.up, camera.name);
+	node = node.cloneAndAddParent(parentID);
+	return node;
+}
+
+void GeometryCollector::addCameraNode(camera_t node)
+{
+	cameras.push_back(node);
+}
+
+repo::core::model::RepoNodeSet GeometryCollector::getCameraNodes(repo::lib::RepoUUID parentID)
+{
+	repo::core::model::RepoNodeSet camerasNodeSet;
+	for (auto& camera : cameras)
+		camerasNodeSet.insert(new repo::core::model::CameraNode(generateCameraNode(camera, parentID)));
+	return camerasNodeSet;
+}
+
+bool GeometryCollector::hasCemaraNodes()
+{
+	return cameras.size();
+}
+
+repo::core::model::TransformationNode GeometryCollector::createRootNode()
+{
+	return repo::core::model::RepoBSONFactory::makeTransformationNode(rootMatrix, "rootNode");
+}
 
 void GeometryCollector::setCurrentMaterial(const repo_material_t &material, bool missingTexture) {
 
@@ -141,14 +170,13 @@ void GeometryCollector::addFace(
 }
 
 
-repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes() {
+repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core::model::TransformationNode& root) {
 	repo::core::model::RepoNodeSet res;
 	auto dummyCol = std::vector<repo_color4d_t>();
 	auto dummyOutline = std::vector<std::vector<float>>();
 
 	std::unordered_map<std::string, repo::core::model::TransformationNode*> layerToTrans;
 
-	auto root = repo::core::model::RepoBSONFactory::makeTransformationNode(rootMatrix, "rootNode");
 	auto rootId = root.getSharedID();
 	repoDebug << "Mesh data: " << meshData.size();
 	for (const auto &meshGroupEntry : meshData) {

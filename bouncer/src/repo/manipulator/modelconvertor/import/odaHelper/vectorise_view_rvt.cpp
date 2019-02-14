@@ -145,6 +145,7 @@ OdGsViewPtr VectorizeView::createObject(GeometryCollector* geoColl, OdBmDatabase
 	auto ptr = OdRxObjectImpl<VectorizeView, OdGsView>::createObject();
 	static_cast<VectorizeView*>(ptr.get())->collector = geoColl;
 	static_cast<VectorizeView*>(ptr.get())->database = database;
+	static_cast<VectorizeView*>(ptr.get())->getCameras(database);
 	return ptr;
 }
 
@@ -426,4 +427,48 @@ OdBm::DisplayUnitType::Enum VectorizeView::getUnits(OdBmDatabasePtr database)
 double repo::manipulator::modelconvertor::odaHelper::VectorizeView::getUnitsCoef(OdBm::DisplayUnitType::Enum unitType)
 {
 	return BmUnitUtils::getDisplayUnitTypeInfo(unitType)->inIntUnitsCoeff;
+}
+
+void VectorizeView::getCameras(OdBmDatabasePtr database)
+{
+	if (collector->hasCemaraNodes())
+		return;
+
+	OdDbBaseDatabasePEPtr pDbPE(database);
+	OdRxIteratorPtr layouts = pDbPE->layouts(database);
+	for (; !layouts->done(); layouts->next())
+	{
+		OdBmDBDrawingPtr pDBDrawing = layouts->object();
+		if (pDBDrawing->getBaseViewNameFormat() != OdBm::ViewType::_3d)
+			continue;
+
+		OdBmViewportPtr pViewport = pDBDrawing->getBaseViewportId().safeOpenObject();
+		if (pViewport.isNull()) continue;
+		OdBmDBViewPtr pDBView = pViewport->getDbViewId().safeOpenObject();
+		if (pDBView.isNull()) continue;
+		collector->addCameraNode(convertCamera(pDBView));
+	}
+}
+
+void getCameraConfigurations(OdGsViewImpl& view, float& aspectRatio, float& farClipPlane, float& nearClipPlane, float& FOV)
+{
+	//NOTE : configurations were taken from current 3d view
+	aspectRatio = view.windowAspect();
+	farClipPlane = view.frontClip();
+	nearClipPlane = view.backClip();
+	FOV = view.lensLengthToFOV(view.lensLength());
+}
+
+camera_t VectorizeView::convertCamera(OdBmDBViewPtr view)
+{
+	camera_t camera;
+	getCameraConfigurations(this->view(), camera.aspectRatio, camera.farClipPlane, camera.nearClipPlane, camera.FOV);
+	auto eye = view->getViewDirection();
+	auto pos = view->getOrigin();
+	auto up = view->getUpDirection();
+	camera.eye = repo::lib::RepoVector3D(eye.x, eye.y, eye.z);
+	camera.pos = repo::lib::RepoVector3D(pos.x, pos.y, pos.z);
+	camera.up = repo::lib::RepoVector3D(up.z, up.y, up.z);
+	camera.name = view->getNamed() ? convertToStdString(view->getViewName()) : "camera";
+	return camera;
 }

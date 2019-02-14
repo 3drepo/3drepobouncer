@@ -50,6 +50,8 @@
 #include "Database/BmUnitUtils.h"
 #include "Database/Managers/BmUnitsTracking.h"
 #include "Database/Entities/BmUnitsElem.h"
+#include "Database/Entities/BmDBDrawing.h"
+#include "Database/Entities/BmViewport.h"
 
 #include "../../../../lib/datastructure/repo_structs.h"
 #include "geometry_collector.h"
@@ -89,6 +91,8 @@ namespace repo {
 						std::vector<repo::lib::RepoVector2D>& uvOut) override;
 
 				private:
+					void getCameras(OdBmDatabasePtr database);
+					camera_t convertCamera(OdBmDBViewPtr view);
 					void fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t& material, bool& missingTexture);
 					void fillMaterial(OdBmMaterialElemPtr materialPtr, const MaterialColors& matColors, repo_material_t& material);
 					void fillMeshData(const OdGiDrawable* element);

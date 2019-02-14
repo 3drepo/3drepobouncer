@@ -43,6 +43,8 @@ void VectoriseDeviceRvt::init(GeometryCollector *const geoCollector, OdBmDatabas
 	this->database = database;
 }
 
+//.. for some reason this callback is called twice
+//.. could be reported to ODA
 OdGsViewPtr VectoriseDeviceRvt::createView(
 	const OdGsClientViewInfo* pInfo,
 	bool bEnableLayerVisibilityPerView)
