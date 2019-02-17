@@ -65,11 +65,11 @@ OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimData
 		
 		if (pDBDrawing->getBaseViewNameFormat() == OdBm::ViewType::_3d)
 		{
-			//.. set first 3D view available
+			//.. NOTE: set first 3D view available
 			if (layoutName.isEmpty())
 				layoutName = pLayout->name(layouts->object());
 			
-			//.. try to find 3D view with a valid default name
+			//.. NOTE: try to find 3D view with a valid default name
 			if (pDBDrawing->getName().find(L"3D") != -1)
 				return pLayout->name(layouts->object());
 		}
@@ -86,13 +86,14 @@ repo::manipulator::modelconvertor::odaHelper::FileProcessorRvt::~FileProcessorRv
 void FileProcessorRvt::setMaxEdgeLength(double edgeLength)
 {
 	OdSmartPtr<BmModelerModule> pModModule;
-	wrTriangulationParams TriangulationParams;
+	wrTriangulationParams TriangulationParams; //.. NOTE: This structure contains fields related to triangulation
 	OdRxModulePtr pModule = odrxDynamicLinker()->loadModule(OdBmModelerModuleName);
 	if (pModule.get())
 	{
 		pModModule = BmModelerModule::cast(pModule);
 		pModModule->getTriangulationParams(TriangulationParams);
-		TriangulationParams.maxFacetEdgeLength = edgeLength; //.. we may adjust triangulation options. sometimes it creates a lot of triangles
+		//.. NOTE: We may adjust triangulation options. sometimes it creates a lot of triangles
+		TriangulationParams.maxFacetEdgeLength = edgeLength; 
 		pModModule->setTriangulationParams(TriangulationParams);
 	}
 }
@@ -113,7 +114,7 @@ void setupUnitsFormat(OdBmDatabasePtr pDb, double accuracy)
 	for (uint32_t i = 0; i < formatOptionsArr.size(); i++)
 	{
 		OdBmFormatOptions* formatOptions = formatOptionsArr[i];
-		//.. here the format of units is configured
+		//.. NOTE: Here the format of units is configured
 		formatOptions->setAccuracy(accuracy);
 		formatOptions->setRoundingMethod(OdBm::RoundingMethod::Nearest);
 	}

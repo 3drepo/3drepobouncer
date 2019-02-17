@@ -42,7 +42,10 @@ namespace repo {
 					uint8_t readFile() override;
 
 				private:
-					//.. adjust triangulation options
+					/**
+					* This method changes tessellation options
+					* @param edgeLength - maximum triangle edge length
+					*/
 					void setMaxEdgeLength(double edgeLength);
 				};
 			}

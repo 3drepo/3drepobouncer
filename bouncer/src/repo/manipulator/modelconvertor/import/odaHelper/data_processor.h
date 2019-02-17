@@ -51,6 +51,14 @@ namespace repo {
 					void beginViewVectorization();
 
 				protected:
+					/**
+					* Should be overriden in derived classes to process materials
+					* @param prevCache - previous material cache
+					* @param materialId - database id of the material
+					* @param materialData - structure with material data
+					* @param matColors - reference that receives material color
+					* @param material - 3D Repo material structure received from materialData
+					*/
 					virtual void convertTo3DRepoMaterial(
 						OdGiMaterialItemPtr prevCache,
 						OdDbStub* materialId,
@@ -59,16 +67,34 @@ namespace repo {
 						repo_material_t& material,
 						bool& missingTexture);
 
+					/**
+					* Should be overriden in derived classes to process triangles
+					* @param p3Vertices - input vertices of the triangle
+					* @param verticesOut - output vertices in 3D Repo format
+					* @param uvOut - output texture coordinates
+					*/
 					virtual void convertTo3DRepoVertices(
 						const OdInt32* p3Vertices, 
 						std::vector<repo::lib::RepoVector3D64>& verticesOut,
 						std::vector<repo::lib::RepoVector2D>& uvOut);
 
 				private:
+					/**
+					* This callback is invoked when next triangle should be processed
+					* defined in OdGiGeometrySimplifier class
+					* @param p3Vertices - input vertices of the triangle
+					* @param pNormal - input veritces normal
+					*/
 					void triangleOut(
 						const OdInt32* p3Vertices,
 						const OdGeVector3d* pNormal) final;
 
+					/**
+					* This callback is invoked when next material should be processed
+					* @param prevCache - previous material cache
+					* @param materialId - database id of the material
+					* @param materialData - structure with material data
+					*/
 					OdGiMaterialItemPtr fillMaterialCache(
 						OdGiMaterialItemPtr prevCache,
 						OdDbStub* materialId,

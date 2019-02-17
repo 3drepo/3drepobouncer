@@ -63,13 +63,13 @@ std::string extractValidTexturePath(const std::string& inputPath)
 {
 	std::string outputFilePath = inputPath;
 
-	//..try to extract one valid paths if multiple paths are provided
+	//.. NOTE: try to extract one valid paths if multiple paths are provided
 	outputFilePath = outputFilePath.substr(0, outputFilePath.find("|", 0));
 
 	if (isFileExist(outputFilePath))
 		return outputFilePath;
 
-	//..try to apply absolute path
+	//.. NOTE: try to apply absolute path
 	char* env = std::getenv(RVT_TEXTURES_ENV_VARIABLE);
 	if (env == nullptr)
 		return std::string();
@@ -83,6 +83,7 @@ std::string extractValidTexturePath(const std::string& inputPath)
 	return std::string();
 }
 
+//.. NOTE: Converts metadata object to a valid std::string (represents value)
 std::string variantToString(const OdTfVariant& val, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBmDatabase* database, OdBm::BuiltInParameterDefinition::Enum param)
 {
 	std::string strOut;
@@ -283,12 +284,12 @@ void VectorizeView::fillMeshData(const OdGiDrawable* pDrawable)
 	{
 		collector->setCurrentMeta(fillMetadata(element));
 
-		//..for some objects material is not set. set default here
+		//.. NOTE: for some objects material is not set. set default here
 		collector->setCurrentMaterial(GetDefaultMaterial());
 	}
 	catch(OdError& er)
 	{
-		//..Hotfix: handle nullPtr exception (need to check updated library)
+		//.. HOTFIX: handle nullPtr exception (reported to ODA)
 	}
 
 	meshesCount++;
@@ -329,7 +330,7 @@ void VectorizeView::fillMetadataByElemPtr(
 	{
 		std::string builtInName = convertToStdString(OdBm::BuiltInParameter(*it).toString());
 
-		//..Hotfix: handle access violation exception (need to check updated library)
+		//.. HOTFIX: handle access violation exception (reported to ODA)
 		if (builtInName == std::string("ROOF_SLOPE"))
 			continue;
 
