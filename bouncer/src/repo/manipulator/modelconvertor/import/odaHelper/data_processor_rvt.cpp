@@ -141,13 +141,11 @@ std::string variantToString(const OdTfVariant& val, OdBmLabelUtilsPEPtr labelUti
 	return strOut;
 }
 
-OdGsViewPtr DataProcessorRvt::createObject(GeometryCollector* geoColl, OdBmDatabasePtr database)
+void DataProcessorRvt::init(GeometryCollector* geoColl, OdBmDatabasePtr database)
 {
-	auto ptr = OdRxObjectImpl<DataProcessorRvt, OdGsView>::createObject();
-	static_cast<DataProcessorRvt*>(ptr.get())->collector = geoColl;
-	static_cast<DataProcessorRvt*>(ptr.get())->database = database;
-	static_cast<DataProcessorRvt*>(ptr.get())->getCameras(database);
-	return ptr;
+	this->collector = geoColl;
+	this->database = database;
+	getCameras(database);
 }
 
 DataProcessorRvt::DataProcessorRvt()
@@ -155,7 +153,7 @@ DataProcessorRvt::DataProcessorRvt()
 	meshesCount = 0;
 }
 
-void repo::manipulator::modelconvertor::odaHelper::DataProcessorRvt::beginViewVectorization()
+void DataProcessorRvt::beginViewVectorization()
 {
 	DataProcessor::beginViewVectorization();
 	OdBm::DisplayUnitType::Enum lengthUnits = getUnits(database);

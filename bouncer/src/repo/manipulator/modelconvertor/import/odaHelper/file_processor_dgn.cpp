@@ -40,7 +40,7 @@
 #include <DgLine.h>      // This file puts OdDgLine3d in the output file
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-class StubDeviceModuleText : public OdGsBaseModule
+class StubDeviceModuleDgn : public OdGsBaseModule
 {
 private:
 	GeometryCollector *collector;
@@ -72,7 +72,7 @@ protected:
 		return OdSmartPtr<OdGsViewImpl>();
 	}
 };
-ODRX_DEFINE_PSEUDO_STATIC_MODULE(StubDeviceModuleText);
+ODRX_DEFINE_PSEUDO_STATIC_MODULE(StubDeviceModuleDgn);
 
 class RepoDgnServices : public OdExDgnSystemServices, public OdExDgnHostAppServices
 {
@@ -248,9 +248,9 @@ int FileProcessorDgn::importDgn(OdDbBaseDatabase *pDb,
 	{
 		odgsInitialize();
 		
-		OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(StubDeviceModuleText)(OD_T("StubDeviceModuleText"));
+		OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(StubDeviceModuleDgn)(OD_T("StubDeviceModuleDgn"));
 
-		((StubDeviceModuleText*)pGsModule.get())->init(collector);
+		((StubDeviceModuleDgn*)pGsModule.get())->init(collector);
 
 
 		OdDbBaseDatabasePEPtr pDbPE(pDb);

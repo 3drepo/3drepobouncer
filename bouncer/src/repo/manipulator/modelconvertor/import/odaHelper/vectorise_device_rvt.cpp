@@ -36,22 +36,3 @@ VectoriseDeviceRvt::VectoriseDeviceRvt()
 	setLogicalPalette(odcmAcadLightPalette(), 256);
 	onSize(OdGsDCRect(0, 100, 0, 100));
 }
-
-void VectoriseDeviceRvt::init(GeometryCollector *const geoCollector, OdBmDatabasePtr database)
-{
-	geoColl = geoCollector;
-	this->database = database;
-}
-
-//.. for some reason this callback is called twice
-//.. could be reported to ODA
-OdGsViewPtr VectoriseDeviceRvt::createView(
-	const OdGsClientViewInfo* pInfo,
-	bool bEnableLayerVisibilityPerView)
-{
-	OdGsViewPtr pView = DataProcessorRvt::createObject(geoColl, database);
-	DataProcessorRvt* pMyView = static_cast<DataProcessorRvt*>(pView.get());
-	pMyView->OdGsBaseMaterialView::init(this, pInfo, bEnableLayerVisibilityPerView);
-	pMyView->output().setDestGeometry(*pMyView);
-	return (OdGsView*)pMyView;
-}

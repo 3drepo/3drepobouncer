@@ -38,6 +38,7 @@
 
 //3d repo bouncer
 #include "file_processor_rvt.h"
+#include "data_processor_rvt.h"
 
 //help
 #include "vectorise_device_rvt.h"
@@ -46,6 +47,32 @@ using namespace repo::manipulator::modelconvertor::odaHelper;
 
 const double TRIANGULATION_EDGE_LENGTH = 1.0;
 const double ROUNDING_ACCURACY = 0.000001;
+
+class StubDeviceModuleRvt : public OdGsBaseModule
+{
+private:
+	OdBmDatabasePtr database;
+	GeometryCollector *collector;
+
+public:
+	void init(GeometryCollector* const collector, OdBmDatabasePtr database)
+	{
+		this->collector = collector;
+		this->database = database;
+	}
+protected:
+	OdSmartPtr<OdGsBaseVectorizeDevice> createDeviceObject()
+	{
+		return OdRxObjectImpl<VectoriseDeviceRvt, OdGsBaseVectorizeDevice>::createObject();
+	}
+	OdSmartPtr<OdGsViewImpl> createViewObject()
+	{
+		OdSmartPtr<OdGsViewImpl> pP = OdRxObjectImpl<DataProcessorRvt, OdGsViewImpl>::createObject();
+		((DataProcessorRvt*)pP.get())->init(collector, database);
+		return pP;
+	}
+};
+ODRX_DEFINE_PSEUDO_STATIC_MODULE(StubDeviceModuleRvt);
 
 class RepoRvtServices : public ExSystemServices, public OdExBimHostAppServices
 {
@@ -142,9 +169,10 @@ uint8_t FileProcessorRvt::readFile()
 			pDbPE->setCurrentLayout(pDb, layout);
 
 			OdGiContextForBmDatabasePtr pBimContext = OdGiContextForBmDatabase::createObject();
+			OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(StubDeviceModuleRvt)(OD_T("StubDeviceModuleRvt"));
 
-			OdGsDevicePtr pDevice = OdRxObjectImpl<VectoriseDeviceRvt, OdGsDevice>::createObject();
-			(static_cast<VectoriseDeviceRvt*>(pDevice.get()))->init(collector, pDb);
+			((StubDeviceModuleRvt*)pGsModule.get())->init(collector, pDb);
+			OdGsDevicePtr pDevice = pGsModule->createDevice();
 
 			pBimContext->setDatabase(pDb);
 			pDevice = pDbPE->setupActiveLayoutViews(pDevice, pBimContext);

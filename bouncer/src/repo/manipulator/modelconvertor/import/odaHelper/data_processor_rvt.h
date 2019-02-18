@@ -68,9 +68,9 @@ namespace repo {
 				public:
 					DataProcessorRvt();
 
-					static OdGsViewPtr createObject(GeometryCollector* geoColl, OdBmDatabasePtr database);
-
 					VectoriseDeviceRvt* device();
+
+					void init(GeometryCollector* geoColl, OdBmDatabasePtr database);
 					
 				protected:
 					void draw(const OdGiDrawable*) override;
