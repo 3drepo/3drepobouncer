@@ -26,7 +26,7 @@
 #include "Geometry/Entities/BmMaterial.h"
 #include "Database/BmAssetHelpers.h"
 
-#include "vectorise_view_rvt.h"
+#include "data_processor_rvt.h"
 #include "vectorise_device_rvt.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
@@ -49,8 +49,8 @@ OdGsViewPtr VectoriseDeviceRvt::createView(
 	const OdGsClientViewInfo* pInfo,
 	bool bEnableLayerVisibilityPerView)
 {
-	OdGsViewPtr pView = VectorizeView::createObject(geoColl, database);
-	VectorizeView* pMyView = static_cast<VectorizeView*>(pView.get());
+	OdGsViewPtr pView = DataProcessorRvt::createObject(geoColl, database);
+	DataProcessorRvt* pMyView = static_cast<DataProcessorRvt*>(pView.get());
 	pMyView->OdGsBaseMaterialView::init(this, pInfo, bEnableLayerVisibilityPerView);
 	pMyView->output().setDestGeometry(*pMyView);
 	return (OdGsView*)pMyView;

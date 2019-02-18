@@ -33,7 +33,7 @@
 #include <DgGsManager.h>
 
 #include "file_processor_dgn.h"
-#include "geometry_dumper_dgn.h"
+#include "data_processor_dgn.h"
 #include "vectorise_device_dgn.h"
 #include "helper_functions.h"
 
@@ -59,8 +59,8 @@ protected:
 	}
 	OdSmartPtr<OdGsViewImpl> createViewObject()
 	{
-		OdSmartPtr<OdGsViewImpl> pP = OdRxObjectImpl<GeometryDumperDgn, OdGsViewImpl>::createObject();
-		((GeometryDumperDgn*)pP.get())->init(collector);
+		OdSmartPtr<OdGsViewImpl> pP = OdRxObjectImpl<DataProcessorDgn, OdGsViewImpl>::createObject();
+		((DataProcessorDgn*)pP.get())->init(collector);
 		return pP;
 	}
 	OdSmartPtr<OdGsBaseVectorizeDevice> createBitmapDeviceObject()

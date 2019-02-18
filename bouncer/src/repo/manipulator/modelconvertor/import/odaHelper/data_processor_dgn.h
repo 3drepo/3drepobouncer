@@ -36,10 +36,10 @@ namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-				class GeometryDumperDgn : public DataProcessor
+				class DataProcessorDgn : public DataProcessor
 				{
 				public:
-					GeometryDumperDgn() {}
+					DataProcessorDgn() {}
 
 					void init(GeometryCollector *const geoCollector);
 
@@ -65,7 +65,7 @@ namespace repo {
 					OdCmEntityColor fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color);
 
 				};
-				typedef OdSharedPtr<GeometryDumperDgn> OdGiConveyorGeometryDgnDumperPtr;
+				typedef OdSharedPtr<DataProcessorDgn> OdGiConveyorGeometryDgnDumperPtr;
 			}
 		}
 	}

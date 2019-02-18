@@ -22,16 +22,16 @@
 #include <DgLevelTableRecord.h>
 
 #include "helper_functions.h"
-#include "geometry_dumper_dgn.h"
+#include "data_processor_dgn.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-VectoriseDeviceDgn* GeometryDumperDgn::device()
+VectoriseDeviceDgn* DataProcessorDgn::device()
 {
 	return static_cast<VectoriseDeviceDgn*>(OdGsBaseVectorizeView::device());
 }
 
-bool GeometryDumperDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
+bool DataProcessorDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 {
 	OdDgElementPtr pElm = OdDgElement::cast(pDrawable);
 	auto currentItem = pElm;
@@ -60,7 +60,7 @@ bool GeometryDumperDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	return OdGsBaseMaterialView::doDraw(i, pDrawable);
 }
 
-void GeometryDumperDgn::convertTo3DRepoMaterial(
+void DataProcessorDgn::convertTo3DRepoMaterial(
 	OdGiMaterialItemPtr prevCache,
 	OdDbStub* materialId,
 	const OdGiMaterialTraitsData & materialData,
@@ -85,25 +85,25 @@ void GeometryDumperDgn::convertTo3DRepoMaterial(
 	material.shininessStrength = 1 - material.shininessStrength;
 }
 
-void GeometryDumperDgn::init(GeometryCollector *const geoCollector)
+void DataProcessorDgn::init(GeometryCollector *const geoCollector)
 {
 	collector = geoCollector;
 }
 
-void GeometryDumperDgn::setMode(OdGsView::RenderMode mode)
+void DataProcessorDgn::setMode(OdGsView::RenderMode mode)
 {
 	OdGsBaseVectorizeView::m_renderMode = kGouraudShaded;
 	m_regenerationType = kOdGiRenderCommand;
 	OdGiGeometrySimplifier::m_renderMode = OdGsBaseVectorizeView::m_renderMode;
 }
 
-void GeometryDumperDgn::endViewVectorization()
+void DataProcessorDgn::endViewVectorization()
 {
 	collector->stopMeshEntry();
 	OdGsBaseMaterialView::endViewVectorization();
 }
 
-OdCmEntityColor GeometryDumperDgn::fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color)
+OdCmEntityColor DataProcessorDgn::fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color)
 {
 	if (color.isByACI() || color.isByDgnIndex())
 	{

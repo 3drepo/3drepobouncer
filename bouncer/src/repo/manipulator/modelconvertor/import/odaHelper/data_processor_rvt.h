@@ -63,10 +63,10 @@ namespace repo {
 			namespace odaHelper {
 				class VectoriseDeviceRvt;
 
-				class VectorizeView : public DataProcessor
+				class DataProcessorRvt : public DataProcessor
 				{
 				public:
-					VectorizeView();
+					DataProcessorRvt();
 
 					static OdGsViewPtr createObject(GeometryCollector* geoColl, OdBmDatabasePtr database);
 

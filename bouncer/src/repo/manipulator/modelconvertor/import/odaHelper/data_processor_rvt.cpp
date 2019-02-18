@@ -19,7 +19,7 @@
 #include "OdPlatformSettings.h"
 
 #include "vectorise_device_rvt.h"
-#include "vectorise_view_rvt.h"
+#include "data_processor_rvt.h"
 #include "helper_functions.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
@@ -83,7 +83,7 @@ std::string extractValidTexturePath(const std::string& inputPath)
 	return std::string();
 }
 
-//.. NOTE: Converts metadata object to a valid std::string (represents value)
+//.. NOTE: Converts metadata object to a valid std::string that represents metadata value
 std::string variantToString(const OdTfVariant& val, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBmDatabase* database, OdBm::BuiltInParameterDefinition::Enum param)
 {
 	std::string strOut;
@@ -141,21 +141,21 @@ std::string variantToString(const OdTfVariant& val, OdBmLabelUtilsPEPtr labelUti
 	return strOut;
 }
 
-OdGsViewPtr VectorizeView::createObject(GeometryCollector* geoColl, OdBmDatabasePtr database)
+OdGsViewPtr DataProcessorRvt::createObject(GeometryCollector* geoColl, OdBmDatabasePtr database)
 {
-	auto ptr = OdRxObjectImpl<VectorizeView, OdGsView>::createObject();
-	static_cast<VectorizeView*>(ptr.get())->collector = geoColl;
-	static_cast<VectorizeView*>(ptr.get())->database = database;
-	static_cast<VectorizeView*>(ptr.get())->getCameras(database);
+	auto ptr = OdRxObjectImpl<DataProcessorRvt, OdGsView>::createObject();
+	static_cast<DataProcessorRvt*>(ptr.get())->collector = geoColl;
+	static_cast<DataProcessorRvt*>(ptr.get())->database = database;
+	static_cast<DataProcessorRvt*>(ptr.get())->getCameras(database);
 	return ptr;
 }
 
-VectorizeView::VectorizeView()
+DataProcessorRvt::DataProcessorRvt()
 {
 	meshesCount = 0;
 }
 
-void repo::manipulator::modelconvertor::odaHelper::VectorizeView::beginViewVectorization()
+void repo::manipulator::modelconvertor::odaHelper::DataProcessorRvt::beginViewVectorization()
 {
 	DataProcessor::beginViewVectorization();
 	OdBm::DisplayUnitType::Enum lengthUnits = getUnits(database);
@@ -168,18 +168,18 @@ void repo::manipulator::modelconvertor::odaHelper::VectorizeView::beginViewVecto
 	setEyeToOutputTransform(getEyeToWorldTransform());
 }
 
-void VectorizeView::draw(const OdGiDrawable* pDrawable)
+void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
 {
 	fillMeshData(pDrawable);
 	OdGsBaseMaterialView::draw(pDrawable);
 }
 
-VectoriseDeviceRvt* VectorizeView::device()
+VectoriseDeviceRvt* DataProcessorRvt::device()
 {
 	return (VectoriseDeviceRvt*)OdGsBaseVectorizeView::device();
 }
 
-void VectorizeView::convertTo3DRepoMaterial(
+void DataProcessorRvt::convertTo3DRepoMaterial(
 	OdGiMaterialItemPtr prevCache,
 	OdDbStub* materialId,
 	const OdGiMaterialTraitsData & materialData,
@@ -202,7 +202,7 @@ void VectorizeView::convertTo3DRepoMaterial(
 	fillTexture(materialElem, material, missingTexture);
 }
 
-void VectorizeView::convertTo3DRepoVertices(
+void DataProcessorRvt::convertTo3DRepoVertices(
 	const OdInt32* p3Vertices,
 	std::vector<repo::lib::RepoVector3D64>& verticesOut,
 	std::vector<repo::lib::RepoVector2D>& uvOut)
@@ -237,7 +237,7 @@ void VectorizeView::convertTo3DRepoVertices(
 		uvOut.push_back({ (float)outTex.outCoord[i].x, (float)outTex.outCoord[i].y });
 }
 
-std::string VectorizeView::getLevel(OdBmElementPtr element, const std::string& name)
+std::string DataProcessorRvt::getLevel(OdBmElementPtr element, const std::string& name)
 {
 	auto levelId = element->getAssocLevelId();
 	if (levelId.isValid())
@@ -266,7 +266,7 @@ std::string VectorizeView::getLevel(OdBmElementPtr element, const std::string& n
 	return name;
 }
 
-void VectorizeView::fillMeshData(const OdGiDrawable* pDrawable)
+void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 {
 	OdBmElementPtr element = OdBmElement::cast(pDrawable);
 	if (element.isNull())
@@ -300,7 +300,7 @@ void VectorizeView::fillMeshData(const OdGiDrawable* pDrawable)
 	collector->startMeshEntry();
 }
 
-void VectorizeView::fillMetadataById(
+void DataProcessorRvt::fillMetadataById(
 	OdBmObjectId id,
 	std::pair<std::vector<std::string>, std::vector<std::string>>& metadata)
 {
@@ -315,7 +315,7 @@ void VectorizeView::fillMetadataById(
 	fillMetadataByElemPtr(ptr, metadata);
 }
 
-void VectorizeView::fillMetadataByElemPtr(
+void DataProcessorRvt::fillMetadataByElemPtr(
 	OdBmElementPtr element,
 	std::pair<std::vector<std::string>, std::vector<std::string>>& metadata)
 {
@@ -357,7 +357,7 @@ void VectorizeView::fillMetadataByElemPtr(
 	}
 }
 
-std::pair<std::vector<std::string>, std::vector<std::string>> VectorizeView::fillMetadata(OdBmElementPtr element)
+std::pair<std::vector<std::string>, std::vector<std::string>> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
 {
 	std::pair<std::vector<std::string>, std::vector<std::string>> metadata;
 	fillMetadataByElemPtr(element, metadata);
@@ -367,7 +367,7 @@ std::pair<std::vector<std::string>, std::vector<std::string>> VectorizeView::fil
 	return metadata;
 }
 
-void VectorizeView::fillMaterial(OdBmMaterialElemPtr materialPtr, const MaterialColors& matColors, repo_material_t& material)
+void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const MaterialColors& matColors, repo_material_t& material)
 {
 	const float norm = 255.f;
 	
@@ -380,7 +380,7 @@ void VectorizeView::fillMaterial(OdBmMaterialElemPtr materialPtr, const Material
 		material.shininess = (float)materialPtr->getMaterial()->getShininess() / norm;
 }
 
-void VectorizeView::fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t& material, bool& missingTexture)
+void DataProcessorRvt::fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t& material, bool& missingTexture)
 {
 	missingTexture = false;
 
@@ -415,7 +415,7 @@ void VectorizeView::fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t
 	material.texturePath = validTextureName;
 }
 
-OdBm::DisplayUnitType::Enum VectorizeView::getUnits(OdBmDatabasePtr database)
+OdBm::DisplayUnitType::Enum DataProcessorRvt::getUnits(OdBmDatabasePtr database)
 {
 	OdBmFormatOptionsPtrArray aFormatOptions;
 	OdBmUnitsTrackingPtr pUnitsTracking = database->getAppInfo(OdBm::ManagerType::UnitsTracking);
@@ -425,12 +425,12 @@ OdBm::DisplayUnitType::Enum VectorizeView::getUnits(OdBmDatabasePtr database)
 	return formatOptionsLength->getDisplayUnits();
 }
 
-double repo::manipulator::modelconvertor::odaHelper::VectorizeView::getUnitsCoef(OdBm::DisplayUnitType::Enum unitType)
+double repo::manipulator::modelconvertor::odaHelper::DataProcessorRvt::getUnitsCoef(OdBm::DisplayUnitType::Enum unitType)
 {
 	return BmUnitUtils::getDisplayUnitTypeInfo(unitType)->inIntUnitsCoeff;
 }
 
-void VectorizeView::getCameras(OdBmDatabasePtr database)
+void DataProcessorRvt::getCameras(OdBmDatabasePtr database)
 {
 	if (collector->hasCemaraNodes())
 		return;
@@ -460,7 +460,7 @@ void getCameraConfigurations(OdGsViewImpl& view, float& aspectRatio, float& farC
 	FOV = view.lensLengthToFOV(view.lensLength());
 }
 
-camera_t VectorizeView::convertCamera(OdBmDBViewPtr view)
+camera_t DataProcessorRvt::convertCamera(OdBmDBViewPtr view)
 {
 	camera_t camera;
 	getCameraConfigurations(this->view(), camera.aspectRatio, camera.farClipPlane, camera.nearClipPlane, camera.FOV);
