@@ -146,6 +146,7 @@ void DataProcessorRvt::init(GeometryCollector* geoColl, OdBmDatabasePtr database
 	this->collector = geoColl;
 	this->database = database;
 	getCameras(database);
+	forEachBmDBView(database, [&](OdBmDBViewPtr pDBView) { hiddenElementsViewRejection(pDBView); });
 }
 
 DataProcessorRvt::DataProcessorRvt()
@@ -428,25 +429,30 @@ double repo::manipulator::modelconvertor::odaHelper::DataProcessorRvt::getUnitsC
 	return BmUnitUtils::getDisplayUnitTypeInfo(unitType)->inIntUnitsCoeff;
 }
 
+void DataProcessorRvt::hiddenElementsViewRejection(OdBmDBViewPtr pDBView)
+{
+	//.. NOTE: exclude hidden elements from drawing
+	auto setts = pDBView->getHiddenElementsViewSettings();
+	OdBmObjectIdArray arr;
+	setts->getHiddenElements(arr);
+	for (uint32_t i = 0; i < arr.size(); i++)
+	{
+		OdBmElementPtr hidden = arr[i].safeOpenObject(OdBm::OpenMode::kForWrite);
+		if (hidden.isNull())
+			continue;
+
+		OdBmRejectedViewRules rules;
+		rules.rejectAllViewTypes();
+		hidden->setViewRules(rules);
+	}
+}
+
 void DataProcessorRvt::getCameras(OdBmDatabasePtr database)
 {
 	if (collector->hasCemaraNodes())
 		return;
 
-	OdDbBaseDatabasePEPtr pDbPE(database);
-	OdRxIteratorPtr layouts = pDbPE->layouts(database);
-	for (; !layouts->done(); layouts->next())
-	{
-		OdBmDBDrawingPtr pDBDrawing = layouts->object();
-		if (pDBDrawing->getBaseViewNameFormat() != OdBm::ViewType::_3d)
-			continue;
-
-		OdBmViewportPtr pViewport = pDBDrawing->getBaseViewportId().safeOpenObject();
-		if (pViewport.isNull()) continue;
-		OdBmDBViewPtr pDBView = pViewport->getDbViewId().safeOpenObject();
-		if (pDBView.isNull()) continue;
-		collector->addCameraNode(convertCamera(pDBView));
-	}
+	forEachBmDBView(database, [&](OdBmDBViewPtr pDBView) { collector->addCameraNode(convertCamera(pDBView)); });
 }
 
 void getCameraConfigurations(OdGsViewImpl& view, float& aspectRatio, float& farClipPlane, float& nearClipPlane, float& FOV)

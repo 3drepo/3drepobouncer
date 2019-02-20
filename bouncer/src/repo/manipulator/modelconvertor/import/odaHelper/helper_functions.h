@@ -21,6 +21,15 @@
 #include <SharedPtr.h>
 #include <OdString.h>
 
+#include "OdaCommon.h"
+#include <BimCommon.h>
+#include "DbBaseDatabase.h"
+#include "Database/BmDatabase.h"
+#include "Database/Entities/BmDBView.h"
+#include "Database/Entities/BmViewport.h"
+#include "Database/Entities/BmDBDrawing.h"
+#include "Base/BmViewType.h"
+
 #include "../../../../lib/datastructure/repo_structs.h"
 
 namespace repo {
@@ -51,6 +60,11 @@ namespace repo {
 
 				using RepoVector3DSortComparator = _RepoVector3DSortComparator < repo::lib::RepoVector3D >;
 				using RepoVector3D64SortComparator = _RepoVector3DSortComparator < repo::lib::RepoVector3D64 >;
+
+				//.. NOTE: this function iterates over database views
+				//.. we already have a couple of functions that uses this iteration 
+				//.. so in order to reduce code duplication we are using iteration with an action callback
+				void forEachBmDBView(OdBmDatabasePtr database, std::function<void(OdBmDBViewPtr viewPtr)> func);
 			}
 		}
 	}

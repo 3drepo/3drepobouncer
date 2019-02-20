@@ -26,3 +26,25 @@ std::string repo::manipulator::modelconvertor::odaHelper::convertToStdString(con
 	std::string str = utf_to_utf<char>(wstr.c_str(), wstr.c_str() + wstr.size());
 	return str;
 }
+
+void repo::manipulator::modelconvertor::odaHelper::forEachBmDBView(OdBmDatabasePtr database, std::function<void(OdBmDBViewPtr viewPtr)> func)
+{
+	OdDbBaseDatabasePEPtr pDbPE(database);
+	OdRxIteratorPtr layouts = pDbPE->layouts(database);
+	for (; !layouts->done(); layouts->next())
+	{
+		OdBmDBDrawingPtr pDBDrawing = layouts->object();
+		if (pDBDrawing->getBaseViewNameFormat() != OdBm::ViewType::_3d)
+			continue;
+
+		OdBmViewportPtr pViewport = pDBDrawing->getBaseViewportId().safeOpenObject();
+		if (pViewport.isNull()) 
+			continue;
+
+		OdBmDBViewPtr pDBView = pViewport->getDbViewId().safeOpenObject();
+		if (pDBView.isNull()) 
+			continue;
+
+		func(pDBView);
+	}
+}

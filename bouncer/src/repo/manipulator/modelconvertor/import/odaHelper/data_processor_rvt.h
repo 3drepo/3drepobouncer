@@ -52,6 +52,7 @@
 #include "Database/Entities/BmUnitsElem.h"
 #include "Database/Entities/BmDBDrawing.h"
 #include "Database/Entities/BmViewport.h"
+#include "Database/Entities/BmHiddenElementsViewSettings.h"
 
 #include "../../../../lib/datastructure/repo_structs.h"
 #include "geometry_collector.h"
@@ -91,6 +92,7 @@ namespace repo {
 						std::vector<repo::lib::RepoVector2D>& uvOut) override;
 
 				private:
+					void hiddenElementsViewRejection(OdBmDBViewPtr pDBView);
 					void getCameras(OdBmDatabasePtr database);
 					camera_t convertCamera(OdBmDBViewPtr view);
 					void fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t& material, bool& missingTexture);
