@@ -24,7 +24,21 @@
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
+//.. NOTE: Environment variable name for Revit textures
 const char* RVT_TEXTURES_ENV_VARIABLE = "RVT_TEXTURES";
+
+//.. NOTE: These metadata params are crashing application when we're trying to get them; Report to ODA
+const std::vector<std::string> PROBLEMATIC_PARAMS = { 
+	"ROOF_SLOPE", 
+	"RBS_PIPE_SIZE_MAXIMUM",
+	"RBS_PIPE_SIZE_MINIMUM", 
+	"RBS_SYSTEM_CLASSIFICATION_PARAM" 
+};
+
+bool isProblematicParam(const std::string& param)
+{
+	return std::find(PROBLEMATIC_PARAMS.begin(), PROBLEMATIC_PARAMS.end(), param) != PROBLEMATIC_PARAMS.end();
+}
 
 repo_material_t GetDefaultMaterial()
 {
@@ -330,7 +344,7 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 		std::string builtInName = convertToStdString(OdBm::BuiltInParameter(*it).toString());
 
 		//.. HOTFIX: handle access violation exception (reported to ODA)
-		if (builtInName == std::string("ROOF_SLOPE"))
+		if (isProblematicParam(builtInName))
 			continue;
 
 		std::string paramName;
