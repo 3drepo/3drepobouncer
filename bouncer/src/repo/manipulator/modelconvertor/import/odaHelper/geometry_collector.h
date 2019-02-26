@@ -75,7 +75,12 @@ namespace repo {
 					* @return returns a vector of double (3 values) for the model offset.
 					*/
 					std::vector<double> getModelOffset() const {
-						return minMeshBox;
+						std::vector<double> res;
+						for (int i = 0; i < minMeshBox.size(); ++i) {
+							res.push_back(origin.size() > i ? minMeshBox[i] - origin[i] : minMeshBox[i]);
+						}
+
+						return res;
 					}
 
 					/**
@@ -92,7 +97,7 @@ namespace repo {
 						nextLayer = name;
 					}
 
-					/** 
+					/**
 					* Set the name for the next mesh
 					* @param name name of the next mesh
 					*/
@@ -122,15 +127,18 @@ namespace repo {
 					*/
 					void setCurrentMaterial(const repo_material_t &material);
 
+					void setOrigin(const double &x, const double &y, const double &z) {
+						origin = { x, y, z };
+					}
 
 				private:
 					std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<int, mesh_data_t>>> meshData;
 					std::string nextMeshName, nextLayer, nextGroupName;
-					std::unordered_map< uint32_t, repo::core::model::MaterialNode > idxToMat;					
+					std::unordered_map< uint32_t, repo::core::model::MaterialNode > idxToMat;
 					std::unordered_map<uint32_t, std::vector<repo::lib::RepoUUID> > matToMeshes;
 					repo::core::model::RepoNodeSet transNodes;
 					uint32_t currMat;
-					std::vector<double> minMeshBox;
+					std::vector<double> minMeshBox, origin;
 					mesh_data_t *currentEntry = nullptr;
 
 					repo::core::model::TransformationNode* createTransNode(

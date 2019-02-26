@@ -212,6 +212,8 @@ int FileProcessor::readFile() {
 			{
 				OdGeExtents3d extModel;
 				pModel->getGeomExtents(vectorizedViewId, extModel);
+				auto origin = pModel->getGlobalOrigin();
+				collector->setOrigin(origin.x, origin.y, origin.z);
 				// Color with #255 always defines backround. The background of the active model must be considered in the device palette.
 				pPalCpy[255] = background;
 				// Note: This method should be called to resolve "white background issue" before setting device palette
