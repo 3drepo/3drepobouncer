@@ -43,6 +43,11 @@ MeshNode::~MeshNode()
 RepoNode MeshNode::cloneAndApplyTransformation(
 	const repo::lib::RepoMatrix &matrix) const
 {
+	if(matrix.isIdentity()) {
+		RepoBSONBuilder builder;
+		return MeshNode(builder.appendElementsUnique(*this), bigFiles);
+	}
+
 	std::vector<repo::lib::RepoVector3D> vertices = getVertices();
 	std::vector<repo::lib::RepoVector3D> normals = getNormals();
 
