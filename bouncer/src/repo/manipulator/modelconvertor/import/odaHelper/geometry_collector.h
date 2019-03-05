@@ -206,7 +206,6 @@ namespace repo {
 
 					std::pair<std::vector<std::string>, std::vector<std::string>> currentMeta;
 					repo::core::model::RepoNodeSet metaSet;
-					std::vector<double> minMeshBox;
 					mesh_data_t *currentEntry = nullptr;
 					bool missingTextures = false;
 					repo::lib::RepoMatrix rootMatrix;
