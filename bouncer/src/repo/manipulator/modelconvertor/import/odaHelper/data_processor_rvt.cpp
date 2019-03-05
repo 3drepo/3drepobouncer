@@ -146,8 +146,7 @@ std::string variantToString(const OdTfVariant& val, OdBmLabelUtilsPEPtr labelUti
 				}
 				else
 				{
-					OdBmElementPtr elem = database->getObjectId(rawValue.getHandle()).safeOpenObject();
-					strOut = (elem->getElementName() == OdString::kEmpty) ? std::to_string((OdUInt64)rawValue.getHandle()) : convertToStdString(elem->getElementName());
+					strOut = std::to_string((OdUInt64)rawValue.getHandle());
 				}
 			}
 	}
