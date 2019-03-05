@@ -43,7 +43,7 @@ AssimpModelImport::AssimpModelImport()
 }
 
 AssimpModelImport::AssimpModelImport(const ModelImportConfig *settings) :
-AbstractModelImport(settings)
+	AbstractModelImport(settings)
 {
 }
 
@@ -244,7 +244,7 @@ repo::core::model::CameraNode* AssimpModelImport::createCameraRepoNode(
 			{ (float)(assimpCamera->mPosition.x), (float)(assimpCamera->mPosition.y - offset[1]), (float)(assimpCamera->mPosition.z - offset[2]) },
 			{ (float)(assimpCamera->mUp.x - offset[0]), (float)(assimpCamera->mUp.y - offset[1]), (float)(assimpCamera->mUp.z - offset[2]) },
 			cameraName
-			));
+		));
 	}
 
 	return cameraNode;
@@ -254,17 +254,17 @@ float AssimpModelImport::normaliseShininess(const float &rawValue) const {
 	std::string ext = getFileExtension(orgFile);
 	float value;
 	if (ext == ".FBX") {
-		value = rawValue/20.;
+		value = rawValue / 20.;
 	}
-	else if(ext == ".OBJ") {
-		value = rawValue/200.;
+	else if (ext == ".OBJ") {
+		value = rawValue / 200.;
 	}
 	else if (ext == ".DAE") {
-		value = rawValue > 128? 1 : rawValue/128;
+		value = rawValue > 128 ? 1 : rawValue / 128;
 	}
 	else {
 		value = rawValue / 1000;
-}	
+	}
 
 	return value;
 }
@@ -276,7 +276,7 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 {
 	repo::core::model::MaterialNode *materialNode;
 
-	if (material){
+	if (material) {
 		repo_material_t repo_material;
 
 		aiColor3D tempColor;
@@ -334,7 +334,7 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 		if (AI_SUCCESS == material->Get(AI_MATKEY_OPACITY, tempFloat))
 		{
 			//If opacity is 0, we assume it's bonkers.
-			repo_material.opacity = tempFloat == 0 ? 1 : tempFloat;		
+			repo_material.opacity = tempFloat == 0 ? 1 : tempFloat;
 		}
 		else
 			repo_material.opacity = 1;
@@ -348,7 +348,7 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 		//--------------------------------------------------------------------------
 		// Shininess strength
 		if (AI_SUCCESS == material->Get(AI_MATKEY_SHININESS_STRENGTH, tempFloat))
-			repo_material.shininessStrength = tempFloat > 0 ? tempFloat : 1;
+			repo_material.shininessStrength = tempFloat >= 0 ? tempFloat : 0;
 		else
 			repo_material.shininessStrength = std::numeric_limits<float>::quiet_NaN();
 
@@ -667,11 +667,11 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 	const std::vector<double>                                &worldOffset,
 	const std::vector<repo::lib::RepoUUID>						             &parent
 
-	)
+)
 {
 	repo::core::model::RepoNodeSet transNodes;
 
-	if (assimpNode){
+	if (assimpNode) {
 		std::string transName(assimpNode->mName.data);
 		if (count % 1000 == 0)
 			repoInfo << "Constructing transformation #" << count;
@@ -679,9 +679,9 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 		//create a 4 by 4 vector
 		std::vector < std::vector<float> > transMat;
 
-		for (int i = 0; i < 4; i++){
+		for (int i = 0; i < 4; i++) {
 			std::vector<float> rows;
-			for (int j = 0; j < 4; j++){
+			for (int j = 0; j < 4; j++) {
 				rows.push_back(assimpNode->mTransformation[i][j]);
 			}
 			transMat.push_back(rows);
@@ -700,7 +700,7 @@ repo::core::model::RepoNodeSet AssimpModelImport::createTransformationNodesRecur
 
 		repo::core::model::TransformationNode * transNode =
 			new repo::core::model::TransformationNode(
-			repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(transMat), transName, parent));
+				repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(transMat), transName, parent));
 
 		repo::lib::RepoUUID sharedId = transNode->getSharedID();
 		std::vector<repo::lib::RepoUUID> myShareID;
@@ -808,15 +808,14 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 				{
 					std::string texName(path.data);
 					repoTrace << "texture name: " << texName;
-					
+
 					if (!texName.empty())
 					{
 						repo::core::model::RepoNode *textureNode = nullptr;
-						
+
 						const aiTexture* texture = nullptr;
 						if (texture = assimpScene->GetEmbeddedTexture(texName.c_str()))
 						{
-							
 							repoTrace << "Embedded texture name: " << texName;
 							//---------------------------------------------------------
 							// Embedded texture
@@ -833,7 +832,6 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 								REPO_NODE_API_LEVEL_1));
 
 							free(memblock);
-
 						}
 						else
 						{
@@ -1246,7 +1244,7 @@ bool AssimpModelImport::importModel(std::string filePath, uint8_t &err)
 	importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_READ_TEXTURES, true);
 	assimpScene = importer.ReadFile(filePath, 0);
 
-	if (!assimpScene){
+	if (!assimpScene) {
 		std::string errorString = importer.GetErrorString();
 		repoError << " Failed to convert file to aiScene : " << errorString;
 		if (errorString.find("format version") != std::string::npos) {
@@ -1276,7 +1274,7 @@ bool AssimpModelImport::importModel(std::string filePath, uint8_t &err)
 	return success;
 }
 
-void AssimpModelImport::setAssimpProperties(){
+void AssimpModelImport::setAssimpProperties() {
 	if (settings->getCalculateTangentSpace())
 		importer.SetPropertyFloat(AI_CONFIG_PP_CT_MAX_SMOOTHING_ANGLE, settings->getCalculateTangentSpaceMaxSmoothingAngle());
 
@@ -1301,7 +1299,7 @@ void AssimpModelImport::setAssimpProperties(){
 	if (settings->getPreTransformVertices())
 		importer.SetPropertyBool(AI_CONFIG_PP_PTV_NORMALIZE, settings->getPreTransformVerticesNormalize());
 
-	if (settings->getRemoveComponents()){
+	if (settings->getRemoveComponents()) {
 		int32_t removeComponents = 0;
 		removeComponents |= settings->getRemoveComponentsAnimations() ? aiComponent_ANIMATIONS : 0;
 		removeComponents |= settings->getRemoveComponentsBiTangents() ? aiComponent_TANGENTS_AND_BITANGENTS : 0;

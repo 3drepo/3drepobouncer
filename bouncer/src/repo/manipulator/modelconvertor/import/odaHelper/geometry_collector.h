@@ -97,7 +97,12 @@ namespace repo {
 					* @return returns a vector of double (3 values) for the model offset.
 					*/
 					std::vector<double> getModelOffset() const {
-						return minMeshBox;
+						std::vector<double> res;
+						for (int i = 0; i < minMeshBox.size(); ++i) {
+							res.push_back(origin.size() > i ? minMeshBox[i] - origin[i] : minMeshBox[i]);
+						}
+
+						return res;
 					}
 
 					/**
@@ -114,7 +119,7 @@ namespace repo {
 						nextLayer = name;
 					}
 
-					/** 
+					/**
 					* Set the name for the next mesh
 					* @param name name of the next mesh
 					*/
@@ -144,6 +149,10 @@ namespace repo {
 					* @param material material contents.
 					*/
 					void setCurrentMaterial(const repo_material_t &material, bool missingTexture = false);
+
+					void setOrigin(const double &x, const double &y, const double &z) {
+						origin = { x, y, z };
+					}
 
 					/**
 					* Change current meta node to the one provided
@@ -193,6 +202,8 @@ namespace repo {
 					std::unordered_map<uint32_t, std::vector<repo::lib::RepoUUID> > matToMeshes;
 					repo::core::model::RepoNodeSet transNodes;
 					uint32_t currMat;
+					std::vector<double> minMeshBox, origin;
+
 					std::pair<std::vector<std::string>, std::vector<std::string>> currentMeta;
 					repo::core::model::RepoNodeSet metaSet;
 					std::vector<double> minMeshBox;
