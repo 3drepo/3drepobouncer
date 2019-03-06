@@ -217,13 +217,16 @@ void DataProcessorRvt::convertTo3DRepoMaterial(
 void DataProcessorRvt::convertTo3DRepoVertices(
 	const OdInt32* p3Vertices,
 	std::vector<repo::lib::RepoVector3D64>& verticesOut,
+	repo::lib::RepoVector3D64& normalOut,
 	std::vector<repo::lib::RepoVector2D>& uvOut)
 {
-	DataProcessor::convertTo3DRepoVertices(p3Vertices, verticesOut, uvOut);
+	DataProcessor::convertTo3DRepoVertices(p3Vertices, verticesOut, normalOut, uvOut);
 
 	const int numVertices = 3;
 	if (verticesOut.size() != numVertices)
 		return;
+
+	normalOut = calcNormal(verticesOut[0], verticesOut[1], verticesOut[2]);
 
 	OdGiMapperItemEntry::MapInputTriangle trg;
 

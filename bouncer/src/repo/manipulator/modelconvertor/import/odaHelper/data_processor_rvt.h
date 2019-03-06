@@ -89,6 +89,7 @@ namespace repo {
 					void convertTo3DRepoVertices(
 						const OdInt32* p3Vertices, 
 						std::vector<repo::lib::RepoVector3D64>& verticesOut,
+						repo::lib::RepoVector3D64& normalOut,
 						std::vector<repo::lib::RepoVector2D>& uvOut) override;
 
 				private:

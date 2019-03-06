@@ -46,9 +46,12 @@ namespace repo {
 
 				struct mesh_data_t {
 					std::vector<repo::lib::RepoVector3D64> rawVertices;
+					std::vector<repo::lib::RepoVector3D64> rawNormals;
 					std::vector<repo_face_t> faces;
 					std::vector<std::vector<float>> boundingBox;
-					std::map<repo::lib::RepoVector3D64, int, RepoVector3D64SortComparator> vToVIndex;
+					std::multimap<repo::lib::RepoVector3D64, 
+						std::pair<int, repo::lib::RepoVector3D64>, 
+						RepoVector3D64SortComparator> vToVIndex;
 					std::vector<repo::lib::RepoVector2D> uvCoords;
 					std::string name;
 					std::string layerName;
@@ -141,6 +144,7 @@ namespace repo {
 					*/
 					void addFace(
 						const std::vector<repo::lib::RepoVector3D64> &vertices,
+						const repo::lib::RepoVector3D64& normal,
 						const std::vector<repo::lib::RepoVector2D>& uvCoords = std::vector<repo::lib::RepoVector2D>()
 					);
 

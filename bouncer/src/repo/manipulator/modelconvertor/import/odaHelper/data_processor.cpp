@@ -29,6 +29,7 @@ using namespace repo::manipulator::modelconvertor::odaHelper;
 void DataProcessor::convertTo3DRepoVertices(
 	const OdInt32* p3Vertices, 
 	std::vector<repo::lib::RepoVector3D64>& verticesOut,
+	repo::lib::RepoVector3D64& normalOut,
 	std::vector<repo::lib::RepoVector2D>& uvOut)
 {
 	const OdGePoint3d*  pVertexDataList = vertexDataList();
@@ -49,11 +50,12 @@ void DataProcessor::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* p
 {
 	std::vector<repo::lib::RepoVector3D64> vertices;
 	std::vector<repo::lib::RepoVector2D> uv;
+	repo::lib::RepoVector3D64 normal;
 
-	convertTo3DRepoVertices(p3Vertices, vertices, uv);
+	convertTo3DRepoVertices(p3Vertices, vertices, normal, uv);
 
 	if (vertices.size())
-		collector->addFace(vertices, uv);
+		collector->addFace(vertices, normal, uv);
 }
 
 double DataProcessor::deviation(

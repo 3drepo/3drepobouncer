@@ -20,6 +20,8 @@
 
 using namespace boost::locale::conv;
 
+const double repo::manipulator::modelconvertor::odaHelper::DOUBLE_TOLERANCE = 1E-6;
+
 std::string repo::manipulator::modelconvertor::odaHelper::convertToStdString(const OdString &value)
 {
 	std::wstring wstr((wchar_t*)value.c_str());
@@ -47,4 +49,34 @@ void repo::manipulator::modelconvertor::odaHelper::forEachBmDBView(OdBmDatabaseP
 
 		func(pDBView);
 	}
+}
+
+int repo::manipulator::modelconvertor::odaHelper::compare(double d1, double d2)
+{
+	float diff = d1 - d2;
+	if (diff > DOUBLE_TOLERANCE)
+		return 1;
+	if (diff < -DOUBLE_TOLERANCE)
+		return -1;
+
+	return 0;
+}
+
+repo::lib::RepoVector3D64 repo::manipulator::modelconvertor::odaHelper::operator-(const repo::lib::RepoVector3D64& p1, const repo::lib::RepoVector3D64& p2)
+{
+	return repo::lib::RepoVector3D64(p1.x - p2.x, p1.y - p2.y, p1.z - p2.z);
+}
+
+repo::lib::RepoVector3D64 repo::manipulator::modelconvertor::odaHelper::operator+(const repo::lib::RepoVector3D64& p1, const repo::lib::RepoVector3D64& p2)
+{
+	return repo::lib::RepoVector3D64(p1.x + p2.x, p1.y + p2.y, p1.z + p2.z);
+}
+
+repo::lib::RepoVector3D64 repo::manipulator::modelconvertor::odaHelper::calcNormal(repo::lib::RepoVector3D64 p1, repo::lib::RepoVector3D64 p2, repo::lib::RepoVector3D64 p3)
+{
+	repo::lib::RepoVector3D64 vecA(p2 - p1);
+	repo::lib::RepoVector3D64 vecB(p3 - p2);
+	repo::lib::RepoVector3D64 vecC = vecA.crossProduct(vecB);
+	vecC.normalize();
+	return vecC;
 }

@@ -36,6 +36,8 @@ namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
+				extern const double DOUBLE_TOLERANCE;
+
 				std::string convertToStdString(const OdString &value);
 
 				template <class T>
@@ -65,6 +67,14 @@ namespace repo {
 				//.. we already have a couple of functions that uses this iteration 
 				//.. so in order to reduce code duplication we are using iteration with an action callback
 				void forEachBmDBView(OdBmDatabasePtr database, std::function<void(OdBmDBViewPtr viewPtr)> func);
+
+				int compare(double d1, double d2);
+
+				repo::lib::RepoVector3D64 operator-(const repo::lib::RepoVector3D64& p1, const repo::lib::RepoVector3D64& p2);
+
+				repo::lib::RepoVector3D64 operator+(const repo::lib::RepoVector3D64& p1, const repo::lib::RepoVector3D64& p2);
+
+				repo::lib::RepoVector3D64 calcNormal(repo::lib::RepoVector3D64 p1, repo::lib::RepoVector3D64 p2, repo::lib::RepoVector3D64 p3);
 			}
 		}
 	}

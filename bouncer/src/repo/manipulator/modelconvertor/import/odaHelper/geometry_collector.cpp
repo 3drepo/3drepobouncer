@@ -129,15 +129,25 @@ void  GeometryCollector::stopMeshEntry() {
 
 void GeometryCollector::addFace(
 	const std::vector<repo::lib::RepoVector3D64> &vertices, 
+	const repo::lib::RepoVector3D64& normal,
 	const std::vector<repo::lib::RepoVector2D>& uvCoords) 
 {
 	if (!meshData.size()) startMeshEntry();
 	repo_face_t face;
 	for (auto i = 0; i < vertices.size(); ++i) {
 		auto& v = vertices[i];
+		int vertIdx = 0;
 		if (currentEntry->vToVIndex.find(v) == currentEntry->vToVIndex.end()) {
-			currentEntry->vToVIndex[v] = currentEntry->rawVertices.size();
+			//..insert new vertex along with index and normal
+			currentEntry->vToVIndex.insert(
+				std::pair<repo::lib::RepoVector3D64, 
+				std::pair<int, repo::lib::RepoVector3D64>>(
+					v, 
+					std::pair<int, repo::lib::RepoVector3D64>(currentEntry->rawVertices.size(), normal))
+			);
+			vertIdx = currentEntry->rawVertices.size();
 			currentEntry->rawVertices.push_back(v);
+			currentEntry->rawNormals.push_back(normal);
 			if (i < uvCoords.size())
 				currentEntry->uvCoords.push_back(uvCoords[i]);
 
@@ -164,7 +174,42 @@ void GeometryCollector::addFace(
 				minMeshBox = { v.x, v.y, v.z };
 			}
 		}
-		face.push_back(currentEntry->vToVIndex[v]);
+		else
+		{
+			//..if the vertex already exists - receive all entries of this vertex in multimap
+			bool normalFound = false;
+			auto iterators = currentEntry->vToVIndex.equal_range(v);
+
+			for (auto it = iterators.first; it != iterators.second; it++)
+			{
+				//..try to find a point with the same normal
+				auto result = it->second.second.dotProduct(normal);
+				if (!compare(result, 1.0))
+				{
+					vertIdx = it->second.first;
+					normalFound = true;
+					break;
+				}
+			}
+
+			if (!normalFound)
+			{
+				//.. in case the normal for this point doesn't exist yet - we should add it 
+				//.. as duplicated and add new normal and index
+				currentEntry->vToVIndex.insert(
+					std::pair<repo::lib::RepoVector3D64,
+					std::pair<int, repo::lib::RepoVector3D64>>(
+						v,
+						std::pair<int, repo::lib::RepoVector3D64>(currentEntry->rawVertices.size(), normal))
+				);
+
+				vertIdx = currentEntry->rawVertices.size();
+				currentEntry->rawVertices.push_back(v);
+				currentEntry->rawNormals.push_back(normal);
+			}
+		}
+
+		face.push_back(vertIdx);
 	}
 	currentEntry->faces.push_back(face);
 }
@@ -197,14 +242,21 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 				std::vector<repo::lib::RepoVector3D> vertices32;
 				vertices32.reserve(meshMatEntry.second.rawVertices.size());
 
+				std::vector<repo::lib::RepoVector3D> normals32;
+				normals32.reserve(meshMatEntry.second.rawNormals.size());
+
 				for (const auto &v : meshMatEntry.second.rawVertices) {
 					vertices32.push_back({ (float)(v.x), (float)(v.y), (float)(v.z) });
+				}
+
+				for (const auto &n : meshMatEntry.second.rawNormals) {
+					normals32.push_back({ (float)(n.x), (float)(n.y), (float)(n.z) });
 				}
 
 				auto meshNode = repo::core::model::RepoBSONFactory::makeMeshNode(
 					vertices32,
 					meshMatEntry.second.faces,
-					std::vector<repo::lib::RepoVector3D>(),
+					normals32,
 					meshMatEntry.second.boundingBox,
 					uvChannels,
 					dummyCol,
