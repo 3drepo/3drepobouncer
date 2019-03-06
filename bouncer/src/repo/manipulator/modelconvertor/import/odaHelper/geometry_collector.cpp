@@ -198,7 +198,7 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 				vertices32.reserve(meshMatEntry.second.rawVertices.size());
 
 				for (const auto &v : meshMatEntry.second.rawVertices) {
-					vertices32.push_back({ (float)(v.x - minMeshBox[0]), (float)(v.y - minMeshBox[1]), (float)(v.z - minMeshBox[2]) });
+					vertices32.push_back({ (float)(v.x), (float)(v.y), (float)(v.z) });
 				}
 
 				auto meshNode = repo::core::model::RepoBSONFactory::makeMeshNode(
