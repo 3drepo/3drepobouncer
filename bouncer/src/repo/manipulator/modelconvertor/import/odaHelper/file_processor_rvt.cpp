@@ -31,7 +31,6 @@
 #include "Database/GiContextForBmDatabase.h"
 #include "Database/Entities/BmDBDrawing.h"
 #include "ModelerGeometry/BmModelerModule.h"
-#include "Wr/wrTriangulationParams.h"
 #include "Database/Entities/BmUnitsElem.h"
 #include "Database/BmUnitUtils.h"
 #include "Database/Managers/BmUnitsTracking.h"
@@ -45,7 +44,8 @@
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-const double TRIANGULATION_EDGE_LENGTH = 1.0;
+const bool USE_NEW_TESSELLATION = true;
+const double TRIANGULATION_EDGE_LENGTH = 1;
 const double ROUNDING_ACCURACY = 0.000001;
 
 class StubDeviceModuleRvt : public OdGsBaseModule
@@ -110,18 +110,14 @@ repo::manipulator::modelconvertor::odaHelper::FileProcessorRvt::~FileProcessorRv
 
 }
 
-void FileProcessorRvt::setMaxEdgeLength(double edgeLength)
+void FileProcessorRvt::setTessellationParams(wrTriangulationParams params)
 {
 	OdSmartPtr<BmModelerModule> pModModule;
-	wrTriangulationParams TriangulationParams; //.. NOTE: This structure contains fields related to triangulation
 	OdRxModulePtr pModule = odrxDynamicLinker()->loadModule(OdBmModelerModuleName);
 	if (pModule.get())
 	{
 		pModModule = BmModelerModule::cast(pModule);
-		pModModule->getTriangulationParams(TriangulationParams);
-		//.. NOTE: We may adjust triangulation options. sometimes it creates a lot of triangles
-		TriangulationParams.maxFacetEdgeLength = edgeLength; 
-		pModModule->setTriangulationParams(TriangulationParams);
+		pModModule->setTriangulationParams(params);
 	}
 }
 
@@ -155,7 +151,11 @@ uint8_t FileProcessorRvt::readFile()
 	OdRxModule* pModule = ::odrxDynamicLinker()->loadModule(OdBmLoaderModuleName, false);
 	try
 	{
-		setMaxEdgeLength(TRIANGULATION_EDGE_LENGTH);
+		//.. change tessellation params here
+		wrTriangulationParams triParams(USE_NEW_TESSELLATION);
+		triParams.maxFacetEdgeLength = TRIANGULATION_EDGE_LENGTH;
+
+		setTessellationParams(triParams);
 
 		odgsInitialize();
 		OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));

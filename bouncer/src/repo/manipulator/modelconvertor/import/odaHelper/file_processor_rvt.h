@@ -22,6 +22,7 @@
 #include <OdaCommon.h>
 #include <Gs/GsBaseInclude.h>
 #include <RxObjectImpl.h>
+#include "Wr/wrTriangulationParams.h"
 
 #include <vector>
 #include <string>
@@ -46,7 +47,7 @@ namespace repo {
 					* This method changes tessellation options
 					* @param edgeLength - maximum triangle edge length
 					*/
-					void setMaxEdgeLength(double edgeLength);
+					void setTessellationParams(wrTriangulationParams params);
 				};
 			}
 		}
