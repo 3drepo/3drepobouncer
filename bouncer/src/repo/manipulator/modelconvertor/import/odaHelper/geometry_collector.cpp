@@ -246,7 +246,7 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 				normals32.reserve(meshMatEntry.second.rawNormals.size());
 
 				for (const auto &v : meshMatEntry.second.rawVertices) {
-					vertices32.push_back({ (float)(v.x), (float)(v.y), (float)(v.z) });
+					vertices32.push_back({ (float)(v.x - minMeshBox[0]), (float)(v.y - minMeshBox[1]), (float)(v.z - minMeshBox[2]) });
 				}
 
 				for (const auto &n : meshMatEntry.second.rawNormals) {
