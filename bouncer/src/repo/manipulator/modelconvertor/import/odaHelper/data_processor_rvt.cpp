@@ -160,6 +160,8 @@ void DataProcessorRvt::init(GeometryCollector* geoColl, OdBmDatabasePtr database
 	this->database = database;
 	getCameras(database);
 	forEachBmDBView(database, [&](OdBmDBViewPtr pDBView) { hiddenElementsViewRejection(pDBView); });
+	auto origin = getBasePoint(database);
+	this->collector->setOrigin(origin.x, origin.y, origin.z);
 }
 
 DataProcessorRvt::DataProcessorRvt()
@@ -297,7 +299,7 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 
 	try
 	{
-		collector->setCurrentMeta(fillMetadata(element));
+		//collector->setCurrentMeta(fillMetadata(element));
 
 		//.. NOTE: for some objects material is not set. set default here
 		collector->setCurrentMaterial(GetDefaultMaterial());
@@ -492,4 +494,53 @@ camera_t DataProcessorRvt::convertCamera(OdBmDBViewPtr view)
 	camera.up = repo::lib::RepoVector3D(up.z, up.y, up.z);
 	camera.name = view->getNamed() ? convertToStdString(view->getViewName()) : "camera";
 	return camera;
+}
+
+repo::lib::RepoVector3D64 DataProcessorRvt::getBasePoint(OdBmDatabase* pDb)
+{
+	OdBmElementTrackingDataPtr pElementTrackingDataMgr = pDb->getAppInfo(OdBm::ManagerType::ElementTrackingData);
+	OdBmObjectIdArray aElements;
+	OdResult res = pElementTrackingDataMgr->getElementsByType(
+		pDb->getObjectId(OdBm::BuiltInCategory::OST_ProjectBasePoint),
+		OdBm::TrackingElementType::Elements,
+		aElements);
+
+	repo::lib::RepoVector3D64 origin;
+	OdBmBasePointPtr pThis;
+	if (!aElements.isEmpty())
+	{
+		pThis = aElements.first().safeOpenObject();
+
+		if (pThis->getLocationType() == 0)
+		{
+			double angleToNorth;
+			OdGeVector3d direction;
+			{
+				if (OdBmGeoLocation::isGeoLocationAllowed(pThis->database()))
+				{
+					OdBmGeoLocationPtr pActiveLocation = OdBmGeoLocation::getActiveLocationId(pThis->database()).safeOpenObject();
+					OdGeMatrix3d activeTransform = pActiveLocation->getTransform();
+					OdGePoint3d activeOrigin;
+					OdGeVector3d activeX, activeY, activeZ;
+					activeTransform.getCoordSystem(activeOrigin, activeX, activeY, activeZ);
+
+					OdBmGeoLocationPtr pProjectLocation = OdBmGeoLocation::getProjectLocationId(pThis->database()).safeOpenObject();
+					OdGeMatrix3d projectTransform = pProjectLocation->getTransform();
+					OdGePoint3d projectOrigin;
+					OdGeVector3d projectX, projectY, projectZ;
+					projectTransform.getCoordSystem(projectOrigin, projectX, projectY, projectZ);
+
+					OdGeMatrix3d alignedLocation;
+					alignedLocation.setToAlignCoordSys(activeOrigin, activeX, activeY, activeZ, projectOrigin, projectX, projectY, projectZ);
+
+					angleToNorth = acos(activeX.dotProduct(projectX));
+					direction = (projectOrigin - activeOrigin).transformBy(alignedLocation);
+
+					origin = repo::lib::RepoVector3D64(direction.x, direction.y, direction.z);
+				}
+			}
+		}
+	}
+
+	return origin;
 }

@@ -49,10 +49,13 @@
 #include "Database/Entities/BmAUnits.h"
 #include "Database/BmUnitUtils.h"
 #include "Database/Managers/BmUnitsTracking.h"
+#include "Database/Managers/BmElementTrackingData.h"
 #include "Database/Entities/BmUnitsElem.h"
 #include "Database/Entities/BmDBDrawing.h"
 #include "Database/Entities/BmViewport.h"
 #include "Database/Entities/BmHiddenElementsViewSettings.h"
+#include "Database/Entities/BmBasePoint.h"
+#include "Database/Entities/BmGeoLocation.h"
 
 #include "../../../../lib/datastructure/repo_structs.h"
 #include "geometry_collector.h"
@@ -112,6 +115,7 @@ namespace repo {
 					std::string getLevel(OdBmElementPtr element, const std::string& name);
 					OdBm::DisplayUnitType::Enum getUnits(OdBmDatabasePtr database);
 					double getUnitsCoef(OdBm::DisplayUnitType::Enum unitType);
+					repo::lib::RepoVector3D64 getBasePoint(OdBmDatabase* pDb);
 
 					uint64_t meshesCount;
 					OdBmDatabasePtr database;
