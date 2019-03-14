@@ -160,25 +160,23 @@ void DataProcessorRvt::init(GeometryCollector* geoColl, OdBmDatabasePtr database
 	this->database = database;
 	getCameras(database);
 	forEachBmDBView(database, [&](OdBmDBViewPtr pDBView) { hiddenElementsViewRejection(pDBView); });
+
+	OdBm::DisplayUnitType::Enum lengthUnits = getUnits(database);
+	scaleCoef = 1.0 / getUnitsCoef(lengthUnits);
+
 	auto origin = getBasePoint(database);
-	this->collector->setOrigin(origin.x, origin.y, origin.z);
+	this->collector->setOrigin(origin.x * scaleCoef, origin.y * scaleCoef, origin.z * scaleCoef);
 }
 
-DataProcessorRvt::DataProcessorRvt()
+DataProcessorRvt::DataProcessorRvt() : 
+	scaleCoef(1.0),
+	meshesCount(0)
 {
-	meshesCount = 0;
 }
 
 void DataProcessorRvt::beginViewVectorization()
 {
 	DataProcessor::beginViewVectorization();
-	OdBm::DisplayUnitType::Enum lengthUnits = getUnits(database);
-	double scale = 1.0 / getUnitsCoef(lengthUnits);
-	repo::lib::RepoMatrix mat({ (float)scale,0,0,0,
-		0,(float)scale,0,0,
-		0,0,(float)scale,0,
-		0,0,0,1 });
-	collector->setRootMatrix(mat);
 	setEyeToOutputTransform(getEyeToWorldTransform());
 }
 
@@ -227,6 +225,13 @@ void DataProcessorRvt::convertTo3DRepoVertices(
 	const int numVertices = 3;
 	if (verticesOut.size() != numVertices)
 		return;
+
+	for (auto& v : verticesOut)
+	{
+		v.x *= scaleCoef;
+		v.y *= scaleCoef;
+		v.z *= scaleCoef;
+	}
 
 	normalOut = calcNormal(verticesOut[0], verticesOut[1], verticesOut[2]);
 
@@ -299,7 +304,7 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 
 	try
 	{
-		collector->setCurrentMeta(fillMetadata(element));
+		//collector->setCurrentMeta(fillMetadata(element));
 
 		//.. NOTE: for some objects material is not set. set default here
 		collector->setCurrentMaterial(GetDefaultMaterial());

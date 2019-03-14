@@ -119,6 +119,7 @@ namespace repo {
 
 					uint64_t meshesCount;
 					OdBmDatabasePtr database;
+					double scaleCoef;
 				};
 			}
 		}
