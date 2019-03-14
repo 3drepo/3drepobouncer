@@ -299,7 +299,7 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 
 	try
 	{
-		//collector->setCurrentMeta(fillMetadata(element));
+		collector->setCurrentMeta(fillMetadata(element));
 
 		//.. NOTE: for some objects material is not set. set default here
 		collector->setCurrentMaterial(GetDefaultMaterial());
