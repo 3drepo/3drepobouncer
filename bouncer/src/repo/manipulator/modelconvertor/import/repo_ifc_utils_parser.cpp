@@ -160,6 +160,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 		if (parentID.toString() != REPO_HISTORY_MASTER_BRANCH) parents.push_back(parentID);
 
 		auto transNode = repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name, parents);
+
 		transID = transNode.getSharedID();
 
 		transNodeSet.insert(new repo::core::model::TransformationNode(transNode));
@@ -294,6 +295,7 @@ void IFCUtilsParser::determineActionsByElementType(
 	case IfcSchema::Type::IfcElementQuantity:
 	case IfcSchema::Type::IfcRelConnectsPathElements:
 	case IfcSchema::Type::IfcAnnotation:
+	case IfcSchema::Type::IfcComplexProperty: //We don't support this atm.
 		createElement = false;
 		traverseChildren = false;
 		break;
