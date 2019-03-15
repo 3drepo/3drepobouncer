@@ -87,6 +87,32 @@ namespace repo{
 			return result;
 		}
 
+		inline repo::lib::RepoVector3D64 operator*(const RepoMatrix &matrix, const repo::lib::RepoVector3D64 &vec)
+		{
+			repo::lib::RepoVector3D64 result;
+			auto mat = matrix.getData();
+			/*
+			00 01 02 03
+			04 05 06 07
+			08 09 10 11
+			12 13 14 15
+			*/
+
+			result.x = mat[0] * vec.x + mat[1] * vec.y + mat[2] * vec.z + mat[3];
+			result.y = mat[4] * vec.x + mat[5] * vec.y + mat[6] * vec.z + mat[7];
+			result.z = mat[8] * vec.x + mat[9] * vec.y + mat[10] * vec.z + mat[11];
+
+			float sig = 1e-5;
+
+			if (fabs(mat[12]) > sig || fabs(mat[13]) > sig || fabs(mat[14]) > sig || fabs(mat[15] - 1) > sig)
+			{
+				repoWarning << "Potentially incorrect transformation : does not expect the last row to have values!";
+				repoWarning << matrix.toString();
+				exit(0);
+			}
+
+			return result;
+		}
 
 		inline RepoMatrix operator*(const RepoMatrix &matrix1, const RepoMatrix &matrix2)
 		{
