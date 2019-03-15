@@ -132,7 +132,6 @@
 			}).catch(err => {
 
 				logger.error("importToy module error");
-				console.log(err, err.stack);
 
 				callback(JSON.stringify({
 					value: ERRCODE_BOUNCER_CRASH,
@@ -145,6 +144,28 @@
 		} else {
 			exeCommand(cmd, rid, callback);
 		}
+
+	}
+
+	function writeOutStdBuffers(stdout, stderr, logDir, prefix) {
+		const fs = require('fs');
+		const fullPrefix = `${logDir}/${prefix}`;
+		const regexReplace = new RegExp(conf.bouncer.password, 'g');
+		fs.writeFile(`${fullPrefix}_stdout.log`, stdout.replace(regexReplace, "[REDACTED]"), (err) => {
+			if (err) {
+				logger.error("Failed to write stdout file: ", err);
+			} else {
+				logger.info("Written stdout log to " + `${fullPrefix}_stdout.log`);
+			}
+		});
+
+		fs.writeFile(`${fullPrefix}_stderr.log`, stderr.replace(regexReplace, "[REDACTED]"), (err) => {
+			if (err) {
+				logger.error("Failed to write stderr file: ", err);
+			} else {
+				logger.info("Written stderr log to " + `${fullPrefix}_stderr.log`);
+			}
+		});
 
 	}
 
@@ -182,7 +203,7 @@
 			let cmdArr = cmd.split(' ');
 			if(cmdArr[0] == "import")
 			{
-				let fs = require('fs')
+				const fs = require('fs')
 				fs.readFile(cmdArr[2], 'utf8', function (err,data) {
 				  	if (err) {
 						return logger.error(err);
@@ -258,29 +279,29 @@
 		}
 
 		exec(command, function(error, stdout, stderr){
-			let reply = {};
-			logger.debug(stdout);
+			const reply = {};
 
 			if(error !== null && error.code && softFails.indexOf(error.code) == -1){
 				if(error.code)
 					reply.value = error.code;
 				else
 					reply.value = ERRCODE_BOUNCER_CRASH;
+
+				writeOutStdBuffers(stdout, stderr, logDir, "bouncer");
 				callback({
 					value: reply.value,
 					database: cmdDatabase,
 					project: cmdProject,
 					user
 				}, true);
-				logger.info("Executed command: " + command, reply);
+				logger.info("[FAILED] Executed command: " + command, reply);
 			}
 			else{
 				if(error == null)
 					reply.value = 0;
 				else
 					reply.value = error.code;
-				console.log(error);
-				logger.info("Executed command: " + command, reply);
+				logger.info("[SUCCEED] Executed command: " + command, reply);
 				if(conf.unity && conf.unity.project && cmdArr[0] == "import")
 				{
 					let commandArgs = cmdFile;
@@ -314,6 +335,7 @@
 							if(error)
 							{
 								reply.value = ERRCODE_BUNDLE_GEN_FAIL;
+								writeOutStdBuffers(stdout, stderr, logDir, "unity");
 							}
 							logger.info("Executed Unity command: " + unityCommand, reply);
 							callback({
