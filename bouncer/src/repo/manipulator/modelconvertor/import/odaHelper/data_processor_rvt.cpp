@@ -501,6 +501,7 @@ camera_t DataProcessorRvt::convertCamera(OdBmDBViewPtr view)
 	return camera;
 }
 
+//.. TODO: Comment this code for newer version of ODA BIM library
 repo::lib::RepoVector3D64 DataProcessorRvt::getBasePoint(OdBmDatabase* pDb)
 {
 	OdBmElementTrackingDataPtr pElementTrackingDataMgr = pDb->getAppInfo(OdBm::ManagerType::ElementTrackingData);
@@ -549,3 +550,27 @@ repo::lib::RepoVector3D64 DataProcessorRvt::getBasePoint(OdBmDatabase* pDb)
 
 	return origin;
 }
+
+//.. TODO: Uncomment this code for newer version of ODA BIM library
+/*
+repo::lib::RepoVector3D64 DataProcessorRvt::getBasePoint(OdBmDatabasePtr pDb)
+{
+	repo::lib::RepoVector3D64 basePoint;
+	OdBmObjectIdArray aElements;
+
+	OdBmElementTrackingDataPtr pElementTrackingDataMgr = pDb->getAppInfo(OdBm::ManagerType::ElementTrackingData);
+	OdResult res = pElementTrackingDataMgr->getElementsByType(
+		pDb->getObjectId(OdBm::BuiltInCategory::OST_ProjectBasePoint),
+		OdBm::TrackingElementType::Elements,
+		aElements);
+
+	if (res == OdResult::eOk && !aElements.isEmpty())
+	{
+		OdBmBasePointPtr pt = aElements.first().safeOpenObject();
+		pt->getParam(OdBm::BuiltInParameter::BASEPOINT_EASTWEST_PARAM, basePoint.x);
+		pt->getParam(OdBm::BuiltInParameter::BASEPOINT_NORTHSOUTH_PARAM, basePoint.y);
+		pt->getParam(OdBm::BuiltInParameter::BASEPOINT_ELEVATION_PARAM, basePoint.z);
+	}
+
+	return basePoint;
+}*/
