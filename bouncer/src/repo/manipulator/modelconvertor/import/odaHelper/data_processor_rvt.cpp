@@ -166,6 +166,8 @@ void DataProcessorRvt::init(GeometryCollector* geoColl, OdBmDatabasePtr database
 
 	auto origin = getBasePoint(database);
 	this->collector->setOrigin(origin.x * scaleCoef, origin.y * scaleCoef, origin.z * scaleCoef);
+
+	std::cout << "x: " << origin.x * scaleCoef << " y: " << origin.y * scaleCoef << " z: " << origin.z * scaleCoef << std::endl;
 }
 
 DataProcessorRvt::DataProcessorRvt() : 
@@ -507,7 +509,7 @@ repo::lib::RepoVector3D64 DataProcessorRvt::getBasePoint(OdBmDatabase* pDb)
 	OdBmElementTrackingDataPtr pElementTrackingDataMgr = pDb->getAppInfo(OdBm::ManagerType::ElementTrackingData);
 	OdBmObjectIdArray aElements;
 	OdResult res = pElementTrackingDataMgr->getElementsByType(
-		pDb->getObjectId(OdBm::BuiltInCategory::OST_ProjectBasePoint),
+		pDb->getObjectId(OdBm::BuiltInCategory::OST_SharedBasePoint),
 		OdBm::TrackingElementType::Elements,
 		aElements);
 
@@ -516,6 +518,14 @@ repo::lib::RepoVector3D64 DataProcessorRvt::getBasePoint(OdBmDatabase* pDb)
 	if (!aElements.isEmpty())
 	{
 		pThis = aElements.first().safeOpenObject();
+
+		//.. TODO: Remove test code after testing is finished
+		//.. NOTE: test code started
+		OdGePoint3d survey;
+		OdBmBasePointPtr pt = aElements.first().safeOpenObject();
+		survey = pt->getTransformedPosition();
+		return repo::lib::RepoVector3D64(survey.x, survey.y, survey.z);
+		//.. NOTE: test code ended
 
 		if (pThis->getLocationType() == 0)
 		{
