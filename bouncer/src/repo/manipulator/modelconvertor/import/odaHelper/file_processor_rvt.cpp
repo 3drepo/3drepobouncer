@@ -153,8 +153,6 @@ uint8_t FileProcessorRvt::readFile()
 	{
 		//.. change tessellation params here
 		wrTriangulationParams triParams(USE_NEW_TESSELLATION);
-		triParams.maxFacetEdgeLength = TRIANGULATION_EDGE_LENGTH;
-
 		setTessellationParams(triParams);
 
 		odgsInitialize();
