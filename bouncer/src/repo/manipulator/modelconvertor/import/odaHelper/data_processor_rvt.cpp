@@ -25,7 +25,7 @@
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 //.. NOTE: Environment variable name for Revit textures
-const char* RVT_TEXTURES_ENV_VARIABLE = "RVT_TEXTURES";
+const char* RVT_TEXTURES_ENV_VARIABLE = "REPO_RVT_TEXTURES";
 
 //.. NOTE: These metadata params are crashing application when we're trying to get them; Report to ODA
 const std::vector<std::string> PROBLEMATIC_PARAMS = { 
@@ -90,10 +90,13 @@ std::string extractValidTexturePath(const std::string& inputPath)
 
 	auto absolutePath = boost::filesystem::absolute(outputFilePath, env);
 	outputFilePath = absolutePath.generic_string();
-
 	if (isFileExist(outputFilePath))
 		return outputFilePath;
 
+	auto altPath = boost::filesystem::absolute(absolutePath.leaf(), env);
+	auto altPathStr = altPath.generic_string();
+	if (isFileExist(altPathStr))
+		return altPathStr;
 	return std::string();
 }
 
@@ -432,7 +435,6 @@ void DataProcessorRvt::fillTexture(OdBmMaterialElemPtr materialPtr, repo_materia
 
 	std::string textureName(convertToStdString(textureFileName));
 	std::string validTextureName = extractValidTexturePath(textureName);
-
 	if (validTextureName.empty() && !textureName.empty())
 		missingTexture = true;
 
