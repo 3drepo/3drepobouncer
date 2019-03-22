@@ -28,7 +28,7 @@ using namespace repo::manipulator::modelconvertor::odaHelper;
 const char* RVT_TEXTURES_ENV_VARIABLE = "REPO_RVT_TEXTURES";
 
 //.. NOTE: These metadata params are crashing application when we're trying to get them; Report to ODA
-const std::vector<std::string> PROBLEMATIC_PARAMS = { 
+const std::set<std::string> PROBLEMATIC_PARAMS = { 
 	"ROOF_SLOPE", 
 	"RBS_PIPE_SIZE_MAXIMUM",
 	"RBS_PIPE_SIZE_MINIMUM", 
@@ -37,7 +37,7 @@ const std::vector<std::string> PROBLEMATIC_PARAMS = {
 
 bool isProblematicParam(const std::string& param)
 {
-	return std::find(PROBLEMATIC_PARAMS.begin(), PROBLEMATIC_PARAMS.end(), param) != PROBLEMATIC_PARAMS.end();
+	return PROBLEMATIC_PARAMS.find(param) != PROBLEMATIC_PARAMS.end();
 }
 
 repo_material_t GetDefaultMaterial()
@@ -72,8 +72,7 @@ bool doesFileExist(const boost::filesystem::path& inputPath)
 std::string extractValidTexturePath(const std::string& inputPath)
 {
 	// Try to extract one valid paths if multiple paths are provided
-	boost::filesystem::path texturePath = inputPath.substr(0, inputPath.find("|", 0));
-
+	auto texturePath = boost::filesystem::path(inputPath.substr(0, inputPath.find("|", 0))).make_preferred();
 	if (doesFileExist(texturePath))
 		return texturePath.generic_string();
 
@@ -90,8 +89,8 @@ std::string extractValidTexturePath(const std::string& inputPath)
 		return absolutePath.generic_string();
 
 	// Sometimes the texture path has subdirectories like "./mat/1" remove it and see if we can find it.
-	auto altPath = boost::filesystem::absolute(absolutePath.leaf(), env);
-	repoInfo << "Trying to find (Alt path): " << altPath << " leaf: " << absolutePath.leaf();
+	auto altPath = boost::filesystem::absolute(texturePath.leaf(), env);
+	repoInfo << "Trying to find (Alt path): " << altPath << " leaf: " << texturePath.leaf();
 	if (doesFileExist(altPath))
 		return altPath.generic_string();
 
