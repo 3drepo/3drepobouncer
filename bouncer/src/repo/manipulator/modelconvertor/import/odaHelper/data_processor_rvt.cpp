@@ -92,14 +92,18 @@ std::string extractValidTexturePath(const std::string& inputPath)
 
 	auto absolutePath = boost::filesystem::absolute(outputFilePath, env);
 	outputFilePath = absolutePath.generic_string();
+	repoInfo << "Trying to find: " << outputFilePath;
 	if (isFileExist(outputFilePath))
 		return outputFilePath;
 
 	// Sometimes the texture path has subdirectories like "./mat/1" remove it and see if we can find it.
 	auto altPath = boost::filesystem::absolute(absolutePath.leaf(), env);
 	auto altPathStr = altPath.generic_string();
+	repoInfo << "Trying to find: " << altPathStr;
 	if (isFileExist(altPathStr))
 		return altPathStr;
+
+	repoInfo << "Failed to find: " << outputFilePath;
 	return std::string();
 }
 

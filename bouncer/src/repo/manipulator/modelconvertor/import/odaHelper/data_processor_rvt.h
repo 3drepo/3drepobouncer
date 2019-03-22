@@ -120,6 +120,8 @@ namespace repo {
 					uint64_t meshesCount;
 					OdBmDatabasePtr database;
 					double scaleCoef;
+
+					std::function<repo::lib::RepoVector3D64(OdGePoint3d)> toProjectCoorindates = [](OdGePoint3d pnt){ return repo::lib::RepoVector3D64(pnt.x, pnt.y, pnt.z); };
 				};
 			}
 		}
