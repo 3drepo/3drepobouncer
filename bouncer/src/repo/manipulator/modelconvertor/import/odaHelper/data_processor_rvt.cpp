@@ -43,11 +43,11 @@ bool isProblematicParam(const std::string& param)
 repo_material_t GetDefaultMaterial()
 {
 	repo_material_t material;
-	material.shininess = 0.5;
-	material.shininessStrength = 0.5;
+	material.shininess = 0.0;
+	material.shininessStrength = 0.0;
 	material.opacity = 1;
 	material.specular = { 0, 0, 0, 0 };
-	material.diffuse = { 0.2f, 0.2f, 0.2f, 0 };
+	material.diffuse = { 0.5f, 0.5f, 0.5f, 0 };
 	material.emissive = material.diffuse;
 
 	return material;
