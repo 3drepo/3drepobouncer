@@ -33,7 +33,6 @@ void DataProcessor::convertTo3DRepoVertices(
 	std::vector<repo::lib::RepoVector2D>& uvOut)
 {
 	const OdGePoint3d*  pVertexDataList = vertexDataList();
-	const OdGeVector3d* pNormals = NULL;
 
 	if ((pVertexDataList + p3Vertices[0]) != (pVertexDataList + p3Vertices[1]) &&
 		(pVertexDataList + p3Vertices[0]) != (pVertexDataList + p3Vertices[2]) &&
@@ -41,7 +40,7 @@ void DataProcessor::convertTo3DRepoVertices(
 	{
 		for (int i = 0; i < 3; ++i)
 		{
-			verticesOut.push_back({ pVertexDataList[p3Vertices[i]].x , pVertexDataList[p3Vertices[i]].y, pVertexDataList[p3Vertices[i]].z });
+			verticesOut.push_back(toProjectCoorindates(pVertexDataList[p3Vertices[i]]));
 		}
 	}
 }

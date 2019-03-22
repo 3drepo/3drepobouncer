@@ -79,6 +79,8 @@ namespace repo {
 						repo::lib::RepoVector3D64& normalOut,
 						std::vector<repo::lib::RepoVector2D>& uvOut);
 
+					std::function<repo::lib::RepoVector3D64(OdGePoint3d)> toProjectCoorindates = [](OdGePoint3d pnt) { return repo::lib::RepoVector3D64(pnt.x, pnt.y, pnt.z); };
+
 				private:
 					/**
 					* This callback is invoked when next triangle should be processed

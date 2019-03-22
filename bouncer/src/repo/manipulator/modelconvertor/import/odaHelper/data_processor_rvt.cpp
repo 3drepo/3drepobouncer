@@ -82,17 +82,13 @@ std::string extractValidTexturePath(const std::string& inputPath)
 	char* env = std::getenv(RVT_TEXTURES_ENV_VARIABLE);
 	if (env == nullptr)
 		return std::string();
-	
-	repoInfo << "TEXTURE PATH: " << env;
 
 	auto absolutePath = boost::filesystem::absolute(texturePath, env);
-	repoInfo << "Trying to find (absolutePath): " << absolutePath;
 	if (doesFileExist(absolutePath))
 		return absolutePath.generic_string();
 
 	// Sometimes the texture path has subdirectories like "./mat/1" remove it and see if we can find it.
 	auto altPath = boost::filesystem::absolute(texturePath.leaf(), env);
-	repoInfo << "Trying to find (Alt path): " << altPath << " leaf: " << texturePath.leaf();
 	if (doesFileExist(altPath))
 		return altPath.generic_string();
 
@@ -164,17 +160,10 @@ void DataProcessorRvt::init(GeometryCollector* geoColl, OdBmDatabasePtr database
 	getCameras(database);
 	forEachBmDBView(database, [&](OdBmDBViewPtr pDBView) { hiddenElementsViewRejection(pDBView); });
 
-	OdBm::DisplayUnitType::Enum lengthUnits = getUnits(database);
-	scaleCoef = 1.0 / getUnitsCoef(lengthUnits);
-
-	auto origin = getBasePoint(database);
-	this->collector->setOrigin(origin.x * scaleCoef, origin.y * scaleCoef, origin.z * scaleCoef);
-
-	std::cout << "x: " << origin.x * scaleCoef << " y: " << origin.y * scaleCoef << " z: " << origin.z * scaleCoef << std::endl;
+	establishProjectTranslation(database);
 }
 
 DataProcessorRvt::DataProcessorRvt() : 
-	scaleCoef(1.0),
 	meshesCount(0)
 {
 }
@@ -230,13 +219,6 @@ void DataProcessorRvt::convertTo3DRepoVertices(
 	const int numVertices = 3;
 	if (verticesOut.size() != numVertices)
 		return;
-
-	for (auto& v : verticesOut)
-	{
-		v.x *= scaleCoef;
-		v.y *= scaleCoef;
-		v.z *= scaleCoef;
-	}
 
 	normalOut = calcNormal(verticesOut[0], verticesOut[1], verticesOut[2]);
 
@@ -505,23 +487,48 @@ camera_t DataProcessorRvt::convertCamera(OdBmDBViewPtr view)
 	return camera;
 }
 
-repo::lib::RepoVector3D64 DataProcessorRvt::getBasePoint(OdBmDatabase* pDb)
+//.. TODO: Comment this code for newer version of ODA BIM library
+void DataProcessorRvt::establishProjectTranslation(OdBmDatabase* pDb)
 {
 	OdBmElementTrackingDataPtr pElementTrackingDataMgr = pDb->getAppInfo(OdBm::ManagerType::ElementTrackingData);
 	OdBmObjectIdArray aElements;
 	OdResult res = pElementTrackingDataMgr->getElementsByType(
-		pDb->getObjectId(OdBm::BuiltInCategory::OST_SharedBasePoint),
+		pDb->getObjectId(OdBm::BuiltInCategory::OST_ProjectBasePoint),
 		OdBm::TrackingElementType::Elements,
 		aElements);
 
-	repo::lib::RepoVector3D64 origin;
 	if (!aElements.isEmpty())
 	{
-		OdGePoint3d survey;
 		OdBmBasePointPtr pThis = aElements.first().safeOpenObject();
-		survey = pThis->getTransformedPosition();
-		origin = repo::lib::RepoVector3D64(survey.x, survey.y, survey.z);
-	}
 
-	return origin;
+		if (pThis->getLocationType() == 0)
+		{
+			
+			if (OdBmGeoLocation::isGeoLocationAllowed(pThis->database()))
+			{
+				OdBmGeoLocationPtr pActiveLocation = OdBmGeoLocation::getActiveLocationId(pThis->database()).safeOpenObject();
+				OdGeMatrix3d activeTransform = pActiveLocation->getTransform();
+				OdGePoint3d activeOrigin;
+				OdGeVector3d activeX, activeY, activeZ;
+				activeTransform.getCoordSystem(activeOrigin, activeX, activeY, activeZ);
+
+				OdBmGeoLocationPtr pProjectLocation = OdBmGeoLocation::getProjectLocationId(pThis->database()).safeOpenObject();
+				OdGeMatrix3d projectTransform = pProjectLocation->getTransform();
+				OdGePoint3d projectOrigin;
+				OdGeVector3d projectX, projectY, projectZ;
+				projectTransform.getCoordSystem(projectOrigin, projectX, projectY, projectZ);
+
+				OdGeMatrix3d alignedLocation;
+				alignedLocation.setToAlignCoordSys(activeOrigin, activeX, activeY, activeZ, projectOrigin, projectX, projectY, projectZ);
+
+				auto scaleCoef = 1.0 / getUnitsCoef(getUnits(database));
+				toProjectCoorindates = [activeOrigin, alignedLocation, scaleCoef](OdGePoint3d point) {
+					auto convertedPoint = (point - activeOrigin).transformBy(alignedLocation);
+					return repo::lib::RepoVector3D64(convertedPoint.x * scaleCoef, convertedPoint.y * scaleCoef, convertedPoint.z * scaleCoef);
+				};
+
+			}
+			
+		}
+	}
 }

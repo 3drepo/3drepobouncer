@@ -115,13 +115,11 @@ namespace repo {
 					std::string getLevel(OdBmElementPtr element, const std::string& name);
 					OdBm::DisplayUnitType::Enum getUnits(OdBmDatabasePtr database);
 					double getUnitsCoef(OdBm::DisplayUnitType::Enum unitType);
-					repo::lib::RepoVector3D64 getBasePoint(OdBmDatabase* pDb);
+					void establishProjectTranslation(OdBmDatabase* pDb);
 
 					uint64_t meshesCount;
 					OdBmDatabasePtr database;
-					double scaleCoef;
 
-					std::function<repo::lib::RepoVector3D64(OdGePoint3d)> toProjectCoorindates = [](OdGePoint3d pnt){ return repo::lib::RepoVector3D64(pnt.x, pnt.y, pnt.z); };
 				};
 			}
 		}
