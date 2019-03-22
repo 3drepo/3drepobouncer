@@ -511,7 +511,7 @@ repo::lib::RepoVector3D64 DataProcessorRvt::getBasePoint(OdBmDatabase* pDb)
 	OdBmElementTrackingDataPtr pElementTrackingDataMgr = pDb->getAppInfo(OdBm::ManagerType::ElementTrackingData);
 	OdBmObjectIdArray aElements;
 	OdResult res = pElementTrackingDataMgr->getElementsByType(
-		pDb->getObjectId(OdBm::BuiltInCategory::OST_SharedBasePoint),
+		pDb->getObjectId(OdBm::BuiltInCategory::OST_ProjectBasePoint),
 		OdBm::TrackingElementType::Elements,
 		aElements);
 
@@ -520,14 +520,6 @@ repo::lib::RepoVector3D64 DataProcessorRvt::getBasePoint(OdBmDatabase* pDb)
 	if (!aElements.isEmpty())
 	{
 		pThis = aElements.first().safeOpenObject();
-
-		//.. TODO: Remove test code after testing is finished
-		//.. NOTE: test code started
-		OdGePoint3d survey;
-		OdBmBasePointPtr pt = aElements.first().safeOpenObject();
-		survey = pt->getTransformedPosition();
-		return repo::lib::RepoVector3D64(survey.x, survey.y, survey.z);
-		//.. NOTE: test code ended
 
 		if (pThis->getLocationType() == 0)
 		{
@@ -541,6 +533,11 @@ repo::lib::RepoVector3D64 DataProcessorRvt::getBasePoint(OdBmDatabase* pDb)
 					OdGePoint3d activeOrigin;
 					OdGeVector3d activeX, activeY, activeZ;
 					activeTransform.getCoordSystem(activeOrigin, activeX, activeY, activeZ);
+
+					//.. TODO: Remove test code after testing is finished
+					//.. NOTE: test code started
+					return repo::lib::RepoVector3D64(activeOrigin.x, activeOrigin.y, activeOrigin.z);
+					//.. NOTE: test code ended
 
 					OdBmGeoLocationPtr pProjectLocation = OdBmGeoLocation::getProjectLocationId(pThis->database()).safeOpenObject();
 					OdGeMatrix3d projectTransform = pProjectLocation->getTransform();
