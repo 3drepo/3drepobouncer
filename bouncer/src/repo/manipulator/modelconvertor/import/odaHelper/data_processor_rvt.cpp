@@ -77,13 +77,13 @@ std::string extractValidTexturePath(const std::string& inputPath)
 {
 	std::string outputFilePath = inputPath;
 
-	//.. NOTE: try to extract one valid paths if multiple paths are provided
+	// Try to extract one valid paths if multiple paths are provided
 	outputFilePath = outputFilePath.substr(0, outputFilePath.find("|", 0));
 
 	if (isFileExist(outputFilePath))
 		return outputFilePath;
 
-	//.. NOTE: try to apply absolute path
+	// Try to apply absolute path
 	char* env = std::getenv(RVT_TEXTURES_ENV_VARIABLE);
 	if (env == nullptr)
 		return std::string();
@@ -93,6 +93,7 @@ std::string extractValidTexturePath(const std::string& inputPath)
 	if (isFileExist(outputFilePath))
 		return outputFilePath;
 
+	// Sometimes the texture path has subdirectories like "./mat/1" remove it and see if we can find it.
 	auto altPath = boost::filesystem::absolute(absolutePath.leaf(), env);
 	auto altPathStr = altPath.generic_string();
 	if (isFileExist(altPathStr))
