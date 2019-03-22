@@ -64,13 +64,9 @@ std::string getElementName(OdBmElementPtr element, uint64_t id)
 	return elName;
 }
 
-bool isFileExist(const std::string& inputPath)
+bool doesFileExist(const std::string& inputPath)
 {
-	if (boost::filesystem::exists(inputPath))
-		if (boost::filesystem::is_regular_file(inputPath))
-			return true;
-
-	return false;
+	return boost::filesystem::exists(inputPath) && boost::filesystem::is_regular_file(inputPath);
 }
 
 std::string extractValidTexturePath(const std::string& inputPath)
@@ -80,7 +76,7 @@ std::string extractValidTexturePath(const std::string& inputPath)
 	// Try to extract one valid paths if multiple paths are provided
 	outputFilePath = outputFilePath.substr(0, outputFilePath.find("|", 0));
 
-	if (isFileExist(outputFilePath))
+	if (doesFileExist(outputFilePath))
 		return outputFilePath;
 
 	// Try to apply absolute path
@@ -90,17 +86,17 @@ std::string extractValidTexturePath(const std::string& inputPath)
 	
 	repoInfo << "TEXTURE PATH: " << env;
 
-	auto absolutePath = boost::filesystem::absolute(outputFilePath, env);
+	auto absolutePath = boost::filesystem::absolute(boost::filesystem::path(outputFilePath), env);
 	outputFilePath = absolutePath.generic_string();
-	repoInfo << "Trying to find: " << outputFilePath;
-	if (isFileExist(outputFilePath))
+	repoInfo << "Trying to find (absolutePath): " << outputFilePath;
+	if (doesFileExist(outputFilePath))
 		return outputFilePath;
 
 	// Sometimes the texture path has subdirectories like "./mat/1" remove it and see if we can find it.
 	auto altPath = boost::filesystem::absolute(absolutePath.leaf(), env);
 	auto altPathStr = altPath.generic_string();
-	repoInfo << "Trying to find: " << altPathStr;
-	if (isFileExist(altPathStr))
+	repoInfo << "Trying to find (Alt path): " << altPathStr << " leaf: " << absolutePath.leaf();
+	if (doesFileExist(altPathStr))
 		return altPathStr;
 
 	repoInfo << "Failed to find: " << outputFilePath;
