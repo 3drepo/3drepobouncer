@@ -59,7 +59,7 @@
 	function testClient(callback){
 		logger.info("Checking status of client...");
 
-		setBouncerEnvars();
+		setBouncerEnvars(logDir);
 
 		let awsBucketName;
 		let awsBucketRegion;
@@ -197,7 +197,7 @@
 		let awsBucketName;
 		let awsBucketRegion;
 
-		setBouncerEnvars();
+		setBouncerEnvars(logDir);
 
 		if (conf.aws)
 		{
