@@ -309,7 +309,7 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 
 	try
 	{
-		//collector->setCurrentMeta(fillMetadata(element));
+		collector->setCurrentMeta(fillMetadata(element));
 
 		//.. NOTE: for some objects material is not set. set default here
 		collector->setCurrentMaterial(GetDefaultMaterial());
@@ -505,81 +505,23 @@ camera_t DataProcessorRvt::convertCamera(OdBmDBViewPtr view)
 	return camera;
 }
 
-//.. TODO: Comment this code for newer version of ODA BIM library
 repo::lib::RepoVector3D64 DataProcessorRvt::getBasePoint(OdBmDatabase* pDb)
 {
 	OdBmElementTrackingDataPtr pElementTrackingDataMgr = pDb->getAppInfo(OdBm::ManagerType::ElementTrackingData);
 	OdBmObjectIdArray aElements;
 	OdResult res = pElementTrackingDataMgr->getElementsByType(
-		pDb->getObjectId(OdBm::BuiltInCategory::OST_ProjectBasePoint),
+		pDb->getObjectId(OdBm::BuiltInCategory::OST_SharedBasePoint),
 		OdBm::TrackingElementType::Elements,
 		aElements);
 
 	repo::lib::RepoVector3D64 origin;
-	OdBmBasePointPtr pThis;
 	if (!aElements.isEmpty())
 	{
-		pThis = aElements.first().safeOpenObject();
-
-		if (pThis->getLocationType() == 0)
-		{
-			double angleToNorth;
-			OdGeVector3d direction;
-			{
-				if (OdBmGeoLocation::isGeoLocationAllowed(pThis->database()))
-				{
-					OdBmGeoLocationPtr pActiveLocation = OdBmGeoLocation::getActiveLocationId(pThis->database()).safeOpenObject();
-					OdGeMatrix3d activeTransform = pActiveLocation->getTransform();
-					OdGePoint3d activeOrigin;
-					OdGeVector3d activeX, activeY, activeZ;
-					activeTransform.getCoordSystem(activeOrigin, activeX, activeY, activeZ);
-
-					//.. TODO: Remove test code after testing is finished
-					//.. NOTE: test code started
-					return repo::lib::RepoVector3D64(activeOrigin.x, activeOrigin.y, activeOrigin.z);
-					//.. NOTE: test code ended
-
-					OdBmGeoLocationPtr pProjectLocation = OdBmGeoLocation::getProjectLocationId(pThis->database()).safeOpenObject();
-					OdGeMatrix3d projectTransform = pProjectLocation->getTransform();
-					OdGePoint3d projectOrigin;
-					OdGeVector3d projectX, projectY, projectZ;
-					projectTransform.getCoordSystem(projectOrigin, projectX, projectY, projectZ);
-
-					OdGeMatrix3d alignedLocation;
-					alignedLocation.setToAlignCoordSys(activeOrigin, activeX, activeY, activeZ, projectOrigin, projectX, projectY, projectZ);
-
-					angleToNorth = acos(activeX.dotProduct(projectX));
-					direction = (projectOrigin - activeOrigin).transformBy(alignedLocation);
-
-					origin = repo::lib::RepoVector3D64(direction.x, direction.y, direction.z);
-				}
-			}
-		}
+		OdGePoint3d survey;
+		OdBmBasePointPtr pThis = aElements.first().safeOpenObject();
+		survey = pThis->getTransformedPosition();
+		origin = repo::lib::RepoVector3D64(survey.x, survey.y, survey.z);
 	}
 
 	return origin;
 }
-
-//.. TODO: Uncomment this code for newer version of ODA BIM library
-/*
-repo::lib::RepoVector3D64 DataProcessorRvt::getBasePoint(OdBmDatabasePtr pDb)
-{
-	repo::lib::RepoVector3D64 basePoint;
-	OdBmObjectIdArray aElements;
-
-	OdBmElementTrackingDataPtr pElementTrackingDataMgr = pDb->getAppInfo(OdBm::ManagerType::ElementTrackingData);
-	OdResult res = pElementTrackingDataMgr->getElementsByType(
-		pDb->getObjectId(OdBm::BuiltInCategory::OST_ProjectBasePoint),
-		OdBm::TrackingElementType::Elements,
-		aElements);
-
-	if (res == OdResult::eOk && !aElements.isEmpty())
-	{
-		OdBmBasePointPtr pt = aElements.first().safeOpenObject();
-		pt->getParam(OdBm::BuiltInParameter::BASEPOINT_EASTWEST_PARAM, basePoint.x);
-		pt->getParam(OdBm::BuiltInParameter::BASEPOINT_NORTHSOUTH_PARAM, basePoint.y);
-		pt->getParam(OdBm::BuiltInParameter::BASEPOINT_ELEVATION_PARAM, basePoint.z);
-	}
-
-	return basePoint;
-}*/
