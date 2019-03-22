@@ -14,7 +14,10 @@ module.exports = {
 		dbport: 27017,
 		username : 'username',
 		password : 'password',
-		log_dir : '/var/log/3drepo/bouncer/'
+		log_dir : '/var/log/3drepo/bouncer/',
+		envars: {
+			"REPO_RVT_TEXTURES" : "C:/local/revit_materials/"
+		}
 	},
 	mongoimport:{
 		writeConcern: {
