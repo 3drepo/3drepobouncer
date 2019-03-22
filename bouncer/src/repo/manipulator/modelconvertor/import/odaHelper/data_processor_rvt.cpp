@@ -64,20 +64,18 @@ std::string getElementName(OdBmElementPtr element, uint64_t id)
 	return elName;
 }
 
-bool doesFileExist(const std::string& inputPath)
+bool doesFileExist(const boost::filesystem::path& inputPath)
 {
 	return boost::filesystem::exists(inputPath) && boost::filesystem::is_regular_file(inputPath);
 }
 
 std::string extractValidTexturePath(const std::string& inputPath)
 {
-	std::string outputFilePath = inputPath;
-
 	// Try to extract one valid paths if multiple paths are provided
-	outputFilePath = outputFilePath.substr(0, outputFilePath.find("|", 0));
+	boost::filesystem::path texturePath = inputPath.substr(0, inputPath.find("|", 0));
 
-	if (doesFileExist(outputFilePath))
-		return outputFilePath;
+	if (doesFileExist(texturePath))
+		return texturePath.generic_string();
 
 	// Try to apply absolute path
 	char* env = std::getenv(RVT_TEXTURES_ENV_VARIABLE);
@@ -86,20 +84,18 @@ std::string extractValidTexturePath(const std::string& inputPath)
 	
 	repoInfo << "TEXTURE PATH: " << env;
 
-	auto absolutePath = boost::filesystem::absolute(boost::filesystem::path(outputFilePath), env);
-	outputFilePath = absolutePath.generic_string();
-	repoInfo << "Trying to find (absolutePath): " << outputFilePath;
-	if (doesFileExist(outputFilePath))
-		return outputFilePath;
+	auto absolutePath = boost::filesystem::absolute(texturePath, env);
+	repoInfo << "Trying to find (absolutePath): " << absolutePath;
+	if (doesFileExist(absolutePath))
+		return absolutePath.generic_string();
 
 	// Sometimes the texture path has subdirectories like "./mat/1" remove it and see if we can find it.
 	auto altPath = boost::filesystem::absolute(absolutePath.leaf(), env);
-	auto altPathStr = altPath.generic_string();
-	repoInfo << "Trying to find (Alt path): " << altPathStr << " leaf: " << absolutePath.leaf();
-	if (doesFileExist(altPathStr))
-		return altPathStr;
+	repoInfo << "Trying to find (Alt path): " << altPath << " leaf: " << absolutePath.leaf();
+	if (doesFileExist(altPath))
+		return altPath.generic_string();
 
-	repoInfo << "Failed to find: " << outputFilePath;
+	repoError << "Failed to find: " << texturePath;
 	return std::string();
 }
 
