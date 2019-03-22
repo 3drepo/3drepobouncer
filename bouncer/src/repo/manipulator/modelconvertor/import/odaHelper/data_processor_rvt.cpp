@@ -72,7 +72,9 @@ bool doesFileExist(const boost::filesystem::path& inputPath)
 std::string extractValidTexturePath(const std::string& inputPath)
 {
 	// Try to extract one valid paths if multiple paths are provided
-	auto texturePath = boost::filesystem::path(inputPath.substr(0, inputPath.find("|", 0))).make_preferred();
+	auto pathStr = inputPath.substr(0, inputPath.find("|", 0));
+	std::replace(pathStr.begin(), pathStr.end(), '\\', '/');
+	auto texturePath = boost::filesystem::path(pathStr).make_preferred();
 	if (doesFileExist(texturePath))
 		return texturePath.generic_string();
 
