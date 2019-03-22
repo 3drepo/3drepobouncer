@@ -87,6 +87,8 @@ std::string extractValidTexturePath(const std::string& inputPath)
 	char* env = std::getenv(RVT_TEXTURES_ENV_VARIABLE);
 	if (env == nullptr)
 		return std::string();
+	
+	repoInfo << "TEXTURE PATH: " << env;
 
 	auto absolutePath = boost::filesystem::absolute(outputFilePath, env);
 	outputFilePath = absolutePath.generic_string();
