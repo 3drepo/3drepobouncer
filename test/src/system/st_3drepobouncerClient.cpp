@@ -379,7 +379,12 @@ TEST(RepoClientTest, UploadTestRVT)
 
 	//Upload RVT file with texture directory set
 	std::string texturePath = "REPO_RVT_TEXTURES=" + getDataPath("textures");
-	putenv(texturePath.c_str());
+	
+	//Linux putenv takes in a char* instead of const char* - need a copy of the const char*
+	char* texturePathEnv = new char[texturePath.size()+1];
+	strncpy(texturePathEnv, texturePath.c_str(), texturePath.size()+1);
+
+	putenv(texturePathEnv);
 	std::string rvtUpload2 = produceUploadArgs(db, "rvtTest2", getDataPath(rvtModel));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload2));
 	EXPECT_TRUE(projectExists(db, "rvtTest2"));
