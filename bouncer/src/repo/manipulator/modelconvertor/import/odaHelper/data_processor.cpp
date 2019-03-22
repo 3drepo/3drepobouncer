@@ -27,11 +27,20 @@
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 void DataProcessor::convertTo3DRepoVertices(
-	const OdInt32* p3Vertices, 
+	const OdInt32* p3Vertices,
 	std::vector<repo::lib::RepoVector3D64>& verticesOut,
 	repo::lib::RepoVector3D64& normalOut,
 	std::vector<repo::lib::RepoVector2D>& uvOut)
 {
+	std::vector<OdGePoint3d> odaPoints;
+	getVertices(p3Vertices, odaPoints, verticesOut);
+}
+
+void DataProcessor::getVertices(
+	const OdInt32* p3Vertices,
+	std::vector<OdGePoint3d> &odaPoint,
+	std::vector<repo::lib::RepoVector3D64> &repoPoint
+){
 	const OdGePoint3d*  pVertexDataList = vertexDataList();
 
 	if ((pVertexDataList + p3Vertices[0]) != (pVertexDataList + p3Vertices[1]) &&
@@ -40,7 +49,9 @@ void DataProcessor::convertTo3DRepoVertices(
 	{
 		for (int i = 0; i < 3; ++i)
 		{
-			verticesOut.push_back(toProjectCoorindates(pVertexDataList[p3Vertices[i]]));
+			auto point = pVertexDataList[p3Vertices[i]];
+			odaPoint.push_back(point);
+			repoPoint.push_back(convertTo3DRepoWorldCoorindates(point));
 		}
 	}
 }

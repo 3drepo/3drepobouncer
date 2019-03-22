@@ -79,7 +79,26 @@ namespace repo {
 						repo::lib::RepoVector3D64& normalOut,
 						std::vector<repo::lib::RepoVector2D>& uvOut);
 
-					std::function<repo::lib::RepoVector3D64(OdGePoint3d)> toProjectCoorindates = [](OdGePoint3d pnt) { return repo::lib::RepoVector3D64(pnt.x, pnt.y, pnt.z); };
+					/**
+					* Given vertice location, obtain vertices in teigha type and 3drepo type.
+					* @param p3Vertices  - input vertice locations
+					* @param odaPoint - [OUTPUT] vector to store results in teigha type
+					* @param repoPoint - [OUTPUT] vector to store repoPoint
+					*/
+					void getVertices(
+						const OdInt32* p3Vertices,
+						std::vector<OdGePoint3d> &odaPoint,
+						std::vector<repo::lib::RepoVector3D64> &repoPoint
+					);
+
+					/**
+					* Function to convert a teigha point to 3D Repo point
+					* By default, this just returns the same point converted into 3drepo type.
+					* Should the format require, this needs to be overwritten to translate the point back to project point
+					* @param pnt point in teigha format
+					* @return returns converted, transformed point in RepoVector3D64
+					*/
+					std::function<repo::lib::RepoVector3D64(OdGePoint3d)> convertTo3DRepoWorldCoorindates = [](OdGePoint3d pnt) { return repo::lib::RepoVector3D64(pnt.x, pnt.y, pnt.z); };
 
 				private:
 					/**

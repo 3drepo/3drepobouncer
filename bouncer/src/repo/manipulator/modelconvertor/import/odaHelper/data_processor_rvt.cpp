@@ -214,7 +214,8 @@ void DataProcessorRvt::convertTo3DRepoVertices(
 	repo::lib::RepoVector3D64& normalOut,
 	std::vector<repo::lib::RepoVector2D>& uvOut)
 {
-	DataProcessor::convertTo3DRepoVertices(p3Vertices, verticesOut, normalOut, uvOut);
+	std::vector<OdGePoint3d> odaPoints;
+	getVertices(p3Vertices, odaPoints, verticesOut);
 
 	const int numVertices = 3;
 	if (verticesOut.size() != numVertices)
@@ -224,11 +225,9 @@ void DataProcessorRvt::convertTo3DRepoVertices(
 
 	OdGiMapperItemEntry::MapInputTriangle trg;
 
-	for (int i = 0; i < verticesOut.size(); ++i)
+	for (int i = 0; i < odaPoints.size(); ++i)
 	{
-		trg.inPt[i].x = verticesOut[i].x;
-		trg.inPt[i].y = verticesOut[i].y;
-		trg.inPt[i].z = verticesOut[i].z;
+		trg.inPt[i] = odaPoints[i];
 	}
 
 	OdGiMapperItemEntry::MapOutputCoords outTex;
@@ -522,7 +521,7 @@ void DataProcessorRvt::establishProjectTranslation(OdBmDatabase* pDb)
 				alignedLocation.setToAlignCoordSys(activeOrigin, activeX, activeY, activeZ, projectOrigin, projectX, projectY, projectZ);
 
 				auto scaleCoef = 1.0 / getUnitsCoef(getUnits(database));
-				toProjectCoorindates = [activeOrigin, alignedLocation, scaleCoef](OdGePoint3d point) {
+				convertTo3DRepoWorldCoorindates = [activeOrigin, alignedLocation, scaleCoef](OdGePoint3d point) {
 					auto convertedPoint = (point - activeOrigin).transformBy(alignedLocation);
 					return repo::lib::RepoVector3D64(convertedPoint.x * scaleCoef, convertedPoint.y * scaleCoef, convertedPoint.z * scaleCoef);
 				};
