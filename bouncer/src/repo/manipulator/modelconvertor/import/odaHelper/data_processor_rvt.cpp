@@ -17,6 +17,7 @@
 
 #include <boost/filesystem.hpp>
 #include <OdPlatformSettings.h>
+#include <Database/Entities/BmUnitsElem.h>
 
 
 

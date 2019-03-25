@@ -17,6 +17,8 @@
 #pragma once
 
 #include <BimCommon.h>
+#include <RxObjectImpl.h>
+#include <OdPlatformSettings.h>
 #include <ColorMapping.h>
 
 #include <Database/BmAssetHelpers.h>
@@ -45,8 +47,7 @@
 #include <Main/Entities/BmDirectShape.h>
 #include <Main/Entities/BmDirectShapeCell.h>
 #include <Main/Entities/BmDirectShapeDataCell.h>
-#include <OdPlatformSettings.h>
-#include <RxObjectImpl.h>
+
 #include <toString.h>
 
 
