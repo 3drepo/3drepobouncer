@@ -87,12 +87,12 @@ namespace repo{
 				return *this;
 			}
 
-			inline _RepoVector3D<T>& operator+(const _RepoVector3D<T> &other)
+			inline _RepoVector3D<T> operator+(const _RepoVector3D<T> &other)
 			{							
 				return _RepoVector3D<T>(x + other.x, y + other.y, z + other.z);
 			}
 
-			inline _RepoVector3D<T>& operator-(const _RepoVector3D<T> &other)
+			inline _RepoVector3D<T> operator-(const _RepoVector3D<T> &other)
 			{
 				return _RepoVector3D<T>(x - other.x, y - other.y, z - other.z);
 			}
