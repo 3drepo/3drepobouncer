@@ -138,7 +138,7 @@ void DataProcessorRvt::init(GeometryCollector* geoColl, OdBmDatabasePtr database
 {
 	this->collector = geoColl;
 	this->database = database;
-	getCameras(database);
+	//getCameras(database);
 	forEachBmDBView(database, [&](OdBmDBViewPtr pDBView) { hiddenElementsViewRejection(pDBView); });
 
 	establishProjectTranslation(database);
@@ -432,7 +432,7 @@ void DataProcessorRvt::hiddenElementsViewRejection(OdBmDBViewPtr pDBView)
 
 void DataProcessorRvt::getCameras(OdBmDatabasePtr database)
 {
-	if (collector->hasCemaraNodes())
+	if (collector->hasCameraNodes())
 		return;
 
 	forEachBmDBView(database, [&](OdBmDBViewPtr pDBView) { collector->addCameraNode(convertCamera(pDBView)); });

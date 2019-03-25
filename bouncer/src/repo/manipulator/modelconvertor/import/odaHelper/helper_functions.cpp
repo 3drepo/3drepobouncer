@@ -62,20 +62,10 @@ int repo::manipulator::modelconvertor::odaHelper::compare(double d1, double d2)
 	return 0;
 }
 
-repo::lib::RepoVector3D64 repo::manipulator::modelconvertor::odaHelper::operator-(const repo::lib::RepoVector3D64& p1, const repo::lib::RepoVector3D64& p2)
-{
-	return repo::lib::RepoVector3D64(p1.x - p2.x, p1.y - p2.y, p1.z - p2.z);
-}
-
-repo::lib::RepoVector3D64 repo::manipulator::modelconvertor::odaHelper::operator+(const repo::lib::RepoVector3D64& p1, const repo::lib::RepoVector3D64& p2)
-{
-	return repo::lib::RepoVector3D64(p1.x + p2.x, p1.y + p2.y, p1.z + p2.z);
-}
-
 repo::lib::RepoVector3D64 repo::manipulator::modelconvertor::odaHelper::calcNormal(repo::lib::RepoVector3D64 p1, repo::lib::RepoVector3D64 p2, repo::lib::RepoVector3D64 p3)
 {
-	repo::lib::RepoVector3D64 vecA(p2 - p1);
-	repo::lib::RepoVector3D64 vecB(p3 - p2);
+	repo::lib::RepoVector3D64 vecA = p2 - p1;
+	repo::lib::RepoVector3D64 vecB = p3 - p2;
 	repo::lib::RepoVector3D64 vecC = vecA.crossProduct(vecB);
 	vecC.normalize();
 	return vecC;

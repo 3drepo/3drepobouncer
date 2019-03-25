@@ -185,7 +185,7 @@ namespace repo {
 					/**
 					* Returns true if cameras are available
 					*/
-					bool hasCemaraNodes();
+					bool hasCameraNodes();
 
 					/**
 					* Get cameras for scene

@@ -53,7 +53,7 @@ repo::core::model::RepoNodeSet GeometryCollector::getCameraNodes(repo::lib::Repo
 	return camerasNodeSet;
 }
 
-bool GeometryCollector::hasCemaraNodes()
+bool GeometryCollector::hasCameraNodes()
 {
 	return cameras.size();
 }
@@ -245,12 +245,13 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 				std::vector<repo::lib::RepoVector3D> normals32;
 				normals32.reserve(meshMatEntry.second.rawNormals.size());
 
-				for (const auto &v : meshMatEntry.second.rawVertices) {
+				for (int i = 0; i < meshMatEntry.second.rawVertices.size(); ++i) {
+					auto v = meshMatEntry.second.rawVertices[i];
 					vertices32.push_back({ (float)(v.x - minMeshBox[0]), (float)(v.y - minMeshBox[1]), (float)(v.z - minMeshBox[2]) });
-				}
-
-				for (const auto &n : meshMatEntry.second.rawNormals) {
-					normals32.push_back({ (float)(n.x), (float)(n.y), (float)(n.z) });
+					if (i < meshMatEntry.second.rawNormals.size()) {
+						auto n = meshMatEntry.second.rawNormals[i];
+						normals32.push_back({ (float)(n.x), (float)(n.y), (float)(n.z) });
+					}
 				}
 
 				auto meshNode = repo::core::model::RepoBSONFactory::makeMeshNode(
@@ -319,6 +320,7 @@ void GeometryCollector::getMaterialAndTextureNodes(repo::core::model::RepoNodeSe
 			auto matNode = new repo::core::model::MaterialNode(materialNode.cloneAndAddParent(matToMeshes[matIdx]));
 			materials.insert(matNode);
 
+			//FIXME: Mat shared ID is known at the point of creating texture node. We shouldn't be cloning here.
 			if (!textureNode.isEmpty()) {
 				auto texNode = new repo::core::model::TextureNode(textureNode.cloneAndAddParent(matNode->getSharedID()));
 				textures.insert(texNode);
