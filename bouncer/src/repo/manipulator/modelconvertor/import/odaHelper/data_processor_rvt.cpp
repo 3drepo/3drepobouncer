@@ -25,9 +25,9 @@
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 
-bool DataProcessorRvt::isProblematicParam(const std::string& param)
+bool DataProcessorRvt::ignoreParam(const std::string& param)
 {
-	return PROBLEMATIC_PARAMS.find(param) != PROBLEMATIC_PARAMS.end();
+	return PROBLEMATIC_PARAMS.find(param) != PROBLEMATIC_PARAMS.end() || IGNORE_PARAMS.find(param) != IGNORE_PARAMS.end();
 }
 
 std::string DataProcessorRvt::getElementName(OdBmElementPtr element, uint64_t id)
@@ -319,7 +319,7 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 		std::string builtInName = convertToStdString(OdBm::BuiltInParameter(*it).toString());
 
 		//.. HOTFIX: handle access violation exception (reported to ODA)
-		if (isProblematicParam(builtInName))
+		if (ignoreParam(builtInName))
 			continue;
 
 		std::string paramName;
