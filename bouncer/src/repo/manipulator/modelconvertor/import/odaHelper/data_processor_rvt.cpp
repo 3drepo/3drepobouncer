@@ -27,7 +27,9 @@ using namespace repo::manipulator::modelconvertor::odaHelper;
 
 bool DataProcessorRvt::ignoreParam(const std::string& param)
 {
-	return PROBLEMATIC_PARAMS.find(param) != PROBLEMATIC_PARAMS.end() || IGNORE_PARAMS.find(param) != IGNORE_PARAMS.end();
+	auto paramUpper = param;
+	std::transform(paramUpper.begin(), paramUpper.end(), paramUpper.begin(), ::toupper);
+	return PROBLEMATIC_PARAMS.find(param) != PROBLEMATIC_PARAMS.end() || IGNORE_PARAMS.find(paramUpper) != IGNORE_PARAMS.end();
 }
 
 std::string DataProcessorRvt::getElementName(OdBmElementPtr element, uint64_t id)
@@ -319,8 +321,7 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 		std::string builtInName = convertToStdString(OdBm::BuiltInParameter(*it).toString());
 
 		//.. HOTFIX: handle access violation exception (reported to ODA)
-		if (ignoreParam(builtInName))
-			continue;
+		if (ignoreParam(builtInName)) continue;
 
 		std::string paramName;
 		if (!labelUtils->getLabelFor(*it).isEmpty())
@@ -335,11 +336,15 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 			OdBmParamElemPtr pParamElem = element->database()->getObjectId(*it).safeOpenObject();
 			OdBmParamDefPtr pDescParam = pParamElem->getParamDef();
 
-			std::string variantValue = translateMetadataValue(value, labelUtils, pDescParam, element->getDatabase(), *it);
-			if (!variantValue.empty())
-			{
-				metadata.first.push_back(convertToStdString(pDescParam->getCaption()));
-				metadata.second.push_back(variantValue);
+			auto metaKey = convertToStdString(pDescParam->getCaption());
+			if (!ignoreParam(metaKey)) {
+				std::string variantValue = translateMetadataValue(value, labelUtils, pDescParam, element->getDatabase(), *it);
+				if (!variantValue.empty())
+				{
+				
+					metadata.first.push_back(metaKey);
+					metadata.second.push_back(variantValue);
+				}
 			}
 		}
 	}

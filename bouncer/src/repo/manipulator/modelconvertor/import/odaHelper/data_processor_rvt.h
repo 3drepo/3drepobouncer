@@ -80,8 +80,8 @@ namespace repo {
 
 					//These metadata params are crashing application when we're trying to get them; Report to ODA
 					const std::set<std::string> IGNORE_PARAMS = {
-						"Render Appearance",
-						"Render Appearance Properties"
+						"RENDER APPEARANCE",
+						"RENDER APPEARANCE PROPERTIES"
 					};
 
 				public:
