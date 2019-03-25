@@ -134,7 +134,7 @@ namespace repo {
 
 					OdBm::DisplayUnitType::Enum getUnits(OdBmDatabasePtr database);
 
-					bool isProblematicParam(const std::string& param);
+					bool ignoreParam(const std::string& param);
 
 					std::string translateMetadataValue(
 						const OdTfVariant& val,
