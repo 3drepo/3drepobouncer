@@ -69,6 +69,8 @@ namespace repo {
 
 				class DataProcessorRvt : public DataProcessor
 				{
+					const static char* RVT_TEXTURES_ENV_VARIABLE;
+					const static std::set<std::string> PROBLEMATIC_PARAMS;
 				public:
 					DataProcessorRvt();
 
@@ -85,7 +87,7 @@ namespace repo {
 						OdGiMaterialItemPtr prevCache,
 						OdDbStub* materialId,
 						const OdGiMaterialTraitsData & materialData,
-						MaterialColors& matColors,
+						MaterialColours& matColors,
 						repo_material_t& material,
 						bool& missingTexture) override;
 
@@ -99,8 +101,10 @@ namespace repo {
 					void hiddenElementsViewRejection(OdBmDBViewPtr pDBView);
 					void getCameras(OdBmDatabasePtr database);
 					camera_t convertCamera(OdBmDBViewPtr view);
+					std::string determineTexturePath(const std::string& inputPath);
+					void establishProjectTranslation(OdBmDatabase* pDb);
 					void fillTexture(OdBmMaterialElemPtr materialPtr, repo_material_t& material, bool& missingTexture);
-					void fillMaterial(OdBmMaterialElemPtr materialPtr, const MaterialColors& matColors, repo_material_t& material);
+					void fillMaterial(OdBmMaterialElemPtr materialPtr, const MaterialColours& matColors, repo_material_t& material);
 					void fillMeshData(const OdGiDrawable* element);
 
 					void fillMetadataById(
@@ -113,9 +117,18 @@ namespace repo {
 
 					std::pair<std::vector<std::string>, std::vector<std::string>> fillMetadata(OdBmElementPtr element);
 					std::string getLevel(OdBmElementPtr element, const std::string& name);
+					std::string getElementName(OdBmElementPtr element, uint64_t id);
+
 					OdBm::DisplayUnitType::Enum getUnits(OdBmDatabasePtr database);
-					double getUnitsCoef(OdBm::DisplayUnitType::Enum unitType);
-					void establishProjectTranslation(OdBmDatabase* pDb);
+
+					bool isProblematicParam(const std::string& param);
+
+					std::string translateMetadataValue(
+						const OdTfVariant& val,
+						OdBmLabelUtilsPEPtr labelUtils,
+						OdBmParamDefPtr paramDef,
+						OdBmDatabase* database,
+						OdBm::BuiltInParameterDefinition::Enum param);
 
 					uint64_t meshesCount;
 					OdBmDatabasePtr database;

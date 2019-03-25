@@ -17,19 +17,16 @@
 
 #pragma once
 
-#include "geometry_collector.h"
 
-#include <SharedPtr.h>
+#include <vector>
 #include <Gi/GiGeometrySimplifier.h>
 #include <Gs/GsBaseMaterialView.h>
 #include <string>
 #include <fstream>
 
+#include "geometry_collector.h"
 #include "vectorise_device_dgn.h"
 #include "../../../../core/model/bson/repo_node_mesh.h"
-
-#include <vector>
-#include "material_colors.h"
 
 namespace repo {
 	namespace manipulator {
@@ -40,6 +37,18 @@ namespace repo {
 				{
 				protected:
 					GeometryCollector *collector;
+					struct MaterialColours
+					{
+						ODCOLORREF colorDiffuse = 0;
+						ODCOLORREF colorAmbient = 0;
+						ODCOLORREF colorSpecular = 0;
+						ODCOLORREF colorEmissive = 0;
+
+						bool colorDiffuseOverride = false;
+						bool colorAmbientOverride = false;
+						bool colorSpecularOverride = false;
+						bool colorEmissiveOverride = false;
+					};
 
 				public:
 					DataProcessor() {}
@@ -47,7 +56,7 @@ namespace repo {
 					virtual double deviation(
 						const OdGiDeviationType deviationType,
 						const OdGePoint3d& pointOnCurve) const;
-					
+
 					void beginViewVectorization();
 
 				protected:
@@ -63,7 +72,7 @@ namespace repo {
 						OdGiMaterialItemPtr prevCache,
 						OdDbStub* materialId,
 						const OdGiMaterialTraitsData & materialData,
-						MaterialColors& matColors,
+						MaterialColours& matColors,
 						repo_material_t& material,
 						bool& missingTexture);
 
@@ -74,10 +83,12 @@ namespace repo {
 					* @param uvOut - output texture coordinates
 					*/
 					virtual void convertTo3DRepoVertices(
-						const OdInt32* p3Vertices, 
+						const OdInt32* p3Vertices,
 						std::vector<repo::lib::RepoVector3D64>& verticesOut,
 						repo::lib::RepoVector3D64& normalOut,
 						std::vector<repo::lib::RepoVector2D>& uvOut);
+
+					repo_material_t GetDefaultMaterial() const;
 
 					/**
 					* Given vertice location, obtain vertices in teigha type and 3drepo type.

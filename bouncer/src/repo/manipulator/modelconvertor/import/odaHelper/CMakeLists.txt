@@ -28,7 +28,6 @@ if(ODA_SUPPORT)
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_rvt.h
 		${CMAKE_CURRENT_SOURCE_DIR}/geometry_collector.h
 		${CMAKE_CURRENT_SOURCE_DIR}/helper_functions.h
-		${CMAKE_CURRENT_SOURCE_DIR}/material_colors.h
 		${CMAKE_CURRENT_SOURCE_DIR}/od_alloc_op.h
 		${CMAKE_CURRENT_SOURCE_DIR}/oda_exsystem_services.h
 		${CMAKE_CURRENT_SOURCE_DIR}/vectorise_device_dgn.h

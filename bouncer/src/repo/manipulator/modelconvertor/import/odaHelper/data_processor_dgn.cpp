@@ -64,7 +64,7 @@ void DataProcessorDgn::convertTo3DRepoMaterial(
 	OdGiMaterialItemPtr prevCache,
 	OdDbStub* materialId,
 	const OdGiMaterialTraitsData & materialData,
-	MaterialColors& matColors,
+	MaterialColours& matColors,
 	repo_material_t& material,
 	bool& missingTexture)
 {

@@ -9,7 +9,6 @@ add_subdirectory(lib)
 add_subdirectory(manipulator)
 set(SOURCES
 	${SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/error_codes.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_controller.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_controller.cpp.inl
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_controller_internal.cpp.inl

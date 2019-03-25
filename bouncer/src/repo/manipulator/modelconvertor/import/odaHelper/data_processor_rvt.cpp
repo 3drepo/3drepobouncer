@@ -15,8 +15,8 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "boost/filesystem.hpp"
-#include "OdPlatformSettings.h"
+#include <boost/filesystem.hpp>
+#include <OdPlatformSettings.h>
 
 #include "vectorise_device_rvt.h"
 #include "data_processor_rvt.h"
@@ -25,35 +25,22 @@
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 //.. NOTE: Environment variable name for Revit textures
-const char* RVT_TEXTURES_ENV_VARIABLE = "REPO_RVT_TEXTURES";
+const char* DataProcessorRvt::RVT_TEXTURES_ENV_VARIABLE = "REPO_RVT_TEXTURES";
 
 //.. NOTE: These metadata params are crashing application when we're trying to get them; Report to ODA
-const std::set<std::string> PROBLEMATIC_PARAMS = { 
-	"ROOF_SLOPE", 
+const std::set<std::string> PROBLEMATIC_PARAMS = {
+	"ROOF_SLOPE",
 	"RBS_PIPE_SIZE_MAXIMUM",
-	"RBS_PIPE_SIZE_MINIMUM", 
-	"RBS_SYSTEM_CLASSIFICATION_PARAM" 
+	"RBS_PIPE_SIZE_MINIMUM",
+	"RBS_SYSTEM_CLASSIFICATION_PARAM"
 };
 
-bool isProblematicParam(const std::string& param)
+bool DataProcessorRvt::isProblematicParam(const std::string& param)
 {
 	return PROBLEMATIC_PARAMS.find(param) != PROBLEMATIC_PARAMS.end();
 }
 
-repo_material_t GetDefaultMaterial()
-{
-	repo_material_t material;
-	material.shininess = 0.0;
-	material.shininessStrength = 0.0;
-	material.opacity = 1;
-	material.specular = { 0, 0, 0, 0 };
-	material.diffuse = { 0.5f, 0.5f, 0.5f, 0 };
-	material.emissive = material.diffuse;
-
-	return material;
-}
-
-std::string getElementName(OdBmElementPtr element, uint64_t id)
+std::string DataProcessorRvt::getElementName(OdBmElementPtr element, uint64_t id)
 {
 	std::string elName(convertToStdString(element->getElementName()));
 	if (!elName.empty())
@@ -69,7 +56,7 @@ bool doesFileExist(const boost::filesystem::path& inputPath)
 	return boost::filesystem::exists(inputPath) && boost::filesystem::is_regular_file(inputPath);
 }
 
-std::string extractValidTexturePath(const std::string& inputPath)
+std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 {
 	// Try to extract one valid paths if multiple paths are provided
 	auto pathStr = inputPath.substr(0, inputPath.find("|", 0));
@@ -96,21 +83,25 @@ std::string extractValidTexturePath(const std::string& inputPath)
 	return std::string();
 }
 
-//.. NOTE: Converts metadata object to a valid std::string that represents metadata value
-std::string variantToString(const OdTfVariant& val, OdBmLabelUtilsPEPtr labelUtils, OdBmParamDefPtr paramDef, OdBmDatabase* database, OdBm::BuiltInParameterDefinition::Enum param)
+std::string DataProcessorRvt::translateMetadataValue(
+	const OdTfVariant& val, 
+	OdBmLabelUtilsPEPtr labelUtils, 
+	OdBmParamDefPtr paramDef, 
+	OdBmDatabase* database, 
+	OdBm::BuiltInParameterDefinition::Enum param)
 {
 	std::string strOut;
 	switch (val.type()) {
-	case OdTfVariant::kString: 
+	case OdTfVariant::kString:
 		strOut = convertToStdString(val.getString());
 		break;
-	case OdTfVariant::kBool:   
+	case OdTfVariant::kBool:
 		strOut = std::to_string(val.getBool());
 		break;
-	case OdTfVariant::kInt8:    
+	case OdTfVariant::kInt8:
 		strOut = std::to_string(val.getInt8());
 		break;
-	case OdTfVariant::kInt16:   
+	case OdTfVariant::kInt16:
 		strOut = std::to_string(val.getInt16());
 		break;
 	case OdTfVariant::kInt32:
@@ -119,10 +110,10 @@ std::string variantToString(const OdTfVariant& val, OdBmLabelUtilsPEPtr labelUti
 		else
 			strOut = std::to_string(val.getInt32());
 		break;
-	case OdTfVariant::kInt64:  
+	case OdTfVariant::kInt64:
 		strOut = std::to_string(val.getInt64());
 		break;
-	case OdTfVariant::kDouble: 
+	case OdTfVariant::kDouble:
 		strOut = convertToStdString(labelUtils->format(*database->getUnits(), paramDef->getUnitType(), val.getDouble(), false));
 		break;
 	case OdTfVariant::kDbStubPtr:
@@ -163,7 +154,7 @@ void DataProcessorRvt::init(GeometryCollector* geoColl, OdBmDatabasePtr database
 	establishProjectTranslation(database);
 }
 
-DataProcessorRvt::DataProcessorRvt() : 
+DataProcessorRvt::DataProcessorRvt() :
 	meshesCount(0)
 {
 }
@@ -189,7 +180,7 @@ void DataProcessorRvt::convertTo3DRepoMaterial(
 	OdGiMaterialItemPtr prevCache,
 	OdDbStub* materialId,
 	const OdGiMaterialTraitsData & materialData,
-	MaterialColors& matColors,
+	MaterialColours& matColors,
 	repo_material_t& material,
 	bool& missingTexture)
 {
@@ -283,7 +274,7 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 	if (!element->isDBRO())
 		return;
 
-	std::string elementName = getElementName(element, meshesCount);
+	std::string elementName = getElementName(element, meshesCount++);
 
 	collector->setNextMeshName(elementName);
 	collector->setMeshGroup(elementName);
@@ -292,15 +283,14 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 	{
 		collector->setCurrentMeta(fillMetadata(element));
 
-		//.. NOTE: for some objects material is not set. set default here
+		//some objects material is not set. set default here
 		collector->setCurrentMaterial(GetDefaultMaterial());
 	}
 	catch(OdError& er)
 	{
 		//.. HOTFIX: handle nullPtr exception (reported to ODA)
+		repoError << "Caught exception whilst: " << convertToStdString(er.description());
 	}
-
-	meshesCount++;
 
 	std::string layerName = getLevel(element, "Layer Default");
 	collector->setLayer(layerName);
@@ -314,12 +304,12 @@ void DataProcessorRvt::fillMetadataById(
 {
 	if (id.isNull())
 		return;
-	
+
 	OdBmObjectPtr ptr = id.safeOpenObject();
-	
-	if (ptr.isNull()) 
+
+	if (ptr.isNull())
 		return;
-	
+
 	fillMetadataByElemPtr(ptr, metadata);
 }
 
@@ -355,7 +345,7 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 			OdBmParamElemPtr pParamElem = element->database()->getObjectId(*it).safeOpenObject();
 			OdBmParamDefPtr pDescParam = pParamElem->getParamDef();
 
-			std::string variantValue = variantToString(value, labelUtils, pDescParam, element->getDatabase(), *it);
+			std::string variantValue = translateMetadataValue(value, labelUtils, pDescParam, element->getDatabase(), *it);
 			if (!variantValue.empty())
 			{
 				metadata.first.push_back(convertToStdString(pDescParam->getCaption()));
@@ -375,10 +365,10 @@ std::pair<std::vector<std::string>, std::vector<std::string>> DataProcessorRvt::
 	return metadata;
 }
 
-void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const MaterialColors& matColors, repo_material_t& material)
+void DataProcessorRvt::fillMaterial(OdBmMaterialElemPtr materialPtr, const MaterialColours& matColors, repo_material_t& material)
 {
 	const float norm = 255.f;
-	
+
 	material.specular = { ODGETRED(matColors.colorSpecular) / norm, ODGETGREEN(matColors.colorSpecular) / norm, ODGETBLUE(matColors.colorSpecular) / norm, 1.0f };
 	material.ambient = { ODGETRED(matColors.colorAmbient) / norm, ODGETGREEN(matColors.colorAmbient) / norm, ODGETBLUE(matColors.colorAmbient) / norm, 1.0f };
 	material.emissive = { ODGETRED(matColors.colorEmissive) / norm, ODGETGREEN(matColors.colorEmissive) / norm, ODGETBLUE(matColors.colorEmissive) / norm, 1.0f };
@@ -415,7 +405,7 @@ void DataProcessorRvt::fillTexture(OdBmMaterialElemPtr materialPtr, repo_materia
 		return;
 
 	std::string textureName(convertToStdString(textureFileName));
-	std::string validTextureName = extractValidTexturePath(textureName);
+	std::string validTextureName = determineTexturePath(textureName);
 	if (validTextureName.empty() && !textureName.empty())
 		missingTexture = true;
 
@@ -430,11 +420,6 @@ OdBm::DisplayUnitType::Enum DataProcessorRvt::getUnits(OdBmDatabasePtr database)
 	OdBmAUnitsPtr ptrAUnits = pUnitsElem->getUnits().get();
 	OdBmFormatOptionsPtr formatOptionsLength = ptrAUnits->getFormatOptions(OdBm::UnitType::Enum::UT_Length);
 	return formatOptionsLength->getDisplayUnits();
-}
-
-double repo::manipulator::modelconvertor::odaHelper::DataProcessorRvt::getUnitsCoef(OdBm::DisplayUnitType::Enum unitType)
-{
-	return BmUnitUtils::getDisplayUnitTypeInfo(unitType)->inIntUnitsCoeff;
 }
 
 void DataProcessorRvt::hiddenElementsViewRejection(OdBmDBViewPtr pDBView)
@@ -502,7 +487,7 @@ void DataProcessorRvt::establishProjectTranslation(OdBmDatabase* pDb)
 
 		if (pThis->getLocationType() == 0)
 		{
-			
+
 			if (OdBmGeoLocation::isGeoLocationAllowed(pThis->database()))
 			{
 				OdBmGeoLocationPtr pActiveLocation = OdBmGeoLocation::getActiveLocationId(pThis->database()).safeOpenObject();
@@ -520,14 +505,14 @@ void DataProcessorRvt::establishProjectTranslation(OdBmDatabase* pDb)
 				OdGeMatrix3d alignedLocation;
 				alignedLocation.setToAlignCoordSys(activeOrigin, activeX, activeY, activeZ, projectOrigin, projectX, projectY, projectZ);
 
-				auto scaleCoef = 1.0 / getUnitsCoef(getUnits(database));
+				auto scaleCoef = 1.0 / BmUnitUtils::getDisplayUnitTypeInfo(getUnits(database))->inIntUnitsCoeff;
 				convertTo3DRepoWorldCoorindates = [activeOrigin, alignedLocation, scaleCoef](OdGePoint3d point) {
 					auto convertedPoint = (point - activeOrigin).transformBy(alignedLocation);
 					return repo::lib::RepoVector3D64(convertedPoint.x * scaleCoef, convertedPoint.y * scaleCoef, convertedPoint.z * scaleCoef);
 				};
 
 			}
-			
+
 		}
 	}
 }

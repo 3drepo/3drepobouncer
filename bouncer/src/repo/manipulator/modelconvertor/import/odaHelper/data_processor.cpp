@@ -78,7 +78,7 @@ void DataProcessor::convertTo3DRepoMaterial(
 	OdGiMaterialItemPtr prevCache,
 	OdDbStub* materialId,
 	const OdGiMaterialTraitsData & materialData,
-	MaterialColors& matColors,
+	MaterialColours& matColors,
 	repo_material_t& material,
 	bool& missingTexture)
 {
@@ -128,10 +128,10 @@ void DataProcessor::convertTo3DRepoMaterial(
 		matColors.colorEmissive = OdCmEntityColor::lookUpRGB((OdUInt8)emissiveColor.color().colorIndex());
 	}
 
-	matColors.colorDiffuseOverride = diffuseColor.method() == OdGiMaterialColor::kOverride ? true : false;
-	matColors.colorAmbientOverride = ambientColor.method() == OdGiMaterialColor::kOverride ? true : false;
-	matColors.colorSpecularOverride = specularColor.method() == OdGiMaterialColor::kOverride ? true : false;
-	matColors.colorEmissiveOverride = emissiveColor.method() == OdGiMaterialColor::kOverride ? true : false;
+	matColors.colorDiffuseOverride = diffuseColor.method() == OdGiMaterialColor::kOverride;
+	matColors.colorAmbientOverride = ambientColor.method() == OdGiMaterialColor::kOverride;
+	matColors.colorSpecularOverride = specularColor.method() == OdGiMaterialColor::kOverride;
+	matColors.colorEmissiveOverride = emissiveColor.method() == OdGiMaterialColor::kOverride;
 
 	material.shininessStrength = glossFactor;
 	material.shininess = materialData.reflectivity();
@@ -143,17 +143,30 @@ OdGiMaterialItemPtr DataProcessor::fillMaterialCache(
 	OdDbStub* materialId,
 	const OdGiMaterialTraitsData & materialData
 ) {
-	MaterialColors colors;
+	MaterialColours colors;
 	repo_material_t material;
 	bool missingTexture = false;
 
+	collector->stopMeshEntry();
 	convertTo3DRepoMaterial(prevCache, materialId, materialData, colors, material, missingTexture);
 
 	collector->setCurrentMaterial(material, missingTexture);
-	collector->stopMeshEntry();
 	collector->startMeshEntry();
 
 	return OdGiMaterialItemPtr();
+}
+
+
+repo_material_t DataProcessor::GetDefaultMaterial() const {
+	repo_material_t material;
+	material.shininess = 0.0;
+	material.shininessStrength = 0.0;
+	material.opacity = 1;
+	material.specular = { 0, 0, 0, 0 };
+	material.diffuse = { 0.5f, 0.5f, 0.5f, 0 };
+	material.emissive = material.diffuse;
+
+	return material;
 }
 
 void DataProcessor::beginViewVectorization()
