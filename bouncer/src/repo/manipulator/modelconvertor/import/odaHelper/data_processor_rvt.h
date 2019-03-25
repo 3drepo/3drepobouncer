@@ -15,7 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #pragma once
-
 #include <SharedPtr.h>
 #include <Gs/GsBaseInclude.h>
 #include <Gs/GsBaseMaterialView.h>
@@ -51,7 +50,6 @@
 #include <Database/Managers/BmUnitsTracking.h>
 #include <Database/Managers/BmElementTrackingData.h>
 #include <Database/Entities/BmUnitsElem.h>
-#include <Database/Entities/BmDBDrawing.h>
 #include <Database/Entities/BmViewport.h>
 #include <Database/Entities/BmHiddenElementsViewSettings.h>
 #include <Database/Entities/BmBasePoint.h>

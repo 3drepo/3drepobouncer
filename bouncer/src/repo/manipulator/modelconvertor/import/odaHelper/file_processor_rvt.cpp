@@ -18,6 +18,7 @@
 //ODA [ BIM BIM-EX RX DB ]
 #include <BimCommon.h>
 #include <Common/BmBuildSettings.h>
+#include <Gs/Gs.h>
 #include <Database/BmDatabase.h>
 #include <Database/BmUnitUtils.h>
 #include <Database/Entities/BmDBDrawing.h>
