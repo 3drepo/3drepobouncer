@@ -84,12 +84,9 @@ bool OdaModelImport::importModel(std::string filePath, uint8_t &err)
 		err = REPOERR_LOAD_SCENE_FAIL;
 	}
 
-    if (!success) {
-		repoError << repo::get3DRepoErrorDescription(err);
-    }
     return success;
 #else
-    //ODA support not compiled in. 
+    //ODA support not compiled in.
     err = REPOERR_ODA_UNAVAILABLE;
     return false;
 #endif

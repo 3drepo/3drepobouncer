@@ -125,7 +125,7 @@ typedef struct{
 			ss << std::fixed << n;
 		}
 		for (const auto &n : texturePath) {
-			ss << std::fixed << n;
+			ss << n;
 		}
 
 		ss << opacity << shininess << shininessStrength << isWireframe << isTwoSided;
