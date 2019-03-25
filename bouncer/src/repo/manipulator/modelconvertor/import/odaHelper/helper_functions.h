@@ -21,14 +21,14 @@
 #include <SharedPtr.h>
 #include <OdString.h>
 
-#include "OdaCommon.h"
+#include <OdaCommon.h>
 #include <BimCommon.h>
-#include "DbBaseDatabase.h"
-#include "Database/BmDatabase.h"
-#include "Database/Entities/BmDBView.h"
-#include "Database/Entities/BmViewport.h"
-#include "Database/Entities/BmDBDrawing.h"
-#include "Base/BmViewType.h"
+#include <DbBaseDatabase.h>
+#include <Database/BmDatabase.h>
+#include <Database/Entities/BmDBView.h>
+#include <Database/Entities/BmViewport.h>
+#include <Database/Entities/BmDBDrawing.h>
+#include <Base/BmViewType.h>
 
 #include "../../../../lib/datastructure/repo_structs.h"
 
@@ -69,10 +69,6 @@ namespace repo {
 				void forEachBmDBView(OdBmDatabasePtr database, std::function<void(OdBmDBViewPtr viewPtr)> func);
 
 				int compare(double d1, double d2);
-
-				repo::lib::RepoVector3D64 operator-(const repo::lib::RepoVector3D64& p1, const repo::lib::RepoVector3D64& p2);
-
-				repo::lib::RepoVector3D64 operator+(const repo::lib::RepoVector3D64& p1, const repo::lib::RepoVector3D64& p2);
 
 				repo::lib::RepoVector3D64 calcNormal(repo::lib::RepoVector3D64 p1, repo::lib::RepoVector3D64 p2, repo::lib::RepoVector3D64 p3);
 			}

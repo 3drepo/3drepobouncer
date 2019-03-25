@@ -16,24 +16,24 @@
 */
 
 //ODA [ BIM BIM-EX RX DB ]
-#include "Common/BmBuildSettings.h"
-#include <OdaCommon.h>
-#include <StaticRxObject.h>
-#include <RxInit.h>
-#include <RxDynamicModule.h>
+#include <BimCommon.h>
+#include <Common/BmBuildSettings.h>
+#include <Database/BmDatabase.h>
+#include <Database/BmUnitUtils.h>
+#include <Database/Entities/BmDBDrawing.h>
+#include <Database/Entities/BmUnitsElem.h>
+#include <Database/GiContextForBmDatabase.h>
+#include <Database/Managers/BmUnitsTracking.h>
 #include <DynamicLinker.h>
-#include <RxDynamicModule.h>
+#include <ExBimHostAppServices.h>
 #include <ExSystemServices.h>
-#include "ExBimHostAppServices.h"
-#include "BimCommon.h"
-#include "RxObjectImpl.h"
-#include "Database/BmDatabase.h"
-#include "Database/GiContextForBmDatabase.h"
-#include "Database/Entities/BmDBDrawing.h"
-#include "ModelerGeometry/BmModelerModule.h"
-#include "Database/Entities/BmUnitsElem.h"
-#include "Database/BmUnitUtils.h"
-#include "Database/Managers/BmUnitsTracking.h"
+#include <ModelerGeometry/BmModelerModule.h>
+#include <OdaCommon.h>
+#include <RxDynamicModule.h>
+#include <RxDynamicModule.h>
+#include <RxInit.h>
+#include <RxObjectImpl.h>
+#include <StaticRxObject.h>
 
 //3d repo bouncer
 #include "file_processor_rvt.h"
@@ -92,12 +92,16 @@ OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimData
 		
 		if (pDBDrawing->getBaseViewNameFormat() == OdBm::ViewType::_3d)
 		{
-			//.. NOTE: set first 3D view available
+			//set first 3D view available
 			if (layoutName.isEmpty())
 				layoutName = pLayout->name(layouts->object());
 			
-			//.. NOTE: try to find 3D view with a valid default name
+			//3D View called "3D" has precedence
 			if (pDBDrawing->getName().find(L"3D") != -1)
+				layoutName =  pLayout->name(layouts->object());
+
+			//3D view called "3D Repo" should return straight away
+			if (pDBDrawing->getName().find(L"3D Repo") != -1)
 				return pLayout->name(layouts->object());
 		}
 	}

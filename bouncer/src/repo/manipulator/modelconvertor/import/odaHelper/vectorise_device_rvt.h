@@ -17,18 +17,19 @@
 
 #pragma once
 
-#include "SharedPtr.h"
-#include "Gs/GsBaseInclude.h"
+#include <SharedPtr.h>
+#include <Gs/GsBaseInclude.h>
 #include <Gs/GsBaseMaterialView.h>
-#include "Gi/GiGeometrySimplifier.h"
-#include "Gs/GsBaseInclude.h"
+#include <Gi/GiGeometrySimplifier.h>
+#include <Gs/GsBaseInclude.h>
 #include <Gs/GsBaseMaterialView.h>
-#include "geometry_collector.h"
-#include "Common/BmBuildSettings.h"
+#include <Common/BmBuildSettings.h>
 #include <OdaCommon.h>
-#include "BimCommon.h"
-#include "RxObjectImpl.h"
-#include "Database/BmDatabase.h"
+#include <BimCommon.h>
+#include <RxObjectImpl.h>
+#include <Database/BmDatabase.h>
+
+#include "geometry_collector.h"
 
 namespace repo {
 	namespace manipulator {

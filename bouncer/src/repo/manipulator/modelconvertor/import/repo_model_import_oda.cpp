@@ -5,8 +5,8 @@
 #ifdef ODA_SUPPORT
 #include <OdaCommon.h>
 #include <Gs/GsBaseInclude.h>
-#include "repo/manipulator/modelconvertor/import/odaHelper/file_processor.h"
-#include "repo/manipulator/modelconvertor/import/odaHelper/helper_functions.h"
+#include "odaHelper/file_processor.h"
+#include "odaHelper/helper_functions.h"
 #endif
 
 using namespace repo::manipulator::modelconvertor;
@@ -51,8 +51,7 @@ repo::core::model::RepoScene* OdaModelImport::generateRepoScene()
 		geoCollector.getMaterialAndTextureNodes(materialSet, textureSet);
         auto transSet = geoCollector.getTransformationNodes();
 		auto metaSet = geoCollector.getMetaNodes();
-		auto cameraSet = geoCollector.getCameraNodes(rootNode.getSharedID());
-		scene = new repo::core::model::RepoScene({ filePath }, cameraSet, meshSet, materialSet, metaSet, textureSet, transSet);
+		scene = new repo::core::model::RepoScene({ filePath }, dummy, meshSet, materialSet, metaSet, textureSet, transSet);
 		if (geoCollector.hasMissingTextures())
 			scene->setMissingTexture();
         scene->setWorldOffset(geoCollector.getModelOffset());

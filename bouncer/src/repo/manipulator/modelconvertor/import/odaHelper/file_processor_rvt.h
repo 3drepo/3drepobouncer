@@ -22,7 +22,7 @@
 #include <OdaCommon.h>
 #include <Gs/GsBaseInclude.h>
 #include <RxObjectImpl.h>
-#include "Wr/wrTriangulationParams.h"
+#include <Wr/wrTriangulationParams.h>
 
 #include <vector>
 #include <string>

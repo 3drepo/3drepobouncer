@@ -15,16 +15,16 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "boost/filesystem.hpp"
-#include "OdPlatformSettings.h"
+#include <boost/filesystem.hpp>
+#include <OdPlatformSettings.h>
 #include <BimCommon.h>
 #include <Database/BmElement.h>
 #include <RxObjectImpl.h>
 #include <ColorMapping.h>
 #include <toString.h>
-#include "Database/Entities/BmMaterialElem.h"
-#include "Geometry/Entities/BmMaterial.h"
-#include "Database/BmAssetHelpers.h"
+#include <Database/Entities/BmMaterialElem.h>
+#include <Geometry/Entities/BmMaterial.h>
+#include <Database/BmAssetHelpers.h>
 
 #include "data_processor_rvt.h"
 #include "vectorise_device_rvt.h"

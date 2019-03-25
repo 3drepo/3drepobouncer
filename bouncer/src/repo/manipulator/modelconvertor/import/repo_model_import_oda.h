@@ -23,7 +23,7 @@
 #include <vector>
 
 #ifdef ODA_SUPPORT
-#include "repo/manipulator/modelconvertor/import/odaHelper/geometry_collector.h"
+#include "odaHelper/geometry_collector.h"
 #endif
 
 namespace repo {
