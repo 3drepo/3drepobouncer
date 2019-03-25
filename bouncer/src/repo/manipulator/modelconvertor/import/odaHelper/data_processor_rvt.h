@@ -69,8 +69,17 @@ namespace repo {
 
 				class DataProcessorRvt : public DataProcessor
 				{
-					const static char* RVT_TEXTURES_ENV_VARIABLE;
-					const static std::set<std::string> PROBLEMATIC_PARAMS;
+					//Environment variable name for Revit textures
+					const char* DataProcessorRvt::RVT_TEXTURES_ENV_VARIABLE = "REPO_RVT_TEXTURES";
+
+					//These metadata params are crashing application when we're trying to get them; Report to ODA
+					const std::set<std::string> PROBLEMATIC_PARAMS = {
+						"ROOF_SLOPE",
+						"RBS_PIPE_SIZE_MAXIMUM",
+						"RBS_PIPE_SIZE_MINIMUM",
+						"RBS_SYSTEM_CLASSIFICATION_PARAM"
+					};
+
 				public:
 					DataProcessorRvt();
 
