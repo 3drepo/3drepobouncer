@@ -16,47 +16,41 @@
 */
 #pragma once
 
-#include "SharedPtr.h"
-#include "Gs/GsBaseInclude.h"
-#include <Gs/GsBaseMaterialView.h>
-#include "Gi/GiGeometrySimplifier.h"
-#include "Gs/GsBaseInclude.h"
-#include <Gs/GsBaseMaterialView.h>
-
-#include "OdPlatformSettings.h"
 #include <BimCommon.h>
-#include <Database/BmElement.h>
-#include <RxObjectImpl.h>
 #include <ColorMapping.h>
-#include <toString.h>
-#include "Database/Entities/BmMaterialElem.h"
-#include "Geometry/Entities/BmMaterial.h"
-#include "Database/BmAssetHelpers.h"
-#include "Database/BmBuiltInParameter.h"
-#include "Database/Entities/BmParamElem.h"
 
-#include "Main/Entities/BmDirectShape.h"
-#include "Main/Entities/BmDirectShapeCell.h"
-#include "Main/Entities/BmDirectShapeDataCell.h"
-
-#include "repo/core/model/bson/repo_bson_builder.h"
-#include "Database/Entities/BmElementHeader.h"
-
-#include "HostObj/Entities/BmLevel.h"
-
+#include <Database/BmAssetHelpers.h>
+#include <Database/BmBuiltInParameter.h>
 #include <Database/BmElement.h>
-#include "Database/BmLabelUtilsPE.h"
-#include "Database/Entities/BmAUnits.h"
-#include "Database/BmUnitUtils.h"
-#include "Database/Managers/BmUnitsTracking.h"
-#include "Database/Managers/BmElementTrackingData.h"
-#include "Database/Entities/BmUnitsElem.h"
-#include "Database/Entities/BmDBDrawing.h"
-#include "Database/Entities/BmViewport.h"
-#include "Database/Entities/BmHiddenElementsViewSettings.h"
-#include "Database/Entities/BmBasePoint.h"
-#include "Database/Entities/BmGeoLocation.h"
+#include <Database/BmLabelUtilsPE.h>
+#include <Database/BmUnitUtils.h>
+#include <Database/Entities/BmAUnits.h>
+#include <Database/Entities/BmBasePoint.h>
+#include <Database/Entities/BmDBDrawing.h>
+#include <Database/Entities/BmElementHeader.h>
+#include <Database/Entities/BmGeoLocation.h>
+#include <Database/Entities/BmMaterialElem.h>
+#include <Database/Entities/BmParamElem.h>
+#include <Database/Managers/BmUnitsTracking.h>
 
+#include <Geometry/Entities/BmMaterial.h>
+#include <Gi/GiGeometrySimplifier.h>
+
+#include <Gs/GsBaseInclude.h>
+#include <Gs/GsBaseInclude.h>
+#include <Gs/GsBaseMaterialView.h>
+#include <Gs/GsBaseMaterialView.h>
+
+#include <HostObj/Entities/BmLevel.h>
+#include <Main/Entities/BmDirectShape.h>
+#include <Main/Entities/BmDirectShapeCell.h>
+#include <Main/Entities/BmDirectShapeDataCell.h>
+#include <OdPlatformSettings.h>
+#include <RxObjectImpl.h>
+#include <toString.h>
+
+
+#include "../../../../core/model/bson/repo_bson_builder.h"
 #include "../../../../lib/datastructure/repo_structs.h"
 #include "geometry_collector.h"
 #include "data_processor.h"
