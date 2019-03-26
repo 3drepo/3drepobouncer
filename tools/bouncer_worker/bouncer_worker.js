@@ -174,8 +174,6 @@
 		{
 			process.env['AWS_ACCESS_KEY_ID'] = conf.aws.access_key_id;
 			process.env['AWS_SECRET_ACCESS_KEY'] =  conf.aws.secret_access_key;
-			awsBucketName = conf.aws.bucket_name;
-			awsBucketRegion = conf.aws.bucket_region;
 		}
 
 		if (conf.bouncer.envars) {
