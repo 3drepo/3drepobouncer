@@ -35,6 +35,7 @@
 #include <RxInit.h>
 #include <RxObjectImpl.h>
 #include <StaticRxObject.h>
+#include "Database/BmGsManager.h"
 
 //3d repo bouncer
 #include "file_processor_rvt.h"
@@ -148,6 +149,13 @@ void setupUnitsFormat(OdBmDatabasePtr pDb, double accuracy)
 	}
 }
 
+void setupRenderMode(OdBmDatabasePtr database, OdGsDevicePtr device, OdGiContextForBmDatabasePtr bimContext, OdGsView::RenderMode renderMode)
+{
+	OdGsBmDBDrawingHelperPtr drawingHelper = OdGsBmDBDrawingHelper::setupDBDrawingViews(database->getActiveDBDrawingId(), device, bimContext);
+	auto view = drawingHelper->activeView();
+	view->setMode(renderMode);
+}
+
 uint8_t FileProcessorRvt::readFile()
 {
 	int nRes = REPOERR_OK;
@@ -179,6 +187,12 @@ uint8_t FileProcessorRvt::readFile()
 
 			pBimContext->setDatabase(pDb);
 			pDevice = pDbPE->setupActiveLayoutViews(pDevice, pBimContext);
+
+			// NOTE: Render mode can be kFlatShaded, kGouraudShaded, kFlatShadedWithWireframe, kGouraudShadedWithWireframe
+			// kHiddenLine mode prevents materails from being uploaded
+			// Uncomment the setupRenderMode function call to change render mode
+			//setupRenderMode(pDb, pDevice, pBimContext, OdGsView::kFlatShaded);
+
 			OdGsDCRect screenRect(OdGsDCPoint(0, 0), OdGsDCPoint(1000, 1000)); //Set the screen space to the borders of the scene
 			pDevice->onSize(screenRect);
 			setupUnitsFormat(pDb, ROUNDING_ACCURACY);
