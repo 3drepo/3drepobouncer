@@ -25,56 +25,47 @@
 #include <string>
 #include <fstream>
 
-#include "vectorise_device.h"
+#include "vectorise_device_dgn.h"
 #include "../../../../core/model/bson/repo_node_mesh.h"
 
+#include "data_processor.h"
+
 #include <vector>
+
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-				class GeometryDumper : public OdGiGeometrySimplifier, public OdGsBaseMaterialView
+				class DataProcessorDgn : public DataProcessor
 				{
-					GeometryCollector *collector;				
-
 				public:
-					GeometryDumper() {}
-					
-					virtual double deviation(
-						const OdGiDeviationType deviationType, 
-						const OdGePoint3d& pointOnCurve) const;
+					DataProcessorDgn() {}
 
-					VectoriseDevice* device();
+					void init(GeometryCollector *const geoCollector);
 
-					bool doDraw(
-						OdUInt32 i, 
-						const OdGiDrawable* pDrawable);
+					VectoriseDeviceDgn* device();
 
-					void init(
-						GeometryCollector *const geoCollector);
-
-					void beginViewVectorization();
-
-					void endViewVectorization();
+					bool doDraw(OdUInt32 i,	const OdGiDrawable* pDrawable) override;
 
 					void setMode(OdGsView::RenderMode mode);
 
+					void endViewVectorization();
+
 				protected:
 
-					OdGiMaterialItemPtr fillMaterialCache(
-						OdGiMaterialItemPtr prevCache, 
-						OdDbStub* materialId, 
-						const OdGiMaterialTraitsData & materialData);
-
-					void triangleOut(
-						const OdInt32* p3Vertices, 
-						const OdGeVector3d* pNormal);
+					void convertTo3DRepoMaterial(
+						OdGiMaterialItemPtr prevCache,
+						OdDbStub* materialId,
+						const OdGiMaterialTraitsData & materialData,
+						MaterialColours& matColors,
+						repo_material_t& material,
+						bool& missingTexture) override;
 
 				private:
 					OdCmEntityColor fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color);
 
 				};
-				typedef OdSharedPtr<GeometryDumper> OdGiConveyorGeometryDumperPtr;
+				typedef OdSharedPtr<DataProcessorDgn> OdGiConveyorGeometryDgnDumperPtr;
 			}
 		}
 	}

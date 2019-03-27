@@ -80,7 +80,6 @@ TEST(DatabaseStatsTest, getStats)
 	EXPECT_EQ(0, stats.getExtentFreeListNum());
 	EXPECT_EQ(0, stats.getExtentFreeListSize());
 
-	repoTrace << stats;
 
 	EXPECT_EQ(REPO_GTEST_DBNAME1, stats.getDatabase());
 }

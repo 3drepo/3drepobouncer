@@ -59,13 +59,13 @@
 	function testClient(callback){
 		logger.info("Checking status of client...");
 
+		setBouncerEnvars();
+
 		let awsBucketName;
 		let awsBucketRegion;
 
 		if (conf.aws)
 		{
-			process.env['AWS_ACCESS_KEY_ID'] = conf.aws.access_key_id;
-			process.env['AWS_SECRET_ACCESS_KEY'] =  conf.aws.secret_access_key;
 			awsBucketName = conf.aws.bucket_name;
 			awsBucketRegion = conf.aws.bucket_region;
 		}
@@ -169,18 +169,36 @@
 
 	}
 
+	function setBouncerEnvars(logDir) {
+		if (conf.aws)
+		{
+			process.env['AWS_ACCESS_KEY_ID'] = conf.aws.access_key_id;
+			process.env['AWS_SECRET_ACCESS_KEY'] =  conf.aws.secret_access_key;
+		}
+
+		if (conf.bouncer.envars) {
+			Object.keys(conf.bouncer.envars).forEach((key) => {
+				process.env[key] = conf.bouncer.envars[key];
+			});
+		}
+
+		if(logDir) {
+			process.env['REPO_LOG_DIR']= logDir ;
+		}
+	}
+
 	function runBouncer(logDir, cmd,  callback)
 	{
-		let os = require('os');
+		const os = require('os');
 		let command = "";
 
 		let awsBucketName;
 		let awsBucketRegion;
 
+		setBouncerEnvars(logDir);
+
 		if (conf.aws)
 		{
-			process.env['AWS_ACCESS_KEY_ID'] = conf.aws.access_key_id;
-			process.env['AWS_SECRET_ACCESS_KEY'] =  conf.aws.secret_access_key;
 			awsBucketName = conf.aws.bucket_name;
 			awsBucketRegion = conf.aws.bucket_region;
 		}
@@ -189,7 +207,6 @@
 		{
 
 			cmd = cmd.replace("/sharedData/", conf.rabbitmq.sharedDir);
-			process.env['REPO_LOG_DIR']= logDir ;
 
 			command = path.normalize(conf.bouncer.path) + " " +
 				conf.bouncer.dbhost + " " +
@@ -218,8 +235,7 @@
 		}
 		else
 		{
-			command = "REPO_LOG_DIR=" + logDir + " " +
-				path.normalize(conf.bouncer.path) + " " +
+			command = path.normalize(conf.bouncer.path) + " " +
 				conf.bouncer.dbhost + " " +
 				conf.bouncer.dbport + " " +
 				conf.bouncer.username + " " +

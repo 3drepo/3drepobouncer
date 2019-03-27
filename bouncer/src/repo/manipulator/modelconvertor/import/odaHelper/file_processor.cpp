@@ -15,28 +15,12 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-#include <OdaCommon.h>
-
-#include <StaticRxObject.h>
-#include <RxInit.h>
-#include <RxDynamicModule.h>
-#include <DynamicLinker.h>
-#include <DgDatabase.h>
-#include <RxDynamicModule.h>
-
-#include <ExSystemServices.h>
-#include <ExDgnServices.h>
-#include <ExDgnHostAppServices.h>
-
-#include <DgGiContext.h>
-#include <DgGsManager.h>
-
+#include "boost/filesystem.hpp"
+#include <memory>
 #include "file_processor.h"
-#include "geometry_dumper.h"
-#include "vectorise_device.h"
+#include "file_processor_dgn.h"
+#include "file_processor_rvt.h"
 
-#include <DgLine.h>      // This file puts OdDgLine3d in the output file
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 FileProcessor::FileProcessor(const std::string &inputFile, GeometryCollector *geoCollector)
@@ -45,268 +29,27 @@ FileProcessor::FileProcessor(const std::string &inputFile, GeometryCollector *ge
 {
 }
 
-
-FileProcessor::~FileProcessor()
+repo::manipulator::modelconvertor::odaHelper::FileProcessor::~FileProcessor()
 {
 }
 
-class StubDeviceModuleText : public OdGsBaseModule
-{
-private:
-	GeometryCollector *collector;
-	OdGeMatrix3d        m_matTransform;
-	const std::map<OdDbStub*, double>* m_pMapDeviations;
-
-public:
-	void init(GeometryCollector* const collector)
-	{
-		this->collector = collector;
-	}
-protected:
-	OdSmartPtr<OdGsBaseVectorizeDevice> createDeviceObject()
-	{
-		return OdRxObjectImpl<VectoriseDevice, OdGsBaseVectorizeDevice>::createObject();
-	}
-	OdSmartPtr<OdGsViewImpl> createViewObject()
-	{
-		OdSmartPtr<OdGsViewImpl> pP = OdRxObjectImpl<GeometryDumper, OdGsViewImpl>::createObject();
-		((GeometryDumper*)pP.get())->init(collector);
-		return pP;
-	}
-	OdSmartPtr<OdGsBaseVectorizeDevice> createBitmapDeviceObject()
-	{
-		return OdSmartPtr<OdGsBaseVectorizeDevice>();
-	}
-	OdSmartPtr<OdGsViewImpl> createBitmapViewObject()
-	{
-		return OdSmartPtr<OdGsViewImpl>();
-	}
-};
-ODRX_DEFINE_PSEUDO_STATIC_MODULE(StubDeviceModuleText);
-
-class RepoDgnServices : public OdExDgnSystemServices, public OdExDgnHostAppServices
-{
-protected:
-	ODRX_USING_HEAP_OPERATORS(OdExDgnSystemServices);
-};
-
-//TODO: merge with geometry dumper's function
-std::string convertToString(const OdString &value) {
-	const char *ansi = static_cast<const char *>(value);
-	return std::string(ansi);
+template<typename T, typename... Args>
+std::unique_ptr<T> makeUnique(Args&&... args) {
+	return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
-int FileProcessor::readFile() {
 
-	int   nRes = 0;               // Return value for the function
-	OdStaticRxObject<RepoDgnServices> svcs;
-	OdString fileSource = file.c_str();
-	OdString strStlFilename = OdString::kEmpty;
+std::unique_ptr<FileProcessor> FileProcessor::getFileProcessor(const std::string &inputFile, GeometryCollector * geoCollector) {
 
+	boost::filesystem::path filePathP(inputFile);
+	std::string fileExt = filePathP.extension().string();
+	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
 
-	/**********************************************************************/
-	/* Initialize Runtime Extension environment                           */
-	/**********************************************************************/
-	odrxInitialize(&svcs);
-	odgsInitialize();
+	if (fileExt == ".DGN")
+		return makeUnique<FileProcessorDgn>(inputFile, geoCollector);
+	else if (fileExt == ".RVT" || fileExt == ".RFA")
+		return makeUnique<FileProcessorRvt>(inputFile, geoCollector);
 
-
-	try
-	{
-		/**********************************************************************/
-		/* Initialize Teigha™ for .dgn files                                               */
-		/**********************************************************************/
-		::odrxDynamicLinker()->loadModule(L"TG_Db", false);
-
-		OdDgDatabasePtr pDb = svcs.readFile(fileSource);
-
-		if (!pDb.isNull())
-		{
-
-			const ODCOLORREF* refColors = OdDgColorTable::currentPalette(pDb);
-			ODGSPALETTE pPalCpy;
-			pPalCpy.insert(pPalCpy.begin(), refColors, refColors + 256);
-
-			OdDgElementId elementId = pDb->getActiveModelId();
-
-			if (elementId.isValid()) {
-				OdDgModelPtr viewElement = elementId.openObject(OdDg::kForRead);
-				auto activeViewName = convertToString(viewElement->getName());
-				if (viewElement->getType() != OdDgModel::Type::kDesignModel || activeViewName == "Title")
-				{
-					OdDgElementIteratorPtr pModelIter = pDb->getModelTable()->createIterator();
-					for (; !pModelIter->done(); pModelIter->step())
-					{
-						OdDgModelPtr elem = pModelIter->item().openObject();
-						auto viewName = convertToString(elem->getName());
-						if (!elem.isNull() && elem->getType() == OdDgModel::Type::kDesignModel &&  
-							viewName != "Title") {
-							repoInfo << "Setting active view to: " << viewName;
-							pDb->setActiveModelId(pModelIter->item());
-							elementId = pModelIter->item();
-							break;
-						}
-					}
-				}
-			}
-			
-		
-			if (elementId.isNull())
-			{
-				elementId = pDb->getDefaultModelId();
-				pDb->setActiveModelId(elementId);
-			}
-			OdDgElementId elementActId = pDb->getActiveModelId();
-			OdDgModelPtr pModel = elementId.safeOpenObject();
-			ODCOLORREF background = pModel->getBackground();
-
-			OdDgElementId vectorizedViewId;
-			OdDgViewGroupPtr pViewGroup = pDb->getActiveViewGroupId().openObject();
-			if (pViewGroup.isNull())
-			{
-				//  Some files can have invalid id for View Group. Try to get & use a valid (recommended) View Group object.
-				pViewGroup = pDb->recommendActiveViewGroupId().openObject();
-				if (pViewGroup.isNull())
-				{
-					// Add View group
-					pModel->createViewGroup();
-					pModel->fitToView();
-					pViewGroup = pDb->recommendActiveViewGroupId().openObject();
-				}
-			}
-			if (!pViewGroup.isNull())
-			{
-				OdDgElementIteratorPtr pIt = pViewGroup->createIterator();
-				for (; !pIt->done(); pIt->step())
-				{
-					OdDgViewPtr pView = OdDgView::cast(pIt->item().openObject());
-					if (pView.get() && pView->getVisibleFlag())
-					{
-						vectorizedViewId = pIt->item();
-						break;
-					}
-				}
-			}
-
-			if (vectorizedViewId.isNull() && !pViewGroup.isNull())
-			{
-				OdDgElementIteratorPtr pIt = pViewGroup->createIterator();
-
-				if (!pIt->done())
-				{
-					OdDgViewPtr pView = OdDgView::cast(pIt->item().openObject(OdDg::kForWrite));
-
-					if (pView.get())
-					{
-						pView->setVisibleFlag(true);
-						vectorizedViewId = pIt->item();
-					}
-				}
-			}
-
-			if (vectorizedViewId.isNull())
-			{
-				repoError << "Can not find an active view group or all its views are disabled";
-			}
-			else
-			{
-				OdGeExtents3d extModel;
-				pModel->getGeomExtents(vectorizedViewId, extModel);
-				auto origin = pModel->getGlobalOrigin();
-				collector->setOrigin(origin.x, origin.y, origin.z);
-				// Color with #255 always defines backround. The background of the active model must be considered in the device palette.
-				pPalCpy[255] = background;
-				// Note: This method should be called to resolve "white background issue" before setting device palette
-				bool bCorrected = OdDgColorTable::correctPaletteForWhiteBackground(pPalCpy.asArrayPtr());
-
-				// Calculate deviations for dgn elements
-
-				std::map<OdDbStub*, double > mapDeviations;
-
-				OdDgElementIteratorPtr pIter = pModel->createGraphicsElementsIterator();
-
-				for (; !pIter->done(); pIter->step())
-				{
-					OdGeExtents3d extElm;
-					OdDgElementPtr pItem = pIter->item().openObject(OdDg::kForRead);
-
-					if (pItem->isKindOf(OdDgGraphicsElement::desc()))
-					{
-						pItem->getGeomExtents(extElm);
-
-						if (extElm.isValidExtents())
-							mapDeviations[pItem->elementId()] = extElm.maxPoint().distanceTo(extElm.minPoint()) / 1e4;
-					}
-				}
-
-				importDgn(pDb, pPalCpy.asArrayPtr(), 256);			
-			}
-		}
-	}
-	catch (std::exception &e)
-	{
-		repoError << "Failed: " << e.what();
-	}
-	return nRes;
+	return nullptr;
 }
 
-int FileProcessor::importDgn(OdDbBaseDatabase *pDb,
-	const ODCOLORREF* pPallete,
-	int numColors,
-	const OdGiDrawable* pEntity,
-	const OdGeMatrix3d& matTransform,
-	const std::map<OdDbStub*, double>* pMapDeviations)
-{
-
-	int ret = 0;
-	OdUInt32 iCurEntData = 0;
-	try
-	{
-		odgsInitialize();
-		
-		OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(StubDeviceModuleText)(OD_T("StubDeviceModuleText"));
-
-		((StubDeviceModuleText*)pGsModule.get())->init(collector);
-
-
-		OdDbBaseDatabasePEPtr pDbPE(pDb);
-		OdGiDefaultContextPtr pContext = pDbPE->createGiContext(pDb);
-		{
-			OdGsDevicePtr pDevice = pGsModule->createDevice();
-			pDevice->setLogicalPalette(pPallete, numColors);
-
-			if (pEntity)
-			{
-				//for one entity
-				OdGsViewPtr pNewView = pDevice->createView();
-				pNewView->setMode(OdGsView::kFlatShaded);
-				pDevice->addView(pNewView);
-				pNewView->add((OdGiDrawable*)pEntity, 0);
-			}
-			else
-			{
-				OdGsDevicePtr pHlpDevice = pDbPE->setupActiveLayoutViews(pDevice, pContext);
-			}
-			pDevice->setUserGiContext(pContext);
-
-			OdGsDCRect screenRect(OdGsDCPoint(0, 1000), OdGsDCPoint(1000, 0));
-			pDevice->onSize(screenRect);
-			pDevice->update();
-		}
-
-		pContext.release();
-		pGsModule.release();
-		
-		odgsUninitialize();
-	}	
-	catch (OdError& e)
-	{
-		ret = e.code();
-		repoError << e.description().c_str();
-	}
-	catch (...)
-	{
-		ret = 1;
-	}
-	return ret;
-}

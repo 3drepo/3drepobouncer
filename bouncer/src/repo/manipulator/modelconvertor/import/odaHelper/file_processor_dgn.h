@@ -16,26 +16,39 @@
 */
 
 #pragma once
-#include "geometry_collector.h"
-#include "repo/error_codes.h"
+
+#include "../../../../core/model/bson/repo_node_mesh.h"
+
+#include <OdaCommon.h>
+#include <Gs/GsBaseInclude.h>
+#include <RxObjectImpl.h>
+#include <vector>
 #include <string>
+
+#include "geometry_collector.h"
+#include "file_processor.h"
+
 
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-				class FileProcessor
+				class FileProcessorDgn : public FileProcessor
 				{
-				protected:
-					FileProcessor(const std::string& inputFile, GeometryCollector* geoCollector);
 				public:
-					static std::unique_ptr<FileProcessor> getFileProcessor(const std::string& inputFile, GeometryCollector* geoCollector);
-					virtual ~FileProcessor();
-					virtual uint8_t readFile() = 0;
-					
-				protected:
-					const std::string file;
-					GeometryCollector *collector;
+					FileProcessorDgn(const std::string &inputFile, GeometryCollector * geoCollector) : FileProcessor(inputFile, geoCollector) {};
+					~FileProcessorDgn() override;
+
+					uint8_t readFile() override;
+
+				private:
+					int importDgn(OdDbBaseDatabase *pDb,
+						const ODCOLORREF* pPallete,
+						int numColors,
+						const OdGiDrawable* pEntity = nullptr,
+						const OdGeMatrix3d& matTransform = OdGeMatrix3d::kIdentity,
+						const std::map<OdDbStub*, double>* pMapDeviations = nullptr);
+
 				};
 			}
 		}
