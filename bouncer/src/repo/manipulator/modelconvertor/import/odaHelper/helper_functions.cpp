@@ -15,6 +15,9 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <string>
+#include <sstream>
+#include <iostream>
 #include <boost/locale/encoding_utf.hpp>
 #include "helper_functions.h"
 
