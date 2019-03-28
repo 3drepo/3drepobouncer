@@ -96,15 +96,19 @@ OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimData
 		{
 			//set first 3D view available
 			if (layoutName.isEmpty())
-				layoutName = pLayout->name(layouts->object());
-			
+				layoutName = pLayout->name(layouts->object());		
+
 			//3D View called "3D" has precedence
-			if (pDBDrawing->getName().find(L"3D") != -1)
-				layoutName =  pLayout->name(layouts->object());
+			if (pDBDrawing->getName().iCompare("{3D}") == 0) {
+				repoInfo << "Found default named 3D view.";
+				layoutName = pLayout->name(layouts->object());
+			}
 
 			//3D view called "3D Repo" should return straight away
-			if (pDBDrawing->getName().find(L"3D Repo") != -1)
+			if (pDBDrawing->getName().iCompare("3D Repo") == 0) {
+				repoInfo << "Found 3D view named 3D Repo.";
 				return pLayout->name(layouts->object());
+			}
 		}
 	}
 
@@ -174,6 +178,7 @@ uint8_t FileProcessorRvt::readFile()
 		{
 			OdDbBaseDatabasePEPtr pDbPE(pDb);
 			OdString layout = Get3DLayout(pDbPE, pDb);
+			repoInfo << "Using 3D View: " << convertToStdString(layout);
 			if (layout.isEmpty())
 				return REPOERR_VALID_3D_VIEW_NOT_FOUND;
 
