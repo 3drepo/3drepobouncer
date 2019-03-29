@@ -32,8 +32,10 @@ void DataProcessor::convertTo3DRepoVertices(
 	repo::lib::RepoVector3D64& normalOut,
 	std::vector<repo::lib::RepoVector2D>& uvOut)
 {
+	
 	std::vector<OdGePoint3d> odaPoints;
 	getVertices(p3Vertices, odaPoints, verticesOut);
+	normalOut = calcNormal(verticesOut[0], verticesOut[1], verticesOut[2]);
 }
 
 void DataProcessor::getVertices(
