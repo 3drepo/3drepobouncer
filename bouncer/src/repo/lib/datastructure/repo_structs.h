@@ -107,6 +107,7 @@ typedef struct{
 	bool isWireframe = false;
 	bool isTwoSided = false;
 
+	std::string texturePath;
 
 	unsigned int checksum() const {
 		std::stringstream ss;
@@ -122,6 +123,9 @@ typedef struct{
 		}
 		for (const auto &n : emissive) {
 			ss << std::fixed << n;
+		}
+		for (const auto &n : texturePath) {
+			ss << n;
 		}
 
 		ss << opacity << shininess << shininessStrength << isWireframe << isTwoSided;

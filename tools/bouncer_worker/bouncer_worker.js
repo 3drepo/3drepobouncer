@@ -59,13 +59,13 @@
 	function testClient(callback){
 		logger.info("Checking status of client...");
 
+		setBouncerEnvars();
+
 		let awsBucketName;
 		let awsBucketRegion;
 
 		if (conf.aws)
 		{
-			process.env['AWS_ACCESS_KEY_ID'] = conf.aws.access_key_id;
-			process.env['AWS_SECRET_ACCESS_KEY'] =  conf.aws.secret_access_key;
 			awsBucketName = conf.aws.bucket_name;
 			awsBucketRegion = conf.aws.bucket_region;
 		}
@@ -132,7 +132,6 @@
 			}).catch(err => {
 
 				logger.error("importToy module error");
-				console.log(err, err.stack);
 
 				callback(JSON.stringify({
 					value: ERRCODE_BOUNCER_CRASH,
@@ -148,18 +147,58 @@
 
 	}
 
+	function writeOutStdBuffers(stdout, stderr, logDir, prefix) {
+		const fs = require('fs');
+		const fullPrefix = `${logDir}/${prefix}`;
+		const regexReplace = new RegExp(conf.bouncer.password, 'g');
+		fs.writeFile(`${fullPrefix}_stdout.log`, stdout.replace(regexReplace, "[REDACTED]"), (err) => {
+			if (err) {
+				logger.error("Failed to write stdout file: ", err);
+			} else {
+				logger.info("Written stdout log to " + `${fullPrefix}_stdout.log`);
+			}
+		});
+
+		fs.writeFile(`${fullPrefix}_stderr.log`, stderr.replace(regexReplace, "[REDACTED]"), (err) => {
+			if (err) {
+				logger.error("Failed to write stderr file: ", err);
+			} else {
+				logger.info("Written stderr log to " + `${fullPrefix}_stderr.log`);
+			}
+		});
+
+	}
+
+	function setBouncerEnvars(logDir) {
+		if (conf.aws)
+		{
+			process.env['AWS_ACCESS_KEY_ID'] = conf.aws.access_key_id;
+			process.env['AWS_SECRET_ACCESS_KEY'] =  conf.aws.secret_access_key;
+		}
+
+		if (conf.bouncer.envars) {
+			Object.keys(conf.bouncer.envars).forEach((key) => {
+				process.env[key] = conf.bouncer.envars[key];
+			});
+		}
+
+		if(logDir) {
+			process.env['REPO_LOG_DIR']= logDir ;
+		}
+	}
+
 	function runBouncer(logDir, cmd,  callback)
 	{
-		let os = require('os');
+		const os = require('os');
 		let command = "";
 
 		let awsBucketName;
 		let awsBucketRegion;
 
+		setBouncerEnvars(logDir);
+
 		if (conf.aws)
 		{
-			process.env['AWS_ACCESS_KEY_ID'] = conf.aws.access_key_id;
-			process.env['AWS_SECRET_ACCESS_KEY'] =  conf.aws.secret_access_key;
 			awsBucketName = conf.aws.bucket_name;
 			awsBucketRegion = conf.aws.bucket_region;
 		}
@@ -168,7 +207,6 @@
 		{
 
 			cmd = cmd.replace("/sharedData/", conf.rabbitmq.sharedDir);
-			process.env['REPO_LOG_DIR']= logDir ;
 
 			command = path.normalize(conf.bouncer.path) + " " +
 				conf.bouncer.dbhost + " " +
@@ -182,7 +220,7 @@
 			let cmdArr = cmd.split(' ');
 			if(cmdArr[0] == "import")
 			{
-				let fs = require('fs')
+				const fs = require('fs')
 				fs.readFile(cmdArr[2], 'utf8', function (err,data) {
 				  	if (err) {
 						return logger.error(err);
@@ -197,8 +235,7 @@
 		}
 		else
 		{
-			command = "REPO_LOG_DIR=" + logDir + " " +
-				path.normalize(conf.bouncer.path) + " " +
+			command = path.normalize(conf.bouncer.path) + " " +
 				conf.bouncer.dbhost + " " +
 				conf.bouncer.dbport + " " +
 				conf.bouncer.username + " " +
@@ -258,29 +295,29 @@
 		}
 
 		exec(command, function(error, stdout, stderr){
-			let reply = {};
-			logger.debug(stdout);
+			const reply = {};
 
 			if(error !== null && error.code && softFails.indexOf(error.code) == -1){
 				if(error.code)
 					reply.value = error.code;
 				else
 					reply.value = ERRCODE_BOUNCER_CRASH;
+
+				writeOutStdBuffers(stdout, stderr, logDir, "bouncer");
 				callback({
 					value: reply.value,
 					database: cmdDatabase,
 					project: cmdProject,
 					user
 				}, true);
-				logger.info("Executed command: " + command, reply);
+				logger.info("[FAILED] Executed command: " + command, reply);
 			}
 			else{
 				if(error == null)
 					reply.value = 0;
 				else
 					reply.value = error.code;
-				console.log(error);
-				logger.info("Executed command: " + command, reply);
+				logger.info("[SUCCEED] Executed command: " + command, reply);
 				if(conf.unity && conf.unity.project && cmdArr[0] == "import")
 				{
 					let commandArgs = cmdFile;
@@ -314,6 +351,7 @@
 							if(error)
 							{
 								reply.value = ERRCODE_BUNDLE_GEN_FAIL;
+								writeOutStdBuffers(stdout, stderr, logDir, "unity");
 							}
 							logger.info("Executed Unity command: " + unityCommand, reply);
 							callback({

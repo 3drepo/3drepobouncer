@@ -144,6 +144,7 @@ namespace repo {
 					const std::string                                      &model,
 					const std::vector<double>                              &offset,
 					const std::vector<std::string>                         &vrAssetFiles,
+					const std::vector<std::string>                         &iosAssetFiles,
 					const std::vector<std::string>                         &jsonFiles);
 
 				/*
@@ -260,6 +261,22 @@ namespace repo {
 					const std::string                                 &name = std::string(),
 					const std::vector<repo::lib::RepoUUID>            &parents = std::vector<repo::lib::RepoUUID>(),
 					const int                                         &apiLevel = REPO_NODE_API_LEVEL_1);
+
+				static MeshNode makeMeshNode(
+					const std::vector<repo::lib::RepoVector3D>        &vertices,
+					const std::vector<repo_face_t>                    &faces,
+					const std::vector<repo::lib::RepoVector3D>        &normals,
+					const std::vector<std::vector<float>>             &boundingBox,
+					const std::vector<repo::lib::RepoUUID>            &parents) {
+
+					return makeMeshNode(vertices, faces, normals, boundingBox,
+						std::vector<std::vector<repo::lib::RepoVector2D>>(),
+						std::vector<repo_color4d_t>(),
+						std::vector<std::vector<float>>(),
+						std::string(),
+						parents
+					);
+				}
 
 				/**
 				* Create a Reference Node

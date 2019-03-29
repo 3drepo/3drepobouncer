@@ -382,25 +382,22 @@ bool RepoScene::addNodeToScene(
 	RepoNodeSet *collection)
 {
 	bool success = true;
-	RepoNodeSet::iterator nodeIterator;
-	if (nodes.size() > 0)
+
+	for (auto & node : nodes)
 	{
-		collection->insert(nodes.begin(), nodes.end());
-		for (nodeIterator = nodes.begin(); nodeIterator != nodes.end(); ++nodeIterator)
+		if (node)
 		{
-			RepoNode * node = *nodeIterator;
-			if (node)
+			collection->insert(node);
+			if (!addNodeToMaps(gType, node, errMsg))
 			{
-				if (!addNodeToMaps(gType, node, errMsg))
-				{
-					repoError << "failed to add node (" << node->getUniqueID() << " to scene graph: " << errMsg;
-					success = false;
-				}
+				repoError << "failed to add node (" << node->getUniqueID() << " to scene graph: " << errMsg;
+				success = false;
 			}
-			if (gType == GraphType::DEFAULT)
-				newAdded.insert(node->getSharedID());
 		}
+		if (gType == GraphType::DEFAULT)
+			newAdded.insert(node->getSharedID());
 	}
+
 
 	return success;
 }
@@ -683,15 +680,7 @@ bool RepoScene::commitRevisionNode(
 		uniqueIDs.push_back(keyVal.first);
 	}
 
-	//convert the sets to vectors
-	std::vector<repo::lib::RepoUUID> newAddedV(newAdded.begin(), newAdded.end());
-	std::vector<repo::lib::RepoUUID> newRemovedV(newRemoved.begin(), newRemoved.end());
-	std::vector<repo::lib::RepoUUID> newModifiedV(newModified.begin(), newModified.end());
-
 	repoTrace << "Committing Revision Node....";
-
-	repoTrace << "New revision: #current = " << uniqueIDs.size() << " #added = " << newAddedV.size()
-		<< " #deleted = " << newRemovedV.size() << " #modified = " << newModifiedV.size();
 
 	std::vector<std::string> fileNames;
 	for (const std::string &name : refFiles)
@@ -702,7 +691,7 @@ bool RepoScene::commitRevisionNode(
 
 	newRevNode =
 		new RevisionNode(RepoBSONFactory::makeRevisionNode(userName, branch, uniqueIDs,
-		/*newAddedV, newRemovedV, newModifiedV,*/ fileNames, parent, worldOffset, message, tag));
+		fileNames, parent, worldOffset, message, tag));
 	*newRevNode = newRevNode->cloneAndUpdateStatus(RevisionNode::UploadStatus::GEN_DEFAULT);
 
 	if (newRevNode)

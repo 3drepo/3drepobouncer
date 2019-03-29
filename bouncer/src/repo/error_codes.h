@@ -69,4 +69,5 @@
 #define REPOERR_MAX_NODES_EXCEEDED 25
 //When ODA not compiled in but dgn import requested
 #define REPOERR_ODA_UNAVAILABLE 26
-
+//No valid 3D view found (for Revit format)
+#define REPOERR_VALID_3D_VIEW_NOT_FOUND 27

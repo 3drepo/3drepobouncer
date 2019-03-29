@@ -16,29 +16,30 @@
 */
 
 #pragma once
+#include <Gs/GsBaseInclude.h>
+#include <RxObjectImpl.h>
+#include <iostream>
+#include <Gs/GsBaseMaterialView.h>
 #include "geometry_collector.h"
-#include "repo/error_codes.h"
-#include <string>
+
 
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-				class FileProcessor
+
+				class VectoriseDeviceDgn :
+					public OdGsBaseVectorizeDevice
 				{
+					GeometryCollector * geoCollector;
 				protected:
-					FileProcessor(const std::string& inputFile, GeometryCollector* geoCollector);
+					ODRX_USING_HEAP_OPERATORS(OdGsBaseVectorizeDevice);
 				public:
-					static std::unique_ptr<FileProcessor> getFileProcessor(const std::string& inputFile, GeometryCollector* geoCollector);
-					virtual ~FileProcessor();
-					virtual uint8_t readFile() = 0;
-					
-				protected:
-					const std::string file;
-					GeometryCollector *collector;
-				};
+
+					VectoriseDeviceDgn(){}
+					~VectoriseDeviceDgn(){}
+				}; // end OdaVectorizeDevice			
 			}
 		}
 	}
 }
-

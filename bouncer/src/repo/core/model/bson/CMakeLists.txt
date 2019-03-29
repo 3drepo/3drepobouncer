@@ -36,6 +36,7 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_element.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_factory.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_project_settings.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_ref.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_role.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_role_settings.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_unity_assets.h
