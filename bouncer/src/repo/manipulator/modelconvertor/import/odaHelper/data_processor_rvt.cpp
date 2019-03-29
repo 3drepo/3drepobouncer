@@ -71,7 +71,7 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 	if (doesFileExist(altPath))
 		return altPath.generic_string();
 
-	repoError << "Failed to find: " << texturePath;
+	repoDebug << "Failed to find: " << texturePath;
 	return std::string();
 }
 

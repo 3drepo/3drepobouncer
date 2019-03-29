@@ -153,7 +153,7 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 
 				std::vector<repo::core::model::RepoNode*> granTransParents =
 					scene->getParentNodesFiltered(gType,
-					trans, repo::core::model::NodeType::TRANSFORMATION);
+						trans, repo::core::model::NodeType::TRANSFORMATION);
 
 				bool absorbTrans = (meshVector.size() == 1) && noTransSiblings && granTransParents.size() == 1;
 
@@ -192,9 +192,9 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 								if (node)
 								{
 									scene->abandonChild(gType,
-										parentSharedID, node, false, true);		
+										parentSharedID, node, false, true);
 
-									if (!isIdentity && node->positionDependant()){
+									if (!isIdentity && node->positionDependant()) {
 										//Parent is not the identity matrix, we need to reapply the transformation if
 										//the node is position dependant
 										node->swap(node->cloneAndApplyTransformation(trans->getTransMatrix(false)));
@@ -206,7 +206,7 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 											(repo::core::model::RepoNode*) granTrans,
 											node,
 											false
-											);
+										);
 									}
 								}
 							}
