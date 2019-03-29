@@ -155,9 +155,11 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 					scene->getParentNodesFiltered(gType,
 					trans, repo::core::model::NodeType::TRANSFORMATION);
 
-				bool absorbTrans = meshVector.size() > 0 && noTransSiblings && granTransParents.size() == 1;
+				bool absorbTrans = meshVector.size() > 0 && noTransSiblings;
+				bool satisfyStrictMode = strictMode && meshVector.size() == 1 && granTransParents.size() == 1;
 
-				if (absorbTrans && ( !strictMode  ||  meshVector.size() == 1))
+			
+				if (absorbTrans && (!strictMode || satisfyStrictMode))
 				{
 
 					//connect all metadata to children mesh
@@ -167,12 +169,12 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 					}
 
 					//change mesh name FIXME: this is a bit hacky.
-					if (absorbTrans || (mesh->getName().empty() && trans->getName().find(IFC_TYPE_SPACE_LABEL) != std::string::npos))
+					if (satisfyStrictMode || (mesh->getName().empty() && trans->getName().find(IFC_TYPE_SPACE_LABEL) != std::string::npos))
 					{
 						repo::core::model::MeshNode newMesh = mesh->cloneAndChangeName(trans->getName(), false);
 						scene->modifyNode(gType, mesh, &newMesh);
 					}
-					if (absorbTrans)
+					if (satisfyStrictMode)
 					{
 						repo::core::model::TransformationNode *granTrans =
 							dynamic_cast<repo::core::model::TransformationNode*>(granTransParents[0]);
@@ -219,8 +221,10 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 							repoError << "Failed to dynamically cast a transformation node!!!!";
 						}
 					}
-				} //(singleMeshChild && noTransSiblings && granTransParents.size() == 1)
-			}//(trans->getUniqueID() != scene->getRoot()->getUniqueID() && trans->isIdentity())
+				}
+				
+				
+			}
 		}
 		else
 		{

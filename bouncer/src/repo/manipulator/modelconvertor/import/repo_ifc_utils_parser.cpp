@@ -163,19 +163,10 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 
 		transID = transNode.getSharedID();
 
-		transNodeSet.insert(new repo::core::model::TransformationNode(transNode));
-
-		if (meshes.find(guid) != meshes.end())
-		{
-			//has meshes associated with it. append parent
-			for (auto &mesh : meshes[guid])
-			{
-				*mesh = mesh->cloneAndAddParent(transID);
-				if (isIFCSpace || mesh->getName().empty())
-					*mesh = mesh->cloneAndChangeName(name);
-			}
-		}
+		transNodeSet.insert(new repo::core::model::TransformationNode(transNode));	
 	}
+
+	bool hasTransChildren = false;
 
 	if (traverseChildren)
 	{
@@ -190,6 +181,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 				{
 					auto childTransNodes = createTransformationsRecursive(ifcfile, element, meshes, materials, metaSet, myMetaValues, transID, childrenAncestors);
 					transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
+					hasTransChildren |= childTransNodes.size();
 				}
 			}
 		}
@@ -203,6 +195,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 					auto childEntity = ifcfile.entityById(childrenId);
 					auto childTransNodes = createTransformationsRecursive(ifcfile, childEntity, meshes, materials, metaSet, myMetaValues, transID, childrenAncestors);
 					transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
+					hasTransChildren |= childTransNodes.size();
 				}
 				catch (IfcParse::IfcException &e)
 				{
@@ -223,7 +216,21 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 		myMetaValues.first.insert(myMetaValues.first.begin(), REPO_LABEL_IFC_TYPE);
 		myMetaValues.second.insert(myMetaValues.second.begin(), ifcType);
 
-		metaSet.insert(new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(myMetaValues.first, myMetaValues.second, name, { transID })));
+		std::vector<repo::lib::RepoUUID> metaParents = { transID };
+		if (meshes.find(guid) != meshes.end())
+		{
+			//has meshes associated with it. append parent
+			for (auto &mesh : meshes[guid])
+			{
+				*mesh = mesh->cloneAndAddParent(transID);
+				if (isIFCSpace || mesh->getName().empty() && hasTransChildren) {
+					*mesh = mesh->cloneAndChangeName(name);
+					metaParents.push_back(mesh->getSharedID());
+				}
+			}
+		}
+
+		metaSet.insert(new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(myMetaValues.first, myMetaValues.second, name, metaParents)));
 	}
 	else
 	{
