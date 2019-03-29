@@ -149,18 +149,18 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 					}					
 				}
 
-				bool noTransSiblings = transSiblingCount == 0;
+				bool noTransSiblings = (bool)!getChildrenByIDAndType(scene, gType, parentSharedID, repo::core::model::NodeType::TRANSFORMATION).size() == 1;
 
 				std::vector<repo::core::model::RepoNode*> granTransParents =
 					scene->getParentNodesFiltered(gType,
-					trans, repo::core::model::NodeType::TRANSFORMATION);
+						trans, repo::core::model::NodeType::TRANSFORMATION);
 
-				bool absorbTrans = meshVector.size() > 0 && noTransSiblings;
-				bool satisfyStrictMode = strictMode && meshVector.size() == 1 && granTransParents.size() == 1;
+				bool absorbTrans = (meshVector.size() == 1) && noTransSiblings && granTransParents.size() == 1;
 
-			
-				if (absorbTrans && (!strictMode || satisfyStrictMode))
+				if ((!strictMode && meshVector.size() || absorbTrans))
 				{
+					auto metaVector = getChildrenByIDAndType(scene, gType,
+						parentSharedID, repo::core::model::NodeType::METADATA);
 
 					//connect all metadata to children mesh
 					for (const auto &meta : metaVector)
@@ -169,12 +169,12 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 					}
 
 					//change mesh name FIXME: this is a bit hacky.
-					if (satisfyStrictMode || (mesh->getName().empty() && trans->getName().find(IFC_TYPE_SPACE_LABEL) != std::string::npos))
+					if (absorbTrans || (mesh->getName().empty() && trans->getName().find(IFC_TYPE_SPACE_LABEL) != std::string::npos))
 					{
 						repo::core::model::MeshNode newMesh = mesh->cloneAndChangeName(trans->getName(), false);
 						scene->modifyNode(gType, mesh, &newMesh);
 					}
-					if (satisfyStrictMode)
+					if (absorbTrans)
 					{
 						repo::core::model::TransformationNode *granTrans =
 							dynamic_cast<repo::core::model::TransformationNode*>(granTransParents[0]);
@@ -194,9 +194,9 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 								if (node)
 								{
 									scene->abandonChild(gType,
-										parentSharedID, node, false, true);		
+										parentSharedID, node, false, true);
 
-									if (!isIdentity && node->positionDependant()){
+									if (!isIdentity && node->positionDependant()) {
 										//Parent is not the identity matrix, we need to reapply the transformation if
 										//the node is position dependant
 										node->swap(node->cloneAndApplyTransformation(trans->getTransMatrix(false)));
@@ -208,7 +208,7 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 											(repo::core::model::RepoNode*) granTrans,
 											node,
 											false
-											);
+										);
 									}
 								}
 							}
@@ -221,10 +221,10 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 							repoError << "Failed to dynamically cast a transformation node!!!!";
 						}
 					}
-				}
+				} //(singleMeshChild && noTransSiblings && granTransParents.size() == 1)
+			}//(trans->getUniqueID() != scene->getRoot()->getUniqueID() && trans->isIdentity())
 				
-				
-			}
+			
 		}
 		else
 		{
