@@ -149,7 +149,7 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 					}					
 				}
 
-				bool noTransSiblings = (bool)!getChildrenByIDAndType(scene, gType, parentSharedID, repo::core::model::NodeType::TRANSFORMATION).size() == 1;
+				bool noTransSiblings = transSiblingCount == 0;
 
 				std::vector<repo::core::model::RepoNode*> granTransParents =
 					scene->getParentNodesFiltered(gType,
@@ -157,10 +157,8 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 
 				bool absorbTrans = (meshVector.size() == 1) && noTransSiblings && granTransParents.size() == 1;
 
-				if ((!strictMode && meshVector.size() || absorbTrans))
+				if (!strictMode && meshVector.size() || absorbTrans)
 				{
-					auto metaVector = getChildrenByIDAndType(scene, gType,
-						parentSharedID, repo::core::model::NodeType::METADATA);
 
 					//connect all metadata to children mesh
 					for (const auto &meta : metaVector)
@@ -223,8 +221,6 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 					}
 				} //(singleMeshChild && noTransSiblings && granTransParents.size() == 1)
 			}//(trans->getUniqueID() != scene->getRoot()->getUniqueID() && trans->isIdentity())
-				
-			
 		}
 		else
 		{
