@@ -155,9 +155,9 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 					scene->getParentNodesFiltered(gType,
 					trans, repo::core::model::NodeType::TRANSFORMATION);
 
-				bool absorbTrans = (meshVector.size() == 1) && noTransSiblings && granTransParents.size() == 1;
+				bool absorbTrans = meshVector.size() > 0 && noTransSiblings && granTransParents.size() == 1;
 
-				if (!strictMode && meshVector.size() || absorbTrans)
+				if (absorbTrans && ( !strictMode  ||  meshVector.size() == 1))
 				{
 
 					//connect all metadata to children mesh

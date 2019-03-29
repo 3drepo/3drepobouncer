@@ -171,7 +171,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 			for (auto &mesh : meshes[guid])
 			{
 				*mesh = mesh->cloneAndAddParent(transID);
-				if (isIFCSpace)
+				if (isIFCSpace || mesh->getName().empty())
 					*mesh = mesh->cloneAndChangeName(name);
 			}
 		}
