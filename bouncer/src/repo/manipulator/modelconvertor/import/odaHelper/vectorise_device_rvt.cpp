@@ -15,30 +15,24 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#pragma once
-#include "geometry_collector.h"
-#include "repo/error_codes.h"
-#include <string>
+#include <boost/filesystem.hpp>
+#include <OdPlatformSettings.h>
+#include <BimCommon.h>
+#include <Database/BmElement.h>
+#include <RxObjectImpl.h>
+#include <ColorMapping.h>
+#include <toString.h>
+#include <Database/Entities/BmMaterialElem.h>
+#include <Geometry/Entities/BmMaterial.h>
+#include <Database/BmAssetHelpers.h>
 
-namespace repo {
-	namespace manipulator {
-		namespace modelconvertor {
-			namespace odaHelper {
-				class FileProcessor
-				{
-				protected:
-					FileProcessor(const std::string& inputFile, GeometryCollector* geoCollector);
-				public:
-					static std::unique_ptr<FileProcessor> getFileProcessor(const std::string& inputFile, GeometryCollector* geoCollector);
-					virtual ~FileProcessor();
-					virtual uint8_t readFile() = 0;
-					
-				protected:
-					const std::string file;
-					GeometryCollector *collector;
-				};
-			}
-		}
-	}
+#include "data_processor_rvt.h"
+#include "vectorise_device_rvt.h"
+
+using namespace repo::manipulator::modelconvertor::odaHelper;
+
+VectoriseDeviceRvt::VectoriseDeviceRvt()
+{
+	setLogicalPalette(odcmAcadLightPalette(), 256);
+	onSize(OdGsDCRect(0, 100, 0, 100));
 }
-

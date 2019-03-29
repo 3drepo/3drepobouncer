@@ -365,6 +365,37 @@ TEST(RepoClientTest, UploadTestDGN)
 	EXPECT_TRUE(projectExists(db, "dgnTest"));
 }
 
+TEST(RepoClientTest, UploadTestRVT)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
+
+
+	//Upload RVT file
+	std::string rvtUpload = produceUploadArgs(db, "rvtTest", getDataPath(rvtModel));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(rvtUpload));
+	EXPECT_TRUE(projectExists(db, "rvtTest"));
+
+	//Upload RVT file with texture directory set
+	std::string texturePath = "REPO_RVT_TEXTURES=" + getDataPath("textures");
+	
+	//Linux putenv takes in a char* instead of const char* - need a copy of the const char*
+	char* texturePathEnv = new char[texturePath.size()+1];
+	strncpy(texturePathEnv, texturePath.c_str(), texturePath.size()+1);
+
+	putenv(texturePathEnv);
+	std::string rvtUpload2 = produceUploadArgs(db, "rvtTest2", getDataPath(rvtModel));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload2));
+	EXPECT_TRUE(projectExists(db, "rvtTest2"));
+
+	//Upload RVT file with no valid 3D view
+	std::string rvtUpload3 = produceUploadArgs(db, "rvtTest3", getDataPath(rvtNo3DViewModel));
+	EXPECT_EQ((int)REPOERR_VALID_3D_VIEW_NOT_FOUND, runProcess(rvtUpload3));
+	EXPECT_FALSE(projectExists(db, "rvtTest3"));
+
+}
+
 TEST(RepoClientTest, UploadTestMissingFieldsInJSON)
 {
 	//this ensures we can run processes

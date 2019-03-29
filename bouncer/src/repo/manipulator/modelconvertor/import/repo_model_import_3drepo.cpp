@@ -136,7 +136,11 @@ repo::core::model::MaterialNode *RepoModelImport::parseMaterial(const boost::pro
 		return materialNode;
 }
 
-repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree &mesh, const std::string &parentName, const repo::lib::RepoUUID &parentID, const repo::lib::RepoMatrix &trans)
+RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
+	const ptree &mesh, 
+	const std::string &parentName, 
+	const repo::lib::RepoUUID &parentID, 
+	const repo::lib::RepoMatrix &trans)
 {
 	repo::core::model::MaterialNode *materialNode;
 
@@ -146,16 +150,31 @@ repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree &mesh, 
 	int numVertices = mesh.get<int>("numVertices");
 
 	//Avoid using assimp objects everywhere -> converting assimp objects into repo structs
-	std::vector<repo::lib::RepoVector3D> vertices;
+	std::vector<repo::lib::RepoVector3D64> vertices;
 	std::vector<repo::lib::RepoVector3D> normals;
 	std::vector<repo_face_t> faces;
 
-	std::vector<std::vector<float> > boundingBox;
+	std::vector<std::vector<double> > boundingBox;
+	
+	const bool needTransform = !trans.isIdentity();
+	repo::lib::RepoMatrix normalTrans;
 
-	std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
-	std::vector<repo_color4d_t> colors;
-	std::vector<std::vector<float> > outline;
+	if (needTransform)
+	{
+		repo::lib::RepoMatrix invTrans;
 
+		invTrans = trans.invert().transpose();
+
+		auto data = invTrans.getData();
+		data[3] = data[7] = data[11] = 0;
+		data[12] = data[13] = data[14] = 0;
+
+		normalTrans  = repo::lib::RepoMatrix(data);
+	}
+
+	std::vector<double> minBBox;
+	std::vector<double> maxBBox;
+	
 	for(ptree::const_iterator props = mesh.begin(); props != mesh.end(); props++)
 	{
 		if (props->first == REPO_IMPORT_MATERIAL)
@@ -172,16 +191,32 @@ repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree &mesh, 
 
 			for(int i = 0; i < numVertices; i ++)
 			{
-				repo::lib::RepoVector3D tmpVec;
+			
+				if (props->first == REPO_IMPORT_VERTICES) {
+					repo::lib::RepoVector3D64 tmpVec = { tmpVertices[i * 3] ,  tmpVertices[i * 3 + 1] , tmpVertices[i * 3 + 2] };
+					if (needTransform) tmpVec = trans * tmpVec;
 
-				tmpVec.x = tmpVertices[i * 3];
-				tmpVec.y = tmpVertices[i * 3 + 1];
-				tmpVec.z = tmpVertices[i * 3 + 2];
+					if (minBBox.size()) {
+						if (tmpVec.x < minBBox[0]) minBBox[0] = tmpVec.x;
+						if (tmpVec.y < minBBox[1]) minBBox[1] = tmpVec.y;
+						if (tmpVec.z < minBBox[2]) minBBox[2] = tmpVec.z;
+					}
+					else
+						minBBox = { tmpVec.x, tmpVec.y, tmpVec.z };
 
-				if (props->first == REPO_IMPORT_VERTICES )
+					if (maxBBox.size()) {
+						if (tmpVec.x > maxBBox[0]) maxBBox[0] = tmpVec.x;
+						if (tmpVec.y > maxBBox[1]) maxBBox[1] = tmpVec.y;
+						if (tmpVec.z > maxBBox[2]) maxBBox[2] = tmpVec.z;
+					} else
+						maxBBox = { tmpVec.x, tmpVec.y, tmpVec.z };
+
 					vertices.push_back(tmpVec);
-				else
-					normals.push_back(tmpVec);
+				}
+				else {
+					repo::lib::RepoVector3D tmpVec = { tmpVertices[i * 3] ,  tmpVertices[i * 3 + 1] , tmpVertices[i * 3 + 2] };
+					normals.push_back(needTransform ? normalTrans * tmpVec : tmpVec);
+				}
 			}
 		}
 
@@ -203,82 +238,27 @@ repo::core::model::MeshNode* RepoModelImport::createMeshNode(const ptree &mesh, 
 			}
 		}
 	}
-
-	repo::lib::RepoVector3D min = vertices[0];
-	repo::lib::RepoVector3D max = vertices[0];
-
-	repo::lib::RepoVector3D min_test = vertices[0];
-	repo::lib::RepoVector3D max_test = vertices[0];
 	
-	for(auto &v : vertices)
-	{
-
-		if (v.x < min_test.x) min_test.x = v.x;
-		if (v.y < min_test.y) min_test.y = v.y;
-		if (v.z < min_test.z) min_test.z = v.z;
-
-		if (v.x > max_test.x) max_test.x = v.x;
-		if (v.y > max_test.y) max_test.y = v.y;
-		if (v.z > max_test.z) max_test.z = v.z;
-		
-		v.x -= offset[0];
-		v.y -= offset[1];
-		v.z -= offset[2];
-
-		if (!trans.isIdentity())
-		{
-			v = trans * v;
-		}
-
-		if (v.x < min.x) min.x = v.x;
-		if (v.y < min.y) min.y = v.y;
-		if (v.z < min.z) min.z = v.z;
-
-		if (v.x > max.x) max.x = v.x;
-		if (v.y > max.y) max.y = v.y;
-		if (v.z > max.z) max.z = v.z;
-	}
-
-	if (!trans.isIdentity())
-	{
-		repo::lib::RepoMatrix invTrans;
-
-		invTrans = trans.invert().transpose();
-
-		auto data = invTrans.getData();
-		data[3] = data[7] = data[11] = 0;
-		data[12] = data[13] = data[14] = 0;
-
-		repo::lib::RepoMatrix normTrans(data);
-
-		for(auto &n : normals)
-		{
-			n = normTrans * n;
-		}
-	}
-
-	std::vector<float> minBBox;
-	std::vector<float> maxBBox;
-
-	minBBox.push_back(min.x); minBBox.push_back(min.y); minBBox.push_back(min.z);
-	maxBBox.push_back(max.x); maxBBox.push_back(max.y); maxBBox.push_back(max.z);
-
 	boundingBox.push_back(minBBox);
 	boundingBox.push_back(maxBBox);
 
-	repo::core::model::MeshNode *meshNode = new repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(
-		vertices, faces, normals, boundingBox, uvChannels, colors, outline));
+	if (offset.size()) {
+		for (int i = 0; i < offset.size(); ++i)
+			offset[i] = offset[i] > minBBox[i] ? minBBox[i] : offset[i];		
+	}
+	else {
+		offset = minBBox;
+	}
 
-	*meshNode = meshNode->cloneAndAddParent(parentID);
+	const auto sharedID = repo::lib::RepoUUID::createUUID();
 
 	if (materialID >= 0)
 	{
-		matParents[materialID].push_back(meshNode->getSharedID());
+		matParents[materialID].push_back(sharedID);
 	}
 
-	meshes.insert(meshNode);
-
-	return meshNode;
+	mesh_data_t result = {vertices, normals, faces, boundingBox, parentID, sharedID};
+	return result;
 }
 
 void RepoModelImport::createObject(const ptree& tree)
@@ -319,7 +299,7 @@ void RepoModelImport::createObject(const ptree& tree)
 	node_map.push_back(transNode);
 
 	std::vector<repo::core::model::MetadataNode*> metas;
-	std::vector<repo::core::model::MeshNode*> meshes;
+	std::vector<repo::lib::RepoUUID> meshSharedIDs;
 
 	for(ptree::const_iterator props = tree.begin(); props != tree.end(); props++)
 	{
@@ -330,23 +310,17 @@ void RepoModelImport::createObject(const ptree& tree)
 
 		if (props->first == REPO_IMPORT_GEOMETRY)
 		{
-			meshes.push_back(createMeshNode(props->second, transName, transID, trans_map.back()));
+			auto mesh = createMeshRecord(props->second, transName, transID, trans_map.back());
+			meshSharedIDs.push_back(mesh.sharedID);
+			meshEntries.push_back(mesh);
 		}
 	}
 
 	repo::lib::RepoUUID metaParentSharedID = transNode->getSharedID();
 
-	if (meshes.size() > 0)
-	{
-		if (meshes.size() > 1)
-			repoWarning << "More than one mesh to attach metadata to.";
-
-		metaParentSharedID = meshes[0]->getSharedID();
-	}
-
 	for(auto &meta : metas)
 	{
-		*meta = meta->cloneAndAddParent(metaParentSharedID);
+		*meta = meta->cloneAndAddParent(meshSharedIDs);
 	}
 
 	transformations.insert(transNode);
@@ -506,8 +480,6 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene()
 		return nullptr;
 	}
 
-	offset = as_vector<double>(*rootBBOX, "min");
-
 	boost::optional< ptree& > transMatTree = root.get_child_optional("transformation");
 	repo::lib::RepoMatrix transMat;
 
@@ -553,20 +525,35 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene()
 	if (!orgFile.empty())
 		fileVect.push_back(orgFile);
 
+
+	repo::core::model::RepoNodeSet meshes;
+	if (!offset.size()) offset = { 0, 0, 0 };
+
+	for (const auto &entry : meshEntries) {
+		std::vector<repo::lib::RepoVector3D> vertices;
+		std::vector<std::vector<float>> boundingBox;
+
+		for (const auto &v : entry.rawVertices) {
+			repo::lib::RepoVector3D v32 = {(float)(v.x - offset[0]), (float)(v.y - offset[1]), (float)(v.z - offset[2]) };
+			vertices.push_back(v32);
+		}
+
+		for (const auto &bbArr : entry.boundingBox) {
+			std::vector<float> bb;
+			for (int i = 0; i < bbArr.size(); ++i) {
+				bb.push_back((float)bbArr[i] - offset[i]);
+			}
+			boundingBox.push_back(bb);
+		}
+
+		auto mesh = repo::core::model::RepoBSONFactory::makeMeshNode(vertices, entry.faces, entry.normals, boundingBox, { entry.parent });
+		repo::core::model::RepoBSONBuilder builder;
+		builder.append(REPO_NODE_LABEL_SHARED_ID, entry.sharedID);
+		auto changes = builder.obj();
+		meshes.insert(new repo::core::model::MeshNode(mesh.cloneAndAddFields(&changes, false)));
+	}
+
 	repo::core::model::RepoScene * scenePtr = new repo::core::model::RepoScene(fileVect, cameras, meshes, materials, metadata, textures, transformations);
-
-	// Transform offset into correct space
-	repo::lib::RepoVector3D tmpVec;
-
-	tmpVec.x = offset[0];
-	tmpVec.y = offset[1];
-	tmpVec.z = offset[2];
-
-	tmpVec = transMat * tmpVec;
-
-	offset[0] = tmpVec.x;
-	offset[1] = tmpVec.y;
-	offset[2] = tmpVec.z;
 
 	scenePtr->setWorldOffset(offset);
 

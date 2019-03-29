@@ -16,30 +16,33 @@
 */
 
 #pragma once
-#include <Gs/GsBaseInclude.h>
-#include <RxObjectImpl.h>
-#include <iostream>
-#include <Gs/GsBaseMaterialView.h>
-#include "geometry_collector.h"
 
+#include <SharedPtr.h>
+#include <Gs/GsBaseInclude.h>
+#include <Gs/GsBaseMaterialView.h>
+#include <Gi/GiGeometrySimplifier.h>
+#include <Gs/GsBaseInclude.h>
+#include <Gs/GsBaseMaterialView.h>
+#include <Common/BmBuildSettings.h>
+#include <OdaCommon.h>
+#include <BimCommon.h>
+#include <RxObjectImpl.h>
+#include <Database/BmDatabase.h>
+
+#include "geometry_collector.h"
 
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
 
-				class VectoriseDevice :
-					public OdGsBaseVectorizeDevice
+				class VectoriseDeviceRvt : public OdGsBaseVectorizeDevice
 				{
-					GeometryCollector * geoCollector;
-				protected:
-					ODRX_USING_HEAP_OPERATORS(OdGsBaseVectorizeDevice);
 				public:
-
-					VectoriseDevice(){}
-					~VectoriseDevice(){}
-				}; // end OdaVectoriseDevice			
+					VectoriseDeviceRvt();
+				};
 			}
 		}
 	}
 }
+
