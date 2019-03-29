@@ -35,7 +35,8 @@ void DataProcessor::convertTo3DRepoVertices(
 	
 	std::vector<OdGePoint3d> odaPoints;
 	getVertices(p3Vertices, odaPoints, verticesOut);
-	normalOut = calcNormal(verticesOut[0], verticesOut[1], verticesOut[2]);
+	if(verticesOut.size() >=3)
+		normalOut = calcNormal(verticesOut[0], verticesOut[1], verticesOut[2]);
 }
 
 void DataProcessor::getVertices(
