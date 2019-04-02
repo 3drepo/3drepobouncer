@@ -145,8 +145,8 @@ void GeometryCollector::addFace(
 		startMeshEntry();
 	}
 
-	if (faceHasUV && uvCoords.size() == vertices.size()) {
-		repoError << "Vertices size and UV size mismatched!";
+	if (faceHasUV && uvCoords.size() != vertices.size()) {
+		repoError << "Vertices size["<< vertices.size() << "] and UV size ["<< uvCoords.size() <<"] mismatched!";
 		exit(-1);
 	}
 
