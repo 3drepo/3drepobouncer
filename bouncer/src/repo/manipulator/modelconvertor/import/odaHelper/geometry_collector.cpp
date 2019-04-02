@@ -133,6 +133,23 @@ void GeometryCollector::addFace(
 	const std::vector<repo::lib::RepoVector2D>& uvCoords) 
 {
 	if (!meshData.size()) startMeshEntry();
+
+	bool currentEntryHasUV = currentEntry->uvCoords.size();
+	bool faceHasUV = uvCoords.size();
+	if (currentEntry->rawVertices.size() && currentEntryHasUV != faceHasUV) {
+		//Start a new mesh if the current mesh has UVs but this face doesn't or vice versa.
+		auto lastMeshName = nextMeshName;
+		stopMeshEntry();
+		nextMeshName = lastMeshName + "_";
+		repoDebug << "Staring a new mesh due to UV difference";
+		startMeshEntry();
+	}
+
+	if (faceHasUV && uvCoords.size() == vertices.size()) {
+		repoError << "Vertices size and UV size mismatched!";
+		exit(-1);
+	}
+
 	repo_face_t face;
 	for (auto i = 0; i < vertices.size(); ++i) {
 		auto& v = vertices[i];
@@ -206,11 +223,14 @@ void GeometryCollector::addFace(
 				vertIdx = currentEntry->rawVertices.size();
 				currentEntry->rawVertices.push_back(v);
 				currentEntry->rawNormals.push_back(normal);
+				if (i < uvCoords.size())
+					currentEntry->uvCoords.push_back(uvCoords[i]);
 			}
 		}
 
 		face.push_back(vertIdx);
 	}
+
 	currentEntry->faces.push_back(face);
 }
 

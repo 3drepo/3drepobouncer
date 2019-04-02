@@ -38,7 +38,6 @@
 #include <Main/Entities/BmDirectShapeCell.h>
 #include <Main/Entities/BmDirectShapeDataCell.h>
 
-#include <repo/core/model/bson/repo_bson_builder.h>
 #include <Database/Entities/BmElementHeader.h>
 
 #include <HostObj/Entities/BmLevel.h>
@@ -56,6 +55,7 @@
 #include <Database/Entities/BmGeoLocation.h>
 
 #include "../../../../lib/datastructure/repo_structs.h"
+#include "../../../../core/model/bson/repo_bson_builder.h"
 #include "geometry_collector.h"
 #include "data_processor.h"
 
