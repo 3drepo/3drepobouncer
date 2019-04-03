@@ -34,7 +34,7 @@
 	const amqp = require("amqplib/callback_api");
 	const conf = require("./config.js");
 	const path = require("path");
-	const exec = require("child_process").exec;
+	const spawn = require("child_process").spawn;
 	const importToy = require('./importToy');
 	const winston = require('winston');
 	const rootModelDir = './toy';
@@ -61,8 +61,8 @@
 
 		setBouncerEnvars();
 
-		let awsBucketName;
-		let awsBucketRegion;
+		let awsBucketName = "undefined";
+		let awsBucketRegion = "undefined";
 
 		if (conf.aws)
 		{
@@ -70,24 +70,26 @@
 			awsBucketRegion = conf.aws.bucket_region;
 		}
 
-		const cmd = path.normalize(conf.bouncer.path) + " " +
-				conf.bouncer.dbhost + " " +
-				conf.bouncer.dbport + " " +
-				conf.bouncer.username + " " +
-				conf.bouncer.password + " " +
-				awsBucketName + " " +
-				awsBucketRegion + " test";
+		const cmdParams = [
+				conf.bouncer.dbhost,
+				conf.bouncer.dbport,
+				conf.bouncer.username,
+				conf.bouncer.password,
+				awsBucketName,
+				awsBucketRegion,
+				"test"
+			];
 
-		exec(cmd, function(error, stdout, stderr){
-			if(error !== null){
-				logger.error("bouncer call errored");
-				logger.debug(stdout);
-			}
-			else{
-				logger.info("bouncer call passed");
+		const cmdExec = spawn(path.normalize(conf.bouncer.path), cmdParams);
+		cmdExec.on("close", (code) => {
+			if(code === 0) {
+				logger.info("Bouncer call passed");
 				callback();
+			} else {
+				logger.error("Bouncer call errored");
 			}
 		});
+
 	}
 
 	/**
@@ -147,28 +149,6 @@
 
 	}
 
-	function writeOutStdBuffers(stdout, stderr, logDir, prefix) {
-		const fs = require('fs');
-		const fullPrefix = `${logDir}/${prefix}`;
-		const regexReplace = new RegExp(conf.bouncer.password, 'g');
-		fs.writeFile(`${fullPrefix}_stdout.log`, stdout.replace(regexReplace, "[REDACTED]"), (err) => {
-			if (err) {
-				logger.error("Failed to write stdout file: ", err);
-			} else {
-				logger.info("Written stdout log to " + `${fullPrefix}_stdout.log`);
-			}
-		});
-
-		fs.writeFile(`${fullPrefix}_stderr.log`, stderr.replace(regexReplace, "[REDACTED]"), (err) => {
-			if (err) {
-				logger.error("Failed to write stderr file: ", err);
-			} else {
-				logger.info("Written stderr log to " + `${fullPrefix}_stderr.log`);
-			}
-		});
-
-	}
-
 	function setBouncerEnvars(logDir) {
 		if (conf.aws)
 		{
@@ -191,9 +171,10 @@
 	{
 		const os = require('os');
 		let command = "";
+		const cmdParams = [];
 
-		let awsBucketName;
-		let awsBucketRegion;
+		let awsBucketName = "undefined";
+		let awsBucketRegion = "undfined";
 
 		setBouncerEnvars(logDir);
 
@@ -203,19 +184,21 @@
 			awsBucketRegion = conf.aws.bucket_region;
 		}
 
+		cmdParams.push(
+			conf.bouncer.dbhost,
+			conf.bouncer.dbport,
+			conf.bouncer.username,
+			conf.bouncer.password,
+			awsBucketName,
+			awsBucketRegion);
+
 		if(os.platform() === "win32")
 		{
 
 			cmd = cmd.replace("/sharedData/", conf.rabbitmq.sharedDir);
 
-			command = path.normalize(conf.bouncer.path) + " " +
-				conf.bouncer.dbhost + " " +
-				conf.bouncer.dbport + " " +
-				conf.bouncer.username + " " +
-				conf.bouncer.password + " " +
-				awsBucketName + " " +
-				awsBucketRegion + " " +
-				cmd;
+			command = path.normalize(conf.bouncer.path);
+			cmd.split(' ').forEach((data) => cmdParams.push(data));
 
 			let cmdArr = cmd.split(' ');
 			if(cmdArr[0] == "import")
@@ -235,14 +218,7 @@
 		}
 		else
 		{
-			command = path.normalize(conf.bouncer.path) + " " +
-				conf.bouncer.dbhost + " " +
-				conf.bouncer.dbport + " " +
-				conf.bouncer.username + " " +
-				conf.bouncer.password + " " +
-				awsBucketName + " " +
-				awsBucketRegion + " " +
-				cmd;
+			cmd.split(' ').forEach((data) => cmdParams.push(data));
 		}
 
 		let cmdFile;
@@ -294,37 +270,35 @@
 			}, false);
 		}
 
-		exec(command, function(error, stdout, stderr){
+		const cmdExec = spawn(path.normalize(conf.bouncer.path), cmdParams);
+
+		cmdExec.on("close", (code) => {
 			const reply = {};
 
-			if(error !== null && error.code && softFails.indexOf(error.code) == -1){
-				if(error.code)
-					reply.value = error.code;
+			if(code !== 0 && softFails.indexOf(code) === -1){
+				if(code)
+					reply.value = code;
 				else
 					reply.value = ERRCODE_BOUNCER_CRASH;
 
-				writeOutStdBuffers(stdout, stderr, logDir, "bouncer");
 				callback({
 					value: reply.value,
 					database: cmdDatabase,
 					project: cmdProject,
 					user
 				}, true);
-				logger.info("[FAILED] Executed command: " + command, reply);
+				logger.info(`[FAILED] Executed command: ${command} ${cmdParams.join(" ")}`, reply);
 			}
 			else{
-				if(error == null)
-					reply.value = 0;
-				else
-					reply.value = error.code;
-				logger.info("[SUCCEED] Executed command: " + command, reply);
+				reply.value = code;
+				logger.info(`[SUCCEED] Executed command: ${command} ${cmdParams.join(" ")} `, reply);
 				if(conf.unity && conf.unity.project && cmdArr[0] == "import")
 				{
 					let commandArgs = cmdFile;
 					if(commandArgs && commandArgs.database && commandArgs.project)
 					{
-						let awsBucketName;
-						let awsBucketRegion;
+						let awsBucketName = "undefined";
+						let awsBucketRegion = "undefined";
 
 						if (conf.aws)
 						{
@@ -334,26 +308,27 @@
 							awsBucketRegion = conf.aws.bucket_region;
 						}
 
-						const unityCommand = conf.unity.batPath + " " +
-							conf.unity.project + " " +
-							conf.bouncer.dbhost + " " +
-							conf.bouncer.dbport + " " +
-							conf.bouncer.username + " " +
-							conf.bouncer.password + " " +
-							commandArgs.database + " " +
-							commandArgs.project + " " +
-							awsBucketName + " " +
-							awsBucketRegion + " " +
-							logDir;
+						const unityCommand = conf.unity.batPath;
+						const unityCmdParams = [
+							conf.unity.project,
+							conf.bouncer.dbhost,
+							conf.bouncer.dbport,
+							conf.bouncer.username,
+							conf.bouncer.password,
+							commandArgs.database,
+							commandArgs.project,
+							awsBucketName,
+							awsBucketRegion,
+							logDir];
 
-						logger.info("running unity command: " + unityCommand);
-						exec(unityCommand, function( error, stdout, stderr){
-							if(error)
+						logger.info(`Running unity command: ${unityCommand} ${unityCmdParams.join(" ")}`);
+						const unityExec = spawn(unityCommand, unityCmdParams);
+						unityExec.on("close", (code) => {
+							if(code !== 0)
 							{
 								reply.value = ERRCODE_BUNDLE_GEN_FAIL;
-								writeOutStdBuffers(stdout, stderr, logDir, "unity");
 							}
-							logger.info("Executed Unity command: " + unityCommand, reply);
+							logger.info(`Executed unity command: ${unityCommand} ${unityCmdParams.join(" ")}`, reply);
 							callback({
 								value: reply.value,
 								database: cmdDatabase,
