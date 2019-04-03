@@ -276,7 +276,7 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 		collector->setCurrentMeta(fillMetadata(element));
 		//some objects material is not set. set default here
 		collector->setCurrentMaterial(GetDefaultMaterial());
-}	
+	}
 	catch(OdError& er)
 	{
 		//.. HOTFIX: handle nullPtr exception (reported to ODA)
