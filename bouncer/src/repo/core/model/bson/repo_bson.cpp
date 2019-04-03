@@ -101,12 +101,12 @@ RepoBSON RepoBSON::cloneAndShrink() const
 
 repo::lib::RepoUUID RepoBSON::getUUIDField(const std::string &label) const{
 
-	
+
 	if (hasField(label))
 	{
 		const mongo::BSONElement bse = getField(label);
-		return repo::lib::RepoUUID::fromBSONElement(bse);		
-	}	
+		return repo::lib::RepoUUID::fromBSONElement(bse);
+	}
 	else
 	{
 		return repo::lib::RepoUUID::createUUID();
@@ -132,7 +132,7 @@ std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &
 		}
 		else
 		{
-			repoError << "getUUIDFieldArray: field " << label << " is an empty bson or wrong type!";
+			repoDebug << "getUUIDFieldArray: field " << label << " is an empty bson or wrong type!";
 		}
 	}
 
