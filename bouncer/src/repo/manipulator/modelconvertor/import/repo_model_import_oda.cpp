@@ -1,6 +1,6 @@
 #include "repo_model_import_oda.h"
-#include "repo/core/model/bson/repo_bson_factory.h"
-#include "repo/error_codes.h"
+#include "../../../core/model/bson/repo_bson_factory.h"
+#include "../../../error_codes.h"
 
 #ifdef ODA_SUPPORT
 #include <OdaCommon.h>

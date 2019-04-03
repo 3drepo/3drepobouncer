@@ -95,8 +95,10 @@ OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimData
 		if (pDBDrawing->getBaseViewNameFormat() == OdBm::ViewType::_3d)
 		{
 			//set first 3D view available
-			if (layoutName.isEmpty())
-				layoutName = pLayout->name(layouts->object());		
+			if (layoutName.isEmpty()) {
+				layoutName = pLayout->name(layouts->object());
+				repoInfo << "First layout name is " << convertToStdString(pDBDrawing->getName());
+			}
 
 			//3D View called "3D" has precedence
 			if (pDBDrawing->getName().iCompare("{3D}") == 0) {
