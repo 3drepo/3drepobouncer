@@ -274,14 +274,13 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 	try
 	{
 		collector->setCurrentMeta(fillMetadata(element));
-
 		//some objects material is not set. set default here
 		collector->setCurrentMaterial(GetDefaultMaterial());
-	}
+}	
 	catch(OdError& er)
 	{
 		//.. HOTFIX: handle nullPtr exception (reported to ODA)
-		repoError << "Caught exception whilst: " << convertToStdString(er.description());
+		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
 	}
 
 	std::string layerName = getLevel(element, "Layer Default");
@@ -353,10 +352,42 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 std::pair<std::vector<std::string>, std::vector<std::string>> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
 {
 	std::pair<std::vector<std::string>, std::vector<std::string>> metadata;
-	fillMetadataByElemPtr(element, metadata);
-	fillMetadataById(element->getFamId(), metadata);
-	fillMetadataById(element->getTypeID(), metadata);
-	fillMetadataById(element->getCategroryId(), metadata);
+	try
+	{
+		fillMetadataByElemPtr(element, metadata);
+	}
+	catch (OdError& er)
+	{
+		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
+	}
+
+	try
+	{
+		fillMetadataById(element->getFamId(), metadata);
+	}
+	catch (OdError& er)
+	{
+		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
+	}
+
+	try
+	{
+		fillMetadataById(element->getTypeID(), metadata);
+	}
+	catch (OdError& er)
+	{
+		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
+	}
+
+	try
+	{
+		fillMetadataById(element->getCategroryId(), metadata);
+	}
+	catch (OdError& er)
+	{
+		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
+	}
+
 	return metadata;
 }
 
