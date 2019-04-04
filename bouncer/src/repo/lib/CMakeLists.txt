@@ -8,6 +8,7 @@ add_subdirectory(datastructure)
 set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_broadcaster.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_config.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_log.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_property_tree.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_stack.cpp
@@ -18,6 +19,7 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/json_parser.h
 	${CMAKE_CURRENT_SOURCE_DIR}/json_parser_write.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_broadcaster.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_config.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_listener_abstract.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_listener_stdout.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_log.h
