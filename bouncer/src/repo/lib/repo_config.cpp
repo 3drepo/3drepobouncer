@@ -60,3 +60,11 @@ void RepoConfig::configureFS(
 
 	if (useAsDefault) defaultStorage = FileStorageEngine::FS;
 }
+
+bool RepoConfig::validate() const{
+	const bool dbOk = !dbConf.addr.empty() && (dbConf.username.empty() || !dbConf.password.empty());
+	const bool s3Ok = !s3Conf.configured || (!s3Conf.bucketName.empty() && !s3Conf.bucketRegion.empty());
+	const bool fsOk = !fsConf.configured || !fsConf.dir.empty();
+
+	return dbOk && s3Ok && fsOk;
+}

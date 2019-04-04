@@ -22,9 +22,10 @@
 
 namespace repo{
 	namespace lib{
-		class REPO_API_EXPORT RepoConfig
+		class RepoConfig
 		{
-			enum class FileStorageEngine { GRIDFS, S3, FS }; //FIXME: this should live in file service?
+			enum class FileStorageEngine { GRIDFS, S3, FS }; //FIXME: this should live in filemanager?
+			enum class CompressionType {NONE}; //FIXME: this belongs in filemanager
 		public:
 			struct database_config_t {
 				std::string addr;
@@ -54,14 +55,14 @@ namespace repo{
 			* @params password password to login with
 			* @param pwDigested true if password given is digested.
 			*/
-			RepoConfig(
+			REPO_API_EXPORT RepoConfig(
 				const std::string &databaseAddr,
 				const int &port,
 				const std::string &username,
 				const std::string &password,
 				const bool pwDigested = false);
 
-			~RepoConfig() {}
+			REPO_API_EXPORT ~RepoConfig() {}
 
 			/**
 			* Set configurations to connect to S3 to store files
@@ -69,7 +70,7 @@ namespace repo{
 			* @params bucketRegion name of the region the bucket sits in
 			* @params useAsDefault use this as the default storage engine
 			*/
-			void configureS3(
+			void REPO_API_EXPORT configureS3(
 				const std::string &bucketName,
 				const std::string &bucketRegion,
 				const bool useAsDefault = true);
@@ -80,17 +81,32 @@ namespace repo{
 			* @params level number of hierachys to use
 			* @params useAsDefault use this as the default storage engine
 			*/
-			void configureFS(
+			void REPO_API_EXPORT configureFS(
 				const std::string &directory,
 				const int         &level = 2,
+				const 
 				const bool useAsDefault = true
-				);
-			
+				);			
+
+			const database_config_t getDatabaseConfig() const { return dbConf; }
+			const s3_config_t getS3Config() const { return s3Conf; }
+			const fs_config_t getFSConfig() const { return fsConf; }
+
+			/**
+			* Get default storage engine currently configured
+			* @return returns the default engine of choice for new writes
+			*/
+			FileStorageEngine getDefaultStorageEngine() const { return defaultStorage; }
+
+			bool validate() const;
+
 		private:
 			database_config_t dbConf;
 			s3_config_t s3Conf;
 			fs_config_t fsConf;
 			FileStorageEngine defaultStorage;
+			CompressionType compression = CompressionType::NONE;
+
 		};
 	}
 }
