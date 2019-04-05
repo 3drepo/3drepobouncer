@@ -24,9 +24,11 @@ namespace repo{
 	namespace lib{
 		class RepoConfig
 		{
-			enum class FileStorageEngine { GRIDFS, S3, FS }; //FIXME: this should live in filemanager?
-			enum class CompressionType {NONE}; //FIXME: this belongs in filemanager
+
 		public:
+			enum class FileStorageEngine { GRIDFS, S3, FS }; //FIXME: this should live in filemanager?
+			enum class CompressionType { NONE }; //FIXME: this belongs in filemanager
+
 			struct database_config_t {
 				std::string addr;
 				int port = 27017;

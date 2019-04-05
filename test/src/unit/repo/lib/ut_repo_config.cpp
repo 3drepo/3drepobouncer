@@ -21,7 +21,7 @@
 
 using namespace repo::lib;
 
-TEST(RepoConfigTest, constructorTest)
+TEST(RepoConfigTest, dbConfigTest)
 {
 	std::string db = "database", user = "username", password = "password";
 	int port = 10000;
@@ -33,4 +33,137 @@ TEST(RepoConfigTest, constructorTest)
 	EXPECT_EQ(dbData.username, user);
 	EXPECT_EQ(dbData.password, password);
 	EXPECT_EQ(dbData.pwDigested, pwDigested);
+
+	EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::GRIDFS);
 }
+
+repo::lib::RepoConfig createConfig() {
+
+	std::string db = "database", user = "username", password = "password";
+	int port = 10000;
+	bool pwDigested = true;
+	RepoConfig config = { db, port, user, password, pwDigested };
+
+	return config;
+}
+
+TEST(RepoConfigTest, s3ConfigTest)
+{
+	auto config = createConfig();
+	std::string bucketName = "b1", bucketRegion = "r1", bucketName1 = "b2", bucketRegion1 = "r2";
+	config.configureS3(bucketName, bucketRegion, false);
+	auto s3Conf = config.getS3Config();
+	EXPECT_EQ(s3Conf.bucketName, bucketName);
+	EXPECT_EQ(s3Conf.bucketRegion, bucketRegion);
+	EXPECT_TRUE(s3Conf.configured);
+
+	EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::GRIDFS);
+
+	config.configureS3(bucketName1, bucketRegion1, true);
+
+	s3Conf = config.getS3Config();
+	EXPECT_EQ(s3Conf.bucketName, bucketName1);
+	EXPECT_EQ(s3Conf.bucketRegion, bucketRegion1);
+	EXPECT_TRUE(s3Conf.configured);
+
+	EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::S3);
+}
+
+TEST(RepoConfigTest, fsConfigTest)
+{
+	auto config = createConfig();
+	std::string dir1 = "p1", dir2 = "p2";
+	int level1 = 10, level2 = 1;
+	config.configureFS(dir1, level1, false);
+	auto fsConf = config.getFSConfig();
+	EXPECT_EQ(fsConf.dir, dir1);
+	EXPECT_EQ(fsConf.nLevel, level1);
+	EXPECT_TRUE(fsConf.configured);
+
+	EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::GRIDFS);
+
+	config.configureFS(dir2, level2, true);
+	fsConf = config.getFSConfig();
+	EXPECT_EQ(fsConf.dir, dir2);
+	EXPECT_EQ(fsConf.nLevel, level2);
+	EXPECT_TRUE(fsConf.configured);
+
+	EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::FS);
+
+
+}
+
+TEST(RepoConfigTest, validationTestDB)
+{
+	EXPECT_TRUE(createConfig().validate());
+
+	std::string dummy = "dummy";
+
+	//database connection a negative port
+	EXPECT_FALSE(RepoConfig(dummy, -2, dummy, dummy).validate());
+
+	//database connection with no credentials
+	EXPECT_TRUE(RepoConfig(dummy, 1, "", "").validate());
+
+	//database connection with username but no password
+	EXPECT_FALSE(RepoConfig(dummy, 1, dummy, "").validate());
+
+	//database connection with password but no username
+	EXPECT_FALSE(RepoConfig(dummy, 1, "", dummy).validate());
+
+}
+
+TEST(RepoConfigTest, validationTestDB)
+{
+	EXPECT_TRUE(createConfig().validate());
+
+	std::string dummy = "dummy";
+
+	//database connection a negative port
+	EXPECT_FALSE(RepoConfig(dummy, -2, dummy, dummy).validate());
+
+	//database connection with no credentials
+	EXPECT_TRUE(RepoConfig(dummy, 1, "", "").validate());
+
+	//database connection with username but no password
+	EXPECT_FALSE(RepoConfig(dummy, 1, dummy, "").validate());
+
+	//database connection with password but no username
+	EXPECT_FALSE(RepoConfig(dummy, 1, "", dummy).validate());
+
+}
+
+TEST(RepoConfigTest, validationTestS3)
+{
+	std::string dummy = "dummy";
+	auto config = createConfig();
+
+	config.configureS3(dummy, dummy);
+	EXPECT_TRUE(config.validate());
+
+	config.configureS3("", "");
+	EXPECT_FALSE(config.validate());
+
+	config.configureS3(dummy, "");
+	EXPECT_FALSE(config.validate());
+
+	config.configureS3("", dummy);
+	EXPECT_FALSE(config.validate());
+}
+
+TEST(RepoConfigTest, validationTestFS)
+{
+	std::string dummy = "dummy";
+	auto config = createConfig();
+
+	config.configureFS(dummy, 1);
+	EXPECT_TRUE(config.validate());
+
+	config.configureFS("", 0);
+	EXPECT_FALSE(config.validate());
+
+	config.configureFS(dummy,-1);
+	EXPECT_FALSE(config.validate());
+
+}
+
