@@ -72,8 +72,7 @@ RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 		boost::property_tree::read_json(filePath, jsonTree);
 	}
 	catch (const std::exception &e) {
-		std::string errMsg = "Failed to read configuration file [" + filePath + "] : " + e.what();
-		throw RepoException(errMsg.c_str());
+		throw RepoException("Failed to read configuration file [" + filePath + "] : " + e.what());
 	}
 	
 	//Read database configurations
