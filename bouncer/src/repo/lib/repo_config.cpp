@@ -20,6 +20,7 @@
 */
 
 #include "repo_config.h"
+#include "repo_exception.h"
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/filesystem.hpp>
@@ -72,14 +73,14 @@ RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 	}
 	catch (const std::exception &e) {
 		std::string errMsg = "Failed to read configuration file [" + filePath + "] : " + e.what();
-		throw std::exception(errMsg.c_str());
+		throw RepoException(errMsg.c_str());
 	}
 	
 	//Read database configurations
 	auto dbTree = jsonTree.get_child_optional("db");
 
 	if (!dbTree) {
-		throw std::exception("Cannot find entry 'db' within configuration file.");
+		throw RepoException("Cannot find entry 'db' within configuration file.");
 	}
 
 	auto dbAddr = dbTree->get<std::string>("dbhost", "");
@@ -88,7 +89,7 @@ RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 	auto password = dbTree->get<std::string>("password", "");
 
 	if (dbAddr.empty() || dbPort == -1) {
-		throw std::exception("Database address and port not specified within configuration file.");
+		throw RepoException("Database address and port not specified within configuration file.");
 	}
 
 	repo::lib::RepoConfig config = { dbAddr, dbPort, username, password };
