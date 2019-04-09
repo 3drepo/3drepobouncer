@@ -22,7 +22,7 @@
 
 //Test Database address
 const static std::string REPO_GTEST_DBADDRESS = "localhost";
-const static uint32_t    REPO_GTEST_DBPORT = 27017;
+const static int REPO_GTEST_DBPORT = 27017;
 const static std::string REPO_GTEST_AUTH_DATABASE = "admin";
 const static std::string REPO_GTEST_DBUSER = "testUser";
 const static std::string REPO_GTEST_DBPW = "3drepotest";

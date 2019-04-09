@@ -495,9 +495,7 @@ TEST(RepoClientTest, GenStashTest)
 {
 	repo::RepoController *controller = new repo::RepoController();
 	std::string errMsg;
-	repo::RepoController::RepoToken *token =
-		controller->init(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
-		REPO_GTEST_DBUSER, REPO_GTEST_DBPW, REPO_GTEST_S3_BUCKET, REPO_GTEST_S3_REGION);
+	repo::RepoController::RepoToken *token = initController(controller);
 	repo::lib::RepoUUID stashRoot;
 	if (token)
 	{

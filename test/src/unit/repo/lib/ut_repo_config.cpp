@@ -113,26 +113,6 @@ TEST(RepoConfigTest, validationTestDB)
 
 }
 
-TEST(RepoConfigTest, validationTestDB)
-{
-	EXPECT_TRUE(createConfig().validate());
-
-	std::string dummy = "dummy";
-
-	//database connection a negative port
-	EXPECT_FALSE(RepoConfig(dummy, -2, dummy, dummy).validate());
-
-	//database connection with no credentials
-	EXPECT_TRUE(RepoConfig(dummy, 1, "", "").validate());
-
-	//database connection with username but no password
-	EXPECT_FALSE(RepoConfig(dummy, 1, dummy, "").validate());
-
-	//database connection with password but no username
-	EXPECT_FALSE(RepoConfig(dummy, 1, "", dummy).validate());
-
-}
-
 TEST(RepoConfigTest, validationTestS3)
 {
 	std::string dummy = "dummy";

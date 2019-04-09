@@ -33,17 +33,10 @@ static std::shared_ptr<RepoController> getController()
 	return controller;
 }
 
-static RepoController::RepoToken* getToken()
-{
-	auto controller = getController();
-	std::string errMsg;
-	return controller->init(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
-		REPO_GTEST_DBUSER, REPO_GTEST_DBPW, REPO_GTEST_S3_BUCKET, REPO_GTEST_S3_REGION);
-}
 
 TEST(RepoControllerTest, CommitScene){
 	auto controller = getController();
-	auto token = getToken();
+	auto token = initController(controller.get());
 	//Try to commit a scene without setting db/project name
 	uint8_t errCode;
 	auto scene = controller->loadSceneFromFile(getDataPath(simpleModel), errCode);
@@ -66,7 +59,7 @@ TEST(RepoControllerTest, CommitScene){
 
 	//Setting the db name and project name should allow commit successfully
 	scene->setDatabaseAndProjectName("commitSceneTest", "commitCube");
-	EXPECT_TRUE(controller->commitScene(getToken(), scene));
+	EXPECT_TRUE(controller->commitScene(token, scene));
 	EXPECT_TRUE(scene->isRevisioned());
 	EXPECT_TRUE(projectExists("commitSceneTest", "commitCube"));
 	EXPECT_EQ(scene->getOwner(), REPO_GTEST_DBUSER);
@@ -75,7 +68,7 @@ TEST(RepoControllerTest, CommitScene){
 	std::string owner = "dog";
 	EXPECT_EQ(errCode, 0);
 	scene2->setDatabaseAndProjectName("commitSceneTest", "commitCube2");
-	EXPECT_TRUE(controller->commitScene(getToken(), scene2, owner));
+	EXPECT_TRUE(controller->commitScene(token, scene2, owner));
 	EXPECT_TRUE(scene2->isRevisioned());
 	EXPECT_TRUE(projectExists("commitSceneTest", "commitCube2"));
 	EXPECT_EQ(scene2->getOwner(), owner);
