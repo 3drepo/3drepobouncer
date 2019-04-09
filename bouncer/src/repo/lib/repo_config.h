@@ -26,6 +26,7 @@ namespace repo{
 		{
 
 		public:
+			const static int REPO_CONFIG_FS_DEFAULT_LEVEL = 2;
 			enum class FileStorageEngine { GRIDFS, S3, FS }; //FIXME: this should live in filemanager?
 			enum class CompressionType { NONE }; //FIXME: this belongs in filemanager
 
@@ -64,6 +65,12 @@ namespace repo{
 				const std::string &password,
 				const bool pwDigested = false);
 
+			/**
+			* Instantiate RepoConfig given a JSON configuration file.
+			* Will throw exception if file is invalid.
+			*/
+			static RepoConfig REPO_API_EXPORT fromFile(const std::string &filePath);
+
 			REPO_API_EXPORT ~RepoConfig() {}
 
 			/**
@@ -85,7 +92,7 @@ namespace repo{
 			*/
 			void REPO_API_EXPORT configureFS(
 				const std::string &directory,
-				const int         &level = 2,
+				const int         &level = REPO_CONFIG_FS_DEFAULT_LEVEL,
 				const bool useAsDefault = true
 				);			
 

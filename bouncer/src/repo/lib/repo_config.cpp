@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2016 3D Repo Ltd
+*  Copyright (C) 2019 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -20,6 +20,9 @@
 */
 
 #include "repo_config.h"
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+#include <boost/filesystem.hpp>
 using namespace repo::lib;
 
 
@@ -59,6 +62,61 @@ void RepoConfig::configureFS(
 	fsConf.configured = true;
 
 	if (useAsDefault) defaultStorage = FileStorageEngine::FS;
+}
+
+RepoConfig RepoConfig::fromFile(const std::string &filePath) {
+	boost::property_tree::ptree jsonTree;
+	
+	try {
+		boost::property_tree::read_json(filePath, jsonTree);
+	}
+	catch (const std::exception &e) {
+		std::string errMsg = "Failed to read configuration file [" + filePath + "] : " + e.what();
+		throw std::exception(errMsg.c_str());
+	}
+	
+	//Read database configurations
+	auto dbTree = jsonTree.get_child_optional("db");
+
+	if (!dbTree) {
+		throw std::exception("Cannot find entry 'db' within configuration file.");
+	}
+
+	auto dbAddr = dbTree->get<std::string>("dbhost", "");
+	auto dbPort = dbTree->get<int>("dbport", -1);
+	auto username = dbTree->get<std::string>("username", "");
+	auto password = dbTree->get<std::string>("password", "");
+
+	if (dbAddr.empty() || dbPort == -1) {
+		throw std::exception("Database address and port not specified within configuration file.");
+	}
+
+	repo::lib::RepoConfig config = { dbAddr, dbPort, username, password };
+
+	//Read S3 configurations if found
+	auto s3Tree = jsonTree.get_child_optional("aws");
+
+	if (s3Tree) {
+		auto bucketName = s3Tree->get<std::string>("bucket_name", "");
+		auto bucketRegion = s3Tree->get<std::string>("bucket_region", "");
+		auto useAsDefault = s3Tree->get<bool>("default", false);
+		if(!bucketName.empty() && !bucketRegion.empty())
+			config.configureS3(bucketName, bucketRegion, useAsDefault);
+	}
+
+	//Read FS configuirations if found
+	auto fsTree = jsonTree.get_child_optional("fileshare");
+
+	if (fsTree) {
+		auto path = fsTree->get<std::string>("path", "");
+		auto level = fsTree->get<int>("level", RepoConfig::REPO_CONFIG_FS_DEFAULT_LEVEL);
+		auto useAsDefault = fsTree->get<bool>("default", true);
+		if (!path.empty())
+			config.configureFS(path, level, useAsDefault);
+	}
+
+	return config;
+
 }
 
 bool RepoConfig::validate() const{
