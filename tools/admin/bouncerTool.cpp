@@ -129,7 +129,10 @@ int main(int argc, char* argv[]){
 	if (cmdnArgs <= op.nArgcs)
 	{
 		std::string errMsg;
-		repo::RepoController::RepoToken* token = controller->init(errMsg, address, port, username, password, bucketName, bucketRegion);
+		repo::lib::RepoConfig config = { address, port, username, password };
+		if (!bucketName.empty() && !bucketRegion.empty())
+			config.configureS3(bucketName, bucketRegion);
+		repo::RepoController::RepoToken* token = controller->init(errMsg, config);
 		if (token)
 		{
 			repoLog("successfully connected to the database and file service!");
