@@ -86,7 +86,6 @@ namespace repo{
 			void REPO_API_EXPORT configureFS(
 				const std::string &directory,
 				const int         &level = 2,
-				const 
 				const bool useAsDefault = true
 				);			
 
