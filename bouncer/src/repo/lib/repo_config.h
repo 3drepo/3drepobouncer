@@ -22,11 +22,11 @@
 
 namespace repo{
 	namespace lib{
+		static int REPO_CONFIG_FS_DEFAULT_LEVEL = 2;
 		class RepoConfig
 		{
 
 		public:
-			const static int REPO_CONFIG_FS_DEFAULT_LEVEL = 2;
 			enum class FileStorageEngine { GRIDFS, S3, FS }; //FIXME: this should live in filemanager?
 			enum class CompressionType { NONE }; //FIXME: this belongs in filemanager
 
