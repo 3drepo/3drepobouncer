@@ -109,7 +109,7 @@ RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 
 	if (fsTree) {
 		auto path = fsTree->get<std::string>("path", "");
-		auto level = fsTree->get<int>("level", RepoConfig::REPO_CONFIG_FS_DEFAULT_LEVEL);
+		auto level = fsTree->get<int>("level", REPO_CONFIG_FS_DEFAULT_LEVEL);
 		auto useAsDefault = fsTree->get<bool>("default", true);
 		if (!path.empty())
 			config.configureFS(path, level, useAsDefault);
