@@ -59,7 +59,7 @@ TEST(RepoControllerTest, CommitScene){
 
 	//Setting the db name and project name should allow commit successfully
 	scene->setDatabaseAndProjectName("commitSceneTest", "commitCube");
-	EXPECT_TRUE(controller->commitScene(token, scene));
+	EXPECT_TRUE(controller->commitScene(initController(controller.get()), scene));
 	EXPECT_TRUE(scene->isRevisioned());
 	EXPECT_TRUE(projectExists("commitSceneTest", "commitCube"));
 	EXPECT_EQ(scene->getOwner(), REPO_GTEST_DBUSER);
@@ -68,7 +68,7 @@ TEST(RepoControllerTest, CommitScene){
 	std::string owner = "dog";
 	EXPECT_EQ(errCode, 0);
 	scene2->setDatabaseAndProjectName("commitSceneTest", "commitCube2");
-	EXPECT_TRUE(controller->commitScene(token, scene2, owner));
+	EXPECT_TRUE(controller->commitScene(initController(controller.get()), scene2, owner));
 	EXPECT_TRUE(scene2->isRevisioned());
 	EXPECT_TRUE(projectExists("commitSceneTest", "commitCube2"));
 	EXPECT_EQ(scene2->getOwner(), owner);
