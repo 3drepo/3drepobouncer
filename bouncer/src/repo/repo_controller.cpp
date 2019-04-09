@@ -44,17 +44,11 @@ void RepoController::addAlias(
 }
 
 RepoController::RepoToken* RepoController::init(
-	std::string       &errMsg,
-	const std::string &address,
-	const int         &port,
-	const std::string &username,
-	const std::string &password,
-	const std::string &bucketName,
-	const std::string &bucketRegion,
-	const bool        &pwDigested
+	std::string            &errMsg,
+	const lib::RepoConfig  &config
 	)
 {
-	return impl->init(errMsg, address, port, username, password, bucketName, bucketRegion, pwDigested);
+	return impl->init(errMsg, config);
 }
 
 bool RepoController::cleanUp(
@@ -90,51 +84,6 @@ uint64_t RepoController::countItemsInCollection(
 	const std::string    &collection)
 {
 	return impl->countItemsInCollection(token, database, collection);
-}
-
-RepoController::RepoToken* RepoController::createToken(
-	const std::string &alias,
-	const std::string &address,
-	const int         &port,
-	const std::string &dbName,
-	const std::string &username,
-	const std::string &password,
-	const std::string &bucketName,
-	const std::string &bucketRegion
-	)
-{
-	return impl->createToken(alias, address, port, dbName, username, password, bucketName, bucketRegion);
-}
-
-RepoController::RepoToken* RepoController::createToken(
-	const std::string &alias,
-	const std::string &address,
-	const int         &port,
-	const std::string &dbName,
-	const std::string &bucketName,
-	const std::string &bucketRegion,
-	const RepoController::RepoToken *token
-	)
-{
-	return impl->createToken(alias, address, port, dbName, bucketName, bucketRegion, token);
-}
-
-RepoController::RepoToken* RepoController::createTokenFromSerialised(
-	const std::string &data) const
-{
-	RepoController::RepoToken* token = nullptr;
-	if (data.size())
-	{
-		token = RepoController::RepoToken::createTokenFromRawData(data);
-
-		if (token && !token->valid())
-		{
-			delete token;
-			token = nullptr;
-		}
-	}
-
-	return token;
 }
 
 void RepoController::destroyToken(RepoController::RepoToken* token)
@@ -200,31 +149,6 @@ const uint32_t               &limit)
 	return impl->getAllFromCollectionContinuous(token, database, collection, fields, sortField, sortOrder, skip, limit);
 }
 
-void RepoController::getInfoFromToken(
-	const RepoController::RepoToken *token,
-	std::string                     &alias,
-	std::string                     &host,
-	uint32_t                        &port,
-	std::string                     &username,
-	std::string                     &authDB
-	) const
-{
-	if (token)
-	{
-		alias = token->alias;
-		host = token->databaseHost;
-		port = token->databasePort;
-		if (token->getCredentials())
-			username = token->credentials.getStringField("user");
-
-		authDB = token->databaseName;
-	}
-	else
-	{
-		repoError << "Failed to obtain information from token: token is invalid!";
-	}
-}
-
 std::vector < repo::core::model::RepoRole > RepoController::getRolesFromDatabase(
 	const RepoController::RepoToken              *token,
 	const std::string            &database,
@@ -283,11 +207,6 @@ repo::core::model::CollectionStats RepoController::getCollectionStats(
 	const std::string                    &collection)
 {
 	return impl->getCollectionStats(token, database, collection);
-}
-
-std::string RepoController::getHostAndPort(const RepoController::RepoToken *token)
-{
-	return token->databaseAd;
 }
 
 std::map<std::string, std::list<std::string>>
@@ -526,18 +445,6 @@ bool RepoController::saveSceneToFile(
 	const repo::core::model::RepoScene* scene)
 {
 	return impl->saveSceneToFile(filePath, scene);
-}
-
-std::string RepoController::serialiseToken(
-	const RepoController::RepoToken* token) const
-{
-	if (token)
-		return token->serialiseToken();
-	else
-	{
-		repoError << "Cannot serialise token : token is empty!";
-		return std::string();
-	}
 }
 
 void RepoController::reduceTransformations(

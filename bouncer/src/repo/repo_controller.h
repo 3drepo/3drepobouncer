@@ -37,6 +37,7 @@
 #include "core/model/collection/repo_scene.h"
 #include "lib/datastructure/repo_structs.h"
 #include "lib/repo_listener_abstract.h"
+#include "lib/repo_config.h"
 #include "manipulator/modelconvertor/import/repo_model_import_config.h"
 #include "repo_bouncer_global.h"
 
@@ -70,22 +71,11 @@ namespace repo{
 		/**
 			* Connect to a mongo database, authenticate by the admin database
 			* @param errMsg error message if failed
-			* @param address address of the database
-			* @param port port number
-			* @param username user login name
-			* @param password user password
-			* @param pwDigested is given password digested (default: false)
-			* @return returns a void pointer to a token
+			* @param config RepoConfig instance containing all connection information
 			*/
 		RepoToken* init(
 			std::string       &errMsg,
-			const std::string &address,
-			const int         &port,
-			const std::string &username,
-			const std::string &password,
-			const std::string &bucketName = "",
-			const std::string &bucketRegion = "",
-			const bool        &pwDigested = false
+			const lib::RepoConfig  &config
 			);
 
 		/**
@@ -109,60 +99,12 @@ namespace repo{
 			RepoToken         *token,
 			const std::string &alias);
 
-		/**
-		* create a token base on the information given
-		*/
-		RepoToken* createToken(
-			const std::string &alias,
-			const std::string &address,
-			const int         &port,
-			const std::string &dbName,
-			const std::string &username,
-			const std::string &password,
-			const std::string &bucketName,
-			const std::string &bucketRegion
-			);
-
-		RepoToken* createToken(
-			const std::string &alias,
-			const std::string &address,
-			const int         &port,
-			const std::string &dbName,
-			const std::string &bucketName,
-			const std::string &bucketRegion,
-			const RepoController::RepoToken *token
-			);
-
-		/**
-		* Re-create a repo token given the serialised data
-		* @param data serialised data from serialiseToken()
-		* @return returns  RepoToken upon success
-		*/
-		RepoToken* createTokenFromSerialised(
-			const std::string &data) const;
 
 		/**
 		* Destroy token from memory
 		* @param token token to destroy
 		*/
 		void destroyToken(RepoToken* token);
-
-		void getInfoFromToken(
-			const RepoToken *token,
-			std::string     &alias,
-			std::string     &host,
-			uint32_t        &port,
-			std::string     &username,
-			std::string     &authDB
-			) const;
-
-		/**
-		* Serialise the given token
-		* @param token token
-		* @return return the token in serialised form
-		*/
-		std::string serialiseToken(
-			const RepoToken* token) const;
 
 		/*
 		*	------------- Database info lookup --------------
@@ -330,13 +272,6 @@ namespace repo{
 			const RepoToken *token,
 			const std::list<std::string> &databases);
 
-		/**
-			* Return host:port of the database connection that is associated with
-			* the given token
-			* @param token repo token
-			* @return return a string with "databaseAddress:port"
-			*/
-		std::string getHostAndPort(const RepoToken *token);
 		/**
 			* Get a list of Admin roles from the database
 			* @param token repo token to the database
