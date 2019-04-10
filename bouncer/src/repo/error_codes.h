@@ -71,3 +71,5 @@
 #define REPOERR_ODA_UNAVAILABLE 26
 //No valid 3D view found (for Revit format)
 #define REPOERR_VALID_3D_VIEW_NOT_FOUND 27
+//Failed reading configuration file
+#define REPOERR_INVALID_CONFIG_FILE 28

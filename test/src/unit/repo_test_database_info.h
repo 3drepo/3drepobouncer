@@ -33,6 +33,8 @@ const static std::string REPO_GTEST_DBNAME2_PROJ = "sphere";
 const static std::string REPO_GTEST_DBNAME1_FED = "fedTest";
 const static std::string REPO_GTEST_DBNAME_ROLEUSERTEST = "sampleDataRWRolesUsers";
 
+const static std::string connectionConfig = "config/config.json";
+
 const static std::string clientExe = "3drepobouncerClient";
 const static std::string simpleModel = "cube.obj";
 const static std::string texturedModel = "texturedPlane.dae";
@@ -140,6 +142,11 @@ static std::string getDataPath(
 		returnPath = fullPath.string();
 	}
 	return returnPath;
+}
+
+
+static std::string getConnConfig() {
+	return getDataPath(connectionConfig);
 }
 
 /*
