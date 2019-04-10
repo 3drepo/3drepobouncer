@@ -21,6 +21,7 @@
 
 #include "repo_config.h"
 #include "repo_exception.h"
+#include "repo_log.h"
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/filesystem.hpp>
@@ -67,7 +68,6 @@ void RepoConfig::configureFS(
 
 RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 	boost::property_tree::ptree jsonTree;
-	
 	try {
 		boost::property_tree::read_json(filePath, jsonTree);
 	}
@@ -92,6 +92,7 @@ RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 	}
 
 	repo::lib::RepoConfig config = { dbAddr, dbPort, username, password };
+	auto useAsDefault = jsonTree.get<std::string>("defaultStorage", "");
 
 	//Read S3 configurations if found
 	auto s3Tree = jsonTree.get_child_optional("aws");
@@ -99,20 +100,18 @@ RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 	if (s3Tree) {
 		auto bucketName = s3Tree->get<std::string>("bucket_name", "");
 		auto bucketRegion = s3Tree->get<std::string>("bucket_region", "");
-		auto useAsDefault = s3Tree->get<bool>("default", false);
 		if(!bucketName.empty() && !bucketRegion.empty())
-			config.configureS3(bucketName, bucketRegion, useAsDefault);
+			config.configureS3(bucketName, bucketRegion, useAsDefault == "s3");
 	}
 
 	//Read FS configuirations if found
-	auto fsTree = jsonTree.get_child_optional("fileshare");
+	auto fsTree = jsonTree.get_child_optional("fs");
 
 	if (fsTree) {
 		auto path = fsTree->get<std::string>("path", "");
 		auto level = fsTree->get<int>("level", REPO_CONFIG_FS_DEFAULT_LEVEL);
-		auto useAsDefault = fsTree->get<bool>("default", true);
 		if (!path.empty())
-			config.configureFS(path, level, useAsDefault);
+			config.configureFS(path, level, useAsDefault == "fs" || useAsDefault.empty());
 	}
 
 	return config;

@@ -17,9 +17,78 @@
 
 #include <cstdlib>
 #include <repo/lib/repo_config.h>
+#include <repo/lib/repo_exception.h>
 #include <gtest/gtest.h>
 
+#include "../../repo_test_database_info.h"
+
 using namespace repo::lib;
+
+TEST(RepoConfigTest, ConstructFromFile) 
+{
+	EXPECT_NO_THROW({
+		auto config = RepoConfig::fromFile(getDataPath("/config/justDB.json"));
+		EXPECT_TRUE(config.validate());
+	});
+
+	EXPECT_THROW(RepoConfig::fromFile(getDataPath("/empty.json")), RepoException);
+
+	EXPECT_THROW(RepoConfig::fromFile(getDataPath("/config/doesntExist.json")), RepoException);
+
+	EXPECT_NO_THROW({
+		auto config = RepoConfig::fromFile(getDataPath("/config/withS3.json"));
+		EXPECT_TRUE(config.validate());
+		EXPECT_TRUE(config.getS3Config().configured);
+		EXPECT_FALSE(config.getFSConfig().configured);
+		EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::GRIDFS);
+	});
+
+	EXPECT_NO_THROW({
+		auto config = RepoConfig::fromFile(getDataPath("/config/withS3Default.json"));
+		EXPECT_TRUE(config.getS3Config().configured);
+		EXPECT_FALSE(config.getFSConfig().configured);
+		EXPECT_TRUE(config.validate());
+		EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::S3);
+	});
+
+
+	EXPECT_NO_THROW({
+		auto config = RepoConfig::fromFile(getDataPath("/config/withFS.json"));
+		EXPECT_TRUE(config.validate());
+		EXPECT_FALSE(config.getS3Config().configured);
+		EXPECT_TRUE(config.getFSConfig().configured);
+		EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::FS);
+	});
+
+	EXPECT_NO_THROW({
+		auto config = RepoConfig::fromFile(getDataPath("/config/withAllDbDefault.json"));
+		EXPECT_TRUE(config.validate());
+		EXPECT_TRUE(config.getS3Config().configured);
+		EXPECT_TRUE(config.getFSConfig().configured);
+		EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::GRIDFS);
+	});
+
+	EXPECT_NO_THROW({
+		auto config = RepoConfig::fromFile(getDataPath("/config/withAllNoDefault.json"));
+		EXPECT_TRUE(config.validate());
+		EXPECT_TRUE(config.getS3Config().configured);
+		EXPECT_TRUE(config.getFSConfig().configured);
+		EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::FS);
+	});
+
+	EXPECT_NO_THROW({
+		auto config = RepoConfig::fromFile(getDataPath("/config/withAllS3Default.json"));
+		EXPECT_TRUE(config.validate());
+		EXPECT_TRUE(config.getS3Config().configured);
+		EXPECT_TRUE(config.getFSConfig().configured);
+		EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::S3);
+	});
+
+
+
+
+
+}
 
 TEST(RepoConfigTest, dbConfigTest)
 {
