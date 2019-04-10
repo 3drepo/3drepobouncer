@@ -32,7 +32,6 @@
 	"use strict";
 
 	const amqp = require("amqplib/callback_api");
-	const conf = require("./config.js");
 	const path = require("path");
 	const spawn = require("child_process").spawn;
 	const importToy = require('./importToy');
@@ -43,6 +42,11 @@
 	const ERRCODE_PARAM_READ_FAIL = 13;
 	const ERRCODE_BUNDLE_GEN_FAIL = 14;
 	const softFails = [7,10,15]; //failures that should go through to generate bundle
+
+	const fs = require("fs");
+	const configFullPath = path.resolve(__dirname, "config.json");
+	const conf = JSON.parse(fs.readFileSync(configFullPath));
+
 
 	const logger = new (winston.Logger)({
 		transports: [new (winston.transports.Console)({'timestamp': true}),
@@ -71,15 +75,11 @@
 		}
 
 		const cmdParams = [
-				conf.bouncer.dbhost,
-				conf.bouncer.dbport,
-				conf.bouncer.username,
-				conf.bouncer.password,
-				awsBucketName,
-				awsBucketRegion,
+				configFullPath,
 				"test"
 			];
 
+		console.log(path.normalize(conf.bouncer.path), cmdParams.join(" "));
 		const cmdExec = spawn(path.normalize(conf.bouncer.path), cmdParams);
 		cmdExec.on("close", (code) => {
 			if(code === 0) {
@@ -184,13 +184,7 @@
 			awsBucketRegion = conf.aws.bucket_region;
 		}
 
-		cmdParams.push(
-			conf.bouncer.dbhost,
-			conf.bouncer.dbport,
-			conf.bouncer.username,
-			conf.bouncer.password,
-			awsBucketName,
-			awsBucketRegion);
+		cmdParams.push(configFullPath);
 
 		if(os.platform() === "win32")
 		{

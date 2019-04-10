@@ -7,6 +7,7 @@ tools/bouncer_worker/toy
 #nodeJS stuff
 tools/bouncer_worker/config.js
 tools/bouncer_worker/node_modules
+tools/bouncer_worker/config.json
 
 #Windows junk
 *.vcxproj*
