@@ -99,25 +99,16 @@ static std::string produceUploadFileArgs(
 }
 
 static std::string produceUploadArgs(
-	const std::string &configPath,
 	const std::string &database,
 	const std::string &project,
-	const std::string &filePath)
+	const std::string &filePath,
+	const std::string &configPath = getConnConfig())
 {
 	return  getClientExePath()
 		+ " " + configPath
 		+ " import \""
 		+ filePath + "\" "
 		+ database + " " + project;
-}
-
-
-static std::string produceUploadArgs(
-	const std::string &database,
-	const std::string &project,
-	const std::string &filePath)
-{
-	produceUploadArgs(getConnConfig(), database, project, filePath);
 }
 
 static int runProcess(
@@ -139,7 +130,7 @@ TEST(RepoClientTest, UploadTestInvalidDBConn)
 
 	//Test failing to connect to database
 	std::string db = "stUpload";
-	std::string failToConnect = produceUploadArgs(getDataPath("config/invalidAdd.json"), db, "failConn", getSuccessFilePath());
+	std::string failToConnect = produceUploadArgs(db, "failConn", getSuccessFilePath(), getDataPath("config/invalidAdd.json"));
 	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToConnect));
 	EXPECT_FALSE(projectExists(db, "failConn"));
 }
@@ -150,7 +141,7 @@ TEST(RepoClientTest, UploadTestBadDBAuth)
 	std::string db = "stUpload";
 
 	//Test Bad authentication
-	std::string failToAuth = produceUploadArgs(getDataPath("config/badAuth.json"), db, "failAuth", getSuccessFilePath());
+	std::string failToAuth = produceUploadArgs(db, "failAuth", getSuccessFilePath(), getDataPath("config/badAuth.json"));
 	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToAuth));
 	EXPECT_FALSE(projectExists(db, "failAuth"));
 
