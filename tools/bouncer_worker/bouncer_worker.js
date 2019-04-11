@@ -79,7 +79,6 @@
 				"test"
 			];
 
-		console.log(path.normalize(conf.bouncer.path), cmdParams.join(" "));
 		const cmdExec = spawn(path.normalize(conf.bouncer.path), cmdParams);
 		cmdExec.on("close", (code) => {
 			if(code === 0) {
