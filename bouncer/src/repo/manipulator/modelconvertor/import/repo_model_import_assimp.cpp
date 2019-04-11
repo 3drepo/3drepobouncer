@@ -839,12 +839,12 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 							//External texture
 							std::ifstream::pos_type size;
 							std::string dirPath = getDirPath(orgFile);
-							boost::filesystem::path filePath = boost::filesystem::path(dirPath) / boost::filesystem::path(texName);
+							boost::filesystem::path filePath = boost::filesystem::absolute(texName, dirPath);
 							std::ifstream file(filePath.string(), std::ios::in | std::ios::binary | std::ios::ate);
 							char *memblock = nullptr;
 							if (!file.is_open())
 							{
-								repoError << "Could not open texture: " << dirPath << texName << std::endl;
+								repoError << "Could not open texture: " << filePath << std::endl;
 								missingTextures = true;
 							}
 							else
