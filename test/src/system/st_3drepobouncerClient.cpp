@@ -149,13 +149,19 @@ TEST(RepoClientTest, UploadTestBadDBAuth)
 
 TEST(RepoClientTest, UploadTestNoFile)
 {
+	std::cout << "@ test file no upload: " << std::endl;
 	//this ensures we can run processes
 	ASSERT_TRUE(system(nullptr));
+	std::cout << "@ test file no upload: passed assertion " << std::endl;
 	std::string db = "stUpload";
 
+	std::cout << "@ test file no upload: passed db string" << std::endl;
+	fflush(stdout);
 	//Test Bad FilePath
 	std::string badFilePath = produceUploadArgs(db, "failPath", "nonExistentFile.obj");
+	fflush(stdout);
 	std::cout << " Executing: " << badFilePath << std::endl;
+	fflush(stdout);
 	EXPECT_EQ((int)REPOERR_MODEL_FILE_READ, runProcess(badFilePath));
 	EXPECT_FALSE(projectExists(db, "failPath"));
 }
