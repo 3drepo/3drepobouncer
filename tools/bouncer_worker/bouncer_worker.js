@@ -304,14 +304,9 @@
 						const unityCommand = conf.unity.batPath;
 						const unityCmdParams = [
 							conf.unity.project,
-							conf.bouncer.dbhost,
-							conf.bouncer.dbport,
-							conf.bouncer.username,
-							conf.bouncer.password,
+							configFullPath,
 							commandArgs.database,
 							commandArgs.project,
-							awsBucketName,
-							awsBucketRegion,
 							logDir];
 
 						logger.info(`Running unity command: ${unityCommand} ${unityCmdParams.join(" ")}`);
