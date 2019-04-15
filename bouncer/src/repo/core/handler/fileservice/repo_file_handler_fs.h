@@ -33,7 +33,7 @@ namespace repo{
 	namespace core{
 		namespace handler{
 			namespace fileservice{
-				class S3FileHandler : public AbstractFileHandler
+				class FSFileHandler : public AbstractFileHandler
 				{
 				public:
 					/*
@@ -43,15 +43,15 @@ namespace repo{
 					/**
 					 * A Deconstructor
 					 */
-					~S3FileHandler();
+					~FSFileHandler();
 
 					/**
 					 * Returns file handler.
-					 * S3FileHandler follows the singleton pattern.
+					 * FSFileHandler follows the singleton pattern.
 					 */
-					S3FileHandler(
-						const std::string &bucketName,
-						const std::string &region
+					FSFileHandler(
+						const std::string &dir,
+						const int &nLevel
 						);
 
 					/**
@@ -76,14 +76,6 @@ namespace repo{
 						);
 
 				protected:
-					/*
-					*	================================= Protected Fields ========================================
-					*/
-					static S3FileHandler *handler; /* !the single instance of this class*/
-
-					/*
-					 *	================================= Private Functions =======================================
-					 */
 					
 					/**
 					 * Upload file to S3.
@@ -104,23 +96,13 @@ namespace repo{
 					 *	=================================== Private Fields ========================================
 					 */
 
-					std::string bucketName;
-					std::string bucketRegion;
+					const std::string dirPath;
+					const int level;
 
 					/*
 					 *	================================= Private Functions =======================================
 					 */
 
-					/**
-					 * Constructor is private because this class follows the singleton pattern
-					 */
-					S3FileHandler();
-
-					/**
-					 * Returns file handler.
-					 * S3FileHandler follows the singleton pattern.
-					 */
-					static S3FileHandler* getHandler();
 
 					/**
 					 * Add ref entry for file to database.

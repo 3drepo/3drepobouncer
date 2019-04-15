@@ -64,8 +64,7 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::init(
 
 
 		//FIXME : this should just use the dbConf struct...
-		const bool success = worker->connectAndAuthenticateWithAdmin(errMsg, dbConf.addr, dbConf.port,
-			numDBConnections, dbConf.username, dbConf.password, dbConf.pwDigested);
+		const bool success = worker->init(errMsg, config, numDBConnections);
 
 		if (success)
 		{

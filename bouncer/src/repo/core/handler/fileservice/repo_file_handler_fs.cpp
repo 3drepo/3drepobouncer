@@ -15,55 +15,33 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/**
- *  AWS S3 handler
- */
-
-#ifdef S3_SUPPORT
-
-#include <aws/core/Aws.h>
-#include <aws/core/utils/memory/stl/AWSString.h>
-#include <aws/s3/model/DeleteObjectRequest.h>
-#include <aws/s3/model/PutObjectRequest.h>
-#include <aws/s3/S3Client.h>
-
-#include "repo_file_handler_s3.h"
+#include "repo_file_handler_fs.h"
 
 #include "../../model/repo_model_global.h"
 #include "../../../lib/repo_log.h"
 
-using namespace Aws::Auth;
-using namespace Aws::Http;
-using namespace Aws::Client;
-using namespace Aws::S3;
-using namespace Aws::S3::Model;
-using namespace Aws::Utils;
-
 using namespace repo::core::handler::fileservice;
 
-S3FileHandler::S3FileHandler(
-	const std::string &bucketName,
-						const std::string &region) :
-	AbstractFileHandler(), 
-	bucketName(name),
-	bucketRegion(region)
+FSFileHandler::FSFileHandler(
+	const std::string &dir,
+	const int &nLevel) :
+	AbstractFileHandler(),
+	dirPath(dir),
+	level(nLevel)
 {
-	Aws::SDKOptions options;
-	Aws::InitAPI(options);
 }
 
 /**
  * A Deconstructor
  */
-S3FileHandler::~S3FileHandler()
+FSFileHandler::~FSFileHandler()
 {
-	Aws::SDKOptions options;
-	Aws::ShutdownAPI(options);
+	
 }
 
-bool S3FileHandler::deleteFile(
+bool FSFileHandler::deleteFile(
 	const std::string &keyName)
-{
+{/*
 	const Aws::String awsKeyName = keyName.c_str();
 	const Aws::String awsBucketName = bucketName.c_str();
 	const Aws::String awsBucketRegion = bucketRegion.c_str();
@@ -89,52 +67,56 @@ bool S3FileHandler::deleteFile(
 		repoTrace << "DeleteObject.error: " << deleteObjectOutcome.GetError();
 	}
 
-	return success;
+	return success;*/
+
+	return false;
 }
 
-bool S3FileHandler::deleteFileAndRef(
+bool FSFileHandler::deleteFileAndRef(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	const std::string                            &databaseName,
 	const std::string                            &collectionNamePrefix,
 	const std::string                            &fileName)
 {
-	bool success = true;
+	//bool success = true;
 
-	repo::core::model::RepoBSON criteria = BSON(REPO_LABEL_ID << cleanFileName(fileName));
-	repo::core::model::RepoBSON bson = handler->findOneByCriteria(
-			databaseName,
-			collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
-			criteria);
+	//repo::core::model::RepoBSON criteria = BSON(REPO_LABEL_ID << cleanFileName(fileName));
+	//repo::core::model::RepoBSON bson = handler->findOneByCriteria(
+	//		databaseName,
+	//		collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
+	//		criteria);
 
-	if (bson.isEmpty())
-	{
-		repoTrace << "Failed: cannot find file ref "
-			<< cleanFileName(fileName) << " from "
-			<< databaseName << "/"
-			<< collectionNamePrefix << "." << REPO_COLLECTION_EXT_REF;
-		success = false;
-	}
-	else
-	{
-		std::string keyName = bson.getField(REPO_REF_LABEL_LINK).str();
+	//if (bson.isEmpty())
+	//{
+	//	repoTrace << "Failed: cannot find file ref "
+	//		<< cleanFileName(fileName) << " from "
+	//		<< databaseName << "/"
+	//		<< collectionNamePrefix << "." << REPO_COLLECTION_EXT_REF;
+	//	success = false;
+	//}
+	//else
+	//{
+	//	std::string keyName = bson.getField(REPO_REF_LABEL_LINK).str();
 
-		success = deleteFile(keyName) &&
-			AbstractFileHandler::dropFileRef(
-					handler,
-					bson,
-					databaseName,
-					collectionNamePrefix);
-	}
+	//	success = deleteFile(keyName) &&
+	//		AbstractFileHandler::dropFileRef(
+	//				handler,
+	//				bson,
+	//				databaseName,
+	//				collectionNamePrefix);
+	//}
 
-	return success;
+	//return success;
+
+	return false;
 }
 
-bool S3FileHandler::uploadFile(
+bool FSFileHandler::uploadFile(
 	const std::string          &keyName,
 	const std::vector<uint8_t> &bin
 	)
 {
-	const Aws::String awsKeyName = keyName.c_str();
+	/*const Aws::String awsKeyName = keyName.c_str();
 	const Aws::String awsBucketName = bucketName.c_str();
 	const Aws::String awsBucketRegion = bucketRegion.c_str();
 
@@ -166,17 +148,18 @@ bool S3FileHandler::uploadFile(
 		repoTrace << "PutObject.error: " << putObjectOutcome.GetError();
 	}
 
-	return success;
+	return success;*/
+	return false;
 }
 
-bool S3FileHandler::uploadFileAndCommit(
+bool FSFileHandler::uploadFileAndCommit(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	const std::string                            &databaseName,
 	const std::string                            &collectionNamePrefix,
 	const std::string                            &fileName,
 	const std::vector<uint8_t>                   &bin)
 {
-	bool success = true;
+	/*bool success = true;
 	auto fileUUID = repo::lib::RepoUUID::createUUID();
 
 	if (success &= uploadFile(fileUUID.toString(), bin))
@@ -192,10 +175,12 @@ bool S3FileHandler::uploadFileAndCommit(
 				fileSize);
 	}
 
-	return success;
+	return success;*/
+
+	return false;
 }
 
-bool S3FileHandler::upsertFileRef(
+bool FSFileHandler::upsertFileRef(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	const std::string                            &databaseName,
 	const std::string                            &collectionNamePrefix,
@@ -212,4 +197,3 @@ bool S3FileHandler::upsertFileRef(
 			size);
 }
 
-#endif

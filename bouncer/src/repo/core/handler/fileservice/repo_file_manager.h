@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2018 3D Repo Ltd
+*  Copyright (C) 2019 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -15,50 +15,43 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/**
- *  AWS S3 handler
- */
-
 #pragma once
 
 #include <string>
 
-#include <iostream>
-#include <fstream>
-#include <boost/interprocess/streams/bufferstream.hpp>
-
 #include "repo_file_handler_abstract.h"
+#include "../repo_database_handler_abstract.h"
+#include "../../model/bson/repo_bson_ref.h""
+#include "../../../lib/repo_config.h"
 
 namespace repo{
 	namespace core{
 		namespace handler{
 			namespace fileservice{
-				class S3FileHandler : public AbstractFileHandler
+				class FileManager
 				{
 				public:
-					/*
-					 *	=================================== Public Functions ========================================
-					 */
-
 					/**
 					 * A Deconstructor
 					 */
-					~S3FileHandler();
+					~FileManager(){}
+
+					/*
+					* Returns file handler.
+					* Get file manager instance
+					* Throws RepoException if this is called before instantiateMananger is called.
+					*/
+					static FileManager* getManager();
+
+					static FileManager* instantiateManager(
+						const repo::lib::RepoConfig &config,
+						repo::core::handler::AbstractDatabaseHandler *dbHandler
+					);
 
 					/**
-					 * Returns file handler.
-					 * S3FileHandler follows the singleton pattern.
-					 */
-					S3FileHandler(
-						const std::string &bucketName,
-						const std::string &region
-						);
-
-					/**
-					 * Upload file to S3 and commit ref entry to database.
+					 * Upload file and commit ref entry to database.
 					 */
 					bool uploadFileAndCommit(
-						repo::core::handler::AbstractDatabaseHandler *handler,
 						const std::string                            &databaseName,
 						const std::string                            &collectionNamePrefix,
 						const std::string                            &fileName,
@@ -69,72 +62,51 @@ namespace repo{
 					 * Delete file ref and associated file from database.
 					 */
 					bool deleteFileAndRef(
-						repo::core::handler::AbstractDatabaseHandler *handler,
 						const std::string                            &databaseName,
 						const std::string                            &collectionNamePrefix,
 						const std::string                            &fileName
 						);
 
-				protected:
-					/*
-					*	================================= Protected Fields ========================================
-					*/
-					static S3FileHandler *handler; /* !the single instance of this class*/
-
-					/*
-					 *	================================= Private Functions =======================================
-					 */
-					
-					/**
-					 * Upload file to S3.
-					 */
-					bool uploadFile(
-						const std::string          &keyName,
-						const std::vector<uint8_t> &bin
-						);
-
-					/**
-					 * Delete file from S3.
-					 */
-					bool deleteFile(
-						const std::string &keyName);
-
 				private:
-					/*
-					 *	=================================== Private Fields ========================================
+					/**
+					 * Default constructor
 					 */
-
-					std::string bucketName;
-					std::string bucketRegion;
-
-					/*
-					 *	================================= Private Functions =======================================
-					 */
+					FileManager(const repo::lib::RepoConfig &config,
+						repo::core::handler::AbstractDatabaseHandler *dbHandler);
 
 					/**
-					 * Constructor is private because this class follows the singleton pattern
+					 * Cleans given filename by removing teamspace and model strings.
+					 * e.g. cleanFileName("/teamspaceA/modelB/file.obj")
+					 *        => "file.obj"
+					 *      cleanFileName("/teamspaceA/modelB/revision/revC/file.obj")
+					 *        => "revC/file.obj"
 					 */
-					S3FileHandler();
+					std::string cleanFileName(
+						const std::string &fileName);
 
 					/**
-					 * Returns file handler.
-					 * S3FileHandler follows the singleton pattern.
+					 * Remove ref entry for file to database.
 					 */
-					static S3FileHandler* getHandler();
-
+					bool dropFileRef(
+						const repo::core::model::RepoBSON            bson,
+						const std::string                            &databaseName,
+						const std::string                            &collectionNamePrefix);
 					/**
 					 * Add ref entry for file to database.
 					 */
 					bool upsertFileRef(
-						repo::core::handler::AbstractDatabaseHandler *handler,
 						const std::string                            &databaseName,
 						const std::string                            &collectionNamePrefix,
 						const std::string                            &id,
 						const std::string                            &link,
+						const std::string                            &type,
 						const uint32_t                               &size);
+
+					static FileManager* manager;
+					repo::core::handler::AbstractDatabaseHandler *dbHandler;
+					std::shared_ptr<AbstractFileHandler> defaultHandler, s3Handler, fsHandler;
 				};
 			}
 		}
 	}
 }
-

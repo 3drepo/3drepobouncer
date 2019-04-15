@@ -24,12 +24,11 @@
 #include <boost/range/algorithm/copy.hpp>
 
 #include "../core/handler/repo_database_handler_mongo.h"
-#ifdef S3_SUPPORT
-#include "../core/handler/fileservice/repo_file_handler_s3.h"
-#endif
+#include "../core/handler/fileservice/repo_file_manager.h"
 #include "../core/model/bson/repo_bson_factory.h"
 #include "../error_codes.h"
 #include "../lib/repo_log.h"
+#include "../lib/repo_config.h"
 #include "diff/repo_diff_name.h"
 #include "diff/repo_diff_sharedid.h"
 #include "modelconvertor/import/repo_model_import_assimp.h"
@@ -83,40 +82,6 @@ bool RepoManipulator::cleanUp(
 		repoError << "Clean up failed on " << dbName << "." << projectName;
 	}
 	return success;
-}
-
-bool RepoManipulator::connectAndAuthenticate(
-	std::string       &errMsg,
-	const std::string &address,
-	const uint32_t    &port,
-	const uint32_t    &maxConnections,
-	const std::string &dbName,
-	const std::string &username,
-	const std::string &password,
-	const bool        &pwDigested
-	)
-{
-	//FIXME: we should have a database manager class that will instantiate new handlers/give existing handlers
-	repo::core::handler::AbstractDatabaseHandler *handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(
-		errMsg, address, port, maxConnections, dbName, username, password, pwDigested);
-
-	return handler;
-}
-bool RepoManipulator::connectAndAuthenticate(
-	std::string       &errMsg,
-	const std::string &address,
-	const uint32_t    &port,
-	const uint32_t    &maxConnections,
-	const std::string &dbName,
-	const repo::core::model::RepoBSON *credentials
-	)
-{
-	repo::core::handler::AbstractDatabaseHandler *handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(
-		errMsg, address, port, maxConnections, dbName, credentials);
-
-	return handler;
 }
 
 bool RepoManipulator::connectAndAuthenticateWithAdmin(
@@ -939,6 +904,22 @@ bool RepoManipulator::hasDatabase(
 	auto databaseList = fetchDatabases(databaseAd, cred);
 	auto findIt = std::find(databaseList.begin(), databaseList.end(), dbName);
 	return findIt != databaseList.end();
+}
+
+bool RepoManipulator::init(
+	std::string       &errMsg,
+	const repo::lib::RepoConfig  &config,
+	const int            &nDbConnections
+) {
+	auto dbConf = config.getDatabaseConfig();
+	bool success = true;
+	if (success = connectAndAuthenticateWithAdmin(errMsg, dbConf.addr, dbConf.port, nDbConnections, dbConf.username, dbConf.password)) {
+		repo::core::handler::AbstractDatabaseHandler* handler =
+			repo::core::handler::MongoDatabaseHandler::getHandler(dbConf.addr);
+		success = (bool) repo::core::handler::fileservice::FileManager::instantiateManager(config, handler);
+	}
+
+	return success;
 }
 
 std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoManipulator::initialiseAssetBuffer(

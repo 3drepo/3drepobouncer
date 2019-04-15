@@ -187,4 +187,5 @@
 #define REPO_NODE_TYPE_UNKNOWN			"unknown" // reserved UUID ext 00
 //-----------------------------------------------------------------------------
 #define REPO_REF_TYPE_S3	"s3"
+#define REPO_REF_TYPE_FS	"fs"
 //-----------------------------------------------------------------------------
