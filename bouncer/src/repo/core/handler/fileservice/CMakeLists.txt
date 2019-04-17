@@ -6,7 +6,6 @@
 
 set(SOURCES
 	${SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_file_handler_abstract.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_file_handler_fs.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_file_handler_s3.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_file_manager.cpp

@@ -49,14 +49,14 @@ bool FileManager::uploadFileAndCommit(
 {
 	bool success = true;
 	auto fileUUID = repo::lib::RepoUUID::createUUID();
-
-	if (success = defaultHandler->uploadFile(fileUUID.toString(), bin)){
+	auto linkName = defaultHandler->uploadFile(fileUUID.toString(), bin);
+	if (!linkName.empty()){
 
 		success = upsertFileRef(
 			databaseName,
 			collectionNamePrefix,
 			cleanFileName(fileName),
-			fileUUID.toString(),
+			linkName,
 			defaultHandler->getTypeAsString(),
 			bin.size());
 	}

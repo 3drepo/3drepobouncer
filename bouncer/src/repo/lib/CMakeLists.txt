@@ -26,5 +26,6 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_log.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_property_tree.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_stack.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_utils.h
 	CACHE STRING "HEADERS" FORCE)
 
