@@ -60,8 +60,9 @@ namespace repo{
 
 					/**
 					 * Upload file to FS
+					 * upon success, returns the link information for the file, empty otherwise.
 					 */
-					bool uploadFile(
+					std::string uploadFile(
 						const std::string          &keyName,
 						const std::vector<uint8_t> &bin
 						);
@@ -76,9 +77,11 @@ namespace repo{
 					/*
 					 *	=================================== Private Fields ========================================
 					 */
-
+					std::vector<std::string> determineHierachy(const std::string &name) const;
+					
 					const std::string dirPath;
 					const int level;
+					const static int minChunkLength = 4;
 				};
 			}
 		}

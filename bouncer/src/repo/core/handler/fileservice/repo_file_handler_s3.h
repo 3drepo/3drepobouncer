@@ -58,7 +58,7 @@ namespace repo{
 					/**
 					* Upload file to S3.
 					*/
-					bool uploadFile(
+					std::string uploadFile(
 						const std::string          &keyName,
 						const std::vector<uint8_t> &bin
 					);

@@ -57,16 +57,50 @@ bool FSFileHandler::deleteFile(
 	return success;
 }
 
-bool FSFileHandler::uploadFile(
+std::vector<std::string> FSFileHandler::determineHierachy(
+	const std::string &name
+) const {
+	auto nameChunkLen = name.length() / level;
+	nameChunkLen = nameChunkLen < minChunkLength ? minChunkLength : nameChunkLen;
+
+	std::hash<std::string> stringHasher;
+	std::vector<std::string> levelNames;
+	for (int i = 0; i < level; ++i) {
+		auto chunkStart = (i * nameChunkLen) % (name.length() - nameChunkLen);
+		auto stringToHash = name.substr(i, nameChunkLen) + std::to_string((float)std::rand()/ RAND_MAX);
+		levelNames.push_back(std::to_string(stringHasher(stringToHash)));
+	}
+
+	return levelNames;
+}
+
+std::string FSFileHandler::uploadFile(
 	const std::string          &keyName,
 	const std::vector<uint8_t> &bin
 	)
 {
-	bool success = false;
-	//Determine file directory hierachy
-	// write file
+	auto hierachy = determineHierachy(keyName);
+	
+	boost::filesystem::path path(dirPath);
+	boost::filesystem::path relativePath;
 
-	return success;
+	for (const auto &levelName : hierachy) {
+		path /= levelName;
+		relativePath /= levelName;
+		if (!repo::lib::doesDirExist(path)) {
+			boost::filesystem::create_directories(path);
+		}
+	}
+
+	path /= keyName;
+	relativePath /= keyName;
+
+	std::ofstream outs(path.string(), std::ios::out | std::ios::binary);
+	outs.write((char*)bin.data(), bin.size());
+	outs.close();
+
+
+	return relativePath.string();
 }
 
 

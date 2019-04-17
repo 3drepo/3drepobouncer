@@ -92,7 +92,7 @@ bool S3FileHandler::deleteFile(
 	return success;
 }
 
-bool S3FileHandler::uploadFile(
+std::string S3FileHandler::uploadFile(
 	const std::string          &keyName,
 	const std::vector<uint8_t> &bin
 	)
@@ -129,7 +129,7 @@ bool S3FileHandler::uploadFile(
 		repoTrace << "PutObject.error: " << putObjectOutcome.GetError();
 	}
 
-	return success;
+	return success ? keyName : "";
 }
 
 #endif

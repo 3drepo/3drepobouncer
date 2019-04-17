@@ -44,7 +44,7 @@ namespace repo{
 					/**
 					* Upload file.
 					*/
-					virtual bool uploadFile(
+					virtual std::string uploadFile(
 						const std::string          &fileName,
 						const std::vector<uint8_t> &bin
 					) = 0;
