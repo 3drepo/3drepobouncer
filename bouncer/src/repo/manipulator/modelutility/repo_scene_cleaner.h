@@ -18,7 +18,7 @@
 #include <string>
 #include "../../core/model/bson/repo_node_revision.h"
 #include "../../core/handler/repo_database_handler_abstract.h"
-#include "../../core/handler/fileservice/repo_file_handler_abstract.h"
+#include "../../core/handler/fileservice/repo_file_manager.h"
 
 namespace repo{
 	namespace manipulator{
@@ -37,7 +37,7 @@ namespace repo{
 					const std::string                                      &dbName,
 					const std::string                                      &projectName,
 					repo::core::handler::AbstractDatabaseHandler           *handler,
-					repo::core::handler::fileservice::AbstractFileHandler  *fileHandler
+					repo::core::handler::fileservice::FileManager		   *fileManager
 					);
 				~SceneCleaner();
 
@@ -46,7 +46,7 @@ namespace repo{
 			private:
 				const std::string dbName, projectName;
 				repo::core::handler::AbstractDatabaseHandler *handler;
-				repo::core::handler::fileservice::AbstractFileHandler *fileHandler;
+				repo::core::handler::fileservice::FileManager *fileManager;
 
 				/**
 				* Depending on the status of the revision node given,
@@ -69,7 +69,7 @@ namespace repo{
 				void removeAllGridFSReference(
 					const repo::core::model::RepoBSON &idArray);
 
-#ifdef FILESERVICE_SUPPORT
+#ifdef FILESERVICE_SUPPORT //FIXME
 				/**
 				* Given a list of IDs in BSON format and collection name,
 				* remove file references

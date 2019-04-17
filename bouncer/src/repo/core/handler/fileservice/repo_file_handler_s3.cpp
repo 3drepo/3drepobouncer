@@ -92,43 +92,6 @@ bool S3FileHandler::deleteFile(
 	return success;
 }
 
-bool S3FileHandler::deleteFileAndRef(
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	const std::string                            &databaseName,
-	const std::string                            &collectionNamePrefix,
-	const std::string                            &fileName)
-{
-	bool success = true;
-
-	repo::core::model::RepoBSON criteria = BSON(REPO_LABEL_ID << cleanFileName(fileName));
-	repo::core::model::RepoBSON bson = handler->findOneByCriteria(
-			databaseName,
-			collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
-			criteria);
-
-	if (bson.isEmpty())
-	{
-		repoTrace << "Failed: cannot find file ref "
-			<< cleanFileName(fileName) << " from "
-			<< databaseName << "/"
-			<< collectionNamePrefix << "." << REPO_COLLECTION_EXT_REF;
-		success = false;
-	}
-	else
-	{
-		std::string keyName = bson.getField(REPO_REF_LABEL_LINK).str();
-
-		success = deleteFile(keyName) &&
-			AbstractFileHandler::dropFileRef(
-					handler,
-					bson,
-					databaseName,
-					collectionNamePrefix);
-	}
-
-	return success;
-}
-
 bool S3FileHandler::uploadFile(
 	const std::string          &keyName,
 	const std::vector<uint8_t> &bin
@@ -167,49 +130,6 @@ bool S3FileHandler::uploadFile(
 	}
 
 	return success;
-}
-
-bool S3FileHandler::uploadFileAndCommit(
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	const std::string                            &databaseName,
-	const std::string                            &collectionNamePrefix,
-	const std::string                            &fileName,
-	const std::vector<uint8_t>                   &bin)
-{
-	bool success = true;
-	auto fileUUID = repo::lib::RepoUUID::createUUID();
-
-	if (success &= uploadFile(fileUUID.toString(), bin))
-	{
-		auto fileSize = bin.size() * sizeof(bin[0]);
-
-		success &= upsertFileRef(
-				handler,
-				databaseName,
-				collectionNamePrefix,
-				cleanFileName(fileName),
-				fileUUID.toString(),
-				fileSize);
-	}
-
-	return success;
-}
-
-bool S3FileHandler::upsertFileRef(
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	const std::string                            &databaseName,
-	const std::string                            &collectionNamePrefix,
-	const std::string                            &id,
-	const std::string                            &link,
-	const uint32_t                               &size)
-{
-	return AbstractFileHandler::upsertFileRef(handler,
-			databaseName,
-			collectionNamePrefix,
-			id,
-			link,
-			REPO_REF_TYPE_S3,
-			size);
 }
 
 #endif

@@ -41,6 +41,79 @@ FileManager* FileManager::instantiateManager(
 	return manager = new FileManager(config, dbHandler);
 }
 
+bool FileManager::uploadFileAndCommit(
+	const std::string                            &databaseName,
+	const std::string                            &collectionNamePrefix,
+	const std::string                            &fileName,
+	const std::vector<uint8_t>                   &bin)
+{
+	bool success = true;
+	auto fileUUID = repo::lib::RepoUUID::createUUID();
+
+	if (success = defaultHandler->uploadFile(fileUUID.toString(), bin)){
+
+		success = upsertFileRef(
+			databaseName,
+			collectionNamePrefix,
+			cleanFileName(fileName),
+			fileUUID.toString(),
+			defaultHandler->getTypeAsString(),
+			bin.size());
+	}
+
+	return success;
+}
+
+bool FileManager::deleteFileAndRef(
+	const std::string                            &databaseName,
+	const std::string                            &collectionNamePrefix,
+	const std::string                            &fileName)
+{
+	bool success = true;
+
+	repo::core::model::RepoBSON criteria = BSON(REPO_LABEL_ID << cleanFileName(fileName));
+	repo::core::model::RepoBSON bson = dbHandler->findOneByCriteria(
+		databaseName,
+		collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
+		criteria);
+
+	if (bson.isEmpty())
+	{
+		repoTrace << "Failed: cannot find file ref "
+			<< cleanFileName(fileName) << " from "
+			<< databaseName << "/"
+			<< collectionNamePrefix << "." << REPO_COLLECTION_EXT_REF;
+		success = false;
+	}
+	else
+	{
+		std::string keyName = bson.getStringField(REPO_REF_LABEL_LINK);
+		std::string type = bson.getStringField(REPO_LABEL_TYPE); //Should return enum
+
+		std::shared_ptr<AbstractFileHandler> handler = nullptr;
+		if (type == REPO_REF_TYPE_S3) {
+			handler = s3Handler;
+		}
+		else if (type == REPO_REF_TYPE_FS) {
+			handler = fsHandler;
+		}
+
+		if (handler) {
+			success = defaultHandler->deleteFile(keyName) &&
+				dropFileRef(
+					bson,
+					databaseName,
+					collectionNamePrefix);
+		}
+		else {
+			repoError << "Trying to delete a file from " << type << " but connection to this service is not configured.";
+			success = false;
+		}
+	}
+
+	return success;
+}
+
 FileManager::FileManager(
 	const repo::lib::RepoConfig &config,
 	repo::core::handler::AbstractDatabaseHandler *dbHandler

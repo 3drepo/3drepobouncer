@@ -54,31 +54,12 @@ namespace repo{
 						const int &nLevel
 						);
 
-					/**
-					 * Upload file to S3 and commit ref entry to database.
-					 */
-					bool uploadFileAndCommit(
-						repo::core::handler::AbstractDatabaseHandler *handler,
-						const std::string                            &databaseName,
-						const std::string                            &collectionNamePrefix,
-						const std::string                            &fileName,
-						const std::vector<uint8_t>                   &bin
-						);
+					std::string getTypeAsString() const {
+						return REPO_REF_TYPE_FS;
+					}
 
 					/**
-					 * Delete file ref and associated file from database.
-					 */
-					bool deleteFileAndRef(
-						repo::core::handler::AbstractDatabaseHandler *handler,
-						const std::string                            &databaseName,
-						const std::string                            &collectionNamePrefix,
-						const std::string                            &fileName
-						);
-
-				protected:
-					
-					/**
-					 * Upload file to S3.
+					 * Upload file to FS
 					 */
 					bool uploadFile(
 						const std::string          &keyName,
@@ -86,7 +67,7 @@ namespace repo{
 						);
 
 					/**
-					 * Delete file from S3.
+					 * Delete file from FS.
 					 */
 					bool deleteFile(
 						const std::string &keyName);
@@ -98,22 +79,6 @@ namespace repo{
 
 					const std::string dirPath;
 					const int level;
-
-					/*
-					 *	================================= Private Functions =======================================
-					 */
-
-
-					/**
-					 * Add ref entry for file to database.
-					 */
-					bool upsertFileRef(
-						repo::core::handler::AbstractDatabaseHandler *handler,
-						const std::string                            &databaseName,
-						const std::string                            &collectionNamePrefix,
-						const std::string                            &id,
-						const std::string                            &link,
-						const uint32_t                               &size);
 				};
 			}
 		}

@@ -68,11 +68,9 @@ bool RepoManipulator::cleanUp(
 	bool success;
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	repo::core::handler::fileservice::AbstractFileHandler* fileHandler;
-#ifdef S3_SUPPORT
-	fileHandler = repo::core::handler::fileservice::S3FileHandler::getHandler(bucketName, bucketRegion);
-#endif
-	modelutility::SceneCleaner cleaner(dbName, projectName, handler, fileHandler);
+	auto manager = repo::core::handler::fileservice::FileManager::getManager();
+
+	modelutility::SceneCleaner cleaner(dbName, projectName, handler, manager);
 	if (success = cleaner.execute())
 	{
 		repoInfo << dbName << "." << projectName << " has been cleaned up successfully.";
@@ -158,12 +156,9 @@ bool RepoManipulator::commitAssetBundleBuffers(
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	repo::core::handler::fileservice::AbstractFileHandler* fileHandler;
-#ifdef S3_SUPPORT
-	fileHandler = repo::core::handler::fileservice::S3FileHandler::getHandler(bucketName, bucketRegion);
-#endif
+	auto manager = repo::core::handler::fileservice::FileManager::getManager();
 	modelutility::SceneManager SceneManager;
-	return SceneManager.commitWebBuffers(scene, scene->getUnityExtension(), buffers, handler, fileHandler, true);
+	return SceneManager.commitWebBuffers(scene, scene->getUnityExtension(), buffers, handler, manager, true);
 }
 
 bool RepoManipulator::commitScene(
@@ -522,12 +517,11 @@ bool RepoManipulator::generateAndCommitSelectionTree(
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	repo::core::handler::fileservice::AbstractFileHandler *fileHandler;
-#ifdef S3_SUPPORT
-	fileHandler = repo::core::handler::fileservice::S3FileHandler::getHandler(bucketName, bucketRegion);
-#endif
+	auto manager = repo::core::handler::fileservice::FileManager::getManager();
+
 	modelutility::SceneManager SceneManager;
-	return SceneManager.generateAndCommitSelectionTree(scene, handler, fileHandler);
+
+	return SceneManager.generateAndCommitSelectionTree(scene, handler, manager);
 }
 
 bool RepoManipulator::removeStashGraphFromDatabase(
@@ -573,12 +567,9 @@ bool RepoManipulator::generateAndCommitWebViewBuffer(
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	repo::core::handler::fileservice::AbstractFileHandler* fileHandler;
-#ifdef S3_SUPPORT
-	fileHandler = repo::core::handler::fileservice::S3FileHandler::getHandler(bucketName, bucketRegion);
-#endif
+	auto manager = repo::core::handler::fileservice::FileManager::getManager();
 	modelutility::SceneManager SceneManager;
-	return SceneManager.generateWebViewBuffers(scene, exType, buffers, handler, fileHandler);
+	return SceneManager.generateWebViewBuffers(scene, exType, buffers, handler, manager);
 }
 
 repo_web_buffers_t RepoManipulator::generateGLTFBuffer(
@@ -961,13 +952,11 @@ void RepoManipulator::insertBinaryFileToDatabase(
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	repo::core::handler::fileservice::AbstractFileHandler* fileHandler;
-#ifdef S3_SUPPORT
-	fileHandler = repo::core::handler::fileservice::S3FileHandler::getHandler(bucketName, bucketRegion);
-#endif
-	if (handler && fileHandler)
+	auto manager = repo::core::handler::fileservice::FileManager::getManager();
+	if (handler && manager)
 	{
 		std::string errMsg;
+		//FIXME: this should go inside file manager
 		if (handler->insertRawFile(database, collection, name, rawData, errMsg, mimeType))
 		{
 			repoInfo << "File (" << name << ") added successfully.";
@@ -977,8 +966,7 @@ void RepoManipulator::insertBinaryFileToDatabase(
 			repoError << "Failed to add file (" << name << "): " << errMsg;
 		}
 
-#ifdef FILESERVICE_SUPPORT
-		if (fileHandler->uploadFileAndCommit(handler, database, collection, name, rawData))
+		if (manager->uploadFileAndCommit(database, collection, name, rawData))
 		{
 			repoInfo << "File (" << name << ") added successfully to S3.";
 		}
@@ -986,7 +974,7 @@ void RepoManipulator::insertBinaryFileToDatabase(
 		{
 			repoError << "Failed to add file (" << name << ") to S3: " << errMsg;
 		}
-#endif
+
 	}
 }
 

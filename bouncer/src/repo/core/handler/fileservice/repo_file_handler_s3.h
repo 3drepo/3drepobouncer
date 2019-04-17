@@ -54,50 +54,36 @@ namespace repo{
 						const std::string &region
 						);
 
-					/**
-					 * Upload file to S3 and commit ref entry to database.
-					 */
-					bool uploadFileAndCommit(
-						repo::core::handler::AbstractDatabaseHandler *handler,
-						const std::string                            &databaseName,
-						const std::string                            &collectionNamePrefix,
-						const std::string                            &fileName,
-						const std::vector<uint8_t>                   &bin
-						);
 
 					/**
-					 * Delete file ref and associated file from database.
-					 */
-					bool deleteFileAndRef(
-						repo::core::handler::AbstractDatabaseHandler *handler,
-						const std::string                            &databaseName,
-						const std::string                            &collectionNamePrefix,
-						const std::string                            &fileName
-						);
+					* Upload file to S3.
+					*/
+					bool uploadFile(
+						const std::string          &keyName,
+						const std::vector<uint8_t> &bin
+					);
 
+					/**
+					* Delete file from S3.
+					*/
+					bool deleteFile(
+						const std::string &keyName);
+
+					std::string getTypeAsString() const {
+						return REPO_REF_TYPE_S3;
+					}
+
+		
 				protected:
 					/*
 					*	================================= Protected Fields ========================================
 					*/
-					static S3FileHandler *handler; /* !the single instance of this class*/
+
 
 					/*
 					 *	================================= Private Functions =======================================
 					 */
-					
-					/**
-					 * Upload file to S3.
-					 */
-					bool uploadFile(
-						const std::string          &keyName,
-						const std::vector<uint8_t> &bin
-						);
 
-					/**
-					 * Delete file from S3.
-					 */
-					bool deleteFile(
-						const std::string &keyName);
 
 				private:
 					/*
@@ -106,21 +92,6 @@ namespace repo{
 
 					std::string bucketName;
 					std::string bucketRegion;
-
-					/*
-					 *	================================= Private Functions =======================================
-					 */
-
-					/**
-					 * Constructor is private because this class follows the singleton pattern
-					 */
-					S3FileHandler();
-
-					/**
-					 * Returns file handler.
-					 * S3FileHandler follows the singleton pattern.
-					 */
-					static S3FileHandler* getHandler();
 
 					/**
 					 * Add ref entry for file to database.

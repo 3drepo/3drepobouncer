@@ -26,11 +26,11 @@ SceneCleaner::SceneCleaner(
 	const std::string                                      &dbName,
 	const std::string                                      &projectName,
 	repo::core::handler::AbstractDatabaseHandler           *handler,
-	repo::core::handler::fileservice::AbstractFileHandler  *fileHandler) :
+	repo::core::handler::fileservice::FileManager		   *fileManager) :
 	dbName(dbName),
 	projectName(projectName),
 	handler(handler),
-	fileHandler(fileHandler)
+	fileManager (fileManager)
 {
 }
 
@@ -60,9 +60,9 @@ bool SceneCleaner::execute()
 	}
 
 #ifdef FILESERVICE_SUPPORT
-	if (!fileHandler)
+	if (!fileManager)
 	{
-		repoError << "Failed to instantiate scene cleaner: null pointer to the file service!";
+		repoError << "Failed to instantiate scene cleaner: null pointer to the file service manager!";
 	}
 #endif
 
@@ -117,7 +117,7 @@ void SceneCleaner::removeCollectionFiles(
 {
 	for (const auto fname : documentIds)
 	{
-		fileHandler->deleteFileAndRef(handler, dbName, collection, fname);
+		fileManager->deleteFileAndRef(handler, dbName, collection, fname);
 	}
 }
 
@@ -176,7 +176,7 @@ bool SceneCleaner::removeRevision(
 	{
 		handler->dropRawFile(dbName, projectName + "." + REPO_COLLECTION_HISTORY, file, errMsg);
 #ifdef FILESERVICE_SUPPORT
-		fileHandler->deleteFileAndRef(handler, dbName, projectName + "." + REPO_COLLECTION_HISTORY, file);
+		fileManager->deleteFileAndRef(handler, dbName, projectName + "." + REPO_COLLECTION_HISTORY, file);
 #endif
 	}
 	//delete the revision itself
