@@ -69,7 +69,6 @@ namespace repo{
 				void removeAllGridFSReference(
 					const repo::core::model::RepoBSON &idArray);
 
-#ifdef FILESERVICE_SUPPORT //FIXME
 				/**
 				* Given a list of IDs in BSON format and collection name,
 				* remove file references
@@ -84,7 +83,7 @@ namespace repo{
 				*/
 				void removeAllFiles(
 					const std::vector<std::string> &documentIds);
-#endif
+
 
 				/**
 				* Remove the revision given from the database

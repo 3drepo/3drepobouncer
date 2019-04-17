@@ -175,10 +175,7 @@ bool RepoManipulator::commitScene(
 	bool success = false;
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	repo::core::handler::fileservice::AbstractFileHandler *fileHandler;
-#ifdef S3_SUPPORT
-	fileHandler = repo::core::handler::fileservice::S3FileHandler::getHandler(bucketName, bucketRegion);
-#endif
+	auto manager = repo::core::handler::fileservice::FileManager::getManager();
 	std::string projOwner = owner.empty() ? cred->getStringField("user") : owner;
 
 	std::string msg;
@@ -190,7 +187,7 @@ bool RepoManipulator::commitScene(
 		repoError << "Failed to commit scene : database name or project name is empty!";
 	}
 
-	if (handler && scene && scene->commit(handler, fileHandler, msg, projOwner, desc, tag))
+	if (handler && scene && scene->commit(handler, manager, msg, projOwner, desc, tag))
 	{
 		repoInfo << "Scene successfully committed to the database";
 		if (!(success = (scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size())))

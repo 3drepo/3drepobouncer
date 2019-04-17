@@ -53,20 +53,19 @@ bool SceneCleaner::cleanUpRevision(
 
 bool SceneCleaner::execute()
 {
-	bool success = handler;
 	if (!handler)
 	{
 		repoError << "Failed to instantiate scene cleaner: null pointer to the database!";
+		return false;
 	}
 
-#ifdef FILESERVICE_SUPPORT
 	if (!fileManager)
 	{
 		repoError << "Failed to instantiate scene cleaner: null pointer to the file service manager!";
+		return false;
 	}
-#endif
-
-	if (!(success &= !(dbName.empty() || projectName.empty())))
+	bool success = false;
+	if (!(success = !(dbName.empty() || projectName.empty())))
 	{
 		repoError << "Failed to instantiate scene cleaner: database name or project name is empty!";
 	}
@@ -110,14 +109,14 @@ void SceneCleaner::removeAllGridFSReference(
 	}
 }
 
-#ifdef FILESERVICE_SUPPORT
+//FIXME
 void SceneCleaner::removeCollectionFiles(
 	const std::vector<std::string> &documentIds,
 	const std::string &collection)
 {
 	for (const auto fname : documentIds)
 	{
-		fileManager->deleteFileAndRef(handler, dbName, collection, fname);
+		fileManager->deleteFileAndRef(dbName, collection, fname);
 	}
 }
 
@@ -128,7 +127,6 @@ void SceneCleaner::removeAllFiles(
 	removeCollectionFiles(documentIds, projectName + "." + REPO_COLLECTION_STASH_JSON);
 	removeCollectionFiles(documentIds, projectName + "." + REPO_COLLECTION_STASH_UNITY);
 }
-#endif
 
 bool SceneCleaner::removeRevision(
 	const repo::core::model::RevisionNode &revNode)
@@ -145,7 +143,7 @@ bool SceneCleaner::removeRevision(
 	builder.append(REPO_NODE_LABEL_TYPE, REPO_NODE_TYPE_MESH);
 	builder.append(REPO_NODE_STASH_REF, revNode.getUniqueID());
 	auto revisionMeshes = handler->findAllByCriteria(dbName, projectName + "." + REPO_COLLECTION_STASH_REPO, builder.obj());
-
+	//FIXME: revisit.
 	std::vector<std::string> documentIds;
 	documentIds.push_back("revision/" + revNode.getUniqueID().toString() + "/" + REPO_DOCUMENT_ID_SUFFIX_FULLTREE);
 	documentIds.push_back("revision/" + revNode.getUniqueID().toString() + "/" + REPO_DOCUMENT_ID_SUFFIX_IDMAP);
@@ -161,9 +159,8 @@ bool SceneCleaner::removeRevision(
 		documentIds.push_back(meshId + REPO_DOCUMENT_ID_SUFFIX_UNITY3D_WIN);
 	}
 
-#ifdef FILESERVICE_SUPPORT
+	//FIXME
 	removeAllFiles(documentIds);
-#endif
 
 	repo::core::model::RepoBSON criteria = BSON(REPO_NODE_LABEL_ID << BSON("$in" << currentField));
 	std::string errMsg;
@@ -175,9 +172,7 @@ bool SceneCleaner::removeRevision(
 	for (const auto &file : orgFileNames)
 	{
 		handler->dropRawFile(dbName, projectName + "." + REPO_COLLECTION_HISTORY, file, errMsg);
-#ifdef FILESERVICE_SUPPORT
-		fileManager->deleteFileAndRef(handler, dbName, projectName + "." + REPO_COLLECTION_HISTORY, file);
-#endif
+		fileManager->deleteFileAndRef(dbName, projectName + "." + REPO_COLLECTION_HISTORY, file);
 	}
 	//delete the revision itself
 	handler->dropDocument(revNode, dbName, projectName + "." + REPO_COLLECTION_HISTORY, errMsg);
