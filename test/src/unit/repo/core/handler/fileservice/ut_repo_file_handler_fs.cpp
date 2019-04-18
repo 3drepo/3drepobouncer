@@ -30,3 +30,14 @@ TEST(FSFileHandlerTest, GetHandler)
 	EXPECT_THROW(FSFileHandler(getDataPath(simpleModel), 2), repo::lib::RepoException);
 }
 
+FSFileHandler createHandler() {
+	return FSFileHandler(getDataPath("fileShare"), 2);
+}
+
+
+TEST(FSFileHandlerTest, deleteFile)
+{
+	auto handler = createHandler();
+	EXPECT_TRUE(handler.deleteFile("deleteTest"));
+	EXPECT_FALSE(handler.deleteFile("ThisFileDoesNotExist"));
+}
