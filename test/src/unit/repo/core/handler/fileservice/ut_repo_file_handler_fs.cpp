@@ -19,6 +19,7 @@
 #include <repo/core/handler/fileservice/repo_file_handler_fs.h>
 #include <repo/core/model/bson/repo_node.h>
 #include <repo/lib/repo_exception.h>
+#include <repo/lib/repo_utils.h>
 #include "../../../../repo_test_database_info.h"
 
 using namespace repo::core::handler::fileservice;
@@ -38,6 +39,21 @@ FSFileHandler createHandler() {
 TEST(FSFileHandlerTest, deleteFile)
 {
 	auto handler = createHandler();
+	auto pathToFile = getDataPath("fileShare/deleteTest");
+	ASSERT_TRUE(repo::lib::doesFileExist(pathToFile));
 	EXPECT_TRUE(handler.deleteFile("deleteTest"));
+	EXPECT_FALSE(repo::lib::doesFileExist(pathToFile));
 	EXPECT_FALSE(handler.deleteFile("ThisFileDoesNotExist"));
+	
+}
+
+TEST(FSFileHandlerTest, writeFile)
+{
+	auto handler = createHandler();
+	std::vector<uint8_t> buffer;
+	buffer.reserve(1024);
+	auto linker = handler.uploadFile("newFile", buffer);
+	EXPECT_FALSE(linker.empty());
+	auto fullPath = getDataPath("fileShare/" + linker);
+	EXPECT_TRUE(repo::lib::doesFileExist(fullPath));
 }
