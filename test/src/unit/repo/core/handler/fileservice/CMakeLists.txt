@@ -6,6 +6,6 @@
 
 set(TEST_SOURCES
 	${TEST_SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_file_handler_s3.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_file_handler_fs.cpp
 	CACHE STRING "TEST_SOURCES" FORCE)
 

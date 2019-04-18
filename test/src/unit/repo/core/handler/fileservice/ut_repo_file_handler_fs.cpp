@@ -15,21 +15,18 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifdef S3_SUPPORT
-
 #include <gtest/gtest.h>
-#include <repo/core/handler/fileservice/repo_file_handler_s3.h>
+#include <repo/core/handler/fileservice/repo_file_handler_fs.h>
 #include <repo/core/model/bson/repo_node.h>
-#include "../../../repo_test_fileservice_info.h"
+#include <repo/lib/repo_exception.h>
+#include "../../../../repo_test_database_info.h"
 
 using namespace repo::core::handler::fileservice;
 
-TEST(S3FileHandlerTest, GetHandler)
+TEST(FSFileHandlerTest, GetHandler)
 {
-	S3FileHandler* fileHandler =
-		S3FileHandler::getHandler(REPO_GTEST_S3_BUCKET, REPO_GTEST_S3_REGION);
-
-	EXPECT_TRUE(fileHandler);
+	EXPECT_NO_THROW(FSFileHandler(getDataPath("fileShare"), 2));
+	EXPECT_THROW(FSFileHandler(getDataPath("fdlfkjdlkfsjd"), 2), repo::lib::RepoException);
+	EXPECT_THROW(FSFileHandler(getDataPath(simpleModel), 2), repo::lib::RepoException);
 }
 
-#endif

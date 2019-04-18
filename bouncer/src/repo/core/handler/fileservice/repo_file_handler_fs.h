@@ -45,10 +45,6 @@ namespace repo{
 					 */
 					~FSFileHandler();
 
-					/**
-					 * Returns file handler.
-					 * FSFileHandler follows the singleton pattern.
-					 */
 					FSFileHandler(
 						const std::string &dir,
 						const int &nLevel
