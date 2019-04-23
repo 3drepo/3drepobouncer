@@ -119,6 +119,9 @@ FileManager::FileManager(
 	const repo::lib::RepoConfig &config,
 	repo::core::handler::AbstractDatabaseHandler *dbHandler
 ) : dbHandler(dbHandler) {
+
+	if(!dbHandler)
+		throw repo::lib::RepoException("Trying to instantiate FileManager with a nullptr to database!");
 #ifdef S3_SUPPORT
 	auto s3Config = config.getS3Config();
 	if (s3Config.configured) {
@@ -134,6 +137,7 @@ FileManager::FileManager(
 		if (config.getDefaultStorageEngine() == repo::lib::RepoConfig::FileStorageEngine::FS)
 			defaultHandler = fsHandler;
 	}
+
 
 }
 

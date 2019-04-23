@@ -20,14 +20,25 @@
 #include <repo/core/model/bson/repo_node.h>
 #include <repo/lib/repo_exception.h>
 #include <repo/lib/repo_utils.h>
-#include "../../../../repo_test_database_info.h"
+#include "../../../../repo_test_fileservice_info.h"
 
 using namespace repo::core::handler::fileservice;
 
-TEST(FileManager, GetManager)
+static FileManager* getManagerDefaultFS()
 {
 	FileManager::disconnect();
-	EXPECT_THROW(FileManager::getManager(), repo::lib::RepoException);
+	return FileManager::instantiateManager(repo::lib::RepoConfig::fromFile(getDataPath("config/withFS.json")), getHandler());
+}
 
+TEST(FileManager, GetManager)
+{
+	//FileManager::disconnect();
+	//EXPECT_THROW(FileManager::getManager(), repo::lib::RepoException);
+	EXPECT_NO_THROW(getManagerDefaultFS());
+}
 
+TEST(FileManager, InstantiateManager)
+{
+	FileManager::disconnect();
+	EXPECT_THROW(FileManager::instantiateManager(repo::lib::RepoConfig::fromFile(getDataPath("config/withFS.json")), nullptr), repo::lib::RepoException);
 }
