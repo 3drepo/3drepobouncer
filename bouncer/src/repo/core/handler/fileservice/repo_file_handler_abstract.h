@@ -49,7 +49,7 @@ namespace repo{
 						const std::vector<uint8_t> &bin
 					) = 0;
 
-					virtual std::string getTypeAsString() const = 0;
+					virtual repo::core::model::RepoRef::RefType getType() const = 0;
 
 
 

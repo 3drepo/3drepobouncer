@@ -105,7 +105,7 @@ namespace repo{
 						const std::string                            &collectionNamePrefix,
 						const std::string                            &id,
 						const std::string                            &link,
-						const std::string                            &type,
+						const repo::core::model::RepoRef::RefType    &type,
 						const uint32_t                               &size);
 
 					static FileManager* manager;

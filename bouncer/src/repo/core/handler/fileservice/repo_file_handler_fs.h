@@ -50,8 +50,8 @@ namespace repo{
 						const int &nLevel
 						);
 
-					std::string getTypeAsString() const {
-						return REPO_REF_TYPE_FS;
+					repo::core::model::RepoRef::RefType getType() const {
+						return repo::core::model::RepoRef::RefType::FS;
 					}
 
 					/**

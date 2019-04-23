@@ -69,8 +69,8 @@ namespace repo{
 					bool deleteFile(
 						const std::string &keyName);
 
-					std::string getTypeAsString() const {
-						return REPO_REF_TYPE_S3;
+					repo::core::model::RepoRef::RefType getType() const {
+						return repo::core::model::RepoRef::RefType::S3;
 					}
 
 		

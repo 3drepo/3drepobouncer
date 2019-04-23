@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2018 3D Repo Ltd
+*  Copyright (C) 2019 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -32,16 +32,33 @@ namespace repo {
 			//------------------------------------------------------------------------------
 			#define REPO_REF_LABEL_LINK "link"
 			#define REPO_REF_LABEL_SIZE "size"
+			#define REPO_REF_LABEL_TYPE "type"
 
 			class REPO_API_EXPORT RepoRef : public RepoBSON
 			{
+				const static std::string REPO_REF_TYPE_S3;
+				const static std::string REPO_REF_TYPE_FS;
+				const static std::string REPO_REF_TYPE_GRIDFS;
+				const static std::string REPO_REF_TYPE_UNKNOWN;
 			public:
+				enum class RefType {
+					S3, GRIDFS, FS, UNKNOWN
+				};
 
 				RepoRef() : RepoBSON() {}
 
 				RepoRef(RepoBSON bson) : RepoBSON(bson){}
 
 				~RepoRef() {}
+
+				static std::string convertTypeAsString(const RefType &type);
+
+				std::string getFileName() const;
+
+				std::string getRefLink() const;
+
+				RefType getType() const;
+
 			};
 		}// end namespace model
 	} // end namespace core
