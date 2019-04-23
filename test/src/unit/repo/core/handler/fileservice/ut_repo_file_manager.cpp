@@ -31,6 +31,14 @@ static FileManager* getManagerDefaultFS()
 }
 
 TEST(FileManager, GetManager)
-{	
+{
+	FileManager::disconnect();
+	EXPECT_THROW(FileManager::getManager(), repo::lib::RepoException);
 	EXPECT_NO_THROW(getManagerDefaultFS());
+}
+
+TEST(FileManager, InstantiateManager)
+{
+	FileManager::disconnect();
+	EXPECT_THROW(FileManager::instantiateManager(repo::lib::RepoConfig::fromFile(getDataPath("config/withFS.json")), nullptr), repo::lib::RepoException);	
 }

@@ -46,6 +46,7 @@ namespace repo{
 					static void disconnect() {
 						if (manager)
 							delete manager;
+						manager = nullptr;
 					}
 
 					static FileManager* instantiateManager(

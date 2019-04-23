@@ -36,7 +36,7 @@ FileManager* FileManager::instantiateManager(
 	const repo::lib::RepoConfig &config,
 	repo::core::handler::AbstractDatabaseHandler *dbHandler
 ){
-	if (manager) return manager;
+	if (manager) disconnect();
 
 	return manager = new FileManager(config, dbHandler);
 }
