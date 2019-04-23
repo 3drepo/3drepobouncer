@@ -63,3 +63,24 @@ TEST(FileManager, UploadFileAndCommit)
 	std::string linkName = res.getStringField(REPO_REF_LABEL_LINK);
 	EXPECT_TRUE(repo::lib::doesFileExist(getDataPath("fileShare/" + linkName)));
 }
+
+TEST(FileManager, deleteFileAndRef)
+{
+	auto manager = getManagerDefaultFS();
+	ASSERT_TRUE(manager);
+	auto db = "testFileManager";
+	std::string col = "testFileUpload";
+	auto fileName = "testFileToRemove";
+	auto dataPathName = getDataPath("fileShare/dir1/dir2/dir3/someFile");
+	ASSERT_TRUE(repo::lib::doesFileExist(dataPathName));
+
+	EXPECT_TRUE(manager->deleteFileAndRef(db, col, fileName));
+
+	auto dbHandler = getHandler();
+	auto res = dbHandler->findOneByCriteria(db, col + "." + REPO_COLLECTION_EXT_REF, BSON("_id" << fileName));
+	EXPECT_TRUE(res.isEmpty());
+	
+	EXPECT_FALSE(repo::lib::doesFileExist(dataPathName));
+
+	EXPECT_FALSE(manager->deleteFileAndRef(db, col, fileName));
+}
