@@ -7,5 +7,6 @@
 set(TEST_SOURCES
 	${TEST_SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_file_handler_fs.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/ut_repo_file_manager.cpp
 	CACHE STRING "TEST_SOURCES" FORCE)
 
