@@ -43,6 +43,11 @@ namespace repo{
 					*/
 					static FileManager* getManager();
 
+					static void disconnect() {
+						if (manager)
+							delete manager;
+					}
+
 					static FileManager* instantiateManager(
 						const repo::lib::RepoConfig &config,
 						repo::core::handler::AbstractDatabaseHandler *dbHandler

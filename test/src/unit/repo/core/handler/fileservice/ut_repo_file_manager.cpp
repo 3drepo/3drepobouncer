@@ -26,6 +26,7 @@ using namespace repo::core::handler::fileservice;
 
 TEST(FileManager, GetManager)
 {
+	FileManager::disconnect();
 	EXPECT_THROW(FileManager::getManager(), repo::lib::RepoException);
 
 
