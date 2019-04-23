@@ -48,6 +48,7 @@ bool FileManager::uploadFileAndCommit(
 	const std::vector<uint8_t>                   &bin)
 {
 	bool success = true;
+	if (!defaultHandler) return true; //FIXME
 	auto fileUUID = repo::lib::RepoUUID::createUUID();
 	auto linkName = defaultHandler->uploadFile(fileUUID.toString(), bin);
 	if (!linkName.empty()){
@@ -70,7 +71,7 @@ bool FileManager::deleteFileAndRef(
 	const std::string                            &fileName)
 {
 	bool success = true;
-
+	if (!defaultHandler) return true; //FIXME
 	repo::core::model::RepoBSON criteria = BSON(REPO_LABEL_ID << cleanFileName(fileName));
 	repo::core::model::RepoBSON bson = dbHandler->findOneByCriteria(
 		databaseName,
