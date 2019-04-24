@@ -33,7 +33,7 @@ std::string RepoRef::convertTypeAsString(const RefType &type) {
 	case RefType::FS:
 		return REPO_REF_TYPE_FS;
 	default:
-		return "";
+		return REPO_REF_TYPE_UNKNOWN;
 	}
 }
 

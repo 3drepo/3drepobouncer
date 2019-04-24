@@ -36,11 +36,12 @@ namespace repo {
 
 			class REPO_API_EXPORT RepoRef : public RepoBSON
 			{
+			public:
 				const static std::string REPO_REF_TYPE_S3;
 				const static std::string REPO_REF_TYPE_FS;
 				const static std::string REPO_REF_TYPE_GRIDFS;
 				const static std::string REPO_REF_TYPE_UNKNOWN;
-			public:
+
 				enum class RefType {
 					S3, GRIDFS, FS, UNKNOWN
 				};

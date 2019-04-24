@@ -24,14 +24,11 @@
 
 using namespace repo::core::model;
 
-TEST(RepoRefTest, OperatorEqualTest)
+TEST(RepoRefTest, ConvertTypeAsString)
 {
-	RepoNode typicalNode = makeTypicalNode();
-	EXPECT_NE(makeRandomNode(), typicalNode);
-	EXPECT_NE(makeRandomNode(), makeRandomNode());
-	EXPECT_EQ(typicalNode, typicalNode);
-
-	repo::lib::RepoUUID sharedID = repo::lib::RepoUUID::createUUID();
-	EXPECT_NE(makeNode(repo::lib::RepoUUID::createUUID(), sharedID), makeNode(repo::lib::RepoUUID::createUUID(), sharedID));
-	EXPECT_NE(makeNode(sharedID, repo::lib::RepoUUID::createUUID()), makeNode(sharedID, repo::lib::RepoUUID::createUUID()));
+	EXPECT_EQ(RepoRef::convertTypeAsString(RepoRef::RefType::S3), RepoRef::REPO_REF_TYPE_S3);
+	EXPECT_EQ(RepoRef::convertTypeAsString(RepoRef::RefType::FS), RepoRef::REPO_REF_TYPE_FS);
+	EXPECT_EQ(RepoRef::convertTypeAsString(RepoRef::RefType::GRIDFS), RepoRef::REPO_REF_TYPE_GRIDFS);
+	EXPECT_EQ(RepoRef::convertTypeAsString(RepoRef::RefType::UNKNOWN), RepoRef::REPO_REF_TYPE_UNKNOWN);
+	EXPECT_EQ(RepoRef::convertTypeAsString((RepoRef::RefType)10), RepoRef::REPO_REF_TYPE_UNKNOWN);
 }
