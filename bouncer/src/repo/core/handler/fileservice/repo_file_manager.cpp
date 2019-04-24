@@ -112,7 +112,7 @@ bool FileManager::deleteFileAndRef(
 					collectionNamePrefix);
 		}
 		else {
-			repoError << "Trying to delete a file from file storage but connection to this service is not configured.";
+			repoError << "Trying to delete a file from " << repo::core::model::RepoRef::convertTypeAsString(type) << " but connection to this service is not configured.";
 			success = false;
 		}
 	}
