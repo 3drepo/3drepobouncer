@@ -51,7 +51,7 @@ TEST(FSFileHandlerTest, writeFile)
 {
 	auto handler = createHandler();
 	std::vector<uint8_t> buffer;
-	buffer.reserve(1024);
+	buffer.resize(1024);
 	auto linker = handler.uploadFile("a", "b", "newFile", buffer);
 	EXPECT_FALSE(linker.empty());
 	auto fullPath = getDataPath("fileShare/" + linker);

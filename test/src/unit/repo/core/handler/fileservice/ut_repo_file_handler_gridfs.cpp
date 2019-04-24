@@ -54,7 +54,7 @@ TEST(GridFSFileHandlerTest, writeFile)
 {
 	auto handler = getGridFSHandler();
 	std::vector<uint8_t> buffer;
-	buffer.reserve(1024);
+	buffer.resize(1024);
 	std::string fName = "gridFSFile";
 	auto linker = handler.uploadFile("testFileManager", "testFileUpload", fName, buffer);
 	EXPECT_EQ(fName, linker);
