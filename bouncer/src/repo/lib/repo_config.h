@@ -18,6 +18,7 @@
 #pragma once
 #include <string>
 #include "../repo_bouncer_global.h"
+#include "../core/model/bson/repo_bson_ref.h"
 
 
 namespace repo{
@@ -27,9 +28,7 @@ namespace repo{
 		{
 
 		public:
-			enum class FileStorageEngine { GRIDFS, S3, FS }; //FIXME: this should live in filemanager?
-			enum class CompressionType { NONE }; //FIXME: this belongs in filemanager
-
+			using FileStorageEngine = repo::core::model::RepoRef::RefType;
 			struct database_config_t {
 				std::string addr;
 				int port = 27017;
@@ -113,7 +112,6 @@ namespace repo{
 			s3_config_t s3Conf;
 			fs_config_t fsConf;
 			FileStorageEngine defaultStorage;
-			CompressionType compression = CompressionType::NONE;
 
 		};
 	}
