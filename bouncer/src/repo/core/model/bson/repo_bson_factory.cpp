@@ -640,7 +640,7 @@ RepoRef RepoBSONFactory::makeRepoRef(
 	const std::string &fileName,
 	const RepoRef::RefType &type,
 	const std::string &link,
-	const size_t size) {
+	const uint64_t size) {
 
 	repo::core::model::RepoBSONBuilder builder;
 	builder.append(REPO_LABEL_ID, fileName);
