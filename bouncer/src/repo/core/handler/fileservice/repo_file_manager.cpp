@@ -63,7 +63,7 @@ bool FileManager::uploadFileAndCommit(
 			defaultHandler->getType(),
 			bin.size());
 #ifdef LEGACY_SUPPORT
-		gridfsHandler->uploadFile(databaseName, collectionNamePrefix, fileUUID.toString(), bin);
+		gridfsHandler->uploadFile(databaseName, collectionNamePrefix, fileName, bin);
 #endif
 	}
 

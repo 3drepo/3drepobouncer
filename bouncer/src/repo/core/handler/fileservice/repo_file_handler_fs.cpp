@@ -86,25 +86,25 @@ std::string FSFileHandler::uploadFile(
 	auto hierachy = determineHierachy(keyName);
 	
 	boost::filesystem::path path(dirPath);
-	boost::filesystem::path relativePath;
+	std::stringstream ss;
 
 	for (const auto &levelName : hierachy) {
 		path /= levelName;
-		relativePath /= levelName;
+		ss << levelName << "/";
 		if (!repo::lib::doesDirExist(path)) {
 			boost::filesystem::create_directories(path);
 		}
 	}
 
 	path /= keyName;
-	relativePath /= keyName;
-
+	ss <<  keyName;
+	
 	std::ofstream outs(path.string(), std::ios::out | std::ios::binary);
 	outs.write((char*)bin.data(), bin.size());
 	outs.close();
 
 
-	return relativePath.string();
+	return ss.str();
 }
 
 
