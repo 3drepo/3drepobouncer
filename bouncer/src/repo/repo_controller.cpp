@@ -51,15 +51,6 @@ RepoController::RepoToken* RepoController::init(
 	return impl->init(errMsg, config);
 }
 
-bool RepoController::cleanUp(
-	const RepoToken      *token,
-	const std::string                      &dbName,
-	const std::string                      &projectName
-	)
-{
-	return impl->cleanUp(token, dbName, projectName);
-}
-
 bool RepoController::commitAssetBundleBuffers(
 	const RepoController::RepoToken *token,
 	repo::core::model::RepoScene    *scene,

@@ -42,24 +42,14 @@ bool SceneManager::commitWebBuffers(
 	//Upload the files
 	for (const auto &bufferPair : resultBuffers.geoFiles)
 	{
-		std::string errMsg;
-		if (success &= handler->insertRawFile(databaseName, projectName + "." + geoStashExt, bufferPair.first, bufferPair.second,
-			errMsg))
-		{
-			repoInfo << "File (" << bufferPair.first << ") added successfully.";
-		}
-		else
-		{
-			repoError << "Failed to add file  (" << bufferPair.first << "): " << errMsg;
-		}
 
 		if (success &= fileManager->uploadFileAndCommit(databaseName, projectName + "." + geoStashExt, bufferPair.first, bufferPair.second))
 		{
-			repoInfo << "File (" << bufferPair.first << ") added successfully to S3.";
+			repoInfo << "File (" << bufferPair.first << ") added successfully to file storage.";
 		}
 		else
 		{
-			repoError << "Failed to add file  (" << bufferPair.first << ") to S3: " << errMsg;
+			repoError << "Failed to add file  (" << bufferPair.first << ") to file storage";
 		}
 	}
 
@@ -67,23 +57,14 @@ bool SceneManager::commitWebBuffers(
 	{
 		std::string errMsg;
 		std::string fileName = bufferPair.first;
-		if (success &= handler->insertRawFile(databaseName, projectName + "." + jsonStashExt, fileName, bufferPair.second,
-			errMsg))
-		{
-			repoInfo << "File (" << fileName << ") added successfully.";
-		}
-		else
-		{
-			repoError << "Failed to add file  (" << fileName << "): " << errMsg;
-		}
-
+		
 		if (success &= fileManager->uploadFileAndCommit(databaseName, projectName + "." + jsonStashExt, bufferPair.first, bufferPair.second))
 		{
-			repoInfo << "File (" << fileName << ") added successfully to S3.";
+			repoInfo << "File (" << fileName << ") added successfully to file storage.";
 		}
 		else
 		{
-			repoError << "Failed to add file  (" << fileName << ") to S3: " << errMsg;
+			repoError << "Failed to add file  (" << fileName << ") to  file storage.";
 		}
 	}
 
@@ -396,26 +377,17 @@ bool SceneManager::generateAndCommitSelectionTree(
 			{
 				std::string fileName = fileNamePrefix + file.first;
 
-				if (handler && handler->insertRawFile(databaseName, projectName + "." + scene->getJSONExtension(), fileName, file.second, errMsg))
-				{
-					repoInfo << "File (" << fileName << ") added successfully.";
-				}
-				else
-				{
-					repoError << "Failed to add file  (" << fileName << "): " << errMsg;
-				}
-
 				if (handler && fileManager->uploadFileAndCommit(
 							databaseName,
 							projectName + "." + scene->getJSONExtension(),
 							fileName,
 							file.second))
 				{
-					repoInfo << "File (" << fileName << ") added successfully to S3.";
+					repoInfo << "File (" << fileName << ") added successfully to file storage.";
 				}
 				else
 				{
-					repoError << "Failed to add file  (" << fileName << ") to S3: " << errMsg;
+					repoError << "Failed to add file  (" << fileName << ") to file storage: " << errMsg;
 				}
 			}
 		}

@@ -70,19 +70,6 @@ int32_t performOperation(
 * ======================== Command functions ===================
 */
 
-/**
-* Check all revisions within a project for status information,
-* If the revision is deemed corrupted, attempt to repair, otherwise delete.
-* @param controller the controller to the bouncer library
-* @param token      token provided by the controller after authentication
-* @param command    command and it's arguments to perform
-* @return returns true upon success
-*/
-static int32_t cleanUpProject(
-	repo::RepoController       *controller,
-	const repo::RepoController::RepoToken      *token,
-	const repo_op_t            &command
-	);
 
 /**
 * Generate and commit a federation

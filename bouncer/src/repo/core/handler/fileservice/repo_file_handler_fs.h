@@ -59,6 +59,8 @@ namespace repo{
 					 * upon success, returns the link information for the file, empty otherwise.
 					 */
 					std::string uploadFile(
+						const std::string          &database,
+						const std::string          &collection,
 						const std::string          &keyName,
 						const std::vector<uint8_t> &bin
 						);
@@ -67,6 +69,8 @@ namespace repo{
 					 * Delete file from FS.
 					 */
 					bool deleteFile(
+						const std::string          &database,
+						const std::string          &collection,
 						const std::string &keyName);
 
 				private:

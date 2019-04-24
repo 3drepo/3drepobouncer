@@ -39,12 +39,16 @@ namespace repo{
 					* Delete file.
 					*/
 					virtual bool deleteFile(
+						const std::string          &database,
+						const std::string          &collection,
 						const std::string &fileName) = 0;
 
 					/**
 					* Upload file.
 					*/
 					virtual std::string uploadFile(
+						const std::string          &database,
+						const std::string          &collection,
 						const std::string          &fileName,
 						const std::vector<uint8_t> &bin
 					) = 0;

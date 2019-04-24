@@ -40,7 +40,6 @@
 #include "modelconvertor/import/repo_metadata_import_csv.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
 #include "modeloptimizer/repo_optimizer_ifc.h"
-#include "modelutility/repo_scene_cleaner.h"
 #include "modelutility/repo_scene_manager.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
 #include "statistics/repo_statistics_generator.h"
@@ -54,32 +53,6 @@ RepoManipulator::RepoManipulator()
 
 RepoManipulator::~RepoManipulator()
 {
-}
-
-bool RepoManipulator::cleanUp(
-	const std::string                      &databaseAd,
-	const repo::core::model::RepoBSON      *cred,
-	const std::string                      &bucketName,
-	const std::string                      &bucketRegion,
-	const std::string                      &dbName,
-	const std::string                      &projectName
-	)
-{
-	bool success;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	auto manager = repo::core::handler::fileservice::FileManager::getManager();
-
-	modelutility::SceneCleaner cleaner(dbName, projectName, handler, manager);
-	if (success = cleaner.execute())
-	{
-		repoInfo << dbName << "." << projectName << " has been cleaned up successfully.";
-	}
-	else
-	{
-		repoError << "Clean up failed on " << dbName << "." << projectName;
-	}
-	return success;
 }
 
 bool RepoManipulator::connectAndAuthenticateWithAdmin(
@@ -952,24 +925,13 @@ void RepoManipulator::insertBinaryFileToDatabase(
 	auto manager = repo::core::handler::fileservice::FileManager::getManager();
 	if (handler && manager)
 	{
-		std::string errMsg;
-		//FIXME: this should go inside file manager
-		if (handler->insertRawFile(database, collection, name, rawData, errMsg, mimeType))
-		{
-			repoInfo << "File (" << name << ") added successfully.";
-		}
-		else
-		{
-			repoError << "Failed to add file (" << name << "): " << errMsg;
-		}
-
 		if (manager->uploadFileAndCommit(database, collection, name, rawData))
 		{
-			repoInfo << "File (" << name << ") added successfully to S3.";
+			repoInfo << "File (" << name << ") added successfully to storage.";
 		}
 		else
 		{
-			repoError << "Failed to add file (" << name << ") to S3: " << errMsg;
+			repoError << "Failed to add file (" << name << ") to storage.";
 		}
 
 	}

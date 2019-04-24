@@ -84,35 +84,6 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::init(
 	return token;
 }
 
-bool  RepoController::_RepoControllerImpl::cleanUp(
-	const RepoController::RepoToken        *token,
-	const std::string                      &dbName,
-	const std::string                      &projectName
-	)
-{
-	if (!token)
-	{
-		repoError << "Failed to clean up project: empty token to database";
-		return false;
-	}
-
-	if (dbName.empty() || projectName.empty())
-	{
-		repoError << "Failed to clean up project: database or project name is empty!";
-		return false;
-	}
-
-	manipulator::RepoManipulator* worker = workerPool.pop();
-	bool success = worker->cleanUp(token->databaseAd,
-			token->getCredentials(),
-			token->bucketName,
-			token->bucketRegion,
-			dbName,
-			projectName);
-	workerPool.push(worker);
-	return success;
-}
-
 bool RepoController::_RepoControllerImpl::commitAssetBundleBuffers(
 	const RepoController::RepoToken *token,
 	repo::core::model::RepoScene    *scene,

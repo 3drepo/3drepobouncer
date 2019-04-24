@@ -44,22 +44,6 @@ namespace repo{
 			~RepoManipulator();
 
 			/**
-			* Clean up any incomplete commits within the project
-			* @param address mongo database address
-			* @param port port number
-			* @param dbName name of the database
-			* @param projectName name of the project
-			*/
-			bool cleanUp(
-				const std::string                      &databaseAd,
-				const repo::core::model::RepoBSON      *cred,
-				const std::string                      &bucketName,
-				const std::string                      &bucketRegion,
-				const std::string                      &dbName,
-				const std::string                      &projectName
-				);
-
-			/**
 			* Commit a scene graph
 			* @param databaseAd mongo database address:port
 			* @param cred user credentials in bson form

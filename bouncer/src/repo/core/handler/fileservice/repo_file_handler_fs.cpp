@@ -45,6 +45,8 @@ FSFileHandler::~FSFileHandler()
 }
 
 bool FSFileHandler::deleteFile(
+	const std::string          &database,
+	const std::string          &collection,
 	const std::string &keyName)
 {
 	bool success = false;
@@ -75,6 +77,8 @@ std::vector<std::string> FSFileHandler::determineHierachy(
 }
 
 std::string FSFileHandler::uploadFile(
+	const std::string          &database,
+	const std::string          &collection,
 	const std::string          &keyName,
 	const std::vector<uint8_t> &bin
 	)

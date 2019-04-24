@@ -110,7 +110,7 @@ namespace repo{
 
 					static FileManager* manager;
 					repo::core::handler::AbstractDatabaseHandler *dbHandler;
-					std::shared_ptr<AbstractFileHandler> defaultHandler, s3Handler, fsHandler;
+					std::shared_ptr<AbstractFileHandler> defaultHandler, s3Handler, fsHandler, gridfsHandler;
 				};
 			}
 		}

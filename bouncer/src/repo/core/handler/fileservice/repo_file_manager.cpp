@@ -19,8 +19,9 @@
 #include "../../../lib/repo_exception.h"
 #include "../../model/repo_model_global.h"
 #include "../../model/bson/repo_bson_factory.h"
-#include "repo_file_handler_s3.h"
 #include "repo_file_handler_fs.h"
+#include "repo_file_handler_gridfs.h"
+#include "repo_file_handler_s3.h"
 
 using namespace repo::core::handler::fileservice;
 
@@ -48,9 +49,8 @@ bool FileManager::uploadFileAndCommit(
 	const std::vector<uint8_t>                   &bin)
 {
 	bool success = true;
-	if (!defaultHandler) return true; //FIXME
 	auto fileUUID = repo::lib::RepoUUID::createUUID();
-	auto linkName = defaultHandler->uploadFile(fileUUID.toString(), bin);
+	auto linkName = defaultHandler->uploadFile(databaseName, collectionNamePrefix, fileUUID.toString(), bin);
 	if (!linkName.empty()){
 
 		success = upsertFileRef(
@@ -71,7 +71,6 @@ bool FileManager::deleteFileAndRef(
 	const std::string                            &fileName)
 {
 	bool success = true;
-	if (!defaultHandler) return true; //FIXME
 	repo::core::model::RepoBSON criteria = BSON(REPO_LABEL_ID << cleanFileName(fileName));
 	repo::core::model::RepoRef ref = dbHandler->findOneByCriteria(
 		databaseName,
@@ -91,21 +90,18 @@ bool FileManager::deleteFileAndRef(
 		const auto keyName = ref.getRefLink();
 		const auto type = ref.getType(); //Should return enum
 
-		std::shared_ptr<AbstractFileHandler> handler = nullptr;
+		std::shared_ptr<AbstractFileHandler> handler = gridfsHandler;;
 		switch (type) {
 		case repo::core::model::RepoRef::RefType::S3:
 			handler = s3Handler;
 			break;
 		case repo::core::model::RepoRef::RefType::FS:
 			handler = fsHandler;
-			break;
-		//default:
-		//	//FIXME: use gridfs handler
-		//	break;
+			break;		
 		}
 		
 		if (handler) {
-			success = defaultHandler->deleteFile(keyName) &&
+			success = defaultHandler->deleteFile(databaseName, collectionNamePrefix, keyName) &&
 				dropFileRef(
 					ref,
 					databaseName,
@@ -127,6 +123,9 @@ FileManager::FileManager(
 
 	if(!dbHandler)
 		throw repo::lib::RepoException("Trying to instantiate FileManager with a nullptr to database!");
+
+	gridfsHandler = std::make_shared<GridFSFileHandler>(dbHandler);
+	defaultHandler = gridfsHandler;
 #ifdef S3_SUPPORT
 	auto s3Config = config.getS3Config();
 	if (s3Config.configured) {
@@ -142,8 +141,6 @@ FileManager::FileManager(
 		if (config.getDefaultStorageEngine() == repo::lib::RepoConfig::FileStorageEngine::FS)
 			defaultHandler = fsHandler;
 	}
-
-
 }
 
 std::string FileManager::cleanFileName(

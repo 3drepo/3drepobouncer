@@ -23,17 +23,14 @@
 
 #include <string>
 
-#include <iostream>
-#include <fstream>
-#include <boost/interprocess/streams/bufferstream.hpp>
-
 #include "repo_file_handler_abstract.h"
+#include "../repo_database_handler_abstract.h"
 
 namespace repo{
 	namespace core{
 		namespace handler{
 			namespace fileservice{
-				class S3FileHandler : public AbstractFileHandler
+				class GridFSFileHandler : public AbstractFileHandler
 				{
 				public:
 					/*
@@ -43,70 +40,39 @@ namespace repo{
 					/**
 					 * A Deconstructor
 					 */
-					~S3FileHandler();
-
-					/**
-					 * Returns file handler.
-					 * S3FileHandler follows the singleton pattern.
-					 */
-					S3FileHandler(
-						const std::string &bucketName,
-						const std::string &region
+					~GridFSFileHandler();
+					GridFSFileHandler(
+						repo::core::handler::AbstractDatabaseHandler* handler
 						);
 
+					repo::core::model::RepoRef::RefType getType() const {
+						return repo::core::model::RepoRef::RefType::GRIDFS;
+					}
 
 					/**
-					* Upload file to S3.
-					*/
+					 * Upload file to FS
+					 * upon success, returns the link information for the file, empty otherwise.
+					 */
 					std::string uploadFile(
 						const std::string          &database,
 						const std::string          &collection,
 						const std::string          &keyName,
 						const std::vector<uint8_t> &bin
-					);
+						);
 
 					/**
-					* Delete file from S3.
-					*/
+					 * Delete file from FS.
+					 */
 					bool deleteFile(
 						const std::string          &database,
 						const std::string          &collection,
-						const std::string &keyName);
-
-					repo::core::model::RepoRef::RefType getType() const {
-						return repo::core::model::RepoRef::RefType::S3;
-					}
-
-		
-				protected:
-					/*
-					*	================================= Protected Fields ========================================
-					*/
-
-
-					/*
-					 *	================================= Private Functions =======================================
-					 */
-
+						const std::string		   &keyName);
 
 				private:
 					/*
 					 *	=================================== Private Fields ========================================
 					 */
-
-					std::string bucketName;
-					std::string bucketRegion;
-
-					/**
-					 * Add ref entry for file to database.
-					 */
-					bool upsertFileRef(
-						repo::core::handler::AbstractDatabaseHandler *handler,
-						const std::string                            &databaseName,
-						const std::string                            &collectionNamePrefix,
-						const std::string                            &id,
-						const std::string                            &link,
-						const uint32_t                               &size);
+					repo::core::handler::AbstractDatabaseHandler* handler;
 				};
 			}
 		}

@@ -62,6 +62,8 @@ S3FileHandler::~S3FileHandler()
 }
 
 bool S3FileHandler::deleteFile(
+	const std::string          &database,
+	const std::string          &collection,
 	const std::string &keyName)
 {
 	const Aws::String awsKeyName = keyName.c_str();
@@ -93,6 +95,8 @@ bool S3FileHandler::deleteFile(
 }
 
 std::string S3FileHandler::uploadFile(
+	const std::string          &database,
+	const std::string          &collection,
 	const std::string          &keyName,
 	const std::vector<uint8_t> &bin
 	)

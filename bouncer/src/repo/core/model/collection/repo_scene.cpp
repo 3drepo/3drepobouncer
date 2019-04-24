@@ -736,15 +736,9 @@ bool RepoScene::commitRevisionNode(
 				std::vector<uint8_t> rawFile(size);
 				if (file.read((char*)rawFile.data(), size))
 				{
-					std::string errMsg;
-					if (!handler->insertRawFile(databaseName, projectName + "." + rawExt, gridFSName, rawFile, errMsg))
-					{
-						repoError << "Failed to save original file into the database: " << errMsg;
-					}
-
 					if (!manager->uploadFileAndCommit(databaseName, projectName + "." + rawExt, gridFSName, rawFile))
 					{
-						repoError << "Failed to save original file into the S3: " << errMsg;
+						repoError << "Failed to save original file into file storage: " << errMsg;
 					}
 				}
 				else
