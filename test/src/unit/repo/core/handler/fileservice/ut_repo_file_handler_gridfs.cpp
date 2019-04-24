@@ -38,25 +38,33 @@ GridFSFileHandler getGridFSHandler()
 	auto dbHandler = getHandler();
 	return GridFSFileHandler(dbHandler);
 }
-//
-//TEST(GridFSFileHandlerTest, deleteFile)
-//{
-//	auto handler = createHandler();
-//	auto pathToFile = getDataPath("fileShare/deleteTest");
-//	ASSERT_TRUE(repo::lib::doesFileExist(pathToFile));
-//	EXPECT_TRUE(handler.deleteFile("a", "b", "deleteTest"));
-//	EXPECT_FALSE(repo::lib::doesFileExist(pathToFile));
-//	EXPECT_FALSE(handler.deleteFile("a", "b", "ThisFileDoesNotExist"));
-//	
-//}
-//
+
+TEST(GridFSFileHandlerTest, deleteFile)
+{
+	auto handler = getGridFSHandler();
+	auto dbHandler = getHandler();
+	std::string db = "testFileManager";
+	std::string col = "testFileUpload";
+	std::string fName = "gridFSFile";
+
+	ASSERT_TRUE(dbHandler->getRawFile(db, col, fName).size() > 0);
+	EXPECT_TRUE(handler.deleteFile(db, col, fName));
+	EXPECT_EQ(dbHandler->getRawFile(db, col, fName).size(), 0);
+	
+}
+
 TEST(GridFSFileHandlerTest, writeFile)
 {
 	auto handler = getGridFSHandler();
 	std::vector<uint8_t> buffer;
-	buffer.resize(1024);
-	std::string fName = "gridFSFile";
-	auto linker = handler.uploadFile("testFileManager", "testFileUpload", fName, buffer);
+	uint32_t fSize = 1024;
+	buffer.resize(fSize);
+	std::string db = "testFileManager";
+	std::string col = "testFileUpload";
+	std::string fName = "testFileWrite";
+	auto linker = handler.uploadFile(db, col, fName, buffer);
 	EXPECT_EQ(fName, linker);
+	auto dbHandler = getHandler();
 
+	EXPECT_EQ(dbHandler->getRawFile(db, col, fName).size(), fSize);
 }
