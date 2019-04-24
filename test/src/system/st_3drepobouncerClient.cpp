@@ -425,19 +425,3 @@ TEST(RepoClientTest, GenStashTest)
 
 	delete controller;
 }
-
-TEST(RepoClientTest, CleanTest)
-{
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceCleanArgs("sampleDataRW", "cleanTest1")));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceCleanArgs("sampleDataRW", "cleanTest2")));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceCleanArgs("sampleDataRW", "cleanTest3")));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceCleanArgs("sampleDataRW", "cleanTest4")));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceCleanArgs("sampleDataRW", "cleanTest5")));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceCleanArgs("sampleDataRW", "nonExistentbadfsd")));
-
-	EXPECT_FALSE(projectHasValidRevision("sampleDataRW", "cleanTest1"));
-	EXPECT_FALSE(projectHasValidRevision("sampleDataRW", "cleanTest2")); // FIXME: change dump?
-	EXPECT_FALSE(projectHasValidRevision("sampleDataRW", "cleanTest3")); // FIXME: change dump?
-	EXPECT_FALSE(projectHasValidRevision("sampleDataRW", "cleanTest4")); // FIXME: change dump?
-	EXPECT_TRUE(projectHasValidRevision("sampleDataRW", "cleanTest5"));
-}

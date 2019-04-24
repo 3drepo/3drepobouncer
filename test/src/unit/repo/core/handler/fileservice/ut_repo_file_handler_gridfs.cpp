@@ -50,13 +50,13 @@ GridFSFileHandler getGridFSHandler()
 //	
 //}
 //
-//TEST(GridFSFileHandlerTest, writeFile)
-//{
-//	auto handler = createHandler();
-//	std::vector<uint8_t> buffer;
-//	buffer.reserve(1024);
-//	auto linker = handler.uploadFile("a", "b", "newFile", buffer);
-//	EXPECT_FALSE(linker.empty());
-//	auto fullPath = getDataPath("fileShare/" + linker);
-//	EXPECT_TRUE(repo::lib::doesFileExist(fullPath));
-//}
+TEST(GridFSFileHandlerTest, writeFile)
+{
+	auto handler = getGridFSHandler();
+	std::vector<uint8_t> buffer;
+	buffer.reserve(1024);
+	std::string fName = "gridFSFile";
+	auto linker = handler.uploadFile("testFileManager", "testFileUpload", fName, buffer);
+	EXPECT_EQ(fName, linker);
+
+}
