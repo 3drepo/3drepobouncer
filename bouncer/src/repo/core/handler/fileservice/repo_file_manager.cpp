@@ -25,6 +25,8 @@
 
 using namespace repo::core::handler::fileservice;
 
+#define LEGACY_SUPPORT 1
+
 FileManager* FileManager::manager = nullptr;
 
 FileManager* FileManager::getManager() {
@@ -60,6 +62,9 @@ bool FileManager::uploadFileAndCommit(
 			linkName,
 			defaultHandler->getType(),
 			bin.size());
+#ifdef LEGACY_SUPPORT
+		gridfsHandler->uploadFile(databaseName, collectionNamePrefix, fileUUID.toString(), bin);
+#endif
 	}
 
 	return success;
@@ -76,6 +81,11 @@ bool FileManager::deleteFileAndRef(
 		databaseName,
 		collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
 		criteria);
+
+#ifdef LEGACY_SUPPORT
+	gridfsHandler->deleteFile(databaseName, collectionNamePrefix, fileName);
+#endif
+
 
 	if (ref.isEmpty())
 	{
