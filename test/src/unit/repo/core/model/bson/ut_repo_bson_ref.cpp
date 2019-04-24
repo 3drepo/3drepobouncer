@@ -32,3 +32,19 @@ TEST(RepoRefTest, ConvertTypeAsString)
 	EXPECT_EQ(RepoRef::convertTypeAsString(RepoRef::RefType::UNKNOWN), RepoRef::REPO_REF_TYPE_UNKNOWN);
 	EXPECT_EQ(RepoRef::convertTypeAsString((RepoRef::RefType)10), RepoRef::REPO_REF_TYPE_UNKNOWN);
 }
+
+TEST(RepoRefTest, GeneralTest)
+{
+	std::string fileName = "FileNameTest";
+	auto type = RepoRef::RefType::S3;
+	std::string link = "linkOfThisFile";
+	uint32_t size = std::rand();
+	auto ref = RepoBSONFactory::makeRepoRef(fileName, type, link, size);
+
+	EXPECT_FALSE(ref.isEmpty());
+	EXPECT_EQ(fileName, ref.getFileName());
+	EXPECT_EQ(type, ref.getType());
+	EXPECT_EQ(link, ref.getRefLink());
+	EXPECT_EQ(size, ref.getIntField(REPO_REF_LABEL_SIZE));
+	
+}
