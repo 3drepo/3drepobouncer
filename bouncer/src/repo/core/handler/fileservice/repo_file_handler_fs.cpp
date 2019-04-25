@@ -70,7 +70,8 @@ std::vector<std::string> FSFileHandler::determineHierachy(
 	for (int i = 0; i < level; ++i) {
 		auto chunkStart = (i * nameChunkLen) % (name.length() - nameChunkLen);
 		auto stringToHash = name.substr(i, nameChunkLen) + std::to_string((float)std::rand()/ RAND_MAX);
-		levelNames.push_back(std::to_string(stringHasher(stringToHash)));
+		auto hashedValue = stringHasher(stringToHash) & 255;
+		levelNames.push_back(std::to_string(hashedValue));
 	}
 
 	return levelNames;
