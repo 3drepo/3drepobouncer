@@ -67,7 +67,7 @@
 				}
 			});
 
-			const timeout = conf.timeout || 180*60*1000
+			const timeout = conf.timeoutMS || 180*60*1000
 			setTimeout(() => {
 				isTimeout = true;
 				cmdExec.kill();
