@@ -42,6 +42,7 @@
 	const ERRCODE_BOUNCER_CRASH = 12;
 	const ERRCODE_PARAM_READ_FAIL = 13;
 	const ERRCODE_BUNDLE_GEN_FAIL = 14;
+	const ERRCODE_TIMEOUT = 29;
 	const softFails = [7,10,15]; //failures that should go through to generate bundle
 
 	const logger = new (winston.Logger)({
@@ -49,6 +50,30 @@
 		  new (winston.transports.File)({'filename': conf.logLocation? conf.logLocation : "./bouncer_worker.log"})
 		]
 	});
+
+	function run(exe, params, codesAsSuccess = []) {
+
+		return new Promise((resolve, reject) => {
+			logger.info(`Executing command: ${exe} ${params.join(" ")}`);
+			const cmdExec = spawn(exe, params);
+			let isTimeout = false;
+			cmdExec.on("close", (code) => {
+				if(isTimeout) {
+					reject(ERRCODE_TIMEOUT);
+				} else if(code === 0 || codeAsSuccess.indexOf(code) > -1) {
+					resolve(code);
+				} else {
+					reject(code);
+				}
+			});
+
+			const timeout = conf.timeout || 180*60*1000
+			setTimeout(() => {
+				isTimeout = true;
+				cmdExec.kill();
+			}, timeout);
+		});
+	}
 
 	/**
 	 * Test that the client is working and
@@ -80,16 +105,13 @@
 				"test"
 			];
 
-		const cmdExec = spawn(path.normalize(conf.bouncer.path), cmdParams);
-		cmdExec.on("close", (code) => {
-			if(code === 0) {
-				logger.info("Bouncer call passed");
-				callback();
-			} else {
-				logger.error("Bouncer call errored");
-			}
-		});
 
+		run(path.normalize(conf.bouncer.path), cmdParams).then(() => {
+			logger.info("Bouncer call passed");
+			callback();
+		}).catch((code)=> {
+			logger.error(`Bouncer call errored (Error code: ${code})`);
+		});
 	}
 
 	/**
@@ -270,117 +292,116 @@
 			}, false);
 		}
 
-		const cmdExec = spawn(path.normalize(conf.bouncer.path), cmdParams);
+		const execProm = run(path.normalize(conf.bouncer.path), cmdParams, softFails);
 
-		cmdExec.on("close", (code) => {
+		execProm.then((code) => {
+			logger.info(`[SUCCEED] Executed command: ${command} ${cmdParams.join(" ")} `, reply);
+			if(conf.unity && conf.unity.project && cmdArr[0] == "import")
+			{
+				let commandArgs = cmdFile;
+				if(commandArgs && commandArgs.database && commandArgs.project)
+				{
+					let awsBucketName = "undefined";
+					let awsBucketRegion = "undefined";
+
+					if (conf.aws)
+					{
+						process.env['AWS_ACCESS_KEY_ID'] = conf.aws.access_key_id;
+						process.env['AWS_SECRET_ACCESS_KEY'] =  conf.aws.secret_access_key;
+						awsBucketName = conf.aws.bucket_name;
+						awsBucketRegion = conf.aws.bucket_region;
+					}
+
+					const unityCommand = conf.unity.batPath;
+					const unityCmdParams = [
+						conf.unity.project,
+						conf.bouncer.dbhost,
+						conf.bouncer.dbport,
+						conf.bouncer.username,
+						conf.bouncer.password,
+						commandArgs.database,
+						commandArgs.project,
+						awsBucketName,
+						awsBucketRegion,
+						logDir];
+
+					logger.info(`Running unity command: ${unityCommand} ${unityCmdParams.join(" ")}`);
+					const unityExec = run(unityCommand, unityCmdParams);
+					unityExec.then(() => {
+						logger.info(`[SUCCESS] Executed unity command: ${unityCommand} ${unityCmdParams.join(" ")}`, reply);
+						callback({
+							value: 0,
+							database: cmdDatabase,
+							project: cmdProject,
+							user
+						}, true);
+					}).catch((unityCode) => {
+						reply.value = ERRCODE_BUNDLE_GEN_FAIL;
+						logger.info(`[FAILED] Executed unity command: ${unityCommand} ${unityCmdParams.join(" ")}`, reply);
+						callback({
+							value: unityCode,
+							database: cmdDatabase,
+							project: cmdProject,
+							user
+						}, true);
+					});
+				}
+				else
+				{
+					logger.error("Failed to read " + cmdArr[2]);
+					callback({
+						value: ERRCODE_PARAM_READ_FAIL,
+						database: cmdDatabase,
+						project: cmdProject,
+						user
+					}, true);
+				}
+			}
+			else
+			{
+				if(toyFed) {
+
+					const dbConfig = {
+						username: conf.bouncer.username,
+						password: conf.bouncer.password,
+						dbhost: conf.bouncer.dbhost,
+						dbport: conf.bouncer.dbport,
+						writeConcern: conf.mongoimport && conf.mongoimport.writeConcern
+					};
+					const dir = `${rootModelDir}/${toyFed}`;
+					importToy(dbConfig, dir, cmdDatabase, cmdDatabase, cmdProject, {tree: 1}).then(()=> {
+						callback({
+							value: code,
+							database: cmdDatabase,
+							project: cmdProject,
+							user
+						}, true);
+					});
+				} else {
+
+					callback({
+						value: code,
+						database: cmdDatabase,
+						project: cmdProject,
+						user
+					}, true);
+				}
+			}
+
+		}).catch((code) => {
 			const reply = {};
-
-			if(code !== 0 && softFails.indexOf(code) === -1){
-				if(code)
-					reply.value = code;
-				else
-					reply.value = ERRCODE_BOUNCER_CRASH;
-
-				callback({
-					value: reply.value,
-					database: cmdDatabase,
-					project: cmdProject,
-					user
-				}, true);
-				logger.info(`[FAILED] Executed command: ${command} ${cmdParams.join(" ")}`, reply);
-			}
-			else{
+			if(code)
 				reply.value = code;
-				logger.info(`[SUCCEED] Executed command: ${command} ${cmdParams.join(" ")} `, reply);
-				if(conf.unity && conf.unity.project && cmdArr[0] == "import")
-				{
-					let commandArgs = cmdFile;
-					if(commandArgs && commandArgs.database && commandArgs.project)
-					{
-						let awsBucketName = "undefined";
-						let awsBucketRegion = "undefined";
+			else
+				reply.value = ERRCODE_BOUNCER_CRASH;
 
-						if (conf.aws)
-						{
-							process.env['AWS_ACCESS_KEY_ID'] = conf.aws.access_key_id;
-							process.env['AWS_SECRET_ACCESS_KEY'] =  conf.aws.secret_access_key;
-							awsBucketName = conf.aws.bucket_name;
-							awsBucketRegion = conf.aws.bucket_region;
-						}
-
-						const unityCommand = conf.unity.batPath;
-						const unityCmdParams = [
-							conf.unity.project,
-							conf.bouncer.dbhost,
-							conf.bouncer.dbport,
-							conf.bouncer.username,
-							conf.bouncer.password,
-							commandArgs.database,
-							commandArgs.project,
-							awsBucketName,
-							awsBucketRegion,
-							logDir];
-
-						logger.info(`Running unity command: ${unityCommand} ${unityCmdParams.join(" ")}`);
-						const unityExec = spawn(unityCommand, unityCmdParams);
-						unityExec.on("close", (code) => {
-							if(code !== 0)
-							{
-								reply.value = ERRCODE_BUNDLE_GEN_FAIL;
-							}
-							logger.info(`Executed unity command: ${unityCommand} ${unityCmdParams.join(" ")}`, reply);
-							callback({
-								value: reply.value,
-								database: cmdDatabase,
-								project: cmdProject,
-								user
-							}, true);
-						});
-					}
-					else
-					{
-						logger.error("Failed to read " + cmdArr[2]);
-						reply.value = ERRCODE_PARAM_READ_FAIL;
-						callback({
-							value: reply.value,
-							database: cmdDatabase,
-							project: cmdProject,
-							user
-						}, true);
-					}
-				}
-				else
-				{
-					if(toyFed) {
-
-						const dbConfig = {
-							username: conf.bouncer.username,
-							password: conf.bouncer.password,
-							dbhost: conf.bouncer.dbhost,
-							dbport: conf.bouncer.dbport,
-							writeConcern: conf.mongoimport && conf.mongoimport.writeConcern
-						};
-						const dir = `${rootModelDir}/${toyFed}`;
-						importToy(dbConfig, dir, cmdDatabase, cmdDatabase, cmdProject, {tree: 1}).then(()=> {
-							callback({
-								value: reply.value,
-								database: cmdDatabase,
-								project: cmdProject,
-								user
-							}, true);
-						});
-					} else {
-
-						callback({
-							value: reply.value,
-							database: cmdDatabase,
-							project: cmdProject,
-							user
-						}, true);
-					}
-				}
-			}
-
+			callback({
+				value: reply.value,
+				database: cmdDatabase,
+				project: cmdProject,
+				user
+			}, true);
+			logger.info(`[FAILED] Executed command: ${command} ${cmdParams.join(" ")}`, reply);
 		});
 
 	}
