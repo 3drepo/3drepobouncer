@@ -31,7 +31,7 @@
 (() => {
 	"use strict";
 
-	const amqp = require("amqplib/callback_api");
+	const amqp = require("amqplib");
 	const conf = require("./config.js");
 	const path = require("path");
 	const spawn = require("child_process").spawn;
@@ -44,6 +44,7 @@
 	const ERRCODE_BUNDLE_GEN_FAIL = 14;
 	const ERRCODE_TIMEOUT = 29;
 	const softFails = [7,10,15]; //failures that should go through to generate bundle
+	let retry = 0;
 
 	const logger = new (winston.Logger)({
 		transports: [new (winston.transports.Console)({'timestamp': true}),
@@ -446,19 +447,42 @@
 	}
 
 	function connectQ(){
-		amqp.connect(conf.rabbitmq.host, function(err,conn){
-			if(err !== null)
-			{
-				logger.error("failed to establish connection to rabbit mq");
-			}
-			else
-			{
-				conn.createChannel(function(err, ch){
-					ch.assertQueue(conf.rabbitmq.callback_queue, { durable: true });
-					listenToQueue(ch, conf.rabbitmq.worker_queue, conf.rabbitmq.task_prefetch || 4);
-					listenToQueue(ch, conf.rabbitmq.model_queue, conf.rabbitmq.model_prefetch || 1);
+		amqp.connect(conf.rabbitmq.host).then((conn) => {
+			retry = 0;
+            logger.error("[AMQP] Connected! Creating channel...");
+			conn.createChannel().then((ch) => {
+				ch.assertQueue(conf.rabbitmq.callback_queue, { durable: true });
+				listenToQueue(ch, conf.rabbitmq.worker_queue, conf.rabbitmq.task_prefetch || 4);
+				listenToQueue(ch, conf.rabbitmq.model_queue, conf.rabbitmq.model_prefetch || 1);
 
-				});
+			});
+
+		  	conn.on("close", () => {
+				const maxRetries = conf.rabbitmq.maxRetries || 3;
+	            logger.error("[AMQP] connection closed.");
+				if(++retry <= maxRetries) {
+	                logger.error(`[AMQP] Trying to reconnect [${retry}/${maxRetries}]...`);
+					connectQ();
+				} else {
+	            	logger.error("[AMQP] Retries exhausted");
+					process.exit(-1);
+				}
+            });
+
+            conn.on("error", (err)  => {
+               	logger.error("[AMQP] connection error: " + err.message);
+            });
+
+
+		}).catch((err) => {
+			logger.error(`[AMQP] failed to establish connection to rabbit mq: ${err}.`);
+			const maxRetries = conf.rabbitmq.maxRetries || 3;
+			if(++retry <= maxRetries) {
+	            logger.error(`[AMQP] Trying to reconnect [${retry}/${maxRetries}]...`);
+				connectQ();
+			} else {
+            	logger.error("[AMQP] Retries exhausted");
+				process.exit(-1);
 			}
 		});
 	}

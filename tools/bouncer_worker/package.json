@@ -7,7 +7,7 @@
     "restart": "npm stop; npm start"
   },
   "dependencies": {
-    "amqplib": "0.4.1",
+    "amqplib": "0.5.3",
     "mongodb": "2.2.24",
     "winston": "2.4.0"
   }
