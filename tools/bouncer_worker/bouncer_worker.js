@@ -45,6 +45,7 @@
 	const ERRCODE_TIMEOUT = 29;
 	const softFails = [7,10,15]; //failures that should go through to generate bundle
 	let retry = 0;
+	let connClosed = false;
 
 	const logger = new (winston.Logger)({
 		transports: [new (winston.transports.Console)({'timestamp': true}),
@@ -449,6 +450,7 @@
 	function connectQ(){
 		amqp.connect(conf.rabbitmq.host).then((conn) => {
 			retry = 0;
+			connClosed = false;
             logger.error("[AMQP] Connected! Creating channel...");
 			conn.createChannel().then((ch) => {
 				ch.assertQueue(conf.rabbitmq.callback_queue, { durable: true });
@@ -458,14 +460,18 @@
 			});
 
 		  	conn.on("close", () => {
-				const maxRetries = conf.rabbitmq.maxRetries || 3;
-	            logger.error("[AMQP] connection closed.");
-				if(++retry <= maxRetries) {
-	                logger.error(`[AMQP] Trying to reconnect [${retry}/${maxRetries}]...`);
-					connectQ();
-				} else {
-	            	logger.error("[AMQP] Retries exhausted");
-					process.exit(-1);
+				if(!connClosed) {
+					//this can be called more than once for some reason. Use a boolean to distinguish first timers.
+					connClosed = true;
+					const maxRetries = conf.rabbitmq.maxRetries || 300;
+					logger.error("[AMQP] connection closed.");
+					if(++retry <= maxRetries) {
+						logger.error(`[AMQP] Trying to reconnect [${retry}/${maxRetries}]...`);
+						connectQ();
+					} else {
+						logger.error("[AMQP] Retries exhausted");
+						process.exit(-1);
+					}
 				}
             });
 
@@ -476,7 +482,7 @@
 
 		}).catch((err) => {
 			logger.error(`[AMQP] failed to establish connection to rabbit mq: ${err}.`);
-			const maxRetries = conf.rabbitmq.maxRetries || 3;
+			const maxRetries = conf.rabbitmq.maxRetries || 300;
 			if(++retry <= maxRetries) {
 	            logger.error(`[AMQP] Trying to reconnect [${retry}/${maxRetries}]...`);
 				connectQ();
