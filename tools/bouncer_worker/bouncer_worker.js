@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 
 /**
- *  Copyright (C) 2015 3D Repo Ltd
+ *	Copyright (C) 2015 3D Repo Ltd
  *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU Affero General Public License as
- *  published by the Free Software Foundation, either version 3 of the
- *  License, or (at your option) any later version.
+ *	This program is free software: you can redistribute it and/or modify
+ *	it under the terms of the GNU Affero General Public License as
+ *	published by the Free Software Foundation, either version 3 of the
+ *	License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU Affero General Public License for more details.
+ *	This program is distributed in the hope that it will be useful,
+ *	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *	GNU Affero General Public License for more details.
  *
- *  You should have received a copy of the GNU Affero General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>
+ *	You should have received a copy of the GNU Affero General Public License
+ *	along with this program.  If not, see <http://www.gnu.org/licenses/>
  * /
 
  /*
@@ -177,7 +177,7 @@
 		if (conf.aws)
 		{
 			process.env['AWS_ACCESS_KEY_ID'] = conf.aws.access_key_id;
-			process.env['AWS_SECRET_ACCESS_KEY'] =  conf.aws.secret_access_key;
+			process.env['AWS_SECRET_ACCESS_KEY'] =	conf.aws.secret_access_key;
 		}
 
 		if (conf.bouncer.envars) {
@@ -229,14 +229,14 @@
 			{
 				const fs = require('fs')
 				fs.readFile(cmdArr[2], 'utf8', function (err,data) {
-				  	if (err) {
+					if (err) {
 						return logger.error(err);
-  					}
-		  			let result = data.replace("/sharedData/", conf.rabbitmq.sharedDir);
+					}
+					let result = data.replace("/sharedData/", conf.rabbitmq.sharedDir);
 
-		  			fs.writeFile(cmdArr[2], result, 'utf8', function (err) {
-     						if (err) return logger.error(err);
-  					});
+					fs.writeFile(cmdArr[2], result, 'utf8', function (err) {
+							if (err) return logger.error(err);
+					});
 				});
 			}
 		}
@@ -309,7 +309,7 @@
 					if (conf.aws)
 					{
 						process.env['AWS_ACCESS_KEY_ID'] = conf.aws.access_key_id;
-						process.env['AWS_SECRET_ACCESS_KEY'] =  conf.aws.secret_access_key;
+						process.env['AWS_SECRET_ACCESS_KEY'] =	conf.aws.secret_access_key;
 						awsBucketName = conf.aws.bucket_name;
 						awsBucketRegion = conf.aws.bucket_region;
 					}
@@ -451,7 +451,7 @@
 		amqp.connect(conf.rabbitmq.host).then((conn) => {
 			retry = 0;
 			connClosed = false;
-            logger.error("[AMQP] Connected! Creating channel...");
+			logger.error("[AMQP] Connected! Creating channel...");
 			conn.createChannel().then((ch) => {
 				ch.assertQueue(conf.rabbitmq.callback_queue, { durable: true });
 				listenToQueue(ch, conf.rabbitmq.worker_queue, conf.rabbitmq.task_prefetch || 4);
@@ -459,7 +459,7 @@
 
 			});
 
-		  	conn.on("close", () => {
+			conn.on("close", () => {
 				if(!connClosed) {
 					//this can be called more than once for some reason. Use a boolean to distinguish first timers.
 					connClosed = true;
@@ -473,21 +473,21 @@
 						process.exit(-1);
 					}
 				}
-            });
+			});
 
-            conn.on("error", (err)  => {
-               	logger.error("[AMQP] connection error: " + err.message);
-            });
+			conn.on("error", (err)	=> {
+				logger.error("[AMQP] connection error: " + err.message);
+			});
 
 
 		}).catch((err) => {
 			logger.error(`[AMQP] failed to establish connection to rabbit mq: ${err}.`);
 			const maxRetries = conf.rabbitmq.maxRetries || 300;
 			if(++retry <= maxRetries) {
-	            logger.error(`[AMQP] Trying to reconnect [${retry}/${maxRetries}]...`);
+				logger.error(`[AMQP] Trying to reconnect [${retry}/${maxRetries}]...`);
 				connectQ();
 			} else {
-            	logger.error("[AMQP] Retries exhausted");
+				logger.error("[AMQP] Retries exhausted");
 				process.exit(-1);
 			}
 		});
