@@ -332,7 +332,7 @@
 					unityExec.then(() => {
 						logger.info(`[SUCCESS] Executed unity command: ${unityCommand} ${unityCmdParams.join(" ")}`, reply);
 						callback({
-							value: 0,
+							value: code,
 							database: cmdDatabase,
 							project: cmdProject,
 							user
