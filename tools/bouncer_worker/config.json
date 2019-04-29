@@ -1,0 +1,42 @@
+{
+	"logLocation": "log.log",
+	"rabbitmq":{
+		"host": "amqp://guest:guest@localhost:5672",
+		"worker_queue": "jobq",
+		"callback_queue": "callbackq",
+		"model_queue": "modelq",
+		"task_prefetch": 4,
+		"model_prefetch": 1,
+		"sharedDir": "C:/sharedSpace/"
+	},
+	"bouncer":{
+		"path" : "C:/local/3drepobouncer/bin/3drepobouncerclient.exe",
+		"log_dir" : "./log/",
+		"envars": {
+			"REPO_RVT_TEXTURES" : "C:/local/revit_materials/"
+		}
+	},
+	"aws": {
+		"access_key_id": "AKIAISRQFJ4JIZCRLBKA",
+		"secret_access_key": "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",
+		"bucket_name": "3drepo-sandbox",
+		"bucket_region": "eu-west-2"
+	},
+	"db": {
+		"dbhost" :"localhost",
+		"dbport": 9997,
+		"username" : "adminUser",
+		"password" : "zNU378qnEZKbaGEq"
+	},
+	"mongoimport":{
+		"writeConcern": {
+			"w": 1
+		}
+	},
+	"unity":
+	{
+		"project": "C:\\Users\\Carmen\\work\\repo\\3drepounity\\AssetBundleCreator",
+		"batPath": "C:\\Users\\Carmen\\work\\repo\\3drepounity\\AssetBundleCreator\\buildBundle.bat"
+	}
+
+}
