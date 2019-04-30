@@ -60,7 +60,6 @@
 			const cmdExec = spawn(exe, params);
 			let isTimeout = false;
 			cmdExec.on("close", (code) => {
-				console.log("Executed, code: ", code);
 				if(isTimeout) {
 					reject(ERRCODE_TIMEOUT);
 				} else if(code === 0 || codesAsSuccess.includes(code)) {
