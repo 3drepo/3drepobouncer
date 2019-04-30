@@ -60,9 +60,10 @@
 			const cmdExec = spawn(exe, params);
 			let isTimeout = false;
 			cmdExec.on("close", (code) => {
+				console.log("Executed, code: ", code);
 				if(isTimeout) {
 					reject(ERRCODE_TIMEOUT);
-				} else if(code === 0 || codeAsSuccess.indexOf(code) > -1) {
+				} else if(code === 0 || codesAsSuccess.includes(code)) {
 					resolve(code);
 				} else {
 					reject(code);
@@ -297,7 +298,7 @@
 		const execProm = run(path.normalize(conf.bouncer.path), cmdParams, softFails);
 
 		execProm.then((code) => {
-			logger.info(`[SUCCEED] Executed command: ${command} ${cmdParams.join(" ")} `, reply);
+			logger.info(`[SUCCEED] Executed command: ${command} ${cmdParams.join(" ")} `, code);
 			if(conf.unity && conf.unity.project && cmdArr[0] == "import")
 			{
 				let commandArgs = cmdFile;
@@ -329,8 +330,8 @@
 
 					logger.info(`Running unity command: ${unityCommand} ${unityCmdParams.join(" ")}`);
 					const unityExec = run(unityCommand, unityCmdParams);
-					unityExec.then(() => {
-						logger.info(`[SUCCESS] Executed unity command: ${unityCommand} ${unityCmdParams.join(" ")}`, reply);
+					unityExec.then((code) => {
+						logger.info(`[SUCCESS] Executed unity command: ${unityCommand} ${unityCmdParams.join(" ")}`, code);
 						callback({
 							value: code,
 							database: cmdDatabase,
@@ -338,10 +339,9 @@
 							user
 						}, true);
 					}).catch((unityCode) => {
-						reply.value = ERRCODE_BUNDLE_GEN_FAIL;
-						logger.info(`[FAILED] Executed unity command: ${unityCommand} ${unityCmdParams.join(" ")}`, reply);
+						logger.info(`[FAILED] Executed unity command: ${unityCommand} ${unityCmdParams.join(" ")}`, unityCode);
 						callback({
-							value: unityCode,
+							value: ERRCODE_BUNDLE_GEN_FAIL,
 							database: cmdDatabase,
 							project: cmdProject,
 							user
@@ -391,19 +391,14 @@
 			}
 
 		}).catch((code) => {
-			const reply = {};
-			if(code)
-				reply.value = code;
-			else
-				reply.value = ERRCODE_BOUNCER_CRASH;
-
+			const err =  code? code : ERRCODE_BOUNCER_CRASH;
 			callback({
-				value: reply.value,
+				value: err,
 				database: cmdDatabase,
 				project: cmdProject,
 				user
 			}, true);
-			logger.info(`[FAILED] Executed command: ${command} ${cmdParams.join(" ")}`, reply);
+			logger.info(`[FAILED] Executed command: ${command} ${cmdParams.join(" ")}`, err);
 		});
 
 	}
