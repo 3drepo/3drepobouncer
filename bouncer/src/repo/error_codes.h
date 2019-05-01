@@ -71,3 +71,5 @@
 #define REPOERR_ODA_UNAVAILABLE 26
 //No valid 3D view found (for Revit format)
 #define REPOERR_VALID_3D_VIEW_NOT_FOUND 27
+//Process timed out (only used in bouncer_worker)
+#define REPOERR_TIMEOUT 29
