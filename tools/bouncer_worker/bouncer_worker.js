@@ -390,14 +390,14 @@
 			}
 
 		}).catch((code) => {
-			const err =  code? code : ERRCODE_BOUNCER_CRASH;
+			const err =  code || ERRCODE_BOUNCER_CRASH;
 			callback({
 				value: err,
 				database: cmdDatabase,
 				project: cmdProject,
 				user
 			}, true);
-			logger.info(`[FAILED] Executed command: ${command} ${cmdParams.join(" ")}`, err);
+			logger.error(`[FAILED] Executed command: ${command} ${cmdParams.join(" ")}`, err);
 		});
 
 	}
@@ -441,11 +441,22 @@
 		}, {noAck: false});
 	}
 
+	function reconnectQ() {
+		const maxRetries = conf.rabbitmq.maxRetries || 3;
+		if(++retry <= maxRetries) {
+			logger.error(`[AMQP] Trying to reconnect [${retry}/${maxRetries}]...`);
+			connectQ();
+		} else {
+			logger.error("[AMQP] Retries exhausted");
+			process.exit(-1);
+		}
+	}
+
 	function connectQ(){
 		amqp.connect(conf.rabbitmq.host).then((conn) => {
 			retry = 0;
 			connClosed = false;
-			logger.error("[AMQP] Connected! Creating channel...");
+			logger.info("[AMQP] Connected! Creating channel...");
 			conn.createChannel().then((ch) => {
 				ch.assertQueue(conf.rabbitmq.callback_queue, { durable: true });
 				listenToQueue(ch, conf.rabbitmq.worker_queue, conf.rabbitmq.task_prefetch || 4);
@@ -457,15 +468,8 @@
 				if(!connClosed) {
 					//this can be called more than once for some reason. Use a boolean to distinguish first timers.
 					connClosed = true;
-					const maxRetries = conf.rabbitmq.maxRetries || 300;
 					logger.error("[AMQP] connection closed.");
-					if(++retry <= maxRetries) {
-						logger.error(`[AMQP] Trying to reconnect [${retry}/${maxRetries}]...`);
-						connectQ();
-					} else {
-						logger.error("[AMQP] Retries exhausted");
-						process.exit(-1);
-					}
+					reconnectQ();
 				}
 			});
 
@@ -476,14 +480,7 @@
 
 		}).catch((err) => {
 			logger.error(`[AMQP] failed to establish connection to rabbit mq: ${err}.`);
-			const maxRetries = conf.rabbitmq.maxRetries || 300;
-			if(++retry <= maxRetries) {
-				logger.error(`[AMQP] Trying to reconnect [${retry}/${maxRetries}]...`);
-				connectQ();
-			} else {
-				logger.error("[AMQP] Retries exhausted");
-				process.exit(-1);
-			}
+			reconnectQ();
 		});
 	}
 
