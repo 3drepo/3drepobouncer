@@ -215,6 +215,9 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 
 
 			return db.collection("settings").findOne({_id: project}).then(setting => {
+				if(!setting) {
+					return reject("Model "+ setting +" not found");
+				}
 				const oldIdToNewId = {};
 				let subModelPromise;
 				if(setting.subModels) {

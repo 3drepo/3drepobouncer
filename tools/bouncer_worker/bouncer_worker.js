@@ -1,20 +1,20 @@
 #!/usr/bin/env node
 
 /**
- *  Copyright (C) 2015 3D Repo Ltd
+ *	Copyright (C) 2015 3D Repo Ltd
  *
- *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU Affero General Public License as
- *  published by the Free Software Foundation, either version 3 of the
- *  License, or (at your option) any later version.
+ *	This program is free software: you can redistribute it and/or modify
+ *	it under the terms of the GNU Affero General Public License as
+ *	published by the Free Software Foundation, either version 3 of the
+ *	License, or (at your option) any later version.
  *
- *  This program is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU Affero General Public License for more details.
+ *	This program is distributed in the hope that it will be useful,
+ *	but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *	GNU Affero General Public License for more details.
  *
- *  You should have received a copy of the GNU Affero General Public License
- *  along with this program.  If not, see <http://www.gnu.org/licenses/>
+ *	You should have received a copy of the GNU Affero General Public License
+ *	along with this program.  If not, see <http://www.gnu.org/licenses/>
  * /
 
  /*
@@ -31,7 +31,8 @@
 (() => {
 	"use strict";
 
-	const amqp = require("amqplib/callback_api");
+	const amqp = require("amqplib");
+	const conf = require("./config.js");
 	const path = require("path");
 	const spawn = require("child_process").spawn;
 	const importToy = require('./importToy');
@@ -41,7 +42,10 @@
 	const ERRCODE_BOUNCER_CRASH = 12;
 	const ERRCODE_PARAM_READ_FAIL = 13;
 	const ERRCODE_BUNDLE_GEN_FAIL = 14;
+	const ERRCODE_TIMEOUT = 29;
 	const softFails = [7,10,15]; //failures that should go through to generate bundle
+	let retry = 0;
+	let connClosed = false;
 
 	const fs = require("fs");
 	const configFullPath = path.resolve(__dirname, "config.json");
@@ -53,6 +57,30 @@
 		  new (winston.transports.File)({'filename': conf.logLocation? conf.logLocation : "./bouncer_worker.log"})
 		]
 	});
+
+	function run(exe, params, codesAsSuccess = []) {
+
+		return new Promise((resolve, reject) => {
+			logger.info(`Executing command: ${exe} ${params.join(" ")}`);
+			const cmdExec = spawn(exe, params);
+			let isTimeout = false;
+			cmdExec.on("close", (code) => {
+				if(isTimeout) {
+					reject(ERRCODE_TIMEOUT);
+				} else if(code === 0 || codesAsSuccess.includes(code)) {
+					resolve(code);
+				} else {
+					reject(code);
+				}
+			});
+
+			const timeout = conf.timeoutMS || 180*60*1000
+			setTimeout(() => {
+				isTimeout = true;
+				cmdExec.kill();
+			}, timeout);
+		});
+	}
 
 	/**
 	 * Test that the client is working and
@@ -79,16 +107,13 @@
 				"test"
 			];
 
-		const cmdExec = spawn(path.normalize(conf.bouncer.path), cmdParams);
-		cmdExec.on("close", (code) => {
-			if(code === 0) {
-				logger.info("Bouncer call passed");
-				callback();
-			} else {
-				logger.error("Bouncer call errored");
-			}
-		});
 
+		run(path.normalize(conf.bouncer.path), cmdParams).then(() => {
+			logger.info("Bouncer call passed");
+			callback();
+		}).catch((code)=> {
+			logger.error(`Bouncer call errored (Error code: ${code})`);
+		});
 	}
 
 	/**
@@ -152,7 +177,7 @@
 		if (conf.aws)
 		{
 			process.env['AWS_ACCESS_KEY_ID'] = conf.aws.access_key_id;
-			process.env['AWS_SECRET_ACCESS_KEY'] =  conf.aws.secret_access_key;
+			process.env['AWS_SECRET_ACCESS_KEY'] =	conf.aws.secret_access_key;
 		}
 
 		if (conf.bouncer.envars) {
@@ -198,14 +223,14 @@
 			{
 				const fs = require('fs')
 				fs.readFile(cmdArr[2], 'utf8', function (err,data) {
-				  	if (err) {
+					if (err) {
 						return logger.error(err);
-  					}
-		  			let result = data.replace("/sharedData/", conf.rabbitmq.sharedDir);
+					}
+					let result = data.replace("/sharedData/", conf.rabbitmq.sharedDir);
 
-		  			fs.writeFile(cmdArr[2], result, 'utf8', function (err) {
-     						if (err) return logger.error(err);
-  					});
+					fs.writeFile(cmdArr[2], result, 'utf8', function (err) {
+							if (err) return logger.error(err);
+					});
 				});
 			}
 		}
@@ -263,112 +288,106 @@
 			}, false);
 		}
 
-		const cmdExec = spawn(path.normalize(conf.bouncer.path), cmdParams);
+		const execProm = run(path.normalize(conf.bouncer.path), cmdParams, softFails);
 
-		cmdExec.on("close", (code) => {
-			const reply = {};
-
-			if(code !== 0 && softFails.indexOf(code) === -1){
-				if(code)
-					reply.value = code;
-				else
-					reply.value = ERRCODE_BOUNCER_CRASH;
-
-				callback({
-					value: reply.value,
-					database: cmdDatabase,
-					project: cmdProject,
-					user
-				}, true);
-				logger.info(`[FAILED] Executed command: ${command} ${cmdParams.join(" ")}`, reply);
-			}
-			else{
-				reply.value = code;
-				logger.info(`[SUCCEED] Executed command: ${command} ${cmdParams.join(" ")} `, reply);
-				if(conf.unity && conf.unity.project && cmdArr[0] == "import")
+		execProm.then((code) => {
+			logger.info(`[SUCCEED] Executed command: ${command} ${cmdParams.join(" ")} `, code);
+			if(conf.unity && conf.unity.project && cmdArr[0] == "import")
+			{
+				let commandArgs = cmdFile;
+				if(commandArgs && commandArgs.database && commandArgs.project)
 				{
-					let commandArgs = cmdFile;
-					if(commandArgs && commandArgs.database && commandArgs.project)
+					let awsBucketName = "undefined";
+					let awsBucketRegion = "undefined";
+
+					if (conf.aws)
 					{
-						let awsBucketName = "undefined";
-						let awsBucketRegion = "undefined";
+						process.env['AWS_ACCESS_KEY_ID'] = conf.aws.access_key_id;
+						process.env['AWS_SECRET_ACCESS_KEY'] =	conf.aws.secret_access_key;
+						awsBucketName = conf.aws.bucket_name;
+						awsBucketRegion = conf.aws.bucket_region;
+					}
 
-						if (conf.aws)
-						{
-							process.env['AWS_ACCESS_KEY_ID'] = conf.aws.access_key_id;
-							process.env['AWS_SECRET_ACCESS_KEY'] =  conf.aws.secret_access_key;
-							awsBucketName = conf.aws.bucket_name;
-							awsBucketRegion = conf.aws.bucket_region;
-						}
-
-						const unityCommand = conf.unity.batPath;
-						const unityCmdParams = [
+					const unityCommand = conf.unity.batPath;
+					const unityCmdParams = [
 							conf.unity.project,
 							configFullPath,
 							commandArgs.database,
 							commandArgs.project,
-							logDir];
+							logDir
+					];
 
-						logger.info(`Running unity command: ${unityCommand} ${unityCmdParams.join(" ")}`);
-						const unityExec = spawn(unityCommand, unityCmdParams);
-						unityExec.on("close", (code) => {
-							if(code !== 0)
-							{
-								reply.value = ERRCODE_BUNDLE_GEN_FAIL;
-							}
-							logger.info(`Executed unity command: ${unityCommand} ${unityCmdParams.join(" ")}`, reply);
-							callback({
-								value: reply.value,
-								database: cmdDatabase,
-								project: cmdProject,
-								user
-							}, true);
-						});
-					}
-					else
-					{
-						logger.error("Failed to read " + cmdArr[2]);
-						reply.value = ERRCODE_PARAM_READ_FAIL;
+					logger.info(`Running unity command: ${unityCommand} ${unityCmdParams.join(" ")}`);
+					const unityExec = run(unityCommand, unityCmdParams);
+					unityExec.then((unityCode) => {
+						logger.info(`[SUCCESS] Executed unity command: ${unityCommand} ${unityCmdParams.join(" ")}`, unityCode);
 						callback({
-							value: reply.value,
+							value: code,
 							database: cmdDatabase,
 							project: cmdProject,
 							user
 						}, true);
-					}
+					}).catch((unityCode) => {
+						logger.info(`[FAILED] Executed unity command: ${unityCommand} ${unityCmdParams.join(" ")}`, unityCode);
+						callback({
+							value: ERRCODE_BUNDLE_GEN_FAIL,
+							database: cmdDatabase,
+							project: cmdProject,
+							user
+						}, true);
+					});
 				}
 				else
 				{
-					if(toyFed) {
+					logger.error("Failed to read " + cmdArr[2]);
+					callback({
+						value: ERRCODE_PARAM_READ_FAIL,
+						database: cmdDatabase,
+						project: cmdProject,
+						user
+					}, true);
+				}
+			}
+			else
+			{
+				if(toyFed) {
 
-						const dbConfig = {
-							username: conf.bouncer.username,
-							password: conf.bouncer.password,
-							dbhost: conf.bouncer.dbhost,
-							dbport: conf.bouncer.dbport,
-							writeConcern: conf.mongoimport && conf.mongoimport.writeConcern
-						};
-						const dir = `${rootModelDir}/${toyFed}`;
-						importToy(dbConfig, dir, cmdDatabase, cmdDatabase, cmdProject, {tree: 1}).then(()=> {
-							callback({
-								value: reply.value,
-								database: cmdDatabase,
-								project: cmdProject,
-								user
-							}, true);
-						});
-					} else {
-
+					const dbConfig = {
+						username: conf.bouncer.username,
+						password: conf.bouncer.password,
+						dbhost: conf.bouncer.dbhost,
+						dbport: conf.bouncer.dbport,
+						writeConcern: conf.mongoimport && conf.mongoimport.writeConcern
+					};
+					const dir = `${rootModelDir}/${toyFed}`;
+					importToy(dbConfig, dir, cmdDatabase, cmdDatabase, cmdProject, {tree: 1}).then(()=> {
 						callback({
-							value: reply.value,
+							value: code,
 							database: cmdDatabase,
 							project: cmdProject,
 							user
 						}, true);
-					}
+					});
+				} else {
+
+					callback({
+						value: code,
+						database: cmdDatabase,
+						project: cmdProject,
+						user
+					}, true);
 				}
 			}
 
+		}).catch((code) => {
+			const err =  code || ERRCODE_BOUNCER_CRASH;
+			callback({
+				value: err,
+				database: cmdDatabase,
+				project: cmdProject,
+				user
+			}, true);
+			logger.error(`[FAILED] Executed command: ${command} ${cmdParams.join(" ")}`, err);
 		});
 
 	}
@@ -412,21 +431,46 @@
 		}, {noAck: false});
 	}
 
-	function connectQ(){
-		amqp.connect(conf.rabbitmq.host, function(err,conn){
-			if(err !== null)
-			{
-				logger.error("failed to establish connection to rabbit mq");
-			}
-			else
-			{
-				conn.createChannel(function(err, ch){
-					ch.assertQueue(conf.rabbitmq.callback_queue, { durable: true });
-					listenToQueue(ch, conf.rabbitmq.worker_queue, conf.rabbitmq.task_prefetch || 4);
-					listenToQueue(ch, conf.rabbitmq.model_queue, conf.rabbitmq.model_prefetch || 1);
+	function reconnectQ() {
+		const maxRetries = conf.rabbitmq.maxRetries || 3;
+		if(++retry <= maxRetries) {
+			logger.error(`[AMQP] Trying to reconnect [${retry}/${maxRetries}]...`);
+			connectQ();
+		} else {
+			logger.error("[AMQP] Retries exhausted");
+			process.exit(-1);
+		}
+	}
 
-				});
-			}
+	function connectQ(){
+		amqp.connect(conf.rabbitmq.host).then((conn) => {
+			retry = 0;
+			connClosed = false;
+			logger.info("[AMQP] Connected! Creating channel...");
+			conn.createChannel().then((ch) => {
+				ch.assertQueue(conf.rabbitmq.callback_queue, { durable: true });
+				listenToQueue(ch, conf.rabbitmq.worker_queue, conf.rabbitmq.task_prefetch || 4);
+				listenToQueue(ch, conf.rabbitmq.model_queue, conf.rabbitmq.model_prefetch || 1);
+
+			});
+
+			conn.on("close", () => {
+				if(!connClosed) {
+					//this can be called more than once for some reason. Use a boolean to distinguish first timers.
+					connClosed = true;
+					logger.error("[AMQP] connection closed.");
+					reconnectQ();
+				}
+			});
+
+			conn.on("error", (err)	=> {
+				logger.error("[AMQP] connection error: " + err.message);
+			});
+
+
+		}).catch((err) => {
+			logger.error(`[AMQP] failed to establish connection to rabbit mq: ${err}.`);
+			reconnectQ();
 		});
 	}
 
