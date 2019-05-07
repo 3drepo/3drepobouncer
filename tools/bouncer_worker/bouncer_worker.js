@@ -32,7 +32,6 @@
 	"use strict";
 
 	const amqp = require("amqplib");
-	const conf = require("./config.js");
 	const path = require("path");
 	const spawn = require("child_process").spawn;
 	const importToy = require('./importToy');
