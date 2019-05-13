@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2018 3D Repo Ltd
+*  Copyright (C) 2019 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -14,22 +14,19 @@
 *  You should have received a copy of the GNU Affero General Public License
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#pragma once
 
-#ifdef S3_SUPPORT
+#include <boost/filesystem.hpp>
+namespace repo {
+	namespace lib {
+		static bool doesFileExist(const boost::filesystem::path& inputPath)
+		{
+			return boost::filesystem::exists(inputPath) && boost::filesystem::is_regular_file(inputPath);
+		}
 
-#include <gtest/gtest.h>
-#include <repo/core/handler/fileservice/repo_file_handler_s3.h>
-#include <repo/core/model/bson/repo_node.h>
-#include "../../../repo_test_fileservice_info.h"
-
-using namespace repo::core::handler::fileservice;
-
-TEST(S3FileHandlerTest, GetHandler)
-{
-	S3FileHandler* fileHandler =
-		S3FileHandler::getHandler(REPO_GTEST_S3_BUCKET, REPO_GTEST_S3_REGION);
-
-	EXPECT_TRUE(fileHandler);
+		static bool doesDirExist(const boost::filesystem::path& inputPath)
+		{
+			return boost::filesystem::exists(inputPath) && boost::filesystem::is_directory(inputPath);
+		}
+	}
 }
-
-#endif

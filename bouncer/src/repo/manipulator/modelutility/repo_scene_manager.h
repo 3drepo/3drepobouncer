@@ -17,7 +17,7 @@
 #pragma once
 #include "../../core/model/collection/repo_scene.h"
 #include "../../core/handler/repo_database_handler_abstract.h"
-#include "../../core/handler/fileservice/repo_file_handler_abstract.h"
+#include "../../core/handler/fileservice/repo_file_manager.h"
 #include "../modelconvertor/export/repo_model_export_web.h"
 
 namespace repo{
@@ -42,7 +42,7 @@ namespace repo{
 					const std::string                                     &geoStashExt,
 					const repo_web_buffers_t                              &resultBuffers,
 					repo::core::handler::AbstractDatabaseHandler          *handler,
-					repo::core::handler::fileservice::AbstractFileHandler *fileHandler,
+					repo::core::handler::fileservice::FileManager         *fileManager,
 					const bool                                            addTimestampToSettings = false);
 
 				/**
@@ -98,7 +98,7 @@ namespace repo{
 				bool generateAndCommitSelectionTree(
 					repo::core::model::RepoScene                          *scene,
 					repo::core::handler::AbstractDatabaseHandler          *handler,
-					repo::core::handler::fileservice::AbstractFileHandler *fileHandler
+					repo::core::handler::fileservice::FileManager         *fileManager
 					);
 
 				/**
@@ -141,7 +141,7 @@ namespace repo{
 					const repo::manipulator::modelconvertor::WebExportType &exType,
 					repo_web_buffers_t                                     &resultBuffers,
 					repo::core::handler::AbstractDatabaseHandler           *handler = nullptr,
-					repo::core::handler::fileservice::AbstractFileHandler  *fileHandler = nullptr);
+					repo::core::handler::fileservice::FileManager         *fileManager = nullptr);
 
 				/**
 				* Remove stash graph entry for the given scene

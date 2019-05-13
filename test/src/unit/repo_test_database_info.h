@@ -22,7 +22,7 @@
 
 //Test Database address
 const static std::string REPO_GTEST_DBADDRESS = "localhost";
-const static uint32_t    REPO_GTEST_DBPORT = 27017;
+const static int REPO_GTEST_DBPORT = 27017;
 const static std::string REPO_GTEST_AUTH_DATABASE = "admin";
 const static std::string REPO_GTEST_DBUSER = "testUser";
 const static std::string REPO_GTEST_DBPW = "3drepotest";
@@ -32,6 +32,8 @@ const static std::string REPO_GTEST_DBNAME1_PROJ = "3drepoBIM";
 const static std::string REPO_GTEST_DBNAME2_PROJ = "sphere";
 const static std::string REPO_GTEST_DBNAME1_FED = "fedTest";
 const static std::string REPO_GTEST_DBNAME_ROLEUSERTEST = "sampleDataRWRolesUsers";
+
+const static std::string connectionConfig = "config/config.json";
 
 const static std::string clientExe = "3drepobouncerClient";
 const static std::string simpleModel = "cube.obj";
@@ -140,6 +142,11 @@ static std::string getDataPath(
 		returnPath = fullPath.string();
 	}
 	return returnPath;
+}
+
+
+static std::string getConnConfig() {
+	return getDataPath(connectionConfig);
 }
 
 /*

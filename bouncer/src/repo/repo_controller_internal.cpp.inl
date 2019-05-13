@@ -53,133 +53,35 @@ RepoController::_RepoControllerImpl::~_RepoControllerImpl()
 
 RepoController::RepoToken* RepoController::_RepoControllerImpl::init(
 	std::string       &errMsg,
-	const std::string &address,
-	const int         &port,
-	const std::string &username,
-	const std::string &password,
-	const std::string &bucketName,
-	const std::string &bucketRegion,
-	const bool        &pwDigested
+	const lib::RepoConfig  &config
 	)
 {
-	manipulator::RepoManipulator* worker = workerPool.pop();
+	RepoToken *token = nullptr;
+	if (config.validate()) {
+		manipulator::RepoManipulator* worker = workerPool.pop();
 
-	core::model::RepoBSON* cred = 0;
-	RepoToken *token = 0;
+		auto dbConf = config.getDatabaseConfig();
 
-	std::string dbFullAd = address + ":" + std::to_string(port);
 
-	bool success = worker->connectAndAuthenticateWithAdmin(errMsg, address, port,
-		numDBConnections, username, password, pwDigested);
+		//FIXME : this should just use the dbConf struct...
+		const bool success = worker->init(errMsg, config, numDBConnections);
 
-	if (success && !username.empty())
-		cred = worker->createCredBSON("admin", username, password, pwDigested);
+		if (success)
+		{
+			const std::string dbFullAd = dbConf.addr + ":" + std::to_string(dbConf.port);
+			token = new RepoController::RepoToken(config);			
+			repoInfo << "Successfully connected to the " << dbFullAd;
+			if (!dbConf.username.empty())
+				repoInfo << dbConf.username << " is authenticated to " << dbFullAd;
+		}
 
-	if (success && (cred || username.empty()))
-	{
-		token = new RepoController::RepoToken(*cred,
-				address,
-				port,
-				worker->getNameOfAdminDatabase(dbFullAd),
-				bucketName,
-				bucketRegion);
-		if (cred) delete cred;
-		repoInfo << "Successfully connected to the " << dbFullAd;
-		if (!username.empty())
-			repoInfo << username << " is authenticated to " << dbFullAd;
+		workerPool.push(worker);
 	}
-
-	workerPool.push(worker);
+	else {
+		errMsg = "Invalid configuration.";
+	}
+	
 	return token;
-}
-
-bool  RepoController::_RepoControllerImpl::cleanUp(
-	const RepoController::RepoToken        *token,
-	const std::string                      &dbName,
-	const std::string                      &projectName
-	)
-{
-	if (!token)
-	{
-		repoError << "Failed to clean up project: empty token to database";
-		return false;
-	}
-
-	if (dbName.empty() || projectName.empty())
-	{
-		repoError << "Failed to clean up project: database or project name is empty!";
-		return false;
-	}
-
-	manipulator::RepoManipulator* worker = workerPool.pop();
-	bool success = worker->cleanUp(token->databaseAd,
-			token->getCredentials(),
-			token->bucketName,
-			token->bucketRegion,
-			dbName,
-			projectName);
-	workerPool.push(worker);
-	return success;
-}
-
-RepoController::RepoToken* RepoController::_RepoControllerImpl::createToken(
-	const std::string &alias,
-	const std::string &address,
-	const int         &port,
-	const std::string &dbName,
-	const std::string &username,
-	const std::string &password,
-	const std::string &bucketName,
-	const std::string &bucketRegion
-	)
-{
-	manipulator::RepoManipulator* worker = workerPool.pop();
-
-	RepoController::RepoToken *token = nullptr;
-
-	std::string dbFullAd = address + ":" + std::to_string(port);
-	repo::core::model::RepoBSON *cred = nullptr;
-	if (!username.empty())
-		cred = worker->createCredBSON(dbName, username, password, false);
-	workerPool.push(worker);
-
-	if (cred || username.empty())
-	{
-		token = new RepoController::RepoToken(cred ? *cred : repo::core::model::RepoBSON(),
-				address,
-				port,
-				dbName,
-				bucketName,
-				bucketRegion,
-				alias);
-		if (cred)delete cred;
-	}
-
-	return token && token->valid() ? token : nullptr;
-}
-
-RepoController::RepoToken* RepoController::_RepoControllerImpl::createToken(
-	const std::string &alias,
-	const std::string &address,
-	const int         &port,
-	const std::string &dbName,
-	const std::string &bucketName,
-	const std::string &bucketRegion,
-	const RepoController::RepoToken *credToken
-	)
-{
-	RepoController::RepoToken *token = nullptr;
-	std::string dbFullAd = address + ":" + std::to_string(port);
-
-	token = new RepoController::RepoToken(credToken->credentials,
-			address,
-			port,
-			dbName,
-			bucketName,
-			bucketRegion,
-			alias);
-
-	return token && token->valid() ? token : nullptr;
 }
 
 bool RepoController::_RepoControllerImpl::commitAssetBundleBuffers(

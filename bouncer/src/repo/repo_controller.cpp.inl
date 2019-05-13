@@ -19,6 +19,7 @@
 #include "manipulator/repo_manipulator.h"
 #include "repo_controller.h"
 #include "core/model/bson/repo_bson_builder.h"
+#include "core/handler/repo_database_handler_mongo.h"
 
 using namespace repo;
 
@@ -33,43 +34,23 @@ class RepoController::RepoToken
 	friend class RepoController;
 
 public:
-
 	/**
 	* Construct a Repo token
+	* @param config repoconfig with connection information
 	* @param credentials user credentials in a bson format
-	* @param databaseHostPort database address+port as a string
-	* @param databaseName database it is authenticating against
 	*/
 	RepoToken(
-		const repo::core::model::RepoBSON &credentials,
-		const std::string                 &databaseHost = std::string(),
-		const uint32_t                    &port = 27017,
-		const std::string                 &databaseName = std::string(),
-		const std::string                 &bucketName = std::string(),
-		const std::string                 &bucketRegion = std::string(),
-		const std::string                 &alias = std::string()) :
-		databaseHost(databaseHost),
-		databasePort(port),
-		databaseAd(databaseHost + std::to_string(port)),
-		credentials(credentials.isEmpty() ? repo::core::model::RepoBSON() : credentials.copy()),
-		databaseName(databaseName),
-		bucketName(bucketName),
-		bucketRegion(bucketRegion),
+		const lib::RepoConfig             &config,
+		const std::string                 &alias = std::string()) :		
+		config(config),
 		alias(alias)
 	{
-	}
+		auto dbConf = config.getDatabaseConfig();
+		credentials = dbConf.username.empty() ? 
+			nullptr : 
+			core::handler::MongoDatabaseHandler::createBSONCredentials(dbConf.addr, dbConf.username, dbConf.password, dbConf.pwDigested);
 
-	static RepoToken* createTokenFromRawData(
-		const std::string &data)
-	{
-		auto bson = repo::core::model::RepoBSON::fromJSON(data);
-
-		std::string databaseHost = bson.getStringField(dbAddLabel);
-		uint32_t databasePort = bson.getField(dbPortLabel).Int();
-		std::string databaseName = bson.getStringField(dbNameLabel);
-		std::string alias = bson.getStringField(aliasLabel);
-		auto res = new RepoToken(bson.getObjectField(credLabel), databaseHost, databasePort, databaseName, alias);
-		return res;
+		databaseAd = dbConf.addr;
 	}
 
 	~RepoToken(){
@@ -77,39 +58,20 @@ public:
 
 	const repo::core::model::RepoBSON* getCredentials() const
 	{
-		return credentials.isEmpty() ? nullptr : &credentials;
+		return credentials;
 	}
-
-	std::string serialiseToken() const
-	{
-		repo::core::model::RepoBSONBuilder builder;
-		if (!credentials.isEmpty())
-		{
-			builder << credLabel << credentials;
-		}
-		builder << dbAddLabel << databaseHost;
-		builder << dbPortLabel << databasePort;
-		builder << dbNameLabel << databaseName;
-		builder << aliasLabel << alias;
-
-		return builder.obj().toString();
-	}
-
+	
 	bool valid() const
 	{
-		return !(databaseHost.empty());
+		return config.validate();
 	}
 
 private:
-	const repo::core::model::RepoBSON credentials;
-	const std::string databaseAd;
-	const std::string databaseHost;
-	const uint32_t databasePort;
-	const std::string databaseName;
+	const lib::RepoConfig config;
+	const core::model::RepoBSON *credentials;
 	std::string alias;
-	const std::string bucketName;
-	const std::string bucketRegion;
-};
+	std::string databaseAd, bucketRegion, bucketName, databaseName = REPO_ADMIN; //FIXME: workaround, to be removed.	
+	};
 
 class RepoController::_RepoControllerImpl{
 public:
@@ -146,13 +108,7 @@ public:
 	*/
 	RepoToken* init(
 		std::string       &errMsg,
-		const std::string &address,
-		const int         &port,
-		const std::string &username,
-		const std::string &password,
-		const std::string &bucketName,
-		const std::string &bucketRegion,
-		const bool        &pwDigested = false
+		const lib::RepoConfig  &config
 		);
 
 	/**
@@ -162,30 +118,6 @@ public:
 	* @param token token to the database
 	*/
 	void disconnectFromDatabase(const RepoToken* token);
-
-	/**
-	* create a token base on the information given
-	*/
-	RepoToken* createToken(
-		const std::string &alias,
-		const std::string &address,
-		const int         &port,
-		const std::string &dbName,
-		const std::string &username,
-		const std::string &password,
-		const std::string &bucketName,
-		const std::string &bucketRegion
-		);
-
-	RepoController::RepoToken* createToken(
-		const std::string &alias,
-		const std::string &address,
-		const int         &port,
-		const std::string &dbName,
-		const std::string &bucketName,
-		const std::string &bucketRegion,
-		const RepoController::RepoToken *token
-		);
 
 	/*
 	*	------------- Database info lookup --------------
@@ -369,23 +301,6 @@ public:
 	* @return returns a vector of roles
 	*/
 	std::list<std::string> getStandardDatabaseRoles(const RepoToken *token);
-
-	/*
-	*	---------------- Database Retrieval -----------------------
-	*/
-
-	/**
-	* Clean up any incomplete commits within the project
-	* @param address mongo database address
-	* @param port port number
-	* @param dbName name of the database
-	* @param projectName name of the project
-	*/
-	bool cleanUp(
-		const RepoToken                        *token,
-		const std::string                      &dbName,
-		const std::string                      &projectName
-		);
 
 	/**
 	* Retrieve a RepoScene with a specific revision loaded.

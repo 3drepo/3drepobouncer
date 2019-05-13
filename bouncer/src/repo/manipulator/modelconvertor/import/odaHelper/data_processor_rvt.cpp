@@ -21,6 +21,7 @@
 #include "vectorise_device_rvt.h"
 #include "data_processor_rvt.h"
 #include "helper_functions.h"
+#include "../../../../lib/repo_utils.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
@@ -43,10 +44,6 @@ std::string DataProcessorRvt::getElementName(OdBmElementPtr element, uint64_t id
 	return elName;
 }
 
-bool doesFileExist(const boost::filesystem::path& inputPath)
-{
-	return boost::filesystem::exists(inputPath) && boost::filesystem::is_regular_file(inputPath);
-}
 
 std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 {
@@ -54,7 +51,7 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 	auto pathStr = inputPath.substr(0, inputPath.find("|", 0));
 	std::replace(pathStr.begin(), pathStr.end(), '\\', '/');
 	auto texturePath = boost::filesystem::path(pathStr).make_preferred();
-	if (doesFileExist(texturePath))
+	if (repo::lib::doesFileExist(texturePath))
 		return texturePath.generic_string();
 
 	// Try to apply absolute path
@@ -63,12 +60,12 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 		return std::string();
 
 	auto absolutePath = boost::filesystem::absolute(texturePath, env);
-	if (doesFileExist(absolutePath))
+	if (repo::lib::doesFileExist(absolutePath))
 		return absolutePath.generic_string();
 
 	// Sometimes the texture path has subdirectories like "./mat/1" remove it and see if we can find it.
 	auto altPath = boost::filesystem::absolute(texturePath.leaf(), env);
-	if (doesFileExist(altPath))
+	if (repo::lib::doesFileExist(altPath))
 		return altPath.generic_string();
 
 	repoDebug << "Failed to find: " << texturePath;
