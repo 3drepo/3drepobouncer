@@ -475,7 +475,7 @@
 
 	logger.info("Initialising bouncer client queue...");
 	if(conf.hasOwnProperty("umask")) {
-		systemLogger.logInfo("Setting umask: " + config.umask);
+		logger.info("Setting umask: " + config.umask);
 		process.umask(conf.umask);
 	}
 	testClient(connectQ);
