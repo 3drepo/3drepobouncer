@@ -25,6 +25,9 @@ resource.h
 #vim junk
 *.swp
 
+#sed junk
+*.bak
+
 #mongo junk
 *.lock
 
