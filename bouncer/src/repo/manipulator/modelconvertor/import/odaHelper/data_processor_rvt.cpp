@@ -24,6 +24,20 @@
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
+//These metadata params are crashing application when we're trying to get them; Report to ODA
+const std::set<std::string> PROBLEMATIC_PARAMS = {
+	"ROOF_SLOPE",
+	"RBS_PIPE_SIZE_MAXIMUM",
+	"RBS_PIPE_SIZE_MINIMUM",
+	"RBS_SYSTEM_CLASSIFICATION_PARAM",
+	"RBS_ELECTRICAL_DATA"
+};
+
+//These metadata params are not of interest to users. Do not read.
+const std::set<std::string> IGNORE_PARAMS = {
+	"RENDER APPEARANCE",
+	"RENDER APPEARANCE PROPERTIES"
+};
 
 bool DataProcessorRvt::ignoreParam(const std::string& param)
 {
@@ -318,7 +332,6 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 	for (OdBuiltInParamArray::iterator it = aParams.begin(); it != aParams.end(); it++)
 	{
 		std::string builtInName = convertToStdString(OdBm::BuiltInParameter(*it).toString());
-
 		//.. HOTFIX: handle access violation exception (reported to ODA)
 		if (ignoreParam(builtInName)) continue;
 

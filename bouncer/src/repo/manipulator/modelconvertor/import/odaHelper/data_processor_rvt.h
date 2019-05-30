@@ -70,19 +70,6 @@ namespace repo {
 					//Environment variable name for Revit textures
 					const char* RVT_TEXTURES_ENV_VARIABLE = "REPO_RVT_TEXTURES";
 
-					//These metadata params are crashing application when we're trying to get them; Report to ODA
-					const std::set<std::string> PROBLEMATIC_PARAMS = {
-						"ROOF_SLOPE",
-						"RBS_PIPE_SIZE_MAXIMUM",
-						"RBS_PIPE_SIZE_MINIMUM",
-						"RBS_SYSTEM_CLASSIFICATION_PARAM"
-					};
-
-					//These metadata params are crashing application when we're trying to get them; Report to ODA
-					const std::set<std::string> IGNORE_PARAMS = {
-						"RENDER APPEARANCE",
-						"RENDER APPEARANCE PROPERTIES"
-					};
 
 				public:
 					DataProcessorRvt();
