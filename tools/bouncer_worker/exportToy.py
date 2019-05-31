@@ -48,6 +48,7 @@ def  grabExternalFilesAndRewrite(collection):
         shutil.copy(pathToFile, toyFolderFullDir)
         newPath = re.sub(r'.+/.+/', toyFolder + "/", entry["link"])
         entry["link"] = newPath;
+        entry["noDelete"] = True;
         db[collection].save(entry);
     return
 
