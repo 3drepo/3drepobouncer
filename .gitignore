@@ -30,6 +30,9 @@ resource.h
 *.swp
 *~
 
+#sed junk
+*.bak
+
 #mongo junk
 *.lock
 
