@@ -32,15 +32,19 @@ if code:
     fatalError("git force add failed")
 
 
-os.system("sed -i '.bak' 's/VERSION_MAJOR [^ ]*/VERSION_MAJOR " + majorV + ")/' bouncer/CMakeLists.txt")
+os.system("sed 's/VERSION_MAJOR [^ ]*/VERSION_MAJOR " + majorV + ")/' bouncer/CMakeLists.txt > bouncer/CMakeLists.txt.bak")
+os.system("mv bouncer/CMakeLists.txt.bak bouncer/CMakeLists.txt")
 
 minorTag = minor1V +"_"+minor2V
 
-os.system("sed -i '.bak' 's/VERSION_MINOR [^ ]*/VERSION_MINOR " + minorTag + ")/' bouncer/CMakeLists.txt")
+os.system("sed 's/VERSION_MINOR [^ ]*/VERSION_MINOR " + minorTag + ")/' bouncer/CMakeLists.txt > bouncer/CMakeLists.txt.bak")
+os.system("mv bouncer/CMakeLists.txt.bak bouncer/CMakeLists.txt")
 
-os.system("sed -i '.bak' 's/BOUNCER_VMAJOR [^ ]*/BOUNCER_VMAJOR " + majorV + "/' bouncer/src/repo/repo_bouncer_global.h")
+os.system("sed 's/BOUNCER_VMAJOR [^ ]*/BOUNCER_VMAJOR " + majorV + "/' bouncer/src/repo/repo_bouncer_global.h > bouncer/src/repo/repo_bouncer_global.h.bak")
+os.system("mv bouncer/src/repo/repo_bouncer_global.h.bak bouncer/src/repo/repo_bouncer_global.h")
 minorVersion = minor1V + "." + minor2V
-os.system("sed -i '.bak' 's/BOUNCER_VMINOR [^ ]*/BOUNCER_VMINOR \"" + minorVersion + "\"/' bouncer/src/repo/repo_bouncer_global.h")
+os.system("sed 's/BOUNCER_VMINOR [^ ]*/BOUNCER_VMINOR \"" + minorVersion + "\"/' bouncer/src/repo/repo_bouncer_global.h > bouncer/src/repo/repo_bouncer_global.h.bak")
+os.system("mv bouncer/src/repo/repo_bouncer_global.h.bak bouncer/src/repo/repo_bouncer_global.h")
 
 
 os.system("git add bouncer/CMakeLists.txt bouncer/src/repo/repo_bouncer_global.h")
