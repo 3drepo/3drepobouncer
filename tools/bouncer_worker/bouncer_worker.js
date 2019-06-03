@@ -133,10 +133,10 @@
 			let username = database;
 
 			let dbConfig = {
-				username: conf.bouncer.username,
-				password: conf.bouncer.password,
-				dbhost: conf.bouncer.dbhost,
-				dbport: conf.bouncer.dbport,
+				username: conf.db.username,
+				password: conf.db.password,
+				dbhost: conf.db.dbhost,
+				dbport: conf.db.dbport,
 				writeConcern: conf.mongoimport && conf.mongoimport.writeConcern
 			};
 
@@ -352,10 +352,10 @@
 				if(toyFed) {
 
 					const dbConfig = {
-						username: conf.bouncer.username,
-						password: conf.bouncer.password,
-						dbhost: conf.bouncer.dbhost,
-						dbport: conf.bouncer.dbport,
+						username: conf.db.username,
+						password: conf.db.password,
+						dbhost: conf.db.dbhost,
+						dbport: conf.db.dbport,
 						writeConcern: conf.mongoimport && conf.mongoimport.writeConcern
 					};
 					const dir = `${rootModelDir}/${toyFed}`;
