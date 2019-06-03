@@ -159,32 +159,34 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 
 			bucket.find().forEach(file => {
 
-				let newFileName = file.filename;
-				newFileName = newFileName.split('/');
-				newFileName[1] = database;
-				newFileName[2] = project;
-				newFileName = newFileName.join('/');
-				file.filename = newFileName;
+				let newFileName = newFileName.split('/');
+				if(newFileName.length >= 3) {
+					newFileName[1] = database;
+					newFileName[2] = project;
+					newFileName = newFileName.join('/');
+					file.filename = newFileName;
 
-				renamePromises.push(
+					renamePromises.push(
 
-					new Promise((resolve, reject) => {
+						new Promise((resolve, reject) => {
 
-						bucket.rename(file._id, newFileName, function(err) {
-							if(err){
-								reject(err);
-							} else {
-								resolve();
-							}
+							bucket.rename(file._id, newFileName, function(err) {
+								if(err){
+									reject(err);
+								} else {
+									resolve();
+								}
 
-						});
-					})
+							});
+						})
 
-				);
+					);
 
-				// unityAssets.json have the path baked into the file :(
-				if(newFileName.endsWith('unityAssets.json')){
-					renamePromises.push(renameUnityAsset(bucket, file));
+
+					// unityAssets.json have the path baked into the file :(
+					if(newFileName.endsWith('unityAssets.json')){
+						renamePromises.push(renameUnityAsset(bucket, file));
+					}
 				}
 
 			}, err => {
