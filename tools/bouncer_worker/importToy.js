@@ -159,7 +159,7 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 
 			bucket.find().forEach(file => {
 
-				let newFileName = newFileName.split('/');
+				let newFileName = file.filename.split('/');
 				if(newFileName.length >= 3) {
 					newFileName[1] = database;
 					newFileName[2] = project;
