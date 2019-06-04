@@ -139,7 +139,11 @@ std::string DataProcessorRvt::translateMetadataValue(
 				}
 				else
 				{
-					strOut = std::to_string((OdUInt64)rawValue.getHandle());
+					OdBmElementPtr elem = database->getObjectId(rawValue.getHandle()).safeOpenObject();
+					if (elem->getElementName() == OdString::kEmpty)
+						strOut = std::to_string((OdUInt64)rawValue.getHandle());
+					else
+						strOut = convertToStdString(elem->getElementName());
 				}
 			}
 	}
@@ -302,7 +306,7 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 
 void DataProcessorRvt::fillMetadataById(
 	OdBmObjectId id,
-	std::pair<std::vector<std::string>, std::vector<std::string>>& metadata)
+	std::map<std::string, std::string>& metadata)
 {
 	if (id.isNull())
 		return;
@@ -317,7 +321,7 @@ void DataProcessorRvt::fillMetadataById(
 
 void DataProcessorRvt::fillMetadataByElemPtr(
 	OdBmElementPtr element,
-	std::pair<std::vector<std::string>, std::vector<std::string>>& metadata)
+	std::map<std::string, std::string>& metadata)
 {
 	OdBuiltInParamArray aParams;
 	element->getListParams(aParams);
@@ -326,42 +330,45 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 	if (labelUtils.isNull())
 		return;
 
-	for (OdBuiltInParamArray::iterator it = aParams.begin(); it != aParams.end(); it++)
-	{
-		std::string builtInName = convertToStdString(OdBm::BuiltInParameter(*it).toString());
+	for (OdBm::BuiltInParameter::Enum entry : aParams) {
+		std::string builtInName = convertToStdString(OdBm::BuiltInParameter(entry).toString());
 		//.. HOTFIX: handle access violation exception (reported to ODA)
 		if (ignoreParam(builtInName)) continue;
 
 		std::string paramName;
-		if (!labelUtils->getLabelFor(*it).isEmpty())
-			paramName = convertToStdString(labelUtils->getLabelFor(*it));
+		if (!labelUtils->getLabelFor(entry).isEmpty())
+			paramName = convertToStdString(labelUtils->getLabelFor(entry));
 		else
 			paramName = builtInName;
 
 		OdTfVariant value;
-		OdResult res = element->getParam(*it, value);
+		OdResult res = element->getParam(entry, value);
+
 		if (res == eOk)
 		{
-			OdBmParamElemPtr pParamElem = element->database()->getObjectId(*it).safeOpenObject();
+			OdBmParamElemPtr pParamElem = element->database()->getObjectId(entry).safeOpenObject();
 			OdBmParamDefPtr pDescParam = pParamElem->getParamDef();
 
 			auto metaKey = convertToStdString(pDescParam->getCaption());
 			if (!ignoreParam(metaKey)) {
-				std::string variantValue = translateMetadataValue(value, labelUtils, pDescParam, element->getDatabase(), *it);
+				std::string variantValue = translateMetadataValue(value, labelUtils, pDescParam, element->getDatabase(), entry);
 				if (!variantValue.empty())
 				{
-				
-					metadata.first.push_back(metaKey);
-					metadata.second.push_back(variantValue);
+
+					if (metadata.find(metaKey) != metadata.end() && metadata[metaKey] != variantValue) {
+						repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << "value before: " << metadata[metaKey] << " after: " << variantValue;
+					}
+					metadata[metaKey] = variantValue;
 				}
 			}
 		}
 	}
+
 }
 
-std::pair<std::vector<std::string>, std::vector<std::string>> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
+std::map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
 {
-	std::pair<std::vector<std::string>, std::vector<std::string>> metadata;
+	std::map<std::string, std::string> metadata;
 	try
 	{
 		fillMetadataByElemPtr(element, metadata);
@@ -397,7 +404,6 @@ std::pair<std::vector<std::string>, std::vector<std::string>> DataProcessorRvt::
 	{
 		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
 	}
-
 	return metadata;
 }
 
