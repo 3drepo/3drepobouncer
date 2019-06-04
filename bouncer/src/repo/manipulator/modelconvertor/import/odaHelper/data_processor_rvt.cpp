@@ -139,7 +139,11 @@ std::string DataProcessorRvt::translateMetadataValue(
 				}
 				else
 				{
-					strOut = std::to_string((OdUInt64)rawValue.getHandle());
+					OdBmElementPtr elem = database->getObjectId(rawValue.getHandle()).safeOpenObject();
+					if (elem->getElementName() == OdString::kEmpty)
+						strOut = std::to_string((OdUInt64)rawValue.getHandle());
+					else
+						strOut = convertToStdString(elem->getElementName());
 				}
 			}
 	}
