@@ -354,7 +354,10 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 				std::string variantValue = translateMetadataValue(value, labelUtils, pDescParam, element->getDatabase(), entry);
 				if (!variantValue.empty())
 				{
-						
+
+					if (metadata.find(metaKey) != metadata.end() && metadata[metaKey] != variantValue) {
+						repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << "value before: " << metadata[metaKey] << " after: " << variantValue;
+					}
 					metadata[metaKey] = variantValue;
 				}
 			}
@@ -365,11 +368,9 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 
 std::map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
 {
-	repoTrace << "============================ START =============================================";
 	std::map<std::string, std::string> metadata;
 	try
 	{
-		repoTrace << "meta 1";
 		fillMetadataByElemPtr(element, metadata);
 	}
 	catch (OdError& er)
@@ -379,7 +380,6 @@ std::map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBmElementPtr
 
 	try
 	{
-		repoTrace << "meta 2";
 		fillMetadataById(element->getFamId(), metadata);
 	}
 	catch (OdError& er)
@@ -389,7 +389,6 @@ std::map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBmElementPtr
 
 	try
 	{
-		repoTrace << "meta 3";
 		fillMetadataById(element->getTypeID(), metadata);
 	}
 	catch (OdError& er)
@@ -399,14 +398,12 @@ std::map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBmElementPtr
 
 	try
 	{
-		repoTrace << "meta 4";
 		fillMetadataById(element->getCategroryId(), metadata);
 	}
 	catch (OdError& er)
 	{
 		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
 	}
-	repoTrace << "============================ END =============================================";
 	return metadata;
 }
 
