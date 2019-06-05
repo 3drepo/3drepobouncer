@@ -187,13 +187,14 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 		{
 			std::vector<int> startEnd = as_vector<int>(mesh, props->first);
 
-			float *tmpVertices = (float *)(geomBuf + startEnd[0]);
+			double *tmpVerticesDouble = (double *)(geomBuf + startEnd[0]);
+			float *tmpVerticesSingle = (float *)(geomBuf + startEnd[0]);
 
 			for(int i = 0; i < numVertices; i ++)
 			{
 			
 				if (props->first == REPO_IMPORT_VERTICES) {
-					repo::lib::RepoVector3D64 tmpVec = { tmpVertices[i * 3] ,  tmpVertices[i * 3 + 1] , tmpVertices[i * 3 + 2] };
+					repo::lib::RepoVector3D64 tmpVec = { tmpVerticesDouble[i * 3] ,  tmpVerticesDouble[i * 3 + 1] , tmpVerticesDouble[i * 3 + 2] };
 					if (needTransform) tmpVec = trans * tmpVec;
 
 					if (minBBox.size()) {
@@ -214,7 +215,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 					vertices.push_back(tmpVec);
 				}
 				else {
-					repo::lib::RepoVector3D tmpVec = { tmpVertices[i * 3] ,  tmpVertices[i * 3 + 1] , tmpVertices[i * 3 + 2] };
+					repo::lib::RepoVector3D tmpVec = { tmpVerticesSingle[i * 3] ,  tmpVerticesSingle[i * 3 + 1] , tmpVerticesSingle[i * 3 + 2] };
 					normals.push_back(needTransform ? normalTrans * tmpVec : tmpVec);
 				}
 			}
@@ -367,7 +368,7 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 
 		if (strcmp(fileVersion, supportedFileVersion) != 0)
 		{
-			repoError << "Unsupported BIM file version" << fileVersion;
+			repoError << "Unsupported BIM file version: " << fileVersion << " supported version: "<< supportedFileVersion;
 			err = REPOERR_UNSUPPORTED_BIM_VERSION;
 			return false;
 		}
