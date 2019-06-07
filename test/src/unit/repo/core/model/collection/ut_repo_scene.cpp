@@ -268,12 +268,12 @@ TEST(RepoSceneTest, CommitScene)
 	std::string commitUser = "me";
 
 	//Commiting an empty scene should fail (fails on empty project/database name)
-	EXPECT_FALSE(scene.commit(getHandler(), getFileHandler(), errMsg, commitUser));
+	EXPECT_FALSE(scene.commit(getHandler(), getFileManager(), errMsg, commitUser));
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
 
 	scene.setDatabaseAndProjectName("sceneCommit", "test1");
-	EXPECT_FALSE(scene.commit(getHandler(), getFileHandler(), errMsg, commitUser));
+	EXPECT_FALSE(scene.commit(getHandler(), getFileManager(), errMsg, commitUser));
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
 
@@ -302,7 +302,7 @@ TEST(RepoSceneTest, CommitScene)
 	std::string commitMsg = "this is a commit message for this commit.";
 	std::string commitTag = "test";
 
-	EXPECT_TRUE(scene2.commit(getHandler(), getFileHandler(), errMsg, commitUser, commitMsg, commitTag));
+	EXPECT_TRUE(scene2.commit(getHandler(), getFileManager(), errMsg, commitUser, commitMsg, commitTag));
 	EXPECT_TRUE(errMsg.empty());
 
 	EXPECT_TRUE(scene2.isRevisioned());
@@ -342,7 +342,7 @@ TEST(RepoSceneTest, CommitStash)
 
 	RepoScene scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
 	scene2.setDatabaseAndProjectName("stashCommit", "test");
-	ASSERT_TRUE(scene2.commit(getHandler(), getFileHandler(), errMsg, "blah"));
+	ASSERT_TRUE(scene2.commit(getHandler(), getFileManager(), errMsg, "blah"));
 	errMsg.clear();
 	//Empty stash shouldn't have commit but should return true(apparently)
 	EXPECT_TRUE(scene2.commitStash(getHandler(), errMsg));
@@ -441,7 +441,7 @@ TEST(RepoSceneTest, getRevisionProperties)
 
 	RepoScene scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
 	scene2.setDatabaseAndProjectName("sceneCommit", "test2");
-	ASSERT_TRUE(scene2.commit(getHandler(), getFileHandler(), errMsg, commitUser, commitMessage, commitTag));
+	ASSERT_TRUE(scene2.commit(getHandler(), getFileManager(), errMsg, commitUser, commitMessage, commitTag));
 
 	scene2.setWorldOffset(offset);
 	EXPECT_EQ(scene2.getOwner(), commitUser);

@@ -31,7 +31,7 @@ bool SceneManager::commitWebBuffers(
 	const std::string                                     &geoStashExt,
 	const repo_web_buffers_t                              &resultBuffers,
 	repo::core::handler::AbstractDatabaseHandler          *handler,
-	repo::core::handler::fileservice::AbstractFileHandler *fileHandler,
+	repo::core::handler::fileservice::FileManager         *fileManager,
 	const bool                                            addTimestampToSettings)
 {
 	bool success = true;
@@ -42,53 +42,30 @@ bool SceneManager::commitWebBuffers(
 	//Upload the files
 	for (const auto &bufferPair : resultBuffers.geoFiles)
 	{
-		std::string errMsg;
-		if (success &= handler->insertRawFile(databaseName, projectName + "." + geoStashExt, bufferPair.first, bufferPair.second,
-			errMsg))
-		{
-			repoInfo << "File (" << bufferPair.first << ") added successfully.";
-		}
-		else
-		{
-			repoError << "Failed to add file  (" << bufferPair.first << "): " << errMsg;
-		}
 
-#ifdef FILESERVICE_SUPPORT
-		if (success &= fileHandler->uploadFileAndCommit(handler, databaseName, projectName + "." + geoStashExt, bufferPair.first, bufferPair.second))
+		if (success &= fileManager->uploadFileAndCommit(databaseName, projectName + "." + geoStashExt, bufferPair.first, bufferPair.second))
 		{
-			repoInfo << "File (" << bufferPair.first << ") added successfully to S3.";
+			repoInfo << "File (" << bufferPair.first << ") added successfully to file storage.";
 		}
 		else
 		{
-			repoError << "Failed to add file  (" << bufferPair.first << ") to S3: " << errMsg;
+			repoError << "Failed to add file  (" << bufferPair.first << ") to file storage";
 		}
-#endif
 	}
 
 	for (const auto &bufferPair : resultBuffers.jsonFiles)
 	{
 		std::string errMsg;
 		std::string fileName = bufferPair.first;
-		if (success &= handler->insertRawFile(databaseName, projectName + "." + jsonStashExt, fileName, bufferPair.second,
-			errMsg))
+		
+		if (success &= fileManager->uploadFileAndCommit(databaseName, projectName + "." + jsonStashExt, bufferPair.first, bufferPair.second))
 		{
-			repoInfo << "File (" << fileName << ") added successfully.";
+			repoInfo << "File (" << fileName << ") added successfully to file storage.";
 		}
 		else
 		{
-			repoError << "Failed to add file  (" << fileName << "): " << errMsg;
+			repoError << "Failed to add file  (" << fileName << ") to  file storage.";
 		}
-
-#ifdef FILESERVICE_SUPPORT
-		if (success &= fileHandler->uploadFileAndCommit(handler, databaseName, projectName + "." + jsonStashExt, bufferPair.first, bufferPair.second))
-		{
-			repoInfo << "File (" << fileName << ") added successfully to S3.";
-		}
-		else
-		{
-			repoError << "Failed to add file  (" << fileName << ") to S3: " << errMsg;
-		}
-#endif
 	}
 
 	std::string errMsg;
@@ -310,7 +287,7 @@ bool SceneManager::generateWebViewBuffers(
 	const repo::manipulator::modelconvertor::WebExportType &exType,
 	repo_web_buffers_t                                     &resultBuffers,
 	repo::core::handler::AbstractDatabaseHandler           *handler,
-	repo::core::handler::fileservice::AbstractFileHandler  *fileHandler)
+	repo::core::handler::fileservice::FileManager         *fileManager)
 {
 	bool success = false;
 	if (success = (scene&& scene->isRevisioned()))
@@ -344,7 +321,7 @@ bool SceneManager::generateWebViewBuffers(
 		{
 			if (toCommit)
 			{
-				success = commitWebBuffers(scene, geoStashExt, resultBuffers, handler, fileHandler);
+				success = commitWebBuffers(scene, geoStashExt, resultBuffers, handler, fileManager);
 			}
 		}
 		else
@@ -379,7 +356,7 @@ repo_web_buffers_t SceneManager::generateGLTFBuffer(
 bool SceneManager::generateAndCommitSelectionTree(
 	repo::core::model::RepoScene                           *scene,
 	repo::core::handler::AbstractDatabaseHandler           *handler,
-	repo::core::handler::fileservice::AbstractFileHandler  *fileHandler)
+	repo::core::handler::fileservice::FileManager         *fileManager)
 {
 	bool success = false;
 	if (success = scene && scene->isRevisioned() && handler)
@@ -400,30 +377,18 @@ bool SceneManager::generateAndCommitSelectionTree(
 			{
 				std::string fileName = fileNamePrefix + file.first;
 
-				if (handler && handler->insertRawFile(databaseName, projectName + "." + scene->getJSONExtension(), fileName, file.second, errMsg))
-				{
-					repoInfo << "File (" << fileName << ") added successfully.";
-				}
-				else
-				{
-					repoError << "Failed to add file  (" << fileName << "): " << errMsg;
-				}
-
-#ifdef FILESERVICE_SUPPORT
-				if (handler && fileHandler->uploadFileAndCommit(
-							handler,
+				if (handler && fileManager->uploadFileAndCommit(
 							databaseName,
 							projectName + "." + scene->getJSONExtension(),
 							fileName,
 							file.second))
 				{
-					repoInfo << "File (" << fileName << ") added successfully to S3.";
+					repoInfo << "File (" << fileName << ") added successfully to file storage.";
 				}
 				else
 				{
-					repoError << "Failed to add file  (" << fileName << ") to S3: " << errMsg;
+					repoError << "Failed to add file  (" << fileName << ") to file storage: " << errMsg;
 				}
-#endif
 			}
 		}
 		else

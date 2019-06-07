@@ -32,7 +32,6 @@
 	"use strict";
 
 	const amqp = require("amqplib");
-	const conf = require("./config.js");
 	const path = require("path");
 	const spawn = require("child_process").spawn;
 	const importToy = require('./importToy');
@@ -46,6 +45,11 @@
 	const softFails = [7,10,15]; //failures that should go through to generate bundle
 	let retry = 0;
 	let connClosed = false;
+
+	const fs = require("fs");
+	const configFullPath = path.resolve(__dirname, "config.json");
+	const conf = JSON.parse(fs.readFileSync(configFullPath));
+
 
 	const logger = new (winston.Logger)({
 		transports: [new (winston.transports.Console)({'timestamp': true}),
@@ -98,12 +102,7 @@
 		}
 
 		const cmdParams = [
-				conf.bouncer.dbhost,
-				conf.bouncer.dbport,
-				conf.bouncer.username,
-				conf.bouncer.password,
-				awsBucketName,
-				awsBucketRegion,
+				configFullPath,
 				"test"
 			];
 
@@ -134,10 +133,10 @@
 			let username = database;
 
 			let dbConfig = {
-				username: conf.bouncer.username,
-				password: conf.bouncer.password,
-				dbhost: conf.bouncer.dbhost,
-				dbport: conf.bouncer.dbport,
+				username: conf.db.username,
+				password: conf.db.password,
+				dbhost: conf.db.dbhost,
+				dbport: conf.db.dbport,
 				writeConcern: conf.mongoimport && conf.mongoimport.writeConcern
 			};
 
@@ -208,13 +207,7 @@
 			awsBucketRegion = conf.aws.bucket_region;
 		}
 
-		cmdParams.push(
-			conf.bouncer.dbhost,
-			conf.bouncer.dbport,
-			conf.bouncer.username,
-			conf.bouncer.password,
-			awsBucketName,
-			awsBucketRegion);
+		cmdParams.push(configFullPath);
 
 		if(os.platform() === "win32")
 		{
@@ -316,21 +309,17 @@
 
 					const unityCommand = conf.unity.batPath;
 					const unityCmdParams = [
-						conf.unity.project,
-						conf.bouncer.dbhost,
-						conf.bouncer.dbport,
-						conf.bouncer.username,
-						conf.bouncer.password,
-						commandArgs.database,
-						commandArgs.project,
-						awsBucketName,
-						awsBucketRegion,
-						logDir];
+							conf.unity.project,
+							configFullPath,
+							commandArgs.database,
+							commandArgs.project,
+							logDir
+					];
 
 					logger.info(`Running unity command: ${unityCommand} ${unityCmdParams.join(" ")}`);
 					const unityExec = run(unityCommand, unityCmdParams);
-					unityExec.then((code) => {
-						logger.info(`[SUCCESS] Executed unity command: ${unityCommand} ${unityCmdParams.join(" ")}`, code);
+					unityExec.then((unityCode) => {
+						logger.info(`[SUCCESS] Executed unity command: ${unityCommand} ${unityCmdParams.join(" ")}`, unityCode);
 						callback({
 							value: code,
 							database: cmdDatabase,
@@ -363,10 +352,10 @@
 				if(toyFed) {
 
 					const dbConfig = {
-						username: conf.bouncer.username,
-						password: conf.bouncer.password,
-						dbhost: conf.bouncer.dbhost,
-						dbport: conf.bouncer.dbport,
+						username: conf.db.username,
+						password: conf.db.password,
+						dbhost: conf.db.dbhost,
+						dbport: conf.db.dbport,
 						writeConcern: conf.mongoimport && conf.mongoimport.writeConcern
 					};
 					const dir = `${rootModelDir}/${toyFed}`;
@@ -485,6 +474,10 @@
 	}
 
 	logger.info("Initialising bouncer client queue...");
+	if(conf.hasOwnProperty("umask")) {
+		logger.info("Setting umask: " + conf.umask);
+		process.umask(conf.umask);
+	}
 	testClient(connectQ);
 
 })();

@@ -16,20 +16,16 @@
 */
 
 #include <repo/lib/repo_listener_stdout.h>
+#include <repo/lib/repo_exception.h>
 #include "functions.h"
 
-static const uint32_t minArgs = 8;  //exe address port username password bucketName bucketRegion command
+static const uint32_t minArgs = 3;  //exe configFile command
 
 void printHelp()
 {
-	std::cout << "Usage: 3drepobouncerClient <address> <port> <username> <password> <bucketName> <bucketRegion> <command> [<args>]" << std::endl;
+	std::cout << "Usage: 3drepobouncerClient path_to_config [<args>]" << std::endl;
 	std::cout << std::endl;
-	std::cout << "address\t\tAddress of database instance" << std::endl;
-	std::cout << "port\t\tPort of database instance" << std::endl;
-	std::cout << "username\tUsername to connect to database" << std::endl;
-	std::cout << "password\tPassword of user" << std::endl;
-	std::cout << "bucketName\tName of S3 bucket" << std::endl;
-	std::cout << "bucketRegion\tLocation of bucket" << std::endl;
+	std::cout << "path_to_config\t\tPath to configuration json" << std::endl;	
 	std::cout << std::endl;
 	std::cout << "Supported Commands:" << std::endl;
 	std::cout << helpInfo() << std::endl;
@@ -109,16 +105,11 @@ int main(int argc, char* argv[]){
 		return REPOERR_INVALID_ARG;
 	}
 
-	std::string address = argv[1];
-	int port = atoi(argv[2]);
-	std::string username = argv[3];
-	std::string password = argv[4];
-	std::string bucketName = argv[5];
-	std::string bucketRegion = argv[6];
-
+	int idx = 0;
+	std::string configPath = argv[++idx];	
 	logCommand(argc, argv);
 	repo_op_t op;
-	op.command = argv[7];
+	op.command = argv[++idx];
 	if (argc > minArgs)
 		op.args = &argv[minArgs];
 	op.nArgcs = argc - minArgs;
@@ -128,22 +119,30 @@ int main(int argc, char* argv[]){
 	if (cmdnArgs <= op.nArgcs)
 	{
 		std::string errMsg;
-		repo::RepoController::RepoToken* token = controller->init(errMsg, address, port, username, password, bucketName, bucketRegion);
-		if (token)
-		{
-			repoLog("successfully connected to the database!");
-			int32_t errcode = performOperation(controller, token, op);
+		try {
+			auto config = repo::lib::RepoConfig::fromFile(configPath);
+			repo::RepoController::RepoToken* token = controller->init(errMsg, config);
+			if (token)
+			{
+				repoLog("successfully connected to the database!");
+				int32_t errcode = performOperation(controller, token, op);
 
-			controller->destroyToken(token);
-			delete controller;
-			repoLog("Process completed, returning with error code: " + std::to_string(errcode));
-			return errcode;
+				controller->destroyToken(token);
+				delete controller;
+				repoLog("Process completed, returning with error code: " + std::to_string(errcode));
+				return errcode;
+			}
+			else {
+				repoLogError("Failed to authenticate to the database: " + errMsg);
+				delete controller;
+				return REPOERR_AUTH_FAILED;
+			}
 		}
-		else{
-			repoLogError("Failed to authenticate to the database: " + errMsg);
-			delete controller;
-			return REPOERR_AUTH_FAILED;
+		catch (const repo::lib::RepoException &e) {
+			repoLogError("Failed to read configuration from file: " + configPath + " : " + e.what());
+			return REPOERR_INVALID_CONFIG_FILE;
 		}
+		
 	}
 	else
 	{

@@ -13,6 +13,7 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_element.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_factory.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_project_settings.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_ref.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_role.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_role_settings.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_user.cpp

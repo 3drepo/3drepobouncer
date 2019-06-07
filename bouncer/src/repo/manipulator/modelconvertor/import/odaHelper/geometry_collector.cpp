@@ -78,7 +78,7 @@ void GeometryCollector::setCurrentMaterial(const repo_material_t &material, bool
 	currMat = checkSum;
 }
 
-void repo::manipulator::modelconvertor::odaHelper::GeometryCollector::setCurrentMeta(const std::pair<std::vector<std::string>, std::vector<std::string>>& meta)
+void repo::manipulator::modelconvertor::odaHelper::GeometryCollector::setCurrentMeta(const std::map<std::string, std::string>& meta)
 {
 	currentMeta = meta;
 }
@@ -288,9 +288,9 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 
 				auto& metaValues = meshMatEntry.second.metaValues;
 
-				if (!metaValues.first.empty())
+				if (!metaValues.empty())
 				{
-					metaSet.insert(new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metaValues.first, metaValues.second, meshMatEntry.second.name,
+					metaSet.insert(new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metaValues, meshMatEntry.second.name,
 					{
 						meshNode.getSharedID()
 					})));

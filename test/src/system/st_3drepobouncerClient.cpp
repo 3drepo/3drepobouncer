@@ -42,12 +42,8 @@ static std::string produceCleanArgs(
 	const std::string &password = REPO_GTEST_DBPW
 	)
 {
-	return  getClientExePath() + " " + dbAdd + " "
-		+ std::to_string(port) + " "
-		+ username + " "
-		+ password + " "
-		+ REPO_GTEST_S3_BUCKET + " "
-		+ REPO_GTEST_S3_REGION
+	return  getClientExePath() + " "
+		+ getConnConfig()
 		+ " clean "
 		+ database + " "
 		+ project;
@@ -56,19 +52,11 @@ static std::string produceCleanArgs(
 static std::string produceGenStashArgs(
 	const std::string &database,
 	const std::string &project,
-	const std::string &type,
-	const std::string &dbAdd = REPO_GTEST_DBADDRESS,
-	const int         &port = REPO_GTEST_DBPORT,
-	const std::string &username = REPO_GTEST_DBUSER,
-	const std::string &password = REPO_GTEST_DBPW
+	const std::string &type	
 	)
 {
-	return  getClientExePath() + " " + dbAdd + " "
-		+ std::to_string(port) + " "
-		+ username + " "
-		+ password + " "
-		+ REPO_GTEST_S3_BUCKET + " "
-		+ REPO_GTEST_S3_REGION
+	return  getClientExePath() + " "
+		+ getConnConfig()
 		+ " genStash "
 		+ database + " "
 		+ project + " "
@@ -78,19 +66,11 @@ static std::string produceGenStashArgs(
 static std::string produceGetFileArgs(
 	const std::string &file,
 	const std::string &database,
-	const std::string &project,
-	const std::string &dbAdd = REPO_GTEST_DBADDRESS,
-	const int         &port = REPO_GTEST_DBPORT,
-	const std::string &username = REPO_GTEST_DBUSER,
-	const std::string &password = REPO_GTEST_DBPW
+	const std::string &project
 	)
 {
-	return  getClientExePath() + " " + dbAdd + " "
-		+ std::to_string(port) + " "
-		+ username + " "
-		+ password + " "
-		+ REPO_GTEST_S3_BUCKET + " "
-		+ REPO_GTEST_S3_REGION
+	return  getClientExePath() + " "
+		+ getConnConfig()
 		+ " getFile "
 		+ database + " "
 		+ project + " \""
@@ -99,113 +79,36 @@ static std::string produceGetFileArgs(
 
 static std::string produceCreateFedArgs(
 	const std::string &file,
-	const std::string &owner = std::string(),
-	const std::string &dbAdd = REPO_GTEST_DBADDRESS,
-	const int         &port = REPO_GTEST_DBPORT,
-	const std::string &username = REPO_GTEST_DBUSER,
-	const std::string &password = REPO_GTEST_DBPW
+	const std::string &owner = std::string()
 	)
 {
-	return  getClientExePath() + " " + dbAdd + " "
-		+ std::to_string(port) + " "
-		+ username + " "
-		+ password + " "
-		+ REPO_GTEST_S3_BUCKET + " "
-		+ REPO_GTEST_S3_REGION
+	return  getClientExePath() + " " 
+		+ getConnConfig()
 		+ " genFed \""
 		+ file + "\" "
 		+ owner;
 }
 
 static std::string produceUploadFileArgs(
-	const std::string &filePath,
-	const std::string &dbAdd = REPO_GTEST_DBADDRESS,
-	const int         &port = REPO_GTEST_DBPORT,
-	const std::string &username = REPO_GTEST_DBUSER,
-	const std::string &password = REPO_GTEST_DBPW)
-{
-	return  getClientExePath() + " " + dbAdd + " "
-		+ std::to_string(port) + " "
-		+ username + " "
-		+ password + " "
-		+ REPO_GTEST_S3_BUCKET + " "
-		+ REPO_GTEST_S3_REGION
+	const std::string &filePath
+){
+	return  getClientExePath() + " " 
+		+ getConnConfig()
 		+ " import -f \""
 		+ filePath + "\"";
 }
 
 static std::string produceUploadArgs(
-	const std::string &dbAdd,
-	const int         &port,
-	const std::string &username,
-	const std::string &password,
 	const std::string &database,
 	const std::string &project,
-	const std::string &bucketName,
-	const std::string &bucketRegion,
-	const std::string &filePath)
+	const std::string &filePath,
+	const std::string &configPath = getConnConfig())
 {
-	return  getClientExePath() + " " + dbAdd + " "
-		+ std::to_string(port) + " "
-		+ username + " "
-		+ password + " "
-		+ bucketName + " "
-		+ bucketRegion
+	return  getClientExePath()
+		+ " " + configPath
 		+ " import \""
 		+ filePath + "\" "
 		+ database + " " + project;
-}
-
-static std::string produceUploadArgs(
-	const std::string &dbAdd,
-	const int         &port,
-	const std::string &username,
-	const std::string &password,
-	const std::string &database,
-	const std::string &project,
-	const std::string &filePath)
-{
-	return produceUploadArgs(dbAdd, port,
-		username, password,
-		database, project,
-		REPO_GTEST_S3_BUCKET, REPO_GTEST_S3_REGION,
-		filePath);
-}
-
-static std::string produceUploadArgs(
-	const std::string &dbAdd,
-	const int         &port,
-	const std::string &database,
-	const std::string &project,
-	const std::string &filePath)
-{
-	return produceUploadArgs(dbAdd, port,
-		REPO_GTEST_DBUSER, REPO_GTEST_DBPW,
-		database, project, filePath);
-}
-
-static std::string produceUploadArgs(
-	const std::string &username,
-	const std::string &password,
-	const std::string &database,
-	const std::string &project,
-	const std::string &filePath)
-{
-	return produceUploadArgs(REPO_GTEST_DBADDRESS,
-		REPO_GTEST_DBPORT,
-		username, password,
-		database, project, filePath);
-}
-
-static std::string produceUploadArgs(
-	const std::string &database,
-	const std::string &project,
-	const std::string &filePath)
-{
-	return produceUploadArgs(REPO_GTEST_DBADDRESS,
-		REPO_GTEST_DBPORT,
-		REPO_GTEST_DBUSER, REPO_GTEST_DBPW,
-		database, project, filePath);
 }
 
 static int runProcess(
@@ -227,7 +130,7 @@ TEST(RepoClientTest, UploadTestInvalidDBConn)
 
 	//Test failing to connect to database
 	std::string db = "stUpload";
-	std::string failToConnect = produceUploadArgs("invalidAdd", 12345, db, "failConn", getSuccessFilePath());
+	std::string failToConnect = produceUploadArgs(db, "failConn", getSuccessFilePath(), getDataPath("config/invalidAdd.json"));
 	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToConnect));
 	EXPECT_FALSE(projectExists(db, "failConn"));
 }
@@ -238,7 +141,7 @@ TEST(RepoClientTest, UploadTestBadDBAuth)
 	std::string db = "stUpload";
 
 	//Test Bad authentication
-	std::string failToAuth = produceUploadArgs("blah", "blah", db, "failAuth", getSuccessFilePath());
+	std::string failToAuth = produceUploadArgs(db, "failAuth", getSuccessFilePath(), getDataPath("config/badAuth.json"));
 	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToAuth));
 	EXPECT_FALSE(projectExists(db, "failAuth"));
 
@@ -249,9 +152,11 @@ TEST(RepoClientTest, UploadTestNoFile)
 	//this ensures we can run processes
 	ASSERT_TRUE(system(nullptr));
 	std::string db = "stUpload";
-
 	//Test Bad FilePath
 	std::string badFilePath = produceUploadArgs(db, "failPath", "nonExistentFile.obj");
+	fflush(stdout);
+	std::cout << " Executing: " << badFilePath << std::endl;
+	fflush(stdout);
 	EXPECT_EQ((int)REPOERR_MODEL_FILE_READ, runProcess(badFilePath));
 	EXPECT_FALSE(projectExists(db, "failPath"));
 }
@@ -286,8 +191,7 @@ TEST(RepoClientTest, UploadTestBadArgs)
 	ASSERT_TRUE(system(nullptr));
 
 	//Insufficient arguments
-	std::string lackArg = getClientExePath() + " " + REPO_GTEST_DBADDRESS + " " + std::to_string(REPO_GTEST_DBPORT) + " "
-		+ REPO_GTEST_DBUSER + " " + REPO_GTEST_DBPW + " import " + getSuccessFilePath();
+	std::string lackArg = getClientExePath() + " " + getConnConfig() + " import " + getSuccessFilePath();
 	EXPECT_EQ((int)REPOERR_INVALID_ARG, runProcess(lackArg));
 }
 
@@ -437,15 +341,6 @@ TEST(RepoClientTest, CreateFedTest)
 	//this ensures we can run processes
 	ASSERT_TRUE(system(nullptr));
 
-	//Test failing to connect to database
-	std::string db = "stFed";
-	std::string failToConnect = produceCreateFedArgs("whatever", "", "invalidAdd", 12345);
-	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToConnect));
-
-	//Test Bad authentication
-	std::string failToAuth = produceCreateFedArgs("whatever", "", REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT, "badUser", "invalidPasswrd2");
-	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToAuth));
-
 	//Test Bad FilePath
 	std::string badFilePath = produceCreateFedArgs("nonExistentFile.json");
 	EXPECT_EQ((int)REPOERR_FED_GEN_FAIL, runProcess(badFilePath));
@@ -495,9 +390,7 @@ TEST(RepoClientTest, GenStashTest)
 {
 	repo::RepoController *controller = new repo::RepoController();
 	std::string errMsg;
-	repo::RepoController::RepoToken *token =
-		controller->init(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
-		REPO_GTEST_DBUSER, REPO_GTEST_DBPW, REPO_GTEST_S3_BUCKET, REPO_GTEST_S3_REGION);
+	repo::RepoController::RepoToken *token = initController(controller);
 	repo::lib::RepoUUID stashRoot;
 	if (token)
 	{
@@ -531,20 +424,4 @@ TEST(RepoClientTest, GenStashTest)
 	EXPECT_EQ((int)REPOERR_STASH_GEN_FAIL, runProcess(produceGenStashArgs("blash", "blah", "gltf")));
 
 	delete controller;
-}
-
-TEST(RepoClientTest, CleanTest)
-{
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceCleanArgs("sampleDataRW", "cleanTest1")));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceCleanArgs("sampleDataRW", "cleanTest2")));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceCleanArgs("sampleDataRW", "cleanTest3")));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceCleanArgs("sampleDataRW", "cleanTest4")));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceCleanArgs("sampleDataRW", "cleanTest5")));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(produceCleanArgs("sampleDataRW", "nonExistentbadfsd")));
-
-	EXPECT_FALSE(projectHasValidRevision("sampleDataRW", "cleanTest1"));
-	EXPECT_FALSE(projectHasValidRevision("sampleDataRW", "cleanTest2")); // FIXME: change dump?
-	EXPECT_FALSE(projectHasValidRevision("sampleDataRW", "cleanTest3")); // FIXME: change dump?
-	EXPECT_FALSE(projectHasValidRevision("sampleDataRW", "cleanTest4")); // FIXME: change dump?
-	EXPECT_TRUE(projectHasValidRevision("sampleDataRW", "cleanTest5"));
 }

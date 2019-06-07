@@ -159,32 +159,34 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 
 			bucket.find().forEach(file => {
 
-				let newFileName = file.filename;
-				newFileName = newFileName.split('/');
-				newFileName[1] = database;
-				newFileName[2] = project;
-				newFileName = newFileName.join('/');
-				file.filename = newFileName;
+				let newFileName = file.filename.split('/');
+				if(newFileName.length >= 3) {
+					newFileName[1] = database;
+					newFileName[2] = project;
+					newFileName = newFileName.join('/');
+					file.filename = newFileName;
 
-				renamePromises.push(
+					renamePromises.push(
 
-					new Promise((resolve, reject) => {
+						new Promise((resolve, reject) => {
 
-						bucket.rename(file._id, newFileName, function(err) {
-							if(err){
-								reject(err);
-							} else {
-								resolve();
-							}
+							bucket.rename(file._id, newFileName, function(err) {
+								if(err){
+									reject(err);
+								} else {
+									resolve();
+								}
 
-						});
-					})
+							});
+						})
 
-				);
+					);
 
-				// unityAssets.json have the path baked into the file :(
-				if(newFileName.endsWith('unityAssets.json')){
-					renamePromises.push(renameUnityAsset(bucket, file));
+
+					// unityAssets.json have the path baked into the file :(
+					if(newFileName.endsWith('unityAssets.json')){
+						renamePromises.push(renameUnityAsset(bucket, file));
+					}
 				}
 
 			}, err => {
@@ -203,9 +205,9 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 	function renameGroups(db){
 
 		const subModelNameToOldID = {
-			"Lego_House_Architecture" : "33586989-6130-4787-8ea5-b56b81286ccf",
-			"Lego_House_Landscape" : "81abd908-d0b2-46f5-a9d5-38471dbfab72",
-			"Lego_House_Structure" : "94020bb8-07d3-4811-ae29-040c961ed92f"
+			"Lego_House_Architecture" : "a29d06a0-51b7-45d7-9d33-41a62e036e5b",
+			"Lego_House_Landscape" : "76fa299d-b626-48c5-9327-05fa371b3a49",
+			"Lego_House_Structure" : "7ea2eb1f-3ba6-4f13-b6e5-a1b53f17d0c6"
 		};
 
 		return new Promise((resolve, reject) => {

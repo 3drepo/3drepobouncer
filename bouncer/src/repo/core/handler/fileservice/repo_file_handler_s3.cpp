@@ -41,10 +41,12 @@ using namespace Aws::Utils;
 
 using namespace repo::core::handler::fileservice;
 
-S3FileHandler* S3FileHandler::handler = NULL;
-
-S3FileHandler::S3FileHandler() :
-	AbstractFileHandler()
+S3FileHandler::S3FileHandler(
+	const std::string &bucketName,
+						const std::string &region) :
+	AbstractFileHandler(), 
+	bucketName(name),
+	bucketRegion(region)
 {
 	Aws::SDKOptions options;
 	Aws::InitAPI(options);
@@ -60,6 +62,8 @@ S3FileHandler::~S3FileHandler()
 }
 
 bool S3FileHandler::deleteFile(
+	const std::string          &database,
+	const std::string          &collection,
 	const std::string &keyName)
 {
 	const Aws::String awsKeyName = keyName.c_str();
@@ -90,77 +94,9 @@ bool S3FileHandler::deleteFile(
 	return success;
 }
 
-bool S3FileHandler::deleteFileAndRef(
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	const std::string                            &databaseName,
-	const std::string                            &collectionNamePrefix,
-	const std::string                            &fileName)
-{
-	bool success = true;
-
-	repo::core::model::RepoBSON criteria = BSON(REPO_LABEL_ID << cleanFileName(fileName));
-	repo::core::model::RepoBSON bson = handler->findOneByCriteria(
-			databaseName,
-			collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
-			criteria);
-
-	if (bson.isEmpty())
-	{
-		repoTrace << "Failed: cannot find file ref "
-			<< cleanFileName(fileName) << " from "
-			<< databaseName << "/"
-			<< collectionNamePrefix << "." << REPO_COLLECTION_EXT_REF;
-		success = false;
-	}
-	else
-	{
-		std::string keyName = bson.getField(REPO_REF_LABEL_LINK).str();
-
-		success = deleteFile(keyName) &&
-			AbstractFileHandler::dropFileRef(
-					handler,
-					bson,
-					databaseName,
-					collectionNamePrefix);
-	}
-
-	return success;
-}
-
-S3FileHandler* S3FileHandler::getHandler(
-	const std::string &bucketName,
-	const std::string &region)
-{
-	if (getHandler())
-		handler->setBucket(bucketName, region);
-
-	return handler;
-}
-
-S3FileHandler* S3FileHandler::getHandler()
-{
-	if (!handler)
-	{
-		repoTrace << "Handler not present, instantiating new handler...";
-		handler = new S3FileHandler();
-	}
-	else
-	{
-		repoTrace << "Found handler, returning existing handler";
-	}
-
-	return handler;
-}
-
-void S3FileHandler::setBucket(
-	const std::string &name,
-	const std::string &region)
-{
-	bucketName = name;
-	bucketRegion = region;
-}
-
-bool S3FileHandler::uploadFile(
+std::string S3FileHandler::uploadFile(
+	const std::string          &database,
+	const std::string          &collection,
 	const std::string          &keyName,
 	const std::vector<uint8_t> &bin
 	)
@@ -197,50 +133,7 @@ bool S3FileHandler::uploadFile(
 		repoTrace << "PutObject.error: " << putObjectOutcome.GetError();
 	}
 
-	return success;
-}
-
-bool S3FileHandler::uploadFileAndCommit(
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	const std::string                            &databaseName,
-	const std::string                            &collectionNamePrefix,
-	const std::string                            &fileName,
-	const std::vector<uint8_t>                   &bin)
-{
-	bool success = true;
-	auto fileUUID = repo::lib::RepoUUID::createUUID();
-
-	if (success &= uploadFile(fileUUID.toString(), bin))
-	{
-		auto fileSize = bin.size() * sizeof(bin[0]);
-
-		success &= upsertFileRef(
-				handler,
-				databaseName,
-				collectionNamePrefix,
-				cleanFileName(fileName),
-				fileUUID.toString(),
-				fileSize);
-	}
-
-	return success;
-}
-
-bool S3FileHandler::upsertFileRef(
-	repo::core::handler::AbstractDatabaseHandler *handler,
-	const std::string                            &databaseName,
-	const std::string                            &collectionNamePrefix,
-	const std::string                            &id,
-	const std::string                            &link,
-	const uint32_t                               &size)
-{
-	return AbstractFileHandler::upsertFileRef(handler,
-			databaseName,
-			collectionNamePrefix,
-			id,
-			link,
-			REPO_REF_TYPE_S3,
-			size);
+	return success ? keyName : "";
 }
 
 #endif

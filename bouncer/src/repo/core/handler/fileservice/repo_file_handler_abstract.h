@@ -36,76 +36,32 @@ namespace repo{
 					virtual ~AbstractFileHandler(){}
 
 					/**
-					 * Upload file and commit ref entry to database.
-					 */
-					virtual bool uploadFileAndCommit(
-						repo::core::handler::AbstractDatabaseHandler *handler,
-						const std::string                            &databaseName,
-						const std::string                            &collectionNamePrefix,
-						const std::string                            &fileName,
-						const std::vector<uint8_t>                   &bin
-						) = 0;
+					* Delete file.
+					*/
+					virtual bool deleteFile(
+						const std::string          &database,
+						const std::string          &collection,
+						const std::string &fileName) = 0;
 
 					/**
-					 * Delete file ref and associated file from database.
-					 */
-					virtual bool deleteFileAndRef(
-						repo::core::handler::AbstractDatabaseHandler *handler,
-						const std::string                            &databaseName,
-						const std::string                            &collectionNamePrefix,
-						const std::string                            &fileName
-						) = 0;
+					* Upload file.
+					*/
+					virtual std::string uploadFile(
+						const std::string          &database,
+						const std::string          &collection,
+						const std::string          &fileName,
+						const std::vector<uint8_t> &bin
+					) = 0;
+
+					virtual repo::core::model::RepoRef::RefType getType() const = 0;
+
+
 
 				protected:
 					/**
 					 * Default constructor
 					 */
-					AbstractFileHandler(){};
-
-					/**
-					 * Cleans given filename by removing teamspace and model strings.
-					 * e.g. cleanFileName("/teamspaceA/modelB/file.obj")
-					 *        => "file.obj"
-					 *      cleanFileName("/teamspaceA/modelB/revision/revC/file.obj")
-					 *        => "revC/file.obj"
-					 */
-					std::string cleanFileName(
-						const std::string &fileName);
-
-					/**
-					 * Delete file.
-					 */
-					virtual bool deleteFile(
-						const std::string &fileName) = 0;
-
-					/**
-					 * Remove ref entry for file to database.
-					 */
-					bool dropFileRef(
-						repo::core::handler::AbstractDatabaseHandler *handler,
-						const repo::core::model::RepoBSON            bson,
-						const std::string                            &databaseName,
-						const std::string                            &collectionNamePrefix);
-
-					/**
-					 * Upload file.
-					 */
-					virtual bool uploadFile(
-						const std::string          &fileName,
-						const std::vector<uint8_t> &bin
-						) = 0;
-
-					/**
-					 * Add ref entry for file to database.
-					 */
-					bool upsertFileRef(
-						repo::core::handler::AbstractDatabaseHandler *handler,
-						const std::string                            &databaseName,
-						const std::string                            &collectionNamePrefix,
-						const std::string                            &id,
-						const std::string                            &link,
-						const std::string                            &type,
-						const uint32_t                               &size);
+					AbstractFileHandler(){};							
 				};
 			}
 		}

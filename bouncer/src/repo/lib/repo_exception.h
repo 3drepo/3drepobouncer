@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2015 3D Repo Ltd
+*  Copyright (C) 2019 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -16,24 +16,17 @@
 */
 
 #pragma once
-#include <cstdint>
-#if defined(_WIN32) || defined(_WIN64)
-#   define REPO_DECL_EXPORT __declspec(dllexport)
-#   define REPO_DECL_IMPORT __declspec(dllimport)
-#else
-#   define REPO_DECL_EXPORT
-#   define REPO_DECL_IMPORT
-#endif
 
-//------------------------------------------------------------------------------
-#if defined(REPO_API_LIBRARY)
-#   define REPO_API_EXPORT REPO_DECL_EXPORT
-#else
-#   define REPO_API_EXPORT REPO_DECL_IMPORT
-#endif
+#include <string>
+namespace repo {
+	namespace lib {
+		class RepoException : std::exception {
+		public:
+			RepoException(const std::string &msg) : errMsg(msg){};
 
-//------------------------------------------------------------------------------
-#define BOUNCER_VMAJOR 3
-#define BOUNCER_VMINOR "7.3"
-
-//
+			char const* what() const throw() { return errMsg.c_str(); }
+		private:
+			const std::string errMsg;
+		};
+	}
+}

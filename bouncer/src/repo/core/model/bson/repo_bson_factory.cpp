@@ -260,6 +260,56 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	return MetadataNode(builder.obj());
 }
 
+MetadataNode RepoBSONFactory::makeMetaDataNode(
+	const std::map<std::string, std::string>  &meta,
+	const std::string               &name,
+	const std::vector<repo::lib::RepoUUID>     &parents,
+	const int                       &apiLevel)
+{
+	RepoBSONBuilder builder, metaBuilder;
+	// Compulsory fields such as _id, type, api as well as path
+	// and optional name
+	auto defaults = appendDefaults(REPO_NODE_TYPE_METADATA, apiLevel, repo::lib::RepoUUID::createUUID(), name, parents);
+	builder.appendElements(defaults);
+
+	//check keys and values have the same sizes
+
+
+	for (const auto &entry : meta)
+	{
+		std::string key = sanitiseKey(entry.first);
+		std::string value = entry.second;
+
+		if (!key.empty() && !value.empty())
+		{
+			//Check if it is a number, if it is, store it as a number
+
+			try {
+				long long valueInt = boost::lexical_cast<long long>(value);
+				metaBuilder << key << valueInt;
+			}
+			catch (boost::bad_lexical_cast &)
+			{
+				//not an int, try a double
+
+				try {
+					double valueFloat = boost::lexical_cast<double>(value);
+					metaBuilder << key << valueFloat;
+				}
+				catch (boost::bad_lexical_cast &)
+				{
+					//not an int or float, store as string
+					metaBuilder << key << value;
+				}
+			}
+		}
+	}
+
+	builder << REPO_NODE_LABEL_METADATA << metaBuilder.obj();
+
+	return MetadataNode(builder.obj());
+}
+
 MeshNode RepoBSONFactory::makeMeshNode(
 	const std::vector<repo::lib::RepoVector3D>                  &vertices,
 	const std::vector<repo_face_t>                    &faces,
@@ -634,6 +684,20 @@ RepoRole RepoBSONFactory::_makeRepoRole(
 	}
 
 	return RepoRole(builder.obj());
+}
+
+RepoRef RepoBSONFactory::makeRepoRef(
+	const std::string &fileName,
+	const RepoRef::RefType &type,
+	const std::string &link,
+	const uint32_t size) {
+
+	repo::core::model::RepoBSONBuilder builder;
+	builder.append(REPO_LABEL_ID, fileName);
+	builder.append(REPO_REF_LABEL_TYPE, RepoRef::convertTypeAsString(type));
+	builder.append(REPO_REF_LABEL_LINK, link);
+	builder.append(REPO_REF_LABEL_SIZE, (unsigned int) size);
+	return RepoRef(builder.obj());
 }
 
 RepoRoleSettings RepoBSONFactory::makeRepoRoleSettings(

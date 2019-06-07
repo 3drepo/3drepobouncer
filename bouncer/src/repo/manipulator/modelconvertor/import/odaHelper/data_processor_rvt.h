@@ -109,13 +109,13 @@ namespace repo {
 
 					void fillMetadataById(
 						OdBmObjectId id, 
-						std::pair<std::vector<std::string>, std::vector<std::string>>& metadata);
+						std::map<std::string, std::string>& metadata);
 
 					void fillMetadataByElemPtr(
 						OdBmElementPtr element, 
-						std::pair<std::vector<std::string>, std::vector<std::string>>& metadata);
+						std::map<std::string, std::string>& metadata);
 
-					std::pair<std::vector<std::string>, std::vector<std::string>> fillMetadata(OdBmElementPtr element);
+					std::map<std::string, std::string> fillMetadata(OdBmElementPtr element);
 					std::string getLevel(OdBmElementPtr element, const std::string& name);
 					std::string getElementName(OdBmElementPtr element, uint64_t id);
 
