@@ -108,7 +108,7 @@ std::string FSFileHandler::uploadFile(
 		outs.write((char*)bin.data(), bin.size());
 		outs.close();
 		if (failed = (!outs || !repo::lib::doesFileExist(path))) {
-			repoTrace << "Failed to write to file " << path.string() << ((retries +1) < 3? ". Retrying... " : "");
+			repoError << "Failed to write to file " << path.string() << ((retries +1) < 3? ". Retrying... " : "");
 			boost::this_thread::sleep(boost::posix_time::seconds(5));
 		}
 	} while (failed && ++retries < 3);
