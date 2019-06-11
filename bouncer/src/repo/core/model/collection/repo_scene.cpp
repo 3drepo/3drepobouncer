@@ -738,7 +738,8 @@ bool RepoScene::commitRevisionNode(
 				{
 					if (!(success = manager->uploadFileAndCommit(databaseName, projectName + "." + rawExt, gridFSName, rawFile)))
 					{
-						repoError << "Failed to save original file into file storage: " << errMsg;
+						errMsg = "Failed to save original file into file storage: " + gridFSName;
+						repoError << errMsg;
 					}
 				}
 				else

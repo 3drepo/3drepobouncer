@@ -113,7 +113,7 @@ std::string FSFileHandler::uploadFile(
 		}
 	} while (failed && ++retries < 3);
 
-	return failed ?  "" : ss.str();
+	return /*failed ?  "" :*/ ss.str(); //Returning link regardless for now.
 }
 
 
