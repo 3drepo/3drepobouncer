@@ -33,7 +33,7 @@ FSFileHandler::FSFileHandler(
 	level(nLevel)
 {
 	if (!repo::lib::doesDirExist(dir)) {
-		repoError << "Cannot initialise fileshare: " + dir + " is does not exist/is not a directory";
+		repoError << "Cannot initialise fileshare: " + dir + " does not exist/is not a directory";
 		throw repo::lib::RepoException("Cannot initialise fileshare: " + dir + " is does not exist/is not a directory");
 	}
 }
