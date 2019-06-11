@@ -506,7 +506,7 @@ const std::list<std::string> &databases)
 	return map;
 }
 
-void RepoController::_RepoControllerImpl::insertBinaryFileToDatabase(
+bool RepoController::_RepoControllerImpl::insertBinaryFileToDatabase(
 	const RepoController::RepoToken            *token,
 	const std::string          &database,
 	const std::string          &collection,
@@ -517,7 +517,7 @@ void RepoController::_RepoControllerImpl::insertBinaryFileToDatabase(
 	if (token)
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		worker->insertBinaryFileToDatabase(token->databaseAd,
+		return worker->insertBinaryFileToDatabase(token->databaseAd,
 			token->getCredentials(),
 			token->bucketName,
 			token->bucketRegion,
@@ -531,6 +531,7 @@ void RepoController::_RepoControllerImpl::insertBinaryFileToDatabase(
 	else
 	{
 		repoError << "Trying to save a binary file without a database connection!";
+		return false;
 	}
 }
 

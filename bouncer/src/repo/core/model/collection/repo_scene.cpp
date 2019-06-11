@@ -736,7 +736,7 @@ bool RepoScene::commitRevisionNode(
 				std::vector<uint8_t> rawFile(size);
 				if (file.read((char*)rawFile.data(), size))
 				{
-					if (!manager->uploadFileAndCommit(databaseName, projectName + "." + rawExt, gridFSName, rawFile))
+					if (!(success = manager->uploadFileAndCommit(databaseName, projectName + "." + rawExt, gridFSName, rawFile)))
 					{
 						repoError << "Failed to save original file into file storage: " << errMsg;
 					}

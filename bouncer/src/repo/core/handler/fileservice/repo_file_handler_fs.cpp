@@ -99,13 +99,19 @@ std::string FSFileHandler::uploadFile(
 
 	path /= keyName;
 	ss <<  keyName;
-	
-	std::ofstream outs(path.string(), std::ios::out | std::ios::binary);
-	outs.write((char*)bin.data(), bin.size());
-	outs.close();
+	int retries = 0;
+	bool failed;
+	do {
+		std::ofstream outs(path.string(), std::ios::out | std::ios::binary);
+		outs.write((char*)bin.data(), bin.size());
+		outs.close();
+		if (failed = !outs) {
+			repoTrace << "Failed to write to file " << path.string() << ((retries +1) < 3? ". Retrying... " : "");
+		}
 
+	} while (failed && ++retries < 3);
 
-	return ss.str();
+	return failed ?  "" : ss.str();
 }
 
 
