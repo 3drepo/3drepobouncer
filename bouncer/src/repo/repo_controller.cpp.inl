@@ -373,7 +373,7 @@ public:
 	* @param  rawData data in the form of byte vector
 	* @param mimeType the MIME type of the data (optional)
 	*/
-	void insertBinaryFileToDatabase(
+	bool insertBinaryFileToDatabase(
 		const RepoToken            *token,
 		const std::string          &database,
 		const std::string          &collection,

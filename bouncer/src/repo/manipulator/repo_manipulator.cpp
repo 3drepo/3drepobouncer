@@ -909,7 +909,7 @@ std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoManipulator::initi
 	return assetExport.getReorganisedMeshes(serialisedFaceBuf, idMapBuf, meshMappings);
 }
 
-void RepoManipulator::insertBinaryFileToDatabase(
+bool RepoManipulator::insertBinaryFileToDatabase(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON             *cred,
 	const std::string                             &bucketName,
@@ -923,9 +923,10 @@ void RepoManipulator::insertBinaryFileToDatabase(
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	auto manager = repo::core::handler::fileservice::FileManager::getManager();
+	bool success = false;
 	if (handler && manager)
 	{
-		if (manager->uploadFileAndCommit(database, collection, name, rawData))
+		if (success = manager->uploadFileAndCommit(database, collection, name, rawData))
 		{
 			repoInfo << "File (" << name << ") added successfully to storage.";
 		}
@@ -935,6 +936,8 @@ void RepoManipulator::insertBinaryFileToDatabase(
 		}
 
 	}
+
+	return success;
 }
 
 void RepoManipulator::insertRole(

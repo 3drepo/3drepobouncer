@@ -15,6 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <stdio.h>
+#include <boost/thread.hpp>
 #include "repo_file_handler_fs.h"
 
 #include "../../model/repo_model_global.h"
@@ -32,6 +33,7 @@ FSFileHandler::FSFileHandler(
 	level(nLevel)
 {
 	if (!repo::lib::doesDirExist(dir)) {
+		repoError << "Cannot initialise fileshare: " + dir + " does not exist/is not a directory";
 		throw repo::lib::RepoException("Cannot initialise fileshare: " + dir + " is does not exist/is not a directory");
 	}
 }
@@ -84,11 +86,11 @@ std::string FSFileHandler::uploadFile(
 	const std::vector<uint8_t> &bin
 	)
 {
-	auto hierachy = determineHierachy(keyName);
+
+	auto hierachy = level > 0 ? determineHierachy(keyName) : std::vector<std::string>();
 	
 	boost::filesystem::path path(dirPath);
 	std::stringstream ss;
-
 	for (const auto &levelName : hierachy) {
 		path /= levelName;
 		ss << levelName << "/";
@@ -99,13 +101,19 @@ std::string FSFileHandler::uploadFile(
 
 	path /= keyName;
 	ss <<  keyName;
-	
-	std::ofstream outs(path.string(), std::ios::out | std::ios::binary);
-	outs.write((char*)bin.data(), bin.size());
-	outs.close();
+	int retries = 0;
+	bool failed;
+	do {
+		std::ofstream outs(path.string(), std::ios::out | std::ios::binary);
+		outs.write((char*)bin.data(), bin.size());
+		outs.close();
+		if (failed = (!outs || !repo::lib::doesFileExist(path))) {
+			repoError << "Failed to write to file " << path.string() << ((retries +1) < 3? ". Retrying... " : "");
+			boost::this_thread::sleep(boost::posix_time::seconds(5));
+		}
+	} while (failed && ++retries < 3);
 
-
-	return ss.str();
+	return /*failed ?  "" :*/ ss.str(); //Returning link regardless for now.
 }
 
 

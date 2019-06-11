@@ -561,7 +561,7 @@ namespace repo{
 			* @param  rawData data in the form of byte vector
 			* @param mimeType the MIME type of the data (optional)
 			*/
-			void insertBinaryFileToDatabase(
+			bool insertBinaryFileToDatabase(
 				const std::string                             &databaseAd,
 				const repo::core::model::RepoBSON             *cred,
 				const std::string                             &bucketName,

@@ -388,6 +388,8 @@ bool SceneManager::generateAndCommitSelectionTree(
 				else
 				{
 					repoError << "Failed to add file  (" << fileName << ") to file storage: " << errMsg;
+					success = false;
+					break;
 				}
 			}
 		}
