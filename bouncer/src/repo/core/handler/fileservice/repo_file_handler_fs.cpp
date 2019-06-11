@@ -86,11 +86,11 @@ std::string FSFileHandler::uploadFile(
 	const std::vector<uint8_t> &bin
 	)
 {
-	auto hierachy = determineHierachy(keyName);
+
+	auto hierachy = level > 0 ? determineHierachy(keyName) : std::vector<std::string>();
 	
 	boost::filesystem::path path(dirPath);
 	std::stringstream ss;
-
 	for (const auto &levelName : hierachy) {
 		path /= levelName;
 		ss << levelName << "/";
