@@ -168,7 +168,7 @@ namespace repo{
 				* @return returns true if missing textures
 				*/
 				bool isMissingTexture() const{
-					return status & REPO_SCENE_TEXTURE_BIT;
+					return (bool)status & REPO_SCENE_TEXTURE_BIT;
 				}
 
 				/**
@@ -177,7 +177,7 @@ namespace repo{
 				* @return returns true invalid meshes exists
 				*/
 				bool hasInvalidMeshes() const{
-					return status & REPO_SCENE_INVALID_MESH_BIT;
+					return (bool)status & REPO_SCENE_INVALID_MESH_BIT;
 				}
 
 				/**
@@ -185,7 +185,7 @@ namespace repo{
 				* @return returns true if missing nodes
 				*/
 				bool isMissingNodes() const{
-					return status & REPO_SCENE_ENTITIES_BIT;
+					return (bool) (status & REPO_SCENE_ENTITIES_BIT) > 0;
 				}
 
 				/**
@@ -206,6 +206,7 @@ namespace repo{
 				* Flag missing nodes due to import failures
 				*/
 				void setMissingNodes(){
+					repoTrace << "Missing nodes set.";
 					status |= REPO_SCENE_ENTITIES_BIT;
 				}
 
@@ -1161,7 +1162,7 @@ namespace repo{
 
 				repoGraphInstance graph; //current state of the graph, given the branch/revision
 				repoGraphInstance stashGraph; //current state of the optimized graph, given the branch/revision
-				uint16_t status; //health of the scene, 0 denotes healthy
+				uint16_t status = 0; //health of the scene, 0 denotes healthy
 				bool ignoreReferenceNodes = false;
 				bool loadExtFiles = true;
 			};
