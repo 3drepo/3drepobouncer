@@ -385,13 +385,19 @@ bool RepoScene::addNodeToScene(
 
 	for (auto & node : nodes)
 	{
-		if (node && node->getTypeAsEnum() == NodeType::TRANSFORMATION || node->getParentIDs().size())
+		if (node)
 		{
-			collection->insert(node);
-			if (!addNodeToMaps(gType, node, errMsg))
-			{
-				repoError << "failed to add node (" << node->getUniqueID() << " to scene graph: " << errMsg;
-				success = false;
+			if (node->getTypeAsEnum() == NodeType::TRANSFORMATION || node->getParentIDs().size()) {
+				collection->insert(node);
+				if (!addNodeToMaps(gType, node, errMsg))
+				{
+					repoError << "failed to add node (" << node->getUniqueID() << " to scene graph: " << errMsg;
+					success = false;
+				}
+			}
+			else {
+				//Orphaned nodes detected, flag missing nodes
+				setMissingNodes();
 			}
 		}
 		if (gType == GraphType::DEFAULT)
