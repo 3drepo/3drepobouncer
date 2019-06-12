@@ -385,7 +385,7 @@ bool RepoScene::addNodeToScene(
 
 	for (auto & node : nodes)
 	{
-		if (node)
+		if (node && node->getTypeAsEnum() == NodeType::TRANSFORMATION || node->getParentIDs().size())
 		{
 			collection->insert(node);
 			if (!addNodeToMaps(gType, node, errMsg))
