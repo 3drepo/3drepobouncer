@@ -375,6 +375,10 @@ void RepoScene::addMetadata(
 	clearStash();
 }
 
+bool RepoScene::isMissingNodes() const {
+	return status & REPO_SCENE_ENTITIES_BIT;
+}
+
 bool RepoScene::addNodeToScene(
 	const GraphType &gType,
 	const RepoNodeSet nodes,

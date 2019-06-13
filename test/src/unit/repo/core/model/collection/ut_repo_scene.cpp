@@ -74,8 +74,7 @@ TEST(RepoSceneTest, ConstructOrhpanMeshScene)
 	meshes.insert(m3);
 
 	RepoScene scene(files, empty, meshes, empty, empty, empty, trans);
-	EXPECT_TRUE(scene.isMissingNodes());
-	delete root, t1, m1, m2, m2;
+	EXPECT_TRUE(scene.isMissingNodes());	
 }
 
 TEST(RepoSceneTest, FilterNodesByType)

@@ -184,9 +184,7 @@ namespace repo{
 				* Check if default scene graph is missing some nodes due to failed import
 				* @return returns true if missing nodes
 				*/
-				bool isMissingNodes() const{
-					return (bool) (status & REPO_SCENE_ENTITIES_BIT) > 0;
-				}
+				bool isMissingNodes() const;
 
 				/**
 				* Flag missing texture bit on status.
@@ -206,7 +204,6 @@ namespace repo{
 				* Flag missing nodes due to import failures
 				*/
 				void setMissingNodes(){
-					repoTrace << "Missing nodes set.";
 					status |= REPO_SCENE_ENTITIES_BIT;
 				}
 
