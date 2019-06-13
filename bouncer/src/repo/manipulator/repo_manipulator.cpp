@@ -796,13 +796,6 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 					return nullptr;
 				}
 
-				if (scene->isMissingNodes()) {
-					delete scene;
-					error = REPOERR_LOAD_SCENE_MISSING_NODES;
-					return nullptr;
-
-				}
-
 				if (!scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
 
 					delete scene;
