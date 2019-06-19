@@ -490,12 +490,7 @@ int32_t importFileAndCommit(
 
 		if (controller->commitScene(token, graph, owner, tag, desc))
 		{
-			if (graph->isMissingTexture())
-			{
-				repoLog("Missing texture detected!");
-				return REPOERR_LOAD_SCENE_MISSING_TEXTURE;
-			}
-			else if (graph->isMissingNodes())
+			if (graph->isMissingNodes())
 			{
 				repoLog("Missing nodes detected!");
 				return REPOERR_LOAD_SCENE_MISSING_NODES;
@@ -504,6 +499,11 @@ int32_t importFileAndCommit(
 			{
 				repoLog("Invalid meshes detected!");
 				return REPOERR_LOAD_SCENE_MISSING_NODES;
+			} 
+			else if (graph->isMissingTexture())
+			{
+				repoLog("Missing texture detected!");
+				return REPOERR_LOAD_SCENE_MISSING_TEXTURE;
 			}
 			else
 				return REPOERR_OK;
