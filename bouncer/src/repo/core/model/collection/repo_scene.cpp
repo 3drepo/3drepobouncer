@@ -402,6 +402,7 @@ bool RepoScene::addNodeToScene(
 			else {
 				//Orphaned nodes detected, flag missing nodes
 				setMissingNodes();
+				continue;
 			}
 		}
 		if (gType == GraphType::DEFAULT)

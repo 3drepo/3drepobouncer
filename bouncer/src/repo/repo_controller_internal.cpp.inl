@@ -91,7 +91,6 @@ bool RepoController::_RepoControllerImpl::commitAssetBundleBuffers(
 {
 	bool success = false;
 	manipulator::RepoManipulator* worker = workerPool.pop();
-	repoInfo << "token->bucketName: " << token->bucketName;
 	success = worker->commitAssetBundleBuffers(token->databaseAd,
 			token->getCredentials(),
 			token->bucketName,
