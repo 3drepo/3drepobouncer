@@ -1553,26 +1553,6 @@ void RepoScene::populateAndUpdate(
 	addNodeToScene(gType, references, errMsg, &(instance.references));
 	addNodeToScene(gType, unknowns, errMsg, &(instance.unknowns));
 
-	//validateScene(); //no longer doing this as it takes absolutely forever to go through every face.
-}
-
-void RepoScene::validateScene()
-{
-	//Check all meshes are triangulated
-	bool invalidMesh = false;
-	for (const auto &meshNode : graph.meshes)
-	{
-		auto mesh = dynamic_cast<const MeshNode*>(meshNode);
-		for (const auto face : mesh->getFaces())
-		{
-			if (invalidMesh = (face.size() != 3))
-				break;
-		}
-		if (invalidMesh) break;
-	}
-
-	if (invalidMesh)
-		setHasInvalidMeshes();
 }
 
 void RepoScene::reorientateDirectXModel()
