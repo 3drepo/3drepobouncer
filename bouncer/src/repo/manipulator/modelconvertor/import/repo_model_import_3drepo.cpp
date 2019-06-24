@@ -300,7 +300,7 @@ void RepoModelImport::createObject(const ptree& tree)
 	node_map.push_back(transNode);
 
 	std::vector<repo::core::model::MetadataNode*> metas;
-	std::vector<repo::lib::RepoUUID> meshSharedIDs;
+	std::vector<repo::lib::RepoUUID> metaParentIDs;
 
 	for(ptree::const_iterator props = tree.begin(); props != tree.end(); props++)
 	{
@@ -312,16 +312,17 @@ void RepoModelImport::createObject(const ptree& tree)
 		if (props->first == REPO_IMPORT_GEOMETRY)
 		{
 			auto mesh = createMeshRecord(props->second, transName, transID, trans_map.back());
-			meshSharedIDs.push_back(mesh.sharedID);
+			metaParentIDs.push_back(mesh.sharedID);
 			meshEntries.push_back(mesh);
 		}
 	}
 
-	repo::lib::RepoUUID metaParentSharedID = transNode->getSharedID();
+	metaParentIDs.push_back(transNode->getSharedID());
 
+	
 	for(auto &meta : metas)
 	{
-		*meta = meta->cloneAndAddParent(meshSharedIDs);
+		*meta = meta->cloneAndAddParent(metaParentIDs);
 	}
 
 	transformations.insert(transNode);
