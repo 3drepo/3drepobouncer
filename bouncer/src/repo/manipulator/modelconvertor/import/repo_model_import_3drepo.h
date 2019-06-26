@@ -59,7 +59,7 @@ namespace repo{
 			const std::string REPO_V2 = "BIM002";
 
 			const std::set<std::string> supportedFileVersions = { REPO_V1, REPO_V2 };
-			const static int REPO_VERSION_LENGTH = 7;
+			const static int REPO_VERSION_LENGTH = 6;
 
 			class RepoModelImport : public AbstractModelImport
 			{

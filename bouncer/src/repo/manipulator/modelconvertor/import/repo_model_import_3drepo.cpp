@@ -370,7 +370,6 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 		fin->read(fileVersion, REPO_VERSION_LENGTH);
 
 		std::string incomingVersion = fileVersion;
-		incomingVersion.resize(REPO_VERSION_LENGTH - 1); //last character is end of string. Ditch it for a more reliable comparison
 
 		if (supportedFileVersions.find(incomingVersion) == supportedFileVersions.end())
 		{
