@@ -375,6 +375,10 @@ void RepoScene::addMetadata(
 	clearStash();
 }
 
+bool RepoScene::isMissingNodes() const {
+	return status & REPO_SCENE_ENTITIES_BIT;
+}
+
 bool RepoScene::addNodeToScene(
 	const GraphType &gType,
 	const RepoNodeSet nodes,
@@ -387,11 +391,18 @@ bool RepoScene::addNodeToScene(
 	{
 		if (node)
 		{
-			collection->insert(node);
-			if (!addNodeToMaps(gType, node, errMsg))
-			{
-				repoError << "failed to add node (" << node->getUniqueID() << " to scene graph: " << errMsg;
-				success = false;
+			if (node->getTypeAsEnum() == NodeType::TRANSFORMATION || node->getParentIDs().size()) {
+				collection->insert(node);
+				if (!addNodeToMaps(gType, node, errMsg))
+				{
+					repoError << "failed to add node (" << node->getUniqueID() << " to scene graph: " << errMsg;
+					success = false;
+				}
+			}
+			else {
+				//Orphaned nodes detected, flag missing nodes
+				setMissingNodes();
+				continue;
 			}
 		}
 		if (gType == GraphType::DEFAULT)
@@ -1542,26 +1553,6 @@ void RepoScene::populateAndUpdate(
 	addNodeToScene(gType, references, errMsg, &(instance.references));
 	addNodeToScene(gType, unknowns, errMsg, &(instance.unknowns));
 
-	//validateScene(); //no longer doing this as it takes absolutely forever to go through every face.
-}
-
-void RepoScene::validateScene()
-{
-	//Check all meshes are triangulated
-	bool invalidMesh = false;
-	for (const auto &meshNode : graph.meshes)
-	{
-		auto mesh = dynamic_cast<const MeshNode*>(meshNode);
-		for (const auto face : mesh->getFaces())
-		{
-			if (invalidMesh = (face.size() != 3))
-				break;
-		}
-		if (invalidMesh) break;
-	}
-
-	if (invalidMesh)
-		setHasInvalidMeshes();
 }
 
 void RepoScene::reorientateDirectXModel()

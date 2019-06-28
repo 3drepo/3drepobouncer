@@ -238,9 +238,9 @@ TEST(RepoClientTest, UploadTestMissingNodes)
 
 	//Test missing nodes Upload
 	std::string misUpload = produceUploadArgs(db, "missing", getDataPath(missingNodesModel));
+	std::cout << " Running Missing nodes... " << misUpload << std::endl;
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_NODES, runProcess(misUpload));
 	EXPECT_TRUE(projectExists(db, "missing"));
-
 }
 
 TEST(RepoClientTest, UploadTestIFC)

@@ -287,7 +287,7 @@ bool _generateStash(
 		{
 			success = controller->generateAndCommitSelectionTree(token, scene);
 		}
-		
+
 		delete scene;
 	}
 
@@ -490,20 +490,15 @@ int32_t importFileAndCommit(
 
 		if (controller->commitScene(token, graph, owner, tag, desc))
 		{
-			if (graph->isMissingTexture())
-			{
-				repoLog("Missing texture detected!");
-				return REPOERR_LOAD_SCENE_MISSING_TEXTURE;
-			}
-			else if (graph->isMissingNodes())
+			if (graph->isMissingNodes())
 			{
 				repoLog("Missing nodes detected!");
 				return REPOERR_LOAD_SCENE_MISSING_NODES;
 			}
-			else if (graph->hasInvalidMeshes())
+			else if (graph->isMissingTexture())
 			{
-				repoLog("Invalid meshes detected!");
-				return REPOERR_LOAD_SCENE_MISSING_NODES;
+				repoLog("Missing texture detected!");
+				return REPOERR_LOAD_SCENE_MISSING_TEXTURE;
 			}
 			else
 				return REPOERR_OK;

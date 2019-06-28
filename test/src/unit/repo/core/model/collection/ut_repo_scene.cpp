@@ -55,6 +55,28 @@ TEST(RepoSceneTest, Constructor)
 	RepoScene scene2(files, empty, empty, empty, empty, empty, empty);
 }
 
+TEST(RepoSceneTest, ConstructOrhpanMeshScene)
+{
+	RepoNodeSet empty, trans, meshes;
+	std::vector<std::string> files;
+
+	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 100 + 1)));
+	trans.insert(root);
+
+	auto t1 = new TransformationNode(makeRandomNode(root->getSharedID(), getRandomString(rand() % 100 + 1) + root->getName()));
+	trans.insert(t1);
+	
+	auto m1 = new MeshNode();
+	auto m2 = new MeshNode();
+	auto m3 = new MeshNode();
+	meshes.insert(m1);
+	meshes.insert(m2);
+	meshes.insert(m3);
+
+	RepoScene scene(files, empty, meshes, empty, empty, empty, trans);
+	EXPECT_TRUE(scene.isMissingNodes());	
+}
+
 TEST(RepoSceneTest, FilterNodesByType)
 {
 	std::vector<RepoNode*> nodes;
