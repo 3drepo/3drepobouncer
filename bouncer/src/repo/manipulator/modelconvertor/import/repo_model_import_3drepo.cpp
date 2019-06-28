@@ -187,13 +187,18 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 		{
 			std::vector<int> startEnd = as_vector<int>(mesh, props->first);
 
-			float *tmpVertices = (float *)(geomBuf + startEnd[0]);
+			double *tmpVerticesDouble = (double *)(geomBuf + startEnd[0]);
+			float *tmpVerticesSingle = (float *)(geomBuf + startEnd[0]);
 
 			for(int i = 0; i < numVertices; i ++)
 			{
 			
 				if (props->first == REPO_IMPORT_VERTICES) {
-					repo::lib::RepoVector3D64 tmpVec = { tmpVertices[i * 3] ,  tmpVertices[i * 3 + 1] , tmpVertices[i * 3 + 2] };
+					repo::lib::RepoVector3D64 tmpVec;
+					if (is32Bit)
+						tmpVec = { tmpVerticesSingle[i * 3], tmpVerticesSingle[i * 3 + 1], tmpVerticesSingle[i * 3 + 2] };
+					else
+						tmpVec = { tmpVerticesDouble[i * 3] ,  tmpVerticesDouble[i * 3 + 1] , tmpVerticesDouble[i * 3 + 2] };
 					if (needTransform) tmpVec = trans * tmpVec;
 
 					if (minBBox.size()) {
@@ -214,7 +219,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 					vertices.push_back(tmpVec);
 				}
 				else {
-					repo::lib::RepoVector3D tmpVec = { tmpVertices[i * 3] ,  tmpVertices[i * 3 + 1] , tmpVertices[i * 3 + 2] };
+					repo::lib::RepoVector3D tmpVec = { tmpVerticesSingle[i * 3] ,  tmpVerticesSingle[i * 3 + 1] , tmpVerticesSingle[i * 3 + 2] };
 					normals.push_back(needTransform ? normalTrans * tmpVec : tmpVec);
 				}
 			}
@@ -299,7 +304,7 @@ void RepoModelImport::createObject(const ptree& tree)
 	node_map.push_back(transNode);
 
 	std::vector<repo::core::model::MetadataNode*> metas;
-	std::vector<repo::lib::RepoUUID> meshSharedIDs;
+	std::vector<repo::lib::RepoUUID> metaParentIDs;
 
 	for(ptree::const_iterator props = tree.begin(); props != tree.end(); props++)
 	{
@@ -311,16 +316,17 @@ void RepoModelImport::createObject(const ptree& tree)
 		if (props->first == REPO_IMPORT_GEOMETRY)
 		{
 			auto mesh = createMeshRecord(props->second, transName, transID, trans_map.back());
-			meshSharedIDs.push_back(mesh.sharedID);
+			metaParentIDs.push_back(mesh.sharedID);
 			meshEntries.push_back(mesh);
 		}
 	}
 
-	repo::lib::RepoUUID metaParentSharedID = transNode->getSharedID();
+	metaParentIDs.push_back(transNode->getSharedID());
 
+	
 	for(auto &meta : metas)
 	{
-		*meta = meta->cloneAndAddParent(meshSharedIDs);
+		*meta = meta->cloneAndAddParent(metaParentIDs);
 	}
 
 	transformations.insert(transNode);
@@ -359,24 +365,26 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 		inbuf->push(*finCompressed);
 
 		fin = new std::istream(inbuf);
+		char *fileVersion = (char*) malloc(sizeof(*fileVersion *  REPO_VERSION_LENGTH));
 
-		const int fileVersionSize = strlen(supportedFileVersion);
-		char *fileVersion = (char*) malloc(sizeof(*fileVersion *  fileVersionSize));
+		fin->read(fileVersion, REPO_VERSION_LENGTH);
 
-		fin->read(fileVersion, fileVersionSize);
+		std::string incomingVersion = fileVersion;
 
-		if (strcmp(fileVersion, supportedFileVersion) != 0)
+		if (supportedFileVersions.find(incomingVersion) == supportedFileVersions.end())
 		{
-			repoError << "Unsupported BIM file version" << fileVersion;
+			repoError << "Unsupported BIM file version: " << fileVersion;
 			err = REPOERR_UNSUPPORTED_BIM_VERSION;
 			return false;
 		}
 
-		repoInfo << "Loading BIM file [VERSION: " << fileVersion << "]";
+		is32Bit = REPO_V1 == incomingVersion;
+
+		repoInfo << "Loading BIM file [VERSION: " << incomingVersion << "] 32 bit? : " << is32Bit;
 
 		delete fileVersion;
 		
-		size_t metaSize = fileVersionSize + sizeof(fileMeta);
+		size_t metaSize = REPO_VERSION_LENGTH + sizeof(fileMeta);
 		// Size of metadata at start
 		fin->read((char*)&file_meta, sizeof(fileMeta));
 
