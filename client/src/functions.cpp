@@ -287,7 +287,7 @@ bool _generateStash(
 		{
 			success = controller->generateAndCommitSelectionTree(token, scene);
 		}
-		
+
 		delete scene;
 	}
 
@@ -494,7 +494,7 @@ int32_t importFileAndCommit(
 			{
 				repoLog("Missing nodes detected!");
 				return REPOERR_LOAD_SCENE_MISSING_NODES;
-			}			
+			}
 			else if (graph->isMissingTexture())
 			{
 				repoLog("Missing texture detected!");
