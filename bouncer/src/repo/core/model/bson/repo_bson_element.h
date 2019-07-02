@@ -32,9 +32,6 @@
 #include "../../../lib/repo_log.h"
 namespace repo {
 	namespace core {
-		namespace handler {
-			class MongoDatabaseHandler;
-		}
 		namespace model {
 			//type of element
 			enum class REPO_API_EXPORT ElementType{
@@ -46,7 +43,7 @@ namespace repo {
 			{
 				friend class RepoBSONBuilder;
 				friend class RepoBSON;
-				friend class repo::core::handler::MongoDatabaseHandler;
+
 			public:
 
 				/**
@@ -117,6 +114,10 @@ namespace repo {
 
 				const char* binData(int length) const {
 					return mongo::BSONElement::binData(length);
+				}
+				
+				mongo::BSONElement toMongoElement() const {
+					return *this;
 				}
 
 				inline bool operator==(const RepoBSONElement & other) {

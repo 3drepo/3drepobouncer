@@ -300,7 +300,7 @@ bool MongoDatabaseHandler::dropDocument(
 			worker = workerPool->getWorker();
 			if (success = worker && !bson.isEmpty() && bson.hasField("_id"))
 			{
-				mongo::Query query = MONGO_QUERY("_id" << bson.getField("_id"));
+				mongo::Query query = MONGO_QUERY("_id" << bson.getField("_id").toMongoElement());
 				worker->remove(database + "." + collection, query, true);
 			}
 			else
