@@ -161,6 +161,12 @@ namespace repo {
 					return mongo::BSONObj::getObjectField(label);
 				}
 
+				double getDoubleField(const std::string &label) const {
+					return  mongo::BSONObj::hasField(label) ?
+						mongo::BSONObj::getField(label).Double() :
+						0.0;
+				}
+
 				bool isEmpty() const {
 					return mongo::BSONObj::isEmpty();
 				}

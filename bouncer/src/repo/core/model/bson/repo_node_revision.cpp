@@ -77,7 +77,7 @@ std::vector<double> RevisionNode::getCoordOffset() const
 		{
 			for (int i = 0; i < 3; ++i)
 			{
-				offset.push_back(offsetObj.getField(std::to_string(i)).Double());
+				offset.push_back(offsetObj.getDoubleField(std::to_string(i)));
 			}
 		}
 		else
@@ -140,7 +140,7 @@ RevisionNode::UploadStatus RevisionNode::getUploadStatus() const
 	UploadStatus status = UploadStatus::COMPLETE;
 	if (hasField(REPO_NODE_REVISION_LABEL_INCOMPLETE))
 	{
-		status = (UploadStatus)getField(REPO_NODE_REVISION_LABEL_INCOMPLETE).Int();
+		status = (UploadStatus)getIntField(REPO_NODE_REVISION_LABEL_INCOMPLETE);
 	}
 
 	return status;

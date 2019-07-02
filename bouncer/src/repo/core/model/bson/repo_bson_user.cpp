@@ -147,9 +147,9 @@ std::string RepoUser::getCleartextPassword() const
 	std::string password;
 	if (hasField(REPO_USER_LABEL_CREDENTIALS))
 	{
-		RepoBSON cred = getField(REPO_USER_LABEL_CREDENTIALS).embeddedObject();
+		RepoBSON cred = getObjectField(REPO_USER_LABEL_CREDENTIALS);
 
-		password = cred.getField(REPO_USER_LABEL_CLEARTEXT).str();
+		password = cred.getStringField(REPO_USER_LABEL_CLEARTEXT);
 	}
 	return password;
 }
@@ -159,7 +159,7 @@ RepoBSON RepoUser::getCustomDataBSON() const
 	RepoBSON customData;
 	if (hasField(REPO_USER_LABEL_CUSTOM_DATA))
 	{
-		customData = getField(REPO_USER_LABEL_CUSTOM_DATA).embeddedObject();
+		customData = getObjectField(REPO_USER_LABEL_CUSTOM_DATA);
 	}
 	return customData;
 }
@@ -170,7 +170,7 @@ RepoBSON RepoUser::getRolesBSON() const
 	RepoBSON roles;
 	if (hasField(REPO_USER_LABEL_ROLES))
 	{
-		roles = getField(REPO_USER_LABEL_ROLES).embeddedObject();
+		roles = getObjectField(REPO_USER_LABEL_ROLES);
 	}
 	return roles;
 }
@@ -180,9 +180,9 @@ std::string RepoUser::getPassword() const
 	std::string password;
 	if (hasField(REPO_USER_LABEL_CREDENTIALS))
 	{
-		RepoBSON cred = getField(REPO_USER_LABEL_CREDENTIALS).embeddedObject();
+		RepoBSON cred = getObjectField(REPO_USER_LABEL_CREDENTIALS);
 
-		password = cred.getField(REPO_USER_LABEL_ENCRYPTION).str();
+		password = cred.getStringField(REPO_USER_LABEL_ENCRYPTION);
 	}
 	return password;
 }

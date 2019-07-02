@@ -1399,7 +1399,7 @@ bool RepoScene::populate(
 		RepoBSON obj = *it;
 		RepoNode *node = NULL;
 
-		std::string nodeType = obj.getField(REPO_NODE_LABEL_TYPE).str();
+		std::string nodeType = obj.getStringField(REPO_NODE_LABEL_TYPE);
 
 		if (REPO_NODE_TYPE_TRANSFORMATION == nodeType)
 		{
