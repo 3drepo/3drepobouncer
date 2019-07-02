@@ -51,7 +51,7 @@ MetadataNode MetadataNode::cloneAndAddMetadata(
 			metaBuilder.appendElementsUnique(metaBson);
 	}
 
-	bsonBuilder << REPO_NODE_LABEL_METADATA << metaBuilder.obj();
+	bsonBuilder.append(REPO_NODE_LABEL_METADATA, metaBuilder.obj());
 	bsonBuilder.appendElementsUnique(*this);
 	return MetadataNode(bsonBuilder.obj(), bigFiles);
 }
@@ -63,10 +63,9 @@ bool MetadataNode::sEqual(const RepoNode &other) const
 		return false;
 	}
 
-	std::set<std::string> fieldNames, otherFieldNames;
-
+	std::set<std::string> fieldNames = getFieldNames(), otherFieldNames = other.getFieldNames();
 	bool match = false;
-	if (match = (getFieldNames(fieldNames) == other.getFieldNames(otherFieldNames)))
+	if (match = ( fieldNames.size() == otherFieldNames.size()))
 	{
 		for (const std::string &fieldName : fieldNames)
 		{

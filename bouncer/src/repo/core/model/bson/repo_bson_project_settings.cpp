@@ -29,7 +29,7 @@ RepoProjectSettings RepoProjectSettings::cloneAndClearStatus() const
 {
 	RepoBSONBuilder builder;
 	builder.appendTimeStamp(REPO_PROJECT_SETTINGS_LABEL_TIMESTAMP);
-	builder << REPO_PROJECT_SETTINGS_LABEL_STATUS << "ok";
+	builder.append(REPO_PROJECT_SETTINGS_LABEL_STATUS, "ok");
 	builder.appendElementsUnique(*this);
 	return builder.obj();
 }
@@ -38,7 +38,7 @@ RepoProjectSettings RepoProjectSettings::cloneAndClearStatus() const
 RepoProjectSettings RepoProjectSettings::cloneAndAddErrorStatus() const
 {
 	RepoBSONBuilder builder;
-	builder << REPO_PROJECT_SETTINGS_LABEL_STATUS << "error";
+	builder.append(REPO_PROJECT_SETTINGS_LABEL_STATUS, "error");
 	builder.appendElementsUnique(*this);
 	return builder.obj();
 }
@@ -59,7 +59,7 @@ RepoProjectSettings RepoProjectSettings::cloneAndMergeProjectSettings
 	currentProperties = currentProperties.removeField(REPO_LABEL_ZFAR);
 
 	propertiesBuilder.appendElementsUnique(currentProperties);
-	newProjBuilder << REPO_LABEL_PROPERTIES << propertiesBuilder.obj();
+	newProjBuilder.append(REPO_LABEL_PROPERTIES, propertiesBuilder.obj());
 
 	newProjBuilder.appendElementsUnique(proj);
 

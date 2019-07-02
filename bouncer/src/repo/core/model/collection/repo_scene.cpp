@@ -1173,7 +1173,7 @@ bool RepoScene::loadRevision(
 	if (headRevision){
 		RepoBSONBuilder critBuilder;
 		critBuilder.append(REPO_NODE_LABEL_SHARED_ID, branch);
-		critBuilder << REPO_NODE_REVISION_LABEL_INCOMPLETE << BSON("$exists" << false);
+		critBuilder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, BSON("$exists" << false));
 
 		bson = handler->findOneByCriteria(databaseName, projectName + "." +
 			revExt, critBuilder.obj(), REPO_NODE_REVISION_LABEL_TIMESTAMP);

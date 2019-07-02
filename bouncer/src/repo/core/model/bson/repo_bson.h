@@ -46,18 +46,32 @@
 
 namespace repo {
 	namespace core {
+		namespace handler {
+			class MongoDatabaseHandler;
+		}
+
 		namespace model {
 			//TODO: Eventually we should inherit from a generic BSON object.
 			//work seems to have been started in here:https://github.com/jbenet/bson-cpp
 			//alternatively we can use a c++ wrapper on https://github.com/mongodb/libbson
-			class REPO_API_EXPORT RepoBSON : public mongo::BSONObj
+			class REPO_API_EXPORT RepoBSON : private mongo::BSONObj
 			{
+				friend class RepoBSONBuilder;
+				friend class repo::core::handler::MongoDatabaseHandler;
 			public:
 
 				/**
 				* Default empty constructor.
 				*/
 				RepoBSON() : mongo::BSONObj() {}
+
+				/**
+				* Constructor from Mongo BSON object.
+				* @param mongo BSON object
+				*/
+				RepoBSON(const RepoBSON &obj,
+					const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping =
+					std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>());
 
 				/**
 				* Constructor from Mongo BSON object.
@@ -105,6 +119,18 @@ namespace repo {
 				{
 					mongo::BSONObj::swap(otherCopy);
 					bigFiles = otherCopy.bigFiles;
+				}				
+
+				bool couldBeArray() const {
+					return mongo::BSONObj::couldBeArray();
+				}
+
+				bool hasField(const std::string &label) const {
+					return mongo::BSONObj::hasField(label);
+				}
+
+				int nFields() const {
+					return mongo::BSONObj::couldBeArray();
 				}
 
 				/**
@@ -120,6 +146,23 @@ namespace repo {
 				RepoBSONElement getField(const std::string &label) const
 				{
 					return RepoBSONElement(mongo::BSONObj::getField(label));
+				}
+
+				bool getBoolField(const std::string &label) const
+				{
+					return mongo::BSONObj::getBoolField (label);
+				}
+
+				std::string getStringField(const std::string &label) const {
+					return mongo::BSONObj::getStringField(label);
+				}
+
+				RepoBSON getObjectField(const std::string &label) const {
+					return mongo::BSONObj::getObjectField(label);
+				}
+
+				bool isEmpty() const {
+					return mongo::BSONObj::isEmpty();
 				}
 
 				/**
@@ -177,7 +220,6 @@ namespace repo {
 
 					return success;
 				}
-
 				/**
 				* Overload of getField function to retreve repo::lib::RepoUUID
 				* @param label name of the field
@@ -199,6 +241,10 @@ namespace repo {
 				*/
 				std::vector<float> getFloatArray(const std::string &label) const;
 
+				int getIntField(const std::string &label) const {
+					return mongo::BSONObj::getIntField(label);
+				}
+
 				/**
 				* Get an array of fields given an element label
 				* @param label name of the array element
@@ -212,6 +258,13 @@ namespace repo {
 				* @return returns timestamp as int64, return -1 if not found
 				*/
 				int64_t getTimeStampField(const std::string &label) const;
+
+
+				std::set<std::string> getFieldNames() const {
+					std::set<std::string> fieldNames;
+					mongo::BSONObj::getFieldNames(fieldNames);
+					return fieldNames;
+				}
 
 				/**
 				* Get a field as a List of string pairs
@@ -252,6 +305,18 @@ namespace repo {
 
 				virtual RepoBSON cloneAndAddFields(
 					const RepoBSON *changes) const;
+
+				bool isValid() const {
+					return mongo::BSONObj::isValid();
+				}
+
+				uint64_t objsize() const {
+					return mongo::BSONObj::objsize();
+				}
+
+				RepoBSON removeField(const std::string &label) const {
+					return mongo::BSONObj::removeField(label);
+				}
 
 			public:
 

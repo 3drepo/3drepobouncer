@@ -21,6 +21,33 @@
 
 using namespace repo::core::model;
 
+RepoBSON::RepoBSON(const RepoBSON &obj,
+	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping) {
+	std::vector<std::pair<std::string, std::string>> existingFiles;
+
+	if (bigFiles.size() > 0)
+	{
+		mongo::BSONObjBuilder builder, arrbuilder;
+
+		for (const auto & pair : bigFiles)
+		{
+			//append field name :file name
+			arrbuilder << pair.first << pair.second.first;
+		}
+
+		if (obj.hasField(REPO_LABEL_OVERSIZED_FILES))
+		{
+			arrbuilder.appendElementsUnique(obj.getObjectField(REPO_LABEL_OVERSIZED_FILES));
+		}
+
+		builder.append(REPO_LABEL_OVERSIZED_FILES, arrbuilder.obj());
+		builder.appendElementsUnique(obj);
+
+		*this = builder.obj();
+		bigFiles = binMapping;
+	}
+}
+
 RepoBSON::RepoBSON(
 	const mongo::BSONObj &obj,
 	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping)
@@ -77,11 +104,9 @@ RepoBSON RepoBSON::cloneAndAddFields(
 
 RepoBSON RepoBSON::cloneAndShrink() const
 {
-	std::set<std::string> fields;
+	std::set<std::string> fields = getFieldNames();
 	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>>> rawFiles(bigFiles.begin(), bigFiles.end());
 	std::string uniqueIDStr = hasField(REPO_LABEL_ID) ? getUUIDField(REPO_LABEL_ID).toString() : repo::lib::RepoUUID::createUUID().toString();
-
-	getFieldNames(fields);
 
 	RepoBSON resultBson = *this;
 
@@ -123,8 +148,7 @@ std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &
 
 		if (!array.isEmpty())
 		{
-			std::set<std::string> fields;
-			array.getFieldNames(fields);
+			std::set<std::string> fields = array.getFieldNames();
 
 			std::set<std::string>::iterator it;
 			for (it = fields.begin(); it != fields.end(); ++it)
@@ -164,8 +188,7 @@ std::vector<std::pair<std::string, std::string>> RepoBSON::getFileList() const
 	{
 		RepoBSON extRefbson = getObjectField(REPO_LABEL_OVERSIZED_FILES);
 
-		std::set<std::string> fieldNames;
-		extRefbson.getFieldNames(fieldNames);
+		std::set<std::string> fieldNames = extRefbson.getFieldNames();
 		for (const auto &name : fieldNames)
 		{
 			fileList.push_back(std::pair<std::string, std::string>(name, extRefbson.getStringField(name)));
@@ -183,8 +206,7 @@ std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
 		RepoBSON array = getObjectField(label);
 		if (!array.isEmpty())
 		{
-			std::set<std::string> fields;
-			array.getFieldNames(fields);
+			std::set<std::string> fields = array.getFieldNames();
 
 			// Pre allocate memory to speed up copying
 			results.reserve(fields.size());

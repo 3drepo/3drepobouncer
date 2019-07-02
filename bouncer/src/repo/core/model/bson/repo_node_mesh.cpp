@@ -45,7 +45,8 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 {
 	if(matrix.isIdentity()) {
 		RepoBSONBuilder builder;
-		return MeshNode(builder.appendElementsUnique(*this), bigFiles);
+		builder.appendElementsUnique(*this);
+		return MeshNode(builder.obj(), bigFiles);
 	}
 
 	std::vector<repo::lib::RepoVector3D> vertices = getVertices();
@@ -151,12 +152,14 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 		outlineBuilder.appendArray("3", outline3);
 		builder.appendArray(REPO_NODE_MESH_LABEL_OUTLINE, outlineBuilder.obj());
 
-		return MeshNode(builder.appendElementsUnique(*this), newBigFiles);
+		builder.appendElementsUnique(*this);
+
+		return MeshNode(builder.obj(), newBigFiles);
 	}
 	else
 	{
 		repoError << "Unable to apply transformation: Cannot find vertices within a mesh!";
-		return  RepoNode(this->copy(), bigFiles);
+		return  RepoNode(*this, bigFiles);
 	}
 }
 
@@ -171,14 +174,13 @@ MeshNode MeshNode::cloneAndUpdateMeshMapping(
 	if (!overwrite && !mapArray.isEmpty())
 	{
 		//if map array isn't empty, find the next index it needs to slot in
-		std::set<std::string> fields;
-		mapArray.getFieldNames(fields);
+		std::set<std::string> fields = mapArray.getFieldNames();
 		index = fields.size();
 	}
 
 	for (uint32_t i = 0; i < vec.size(); ++i)
 	{
-		mapbuilder << std::to_string(index + i) << meshMappingAsBSON(vec[i]);
+		mapbuilder.append(std::to_string(index + i), meshMappingAsBSON(vec[i]));
 	}
 	//append the rest of the array onto this new map bson
 	if (!overwrite) mapbuilder.appendElementsUnique(mapArray);
@@ -290,8 +292,7 @@ std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
 	RepoBSON mapArray = getObjectField(REPO_NODE_MESH_LABEL_MERGE_MAP);
 	if (!mapArray.isEmpty())
 	{
-		std::set<std::string> fields;
-		mapArray.getFieldNames(fields);
+		std::set<std::string> fields = mapArray.getFieldNames();
 		mappings.resize(fields.size());
 		for (const auto &name : fields)
 		{
@@ -423,10 +424,10 @@ RepoBSON MeshNode::meshMappingAsBSON(const repo_mesh_mapping_t  &mapping)
 	RepoBSONBuilder builder;
 	builder.append(REPO_NODE_MESH_LABEL_MAP_ID, mapping.mesh_id);
 	builder.append(REPO_NODE_MESH_LABEL_MATERIAL_ID, mapping.material_id);
-	builder << REPO_NODE_MESH_LABEL_VERTEX_FROM << mapping.vertFrom;
-	builder << REPO_NODE_MESH_LABEL_VERTEX_TO << mapping.vertTo;
-	builder << REPO_NODE_MESH_LABEL_TRIANGLE_FROM << mapping.triFrom;
-	builder << REPO_NODE_MESH_LABEL_TRIANGLE_TO << mapping.triTo;
+	builder.append(REPO_NODE_MESH_LABEL_VERTEX_FROM, mapping.vertFrom);
+	builder.append(REPO_NODE_MESH_LABEL_VERTEX_TO, mapping.vertTo);
+	builder.append(REPO_NODE_MESH_LABEL_TRIANGLE_FROM, mapping.triFrom);
+	builder.append(REPO_NODE_MESH_LABEL_TRIANGLE_TO, mapping.triTo);
 
 	RepoBSONBuilder bbBuilder;
 	bbBuilder.append("0", mapping.min);

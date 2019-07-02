@@ -57,7 +57,6 @@ repo::core::model::RepoNodeSet MetadataImportCSV::readMetadata(
 
 	if (file.is_open())
 	{
-		repoTrace << "Reading... " << path;
 		std::vector<std::string> tokens;
 		while (file.good() && readLine(file, tokens))
 		{
@@ -68,13 +67,9 @@ repo::core::model::RepoNodeSet MetadataImportCSV::readMetadata(
 				repo::core::model::MetadataNode meta =
 					repo::core::model::RepoBSONFactory::makeMetaDataNode(headers, tokens, tokens[0]);
 				metadata.insert(new repo::core::model::MetadataNode(meta));
-
-				repoDebug << " metadata: " << meta.toString();
 			}
 		}
 		file.close();
-
-		repoTrace << "Created " << metadata.size() << " metadata nodes.";
 	}
 	else
 	{

@@ -124,8 +124,7 @@ std::vector<std::string> RevisionNode::getOrgFiles() const
 	{
 		RepoBSON arraybson = getObjectField(REPO_NODE_REVISION_LABEL_REF_FILE);
 
-		std::set<std::string> fields;
-		arraybson.getFieldNames(fields);
+		std::set<std::string> fields = arraybson.getFieldNames();
 
 		for (const auto &field : fields)
 		{

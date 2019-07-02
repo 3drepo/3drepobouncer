@@ -419,7 +419,7 @@ repo::core::model::RepoRole RepoManipulator::findRole(
 	else
 	{
 		repo::core::model::RepoBSONBuilder builder;
-		builder << REPO_LABEL_ROLE << roleName;
+		builder.append(REPO_LABEL_ROLE, roleName);
 
 		role = repo::core::model::RepoRole(
 			handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_ROLES, builder.obj()));
@@ -444,7 +444,7 @@ repo::core::model::RepoUser RepoManipulator::findUser(
 	else
 	{
 		repo::core::model::RepoBSONBuilder builder;
-		builder << REPO_LABEL_USER << username;
+		builder.append(REPO_LABEL_USER, username);
 
 		user = repo::core::model::RepoUser(
 			handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, builder.obj()));
@@ -689,7 +689,7 @@ repo::core::model::RepoRoleSettings RepoManipulator::getRoleSettingByName(
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	repo::core::model::RepoBSONBuilder builder;
-	builder << REPO_LABEL_ID << uniqueRoleName;
+	builder.append(REPO_LABEL_ID, uniqueRoleName);
 	if (handler)
 		settings = repo::core::model::RepoRoleSettings(
 		handler->findOneByCriteria(database, REPO_COLLECTION_SETTINGS_ROLES, builder.obj()));
@@ -1242,7 +1242,6 @@ void RepoManipulator::updateRole(
 		else
 		{
 			repoError << "Failed to update role : " << errMsg;
-			repoTrace << role.toString();
 		}
 	}
 }

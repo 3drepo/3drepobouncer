@@ -54,7 +54,7 @@ RepoNode TransformationNode::cloneAndApplyTransformation(
 		RepoBSONBuilder columns;
 		for (uint32_t j = 0; j < 4; ++j){
 			size_t idx = i * 4 + j;
-			columns << std::to_string(j) << resultData[idx];
+			columns.append(std::to_string(j), resultData[idx]);
 		}
 		rows.appendArray(std::to_string(i), columns.obj());
 	}
@@ -63,7 +63,7 @@ RepoNode TransformationNode::cloneAndApplyTransformation(
 
 	builder.appendElementsUnique(*this);
 
-	return TransformationNode(RepoBSON(builder.obj(), bigFiles));
+	return TransformationNode(RepoBSON(builder.mongoObj(), bigFiles));
 }
 
 TransformationNode TransformationNode::cloneAndResetMatrix() const
@@ -76,7 +76,7 @@ TransformationNode TransformationNode::cloneAndResetMatrix() const
 	{
 		RepoBSONBuilder columns;
 		for (uint32_t j = 0; j < 4; ++j){
-			columns << std::to_string(j) << (i == j ? 1.0 : 0.0);
+			columns.append(std::to_string(j), (i == j ? 1.0 : 0.0));
 		}
 		rows.appendArray(std::to_string(i), columns.obj());
 	}
@@ -84,7 +84,7 @@ TransformationNode TransformationNode::cloneAndResetMatrix() const
 
 	builder.appendElementsUnique(*this);
 
-	return TransformationNode(RepoBSON(builder.obj(), bigFiles));
+	return TransformationNode(RepoBSON(builder.mongoObj(), bigFiles));
 }
 
 std::vector<std::vector<float>> TransformationNode::identityMat()
@@ -116,14 +116,12 @@ repo::lib::RepoMatrix TransformationNode::getTransMatrix(const bool &rowMajor) c
 		RepoBSON matrixObj =
 			getField(REPO_NODE_LABEL_MATRIX).embeddedObject();
 
-		std::set<std::string> mFields;
-		matrixObj.getFieldNames(mFields);
+		std::set<std::string> mFields = matrixObj.getFieldNames();
 		for (auto &field : mFields)
 		{
 			rowInd = std::stoi(field);
 			RepoBSON arrayObj = matrixObj.getField(field).embeddedObject();
-			std::set<std::string> aFields;
-			arrayObj.getFieldNames(aFields);
+			std::set<std::string> aFields = arrayObj.getFieldNames();
 			for (auto &aField : aFields)
 			{
 				colInd = std::stoi(aField);

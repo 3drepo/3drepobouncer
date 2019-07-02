@@ -74,11 +74,11 @@ RepoBSON RepoUser::createQuotaBSON(QuotaLimit quota) const {
 	RepoBSONBuilder quotaBuilder;
 
 	if(quota.unlimitedUsers)
-		quotaBuilder << REPO_USER_LABEL_SUB_COLLABORATOR << REPO_USER_LABAL_SUB_UNLIMITED;
+		quotaBuilder.append(REPO_USER_LABEL_SUB_COLLABORATOR, REPO_USER_LABAL_SUB_UNLIMITED);
 	else
-		quotaBuilder << REPO_USER_LABEL_SUB_COLLABORATOR << quota.collaborators;
+		quotaBuilder.append(REPO_USER_LABEL_SUB_COLLABORATOR, quota.collaborators);
 
-	quotaBuilder << REPO_USER_LABEL_SUB_DATA << quota.data;
+	quotaBuilder.append(REPO_USER_LABEL_SUB_DATA, quota.data);
 	quotaBuilder.appendTime(REPO_USER_LABEL_SUB_EXPIRY_DATE, quota.expiryDate);
 	return quotaBuilder.obj();
 }
@@ -105,21 +105,21 @@ RepoUser RepoUser::cloneAndUpdateSubscriptions(
 	RepoBSONBuilder updatedLicenses, subscriptionsBuilder;
 
 	if (quotaEntryHasQuota(discretionary))
-		updatedLicenses << REPO_USER_LABEL_SUB_DISCRETIONARY << createQuotaBSON(discretionary);
+		updatedLicenses.append(REPO_USER_LABEL_SUB_DISCRETIONARY, createQuotaBSON(discretionary));
 	if (quotaEntryHasQuota(enterprise))
-		updatedLicenses << REPO_USER_LABEL_SUB_ENTERPRISE << createQuotaBSON(enterprise);
+		updatedLicenses.append(REPO_USER_LABEL_SUB_ENTERPRISE, createQuotaBSON(enterprise));
 
 	auto oldSub = getSubscriptionBSON();
 	if (oldSub.hasField(REPO_USER_LABEL_SUB_PAYPAL))
-		updatedLicenses << REPO_USER_LABEL_SUB_PAYPAL << oldSub.getObjectField(REPO_USER_LABEL_SUB_PAYPAL);
+		updatedLicenses.append(REPO_USER_LABEL_SUB_PAYPAL, oldSub.getObjectField(REPO_USER_LABEL_SUB_PAYPAL));
 	
 
 	RepoBSONBuilder newCustomDataBuilder, newUserBSON, billingBuilder;
-	billingBuilder << REPO_USER_LABEL_SUBS << updatedLicenses.obj();
+	billingBuilder.append(REPO_USER_LABEL_SUBS, updatedLicenses.obj());
 	newCustomDataBuilder.append(REPO_USER_LABEL_BILLING, billingBuilder.obj());
 	newCustomDataBuilder.appendElementsUnique(getObjectField(REPO_USER_LABEL_CUSTOM_DATA));
 
-	newUserBSON << REPO_USER_LABEL_CUSTOM_DATA << newCustomDataBuilder.obj();
+	newUserBSON.append(REPO_USER_LABEL_CUSTOM_DATA, newCustomDataBuilder.obj());
 	newUserBSON.appendElementsUnique(*this);
 
 	return newUserBSON.obj();

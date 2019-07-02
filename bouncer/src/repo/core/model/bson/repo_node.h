@@ -107,7 +107,7 @@ namespace repo{
 				virtual RepoNode cloneAndApplyTransformation(
 					const repo::lib::RepoMatrix &matrix) const
 				{
-					return RepoNode(copy(), bigFiles);
+					return RepoNode(*this, bigFiles);
 				}
 
 				/**
