@@ -32,6 +32,9 @@
 #include "../../../lib/repo_log.h"
 namespace repo {
 	namespace core {
+		namespace handler {
+			class MongoDatabaseHandler;
+		}
 		namespace model {
 			//type of element
 			enum class REPO_API_EXPORT ElementType{
@@ -43,6 +46,7 @@ namespace repo {
 			{
 				friend class RepoBSONBuilder;
 				friend class RepoBSON;
+				friend class repo::core::handler::MongoDatabaseHandler;
 			public:
 
 				/**
