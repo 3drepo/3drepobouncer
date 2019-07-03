@@ -24,6 +24,7 @@
 
 using namespace repo::core::model;
 
+static auto mongoTestBSON = BSON("ice" << "lolly" << "amount" << 100);
 static const RepoBSON testBson = RepoBSON(BSON("ice" << "lolly" << "amount" << 100));
 static const RepoBSON emptyBson;
 
@@ -493,13 +494,14 @@ TEST(RepoBSONTest, GetEmbeddedDoubleTest)
 	RepoBSON hasFieldWrongTypeBson(BSON("field" << 1));
 	EXPECT_EQ(hasFieldWrongTypeBson.getEmbeddedDouble("field", "somethingElse"), 0);
 
-	RepoBSON hasFieldNoEmbeddedField(BSON("field" << testBson));
+	
+	RepoBSON hasFieldNoEmbeddedField(BSON("field" << mongoTestBSON));
 	EXPECT_EQ(hasFieldNoEmbeddedField.getEmbeddedDouble("field", "somethingElse"), 0);
 
-	RepoBSON hasEmbeddedFieldWrongType(BSON("field" << testBson));
+	RepoBSON hasEmbeddedFieldWrongType(BSON("field" << mongoTestBSON));
 	EXPECT_EQ(hasEmbeddedFieldWrongType.getEmbeddedDouble("field", "ice"), 0);
 
-	RepoBSON expectNumber(BSON("field" << testBson));
+	RepoBSON expectNumber(BSON("field" << mongoTestBSON));
 	EXPECT_EQ(expectNumber.getEmbeddedDouble("field", "amount"), 100);
 
 	auto innerBson = BSON("amount" << 1.10101);
@@ -514,7 +516,7 @@ TEST(RepoBSONTest, HasEmbeddedFieldTest)
 	RepoBSON hasFieldWrongTypeBson(BSON("field" << 1));
 	EXPECT_FALSE(hasFieldWrongTypeBson.hasEmbeddedField("field", "bye"));
 
-	RepoBSON expectTrue(BSON("field" << testBson));
+	RepoBSON expectTrue(BSON("field" << mongoTestBSON));
 	EXPECT_TRUE(expectTrue.hasEmbeddedField("field", "ice"));
 	EXPECT_FALSE(expectTrue.hasEmbeddedField("field", "NonExistent"));
 }
