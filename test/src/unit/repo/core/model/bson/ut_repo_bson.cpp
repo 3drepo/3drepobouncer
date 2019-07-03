@@ -51,9 +51,9 @@ TEST(RepoBSONTest, GetField)
 	EXPECT_EQ(testBson.getField("ice"), testBson.getField("ice"));
 	EXPECT_NE(testBson.getField("ice"), testBson.getField("amount"));
 
-	EXPECT_EQ("lolly", testBson.getField("ice").str());
-	EXPECT_EQ(100, testBson.getField("amount").Int());
-	EXPECT_TRUE(emptyBson.getField("hello").eoo());
+	EXPECT_EQ("lolly", testBson.getStringField("ice"));
+	EXPECT_EQ(100, testBson.getIntField("amount"));
+	EXPECT_TRUE(emptyBson.getField("hello").isNull());
 }
 
 TEST(RepoBSONTest, GetBinaryAsVectorEmbedded)

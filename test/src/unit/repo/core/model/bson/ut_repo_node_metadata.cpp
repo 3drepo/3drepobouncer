@@ -101,9 +101,7 @@ TEST(MetaNodeTest, CloneAndAddMetadataTest)
 
 	auto resMeta = updatedMeta2.getObjectField(REPO_NODE_LABEL_METADATA);
 
-	std::set<std::string> fieldNames1, fieldNames2;
-	meta1.getFieldNames(fieldNames1);
-	meta2.getFieldNames(fieldNames2);
+	std::set<std::string> fieldNames1 = meta1.getFieldNames(), fieldNames2 = meta2.getFieldNames();
 
 	for (const auto &fieldName : fieldNames1)
 	{

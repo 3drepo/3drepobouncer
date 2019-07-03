@@ -324,6 +324,14 @@ namespace repo {
 					return mongo::BSONObj::removeField(label);
 				}
 
+				std::string toString() const {
+					return mongo::BSONObj::toString();
+				}
+
+				inline bool operator!=(const RepoBSON other) const {
+					return mongo::BSONObj::operator!=(other);
+				}
+
 			public:
 
 				/*

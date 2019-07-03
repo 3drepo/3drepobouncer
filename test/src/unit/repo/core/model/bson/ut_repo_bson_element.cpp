@@ -31,14 +31,14 @@ TEST(RepoBSONElementTest, ConstructorTest)
 {
 	RepoBSONElement empty;
 
-	EXPECT_TRUE(empty.eoo());
+	EXPECT_TRUE(empty.isNull());
 
 	auto mongoBson = BSON("stringField" << "String" << "IntField" << std::rand() << "DoubleField" << (double)std::rand() / 100. << "BoolField" << true);
 
 	EXPECT_EQ(mongoBson.getField("stringField").String(), RepoBSONElement(mongoBson.getField("stringField")).String());
 	EXPECT_EQ(mongoBson.getField("IntField").Int(), RepoBSONElement(mongoBson.getField("IntField")).Int());
 	EXPECT_EQ(mongoBson.getField("DoubleField").Double(), RepoBSONElement(mongoBson.getField("DoubleField")).Double());
-	EXPECT_EQ(mongoBson.getField("BoolField").Bool(), RepoBSONElement(mongoBson.getField("BoolField")).Bool());
+	EXPECT_EQ(mongoBson.getBoolField("BoolField"), RepoBSONElement(mongoBson.getField("BoolField")).Bool());
 }
 
 TEST(RepoBSONElementTest, TypeTest)

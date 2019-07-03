@@ -100,8 +100,16 @@ namespace repo {
 					return mongo::BSONElement::date();
 				}
 
+				bool Bool() const {
+					return mongo::BSONElement::Bool();
+				}
+
 				int Int() const{
 					return mongo::BSONElement::Int();
+				}
+
+				long long Long() const {
+					return mongo::BSONElement::Long();
 				}
 
 				double Double() const {
@@ -120,8 +128,20 @@ namespace repo {
 					return *this;
 				}
 
-				inline bool operator==(const RepoBSONElement & other) {
+				inline bool operator==(const RepoBSONElement & other) const {
 					return mongo::BSONElement::operator==(other);
+				}
+
+				inline bool operator!=(const RepoBSONElement other) const {
+					return mongo::BSONElement::operator!=(other);
+				}
+
+				std::string toString() const {
+					return mongo::BSONElement::toString();
+				}
+
+				bool isNull() const {
+					return mongo::BSONElement::isNull();
 				}
 			};
 		}// end namespace model

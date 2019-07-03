@@ -199,8 +199,8 @@ TEST(RepoBSONFactoryTest, AppendDefaultsTest)
 
 	RepoBSONBuilder builderWithFields;
 
-	builderWithFields << "Number" << 1023;
-	builderWithFields << "doll" << "Kitty";
+	builderWithFields.append("Number", 1023);
+	builderWithFields.append("doll", "Kitty");
 
 	auto defaults2 = RepoBSONFactory::appendDefaults("test");
 	builderWithFields.appendElements(defaults2);

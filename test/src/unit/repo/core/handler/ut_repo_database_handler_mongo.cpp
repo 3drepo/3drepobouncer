@@ -456,8 +456,7 @@ TEST(MongoDatabaseHandlerTest, InsertDocument)
 	repo::core::model::RepoBSON result = handler->findOneByCriteria(database, collection, testCase);
 	EXPECT_FALSE(result.isEmpty());
 
-	std::set<std::string> fields;
-	result.getFieldNames(fields);
+	std::set<std::string> fields = result.getFieldNames();
 	for (const auto &fname : fields)
 	{
 		ASSERT_TRUE(testCase.hasField(fname));
@@ -528,8 +527,7 @@ TEST(MongoDatabaseHandlerTest, InsertRole)
 	repo::core::model::RepoBSON result = handler->findOneByCriteria("admin", "system.roles", roleTest);
 	EXPECT_FALSE(result.isEmpty());
 
-	std::set<std::string> fields;
-	roleTest.getFieldNames(fields);
+	std::set<std::string> fields = roleTest.getFieldNames();
 	for (const auto &fname : fields)
 	{
 		ASSERT_TRUE(result.hasField(fname));
@@ -595,8 +593,7 @@ TEST(MongoDatabaseHandlerTest, UpsertDocument)
 	repo::core::model::RepoBSON result = handler->findOneByCriteria(database, collection, testCase);
 	EXPECT_FALSE(result.isEmpty());
 
-	std::set<std::string> fields;
-	result.getFieldNames(fields);
+	std::set<std::string> fields = result.getFieldNames();
 	for (const auto &fname : fields)
 	{
 		ASSERT_TRUE(testCase.hasField(fname));

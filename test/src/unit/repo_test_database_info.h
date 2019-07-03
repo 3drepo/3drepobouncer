@@ -230,7 +230,7 @@ static std::pair<std::pair<std::string, std::string>, mongo::BSONObj> getDataFor
 	result.first = { "sampleDataRW", "collectionToDrop" };
 	repo::core::model::RepoBSONBuilder builder;
 	builder.append("_id", repo::lib::RepoUUID("0ab45528-9258-421a-927c-c51bf40fc478"));
-	result.second = builder.obj();
+	result.second = builder.mongoObj();
 
 	return result;
 }
