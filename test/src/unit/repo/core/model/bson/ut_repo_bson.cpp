@@ -72,7 +72,7 @@ TEST(RepoBSONTest, GetBinaryAsVectorEmbedded)
 	builder << "numTest" << 1.35;
 	builder.appendBinData("binDataTest", in.size(), mongo::BinDataGeneral, &in[0]);
 
-	RepoBSON bson(builder);
+	RepoBSON bson(builder.obj());
 
 	EXPECT_TRUE(bson.getBinaryFieldAsVector("binDataTest", out));
 
