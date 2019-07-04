@@ -328,6 +328,11 @@ namespace repo {
 					return mongo::BSONObj::toString();
 				}
 
+
+				inline bool operator==(const RepoBSON other) const {
+					return mongo::BSONObj::operator==(other);
+				}
+
 				inline bool operator!=(const RepoBSON other) const {
 					return mongo::BSONObj::operator!=(other);
 				}
