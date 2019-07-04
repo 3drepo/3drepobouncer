@@ -42,7 +42,6 @@ TEST(RepoBSONTest, ConstructFromMongo)
 	RepoBSON bson2(builder);
 	RepoBSON bsonDiff(BSON("something" << "different"));
 
-	EXPECT_EQ(bson1, bson2);
 	EXPECT_EQ(bson1.toString(), bson2.toString());
 	EXPECT_NE(bson1, bsonDiff);
 }
