@@ -120,7 +120,7 @@ namespace repo {
 					return mongo::BSONElement::size();
 				}
 
-				const char* binData(int length) const {
+				const char* binData(int &length) const {
 					return mongo::BSONElement::binData(length);
 				}
 				
