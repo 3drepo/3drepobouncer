@@ -678,24 +678,6 @@ std::list<std::string> RepoManipulator::getAdminDatabaseRoles(
 	return roles;
 }
 
-repo::core::model::RepoRoleSettings RepoManipulator::getRoleSettingByName(
-	const std::string                   &databaseAd,
-	const repo::core::model::RepoBSON	*cred,
-	const std::string					&database,
-	const std::string					&uniqueRoleName
-	)
-{
-	repo::core::model::RepoRoleSettings settings;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	repo::core::model::RepoBSONBuilder builder;
-	builder.append(REPO_LABEL_ID, uniqueRoleName);
-	if (handler)
-		settings = repo::core::model::RepoRoleSettings(
-		handler->findOneByCriteria(database, REPO_COLLECTION_SETTINGS_ROLES, builder.obj()));
-	return settings;
-}
-
 std::shared_ptr<repo_partitioning_tree_t>
 RepoManipulator::getScenePartitioning(
 const repo::core::model::RepoScene *scene,

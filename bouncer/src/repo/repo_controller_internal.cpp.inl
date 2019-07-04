@@ -352,41 +352,6 @@ std::vector < repo::core::model::RepoRole > RepoController::_RepoControllerImpl:
 
 	return roles;
 }
-
-std::vector < repo::core::model::RepoRoleSettings > RepoController::_RepoControllerImpl::getRoleSettingsFromDatabase(
-	const RepoController::RepoToken              *token,
-	const std::string            &database,
-	const uint64_t               &skip,
-	const uint32_t               &limit)
-{
-	auto bsons = getAllFromCollectionContinuous(token, database, REPO_COLLECTION_SETTINGS_ROLES, skip, limit);
-	std::vector<repo::core::model::RepoRoleSettings > roleSettings;
-	for (const auto &b : bsons)
-	{
-		roleSettings.push_back(repo::core::model::RepoRoleSettings(b));
-	}
-	return roleSettings;
-}
-
-repo::core::model::RepoRoleSettings RepoController::_RepoControllerImpl::getRoleSettings(
-	const RepoController::RepoToken *token,
-	const std::string &database,
-	const std::string &uniqueRoleName)
-{
-	repo::core::model::RepoRoleSettings res;
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		res = worker->getRoleSettingByName(token->databaseAd, token->getCredentials(), database, uniqueRoleName);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to retrieve Role setting from database without a valid token!";
-	}
-	return res;
-}
-
 std::list<std::string> RepoController::_RepoControllerImpl::getDatabases(const RepoController::RepoToken *token)
 {
 	repoTrace << "Controller: Fetching Database....";

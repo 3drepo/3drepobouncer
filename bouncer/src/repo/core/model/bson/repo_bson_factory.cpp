@@ -696,34 +696,6 @@ RepoRef RepoBSONFactory::makeRepoRef(
 	return RepoRef(builder.obj());
 }
 
-RepoRoleSettings RepoBSONFactory::makeRepoRoleSettings(
-	const std::string &uniqueRoleName,
-	const std::string &color,
-	const std::string &description,
-	const std::vector<std::string> &modules)
-{
-	RepoBSONBuilder builder;
-
-	//--------------------------------------------------------------------------
-	// Project name
-	if (!uniqueRoleName.empty())
-		builder.append(REPO_LABEL_ID, uniqueRoleName);
-
-	// Color
-	if (!color.empty())
-		builder.append(REPO_LABEL_COLOR, color);
-
-	// Description
-	if (!description.empty())
-		builder.append(REPO_LABEL_DESCRIPTION, description);
-
-	// Modules
-	if (modules.size() > 0)
-		builder.appendArray(REPO_LABEL_MODULES, modules);
-
-	return RepoRoleSettings(builder.obj());
-}
-
 RepoUser RepoBSONFactory::makeRepoUser(
 	const std::string                           &userName,
 	const std::string                           &password,

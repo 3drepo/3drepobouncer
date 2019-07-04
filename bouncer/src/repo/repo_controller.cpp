@@ -149,30 +149,6 @@ std::vector < repo::core::model::RepoRole > RepoController::getRolesFromDatabase
 	return impl->getRolesFromDatabase(token, database, skip, limit);
 }
 
-std::vector < repo::core::model::RepoRoleSettings > RepoController::getRoleSettingsFromDatabase(
-	const RepoController::RepoToken              *token,
-	const std::string            &database,
-	const uint64_t               &skip,
-	const uint32_t               &limit)
-{
-	return impl->getRoleSettingsFromDatabase(token, database, skip, limit);
-}
-
-repo::core::model::RepoRoleSettings RepoController::getRoleSettings(
-	const RepoController::RepoToken *token,
-	const repo::core::model::RepoRole &role)
-{
-	return getRoleSettings(token, role.getDatabase(), role.getName());
-}
-
-repo::core::model::RepoRoleSettings RepoController::getRoleSettings(
-	const RepoController::RepoToken *token,
-	const std::string &database,
-	const std::string &uniqueRoleName)
-{
-	return impl->getRoleSettings(token, database, uniqueRoleName);
-}
-
 std::list<std::string> RepoController::getDatabases(const RepoController::RepoToken *token)
 {
 	return impl->getDatabases(token);

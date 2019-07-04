@@ -23,7 +23,6 @@
 #include <map>
 #include <string>
 
-#include "../core/model/bson/repo_bson_role_settings.h"
 #include "../core/model/bson/repo_node_reference.h"
 #include "../core/model/bson/repo_node_transformation.h"
 #include "../core/model/bson/repo_node_mesh.h"
@@ -442,19 +441,6 @@ namespace repo{
 			std::list<std::string> getAdminDatabaseRoles(
 				const std::string                     &databaseAd);
 
-			/**
-			* Get a role settings within a database
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
-			* @param database name of database
-			* @param uniqueRoleName name of the role to look for
-			*/
-			repo::core::model::RepoRoleSettings getRoleSettingByName(
-				const std::string                   &databaseAd,
-				const repo::core::model::RepoBSON	*cred,
-				const std::string					&database,
-				const std::string					&uniqueRoleName
-				);
 
 			/**
 			* Get a hierachical spatial partitioning in form of a tree
