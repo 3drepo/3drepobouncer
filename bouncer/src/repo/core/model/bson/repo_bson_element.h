@@ -140,6 +140,10 @@ namespace repo {
 					return mongo::BSONElement::toString();
 				}
 
+				bool eoo() const {
+					return mongo::BSONElement::eoo();
+				}
+
 				bool isNull() const {
 					return mongo::BSONElement::isNull();
 				}

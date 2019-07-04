@@ -31,7 +31,7 @@ TEST(RepoBSONElementTest, ConstructorTest)
 {
 	RepoBSONElement empty;
 
-	EXPECT_TRUE(empty.isNull());
+	EXPECT_TRUE(empty.eoo());
 
 	auto mongoBson = BSON("stringField" << "String" << "IntField" << std::rand() << "DoubleField" << (double)std::rand() / 100. << "BoolField" << true);
 
