@@ -22,8 +22,10 @@
 using namespace repo::core::model;
 
 RepoBSON::RepoBSON(const RepoBSON &obj,
-	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping) {
-	std::vector<std::pair<std::string, std::string>> existingFiles;
+	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping) : 
+	mongo::BSONObj(obj),
+	bigFiles(binMapping) {
+	auto existingFiles = obj.getFilesMapping();
 
 	if (bigFiles.size() > 0)
 	{
@@ -46,6 +48,13 @@ RepoBSON::RepoBSON(const RepoBSON &obj,
 		*this = builder.obj();
 		bigFiles = binMapping;
 	}
+
+	for (const auto &pair : existingFiles) {
+		if (bigFiles.find(pair.first) == bigFiles.end()) {
+			bigFiles[pair.first] = pair.second;
+		}
+	}
+
 }
 
 RepoBSON::RepoBSON(
@@ -54,8 +63,7 @@ RepoBSON::RepoBSON(
 	: mongo::BSONObj(obj),
 	bigFiles(binMapping)
 {
-	std::vector<std::pair<std::string, std::string>> existingFiles;
-
+	
 	if (bigFiles.size() > 0)
 	{
 		mongo::BSONObjBuilder builder, arrbuilder;
@@ -108,7 +116,7 @@ RepoBSON RepoBSON::cloneAndShrink() const
 	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>>> rawFiles(bigFiles.begin(), bigFiles.end());
 	std::string uniqueIDStr = hasField(REPO_LABEL_ID) ? getUUIDField(REPO_LABEL_ID).toString() : repo::lib::RepoUUID::createUUID().toString();
 
-	RepoBSON resultBson = *this;
+	RepoBSON resultBson = *this;	
 
 	for (const std::string &field : fields)
 	{
@@ -120,7 +128,6 @@ RepoBSON RepoBSON::cloneAndShrink() const
 			resultBson = resultBson.removeField(field);
 		}
 	}
-
 	return RepoBSON(resultBson, rawFiles);
 }
 
