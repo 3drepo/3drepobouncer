@@ -297,6 +297,17 @@ double RepoBSON::getEmbeddedDouble(
 	return value;
 }
 
+double RepoBSON::getDoubleField(const std::string &label) const {
+	double ret = 0.0;
+	if (mongo::BSONObj::hasField(label)) {
+		auto field = mongo::BSONObj::getField(label);
+		if (field.type() == mongo::BSONType::NumberDouble)
+			ret = field.Double();
+	}
+
+	return ret;
+}
+
 bool RepoBSON::hasEmbeddedField(
 	const std::string &embeddedObjName,
 	const std::string &fieldName) const
