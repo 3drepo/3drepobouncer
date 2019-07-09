@@ -24,7 +24,7 @@
 
 using namespace repo::core::model;
 
-static auto mongoTestBSON = BSON("ice" << "lolly" << "amount" << 100);
+static auto mongoTestBSON = BSON("ice" << "lolly" << "amount" << 100.0);
 static const RepoBSON testBson = RepoBSON(BSON("ice" << "lolly" << "amount" << 100));
 static const RepoBSON emptyBson;
 
