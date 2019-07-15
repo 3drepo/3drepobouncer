@@ -130,7 +130,7 @@ namespace repo {
 				}
 
 				int nFields() const {
-					return mongo::BSONObj::couldBeArray();
+					return mongo::BSONObj::nFields();
 				}
 
 				/**
