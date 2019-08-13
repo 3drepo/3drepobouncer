@@ -87,10 +87,10 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 }
 
 std::string DataProcessorRvt::translateMetadataValue(
-	const OdTfVariant& val, 
-	OdBmLabelUtilsPEPtr labelUtils, 
-	OdBmParamDefPtr paramDef, 
-	OdBmDatabase* database, 
+	const OdTfVariant& val,
+	OdBmLabelUtilsPEPtr labelUtils,
+	OdBmParamDefPtr paramDef,
+	OdBmDatabase* database,
 	OdBm::BuiltInParameterDefinition::Enum param)
 {
 	std::string strOut;
@@ -547,7 +547,7 @@ void DataProcessorRvt::establishProjectTranslation(OdBmDatabase* pDb)
 				OdGeMatrix3d alignedLocation;
 				alignedLocation.setToAlignCoordSys(activeOrigin, activeX, activeY, activeZ, projectOrigin, projectX, projectY, projectZ);
 
-				auto scaleCoef = 1.0 / BmUnitUtils::getDisplayUnitTypeInfo(getUnits(database))->inIntUnitsCoeff;
+				auto scaleCoef = 1.0 / OdBmUnitUtils::getDisplayUnitTypeInfo(getUnits(database))->inIntUnitsCoeff;
 				convertTo3DRepoWorldCoorindates = [activeOrigin, alignedLocation, scaleCoef](OdGePoint3d point) {
 					auto convertedPoint = (point - activeOrigin).transformBy(alignedLocation);
 					return repo::lib::RepoVector3D64(convertedPoint.x * scaleCoef, convertedPoint.y * scaleCoef, convertedPoint.z * scaleCoef);
