@@ -43,7 +43,7 @@ before_install:
     - tar -zxf testData/bouncer/ext_libs/ifcopenshell.tgz
     - sudo apt-get install libvtk5-dev libxmu-dev libxi-dev
     - echo ============ TEIGHA INSTALL =============
-    - wget $TEIGHA_LIBS
+    - wget $TEIGHA_LIBS_20_5
     - tar -zxf teighaLinuxGCC4.9.tgz
     - ls teighaLinuxGCC4.9/Kernel/Include
     - echo ============ AWS SDK INSTALL =============
