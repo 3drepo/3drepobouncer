@@ -58,7 +58,7 @@ before_script:
     - export IFCOPENSHELL_ROOT=$PWD/../IfcOpenShell
     - export ODA_ROOT=$PWD/../teighaLinuxGCC5.3
     - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_5.3dll/
-    - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_BUILD_TYPE=Release ../
+    - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_CXX_STANDARD=11 -DCMAKE_BUILD_TYPE=Release ../
     - mongo mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
 script:
     - sudo make -j2 install
