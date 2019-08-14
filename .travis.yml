@@ -19,7 +19,6 @@ before_install:
     - mongod --version
     - mkdir testData && cd testData
     - svn --no-auth-cache export --username $TESTUSER --password $TESTPW https://github.com/3drepo/tests/trunk/cplusplus/bouncer
-    - ls
     - cd ../
     - mkdir data
     - mongod --dbpath data &
@@ -40,7 +39,7 @@ before_install:
     - echo ============ IFCOPENSHELL INSTALL =============
     - tar -zxf testData/bouncer/ext_libs/xenial/OCCT.tgz
     - tar -zxf testData/bouncer/ext_libs/xenial/IfcOpenShell.tgz
-    - sudo apt-get install libvtk5-dev libxmu-dev libxi-dev
+    - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev
     - echo ============ TEIGHA INSTALL =============
     - wget $TEIGHA_LIBS_20_5
     - tar -zxf teighaLinuxGCC5.3.tgz
