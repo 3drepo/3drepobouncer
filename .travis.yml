@@ -1,4 +1,3 @@
-dist: trusty
 language: cpp
 
 compiler:
@@ -10,8 +9,8 @@ addons:
         sources:
             - ubuntu-toolchain-r-test
         packages:
-            - gcc-4.9
-            - g++-4.9
+            - gcc
+            - g++
 
 before_install:
     #- echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list
@@ -28,25 +27,25 @@ before_install:
     - cd  testData/bouncer/data/database/
     - mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin --quiet
     - cd ../../../../
-    - export CXX="g++-4.9"
-    - export CC="gcc-4.9"
-    - sudo ln -sf /usr/bin/gcov-4.9 /usr/bin/gcov
+    - export CXX="g++"
+    - export CC="gcc"
     - gcov --version
     - echo ============ BOOST  INSTALL =============
-    - sudo add-apt-repository -y ppa:samuel-bachmann/boost
-    - sudo apt-get update
-    - sudo apt-get install libboost1.60-all-dev
+      #    - sudo add-apt-repository -y ppa:samuel-bachmann/boost
+      #    - sudo apt-get update
+      #    - sudo apt-get install libboost1.60-all-dev
+    - sudo apt-get install libboost-all-dev
     - echo ============ MONGO  INSTALL =============
-    - tar -zxf testData/bouncer/ext_libs/mongo-cxx-1.1.0.tgz
+    - tar -zxf testData/bouncer/ext_libs/xenial/mongo-cxx-driver.tgz
     - echo ============ ASSIMP INSTALL =============
-    - tar -zxf testData/bouncer/ext_libs/assimp-install.tgz
+    - tar -zxf testData/bouncer/ext_libs/xenial/assimp.tgz
     - echo ============ IFCOPENSHELL INSTALL =============
-    - tar -zxf testData/bouncer/ext_libs/occt.tgz
-    - tar -zxf testData/bouncer/ext_libs/ifcopenshell.tgz
-    - sudo apt-get install libvtk5-dev libxmu-dev libxmu-dev libxi-dev
+    - tar -zxf testData/bouncer/ext_libs/xenial/OCCT.tgz
+    - tar -zxf testData/bouncer/ext_libs/xenial/IfcOpenShell.tgz
+    - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev
     - echo ============ TEIGHA INSTALL =============
-    - wget $TEIGHA_LIBS_20_5
-    - tar -zxf teighaLinuxGCC4.9.tgz
+    - wget $TEIGHA_LIBS_20_5_XENIAL
+    - tar -zxf teighaLinuxGCC5.3.tgz
     - ls teighaLinuxGCC4.9/Kernel/Include
 
 install:
@@ -55,19 +54,19 @@ services:
     - mongodb
 before_script:
     - mkdir build && cd build
-    - export MONGO_ROOT=$PWD/../mongo-cxx-1.1.0
-    - export ASSIMP_ROOT=$PWD/../assimp-install
-    - export OCCT_ROOT=$PWD/../occt-install
-    - export IFCOPENSHELL_ROOT=$PWD/../ifcopenshell
-    - export ODA_ROOT=$PWD/../teighaLinuxGCC4.9
-    - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_4.9dll/
+    - export MONGO_ROOT=$PWD/../mongo-cxx-driver
+    - export ASSIMP_ROOT=$PWD/../assimp
+    - export OCCT_ROOT=$PWD/../OCCT
+    - export IFCOPENSHELL_ROOT=$PWD/../IfcOpenShell
+    - export ODA_ROOT=$PWD/../teighaLinuxGCC5.3
+    - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_5.3dll/
     - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_CXX_STANDARD=11 -DCMAKE_BUILD_TYPE=Release ../
     - mongo mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
 script:
     - sudo make -j2 install
     - export REPO_MODEL_PATH=$PWD/../testData/bouncer/data/models
     - for f in $REPO_MODEL_PATH/*.json; do sed -i.bak -e 's|$REPO_MODEL_PATH|'$REPO_MODEL_PATH'|g' $f; done
-    - LD_LIBRARY_PATH=$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$ODA_ROOT/bin/lnxX64_4.9dll/:$LD_LIBRARY_PATH 3drepobouncerTest
+    - LD_LIBRARY_PATH=$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$ODA_ROOT/bin/lnxX64_5.3dll/:$LD_LIBRARY_PATH 3drepobouncerTest
 after_success:
     - coveralls --root ../ -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0" -e "aws-install"
 notifications:
