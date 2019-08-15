@@ -44,7 +44,7 @@ before_install:
     - echo $PWD
     - cd IfcOpenShell
     - mkdir build && cd build
-    - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=11 -DCOLLADA_SUPPORT=off -DBUILD_CONVERT=off -DBUILD_GEOMSERVER=off -DCMAKE_INSTALL_PREFIX=~/IfcOpenShell -DUNICODE_SUPPORT=off -DOCC_INCLUDE_DIR=$PWD/../../OCCT/include/opencascade -DOCC_LIBRARY_DIR=$PWD/../../OCCT/lib  ../cmake
+    - cmake -DBUILD_IFCPYTHON=off -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=11 -DCOLLADA_SUPPORT=off -DBUILD_CONVERT=off -DBUILD_GEOMSERVER=off -DCMAKE_INSTALL_PREFIX=~/IfcOpenShell -DUNICODE_SUPPORT=off -DOCC_INCLUDE_DIR=$PWD/../../OCCT/include/opencascade -DOCC_LIBRARY_DIR=$PWD/../../OCCT/lib  ../cmake
     - make install -j2
     - cd ../../
     - echo ============ TEIGHA INSTALL =============
