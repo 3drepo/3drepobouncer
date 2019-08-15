@@ -67,7 +67,7 @@ script:
     - sudo make -j2 install
     - export REPO_MODEL_PATH=$PWD/../testData/bouncer/data/models
     - for f in $REPO_MODEL_PATH/*.json; do sed -i.bak -e 's|$REPO_MODEL_PATH|'$REPO_MODEL_PATH'|g' $f; done
-    - LD_LIBRARY_PATH=$AWSSDK_ROOT/lib/:$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$ODA_ROOT/bin/lnxX64_4.9dll/:$LD_LIBRARY_PATH 3drepobouncerTest
+    - LD_LIBRARY_PATH=$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$ODA_ROOT/bin/lnxX64_4.9dll/:$LD_LIBRARY_PATH 3drepobouncerTest
 after_success:
     - coveralls --root ../ -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0" -e "aws-install"
 notifications:
