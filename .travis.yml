@@ -1,3 +1,4 @@
+dist: trusty
 language: cpp
 
 compiler:
@@ -25,7 +26,7 @@ before_install:
     - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
     - mongo admin testData/bouncer/createUser.js
     - cd  testData/bouncer/data/database/
-    - mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin
+    - mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin --quiet
     - cd ../../../../
     - export CXX="g++-4.9"
     - export CC="gcc-4.9"
@@ -34,7 +35,7 @@ before_install:
     - echo ============ BOOST  INSTALL =============
     - sudo apt-get install libboost-all-dev
     - echo ============ MONGO  INSTALL =============
-    - tar -zxf testData/bouncer/ext_libs/xenial/mongo-cxx-driver.tgz
+    - tar -zxf testData/bouncer/ext_libs/mongo-cxx-1.1.0.tgz
     - echo ============ ASSIMP INSTALL =============
     - tar -zxf testData/bouncer/ext_libs/assimp-install.tgz
     - echo ============ IFCOPENSHELL INSTALL =============
@@ -52,7 +53,7 @@ services:
     - mongodb
 before_script:
     - mkdir build && cd build
-    - export MONGO_ROOT=$PWD/../mongo-cxx-driver
+    - export MONGO_ROOT=$PWD/../mongo-cxx-1.1.0
     - export ASSIMP_ROOT=$PWD/../assimp-install
     - export OCCT_ROOT=$PWD/../occt-install
     - export IFCOPENSHELL_ROOT=$PWD/../ifcopenshell
