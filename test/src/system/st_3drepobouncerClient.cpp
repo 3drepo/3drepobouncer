@@ -307,16 +307,16 @@ TEST(RepoClientTest, UploadTestRVTRegressionTests)
 
 	// Regression tests for fixed bugs
 	std::string rvtUpload4 = produceUploadArgs(db, "rvtTest4", getDataPath(rvtRoofTest));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload4));
-	EXPECT_FALSE(projectExists(db, "rvtTest4"));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(rvtUpload4));
+	EXPECT_TRUE(projectExists(db, "rvtTest4"));
 	
 	std::string rvtUpload5 = produceUploadArgs(db, "rvtTest5", getDataPath(rvtMeta1));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload5));
-	EXPECT_FALSE(projectExists(db, "rvtTest5"));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(rvtUpload5));
+	EXPECT_TRUE(projectExists(db, "rvtTest5"));
 
 	std::string rvtUpload6 = produceUploadArgs(db, "rvtTest6", getDataPath(rvtMeta2));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload6));
-	EXPECT_FALSE(projectExists(db, "rvtTest6"));
+	EXPECT_TRUE(projectExists(db, "rvtTest6"));
 }
 
 
