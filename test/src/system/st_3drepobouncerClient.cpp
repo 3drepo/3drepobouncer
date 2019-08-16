@@ -275,7 +275,6 @@ TEST(RepoClientTest, UploadTestRVT)
 	ASSERT_TRUE(system(nullptr));
 	std::string db = "stUpload";
 
-
 	//Upload RVT file
 	std::string rvtUpload = produceUploadArgs(db, "rvtTest", getDataPath(rvtModel));
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(rvtUpload));
@@ -298,21 +297,27 @@ TEST(RepoClientTest, UploadTestRVT)
 	EXPECT_EQ((int)REPOERR_VALID_3D_VIEW_NOT_FOUND, runProcess(rvtUpload3));
 	EXPECT_FALSE(projectExists(db, "rvtTest3"));
 
+}
+
+
+TEST(RepoClientTest, UploadTestRVTRegressionTests)
+{
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
+
 	// Regression tests for fixed bugs
-	/*std::string rvtUpload4 = produceUploadArgs(db, "rvtTest4", getDataPath(rvtRoofTest));
+	std::string rvtUpload4 = produceUploadArgs(db, "rvtTest4", getDataPath(rvtRoofTest));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload4));
-	EXPECT_FALSE(projectExists(db, "rvtTest4"));*/
-	/*
+	EXPECT_FALSE(projectExists(db, "rvtTest4"));
+	
 	std::string rvtUpload5 = produceUploadArgs(db, "rvtTest5", getDataPath(rvtMeta1));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload5));
 	EXPECT_FALSE(projectExists(db, "rvtTest5"));
-	
+
 	std::string rvtUpload6 = produceUploadArgs(db, "rvtTest6", getDataPath(rvtMeta2));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload6));
-	EXPECT_FALSE(projectExists(db, "rvtTest6"));*/
-
+	EXPECT_FALSE(projectExists(db, "rvtTest6"));
 }
-
 
 
 TEST(RepoClientTest, UploadTestMissingFieldsInJSON)
