@@ -46,7 +46,7 @@ before_install:
     - echo ============ TEIGHA INSTALL =============
     - wget $TEIGHA_LIBS_20_5_XENIAL
     - tar -zxf teighaLinuxGCC5.3.tgz
-    - ls teighaLinuxGCC4.9/Kernel/Include
+    - ls teighaLinuxGCC5.3/Kernel/Include
 
 install:
     - sudo pip install cpp-coveralls
