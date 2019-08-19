@@ -25,15 +25,6 @@
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-//These metadata params are crashing application when we're trying to get them; Report to ODA
-const std::set<std::string> PROBLEMATIC_PARAMS = {
-	"ROOF_SLOPE",
-	"RBS_PIPE_SIZE_MAXIMUM",
-	"RBS_PIPE_SIZE_MINIMUM",
-	"RBS_SYSTEM_CLASSIFICATION_PARAM",
-	"RBS_ELECTRICAL_DATA"
-};
-
 //These metadata params are not of interest to users. Do not read.
 const std::set<std::string> IGNORE_PARAMS = {
 	"RENDER APPEARANCE",
@@ -44,7 +35,7 @@ bool DataProcessorRvt::ignoreParam(const std::string& param)
 {
 	auto paramUpper = param;
 	std::transform(paramUpper.begin(), paramUpper.end(), paramUpper.begin(), ::toupper);
-	return PROBLEMATIC_PARAMS.find(param) != PROBLEMATIC_PARAMS.end() || IGNORE_PARAMS.find(paramUpper) != IGNORE_PARAMS.end();
+	return IGNORE_PARAMS.find(paramUpper) != IGNORE_PARAMS.end();
 }
 
 std::string DataProcessorRvt::getElementName(OdBmElementPtr element, uint64_t id)
