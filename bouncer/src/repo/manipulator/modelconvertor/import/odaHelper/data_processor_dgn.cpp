@@ -64,25 +64,24 @@ std::unordered_map<std::string, std::string> DataProcessorDgn::extractXMLLinkage
 
 	entries["Element ID"] = convertToStdString(toString(pElm->elementId().getHandle()));
 
-
 	//it's currently crashing occasionally as of Teigha 2019 Update 2
 	//OdRxObjectPtrArray arrLinkages;
 	//pElm->getLinkages(OdDgAttributeLinkage::kXmlLinkage, arrLinkages);
 
-	/*for (OdUInt32 counter = 0; counter < arrLinkages.size(); counter++)
-	{
-	OdDgAttributeLinkagePtr linkagePtr = arrLinkages[counter];
-	if (linkagePtr->getPrimaryId() == OdDgAttributeLinkage::kXmlLinkage) {
-	OdDgXmlLinkagePtr pXmlLinkage = OdDgXmlLinkage::cast(linkagePtr);
-	if (!pXmlLinkage.isNull()) {
-	boost::property_tree::ptree tree;
-	std::stringstream ss;
-	ss << convertToStdString(pXmlLinkage->getXmlData());
-	boost::property_tree::read_xml(ss, tree);
-	printTree(tree, entries);
-	}
-	}
-	}*/
+	//for (OdUInt32 counter = 0; counter < arrLinkages.size(); counter++)
+	//{
+	//	OdDgAttributeLinkagePtr linkagePtr = arrLinkages[counter];
+	//	if (linkagePtr->getPrimaryId() == OdDgAttributeLinkage::kXmlLinkage) {
+	//		OdDgXmlLinkagePtr pXmlLinkage = OdDgXmlLinkage::cast(linkagePtr);
+	//		if (!pXmlLinkage.isNull()) {
+	//			boost::property_tree::ptree tree;
+	//			std::stringstream ss;
+	//			ss << convertToStdString(pXmlLinkage->getXmlData());
+	//			boost::property_tree::read_xml(ss, tree);
+	//			printTree(tree, entries);
+	//		}
+	//	}
+	//}
 
 
 	return entries;
