@@ -261,7 +261,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 }
 
 MetadataNode RepoBSONFactory::makeMetaDataNode(
-	const std::map<std::string, std::string>  &meta,
+	const std::unordered_map<std::string, std::string>  &data,
 	const std::string               &name,
 	const std::vector<repo::lib::RepoUUID>     &parents,
 	const int                       &apiLevel)
@@ -272,13 +272,10 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	auto defaults = appendDefaults(REPO_NODE_TYPE_METADATA, apiLevel, repo::lib::RepoUUID::createUUID(), name, parents);
 	builder.appendElements(defaults);
 
-	//check keys and values have the same sizes
-
-
-	for (const auto &entry : meta)
-	{
+	for (const auto &entry : data) {
 		std::string key = sanitiseKey(entry.first);
 		std::string value = entry.second;
+
 
 		if (!key.empty() && !value.empty())
 		{
@@ -304,6 +301,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 			}
 		}
 	}
+
 
 	builder << REPO_NODE_LABEL_METADATA << metaBuilder.obj();
 
@@ -686,20 +684,6 @@ RepoRole RepoBSONFactory::_makeRepoRole(
 	return RepoRole(builder.obj());
 }
 
-RepoRef RepoBSONFactory::makeRepoRef(
-	const std::string &fileName,
-	const RepoRef::RefType &type,
-	const std::string &link,
-	const uint32_t size) {
-
-	repo::core::model::RepoBSONBuilder builder;
-	builder.append(REPO_LABEL_ID, fileName);
-	builder.append(REPO_REF_LABEL_TYPE, RepoRef::convertTypeAsString(type));
-	builder.append(REPO_REF_LABEL_LINK, link);
-	builder.append(REPO_REF_LABEL_SIZE, (unsigned int) size);
-	return RepoRef(builder.obj());
-}
-
 RepoRoleSettings RepoBSONFactory::makeRepoRoleSettings(
 	const std::string &uniqueRoleName,
 	const std::string &color,
@@ -786,7 +770,6 @@ RepoUnityAssets RepoBSONFactory::makeRepoUnityAssets(
 	const std::string                           &model,
 	const std::vector<double>                   &offset,
 	const std::vector<std::string>              &vrAssetFiles,
-	const std::vector<std::string>              &iosAssetFiles,
 	const std::vector<std::string>              &jsonFiles)
 {
 	RepoBSONBuilder builder;
@@ -807,9 +790,6 @@ RepoUnityAssets RepoBSONFactory::makeRepoUnityAssets(
 
 	if (vrAssetFiles.size())
 		builder.appendArray(REPO_UNITY_ASSETS_LABEL_VRASSETS, vrAssetFiles);
-
-	if (iosAssetFiles.size())
-		builder.appendArray(REPO_UNITY_ASSETS_LABEL_IOSASSETS, iosAssetFiles);
 
 	if (jsonFiles.size())
 		builder.appendArray(REPO_UNITY_ASSETS_LABEL_JSONFILES, jsonFiles);

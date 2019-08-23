@@ -74,7 +74,7 @@ void DataProcessor::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* p
 double DataProcessor::deviation(
 	const OdGiDeviationType deviationType,
 	const OdGePoint3d& pointOnCurve) const {
-	return 0;
+	return deviationValue;
 }
 
 void DataProcessor::convertTo3DRepoMaterial(

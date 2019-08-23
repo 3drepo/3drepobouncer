@@ -78,11 +78,6 @@ void GeometryCollector::setCurrentMaterial(const repo_material_t &material, bool
 	currMat = checkSum;
 }
 
-void repo::manipulator::modelconvertor::odaHelper::GeometryCollector::setCurrentMeta(const std::map<std::string, std::string>& meta)
-{
-	currentMeta = meta;
-}
-
 repo::core::model::RepoNodeSet repo::manipulator::modelconvertor::odaHelper::GeometryCollector::getMetaNodes()
 {
 	return metaSet;
@@ -94,7 +89,6 @@ mesh_data_t GeometryCollector::createMeshEntry() {
 	entry.name = nextMeshName;
 	entry.groupName = nextGroupName;
 	entry.layerName = nextLayer.empty() ? "UnknownLayer" : nextLayer;
-	entry.metaValues = currentMeta;
 
 	return entry;
 
@@ -243,7 +237,6 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 	std::unordered_map<std::string, repo::core::model::TransformationNode*> layerToTrans;
 
 	auto rootId = root.getSharedID();
-	repoDebug << "Mesh data: " << meshData.size();
 	for (const auto &meshGroupEntry : meshData) {
 		for (const auto &meshLayerEntry : meshGroupEntry.second) {
 			for (const auto &meshMatEntry : meshLayerEntry.second) {
@@ -255,7 +248,7 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 
 
 				if (layerToTrans.find(meshLayerEntry.first) == layerToTrans.end()) {
-					layerToTrans[meshLayerEntry.first] = createTransNode(meshLayerEntry.first, rootId);
+					layerToTrans[meshLayerEntry.first] = createTransNode(layerIDToName[meshLayerEntry.first], meshLayerEntry.first,  rootId);
 					transNodes.insert(layerToTrans[meshLayerEntry.first]);
 				}
 
@@ -286,14 +279,9 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 					{ layerToTrans[meshLayerEntry.first]->getSharedID() }
 				);
 
-				auto& metaValues = meshMatEntry.second.metaValues;
 
-				if (!metaValues.empty())
-				{
-					metaSet.insert(new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metaValues, meshMatEntry.second.name,
-					{
-						meshNode.getSharedID()
-					})));
+				if (idToMeta.find(meshGroupEntry.first) != idToMeta.end()) {
+					metaNodes.insert(createMetaNode(meshGroupEntry.first, { meshNode.getSharedID() }, idToMeta[meshGroupEntry.first]));
 				}
 
 				if (matToMeshes.find(meshMatEntry.second.matIdx) == matToMeshes.end()) {
@@ -310,10 +298,24 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 	return res;
 }
 
+repo::core::model::MetadataNode*  GeometryCollector::createMetaNode(
+	const std::string &name,
+	const repo::lib::RepoUUID &parentId,
+	const  std::unordered_map<std::string, std::string> &metaValues
+) {
+	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metaValues, name, {parentId}));
+}
+
 repo::core::model::TransformationNode*  GeometryCollector::createTransNode(
 	const std::string &name,
-	const repo::lib::RepoUUID &parentId) {	
-	return new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name, { parentId }));
+	const std::string &id,
+	const repo::lib::RepoUUID &parentId) 
+{	
+	auto transNode = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name, { parentId }));
+	if (idToMeta.find(id) != idToMeta.end()) {
+		metaNodes.insert(createMetaNode(name, transNode->getSharedID(), idToMeta[id]));
+	}
+	return transNode;
 }
 
 void repo::manipulator::modelconvertor::odaHelper::GeometryCollector::setRootMatrix(repo::lib::RepoMatrix matrix)

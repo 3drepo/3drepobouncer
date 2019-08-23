@@ -36,6 +36,17 @@ namespace repo {
 				protected:
 					const std::string file;
 					GeometryCollector *collector;
+<<<<<<< HEAD
+=======
+					int importDgn(OdDbBaseDatabase *pDb,
+						const ODCOLORREF* pPallete,
+						int numColors,
+						const OdGeExtents3d &extModel,
+						const OdGiDrawable* pEntity = nullptr,
+						const OdGeMatrix3d& matTransform = OdGeMatrix3d::kIdentity,
+						const std::map<OdDbStub*, double>* pMapDeviations = nullptr);
+
+>>>>>>> ISSUE_295
 				};
 			}
 		}

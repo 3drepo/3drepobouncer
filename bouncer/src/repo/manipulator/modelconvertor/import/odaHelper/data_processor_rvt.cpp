@@ -277,27 +277,28 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 	collector->setNextMeshName(elementName);
 	collector->setMeshGroup(elementName);
 
+	std::string layerName = getLevel(element, "Layer Default");
+	collector->setLayer(layerName, layerName);
+
 	try
 	{
-		collector->setCurrentMeta(fillMetadata(element));
 		//some objects material is not set. set default here
 		collector->setCurrentMaterial(GetDefaultMaterial());
+		collector->setMetadata(layerName, fillMetadata(element));			
 	}
-	catch(OdError& er)
+	catch (OdError& er)
 	{
 		//.. HOTFIX: handle nullPtr exception (reported to ODA)
 		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
 	}
 
-	std::string layerName = getLevel(element, "Layer Default");
-	collector->setLayer(layerName);
 	collector->stopMeshEntry();
 	collector->startMeshEntry();
 }
 
 void DataProcessorRvt::fillMetadataById(
 	OdBmObjectId id,
-	std::map<std::string, std::string>& metadata)
+	std::unordered_map<std::string, std::string>& metadata)
 {
 	if (id.isNull())
 		return;
@@ -312,7 +313,7 @@ void DataProcessorRvt::fillMetadataById(
 
 void DataProcessorRvt::fillMetadataByElemPtr(
 	OdBmElementPtr element,
-	std::map<std::string, std::string>& metadata)
+	std::unordered_map<std::string, std::string>& metadata)
 {
 	OdBuiltInParamArray aParams;
 	element->getListParams(aParams);
@@ -357,9 +358,9 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 
 }
 
-std::map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
+std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
 {
-	std::map<std::string, std::string> metadata;
+	std::unordered_map<std::string, std::string> metadata;
 	try
 	{
 		fillMetadataByElemPtr(element, metadata);
