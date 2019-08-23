@@ -63,7 +63,6 @@ namespace repo {
 
 				private:
 					OdCmEntityColor fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color);
-					double deviationValue = 0;
 
 					std::unordered_map<std::string, std::string> extractXMLLinkages(OdDgElementPtr pElm);
 

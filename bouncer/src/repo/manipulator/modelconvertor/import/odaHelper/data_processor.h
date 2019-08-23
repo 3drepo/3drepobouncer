@@ -111,6 +111,8 @@ namespace repo {
 					*/
 					std::function<repo::lib::RepoVector3D64(OdGePoint3d)> convertTo3DRepoWorldCoorindates = [](OdGePoint3d pnt) { return repo::lib::RepoVector3D64(pnt.x, pnt.y, pnt.z); };
 
+
+					double deviationValue = 0;
 				private:
 					/**
 					* This callback is invoked when next triangle should be processed
@@ -132,6 +134,7 @@ namespace repo {
 						OdGiMaterialItemPtr prevCache,
 						OdDbStub* materialId,
 						const OdGiMaterialTraitsData & materialData) final;
+
 				};
 			}
 		}
