@@ -23,6 +23,7 @@
 #pragma once
 
 #include "repo_bson_project_settings.h"
+#include "repo_bson_ref.h"
 #include "repo_bson_role.h"
 #include "repo_bson_role_settings.h"
 #include "repo_bson_user.h"
@@ -83,6 +84,20 @@ namespace repo {
 					const RepoRole &oldRole = RepoRole());
 
 				/**
+				* Create RepoRef
+				* @param fileName name of the file
+				* @param type type of storage
+				* @param link reference link
+				* @param size size of file in bytes
+				* @return returns a bson with this reference information
+				*/
+				static RepoRef makeRepoRef(
+					const std::string &fileName,
+					const RepoRef::RefType &type,
+					const std::string &link,
+					const uint32_t size);
+
+				/**
 				* Create a role BSON
 				* @param roleName name of the role
 				* @param database database where this role resides
@@ -134,6 +149,7 @@ namespace repo {
 				* @param model model ID (string) to reference
 				* @param offset world offset shift coordinates of the model
 				* @param vrAssetFiles list of VR Unity assets
+				* @param iosAssetFiles list of iOS Unity assets
 				* @param jsonFiles list of JSON files
 				* @return returns a RepoUnityAssets
 				*/
@@ -144,6 +160,7 @@ namespace repo {
 					const std::string                                      &model,
 					const std::vector<double>                              &offset,
 					const std::vector<std::string>                         &vrAssetFiles,
+					const std::vector<std::string>                         &iosAssetFiles,
 					const std::vector<std::string>                         &jsonFiles);
 
 				/*
@@ -251,6 +268,7 @@ namespace repo {
 					const std::string            &name = std::string(),
 					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>(),
 					const int                    &apiLevel = REPO_NODE_API_LEVEL_1);
+				
 
 				/**
 				* Create a Mesh Node
@@ -276,6 +294,22 @@ namespace repo {
 					const std::string                                 &name = std::string(),
 					const std::vector<repo::lib::RepoUUID>            &parents = std::vector<repo::lib::RepoUUID>(),
 					const int                                         &apiLevel = REPO_NODE_API_LEVEL_1);
+
+				static MeshNode makeMeshNode(
+					const std::vector<repo::lib::RepoVector3D>        &vertices,
+					const std::vector<repo_face_t>                    &faces,
+					const std::vector<repo::lib::RepoVector3D>        &normals,
+					const std::vector<std::vector<float>>             &boundingBox,
+					const std::vector<repo::lib::RepoUUID>            &parents) {
+
+					return makeMeshNode(vertices, faces, normals, boundingBox,
+						std::vector<std::vector<repo::lib::RepoVector2D>>(),
+						std::vector<repo_color4d_t>(),
+						std::vector<std::vector<float>>(),
+						std::string(),
+						parents
+					);
+				}
 
 				/**
 				* Create a Reference Node
