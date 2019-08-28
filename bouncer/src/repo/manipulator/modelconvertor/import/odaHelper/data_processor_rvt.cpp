@@ -25,15 +25,6 @@
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-//These metadata params are crashing application when we're trying to get them; Report to ODA
-const std::set<std::string> PROBLEMATIC_PARAMS = {
-	"ROOF_SLOPE",
-	"RBS_PIPE_SIZE_MAXIMUM",
-	"RBS_PIPE_SIZE_MINIMUM",
-	"RBS_SYSTEM_CLASSIFICATION_PARAM",
-	"RBS_ELECTRICAL_DATA"
-};
-
 //These metadata params are not of interest to users. Do not read.
 const std::set<std::string> IGNORE_PARAMS = {
 	"RENDER APPEARANCE",
@@ -44,7 +35,7 @@ bool DataProcessorRvt::ignoreParam(const std::string& param)
 {
 	auto paramUpper = param;
 	std::transform(paramUpper.begin(), paramUpper.end(), paramUpper.begin(), ::toupper);
-	return PROBLEMATIC_PARAMS.find(param) != PROBLEMATIC_PARAMS.end() || IGNORE_PARAMS.find(paramUpper) != IGNORE_PARAMS.end();
+	return IGNORE_PARAMS.find(paramUpper) != IGNORE_PARAMS.end();
 }
 
 std::string DataProcessorRvt::getElementName(OdBmElementPtr element, uint64_t id)
@@ -87,10 +78,10 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 }
 
 std::string DataProcessorRvt::translateMetadataValue(
-	const OdTfVariant& val, 
-	OdBmLabelUtilsPEPtr labelUtils, 
-	OdBmParamDefPtr paramDef, 
-	OdBmDatabase* database, 
+	const OdTfVariant& val,
+	OdBmLabelUtilsPEPtr labelUtils,
+	OdBmParamDefPtr paramDef,
+	OdBmDatabase* database,
 	OdBm::BuiltInParameterDefinition::Enum param)
 {
 	std::string strOut;
@@ -286,27 +277,28 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 	collector->setNextMeshName(elementName);
 	collector->setMeshGroup(elementName);
 
+	std::string layerName = getLevel(element, "Layer Default");
+	collector->setLayer(layerName, layerName);
+
 	try
 	{
-		collector->setCurrentMeta(fillMetadata(element));
 		//some objects material is not set. set default here
 		collector->setCurrentMaterial(GetDefaultMaterial());
+		collector->setMetadata(layerName, fillMetadata(element));			
 	}
-	catch(OdError& er)
+	catch (OdError& er)
 	{
 		//.. HOTFIX: handle nullPtr exception (reported to ODA)
 		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
 	}
 
-	std::string layerName = getLevel(element, "Layer Default");
-	collector->setLayer(layerName);
 	collector->stopMeshEntry();
 	collector->startMeshEntry();
 }
 
 void DataProcessorRvt::fillMetadataById(
 	OdBmObjectId id,
-	std::map<std::string, std::string>& metadata)
+	std::unordered_map<std::string, std::string>& metadata)
 {
 	if (id.isNull())
 		return;
@@ -321,7 +313,7 @@ void DataProcessorRvt::fillMetadataById(
 
 void DataProcessorRvt::fillMetadataByElemPtr(
 	OdBmElementPtr element,
-	std::map<std::string, std::string>& metadata)
+	std::unordered_map<std::string, std::string>& metadata)
 {
 	OdBuiltInParamArray aParams;
 	element->getListParams(aParams);
@@ -366,9 +358,9 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 
 }
 
-std::map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
+std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
 {
-	std::map<std::string, std::string> metadata;
+	std::unordered_map<std::string, std::string> metadata;
 	try
 	{
 		fillMetadataByElemPtr(element, metadata);
@@ -547,7 +539,7 @@ void DataProcessorRvt::establishProjectTranslation(OdBmDatabase* pDb)
 				OdGeMatrix3d alignedLocation;
 				alignedLocation.setToAlignCoordSys(activeOrigin, activeX, activeY, activeZ, projectOrigin, projectX, projectY, projectZ);
 
-				auto scaleCoef = 1.0 / BmUnitUtils::getDisplayUnitTypeInfo(getUnits(database))->inIntUnitsCoeff;
+				auto scaleCoef = 1.0 / OdBmUnitUtils::getDisplayUnitTypeInfo(getUnits(database))->inIntUnitsCoeff;
 				convertTo3DRepoWorldCoorindates = [activeOrigin, alignedLocation, scaleCoef](OdGePoint3d point) {
 					auto convertedPoint = (point - activeOrigin).transformBy(alignedLocation);
 					return repo::lib::RepoVector3D64(convertedPoint.x * scaleCoef, convertedPoint.y * scaleCoef, convertedPoint.z * scaleCoef);

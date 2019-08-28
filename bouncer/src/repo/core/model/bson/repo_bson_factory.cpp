@@ -257,7 +257,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 }
 
 MetadataNode RepoBSONFactory::makeMetaDataNode(
-	const std::map<std::string, std::string>  &meta,
+	const std::unordered_map<std::string, std::string>  &data,
 	const std::string               &name,
 	const std::vector<repo::lib::RepoUUID>     &parents,
 	const int                       &apiLevel)
@@ -268,13 +268,10 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	auto defaults = appendDefaults(REPO_NODE_TYPE_METADATA, apiLevel, repo::lib::RepoUUID::createUUID(), name, parents);
 	builder.appendElements(defaults);
 
-	//check keys and values have the same sizes
-
-
-	for (const auto &entry : meta)
-	{
+	for (const auto &entry : data) {
 		std::string key = sanitiseKey(entry.first);
 		std::string value = entry.second;
+
 
 		if (!key.empty() && !value.empty())
 		{
@@ -692,7 +689,7 @@ RepoRef RepoBSONFactory::makeRepoRef(
 	builder.append(REPO_LABEL_ID, fileName);
 	builder.append(REPO_REF_LABEL_TYPE, RepoRef::convertTypeAsString(type));
 	builder.append(REPO_REF_LABEL_LINK, link);
-	builder.append(REPO_REF_LABEL_SIZE, (unsigned int) size);
+	builder.append(REPO_REF_LABEL_SIZE, (unsigned int)size);
 	return RepoRef(builder.obj());
 }
 
@@ -952,7 +949,7 @@ TransformationNode RepoBSONFactory::makeTransformationNode(
 	auto defaults = appendDefaults(REPO_NODE_TYPE_TRANSFORMATION, apiLevel, repo::lib::RepoUUID::createUUID(), name, parents);
 	builder.appendElements(defaults);
 
-	builder.append(REPO_NODE_LABEL_MATRIX, transMatrix);	
+	builder.append(REPO_NODE_LABEL_MATRIX, transMatrix);
 
 	return TransformationNode(builder.obj());
 }

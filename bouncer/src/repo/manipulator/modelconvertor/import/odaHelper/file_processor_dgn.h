@@ -45,6 +45,7 @@ namespace repo {
 					int importDgn(OdDbBaseDatabase *pDb,
 						const ODCOLORREF* pPallete,
 						int numColors,
+						const OdGeExtents3d &extModel,
 						const OdGiDrawable* pEntity = nullptr,
 						const OdGeMatrix3d& matTransform = OdGeMatrix3d::kIdentity,
 						const std::map<OdDbStub*, double>* pMapDeviations = nullptr);

@@ -45,6 +45,9 @@ const static std::string ifcModel = "duplex.ifc";
 const static std::string dgnModel = "sample.dgn";
 const static std::string rvtModel = "sample.rvt";
 const static std::string rvtNo3DViewModel = "sample_bad.rvt";
+const static std::string rvtRoofTest = "RoofTest.rvt";
+const static std::string rvtMeta1 = "MetaTest1.rvt";
+const static std::string rvtMeta2 = "MetaTest2.rvt";
 const static std::string unsupportedFBXVersion = "unsupported.FBX";
 
 const static std::string emptyFile = "empty.json";

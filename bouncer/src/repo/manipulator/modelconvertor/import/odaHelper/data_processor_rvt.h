@@ -28,10 +28,10 @@
 #include <RxObjectImpl.h>
 #include <ColorMapping.h>
 #include <toString.h>
+#include <Common/BuiltIns/BmBuiltInParameter.h>
 #include <Database/Entities/BmMaterialElem.h>
 #include <Geometry/Entities/BmMaterial.h>
 #include <Database/BmAssetHelpers.h>
-#include <Database/BmBuiltInParameter.h>
 #include <Database/Entities/BmParamElem.h>
 
 #include <Main/Entities/BmDirectShape.h>
@@ -43,7 +43,7 @@
 #include <HostObj/Entities/BmLevel.h>
 
 #include <Database/BmElement.h>
-#include <Database/BmLabelUtilsPE.h>
+#include <Database/PE/BmLabelUtilsPE.h>
 #include <Database/Entities/BmAUnits.h>
 #include <Database/BmUnitUtils.h>
 #include <Database/Managers/BmUnitsTracking.h>
@@ -77,7 +77,7 @@ namespace repo {
 					VectoriseDeviceRvt* device();
 
 					void init(GeometryCollector* geoColl, OdBmDatabasePtr database);
-					
+
 				protected:
 					void draw(const OdGiDrawable*) override;
 
@@ -92,7 +92,7 @@ namespace repo {
 						bool& missingTexture) override;
 
 					void convertTo3DRepoVertices(
-						const OdInt32* p3Vertices, 
+						const OdInt32* p3Vertices,
 						std::vector<repo::lib::RepoVector3D64>& verticesOut,
 						repo::lib::RepoVector3D64& normalOut,
 						std::vector<repo::lib::RepoVector2D>& uvOut) override;
@@ -108,14 +108,14 @@ namespace repo {
 					void fillMeshData(const OdGiDrawable* element);
 
 					void fillMetadataById(
-						OdBmObjectId id, 
-						std::map<std::string, std::string>& metadata);
+						OdBmObjectId id,
+						std::unordered_map<std::string, std::string>& metadata);
 
 					void fillMetadataByElemPtr(
-						OdBmElementPtr element, 
-						std::map<std::string, std::string>& metadata);
+						OdBmElementPtr element,
+						std::unordered_map<std::string, std::string>& metadata);
 
-					std::map<std::string, std::string> fillMetadata(OdBmElementPtr element);
+					std::unordered_map<std::string, std::string> fillMetadata(OdBmElementPtr element);
 					std::string getLevel(OdBmElementPtr element, const std::string& name);
 					std::string getElementName(OdBmElementPtr element, uint64_t id);
 
