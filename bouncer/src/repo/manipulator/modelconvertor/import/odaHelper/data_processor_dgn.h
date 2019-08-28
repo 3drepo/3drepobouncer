@@ -41,11 +41,11 @@ namespace repo {
 				public:
 					DataProcessorDgn() {}
 
-					void init(GeometryCollector *const geoCollector);
-
 					VectoriseDeviceDgn* device();
 
 					bool doDraw(OdUInt32 i,	const OdGiDrawable* pDrawable) override;
+					void init(
+						GeometryCollector *const geoCollector, const OdGeExtents3d &extModel);
 
 					void setMode(OdGsView::RenderMode mode);
 
@@ -63,6 +63,8 @@ namespace repo {
 
 				private:
 					OdCmEntityColor fixByACI(const ODCOLORREF *ids, const OdCmEntityColor &color);
+
+					std::unordered_map<std::string, std::string> extractXMLLinkages(OdDgElementPtr pElm);
 
 				};
 				typedef OdSharedPtr<DataProcessorDgn> OdGiConveyorGeometryDgnDumperPtr;

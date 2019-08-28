@@ -149,6 +149,7 @@ namespace repo {
 				* @param model model ID (string) to reference
 				* @param offset world offset shift coordinates of the model
 				* @param vrAssetFiles list of VR Unity assets
+				* @param iosAssetFiles list of iOS Unity assets
 				* @param jsonFiles list of JSON files
 				* @return returns a RepoUnityAssets
 				*/
@@ -248,26 +249,27 @@ namespace repo {
 				* @return returns a metadata node
 				*/
 				static MetadataNode makeMetaDataNode(
-					const std::map<std::string, std::string>  &meta,
+					const std::vector<std::string>  &keys,
+					const std::vector<std::string>  &values,
 					const std::string               &name = std::string(),
 					const std::vector<repo::lib::RepoUUID>     &parents = std::vector<repo::lib::RepoUUID>(),
 					const int                       &apiLevel = REPO_NODE_API_LEVEL_1);
 
 				/**
 				* Create a Metadata Node
-				* @param keys labels for the fields
-				* @param values values of the fields, matching the key parameter
+				* @param data list of key value pair
 				* @param name Name of Metadata (optional)
 				* @param parents
 				* @param apiLevel Repo Node API level (optional)
 				* @return returns a metadata node
 				*/
 				static MetadataNode makeMetaDataNode(
-					const std::vector<std::string>  &keys,
-					const std::vector<std::string>  &values,
-					const std::string               &name = std::string(),
-					const std::vector<repo::lib::RepoUUID>     &parents = std::vector<repo::lib::RepoUUID>(),
-					const int                       &apiLevel = REPO_NODE_API_LEVEL_1);
+					const std::unordered_map<std::string, std::string>  &data,
+					const std::string            &name = std::string(),
+					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>(),
+					const int                    &apiLevel = REPO_NODE_API_LEVEL_1);
+				
+
 				/**
 				* Create a Mesh Node
 				* @param vertices vector of vertices

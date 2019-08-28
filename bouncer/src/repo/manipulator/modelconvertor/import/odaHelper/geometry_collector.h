@@ -57,7 +57,6 @@ namespace repo {
 					std::string layerName;
 					std::string groupName;
 					uint32_t matIdx;
-					std::map<std::string, std::string> metaValues;
 				};
 
 				class GeometryCollector
@@ -89,6 +88,15 @@ namespace repo {
 					}
 
 					/**
+					* Get all the metadata nodes collected.
+					* This is based on the layer information
+					* @return returns a repoNodeSet containing metadata nodes
+					*/
+					repo::core::model::RepoNodeSet getMetadataNodes() {
+						return metaNodes;
+					}
+
+					/**
 					* Get all mesh nodes collected.
 					* @return returns a vector of mesh nodes
 					*/
@@ -109,6 +117,14 @@ namespace repo {
 					}
 
 					/**
+					* returns a boolean indicating if we already have metedata for this given ID
+					* @return returns true if there is a metadata entry
+					*/
+					bool hasMeta(const std::string &id) {
+						return idToMeta.find(id) != idToMeta.end();
+					}
+
+					/**
 					* Indicates a start of a mesh
 					*/
 					void startMeshEntry();
@@ -118,8 +134,10 @@ namespace repo {
 					*/
 					void stopMeshEntry();
 
-					void setLayer(const std::string &name) {
-						nextLayer = name;
+					void setLayer(const std::string id, const std::string &name) {
+						nextLayer = id;
+						if (layerIDToName.find(id) == layerIDToName.end())
+							layerIDToName[id] = name;
 					}
 
 					/**
@@ -133,6 +151,7 @@ namespace repo {
 					/**
 					* Set next group name
 					* @param groupName group name of the next mesh
+					* @return returns true if there's already a metadata entry for this grouping
 					*/
 					void setMeshGroup(const std::string &groupName) {
 						nextGroupName = groupName;
@@ -199,16 +218,30 @@ namespace repo {
 					*/
 					repo::core::model::TransformationNode createRootNode();
 
+					/**
+					* Set metadata of a group
+					* @param groupName groupName
+					* @param metaEntry Metadata entry for groupName
+					*/
+					void setMetadata(const std::string &groupName,
+						const std::unordered_map<std::string, std::string> &metaEntry)
+					{
+						idToMeta[groupName] = metaEntry;
+					}
+
+
 				private:
+
 					std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<int, mesh_data_t>>> meshData;
+					std::unordered_map<std::string, std::unordered_map<std::string, std::string> > idToMeta;
+					std::unordered_map<std::string, std::string> layerIDToName;
 					std::string nextMeshName, nextLayer, nextGroupName;
 					std::unordered_map< uint32_t, std::pair<repo::core::model::MaterialNode, repo::core::model::TextureNode> > idxToMat;
 					std::unordered_map<uint32_t, std::vector<repo::lib::RepoUUID> > matToMeshes;
-					repo::core::model::RepoNodeSet transNodes;
+					repo::core::model::RepoNodeSet transNodes, metaNodes;
 					uint32_t currMat;
 					std::vector<double> minMeshBox, origin;
 
-					std::map<std::string, std::string> currentMeta;
 					repo::core::model::RepoNodeSet metaSet;
 					mesh_data_t *currentEntry = nullptr;
 					bool missingTextures = false;
@@ -217,10 +250,16 @@ namespace repo {
 
 					repo::core::model::TransformationNode* createTransNode(
 						const std::string &name,
+						const std::string &id,
 						const repo::lib::RepoUUID &parentId
 					);
 
 					repo::core::model::TextureNode createTextureNode(const std::string& texturePath);
+					repo::core::model::MetadataNode*  createMetaNode(
+						const std::string &name,
+						const repo::lib::RepoUUID &parentId,
+						const  std::unordered_map<std::string, std::string> &metaValues
+					);
 
 					mesh_data_t createMeshEntry();
 				};
