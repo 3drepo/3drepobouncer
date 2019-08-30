@@ -226,7 +226,6 @@ namespace repo {
 					void setMetadata(const std::string &groupName,
 						const std::unordered_map<std::string, std::string> &metaEntry)
 					{
-						repoInfo << "Setting meta to  " << groupName << " meta size: " << metaEntry.size();
 						if(metaEntry.size() > 0)
 							idToMeta[groupName] = metaEntry;
 					}

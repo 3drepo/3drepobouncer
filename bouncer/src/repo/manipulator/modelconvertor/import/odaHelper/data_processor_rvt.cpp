@@ -348,7 +348,7 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 				{
 
 					if (metadata.find(metaKey) != metadata.end() && metadata[metaKey] != variantValue) {
-						repoError << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << "value before: " << metadata[metaKey] << " after: " << variantValue;
+						repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << "value before: " << metadata[metaKey] << " after: " << variantValue;
 					}
 					metadata[metaKey] = variantValue;
 				}
