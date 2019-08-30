@@ -80,7 +80,7 @@ void GeometryCollector::setCurrentMaterial(const repo_material_t &material, bool
 
 repo::core::model::RepoNodeSet repo::manipulator::modelconvertor::odaHelper::GeometryCollector::getMetaNodes()
 {
-	return metaSet;
+	return metaNodes;
 }
 
 mesh_data_t GeometryCollector::createMeshEntry() {
@@ -280,8 +280,10 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 				);
 
 
+				repoInfo << "Fetching Meta for " << meshGroupEntry.first;
 				if (idToMeta.find(meshGroupEntry.first) != idToMeta.end()) {
 					metaNodes.insert(createMetaNode(meshGroupEntry.first, { meshNode.getSharedID() }, idToMeta[meshGroupEntry.first]));
+					repoInfo << "Meta Found. metaNodes Count: " << metaNodes.size();
 				}
 
 				if (matToMeshes.find(meshMatEntry.second.matIdx) == matToMeshes.end()) {

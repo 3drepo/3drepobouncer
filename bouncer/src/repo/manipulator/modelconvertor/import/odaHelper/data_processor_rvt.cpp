@@ -284,12 +284,12 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 	{
 		//some objects material is not set. set default here
 		collector->setCurrentMaterial(GetDefaultMaterial());
-		collector->setMetadata(layerName, fillMetadata(element));			
+		collector->setMetadata(elementName, fillMetadata(element));
 	}
 	catch (OdError& er)
 	{
 		//.. HOTFIX: handle nullPtr exception (reported to ODA)
-		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
+		repoError << "Caught exception whilst: " << convertToStdString(er.description());
 	}
 
 	collector->stopMeshEntry();
@@ -348,7 +348,7 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 				{
 
 					if (metadata.find(metaKey) != metadata.end() && metadata[metaKey] != variantValue) {
-						repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << "value before: " << metadata[metaKey] << " after: " << variantValue;
+						repoError << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << "value before: " << metadata[metaKey] << " after: " << variantValue;
 					}
 					metadata[metaKey] = variantValue;
 				}
@@ -367,7 +367,7 @@ std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBm
 	}
 	catch (OdError& er)
 	{
-		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
+		repoError << "Caught exception whilst: " << convertToStdString(er.description());
 	}
 
 	try
@@ -376,7 +376,7 @@ std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBm
 	}
 	catch (OdError& er)
 	{
-		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
+		repoError << "Caught exception whilst: " << convertToStdString(er.description());
 	}
 
 	try
@@ -385,7 +385,7 @@ std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBm
 	}
 	catch (OdError& er)
 	{
-		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
+		repoError << "Caught exception whilst: " << convertToStdString(er.description());
 	}
 
 	try
@@ -394,7 +394,7 @@ std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBm
 	}
 	catch (OdError& er)
 	{
-		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
+		repoError << "Caught exception whilst: " << convertToStdString(er.description());
 	}
 	return metadata;
 }
