@@ -26,6 +26,8 @@
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
+static const char* ODA_CSV_LOCATION = "ODA_CSV_LOCATION";
+
 //These metadata params are not of interest to users. Do not read.
 const std::set<std::string> IGNORE_PARAMS = {
 	"RENDER APPEARANCE",
@@ -316,9 +318,11 @@ void DataProcessorRvt::initLabelUtils() {
 	if (!labelUtils) {
 		OdBmLabelUtilsPEPtr _labelUtils = OdBmObject::desc()->getX(OdBmLabelUtilsPE::desc());
 		labelUtils = (OdBmSampleLabelUtilsPE*)_labelUtils.get();
-
-		OdString str("C:\\local\\teigha\\exe\\vc14_amd64dll");
-		labelUtils->setLookupRoot(str);
+		char* env = std::getenv(ODA_CSV_LOCATION);
+		if (env) {
+			repoInfo << "Setting root as: " << env;
+			labelUtils->setLookupRoot(OdString(env));
+		}
 	}
 }
 
