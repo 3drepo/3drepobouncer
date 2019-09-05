@@ -164,6 +164,7 @@ void DataProcessorRvt::beginViewVectorization()
 {
 	DataProcessor::beginViewVectorization();
 	setEyeToOutputTransform(getEyeToWorldTransform());
+	initLabelUtils();
 }
 
 void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
@@ -323,6 +324,9 @@ void DataProcessorRvt::initLabelUtils() {
 			repoInfo << "Setting root as: " << env;
 			labelUtils->setLookupRoot(OdString(env));
 		}
+		else {
+			repoWarning << "Cannot find envar ODA_CSV_LOCATION. Metadata may not be processed.";
+		}
 	}
 }
 
@@ -331,9 +335,7 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 	std::unordered_map<std::string, std::string>& metadata)
 {
 	OdBuiltInParamArray aParams;
-	element->getListParams(aParams);
-	
-	initLabelUtils();
+	element->getListParams(aParams);	
 
 	if (!labelUtils) return;
 
