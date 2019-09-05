@@ -54,6 +54,8 @@
 #include <Database/Entities/BmBasePoint.h>
 #include <Database/Entities/BmGeoLocation.h>
 
+#include <TB_ExLabelUtils/BmSampleLabelUtilsPE.h>
+
 #include "../../../../lib/datastructure/repo_structs.h"
 #include "../../../../core/model/bson/repo_bson_builder.h"
 #include "geometry_collector.h"
@@ -119,6 +121,8 @@ namespace repo {
 					std::string getLevel(OdBmElementPtr element, const std::string& name);
 					std::string getElementName(OdBmElementPtr element, uint64_t id);
 
+					void initLabelUtils();
+
 					OdBm::DisplayUnitType::Enum getUnits(OdBmDatabasePtr database);
 
 					bool ignoreParam(const std::string& param);
@@ -132,6 +136,7 @@ namespace repo {
 
 					uint64_t meshesCount;
 					OdBmDatabasePtr database;
+					OdBmSampleLabelUtilsPE* labelUtils = nullptr;
 
 				};
 			}

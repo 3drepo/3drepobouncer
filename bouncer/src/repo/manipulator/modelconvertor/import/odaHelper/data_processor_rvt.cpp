@@ -22,7 +22,7 @@
 #include "data_processor_rvt.h"
 #include "helper_functions.h"
 #include "../../../../lib/repo_utils.h"
-#include <TB_ExLabelUtils/BmSampleLabelUtilsPE.h>
+
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
@@ -312,20 +312,24 @@ void DataProcessorRvt::fillMetadataById(
 	fillMetadataByElemPtr(ptr, metadata);
 }
 
+void DataProcessorRvt::initLabelUtils() {
+	if (!labelUtils) {
+		OdBmLabelUtilsPEPtr _labelUtils = OdBmObject::desc()->getX(OdBmLabelUtilsPE::desc());
+		labelUtils = (OdBmSampleLabelUtilsPE*)_labelUtils.get();
+
+		OdString str("C:\\local\\teigha\\exe\\vc14_amd64dll");
+		labelUtils->setLookupRoot(str);
+	}
+}
+
 void DataProcessorRvt::fillMetadataByElemPtr(
 	OdBmElementPtr element,
 	std::unordered_map<std::string, std::string>& metadata)
 {
 	OdBuiltInParamArray aParams;
 	element->getListParams(aParams);
-
-	OdBmLabelUtilsPEPtr _labelUtils = OdBmObject::desc()->getX(OdBmLabelUtilsPE::desc());
-
-	OdBmSampleLabelUtilsPE* labelUtils = (OdBmSampleLabelUtilsPE*)_labelUtils.get();
-
-	OdString str("C:\\local\\teigha\\exe\\vc14_amd64dll");
-	labelUtils->setLookupRoot(str);
-
+	
+	initLabelUtils();
 
 	if (!labelUtils) return;
 
