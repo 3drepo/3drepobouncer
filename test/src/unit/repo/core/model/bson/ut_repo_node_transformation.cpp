@@ -57,7 +57,7 @@ TransformationNode makeTransformationNode(
 	{
 		RepoBSONBuilder columns;
 		for (uint32_t j = 0; j < 4; ++j){
-			columns << std::to_string(j) << matrix[i * 4 + j];
+			columns.append(std::to_string(j), matrix[i * 4 + j]);
 		}
 		rows.appendArray(std::to_string(i), columns.obj());
 	}

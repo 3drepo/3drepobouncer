@@ -106,7 +106,7 @@ uint64_t repo::core::model::DatabaseStats::getSize(const std::string& name) cons
 {
 	uint64_t size = 0;
 	if (hasField(name))
-		size = getField(name).safeNumberLong();
+		size = getIntField(name);
 	return size;
 }
 
@@ -117,7 +117,7 @@ uint64_t repo::core::model::DatabaseStats::getEmbeddedNumber(
 	uint64_t size = 0;
 	auto bson = getObjectField(embeddedObj);
 	if (bson.hasField(name))
-		size = bson.getField(name).safeNumberLong();
+		size = bson.getIntField(name);
 
 	return size;
 }

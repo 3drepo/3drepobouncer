@@ -114,7 +114,7 @@ namespace repo {
 				float getAspectRatio() const
 				{
 					return hasField(REPO_NODE_LABEL_ASPECT_RATIO) ?
-						(float)getField(REPO_NODE_LABEL_ASPECT_RATIO).numberDouble() :
+						(float)getDoubleField(REPO_NODE_LABEL_ASPECT_RATIO):
 						1.;
 				}
 
@@ -125,7 +125,7 @@ namespace repo {
 				float getHorizontalFOV() const
 				{
 					return hasField(REPO_NODE_LABEL_FOV) ?
-						(float)getField(REPO_NODE_LABEL_FOV).numberDouble() :
+						(float)getDoubleField(REPO_NODE_LABEL_FOV) :
 						1.;
 				}
 
@@ -143,7 +143,7 @@ namespace repo {
 				float getFarClippingPlane() const
 				{
 					return hasField(REPO_NODE_LABEL_FAR) ?
-						(float)getField(REPO_NODE_LABEL_FAR).numberDouble() :
+						(float)getDoubleField(REPO_NODE_LABEL_FAR):
 						1.;
 				}
 
@@ -154,7 +154,7 @@ namespace repo {
 				float getFieldOfView() const
 				{
 					return hasField(REPO_NODE_LABEL_FOV) ?
-						(float)getField(REPO_NODE_LABEL_FOV).numberDouble() :
+						(float)getDoubleField(REPO_NODE_LABEL_FOV) :
 						1.;
 				}
 
@@ -165,7 +165,7 @@ namespace repo {
 				float getNearClippingPlane() const
 				{
 					return hasField(REPO_NODE_LABEL_NEAR) ?
-						(float)getField(REPO_NODE_LABEL_NEAR).numberDouble() :
+						(float)getDoubleField(REPO_NODE_LABEL_NEAR) :
 						1.;
 				}
 

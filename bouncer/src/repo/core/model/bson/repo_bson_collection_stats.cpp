@@ -50,7 +50,7 @@ uint64_t repo::core::model::CollectionStats::getSize(const std::string& name) co
 {
 	uint64_t size = 0;
 	if (hasField(name))
-		size = getField(name).safeNumberLong();
+		size = getIntField(name);
 	return size;
 }
 

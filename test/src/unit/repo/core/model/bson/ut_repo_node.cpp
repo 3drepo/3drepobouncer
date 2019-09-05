@@ -36,7 +36,7 @@ RepoNode makeTypicalNode()
 {
 	RepoBSONBuilder builder;
 
-	builder << REPO_NODE_LABEL_NAME << typicalName;
+	builder.append(REPO_NODE_LABEL_NAME, typicalName);
 	builder.append(REPO_NODE_LABEL_ID, typicalUniqueID);
 	builder.append(REPO_NODE_LABEL_SHARED_ID, typicalSharedID);
 
@@ -62,7 +62,7 @@ RepoNode makeNode(const repo::lib::RepoUUID &unqiueID, const repo::lib::RepoUUID
 
 	if (!name.empty())
 	{
-		builder << REPO_NODE_LABEL_NAME << name;
+		builder.append(REPO_NODE_LABEL_NAME, name);
 	}
 
 	return RepoNode(builder.obj());

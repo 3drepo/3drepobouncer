@@ -59,7 +59,8 @@ RepoNode CameraNode::cloneAndApplyTransformation(
 	{
 		builder.append(REPO_NODE_LABEL_UP, matrix * getUp());
 	}
-	return CameraNode(builder.appendElementsUnique(*this));
+	builder.appendElementsUnique(*this);
+	return CameraNode(builder.obj());
 }
 
 repo::lib::RepoVector3D CameraNode::getPosition() const

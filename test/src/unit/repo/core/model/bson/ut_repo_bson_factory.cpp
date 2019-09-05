@@ -185,22 +185,20 @@ TEST(RepoBSONFactoryTest, AppendDefaultsTest)
 	builder.appendElements(defaults);
 
 	RepoNode n = builder.obj();
-
 	EXPECT_FALSE(n.isEmpty());
 
-	EXPECT_EQ(4, n.nFields());
+	EXPECT_EQ(3, n.nFields());
 
 	EXPECT_TRUE(n.hasField(REPO_NODE_LABEL_ID));
 	EXPECT_TRUE(n.hasField(REPO_NODE_LABEL_SHARED_ID));
-	EXPECT_TRUE(n.hasField(REPO_NODE_LABEL_API));
 	EXPECT_TRUE(n.hasField(REPO_NODE_LABEL_TYPE));
 
 	//Ensure existing fields doesnt' disappear
 
 	RepoBSONBuilder builderWithFields;
 
-	builderWithFields << "Number" << 1023;
-	builderWithFields << "doll" << "Kitty";
+	builderWithFields.append("Number", 1023);
+	builderWithFields.append("doll", "Kitty");
 
 	auto defaults2 = RepoBSONFactory::appendDefaults("test");
 	builderWithFields.appendElements(defaults2);
@@ -208,11 +206,10 @@ TEST(RepoBSONFactoryTest, AppendDefaultsTest)
 	RepoNode nWithExists = builderWithFields.obj();
 	EXPECT_FALSE(nWithExists.isEmpty());
 
-	EXPECT_EQ(6, nWithExists.nFields());
+	EXPECT_EQ(5, nWithExists.nFields());
 
 	EXPECT_TRUE(nWithExists.hasField(REPO_NODE_LABEL_ID));
 	EXPECT_TRUE(nWithExists.hasField(REPO_NODE_LABEL_SHARED_ID));
-	EXPECT_TRUE(nWithExists.hasField(REPO_NODE_LABEL_API));
 	EXPECT_TRUE(nWithExists.hasField(REPO_NODE_LABEL_TYPE));
 
 	EXPECT_TRUE(nWithExists.hasField("doll"));
@@ -385,6 +382,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	EXPECT_TRUE(compareStdVectors(uvChannels, uvOut));
 
 	auto bbox = mesh.getBoundingBox();
+	repoTrace << mesh.toString();
 	ASSERT_EQ(boundingBox.size(), bbox.size());
 	ASSERT_EQ(3, boundingBox[0].size());
 	ASSERT_EQ(3, boundingBox[1].size());

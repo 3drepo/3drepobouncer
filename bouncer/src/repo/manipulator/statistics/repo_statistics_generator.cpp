@@ -105,7 +105,7 @@ static int64_t getFileSizeTotal(
 
 	repo::core::model::RepoBSONBuilder builder;
 	builder.appendArray("$in", files);
-	auto criteria = BSON("filename" << builder.obj());
+	auto criteria = BSON("filename" << builder.mongoObj());
 
 	auto filesInfo = handler->findAllByCriteria(dbName, project + ".history.files", criteria);
 
@@ -408,10 +408,7 @@ static uint64_t getNewUsersWithinDuration(
 	timeRangeBuilder.appendTime("$lt", to);
 	timeRangeBuilder.appendTime("$gt", from);
 
-	repo::core::model::RepoBSON planInfo;
-
-	auto subscriptionCriteria = BSON("$elemMatch" << planInfo);
-	repo::core::model::RepoBSON criteria = BSON("customData.createdAt" << timeRangeBuilder.obj());
+	repo::core::model::RepoBSON criteria = BSON("customData.createdAt" << timeRangeBuilder.mongoObj());
 	auto users = handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, criteria);
 	std::vector<repo::core::model::RepoBSON> filteredUsers;
 	for (const auto userBson : users)

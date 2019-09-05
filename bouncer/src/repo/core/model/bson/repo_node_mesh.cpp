@@ -45,7 +45,8 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 {
 	if(matrix.isIdentity()) {
 		RepoBSONBuilder builder;
-		return MeshNode(builder.appendElementsUnique(*this), bigFiles);
+		builder.appendElementsUnique(*this);
+		return MeshNode(builder.obj(), bigFiles);
 	}
 
 	std::vector<repo::lib::RepoVector3D> vertices = getVertices();
@@ -151,12 +152,14 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 		outlineBuilder.appendArray("3", outline3);
 		builder.appendArray(REPO_NODE_MESH_LABEL_OUTLINE, outlineBuilder.obj());
 
-		return MeshNode(builder.appendElementsUnique(*this), newBigFiles);
+		builder.appendElementsUnique(*this);
+
+		return MeshNode(builder.obj(), newBigFiles);
 	}
 	else
 	{
 		repoError << "Unable to apply transformation: Cannot find vertices within a mesh!";
-		return  RepoNode(this->copy(), bigFiles);
+		return  RepoNode(*this, bigFiles);
 	}
 }
 
@@ -171,14 +174,13 @@ MeshNode MeshNode::cloneAndUpdateMeshMapping(
 	if (!overwrite && !mapArray.isEmpty())
 	{
 		//if map array isn't empty, find the next index it needs to slot in
-		std::set<std::string> fields;
-		mapArray.getFieldNames(fields);
+		std::set<std::string> fields = mapArray.getFieldNames();
 		index = fields.size();
 	}
 
 	for (uint32_t i = 0; i < vec.size(); ++i)
 	{
-		mapbuilder << std::to_string(index + i) << meshMappingAsBSON(vec[i]);
+		mapbuilder.append(std::to_string(index + i), meshMappingAsBSON(vec[i]));
 	}
 	//append the rest of the array onto this new map bson
 	if (!overwrite) mapbuilder.appendElementsUnique(mapArray);
@@ -217,9 +219,9 @@ std::vector<repo::lib::RepoVector3D> MeshNode::getBoundingBox(RepoBSON &bbArr)
 				if (nFields >= 3)
 				{
 					repo::lib::RepoVector3D vector;
-					vector.x = bbVectorBson.getField("0").Double();
-					vector.y = bbVectorBson.getField("1").Double();
-					vector.z = bbVectorBson.getField("2").Double();
+					vector.x = bbVectorBson.getDoubleField("0");
+					vector.y = bbVectorBson.getDoubleField("1");
+					vector.z = bbVectorBson.getDoubleField("2");
 
 					bbox.push_back(vector);
 				}
@@ -279,7 +281,7 @@ uint32_t MeshNode::getMFormat() const
 	uint32_t fBit = (uint32_t)hasBinField(REPO_NODE_MESH_LABEL_FACES) << 1;
 	uint32_t nBit = (uint32_t)hasBinField(REPO_NODE_MESH_LABEL_NORMALS) << 2;
 	uint32_t cBit = (uint32_t)hasBinField(REPO_NODE_MESH_LABEL_COLORS) << 3;
-	uint32_t uvBits = (hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT) ? getField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT).numberInt() : 0) << 4;
+	uint32_t uvBits = (hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT) ? getIntField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT) : 0) << 4;
 
 	return vBit | fBit | nBit | cBit | uvBits;
 }
@@ -290,8 +292,7 @@ std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
 	RepoBSON mapArray = getObjectField(REPO_NODE_MESH_LABEL_MERGE_MAP);
 	if (!mapArray.isEmpty())
 	{
-		std::set<std::string> fields;
-		mapArray.getFieldNames(fields);
+		std::set<std::string> fields = mapArray.getFieldNames();
 		mappings.resize(fields.size());
 		for (const auto &name : fields)
 		{
@@ -300,10 +301,10 @@ std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
 
 			mapping.mesh_id = mappingObj.getUUIDField(REPO_NODE_MESH_LABEL_MAP_ID);
 			mapping.material_id = mappingObj.getUUIDField(REPO_NODE_MESH_LABEL_MATERIAL_ID);
-			mapping.vertFrom = mappingObj.getField(REPO_NODE_MESH_LABEL_VERTEX_FROM).Int();
-			mapping.vertTo = mappingObj.getField(REPO_NODE_MESH_LABEL_VERTEX_TO).Int();
-			mapping.triFrom = mappingObj.getField(REPO_NODE_MESH_LABEL_TRIANGLE_FROM).Int();
-			mapping.triTo = mappingObj.getField(REPO_NODE_MESH_LABEL_TRIANGLE_TO).Int();
+			mapping.vertFrom = mappingObj.getIntField(REPO_NODE_MESH_LABEL_VERTEX_FROM);
+			mapping.vertTo = mappingObj.getIntField(REPO_NODE_MESH_LABEL_VERTEX_TO);
+			mapping.triFrom = mappingObj.getIntField(REPO_NODE_MESH_LABEL_TRIANGLE_FROM);
+			mapping.triTo = mappingObj.getIntField(REPO_NODE_MESH_LABEL_TRIANGLE_TO);
 
 			RepoBSON boundingBox = mappingObj.getObjectField(REPO_NODE_MESH_LABEL_BOUNDING_BOX);
 
@@ -353,7 +354,7 @@ std::vector<std::vector<repo::lib::RepoVector2D>> MeshNode::getUVChannelsSeparat
 	if (serialisedChannels.size())
 	{
 		//get number of channels and split the serialised.
-		uint32_t nChannels = getField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT).numberInt();
+		uint32_t nChannels = getIntField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT);
 		uint32_t vecPerChannel = serialisedChannels.size() / nChannels;
 		channels.reserve(nChannels);
 		for (uint32_t i = 0; i < nChannels; i++)
@@ -385,7 +386,7 @@ std::vector<repo_face_t> MeshNode::getFaces() const
 	if (hasBinField(REPO_NODE_MESH_LABEL_FACES) && hasField(REPO_NODE_MESH_LABEL_FACES_COUNT))
 	{
 		std::vector <uint32_t> serializedFaces = std::vector<uint32_t>();
-		int32_t facesCount = getField(REPO_NODE_MESH_LABEL_FACES_COUNT).numberInt();
+		int32_t facesCount = getIntField(REPO_NODE_MESH_LABEL_FACES_COUNT);
 		faces.reserve(facesCount);
 
 		getBinaryFieldAsVector(REPO_NODE_MESH_LABEL_FACES, serializedFaces);
@@ -423,10 +424,10 @@ RepoBSON MeshNode::meshMappingAsBSON(const repo_mesh_mapping_t  &mapping)
 	RepoBSONBuilder builder;
 	builder.append(REPO_NODE_MESH_LABEL_MAP_ID, mapping.mesh_id);
 	builder.append(REPO_NODE_MESH_LABEL_MATERIAL_ID, mapping.material_id);
-	builder << REPO_NODE_MESH_LABEL_VERTEX_FROM << mapping.vertFrom;
-	builder << REPO_NODE_MESH_LABEL_VERTEX_TO << mapping.vertTo;
-	builder << REPO_NODE_MESH_LABEL_TRIANGLE_FROM << mapping.triFrom;
-	builder << REPO_NODE_MESH_LABEL_TRIANGLE_TO << mapping.triTo;
+	builder.append(REPO_NODE_MESH_LABEL_VERTEX_FROM, mapping.vertFrom);
+	builder.append(REPO_NODE_MESH_LABEL_VERTEX_TO, mapping.vertTo);
+	builder.append(REPO_NODE_MESH_LABEL_TRIANGLE_FROM, mapping.triFrom);
+	builder.append(REPO_NODE_MESH_LABEL_TRIANGLE_TO, mapping.triTo);
 
 	RepoBSONBuilder bbBuilder;
 	bbBuilder.append("0", mapping.min);

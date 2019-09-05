@@ -124,7 +124,7 @@ namespace repo {
 				{
 					bool isUnique = false; //defaults to false.
 					if (hasField(REPO_NODE_REFERENCE_LABEL_UNIQUE))
-						isUnique = getField(REPO_NODE_REFERENCE_LABEL_UNIQUE).boolean();
+						isUnique = getBoolField(REPO_NODE_REFERENCE_LABEL_UNIQUE);
 
 					return isUnique;
 				}

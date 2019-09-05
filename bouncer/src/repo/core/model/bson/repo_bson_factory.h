@@ -25,7 +25,6 @@
 #include "repo_bson_project_settings.h"
 #include "repo_bson_ref.h"
 #include "repo_bson_role.h"
-#include "repo_bson_role_settings.h"
 #include "repo_bson_user.h"
 #include "repo_bson_unity_assets.h"
 #include "repo_node.h"
@@ -112,13 +111,7 @@ namespace repo {
 					const std::vector<std::pair<std::string, std::string>> &inheritedRoles
 					= std::vector<std::pair<std::string, std::string>>()
 					);
-
-				static RepoRoleSettings makeRepoRoleSettings(
-					const std::string &uniqueRoleName,
-					const std::string &color,
-					const std::string &description = std::string(),
-					const std::vector<std::string> &modules = std::vector<std::string>());
-
+				
 				/**
 				* Create a user BSON
 				* @param userName username

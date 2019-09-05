@@ -1173,7 +1173,7 @@ bool RepoScene::loadRevision(
 	if (headRevision){
 		RepoBSONBuilder critBuilder;
 		critBuilder.append(REPO_NODE_LABEL_SHARED_ID, branch);
-		critBuilder << REPO_NODE_REVISION_LABEL_INCOMPLETE << BSON("$exists" << false);
+		critBuilder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, BSON("$exists" << false));
 
 		bson = handler->findOneByCriteria(databaseName, projectName + "." +
 			revExt, critBuilder.obj(), REPO_NODE_REVISION_LABEL_TIMESTAMP);
@@ -1399,7 +1399,7 @@ bool RepoScene::populate(
 		RepoBSON obj = *it;
 		RepoNode *node = NULL;
 
-		std::string nodeType = obj.getField(REPO_NODE_LABEL_TYPE).str();
+		std::string nodeType = obj.getStringField(REPO_NODE_LABEL_TYPE);
 
 		if (REPO_NODE_TYPE_TRANSFORMATION == nodeType)
 		{
