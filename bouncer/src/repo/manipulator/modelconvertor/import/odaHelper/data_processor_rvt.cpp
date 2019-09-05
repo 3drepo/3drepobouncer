@@ -23,7 +23,10 @@
 #include "helper_functions.h"
 #include "../../../../lib/repo_utils.h"
 
+
 using namespace repo::manipulator::modelconvertor::odaHelper;
+
+static const char* ODA_CSV_LOCATION = "ODA_CSV_LOCATION";
 
 //These metadata params are not of interest to users. Do not read.
 const std::set<std::string> IGNORE_PARAMS = {
@@ -161,6 +164,7 @@ void DataProcessorRvt::beginViewVectorization()
 {
 	DataProcessor::beginViewVectorization();
 	setEyeToOutputTransform(getEyeToWorldTransform());
+	initLabelUtils();
 }
 
 void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
@@ -284,12 +288,12 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 	{
 		//some objects material is not set. set default here
 		collector->setCurrentMaterial(GetDefaultMaterial());
-		collector->setMetadata(layerName, fillMetadata(element));			
+		collector->setMetadata(elementName, fillMetadata(element));
 	}
 	catch (OdError& er)
 	{
 		//.. HOTFIX: handle nullPtr exception (reported to ODA)
-		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
+		repoError << "Caught exception whilst: " << convertToStdString(er.description());
 	}
 
 	collector->stopMeshEntry();
@@ -311,16 +315,29 @@ void DataProcessorRvt::fillMetadataById(
 	fillMetadataByElemPtr(ptr, metadata);
 }
 
+void DataProcessorRvt::initLabelUtils() {
+	if (!labelUtils) {
+		OdBmLabelUtilsPEPtr _labelUtils = OdBmObject::desc()->getX(OdBmLabelUtilsPE::desc());
+		labelUtils = (OdBmSampleLabelUtilsPE*)_labelUtils.get();
+		char* env = std::getenv(ODA_CSV_LOCATION);
+		if (env) {
+			repoInfo << "Setting root as: " << env;
+			labelUtils->setLookupRoot(OdString(env));
+		}
+		else {
+			repoWarning << "Cannot find envar ODA_CSV_LOCATION. Metadata may not be processed.";
+		}
+	}
+}
+
 void DataProcessorRvt::fillMetadataByElemPtr(
 	OdBmElementPtr element,
 	std::unordered_map<std::string, std::string>& metadata)
 {
 	OdBuiltInParamArray aParams;
-	element->getListParams(aParams);
+	element->getListParams(aParams);	
 
-	OdBmLabelUtilsPEPtr labelUtils = OdBmObject::desc()->getX(OdBmLabelUtilsPE::desc());
-	if (labelUtils.isNull())
-		return;
+	if (!labelUtils) return;
 
 	for (OdBm::BuiltInParameter::Enum entry : aParams) {
 		std::string builtInName = convertToStdString(OdBm::BuiltInParameter(entry).toString());
@@ -367,7 +384,7 @@ std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBm
 	}
 	catch (OdError& er)
 	{
-		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
+		repoError << "Caught exception whilst: " << convertToStdString(er.description());
 	}
 
 	try
@@ -376,7 +393,7 @@ std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBm
 	}
 	catch (OdError& er)
 	{
-		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
+		repoError << "Caught exception whilst: " << convertToStdString(er.description());
 	}
 
 	try
@@ -385,7 +402,7 @@ std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBm
 	}
 	catch (OdError& er)
 	{
-		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
+		repoError << "Caught exception whilst: " << convertToStdString(er.description());
 	}
 
 	try
@@ -394,7 +411,7 @@ std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBm
 	}
 	catch (OdError& er)
 	{
-		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
+		repoError << "Caught exception whilst: " << convertToStdString(er.description());
 	}
 	return metadata;
 }

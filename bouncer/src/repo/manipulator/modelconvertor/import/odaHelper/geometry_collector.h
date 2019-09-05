@@ -226,7 +226,8 @@ namespace repo {
 					void setMetadata(const std::string &groupName,
 						const std::unordered_map<std::string, std::string> &metaEntry)
 					{
-						idToMeta[groupName] = metaEntry;
+						if(metaEntry.size() > 0)
+							idToMeta[groupName] = metaEntry;
 					}
 
 
@@ -242,7 +243,6 @@ namespace repo {
 					uint32_t currMat;
 					std::vector<double> minMeshBox, origin;
 
-					repo::core::model::RepoNodeSet metaSet;
 					mesh_data_t *currentEntry = nullptr;
 					bool missingTextures = false;
 					repo::lib::RepoMatrix rootMatrix;

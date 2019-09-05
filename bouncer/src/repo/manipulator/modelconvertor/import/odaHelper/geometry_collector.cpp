@@ -80,7 +80,7 @@ void GeometryCollector::setCurrentMaterial(const repo_material_t &material, bool
 
 repo::core::model::RepoNodeSet repo::manipulator::modelconvertor::odaHelper::GeometryCollector::getMetaNodes()
 {
-	return metaSet;
+	return metaNodes;
 }
 
 mesh_data_t GeometryCollector::createMeshEntry() {
