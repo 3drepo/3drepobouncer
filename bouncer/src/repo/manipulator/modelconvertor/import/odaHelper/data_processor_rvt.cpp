@@ -22,6 +22,7 @@
 #include "data_processor_rvt.h"
 #include "helper_functions.h"
 #include "../../../../lib/repo_utils.h"
+#include <TB_ExLabelUtils/BmSampleLabelUtilsPE.h>
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
@@ -318,9 +319,15 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 	OdBuiltInParamArray aParams;
 	element->getListParams(aParams);
 
-	OdBmLabelUtilsPEPtr labelUtils = OdBmObject::desc()->getX(OdBmLabelUtilsPE::desc());
-	if (labelUtils.isNull())
-		return;
+	OdBmLabelUtilsPEPtr _labelUtils = OdBmObject::desc()->getX(OdBmLabelUtilsPE::desc());
+
+	OdBmSampleLabelUtilsPE* labelUtils = (OdBmSampleLabelUtilsPE*)_labelUtils.get();
+
+	OdString str("C:\\local\\teigha\\exe\\vc14_amd64dll");
+	labelUtils->setLookupRoot(str);
+
+
+	if (!labelUtils) return;
 
 	for (OdBm::BuiltInParameter::Enum entry : aParams) {
 		std::string builtInName = convertToStdString(OdBm::BuiltInParameter(entry).toString());
