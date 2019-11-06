@@ -19,7 +19,7 @@
 
 #include <BimCommon.h>
 #include <Database/BmElement.h>
-#include <vector>
+#include <unordered_map>
 
 namespace repo {
 	namespace manipulator {
