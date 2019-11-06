@@ -28,8 +28,17 @@ namespace repo {
 				class CustomDataProcessorRVT
 				{
 				public:
-					static void fillCustomMetadata(OdBmElementPtr element,
-						std::unordered_map<std::string, std::string>& metadata);
+					CustomDataProcessorRVT(OdBmElementPtr _element) : element(_element) {}
+
+					void fillCustomMetadata(std::unordered_map<std::string, std::string>& metadata);
+
+				private:
+					const OdBmElementPtr element;
+
+					void fetchStringData(std::unordered_map<std::string, std::string>& dataStore);
+					void fetchIntData(std::unordered_map<std::string, std::string>& dataStore);
+					void fetchDoubleData(std::unordered_map<std::string, std::string>& dataStore);
+
 				};
 			}
 		}

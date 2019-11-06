@@ -18,29 +18,84 @@
 #include <Database/Entities/BmParamElem.h>
 #include <Database/Entities/BmParamValueAString.h>
 #include <Database/Entities/BmParamValueSetAString.h>
+#include <Database/Entities/BmParamValueInt.h>
+#include <Database/Entities/BmParamValueSetInt.h>
+#include <Database/Entities/BmParamValueDouble.h>
+#include <Database/Entities/BmParamValueSetDouble.h>
 #include "helper_functions.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 void CustomDataProcessorRVT::fillCustomMetadata(
-	OdBmElementPtr element,
 	std::unordered_map<std::string, std::string>& metadata
+) {
+	fetchStringData(metadata);
+	/*fetchIntData(metadata);
+	fetchDoubleData(metadata);*/
+}
+
+void CustomDataProcessorRVT::fetchStringData(
+	std::unordered_map<std::string, std::string>& dataStore
 ) {
 	//In accordance to https://forum.opendesign.com/showthread.php?18030-How-to-access-the-custom-parameter-added-in-model-group-using-ODA-BimRv-API
 	OdBmParamValueAStringPtrArray aStringParams;
 	if (!element->getStringParams().isNull())
-	{		
+	{
 		OdBmParamValueSetAStringPtr pStringParams = element->getStringParams();
 		pStringParams->getParamSet(aStringParams);
-		for (const auto &param : aStringParams) {			
+		for (const auto &param : aStringParams) {
 			OdBmObjectId paramID = param->getParamId();
 			if ((OdInt64)paramID.getHandle() < 0) continue; //negative id is built in values
 			auto value = convertToStdString(param->getValue());
-			
+
 			OdBmParamElemPtr paramElemPtr = paramID.safeOpenObject();
 			OdBmParamDefPtr pDescParam = paramElemPtr->getParamDef();
 			auto metaKey = convertToStdString(pDescParam->getCaption());
-			metadata[metaKey] = value;			
+			dataStore[metaKey] = value;
+		}
+	}
+}
+
+void CustomDataProcessorRVT::fetchIntData(
+	std::unordered_map<std::string, std::string>& dataStore
+) {
+
+	OdBmParamValueIntPtrArray aIntParams;
+	if (!element->getStringParams().isNull())
+	{
+		OdBmParamValueSetIntPtr intParams = element->getIntParams();
+		intParams->getParamSet(aIntParams);
+		for (const auto &param : aIntParams) {
+			OdBmObjectId paramID = param->getParamId();
+			if ((OdInt64)paramID.getHandle() < 0) continue; //negative id is built in values
+			auto value = std::to_string(param->getValue());
+
+			OdBmParamElemPtr paramElemPtr = paramID.safeOpenObject();
+			OdBmParamDefPtr pDescParam = paramElemPtr->getParamDef();
+			auto metaKey = convertToStdString(pDescParam->getCaption());
+			dataStore[metaKey] = value;
+		}
+	}
+}
+
+void CustomDataProcessorRVT::fetchDoubleData(
+	std::unordered_map<std::string, std::string>& dataStore
+) {
+
+	OdBmParamValueDoublePtrArray aDoubleParams;
+	if (!element->getStringParams().isNull())
+	{
+		OdBmParamValueSetDoublePtr doubleParams = element->getDoubleParams();
+		doubleParams->getParamSet(aDoubleParams);
+		for (const auto &param : aDoubleParams) {
+			OdBmObjectId paramID = param->getParamId();
+			if ((OdInt64)paramID.getHandle() < 0) continue; //negative id is built in values
+			auto value = std::to_string(param->getValue());
+
+			OdBmParamElemPtr paramElemPtr = paramID.safeOpenObject();
+			OdBmParamDefPtr pDescParam = paramElemPtr->getParamDef();
+			auto metaKey = convertToStdString(pDescParam->getCaption());
+			dataStore[metaKey] = value;
 		}
 	}
 }

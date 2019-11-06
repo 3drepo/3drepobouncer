@@ -373,7 +373,8 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 			}
 		}
 
-		CustomDataProcessorRVT::fillCustomMetadata(element, metadata);
+		CustomDataProcessorRVT customDataProcessor(element); 
+		customDataProcessor.fillCustomMetadata(metadata);
 
 
 		
