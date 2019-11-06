@@ -30,8 +30,8 @@ void CustomDataProcessorRVT::fillCustomMetadata(
 	std::unordered_map<std::string, std::string>& metadata
 ) {
 	fetchStringData(metadata);
-	/*fetchIntData(metadata);
-	fetchDoubleData(metadata);*/
+	fetchIntData(metadata);
+	//fetchDoubleData(metadata);
 }
 
 void CustomDataProcessorRVT::fetchStringData(
@@ -61,11 +61,12 @@ void CustomDataProcessorRVT::fetchIntData(
 ) {
 
 	OdBmParamValueIntPtrArray aIntParams;
-	if (!element->getStringParams().isNull())
+	if (!element->getIntParams().isNull())
 	{
 		OdBmParamValueSetIntPtr intParams = element->getIntParams();
 		intParams->getParamSet(aIntParams);
 		for (const auto &param : aIntParams) {
+
 			OdBmObjectId paramID = param->getParamId();
 			if ((OdInt64)paramID.getHandle() < 0) continue; //negative id is built in values
 			auto value = std::to_string(param->getValue());
@@ -83,7 +84,7 @@ void CustomDataProcessorRVT::fetchDoubleData(
 ) {
 
 	OdBmParamValueDoublePtrArray aDoubleParams;
-	if (!element->getStringParams().isNull())
+	if (!element->getDoubleParams().isNull())
 	{
 		OdBmParamValueSetDoublePtr doubleParams = element->getDoubleParams();
 		doubleParams->getParamSet(aDoubleParams);
