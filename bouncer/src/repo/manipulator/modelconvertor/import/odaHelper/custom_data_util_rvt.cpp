@@ -31,7 +31,7 @@ void CustomDataProcessorRVT::fillCustomMetadata(
 ) {
 	fetchStringData(metadata);
 	fetchIntData(metadata);
-	//fetchDoubleData(metadata);
+	fetchDoubleData(metadata);
 }
 
 void CustomDataProcessorRVT::fetchStringData(
