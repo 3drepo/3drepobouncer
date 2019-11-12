@@ -7,6 +7,7 @@
 if(ODA_SUPPORT)
 	set(SOURCES
 		${SOURCES}
+		${CMAKE_CURRENT_SOURCE_DIR}/custom_data_util_rvt.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/data_processor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/data_processor_dgn.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/data_processor_rvt.cpp
@@ -20,6 +21,7 @@ if(ODA_SUPPORT)
 
 	set(HEADERS
 		${HEADERS}
+		${CMAKE_CURRENT_SOURCE_DIR}/custom_data_util_rvt.h
 		${CMAKE_CURRENT_SOURCE_DIR}/data_processor.h
 		${CMAKE_CURRENT_SOURCE_DIR}/data_processor_dgn.h
 		${CMAKE_CURRENT_SOURCE_DIR}/data_processor_rvt.h

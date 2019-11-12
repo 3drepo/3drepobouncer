@@ -21,6 +21,7 @@
 #include "vectorise_device_rvt.h"
 #include "data_processor_rvt.h"
 #include "helper_functions.h"
+#include "custom_data_util_rvt.h"
 #include "../../../../lib/repo_utils.h"
 
 
@@ -371,6 +372,13 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 				}
 			}
 		}
+
+		CustomDataProcessorRVT customDataProcessor(element); 
+		customDataProcessor.fillCustomMetadata(metadata);
+
+
+		
+
 	}
 
 }
