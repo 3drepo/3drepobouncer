@@ -193,7 +193,7 @@ void DataProcessorRvt::convertTo3DRepoMaterial(
 	OdBmMaterialElemPtr materialElem;
 	if (matId.isValid())
 	{
-		OdBmObjectPtr objectPtr = matId.safeOpenObject(OdBm::kForRead);
+		OdBmObjectPtr objectPtr = matId.safeOpenObject();
 		if (!objectPtr.isNull())
 			materialElem = OdBmMaterialElem::cast(objectPtr);
 	}
@@ -294,7 +294,7 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 	catch (OdError& er)
 	{
 		//.. HOTFIX: handle nullPtr exception (reported to ODA)
-		repoError << "Caught exception whilst: " << convertToStdString(er.description());
+		repoError << "Caught exception whilst trying to retrieve Material/metadata: " << convertToStdString(er.description());
 	}
 
 	collector->stopMeshEntry();
@@ -376,9 +376,6 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 		CustomDataProcessorRVT customDataProcessor(element); 
 		customDataProcessor.fillCustomMetadata(metadata);
 
-
-		
-
 	}
 
 }
@@ -392,7 +389,7 @@ std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBm
 	}
 	catch (OdError& er)
 	{
-		repoError << "Caught exception whilst: " << convertToStdString(er.description());
+		repoError << "Caught exception whilst trying to fetch metadata by element pointer " << convertToStdString(er.description());
 	}
 
 	try
@@ -401,7 +398,7 @@ std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBm
 	}
 	catch (OdError& er)
 	{
-		repoError << "Caught exception whilst: " << convertToStdString(er.description());
+		repoError << "Caught exception whilst trying to get metadata by family ID: " << convertToStdString(er.description());
 	}
 
 	try
@@ -410,7 +407,7 @@ std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBm
 	}
 	catch (OdError& er)
 	{
-		repoError << "Caught exception whilst: " << convertToStdString(er.description());
+		repoError << "Caught exception whilst trying to get metadata by Type ID: " << convertToStdString(er.description());
 	}
 
 	try
@@ -419,7 +416,7 @@ std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBm
 	}
 	catch (OdError& er)
 	{
-		repoError << "Caught exception whilst: " << convertToStdString(er.description());
+		repoError << "Caught exception whilst trying to get ,etadata nu category ID: " << convertToStdString(er.description());
 	}
 	return metadata;
 }
@@ -489,7 +486,7 @@ void DataProcessorRvt::hiddenElementsViewRejection(OdBmDBViewPtr pDBView)
 	setts->getHiddenElements(arr);
 	for (uint32_t i = 0; i < arr.size(); i++)
 	{
-		OdBmElementPtr hidden = arr[i].safeOpenObject(OdBm::OpenMode::kForWrite);
+		OdBmElementPtr hidden = arr[i].safeOpenObject();
 		if (hidden.isNull())
 			continue;
 
