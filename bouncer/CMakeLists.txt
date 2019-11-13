@@ -2,8 +2,8 @@
 #================Source and header files===============
 add_subdirectory(src)
 
-set(VERSION_MAJOR 3)
-set(VERSION_MINOR 11_1)
+set(VERSION_MAJOR 4)
+set(VERSION_MINOR 1_0)
 
 include_directories(${Boost_INCLUDE_DIRS} ${MONGO_INCLUDE_DIR} ${ASSIMP_INCLUDE_DIR} ${OCCT_INCLUDE_DIR} ${IFCOPENSHELL_INCLUDE_DIR} ${ODA_INCLUDE_DIR} ${AWSSDK_INCLUDE_DIR} src)
 add_definitions(-DREPO_API_LIBRARY)
