@@ -33,6 +33,18 @@ RepoNode::~RepoNode()
 {
 }
 
+RepoNode RepoNode::cloneAndChangeIdentity() const {
+	RepoBSONBuilder builder;
+	
+	builder.append(REPO_NODE_LABEL_ID, repo::lib::RepoUUID::createUUID());
+
+	builder.append(REPO_NODE_LABEL_SHARED_ID, repo::lib::RepoUUID::createUUID());
+
+	builder.appendElementsUnique(*this);
+
+	return RepoNode(builder.obj(), bigFiles);
+}
+
 RepoNode RepoNode::cloneAndAddParent(
 	const repo::lib::RepoUUID &parentID,
 	const bool     &newUniqueID,

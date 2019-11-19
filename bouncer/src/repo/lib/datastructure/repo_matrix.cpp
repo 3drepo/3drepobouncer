@@ -44,6 +44,21 @@ RepoMatrix::RepoMatrix(const std::vector<float> &mat)
 	}	
 }		
 
+RepoMatrix::RepoMatrix(const std::vector<double> &mat)
+{
+	data = { 1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1 };
+
+	for (int i = 0; i < mat.size(); ++i)
+	{
+		if (i >= 16) break;
+		data[i] = mat[i];
+
+	}
+}
+
 RepoMatrix::RepoMatrix(const std::vector<std::vector<float>> &mat)
 {
 
