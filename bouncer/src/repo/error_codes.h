@@ -75,3 +75,5 @@
 #define REPOERR_INVALID_CONFIG_FILE 28
 //Process timed out (only used in bouncer_worker)
 #define REPOERR_TIMEOUT 29
+//When Synchro is not compiled within the library
+#define REPOERR_SYNCHRO_UNAVAILABLE 30

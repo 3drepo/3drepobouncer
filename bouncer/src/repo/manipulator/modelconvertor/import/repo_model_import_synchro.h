@@ -19,7 +19,9 @@
 #pragma once
 
 #include <string>
+#ifdef SYNCHRO_SUPPORT
 #include <spm_reader.h>
+#endif
 #include <memory>
 
 #include "repo_model_import_abstract.h"
@@ -39,13 +41,13 @@ namespace repo{
 				/**
 				* Default Constructor, generate model with default settings
 				*/
-				SynchroModelImport();
+				SynchroModelImport() {};
 				
 				/**
 				* Default Deconstructor
 				*/
 				~SynchroModelImport() {}
-				
+#ifdef SYNCHRO_SUPPORT
 				/**
 				* Generates a repo scene graph
 				* an internal representation(aiscene) needs to have
@@ -76,7 +78,28 @@ namespace repo{
 				std::unordered_map<std::string, repo::core::model::MeshNode> SynchroModelImport::createMeshTemplateNodes();
 
 				std::shared_ptr<synchro_reader::SPMReader> reader;
+
 				std::string orgFile;
+#else
+				/**
+				* Generates a repo scene graph
+				* an internal representation(aiscene) needs to have
+				* been created before this call
+				* @return returns a populated RepoScene upon success.
+				*/
+				repo::core::model::RepoScene* generateRepoScene() { return nullptr; }
+
+				/**
+				* Import model from a given file
+				* @param path to the file
+				* @param error message if failed
+				* @return returns true upon success
+				*/
+				bool importModel(std::string filePath, uint8_t &errMsg) {
+					errMsg = REPOERR_SYNCHRO_UNAVAILABLE;
+					return false;
+				}
+#endif
 			};
 		} //namespace SynchroModelImport
 	} //namespace manipulator

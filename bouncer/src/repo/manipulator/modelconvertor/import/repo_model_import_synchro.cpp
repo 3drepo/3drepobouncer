@@ -15,7 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
+#ifdef SYNCHRO_SUPPORT
 #include "repo_model_import_synchro.h"
 
 #include "../../../core/model/bson/repo_bson_builder.h"
@@ -25,12 +25,8 @@
 
 using namespace repo::manipulator::modelconvertor;
 
-SynchroModelImport::SynchroModelImport()
-{
-
-}
-
 bool SynchroModelImport::importModel(std::string filePath, uint8_t &errMsg) {
+
 	orgFile = filePath;
 	reader = std::make_shared<synchro_reader::SPMReader>(filePath);
 
@@ -227,3 +223,4 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	repo::core::model::RepoNodeSet dummy;
 	return new repo::core::model::RepoScene({ orgFile }, dummy, meshNodes, matNodes, dummy, textNodes, transNodes);
 }
+#endif
