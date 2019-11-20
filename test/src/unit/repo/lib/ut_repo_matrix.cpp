@@ -53,7 +53,7 @@ TEST(RepoMatrixTest, constructorTest)
 		sourceMat3.push_back((rand() % 1000) / 1000.f);
 	}
 
-	RepoMatrix matrix4(sourceMat1), matrix5(sourceMat2), matrix6(sourceMat3);	
+	RepoMatrix matrix7(sourceMat1), matrix5(sourceMat2), matrix6(sourceMat3);	
 }
 
 TEST(RepoMatrixTest, determinantTest)
