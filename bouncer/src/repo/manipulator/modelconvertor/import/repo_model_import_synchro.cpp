@@ -31,6 +31,7 @@ SynchroModelImport::SynchroModelImport()
 }
 
 bool SynchroModelImport::importModel(std::string filePath, uint8_t &errMsg) {
+	orgFile = filePath;
 	reader = std::make_shared<synchro_reader::SPMReader>(filePath);
 
 	if (!reader->init()) {
@@ -223,5 +224,6 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 		*repoIDToNode[nodeID] = repoIDToNode[nodeID]->cloneAndAddParent(parents);
 	}
 
-	return new repo::core::model::RepoScene({})
+	repo::core::model::RepoNodeSet dummy;
+	return new repo::core::model::RepoScene({ orgFile }, dummy, meshNodes, matNodes, dummy, textNodes, transNodes);
 }

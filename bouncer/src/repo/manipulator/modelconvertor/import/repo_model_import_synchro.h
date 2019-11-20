@@ -76,6 +76,7 @@ namespace repo{
 				std::unordered_map<std::string, repo::core::model::MeshNode> SynchroModelImport::createMeshTemplateNodes();
 
 				std::shared_ptr<synchro_reader::SPMReader> reader;
+				std::string orgFile;
 			};
 		} //namespace SynchroModelImport
 	} //namespace manipulator

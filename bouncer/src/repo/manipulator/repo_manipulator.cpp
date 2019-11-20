@@ -35,6 +35,7 @@
 #include "modelconvertor/import/repo_model_import_ifc.h"
 #include "modelconvertor/import/repo_model_import_3drepo.h"
 #include "modelconvertor/import/repo_model_import_oda.h"
+#include "modelconvertor/import/repo_model_import_synchro.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
 #include "modelconvertor/export/repo_model_export_asset.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
@@ -740,6 +741,7 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 	bool useAssimpImporter = repo::manipulator::modelconvertor::AssimpModelImport::isSupportedExts(fileExt);
 	bool useIFCImporter = fileExt == ".IFC" && (!config || config->getUseIFCOpenShell());
 	bool useRepoImporter = fileExt == ".BIM";
+	bool useSynchroImporter = fileExt == ".SPM";
 	bool useOdaImporter = repo::manipulator::modelconvertor::OdaModelImport::isSupportedExts(fileExt);
 
 	if (useIFCImporter)
@@ -757,6 +759,9 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 	else if (useAssimpImporter)
 	{
 		modelConvertor = new repo::manipulator::modelconvertor::AssimpModelImport(config);
+	}else if (useSynchroImporter)
+	{
+		modelConvertor = new repo::manipulator::modelconvertor::SynchroModelImport();
 	}
 	else
 	{
@@ -784,7 +789,7 @@ const repo::manipulator::modelconvertor::ModelImportConfig *config)
 					error = REPOERR_NO_MESHES;
 					return nullptr;
 				}
-				if (rotateModel || useIFCImporter || useOdaImporter)
+				if (rotateModel || useIFCImporter || useOdaImporter || useSynchroImporter)
 				{
 					repoTrace << "rotating model by 270 degress on the x axis...";
 					scene->reorientateDirectXModel();
