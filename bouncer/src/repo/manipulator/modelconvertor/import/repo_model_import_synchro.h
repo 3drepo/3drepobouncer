@@ -41,7 +41,7 @@ namespace repo{
 				/**
 				* Default Constructor, generate model with default settings
 				*/
-				SynchroModelImport() {};
+				SynchroModelImport() {}
 				
 				/**
 				* Default Deconstructor
