@@ -20,7 +20,7 @@
 
 #include <string>
 #ifdef SYNCHRO_SUPPORT
-#include <spm_reader.h>
+#include <synchro_reader/spm_reader.h>
 #endif
 #include <memory>
 
