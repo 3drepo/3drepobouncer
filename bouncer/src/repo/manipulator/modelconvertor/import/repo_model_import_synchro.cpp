@@ -25,6 +25,8 @@
 
 using namespace repo::manipulator::modelconvertor;
 
+const std::string RESOURCE_ID_NAME = "Resource ID";
+
 bool SynchroModelImport::importModel(std::string filePath, uint8_t &errMsg) {
 
 	orgFile = filePath;
@@ -69,9 +71,18 @@ std::pair<repo::core::model::RepoNodeSet, repo::core::model::RepoNodeSet> Synchr
 	return{ matNodes, textNodes};
 }
 
+repo::core::model::MetadataNode* SynchroModelImport::createMetaNode(
+	const std::unordered_map<std::string, std::string> &metadata,
+	const std::string &name,	
+	const std::vector<repo::lib::RepoUUID> &parents) {
+
+	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metadata, name, parents));
+}
+
+
 repo::core::model::TransformationNode* SynchroModelImport::createTransNode(
 	const repo::lib::RepoMatrix &matrix,
-	const std::string name,
+	const std::string &name,
 	const std::vector<repo::lib::RepoUUID> &parents) {
 
 	return new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(matrix, name, parents));
@@ -123,7 +134,7 @@ std::unordered_map<std::string, repo::core::model::MeshNode> SynchroModelImport:
 
 repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	
-	repo::core::model::RepoNodeSet transNodes, matNodes, textNodes, meshNodes;
+	repo::core::model::RepoNodeSet transNodes, matNodes, textNodes, meshNodes, metaNodes;
 	std::unordered_map<std::string, repo::lib::RepoUUID> synchroIDToRepoID;
 	std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> repoIDToNode;
 
@@ -131,9 +142,8 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	matNodes = matPairs.first;
 	textNodes = matPairs.second;
 
-	auto identity = repo::lib::RepoMatrix();
-	//TODO: Is there project name?
-	auto root = createTransNode(identity, "root");
+	auto identity = repo::lib::RepoMatrix();	
+	auto root = createTransNode(identity, reader->getProjectName());
 	transNodes.insert(root);
 	
 	std::unordered_map < std::string, std::unordered_map<std::string, repo::lib::RepoUUID>> meshMatNodeMap;
@@ -148,8 +158,10 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 		repoIDToNode[trans->getUniqueID()] = trans;
 		synchroIDToRepoID[entity.second.id] = trans->getUniqueID();
 		nodeToSynchroParent[trans->getUniqueID()] = entity.second.parentID;
-		// TODO metadata;
-		
+		auto meta = entity.second.metadata;
+		meta[RESOURCE_ID_NAME] = entity.second.resourceID;
+		metaNodes.insert(createMetaNode(meta, entity.second.name, { trans->getSharedID() }));
+
 
 		for (const auto meshEntry : entity.second.meshes) {
 			auto meshID = meshEntry.geoId;
@@ -221,6 +233,6 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	}
 
 	repo::core::model::RepoNodeSet dummy;
-	return new repo::core::model::RepoScene({ orgFile }, dummy, meshNodes, matNodes, dummy, textNodes, transNodes);
+	return new repo::core::model::RepoScene({ orgFile }, dummy, meshNodes, matNodes, metaNodes, textNodes, transNodes);
 }
 #endif

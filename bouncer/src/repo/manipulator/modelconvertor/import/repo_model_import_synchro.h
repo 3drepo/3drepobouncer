@@ -26,7 +26,6 @@
 
 #include "repo_model_import_abstract.h"
 #include "../../../core/model/collection/repo_scene.h"
-#include "../../../core/model/bson/repo_node_camera.h"
 #include "../../../core/model/bson/repo_node_material.h"
 #include "../../../core/model/bson/repo_node_mesh.h"
 #include "../../../core/model/bson/repo_node_metadata.h"
@@ -69,10 +68,14 @@ namespace repo{
 					std::unordered_map<std::string, repo::lib::RepoUUID> &synchroIDtoRepoID,
 					std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> &repoIDToNode);
 
+				repo::core::model::MetadataNode* createMetaNode(
+					const std::unordered_map<std::string, std::string> &metadata,
+					const std::string &name,
+					const std::vector<repo::lib::RepoUUID> &parents);
 
 				repo::core::model::TransformationNode* createTransNode(
 					const repo::lib::RepoMatrix &matrix,
-					const std::string name,
+					const std::string &name,
 					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>());
 
 				std::unordered_map<std::string, repo::core::model::MeshNode> SynchroModelImport::createMeshTemplateNodes();
