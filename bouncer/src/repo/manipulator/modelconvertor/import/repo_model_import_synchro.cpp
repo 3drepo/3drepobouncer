@@ -31,11 +31,12 @@ bool SynchroModelImport::importModel(std::string filePath, uint8_t &errMsg) {
 
 	orgFile = filePath;
 	reader = std::make_shared<synchro_reader::SPMReader>(filePath);
-
+	repoInfo << "=== IMPORTING MODEL WITH SYNCHRO MODEL CONVERTOR ===";
 	if (!reader->init()) {
 		errMsg = REPOERR_LOAD_SCENE_FAIL;
 		return false;
 	}
+	repoInfo << "Initialisation successful";
 	
 	return true;
 }
@@ -233,6 +234,16 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	}
 
 	repo::core::model::RepoNodeSet dummy;
-	return new repo::core::model::RepoScene({ orgFile }, dummy, meshNodes, matNodes, metaNodes, textNodes, transNodes);
+	repoInfo << "Creating scene with : " << transNodes.size() << " transformations, "
+		<< meshNodes.size() << " meshes, "
+		<< matNodes.size() << " materials, "
+		<< textNodes.size() << " textures, "
+		<< metaNodes.size() << " metadata ";
+	auto scene = new repo::core::model::RepoScene({ orgFile }, dummy, meshNodes, matNodes, metaNodes, textNodes, transNodes);
+	auto origin = reader->getGlobalOffset();
+	repoInfo << "Setting Global Offset: " << origin.x << ", " << origin.y << ", " << origin.z;
+	scene->setWorldOffset({ origin.x, origin.y, origin.z });
+
+	return scene;
 }
 #endif
