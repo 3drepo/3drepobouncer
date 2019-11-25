@@ -26,11 +26,11 @@ if(DEFINED ENV{ZLIB_ROOT})
 		${ZLIB_ROOT}/include
 		${ZLIB_ROOT}
 		)
-	find_library(ZLIB_LIBRARIES_RELEASE NAMES zlibwapi
+	find_library(ZLIB_LIBRARIES_RELEASE NAMES zlibwapi z
 		PATHS
 		${ZLIB_ROOT}/lib
 	)
-	find_library(ZLIB_LIBRARIES_DEBUG NAMES zlibwapid zlibwapi
+	find_library(ZLIB_LIBRARIES_DEBUG NAMES zlibwapid zlibwapi z
 		PATHS
 		${ZLIB_ROOT}/lib
 	)
@@ -50,14 +50,14 @@ else(ZLIB_INCLUDE_DIR AND ZLIB_LIBRARIES)
 		/opt/local/include
     )
 
-	find_library(ZLIB_LIBRARIES_RELEASE NAMES zlibwapi
+	find_library(ZLIB_LIBRARIES_RELEASE NAMES zlibwapi z
     	PATHS
     	/usr/lib/
     	/usr/local/lib/
     	/opt/local/lib/
     )
 
-	find_library(ZLIB_LIBRARIES_DEBUG NAMES zlibwapid zlibwapi
+	find_library(ZLIB_LIBRARIES_DEBUG NAMES zlibwapid zlibwapi z
     	PATHS
     	/usr/lib/
     	/usr/local/lib/

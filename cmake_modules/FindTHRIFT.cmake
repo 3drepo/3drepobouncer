@@ -26,11 +26,11 @@ if(DEFINED ENV{THRIFT_ROOT})
 		${THRIFT_ROOT}/include
 		${THRIFT_ROOT}/src
 		)
-	find_library(THRIFT_LIBRARIES_RELEASE NAMES libthrift
+	find_library(THRIFT_LIBRARIES_RELEASE NAMES libthrift thrift
 		PATHS
 		${THRIFT_ROOT}/lib
 	)
-	find_library(THRIFT_LIBRARIES_DEBUG NAMES libthriftd libthrift
+	find_library(THRIFT_LIBRARIES_DEBUG NAMES libthriftd thriftd libthrift thrift
 		PATHS
 		${THRIFT_ROOT}/lib
 	)
@@ -50,14 +50,14 @@ else(THRIFT_INCLUDE_DIR AND THRIFT_LIBRARIES)
 		/opt/local/include
     )
 
-	find_library(THRIFT_LIBRARIES_RELEASE NAMES libthrift
+	find_library(THRIFT_LIBRARIES_RELEASE NAMES libthrift thrift
     	PATHS
     	/usr/lib/
     	/usr/local/lib/
     	/opt/local/lib/
     )
 
-	find_library(THRIFT_LIBRARIES_DEBUG NAMES libthrift libthriftd
+	find_library(THRIFT_LIBRARIES_DEBUG NAMES libthriftd thriftd libthrift thrift
     	PATHS
     	/usr/lib/
     	/usr/local/lib/
