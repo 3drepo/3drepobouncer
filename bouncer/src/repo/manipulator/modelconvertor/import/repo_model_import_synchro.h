@@ -41,7 +41,7 @@ namespace repo{
 				* Default Constructor, generate model with default settings
 				*/
 				SynchroModelImport() {}
-				
+
 				/**
 				* Default Deconstructor
 				*/
@@ -78,7 +78,7 @@ namespace repo{
 					const std::string &name,
 					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>());
 
-				std::unordered_map<std::string, repo::core::model::MeshNode> SynchroModelImport::createMeshTemplateNodes();
+				std::unordered_map<std::string, repo::core::model::MeshNode> createMeshTemplateNodes();
 
 				std::shared_ptr<synchro_reader::SPMReader> reader;
 
