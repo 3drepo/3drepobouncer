@@ -94,10 +94,10 @@ endif()
 
 if (SYNCHRO_SUPPORT)
 	add_definitions(-DSYNCHRO_SUPPORT)
-	find_package(SynchroReader REQUIRED)
-	find_package(Thrift REQUIRED)
-	find_package(Zlib REQUIRED)
-	find_package(Synchro REQUIRED)
+	find_package(SYNCHROREADER REQUIRED)
+	find_package(THRIFT REQUIRED)
+	find_package(ZLIB REQUIRED)
+	find_package(SYNCHRO REQUIRED)
 endif()
 
 
