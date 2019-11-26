@@ -30,13 +30,21 @@ if(DEFINED ENV{THRIFT_ROOT})
 		PATHS
 		${THRIFT_ROOT}/lib
 	)
+	find_library(THRIFTZ_LIBRARIES_RELEASE NAMES libthriftz thriftz
+		PATHS
+		${THRIFT_ROOT}/lib
+	)
 	find_library(THRIFT_LIBRARIES_DEBUG NAMES libthriftd thriftd libthrift thrift
 		PATHS
 		${THRIFT_ROOT}/lib
 	)
+	find_library(THRIFTZ_LIBRARIES_DEBUG NAMES libthriftzd libthriftz thriftzd thriftz
+		PATHS
+		${THRIFT_ROOT}/lib
+	)
 	set(THRIFT_LIBRARIES
-		debug ${THRIFT_LIBRARIES_DEBUG}
-		optimized ${THRIFT_LIBRARIES_RELEASE}
+		debug ${THRIFT_LIBRARIES_DEBUG} ${THRIFTZ_LIBRARIES_DEBUG}
+		optimized ${THRIFT_LIBRARIES_RELEASE} ${THRIFTZ_LIBRARIES_RELEASE}
 	)
 endif()
 
@@ -56,6 +64,12 @@ else(THRIFT_INCLUDE_DIR AND THRIFT_LIBRARIES)
     	/usr/local/lib/
     	/opt/local/lib/
     )
+	find_library(THRIFTZ_LIBRARIES_RELEASE NAMES libthriftz thriftz
+    	PATHS
+    	/usr/lib/
+    	/usr/local/lib/
+    	/opt/local/lib/
+    )
 
 	find_library(THRIFT_LIBRARIES_DEBUG NAMES libthriftd thriftd libthrift thrift
     	PATHS
@@ -63,10 +77,16 @@ else(THRIFT_INCLUDE_DIR AND THRIFT_LIBRARIES)
     	/usr/local/lib/
     	/opt/local/lib/
     )
+	find_library(THRIFTZ_LIBRARIES_DEBUG NAMES libthriftzd thriftzd libthriftz thriftz
+    	PATHS
+    	/usr/lib/
+    	/usr/local/lib/
+    	/opt/local/lib/
+    )
 
 	set(THRIFT_LIBRARIES
-		debug ${THRIFT_LIBRARIES_DEBUG}
-		optimized ${THRIFT_LIBRARIES_RELEASE}
+		debug ${THRIFT_LIBRARIES_DEBUG} ${THRIFTZ_LIBRARIES_DEBUG}
+		optimized ${THRIFT_LIBRARIES_RELEASE} ${THRIFTZ_LIBRARIES_RELEASE}
 		)
 endif(THRIFT_INCLUDE_DIR AND THRIFT_LIBRARIES)
 
