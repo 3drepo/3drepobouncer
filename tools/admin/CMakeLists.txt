@@ -10,11 +10,11 @@ set(TOOLS_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/functions.h
 	CACHE STRING "TOOL_HEADERS" FORCE)
 
-include_directories(src ../../bouncer/src
+include_directories(src ../../bouncer/src 
 	${Boost_INCLUDE_DIR} ${MONGO_INCLUDE_DIR} ${ASSIMP_INCLUDE_DIR} ${OCCT_INCLUDE_DIR} ${IFCOPENSHELL_INCLUDE_DIR} ${AWSSDK_INCLUDE_DIR})
-add_executable(3drepobouncerTool ${TOOLS_SOURCES})
-target_link_libraries(3drepobouncerTool 3drepobouncer
-	${Boost_LIBRARIES} ${MOMGO_LIBRARIES} ${ASSIMP_LIBRARIES} ${OCCT_LIBRARIES} ${IFCOPENSHELL_GEOMLIB} ${IFCOPENSHELL_PARSERLIB}  ${SYNCHRO_READER_LIBRARIES} ${THRIFT_LIBRARIES} ${ZLIB_LIBRARIES} ${SYNCHRO_LIBRARIES} ${AWSSDK_LIBRARIES})
+add_executable(3drepobouncerTool ${TOOLS_SOURCES}) 
+target_link_libraries(3drepobouncerTool 3drepobouncer 
+	${Boost_LIBRARIES} ${MOMGO_LIBRARIES} ${ASSIMP_LIBRARIES} ${OCCT_LIBRARIES} ${IFCOPENSHELL_GEOMLIB} ${IFCOPENSHELL_PARSERLIB} ${AWSSDK_LIBRARIES})
 
 
 install(TARGETS 3drepobouncerTool DESTINATION bin)
