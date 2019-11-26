@@ -299,6 +299,17 @@ TEST(RepoClientTest, UploadTestRVT)
 
 }
 
+TEST(RepoClientTest, UploadTestSPM)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
+
+	std::string spmUpload = produceUploadArgs(db, "synchroTest", getDataPath(synchroFile));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(spmUpload));
+	EXPECT_TRUE(projectExists(db, "synchroTest"));
+}
+
 
 TEST(RepoClientTest, UploadTestRVTRegressionTests)
 {
