@@ -46,6 +46,9 @@ namespace repo{
 				* Default Deconstructor
 				*/
 				~SynchroModelImport() {}
+
+				virtual bool requireReorientation() const { return true; }
+
 #ifdef SYNCHRO_SUPPORT
 				/**
 				* Generates a repo scene graph

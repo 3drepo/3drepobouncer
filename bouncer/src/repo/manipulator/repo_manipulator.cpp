@@ -31,18 +31,14 @@
 #include "../lib/repo_config.h"
 #include "diff/repo_diff_name.h"
 #include "diff/repo_diff_sharedid.h"
-#include "modelconvertor/import/repo_model_import_assimp.h"
-#include "modelconvertor/import/repo_model_import_ifc.h"
-#include "modelconvertor/import/repo_model_import_3drepo.h"
-#include "modelconvertor/import/repo_model_import_oda.h"
-#include "modelconvertor/import/repo_model_import_synchro.h"
-#include "modelconvertor/export/repo_model_export_assimp.h"
+#include "modelconvertor/import/repo_model_import_manager.h"
 #include "modelconvertor/export/repo_model_export_asset.h"
+#include "modelconvertor/export/repo_model_export_assimp.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
-#include "modeloptimizer/repo_optimizer_trans_reduction.h"
 #include "modeloptimizer/repo_optimizer_ifc.h"
 #include "modelutility/repo_scene_manager.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
+#include "modeloptimizer/repo_optimizer_trans_reduction.h"
 #include "statistics/repo_statistics_generator.h"
 #include "repo_manipulator.h"
 
@@ -729,104 +725,22 @@ const bool &applyReduction,
 const bool &rotateModel,
 const repo::manipulator::modelconvertor::ModelImportConfig *config)
 {
-	repo::core::model::RepoScene* scene = nullptr;
-
-	boost::filesystem::path filePathP(filePath);
-	std::string fileExt = filePathP.extension().string();
-
-	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
-	
-	repo::manipulator::modelconvertor::AbstractModelImport* modelConvertor = nullptr;
-
-	bool useAssimpImporter = repo::manipulator::modelconvertor::AssimpModelImport::isSupportedExts(fileExt);
-	bool useIFCImporter = fileExt == ".IFC" && (!config || config->getUseIFCOpenShell());
-	bool useRepoImporter = fileExt == ".BIM";
-	bool useSynchroImporter = fileExt == ".SPM";
-	bool useOdaImporter = repo::manipulator::modelconvertor::OdaModelImport::isSupportedExts(fileExt);
-
-	if (useIFCImporter)
-	{
-		modelConvertor = new repo::manipulator::modelconvertor::IFCModelImport(config);
-	}
-	else if (useRepoImporter)
-	{
-		modelConvertor = new repo::manipulator::modelconvertor::RepoModelImport(config);
-	}
-	else if (useOdaImporter)
-	{
-		modelConvertor = new repo::manipulator::modelconvertor::OdaModelImport(); //FIXME: take in config like everything else.
-	}
-	else if (useAssimpImporter)
-	{
-		modelConvertor = new repo::manipulator::modelconvertor::AssimpModelImport(config);
-	}else if (useSynchroImporter)
-	{
-		modelConvertor = new repo::manipulator::modelconvertor::SynchroModelImport();
-	}
-	else
-	{
-		error = REPOERR_FILE_TYPE_NOT_SUPPORTED;
-		return nullptr;
-	}
-
-	if (modelConvertor)
-	{
-		repoTrace << "Importing model...";
-		if (modelConvertor->importModel(filePath, error))
-		{
-			repoTrace << "model Imported, generating Repo Scene";
-			if ((scene = modelConvertor->generateRepoScene()))
-			{
-				if (scene->exceedsMaximumNodes()) {
-					delete scene;
-					error = REPOERR_MAX_NODES_EXCEEDED;
-					return nullptr;
-				}
-
-				if (!scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
-
-					delete scene;
-					error = REPOERR_NO_MESHES;
-					return nullptr;
-				}
-				if (rotateModel || useIFCImporter || useOdaImporter || useSynchroImporter)
-				{
-					repoTrace << "rotating model by 270 degress on the x axis...";
-					scene->reorientateDirectXModel();
-				}
-
-				if (applyReduction && !useOdaImporter)
-				{
-					repoTrace << "Scene generated. Applying transformation reduction optimizer";
-					modeloptimizer::TransformationReductionOptimizer optimizer;
-					optimizer.apply(scene);
-				}
-
-				//Generate stash
-				repoInfo << "Generating stash graph for optimised viewing...";
-				if (generateStashGraph(scene))
-				{
-					repoTrace << "Stash graph generated.";
-				}
-				else
-				{
-					repoError << "Error generating stash graph";
-					error = REPOERR_STASH_GEN_FAIL;
-					delete scene;
-					return nullptr;
-				}
-				error = REPOERR_OK;
-			}
-			else
-			{
-				error = REPOERR_UNKNOWN_ERR;
-
-			}
+	repo::manipulator::modelconvertor::ModelImportManager manager;
+	auto scene =  manager.ImportFromFile(filePath, rotateModel, applyReduction, error);
+	if (scene) {
+		if (generateStashGraph(scene)) {
+			repoTrace << "Stash graph generated.";
+			error = REPOERR_OK;
 		}
-		delete modelConvertor;
+		else
+		{
+			repoError << "Error generating stash graph";
+			error = REPOERR_STASH_GEN_FAIL;
+			delete scene;
+			scene = nullptr;
+		}
 	}
-	else
-		error = REPOERR_UNKNOWN_ERR;
+
 	return scene;
 }
 
