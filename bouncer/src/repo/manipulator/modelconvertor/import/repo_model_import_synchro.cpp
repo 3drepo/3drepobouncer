@@ -132,6 +132,20 @@ std::unordered_map<std::string, repo::core::model::MeshNode> SynchroModelImport:
 	return res;		
 }
 
+repo::core::model::MeshNode* SynchroModelImport::createMeshNode(
+	const repo::core::model::MeshNode &templateMesh, 
+	const std::vector<double> &transformation, 
+	const std::vector<double> &offset, 
+	const repo::lib::RepoUUID &parentID) {
+	auto trans = transformation;
+	trans[3] -= offset[0];
+	trans[7] -= offset[1];
+	trans[11] -= offset[2];
+	auto matrix = repo::lib::RepoMatrix(trans);
+	return new repo::core::model::MeshNode(
+		templateMesh.cloneAndApplyTransformation(matrix).cloneAndAddParent(parentID, true, true));
+}
+
 
 repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	
@@ -147,13 +161,12 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	auto root = createTransNode(identity, reader->getProjectName());
 	transNodes.insert(root);
 	
-	std::unordered_map < std::string, std::unordered_map<std::string, repo::lib::RepoUUID>> meshMatNodeMap;
 	std::unordered_map<repo::lib::RepoUUID, std::vector<repo::lib::RepoUUID>, repo::lib::RepoUUIDHasher> nodeToParents;
 	std::unordered_map<repo::lib::RepoUUID, std::string, repo::lib::RepoUUIDHasher> nodeToSynchroParent;
 
 	auto meshNodeTemplates = createMeshTemplateNodes();
-
-	for (const auto entity : reader->getEntities()) {
+	std::vector<synchro_reader::Vector3D> bbox;
+	for (const auto entity : reader->getEntities(bbox)) {
 		auto trans = createTransNode(identity, entity.second.name);
 		transNodes.insert(trans);
 		repoIDToNode[trans->getUniqueID()] = trans;
@@ -172,46 +185,21 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 				repoDebug << "Cannot find mesh/material entry. Skipping..";
 				continue;
 			}
+	
+			auto mesh = createMeshNode(meshNodeTemplates[meshID], 
+				meshEntry.transformation, { bbox[0].x, bbox[0].y, bbox[0].z }, trans->getSharedID());
 
-			if (meshMatNodeMap.find(meshID) == meshMatNodeMap.end()) {
-				meshMatNodeMap[meshID] = std::unordered_map<std::string, repo::lib::RepoUUID>();
-			}
+			auto matNode = repoIDToNode[synchroIDToRepoID[matID]];
+			auto matNodeID = matNode->getUniqueID();
 
-			if (meshMatNodeMap[meshID].find(matID) == meshMatNodeMap[meshID].end()) {
-				auto mesh = new repo::core::model::MeshNode(meshNodeTemplates[meshID].cloneAndChangeIdentity());
-				meshMatNodeMap[meshID][matID] = mesh->getUniqueID();
+			if (nodeToParents.find(matNodeID) == nodeToParents.end())
+				nodeToParents[matNodeID] = { mesh->getSharedID() };
+			else
+				nodeToParents[matNodeID].push_back(mesh->getSharedID());
 
-				auto matNode = repoIDToNode[synchroIDToRepoID[matID]];
-				auto matNodeID = matNode->getUniqueID();
-
-				if (nodeToParents.find(matNodeID) == nodeToParents.end())
-					nodeToParents[matNodeID] = { mesh->getSharedID() };
-				else
-					nodeToParents[matNodeID].push_back(mesh->getSharedID());
-
-				meshNodes.insert(mesh);
-				synchroIDToRepoID[meshID] = mesh->getUniqueID();
-				repoIDToNode[mesh->getUniqueID()] = mesh;
-			}
-
-			//Add transformation as parent of the mesh entry
-			auto repoMat = repo::lib::RepoMatrix(meshEntry.transformation);
-			auto meshTrans = new repo::core::model::TransformationNode(
-				repo::core::model::RepoBSONFactory::makeTransformationNode(
-					repoMat,
-					entity.second.name,
-					{ trans->getSharedID() }));
-
-			transNodes.insert(meshTrans);
-
-
-			auto mesh = meshMatNodeMap[meshID][matID];
-			if (nodeToParents.find(mesh) == nodeToParents.end()) {
-				nodeToParents[mesh] = { meshTrans->getSharedID() };
-			}
-			else {
-				nodeToParents[mesh].push_back(meshTrans->getSharedID());
-			}
+			meshNodes.insert(mesh);
+			synchroIDToRepoID[meshID] = mesh->getUniqueID();
+			repoIDToNode[mesh->getUniqueID()] = mesh;
 
 		}
 	}
@@ -241,8 +229,9 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 		<< metaNodes.size() << " metadata ";
 	auto scene = new repo::core::model::RepoScene({ orgFile }, dummy, meshNodes, matNodes, metaNodes, textNodes, transNodes);
 	auto origin = reader->getGlobalOffset();
-	repoInfo << "Setting Global Offset: " << origin.x << ", " << origin.y << ", " << origin.z;
-	scene->setWorldOffset({ origin.x, origin.y, origin.z });
+	std::vector<double> offset = { origin.x + bbox[0].x, origin.y + bbox[0].y, origin.z + bbox[0].z };
+	repoInfo << "Setting Global Offset: " << offset[0] << ", " << offset[1] << ", " << offset[2];
+	scene->setWorldOffset(offset);
 
 	return scene;
 }
