@@ -71,7 +71,7 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 					scene->reorientateDirectXModel();
 				}
 
-				if (applyReduction || modelConvertor->applyReduction()) {
+				if (applyReduction && modelConvertor->applyReduction()) {
 					repoTrace << "Applying transformation reduction optimizer";
 					repo::manipulator::modeloptimizer::TransformationReductionOptimizer optimizer;
 					optimizer.apply(scene);
