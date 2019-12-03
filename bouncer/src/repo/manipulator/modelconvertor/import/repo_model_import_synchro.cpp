@@ -335,7 +335,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 			auto color32Bit = colorEntry.first;
 			auto colorArr = (uint8_t*)&color32Bit;
 
-			auto colorVector = repo::lib::RepoVector3D({(float)colorArr[0]/255.f, (float)colorArr[1] / 255.f , (float)colorArr[2] / 255.f });
+			auto colorVector = repo::lib::RepoVector3D((float)colorArr[0]/255.f, (float)colorArr[1] / 255.f , (float)colorArr[2] / 255.f );
 
 			auto taskBSON = repo::core::model::RepoBSONFactory::makeColorTask( colorVector, colorEntry.second);
 
