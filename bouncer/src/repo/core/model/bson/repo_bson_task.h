@@ -38,9 +38,9 @@ namespace repo {
 			class REPO_API_EXPORT RepoTask : public RepoBSON
 			{
 			public:				
-				const static std::string RepoTask::REPO_TASK_TYPE_VISIBILITY;
-				const static std::string RepoTask::REPO_TASK_TYPE_COLOR;
-				const static std::string RepoTask::REPO_REF_TYPE_CAMERA;
+				const static std::string REPO_TASK_TYPE_VISIBILITY;
+				const static std::string REPO_TASK_TYPE_COLOR;
+				const static std::string REPO_REF_TYPE_CAMERA;
 
 				RepoTask() : RepoBSON() {}
 
