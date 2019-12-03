@@ -953,3 +953,69 @@ TransformationNode RepoBSONFactory::makeTransformationNode(
 
 	return TransformationNode(builder.obj());
 }
+
+RepoSequence RepoBSONFactory::makeSequence(
+	const std::map<uint64_t, std::vector<repo::lib::RepoUUID>> &frameToTasks,
+	const std::string &name
+) {
+	RepoBSONBuilder builder;
+	builder.append(REPO_LABEL_ID, repo::lib::RepoUUID::createUUID());
+	builder.append(REPO_SEQUENCE_LABEL_NAME, name);
+	
+	std::vector<RepoBSON> frames;
+
+	for (const auto &frameEntry : frameToTasks) {
+		RepoBSONBuilder bsonBuilder;
+		bsonBuilder.appendTime(REPO_SEQUENCE_LABEL_DATE, frameEntry.first);
+		bsonBuilder.appendArray(REPO_SEQUENCE_LABEL_TASKS, frameEntry.second);
+
+		frames.push_back(bsonBuilder.obj());
+	}
+
+	builder.appendArray(REPO_SEQUENCE_LABEL_FRAMES, frames);
+
+	return RepoSequence(builder.obj());
+}
+
+RepoTask RepoBSONFactory::makeVisibilityTask(
+	const float &opacity,
+	const std::vector<repo::lib::RepoUUID> &objects) {
+	RepoBSONBuilder builder;
+	builder.append(REPO_LABEL_ID, repo::lib::RepoUUID::createUUID());
+	builder.append(REPO_TASK_LABEL_ACTION, RepoTask::REPO_TASK_TYPE_VISIBILITY);
+	builder.append(REPO_TASK_LABEL_VALUE, opacity);
+	builder.appendArray(REPO_TASK_LABEL_OBJECTS, objects);
+	return RepoTask(builder.obj());
+}
+
+RepoTask RepoBSONFactory::makeColorTask(
+	const repo::lib::RepoVector3D &colorValue,
+	const std::vector<repo::lib::RepoUUID> &objects
+) {
+	RepoBSONBuilder builder;
+	builder.append(REPO_LABEL_ID, repo::lib::RepoUUID::createUUID());
+	builder.append(REPO_TASK_LABEL_ACTION, RepoTask::REPO_TASK_TYPE_COLOR);
+	builder.append(REPO_TASK_LABEL_VALUE, colorValue);
+	builder.appendArray(REPO_TASK_LABEL_OBJECTS, objects);
+	return RepoTask(builder.obj());
+}
+
+RepoTask RepoBSONFactory::makeCameraTask(
+	const float         &fieldOfView,
+	const bool           isPerspective,
+	const repo::lib::RepoVector3D &position,
+	const repo::lib::RepoVector3D &forward,	
+	const repo::lib::RepoVector3D &up
+) {
+	RepoBSONBuilder builder, subObjBuilder;
+	builder.append(REPO_LABEL_ID, repo::lib::RepoUUID::createUUID());
+	builder.append(REPO_TASK_LABEL_ACTION, RepoTask::REPO_TASK_TYPE_COLOR);
+
+	subObjBuilder.append(REPO_TASK_LABEL_POSITION, position);
+	subObjBuilder.append(REPO_TASK_LABEL_FORWARD, forward);
+	subObjBuilder.append(REPO_TASK_LABEL_UP, up);
+	subObjBuilder.append(REPO_TASK_LABEL_FOV, fieldOfView);
+	subObjBuilder.append(REPO_TASK_LABEL_IS_PERSPECTIVE, isPerspective);
+	builder.append(REPO_TASK_LABEL_VALUE, subObjBuilder.obj());
+	return RepoTask(builder.obj());
+}

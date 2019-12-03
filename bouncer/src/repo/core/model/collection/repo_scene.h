@@ -25,6 +25,8 @@
 
 #include "../../handler/repo_database_handler_abstract.h"
 #include "../../handler/fileservice/repo_file_manager.h"
+#include "../bson/repo_bson_sequence.h"
+#include "../bson/repo_bson_task.h"
 #include "../bson/repo_node.h"
 #include "../bson/repo_node_revision.h"
 
@@ -232,6 +234,13 @@ namespace repo{
 					repo::core::handler::AbstractDatabaseHandler *handler
 					);
 
+				void addSequence(
+					const RepoSequence &animationSequence,
+					const std::vector<RepoTask> &_tasks
+				 ){
+					sequence = animationSequence;
+					tasks = _tasks;
+				}
 
 				/**
 				* Clears the contents within the Stash (if there is one)
@@ -991,6 +1000,11 @@ namespace repo{
 					const GraphType &gType,
 					std::string &errMsg);
 
+				bool commitSequence(
+					repo::core::handler::AbstractDatabaseHandler *handler,
+					const repo::lib::RepoUUID &revID
+				);
+
 				/**
 				* Commit a project settings base on the
 				* changes on this scene
@@ -1124,6 +1138,9 @@ namespace repo{
 				std::string databaseName;/*! name of the database */
 				std::string projectName; /*! name of the project */
 				RevisionNode		 *revNode;
+
+				RepoSequence sequence;
+				std::vector<RepoTask> tasks;
 
 				/*
 				* ---------------- Scene Graph Details ----------------

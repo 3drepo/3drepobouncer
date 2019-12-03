@@ -596,11 +596,45 @@ bool RepoScene::commit(
 				toRemove.clear();
 				unRevisioned = false;
 			}
+			repoInfo << "Sequence: " << tasks.size();
+			if (success && tasks.size()) {
+				repoInfo << "Commited Scene nodes, committing sequence";
+				commitSequence(handler, newRevNode->getUniqueID());
+			}
 		}
 	}
 	if (success) updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
 	//Create and Commit revision node
 	return success;
+}
+
+bool RepoScene::commitSequence(
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	const repo::lib::RepoUUID &revID
+) {
+	if (tasks.size()) {
+		std::string err;
+
+		if (handler->insertDocument(
+			databaseName, projectName + "." + REPO_COLLECTION_SEQUENCE, sequence.cloneAndAddRevision(revID), err)) {
+
+			for (const auto &task : tasks) {
+				if (!handler->insertDocument(
+					databaseName, projectName + "." + REPO_COLLECTION_TASK, task, err)) {
+
+					repoError << "Failed to commit a sequence task: " << err;
+				}
+
+			}
+
+		}
+		else {
+			repoError << "Failed to commit sequence bson: " << err;
+			return false;
+		}
+	}
+
+	return true;
 }
 
 void RepoScene::addErrorStatusToProjectSettings(

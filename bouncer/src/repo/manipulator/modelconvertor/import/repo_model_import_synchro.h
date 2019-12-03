@@ -87,6 +87,9 @@ namespace repo{
 					const std::vector<double> &offset,
 					const repo::lib::RepoUUID &parentID);
 
+				repo::core::model::RepoScene* constructScene(
+					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs);
+
 				std::unordered_map<std::string, repo::core::model::MeshNode> createMeshTemplateNodes();
 
 				std::shared_ptr<synchro_reader::SPMReader> reader;

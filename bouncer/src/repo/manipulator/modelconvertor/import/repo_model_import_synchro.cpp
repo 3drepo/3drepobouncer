@@ -16,6 +16,7 @@
 */
 
 #ifdef SYNCHRO_SUPPORT
+#include <memory>
 #include "repo_model_import_synchro.h"
 
 #include "../../../core/model/bson/repo_bson_builder.h"
@@ -26,6 +27,7 @@
 using namespace repo::manipulator::modelconvertor;
 
 const std::string RESOURCE_ID_NAME = "Resource ID";
+const std::string DEFAULT_SEQUENCE_NAME = "Unnamed Sequence";
 
 bool SynchroModelImport::importModel(std::string filePath, uint8_t &errMsg) {
 
@@ -146,9 +148,9 @@ repo::core::model::MeshNode* SynchroModelImport::createMeshNode(
 		templateMesh.cloneAndApplyTransformation(matrix).cloneAndAddParent(parentID, true, true));
 }
 
-
-repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
-	
+repo::core::model::RepoScene* SynchroModelImport::constructScene( 
+	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs
+) {
 	repo::core::model::RepoNodeSet transNodes, matNodes, textNodes, meshNodes, metaNodes;
 	std::unordered_map<std::string, repo::lib::RepoUUID> synchroIDToRepoID;
 	std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> repoIDToNode;
@@ -157,10 +159,10 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	matNodes = matPairs.first;
 	textNodes = matPairs.second;
 
-	auto identity = repo::lib::RepoMatrix();	
+	auto identity = repo::lib::RepoMatrix();
 	auto root = createTransNode(identity, reader->getProjectName());
 	transNodes.insert(root);
-	
+
 	std::unordered_map<repo::lib::RepoUUID, std::vector<repo::lib::RepoUUID>, repo::lib::RepoUUIDHasher> nodeToParents;
 	std::unordered_map<repo::lib::RepoUUID, std::string, repo::lib::RepoUUIDHasher> nodeToSynchroParent;
 
@@ -168,13 +170,18 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	std::vector<synchro_reader::Vector3D> bbox;
 	for (const auto entity : reader->getEntities(bbox)) {
 		auto trans = createTransNode(identity, entity.second.name);
+		auto resourceID = entity.second.resourceID;
 		transNodes.insert(trans);
 		repoIDToNode[trans->getUniqueID()] = trans;
 		synchroIDToRepoID[entity.second.id] = trans->getUniqueID();
 		nodeToSynchroParent[trans->getUniqueID()] = entity.second.parentID;
 		auto meta = entity.second.metadata;
-		meta[RESOURCE_ID_NAME] = entity.second.resourceID;
+		meta[RESOURCE_ID_NAME] = resourceID;
 		metaNodes.insert(createMetaNode(meta, entity.second.name, { trans->getSharedID() }));
+
+		if (resourceIDsToSharedIDs.find(resourceID) == resourceIDsToSharedIDs.end()) {
+			resourceIDsToSharedIDs[resourceID] = {};
+		}
 
 
 		for (const auto meshEntry : entity.second.meshes) {
@@ -185,8 +192,8 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 				repoDebug << "Cannot find mesh/material entry. Skipping..";
 				continue;
 			}
-	
-			auto mesh = createMeshNode(meshNodeTemplates[meshID], 
+
+			auto mesh = createMeshNode(meshNodeTemplates[meshID],
 				meshEntry.transformation, { bbox[0].x, bbox[0].y, bbox[0].z }, trans->getSharedID());
 
 			auto matNode = repoIDToNode[synchroIDToRepoID[matID]];
@@ -200,7 +207,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 			meshNodes.insert(mesh);
 			synchroIDToRepoID[meshID] = mesh->getUniqueID();
 			repoIDToNode[mesh->getUniqueID()] = mesh;
-
+			resourceIDsToSharedIDs[resourceID].push_back(mesh->getSharedID());
 		}
 	}
 
@@ -210,7 +217,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 		auto synchroParent = entry.second;
 		auto parentSharedID = rootSharedID;
 		if (synchroIDToRepoID.find(synchroParent) != synchroIDToRepoID.end()) {
-			parentSharedID = repoIDToNode[synchroIDToRepoID[synchroParent]]->getSharedID();			
+			parentSharedID = repoIDToNode[synchroIDToRepoID[synchroParent]]->getSharedID();
 		}
 		*repoIDToNode[nodeID] = repoIDToNode[nodeID]->cloneAndAddParent(parentSharedID);
 	}
@@ -233,6 +240,121 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	repoInfo << "Setting Global Offset: " << offset[0] << ", " << offset[1] << ", " << offset[2];
 	scene->setWorldOffset(offset);
 
+	return scene;
+}
+
+repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
+	
+	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> resourceIDsToSharedIDs;
+
+	auto scene = constructScene(resourceIDsToSharedIDs);
+
+	repoInfo << "Getting animations... resource size: " << resourceIDsToSharedIDs.size() << " first ID: " << resourceIDsToSharedIDs.begin()->first;
+	auto animation = reader->getAnimation();
+	
+
+	std::map<uint64_t, std::vector<repo::lib::RepoUUID>> frameToTasks;
+	std::vector<repo::core::model::RepoTask> tasks;
+
+
+	for (const auto &frame : animation.frames) {
+		frameToTasks[frame.first] = std::vector < repo::lib::RepoUUID>();
+		std::unordered_map<uint32_t, std::vector<repo::lib::RepoUUID>> colorTasks;
+		std::unordered_map<float, std::vector<repo::lib::RepoUUID>> visibilityTasks;
+		for (const auto &task : frame.second) {
+			switch (task->getType()) {
+			case synchro_reader::AnimationTask::TaskType::CAMERA:
+				{
+					auto camTask = std::dynamic_pointer_cast<const synchro_reader::CameraChange>(task);
+					auto taskBSON = repo::core::model::RepoBSONFactory::makeCameraTask(
+						camTask->fov, camTask->isPerspective,
+						{ (float)camTask->position.x, (float)camTask->position.y, (float)camTask->position.z },
+						{ (float)camTask->forward.x, (float)camTask->forward.y, (float)camTask->forward.z },
+						{ (float)camTask->up.x, (float)camTask->up.y, (float)camTask->up.z }
+					);
+
+					tasks.push_back(taskBSON);
+					frameToTasks[frame.first].push_back(taskBSON.getUUIDField(REPO_LABEL_ID));
+				}
+				break;
+			case synchro_reader::AnimationTask::TaskType::COLOR:
+				{
+					auto colourTask = std::dynamic_pointer_cast<const synchro_reader::ColourTask>(task);
+
+					if (resourceIDsToSharedIDs.find(colourTask->resourceID) != resourceIDsToSharedIDs.end()) {
+						auto color = colourTask->color;
+						uint8_t bitColor[4];
+						bitColor[0] = color[0] * 255;
+						bitColor[1] = color[1] * 255;
+						bitColor[2] = color[2] * 255;
+						bitColor[3] = 0;
+
+						auto colour32Bit = *(uint32_t*)&bitColor;
+
+						if (colorTasks.find(colour32Bit) == colorTasks.end()) {
+							colorTasks[colour32Bit] = resourceIDsToSharedIDs[colourTask->resourceID];
+						}
+						else {
+							colorTasks[colour32Bit].insert(
+								colorTasks[colour32Bit].end(),
+								resourceIDsToSharedIDs[colourTask->resourceID].begin(),
+								resourceIDsToSharedIDs[colourTask->resourceID].end());
+						}					
+					}
+					else {
+						repoInfo << " Found colour tasks but no matching resource: " << colourTask->resourceID;
+						exit(-1);
+					}
+				}
+				break;
+			case synchro_reader::AnimationTask::TaskType::VISIBILITY:
+				{
+					auto visibilityTask = std::dynamic_pointer_cast<const synchro_reader::VisibilityTask>(task);
+					if (resourceIDsToSharedIDs.find(visibilityTask->resourceID) != resourceIDsToSharedIDs.end()) {
+						auto visibility = visibilityTask->visibility / 100.;
+						if (visibilityTasks.find(visibility) == visibilityTasks.end()) {
+							visibilityTasks[visibility] = resourceIDsToSharedIDs[visibilityTask->resourceID];
+						}
+						else {
+							visibilityTasks[visibility].insert(
+								visibilityTasks[visibility].end(),
+								resourceIDsToSharedIDs[visibilityTask->resourceID].begin(), 
+								resourceIDsToSharedIDs[visibilityTask->resourceID].end());
+						}
+					}
+					else {
+						repoInfo << " Found visibility tasks but no matching resource: " << visibilityTask->resourceID;
+						exit(-1);
+					}
+				}
+				break;
+			}
+		}
+
+		for (const auto &colorEntry : colorTasks) {
+			auto color32Bit = colorEntry.first;
+			auto colorArr = (uint8_t*)&color32Bit;
+
+			auto colorVector = repo::lib::RepoVector3D({(float)colorArr[0]/255.f, (float)colorArr[1] / 255.f , (float)colorArr[2] / 255.f });
+
+			auto taskBSON = repo::core::model::RepoBSONFactory::makeColorTask( colorVector, colorEntry.second);
+
+			tasks.push_back(taskBSON);
+			frameToTasks[frame.first].push_back(taskBSON.getUUIDField(REPO_LABEL_ID));
+		}
+
+		for (const auto &visibilityEntry : visibilityTasks) {
+			auto taskBSON = repo::core::model::RepoBSONFactory::makeVisibilityTask(visibilityEntry.first, visibilityEntry.second);
+
+			tasks.push_back(taskBSON);
+			frameToTasks[frame.first].push_back(taskBSON.getUUIDField(REPO_LABEL_ID));			
+		}
+		repoInfo << "Color tasks: " << colorTasks.size() << ", visibilityTasks " << visibilityTasks.size();
+	}
+	std::string animationName = animation.name.empty() ? DEFAULT_SEQUENCE_NAME : animation.name;
+	auto sequence = repo::core::model::RepoBSONFactory::makeSequence(frameToTasks, animationName);
+	repoInfo << "Animation constructed, number of frames: " << frameToTasks.size() << "# tasks:" << tasks.size();
+	scene->addSequence(sequence, tasks);
 	return scene;
 }
 #endif
