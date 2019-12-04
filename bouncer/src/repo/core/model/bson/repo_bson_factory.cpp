@@ -966,7 +966,7 @@ RepoSequence RepoBSONFactory::makeSequence(
 
 	for (const auto &frameEntry : frameToTasks) {
 		RepoBSONBuilder bsonBuilder;
-		bsonBuilder.appendTime(REPO_SEQUENCE_LABEL_DATE, frameEntry.first);
+		bsonBuilder.appendTime(REPO_SEQUENCE_LABEL_DATE, frameEntry.first * 1000);
 		bsonBuilder.appendArray(REPO_SEQUENCE_LABEL_TASKS, frameEntry.second);
 
 		frames.push_back(bsonBuilder.obj());

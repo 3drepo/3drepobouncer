@@ -27,5 +27,6 @@ RepoSequence RepoSequence::cloneAndAddRevision(
 	RepoBSONBuilder builder;
 	builder.append(REPO_SEQUENCE_LABEL_REV_ID, rid);
 
-	return RepoSequence(builder.obj());
+	auto bson = builder.obj();
+	return cloneAndAddFields(&bson);
 }

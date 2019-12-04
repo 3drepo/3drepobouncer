@@ -596,7 +596,6 @@ bool RepoScene::commit(
 				toRemove.clear();
 				unRevisioned = false;
 			}
-			repoInfo << "Sequence: " << tasks.size();
 			if (success && tasks.size()) {
 				repoInfo << "Commited Scene nodes, committing sequence";
 				commitSequence(handler, newRevNode->getUniqueID());

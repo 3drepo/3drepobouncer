@@ -249,7 +249,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 
 	auto scene = constructScene(resourceIDsToSharedIDs);
 
-	repoInfo << "Getting animations... resource size: " << resourceIDsToSharedIDs.size() << " first ID: " << resourceIDsToSharedIDs.begin()->first;
+	repoInfo << "Getting animations... ";
 	auto animation = reader->getAnimation();
 	
 
@@ -301,10 +301,6 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 								resourceIDsToSharedIDs[colourTask->resourceID].end());
 						}					
 					}
-					else {
-						repoInfo << " Found colour tasks but no matching resource: " << colourTask->resourceID;
-						exit(-1);
-					}
 				}
 				break;
 			case synchro_reader::AnimationTask::TaskType::VISIBILITY:
@@ -322,16 +318,13 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 								resourceIDsToSharedIDs[visibilityTask->resourceID].end());
 						}
 					}
-					else {
-						repoInfo << " Found visibility tasks but no matching resource: " << visibilityTask->resourceID;
-						exit(-1);
-					}
 				}
 				break;
 			}
 		}
 
 		for (const auto &colorEntry : colorTasks) {
+			if (!colorEntry.second.size()) continue;
 			auto color32Bit = colorEntry.first;
 			auto colorArr = (uint8_t*)&color32Bit;
 
@@ -344,12 +337,12 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 		}
 
 		for (const auto &visibilityEntry : visibilityTasks) {
+			if (!visibilityEntry.second.size()) continue;
 			auto taskBSON = repo::core::model::RepoBSONFactory::makeVisibilityTask(visibilityEntry.first, visibilityEntry.second);
 
 			tasks.push_back(taskBSON);
 			frameToTasks[frame.first].push_back(taskBSON.getUUIDField(REPO_LABEL_ID));			
 		}
-		repoInfo << "Color tasks: " << colorTasks.size() << ", visibilityTasks " << visibilityTasks.size();
 	}
 	std::string animationName = animation.name.empty() ? DEFAULT_SEQUENCE_NAME : animation.name;
 	auto sequence = repo::core::model::RepoBSONFactory::makeSequence(frameToTasks, animationName);

@@ -27,8 +27,8 @@ namespace repo {
 			//
 			//------------------------------------------------------------------------------
 			#define REPO_TASK_LABEL_ACTION "action"
-			#define REPO_TASK_LABEL_VALUE "name"
-			#define REPO_TASK_LABEL_OBJECTS "sequence"
+			#define REPO_TASK_LABEL_VALUE "value"
+			#define REPO_TASK_LABEL_OBJECTS "shared_ids"
 			#define REPO_TASK_LABEL_FOV "fov"
 			#define REPO_TASK_LABEL_IS_PERSPECTIVE "isPerspective"
 			#define REPO_TASK_LABEL_POSITION "position"
