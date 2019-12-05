@@ -128,7 +128,7 @@ bool RepoManipulator::commitAssetBundleBuffers(
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	auto manager = repo::core::handler::fileservice::FileManager::getManager();
 	modelutility::SceneManager SceneManager;
-	return SceneManager.commitWebBuffers(scene, scene->getUnityExtension(), buffers, handler, manager, true);
+	return SceneManager.commitWebBuffers(scene, REPO_COLLECTION_STASH_UNITY, buffers, handler, manager, true);
 }
 
 bool RepoManipulator::commitScene(
@@ -1066,7 +1066,7 @@ bool RepoManipulator::saveOriginalFiles(
 			for (const std::string &file : files)
 			{
 				std::vector<uint8_t> rawFile = handler->getRawFile(scene->getDatabaseName(),
-					scene->getProjectName() + "." + scene->getRawExtension(), file);
+					scene->getProjectName() + "." + REPO_COLLECTION_RAW, file);
 				if (rawFile.size() > 0)
 				{
 					boost::filesystem::path filePath(file);
