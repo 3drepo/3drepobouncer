@@ -401,23 +401,6 @@ TEST(RepoSceneTest, GetSetDatabaseProjectName)
 	EXPECT_EQ("p_r_o_j_e_c_t____", scene3.getProjectName());
 }
 
-TEST(RepoSceneTest, getExtensions)
-{
-	RepoScene scene;
-	EXPECT_EQ(scene.getStashExtension(), REPO_COLLECTION_STASH_REPO);
-	EXPECT_EQ(scene.getRawExtension(), REPO_COLLECTION_RAW);
-	EXPECT_EQ(scene.getSRCExtension(), REPO_COLLECTION_STASH_SRC);
-	EXPECT_EQ(scene.getGLTFExtension(), REPO_COLLECTION_STASH_GLTF);
-	EXPECT_EQ(scene.getJSONExtension(), REPO_COLLECTION_STASH_JSON);
-
-	RepoScene scene2("db", "proj", "scene", "rev", "stash", "raw", "iss", "src", "gltf", "json");
-
-	EXPECT_EQ(scene2.getStashExtension(), "stash");
-	EXPECT_EQ(scene2.getRawExtension(), "raw");
-	EXPECT_EQ(scene2.getSRCExtension(), "src");
-	EXPECT_EQ(scene2.getGLTFExtension(), "gltf");
-	EXPECT_EQ(scene2.getJSONExtension(), "json");
-}
 
 TEST(RepoSceneTest, getSetRevisionID)
 {
