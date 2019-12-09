@@ -26,7 +26,7 @@ namespace repo {
 			// Fields specific to ref only
 			//
 			//------------------------------------------------------------------------------
-			#define REPO_SEQUENCE_LABEL_REV_ID "revId"
+			#define REPO_SEQUENCE_LABEL_REV_ID "rev_id"
 			#define REPO_SEQUENCE_LABEL_NAME "name"
 			#define REPO_SEQUENCE_LABEL_FRAMES "sequence"
 			#define REPO_SEQUENCE_LABEL_DATE "dateTime"
