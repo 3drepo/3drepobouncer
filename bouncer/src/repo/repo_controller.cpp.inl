@@ -211,38 +211,12 @@ public:
 		);
 
 	/**
-	* Return a CollectionStats BSON containing statistics about
-	* this collection
-	* @param token A RepoToken given at authentication
-	* @param database name of database
-	* @param collection name of collection
-	* @return returns a BSON object containing this information
-	*/
-	repo::core::model::CollectionStats getCollectionStats(
-		const RepoToken            *token,
-		const std::string    &database,
-		const std::string    &collection);
-
-	/**
 	* Return a list of database available to the user
 	* @param token A RepoToken given at authentication
 	* @return returns a list of database names
 	*/
 	std::list<std::string> getDatabases(
 		const RepoToken *token);
-	//FIXME: vectors are much better than list for traversal efficiency...
-	// (but they also require large continuos memory allocation should they be massive)
-
-	/**
-	* Return a DatabaseStats BSON containing statistics about
-	* this database
-	* @param token A RepoToken given at authentication
-	* @param database name of database
-	* @return returns a BSON object containing this information
-	*/
-	repo::core::model::DatabaseStats getDatabaseStats(
-		const RepoToken *token,
-		const std::string &database);
 
 	/**
 	* Return a list of projects with the database available to the user

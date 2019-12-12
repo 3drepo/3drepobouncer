@@ -154,27 +154,6 @@ std::list<std::string> RepoController::getDatabases(const RepoController::RepoTo
 	return impl->getDatabases(token);
 }
 
-repo::core::model::DatabaseStats RepoController::getDatabaseStats(const RepoController::RepoToken *token,
-	const std::string &databaseName)
-{
-	return impl->getDatabaseStats(token, databaseName);
-}
-
-std::list<std::string>  RepoController::getCollections(
-	const RepoController::RepoToken       *token,
-	const std::string     &databaseName
-	)
-{
-	return impl->getCollections(token, databaseName);
-}
-
-repo::core::model::CollectionStats RepoController::getCollectionStats(
-	const RepoController::RepoToken      *token,
-	const std::string                    &database,
-	const std::string                    &collection)
-{
-	return impl->getCollectionStats(token, database, collection);
-}
 
 std::map<std::string, std::list<std::string>>
 RepoController::getDatabasesWithProjects(
