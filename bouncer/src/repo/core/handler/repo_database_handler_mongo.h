@@ -40,7 +40,6 @@
 #include "../model/bson/repo_bson_builder.h"
 #include "../model/bson/repo_bson_role.h"
 #include "../model/bson/repo_bson_user.h"
-#include "../model/bson/repo_bson_database_stats.h"
 #include "../../lib/repo_stack.h"
 
 namespace repo{
