@@ -439,20 +439,6 @@ bool RepoController::isVREnabled(const RepoController::RepoToken *token,
 	return impl->isVREnabled(token, scene);
 }
 
-void RepoController::getDatabaseStatistics(
-	const RepoController::RepoToken   *token,
-	const std::string &outputFilePath)
-{
-	impl->getDatabaseStatistics(token, outputFilePath);
-}
-
-void RepoController::getUserList(
-	const RepoController::RepoToken   *token,
-	const std::string &outputFilePath)
-{
-	impl->getUserList(token, outputFilePath);
-}
-
 std::string RepoController::getVersion()
 {
 	return impl->getVersion();

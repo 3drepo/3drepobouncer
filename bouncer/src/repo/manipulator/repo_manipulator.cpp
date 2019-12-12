@@ -42,7 +42,6 @@
 #include "modeloptimizer/repo_optimizer_ifc.h"
 #include "modelutility/repo_scene_manager.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
-#include "statistics/repo_statistics_generator.h"
 #include "repo_manipulator.h"
 
 using namespace repo::manipulator;
@@ -641,28 +640,6 @@ const std::list<std::string> &databases)
 		list = handler->getDatabasesWithProjects(databases);
 
 	return list;
-}
-
-void RepoManipulator::getDatabaseStatistics(
-	const std::string                     &databaseAd,
-	const repo::core::model::RepoBSON*	  cred,
-	const std::string &outputFilePath)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	StatisticsGenerator statGen(handler);
-	statGen.getDatabaseStatistics(outputFilePath);
-}
-
-void RepoManipulator::getUserList(
-	const std::string                     &databaseAd,
-	const repo::core::model::RepoBSON*	  cred,
-	const std::string &outputFilePath)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	StatisticsGenerator statGen(handler);
-	statGen.getUserList(outputFilePath);
 }
 
 std::list<std::string> RepoManipulator::getAdminDatabaseRoles(

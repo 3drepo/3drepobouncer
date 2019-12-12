@@ -770,25 +770,6 @@ public:
 		compareScenes(token, base, compare, baseResults, compResults, repo::DiffMode::DIFF_BY_NAME);
 	}
 
-	/*
-	*	------------- Statistics --------------
-	*/
-
-	/**
-	* Generate database statistics and print the result in the given filepath
-	* @params outputFilePath
-	*/
-	void getDatabaseStatistics(
-		const RepoToken   *token,
-		const std::string &outputFilePath);
-
-	/**
-	* Get a list of users and print the result in the given filepath
-	* @params outputFilePath
-	*/
-	void getUserList(
-		const RepoToken   *token,
-		const std::string &outputFilePath);
 
 	/*
 	*	------------- Versioning --------------

@@ -1133,24 +1133,6 @@ void RepoController::_RepoControllerImpl::compareScenes(
 	}
 }
 
-void RepoController::_RepoControllerImpl::getDatabaseStatistics(
-	const RepoController::RepoToken   *token,
-	const std::string &outputFilePath)
-{
-	manipulator::RepoManipulator* worker = workerPool.pop();
-	worker->getDatabaseStatistics(token->databaseAd, token->getCredentials(), outputFilePath);
-	workerPool.push(worker);
-}
-
-void RepoController::_RepoControllerImpl::getUserList(
-	const RepoController::RepoToken   *token,
-	const std::string &outputFilePath)
-{
-	manipulator::RepoManipulator* worker = workerPool.pop();
-	worker->getUserList(token->databaseAd, token->getCredentials(), outputFilePath);
-	workerPool.push(worker);
-}
-
 std::string RepoController::_RepoControllerImpl::getVersion()
 {
 	std::stringstream ss;

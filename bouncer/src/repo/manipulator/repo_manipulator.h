@@ -460,23 +460,6 @@ namespace repo{
 			std::list<std::string> getStandardDatabaseRoles(
 				const std::string                             &databaseAd);
 
-			/**
-			* Generate database statistics and print the result in the given filepath
-			* @params outputFilePath
-			*/
-			void getDatabaseStatistics(
-				const std::string                     &databaseAd,
-				const repo::core::model::RepoBSON*	  cred,
-				const std::string &outputFilePath);
-
-			/**
-			* Get a list of users and print the result in the given filepath
-			* @params outputFilePath
-			*/
-			void getUserList(
-				const std::string                     &databaseAd,
-				const repo::core::model::RepoBSON*	  cred,
-				const std::string &outputFilePath);
 
 			/**
 			* Get the name of the admin database
