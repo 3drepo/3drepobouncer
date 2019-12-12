@@ -697,43 +697,6 @@ std::list<std::string> MongoDatabaseHandler::getCollections(
 	return collections;
 }
 
-repo::core::model::CollectionStats MongoDatabaseHandler::getCollectionStats(
-	const std::string    &database,
-	const std::string    &collection,
-	std::string          &errMsg)
-{
-	mongo::BSONObj info;
-	mongo::DBClientBase *worker;
-	if (!(database.empty() || collection.empty()))
-	{
-		try {
-			mongo::BSONObjBuilder builder;
-			builder.append("collstats", collection);
-			builder.append("scale", 1); // 1024 == KB
-
-			worker = workerPool->getWorker();
-			if (worker)
-				worker->runCommand(database, builder.obj(), info);
-			else
-				repoError << "Failed to count number of items in collection: cannot obtain a database worker from the pool";
-		}
-		catch (mongo::DBException &e)
-		{
-			errMsg = e.what();
-			repoError << "Failed to retreive collection stats for" << database
-				<< "." << collection << " : " << errMsg;
-		}
-
-		workerPool->returnWorker(worker);
-	}
-	else
-	{
-		errMsg = "Failed to retrieve collection stats: empty database name/collection name";
-	}
-
-	return repo::core::model::CollectionStats(info);
-}
-
 std::list<std::string> MongoDatabaseHandler::getDatabases(
 	const bool &sorted)
 {
@@ -758,42 +721,6 @@ std::list<std::string> MongoDatabaseHandler::getDatabases(
 	}
 	workerPool->returnWorker(worker);
 	return list;
-}
-
-repo::core::model::DatabaseStats MongoDatabaseHandler::getDatabaseStats(
-	const std::string    &database,
-	std::string          &errMsg)
-{
-	mongo::BSONObj info;
-	mongo::DBClientBase *worker;
-	if (!database.empty())
-	{
-		try {
-			mongo::BSONObjBuilder builder;
-			builder.append("dbStats", 1);
-			builder.append("scale", 1); // 1024 == KB
-
-			worker = workerPool->getWorker();
-			if (worker)
-				worker->runCommand(database, builder.obj(), info);
-			else
-				repoError << "Failed to count number of items in collection: cannot obtain a database worker from the pool";
-		}
-		catch (mongo::DBException &e)
-		{
-			errMsg = e.what();
-			repoError << "Failed to retreive database stats for" << database
-				<< " : " << errMsg;
-		}
-
-		workerPool->returnWorker(worker);
-	}
-	else
-	{
-		errMsg = "Failed to retrieve collection stats: empty database name/collection name";
-	}
-
-	return repo::core::model::DatabaseStats(info);
 }
 
 std::vector<uint8_t> MongoDatabaseHandler::getBigFile(

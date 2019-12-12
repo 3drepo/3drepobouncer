@@ -26,7 +26,6 @@
 #include "../core/model/bson/repo_node_reference.h"
 #include "../core/model/bson/repo_node_transformation.h"
 #include "../core/model/bson/repo_node_mesh.h"
-#include "../core/model/bson/repo_bson_database_stats.h"
 #include "../core/model/collection/repo_scene.h"
 #include "../lib/repo_config.h"
 #include "diff/repo_diff_abstract.h"
@@ -387,38 +386,6 @@ namespace repo{
 				const int									  &sortOrder = -1,
 				const uint64_t                                &skip = 0,
 				const uint32_t                                &limit = 0);
-
-			/**
-			* Get the collection statistics of the given collection
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
-			* @param database Name of database
-			* @param collection Name of collection
-			* @param errMsg error message when error occurs
-			* @return returns a bson object with statistical info.
-			*/
-			repo::core::model::CollectionStats getCollectionStats(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON             *cred,
-				const std::string                             &database,
-				const std::string                             &collection,
-				std::string	                                  &errMsg
-				);
-
-			/**
-			* Get the database statistics of the given database
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
-			* @param database Name of database
-			* @param errMsg error message when error occurs
-			* @return returns a bson object with statistical info.
-			*/
-			repo::core::model::DatabaseStats getDatabaseStats(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON             *cred,
-				const std::string                             &database,
-				std::string	                                  &errMsg
-				);
 
 			/**
 			* Return a list of projects with the database available to the user
