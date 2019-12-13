@@ -177,7 +177,6 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 		nodeToSynchroParent[trans->getUniqueID()] = entity.second.parentID;
 		auto meta = entity.second.metadata;		
 		meta[RESOURCE_ID_NAME] = resourceID;
-		std::cout << resourceID << std::endl;
 		if (meta.size() > 1 || !resourceID.empty()) {
 			metaNodes.insert(createMetaNode(meta, entity.second.name, { trans->getSharedID() }));
 		}
