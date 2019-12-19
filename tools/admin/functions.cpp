@@ -31,8 +31,6 @@ static const std::string FBX_EXTENSION = ".FBX";
 
 static const std::string cmdGenStash = "genStashAll";   //Generate stashes for all databases
 static const std::string cmdGenStashSpecific = "genStash";   //Generate stashes for a specific database
-static const std::string cmdGetUserList = "userList";   //Generate list of users
-static const std::string cmdGenDBStats = "genDBStats";   //Generate database statistics
 static const std::string cmdTestConn = "test";   //test the connection
 static const std::string cmdVersion = "version";   //get version
 static const std::string cmdVersion2 = "-v";   //get version
@@ -43,8 +41,6 @@ std::string helpInfo()
 
 	ss << cmdGenStash << "\tGenerate Stash for all databases. (args: [repo|gltf|src|tree])\n";
 	ss << cmdGenStashSpecific << "\tGenerate Stash for specific list of databases. (args: <file with list of databases> [repo|gltf|src|tree])\n";
-	ss << cmdGetUserList << "\tGenerate a list of users and their contact information\n";
-	ss << cmdGenDBStats << "\tCreate a database statistics report (args: <output file>)\n";
 	ss << cmdTestConn << "\t\tTest the client and database connection is working. (args: none)\n";
 	ss << cmdVersion << "[-v]\tPrints the version of Repo Bouncer Client/Library\n";
 
@@ -60,7 +56,7 @@ int32_t knownValid(const std::string &cmd)
 {
 	if (cmd == cmdGenStashSpecific)
 		return 2;
-	if (cmd == cmdGenStash || cmd == cmdGetUserList || cmd == cmdGenDBStats)
+	if (cmd == cmdGenStash)
 		return 1;
 	if (cmd == cmdTestConn)
 		return 0;
@@ -85,28 +81,6 @@ int32_t performOperation(
 		catch (const std::exception &e)
 		{
 			repoLogError("Failed to generate optimised stash: " + std::string(e.what()));
-			errCode = REPOERR_UNKNOWN_ERR;
-		}
-	}
-	else if (command.command == cmdGetUserList)
-	{
-		try{
-			errCode = getUserList(controller, token, command);
-		}
-		catch (const std::exception &e)
-		{
-			repoLogError("Failed to generate user list: " + std::string(e.what()));
-			errCode = REPOERR_UNKNOWN_ERR;
-		}
-	}
-	else if (command.command == cmdGenDBStats)
-	{
-		try{
-			errCode = getDBStats(controller, token, command);
-		}
-		catch (const std::exception &e)
-		{
-			repoLogError("Failed to generate db stats: " + std::string(e.what()));
 			errCode = REPOERR_UNKNOWN_ERR;
 		}
 	}
@@ -306,39 +280,4 @@ int32_t generateStash(
 	repoLog("Stash generation completed. " + std::to_string(tolCount) + " processed, " + std::to_string(failCount) + " failed");
 
 	return failCount == 0 ? REPOERR_OK : REPOERR_STASH_GEN_FAIL;
-}
-
-int32_t getUserList(
-	repo::RepoController       *controller,
-	const repo::RepoController::RepoToken      *token,
-	const repo_op_t            &command
-	)
-{
-	if (command.nArgcs < 1)
-	{
-		repoLogError("Number of arguments mismatch! " + cmdGetUserList
-			+ " requires 1 arguments: <output file path>");
-		return REPOERR_INVALID_ARG;
-	}
-
-	controller->getUserList(token, command.args[0]);
-	return REPOERR_OK;
-}
-
-int32_t getDBStats(
-	repo::RepoController       *controller,
-	const repo::RepoController::RepoToken      *token,
-	const repo_op_t            &command
-	)
-{
-	if (command.nArgcs < 1)
-	{
-		repoLogError("Number of arguments mismatch! " + cmdGenDBStats
-			+ " requires 1 arguments: <output file path> [file with list of paid teamspaces]");
-		return REPOERR_INVALID_ARG;
-	}
-
-	controller->getDatabaseStatistics(token, command.args[0]);
-
-	return REPOERR_OK;
 }

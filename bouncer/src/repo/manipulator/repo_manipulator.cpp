@@ -39,7 +39,6 @@
 #include "modelutility/repo_scene_manager.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"
-#include "statistics/repo_statistics_generator.h"
 #include "repo_manipulator.h"
 
 using namespace repo::manipulator;
@@ -173,7 +172,7 @@ bool RepoManipulator::commitScene(
 			else
 			{
 				repoError << "Failed to commit scene stash : " << msg;
-			}			
+			}
 		}
 
 		if (success)
@@ -594,37 +593,6 @@ const uint32_t								  &limit)
 	return vector;
 }
 
-repo::core::model::CollectionStats RepoManipulator::getCollectionStats(
-	const std::string                             &databaseAd,
-	const repo::core::model::RepoBSON*	  cred,
-	const std::string                             &database,
-	const std::string                             &collection,
-	std::string                                   &errMsg)
-{
-	repo::core::model::CollectionStats stats;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-		stats = handler->getCollectionStats(database, collection, errMsg);
-
-	return stats;
-}
-
-repo::core::model::DatabaseStats RepoManipulator::getDatabaseStats(
-	const std::string                             &databaseAd,
-	const repo::core::model::RepoBSON*	  cred,
-	const std::string                             &database,
-	std::string                                   &errMsg)
-{
-	repo::core::model::DatabaseStats stats;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-		stats = handler->getDatabaseStats(database, errMsg);
-
-	return stats;
-}
-
 std::map<std::string, std::list<std::string>>
 RepoManipulator::getDatabasesWithProjects(
 const std::string                             &databaseAd,
@@ -638,28 +606,6 @@ const std::list<std::string> &databases)
 		list = handler->getDatabasesWithProjects(databases);
 
 	return list;
-}
-
-void RepoManipulator::getDatabaseStatistics(
-	const std::string                     &databaseAd,
-	const repo::core::model::RepoBSON*	  cred,
-	const std::string &outputFilePath)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	StatisticsGenerator statGen(handler);
-	statGen.getDatabaseStatistics(outputFilePath);
-}
-
-void RepoManipulator::getUserList(
-	const std::string                     &databaseAd,
-	const repo::core::model::RepoBSON*	  cred,
-	const std::string &outputFilePath)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	StatisticsGenerator statGen(handler);
-	statGen.getUserList(outputFilePath);
 }
 
 std::list<std::string> RepoManipulator::getAdminDatabaseRoles(

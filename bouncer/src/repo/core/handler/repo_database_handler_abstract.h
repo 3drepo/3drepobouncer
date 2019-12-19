@@ -29,8 +29,7 @@
 #include "../model/bson/repo_bson.h"
 #include "../model/bson/repo_bson_role.h"
 #include "../model/bson/repo_bson_user.h"
-#include "../model/bson/repo_bson_collection_stats.h"
-#include "../model/bson/repo_bson_database_stats.h"
+
 
 namespace repo{
 	namespace core{
@@ -106,17 +105,6 @@ namespace repo{
 				*/
 				virtual std::list<std::string> getCollections(const std::string &database) = 0;
 
-				/**
-				* Get the collection statistics of the given collection
-				* @param database Name of database
-				* @param collection Name of collection
-				* @param errMsg error message when error occurs
-				* @return returns a bson object with statistical info.
-				*/
-				virtual repo::core::model::CollectionStats getCollectionStats(
-					const std::string    &database,
-					const std::string    &collection,
-					std::string          &errMsg) = 0;
 
 				/**
 				* Get a list of all available databases, alphabetically sorted by default.
@@ -131,17 +119,7 @@ namespace repo{
 				*/
 				virtual std::map<std::string, std::list<std::string> > getDatabasesWithProjects(
 					const std::list<std::string> &databases,
-					const std::string &projectExt = "scene") = 0;
-
-                                /**
-                                * Get the database statistics of the given database
-                                * @param database Name of database
-                                * @param errMsg error message when error occurs
-                                * @return returns a bson object with statistical info.
-                                */
-                                virtual repo::core::model::DatabaseStats getDatabaseStats(
-                                        const std::string    &database,
-                                        std::string          &errMsg) = 0;
+					const std::string &projectExt = "scene") = 0;                          
 
 				/**
 				* Get a list of projects associated with a given database (aka company account).
