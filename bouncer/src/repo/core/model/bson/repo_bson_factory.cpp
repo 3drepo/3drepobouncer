@@ -972,6 +972,6 @@ RepoSequence RepoBSONFactory::makeSequence(
 	}
 
 	builder.appendArray(REPO_SEQUENCE_LABEL_FRAMES, frames);
-	exit(0);
+
 	return RepoSequence(builder.obj());
 }
