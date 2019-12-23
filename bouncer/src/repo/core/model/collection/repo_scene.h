@@ -26,7 +26,6 @@
 #include "../../handler/repo_database_handler_abstract.h"
 #include "../../handler/fileservice/repo_file_manager.h"
 #include "../bson/repo_bson_sequence.h"
-#include "../bson/repo_bson_task.h"
 #include "../bson/repo_node.h"
 #include "../bson/repo_node_revision.h"
 
@@ -213,10 +212,10 @@ namespace repo{
 
 				void addSequence(
 					const RepoSequence &animationSequence,
-					const std::vector<RepoTask> &_tasks
+					const std::unordered_map<std::string, std::vector<uint8_t>> &states
 				 ){
 					sequence = animationSequence;
-					tasks = _tasks;
+					frameStates = states;
 				}
 
 				/**
@@ -926,6 +925,7 @@ namespace repo{
 
 				bool commitSequence(
 					repo::core::handler::AbstractDatabaseHandler *handler,
+					repo::core::handler::fileservice::FileManager *manager,
 					const repo::lib::RepoUUID &revID
 				);
 
@@ -1055,7 +1055,7 @@ namespace repo{
 				RevisionNode		 *revNode;
 
 				RepoSequence sequence;
-				std::vector<RepoTask> tasks;
+				std::unordered_map<std::string, std::vector<uint8_t>> frameStates;
 
 				/*
 				* ---------------- Scene Graph Details ----------------

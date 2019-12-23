@@ -28,13 +28,19 @@ namespace repo {
 			//------------------------------------------------------------------------------
 			#define REPO_SEQUENCE_LABEL_REV_ID "rev_id"
 			#define REPO_SEQUENCE_LABEL_NAME "name"
-			#define REPO_SEQUENCE_LABEL_FRAMES "sequence"
+			#define REPO_SEQUENCE_LABEL_FRAMES "frames"
 			#define REPO_SEQUENCE_LABEL_DATE "dateTime"
-			#define REPO_SEQUENCE_LABEL_TASKS "tasks"
+			#define REPO_SEQUENCE_LABEL_STATE "state"
 
 			class REPO_API_EXPORT RepoSequence : public RepoBSON
 			{
 			public:				
+
+				struct FrameData {
+					uint64_t timestamp;
+					std::string ref;
+				};
+
 				RepoSequence() : RepoBSON() {}
 
 				RepoSequence(RepoBSON bson) : RepoBSON(bson){}

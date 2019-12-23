@@ -22,6 +22,7 @@
 #include "../../../core/model/bson/repo_bson_builder.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../lib/repo_log.h"
+#include "../../../lib/repo_property_tree.h"
 #include "../../../error_codes.h"
 
 using namespace repo::manipulator::modelconvertor;
@@ -246,6 +247,90 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 	return scene;
 }
 
+uint32_t colourIn32Bit(const std::vector<float> &color) {
+	uint8_t bitColor[4];
+	bitColor[0] = color[0] * 255;
+	bitColor[1] = color[1] * 255;
+	bitColor[2] = color[2] * 255;
+	bitColor[3] = 0;
+
+	return *(uint32_t*)&bitColor;
+}
+
+std::vector<float> colourFrom32Bit(const uint32_t &color) {
+	auto colorArr = (uint8_t*)&color;
+	return{ (float)colorArr[0] / 255.f, (float)colorArr[1] / 255.f, (float)colorArr[2] / 255.f };
+}
+
+const static std::string SEQ_CACHE_LABEL_TRANSPARENCY = "transparency";
+const static std::string SEQ_CACHE_LABEL_COLOR = "color";
+const static std::string SEQ_CACHE_LABEL_VALUE = "value";
+const static std::string SEQ_CACHE_LABEL_SHARED_IDS = "shared_ids";
+
+std::pair<std::string, std::vector<uint8_t>> generateCache(
+	const std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
+	const std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState) {
+
+	std::vector<repo::lib::PropertyTree> transparencyStates, colourStates;
+	std::unordered_map<float, std::vector<std::string>> transToIDs;
+	std::unordered_map<uint32_t, std::vector<std::string>> colorToIDs;
+
+	for (const auto &entry : meshAlphaState) {
+		auto value = entry.second.second;
+		if (value != entry.second.first) {
+			if (transToIDs.find(value) == transToIDs.end()) {
+				transToIDs[value] = { entry.first.toString() };
+			}
+			else {
+				transToIDs[value].push_back(entry.first.toString());
+			}
+		}
+	}
+
+	for (const auto &entry : meshColourState) {
+		if (!entry.second.second.size()) continue;
+		auto value = colourIn32Bit(entry.second.second);
+		if (value != entry.second.first) {
+			if (colorToIDs.find(value) == colorToIDs.end()) {
+				colorToIDs[value] = { entry.first.toString() };
+			}
+			else {
+				colorToIDs[value].push_back(entry.first.toString());
+			}
+		}
+	}
+
+	for (const auto &entry : transToIDs) {
+		repo::lib::PropertyTree transTree;
+		transTree.addToTree(SEQ_CACHE_LABEL_VALUE, entry.first);
+		transTree.addToTree(SEQ_CACHE_LABEL_SHARED_IDS, entry.second);
+		transparencyStates.push_back(transTree);
+	}
+
+	for (const auto &entry : colorToIDs) {
+		repo::lib::PropertyTree colTree;
+		colTree.addToTree(SEQ_CACHE_LABEL_VALUE, colourFrom32Bit(entry.first));
+		colTree.addToTree(SEQ_CACHE_LABEL_SHARED_IDS, entry.second);
+		colourStates.push_back(colTree);
+	}
+	
+	repo::lib::PropertyTree bufferTree;
+	bufferTree.addArrayObjects(SEQ_CACHE_LABEL_TRANSPARENCY, transparencyStates);
+	bufferTree.addArrayObjects(SEQ_CACHE_LABEL_COLOR, colourStates);
+
+	std::stringstream ss;
+	bufferTree.write_json(ss);
+	auto data = ss.str();
+	
+	//FIXME: Refactor to prop tree
+	std::vector<uint8_t> binData;
+	binData.resize(data.size());
+	memcpy(binData.data(), data.c_str(), data.size());
+
+	return {repo::lib::RepoUUID::createUUID().toString(), binData};
+
+}
+
 repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	
 	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> resourceIDsToSharedIDs;
@@ -256,101 +341,91 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	auto animation = reader->getAnimation();
 	
 
-	std::map<uint64_t, std::vector<repo::lib::RepoUUID>> frameToTasks;
-	std::vector<repo::core::model::RepoTask> tasks;
+	std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> meshAlphaState;
+	std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> meshColourState;
+	std::unordered_map<std::string, std::vector<uint8_t>> stateBuffers;
+	std::vector<repo::core::model::RepoSequence::FrameData> frameData;
+	
+	auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
 
+	for (const auto &mesh : meshes) {
+		auto id = mesh->getSharedID();
+		auto material = scene->getChildrenNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT, id, repo::core::model::NodeType::MATERIAL);
+		std::vector<float> materialCol = {0,0,0};
+		float defaultAlpha = 1;
+		if (material.size()) {
+			auto materialNode = (repo::core::model::MaterialNode*)material[0];
+			materialCol = materialNode->getMaterialStruct().diffuse;
+			defaultAlpha = materialNode->getMaterialStruct().opacity;
+		}
+		
+		meshColourState[id] = { colourIn32Bit(materialCol), std::vector<float >() };
+		meshAlphaState[id] = { defaultAlpha, -1 };
+	}
 
+	std::string validCache;
 	for (const auto &frame : animation.frames) {
-		frameToTasks[frame.first] = std::vector < repo::lib::RepoUUID>();
-		std::unordered_map<uint32_t, std::vector<repo::lib::RepoUUID>> colorTasks;
-		std::unordered_map<float, std::vector<repo::lib::RepoUUID>> visibilityTasks;
 		for (const auto &task : frame.second) {
 			switch (task->getType()) {
-			case synchro_reader::AnimationTask::TaskType::CAMERA:
-				{
-					auto camTask = std::dynamic_pointer_cast<const synchro_reader::CameraChange>(task);
-					auto taskBSON = repo::core::model::RepoBSONFactory::makeCameraTask(
-						camTask->fov, camTask->isPerspective,
-						{ (float)camTask->position.x, (float)camTask->position.y, (float)camTask->position.z },
-						{ (float)camTask->forward.x, (float)camTask->forward.y, (float)camTask->forward.z },
-						{ (float)camTask->up.x, (float)camTask->up.y, (float)camTask->up.z }
-					);
-
-					tasks.push_back(taskBSON);
-					frameToTasks[frame.first].push_back(taskBSON.getUUIDField(REPO_LABEL_ID));
-				}
-				break;
+			//case synchro_reader::AnimationTask::TaskType::CAMERA:
+			//	{
+			//		auto camTask = std::dynamic_pointer_cast<const synchro_reader::CameraChange>(task);
+			//		auto taskBSON = repo::core::model::RepoBSONFactory::makeCameraTask(
+			//			camTask->fov, camTask->isPerspective,
+			//			{ (float)camTask->position.x, (float)camTask->position.y, (float)camTask->position.z },
+			//			{ (float)camTask->forward.x, (float)camTask->forward.y, (float)camTask->forward.z },
+			//			{ (float)camTask->up.x, (float)camTask->up.y, (float)camTask->up.z }
+			//		);					
+			//		//FIXME: Camfix
+			//	}
+			//	break;
 			case synchro_reader::AnimationTask::TaskType::COLOR:
 				{
 					auto colourTask = std::dynamic_pointer_cast<const synchro_reader::ColourTask>(task);
 
 					if (resourceIDsToSharedIDs.find(colourTask->resourceID) != resourceIDsToSharedIDs.end()) {
-						auto color = colourTask->color;
-						uint8_t bitColor[4];
-						bitColor[0] = color[0] * 255;
-						bitColor[1] = color[1] * 255;
-						bitColor[2] = color[2] * 255;
-						bitColor[3] = 0;
-
-						auto colour32Bit = *(uint32_t*)&bitColor;
-
-						if (colorTasks.find(colour32Bit) == colorTasks.end()) {
-							colorTasks[colour32Bit] = resourceIDsToSharedIDs[colourTask->resourceID];
+						auto color = colourTask->color;						
+						auto colour32Bit = colourIn32Bit(color);
+						auto meshes = resourceIDsToSharedIDs[colourTask->resourceID];					
+						for (const auto mesh : meshes) {
+							meshColourState[mesh].second = meshColourState[mesh].first == colour32Bit? std::vector<float>() : color;
 						}
-						else {
-							colorTasks[colour32Bit].insert(
-								colorTasks[colour32Bit].end(),
-								resourceIDsToSharedIDs[colourTask->resourceID].begin(),
-								resourceIDsToSharedIDs[colourTask->resourceID].end());
-						}					
+						validCache = "";
 					}
 				}
 				break;
 			case synchro_reader::AnimationTask::TaskType::VISIBILITY:
-				{
+				{	
 					auto visibilityTask = std::dynamic_pointer_cast<const synchro_reader::VisibilityTask>(task);
 					if (resourceIDsToSharedIDs.find(visibilityTask->resourceID) != resourceIDsToSharedIDs.end()) {
 						auto visibility = visibilityTask->visibility / 100.;
-						if (visibilityTasks.find(visibility) == visibilityTasks.end()) {
-							visibilityTasks[visibility] = resourceIDsToSharedIDs[visibilityTask->resourceID];
+						auto meshes = resourceIDsToSharedIDs[visibilityTask->resourceID];				
+						for (const auto mesh : meshes) {
+							meshAlphaState[mesh].second = meshAlphaState[mesh].first == visibility ? -1 : visibility;
 						}
-						else {
-							visibilityTasks[visibility].insert(
-								visibilityTasks[visibility].end(),
-								resourceIDsToSharedIDs[visibilityTask->resourceID].begin(), 
-								resourceIDsToSharedIDs[visibilityTask->resourceID].end());
-						}
+						validCache = "";
 					}
 				}
 				break;
 			}
 		}
-
-		for (const auto &colorEntry : colorTasks) {
-			if (!colorEntry.second.size()) continue;
-			auto color32Bit = colorEntry.first;
-			auto colorArr = (uint8_t*)&color32Bit;
-
-			auto colorVector = repo::lib::RepoVector3D((float)colorArr[0]/255.f, (float)colorArr[1] / 255.f , (float)colorArr[2] / 255.f );
-
-			auto taskBSON = repo::core::model::RepoBSONFactory::makeColorTask( colorVector, colorEntry.second);
-
-			tasks.push_back(taskBSON);
-			frameToTasks[frame.first].push_back(taskBSON.getUUIDField(REPO_LABEL_ID));
+		if (validCache.empty()) {
+			auto cacheData = generateCache(meshAlphaState, meshColourState);
+			validCache = cacheData.first;
+			stateBuffers[validCache] = cacheData.second;
 		}
-
-		for (const auto &visibilityEntry : visibilityTasks) {
-			if (!visibilityEntry.second.size()) continue;
-			auto taskBSON = repo::core::model::RepoBSONFactory::makeVisibilityTask(visibilityEntry.first, visibilityEntry.second);
-
-			tasks.push_back(taskBSON);
-			frameToTasks[frame.first].push_back(taskBSON.getUUIDField(REPO_LABEL_ID));			
-		}
+		repo::core::model::RepoSequence::FrameData data;
+		data.ref = validCache;
+		data.timestamp = frame.first;
+		frameData.push_back(data);
 	}
+
+
+
 	std::string animationName = animation.name.empty() ? DEFAULT_SEQUENCE_NAME : animation.name;
-	auto sequence = repo::core::model::RepoBSONFactory::makeSequence(frameToTasks, animationName);
-	repoInfo << "Animation constructed, number of frames: " << frameToTasks.size() << "# tasks:" << tasks.size();
-	scene->addSequence(sequence, tasks);
+	auto sequence = repo::core::model::RepoBSONFactory::makeSequence(frameData, animationName);
+	repoInfo << "Animation constructed, number of frames: " << frameData.size();
+	scene->addSequence(sequence, stateBuffers);
 	return scene;
 }
 #endif

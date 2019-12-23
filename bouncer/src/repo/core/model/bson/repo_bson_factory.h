@@ -26,7 +26,6 @@
 #include "repo_bson_ref.h"
 #include "repo_bson_role.h"
 #include "repo_bson_sequence.h"
-#include "repo_bson_task.h"
 #include "repo_bson_user.h"
 #include "repo_bson_unity_assets.h"
 #include "repo_node.h"
@@ -389,26 +388,8 @@ namespace repo {
 					const int                             &apiLevel = REPO_NODE_API_LEVEL_1);
 
 				static RepoSequence makeSequence(
-					const std::map<uint64_t, std::vector<repo::lib::RepoUUID>> &frameToTasks,
+					const std::vector<repo::core::model::RepoSequence::FrameData> &frameData,
 					const std::string &name
-				);
-
-				static RepoTask makeVisibilityTask(
-					const float &opacity,
-					const std::vector<repo::lib::RepoUUID> &objects
-				);
-
-				static RepoTask makeColorTask(
-					const repo::lib::RepoVector3D &colorValue,
-					const std::vector<repo::lib::RepoUUID> &objects
-				);
-
-				static RepoTask makeCameraTask(
-					const float         &fieldOfView,
-					const bool           isPerspective,
-					const repo::lib::RepoVector3D &position,
-					const repo::lib::RepoVector3D &forward,
-					const repo::lib::RepoVector3D &up
 				);
 
 

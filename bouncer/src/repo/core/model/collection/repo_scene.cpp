@@ -562,9 +562,9 @@ bool RepoScene::commit(
 				toRemove.clear();
 				unRevisioned = false;
 			}
-			if (success && tasks.size()) {
+			if (success && frameStates.size()) {
 				repoInfo << "Commited Scene nodes, committing sequence";
-				commitSequence(handler, newRevNode->getUniqueID());
+				commitSequence(handler, manager, newRevNode->getUniqueID());
 			}
 		}
 	}
@@ -575,23 +575,23 @@ bool RepoScene::commit(
 
 bool RepoScene::commitSequence(
 	repo::core::handler::AbstractDatabaseHandler *handler,
+	repo::core::handler::fileservice::FileManager *manager,
 	const repo::lib::RepoUUID &revID
 ) {
-	if (tasks.size()) {
+	bool success = true;
+	if (frameStates.size()) {
 		std::string err;
 
+		auto sequenceCol = projectName + "." + REPO_COLLECTION_SEQUENCE;
 		if (handler->insertDocument(
-			databaseName, projectName + "." + REPO_COLLECTION_SEQUENCE, sequence.cloneAndAddRevision(revID), err)) {
+			databaseName, sequenceCol, sequence.cloneAndAddRevision(revID), err)) {
 
-			for (const auto &task : tasks) {
-				if (!handler->insertDocument(
-					databaseName, projectName + "." + REPO_COLLECTION_TASK, task, err)) {
-
-					repoError << "Failed to commit a sequence task: " << err;
+			for (const auto &state : frameStates) {				
+				if (!manager->uploadFileAndCommit(databaseName, sequenceCol, state.first, state.second)) {
+					repoError << "Failed to commit a sequence state.";
+					success = false; 
 				}
-
 			}
-
 		}
 		else {
 			repoError << "Failed to commit sequence bson: " << err;
@@ -599,7 +599,7 @@ bool RepoScene::commitSequence(
 		}
 	}
 
-	return true;
+	return success;
 }
 
 void RepoScene::addErrorStatusToProjectSettings(
