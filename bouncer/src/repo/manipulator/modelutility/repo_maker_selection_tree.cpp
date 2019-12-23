@@ -125,8 +125,9 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 		if (metaIDs.size())
 			tree.addToTree("meta", metaIDs);
 
-		if (name.find(IFC_TYPE_SPACE_LABEL) != std::string::npos
-			&& currentNode->getTypeAsEnum() == repo::core::model::NodeType::MESH)
+		if (scene->isHiddenByDefault(currentNode->getUniqueID()) ||
+			(name.find(IFC_TYPE_SPACE_LABEL) != std::string::npos
+			&& currentNode->getTypeAsEnum() == repo::core::model::NodeType::MESH))
 		{
 			tree.addToTree(REPO_LABEL_VISIBILITY_STATE, REPO_VISIBILITY_STATE_HIDDEN);
 			hiddenOnDefault = true;

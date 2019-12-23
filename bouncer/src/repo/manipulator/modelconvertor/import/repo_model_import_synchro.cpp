@@ -347,10 +347,10 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> meshColourState;
 	std::unordered_map<std::string, std::vector<uint8_t>> stateBuffers;
 	std::vector<repo::core::model::RepoSequence::FrameData> frameData;
-	std::vector<repo::lib::RepoUUID> defaultInvisible;
+	std::set<repo::lib::RepoUUID> defaultInvisible;
 	
 	auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
-
+	repoInfo << "Visibility Entry " << animInfo.second.size();
 	for (const auto &lastStateEntry : animInfo.second) {
 		if (resourceIDsToSharedIDs.find(lastStateEntry.first) == resourceIDsToSharedIDs.end()) continue;
 		for (const auto &id : resourceIDsToSharedIDs[lastStateEntry.first]) {
@@ -365,7 +365,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 			}
 
 			if (!lastStateEntry.second) {
-				defaultInvisible.push_back(scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, id)->getUniqueID());
+				defaultInvisible.insert(scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, id)->getUniqueID());
 				defaultAlpha = 0;
 			}
 
@@ -437,6 +437,8 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	auto sequence = repo::core::model::RepoBSONFactory::makeSequence(frameData, animationName);
 	repoInfo << "Animation constructed, number of frames: " << frameData.size();
 	scene->addSequence(sequence, stateBuffers);
+	scene->setDefaultInvisible(defaultInvisible);
+	repoInfo << "#default invisible: " << defaultInvisible.size();
 
 
 	return scene;

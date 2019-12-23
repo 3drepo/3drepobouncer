@@ -218,6 +218,14 @@ namespace repo{
 					frameStates = states;
 				}
 
+				void setDefaultInvisible(const std::set<repo::lib::RepoUUID> &idsToHide){
+					defaultInvisible = idsToHide;
+				}
+
+				bool isHiddenByDefault(const repo::lib::RepoUUID &uniqueID) const {
+					return defaultInvisible.find(uniqueID) != defaultInvisible.end();
+				}
+
 				/**
 				* Clears the contents within the Stash (if there is one)
 				*/
@@ -1056,6 +1064,7 @@ namespace repo{
 
 				RepoSequence sequence;
 				std::unordered_map<std::string, std::vector<uint8_t>> frameStates;
+				std::set<repo::lib::RepoUUID> defaultInvisible;
 
 				/*
 				* ---------------- Scene Graph Details ----------------
