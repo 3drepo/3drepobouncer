@@ -338,29 +338,40 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	auto scene = constructScene(resourceIDsToSharedIDs);
 
 	repoInfo << "Getting animations... ";
-	auto animation = reader->getAnimation();
+	auto animInfo = reader->getAnimation();
 	
+
+	auto animation = animInfo.first;
 
 	std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> meshAlphaState;
 	std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> meshColourState;
 	std::unordered_map<std::string, std::vector<uint8_t>> stateBuffers;
 	std::vector<repo::core::model::RepoSequence::FrameData> frameData;
+	std::vector<repo::lib::RepoUUID> defaultInvisible;
 	
 	auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
 
-	for (const auto &mesh : meshes) {
-		auto id = mesh->getSharedID();
-		auto material = scene->getChildrenNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT, id, repo::core::model::NodeType::MATERIAL);
-		std::vector<float> materialCol = {0,0,0};
-		float defaultAlpha = 1;
-		if (material.size()) {
-			auto materialNode = (repo::core::model::MaterialNode*)material[0];
-			materialCol = materialNode->getMaterialStruct().diffuse;
-			defaultAlpha = materialNode->getMaterialStruct().opacity;
+	for (const auto &lastStateEntry : animInfo.second) {
+		if (resourceIDsToSharedIDs.find(lastStateEntry.first) == resourceIDsToSharedIDs.end()) continue;
+		for (const auto &id : resourceIDsToSharedIDs[lastStateEntry.first]) {
+			float defaultAlpha = 1;
+
+			auto material = scene->getChildrenNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT, id, repo::core::model::NodeType::MATERIAL);
+			std::vector<float> materialCol = { 0,0,0 };
+			if (material.size()) {
+				auto materialNode = (repo::core::model::MaterialNode*)material[0];
+				materialCol = materialNode->getMaterialStruct().diffuse;
+				defaultAlpha = materialNode->getMaterialStruct().opacity;
+			}
+
+			if (!lastStateEntry.second) {
+				defaultInvisible.push_back(scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, id)->getUniqueID());
+				defaultAlpha = 0;
+			}
+
+			meshColourState[id] = { colourIn32Bit(materialCol), std::vector<float >() };
+			meshAlphaState[id] = { defaultAlpha, -1 };
 		}
-		
-		meshColourState[id] = { colourIn32Bit(materialCol), std::vector<float >() };
-		meshAlphaState[id] = { defaultAlpha, -1 };
 	}
 
 	std::string validCache;
@@ -426,6 +437,8 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	auto sequence = repo::core::model::RepoBSONFactory::makeSequence(frameData, animationName);
 	repoInfo << "Animation constructed, number of frames: " << frameData.size();
 	scene->addSequence(sequence, stateBuffers);
+
+
 	return scene;
 }
 #endif
