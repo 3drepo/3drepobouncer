@@ -31,14 +31,23 @@ namespace repo {
 			#define REPO_SEQUENCE_LABEL_FRAMES "frames"
 			#define REPO_SEQUENCE_LABEL_DATE "dateTime"
 			#define REPO_SEQUENCE_LABEL_STATE "state"
+			#define REPO_SEQUENCE_LABEL_TASKS "tasks"
+			#define REPO_SEQUENCE_LABEL_TASK_START "startDate"
+			#define REPO_SEQUENCE_LABEL_TASK_END "endDate"
 
 			class REPO_API_EXPORT RepoSequence : public RepoBSON
 			{
 			public:				
 
+				struct Task {
+					std::string name;
+					uint64_t startTime, endTime;
+					std::unordered_map<std::string, Task> childTasks;
+				};
 				struct FrameData {
 					uint64_t timestamp;
 					std::string ref;
+					std::unordered_map<std::string, Task> currentTasks;
 				};
 
 				RepoSequence() : RepoBSON() {}

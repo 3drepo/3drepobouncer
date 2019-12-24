@@ -331,24 +331,134 @@ std::pair<std::string, std::vector<uint8_t>> generateCache(
 
 }
 
+void updateFrameState(
+	const std::vector<std::shared_ptr<synchro_reader::AnimationTask>> &tasks,
+	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
+	std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
+	std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState
+
+	) {
+	for (const auto &task : tasks) {
+		switch (task->getType()) {
+			//case synchro_reader::AnimationTask::TaskType::CAMERA:
+			//	{
+			//		auto camTask = std::dynamic_pointer_cast<const synchro_reader::CameraChange>(task);
+			//		auto taskBSON = repo::core::model::RepoBSONFactory::makeCameraTask(
+			//			camTask->fov, camTask->isPerspective,
+			//			{ (float)camTask->position.x, (float)camTask->position.y, (float)camTask->position.z },
+			//			{ (float)camTask->forward.x, (float)camTask->forward.y, (float)camTask->forward.z },
+			//			{ (float)camTask->up.x, (float)camTask->up.y, (float)camTask->up.z }
+			//		);					
+			//		//FIXME: Camfix
+			//	}
+			//	break;
+		case synchro_reader::AnimationTask::TaskType::COLOR:
+		{
+			auto colourTask = std::dynamic_pointer_cast<const synchro_reader::ColourTask>(task);
+
+			if (resourceIDsToSharedIDs.find(colourTask->resourceID) != resourceIDsToSharedIDs.end()) {
+				auto color = colourTask->color;
+				auto colour32Bit = colourIn32Bit(color);
+				auto meshes = resourceIDsToSharedIDs[colourTask->resourceID];
+				for (const auto mesh : meshes) {
+					meshColourState[mesh].second = meshColourState[mesh].first == colour32Bit ? std::vector<float>() : color;
+				}
+			}
+		}
+		break;
+		case synchro_reader::AnimationTask::TaskType::VISIBILITY:
+		{
+			auto visibilityTask = std::dynamic_pointer_cast<const synchro_reader::VisibilityTask>(task);
+			if (resourceIDsToSharedIDs.find(visibilityTask->resourceID) != resourceIDsToSharedIDs.end()) {
+				auto visibility = visibilityTask->visibility / 100.;
+				auto meshes = resourceIDsToSharedIDs[visibilityTask->resourceID];
+				for (const auto mesh : meshes) {
+					meshAlphaState[mesh].second = meshAlphaState[mesh].first == visibility ? -1 : visibility;
+				}
+			}
+		}
+		break;
+		}
+	}
+
+}
+
+void addTasks(
+	std::unordered_map<std::string, repo::core::model::RepoSequence::Task> &currentTasks,
+	std::vector<std::string> &toAdd,
+	std::map<std::string, synchro_reader::Task> &tasks
+	) {
+	for (const auto &entry : toAdd) {
+		std::list<std::string> hierachy;
+		auto currentEntry = entry;
+		while(!currentEntry.empty()) {
+			hierachy.push_front(currentEntry);
+			currentEntry = tasks[currentEntry].parentTask;
+		}
+
+		auto taskList = &currentTasks;
+		
+		for (const auto &taskID : hierachy) {
+			if (taskList->find(taskID) == taskList->end()) {
+				repo::core::model::RepoSequence::Task newTask;
+				newTask.name = tasks[taskID].name;
+				newTask.startTime = tasks[taskID].startTime;
+				newTask.endTime = tasks[taskID].endTime;
+				(*taskList)[taskID] = newTask;
+			}
+			
+			taskList = &((*taskList)[taskID].childTasks);
+			
+		}
+	}
+}
+
+void removeTasks(
+	std::unordered_map<std::string, repo::core::model::RepoSequence::Task> &currentTasks,
+	std::vector<std::string> &toRemove,
+	std::map<std::string, synchro_reader::Task> &tasks
+) {
+	for (const auto &entry : toRemove) {
+		std::list<std::string> hierachy;
+		auto currentEntry = tasks[entry].parentTask;
+		while (!currentEntry.empty()) {
+			hierachy.push_front(currentEntry);
+			currentEntry = tasks[currentEntry].parentTask;
+		}
+
+		auto taskList = &currentTasks;
+
+		for (const auto &taskID : hierachy) {
+			if (taskList->find(taskID) != taskList->end()) {
+				taskList = &((*taskList)[taskID].childTasks);
+			}
+		}
+		if (taskList->find(entry) != taskList->end()) {
+			taskList->erase(entry);
+		}
+	}
+}
+
 repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
-	
+
 	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> resourceIDsToSharedIDs;
 
 	auto scene = constructScene(resourceIDsToSharedIDs);
 
 	repoInfo << "Getting animations... ";
 	auto animInfo = reader->getAnimation();
-	
+
 
 	auto animation = animInfo.first;
+	auto taskInfo = reader->getTasks();
 
 	std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> meshAlphaState;
 	std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> meshColourState;
 	std::unordered_map<std::string, std::vector<uint8_t>> stateBuffers;
 	std::vector<repo::core::model::RepoSequence::FrameData> frameData;
 	std::set<repo::lib::RepoUUID> defaultInvisible;
-	
+
+
 	auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
 	repoInfo << "Visibility Entry " << animInfo.second.size();
 	for (const auto &lastStateEntry : animInfo.second) {
@@ -375,60 +485,46 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	}
 
 	std::string validCache;
-	for (const auto &frame : animation.frames) {
-		for (const auto &task : frame.second) {
-			switch (task->getType()) {
-			//case synchro_reader::AnimationTask::TaskType::CAMERA:
-			//	{
-			//		auto camTask = std::dynamic_pointer_cast<const synchro_reader::CameraChange>(task);
-			//		auto taskBSON = repo::core::model::RepoBSONFactory::makeCameraTask(
-			//			camTask->fov, camTask->isPerspective,
-			//			{ (float)camTask->position.x, (float)camTask->position.y, (float)camTask->position.z },
-			//			{ (float)camTask->forward.x, (float)camTask->forward.y, (float)camTask->forward.z },
-			//			{ (float)camTask->up.x, (float)camTask->up.y, (float)camTask->up.z }
-			//		);					
-			//		//FIXME: Camfix
-			//	}
-			//	break;
-			case synchro_reader::AnimationTask::TaskType::COLOR:
-				{
-					auto colourTask = std::dynamic_pointer_cast<const synchro_reader::ColourTask>(task);
+	auto currentFrame = animation.frames.begin();
+	auto currentStart = taskInfo.taskStartDates.begin();
+	auto currentEnd = taskInfo.taskEndDates.begin();
 
-					if (resourceIDsToSharedIDs.find(colourTask->resourceID) != resourceIDsToSharedIDs.end()) {
-						auto color = colourTask->color;						
-						auto colour32Bit = colourIn32Bit(color);
-						auto meshes = resourceIDsToSharedIDs[colourTask->resourceID];					
-						for (const auto mesh : meshes) {
-							meshColourState[mesh].second = meshColourState[mesh].first == colour32Bit? std::vector<float>() : color;
-						}
-						validCache = "";
-					}
-				}
-				break;
-			case synchro_reader::AnimationTask::TaskType::VISIBILITY:
-				{	
-					auto visibilityTask = std::dynamic_pointer_cast<const synchro_reader::VisibilityTask>(task);
-					if (resourceIDsToSharedIDs.find(visibilityTask->resourceID) != resourceIDsToSharedIDs.end()) {
-						auto visibility = visibilityTask->visibility / 100.;
-						auto meshes = resourceIDsToSharedIDs[visibilityTask->resourceID];				
-						for (const auto mesh : meshes) {
-							meshAlphaState[mesh].second = meshAlphaState[mesh].first == visibility ? -1 : visibility;
-						}
-						validCache = "";
-					}
-				}
-				break;
-			}
-		}
-		if (validCache.empty()) {
+	repoInfo << animation.frames.size() << ", " << taskInfo.taskStartDates.size()  << ", " << taskInfo.taskEndDates.size();
+	std::unordered_map<std::string, repo::core::model::RepoSequence::Task> currentTasks;
+	while (currentFrame != animation.frames.end() || currentStart != taskInfo.taskStartDates.end() || currentEnd != taskInfo.taskEndDates.end()) {
+		auto currentTime = currentFrame != animation.frames.end() ? currentFrame->first : -1;
+
+		currentTime = std::min(currentTime, currentStart != taskInfo.taskStartDates.end() ? currentStart->first : -1);
+
+		currentTime = std::min(currentTime, currentEnd != taskInfo.taskEndDates.end() ? currentEnd->first : -1);
+
+
+		if (currentFrame != animation.frames.end() && currentFrame->first == currentTime) {
+			updateFrameState(currentFrame->second, resourceIDsToSharedIDs, meshAlphaState, meshColourState);
 			auto cacheData = generateCache(meshAlphaState, meshColourState);
 			validCache = cacheData.first;
 			stateBuffers[validCache] = cacheData.second;
+			currentFrame++;
 		}
+
+		if (currentStart != taskInfo.taskStartDates.end() && currentStart->first == currentTime) {
+			addTasks(currentTasks, currentStart->second, taskInfo.tasks);
+			currentStart++;
+		}
+
+		if (currentEnd != taskInfo.taskEndDates.end() && currentEnd->first == currentTime) {
+			removeTasks(currentTasks, currentEnd->second, taskInfo.tasks);
+			currentEnd++;
+		}
+
+
 		repo::core::model::RepoSequence::FrameData data;
 		data.ref = validCache;
-		data.timestamp = frame.first;
+		data.timestamp = currentTime;
+		data.currentTasks = currentTasks;
 		frameData.push_back(data);
+
+		
 	}
 
 
