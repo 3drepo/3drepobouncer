@@ -90,6 +90,37 @@ namespace repo{
 				repo::core::model::RepoScene* constructScene(
 					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs);
 
+
+				uint32_t colourIn32Bit(const std::vector<float> &color) const;
+
+				std::vector<float> colourFrom32Bit(const uint32_t &color) const;
+
+
+				std::pair<std::string, std::vector<uint8_t>> generateCache(
+					const std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
+					const std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState);
+
+				void addTasks(
+					std::unordered_map<std::string, repo::core::model::RepoSequence::Task> &currentTasks,
+					std::vector<std::string> &toAdd,
+					std::map<std::string, synchro_reader::Task> &tasks
+				);
+
+				void removeTasks(
+					std::unordered_map<std::string, repo::core::model::RepoSequence::Task> &currentTasks,
+					std::vector<std::string> &toRemove,
+					std::map<std::string, synchro_reader::Task> &tasks
+				);
+
+
+				void updateFrameState(
+					const std::vector<std::shared_ptr<synchro_reader::AnimationTask>> &tasks,
+					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
+					std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
+					std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState
+
+				);
+
 				std::unordered_map<std::string, repo::core::model::MeshNode> createMeshTemplateNodes();
 
 				std::shared_ptr<synchro_reader::SPMReader> reader;

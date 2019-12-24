@@ -30,6 +30,12 @@ using namespace repo::manipulator::modelconvertor;
 const std::string RESOURCE_ID_NAME = "Resource ID";
 const std::string DEFAULT_SEQUENCE_NAME = "Unnamed Sequence";
 
+
+const static std::string SEQ_CACHE_LABEL_TRANSPARENCY = "transparency";
+const static std::string SEQ_CACHE_LABEL_COLOR = "color";
+const static std::string SEQ_CACHE_LABEL_VALUE = "value";
+const static std::string SEQ_CACHE_LABEL_SHARED_IDS = "shared_ids";
+
 bool SynchroModelImport::importModel(std::string filePath, uint8_t &errMsg) {
 
 	orgFile = filePath;
@@ -247,7 +253,7 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 	return scene;
 }
 
-uint32_t colourIn32Bit(const std::vector<float> &color) {
+uint32_t SynchroModelImport::colourIn32Bit(const std::vector<float> &color) const {
 	uint8_t bitColor[4];
 	bitColor[0] = color[0] * 255;
 	bitColor[1] = color[1] * 255;
@@ -257,17 +263,13 @@ uint32_t colourIn32Bit(const std::vector<float> &color) {
 	return *(uint32_t*)&bitColor;
 }
 
-std::vector<float> colourFrom32Bit(const uint32_t &color) {
+std::vector<float> SynchroModelImport::colourFrom32Bit(const uint32_t &color) const {
 	auto colorArr = (uint8_t*)&color;
 	return{ (float)colorArr[0] / 255.f, (float)colorArr[1] / 255.f, (float)colorArr[2] / 255.f };
 }
 
-const static std::string SEQ_CACHE_LABEL_TRANSPARENCY = "transparency";
-const static std::string SEQ_CACHE_LABEL_COLOR = "color";
-const static std::string SEQ_CACHE_LABEL_VALUE = "value";
-const static std::string SEQ_CACHE_LABEL_SHARED_IDS = "shared_ids";
 
-std::pair<std::string, std::vector<uint8_t>> generateCache(
+std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
 	const std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
 	const std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState) {
 
@@ -331,7 +333,7 @@ std::pair<std::string, std::vector<uint8_t>> generateCache(
 
 }
 
-void updateFrameState(
+void SynchroModelImport::updateFrameState(
 	const std::vector<std::shared_ptr<synchro_reader::AnimationTask>> &tasks,
 	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
@@ -383,7 +385,7 @@ void updateFrameState(
 
 }
 
-void addTasks(
+void SynchroModelImport::addTasks(
 	std::unordered_map<std::string, repo::core::model::RepoSequence::Task> &currentTasks,
 	std::vector<std::string> &toAdd,
 	std::map<std::string, synchro_reader::Task> &tasks
@@ -413,7 +415,7 @@ void addTasks(
 	}
 }
 
-void removeTasks(
+void SynchroModelImport::removeTasks(
 	std::unordered_map<std::string, repo::core::model::RepoSequence::Task> &currentTasks,
 	std::vector<std::string> &toRemove,
 	std::map<std::string, synchro_reader::Task> &tasks
