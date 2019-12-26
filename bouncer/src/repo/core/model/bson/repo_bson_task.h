@@ -26,38 +26,20 @@ namespace repo {
 			// Fields specific to ref only
 			//
 			//------------------------------------------------------------------------------
-			#define REPO_SEQUENCE_LABEL_REV_ID "rev_id"
-			#define REPO_SEQUENCE_LABEL_NAME "name"
-			#define REPO_SEQUENCE_LABEL_FRAMES "frames"
-			#define REPO_SEQUENCE_LABEL_DATE "dateTime"
-			#define REPO_SEQUENCE_LABEL_STATE "state"
-			#define REPO_SEQUENCE_LABEL_TASKS "tasks"
-			#define REPO_SEQUENCE_LABEL_TASK_START "startDate"
-			#define REPO_SEQUENCE_LABEL_TASK_END "endDate"
+			#define REPO_TASK_LABEL_NAME "name"
+			#define REPO_TASK_LABEL_DATA "data"
+			#define REPO_TASK_LABEL_PARENTS "parents"
 
-			class REPO_API_EXPORT RepoSequence : public RepoBSON
+			class REPO_API_EXPORT RepoTask : public RepoBSON
 			{
 			public:				
 
-				struct Task {
-					std::string name;
-					uint64_t startTime, endTime;
-					repo::lib::RepoUUID id;
-					std::unordered_map<std::string, Task> childTasks;
-				};
-				struct FrameData {
-					uint64_t timestamp;
-					std::string ref;
-					std::unordered_map<std::string, Task> currentTasks;
-				};
+				
+				RepoTask() : RepoBSON() {}
 
-				RepoSequence() : RepoBSON() {}
+				RepoTask(RepoBSON bson) : RepoBSON(bson){}
 
-				RepoSequence(RepoBSON bson) : RepoBSON(bson){}
-
-				RepoSequence cloneAndAddRevision(const repo::lib::RepoUUID &rid) const;
-
-				~RepoSequence() {}		
+				~RepoTask() {}		
 
 			};
 		}// end namespace model

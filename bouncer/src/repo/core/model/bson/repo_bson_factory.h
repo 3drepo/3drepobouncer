@@ -26,6 +26,7 @@
 #include "repo_bson_ref.h"
 #include "repo_bson_role.h"
 #include "repo_bson_sequence.h"
+#include "repo_bson_task.h"
 #include "repo_bson_user.h"
 #include "repo_bson_unity_assets.h"
 #include "repo_node.h"
@@ -392,6 +393,12 @@ namespace repo {
 					const std::string &name
 				);
 
+				static RepoTask makeTask(
+					const std::string &name,
+					const std::unordered_map<std::string, std::string>  &data,
+					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>(),
+					const repo::lib::RepoUUID &id = repo::lib::RepoUUID::createUUID()
+				);
 
 			};
 		} //namespace model

@@ -597,6 +597,14 @@ bool RepoScene::commitSequence(
 			repoError << "Failed to commit sequence bson: " << err;
 			return false;
 		}
+
+		auto taskCol = projectName + "." + REPO_COLLECTION_TASK;
+		for (const auto &task : taskList) {
+			if (!handler->insertDocument(databaseName, taskCol, task, err)) {
+				repoError << "Failed to commit task bson: " << err;
+				return false;
+			}
+		}
 	}
 
 	return success;

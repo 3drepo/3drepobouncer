@@ -26,6 +26,7 @@
 #include "../../handler/repo_database_handler_abstract.h"
 #include "../../handler/fileservice/repo_file_manager.h"
 #include "../bson/repo_bson_sequence.h"
+#include "../bson/repo_bson_task.h"
 #include "../bson/repo_node.h"
 #include "../bson/repo_node_revision.h"
 
@@ -212,10 +213,12 @@ namespace repo{
 
 				void addSequence(
 					const RepoSequence &animationSequence,
-					const std::unordered_map<std::string, std::vector<uint8_t>> &states
+					const std::unordered_map<std::string, std::vector<uint8_t>> &states,
+					const std::vector<RepoTask> &tasks
 				 ){
 					sequence = animationSequence;
 					frameStates = states;
+					taskList = tasks;
 				}
 
 				void setDefaultInvisible(const std::set<repo::lib::RepoUUID> &idsToHide){
@@ -1063,6 +1066,7 @@ namespace repo{
 				RevisionNode		 *revNode;
 
 				RepoSequence sequence;
+				std::vector<RepoTask> taskList;
 				std::unordered_map<std::string, std::vector<uint8_t>> frameStates;
 				std::set<repo::lib::RepoUUID> defaultInvisible;
 

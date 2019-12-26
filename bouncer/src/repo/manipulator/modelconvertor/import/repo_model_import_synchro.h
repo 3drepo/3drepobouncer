@@ -103,7 +103,8 @@ namespace repo{
 				void addTasks(
 					std::unordered_map<std::string, repo::core::model::RepoSequence::Task> &currentTasks,
 					std::vector<std::string> &toAdd,
-					std::map<std::string, synchro_reader::Task> &tasks
+					std::map<std::string, synchro_reader::Task> &tasks,
+					std::unordered_map<std::string, repo::lib::RepoUUID> &taskIDtoRepoID
 				);
 
 				void removeTasks(

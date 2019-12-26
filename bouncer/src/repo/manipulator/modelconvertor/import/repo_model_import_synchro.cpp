@@ -388,7 +388,8 @@ void SynchroModelImport::updateFrameState(
 void SynchroModelImport::addTasks(
 	std::unordered_map<std::string, repo::core::model::RepoSequence::Task> &currentTasks,
 	std::vector<std::string> &toAdd,
-	std::map<std::string, synchro_reader::Task> &tasks
+	std::map<std::string, synchro_reader::Task> &tasks,
+	std::unordered_map<std::string, repo::lib::RepoUUID> &taskIDtoRepoID
 	) {
 	for (const auto &entry : toAdd) {
 		std::list<std::string> hierachy;
@@ -406,6 +407,7 @@ void SynchroModelImport::addTasks(
 				newTask.name = tasks[taskID].name;
 				newTask.startTime = tasks[taskID].startTime;
 				newTask.endTime = tasks[taskID].endTime;
+				newTask.id = taskIDtoRepoID[taskID];
 				(*taskList)[taskID] = newTask;
 			}
 			
@@ -459,6 +461,26 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	std::unordered_map<std::string, std::vector<uint8_t>> stateBuffers;
 	std::vector<repo::core::model::RepoSequence::FrameData> frameData;
 	std::set<repo::lib::RepoUUID> defaultInvisible;
+	std::unordered_map<std::string, repo::lib::RepoUUID> taskIDtoRepoID;
+	std::vector<repo::core::model::RepoTask> taskBSONs;
+
+	for (const auto &task : taskInfo.tasks) {
+		std::vector<repo::lib::RepoUUID> parents;
+		auto parentID = task.second.parentTask;
+		if (!parentID.empty()) {
+			if (taskIDtoRepoID.find(parentID) == taskIDtoRepoID.end()) {
+				taskIDtoRepoID[parentID] = repo::lib::RepoUUID::createUUID();
+			}
+
+			parents.push_back(taskIDtoRepoID[parentID]);
+		}
+
+		auto taskID = task.second.id;
+		if(taskIDtoRepoID.find(taskID) == taskIDtoRepoID.end())
+			taskIDtoRepoID[taskID] = repo::lib::RepoUUID::createUUID();
+
+		taskBSONs.push_back(repo::core::model::RepoBSONFactory::makeTask(task.second.name, task.second.data, parents, taskIDtoRepoID[taskID]));
+	}
 
 
 	auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
@@ -510,7 +532,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 		}
 
 		if (currentStart != taskInfo.taskStartDates.end() && currentStart->first == currentTime) {
-			addTasks(currentTasks, currentStart->second, taskInfo.tasks);
+			addTasks(currentTasks, currentStart->second, taskInfo.tasks, taskIDtoRepoID);
 			currentStart++;
 		}
 
@@ -534,7 +556,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	std::string animationName = animation.name.empty() ? DEFAULT_SEQUENCE_NAME : animation.name;
 	auto sequence = repo::core::model::RepoBSONFactory::makeSequence(frameData, animationName);
 	repoInfo << "Animation constructed, number of frames: " << frameData.size();
-	scene->addSequence(sequence, stateBuffers);
+	scene->addSequence(sequence, stateBuffers, taskBSONs);
 	scene->setDefaultInvisible(defaultInvisible);
 	repoInfo << "#default invisible: " << defaultInvisible.size();
 
