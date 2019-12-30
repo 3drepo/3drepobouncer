@@ -101,14 +101,14 @@ namespace repo{
 					const std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState);
 
 				void addTasks(
-					std::unordered_map<std::string, repo::core::model::RepoSequence::Task> &currentTasks,
+					std::unordered_map<std::string, std::shared_ptr<repo::core::model::RepoSequence::Task>> &currentTasks,
 					std::vector<std::string> &toAdd,
 					std::map<std::string, synchro_reader::Task> &tasks,
 					std::unordered_map<std::string, repo::lib::RepoUUID> &taskIDtoRepoID
 				);
 
 				void removeTasks(
-					std::unordered_map<std::string, repo::core::model::RepoSequence::Task> &currentTasks,
+					std::unordered_map<std::string, std::shared_ptr<repo::core::model::RepoSequence::Task>> &currentTasks,
 					std::vector<std::string> &toRemove,
 					std::map<std::string, synchro_reader::Task> &tasks
 				);

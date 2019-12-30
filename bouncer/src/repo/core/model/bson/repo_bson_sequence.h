@@ -44,12 +44,12 @@ namespace repo {
 					std::string name;
 					uint64_t startTime, endTime;
 					repo::lib::RepoUUID id;
-					std::unordered_map<std::string, Task> childTasks;
+					std::unordered_map<std::string, std::shared_ptr<Task>> childTasks;
 				};
 				struct FrameData {
 					uint64_t timestamp;
 					std::string ref;
-					std::unordered_map<std::string, Task> currentTasks;
+					std::unordered_map<std::string, std::shared_ptr<Task>> currentTasks;
 				};
 
 				RepoSequence() : RepoBSON() {}

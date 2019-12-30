@@ -386,7 +386,7 @@ void SynchroModelImport::updateFrameState(
 }
 
 void SynchroModelImport::addTasks(
-	std::unordered_map<std::string, repo::core::model::RepoSequence::Task> &currentTasks,
+	std::unordered_map<std::string, std::shared_ptr<repo::core::model::RepoSequence::Task>> &currentTasks,
 	std::vector<std::string> &toAdd,
 	std::map<std::string, synchro_reader::Task> &tasks,
 	std::unordered_map<std::string, repo::lib::RepoUUID> &taskIDtoRepoID
@@ -408,17 +408,17 @@ void SynchroModelImport::addTasks(
 				newTask.startTime = tasks[taskID].startTime;
 				newTask.endTime = tasks[taskID].endTime;
 				newTask.id = taskIDtoRepoID[taskID];
-				(*taskList)[taskID] = newTask;
+				(*taskList)[taskID] = std::make_shared<repo::core::model::RepoSequence::Task>(newTask);
 			}
 			
-			taskList = &((*taskList)[taskID].childTasks);
+			taskList = &((*taskList)[taskID]->childTasks);
 			
 		}
 	}
 }
 
 void SynchroModelImport::removeTasks(
-	std::unordered_map<std::string, repo::core::model::RepoSequence::Task> &currentTasks,
+	std::unordered_map<std::string, std::shared_ptr<repo::core::model::RepoSequence::Task>> &currentTasks,
 	std::vector<std::string> &toRemove,
 	std::map<std::string, synchro_reader::Task> &tasks
 ) {
@@ -434,7 +434,7 @@ void SynchroModelImport::removeTasks(
 
 		for (const auto &taskID : hierachy) {
 			if (taskList->find(taskID) != taskList->end()) {
-				taskList = &((*taskList)[taskID].childTasks);
+				taskList = &((*taskList)[taskID]->childTasks);
 			}
 		}
 		if (taskList->find(entry) != taskList->end()) {
@@ -490,7 +490,6 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 
 
 	auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
-	repoInfo << "Visibility Entry " << animInfo.second.size();
 	for (const auto &lastStateEntry : animInfo.second) {
 		if (resourceIDsToSharedIDs.find(lastStateEntry.first) == resourceIDsToSharedIDs.end()) continue;
 		for (const auto &id : resourceIDsToSharedIDs[lastStateEntry.first]) {
@@ -519,8 +518,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	auto currentStart = taskInfo.taskStartDates.begin();
 	auto currentEnd = taskInfo.taskEndDates.begin();
 
-	repoInfo << animation.frames.size() << ", " << taskInfo.taskStartDates.size()  << ", " << taskInfo.taskEndDates.size();
-	std::unordered_map<std::string, repo::core::model::RepoSequence::Task> currentTasks;
+	std::unordered_map<std::string, std::shared_ptr<repo::core::model::RepoSequence::Task>> currentTasks;
 	while (currentFrame != animation.frames.end() || currentStart != taskInfo.taskStartDates.end() || currentEnd != taskInfo.taskEndDates.end()) {
 		auto currentTime = currentFrame != animation.frames.end() ? currentFrame->first : -1;
 

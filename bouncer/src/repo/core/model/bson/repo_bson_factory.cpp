@@ -1008,17 +1008,17 @@ RepoTask RepoBSONFactory::makeTask(
 }
 
 std::vector<RepoBSON> buildSequenceTasksBSON(
-	const std::unordered_map<std::string, repo::core::model::RepoSequence::Task> &tasks) {
+	const std::unordered_map<std::string, std::shared_ptr<repo::core::model::RepoSequence::Task>> &tasks) {
 
 	std::vector<RepoBSON> taskBsons;
 	for (const auto &taskEntry : tasks) {
 		RepoBSONBuilder taskBuilder;
-		taskBuilder.append(REPO_LABEL_ID, taskEntry.second.id);
-		taskBuilder.append(REPO_SEQUENCE_LABEL_NAME, taskEntry.second.name);
-		taskBuilder.append(REPO_SEQUENCE_LABEL_TASK_START, mongo::Date_t(taskEntry.second.startTime * 1000));
-		taskBuilder.append(REPO_SEQUENCE_LABEL_TASK_END, mongo::Date_t(taskEntry.second.endTime * 1000));
-		if (taskEntry.second.childTasks.size()) {
-			taskBuilder.appendArray(REPO_SEQUENCE_LABEL_TASKS, buildSequenceTasksBSON(taskEntry.second.childTasks));
+		taskBuilder.append(REPO_LABEL_ID, taskEntry.second->id);
+		taskBuilder.append(REPO_SEQUENCE_LABEL_NAME, taskEntry.second->name);
+		taskBuilder.append(REPO_SEQUENCE_LABEL_TASK_START, mongo::Date_t(taskEntry.second->startTime * 1000));
+		taskBuilder.append(REPO_SEQUENCE_LABEL_TASK_END, mongo::Date_t(taskEntry.second->endTime * 1000));
+		if (taskEntry.second->childTasks.size()) {
+			taskBuilder.appendArray(REPO_SEQUENCE_LABEL_TASKS, buildSequenceTasksBSON(taskEntry.second->childTasks));
 		}
 		taskBsons.push_back(taskBuilder.obj());
 	}
