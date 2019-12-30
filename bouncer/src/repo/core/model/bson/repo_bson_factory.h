@@ -396,6 +396,7 @@ namespace repo {
 				static RepoTask makeTask(
 					const std::string &name,
 					const std::unordered_map<std::string, std::string>  &data,
+					const std::vector<repo::lib::RepoUUID> &resources,
 					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>(),
 					const repo::lib::RepoUUID &id = repo::lib::RepoUUID::createUUID()
 				);

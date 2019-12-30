@@ -957,6 +957,7 @@ TransformationNode RepoBSONFactory::makeTransformationNode(
 RepoTask RepoBSONFactory::makeTask(
 	const std::string &name,
 	const std::unordered_map<std::string, std::string> &data,
+	const std::vector<repo::lib::RepoUUID> &resources,
 	const std::vector<repo::lib::RepoUUID> &parents,
 	const repo::lib::RepoUUID &id
 ) {
@@ -966,6 +967,10 @@ RepoTask RepoBSONFactory::makeTask(
 
 	if (parents.size())
 		builder.appendArray(REPO_TASK_LABEL_PARENTS, parents);
+
+	if (resources.size()) {
+		builder.appendArray(REPO_TASK_LABEL_RESOURCES, resources);
+	}
 
 	for (const auto &entry : data) {
 		std::string key = sanitiseKey(entry.first);

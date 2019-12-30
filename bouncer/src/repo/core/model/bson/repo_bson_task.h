@@ -29,6 +29,7 @@ namespace repo {
 			#define REPO_TASK_LABEL_NAME "name"
 			#define REPO_TASK_LABEL_DATA "data"
 			#define REPO_TASK_LABEL_PARENTS "parents"
+			#define REPO_TASK_LABEL_RESOURCES "resources"
 
 			class REPO_API_EXPORT RepoTask : public RepoBSON
 			{

@@ -479,7 +479,13 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 		if(taskIDtoRepoID.find(taskID) == taskIDtoRepoID.end())
 			taskIDtoRepoID[taskID] = repo::lib::RepoUUID::createUUID();
 
-		taskBSONs.push_back(repo::core::model::RepoBSONFactory::makeTask(task.second.name, task.second.data, parents, taskIDtoRepoID[taskID]));
+		std::vector<repo::lib::RepoUUID> relatedEntities;
+		for (const auto &resourceID : task.second.relatedResources) {
+			if (resourceIDsToSharedIDs.find(resourceID) != resourceIDsToSharedIDs.end()) {
+				relatedEntities.insert(relatedEntities.end(), resourceIDsToSharedIDs[resourceID].begin(), resourceIDsToSharedIDs[resourceID].end());
+			}
+		}
+		taskBSONs.push_back(repo::core::model::RepoBSONFactory::makeTask(task.second.name, task.second.data, relatedEntities, parents, taskIDtoRepoID[taskID]));
 	}
 
 
