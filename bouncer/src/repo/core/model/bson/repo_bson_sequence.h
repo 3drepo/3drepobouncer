@@ -16,6 +16,7 @@
 */
 
 #pragma once
+#include <unordered_map>
 #include "repo_bson.h"
 
 namespace repo {
