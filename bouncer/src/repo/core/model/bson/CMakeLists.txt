@@ -14,7 +14,6 @@ set(SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_ref.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_role.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_sequence.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_task.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_bson_user.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_node_camera.cpp
