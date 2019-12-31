@@ -40,7 +40,7 @@ const static std::string SEQ_CACHE_LABEL_POSITION = "position";
 const static std::string SEQ_CACHE_LABEL_FORWARD = "forward";
 const static std::string SEQ_CACHE_LABEL_UP = "up";
 const static std::string SEQ_CACHE_LABEL_FOV = "fov";
-const static std::string SEQ_CACHE_LABEL_PERSPECTIVE = "PERSPECTIVE";
+const static std::string SEQ_CACHE_LABEL_PERSPECTIVE = "perspective";
 
 class SynchroModelImport::CameraChange{
 public:
