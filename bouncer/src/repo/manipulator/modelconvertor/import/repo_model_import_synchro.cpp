@@ -37,6 +37,7 @@ const static std::string SEQ_CACHE_LABEL_VALUE = "value";
 const static std::string SEQ_CACHE_LABEL_SHARED_IDS = "shared_ids";
 const static std::string SEQ_CACHE_LABEL_CAMERA = "camera";
 const static std::string SEQ_CACHE_LABEL_POSITION = "position";
+const static std::string SEQ_CACHE_LABEL_DIRECTION = "direction";
 const static std::string SEQ_CACHE_LABEL_FORWARD = "forward";
 const static std::string SEQ_CACHE_LABEL_UP = "up";
 const static std::string SEQ_CACHE_LABEL_FOV = "fov";
@@ -299,9 +300,11 @@ std::vector<float> SynchroModelImport::colourFrom32Bit(const uint32_t &color) co
 std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
 	const std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
 	const std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
+	const std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> &transformState,
+	const std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> &clipState,
 	const std::shared_ptr<CameraChange> &cam) {
 
-	std::vector<repo::lib::PropertyTree> transparencyStates, colourStates;
+	std::vector<repo::lib::PropertyTree> transparencyStates, colourStates, transformationStates, clipPlaneStates;
 	std::unordered_map<float, std::vector<std::string>> transToIDs;
 	std::unordered_map<uint32_t, std::vector<std::string>> colorToIDs;
 
@@ -330,6 +333,24 @@ std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
 		}
 	}
 
+	for (const auto &entry : transformState) {
+		repo::lib::PropertyTree transformTree;
+		transformTree.addToTree(SEQ_CACHE_LABEL_VALUE, entry.second);
+		std::vector<repo::lib::RepoUUID> idArr = {entry.first};
+		transformTree.addToTree(SEQ_CACHE_LABEL_SHARED_IDS, idArr);
+		transformationStates.push_back(transformTree);
+	}	
+
+	for (const auto &entry : clipState) {
+		repo::lib::PropertyTree clipTree, valueTree;
+		valueTree.addToTree(SEQ_CACHE_LABEL_POSITION, entry.second.first);
+		valueTree.addToTree(SEQ_CACHE_LABEL_DIRECTION, entry.second.second);
+		clipTree.mergeSubTree(SEQ_CACHE_LABEL_VALUE, valueTree);
+		std::vector<repo::lib::RepoUUID> idArr = { entry.first };
+		clipTree.addToTree(SEQ_CACHE_LABEL_SHARED_IDS, idArr);
+		clipPlaneStates.push_back(clipTree);
+	}
+
 	for (const auto &entry : transToIDs) {
 		repo::lib::PropertyTree transTree;
 		transTree.addToTree(SEQ_CACHE_LABEL_VALUE, entry.first);
@@ -345,8 +366,10 @@ std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
 	}
 	
 	repo::lib::PropertyTree bufferTree;
-	bufferTree.addArrayObjects(SEQ_CACHE_LABEL_TRANSPARENCY, transparencyStates);
-	bufferTree.addArrayObjects(SEQ_CACHE_LABEL_COLOR, colourStates);
+	if (transparencyStates.size()) bufferTree.addArrayObjects(SEQ_CACHE_LABEL_TRANSPARENCY, transparencyStates);
+	if (colourStates.size()) bufferTree.addArrayObjects(SEQ_CACHE_LABEL_COLOR, colourStates);
+	if (transformationStates.size()) bufferTree.addArrayObjects(SEQ_CACHE_LABEL_COLOR, transformationStates);
+	if (clipPlaneStates.size()) bufferTree.addArrayObjects(SEQ_CACHE_LABEL_COLOR, clipPlaneStates);
 
 
 	if (cam) {
@@ -377,6 +400,8 @@ void SynchroModelImport::updateFrameState(
 	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
+	std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> &transformState,
+	std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> &clipState,
 	std::shared_ptr<CameraChange> &cam
 
 	) {
@@ -395,6 +420,24 @@ void SynchroModelImport::updateFrameState(
 
 				}
 				break;
+		case synchro_reader::AnimationTask::TaskType::CLIP:
+		{
+			auto clipTask = std::dynamic_pointer_cast<const synchro_reader::ClipTask>(task);
+			auto meshes = resourceIDsToSharedIDs[clipTask->resourceID];
+			if (clipTask->reset) {
+				for (const auto &mesh : meshes)
+					clipState.erase(mesh);
+			}
+			else {
+				repo::lib::RepoVector3D64 position = { clipTask->position.x, clipTask->position.y, clipTask->position.z};
+				repo::lib::RepoVector3D64 dir = { clipTask->dir.x, clipTask->dir.y, clipTask->dir.z };
+				auto clip = std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>(position, dir);
+				for (const auto &mesh : meshes)
+					clipState[mesh] = clip;
+			}
+			
+		}
+		break;
 		case synchro_reader::AnimationTask::TaskType::COLOR:
 		{
 			auto colourTask = std::dynamic_pointer_cast<const synchro_reader::ColourTask>(task);
@@ -407,6 +450,21 @@ void SynchroModelImport::updateFrameState(
 					meshColourState[mesh].second = meshColourState[mesh].first == colour32Bit ? std::vector<float>() : color;
 				}
 			}
+		}
+		break;
+		case synchro_reader::AnimationTask::TaskType::TRANSFORMATION:
+		{
+			auto transTask = std::dynamic_pointer_cast<const synchro_reader::TransformationTask>(task);
+			auto meshes = resourceIDsToSharedIDs[transTask->resourceID];
+			if (transTask->reset) {
+				for (const auto &mesh : meshes)
+					transformState.erase(mesh);
+			}
+			else {
+				for (const auto &mesh : meshes)
+					transformState[mesh] = transTask->trans;
+			}
+
 		}
 		break;
 		case synchro_reader::AnimationTask::TaskType::VISIBILITY:
@@ -556,6 +614,10 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 
 	std::string validCache;
 	std::shared_ptr<CameraChange> cam = nullptr;
+
+	std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> transformState;
+	std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> clipState;
+
 	auto currentFrame = animation.frames.begin();
 	auto currentStart = taskInfo.taskStartDates.begin();
 	auto currentEnd = taskInfo.taskEndDates.begin();
@@ -568,10 +630,9 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 
 		currentTime = std::min(currentTime, currentEnd != taskInfo.taskEndDates.end() ? currentEnd->first : -1);
 
-
 		if (currentFrame != animation.frames.end() && currentFrame->first == currentTime) {
-			updateFrameState(currentFrame->second, resourceIDsToSharedIDs, meshAlphaState, meshColourState, cam);
-			auto cacheData = generateCache(meshAlphaState, meshColourState, cam);
+			updateFrameState(currentFrame->second, resourceIDsToSharedIDs, meshAlphaState, meshColourState, transformState, clipState, cam);
+			auto cacheData = generateCache(meshAlphaState, meshColourState, transformState, clipState, cam);
 			validCache = cacheData.first;
 			stateBuffers[validCache] = cacheData.second;
 			currentFrame++;
@@ -592,9 +653,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 		data.ref = validCache;
 		data.timestamp = currentTime;
 		data.currentTasks = currentTasks;
-		frameData.push_back(data);
-
-		
+		frameData.push_back(data);		
 	}
 
 
