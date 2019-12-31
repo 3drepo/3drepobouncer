@@ -263,6 +263,11 @@ namespace repo{
 			const repo::lib::RepoVector3D &value);
 
 		template <>
+		void PropertyTree::addToTree<repo::lib::RepoVector3D64>(
+			const std::string             &label,
+			const repo::lib::RepoVector3D64 &value);
+
+		template <>
 		void PropertyTree::addToTree<std::string>(
 			const std::string           &label,
 			const std::string           &value);
@@ -291,5 +296,12 @@ namespace repo{
 			const std::string  &attribute,
 			const repo::lib::RepoVector3D &value
 			);
+
+		template <>
+		void PropertyTree::addFieldAttribute(
+			const std::string  &label,
+			const std::string  &attribute,
+			const repo::lib::RepoVector3D64 &value
+		);
 	}
 }

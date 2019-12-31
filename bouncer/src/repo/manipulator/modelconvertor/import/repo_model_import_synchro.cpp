@@ -35,6 +35,33 @@ const static std::string SEQ_CACHE_LABEL_TRANSPARENCY = "transparency";
 const static std::string SEQ_CACHE_LABEL_COLOR = "color";
 const static std::string SEQ_CACHE_LABEL_VALUE = "value";
 const static std::string SEQ_CACHE_LABEL_SHARED_IDS = "shared_ids";
+const static std::string SEQ_CACHE_LABEL_CAMERA = "camera";
+const static std::string SEQ_CACHE_LABEL_POSITION = "position";
+const static std::string SEQ_CACHE_LABEL_FORWARD = "forward";
+const static std::string SEQ_CACHE_LABEL_UP = "up";
+const static std::string SEQ_CACHE_LABEL_FOV = "fov";
+const static std::string SEQ_CACHE_LABEL_PERSPECTIVE = "PERSPECTIVE";
+
+class SynchroModelImport::CameraChange{
+public:
+	CameraChange(
+		const repo::lib::RepoVector3D64 &_position,
+		const repo::lib::RepoVector3D &_forward,
+		const repo::lib::RepoVector3D &_up,
+		const float &_fov,
+		const bool _isPerspective
+	) :
+		position(_position),
+		forward(_forward),
+		up(_up),
+		fov(_fov),
+		isPerspective(_isPerspective) {}
+
+	const repo::lib::RepoVector3D64 position;
+	const repo::lib::RepoVector3D forward, up;
+	const float fov;
+	const bool isPerspective;
+};
 
 bool SynchroModelImport::importModel(std::string filePath, uint8_t &errMsg) {
 
@@ -271,7 +298,8 @@ std::vector<float> SynchroModelImport::colourFrom32Bit(const uint32_t &color) co
 
 std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
 	const std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
-	const std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState) {
+	const std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
+	const std::shared_ptr<CameraChange> &cam) {
 
 	std::vector<repo::lib::PropertyTree> transparencyStates, colourStates;
 	std::unordered_map<float, std::vector<std::string>> transToIDs;
@@ -320,6 +348,17 @@ std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
 	bufferTree.addArrayObjects(SEQ_CACHE_LABEL_TRANSPARENCY, transparencyStates);
 	bufferTree.addArrayObjects(SEQ_CACHE_LABEL_COLOR, colourStates);
 
+
+	if (cam) {
+		repo::lib::PropertyTree camTree;
+		camTree.addToTree(SEQ_CACHE_LABEL_POSITION, cam->position);
+		camTree.addToTree(SEQ_CACHE_LABEL_FORWARD, cam->forward);
+		camTree.addToTree(SEQ_CACHE_LABEL_UP, cam->up);
+		camTree.addToTree(SEQ_CACHE_LABEL_PERSPECTIVE, cam->isPerspective ? "true" : "false");
+		camTree.addToTree(SEQ_CACHE_LABEL_FOV, cam->fov);
+		bufferTree.mergeSubTree(SEQ_CACHE_LABEL_CAMERA, camTree);
+	}
+
 	std::stringstream ss;
 	bufferTree.write_json(ss);
 	auto data = ss.str();
@@ -337,23 +376,25 @@ void SynchroModelImport::updateFrameState(
 	const std::vector<std::shared_ptr<synchro_reader::AnimationTask>> &tasks,
 	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
-	std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState
+	std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
+	std::shared_ptr<CameraChange> &cam
 
 	) {
 	for (const auto &task : tasks) {
 		switch (task->getType()) {
-			//case synchro_reader::AnimationTask::TaskType::CAMERA:
-			//	{
-			//		auto camTask = std::dynamic_pointer_cast<const synchro_reader::CameraChange>(task);
-			//		auto taskBSON = repo::core::model::RepoBSONFactory::makeCameraTask(
-			//			camTask->fov, camTask->isPerspective,
-			//			{ (float)camTask->position.x, (float)camTask->position.y, (float)camTask->position.z },
-			//			{ (float)camTask->forward.x, (float)camTask->forward.y, (float)camTask->forward.z },
-			//			{ (float)camTask->up.x, (float)camTask->up.y, (float)camTask->up.z }
-			//		);					
-			//		//FIXME: Camfix
-			//	}
-			//	break;
+			case synchro_reader::AnimationTask::TaskType::CAMERA:
+				{
+					auto camChange = std::dynamic_pointer_cast<const synchro_reader::CameraChange>(task);
+					cam = std::make_shared<CameraChange>(
+							repo::lib::RepoVector3D64(camChange->position.x, camChange->position.y, camChange->position.z),
+							repo::lib::RepoVector3D(camChange->forward.x, camChange->forward.y, camChange->forward.z),
+							repo::lib::RepoVector3D(camChange->up.x, camChange->up.y, camChange->up.z),
+							camChange->fov,
+							camChange->isPerspective
+						);
+
+				}
+				break;
 		case synchro_reader::AnimationTask::TaskType::COLOR:
 		{
 			auto colourTask = std::dynamic_pointer_cast<const synchro_reader::ColourTask>(task);
@@ -514,6 +555,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	}
 
 	std::string validCache;
+	std::shared_ptr<CameraChange> cam = nullptr;
 	auto currentFrame = animation.frames.begin();
 	auto currentStart = taskInfo.taskStartDates.begin();
 	auto currentEnd = taskInfo.taskEndDates.begin();
@@ -528,8 +570,8 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 
 
 		if (currentFrame != animation.frames.end() && currentFrame->first == currentTime) {
-			updateFrameState(currentFrame->second, resourceIDsToSharedIDs, meshAlphaState, meshColourState);
-			auto cacheData = generateCache(meshAlphaState, meshColourState);
+			updateFrameState(currentFrame->second, resourceIDsToSharedIDs, meshAlphaState, meshColourState, cam);
+			auto cacheData = generateCache(meshAlphaState, meshColourState, cam);
 			validCache = cacheData.first;
 			stateBuffers[validCache] = cacheData.second;
 			currentFrame++;

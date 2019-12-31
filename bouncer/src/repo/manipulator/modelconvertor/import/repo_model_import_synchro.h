@@ -34,6 +34,7 @@
 namespace repo{
 	namespace manipulator{
 		namespace modelconvertor{
+			
 			class SynchroModelImport : public AbstractModelImport
 			{
 			public:
@@ -67,6 +68,8 @@ namespace repo{
 				bool importModel(std::string filePath, uint8_t &errMsg);
 
 			private:
+				class CameraChange;
+
 				std::pair<repo::core::model::RepoNodeSet, repo::core::model::RepoNodeSet> generateMatNodes(
 					std::unordered_map<std::string, repo::lib::RepoUUID> &synchroIDtoRepoID,
 					std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> &repoIDToNode);
@@ -98,7 +101,8 @@ namespace repo{
 
 				std::pair<std::string, std::vector<uint8_t>> generateCache(
 					const std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
-					const std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState);
+					const std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
+					const std::shared_ptr<CameraChange> &cam);
 
 				void addTasks(
 					std::unordered_map<std::string, std::shared_ptr<repo::core::model::RepoSequence::Task>> &currentTasks,
@@ -118,7 +122,8 @@ namespace repo{
 					const std::vector<std::shared_ptr<synchro_reader::AnimationTask>> &tasks,
 					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
 					std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
-					std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState
+					std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
+					std::shared_ptr<CameraChange> &cam
 
 				);
 
