@@ -462,8 +462,10 @@ void SynchroModelImport::updateFrameState(
 					transformState.erase(mesh);
 			}
 			else {
-				for (const auto &mesh : meshes)
+				for (const auto &mesh : meshes) {
 					transformState[mesh] = transTask->trans;
+					transformingMesh.insert(mesh);
+				}
 			}
 
 		}
