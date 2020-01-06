@@ -180,6 +180,9 @@ namespace repo {
 				*/
 				std::vector<repo_face_t> getFaces() const;
 
+				// State whether the mesh can be optimsed into batched meshes
+				bool isIndependent() const;
+
 				std::vector<repo_mesh_mapping_t> getMeshMapping() const;
 
 				/**

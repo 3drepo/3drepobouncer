@@ -159,7 +159,8 @@ namespace repo {
 					std::unordered_map<uint32_t, std::vector<std::set<repo::lib::RepoUUID>>>			&normalMeshes,
 					std::unordered_map<uint32_t, std::vector<std::set<repo::lib::RepoUUID>>>			&transparentMeshes,
 					std::unordered_map < uint32_t, std::unordered_map < repo::lib::RepoUUID,
-					std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher >> &texturedMeshes);
+					std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher >> &texturedMeshes,
+					std::vector<repo::lib::RepoUUID> &separateMeshes);
 			};
 		}
 	}
