@@ -623,6 +623,9 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	auto currentEnd = taskInfo.taskEndDates.begin();
 
 	std::unordered_map<std::string, std::shared_ptr<repo::core::model::RepoSequence::Task>> currentTasks;
+
+	std::set<repo::lib::RepoUUID> transformingMesh;
+
 	while (currentFrame != animation.frames.end() || currentStart != taskInfo.taskStartDates.end() || currentEnd != taskInfo.taskEndDates.end()) {
 		auto currentTime = currentFrame != animation.frames.end() ? currentFrame->first : -1;
 
@@ -631,7 +634,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 		currentTime = std::min(currentTime, currentEnd != taskInfo.taskEndDates.end() ? currentEnd->first : -1);
 
 		if (currentFrame != animation.frames.end() && currentFrame->first == currentTime) {
-			updateFrameState(currentFrame->second, resourceIDsToSharedIDs, meshAlphaState, meshColourState, transformState, clipState, cam);
+			updateFrameState(currentFrame->second, resourceIDsToSharedIDs, meshAlphaState, meshColourState, transformState, clipState, cam, transformingMesh);
 			auto cacheData = generateCache(meshAlphaState, meshColourState, transformState, clipState, cam);
 			validCache = cacheData.first;
 			stateBuffers[validCache] = cacheData.second;
@@ -654,6 +657,11 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 		data.timestamp = currentTime;
 		data.currentTasks = currentTasks;
 		frameData.push_back(data);		
+	}
+
+	for (const auto &mesh : transformingMesh) {
+		auto meshNode =(repo::core::model::MeshNode*) scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, mesh);		
+		meshNode->swap(meshNode->cloneAndFlagIndependent());
 	}
 
 

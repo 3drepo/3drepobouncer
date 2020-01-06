@@ -40,6 +40,13 @@ MeshNode::~MeshNode()
 {
 }
 
+MeshNode MeshNode::cloneAndFlagIndependent() const {
+	RepoBSONBuilder builder;
+	builder.append(REPO_NODE_MESH_LABEL_INDEPENDENT, true);
+	builder.appendElementsUnique(*this);
+	return MeshNode(builder.obj(), bigFiles);
+}
+
 RepoNode MeshNode::cloneAndApplyTransformation(
 	const repo::lib::RepoMatrix &matrix) const
 {

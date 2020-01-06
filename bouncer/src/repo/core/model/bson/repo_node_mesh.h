@@ -59,7 +59,7 @@ namespace repo {
 #define REPO_NODE_MESH_LABEL_MATERIAL_ID		        "mat_id"
 #define REPO_NODE_MESH_LABEL_MERGE_MAP		        "m_map"
 			//------------------------------------------------------------------------------
-
+#define REPO_NODE_MESH_LABEL_INDEPENDENT		        "independent"
 
 			class REPO_API_EXPORT MeshNode :public RepoNode
 			{
@@ -155,6 +155,8 @@ namespace repo {
 				MeshNode cloneAndUpdateMeshMapping(
 					const std::vector<repo_mesh_mapping_t> &vec,
 					const bool                             &overwrite = false);
+
+				MeshNode cloneAndFlagIndependent() const;
 
 				/**
 				* --------- Convenience functions -----------
