@@ -16,7 +16,9 @@
 */
 
 #include <gtest/gtest.h>
+#include <cstdlib>
 #include <repo/manipulator/modeloptimizer/repo_optimizer_multipart.h>
+#include <repo/core/model/bson/repo_bson_factory.h>
 
 using namespace repo::manipulator::modeloptimizer;
 
@@ -39,10 +41,50 @@ TEST(MultipartOptimizer, ApplyOptimizationTestEmpty)
 
 	EXPECT_FALSE(opt.apply(empty));
 	EXPECT_FALSE(opt.apply(empty2));
+
+	delete empty2;
+}
+
+repo::core::model::MeshNode* createRandomMesh(const bool hasUV, const bool isIndependent, const std::vector<repo::lib::RepoUUID> &parent) {
+	int nVertices = 10;
+	int nFaces = 3;
+	std::vector<repo::lib::RepoVector3D> vertices;
+	std::vector<repo_face_t> faces;
+
+	for (int i = 0; i < nVertices; ++i) {
+		vertices.push_back({std::rand(), std::rand(), std::rand()});
+	}
+
+	for (int i = 0; i < nFaces; ++i) {
+		repo_face_t face;
+		for(int j = 0; j < 3; ++j)
+			face.push_back(std::rand() / nVertices);
+		faces.push_back(face);
+	}
+
+	new repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces, {}, {}, parent));
 }
 
 TEST(MultipartOptimizer, TestAllMerged)
 {
+	auto opt = MultipartOptimizer();
+	auto root = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
+	auto rootID = root->getSharedID();
 
+	auto nMesh = 3;
+	repo::core::model::RepoNodeSet meshes, trans, dummy;
+	trans.insert(root);
+	for(int i =0; i < nMesh; ++i)
+		meshes.insert(createRandomMesh(false, false, {rootID}));
+
+	repo::core::model::RepoScene *scene = new repo::core::model::RepoScene({}, dummy, meshes, dummy, dummy, dummy, trans);
+	ASSERT_TRUE(scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT));
+	ASSERT_FALSE(scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED));
+	
+	EXPECT_TRUE(opt.apply(scene));
+	EXPECT_TRUE(scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT));
+	EXPECT_TRUE(scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED));
+
+	EXPECT_EQ(1, scene->getAllMeshes(repo::core::model::RepoScene::GraphType::OPTIMIZED).size());
 
 }
