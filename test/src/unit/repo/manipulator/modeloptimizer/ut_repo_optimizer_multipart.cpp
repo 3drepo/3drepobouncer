@@ -127,3 +127,27 @@ TEST(MultipartOptimizer, TestWithIndependent)
 	EXPECT_EQ(2, scene->getAllMeshes(OPTIMIZED_GRAPH).size());
 
 }
+
+TEST(MultipartOptimizer, TestWithUV)
+{
+	auto opt = MultipartOptimizer();
+	auto root = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
+	auto rootID = root->getSharedID();
+
+	auto nMesh = 3;
+	repo::core::model::RepoNodeSet meshes, trans, dummy;
+	trans.insert(root);
+	for (int i = 0; i < nMesh; ++i)
+		meshes.insert(createRandomMesh(i == 1, false, { rootID }));
+
+	repo::core::model::RepoScene *scene = new repo::core::model::RepoScene({}, dummy, meshes, dummy, dummy, dummy, trans);
+	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
+	ASSERT_FALSE(scene->hasRoot(OPTIMIZED_GRAPH));
+
+	EXPECT_TRUE(opt.apply(scene));
+	EXPECT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
+	EXPECT_TRUE(scene->hasRoot(OPTIMIZED_GRAPH));
+
+	EXPECT_EQ(2, scene->getAllMeshes(OPTIMIZED_GRAPH).size());
+
+}
