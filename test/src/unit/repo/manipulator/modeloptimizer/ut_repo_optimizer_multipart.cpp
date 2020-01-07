@@ -65,14 +65,16 @@ repo::core::model::MeshNode* createRandomMesh(const bool hasUV, const bool isInd
 		faces.push_back(face);
 	}
 
-	std::vector<repo::lib::RepoVector2D> uvs;
+	std::vector<std::vector<repo::lib::RepoVector2D>> uvs;
 	if (hasUV) {
+		std::vector<repo::lib::RepoVector2D> channel;
 		for (int i = 0; i < nVertices; ++i) {
-			uvs.push_back({ (float)std::rand() / RAND_MAX, (float)std::rand() / RAND_MAX });
+			channel.push_back({ (float)std::rand() / RAND_MAX, (float)std::rand() / RAND_MAX });
 		}
+		uvs.push_back(channel);
 	}
 
-	auto mesh = new repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces, {}, {}, { uvs }, {}, {}, "mesh",parent));
+	auto mesh = new repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces, {}, {}, uvs, {}, {}, "mesh",parent));
 
 	if (isIndependent)
 		mesh->swap(mesh->cloneAndFlagIndependent());
