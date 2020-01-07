@@ -27,21 +27,22 @@ TEST(MultipartOptimizer, ConstructorTest)
 
 TEST(MultipartOptimizer, DeconstructorTest)
 {
-	auto ptr = new TransformationReductionOptimizer();
+	auto ptr = new MultipartOptimizer();
 	delete ptr;
 }
 
-TEST(MultipartOptimizer, ApplyOptimizationTest)
+TEST(MultipartOptimizer, ApplyOptimizationTestEmpty)
 {
-
-	auto opt = TransformationReductionOptimizer();
+	auto opt = MultipartOptimizer();
 	repo::core::model::RepoScene *empty = nullptr;
 	repo::core::model::RepoScene *empty2 = new repo::core::model::RepoScene();
 
 	EXPECT_FALSE(opt.apply(empty));
 	EXPECT_FALSE(opt.apply(empty2));
-
-	//FIXME: to finish. need to construct a scene to test this properly.
-
 }
 
+TEST(MultipartOptimizer, TestAllMerged)
+{
+
+
+}
