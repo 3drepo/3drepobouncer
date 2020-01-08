@@ -53,7 +53,7 @@ namespace repo{
 #ifdef SYNCHRO_SUPPORT
 				/**
 				* Generates a repo scene graph
-				* an internal representation(aiscene) needs to have
+				* an internal representation needs to have
 				* been created before this call
 				* @return returns a populated RepoScene upon success.
 				*/

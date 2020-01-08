@@ -16,21 +16,31 @@
 */
 
 #include <gtest/gtest.h>
-#include <repo/manipulator/modeloptimizer/repo_optimizer_multipart.h>
-#include <repo/core/model/bson/repo_bson_factory.h>
+#include <repo/manipulator/modelconvertor/import/repo_model_import_synchro.h>
+#include "../../../../repo_test_database_info.h"
 
-using namespace repo::manipulator::modeloptimizer;
-//
-//const static repo::core::model::RepoScene::GraphType DEFAULT_GRAPH = repo::core::model::RepoScene::GraphType::DEFAULT;
-//const static repo::core::model::RepoScene::GraphType OPTIMIZED_GRAPH = repo::core::model::RepoScene::GraphType::OPTIMIZED;
-//
-//TEST(MultipartOptimizer, ConstructorTest)
-//{
-//	MultipartOptimizer();
-//}
-//
-//TEST(MultipartOptimizer, DeconstructorTest)
-//{
-//	auto ptr = new MultipartOptimizer();
-//	delete ptr;
-//}
+using namespace repo::manipulator::modelconvertor;
+
+TEST(SynchroModelImport, ConstructorTest)
+{
+	SynchroModelImport();
+}
+
+TEST(SynchroModelImport, DeconstructorTest)
+{
+	auto ptr = new SynchroModelImport();
+	delete ptr;
+}
+
+TEST(SynchroModelImport, ImportModel)
+{
+	auto import = SynchroModelImport();
+	uint8_t errCode;
+	EXPECT_TRUE(import.importModel(getDataPath(synchroWithTransform), errCode));
+	EXPECT_EQ(0, errCode);
+
+	auto scene = import.generateRepoScene();
+
+	ASSERT_TRUE(scene);
+
+}
