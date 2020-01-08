@@ -352,41 +352,6 @@ std::vector < repo::core::model::RepoRole > RepoController::_RepoControllerImpl:
 
 	return roles;
 }
-
-std::vector < repo::core::model::RepoRoleSettings > RepoController::_RepoControllerImpl::getRoleSettingsFromDatabase(
-	const RepoController::RepoToken              *token,
-	const std::string            &database,
-	const uint64_t               &skip,
-	const uint32_t               &limit)
-{
-	auto bsons = getAllFromCollectionContinuous(token, database, REPO_COLLECTION_SETTINGS_ROLES, skip, limit);
-	std::vector<repo::core::model::RepoRoleSettings > roleSettings;
-	for (const auto &b : bsons)
-	{
-		roleSettings.push_back(repo::core::model::RepoRoleSettings(b));
-	}
-	return roleSettings;
-}
-
-repo::core::model::RepoRoleSettings RepoController::_RepoControllerImpl::getRoleSettings(
-	const RepoController::RepoToken *token,
-	const std::string &database,
-	const std::string &uniqueRoleName)
-{
-	repo::core::model::RepoRoleSettings res;
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		res = worker->getRoleSettingByName(token->databaseAd, token->getCredentials(), database, uniqueRoleName);
-		workerPool.push(worker);
-	}
-	else
-	{
-		repoError << "Trying to retrieve Role setting from database without a valid token!";
-	}
-	return res;
-}
-
 std::list<std::string> RepoController::_RepoControllerImpl::getDatabases(const RepoController::RepoToken *token)
 {
 	repoTrace << "Controller: Fetching Database....";
@@ -414,30 +379,6 @@ std::list<std::string> RepoController::_RepoControllerImpl::getDatabases(const R
 	return list;
 }
 
-repo::core::model::DatabaseStats RepoController::_RepoControllerImpl::getDatabaseStats(
-	const RepoController::RepoToken *token,
-	const std::string &database)
-{
-	repo::core::model::DatabaseStats stats;
-
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		std::string errMsg;
-		stats = worker->getDatabaseStats(token->databaseAd,
-			token->getCredentials(), database, errMsg);
-		workerPool.push(worker);
-
-		if (!errMsg.empty())
-			repoError << errMsg;
-	}
-	else
-	{
-		repoError << "Trying to get database stats without a database connection!";
-	}
-	return stats;
-}
-
 std::list<std::string>  RepoController::_RepoControllerImpl::getCollections(
 	const RepoController::RepoToken       *token,
 	const std::string     &databaseName
@@ -456,32 +397,6 @@ std::list<std::string>  RepoController::_RepoControllerImpl::getCollections(
 	}
 
 	return list;
-}
-
-repo::core::model::CollectionStats RepoController::_RepoControllerImpl::getCollectionStats(
-	const RepoController::RepoToken      *token,
-	const std::string    &database,
-	const std::string    &collection)
-{
-	repo::core::model::CollectionStats stats;
-
-	if (token)
-	{
-		manipulator::RepoManipulator* worker = workerPool.pop();
-		std::string errMsg;
-		stats = worker->getCollectionStats(token->databaseAd,
-			token->getCredentials(), database, collection, errMsg);
-		workerPool.push(worker);
-
-		if (!errMsg.empty())
-			repoError << errMsg;
-	}
-	else
-	{
-		repoError << "Trying to get collections stats without a database connection!";
-	}
-
-	return stats;
 }
 
 std::map<std::string, std::list<std::string>>
@@ -1166,24 +1081,6 @@ void RepoController::_RepoControllerImpl::compareScenes(
 	else{
 		repoError << "RepoController::_RepoControllerImpl::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
 	}
-}
-
-void RepoController::_RepoControllerImpl::getDatabaseStatistics(
-	const RepoController::RepoToken   *token,
-	const std::string &outputFilePath)
-{
-	manipulator::RepoManipulator* worker = workerPool.pop();
-	worker->getDatabaseStatistics(token->databaseAd, token->getCredentials(), outputFilePath);
-	workerPool.push(worker);
-}
-
-void RepoController::_RepoControllerImpl::getUserList(
-	const RepoController::RepoToken   *token,
-	const std::string &outputFilePath)
-{
-	manipulator::RepoManipulator* worker = workerPool.pop();
-	worker->getUserList(token->databaseAd, token->getCredentials(), outputFilePath);
-	workerPool.push(worker);
 }
 
 std::string RepoController::_RepoControllerImpl::getVersion()

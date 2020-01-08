@@ -34,7 +34,7 @@ void RepoBSONBuilder::appendArrayPair(
 			RepoBSONBuilder innerBuilder;
 			innerBuilder << fstLabel << it->first;
 			innerBuilder << sndLabel << it->second;
-			arrBuilder.append(innerBuilder.obj());
+			arrBuilder.append(innerBuilder.mongoObj());
 		}
 		append(label, arrBuilder.arr());
 	}

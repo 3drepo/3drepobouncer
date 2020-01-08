@@ -23,11 +23,9 @@
 #include <map>
 #include <string>
 
-#include "../core/model/bson/repo_bson_role_settings.h"
 #include "../core/model/bson/repo_node_reference.h"
 #include "../core/model/bson/repo_node_transformation.h"
 #include "../core/model/bson/repo_node_mesh.h"
-#include "../core/model/bson/repo_bson_database_stats.h"
 #include "../core/model/collection/repo_scene.h"
 #include "../lib/repo_config.h"
 #include "diff/repo_diff_abstract.h"
@@ -390,38 +388,6 @@ namespace repo{
 				const uint32_t                                &limit = 0);
 
 			/**
-			* Get the collection statistics of the given collection
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
-			* @param database Name of database
-			* @param collection Name of collection
-			* @param errMsg error message when error occurs
-			* @return returns a bson object with statistical info.
-			*/
-			repo::core::model::CollectionStats getCollectionStats(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON             *cred,
-				const std::string                             &database,
-				const std::string                             &collection,
-				std::string	                                  &errMsg
-				);
-
-			/**
-			* Get the database statistics of the given database
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
-			* @param database Name of database
-			* @param errMsg error message when error occurs
-			* @return returns a bson object with statistical info.
-			*/
-			repo::core::model::DatabaseStats getDatabaseStats(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON             *cred,
-				const std::string                             &database,
-				std::string	                                  &errMsg
-				);
-
-			/**
 			* Return a list of projects with the database available to the user
 			* @param databaseAd mongo database address:port
 			* @param cred user credentials in bson form
@@ -442,19 +408,6 @@ namespace repo{
 			std::list<std::string> getAdminDatabaseRoles(
 				const std::string                     &databaseAd);
 
-			/**
-			* Get a role settings within a database
-			* @param databaseAd mongo database address:port
-			* @param cred user credentials in bson form
-			* @param database name of database
-			* @param uniqueRoleName name of the role to look for
-			*/
-			repo::core::model::RepoRoleSettings getRoleSettingByName(
-				const std::string                   &databaseAd,
-				const repo::core::model::RepoBSON	*cred,
-				const std::string					&database,
-				const std::string					&uniqueRoleName
-				);
 
 			/**
 			* Get a hierachical spatial partitioning in form of a tree
@@ -474,23 +427,6 @@ namespace repo{
 			std::list<std::string> getStandardDatabaseRoles(
 				const std::string                             &databaseAd);
 
-			/**
-			* Generate database statistics and print the result in the given filepath
-			* @params outputFilePath
-			*/
-			void getDatabaseStatistics(
-				const std::string                     &databaseAd,
-				const repo::core::model::RepoBSON*	  cred,
-				const std::string &outputFilePath);
-
-			/**
-			* Get a list of users and print the result in the given filepath
-			* @params outputFilePath
-			*/
-			void getUserList(
-				const std::string                     &databaseAd,
-				const repo::core::model::RepoBSON*	  cred,
-				const std::string &outputFilePath);
 
 			/**
 			* Get the name of the admin database

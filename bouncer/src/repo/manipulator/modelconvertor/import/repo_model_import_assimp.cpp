@@ -607,27 +607,27 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 			switch (currentValue.mType)
 			{
 			case AI_BOOL:
-				builder << key << *(static_cast<bool *>(currentValue.mData));
+				builder.append(key, *(static_cast<bool *>(currentValue.mData)));
 				break;
 
 			case AI_INT32:
-				builder << key << *(static_cast<int *>(currentValue.mData));
+				builder.append(key, *(static_cast<int *>(currentValue.mData)));
 				break;
 
 			case AI_UINT64:
 				//mongo doesn't support 64bit unsigned. storing it as a signed number
-				builder << key << (long long)(*(static_cast<uint64_t *>(currentValue.mData)));
+				builder.append(key, (long long)(*(static_cast<uint64_t *>(currentValue.mData))));
 				break;
 
 			case AI_FLOAT:
-				builder << key << *(static_cast<float *>(currentValue.mData));
+				builder.append(key, *(static_cast<float *>(currentValue.mData)));
 				break;
 
 			case AI_AISTRING:
 				val = (static_cast<aiString *>(currentValue.mData))->C_Str();
 
 				if (val.compare(key))
-					builder << key << val;
+					builder.append(key, val);
 
 				break;
 			case AI_AIVECTOR3D:

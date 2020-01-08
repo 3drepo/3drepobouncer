@@ -298,11 +298,9 @@ bool MongoDatabaseHandler::dropDocument(
 	{
 		try{
 			worker = workerPool->getWorker();
-			mongo::BSONElement bsonID;
-			bson.getObjectID(bsonID);
-			if (success = worker && !bson.isEmpty() && !bsonID.isNull())
+			if (success = worker && !bson.isEmpty() && bson.hasField("_id"))
 			{
-				mongo::Query query = MONGO_QUERY("_id" << bsonID);
+				mongo::Query query = MONGO_QUERY("_id" << bson.getField("_id").toMongoElement());
 				worker->remove(database + "." + collection, query, true);
 			}
 			else
@@ -578,7 +576,7 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 		worker = workerPool->getWorker();
 		if (worker)
 		{
-			auto query = mongo::Query(queryBuilder.obj());
+			auto query = mongo::Query(queryBuilder.mongoObj());
 			if (!sortField.empty())
 				query = query.sort(sortField, -1);
 
@@ -617,7 +615,7 @@ repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
 		if (worker)
 		{
 			mongo::BSONObj bsonMongo = worker->findOne(getNamespace(database, collection),
-				mongo::Query(queryBuilder.obj()));
+				mongo::Query(queryBuilder.mongoObj()));
 
 			bson = createRepoBSON(worker, database, collection, bsonMongo);
 		}
@@ -699,43 +697,6 @@ std::list<std::string> MongoDatabaseHandler::getCollections(
 	return collections;
 }
 
-repo::core::model::CollectionStats MongoDatabaseHandler::getCollectionStats(
-	const std::string    &database,
-	const std::string    &collection,
-	std::string          &errMsg)
-{
-	mongo::BSONObj info;
-	mongo::DBClientBase *worker;
-	if (!(database.empty() || collection.empty()))
-	{
-		try {
-			mongo::BSONObjBuilder builder;
-			builder.append("collstats", collection);
-			builder.append("scale", 1); // 1024 == KB
-
-			worker = workerPool->getWorker();
-			if (worker)
-				worker->runCommand(database, builder.obj(), info);
-			else
-				repoError << "Failed to count number of items in collection: cannot obtain a database worker from the pool";
-		}
-		catch (mongo::DBException &e)
-		{
-			errMsg = e.what();
-			repoError << "Failed to retreive collection stats for" << database
-				<< "." << collection << " : " << errMsg;
-		}
-
-		workerPool->returnWorker(worker);
-	}
-	else
-	{
-		errMsg = "Failed to retrieve collection stats: empty database name/collection name";
-	}
-
-	return repo::core::model::CollectionStats(info);
-}
-
 std::list<std::string> MongoDatabaseHandler::getDatabases(
 	const bool &sorted)
 {
@@ -760,42 +721,6 @@ std::list<std::string> MongoDatabaseHandler::getDatabases(
 	}
 	workerPool->returnWorker(worker);
 	return list;
-}
-
-repo::core::model::DatabaseStats MongoDatabaseHandler::getDatabaseStats(
-	const std::string    &database,
-	std::string          &errMsg)
-{
-	mongo::BSONObj info;
-	mongo::DBClientBase *worker;
-	if (!database.empty())
-	{
-		try {
-			mongo::BSONObjBuilder builder;
-			builder.append("dbStats", 1);
-			builder.append("scale", 1); // 1024 == KB
-
-			worker = workerPool->getWorker();
-			if (worker)
-				worker->runCommand(database, builder.obj(), info);
-			else
-				repoError << "Failed to count number of items in collection: cannot obtain a database worker from the pool";
-		}
-		catch (mongo::DBException &e)
-		{
-			errMsg = e.what();
-			repoError << "Failed to retreive database stats for" << database
-				<< " : " << errMsg;
-		}
-
-		workerPool->returnWorker(worker);
-	}
-	else
-	{
-		errMsg = "Failed to retrieve collection stats: empty database name/collection name";
-	}
-
-	return repo::core::model::DatabaseStats(info);
 }
 
 std::vector<uint8_t> MongoDatabaseHandler::getBigFile(
@@ -1222,31 +1147,32 @@ bool MongoDatabaseHandler::performUserCmd(
 				switch (op)
 				{
 				case OPERATION::INSERT:
-					cmdBuilder << "createUser" << username;
+					cmdBuilder.append("createUser", username);
 					break;
 				case OPERATION::UPDATE:
-					cmdBuilder << "updateUser" << username;
+					cmdBuilder.append("updateUser", username);
 					break;
 				case OPERATION::DROP:
-					cmdBuilder << "dropUser" << username;
+					cmdBuilder.append("dropUser", username);
 				}
 
 				if (op != OPERATION::DROP)
 				{
 					std::string pw = user.getCleartextPassword();
 					if (!pw.empty())
-						cmdBuilder << "pwd" << pw;
+						cmdBuilder.append("pwd", pw);
 
 					repo::core::model::RepoBSON customData = user.getCustomDataBSON();
 					if (!customData.isEmpty())
-						cmdBuilder << "customData" << customData;
+						cmdBuilder.append("customData", customData);
+
 
 					//compulsory, so no point checking if it's empty
 					cmdBuilder.appendArray("roles", user.getRolesBSON());
 				}
 
 				mongo::BSONObj info;
-				success = worker->runCommand(ADMIN_DATABASE, cmdBuilder.obj(), info);
+				success = worker->runCommand(ADMIN_DATABASE, cmdBuilder.mongoObj(), info);
 
 				std::string cmdError = info.getStringField("errmsg");
 				if (!cmdError.empty())
@@ -1292,7 +1218,7 @@ bool MongoDatabaseHandler::upsertDocument(
 		if (success = worker)
 		{
 			repo::core::model::RepoBSONBuilder queryBuilder;
-			queryBuilder << ID << obj.getField(ID);
+			queryBuilder.append(ID, obj.getField(ID));
 
 			mongo::BSONElement bsonID;
 			obj.getObjectID(bsonID);
@@ -1320,7 +1246,7 @@ bool MongoDatabaseHandler::upsertDocument(
 
 				mongo::BSONObjBuilder updateBuilder;
 				updateBuilder << REPO_COMMAND_Q << BSON(REPO_LABEL_ID << bsonID);
-				updateBuilder << REPO_COMMAND_U << BSON("$set" << obj.removeField(ID));
+				updateBuilder << REPO_COMMAND_U << BSON("$set" << ((mongo::BSONObj)obj).removeField(ID));
 				updateBuilder << REPO_COMMAND_UPSERT << true;
 
 				builder << REPO_COMMAND_UPDATES << BSON_ARRAY(updateBuilder.obj());

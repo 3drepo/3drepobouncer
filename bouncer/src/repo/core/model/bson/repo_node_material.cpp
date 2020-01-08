@@ -58,21 +58,21 @@ repo_material_t MaterialNode::getMaterialStruct() const
 		mat.emissive.insert(mat.emissive.end(), tempVec.begin(), tempVec.end());
 
 	mat.isWireframe = hasField(REPO_NODE_MATERIAL_LABEL_WIREFRAME) &&
-		getField(REPO_NODE_MATERIAL_LABEL_WIREFRAME).boolean();
+		getBoolField(REPO_NODE_MATERIAL_LABEL_WIREFRAME);
 
 	mat.isTwoSided = hasField(REPO_NODE_MATERIAL_LABEL_TWO_SIDED) &&
-		getField(REPO_NODE_MATERIAL_LABEL_TWO_SIDED).boolean();
+		getBoolField(REPO_NODE_MATERIAL_LABEL_TWO_SIDED);
 
 	mat.opacity = hasField(REPO_NODE_MATERIAL_LABEL_OPACITY) ?
-		getField(REPO_NODE_MATERIAL_LABEL_OPACITY).numberDouble() :
+		getDoubleField(REPO_NODE_MATERIAL_LABEL_OPACITY):
 		std::numeric_limits<float>::quiet_NaN();
 
 	mat.shininess = hasField(REPO_NODE_MATERIAL_LABEL_SHININESS) ?
-		getField(REPO_NODE_MATERIAL_LABEL_SHININESS).numberDouble() :
+		getDoubleField(REPO_NODE_MATERIAL_LABEL_SHININESS):
 		std::numeric_limits<float>::quiet_NaN();
 
 	mat.shininessStrength = hasField(REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH) ?
-		getField(REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH).numberDouble() :
+		getDoubleField(REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH):
 		std::numeric_limits<float>::quiet_NaN();
 
 	return mat;

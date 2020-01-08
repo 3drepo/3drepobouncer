@@ -29,7 +29,6 @@
 
 #include "core/model/bson/repo_bson_project_settings.h"
 #include "core/model/bson/repo_bson_role.h"
-#include "core/model/bson/repo_bson_role_settings.h"
 #include "core/model/bson/repo_bson_user.h"
 #include "core/model/bson/repo_node_transformation.h"
 #include "core/model/bson/repo_node_mesh.h"
@@ -185,37 +184,7 @@ namespace repo{
 			const std::string            &database,
 			const uint64_t               &skip = 0,
 			const uint32_t               &limit = 0);
-
-		/**
-		* Get all role settings within a database
-		* @param token A RepoToken given at authentication
-		* @param database name of database
-		* @param skip specify how many documents to skip (see description above)
-		* @param limit specifiy max. number of documents to retrieve (0 = no limit)
-		*/
-		std::vector < repo::core::model::RepoRoleSettings >
-			getRoleSettingsFromDatabase(
-			const RepoToken              *token,
-			const std::string            &database,
-			const uint64_t               &skip = 0,
-			const uint32_t               &limit = 0);
-
-		repo::core::model::RepoRoleSettings getRoleSettings(
-			const RepoToken *token,
-			const repo::core::model::RepoRole &role);
-
-		/**
-		* Get a role settings within a database
-		* @param token A RepoToken given at authentication
-		* @param database name of database
-		* @param uniqueRoleName name of the role to look for
-		*/
-		repo::core::model::RepoRoleSettings getRoleSettings(
-			const RepoToken *token,
-			const std::string &database,
-			const std::string &uniqueRoleName
-			);
-
+	
 		/**
 			* Return a list of collections within the database
 			* @param token A RepoToken given at authentication
@@ -227,18 +196,6 @@ namespace repo{
 			const std::string     &databaseName
 			);
 
-		/**
-			* Return a CollectionStats BSON containing statistics about
-			* this collection
-			* @param token A RepoToken given at authentication
-			* @param database name of database
-			* @param collection name of collection
-			* @return returns a BSON object containing this information
-			*/
-		repo::core::model::CollectionStats getCollectionStats(
-			const RepoToken            *token,
-			const std::string    &database,
-			const std::string    &collection);
 
 		/**
 			* Return a list of database available to the user
@@ -247,19 +204,6 @@ namespace repo{
 			*/
 		std::list<std::string> getDatabases(
 			const RepoToken *token);
-		//FIXME: vectors are much better than list for traversal efficiency...
-		// (but they also require large continuos memory allocation should they be massive)
-
-		/**
-				* Return a DatabaseStats BSON containing statistics about
-				* this database
-				* @param token A RepoToken given at authentication
-				* @param database name of database
-				* @return returns a BSON object containing this information
-				*/
-		repo::core::model::DatabaseStats getDatabaseStats(
-			const RepoToken *token,
-			const std::string &database);
 
 		/**
 			* Return a list of projects with the database available to the user
@@ -470,21 +414,6 @@ namespace repo{
 			removeDocument(token, database, REPO_COLLECTION_SETTINGS_PROJECTS, projectSettings);
 		}
 
-		void removeRoleSettings(
-			const RepoToken *token,
-			const std::string &database,
-			const repo::core::model::RepoRoleSettings &roleSettings)
-		{
-			removeDocument(token, database, REPO_COLLECTION_SETTINGS_ROLES, roleSettings);
-		}
-
-		void removeRoleSettings(
-			const RepoToken *token,
-			const repo::core::model::RepoRole &role,
-			const repo::core::model::RepoRoleSettings &settings)
-		{
-			removeRoleSettings(token, role.getDatabase(), settings);
-		}
 
 		/**
 			* remove a user from the database
@@ -536,23 +465,7 @@ namespace repo{
 			const std::string                        &databaseName,
 			const std::string                        &collectionName,
 			const repo::core::model::RepoBSON  &bson);
-
-		void upsertRoleSettings(
-			const RepoToken *token,
-			const std::string &database,
-			const repo::core::model::RepoRoleSettings &roleSettings)
-		{
-			upsertDocument(token, database, REPO_COLLECTION_SETTINGS_ROLES, roleSettings);
-		}
-
-		void upsertRoleSettings(
-			const RepoToken *token,
-			const repo::core::model::RepoRole &role,
-			const repo::core::model::RepoRoleSettings &settings)
-		{
-			upsertRoleSettings(token, role.getDatabase(), settings);
-		}
-
+	
 		void upsertProjectSettings(
 			const RepoToken *token,
 			const std::string &database,
@@ -823,25 +736,7 @@ namespace repo{
 			compareScenes(token, base, compare, baseResults, compResults, repo::DiffMode::DIFF_BY_NAME);
 		}
 
-		/*
-		*	------------- Statistics --------------
-		*/
-		/**
-		* Generate database statistics and print the result in the given filepath
-		* @params outputFilePath
-		*/
-		void getDatabaseStatistics(
-			const RepoToken   *token,
-			const std::string &outputFilePath);
-
-		/**
-		* Get a list of users and print the result in the given filepath
-		* @params outputFilePath
-		*/
-		void getUserList(
-			const RepoToken   *token,
-			const std::string &outputFilePath);
-
+	
 		/*
 		*	------------- Versioning --------------
 		*/

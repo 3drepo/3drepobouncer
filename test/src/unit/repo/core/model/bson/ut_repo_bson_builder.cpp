@@ -35,7 +35,7 @@ TEST(RepoBSONBuilderTest, ConstructBuilder)
 TEST(RepoBSONBuilderTest, AppendArray)
 {
 	std::vector<std::string> arr({"hello", "bye"});
-	RepoBSON arrBson = BSON("1" << arr[0] << "2" << arr[1]);
+	auto arrBson = BSON("1" << arr[0] << "2" << arr[1]);
 	mongo::BSONObjBuilder mbuilder;
 	mbuilder.appendArray("arrayTest", arrBson);
 	RepoBSON b(mbuilder.obj());

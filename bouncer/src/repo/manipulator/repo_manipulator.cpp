@@ -42,7 +42,6 @@
 #include "modeloptimizer/repo_optimizer_ifc.h"
 #include "modelutility/repo_scene_manager.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
-#include "statistics/repo_statistics_generator.h"
 #include "repo_manipulator.h"
 
 using namespace repo::manipulator;
@@ -419,7 +418,7 @@ repo::core::model::RepoRole RepoManipulator::findRole(
 	else
 	{
 		repo::core::model::RepoBSONBuilder builder;
-		builder << REPO_LABEL_ROLE << roleName;
+		builder.append(REPO_LABEL_ROLE, roleName);
 
 		role = repo::core::model::RepoRole(
 			handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_ROLES, builder.obj()));
@@ -444,7 +443,7 @@ repo::core::model::RepoUser RepoManipulator::findUser(
 	else
 	{
 		repo::core::model::RepoBSONBuilder builder;
-		builder << REPO_LABEL_USER << username;
+		builder.append(REPO_LABEL_USER, username);
 
 		user = repo::core::model::RepoUser(
 			handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, builder.obj()));
@@ -597,37 +596,6 @@ const uint32_t								  &limit)
 	return vector;
 }
 
-repo::core::model::CollectionStats RepoManipulator::getCollectionStats(
-	const std::string                             &databaseAd,
-	const repo::core::model::RepoBSON*	  cred,
-	const std::string                             &database,
-	const std::string                             &collection,
-	std::string                                   &errMsg)
-{
-	repo::core::model::CollectionStats stats;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-		stats = handler->getCollectionStats(database, collection, errMsg);
-
-	return stats;
-}
-
-repo::core::model::DatabaseStats RepoManipulator::getDatabaseStats(
-	const std::string                             &databaseAd,
-	const repo::core::model::RepoBSON*	  cred,
-	const std::string                             &database,
-	std::string                                   &errMsg)
-{
-	repo::core::model::DatabaseStats stats;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	if (handler)
-		stats = handler->getDatabaseStats(database, errMsg);
-
-	return stats;
-}
-
 std::map<std::string, std::list<std::string>>
 RepoManipulator::getDatabasesWithProjects(
 const std::string                             &databaseAd,
@@ -643,28 +611,6 @@ const std::list<std::string> &databases)
 	return list;
 }
 
-void RepoManipulator::getDatabaseStatistics(
-	const std::string                     &databaseAd,
-	const repo::core::model::RepoBSON*	  cred,
-	const std::string &outputFilePath)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	StatisticsGenerator statGen(handler);
-	statGen.getDatabaseStatistics(outputFilePath);
-}
-
-void RepoManipulator::getUserList(
-	const std::string                     &databaseAd,
-	const repo::core::model::RepoBSON*	  cred,
-	const std::string &outputFilePath)
-{
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	StatisticsGenerator statGen(handler);
-	statGen.getUserList(outputFilePath);
-}
-
 std::list<std::string> RepoManipulator::getAdminDatabaseRoles(
 	const std::string  &databaseAd)
 {
@@ -676,24 +622,6 @@ std::list<std::string> RepoManipulator::getAdminDatabaseRoles(
 		roles = handler->getAdminDatabaseRoles();
 
 	return roles;
-}
-
-repo::core::model::RepoRoleSettings RepoManipulator::getRoleSettingByName(
-	const std::string                   &databaseAd,
-	const repo::core::model::RepoBSON	*cred,
-	const std::string					&database,
-	const std::string					&uniqueRoleName
-	)
-{
-	repo::core::model::RepoRoleSettings settings;
-	repo::core::handler::AbstractDatabaseHandler* handler =
-		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
-	repo::core::model::RepoBSONBuilder builder;
-	builder << REPO_LABEL_ID << uniqueRoleName;
-	if (handler)
-		settings = repo::core::model::RepoRoleSettings(
-		handler->findOneByCriteria(database, REPO_COLLECTION_SETTINGS_ROLES, builder.obj()));
-	return settings;
 }
 
 std::shared_ptr<repo_partitioning_tree_t>
@@ -1242,7 +1170,6 @@ void RepoManipulator::updateRole(
 		else
 		{
 			repoError << "Failed to update role : " << errMsg;
-			repoTrace << role.toString();
 		}
 	}
 }

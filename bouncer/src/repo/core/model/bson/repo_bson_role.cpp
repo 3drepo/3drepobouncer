@@ -65,16 +65,16 @@ RepoRole RepoRole::cloneAndUpdatePrivileges(
 		const auto &p = privileges[i];
 		RepoBSONBuilder innerBsonBuilder, actionBuilder;
 		RepoBSON resource = BSON(REPO_ROLE_LABEL_DATABASE << p.database << REPO_ROLE_LABEL_COLLECTION << p.collection);
-		innerBsonBuilder << REPO_ROLE_LABEL_RESOURCE << resource;
+		innerBsonBuilder.append(REPO_ROLE_LABEL_RESOURCE, resource);
 
 		for (size_t aCount = 0; aCount < p.actions.size(); ++aCount)
 		{
-			actionBuilder << std::to_string(aCount) << RepoRole::dbActionToString(p.actions[aCount]);
+			actionBuilder.append(std::to_string(aCount), RepoRole::dbActionToString(p.actions[aCount]));
 		}
 
 		innerBsonBuilder.appendArray(REPO_ROLE_LABEL_ACTIONS, actionBuilder.obj());
 
-		privilegesBuilder << std::to_string(i) << innerBsonBuilder.obj();
+		privilegesBuilder.append(std::to_string(i), innerBsonBuilder.obj());
 	}
 	builder.appendArray(REPO_ROLE_LABEL_PRIVILEGES, privilegesBuilder.obj());
 
@@ -204,8 +204,7 @@ std::vector<DBActions> RepoRole::stringsToDBActions(
 std::vector<DBActions> RepoRole::getActions(RepoBSON actionArr) const
 {
 	std::vector<DBActions> actions;
-	std::set<std::string> fieldNames;
-	actionArr.getFieldNames(fieldNames);
+	std::set<std::string> fieldNames = actionArr.getFieldNames();
 
 	for (const auto &field : fieldNames)
 	{
@@ -221,8 +220,7 @@ std::vector<std::pair<std::string, std::string>> RepoRole::getInheritedRoles() c
 
 	RepoBSON parentRoles = getObjectField(REPO_ROLE_LABEL_INHERITED_ROLES);
 
-	std::set<std::string> fieldNames;
-	parentRoles.getFieldNames(fieldNames);
+	std::set<std::string> fieldNames = parentRoles.getFieldNames();
 
 	for (const auto &field : fieldNames)
 	{
@@ -251,8 +249,7 @@ std::vector<RepoPrivilege> RepoRole::getPrivileges() const
 	RepoBSON pbson = getObjectField(REPO_ROLE_LABEL_PRIVILEGES);
 	if (!pbson.isEmpty())
 	{
-		std::set<std::string> fieldNames;
-		pbson.getFieldNames(fieldNames);
+		std::set<std::string> fieldNames = pbson.getFieldNames();
 
 		for (const auto &field : fieldNames)
 		{

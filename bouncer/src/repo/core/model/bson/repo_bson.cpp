@@ -21,14 +21,49 @@
 
 using namespace repo::core::model;
 
+RepoBSON::RepoBSON(const RepoBSON &obj,
+	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping) : 
+	mongo::BSONObj(obj),
+	bigFiles(binMapping) {
+	auto existingFiles = obj.getFilesMapping();
+
+	if (bigFiles.size() > 0)
+	{
+		mongo::BSONObjBuilder builder, arrbuilder;
+
+		for (const auto & pair : bigFiles)
+		{
+			//append field name :file name
+			arrbuilder << pair.first << pair.second.first;
+		}
+
+		if (obj.hasField(REPO_LABEL_OVERSIZED_FILES))
+		{
+			arrbuilder.appendElementsUnique(obj.getObjectField(REPO_LABEL_OVERSIZED_FILES));
+		}
+
+		builder.append(REPO_LABEL_OVERSIZED_FILES, arrbuilder.obj());
+		builder.appendElementsUnique(obj);
+
+		*this = builder.obj();
+		bigFiles = binMapping;
+	}
+
+	for (const auto &pair : existingFiles) {
+		if (bigFiles.find(pair.first) == bigFiles.end()) {
+			bigFiles[pair.first] = pair.second;
+		}
+	}
+
+}
+
 RepoBSON::RepoBSON(
 	const mongo::BSONObj &obj,
 	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping)
 	: mongo::BSONObj(obj),
 	bigFiles(binMapping)
 {
-	std::vector<std::pair<std::string, std::string>> existingFiles;
-
+	
 	if (bigFiles.size() > 0)
 	{
 		mongo::BSONObjBuilder builder, arrbuilder;
@@ -77,13 +112,11 @@ RepoBSON RepoBSON::cloneAndAddFields(
 
 RepoBSON RepoBSON::cloneAndShrink() const
 {
-	std::set<std::string> fields;
+	std::set<std::string> fields = getFieldNames();
 	std::unordered_map< std::string, std::pair<std::string, std::vector<uint8_t>>> rawFiles(bigFiles.begin(), bigFiles.end());
 	std::string uniqueIDStr = hasField(REPO_LABEL_ID) ? getUUIDField(REPO_LABEL_ID).toString() : repo::lib::RepoUUID::createUUID().toString();
 
-	getFieldNames(fields);
-
-	RepoBSON resultBson = *this;
+	RepoBSON resultBson = *this;	
 
 	for (const std::string &field : fields)
 	{
@@ -95,23 +128,15 @@ RepoBSON RepoBSON::cloneAndShrink() const
 			resultBson = resultBson.removeField(field);
 		}
 	}
-
 	return RepoBSON(resultBson, rawFiles);
 }
 
 repo::lib::RepoUUID RepoBSON::getUUIDField(const std::string &label) const{
 
 
-	if (hasField(label))
-	{
-		const mongo::BSONElement bse = getField(label);
-		return repo::lib::RepoUUID::fromBSONElement(bse);
-	}
-	else
-	{
-		return repo::lib::RepoUUID::createUUID();
-	}
-
+	return hasField(label) ?
+		repo::lib::RepoUUID::fromBSONElement(getField(label)) :
+		repo::lib::RepoUUID::createUUID();
 }
 
 std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &label) const{
@@ -123,8 +148,7 @@ std::vector<repo::lib::RepoUUID> RepoBSON::getUUIDFieldArray(const std::string &
 
 		if (!array.isEmpty())
 		{
-			std::set<std::string> fields;
-			array.getFieldNames(fields);
+			std::set<std::string> fields = array.getFieldNames();
 
 			std::set<std::string>::iterator it;
 			for (it = fields.begin(); it != fields.end(); ++it)
@@ -164,8 +188,7 @@ std::vector<std::pair<std::string, std::string>> RepoBSON::getFileList() const
 	{
 		RepoBSON extRefbson = getObjectField(REPO_LABEL_OVERSIZED_FILES);
 
-		std::set<std::string> fieldNames;
-		extRefbson.getFieldNames(fieldNames);
+		std::set<std::string> fieldNames = extRefbson.getFieldNames();
 		for (const auto &name : fieldNames)
 		{
 			fileList.push_back(std::pair<std::string, std::string>(name, extRefbson.getStringField(name)));
@@ -183,13 +206,12 @@ std::vector<float> RepoBSON::getFloatArray(const std::string &label) const
 		RepoBSON array = getObjectField(label);
 		if (!array.isEmpty())
 		{
-			std::set<std::string> fields;
-			array.getFieldNames(fields);
+			std::set<std::string> fields = array.getFieldNames();
 
 			// Pre allocate memory to speed up copying
 			results.reserve(fields.size());
 			for (auto field : fields)
-				results.push_back(array.getField(field).numberDouble());
+				results.push_back(array.getDoubleField(field));
 		}
 		else
 		{
@@ -222,7 +244,7 @@ int64_t RepoBSON::getTimeStampField(const std::string &label) const
 		auto field = getField(label);
 		if (field.type() == ElementType::DATE)
 			time = field.date().asInt64();
-		else if (!field.isNull())
+		else
 		{
 			repoError << "GetTimeStampField: field " << label << " is not of type Date!";
 		}
@@ -239,7 +261,7 @@ std::list<std::pair<std::string, std::string> > RepoBSON::getListStringPairField
 	mongo::BSONElement arrayElement;
 	if (hasField(arrLabel))
 	{
-		arrayElement = getField(arrLabel);
+		arrayElement = mongo::BSONObj::getField(arrLabel);
 	}
 
 	if (!arrayElement.eoo() && arrayElement.type() == mongo::BSONType::Array)
@@ -270,9 +292,20 @@ double RepoBSON::getEmbeddedDouble(
 	double value = defaultValue;
 	if (hasEmbeddedField(embeddedObjName, fieldName))
 	{
-		value = (getObjectField(embeddedObjName)).getField(fieldName).numberDouble();
+		value = (getObjectField(embeddedObjName)).getDoubleField(fieldName);
 	}
 	return value;
+}
+
+double RepoBSON::getDoubleField(const std::string &label) const {
+	double ret = 0.0;
+	if (mongo::BSONObj::hasField(label)) {
+		auto field = mongo::BSONObj::getField(label);
+		if (field.type() == mongo::BSONType::NumberDouble)
+			ret = field.Double();
+	}
+
+	return ret;
 }
 
 bool RepoBSON::hasEmbeddedField(

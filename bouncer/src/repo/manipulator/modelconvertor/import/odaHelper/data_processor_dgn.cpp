@@ -21,6 +21,13 @@
 #include <toString.h>
 #include <DgLevelTableRecord.h>
 
+#include <DgAttributeLinkage.h>
+#include <FlatMemStream.h>
+#include <OdPlatformStreamer.h>
+
+#include <boost/property_tree/xml_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
+
 #include "helper_functions.h"
 #include "data_processor_dgn.h"
 
@@ -29,6 +36,54 @@ using namespace repo::manipulator::modelconvertor::odaHelper;
 VectoriseDeviceDgn* DataProcessorDgn::device()
 {
 	return static_cast<VectoriseDeviceDgn*>(OdGsBaseVectorizeView::device());
+}
+
+void printTree(const boost::property_tree::ptree &tree,
+	std::unordered_map<std::string, std::string> &resultCollector,
+	const std::string & parentName = "",
+	const bool isXMLAttri = false)
+{
+
+	for (const auto &it : tree) {
+		const auto field = isXMLAttri ? "<xmlattr>." + it.first : it.first;
+		const bool isAttriChild = field == "<xmlattr>";
+		const auto value = it.second.data();
+		if (!isAttriChild && !value.empty())
+		{
+			const auto fieldLabel = parentName + ":" + it.first;
+			resultCollector[fieldLabel] = value;
+		}
+
+		const std::string childPrefix = isAttriChild ? parentName : field;
+		printTree(it.second, resultCollector, childPrefix, isAttriChild);
+	}
+}
+
+std::unordered_map<std::string, std::string> DataProcessorDgn::extractXMLLinkages(OdDgElementPtr pElm) {
+	std::unordered_map<std::string, std::string> entries;
+
+	entries["Element ID"] = convertToStdString(toString(pElm->elementId().getHandle()));
+	
+	OdRxObjectPtrArray arrLinkages;
+	pElm->getLinkages(OdDgAttributeLinkage::kXmlLinkage, arrLinkages);
+
+	for (OdUInt32 counter = 0; counter < arrLinkages.size(); counter++)
+	{
+		OdDgAttributeLinkagePtr linkagePtr = arrLinkages[counter];
+		if (linkagePtr->getPrimaryId() == OdDgAttributeLinkage::kXmlLinkage) {
+			OdDgXmlLinkagePtr pXmlLinkage = OdDgXmlLinkage::cast(linkagePtr);
+			if (!pXmlLinkage.isNull()) {
+				boost::property_tree::ptree tree;
+				std::stringstream ss;
+				ss << convertToStdString(pXmlLinkage->getXmlData());
+				boost::property_tree::read_xml(ss, tree);
+				printTree(tree, entries);
+			}
+		}
+	}
+
+
+	return entries;
 }
 
 bool DataProcessorDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
@@ -44,8 +99,13 @@ bool DataProcessorDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	}
 
 	//We want to group meshes together up to 1 below the top.
-	OdString groupID = toString(previousItem->elementId().getHandle());
-	collector->setMeshGroup(convertToStdString(groupID));
+	std::string groupID = convertToStdString(toString(previousItem->elementId().getHandle()));
+	collector->setMeshGroup(groupID);
+
+	if (!collector->hasMeta(groupID)) {
+		collector->setMetadata(groupID, extractXMLLinkages(previousItem));
+	}
+
 
 	OdString sHandle = pElm->isDBRO() ? toString(pElm->elementId().getHandle()) : toString(OD_T("non-DbResident"));
 	collector->setNextMeshName(convertToStdString(sHandle));
@@ -55,7 +115,11 @@ bool DataProcessorDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	if (!idLevel.isNull())
 	{
 		OdDgLevelTableRecordPtr pLevel = idLevel.openObject(OdDg::kForRead);
-		collector->setLayer(convertToStdString(pLevel->getName()));
+		const auto levelID = convertToStdString(toString(idLevel.getHandle()));
+		collector->setLayer(levelID, convertToStdString(pLevel->getName()));
+		if (!collector->hasMeta(levelID)) {
+			collector->setMetadata(levelID, extractXMLLinkages(pLevel));
+		}
 	}
 	return OdGsBaseMaterialView::doDraw(i, pDrawable);
 }
@@ -85,9 +149,12 @@ void DataProcessorDgn::convertTo3DRepoMaterial(
 	material.shininessStrength = 1 - material.shininessStrength;
 }
 
-void DataProcessorDgn::init(GeometryCollector *const geoCollector)
+void DataProcessorDgn::init(
+	GeometryCollector *const geoCollector,
+	const OdGeExtents3d &extModel)
 {
 	collector = geoCollector;
+	deviationValue = extModel.maxPoint().distanceTo(extModel.minPoint()) / 1e5;
 }
 
 void DataProcessorDgn::setMode(OdGsView::RenderMode mode)

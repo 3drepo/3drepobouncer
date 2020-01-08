@@ -40,7 +40,6 @@
 #include "../model/bson/repo_bson_builder.h"
 #include "../model/bson/repo_bson_role.h"
 #include "../model/bson/repo_bson_user.h"
-#include "../model/bson/repo_bson_database_stats.h"
 #include "../../lib/repo_stack.h"
 
 namespace repo{
@@ -196,17 +195,6 @@ namespace repo{
 				*/
 				std::list<std::string> getCollections(const std::string &database);
 
-				/**
-				* Get the collection statistics of the given collection
-				* @param database Name of database
-				* @param collection Name of collection
-				* @param errMsg error message when error occurs
-				* @return returns a bson object with statistical info.
-				*/
-				repo::core::model::CollectionStats getCollectionStats(
-					const std::string    &database,
-					const std::string    &collection,
-					std::string          &errMsg);
 
 				/**
 				 * Get a list of all available databases, alphabetically sorted by default.
@@ -214,17 +202,7 @@ namespace repo{
 				 * @return returns a list of database names
 				 */
 				std::list<std::string> getDatabases(const bool &sorted = true);
-
-				/**
-				* Get the database statistics of the given database
-				* @param database Name of database
-				* @param errMsg error message when error occurs
-				* @return returns a bson object with statistical info.
-				*/
-				repo::core::model::DatabaseStats getDatabaseStats(
-					const std::string    &database,
-					std::string          &errMsg);
-
+			
 				/** get the associated projects for the list of database.
 				 * @param list of database
 				 * @return returns a map of database -> list of projects

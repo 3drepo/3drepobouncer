@@ -19,7 +19,7 @@
 #ODA_LIBRARIES will point to the libraries
 
 set(ODA_LIB_NAMES
-	TD_ExamplesCommon TG_ExamplesCommon TB_ExamplesCommon TG_Db TD_DbRoot TD_Gs TD_Gi TD_Ge TD_Root TD_Alloc TB_Loader TB_Database TB_Base TB_ModelerGeometry TD_Br TD_TfCore TB_Main TB_MEP TB_Analytical TB_Architecture TB_StairsRamp TB_Geometry TB_HostObj)
+	TD_ExamplesCommon TG_ExamplesCommon TB_Common TB_ExamplesCommon TG_Db TD_DbRoot TD_Gs TD_Gi TD_Ge TD_Root TD_Alloc TB_Loader TB_Database TB_Base TB_ModelerGeometry TD_Br TD_TfCore TB_Main TB_MEP TB_Analytical TB_Architecture TB_StairsRamp TB_Geometry TB_HostObj)
 
 
 if(DEFINED ENV{ODA_LIB_DIR})
@@ -42,11 +42,11 @@ if(DEFINED ENV{ODA_ROOT})
 			${ODA_ROOT}/Dgn/Examples/Common
 			${ODA_ROOT}/Dgn/Extensions/ExServices
 			${ODA_ROOT}/Kernel/Extensions/ExServices
-			${ODA_ROOT}/Bim/Include
-			${ODA_ROOT}/Bim/Extensions
-			${ODA_ROOT}/Bim/Extensions/ExServices
-			${ODA_ROOT}/Bim/Examples/Common
-			${ODA_ROOT}/Bim/Examples
+			${ODA_ROOT}/BimRv/Include
+			${ODA_ROOT}/BimRv/Extensions
+			${ODA_ROOT}/BimRv/Extensions/ExServices
+			${ODA_ROOT}/BimRv/Examples/Common
+			${ODA_ROOT}/BimRv/Examples
 			${ODA_ROOT}/Prc/Include
 	)
 

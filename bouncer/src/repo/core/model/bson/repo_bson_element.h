@@ -39,20 +39,23 @@ namespace repo {
 				OBJECTID, DOUBLE, INT, LONG, OBJECT, STRING, UNKNOWN
 			};
 			class REPO_API_EXPORT RepoBSONElement :
-				public mongo::BSONElement
+				private mongo::BSONElement
 			{
+				friend class RepoBSONBuilder;
+				friend class RepoBSON;
+
 			public:
 
 				/**
 				* Default constructor
 				*/
-				RepoBSONElement() : mongo::BSONElement(){}
+				RepoBSONElement() : mongo::BSONElement() {}
 
 				/**
 				* Construct a RepoBSONElement base on a mongo element
 				* @param mongo BSON element
 				*/
-				RepoBSONElement(mongo::BSONElement ele) : mongo::BSONElement(ele){}
+				RepoBSONElement(mongo::BSONElement ele) : mongo::BSONElement(ele) {}
 
 				/**
 				* Destructor
@@ -67,7 +70,6 @@ namespace repo {
 
 				std::vector<RepoBSONElement> Array()
 				{
-					repoInfo << " HI";
 					//FIXME: potentially slow.
 					//This is done so we can hide mongo representation from the bouncer world.
 					std::vector<RepoBSONElement> arr;
@@ -84,6 +86,66 @@ namespace repo {
 					}
 
 					return arr;
+				}
+
+				std::string String() const{
+					return mongo::BSONElement::String();
+				}
+
+				mongo::BSONObj embeddedObject() const {
+					return mongo::BSONElement::embeddedObject();
+				}
+
+				mongo::Date_t date() const {
+					return mongo::BSONElement::date();
+				}
+
+				bool Bool() const {
+					return mongo::BSONElement::Bool();
+				}
+
+				int Int() const{
+					return mongo::BSONElement::Int();
+				}
+
+				long long Long() const {
+					return mongo::BSONElement::Long();
+				}
+
+				double Double() const {
+					return mongo::BSONElement::Double();
+				}
+
+				size_t size() const {
+					return mongo::BSONElement::size();
+				}
+
+				const char* binData(int &length) const {
+					return mongo::BSONElement::binData(length);
+				}
+				
+				mongo::BSONElement toMongoElement() const {
+					return *this;
+				}
+
+				inline bool operator==(const RepoBSONElement & other) const {
+					return mongo::BSONElement::operator==(other);
+				}
+
+				inline bool operator!=(const RepoBSONElement other) const {
+					return mongo::BSONElement::operator!=(other);
+				}
+
+				std::string toString() const {
+					return mongo::BSONElement::toString();
+				}
+
+				bool eoo() const {
+					return mongo::BSONElement::eoo();
+				}
+
+				bool isNull() const {
+					return mongo::BSONElement::isNull();
 				}
 			};
 		}// end namespace model

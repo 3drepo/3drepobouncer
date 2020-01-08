@@ -45,12 +45,13 @@ class StubDeviceModuleDgn : public OdGsBaseModule
 private:
 	GeometryCollector *collector;
 	OdGeMatrix3d        m_matTransform;
-	const std::map<OdDbStub*, double>* m_pMapDeviations;
+	OdGeExtents3d extModel;
 
 public:
-	void init(GeometryCollector* const collector)
+	void init(GeometryCollector* const collector, const OdGeExtents3d &extModel)
 	{
 		this->collector = collector;
+		this->extModel = extModel;
 	}
 protected:
 	OdSmartPtr<OdGsBaseVectorizeDevice> createDeviceObject()
@@ -60,7 +61,7 @@ protected:
 	OdSmartPtr<OdGsViewImpl> createViewObject()
 	{
 		OdSmartPtr<OdGsViewImpl> pP = OdRxObjectImpl<DataProcessorDgn, OdGsViewImpl>::createObject();
-		((DataProcessorDgn*)pP.get())->init(collector);
+		((DataProcessorDgn*)pP.get())->init(collector, extModel);
 		return pP;
 	}
 	OdSmartPtr<OdGsBaseVectorizeDevice> createBitmapDeviceObject()
@@ -225,7 +226,7 @@ uint8_t FileProcessorDgn::readFile() {
 					}
 				}*/
 
-				importDgn(pDb, pPalCpy.asArrayPtr(), 256);			
+				importDgn(pDb, pPalCpy.asArrayPtr(), 256, extModel);
 			}
 		}
 	}
@@ -239,6 +240,7 @@ uint8_t FileProcessorDgn::readFile() {
 int FileProcessorDgn::importDgn(OdDbBaseDatabase *pDb,
 	const ODCOLORREF* pPallete,
 	int numColors,
+	const OdGeExtents3d &extModel,
 	const OdGiDrawable* pEntity,
 	const OdGeMatrix3d& matTransform,
 	const std::map<OdDbStub*, double>* pMapDeviations)
@@ -252,7 +254,7 @@ int FileProcessorDgn::importDgn(OdDbBaseDatabase *pDb,
 		
 		OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(StubDeviceModuleDgn)(OD_T("StubDeviceModuleDgn"));
 
-		((StubDeviceModuleDgn*)pGsModule.get())->init(collector);
+		((StubDeviceModuleDgn*)pGsModule.get())->init(collector, extModel);
 
 
 		OdDbBaseDatabasePEPtr pDbPE(pDb);

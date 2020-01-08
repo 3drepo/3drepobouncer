@@ -21,18 +21,13 @@
 #include "vectorise_device_rvt.h"
 #include "data_processor_rvt.h"
 #include "helper_functions.h"
+#include "custom_data_util_rvt.h"
 #include "../../../../lib/repo_utils.h"
+
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-//These metadata params are crashing application when we're trying to get them; Report to ODA
-const std::set<std::string> PROBLEMATIC_PARAMS = {
-	"ROOF_SLOPE",
-	"RBS_PIPE_SIZE_MAXIMUM",
-	"RBS_PIPE_SIZE_MINIMUM",
-	"RBS_SYSTEM_CLASSIFICATION_PARAM",
-	"RBS_ELECTRICAL_DATA"
-};
+static const char* ODA_CSV_LOCATION = "ODA_CSV_LOCATION";
 
 //These metadata params are not of interest to users. Do not read.
 const std::set<std::string> IGNORE_PARAMS = {
@@ -44,7 +39,7 @@ bool DataProcessorRvt::ignoreParam(const std::string& param)
 {
 	auto paramUpper = param;
 	std::transform(paramUpper.begin(), paramUpper.end(), paramUpper.begin(), ::toupper);
-	return PROBLEMATIC_PARAMS.find(param) != PROBLEMATIC_PARAMS.end() || IGNORE_PARAMS.find(paramUpper) != IGNORE_PARAMS.end();
+	return IGNORE_PARAMS.find(paramUpper) != IGNORE_PARAMS.end();
 }
 
 std::string DataProcessorRvt::getElementName(OdBmElementPtr element, uint64_t id)
@@ -87,10 +82,10 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 }
 
 std::string DataProcessorRvt::translateMetadataValue(
-	const OdTfVariant& val, 
-	OdBmLabelUtilsPEPtr labelUtils, 
-	OdBmParamDefPtr paramDef, 
-	OdBmDatabase* database, 
+	const OdTfVariant& val,
+	OdBmLabelUtilsPEPtr labelUtils,
+	OdBmParamDefPtr paramDef,
+	OdBmDatabase* database,
 	OdBm::BuiltInParameterDefinition::Enum param)
 {
 	std::string strOut;
@@ -170,6 +165,7 @@ void DataProcessorRvt::beginViewVectorization()
 {
 	DataProcessor::beginViewVectorization();
 	setEyeToOutputTransform(getEyeToWorldTransform());
+	initLabelUtils();
 }
 
 void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
@@ -197,7 +193,7 @@ void DataProcessorRvt::convertTo3DRepoMaterial(
 	OdBmMaterialElemPtr materialElem;
 	if (matId.isValid())
 	{
-		OdBmObjectPtr objectPtr = matId.safeOpenObject(OdBm::kForRead);
+		OdBmObjectPtr objectPtr = matId.safeOpenObject();
 		if (!objectPtr.isNull())
 			materialElem = OdBmMaterialElem::cast(objectPtr);
 	}
@@ -286,27 +282,28 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 	collector->setNextMeshName(elementName);
 	collector->setMeshGroup(elementName);
 
+	std::string layerName = getLevel(element, "Layer Default");
+	collector->setLayer(layerName, layerName);
+
 	try
 	{
-		collector->setCurrentMeta(fillMetadata(element));
 		//some objects material is not set. set default here
 		collector->setCurrentMaterial(GetDefaultMaterial());
+		collector->setMetadata(elementName, fillMetadata(element));
 	}
-	catch(OdError& er)
+	catch (OdError& er)
 	{
 		//.. HOTFIX: handle nullPtr exception (reported to ODA)
-		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
+		repoError << "Caught exception whilst trying to retrieve Material/metadata: " << convertToStdString(er.description());
 	}
 
-	std::string layerName = getLevel(element, "Layer Default");
-	collector->setLayer(layerName);
 	collector->stopMeshEntry();
 	collector->startMeshEntry();
 }
 
 void DataProcessorRvt::fillMetadataById(
 	OdBmObjectId id,
-	std::map<std::string, std::string>& metadata)
+	std::unordered_map<std::string, std::string>& metadata)
 {
 	if (id.isNull())
 		return;
@@ -319,16 +316,29 @@ void DataProcessorRvt::fillMetadataById(
 	fillMetadataByElemPtr(ptr, metadata);
 }
 
+void DataProcessorRvt::initLabelUtils() {
+	if (!labelUtils) {
+		OdBmLabelUtilsPEPtr _labelUtils = OdBmObject::desc()->getX(OdBmLabelUtilsPE::desc());
+		labelUtils = (OdBmSampleLabelUtilsPE*)_labelUtils.get();
+		char* env = std::getenv(ODA_CSV_LOCATION);
+		if (env) {
+			repoInfo << "Setting root as: " << env;
+			labelUtils->setLookupRoot(OdString(env));
+		}
+		else {
+			repoWarning << "Cannot find envar ODA_CSV_LOCATION. Metadata may not be processed.";
+		}
+	}
+}
+
 void DataProcessorRvt::fillMetadataByElemPtr(
 	OdBmElementPtr element,
-	std::map<std::string, std::string>& metadata)
+	std::unordered_map<std::string, std::string>& metadata)
 {
 	OdBuiltInParamArray aParams;
-	element->getListParams(aParams);
+	element->getListParams(aParams);	
 
-	OdBmLabelUtilsPEPtr labelUtils = OdBmObject::desc()->getX(OdBmLabelUtilsPE::desc());
-	if (labelUtils.isNull())
-		return;
+	if (!labelUtils) return;
 
 	for (OdBm::BuiltInParameter::Enum entry : aParams) {
 		std::string builtInName = convertToStdString(OdBm::BuiltInParameter(entry).toString());
@@ -362,20 +372,24 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 				}
 			}
 		}
+
+		CustomDataProcessorRVT customDataProcessor(element); 
+		customDataProcessor.fillCustomMetadata(metadata);
+
 	}
 
 }
 
-std::map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
+std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
 {
-	std::map<std::string, std::string> metadata;
+	std::unordered_map<std::string, std::string> metadata;
 	try
 	{
 		fillMetadataByElemPtr(element, metadata);
 	}
 	catch (OdError& er)
 	{
-		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
+		repoError << "Caught exception whilst trying to fetch metadata by element pointer " << convertToStdString(er.description());
 	}
 
 	try
@@ -384,7 +398,7 @@ std::map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBmElementPtr
 	}
 	catch (OdError& er)
 	{
-		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
+		repoError << "Caught exception whilst trying to get metadata by family ID: " << convertToStdString(er.description());
 	}
 
 	try
@@ -393,7 +407,7 @@ std::map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBmElementPtr
 	}
 	catch (OdError& er)
 	{
-		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
+		repoError << "Caught exception whilst trying to get metadata by Type ID: " << convertToStdString(er.description());
 	}
 
 	try
@@ -402,7 +416,7 @@ std::map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBmElementPtr
 	}
 	catch (OdError& er)
 	{
-		repoDebug << "Caught exception whilst: " << convertToStdString(er.description());
+		repoError << "Caught exception whilst trying to get ,etadata nu category ID: " << convertToStdString(er.description());
 	}
 	return metadata;
 }
@@ -472,7 +486,7 @@ void DataProcessorRvt::hiddenElementsViewRejection(OdBmDBViewPtr pDBView)
 	setts->getHiddenElements(arr);
 	for (uint32_t i = 0; i < arr.size(); i++)
 	{
-		OdBmElementPtr hidden = arr[i].safeOpenObject(OdBm::OpenMode::kForWrite);
+		OdBmElementPtr hidden = arr[i].safeOpenObject();
 		if (hidden.isNull())
 			continue;
 
@@ -547,7 +561,7 @@ void DataProcessorRvt::establishProjectTranslation(OdBmDatabase* pDb)
 				OdGeMatrix3d alignedLocation;
 				alignedLocation.setToAlignCoordSys(activeOrigin, activeX, activeY, activeZ, projectOrigin, projectX, projectY, projectZ);
 
-				auto scaleCoef = 1.0 / BmUnitUtils::getDisplayUnitTypeInfo(getUnits(database))->inIntUnitsCoeff;
+				auto scaleCoef = 1.0 / OdBmUnitUtils::getDisplayUnitTypeInfo(getUnits(database))->inIntUnitsCoeff;
 				convertTo3DRepoWorldCoorindates = [activeOrigin, alignedLocation, scaleCoef](OdGePoint3d point) {
 					auto convertedPoint = (point - activeOrigin).transformBy(alignedLocation);
 					return repo::lib::RepoVector3D64(convertedPoint.x * scaleCoef, convertedPoint.y * scaleCoef, convertedPoint.z * scaleCoef);

@@ -39,7 +39,7 @@
 namespace repo {
 	namespace core {
 		namespace model {
-			class REPO_API_EXPORT RepoBSONBuilder : public mongo::BSONObjBuilder
+			class REPO_API_EXPORT RepoBSONBuilder : private mongo::BSONObjBuilder
 			{
 			public:
 				RepoBSONBuilder();
@@ -128,6 +128,14 @@ namespace repo {
 					}
 				}
 
+				void appendElements(RepoBSON bson) {
+					mongo::BSONObjBuilder::appendElements(bson);
+				}
+
+				void appendElementsUnique(RepoBSON bson) {
+					mongo::BSONObjBuilder::appendElementsUnique(bson);
+				}
+
 				void appendTimeStamp(std::string label){
 					appendTime(label, time(NULL) * 1000);
 				}
@@ -142,6 +150,8 @@ namespace repo {
 				* @return returns a RepoBSON object with the fields given.
 				*/
 				RepoBSON obj();
+
+				mongo::BSONObj mongoObj() { return mongo::BSONObjBuilder::obj();  }
 
 			private:
 				/**

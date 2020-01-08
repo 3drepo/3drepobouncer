@@ -50,12 +50,8 @@ RepoBSON RepoBSONFactory::appendDefaults(
 	// Type
 	if (!type.empty())
 	{
-		builder << REPO_NODE_LABEL_TYPE << type;
+		builder.append(REPO_NODE_LABEL_TYPE, type);
 	}
-
-	//--------------------------------------------------------------------------
-	// API level
-	builder << REPO_NODE_LABEL_API << api;
 
 	//--------------------------------------------------------------------------
 	// Parents
@@ -68,7 +64,7 @@ RepoBSON RepoBSONFactory::appendDefaults(
 	// Name
 	if (!name.empty())
 	{
-		builder << REPO_NODE_LABEL_NAME << name;
+		builder.append(REPO_NODE_LABEL_NAME, name);
 	}
 
 	return builder.obj();
@@ -95,19 +91,19 @@ CameraNode RepoBSONFactory::makeCameraNode(
 
 	//--------------------------------------------------------------------------
 	// Aspect ratio
-	builder << REPO_NODE_LABEL_ASPECT_RATIO << aspectRatio;
+	builder.append(REPO_NODE_LABEL_ASPECT_RATIO, aspectRatio);
 
 	//--------------------------------------------------------------------------
 	// Far clipping plane
-	builder << REPO_NODE_LABEL_FAR << farClippingPlane;
+	builder.append(REPO_NODE_LABEL_FAR, farClippingPlane);
 
 	//--------------------------------------------------------------------------
 	// Near clipping plane
-	builder << REPO_NODE_LABEL_NEAR << nearClippingPlane;
+	builder.append(REPO_NODE_LABEL_NEAR, nearClippingPlane);
 
 	//--------------------------------------------------------------------------
 	// Field of view
-	builder << REPO_NODE_LABEL_FOV << fieldOfView;
+	builder.append(REPO_NODE_LABEL_FOV, fieldOfView);
 
 	//--------------------------------------------------------------------------
 	// Look at vector
@@ -146,18 +142,18 @@ MaterialNode RepoBSONFactory::makeMaterialNode(
 		builder.appendArray(REPO_NODE_MATERIAL_LABEL_EMISSIVE, material.emissive);
 
 	if (material.isWireframe)
-		builder << REPO_NODE_MATERIAL_LABEL_WIREFRAME << material.isWireframe;
+		builder.append(REPO_NODE_MATERIAL_LABEL_WIREFRAME, material.isWireframe);
 	if (material.isTwoSided)
-		builder << REPO_NODE_MATERIAL_LABEL_TWO_SIDED << material.isTwoSided;
+		builder.append(REPO_NODE_MATERIAL_LABEL_TWO_SIDED, material.isTwoSided);
 
 	if (material.opacity == material.opacity)
-		builder << REPO_NODE_MATERIAL_LABEL_OPACITY << material.opacity;
+		builder.append(REPO_NODE_MATERIAL_LABEL_OPACITY, material.opacity);
 
 	if (material.shininess == material.shininess)
-		builder << REPO_NODE_MATERIAL_LABEL_SHININESS << material.shininess;
+		builder.append(REPO_NODE_MATERIAL_LABEL_SHININESS, material.shininess);
 
 	if (material.shininessStrength == material.shininessStrength)
-		builder << REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH << material.shininessStrength;
+		builder.append(REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH, material.shininessStrength);
 
 	return MaterialNode(builder.obj());
 }
@@ -179,12 +175,12 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	//--------------------------------------------------------------------------
 	// Media type
 	if (!mimeType.empty())
-		builder << REPO_LABEL_MEDIA_TYPE << mimeType;
+		builder.append(REPO_LABEL_MEDIA_TYPE, mimeType);
 
 	//--------------------------------------------------------------------------
 	// Add metadata subobject
 	if (!metadata.isEmpty())
-		builder << REPO_NODE_LABEL_METADATA << metadata;
+		builder.append(REPO_NODE_LABEL_METADATA, metadata);
 
 	return MetadataNode(builder.obj());
 }
@@ -236,7 +232,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 
 			try{
 				long long valueInt = boost::lexical_cast<long long>(value);
-				metaBuilder << key << valueInt;
+				metaBuilder.append(key, valueInt);
 			}
 			catch (boost::bad_lexical_cast &)
 			{
@@ -244,24 +240,24 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 
 				try{
 					double valueFloat = boost::lexical_cast<double>(value);
-					metaBuilder << key << valueFloat;
+					metaBuilder.append(key, valueFloat);
 				}
 				catch (boost::bad_lexical_cast &)
 				{
 					//not an int or float, store as string
-					metaBuilder << key << value;
+					metaBuilder.append(key, value);
 				}
 			}
 		}
 	}
 
-	builder << REPO_NODE_LABEL_METADATA << metaBuilder.obj();
+	builder.append(REPO_NODE_LABEL_METADATA, metaBuilder.obj());
 
 	return MetadataNode(builder.obj());
 }
 
 MetadataNode RepoBSONFactory::makeMetaDataNode(
-	const std::map<std::string, std::string>  &meta,
+	const std::unordered_map<std::string, std::string>  &data,
 	const std::string               &name,
 	const std::vector<repo::lib::RepoUUID>     &parents,
 	const int                       &apiLevel)
@@ -272,13 +268,10 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	auto defaults = appendDefaults(REPO_NODE_TYPE_METADATA, apiLevel, repo::lib::RepoUUID::createUUID(), name, parents);
 	builder.appendElements(defaults);
 
-	//check keys and values have the same sizes
-
-
-	for (const auto &entry : meta)
-	{
+	for (const auto &entry : data) {
 		std::string key = sanitiseKey(entry.first);
 		std::string value = entry.second;
+
 
 		if (!key.empty() && !value.empty())
 		{
@@ -286,7 +279,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 
 			try {
 				long long valueInt = boost::lexical_cast<long long>(value);
-				metaBuilder << key << valueInt;
+				metaBuilder.append(key, valueInt);
 			}
 			catch (boost::bad_lexical_cast &)
 			{
@@ -294,18 +287,18 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 
 				try {
 					double valueFloat = boost::lexical_cast<double>(value);
-					metaBuilder << key << valueFloat;
+					metaBuilder.append(key, valueFloat);
 				}
 				catch (boost::bad_lexical_cast &)
 				{
 					//not an int or float, store as string
-					metaBuilder << key << value;
+					metaBuilder.append(key, value);
 				}
 			}
 		}
 	}
 
-	builder << REPO_NODE_LABEL_METADATA << metaBuilder.obj();
+	builder.append(REPO_NODE_LABEL_METADATA, metaBuilder.obj());
 
 	return MetadataNode(builder.obj());
 }
@@ -396,7 +389,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 	if (faces.size() > 0)
 	{
-		builder << REPO_NODE_MESH_LABEL_FACES_COUNT << (uint32_t)(faces.size());
+		builder.append(REPO_NODE_MESH_LABEL_FACES_COUNT, (uint32_t)(faces.size()));
 
 		// In API LEVEL 1, faces are stored as
 		// [n1, v1, v2, ..., n2, v1, v2...]
@@ -505,7 +498,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	if (uvChannels.size() > 0)
 	{
 		// Could be unsigned __int64 if BSON had such construct (the closest is only __int64)
-		builder << REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT << (uint32_t)(uvChannels.size());
+		builder.append(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT, (uint32_t)(uvChannels.size()));
 
 		std::vector<repo::lib::RepoVector2D> concatenated;
 
@@ -565,46 +558,46 @@ RepoProjectSettings RepoBSONFactory::makeRepoProjectSettings(
 	//--------------------------------------------------------------------------
 	// Project name
 	if (!uniqueProjectName.empty())
-		builder << REPO_LABEL_ID << uniqueProjectName;
+		builder.append(REPO_LABEL_ID, uniqueProjectName);
 
 	//--------------------------------------------------------------------------
 	// Owner
 	if (!owner.empty())
-		builder << REPO_LABEL_OWNER << owner;
+		builder.append(REPO_LABEL_OWNER, owner);
 
 	//--------------------------------------------------------------------------
 	// Description
 	if (!description.empty())
-		builder << REPO_LABEL_DESCRIPTION << description;
+		builder.append(REPO_LABEL_DESCRIPTION, description);
 
 	//--------------------------------------------------------------------------
 	// Type
 	if (!type.empty())
-		builder << REPO_LABEL_TYPE << type;
+		builder.append(REPO_LABEL_TYPE, type);
 
 	//--------------------------------------------------------------------------
 	// federate
 	if (isFederate)
-		builder << REPO_PROJECT_SETTINGS_LABEL_IS_FEDERATION << isFederate;
+		builder.append(REPO_PROJECT_SETTINGS_LABEL_IS_FEDERATION, isFederate);
 
 	//--------------------------------------------------------------------------
 	// Properties (embedded sub-bson)
 	RepoBSONBuilder propertiesBuilder;
 	if (pinSize != REPO_DEFAULT_PROJECT_PIN_SIZE)
-		propertiesBuilder << REPO_LABEL_PIN_SIZE << pinSize;
+		propertiesBuilder.append(REPO_LABEL_PIN_SIZE, pinSize);
 	if (avatarHeight != REPO_DEFAULT_PROJECT_AVATAR_HEIGHT)
-		propertiesBuilder << REPO_LABEL_AVATAR_HEIGHT << avatarHeight;
+		propertiesBuilder.append(REPO_LABEL_AVATAR_HEIGHT, avatarHeight);
 	if (visibilityLimit != REPO_DEFAULT_PROJECT_VISIBILITY_LIMIT)
-		propertiesBuilder << REPO_LABEL_VISIBILITY_LIMIT << visibilityLimit;
+		propertiesBuilder.append(REPO_LABEL_VISIBILITY_LIMIT, visibilityLimit);
 	if (speed != REPO_DEFAULT_PROJECT_SPEED)
-		propertiesBuilder << REPO_LABEL_SPEED << speed;
+		propertiesBuilder.append(REPO_LABEL_SPEED, speed);
 	if (zNear != REPO_DEFAULT_PROJECT_ZNEAR)
-		propertiesBuilder << REPO_LABEL_ZNEAR << zNear;
+		propertiesBuilder.append(REPO_LABEL_ZNEAR, zNear);
 	if (zFar != REPO_DEFAULT_PROJECT_ZFAR)
-		propertiesBuilder << REPO_LABEL_ZFAR << zFar;
+		propertiesBuilder.append(REPO_LABEL_ZFAR, zFar);
 	RepoBSON propertiesBSON = propertiesBuilder.obj();
 	if (propertiesBSON.isValid() && !propertiesBSON.isEmpty())
-		builder << REPO_LABEL_PROPERTIES << propertiesBSON;
+		builder.append(REPO_LABEL_PROPERTIES, propertiesBSON);
 
 	//--------------------------------------------------------------------------
 	// Add to the parent object
@@ -633,9 +626,9 @@ RepoRole RepoBSONFactory::_makeRepoRole(
 	)
 {
 	RepoBSONBuilder builder;
-	builder << REPO_LABEL_ID << database + "." + roleName;
-	builder << REPO_ROLE_LABEL_ROLE << roleName;
-	builder << REPO_ROLE_LABEL_DATABASE << database;
+	builder.append(REPO_LABEL_ID, database + "." + roleName);
+	builder.append(REPO_ROLE_LABEL_ROLE, roleName);
+	builder.append(REPO_ROLE_LABEL_DATABASE, database);
 
 	//====== Add Privileges ========
 	if (privileges.size() > 0)
@@ -646,16 +639,16 @@ RepoRole RepoBSONFactory::_makeRepoRole(
 			const auto &p = privileges[i];
 			RepoBSONBuilder innerBsonBuilder, actionBuilder;
 			RepoBSON resource = BSON(REPO_ROLE_LABEL_DATABASE << p.database << REPO_ROLE_LABEL_COLLECTION << p.collection);
-			innerBsonBuilder << REPO_ROLE_LABEL_RESOURCE << resource;
+			innerBsonBuilder.append(REPO_ROLE_LABEL_RESOURCE, resource);
 
 			for (size_t aCount = 0; aCount < p.actions.size(); ++aCount)
 			{
-				actionBuilder << std::to_string(aCount) << RepoRole::dbActionToString(p.actions[aCount]);
+				actionBuilder.append(std::to_string(aCount), RepoRole::dbActionToString(p.actions[aCount]));
 			}
 
 			innerBsonBuilder.appendArray(REPO_ROLE_LABEL_ACTIONS, actionBuilder.obj());
 
-			privilegesBuilder << std::to_string(i) << innerBsonBuilder.obj();
+			privilegesBuilder.append(std::to_string(i), innerBsonBuilder.obj());
 		}
 		builder.appendArray(REPO_ROLE_LABEL_PRIVILEGES, privilegesBuilder.obj());
 	}
@@ -677,7 +670,7 @@ RepoRole RepoBSONFactory::_makeRepoRole(
 				<< REPO_ROLE_LABEL_DATABASE << inheritedRoles[i].first
 				);
 
-			inheritedRolesBuilder << std::to_string(i) << parentRole;
+			inheritedRolesBuilder.append(std::to_string(i), parentRole);
 		}
 
 		builder.appendArray(REPO_ROLE_LABEL_INHERITED_ROLES, inheritedRolesBuilder.obj());
@@ -696,36 +689,8 @@ RepoRef RepoBSONFactory::makeRepoRef(
 	builder.append(REPO_LABEL_ID, fileName);
 	builder.append(REPO_REF_LABEL_TYPE, RepoRef::convertTypeAsString(type));
 	builder.append(REPO_REF_LABEL_LINK, link);
-	builder.append(REPO_REF_LABEL_SIZE, (unsigned int) size);
+	builder.append(REPO_REF_LABEL_SIZE, (unsigned int)size);
 	return RepoRef(builder.obj());
-}
-
-RepoRoleSettings RepoBSONFactory::makeRepoRoleSettings(
-	const std::string &uniqueRoleName,
-	const std::string &color,
-	const std::string &description,
-	const std::vector<std::string> &modules)
-{
-	RepoBSONBuilder builder;
-
-	//--------------------------------------------------------------------------
-	// Project name
-	if (!uniqueRoleName.empty())
-		builder << REPO_LABEL_ID << uniqueRoleName;
-
-	// Color
-	if (!color.empty())
-		builder << REPO_LABEL_COLOR << color;
-
-	// Description
-	if (!description.empty())
-		builder << REPO_LABEL_DESCRIPTION << description;
-
-	// Modules
-	if (modules.size() > 0)
-		builder.appendArray(REPO_LABEL_MODULES, modules);
-
-	return RepoRoleSettings(builder.obj());
 }
 
 RepoUser RepoBSONFactory::makeRepoUser(
@@ -743,23 +708,23 @@ RepoUser RepoBSONFactory::makeRepoUser(
 
 	builder.append(REPO_LABEL_ID, repo::lib::RepoUUID::createUUID());
 	if (!userName.empty())
-		builder << REPO_USER_LABEL_USER << userName;
+		builder.append(REPO_USER_LABEL_USER, userName);
 
 	if (!password.empty())
 	{
 		RepoBSONBuilder credentialsBuilder;
-		credentialsBuilder << REPO_USER_LABEL_CLEARTEXT << password;
-		builder << REPO_USER_LABEL_CREDENTIALS << credentialsBuilder.obj();
+		credentialsBuilder.append(REPO_USER_LABEL_CLEARTEXT, password);
+		builder.append(REPO_USER_LABEL_CREDENTIALS, credentialsBuilder.obj());
 	}
 
 	if (!firstName.empty())
-		customDataBuilder << REPO_USER_LABEL_FIRST_NAME << firstName;
+		customDataBuilder.append(REPO_USER_LABEL_FIRST_NAME, firstName);
 
 	if (!lastName.empty())
-		customDataBuilder << REPO_USER_LABEL_LAST_NAME << lastName;
+		customDataBuilder.append(REPO_USER_LABEL_LAST_NAME, lastName);
 
 	if (!email.empty())
-		customDataBuilder << REPO_USER_LABEL_EMAIL << email;
+		customDataBuilder.append(REPO_USER_LABEL_EMAIL, email);
 
 	if (!apiKeys.empty())
 		customDataBuilder.appendArrayPair(REPO_USER_LABEL_API_KEYS, apiKeys, REPO_USER_LABEL_LABEL, REPO_USER_LABEL_KEY);
@@ -768,10 +733,10 @@ RepoUser RepoBSONFactory::makeRepoUser(
 	{
 		RepoBSONBuilder avatarBuilder;
 		avatarBuilder.appendBinary(REPO_LABEL_DATA, &avatar.at(0), sizeof(avatar.at(0))*avatar.size());
-		customDataBuilder << REPO_LABEL_AVATAR << avatarBuilder.obj();
+		customDataBuilder.append(REPO_LABEL_AVATAR, avatarBuilder.obj());
 	}
 
-	builder << REPO_USER_LABEL_CUSTOM_DATA << customDataBuilder.obj();
+	builder.append(REPO_USER_LABEL_CUSTOM_DATA, customDataBuilder.obj());
 
 	if (roles.size())
 		builder.appendArrayPair(REPO_USER_LABEL_ROLES, roles, REPO_USER_LABEL_DB, REPO_USER_LABEL_ROLE);
@@ -797,10 +762,10 @@ RepoUnityAssets RepoBSONFactory::makeRepoUnityAssets(
 		builder.appendArray(REPO_UNITY_ASSETS_LABEL_ASSETS, assets);
 
 	if (!database.empty())
-		builder << REPO_LABEL_DATABASE << database;
+		builder.append(REPO_LABEL_DATABASE, database);
 
 	if (!model.empty())
-		builder << REPO_LABEL_MODEL << model;
+		builder.append(REPO_LABEL_MODEL, model);
 
 	if (offset.size())
 		builder.appendArray(REPO_UNITY_ASSETS_LABEL_OFFSET, offset);
@@ -834,12 +799,12 @@ ReferenceNode RepoBSONFactory::makeReferenceNode(
 	//--------------------------------------------------------------------------
 	// Project owner (company or individual)
 	if (!database.empty())
-		builder << REPO_NODE_REFERENCE_LABEL_OWNER << database;
+		builder.append(REPO_NODE_REFERENCE_LABEL_OWNER, database);
 
 	//--------------------------------------------------------------------------
 	// Project name
 	if (!project.empty())
-		builder << REPO_NODE_REFERENCE_LABEL_PROJECT << project;
+		builder.append(REPO_NODE_REFERENCE_LABEL_PROJECT, project);
 
 	//--------------------------------------------------------------------------
 	// Revision ID (specific revision if UID, branch if SID)
@@ -850,7 +815,7 @@ ReferenceNode RepoBSONFactory::makeReferenceNode(
 	//--------------------------------------------------------------------------
 	// Unique set if the revisionID is UID, not set if SID (branch)
 	if (isUniqueID)
-		builder << REPO_NODE_REFERENCE_LABEL_UNIQUE << isUniqueID;
+		builder.append(REPO_NODE_REFERENCE_LABEL_UNIQUE, isUniqueID);
 
 	return ReferenceNode(builder.obj());
 }
@@ -881,17 +846,17 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 	//--------------------------------------------------------------------------
 	// Author
 	if (!user.empty())
-		builder << REPO_NODE_REVISION_LABEL_AUTHOR << user;
+		builder.append(REPO_NODE_REVISION_LABEL_AUTHOR, user);
 
 	//--------------------------------------------------------------------------
 	// Message
 	if (!message.empty())
-		builder << REPO_NODE_REVISION_LABEL_MESSAGE << message;
+		builder.append(REPO_NODE_REVISION_LABEL_MESSAGE, message);
 
 	//--------------------------------------------------------------------------
 	// Tag
 	if (!tag.empty())
-		builder << REPO_NODE_REVISION_LABEL_TAG << tag;
+		builder.append(REPO_NODE_REVISION_LABEL_TAG, tag);
 
 	//--------------------------------------------------------------------------
 	// Timestamp
@@ -907,23 +872,6 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 	// Shift for world coordinates
 	if (worldOffset.size() > 0)
 		builder.appendArray(REPO_NODE_REVISION_LABEL_WORLD_COORD_SHIFT, worldOffset);
-
-	////--------------------------------------------------------------------------
-	//// Added Shared IDs
-
-	//if (added.size() > 0)
-	//	builder.appendArray(REPO_NODE_REVISION_LABEL_ADDED_SHARED_IDS, builder.createArrayBSON(added));
-
-	////--------------------------------------------------------------------------
-	//// Deleted Shared IDs
-	//if (removed.size() > 0)
-	//	builder.appendArray(REPO_NODE_REVISION_LABEL_DELETED_SHARED_IDS, builder.createArrayBSON(removed));
-
-	////--------------------------------------------------------------------------
-	//// Modified Shared IDs
-	//if (modified.size() > 0)
-	//	builder.appendArray(REPO_NODE_REVISION_LABEL_MODIFIED_SHARED_IDS, builder.createArrayBSON(modified));
-	//--------------------------------------------------------------------------
 
 	//--------------------------------------------------------------------------
 	// original files references
@@ -956,12 +904,12 @@ TextureNode RepoBSONFactory::makeTextureNode(
 	//
 	// Width
 	//
-	builder << REPO_LABEL_WIDTH << width;
+	builder.append(REPO_LABEL_WIDTH, width);
 
 	//
 	// Height
 	//
-	builder << REPO_LABEL_HEIGHT << height;
+	builder.append(REPO_LABEL_HEIGHT, height);
 
 	//
 	// Format TODO: replace format with MIME Type?
@@ -971,7 +919,7 @@ TextureNode RepoBSONFactory::makeTextureNode(
 		boost::filesystem::path file{ name };
 		std::string ext = file.extension().string();
 		if (!ext.empty())
-			builder << REPO_NODE_LABEL_EXTENSION << ext.substr(1, ext.size());
+			builder.append(REPO_NODE_LABEL_EXTENSION, ext.substr(1, ext.size()));
 	}
 	//
 	// Data
@@ -1001,7 +949,7 @@ TransformationNode RepoBSONFactory::makeTransformationNode(
 	auto defaults = appendDefaults(REPO_NODE_TYPE_TRANSFORMATION, apiLevel, repo::lib::RepoUUID::createUUID(), name, parents);
 	builder.appendElements(defaults);
 
-	builder.append(REPO_NODE_LABEL_MATRIX, transMatrix);	
+	builder.append(REPO_NODE_LABEL_MATRIX, transMatrix);
 
 	return TransformationNode(builder.obj());
 }

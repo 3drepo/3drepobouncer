@@ -212,45 +212,6 @@ TEST(MongoDatabaseHandlerTest, GetCollections)
 	EXPECT_EQ(0, handler->getCollections("blahblah").size());
 }
 
-TEST(MongoDatabaseHandlerTest, GetCollectionStats)
-{
-	auto handler = getHandler();
-	ASSERT_TRUE(handler);
-
-	auto golden = getCollectionStats();
-	std::string message;
-	repo::core::model::CollectionStats stats = handler->getCollectionStats(golden.first.first, golden.first.second, message);
-
-	EXPECT_TRUE(message.empty());
-	EXPECT_FALSE(stats.isEmpty());
-	ASSERT_TRUE(stats.nFields() > golden.second.nFields());
-	std::set<std::string> fields;
-	golden.second.getFieldNames(fields);
-
-	for (const auto &fieldName : fields)
-	{
-		ASSERT_TRUE(stats.hasField(fieldName));
-		EXPECT_EQ(stats.getField(fieldName).toString(), golden.second.getField(fieldName).toString());
-	}
-	//check error handling - make sure it doesn't crash
-	message.clear();
-	EXPECT_TRUE(handler->getCollectionStats("", golden.first.second, message).isEmpty());
-	EXPECT_FALSE(message.empty());
-
-	message.clear();
-	EXPECT_TRUE(handler->getCollectionStats(golden.first.first, "", message).isEmpty());
-	EXPECT_FALSE(message.empty());
-
-	message.clear();
-	//Shoudl return with collection not found
-	EXPECT_EQ(0, handler->getCollectionStats("nonExistent", "blah", message).getField("ok").Double());
-	EXPECT_TRUE(message.empty());
-
-	message.clear();
-	EXPECT_EQ(0.0, handler->getCollectionStats(golden.first.first, "blah", message).getField("ok").Double());
-	EXPECT_TRUE(message.empty());
-}
-
 TEST(MongoDatabaseHandlerTest, GetDatabases)
 {
 	auto handler = getHandler();
@@ -456,8 +417,7 @@ TEST(MongoDatabaseHandlerTest, InsertDocument)
 	repo::core::model::RepoBSON result = handler->findOneByCriteria(database, collection, testCase);
 	EXPECT_FALSE(result.isEmpty());
 
-	std::set<std::string> fields;
-	result.getFieldNames(fields);
+	std::set<std::string> fields = result.getFieldNames();
 	for (const auto &fname : fields)
 	{
 		ASSERT_TRUE(testCase.hasField(fname));
@@ -528,8 +488,7 @@ TEST(MongoDatabaseHandlerTest, InsertRole)
 	repo::core::model::RepoBSON result = handler->findOneByCriteria("admin", "system.roles", roleTest);
 	EXPECT_FALSE(result.isEmpty());
 
-	std::set<std::string> fields;
-	roleTest.getFieldNames(fields);
+	std::set<std::string> fields = roleTest.getFieldNames();
 	for (const auto &fname : fields)
 	{
 		ASSERT_TRUE(result.hasField(fname));
@@ -595,8 +554,7 @@ TEST(MongoDatabaseHandlerTest, UpsertDocument)
 	repo::core::model::RepoBSON result = handler->findOneByCriteria(database, collection, testCase);
 	EXPECT_FALSE(result.isEmpty());
 
-	std::set<std::string> fields;
-	result.getFieldNames(fields);
+	std::set<std::string> fields = result.getFieldNames();
 	for (const auto &fname : fields)
 	{
 		ASSERT_TRUE(testCase.hasField(fname));

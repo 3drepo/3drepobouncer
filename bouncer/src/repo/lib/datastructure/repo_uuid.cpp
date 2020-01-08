@@ -108,7 +108,7 @@ RepoUUID RepoUUID::fromBSONElement(const repo::core::model::RepoBSONElement &ele
 	}
 	else
 	{
-		repoError << "Field  is not of type UUID! Bin data: " << (int)ele.type() << " enum: " << ((ele.type() == repo::core::model::ElementType::UUID) ? (int)ele.binDataType() : 0);
+		repoError << "Field  is not of type UUID! Bin data: " << (int)ele.type();
 		return createUUID();  // failsafe
 	}
 

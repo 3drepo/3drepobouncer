@@ -149,56 +149,11 @@ std::vector < repo::core::model::RepoRole > RepoController::getRolesFromDatabase
 	return impl->getRolesFromDatabase(token, database, skip, limit);
 }
 
-std::vector < repo::core::model::RepoRoleSettings > RepoController::getRoleSettingsFromDatabase(
-	const RepoController::RepoToken              *token,
-	const std::string            &database,
-	const uint64_t               &skip,
-	const uint32_t               &limit)
-{
-	return impl->getRoleSettingsFromDatabase(token, database, skip, limit);
-}
-
-repo::core::model::RepoRoleSettings RepoController::getRoleSettings(
-	const RepoController::RepoToken *token,
-	const repo::core::model::RepoRole &role)
-{
-	return getRoleSettings(token, role.getDatabase(), role.getName());
-}
-
-repo::core::model::RepoRoleSettings RepoController::getRoleSettings(
-	const RepoController::RepoToken *token,
-	const std::string &database,
-	const std::string &uniqueRoleName)
-{
-	return impl->getRoleSettings(token, database, uniqueRoleName);
-}
-
 std::list<std::string> RepoController::getDatabases(const RepoController::RepoToken *token)
 {
 	return impl->getDatabases(token);
 }
 
-repo::core::model::DatabaseStats RepoController::getDatabaseStats(const RepoController::RepoToken *token,
-	const std::string &databaseName)
-{
-	return impl->getDatabaseStats(token, databaseName);
-}
-
-std::list<std::string>  RepoController::getCollections(
-	const RepoController::RepoToken       *token,
-	const std::string     &databaseName
-	)
-{
-	return impl->getCollections(token, databaseName);
-}
-
-repo::core::model::CollectionStats RepoController::getCollectionStats(
-	const RepoController::RepoToken      *token,
-	const std::string                    &database,
-	const std::string                    &collection)
-{
-	return impl->getCollectionStats(token, database, collection);
-}
 
 std::map<std::string, std::list<std::string>>
 RepoController::getDatabasesWithProjects(
@@ -461,20 +416,6 @@ bool RepoController::isVREnabled(const RepoController::RepoToken *token,
 	const repo::core::model::RepoScene *scene)
 {
 	return impl->isVREnabled(token, scene);
-}
-
-void RepoController::getDatabaseStatistics(
-	const RepoController::RepoToken   *token,
-	const std::string &outputFilePath)
-{
-	impl->getDatabaseStatistics(token, outputFilePath);
-}
-
-void RepoController::getUserList(
-	const RepoController::RepoToken   *token,
-	const std::string &outputFilePath)
-{
-	impl->getUserList(token, outputFilePath);
 }
 
 std::string RepoController::getVersion()
