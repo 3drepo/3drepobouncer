@@ -151,7 +151,7 @@ void DataProcessorRvt::init(GeometryCollector* geoColl, OdBmDatabasePtr database
 	this->collector = geoColl;
 	this->database = database;
 	//getCameras(database);
-	//forEachBmDBView(database, [&](OdBmDBViewPtr pDBView) { hiddenElementsViewRejection(pDBView); });
+	forEachBmDBView(database, [&](OdBmDBViewPtr pDBView) { hiddenElementsViewRejection(pDBView); });
 
 	establishProjectTranslation(database);
 }
@@ -289,7 +289,7 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 	{
 		//some objects material is not set. set default here
 		collector->setCurrentMaterial(GetDefaultMaterial());
-		//collector->setMetadata(elementName, fillMetadata(element));
+		collector->setMetadata(elementName, fillMetadata(element));
 	}
 	catch (OdError& er)
 	{
