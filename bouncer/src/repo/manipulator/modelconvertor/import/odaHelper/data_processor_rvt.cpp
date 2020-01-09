@@ -389,7 +389,7 @@ std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBm
 	}
 	catch (OdError& er)
 	{
-		repoError << "Caught exception whilst trying to fetch metadata by element pointer " << convertToStdString(er.description());
+		repoTrace << "Caught exception whilst trying to fetch metadata by element pointer " << convertToStdString(er.description());
 	}
 
 	try
@@ -398,7 +398,7 @@ std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBm
 	}
 	catch (OdError& er)
 	{
-		repoError << "Caught exception whilst trying to get metadata by family ID: " << convertToStdString(er.description());
+		repoTrace << "Caught exception whilst trying to get metadata by family ID: " << convertToStdString(er.description());
 	}
 
 	try
@@ -407,17 +407,16 @@ std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBm
 	}
 	catch (OdError& er)
 	{
-		repoError << "Caught exception whilst trying to get metadata by Type ID: " << convertToStdString(er.description());
+		repoTrace << "Caught exception whilst trying to get metadata by Type ID: " << convertToStdString(er.description());
 	}
-
-	//try
-	//{
-	//	fillMetadataById(element->getCategroryId(), metadata);
-	//}
-	//catch (OdError& er)
-	//{
-	//	repoError << "Caught exception whilst trying to get ,etadata nu category ID: " << convertToStdString(er.description());
-	//}
+	try
+	{
+		fillMetadataById(element->getHeaderCategoryId(), metadata);
+	}
+	catch (OdError& er)
+	{
+		repoTrace << "Caught exception whilst trying to get ,etadata nu category ID: " << convertToStdString(er.description());
+	}
 	return metadata;
 }
 
