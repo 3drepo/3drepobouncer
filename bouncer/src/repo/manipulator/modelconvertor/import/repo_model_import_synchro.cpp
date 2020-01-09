@@ -33,6 +33,8 @@ const std::string DEFAULT_SEQUENCE_NAME = "Unnamed Sequence";
 
 const static std::string SEQ_CACHE_LABEL_TRANSPARENCY = "transparency";
 const static std::string SEQ_CACHE_LABEL_COLOR = "color";
+const static std::string SEQ_CACHE_LABEL_TRANSFORMATION = "transformation";
+const static std::string SEQ_CACHE_LABEL_CLIP = "clip";
 const static std::string SEQ_CACHE_LABEL_VALUE = "value";
 const static std::string SEQ_CACHE_LABEL_SHARED_IDS = "shared_ids";
 const static std::string SEQ_CACHE_LABEL_CAMERA = "camera";
@@ -368,8 +370,8 @@ std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
 	repo::lib::PropertyTree bufferTree;
 	if (transparencyStates.size()) bufferTree.addArrayObjects(SEQ_CACHE_LABEL_TRANSPARENCY, transparencyStates);
 	if (colourStates.size()) bufferTree.addArrayObjects(SEQ_CACHE_LABEL_COLOR, colourStates);
-	if (transformationStates.size()) bufferTree.addArrayObjects(SEQ_CACHE_LABEL_COLOR, transformationStates);
-	if (clipPlaneStates.size()) bufferTree.addArrayObjects(SEQ_CACHE_LABEL_COLOR, clipPlaneStates);
+	if (transformationStates.size()) bufferTree.addArrayObjects(SEQ_CACHE_LABEL_TRANSFORMATION, transformationStates);
+	if (clipPlaneStates.size()) bufferTree.addArrayObjects(SEQ_CACHE_LABEL_CLIP, clipPlaneStates);
 
 
 	if (cam) {
