@@ -151,7 +151,7 @@ void DataProcessorRvt::init(GeometryCollector* geoColl, OdBmDatabasePtr database
 	this->collector = geoColl;
 	this->database = database;
 	//getCameras(database);
-	forEachBmDBView(database, [&](OdBmDBViewPtr pDBView) { hiddenElementsViewRejection(pDBView); });
+	//forEachBmDBView(database, [&](OdBmDBViewPtr pDBView) { hiddenElementsViewRejection(pDBView); });
 
 	establishProjectTranslation(database);
 }
@@ -289,7 +289,7 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 	{
 		//some objects material is not set. set default here
 		collector->setCurrentMaterial(GetDefaultMaterial());
-		collector->setMetadata(elementName, fillMetadata(element));
+		//collector->setMetadata(elementName, fillMetadata(element));
 	}
 	catch (OdError& er)
 	{
@@ -410,14 +410,14 @@ std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBm
 		repoError << "Caught exception whilst trying to get metadata by Type ID: " << convertToStdString(er.description());
 	}
 
-	try
-	{
-		fillMetadataById(element->getCategroryId(), metadata);
-	}
-	catch (OdError& er)
-	{
-		repoError << "Caught exception whilst trying to get ,etadata nu category ID: " << convertToStdString(er.description());
-	}
+	//try
+	//{
+	//	fillMetadataById(element->getCategroryId(), metadata);
+	//}
+	//catch (OdError& er)
+	//{
+	//	repoError << "Caught exception whilst trying to get ,etadata nu category ID: " << convertToStdString(er.description());
+	//}
 	return metadata;
 }
 
