@@ -69,7 +69,7 @@ script:
     - cd ~/bouncer_install
     - cp bin/* $ODA_ROOT/bin/lnxX64_5.3dll/
     - cd $ODA_ROOT/bin/lnxX64_5.3dll/ && ls 3drepo*
-    - ODA_CSV_LOCATION=$ODA_ROOT/bin/lnxX64_5.3dll/ LD_LIBRARY_PATH=$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$ODA_ROOT/bin/lnxX64_5.3dll/:$LD_LIBRARY_PATH:$HOME/bouncer_install/lib 3drepobouncerTest
+    - ODA_CSV_LOCATION=$ODA_ROOT/bin/lnxX64_5.3dll/ LD_LIBRARY_PATH=$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$ODA_ROOT/bin/lnxX64_5.3dll/:$LD_LIBRARY_PATH:$HOME/bouncer_install/lib ./3drepobouncerTest
 after_success:
     - coveralls --root ../ -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0" -e "aws-install"
 notifications:
