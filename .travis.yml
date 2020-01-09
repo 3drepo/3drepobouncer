@@ -60,13 +60,16 @@ before_script:
     - export IFCOPENSHELL_ROOT=$PWD/../IfcOpenShell
     - export ODA_ROOT=$PWD/../teighaLinuxGCC5.3
     - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_5.3dll/
-    - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_CXX_STANDARD=11 -DCMAKE_BUILD_TYPE=Release ../
+    - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_CXX_STANDARD=11 -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH=~/bouncer_install ../
     - mongo mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
 script:
     - sudo make -j2 install
     - export REPO_MODEL_PATH=$PWD/../testData/bouncer/data/models
     - for f in $REPO_MODEL_PATH/*.json; do sed -i.bak -e 's|$REPO_MODEL_PATH|'$REPO_MODEL_PATH'|g' $f; done
-    - ODA_CSV_LOCATION=$ODA_ROOT/bin/lnxX64_5.3dll/ LD_LIBRARY_PATH=$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$ODA_ROOT/bin/lnxX64_5.3dll/:$LD_LIBRARY_PATH 3drepobouncerTest
+    - cd ~/bouncer_install
+    - cp bouncer_install/bin/* $ODA_ROOT/bin/lnxX64_5.3dll/
+    - cd $ODA_ROOT/bin/lnxX64_5.3dll/ && ls 3drepo*
+    - ODA_CSV_LOCATION=$ODA_ROOT/bin/lnxX64_5.3dll/ LD_LIBRARY_PATH=$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$ODA_ROOT/bin/lnxX64_5.3dll/:$LD_LIBRARY_PATH:$HOME/bouncer_install/lib 3drepobouncerTest
 after_success:
     - coveralls --root ../ -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0" -e "aws-install"
 notifications:
