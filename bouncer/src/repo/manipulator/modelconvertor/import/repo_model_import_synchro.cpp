@@ -479,7 +479,7 @@ void SynchroModelImport::updateFrameState(
 				auto visibility = visibilityTask->visibility / 100.;
 				auto meshes = resourceIDsToSharedIDs[visibilityTask->resourceID];
 				for (const auto mesh : meshes) {
-					meshAlphaState[mesh].second = meshAlphaState[mesh].first == visibility ? -1 : visibility;
+					meshAlphaState[mesh].second = visibility;
 				}
 			}
 		}
@@ -613,7 +613,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 			}
 
 			meshColourState[id] = { colourIn32Bit(materialCol), std::vector<float >() };
-			meshAlphaState[id] = { defaultAlpha, -1 };
+			meshAlphaState[id] = { defaultAlpha, defaultAlpha };
 		}
 	}
 
