@@ -154,7 +154,7 @@ void DataProcessorDgn::init(
 	const OdGeExtents3d &extModel)
 {
 	collector = geoCollector;
-	deviationValue = extModel.maxPoint().distanceTo(extModel.minPoint()) / 1e5;
+	//deviationValue = extModel.maxPoint().distanceTo(extModel.minPoint()) / 1e5; //FIXME: Uncomment when dgn bug is fixed https://jira.opendesign.com/browse/DGN-2274
 }
 
 void DataProcessorDgn::setMode(OdGsView::RenderMode mode)

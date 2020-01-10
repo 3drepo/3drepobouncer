@@ -198,7 +198,7 @@ uint8_t FileProcessorDgn::readFile() {
 			else
 			{
 				OdGeExtents3d extModel;
-				pModel->getGeomExtents(vectorizedViewId, extModel);
+				//pModel->getGeomExtents(vectorizedViewId, extModel);
 				auto origin = pModel->getGlobalOrigin();
 				collector->setOrigin(origin.x, origin.y, origin.z);
 				// Color with #255 always defines backround. The background of the active model must be considered in the device palette.
@@ -210,7 +210,7 @@ uint8_t FileProcessorDgn::readFile() {
 
 				std::map<OdDbStub*, double > mapDeviations;
 
-				OdDgElementIteratorPtr pIter = pModel->createGraphicsElementsIterator();
+				/*OdDgElementIteratorPtr pIter = pModel->createGraphicsElementsIterator();
 
 				for (; !pIter->done(); pIter->step())
 				{
@@ -224,7 +224,7 @@ uint8_t FileProcessorDgn::readFile() {
 						if (extElm.isValidExtents())
 							mapDeviations[pItem->elementId()] = extElm.maxPoint().distanceTo(extElm.minPoint()) / 1e4;
 					}
-				}
+				}*/
 
 				importDgn(pDb, pPalCpy.asArrayPtr(), 256, extModel);
 			}

@@ -52,7 +52,7 @@ static std::string produceCleanArgs(
 static std::string produceGenStashArgs(
 	const std::string &database,
 	const std::string &project,
-	const std::string &type	
+	const std::string &type
 	)
 {
 	return  getClientExePath() + " "
@@ -82,7 +82,7 @@ static std::string produceCreateFedArgs(
 	const std::string &owner = std::string()
 	)
 {
-	return  getClientExePath() + " " 
+	return  getClientExePath() + " "
 		+ getConnConfig()
 		+ " genFed \""
 		+ file + "\" "
@@ -92,7 +92,7 @@ static std::string produceCreateFedArgs(
 static std::string produceUploadFileArgs(
 	const std::string &filePath
 ){
-	return  getClientExePath() + " " 
+	return  getClientExePath() + " "
 		+ getConnConfig()
 		+ " import -f \""
 		+ filePath + "\"";
@@ -282,7 +282,7 @@ TEST(RepoClientTest, UploadTestRVT)
 
 	//Upload RVT file with texture directory set
 	std::string texturePath = "REPO_RVT_TEXTURES=" + getDataPath("textures");
-	
+
 	//Linux putenv takes in a char* instead of const char* - need a copy of the const char*
 	char* texturePathEnv = new char[texturePath.size()+1];
 	strncpy(texturePathEnv, texturePath.c_str(), texturePath.size()+1);
@@ -320,10 +320,10 @@ TEST(RepoClientTest, UploadTestRVTRegressionTests)
 	std::string rvtUpload4 = produceUploadArgs(db, "rvtTest4", getDataPath(rvtRoofTest));
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(rvtUpload4));
 	EXPECT_TRUE(projectExists(db, "rvtTest4"));
-	
-	/*std::string rvtUpload5 = produceUploadArgs(db, "rvtTest5", getDataPath(rvtMeta1));
+
+	std::string rvtUpload5 = produceUploadArgs(db, "rvtTest5", getDataPath(rvtMeta1));
 	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(rvtUpload5));
-	EXPECT_TRUE(projectExists(db, "rvtTest5"));*/
+	EXPECT_TRUE(projectExists(db, "rvtTest5"));
 
 	std::string rvtUpload6 = produceUploadArgs(db, "rvtTest6", getDataPath(rvtMeta2));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload6));
@@ -364,7 +364,7 @@ TEST(RepoClientTest, UploadTestOwner)
 	EXPECT_TRUE(projectSettingsCheck("testDB", importNoOwnerPro2, REPO_GTEST_DBUSER, "thisTag", "MyUpload"));
 }
 
-	
+
 
 
 TEST(RepoClientTest, CreateFedTest)

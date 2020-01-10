@@ -44,7 +44,7 @@ before_install:
     - tar -zxf testData/bouncer/ext_libs/xenial/IfcOpenShell.tgz
     - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev
     - echo ============ TEIGHA INSTALL =============
-    - wget $TEIGHA_LIBS_20_5_XENIAL
+    - wget $TEIGHA_LIBS_2020_2
     - tar -zxf teighaLinuxGCC5.3.tgz
     - ls teighaLinuxGCC5.3/Kernel/Include
     - echo ============ SYNCHRO INSTALL =============
@@ -68,13 +68,16 @@ before_script:
     - export SYNCHRO_ROOT=$PWD/../synchro
     - export SYNCHRO_READER_ROOT=$PWD/../3drepoSynchroReader
     - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_5.3dll/
-    - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_CXX_STANDARD=11 -DCMAKE_BUILD_TYPE=Release -DSYNCHRO_SUPPORT=ON ../
+    - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_CXX_STANDARD=11 -DCMAKE_BUILD_TYPE=Release -DSYNCHRO_SUPPORT=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
     - mongo mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
 script:
     - sudo make -j2 install
     - export REPO_MODEL_PATH=$PWD/../testData/bouncer/data/models
     - for f in $REPO_MODEL_PATH/*.json; do sed -i.bak -e 's|$REPO_MODEL_PATH|'$REPO_MODEL_PATH'|g' $f; done
-    - ODA_CSV_LOCATION=$ODA_ROOT/bin/lnxX64_5.3dll/ LD_LIBRARY_PATH=$SYNCHRO_ROOT/lib:$SYNCHRO_READER_ROOT/lib:$THRIFT_ROOT/lib:$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$ODA_ROOT/bin/lnxX64_5.3dll/:$LD_LIBRARY_PATH 3drepobouncerTest
+    - cd ~/bouncer_install
+    - cp bin/* $ODA_ROOT/bin/lnxX64_5.3dll/
+    - cd $ODA_ROOT/bin/lnxX64_5.3dll/ && ls 3drepo*
+    - ODA_CSV_LOCATION=$ODA_ROOT/bin/lnxX64_5.3dll/ PATH=$ODA_ROOT/bin/lnxX64_5.3dll/:$PATH LD_LIBRARY_PATH=$SYNCHRO_ROOT/lib:$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$ODA_ROOT/bin/lnxX64_5.3dll/:$LD_LIBRARY_PATH:$HOME/bouncer_install/lib 3drepobouncerTest
 after_success:
     - coveralls --root ../ -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0" -e "aws-install"
 notifications:
