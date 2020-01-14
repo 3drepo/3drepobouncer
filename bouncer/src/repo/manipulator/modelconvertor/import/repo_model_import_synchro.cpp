@@ -609,7 +609,6 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 
 			if (!lastStateEntry.second) {
 				defaultInvisible.insert(scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, id)->getUniqueID());
-				defaultAlpha = 0;
 			}
 
 			meshColourState[id] = { colourIn32Bit(materialCol), std::vector<float >() };
