@@ -447,10 +447,11 @@ void SynchroModelImport::updateFrameState(
 
 			if (resourceIDsToSharedIDs.find(colourTask->resourceID) != resourceIDsToSharedIDs.end()) {
 				auto color = colourTask->color;
-				auto colour32Bit = colourIn32Bit(color);
+				bool reset = !color.size();
+				auto colour32Bit = reset? 0 : colourIn32Bit(color);
 				auto meshes = resourceIDsToSharedIDs[colourTask->resourceID];
 				for (const auto mesh : meshes) {
-					meshColourState[mesh].second = meshColourState[mesh].first == colour32Bit ? std::vector<float>() : color;
+					meshColourState[mesh].second = reset ||  meshColourState[mesh].first == colour32Bit ? std::vector<float>() : color;
 				}
 			}
 		}
@@ -476,10 +477,10 @@ void SynchroModelImport::updateFrameState(
 		{
 			auto visibilityTask = std::dynamic_pointer_cast<const synchro_reader::VisibilityTask>(task);
 			if (resourceIDsToSharedIDs.find(visibilityTask->resourceID) != resourceIDsToSharedIDs.end()) {
-				auto visibility = visibilityTask->visibility / 100.;
+				auto visibility = visibilityTask->visibility;
 				auto meshes = resourceIDsToSharedIDs[visibilityTask->resourceID];
 				for (const auto mesh : meshes) {
-					meshAlphaState[mesh].second = visibility;
+					meshAlphaState[mesh].second = visibility == -1? meshAlphaState[mesh].first : visibility;
 				}
 			}
 		}
