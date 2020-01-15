@@ -393,6 +393,9 @@ namespace repo {
 					const std::string &name
 				);
 
+				static std::vector<RepoBSON> buildSequenceTasksBSON(
+					const std::unordered_map<std::string, std::shared_ptr<repo::core::model::RepoSequence::Task>> &tasks);
+
 				static RepoTask makeTask(
 					const std::string &name,
 					const std::unordered_map<std::string, std::string>  &data,

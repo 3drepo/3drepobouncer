@@ -49,7 +49,7 @@ namespace repo {
 				struct FrameData {
 					uint64_t timestamp;
 					std::string ref;
-					std::unordered_map<std::string, std::shared_ptr<Task>> currentTasks;
+					std::vector<RepoBSON> currentTasks;
 				};
 
 				RepoSequence() : RepoBSON() {}

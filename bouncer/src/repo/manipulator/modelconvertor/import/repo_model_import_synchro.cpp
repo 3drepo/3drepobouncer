@@ -655,11 +655,10 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 			currentEnd++;
 		}
 
-
 		repo::core::model::RepoSequence::FrameData data;
 		data.ref = validCache;
 		data.timestamp = currentTime;
-		data.currentTasks = currentTasks;
+		data.currentTasks = repo::core::model::RepoBSONFactory::buildSequenceTasksBSON(currentTasks);
 		frameData.push_back(data);		
 	}
 
@@ -667,8 +666,6 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 		auto meshNode =(repo::core::model::MeshNode*) scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, mesh);		
 		meshNode->swap(meshNode->cloneAndFlagIndependent());
 	}
-
-
 
 	std::string animationName = animation.name.empty() ? DEFAULT_SEQUENCE_NAME : animation.name;
 	auto sequence = repo::core::model::RepoBSONFactory::makeSequence(frameData, animationName);
