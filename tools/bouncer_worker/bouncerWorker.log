@@ -1,0 +1,37 @@
+{"level":"info","message":"Initialising bouncer client queue...","timestamp":"2020-02-03T16:17:40.949Z"}
+{"level":"info","message":"Checking status of client...","timestamp":"2020-02-03T16:17:40.951Z"}
+{"level":"info","message":"Executing command: C:\\local\\3drepobouncer\\bin\\3drepobouncerclient.exe C:\\Users\\Carmen\\work\\repo\\3drepobouncer\\tools\\bouncer_worker\\config.json test","timestamp":"2020-02-03T16:17:40.952Z"}
+{"level":"info","message":"Bouncer call passed","timestamp":"2020-02-03T16:17:41.887Z"}
+{"level":"info","message":"[AMQP] Connected! Creating channel...","timestamp":"2020-02-03T16:17:41.915Z"}
+{"level":"info","message":"Bouncer Client Queue started. Waiting for messages in jobq of amqp://guest:guest@localhost:5672....","timestamp":"2020-02-03T16:17:41.919Z"}
+{"level":"info","message":"Bouncer Client Queue started. Waiting for messages in modelq of amqp://guest:guest@localhost:5672....","timestamp":"2020-02-03T16:17:41.920Z"}
+{"level":"info","message":" [x] Received importToy testInvite fbe246f0-1075-11ea-be82-5b57929fe8b4 7ea2eb1f-3ba6-4f13-b6e5-a1b53f17d0c6  from jobq","timestamp":"2020-02-03T16:17:41.923Z"}
+{"level":"info","message":" [x] Received importToy testInvite fbe37f70-1075-11ea-be82-5b57929fe8b4 a29d06a0-51b7-45d7-9d33-41a62e036e5b  from jobq","timestamp":"2020-02-03T16:17:42.242Z"}
+{"level":"info","message":" [x] Received importToy testInvite fbe30a40-1075-11ea-be82-5b57929fe8b4 76fa299d-b626-48c5-9327-05fa371b3a49  from jobq","timestamp":"2020-02-03T16:17:42.243Z"}
+{"level":"info","message":" [x] Received genFed C:/sharedSpace//fc259180-1075-11ea-be82-5b57929fe8b4/obj.json testInvite from jobq","timestamp":"2020-02-03T16:17:42.244Z"}
+{"level":"info","message":"Executing command: C:\\local\\3drepobouncer\\bin\\3drepobouncerclient.exe C:\\Users\\Carmen\\work\\repo\\3drepobouncer\\tools\\bouncer_worker\\config.json genFed C:/sharedSpace//fc259180-1075-11ea-be82-5b57929fe8b4/obj.json testInvite","timestamp":"2020-02-03T16:17:42.246Z"}
+{"level":"info","message":" [x] Received import -f C:/sharedSpace//7a1b9ea0-11d8-11ea-9a64-2b1686df2fe3.json from modelq","timestamp":"2020-02-03T16:17:42.262Z"}
+{"level":"info","message":"sending to reply queue(callbackq): {\"status\":\"processing\",\"database\":\"carmen\",\"project\":\"5ac664a0-35eb-4ead-ba64-9fbff9aafec7\"}","timestamp":"2020-02-03T16:17:42.265Z"}
+{"level":"info","message":"Executing command: C:\\local\\3drepobouncer\\bin\\3drepobouncerclient.exe C:\\Users\\Carmen\\work\\repo\\3drepobouncer\\tools\\bouncer_worker\\config.json import -f C:/sharedSpace//7a1b9ea0-11d8-11ea-9a64-2b1686df2fe3.json","timestamp":"2020-02-03T16:17:42.267Z"}
+{"level":"info","message":"sending to reply queue(callbackq): {\"value\":18,\"database\":\"carmen\",\"project\":\"5ac664a0-35eb-4ead-ba64-9fbff9aafec7\",\"user\":\"carmen\"}","timestamp":"2020-02-03T16:17:42.836Z"}
+{"level":"error","message":"[FAILED] Executed command: C:\\local\\3drepobouncer\\bin\\3drepobouncerclient.exe C:\\Users\\Carmen\\work\\repo\\3drepobouncer\\tools\\bouncer_worker\\config.json import -f C:/sharedSpace//7a1b9ea0-11d8-11ea-9a64-2b1686df2fe3.json 18","timestamp":"2020-02-03T16:17:42.837Z"}
+{"level":"info","message":"Initialising bouncer client queue...","timestamp":"2020-02-03T16:18:10.458Z"}
+{"level":"info","message":"Checking status of client...","timestamp":"2020-02-03T16:18:10.459Z"}
+{"level":"info","message":"Executing command: C:\\local\\3drepobouncer\\bin\\3drepobouncerclient.exe C:\\Users\\Carmen\\work\\repo\\3drepobouncer\\tools\\bouncer_worker\\config.json test","timestamp":"2020-02-03T16:18:10.467Z"}
+{"level":"info","message":"Bouncer call passed","timestamp":"2020-02-03T16:18:10.613Z"}
+{"level":"info","message":"[AMQP] Connected! Creating channel...","timestamp":"2020-02-03T16:18:10.641Z"}
+{"level":"info","message":"Bouncer Client Queue started. Waiting for messages in modelq of amqp://guest:guest@localhost:5672....","timestamp":"2020-02-03T16:18:10.648Z"}
+{"level":"info","message":"Initialising bouncer client queue...","timestamp":"2020-02-03T16:18:21.279Z"}
+{"level":"info","message":"Checking status of client...","timestamp":"2020-02-03T16:18:21.282Z"}
+{"level":"info","message":"Executing command: C:\\local\\3drepobouncer\\bin\\3drepobouncerclient.exe C:\\Users\\Carmen\\work\\repo\\3drepobouncer\\tools\\bouncer_worker\\config.json test","timestamp":"2020-02-03T16:18:21.290Z"}
+{"level":"info","message":"Bouncer call passed","timestamp":"2020-02-03T16:18:21.438Z"}
+{"level":"info","message":"[AMQP] Connected! Creating channel...","timestamp":"2020-02-03T16:18:21.469Z"}
+{"level":"info","message":"Bouncer Client Queue started. Waiting for messages in jobq of amqp://guest:guest@localhost:5672....","timestamp":"2020-02-03T16:18:21.476Z"}
+{"level":"info","message":" [x] Received importToy testInvite fbe246f0-1075-11ea-be82-5b57929fe8b4 7ea2eb1f-3ba6-4f13-b6e5-a1b53f17d0c6  from jobq","timestamp":"2020-02-03T16:18:21.488Z"}
+{"level":"info","message":" [x] Received importToy testInvite fbe37f70-1075-11ea-be82-5b57929fe8b4 a29d06a0-51b7-45d7-9d33-41a62e036e5b  from jobq","timestamp":"2020-02-03T16:18:21.626Z"}
+{"level":"info","message":" [x] Received importToy testInvite fbe30a40-1075-11ea-be82-5b57929fe8b4 76fa299d-b626-48c5-9327-05fa371b3a49  from jobq","timestamp":"2020-02-03T16:18:21.633Z"}
+{"level":"info","message":" [x] Received genFed C:/sharedSpace//fc259180-1075-11ea-be82-5b57929fe8b4/obj.json testInvite from jobq","timestamp":"2020-02-03T16:18:21.635Z"}
+{"level":"info","message":"Executing command: C:\\local\\3drepobouncer\\bin\\3drepobouncerclient.exe C:\\Users\\Carmen\\work\\repo\\3drepobouncer\\tools\\bouncer_worker\\config.json genFed C:/sharedSpace//fc259180-1075-11ea-be82-5b57929fe8b4/obj.json testInvite","timestamp":"2020-02-03T16:18:21.642Z"}
+{"meta":0,"level":"info","message":"[SUCCEED] Executed command: C:\\local\\3drepobouncer\\bin\\3drepobouncerclient.exe C:\\Users\\Carmen\\work\\repo\\3drepobouncer\\tools\\bouncer_worker\\config.json genFed C:/sharedSpace//fc259180-1075-11ea-be82-5b57929fe8b4/obj.json testInvite ","timestamp":"2020-02-03T16:18:23.789Z"}
+{"level":"error","message":"importToy module error","timestamp":"2020-02-03T16:18:27.574Z"}
+{"level":"info","message":"sending to reply queue(callbackq): {\"value\":12,\"message\":\"Command failed: mongoimport -j 8 --host localhost:9997 --username [username masked] --password [password masked] --authenticationDatabase admin --db testInvite --collection fbe30a40-1075-11ea-be82-5b57929fe8b4.stash.unity3d --writeConcern '{\\\"w\\\":1}' --file C:\\\\Users\\\\Carmen\\\\work\\\\repo\\\\3drepobouncer\\\\tools\\\\bouncer_worker/./toy/76fa299d-b626-48c5-9327-05fa371b3a49/stash.unity3d.json\\n\",\"database\":\"testInvite\",\"project\":\"fbe30a40-1075-11ea-be82-5b57929fe8b4\"}","timestamp":"2020-02-03T16:18:27.575Z"}
