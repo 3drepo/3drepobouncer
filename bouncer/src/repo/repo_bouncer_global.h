@@ -37,7 +37,7 @@
 <<<<<<< HEAD
 #define BOUNCER_VMINOR "4.0"
 =======
-#define BOUNCER_VMINOR "3.0"
+#define BOUNCER_VMINOR "4.0"
 >>>>>>> 0ecf4f0150a5f7851f2223541e039964659cc7f0
 
 //
