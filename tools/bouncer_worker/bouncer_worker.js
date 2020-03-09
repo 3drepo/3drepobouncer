@@ -448,8 +448,8 @@
 			logger.info("[AMQP] Connected! Creating channel...");
 			conn.createChannel().then((ch) => {
 				ch.assertQueue(conf.rabbitmq.callback_queue, { durable: true });
-				listenToQueue(ch, conf.rabbitmq.worker_queue, conf.rabbitmq.task_prefetch || 4);
-				listenToQueue(ch, conf.rabbitmq.model_queue, conf.rabbitmq.model_prefetch || 1);
+				conf.rabbitmq.worker_queue && listenToQueue(ch, conf.rabbitmq.worker_queue, conf.rabbitmq.task_prefetch || 4);
+				conf.rabbitmq.model_queue && listenToQueue(ch, conf.rabbitmq.model_queue, conf.rabbitmq.model_prefetch || 1);
 
 			});
 
