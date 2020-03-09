@@ -3,11 +3,7 @@
 add_subdirectory(src)
 
 set(VERSION_MAJOR 4)
-<<<<<<< HEAD
 set(VERSION_MINOR 4_0)
-=======
-set(VERSION_MINOR 4_0)
->>>>>>> 0ecf4f0150a5f7851f2223541e039964659cc7f0
 
 include_directories(${Boost_INCLUDE_DIRS} ${MONGO_INCLUDE_DIR} ${ASSIMP_INCLUDE_DIR} ${OCCT_INCLUDE_DIR} ${IFCOPENSHELL_INCLUDE_DIR} ${ODA_INCLUDE_DIR} ${AWSSDK_INCLUDE_DIR} src)
 add_definitions(-DREPO_API_LIBRARY)
