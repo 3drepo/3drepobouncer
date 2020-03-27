@@ -73,6 +73,19 @@ void PropertyTree::addFieldAttribute(
 }
 
 template <>
+void PropertyTree::addFieldAttribute(
+	const std::string  &label,
+	const std::string  &attribute,
+	const repo::lib::RepoVector3D64 &value
+)
+{
+	std::stringstream ss;
+	ss << value.x << "," << value.y << "," << value.z;
+
+	addFieldAttribute(label, attribute, ss.str());
+}
+
+template <>
 void PropertyTree::addToTree<std::string>(
 	const std::string           &label,
 	const std::string           &value)
@@ -107,6 +120,18 @@ template <>
 void PropertyTree::addToTree<repo::lib::RepoVector3D>(
 	const std::string  &label,
 	const repo::lib::RepoVector3D &value
+	)
+{
+	std::stringstream ss;
+	ss << value.x << " " << value.y << " " << value.z;
+
+	addToTree(label, ss.str());
+}
+
+template <>
+void PropertyTree::addToTree<repo::lib::RepoVector3D64>(
+	const std::string  &label,
+	const repo::lib::RepoVector3D64 &value
 	)
 {
 	std::stringstream ss;

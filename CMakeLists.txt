@@ -30,6 +30,7 @@ endif()
 
 option (REPO_BUILD_COVERAGE "Building with coverage report" OFF)
 option (ODA_SUPPORT "If ODA library is present" OFF)
+option (SYNCHRO_SUPPORT "If Synchro library is present" OFF)
 if(REPO_BUILD_COVERAGE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 --coverage")
 endif()
@@ -88,6 +89,17 @@ if (ODA_SUPPORT)
 	add_definitions(-DODA_SUPPORT)
 	find_package(ODA REQUIRED)
 endif()
+
+#===================== SYNCHRO ============================
+
+if (SYNCHRO_SUPPORT)
+	add_definitions(-DSYNCHRO_SUPPORT)
+	find_package(SYNCHROREADER REQUIRED)
+	find_package(THRIFT REQUIRED)
+	find_package(ZLIB REQUIRED)
+	find_package(SYNCHRO REQUIRED)
+endif()
+
 
 #==================== AWS S3 SDK ======================
 option (S3_SUPPORT "Build with S3 support" OFF)

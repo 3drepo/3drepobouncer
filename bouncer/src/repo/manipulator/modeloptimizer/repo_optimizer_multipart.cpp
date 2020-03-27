@@ -263,8 +263,10 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 	{
 		std::unordered_map<uint32_t, std::vector<std::set<repo::lib::RepoUUID>>> transparentMeshes, normalMeshes;
 		std::unordered_map<uint32_t, std::unordered_map<repo::lib::RepoUUID, std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher>> texturedMeshes;
+
+		std::vector<repo::lib::RepoUUID> separateMeshes;
 		//Sort the meshes into 3 different grouping
-		sortMeshes(scene, meshes, normalMeshes, transparentMeshes, texturedMeshes);
+		sortMeshes(scene, meshes, normalMeshes, transparentMeshes, texturedMeshes, separateMeshes);
 
 		repo::core::model::RepoNodeSet mergedMeshes, materials, trans, textures, dummy;
 
@@ -302,6 +304,11 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 
 				}
 			}
+		}
+
+		//Ungrouped meshes
+		for (const auto mesh : separateMeshes) {
+			processMeshGroup(scene, { mesh }, rootID, mergedMeshes, matNodes, matIDs);
 		}
 
 		if (success)
@@ -463,7 +470,9 @@ void MultipartOptimizer::sortMeshes(
 	std::unordered_map<uint32_t, std::vector<std::set<repo::lib::RepoUUID>>>						&normalMeshes,
 	std::unordered_map<uint32_t, std::vector<std::set<repo::lib::RepoUUID>>>						&transparentMeshes,
 	std::unordered_map < uint32_t, std::unordered_map < repo::lib::RepoUUID,
-	std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher >> &texturedMeshes)
+	std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher >> &texturedMeshes,
+	std::vector<repo::lib::RepoUUID> &separateMeshes
+	)
 {
 	std::unordered_map<uint32_t, size_t> normalFCount, transparentFCount;
 	std::unordered_map<uint32_t, std::unordered_map<repo::lib::RepoUUID, size_t, repo::lib::RepoUUIDHasher> > texturedFCount;
@@ -476,6 +485,12 @@ void MultipartOptimizer::sortMeshes(
 			repoWarning << "mesh " << mesh->getUniqueID() << " has no vertices/faces, skipping...";
 			continue;
 		}
+
+		if (mesh->isIndependent()) {
+			separateMeshes.push_back(mesh->getUniqueID());
+			continue;
+		}
+
 		/**
 		* 1 - figure out it's mFormat (what buffers does it have)
 		* 2 - check if it has texture

@@ -35,7 +35,7 @@ bool SceneManager::commitWebBuffers(
 	const bool                                            addTimestampToSettings)
 {
 	bool success = true;
-	std::string jsonStashExt = scene->getJSONExtension();
+	std::string jsonStashExt = REPO_COLLECTION_STASH_JSON;
 	std::string databaseName = scene->getDatabaseName();
 	std::string projectName = scene->getProjectName();
 
@@ -297,16 +297,16 @@ bool SceneManager::generateWebViewBuffers(
 			scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_WEB_STASH);
 
 		std::string geoStashExt;
-		std::string jsonStashExt = scene->getJSONExtension();
+		std::string jsonStashExt = REPO_COLLECTION_STASH_JSON;
 
 		switch (exType)
 		{
 		case repo::manipulator::modelconvertor::WebExportType::GLTF:
-			geoStashExt = scene->getGLTFExtension();
+			geoStashExt = REPO_COLLECTION_STASH_GLTF;
 			resultBuffers = generateGLTFBuffer(scene);
 			break;
 		case repo::manipulator::modelconvertor::WebExportType::SRC:
-			geoStashExt = scene->getSRCExtension();
+			geoStashExt = REPO_COLLECTION_STASH_SRC;
 			resultBuffers = generateSRCBuffer(scene);
 			break;
 		case repo::manipulator::modelconvertor::WebExportType::UNITY:
@@ -379,7 +379,7 @@ bool SceneManager::generateAndCommitSelectionTree(
 
 				if (handler && fileManager->uploadFileAndCommit(
 							databaseName,
-							projectName + "." + scene->getJSONExtension(),
+							projectName + "." + REPO_COLLECTION_STASH_JSON,
 							fileName,
 							file.second))
 				{
@@ -448,7 +448,7 @@ bool SceneManager::removeStashGraph(
 
 			repo::core::model::RepoBSONBuilder builder;
 			builder.append(REPO_NODE_STASH_REF, scene->getRevisionID());
-			success = handler->dropDocuments(builder.obj(), scene->getDatabaseName(), scene->getProjectName() + "." + scene->getStashExtension(), errMsg);
+			success = handler->dropDocuments(builder.obj(), scene->getDatabaseName(), scene->getProjectName() + "." + REPO_COLLECTION_STASH_REPO, errMsg);
 		}
 	}
 	else

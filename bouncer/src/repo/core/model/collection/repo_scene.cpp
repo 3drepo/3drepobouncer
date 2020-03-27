@@ -35,7 +35,7 @@ using namespace repo::core::model;
 
 const std::vector<std::string> RepoScene::collectionsInProject = { "scene", "scene.files", "scene.chunks", "stash.3drepo", "stash.3drepo.files", "stash.3drepo.chunks", "stash.x3d", "stash.x3d.files",
 "stash.json_mpc.files", "stash.json_mpc.chunks", "stash.x3d.chunks", "stash.gltf", "stash.gltf.files", "stash.gltf.chunks", "stash.src", "stash.src.files", "stash.src.chunks", "history",
-"history.files", "history.chunks", "issues", "wayfinder", "groups" };
+"history.files", "history.chunks", "issues", "wayfinder", "groups", "sequences", "tasks" };
 
 static bool nameCheck(const char &c)
 {
@@ -85,28 +85,10 @@ std::string RepoScene::sanitizeDatabaseName(const std::string& name) const
 
 RepoScene::RepoScene(
 	const std::string &database,
-	const std::string &projectName,
-	const std::string &sceneExt,
-	const std::string &revExt,
-	const std::string &stashExt,
-	const std::string &rawExt,
-	const std::string &issuesExt,
-	const std::string &srcExt,
-	const std::string &gltfExt,
-	const std::string &jsonExt,
-	const std::string &unityExt)
+	const std::string &projectName)
 	:
 	databaseName(sanitizeDatabaseName(database)),
 	projectName(sanitizeName(projectName)),
-	sceneExt(sanitizeExt(sceneExt)),
-	revExt(sanitizeExt(revExt)),
-	stashExt(sanitizeExt(stashExt)),
-	rawExt(sanitizeExt(rawExt)),
-	issuesExt(sanitizeExt(issuesExt)),
-	srcExt(sanitizeExt(srcExt)),
-	gltfExt(sanitizeExt(gltfExt)),
-	jsonExt(sanitizeExt(jsonExt)),
-	unityExt(sanitizeExt(unityExt)),
 	headRevision(true),
 	unRevisioned(false),
 	revNode(0),
@@ -127,26 +109,10 @@ RepoScene::RepoScene(
 	const RepoNodeSet              &textures,
 	const RepoNodeSet              &transformations,
 	const RepoNodeSet              &references,
-	const RepoNodeSet              &unknowns,
-	const std::string              &sceneExt,
-	const std::string              &revExt,
-	const std::string              &stashExt,
-	const std::string              &rawExt,
-	const std::string              &issuesExt,
-	const std::string              &srcExt,
-	const std::string              &gltfExt,
-	const std::string              &jsonExt
+	const RepoNodeSet              &unknowns
 	) :
 	databaseName(""),
 	projectName(""),
-	sceneExt(sanitizeExt(sceneExt)),
-	revExt(sanitizeExt(revExt)),
-	stashExt(sanitizeExt(stashExt)),
-	rawExt(sanitizeExt(rawExt)),
-	issuesExt(sanitizeExt(issuesExt)),
-	srcExt(sanitizeExt(srcExt)),
-	gltfExt(sanitizeExt(gltfExt)),
-	jsonExt(sanitizeExt(jsonExt)),
 	headRevision(true),
 	unRevisioned(true),
 	refFiles(refFiles),
@@ -570,7 +536,7 @@ bool RepoScene::commit(
 			//commited the revision node, commit the modification on the scene
 			if (success &= commitSceneChanges(handler, errMsg))
 			{
-				handler->createCollection(databaseName, projectName + "." + issuesExt);
+				handler->createCollection(databaseName, projectName + "." + REPO_COLLECTION_ISSUES);
 
 				//Succeed in commiting everything.
 				//Update Revision Node and reset state.
@@ -596,10 +562,51 @@ bool RepoScene::commit(
 				toRemove.clear();
 				unRevisioned = false;
 			}
+			if (success && frameStates.size()) {
+				repoInfo << "Commited Scene nodes, committing sequence";
+				commitSequence(handler, manager, newRevNode->getUniqueID());
+			}
 		}
 	}
 	if (success) updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
 	//Create and Commit revision node
+	return success;
+}
+
+bool RepoScene::commitSequence(
+	repo::core::handler::AbstractDatabaseHandler *handler,
+	repo::core::handler::fileservice::FileManager *manager,
+	const repo::lib::RepoUUID &revID
+) {
+	bool success = true;
+	if (frameStates.size()) {
+		std::string err;
+
+		auto sequenceCol = projectName + "." + REPO_COLLECTION_SEQUENCE;
+		if (handler->insertDocument(
+			databaseName, sequenceCol, sequence.cloneAndAddRevision(revID), err)) {
+
+			for (const auto &state : frameStates) {				
+				if (!manager->uploadFileAndCommit(databaseName, sequenceCol, state.first, state.second)) {
+					repoError << "Failed to commit a sequence state.";
+					success = false; 
+				}
+			}
+		}
+		else {
+			repoError << "Failed to commit sequence bson: " << err;
+			return false;
+		}
+
+		auto taskCol = projectName + "." + REPO_COLLECTION_TASK;
+		for (const auto &task : taskList) {
+			if (!handler->insertDocument(databaseName, taskCol, task, err)) {
+				repoError << "Failed to commit task bson: " << err;
+				return false;
+			}
+		}
+	}
+
 	return success;
 }
 
@@ -707,9 +714,9 @@ bool RepoScene::commitRevisionNode(
 
 	if (newRevNode)
 	{
-		handler->createIndex(databaseName, projectName + "." + revExt, BSON(REPO_NODE_REVISION_LABEL_TIMESTAMP << -1));
-		handler->createIndex(databaseName, projectName + "." + sceneExt, BSON("metadata.IFC GUID" << 1 << REPO_NODE_LABEL_PARENTS << 1));
-		handler->createIndex(databaseName, projectName + "." + sceneExt, BSON(REPO_NODE_LABEL_SHARED_ID << 1 <<  REPO_LABEL_TYPE << 1 << REPO_LABEL_ID << 1));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, BSON(REPO_NODE_REVISION_LABEL_TIMESTAMP << -1));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON("metadata.IFC GUID" << 1 << REPO_NODE_LABEL_PARENTS << 1));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_LABEL_SHARED_ID << 1 <<  REPO_LABEL_TYPE << 1 << REPO_LABEL_ID << 1));
 		//Creation of the revision node will append unique id onto the filename (e.g. <uniqueID>chair.obj)
 		//we need to store the file in GridFS under the new name
 		std::vector<std::string> newRefFileNames = newRevNode->getOrgFiles();
@@ -747,7 +754,7 @@ bool RepoScene::commitRevisionNode(
 				std::vector<uint8_t> rawFile(size);
 				if (file.read((char*)rawFile.data(), size))
 				{
-					if (!(success = manager->uploadFileAndCommit(databaseName, projectName + "." + rawExt, gridFSName, rawFile)))
+					if (!(success = manager->uploadFileAndCommit(databaseName, projectName + "." + REPO_COLLECTION_RAW, gridFSName, rawFile)))
 					{
 						errMsg = "Failed to save original file into file storage: " + gridFSName;
 						repoError << errMsg;
@@ -772,7 +779,7 @@ bool RepoScene::commitRevisionNode(
 		return false;
 	}
 
-	return success && handler->insertDocument(databaseName, projectName + "." + revExt, *newRevNode, errMsg);
+	return success && handler->insertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *newRevNode, errMsg);
 }
 
 bool RepoScene::commitNodes(
@@ -785,7 +792,7 @@ bool RepoScene::commitNodes(
 
 	bool isStashGraph = gType == GraphType::OPTIMIZED;
 	repoGraphInstance &g = isStashGraph ? stashGraph : graph;
-	std::string ext = isStashGraph ? stashExt : sceneExt;
+	std::string ext = isStashGraph ? REPO_COLLECTION_STASH_REPO : REPO_COLLECTION_SCENE;
 
 	size_t count = 0;
 	size_t total = nodesToCommit.size();
@@ -1176,16 +1183,16 @@ bool RepoScene::loadRevision(
 		critBuilder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, BSON("$exists" << false));
 
 		bson = handler->findOneByCriteria(databaseName, projectName + "." +
-			revExt, critBuilder.obj(), REPO_NODE_REVISION_LABEL_TIMESTAMP);
+			REPO_COLLECTION_HISTORY, critBuilder.obj(), REPO_NODE_REVISION_LABEL_TIMESTAMP);
 		repoTrace << "Fetching head of revision from branch " << branch;
 	}
 	else{
-		bson = handler->findOneByUniqueID(databaseName, projectName + "." + revExt, revision);
+		bson = handler->findOneByUniqueID(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, revision);
 		repoTrace << "Fetching revision using unique ID: " << revision;
 	}
 
 	if (bson.isEmpty()){
-		errMsg = "Failed: cannot find revision document from " + databaseName + "." + projectName + "." + revExt;
+		errMsg = "Failed: cannot find revision document from " + databaseName + "." + projectName + "." + REPO_COLLECTION_HISTORY;
 		success = false;
 	}
 	else{
@@ -1215,7 +1222,7 @@ bool RepoScene::loadScene(
 	//Get the relevant nodes from the scene graph using the unique IDs stored in this revision node
 	RepoBSON idArray = revNode->getObjectField(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS);
 	std::vector<RepoBSON> nodes = handler->findAllByUniqueIDs(
-		databaseName, projectName + "." + sceneExt, idArray, !loadExtFiles);
+		databaseName, projectName + "." + REPO_COLLECTION_SCENE, idArray, !loadExtFiles);
 
 	repoInfo << "# of nodes in this unoptimised scene = " << nodes.size();
 
@@ -1241,7 +1248,7 @@ bool RepoScene::loadStash(
 	RepoBSONBuilder builder;
 	builder.append(REPO_NODE_STASH_REF, revNode->getUniqueID());
 
-	std::vector<RepoBSON> nodes = handler->findAllByCriteria(databaseName, projectName + "." + stashExt, builder.obj());
+	std::vector<RepoBSON> nodes = handler->findAllByCriteria(databaseName, projectName + "." + REPO_COLLECTION_STASH_REPO, builder.obj());
 	if (success = nodes.size())
 	{
 		repoInfo << "# of nodes in this stash scene = " << nodes.size();
@@ -1459,7 +1466,7 @@ bool RepoScene::populate(
 			//construct a new RepoScene with the information from reference node and append this g to the Scene
 			std::string spDbName = reference->getDatabaseName();
 			if (spDbName.empty()) spDbName = databaseName;
-			RepoScene *refg = new RepoScene(spDbName, reference->getProjectName(), sceneExt, revExt);
+			RepoScene *refg = new RepoScene(spDbName, reference->getProjectName());
 			if (reference->useSpecificRevision())
 				refg->setRevision(reference->getRevisionID());
 			else
@@ -1658,7 +1665,7 @@ bool RepoScene::updateRevisionStatus(
 		{
 			//update revision node
 			std::string errMsg;
-			success = handler->upsertDocument(databaseName, projectName + "." + revExt, updatedRev, true, errMsg);
+			success = handler->upsertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, updatedRev, true, errMsg);
 		}
 		else
 		{

@@ -73,6 +73,14 @@ namespace repo{
 
 				/**
 				* Create a new object with this object's values,
+				* changing the unique and shared id.
+				* NOTE: this object is unchanged!
+				* @return new object with the field updated
+				*/
+				RepoNode cloneAndChangeIdentity() const;
+
+				/**
+				* Create a new object with this object's values,
 				* and add another parent into this new object
 				* NOTE: this object is unchanged!
 				* @param parentID the shared uuid of the parent

@@ -39,30 +39,33 @@ TEST(RepoMatrixTest, constructorTest)
 {
 	std::vector<float> sourceMat1;
 	std::vector<std::vector<float>> sourceMat2;
+	std::vector<double> sourceMat3;
 	RepoMatrix matrix;
 	RepoMatrix matrix2(sourceMat1);
 	RepoMatrix matrix3(sourceMat2);
+	RepoMatrix matrix4(sourceMat3);
 	
 	for (int i = 0; i < 16; ++i)
 	{
 		sourceMat1.push_back((rand()%1000) / 1000.f);
 		if (i % 4 == 0) sourceMat2.push_back(std::vector<float>());
 		sourceMat2.back().push_back((rand() % 1000) / 1000.f);
+		sourceMat3.push_back((rand() % 1000) / 1000.f);
 	}
 
-	RepoMatrix matrix4(sourceMat1), matrix5(sourceMat2);	
+	RepoMatrix matrix7(sourceMat1), matrix5(sourceMat2), matrix6(sourceMat3);	
 }
 
 TEST(RepoMatrixTest, determinantTest)
 {
 	RepoMatrix id;
 	EXPECT_EQ(1, id.determinant());
-
-	RepoMatrix rand({   2, 0.3f,   0.4f, 1.23f,
-					 0.45f,    1, 0.488f, 12345,
-					    0,   0,     3.5f,     0,
-						0,   0,       0,     1
-					 });
+	std::vector<float> matValues = { 2, 0.3f,   0.4f, 1.23f,
+		0.45f,    1, 0.488f, 12345,
+		0,   0,     3.5f,     0,
+		0,   0,       0,     1
+	};
+	RepoMatrix rand(matValues);
 
 	EXPECT_EQ(6.5275f, rand.determinant());
 }
@@ -123,12 +126,12 @@ TEST(RepoMatrixTest, invertTest)
 {
 	RepoMatrix id;
 	EXPECT_TRUE(checkIsIdentity(id.invert()));
-
-	RepoMatrix rand({ 2, 0.3f, 0.4f, 1.23f,
+	std::vector<float> matValues = { 2, 0.3f, 0.4f, 1.23f,
 		0.45f, 1, 0.488f, 12345,
 		0, 0, 3.5f, 0,
 		0, 0, 0, 1
-	});
+	};
+	RepoMatrix rand(matValues);
 
 	std::vector<float> expectedRes = {
 		0.5361930294906166f, -0.16085790884718498f, -0.038851014936805824f, 1985.13146972656250000f,
@@ -221,12 +224,12 @@ TEST(RepoMatrixTest, matVecTest)
 	EXPECT_EQ(sampleVec.x, newVec.x);
 	EXPECT_EQ(sampleVec.y, newVec.y);
 	EXPECT_EQ(sampleVec.z, newVec.z);
-
-	RepoMatrix rand({ 2, 0.3f, 0.4f, 1.23f,
+	std::vector<float> matValues = { 2, 0.3f, 0.4f, 1.23f,
 		0.45f, 1, 0.488f, 12345,
 		0.5f, 0, 3.5f, 0,
 		0, 0, 0, 1
-	});
+	};
+	RepoMatrix rand(matValues);
 
 	auto newVec2 = rand * sampleVec;
 	
@@ -239,17 +242,20 @@ TEST(RepoMatrixTest, matMatTest)
 {
 	EXPECT_TRUE(checkIsIdentity(RepoMatrix()*RepoMatrix()));
 
-	RepoMatrix rand({ 2, 0.3f, 0.4f, 1.23f,
+	std::vector <float> matValues = { 2, 0.3f, 0.4f, 1.23f,
 		0.45f, 1, 0.488f, 12345,
 		0.5f, 0, 3.5f, 0,
 		0, 4.56f, 0.0001f, 1
-	});
+	};
+	RepoMatrix rand(matValues);
 
-	RepoMatrix rand2({3.254f, 13.12456f, 0.0001f, 1.264f,
-				      0.5f,   0.645f,   10, 321.02f,
-					  0.7892f, 10.3256f, 1, 0.5f,
-					  0.5f, 0.6f, 0.7f, 1
-	});
+	std::vector<float> matValues2 = { 3.254f, 13.12456f, 0.0001f, 1.264f,
+		0.5f,   0.645f,   10, 321.02f,
+		0.7892f, 10.3256f, 1, 0.5f,
+		0.5f, 0.6f, 0.7f, 1
+	};
+
+	RepoMatrix rand2(matValues2);
 
 	EXPECT_EQ(rand, RepoMatrix()*rand);
 	EXPECT_EQ(rand, rand*RepoMatrix());

@@ -49,6 +49,8 @@ const static std::string rvtRoofTest = "RoofTest.rvt";
 const static std::string rvtMeta1 = "MetaTest1.rvt";
 const static std::string rvtMeta2 = "MetaTest2.rvt";
 const static std::string unsupportedFBXVersion = "unsupported.FBX";
+const static std::string synchroFile = "synchro.spm";
+const static std::string synchroWithTransform = "withTransformations.spm";
 
 const static std::string emptyFile = "empty.json";
 const static std::string emptyJSONFile = "empty2.json";

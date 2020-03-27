@@ -70,6 +70,9 @@ namespace repo{
 				*/
 				virtual bool importModel(std::string filePath, uint8_t &errMsg) = 0;
 
+				virtual bool applyReduction() const { return true;  }
+				virtual bool requireReorientation() const { return false; }
+
 			protected:
 				/**
 				* Retrieve the directory to the file

@@ -953,3 +953,100 @@ TransformationNode RepoBSONFactory::makeTransformationNode(
 
 	return TransformationNode(builder.obj());
 }
+
+RepoTask RepoBSONFactory::makeTask(
+	const std::string &name,
+	const std::unordered_map<std::string, std::string> &data,
+	const std::vector<repo::lib::RepoUUID> &resources,
+	const std::vector<repo::lib::RepoUUID> &parents,
+	const repo::lib::RepoUUID &id
+) {
+	RepoBSONBuilder builder, metaBuilder;
+	builder.append(REPO_LABEL_ID, id);
+	builder.append(REPO_TASK_LABEL_NAME, name);
+
+	if (parents.size())
+		builder.appendArray(REPO_TASK_LABEL_PARENTS, parents);
+
+	if (resources.size()) {
+		builder.appendArray(REPO_TASK_LABEL_RESOURCES, resources);
+	}
+
+	for (const auto &entry : data) {
+		std::string key = sanitiseKey(entry.first);
+		std::string value = entry.second;
+
+
+		if (!key.empty() && !value.empty())
+		{
+			//Check if it is a number, if it is, store it as a number
+
+			try {
+				long long valueInt = boost::lexical_cast<long long>(value);
+				metaBuilder.append(key, valueInt);
+			}
+			catch (boost::bad_lexical_cast &)
+			{
+				//not an int, try a double
+
+				try {
+					double valueFloat = boost::lexical_cast<double>(value);
+					metaBuilder.append(key, valueFloat);
+				}
+				catch (boost::bad_lexical_cast &)
+				{
+					//not an int or float, store as string
+					metaBuilder.append(key, value);
+				}
+			}
+		}
+	}
+
+	builder.append(REPO_TASK_LABEL_DATA, metaBuilder.obj());
+
+	return builder.obj();
+}
+
+std::vector<RepoBSON> RepoBSONFactory::buildSequenceTasksBSON(
+	const std::unordered_map<std::string, std::shared_ptr<repo::core::model::RepoSequence::Task>> &tasks) {
+
+	std::vector<RepoBSON> taskBsons;
+	for (const auto &taskEntry : tasks) {
+		RepoBSONBuilder taskBuilder;
+		taskBuilder.append(REPO_LABEL_ID, taskEntry.second->id);
+		taskBuilder.append(REPO_SEQUENCE_LABEL_NAME, taskEntry.second->name);
+		taskBuilder.append(REPO_SEQUENCE_LABEL_TASK_START, mongo::Date_t(taskEntry.second->startTime * 1000));
+		taskBuilder.append(REPO_SEQUENCE_LABEL_TASK_END, mongo::Date_t(taskEntry.second->endTime * 1000));
+		if (taskEntry.second->childTasks.size()) {
+			taskBuilder.appendArray(REPO_SEQUENCE_LABEL_TASKS, buildSequenceTasksBSON(taskEntry.second->childTasks));
+		}
+		taskBsons.push_back(taskBuilder.obj());
+	}
+
+	return taskBsons;
+}
+
+RepoSequence RepoBSONFactory::makeSequence(
+	const std::vector<repo::core::model::RepoSequence::FrameData> &frameData,
+	const std::string &name
+) {
+	RepoBSONBuilder builder;
+	builder.append(REPO_LABEL_ID, repo::lib::RepoUUID::createUUID());
+	builder.append(REPO_SEQUENCE_LABEL_NAME, name);
+	
+	std::vector<RepoBSON> frames;
+
+	for (const auto &frameEntry : frameData) {
+		RepoBSONBuilder bsonBuilder;
+		bsonBuilder.append(REPO_SEQUENCE_LABEL_DATE, mongo::Date_t(frameEntry.timestamp*1000));
+		bsonBuilder.append(REPO_SEQUENCE_LABEL_STATE, frameEntry.ref);
+
+		bsonBuilder.appendArray(REPO_SEQUENCE_LABEL_TASKS, frameEntry.currentTasks);
+
+		frames.push_back(bsonBuilder.obj());
+	}
+
+	builder.appendArray(REPO_SEQUENCE_LABEL_FRAMES, frames);
+
+	return RepoSequence(builder.obj());
+}

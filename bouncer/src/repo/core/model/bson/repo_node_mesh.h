@@ -59,7 +59,7 @@ namespace repo {
 #define REPO_NODE_MESH_LABEL_MATERIAL_ID		        "mat_id"
 #define REPO_NODE_MESH_LABEL_MERGE_MAP		        "m_map"
 			//------------------------------------------------------------------------------
-
+#define REPO_NODE_MESH_LABEL_INDEPENDENT		        "independent"
 
 			class REPO_API_EXPORT MeshNode :public RepoNode
 			{
@@ -156,6 +156,8 @@ namespace repo {
 					const std::vector<repo_mesh_mapping_t> &vec,
 					const bool                             &overwrite = false);
 
+				MeshNode cloneAndFlagIndependent() const;
+
 				/**
 				* --------- Convenience functions -----------
 				*/
@@ -177,6 +179,9 @@ namespace repo {
 				* Retrieve a vector of faces from the bson object
 				*/
 				std::vector<repo_face_t> getFaces() const;
+
+				// State whether the mesh can be optimsed into batched meshes
+				bool isIndependent() const;
 
 				std::vector<repo_mesh_mapping_t> getMeshMapping() const;
 

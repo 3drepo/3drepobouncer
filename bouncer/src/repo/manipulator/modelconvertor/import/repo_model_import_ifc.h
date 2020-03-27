@@ -66,6 +66,8 @@ namespace repo{
 				*/
 				virtual bool importModel(std::string filePath, uint8_t &err);
 
+				virtual bool requireReorientation() const { return true; }
+
 			protected:				
 
 				std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> meshes;

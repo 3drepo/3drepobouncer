@@ -30,8 +30,11 @@ namespace repo{
 			RepoMatrix();
 
 			RepoMatrix(const std::vector<float> &mat);
+			
+			RepoMatrix(const std::vector<double> &mat);
 
 			RepoMatrix(const std::vector<std::vector<float>> &mat);
+			
 
 			float determinant() const;
 

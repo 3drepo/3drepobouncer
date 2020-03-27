@@ -93,6 +93,8 @@
 #define REPO_COLLECTION_STASH_JSON  "stash.json_mpc"
 #define REPO_COLLECTION_STASH_UNITY "stash.unity3d"
 #define REPO_COLLECTION_EXT_REF     "ref"
+#define REPO_COLLECTION_SEQUENCE     "sequences"
+#define REPO_COLLECTION_TASK		 "tasks"
 
 #define REPO_COLLECTION_SETTINGS            "settings"
 

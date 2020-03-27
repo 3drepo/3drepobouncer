@@ -25,6 +25,8 @@
 
 #include "../../handler/repo_database_handler_abstract.h"
 #include "../../handler/fileservice/repo_file_manager.h"
+#include "../bson/repo_bson_sequence.h"
+#include "../bson/repo_bson_task.h"
 #include "../bson/repo_node.h"
 #include "../bson/repo_node_revision.h"
 
@@ -78,22 +80,10 @@ namespace repo{
 				*
 				* @param database name  of the database
 				* @param projectName name of the project
-				* @param sceneExt extension name of the scene graph (Default: "scene")
-				* @param revExt extension name of the revision graph (Default: "history")
-				* @param stashExt extension name of the stash (Default: "stash.3drepo")
 				*/
 				RepoScene(
 					const std::string                                  &database = std::string(),
-					const std::string                                  &projectName = std::string(),
-					const std::string                                  &sceneExt = REPO_COLLECTION_SCENE,
-					const std::string                                  &revExt = REPO_COLLECTION_HISTORY,
-					const std::string                                  &stashExt = REPO_COLLECTION_STASH_REPO,
-					const std::string                                  &rawExt = REPO_COLLECTION_RAW,
-					const std::string                                  &issuesExt = REPO_COLLECTION_ISSUES,
-					const std::string                                  &srcExt = REPO_COLLECTION_STASH_SRC,
-					const std::string                                  &gltfExt = REPO_COLLECTION_STASH_GLTF,
-					const std::string                                  &jsonExt = REPO_COLLECTION_STASH_JSON,
-					const std::string                                  &unityExt = REPO_COLLECTION_STASH_UNITY);
+					const std::string                                  &projectName = std::string());
 
 				/**
 				* Used for constructing scene graphs from model convertors
@@ -111,9 +101,6 @@ namespace repo{
 				* @param transformations Repo Node set of transformations
 				* @param references Repo Node set of references (optional)
 				* @param unknowns Repo Node set of unknowns (optional)
-				* @param sceneExt extension name of the scene when it is saved into the database (optional)
-				* @param revExt   extension name of the revision when it is saved into the database (optional)
-				* @param stashExt extension name of the stash (Default: "stash.3drepo")
 				*/
 				RepoScene(
 					const std::vector<std::string> &refFiles,
@@ -124,15 +111,7 @@ namespace repo{
 					const RepoNodeSet              &textures,
 					const RepoNodeSet              &transformations,
 					const RepoNodeSet              &references = RepoNodeSet(),
-					const RepoNodeSet              &unknowns = RepoNodeSet(),
-					const std::string              &sceneExt = REPO_COLLECTION_SCENE,
-					const std::string              &revExt = REPO_COLLECTION_HISTORY,
-					const std::string              &stashExt = REPO_COLLECTION_STASH_REPO,
-					const std::string              &rawExt = REPO_COLLECTION_RAW,
-					const std::string              &issuesExt = REPO_COLLECTION_ISSUES,
-					const std::string              &srcExt = REPO_COLLECTION_STASH_SRC,
-					const std::string              &gltfExt = REPO_COLLECTION_STASH_GLTF,
-					const std::string              &jsonExt = REPO_COLLECTION_STASH_JSON);
+					const RepoNodeSet              &unknowns = RepoNodeSet());
 
 				/**
 				* Default Deconstructor
@@ -232,6 +211,23 @@ namespace repo{
 					repo::core::handler::AbstractDatabaseHandler *handler
 					);
 
+				void addSequence(
+					const RepoSequence &animationSequence,
+					const std::unordered_map<std::string, std::vector<uint8_t>> &states,
+					const std::vector<RepoTask> &tasks
+				 ){
+					sequence = animationSequence;
+					frameStates = states;
+					taskList = tasks;
+				}
+
+				void setDefaultInvisible(const std::set<repo::lib::RepoUUID> &idsToHide){
+					defaultInvisible = idsToHide;
+				}
+
+				bool isHiddenByDefault(const repo::lib::RepoUUID &uniqueID) const {
+					return defaultInvisible.find(uniqueID) != defaultInvisible.end();
+				}
 
 				/**
 				* Clears the contents within the Stash (if there is one)
@@ -293,59 +289,6 @@ namespace repo{
 					return graph.nodesByUniqueID.size() > REPO_SCENE_MAX_NODES;
 				}
 
-				/**
-				* Get stash extension for this project
-				* @return returns the repo stash extension
-				*/
-				std::string getStashExtension() const
-				{
-					return stashExt;
-				}
-
-				/**
-				* Get raw extension for this project
-				* @return returns the raw extension
-				*/
-				std::string getRawExtension() const
-				{
-					return rawExt;
-				}
-
-				/**
-				* Get src extension for this project
-				* @return returns the src extension
-				*/
-				std::string getSRCExtension() const
-				{
-					return srcExt;
-				}
-
-				/**
-				* Get gltf extension for this project
-				* @return returns the gltf extension
-				*/
-				std::string getGLTFExtension() const
-				{
-					return gltfExt;
-				}
-
-				/**
-				* Get json extension for this project
-				* @return returns the json extension
-				*/
-				std::string getJSONExtension() const
-				{
-					return jsonExt;
-				}
-
-				/**
-				* Get unity extension for this project
-				* @return returns the unity extension
-				*/
-				std::string getUnityExtension() const
-				{
-					return unityExt;
-				}
 				/**
 				* Get the revision ID of this scene graph
 				* @return returns the revision ID of this scene
@@ -991,6 +934,12 @@ namespace repo{
 					const GraphType &gType,
 					std::string &errMsg);
 
+				bool commitSequence(
+					repo::core::handler::AbstractDatabaseHandler *handler,
+					repo::core::handler::fileservice::FileManager *manager,
+					const repo::lib::RepoUUID &revID
+				);
+
 				/**
 				* Commit a project settings base on the
 				* changes on this scene
@@ -1104,15 +1053,6 @@ namespace repo{
 				* ---------------- Scene Graph settings ----------------
 				*/
 
-				std::string sceneExt;    /*! extension for scene   graph (Default: scene)*/
-				std::string revExt;      /*! extension for history graph (Default: history)*/
-				std::string stashExt;      /*! extension for optimized graph (Default: stash.3drepo)*/
-				std::string rawExt;      /*! extension for raw file dumps (e.g. original files) (Default: raw)*/
-				std::string issuesExt;      /*! extension for issues*/
-				std::string srcExt;      /*! extension for SRC stash files*/
-				std::string gltfExt;      /*! extension for GLTF stash files*/
-				std::string jsonExt;      /*! extension for JSON graph metadata files*/
-				std::string unityExt;      /*! extension for Unity files*/
 				std::vector<std::string> refFiles;  //Original Files that created this scene
 				std::vector<RepoNode*> toRemove;
 				std::vector<double> worldOffset;
@@ -1124,6 +1064,11 @@ namespace repo{
 				std::string databaseName;/*! name of the database */
 				std::string projectName; /*! name of the project */
 				RevisionNode		 *revNode;
+
+				RepoSequence sequence;
+				std::vector<RepoTask> taskList;
+				std::unordered_map<std::string, std::vector<uint8_t>> frameStates;
+				std::set<repo::lib::RepoUUID> defaultInvisible;
 
 				/*
 				* ---------------- Scene Graph Details ----------------
