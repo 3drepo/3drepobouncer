@@ -3,6 +3,7 @@ log
 
 tools/testScripts
 tools/bouncer_worker/toy
+.vs
 
 #nodeJS stuff
 tools/bouncer_worker/config.js
