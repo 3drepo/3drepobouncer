@@ -21,7 +21,7 @@
 #include <iostream>
 #include <repo/repo_controller.h>
 
-struct repo_op_t{
+struct repo_op_t {
 	std::string  command;
 	char** args;
 	uint32_t nArgcs;
@@ -39,6 +39,11 @@ struct repo_op_t{
 * @return returns a string of command and it's info
 */
 std::string helpInfo();
+
+/**
+* Check if the given command requires connection
+*/
+bool noConnectionRequired(const std::string &cmd);
 
 /**
 * Check if the command is a special one (that can be used without database info)
@@ -64,7 +69,7 @@ int32_t performOperation(
 	repo::RepoController *controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
-	);
+);
 
 /*
 * ======================== Command functions ===================
@@ -81,30 +86,9 @@ static int32_t generateStash(
 	repo::RepoController       *controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
-	);
+);
 
-/**
-* Get a list of users
-* @param controller the controller to the bouncer library
-* @param token      token provided by the controller after authentication
-* @param command    command and it's arguments to perform
-* @return returns true upon success
-*/
-static int32_t getUserList(
+static int32_t runImport(
 	repo::RepoController       *controller,
-	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
-	);
-
-/**
-* Get database stats
-* @param controller the controller to the bouncer library
-* @param token      token provided by the controller after authentication
-* @param command    command and it's arguments to perform
-* @return returns true upon success
-*/
-int32_t getDBStats(
-	repo::RepoController       *controller,
-	const repo::RepoController::RepoToken      *token,
-	const repo_op_t            &command
-	);
+);

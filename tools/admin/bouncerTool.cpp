@@ -15,7 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include <repo/lib/repo_listener_stdout.h>
 #include "functions.h"
 
@@ -89,9 +88,10 @@ void logCommand(int argc, char* argv[])
 	}
 }
 
-int main(int argc, char* argv[]){
+int main(int argc, char* argv[]) {
 	repo::RepoController *controller = instantiateController();
-	if (argc < minArgs){
+	auto noConn = noConnectionRequired(argv[1]);
+	if (argc < minArgs && !noConn) {
 		if (argc == 2 && isSpecialCommand(argv[1]))
 		{
 			repo_op_t op;
@@ -104,49 +104,65 @@ int main(int argc, char* argv[]){
 
 			return errcode;
 		}
+
 		printHelp();
 		if (argv[1] != "-h")
-			repoLogError("Invalid number of arguments ("+std::to_string(argc)+")");
+			repoLogError("Invalid number of arguments (" + std::to_string(argc) + ")");
 		return REPOERR_INVALID_ARG;
 	}
 
-	std::string address = argv[1];
-	int port = atoi(argv[2]);
-	std::string username = argv[3];
-	std::string password = argv[4];
-	std::string bucketName = argv[5];
-	std::string bucketRegion = argv[6];
+	std::string address, username, password, bucketName, bucketRegion;
+	int port;
+	auto argIdx = 1;
+
+	if (!noConn) {
+		address = argv[argIdx++];
+		port = atoi(argv[argIdx++]);
+		username = argv[argIdx++];
+		password = argv[argIdx++];
+		bucketName = argv[argIdx++];
+		bucketRegion = argv[argIdx++];
+	}
 
 	logCommand(argc, argv);
 	repo_op_t op;
-	op.command = argv[7];
-	if (argc > minArgs)
-		op.args = &argv[minArgs];
-	op.nArgcs = argc - minArgs;
+	op.command = argv[argIdx++];
+	if (argc > argIdx)
+		op.args = &argv[argIdx];
+	op.nArgcs = argc - argIdx;
 
 	//Check before connecting to the database
 	int32_t cmdnArgs = knownValid(op.command);
 	if (cmdnArgs <= op.nArgcs)
 	{
 		std::string errMsg;
-		repo::lib::RepoConfig config = { address, port, username, password };
-		if (!bucketName.empty() && !bucketRegion.empty())
-			config.configureS3(bucketName, bucketRegion);
-		repo::RepoController::RepoToken* token = controller->init(errMsg, config);
-		if (token)
-		{
-			repoLog("successfully connected to the database and file service!");
-			int32_t errcode = performOperation(controller, token, op);
 
-			controller->destroyToken(token);
+		if (noConn) {
+			int32_t errcode = performOperation(controller, nullptr, op);
 			delete controller;
 			repoLog("Process completed, returning with error code: " + std::to_string(errcode));
 			return errcode;
 		}
-		else{
-			repoLogError("Failed to authenticate to the database: " + errMsg);
-			delete controller;
-			return REPOERR_AUTH_FAILED;
+		else {
+			repo::lib::RepoConfig config = { address, port, username, password };
+			if (!bucketName.empty() && !bucketRegion.empty())
+				config.configureS3(bucketName, bucketRegion);
+			repo::RepoController::RepoToken* token = controller->init(errMsg, config);
+			if (token)
+			{
+				repoLog("successfully connected to the database and file service!");
+				int32_t errcode = performOperation(controller, token, op);
+
+				controller->destroyToken(token);
+				delete controller;
+				repoLog("Process completed, returning with error code: " + std::to_string(errcode));
+				return errcode;
+			}
+			else {
+				repoLogError("Failed to authenticate to the database: " + errMsg);
+				delete controller;
+				return REPOERR_AUTH_FAILED;
+			}
 		}
 	}
 	else
