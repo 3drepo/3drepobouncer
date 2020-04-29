@@ -490,15 +490,12 @@ void DataProcessorRvt::hiddenElementsViewRejection(OdBmDBViewPtr pDBView)
 
 		tr.start();
 		OdBmElementPtr hidden = arr[i].safeOpenObject();
-		if (hidden.isNull()) {
-			tr.rollback();
-			continue;
+		if (!hidden.isNull()) {
+			OdBmRejectedViewRules rules;
+			rules.rejectAllViewTypes();
+			hidden->setViewRules(rules);
+
 		}
-
-		OdBmRejectedViewRules rules;
-		rules.rejectAllViewTypes();
-		hidden->setViewRules(rules);
-
 		tr.commit();
 
 		ODBM_TRANSACTION_END();
