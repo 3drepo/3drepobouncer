@@ -78,7 +78,7 @@ void RepoLog::logToFile(const std::string &filePath)
 	std::string fileName;
 	// a directory is given
 	std::string name = getTimeAsString() + "_%N.log";
-	fileName = (logPath.parent_path() / name).string();
+	fileName = (logPath/ name).string();
 
 	boost::log::add_file_log
 		(
