@@ -90,7 +90,7 @@ void logCommand(int argc, char* argv[])
 
 int main(int argc, char* argv[]) {
 	repo::RepoController *controller = instantiateController();
-	auto noConn = noConnectionRequired(argv[1]);
+	auto noConn = argc > 1 && noConnectionRequired(argv[1]);
 	if (argc < minArgs && !noConn) {
 		if (argc == 2 && isSpecialCommand(argv[1]))
 		{
