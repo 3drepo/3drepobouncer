@@ -38,11 +38,13 @@ def getFileHash(file):
     md5 = hashlib.md5();
     block_size = 2**20;
     with open(file, "rb") as f:
-        while True:
+        count = 0;
+        while count < 10:
             data = f.read(block_size)
             if not data:
                 break
             md5.update(data)
+            count += 10;
     return md5.hexdigest()
 
 
@@ -62,15 +64,17 @@ hashCheck = {};
 count = 0;
 logFolder = "log_" + datetime.now().strftime("%m-%d-%Y-%H_%M_%S");
 os.mkdir(logFolder);
+total = len(files);
 
 for file in files:
+    count+=1;
     md5 = getFileHash(file);
+    print "["+str(count)+ "/" + str(total)+ "] " + file;
     if md5 in hashCheck:
         continue;
     hashCheck[md5] = 1;
     logPath = os.path.join(logFolder, str(count));
     results.append(runImportCmd(file, logPath));
-    count+=1;
 
 writeResults(outFile, results);
 
