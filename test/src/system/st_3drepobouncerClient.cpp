@@ -326,8 +326,12 @@ TEST(RepoClientTest, UploadTestRVTRegressionTests)
 	EXPECT_TRUE(projectExists(db, "rvtTest5"));
 
 	std::string rvtUpload6 = produceUploadArgs(db, "rvtTest6", getDataPath(rvtMeta2));
-	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload6));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload6));	
 	EXPECT_TRUE(projectExists(db, "rvtTest6"));
+
+	std::string rvtUpload7 = produceUploadArgs(db, "rvtTest7", getDataPath(rvtHouse));
+	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(rvtUpload7));
+	EXPECT_TRUE(projectExists(db, "rvtTest7"));
 }
 
 
