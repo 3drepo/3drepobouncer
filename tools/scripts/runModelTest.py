@@ -1,5 +1,5 @@
 import glob, os
-import sys, re, hashlib
+import sys, re, hashlib, timeit
 from datetime import datetime
 from subprocess import Popen, PIPE
 from threading import Timer
@@ -19,13 +19,18 @@ def runImportCmd(file, logDir):
     os.environ["REPO_LOG_DIR"] = logDir;
     proc = Popen(["3drepobouncerTool.exe", "testImport" ,file], stdout=PIPE, stderr=PIPE);
     timer = Timer(processTimeout, proc.kill)
+    timeStart = timeit.default_timer();
     try:
         timer.start();
         proc.wait();
     finally:
         timer.cancel();
+    timeEnd = timeit.default_timer();
 
-    code = -1
+    if (timeEnd - timeStart) > processTimeout:
+        code = "TIMED OUT"
+    else:
+        code = proc.returncode
 
     # for some reason (I suspect ODA), windows is no longer returning an accurate error code...
     logFiles = glob.glob(os.path.join(logDir, "*"));
