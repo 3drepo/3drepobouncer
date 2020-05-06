@@ -1,7 +1,11 @@
-import glob, os, subprocess
+import glob, os
 import sys, re, hashlib
 from datetime import datetime
+from subprocess import Popen, PIPE
+from threading import Timer
 
+
+processTimeout = 360; #1 hr runtime
 
 def findAllFiles(path, ext):
     filesToTest = [];
@@ -13,18 +17,26 @@ def findAllFiles(path, ext):
 
 def runImportCmd(file, logDir):
     os.environ["REPO_LOG_DIR"] = logDir;
-    code = subprocess.call(["3drepobouncerTool.exe", "testImport" ,file]);
-    if sys.platform == "win32":
-        # for some reason (I suspect ODA), windows is no longer returning an accurate error code...
-        logFiles = glob.glob(os.path.join(logDir, "*"));
-        logFile = logFiles[0];
-        with open(logFile, 'r') as f:
-            lines = f.read().splitlines()
-            lastLine = lines[-1]
-            regex = re.search(".+returning with error code: ", lastLine);
-            if regex != None:
-                codeStr = lastLine[regex.end():]
-                code = int(codeStr);
+    proc = Popen(["3drepobouncerTool.exe", "testImport" ,file], stdout=PIPE, stderr=PIPE);
+    timer = Timer(processTimeout, proc.kill)
+    try:
+        timer.start();
+        proc.wait();
+    finally:
+        timer.cancel();
+
+    code = -1
+
+    # for some reason (I suspect ODA), windows is no longer returning an accurate error code...
+    logFiles = glob.glob(os.path.join(logDir, "*"));
+    logFile = logFiles[0];
+    with open(logFile, 'r') as f:
+        lines = f.read().splitlines()
+        lastLine = lines[-1]
+        regex = re.search(".+returning with error code: ", lastLine);
+        if regex != None:
+            codeStr = lastLine[regex.end():]
+            code = int(codeStr);
     return [file, code, logDir]
 
 def writeResults(file, results):
@@ -71,6 +83,8 @@ for file in files:
     md5 = getFileHash(file);
     print "["+str(count)+ "/" + str(total)+ "] " + file;
     if md5 in hashCheck:
+        print "\t duplicated file, skipping..."
+        results.append([file, "DUPLICATE", ""]);
         continue;
     hashCheck[md5] = 1;
     logPath = os.path.join(logFolder, str(count));
