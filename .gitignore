@@ -2,6 +2,8 @@ build
 log
 
 tools/testScripts
+tools/scripts/log*
+tools/scripts/*.csv
 tools/bouncer_worker/toy
 .vs
 
