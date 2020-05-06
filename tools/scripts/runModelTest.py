@@ -26,8 +26,9 @@ def runImportCmd(file, logDir):
     finally:
         timer.cancel();
     timeEnd = timeit.default_timer();
+    timeTaken = timeEnd - timeStart;
 
-    if (timeEnd - timeStart) > processTimeout:
+    if timeTaken > processTimeout:
         code = "TIMED OUT"
     else:
         code = proc.returncode
@@ -42,13 +43,13 @@ def runImportCmd(file, logDir):
         if regex != None:
             codeStr = lastLine[regex.end():]
             code = int(codeStr);
-    return [file, code, logDir]
+    return [file, code, timeTaken, logDir]
 
 def writeResults(file, results):
     fstream = open(file, "w");
-    fstream.write("File,Exit Code,Log location\n");
+    fstream.write("File,Exit Code,Time taken(s),Log location\n");
     for entry in results:
-        fstream.write(entry[0] + "," + str(entry[1]) + ","+ entry[2] + "\n");
+        fstream.write(entry[0] + "," + str(entry[1]) + ","+ str(entry[2]) + "," + entry[3]+"\n");
     fstream.close();
 
 def getFileHash(file):
@@ -89,7 +90,7 @@ for file in files:
     print "["+str(count)+ "/" + str(total)+ "] " + file;
     if md5 in hashCheck:
         print "\t duplicated file, skipping..."
-        results.append([file, "DUPLICATE", ""]);
+        results.append([file, "DUPLICATE", "", ""]);
         continue;
     hashCheck[md5] = 1;
     logPath = os.path.join(logFolder, str(count));
