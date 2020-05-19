@@ -23,6 +23,7 @@
 #include "helper_functions.h"
 #include "custom_data_util_rvt.h"
 #include "../../../../lib/repo_utils.h"
+#include <Database/BmTransaction.h>
 
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
@@ -485,13 +486,19 @@ void DataProcessorRvt::hiddenElementsViewRejection(OdBmDBViewPtr pDBView)
 	setts->getHiddenElements(arr);
 	for (uint32_t i = 0; i < arr.size(); i++)
 	{
-		OdBmElementPtr hidden = arr[i].safeOpenObject();
-		if (hidden.isNull())
-			continue;
+		ODBM_TRANSACTION_BEGIN(tr, database)
 
-		OdBmRejectedViewRules rules;
-		rules.rejectAllViewTypes();
-		hidden->setViewRules(rules);
+		tr.start();
+		OdBmElementPtr hidden = arr[i].safeOpenObject();
+		if (!hidden.isNull()) {
+			OdBmRejectedViewRules rules;
+			rules.rejectAllViewTypes();
+			hidden->setViewRules(rules);
+
+		}
+		tr.commit();
+
+		ODBM_TRANSACTION_END();
 	}
 }
 

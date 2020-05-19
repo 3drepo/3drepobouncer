@@ -12,6 +12,7 @@ tools/bouncer_worker/config.json
 #Windows junk
 *.vcxproj*
 *.sln
+*.vs
 *.suo
 *.rc
 *.opensdf
