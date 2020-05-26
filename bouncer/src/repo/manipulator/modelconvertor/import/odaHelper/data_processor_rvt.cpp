@@ -152,7 +152,6 @@ void DataProcessorRvt::init(GeometryCollector* geoColl, OdBmDatabasePtr database
 	this->collector = geoColl;
 	this->database = database;
 	//getCameras(database);
-	forEachBmDBView(database, [&](OdBmDBViewPtr pDBView) { hiddenElementsViewRejection(pDBView); });
 
 	establishProjectTranslation(database);
 }
@@ -476,30 +475,6 @@ OdBm::DisplayUnitType::Enum DataProcessorRvt::getUnits(OdBmDatabasePtr database)
 	OdBmAUnitsPtr ptrAUnits = pUnitsElem->getUnits().get();
 	OdBmFormatOptionsPtr formatOptionsLength = ptrAUnits->getFormatOptions(OdBm::UnitType::Enum::UT_Length);
 	return formatOptionsLength->getDisplayUnits();
-}
-
-void DataProcessorRvt::hiddenElementsViewRejection(OdBmDBViewPtr pDBView)
-{
-	//.. NOTE: exclude hidden elements from drawing
-	auto setts = pDBView->getHiddenElementsViewSettings();
-	OdBmObjectIdArray arr;
-	setts->getHiddenElements(arr);
-	for (uint32_t i = 0; i < arr.size(); i++)
-	{
-		ODBM_TRANSACTION_BEGIN(tr, database)
-
-		tr.start();
-		OdBmElementPtr hidden = arr[i].safeOpenObject();
-		if (!hidden.isNull()) {
-			OdBmRejectedViewRules rules;
-			rules.rejectAllViewTypes();
-			hidden->setViewRules(rules);
-
-		}
-		tr.commit();
-
-		ODBM_TRANSACTION_END();
-	}
 }
 
 void DataProcessorRvt::getCameras(OdBmDatabasePtr database)
