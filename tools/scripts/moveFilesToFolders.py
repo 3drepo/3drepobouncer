@@ -15,7 +15,12 @@ def determineResult(file):
             data = line.split(",");
             if data[1] == "NOT RAN":
                 break;
-            if isPass(int(data[1])) :
+            if data[1] == "DUPLICATE":
+                continue;
+            if data[1] == "TIMED OUT":
+                destination = os.path.join(os.path.join(os.path.dirname(data[0]), "Timedout"), os.path.basename(data[0]))
+                shutil.move(data[0], destination);
+            elif isPass(int(data[1])) :
                 destination = os.path.join(os.path.join(os.path.dirname(data[0]), "Passed"), os.path.basename(data[0]))
                 shutil.move(data[0], destination);
             else :
