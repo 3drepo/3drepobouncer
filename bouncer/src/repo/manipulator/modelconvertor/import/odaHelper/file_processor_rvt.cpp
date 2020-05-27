@@ -208,8 +208,13 @@ uint8_t FileProcessorRvt::readFile()
 	}
 	catch (OdError& e)
 	{
-		nRes = REPOERR_LOAD_SCENE_FAIL;
-		repoError << e.description().c_str();
+		repoError << e.description().c_str() << ", code: " << e.code();
+		if (e.code() == OdResult::eUnsupportedFileFormat) {
+			nRes = REPOERR_UNSUPPORTED_VERSION;
+		}
+		else {
+			nRes = REPOERR_LOAD_SCENE_FAIL;
+		}	
 	}
 
 	return nRes;
