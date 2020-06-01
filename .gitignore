@@ -2,7 +2,10 @@ build
 log
 
 tools/testScripts
+tools/scripts/log*
+tools/scripts/*.csv
 tools/bouncer_worker/toy
+.vs
 
 #nodeJS stuff
 tools/bouncer_worker/config.js
