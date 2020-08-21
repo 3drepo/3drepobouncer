@@ -205,9 +205,9 @@ module.exports = function(dbConfig, modelDir, username, database, project, skipP
 	function renameGroups(db){
 
 		const subModelNameToOldID = {
-			"Lego_House_Architecture" : "a29d06a0-51b7-45d7-9d33-41a62e036e5b",
-			"Lego_House_Landscape" : "76fa299d-b626-48c5-9327-05fa371b3a49",
-			"Lego_House_Structure" : "7ea2eb1f-3ba6-4f13-b6e5-a1b53f17d0c6"
+			"Lego_House_Architecture" : "1cac0310-e3cc-11ea-bc6b-69e466be9639",
+			"Lego_House_Landscape" : "1cab8de0-e3cc-11ea-bc6b-69e466be9639",
+			"Lego_House_Structure" : "1cac5130-e3cc-11ea-bc6b-69e466be9639"
 		};
 
 		return new Promise((resolve, reject) => {
