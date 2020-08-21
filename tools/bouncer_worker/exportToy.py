@@ -45,8 +45,12 @@ def  grabExternalFilesAndRewrite(collection):
     print "Copying files from file share to toy project folder : " + collection
     for entry in db[collection].find({"type": "fs"}):
         pathToFile = os.path.join(fileShareDir, entry["link"])
-        shutil.copy(pathToFile, toyFolderFullDir)
+        try:
+            shutil.copy(pathToFile, toyFolderFullDir)
+        except:
+            print "copy failed: " + pathToFile + ","+  toyFolderFullDir
         newPath = re.sub(r'.+/.+/', toyFolder + "/", entry["link"])
+        newPath = re.sub(r'toy_.+/', toyFolder + "/", newPath)
         entry["link"] = newPath;
         entry["noDelete"] = True;
         db[collection].save(entry);
