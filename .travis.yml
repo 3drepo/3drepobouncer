@@ -64,7 +64,7 @@ before_script:
     - export OCCT_ROOT=$PWD/../OCCT
     - export IFCOPENSHELL_ROOT=$PWD/../IfcOpenShell
     - export ODA_ROOT=$PWD/../teighaLinuxGCC5.3
-    - export THRIFT_ROOT=$PWD/../thrift-0.11.0
+    - export THRIFT_ROOT=$PWD/../thrift-0.12.0
     - export SYNCHRO_ROOT=$PWD/../synchro
     - export SYNCHRO_READER_ROOT=$PWD/../3drepoSynchroReader
     - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_5.3dll/
