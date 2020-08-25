@@ -15,7 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
 
 #include <string>
@@ -31,10 +30,9 @@
 #include "../../../core/model/bson/repo_node_metadata.h"
 #include "../../../core/model/bson/repo_node_transformation.h"
 
-namespace repo{
-	namespace manipulator{
-		namespace modelconvertor{
-			
+namespace repo {
+	namespace manipulator {
+		namespace modelconvertor {
 			class SynchroModelImport : public AbstractModelImport
 			{
 			public:
@@ -93,11 +91,9 @@ namespace repo{
 				repo::core::model::RepoScene* constructScene(
 					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs);
 
-
 				uint32_t colourIn32Bit(const std::vector<float> &color) const;
 
 				std::vector<float> colourFrom32Bit(const uint32_t &color) const;
-
 
 				std::pair<std::string, std::vector<uint8_t>> generateCache(
 					const std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
@@ -105,20 +101,6 @@ namespace repo{
 					const std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> &transformState,
 					const std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> &clipState,
 					const std::shared_ptr<CameraChange> &cam);
-
-				void addTasks(
-					std::unordered_map<std::string, std::shared_ptr<repo::core::model::RepoSequence::Task>> &currentTasks,
-					std::vector<std::string> &toAdd,
-					std::map<std::string, synchro_reader::Task> &tasks,
-					std::unordered_map<std::string, repo::lib::RepoUUID> &taskIDtoRepoID
-				);
-
-				void removeTasks(
-					std::unordered_map<std::string, std::shared_ptr<repo::core::model::RepoSequence::Task>> &currentTasks,
-					std::vector<std::string> &toRemove,
-					std::map<std::string, synchro_reader::Task> &tasks
-				);
-
 
 				void updateFrameState(
 					const std::vector<std::shared_ptr<synchro_reader::AnimationTask>> &tasks,
