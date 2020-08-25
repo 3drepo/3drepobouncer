@@ -26,8 +26,8 @@
 #include "datastructure/repo_uuid.h"
 #include "datastructure/repo_vector.h"
 
-namespace repo{
-	namespace lib{
+namespace repo {
+	namespace lib {
 		class PropertyTree
 		{
 		public:
@@ -70,7 +70,7 @@ namespace repo{
 				const std::string &label,
 				const std::string &attribute,
 				const T &value
-				)
+			)
 			{
 				addFieldAttribute(label, attribute, boost::lexical_cast<std::string>(value));
 			}
@@ -92,7 +92,7 @@ namespace repo{
 				const std::string &attribute,
 				const std::vector<T> &value,
 				const bool        &useDelimiter = true
-				)
+			)
 			{
 				std::stringstream ss;
 				for (uint32_t i = 0; i < value.size(); ++i)
@@ -208,9 +208,22 @@ namespace repo{
 			*/
 			void write_json(
 				std::iostream &stream
-				) const
+			) const
 			{
 				boost::property_tree::write_json(stream, tree, false);
+			}
+
+			std::vector<uint8_t> writeJsonToBuffer() {
+				std::stringstream ss;
+				write_json(ss);
+				auto data = ss.str();
+
+				//FIXME: Refactor to prop tree
+				std::vector<uint8_t> binData;
+				binData.resize(data.size());
+				memcpy(binData.data(), data.c_str(), data.size());
+
+				return binData;
 			}
 
 			/**
@@ -219,7 +232,7 @@ namespace repo{
 			*/
 			void write_xml(
 				std::iostream &stream
-				) const
+			) const
 			{
 				std::stringstream ss;
 				boost::property_tree::write_xml(ss, tree);
@@ -288,14 +301,14 @@ namespace repo{
 			const std::string &label,
 			const std::string &attribute,
 			const std::string &value
-			);
+		);
 
 		template <>
 		void PropertyTree::addFieldAttribute(
 			const std::string  &label,
 			const std::string  &attribute,
 			const repo::lib::RepoVector3D &value
-			);
+		);
 
 		template <>
 		void PropertyTree::addFieldAttribute(

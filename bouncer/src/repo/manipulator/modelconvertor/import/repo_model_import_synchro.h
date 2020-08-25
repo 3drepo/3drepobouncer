@@ -114,6 +114,12 @@ namespace repo {
 
 				);
 
+				void generateTaskInformation(
+					const synchro_reader::TasksInformation &taskInfo,
+					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
+					repo::core::model::RepoScene* &scene
+				);
+
 				std::unordered_map<std::string, repo::core::model::MeshNode> createMeshTemplateNodes();
 
 				std::shared_ptr<synchro_reader::SPMReader> reader;

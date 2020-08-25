@@ -110,7 +110,7 @@ RepoScene::RepoScene(
 	const RepoNodeSet              &transformations,
 	const RepoNodeSet              &references,
 	const RepoNodeSet              &unknowns
-	) :
+) :
 	databaseName(""),
 	projectName(""),
 	headRevision(true),
@@ -183,7 +183,7 @@ void RepoScene::abandonChild(
 		//And the child node in question is not a added/modified node already
 		bool needNewId = !unRevisioned
 			&& (newAdded.find(childSharedID) == newAdded.end()
-			|| newModified.find(childSharedID) == newModified.end());
+				|| newModified.find(childSharedID) == newModified.end());
 
 		auto nodeWithoutParent = child->cloneAndRemoveParent(parent, needNewId);
 		this->modifyNode(gType, child, &nodeWithoutParent, true);
@@ -312,7 +312,7 @@ void RepoScene::addMetadata(
 						parents.push_back(parentSharedID);
 					}
 				}
-				else{
+				else {
 					repo::lib::RepoUUID parentSharedID = node->getSharedID();
 					if (graph.parentToChildren.find(parentSharedID) == graph.parentToChildren.end())
 						graph.parentToChildren[parentSharedID] = std::vector<RepoNode*>();
@@ -375,7 +375,6 @@ bool RepoScene::addNodeToScene(
 			newAdded.insert(node->getSharedID());
 	}
 
-
 	return success;
 }
 
@@ -401,16 +400,16 @@ bool RepoScene::addNodeToMaps(
 	repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
 	//----------------------------------------------------------------------
 	//If the node has no parents it must be the rootnode
-	if (!node->hasField(REPO_NODE_LABEL_PARENTS)){
+	if (!node->hasField(REPO_NODE_LABEL_PARENTS)) {
 		if (!g.rootNode)
 			g.rootNode = node;
-		else{
+		else {
 			//root node already exist, check if they are the same node
-			if (g.rootNode == node){
+			if (g.rootNode == node) {
 				//for some reason 2 instance of the root node reside in this scene graph - probably not game breaking.
 				repoWarning << "2 instance of the (same) root node found";
 			}
-			else{
+			else {
 				//found 2 nodes with no parents...
 				//they could be straggling materials. Only give an error if both are transformation
 				//NOTE: this will fall apart if we ever allow root node to be something other than a transformation.
@@ -426,7 +425,7 @@ bool RepoScene::addNodeToMaps(
 			}
 		}
 	}
-	else{
+	else {
 		//has parent
 		std::vector<repo::lib::RepoUUID> parentIDs = node->getParentIDs();
 		std::vector<repo::lib::RepoUUID>::iterator it;
@@ -437,11 +436,11 @@ bool RepoScene::addNodeToMaps(
 
 			//check if the parent already has an entry
 			auto mapIt = g.parentToChildren.find(parent);
-			if (mapIt != g.parentToChildren.end()){
+			if (mapIt != g.parentToChildren.end()) {
 				//has an entry, add to the vector
 				g.parentToChildren[parent].push_back(node);
 			}
-			else{
+			else {
 				//no entry, create one
 				std::vector<RepoNode*> children;
 				children.push_back(node);
@@ -585,11 +584,10 @@ bool RepoScene::commitSequence(
 		auto sequenceCol = projectName + "." + REPO_COLLECTION_SEQUENCE;
 		if (handler->insertDocument(
 			databaseName, sequenceCol, sequence.cloneAndAddRevision(revID), err)) {
-
-			for (const auto &state : frameStates) {				
+			for (const auto &state : frameStates) {
 				if (!manager->uploadFileAndCommit(databaseName, sequenceCol, state.first, state.second)) {
 					repoError << "Failed to commit a sequence state.";
-					success = false; 
+					success = false;
 				}
 			}
 		}
@@ -599,10 +597,17 @@ bool RepoScene::commitSequence(
 		}
 
 		auto taskCol = projectName + "." + REPO_COLLECTION_TASK;
-		for (const auto &task : taskList) {
+		for (const auto &task : tasks) {
 			if (!handler->insertDocument(databaseName, taskCol, task, err)) {
 				repoError << "Failed to commit task bson: " << err;
 				return false;
+			}
+		}
+
+		if (taskList.size()) {
+			if (!manager->uploadFileAndCommit(databaseName, taskCol, revID.toString(), taskList)) {
+				repoError << "Failed to commit a task list";
+				success = false;
 			}
 		}
 	}
@@ -612,7 +617,7 @@ bool RepoScene::commitSequence(
 
 void RepoScene::addErrorStatusToProjectSettings(
 	repo::core::handler::AbstractDatabaseHandler *handler
-	)
+)
 {
 	RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
 	auto doc = RepoProjectSettings(handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria));
@@ -626,7 +631,7 @@ void RepoScene::addErrorStatusToProjectSettings(
 
 void RepoScene::addTimestampToProjectSettings(
 	repo::core::handler::AbstractDatabaseHandler *handler
-	)
+)
 {
 	RepoBSON criteria = BSON(REPO_LABEL_ID << projectName);
 	auto doc = RepoProjectSettings(handler->findOneByCriteria(databaseName, REPO_COLLECTION_SETTINGS, criteria));
@@ -636,8 +641,6 @@ void RepoScene::addTimestampToProjectSettings(
 	{
 		repoError << "Failed to update project settings: " << errorMsg;
 	}
-
-
 }
 
 bool RepoScene::commitProjectSettings(
@@ -709,14 +712,14 @@ bool RepoScene::commitRevisionNode(
 
 	newRevNode =
 		new RevisionNode(RepoBSONFactory::makeRevisionNode(userName, branch, uniqueIDs,
-		fileNames, parent, worldOffset, message, tag));
+			fileNames, parent, worldOffset, message, tag));
 	*newRevNode = newRevNode->cloneAndUpdateStatus(RevisionNode::UploadStatus::GEN_DEFAULT);
 
 	if (newRevNode)
 	{
 		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, BSON(REPO_NODE_REVISION_LABEL_TIMESTAMP << -1));
 		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON("metadata.IFC GUID" << 1 << REPO_NODE_LABEL_PARENTS << 1));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_LABEL_SHARED_ID << 1 <<  REPO_LABEL_TYPE << 1 << REPO_LABEL_ID << 1));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_LABEL_SHARED_ID << 1 << REPO_LABEL_TYPE << 1 << REPO_LABEL_ID << 1));
 		//Creation of the revision node will append unique id onto the filename (e.g. <uniqueID>chair.obj)
 		//we need to store the file in GridFS under the new name
 		std::vector<std::string> newRefFileNames = newRevNode->getOrgFiles();
@@ -907,8 +910,8 @@ bool RepoScene::commitStash(
 
 std::vector<RepoNode*>
 RepoScene::getChildrenAsNodes(
-const GraphType &gType,
-const repo::lib::RepoUUID &parent) const
+	const GraphType &gType,
+	const repo::lib::RepoUUID &parent) const
 {
 	std::vector<RepoNode*> children;
 	const repoGraphInstance &g = GraphType::OPTIMIZED == gType ? stashGraph : graph;
@@ -918,9 +921,9 @@ const repo::lib::RepoUUID &parent) const
 
 std::vector<RepoNode*>
 RepoScene::getChildrenNodesFiltered(
-const GraphType &gType,
-const repo::lib::RepoUUID  &parent,
-const NodeType  &type) const
+	const GraphType &gType,
+	const repo::lib::RepoUUID  &parent,
+	const NodeType  &type) const
 {
 	std::vector<RepoNode*> childrenUnfiltered = getChildrenAsNodes(gType, parent);
 
@@ -929,8 +932,8 @@ const NodeType  &type) const
 
 std::vector<RepoNode*>
 RepoScene::filterNodesByType(
-const std::vector<RepoNode*> nodes,
-const NodeType filter)
+	const std::vector<RepoNode*> nodes,
+	const NodeType filter)
 {
 	std::vector<RepoNode*> filteredNodes;
 
@@ -1166,7 +1169,7 @@ std::vector<std::string> RepoScene::getOriginalFiles() const
 
 bool RepoScene::loadRevision(
 	repo::core::handler::AbstractDatabaseHandler *handler,
-	std::string &errMsg){
+	std::string &errMsg) {
 	bool success = true;
 
 	if (!handler)
@@ -1177,7 +1180,7 @@ bool RepoScene::loadRevision(
 
 	RepoBSON bson;
 	repoTrace << "loading revision : " << databaseName << "." << projectName << " head Revision: " << headRevision;
-	if (headRevision){
+	if (headRevision) {
 		RepoBSONBuilder critBuilder;
 		critBuilder.append(REPO_NODE_LABEL_SHARED_ID, branch);
 		critBuilder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, BSON("$exists" << false));
@@ -1186,16 +1189,16 @@ bool RepoScene::loadRevision(
 			REPO_COLLECTION_HISTORY, critBuilder.obj(), REPO_NODE_REVISION_LABEL_TIMESTAMP);
 		repoTrace << "Fetching head of revision from branch " << branch;
 	}
-	else{
+	else {
 		bson = handler->findOneByUniqueID(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, revision);
 		repoTrace << "Fetching revision using unique ID: " << revision;
 	}
 
-	if (bson.isEmpty()){
+	if (bson.isEmpty()) {
 		errMsg = "Failed: cannot find revision document from " + databaseName + "." + projectName + "." + REPO_COLLECTION_HISTORY;
 		success = false;
 	}
-	else{
+	else {
 		revNode = new RevisionNode(bson);
 		worldOffset = revNode->getCoordOffset();
 	}
@@ -1205,7 +1208,7 @@ bool RepoScene::loadRevision(
 
 bool RepoScene::loadScene(
 	repo::core::handler::AbstractDatabaseHandler *handler,
-	std::string &errMsg){
+	std::string &errMsg) {
 	bool success = true;
 
 	if (!handler)
@@ -1214,7 +1217,7 @@ bool RepoScene::loadScene(
 		return false;
 	}
 
-	if (!revNode){
+	if (!revNode) {
 		//try to load revision node first.
 		if (!loadRevision(handler, errMsg)) return false;
 	}
@@ -1231,7 +1234,7 @@ bool RepoScene::loadScene(
 
 bool RepoScene::loadStash(
 	repo::core::handler::AbstractDatabaseHandler *handler,
-	std::string &errMsg){
+	std::string &errMsg) {
 	bool success = true;
 
 	if (!handler)
@@ -1240,7 +1243,7 @@ bool RepoScene::loadStash(
 		return false;
 	}
 
-	if (!revNode){
+	if (!revNode) {
 		if (!loadRevision(handler, errMsg)) return false;
 	}
 
@@ -1306,7 +1309,7 @@ void RepoScene::modifyNode(
 void RepoScene::removeNode(
 	const GraphType                   &gtype,
 	const repo::lib::RepoUUID                    &sharedID
-	)
+)
 {
 	repoGraphInstance &g = gtype == GraphType::OPTIMIZED ? stashGraph : graph;
 	RepoNode *node = getNodeBySharedID(gtype, sharedID);
@@ -1443,7 +1446,7 @@ bool RepoScene::populate(
 			node = new MetadataNode(obj);
 			g.metadata.insert(node);
 		}
-		else{
+		else {
 			//UNKNOWN TYPE - instantiate it with generic RepoNode
 			node = new RepoNode(obj);
 			g.unknowns.insert(node);
@@ -1475,7 +1478,6 @@ bool RepoScene::populate(
 			if (!loadExtFiles) {
 				refg->skipLoadingExtFiles();
 			}
-				
 
 			//Try to load the stash first, if fail, try scene.
 			if (loadExtFiles && refg->loadStash(handler, errMsg) || refg->loadScene(handler, errMsg))
@@ -1492,7 +1494,7 @@ bool RepoScene::populate(
 			}
 		}
 	}
-	
+
 	repoTrace << "World Offset = [" << worldOffset[0] << " , " << worldOffset[1] << ", " << worldOffset[2] << " ]";
 	//Now that we know the world Offset, make sure the referenced scenes are shifted accordingly
 	for (const auto &node : g.references)
@@ -1559,7 +1561,6 @@ void RepoScene::populateAndUpdate(
 	addNodeToScene(gType, transformations, errMsg, &(instance.transformations));
 	addNodeToScene(gType, references, errMsg, &(instance.references));
 	addNodeToScene(gType, unknowns, errMsg, &(instance.unknowns));
-
 }
 
 void RepoScene::reorientateDirectXModel()

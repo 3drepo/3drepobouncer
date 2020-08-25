@@ -371,16 +371,7 @@ std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
 		bufferTree.mergeSubTree(SEQ_CACHE_LABEL_CAMERA, camTree);
 	}
 
-	std::stringstream ss;
-	bufferTree.write_json(ss);
-	auto data = ss.str();
-
-	//FIXME: Refactor to prop tree
-	std::vector<uint8_t> binData;
-	binData.resize(data.size());
-	memcpy(binData.data(), data.c_str(), data.size());
-
-	return { repo::lib::RepoUUID::createUUID().toString(), binData };
+	return { repo::lib::RepoUUID::createUUID().toString(), bufferTree.writeJsonToBuffer() };
 }
 
 void SynchroModelImport::updateFrameState(
@@ -471,39 +462,99 @@ void SynchroModelImport::updateFrameState(
 		}
 	}
 }
-repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
-	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> resourceIDsToSharedIDs;
 
-	auto scene = constructScene(resourceIDsToSharedIDs);
+struct SequenceTask {
+	repo::lib::RepoUUID id;
+	std::string name;
+	uint64_t startTime, endTime;
+};
 
-	repoInfo << "Getting animations... ";
-	auto animInfo = reader->getAnimation();
+struct SequenceTaskComparator
+{
+	bool operator()(SequenceTask a, SequenceTask b)  const {
+		if (a.startTime == b.startTime)
+			return a.endTime < b.endTime;
+		return a.startTime < b.startTime;
+	}
+};
 
-	auto animation = animInfo.first;
-	auto taskInfo = reader->getTasks();
+static const std::string TASK_ID = "id";
+static const std::string TASK_NAME = "name";
+static const std::string TASK_START_DATE = "startDate";
+static const std::string TASK_END_DATE = "endDate";
+static const std::string TASK_CHILDREN = "subTasks";
 
-	std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> meshAlphaState;
-	std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> meshColourState;
-	std::unordered_map<std::string, std::vector<uint8_t>> stateBuffers;
-	std::vector<repo::core::model::RepoSequence::FrameData> frameData;
-	std::set<repo::lib::RepoUUID> defaultInvisible;
+repo::lib::PropertyTree createTaskTree(
+	const SequenceTask &task,
+	const std::unordered_map<repo::lib::RepoUUID, std::set<SequenceTask, SequenceTaskComparator>, repo::lib::RepoUUIDHasher> &taskToChildren
+) {
+	repo::lib::PropertyTree taskTree;
+	taskTree.addToTree(TASK_ID, task.id);
+	taskTree.addToTree(TASK_NAME, task.name);
+	taskTree.addToTree(TASK_START_DATE, task.startTime);
+	taskTree.addToTree(TASK_END_DATE, task.endTime);
+
+	if (taskToChildren.find(task.id) != taskToChildren.end()) {
+		std::vector<repo::lib::PropertyTree> childrenTrees;
+		for (const auto subTask : taskToChildren.at(task.id)) {
+			childrenTrees.push_back(createTaskTree(subTask, taskToChildren));
+		}
+
+		taskTree.addArrayObjects(TASK_CHILDREN, childrenTrees);
+	}
+
+	return taskTree;
+}
+
+std::vector<uint8_t> generateTaskCache(
+	const std::set<SequenceTask, SequenceTaskComparator> &rootTasks,
+	const std::unordered_map<repo::lib::RepoUUID, std::set<SequenceTask, SequenceTaskComparator>, repo::lib::RepoUUIDHasher> &taskToChildren
+) {
+	std::vector<repo::lib::PropertyTree> tasks;
+
+	for (const auto &task : rootTasks) {
+		tasks.push_back(createTaskTree(task, taskToChildren));
+	}
+
+	repo::lib::PropertyTree root;
+	root.addArrayObjects("tasks", tasks);
+	return root.writeJsonToBuffer();
+}
+
+void SynchroModelImport::generateTaskInformation(
+	const synchro_reader::TasksInformation &taskInfo,
+	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
+	repo::core::model::RepoScene* &scene
+) {
 	std::unordered_map<std::string, repo::lib::RepoUUID> taskIDtoRepoID;
+	std::unordered_map<repo::lib::RepoUUID, std::set<SequenceTask, SequenceTaskComparator>, repo::lib::RepoUUIDHasher> taskToChildren;
+	std::set<SequenceTask, SequenceTaskComparator> rootTasks;
 	std::vector<repo::core::model::RepoTask> taskBSONs;
 
 	for (const auto &task : taskInfo.tasks) {
-		std::vector<repo::lib::RepoUUID> parents;
 		auto parentID = task.second.parentTask;
-		if (!parentID.empty()) {
-			if (taskIDtoRepoID.find(parentID) == taskIDtoRepoID.end()) {
-				taskIDtoRepoID[parentID] = repo::lib::RepoUUID::createUUID();
-			}
-
-			parents.push_back(taskIDtoRepoID[parentID]);
-		}
+		std::vector<repo::lib::RepoUUID> parentArr;
 
 		auto taskID = task.second.id;
-		if (taskIDtoRepoID.find(taskID) == taskIDtoRepoID.end())
+		if (taskIDtoRepoID.find(taskID) == taskIDtoRepoID.end()) {
 			taskIDtoRepoID[taskID] = repo::lib::RepoUUID::createUUID();
+		}
+
+		SequenceTask taskItem = { taskIDtoRepoID[taskID] , task.second.name, task.second.startTime, task.second.endTime };
+
+		if (parentID.empty()) {
+			rootTasks.insert(taskItem);
+		}
+		else {
+			if (taskIDtoRepoID.find(parentID) == taskIDtoRepoID.end()) {
+				auto parentUUID = repo::lib::RepoUUID::createUUID();
+				taskIDtoRepoID[parentID] = parentUUID;
+				parentArr = { parentUUID };
+				taskToChildren[parentUUID] = {};
+			}
+
+			taskToChildren[taskIDtoRepoID[parentID]].insert(taskItem);
+		}
 
 		std::vector<repo::lib::RepoUUID> relatedEntities;
 		for (const auto &resourceID : task.second.relatedResources) {
@@ -511,8 +562,30 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 				relatedEntities.insert(relatedEntities.end(), resourceIDsToSharedIDs[resourceID].begin(), resourceIDsToSharedIDs[resourceID].end());
 			}
 		}
-		taskBSONs.push_back(repo::core::model::RepoBSONFactory::makeTask(task.second.name, task.second.data, relatedEntities, parents, taskIDtoRepoID[taskID]));
+		taskBSONs.push_back(repo::core::model::RepoBSONFactory::makeTask(task.second.name, task.second.data, relatedEntities, parentArr, taskIDtoRepoID[taskID]));
 	}
+
+	scene->addSequenceTasks(taskBSONs, generateTaskCache(rootTasks, taskToChildren));
+}
+
+repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
+	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> resourceIDsToSharedIDs;
+
+	auto scene = constructScene(resourceIDsToSharedIDs);
+
+	repoInfo << "Getting tasks... ";
+	generateTaskInformation(reader->getTasks(), resourceIDsToSharedIDs, scene);
+
+	repoInfo << "Getting animations... ";
+	auto animInfo = reader->getAnimation();
+
+	auto animation = animInfo.first;
+
+	std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> meshAlphaState;
+	std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> meshColourState;
+	std::unordered_map<std::string, std::vector<uint8_t>> stateBuffers;
+	std::vector<repo::core::model::RepoSequence::FrameData> frameData;
+	std::set<repo::lib::RepoUUID> defaultInvisible;
 
 	auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
 	for (const auto &lastStateEntry : animInfo.second) {
@@ -542,9 +615,6 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> transformState;
 	std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> clipState;
 
-	auto currentStart = taskInfo.taskStartDates.begin();
-	auto currentEnd = taskInfo.taskEndDates.begin();
-
 	std::set<repo::lib::RepoUUID> transformingMesh;
 
 	for (const auto &currentFrame : animation.frames) {
@@ -567,7 +637,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 	std::string animationName = animation.name.empty() ? DEFAULT_SEQUENCE_NAME : animation.name;
 	auto sequence = repo::core::model::RepoBSONFactory::makeSequence(frameData, animationName);
 	repoInfo << "Animation constructed, number of frames: " << frameData.size();
-	scene->addSequence(sequence, stateBuffers, taskBSONs);
+	scene->addSequence(sequence, stateBuffers);
 	scene->setDefaultInvisible(defaultInvisible);
 	repoInfo << "#default invisible: " << defaultInvisible.size();
 
