@@ -22,7 +22,6 @@
 #include "../../../core/model/bson/repo_bson_builder.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../lib/repo_log.h"
-#include "../../../lib/repo_property_tree.h"
 #include "../../../error_codes.h"
 
 using namespace repo::manipulator::modelconvertor;
@@ -463,28 +462,7 @@ void SynchroModelImport::updateFrameState(
 	}
 }
 
-struct SequenceTask {
-	repo::lib::RepoUUID id;
-	std::string name;
-	uint64_t startTime, endTime;
-};
-
-struct SequenceTaskComparator
-{
-	bool operator()(SequenceTask a, SequenceTask b)  const {
-		if (a.startTime == b.startTime)
-			return a.endTime < b.endTime;
-		return a.startTime < b.startTime;
-	}
-};
-
-static const std::string TASK_ID = "id";
-static const std::string TASK_NAME = "name";
-static const std::string TASK_START_DATE = "startDate";
-static const std::string TASK_END_DATE = "endDate";
-static const std::string TASK_CHILDREN = "subTasks";
-
-repo::lib::PropertyTree createTaskTree(
+repo::lib::PropertyTree SynchroModelImport::createTaskTree(
 	const SequenceTask &task,
 	const std::unordered_map<repo::lib::RepoUUID, std::set<SequenceTask, SequenceTaskComparator>, repo::lib::RepoUUIDHasher> &taskToChildren
 ) {
@@ -506,7 +484,7 @@ repo::lib::PropertyTree createTaskTree(
 	return taskTree;
 }
 
-std::vector<uint8_t> generateTaskCache(
+std::vector<uint8_t> SynchroModelImport::generateTaskCache(
 	const std::set<SequenceTask, SequenceTaskComparator> &rootTasks,
 	const std::unordered_map<repo::lib::RepoUUID, std::set<SequenceTask, SequenceTaskComparator>, repo::lib::RepoUUIDHasher> &taskToChildren
 ) {
