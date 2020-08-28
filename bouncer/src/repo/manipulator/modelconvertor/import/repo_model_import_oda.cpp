@@ -13,18 +13,14 @@ using namespace repo::manipulator::modelconvertor;
 
 const std::string OdaModelImport::supportedExtensions = ".dgn.rvt.rfa";
 
-OdaModelImport::OdaModelImport()
-{
-}
-
 OdaModelImport::~OdaModelImport()
 {
 }
 
 static repo_material_t createDefaultMaterial() {
-    repo_material_t matStruct;
-    matStruct.diffuse = { 1, 1, 1 };
-    matStruct.opacity = 1;
+	repo_material_t matStruct;
+	matStruct.diffuse = { 1, 1, 1 };
+	matStruct.opacity = 1;
 }
 
 bool OdaModelImport::isSupportedExts(const std::string &testExt)
@@ -37,58 +33,57 @@ bool OdaModelImport::isSupportedExts(const std::string &testExt)
 
 repo::core::model::RepoScene* OdaModelImport::generateRepoScene()
 {
-    repo::core::model::RepoScene *scene = nullptr;
+	repo::core::model::RepoScene *scene = nullptr;
 #ifdef ODA_SUPPORT
-    repoInfo << "Constructing Repo Scene...";
-    const repo::core::model::RepoNodeSet dummy;
+	repoInfo << "Constructing Repo Scene...";
+	const repo::core::model::RepoNodeSet dummy;
 	auto rootNode = geoCollector.createRootNode();
-    auto meshSet = geoCollector.getMeshNodes(rootNode);
-    if (meshSet.size()) {
-        repoInfo << "Get material nodes... ";
+	auto meshSet = geoCollector.getMeshNodes(rootNode);
+	if (meshSet.size()) {
+		repoInfo << "Get material nodes... ";
 
 		repo::core::model::RepoNodeSet materialSet, textureSet;
 
 		geoCollector.getMaterialAndTextureNodes(materialSet, textureSet);
-        auto transSet = geoCollector.getTransformationNodes();
+		auto transSet = geoCollector.getTransformationNodes();
 		auto metaSet = geoCollector.getMetaNodes();
 		repoInfo << "Nodes count - Trans: " << transSet.size() << " meshes: " << meshSet.size() << " materials: " << materialSet.size() << " metadata: " << metaSet.size();
 		scene = new repo::core::model::RepoScene({ filePath }, dummy, meshSet, materialSet, metaSet, textureSet, transSet);
 		if (geoCollector.hasMissingTextures())
 			scene->setMissingTexture();
-        scene->setWorldOffset(geoCollector.getModelOffset());
-        repoInfo << "Repo Scene constructed.";
-    }
-    else {
-        repoError << "No meshes generated";
-        scene = new repo::core::model::RepoScene({ filePath }, dummy, dummy, dummy, dummy, dummy, dummy);
-    }
+		scene->setWorldOffset(geoCollector.getModelOffset());
+		repoInfo << "Repo Scene constructed.";
+	}
+	else {
+		repoError << "No meshes generated";
+		scene = new repo::core::model::RepoScene({ filePath }, dummy, dummy, dummy, dummy, dummy, dummy);
+	}
 
 #endif
-    return scene;
+	return scene;
 }
 
 bool OdaModelImport::importModel(std::string filePath, uint8_t &err)
 {
 #ifdef ODA_SUPPORT
-    this->filePath = filePath;
-    repoInfo << " ==== Importing with Teigha Library [" << filePath << "] ====";
-    std::unique_ptr<odaHelper::FileProcessor> odaProcessor = odaHelper::FileProcessor::getFileProcessor(filePath, &geoCollector);
-    bool success = false;
+	this->filePath = filePath;
+	repoInfo << " ==== Importing with Teigha Library [" << filePath << "] ====";
+	std::unique_ptr<odaHelper::FileProcessor> odaProcessor = odaHelper::FileProcessor::getFileProcessor(filePath, &geoCollector);
+	bool success = false;
 	err = REPOERR_OK;
-    try {
+	try {
 		err = odaProcessor->readFile();
-        success = odaProcessor != nullptr && err == REPOERR_OK;
-    }
+		success = odaProcessor != nullptr && err == REPOERR_OK;
+	}
 	catch (std::exception& ex) {
 		success = false;
 		err = REPOERR_LOAD_SCENE_FAIL;
 	}
 
-    return success;
+	return success;
 #else
-    //ODA support not compiled in.
-    err = REPOERR_ODA_UNAVAILABLE;
-    return false;
+	//ODA support not compiled in.
+	err = REPOERR_ODA_UNAVAILABLE;
+	return false;
 #endif
 }
-

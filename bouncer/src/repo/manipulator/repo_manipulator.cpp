@@ -59,14 +59,14 @@ bool RepoManipulator::connectAndAuthenticateWithAdmin(
 	const std::string &username,
 	const std::string &password,
 	const bool        &pwDigested
-	)
+)
 {
 	//FIXME: we should have a database manager class that will instantiate new handlers/give existing handlers
 	repo::core::handler::AbstractDatabaseHandler *handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(
-		errMsg, address, port, maxConnections,
-		repo::core::handler::MongoDatabaseHandler::getAdminDatabaseName(),
-		username, password, pwDigested);
+			errMsg, address, port, maxConnections,
+			repo::core::handler::MongoDatabaseHandler::getAdminDatabaseName(),
+			username, password, pwDigested);
 
 	return handler != 0;
 }
@@ -92,7 +92,7 @@ repo::core::model::RepoScene* RepoManipulator::createFederatedScene(
 
 	repo::core::model::TransformationNode rootNode =
 		repo::core::model::RepoBSONFactory::makeTransformationNode(
-		repo::lib::RepoMatrix(), "<root>");
+			repo::lib::RepoMatrix(), "<root>");
 
 	transNodes.insert(new repo::core::model::TransformationNode(rootNode));
 
@@ -100,12 +100,12 @@ repo::core::model::RepoScene* RepoManipulator::createFederatedScene(
 	{
 		transNodes.insert(new repo::core::model::TransformationNode(
 			pair.first.cloneAndAddParent(rootNode.getSharedID())
-			)
-			);
+		)
+		);
 		refNodes.insert(new repo::core::model::ReferenceNode(
 			pair.second.cloneAndAddParent(pair.first.getSharedID())
-			)
-			);
+		)
+		);
 	}
 	//federate scene has no referenced files
 	std::vector<std::string> empty;
@@ -161,7 +161,7 @@ bool RepoManipulator::commitScene(
 		repoInfo << "Scene successfully committed to the database";
 		if (!(success = (scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size())))
 		{
-			if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)){
+			if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)) {
 				repoInfo << "Optimised scene not found. Attempt to generate...";
 				success = generateAndCommitStashGraph(databaseAd, cred, scene);
 			}
@@ -269,7 +269,7 @@ bool RepoManipulator::dropCollection(
 	const std::string                             &databaseName,
 	const std::string                             &collectionName,
 	std::string			                          &errMsg
-	)
+)
 {
 	bool success = false;
 	repo::core::handler::AbstractDatabaseHandler* handler =
@@ -287,7 +287,7 @@ bool RepoManipulator::dropDatabase(
 	const repo::core::model::RepoBSON*	  cred,
 	const std::string                             &databaseName,
 	std::string			                          &errMsg
-	)
+)
 {
 	bool success = false;
 	repo::core::handler::AbstractDatabaseHandler* handler =
@@ -342,7 +342,7 @@ bool RepoManipulator::dropDatabase(
 std::list<std::string> RepoManipulator::fetchDatabases(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON*	  cred
-	)
+)
 {
 	std::list<std::string> list;
 	repo::core::handler::AbstractDatabaseHandler* handler =
@@ -357,7 +357,7 @@ std::list<std::string> RepoManipulator::fetchCollections(
 	const std::string                             &databaseAd,
 	const repo::core::model::RepoBSON*	  cred,
 	const std::string                             &database
-	)
+)
 {
 	std::list<std::string> list;
 	repo::core::handler::AbstractDatabaseHandler* handler =
@@ -403,7 +403,7 @@ repo::core::model::RepoRole RepoManipulator::findRole(
 	const repo::core::model::RepoBSON 	   *cred,
 	const std::string                      &dbName,
 	const std::string                      &roleName
-	)
+)
 {
 	repo::core::model::RepoRole role;
 	repo::core::handler::AbstractDatabaseHandler* handler =
@@ -428,7 +428,7 @@ repo::core::model::RepoUser RepoManipulator::findUser(
 	const std::string                      &databaseAd,
 	const repo::core::model::RepoBSON 	   *cred,
 	const std::string                      &username
-	)
+)
 {
 	repo::core::model::RepoUser user;
 	repo::core::handler::AbstractDatabaseHandler* handler =
@@ -479,7 +479,7 @@ bool RepoManipulator::generateAndCommitSelectionTree(
 	const std::string                     &bucketName,
 	const std::string                     &bucketRegion,
 	repo::core::model::RepoScene          *scene
-	)
+)
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
@@ -494,7 +494,7 @@ bool RepoManipulator::removeStashGraphFromDatabase(
 	const std::string                         &databaseAd,
 	const repo::core::model::RepoBSON         *cred,
 	repo::core::model::RepoScene* scene
-	)
+)
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
@@ -504,7 +504,7 @@ bool RepoManipulator::removeStashGraphFromDatabase(
 
 bool RepoManipulator::generateStashGraph(
 	repo::core::model::RepoScene              *scene
-	)
+)
 {
 	modelutility::SceneManager SceneManager;
 	return SceneManager.generateStashGraph(scene, nullptr);
@@ -514,7 +514,7 @@ bool RepoManipulator::generateAndCommitStashGraph(
 	const std::string                         &databaseAd,
 	const repo::core::model::RepoBSON         *cred,
 	repo::core::model::RepoScene              *scene
-	)
+)
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
@@ -558,12 +558,12 @@ repo_web_buffers_t RepoManipulator::generateSRCBuffer(
 
 std::vector<repo::core::model::RepoBSON>
 RepoManipulator::getAllFromCollectionTailable(
-const std::string                             &databaseAd,
-const repo::core::model::RepoBSON*	  cred,
-const std::string                             &database,
-const std::string                             &collection,
-const uint64_t                                &skip,
-const uint32_t								  &limit)
+	const std::string                             &databaseAd,
+	const repo::core::model::RepoBSON*	  cred,
+	const std::string                             &database,
+	const std::string                             &collection,
+	const uint64_t                                &skip,
+	const uint32_t								  &limit)
 {
 	std::vector<repo::core::model::RepoBSON> vector;
 	repo::core::handler::AbstractDatabaseHandler* handler =
@@ -575,15 +575,15 @@ const uint32_t								  &limit)
 
 std::vector<repo::core::model::RepoBSON>
 RepoManipulator::getAllFromCollectionTailable(
-const std::string                             &databaseAd,
-const repo::core::model::RepoBSON*	  cred,
-const std::string                             &database,
-const std::string                             &collection,
-const std::list<std::string>				  &fields,
-const std::string							  &sortField,
-const int									  &sortOrder,
-const uint64_t                                &skip,
-const uint32_t								  &limit)
+	const std::string                             &databaseAd,
+	const repo::core::model::RepoBSON*	  cred,
+	const std::string                             &database,
+	const std::string                             &collection,
+	const std::list<std::string>				  &fields,
+	const std::string							  &sortField,
+	const int									  &sortOrder,
+	const uint64_t                                &skip,
+	const uint32_t								  &limit)
 {
 	std::vector<repo::core::model::RepoBSON> vector;
 	repo::core::handler::AbstractDatabaseHandler* handler =
@@ -595,9 +595,9 @@ const uint32_t								  &limit)
 
 std::map<std::string, std::list<std::string>>
 RepoManipulator::getDatabasesWithProjects(
-const std::string                             &databaseAd,
-const repo::core::model::RepoBSON*	  cred,
-const std::list<std::string> &databases)
+	const std::string                             &databaseAd,
+	const repo::core::model::RepoBSON*	  cred,
+	const std::list<std::string> &databases)
 {
 	std::map<std::string, std::list<std::string>> list;
 	repo::core::handler::AbstractDatabaseHandler* handler =
@@ -623,8 +623,8 @@ std::list<std::string> RepoManipulator::getAdminDatabaseRoles(
 
 std::shared_ptr<repo_partitioning_tree_t>
 RepoManipulator::getScenePartitioning(
-const repo::core::model::RepoScene *scene,
-const uint32_t                     &maxDepth
+	const repo::core::model::RepoScene *scene,
+	const uint32_t                     &maxDepth
 )
 {
 	modelutility::RDTreeSpatialPartitioner partitioner(scene, maxDepth);
@@ -654,8 +654,8 @@ std::string RepoManipulator::getNameOfAdminDatabase(
 
 repo::core::model::RepoNodeSet
 RepoManipulator::loadMetadataFromFile(
-const std::string &filePath,
-const char        &delimiter)
+	const std::string &filePath,
+	const char        &delimiter)
 {
 	repo::manipulator::modelconvertor::MetadataImportCSV metaImport;
 	std::vector<std::string> tmp;
@@ -665,14 +665,12 @@ const char        &delimiter)
 
 repo::core::model::RepoScene*
 RepoManipulator::loadSceneFromFile(
-const std::string &filePath,
-uint8_t &error,
-const bool &applyReduction,
-const bool &rotateModel,
-const repo::manipulator::modelconvertor::ModelImportConfig *config)
+	const std::string &filePath,
+	uint8_t &error,
+	const repo::manipulator::modelconvertor::ModelImportConfig &config)
 {
 	repo::manipulator::modelconvertor::ModelImportManager manager;
-	auto scene =  manager.ImportFromFile(filePath, rotateModel, applyReduction, error);
+	auto scene = manager.ImportFromFile(filePath, config, error);
 	if (scene) {
 		if (generateStashGraph(scene)) {
 			repoTrace << "Stash graph generated.";
@@ -724,7 +722,7 @@ bool RepoManipulator::init(
 	if (success = connectAndAuthenticateWithAdmin(errMsg, dbConf.addr, dbConf.port, nDbConnections, dbConf.username, dbConf.password)) {
 		repo::core::handler::AbstractDatabaseHandler* handler =
 			repo::core::handler::MongoDatabaseHandler::getHandler(dbConf.addr);
-		success = (bool) repo::core::handler::fileservice::FileManager::instantiateManager(config, handler);
+		success = (bool)repo::core::handler::fileservice::FileManager::instantiateManager(config, handler);
 	}
 
 	return success;
@@ -781,7 +779,6 @@ bool RepoManipulator::insertBinaryFileToDatabase(
 		{
 			repoError << "Failed to add file (" << name << ") to storage.";
 		}
-
 	}
 
 	return success;
@@ -864,7 +861,7 @@ void RepoManipulator::reduceTransformations(
 			repoWarning << "There is no stash associated with this optimised graph. Viewing may be impossible/slow should you commit this scene.";
 		}
 	}
-	else{
+	else {
 		repoError << "RepoController::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
 	}
 }
@@ -898,7 +895,7 @@ bool RepoManipulator::removeProject(
 	const std::string                        &databaseName,
 	const std::string                        &projectName,
 	std::string								 &errMsg
-	)
+)
 {
 	bool success = true;
 	//Remove entry from project settings
@@ -922,9 +919,9 @@ bool RepoManipulator::removeProject(
 		//find all roles with a privilege of this collection and remove it
 		repo::core::model::RepoBSON privCriteria = BSON("privileges" <<
 			BSON("$elemMatch" <<
-			BSON("resource" << BSON("db" << databaseName << "collection" << collectionName))
+				BSON("resource" << BSON("db" << databaseName << "collection" << collectionName))
 			)
-			);
+		);
 
 		//FIXME: should get this from handler to ensure it's correct for non mongo databases (future proof)
 		auto results = handler->findAllByCriteria(REPO_ADMIN, REPO_SYSTEM_ROLES, privCriteria);

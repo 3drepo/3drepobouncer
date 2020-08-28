@@ -28,9 +28,9 @@
 
 using namespace repo::manipulator::modelconvertor;
 
-IFCModelImport::IFCModelImport(const ModelImportConfig *settings) :
-AbstractModelImport(settings),
-partialFailure(false)
+IFCModelImport::IFCModelImport(const ModelImportConfig &settings) :
+	AbstractModelImport(settings),
+	partialFailure(false)
 {
 }
 

@@ -32,17 +32,11 @@
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../lib/repo_log.h"
 #include "../../../error_codes.h"
+#include "./repo_model_import_config_default_values.h"
 
 using namespace repo::manipulator::modelconvertor;
 
-AssimpModelImport::AssimpModelImport()
-	: keepMetadata(false)
-{
-	//set default ASSIMP debone threshold
-	//settings->setDeboneThreshold(AI_DEBONE_THRESHOLD);
-}
-
-AssimpModelImport::AssimpModelImport(const ModelImportConfig *settings) :
+AssimpModelImport::AssimpModelImport(const ModelImportConfig &settings) :
 	AbstractModelImport(settings)
 {
 }
@@ -51,12 +45,6 @@ AssimpModelImport::~AssimpModelImport()
 {
 	if (assimpScene)
 		importer.FreeScene();
-
-	if (destroySettings)
-	{
-		delete settings;
-		settings = nullptr;
-	}
 }
 bool AssimpModelImport::isSupportedExts(const std::string &testExt)
 {
@@ -107,69 +95,69 @@ std::string AssimpModelImport::getSupportedFormats()
 uint32_t AssimpModelImport::composeAssimpPostProcessingFlags(
 	uint32_t flag)
 {
-	if (settings->getCalculateTangentSpace())
+	if (repoDefaultCalculateTangentSpace)
 		flag |= aiProcess_CalcTangentSpace;
 
-	if (settings->getConvertToUVCoordinates())
+	if (repoDefaultConvertToUVCoordinates)
 		flag |= aiProcess_GenUVCoords;
 
-	if (settings->getDegeneratesToPointsLines())
+	if (repoDefaultDegeneratesToPointsLines)
 		flag |= aiProcess_FindDegenerates;
 
-	if (settings->getDebone())
+	if (repoDefaultDebone)
 		flag |= aiProcess_Debone;
 
 	// Debone threshold
 	// Debone only if all
 
-	if (settings->getFindInstances())
+	if (repoDefaultFindInstances)
 		flag |= aiProcess_FindInstances;
 
-	if (settings->getFindInvalidData())
+	if (repoDefaultFindInvalidData)
 		flag |= aiProcess_FindInvalidData;
 
 	// Animation accuracy
 
-	if (settings->getFixInfacingNormals())
+	if (repoDefaultFixInfacingNormals)
 		flag |= aiProcess_FixInfacingNormals;
 
-	if (settings->getFlipUVCoordinates())
+	if (repoDefaultFlipUVCoordinates)
 		flag |= aiProcess_FlipUVs;
 
-	if (settings->getFlipWindingOrder())
+	if (repoDefaultFlipWindingOrder)
 		flag |= aiProcess_FlipWindingOrder;
 
-	if (settings->getGenerateNormals() && settings->getGenerateNormalsFlat())
+	if (repoDefaultGenerateNormals && repoDefaultGenerateNormalsFlat)
 		flag |= aiProcess_GenNormals;
 
-	if (settings->getGenerateNormals() && settings->getGenerateNormalsSmooth())
+	if (repoDefaultGenerateNormals && repoDefaultGenerateNormalsSmooth)
 		flag |= aiProcess_GenSmoothNormals;
 
 	// Crease angle
 
-	if (settings->getImproveCacheLocality())
+	if (repoDefaultImproveCacheLocality)
 		flag |= aiProcess_ImproveCacheLocality;
 
 	// Vertex cache size
 
-	if (settings->getJoinIdenticalVertices())
+	if (repoDefaultJoinIdenticalVertices)
 		flag |= aiProcess_JoinIdenticalVertices;
 
-	if (settings->getLimitBoneWeights())
+	if (repoDefaultLimitBoneWeights)
 		flag |= aiProcess_LimitBoneWeights;
 
 	// Max bone weights
 
-	if (settings->getMakeLeftHanded())
+	if (repoDefaultMakeLeftHanded)
 		flag |= aiProcess_MakeLeftHanded;
 
-	if (settings->getOptimizeMeshes())
+	if (repoDefaultOptimizeMeshes)
 		flag |= aiProcess_OptimizeMeshes;
 
-	if (settings->getPreTransformUVCoordinates())
+	if (repoDefaultPreTransformUVCoordinates)
 		flag |= aiProcess_TransformUVCoords;
 
-	if (settings->getPreTransformVertices())
+	if (repoDefaultPreTransformVertices)
 	{
 		repoWarning << "PretransformVertices flag is set. If you want to generate multipart stash disable this flag as it has been migrated to RepoBouncer.";
 		flag |= aiProcess_PreTransformVertices;
@@ -177,41 +165,41 @@ uint32_t AssimpModelImport::composeAssimpPostProcessingFlags(
 
 	// Normalize
 
-	if (settings->getRemoveComponents())
+	if (repoDefaultRemoveComponents)
 		flag |= aiProcess_RemoveComponent;
 
 	// !individual components!
 
-	if (settings->getRemoveRedundantMaterials())
+	if (repoDefaultRemoveRedundantMaterials)
 		flag |= aiProcess_RemoveRedundantMaterials;
 
 	// Skip materials
 
-	if (settings->getRemoveRedundantNodes())
+	if (repoDefaultRemoveRedundantNodes)
 		flag |= aiProcess_OptimizeGraph;
 
 	// Skip nodes
 
-	if (settings->getSortAndRemove())
+	if (repoDefaultSortAndRemove)
 		flag |= aiProcess_SortByPType;
 
 	// Remove types
 
-	if (settings->getSplitByBoneCount())
+	if (repoDefaultSplitByBoneCount)
 		flag |= aiProcess_SplitByBoneCount;
 
 	// Max bones
 
-	if (settings->getSplitLargeMeshes())
+	if (repoDefaultSplitLargeMeshes)
 		flag |= aiProcess_SplitLargeMeshes;
 
 	// Vertex limit
 	// Triangle limit
 
-	if (settings->getTriangulate())
+	if (repoDefaultTriangulate)
 		flag |= aiProcess_Triangulate;
 
-	if (settings->getValidateDataStructures())
+	if (repoDefaultValidateDataStructures)
 		flag |= aiProcess_ValidateDataStructure;
 
 	return flag;
@@ -1240,7 +1228,7 @@ bool AssimpModelImport::importModel(std::string filePath, uint8_t &err)
 
 	keepMetadata = getFileExtension(filePath) == ".IFC";
 	importer.SetPropertyInteger(AI_CONFIG_GLOB_MEASURE_TIME, 1);
-	importer.SetPropertyBool(AI_CONFIG_IMPORT_IFC_SKIP_SPACE_REPRESENTATIONS, settings->getSkipIFCSpaceRepresentation());
+	importer.SetPropertyBool(AI_CONFIG_IMPORT_IFC_SKIP_SPACE_REPRESENTATIONS, repoDefaultIfcSkipSpaceRepresentation);
 	importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_READ_TEXTURES, true);
 	assimpScene = importer.ReadFile(filePath, 0);
 
@@ -1275,67 +1263,67 @@ bool AssimpModelImport::importModel(std::string filePath, uint8_t &err)
 }
 
 void AssimpModelImport::setAssimpProperties() {
-	if (settings->getCalculateTangentSpace())
-		importer.SetPropertyFloat(AI_CONFIG_PP_CT_MAX_SMOOTHING_ANGLE, settings->getCalculateTangentSpaceMaxSmoothingAngle());
+	if (repoDefaultCalculateTangentSpace)
+		importer.SetPropertyFloat(AI_CONFIG_PP_CT_MAX_SMOOTHING_ANGLE, repoDefaultCalculateTangentSpaceMaxSmoothingAngle);
 
-	if (settings->getDebone())
+	if (repoDefaultDebone)
 	{
-		importer.SetPropertyFloat(AI_CONFIG_PP_DB_THRESHOLD, settings->getDeboneThreshold());
-		importer.SetPropertyBool(AI_CONFIG_PP_DB_ALL_OR_NONE, settings->getDeboneOnlyIfAll());
+		importer.SetPropertyFloat(AI_CONFIG_PP_DB_THRESHOLD, repoDefaultDeboneThreshold);
+		importer.SetPropertyBool(AI_CONFIG_PP_DB_ALL_OR_NONE, repoDefaultDeboneOnlyIfAll);
 	}
 
-	if (settings->getFindInvalidData())
-		importer.SetPropertyFloat(AI_CONFIG_PP_FID_ANIM_ACCURACY, settings->getFindInvalidDataAnimationAccuracy());
+	if (repoDefaultFindInvalidData)
+		importer.SetPropertyFloat(AI_CONFIG_PP_FID_ANIM_ACCURACY, repoDefaultFindInvalidDataAnimationAccuracy);
 
-	if (settings->getGenerateNormals() && settings->getGenerateNormalsSmooth())
-		importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, settings->getGenerateNormalsSmoothCreaseAngle());
+	if (repoDefaultGenerateNormals && repoDefaultGenerateNormalsSmooth)
+		importer.SetPropertyFloat(AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, repoDefaultGenerateNormalsSmoothCreaseAngle);
 
-	if (settings->getImproveCacheLocality())
-		importer.SetPropertyInteger(AI_CONFIG_PP_ICL_PTCACHE_SIZE, settings->getImproveCacheLocalityVertexCacheSize());
+	if (repoDefaultImproveCacheLocality)
+		importer.SetPropertyInteger(AI_CONFIG_PP_ICL_PTCACHE_SIZE, repoDefaultImproveCacheLocalityVertexCacheSize);
 
-	if (settings->getLimitBoneWeights())
-		importer.SetPropertyInteger(AI_CONFIG_PP_LBW_MAX_WEIGHTS, settings->getLimitBoneWeightsMaxWeight());
+	if (repoDefaultLimitBoneWeights)
+		importer.SetPropertyInteger(AI_CONFIG_PP_LBW_MAX_WEIGHTS, repoDefaultLimitBoneWeightsMaxWeight);
 
-	if (settings->getPreTransformVertices())
-		importer.SetPropertyBool(AI_CONFIG_PP_PTV_NORMALIZE, settings->getPreTransformVerticesNormalize());
+	if (repoDefaultPreTransformVertices)
+		importer.SetPropertyBool(AI_CONFIG_PP_PTV_NORMALIZE, repoDefaultPreTransformVerticesNormalize);
 
-	if (settings->getRemoveComponents()) {
+	if (repoDefaultRemoveComponents) {
 		int32_t removeComponents = 0;
-		removeComponents |= settings->getRemoveComponentsAnimations() ? aiComponent_ANIMATIONS : 0;
-		removeComponents |= settings->getRemoveComponentsBiTangents() ? aiComponent_TANGENTS_AND_BITANGENTS : 0;
-		removeComponents |= settings->getRemoveComponentsBoneWeights() ? aiComponent_BONEWEIGHTS : 0;
-		removeComponents |= settings->getRemoveComponentsCameras() ? aiComponent_CAMERAS : 0;
-		removeComponents |= settings->getRemoveComponentsColors() ? aiComponent_COLORS : 0;
-		removeComponents |= settings->getRemoveComponentsLights() ? aiComponent_LIGHTS : 0;
-		removeComponents |= settings->getRemoveComponentsMaterials() ? aiComponent_MATERIALS : 0;
-		removeComponents |= settings->getRemoveComponentsMeshes() ? aiComponent_MESHES : 0;
-		removeComponents |= settings->getRemoveComponentsNormals() ? aiComponent_NORMALS : 0;
-		removeComponents |= settings->getRemoveComponentsTextureCoordinates() ? aiComponent_TEXCOORDS : 0;
-		removeComponents |= settings->getRemoveComponentsTextures() ? aiComponent_TEXTURES : 0;
+		removeComponents |= repoDefaultRemoveComponentsAnimations ? aiComponent_ANIMATIONS : 0;
+		removeComponents |= repoDefaultRemoveComponentsBiTangents ? aiComponent_TANGENTS_AND_BITANGENTS : 0;
+		removeComponents |= repoDefaultRemoveComponentsBoneWeights ? aiComponent_BONEWEIGHTS : 0;
+		removeComponents |= repoDefaultRemoveComponentsCameras ? aiComponent_CAMERAS : 0;
+		removeComponents |= repoDefaultRemoveComponentsColors ? aiComponent_COLORS : 0;
+		removeComponents |= repoDefaultRemoveComponentsLights ? aiComponent_LIGHTS : 0;
+		removeComponents |= repoDefaultRemoveComponentsMaterials ? aiComponent_MATERIALS : 0;
+		removeComponents |= repoDefaultRemoveComponentsMeshes ? aiComponent_MESHES : 0;
+		removeComponents |= repoDefaultRemoveComponentsNormals ? aiComponent_NORMALS : 0;
+		removeComponents |= repoDefaultRemoveComponentsTextureCoordinates ? aiComponent_TEXCOORDS : 0;
+		removeComponents |= repoDefaultRemoveComponentsTextures ? aiComponent_TEXTURES : 0;
 
 		importer.SetPropertyInteger(AI_CONFIG_PP_RVC_FLAGS, removeComponents);
 	}
 
-	if (settings->getRemoveRedundantMaterials())
-		importer.SetPropertyString(AI_CONFIG_PP_RRM_EXCLUDE_LIST, settings->getRemoveRedundantMaterialsSkip());
+	if (repoDefaultRemoveRedundantMaterials)
+		importer.SetPropertyString(AI_CONFIG_PP_RRM_EXCLUDE_LIST, repoDefaultRemoveRedundantMaterialsSkip);
 
-	if (settings->getRemoveRedundantNodes())
-		importer.SetPropertyString(AI_CONFIG_PP_OG_EXCLUDE_LIST, settings->getRemoveRedundantNodesSkip());
+	if (repoDefaultRemoveRedundantNodes)
+		importer.SetPropertyString(AI_CONFIG_PP_OG_EXCLUDE_LIST, repoDefaultRemoveRedundantNodesSkip);
 
-	if (settings->getSortAndRemove())
+	if (repoDefaultSortAndRemove)
 	{
 		int32_t removePrimitives = 0;
-		removePrimitives |= settings->getSortAndRemovePoints() ? aiPrimitiveType_POINT : 0;
-		removePrimitives |= settings->getSortAndRemoveLines() ? aiPrimitiveType_LINE : 0;
-		removePrimitives |= settings->getSortAndRemoveTriangles() ? aiPrimitiveType_TRIANGLE : 0;
-		removePrimitives |= settings->getSortAndRemovePolygons() ? aiPrimitiveType_POLYGON : 0;
+		removePrimitives |= repoDefaultSortAndRemovePoints ? aiPrimitiveType_POINT : 0;
+		removePrimitives |= repoDefaultSortAndRemoveLines ? aiPrimitiveType_LINE : 0;
+		removePrimitives |= repoDefaultSortAndRemoveTriangles ? aiPrimitiveType_TRIANGLE : 0;
+		removePrimitives |= repoDefaultSortAndRemovePolygons ? aiPrimitiveType_POLYGON : 0;
 		importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, removePrimitives);
 	}
-	if (settings->getSplitLargeMeshes())
+	if (repoDefaultSplitLargeMeshes)
 	{
-		importer.SetPropertyInteger(AI_CONFIG_PP_SLM_TRIANGLE_LIMIT, settings->getSplitLargeMeshesTriangleLimit());
-		importer.SetPropertyInteger(AI_CONFIG_PP_SLM_VERTEX_LIMIT, settings->getSplitLargeMeshesVertexLimit());
+		importer.SetPropertyInteger(AI_CONFIG_PP_SLM_TRIANGLE_LIMIT, repoDefaultSplitLargeMeshesTriangleLimit);
+		importer.SetPropertyInteger(AI_CONFIG_PP_SLM_VERTEX_LIMIT, repoDefaultSplitLargeMeshesVertexLimit);
 	}
-	if (settings->getSplitByBoneCount())
-		importer.SetPropertyInteger(AI_CONFIG_PP_SBBC_MAX_BONES, settings->getSplitByBoneCountMaxBones());
+	if (repoDefaultSplitByBoneCount)
+		importer.SetPropertyInteger(AI_CONFIG_PP_SBBC_MAX_BONES, repoDefaultSplitByBoneCountMaxBones);
 }

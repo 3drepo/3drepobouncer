@@ -40,7 +40,7 @@ namespace repo {
 				/**
 				* Default Constructor, generate model with default settings
 				*/
-				SynchroModelImport() {}
+				SynchroModelImport(const ModelImportConfig &settings) : AbstractModelImport(settings) {}
 
 				/**
 				* Default Deconstructor
@@ -175,9 +175,9 @@ namespace repo {
 				bool importModel(std::string filePath, uint8_t &errMsg) {
 					errMsg = REPOERR_SYNCHRO_UNAVAILABLE;
 					return false;
-			}
+				}
 #endif
-		};
-	} //namespace SynchroModelImport
-} //namespace manipulator
+			};
+		} //namespace SynchroModelImport
+	} //namespace manipulator
 } //namespace repo

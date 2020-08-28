@@ -322,12 +322,14 @@ std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
 		}
 	}
 
-	for (const auto &entry : transformState) {
-		repo::lib::PropertyTree transformTree;
-		transformTree.addToTree(SEQ_CACHE_LABEL_VALUE, entry.second);
-		std::vector<repo::lib::RepoUUID> idArr = { entry.first };
-		transformTree.addToTree(SEQ_CACHE_LABEL_SHARED_IDS, idArr);
-		transformationStates.push_back(transformTree);
+	if (settings.shouldImportAnimations()) {
+		for (const auto &entry : transformState) {
+			repo::lib::PropertyTree transformTree;
+			transformTree.addToTree(SEQ_CACHE_LABEL_VALUE, entry.second);
+			std::vector<repo::lib::RepoUUID> idArr = { entry.first };
+			transformTree.addToTree(SEQ_CACHE_LABEL_SHARED_IDS, idArr);
+			transformationStates.push_back(transformTree);
+		}
 	}
 
 	for (const auto &entry : clipState) {
@@ -432,17 +434,22 @@ void SynchroModelImport::updateFrameState(
 		break;
 		case synchro_reader::AnimationTask::TaskType::TRANSFORMATION:
 		{
-			auto transTask = std::dynamic_pointer_cast<const synchro_reader::TransformationTask>(task);
-			auto meshes = resourceIDsToSharedIDs[transTask->resourceID];
-			if (transTask->reset) {
-				for (const auto &mesh : meshes)
-					transformState.erase(mesh);
+			if (settings.shouldImportAnimations()) {
+				auto transTask = std::dynamic_pointer_cast<const synchro_reader::TransformationTask>(task);
+				auto meshes = resourceIDsToSharedIDs[transTask->resourceID];
+				if (transTask->reset) {
+					for (const auto &mesh : meshes)
+						transformState.erase(mesh);
+				}
+				else {
+					for (const auto &mesh : meshes) {
+						transformState[mesh] = transTask->trans;
+						transformingMesh.insert(mesh);
+					}
+				}
 			}
 			else {
-				for (const auto &mesh : meshes) {
-					transformState[mesh] = transTask->trans;
-					transformingMesh.insert(mesh);
-				}
+				repoInfo << "Transformation found but it's disabled";
 			}
 		}
 		break;
@@ -607,6 +614,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 		frameData.push_back(data);
 	}
 
+	repoInfo << "transforming Mesh: " << transformingMesh.size();
 	for (const auto &mesh : transformingMesh) {
 		auto meshNode = (repo::core::model::MeshNode*) scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, mesh);
 		meshNode->swap(meshNode->cloneAndFlagIndependent());
