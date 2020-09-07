@@ -599,8 +599,6 @@ namespace repo {
 		/**
 			* Load a Repo Scene from a file
 			* @param filePath path to file
-			* @param apply transformation reduction (default: true)
-			* @param rotateModel rotate model by 270degrees on x (default: false)
 			* @param config import settings(optional)
 			* @return returns a pointer to Repo Scene upon success
 			*/
