@@ -33,8 +33,7 @@ static std::shared_ptr<RepoController> getController()
 	return controller;
 }
 
-
-TEST(RepoControllerTest, CommitScene){
+TEST(RepoControllerTest, CommitScene) {
 	auto controller = getController();
 	auto token = initController(controller.get());
 	//Try to commit a scene without setting db/project name
@@ -78,7 +77,7 @@ TEST(RepoControllerTest, CommitScene){
 	EXPECT_FALSE(controller->commitScene(nullptr, scene));
 }
 
-TEST(RepoControllerTest, LoadSceneFromFile){
+TEST(RepoControllerTest, LoadSceneFromFile) {
 	auto controller = getController();
 	auto defaultG = core::model::RepoScene::GraphType::DEFAULT;
 	auto optG = core::model::RepoScene::GraphType::OPTIMIZED;
@@ -95,7 +94,7 @@ TEST(RepoControllerTest, LoadSceneFromFile){
 	EXPECT_TRUE(dynamic_cast<core::model::TransformationNode*>(scene->getRoot(defaultG))->isIdentity());
 
 	//Import the scene with no transformation reduction
-	auto sceneNoReduction = controller->loadSceneFromFile(getDataPath(simpleModel), errCode, false);
+	auto sceneNoReduction = controller->loadSceneFromFile(getDataPath(simpleModel), errCode, repo::manipulator::modelconvertor::ModelImportConfig());
 	EXPECT_EQ(errCode, 0);
 	EXPECT_TRUE(sceneNoReduction);
 	EXPECT_TRUE(sceneNoReduction->getRoot(defaultG));
@@ -106,7 +105,7 @@ TEST(RepoControllerTest, LoadSceneFromFile){
 			> scene->getAllTransformations(defaultG).size());
 
 	//Import the scene with root trans rotated
-	auto sceneRotated = controller->loadSceneFromFile(getDataPath(simpleModel), errCode, true, true);
+	auto sceneRotated = controller->loadSceneFromFile(getDataPath(simpleModel), errCode, repo::manipulator::modelconvertor::ModelImportConfig(true, true, true));
 	EXPECT_EQ(errCode, 0);
 	EXPECT_TRUE(sceneRotated);
 	ASSERT_TRUE(sceneRotated->getRoot(defaultG));

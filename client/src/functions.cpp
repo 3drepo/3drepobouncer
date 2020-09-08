@@ -447,14 +447,6 @@ int32_t importFileAndCommit(
 			if (rotate)
 			{
 				owner = command.args[4];
-				if (command.nArgcs > 5)
-				{
-					configFile = command.args[5];
-				}
-			}
-			else
-			{
-				configFile = command.args[4];
 			}
 		}
 	}
@@ -469,7 +461,7 @@ int32_t importFileAndCommit(
 
 	repoLog("File: " + fileLoc + " database: " + database
 		+ " project: " + project + " rotate:"
-		+ (rotate ? "true" : "false") + " owner :" + owner + " importAnimations: " + importAnimations);
+		+ (rotate ? "true" : "false") + " owner :" + owner + " importAnimations: " + (importAnimations ? "true" : "false"));
 
 	repo::manipulator::modelconvertor::ModelImportConfig config(true, rotate, importAnimations);
 	uint8_t err;

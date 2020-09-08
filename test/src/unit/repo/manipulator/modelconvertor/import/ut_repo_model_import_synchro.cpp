@@ -23,18 +23,18 @@ using namespace repo::manipulator::modelconvertor;
 
 TEST(SynchroModelImport, ConstructorTest)
 {
-	SynchroModelImport();
+	SynchroModelImport(ModelImportConfig());
 }
 
 TEST(SynchroModelImport, DeconstructorTest)
 {
-	auto ptr = new SynchroModelImport();
+	auto ptr = new SynchroModelImport(ModelImportConfig());
 	delete ptr;
 }
 
 TEST(SynchroModelImport, ImportModel)
 {
-	auto import = SynchroModelImport();
+	auto import = SynchroModelImport(ModelImportConfig());
 	uint8_t errCode;
 	EXPECT_TRUE(import.importModel(getDataPath(synchroWithTransform), errCode));
 	EXPECT_EQ(0, errCode);
@@ -42,5 +42,4 @@ TEST(SynchroModelImport, ImportModel)
 	auto scene = import.generateRepoScene();
 
 	ASSERT_TRUE(scene);
-
 }
