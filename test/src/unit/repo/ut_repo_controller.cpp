@@ -94,7 +94,7 @@ TEST(RepoControllerTest, LoadSceneFromFile) {
 	EXPECT_TRUE(dynamic_cast<core::model::TransformationNode*>(scene->getRoot(defaultG))->isIdentity());
 
 	//Import the scene with no transformation reduction
-	auto sceneNoReduction = controller->loadSceneFromFile(getDataPath(simpleModel), errCode, repo::manipulator::modelconvertor::ModelImportConfig());
+	auto sceneNoReduction = controller->loadSceneFromFile(getDataPath(simpleModel), errCode, repo::manipulator::modelconvertor::ModelImportConfig(false));
 	EXPECT_EQ(errCode, 0);
 	EXPECT_TRUE(sceneNoReduction);
 	EXPECT_TRUE(sceneNoReduction->getRoot(defaultG));
