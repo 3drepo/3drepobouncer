@@ -141,7 +141,8 @@ namespace repo {
 					const repo::lib::RepoUUID                                                             &rootID,
 					repo::core::model::RepoNodeSet                                             &mergedMeshes,
 					std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> &matNodes,
-					std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>                    &matIDs);
+					std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>                    &matIDs,
+					const bool independentGroup = false);
 
 				/**
 				* Sort the given RepoNodeSet of meshes for multipart merging
@@ -154,7 +155,7 @@ namespace repo {
 					const repo::core::model::RepoNodeSet                                    &meshes,
 					std::unordered_map < uint32_t, std::unordered_map < repo::lib::RepoUUID,
 					std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher >> &normalMeshes,
-					std::vector<repo::lib::RepoUUID> &separateMeshes);
+					std::set<repo::lib::RepoUUID> &separateMeshes);
 			};
 		}
 	}

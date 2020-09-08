@@ -261,7 +261,7 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 	if (success = meshes.size())
 	{
 		std::unordered_map<uint32_t, std::unordered_map<repo::lib::RepoUUID, std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher>> normalMeshes;
-		std::vector<repo::lib::RepoUUID> separateMeshes;
+		std::set<repo::lib::RepoUUID> separateMeshes;
 		//Sort the meshes into different groupings
 		sortMeshes(scene, meshes, normalMeshes, separateMeshes);
 
@@ -287,9 +287,7 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 		}
 
 		//Ungrouped meshes
-		for (const auto mesh : separateMeshes) {
-			processMeshGroup(scene, { mesh }, rootID, mergedMeshes, matNodes, matIDs);
-		}
+		processMeshGroup(scene, separateMeshes, rootID, mergedMeshes, matNodes, matIDs, true);
 
 		if (success)
 		{
@@ -379,7 +377,8 @@ bool MultipartOptimizer::processMeshGroup(
 	const repo::lib::RepoUUID                                                             &rootID,
 	repo::core::model::RepoNodeSet                                             &mergedMeshes,
 	std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> &matNodes,
-	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>                     &matIDs
+	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>                     &matIDs,
+	const bool independentGroup
 )
 {
 	if (!meshes.size()) return true;
@@ -388,7 +387,7 @@ bool MultipartOptimizer::processMeshGroup(
 	auto sMesh = createSuperMesh(scene, meshes, matIDs);
 	if (success = sMesh)
 	{
-		auto sMeshWithParent = sMesh->cloneAndAddParent({ rootID });
+		auto sMeshWithParent = (independentGroup ? sMesh->cloneAndFlagIndependent() : *sMesh).cloneAndAddParent({ rootID });
 		sMesh->swap(sMeshWithParent);
 		mergedMeshes.insert(sMesh);
 
@@ -448,7 +447,7 @@ void MultipartOptimizer::sortMeshes(
 	const repo::core::model::RepoNodeSet                                    &meshes,
 	std::unordered_map < uint32_t, std::unordered_map < repo::lib::RepoUUID,
 	std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher >> &normalMeshes,
-	std::vector<repo::lib::RepoUUID> &separateMeshes
+	std::set<repo::lib::RepoUUID> &separateMeshes
 )
 {
 	std::unordered_map<uint32_t, std::unordered_map<repo::lib::RepoUUID, size_t, repo::lib::RepoUUIDHasher> > normalFCount;
@@ -463,7 +462,7 @@ void MultipartOptimizer::sortMeshes(
 		}
 
 		if (mesh->isIndependent()) {
-			separateMeshes.push_back(mesh->getUniqueID());
+			separateMeshes.insert(mesh->getUniqueID());
 		}
 		else {
 			uint32_t mFormat = mesh->getMFormat(isTransparent(scene, mesh));
