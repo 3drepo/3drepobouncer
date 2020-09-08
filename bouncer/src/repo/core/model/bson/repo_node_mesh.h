@@ -78,7 +78,7 @@ namespace repo {
 				MeshNode(RepoBSON bson,
 					const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping =
 					std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>()
-					);
+				);
 
 				/**
 				* Default deconstructor
@@ -92,7 +92,7 @@ namespace repo {
 				* where vertices is the LSB
 				* @return returns the mFormat flag
 				*/
-				uint32_t getMFormat() const;
+				uint32_t getMFormat(const bool isTransparent = false) const;
 
 				/**
 				* Get the type of node

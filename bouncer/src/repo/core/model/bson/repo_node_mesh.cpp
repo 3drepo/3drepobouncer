@@ -26,7 +26,7 @@
 using namespace repo::core::model;
 
 MeshNode::MeshNode() :
-RepoNode()
+	RepoNode()
 {
 }
 
@@ -54,7 +54,7 @@ bool MeshNode::isIndependent() const {
 RepoNode MeshNode::cloneAndApplyTransformation(
 	const repo::lib::RepoMatrix &matrix) const
 {
-	if(matrix.isIdentity()) {
+	if (matrix.isIdentity()) {
 		RepoBSONBuilder builder;
 		builder.appendElementsUnique(*this);
 		return MeshNode(builder.obj(), bigFiles);
@@ -281,7 +281,7 @@ std::vector<repo::lib::RepoVector3D> MeshNode::getVertices() const
 	return vertices;
 }
 
-uint32_t MeshNode::getMFormat() const
+uint32_t MeshNode::getMFormat(const bool isTransparent) const
 {
 	/*
 	 * maximum of 32 bit, each bit represent the presents of the following
@@ -292,9 +292,10 @@ uint32_t MeshNode::getMFormat() const
 	uint32_t fBit = (uint32_t)hasBinField(REPO_NODE_MESH_LABEL_FACES) << 1;
 	uint32_t nBit = (uint32_t)hasBinField(REPO_NODE_MESH_LABEL_NORMALS) << 2;
 	uint32_t cBit = (uint32_t)hasBinField(REPO_NODE_MESH_LABEL_COLORS) << 3;
-	uint32_t uvBits = (hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT) ? getIntField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT) : 0) << 4;
+	uint32_t transBit = isTransparent ? 1 : 0 << 4;
+	uint32_t uvBits = (hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT) ? getIntField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT) : 0) << 5;
 
-	return vBit | fBit | nBit | cBit | uvBits;
+	return vBit | fBit | nBit | cBit | uvBits | transBit;
 }
 
 std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
@@ -373,7 +374,7 @@ std::vector<std::vector<repo::lib::RepoVector2D>> MeshNode::getUVChannelsSeparat
 			channels.push_back(std::vector<repo::lib::RepoVector2D>());
 			channels[i].reserve(vecPerChannel);
 
-			uint32_t offset = i*vecPerChannel;
+			uint32_t offset = i * vecPerChannel;
 			channels[i].insert(channels[i].begin(), serialisedChannels.begin() + offset,
 				serialisedChannels.begin() + offset + vecPerChannel);
 		}
