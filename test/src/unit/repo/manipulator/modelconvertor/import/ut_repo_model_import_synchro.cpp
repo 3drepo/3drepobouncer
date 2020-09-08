@@ -32,14 +32,14 @@ TEST(SynchroModelImport, DeconstructorTest)
 	delete ptr;
 }
 
-//TEST(SynchroModelImport, ImportModel)
-//{
-//	auto import = SynchroModelImport(ModelImportConfig());
-//	uint8_t errCode;
-//	EXPECT_TRUE(import.importModel(getDataPath(synchroWithTransform), errCode));
-//	EXPECT_EQ(0, errCode);
-//
-//	auto scene = import.generateRepoScene();
-//
-//	ASSERT_TRUE(scene);
-//}
+TEST(SynchroModelImport, ImportModel)
+{
+	auto import = SynchroModelImport(ModelImportConfig());
+	uint8_t errCode;
+	EXPECT_TRUE(import.importModel(getDataPath(synchroWithTransform), errCode));
+	EXPECT_EQ(0, errCode);
+
+	auto scene = import.generateRepoScene();
+
+	ASSERT_TRUE(scene);
+}
