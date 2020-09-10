@@ -454,7 +454,6 @@ void SynchroModelImport::updateFrameState(
 					repo::lib::RepoMatrix conversionMatrix(rotation);
 					matrix = conversionMatrix * matrix;
 					for (const auto &mesh : meshes) {
-						repoInfo << "\t" << mesh.toString();
 						transformState[mesh] = matrix.getData();
 						transformingMesh.insert(mesh);
 					}
