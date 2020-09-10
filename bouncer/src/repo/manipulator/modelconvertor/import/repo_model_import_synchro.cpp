@@ -443,7 +443,6 @@ void SynchroModelImport::updateFrameState(
 						transformState.erase(mesh);
 				}
 				else {
-					repoInfo << "Meshes: ";
 					repo::lib::RepoMatrix matrix(transTask->trans);
 					std::vector<float> rotation = {
 						1, 0, 0, 0,
