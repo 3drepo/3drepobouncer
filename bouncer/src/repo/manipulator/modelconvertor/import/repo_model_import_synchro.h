@@ -120,7 +120,7 @@ namespace repo {
 				std::pair<std::string, std::vector<uint8_t>> generateCache(
 					const std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
 					const std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
-					const std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> &transformState,
+					const std::unordered_map<repo::lib::RepoUUID, std::vector<float>, repo::lib::RepoUUIDHasher> &transformState,
 					const std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> &clipState,
 					const std::shared_ptr<CameraChange> &cam);
 
@@ -129,7 +129,7 @@ namespace repo {
 					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
 					std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
 					std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
-					std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> &transformState,
+					std::unordered_map<repo::lib::RepoUUID, std::vector<float>, repo::lib::RepoUUIDHasher> &transformState,
 					std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> &clipState,
 					std::shared_ptr<CameraChange> &cam,
 					std::set<repo::lib::RepoUUID> &transformingMesh
