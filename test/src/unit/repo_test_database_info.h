@@ -52,6 +52,7 @@ const static std::string rvtHouse = "sampleHouse.rvt";
 const static std::string unsupportedFBXVersion = "unsupported.FBX";
 const static std::string synchroFile = "synchro.spm";
 const static std::string synchroWithTransform = "withTransformations.spm";
+const static std::string synchroOldVersion = "synchro6_1.spm";
 
 const static std::string emptyFile = "empty.json";
 const static std::string emptyJSONFile = "empty2.json";
@@ -87,7 +88,6 @@ const static std::string  importNoOwnerPro2Desc = "MyUpload";
 const static std::string getFileFileName = "a0205d17-e73c-4d3f-ad1b-8b875cb5f342cube_obj";
 const static std::string getFileNameBIMModel = "5be1aca9-e4d0-4cec-987d-80d2fde3dade3DrepoBIM_obj";
 
-
 const static std::string genFedDB = "genFedTest";
 const static std::string genFedNoSubProName = "noSubPro";
 const static std::string genFedSuccessName = "fedTest";
@@ -113,8 +113,8 @@ static repo::core::handler::MongoDatabaseHandler* getHandler()
 
 static std::vector<repo::lib::RepoVector3D> getGoldenDataForBBoxTest()
 {
-	return{ repo::lib::RepoVector3D( -30.00954627990722700f, -15.00000476837158200f, -0.00000199999999495f ), 
-			repo::lib::RepoVector3D( 30.05025100708007800f, 60.69493103027343800f, 30.00000953674316400f ) };
+	return{ repo::lib::RepoVector3D(-30.00954627990722700f, -15.00000476837158200f, -0.00000199999999495f),
+			repo::lib::RepoVector3D(30.05025100708007800f, 60.69493103027343800f, 30.00000953674316400f) };
 }
 
 static std::string getClientExePath()
@@ -149,7 +149,6 @@ static std::string getDataPath(
 	}
 	return returnPath;
 }
-
 
 static std::string getConnConfig() {
 	return getDataPath(connectionConfig);
@@ -197,11 +196,11 @@ static std::vector<std::string> getCollectionList(
 	{
 		return{ "3drepoBIM.history", "3drepoBIM.history.chunks", "3drepoBIM.history.files", "3drepoBIM.issues", "3drepoBIM.scene", "3drepoBIM.stash.3drepo",
 			"fedTest.history", "fedTest.issues", "fedTest.scene"
-			, "settings"};
+			, "settings" };
 	}
 	else
 	{
-		return{ "sphere.history", "sphere.history.chunks", "sphere.history.files", "sphere.issues", "sphere.scene", "sphere.scene.files", "sphere.scene.chunks", "sphere.stash.3drepo", "sphere.stash.3drepo.chunks", "sphere.stash.3drepo.files", "settings"};
+		return{ "sphere.history", "sphere.history.chunks", "sphere.history.files", "sphere.issues", "sphere.scene", "sphere.scene.files", "sphere.scene.chunks", "sphere.stash.3drepo", "sphere.stash.3drepo.chunks", "sphere.stash.3drepo.files", "settings" };
 	}
 }
 
@@ -225,7 +224,7 @@ static std::pair <std::pair<std::string, std::string>, mongo::BSONObj> getCollec
 		<< "indexSizes"
 		<< BSON("_id_" << 8176)*/
 		<< "ok" << 1.0000000000000000
-		);
+	);
 
 	return results;
 }

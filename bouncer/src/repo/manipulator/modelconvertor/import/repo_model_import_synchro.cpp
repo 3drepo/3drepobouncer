@@ -69,8 +69,12 @@ bool SynchroModelImport::importModel(std::string filePath, uint8_t &errMsg) {
 	orgFile = filePath;
 	reader = std::make_shared<synchro_reader::SPMReader>(filePath);
 	repoInfo << "=== IMPORTING MODEL WITH SYNCHRO MODEL CONVERTOR ===";
-	if (!reader->init()) {
-		errMsg = REPOERR_LOAD_SCENE_FAIL;
+	int errCode = reader->init();
+	if (errCode > 0) {
+		if (errCode == 2)
+			errMsg = REPOERR_UNSUPPORTED_VERSION;
+		else
+			errMsg = REPOERR_LOAD_SCENE_FAIL;
 		return false;
 	}
 	repoInfo << "Initialisation successful";
