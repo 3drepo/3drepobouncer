@@ -535,7 +535,7 @@ void SynchroModelImport::generateTaskInformation(
 			taskIDtoRepoID[taskID] = repo::lib::RepoUUID::createUUID();
 		}
 
-		SequenceTask taskItem = { taskIDtoRepoID[taskID] , task.second.name, task.second.startTime, task.second.endTime };
+		SequenceTask taskItem = { taskIDtoRepoID[taskID] , task.second.name, task.second.startTime * 1000, task.second.endTime * 1000 };
 
 		if (parentID.empty()) {
 			rootTasks.insert(taskItem);
