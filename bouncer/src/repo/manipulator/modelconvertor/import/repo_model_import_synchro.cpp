@@ -637,8 +637,18 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 	std::string animationName = animation.name.empty() ? DEFAULT_SEQUENCE_NAME : animation.name;
 	auto sequence = repo::core::model::RepoBSONFactory::makeSequence(frameData, animationName);
 	try {
-		repoInfo << "Animation constructed, number of frames: " << frameData.size();
-		scene->addSequence(sequence, stateBuffers);
+		if (sequence.objsize() > REPO_MAX_OBJ_SIZE) {
+			errMsg = REPOERR_SYNCHRO_SEQUENCE_TOO_BIG;
+			delete scene;
+			scene = nullptr;
+		}
+		else {
+			repoInfo << "Animation constructed, number of frames: " << frameData.size();
+			scene->addSequence(sequence, stateBuffers);
+
+			scene->setDefaultInvisible(defaultInvisible);
+			repoInfo << "#default invisible: " << defaultInvisible.size();
+		}
 	}
 	catch (const std::exception &e) {
 		std::string error(e.what());
@@ -652,9 +662,6 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 		delete scene;
 		return nullptr;
 	}
-
-	scene->setDefaultInvisible(defaultInvisible);
-	repoInfo << "#default invisible: " << defaultInvisible.size();
 
 	return scene;
 }

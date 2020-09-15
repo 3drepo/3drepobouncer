@@ -39,7 +39,7 @@ TEST(SynchroModelImport, ImportModel)
 	EXPECT_TRUE(import.importModel(getDataPath(synchroWithTransform), errCode));
 	EXPECT_EQ(0, errCode);
 
-	auto scene = import.generateRepoScene();
+	auto scene = import.generateRepoScene(errCode);
 
 	ASSERT_TRUE(scene);
 }
