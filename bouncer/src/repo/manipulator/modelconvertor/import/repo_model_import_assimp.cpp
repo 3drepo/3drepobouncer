@@ -1074,7 +1074,7 @@ repo::core::model::RepoNode* AssimpModelImport::duplicateMesh(
 	return newMesh;
 }
 
-repo::core::model::RepoScene * AssimpModelImport::generateRepoScene()
+repo::core::model::RepoScene * AssimpModelImport::generateRepoScene(uint8_t &errMsg)
 {
 	repo::core::model::RepoScene *scene;
 

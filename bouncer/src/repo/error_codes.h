@@ -77,3 +77,5 @@
 #define REPOERR_TIMEOUT 29
 //When Synchro is not compiled within the library
 #define REPOERR_SYNCHRO_UNAVAILABLE 30
+//Synchro sequence exceed size of bson
+#define REPOERR_SYNCHRO_SEQUENCE_TOO_BIG 31

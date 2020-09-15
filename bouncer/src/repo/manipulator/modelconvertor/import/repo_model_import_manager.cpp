@@ -49,10 +49,11 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 	repoTrace << "Importing model...";
 	if (modelConvertor->importModel(file, error)) {
 		repoTrace << "model Imported, generating Repo Scene";
-		scene = modelConvertor->generateRepoScene();
+		uint8_t errCode = REPOERR_LOAD_SCENE_FAIL;
+		scene = modelConvertor->generateRepoScene(errCode);
 
 		if (!scene) {
-			error = REPOERR_UNKNOWN_ERR;
+			error = errCode;
 		}
 		else {
 			if (scene->exceedsMaximumNodes()) {

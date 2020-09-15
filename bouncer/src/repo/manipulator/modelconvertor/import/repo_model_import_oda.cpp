@@ -31,7 +31,7 @@ bool OdaModelImport::isSupportedExts(const std::string &testExt)
 	return supportedExtensions.find(lowerExt) != std::string::npos;
 }
 
-repo::core::model::RepoScene* OdaModelImport::generateRepoScene()
+repo::core::model::RepoScene* OdaModelImport::generateRepoScene(uint8_t &errMsg)
 {
 	repo::core::model::RepoScene *scene = nullptr;
 #ifdef ODA_SUPPORT
@@ -59,6 +59,8 @@ repo::core::model::RepoScene* OdaModelImport::generateRepoScene()
 		scene = new repo::core::model::RepoScene({ filePath }, dummy, dummy, dummy, dummy, dummy, dummy);
 	}
 
+#else
+	errMsg = REPOERR_ODA_UNAVAILABLE;
 #endif
 	return scene;
 }

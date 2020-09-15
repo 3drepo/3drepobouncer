@@ -38,13 +38,15 @@ IFCModelImport::~IFCModelImport()
 {
 }
 
-repo::core::model::RepoScene* IFCModelImport::generateRepoScene()
+repo::core::model::RepoScene* IFCModelImport::generateRepoScene(uint8_t &errCode)
 {
 	IFCUtilsParser parserUtil(ifcFile);
 	std::string errMsg;
 	auto scene = parserUtil.generateRepoScene(errMsg, meshes, materials, offset);
-	if (!scene)
+	if (!scene) {
 		repoError << "Failed to generate Repo Scene: " << errMsg;
+		errCode = REPOERR_LOAD_SCENE_FAIL;
+	}
 	if (partialFailure) scene->setMissingNodes();
 	return scene;
 }

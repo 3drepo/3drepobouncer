@@ -54,7 +54,7 @@ namespace repo {
 				* been created before this call (e.g. by means of importModel())
 				* @return returns a populated RepoScene upon success.
 				*/
-				virtual repo::core::model::RepoScene* generateRepoScene() = 0;
+				virtual repo::core::model::RepoScene* generateRepoScene(uint8_t &errMsg) = 0;
 
 				/**
 				* Import model from a given file

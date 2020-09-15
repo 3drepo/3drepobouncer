@@ -567,7 +567,7 @@ void SynchroModelImport::generateTaskInformation(
 	scene->addSequenceTasks(taskBSONs, generateTaskCache(rootTasks, taskToChildren));
 }
 
-repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
+repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &errMsg) {
 	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> resourceIDsToSharedIDs;
 
 	auto scene = constructScene(resourceIDsToSharedIDs);
@@ -636,8 +636,23 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 
 	std::string animationName = animation.name.empty() ? DEFAULT_SEQUENCE_NAME : animation.name;
 	auto sequence = repo::core::model::RepoBSONFactory::makeSequence(frameData, animationName);
-	repoInfo << "Animation constructed, number of frames: " << frameData.size();
-	scene->addSequence(sequence, stateBuffers);
+	try {
+		repoInfo << "Animation constructed, number of frames: " << frameData.size();
+		scene->addSequence(sequence, stateBuffers);
+	}
+	catch (const std::exception &e) {
+		std::string error(e.what());
+		if (error.find("BufBuilder") != std::string::npos) {
+			errMsg = REPOERR_SYNCHRO_SEQUENCE_TOO_BIG;
+		}
+		else {
+			errMsg = REPOERR_LOAD_SCENE_FAIL;
+		}
+
+		delete scene;
+		return nullptr;
+	}
+
 	scene->setDefaultInvisible(defaultInvisible);
 	repoInfo << "#default invisible: " << defaultInvisible.size();
 

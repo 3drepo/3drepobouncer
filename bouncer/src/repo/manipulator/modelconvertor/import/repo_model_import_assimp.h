@@ -67,7 +67,7 @@ namespace repo {
 				* been created before this call
 				* @return returns a populated RepoScene upon success.
 				*/
-				repo::core::model::RepoScene* generateRepoScene();
+				repo::core::model::RepoScene* generateRepoScene(uint8_t &errMsg);
 
 				/**
 				* Import model from a given file
