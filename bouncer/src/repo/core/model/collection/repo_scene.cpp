@@ -605,7 +605,7 @@ bool RepoScene::commitSequence(
 		}
 
 		if (taskList.size()) {
-			if (!manager->uploadFileAndCommit(databaseName, taskCol, revID.toString(), taskList)) {
+			if (!manager->uploadFileAndCommit(databaseName, taskCol, sequence.getUUIDField(REPO_LABEL_ID).toString(), taskList)) {
 				repoError << "Failed to commit a task list";
 				success = false;
 			}
