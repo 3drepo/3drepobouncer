@@ -57,7 +57,7 @@ TEST(RepoBSONTest, ConstructFromMongoSizeExceeds) {
 		BSON("message" << msgData);
 	}
 	catch (const std::exception &e) {
-		EXPECT_NE(error.find("BufBuilder"), std::string::npos);
+		EXPECT_NE(e.find("BufBuilder"), std::string::npos);
 	}
 }
 
