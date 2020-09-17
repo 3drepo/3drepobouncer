@@ -465,7 +465,7 @@ void MultipartOptimizer::sortMeshes(
 			separateMeshes.insert(mesh->getUniqueID());
 		}
 		else {
-			uint32_t mFormat = mesh->getMFormat(isTransparent(scene, mesh));
+			uint32_t mFormat = mesh->getMFormat(isTransparent(scene, mesh), scene->isHiddenByDefault(mesh->getUniqueID()));
 			repo::lib::RepoUUID texID = getTextureID(scene, mesh);
 			auto it = normalMeshes.find(mFormat);
 			if (it == normalMeshes.end())

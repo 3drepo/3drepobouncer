@@ -92,7 +92,7 @@ namespace repo {
 				* where vertices is the LSB
 				* @return returns the mFormat flag
 				*/
-				uint32_t getMFormat(const bool isTransparent = false) const;
+				uint32_t getMFormat(const bool isTransparent = false, const bool isInvisibleDefault = false) const;
 
 				/**
 				* Get the type of node

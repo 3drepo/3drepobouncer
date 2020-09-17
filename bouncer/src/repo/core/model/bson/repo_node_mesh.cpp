@@ -281,7 +281,7 @@ std::vector<repo::lib::RepoVector3D> MeshNode::getVertices() const
 	return vertices;
 }
 
-uint32_t MeshNode::getMFormat(const bool isTransparent) const
+uint32_t MeshNode::getMFormat(const bool isTransparent, const bool isInvisibleDefault) const
 {
 	/*
 	 * maximum of 32 bit, each bit represent the presents of the following
@@ -293,9 +293,10 @@ uint32_t MeshNode::getMFormat(const bool isTransparent) const
 	uint32_t nBit = (uint32_t)hasBinField(REPO_NODE_MESH_LABEL_NORMALS) << 2;
 	uint32_t cBit = (uint32_t)hasBinField(REPO_NODE_MESH_LABEL_COLORS) << 3;
 	uint32_t transBit = isTransparent ? 1 : 0 << 4;
-	uint32_t uvBits = (hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT) ? getIntField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT) : 0) << 5;
+	uint32_t visiBit = isInvisibleDefault ? 1 : 0 << 5;
+	uint32_t uvBits = (hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT) ? getIntField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT) : 0) << 6;
 
-	return vBit | fBit | nBit | cBit | uvBits | transBit;
+	return vBit | fBit | nBit | cBit | uvBits | transBit | visiBit;
 }
 
 std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
