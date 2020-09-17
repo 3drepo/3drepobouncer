@@ -47,6 +47,20 @@ TEST(RepoBSONTest, ConstructFromMongo)
 	EXPECT_NE(bson1, bsonDiff);
 }
 
+TEST(RepoBSONTest, ConstructFromMongoSizeExceeds) {
+	std::string msgData;
+	msgData.resize(1024 * 1024 * 65);
+
+	ASSERT_ANY_THROW(BSON("message" << msgData));
+
+	try {
+		BSON("message" << msgData)
+	}
+	catch (const std::exception &e) {
+		EXPECT_NE(error.find("BufBuilder"), std::string::npos);
+	}
+}
+
 TEST(RepoBSONTest, GetField)
 {
 	EXPECT_EQ(testBson.getField("ice"), testBson.getField("ice"));
@@ -494,7 +508,6 @@ TEST(RepoBSONTest, GetEmbeddedDoubleTest)
 	RepoBSON hasFieldWrongTypeBson(BSON("field" << 1));
 	EXPECT_EQ(hasFieldWrongTypeBson.getEmbeddedDouble("field", "somethingElse"), 0);
 
-	
 	RepoBSON hasFieldNoEmbeddedField(BSON("field" << mongoTestBSON));
 	EXPECT_EQ(hasFieldNoEmbeddedField.getEmbeddedDouble("field", "somethingElse"), 0);
 
