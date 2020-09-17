@@ -448,14 +448,23 @@ void SynchroModelImport::updateFrameState(
 				}
 				else {
 					repo::lib::RepoMatrix matrix(transTask->trans);
-					std::vector<float> rotation = {
+					std::vector<float> toDX = {
+						1, 0, 0, 0,
+						0, 0, -1, 0,
+						0, 1, 0, 0,
+						0, 0, 0,  1
+					};
+					std::vector<float> toGL = {
 						1, 0, 0, 0,
 						0, 0, 1, 0,
 						0, -1, 0, 0,
-						0, 0, 0,  1,
+						0, 0, 0,  1
 					};
-					repo::lib::RepoMatrix conversionMatrix(rotation);
-					matrix = conversionMatrix * matrix;
+					repo::lib::RepoMatrix matDX(toDX);
+					repo::lib::RepoMatrix matGL(toGL);
+
+					matrix = matGL * matrix * matDX;
+
 					for (const auto &mesh : meshes) {
 						transformState[mesh] = matrix.getData();
 						transformingMesh.insert(mesh);
