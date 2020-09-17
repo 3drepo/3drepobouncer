@@ -54,7 +54,7 @@ TEST(RepoBSONTest, ConstructFromMongoSizeExceeds) {
 	ASSERT_ANY_THROW(BSON("message" << msgData));
 
 	try {
-		BSON("message" << msgData)
+		BSON("message" << msgData);
 	}
 	catch (const std::exception &e) {
 		EXPECT_NE(error.find("BufBuilder"), std::string::npos);
