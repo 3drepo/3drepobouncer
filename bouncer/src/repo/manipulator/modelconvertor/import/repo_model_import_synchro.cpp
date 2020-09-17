@@ -570,73 +570,75 @@ void SynchroModelImport::generateTaskInformation(
 repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &errMsg) {
 	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> resourceIDsToSharedIDs;
 
-	auto scene = constructScene(resourceIDsToSharedIDs);
-
-	repoInfo << "Getting tasks... ";
-	generateTaskInformation(reader->getTasks(), resourceIDsToSharedIDs, scene);
-
-	repoInfo << "Getting animations... ";
-	auto animInfo = reader->getAnimation();
-
-	auto animation = animInfo.first;
-
-	std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> meshAlphaState;
-	std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> meshColourState;
-	std::unordered_map<std::string, std::vector<uint8_t>> stateBuffers;
-	std::vector<repo::core::model::RepoSequence::FrameData> frameData;
-	std::set<repo::lib::RepoUUID> defaultInvisible;
-
-	auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
-	for (const auto &lastStateEntry : animInfo.second) {
-		if (resourceIDsToSharedIDs.find(lastStateEntry.first) == resourceIDsToSharedIDs.end()) continue;
-		for (const auto &id : resourceIDsToSharedIDs[lastStateEntry.first]) {
-			float defaultAlpha = 1;
-
-			auto material = scene->getChildrenNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT, id, repo::core::model::NodeType::MATERIAL);
-			std::vector<float> materialCol = { 0,0,0 };
-			if (material.size()) {
-				auto materialNode = (repo::core::model::MaterialNode*)material[0];
-				materialCol = materialNode->getMaterialStruct().diffuse;
-				defaultAlpha = materialNode->getMaterialStruct().opacity;
-			}
-
-			if (!lastStateEntry.second) {
-				defaultInvisible.insert(scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, id)->getUniqueID());
-			}
-
-			meshColourState[id] = { colourIn32Bit(materialCol), std::vector<float >() };
-			meshAlphaState[id] = { defaultAlpha, defaultAlpha };
-		}
-	}
-
-	std::shared_ptr<CameraChange> cam = nullptr;
-
-	std::unordered_map<repo::lib::RepoUUID, std::vector<float>, repo::lib::RepoUUIDHasher> transformState;
-	std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> clipState;
-
-	std::set<repo::lib::RepoUUID> transformingMesh;
-
-	for (const auto &currentFrame : animation.frames) {
-		auto currentTime = currentFrame.first;
-		updateFrameState(currentFrame.second, resourceIDsToSharedIDs, meshAlphaState, meshColourState, transformState, clipState, cam, transformingMesh);
-		auto cacheData = generateCache(meshAlphaState, meshColourState, transformState, clipState, cam);
-		stateBuffers[cacheData.first] = cacheData.second;
-
-		repo::core::model::RepoSequence::FrameData data;
-		data.ref = cacheData.first;
-		data.timestamp = currentTime;
-		frameData.push_back(data);
-	}
-
-	repoInfo << "transforming Mesh: " << transformingMesh.size();
-	for (const auto &mesh : transformingMesh) {
-		auto meshNode = (repo::core::model::MeshNode*) scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, mesh);
-		meshNode->swap(meshNode->cloneAndFlagIndependent());
-	}
-
-	std::string animationName = animation.name.empty() ? DEFAULT_SEQUENCE_NAME : animation.name;
-	auto sequence = repo::core::model::RepoBSONFactory::makeSequence(frameData, animationName);
+	repo::core::model::RepoScene* scene = nullptr;
 	try {
+		scene = constructScene(resourceIDsToSharedIDs);
+
+		repoInfo << "Getting tasks... ";
+		generateTaskInformation(reader->getTasks(), resourceIDsToSharedIDs, scene);
+
+		repoInfo << "Getting animations... ";
+		auto animInfo = reader->getAnimation();
+
+		auto animation = animInfo.first;
+
+		std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> meshAlphaState;
+		std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> meshColourState;
+		std::unordered_map<std::string, std::vector<uint8_t>> stateBuffers;
+		std::vector<repo::core::model::RepoSequence::FrameData> frameData;
+		std::set<repo::lib::RepoUUID> defaultInvisible;
+
+		auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
+		for (const auto &lastStateEntry : animInfo.second) {
+			if (resourceIDsToSharedIDs.find(lastStateEntry.first) == resourceIDsToSharedIDs.end()) continue;
+			for (const auto &id : resourceIDsToSharedIDs[lastStateEntry.first]) {
+				float defaultAlpha = 1;
+
+				auto material = scene->getChildrenNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT, id, repo::core::model::NodeType::MATERIAL);
+				std::vector<float> materialCol = { 0,0,0 };
+				if (material.size()) {
+					auto materialNode = (repo::core::model::MaterialNode*)material[0];
+					materialCol = materialNode->getMaterialStruct().diffuse;
+					defaultAlpha = materialNode->getMaterialStruct().opacity;
+				}
+
+				if (!lastStateEntry.second) {
+					defaultInvisible.insert(scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, id)->getUniqueID());
+				}
+
+				meshColourState[id] = { colourIn32Bit(materialCol), std::vector<float >() };
+				meshAlphaState[id] = { defaultAlpha, defaultAlpha };
+			}
+		}
+
+		std::shared_ptr<CameraChange> cam = nullptr;
+
+		std::unordered_map<repo::lib::RepoUUID, std::vector<float>, repo::lib::RepoUUIDHasher> transformState;
+		std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> clipState;
+
+		std::set<repo::lib::RepoUUID> transformingMesh;
+
+		for (const auto &currentFrame : animation.frames) {
+			auto currentTime = currentFrame.first;
+			updateFrameState(currentFrame.second, resourceIDsToSharedIDs, meshAlphaState, meshColourState, transformState, clipState, cam, transformingMesh);
+			auto cacheData = generateCache(meshAlphaState, meshColourState, transformState, clipState, cam);
+			stateBuffers[cacheData.first] = cacheData.second;
+
+			repo::core::model::RepoSequence::FrameData data;
+			data.ref = cacheData.first;
+			data.timestamp = currentTime;
+			frameData.push_back(data);
+		}
+
+		repoInfo << "transforming Mesh: " << transformingMesh.size();
+		for (const auto &mesh : transformingMesh) {
+			auto meshNode = (repo::core::model::MeshNode*) scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, mesh);
+			meshNode->swap(meshNode->cloneAndFlagIndependent());
+		}
+
+		std::string animationName = animation.name.empty() ? DEFAULT_SEQUENCE_NAME : animation.name;
+		auto sequence = repo::core::model::RepoBSONFactory::makeSequence(frameData, animationName);
+
 		if (sequence.objsize() > REPO_MAX_OBJ_SIZE) {
 			errMsg = REPOERR_SYNCHRO_SEQUENCE_TOO_BIG;
 			delete scene;
@@ -653,13 +655,14 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 	catch (const std::exception &e) {
 		std::string error(e.what());
 		if (error.find("BufBuilder") != std::string::npos) {
-			errMsg = REPOERR_SYNCHRO_SEQUENCE_TOO_BIG;
+			errMsg = scene ? REPOERR_SYNCHRO_SEQUENCE_TOO_BIG : REPOERR_MAX_NODES_EXCEEDED;
 		}
 		else {
 			errMsg = REPOERR_LOAD_SCENE_FAIL;
 		}
 
-		delete scene;
+		if (scene)
+			delete scene;
 		return nullptr;
 	}
 
