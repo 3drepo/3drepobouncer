@@ -365,7 +365,7 @@ TEST(RepoSceneTest, CommitStash)
 
 	RepoScene scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
 	scene2.setDatabaseAndProjectName("stashCommit", "test");
-	ASSERT_TRUE(scene2.commit(getHandler(), getFileManager(), errMsg, "blah"));
+	ASSERT_EQ(REPOERR_OK, scene2.commit(getHandler(), getFileManager(), errMsg, "blah"));
 	errMsg.clear();
 	//Empty stash shouldn't have commit but should return true(apparently)
 	EXPECT_TRUE(scene2.commitStash(getHandler(), errMsg));
@@ -446,7 +446,7 @@ TEST(RepoSceneTest, getRevisionProperties)
 
 	RepoScene scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
 	scene2.setDatabaseAndProjectName("sceneCommit", "test2");
-	ASSERT_TRUE(scene2.commit(getHandler(), getFileManager(), errMsg, commitUser, commitMessage, commitTag));
+	ASSERT_EQ(REPOERR_OK, scene2.commit(getHandler(), getFileManager(), errMsg, commitUser, commitMessage, commitTag));
 
 	scene2.setWorldOffset(offset);
 	EXPECT_EQ(scene2.getOwner(), commitUser);
