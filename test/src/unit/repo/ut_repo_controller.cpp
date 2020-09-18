@@ -45,15 +45,15 @@ TEST(RepoControllerTest, CommitScene) {
 
 	//Trying to commit a scene with empty db and project name should also fail
 	scene->setDatabaseAndProjectName("", "");
-	EXPECT_EQ(REPOERR_UPLOAD_FAILED, controller->commitScene(token, scene));
+	EXPECT_EQ(REPOERR_UNKNOWN_ERR, controller->commitScene(token, scene));
 	EXPECT_FALSE(scene->isRevisioned());
 
 	scene->setDatabaseAndProjectName("balh", "");
-	EXPECT_EQ(REPOERR_UPLOAD_FAILED, controller->commitScene(token, scene));
+	EXPECT_EQ(REPOERR_UNKNOWN_ERR, controller->commitScene(token, scene));
 	EXPECT_FALSE(scene->isRevisioned());
 
 	scene->setDatabaseAndProjectName("", "blah");
-	EXPECT_EQ(REPOERR_UPLOAD_FAILED, controller->commitScene(token, scene));
+	EXPECT_EQ(REPOERR_UNKNOWN_ERR, controller->commitScene(token, scene));
 	EXPECT_FALSE(scene->isRevisioned());
 
 	//Setting the db name and project name should allow commit successfully
