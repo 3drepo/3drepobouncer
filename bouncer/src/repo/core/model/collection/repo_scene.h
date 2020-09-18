@@ -249,7 +249,7 @@ namespace repo {
 				* @param tag tag for this commit (optional)
 				* @return returns true upon success
 				*/
-				bool commit(
+				uint8_t commit(
 					repo::core::handler::AbstractDatabaseHandler *handler,
 					repo::core::handler::fileservice::FileManager *manager,
 					std::string &errMsg,
@@ -941,7 +941,8 @@ namespace repo {
 				bool commitSequence(
 					repo::core::handler::AbstractDatabaseHandler *handler,
 					repo::core::handler::fileservice::FileManager *manager,
-					const repo::lib::RepoUUID &revID
+					const repo::lib::RepoUUID &revID,
+					std::string &err
 				);
 
 				/**

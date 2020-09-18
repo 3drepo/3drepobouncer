@@ -79,3 +79,5 @@
 #define REPOERR_SYNCHRO_UNAVAILABLE 30
 //Synchro sequence exceed size of bson
 #define REPOERR_SYNCHRO_SEQUENCE_TOO_BIG 31
+//Imported successfully, but failed to upload it to the database/fileshares
+#define REPOERR_UPLOAD_FAILED 32

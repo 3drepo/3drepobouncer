@@ -28,6 +28,7 @@
 #include <fstream>
 
 #include "../../../lib/repo_log.h"
+#include "../../../error_codes.h"
 #include "../bson/repo_bson_builder.h"
 #include "../bson/repo_bson_factory.h"
 
@@ -491,7 +492,7 @@ void RepoScene::clearStash()
 	stashGraph.rootNode = nullptr;
 }
 
-bool RepoScene::commit(
+uint8_t RepoScene::commit(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	repo::core::handler::fileservice::FileManager *manager,
 	std::string &errMsg,
@@ -505,7 +506,7 @@ bool RepoScene::commit(
 	if (!handler)
 	{
 		errMsg = "Cannot commit to the database - no database handler assigned.";
-		return false;
+		return REPOERR_UPLOAD_FAILED;
 	}
 
 	if (databaseName.empty() || projectName.empty())
@@ -513,13 +514,13 @@ bool RepoScene::commit(
 		errMsg = "Cannot commit to the database - databaseName or projectName is empty (database: "
 			+ databaseName
 			+ " project: " + projectName + " ).";
-		return false;
+		return REPOERR_UPLOAD_FAILED;
 	}
 
 	if (!graph.rootNode)
 	{
 		errMsg = "Cannot commit to the database - Scene is empty!.";
-		return false;
+		return REPOERR_UPLOAD_FAILED;
 	}
 
 	if (success &= commitProjectSettings(handler, errMsg, userName))
@@ -563,24 +564,24 @@ bool RepoScene::commit(
 			}
 			if (success && frameStates.size()) {
 				repoInfo << "Commited Scene nodes, committing sequence";
-				commitSequence(handler, manager, newRevNode->getUniqueID());
+				commitSequence(handler, manager, newRevNode->getUniqueID(), errMsg);
 			}
 		}
 	}
 	if (success) updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
 	//Create and Commit revision node
-	return success;
+	repoInfo << "Succes: " << success << " msg: " << errMsg;
+	return success ? REPOERR_OK : (errMsg.find("exceeds maxBsonObjectSize") != std::string::npos ? REPOERR_MAX_NODES_EXCEEDED : REPOERR_UPLOAD_FAILED);
 }
 
 bool RepoScene::commitSequence(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	repo::core::handler::fileservice::FileManager *manager,
-	const repo::lib::RepoUUID &revID
+	const repo::lib::RepoUUID &revID,
+	std::string &err
 ) {
 	bool success = true;
 	if (frameStates.size()) {
-		std::string err;
-
 		auto sequenceCol = projectName + "." + REPO_COLLECTION_SEQUENCE;
 		if (handler->insertDocument(
 			databaseName, sequenceCol, sequence.cloneAndAddRevision(revID), err)) {
@@ -782,7 +783,18 @@ bool RepoScene::commitRevisionNode(
 		return false;
 	}
 
-	return success && handler->insertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *newRevNode, errMsg);
+	std::string dummyData;
+	dummyData.resize(1024 * 1024 * 32);
+
+	RepoBSON dummyBson(BSON("msg" << dummyData));
+	auto clonedItem = newRevNode->cloneAndAddFields(&dummyBson);
+
+	if (success)
+		return  handler->insertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, clonedItem, errMsg);
+
+	return success;
+
+	/*return success && handler->insertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *newRevNode, errMsg);*/
 }
 
 bool RepoScene::commitNodes(

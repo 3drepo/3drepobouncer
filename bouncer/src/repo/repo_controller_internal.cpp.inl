@@ -17,6 +17,7 @@
 
 #pragma once
 #include "repo_controller.cpp.inl"
+#include "error_codes.h"
 
 #include "manipulator/modelconvertor/import/repo_model_import_assimp.h"
 #include "manipulator/modelconvertor/export/repo_model_export_assimp.h"
@@ -101,14 +102,14 @@ bool RepoController::_RepoControllerImpl::commitAssetBundleBuffers(
 	return success;
 }
 
-bool RepoController::_RepoControllerImpl::commitScene(
+uint8_t RepoController::_RepoControllerImpl::commitScene(
 	const RepoController::RepoToken                     *token,
 	repo::core::model::RepoScene        *scene,
 	const std::string                   &owner,
 	const std::string                      &tag,
 	const std::string                      &desc)
 {
-	bool success = false;
+	uint8_t errCode = REPOERR_UNKNOWN_ERR;
 	if (scene)
 	{
 		if (!(scene->getDatabaseName().empty() || scene->getProjectName().empty()))
@@ -121,7 +122,7 @@ bool RepoController::_RepoControllerImpl::commitScene(
 					sceneOwner = "ANONYMOUS USER";
 				}
 				manipulator::RepoManipulator* worker = workerPool.pop();
-				success = worker->commitScene(token->databaseAd,
+				errCode = worker->commitScene(token->databaseAd,
 					token->getCredentials(),
 					token->bucketName,
 					token->bucketRegion,
@@ -145,7 +146,7 @@ bool RepoController::_RepoControllerImpl::commitScene(
 	{
 		repoError << "Trying to commit an empty scene into the database";
 	}
-	return success;
+	return errCode;
 }
 
 uint64_t RepoController::_RepoControllerImpl::countItemsInCollection(

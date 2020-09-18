@@ -306,7 +306,7 @@ public:
 	* @param scene RepoScene to commit
 	* @param owner specify the owner of the scene (by default it is the user authorised to commit)
 	*/
-	bool commitScene(
+	uint8_t commitScene(
 		const RepoToken                     *token,
 		repo::core::model::RepoScene        *scene,
 		const std::string                   &owner = "",

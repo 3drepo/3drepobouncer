@@ -59,7 +59,7 @@ bool RepoController::commitAssetBundleBuffers(
 	return impl->commitAssetBundleBuffers(token, scene, buffers);
 }
 
-bool RepoController::commitScene(
+uint8_t RepoController::commitScene(
 	const RepoController::RepoToken    *token,
 	repo::core::model::RepoScene        *scene,
 	const std::string                   &owner,

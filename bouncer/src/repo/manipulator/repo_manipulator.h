@@ -48,7 +48,7 @@ namespace repo {
 			* @param scene scene to commit
 			* @param owner specify the owner of the scene (by default it is the user authorised to commit)
 			*/
-			bool commitScene(
+			uint8_t commitScene(
 				const std::string                     &databaseAd,
 				const repo::core::model::RepoBSON     *cred,
 				const std::string                     &bucketName,

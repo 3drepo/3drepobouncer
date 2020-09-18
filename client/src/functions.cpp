@@ -471,7 +471,9 @@ int32_t importFileAndCommit(
 		repoLog("Trying to commit this scene to database as " + database + "." + project);
 		graph->setDatabaseAndProjectName(database, project);
 
-		if (controller->commitScene(token, graph, owner, tag, desc))
+		err = controller->commitScene(token, graph, owner, tag, desc);
+
+		if (err == REPOERR_OK)
 		{
 			if (graph->isMissingNodes())
 			{
@@ -484,7 +486,7 @@ int32_t importFileAndCommit(
 				return REPOERR_LOAD_SCENE_MISSING_TEXTURE;
 			}
 			else
-				return REPOERR_OK;
+				return err;
 		}
 	}
 	return err ? err : REPOERR_LOAD_SCENE_FAIL;

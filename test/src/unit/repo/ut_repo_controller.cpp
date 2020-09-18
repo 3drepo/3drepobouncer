@@ -39,26 +39,26 @@ TEST(RepoControllerTest, CommitScene) {
 	//Try to commit a scene without setting db/project name
 	uint8_t errCode;
 	auto scene = controller->loadSceneFromFile(getDataPath(simpleModel), errCode);
-	EXPECT_EQ(0, errCode);
-	EXPECT_FALSE(controller->commitScene(token, scene));
+	EXPECT_EQ(REPOERR_OK, errCode);
+	EXPECT_EQ(REPOERR_UPLOAD_FAILED, controller->commitScene(token, scene));
 	EXPECT_FALSE(scene->isRevisioned());
 
 	//Trying to commit a scene with empty db and project name should also fail
 	scene->setDatabaseAndProjectName("", "");
-	EXPECT_FALSE(controller->commitScene(token, scene));
+	EXPECT_EQ(REPOERR_UPLOAD_FAILED, controller->commitScene(token, scene));
 	EXPECT_FALSE(scene->isRevisioned());
 
 	scene->setDatabaseAndProjectName("balh", "");
-	EXPECT_FALSE(controller->commitScene(token, scene));
+	EXPECT_EQ(REPOERR_UPLOAD_FAILED, controller->commitScene(token, scene));
 	EXPECT_FALSE(scene->isRevisioned());
 
 	scene->setDatabaseAndProjectName("", "blah");
-	EXPECT_FALSE(controller->commitScene(token, scene));
+	EXPECT_EQ(REPOERR_UPLOAD_FAILED, controller->commitScene(token, scene));
 	EXPECT_FALSE(scene->isRevisioned());
 
 	//Setting the db name and project name should allow commit successfully
 	scene->setDatabaseAndProjectName("commitSceneTest", "commitCube");
-	EXPECT_TRUE(controller->commitScene(initController(controller.get()), scene));
+	EXPECT_EQ(REPOERR_OK, controller->commitScene(initController(controller.get()), scene));
 	EXPECT_TRUE(scene->isRevisioned());
 	EXPECT_TRUE(projectExists("commitSceneTest", "commitCube"));
 	EXPECT_EQ(scene->getOwner(), REPO_GTEST_DBUSER);
@@ -67,14 +67,14 @@ TEST(RepoControllerTest, CommitScene) {
 	std::string owner = "dog";
 	EXPECT_EQ(errCode, 0);
 	scene2->setDatabaseAndProjectName("commitSceneTest", "commitCube2");
-	EXPECT_TRUE(controller->commitScene(initController(controller.get()), scene2, owner));
+	EXPECT_EQ(REPOERR_OK, controller->commitScene(initController(controller.get()), scene2, owner));
 	EXPECT_TRUE(scene2->isRevisioned());
 	EXPECT_TRUE(projectExists("commitSceneTest", "commitCube2"));
 	EXPECT_EQ(scene2->getOwner(), owner);
 
 	//null pointer checks
-	EXPECT_FALSE(controller->commitScene(token, nullptr));
-	EXPECT_FALSE(controller->commitScene(nullptr, scene));
+	EXPECT_EQ(REPOERR_UPLOAD_FAILED, controller->commitScene(token, nullptr));
+	EXPECT_EQ(REPOERR_UPLOAD_FAILED, controller->commitScene(nullptr, scene));
 }
 
 TEST(RepoControllerTest, LoadSceneFromFile) {
