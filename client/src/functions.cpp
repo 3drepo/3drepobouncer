@@ -171,6 +171,7 @@ int32_t generateFederation(
 	repoLog("Federation configuration file: " + fedFile);
 
 	bool  success = false;
+	uint8_t errCode = REPOERR_FED_GEN_FAIL;
 
 	boost::property_tree::ptree jsonTree;
 	try {
@@ -238,7 +239,7 @@ int32_t generateFederation(
 				if (success = scene)
 				{
 					scene->setDatabaseAndProjectName(database, project);
-					success = controller->commitScene(token, scene, owner);
+					errCode = controller->commitScene(token, scene, owner);
 				}
 			}
 			else
@@ -253,7 +254,7 @@ int32_t generateFederation(
 		repoLogError("Failed to generate Federation: " + std::string(e.what()));
 	}
 
-	return success ? REPOERR_OK : REPOERR_FED_GEN_FAIL;
+	return success ? REPOERR_OK : errCode;
 }
 
 bool _generateStash(
