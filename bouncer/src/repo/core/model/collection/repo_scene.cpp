@@ -783,18 +783,10 @@ bool RepoScene::commitRevisionNode(
 		return false;
 	}
 
-	std::string dummyData;
-	dummyData.resize(1024 * 1024 * 32);
-
-	RepoBSON dummyBson(BSON("msg" << dummyData));
-	auto clonedItem = newRevNode->cloneAndAddFields(&dummyBson);
-
 	if (success)
-		return  handler->insertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, clonedItem, errMsg);
+		return handler->insertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *newRevNode, errMsg);
 
 	return success;
-
-	/*return success && handler->insertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *newRevNode, errMsg);*/
 }
 
 bool RepoScene::commitNodes(
