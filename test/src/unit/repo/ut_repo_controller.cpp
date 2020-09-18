@@ -40,7 +40,7 @@ TEST(RepoControllerTest, CommitScene) {
 	uint8_t errCode;
 	auto scene = controller->loadSceneFromFile(getDataPath(simpleModel), errCode);
 	EXPECT_EQ(REPOERR_OK, errCode);
-	EXPECT_EQ(REPOERR_UPLOAD_FAILED, controller->commitScene(token, scene));
+	EXPECT_EQ(REPOERR_UNKNOWN_ERR, controller->commitScene(token, scene));
 	EXPECT_FALSE(scene->isRevisioned());
 
 	//Trying to commit a scene with empty db and project name should also fail
