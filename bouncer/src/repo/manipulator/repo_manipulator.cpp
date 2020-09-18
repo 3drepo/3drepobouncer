@@ -141,7 +141,7 @@ uint8_t RepoManipulator::commitScene(
 	const std::string                      &desc)
 {
 	repoLog("Manipulator: Committing model to database");
-	uint8_t errCode;
+	uint8_t errCode = REPOERR_UPLOAD_FAILED;
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	auto manager = repo::core::handler::fileservice::FileManager::getManager();
@@ -154,6 +154,7 @@ uint8_t RepoManipulator::commitScene(
 	if (dbName.empty() || projectName.empty())
 	{
 		repoError << "Failed to commit scene : database name or project name is empty!";
+		errCode = REPOERR_UPLOAD_FAILED;
 	}
 
 	if (handler && scene)
