@@ -74,7 +74,7 @@ TEST(RepoControllerTest, CommitScene) {
 
 	//null pointer checks
 	EXPECT_EQ(REPOERR_UNKNOWN_ERR, controller->commitScene(token, nullptr));
-	EXPECT_EQ(REPOERR_UPLOAD_FAILED, controller->commitScene(nullptr, scene));
+	EXPECT_EQ(REPOERR_UNKNOWN_ERR, controller->commitScene(nullptr, scene));
 }
 
 TEST(RepoControllerTest, LoadSceneFromFile) {
