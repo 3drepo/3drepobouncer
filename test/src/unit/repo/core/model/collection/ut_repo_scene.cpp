@@ -24,6 +24,7 @@
 #include <repo/core/model/bson/repo_node_transformation.h>
 #include <repo/core/model/bson/repo_bson_factory.h>
 #include <repo/core/model/collection/repo_scene.h>
+#include <repo/error_codes.h>
 
 #include "../../../../repo_test_utils.h"
 #include "../../../../repo_test_database_info.h"
@@ -65,7 +66,7 @@ TEST(RepoSceneTest, ConstructOrhpanMeshScene)
 
 	auto t1 = new TransformationNode(makeRandomNode(root->getSharedID(), getRandomString(rand() % 100 + 1) + root->getName()));
 	trans.insert(t1);
-	
+
 	auto m1 = new MeshNode();
 	auto m2 = new MeshNode();
 	auto m3 = new MeshNode();
@@ -74,7 +75,7 @@ TEST(RepoSceneTest, ConstructOrhpanMeshScene)
 	meshes.insert(m3);
 
 	RepoScene scene(files, empty, meshes, empty, empty, empty, trans);
-	EXPECT_TRUE(scene.isMissingNodes());	
+	EXPECT_TRUE(scene.isMissingNodes());
 }
 
 TEST(RepoSceneTest, FilterNodesByType)
@@ -290,12 +291,12 @@ TEST(RepoSceneTest, CommitScene)
 	std::string commitUser = "me";
 
 	//Commiting an empty scene should fail (fails on empty project/database name)
-	EXPECT_FALSE(scene.commit(getHandler(), getFileManager(), errMsg, commitUser));
+	EXPECT_EQ(REPOERR_UPLOAD_FAILED, scene.commit(getHandler(), getFileManager(), errMsg, commitUser));
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
 
 	scene.setDatabaseAndProjectName("sceneCommit", "test1");
-	EXPECT_FALSE(scene.commit(getHandler(), getFileManager(), errMsg, commitUser));
+	EXPECT_EQ(REPOERR_UPLOAD_FAILED, scene.commit(getHandler(), getFileManager(), errMsg, commitUser));
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
 
@@ -317,14 +318,14 @@ TEST(RepoSceneTest, CommitScene)
 
 	RepoScene scene2(std::vector<std::string>(), empty, meshNodes, empty, empty, empty, transNodes);
 	scene2.setDatabaseAndProjectName("sceneCommit", "test2");
-	EXPECT_FALSE(scene2.commit(nullptr, nullptr, errMsg, commitUser));
+	EXPECT_EQ(REPOERR_UPLOAD_FAILED, scene2.commit(nullptr, nullptr, errMsg, commitUser));
 	EXPECT_FALSE(errMsg.empty());
 	errMsg.clear();
 
 	std::string commitMsg = "this is a commit message for this commit.";
 	std::string commitTag = "test";
 
-	EXPECT_TRUE(scene2.commit(getHandler(), getFileManager(), errMsg, commitUser, commitMsg, commitTag));
+	EXPECT_EQ(REPOERR_OK, scene2.commit(getHandler(), getFileManager(), errMsg, commitUser, commitMsg, commitTag));
 	EXPECT_TRUE(errMsg.empty());
 
 	EXPECT_TRUE(scene2.isRevisioned());
@@ -400,7 +401,6 @@ TEST(RepoSceneTest, GetSetDatabaseProjectName)
 	EXPECT_EQ("system_h________a_", scene3.getDatabaseName());
 	EXPECT_EQ("p_r_o_j_e_c_t____", scene3.getProjectName());
 }
-
 
 TEST(RepoSceneTest, getSetRevisionID)
 {
@@ -733,7 +733,6 @@ TEST(RepoSceneTest, getTextureIDForMesh)
 	RepoScene scene;
 	EXPECT_TRUE(scene.getTextureIDForMesh(defaultG, repo::lib::RepoUUID::createUUID()).empty());
 
-
 	RepoNodeSet transNodes, meshNodes, empty, matNodes, texNodes;
 
 	auto root = new TransformationNode(makeRandomNode(getRandomString(rand() % 10 + 1)));
@@ -789,7 +788,7 @@ TEST(RepoSceneTest, getAllNodes)
 	metaNodes.insert(new MetadataNode(makeRandomNode(root->getSharedID())));
 	metaNodes.insert(new MetadataNode(makeRandomNode(root->getSharedID())));
 	refNodes.insert(new ReferenceNode(makeRandomNode(root->getSharedID())));
-	
+
 	transNodes.insert(root);
 
 	auto scene2 = RepoScene(std::vector<std::string>(), camNodes, meshNodes, matNodes, metaNodes, texNodes, transNodes, refNodes);
@@ -814,7 +813,6 @@ TEST(RepoSceneTest, getAllNodes)
 		EXPECT_NE(meshes.end(), meshes.find(mesh));
 		EXPECT_NE(allSharedIDs.end(), allSharedIDs.find(mesh->getSharedID()));
 	}
-
 
 	auto mats = scene2.getAllMaterials(defaultG);
 	EXPECT_EQ(matNodes.size(), mats.size());
@@ -843,7 +841,6 @@ TEST(RepoSceneTest, getAllNodes)
 		EXPECT_NE(allSharedIDs.end(), allSharedIDs.find(tran->getSharedID()));
 	}
 
-
 	auto metas = scene2.getAllMetadata(defaultG);
 	EXPECT_EQ(metaNodes.size(), metas.size());
 	EXPECT_EQ(0, scene2.getAllMetadata(RepoScene::GraphType::OPTIMIZED).size());
@@ -861,7 +858,6 @@ TEST(RepoSceneTest, getAllNodes)
 		EXPECT_NE(refs.end(), refs.find(ref));
 		EXPECT_NE(allSharedIDs.end(), allSharedIDs.find(ref->getSharedID()));
 	}
-
 }
 
 TEST(RepoSceneTest, getAllDescendantsByType)
@@ -897,7 +893,7 @@ TEST(RepoSceneTest, getAllDescendantsByType)
 
 	auto meshes = scene2.getAllDescendantsByType(defaultG, root->getSharedID(), NodeType::MESH);
 	ASSERT_EQ(2, meshes.size());
-	EXPECT_FALSE( std::find(meshes.begin(), meshes.end(), m1) == meshes.end());
+	EXPECT_FALSE(std::find(meshes.begin(), meshes.end(), m1) == meshes.end());
 	EXPECT_FALSE(std::find(meshes.begin(), meshes.end(), m2) == meshes.end());
 
 	meshes = scene2.getAllDescendantsByType(defaultG, trans2->getSharedID(), NodeType::MESH);
@@ -965,7 +961,6 @@ TEST(RepoSceneTest, getNodeBySharedID)
 	EXPECT_EQ(root, scene2.getNodeBySharedID(defaultG, root->getSharedID()));
 	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(defaultG, repo::lib::RepoUUID::createUUID()));
 	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(RepoScene::GraphType::OPTIMIZED, m2st->getSharedID()));
-
 }
 
 TEST(RepoSceneTest, getNodeByUniqueID)
@@ -1011,7 +1006,6 @@ TEST(RepoSceneTest, getNodeByUniqueID)
 	EXPECT_EQ(root, scene2.getNodeByUniqueID(defaultG, root->getUniqueID()));
 	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(defaultG, repo::lib::RepoUUID::createUUID()));
 	EXPECT_EQ(nullptr, scene2.getNodeBySharedID(RepoScene::GraphType::OPTIMIZED, m2st->getUniqueID()));
-
 }
 
 TEST(RepoSceneTest, hasRoot)
@@ -1089,7 +1083,6 @@ TEST(RepoSceneTest, getOriginalFiles)
 	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, empty, empty);
 	EXPECT_EQ(0, scene2.getOriginalFiles().size());
 
-
 	std::vector<std::string> orgFiles;
 	for (int i = 0; i < rand() % 10 + 1; ++i)
 	{
@@ -1114,7 +1107,6 @@ TEST(RepoSceneTest, getOriginalFiles)
 	EXPECT_EQ(getFileNameBIMModel, orgFilesOut2[0]);
 }
 
-
 TEST(RepoSceneTest, addNodes)
 {
 	std::vector<RepoNode *> newNodes;
@@ -1133,7 +1125,6 @@ TEST(RepoSceneTest, addNodes)
 
 	scene.addNodes(newNodes);
 	EXPECT_EQ(newNodes.size(), scene.getItemsInCurrentGraph(defaultG));
-
 
 	int currentSize = newNodes.size();
 	newNodes.clear();
@@ -1157,7 +1148,6 @@ TEST(RepoSceneTest, modifyNode)
 	scene.addNodes({ root });
 	RepoNode newFields = RepoBSON(BSON("name" << "cream"));
 	scene.modifyNode(defaultG, root, &newFields);
-
 
 	EXPECT_EQ(newFields.getName(), root->getName());
 
@@ -1200,14 +1190,14 @@ TEST(RepoSceneTest, reorientateDirectXModel)
 	EXPECT_FALSE(scene.hasRoot(RepoScene::GraphType::OPTIMIZED));
 
 	RepoNodeSet transNodes, transNodesStash, empty;
-	auto root = new TransformationNode( RepoBSONFactory::makeTransformationNode());
-	auto rootStash =new TransformationNode( RepoBSONFactory::makeTransformationNode());
+	auto root = new TransformationNode(RepoBSONFactory::makeTransformationNode());
+	auto rootStash = new TransformationNode(RepoBSONFactory::makeTransformationNode());
 	transNodes.insert(root);
 	transNodesStash.insert(rootStash);
 
 	ASSERT_TRUE(root->isIdentity());
 	ASSERT_TRUE(rootStash->isIdentity());
-	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, empty, transNodes);	
+	auto scene2 = RepoScene(std::vector<std::string>(), empty, empty, empty, empty, empty, transNodes);
 	scene2.addStashGraph(empty, empty, empty, empty, transNodesStash);
 	scene2.reorientateDirectXModel();
 	std::vector<float> rotatedMat =
@@ -1220,5 +1210,4 @@ TEST(RepoSceneTest, reorientateDirectXModel)
 
 	EXPECT_EQ(rotatedMat, root->getTransMatrix(false));
 	EXPECT_FALSE(scene2.hasRoot(RepoScene::GraphType::OPTIMIZED));
-
 }
