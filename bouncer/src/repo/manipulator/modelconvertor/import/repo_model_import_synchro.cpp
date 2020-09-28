@@ -186,7 +186,7 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 	repo::core::model::RepoNodeSet transNodes, matNodes, textNodes, meshNodes, metaNodes;
 	std::unordered_map<std::string, repo::lib::RepoUUID> synchroIDToRepoID;
 	std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> repoIDToNode;
-
+	repoInfo << "Generating materials.... ";
 	auto matPairs = generateMatNodes(synchroIDToRepoID, repoIDToNode);
 	matNodes = matPairs.first;
 	textNodes = matPairs.second;
@@ -198,8 +198,10 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 	std::unordered_map<repo::lib::RepoUUID, std::vector<repo::lib::RepoUUID>, repo::lib::RepoUUIDHasher> nodeToParents;
 	std::unordered_map<repo::lib::RepoUUID, std::string, repo::lib::RepoUUIDHasher> nodeToSynchroParent;
 
+	repoInfo << "Generating mesh templates...";
 	auto meshNodeTemplates = createMeshTemplateNodes();
 	std::vector<synchro_reader::Vector3D> bbox;
+	repoInfo << "Reading entities ";
 	for (const auto entity : reader->getEntities(bbox)) {
 		auto trans = createTransNode(identity, entity.second.name);
 		auto resourceID = entity.second.resourceID;
@@ -581,6 +583,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 
 	repo::core::model::RepoScene* scene = nullptr;
 	try {
+		repoInfo << "Constructing scene...";
 		scene = constructScene(resourceIDsToSharedIDs);
 
 		repoInfo << "Getting tasks... ";

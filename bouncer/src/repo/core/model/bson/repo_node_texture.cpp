@@ -26,12 +26,12 @@
 using namespace repo::core::model;
 
 TextureNode::TextureNode() :
-RepoNode()
+	RepoNode()
 {
 }
 
-TextureNode::TextureNode(RepoBSON bson) :
-RepoNode(bson)
+TextureNode::TextureNode(RepoBSON bson, const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>&binMapping) :
+	RepoNode(bson, binMapping)
 {
 }
 
@@ -46,7 +46,7 @@ std::vector<char> TextureNode::getRawData() const
 	{
 		getBinaryFieldAsVector(REPO_LABEL_DATA, dataVec);
 	}
-	else{
+	else {
 		repoError << "Cannot find field for data in texture node!";
 	}
 
