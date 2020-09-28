@@ -48,7 +48,8 @@ namespace repo {
 				* Construct a TextureNode from a RepoBSON object
 				* @param RepoBSON object
 				*/
-				TextureNode(RepoBSON bson);
+				TextureNode(RepoBSON bson,
+					const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>&binMapping = std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>());
 
 				/**
 				* Default deconstructor

@@ -896,7 +896,9 @@ TextureNode RepoBSONFactory::makeTextureNode(
 	const int         &apiLevel)
 {
 	RepoBSONBuilder builder;
-	auto defaults = appendDefaults(REPO_NODE_TYPE_TEXTURE, apiLevel, repo::lib::RepoUUID::createUUID(), name);
+	repo::lib::RepoUUID uniqueID = repo::lib::RepoUUID::createUUID();
+	std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> binMapping;
+	auto defaults = appendDefaults(REPO_NODE_TYPE_TEXTURE, apiLevel, uniqueID, name);
 	builder.appendElements(defaults);
 	//
 	// Width
@@ -922,17 +924,20 @@ TextureNode RepoBSONFactory::makeTextureNode(
 	// Data
 	//
 
-	if (data && byteCount)
-		builder.appendBinary(
-			REPO_LABEL_DATA,
-			data,
-			byteCount);
+	if (data && byteCount) {
+		std::string bName = uniqueID.toString() + "_data";
+		//inclusion of this binary exceeds the maximum, store separately
+		binMapping[REPO_LABEL_DATA] =
+			std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
+		binMapping[REPO_LABEL_DATA].second.resize(byteCount); //uint8_t will ensure it is a byte addrressing
+		memcpy(binMapping[REPO_LABEL_DATA].second.data(), data, byteCount);
+	}
 	else
 	{
 		repoWarning << " Creating a texture node with no texture!";
 	}
 
-	return TextureNode(builder.obj());
+	return TextureNode(builder.obj(), binMapping);
 }
 
 TransformationNode RepoBSONFactory::makeTransformationNode(
