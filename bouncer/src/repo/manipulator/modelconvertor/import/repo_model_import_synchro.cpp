@@ -211,9 +211,8 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 		nodeToSynchroParent[trans->getUniqueID()] = entity.second.parentID;
 		auto meta = entity.second.metadata;
 		meta[RESOURCE_ID_NAME] = resourceID;
-		if (meta.size() > 1 || !resourceID.empty()) {
-			metaNodes.insert(createMetaNode(meta, entity.second.name, { trans->getSharedID() }));
-		}
+
+		std::vector<repo::lib::RepoUUID> metaParents = { trans->getSharedID() };
 
 		if (!resourceID.empty() && resourceIDsToSharedIDs.find(resourceID) == resourceIDsToSharedIDs.end()) {
 			resourceIDsToSharedIDs[resourceID] = {};
@@ -244,6 +243,10 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 			repoIDToNode[mesh->getUniqueID()] = mesh;
 			if (!resourceID.empty())
 				resourceIDsToSharedIDs[resourceID].push_back(mesh->getSharedID());
+		}
+
+		if (meta.size() > 1 || !resourceID.empty()) {
+			metaNodes.insert(createMetaNode(meta, entity.second.name, metaParents));
 		}
 	}
 
