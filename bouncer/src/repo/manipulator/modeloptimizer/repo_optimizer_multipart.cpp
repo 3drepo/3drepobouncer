@@ -29,6 +29,7 @@ auto defaultGraph = repo::core::model::RepoScene::GraphType::DEFAULT;
 
 static const size_t  REPO_MP_MAX_FACE_COUNT = 500000;
 static const size_t REPO_MP_MAX_MESHES_IN_SUPERMESH = 5000;
+static const size_t REPO_MP_MAX_MESHES_IN_SEPARATED_SUPERMESH = 1000;
 
 MultipartOptimizer::MultipartOptimizer() :
 	AbstractOptimizer()
@@ -261,7 +262,7 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 	if (success = meshes.size())
 	{
 		std::unordered_map<uint32_t, std::unordered_map<repo::lib::RepoUUID, std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher>> normalMeshes;
-		std::set<repo::lib::RepoUUID> separateMeshes;
+		std::vector<std::set<repo::lib::RepoUUID>> separateMeshes;
 		//Sort the meshes into different groupings
 		sortMeshes(scene, meshes, normalMeshes, separateMeshes);
 
@@ -287,7 +288,8 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 		}
 
 		//Ungrouped meshes
-		processMeshGroup(scene, separateMeshes, rootID, mergedMeshes, matNodes, matIDs, true);
+		for (const auto &meshGroup : separateMeshes)
+			success &= processMeshGroup(scene, meshGroup, rootID, mergedMeshes, matNodes, matIDs, true);
 
 		if (success)
 		{
@@ -447,10 +449,11 @@ void MultipartOptimizer::sortMeshes(
 	const repo::core::model::RepoNodeSet                                    &meshes,
 	std::unordered_map < uint32_t, std::unordered_map < repo::lib::RepoUUID,
 	std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher >> &normalMeshes,
-	std::set<repo::lib::RepoUUID> &separateMeshes
+	std::vector<std::set<repo::lib::RepoUUID>> &separateMeshes
 )
 {
 	std::unordered_map<uint32_t, std::unordered_map<repo::lib::RepoUUID, size_t, repo::lib::RepoUUIDHasher> > normalFCount;
+	size_t separatesFCount = 0;
 
 	for (const auto &node : meshes)
 	{
@@ -462,7 +465,18 @@ void MultipartOptimizer::sortMeshes(
 		}
 
 		if (mesh->isIndependent()) {
-			separateMeshes.insert(mesh->getUniqueID());
+			size_t faceCount = mesh->getFaces().size();
+			if (!separateMeshes.size()) {
+				separateMeshes.push_back(std::set<repo::lib::RepoUUID>());
+			}
+			if (separatesFCount + faceCount > REPO_MP_MAX_FACE_COUNT ||
+				separateMeshes.back().size() > REPO_MP_MAX_MESHES_IN_SEPARATED_SUPERMESH)
+			{
+				//Exceed max face count or meshes, create another grouping entry for this format
+				separateMeshes.push_back(std::set<repo::lib::RepoUUID>());
+				separatesFCount = 0;
+			}
+			separateMeshes.back().insert(mesh->getUniqueID());
 		}
 		else {
 			uint32_t mFormat = mesh->getMFormat(isTransparent(scene, mesh), scene->isHiddenByDefault(mesh->getUniqueID()));

@@ -152,6 +152,17 @@ namespace repo {
 					repo::core::model::RepoScene* &scene
 				);
 
+				std::vector<repo::lib::RepoUUID> findRecursiveMeshSharedIDs(
+					repo::core::model::RepoScene* &scene,
+					const repo::lib::RepoUUID &id
+				) const;
+
+				void determineMeshesInResources(
+					repo::core::model::RepoScene* &scene,
+					const std::unordered_map<repo::lib::RepoUUID, std::vector<repo::lib::RepoUUID>, repo::lib::RepoUUIDHasher> &entityNodesToMeshesSharedID,
+					const std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToEntityNodes,
+					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs);
+
 				std::unordered_map<std::string, repo::core::model::MeshNode> createMeshTemplateNodes();
 
 				std::shared_ptr<synchro_reader::SPMReader> reader;

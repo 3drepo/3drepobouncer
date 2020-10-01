@@ -155,7 +155,7 @@ namespace repo {
 					const repo::core::model::RepoNodeSet                                    &meshes,
 					std::unordered_map < uint32_t, std::unordered_map < repo::lib::RepoUUID,
 					std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher >> &normalMeshes,
-					std::set<repo::lib::RepoUUID> &separateMeshes);
+					std::vector<std::set<repo::lib::RepoUUID>> &separateMeshes);
 			};
 		}
 	}

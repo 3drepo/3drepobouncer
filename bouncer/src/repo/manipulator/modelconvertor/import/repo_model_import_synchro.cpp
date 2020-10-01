@@ -180,6 +180,40 @@ repo::core::model::MeshNode* SynchroModelImport::createMeshNode(
 		templateMesh.cloneAndApplyTransformation(matrix).cloneAndAddParent(parentID, true, true));
 }
 
+std::vector<repo::lib::RepoUUID> SynchroModelImport::findRecursiveMeshSharedIDs(
+	repo::core::model::RepoScene* &scene,
+	const repo::lib::RepoUUID &id
+) const {
+	auto node = scene->getNodeByUniqueID(repo::core::model::RepoScene::GraphType::DEFAULT, id);
+
+	if (node->getTypeAsEnum() == repo::core::model::NodeType::MESH) {
+		return { node->getSharedID() };
+	}
+
+	auto allMeshes = scene->getAllDescendantsByType(repo::core::model::RepoScene::GraphType::DEFAULT, node->getSharedID(), repo::core::model::NodeType::MESH);
+	std::vector<repo::lib::RepoUUID> results;
+
+	for (const auto &mesh : allMeshes) {
+		results.push_back(mesh->getSharedID());
+	}
+
+	return results;
+}
+
+void SynchroModelImport::determineMeshesInResources(
+	repo::core::model::RepoScene* &scene,
+	const std::unordered_map<repo::lib::RepoUUID, std::vector<repo::lib::RepoUUID>, repo::lib::RepoUUIDHasher> &entityNodesToMeshesSharedID,
+	const std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToEntityNodes,
+	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs) {
+	for (const auto &entry : resourceIDsToEntityNodes) {
+		resourceIDsToSharedIDs[entry.first] = {};
+		for (const auto &nodeId : entry.second) {
+			auto meshes = findRecursiveMeshSharedIDs(scene, nodeId);
+			resourceIDsToSharedIDs[entry.first].insert(resourceIDsToSharedIDs[entry.first].end(), meshes.begin(), meshes.end());
+		}
+	}
+}
+
 repo::core::model::RepoScene* SynchroModelImport::constructScene(
 	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs
 ) {
@@ -197,6 +231,8 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 
 	std::unordered_map<repo::lib::RepoUUID, std::vector<repo::lib::RepoUUID>, repo::lib::RepoUUIDHasher> nodeToParents;
 	std::unordered_map<repo::lib::RepoUUID, std::string, repo::lib::RepoUUIDHasher> nodeToSynchroParent;
+	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> resourceIDsToEntityNodes;
+	std::unordered_map<repo::lib::RepoUUID, std::vector<repo::lib::RepoUUID>, repo::lib::RepoUUIDHasher> entityNodesToMeshesSharedID;
 
 	repoInfo << "Generating mesh templates...";
 	auto meshNodeTemplates = createMeshTemplateNodes();
@@ -206,16 +242,21 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 		auto trans = createTransNode(identity, entity.second.name);
 		auto resourceID = entity.second.resourceID;
 		transNodes.insert(trans);
-		repoIDToNode[trans->getUniqueID()] = trans;
-		synchroIDToRepoID[entity.second.id] = trans->getUniqueID();
-		nodeToSynchroParent[trans->getUniqueID()] = entity.second.parentID;
+		auto transUniqueID = trans->getUniqueID();
+		repoIDToNode[transUniqueID] = trans;
+		synchroIDToRepoID[entity.second.id] = transUniqueID;
+		nodeToSynchroParent[transUniqueID] = entity.second.parentID;
 		auto meta = entity.second.metadata;
 		meta[RESOURCE_ID_NAME] = resourceID;
 
 		std::vector<repo::lib::RepoUUID> metaParents = { trans->getSharedID() };
 
-		if (!resourceID.empty() && resourceIDsToSharedIDs.find(resourceID) == resourceIDsToSharedIDs.end()) {
-			resourceIDsToSharedIDs[resourceID] = {};
+		entityNodesToMeshesSharedID[transUniqueID] = {};
+		if (resourceIDsToEntityNodes.find(resourceID) == resourceIDsToEntityNodes.end()) {
+			resourceIDsToEntityNodes[resourceID] = { transUniqueID };
+		}
+		else {
+			resourceIDsToEntityNodes[resourceID].push_back(transUniqueID);
 		}
 
 		for (const auto meshEntry : entity.second.meshes) {
@@ -239,6 +280,7 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 				nodeToParents[matNodeID].push_back(mesh->getSharedID());
 
 			meshNodes.insert(mesh);
+			entityNodesToMeshesSharedID[transUniqueID].push_back(mesh->getSharedID());
 			synchroIDToRepoID[meshID] = mesh->getUniqueID();
 			repoIDToNode[mesh->getUniqueID()] = mesh;
 			if (!resourceID.empty())
@@ -279,6 +321,8 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 	repoInfo << "Setting Global Offset: " << offset[0] << ", " << offset[1] << ", " << offset[2];
 	scene->setWorldOffset(offset);
 
+	// Gather all meshes belong to a certain resource ID
+	determineMeshesInResources(scene, entityNodesToMeshesSharedID, resourceIDsToEntityNodes, resourceIDsToSharedIDs);
 	return scene;
 }
 
@@ -603,9 +647,11 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 		std::vector<repo::core::model::RepoSequence::FrameData> frameData;
 		std::set<repo::lib::RepoUUID> defaultInvisible;
 
-		auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
 		for (const auto &lastStateEntry : animInfo.second) {
-			if (resourceIDsToSharedIDs.find(lastStateEntry.first) == resourceIDsToSharedIDs.end()) continue;
+			if (resourceIDsToSharedIDs.find(lastStateEntry.first) == resourceIDsToSharedIDs.end()) {
+				continue;
+			};
+
 			for (const auto &id : resourceIDsToSharedIDs[lastStateEntry.first]) {
 				float defaultAlpha = 1;
 
