@@ -40,15 +40,18 @@ MeshNode::~MeshNode()
 {
 }
 
-MeshNode MeshNode::cloneAndFlagIndependent() const {
+MeshNode MeshNode::cloneAndNoteGrouping(const std::string &grouping) const {
 	RepoBSONBuilder builder;
-	builder.append(REPO_NODE_MESH_LABEL_INDEPENDENT, true);
+	builder.append(REPO_NODE_MESH_LABEL_GROUPING, grouping);
 	builder.appendElementsUnique(*this);
 	return MeshNode(builder.obj(), bigFiles);
 }
 
-bool MeshNode::isIndependent() const {
-	return hasField(REPO_NODE_MESH_LABEL_INDEPENDENT) && getBoolField(REPO_NODE_MESH_LABEL_INDEPENDENT);
+std::string MeshNode::getGrouping() const {
+	if (hasField(REPO_NODE_MESH_LABEL_GROUPING))
+		return getStringField(REPO_NODE_MESH_LABEL_GROUPING);
+
+	return "";
 }
 
 RepoNode MeshNode::cloneAndApplyTransformation(

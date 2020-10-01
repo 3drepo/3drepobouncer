@@ -193,7 +193,6 @@ bool MeshMapReorganiser::performSplitting()
 
 	//Resources
 	repo::lib::RepoUUID superMeshID = mesh->getUniqueID();
-	bool independentMesh = mesh->isIndependent();
 
 	repoTrace << "Performing splitting on mesh: " << mesh->getUniqueID();
 	size_t nMappings = orgMappings.size();
@@ -220,7 +219,7 @@ bool MeshMapReorganiser::performSplitting()
 		// If the current cumulative count of vertices is greater than the
 		// vertex limit then start a new mesh.
 		// If newMappings === 0 we need to initialize the first mesh
-		if (((subMeshVertexCount + currentMeshNumVertices) > maxVertices) || finishedSubMesh || independentMesh) {
+		if (((subMeshVertexCount + currentMeshNumVertices) > maxVertices) || finishedSubMesh) {
 			// Close off the previous sub mesh
 			if (!finishedSubMesh) // Have we already finished this one
 			{

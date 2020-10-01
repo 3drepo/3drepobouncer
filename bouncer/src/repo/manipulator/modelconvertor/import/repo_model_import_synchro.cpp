@@ -437,7 +437,7 @@ void SynchroModelImport::updateFrameState(
 	std::unordered_map<repo::lib::RepoUUID, std::vector<float>, repo::lib::RepoUUIDHasher> &transformState,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> &clipState,
 	std::shared_ptr<CameraChange> &cam,
-	std::set<repo::lib::RepoUUID> &transformingMesh
+	std::set<std::string> &transformingResource
 
 ) {
 	for (const auto &task : tasks) {
@@ -491,6 +491,7 @@ void SynchroModelImport::updateFrameState(
 			if (settings.shouldImportAnimations()) {
 				auto transTask = std::dynamic_pointer_cast<const synchro_reader::TransformationTask>(task);
 				auto meshes = resourceIDsToSharedIDs[transTask->resourceID];
+				transformingResource.insert(transTask->resourceID);
 				if (transTask->reset) {
 					for (const auto &mesh : meshes)
 						transformState.erase(mesh);
@@ -516,7 +517,6 @@ void SynchroModelImport::updateFrameState(
 
 					for (const auto &mesh : meshes) {
 						transformState[mesh] = matrix.getData();
-						transformingMesh.insert(mesh);
 					}
 				}
 			}
@@ -677,11 +677,11 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 		std::unordered_map<repo::lib::RepoUUID, std::vector<float>, repo::lib::RepoUUIDHasher> transformState;
 		std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> clipState;
 
-		std::set<repo::lib::RepoUUID> transformingMesh;
+		std::set<std::string> transformingResources;
 
 		for (const auto &currentFrame : animation.frames) {
 			auto currentTime = currentFrame.first;
-			updateFrameState(currentFrame.second, resourceIDsToSharedIDs, meshAlphaState, meshColourState, transformState, clipState, cam, transformingMesh);
+			updateFrameState(currentFrame.second, resourceIDsToSharedIDs, meshAlphaState, meshColourState, transformState, clipState, cam, transformingResources);
 			auto cacheData = generateCache(meshAlphaState, meshColourState, transformState, clipState, cam);
 			stateBuffers[cacheData.first] = cacheData.second;
 
@@ -691,10 +691,12 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 			frameData.push_back(data);
 		}
 
-		repoInfo << "transforming Mesh: " << transformingMesh.size();
-		for (const auto &mesh : transformingMesh) {
-			auto meshNode = (repo::core::model::MeshNode*) scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, mesh);
-			meshNode->swap(meshNode->cloneAndFlagIndependent());
+		repoInfo << "transforming Mesh: " << transformingResources.size();
+		for (const auto &resourceID : transformingResources) {
+			for (const auto &mesh : resourceIDsToSharedIDs[resourceID]) {
+				auto meshNode = (repo::core::model::MeshNode*) scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, mesh);
+				meshNode->swap(meshNode->cloneAndNoteGrouping(resourceID));
+			}
 		}
 
 		std::string animationName = animation.name.empty() ? DEFAULT_SEQUENCE_NAME : animation.name;

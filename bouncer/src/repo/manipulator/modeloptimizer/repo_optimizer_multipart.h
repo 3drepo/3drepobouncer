@@ -88,7 +88,8 @@ namespace repo {
 				repo::core::model::MeshNode* createSuperMesh(
 					const repo::core::model::RepoScene *scene,
 					const std::set<repo::lib::RepoUUID>           &meshGroup,
-					std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher> &matIDs);
+					std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher> &matIDs,
+					const bool isGrouped);
 
 				/**
 				* Generate the multipart scene
@@ -142,20 +143,18 @@ namespace repo {
 					repo::core::model::RepoNodeSet                                             &mergedMeshes,
 					std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> &matNodes,
 					std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>                    &matIDs,
-					const bool independentGroup = false);
+					const bool isGrouped);
 
 				/**
 				* Sort the given RepoNodeSet of meshes for multipart merging
 				* @param scene             scene as reference
 				* @param meshes            meshes to sort
-				* @param texturedMeshes    container to store textured meshes
 				*/
 				void sortMeshes(
 					const repo::core::model::RepoScene                                      *scene,
 					const repo::core::model::RepoNodeSet                                    &meshes,
-					std::unordered_map < uint32_t, std::unordered_map < repo::lib::RepoUUID,
-					std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher >> &normalMeshes,
-					std::vector<std::set<repo::lib::RepoUUID>> &separateMeshes);
+					std::unordered_map < std::string, std::unordered_map < uint32_t, std::unordered_map < repo::lib::RepoUUID,
+					std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher >>> &normalMeshes);
 			};
 		}
 	}
