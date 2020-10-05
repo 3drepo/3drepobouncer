@@ -172,9 +172,9 @@ repo::core::model::MeshNode* SynchroModelImport::createMeshNode(
 	const std::vector<double> &offset,
 	const repo::lib::RepoUUID &parentID) {
 	auto trans = transformation;
-	trans[3] -= offset[0];
-	trans[7] -= offset[1];
-	trans[11] -= offset[2];
+	//trans[3] -= offset[0];
+	//trans[7] -= offset[1];
+	//trans[11] -= offset[2];
 	auto matrix = repo::lib::RepoMatrix(trans);
 	return new repo::core::model::MeshNode(
 		templateMesh.cloneAndApplyTransformation(matrix).cloneAndAddParent(parentID, true, true));
@@ -317,7 +317,9 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 		<< metaNodes.size() << " metadata ";
 	auto scene = new repo::core::model::RepoScene({ orgFile }, dummy, meshNodes, matNodes, metaNodes, textNodes, transNodes);
 	auto origin = reader->getGlobalOffset();
-	std::vector<double> offset = { origin.x + bbox[0].x, origin.y + bbox[0].y, origin.z + bbox[0].z };
+
+	/*std::vector<double> offset = { origin.x + bbox[0].x, origin.y + bbox[0].y, origin.z + bbox[0].z };*/
+	std::vector<double> offset = { origin.x, origin.y, origin.z };
 	repoInfo << "Setting Global Offset: " << offset[0] << ", " << offset[1] << ", " << offset[2];
 	scene->setWorldOffset(offset);
 
@@ -437,7 +439,8 @@ void SynchroModelImport::updateFrameState(
 	std::unordered_map<repo::lib::RepoUUID, std::vector<float>, repo::lib::RepoUUIDHasher> &transformState,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> &clipState,
 	std::shared_ptr<CameraChange> &cam,
-	std::set<std::string> &transformingResource
+	std::set<std::string> &transformingResource,
+	const std::vector<double> &offset
 
 ) {
 	for (const auto &task : tasks) {
@@ -474,7 +477,6 @@ void SynchroModelImport::updateFrameState(
 		case synchro_reader::AnimationTask::TaskType::COLOR:
 		{
 			auto colourTask = std::dynamic_pointer_cast<const synchro_reader::ColourTask>(task);
-
 			if (resourceIDsToSharedIDs.find(colourTask->resourceID) != resourceIDsToSharedIDs.end()) {
 				auto color = colourTask->color;
 				bool reset = !color.size();
@@ -510,9 +512,9 @@ void SynchroModelImport::updateFrameState(
 						0, -1, 0, 0,
 						0, 0, 0,  1
 					};
+
 					repo::lib::RepoMatrix matDX(toDX);
 					repo::lib::RepoMatrix matGL(toGL);
-
 					matrix = matGL * matrix * matDX;
 
 					for (const auto &mesh : meshes) {
@@ -634,6 +636,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 		scene = constructScene(resourceIDsToSharedIDs);
 
 		repoInfo << "Getting tasks... ";
+
 		generateTaskInformation(reader->getTasks(), resourceIDsToSharedIDs, scene);
 
 		repoInfo << "Getting animations... ";
@@ -679,9 +682,12 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 
 		std::set<std::string> transformingResources;
 
+		auto origin = reader->getGlobalOffset();
+		std::vector<double> offset = { origin.x, origin.z , -origin.y };
+
 		for (const auto &currentFrame : animation.frames) {
 			auto currentTime = currentFrame.first;
-			updateFrameState(currentFrame.second, resourceIDsToSharedIDs, meshAlphaState, meshColourState, transformState, clipState, cam, transformingResources);
+			updateFrameState(currentFrame.second, resourceIDsToSharedIDs, meshAlphaState, meshColourState, transformState, clipState, cam, transformingResources, offset);
 			auto cacheData = generateCache(meshAlphaState, meshColourState, transformState, clipState, cam);
 			stateBuffers[cacheData.first] = cacheData.second;
 

@@ -132,7 +132,8 @@ namespace repo {
 					std::unordered_map<repo::lib::RepoUUID, std::vector<float>, repo::lib::RepoUUIDHasher> &transformState,
 					std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> &clipState,
 					std::shared_ptr<CameraChange> &cam,
-					std::set<std::string> &transformingResource
+					std::set<std::string> &transformingResource,
+					const std::vector<double> &offset
 
 				);
 
@@ -186,9 +187,9 @@ namespace repo {
 				bool importModel(std::string filePath, uint8_t &errMsg) {
 					errMsg = REPOERR_SYNCHRO_UNAVAILABLE;
 					return false;
-				}
+			}
 #endif
-			};
-		} //namespace SynchroModelImport
-	} //namespace manipulator
+		};
+	} //namespace SynchroModelImport
+} //namespace manipulator
 } //namespace repo
