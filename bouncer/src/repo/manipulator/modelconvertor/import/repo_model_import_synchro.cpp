@@ -513,9 +513,19 @@ void SynchroModelImport::updateFrameState(
 						0, 0, 0,  1
 					};
 
+					std::vector<float> toWorld = {
+						1, 0, 0, (float)offset[0],
+						0, 1, 0, (float)offset[1],
+						0, 0, 1, (float)offset[2],
+						0, 0, 0,  1
+					};
+
 					repo::lib::RepoMatrix matDX(toDX);
 					repo::lib::RepoMatrix matGL(toGL);
-					matrix = matGL * matrix * matDX;
+					repo::lib::RepoMatrix matToWorld(toWorld);
+					auto fromWorld = matToWorld.invert();
+
+					matrix = matToWorld * matGL * matrix * matDX * fromWorld;
 
 					for (const auto &mesh : meshes) {
 						transformState[mesh] = matrix.getData();
