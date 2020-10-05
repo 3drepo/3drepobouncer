@@ -48,7 +48,7 @@ TEST(MultipartOptimizer, ApplyOptimizationTestEmpty)
 	delete empty2;
 }
 
-repo::core::model::MeshNode* createRandomMesh(const bool hasUV, const bool isIndependent, const std::vector<repo::lib::RepoUUID> &parent) {
+repo::core::model::MeshNode* createRandomMesh(const bool hasUV, const std::vector<repo::lib::RepoUUID> &parent) {
 	int nVertices = 10;
 	int nFaces = 3;
 	std::vector<repo::lib::RepoVector3D> vertices;
@@ -76,9 +76,6 @@ repo::core::model::MeshNode* createRandomMesh(const bool hasUV, const bool isInd
 
 	auto mesh = new repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces, {}, {}, uvs, {}, {}, "mesh", parent));
 
-	if (isIndependent)
-		mesh->swap(mesh->cloneAndFlagIndependent());
-
 	return mesh;
 }
 
@@ -92,7 +89,7 @@ TEST(MultipartOptimizer, TestAllMerged)
 	repo::core::model::RepoNodeSet meshes, trans, dummy;
 	trans.insert(root);
 	for (int i = 0; i < nMesh; ++i)
-		meshes.insert(createRandomMesh(false, false, { rootID }));
+		meshes.insert(createRandomMesh(false, { rootID }));
 
 	repo::core::model::RepoScene *scene = new repo::core::model::RepoScene({}, dummy, meshes, dummy, dummy, dummy, trans);
 	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
@@ -105,29 +102,6 @@ TEST(MultipartOptimizer, TestAllMerged)
 	EXPECT_EQ(1, scene->getAllMeshes(OPTIMIZED_GRAPH).size());
 }
 
-TEST(MultipartOptimizer, TestWithIndependent)
-{
-	auto opt = MultipartOptimizer();
-	auto root = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode());
-	auto rootID = root->getSharedID();
-
-	auto nMesh = 3;
-	repo::core::model::RepoNodeSet meshes, trans, dummy;
-	trans.insert(root);
-	for (int i = 0; i < nMesh; ++i)
-		meshes.insert(createRandomMesh(false, i == 1, { rootID }));
-
-	repo::core::model::RepoScene *scene = new repo::core::model::RepoScene({}, dummy, meshes, dummy, dummy, dummy, trans);
-	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
-	ASSERT_FALSE(scene->hasRoot(OPTIMIZED_GRAPH));
-
-	EXPECT_TRUE(opt.apply(scene));
-	EXPECT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
-	EXPECT_TRUE(scene->hasRoot(OPTIMIZED_GRAPH));
-
-	EXPECT_EQ(2, scene->getAllMeshes(OPTIMIZED_GRAPH).size());
-}
-
 TEST(MultipartOptimizer, TestWithUV)
 {
 	auto opt = MultipartOptimizer();
@@ -138,7 +112,7 @@ TEST(MultipartOptimizer, TestWithUV)
 	repo::core::model::RepoNodeSet meshes, trans, dummy;
 	trans.insert(root);
 	for (int i = 0; i < nMesh; ++i)
-		meshes.insert(createRandomMesh(i == 1, false, { rootID }));
+		meshes.insert(createRandomMesh(i == 1, { rootID }));
 
 	repo::core::model::RepoScene *scene = new repo::core::model::RepoScene({}, dummy, meshes, dummy, dummy, dummy, trans);
 	ASSERT_TRUE(scene->hasRoot(DEFAULT_GRAPH));
