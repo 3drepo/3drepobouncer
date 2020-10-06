@@ -346,7 +346,7 @@ std::vector<float> SynchroModelImport::colourFrom32Bit(const uint32_t &color) co
 std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
 	const std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
 	const std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
-	const std::unordered_map<repo::lib::RepoUUID, std::vector<float>, repo::lib::RepoUUIDHasher> &transformState,
+	const std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> &transformState,
 	const std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> &clipState,
 	const std::shared_ptr<CameraChange> &cam) {
 	std::vector<repo::lib::PropertyTree> transparencyStates, colourStates, transformationStates, clipPlaneStates;
@@ -436,7 +436,7 @@ void SynchroModelImport::updateFrameState(
 	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
-	std::unordered_map<repo::lib::RepoUUID, std::vector<float>, repo::lib::RepoUUIDHasher> &transformState,
+	std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> &transformState,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> &clipState,
 	std::shared_ptr<CameraChange> &cam,
 	std::set<std::string> &transformingResource,
@@ -499,30 +499,30 @@ void SynchroModelImport::updateFrameState(
 						transformState.erase(mesh);
 				}
 				else {
-					repo::lib::RepoMatrix matrix(transTask->trans);
-					std::vector<float> toDX = {
+					repo::lib::RepoMatrix64 matrix(transTask->trans);
+					std::vector<double> toDX = {
 						1, 0, 0, 0,
 						0, 0, -1, 0,
 						0, 1, 0, 0,
 						0, 0, 0,  1
 					};
-					std::vector<float> toGL = {
+					std::vector<double> toGL = {
 						1, 0, 0, 0,
 						0, 0, 1, 0,
 						0, -1, 0, 0,
 						0, 0, 0,  1
 					};
 
-					std::vector<float> toWorld = {
-						1, 0, 0, (float)offset[0],
-						0, 1, 0, (float)offset[1],
-						0, 0, 1, (float)offset[2],
+					std::vector<double> toWorld = {
+						1, 0, 0, offset[0],
+						0, 1, 0, offset[1],
+						0, 0, 1, offset[2],
 						0, 0, 0,  1
 					};
 
-					repo::lib::RepoMatrix matDX(toDX);
-					repo::lib::RepoMatrix matGL(toGL);
-					repo::lib::RepoMatrix matToWorld(toWorld);
+					repo::lib::RepoMatrix64 matDX(toDX);
+					repo::lib::RepoMatrix64 matGL(toGL);
+					repo::lib::RepoMatrix64 matToWorld(toWorld);
 					auto fromWorld = matToWorld.invert();
 
 					matrix = matToWorld * matGL * matrix * matDX * fromWorld;
@@ -687,7 +687,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 
 		std::shared_ptr<CameraChange> cam = nullptr;
 
-		std::unordered_map<repo::lib::RepoUUID, std::vector<float>, repo::lib::RepoUUIDHasher> transformState;
+		std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> transformState;
 		std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> clipState;
 
 		std::set<std::string> transformingResources;
