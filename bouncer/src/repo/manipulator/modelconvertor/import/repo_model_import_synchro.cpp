@@ -722,7 +722,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 		std::vector<double> offset = { origin.x, origin.z , -origin.y };
 		int count = 0;
 		auto total = animation.frames.size();
-		int step = animation.frames.size() / 10;
+		int step = total > 10? total / 10 : 1;
 		for (const auto &currentFrame : animation.frames) {
 			auto currentTime = currentFrame.first;
 			//auto start = std::chrono::high_resolution_clock::now();
