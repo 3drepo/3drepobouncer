@@ -17,6 +17,7 @@
 
 #ifdef SYNCHRO_SUPPORT
 #include <memory>
+#include <chrono>
 #include "repo_model_import_synchro.h"
 
 #include "../../../core/model/bson/repo_bson_builder.h"
@@ -343,28 +344,18 @@ std::vector<float> SynchroModelImport::colourFrom32Bit(const uint32_t &color) co
 	return{ (float)colorArr[0] / 255.f, (float)colorArr[1] / 255.f, (float)colorArr[2] / 255.f };
 }
 
-std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
-	const std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
+std::string SynchroModelImport::generateCache(
+	const std::unordered_map<float, std::set<std::string>> &alphaValueToIDs,
 	const std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
 	const std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> &transformState,
 	const std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> &clipState,
-	const std::shared_ptr<CameraChange> &cam) {
+	const std::shared_ptr<CameraChange> &cam,
+	std::unordered_map<std::string, std::vector<uint8_t>> &stateBuffers) {
 	std::vector<repo::lib::PropertyTree> transparencyStates, colourStates, transformationStates, clipPlaneStates;
 	std::unordered_map<float, std::vector<std::string>> transToIDs;
 	std::unordered_map<uint32_t, std::vector<std::string>> colorToIDs;
 
-	for (const auto &entry : meshAlphaState) {
-		auto value = entry.second.second;
-		if (value != entry.second.first) {
-			if (transToIDs.find(value) == transToIDs.end()) {
-				transToIDs[value] = { entry.first.toString() };
-			}
-			else {
-				transToIDs[value].push_back(entry.first.toString());
-			}
-		}
-	}
-
+	//auto start = std::chrono::high_resolution_clock::now();
 	for (const auto &entry : meshColourState) {
 		if (!entry.second.second.size()) continue;
 		auto value = colourIn32Bit(entry.second.second);
@@ -377,7 +368,9 @@ std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
 			}
 		}
 	}
-
+	/*auto end = std::chrono::high_resolution_clock::now();
+	repoInfo << "\tmeshColourState: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.;
+	start = std::chrono::high_resolution_clock::now();*/
 	if (settings.shouldImportAnimations()) {
 		for (const auto &entry : transformState) {
 			repo::lib::PropertyTree transformTree;
@@ -387,6 +380,9 @@ std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
 			transformationStates.push_back(transformTree);
 		}
 	}
+	/*end = std::chrono::high_resolution_clock::now();
+	repoInfo << "\ttransformState: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.;
+	start = std::chrono::high_resolution_clock::now();*/
 
 	for (const auto &entry : clipState) {
 		repo::lib::PropertyTree clipTree, valueTree;
@@ -397,13 +393,18 @@ std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
 		clipTree.addToTree(SEQ_CACHE_LABEL_SHARED_IDS, idArr);
 		clipPlaneStates.push_back(clipTree);
 	}
-
-	for (const auto &entry : transToIDs) {
+	/*end = std::chrono::high_resolution_clock::now();
+	repoInfo << "\tclipState: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.;
+	start = std::chrono::high_resolution_clock::now();*/
+	for (const auto &entry : alphaValueToIDs) {
 		repo::lib::PropertyTree transTree;
 		transTree.addToTree(SEQ_CACHE_LABEL_VALUE, entry.first);
 		transTree.addToTree(SEQ_CACHE_LABEL_SHARED_IDS, entry.second);
 		transparencyStates.push_back(transTree);
 	}
+	/*end = std::chrono::high_resolution_clock::now();
+	repoInfo << "\ttransToId: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.;
+	start = std::chrono::high_resolution_clock::now();*/
 
 	for (const auto &entry : colorToIDs) {
 		repo::lib::PropertyTree colTree;
@@ -411,13 +412,18 @@ std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
 		colTree.addToTree(SEQ_CACHE_LABEL_SHARED_IDS, entry.second);
 		colourStates.push_back(colTree);
 	}
+	/*end = std::chrono::high_resolution_clock::now();
+	repoInfo << "\tcolorToIDs: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.;
+	start = std::chrono::high_resolution_clock::now();*/
 
 	repo::lib::PropertyTree bufferTree;
 	if (transparencyStates.size()) bufferTree.addArrayObjects(SEQ_CACHE_LABEL_TRANSPARENCY, transparencyStates);
 	if (colourStates.size()) bufferTree.addArrayObjects(SEQ_CACHE_LABEL_COLOR, colourStates);
 	if (transformationStates.size()) bufferTree.addArrayObjects(SEQ_CACHE_LABEL_TRANSFORMATION, transformationStates);
 	if (clipPlaneStates.size()) bufferTree.addArrayObjects(SEQ_CACHE_LABEL_CLIP, clipPlaneStates);
-
+	/*end = std::chrono::high_resolution_clock::now();
+	repoInfo << "\taddToTree: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.;
+	start = std::chrono::high_resolution_clock::now();*/
 	if (cam) {
 		repo::lib::PropertyTree camTree;
 		camTree.addToTree(SEQ_CACHE_LABEL_POSITION, cam->position);
@@ -427,13 +433,19 @@ std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
 		camTree.addToTree(SEQ_CACHE_LABEL_FOV, cam->fov);
 		bufferTree.mergeSubTree(SEQ_CACHE_LABEL_CAMERA, camTree);
 	}
+	/*end = std::chrono::high_resolution_clock::now();
+	repoInfo << "\taddToTree(cam): " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.;*/
 
-	return { repo::lib::RepoUUID::createUUID().toString(), bufferTree.writeJsonToBuffer() };
+	auto id = repo::lib::RepoUUID::createUUID().toString();
+
+	stateBuffers[id] = bufferTree.writeJsonToBuffer();
+	return id;
 }
 
 void SynchroModelImport::updateFrameState(
 	const std::vector<std::shared_ptr<synchro_reader::AnimationTask>> &tasks,
 	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
+	std::unordered_map<float, std::set<std::string>> &alphaValueToIDs,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
 	std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> &transformState,
@@ -544,7 +556,21 @@ void SynchroModelImport::updateFrameState(
 				auto visibility = visibilityTask->visibility;
 				auto meshes = resourceIDsToSharedIDs[visibilityTask->resourceID];
 				for (const auto mesh : meshes) {
-					meshAlphaState[mesh].second = visibility == -1 ? meshAlphaState[mesh].first : visibility;
+					if (visibility == -1) {
+						meshAlphaState[mesh].second = meshAlphaState[mesh].first;
+						if (alphaValueToIDs.find(visibility) != alphaValueToIDs.end()) {
+							alphaValueToIDs[visibility].erase(mesh.toString());
+						}
+					}
+					else {
+						meshAlphaState[mesh].second = visibility;
+						if (alphaValueToIDs.find(visibility) == alphaValueToIDs.end()) {
+							alphaValueToIDs[visibility] = { mesh.toString() };
+						}
+						else {
+							alphaValueToIDs[visibility].insert(mesh.toString());
+						}
+					}
 				}
 			}
 		}
@@ -686,7 +712,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 		}
 
 		std::shared_ptr<CameraChange> cam = nullptr;
-
+		std::unordered_map<float, std::set<std::string>> alphaValueToIDs;
 		std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> transformState;
 		std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> clipState;
 
@@ -694,17 +720,23 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 
 		auto origin = reader->getGlobalOffset();
 		std::vector<double> offset = { origin.x, origin.z , -origin.y };
+		int count = 0;
 
 		for (const auto &currentFrame : animation.frames) {
 			auto currentTime = currentFrame.first;
-			updateFrameState(currentFrame.second, resourceIDsToSharedIDs, meshAlphaState, meshColourState, transformState, clipState, cam, transformingResources, offset);
-			auto cacheData = generateCache(meshAlphaState, meshColourState, transformState, clipState, cam);
-			stateBuffers[cacheData.first] = cacheData.second;
-
+			//auto start = std::chrono::high_resolution_clock::now();
+			updateFrameState(currentFrame.second, resourceIDsToSharedIDs, alphaValueToIDs, meshAlphaState, meshColourState, transformState, clipState, cam, transformingResources, offset);
+			/*auto end = std::chrono::high_resolution_clock::now();
+			repoInfo << "[" << count << "/" << animation.frames.size() << "]generateCache: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.;
+*/
 			repo::core::model::RepoSequence::FrameData data;
-			data.ref = cacheData.first;
+			/*repoInfo << "[" << count << "/" << animation.frames.size() << "]UpdateFrameState: " << std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count() / 1000.;
+			start = std::chrono::high_resolution_clock::now();*/
+			data.ref = generateCache(alphaValueToIDs, meshColourState, transformState, clipState, cam, stateBuffers);
+			/*end = std::chrono::high_resolution_clock::now();*/
 			data.timestamp = currentTime;
 			frameData.push_back(data);
+			++count;
 		}
 
 		repoInfo << "transforming Mesh: " << transformingResources.size();

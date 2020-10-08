@@ -177,6 +177,47 @@ namespace repo {
 			}
 
 			/**
+			* Add an array of values to the tree at a specified level
+			* This is used for things like arrays within JSON
+			* @param label indicating where the child lives in the tree
+			* @param value vector of children to add
+			* @param join merge vector into a string value instead of putting in a vector
+			*/
+			template <typename T>
+			void addToTree(
+				const std::string           &label,
+				const std::set<T>        &value,
+				const bool                  &join = true)
+			{
+				if (join)
+				{
+					boost::property_tree::ptree arrayTree;
+					for (const auto &child : value)
+					{
+						PropertyTree childTree;
+						childTree.addToTree("", child);
+						arrayTree.push_back(std::make_pair("", childTree.tree));
+					}
+
+					tree.add_child(label, arrayTree);
+				}
+				else
+				{
+					std::stringstream ss;
+					int count = 0;
+					for (const auto &child : value)
+					{
+						ss << boost::lexical_cast<std::string>(child);
+						if (++count != value.size())
+							ss << " ";
+					}
+
+					std::string valueInStr = ss.str();
+					addToTree(label, valueInStr);
+				}
+			}
+
+			/**
 			* Disable the JSON workaround for quotes
 			* There is currently a work around to allow
 			* json parser writes to remove quotes from
