@@ -722,6 +722,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 		std::vector<double> offset = { origin.x, origin.z , -origin.y };
 		int count = 0;
 		auto total = animation.frames.size();
+		int step = animation.frames.size() / 10;
 		for (const auto &currentFrame : animation.frames) {
 			auto currentTime = currentFrame.first;
 			//auto start = std::chrono::high_resolution_clock::now();
@@ -736,7 +737,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 			/*end = std::chrono::high_resolution_clock::now();*/
 			data.timestamp = currentTime;
 			frameData.push_back(data);
-			if (++count % 10 == 0) {
+			if (++count % step == 0) {
 				repoInfo << "Processed " << count << " of " << total << " frames";
 			};
 		}
