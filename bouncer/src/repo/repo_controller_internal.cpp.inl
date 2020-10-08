@@ -17,6 +17,7 @@
 
 #pragma once
 #include "repo_controller.cpp.inl"
+#include "error_codes.h"
 
 #include "manipulator/modelconvertor/import/repo_model_import_assimp.h"
 #include "manipulator/modelconvertor/export/repo_model_export_assimp.h"
@@ -54,7 +55,7 @@ RepoController::_RepoControllerImpl::~_RepoControllerImpl()
 RepoController::RepoToken* RepoController::_RepoControllerImpl::init(
 	std::string       &errMsg,
 	const lib::RepoConfig  &config
-	)
+)
 {
 	RepoToken *token = nullptr;
 	if (config.validate()) {
@@ -62,14 +63,13 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::init(
 
 		auto dbConf = config.getDatabaseConfig();
 
-
 		//FIXME : this should just use the dbConf struct...
 		const bool success = worker->init(errMsg, config, numDBConnections);
 
 		if (success)
 		{
 			const std::string dbFullAd = dbConf.addr + ":" + std::to_string(dbConf.port);
-			token = new RepoController::RepoToken(config);			
+			token = new RepoController::RepoToken(config);
 			repoInfo << "Successfully connected to the " << dbFullAd;
 			if (!dbConf.username.empty())
 				repoInfo << dbConf.username << " is authenticated to " << dbFullAd;
@@ -80,7 +80,7 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::init(
 	else {
 		errMsg = "Invalid configuration.";
 	}
-	
+
 	return token;
 }
 
@@ -92,24 +92,24 @@ bool RepoController::_RepoControllerImpl::commitAssetBundleBuffers(
 	bool success = false;
 	manipulator::RepoManipulator* worker = workerPool.pop();
 	success = worker->commitAssetBundleBuffers(token->databaseAd,
-			token->getCredentials(),
-			token->bucketName,
-			token->bucketRegion,
-			scene,
-			buffers);
+		token->getCredentials(),
+		token->bucketName,
+		token->bucketRegion,
+		scene,
+		buffers);
 	workerPool.push(worker);
 
 	return success;
 }
 
-bool RepoController::_RepoControllerImpl::commitScene(
+uint8_t RepoController::_RepoControllerImpl::commitScene(
 	const RepoController::RepoToken                     *token,
 	repo::core::model::RepoScene        *scene,
 	const std::string                   &owner,
 	const std::string                      &tag,
 	const std::string                      &desc)
 {
-	bool success = false;
+	uint8_t errCode = REPOERR_UNKNOWN_ERR;
 	if (scene)
 	{
 		if (!(scene->getDatabaseName().empty() || scene->getProjectName().empty()))
@@ -122,14 +122,14 @@ bool RepoController::_RepoControllerImpl::commitScene(
 					sceneOwner = "ANONYMOUS USER";
 				}
 				manipulator::RepoManipulator* worker = workerPool.pop();
-				success = worker->commitScene(token->databaseAd,
-						token->getCredentials(),
-						token->bucketName,
-						token->bucketRegion,
-						scene,
-						sceneOwner,
-						tag,
-						desc);
+				errCode = worker->commitScene(token->databaseAd,
+					token->getCredentials(),
+					token->bucketName,
+					token->bucketRegion,
+					scene,
+					sceneOwner,
+					tag,
+					desc);
 				workerPool.push(worker);
 			}
 			else
@@ -146,7 +146,7 @@ bool RepoController::_RepoControllerImpl::commitScene(
 	{
 		repoError << "Trying to commit an empty scene into the database";
 	}
-	return success;
+	return errCode;
 }
 
 uint64_t RepoController::_RepoControllerImpl::countItemsInCollection(
@@ -232,10 +232,10 @@ bool RepoController::_RepoControllerImpl::generateAndCommitSelectionTree(
 		}
 
 		success = worker->generateAndCommitSelectionTree(token->databaseAd,
-				token->getCredentials(),
-				token->bucketName,
-				token->bucketRegion,
-				scene);
+			token->getCredentials(),
+			token->bucketName,
+			token->bucketRegion,
+			scene);
 		workerPool.push(worker);
 	}
 
@@ -245,7 +245,7 @@ bool RepoController::_RepoControllerImpl::generateAndCommitSelectionTree(
 bool RepoController::_RepoControllerImpl::generateAndCommitStashGraph(
 	const RepoController::RepoToken              *token,
 	repo::core::model::RepoScene* scene
-	)
+)
 {
 	bool success = false;
 
@@ -277,11 +277,11 @@ bool RepoController::_RepoControllerImpl::generateAndCommitStashGraph(
 
 std::vector < repo::core::model::RepoBSON >
 RepoController::_RepoControllerImpl::getAllFromCollectionContinuous(
-const RepoController::RepoToken      *token,
-const std::string    &database,
-const std::string    &collection,
-const uint64_t       &skip,
-const uint32_t       &limit)
+	const RepoController::RepoToken      *token,
+	const std::string    &database,
+	const std::string    &collection,
+	const uint64_t       &skip,
+	const uint32_t       &limit)
 {
 	repoTrace << "Controller: Fetching BSONs from "
 		<< database << "." << collection << "....";
@@ -307,14 +307,14 @@ const uint32_t       &limit)
 
 std::vector < repo::core::model::RepoBSON >
 RepoController::_RepoControllerImpl::getAllFromCollectionContinuous(
-const RepoController::RepoToken              *token,
-const std::string            &database,
-const std::string            &collection,
-const std::list<std::string> &fields,
-const std::string            &sortField,
-const int                    &sortOrder,
-const uint64_t               &skip,
-const uint32_t               &limit)
+	const RepoController::RepoToken              *token,
+	const std::string            &database,
+	const std::string            &collection,
+	const std::list<std::string> &fields,
+	const std::string            &sortField,
+	const int                    &sortOrder,
+	const uint64_t               &skip,
+	const uint32_t               &limit)
 {
 	repoTrace << "Controller: Fetching BSONs from "
 		<< database << "." << collection << "....";
@@ -382,7 +382,7 @@ std::list<std::string> RepoController::_RepoControllerImpl::getDatabases(const R
 std::list<std::string>  RepoController::_RepoControllerImpl::getCollections(
 	const RepoController::RepoToken       *token,
 	const std::string     &databaseName
-	)
+)
 {
 	std::list<std::string> list;
 	if (token)
@@ -401,8 +401,8 @@ std::list<std::string>  RepoController::_RepoControllerImpl::getCollections(
 
 std::map<std::string, std::list<std::string>>
 RepoController::_RepoControllerImpl::getDatabasesWithProjects(
-const RepoController::RepoToken *token,
-const std::list<std::string> &databases)
+	const RepoController::RepoToken *token,
+	const std::list<std::string> &databases)
 {
 	std::map<std::string, std::list<std::string> > map;
 	if (token)
@@ -452,7 +452,7 @@ bool RepoController::_RepoControllerImpl::insertBinaryFileToDatabase(
 void RepoController::_RepoControllerImpl::insertRole(
 	const RepoController::RepoToken                   *token,
 	const repo::core::model::RepoRole &role
-	)
+)
 {
 	if (token)
 	{
@@ -489,7 +489,7 @@ bool RepoController::_RepoControllerImpl::removeCollection(
 	const std::string     &databaseName,
 	const std::string     &collectionName,
 	std::string			  &errMsg
-	)
+)
 {
 	bool success = false;
 	if (token)
@@ -512,7 +512,7 @@ bool RepoController::_RepoControllerImpl::removeDatabase(
 	const RepoController::RepoToken       *token,
 	const std::string     &databaseName,
 	std::string			  &errMsg
-	)
+)
 {
 	bool success = false;
 	if (token)
@@ -701,10 +701,10 @@ bool RepoController::_RepoControllerImpl::generateAndCommitGLTFBuffer(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		success = worker->generateAndCommitGLTFBuffer(token->databaseAd,
-				token->getCredentials(),
-				token->bucketName,
-				token->bucketRegion,
-				scene);
+			token->getCredentials(),
+			token->bucketName,
+			token->bucketRegion,
+			scene);
 		workerPool.push(worker);
 	}
 	else
@@ -723,10 +723,10 @@ bool RepoController::_RepoControllerImpl::generateAndCommitSRCBuffer(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		success = worker->generateAndCommitSRCBuffer(token->databaseAd,
-				token->getCredentials(),
-				token->bucketName,
-				token->bucketRegion,
-				scene);
+			token->getCredentials(),
+			token->bucketName,
+			token->bucketRegion,
+			scene);
 		workerPool.push(worker);
 	}
 	else
@@ -805,8 +805,8 @@ std::string RepoController::_RepoControllerImpl::getNameOfAdminDatabase(const Re
 
 std::shared_ptr<repo_partitioning_tree_t>
 RepoController::_RepoControllerImpl::getScenePartitioning(
-const repo::core::model::RepoScene *scene,
-const uint32_t                     &maxDepth
+	const repo::core::model::RepoScene *scene,
+	const uint32_t                     &maxDepth
 )
 {
 	std::shared_ptr<repo_partitioning_tree_t> partition(nullptr);
@@ -907,7 +907,7 @@ bool RepoController::_RepoControllerImpl::isVREnabled(const RepoToken *token,
 		result = worker->isVREnabled(token->databaseAd, token->getCredentials(), scene);
 		workerPool.push(worker);
 	}
-	else{
+	else {
 		repoError << "RepoController::_RepoControllerImpl::isVREnabled: NULL pointer to scene!";
 	}
 	return result;
@@ -915,19 +915,16 @@ bool RepoController::_RepoControllerImpl::isVREnabled(const RepoToken *token,
 
 repo::core::model::RepoScene*
 RepoController::_RepoControllerImpl::loadSceneFromFile(
-const std::string                                          &filePath,
-uint8_t													 &err,
-const bool                                                 &applyReduction,
-const bool                                                 &rotateModel,
-const repo::manipulator::modelconvertor::ModelImportConfig *config)
+	const std::string                                          &filePath,
+	uint8_t													 &err,
+	const repo::manipulator::modelconvertor::ModelImportConfig &config)
 {
-
 	repo::core::model::RepoScene *scene = nullptr;
 
 	if (!filePath.empty())
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
-		scene = worker->loadSceneFromFile(filePath, err, applyReduction, rotateModel, config);
+		scene = worker->loadSceneFromFile(filePath, err, config);
 		workerPool.push(worker);
 		if (!scene)
 			repoError << "Failed to load scene from file - error code: " << std::to_string(err);
@@ -953,7 +950,7 @@ bool RepoController::_RepoControllerImpl::saveOriginalFiles(
 		success = worker->saveOriginalFiles(token->databaseAd, token->getCredentials(), scene, directory);
 		workerPool.push(worker);
 	}
-	else{
+	else {
 		repoError << "RepoController::_RepoControllerImpl::saveSceneToFile: NULL pointer to scene!";
 	}
 	return success;
@@ -973,7 +970,7 @@ bool RepoController::_RepoControllerImpl::saveOriginalFiles(
 		success = worker->saveOriginalFiles(token->databaseAd, token->getCredentials(), database, project, directory);
 		workerPool.push(worker);
 	}
-	else{
+	else {
 		repoError << "RepoController::_RepoControllerImpl::saveSceneToFile: NULL pointer to scene!";
 	}
 
@@ -992,7 +989,7 @@ bool RepoController::_RepoControllerImpl::saveSceneToFile(
 		worker->saveSceneToFile(filePath, scene);
 		workerPool.push(worker);
 	}
-	else{
+	else {
 		repoError << "RepoController::_RepoControllerImpl::saveSceneToFile: NULL pointer to scene!";
 		success = false;
 	}
@@ -1021,7 +1018,7 @@ void RepoController::_RepoControllerImpl::reduceTransformations(
 	{
 		manipulator::RepoManipulator* worker = workerPool.pop();
 		size_t transNodes_pre = scene->getAllTransformations(gType).size();
-		try{
+		try {
 			worker->reduceTransformations(scene, gType);
 		}
 		catch (const std::exception &e)
@@ -1033,7 +1030,7 @@ void RepoController::_RepoControllerImpl::reduceTransformations(
 		repoInfo << "Optimization completed. Number of transformations has been reduced from "
 			<< transNodes_pre << " to " << scene->getAllTransformations(gType).size();
 	}
-	else{
+	else {
 		repoError << "RepoController::_RepoControllerImpl::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
 	}
 }
@@ -1045,7 +1042,7 @@ void RepoController::_RepoControllerImpl::compareScenes(
 	repo_diff_result_t &baseResults,
 	repo_diff_result_t &compResults,
 	const repo::DiffMode       &diffMode
-	)
+)
 {
 	//We only do reduction optimisations on the unoptimised graph
 	const repo::core::model::RepoScene::GraphType gType = repo::core::model::RepoScene::GraphType::DEFAULT;
@@ -1078,7 +1075,7 @@ void RepoController::_RepoControllerImpl::compareScenes(
 		worker->compareScenes(base, compare, baseResults, compResults, diffMode, gType);
 		workerPool.push(worker);
 	}
-	else{
+	else {
 		repoError << "RepoController::_RepoControllerImpl::reduceTransformations: NULL pointer to scene/ Scene is not loaded!";
 	}
 }

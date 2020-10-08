@@ -33,33 +33,32 @@ static std::shared_ptr<RepoController> getController()
 	return controller;
 }
 
-
-TEST(RepoControllerTest, CommitScene){
+TEST(RepoControllerTest, CommitScene) {
 	auto controller = getController();
 	auto token = initController(controller.get());
 	//Try to commit a scene without setting db/project name
 	uint8_t errCode;
 	auto scene = controller->loadSceneFromFile(getDataPath(simpleModel), errCode);
-	EXPECT_EQ(0, errCode);
-	EXPECT_FALSE(controller->commitScene(token, scene));
+	EXPECT_EQ(REPOERR_OK, errCode);
+	EXPECT_EQ(REPOERR_UNKNOWN_ERR, controller->commitScene(token, scene));
 	EXPECT_FALSE(scene->isRevisioned());
 
 	//Trying to commit a scene with empty db and project name should also fail
 	scene->setDatabaseAndProjectName("", "");
-	EXPECT_FALSE(controller->commitScene(token, scene));
+	EXPECT_EQ(REPOERR_UNKNOWN_ERR, controller->commitScene(token, scene));
 	EXPECT_FALSE(scene->isRevisioned());
 
 	scene->setDatabaseAndProjectName("balh", "");
-	EXPECT_FALSE(controller->commitScene(token, scene));
+	EXPECT_EQ(REPOERR_UNKNOWN_ERR, controller->commitScene(token, scene));
 	EXPECT_FALSE(scene->isRevisioned());
 
 	scene->setDatabaseAndProjectName("", "blah");
-	EXPECT_FALSE(controller->commitScene(token, scene));
+	EXPECT_EQ(REPOERR_UNKNOWN_ERR, controller->commitScene(token, scene));
 	EXPECT_FALSE(scene->isRevisioned());
 
 	//Setting the db name and project name should allow commit successfully
 	scene->setDatabaseAndProjectName("commitSceneTest", "commitCube");
-	EXPECT_TRUE(controller->commitScene(initController(controller.get()), scene));
+	EXPECT_EQ(REPOERR_OK, controller->commitScene(initController(controller.get()), scene));
 	EXPECT_TRUE(scene->isRevisioned());
 	EXPECT_TRUE(projectExists("commitSceneTest", "commitCube"));
 	EXPECT_EQ(scene->getOwner(), REPO_GTEST_DBUSER);
@@ -68,17 +67,17 @@ TEST(RepoControllerTest, CommitScene){
 	std::string owner = "dog";
 	EXPECT_EQ(errCode, 0);
 	scene2->setDatabaseAndProjectName("commitSceneTest", "commitCube2");
-	EXPECT_TRUE(controller->commitScene(initController(controller.get()), scene2, owner));
+	EXPECT_EQ(REPOERR_OK, controller->commitScene(initController(controller.get()), scene2, owner));
 	EXPECT_TRUE(scene2->isRevisioned());
 	EXPECT_TRUE(projectExists("commitSceneTest", "commitCube2"));
 	EXPECT_EQ(scene2->getOwner(), owner);
 
 	//null pointer checks
-	EXPECT_FALSE(controller->commitScene(token, nullptr));
-	EXPECT_FALSE(controller->commitScene(nullptr, scene));
+	EXPECT_EQ(REPOERR_UNKNOWN_ERR, controller->commitScene(token, nullptr));
+	EXPECT_EQ(REPOERR_UNKNOWN_ERR, controller->commitScene(nullptr, scene));
 }
 
-TEST(RepoControllerTest, LoadSceneFromFile){
+TEST(RepoControllerTest, LoadSceneFromFile) {
 	auto controller = getController();
 	auto defaultG = core::model::RepoScene::GraphType::DEFAULT;
 	auto optG = core::model::RepoScene::GraphType::OPTIMIZED;
@@ -95,7 +94,7 @@ TEST(RepoControllerTest, LoadSceneFromFile){
 	EXPECT_TRUE(dynamic_cast<core::model::TransformationNode*>(scene->getRoot(defaultG))->isIdentity());
 
 	//Import the scene with no transformation reduction
-	auto sceneNoReduction = controller->loadSceneFromFile(getDataPath(simpleModel), errCode, false);
+	auto sceneNoReduction = controller->loadSceneFromFile(getDataPath(simpleModel), errCode, repo::manipulator::modelconvertor::ModelImportConfig(false));
 	EXPECT_EQ(errCode, 0);
 	EXPECT_TRUE(sceneNoReduction);
 	EXPECT_TRUE(sceneNoReduction->getRoot(defaultG));
@@ -106,7 +105,7 @@ TEST(RepoControllerTest, LoadSceneFromFile){
 			> scene->getAllTransformations(defaultG).size());
 
 	//Import the scene with root trans rotated
-	auto sceneRotated = controller->loadSceneFromFile(getDataPath(simpleModel), errCode, true, true);
+	auto sceneRotated = controller->loadSceneFromFile(getDataPath(simpleModel), errCode, repo::manipulator::modelconvertor::ModelImportConfig(true, true, true));
 	EXPECT_EQ(errCode, 0);
 	EXPECT_TRUE(sceneRotated);
 	ASSERT_TRUE(sceneRotated->getRoot(defaultG));

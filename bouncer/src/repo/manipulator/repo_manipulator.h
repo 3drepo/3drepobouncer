@@ -33,8 +33,8 @@
 #include "modelconvertor/import/repo_model_import_config.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_abstract.h"
 
-namespace repo{
-	namespace manipulator{
+namespace repo {
+	namespace manipulator {
 		class RepoManipulator
 		{
 		public:
@@ -48,7 +48,7 @@ namespace repo{
 			* @param scene scene to commit
 			* @param owner specify the owner of the scene (by default it is the user authorised to commit)
 			*/
-			bool commitScene(
+			uint8_t commitScene(
 				const std::string                     &databaseAd,
 				const repo::core::model::RepoBSON     *cred,
 				const std::string                     &bucketName,
@@ -128,7 +128,7 @@ namespace repo{
 				const std::string                             &database,
 				const std::string                             &collection,
 				std::string                                   &errMsg
-				);
+			);
 
 			/**
 			* Disconnects from the given database host
@@ -151,7 +151,7 @@ namespace repo{
 				const std::string                             &databaseName,
 				const std::string                             &collectionName,
 				std::string			                          &errMsg
-				);
+			);
 
 			/**
 			* Remove a database from the database instance
@@ -166,7 +166,7 @@ namespace repo{
 				const repo::core::model::RepoBSON             *cred,
 				const std::string                             &databaseName,
 				std::string			                          &errMsg
-				);
+			);
 
 			/**
 			* Get a list of all available databases, alphabetically sorted by default.
@@ -177,7 +177,7 @@ namespace repo{
 			std::list<std::string> fetchDatabases(
 				const std::string                 &databaseAd,
 				const repo::core::model::RepoBSON *cred
-				);
+			);
 
 			/**
 			* Get a list of all available collections.
@@ -190,7 +190,7 @@ namespace repo{
 				const std::string                 &databaseAd,
 				const repo::core::model::RepoBSON *cred,
 				const std::string                 &database
-				);
+			);
 
 			/**
 			* Retrieve a RepoScene with a specific revision loaded.
@@ -245,7 +245,7 @@ namespace repo{
 				const std::string                     &bucketName,
 				const std::string                     &bucketRegion,
 				repo::core::model::RepoScene          *scene
-				);
+			);
 
 			/**
 			* Generate and commit stash graph (multipart viewing graph)
@@ -260,7 +260,7 @@ namespace repo{
 				const std::string                         &databaseAd,
 				const repo::core::model::RepoBSON         *cred,
 				repo::core::model::RepoScene* scene
-				);
+			);
 
 			/**
 			* Generate and commit a `exType` encoding for the given scene
@@ -338,7 +338,7 @@ namespace repo{
 			*/
 			bool generateStashGraph(
 				repo::core::model::RepoScene              *scene
-				);
+			);
 			/**
 			* Retrieve documents from a specified collection
 			* due to limitations of the transfer protocol this might need
@@ -353,12 +353,12 @@ namespace repo{
 			*/
 			std::vector<repo::core::model::RepoBSON>
 				getAllFromCollectionTailable(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON             *cred,
-				const std::string                             &database,
-				const std::string                             &collection,
-				const uint64_t                                &skip = 0,
-				const uint32_t                                &limit = 0);
+					const std::string                             &databaseAd,
+					const repo::core::model::RepoBSON             *cred,
+					const std::string                             &database,
+					const std::string                             &collection,
+					const uint64_t                                &skip = 0,
+					const uint32_t                                &limit = 0);
 
 			/**
 			* Retrieve documents from a specified collection
@@ -377,15 +377,15 @@ namespace repo{
 			*/
 			std::vector<repo::core::model::RepoBSON>
 				getAllFromCollectionTailable(
-				const std::string                             &databaseAd,
-				const repo::core::model::RepoBSON             *cred,
-				const std::string                             &database,
-				const std::string                             &collection,
-				const std::list<std::string>				  &fields,
-				const std::string							  &sortField = std::string(),
-				const int									  &sortOrder = -1,
-				const uint64_t                                &skip = 0,
-				const uint32_t                                &limit = 0);
+					const std::string                             &databaseAd,
+					const repo::core::model::RepoBSON             *cred,
+					const std::string                             &database,
+					const std::string                             &collection,
+					const std::list<std::string>				  &fields,
+					const std::string							  &sortField = std::string(),
+					const int									  &sortOrder = -1,
+					const uint64_t                                &skip = 0,
+					const uint32_t                                &limit = 0);
 
 			/**
 			* Return a list of projects with the database available to the user
@@ -396,9 +396,9 @@ namespace repo{
 			*/
 			std::map<std::string, std::list<std::string>>
 				getDatabasesWithProjects(
-				const std::string                 &databaseAd,
-				const repo::core::model::RepoBSON *cred,
-				const std::list<std::string>      &databases);
+					const std::string                 &databaseAd,
+					const repo::core::model::RepoBSON *cred,
+					const std::list<std::string>      &databases);
 
 			/**
 			* Get a list of admin roles from the database
@@ -408,7 +408,6 @@ namespace repo{
 			std::list<std::string> getAdminDatabaseRoles(
 				const std::string                     &databaseAd);
 
-
 			/**
 			* Get a hierachical spatial partitioning in form of a tree
 			* @param scene scene to partition
@@ -417,7 +416,7 @@ namespace repo{
 			std::shared_ptr<repo_partitioning_tree_t> getScenePartitioning(
 				const repo::core::model::RepoScene *scene,
 				const uint32_t                     &maxDepth = 8
-				);
+			);
 
 			/**
 			* Get a list of standard roles from the database
@@ -426,7 +425,6 @@ namespace repo{
 			*/
 			std::list<std::string> getStandardDatabaseRoles(
 				const std::string                             &databaseAd);
-
 
 			/**
 			* Get the name of the admin database
@@ -486,7 +484,7 @@ namespace repo{
 				std::vector<std::vector<uint16_t>> &serialisedFaceBuf,
 				std::vector<std::vector<std::vector<float>>> &idMapBuf,
 				std::vector<std::vector<std::vector<repo_mesh_mapping_t>>> &meshMappings
-				);
+			);
 
 			/**
 			* Insert a binary file into the database (GridFS)
@@ -550,8 +548,8 @@ namespace repo{
 			*/
 			repo::core::model::RepoNodeSet
 				loadMetadataFromFile(
-				const std::string &filePath,
-				const char        &delimiter = ',');
+					const std::string &filePath,
+					const char        &delimiter = ',');
 
 			/**
 			* Load a Repo Scene from a file
@@ -564,11 +562,9 @@ namespace repo{
 			*/
 			repo::core::model::RepoScene*
 				loadSceneFromFile(
-				const std::string                                          &filePath,
-				uint8_t													   &error,
-				const bool                                                 &applyReduction = true,
-				const bool                                                 &rotateModel = false,
-				const repo::manipulator::modelconvertor::ModelImportConfig *config = nullptr);
+					const std::string                                          &filePath,
+					uint8_t													   &error,
+					const repo::manipulator::modelconvertor::ModelImportConfig &config);
 
 			/**
 			* remove a document from the database
@@ -606,7 +602,7 @@ namespace repo{
 				const std::string                        &databaseName,
 				const std::string                        &projectName,
 				std::string								 &errMsg
-				);
+			);
 
 			/**
 			* Reduce redundant transformations from the scene
@@ -631,7 +627,7 @@ namespace repo{
 				const std::string                         &databaseAd,
 				const repo::core::model::RepoBSON         *cred,
 				repo::core::model::RepoScene              *scene
-				);
+			);
 
 			/**
 			* remove a role from the database
@@ -746,7 +742,7 @@ namespace repo{
 				const repo::core::model::RepoBSON 	   *cred,
 				const std::string                      &dbName,
 				const std::string                      &roleName
-				);
+			);
 
 			/**
 			* Find the user given the user name
@@ -760,7 +756,7 @@ namespace repo{
 				const std::string                      &databaseAd,
 				const repo::core::model::RepoBSON 	   *cred,
 				const std::string                      &username
-				);
+			);
 
 			/**
 			* Connect to the given database address/port and authenticat the user using Admin database

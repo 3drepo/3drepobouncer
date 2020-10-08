@@ -6,13 +6,13 @@
 
 set(SOURCES
 	${SOURCES}
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_matrix.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_uuid.cpp
 	CACHE STRING "SOURCES" FORCE)
 
 set(HEADERS
 	${HEADERS}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_matrix.h
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_matrix_def.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_structs.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_uuid.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_vector.h

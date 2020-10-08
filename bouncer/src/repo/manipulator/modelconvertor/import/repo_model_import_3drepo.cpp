@@ -34,7 +34,7 @@
 using namespace repo::manipulator::modelconvertor;
 using namespace boost::property_tree;
 
-RepoModelImport::RepoModelImport(const ModelImportConfig *settings) :
+RepoModelImport::RepoModelImport(const ModelImportConfig &settings) :
 	AbstractModelImport(settings)
 {
 	fin = nullptr;
@@ -472,7 +472,7 @@ boost::property_tree::ptree RepoModelImport::getNextJSON(long jsonSize)
 	return singleJSON;
 }
 
-repo::core::model::RepoScene* RepoModelImport::generateRepoScene()
+repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t &errMsg)
 {
 	repoInfo << "Generating scene";
 
@@ -484,6 +484,7 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene()
 
 	if (!rootBBOX) {
 		repoError << "No root bounding box specified.";
+		errMsg = REPOERR_MODEL_FILE_READ;
 		return nullptr;
 	}
 

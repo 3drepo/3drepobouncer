@@ -40,7 +40,7 @@
 #include "manipulator/modelconvertor/import/repo_model_import_config.h"
 #include "repo_bouncer_global.h"
 
-namespace repo{
+namespace repo {
 	class REPO_API_EXPORT RepoController
 	{
 	public:
@@ -67,15 +67,15 @@ namespace repo{
 			*	------------- Database Connection & Authentication --------------
 			*/
 
-		/**
-			* Connect to a mongo database, authenticate by the admin database
-			* @param errMsg error message if failed
-			* @param config RepoConfig instance containing all connection information
-			*/
+			/**
+				* Connect to a mongo database, authenticate by the admin database
+				* @param errMsg error message if failed
+				* @param config RepoConfig instance containing all connection information
+				*/
 		RepoToken* init(
 			std::string       &errMsg,
 			const lib::RepoConfig  &config
-			);
+		);
 
 		/**
 			* Disconnect the controller from a database connection
@@ -97,7 +97,6 @@ namespace repo{
 		void addAlias(
 			RepoToken         *token,
 			const std::string &alias);
-
 
 		/**
 		* Destroy token from memory
@@ -135,11 +134,11 @@ namespace repo{
 			*/
 		std::vector < repo::core::model::RepoBSON >
 			getAllFromCollectionContinuous(
-			const RepoToken      *token,
-			const std::string    &database,
-			const std::string    &collection,
-			const uint64_t       &skip = 0,
-			const uint32_t       &limit = 0);
+				const RepoToken      *token,
+				const std::string    &database,
+				const std::string    &collection,
+				const uint64_t       &skip = 0,
+				const uint32_t       &limit = 0);
 
 		/**
 			* Retrieve documents from a specified collection, returning only the specified fields
@@ -158,14 +157,14 @@ namespace repo{
 			*/
 		std::vector < repo::core::model::RepoBSON >
 			getAllFromCollectionContinuous(
-			const RepoToken              *token,
-			const std::string            &database,
-			const std::string            &collection,
-			const std::list<std::string> &fields,
-			const std::string            &sortField,
-			const int                    &sortOrder = -1,
-			const uint64_t               &skip = 0,
-			const uint32_t               &limit = 0);
+				const RepoToken              *token,
+				const std::string            &database,
+				const std::string            &collection,
+				const std::list<std::string> &fields,
+				const std::string            &sortField,
+				const int                    &sortOrder = -1,
+				const uint64_t               &skip = 0,
+				const uint32_t               &limit = 0);
 
 		/**
 		* Retrieve roles from a specified database
@@ -180,11 +179,11 @@ namespace repo{
 		*/
 		std::vector < repo::core::model::RepoRole >
 			getRolesFromDatabase(
-			const RepoToken              *token,
-			const std::string            &database,
-			const uint64_t               &skip = 0,
-			const uint32_t               &limit = 0);
-	
+				const RepoToken              *token,
+				const std::string            &database,
+				const uint64_t               &skip = 0,
+				const uint32_t               &limit = 0);
+
 		/**
 			* Return a list of collections within the database
 			* @param token A RepoToken given at authentication
@@ -194,8 +193,7 @@ namespace repo{
 		std::list<std::string> getCollections(
 			const RepoToken             *token,
 			const std::string     &databaseName
-			);
-
+		);
 
 		/**
 			* Return a list of database available to the user
@@ -213,8 +211,8 @@ namespace repo{
 			*/
 		std::map<std::string, std::list<std::string>>
 			getDatabasesWithProjects(
-			const RepoToken *token,
-			const std::list<std::string> &databases);
+				const RepoToken *token,
+				const std::list<std::string> &databases);
 
 		/**
 			* Get a list of Admin roles from the database
@@ -249,18 +247,18 @@ namespace repo{
 		/*
 			*	---------------- Database Retrieval -----------------------
 			*/
-		/**
-			* Retrieve a RepoScene with a specific revision loaded.
-			* @param token Authentication token
-			* @param database the database the collection resides in
-			* @param project name of the project
-			* @param uuid if headRevision, uuid represents the branch id,
-			*              otherwise the unique id of the revision branch
-			* @param headRevision true if retrieving head revision
-			* @param lightFetch fetches only the stash (or scene if stash failed),
-			*                   reduce computation and memory usage (ideal for visualisation)
-			* @return returns a pointer to a repoScene.
-			*/
+			/**
+				* Retrieve a RepoScene with a specific revision loaded.
+				* @param token Authentication token
+				* @param database the database the collection resides in
+				* @param project name of the project
+				* @param uuid if headRevision, uuid represents the branch id,
+				*              otherwise the unique id of the revision branch
+				* @param headRevision true if retrieving head revision
+				* @param lightFetch fetches only the stash (or scene if stash failed),
+				*                   reduce computation and memory usage (ideal for visualisation)
+				* @return returns a pointer to a repoScene.
+				*/
 		repo::core::model::RepoScene* fetchScene(
 			const RepoToken      *token,
 			const std::string    &database,
@@ -299,13 +297,13 @@ namespace repo{
 			*	------- Database Operations (insert/delete/update) ---------
 			*/
 
-		/**
-			* Commit a scene graph
-			* @param token Authentication token
-			* @param scene RepoScene to commit
-			* @param owner specify the owner of the scene (by default it is the user authorised to commit)
-			*/
-		bool commitScene(
+			/**
+				* Commit a scene graph
+				* @param token Authentication token
+				* @param scene RepoScene to commit
+				* @param owner specify the owner of the scene (by default it is the user authorised to commit)
+				*/
+		uint8_t commitScene(
 			const RepoToken                     *token,
 			repo::core::model::RepoScene        *scene,
 			const std::string                   &owner = "",
@@ -358,7 +356,7 @@ namespace repo{
 			const std::string     &databaseName,
 			const std::string     &collectionName,
 			std::string			  &errMsg
-			);
+		);
 
 		/**
 			* Remove a database
@@ -371,7 +369,7 @@ namespace repo{
 			const RepoToken             *token,
 			const std::string           &databaseName,
 			std::string			        &errMsg
-			);
+		);
 
 		/**
 			* remove a document from the database
@@ -413,7 +411,6 @@ namespace repo{
 		{
 			removeDocument(token, database, REPO_COLLECTION_SETTINGS_PROJECTS, projectSettings);
 		}
-
 
 		/**
 			* remove a user from the database
@@ -465,7 +462,7 @@ namespace repo{
 			const std::string                        &databaseName,
 			const std::string                        &collectionName,
 			const repo::core::model::RepoBSON  &bson);
-	
+
 		void upsertProjectSettings(
 			const RepoToken *token,
 			const std::string &database,
@@ -478,18 +475,18 @@ namespace repo{
 			*	------------- Logging --------------
 			*/
 
-		/**
-			* Configure how verbose the log should be
-			* The levels of verbosity are:
-			* TRACE - log all messages
-			* DEBUG - log messages of level debug or above (use for debugging)
-			* INFO - log messages of level info or above (use to filter debugging messages but want informative logging)
-			* WARNING - log messages of level warning or above
-			* ERROR - log messages of level error or above
-			* FATAL - log messages of level fatal or above
-			* @param level specify logging level
-			*
-			*/
+			/**
+				* Configure how verbose the log should be
+				* The levels of verbosity are:
+				* TRACE - log all messages
+				* DEBUG - log messages of level debug or above (use for debugging)
+				* INFO - log messages of level info or above (use to filter debugging messages but want informative logging)
+				* WARNING - log messages of level warning or above
+				* ERROR - log messages of level error or above
+				* FATAL - log messages of level fatal or above
+				* @param level specify logging level
+				*
+				*/
 		void setLoggingLevel(const repo::lib::RepoLog::RepoLogLevel &level);
 
 		/**
@@ -502,12 +499,12 @@ namespace repo{
 			*	------------- Import/ Export --------------
 			*/
 
-		/**
-		* Commit asset bundle buffers
-		* @param database database name
-		* @param project project name
-		* @param buffers web buffers
-		*/
+			/**
+			* Commit asset bundle buffers
+			* @param database database name
+			* @param project project name
+			* @param buffers web buffers
+			*/
 		bool commitAssetBundleBuffers(
 			const RepoController::RepoToken *token,
 			repo::core::model::RepoScene    *scene,
@@ -602,18 +599,13 @@ namespace repo{
 		/**
 			* Load a Repo Scene from a file
 			* @param filePath path to file
-			* @param apply transformation reduction (default: true)
-			* @param rotateModel rotate model by 270degrees on x (default: false)
 			* @param config import settings(optional)
 			* @return returns a pointer to Repo Scene upon success
 			*/
 		repo::core::model::RepoScene* loadSceneFromFile(
 			const std::string &filePath,
 			uint8_t           &err,
-			const bool &applyReduction = true,
-			const bool &rotateModel = false,
-			const repo::manipulator::modelconvertor::ModelImportConfig *config
-			= nullptr);
+			const repo::manipulator::modelconvertor::ModelImportConfig &config = repo::manipulator::modelconvertor::ModelImportConfig());
 
 		/**
 			* Load metadata from a file
@@ -638,18 +630,18 @@ namespace repo{
 			*	------------- Optimizations --------------
 			*/
 
-		/**
-		* Generate and commit stash graph (multipart viewing graph)
-		* The generated graph will be added into the scene provided
-		* also commited to the database/project set within the scene
-		* @param token database token
-		* @param scene scene to optimise
-		* @param return true upon success
-		*/
+			/**
+			* Generate and commit stash graph (multipart viewing graph)
+			* The generated graph will be added into the scene provided
+			* also commited to the database/project set within the scene
+			* @param token database token
+			* @param scene scene to optimise
+			* @param return true upon success
+			*/
 		bool generateAndCommitStashGraph(
 			const RepoToken              *token,
 			repo::core::model::RepoScene* scene
-			);
+		);
 
 		/**
 		* Get a hierachical spatial partitioning in form of a tree
@@ -658,8 +650,8 @@ namespace repo{
 		*/
 		std::shared_ptr<repo_partitioning_tree_t>
 			getScenePartitioning(
-			const repo::core::model::RepoScene *scene,
-			const uint32_t                     &maxDepth = 8
+				const repo::core::model::RepoScene *scene,
+				const uint32_t                     &maxDepth = 8
 			);
 
 		/**
@@ -694,7 +686,7 @@ namespace repo{
 			repo_diff_result_t &baseResults,
 			repo_diff_result_t &compResults,
 			const repo::DiffMode       &diffMode
-			);
+		);
 
 		/**
 			* Compare 2 scenes via IDs.
@@ -711,7 +703,7 @@ namespace repo{
 			repo::core::model::RepoScene        *compare,
 			repo_diff_result_t                          &baseResults,
 			repo_diff_result_t                          &compResults
-			)
+		)
 		{
 			compareScenes(token, base, compare, baseResults, compResults, repo::DiffMode::DIFF_BY_ID);
 		}
@@ -731,12 +723,11 @@ namespace repo{
 			repo::core::model::RepoScene        *compare,
 			repo_diff_result_t &baseResults,
 			repo_diff_result_t &compResults
-			)
+		)
 		{
 			compareScenes(token, base, compare, baseResults, compResults, repo::DiffMode::DIFF_BY_NAME);
 		}
 
-	
 		/*
 		*	------------- Versioning --------------
 		*/

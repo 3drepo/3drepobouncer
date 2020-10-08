@@ -22,14 +22,13 @@
 #include "../../../core/model/bson/repo_bson_builder.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../lib/repo_log.h"
-#include "../../../lib/repo_property_tree.h"
+#include "../../../lib/datastructure/repo_matrix.h"
 #include "../../../error_codes.h"
 
 using namespace repo::manipulator::modelconvertor;
 
 const std::string RESOURCE_ID_NAME = "Resource ID";
 const std::string DEFAULT_SEQUENCE_NAME = "Unnamed Sequence";
-
 
 const static std::string SEQ_CACHE_LABEL_TRANSPARENCY = "transparency";
 const static std::string SEQ_CACHE_LABEL_COLOR = "color";
@@ -45,7 +44,7 @@ const static std::string SEQ_CACHE_LABEL_UP = "up";
 const static std::string SEQ_CACHE_LABEL_FOV = "fov";
 const static std::string SEQ_CACHE_LABEL_PERSPECTIVE = "perspective";
 
-class SynchroModelImport::CameraChange{
+class SynchroModelImport::CameraChange {
 public:
 	CameraChange(
 		const repo::lib::RepoVector3D64 &_position,
@@ -67,23 +66,25 @@ public:
 };
 
 bool SynchroModelImport::importModel(std::string filePath, uint8_t &errMsg) {
-
 	orgFile = filePath;
 	reader = std::make_shared<synchro_reader::SPMReader>(filePath);
 	repoInfo << "=== IMPORTING MODEL WITH SYNCHRO MODEL CONVERTOR ===";
-	if (!reader->init()) {
-		errMsg = REPOERR_LOAD_SCENE_FAIL;
+	int errCode = reader->init();
+	if (errCode > 0) {
+		if (errCode == 2)
+			errMsg = REPOERR_UNSUPPORTED_VERSION;
+		else
+			errMsg = REPOERR_LOAD_SCENE_FAIL;
 		return false;
 	}
 	repoInfo << "Initialisation successful";
-	
+
 	return true;
 }
 
 std::pair<repo::core::model::RepoNodeSet, repo::core::model::RepoNodeSet> SynchroModelImport::generateMatNodes(
 	std::unordered_map<std::string, repo::lib::RepoUUID> &synchroIDtoRepoID,
 	std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> &repoIDToNode) {
-
 	repo::core::model::RepoNodeSet matNodes, textNodes;
 
 	for (const auto matEntry : reader->getMaterials()) {
@@ -105,26 +106,22 @@ std::pair<repo::core::model::RepoNodeSet, repo::core::model::RepoNodeSet> Synchr
 		}
 
 		repoIDToNode[matNode->getUniqueID()] = matNode;
-
 	}
 
-	return{ matNodes, textNodes};
+	return{ matNodes, textNodes };
 }
 
 repo::core::model::MetadataNode* SynchroModelImport::createMetaNode(
 	const std::unordered_map<std::string, std::string> &metadata,
-	const std::string &name,	
+	const std::string &name,
 	const std::vector<repo::lib::RepoUUID> &parents) {
-
 	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metadata, name, parents));
 }
-
 
 repo::core::model::TransformationNode* SynchroModelImport::createTransNode(
 	const repo::lib::RepoMatrix &matrix,
 	const std::string &name,
 	const std::vector<repo::lib::RepoUUID> &parents) {
-
 	return new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(matrix, name, parents));
 }
 
@@ -139,7 +136,7 @@ std::unordered_map<std::string, repo::core::model::MeshNode> SynchroModelImport:
 		std::vector<repo_face_t> faces;
 		for (int i = 0; i < meshDetails.vertices.size(); ++i) {
 			if (meshDetails.normals.size() > i) {
-				normals.push_back({ (float) meshDetails.normals[i].x, (float)meshDetails.normals[i].y, (float)meshDetails.normals[i].z });
+				normals.push_back({ (float)meshDetails.normals[i].x, (float)meshDetails.normals[i].y, (float)meshDetails.normals[i].z });
 			}
 			vertices.push_back({ (float)meshDetails.vertices[i].x, (float)meshDetails.vertices[i].y, (float)meshDetails.vertices[i].z });
 			if (bbox.size()) {
@@ -157,41 +154,73 @@ std::unordered_map<std::string, repo::core::model::MeshNode> SynchroModelImport:
 		}
 
 		for (int i = 0; i < meshDetails.faces.size(); i += 3) {
-
 			faces.push_back({ (uint32_t)meshDetails.faces[i],(uint32_t)meshDetails.faces[i + 1],(uint32_t)meshDetails.faces[i + 2] });
 		}
 
-
 		for (const auto uv : meshDetails.uv) {
-			uvs.push_back({ (float) uv.x, (float)uv.y });
-		}		
-		res[meshDetails.geoID] = repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces, normals, bbox);		
+			uvs.push_back({ (float)uv.x, (float)uv.y });
+		}
+		res[meshDetails.geoID] = repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces, normals, bbox);
 	}
 
-	return res;		
+	return res;
 }
 
 repo::core::model::MeshNode* SynchroModelImport::createMeshNode(
-	const repo::core::model::MeshNode &templateMesh, 
-	const std::vector<double> &transformation, 
-	const std::vector<double> &offset, 
+	const repo::core::model::MeshNode &templateMesh,
+	const std::vector<double> &transformation,
+	const std::vector<double> &offset,
 	const repo::lib::RepoUUID &parentID) {
 	auto trans = transformation;
-	trans[3] -= offset[0];
-	trans[7] -= offset[1];
-	trans[11] -= offset[2];
+	//trans[3] -= offset[0];
+	//trans[7] -= offset[1];
+	//trans[11] -= offset[2];
 	auto matrix = repo::lib::RepoMatrix(trans);
 	return new repo::core::model::MeshNode(
 		templateMesh.cloneAndApplyTransformation(matrix).cloneAndAddParent(parentID, true, true));
 }
 
-repo::core::model::RepoScene* SynchroModelImport::constructScene( 
+std::vector<repo::lib::RepoUUID> SynchroModelImport::findRecursiveMeshSharedIDs(
+	repo::core::model::RepoScene* &scene,
+	const repo::lib::RepoUUID &id
+) const {
+	auto node = scene->getNodeByUniqueID(repo::core::model::RepoScene::GraphType::DEFAULT, id);
+
+	if (node->getTypeAsEnum() == repo::core::model::NodeType::MESH) {
+		return { node->getSharedID() };
+	}
+
+	auto allMeshes = scene->getAllDescendantsByType(repo::core::model::RepoScene::GraphType::DEFAULT, node->getSharedID(), repo::core::model::NodeType::MESH);
+	std::vector<repo::lib::RepoUUID> results;
+
+	for (const auto &mesh : allMeshes) {
+		results.push_back(mesh->getSharedID());
+	}
+
+	return results;
+}
+
+void SynchroModelImport::determineMeshesInResources(
+	repo::core::model::RepoScene* &scene,
+	const std::unordered_map<repo::lib::RepoUUID, std::vector<repo::lib::RepoUUID>, repo::lib::RepoUUIDHasher> &entityNodesToMeshesSharedID,
+	const std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToEntityNodes,
+	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs) {
+	for (const auto &entry : resourceIDsToEntityNodes) {
+		resourceIDsToSharedIDs[entry.first] = {};
+		for (const auto &nodeId : entry.second) {
+			auto meshes = findRecursiveMeshSharedIDs(scene, nodeId);
+			resourceIDsToSharedIDs[entry.first].insert(resourceIDsToSharedIDs[entry.first].end(), meshes.begin(), meshes.end());
+		}
+	}
+}
+
+repo::core::model::RepoScene* SynchroModelImport::constructScene(
 	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs
 ) {
 	repo::core::model::RepoNodeSet transNodes, matNodes, textNodes, meshNodes, metaNodes;
 	std::unordered_map<std::string, repo::lib::RepoUUID> synchroIDToRepoID;
 	std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> repoIDToNode;
-
+	repoInfo << "Generating materials.... ";
 	auto matPairs = generateMatNodes(synchroIDToRepoID, repoIDToNode);
 	matNodes = matPairs.first;
 	textNodes = matPairs.second;
@@ -202,26 +231,33 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 
 	std::unordered_map<repo::lib::RepoUUID, std::vector<repo::lib::RepoUUID>, repo::lib::RepoUUIDHasher> nodeToParents;
 	std::unordered_map<repo::lib::RepoUUID, std::string, repo::lib::RepoUUIDHasher> nodeToSynchroParent;
+	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> resourceIDsToEntityNodes;
+	std::unordered_map<repo::lib::RepoUUID, std::vector<repo::lib::RepoUUID>, repo::lib::RepoUUIDHasher> entityNodesToMeshesSharedID;
 
+	repoInfo << "Generating mesh templates...";
 	auto meshNodeTemplates = createMeshTemplateNodes();
 	std::vector<synchro_reader::Vector3D> bbox;
+	repoInfo << "Reading entities ";
 	for (const auto entity : reader->getEntities(bbox)) {
 		auto trans = createTransNode(identity, entity.second.name);
 		auto resourceID = entity.second.resourceID;
 		transNodes.insert(trans);
-		repoIDToNode[trans->getUniqueID()] = trans;
-		synchroIDToRepoID[entity.second.id] = trans->getUniqueID();
-		nodeToSynchroParent[trans->getUniqueID()] = entity.second.parentID;
-		auto meta = entity.second.metadata;		
+		auto transUniqueID = trans->getUniqueID();
+		repoIDToNode[transUniqueID] = trans;
+		synchroIDToRepoID[entity.second.id] = transUniqueID;
+		nodeToSynchroParent[transUniqueID] = entity.second.parentID;
+		auto meta = entity.second.metadata;
 		meta[RESOURCE_ID_NAME] = resourceID;
-		if (meta.size() > 1 || !resourceID.empty()) {
-			metaNodes.insert(createMetaNode(meta, entity.second.name, { trans->getSharedID() }));
-		}
 
-		if (!resourceID.empty() && resourceIDsToSharedIDs.find(resourceID) == resourceIDsToSharedIDs.end()) {
-			resourceIDsToSharedIDs[resourceID] = {};
-		}
+		std::vector<repo::lib::RepoUUID> metaParents = { trans->getSharedID() };
 
+		entityNodesToMeshesSharedID[transUniqueID] = {};
+		if (resourceIDsToEntityNodes.find(resourceID) == resourceIDsToEntityNodes.end()) {
+			resourceIDsToEntityNodes[resourceID] = { transUniqueID };
+		}
+		else {
+			resourceIDsToEntityNodes[resourceID].push_back(transUniqueID);
+		}
 
 		for (const auto meshEntry : entity.second.meshes) {
 			auto meshID = meshEntry.geoId;
@@ -244,10 +280,15 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 				nodeToParents[matNodeID].push_back(mesh->getSharedID());
 
 			meshNodes.insert(mesh);
+			entityNodesToMeshesSharedID[transUniqueID].push_back(mesh->getSharedID());
 			synchroIDToRepoID[meshID] = mesh->getUniqueID();
 			repoIDToNode[mesh->getUniqueID()] = mesh;
 			if (!resourceID.empty())
 				resourceIDsToSharedIDs[resourceID].push_back(mesh->getSharedID());
+		}
+
+		if (meta.size() > 1 || !resourceID.empty()) {
+			metaNodes.insert(createMetaNode(meta, entity.second.name, metaParents));
 		}
 	}
 
@@ -276,10 +317,14 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 		<< metaNodes.size() << " metadata ";
 	auto scene = new repo::core::model::RepoScene({ orgFile }, dummy, meshNodes, matNodes, metaNodes, textNodes, transNodes);
 	auto origin = reader->getGlobalOffset();
-	std::vector<double> offset = { origin.x + bbox[0].x, origin.y + bbox[0].y, origin.z + bbox[0].z };
+
+	/*std::vector<double> offset = { origin.x + bbox[0].x, origin.y + bbox[0].y, origin.z + bbox[0].z };*/
+	std::vector<double> offset = { origin.x, origin.y, origin.z };
 	repoInfo << "Setting Global Offset: " << offset[0] << ", " << offset[1] << ", " << offset[2];
 	scene->setWorldOffset(offset);
 
+	// Gather all meshes belong to a certain resource ID
+	determineMeshesInResources(scene, entityNodesToMeshesSharedID, resourceIDsToEntityNodes, resourceIDsToSharedIDs);
 	return scene;
 }
 
@@ -298,29 +343,16 @@ std::vector<float> SynchroModelImport::colourFrom32Bit(const uint32_t &color) co
 	return{ (float)colorArr[0] / 255.f, (float)colorArr[1] / 255.f, (float)colorArr[2] / 255.f };
 }
 
-
-std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
-	const std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
+std::string SynchroModelImport::generateCache(
+	const std::unordered_map<float, std::set<std::string>> &alphaValueToIDs,
 	const std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
 	const std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> &transformState,
 	const std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> &clipState,
-	const std::shared_ptr<CameraChange> &cam) {
-
+	const std::shared_ptr<CameraChange> &cam,
+	std::unordered_map<std::string, std::vector<uint8_t>> &stateBuffers) {
 	std::vector<repo::lib::PropertyTree> transparencyStates, colourStates, transformationStates, clipPlaneStates;
 	std::unordered_map<float, std::vector<std::string>> transToIDs;
 	std::unordered_map<uint32_t, std::vector<std::string>> colorToIDs;
-
-	for (const auto &entry : meshAlphaState) {
-		auto value = entry.second.second;
-		if (value != entry.second.first) {
-			if (transToIDs.find(value) == transToIDs.end()) {
-				transToIDs[value] = { entry.first.toString() };
-			}
-			else {
-				transToIDs[value].push_back(entry.first.toString());
-			}
-		}
-	}
 
 	for (const auto &entry : meshColourState) {
 		if (!entry.second.second.size()) continue;
@@ -334,14 +366,15 @@ std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
 			}
 		}
 	}
-
-	for (const auto &entry : transformState) {
-		repo::lib::PropertyTree transformTree;
-		transformTree.addToTree(SEQ_CACHE_LABEL_VALUE, entry.second);
-		std::vector<repo::lib::RepoUUID> idArr = {entry.first};
-		transformTree.addToTree(SEQ_CACHE_LABEL_SHARED_IDS, idArr);
-		transformationStates.push_back(transformTree);
-	}	
+	if (settings.shouldImportAnimations()) {
+		for (const auto &entry : transformState) {
+			repo::lib::PropertyTree transformTree;
+			transformTree.addToTree(SEQ_CACHE_LABEL_VALUE, entry.second);
+			std::vector<repo::lib::RepoUUID> idArr = { entry.first };
+			transformTree.addToTree(SEQ_CACHE_LABEL_SHARED_IDS, idArr);
+			transformationStates.push_back(transformTree);
+		}
+	}
 
 	for (const auto &entry : clipState) {
 		repo::lib::PropertyTree clipTree, valueTree;
@@ -353,7 +386,7 @@ std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
 		clipPlaneStates.push_back(clipTree);
 	}
 
-	for (const auto &entry : transToIDs) {
+	for (const auto &entry : alphaValueToIDs) {
 		repo::lib::PropertyTree transTree;
 		transTree.addToTree(SEQ_CACHE_LABEL_VALUE, entry.first);
 		transTree.addToTree(SEQ_CACHE_LABEL_SHARED_IDS, entry.second);
@@ -366,13 +399,11 @@ std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
 		colTree.addToTree(SEQ_CACHE_LABEL_SHARED_IDS, entry.second);
 		colourStates.push_back(colTree);
 	}
-	
 	repo::lib::PropertyTree bufferTree;
 	if (transparencyStates.size()) bufferTree.addArrayObjects(SEQ_CACHE_LABEL_TRANSPARENCY, transparencyStates);
 	if (colourStates.size()) bufferTree.addArrayObjects(SEQ_CACHE_LABEL_COLOR, colourStates);
 	if (transformationStates.size()) bufferTree.addArrayObjects(SEQ_CACHE_LABEL_TRANSFORMATION, transformationStates);
 	if (clipPlaneStates.size()) bufferTree.addArrayObjects(SEQ_CACHE_LABEL_CLIP, clipPlaneStates);
-
 
 	if (cam) {
 		repo::lib::PropertyTree camTree;
@@ -384,45 +415,39 @@ std::pair<std::string, std::vector<uint8_t>> SynchroModelImport::generateCache(
 		bufferTree.mergeSubTree(SEQ_CACHE_LABEL_CAMERA, camTree);
 	}
 
-	std::stringstream ss;
-	bufferTree.write_json(ss);
-	auto data = ss.str();
-	
-	//FIXME: Refactor to prop tree
-	std::vector<uint8_t> binData;
-	binData.resize(data.size());
-	memcpy(binData.data(), data.c_str(), data.size());
+	auto id = repo::lib::RepoUUID::createUUID().toString();
 
-	return {repo::lib::RepoUUID::createUUID().toString(), binData};
-
+	stateBuffers[id] = bufferTree.writeJsonToBuffer();
+	return id;
 }
 
 void SynchroModelImport::updateFrameState(
 	const std::vector<std::shared_ptr<synchro_reader::AnimationTask>> &tasks,
 	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
+	std::unordered_map<float, std::set<std::string>> &alphaValueToIDs,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
 	std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> &transformState,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> &clipState,
 	std::shared_ptr<CameraChange> &cam,
-	std::set<repo::lib::RepoUUID> &transformingMesh
+	std::set<std::string> &transformingResource,
+	const std::vector<double> &offset
 
-	) {
+) {
 	for (const auto &task : tasks) {
 		switch (task->getType()) {
-			case synchro_reader::AnimationTask::TaskType::CAMERA:
-				{
-					auto camChange = std::dynamic_pointer_cast<const synchro_reader::CameraChange>(task);
-					cam = std::make_shared<CameraChange>(
-							repo::lib::RepoVector3D64(camChange->position.x, camChange->position.y, camChange->position.z),
-							repo::lib::RepoVector3D(camChange->forward.x, camChange->forward.y, camChange->forward.z),
-							repo::lib::RepoVector3D(camChange->up.x, camChange->up.y, camChange->up.z),
-							camChange->fov,
-							camChange->isPerspective
-						);
-
-				}
-				break;
+		case synchro_reader::AnimationTask::TaskType::CAMERA:
+		{
+			auto camChange = std::dynamic_pointer_cast<const synchro_reader::CameraChange>(task);
+			cam = std::make_shared<CameraChange>(
+				repo::lib::RepoVector3D64(camChange->position.x, camChange->position.y, camChange->position.z),
+				repo::lib::RepoVector3D(camChange->forward.x, camChange->forward.y, camChange->forward.z),
+				repo::lib::RepoVector3D(camChange->up.x, camChange->up.y, camChange->up.z),
+				camChange->fov,
+				camChange->isPerspective
+				);
+		}
+		break;
 		case synchro_reader::AnimationTask::TaskType::CLIP:
 		{
 			auto clipTask = std::dynamic_pointer_cast<const synchro_reader::ClipTask>(task);
@@ -432,45 +457,75 @@ void SynchroModelImport::updateFrameState(
 					clipState.erase(mesh);
 			}
 			else {
-				repo::lib::RepoVector3D64 position = { clipTask->position.x, clipTask->position.y, clipTask->position.z};
+				repo::lib::RepoVector3D64 position = { clipTask->position.x, clipTask->position.y, clipTask->position.z };
 				repo::lib::RepoVector3D64 dir = { clipTask->dir.x, clipTask->dir.y, clipTask->dir.z };
 				auto clip = std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>(position, dir);
 				for (const auto &mesh : meshes)
 					clipState[mesh] = clip;
 			}
-			
 		}
 		break;
 		case synchro_reader::AnimationTask::TaskType::COLOR:
 		{
 			auto colourTask = std::dynamic_pointer_cast<const synchro_reader::ColourTask>(task);
-
 			if (resourceIDsToSharedIDs.find(colourTask->resourceID) != resourceIDsToSharedIDs.end()) {
 				auto color = colourTask->color;
 				bool reset = !color.size();
-				auto colour32Bit = reset? 0 : colourIn32Bit(color);
+				auto colour32Bit = reset ? 0 : colourIn32Bit(color);
 				auto meshes = resourceIDsToSharedIDs[colourTask->resourceID];
 				for (const auto mesh : meshes) {
-					meshColourState[mesh].second = reset ||  meshColourState[mesh].first == colour32Bit ? std::vector<float>() : color;
+					meshColourState[mesh].second = reset || meshColourState[mesh].first == colour32Bit ? std::vector<float>() : color;
 				}
 			}
 		}
 		break;
 		case synchro_reader::AnimationTask::TaskType::TRANSFORMATION:
 		{
-			auto transTask = std::dynamic_pointer_cast<const synchro_reader::TransformationTask>(task);
-			auto meshes = resourceIDsToSharedIDs[transTask->resourceID];
-			if (transTask->reset) {
-				for (const auto &mesh : meshes)
-					transformState.erase(mesh);
-			}
-			else {
-				for (const auto &mesh : meshes) {
-					transformState[mesh] = transTask->trans;
-					transformingMesh.insert(mesh);
+			if (settings.shouldImportAnimations()) {
+				auto transTask = std::dynamic_pointer_cast<const synchro_reader::TransformationTask>(task);
+				auto meshes = resourceIDsToSharedIDs[transTask->resourceID];
+				transformingResource.insert(transTask->resourceID);
+				if (transTask->reset) {
+					for (const auto &mesh : meshes)
+						transformState.erase(mesh);
+				}
+				else {
+					repo::lib::RepoMatrix64 matrix(transTask->trans);
+					std::vector<double> toDX = {
+						1, 0, 0, 0,
+						0, 0, -1, 0,
+						0, 1, 0, 0,
+						0, 0, 0,  1
+					};
+					std::vector<double> toGL = {
+						1, 0, 0, 0,
+						0, 0, 1, 0,
+						0, -1, 0, 0,
+						0, 0, 0,  1
+					};
+
+					std::vector<double> toWorld = {
+						1, 0, 0, offset[0],
+						0, 1, 0, offset[1],
+						0, 0, 1, offset[2],
+						0, 0, 0,  1
+					};
+
+					repo::lib::RepoMatrix64 matDX(toDX);
+					repo::lib::RepoMatrix64 matGL(toGL);
+					repo::lib::RepoMatrix64 matToWorld(toWorld);
+					auto fromWorld = matToWorld.invert();
+
+					matrix = matToWorld * matGL * matrix * matDX * fromWorld;
+
+					for (const auto &mesh : meshes) {
+						transformState[mesh] = matrix.getData();
+					}
 				}
 			}
-
+			else {
+				repoInfo << "Transformation found but it's disabled";
+			}
 		}
 		break;
 		case synchro_reader::AnimationTask::TaskType::VISIBILITY:
@@ -480,109 +535,100 @@ void SynchroModelImport::updateFrameState(
 				auto visibility = visibilityTask->visibility;
 				auto meshes = resourceIDsToSharedIDs[visibilityTask->resourceID];
 				for (const auto mesh : meshes) {
-					meshAlphaState[mesh].second = visibility == -1? meshAlphaState[mesh].first : visibility;
+					if (visibility == -1) {
+						meshAlphaState[mesh].second = meshAlphaState[mesh].first;
+						if (alphaValueToIDs.find(visibility) != alphaValueToIDs.end()) {
+							alphaValueToIDs[visibility].erase(mesh.toString());
+						}
+					}
+					else {
+						meshAlphaState[mesh].second = visibility;
+						if (alphaValueToIDs.find(visibility) == alphaValueToIDs.end()) {
+							alphaValueToIDs[visibility] = { mesh.toString() };
+						}
+						else {
+							alphaValueToIDs[visibility].insert(mesh.toString());
+						}
+					}
 				}
 			}
 		}
 		break;
 		}
 	}
-
 }
 
-void SynchroModelImport::addTasks(
-	std::unordered_map<std::string, std::shared_ptr<repo::core::model::RepoSequence::Task>> &currentTasks,
-	std::vector<std::string> &toAdd,
-	std::map<std::string, synchro_reader::Task> &tasks,
-	std::unordered_map<std::string, repo::lib::RepoUUID> &taskIDtoRepoID
-	) {
-	for (const auto &entry : toAdd) {
-		std::list<std::string> hierachy;
-		auto currentEntry = entry;
-		while(!currentEntry.empty()) {
-			hierachy.push_front(currentEntry);
-			currentEntry = tasks[currentEntry].parentTask;
-		}
-
-		auto taskList = &currentTasks;
-		
-		for (const auto &taskID : hierachy) {
-			if (taskList->find(taskID) == taskList->end()) {
-				repo::core::model::RepoSequence::Task newTask;
-				newTask.name = tasks[taskID].name;
-				newTask.startTime = tasks[taskID].startTime;
-				newTask.endTime = tasks[taskID].endTime;
-				newTask.id = taskIDtoRepoID[taskID];
-				(*taskList)[taskID] = std::make_shared<repo::core::model::RepoSequence::Task>(newTask);
-			}
-			
-			taskList = &((*taskList)[taskID]->childTasks);
-			
-		}
-	}
-}
-
-void SynchroModelImport::removeTasks(
-	std::unordered_map<std::string, std::shared_ptr<repo::core::model::RepoSequence::Task>> &currentTasks,
-	std::vector<std::string> &toRemove,
-	std::map<std::string, synchro_reader::Task> &tasks
+repo::lib::PropertyTree SynchroModelImport::createTaskTree(
+	const SequenceTask &task,
+	const std::unordered_map<repo::lib::RepoUUID, std::set<SequenceTask, SequenceTaskComparator>, repo::lib::RepoUUIDHasher> &taskToChildren
 ) {
-	for (const auto &entry : toRemove) {
-		std::list<std::string> hierachy;
-		auto currentEntry = tasks[entry].parentTask;
-		while (!currentEntry.empty()) {
-			hierachy.push_front(currentEntry);
-			currentEntry = tasks[currentEntry].parentTask;
+	repo::lib::PropertyTree taskTree;
+	taskTree.addToTree(TASK_ID, task.id);
+	taskTree.addToTree(TASK_NAME, task.name);
+	taskTree.addToTree(TASK_START_DATE, task.startTime);
+	taskTree.addToTree(TASK_END_DATE, task.endTime);
+
+	if (taskToChildren.find(task.id) != taskToChildren.end()) {
+		std::vector<repo::lib::PropertyTree> childrenTrees;
+		for (const auto subTask : taskToChildren.at(task.id)) {
+			childrenTrees.push_back(createTaskTree(subTask, taskToChildren));
 		}
 
-		auto taskList = &currentTasks;
-
-		for (const auto &taskID : hierachy) {
-			if (taskList->find(taskID) != taskList->end()) {
-				taskList = &((*taskList)[taskID]->childTasks);
-			}
-		}
-		if (taskList->find(entry) != taskList->end()) {
-			taskList->erase(entry);
-		}
+		taskTree.addArrayObjects(TASK_CHILDREN, childrenTrees);
 	}
+
+	return taskTree;
 }
 
-repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
+std::vector<uint8_t> SynchroModelImport::generateTaskCache(
+	const std::set<SequenceTask, SequenceTaskComparator> &rootTasks,
+	const std::unordered_map<repo::lib::RepoUUID, std::set<SequenceTask, SequenceTaskComparator>, repo::lib::RepoUUIDHasher> &taskToChildren
+) {
+	std::vector<repo::lib::PropertyTree> tasks;
 
-	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> resourceIDsToSharedIDs;
+	for (const auto &task : rootTasks) {
+		tasks.push_back(createTaskTree(task, taskToChildren));
+	}
 
-	auto scene = constructScene(resourceIDsToSharedIDs);
+	repo::lib::PropertyTree root;
+	root.addArrayObjects("tasks", tasks);
+	return root.writeJsonToBuffer();
+}
 
-	repoInfo << "Getting animations... ";
-	auto animInfo = reader->getAnimation();
-
-
-	auto animation = animInfo.first;
-	auto taskInfo = reader->getTasks();
-
-	std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> meshAlphaState;
-	std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> meshColourState;
-	std::unordered_map<std::string, std::vector<uint8_t>> stateBuffers;
-	std::vector<repo::core::model::RepoSequence::FrameData> frameData;
-	std::set<repo::lib::RepoUUID> defaultInvisible;
+void SynchroModelImport::generateTaskInformation(
+	const synchro_reader::TasksInformation &taskInfo,
+	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
+	repo::core::model::RepoScene* &scene
+) {
 	std::unordered_map<std::string, repo::lib::RepoUUID> taskIDtoRepoID;
+	std::unordered_map<repo::lib::RepoUUID, std::set<SequenceTask, SequenceTaskComparator>, repo::lib::RepoUUIDHasher> taskToChildren;
+	std::set<SequenceTask, SequenceTaskComparator> rootTasks;
 	std::vector<repo::core::model::RepoTask> taskBSONs;
 
 	for (const auto &task : taskInfo.tasks) {
-		std::vector<repo::lib::RepoUUID> parents;
 		auto parentID = task.second.parentTask;
-		if (!parentID.empty()) {
-			if (taskIDtoRepoID.find(parentID) == taskIDtoRepoID.end()) {
-				taskIDtoRepoID[parentID] = repo::lib::RepoUUID::createUUID();
-			}
-
-			parents.push_back(taskIDtoRepoID[parentID]);
-		}
+		std::vector<repo::lib::RepoUUID> parentArr;
 
 		auto taskID = task.second.id;
-		if(taskIDtoRepoID.find(taskID) == taskIDtoRepoID.end())
+		if (taskIDtoRepoID.find(taskID) == taskIDtoRepoID.end()) {
 			taskIDtoRepoID[taskID] = repo::lib::RepoUUID::createUUID();
+		}
+
+		SequenceTask taskItem = { taskIDtoRepoID[taskID] , task.second.name, task.second.startTime * 1000, task.second.endTime * 1000 };
+
+		if (parentID.empty()) {
+			rootTasks.insert(taskItem);
+		}
+		else {
+			if (taskIDtoRepoID.find(parentID) == taskIDtoRepoID.end()) {
+				auto parentUUID = repo::lib::RepoUUID::createUUID();
+				taskIDtoRepoID[parentID] = parentUUID;
+				parentArr = { parentUUID };
+				taskToChildren[parentUUID] = {};
+			}
+
+			taskToChildren[taskIDtoRepoID[parentID]].insert(taskItem);
+		}
 
 		std::vector<repo::lib::RepoUUID> relatedEntities;
 		for (const auto &resourceID : task.second.relatedResources) {
@@ -590,91 +636,121 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene() {
 				relatedEntities.insert(relatedEntities.end(), resourceIDsToSharedIDs[resourceID].begin(), resourceIDsToSharedIDs[resourceID].end());
 			}
 		}
-		taskBSONs.push_back(repo::core::model::RepoBSONFactory::makeTask(task.second.name, task.second.data, relatedEntities, parents, taskIDtoRepoID[taskID]));
+		taskBSONs.push_back(repo::core::model::RepoBSONFactory::makeTask(task.second.name, task.second.data, relatedEntities, parentArr, taskIDtoRepoID[taskID]));
 	}
 
+	scene->addSequenceTasks(taskBSONs, generateTaskCache(rootTasks, taskToChildren));
+}
 
-	auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
-	for (const auto &lastStateEntry : animInfo.second) {
-		if (resourceIDsToSharedIDs.find(lastStateEntry.first) == resourceIDsToSharedIDs.end()) continue;
-		for (const auto &id : resourceIDsToSharedIDs[lastStateEntry.first]) {
-			float defaultAlpha = 1;
+repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &errMsg) {
+	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> resourceIDsToSharedIDs;
 
-			auto material = scene->getChildrenNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT, id, repo::core::model::NodeType::MATERIAL);
-			std::vector<float> materialCol = { 0,0,0 };
-			if (material.size()) {
-				auto materialNode = (repo::core::model::MaterialNode*)material[0];
-				materialCol = materialNode->getMaterialStruct().diffuse;
-				defaultAlpha = materialNode->getMaterialStruct().opacity;
+	repo::core::model::RepoScene* scene = nullptr;
+	try {
+		repoInfo << "Constructing scene...";
+		scene = constructScene(resourceIDsToSharedIDs);
+
+		repoInfo << "Getting tasks... ";
+
+		generateTaskInformation(reader->getTasks(), resourceIDsToSharedIDs, scene);
+
+		repoInfo << "Getting animations... ";
+		auto animInfo = reader->getAnimation();
+
+		auto animation = animInfo.first;
+
+		std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> meshAlphaState;
+		std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> meshColourState;
+		std::unordered_map<std::string, std::vector<uint8_t>> stateBuffers;
+		std::vector<repo::core::model::RepoSequence::FrameData> frameData;
+		std::set<repo::lib::RepoUUID> defaultInvisible;
+
+		for (const auto &lastStateEntry : animInfo.second) {
+			if (resourceIDsToSharedIDs.find(lastStateEntry.first) == resourceIDsToSharedIDs.end()) {
+				continue;
+			};
+
+			for (const auto &id : resourceIDsToSharedIDs[lastStateEntry.first]) {
+				float defaultAlpha = 1;
+
+				auto material = scene->getChildrenNodesFiltered(repo::core::model::RepoScene::GraphType::DEFAULT, id, repo::core::model::NodeType::MATERIAL);
+				std::vector<float> materialCol = { 0,0,0 };
+				if (material.size()) {
+					auto materialNode = (repo::core::model::MaterialNode*)material[0];
+					materialCol = materialNode->getMaterialStruct().diffuse;
+					defaultAlpha = materialNode->getMaterialStruct().opacity;
+				}
+
+				if (!lastStateEntry.second) {
+					defaultInvisible.insert(scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, id)->getUniqueID());
+				}
+
+				meshColourState[id] = { colourIn32Bit(materialCol), std::vector<float >() };
+				meshAlphaState[id] = { defaultAlpha, defaultAlpha };
 			}
+		}
 
-			if (!lastStateEntry.second) {
-				defaultInvisible.insert(scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, id)->getUniqueID());
+		std::shared_ptr<CameraChange> cam = nullptr;
+		std::unordered_map<float, std::set<std::string>> alphaValueToIDs;
+		std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> transformState;
+		std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> clipState;
+
+		std::set<std::string> transformingResources;
+
+		auto origin = reader->getGlobalOffset();
+		std::vector<double> offset = { origin.x, origin.z , -origin.y };
+		int count = 0;
+		auto total = animation.frames.size();
+		int step = total > 10 ? total / 10 : 1;
+		for (const auto &currentFrame : animation.frames) {
+			auto currentTime = currentFrame.first;
+			updateFrameState(currentFrame.second, resourceIDsToSharedIDs, alphaValueToIDs, meshAlphaState, meshColourState, transformState, clipState, cam, transformingResources, offset);
+			repo::core::model::RepoSequence::FrameData data;
+			data.ref = generateCache(alphaValueToIDs, meshColourState, transformState, clipState, cam, stateBuffers);
+			data.timestamp = currentTime;
+			frameData.push_back(data);
+			if (++count % step == 0) {
+				repoInfo << "Processed " << count << " of " << total << " frames";
+			};
+		}
+
+		repoInfo << "transforming Mesh: " << transformingResources.size();
+		for (const auto &resourceID : transformingResources) {
+			for (const auto &mesh : resourceIDsToSharedIDs[resourceID]) {
+				auto meshNode = (repo::core::model::MeshNode*) scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, mesh);
+				meshNode->swap(meshNode->cloneAndNoteGrouping(resourceID));
 			}
+		}
 
-			meshColourState[id] = { colourIn32Bit(materialCol), std::vector<float >() };
-			meshAlphaState[id] = { defaultAlpha, defaultAlpha };
+		std::string animationName = animation.name.empty() ? DEFAULT_SEQUENCE_NAME : animation.name;
+		auto sequence = repo::core::model::RepoBSONFactory::makeSequence(frameData, animationName);
+
+		if (sequence.objsize() > REPO_MAX_OBJ_SIZE) {
+			errMsg = REPOERR_SYNCHRO_SEQUENCE_TOO_BIG;
+			delete scene;
+			scene = nullptr;
+		}
+		else {
+			repoInfo << "Animation constructed, number of frames: " << frameData.size();
+			scene->addSequence(sequence, stateBuffers);
+
+			scene->setDefaultInvisible(defaultInvisible);
+			repoInfo << "#default invisible: " << defaultInvisible.size();
 		}
 	}
-
-	std::string validCache;
-	std::shared_ptr<CameraChange> cam = nullptr;
-
-	std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> transformState;
-	std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> clipState;
-
-	auto currentFrame = animation.frames.begin();
-	auto currentStart = taskInfo.taskStartDates.begin();
-	auto currentEnd = taskInfo.taskEndDates.begin();
-
-	std::unordered_map<std::string, std::shared_ptr<repo::core::model::RepoSequence::Task>> currentTasks;
-
-	std::set<repo::lib::RepoUUID> transformingMesh;
-
-	while (currentFrame != animation.frames.end() || currentStart != taskInfo.taskStartDates.end() || currentEnd != taskInfo.taskEndDates.end()) {
-		auto currentTime = currentFrame != animation.frames.end() ? currentFrame->first : -1;
-
-		currentTime = std::min(currentTime, currentStart != taskInfo.taskStartDates.end() ? currentStart->first : -1);
-
-		currentTime = std::min(currentTime, currentEnd != taskInfo.taskEndDates.end() ? currentEnd->first : -1);
-
-		if (currentFrame != animation.frames.end() && currentFrame->first == currentTime) {
-			updateFrameState(currentFrame->second, resourceIDsToSharedIDs, meshAlphaState, meshColourState, transformState, clipState, cam, transformingMesh);
-			auto cacheData = generateCache(meshAlphaState, meshColourState, transformState, clipState, cam);
-			validCache = cacheData.first;
-			stateBuffers[validCache] = cacheData.second;
-			currentFrame++;
+	catch (const std::exception &e) {
+		std::string error(e.what());
+		if (error.find("BufBuilder") != std::string::npos) {
+			errMsg = scene ? REPOERR_SYNCHRO_SEQUENCE_TOO_BIG : REPOERR_MAX_NODES_EXCEEDED;
+		}
+		else {
+			errMsg = REPOERR_LOAD_SCENE_FAIL;
 		}
 
-		if (currentStart != taskInfo.taskStartDates.end() && currentStart->first == currentTime) {
-			addTasks(currentTasks, currentStart->second, taskInfo.tasks, taskIDtoRepoID);
-			currentStart++;
-		}
-
-		if (currentEnd != taskInfo.taskEndDates.end() && currentEnd->first == currentTime) {
-			removeTasks(currentTasks, currentEnd->second, taskInfo.tasks);
-			currentEnd++;
-		}
-
-		repo::core::model::RepoSequence::FrameData data;
-		data.ref = validCache;
-		data.timestamp = currentTime;
-		data.currentTasks = repo::core::model::RepoBSONFactory::buildSequenceTasksBSON(currentTasks);
-		frameData.push_back(data);		
+		if (scene)
+			delete scene;
+		return nullptr;
 	}
-
-	for (const auto &mesh : transformingMesh) {
-		auto meshNode =(repo::core::model::MeshNode*) scene->getNodeBySharedID(repo::core::model::RepoScene::GraphType::DEFAULT, mesh);		
-		meshNode->swap(meshNode->cloneAndFlagIndependent());
-	}
-
-	std::string animationName = animation.name.empty() ? DEFAULT_SEQUENCE_NAME : animation.name;
-	auto sequence = repo::core::model::RepoBSONFactory::makeSequence(frameData, animationName);
-	repoInfo << "Animation constructed, number of frames: " << frameData.size();
-	scene->addSequence(sequence, stateBuffers, taskBSONs);
-	scene->setDefaultInvisible(defaultInvisible);
-	repoInfo << "#default invisible: " << defaultInvisible.size();
-
 
 	return scene;
 }

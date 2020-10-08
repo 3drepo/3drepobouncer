@@ -22,12 +22,12 @@
 #include "repo_ifc_utils_geometry.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include <boost/filesystem.hpp>
-
+#include "repo_model_import_config_default_values.h"
 using namespace repo::manipulator::modelconvertor;
 
-IFCUtilsGeometry::IFCUtilsGeometry(const std::string &file, const ModelImportConfig *settings) :
-file(file),
-settings(settings)
+IFCUtilsGeometry::IFCUtilsGeometry(const std::string &file, const ModelImportConfig &settings) :
+	file(file),
+	settings(settings)
 {
 }
 
@@ -51,7 +51,7 @@ repo_material_t IFCUtilsGeometry::createMaterial(
 		matProp.specular = { (float)specular[0], (float)specular[1], (float)specular[2] };
 	}
 	else {
-		matProp.specular = { 0, 0, 0, 0};
+		matProp.specular = { 0, 0, 0, 0 };
 	}
 
 	if (material.hasSpecularity())
@@ -80,23 +80,23 @@ IfcGeom::IteratorSettings IFCUtilsGeometry::createSettings()
 {
 	IfcGeom::IteratorSettings itSettings;
 
-	itSettings.set(IfcGeom::IteratorSettings::WELD_VERTICES, settings->getWieldVertices());
-	itSettings.set(IfcGeom::IteratorSettings::USE_WORLD_COORDS, settings->getUseWorldCoords());
-	itSettings.set(IfcGeom::IteratorSettings::CONVERT_BACK_UNITS, settings->getConvertUnits());
-	itSettings.set(IfcGeom::IteratorSettings::USE_BREP_DATA, settings->getUseBRepData());
-	itSettings.set(IfcGeom::IteratorSettings::SEW_SHELLS, settings->getSewShells());
-	itSettings.set(IfcGeom::IteratorSettings::FASTER_BOOLEANS, settings->getFasterBooleans());
-	itSettings.set(IfcGeom::IteratorSettings::DISABLE_OPENING_SUBTRACTIONS, settings->getNoOpeningSubtractions());
-	itSettings.set(IfcGeom::IteratorSettings::DISABLE_TRIANGULATION, settings->getNoTriangulation());
-	itSettings.set(IfcGeom::IteratorSettings::APPLY_DEFAULT_MATERIALS, settings->getUseDefaultMaterials());
-	itSettings.set(IfcGeom::IteratorSettings::EXCLUDE_SOLIDS_AND_SURFACES, settings->getDisableSolidSurfaces());
-	itSettings.set(IfcGeom::IteratorSettings::NO_NORMALS, settings->getNoNormals());
-	itSettings.set(IfcGeom::IteratorSettings::USE_ELEMENT_NAMES, settings->getUseElementNames());
-	itSettings.set(IfcGeom::IteratorSettings::USE_ELEMENT_GUIDS, settings->getUseElementGuids());
-	itSettings.set(IfcGeom::IteratorSettings::USE_MATERIAL_NAMES, settings->getUseMaterialNames());
-	itSettings.set(IfcGeom::IteratorSettings::CENTER_MODEL, settings->getCentreModels());
-	itSettings.set(IfcGeom::IteratorSettings::GENERATE_UVS, settings->getGenerateUVs());
-	itSettings.set(IfcGeom::IteratorSettings::APPLY_LAYERSETS, settings->getApplyLayerSets());
+	itSettings.set(IfcGeom::IteratorSettings::WELD_VERTICES, repoDefaultIOSWieldVertices);
+	itSettings.set(IfcGeom::IteratorSettings::USE_WORLD_COORDS, repoDefaultIOSUseWorldCoords);
+	itSettings.set(IfcGeom::IteratorSettings::CONVERT_BACK_UNITS, repoDefaultIOSConvertBackUnits);
+	itSettings.set(IfcGeom::IteratorSettings::USE_BREP_DATA, repoDefaultIOSUseBrepData);
+	itSettings.set(IfcGeom::IteratorSettings::SEW_SHELLS, repoDefaultIOSSewShells);
+	itSettings.set(IfcGeom::IteratorSettings::FASTER_BOOLEANS, repoDefaultIOSFasterBooleans);
+	itSettings.set(IfcGeom::IteratorSettings::DISABLE_OPENING_SUBTRACTIONS, repoDefaultIOSDisableOpeningSubtractions);
+	itSettings.set(IfcGeom::IteratorSettings::DISABLE_TRIANGULATION, repoDefaultIOSDisableTriangulate);
+	itSettings.set(IfcGeom::IteratorSettings::APPLY_DEFAULT_MATERIALS, repoDefaultIOSApplyDefaultMaterials);
+	itSettings.set(IfcGeom::IteratorSettings::EXCLUDE_SOLIDS_AND_SURFACES, repoDefaultIOSExcludesSolidsAndSurfaces);
+	itSettings.set(IfcGeom::IteratorSettings::NO_NORMALS, repoDefaultIOSNoNormals);
+	itSettings.set(IfcGeom::IteratorSettings::USE_ELEMENT_NAMES, repoDefaultIOSUseElementNames);
+	itSettings.set(IfcGeom::IteratorSettings::USE_ELEMENT_GUIDS, repoDefaultIOSUseElementGuids);
+	itSettings.set(IfcGeom::IteratorSettings::USE_MATERIAL_NAMES, repoDefaultIOSUseMatNames);
+	itSettings.set(IfcGeom::IteratorSettings::CENTER_MODEL, repoDefaultIOSCentreModel);
+	itSettings.set(IfcGeom::IteratorSettings::GENERATE_UVS, repoDefaultIOSGenerateUVs);
+	itSettings.set(IfcGeom::IteratorSettings::APPLY_LAYERSETS, repoDefaultIOSApplyLayerSets);
 
 	return itSettings;
 }
@@ -112,12 +112,12 @@ bool IFCUtilsGeometry::generateGeometry(
 
 	IfcGeom::Iterator<double> contextIterator(itSettings, file);
 
-	auto filter = settings->getFilteringKeywords();
-	if (settings->getUseElementsFiltering() && filter.size())
+	auto filter = repoDefaultIfcOpenShellFilterList;
+	if (repoDefaultIOSUseFilter && filter.size())
 	{
 		std::set<std::string> filterSet(filter.begin(), filter.end());
 
-		if (settings->getIsExclusionFilter())
+		if (repoDefaultIsExclusion)
 		{
 			contextIterator.excludeEntities(filterSet);
 		}
@@ -129,7 +129,7 @@ bool IFCUtilsGeometry::generateGeometry(
 
 	repoTrace << "Initialising Geom iterator";
 	int res = IFCOPENSHELL_GEO_INIT_FAILED;
-	try{
+	try {
 		res = contextIterator.initialize();
 	}
 	catch (const std::exception &e)

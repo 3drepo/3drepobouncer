@@ -46,7 +46,7 @@ void RepoController::addAlias(
 RepoController::RepoToken* RepoController::init(
 	std::string            &errMsg,
 	const lib::RepoConfig  &config
-	)
+)
 {
 	return impl->init(errMsg, config);
 }
@@ -59,7 +59,7 @@ bool RepoController::commitAssetBundleBuffers(
 	return impl->commitAssetBundleBuffers(token, scene, buffers);
 }
 
-bool RepoController::commitScene(
+uint8_t RepoController::commitScene(
 	const RepoController::RepoToken    *token,
 	repo::core::model::RepoScene        *scene,
 	const std::string                   &owner,
@@ -110,32 +110,32 @@ bool RepoController::generateAndCommitSelectionTree(
 bool RepoController::generateAndCommitStashGraph(
 	const RepoController::RepoToken              *token,
 	repo::core::model::RepoScene* scene
-	)
+)
 {
 	return impl->generateAndCommitStashGraph(token, scene);
 }
 
 std::vector < repo::core::model::RepoBSON >
 RepoController::getAllFromCollectionContinuous(
-const RepoController::RepoToken      *token,
-const std::string    &database,
-const std::string    &collection,
-const uint64_t       &skip,
-const uint32_t       &limit)
+	const RepoController::RepoToken      *token,
+	const std::string    &database,
+	const std::string    &collection,
+	const uint64_t       &skip,
+	const uint32_t       &limit)
 {
 	return impl->getAllFromCollectionContinuous(token, database, collection, skip, limit);
 }
 
 std::vector < repo::core::model::RepoBSON >
 RepoController::getAllFromCollectionContinuous(
-const RepoController::RepoToken              *token,
-const std::string            &database,
-const std::string            &collection,
-const std::list<std::string> &fields,
-const std::string            &sortField,
-const int                    &sortOrder,
-const uint64_t               &skip,
-const uint32_t               &limit)
+	const RepoController::RepoToken              *token,
+	const std::string            &database,
+	const std::string            &collection,
+	const std::list<std::string> &fields,
+	const std::string            &sortField,
+	const int                    &sortOrder,
+	const uint64_t               &skip,
+	const uint32_t               &limit)
 {
 	return impl->getAllFromCollectionContinuous(token, database, collection, fields, sortField, sortOrder, skip, limit);
 }
@@ -154,11 +154,10 @@ std::list<std::string> RepoController::getDatabases(const RepoController::RepoTo
 	return impl->getDatabases(token);
 }
 
-
 std::map<std::string, std::list<std::string>>
 RepoController::getDatabasesWithProjects(
-const RepoController::RepoToken  *token,
-const std::list<std::string>     &databases)
+	const RepoController::RepoToken  *token,
+	const std::list<std::string>     &databases)
 {
 	return impl->getDatabasesWithProjects(token, databases);
 }
@@ -177,7 +176,7 @@ bool RepoController::insertBinaryFileToDatabase(
 void RepoController::insertRole(
 	const RepoController::RepoToken   *token,
 	const repo::core::model::RepoRole &role
-	)
+)
 {
 	impl->insertRole(token, role);
 }
@@ -194,7 +193,7 @@ bool RepoController::removeCollection(
 	const std::string     &databaseName,
 	const std::string     &collectionName,
 	std::string			  &errMsg
-	)
+)
 {
 	return impl->removeCollection(token, databaseName, collectionName, errMsg);
 }
@@ -203,7 +202,7 @@ bool RepoController::removeDatabase(
 	const RepoController::RepoToken       *token,
 	const std::string     &databaseName,
 	std::string			  &errMsg
-	)
+)
 {
 	return impl->removeDatabase(token, databaseName, errMsg);
 }
@@ -317,8 +316,8 @@ std::string RepoController::getNameOfAdminDatabase(const RepoController::RepoTok
 
 std::shared_ptr<repo_partitioning_tree_t>
 RepoController::getScenePartitioning(
-const repo::core::model::RepoScene *scene,
-const uint32_t                     &maxDepth
+	const repo::core::model::RepoScene *scene,
+	const uint32_t                     &maxDepth
 )
 {
 	return impl->getScenePartitioning(scene, maxDepth);
@@ -360,13 +359,11 @@ repo::core::model::RepoNodeSet RepoController::loadMetadataFromFile(
 
 repo::core::model::RepoScene*
 RepoController::loadSceneFromFile(
-const std::string                                          &filePath,
-uint8_t                                                    &err,
-const bool                                                 &applyReduction,
-const bool                                                 &rotateModel,
-const repo::manipulator::modelconvertor::ModelImportConfig *config)
+	const std::string                                          &filePath,
+	uint8_t                                                    &err,
+	const repo::manipulator::modelconvertor::ModelImportConfig &config)
 {
-	return impl->loadSceneFromFile(filePath, err, applyReduction, rotateModel, config);
+	return impl->loadSceneFromFile(filePath, err, config);
 }
 
 bool RepoController::saveOriginalFiles(
@@ -407,7 +404,7 @@ void RepoController::compareScenes(
 	repo_diff_result_t                         &baseResults,
 	repo_diff_result_t                         &compResults,
 	const repo::DiffMode                     &diffMode
-	)
+)
 {
 	impl->compareScenes(token, base, compare, baseResults, compResults, diffMode);
 }

@@ -26,16 +26,12 @@
 #include "repo_model_import_config.h"
 #include "../../../core/model/collection/repo_scene.h"
 
-namespace repo{
-	namespace manipulator{
-		namespace modelconvertor{
+namespace repo {
+	namespace manipulator {
+		namespace modelconvertor {
 			class AbstractModelImport
 			{
 			public:
-				/**
-				* Default Constructor, generate model with default settings
-				*/
-				AbstractModelImport();
 
 				/**
 				* Create AbstractModelImport with specific settings
@@ -43,14 +39,14 @@ namespace repo{
 				* in this object!
 				* @param settings
 				*/
-				AbstractModelImport(const ModelImportConfig *settings);
+				AbstractModelImport(const ModelImportConfig &settings = ModelImportConfig());
 
 				/**
 				* Default Deconstructor
 				* NOTE: The destructor will destroy the settings object referenced
 				* in this object!
 				*/
-				virtual ~AbstractModelImport();
+				virtual ~AbstractModelImport() {};
 
 				/**
 				* Generates a repo scene graph
@@ -58,7 +54,7 @@ namespace repo{
 				* been created before this call (e.g. by means of importModel())
 				* @return returns a populated RepoScene upon success.
 				*/
-				virtual repo::core::model::RepoScene* generateRepoScene() = 0;
+				virtual repo::core::model::RepoScene* generateRepoScene(uint8_t &errMsg) = 0;
 
 				/**
 				* Import model from a given file
@@ -70,7 +66,7 @@ namespace repo{
 				*/
 				virtual bool importModel(std::string filePath, uint8_t &errMsg) = 0;
 
-				virtual bool applyReduction() const { return true;  }
+				virtual bool applyReduction() const { return true; }
 				virtual bool requireReorientation() const { return false; }
 
 			protected:
@@ -90,8 +86,7 @@ namespace repo{
 				*/
 				std::string  getFileName(std::string fullPath);
 
-				const ModelImportConfig *settings; /*! Stores related settings for model import */
-				bool destroySettings; //only destroy settings if it is constructed by this object
+				const ModelImportConfig settings; /*! Stores related settings for model import */
 			};
 		} //namespace modelconvertor
 	} //namespace manipulator

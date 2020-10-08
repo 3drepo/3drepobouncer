@@ -40,7 +40,7 @@ MeshMapReorganiser::MeshMapReorganiser(
 		newUVs = oldUVs;
 		newFaces.reserve(oldFaces.size());
 		serialisedFaces.reserve(oldFaces.size() * 3);
-		
+
 		if (!(reMapSuccess = performSplitting()))
 		{
 			//mission failed clear up the memory
@@ -55,7 +55,6 @@ MeshMapReorganiser::MeshMapReorganiser(
 			splitMap.clear();
 			idMapBuf.clear();
 		}
-	
 	}
 	else
 	{
@@ -64,7 +63,7 @@ MeshMapReorganiser::MeshMapReorganiser(
 	}
 }
 
-MeshMapReorganiser::~MeshMapReorganiser(){}
+MeshMapReorganiser::~MeshMapReorganiser() {}
 
 void MeshMapReorganiser::finishSubMesh(
 	repo_mesh_mapping_t &mapping,
@@ -72,7 +71,7 @@ void MeshMapReorganiser::finishSubMesh(
 	std::vector<float>  &maxBox,
 	const size_t        &nVertices,
 	const size_t        &nFaces
-	)
+)
 {
 	mapping.vertTo = mapping.vertFrom + nVertices;
 	mapping.triTo = mapping.triFrom + nFaces;
@@ -103,7 +102,7 @@ void MeshMapReorganiser::newMatMapEntry(
 	const repo_mesh_mapping_t &mapping,
 	const size_t        &sVertices,
 	const size_t        &sFaces
-	)
+)
 {
 	matMap.back().push_back(mapping);
 
@@ -116,7 +115,7 @@ void MeshMapReorganiser::completeLastMatMapEntry(
 	const size_t        &eFaces,
 	const std::vector<float>  &minBox,
 	const std::vector<float>  &maxBox
-	)
+)
 {
 	matMap.back().back().vertTo = eVertices;
 	matMap.back().back().triTo = eFaces;
@@ -291,7 +290,6 @@ bool MeshMapReorganiser::performSplitting()
 			splitMap[currentSubMesh.mesh_id].push_back(newMappings.size() - 1);
 			completeLastMatMapEntry(totalVertexCount, totalFaceCount);
 		}
-
 	}
 
 	if (subMeshVertexCount) {
@@ -425,7 +423,6 @@ bool MeshMapReorganiser::splitLargeMesh(
 			newFaces.push_back(newFace);
 			splitMeshFaceCount++;
 		}//else nSides != 3
-		
 	}//for (uint32_t fIdx = 0; fIdx < currentMeshNumFaces; ++fIdx)
 
 	updateIDMapArray(splitMeshVertexCount, idMapIdx);
@@ -483,7 +480,6 @@ bool MeshMapReorganiser::splitLargeMesh(
 			std::vector<repo_color4d_t> extras;
 			extras.resize(extraVertices);
 			newColors.insert(startingPosN, extras.begin(), extras.end());
-
 		}
 
 		if (hasUV)
@@ -498,8 +494,6 @@ bool MeshMapReorganiser::splitLargeMesh(
 		}
 	}
 
-
-
 	//Modify the vertices as it may be rearranged within this region
 	std::copy(reMappedVertices.begin(), reMappedVertices.end(), newVertices.begin() + newVerticesVFrom);
 	if (hasNormal)
@@ -511,8 +505,6 @@ bool MeshMapReorganiser::splitLargeMesh(
 
 	if (hasColor)
 		std::copy(reMappedCols.begin(), reMappedCols.end(), newColors.begin() + newVerticesVFrom);
-
-
 
 	splitMap[currentSubMesh.mesh_id].push_back(newMappings.size() - 1);
 	finishSubMesh(newMappings.back(), bboxMin, bboxMax, splitMeshVertexCount, splitMeshFaceCount);
@@ -528,7 +520,7 @@ void MeshMapReorganiser::startSubMesh(
 	const repo::lib::RepoUUID      &matID,
 	const size_t        &sVertices,
 	const size_t        &sFaces
-	)
+)
 {
 	mapping.vertFrom = sVertices;
 	mapping.triFrom = sFaces;

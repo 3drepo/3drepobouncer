@@ -20,9 +20,8 @@
 #include <boost/uuid/uuid.hpp>
 #include "../../core/model/bson/repo_bson_element.h"
 
-namespace repo{
-	namespace lib{
-
+namespace repo {
+	namespace lib {
 		class REPO_API_EXPORT RepoUUID
 		{
 		public:
@@ -30,7 +29,6 @@ namespace repo{
 			RepoUUID(const boost::uuids::uuid &id) : id(id) {}
 
 			RepoUUID(const RepoUUID &other) : id(other.id) {}
-
 
 			RepoUUID(const std::string &stringRep = defaultValue);
 
@@ -41,7 +39,11 @@ namespace repo{
 			* Get the underlying binary data from the UUID
 			* @returns the UUID in binary format
 			*/
-			std::vector<uint8_t> data() const { return std::vector<uint8_t>(std::begin(id.data), std::end(id.data));  }
+			std::vector<uint8_t> data() const { return std::vector<uint8_t>(std::begin(id.data), std::end(id.data)); }
+
+			bool isDefaultValue() const {
+				return toString() == defaultValue;
+			}
 
 			size_t getHash() const;
 
@@ -60,7 +62,6 @@ namespace repo{
 		private:
 			boost::uuids::uuid id;
 		};
-
 
 		inline std::ostream& operator<<(std::ostream& stream, const RepoUUID& uuid)
 		{

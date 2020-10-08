@@ -26,22 +26,19 @@
 #include "../../modeloptimizer/repo_optimizer_trans_reduction.h"
 #include <boost/filesystem.hpp>
 
-
 using namespace repo::manipulator::modelconvertor;
 
 repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
-	const std::string &file, 
-	const bool reorientateModel,
-	const bool applyReduction,
+	const std::string &file,
+	const repo::manipulator::modelconvertor::ModelImportConfig &config,
 	uint8_t &error
 ) const {
-
 	if (!repo::lib::doesFileExist(file)) {
 		error = REPOERR_MODEL_FILE_READ;
 		repoError << "Cannot find file: " << file;
 		return nullptr;
 	}
-	auto modelConvertor = chooseModelConvertor(file);
+	auto modelConvertor = chooseModelConvertor(file, config);
 	if (!modelConvertor) {
 		error = REPOERR_FILE_TYPE_NOT_SUPPORTED;
 		repoError << "Cannot find file: " << file;
@@ -52,26 +49,30 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 	repoTrace << "Importing model...";
 	if (modelConvertor->importModel(file, error)) {
 		repoTrace << "model Imported, generating Repo Scene";
-		scene = modelConvertor->generateRepoScene();
+		uint8_t errCode = REPOERR_LOAD_SCENE_FAIL;
+		scene = modelConvertor->generateRepoScene(errCode);
 
 		if (!scene) {
-			error = REPOERR_UNKNOWN_ERR;
-		} else {
+			error = errCode;
+		}
+		else {
 			if (scene->exceedsMaximumNodes()) {
 				delete scene;
 				scene = nullptr;
 				error = REPOERR_MAX_NODES_EXCEEDED;
-			} else if (!scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
+			}
+			else if (!scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
 				delete scene;
 				scene = nullptr;
 				error = REPOERR_NO_MESHES;
-			} else {
-				if (reorientateModel || modelConvertor->requireReorientation()) {
+			}
+			else {
+				if (config.shouldRotateModel() || modelConvertor->requireReorientation()) {
 					repoTrace << "rotating model by 270 degress on the x axis...";
 					scene->reorientateDirectXModel();
 				}
 
-				if (applyReduction && modelConvertor->applyReduction()) {
+				if (config.shouldApplyReductions() && modelConvertor->applyReduction()) {
 					repoTrace << "Applying transformation reduction optimizer";
 					repo::manipulator::modeloptimizer::TransformationReductionOptimizer optimizer;
 					optimizer.apply(scene);
@@ -85,7 +86,8 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 }
 
 std::shared_ptr<AbstractModelImport> ModelImportManager::chooseModelConvertor(
-	const std::string &file
+	const std::string &file,
+	const repo::manipulator::modelconvertor::ModelImportConfig &config
 ) const {
 	boost::filesystem::path filePathP(file);
 	std::string fileExt = filePathP.extension().string();
@@ -94,15 +96,15 @@ std::shared_ptr<AbstractModelImport> ModelImportManager::chooseModelConvertor(
 	std::shared_ptr<AbstractModelImport> modelConvertor = nullptr;
 
 	if (fileExt == ".IFC")
-		modelConvertor = std::shared_ptr<AbstractModelImport>(new repo::manipulator::modelconvertor::IFCModelImport());
+		modelConvertor = std::shared_ptr<AbstractModelImport>(new repo::manipulator::modelconvertor::IFCModelImport(config));
 	else if (repo::manipulator::modelconvertor::AssimpModelImport::isSupportedExts(fileExt))
-		modelConvertor = std::shared_ptr<AbstractModelImport>(new repo::manipulator::modelconvertor::AssimpModelImport());
+		modelConvertor = std::shared_ptr<AbstractModelImport>(new repo::manipulator::modelconvertor::AssimpModelImport(config));
 	else if (fileExt == ".BIM")
-		modelConvertor = std::shared_ptr<AbstractModelImport>(new repo::manipulator::modelconvertor::RepoModelImport());
+		modelConvertor = std::shared_ptr<AbstractModelImport>(new repo::manipulator::modelconvertor::RepoModelImport(config));
 	else if (repo::manipulator::modelconvertor::OdaModelImport::isSupportedExts(fileExt))
-		modelConvertor = std::shared_ptr<AbstractModelImport>(new repo::manipulator::modelconvertor::OdaModelImport());
+		modelConvertor = std::shared_ptr<AbstractModelImport>(new repo::manipulator::modelconvertor::OdaModelImport(config));
 	else if (fileExt == ".SPM")
-		modelConvertor = std::shared_ptr<AbstractModelImport>(new repo::manipulator::modelconvertor::SynchroModelImport());
+		modelConvertor = std::shared_ptr<AbstractModelImport>(new repo::manipulator::modelconvertor::SynchroModelImport(config));
 
 	return modelConvertor;
 }
