@@ -145,8 +145,8 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 
 	int materialID = -1;
 
-	int numIndices = mesh.get<int>("numIndices");
-	int numVertices = mesh.get<int>("numVertices");
+	int numIndices = mesh.get<int64_t>("numIndices");
+	int numVertices = mesh.get<int64_t>("numVertices");
 
 	//Avoid using assimp objects everywhere -> converting assimp objects into repo structs
 	std::vector<repo::lib::RepoVector3D64> vertices;
@@ -184,7 +184,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 
 		if (props->first == REPO_IMPORT_VERTICES || props->first == REPO_IMPORT_NORMALS)
 		{
-			std::vector<int> startEnd = as_vector<int>(mesh, props->first);
+			std::vector<int64_t> startEnd = as_vector<int64_t>(mesh, props->first);
 
 			double *tmpVerticesDouble = (double *)(geomBuf + startEnd[0]);
 			float *tmpVerticesSingle = (float *)(geomBuf + startEnd[0]);
@@ -226,7 +226,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 
 		if (props->first == REPO_IMPORT_INDICES)
 		{
-			std::vector<int> startEnd = as_vector<int>(mesh, REPO_IMPORT_INDICES);
+			std::vector<int64_t> startEnd = as_vector<int64_t>(mesh, REPO_IMPORT_INDICES);
 
 			uint32_t *tmpIndices = (uint32_t*)(geomBuf + startEnd[0]);
 
