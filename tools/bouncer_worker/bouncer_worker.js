@@ -73,6 +73,9 @@
 				}
 			});
 
+			cmdExec.stdout.on("data", (data) => {});
+			cmdExec.stderr.on("data", (data) => {});
+
 			const timeout = conf.timeoutMS || 180*60*1000
 			setTimeout(() => {
 				isTimeout = true;
