@@ -556,7 +556,8 @@ void SynchroModelImport::updateFrameState(
 					repoInfo << "[" << currentFrameTS << "] Visiblity update :" << visibility;
 				}
 				for (const auto mesh : meshes) {
-					alphaValueToIDs[meshAlphaState[mesh].second].erase(mesh.toString());
+					if (alphaValueToIDs.find(meshAlphaState[mesh].second) != alphaValueToIDs.end())
+						alphaValueToIDs[meshAlphaState[mesh].second].erase(mesh.toString());
 					if (visibility == -1) {
 						meshAlphaState[mesh].second = meshAlphaState[mesh].first;
 					}
