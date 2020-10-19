@@ -421,9 +421,6 @@ std::string SynchroModelImport::generateCache(
 	return id;
 }
 
-auto debugId = "da91f68942bedade7a079aac58b29d6";
-uint64_t currentFrameTS = 0;
-
 void SynchroModelImport::updateFrameState(
 	const std::vector<std::shared_ptr<synchro_reader::AnimationTask>> &tasks,
 	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
@@ -471,18 +468,7 @@ void SynchroModelImport::updateFrameState(
 		case synchro_reader::AnimationTask::TaskType::COLOR:
 		{
 			auto colourTask = std::dynamic_pointer_cast<const synchro_reader::ColourTask>(task);
-			if (debugId == colourTask->resourceID) {
-				std::stringstream ss;
-				if (colourTask->color.size()) {
-					for (const auto &colorPart : colourTask->color) {
-						ss << colorPart << ",";
-					}
-				}
-				else {
-					ss << "-RESET-";
-				}
-				repoInfo << "[" << currentFrameTS << "] Color update " << ss.str();
-			}
+
 			if (resourceIDsToSharedIDs.find(colourTask->resourceID) != resourceIDsToSharedIDs.end()) {
 				auto color = colourTask->color;
 				bool reset = !color.size();
@@ -498,9 +484,7 @@ void SynchroModelImport::updateFrameState(
 		{
 			if (settings.shouldImportAnimations()) {
 				auto transTask = std::dynamic_pointer_cast<const synchro_reader::TransformationTask>(task);
-				if (debugId == transTask->resourceID) {
-					repoInfo << "[" << currentFrameTS << "] Transformation update";
-				}
+
 				auto meshes = resourceIDsToSharedIDs[transTask->resourceID];
 				transformingResource.insert(transTask->resourceID);
 				if (transTask->reset) {
@@ -552,9 +536,7 @@ void SynchroModelImport::updateFrameState(
 			if (resourceIDsToSharedIDs.find(visibilityTask->resourceID) != resourceIDsToSharedIDs.end()) {
 				auto visibility = visibilityTask->visibility;
 				auto meshes = resourceIDsToSharedIDs[visibilityTask->resourceID];
-				if (debugId == visibilityTask->resourceID) {
-					repoInfo << "[" << currentFrameTS << "] Visiblity update :" << visibility;
-				}
+
 				for (const auto mesh : meshes) {
 					if (alphaValueToIDs.find(meshAlphaState[mesh].second) != alphaValueToIDs.end())
 						alphaValueToIDs[meshAlphaState[mesh].second].erase(mesh.toString());
@@ -672,11 +654,6 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 
 		repoInfo << "Getting tasks... ";
 
-		if (resourceIDsToSharedIDs.find(debugId) != resourceIDsToSharedIDs.end())
-			repoInfo << "resource to shared IDs: " << resourceIDsToSharedIDs[debugId].size();
-		else
-			repoInfo << "resource to shared ID has no entry";
-
 		generateTaskInformation(reader->getTasks(), resourceIDsToSharedIDs, scene);
 
 		repoInfo << "Getting animations... ";
@@ -729,7 +706,6 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 		int step = total > 10 ? total / 10 : 1;
 		for (const auto &currentFrame : animation.frames) {
 			auto currentTime = currentFrame.first;
-			currentFrameTS = currentTime;
 			updateFrameState(currentFrame.second, resourceIDsToSharedIDs, alphaValueToIDs, meshAlphaState, meshColourState, transformState, clipState, cam, transformingResources, offset);
 			repo::core::model::RepoSequence::FrameData data;
 			data.ref = generateCache(alphaValueToIDs, meshColourState, transformState, clipState, cam, stateBuffers);
