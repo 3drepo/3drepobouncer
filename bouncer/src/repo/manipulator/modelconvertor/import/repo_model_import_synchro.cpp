@@ -387,6 +387,7 @@ std::string SynchroModelImport::generateCache(
 	}
 
 	for (const auto &entry : alphaValueToIDs) {
+		if (!entry.second.size()) continue;
 		repo::lib::PropertyTree transTree;
 		transTree.addToTree(SEQ_CACHE_LABEL_VALUE, entry.first);
 		transTree.addToTree(SEQ_CACHE_LABEL_SHARED_IDS, entry.second);
@@ -538,18 +539,20 @@ void SynchroModelImport::updateFrameState(
 				auto meshes = resourceIDsToSharedIDs[visibilityTask->resourceID];
 
 				for (const auto mesh : meshes) {
-					if (alphaValueToIDs.find(meshAlphaState[mesh].second) != alphaValueToIDs.end())
-						alphaValueToIDs[meshAlphaState[mesh].second].erase(mesh.toString());
+					auto previousState = meshAlphaState[mesh].second;
+					auto meshStr = mesh.toString();
+					if (alphaValueToIDs.find(previousState) != alphaValueToIDs.end())
+						alphaValueToIDs[previousState].erase(meshStr);
 					if (visibility == -1) {
 						meshAlphaState[mesh].second = meshAlphaState[mesh].first;
 					}
 					else {
 						meshAlphaState[mesh].second = visibility;
 						if (alphaValueToIDs.find(visibility) == alphaValueToIDs.end()) {
-							alphaValueToIDs[visibility] = { mesh.toString() };
+							alphaValueToIDs[visibility] = { meshStr };
 						}
 						else {
-							alphaValueToIDs[visibility].insert(mesh.toString());
+							alphaValueToIDs[visibility].insert(meshStr);
 						}
 					}
 				}
