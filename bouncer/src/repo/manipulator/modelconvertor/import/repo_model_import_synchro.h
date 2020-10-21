@@ -90,6 +90,10 @@ namespace repo {
 				const std::string TASK_END_DATE = "endDate";
 				const std::string TASK_CHILDREN = "subTasks";
 
+				repo::lib::RepoMatrix64 convertMatrixTo3DRepoWorld(
+					const repo::lib::RepoMatrix64 &matrix,
+					const std::vector<double> &offset);
+
 				std::pair<repo::core::model::RepoNodeSet, repo::core::model::RepoNodeSet> generateMatNodes(
 					std::unordered_map<std::string, repo::lib::RepoUUID> &synchroIDtoRepoID,
 					std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> &repoIDToNode);
@@ -111,7 +115,8 @@ namespace repo {
 					const repo::lib::RepoUUID &parentID);
 
 				repo::core::model::RepoScene* constructScene(
-					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs);
+					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
+					std::unordered_map<std::string, repo::lib::RepoUUID> &resourceIDsToRootTransID);
 
 				uint32_t colourIn32Bit(const std::vector<float> &color) const;
 
@@ -127,7 +132,8 @@ namespace repo {
 
 				void updateFrameState(
 					const std::vector<std::shared_ptr<synchro_reader::AnimationTask>> &tasks,
-					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
+					const std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
+					const std::unordered_map<std::string, repo::lib::RepoMatrix64> &resourceIDLastTrans,
 					std::unordered_map<float, std::set<std::string>> &alphaValueToIDs,
 					std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
 					std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
@@ -149,7 +155,7 @@ namespace repo {
 					const std::unordered_map<repo::lib::RepoUUID, std::set<SequenceTask, SequenceTaskComparator>, repo::lib::RepoUUIDHasher> &taskToChildren
 				);
 
-				void generateTaskInformation(
+				uint64_t generateTaskInformation(
 					const synchro_reader::TasksInformation &taskInfo,
 					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
 					repo::core::model::RepoScene* &scene

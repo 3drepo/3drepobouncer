@@ -215,7 +215,8 @@ void SynchroModelImport::determineMeshesInResources(
 }
 
 repo::core::model::RepoScene* SynchroModelImport::constructScene(
-	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs
+	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
+	std::unordered_map<std::string, repo::lib::RepoUUID> &resourceIDsToRootTransID
 ) {
 	repo::core::model::RepoNodeSet transNodes, matNodes, textNodes, meshNodes, metaNodes;
 	std::unordered_map<std::string, repo::lib::RepoUUID> synchroIDToRepoID;
@@ -243,6 +244,8 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 		auto resourceID = entity.second.resourceID;
 		transNodes.insert(trans);
 		auto transUniqueID = trans->getUniqueID();
+		if (!resourceID.empty())
+			resourceIDsToRootTransID[resourceID] = transUniqueID;
 		repoIDToNode[transUniqueID] = trans;
 		synchroIDToRepoID[entity.second.id] = transUniqueID;
 		nodeToSynchroParent[transUniqueID] = entity.second.parentID;
@@ -422,9 +425,41 @@ std::string SynchroModelImport::generateCache(
 	return id;
 }
 
+repo::lib::RepoMatrix64 SynchroModelImport::convertMatrixTo3DRepoWorld(
+	const repo::lib::RepoMatrix64 &matrix,
+	const std::vector<double> &offset) {
+	std::vector<double> toDX = {
+						1, 0, 0, 0,
+						0, 0, -1, 0,
+						0, 1, 0, 0,
+						0, 0, 0,  1
+	};
+	std::vector<double> toGL = {
+		1, 0, 0, 0,
+		0, 0, 1, 0,
+		0, -1, 0, 0,
+		0, 0, 0,  1
+	};
+
+	std::vector<double> toWorld = {
+		1, 0, 0, offset[0],
+		0, 1, 0, offset[1],
+		0, 0, 1, offset[2],
+		0, 0, 0,  1
+	};
+
+	repo::lib::RepoMatrix64 matDX(toDX);
+	repo::lib::RepoMatrix64 matGL(toGL);
+	repo::lib::RepoMatrix64 matToWorld(toWorld);
+	auto fromWorld = matToWorld.invert();
+
+	return matToWorld * matGL * matrix * matDX * fromWorld;
+}
+
 void SynchroModelImport::updateFrameState(
 	const std::vector<std::shared_ptr<synchro_reader::AnimationTask>> &tasks,
-	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
+	const std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
+	const std::unordered_map<std::string, repo::lib::RepoMatrix64> &resourceIDLastTrans,
 	std::unordered_map<float, std::set<std::string>> &alphaValueToIDs,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
@@ -452,7 +487,7 @@ void SynchroModelImport::updateFrameState(
 		case synchro_reader::AnimationTask::TaskType::CLIP:
 		{
 			auto clipTask = std::dynamic_pointer_cast<const synchro_reader::ClipTask>(task);
-			auto meshes = resourceIDsToSharedIDs[clipTask->resourceID];
+			auto meshes = resourceIDsToSharedIDs.at(clipTask->resourceID);
 			if (clipTask->reset) {
 				for (const auto &mesh : meshes)
 					clipState.erase(mesh);
@@ -474,7 +509,7 @@ void SynchroModelImport::updateFrameState(
 				auto color = colourTask->color;
 				bool reset = !color.size();
 				auto colour32Bit = reset ? 0 : colourIn32Bit(color);
-				auto meshes = resourceIDsToSharedIDs[colourTask->resourceID];
+				auto meshes = resourceIDsToSharedIDs.at(colourTask->resourceID);
 				for (const auto &mesh : meshes) {
 					meshColourState[mesh].second = reset || meshColourState[mesh].first == colour32Bit ? std::vector<float>() : color;
 				}
@@ -486,40 +521,37 @@ void SynchroModelImport::updateFrameState(
 			if (settings.shouldImportAnimations()) {
 				auto transTask = std::dynamic_pointer_cast<const synchro_reader::TransformationTask>(task);
 
-				auto meshes = resourceIDsToSharedIDs[transTask->resourceID];
+				auto meshes = resourceIDsToSharedIDs.at(transTask->resourceID);
 				transformingResource.insert(transTask->resourceID);
-				if (transTask->reset) {
+				repo::lib::RepoMatrix64 matrix(transTask->trans);
+
+				bool isTransforming = true;
+
+				if (resourceIDLastTrans.find(transTask->resourceID) != resourceIDLastTrans.end()) {
+					if (transTask->reset) {
+						//The resource has a default animation state, so we actually have to move it to the inverse matrix
+						matrix = repo::lib::RepoMatrix64();
+					}
+					else if (matrix.equals(resourceIDLastTrans.at(transTask->resourceID))) {
+						//it's moving to the final state
+						for (const auto &mesh : meshes)
+							transformState.erase(mesh);
+						isTransforming = false;
+					}
+				}
+				else if (transTask->reset) {
 					for (const auto &mesh : meshes)
 						transformState.erase(mesh);
+					isTransforming = false;
 				}
-				else {
-					repo::lib::RepoMatrix64 matrix(transTask->trans);
-					std::vector<double> toDX = {
-						1, 0, 0, 0,
-						0, 0, -1, 0,
-						0, 1, 0, 0,
-						0, 0, 0,  1
-					};
-					std::vector<double> toGL = {
-						1, 0, 0, 0,
-						0, 0, 1, 0,
-						0, -1, 0, 0,
-						0, 0, 0,  1
-					};
 
-					std::vector<double> toWorld = {
-						1, 0, 0, offset[0],
-						0, 1, 0, offset[1],
-						0, 0, 1, offset[2],
-						0, 0, 0,  1
-					};
+				if (isTransforming) {
+					if (resourceIDLastTrans.find(transTask->resourceID) != resourceIDLastTrans.end()) {
+						//the geometry takes the transformation of the final frame as the default position. undo it before applying a new transformation.
+						matrix = matrix * resourceIDLastTrans.at(transTask->resourceID).invert();
+					}
 
-					repo::lib::RepoMatrix64 matDX(toDX);
-					repo::lib::RepoMatrix64 matGL(toGL);
-					repo::lib::RepoMatrix64 matToWorld(toWorld);
-					auto fromWorld = matToWorld.invert();
-
-					matrix = matToWorld * matGL * matrix * matDX * fromWorld;
+					matrix = convertMatrixTo3DRepoWorld(matrix, offset);
 
 					for (const auto &mesh : meshes) {
 						transformState[mesh] = matrix.getData();
@@ -536,7 +568,7 @@ void SynchroModelImport::updateFrameState(
 			auto visibilityTask = std::dynamic_pointer_cast<const synchro_reader::VisibilityTask>(task);
 			if (resourceIDsToSharedIDs.find(visibilityTask->resourceID) != resourceIDsToSharedIDs.end()) {
 				auto visibility = visibilityTask->visibility;
-				auto meshes = resourceIDsToSharedIDs[visibilityTask->resourceID];
+				auto meshes = resourceIDsToSharedIDs.at(visibilityTask->resourceID);
 
 				for (const auto mesh : meshes) {
 					auto previousState = meshAlphaState[mesh].second;
@@ -600,7 +632,7 @@ std::vector<uint8_t> SynchroModelImport::generateTaskCache(
 	return root.writeJsonToBuffer();
 }
 
-void SynchroModelImport::generateTaskInformation(
+uint64_t SynchroModelImport::generateTaskInformation(
 	const synchro_reader::TasksInformation &taskInfo,
 	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
 	repo::core::model::RepoScene* &scene
@@ -610,6 +642,7 @@ void SynchroModelImport::generateTaskInformation(
 	std::set<SequenceTask, SequenceTaskComparator> rootTasks;
 	std::vector<repo::core::model::RepoTask> taskBSONs;
 
+	uint64_t firstTS = (uint64_t)std::numeric_limits<uint64_t>::max;
 	for (const auto &task : taskInfo.tasks) {
 		auto parentID = task.second.parentTask;
 		std::vector<repo::lib::RepoUUID> parentArr;
@@ -620,6 +653,7 @@ void SynchroModelImport::generateTaskInformation(
 		}
 
 		SequenceTask taskItem = { taskIDtoRepoID[taskID] , task.second.name, task.second.startTime * 1000, task.second.endTime * 1000 };
+		firstTS = std::min(task.second.startTime, firstTS);
 
 		if (parentID.empty()) {
 			rootTasks.insert(taskItem);
@@ -645,32 +679,37 @@ void SynchroModelImport::generateTaskInformation(
 	}
 
 	scene->addSequenceTasks(taskBSONs, generateTaskCache(rootTasks, taskToChildren));
+
+	return firstTS;
 }
 
 repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &errMsg) {
 	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> resourceIDsToSharedIDs;
+	std::unordered_map<std::string, repo::lib::RepoUUID> resourceIDsToRootTransID;
 
 	repo::core::model::RepoScene* scene = nullptr;
 	try {
 		repoInfo << "Constructing scene...";
-		scene = constructScene(resourceIDsToSharedIDs);
+		scene = constructScene(resourceIDsToSharedIDs, resourceIDsToRootTransID);
 
 		repoInfo << "Getting tasks... ";
 
-		generateTaskInformation(reader->getTasks(), resourceIDsToSharedIDs, scene);
+		auto firstFrame = generateTaskInformation(reader->getTasks(), resourceIDsToSharedIDs, scene);
 
 		repoInfo << "Getting animations... ";
-		auto animInfo = reader->getAnimation();
-
-		auto animation = animInfo.first;
+		auto animation = reader->getAnimation();
 
 		std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> meshAlphaState;
 		std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> meshColourState;
+		std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> transformState;
+		std::unordered_map<std::string, repo::lib::RepoMatrix64> resourceIDLastTrans;
 		std::unordered_map<std::string, std::vector<uint8_t>> stateBuffers;
 		std::vector<repo::core::model::RepoSequence::FrameData> frameData;
 		std::set<repo::lib::RepoUUID> defaultInvisible;
+		auto origin = reader->getGlobalOffset();
+		std::vector<double> offset = { origin.x, origin.z , -origin.y };
 
-		for (const auto &lastStateEntry : animInfo.second) {
+		for (const auto &lastStateEntry : animation.lastFrameVisibility) {
 			if (resourceIDsToSharedIDs.find(lastStateEntry.first) == resourceIDsToSharedIDs.end()) {
 				continue;
 			};
@@ -695,21 +734,52 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 			}
 		}
 
+		for (const auto &lastStateEntry : animation.lastTransformation) {
+			auto resourceID = lastStateEntry.first;
+			if (resourceIDsToRootTransID.find(resourceID) == resourceIDsToRootTransID.end()) {
+				continue;
+			};
+
+			auto matrix = repo::lib::RepoMatrix64(lastStateEntry.second);
+
+			resourceIDLastTrans[resourceID] = matrix;
+			auto node = (repo::core::model::TransformationNode*) scene->getNodeByUniqueID(
+				repo::core::model::RepoScene::GraphType::DEFAULT, resourceIDsToRootTransID[resourceID]);
+
+			node->swap(node->cloneAndApplyTransformation(matrix.getData()));
+
+			auto matInverse = matrix.invert();
+			if (resourceIDsToSharedIDs.find(lastStateEntry.first) != resourceIDsToSharedIDs.end()) {
+				for (const auto &id : resourceIDsToSharedIDs[lastStateEntry.first]) {
+					//FIXME: need direct X conversion.
+					transformState[id] = convertMatrixTo3DRepoWorld(matInverse, offset).getData();
+				}
+			}
+		}
+
 		std::shared_ptr<CameraChange> cam = nullptr;
 		std::unordered_map<float, std::set<std::string>> alphaValueToIDs;
-		std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> transformState;
 		std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> clipState;
 
 		std::set<std::string> transformingResources;
 
-		auto origin = reader->getGlobalOffset();
-		std::vector<double> offset = { origin.x, origin.z , -origin.y };
 		int count = 0;
 		auto total = animation.frames.size();
 		int step = total > 10 ? total / 10 : 1;
+
+		if (animation.frames.begin()->first > firstFrame &&
+			transformState.size()) {
+			//First animation frame is bigger than the task frame
+			//And we have animations... need to reset the state of the transforms.
+			repo::core::model::RepoSequence::FrameData data;
+			data.ref = generateCache(alphaValueToIDs, meshColourState, transformState, clipState, cam, stateBuffers);
+			data.timestamp = firstFrame;
+			frameData.push_back(data);
+		}
+
 		for (const auto &currentFrame : animation.frames) {
 			auto currentTime = currentFrame.first;
-			updateFrameState(currentFrame.second, resourceIDsToSharedIDs, alphaValueToIDs, meshAlphaState, meshColourState, transformState, clipState, cam, transformingResources, offset);
+			updateFrameState(currentFrame.second, resourceIDsToSharedIDs, resourceIDLastTrans, alphaValueToIDs, meshAlphaState, meshColourState, transformState, clipState, cam, transformingResources, offset);
 			repo::core::model::RepoSequence::FrameData data;
 			data.ref = generateCache(alphaValueToIDs, meshColourState, transformState, clipState, cam, stateBuffers);
 			data.timestamp = currentTime;
