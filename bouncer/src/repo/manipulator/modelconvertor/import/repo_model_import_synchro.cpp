@@ -429,10 +429,10 @@ repo::lib::RepoMatrix64 SynchroModelImport::convertMatrixTo3DRepoWorld(
 	const repo::lib::RepoMatrix64 &matrix,
 	const std::vector<double> &offset) {
 	std::vector<double> toDX = {
-						1, 0, 0, 0,
-						0, 0, -1, 0,
-						0, 1, 0, 0,
-						0, 0, 0,  1
+		1, 0, 0, 0,
+		0, 0, -1, 0,
+		0, 1, 0, 0,
+		0, 0, 0,  1
 	};
 	std::vector<double> toGL = {
 		1, 0, 0, 0,
