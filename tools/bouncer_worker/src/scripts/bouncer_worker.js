@@ -34,7 +34,7 @@
 	const amqp = require("amqplib");
 	const path = require("path");
 	const spawn = require("child_process").spawn;
-	const importToy = require('./importToy');
+	const importToy = require('../toy/importToy');
 	const winston = require('winston');
 	const rootModelDir = './toy';
 	//Note: these error codes corresponds to error_codes.h in bouncerclient
@@ -47,7 +47,7 @@
 	let connClosed = false;
 
 	const fs = require("fs");
-	const configFullPath = path.resolve(__dirname, "config.json");
+	const configFullPath = path.resolve(__dirname, "../../config.json");
 	const conf = JSON.parse(fs.readFileSync(configFullPath));
 
 
