@@ -20,9 +20,14 @@ const fs = require("fs");
 
 const configFullPath = path.resolve(__dirname, "../../config.json");
 
+const defaultValues = {
+	timeoutMS : 180*60*1000
+};
+
 const parseConfig = () => {
 	try {
-		return JSON.parse(fs.readFileSync(configFullPath))
+		const config =  { ...defaultValues, ...JSON.parse(fs.readFileSync(configFullPath))};
+		return config;
 	} catch (err) {
 		//can't use logger -> circular dependency.
 		console.error("Failed to parse config file:", err);

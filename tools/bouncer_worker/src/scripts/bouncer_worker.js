@@ -31,10 +31,10 @@
 (() => {
 	"use strict";
 	const path = require("path");
+	const run = require("../lib/runCommand");
 
 
 	const amqp = require("amqplib");
-	const spawn = require("child_process").spawn;
 	const importToy = require('../toy/importToy');
 	const rootModelDir = './toy';
 	//Note: these error codes corresponds to error_codes.h in bouncerclient
@@ -48,35 +48,7 @@
 
 	const { config, configPath}  = require("../lib/config");
 
-
 	const logger = require("../lib/logger");
-
-	function run(exe, params, codesAsSuccess = []) {
-
-		return new Promise((resolve, reject) => {
-			logger.info(`Executing command: ${exe} ${params.join(" ")}`);
-			const cmdExec = spawn(exe, params);
-			let isTimeout = false;
-			cmdExec.on("close", (code) => {
-				if(isTimeout) {
-					reject(ERRCODE_TIMEOUT);
-				} else if(code === 0 || codesAsSuccess.includes(code)) {
-					resolve(code);
-				} else {
-					reject(code);
-				}
-			});
-
-			cmdExec.stdout.on("data", (data) => {});
-			cmdExec.stderr.on("data", (data) => {});
-
-			const timeout = config.timeoutMS || 180*60*1000
-			setTimeout(() => {
-				isTimeout = true;
-				cmdExec.kill();
-			}, timeout);
-		});
-	}
 
 	/**
 	 * Test that the client is working and
