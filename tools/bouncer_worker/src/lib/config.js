@@ -17,9 +17,21 @@
 
 const path = require("path");
 const fs = require("fs");
+
 const configFullPath = path.resolve(__dirname, "../../config.json");
 
+const parseConfig = () => {
+	try {
+		return JSON.parse(fs.readFileSync(configFullPath))
+	} catch (err) {
+		//can't use logger -> circular dependency.
+		console.error("Failed to parse config file:", err);
+		process.exit(1);
+	}
+}
+
+
 module.exports = {
-	config: JSON.parse(fs.readFileSync(configFullPath)),
+	config: parseConfig(),
 	configPath: configFullPath
 };
