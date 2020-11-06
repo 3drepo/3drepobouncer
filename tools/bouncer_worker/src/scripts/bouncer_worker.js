@@ -32,57 +32,19 @@
 	"use strict";
 	const path = require("path");
 	const run = require("../lib/runCommand");
+	const { ERRCODE_BOUNCER_CRASH, ERRCODE_PARAM_READ_FAIL, ERRCODE_BUNDLE_GEN_FAIL, BOUNCER_SOFT_FAILS } = require("../constants/errorCodes");
+	const { config, configPath}  = require("../lib/config");
+	const { testClient } = require("../tasks/bouncerClient");
 
 
 	const amqp = require("amqplib");
 	const importToy = require('../toy/importToy');
 	const rootModelDir = './toy';
-	//Note: these error codes corresponds to error_codes.h in bouncerclient
-	const ERRCODE_BOUNCER_CRASH = 12;
-	const ERRCODE_PARAM_READ_FAIL = 13;
-	const ERRCODE_BUNDLE_GEN_FAIL = 14;
-	const ERRCODE_TIMEOUT = 29;
-	const softFails = [7,10,15]; //failures that should go through to generate bundle
 	let retry = 0;
 	let connClosed = false;
 
-	const { config, configPath}  = require("../lib/config");
 
 	const logger = require("../lib/logger");
-
-	/**
-	 * Test that the client is working and
-	 * it is able to connect to the database
-	 * Takes a callback function to with
-	 * indication of success or failure
-	 */
-	function testClient(callback){
-		logger.info("Checking status of client...");
-
-		setBouncerEnvars();
-
-		let awsBucketName = "undefined";
-		let awsBucketRegion = "undefined";
-
-		if (config.aws)
-		{
-			awsBucketName = config.aws.bucket_name;
-			awsBucketRegion = config.aws.bucket_region;
-		}
-
-		const cmdParams = [
-				configPath,
-				"test"
-			];
-
-
-		run(path.normalize(config.bouncer.path), cmdParams).then(() => {
-			logger.info("Bouncer call passed");
-			callback();
-		}).catch((code)=> {
-			logger.error(`Bouncer call errored (Error code: ${code})`);
-		});
-	}
 
 	/**
 	 * handle queue message
@@ -141,23 +103,6 @@
 
 	}
 
-	function setBouncerEnvars(logDir) {
-		if (config.aws)
-		{
-			process.env['AWS_ACCESS_KEY_ID'] = config.aws.access_key_id;
-			process.env['AWS_SECRET_ACCESS_KEY'] =	config.aws.secret_access_key;
-		}
-
-		if (config.bouncer.envars) {
-			Object.keys(config.bouncer.envars).forEach((key) => {
-				process.env[key] = config.bouncer.envars[key];
-			});
-		}
-
-		if(logDir) {
-			process.env['REPO_LOG_DIR']= logDir ;
-		}
-	}
 
 	function runBouncer(logDir, cmd,  callback)
 	{
@@ -256,7 +201,7 @@
 			}, false);
 		}
 
-		const execProm = run(path.normalize(config.bouncer.path), cmdParams, softFails);
+		const execProm = run(path.normalize(config.bouncer.path), cmdParams, BOUNCER_SOFT_FAILS);
 
 		execProm.then((code) => {
 			logger.info(`[SUCCEED] Executed command: ${command} ${cmdParams.join(" ")} `, code);
@@ -447,7 +392,7 @@
 		logger.info("Setting umask: " + config.umask);
 		process.umask(config.umask);
 	}
-	testClient(connectQ);
+	testClient().then(() => connectQ());
 
 })();
 
