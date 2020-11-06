@@ -32,9 +32,9 @@
 
 typedef std::unordered_map<repo::lib::RepoUUID, std::vector<repo::core::model::RepoNode*>, repo::lib::RepoUUIDHasher> ParentMap;
 
-namespace repo{
-	namespace core{
-		namespace model{
+namespace repo {
+	namespace core {
+		namespace model {
 			class REPO_API_EXPORT RepoScene
 			{
 				//FIXME: unsure as to whether i should make the graph a differen class.. struct for now.
@@ -129,7 +129,7 @@ namespace repo{
 				* Check if the default scene graph is ok.
 				* @return returns true if it is healthy
 				*/
-				bool isOK() const{
+				bool isOK() const {
 					return !status;
 				}
 
@@ -145,7 +145,7 @@ namespace repo{
 				* Check if default scene graph is missing texture
 				* @return returns true if missing textures
 				*/
-				bool isMissingTexture() const{
+				bool isMissingTexture() const {
 					return (bool)status & REPO_SCENE_TEXTURE_BIT;
 				}
 				/**
@@ -153,19 +153,18 @@ namespace repo{
 				* @return returns true if missing nodes
 				*/
 				bool isMissingNodes() const;
-	
 
 				/**
 				* Flag missing texture bit on status.
 				*/
-				void setMissingTexture(){
+				void setMissingTexture() {
 					status |= REPO_SCENE_TEXTURE_BIT;
 				}
 
 				/**
 				* Flag missing nodes due to import failures
 				*/
-				void setMissingNodes(){
+				void setMissingNodes() {
 					status |= REPO_SCENE_ENTITIES_BIT;
 				}
 
@@ -200,7 +199,7 @@ namespace repo{
 				*/
 				void addErrorStatusToProjectSettings(
 					repo::core::handler::AbstractDatabaseHandler *handler
-					);
+				);
 
 				/**
 				* Add a timestamp to project settings. This is an indication that
@@ -209,19 +208,25 @@ namespace repo{
 				*/
 				void addTimestampToProjectSettings(
 					repo::core::handler::AbstractDatabaseHandler *handler
-					);
+				);
 
 				void addSequence(
 					const RepoSequence &animationSequence,
-					const std::unordered_map<std::string, std::vector<uint8_t>> &states,
-					const std::vector<RepoTask> &tasks
-				 ){
+					const std::unordered_map<std::string, std::vector<uint8_t>> &states
+				) {
 					sequence = animationSequence;
 					frameStates = states;
-					taskList = tasks;
 				}
 
-				void setDefaultInvisible(const std::set<repo::lib::RepoUUID> &idsToHide){
+				void addSequenceTasks(
+					const std::vector<RepoTask> &taskItems,
+					const std::vector<uint8_t> taskListCache
+				) {
+					tasks = taskItems;
+					taskList = taskListCache;
+				}
+
+				void setDefaultInvisible(const std::set<repo::lib::RepoUUID> &idsToHide) {
 					defaultInvisible = idsToHide;
 				}
 
@@ -244,7 +249,7 @@ namespace repo{
 				* @param tag tag for this commit (optional)
 				* @return returns true upon success
 				*/
-				bool commit(
+				uint8_t commit(
 					repo::core::handler::AbstractDatabaseHandler *handler,
 					repo::core::handler::fileservice::FileManager *manager,
 					std::string &errMsg,
@@ -403,7 +408,7 @@ namespace repo{
 				* Set Branch
 				* @param uuid of branch
 				*/
-				void setBranch(repo::lib::RepoUUID branchID){ branch = branchID; }
+				void setBranch(repo::lib::RepoUUID branchID) { branch = branchID; }
 
 				/**
 				* Set commit message
@@ -560,8 +565,8 @@ namespace repo{
 				*/
 				std::vector<RepoNode*>
 					getChildrenAsNodes(
-					const GraphType &g,
-					const repo::lib::RepoUUID &parent) const;
+						const GraphType &g,
+						const repo::lib::RepoUUID &parent) const;
 
 				/**
 				* Get children nodes of a specified parent that satisfy the filtering condition
@@ -572,9 +577,9 @@ namespace repo{
 				*/
 				std::vector<RepoNode*>
 					getChildrenNodesFiltered(
-					const GraphType &g,
-					const repo::lib::RepoUUID &parent,
-					const NodeType  &type) const;
+						const GraphType &g,
+						const repo::lib::RepoUUID &parent,
+						const NodeType  &type) const;
 
 				/**
 				* Get the list of parent nodes that satisfy the filtering condition
@@ -919,7 +924,6 @@ namespace repo{
 					RepoNode *node,
 					std::string &errMsg);
 
-			
 				/**
 				* Commit a vector of nodes into the database
 				* @param handler database handler to perform the commit
@@ -937,7 +941,8 @@ namespace repo{
 				bool commitSequence(
 					repo::core::handler::AbstractDatabaseHandler *handler,
 					repo::core::handler::fileservice::FileManager *manager,
-					const repo::lib::RepoUUID &revID
+					const repo::lib::RepoUUID &revID,
+					std::string &err
 				);
 
 				/**
@@ -1040,7 +1045,6 @@ namespace repo{
 				void shiftModel(
 					const std::vector<double> &offset);
 
-
 				/*
 				* ---------------- Scene utilities ----------------
 				*/
@@ -1066,7 +1070,8 @@ namespace repo{
 				RevisionNode		 *revNode;
 
 				RepoSequence sequence;
-				std::vector<RepoTask> taskList;
+				std::vector<RepoTask> tasks;
+				std::vector<uint8_t> taskList;
 				std::unordered_map<std::string, std::vector<uint8_t>> frameStates;
 				std::set<repo::lib::RepoUUID> defaultInvisible;
 

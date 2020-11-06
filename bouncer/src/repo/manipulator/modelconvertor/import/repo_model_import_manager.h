@@ -15,7 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
 
 #include <string>
@@ -25,19 +24,24 @@
 #include "../../../core/model/collection/repo_scene.h"
 #include "repo_model_import_abstract.h"
 
-namespace repo{
-	namespace manipulator{
-		namespace modelconvertor{
+namespace repo {
+	namespace manipulator {
+		namespace modelconvertor {
 			class ModelImportManager
 			{
-			public:				
+			public:
 				ModelImportManager() {}
 
-				repo::core::model::RepoScene* ImportFromFile(const std::string &file, const bool reorientateModel, const bool applyReduction, uint8_t &error) const;
+				repo::core::model::RepoScene* ImportFromFile(
+					const std::string &file,
+					const repo::manipulator::modelconvertor::ModelImportConfig &config,
+					uint8_t &error) const;
 
 			private:
-				std::shared_ptr<AbstractModelImport> chooseModelConvertor(const std::string &file) const;
-
+				std::shared_ptr<AbstractModelImport> chooseModelConvertor(
+					const std::string &file,
+					const repo::manipulator::modelconvertor::ModelImportConfig &config
+				) const;
 			};
 		} //namespace modelconvertor
 	} //namespace manipulator

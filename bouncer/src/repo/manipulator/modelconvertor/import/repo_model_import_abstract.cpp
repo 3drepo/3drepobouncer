@@ -24,34 +24,18 @@
 
 using namespace repo::manipulator::modelconvertor;
 
-AbstractModelImport::AbstractModelImport()
+AbstractModelImport::AbstractModelImport(
+	const ModelImportConfig &settings
+) : settings(settings)
 {
-	settings = new ModelImportConfig();
 }
 
-AbstractModelImport::AbstractModelImport(const ModelImportConfig *settings) :
-settings(settings), destroySettings(false)
-{
-	if (!settings)
-	{
-		//settings is null, use default
-		this->settings = new ModelImportConfig();
-		destroySettings = true;
-	}
-}
-
-AbstractModelImport::~AbstractModelImport()
-{
-	if (destroySettings && settings)
-		delete settings;
-}
-
-std::string AbstractModelImport::getDirPath(std::string fullPath){
+std::string AbstractModelImport::getDirPath(std::string fullPath) {
 	boost::filesystem::path p{ fullPath };
 	return p.parent_path().string();
 }
 
-std::string AbstractModelImport::getFileName(std::string fullPath){
+std::string AbstractModelImport::getFileName(std::string fullPath) {
 	boost::filesystem::path p{ fullPath };
 	return p.filename().string();
 }

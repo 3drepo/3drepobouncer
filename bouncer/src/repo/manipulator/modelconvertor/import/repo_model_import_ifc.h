@@ -26,9 +26,9 @@
 #include "../../../core/model/bson/repo_node_material.h"
 #include "../../../core/model/bson/repo_node_mesh.h"
 
-namespace repo{
-	namespace manipulator{
-		namespace modelconvertor{
+namespace repo {
+	namespace manipulator {
+		namespace modelconvertor {
 			class IFCModelImport : public AbstractModelImport
 			{
 			public:
@@ -39,7 +39,7 @@ namespace repo{
 				* in this object!
 				* @param settings
 				*/
-				IFCModelImport(const ModelImportConfig *settings = nullptr);
+				IFCModelImport(const ModelImportConfig &settings);
 
 				/**
 				* Default Deconstructor
@@ -54,7 +54,7 @@ namespace repo{
 				* been created before this call (e.g. by means of importModel())
 				* @return returns a populated RepoScene upon success.
 				*/
-				virtual repo::core::model::RepoScene* generateRepoScene();
+				virtual repo::core::model::RepoScene* generateRepoScene(uint8_t &errMsg);
 
 				/**
 				* Import model from a given file
@@ -68,7 +68,7 @@ namespace repo{
 
 				virtual bool requireReorientation() const { return true; }
 
-			protected:				
+			protected:
 
 				std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> meshes;
 				std::unordered_map<std::string, repo::core::model::MaterialNode*> materials;

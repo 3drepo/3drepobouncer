@@ -27,7 +27,6 @@
 #include <boost/property_tree/json_parser.hpp>
 #include <boost/filesystem.hpp>
 
-
 static const std::string FBX_EXTENSION = ".FBX";
 
 static const std::string cmdCreateFed = "genFed"; //create a federation
@@ -64,7 +63,7 @@ int32_t knownValid(const std::string &cmd)
 	if (cmd == cmdGenStash)
 		return 3;
 	if (cmd == cmdCreateFed)
-		return 1;	
+		return 1;
 	if (cmd == cmdGetFile)
 		return 3;
 	if (cmd == cmdTestConn)
@@ -79,13 +78,13 @@ int32_t performOperation(
 	repo::RepoController *controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
-	)
+)
 {
 	int32_t errCode = REPOERR_UNKNOWN_CMD;
 
 	if (command.command == cmdImportFile)
 	{
-		try{
+		try {
 			errCode = importFileAndCommit(controller, token, command);
 		}
 		catch (const std::exception &e)
@@ -96,7 +95,7 @@ int32_t performOperation(
 	}
 	else if (command.command == cmdGenStash)
 	{
-		try{
+		try {
 			errCode = generateStash(controller, token, command);
 		}
 		catch (const std::exception &e)
@@ -107,7 +106,7 @@ int32_t performOperation(
 	}
 	else if (command.command == cmdCreateFed)
 	{
-		try{
+		try {
 			errCode = generateFederation(controller, token, command);
 		}
 		catch (const std::exception &e)
@@ -118,7 +117,7 @@ int32_t performOperation(
 	}
 	else if (command.command == cmdGetFile)
 	{
-		try{
+		try {
 			errCode = getFileFromProject(controller, token, command);
 		}
 		catch (const std::exception &e)
@@ -152,7 +151,7 @@ int32_t generateFederation(
 	repo::RepoController       *controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
-	)
+)
 {
 	/*
 	* Check the amount of parameters matches
@@ -172,9 +171,10 @@ int32_t generateFederation(
 	repoLog("Federation configuration file: " + fedFile);
 
 	bool  success = false;
+	uint8_t errCode = REPOERR_FED_GEN_FAIL;
 
 	boost::property_tree::ptree jsonTree;
-	try{
+	try {
 		boost::property_tree::read_json(fedFile, jsonTree);
 
 		const std::string database = jsonTree.get<std::string>("database", "");
@@ -222,7 +222,7 @@ int32_t generateFederation(
 					//no matrix/invalid input, assume identity
 					if (x)
 						repoLogError("Transformation was inserted for " + spDatabase + ":" + spProject
-						+ " but it is not a 4x4 matrix(size found: " + std::to_string(x) + "). Using identity...");
+							+ " but it is not a 4x4 matrix(size found: " + std::to_string(x) + "). Using identity...");
 					matrix = repo::core::model::TransformationNode::identityMat();
 				}
 
@@ -239,7 +239,7 @@ int32_t generateFederation(
 				if (success = scene)
 				{
 					scene->setDatabaseAndProjectName(database, project);
-					success = controller->commitScene(token, scene, owner);
+					errCode = controller->commitScene(token, scene, owner);
 				}
 			}
 			else
@@ -254,19 +254,17 @@ int32_t generateFederation(
 		repoLogError("Failed to generate Federation: " + std::string(e.what()));
 	}
 
-	return success ? REPOERR_OK : REPOERR_FED_GEN_FAIL;
+	return success ? REPOERR_OK : errCode;
 }
 
 bool _generateStash(
 	repo::RepoController       *controller,
-	const repo::RepoController::RepoToken      *token, 
+	const repo::RepoController::RepoToken      *token,
 	const std::string            &type,
 	const std::string            &dbName,
 	const std::string            &project,
 	const bool                   isBranch,
 	const std::string            &revID) {
-
-
 	repoLog("Generating stash of type " + type + " for " + dbName + "." + project + " rev: " + revID + (isBranch ? " (branch ID)" : ""));
 	auto scene = controller->fetchScene(token, dbName, project, revID, isBranch, false, true, type == "tree");
 	bool  success = false;
@@ -291,8 +289,6 @@ bool _generateStash(
 		delete scene;
 	}
 
-
-
 	return success;
 }
 
@@ -300,7 +296,7 @@ int32_t generateStash(
 	repo::RepoController       *controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
-	)
+)
 {
 	/*
 	* Check the amount of parameters matches
@@ -312,11 +308,9 @@ int32_t generateStash(
 		return REPOERR_INVALID_ARG;
 	}
 
-	
 	std::string dbName = command.args[0];
 	std::string project = command.args[1];
 	std::string type = command.args[2];
-
 
 	if (!(type == "repo" || type == "gltf" || type == "src" || type == "tree"))
 	{
@@ -340,12 +334,11 @@ int32_t generateStash(
 		for (const auto &rev : revs) {
 			auto revNode = (const repo::core::model::RevisionNode) rev;
 			auto revId = revNode.getUniqueID();
-			success &= _generateStash(controller, token, type, dbName, project, false, revId.toString());		
+			success &= _generateStash(controller, token, type, dbName, project, false, revId.toString());
 		}
 	}
 	else {
 		success = _generateStash(controller, token, type, dbName, project, branch, revId);
-
 	}
 
 	return success ? REPOERR_OK : REPOERR_STASH_GEN_FAIL;
@@ -355,7 +348,7 @@ int32_t getFileFromProject(
 	repo::RepoController       *controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
-	)
+)
 {
 	/*
 	* Check the amount of parameters matches
@@ -371,7 +364,7 @@ int32_t getFileFromProject(
 	std::string project = command.args[1];
 	std::string dir = command.args[2];
 
-	bool success  = controller->saveOriginalFiles(token, dbName, project, dir);
+	bool success = controller->saveOriginalFiles(token, dbName, project, dir);
 
 	return success ? REPOERR_OK : REPOERR_GET_FILE_FAILED;
 }
@@ -380,7 +373,7 @@ int32_t importFileAndCommit(
 	repo::RepoController *controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
-	)
+)
 {
 	/*
 	* Check the amount of parameters matches
@@ -396,27 +389,26 @@ int32_t importFileAndCommit(
 	std::string fileLoc;
 	std::string database;
 	std::string project;
-	std::string configFile, owner, tag, desc;
+	std::string  owner, tag, desc;
 
 	bool success = true;
 	bool rotate = false;
+	bool importAnimations = true;
 	if (usingSettingFiles)
 	{
 		//if we're using settles file then arg[1] must be file path
 		boost::property_tree::ptree jsonTree;
-		try{
+		try {
 			boost::property_tree::read_json(command.args[1], jsonTree);
 
 			database = jsonTree.get<std::string>("database", "");
 			project = jsonTree.get<std::string>("project", "");
 
-			
-
 			owner = jsonTree.get<std::string>("owner", "");
-			configFile = jsonTree.get<std::string>("configfile", "");
 			tag = jsonTree.get<std::string>("tag", "");
 			desc = jsonTree.get<std::string>("desc", "");
 			rotate = jsonTree.get<bool>("dxrotate", rotate);
+			importAnimations = jsonTree.get<bool>("importAnimations", importAnimations);
 			fileLoc = jsonTree.get<std::string>("file", "");
 
 			if (database.empty() || project.empty() || fileLoc.empty())
@@ -456,14 +448,6 @@ int32_t importFileAndCommit(
 			if (rotate)
 			{
 				owner = command.args[4];
-				if (command.nArgcs > 5)
-				{
-					configFile = command.args[5];
-				}
-			}
-			else
-			{
-				configFile = command.args[4];
 			}
 		}
 	}
@@ -478,17 +462,19 @@ int32_t importFileAndCommit(
 
 	repoLog("File: " + fileLoc + " database: " + database
 		+ " project: " + project + " rotate:"
-		+ (rotate ? "true" : "false") + " owner :" + owner + " configFile: " + configFile);
+		+ (rotate ? "true" : "false") + " owner :" + owner + " importAnimations: " + (importAnimations ? "true" : "false"));
 
-	repo::manipulator::modelconvertor::ModelImportConfig config(configFile);
+	repo::manipulator::modelconvertor::ModelImportConfig config(true, rotate, importAnimations);
 	uint8_t err;
-	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, err, true, rotate, &config);
+	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, err, &config);
 	if (graph)
 	{
 		repoLog("Trying to commit this scene to database as " + database + "." + project);
 		graph->setDatabaseAndProjectName(database, project);
 
-		if (controller->commitScene(token, graph, owner, tag, desc))
+		err = controller->commitScene(token, graph, owner, tag, desc);
+
+		if (err == REPOERR_OK)
 		{
 			if (graph->isMissingNodes())
 			{
@@ -501,8 +487,8 @@ int32_t importFileAndCommit(
 				return REPOERR_LOAD_SCENE_MISSING_TEXTURE;
 			}
 			else
-				return REPOERR_OK;
+				return err;
 		}
-	}	
-	return err? err : REPOERR_LOAD_SCENE_FAIL;
+	}
+	return err ? err : REPOERR_LOAD_SCENE_FAIL;
 }

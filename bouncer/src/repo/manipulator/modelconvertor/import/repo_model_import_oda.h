@@ -15,7 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
 
 #include "repo_model_import_abstract.h"
@@ -34,7 +33,7 @@ namespace repo {
 			public:
 				static const std::string supportedExtensions;
 
-				OdaModelImport();
+				OdaModelImport(const ModelImportConfig &settings) : AbstractModelImport(settings) {}
 				~OdaModelImport();
 
 				/**
@@ -48,7 +47,7 @@ namespace repo {
 				* been created before this call (e.g. by means of importModel())
 				* @return returns a populated RepoScene upon success.
 				*/
-				virtual repo::core::model::RepoScene* generateRepoScene();
+				virtual repo::core::model::RepoScene* generateRepoScene(uint8_t &errMsg);
 
 				/**
 				* Import model from a given file
@@ -69,8 +68,6 @@ namespace repo {
 				odaHelper::GeometryCollector geoCollector;
 #endif
 			};
-
 		}
 	}
 }
-

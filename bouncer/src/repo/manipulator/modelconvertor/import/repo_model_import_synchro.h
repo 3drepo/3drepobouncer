@@ -15,7 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
 
 #include <string>
@@ -30,18 +29,18 @@
 #include "../../../core/model/bson/repo_node_mesh.h"
 #include "../../../core/model/bson/repo_node_metadata.h"
 #include "../../../core/model/bson/repo_node_transformation.h"
+#include "../../../lib/repo_property_tree.h"
 
-namespace repo{
-	namespace manipulator{
-		namespace modelconvertor{
-			
+namespace repo {
+	namespace manipulator {
+		namespace modelconvertor {
 			class SynchroModelImport : public AbstractModelImport
 			{
 			public:
 				/**
 				* Default Constructor, generate model with default settings
 				*/
-				SynchroModelImport() {}
+				SynchroModelImport(const ModelImportConfig &settings) : AbstractModelImport(settings) {}
 
 				/**
 				* Default Deconstructor
@@ -57,7 +56,7 @@ namespace repo{
 				* been created before this call
 				* @return returns a populated RepoScene upon success.
 				*/
-				repo::core::model::RepoScene* generateRepoScene();
+				repo::core::model::RepoScene* generateRepoScene(uint8_t &errMsg);
 
 				/**
 				* Import model from a given file
@@ -69,6 +68,31 @@ namespace repo{
 
 			private:
 				class CameraChange;
+
+				struct SequenceTask {
+					repo::lib::RepoUUID id;
+					std::string name;
+					uint64_t startTime, endTime;
+				};
+
+				struct SequenceTaskComparator
+				{
+					bool operator()(SequenceTask a, SequenceTask b)  const {
+						if (a.startTime == b.startTime)
+							return a.endTime < b.endTime;
+						return a.startTime < b.startTime;
+					}
+				};
+
+				const std::string TASK_ID = "id";
+				const std::string TASK_NAME = "name";
+				const std::string TASK_START_DATE = "startDate";
+				const std::string TASK_END_DATE = "endDate";
+				const std::string TASK_CHILDREN = "subTasks";
+
+				repo::lib::RepoMatrix64 convertMatrixTo3DRepoWorld(
+					const repo::lib::RepoMatrix64 &matrix,
+					const std::vector<double> &offset);
 
 				std::pair<repo::core::model::RepoNodeSet, repo::core::model::RepoNodeSet> generateMatNodes(
 					std::unordered_map<std::string, repo::lib::RepoUUID> &synchroIDtoRepoID,
@@ -91,46 +115,62 @@ namespace repo{
 					const repo::lib::RepoUUID &parentID);
 
 				repo::core::model::RepoScene* constructScene(
-					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs);
-
+					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
+					std::unordered_map<std::string, repo::lib::RepoUUID> &resourceIDsToRootTransID);
 
 				uint32_t colourIn32Bit(const std::vector<float> &color) const;
 
 				std::vector<float> colourFrom32Bit(const uint32_t &color) const;
 
-
-				std::pair<std::string, std::vector<uint8_t>> generateCache(
-					const std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
+				std::string generateCache(
+					const std::unordered_map<float, std::set<std::string>> &alphaValueToIDs,
 					const std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
 					const std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> &transformState,
 					const std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> &clipState,
-					const std::shared_ptr<CameraChange> &cam);
-
-				void addTasks(
-					std::unordered_map<std::string, std::shared_ptr<repo::core::model::RepoSequence::Task>> &currentTasks,
-					std::vector<std::string> &toAdd,
-					std::map<std::string, synchro_reader::Task> &tasks,
-					std::unordered_map<std::string, repo::lib::RepoUUID> &taskIDtoRepoID
-				);
-
-				void removeTasks(
-					std::unordered_map<std::string, std::shared_ptr<repo::core::model::RepoSequence::Task>> &currentTasks,
-					std::vector<std::string> &toRemove,
-					std::map<std::string, synchro_reader::Task> &tasks
-				);
-
+					const std::shared_ptr<CameraChange> &cam,
+					std::unordered_map<std::string, std::vector<uint8_t>> &stateBuffers);
 
 				void updateFrameState(
 					const std::vector<std::shared_ptr<synchro_reader::AnimationTask>> &tasks,
-					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
+					const std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
+					const std::unordered_map<std::string, repo::lib::RepoMatrix64> &resourceIDLastTrans,
+					std::unordered_map<float, std::set<std::string>> &alphaValueToIDs,
 					std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
 					std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
 					std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> &transformState,
 					std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> &clipState,
 					std::shared_ptr<CameraChange> &cam,
-					std::set<repo::lib::RepoUUID> &transformingMesh
+					std::set<std::string> &transformingResource,
+					const std::vector<double> &offset
 
 				);
+
+				repo::lib::PropertyTree createTaskTree(
+					const SequenceTask &task,
+					const std::unordered_map<repo::lib::RepoUUID, std::set<SequenceTask, SequenceTaskComparator>, repo::lib::RepoUUIDHasher> &taskToChildren
+				);
+
+				std::vector<uint8_t> generateTaskCache(
+					const std::set<SequenceTask, SequenceTaskComparator> &rootTasks,
+					const std::unordered_map<repo::lib::RepoUUID, std::set<SequenceTask, SequenceTaskComparator>, repo::lib::RepoUUIDHasher> &taskToChildren
+				);
+
+				uint64_t generateTaskInformation(
+					const synchro_reader::TasksInformation &taskInfo,
+					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
+					repo::core::model::RepoScene* &scene
+				);
+
+				std::vector<repo::lib::RepoUUID> findRecursiveMeshSharedIDs(
+					repo::core::model::RepoScene* &scene,
+					const repo::lib::RepoUUID &id
+				) const;
+
+				void determineMeshesInResources(
+					repo::core::model::RepoScene* &scene,
+					const std::unordered_map<repo::lib::RepoUUID, std::vector<repo::lib::RepoUUID>, repo::lib::RepoUUIDHasher> &entityNodesToMeshesSharedID,
+					const std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToEntityNodes,
+					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs);
 
 				std::unordered_map<std::string, repo::core::model::MeshNode> createMeshTemplateNodes();
 
@@ -144,7 +184,7 @@ namespace repo{
 				* been created before this call
 				* @return returns a populated RepoScene upon success.
 				*/
-				repo::core::model::RepoScene* generateRepoScene() { return nullptr; }
+				repo::core::model::RepoScene* generateRepoScene(uint8_t &errMsg) { return nullptr; }
 
 				/**
 				* Import model from a given file

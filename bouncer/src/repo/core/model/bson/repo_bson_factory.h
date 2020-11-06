@@ -112,8 +112,8 @@ namespace repo {
 					const std::vector<RepoPrivilege> &privileges,
 					const std::vector<std::pair<std::string, std::string>> &inheritedRoles
 					= std::vector<std::pair<std::string, std::string>>()
-					);
-				
+				);
+
 				/**
 				* Create a user BSON
 				* @param userName username
@@ -233,7 +233,6 @@ namespace repo {
 					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>(),
 					const int                    &apiLevel = REPO_NODE_API_LEVEL_1);
 
-
 				/**
 				* Create a Metadata Node
 				* @param keys labels for the fields
@@ -263,7 +262,6 @@ namespace repo {
 					const std::string            &name = std::string(),
 					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>(),
 					const int                    &apiLevel = REPO_NODE_API_LEVEL_1);
-				
 
 				/**
 				* Create a Mesh Node
@@ -296,7 +294,6 @@ namespace repo {
 					const std::vector<repo::lib::RepoVector3D>        &normals,
 					const std::vector<std::vector<float>>             &boundingBox,
 					const std::vector<repo::lib::RepoUUID>            &parents) {
-
 					return makeMeshNode(vertices, faces, normals, boundingBox,
 						std::vector<std::vector<repo::lib::RepoVector2D>>(),
 						std::vector<repo_color4d_t>(),
@@ -354,7 +351,7 @@ namespace repo {
 					const std::string              &message = std::string(),
 					const std::string              &tag = std::string(),
 					const int                      &apiLevel = REPO_NODE_API_LEVEL_1
-					);
+				);
 
 				/**
 				* Create a Texture Node
@@ -393,9 +390,6 @@ namespace repo {
 					const std::string &name
 				);
 
-				static std::vector<RepoBSON> buildSequenceTasksBSON(
-					const std::unordered_map<std::string, std::shared_ptr<repo::core::model::RepoSequence::Task>> &tasks);
-
 				static RepoTask makeTask(
 					const std::string &name,
 					const std::unordered_map<std::string, std::string>  &data,
@@ -403,7 +397,6 @@ namespace repo {
 					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>(),
 					const repo::lib::RepoUUID &id = repo::lib::RepoUUID::createUUID()
 				);
-
 			};
 		} //namespace model
 	} //namespace core

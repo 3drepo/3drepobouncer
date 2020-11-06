@@ -56,7 +56,7 @@ TransformationNode makeTransformationNode(
 	for (uint32_t i = 0; i < 4; ++i)
 	{
 		RepoBSONBuilder columns;
-		for (uint32_t j = 0; j < 4; ++j){
+		for (uint32_t j = 0; j < 4; ++j) {
 			columns.append(std::to_string(j), matrix[i * 4 + j]);
 		}
 		rows.appendArray(std::to_string(i), columns.obj());
@@ -149,22 +149,22 @@ TEST(RepoTransformationNodeTest, CloneAndApplyTransformationTest)
 
 	TransformationNode modifiedEmpty = empty.cloneAndApplyTransformation(notId);
 
-	EXPECT_EQ(empty.getTransMatrix(false), identity);
-	EXPECT_EQ(modifiedEmpty.getTransMatrix(false), notId);
+	EXPECT_EQ(empty.getTransMatrix(false), repo::lib::RepoMatrix(identity));
+	EXPECT_EQ(modifiedEmpty.getTransMatrix(false), repo::lib::RepoMatrix(notId));
 
 	auto filled = makeTransformationNode(notId);
 	TransformationNode modifiedFilled = filled.cloneAndApplyTransformation(std::vector<float>());
 
-	EXPECT_EQ(modifiedFilled.getTransMatrix(false), notId);
+	EXPECT_EQ(modifiedFilled.getTransMatrix(false), repo::lib::RepoMatrix(notId));
 }
 
 TEST(RepoTransformationNodeTest, GetTransMatrixTest)
 {
 	TransformationNode empty = TransformationNode();
-	EXPECT_EQ(identity, empty.getTransMatrix(false));
+	EXPECT_EQ(repo::lib::RepoMatrix(identity), empty.getTransMatrix(false));
 
 	TransformationNode notEmpty = makeTransformationNode(notId);
-	EXPECT_EQ(notId, notEmpty.getTransMatrix(false));
+	EXPECT_EQ(repo::lib::RepoMatrix(notId), notEmpty.getTransMatrix(false));
 
 	//check transpose is done correctly
 	auto notIdTransposed = notEmpty.getTransMatrix(true);

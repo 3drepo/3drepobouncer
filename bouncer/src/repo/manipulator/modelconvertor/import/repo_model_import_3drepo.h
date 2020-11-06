@@ -35,14 +35,13 @@
 #include "../../../core/model/bson/repo_node_metadata.h"
 #include "../../../core/model/bson/repo_node_transformation.h"
 
-namespace repo{
-	namespace manipulator{
-		namespace modelconvertor{
-
-			const char REPO_IMPORT_TYPE_STRING   = 'S';
-			const char REPO_IMPORT_TYPE_DOUBLE   = 'D';
-			const char REPO_IMPORT_TYPE_INT      = 'I';
-			const char REPO_IMPORT_TYPE_BOOL     = 'B';
+namespace repo {
+	namespace manipulator {
+		namespace modelconvertor {
+			const char REPO_IMPORT_TYPE_STRING = 'S';
+			const char REPO_IMPORT_TYPE_DOUBLE = 'D';
+			const char REPO_IMPORT_TYPE_INT = 'I';
+			const char REPO_IMPORT_TYPE_BOOL = 'B';
 			const char REPO_IMPORT_TYPE_DATETIME = 'T';
 
 			const std::string REPO_IMPORT_METADATA = "metadata";
@@ -63,117 +62,117 @@ namespace repo{
 
 			class RepoModelImport : public AbstractModelImport
 			{
-				private:
-					std::vector<repo::core::model::RepoNode *> node_map;
-					std::vector<repo::lib::RepoMatrix> trans_map;
-					bool is32Bit = false;
+			private:
+				std::vector<repo::core::model::RepoNode *> node_map;
+				std::vector<repo::lib::RepoMatrix> trans_map;
+				bool is32Bit = false;
 
-					void createObject(const boost::property_tree::ptree& tree);
+				void createObject(const boost::property_tree::ptree& tree);
 
-					char *geomBuf;
-					std::ifstream *finCompressed;
-					boost::iostreams::filtering_streambuf<boost::iostreams::input> *inbuf;
-					std::istream *fin;
+				char *geomBuf;
+				std::ifstream *finCompressed;
+				boost::iostreams::filtering_streambuf<boost::iostreams::input> *inbuf;
+				std::istream *fin;
 
-					typedef struct
-					{
-						int64_t headerSize;
-						int64_t geometrySize;
-						int64_t sizesStart;
-						int64_t sizesSize;
-						int64_t matStart;
-						int64_t matSize;
-						int64_t numChildren;
-					} fileMeta; 
+				typedef struct
+				{
+					int64_t headerSize;
+					int64_t geometrySize;
+					int64_t sizesStart;
+					int64_t sizesSize;
+					int64_t matStart;
+					int64_t matSize;
+					int64_t numChildren;
+				} fileMeta;
 
-					struct mesh_data_t {
-						std::vector<repo::lib::RepoVector3D64> rawVertices;
-						std::vector<repo::lib::RepoVector3D> normals;
-						std::vector<repo_face_t> faces;
-						std::vector<std::vector<double>> boundingBox;
-						repo::lib::RepoUUID parent;
-						repo::lib::RepoUUID sharedID;
-					};
+				struct mesh_data_t {
+					std::vector<repo::lib::RepoVector3D64> rawVertices;
+					std::vector<repo::lib::RepoVector3D> normals;
+					std::vector<repo_face_t> faces;
+					std::vector<std::vector<double>> boundingBox;
+					repo::lib::RepoUUID parent;
+					repo::lib::RepoUUID sharedID;
+				};
 
-					fileMeta file_meta;
+				fileMeta file_meta;
 
-					std::vector<long> sizes;
+				std::vector<long> sizes;
 
-					repo::core::model::MaterialNode* parseMaterial(const boost::property_tree::ptree &pt);
+				repo::core::model::MaterialNode* parseMaterial(const boost::property_tree::ptree &pt);
 
-					repo::core::model::MetadataNode*  createMetadataNode(const boost::property_tree::ptree &metadata, const std::string &parentName, const repo::lib::RepoUUID &parentID);
-					mesh_data_t createMeshRecord(const boost::property_tree::ptree &geometry, const std::string &parentName, const repo::lib::RepoUUID &parentID, const repo::lib::RepoMatrix &trans);
-					boost::property_tree::ptree getNextJSON(long jsonSize);
-					void skipAheadInFile(long amount);
+				repo::core::model::MetadataNode*  createMetadataNode(const boost::property_tree::ptree &metadata, const std::string &parentName, const repo::lib::RepoUUID &parentID);
+				mesh_data_t createMeshRecord(const boost::property_tree::ptree &geometry, const std::string &parentName, const repo::lib::RepoUUID &parentID, const repo::lib::RepoMatrix &trans);
+				boost::property_tree::ptree getNextJSON(long jsonSize);
+				void skipAheadInFile(long amount);
 
-					std::vector<repo::core::model::MaterialNode *> matNodeList;
-					std::vector<std::vector<repo::lib::RepoUUID>> matParents;
+				std::vector<repo::core::model::MaterialNode *> matNodeList;
+				std::vector<std::vector<repo::lib::RepoUUID>> matParents;
 
-					std::vector<mesh_data_t> meshEntries;
-					repo::core::model::RepoNodeSet cameras; //!< Cameras
-					repo::core::model::RepoNodeSet materials; //!< Materials
-					repo::core::model::RepoNodeSet metadata; //!< Metadata
-					repo::core::model::RepoNodeSet transformations; //!< Transformations
-					repo::core::model::RepoNodeSet textures;
+				std::vector<mesh_data_t> meshEntries;
+				repo::core::model::RepoNodeSet cameras; //!< Cameras
+				repo::core::model::RepoNodeSet materials; //!< Materials
+				repo::core::model::RepoNodeSet metadata; //!< Metadata
+				repo::core::model::RepoNodeSet transformations; //!< Transformations
+				repo::core::model::RepoNodeSet textures;
 
-					std::string orgFile;
+				std::string orgFile;
 
-					std::vector<double> offset;
+				std::vector<double> offset;
 
-				public:
+			public:
 
-					/**
-					* Create IFCModelImport with specific settings
-					* NOTE: The destructor will destroy the settings object referenced
-					* in this object!
-					* @param settings
-					*/
-					RepoModelImport(const ModelImportConfig *settings = nullptr);
+				/**
+				* Create IFCModelImport with specific settings
+				* NOTE: The destructor will destroy the settings object referenced
+				* in this object!
+				* @param settings
+				*/
+				RepoModelImport(const ModelImportConfig &settings);
 
-					/**
-					* Default Deconstructor
-					* NOTE: The destructor will destroy the settings object referenced
-					* in this object!
-					*/
-					virtual ~RepoModelImport();
+				/**
+				* Default Deconstructor
+				* NOTE: The destructor will destroy the settings object referenced
+				* in this object!
+				*/
+				virtual ~RepoModelImport();
 
-					/**
-					* Generates a repo scene graph
-					* an internal representation needs to have
-					* been created before this call (e.g. by means of importModel())
-					* @return returns a populated RepoScene upon success.
-					*/
-					virtual repo::core::model::RepoScene* generateRepoScene();
+				/**
+				* Generates a repo scene graph
+				* an internal representation needs to have
+				* been created before this call (e.g. by means of importModel())
+				* @return returns a populated RepoScene upon success.
+				*/
+				virtual repo::core::model::RepoScene* generateRepoScene(uint8_t &errMsg);
 
-					/**
-					* Import model from a given file
-					* This does not generate the Repo Scene Graph
-					* Use getRepoScene() to generate a Repo Scene Graph.
-					* @param path to the file
-					* @param error message if failed
-					* @return returns true upon success
-					*/
-					virtual bool importModel(std::string filePath, uint8_t &errMsg);
+				/**
+				* Import model from a given file
+				* This does not generate the Repo Scene Graph
+				* Use getRepoScene() to generate a Repo Scene Graph.
+				* @param path to the file
+				* @param error message if failed
+				* @return returns true upon success
+				*/
+				virtual bool importModel(std::string filePath, uint8_t &errMsg);
 			};
 
 			//http://stackoverflow.com/questions/23481262/using-boost-property-tree-to-read-int-array
 			template <typename T>
 			inline std::vector<T> as_vector(const boost::property_tree::ptree &pt, const boost::property_tree::ptree::key_type &key)
 			{
-					std::vector<T> r;
-					for (const auto& item : pt.get_child(key))
-							r.push_back(item.second.get_value<T>());
-					return r;
+				std::vector<T> r;
+				for (const auto& item : pt.get_child(key))
+					r.push_back(item.second.get_value<T>());
+				return r;
 			}
 
 			template <typename T>
 			inline std::vector<T> as_vector(const boost::property_tree::ptree &pt)
 			{
-					std::vector<T> r;
-					for (const auto& item : pt)
-							r.push_back(item.second.get_value<T>());
-					return r;
-			}			
+				std::vector<T> r;
+				for (const auto& item : pt)
+					r.push_back(item.second.get_value<T>());
+				return r;
+			}
 		}
 	}
 }

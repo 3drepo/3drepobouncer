@@ -39,22 +39,18 @@
 #include "../../../core/model/bson/repo_node_metadata.h"
 #include "../../../core/model/bson/repo_node_transformation.h"
 
-namespace repo{
-	namespace manipulator{
-		namespace modelconvertor{
+namespace repo {
+	namespace manipulator {
+		namespace modelconvertor {
 			class AssimpModelImport : public AbstractModelImport
 			{
 			public:
-				/**
-				* Default Constructor, generate model with default settings
-				*/
-				AssimpModelImport();
 
 				/**
 				* Create AssimpModelImport with specific settings
 				* @param settings
 				*/
-				AssimpModelImport(const ModelImportConfig *settings);
+				AssimpModelImport(const ModelImportConfig &settings);
 
 				/**
 				* Default Deconstructor
@@ -71,7 +67,7 @@ namespace repo{
 				* been created before this call
 				* @return returns a populated RepoScene upon success.
 				*/
-				repo::core::model::RepoScene* generateRepoScene();
+				repo::core::model::RepoScene* generateRepoScene(uint8_t &errMsg);
 
 				/**
 				* Import model from a given file
@@ -159,7 +155,7 @@ namespace repo{
 					uint32_t                                                             &count,
 					const std::vector<double>                                            &worldOffset,
 					const std::vector<repo::lib::RepoUUID>						                     &parent = std::vector<repo::lib::RepoUUID>()
-					);
+				);
 
 				/**
 				* Duplicate the given mesh and assign a new parent
@@ -197,7 +193,7 @@ namespace repo{
 
 				/**
 				* Normalise shininess value base on source file type
-				* If normalisation factor is unknown for the file type, 
+				* If normalisation factor is unknown for the file type,
 				* rawValue will be returned
 				*/
 				float normaliseShininess(const float &rawValue) const;

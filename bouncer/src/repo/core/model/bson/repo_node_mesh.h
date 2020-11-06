@@ -59,7 +59,7 @@ namespace repo {
 #define REPO_NODE_MESH_LABEL_MATERIAL_ID		        "mat_id"
 #define REPO_NODE_MESH_LABEL_MERGE_MAP		        "m_map"
 			//------------------------------------------------------------------------------
-#define REPO_NODE_MESH_LABEL_INDEPENDENT		        "independent"
+#define REPO_NODE_MESH_LABEL_GROUPING		        "grouping"
 
 			class REPO_API_EXPORT MeshNode :public RepoNode
 			{
@@ -78,7 +78,7 @@ namespace repo {
 				MeshNode(RepoBSON bson,
 					const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping =
 					std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>>()
-					);
+				);
 
 				/**
 				* Default deconstructor
@@ -92,7 +92,7 @@ namespace repo {
 				* where vertices is the LSB
 				* @return returns the mFormat flag
 				*/
-				uint32_t getMFormat() const;
+				uint32_t getMFormat(const bool isTransparent = false, const bool isInvisibleDefault = false) const;
 
 				/**
 				* Get the type of node
@@ -156,7 +156,7 @@ namespace repo {
 					const std::vector<repo_mesh_mapping_t> &vec,
 					const bool                             &overwrite = false);
 
-				MeshNode cloneAndFlagIndependent() const;
+				MeshNode cloneAndNoteGrouping(const std::string &group) const;
 
 				/**
 				* --------- Convenience functions -----------
@@ -180,8 +180,8 @@ namespace repo {
 				*/
 				std::vector<repo_face_t> getFaces() const;
 
-				// State whether the mesh can be optimsed into batched meshes
-				bool isIndependent() const;
+				// get sepcific grouping for mesh batching (empty string if not specified)
+				std::string getGrouping() const;
 
 				std::vector<repo_mesh_mapping_t> getMeshMapping() const;
 

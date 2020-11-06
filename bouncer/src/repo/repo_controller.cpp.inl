@@ -41,26 +41,26 @@ public:
 	*/
 	RepoToken(
 		const lib::RepoConfig             &config,
-		const std::string                 &alias = std::string()) :		
+		const std::string                 &alias = std::string()) :
 		config(config),
 		alias(alias)
 	{
 		auto dbConf = config.getDatabaseConfig();
-		credentials = dbConf.username.empty() ? 
-			nullptr : 
+		credentials = dbConf.username.empty() ?
+			nullptr :
 			core::handler::MongoDatabaseHandler::createBSONCredentials(dbConf.addr, dbConf.username, dbConf.password, dbConf.pwDigested);
 
 		databaseAd = dbConf.addr;
 	}
 
-	~RepoToken(){
+	~RepoToken() {
 	}
 
 	const repo::core::model::RepoBSON* getCredentials() const
 	{
 		return credentials;
 	}
-	
+
 	bool valid() const
 	{
 		return config.validate();
@@ -70,10 +70,10 @@ private:
 	const lib::RepoConfig config;
 	const core::model::RepoBSON *credentials;
 	std::string alias;
-	std::string databaseAd, bucketRegion, bucketName, databaseName = REPO_ADMIN; //FIXME: workaround, to be removed.	
-	};
+	std::string databaseAd, bucketRegion, bucketName, databaseName = REPO_ADMIN; //FIXME: workaround, to be removed.
+};
 
-class RepoController::_RepoControllerImpl{
+class RepoController::_RepoControllerImpl {
 public:
 
 	/**
@@ -109,7 +109,7 @@ public:
 	RepoToken* init(
 		std::string       &errMsg,
 		const lib::RepoConfig  &config
-		);
+	);
 
 	/**
 	* Disconnect the controller from a database connection
@@ -149,11 +149,11 @@ public:
 	*/
 	std::vector < repo::core::model::RepoBSON >
 		getAllFromCollectionContinuous(
-		const RepoToken      *token,
-		const std::string    &database,
-		const std::string    &collection,
-		const uint64_t       &skip = 0,
-		const uint32_t       &limit = 0);
+			const RepoToken      *token,
+			const std::string    &database,
+			const std::string    &collection,
+			const uint64_t       &skip = 0,
+			const uint32_t       &limit = 0);
 
 	/**
 	* Retrieve documents from a specified collection, returning only the specified fields
@@ -172,14 +172,14 @@ public:
 	*/
 	std::vector < repo::core::model::RepoBSON >
 		getAllFromCollectionContinuous(
-		const RepoToken              *token,
-		const std::string            &database,
-		const std::string            &collection,
-		const std::list<std::string> &fields,
-		const std::string            &sortField,
-		const int                    &sortOrder = -1,
-		const uint64_t               &skip = 0,
-		const uint32_t               &limit = 0);
+			const RepoToken              *token,
+			const std::string            &database,
+			const std::string            &collection,
+			const std::list<std::string> &fields,
+			const std::string            &sortField,
+			const int                    &sortOrder = -1,
+			const uint64_t               &skip = 0,
+			const uint32_t               &limit = 0);
 
 	/**
 	* Retrieve roles from a specified database
@@ -194,10 +194,10 @@ public:
 	*/
 	std::vector < repo::core::model::RepoRole >
 		getRolesFromDatabase(
-		const RepoToken              *token,
-		const std::string            &database,
-		const uint64_t               &skip = 0,
-		const uint32_t               &limit = 0);
+			const RepoToken              *token,
+			const std::string            &database,
+			const uint64_t               &skip = 0,
+			const uint32_t               &limit = 0);
 
 	/**
 	* Return a list of collections within the database
@@ -208,7 +208,7 @@ public:
 	std::list<std::string> getCollections(
 		const RepoToken             *token,
 		const std::string     &databaseName
-		);
+	);
 
 	/**
 	* Return a list of database available to the user
@@ -226,8 +226,8 @@ public:
 	*/
 	std::map<std::string, std::list<std::string>>
 		getDatabasesWithProjects(
-		const RepoToken *token,
-		const std::list<std::string> &databases);
+			const RepoToken *token,
+			const std::list<std::string> &databases);
 
 	/**
 	* Get a list of Admin roles from the database
@@ -306,7 +306,7 @@ public:
 	* @param scene RepoScene to commit
 	* @param owner specify the owner of the scene (by default it is the user authorised to commit)
 	*/
-	bool commitScene(
+	uint8_t commitScene(
 		const RepoToken                     *token,
 		repo::core::model::RepoScene        *scene,
 		const std::string                   &owner = "",
@@ -359,7 +359,7 @@ public:
 		const std::string     &databaseName,
 		const std::string     &collectionName,
 		std::string			  &errMsg
-		);
+	);
 
 	/**
 	* Remove a database
@@ -372,7 +372,7 @@ public:
 		const RepoToken             *token,
 		const std::string           &databaseName,
 		std::string			        &errMsg
-		);
+	);
 
 	/**
 	* remove a document from the database
@@ -618,10 +618,7 @@ public:
 	repo::core::model::RepoScene* loadSceneFromFile(
 		const std::string &filePath,
 		uint8_t           &err,
-		const bool &applyReduction = true,
-		const bool &rotateModel = false,
-		const repo::manipulator::modelconvertor::ModelImportConfig *config
-		= nullptr);
+		const repo::manipulator::modelconvertor::ModelImportConfig &config);
 
 	/**
 	* Load metadata from a file
@@ -657,7 +654,7 @@ public:
 	bool generateAndCommitStashGraph(
 		const RepoToken              *token,
 		repo::core::model::RepoScene* scene
-		);
+	);
 
 	/**
 	* Get a hierachical spatial partitioning in form of a tree
@@ -666,8 +663,8 @@ public:
 	*/
 	std::shared_ptr<repo_partitioning_tree_t>
 		getScenePartitioning(
-		const repo::core::model::RepoScene *scene,
-		const uint32_t                     &maxDepth = 8
+			const repo::core::model::RepoScene *scene,
+			const uint32_t                     &maxDepth = 8
 		);
 
 	/**
@@ -702,7 +699,7 @@ public:
 		repo_diff_result_t &baseResults,
 		repo_diff_result_t &compResults,
 		const repo::DiffMode       &diffMode
-		);
+	);
 
 	/**
 	* Compare 2 scenes via IDs.
@@ -719,7 +716,7 @@ public:
 		repo::core::model::RepoScene        *compare,
 		repo_diff_result_t &baseResults,
 		repo_diff_result_t &compResults
-		)
+	)
 	{
 		compareScenes(token, base, compare, baseResults, compResults, repo::DiffMode::DIFF_BY_ID);
 	}
@@ -739,11 +736,10 @@ public:
 		repo::core::model::RepoScene        *compare,
 		repo_diff_result_t &baseResults,
 		repo_diff_result_t &compResults
-		)
+	)
 	{
 		compareScenes(token, base, compare, baseResults, compResults, repo::DiffMode::DIFF_BY_NAME);
 	}
-
 
 	/*
 	*	------------- Versioning --------------
