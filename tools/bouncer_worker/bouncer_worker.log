@@ -1,0 +1,15 @@
+{"level":"info","message":"Initialising bouncer client queue...","timestamp":"2020-11-06T13:07:03.342Z"}
+{"level":"info","message":"Checking status of client...","timestamp":"2020-11-06T13:07:03.344Z"}
+{"level":"info","message":"Executing command: C:\\local\\3drepobouncer\\bin\\3drepobouncerClient.exe C:\\Users\\Carmen\\work\\repo\\3drepobouncer\\tools\\bouncer_worker\\config.json test","timestamp":"2020-11-06T13:07:03.345Z"}
+{"level":"error","message":"Bouncer call errored (Error code: 2)","timestamp":"2020-11-06T13:07:05.427Z"}
+{"level":"info","message":"Initialising bouncer client queue...","timestamp":"2020-11-06T13:07:33.300Z"}
+{"level":"info","message":"Checking status of client...","timestamp":"2020-11-06T13:07:33.302Z"}
+{"level":"info","message":"Executing command: C:\\local\\3drepobouncer\\bin\\3drepobouncerClient.exe C:\\Users\\Carmen\\work\\repo\\3drepobouncer\\tools\\bouncer_worker\\config.json test","timestamp":"2020-11-06T13:07:33.303Z"}
+{"level":"error","message":"Bouncer call errored (Error code: 2)","timestamp":"2020-11-06T13:07:35.375Z"}
+{"level":"info","message":"Initialising bouncer client queue...","timestamp":"2020-11-06T13:08:38.867Z"}
+{"level":"info","message":"Checking status of client...","timestamp":"2020-11-06T13:08:38.868Z"}
+{"level":"info","message":"Executing command: C:\\local\\3drepobouncer\\bin\\3drepobouncerClient.exe C:\\Users\\Carmen\\work\\repo\\3drepobouncer\\tools\\bouncer_worker\\config.json test","timestamp":"2020-11-06T13:08:38.870Z"}
+{"level":"info","message":"Bouncer call passed","timestamp":"2020-11-06T13:08:38.962Z"}
+{"level":"info","message":"[AMQP] Connected! Creating channel...","timestamp":"2020-11-06T13:08:38.986Z"}
+{"level":"info","message":"Bouncer Client Queue started. Waiting for messages in jobq of amqp://guest:guest@localhost:5672....","timestamp":"2020-11-06T13:08:38.990Z"}
+{"level":"info","message":"Bouncer Client Queue started. Waiting for messages in modelq of amqp://guest:guest@localhost:5672....","timestamp":"2020-11-06T13:08:38.991Z"}

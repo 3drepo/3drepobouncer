@@ -30,12 +30,12 @@
 
 (() => {
 	"use strict";
+	const path = require("path");
+
 
 	const amqp = require("amqplib");
-	const path = require("path");
 	const spawn = require("child_process").spawn;
 	const importToy = require('../toy/importToy');
-	const winston = require('winston');
 	const rootModelDir = './toy';
 	//Note: these error codes corresponds to error_codes.h in bouncerclient
 	const ERRCODE_BOUNCER_CRASH = 12;
@@ -46,16 +46,10 @@
 	let retry = 0;
 	let connClosed = false;
 
-	const fs = require("fs");
-	const configFullPath = path.resolve(__dirname, "../../config.json");
-	const conf = JSON.parse(fs.readFileSync(configFullPath));
+	const { config, configPath}  = require("../lib/config");
 
 
-	const logger = new (winston.Logger)({
-		transports: [new (winston.transports.Console)({'timestamp': true}),
-		  new (winston.transports.File)({'filename': conf.logLocation? conf.logLocation : "./bouncer_worker.log"})
-		]
-	});
+	const logger = require("../lib/logger");
 
 	function run(exe, params, codesAsSuccess = []) {
 
@@ -76,7 +70,7 @@
 			cmdExec.stdout.on("data", (data) => {});
 			cmdExec.stderr.on("data", (data) => {});
 
-			const timeout = conf.timeoutMS || 180*60*1000
+			const timeout = config.timeoutMS || 180*60*1000
 			setTimeout(() => {
 				isTimeout = true;
 				cmdExec.kill();
@@ -98,19 +92,19 @@
 		let awsBucketName = "undefined";
 		let awsBucketRegion = "undefined";
 
-		if (conf.aws)
+		if (config.aws)
 		{
-			awsBucketName = conf.aws.bucket_name;
-			awsBucketRegion = conf.aws.bucket_region;
+			awsBucketName = config.aws.bucket_name;
+			awsBucketRegion = config.aws.bucket_region;
 		}
 
 		const cmdParams = [
-				configFullPath,
+				configPath,
 				"test"
 			];
 
 
-		run(path.normalize(conf.bouncer.path), cmdParams).then(() => {
+		run(path.normalize(config.bouncer.path), cmdParams).then(() => {
 			logger.info("Bouncer call passed");
 			callback();
 		}).catch((code)=> {
@@ -136,11 +130,11 @@
 			let username = database;
 
 			let dbConfig = {
-				username: conf.db.username,
-				password: conf.db.password,
-				dbhost: conf.db.dbhost,
-				dbport: conf.db.dbport,
-				writeConcern: conf.mongoimport && conf.mongoimport.writeConcern
+				username: config.db.username,
+				password: config.db.password,
+				dbhost: config.db.dbhost,
+				dbport: config.db.dbport,
+				writeConcern: config.mongoimport && config.mongoimport.writeConcern
 			};
 
 			let dir = `${rootModelDir}/${modelDir}`;
@@ -176,15 +170,15 @@
 	}
 
 	function setBouncerEnvars(logDir) {
-		if (conf.aws)
+		if (config.aws)
 		{
-			process.env['AWS_ACCESS_KEY_ID'] = conf.aws.access_key_id;
-			process.env['AWS_SECRET_ACCESS_KEY'] =	conf.aws.secret_access_key;
+			process.env['AWS_ACCESS_KEY_ID'] = config.aws.access_key_id;
+			process.env['AWS_SECRET_ACCESS_KEY'] =	config.aws.secret_access_key;
 		}
 
-		if (conf.bouncer.envars) {
-			Object.keys(conf.bouncer.envars).forEach((key) => {
-				process.env[key] = conf.bouncer.envars[key];
+		if (config.bouncer.envars) {
+			Object.keys(config.bouncer.envars).forEach((key) => {
+				process.env[key] = config.bouncer.envars[key];
 			});
 		}
 
@@ -204,10 +198,10 @@
 
 		setBouncerEnvars(logDir);
 
-		if (conf.aws)
+		if (config.aws)
 		{
-			awsBucketName = conf.aws.bucket_name;
-			awsBucketRegion = conf.aws.bucket_region;
+			awsBucketName = config.aws.bucket_name;
+			awsBucketRegion = config.aws.bucket_region;
 		}
 
 		cmdParams.push(configFullPath);
@@ -215,9 +209,9 @@
 		if(os.platform() === "win32")
 		{
 
-			cmd = cmd.replace("/sharedData/", conf.rabbitmq.sharedDir);
+			cmd = cmd.replace("/sharedData/", config.rabbitmq.sharedDir);
 
-			command = path.normalize(conf.bouncer.path);
+			command = path.normalize(config.bouncer.path);
 			cmd.split(' ').forEach((data) => cmdParams.push(data));
 
 			let cmdArr = cmd.split(' ');
@@ -228,7 +222,7 @@
 					if (err) {
 						return logger.error(err);
 					}
-					let result = data.replace("/sharedData/", conf.rabbitmq.sharedDir);
+					let result = data.replace("/sharedData/", config.rabbitmq.sharedDir);
 
 					fs.writeFile(cmdArr[2], result, 'utf8', function (err) {
 							if (err) return logger.error(err);
@@ -290,11 +284,11 @@
 			}, false);
 		}
 
-		const execProm = run(path.normalize(conf.bouncer.path), cmdParams, softFails);
+		const execProm = run(path.normalize(config.bouncer.path), cmdParams, softFails);
 
 		execProm.then((code) => {
 			logger.info(`[SUCCEED] Executed command: ${command} ${cmdParams.join(" ")} `, code);
-			if(conf.unity && conf.unity.project && cmdArr[0] == "import")
+			if(config.unity && config.unity.project && cmdArr[0] == "import")
 			{
 				let commandArgs = cmdFile;
 				if(commandArgs && commandArgs.database && commandArgs.project)
@@ -302,17 +296,17 @@
 					let awsBucketName = "undefined";
 					let awsBucketRegion = "undefined";
 
-					if (conf.aws)
+					if (config.aws)
 					{
-						process.env['AWS_ACCESS_KEY_ID'] = conf.aws.access_key_id;
-						process.env['AWS_SECRET_ACCESS_KEY'] =	conf.aws.secret_access_key;
-						awsBucketName = conf.aws.bucket_name;
-						awsBucketRegion = conf.aws.bucket_region;
+						process.env['AWS_ACCESS_KEY_ID'] = config.aws.access_key_id;
+						process.env['AWS_SECRET_ACCESS_KEY'] =	config.aws.secret_access_key;
+						awsBucketName = config.aws.bucket_name;
+						awsBucketRegion = config.aws.bucket_region;
 					}
 
-					const unityCommand = conf.unity.batPath;
+					const unityCommand = config.unity.batPath;
 					const unityCmdParams = [
-							conf.unity.project,
+							config.unity.project,
 							configFullPath,
 							commandArgs.database,
 							commandArgs.project,
@@ -355,11 +349,11 @@
 				if(toyFed) {
 
 					const dbConfig = {
-						username: conf.db.username,
-						password: conf.db.password,
-						dbhost: conf.db.dbhost,
-						dbport: conf.db.dbport,
-						writeConcern: conf.mongoimport && conf.mongoimport.writeConcern
+						username: config.db.username,
+						password: config.db.password,
+						dbhost: config.db.dbhost,
+						dbport: config.db.dbport,
+						writeConcern: config.mongoimport && config.mongoimport.writeConcern
 					};
 					const dir = `${rootModelDir}/${toyFed}`;
 					importToy(dbConfig, dir, cmdDatabase, cmdDatabase, cmdProject, {tree: 1}).then(()=> {
@@ -399,7 +393,7 @@
 	 */
 	function exeCommand(cmd, rid, callback){
 
-		let logRootDir = conf.bouncer.log_dir;
+		let logRootDir = config.bouncer.log_dir;
 
 		if(logRootDir === null) {
 			logRootDir = "./log";
@@ -419,22 +413,22 @@
 	function listenToQueue(ch, queueName, prefetchCount)
 	{
 		ch.assertQueue(queueName, {durable: true});
-		logger.info("Bouncer Client Queue started. Waiting for messages in %s of %s....", queueName, conf.rabbitmq.host);
+		logger.info("Bouncer Client Queue started. Waiting for messages in %s of %s....", queueName, config.rabbitmq.host);
 		ch.prefetch(prefetchCount);
 		ch.consume(queueName, function(msg){
 			logger.info(" [x] Received %s from %s", msg.content.toString(), queueName);
 			handleMessage(msg.content.toString(), msg.properties.correlationId, function(reply, sendAck){
 				if (sendAck)
 					ch.ack(msg);
-				logger.info("sending to reply queue(%s): %s", conf.rabbitmq.callback_queue, reply);
-				ch.sendToQueue(conf.rabbitmq.callback_queue, new Buffer.from(reply),
+				logger.info("sending to reply queue(%s): %s", config.rabbitmq.callback_queue, reply);
+				ch.sendToQueue(config.rabbitmq.callback_queue, new Buffer.from(reply),
 					{correlationId: msg.properties.correlationId, appId: msg.properties.appId});
 			});
 		}, {noAck: false});
 	}
 
 	function reconnectQ() {
-		const maxRetries = conf.rabbitmq.maxRetries || 3;
+		const maxRetries = config.rabbitmq.maxRetries || 3;
 		if(++retry <= maxRetries) {
 			logger.error(`[AMQP] Trying to reconnect [${retry}/${maxRetries}]...`);
 			connectQ();
@@ -445,14 +439,14 @@
 	}
 
 	function connectQ(){
-		amqp.connect(conf.rabbitmq.host).then((conn) => {
+		amqp.connect(config.rabbitmq.host).then((conn) => {
 			retry = 0;
 			connClosed = false;
 			logger.info("[AMQP] Connected! Creating channel...");
 			conn.createChannel().then((ch) => {
-				ch.assertQueue(conf.rabbitmq.callback_queue, { durable: true });
-				conf.rabbitmq.worker_queue && listenToQueue(ch, conf.rabbitmq.worker_queue, conf.rabbitmq.task_prefetch || 4);
-				conf.rabbitmq.model_queue && listenToQueue(ch, conf.rabbitmq.model_queue, conf.rabbitmq.model_prefetch || 1);
+				ch.assertQueue(config.rabbitmq.callback_queue, { durable: true });
+				config.rabbitmq.worker_queue && listenToQueue(ch, config.rabbitmq.worker_queue, config.rabbitmq.task_prefetch || 4);
+				config.rabbitmq.model_queue && listenToQueue(ch, config.rabbitmq.model_queue, config.rabbitmq.model_prefetch || 1);
 
 			});
 
@@ -477,9 +471,9 @@
 	}
 
 	logger.info("Initialising bouncer client queue...");
-	if(conf.hasOwnProperty("umask")) {
-		logger.info("Setting umask: " + conf.umask);
-		process.umask(conf.umask);
+	if(config.hasOwnProperty("umask")) {
+		logger.info("Setting umask: " + config.umask);
+		process.umask(config.umask);
 	}
 	testClient(connectQ);
 
