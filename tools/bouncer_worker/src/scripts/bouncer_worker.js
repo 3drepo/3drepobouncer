@@ -32,14 +32,19 @@
 	"use strict";
 	const path = require("path");
 	const run = require("../lib/runCommand");
-	const { ERRCODE_BOUNCER_CRASH, ERRCODE_PARAM_READ_FAIL, ERRCODE_BUNDLE_GEN_FAIL, BOUNCER_SOFT_FAILS } = require("../constants/errorCodes");
+	const {
+		ERRCODE_BOUNCER_CRASH,
+		ERRCODE_PARAM_READ_FAIL,
+		ERRCODE_BUNDLE_GEN_FAIL,
+		REPOERR_ARG_FILE_FAIL,
+		BOUNCER_SOFT_FAILS } = require("../constants/errorCodes");
 	const { config, configPath}  = require("../lib/config");
 	const { testClient, runCommand = runBouncerCommand } = require("../tasks/bouncerClient");
+	const { generateAssetBundles } = require("../tasks/unityEditor");
 	const { connectToQueue } = require("../lib/queueHandler");
 	const logger = require("../lib/logger");
 
 
-	const amqp = require("amqplib");
 	const importToy = require('../toy/importToy');
 	const rootModelDir = './toy';
 	let retry = 0;
@@ -105,41 +110,33 @@
 	}
 
 	const win32Workaround = (cmd) => {
-		// messages coming in assume the sharedData is stored in a specific linux style directory
-		// we need to do a find/replace to make it use rabbitmq sharedDir instead
-		cmd = cmd.replace("/sharedData/", config.rabbitmq.sharedDir);
-		let cmdArr = cmd.split(' ');
-		if(cmdArr[0] == "import")
-		{
-			const fs = require('fs')
-			const data = fs.readFileSync(cmdArr[2], 'utf8');
-			const result = data.replace("/sharedData/", config.rabbitmq.sharedDir);
-			fs.writeFileSync(cmdArr[2], result, 'utf8');
+		const platform  = require('os').platform();
+		if (platform === "win32") {
+			// messages coming in assume the sharedData is stored in a specific linux style directory
+			// we need to do a find/replace to make it use rabbitmq sharedDir instead
+			cmd = cmd.replace("/sharedData/", config.rabbitmq.sharedDir);
+			let cmdArr = cmd.split(' ');
+			if(cmdArr[0] == "import")
+			{
+				const fs = require('fs')
+				const data = fs.readFileSync(cmdArr[2], 'utf8');
+				const result = data.replace("/sharedData/", config.rabbitmq.sharedDir);
+				fs.writeFileSync(cmdArr[2], result, 'utf8');
+			}
 		}
 	}
 
-
-	async function runBouncer(logDir, cmd,  callback)
-	{
-		const os = require('os');
-		let command = path.normalize(config.bouncer.path);
-		const cmdParams = [];
-
-		cmdParams.push(configFullPath);
-		win32Workaround(cmd);
-
-		cmd.split(' ').forEach((data) => cmdParams.push(data));
-
+	const extractTaskInfo = (cmdArr) => {
+		const command = cmdArr[0];
 		let cmdFile;
 		let cmdDatabase;
 		let cmdProject;
-		let cmdArr = cmd.split(' ');
 		let toyFed = false;
-		let user = "";
+		let user;
+		let errorCode;
 
-		// Extract database and project information from command
-		try{
-			switch(cmdArr[0]) {
+		try {
+			switch(command) {
 				case "import":
 					cmdFile = require(cmdArr[2]);
 					cmdDatabase = cmdFile.database;
@@ -162,127 +159,77 @@
 					cmdProject = cmdArr[2];
 					break;
 				default:
-					logger.error("Unexpected command: " + cmdArr[0]);
+				logger.error("Unexpected command: " + cmdArr[0]);
+				errorCode = REPOERR_ARG_FILE_FAIL;
 			}
-		}
-		catch(error) {
+		} catch (error) {
 			logger.error(error);
-			callback({value: 16}, true);
+			errorCode = REPOERR_ARG_FILE_FAIL;
 		}
 
-		// Issue callback to indicate job is processing, but no ack as job not done
-		if ("genFed" !== cmdArr[0]) {
+		return {command, cmdFile, cmdDatabase, cmdProject, toyFed, user, errorCode};
+	};
+
+	async function runBouncer(logDir, cmd,  callback)
+	{
+		let command = path.normalize(config.bouncer.path);
+		const cmdParams = [];
+
+		cmdParams.push(configFullPath);
+		win32Workaround(cmd);
+
+		let cmdArr = cmd.split(' ');
+
+		cmdArr.forEach((data) => cmdParams.push(data));
+
+		// Extract database and project information from command
+		const {command, cmdFile, cmdDatabase, cmdProject, toyFed, user, errorCode} = extractTaskInfo(cmdArr);
+		if(errorCode) {
+			callback({ value: errorCode });
+			return;
+		}
+
+		if ("genFed" !== command) {
 			callback({
 				status: "processing",
 				database: cmdDatabase,
 				project: cmdProject
-			}, false);
+			});
 		}
 
 		try {
-
 			const code = await runBouncerCommand(logDir, cmdParams);
 			logger.info(`[SUCCEED] Executed command: ${command} ${cmdParams.join(" ")} `, code);
-			if(config.unity && config.unity.project && cmdArr[0] == "import")
-			{
-				let commandArgs = cmdFile;
-				if(commandArgs && commandArgs.database && commandArgs.project)
-				{
-					let awsBucketName = "undefined";
-					let awsBucketRegion = "undefined";
 
-					if (config.aws)
-					{
-						process.env['AWS_ACCESS_KEY_ID'] = config.aws.access_key_id;
-						process.env['AWS_SECRET_ACCESS_KEY'] =	config.aws.secret_access_key;
-						awsBucketName = config.aws.bucket_name;
-						awsBucketRegion = config.aws.bucket_region;
-					}
-
-					const unityCommand = config.unity.batPath;
-					const unityCmdParams = [
-							config.unity.project,
-							configFullPath,
-							commandArgs.database,
-							commandArgs.project,
-							logDir
-					];
-
-					logger.info(`Running unity command: ${unityCommand} ${unityCmdParams.join(" ")}`);
-
-					try {
-						const unityCode = await run(unityCommand, unityCmdParams);
-
-						logger.info(`[SUCCESS] Executed unity command: ${unityCommand} ${unityCmdParams.join(" ")}`, unityCode);
-						callback({
-							value: code,
-							database: cmdDatabase,
-							project: cmdProject,
-							user
-						});
-					} catch(unityCode) {
-						logger.info(`[FAILED] Executed unity command: ${unityCommand} ${unityCmdParams.join(" ")}`, unityCode);
-						callback({
-							value: ERRCODE_BUNDLE_GEN_FAIL,
-							database: cmdDatabase,
-							project: cmdProject,
-							user
-						}, true);
-					}
-				}
-				else
-				{
-					logger.error("Failed to read " + cmdArr[2]);
-					callback({
-						value: ERRCODE_PARAM_READ_FAIL,
-						database: cmdDatabase,
-						project: cmdProject,
-						user
-					}, true);
-				}
+			if (command === "import") {
+				await generateAssetBundles(cmdDatabase, cmdProject, logDir);
+			} else if (command === "toyFed") {
+				const dbConfig = {
+					username: config.db.username,
+					password: config.db.password,
+					dbhost: config.db.dbhost,
+					dbport: config.db.dbport,
+					writeConcern: config.mongoimport && config.mongoimport.writeConcern
+				};
+				const dir = `${rootModelDir}/${toyFed}`;
+				await importToy(dbConfig, dir, cmdDatabase, cmdDatabase, cmdProject, {tree: 1});
 			}
-			else
-			{
-				if(toyFed) {
-
-					const dbConfig = {
-						username: config.db.username,
-						password: config.db.password,
-						dbhost: config.db.dbhost,
-						dbport: config.db.dbport,
-						writeConcern: config.mongoimport && config.mongoimport.writeConcern
-					};
-					const dir = `${rootModelDir}/${toyFed}`;
-					importToy(dbConfig, dir, cmdDatabase, cmdDatabase, cmdProject, {tree: 1}).then(()=> {
-						callback({
-							value: code,
-							database: cmdDatabase,
-							project: cmdProject,
-							user
-						}, true);
-					});
-				} else {
-
-					callback({
-						value: code,
-						database: cmdDatabase,
-						project: cmdProject,
-						user
-					}, true);
-				}
-			}
-
-		} catch(code) {
+			callback({
+				value: code,
+				database: cmdDatabase,
+				project: cmdProject,
+				user
+			});
+		} catch (code) {
 			const err =  code || ERRCODE_BOUNCER_CRASH;
 			callback({
 				value: err,
 				database: cmdDatabase,
 				project: cmdProject,
 				user
-			}, true);
+			});
 			logger.error(`[FAILED] Executed command: ${command} ${cmdParams.join(" ")}`, err);
 		}
-
 	}
 
 	/**
