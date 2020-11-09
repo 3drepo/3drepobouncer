@@ -2,6 +2,7 @@ const logger = require("../lib/logger");
 const { config, configPath} = require("../lib/config");
 const path = require("path");
 const run = require("../lib/runCommand");
+const { BOUNCER_SOFT_FAILS } = require("../constants/errorCodes");
 
 const bouncerClientPath = path.normalize(config.bouncer.path);
 
@@ -18,7 +19,9 @@ const setBouncerEnvars = (logDir) => {
 	}
 }
 
-const testClient = async () => {
+const BouncerHandler = {};
+
+BouncerHandler.testClient = async () => {
 	logger.info("Checking status of client...");
 
 	setBouncerEnvars();
@@ -36,7 +39,10 @@ const testClient = async () => {
 	}
 }
 
-
-module.exports = {
-	testClient
+BouncerHandler.runCommand = async (logDir, cmdParams) => {
+	setBouncerEnvars(logDir);
+	await run(bouncerClientPath, cmdParams, BOUNCER_SOFT_FAILS);
 }
+
+
+module.exports = BouncerHandler;

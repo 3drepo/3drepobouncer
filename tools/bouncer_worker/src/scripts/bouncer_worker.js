@@ -34,7 +34,9 @@
 	const run = require("../lib/runCommand");
 	const { ERRCODE_BOUNCER_CRASH, ERRCODE_PARAM_READ_FAIL, ERRCODE_BUNDLE_GEN_FAIL, BOUNCER_SOFT_FAILS } = require("../constants/errorCodes");
 	const { config, configPath}  = require("../lib/config");
-	const { testClient } = require("../tasks/bouncerClient");
+	const { testClient, runCommand = runBouncerCommand } = require("../tasks/bouncerClient");
+	const { connectToQueue } = require("../lib/queueHandler");
+	const logger = require("../lib/logger");
 
 
 	const amqp = require("amqplib");
@@ -44,12 +46,11 @@
 	let connClosed = false;
 
 
-	const logger = require("../lib/logger");
 
 	/**
 	 * handle queue message
 	 */
-	function handleMessage(cmd, rid, callback){
+	async function handleMessage(cmd, rid, callback){
 		// command start with importToy is handled here instead of passing it to bouncer
 		if(cmd.startsWith('importToy')){
 
@@ -73,29 +74,29 @@
 
 			let dir = `${rootModelDir}/${modelDir}`;
 
-			importToy(dbConfig, dir, username, database, model, skipPostProcessing).then(() => {
+			try {
+			await importToy(dbConfig, dir, username, database, model, skipPostProcessing);
 				// after importing the toy regenerate the tree as well
 				if(skipPostProcessing.tree){
 					callback(JSON.stringify({
 						value: 0,
 						database: database,
 						project: model
-					}), true);
+					}));
 				} else {
 					exeCommand(`genStash ${database} ${model} tree all`, rid, callback);
 				}
 
-			}).catch(err => {
-
+			}
+			catch(err) {
 				logger.error("importToy module error");
-
 				callback(JSON.stringify({
 					value: ERRCODE_BOUNCER_CRASH,
 					message: err.message,
 					database: database,
 					project: model
-				}), true);
-			});
+				}));
+			};
 
 		} else {
 			exeCommand(cmd, rid, callback);
@@ -103,54 +104,31 @@
 
 	}
 
+	const win32Workaround = (cmd) => {
+		// messages coming in assume the sharedData is stored in a specific linux style directory
+		// we need to do a find/replace to make it use rabbitmq sharedDir instead
+		cmd = cmd.replace("/sharedData/", config.rabbitmq.sharedDir);
+		let cmdArr = cmd.split(' ');
+		if(cmdArr[0] == "import")
+		{
+			const fs = require('fs')
+			const data = fs.readFileSync(cmdArr[2], 'utf8');
+			const result = data.replace("/sharedData/", config.rabbitmq.sharedDir);
+			fs.writeFileSync(cmdArr[2], result, 'utf8');
+		}
+	}
 
-	function runBouncer(logDir, cmd,  callback)
+
+	async function runBouncer(logDir, cmd,  callback)
 	{
 		const os = require('os');
-		let command = "";
+		let command = path.normalize(config.bouncer.path);
 		const cmdParams = [];
 
-		let awsBucketName = "undefined";
-		let awsBucketRegion = "undfined";
-
-		setBouncerEnvars(logDir);
-
-		if (config.aws)
-		{
-			awsBucketName = config.aws.bucket_name;
-			awsBucketRegion = config.aws.bucket_region;
-		}
-
 		cmdParams.push(configFullPath);
+		win32Workaround(cmd);
 
-		if(os.platform() === "win32")
-		{
-
-			cmd = cmd.replace("/sharedData/", config.rabbitmq.sharedDir);
-
-			command = path.normalize(config.bouncer.path);
-			cmd.split(' ').forEach((data) => cmdParams.push(data));
-
-			let cmdArr = cmd.split(' ');
-			if(cmdArr[0] == "import")
-			{
-				const fs = require('fs')
-				fs.readFile(cmdArr[2], 'utf8', function (err,data) {
-					if (err) {
-						return logger.error(err);
-					}
-					let result = data.replace("/sharedData/", config.rabbitmq.sharedDir);
-
-					fs.writeFile(cmdArr[2], result, 'utf8', function (err) {
-							if (err) return logger.error(err);
-					});
-				});
-			}
-		}
-		else
-		{
-			cmd.split(' ').forEach((data) => cmdParams.push(data));
-		}
+		cmd.split(' ').forEach((data) => cmdParams.push(data));
 
 		let cmdFile;
 		let cmdDatabase;
@@ -201,9 +179,9 @@
 			}, false);
 		}
 
-		const execProm = run(path.normalize(config.bouncer.path), cmdParams, BOUNCER_SOFT_FAILS);
+		try {
 
-		execProm.then((code) => {
+			const code = await runBouncerCommand(logDir, cmdParams);
 			logger.info(`[SUCCEED] Executed command: ${command} ${cmdParams.join(" ")} `, code);
 			if(config.unity && config.unity.project && cmdArr[0] == "import")
 			{
@@ -231,16 +209,18 @@
 					];
 
 					logger.info(`Running unity command: ${unityCommand} ${unityCmdParams.join(" ")}`);
-					const unityExec = run(unityCommand, unityCmdParams);
-					unityExec.then((unityCode) => {
+
+					try {
+						const unityCode = await run(unityCommand, unityCmdParams);
+
 						logger.info(`[SUCCESS] Executed unity command: ${unityCommand} ${unityCmdParams.join(" ")}`, unityCode);
 						callback({
 							value: code,
 							database: cmdDatabase,
 							project: cmdProject,
 							user
-						}, true);
-					}).catch((unityCode) => {
+						});
+					} catch(unityCode) {
 						logger.info(`[FAILED] Executed unity command: ${unityCommand} ${unityCmdParams.join(" ")}`, unityCode);
 						callback({
 							value: ERRCODE_BUNDLE_GEN_FAIL,
@@ -248,7 +228,7 @@
 							project: cmdProject,
 							user
 						}, true);
-					});
+					}
 				}
 				else
 				{
@@ -292,7 +272,7 @@
 				}
 			}
 
-		}).catch((code) => {
+		} catch(code) {
 			const err =  code || ERRCODE_BOUNCER_CRASH;
 			callback({
 				value: err,
@@ -301,90 +281,21 @@
 				user
 			}, true);
 			logger.error(`[FAILED] Executed command: ${command} ${cmdParams.join(" ")}`, err);
-		});
+		}
 
 	}
 
 	/**
 	 * Execute the Command and provide a reply message to the callback function
 	 */
-	function exeCommand(cmd, rid, callback){
+	async function exeCommand(cmd, rid, callback){
 
 		let logRootDir = config.bouncer.log_dir;
 
-		if(logRootDir === null) {
-			logRootDir = "./log";
-		}
-
 		let logDir = logRootDir + "/" +  rid.toString() + "/";
 
-		runBouncer(logDir, cmd,
-		 function(reply, sendAck){
-			callback(JSON.stringify(reply), sendAck);
-		});
-	}
-
-	/*
-	 * @param {sendAck} sendAck - Should an acknowledgement be sent with callback (true/false)
-	 */
-	function listenToQueue(ch, queueName, prefetchCount)
-	{
-		ch.assertQueue(queueName, {durable: true});
-		logger.info("Bouncer Client Queue started. Waiting for messages in %s of %s....", queueName, config.rabbitmq.host);
-		ch.prefetch(prefetchCount);
-		ch.consume(queueName, function(msg){
-			logger.info(" [x] Received %s from %s", msg.content.toString(), queueName);
-			handleMessage(msg.content.toString(), msg.properties.correlationId, function(reply, sendAck){
-				if (sendAck)
-					ch.ack(msg);
-				logger.info("sending to reply queue(%s): %s", config.rabbitmq.callback_queue, reply);
-				ch.sendToQueue(config.rabbitmq.callback_queue, new Buffer.from(reply),
-					{correlationId: msg.properties.correlationId, appId: msg.properties.appId});
-			});
-		}, {noAck: false});
-	}
-
-	function reconnectQ() {
-		const maxRetries = config.rabbitmq.maxRetries || 3;
-		if(++retry <= maxRetries) {
-			logger.error(`[AMQP] Trying to reconnect [${retry}/${maxRetries}]...`);
-			connectQ();
-		} else {
-			logger.error("[AMQP] Retries exhausted");
-			process.exit(-1);
-		}
-	}
-
-	function connectQ(){
-		amqp.connect(config.rabbitmq.host).then((conn) => {
-			retry = 0;
-			connClosed = false;
-			logger.info("[AMQP] Connected! Creating channel...");
-			conn.createChannel().then((ch) => {
-				ch.assertQueue(config.rabbitmq.callback_queue, { durable: true });
-				config.rabbitmq.worker_queue && listenToQueue(ch, config.rabbitmq.worker_queue, config.rabbitmq.task_prefetch || 4);
-				config.rabbitmq.model_queue && listenToQueue(ch, config.rabbitmq.model_queue, config.rabbitmq.model_prefetch || 1);
-
-			});
-
-			conn.on("close", () => {
-				if(!connClosed) {
-					//this can be called more than once for some reason. Use a boolean to distinguish first timers.
-					connClosed = true;
-					logger.error("[AMQP] connection closed.");
-					reconnectQ();
-				}
-			});
-
-			conn.on("error", (err)	=> {
-				logger.error("[AMQP] connection error: " + err.message);
-			});
-
-
-		}).catch((err) => {
-			logger.error(`[AMQP] failed to establish connection to rabbit mq: ${err}.`);
-			reconnectQ();
-		});
+		await runBouncer(logDir, cmd,
+			(reply) => callback(JSON.stringify(reply)));
 	}
 
 	logger.info("Initialising bouncer client queue...");
@@ -392,7 +303,7 @@
 		logger.info("Setting umask: " + config.umask);
 		process.umask(config.umask);
 	}
-	testClient().then(() => connectQ());
+	testClient().then(() => connectToQueue(handleMessage, handleMessage));
 
 })();
 
