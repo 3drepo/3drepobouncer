@@ -302,12 +302,7 @@ bool SRCModelExport::generateTreeRepresentation(
 				std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> splitMapping = reSplitter->getSplitMapping();
 				delete reSplitter;
 
-				std::string ext = ".src";
-				bool sepX3d; //requires a separate x3d file if it is a multipart mesh
-				if (sepX3d = mesh->getMeshMapping().size() > 1)
-				{
-					ext += ".mpc";
-				}
+				std::string ext = ".src.mpc";
 
 				if (!textureID.empty())
 				{
@@ -317,10 +312,7 @@ bool SRCModelExport::generateTreeRepresentation(
 				if (success = addMeshToExport(splittedMesh, index, facebuf, idMapBuf, ext))
 				{
 					++index;
-					if (sepX3d)
-					{
-						success &= generateJSONMapping(mesh, scene, splitMapping);
-					}
+					success &= generateJSONMapping(mesh, scene, splitMapping);
 				}
 				else
 				{
