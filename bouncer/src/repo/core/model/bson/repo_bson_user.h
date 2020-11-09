@@ -51,6 +51,7 @@ namespace repo {
 #define REPO_USER_LABEL_SUBS						"subscriptions"
 #define REPO_USER_LABEL_SUBS_BILLING_USER			"billingUser"
 #define REPO_USER_LABEL_VR_ENABLED					"vrEnabled"
+#define REPO_USER_LABEL_SRC_ENABLED					"srcEnabled"
 #define REPO_USER_LABEL_CREATED_AT					"createdAt"
 #define REPO_USER_LABEL_SUB_PAYPAL					"paypal"
 #define REPO_USER_LABEL_SUB_DISCRETIONARY			"discretionary"
@@ -233,6 +234,11 @@ namespace repo {
 				* Check if VR is enabled for this teamspace
 				*/
 				bool isVREnabled() const;
+
+				/**
+				* Check if SRC stashes are enabled for this teamspace
+				*/
+				bool isSrcEnabled() const;
 
 			private:
 				/**
