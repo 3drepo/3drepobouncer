@@ -15,13 +15,31 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <gtest/gtest.h>
+
+#include <repo\manipulator\modelconvertor\import\repo_model_import_3drepo.h>
+#include <repo\lib\repo_log.h>
 
 using namespace repo::manipulator::modelconvertor;
 
-
 TEST(RepoModelImport, ImportModel)
 {
-	// EXPECT_TRUE(true);
-	// EXPECT_EQ(0, 0);
-	// ASSERT_TRUE(true);
+	ModelImportConfig config;
+
+	auto modelConvertor = std::shared_ptr<AbstractModelImport>(new RepoModelImport(config));
+
+	uint8_t errCode = 0;
+
+	std::string filePath = R"(C:\Users\haroo\Desktop\BIMTextureFiles\cube_bim2.bim)";
+
+	modelConvertor->importModel(filePath, errCode);
+
+	repoInfo << "Error code from importModel(): " << errCode <<std::endl;
+
+	auto repoScene = modelConvertor->generateRepoScene(errCode);
+
+	repoInfo << "Error code from generateRepoScene(): " << errCode << std::endl;
+
+
+	EXPECT_EQ(0,errCode);
 }
