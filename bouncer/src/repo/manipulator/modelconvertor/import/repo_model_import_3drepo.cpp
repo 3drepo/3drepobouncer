@@ -363,7 +363,7 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 		inbuf->push(*finCompressed);
 
 		fin = new std::istream(inbuf);
-		char *fileVersion = (char*)malloc(sizeof(*fileVersion *  REPO_VERSION_LENGTH));
+		char fileVersion[REPO_VERSION_LENGTH + 1] = { 0 };
 
 		fin->read(fileVersion, REPO_VERSION_LENGTH);
 
@@ -379,8 +379,6 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 		is32Bit = REPO_V1 == incomingVersion;
 
 		repoInfo << "Loading BIM file [VERSION: " << incomingVersion << "] 32 bit? : " << is32Bit;
-
-		delete fileVersion;
 
 		size_t metaSize = REPO_VERSION_LENGTH + sizeof(fileMeta);
 		// Size of metadata at start
