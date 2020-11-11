@@ -265,6 +265,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 	return result;
 }
 
+// Updates trans_map, node_map, transformations
 void RepoModelImport::createObject(const ptree& tree)
 {
 	int myID = tree.get<int>("id");
@@ -477,49 +478,41 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t &errMsg
 	// Process root node
 	boost::property_tree::ptree root = getNextJSON(sizes[1]);
 	std::string rootName = root.get<std::string>("name", "");
-
 	boost::optional< ptree& > rootBBOX = root.get_child_optional("bbox");
-
 	if (!rootBBOX) {
 		repoError << "No root bounding box specified.";
 		errMsg = REPOERR_MODEL_FILE_READ;
 		return nullptr;
 	}
-
 	boost::optional< ptree& > transMatTree = root.get_child_optional("transformation");
 	repo::lib::RepoMatrix transMat;
-
 	if (transMatTree)
 	{
 		transMat = repo::lib::RepoMatrix(as_vector<float>(root, "transformation"));
 	}
-
 	repo::core::model::TransformationNode *rootNode =
 		new repo::core::model::TransformationNode(
 			repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), rootName, std::vector<repo::lib::RepoUUID>()));
-
 	node_map.push_back(rootNode);
 	trans_map.push_back(transMat);
 	transformations.insert(rootNode);
 
+	// Process children of root node 
 	char comma;
-
 	for (long i = 0; i < file_meta.numChildren; i++)
 	{
 		if (i % 500 == 0 || i == file_meta.numChildren - 1)
 		{
 			repoInfo << "Importing " << i << " of " << file_meta.numChildren << " JSON nodes";
 		}
-
 		fin->read(&comma, 1);
 		boost::property_tree::ptree jsonTree = getNextJSON(sizes[i + 2]);
 		createObject(jsonTree);
 	}
 
-	materials.clear();
-
-	repoInfo << "Attaching materials to parents";
 	// Attach all the parents to the materials
+	repoInfo << "Attaching materials to parents";
+	materials.clear();
 	for (int i = 0; i < matNodeList.size(); i++)
 	{
 		repo::core::model::MaterialNode *tmpMaterial = new repo::core::model::MaterialNode();
@@ -527,22 +520,21 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t &errMsg
 		materials.insert(tmpMaterial);
 	}
 
+	// Preparing reference files
 	std::vector<std::string> fileVect;
 	if (!orgFile.empty())
 		fileVect.push_back(orgFile);
 
+	// Processing meshes
 	repo::core::model::RepoNodeSet meshes;
-	if (!offset.size()) offset = { 0, 0, 0 };
-
+	if (!offset.size()) { offset = { 0, 0, 0 }; }
 	for (const auto &entry : meshEntries) {
 		std::vector<repo::lib::RepoVector3D> vertices;
 		std::vector<std::vector<float>> boundingBox;
-
 		for (const auto &v : entry.rawVertices) {
 			repo::lib::RepoVector3D v32 = { (float)(v.x - offset[0]), (float)(v.y - offset[1]), (float)(v.z - offset[2]) };
 			vertices.push_back(v32);
 		}
-
 		for (const auto &bbArr : entry.boundingBox) {
 			std::vector<float> bb;
 			for (int i = 0; i < bbArr.size(); ++i) {
@@ -550,7 +542,6 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t &errMsg
 			}
 			boundingBox.push_back(bb);
 		}
-
 		auto mesh = repo::core::model::RepoBSONFactory::makeMeshNode(vertices, entry.faces, entry.normals, boundingBox, { entry.parent });
 		repo::core::model::RepoBSONBuilder builder;
 		builder.append(REPO_NODE_LABEL_SHARED_ID, entry.sharedID);
@@ -558,14 +549,13 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t &errMsg
 		meshes.insert(new repo::core::model::MeshNode(mesh.cloneAndAddFields(&changes, false)));
 	}
 
+	// Generate scene
 	repo::core::model::RepoScene * scenePtr = new repo::core::model::RepoScene(fileVect, cameras, meshes, materials, metadata, textures, transformations);
-
 	scenePtr->setWorldOffset(offset);
-
+	
+	// Cleanup
 	delete[] geomBuf;
-
 	finCompressed->close();
-
 	delete fin;
 	delete inbuf;
 	delete finCompressed;
