@@ -76,13 +76,13 @@ namespace repo {
 
 				typedef struct
 				{
-					int64_t headerSize;
-					int64_t geometrySize;
-					int64_t sizesStart;
-					int64_t sizesSize;
-					int64_t matStart;
-					int64_t matSize;
-					int64_t numChildren;
+					int64_t jsonSize;     // Size of the entire JSON segment
+					int64_t dataSize;     // Size of the entire binary footer segment
+					int64_t sizesStart;   // Starting location of the JSON sizes array from the top of file in bytes 
+					int64_t sizesSize;	  // Length of the JSON sizes array in bytes
+					int64_t matStart;	  // Starting location of the JSON materials array from the top of the file in bytes 
+					int64_t matSize;	  // Size of the JSON materials array in bytes
+					int64_t numChildren;  // Number of children of the root node
 				} fileMeta;
 
 				struct mesh_data_t {

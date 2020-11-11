@@ -386,7 +386,7 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 		fin->read((char*)&file_meta, sizeof(fileMeta));
 
 		repoInfo << "META size: " << metaSize;
-		repoInfo << "SIZE: header = " << file_meta.headerSize << " bytes, geometry = " << file_meta.geometrySize << " bytes.";
+		repoInfo << "SIZE: header = " << file_meta.jsonSize << " bytes, geometry = " << file_meta.dataSize << " bytes.";
 		repoInfo << "SIZE ARRAY: location = " << file_meta.sizesStart << " bytes, size = " << file_meta.sizesSize << " bytes.";
 		repoInfo << "MAT ARRAY: location = " << file_meta.matStart << " bytes, size = " << file_meta.matSize << " bytes.";
 		repoInfo << "Number of parts to process : " << file_meta.numChildren;
@@ -404,7 +404,7 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 			}
 			matParents.resize(materials.size());
 
-			skipAheadInFile(file_meta.headerSize + metaSize - (file_meta.matStart + file_meta.matSize));
+			skipAheadInFile(file_meta.jsonSize + metaSize - (file_meta.matStart + file_meta.matSize));
 		}
 		else {
 			skipAheadInFile(file_meta.matStart - metaSize);
@@ -419,13 +419,13 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 			skipAheadInFile(file_meta.sizesStart - (file_meta.matStart + file_meta.matSize));
 			sizes = as_vector<long>(getNextJSON(file_meta.sizesSize));
 
-			skipAheadInFile(file_meta.headerSize + metaSize - (file_meta.sizesStart + file_meta.sizesSize));
+			skipAheadInFile(file_meta.jsonSize + metaSize - (file_meta.sizesStart + file_meta.sizesSize));
 		}
 
 		repoInfo << "Reading geometry buffer";
 
-		geomBuf = new char[file_meta.geometrySize];
-		fin->read(geomBuf, file_meta.geometrySize);
+		geomBuf = new char[file_meta.dataSize];
+		fin->read(geomBuf, file_meta.dataSize);
 
 		finCompressed->close();
 		delete finCompressed;
