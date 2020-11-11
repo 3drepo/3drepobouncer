@@ -306,7 +306,8 @@ bool SRCModelExport::generateTreeRepresentation(
 
 				if (!textureID.empty())
 				{
-					ext += "?tex_uuid=" + textureID;
+					//ext += "?tex_uuid=" + textureID;
+					repoWarning << "Mesh " << mesh->getSharedID() << " has textures but the current Unreal SRC importer does not use them. Textures will be ignored in SRCs.";
 				}
 
 				if (success = addMeshToExport(splittedMesh, index, facebuf, idMapBuf, ext))
