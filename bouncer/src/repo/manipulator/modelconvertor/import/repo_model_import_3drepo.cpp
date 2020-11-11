@@ -523,7 +523,9 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t &errMsg
 	// Preparing reference files
 	std::vector<std::string> fileVect;
 	if (!orgFile.empty())
+	{
 		fileVect.push_back(orgFile);
+	}
 
 	// Processing meshes
 	repo::core::model::RepoNodeSet meshes;
