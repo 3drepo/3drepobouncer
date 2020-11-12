@@ -133,11 +133,13 @@ namespace repo {
 				char *dataBuffer;
 				
 				// Intermediary variables used to keep track of node hierarchy
-				std::vector<repo::core::model::RepoNode *> node_map;		//!< List of all transform nodes in order of decoding
-				std::vector<repo::lib::RepoMatrix> trans_matrix_map;		//!< List of all transformation matrices in same order as node_map
+				std::vector<repo::core::model::RepoNode *> node_map;			//!< List of all transform nodes in order of decoding
+				std::vector<repo::lib::RepoMatrix> trans_matrix_map;			//!< List of all transformation matrices in same order as node_map
+				std::vector<repo::core::model::MaterialNode *> matNodeList;		//!< Stores a list of materials
+				std::vector<std::vector<repo::lib::RepoUUID>> matParents;		//!< Stores the UUIDs of all parents of a given material node in the same order matNodeList
+				std::vector<repo::core::model::MaterialNode *> textureNodeList;	//!< Stores a list of textures
+				std::vector<std::vector<repo::lib::RepoUUID>> textureParents;	//!< Stores the UUIDs of all parents of a given texture node the same order as textureNodelList
 				std::vector<mesh_data_t> meshEntries;
-				std::vector<repo::core::model::MaterialNode *> matNodeList;	//!< Stores a list of materials
-				std::vector<std::vector<repo::lib::RepoUUID>> matParents;	//!< Stores all the parents materials in the same order matNodeList
 
 				// Variables directly used to instantiate the RepoScene
 				repo::core::model::RepoNodeSet cameras;
