@@ -170,6 +170,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 	const repo::lib::RepoMatrix &trans)
 {
 	int materialID = -1;
+	int texturesID = -1;
 
 	int numIndices = mesh.get<int64_t>("numIndices");
 	int numVertices = mesh.get<int64_t>("numVertices");
@@ -204,6 +205,11 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 		if (props->first == REPO_IMPORT_MATERIAL)
 		{
 			materialID = props->second.get_value<int>();
+		}
+
+		if(props->first == REPO_IMPORT_TEXTURES)
+		{
+			texturesID = props->second.get_value<int>();
 		}
 
 		if (props->first == REPO_IMPORT_VERTICES || props->first == REPO_IMPORT_NORMALS)
@@ -283,6 +289,11 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 	if (materialID >= 0)
 	{
 		matParents[materialID].push_back(sharedID);
+	}
+
+	if (texturesID >= 0)
+	{
+		textureParents[texturesID].push_back(sharedID);
 	}
 
 	mesh_data_t result = { vertices, normals, faces, boundingBox, parentID, sharedID };
