@@ -145,8 +145,10 @@ repo::core::model::MaterialNode* RepoModelImport::parseMaterial(const boost::pro
 	return materialNode;
 }
 
-repo::core::model::TextureNode* RepoModelImport::parseTexture(const boost::property_tree::ptree& textureTree, char * dataBuffer)
+repo::core::model::TextureNode* RepoModelImport::parseTexture(const boost::property_tree::ptree& textureTree, char * const dataBuffer)
 {
+	// TODO: error checking using the REPOERR_LOAD_SCENE_MISSING_TEXTURE flag
+
 	std::string name = textureTree.get_child("filename").data();
 	uint32_t byteCount = textureTree.get<uint32_t>("numImageBytes");
 	uint32_t width = textureTree.get<uint32_t>("width");
