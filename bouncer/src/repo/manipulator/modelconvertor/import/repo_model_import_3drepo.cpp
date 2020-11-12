@@ -380,11 +380,16 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 		{
 			fin->read((char*)&file_meta, REPO_V2_FILEMETA_BYTE_LEN);
 		}
-		repoInfo << "META size: " << metaSize;
-		repoInfo << "SIZE: header = " << file_meta.jsonSize << " bytes, geometry = " << file_meta.dataSize << " bytes.";
-		repoInfo << "SIZE ARRAY: location = " << file_meta.sizesStart << " bytes, size = " << file_meta.sizesSize << " bytes.";
-		repoInfo << "MAT ARRAY: location = " << file_meta.matStart << " bytes, size = " << file_meta.matSize << " bytes.";
-		repoInfo << "Number of parts to process : " << file_meta.numChildren;
+		repoInfo << std::left << std::setw(30) << "File meta size: "				<< metaSize;
+		repoInfo << std::left << std::setw(30) << "JSON size: "						<< file_meta.jsonSize	  << " bytes";
+		repoInfo << std::left << std::setw(30) << "Data buffer size: "				<< file_meta.dataSize	  << " bytes";
+		repoInfo << std::left << std::setw(30) << "\"sizes\" array start location: "<< file_meta.sizesStart	  << " bytes";
+		repoInfo << std::left << std::setw(30) << "\"sizes\" array size: "			<< file_meta.sizesSize	  << " bytes";
+		repoInfo << std::left << std::setw(30) << "\"materials\" array location: "	<< file_meta.matStart	  << " bytes";
+		repoInfo << std::left << std::setw(30) << "\"materials\" array size: "		<< file_meta.matSize	  << " bytes";
+		repoInfo << std::left << std::setw(30) << "\"textures\" array location: "	<< file_meta.textureSize  << " bytes";
+		repoInfo << std::left << std::setw(30) << "\"textures\" array size: "		<< file_meta.textureStart << " bytes";
+		repoInfo << std::left << std::setw(30) << "Number of parts to process:"		<< file_meta.numChildren;
 
 		// Parse the materials and load sizes vector for navigation in JSON
 		if (file_meta.matStart > file_meta.sizesStart)

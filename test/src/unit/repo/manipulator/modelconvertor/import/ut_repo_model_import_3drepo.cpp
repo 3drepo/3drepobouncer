@@ -30,7 +30,7 @@ TEST(RepoModelImport, ImportModel)
 
 	uint8_t errCode = 0;
 
-	std::string filePath = R"(C:\Users\haroo\Desktop\BIMTextureFiles\cube_bim2.bim)";
+	std::string filePath = R"(C:\Users\haroo\Desktop\BIMTextureFiles\cube_bim3.bim)";
 
 	modelConvertor->importModel(filePath, errCode);
 
