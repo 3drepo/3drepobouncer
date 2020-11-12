@@ -26,20 +26,22 @@ TEST(RepoModelImport, ImportModel)
 {
 	ModelImportConfig config;
 
-	auto modelConvertor = std::shared_ptr<AbstractModelImport>(new RepoModelImport(config));
-
 	uint8_t errCode = 0;
-
+	auto modelConvertor = std::unique_ptr<AbstractModelImport>(new RepoModelImport(config));
 	std::string filePath = R"(C:\Users\haroo\Desktop\BIMTextureFiles\cube_bim3.bim)";
-
 	modelConvertor->importModel(filePath, errCode);
-
-	repoInfo << "Error code from importModel(): " << errCode <<std::endl;
-
+	repoInfo << "Error code from importModel(): " << (int)errCode;
 	auto repoScene = modelConvertor->generateRepoScene(errCode);
+	repoInfo << "Error code from generateRepoScene(): " << (int)errCode;
 
-	repoInfo << "Error code from generateRepoScene(): " << errCode << std::endl;
 
+	errCode = 0;
+	modelConvertor = std::unique_ptr<AbstractModelImport>(new RepoModelImport(config));
+	filePath = R"(C:\Users\haroo\Desktop\BIMTextureFiles\cube_bim2.bim)";
+	modelConvertor->importModel(filePath, errCode);
+	repoInfo << "Error code from importModel(): " << (int)errCode;
+	repoScene = modelConvertor->generateRepoScene(errCode);
+	repoInfo << "Error code from generateRepoScene(): " << (int)errCode;
 
 	EXPECT_EQ(0,errCode);
 }
