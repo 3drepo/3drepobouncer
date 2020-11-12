@@ -97,7 +97,8 @@ namespace repo {
 					repo::lib::RepoUUID sharedID;
 				};
 
-				repo::core::model::MaterialNode* parseMaterial(const boost::property_tree::ptree &pt);
+				repo::core::model::MaterialNode* parseMaterial(const boost::property_tree::ptree& pt);
+				repo::core::model::TextureNode* parseTexture(const boost::property_tree::ptree& textureTree, char * dataBuffer);
 				repo::core::model::MetadataNode*  createMetadataNode(const boost::property_tree::ptree &metadata, const std::string &parentName, const repo::lib::RepoUUID &parentID);
 				mesh_data_t createMeshRecord(const boost::property_tree::ptree &geometry, const std::string &parentName, const repo::lib::RepoUUID &parentID, const repo::lib::RepoMatrix &trans);
 
@@ -138,7 +139,6 @@ namespace repo {
 				std::vector<repo::lib::RepoMatrix> trans_matrix_map;			//!< List of all transformation matrices in same order as node_map
 				std::vector<repo::core::model::MaterialNode *> matNodeList;		//!< Stores a list of materials
 				std::vector<std::vector<repo::lib::RepoUUID>> matParents;		//!< Stores the UUIDs of all parents of a given material node in the same order matNodeList
-				std::vector<repo::core::model::MaterialNode *> textureNodeList;	//!< Stores a list of textures
 				std::vector<repo::core::model::TextureNode *> textureNodeList;	//!< Stores a list of textures
 				std::vector<std::vector<repo::lib::RepoUUID>> textureParents;	//!< Stores the UUIDs of all parents of a given texture node the same order as textureNodelList
 				std::vector<mesh_data_t> meshEntries;

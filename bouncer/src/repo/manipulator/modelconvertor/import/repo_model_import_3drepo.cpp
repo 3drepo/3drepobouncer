@@ -86,7 +86,7 @@ repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(
 	return metaNode;
 }
 
-repo::core::model::MaterialNode *RepoModelImport::parseMaterial(const boost::property_tree::ptree &matTree)
+repo::core::model::MaterialNode* RepoModelImport::parseMaterial(const boost::property_tree::ptree &matTree)
 {
 	repo_material_t repo_material;
 
@@ -133,6 +133,35 @@ repo::core::model::MaterialNode *RepoModelImport::parseMaterial(const boost::pro
 
 	return materialNode;
 }
+
+repo::core::model::TextureNode* RepoModelImport::parseTexture(const boost::property_tree::ptree& textureTree, char * dataBuffer)
+{
+	std::string txtName = textureTree.get_child("filename").data();
+	uint32_t txtByteCount = textureTree.get<uint32_t>("numImageBytes");
+	uint32_t txtWidth = textureTree.get<uint32_t>("width");
+	uint32_t txtHeight = textureTree.get<uint32_t>("height");
+
+	std::vector<uint32_t> txtDataStartEnd = as_vector<uint32_t>(textureTree, "imageBytes");
+	// Error if size is not 2
+
+	char* txtData = &dataBuffer[txtDataStartEnd[0]];
+
+	repo::core::model::TextureNode* textureNode =
+		new repo::core::model::TextureNode(
+			repo::core::model::RepoBSONFactory::makeTextureNode(
+				txtName,
+				txtData,
+				txtByteCount,
+				txtWidth,
+				txtHeight,
+				REPO_NODE_API_LEVEL_1));
+
+	textures.insert(textureNode);
+	textureNodeList.push_back(textureNode);
+
+	return textureNode;
+}
+
 
 RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 	const ptree &mesh,
@@ -431,7 +460,7 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 		{
 			for (ptree::value_type element : texturesRoot.get())
 			{
-				//parseTexture(element.second);
+				parseTexture(element.second, dataBuffer);
 			}
 			textureParents.resize(textures.size());
 		}
