@@ -270,7 +270,7 @@ void RepoModelImport::createObject(const ptree& tree)
 	}
 
 	repo::lib::RepoUUID parentSharedID = node_map[myParent]->getSharedID();
-	repo::lib::RepoMatrix parentTransform = trans_map[myParent];
+	repo::lib::RepoMatrix parentTransform = trans_matrix_map[myParent];
 
 	std::vector<repo::lib::RepoUUID> parentIDs;
 	parentIDs.push_back(parentSharedID);
@@ -284,7 +284,7 @@ void RepoModelImport::createObject(const ptree& tree)
 		transMat = repo::lib::RepoMatrix(as_vector<float>(tree, "transformation"));
 	}
 
-	trans_map.push_back(parentTransform * transMat);
+	trans_matrix_map.push_back(parentTransform * transMat);
 
 	repo::core::model::TransformationNode * transNode =
 		new repo::core::model::TransformationNode(
@@ -306,7 +306,7 @@ void RepoModelImport::createObject(const ptree& tree)
 
 		if (props->first == REPO_IMPORT_GEOMETRY)
 		{
-			auto mesh = createMeshRecord(props->second, transName, transID, trans_map.back());
+			auto mesh = createMeshRecord(props->second, transName, transID, trans_matrix_map.back());
 			metaParentIDs.push_back(mesh.sharedID);
 			meshEntries.push_back(mesh);
 		}
@@ -485,7 +485,7 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t &errMsg
 		new repo::core::model::TransformationNode(
 			repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), rootName, std::vector<repo::lib::RepoUUID>()));
 	node_map.push_back(rootNode);
-	trans_map.push_back(transMat);
+	trans_matrix_map.push_back(transMat);
 	transformations.insert(rootNode);
 
 	// Process children of root node 

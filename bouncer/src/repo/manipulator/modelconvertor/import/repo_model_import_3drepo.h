@@ -102,7 +102,7 @@ namespace repo {
 				 * @brief Creates relevant nodes for given child
 				 * of the root node in the BIM file
 				 * Directly updates:
-				 * trans_map
+				 * trans_matrix_map
 				 * node_map
 				 * transformations
 				 * @param tree 
@@ -123,7 +123,7 @@ namespace repo {
 				
 				// Intermediary variables used to keep track of node hierarchy
 				std::vector<repo::core::model::RepoNode *> node_map;		//!< List of all transform nodes in order of decoding
-				std::vector<repo::lib::RepoMatrix> trans_map;				//!< List of all transformation matrices in same order as node_map
+				std::vector<repo::lib::RepoMatrix> trans_matrix_map;		//!< List of all transformation matrices in same order as node_map
 				std::vector<mesh_data_t> meshEntries;
 				std::vector<repo::core::model::MaterialNode *> matNodeList;	//!< Stores a list of materials
 				std::vector<std::vector<repo::lib::RepoUUID>> matParents;	//!< Stores all the parents materials in the same order matNodeList
