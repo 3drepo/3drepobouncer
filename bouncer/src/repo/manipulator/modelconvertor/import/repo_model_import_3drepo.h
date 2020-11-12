@@ -135,12 +135,11 @@ namespace repo {
 				char *dataBuffer;
 				
 				// Intermediary variables used to keep track of node hierarchy
-				std::vector<repo::core::model::RepoNode *> node_map;			//!< List of all transform nodes in order of decoding
-				std::vector<repo::lib::RepoMatrix> trans_matrix_map;			//!< List of all transformation matrices in same order as node_map
-				std::vector<repo::core::model::MaterialNode *> matNodeList;		//!< Stores a list of materials
-				std::vector<std::vector<repo::lib::RepoUUID>> matParents;		//!< Stores the UUIDs of all parents of a given material node in the same order matNodeList
-				std::vector<repo::core::model::TextureNode *> textureNodeList;	//!< Stores a list of textures
-				std::vector<std::vector<repo::lib::RepoUUID>> textureParents;	//!< Stores the UUIDs of all parents of a given texture node the same order as textureNodelList
+				std::vector<repo::core::model::RepoNode *> node_map;				//!< List of all transform nodes in order of decoding
+				std::vector<repo::lib::RepoMatrix> trans_matrix_map;				//!< List of all transformation matrices in same order as node_map
+				std::vector<repo::core::model::MaterialNode *> matNodeList;			//!< Stores a list of materials
+				std::vector<std::vector<repo::lib::RepoUUID>> matParents;			//!< Stores the UUIDs of all parents of a given material node in the same order matNodeList
+				std::map<int, std::vector<repo::lib::RepoUUID>> textureIdToParents; //!< Maps a texture to the UUID of all the parents that reference it 
 				std::vector<mesh_data_t> meshEntries;
 
 				// Variables directly used to instantiate the RepoScene

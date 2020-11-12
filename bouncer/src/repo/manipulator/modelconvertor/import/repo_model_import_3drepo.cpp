@@ -89,6 +89,7 @@ repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(
 repo::core::model::MaterialNode* RepoModelImport::parseMaterial(const boost::property_tree::ptree &matTree)
 {
 	repo_material_t repo_material;
+	int textureId = -1;
 
 	if (matTree.find("diffuse") != matTree.not_found())
 		repo_material.diffuse = as_vector<float>(matTree, "diffuse");
@@ -120,6 +121,11 @@ repo::core::model::MaterialNode* RepoModelImport::parseMaterial(const boost::pro
 	else
 		repo_material.shininess = 0.0f;
 
+	if (matTree.find("texture") != matTree.not_found())
+	{
+		textureId = matTree.get<int>("texture");
+	}
+
 	repo_material.shininessStrength = 0.25f;
 	repo_material.isWireframe = false;
 	repo_material.isTwoSided = false;
@@ -131,6 +137,11 @@ repo::core::model::MaterialNode* RepoModelImport::parseMaterial(const boost::pro
 	materials.insert(materialNode);
 	matNodeList.push_back(materialNode);
 
+	if(textureId >= 0)
+	{
+		textureIdToParents[textureId].push_back(materialNode->getUniqueID());
+	}
+
 	return materialNode;
 }
 
@@ -140,6 +151,7 @@ repo::core::model::TextureNode* RepoModelImport::parseTexture(const boost::prope
 	uint32_t byteCount = textureTree.get<uint32_t>("numImageBytes");
 	uint32_t width = textureTree.get<uint32_t>("width");
 	uint32_t height = textureTree.get<uint32_t>("height");
+	uint32_t id = textureTree.get<uint32_t>("id");
 
 	std::vector<uint32_t> DataStartEnd = as_vector<uint32_t>(textureTree, "imageBytes");
 	// Error if size is not 2
@@ -155,9 +167,10 @@ repo::core::model::TextureNode* RepoModelImport::parseTexture(const boost::prope
 				width,
 				height,
 				REPO_NODE_API_LEVEL_1));
-
-	textures.insert(textureNode);
-	textureNodeList.push_back(textureNode);
+	
+	repo::core::model::TextureNode* tmpTexture = new repo::core::model::TextureNode();
+	*tmpTexture = textureNode->cloneAndAddParent(textureIdToParents[id]);
+	textures.insert(tmpTexture);
 
 	return textureNode;
 }
@@ -170,7 +183,6 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 	const repo::lib::RepoMatrix &trans)
 {
 	int materialID = -1;
-	int texturesID = -1;
 
 	int numIndices = mesh.get<int64_t>("numIndices");
 	int numVertices = mesh.get<int64_t>("numVertices");
@@ -205,11 +217,6 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 		if (props->first == REPO_IMPORT_MATERIAL)
 		{
 			materialID = props->second.get_value<int>();
-		}
-
-		if(props->first == REPO_IMPORT_TEXTURES)
-		{
-			texturesID = props->second.get_value<int>();
 		}
 
 		if (props->first == REPO_IMPORT_VERTICES || props->first == REPO_IMPORT_NORMALS)
@@ -289,11 +296,6 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 	if (materialID >= 0)
 	{
 		matParents[materialID].push_back(sharedID);
-	}
-
-	if (texturesID >= 0)
-	{
-		textureParents[texturesID].push_back(sharedID);
 	}
 
 	mesh_data_t result = { vertices, normals, faces, boundingBox, parentID, sharedID };
@@ -474,7 +476,6 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 			{
 				parseTexture(element.second, dataBuffer);
 			}
-			textureParents.resize(textures.size());
 			repoInfo << "Loaded: " << textures.size() << " textures";
 		}
 
@@ -566,16 +567,6 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t &errMsg
 		repo::core::model::MaterialNode *tmpMaterial = new repo::core::model::MaterialNode();
 		*tmpMaterial = matNodeList[i]->cloneAndAddParent(matParents[i]);
 		materials.insert(tmpMaterial);
-	}
-
-	// Attach all the parents to the textures
-	repoInfo << "Attaching textures to parents";
-	textures.clear();
-	for (int i = 0; i < textureNodeList.size(); i++)
-	{
-		repo::core::model::TextureNode* tmpTexture = new repo::core::model::TextureNode();
-		*tmpTexture = textureNodeList[i]->cloneAndAddParent(textureParents[i]);
-		textures.insert(tmpTexture);
 	}
 
 	// Preparing reference files
