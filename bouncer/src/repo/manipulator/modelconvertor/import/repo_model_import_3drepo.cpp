@@ -391,7 +391,13 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 		repoInfo << std::left << std::setw(30) << "\"textures\" array size: "		<< file_meta.textureStart << " bytes";
 		repoInfo << std::left << std::setw(30) << "Number of parts to process:"		<< file_meta.numChildren;
 
+		// Load full JSON tree
 		boost::property_tree::ptree jsonRoot = getNextJSON(file_meta.jsonSize);
+
+		// Load binary data
+		repoInfo << "Reading data buffer";
+		dataBuffer = new char[file_meta.dataSize];
+		fin->read(dataBuffer, file_meta.dataSize);
 
 		// Loading in required JSON nodes
 		boost::optional<ptree&> materialsRoot = jsonRoot.get_child_optional("materials");
@@ -429,11 +435,6 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 			}
 			textureParents.resize(textures.size());
 		}
-
-		// Load binary data
-		repoInfo << "Reading data buffer";
-		dataBuffer = new char[file_meta.dataSize];
-		fin->read(dataBuffer, file_meta.dataSize);
 
 		// Clean up
 		finCompressed->close();
