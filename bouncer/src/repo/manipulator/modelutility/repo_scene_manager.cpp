@@ -433,6 +433,14 @@ bool SceneManager::isVrEnabled(
 	return user.isVREnabled();
 }
 
+bool SceneManager::isSrcEnabled(
+	const repo::core::model::RepoScene* scene,
+	repo::core::handler::AbstractDatabaseHandler* handler) const
+{
+	repo::core::model::RepoUser user(handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, BSON("user" << scene->getDatabaseName())));
+	return user.isSrcEnabled();
+}
+
 bool SceneManager::removeStashGraph(
 	repo::core::model::RepoScene                 *scene,
 	repo::core::handler::AbstractDatabaseHandler *handler

@@ -188,6 +188,19 @@ uint8_t RepoManipulator::commitScene(
 					repoError << "failed to commit selection tree";
 			}
 
+			if (success)
+			{
+				modelutility::SceneManager sceneManager;
+				if (sceneManager.isSrcEnabled(scene, handler))
+				{
+					repoInfo << "Generating SRC stashes...";
+					if (success = generateAndCommitSRCBuffer(databaseAd, cred, bucketName, bucketRegion, scene))
+						repoInfo << "SRC Stashes Stored into the database";
+					else
+						repoError << "failed to commit SRC";
+				}
+			}
+
 			errCode = success ? REPOERR_OK : REPOERR_UPLOAD_FAILED;
 		}
 	}

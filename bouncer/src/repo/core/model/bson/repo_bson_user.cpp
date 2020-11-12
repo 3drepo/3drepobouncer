@@ -294,3 +294,10 @@ bool RepoUser::isVREnabled() const
 	return customData.isEmpty() ? false : customData.getBoolField(REPO_USER_LABEL_VR_ENABLED);
 }
 
+bool RepoUser::isSrcEnabled() const
+{
+	auto customData = getCustomDataBSON();
+
+	return customData.isEmpty() ? false : customData.getBoolField(REPO_USER_LABEL_SRC_ENABLED);
+}
+
