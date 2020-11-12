@@ -41,7 +41,10 @@ RepoModelImport::~RepoModelImport()
 {
 }
 
-repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(const ptree &metaTree, const std::string &parentName, const repo::lib::RepoUUID &parentID)
+repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(
+	const ptree &metaTree, 
+	const std::string &parentName, 
+	const repo::lib::RepoUUID &parentID)
 {
 	std::vector<std::string> keys, values;
 
