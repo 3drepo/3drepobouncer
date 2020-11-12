@@ -141,8 +141,6 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 	const repo::lib::RepoUUID &parentID,
 	const repo::lib::RepoMatrix &trans)
 {
-	repo::core::model::MaterialNode *materialNode;
-
 	int materialID = -1;
 
 	int numIndices = mesh.get<int64_t>("numIndices");
@@ -179,7 +177,6 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 		if (props->first == REPO_IMPORT_MATERIAL)
 		{
 			materialID = props->second.get_value<int>();
-			materialNode = matNodeList[materialID];
 		}
 
 		if (props->first == REPO_IMPORT_VERTICES || props->first == REPO_IMPORT_NORMALS)
