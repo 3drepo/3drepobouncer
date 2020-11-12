@@ -101,7 +101,7 @@ namespace repo {
 				bool is32Bit = false;
 				fileMeta file_meta;
 				std::vector<long> sizes;
-				char *geomBuf;
+				char *dataBuffer;
 				
 				// Intermediary variables used to keep track of node hierarchy
 				std::vector<repo::core::model::RepoNode *> node_map;

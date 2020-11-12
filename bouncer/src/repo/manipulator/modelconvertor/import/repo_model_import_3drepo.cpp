@@ -178,8 +178,8 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 		{
 			std::vector<int64_t> startEnd = as_vector<int64_t>(mesh, props->first);
 
-			double *tmpVerticesDouble = (double *)(geomBuf + startEnd[0]);
-			float *tmpVerticesSingle = (float *)(geomBuf + startEnd[0]);
+			double *tmpVerticesDouble = (double *)(dataBuffer + startEnd[0]);
+			float *tmpVerticesSingle = (float *)(dataBuffer + startEnd[0]);
 
 			for (int i = 0; i < numVertices; i++)
 			{
@@ -220,7 +220,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 		{
 			std::vector<int64_t> startEnd = as_vector<int64_t>(mesh, REPO_IMPORT_INDICES);
 
-			uint32_t *tmpIndices = (uint32_t*)(geomBuf + startEnd[0]);
+			uint32_t *tmpIndices = (uint32_t*)(dataBuffer + startEnd[0]);
 
 			for (int i = 0; i < numIndices; i += 3)
 			{
@@ -416,8 +416,8 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 
 		repoInfo << "Reading geometry buffer";
 
-		geomBuf = new char[file_meta.dataSize];
-		fin->read(geomBuf, file_meta.dataSize);
+		dataBuffer = new char[file_meta.dataSize];
+		fin->read(dataBuffer, file_meta.dataSize);
 
 		finCompressed->close();
 		delete finCompressed;
@@ -548,7 +548,7 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t &errMsg
 	scenePtr->setWorldOffset(offset);
 	
 	// Cleanup
-	delete[] geomBuf;
+	delete[] dataBuffer;
 	finCompressed->close();
 	delete fin;
 	delete inbuf;
