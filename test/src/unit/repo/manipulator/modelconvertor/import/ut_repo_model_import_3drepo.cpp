@@ -17,8 +17,8 @@
 
 #include <gtest/gtest.h>
 
-#include <repo\manipulator\modelconvertor\import\repo_model_import_3drepo.h>
-#include <repo\lib\repo_log.h>
+#include <repo/manipulator/modelconvertor/import/repo_model_import_3drepo.h>
+#include <repo/lib/repo_log.h>
 
 using namespace repo::manipulator::modelconvertor;
 
