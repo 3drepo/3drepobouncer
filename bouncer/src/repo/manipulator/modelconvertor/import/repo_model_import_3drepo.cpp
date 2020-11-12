@@ -372,7 +372,14 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 		// Loading file metadata
 		repoInfo << "Loading BIM file [VERSION: " << incomingVersion << "] 32 bit? : " << areVertices32Bit;
 		size_t metaSize = REPO_VERSION_LENGTH + sizeof(fileMeta);
-		fin->read((char*)&file_meta, sizeof(fileMeta));
+		if(incomingVersion == REPO_V3)
+		{
+			fin->read((char*)&file_meta, REPO_V3_FILEMETA_BYTE_LEN);
+		}
+		else
+		{
+			fin->read((char*)&file_meta, REPO_V2_FILEMETA_BYTE_LEN);
+		}
 		repoInfo << "META size: " << metaSize;
 		repoInfo << "SIZE: header = " << file_meta.jsonSize << " bytes, geometry = " << file_meta.dataSize << " bytes.";
 		repoInfo << "SIZE ARRAY: location = " << file_meta.sizesStart << " bytes, size = " << file_meta.sizesSize << " bytes.";

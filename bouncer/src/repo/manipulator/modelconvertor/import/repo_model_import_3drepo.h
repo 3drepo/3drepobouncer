@@ -54,25 +54,36 @@ namespace repo {
 
 			const std::string REPO_IMPORT_BBOX = "bbox";
 
-			const std::string REPO_V1 = "BIM001";
-			const std::string REPO_V2 = "BIM002";
-
-			const std::set<std::string> supportedFileVersions = { REPO_V1, REPO_V2 };
 			const static int REPO_VERSION_LENGTH = 6;
 
 			class RepoModelImport : public AbstractModelImport
 			{
 			private:
+				const std::string REPO_V1 = "BIM001";
+				const std::string REPO_V2 = "BIM002";
+				const std::string REPO_V3 = "BIM003";
+				const std::set<std::string> supportedFileVersions = 
+				{ 
+					REPO_V1, 
+					REPO_V2,
+					REPO_V3
+				};
+
+				const int REPO_V1_FILEMETA_BYTE_LEN = 56;
+				const int REPO_V2_FILEMETA_BYTE_LEN = REPO_V1_FILEMETA_BYTE_LEN;
+				const int REPO_V3_FILEMETA_BYTE_LEN = 72;
 
 				typedef struct
 				{
-					int64_t jsonSize;     // Size of the entire JSON segment
-					int64_t dataSize;     // Size of the entire binary footer segment
-					int64_t sizesStart;   // Starting location of the JSON sizes array from the top of file in bytes 
-					int64_t sizesSize;	  // Length of the JSON sizes array in bytes
-					int64_t matStart;	  // Starting location of the JSON materials array from the top of the file in bytes 
-					int64_t matSize;	  // Size of the JSON materials array in bytes
-					int64_t numChildren;  // Number of children of the root node
+					int64_t jsonSize;			//!< Size of the entire JSON segment
+					int64_t dataSize;			//!< Size of the entire binary footer segment
+					int64_t sizesStart;			//!< Starting location of the JSON sizes array from the top of file in bytes 
+					int64_t sizesSize;			//!< Length of the JSON sizes array in bytes
+					int64_t matStart;			//!< Starting location of the JSON materials array from the top of the file in bytes 
+					int64_t matSize;			//!< Size of the JSON materials array in bytes
+					int64_t numChildren;		//!< Number of children of the root node
+					int64_t textureStart = -1;	//!< Starting location of the JSON textures array from the top of the file in bytes 
+					int64_t textureSize  = -1;  //!< Size of the JSON textures array in bytes
 				} fileMeta;
 
 				struct mesh_data_t 
