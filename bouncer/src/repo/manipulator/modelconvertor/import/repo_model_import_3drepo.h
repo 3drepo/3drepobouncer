@@ -75,7 +75,8 @@ namespace repo {
 					int64_t numChildren;  // Number of children of the root node
 				} fileMeta;
 
-				struct mesh_data_t {
+				struct mesh_data_t 
+				{
 					std::vector<repo::lib::RepoVector3D64> rawVertices;
 					std::vector<repo::lib::RepoVector3D> normals;
 					std::vector<repo_face_t> faces;
@@ -87,8 +88,25 @@ namespace repo {
 				repo::core::model::MaterialNode* parseMaterial(const boost::property_tree::ptree &pt);
 				repo::core::model::MetadataNode*  createMetadataNode(const boost::property_tree::ptree &metadata, const std::string &parentName, const repo::lib::RepoUUID &parentID);
 				mesh_data_t createMeshRecord(const boost::property_tree::ptree &geometry, const std::string &parentName, const repo::lib::RepoUUID &parentID, const repo::lib::RepoMatrix &trans);
+
+				/**
+				 * @brief Creates a property tree from the current
+				 * position in the fine input stream (fin)
+				 * @param number of chars to read
+				 * @return boost poperty tree
+				*/
 				boost::property_tree::ptree getNextJSON(long jsonSize);
 				void skipAheadInFile(long amount);
+
+				/**
+				 * @brief Creates relevant nodes for given child
+				 * of the root node in the BIM file
+				 * Directly updates:
+				 * trans_map
+				 * node_map
+				 * transformations
+				 * @param tree 
+				*/
 				void createObject(const boost::property_tree::ptree& tree);
 
 				// File handling variables
@@ -104,11 +122,11 @@ namespace repo {
 				char *dataBuffer;
 				
 				// Intermediary variables used to keep track of node hierarchy
-				std::vector<repo::core::model::RepoNode *> node_map;
-				std::vector<repo::lib::RepoMatrix> trans_map;
-				std::vector<repo::core::model::MaterialNode *> matNodeList;
-				std::vector<std::vector<repo::lib::RepoUUID>> matParents;
+				std::vector<repo::core::model::RepoNode *> node_map;		//!< List of all transform nodes in order of decoding
+				std::vector<repo::lib::RepoMatrix> trans_map;				//!< List of all transformation matrices in same order as node_map
 				std::vector<mesh_data_t> meshEntries;
+				std::vector<repo::core::model::MaterialNode *> matNodeList;	//!< Stores a list of materials
+				std::vector<std::vector<repo::lib::RepoUUID>> matParents;	//!< Stores all the parents materials in the same order matNodeList
 
 				// Variables directly used to instantiate the RepoScene
 				repo::core::model::RepoNodeSet cameras;

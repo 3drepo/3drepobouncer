@@ -257,7 +257,6 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 	return result;
 }
 
-// Updates trans_map, node_map, transformations
 void RepoModelImport::createObject(const ptree& tree)
 {
 	int myID = tree.get<int>("id");
