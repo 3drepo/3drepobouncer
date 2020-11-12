@@ -344,100 +344,84 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 	repoInfo << "IMPORT [" << fileName << "]";
 	repoInfo << "=== IMPORTING MODEL WITH REPO IMPORTER ===";
 
+	// Reading in file
 	finCompressed = new std::ifstream(filePath, std::ios_base::in | std::ios::binary);
-
 	if (finCompressed)
 	{
 		inbuf = new boost::iostreams::filtering_streambuf<boost::iostreams::input>();
-
 #ifndef REPO_BOOST_NO_GZIP
 		inbuf->push(boost::iostreams::gzip_decompressor());
 #else
 		repoWarning << "Gzip is not compiled into Boost library, .bim imports may not work as intended";
 #endif
 		inbuf->push(*finCompressed);
-
 		fin = new std::istream(inbuf);
+
+		// Check the BIM file format version
 		char fileVersion[REPO_VERSION_LENGTH + 1] = { 0 };
-
 		fin->read(fileVersion, REPO_VERSION_LENGTH);
-
 		std::string incomingVersion = fileVersion;
-
 		if (supportedFileVersions.find(incomingVersion) == supportedFileVersions.end())
 		{
 			repoError << "Unsupported BIM file version: " << fileVersion;
 			err = REPOERR_UNSUPPORTED_BIM_VERSION;
 			return false;
 		}
-
 		areVertices32Bit = REPO_V1 == incomingVersion;
 
+		// Loading file metadata
 		repoInfo << "Loading BIM file [VERSION: " << incomingVersion << "] 32 bit? : " << areVertices32Bit;
-
 		size_t metaSize = REPO_VERSION_LENGTH + sizeof(fileMeta);
-		// Size of metadata at start
 		fin->read((char*)&file_meta, sizeof(fileMeta));
-
 		repoInfo << "META size: " << metaSize;
 		repoInfo << "SIZE: header = " << file_meta.jsonSize << " bytes, geometry = " << file_meta.dataSize << " bytes.";
 		repoInfo << "SIZE ARRAY: location = " << file_meta.sizesStart << " bytes, size = " << file_meta.sizesSize << " bytes.";
 		repoInfo << "MAT ARRAY: location = " << file_meta.matStart << " bytes, size = " << file_meta.matSize << " bytes.";
 		repoInfo << "Number of parts to process : " << file_meta.numChildren;
 
+		// Parse the materials and load sizes vector for navigation in JSON
 		if (file_meta.matStart > file_meta.sizesStart)
 		{
 			skipAheadInFile(file_meta.sizesStart - metaSize);
 			sizes = as_vector<long>(getNextJSON(file_meta.sizesSize));
-
 			skipAheadInFile(file_meta.matStart - (file_meta.sizesStart + file_meta.sizesSize));
-
 			boost::property_tree::ptree materials = getNextJSON(file_meta.matSize);
 			for (const auto& item : materials) {
 				parseMaterial(item.second);
 			}
 			matParents.resize(materials.size());
-
 			skipAheadInFile(file_meta.jsonSize + metaSize - (file_meta.matStart + file_meta.matSize));
 		}
 		else {
 			skipAheadInFile(file_meta.matStart - metaSize);
-
 			boost::property_tree::ptree materialsArr = getNextJSON(file_meta.matSize);
 			for (const auto& item : materialsArr) {
 				parseMaterial(item.second);
 			}
-
 			matParents.resize(materials.size());
-
 			skipAheadInFile(file_meta.sizesStart - (file_meta.matStart + file_meta.matSize));
 			sizes = as_vector<long>(getNextJSON(file_meta.sizesSize));
-
 			skipAheadInFile(file_meta.jsonSize + metaSize - (file_meta.sizesStart + file_meta.sizesSize));
 		}
 
-		repoInfo << "Reading geometry buffer";
-
+		repoInfo << "Reading data buffer";
 		dataBuffer = new char[file_meta.dataSize];
 		fin->read(dataBuffer, file_meta.dataSize);
 
+		// Clean up
 		finCompressed->close();
 		delete finCompressed;
-
 		finCompressed = new std::ifstream(filePath, std::ios_base::in | std::ios::binary);
-
 		delete fin;
 		delete inbuf;
 
+		// Reloading file, skipping to the root start. No seekg for GZIPped files.
 		inbuf = new boost::iostreams::filtering_streambuf<boost::iostreams::input>();
 #ifndef REPO_BOOST_NO_GZIP
 		inbuf->push(boost::iostreams::gzip_decompressor());
 #endif
 		inbuf->push(*finCompressed);
-
 		fin = new std::istream(inbuf);
-
-		// Skip to the root start. No seekg for GZIPped files.
 		skipAheadInFile(sizes[0]);
 
 		return true;

@@ -118,7 +118,7 @@ namespace repo {
 				// Source file meta data storage
 				bool areVertices32Bit = false;
 				fileMeta file_meta;
-				std::vector<long> sizes;
+				std::vector<long> sizes; //!< Sizes of the nodes component, used for navigation.
 				char *dataBuffer;
 				
 				// Intermediary variables used to keep track of node hierarchy
@@ -162,7 +162,8 @@ namespace repo {
 				virtual repo::core::model::RepoScene* generateRepoScene(uint8_t &errMsg);
 
 				/**
-				* Import model from a given file
+				* Import model from a given file.
+				* Loads material nodes.
 				* This does not generate the Repo Scene Graph
 				* Use generateRepoScene() to generate a Repo Scene Graph.
 				* @param path to the file
