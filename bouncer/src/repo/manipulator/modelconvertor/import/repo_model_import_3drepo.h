@@ -34,6 +34,7 @@
 #include "../../../core/model/bson/repo_node_mesh.h"
 #include "../../../core/model/bson/repo_node_metadata.h"
 #include "../../../core/model/bson/repo_node_transformation.h"
+#include "../../../core/model/bson/repo_node_texture.h"
 
 namespace repo {
 	namespace manipulator {
@@ -138,6 +139,7 @@ namespace repo {
 				std::vector<repo::core::model::MaterialNode *> matNodeList;		//!< Stores a list of materials
 				std::vector<std::vector<repo::lib::RepoUUID>> matParents;		//!< Stores the UUIDs of all parents of a given material node in the same order matNodeList
 				std::vector<repo::core::model::MaterialNode *> textureNodeList;	//!< Stores a list of textures
+				std::vector<repo::core::model::TextureNode *> textureNodeList;	//!< Stores a list of textures
 				std::vector<std::vector<repo::lib::RepoUUID>> textureParents;	//!< Stores the UUIDs of all parents of a given texture node the same order as textureNodelList
 				std::vector<mesh_data_t> meshEntries;
 
