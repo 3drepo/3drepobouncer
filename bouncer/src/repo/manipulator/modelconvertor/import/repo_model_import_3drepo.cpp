@@ -146,7 +146,6 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 	int numIndices = mesh.get<int64_t>("numIndices");
 	int numVertices = mesh.get<int64_t>("numVertices");
 
-	//Avoid using assimp objects everywhere -> converting assimp objects into repo structs
 	std::vector<repo::lib::RepoVector3D64> vertices;
 	std::vector<repo::lib::RepoVector3D> normals;
 	std::vector<repo_face_t> faces;
