@@ -566,6 +566,16 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t &errMsg
 		materials.insert(tmpMaterial);
 	}
 
+	// Attach all the parents to the textures
+	repoInfo << "Attaching textures to parents";
+	textures.clear();
+	for (int i = 0; i < textureNodeList.size(); i++)
+	{
+		repo::core::model::TextureNode* tmpTexture = new repo::core::model::TextureNode();
+		*tmpTexture = textureNodeList[i]->cloneAndAddParent(textureParents[i]);
+		textures.insert(tmpTexture);
+	}
+
 	// Preparing reference files
 	std::vector<std::string> fileVect;
 	if (!orgFile.empty())
