@@ -391,31 +391,46 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 		repoInfo << std::left << std::setw(30) << "\"textures\" array size: "		<< file_meta.textureStart << " bytes";
 		repoInfo << std::left << std::setw(30) << "Number of parts to process:"		<< file_meta.numChildren;
 
-		// Parse the materials and load sizes vector for navigation in JSON
-		if (file_meta.matStart > file_meta.sizesStart)
+		boost::property_tree::ptree jsonRoot = getNextJSON(file_meta.jsonSize);
+
+		// Loading in required JSON nodes
+		boost::optional<ptree&> materialsRoot = jsonRoot.get_child_optional("materials");
+		if (materialsRoot)
 		{
-			skipAheadInFile(file_meta.sizesStart - metaSize);
-			sizes = as_vector<long>(getNextJSON(file_meta.sizesSize));
-			skipAheadInFile(file_meta.matStart - (file_meta.sizesStart + file_meta.sizesSize));
-			boost::property_tree::ptree materials = getNextJSON(file_meta.matSize);
-			for (const auto& item : materials) {
-				parseMaterial(item.second);
+			for (ptree::value_type element : materialsRoot.get())
+			{
+				parseMaterial(element.second);
 			}
 			matParents.resize(materials.size());
-			skipAheadInFile(file_meta.jsonSize + metaSize - (file_meta.matStart + file_meta.matSize));
 		}
-		else {
-			skipAheadInFile(file_meta.matStart - metaSize);
-			boost::property_tree::ptree materialsArr = getNextJSON(file_meta.matSize);
-			for (const auto& item : materialsArr) {
-				parseMaterial(item.second);
+		else
+		{
+			repoError << "File " << fileName << " does not have a \"materials\" node";
+			err = REPOERR_MODEL_FILE_READ;
+			return false;
+		}
+		boost::optional<ptree&> sizesRoot = jsonRoot.get_child_optional("sizes");
+		if(sizesRoot)
+		{
+			sizes = as_vector<long>(sizesRoot.get());
+		}
+		else
+		{
+			repoError << "File " << fileName << " does not have a \"sizes\" node";
+			err = REPOERR_MODEL_FILE_READ;
+			return false;
+		}
+		boost::optional<ptree&> texturesRoot = jsonRoot.get_child_optional("textures");
+		if (texturesRoot)
+		{
+			for (ptree::value_type element : texturesRoot.get())
+			{
+				//parseTexture(element.second);
 			}
-			matParents.resize(materials.size());
-			skipAheadInFile(file_meta.sizesStart - (file_meta.matStart + file_meta.matSize));
-			sizes = as_vector<long>(getNextJSON(file_meta.sizesSize));
-			skipAheadInFile(file_meta.jsonSize + metaSize - (file_meta.sizesStart + file_meta.sizesSize));
+			textureParents.resize(textures.size());
 		}
 
+		// Load binary data
 		repoInfo << "Reading data buffer";
 		dataBuffer = new char[file_meta.dataSize];
 		fin->read(dataBuffer, file_meta.dataSize);
