@@ -63,16 +63,6 @@ namespace repo {
 			class RepoModelImport : public AbstractModelImport
 			{
 			private:
-				std::vector<repo::core::model::RepoNode *> node_map;
-				std::vector<repo::lib::RepoMatrix> trans_map;
-				bool is32Bit = false;
-
-				void createObject(const boost::property_tree::ptree& tree);
-
-				char *geomBuf;
-				std::ifstream *finCompressed;
-				boost::iostreams::filtering_streambuf<boost::iostreams::input> *inbuf;
-				std::istream *fin;
 
 				typedef struct
 				{
@@ -94,35 +84,44 @@ namespace repo {
 					repo::lib::RepoUUID sharedID;
 				};
 
-				fileMeta file_meta;
-
-				std::vector<long> sizes;
-
 				repo::core::model::MaterialNode* parseMaterial(const boost::property_tree::ptree &pt);
-
 				repo::core::model::MetadataNode*  createMetadataNode(const boost::property_tree::ptree &metadata, const std::string &parentName, const repo::lib::RepoUUID &parentID);
 				mesh_data_t createMeshRecord(const boost::property_tree::ptree &geometry, const std::string &parentName, const repo::lib::RepoUUID &parentID, const repo::lib::RepoMatrix &trans);
 				boost::property_tree::ptree getNextJSON(long jsonSize);
 				void skipAheadInFile(long amount);
+				void createObject(const boost::property_tree::ptree& tree);
 
+				// File handling variables
+				std::string orgFile;
+				std::ifstream *finCompressed;
+				boost::iostreams::filtering_streambuf<boost::iostreams::input> *inbuf;
+				std::istream *fin;
+
+				// Source file meta data storage
+				bool is32Bit = false;
+				fileMeta file_meta;
+				std::vector<long> sizes;
+				char *geomBuf;
+				
+				// Intermediary variables used to keep track of node hierarchy
+				std::vector<repo::core::model::RepoNode *> node_map;
+				std::vector<repo::lib::RepoMatrix> trans_map;
 				std::vector<repo::core::model::MaterialNode *> matNodeList;
 				std::vector<std::vector<repo::lib::RepoUUID>> matParents;
-
 				std::vector<mesh_data_t> meshEntries;
-				repo::core::model::RepoNodeSet cameras; //!< Cameras
-				repo::core::model::RepoNodeSet materials; //!< Materials
-				repo::core::model::RepoNodeSet metadata; //!< Metadata
-				repo::core::model::RepoNodeSet transformations; //!< Transformations
+
+				// Variables directly used to instantiate the RepoScene
+				repo::core::model::RepoNodeSet cameras;
+				repo::core::model::RepoNodeSet materials;
+				repo::core::model::RepoNodeSet metadata;
+				repo::core::model::RepoNodeSet transformations;
 				repo::core::model::RepoNodeSet textures;
-
-				std::string orgFile;
-
 				std::vector<double> offset;
 
 			public:
 
 				/**
-				* Create IFCModelImport with specific settings
+				* Create RepoModelImport with specific settings
 				* NOTE: The destructor will destroy the settings object referenced
 				* in this object!
 				* @param settings
@@ -147,7 +146,7 @@ namespace repo {
 				/**
 				* Import model from a given file
 				* This does not generate the Repo Scene Graph
-				* Use getRepoScene() to generate a Repo Scene Graph.
+				* Use generateRepoScene() to generate a Repo Scene Graph.
 				* @param path to the file
 				* @param error message if failed
 				* @return returns true upon success

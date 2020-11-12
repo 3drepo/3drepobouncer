@@ -15,10 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-/**
-* Allows Import/Export functionality into/output Repo world using IFCOpenShell
-*/
-
 #include "repo_model_import_3drepo.h"
 #include <boost/filesystem.hpp>
 #include <sstream>
