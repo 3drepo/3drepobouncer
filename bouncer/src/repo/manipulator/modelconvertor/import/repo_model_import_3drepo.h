@@ -48,7 +48,6 @@ namespace repo {
 			const std::string REPO_IMPORT_METADATA = "metadata";
 			const std::string REPO_IMPORT_GEOMETRY = "geometry";
 			const std::string REPO_IMPORT_MATERIAL = "material";
-			const std::string REPO_IMPORT_TEXTURES = "textures";
 			const std::string REPO_IMPORT_VERTICES = "vertices";
 			const std::string REPO_IMPORT_NORMALS  = "normals";
 			const std::string REPO_IMPORT_INDICES  = "indices";
