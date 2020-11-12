@@ -139,7 +139,7 @@ repo::core::model::MaterialNode* RepoModelImport::parseMaterial(const boost::pro
 
 	if(textureId >= 0)
 	{
-		textureIdToParents[textureId].push_back(materialNode->getUniqueID());
+		textureIdToParents[textureId].push_back(materialNode->getSharedID());
 	}
 
 	return materialNode;
