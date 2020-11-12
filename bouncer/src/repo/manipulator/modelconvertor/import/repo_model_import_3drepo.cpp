@@ -448,6 +448,7 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 				parseMaterial(element.second);
 			}
 			matParents.resize(materials.size());
+			repoInfo << "Loaded: " << materials.size() << " materials";
 		}
 		else
 		{
@@ -474,6 +475,7 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 				parseTexture(element.second, dataBuffer);
 			}
 			textureParents.resize(textures.size());
+			repoInfo << "Loaded: " << textures.size() << " textures";
 		}
 
 		// Clean up
