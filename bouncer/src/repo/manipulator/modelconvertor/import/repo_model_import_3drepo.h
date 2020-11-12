@@ -98,7 +98,7 @@ namespace repo {
 				std::istream *fin;
 
 				// Source file meta data storage
-				bool is32Bit = false;
+				bool areVertices32Bit = false;
 				fileMeta file_meta;
 				std::vector<long> sizes;
 				char *dataBuffer;
