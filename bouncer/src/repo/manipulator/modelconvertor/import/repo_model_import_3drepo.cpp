@@ -136,24 +136,24 @@ repo::core::model::MaterialNode* RepoModelImport::parseMaterial(const boost::pro
 
 repo::core::model::TextureNode* RepoModelImport::parseTexture(const boost::property_tree::ptree& textureTree, char * dataBuffer)
 {
-	std::string txtName = textureTree.get_child("filename").data();
-	uint32_t txtByteCount = textureTree.get<uint32_t>("numImageBytes");
-	uint32_t txtWidth = textureTree.get<uint32_t>("width");
-	uint32_t txtHeight = textureTree.get<uint32_t>("height");
+	std::string name = textureTree.get_child("filename").data();
+	uint32_t byteCount = textureTree.get<uint32_t>("numImageBytes");
+	uint32_t width = textureTree.get<uint32_t>("width");
+	uint32_t height = textureTree.get<uint32_t>("height");
 
-	std::vector<uint32_t> txtDataStartEnd = as_vector<uint32_t>(textureTree, "imageBytes");
+	std::vector<uint32_t> DataStartEnd = as_vector<uint32_t>(textureTree, "imageBytes");
 	// Error if size is not 2
 
-	char* txtData = &dataBuffer[txtDataStartEnd[0]];
+	char* data = &dataBuffer[DataStartEnd[0]];
 
 	repo::core::model::TextureNode* textureNode =
 		new repo::core::model::TextureNode(
 			repo::core::model::RepoBSONFactory::makeTextureNode(
-				txtName,
-				txtData,
-				txtByteCount,
-				txtWidth,
-				txtHeight,
+				name,
+				data,
+				byteCount,
+				width,
+				height,
 				REPO_NODE_API_LEVEL_1));
 
 	textures.insert(textureNode);
