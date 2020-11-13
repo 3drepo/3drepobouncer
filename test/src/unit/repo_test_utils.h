@@ -21,6 +21,7 @@
 #include "repo_test_fileservice_info.h"
 #include <fstream>
 #include <repo/lib/repo_log.h>
+#include "../../bouncer/src/repo/error_codes.h"
 
 static repo::RepoController::RepoToken* initController(repo::RepoController *controller) {
 	repo::lib::RepoConfig config = { REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
@@ -216,6 +217,113 @@ namespace test
 		static void printSubTestTitleString(std::string title)
 		{
 			repoInfo << "------------" << title << "------------";
+		}
+
+		static std::string getStringFromRepoErrorCode(int repoErrorCode)
+		{
+			std::string errorString = "";
+			switch(repoErrorCode)
+			{
+			case REPOERR_OK:
+				errorString = R"(Completed successfully)";
+				break;
+			case REPOERR_LAUNCHING_COMPUTE_CLIENT:
+				errorString = R"(Bouncer failed to start - this never gets returned by bouncer client, but bouncer worker will return this)";
+				break;
+			case REPOERR_AUTH_FAILED:
+				errorString = R"(authentication to database failed)";
+				break;
+			case REPOERR_UNKNOWN_CMD:
+				errorString = R"(unrecognised command)";
+				break;
+			case REPOERR_UNKNOWN_ERR:
+				errorString = R"(unknown error (caught exception))";
+				break;
+			case REPOERR_LOAD_SCENE_FAIL:
+				errorString = R"(failed to import file to scene)";
+				break;
+			case REPOERR_STASH_GEN_FAIL:
+				errorString = R"(failed to generate stash graph)";
+				break;
+			case REPOERR_LOAD_SCENE_MISSING_TEXTURE:
+				errorString = R"(Scene uploaded, but missing texture)";
+				break;
+			case REPOERR_INVALID_ARG:
+				errorString = R"(invalid arguments to function)";
+				break;
+			case REPOERR_FED_GEN_FAIL:
+				errorString = R"(failed to generate federation)";
+				break;
+			case REPOERR_LOAD_SCENE_MISSING_NODES:
+				errorString = R"(Scene uploaded but missing some nodes)";
+				break;
+			case REPOERR_GET_FILE_FAILED:
+				errorString = R"(Failed to get file from project)";
+				break;
+			case REPOERR_CRASHED:
+				errorString = R"(Failed to finish (i.e. crashed))";
+				break;
+			case REPOERR_PARAM_FILE_READ_FAILED:
+				errorString = R"(Failed to read import parameters from file (Unity))";
+				break;
+			case REPOERR_BUNDLE_GEN_FAILED:
+				errorString = R"(Failed to generate asset bundles (Unity))";
+				break;
+			case REPOERR_LOAD_SCENE_INVALID_MESHES:
+				errorString = R"(Scene loaded, has untriangulated meshes)";
+				break;
+			case REPOERR_ARG_FILE_FAIL:
+				errorString = R"(Failed to read the fail containing model information)";
+				break;
+			case REPOERR_NO_MESHES:
+				errorString = R"(The file loaded has no meshes)";
+				break;
+			case REPOERR_FILE_TYPE_NOT_SUPPORTED:
+				errorString = R"(Unsupported file extension)";
+				break;
+			case REPOERR_MODEL_FILE_READ:
+				errorString = R"(Failed to read model file)";
+				break;
+			case REPOERR_FILE_ASSIMP_GEN:
+				errorString = R"(Failed during assimp generation)";
+				break;
+			case REPOERR_FILE_IFC_GEO_GEN:
+				errorString = R"(Failed during IFC geometry generation)";
+				break;
+			case REPOERR_UNSUPPORTED_BIM_VERSION:
+				errorString = R"(Bim file version unsupported)";
+				break;
+			case REPOERR_UNSUPPORTED_FBX_VERSION:
+				errorString = R"(FBX file version unsupported)";
+				break;
+			case REPOERR_UNSUPPORTED_VERSION:
+				errorString = R"(Unsupported file version (generic))";
+				break;
+			case REPOERR_MAX_NODES_EXCEEDED:
+				errorString = R"(Exceed the maximum amount fo nodes)";
+				break;
+			case REPOERR_ODA_UNAVAILABLE:
+				errorString = R"(When ODA not compiled in but dgn import requested)";
+				break;
+			case REPOERR_VALID_3D_VIEW_NOT_FOUND:
+				errorString = R"(No valid 3D view found (for Revit format))";
+				break;
+			case REPOERR_INVALID_CONFIG_FILE:
+				errorString = R"(Failed reading configuration file)";
+				break;
+			case REPOERR_TIMEOUT:
+				errorString = R"(Process timed out (only used in bouncer_worker))";
+				break;
+			case REPOERR_SYNCHRO_UNAVAILABLE:
+				errorString = R"(When Synchro is not compiled within the library)";
+				break;
+			case REPOERR_SYNCHRO_SEQUENCE_TOO_BIG:
+				errorString = R"(Synchro sequence exceed size of bson)";
+				break;
+			case REPOERR_UPLOAD_FAILED:
+				errorString = R"(Imported successfully, but failed to upload it to the database/fileshares)";
+			}
+			return errorString;
 		}
 	};
 }
