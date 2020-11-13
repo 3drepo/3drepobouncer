@@ -80,7 +80,7 @@
 			let dir = `${rootModelDir}/${modelDir}`;
 
 			try {
-			await importToy(dbConfig, dir, username, database, model, skipPostProcessing);
+				await importToy(dbConfig, dir, username, database, model, skipPostProcessing);
 				// after importing the toy regenerate the tree as well
 				if(skipPostProcessing.tree){
 					callback(JSON.stringify({
