@@ -64,7 +64,6 @@ namespace repo {
 				const std::string REPO_V3 = "BIM003";
 				const std::set<std::string> supportedFileVersions = 
 				{ 
-					REPO_V1, 
 					REPO_V2,
 					REPO_V3
 				};
