@@ -232,10 +232,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 			{
 				if (props->first == REPO_IMPORT_VERTICES) {
 					repo::lib::RepoVector3D64 tmpVec;
-					if (areVertices32Bit)
-						tmpVec = { tmpVerticesSingle[i * 3], tmpVerticesSingle[i * 3 + 1], tmpVerticesSingle[i * 3 + 2] };
-					else
-						tmpVec = { tmpVerticesDouble[i * 3] ,  tmpVerticesDouble[i * 3 + 1] , tmpVerticesDouble[i * 3 + 2] };
+					tmpVec = { tmpVerticesDouble[i * 3] ,  tmpVerticesDouble[i * 3 + 1] , tmpVerticesDouble[i * 3 + 2] };
 					if (needTransform) tmpVec = trans * tmpVec;
 
 					if (minBBox.size()) {
@@ -411,10 +408,9 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 			err = REPOERR_UNSUPPORTED_BIM_VERSION;
 			return false;
 		}
-		areVertices32Bit = REPO_V1 == incomingVersion;
 
 		// Loading file metadata
-		repoInfo << "Loading BIM file [VERSION: " << incomingVersion << "] 32 bit? : " << areVertices32Bit;
+		repoInfo << "Loading BIM file [VERSION: " << incomingVersion << "]";
 		size_t metaSize = REPO_VERSION_LENGTH + sizeof(fileMeta);
 		if(incomingVersion == REPO_V3)
 		{

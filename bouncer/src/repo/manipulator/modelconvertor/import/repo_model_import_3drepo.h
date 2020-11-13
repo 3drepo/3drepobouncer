@@ -127,7 +127,6 @@ namespace repo {
 				std::istream *fin;
 
 				// Source file meta data storage
-				bool areVertices32Bit = false;
 				fileMeta file_meta;
 				std::vector<long> sizes; //!< Sizes of the nodes component, used for navigation.
 				char *dataBuffer;
