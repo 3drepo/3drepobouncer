@@ -214,9 +214,9 @@ namespace test
 		}
 
 		static void printSubTestTitleString(std::string title)
-{
-	repoInfo << "------------" << title << "------------";
-}
+		{
+			repoInfo << "------------" << title << "------------";
+		}
 	};
 }
 }
