@@ -86,7 +86,7 @@ repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(
 	return metaNode;
 }
 
-repo::core::model::MaterialNode* RepoModelImport::parseMaterial(const boost::property_tree::ptree &matTree)
+void RepoModelImport::parseMaterial(const boost::property_tree::ptree &matTree)
 {
 	repo_material_t repo_material;
 	int textureId = -1;
@@ -141,22 +141,36 @@ repo::core::model::MaterialNode* RepoModelImport::parseMaterial(const boost::pro
 	{
 		textureIdToParents[textureId].push_back(materialNode->getSharedID());
 	}
-
-	return materialNode;
+	return;
 }
 
-repo::core::model::TextureNode* RepoModelImport::parseTexture(const boost::property_tree::ptree& textureTree, char * const dataBuffer)
+void RepoModelImport::parseTexture(
+	const boost::property_tree::ptree& textureTree, 
+	char * const dataBuffer)
 {
-	// TODO: error checking using the REPOERR_LOAD_SCENE_MISSING_TEXTURE flag
+	bool fileNameOk	 = textureTree.find("filename") != textureTree.not_found();
+	bool byteCountOK = textureTree.find("numImageBytes") != textureTree.not_found();
+	bool widthOk	 = textureTree.find("width") != textureTree.not_found();
+	bool heightOk	 = textureTree.find("height") != textureTree.not_found();
+	bool idOk		 = textureTree.find("id") != textureTree.not_found();
 
-	std::string name = textureTree.get_child("filename").data();
+	if (!byteCountOK ||
+		!widthOk	 ||
+		!heightOk	 ||
+		!idOk)
+	{
+		repoError << "Required texture field missing. Skipping this texture.";
+		missingTextures = true;
+		return;
+	}
+
+	std::string name = fileNameOk ? textureTree.get_child("filename").data() : "";
 	uint32_t byteCount = textureTree.get<uint32_t>("numImageBytes");
 	uint32_t width = textureTree.get<uint32_t>("width");
 	uint32_t height = textureTree.get<uint32_t>("height");
 	uint32_t id = textureTree.get<uint32_t>("id");
 
 	std::vector<uint32_t> DataStartEnd = as_vector<uint32_t>(textureTree, "imageBytes");
-	// Error if size is not 2
 
 	char* data = &dataBuffer[DataStartEnd[0]];
 
@@ -174,7 +188,7 @@ repo::core::model::TextureNode* RepoModelImport::parseTexture(const boost::prope
 	*tmpTexture = textureNode->cloneAndAddParent(textureIdToParents[id]);
 	textures.insert(tmpTexture);
 
-	return textureNode;
+	return;
 }
 
 
@@ -475,6 +489,12 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 				parseTexture(element.second, dataBuffer);
 			}
 			repoInfo << "Loaded: " << textures.size() << " textures";
+			int maxTextureId = textureIdToParents.rbegin()->first;
+			if (maxTextureId > (textures.size() - 1))
+			{ 
+				repoError << "A material is referencing a missing texture";
+				missingTextures = true; 
+			}
 		}
 
 		// Clean up
@@ -603,7 +623,12 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t &errMsg
 	// Generate scene
 	repo::core::model::RepoScene * scenePtr = new repo::core::model::RepoScene(fileVect, cameras, meshes, materials, metadata, textures, transformations);
 	scenePtr->setWorldOffset(offset);
-	
+	if (missingTextures) 
+	{
+		errMsg = REPOERR_LOAD_SCENE_MISSING_TEXTURE;
+		scenePtr->setMissingTexture(); 
+	}
+
 	// Cleanup
 	delete[] dataBuffer;
 	finCompressed->close();

@@ -95,8 +95,8 @@ namespace repo {
 					repo::lib::RepoUUID sharedID;
 				};
 
-				repo::core::model::MaterialNode* parseMaterial(const boost::property_tree::ptree& pt);
-				repo::core::model::TextureNode* parseTexture(const boost::property_tree::ptree& textureTree, char * dataBuffer);
+				void parseMaterial(const boost::property_tree::ptree& pt);
+				void parseTexture(const boost::property_tree::ptree& textureTree, char * dataBuffer);
 				repo::core::model::MetadataNode*  createMetadataNode(const boost::property_tree::ptree &metadata, const std::string &parentName, const repo::lib::RepoUUID &parentID);
 				mesh_data_t createMeshRecord(const boost::property_tree::ptree &geometry, const std::string &parentName, const repo::lib::RepoUUID &parentID, const repo::lib::RepoMatrix &trans);
 
@@ -130,6 +130,7 @@ namespace repo {
 				fileMeta file_meta;
 				std::vector<long> sizes; //!< Sizes of the nodes component, used for navigation.
 				char *dataBuffer;
+				bool missingTextures = false;
 				
 				// Intermediary variables used to keep track of node hierarchy
 				std::vector<repo::core::model::RepoNode *> node_map;				//!< List of all transform nodes in order of decoding
