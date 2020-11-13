@@ -16,32 +16,56 @@
 */
 
 #include <gtest/gtest.h>
-
 #include <repo/manipulator/modelconvertor/import/repo_model_import_3drepo.h>
 #include <repo/lib/repo_log.h>
+#include "../../../../repo_test_utils.h"
 
 using namespace repo::manipulator::modelconvertor;
+using namespace repo::test;
 
-TEST(RepoModelImport, ImportModel)
+static bool testBIMFileImport(
+	std::string bimFilePath,
+	int expMaterialsCount,
+	int expTexturesCount,
+	int expMeshesCount)
 {
 	ModelImportConfig config;
-
 	uint8_t errCode = 0;
 	auto modelConvertor = std::unique_ptr<AbstractModelImport>(new RepoModelImport(config));
-	std::string filePath = R"(C:\Users\haroo\Desktop\BIMTextureFiles\cube_bim3.bim)";
-	modelConvertor->importModel(filePath, errCode);
+	modelConvertor->importModel(bimFilePath, errCode);
 	repoInfo << "Error code from importModel(): " << (int)errCode;
 	auto repoScene = modelConvertor->generateRepoScene(errCode);
 	repoInfo << "Error code from generateRepoScene(): " << (int)errCode;
 
+	auto materials = repoScene->getAllMaterials(repo::core::model::RepoScene::GraphType::DEFAULT);
+	auto textures = repoScene->getAllTextures(repo::core::model::RepoScene::GraphType::DEFAULT);
+	auto meshes = repoScene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
 
-	errCode = 0;
-	modelConvertor = std::unique_ptr<AbstractModelImport>(new RepoModelImport(config));
-	filePath = R"(C:\Users\haroo\Desktop\BIMTextureFiles\cube_bim2.bim)";
-	modelConvertor->importModel(filePath, errCode);
-	repoInfo << "Error code from importModel(): " << (int)errCode;
-	repoScene = modelConvertor->generateRepoScene(errCode);
-	repoInfo << "Error code from generateRepoScene(): " << (int)errCode;
+	bool materialsOk = materials.size() == expMaterialsCount;
+	if (!materialsOk) { repoInfo << "Expected " << expMaterialsCount << " materials, found " << materials.size(); }
+	bool texturesOk = textures.size() == expTexturesCount;
+	if (!materialsOk) { repoInfo << "Expected " << expTexturesCount << " textures, found " << textures.size(); }
+	bool meshesOk = meshes.size() == expMeshesCount;
+	if (!materialsOk) { repoInfo << "Expected " << expMeshesCount << " meshes, found " << meshes.size(); }
+	if (!repoScene->isOK()) { repoInfo << "Scene is not healthy"; }
 
-	EXPECT_EQ(0,errCode);
+	bool scenePassed = materialsOk && texturesOk && meshesOk && repoScene->isOK();
+	repoInfo << "Generated scene passed: " << std::boolalpha << scenePassed;
+	return scenePassed;
+};
+
+TEST(RepoModelImport, ImportModel)
+{
+	TestLogging::printTestTitleString(
+		"BIM file format - standard flow",
+		"Happy path tests to check for compatability with all of the BIM \
+		file format versions");
+
+	TestLogging::printSubTestTitleString("BIM003 file - with textures");
+	EXPECT_TRUE(testBIMFileImport(
+		R"(C:\Users\haroo\Desktop\BIMTextureFiles\cube_txtr_bim3_revit_2021_repo_17de4e0.bim)", 4, 3, 4));
+
+	TestLogging::printSubTestTitleString("BIM002 file");
+	EXPECT_TRUE(testBIMFileImport(
+		R"(C:\Users\haroo\Desktop\BIMTextureFiles\cube_txtr_bim2_navis_2021_repo_4.6.1.bim)", 3, 0, 4));
 }
