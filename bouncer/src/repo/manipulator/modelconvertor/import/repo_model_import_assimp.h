@@ -69,6 +69,8 @@ namespace repo {
 				*/
 				repo::core::model::RepoScene* generateRepoScene(uint8_t &errMsg);
 
+				virtual bool requireReorientation() const;
+
 				/**
 				* Import model from a given file
 				* @param path to the file

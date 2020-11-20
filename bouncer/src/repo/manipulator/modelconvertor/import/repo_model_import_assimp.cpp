@@ -31,6 +31,7 @@
 #include "../../../core/model/bson/repo_bson_builder.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../lib/repo_log.h"
+#include "../../../lib/repo_utils.h"
 #include "../../../error_codes.h"
 #include "./repo_model_import_config_default_values.h"
 
@@ -57,7 +58,7 @@ bool AssimpModelImport::isSupportedExts(const std::string &testExt)
 
 	std::string str(ext.C_Str());
 	std::string lowerExt(testExt);
-	std::transform(lowerExt.begin(), lowerExt.end(), lowerExt.begin(), ::tolower);
+	repo::lib::toLower(lowerExt);
 
 	return str.find(lowerExt) != std::string::npos;
 }
@@ -90,6 +91,15 @@ std::string AssimpModelImport::getSupportedFormats()
 		individual += ";;" + formatName + " (*." + extension + ")";
 	}
 	return all + individual;
+}
+
+bool AssimpModelImport::requireReorientation() const {
+	if (orgFile.empty()) return false;
+
+	auto ext = repo::lib::getExtension(orgFile);
+	repo::lib::toLower(ext);
+
+	return ext == ".fbx";
 }
 
 uint32_t AssimpModelImport::composeAssimpPostProcessingFlags(
