@@ -54,6 +54,7 @@ namespace repo{
 
 			private:
 				std::unordered_map<std::string, std::vector<uint8_t>> fullDataBuffer;
+				bool enableCompression;
 
 				/**
 				* Convert a Mesh Node into src format

@@ -23,6 +23,10 @@
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../lib/repo_log.h"
 #include "../../modelutility/repo_mesh_map_reorganiser.h"
+#include <iostream>
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -103,6 +107,8 @@ SRCModelExport::SRCModelExport(
 	const repo::core::model::RepoScene *scene
 	) : WebModelExport(scene)
 {
+	enableCompression = true;
+
 	//Considering all newly imported models should have a stash graph, we only need to support stash graph?
 	if (convertSuccess)
 	{
@@ -148,8 +154,14 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getSRCFile
 
 		uint32_t* bufferAsUInt = (uint32_t*)buffer.data();
 
+		auto srcMagicBit = SRC_MAGIC_BIT;
+		if (enableCompression)
+		{
+			srcMagicBit++;
+		}
+
 		//Header ints
-		bufferAsUInt[0] = SRC_MAGIC_BIT;
+		bufferAsUInt[0] = srcMagicBit;
 		bufferAsUInt[1] = SRC_VERSION;
 		bufferAsUInt[2] = jsonByteSize;
 
@@ -164,8 +176,25 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getSRCFile
 
 		if (fdIt != fullDataBuffer.end())
 		{
+			auto fullDataArray = fdIt->second;
+
+			if (enableCompression) {
+				boost::iostreams::filtering_streambuf<boost::iostreams::input> out;
+				out.push(boost::iostreams::zlib_compressor());
+				out.push(boost::iostreams::array_source((const char*)fullDataArray.data(), fullDataArray.size()));
+
+				// The first 4 bytes define the length of the uncompressed data. ZLib, at the least, requires this be known ahead of time.
+				std::vector<uint8_t> compressed;
+				compressed.resize(4);
+				((uint32_t*)compressed.data())[0] = fullDataArray.size();
+				
+				compressed.insert(compressed.end(), std::istreambuf_iterator<char>(&out), std::istreambuf_iterator<char>());
+				
+				fullDataArray = compressed;
+			}
+
 			//Add data buffer to the full buffer
-			buffer.insert(buffer.end(), fdIt->second.begin(), fdIt->second.end());
+			buffer.insert(buffer.end(), fullDataArray.begin(), fullDataArray.end());
 			fileBuffers[fName] = buffer;
 		}
 		else
