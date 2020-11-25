@@ -31,6 +31,7 @@
 using namespace repo::manipulator::modelconvertor;
 
 const static uint32_t SRC_MAGIC_BIT = 23;
+const static uint32_t SRC_MAGIC_BIT_COMPRESSED = 24;
 const static uint32_t SRC_VERSION = 42;
 const static size_t SRC_MAX_VERTEX_LIMIT = 65535;
 const static size_t SRC_X3DOM_FLOAT = 5126;
@@ -107,8 +108,6 @@ SRCModelExport::SRCModelExport(
 	const repo::core::model::RepoScene *scene
 	) : WebModelExport(scene)
 {
-	enableCompression = true;
-
 	//Considering all newly imported models should have a stash graph, we only need to support stash graph?
 	if (convertSuccess)
 	{
@@ -154,14 +153,12 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getSRCFile
 
 		uint32_t* bufferAsUInt = (uint32_t*)buffer.data();
 
-		auto srcMagicBit = SRC_MAGIC_BIT;
-		if (enableCompression)
-		{
-			srcMagicBit++;
-		}
-
 		//Header ints
-		bufferAsUInt[0] = srcMagicBit;
+#if defined(REPO_BOOST_NO_GZIP)
+		bufferAsUInt[0] = SRC_MAGIC_BIT;
+#else
+		bufferAsUInt[0] = SRC_MAGIC_BIT_COMPRESSED;
+#endif
 		bufferAsUInt[1] = SRC_VERSION;
 		bufferAsUInt[2] = jsonByteSize;
 
@@ -178,7 +175,7 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getSRCFile
 		{
 			auto fullDataArray = fdIt->second;
 
-			if (enableCompression) {
+#if !defined(REPO_BOOST_NO_GZIP)
 				boost::iostreams::filtering_streambuf<boost::iostreams::input> out;
 				out.push(boost::iostreams::zlib_compressor());
 				out.push(boost::iostreams::array_source((const char*)fullDataArray.data(), fullDataArray.size()));
@@ -191,7 +188,7 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getSRCFile
 				compressed.insert(compressed.end(), std::istreambuf_iterator<char>(&out), std::istreambuf_iterator<char>());
 				
 				fullDataArray = compressed;
-			}
+#endif
 
 			//Add data buffer to the full buffer
 			buffer.insert(buffer.end(), fullDataArray.begin(), fullDataArray.end());
