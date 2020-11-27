@@ -205,6 +205,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 
 	std::vector<repo::lib::RepoVector3D64> vertices;
 	std::vector<repo::lib::RepoVector3D> normals;
+	std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
 	std::vector<repo_face_t> faces;
 
 	std::vector<std::vector<double> > boundingBox;
@@ -272,6 +273,19 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 					normals.push_back(needTransform ? normalTrans * tmpVec : tmpVec);
 				}
 			}
+		}
+
+		if (props->first == REPO_IMPORT_UV)
+		{
+			std::vector<int64_t> startEnd = as_vector<int64_t>(mesh, props->first);
+			float* tmpUVs = (float*)(dataBuffer + startEnd[0]);
+			std::vector<repo::lib::RepoVector2D> uvChannelVector;
+			for (int i = 0; i < numVertices; i++)
+			{
+				repo::lib::RepoVector2D tmpUVVec = repo::lib::RepoVector2D(tmpUVs[i * 2] ,  tmpUVs[i * 2 + 1]);
+				uvChannelVector.push_back(tmpUVVec);
+			}
+			uvChannels.push_back(uvChannelVector);
 		}
 
 		if (props->first == REPO_IMPORT_INDICES)
@@ -613,7 +627,16 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t &errMsg
 			}
 			boundingBox.push_back(bb);
 		}
-		auto mesh = repo::core::model::RepoBSONFactory::makeMeshNode(vertices, entry.faces, entry.normals, boundingBox, { entry.parent });
+		auto mesh = repo::core::model::RepoBSONFactory::makeMeshNode(
+			vertices,
+			entry.faces,
+			entry.normals,
+			boundingBox,
+			entry.uvChannels,
+			std::vector<repo_color4d_t>(),
+			std::vector<std::vector<float>>(),
+			std::string(),
+			{ entry.parent });
 		repo::core::model::RepoBSONBuilder builder;
 		builder.append(REPO_NODE_LABEL_SHARED_ID, entry.sharedID);
 		auto changes = builder.obj();

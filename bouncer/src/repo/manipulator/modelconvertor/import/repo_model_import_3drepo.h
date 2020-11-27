@@ -49,6 +49,7 @@ namespace repo {
 			const std::string REPO_IMPORT_GEOMETRY = "geometry";
 			const std::string REPO_IMPORT_MATERIAL = "material";
 			const std::string REPO_IMPORT_VERTICES = "vertices";
+			const std::string REPO_IMPORT_UV	   = "uv";
 			const std::string REPO_IMPORT_NORMALS  = "normals";
 			const std::string REPO_IMPORT_INDICES  = "indices";
 
@@ -89,6 +90,7 @@ namespace repo {
 				{
 					std::vector<repo::lib::RepoVector3D64> rawVertices;
 					std::vector<repo::lib::RepoVector3D> normals;
+					std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
 					std::vector<repo_face_t> faces;
 					std::vector<std::vector<double>> boundingBox;
 					repo::lib::RepoUUID parent;
