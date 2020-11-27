@@ -193,6 +193,7 @@ void RepoModelImport::parseTexture(
 
 
 RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
+	int parentBimId,
 	const ptree &mesh,
 	const std::string &parentName,
 	const repo::lib::RepoUUID &parentID,
@@ -325,7 +326,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 		matParents[materialID].push_back(sharedID);
 	}
 
-	mesh_data_t result = { vertices, normals, faces, boundingBox, parentID, sharedID };
+	mesh_data_t result = { parentBimId, vertices, normals, uvChannels, faces, boundingBox, parentID, sharedID };
 	return result;
 }
 
@@ -378,7 +379,7 @@ void RepoModelImport::createObject(const ptree& tree)
 
 		if (props->first == REPO_IMPORT_GEOMETRY)
 		{
-			auto mesh = createMeshRecord(props->second, transName, transID, trans_matrix_map.back());
+			auto mesh = createMeshRecord(myID, props->second, transName, transID, trans_matrix_map.back());
 			metaParentIDs.push_back(mesh.sharedID);
 			meshEntries.push_back(mesh);
 		}

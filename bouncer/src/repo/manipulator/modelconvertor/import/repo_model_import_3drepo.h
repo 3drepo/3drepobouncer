@@ -88,6 +88,7 @@ namespace repo {
 
 				struct mesh_data_t 
 				{
+					int parentBimId;
 					std::vector<repo::lib::RepoVector3D64> rawVertices;
 					std::vector<repo::lib::RepoVector3D> normals;
 					std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
@@ -100,7 +101,7 @@ namespace repo {
 				void parseMaterial(const boost::property_tree::ptree& pt);
 				void parseTexture(const boost::property_tree::ptree& textureTree, char * dataBuffer);
 				repo::core::model::MetadataNode*  createMetadataNode(const boost::property_tree::ptree &metadata, const std::string &parentName, const repo::lib::RepoUUID &parentID);
-				mesh_data_t createMeshRecord(const boost::property_tree::ptree &geometry, const std::string &parentName, const repo::lib::RepoUUID &parentID, const repo::lib::RepoMatrix &trans);
+				mesh_data_t createMeshRecord(int parentBimId, const boost::property_tree::ptree &geometry, const std::string &parentName, const repo::lib::RepoUUID &parentID, const repo::lib::RepoMatrix &trans);
 
 				/**
 				 * @brief Creates a property tree from the current
