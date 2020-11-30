@@ -201,8 +201,8 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 {
 	int materialID = -1;
 
-	int numIndices = mesh.get<int64_t>("numIndices");
-	int numVertices = mesh.get<int64_t>("numVertices");
+	auto numIndices = mesh.get<int64_t>("numIndices");
+	auto numVertices = mesh.get<int64_t>("numVertices");
 
 	std::vector<repo::lib::RepoVector3D64> vertices;
 	std::vector<repo::lib::RepoVector3D> normals;
@@ -440,6 +440,7 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 
 		// Loading file metadata
 		repoInfo << "Loading BIM file [VERSION: " << incomingVersion << "]";
+
 		size_t metaSize = REPO_VERSION_LENGTH + sizeof(fileMeta);
 		if(incomingVersion == REPO_V3)
 		{
