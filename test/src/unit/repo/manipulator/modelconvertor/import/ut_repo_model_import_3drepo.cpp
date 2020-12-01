@@ -23,7 +23,6 @@
 #include "boost/filesystem.hpp"
 
 using namespace repo::manipulator::modelconvertor;
-using namespace repo::test;
 
 static bool testBIMFileImport(
 	std::string bimFilePath,
@@ -43,7 +42,7 @@ static bool testBIMFileImport(
 	modelConvertor->importModel(bimFilePath, impModelErrCode);
 	if (impModelErrCode != expImpModelErrCode)
 	{ 
-		repoError << "Error from importModel(): " << TestLogging::getStringFromRepoErrorCode((int)impModelErrCode);
+		repoError << "Error from importModel(): " << (int)impModelErrCode;
 		return false; 
 	}
 
@@ -53,7 +52,7 @@ static bool testBIMFileImport(
 		auto repoScene = modelConvertor->generateRepoScene(genSceneErrCode);
 		if (genSceneErrCode != expGenSceneErrCode)
 		{
-			repoError << "Error from generateRepoScene(): " << TestLogging::getStringFromRepoErrorCode((int)genSceneErrCode);
+			repoError << "Error from generateRepoScene(): " << (int)genSceneErrCode;
 			return false;
 		}
 
@@ -164,51 +163,30 @@ static bool testBIMFileImport(
 	return true;
 };
 
-TEST(RepoModelImport, SupportedFormats)
+TEST(RepoModelImport, BIM002ValidFile)
 {
-	TestLogging::printTestTitleString(
-		"Supported BIM format tests",
-		"Happy path tests to check for compatability with all of the supported BIM \
-		file format versions");
-
-	TestLogging::printSubTestTitleString("BIM003 file - with textures");
-	EXPECT_TRUE(testBIMFileImport(
-		getDataPath("RepoModelImport/BrickWalls_bim3.bim"), 3, 2, 6, true));
-
-	TestLogging::printSubTestTitleString("BIM002 file");
-	EXPECT_TRUE(testBIMFileImport(
-		getDataPath("RepoModelImport/cube_bim2_navis_2021_repo_4.6.1.bim"), 3, 0, 4));
+	EXPECT_TRUE(testBIMFileImport(getDataPath("RepoModelImport/cube_bim2_navis_2021_repo_4.6.1.bim"), 3, 0, 4));
 }
 
-TEST(RepoModelImport, UnsupportedFormats)
+TEST(RepoModelImport, BIM003ValidFile)
 {
-	TestLogging::printTestTitleString(
-		"Unsupported BIM file format",
-		"Checking to see if the right errors get thrown");
+	EXPECT_TRUE(testBIMFileImport(getDataPath("RepoModelImport/BrickWalls_bim3.bim"), 3, 2, 6, true));
+}
 
-	TestLogging::printSubTestTitleString("BIM001 file - testing for unsupported error");
+TEST(RepoModelImport, BIM001ValidFile)
+{
 	EXPECT_TRUE(testBIMFileImport(
 		getDataPath("RepoModelImport/cube_bim1_spoofed.bim"), 0, 0, 0, false, REPOERR_UNSUPPORTED_BIM_VERSION, REPOERR_OK, false));
 }
 
-TEST(RepoModelImport, MissingTextureFields)
+TEST(RepoModelImport, BIM003MissingTextureFields)
 {
-	TestLogging::printTestTitleString(
-		"Texture fields missing in the BIM JSON",
-		"Check to see if the correct error is generated");
-
-	TestLogging::printSubTestTitleString("Missing \"numImageBytes\" field");
 	EXPECT_FALSE(testBIMFileImport(
 		getDataPath("RepoModelImport/BrickWalls_bim3_CorruptedTextureField.bim"), 3, 1, 6, true, REPOERR_OK, REPOERR_LOAD_SCENE_MISSING_TEXTURE));
 }
 
-TEST(RepoModelImport, MissingReferencedTexture)
+TEST(RepoModelImport, BIM003MissingReferencedTexture)
 {
-	TestLogging::printTestTitleString(
-		"Materials references a missing texture",
-		"Check to see if the correct error is generated");
-
-	TestLogging::printSubTestTitleString("Material references a texture id not included in file");
 	EXPECT_FALSE(testBIMFileImport(
 		getDataPath("RepoModelImport/BrickWalls_bim3_MissingTexture.bim"), 3, 2, 6, true, REPOERR_OK, REPOERR_LOAD_SCENE_MISSING_TEXTURE));
 }
