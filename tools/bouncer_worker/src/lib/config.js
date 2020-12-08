@@ -34,6 +34,10 @@ const parseConfig = () => {
 	try {
 		const config =  JSON.parse(fs.readFileSync(configFullPath));
 		applyDefaultValuesIfUndefined(config);
+		if(config.hasOwnProperty("umask")) {
+			logger.info("Setting umask: " + config.umask);
+			process.umask(config.umask);
+		}
 		return config;
 	} catch (err) {
 		//can't use logger -> circular dependency.

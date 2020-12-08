@@ -19,8 +19,8 @@
 
 const { MongoClient, GridFSBucket} = require("mongodb");
 const fs = require("fs");
-const config = require("../lib/config");
-const { run = runCommand } = require("../lib/runCommand");
+const { config } = require("../lib/config");
+const { runCommand } = require("../lib/runCommand");
 
 const mongoConnectionString = `mongodb://${config.db.username}:${config.db.password}@${config.db.dbhost}:${config.db.dbport}/admin`;
 
@@ -60,12 +60,12 @@ const runMongoImport = async (database, collection, filePath) => {
 	}
 }
 
-const importJSON = async (modelDir, database, modelId) {
+const importJSON = async (modelDir, database, modelId) => {
 	const collectionFiles = accumulateCollectionFiles(modelDir, modelId);
 
 	let promises = [];
 	Object.keys(importCollectionFiles).forEach(collection => {
-		const filePath = ${__dirname}/${modelDir}/${importCollectionFiles[collection]};
+		const filePath = `${__dirname}/${modelDir}/${importCollectionFiles[collection]}`;
 		promises.push(runMongoImport(database, collection, filePath));
 	});
 
@@ -96,7 +96,7 @@ const renameStash = (db, database, modelId, bucketName) => {
 			newFileName = newFileName.join('/');
 			file.filename = newFileName;
 
-			renamePromises.push(bucket.rename(file._id, newFileName);)
+			renamePromises.push(bucket.rename(file._id, newFileName))
 
 			// unityAssets.json have the path baked into the file :(
 			if(newFileName.endsWith('unityAssets.json')){
@@ -186,7 +186,55 @@ const renameUnityAsset = (bucket, database, modelId, file) => {
 	});
 }
 
+const renameGroups = async (db, database, modelId) => {
 
+	const subModelNameToOldID = {
+		"Lego_House_Architecture" : "1cac0310-e3cc-11ea-bc6b-69e466be9639",
+		"Lego_House_Landscape" : "1cab8de0-e3cc-11ea-bc6b-69e466be9639",
+		"Lego_House_Structure" : "1cac5130-e3cc-11ea-bc6b-69e466be9639"
+	};
+
+	const updateGroupPromises = [];
+	const collection = db.collection(`${modelId}.groups`);
+
+	const setting = db.collection("settings").findOne({_id: modelId});
+
+	if(!setting) {
+		throw `Model ${setting} not found`;
+	}
+
+	const oldIdToNewId = {};
+
+	if(setting.subModels) {
+		const subModelList = [];
+		setting.subModels.forEach((subModel) => {
+			subModelList.push(subModel.model);
+		});
+		const submodels = await db.collection("settings").find({_id: {$in: subModelList}}).toArray();
+		submodels.forEach( (subModelSetting) => {
+			if(subModelNameToOldID[subModelSetting.name]) {
+				oldIdToNewId[subModelNameToOldID[subModelSetting.name]] = subModelSetting._id;
+			}
+		});
+	}
+
+	const groups = await collection.find().toArray();
+	const updateObjectPromises = [];
+
+	groups.forEach((group) => {
+		group.objects && group.object.forEach((obj) => {
+			obj.account = database;
+
+			//if model is fed model, then model id of a group should be
+			//one of the sub models instead of the id of the fed model itself
+			obj.model = oldIdToNewId[obj.model] || modelId;
+		});
+		updateObjectPromises.push(collection.updateOne({ _id: group._id }, group));
+	});
+
+	await Promise.all(updateObjectPromises);
+
+}
 
 const importToyModel = async (modelDir, database, modelId, skipProcessing = {}) => {
 	await importJSON(modelDir, database, modelId);
@@ -197,7 +245,7 @@ const importToyModel = async (modelDir, database, modelId, skipProcessing = {}) 
 	const promises = [];
 
 	if(!skipPostProcessing.renameStash) {
-		promises.push(renameStash(db, databse, modelId, `${modelId}.stash.json_mpc`));
+		promises.push(renameStash(db, database, modelId, `${modelId}.stash.json_mpc`));
 		promises.push(renameStash(db, database, modelId, `${modelId}.stash.src`));
 		promises.push(renameStash(db, database, modelId, `${modelId}.stash.unity3d`));
 		promises.push(renameUnityAssetList(db, database, modelId));
@@ -210,94 +258,14 @@ const importToyModel = async (modelDir, database, modelId, skipProcessing = {}) 
 	if(!skipPostProcessing.risks)
 		promises.push(updateAuthorAndDate(db, modelId, "risks"));
 	if(!skipPostProcessing.history)
-		promises.push(renameGroups(db));
+		promises.push(renameGroups(db, database, modelId));
 
 	await Promise.all(promises);
 	logger.log("Toy modelId imported");
 
 }
 
+module.exports = {
+	importToyModel
+};
 
-module.exports = function(dbConfig, modelDir, username, database, project, skipPostProcessing = {}){
-
-
-
-	function renameGroups(db){
-
-		const subModelNameToOldID = {
-			"Lego_House_Architecture" : "1cac0310-e3cc-11ea-bc6b-69e466be9639",
-			"Lego_House_Landscape" : "1cab8de0-e3cc-11ea-bc6b-69e466be9639",
-			"Lego_House_Structure" : "1cac5130-e3cc-11ea-bc6b-69e466be9639"
-		};
-
-		return new Promise((resolve, reject) => {
-
-			const updateGroupPromises = [];
-			const collection = db.collection(`${project}.groups`);
-
-
-			return db.collection("settings").findOne({_id: project}).then(setting => {
-				if(!setting) {
-					return reject("Model "+ setting +" not found");
-				}
-				const oldIdToNewId = {};
-				let subModelPromise;
-				if(setting.subModels) {
-					const subModelList = [];
-					setting.subModels.forEach((subModel) => {
-						subModelList.push(subModel.model);
-					});
-					subModelPromise = db.collection("settings").find({_id: {$in: subModelList}}).toArray();
-					subModelPromise.then((arr) => {
-						arr.forEach( (subModelSetting) => {
-							if(subModelNameToOldID[subModelSetting.name]) {
-								oldIdToNewId[subModelNameToOldID[subModelSetting.name]] = subModelSetting._id;
-							}
-						});
-					});
-				}
-				else {
-					subModelPromise = Promise.resolve();
-				}
-
-				return subModelPromise.then(() => {
-					return collection.find().forEach(group => {
-						group.objects && group.objects.forEach(obj => {
-							const updateObjectPromises = [];
-							obj.account = database;
-
-							//if model is fed model, then model id of a group should be
-							//one of the sub models instead of the id of the fed model itself
-							if(oldIdToNewId[obj.model]) {
-								obj.model = oldIdToNewId[obj.model];
-							}
-							else {
-								obj.model = project;
-							}
-						});
-
-						return collection.updateOne({ _id: group._id }, group);
-
-
-					}, function done(err) {
-						if(err){
-							reject(err);
-						} else {
-							Promise.all(updateGroupPromises)
-								.then(() => resolve())
-								.catch(err => reject(err));
-						}
-					});
-
-				});
-
-
-
-			});
-
-		});
-
-	}
-
-
-}
