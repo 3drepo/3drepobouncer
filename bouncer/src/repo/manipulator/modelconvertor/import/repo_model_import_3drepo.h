@@ -45,15 +45,24 @@ namespace repo {
 			const char REPO_IMPORT_TYPE_BOOL = 'B';
 			const char REPO_IMPORT_TYPE_DATETIME = 'T';
 
-			const std::string REPO_IMPORT_METADATA = "metadata";
-			const std::string REPO_IMPORT_GEOMETRY = "geometry";
-			const std::string REPO_IMPORT_MATERIAL = "material";
-			const std::string REPO_IMPORT_VERTICES = "vertices";
-			const std::string REPO_IMPORT_UV	   = "uv";
-			const std::string REPO_IMPORT_NORMALS  = "normals";
-			const std::string REPO_IMPORT_INDICES  = "indices";
+			// Node JSON fields
+			const  std::string REPO_IMPORT_METADATA = "metadata";
+			const  std::string REPO_IMPORT_GEOMETRY = "geometry";
+			const  std::string REPO_IMPORT_MATERIAL = "material";
+			const  std::string REPO_IMPORT_VERTICES = "vertices";
+			const  std::string REPO_IMPORT_UV	   = "uv";
+			const  std::string REPO_IMPORT_NORMALS  = "normals";
+			const  std::string REPO_IMPORT_INDICES  = "indices";
+			const  std::string REPO_IMPORT_BBOX 	   = "bbox";
 
-			const std::string REPO_IMPORT_BBOX = "bbox";
+			// Texture JSON fields
+			const  std::string REPO_TXTR_FNAME = "filename";
+			const  std::string REPO_TXTR_NUM_BYTES = "numImageBytes";
+			const  std::string REPO_TXTR_WIDTH = "width";
+			const  std::string REPO_TXTR_HEIGHT = "height";
+			const  std::string REPO_TXTR_ID = "id";
+			const  std::string REPO_TXTR_IMG_BYTES = "imageBytes";
+
 
 			const static int REPO_VERSION_LENGTH = 6;
 
@@ -88,7 +97,6 @@ namespace repo {
 
 				struct mesh_data_t 
 				{
-					int parentBimId;
 					std::vector<repo::lib::RepoVector3D64> rawVertices;
 					std::vector<repo::lib::RepoVector3D> normals;
 					std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
@@ -101,7 +109,7 @@ namespace repo {
 				void parseMaterial(const boost::property_tree::ptree& pt);
 				void parseTexture(const boost::property_tree::ptree& textureTree, char * dataBuffer);
 				repo::core::model::MetadataNode*  createMetadataNode(const boost::property_tree::ptree &metadata, const std::string &parentName, const repo::lib::RepoUUID &parentID);
-				mesh_data_t createMeshRecord(int parentBimId, const boost::property_tree::ptree &geometry, const std::string &parentName, const repo::lib::RepoUUID &parentID, const repo::lib::RepoMatrix &trans);
+				mesh_data_t createMeshRecord(const boost::property_tree::ptree &geometry, const std::string &parentName, const repo::lib::RepoUUID &parentID, const repo::lib::RepoMatrix &trans);
 
 				/**
 				 * @brief Creates a property tree from the current

@@ -20,8 +20,6 @@
 #include "repo_test_database_info.h"
 #include "repo_test_fileservice_info.h"
 #include <fstream>
-#include <repo/lib/repo_log.h>
-#include "../../bouncer/src/repo/error_codes.h"
 
 static repo::RepoController::RepoToken* initController(repo::RepoController *controller) {
 	repo::lib::RepoConfig config = { REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,

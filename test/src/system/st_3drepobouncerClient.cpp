@@ -130,12 +130,12 @@ static int testUpload (
 	std::string fileName
 	)
 {
-	std::string bimUpload = produceUploadArgs(
+	std::string uploadCmd = produceUploadArgs(
 		mongoDbName,
 		projectName,
 		getDataPath(fileName));
 
-	int errCode = runProcess(bimUpload);
+	int errCode = runProcess(uploadCmd);
 	;
 	repoInfo << "Error code from bouncer client: " << errCode
 		<< ", " << (int)errCode;

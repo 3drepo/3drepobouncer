@@ -141,18 +141,17 @@ void RepoModelImport::parseMaterial(const boost::property_tree::ptree &matTree)
 	{
 		textureIdToParents[textureId].push_back(materialNode->getSharedID());
 	}
-	return;
 }
 
 void RepoModelImport::parseTexture(
 	const boost::property_tree::ptree& textureTree, 
 	char * const dataBuffer)
 {
-	bool fileNameOk	 = textureTree.find("filename") != textureTree.not_found();
-	bool byteCountOK = textureTree.find("numImageBytes") != textureTree.not_found();
-	bool widthOk	 = textureTree.find("width") != textureTree.not_found();
-	bool heightOk	 = textureTree.find("height") != textureTree.not_found();
-	bool idOk		 = textureTree.find("id") != textureTree.not_found();
+	bool fileNameOk	 = textureTree.find(REPO_TXTR_FNAME) != textureTree.not_found();
+	bool byteCountOK = textureTree.find(REPO_TXTR_NUM_BYTES) != textureTree.not_found();
+	bool widthOk	 = textureTree.find(REPO_TXTR_WIDTH) != textureTree.not_found();
+	bool heightOk	 = textureTree.find(REPO_TXTR_HEIGHT) != textureTree.not_found();
+	bool idOk		 = textureTree.find(REPO_TXTR_ID) != textureTree.not_found();
 
 	if (!byteCountOK ||
 		!widthOk	 ||
@@ -164,13 +163,13 @@ void RepoModelImport::parseTexture(
 		return;
 	}
 
-	std::string name = fileNameOk ? textureTree.get_child("filename").data() : "";
-	uint32_t byteCount = textureTree.get<uint32_t>("numImageBytes");
-	uint32_t width = textureTree.get<uint32_t>("width");
-	uint32_t height = textureTree.get<uint32_t>("height");
-	uint32_t id = textureTree.get<uint32_t>("id");
+	std::string name = fileNameOk ? textureTree.get_child(REPO_TXTR_FNAME).data() : "";
+	uint32_t byteCount = textureTree.get<uint32_t>(REPO_TXTR_NUM_BYTES);
+	uint32_t width = textureTree.get<uint32_t>(REPO_TXTR_WIDTH);
+	uint32_t height = textureTree.get<uint32_t>(REPO_TXTR_HEIGHT);
+	uint32_t id = textureTree.get<uint32_t>(REPO_TXTR_ID);
 
-	std::vector<uint32_t> DataStartEnd = as_vector<uint32_t>(textureTree, "imageBytes");
+	std::vector<uint64_t> DataStartEnd = as_vector<uint64_t>(textureTree, REPO_TXTR_IMG_BYTES);
 
 	char* data = &dataBuffer[DataStartEnd[0]];
 
@@ -182,18 +181,14 @@ void RepoModelImport::parseTexture(
 				byteCount,
 				width,
 				height,
-				REPO_NODE_API_LEVEL_1));
+				REPO_NODE_API_LEVEL_1,
+				&textureIdToParents[id]));
 	
-	repo::core::model::TextureNode* tmpTexture = new repo::core::model::TextureNode();
-	*tmpTexture = textureNode->cloneAndAddParent(textureIdToParents[id]);
-	textures.insert(tmpTexture);
-
-	return;
+	textures.insert(textureNode);
 }
 
 
 RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
-	int parentBimId,
 	const ptree &mesh,
 	const std::string &parentName,
 	const repo::lib::RepoUUID &parentID,
@@ -236,8 +231,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 		{
 			materialID = props->second.get_value<int>();
 		}
-
-		if (props->first == REPO_IMPORT_VERTICES || props->first == REPO_IMPORT_NORMALS)
+		else if (props->first == REPO_IMPORT_VERTICES || props->first == REPO_IMPORT_NORMALS)
 		{
 			std::vector<int64_t> startEnd = as_vector<int64_t>(mesh, props->first);
 
@@ -275,8 +269,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 				}
 			}
 		}
-
-		if (props->first == REPO_IMPORT_UV)
+		else if (props->first == REPO_IMPORT_UV)
 		{
 			std::vector<int64_t> startEnd = as_vector<int64_t>(mesh, props->first);
 			float* tmpUVs = (float*)(dataBuffer + startEnd[0]);
@@ -288,8 +281,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 			}
 			uvChannels.push_back(uvChannelVector);
 		}
-
-		if (props->first == REPO_IMPORT_INDICES)
+		else if (props->first == REPO_IMPORT_INDICES)
 		{
 			std::vector<int64_t> startEnd = as_vector<int64_t>(mesh, REPO_IMPORT_INDICES);
 
@@ -326,7 +318,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 		matParents[materialID].push_back(sharedID);
 	}
 
-	mesh_data_t result = { parentBimId, vertices, normals, uvChannels, faces, boundingBox, parentID, sharedID };
+	mesh_data_t result = { vertices, normals, uvChannels, faces, boundingBox, parentID, sharedID };
 	return result;
 }
 
@@ -379,7 +371,7 @@ void RepoModelImport::createObject(const ptree& tree)
 
 		if (props->first == REPO_IMPORT_GEOMETRY)
 		{
-			auto mesh = createMeshRecord(myID, props->second, transName, transID, trans_matrix_map.back());
+			auto mesh = createMeshRecord(props->second, transName, transID, trans_matrix_map.back());
 			metaParentIDs.push_back(mesh.sharedID);
 			meshEntries.push_back(mesh);
 		}

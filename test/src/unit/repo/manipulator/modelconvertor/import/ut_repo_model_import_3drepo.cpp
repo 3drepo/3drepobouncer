@@ -21,6 +21,7 @@
 #include "../../../../repo_test_utils.h"
 #include "../../../../repo_test_database_info.h"
 #include "boost/filesystem.hpp"
+#include "../../bouncer/src/repo/error_codes.h"
 
 using namespace repo::manipulator::modelconvertor;
 
