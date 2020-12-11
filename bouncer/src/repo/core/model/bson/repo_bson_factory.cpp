@@ -893,26 +893,24 @@ TextureNode RepoBSONFactory::makeTextureNode(
 	const uint32_t    &byteCount,
 	const uint32_t    &width,
 	const uint32_t    &height,
-	const int         &apiLevel)
+	const int         &apiLevel,
+	const std::vector<repo::lib::RepoUUID>* parentIDs)
 {
 	RepoBSONBuilder builder;
 	repo::lib::RepoUUID uniqueID = repo::lib::RepoUUID::createUUID();
 	std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> binMapping;
 	auto defaults = appendDefaults(REPO_NODE_TYPE_TEXTURE, apiLevel, uniqueID, name);
 	builder.appendElements(defaults);
-	//
+	//--------------------------------------------------------------------------
 	// Width
-	//
 	builder.append(REPO_LABEL_WIDTH, width);
 
-	//
+	//--------------------------------------------------------------------------
 	// Height
-	//
 	builder.append(REPO_LABEL_HEIGHT, height);
 
-	//
+	//--------------------------------------------------------------------------
 	// Format TODO: replace format with MIME Type?
-	//
 	if (!name.empty())
 	{
 		boost::filesystem::path file{ name };
@@ -920,10 +918,9 @@ TextureNode RepoBSONFactory::makeTextureNode(
 		if (!ext.empty())
 			builder.append(REPO_NODE_LABEL_EXTENSION, ext.substr(1, ext.size()));
 	}
-	//
-	// Data
-	//
 
+	//--------------------------------------------------------------------------
+	// Data
 	if (data && byteCount) {
 		std::string bName = uniqueID.toString() + "_data";
 		//inclusion of this binary exceeds the maximum, store separately
@@ -935,6 +932,21 @@ TextureNode RepoBSONFactory::makeTextureNode(
 	else
 	{
 		repoWarning << " Creating a texture node with no texture!";
+	}
+
+	//--------------------------------------------------------------------------
+	// Parent IDs
+	if(parentIDs != nullptr && (parentIDs->size() > 0))
+	{	
+		auto locParentIDs = *parentIDs;
+		// Sort and remove duplicates 
+		std::sort(locParentIDs.begin(), locParentIDs.end());
+		auto noDupesEnd = std::unique(locParentIDs.begin(), locParentIDs.end());
+		if (noDupesEnd != locParentIDs.end())
+		{		
+			locParentIDs.erase(noDupesEnd, locParentIDs.end());
+		}
+		builder.appendArray(REPO_NODE_LABEL_PARENTS, locParentIDs);
 	}
 
 	return TextureNode(builder.obj(), binMapping);
