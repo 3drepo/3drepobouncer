@@ -492,7 +492,7 @@ void MultipartOptimizer::sortMeshes(
 		auto meshGroup = mesh->getGrouping();
 
 		/**
-		* 1 - figure out it's mFormat (what buffers does it have)
+		* 1 - figure out it's mFormat (what buffers, flags and primitives does it have)
 		* 2 - check if it has texture
 		* 3 - if not, check if it is transparent
 		*/

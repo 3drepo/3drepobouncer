@@ -54,6 +54,12 @@ std::string MeshNode::getGrouping() const {
 	return "";
 }
 
+MeshNode::Primitive MeshNode::getPrimitive() const {
+	if (hasField(REPO_NODE_MESH_LABEL_PRIMITIVE))
+		return static_cast<MeshNode::Primitive>(getIntField(REPO_NODE_MESH_LABEL_PRIMITIVE));
+	return MeshNode::Primitive::TRIANGLES;
+}
+
 RepoNode MeshNode::cloneAndApplyTransformation(
 	const repo::lib::RepoMatrix &matrix) const
 {
@@ -288,7 +294,7 @@ uint32_t MeshNode::getMFormat(const bool isTransparent, const bool isInvisibleDe
 {
 	/*
 	 * maximum of 32 bit, each bit represent the presents of the following
-	 * vertices faces normals colors #uvs
+	 * vertices faces normals colors #uvs #type
 	 */
 
 	uint32_t vBit = (uint32_t)hasBinField(REPO_NODE_MESH_LABEL_VERTICES);
@@ -297,9 +303,16 @@ uint32_t MeshNode::getMFormat(const bool isTransparent, const bool isInvisibleDe
 	uint32_t cBit = (uint32_t)hasBinField(REPO_NODE_MESH_LABEL_COLORS) << 3;
 	uint32_t transBit = isTransparent ? 1 : 0 << 4;
 	uint32_t visiBit = isInvisibleDefault ? 1 : 0 << 5;
-	uint32_t uvBits = (hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT) ? getIntField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT) : 0) << 6;
 
-	return vBit | fBit | nBit | cBit | uvBits | transBit | visiBit;
+	/* 
+	 * The current packing supports 255 uv channels and 255 face index counts, both much higher than currently used in any realtime graphics pipeline
+	 * The offsets for the multi-bit fields are powers of 2 for simplicity.
+	 */
+
+	uint32_t uvBits = ((hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT) ? getIntField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT) : 0) & 0xFF) << 8;
+	uint32_t typeBits = (static_cast<int>(getPrimitive()) & 0xFF) << 16;
+
+	return vBit | fBit | nBit | cBit | uvBits | transBit | visiBit | typeBits;
 }
 
 std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
