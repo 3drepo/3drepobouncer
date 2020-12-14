@@ -30,7 +30,7 @@
 #include "../../../core/model/bson/repo_node_metadata.h"
 #include "../../../core/model/bson/repo_node_transformation.h"
 #include "../../../lib/repo_property_tree.h"
-#include "../../../3drepobouncer/bouncer/src/repo/error_codes.h"
+#include "../../../error_codes.h"
 
 namespace repo {
 	namespace manipulator {
