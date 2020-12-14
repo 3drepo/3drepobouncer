@@ -42,8 +42,8 @@ RepoModelImport::~RepoModelImport()
 }
 
 repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(
-	const ptree &metaTree, 
-	const std::string &parentName, 
+	const ptree &metaTree,
+	const std::string &parentName,
 	const repo::lib::RepoUUID &parentID)
 {
 	std::vector<std::string> keys, values;
@@ -137,25 +137,25 @@ void RepoModelImport::parseMaterial(const boost::property_tree::ptree &matTree)
 	materials.insert(materialNode);
 	matNodeList.push_back(materialNode);
 
-	if(textureId >= 0)
+	if (textureId >= 0)
 	{
 		textureIdToParents[textureId].push_back(materialNode->getSharedID());
 	}
 }
 
 void RepoModelImport::parseTexture(
-	const boost::property_tree::ptree& textureTree, 
+	const boost::property_tree::ptree& textureTree,
 	char * const dataBuffer)
 {
-	bool fileNameOk	 = textureTree.find(REPO_TXTR_FNAME) != textureTree.not_found();
+	bool fileNameOk = textureTree.find(REPO_TXTR_FNAME) != textureTree.not_found();
 	bool byteCountOK = textureTree.find(REPO_TXTR_NUM_BYTES) != textureTree.not_found();
-	bool widthOk	 = textureTree.find(REPO_TXTR_WIDTH) != textureTree.not_found();
-	bool heightOk	 = textureTree.find(REPO_TXTR_HEIGHT) != textureTree.not_found();
-	bool idOk		 = textureTree.find(REPO_TXTR_ID) != textureTree.not_found();
+	bool widthOk = textureTree.find(REPO_TXTR_WIDTH) != textureTree.not_found();
+	bool heightOk = textureTree.find(REPO_TXTR_HEIGHT) != textureTree.not_found();
+	bool idOk = textureTree.find(REPO_TXTR_ID) != textureTree.not_found();
 
 	if (!byteCountOK ||
-		!widthOk	 ||
-		!heightOk	 ||
+		!widthOk ||
+		!heightOk ||
 		!idOk)
 	{
 		repoError << "Required texture field missing. Skipping this texture.";
@@ -181,12 +181,10 @@ void RepoModelImport::parseTexture(
 				byteCount,
 				width,
 				height,
-				textureIdToParents[id],
-				REPO_NODE_API_LEVEL_1));
-	
+				textureIdToParents[id]));
+
 	textures.insert(textureNode);
 }
-
 
 RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 	const ptree &mesh,
@@ -276,7 +274,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 			std::vector<repo::lib::RepoVector2D> uvChannelVector;
 			for (int i = 0; i < numVertices; i++)
 			{
-				repo::lib::RepoVector2D tmpUVVec = repo::lib::RepoVector2D(tmpUVs[i * 2] ,  tmpUVs[i * 2 + 1]);
+				repo::lib::RepoVector2D tmpUVVec = repo::lib::RepoVector2D(tmpUVs[i * 2], tmpUVs[i * 2 + 1]);
 				uvChannelVector.push_back(tmpUVVec);
 			}
 			uvChannels.push_back(uvChannelVector);
@@ -434,7 +432,7 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 		repoInfo << "Loading BIM file [VERSION: " << incomingVersion << "]";
 
 		size_t metaSize = REPO_VERSION_LENGTH + sizeof(fileMeta);
-		if(incomingVersion == REPO_V3)
+		if (incomingVersion == REPO_V3)
 		{
 			fin->read((char*)&file_meta, REPO_V3_FILEMETA_BYTE_LEN);
 		}
@@ -442,16 +440,16 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 		{
 			fin->read((char*)&file_meta, REPO_V2_FILEMETA_BYTE_LEN);
 		}
-		repoInfo << std::left << std::setw(30) << "File meta size: "				<< metaSize;
-		repoInfo << std::left << std::setw(30) << "JSON size: "						<< file_meta.jsonSize	  << " bytes";
-		repoInfo << std::left << std::setw(30) << "Data buffer size: "				<< file_meta.dataSize	  << " bytes";
-		repoInfo << std::left << std::setw(30) << "\"sizes\" array start location: "<< file_meta.sizesStart	  << " bytes";
-		repoInfo << std::left << std::setw(30) << "\"sizes\" array size: "			<< file_meta.sizesSize	  << " bytes";
-		repoInfo << std::left << std::setw(30) << "\"materials\" array location: "	<< file_meta.matStart	  << " bytes";
-		repoInfo << std::left << std::setw(30) << "\"materials\" array size: "		<< file_meta.matSize	  << " bytes";
-		repoInfo << std::left << std::setw(30) << "\"textures\" array location: "	<< file_meta.textureSize  << " bytes";
-		repoInfo << std::left << std::setw(30) << "\"textures\" array size: "		<< file_meta.textureStart << " bytes";
-		repoInfo << std::left << std::setw(30) << "Number of parts to process:"		<< file_meta.numChildren;
+		repoInfo << std::left << std::setw(30) << "File meta size: " << metaSize;
+		repoInfo << std::left << std::setw(30) << "JSON size: " << file_meta.jsonSize << " bytes";
+		repoInfo << std::left << std::setw(30) << "Data buffer size: " << file_meta.dataSize << " bytes";
+		repoInfo << std::left << std::setw(30) << "\"sizes\" array start location: " << file_meta.sizesStart << " bytes";
+		repoInfo << std::left << std::setw(30) << "\"sizes\" array size: " << file_meta.sizesSize << " bytes";
+		repoInfo << std::left << std::setw(30) << "\"materials\" array location: " << file_meta.matStart << " bytes";
+		repoInfo << std::left << std::setw(30) << "\"materials\" array size: " << file_meta.matSize << " bytes";
+		repoInfo << std::left << std::setw(30) << "\"textures\" array location: " << file_meta.textureSize << " bytes";
+		repoInfo << std::left << std::setw(30) << "\"textures\" array size: " << file_meta.textureStart << " bytes";
+		repoInfo << std::left << std::setw(30) << "Number of parts to process:" << file_meta.numChildren;
 
 		// Load full JSON tree
 		boost::property_tree::ptree jsonRoot = getNextJSON(file_meta.jsonSize);
@@ -479,7 +477,7 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 			return false;
 		}
 		boost::optional<ptree&> sizesRoot = jsonRoot.get_child_optional("sizes");
-		if(sizesRoot)
+		if (sizesRoot)
 		{
 			sizes = as_vector<long>(sizesRoot.get());
 		}
@@ -499,9 +497,9 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 			repoInfo << "Loaded: " << textures.size() << " textures";
 			int maxTextureId = textureIdToParents.rbegin()->first;
 			if (maxTextureId > (textures.size() - 1))
-			{ 
+			{
 				repoError << "A material is referencing a missing texture";
-				missingTextures = true; 
+				missingTextures = true;
 			}
 		}
 
@@ -572,7 +570,7 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t &errMsg
 	trans_matrix_map.push_back(transMat);
 	transformations.insert(rootNode);
 
-	// Process children of root node 
+	// Process children of root node
 	char comma;
 	for (long i = 0; i < file_meta.numChildren; i++)
 	{
@@ -608,7 +606,7 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t &errMsg
 	for (const auto &entry : meshEntries) {
 		std::vector<repo::lib::RepoVector3D> vertices;
 		std::vector<std::vector<float>> boundingBox;
-		// Offsetting all the verts by the world offset to reduce the magnitude 
+		// Offsetting all the verts by the world offset to reduce the magnitude
 		// of their values so they can be cast to floats (widely used in 3D libs)
 		for (const auto &v : entry.rawVertices) {
 			repo::lib::RepoVector3D v32 = { (float)(v.x - offset[0]), (float)(v.y - offset[1]), (float)(v.z - offset[2]) };
@@ -640,10 +638,10 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t &errMsg
 	// Generate scene
 	repo::core::model::RepoScene * scenePtr = new repo::core::model::RepoScene(fileVect, cameras, meshes, materials, metadata, textures, transformations);
 	scenePtr->setWorldOffset(offset);
-	if (missingTextures) 
+	if (missingTextures)
 	{
 		errMsg = REPOERR_LOAD_SCENE_MISSING_TEXTURE;
-		scenePtr->setMissingTexture(); 
+		scenePtr->setMissingTexture();
 	}
 
 	// Cleanup
