@@ -827,6 +827,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 								size,
 								texture->mWidth,
 								texture->mHeight,
+								std::vector<repo::lib::RepoUUID>(),
 								REPO_NODE_API_LEVEL_1));
 
 							free(memblock);
@@ -860,6 +861,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 								size,
 								size,
 								0,
+								std::vector<repo::lib::RepoUUID>(),
 								REPO_NODE_API_LEVEL_1));
 
 							if (memblock)delete[] memblock;

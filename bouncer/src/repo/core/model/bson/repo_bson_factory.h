@@ -369,8 +369,8 @@ namespace repo {
 					const uint32_t    &byteCount,
 					const uint32_t    &width,
 					const uint32_t    &height,
-					const int         &apiLevel = REPO_NODE_API_LEVEL_1,
-					const std::vector<repo::lib::RepoUUID>* parentIDs = nullptr);
+					const std::vector<repo::lib::RepoUUID>& parentIDs = std::vector<repo::lib::RepoUUID>(),
+					const int         &apiLevel = REPO_NODE_API_LEVEL_1);
 
 				/**
 				* Create a Transformation Node

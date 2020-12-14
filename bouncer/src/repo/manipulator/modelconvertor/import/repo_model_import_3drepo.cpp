@@ -181,8 +181,8 @@ void RepoModelImport::parseTexture(
 				byteCount,
 				width,
 				height,
-				REPO_NODE_API_LEVEL_1,
-				&textureIdToParents[id]));
+				textureIdToParents[id],
+				REPO_NODE_API_LEVEL_1));
 	
 	textures.insert(textureNode);
 }

@@ -893,13 +893,13 @@ TextureNode RepoBSONFactory::makeTextureNode(
 	const uint32_t    &byteCount,
 	const uint32_t    &width,
 	const uint32_t    &height,
-	const int         &apiLevel,
-	const std::vector<repo::lib::RepoUUID>* parentIDs)
+	const std::vector<repo::lib::RepoUUID>& parentIDs,
+	const int         &apiLevel)
 {
 	RepoBSONBuilder builder;
 	repo::lib::RepoUUID uniqueID = repo::lib::RepoUUID::createUUID();
 	std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> binMapping;
-	auto defaults = appendDefaults(REPO_NODE_TYPE_TEXTURE, apiLevel, uniqueID, name);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_TEXTURE, apiLevel, uniqueID, name, parentIDs);
 	builder.appendElements(defaults);
 	//--------------------------------------------------------------------------
 	// Width
@@ -932,21 +932,6 @@ TextureNode RepoBSONFactory::makeTextureNode(
 	else
 	{
 		repoWarning << " Creating a texture node with no texture!";
-	}
-
-	//--------------------------------------------------------------------------
-	// Parent IDs
-	if(parentIDs != nullptr && (parentIDs->size() > 0))
-	{	
-		auto locParentIDs = *parentIDs;
-		// Sort and remove duplicates 
-		std::sort(locParentIDs.begin(), locParentIDs.end());
-		auto noDupesEnd = std::unique(locParentIDs.begin(), locParentIDs.end());
-		if (noDupesEnd != locParentIDs.end())
-		{		
-			locParentIDs.erase(noDupesEnd, locParentIDs.end());
-		}
-		builder.appendArray(REPO_NODE_LABEL_PARENTS, locParentIDs);
 	}
 
 	return TextureNode(builder.obj(), binMapping);
