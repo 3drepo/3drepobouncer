@@ -30,18 +30,19 @@ namespace repo {
 			// Fields specific to unity assets only
 			//
 			//------------------------------------------------------------------------------
-			#define REPO_UNITY_ASSETS_LABEL_ASSETS "assets"
-			#define REPO_UNITY_ASSETS_LABEL_OFFSET "offset"
-			#define REPO_UNITY_ASSETS_LABEL_VRASSETS "vrAssets"
-			#define REPO_UNITY_ASSETS_LABEL_IOSASSETS "iosAssets"
-			#define REPO_UNITY_ASSETS_LABEL_JSONFILES "jsonFiles"
+#define REPO_UNITY_ASSETS_LABEL_ASSETS "assets"
+#define REPO_UNITY_ASSETS_LABEL_OFFSET "offset"
+#define REPO_UNITY_ASSETS_LABEL_VRASSETS "vrAssets"
+#define REPO_UNITY_ASSETS_LABEL_IOSASSETS "iosAssets"
+#define REPO_UNITY_ASSETS_LABEL_ANDROIDASSETS "androidAssets"
+#define REPO_UNITY_ASSETS_LABEL_JSONFILES "jsonFiles"
 			class REPO_API_EXPORT RepoUnityAssets : public RepoBSON
 			{
 			public:
 
 				RepoUnityAssets() : RepoBSON() {}
 
-				RepoUnityAssets(RepoBSON bson) : RepoBSON(bson){}
+				RepoUnityAssets(RepoBSON bson) : RepoBSON(bson) {}
 
 				~RepoUnityAssets() {}
 			};
