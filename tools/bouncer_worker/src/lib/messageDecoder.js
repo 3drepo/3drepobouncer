@@ -38,11 +38,11 @@ const win32Workaround = (cmd) => {
 }
 
 const getBouncerParams = (cmd, args) => {
-	win32workaround(cmd);
+	win32Workaround(cmd);
 	return [configPath, ...args];
 }
 
-const messageDecoder = (msg) => {
+const messageDecoder = (cmd) => {
 	const args = cmd.split(' ');
 	let	res = { command: args[0] };
 
@@ -57,25 +57,29 @@ const messageDecoder = (msg) => {
 			};
 			break;
 		case "import" :
-			cmdFile = require(arg[2]);
-			res = {
-				cmdParams : getBouncerParams(cmd, args),
-				database : cmdFile.database,
-				model : cmdFile.project,
-				user: cmdFile.owner,
-				...res
-			};
+			{
+				const cmdFile = require(args[2]);
+				res = {
+					cmdParams : getBouncerParams(cmd, args),
+					database : cmdFile.database,
+					model : cmdFile.project,
+					user: cmdFile.owner,
+					...res
+				};
+			}
 			break;
 		case "genFed" :
-			cmdFile = require(arg[1]);
-			res = {
-				cmdParams : getBouncerParams(cmd, args),
-				database : cmdFile.database,
-				model : cmdFile.project,
-				toyFed: cmdFile.toyFed,
-				user: cmdFile.owner,
-				...res
-			};
+			{
+				const cmdFile = require(args[1]);
+				res = {
+					cmdParams : getBouncerParams(cmd, args),
+					database : cmdFile.database,
+					model : cmdFile.project,
+					toyFed: cmdFile.toyFed,
+					user: cmdFile.owner,
+					...res
+				};
+			}
 			break;
 		case "genStash" :
 			res = {

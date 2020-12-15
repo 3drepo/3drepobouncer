@@ -18,9 +18,11 @@
 "use strict"
 
 const { config } = require('../lib/config');
-const { runCommand = runBouncerCommand } = require('../tasks/bouncerClient');
-const { ERRCODE_BOUNCER_CRASH } = require("../constants/errorCodes");
+const { runBouncerCommand } = require('../tasks/bouncerClient');
+const { ERRCODE_OK, ERRCODE_BOUNCER_CRASH } = require("../constants/errorCodes");
 const { generateAssetBundles } = require("../tasks/unityEditor");
+const { messageDecoder } = require('../lib/messageDecoder');
+const logger = require("../lib/logger");
 
 const onMessageReceived = async (cmd, rid, callback) => {
 	const logDir = `${config.bouncer.log_dir}/${rid.toString()}/`;
@@ -30,18 +32,18 @@ const onMessageReceived = async (cmd, rid, callback) => {
 		callback({value: cmdMsg.errorCode});
 	} else {
 
-		callback({
+		callback(JSON.stringify({
 			status: "processing",
 			database: cmdMsg.database,
 			project: cmdMsg.model
-		});
+		}));
 
 		const message = await processModel(cmdMsg, logDir);
 		callback(JSON.stringify(message));
 	}
 }
 
-const processModel = async ({database, model, cmdParams}) => {
+const processModel = async ({database, model, cmdParams}, logDir) => {
 	const returnMessage = {
 		value: ERRCODE_OK,
 		database: database,
@@ -49,8 +51,9 @@ const processModel = async ({database, model, cmdParams}) => {
 	};
 	try {
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams);
-		await generateAssetBundles(database, cmdProject, logDir);
+		await generateAssetBundles(database, model, logDir);
 	} catch(err) {
+		console.log(err);
 		logger.error(`Import model error: ${err.message || err}`);
 		returnMessage.value = err || ERRCODE_BOUNCER_CRASH;
 	}

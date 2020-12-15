@@ -20,7 +20,7 @@
 const { importToyModel } = require('../tasks/importToy');
 const { ERRCODE_OK, ERRCODE_TOY_IMPORT_FAILED } = require('../constants/errorCodes');
 const { config } = require('../lib/config');
-const { generateTreeStash, runCommand = runBouncerCommand } = require('../tasks/bouncerClient');
+const { generateTreeStash, runBouncerCommand } = require('../tasks/bouncerClient');
 const { messageDecoder } = require('../lib/messageDecoder');
 const logger = require("../lib/logger");
 

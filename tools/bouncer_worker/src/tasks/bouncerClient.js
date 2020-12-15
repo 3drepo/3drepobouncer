@@ -39,7 +39,7 @@ BouncerHandler.testClient = async () => {
 	}
 }
 
-BouncerHandler.runCommand = async (logDir, cmdParams) => {
+BouncerHandler.runBouncerCommand = async (logDir, cmdParams) => {
 	setBouncerEnvars(logDir);
 	return await run(bouncerClientPath, cmdParams, BOUNCER_SOFT_FAILS);
 }
