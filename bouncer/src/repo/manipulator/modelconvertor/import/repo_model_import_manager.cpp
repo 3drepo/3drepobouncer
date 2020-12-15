@@ -89,9 +89,8 @@ std::shared_ptr<AbstractModelImport> ModelImportManager::chooseModelConvertor(
 	const std::string &file,
 	const repo::manipulator::modelconvertor::ModelImportConfig &config
 ) const {
-	boost::filesystem::path filePathP(file);
-	std::string fileExt = filePathP.extension().string();
-	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
+	std::string fileExt = repo::lib::getExtension(file);
+	repo::lib::toUpper(fileExt);
 
 	std::shared_ptr<AbstractModelImport> modelConvertor = nullptr;
 

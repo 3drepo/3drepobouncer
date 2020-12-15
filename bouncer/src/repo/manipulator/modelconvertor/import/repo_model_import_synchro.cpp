@@ -347,9 +347,10 @@ std::vector<float> SynchroModelImport::colourFrom32Bit(const uint32_t &color) co
 }
 
 std::string SynchroModelImport::generateCache(
+	const std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
 	const std::unordered_map<float, std::set<std::string>> &alphaValueToIDs,
 	const std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
-	const std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> &transformState,
+	const std::unordered_map<std::string, std::vector<double>> &resourceIDTransState,
 	const std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> &clipState,
 	const std::shared_ptr<CameraChange> &cam,
 	std::unordered_map<std::string, std::vector<uint8_t>> &stateBuffers) {
@@ -370,12 +371,15 @@ std::string SynchroModelImport::generateCache(
 		}
 	}
 	if (settings.shouldImportAnimations()) {
-		for (const auto &entry : transformState) {
-			repo::lib::PropertyTree transformTree;
-			transformTree.addToTree(SEQ_CACHE_LABEL_VALUE, entry.second);
-			std::vector<repo::lib::RepoUUID> idArr = { entry.first };
-			transformTree.addToTree(SEQ_CACHE_LABEL_SHARED_IDS, idArr);
-			transformationStates.push_back(transformTree);
+		for (const auto &entry : resourceIDTransState) {
+			if (resourceIDsToSharedIDs.find(entry.first) != resourceIDsToSharedIDs.end()
+				&& resourceIDsToSharedIDs.at(entry.first).size()) {
+				repo::lib::PropertyTree transformTree;
+				transformTree.addToTree(SEQ_CACHE_LABEL_VALUE, entry.second);
+				std::vector<repo::lib::RepoUUID> idArr = resourceIDsToSharedIDs.at(entry.first);
+				transformTree.addToTree(SEQ_CACHE_LABEL_SHARED_IDS, idArr);
+				transformationStates.push_back(transformTree);
+			}
 		}
 	}
 
@@ -463,7 +467,7 @@ void SynchroModelImport::updateFrameState(
 	std::unordered_map<float, std::set<std::string>> &alphaValueToIDs,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> &meshAlphaState,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> &meshColourState,
-	std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> &transformState,
+	std::unordered_map<std::string, std::vector<double>> &resourceIDTransState,
 	std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> &clipState,
 	std::shared_ptr<CameraChange> &cam,
 	std::set<std::string> &transformingResource,
@@ -534,14 +538,12 @@ void SynchroModelImport::updateFrameState(
 					}
 					else if (matrix.equals(resourceIDLastTrans.at(transTask->resourceID))) {
 						//it's moving to the final state
-						for (const auto &mesh : meshes)
-							transformState.erase(mesh);
+						resourceIDTransState.erase(transTask->resourceID);
 						isTransforming = false;
 					}
 				}
 				else if (transTask->reset) {
-					for (const auto &mesh : meshes)
-						transformState.erase(mesh);
+					resourceIDTransState.erase(transTask->resourceID);
 					isTransforming = false;
 				}
 
@@ -553,8 +555,12 @@ void SynchroModelImport::updateFrameState(
 
 					matrix = convertMatrixTo3DRepoWorld(matrix, offset);
 
-					for (const auto &mesh : meshes) {
-						transformState[mesh] = matrix.getData();
+					if (matrix.isIdentity()) {
+						//We're moving it to the final state. undo the transformation
+						resourceIDTransState.erase(transTask->resourceID);
+					}
+					else {
+						resourceIDTransState[transTask->resourceID] = matrix.getData();
 					}
 				}
 			}
@@ -701,7 +707,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 
 		std::unordered_map<repo::lib::RepoUUID, std::pair<float, float>, repo::lib::RepoUUIDHasher> meshAlphaState;
 		std::unordered_map<repo::lib::RepoUUID, std::pair<uint32_t, std::vector<float>>, repo::lib::RepoUUIDHasher> meshColourState;
-		std::unordered_map<repo::lib::RepoUUID, std::vector<double>, repo::lib::RepoUUIDHasher> transformState;
+		std::unordered_map<std::string, std::vector<double>> resourceIDTransState;
 		std::unordered_map<std::string, repo::lib::RepoMatrix64> resourceIDLastTrans;
 		std::unordered_map<std::string, std::vector<uint8_t>> stateBuffers;
 		std::vector<repo::core::model::RepoSequence::FrameData> frameData;
@@ -741,19 +747,15 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 			};
 
 			auto matrix = repo::lib::RepoMatrix64(lastStateEntry.second);
+			if (!matrix.isIdentity()) {
+				resourceIDLastTrans[resourceID] = matrix;
+				auto node = (repo::core::model::TransformationNode*) scene->getNodeByUniqueID(
+					repo::core::model::RepoScene::GraphType::DEFAULT, resourceIDsToRootTransID[resourceID]);
 
-			resourceIDLastTrans[resourceID] = matrix;
-			auto node = (repo::core::model::TransformationNode*) scene->getNodeByUniqueID(
-				repo::core::model::RepoScene::GraphType::DEFAULT, resourceIDsToRootTransID[resourceID]);
+				node->swap(node->cloneAndApplyTransformation(matrix.getData()));
 
-			node->swap(node->cloneAndApplyTransformation(matrix.getData()));
-
-			auto matInverse = matrix.invert();
-			if (resourceIDsToSharedIDs.find(lastStateEntry.first) != resourceIDsToSharedIDs.end()) {
-				for (const auto &id : resourceIDsToSharedIDs[lastStateEntry.first]) {
-					//FIXME: need direct X conversion.
-					transformState[id] = convertMatrixTo3DRepoWorld(matInverse, offset).getData();
-				}
+				auto matInverse = matrix.invert();
+				resourceIDTransState[lastStateEntry.first] = convertMatrixTo3DRepoWorld(matInverse, offset).getData();
 			}
 		}
 
@@ -768,20 +770,20 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 		int step = total > 10 ? total / 10 : 1;
 
 		if (animation.frames.begin()->first > firstFrame &&
-			transformState.size()) {
+			resourceIDTransState.size()) {
 			//First animation frame is bigger than the task frame
 			//And we have animations... need to reset the state of the transforms.
 			repo::core::model::RepoSequence::FrameData data;
-			data.ref = generateCache(alphaValueToIDs, meshColourState, transformState, clipState, cam, stateBuffers);
+			data.ref = generateCache(resourceIDsToSharedIDs, alphaValueToIDs, meshColourState, resourceIDTransState, clipState, cam, stateBuffers);
 			data.timestamp = firstFrame;
 			frameData.push_back(data);
 		}
 
 		for (const auto &currentFrame : animation.frames) {
 			auto currentTime = currentFrame.first;
-			updateFrameState(currentFrame.second, resourceIDsToSharedIDs, resourceIDLastTrans, alphaValueToIDs, meshAlphaState, meshColourState, transformState, clipState, cam, transformingResources, offset);
+			updateFrameState(currentFrame.second, resourceIDsToSharedIDs, resourceIDLastTrans, alphaValueToIDs, meshAlphaState, meshColourState, resourceIDTransState, clipState, cam, transformingResources, offset);
 			repo::core::model::RepoSequence::FrameData data;
-			data.ref = generateCache(alphaValueToIDs, meshColourState, transformState, clipState, cam, stateBuffers);
+			data.ref = generateCache(resourceIDsToSharedIDs, alphaValueToIDs, meshColourState, resourceIDTransState, clipState, cam, stateBuffers);
 			data.timestamp = currentTime;
 			frameData.push_back(data);
 			if (++count % step == 0) {

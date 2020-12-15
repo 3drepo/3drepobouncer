@@ -113,11 +113,13 @@ namespace repo {
 				* Check if the mesh has texture
 				* @param scene scene as reference
 				* @param mesh mesh to check
-				* @return returns the ID of the texture, default ID otherwise.
+				* @param texID texID to return (if any)
+				* @return returns true if there is texture
 				*/
-				repo::lib::RepoUUID getTextureID(
+				bool hasTexture(
 					const repo::core::model::RepoScene *scene,
-					const repo::core::model::MeshNode  *mesh);
+					const repo::core::model::MeshNode  *mesh,
+					repo::lib::RepoUUID                           &texID);
 
 				/**
 				* Check if the mesh is (semi) Transparent
@@ -149,12 +151,18 @@ namespace repo {
 				* Sort the given RepoNodeSet of meshes for multipart merging
 				* @param scene             scene as reference
 				* @param meshes            meshes to sort
+				* @param normalMeshes      container to store normal meshes
+				* @param transparentMeshes container to store (semi)transparent meshes
+				* @param texturedMeshes    container to store textured meshes
 				*/
 				void sortMeshes(
 					const repo::core::model::RepoScene                                      *scene,
 					const repo::core::model::RepoNodeSet                                    &meshes,
+					std::unordered_map<std::string, std::unordered_map<uint32_t, std::vector<std::set<repo::lib::RepoUUID>>>>	&normalMeshes,
+					std::unordered_map < std::string, std::unordered_map<uint32_t, std::vector<std::set<repo::lib::RepoUUID>>>>	&transparentMeshes,
 					std::unordered_map < std::string, std::unordered_map < uint32_t, std::unordered_map < repo::lib::RepoUUID,
-					std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher >>> &normalMeshes);
+					std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher >>> &texturedMeshes
+				);
 			};
 		}
 	}

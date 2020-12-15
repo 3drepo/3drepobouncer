@@ -23,10 +23,15 @@
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../lib/repo_log.h"
 #include "../../modelutility/repo_mesh_map_reorganiser.h"
+#include <iostream>
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/zlib.hpp>
 
 using namespace repo::manipulator::modelconvertor;
 
 const static uint32_t SRC_MAGIC_BIT = 23;
+const static uint32_t SRC_MAGIC_BIT_COMPRESSED = 24;
 const static uint32_t SRC_VERSION = 42;
 const static size_t SRC_MAX_VERTEX_LIMIT = 65535;
 const static size_t SRC_X3DOM_FLOAT = 5126;
@@ -149,7 +154,11 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getSRCFile
 		uint32_t* bufferAsUInt = (uint32_t*)buffer.data();
 
 		//Header ints
+#if defined(REPO_BOOST_NO_GZIP)
 		bufferAsUInt[0] = SRC_MAGIC_BIT;
+#else
+		bufferAsUInt[0] = SRC_MAGIC_BIT_COMPRESSED;
+#endif
 		bufferAsUInt[1] = SRC_VERSION;
 		bufferAsUInt[2] = jsonByteSize;
 
@@ -164,8 +173,25 @@ std::unordered_map<std::string, std::vector<uint8_t>> SRCModelExport::getSRCFile
 
 		if (fdIt != fullDataBuffer.end())
 		{
+			auto fullDataArray = fdIt->second;
+
+#if !defined(REPO_BOOST_NO_GZIP)
+				boost::iostreams::filtering_streambuf<boost::iostreams::input> out;
+				out.push(boost::iostreams::zlib_compressor());
+				out.push(boost::iostreams::array_source((const char*)fullDataArray.data(), fullDataArray.size()));
+
+				// The first 4 bytes define the length of the uncompressed data. ZLib, at the least, requires this be known ahead of time.
+				std::vector<uint8_t> compressed;
+				compressed.resize(4);
+				((uint32_t*)compressed.data())[0] = fullDataArray.size();
+				
+				compressed.insert(compressed.end(), std::istreambuf_iterator<char>(&out), std::istreambuf_iterator<char>());
+				
+				fullDataArray = compressed;
+#endif
+
 			//Add data buffer to the full buffer
-			buffer.insert(buffer.end(), fdIt->second.begin(), fdIt->second.end());
+			buffer.insert(buffer.end(), fullDataArray.begin(), fullDataArray.end());
 			fileBuffers[fName] = buffer;
 		}
 		else
@@ -302,25 +328,18 @@ bool SRCModelExport::generateTreeRepresentation(
 				std::unordered_map<repo::lib::RepoUUID, std::vector<uint32_t>, repo::lib::RepoUUIDHasher> splitMapping = reSplitter->getSplitMapping();
 				delete reSplitter;
 
-				std::string ext = ".src";
-				bool sepX3d; //requires a separate x3d file if it is a multipart mesh
-				if (sepX3d = mesh->getMeshMapping().size() > 1)
-				{
-					ext += ".mpc";
-				}
+				std::string ext = ".src.mpc";
 
 				if (!textureID.empty())
 				{
-					ext += "?tex_uuid=" + textureID;
+					//ext += "?tex_uuid=" + textureID;
+					repoWarning << "Mesh " << mesh->getSharedID() << " has textures but the current Unreal SRC importer does not use them. Textures will be ignored in SRCs.";
 				}
 
 				if (success = addMeshToExport(splittedMesh, index, facebuf, idMapBuf, ext))
 				{
 					++index;
-					if (sepX3d)
-					{
-						success &= generateJSONMapping(mesh, scene, splitMapping);
-					}
+					success &= generateJSONMapping(mesh, scene, splitMapping);
 				}
 				else
 				{

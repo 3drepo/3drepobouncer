@@ -27,17 +27,22 @@ Doxygen documentation can be found [here](http://3drepo.github.io/3drepobouncer/
 Dependencies
 ------------
 3DRepoBouncer relies on the following libraries:
-* [Boost Library v1.55.0 - v1.58.0](http://www.boost.org/)  
+* [Boost Library v1.55.0 - v1.60.0](http://www.boost.org/)  
 See also [pre-built binaries for Windows](http://sourceforge.net/projects/boost/files/boost-binaries/)
 and [modular Boost](https://svn.boost.org/trac/boost/wiki/ModularBoost)
 on [GitHub](https://github.com/boostorg)
 * [Mongo CXX Driver Legacy v1.0+](https://github.com/mongodb/mongo-cxx-driver)
 See [3D Repo guide for compiling MongoDB](https://github.com/3drepo/3drepobouncer/wiki/Compiling-MongoDB-CXX-Driver)
-* [3D Repo ASSIMP library fork](https://github.com/3drepo/assimp)
+* [ASSIMP](https://github.com/assimp/assimp)
 See [3D Repo guide for compiling ASSIMP](https://github.com/3drepo/3drepobouncer/wiki/Compiling-ASSIMP)
 * [3D Repo IFCOpenShell Fork](https://github.com/3drepo/IfcOpenShell)
 This relies on 3D Repo's fork of [OCCT](https://github.com/3drepo/occt). See [3D Repo guide for compiling IFCOpenShell](https://github.com/3drepo/3drepobouncer/wiki/Compiling-IFCOpenShell)
+
+#### Optional Dependencies
+The following are optional dependencies depending on your configuration
 * [AWS SDK for C++](https://github.com/aws/aws-sdk-cpp)
+* 3D Repo Synchro Reader - 3D Repo's proprietary library for reading Synchro SPM files.
+* [Teigha Drawing and BIM library](https://www.opendesign.com/) - Proprietary library for reading RVT and DGN files
 
 To compile and install the library, the following are used:
 * [Python v2.x](https://www.python.org/)
@@ -60,6 +65,18 @@ set the following environmental variables to the directories of your installatio
 * `$env:BOOST_LIBRARYDIR = path_to_boost_libraries (i.e path_to_boost\lib64-msvc-12.0)` (NOT REQUIRED if libraries are in `$BOOST_ROOT/lib`) 
 * `$env:MONGO_ROOT = path_to_mongo_cxx_driver`
 * `$env:ASSIMP_ROOT = path_to_assimp`
+* `$env:OCCT_ROOT = path_to_occt`
+* `$env:OCCT_LIB_DIR = path_to_occt_libraries (e.g path_to_occt\win64\vc14\lib)` (NOT REQUIRED if libraries are in `$OCCT_ROOT/lib`) 
+* `$env:IFCOPENSHELL_ROOT = path_to_ifcOpenShell`
+
+You will also require the following if you are building with `ODA_SUPPORT` checked:
+* `$env:ODA_ROOT`
+* `$env:ODA_LIB_DIR` (e.g. `$ODA_ROOT/lib/lnxX64_5.3dll/`)
+
+You will also require the following if you are building with `SYNCHRO_SUPPORT` checked:
+* `$env:SYNCHRO_ROOT`
+* `$env:THRIFT_ROOT`
+* `$env:SYNCHRO_READER_ROOT`
 
 1. Clone the repository: `git clone https://github.com/3drepo/3drepobouncer.git`
 2. Change directory: `cd 3drepobouncer`
