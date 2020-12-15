@@ -16,7 +16,7 @@
  */
 
 
-const { config, configFullPath } = require("../lib/config");
+const { config, configPath } = require("../lib/config");
 const { ERRCODE_BUNDLE_GEN_FAIL } = require("../constants/errorCodes");
 const run = require("../lib/runCommand");
 const logger = require("../lib/logger");
@@ -28,7 +28,7 @@ UnityHandler.generateAssetBundles = async (database, model, logDir) => {
 		const unityCommand = config.unity.batPath;
 		const unityCmdParams = [
 			config.unity.project,
-			configFullPath,
+			configPath,
 			database,
 			model,
 			logDir
