@@ -44,5 +44,11 @@ BouncerHandler.runCommand = async (logDir, cmdParams) => {
 	return await run(bouncerClientPath, cmdParams, BOUNCER_SOFT_FAILS);
 }
 
+BouncerHandler.generateTreeStash = async (logDir, database, modelId, stashType, rev = "all") => {
+	const cmd = `genStash ${database} ${modelId} ${stashType} ${rev}`;
+	return BouncerHandler.runCommand(logDir, cmd);
+}
+
+
 
 module.exports = BouncerHandler;

@@ -1,28 +1,30 @@
 const amqp = require("amqplib");
 const { rabbitmq } = require("./config").config;
 const logger = require("../lib/logger");
+const JobQHandler = require("../queues/jobQueueHandler");
+const ModelQHandler = require("../queues/modelQueueHandler");
 
 let connClosed = false;
 let retry = 0;
 
-const reconnect = () => {
+const reconnect = (listenToJobQueue, listenToModelQueue) => {
 	const maxRetries = rabbitmq.maxRetries || 3;
 	if(++retry <= maxRetries) {
 		logger.error(`[AMQP] Trying to reconnect [${retry}/${maxRetries}]...`);
-		QueueHandler.connectToQueue();
+		QueueHandler.connectToQueue(listenToJobQueue, listenToModelQueue);
 	} else {
 		logger.error("[AMQP] Retries exhausted");
 		process.exit(-1);
 	}
 }
 
-const establishChannel = async (conn, workerQcallback, modelQcallback) => {
+const establishChannel = async (conn, listenToJobQueue, listenToModelQueue) => {
 	const channel = await conn.createChannel();
 	channel.assertQueue(rabbitmq.callback_queue, { durable: true });
-	rabbitmq.worker_queue && workerQcallback &&
-		listenToQueue(channel, rabbitmq.worker_queue, rabbitmq.task_prefetch);
-	rabbitmq.model_queue && modelQcallback &&
-		listenToQueue(channel, rabbitmq.model_queue, rabbitmq.model_prefetch);
+	rabbitmq.worker_queue && listenToJobQueue &&
+		listenToQueue(channel, rabbitmq.worker_queue, rabbitmq.task_prefetch, JobQHandler.onMessageReceived);
+	rabbitmq.model_queue && listenToModelQueue &&
+		listenToQueue(channel, rabbitmq.model_queue, rabbitmq.model_prefetch, ModelQHandler.onMessageReceived);
 }
 
 const listenToQueue = (channel, queueName, prefetchCount, callback) => {
@@ -42,7 +44,7 @@ const listenToQueue = (channel, queueName, prefetchCount, callback) => {
 
 const QueueHandler = {};
 
-QueueHandler.connectToQueue = async (onWorkerQTask, onModelQTask) => {
+QueueHandler.connectToQueue = async (listenToJobQueue, listenToModelQueue) => {
 	try {
 		const conn = await amqp.connect(rabbitmq.host);
 		retry = 0;
@@ -62,11 +64,11 @@ QueueHandler.connectToQueue = async (onWorkerQTask, onModelQTask) => {
 			logger.error("[AMQP] connection error: " + err.message);
 		});
 
-		await establishChannel(conn, onWorkerQTask, onModelQTask);
+		await establishChannel(conn, listenToJobQueue, listenToModelQueue);
 	}
 	catch(err) {
 		logger.error(`[AMQP] failed to establish connection to rabbit mq: ${err}.`);
-		reconnect();
+		reconnect(listenToJobQueue, listenToModelQueue);
 	}
 
 };

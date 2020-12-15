@@ -236,7 +236,8 @@ const renameGroups = async (db, database, modelId) => {
 
 }
 
-const importToyModel = async (modelDir, database, modelId, skipProcessing = {}) => {
+const importToyModel = async (toyModelID, database, modelId, skipProcessing = {}) => {
+	const modelDir = `${config.toyModelDir}/${toyModelID}`
 	await importJSON(modelDir, database, modelId);
 
 	const dbConn = await MongoClient.connect(url);

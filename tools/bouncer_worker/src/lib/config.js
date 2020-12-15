@@ -28,6 +28,7 @@ const applyDefaultValuesIfUndefined = (config) => {
 	config.bouncer.log_dir = config.bouncer.log_dir || ".log";
 	config.mongoimport = config.mongoimport || {};
 	config.mongoimport.writeConcern = config.mongoimport.writeConcern || { w: 1 };
+	config.toyModelDir = config.toyModelDir || path.resolve(__dirname, "../../toy");
 }
 
 const parseConfig = () => {
