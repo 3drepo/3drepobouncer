@@ -20,14 +20,13 @@
 const { MongoClient, GridFSBucket} = require("mongodb");
 const fs = require("fs");
 const { config } = require("../lib/config");
-const { runCommand } = require("../lib/runCommand");
-
-const mongoConnectionString = `mongodb://${config.db.username}:${config.db.password}@${config.db.dbhost}:${config.db.dbport}/admin`;
+const runCommand = require("../lib/runCommand");
+const logger = require("../lib/logger");
 
 const accumulateCollectionFiles = (modelDir, modelId) => {
 	const importCollectionFiles = {};
 
-	fs.readdirSync(`${__dirname}/${modelDir}`).forEach(file => {
+	fs.readdirSync(modelDir).forEach(file => {
 		// remove '.json' in string
 		let collectionName = file.split('.');
 		collectionName.pop();
@@ -63,24 +62,40 @@ const runMongoImport = async (database, collection, filePath) => {
 const importJSON = async (modelDir, database, modelId) => {
 	const collectionFiles = accumulateCollectionFiles(modelDir, modelId);
 
-	let promises = [];
-	Object.keys(importCollectionFiles).forEach(collection => {
-		const filePath = `${__dirname}/${modelDir}/${importCollectionFiles[collection]}`;
+	const promises = [];
+	Object.keys(collectionFiles).forEach(collection => {
+		const filePath = `${modelDir}/${collectionFiles[collection]}`;
 		promises.push(runMongoImport(database, collection, filePath));
 	});
 
 	return await Promise.all(promises);
 }
 
-const updateHistoryAuthorAndDate = (db, modelId) => {
+const updateHistoryAuthorAndDate = (db, database, modelId) => {
 
 	const collection = db.collection(`${modelId}.history`);
 	const update = {
 		'$set':{
-			'author': username
+			'author': database
 		}
 	};
 	return collection.updateMany({}, update);
+}
+
+const updateAuthorAndDate = async (db, database, model, ext) =>{
+	const collection = db.collection(`${model}.${ext}`);
+	const promises = [];
+
+	const issues = await collection.find().toArray();
+	issues.forEach(issue => {
+		issue.owner = database;
+		issue.comments && issue.comments.forEach(comment => {
+			comment.owner = database;
+		});
+		promises.push(collection.updateOne({ _id: issue._id }, issue));
+	});
+
+	await Promise.all(promises);
 }
 
 const renameStash = (db, database, modelId, bucketName) => {
@@ -236,10 +251,12 @@ const renameGroups = async (db, database, modelId) => {
 
 }
 
-const importToyModel = async (toyModelID, database, modelId, skipProcessing = {}) => {
+const importToyModel = async (toyModelID, database, modelId, skipPostProcessing = {}) => {
 	const modelDir = `${config.toyModelDir}/${toyModelID}`
+	console.log(modelDir);
 	await importJSON(modelDir, database, modelId);
 
+	const url = `mongodb://${config.db.username}:${config.db.password}@${config.db.dbhost}:${config.db.dbport}/admin`;
 	const dbConn = await MongoClient.connect(url);
 	const db = dbConn.db(database);
 
@@ -253,7 +270,7 @@ const importToyModel = async (toyModelID, database, modelId, skipProcessing = {}
 	}
 
 	if(!skipPostProcessing.history)
-		promises.push(updateHistoryAuthorAndDate(db, modelId));
+		promises.push(updateHistoryAuthorAndDate(db, database, modelId));
 	if(!skipPostProcessing.issues)
 		promises.push(updateAuthorAndDate(db, modelId, "issues"));
 	if(!skipPostProcessing.risks)

@@ -75,7 +75,7 @@ const createFed = async ({ database, model, toyFed, cmdParams }, logDir) => {
 		}
 	} catch(err) {
 		logger.error(`generate federation error: ${err.message || err}`);
-		returnMessage.value = err || ERRCODE_TOY_IMPORT_FAILED;
+		returnMessage.value = toyFed ? ERRCODE_TOY_IMPORT_FAILED : err;
 		returnMessage.message = err.message || err;
 	}
 
