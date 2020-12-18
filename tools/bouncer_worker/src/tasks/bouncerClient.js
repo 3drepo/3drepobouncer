@@ -35,6 +35,7 @@ BouncerHandler.testClient = async () => {
 		logger.info('Bouncer call passed');
 	} catch (code) {
 		logger.error(`Bouncer call errored (Error code: ${code})`);
+		throw code;
 	}
 };
 

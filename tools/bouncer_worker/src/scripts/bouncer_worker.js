@@ -17,10 +17,17 @@
 
 const { connectToQueue } = require('../lib/queueHandler');
 const { testClient } = require('../tasks/bouncerClient');
+const logger = require('../lib/logger');
 
 const startBouncerWorker = async () => {
-	await testClient();
-	connectToQueue(true, true);
+	try {
+		await testClient();
+		connectToQueue(true, true);
+	} catch (err) {
+		logger.error(`Error occured: ${err}`);
+		// eslint-disable-next-line
+		process.exit(-1);
+	}
 };
 
 startBouncerWorker();

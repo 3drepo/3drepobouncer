@@ -18,7 +18,7 @@
 const path = require('path');
 const fs = require('fs');
 
-const configFullPath = path.resolve(__dirname, '../../config.json');
+const getConfigLocation = () => process.argv[2] || path.resolve(__dirname, '../../config.json');
 
 /* eslint-disable no-param-reassign */
 const applyDefaultValuesIfUndefined = (config) => {
@@ -37,7 +37,7 @@ const applyDefaultValuesIfUndefined = (config) => {
 // eslint-disable-next-line consistent-return
 const parseConfig = () => {
 	try {
-		const config = JSON.parse(fs.readFileSync(configFullPath));
+		const config = JSON.parse(fs.readFileSync(getConfigLocation()));
 		applyDefaultValuesIfUndefined(config);
 		if (config.umask) {
 			// can't use logger -> circular dependency.
@@ -57,5 +57,5 @@ const parseConfig = () => {
 
 module.exports = {
 	config: parseConfig(),
-	configPath: configFullPath,
+	configPath: getConfigLocation(),
 };
