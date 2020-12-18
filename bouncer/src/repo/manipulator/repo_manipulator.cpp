@@ -191,7 +191,7 @@ uint8_t RepoManipulator::commitScene(
 			if (success)
 			{
 				modelutility::SceneManager sceneManager;
-				if (sceneManager.isSrcEnabled(scene, handler))
+				if (sceneManager.shouldGenerateSrcFiles(scene, handler))
 				{
 					repoInfo << "Generating SRC stashes...";
 					if (success = generateAndCommitSRCBuffer(databaseAd, cred, bucketName, bucketRegion, scene))
