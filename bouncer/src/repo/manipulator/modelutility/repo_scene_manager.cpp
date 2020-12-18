@@ -437,8 +437,8 @@ bool SceneManager::shouldGenerateSrcFiles(
 	repo::core::handler::AbstractDatabaseHandler* handler) const
 {
 	repo::core::model::RepoUser user(handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, BSON("user" << scene->getDatabaseName())));
-	//only generate SRC files if the user has the src flag enabled and we're not dealing with a federation
-	return !scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size() && user.isSrcEnabled();
+	//only generate SRC files if the user has the src flag enabled and there are meshes
+	return !scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size() && user.isSrcEnabled();
 }
 
 bool SceneManager::removeStashGraph(
