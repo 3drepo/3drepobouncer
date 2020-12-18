@@ -58,6 +58,8 @@ install:
 services:
     - mongodb
 before_script:
+    - cd tools/bouncer_worker && yarn install && yarn lint
+    - cd -
     - mkdir build && cd build
     - export MONGO_ROOT=$PWD/../mongo-cxx-driver
     - export ASSIMP_ROOT=$PWD/../assimp
