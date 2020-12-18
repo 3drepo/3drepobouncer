@@ -237,7 +237,7 @@ const renameGroups = async (db, database, modelId) => {
 	const updateObjectPromises = [];
 
 	groups.forEach((group) => {
-		group.objects && group.object.forEach((obj) => {
+		group.objects && group.objects.forEach((obj) => {
 			obj.account = database;
 
 			//if model is fed model, then model id of a group should be

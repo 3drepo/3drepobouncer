@@ -45,8 +45,8 @@ BouncerHandler.runBouncerCommand = async (logDir, cmdParams) => {
 }
 
 BouncerHandler.generateTreeStash = async (logDir, database, modelId, stashType, rev = "all") => {
-	const cmd = `genStash ${database} ${modelId} ${stashType} ${rev}`;
-	return BouncerHandler.runCommand(logDir, cmd);
+	const cmd = [configPath, "genStash", database, modelId, stashType, rev ];
+	return BouncerHandler.runBouncerCommand(logDir, cmd);
 }
 
 
