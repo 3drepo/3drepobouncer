@@ -4,11 +4,19 @@
   "scripts": {
     "start": "pm2 start bouncer_worker.js",
     "stop": "pm2 kill",
-    "restart": "npm stop; npm start"
+    "restart": "npm stop; npm start",
+	"lint": "eslint --ext .js src"
   },
   "dependencies": {
     "amqplib": "0.5.3",
     "mongodb": "2.2.24",
     "winston": "2.4.0"
+  },
+  "devDependencies": {
+    "eslint": "7.10.0",
+    "eslint-config-airbnb-base": "14.2.0",
+	"eslint-plugin-import": "2.22.1",
+	"eslint-plugin-node": "11.1.0",
+	"eslint-plugin-security": "1.4.0"
   }
 }

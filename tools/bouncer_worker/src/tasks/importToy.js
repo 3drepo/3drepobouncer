@@ -1,5 +1,3 @@
-'use strict';
-
 /**
  *  Copyright (C) 2017 3D Repo Ltd
  *
@@ -17,11 +15,11 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const { MongoClient, GridFSBucket} = require("mongodb");
-const fs = require("fs");
-const { config } = require("../lib/config");
-const runCommand = require("../lib/runCommand");
-const logger = require("../lib/logger");
+const { MongoClient, GridFSBucket } = require('mongodb');
+const fs = require('fs');
+const { config } = require('../lib/config');
+const runCommand = require('../lib/runCommand');
+const logger = require('../lib/logger');
 
 const accumulateCollectionFiles = (modelDir, modelId) => {
 	const importCollectionFiles = {};
@@ -36,198 +34,192 @@ const accumulateCollectionFiles = (modelDir, modelId) => {
 	});
 
 	return importCollectionFiles;
-}
+};
 
 const runMongoImport = async (database, collection, filePath) => {
 	const params = [
-		"-j", "8",
-		"--host", `${config.db.dbhost}:${config.db.dbport}`,
-		"--username", config.db.username,
-		"--password", config.db.password,
-		"--authenticationDatabase", "admin",
-		"--db", database,
-		"--collection", collection,
-		"--writeConcern", JSON.stringify(config.mongoimport.writeConcern),
-		"--file", filePath
+		'-j', '8',
+		'--host', `${config.db.dbhost}:${config.db.dbport}`,
+		'--username', config.db.username,
+		'--password', config.db.password,
+		'--authenticationDatabase', 'admin',
+		'--db', database,
+		'--collection', collection,
+		'--writeConcern', JSON.stringify(config.mongoimport.writeConcern),
+		'--file', filePath,
 	];
 
 	try {
-		await runCommand("mongoimport", params);
+		await runCommand('mongoimport', params);
 	} catch (errCode) {
 		logger.error(`Failed to run mongoimport on ${database}:${collection} with data from ${filePath}`);
 		throw errCode;
 	}
-}
+};
 
 const importJSON = async (modelDir, database, modelId) => {
 	const collectionFiles = accumulateCollectionFiles(modelDir, modelId);
 
 	const promises = [];
 	Object.keys(collectionFiles).forEach(collection => {
-		const filePath = `${modelDir}/${collectionFiles[collection]}`;
+		const files = collectionFiles[collection];
+		const filePath = `${modelDir}/${files}`;
 		promises.push(runMongoImport(database, collection, filePath));
 	});
 
-	return await Promise.all(promises);
-}
+	return Promise.all(promises);
+};
 
 const updateHistoryAuthorAndDate = (db, database, modelId) => {
-
 	const collection = db.collection(`${modelId}.history`);
 	const update = {
-		'$set':{
-			'author': database
-		}
+		$set: {
+			author: database,
+		},
 	};
 	return collection.updateMany({}, update);
-}
+};
 
-const updateAuthorAndDate = async (db, database, model, ext) =>{
+const updateAuthorAndDate = async (db, database, model, ext) => {
 	const collection = db.collection(`${model}.${ext}`);
 	const promises = [];
 
 	const issues = await collection.find().toArray();
 	issues.forEach(issue => {
-		issue.owner = database;
-		issue.comments && issue.comments.forEach(comment => {
-			comment.owner = database;
-		});
-		promises.push(collection.updateOne({ _id: issue._id }, issue));
+		const updatedIssue = issue;
+		updatedIssue.owner = database;
+		const comments = [];
+		if (updatedIssue.comments) {
+			updatedIssue.comments.forEach(comment => {
+				comments.push({...comment, owner: database});
+			});
+		}
+		promises.push(collection.updateOne({ _id: updatedIssue._id }, updatedIssue));
 	});
 
 	await Promise.all(promises);
-}
+};
 
 const renameStash = (db, database, modelId, bucketName) => {
-
 	const bucket = new GridFSBucket(db, { bucketName });
 	const renamePromises = [];
 
 	bucket.find().forEach(file => {
 		let newFileName = file.filename.split('/');
-		if(newFileName.length >= 3) {
+		if (newFileName.length >= 3) {
 			newFileName[1] = database;
 			newFileName[2] = modelId;
 			newFileName = newFileName.join('/');
 			file.filename = newFileName;
 
-			renamePromises.push(bucket.rename(file._id, newFileName))
+			renamePromises.push(bucket.rename(file._id, newFileName));
 
 			// unityAssets.json have the path baked into the file :(
-			if(newFileName.endsWith('unityAssets.json')){
+			if (newFileName.endsWith('unityAssets.json')) {
 				renamePromises.push(renameUnityAsset(bucket, database, modelId, file));
 			}
 		}
 	});
 
 	return Promise.all(renamePromises);
-}
-
+};
 
 const renameUnityAssetList = (db, database, model) => {
-
 	const collection = db.collection(`${model}.stash.unity3d`);
 	const promises = [];
 	const prefix = `/${database}/${model}/`;
 	collection.find().forEach(entry => {
 		entry.database = database;
 		entry.model = model;
-		for(let i = 0; i < entry.jsonFiles.length; ++i) {
+		for (let i = 0; i < entry.jsonFiles.length; ++i) {
 			const oldDir = entry.jsonFiles[i];
-			const dirArr = oldDir.split("/");
+			const dirArr = oldDir.split('/');
 			entry.jsonFiles[i] = prefix + dirArr[dirArr.length - 1];
 		}
 
-		for(let i = 0; i < entry.assets.length; ++i) {
+		for (let i = 0; i < entry.assets.length; ++i) {
 			const oldDir = entry.assets[i];
-			const dirArr = oldDir.split("/");
+			const dirArr = oldDir.split('/');
 			entry.assets[i] = prefix + dirArr[dirArr.length - 1];
 		}
 
-		promises.push(collection.updateOne({_id: entry._id}, entry));
+		promises.push(collection.updateOne({ _id: entry._id }, entry));
 	});
 	return Promise.all(promises);
-}
+};
 
-const renameUnityAsset = (bucket, database, modelId, file) => {
-	return new Promise((resolve, reject) => {
-		const rs = bucket.openDownloadStream(file._id);
-		const bufs = [];
+const renameUnityAsset = (bucket, database, modelId, file) => new Promise((resolve, reject) => {
+	const rs = bucket.openDownloadStream(file._id);
+	const bufs = [];
 
-		rs.on('data', d => bufs.push(d));
-		rs.on('end', () => _finishDownload());
-		rs.on('error', err => reject(err));
+	rs.on('data', d => bufs.push(d));
+	rs.on('end', () => _finishDownload());
+	rs.on('error', err => reject(err));
 
-		function _finishDownload(){
-			const unityAsset = JSON.parse(Buffer.concat(bufs));
+	function _finishDownload() {
+		const unityAsset = JSON.parse(Buffer.concat(bufs));
 
-			unityAsset.assets = unityAsset.assets || [];
-			unityAsset.jsonFiles = unityAsset.jsonFiles || [];
+		unityAsset.assets = unityAsset.assets || [];
+		unityAsset.jsonFiles = unityAsset.jsonFiles || [];
 
-			[unityAsset.assets, unityAsset.jsonFiles].forEach(arr => {
-				arr.forEach(( file, i, files) => {
-					let newFileName = file.split('/');
-					newFileName[1] = database;
-					newFileName[2] = modelId;
-					files[i] = newFileName.join('/');
-				});
-			})
-
-			unityAsset.database = database;
-			unityAsset.model = modelId;
-
-
-			//drop the old one
-			bucket.delete(file._id, function(err){
-
-				if(err){
-					return reject(err);
-				}
-
-				//write the updated unityasset json back to database
-				const ws = bucket.openUploadStreamWithId(file._id, file.filename);
-
-				ws.end(JSON.stringify(unityAsset), 'utf8', function(err){
-					if(err){
-						reject(err)
-					} else {
-						resolve();
-					}
-				});
+		[unityAsset.assets, unityAsset.jsonFiles].forEach(arr => {
+			arr.forEach((file, i, files) => {
+				const newFileName = file.split('/');
+				newFileName[1] = database;
+				newFileName[2] = modelId;
+				files[i] = newFileName.join('/');
 			});
+		});
 
+		unityAsset.database = database;
+		unityAsset.model = modelId;
 
-		}
-	});
-}
+		// drop the old one
+		bucket.delete(file._id, err => {
+			if (err) {
+				return reject(err);
+			}
+
+			// write the updated unityasset json back to database
+			const ws = bucket.openUploadStreamWithId(file._id, file.filename);
+
+			ws.end(JSON.stringify(unityAsset), 'utf8', err => {
+				if (err) {
+					reject(err);
+				} else {
+					resolve();
+				}
+			});
+		});
+	}
+});
 
 const renameGroups = async (db, database, modelId) => {
-
 	const subModelNameToOldID = {
-		"Lego_House_Architecture" : "1cac0310-e3cc-11ea-bc6b-69e466be9639",
-		"Lego_House_Landscape" : "1cab8de0-e3cc-11ea-bc6b-69e466be9639",
-		"Lego_House_Structure" : "1cac5130-e3cc-11ea-bc6b-69e466be9639"
+		Lego_House_Architecture: '1cac0310-e3cc-11ea-bc6b-69e466be9639',
+		Lego_House_Landscape: '1cab8de0-e3cc-11ea-bc6b-69e466be9639',
+		Lego_House_Structure: '1cac5130-e3cc-11ea-bc6b-69e466be9639',
 	};
 
 	const updateGroupPromises = [];
 	const collection = db.collection(`${modelId}.groups`);
 
-	const setting = db.collection("settings").findOne({_id: modelId});
+	const setting = db.collection('settings').findOne({ _id: modelId });
 
-	if(!setting) {
+	if (!setting) {
 		throw `Model ${setting} not found`;
 	}
 
 	const oldIdToNewId = {};
 
-	if(setting.subModels) {
+	if (setting.subModels) {
 		const subModelList = [];
-		setting.subModels.forEach((subModel) => {
+		setting.subModels.forEach(subModel => {
 			subModelList.push(subModel.model);
 		});
-		const submodels = await db.collection("settings").find({_id: {$in: subModelList}}).toArray();
-		submodels.forEach( (subModelSetting) => {
-			if(subModelNameToOldID[subModelSetting.name]) {
+		const submodels = await db.collection('settings').find({ _id: { $in: subModelList } }).toArray();
+		submodels.forEach(subModelSetting => {
+			if (subModelNameToOldID[subModelSetting.name]) {
 				oldIdToNewId[subModelNameToOldID[subModelSetting.name]] = subModelSetting._id;
 			}
 		});
@@ -236,23 +228,22 @@ const renameGroups = async (db, database, modelId) => {
 	const groups = await collection.find().toArray();
 	const updateObjectPromises = [];
 
-	groups.forEach((group) => {
-		group.objects && group.objects.forEach((obj) => {
+	groups.forEach(group => {
+		group.objects && group.objects.forEach(obj => {
 			obj.account = database;
 
-			//if model is fed model, then model id of a group should be
-			//one of the sub models instead of the id of the fed model itself
+			// if model is fed model, then model id of a group should be
+			// one of the sub models instead of the id of the fed model itself
 			obj.model = oldIdToNewId[obj.model] || modelId;
 		});
 		updateObjectPromises.push(collection.updateOne({ _id: group._id }, group));
 	});
 
 	await Promise.all(updateObjectPromises);
-
-}
+};
 
 const importToyModel = async (toyModelID, database, modelId, skipPostProcessing = {}) => {
-	const modelDir = `${config.toyModelDir}/${toyModelID}`
+	const modelDir = `${config.toyModelDir}/${toyModelID}`;
 	console.log(modelDir);
 	await importJSON(modelDir, database, modelId);
 
@@ -262,28 +253,22 @@ const importToyModel = async (toyModelID, database, modelId, skipPostProcessing 
 
 	const promises = [];
 
-	if(!skipPostProcessing.renameStash) {
+	if (!skipPostProcessing.renameStash) {
 		promises.push(renameStash(db, database, modelId, `${modelId}.stash.json_mpc`));
 		promises.push(renameStash(db, database, modelId, `${modelId}.stash.src`));
 		promises.push(renameStash(db, database, modelId, `${modelId}.stash.unity3d`));
 		promises.push(renameUnityAssetList(db, database, modelId));
 	}
 
-	if(!skipPostProcessing.history)
-		promises.push(updateHistoryAuthorAndDate(db, database, modelId));
-	if(!skipPostProcessing.issues)
-		promises.push(updateAuthorAndDate(db, modelId, "issues"));
-	if(!skipPostProcessing.risks)
-		promises.push(updateAuthorAndDate(db, modelId, "risks"));
-	if(!skipPostProcessing.history)
-		promises.push(renameGroups(db, database, modelId));
+	if (!skipPostProcessing.history) promises.push(updateHistoryAuthorAndDate(db, database, modelId));
+	if (!skipPostProcessing.issues) promises.push(updateAuthorAndDate(db, modelId, 'issues'));
+	if (!skipPostProcessing.risks) promises.push(updateAuthorAndDate(db, modelId, 'risks'));
+	if (!skipPostProcessing.history) promises.push(renameGroups(db, database, modelId));
 
 	await Promise.all(promises);
-	logger.log("Toy modelId imported");
-
-}
-
-module.exports = {
-	importToyModel
+	logger.log('Toy modelId imported');
 };
 
+module.exports = {
+	importToyModel,
+};

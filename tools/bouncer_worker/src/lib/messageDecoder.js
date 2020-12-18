@@ -15,78 +15,78 @@
  *	along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-"use strict"
-const { config, configPath}  = require("../lib/config");
-const { ERRCODE_ARG_FILE_FAIL } = require("../constants/errorCodes");
-const path = require('path');
+'use strict';
 
-const win32Workaround = (cmd) => {
-	const platform  = require('os').platform();
-	if (platform === "win32") {
+const path = require('path');
+const { config, configPath } = require('./config');
+const { ERRCODE_ARG_FILE_FAIL } = require('../constants/errorCodes');
+
+const win32Workaround = cmd => {
+	const platform = require('os').platform();
+	if (platform === 'win32') {
 		// messages coming in assume the sharedData is stored in a specific linux style directory
 		// we need to do a find/replace to make it use rabbitmq sharedDir instead
-		cmd = cmd.replace("/sharedData/", config.rabbitmq.sharedDir);
-		let cmdArr = cmd.split(' ');
-		if(cmdArr[0] == "import")
-		{
-			const fs = require('fs')
+		cmd = cmd.replace('/sharedData/', config.rabbitmq.sharedDir);
+		const cmdArr = cmd.split(' ');
+		if (cmdArr[0] == 'import') {
+			const fs = require('fs');
 			const data = fs.readFileSync(cmdArr[2], 'utf8');
-			const result = data.replace("/sharedData/", config.rabbitmq.sharedDir);
+			const result = data.replace('/sharedData/', config.rabbitmq.sharedDir);
 			fs.writeFileSync(cmdArr[2], result, 'utf8');
 		}
 	}
-}
+};
 
 const getBouncerParams = (cmd, args) => {
 	win32Workaround(cmd);
 	return [configPath, ...args];
-}
+};
 
-const messageDecoder = (cmd) => {
+const messageDecoder = cmd => {
 	const args = cmd.split(' ');
 	let	res = { command: args[0] };
 
-	switch(args[0]) {
-		case "importToy" :
+	switch (args[0]) {
+		case 'importToy':
 			res = {
 				command: args[0],
 				database: args[1],
 				model: args[2],
 				toyModelID: args[3],
-				skipPostProcessing: args[4] && JSON.parse(args[4]) || {}
+				skipPostProcessing: args[4] && JSON.parse(args[4]) || {},
 			};
 			break;
-		case "import" :
+		case 'import':
 			{
 				const cmdFile = require(args[2]);
 				res = {
-					cmdParams : getBouncerParams(cmd, args),
-					database : cmdFile.database,
-					model : cmdFile.project,
+					cmdParams: getBouncerParams(cmd, args),
+					database: cmdFile.database,
+					model: cmdFile.project,
 					user: cmdFile.owner,
-					...res
+					...res,
 				};
 			}
 			break;
-		case "genFed" :
+		case 'genFed':
 			{
 				const cmdFile = require(args[1]);
 				res = {
-					cmdParams : getBouncerParams(cmd, args),
-					database : cmdFile.database,
-					model : cmdFile.project,
+					cmdParams: getBouncerParams(cmd, args),
+					database: cmdFile.database,
+					model: cmdFile.project,
 					toyFed: cmdFile.toyFed,
 					user: cmdFile.owner,
-					...res
+					...res,
 				};
 			}
 			break;
-		case "genStash" :
+		case 'genStash':
 			res = {
-				cmdParams : getBouncerParams(cmd, args),
+				cmdParams: getBouncerParams(cmd, args),
 				database: args[1],
 				model: args[2],
-				...res
+				...res,
 			};
 			break;
 		default:
@@ -94,6 +94,5 @@ const messageDecoder = (cmd) => {
 	}
 	return res;
 };
-
 
 module.exports = { messageDecoder };

@@ -15,52 +15,49 @@
  *	along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-"use strict"
+'use strict';
 
 const { config } = require('../lib/config');
 const { runBouncerCommand } = require('../tasks/bouncerClient');
-const { ERRCODE_OK, ERRCODE_BOUNCER_CRASH } = require("../constants/errorCodes");
-const { generateAssetBundles } = require("../tasks/unityEditor");
+const { ERRCODE_OK, ERRCODE_BOUNCER_CRASH } = require('../constants/errorCodes');
+const { generateAssetBundles } = require('../tasks/unityEditor');
 const { messageDecoder } = require('../lib/messageDecoder');
-const logger = require("../lib/logger");
+const logger = require('../lib/logger');
 
 const onMessageReceived = async (cmd, rid, callback) => {
 	const logDir = `${config.bouncer.log_dir}/${rid.toString()}/`;
 	const cmdMsg = messageDecoder(cmd);
 
-	if(cmdMsg.errorCode) {
-		callback({value: cmdMsg.errorCode});
+	if (cmdMsg.errorCode) {
+		callback({ value: cmdMsg.errorCode });
 	} else {
-
 		callback(JSON.stringify({
-			status: "processing",
+			status: 'processing',
 			database: cmdMsg.database,
-			project: cmdMsg.model
+			project: cmdMsg.model,
 		}));
 
 		const message = await processModel(cmdMsg, logDir);
 		callback(JSON.stringify(message));
 	}
-}
+};
 
-const processModel = async ({database, model, cmdParams}, logDir) => {
+const processModel = async ({ database, model, cmdParams }, logDir) => {
 	const returnMessage = {
 		value: ERRCODE_OK,
-		database: database,
-		project: model
+		database,
+		project: model,
 	};
 	try {
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams);
 		await generateAssetBundles(database, model, logDir);
-	} catch(err) {
+	} catch (err) {
 		console.log(err);
 		logger.error(`Import model error: ${err.message || err}`);
 		returnMessage.value = err || ERRCODE_BOUNCER_CRASH;
 	}
 
 	return returnMessage;
-}
-
-
+};
 
 module.exports = { onMessageReceived };

@@ -15,16 +15,13 @@
  *	along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const { logLocation } = require("./config");
-const winston = require("winston");
+const winston = require('winston');
+const { logLocation } = require('./config');
 
 const logger = new (winston.Logger)({
-	transports: [new (winston.transports.Console)({'timestamp': true}),
-	  new (winston.transports.File)({'filename': logLocation || "./bouncer_worker.log"})
-	]
+	transports: [new (winston.transports.Console)({ timestamp: true }),
+	  new (winston.transports.File)({ filename: logLocation || './bouncer_worker.log' }),
+	],
 });
 
 module.exports = logger;
-
-
-
