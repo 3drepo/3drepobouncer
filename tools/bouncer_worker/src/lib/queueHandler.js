@@ -7,6 +7,8 @@ const ModelQHandler = require('../queues/modelQueueHandler');
 let connClosed = false;
 let retry = 0;
 
+const QueueHandler = {};
+
 const reconnect = (listenToJobQueue, listenToModelQueue) => {
 	const maxRetries = rabbitmq.maxRetries || 3;
 	if (++retry <= maxRetries) {
@@ -14,27 +16,20 @@ const reconnect = (listenToJobQueue, listenToModelQueue) => {
 		QueueHandler.connectToQueue(listenToJobQueue, listenToModelQueue);
 	} else {
 		logger.error('[AMQP] Retries exhausted');
+		// eslint-disable-next-line no-process-exit
 		process.exit(-1);
 	}
-};
-
-const establishChannel = async (conn, listenToJobQueue, listenToModelQueue) => {
-	const channel = await conn.createChannel();
-	channel.assertQueue(rabbitmq.callback_queue, { durable: true });
-	rabbitmq.worker_queue && listenToJobQueue
-		&& listenToQueue(channel, rabbitmq.worker_queue, rabbitmq.task_prefetch, JobQHandler.onMessageReceived);
-	rabbitmq.model_queue && listenToModelQueue
-		&& listenToQueue(channel, rabbitmq.model_queue, rabbitmq.model_prefetch, ModelQHandler.onMessageReceived);
 };
 
 const listenToQueue = (channel, queueName, prefetchCount, callback) => {
 	channel.assertQueue(queueName, { durable: true });
 	logger.info('Bouncer Client Queue started. Waiting for messages in %s of %s....', queueName, rabbitmq.host);
 	channel.prefetch(prefetchCount);
-	channel.consume(queueName, async msg => {
+	channel.consume(queueName, async (msg) => {
 		logger.info(' [x] Received %s from %s', msg.content.toString(), queueName);
-		await callback(msg.content.toString(), msg.properties.correlationId, reply => {
+		await callback(msg.content.toString(), msg.properties.correlationId, (reply) => {
 			logger.info('sending to reply queue(%s): %s', rabbitmq.callback_queue, reply);
+			// eslint-disable-next-line new-cap
 			channel.sendToQueue(rabbitmq.callback_queue, new Buffer.from(reply),
 				{ correlationId: msg.properties.correlationId, appId: msg.properties.appId });
 		});
@@ -42,7 +37,17 @@ const listenToQueue = (channel, queueName, prefetchCount, callback) => {
 	}, { noAck: false });
 };
 
-const QueueHandler = {};
+const establishChannel = async (conn, listenToJobQueue, listenToModelQueue) => {
+	const channel = await conn.createChannel();
+	channel.assertQueue(rabbitmq.callback_queue, { durable: true });
+	if (rabbitmq.worker_queue && listenToJobQueue) {
+		listenToQueue(channel, rabbitmq.worker_queue, rabbitmq.task_prefetch, JobQHandler.onMessageReceived);
+	}
+
+	if (rabbitmq.model_queue && listenToModelQueue) {
+		listenToQueue(channel, rabbitmq.model_queue, rabbitmq.model_prefetch, ModelQHandler.onMessageReceived);
+	}
+};
 
 QueueHandler.connectToQueue = async (listenToJobQueue, listenToModelQueue) => {
 	try {
@@ -60,7 +65,7 @@ QueueHandler.connectToQueue = async (listenToJobQueue, listenToModelQueue) => {
 			}
 		});
 
-		conn.on('error', err	=> {
+		conn.on('error', (err) => {
 			logger.error(`[AMQP] connection error: ${err.message}`);
 		});
 

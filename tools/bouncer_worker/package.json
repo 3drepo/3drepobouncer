@@ -1,5 +1,8 @@
 {
   "name": "3drepobouncerWorker",
+  "engines": {
+	"node": "10.x.x"
+  },
   "private": true,
   "scripts": {
     "start": "pm2 start bouncer_worker.js",

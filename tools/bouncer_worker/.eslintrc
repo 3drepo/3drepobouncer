@@ -10,9 +10,10 @@
     "env": {
       },
     "rules": {
+		"arrow-parens": ["error", "always"],
 		"no-tabs": ["error", {"allowIndentationTabs": true}],
+		"no-plusplus" : 0,
         "indent": ["error", "tab", { "SwitchCase": 1 }],
-        "arrow-parens": ["error", "as-needed"],
         "object-curly-newline": 0,
         "max-len": ["error", {
             "code": 120,
@@ -20,6 +21,7 @@
             "ignoreTemplateLiterals": true,
             "ignoreStrings":  true
         }],
+		"no-throw-literal": 0,
         "no-restricted-syntax": 0,
         "no-underscore-dangle": ["error", { "allow": ["_id"] }],
         "security/detect-non-literal-fs-filename": 0,

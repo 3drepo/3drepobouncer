@@ -6,9 +6,9 @@ const { BOUNCER_SOFT_FAILS } = require('../constants/errorCodes');
 
 const bouncerClientPath = path.normalize(config.bouncer.path);
 
-const setBouncerEnvars = logDir => {
+const setBouncerEnvars = (logDir) => {
 	if (config.bouncer.envars) {
-		Object.keys(config.bouncer.envars).forEach(key => {
+		Object.keys(config.bouncer.envars).forEach((key) => {
 			process.env[key] = config.bouncer.envars[key];
 		});
 	}
@@ -40,7 +40,7 @@ BouncerHandler.testClient = async () => {
 
 BouncerHandler.runBouncerCommand = async (logDir, cmdParams) => {
 	setBouncerEnvars(logDir);
-	return await run(bouncerClientPath, cmdParams, BOUNCER_SOFT_FAILS);
+	return run(bouncerClientPath, cmdParams, BOUNCER_SOFT_FAILS);
 };
 
 BouncerHandler.generateTreeStash = async (logDir, database, modelId, stashType, rev = 'all') => {
