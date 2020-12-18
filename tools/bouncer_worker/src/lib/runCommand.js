@@ -5,8 +5,8 @@ const { ERRCODE_TIMEOUT } = require('../constants/errorCodes');
 const logger = require('./logger');
 const { timeoutMS } = require('./config').config;
 
-const run = (exe, params, codesAsSuccess = []) => new Promise((resolve, reject) => {
-	logger.info(`Executing command: ${exe} ${params.join(' ')}`);
+const run = (exe, params, codesAsSuccess = [], verbose = true) => new Promise((resolve, reject) => {
+	if (verbose) logger.info(`Executing command: ${exe} ${params.join(' ')}`);
 	const cmdExec = spawn(exe, params);
 	let isTimeout = false;
 	cmdExec.on('close', (code) => {

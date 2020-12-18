@@ -50,7 +50,7 @@ const runMongoImport = async (database, collection, filePath) => {
 	];
 
 	try {
-		await runCommand('mongoimport', params);
+		await runCommand('mongoimport', params, [], false);
 	} catch (errCode) {
 		logger.error(`Failed to run mongoimport on ${database}:${collection} with data from ${filePath}`);
 		throw errCode;
@@ -94,6 +94,7 @@ const updateAuthorAndDate = async (db, database, model, ext) => {
 				comments.push({ ...comment, owner: database });
 			});
 		}
+		updatedIssue.comments = comments;
 		promises.push(collection.updateOne({ _id: updatedIssue._id }, updatedIssue));
 	});
 
@@ -232,6 +233,8 @@ const renameGroups = async (db, database, modelId) => {
 	const updateObjectPromises = [];
 
 	groups.forEach((group) => {
+		const grp = group;
+		grp.author = database;
 		if (group.objects) {
 			group.objects.forEach((object) => {
 				const obj = object;
@@ -241,14 +244,14 @@ const renameGroups = async (db, database, modelId) => {
 				// one of the sub models instead of the id of the fed model itself
 				obj.model = oldIdToNewId[obj.model] || modelId;
 			});
-			updateObjectPromises.push(collection.updateOne({ _id: group._id }, group));
 		}
+		updateObjectPromises.push(collection.updateOne({ _id: group._id }, group));
 	});
 
 	await Promise.all(updateObjectPromises);
 };
 
-const importToyModel = async (toyModelID, database, modelId, skipPostProcessing = {}) => {
+const importToyModel = async (toyModelID, database, modelId) => {
 	const modelDir = `${config.toyModelDir}/${toyModelID}`;
 	await importJSON(modelDir, database, modelId);
 
@@ -258,17 +261,15 @@ const importToyModel = async (toyModelID, database, modelId, skipPostProcessing 
 
 	const promises = [];
 
-	if (!skipPostProcessing.renameStash) {
-		promises.push(renameStash(db, database, modelId, `${modelId}.stash.json_mpc`));
-		promises.push(renameStash(db, database, modelId, `${modelId}.stash.src`));
-		promises.push(renameStash(db, database, modelId, `${modelId}.stash.unity3d`));
-		promises.push(renameUnityAssetList(db, database, modelId));
-	}
+	promises.push(renameStash(db, database, modelId, `${modelId}.stash.json_mpc`));
+	promises.push(renameStash(db, database, modelId, `${modelId}.stash.src`));
+	promises.push(renameStash(db, database, modelId, `${modelId}.stash.unity3d`));
+	promises.push(renameUnityAssetList(db, database, modelId));
 
-	if (!skipPostProcessing.history) promises.push(updateHistoryAuthorAndDate(db, database, modelId));
-	if (!skipPostProcessing.issues) promises.push(updateAuthorAndDate(db, modelId, 'issues'));
-	if (!skipPostProcessing.risks) promises.push(updateAuthorAndDate(db, modelId, 'risks'));
-	if (!skipPostProcessing.history) promises.push(renameGroups(db, database, modelId));
+	promises.push(updateHistoryAuthorAndDate(db, database, modelId));
+	promises.push(updateAuthorAndDate(db, database, modelId, 'issues'));
+	promises.push(updateAuthorAndDate(db, database, modelId, 'risks'));
+	promises.push(renameGroups(db, database, modelId));
 
 	await Promise.all(promises);
 	logger.log('Toy modelId imported');
