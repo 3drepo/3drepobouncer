@@ -16,38 +16,43 @@
  */
 
 const { config } = require('../lib/config');
-const { runBouncerCommand } = require('../tasks/bouncerClient');
-const { ERRCODE_OK, ERRCODE_BOUNCER_CRASH } = require('../constants/errorCodes');
-const { messageDecoder } = require('../lib/messageDecoder');
+const { generateAssetBundles } = require('../tasks/unityEditor');
+const { ERRCODE_ARG_FILE_FAIL, ERRCODE_BOUNCER_CRASH } = require('../constants/errorCodes');
 const logger = require('../lib/logger');
 
-const onMessageReceived = async (cmd, rid, callback) => {
-	const logDir = `${config.bouncer.log_dir}/${rid.toString()}/`;
-	const { errorCode, database, model, cmdParams } = messageDecoder(cmd);
-
-	if (errorCode) {
-		callback({ value: errorCode });
-	} else {
-		callback(JSON.stringify({
-			status: 'processing',
-			database,
-			project: model,
-		}));
-	}
-
+const processUnity = async (database, model, logDir, modelImportErrCode) => {
 	const returnMessage = {
-		value: ERRCODE_OK,
+		value: modelImportErrCode,
 		database,
 		project: model,
 	};
 
 	try {
-		returnMessage.value = await runBouncerCommand(logDir, cmdParams);
-		callback(JSON.stringify(returnMessage), config.rabbitmq.unity_queue);
+		if (database && model) {
+			await generateAssetBundles(database, model, logDir);
+		} else {
+			returnMessage.value = ERRCODE_ARG_FILE_FAIL;
+		}
 	} catch (err) {
-		logger.error(`Import model error: ${err.message || err}`);
+		logger.error(`Failed to generate asset bundle: ${err.message || err}`);
 		returnMessage.value = err || ERRCODE_BOUNCER_CRASH;
-		callback(JSON.stringify(returnMessage));
 	}
+
+	return returnMessage;
 };
+
+const onMessageReceived = async (cmd, rid, callback) => {
+	const { database, project, value } = JSON.parse(cmd);
+	const logDir = `${config.bouncer.log_dir}/${rid.toString()}/`;
+
+	callback(JSON.stringify({
+		status: 'creating asset bundles',
+		database,
+		project,
+	}));
+
+	const message = await processUnity(database, project, logDir, value);
+	callback(JSON.stringify(message));
+};
+
 module.exports = { onMessageReceived };

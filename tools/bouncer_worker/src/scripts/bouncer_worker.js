@@ -22,7 +22,7 @@ const logger = require('../lib/logger');
 const startBouncerWorker = async () => {
 	try {
 		await testClient();
-		connectToQueue(true, true);
+		connectToQueue(true, true, true);
 	} catch (err) {
 		logger.error(`Error occured: ${err}`);
 		// eslint-disable-next-line

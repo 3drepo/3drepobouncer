@@ -26,6 +26,7 @@ const applyDefaultValuesIfUndefined = (config) => {
 	config.rabbitmq.maxRetries = config.rabbitmq.maxRetries || 3;
 	config.rabbitmq.task_prefetch = config.rabbitmq.task_prefetch || 4;
 	config.rabbitmq.model_prefetch = config.rabbitmq.model_prefetch || 1;
+	config.rabbitmq.unity_prefetch = config.rabbitmq.unity_prefetch || 1;
 	config.bouncer.log_dir = config.bouncer.log_dir || '.log';
 	config.mongoimport = config.mongoimport || {};
 	config.mongoimport.writeConcern = config.mongoimport.writeConcern || { w: 1 };

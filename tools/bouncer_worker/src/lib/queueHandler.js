@@ -3,6 +3,7 @@ const { rabbitmq } = require('./config').config;
 const logger = require('./logger');
 const JobQHandler = require('../queues/jobQueueHandler');
 const ModelQHandler = require('../queues/modelQueueHandler');
+const UnityQHandler = require('../queues/unityQueueHandler');
 
 let connClosed = false;
 let retry = 0;
@@ -27,17 +28,18 @@ const listenToQueue = (channel, queueName, prefetchCount, callback) => {
 	channel.prefetch(prefetchCount);
 	channel.consume(queueName, async (msg) => {
 		logger.info(' [x] Received %s from %s', msg.content.toString(), queueName);
-		await callback(msg.content.toString(), msg.properties.correlationId, (reply) => {
-			logger.info('sending to reply queue(%s): %s', rabbitmq.callback_queue, reply);
-			// eslint-disable-next-line new-cap
-			channel.sendToQueue(rabbitmq.callback_queue, new Buffer.from(reply),
-				{ correlationId: msg.properties.correlationId, appId: msg.properties.appId });
-		});
+		await callback(msg.content.toString(), msg.properties.correlationId,
+			(reply, queue = rabbitmq.callback_queue) => {
+				logger.info('sending to reply queue(%s): %s', queue, reply);
+				// eslint-disable-next-line new-cap
+				channel.sendToQueue(queue, new Buffer.from(reply),
+					{ correlationId: msg.properties.correlationId, appId: msg.properties.appId });
+			});
 		channel.ack(msg);
 	}, { noAck: false });
 };
 
-const establishChannel = async (conn, listenToJobQueue, listenToModelQueue) => {
+const establishChannel = async (conn, listenToJobQueue, listenToModelQueue, listenToUnityQueue) => {
 	const channel = await conn.createChannel();
 	channel.assertQueue(rabbitmq.callback_queue, { durable: true });
 	if (rabbitmq.worker_queue && listenToJobQueue) {
@@ -47,9 +49,13 @@ const establishChannel = async (conn, listenToJobQueue, listenToModelQueue) => {
 	if (rabbitmq.model_queue && listenToModelQueue) {
 		listenToQueue(channel, rabbitmq.model_queue, rabbitmq.model_prefetch, ModelQHandler.onMessageReceived);
 	}
+
+	if (rabbitmq.unity_queue && listenToUnityQueue) {
+		listenToQueue(channel, rabbitmq.unity_queue, rabbitmq.unity_prefetch, UnityQHandler.onMessageReceived);
+	}
 };
 
-QueueHandler.connectToQueue = async (listenToJobQueue, listenToModelQueue) => {
+QueueHandler.connectToQueue = async (listenToJobQueue, listenToModelQueue, listenToUnityQueue) => {
 	try {
 		const conn = await amqp.connect(rabbitmq.host);
 		retry = 0;
@@ -69,7 +75,7 @@ QueueHandler.connectToQueue = async (listenToJobQueue, listenToModelQueue) => {
 			logger.error(`[AMQP] connection error: ${err.message}`);
 		});
 
-		await establishChannel(conn, listenToJobQueue, listenToModelQueue);
+		await establishChannel(conn, listenToJobQueue, listenToModelQueue, listenToUnityQueue);
 	} catch (err) {
 		logger.error(`[AMQP] failed to establish connection to rabbit mq: ${err}.`);
 		reconnect(listenToJobQueue, listenToModelQueue);
