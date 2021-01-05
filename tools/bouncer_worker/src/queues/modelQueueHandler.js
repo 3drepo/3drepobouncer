@@ -44,6 +44,11 @@ const onMessageReceived = async (cmd, rid, callback) => {
 	try {
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams);
 		callback(JSON.stringify(returnMessage), config.rabbitmq.unity_queue);
+		callback((JSON.stringify({
+			status: 'queuing for unity service',
+			database,
+			project: model,
+		}));
 	} catch (err) {
 		logger.error(`Import model error: ${err.message || err}`);
 		returnMessage.value = err || ERRCODE_BOUNCER_CRASH;
