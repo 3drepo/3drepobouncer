@@ -17,7 +17,7 @@
 
 const { config } = require('../lib/config');
 const { generateAssetBundles } = require('../tasks/unityEditor');
-const { ERRCODE_ARG_FILE_FAIL, ERRCODE_BOUNCER_CRASH } = require('../constants/errorCodes');
+const { ERRCODE_ARG_FILE_FAIL, ERRCODE_BUNDLE_GEN_FAIL } = require('../constants/errorCodes');
 const logger = require('../lib/logger');
 
 const processUnity = async (database, model, logDir, modelImportErrCode) => {
@@ -35,7 +35,7 @@ const processUnity = async (database, model, logDir, modelImportErrCode) => {
 		}
 	} catch (err) {
 		logger.error(`Failed to generate asset bundle: ${err.message || err}`);
-		returnMessage.value = err || ERRCODE_BOUNCER_CRASH;
+		returnMessage.value = ERRCODE_BUNDLE_GEN_FAIL;
 	}
 
 	return returnMessage;

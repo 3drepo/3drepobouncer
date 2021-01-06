@@ -44,7 +44,7 @@ const onMessageReceived = async (cmd, rid, callback) => {
 	try {
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams);
 		callback(JSON.stringify(returnMessage), config.rabbitmq.unity_queue);
-		callback((JSON.stringify({
+		callback(JSON.stringify({
 			status: 'queuing for unity service',
 			database,
 			project: model,

@@ -20,14 +20,14 @@
 #include "../../core/handler/fileservice/repo_file_manager.h"
 #include "../modelconvertor/export/repo_model_export_web.h"
 
-namespace repo{
-	namespace manipulator{
-		namespace modelutility{
+namespace repo {
+	namespace manipulator {
+		namespace modelutility {
 			class SceneManager
 			{
 			public:
-				SceneManager(){}
-				~SceneManager(){}
+				SceneManager() {}
+				~SceneManager() {}
 
 				/**
 				* Commit web buffers
@@ -45,6 +45,15 @@ namespace repo{
 					repo::core::handler::fileservice::FileManager         *fileManager,
 					const bool                                            addTimestampToSettings = false);
 
+				uint8_t commitScene(
+					repo::core::model::RepoScene                          *scene,
+					const std::string									  &owner,
+					const std::string									  &tag,
+					const std::string									  &desc,
+					repo::core::handler::AbstractDatabaseHandler          *handler,
+					repo::core::handler::fileservice::FileManager         *fileManager
+				);
+
 				/**
 				* Retrieve a RepoScene with a specific revision loaded.
 				* @param handler hander to the database
@@ -61,11 +70,12 @@ namespace repo{
 					repo::core::handler::AbstractDatabaseHandler *handler,
 					const std::string                             &database,
 					const std::string                             &project,
-					const repo::lib::RepoUUID                                &uuid,
+					const repo::lib::RepoUUID                     &uuid,
 					const bool                                    &headRevision = true,
 					const bool                                    &lightFetch = false,
 					const bool                                    &ignoreRefScenes = false,
-					const bool                                    &skeletonFetch = false);
+					const bool                                    &skeletonFetch = false,
+					const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus = {});
 
 				repo::core::model::RepoScene* fetchScene(
 					repo::core::handler::AbstractDatabaseHandler *handler,
@@ -99,7 +109,7 @@ namespace repo{
 					repo::core::model::RepoScene                          *scene,
 					repo::core::handler::AbstractDatabaseHandler          *handler,
 					repo::core::handler::fileservice::FileManager         *fileManager
-					);
+				);
 
 				/**
 				* Generate a stash graph for the given scene and populate it
@@ -113,7 +123,7 @@ namespace repo{
 				bool generateStashGraph(
 					repo::core::model::RepoScene                 *scene,
 					repo::core::handler::AbstractDatabaseHandler *handler = nullptr
-					);
+				);
 
 				/**
 				* Check if the scene is VR enabled
@@ -165,7 +175,7 @@ namespace repo{
 				bool removeStashGraph(
 					repo::core::model::RepoScene                 *scene,
 					repo::core::handler::AbstractDatabaseHandler *handler = nullptr
-					);
+				);
 
 			private:
 				/**

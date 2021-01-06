@@ -267,7 +267,8 @@ namespace repo {
 			const bool           &headRevision = true,
 			const bool           &lightFetch = false,
 			const bool           &ignoreRefScene = false,
-			const bool           &skeletonFetch = false);
+			const bool           &skeletonFetch = false,
+			const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus = {});
 
 		/**
 			* Save the files of the original model to a specified directory
