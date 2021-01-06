@@ -141,7 +141,7 @@ uint8_t SceneManager::commitScene(
 
 			if (success)
 			{
-				if (isSrcEnabled(scene, handler))
+				if (shouldGenerateSrcFiles(scene, handler))
 				{
 					repoInfo << "Generating SRC stashes...";
 					repo_web_buffers_t buffers;
