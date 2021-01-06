@@ -145,7 +145,7 @@ namespace repo {
 				* @param handler hander to the database
 				* @return returns true if src stashes are enabled
 				*/
-				bool isSrcEnabled(
+				bool shouldGenerateSrcFiles(
 					const repo::core::model::RepoScene* scene,
 					repo::core::handler::AbstractDatabaseHandler* handler) const;
 
