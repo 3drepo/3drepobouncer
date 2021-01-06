@@ -1186,24 +1186,29 @@ bool RepoScene::loadRevision(
 	RepoBSON bson;
 	repoTrace << "loading revision : " << databaseName << "." << projectName << " head Revision: " << headRevision;
 	if (headRevision) {
-		RepoBSONBuilder critBuilder, statusBSONBuilder;
-		std::vector<int> statuses;
-		for (const auto &status : includeStatus) {
-			statuses.push_back((int)status);
-		}
-		statusBSONBuilder.appendArray("$in", statuses);
-		std::vector<RepoBSON> statusCheck = {
-			BSON(REPO_NODE_REVISION_LABEL_INCOMPLETE << statusBSONBuilder.mongoObj()),
+		RepoBSONBuilder critBuilder;
+
+		if (includeStatus.size()) {
+			RepoBSONBuilder statusBSONBuilder;
+			std::vector<RepoBSON> statusCheck = {
 			BSON(REPO_NODE_REVISION_LABEL_INCOMPLETE << BSON("$exists" << false))
-		};
+			};
+			std::vector<int> statuses;
+			for (const auto &status : includeStatus) {
+				statuses.push_back((int)status);
+			}
+			statusBSONBuilder.appendArray("$in", statuses);
+			statusCheck.push_back(BSON(REPO_NODE_REVISION_LABEL_INCOMPLETE << statusBSONBuilder.mongoObj()));
+			critBuilder.appendArray("$or", statusCheck);
+		}
+		else {
+			critBuilder.append(REPO_NODE_REVISION_LABEL_INCOMPLETE, BSON("$exists" << false));
+		}
 
 		critBuilder.append(REPO_NODE_LABEL_SHARED_ID, branch);
-		critBuilder.appendArray("$or", statusCheck);
 
-		auto criteria = critBuilder.obj();
-		repoInfo << criteria.toString();
 		bson = handler->findOneByCriteria(databaseName, projectName + "." +
-			REPO_COLLECTION_HISTORY, criteria, REPO_NODE_REVISION_LABEL_TIMESTAMP);
+			REPO_COLLECTION_HISTORY, critBuilder.obj(), REPO_NODE_REVISION_LABEL_TIMESTAMP);
 		repoTrace << "Fetching head of revision from branch " << branch;
 	}
 	else {
