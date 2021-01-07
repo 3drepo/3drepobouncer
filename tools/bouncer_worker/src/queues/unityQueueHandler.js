@@ -16,7 +16,7 @@
  */
 
 const { config } = require('../lib/config');
-const { generateAssetBundles } = require('../tasks/unityEditor');
+const { generateAssetBundles, validateUnityConfigurations } = require('../tasks/unityEditor');
 const { ERRCODE_ARG_FILE_FAIL, ERRCODE_BUNDLE_GEN_FAIL } = require('../constants/errorCodes');
 const logger = require('../lib/logger');
 
@@ -41,7 +41,9 @@ const processUnity = async (database, model, logDir, modelImportErrCode) => {
 	return returnMessage;
 };
 
-const onMessageReceived = async (cmd, rid, callback) => {
+const Handler = {};
+
+Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const { database, project, value } = JSON.parse(cmd);
 	const logDir = `${config.bouncer.log_dir}/${rid.toString()}/`;
 
@@ -55,4 +57,23 @@ const onMessageReceived = async (cmd, rid, callback) => {
 	callback(JSON.stringify(message));
 };
 
-module.exports = { onMessageReceived };
+Handler.validateConfiguration = () => {
+	if (!(config.rabbitmq && config.rabbitmq.callback_queue)) {
+		logger.error('rabbitmq.callback_queue is not specified!');
+		return false;
+	}
+
+	if (!config.rabbitmq.unity_queue) {
+		logger.error('rabbitmq.unity_queue is not specified!');
+		return false;
+	}
+
+	if (!(config.bouncer && config.bouncer.log_dir)) {
+		logger.error('bouncer.log_dir is not specified!');
+		return false;
+	}
+
+	return validateUnityConfigurations();
+};
+
+module.exports = Handler;

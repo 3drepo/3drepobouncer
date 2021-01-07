@@ -21,7 +21,9 @@ const { ERRCODE_OK, ERRCODE_BOUNCER_CRASH } = require('../constants/errorCodes')
 const { messageDecoder } = require('../lib/messageDecoder');
 const logger = require('../lib/logger');
 
-const onMessageReceived = async (cmd, rid, callback) => {
+const Handler = {};
+
+Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const logDir = `${config.bouncer.log_dir}/${rid.toString()}/`;
 	const { errorCode, database, model, cmdParams } = messageDecoder(cmd);
 
@@ -55,4 +57,29 @@ const onMessageReceived = async (cmd, rid, callback) => {
 		callback(JSON.stringify(returnMessage));
 	}
 };
-module.exports = { onMessageReceived };
+
+Handler.validateConfiguration = () => {
+	if (!config.rabbitmq.model_queue) {
+		logger.error('rabbitmq.model_queue is not specified!');
+		return false;
+	}
+
+	if (!config.rabbitmq.callback_queue) {
+		logger.error('rabbitmq.callback_queue is not specified!');
+		return false;
+	}
+
+	if (!config.rabbitmq.unity_queue) {
+		logger.error('rabbitmq.unity_queue is not specified!');
+		return false;
+	}
+
+	if (!config.bouncer.log_dir) {
+		logger.error('bouncer.log_dir is not specified!');
+		return false;
+	}
+
+	return true;
+};
+
+module.exports = Handler;

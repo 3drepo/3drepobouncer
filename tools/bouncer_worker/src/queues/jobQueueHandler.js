@@ -15,12 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const { importToyModel } = require('../tasks/importToy');
+const { importToyModel, validateToyImporterSettings } = require('../tasks/importToy');
 const { ERRCODE_OK, ERRCODE_TOY_IMPORT_FAILED } = require('../constants/errorCodes');
 const { config } = require('../lib/config');
 const { generateTreeStash, runBouncerCommand } = require('../tasks/bouncerClient');
 const { messageDecoder } = require('../lib/messageDecoder');
 const logger = require('../lib/logger');
+
+const Handler = {};
 
 const importToy = async ({ database, model, toyModelID, skipPostProcessing }, logDir) => {
 	const returnMessage = {
@@ -65,7 +67,7 @@ const createFed = async ({ database, model, toyFed, cmdParams }, logDir) => {
 	return returnMessage;
 };
 
-const onMessageReceived = async (cmd, rid, callback) => {
+Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const logDir = `${config.bouncer.log_dir}/${rid.toString()}/`;
 	const cmdMsg = messageDecoder(cmd);
 
@@ -80,4 +82,23 @@ const onMessageReceived = async (cmd, rid, callback) => {
 	}
 };
 
-module.exports = { onMessageReceived };
+Handler.validateConfiguration = () => {
+	if (!config.bouncer.log_dir) {
+		logger.error('bouncer.log_dir is not specified.');
+		return false;
+	}
+
+	if (!config.rabbitmq.worker_queue) {
+		logger.error('rabbitmq.worker_queue is not specified!');
+		return false;
+	}
+
+	if (!config.rabbitmq.callback_queue) {
+		logger.error('rabbitmq.callback_queue is not specified!');
+		return false;
+	}
+
+	return validateToyImporterSettings();
+};
+
+module.exports = Handler;

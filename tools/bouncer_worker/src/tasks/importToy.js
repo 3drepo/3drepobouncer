@@ -251,7 +251,9 @@ const renameGroups = async (db, database, modelId) => {
 	await Promise.all(updateObjectPromises);
 };
 
-const importToyModel = async (toyModelID, database, modelId) => {
+const ToyImporter = {};
+
+ToyImporter.importToyModel = async (toyModelID, database, modelId) => {
 	const modelDir = `${config.toyModelDir}/${toyModelID}`;
 	await importJSON(modelDir, database, modelId);
 
@@ -275,6 +277,13 @@ const importToyModel = async (toyModelID, database, modelId) => {
 	logger.log('Toy modelId imported');
 };
 
-module.exports = {
-	importToyModel,
+ToyImporter.validateToyImporterSettings = () => {
+	if (!config.toyModelDir) {
+		logger.error('toyModelDir not specified');
+		return false;
+	}
+
+	return true;
 };
+
+module.exports = ToyImporter;

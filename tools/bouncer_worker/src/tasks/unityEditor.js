@@ -48,4 +48,17 @@ UnityHandler.generateAssetBundles = async (database, model, logDir) => {
 	}
 };
 
+UnityHandler.validateUnityConfigurations = () => {
+	if (!(config.unity && config.unity.project)) {
+		logger.error('unity.project is not specified!');
+		return false;
+	}
+
+	if (!config.unity.project) {
+		logger.error('unity.project is not specified!');
+		return false;
+	}
+	return true;
+};
+
 module.exports = UnityHandler;

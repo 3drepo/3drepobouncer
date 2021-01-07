@@ -42,15 +42,15 @@ const listenToQueue = (channel, queueName, prefetchCount, callback) => {
 const establishChannel = async (conn, listenToJobQueue, listenToModelQueue, listenToUnityQueue) => {
 	const channel = await conn.createChannel();
 	channel.assertQueue(rabbitmq.callback_queue, { durable: true });
-	if (rabbitmq.worker_queue && listenToJobQueue) {
+	if (listenToJobQueue && JobQHandler.validateConfiguration()) {
 		listenToQueue(channel, rabbitmq.worker_queue, rabbitmq.task_prefetch, JobQHandler.onMessageReceived);
 	}
 
-	if (rabbitmq.model_queue && listenToModelQueue) {
+	if (listenToModelQueue && ModelQHandler.validateConfiguration()) {
 		listenToQueue(channel, rabbitmq.model_queue, rabbitmq.model_prefetch, ModelQHandler.onMessageReceived);
 	}
 
-	if (rabbitmq.unity_queue && listenToUnityQueue) {
+	if (listenToUnityQueue && UnityQHandler.validateConfiguration()) {
 		listenToQueue(channel, rabbitmq.unity_queue, rabbitmq.unity_prefetch, UnityQHandler.onMessageReceived);
 	}
 };
