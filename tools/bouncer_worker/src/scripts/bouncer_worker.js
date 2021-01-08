@@ -15,14 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const { connectToQueue } = require('../lib/queueHandler');
+const { runOnceOnQueue } = require('../lib/config').config;
+const { connectToQueue, runSingleTask } = require('../lib/queueHandler');
 const { testClient } = require('../tasks/bouncerClient');
 const logger = require('../lib/logger');
 
 const startBouncerWorker = async () => {
 	try {
 		await testClient();
-		connectToQueue(true, true, true);
+		if (runOnceOnQueue) {
+			runSingleTask(runOnceOnQueue);
+		} else {
+			connectToQueue(true, true, true);
+		}
 	} catch (err) {
 		logger.error(`Error occured: ${err}`);
 		// eslint-disable-next-line

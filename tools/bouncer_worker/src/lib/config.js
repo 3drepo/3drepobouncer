@@ -17,8 +17,20 @@
 
 const path = require('path');
 const fs = require('fs');
+const yargs = require('yargs/yargs');
+const { hideBin } = require('yargs/helpers');
 
-const getConfigLocation = () => process.argv[2] || path.resolve(__dirname, '../../config.json');
+const Config = {};
+
+const parseParameters = () => {
+	const args = yargs(hideBin(process.argv));
+	return args.option('config', {
+		describe: 'specify the path to a custom configuration file',
+	}).option('runOnceOnQueue', {
+		describe: 'Exit upon processing a single task on the specified queue',
+		choice: ['job', 'model', 'unity'],
+	}).help().argv;
+};
 
 /* eslint-disable no-param-reassign */
 const applyDefaultValuesIfUndefined = (config) => {
@@ -36,9 +48,12 @@ const applyDefaultValuesIfUndefined = (config) => {
 /* eslint-enable no-param-reassign */
 
 // eslint-disable-next-line consistent-return
-const parseConfig = () => {
+const init = () => {
 	try {
-		const config = JSON.parse(fs.readFileSync(getConfigLocation()));
+		const params = parseParameters();
+		Config.configPath = params.config || path.resolve(__dirname, '../../config.json');
+		const config = JSON.parse(fs.readFileSync(Config.configPath));
+		config.runOnceOnQueue = params.runOnceOnQueue;
 		applyDefaultValuesIfUndefined(config);
 		if (config.umask) {
 			// can't use logger -> circular dependency.
@@ -46,7 +61,7 @@ const parseConfig = () => {
 			console.log(`Setting umask: ${config.umask}`);
 			process.umask(config.umask);
 		}
-		return config;
+		Config.config = config;
 	} catch (err) {
 		// can't use logger -> circular dependency.
 		// eslint-disable-next-line no-console
@@ -56,7 +71,6 @@ const parseConfig = () => {
 	}
 };
 
-module.exports = {
-	config: parseConfig(),
-	configPath: getConfigLocation(),
-};
+init();
+
+module.exports = Config;
