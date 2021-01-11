@@ -54,8 +54,8 @@ const static std::string MP_LABEL_PROJECT = "model";
 AssetModelExport::AssetModelExport(
 	const repo::core::model::RepoScene *scene,
 	const bool vrEnabled
-	) : WebModelExport(scene),
-	generateVR(vrEnabled)
+) : WebModelExport(scene),
+generateVR(vrEnabled)
 {
 	//Considering all newly imported models should have a stash graph, we only need to support stash graph?
 	if (convertSuccess)
@@ -163,7 +163,7 @@ bool AssetModelExport::generateTreeRepresentation()
 	{
 		auto meshes = scene->getAllMeshes(gType);
 
-		std::vector<std::string> assetFiles, vrAssetFiles, iosAssetsFiles, jsons;
+		std::vector<std::string> assetFiles, vrAssetFiles, iosAssetsFiles, androidAssetsFiles, jsons;
 		for (const repo::core::model::RepoNode* node : meshes)
 		{
 			auto mesh = dynamic_cast<const repo::core::model::MeshNode*>(node);
@@ -187,6 +187,7 @@ bool AssetModelExport::generateTreeRepresentation()
 				if (generateVR) {
 					vrAssetFiles.push_back(fNamePrefix + "_win64.unity3d");
 					iosAssetsFiles.push_back(fNamePrefix + "_ios.unity3d");
+					androidAssetsFiles.push_back(fNamePrefix + "_android.unity3d");
 				}
 				assetFiles.push_back(fNamePrefix + ".unity3d");
 				jsons.push_back(fNamePrefix + "_unity.json.mpc");
@@ -220,14 +221,15 @@ bool AssetModelExport::generateTreeRepresentation()
 		jsonTrees[assetListFile] = assetListTree;
 
 		unityAssets = core::model::RepoBSONFactory::makeRepoUnityAssets(
-				scene->getRevisionID(),
-				assetFiles,
-				scene->getDatabaseName(),
-				scene->getProjectName(),
-				scene->getWorldOffset(),
-				vrAssetFiles,
-				iosAssetsFiles,
-				jsons);
+			scene->getRevisionID(),
+			assetFiles,
+			scene->getDatabaseName(),
+			scene->getProjectName(),
+			scene->getWorldOffset(),
+			vrAssetFiles,
+			iosAssetsFiles,
+			androidAssetsFiles,
+			jsons);
 	}
 
 	return success;

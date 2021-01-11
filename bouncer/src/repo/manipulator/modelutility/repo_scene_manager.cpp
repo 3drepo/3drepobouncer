@@ -42,7 +42,6 @@ bool SceneManager::commitWebBuffers(
 	//Upload the files
 	for (const auto &bufferPair : resultBuffers.geoFiles)
 	{
-
 		if (success &= fileManager->uploadFileAndCommit(databaseName, projectName + "." + geoStashExt, bufferPair.first, bufferPair.second))
 		{
 			repoInfo << "File (" << bufferPair.first << ") added successfully to file storage.";
@@ -57,7 +56,7 @@ bool SceneManager::commitWebBuffers(
 	{
 		std::string errMsg;
 		std::string fileName = bufferPair.first;
-		
+
 		if (success &= fileManager->uploadFileAndCommit(databaseName, projectName + "." + jsonStashExt, bufferPair.first, bufferPair.second))
 		{
 			repoInfo << "File (" << fileName << ") added successfully to file storage.";
@@ -71,7 +70,7 @@ bool SceneManager::commitWebBuffers(
 	std::string errMsg;
 	if (REPO_COLLECTION_STASH_UNITY == geoStashExt)
 	{
-	       if (success &= handler->upsertDocument(databaseName, projectName + "." + geoStashExt, resultBuffers.unityAssets,
+		if (success &= handler->upsertDocument(databaseName, projectName + "." + geoStashExt, resultBuffers.unityAssets,
 			true, errMsg))
 		{
 			repoInfo << "Unity assets list added successfully.";
@@ -118,7 +117,7 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 		{
 			if (skeletonFetch)
 				scene->skipLoadingExtFiles();
-			if(ignoreRefScenes)
+			if (ignoreRefScenes)
 				scene->ignoreReferenceScene();
 			if (headRevision)
 				scene->setBranch(uuid);
@@ -130,9 +129,9 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 			{
 				repoInfo << "Loaded" <<
 					(headRevision ? (" head revision of branch " + uuid.toString())
-					: (" revision " + uuid.toString()))
+						: (" revision " + uuid.toString()))
 					<< " of " << database << "." << project;
-				if (lightFetch )
+				if (lightFetch)
 				{
 					if (scene->loadStash(handler, errMsg))
 					{
@@ -146,7 +145,7 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 						{
 							repoTrace << "Scene Loaded";
 						}
-						else{
+						else {
 							delete scene;
 							scene = nullptr;
 						}
@@ -170,7 +169,7 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 							}
 						}
 					}
-					else{
+					else {
 						delete scene;
 						scene = nullptr;
 					}
@@ -184,7 +183,7 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 				scene = nullptr;
 			}
 		}
-		else{
+		else {
 			repoError << "Failed to create a RepoScene(out of memory?)!";
 		}
 	}
@@ -238,7 +237,7 @@ void SceneManager::fetchScene(
 bool SceneManager::generateStashGraph(
 	repo::core::model::RepoScene              *scene,
 	repo::core::handler::AbstractDatabaseHandler *handler
-	)
+)
 {
 	bool success = false;
 	if (success = (scene && scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT)))
@@ -378,10 +377,10 @@ bool SceneManager::generateAndCommitSelectionTree(
 				std::string fileName = fileNamePrefix + file.first;
 
 				if (handler && fileManager->uploadFileAndCommit(
-							databaseName,
-							projectName + "." + REPO_COLLECTION_STASH_JSON,
-							fileName,
-							file.second))
+					databaseName,
+					projectName + "." + REPO_COLLECTION_STASH_JSON,
+					fileName,
+					file.second))
 				{
 					repoInfo << "File (" << fileName << ") added successfully to file storage.";
 				}
@@ -433,18 +432,19 @@ bool SceneManager::isVrEnabled(
 	return user.isVREnabled();
 }
 
-bool SceneManager::isSrcEnabled(
+bool SceneManager::shouldGenerateSrcFiles(
 	const repo::core::model::RepoScene* scene,
 	repo::core::handler::AbstractDatabaseHandler* handler) const
 {
 	repo::core::model::RepoUser user(handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, BSON("user" << scene->getDatabaseName())));
-	return user.isSrcEnabled();
+	//only generate SRC files if the user has the src flag enabled and there are meshes
+	return scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size() && user.isSrcEnabled();
 }
 
 bool SceneManager::removeStashGraph(
 	repo::core::model::RepoScene                 *scene,
 	repo::core::handler::AbstractDatabaseHandler *handler
-	)
+)
 {
 	bool success;
 	if (success = scene)
@@ -466,4 +466,3 @@ bool SceneManager::removeStashGraph(
 
 	return success;
 }
-

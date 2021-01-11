@@ -15,7 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include "geometry_collector.h"
 
 #include <assimp/scene.h>
@@ -25,9 +24,7 @@ using namespace repo::manipulator::modelconvertor::odaHelper;
 
 GeometryCollector::GeometryCollector()
 {
-
 }
-
 
 GeometryCollector::~GeometryCollector()
 {
@@ -64,12 +61,11 @@ repo::core::model::TransformationNode GeometryCollector::createRootNode()
 }
 
 void GeometryCollector::setCurrentMaterial(const repo_material_t &material, bool missingTexture) {
-
 	auto checkSum = material.checksum();
-	if(idxToMat.find(checkSum) == idxToMat.end()) {
-		idxToMat[checkSum] = { 
-			repo::core::model::RepoBSONFactory::makeMaterialNode(material), 
-			createTextureNode(material.texturePath) 
+	if (idxToMat.find(checkSum) == idxToMat.end()) {
+		idxToMat[checkSum] = {
+			repo::core::model::RepoBSONFactory::makeMaterialNode(material),
+			createTextureNode(material.texturePath)
 		};
 
 		if (missingTexture)
@@ -91,11 +87,9 @@ mesh_data_t GeometryCollector::createMeshEntry() {
 	entry.layerName = nextLayer.empty() ? "UnknownLayer" : nextLayer;
 
 	return entry;
-
 }
 
 void  GeometryCollector::startMeshEntry() {
-
 	nextMeshName = nextMeshName.empty() ? std::to_string(std::time(0)) : nextMeshName;
 	nextGroupName = nextGroupName.empty() ? nextMeshName : nextGroupName;
 	nextLayer = nextLayer.empty() ? nextMeshName : nextLayer;
@@ -112,19 +106,18 @@ void  GeometryCollector::startMeshEntry() {
 		meshData[nextGroupName][nextLayer][currMat] = createMeshEntry();
 	}
 	currentEntry = &meshData[nextGroupName][nextLayer][currMat];
-
 }
 
 void  GeometryCollector::stopMeshEntry() {
-	if(currentEntry)
-		currentEntry->vToVIndex.clear();		
+	if (currentEntry)
+		currentEntry->vToVIndex.clear();
 	nextMeshName = "";
 }
 
 void GeometryCollector::addFace(
-	const std::vector<repo::lib::RepoVector3D64> &vertices, 
+	const std::vector<repo::lib::RepoVector3D64> &vertices,
 	const repo::lib::RepoVector3D64& normal,
-	const std::vector<repo::lib::RepoVector2D>& uvCoords) 
+	const std::vector<repo::lib::RepoVector2D>& uvCoords)
 {
 	if (!meshData.size()) startMeshEntry();
 
@@ -140,7 +133,7 @@ void GeometryCollector::addFace(
 	}
 
 	if (faceHasUV && uvCoords.size() != vertices.size()) {
-		repoError << "Vertices size["<< vertices.size() << "] and UV size ["<< uvCoords.size() <<"] mismatched!";
+		repoError << "Vertices size[" << vertices.size() << "] and UV size [" << uvCoords.size() << "] mismatched!";
 		exit(-1);
 	}
 
@@ -151,9 +144,9 @@ void GeometryCollector::addFace(
 		if (currentEntry->vToVIndex.find(v) == currentEntry->vToVIndex.end()) {
 			//..insert new vertex along with index and normal
 			currentEntry->vToVIndex.insert(
-				std::pair<repo::lib::RepoVector3D64, 
+				std::pair<repo::lib::RepoVector3D64,
 				std::pair<int, repo::lib::RepoVector3D64>>(
-					v, 
+					v,
 					std::pair<int, repo::lib::RepoVector3D64>(currentEntry->rawVertices.size(), normal))
 			);
 			vertIdx = currentEntry->rawVertices.size();
@@ -163,13 +156,13 @@ void GeometryCollector::addFace(
 				currentEntry->uvCoords.push_back(uvCoords[i]);
 
 			if (currentEntry->boundingBox.size()) {
-				currentEntry->boundingBox[0][0] = currentEntry->boundingBox[0][0] > v.x ? (float) v.x : currentEntry->boundingBox[0][0];
-				currentEntry->boundingBox[0][1] = currentEntry->boundingBox[0][1] > v.y ? (float) v.y : currentEntry->boundingBox[0][1];
-				currentEntry->boundingBox[0][2] = currentEntry->boundingBox[0][2] > v.z ? (float) v.z : currentEntry->boundingBox[0][2];
+				currentEntry->boundingBox[0][0] = currentEntry->boundingBox[0][0] > v.x ? (float)v.x : currentEntry->boundingBox[0][0];
+				currentEntry->boundingBox[0][1] = currentEntry->boundingBox[0][1] > v.y ? (float)v.y : currentEntry->boundingBox[0][1];
+				currentEntry->boundingBox[0][2] = currentEntry->boundingBox[0][2] > v.z ? (float)v.z : currentEntry->boundingBox[0][2];
 
-				currentEntry->boundingBox[1][0] = currentEntry->boundingBox[1][0] < v.x ? (float) v.x : currentEntry->boundingBox[1][0];
-				currentEntry->boundingBox[1][1] = currentEntry->boundingBox[1][1] < v.y ? (float) v.y : currentEntry->boundingBox[1][1];
-				currentEntry->boundingBox[1][2] = currentEntry->boundingBox[1][2] < v.z ? (float) v.z : currentEntry->boundingBox[1][2];
+				currentEntry->boundingBox[1][0] = currentEntry->boundingBox[1][0] < v.x ? (float)v.x : currentEntry->boundingBox[1][0];
+				currentEntry->boundingBox[1][1] = currentEntry->boundingBox[1][1] < v.y ? (float)v.y : currentEntry->boundingBox[1][1];
+				currentEntry->boundingBox[1][2] = currentEntry->boundingBox[1][2] < v.z ? (float)v.z : currentEntry->boundingBox[1][2];
 			}
 			else {
 				currentEntry->boundingBox.push_back({ (float)v.x, (float)v.y, (float)v.z });
@@ -205,7 +198,7 @@ void GeometryCollector::addFace(
 
 			if (!normalFound)
 			{
-				//.. in case the normal for this point doesn't exist yet - we should add it 
+				//.. in case the normal for this point doesn't exist yet - we should add it
 				//.. as duplicated and add new normal and index
 				currentEntry->vToVIndex.insert(
 					std::pair<repo::lib::RepoVector3D64,
@@ -228,7 +221,6 @@ void GeometryCollector::addFace(
 	currentEntry->faces.push_back(face);
 }
 
-
 repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core::model::TransformationNode& root) {
 	repo::core::model::RepoNodeSet res;
 	auto dummyCol = std::vector<repo_color4d_t>();
@@ -242,13 +234,12 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 			for (const auto &meshMatEntry : meshLayerEntry.second) {
 				if (!meshMatEntry.second.rawVertices.size()) continue;
 
-				auto uvChannels = meshMatEntry.second.uvCoords.size() ? 
+				auto uvChannels = meshMatEntry.second.uvCoords.size() ?
 					std::vector<std::vector<repo::lib::RepoVector2D>>{meshMatEntry.second.uvCoords} :
 					std::vector<std::vector<repo::lib::RepoVector2D>>();
 
-
 				if (layerToTrans.find(meshLayerEntry.first) == layerToTrans.end()) {
-					layerToTrans[meshLayerEntry.first] = createTransNode(layerIDToName[meshLayerEntry.first], meshLayerEntry.first,  rootId);
+					layerToTrans[meshLayerEntry.first] = createTransNode(layerIDToName[meshLayerEntry.first], meshLayerEntry.first, rootId);
 					transNodes.insert(layerToTrans[meshLayerEntry.first]);
 				}
 
@@ -279,7 +270,6 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 					{ layerToTrans[meshLayerEntry.first]->getSharedID() }
 				);
 
-
 				if (idToMeta.find(meshGroupEntry.first) != idToMeta.end()) {
 					metaNodes.insert(createMetaNode(meshGroupEntry.first, { meshNode.getSharedID() }, idToMeta[meshGroupEntry.first]));
 				}
@@ -303,14 +293,14 @@ repo::core::model::MetadataNode*  GeometryCollector::createMetaNode(
 	const repo::lib::RepoUUID &parentId,
 	const  std::unordered_map<std::string, std::string> &metaValues
 ) {
-	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metaValues, name, {parentId}));
+	return new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(metaValues, name, { parentId }));
 }
 
 repo::core::model::TransformationNode*  GeometryCollector::createTransNode(
 	const std::string &name,
 	const std::string &id,
-	const repo::lib::RepoUUID &parentId) 
-{	
+	const repo::lib::RepoUUID &parentId)
+{
 	auto transNode = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name, { parentId }));
 	if (idToMeta.find(id) != idToMeta.end()) {
 		metaNodes.insert(createMetaNode(name, transNode->getSharedID(), idToMeta[id]));
@@ -329,7 +319,6 @@ bool GeometryCollector::hasMissingTextures()
 }
 
 void GeometryCollector::getMaterialAndTextureNodes(repo::core::model::RepoNodeSet& materials, repo::core::model::RepoNodeSet& textures) {
-	
 	materials.clear();
 	textures.clear();
 
@@ -373,8 +362,7 @@ repo::core::model::TextureNode GeometryCollector::createTextureNode(const std::s
 		(const char*)memblock,
 		size,
 		1,
-		0,
-		REPO_NODE_API_LEVEL_1
+		0
 	);
 
 	delete[] memblock;

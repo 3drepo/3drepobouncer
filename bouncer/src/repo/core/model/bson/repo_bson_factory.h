@@ -145,6 +145,7 @@ namespace repo {
 				* @param offset world offset shift coordinates of the model
 				* @param vrAssetFiles list of VR Unity assets
 				* @param iosAssetFiles list of iOS Unity assets
+				* @param androidAssetFiles list of android Unity assets
 				* @param jsonFiles list of JSON files
 				* @return returns a RepoUnityAssets
 				*/
@@ -156,6 +157,7 @@ namespace repo {
 					const std::vector<double>                              &offset,
 					const std::vector<std::string>                         &vrAssetFiles,
 					const std::vector<std::string>                         &iosAssetFiles,
+					const std::vector<std::string>                         &androidAssetFiles,
 					const std::vector<std::string>                         &jsonFiles);
 
 				/*
@@ -369,6 +371,7 @@ namespace repo {
 					const uint32_t    &byteCount,
 					const uint32_t    &width,
 					const uint32_t    &height,
+					const std::vector<repo::lib::RepoUUID>& parentIDs = std::vector<repo::lib::RepoUUID>(),
 					const int         &apiLevel = REPO_NODE_API_LEVEL_1);
 
 				/**
