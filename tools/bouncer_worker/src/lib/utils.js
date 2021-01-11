@@ -15,24 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const { runOnceOnQueue } = require('../lib/config').config;
-const { exitApplication } = require('../lib/utils');
-const { connectToQueue, runSingleTask } = require('../lib/queueHandler');
-const { testClient } = require('../tasks/bouncerClient');
-const logger = require('../lib/logger');
+const Utils = {};
 
-const startBouncerWorker = async () => {
-	try {
-		await testClient();
-		if (runOnceOnQueue) {
-			runSingleTask(runOnceOnQueue);
-		} else {
-			connectToQueue(true, true, true);
-		}
-	} catch (err) {
-		logger.error(`Error occured: ${err}`);
-		exitApplication();
-	}
+Utils.exitApplication = (errCode = -1) => {
+	// eslint-disable-next-line no-process-exit
+	process.exit(errCode);
 };
 
-startBouncerWorker();
+Utils.sleep = (ms) => new Promise((resolve) => {
+	setTimeout(resolve, ms);
+});
+
+module.exports = Utils;

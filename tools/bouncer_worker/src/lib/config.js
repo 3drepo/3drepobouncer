@@ -19,15 +19,16 @@ const path = require('path');
 const fs = require('fs');
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
+const { exitApplication } = require('./utils');
 
 const Config = {};
 
 const parseParameters = () => {
 	const args = yargs(hideBin(process.argv));
 	return args.option('config', {
-		describe: 'specify the path to a custom configuration file',
+		describe: 'specify the path to a custom configuration file (default: config.json at root level)',
 	}).option('runOnceOnQueue', {
-		describe: 'Exit upon processing a single task on the specified queue',
+		describe: 'Exit upon processing a single task on the specified queue [job|model|unity]',
 		choice: ['job', 'model', 'unity'],
 	}).help().argv;
 };
@@ -39,6 +40,7 @@ const applyDefaultValuesIfUndefined = (config) => {
 	config.rabbitmq.task_prefetch = config.rabbitmq.task_prefetch || 4;
 	config.rabbitmq.model_prefetch = config.rabbitmq.model_prefetch || 1;
 	config.rabbitmq.unity_prefetch = config.rabbitmq.unity_prefetch || 1;
+	config.rabbitmq.waitBeforeShutdownMS = config.rabbitmq.waitBeforeShutdownMS || 60000;
 	config.bouncer.log_dir = config.bouncer.log_dir || '.log';
 	config.mongoimport = config.mongoimport || {};
 	config.mongoimport.writeConcern = config.mongoimport.writeConcern || { w: 1 };
@@ -66,8 +68,7 @@ const init = () => {
 		// can't use logger -> circular dependency.
 		// eslint-disable-next-line no-console
 		console.error('Failed to parse config file:', err);
-		// eslint-disable-next-line no-process-exit
-		process.exit(1);
+		exitApplication(-1);
 	}
 };
 
