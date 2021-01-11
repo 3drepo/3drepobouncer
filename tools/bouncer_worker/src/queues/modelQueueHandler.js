@@ -24,7 +24,7 @@ const logger = require('../lib/logger');
 const Handler = {};
 
 Handler.onMessageReceived = async (cmd, rid, callback) => {
-	const logDir = `${config.bouncer.log_dir}/${rid.toString()}/`;
+	const logDir = `${config.logging.taskLogDir}/${rid.toString()}/`;
 	const { errorCode, database, model, cmdParams } = messageDecoder(cmd);
 
 	if (errorCode) {
@@ -74,8 +74,8 @@ Handler.validateConfiguration = () => {
 		return false;
 	}
 
-	if (!config.bouncer.log_dir) {
-		logger.error('bouncer.log_dir is not specified!');
+	if (!config.logging.taskLogDir) {
+		logger.error('logging.taskLogDir is not specified!');
 		return false;
 	}
 

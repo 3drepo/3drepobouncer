@@ -45,7 +45,7 @@ const Handler = {};
 
 Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const { database, project, value } = JSON.parse(cmd);
-	const logDir = `${config.bouncer.log_dir}/${rid.toString()}/`;
+	const logDir = `${config.logging.taskLogDir}/${rid.toString()}/`;
 
 	callback(JSON.stringify({
 		status: 'creating asset bundles',
@@ -68,8 +68,8 @@ Handler.validateConfiguration = () => {
 		return false;
 	}
 
-	if (!(config.bouncer && config.bouncer.log_dir)) {
-		logger.error('bouncer.log_dir is not specified!');
+	if (!(config.logging && config.logging.taskLogDir)) {
+		logger.error('config.logging.taskLogDir is not specified!');
 		return false;
 	}
 

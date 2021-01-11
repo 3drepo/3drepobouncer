@@ -68,7 +68,7 @@ const createFed = async ({ database, model, toyFed, cmdParams }, logDir) => {
 };
 
 Handler.onMessageReceived = async (cmd, rid, callback) => {
-	const logDir = `${config.bouncer.log_dir}/${rid.toString()}/`;
+	const logDir = `${config.logging.taskLogDir}/${rid.toString()}/`;
 	const cmdMsg = messageDecoder(cmd);
 
 	if (cmdMsg.errorCode) {
@@ -83,8 +83,8 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 };
 
 Handler.validateConfiguration = () => {
-	if (!config.bouncer.log_dir) {
-		logger.error('bouncer.log_dir is not specified.');
+	if (!config.logging.taskLogDir) {
+		logger.error('logging.taskLogDir is not specified.');
 		return false;
 	}
 
