@@ -16,13 +16,22 @@
  */
 
 const winston = require('winston');
-const { logLocation } = require('./config');
+const { workerLogPath } = require('./config').config.logging;
+
+const getTransporters = () => {
+	const transporters = [
+		new (winston.transports.Console)({ timestamp: true }),
+	];
+
+	if (workerLogPath) {
+		transporters.push(new (winston.transports.File)({ filename: workerLogPath }));
+	}
+
+	return transporters;
+};
 
 const logger = new (winston.Logger)({
-	transports: [
-		new (winston.transports.Console)({ timestamp: true }),
-		new (winston.transports.File)({ filename: logLocation || './bouncer_worker.log' }),
-	],
+	transports: getTransporters(),
 });
 
 module.exports = logger;

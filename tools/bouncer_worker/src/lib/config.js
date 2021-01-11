@@ -36,16 +36,23 @@ const parseParameters = () => {
 /* eslint-disable no-param-reassign */
 const applyDefaultValuesIfUndefined = (config) => {
 	config.timeoutMS = config.timeoutMS || 180 * 60 * 1000;
+
+	// rabbitmq configurations
 	config.rabbitmq.maxRetries = config.rabbitmq.maxRetries || 3;
 	config.rabbitmq.task_prefetch = config.rabbitmq.task_prefetch || 4;
 	config.rabbitmq.model_prefetch = config.rabbitmq.model_prefetch || 1;
 	config.rabbitmq.unity_prefetch = config.rabbitmq.unity_prefetch || 1;
 	config.rabbitmq.waitBeforeShutdownMS = config.rabbitmq.waitBeforeShutdownMS || 60000;
-	config.bouncer.log_dir = config.bouncer.log_dir || '.log';
+
+	// toy project configurations
 	config.mongoimport = config.mongoimport || {};
 	config.mongoimport.writeConcern = config.mongoimport.writeConcern || { w: 1 };
 	config.toyModelDir = config.toyModelDir || path.resolve(__dirname, '../../toy');
-	config.logLocation = config.logLocation || './bouncer_worker.log';
+
+	// logging related
+	config.logging = config.logging || {};
+	config.logging.taskLogDir = config.logging.taskLogDir || config.bouncer.log_dir || '.log';
+	config.logging.workerLogPath = config.logging.workerLogPath || config.logLocation;
 };
 /* eslint-enable no-param-reassign */
 
