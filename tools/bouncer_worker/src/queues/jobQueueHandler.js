@@ -95,6 +95,11 @@ Handler.validateConfiguration = () => {
 		return false;
 	}
 
+	if (!config.rabbitmq.sharedDir) {
+		logger.error('rabbitmq.sharedDir is not specified!', logLabel);
+		return false;
+	}
+
 	if (!config.rabbitmq.callback_queue) {
 		logger.error('rabbitmq.callback_queue is not specified!', logLabel);
 		return false;

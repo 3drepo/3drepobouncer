@@ -76,6 +76,11 @@ Handler.validateConfiguration = () => {
 		return false;
 	}
 
+	if (!config.rabbitmq.sharedDir) {
+		logger.error('rabbitmq.sharedDir is not specified!', logLabel);
+		return false;
+	}
+
 	if (!config.logging.taskLogDir) {
 		logger.error('logging.taskLogDir is not specified!', logLabel);
 		return false;
