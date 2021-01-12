@@ -32,12 +32,11 @@ def updateSrcHeaders(majorV, minorTag):
     execExitOnFail(updateMajor, "Failed to update major number in source");
 
     updateMinor =  sedCmd("BOUNCER_VMINOR [^ ]*", "BOUNCER_VMINOR \"" + minorTag +"\"", "bouncer/src/repo/repo_bouncer_global.h");
-    print updateMinor
     execExitOnFail(updateMinor, "Failed to update minor number in source");
     execExitOnFail("git add bouncer/src/repo/repo_bouncer_global.h", "failed to add repo_bouncer_global.h to git");
 
 def updateBouncerWorker(version):
-    updateVersion = sed("\"version\":[^ ]*", "\"version\": \"" + version + "\",", "tools/bouncer_worker/package.json");
+    updateVersion = sedCmd("\"version\":[^ ]*", "\"version\": \"" + version + "\",", "tools/bouncer_worker/package.json");
     execExitOnFail(updateVersion, "Failed to update version in package.json");
     execExitOnFail("git add tools/bouncer_worker/package.json", "failed to add package.json to git");
 
