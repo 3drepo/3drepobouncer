@@ -1,89 +1,87 @@
-language: node_js
 
-compiler:
-     - gcc
+matrix:
+  include:
+    - language: node_js
+      node_js:
+        - "10.15.1"
+      script:
+        - cd tools/bouncer_worker && yarn install && yarn lint
+    - language: cpp
+      compiler:
+           - gcc
 
-node_js:
-    - "10.15.1"
+      addons:
+          apt:
+              sources:
+                  - ubuntu-toolchain-r-test
+              packages:
+                  - gcc
+                  - g++
 
-addons:
-    apt:
-        sources:
-            - ubuntu-toolchain-r-test
-        packages:
-            - gcc
-            - g++
+      before_install:
+          - mkdir testData && cd testData
+          - svn --no-auth-cache export --username $TESTUSER --password $TESTPW https://github.com/3drepo/tests/trunk/cplusplus/bouncer
+          - cd ../
+          - mkdir data
+          - mongod --dbpath data &
+          - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
+          - mongo admin testData/bouncer/createUser.js
+          - cd  testData/bouncer/data/database/
+          - mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin --quiet
+          - cd ../../../../
+          - export CXX="g++"
+          - export CC="gcc"
+          - gcov --version
+          - echo ============ BOOST  INSTALL =============
+            #    - sudo add-apt-repository -y ppa:samuel-bachmann/boost
+            #    - sudo apt-get update
+            #    - sudo apt-get install libboost1.60-all-dev
+          - sudo apt-get install libboost-all-dev
+          - echo ============ MONGO  INSTALL =============
+          - tar -zxf testData/bouncer/ext_libs/xenial/mongo-cxx-driver.tgz
+          - echo ============ ASSIMP INSTALL =============
+          - tar -zxf testData/bouncer/ext_libs/xenial/assimp.tgz
+          - echo ============ IFCOPENSHELL INSTALL =============
+          - tar -zxf testData/bouncer/ext_libs/xenial/OCCT.tgz
+          - tar -zxf testData/bouncer/ext_libs/xenial/IfcOpenShell.tgz
+          - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev
+          - echo ============ TEIGHA INSTALL =============
+          - wget $TEIGHA_LIBS_2020_2
+          - tar -zxf teighaLinuxGCC5.3.tgz
+          - ls teighaLinuxGCC5.3/Kernel/Include
+          - echo ============ SYNCHRO INSTALL =============
+          - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
+          - tar -zxf testData/bouncer/ext_libs/xenial/synchro_6.2/thrift-0.12.0.tgz
+          - tar -zxf testData/bouncer/ext_libs/xenial/synchro_6.2/synchro.tgz
+          - tar -zxf testData/bouncer/ext_libs/xenial/synchro_6.2/3drepoSynchroReader.tgz
 
-before_install:
-    #- echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list
-    #- sudo apt-get update
-    #- sudo apt-get install mongodb-org
-    - mongod --version
-    - mkdir testData && cd testData
-    - svn --no-auth-cache export --username $TESTUSER --password $TESTPW https://github.com/3drepo/tests/trunk/cplusplus/bouncer
-    - cd ../
-    - mkdir data
-    - mongod --dbpath data &
-    - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
-    - mongo admin testData/bouncer/createUser.js
-    - cd  testData/bouncer/data/database/
-    - mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin --quiet
-    - cd ../../../../
-    - export CXX="g++"
-    - export CC="gcc"
-    - gcov --version
-    - echo ============ BOOST  INSTALL =============
-      #    - sudo add-apt-repository -y ppa:samuel-bachmann/boost
-      #    - sudo apt-get update
-      #    - sudo apt-get install libboost1.60-all-dev
-    - sudo apt-get install libboost-all-dev
-    - echo ============ MONGO  INSTALL =============
-    - tar -zxf testData/bouncer/ext_libs/xenial/mongo-cxx-driver.tgz
-    - echo ============ ASSIMP INSTALL =============
-    - tar -zxf testData/bouncer/ext_libs/xenial/assimp.tgz
-    - echo ============ IFCOPENSHELL INSTALL =============
-    - tar -zxf testData/bouncer/ext_libs/xenial/OCCT.tgz
-    - tar -zxf testData/bouncer/ext_libs/xenial/IfcOpenShell.tgz
-    - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev
-    - echo ============ TEIGHA INSTALL =============
-    - wget $TEIGHA_LIBS_2020_2
-    - tar -zxf teighaLinuxGCC5.3.tgz
-    - ls teighaLinuxGCC5.3/Kernel/Include
-    - echo ============ SYNCHRO INSTALL =============
-    - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
-    - tar -zxf testData/bouncer/ext_libs/xenial/synchro_6.2/thrift-0.12.0.tgz
-    - tar -zxf testData/bouncer/ext_libs/xenial/synchro_6.2/synchro.tgz
-    - tar -zxf testData/bouncer/ext_libs/xenial/synchro_6.2/3drepoSynchroReader.tgz
-
-install:
-    - sudo pip install cpp-coveralls
-services:
-    - mongodb
-before_script:
-    - cd tools/bouncer_worker && yarn install && yarn lint
-    - cd -
-    - mkdir build && cd build
-    - export MONGO_ROOT=$PWD/../mongo-cxx-driver
-    - export ASSIMP_ROOT=$PWD/../assimp
-    - export OCCT_ROOT=$PWD/../OCCT
-    - export IFCOPENSHELL_ROOT=$PWD/../IfcOpenShell
-    - export ODA_ROOT=$PWD/../teighaLinuxGCC5.3
-    - export THRIFT_ROOT=$PWD/../thrift-0.12.0
-    - export SYNCHRO_ROOT=$PWD/../synchro
-    - export SYNCHRO_READER_ROOT=$PWD/../3drepoSynchroReader
-    - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_5.3dll/
-    - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_CXX_STANDARD=11 -DCMAKE_BUILD_TYPE=Release -DSYNCHRO_SUPPORT=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
-    - mongo mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
-script:
-    - sudo make -j2 install
-    - export REPO_MODEL_PATH=$PWD/../testData/bouncer/data/models
-    - for f in $REPO_MODEL_PATH/*.json; do sed -i.bak -e 's|$REPO_MODEL_PATH|'$REPO_MODEL_PATH'|g' $f; done
-    - cd ~/bouncer_install
-    - cp bin/* $ODA_ROOT/bin/lnxX64_5.3dll/
-    - cd $ODA_ROOT/bin/lnxX64_5.3dll/
-    - ODA_CSV_LOCATION=$ODA_ROOT/bin/lnxX64_5.3dll/ PATH=$ODA_ROOT/bin/lnxX64_5.3dll/:$PATH LD_LIBRARY_PATH=$SYNCHRO_READER_ROOT/lib:$SYNCHRO_ROOT/lib:$THRIFT_ROOT/lib:$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$ODA_ROOT/bin/lnxX64_5.3dll/:$LD_LIBRARY_PATH:$HOME/bouncer_install/lib 3drepobouncerTest
-after_success:
-    - cd - && coveralls --root ../ -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0" -e "aws-install"
+      install:
+          - sudo pip install cpp-coveralls
+      services:
+          - mongodb
+      before_script:
+          - mkdir build && cd build
+          - export MONGO_ROOT=$PWD/../mongo-cxx-driver
+          - export ASSIMP_ROOT=$PWD/../assimp
+          - export OCCT_ROOT=$PWD/../OCCT
+          - export IFCOPENSHELL_ROOT=$PWD/../IfcOpenShell
+          - export ODA_ROOT=$PWD/../teighaLinuxGCC5.3
+          - export THRIFT_ROOT=$PWD/../thrift-0.12.0
+          - export SYNCHRO_ROOT=$PWD/../synchro
+          - export SYNCHRO_READER_ROOT=$PWD/../3drepoSynchroReader
+          - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_5.3dll/
+          - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_CXX_STANDARD=11 -DCMAKE_BUILD_TYPE=Release -DSYNCHRO_SUPPORT=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
+          - mongo mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
+      script:
+          - sudo make -j2 install
+          - export REPO_MODEL_PATH=$PWD/../testData/bouncer/data/models
+          - for f in $REPO_MODEL_PATH/*.json; do sed -i.bak -e 's|$REPO_MODEL_PATH|'$REPO_MODEL_PATH'|g' $f; done
+          - cd ~/bouncer_install
+          - cp bin/* $ODA_ROOT/bin/lnxX64_5.3dll/
+          - cd $ODA_ROOT/bin/lnxX64_5.3dll/
+          - ODA_CSV_LOCATION=$ODA_ROOT/bin/lnxX64_5.3dll/ PATH=$ODA_ROOT/bin/lnxX64_5.3dll/:$PATH LD_LIBRARY_PATH=$SYNCHRO_READER_ROOT/lib:$SYNCHRO_ROOT/lib:$THRIFT_ROOT/lib:$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$ODA_ROOT/bin/lnxX64_5.3dll/:$LD_LIBRARY_PATH:$HOME/bouncer_install/lib 3drepobouncerTest
+      after_success:
+          - cd - && coveralls --root ../ -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0" -e "aws-install"
 notifications:
     email:
         recipients:
