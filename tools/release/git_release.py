@@ -36,7 +36,7 @@ def updateSrcHeaders(majorV, minorTag):
     execExitOnFail("git add bouncer/src/repo/repo_bouncer_global.h", "failed to add repo_bouncer_global.h to git");
 
 def updateBouncerWorker(version):
-    updateVersion = sedCmd("\"version\":[^ ]*", "\"version\": \"" + version + "\",", "tools/bouncer_worker/package.json");
+    updateVersion = sedCmd("\"version\": [^ ]*", "\"version\": \"" + version + "\",", "tools/bouncer_worker/package.json");
     execExitOnFail(updateVersion, "Failed to update version in package.json");
     execExitOnFail("git add tools/bouncer_worker/package.json", "failed to add package.json to git");
 
@@ -61,8 +61,6 @@ minorTag = minor1V + "_" + minor2V
 updateCmake(majorV, minorTag);
 updateSrcHeaders(majorV, minorTag);
 updateBouncerWorker(version)
-
-sys.exit(0);
 
 execExitOnFail("git clean -f -d", "Failed to clean directory")
 
