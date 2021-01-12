@@ -21,7 +21,8 @@ const setBouncerEnvars = (logDir) => {
 const BouncerHandler = {};
 
 BouncerHandler.testClient = async () => {
-	logger.info('Checking status of client...');
+	const logLabel = { label: 'INIT' };
+	logger.info('Checking status of client...', logLabel);
 
 	setBouncerEnvars();
 
@@ -31,17 +32,17 @@ BouncerHandler.testClient = async () => {
 	];
 
 	try {
-		await run(bouncerClientPath, cmdParams);
-		logger.info('Bouncer call passed');
+		await run(bouncerClientPath, cmdParams, { logLabel });
+		logger.info('Bouncer call passed', logLabel);
 	} catch (code) {
-		logger.error(`Bouncer call errored (Error code: ${code})`);
+		logger.error(`Bouncer call errored (Error code: ${code})`, logLabel);
 		throw code;
 	}
 };
 
 BouncerHandler.runBouncerCommand = async (logDir, cmdParams) => {
 	setBouncerEnvars(logDir);
-	return run(bouncerClientPath, cmdParams, BOUNCER_SOFT_FAILS);
+	return run(bouncerClientPath, cmdParams, { codesAsSuccess: BOUNCER_SOFT_FAILS, logLabel: { label: 'BOUNCER' } });
 };
 
 BouncerHandler.generateTreeStash = async (logDir, database, modelId, stashType, rev = 'all') => {

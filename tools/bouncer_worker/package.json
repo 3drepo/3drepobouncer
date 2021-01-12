@@ -15,7 +15,7 @@
   "dependencies": {
     "amqplib": "0.5.3",
     "mongodb": "2.2.24",
-    "winston": "2.4.0",
+    "winston": "3.3.3",
     "yargs": "16.2.0"
   },
   "devDependencies": {

@@ -18,10 +18,12 @@
 const { config } = require('../lib/config');
 const { runBouncerCommand } = require('../tasks/bouncerClient');
 const { ERRCODE_OK, ERRCODE_BOUNCER_CRASH } = require('../constants/errorCodes');
+const { MODEL_PROCESSING, UNITY_QUEUED } = require('../constants/statuses');
 const { messageDecoder } = require('../lib/messageDecoder');
 const logger = require('../lib/logger');
 
 const Handler = {};
+const logLabel = { label: 'MODELQ' };
 
 Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const logDir = `${config.logging.taskLogDir}/${rid.toString()}/`;
@@ -31,7 +33,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		callback({ value: errorCode });
 	} else {
 		callback(JSON.stringify({
-			status: 'processing',
+			status: MODEL_PROCESSING,
 			database,
 			project: model,
 		}));
@@ -47,12 +49,12 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams);
 		callback(JSON.stringify(returnMessage), config.rabbitmq.unity_queue);
 		callback(JSON.stringify({
-			status: 'queuing for unity service',
+			status: UNITY_QUEUED,
 			database,
 			project: model,
 		}));
 	} catch (err) {
-		logger.error(`Import model error: ${err.message || err}`);
+		logger.error(`Import model error: ${err.message || err}`, logLabel);
 		returnMessage.value = err || ERRCODE_BOUNCER_CRASH;
 		callback(JSON.stringify(returnMessage));
 	}
@@ -60,22 +62,22 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 
 Handler.validateConfiguration = () => {
 	if (!config.rabbitmq.model_queue) {
-		logger.error('rabbitmq.model_queue is not specified!');
+		logger.error('rabbitmq.model_queue is not specified!', logLabel);
 		return false;
 	}
 
 	if (!config.rabbitmq.callback_queue) {
-		logger.error('rabbitmq.callback_queue is not specified!');
+		logger.error('rabbitmq.callback_queue is not specified!', logLabel);
 		return false;
 	}
 
 	if (!config.rabbitmq.unity_queue) {
-		logger.error('rabbitmq.unity_queue is not specified!');
+		logger.error('rabbitmq.unity_queue is not specified!', logLabel);
 		return false;
 	}
 
 	if (!config.logging.taskLogDir) {
-		logger.error('logging.taskLogDir is not specified!');
+		logger.error('logging.taskLogDir is not specified!', logLabel);
 		return false;
 	}
 

@@ -16,13 +16,7 @@
  */
 
 module.exports = {
-	ERRCODE_OK: 0,
-	ERRCODE_BOUNCER_CRASH: 12,
-	ERRCODE_PARAM_READ_FAIL: 13,
-	ERRCODE_BUNDLE_GEN_FAIL: 14,
-	ERRCODE_ARG_FILE_FAIL: 16,
-	ERRCODE_TIMEOUT: 29,
-	ERRCODE_TOY_IMPORT_FAILED: 33,
-	BOUNCER_SOFT_FAILS: [7, 10, 15], // failures that should go through to generate bundle
-
+	MODEL_PROCESSING: 'processing',
+	UNITY_QUEUED: 'Queued for Unity',
+	UNITY_PROCESSING: 'Generating Bundles',
 };

@@ -22,40 +22,34 @@ const logger = require('../lib/logger');
 
 const UnityHandler = {};
 
-UnityHandler.generateAssetBundles = async (database, model, logDir) => {
-	if (config.unity && config.unity.project) {
-		const unityCommand = config.unity.batPath;
-		const unityCmdParams = [
-			config.unity.project,
-			configPath,
-			database,
-			model,
-			logDir,
-		];
+const logLabel = { label: 'UNITY' };
 
-		try {
-			logger.info(`Running unity command: ${unityCommand} ${unityCmdParams.join(' ')}`);
-			const code = await run(unityCommand, unityCmdParams);
-			logger.info(`[SUCCESS] Executed unity command: ${unityCommand} ${unityCmdParams.join(' ')}`, code);
-			return code;
-		} catch (err) {
-			logger.info(`[FAILED] Executed unity command: ${unityCommand} ${unityCmdParams.join(' ')}`, err);
-			throw ERRCODE_BUNDLE_GEN_FAIL;
-		}
-	} else {
-		logger.info('Unity generation is not configured to run, skipping...');
-		return 0;
+UnityHandler.generateAssetBundles = async (database, model, logDir) => {
+	const unityCommand = config.unity.batPath;
+	const unityCmdParams = [
+		config.unity.project,
+		configPath,
+		database,
+		model,
+		logDir,
+	];
+
+	try {
+		return await run(unityCommand, unityCmdParams, { logLabel });
+	} catch (err) {
+		logger.info(`Failed to execute unity command: ${err}`, logLabel);
+		throw ERRCODE_BUNDLE_GEN_FAIL;
 	}
 };
 
 UnityHandler.validateUnityConfigurations = () => {
 	if (!(config.unity && config.unity.project)) {
-		logger.error('unity.project is not specified!');
+		logger.error('unity.project is not specified!', logLabel);
 		return false;
 	}
 
 	if (!config.unity.project) {
-		logger.error('unity.project is not specified!');
+		logger.error('unity.project is not specified!', logLabel);
 		return false;
 	}
 	return true;

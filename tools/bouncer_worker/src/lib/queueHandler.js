@@ -26,17 +26,19 @@ const UnityQHandler = require('../queues/unityQueueHandler');
 let connClosed = false;
 let retry = 0;
 
+const logLabel = { label: 'AMQP' };
+
 const QueueHandler = {};
 
 const listenToQueue = (channel, queueName, prefetchCount, callback) => {
 	channel.assertQueue(queueName, { durable: true });
-	logger.info('Bouncer Client Queue started. Waiting for messages in %s of %s....', queueName, rabbitmq.host);
+	logger.info(`Waiting for messages in ${queueName}...`, logLabel);
 	channel.prefetch(prefetchCount);
 	channel.consume(queueName, async (msg) => {
-		logger.info(' [x] Received %s from %s', msg.content.toString(), queueName);
+		logger.info(`Received ${msg.content.toString()} from ${queueName}`, logLabel);
 		await callback(msg.content.toString(), msg.properties.correlationId,
 			(reply, queue = rabbitmq.callback_queue) => {
-				logger.info('sending to reply queue(%s): %s', queue, reply);
+				logger.info(`Sending to reply to ${queue}: ${reply}`, logLabel);
 				// eslint-disable-next-line new-cap
 				channel.sendToQueue(queue, new Buffer.from(reply),
 					{ correlationId: msg.properties.correlationId, appId: msg.properties.appId });
@@ -67,10 +69,10 @@ const executeOneTask = async (conn, queueName, callback) => {
 	channel.prefetch(1);
 	const msg = await channel.get(queueName, { noAck: false });
 	if (msg) {
-		logger.info(' [x] Received %s from %s', msg.content.toString(), queueName);
+		logger.info(`Received ${msg.content.toString()} from ${queueName}`, logLabel);
 		await callback(msg.content.toString(), msg.properties.correlationId,
 			(reply, queue = rabbitmq.callback_queue) => {
-				logger.info('sending to reply queue(%s): %s', queue, reply);
+				logger.info(`Sending to reply to ${queue}: ${reply}`, logLabel);
 				// eslint-disable-next-line new-cap
 				channel.sendToQueue(queue, new Buffer.from(reply),
 					{ correlationId: msg.properties.correlationId, appId: msg.properties.appId });
@@ -79,7 +81,7 @@ const executeOneTask = async (conn, queueName, callback) => {
 		// There's no promise/callback for knowing when Ack has been received by the server. So we're doing a wait here.
 		await sleep(rabbitmq.waitBeforeShutdownMS);
 	} else {
-		logger.info(`No message found in ${queueName}.`);
+		logger.info(`No message found in ${queueName}.`, logLabel);
 	}
 	await channel.close();
 	await conn.close();
@@ -89,27 +91,27 @@ const executeOneTask = async (conn, queueName, callback) => {
 const reconnect = (uponConnected) => {
 	const maxRetries = rabbitmq.maxRetries || 3;
 	if (++retry <= maxRetries) {
-		logger.error(`[AMQP] Trying to reconnect [${retry}/${maxRetries}]...`);
+		logger.error(`Trying to reconnect[${retry}/${maxRetries}]...`, logLabel);
 		// eslint-disable-next-line no-use-before-define
 		connectToRabbitMQ(true, uponConnected);
 	} else {
-		logger.error('[AMQP] Retries exhausted');
+		logger.error('Retries exhausted', logLabel);
 		exitApplication();
 	}
 };
 
 const connectToRabbitMQ = async (autoReconnect, uponConnected) => {
 	try {
+		logger.info(`Connecting to ${rabbitmq.host}...`, logLabel);
 		const conn = await amqp.connect(rabbitmq.host);
 		retry = 0;
 		connClosed = false;
-		logger.info('[AMQP] Connected! Creating channel...');
 
 		conn.on('close', () => {
 			if (!connClosed) {
 				// this can be called more than once for some reason. Use a boolean to distinguish first timers.
 				connClosed = true;
-				logger.info('[AMQP] connection closed.');
+				logger.info('Connection closed.', logLabel);
 				if (autoReconnect) {
 					reconnect(uponConnected);
 				}
@@ -117,11 +119,11 @@ const connectToRabbitMQ = async (autoReconnect, uponConnected) => {
 		});
 
 		conn.on('error', (err) => {
-			logger.error(`[AMQP] connection error: ${err.message}`);
+			logger.error(`Connection error: ${err.message}`, logLabel);
 		});
 		uponConnected(conn);
 	} catch (err) {
-		logger.error(`[AMQP] failed to establish connection to rabbit mq: ${err}.`);
+		logger.error(`Failed to establish connection to rabbit mq: ${err}.`, logLabel);
 		if (autoReconnect) {
 			reconnect(uponConnected);
 		}
@@ -158,7 +160,7 @@ QueueHandler.runSingleTask = async (queueType) => {
 			callback = UnityQHandler.onMessageReceived;
 			break;
 		default:
-			logger.error(`unrecognised queue type: ${queueType}. Expected [job|model|unity]`);
+			logger.error(`Unrecognised queue type: ${queueType}. Expected [job|model|unity]`, logLabel);
 			exitApplication();
 	}
 	connectToRabbitMQ(false, (conn) => executeOneTask(conn, queueName, callback));

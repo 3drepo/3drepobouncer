@@ -24,6 +24,8 @@ const logger = require('../lib/logger');
 
 const Handler = {};
 
+const logLabel = { label: 'JOBQ' };
+
 const importToy = async ({ database, model, toyModelID, skipPostProcessing }, logDir) => {
 	const returnMessage = {
 		value: ERRCODE_OK,
@@ -35,11 +37,11 @@ const importToy = async ({ database, model, toyModelID, skipPostProcessing }, lo
 		await importToyModel(toyModelID, database, model, skipPostProcessing);
 
 		if (!skipPostProcessing.tree) {
-			logger.info('Toy model imported. Generating tree...');
+			logger.info('Toy model imported. Generating tree...', logLabel);
 			await generateTreeStash(logDir, database, model, 'tree');
 		}
 	} catch (err) {
-		logger.error(`importToy module error: ${err.message || err}`);
+		logger.error(`importToy module error: ${err.message || err}`, logLabel);
 		returnMessage.value = ERRCODE_TOY_IMPORT_FAILED;
 		returnMessage.message = err.message || err;
 	}
@@ -59,7 +61,7 @@ const createFed = async ({ database, model, toyFed, cmdParams }, logDir) => {
 			await importToyModel(toyFed, database, model, { tree: 1 });
 		}
 	} catch (err) {
-		logger.error(`generate federation error: ${err.message || err}`);
+		logger.error(`Error generating federation: ${err.message || err}`, logLabel);
 		returnMessage.value = toyFed ? ERRCODE_TOY_IMPORT_FAILED : err;
 		returnMessage.message = err.message || err;
 	}
@@ -84,17 +86,17 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 
 Handler.validateConfiguration = () => {
 	if (!config.logging.taskLogDir) {
-		logger.error('logging.taskLogDir is not specified.');
+		logger.error('logging.taskLogDir is not specified.', logLabel);
 		return false;
 	}
 
 	if (!config.rabbitmq.worker_queue) {
-		logger.error('rabbitmq.worker_queue is not specified!');
+		logger.error('rabbitmq.worker_queue is not specified!', logLabel);
 		return false;
 	}
 
 	if (!config.rabbitmq.callback_queue) {
-		logger.error('rabbitmq.callback_queue is not specified!');
+		logger.error('rabbitmq.callback_queue is not specified!', logLabel);
 		return false;
 	}
 

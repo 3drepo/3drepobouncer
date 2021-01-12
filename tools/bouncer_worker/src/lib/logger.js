@@ -18,6 +18,8 @@
 const winston = require('winston');
 const { workerLogPath } = require('./config').config.logging;
 
+const stringFormat = ({ level, message, label, timestamp }) => `${timestamp} [${level}] [${label || 'APP'}] ${message}`;
+
 const getTransporters = () => {
 	const transporters = [
 		new (winston.transports.Console)({ timestamp: true }),
@@ -30,8 +32,14 @@ const getTransporters = () => {
 	return transporters;
 };
 
-const logger = new (winston.Logger)({
+const logger = winston.createLogger({
 	transports: getTransporters(),
+	format: winston.format.combine(
+		winston.format.colorize(),
+		winston.format.timestamp(),
+		winston.format.align(),
+		winston.format.printf(stringFormat),
+	),
 });
 
 module.exports = logger;

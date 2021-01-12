@@ -18,7 +18,10 @@
 const { config } = require('../lib/config');
 const { generateAssetBundles, validateUnityConfigurations } = require('../tasks/unityEditor');
 const { ERRCODE_ARG_FILE_FAIL, ERRCODE_BUNDLE_GEN_FAIL } = require('../constants/errorCodes');
+const { UNITY_PROCESSING } = require('../constants/errorCodes');
 const logger = require('../lib/logger');
+
+const logLabel = { label: 'UNITYQ' };
 
 const processUnity = async (database, model, logDir, modelImportErrCode) => {
 	const returnMessage = {
@@ -34,7 +37,7 @@ const processUnity = async (database, model, logDir, modelImportErrCode) => {
 			returnMessage.value = ERRCODE_ARG_FILE_FAIL;
 		}
 	} catch (err) {
-		logger.error(`Failed to generate asset bundle: ${err.message || err}`);
+		logger.error(`Failed to generate asset bundle: ${err.message || err}`, logLabel);
 		returnMessage.value = ERRCODE_BUNDLE_GEN_FAIL;
 	}
 
@@ -48,7 +51,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const logDir = `${config.logging.taskLogDir}/${rid.toString()}/`;
 
 	callback(JSON.stringify({
-		status: 'creating asset bundles',
+		status: UNITY_PROCESSING,
 		database,
 		project,
 	}));
@@ -59,17 +62,17 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 
 Handler.validateConfiguration = () => {
 	if (!(config.rabbitmq && config.rabbitmq.callback_queue)) {
-		logger.error('rabbitmq.callback_queue is not specified!');
+		logger.error('rabbitmq.callback_queue is not specified!', logLabel);
 		return false;
 	}
 
 	if (!config.rabbitmq.unity_queue) {
-		logger.error('rabbitmq.unity_queue is not specified!');
+		logger.error('rabbitmq.unity_queue is not specified!', logLabel);
 		return false;
 	}
 
 	if (!(config.logging && config.logging.taskLogDir)) {
-		logger.error('config.logging.taskLogDir is not specified!');
+		logger.error('config.logging.taskLogDir is not specified!', logLabel);
 		return false;
 	}
 

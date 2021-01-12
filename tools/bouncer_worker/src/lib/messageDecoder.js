@@ -15,33 +15,27 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const platform = require('os').platform();
 const fs = require('fs');
 const { config, configPath } = require('./config');
 const { ERRCODE_ARG_FILE_FAIL } = require('../constants/errorCodes');
 
-const win32Workaround = (command) => {
-	if (platform === 'win32') {
-		// messages coming in assume the sharedData is stored in a specific linux style directory
-		// we need to do a find/replace to make it use rabbitmq sharedDir instead
-		let cmd = command;
-		cmd = cmd.replace('/sharedData/', config.rabbitmq.sharedDir);
-		const cmdArr = cmd.split(' ');
-		if (cmdArr[0] === 'import') {
-			const data = fs.readFileSync(cmdArr[2], 'utf8');
-			const result = data.replace('/sharedData/', config.rabbitmq.sharedDir);
-			fs.writeFileSync(cmdArr[2], result, 'utf8');
-		}
+const replaceSharedDirPlaceHolder = (command) => {
+	const tagToReplace = '$SHARED_SPACE';
+	// messages coming in has a placeholder for $SHARED_SPACE.
+	// we need to do a find/replace to make it use rabbitmq sharedDir instead
+	let cmd = command;
+	cmd = cmd.replace(tagToReplace, config.rabbitmq.sharedDir);
+	const cmdArr = cmd.split(' ');
+	if (cmdArr[0] === 'import') {
+		const data = fs.readFileSync(cmdArr[2], 'utf8');
+		const result = data.replace(tagToReplace, config.rabbitmq.sharedDir);
+		fs.writeFileSync(cmdArr[2], result, 'utf8');
 	}
-};
-
-const getBouncerParams = (cmd, args) => {
-	win32Workaround(cmd);
-	return [configPath, ...args];
+	return cmd;
 };
 
 const messageDecoder = (cmd) => {
-	const args = cmd.split(' ');
+	const args = replaceSharedDirPlaceHolder(cmd).split(' ');
 	let res = { command: args[0] };
 
 	switch (args[0]) {
@@ -59,7 +53,7 @@ const messageDecoder = (cmd) => {
 				// eslint-disable-next-line
 				const cmdFile = require(args[2]);
 				res = {
-					cmdParams: getBouncerParams(cmd, args),
+					cmdParams: [configPath, ...args],
 					database: cmdFile.database,
 					model: cmdFile.project,
 					user: cmdFile.owner,
@@ -72,7 +66,7 @@ const messageDecoder = (cmd) => {
 				// eslint-disable-next-line
 				const cmdFile = require(args[1]);
 				res = {
-					cmdParams: getBouncerParams(cmd, args),
+					cmdParams: [configPath, ...args],
 					database: cmdFile.database,
 					model: cmdFile.project,
 					toyFed: cmdFile.toyFed,
@@ -83,7 +77,7 @@ const messageDecoder = (cmd) => {
 			break;
 		case 'genStash':
 			res = {
-				cmdParams: getBouncerParams(cmd, args),
+				cmdParams: [configPath, ...args],
 				database: args[1],
 				model: args[2],
 				...res,

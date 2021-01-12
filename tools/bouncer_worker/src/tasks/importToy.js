@@ -21,6 +21,8 @@ const { config } = require('../lib/config');
 const runCommand = require('../lib/runCommand');
 const logger = require('../lib/logger');
 
+const logLabel = { label: 'TOY' };
+
 const accumulateCollectionFiles = (modelDir, modelId) => {
 	const importCollectionFiles = {};
 
@@ -50,9 +52,9 @@ const runMongoImport = async (database, collection, filePath) => {
 	];
 
 	try {
-		await runCommand('mongoimport', params, [], false);
+		await runCommand('mongoimport', params, { verbose: false });
 	} catch (errCode) {
-		logger.error(`Failed to run mongoimport on ${database}:${collection} with data from ${filePath}`);
+		logger.error(`Failed to run mongoimport on ${database}:${collection} with data from ${filePath}`, logLabel);
 		throw errCode;
 	}
 };
@@ -274,12 +276,12 @@ ToyImporter.importToyModel = async (toyModelID, database, modelId) => {
 	promises.push(renameGroups(db, database, modelId));
 
 	await Promise.all(promises);
-	logger.log('Toy modelId imported');
+	logger.info(`${toyModelID} imported to ${modelId}`, logLabel);
 };
 
 ToyImporter.validateToyImporterSettings = () => {
 	if (!config.toyModelDir) {
-		logger.error('toyModelDir not specified');
+		logger.error('toyModelDir not specified', logLabel);
 		return false;
 	}
 
