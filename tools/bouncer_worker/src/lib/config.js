@@ -51,7 +51,7 @@ const applyDefaultValuesIfUndefined = (config) => {
 
 	// logging related
 	config.logging = config.logging || {};
-	config.logging.taskLogDir = config.logging.taskLogDir || config.bouncer.log_dir || '.log';
+	config.logging.taskLogDir = config.logging.taskLogDir || config.bouncer.log_dir || config.rabbitmq.sharedDir;
 	config.logging.workerLogPath = config.logging.workerLogPath || config.logLocation;
 };
 /* eslint-enable no-param-reassign */

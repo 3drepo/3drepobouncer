@@ -1,66 +1,81 @@
 #!/usr/bin/python
 
 import sys
-import os
+def execExitOnFail(cmd, message):
+    code = os.system(cmd);
+    if code:
+        fatalError(message);
 
 def fatalError(message):
     print message
     sys.exit()
 
+def sedCmd(sourceExp, desExp, file):
+    if os.name == "nt":
+        return "powershell.exe \"(Get-content "+ file +") | ForEach-Object {$_ -creplace \'" + sourceExp +"\', \'" +desExp +"\'} | Set-Content " + file + "\""
+    else:
+        return "sed -i \'.bak\' \'s/" + sourceExp + "/" + desExp + "/g\' " + file
+
+def updateCmake(majorV, minorTag):
+    updateMajor = sedCmd("VERSION_MAJOR [^ ]*", "VERSION_MAJOR " + majorV, "bouncer/CMakeLists.txt");
+    execExitOnFail(updateMajor, "Failed to update major number on cmake");
+
+    updateMinor =  sedCmd("VERSION_MINOR [^ ]*", "VERSION_MINOR " + minorTag + ")", "bouncer/CMakeLists.txt");
+    execExitOnFail(updateMinor, "Failed to update minor number on cmake");
+    execExitOnFail("git add bouncer/CMakeLists.txt", "failed to add cmake to git")
+
+def updateSrcHeaders(majorV, minorTag):
+    updateMajor = sedCmd("BOUNCER_VMAJOR [^ ]*", "BOUNCER_VMAJOR " + majorV, " bouncer/src/repo/repo_bouncer_global.h");
+    execExitOnFail(updateMajor, "Failed to update major number in source");
+
+    updateMinor =  sedCmd("BOUNCER_VMINOR [^ ]*", "BOUNCER_VMINOR \"" + minorTag, "bouncer/src/repo/repo_bouncer_global.h");
+    execExitOnFail(updateMinor, "Failed to update minor number in source");
+    execExitOnFail("git add bouncer/src/repo/repo_bouncer_global.h", "failed to add repo_bouncer_global.h to git");
+
+def updateBouncerWorker(version):
+    updateVersion = sed("\"version\":[^ ]*", "\"version\": \"" + version + "\",", "tools/bouncer_worker/package.json");
+    execExitOnFail(updateVersion, "Failed to update version in package.json");
+    execExitOnFail("git add tools/bouncer_worker/package.json", "failed to add package.json to git");
+
 numArguments = len(sys.argv)
 
 if numArguments < 5:
-    fatalError("Usage: " + sys.argv[0] + " <prod/dev> <major> <minor1> <minor2>")
+    fatalError("Usage: " + sys.argv[0] + " <prod/dev> <versionNumber>")
 
 release_type = sys.argv[1]
-majorV      = sys.argv[2]
-minor1V      = sys.argv[3]
-minor2V      = sys.argv[4]
-version = majorV + "." + minor1V + "." + minor2V
+version = sys.argv[2]
+
+versonArray = version.split(".");
+majorV      = versionArray[0]
+minor1V      = versionArray[1]
+minor2V      = versionArray[2]
 
 production   = (release_type == "prod")
 branch       = "master" if production else "staging"
 
-os.system("cd ../..")
+minorTag = minor1V + "_" + minor2V
 
-code = os.system("git checkout " + branch)
+updateCmake(majorV, minorTag);
+updateSrcHeaders(majorV, minorTag);
+updateBouncerWorker(version)
 
-if code:
-    fatalError("git checkout failed")
+sys.exit(0);
 
-if code:
-    fatalError("git force add failed")
-
-
-os.system("sed 's/VERSION_MAJOR [^ ]*/VERSION_MAJOR " + majorV + ")/' bouncer/CMakeLists.txt > bouncer/CMakeLists.txt.bak")
-os.system("mv bouncer/CMakeLists.txt.bak bouncer/CMakeLists.txt")
-
-minorTag = minor1V +"_"+minor2V
-
-os.system("sed 's/VERSION_MINOR [^ ]*/VERSION_MINOR " + minorTag + ")/' bouncer/CMakeLists.txt > bouncer/CMakeLists.txt.bak")
-os.system("mv bouncer/CMakeLists.txt.bak bouncer/CMakeLists.txt")
-
-os.system("sed 's/BOUNCER_VMAJOR [^ ]*/BOUNCER_VMAJOR " + majorV + "/' bouncer/src/repo/repo_bouncer_global.h > bouncer/src/repo/repo_bouncer_global.h.bak")
-os.system("mv bouncer/src/repo/repo_bouncer_global.h.bak bouncer/src/repo/repo_bouncer_global.h")
-minorVersion = minor1V + "." + minor2V
-os.system("sed 's/BOUNCER_VMINOR [^ ]*/BOUNCER_VMINOR \"" + minorVersion + "\"/' bouncer/src/repo/repo_bouncer_global.h > bouncer/src/repo/repo_bouncer_global.h.bak")
-os.system("mv bouncer/src/repo/repo_bouncer_global.h.bak bouncer/src/repo/repo_bouncer_global.h")
+execExitOnFail("git clean -f -d", "Failed to clean directory")
 
 
-os.system("git add bouncer/CMakeLists.txt bouncer/src/repo/repo_bouncer_global.h")
+execExitOnFail("git commit -m \"Version " + version + "\"", "Failed to commit")
 
-os.system("git commit -m \"Version " + version + "\"")
-
-os.system("git push origin :refs/tags/" + version)
-os.system("git tag -fa " + version + " -m \" Version " + version + " \"")
+execExitOnFail("git push origin :refs/tags/" + version, "Failed to push tag")
+execExitOnFail("git tag -fa " + version + " -m \" Version " + version + " \"", "Failed to add tag")
 
 if production:
-    os.system("git push origin :refs/tags/latest")
-    os.system("git tag -fa latest -m \"Update latest\"")
+    execExitOnFail("git push origin :refs/tags/latest","Failed to push tag")
+    execExitOnFail("git tag -fa latest -m \"Update latest\"", "Failed to add tag")
 else:
-    os.system("git push origin :refs/tags/dev_latest")
-    os.system("git tag -fa dev_latest -m \"Update latest\"")
+    execExitOnFail("git push origin :refs/tags/dev_latest", "Failed to push tag")
+    execExitOnFail("git tag -fa dev_latest -m \"Update latest\"", "Failed to add tag")
 
-os.system("git push origin --tags")
-os.system("git push")
+execExitOnFail("git push origin --tags", "Failed to update tag")
+execExitOnFail("git push", "Failed to push upstream")
 

@@ -89,9 +89,8 @@ const executeOneTask = async (conn, queueName, callback) => {
 };
 
 const reconnect = (uponConnected) => {
-	const maxRetries = rabbitmq.maxRetries || 3;
-	if (++retry <= maxRetries) {
-		logger.error(`Trying to reconnect[${retry}/${maxRetries}]...`, logLabel);
+	if (++retry <= rabbitmq.maxRetries) {
+		logger.error(`Trying to reconnect[${retry}/${rabbitmq.maxRetries}]...`, logLabel);
 		// eslint-disable-next-line no-use-before-define
 		connectToRabbitMQ(true, uponConnected);
 	} else {
