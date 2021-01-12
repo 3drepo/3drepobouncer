@@ -43,7 +43,7 @@ Bouncer worker takes in a JSON file with the following parameters.
 
 ````js
 {
-  "umask": //umask to set at initialisation
+  "umask": //umask to set at initialisation (default: none)
   "timeoutMS": //number of ms to spend on a task before timing out (default: 3hours)
   "logging" : {
     "taskLogDir": //Path to where the individual task logs should go for each tasks (Used to be in bouncer.log_dir). (default: rabbitmq.sharedDir[recommended])
