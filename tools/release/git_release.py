@@ -1,6 +1,9 @@
 #!/usr/bin/python
 
 import sys
+import os
+import re
+
 def execExitOnFail(cmd, message):
     code = os.system(cmd);
     if code:
@@ -17,7 +20,7 @@ def sedCmd(sourceExp, desExp, file):
         return "sed -i \'.bak\' \'s/" + sourceExp + "/" + desExp + "/g\' " + file
 
 def updateCmake(majorV, minorTag):
-    updateMajor = sedCmd("VERSION_MAJOR [^ ]*", "VERSION_MAJOR " + majorV, "bouncer/CMakeLists.txt");
+    updateMajor = sedCmd("VERSION_MAJOR [^ ]*", "VERSION_MAJOR " + majorV +")", "bouncer/CMakeLists.txt");
     execExitOnFail(updateMajor, "Failed to update major number on cmake");
 
     updateMinor =  sedCmd("VERSION_MINOR [^ ]*", "VERSION_MINOR " + minorTag + ")", "bouncer/CMakeLists.txt");
@@ -25,10 +28,11 @@ def updateCmake(majorV, minorTag):
     execExitOnFail("git add bouncer/CMakeLists.txt", "failed to add cmake to git")
 
 def updateSrcHeaders(majorV, minorTag):
-    updateMajor = sedCmd("BOUNCER_VMAJOR [^ ]*", "BOUNCER_VMAJOR " + majorV, " bouncer/src/repo/repo_bouncer_global.h");
+    updateMajor = sedCmd("BOUNCER_VMAJOR [^ ]*", "BOUNCER_VMAJOR " + majorV, "bouncer/src/repo/repo_bouncer_global.h");
     execExitOnFail(updateMajor, "Failed to update major number in source");
 
-    updateMinor =  sedCmd("BOUNCER_VMINOR [^ ]*", "BOUNCER_VMINOR \"" + minorTag, "bouncer/src/repo/repo_bouncer_global.h");
+    updateMinor =  sedCmd("BOUNCER_VMINOR [^ ]*", "BOUNCER_VMINOR \"" + minorTag +"\"", "bouncer/src/repo/repo_bouncer_global.h");
+    print updateMinor
     execExitOnFail(updateMinor, "Failed to update minor number in source");
     execExitOnFail("git add bouncer/src/repo/repo_bouncer_global.h", "failed to add repo_bouncer_global.h to git");
 
@@ -39,13 +43,13 @@ def updateBouncerWorker(version):
 
 numArguments = len(sys.argv)
 
-if numArguments < 5:
+if numArguments < 3:
     fatalError("Usage: " + sys.argv[0] + " <prod/dev> <versionNumber>")
 
 release_type = sys.argv[1]
 version = sys.argv[2]
 
-versonArray = version.split(".");
+versionArray = version.split(".");
 majorV      = versionArray[0]
 minor1V      = versionArray[1]
 minor2V      = versionArray[2]
