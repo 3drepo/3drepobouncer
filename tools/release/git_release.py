@@ -2,7 +2,7 @@
 
 import sys
 import os
-import re
+import re, shutil, tempfile
 
 def execExitOnFail(cmd, message):
     code = os.system(cmd);
@@ -13,31 +13,41 @@ def fatalError(message):
     print message
     sys.exit()
 
-def sedCmd(sourceExp, desExp, file):
-    if os.name == "nt":
-        return "powershell.exe \"(Get-content "+ file +") | ForEach-Object {$_ -creplace \'" + sourceExp +"\', \'" +desExp +"\'} | Set-Content " + file + "\""
-    else:
-        return "sed -i \'.bak\' \'s/" + sourceExp + "/" + desExp + "/g\' " + file
+def sedCmd(pattern, repl, filename):
+    '''
+    Perform the pure-Python equivalent of in-place `sed` substitution: e.g.,
+    `sed -i -e 's/'${pattern}'/'${repl}' "${filename}"`.
+    '''
+    # For efficiency, precompile the passed regular expression.
+    pattern_compiled = re.compile(pattern)
+
+    # For portability, NamedTemporaryFile() defaults to mode "w+b" (i.e., binary
+    # writing with updating). This is usually a good thing. In this case,
+    # however, binary writing imposes non-trivial encoding constraints trivially
+    # resolved by switching to text writing. Let's do that.
+    with tempfile.NamedTemporaryFile(mode='w', delete=False) as tmp_file:
+        with open(filename) as src_file:
+            for line in src_file:
+                tmp_file.write(pattern_compiled.sub(repl, line))
+
+    # Overwrite the original file with the munged temporary file in a
+    # manner preserving file attributes (e.g., permissions).
+    shutil.copystat(filename, tmp_file.name)
+    shutil.move(tmp_file.name, filename)
+
 
 def updateCmake(majorV, minorTag):
-    updateMajor = sedCmd("VERSION_MAJOR [^ ]*", "VERSION_MAJOR " + majorV +")", "bouncer/CMakeLists.txt");
-    execExitOnFail(updateMajor, "Failed to update major number on cmake");
-
-    updateMinor =  sedCmd("VERSION_MINOR [^ ]*", "VERSION_MINOR " + minorTag + ")", "bouncer/CMakeLists.txt");
-    execExitOnFail(updateMinor, "Failed to update minor number on cmake");
+    sedCmd("VERSION_MAJOR [^ ]*", "VERSION_MAJOR " + majorV +")\n", "bouncer/CMakeLists.txt");
+    sedCmd("VERSION_MINOR [^ ]*", "VERSION_MINOR " + minorTag + ")\n", "bouncer/CMakeLists.txt");
     execExitOnFail("git add bouncer/CMakeLists.txt", "failed to add cmake to git")
 
 def updateSrcHeaders(majorV, minorTag):
-    updateMajor = sedCmd("BOUNCER_VMAJOR [^ ]*", "BOUNCER_VMAJOR " + majorV, "bouncer/src/repo/repo_bouncer_global.h");
-    execExitOnFail(updateMajor, "Failed to update major number in source");
-
-    updateMinor =  sedCmd("BOUNCER_VMINOR [^ ]*", "BOUNCER_VMINOR \"" + minorTag +"\"", "bouncer/src/repo/repo_bouncer_global.h");
-    execExitOnFail(updateMinor, "Failed to update minor number in source");
+    sedCmd("BOUNCER_VMAJOR [^ ]*", "BOUNCER_VMAJOR " + majorV + "\n", "bouncer/src/repo/repo_bouncer_global.h");
+    sedCmd("BOUNCER_VMINOR [^ ]*", "BOUNCER_VMINOR \"" + minorTag +"\"\n", "bouncer/src/repo/repo_bouncer_global.h");
     execExitOnFail("git add bouncer/src/repo/repo_bouncer_global.h", "failed to add repo_bouncer_global.h to git");
 
 def updateBouncerWorker(version):
-    updateVersion = sedCmd("\"version\": [^ ]*", "\"version\": \"" + version + "\",", "tools/bouncer_worker/package.json");
-    execExitOnFail(updateVersion, "Failed to update version in package.json");
+    sedCmd("\"version\": [^ ]*", "\"version\": \"" + version + "\",\n", "tools/bouncer_worker/package.json");
     execExitOnFail("git add tools/bouncer_worker/package.json", "failed to add package.json to git");
 
 numArguments = len(sys.argv)
