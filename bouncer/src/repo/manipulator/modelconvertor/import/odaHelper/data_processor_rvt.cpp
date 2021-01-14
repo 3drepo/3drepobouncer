@@ -243,26 +243,26 @@ std::string DataProcessorRvt::getLevel(OdBmElementPtr element, const std::string
 	auto levelId = element->getAssocLevelId();
 	if (levelId.isValid())
 	{
-		/*auto levelObject = levelId.safeOpenObject();
+		auto levelObject = levelId.safeOpenObject();
 		if (!levelObject.isNull())
 		{
 			OdBmLevelPtr lptr = OdBmLevel::cast(levelObject);
 			if (!lptr.isNull())
 				return std::string(convertToStdString(lptr->getElementName()));
-		}*/
+		}
 	}
 
-	//auto owner = element->getOwningElementId();
-	//if (owner.isValid())
-	//{
-	//	auto object = owner.openObject();
-	//	if (!object.isNull())
-	//	{
-	//		auto parentElement = OdBmElement::cast(object);
-	//		if (!parentElement.isNull())
-	//			return getLevel(parentElement, name);
-	//	}
-	//}
+	auto owner = element->getOwningElementId();
+	if (owner.isValid())
+	{
+		auto object = owner.openObject();
+		if (!object.isNull())
+		{
+			auto parentElement = OdBmElement::cast(object);
+			if (!parentElement.isNull())
+				return getLevel(parentElement, name);
+		}
+	}
 
 	return name;
 }
