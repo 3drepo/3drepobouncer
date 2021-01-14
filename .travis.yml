@@ -44,7 +44,7 @@ before_install:
     - tar -zxf testData/bouncer/ext_libs/xenial/IfcOpenShell.tgz
     - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev
     - echo ============ TEIGHA INSTALL =============
-    - wget $TEIGHA_LIBS_2021_12
+    - wget -q $TEIGHA_LIBS_2021_12
     - tar -zxf teighaLinuxGCC5.3.tgz
     - ls teighaLinuxGCC5.3/Kernel/Include
     - echo ============ SYNCHRO INSTALL =============
