@@ -19,6 +19,7 @@
 #include <BimCommon.h>
 #include <Common/BmBuildSettings.h>
 #include <Gs/Gs.h>
+#include <Base/BmForgeTypeId.h>
 #include <Database/BmDatabase.h>
 #include <Database/BmUnitUtils.h>
 #include <Database/Entities/BmDBDrawing.h>
@@ -79,7 +80,7 @@ ODRX_DEFINE_PSEUDO_STATIC_MODULE(StubDeviceModuleRvt);
 class RepoRvtServices : public ExSystemServices, public OdExBimHostAppServices
 {
 protected:
-    ODRX_USING_HEAP_OPERATORS(ExSystemServices);
+	ODRX_USING_HEAP_OPERATORS(ExSystemServices);
 };
 
 OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimDatabase)
@@ -91,7 +92,7 @@ OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimData
 	{
 		OdBmDBDrawingPtr pDBDrawing = layouts->object();
 		OdDbBaseLayoutPEPtr pLayout(layouts->object());
-		
+
 		if (pDBDrawing->getBaseViewNameFormat() == OdBm::ViewType::_3d)
 		{
 			//set first 3D view available
@@ -119,7 +120,6 @@ OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimData
 
 repo::manipulator::modelconvertor::odaHelper::FileProcessorRvt::~FileProcessorRvt()
 {
-
 }
 
 void FileProcessorRvt::setTessellationParams(wrTriangulationParams params)
@@ -137,18 +137,18 @@ void setupUnitsFormat(OdBmDatabasePtr pDb, double accuracy)
 {
 	OdBmUnitsTrackingPtr pUnitsTracking = pDb->getAppInfo(OdBm::ManagerType::UnitsTracking);
 	OdBmUnitsElemPtr pUnitsElem = pUnitsTracking->getUnitsElemId().safeOpenObject();
-	if (pUnitsElem.isNull()) 
-		return;
-	
-	OdBmAUnitsPtr units = pUnitsElem->getUnits();
-	if (units.isNull()) 
+	if (pUnitsElem.isNull())
 		return;
 
-	OdBmFormatOptionsPtrArray formatOptionsArr;
-	units->getFormatOptionsArr(formatOptionsArr);
-	for (uint32_t i = 0; i < formatOptionsArr.size(); i++)
+	OdBmAUnitsPtr units = pUnitsElem->getUnits();
+	if (units.isNull())
+		return;
+
+	OdBmMap<OdBmForgeTypeId, OdBmFormatOptionsPtr> aFormatOptions;
+
+	for (const auto &entry : aFormatOptions)
 	{
-		OdBmFormatOptions* formatOptions = formatOptionsArr[i];
+		auto formatOptions = entry.second;
 		//.. NOTE: Here the format of units is configured
 		formatOptions->setAccuracy(accuracy);
 		formatOptions->setRoundingMethod(OdBm::RoundingMethod::Nearest);
@@ -214,9 +214,8 @@ uint8_t FileProcessorRvt::readFile()
 		}
 		else {
 			nRes = REPOERR_LOAD_SCENE_FAIL;
-		}	
+		}
 	}
 
 	return nRes;
 }
-

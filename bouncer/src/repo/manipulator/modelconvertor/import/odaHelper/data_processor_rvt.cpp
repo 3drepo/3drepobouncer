@@ -24,7 +24,7 @@
 #include "custom_data_util_rvt.h"
 #include "../../../../lib/repo_utils.h"
 #include <Database/BmTransaction.h>
-
+#include <Base/BmForgeTypeId.h>
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
@@ -53,7 +53,6 @@ std::string DataProcessorRvt::getElementName(OdBmElementPtr element, uint64_t id
 
 	return elName;
 }
-
 
 std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 {
@@ -113,35 +112,35 @@ std::string DataProcessorRvt::translateMetadataValue(
 		strOut = std::to_string(val.getInt64());
 		break;
 	case OdTfVariant::kDouble:
-		strOut = convertToStdString(labelUtils->format(*database->getUnits(), paramDef->getUnitType(), val.getDouble(), false));
+		strOut = convertToStdString(labelUtils->format(database, paramDef->getUnitType(), val.getDouble(), false));
 		break;
 	case OdTfVariant::kDbStubPtr:
-			OdDbStub* stub = val.getDbStubPtr();
-			if (stub)
+		OdDbStub* stub = val.getDbStubPtr();
+		if (stub)
+		{
+			OdBmObjectId rawValue = OdBmObjectId(stub);
+			if (param == OdBm::BuiltInParameter::ELEM_CATEGORY_PARAM || param == OdBm::BuiltInParameter::ELEM_CATEGORY_PARAM_MT)
 			{
-				OdBmObjectId rawValue = OdBmObjectId(stub);
-				if (param == OdBm::BuiltInParameter::ELEM_CATEGORY_PARAM || param == OdBm::BuiltInParameter::ELEM_CATEGORY_PARAM_MT)
+				OdDbHandle hdl = rawValue.getHandle();
+				if (OdBmObjectId::isRegularHandle(hdl))
 				{
-					OdDbHandle hdl = rawValue.getHandle();
-					if (OdBmObjectId::isRegularHandle(hdl))
-					{
-						strOut = std::to_string((OdUInt64)hdl);
-					}
-					else
-					{
-						OdBm::BuiltInCategory::Enum builtInValue = static_cast<OdBm::BuiltInCategory::Enum>((OdUInt64)rawValue.getHandle());
-						strOut = convertToStdString(OdBm::BuiltInCategory(builtInValue).toString());
-					}
+					strOut = std::to_string((OdUInt64)hdl);
 				}
 				else
 				{
-					OdBmElementPtr elem = database->getObjectId(rawValue.getHandle()).safeOpenObject();
-					if (elem->getElementName() == OdString::kEmpty)
-						strOut = std::to_string((OdUInt64)rawValue.getHandle());
-					else
-						strOut = convertToStdString(elem->getElementName());
+					OdBm::BuiltInCategory::Enum builtInValue = static_cast<OdBm::BuiltInCategory::Enum>((OdUInt64)rawValue.getHandle());
+					strOut = convertToStdString(OdBm::BuiltInCategory(builtInValue).toString());
 				}
 			}
+			else
+			{
+				OdBmElementPtr elem = database->getObjectId(rawValue.getHandle()).safeOpenObject();
+				if (elem->getElementName() == OdString::kEmpty)
+					strOut = std::to_string((OdUInt64)rawValue.getHandle());
+				else
+					strOut = convertToStdString(elem->getElementName());
+			}
+		}
 	}
 
 	return strOut;
@@ -244,26 +243,26 @@ std::string DataProcessorRvt::getLevel(OdBmElementPtr element, const std::string
 	auto levelId = element->getAssocLevelId();
 	if (levelId.isValid())
 	{
-		auto levelObject = levelId.safeOpenObject();
+		/*auto levelObject = levelId.safeOpenObject();
 		if (!levelObject.isNull())
 		{
 			OdBmLevelPtr lptr = OdBmLevel::cast(levelObject);
 			if (!lptr.isNull())
 				return std::string(convertToStdString(lptr->getElementName()));
-		}
+		}*/
 	}
 
-	auto owner = element->getOwningElementId();
-	if (owner.isValid())
-	{
-		auto object = owner.openObject();
-		if (!object.isNull())
-		{
-			auto parentElement = OdBmElement::cast(object);
-			if (!parentElement.isNull())
-				return getLevel(parentElement, name);
-		}
-	}
+	//auto owner = element->getOwningElementId();
+	//if (owner.isValid())
+	//{
+	//	auto object = owner.openObject();
+	//	if (!object.isNull())
+	//	{
+	//		auto parentElement = OdBmElement::cast(object);
+	//		if (!parentElement.isNull())
+	//			return getLevel(parentElement, name);
+	//	}
+	//}
 
 	return name;
 }
@@ -335,12 +334,12 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 	OdBmElementPtr element,
 	std::unordered_map<std::string, std::string>& metadata)
 {
-	OdBuiltInParamArray aParams;
-	element->getListParams(aParams);	
+	OdBmParameterSet aParams;
+	element->getListParams(aParams);
 
 	if (!labelUtils) return;
 
-	for (OdBm::BuiltInParameter::Enum entry : aParams) {
+	for (const auto &entry : aParams.getBuiltInParamsIterator()) {
 		std::string builtInName = convertToStdString(OdBm::BuiltInParameter(entry).toString());
 		//.. HOTFIX: handle access violation exception (reported to ODA)
 		if (ignoreParam(builtInName)) continue;
@@ -364,7 +363,6 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 				std::string variantValue = translateMetadataValue(value, labelUtils, pDescParam, element->getDatabase(), entry);
 				if (!variantValue.empty())
 				{
-
 					if (metadata.find(metaKey) != metadata.end() && metadata[metaKey] != variantValue) {
 						repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << "value before: " << metadata[metaKey] << " after: " << variantValue;
 					}
@@ -372,12 +370,10 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 				}
 			}
 		}
-
-		CustomDataProcessorRVT customDataProcessor(element); 
+		//FIXME: we can probably use aParams.getUserParamsIterator here.
+		CustomDataProcessorRVT customDataProcessor(element);
 		customDataProcessor.fillCustomMetadata(metadata);
-
 	}
-
 }
 
 std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
@@ -474,7 +470,7 @@ OdBm::DisplayUnitType::Enum DataProcessorRvt::getUnits(OdBmDatabasePtr database)
 	OdBmUnitsElemPtr pUnitsElem = pUnitsTracking->getUnitsElemId().safeOpenObject();
 	OdBmAUnitsPtr ptrAUnits = pUnitsElem->getUnits().get();
 	OdBmFormatOptionsPtr formatOptionsLength = ptrAUnits->getFormatOptions(OdBm::UnitType::Enum::UT_Length);
-	return formatOptionsLength->getDisplayUnits();
+	return formatOptionsLength->getUnitTypeId();
 }
 
 void DataProcessorRvt::getCameras(OdBmDatabasePtr database)
@@ -524,7 +520,6 @@ void DataProcessorRvt::establishProjectTranslation(OdBmDatabase* pDb)
 
 		if (pThis->getLocationType() == 0)
 		{
-
 			if (OdBmGeoLocation::isGeoLocationAllowed(pThis->database()))
 			{
 				OdBmGeoLocationPtr pActiveLocation = OdBmGeoLocation::getActiveLocationId(pThis->database()).safeOpenObject();
@@ -542,14 +537,12 @@ void DataProcessorRvt::establishProjectTranslation(OdBmDatabase* pDb)
 				OdGeMatrix3d alignedLocation;
 				alignedLocation.setToAlignCoordSys(activeOrigin, activeX, activeY, activeZ, projectOrigin, projectX, projectY, projectZ);
 
-				auto scaleCoef = 1.0 / OdBmUnitUtils::getDisplayUnitTypeInfo(getUnits(database))->inIntUnitsCoeff;
+				auto scaleCoef = 1.0 / OdBmUnitUtils::getDisplayUnitTypeInfo(getUnits(database)).inIntUnitsCoeff;
 				convertTo3DRepoWorldCoorindates = [activeOrigin, alignedLocation, scaleCoef](OdGePoint3d point) {
 					auto convertedPoint = (point - activeOrigin).transformBy(alignedLocation);
 					return repo::lib::RepoVector3D64(convertedPoint.x * scaleCoef, convertedPoint.y * scaleCoef, convertedPoint.z * scaleCoef);
 				};
-
 			}
-
 		}
 	}
 }
