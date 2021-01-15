@@ -216,6 +216,7 @@ uint8_t FileProcessorRvt::readFile()
 			nRes = REPOERR_LOAD_SCENE_FAIL;
 		}
 	}
+	odrxUninitialize();
 
 	return nRes;
 }
