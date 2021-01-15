@@ -168,13 +168,12 @@ uint8_t FileProcessorRvt::readFile()
 	OdStaticRxObject<RepoRvtServices> svcs;
 	odrxInitialize(&svcs);
 	OdRxModule* pModule = ::odrxDynamicLinker()->loadModule(OdBmLoaderModuleName, false);
+	odgsInitialize();
 	try
 	{
 		//.. change tessellation params here
 		wrTriangulationParams triParams(USE_NEW_TESSELLATION);
 		setTessellationParams(triParams);
-
-		odgsInitialize();
 		OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));
 		if (!pDb.isNull())
 		{
@@ -216,6 +215,7 @@ uint8_t FileProcessorRvt::readFile()
 			nRes = REPOERR_LOAD_SCENE_FAIL;
 		}
 	}
+	odgsUninitialize();
 	odrxUninitialize();
 
 	return nRes;
