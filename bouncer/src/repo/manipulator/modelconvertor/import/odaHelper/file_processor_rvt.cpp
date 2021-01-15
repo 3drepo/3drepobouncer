@@ -180,29 +180,31 @@ uint8_t FileProcessorRvt::readFile()
 			OdDbBaseDatabasePEPtr pDbPE(pDb);
 			OdString layout = Get3DLayout(pDbPE, pDb);
 			repoInfo << "Using 3D View: " << convertToStdString(layout);
-			if (layout.isEmpty())
-				return REPOERR_VALID_3D_VIEW_NOT_FOUND;
+			if (layout.isEmpty()) {
+				nRes = REPOERR_VALID_3D_VIEW_NOT_FOUND;
+			}
+			else {
+				pDbPE->setCurrentLayout(pDb, layout);
 
-			pDbPE->setCurrentLayout(pDb, layout);
+				OdGiContextForBmDatabasePtr pBimContext = OdGiContextForBmDatabase::createObject();
+				OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(StubDeviceModuleRvt)(OD_T("StubDeviceModuleRvt"));
 
-			OdGiContextForBmDatabasePtr pBimContext = OdGiContextForBmDatabase::createObject();
-			OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(StubDeviceModuleRvt)(OD_T("StubDeviceModuleRvt"));
+				((StubDeviceModuleRvt*)pGsModule.get())->init(collector, pDb);
+				OdGsDevicePtr pDevice = pGsModule->createDevice();
 
-			((StubDeviceModuleRvt*)pGsModule.get())->init(collector, pDb);
-			OdGsDevicePtr pDevice = pGsModule->createDevice();
+				pBimContext->setDatabase(pDb);
+				pDevice = pDbPE->setupActiveLayoutViews(pDevice, pBimContext);
 
-			pBimContext->setDatabase(pDb);
-			pDevice = pDbPE->setupActiveLayoutViews(pDevice, pBimContext);
+				// NOTE: Render mode can be kFlatShaded, kGouraudShaded, kFlatShadedWithWireframe, kGouraudShadedWithWireframe
+				// kHiddenLine mode prevents materails from being uploaded
+				// Uncomment the setupRenderMode function call to change render mode
+				//setupRenderMode(pDb, pDevice, pBimContext, OdGsView::kFlatShaded);
 
-			// NOTE: Render mode can be kFlatShaded, kGouraudShaded, kFlatShadedWithWireframe, kGouraudShadedWithWireframe
-			// kHiddenLine mode prevents materails from being uploaded
-			// Uncomment the setupRenderMode function call to change render mode
-			//setupRenderMode(pDb, pDevice, pBimContext, OdGsView::kFlatShaded);
-
-			OdGsDCRect screenRect(OdGsDCPoint(0, 0), OdGsDCPoint(1000, 1000)); //Set the screen space to the borders of the scene
-			pDevice->onSize(screenRect);
-			setupUnitsFormat(pDb, ROUNDING_ACCURACY);
-			pDevice->update();
+				OdGsDCRect screenRect(OdGsDCPoint(0, 0), OdGsDCPoint(1000, 1000)); //Set the screen space to the borders of the scene
+				pDevice->onSize(screenRect);
+				setupUnitsFormat(pDb, ROUNDING_ACCURACY);
+				pDevice->update();
+			}
 		}
 	}
 	catch (OdError& e)
