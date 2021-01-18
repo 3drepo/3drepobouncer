@@ -34,6 +34,7 @@ using namespace repo::manipulator::modelconvertor;
 const static int lodLimit = 15; //Hack to test pop buffers, i should not be committing this!
 
 const static size_t GLTF_MAX_VERTEX_LIMIT = 65535;
+const static size_t GLTF_MAX_TRIANGLE_LIMIT = SIZE_MAX;
 //#define DEBUG //FIXME: to remove
 //#define LODLIMIT
 
@@ -841,13 +842,19 @@ std::unordered_map<repo::lib::RepoUUID, uint32_t, repo::lib::RepoUUIDHasher> GLT
 		std::vector<repo::lib::RepoVector3D> vertices = node->getVertices();
 		std::vector<std::vector<repo::lib::RepoVector2D>> UVs;
 
+		if (node->getPrimitive() != repo::core::model::MeshNode::Primitive::TRIANGLES)
+		{
+			repoError << "GLTFModelExport does not support primitive type " << (int)node->getPrimitive() << " on node " << node->getUniqueID() << ". Skipping...";
+			continue;
+		}
+
 		if (mappings.size() > 1 || vertices.size() > GLTF_MAX_VERTEX_LIMIT)
 		{
 			//This is a multipart mesh node, the mesh may be too big for
 			//webGL, split the mesh into sub meshes
 			std::string bufferFileName = mesh->getUniqueID().toString();
 			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter =
-				new repo::manipulator::modelutility::MeshMapReorganiser(node, GLTF_MAX_VERTEX_LIMIT);
+				new repo::manipulator::modelutility::MeshMapReorganiser(node, GLTF_MAX_VERTEX_LIMIT, GLTF_MAX_TRIANGLE_LIMIT);
 
 			repo::core::model::MeshNode splitMesh = reSplitter->getRemappedMesh();
 			if (splitMesh.isEmpty())

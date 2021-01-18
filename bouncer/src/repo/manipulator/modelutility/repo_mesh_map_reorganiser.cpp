@@ -22,9 +22,11 @@ using namespace repo::manipulator::modelutility;
 
 MeshMapReorganiser::MeshMapReorganiser(
 	const repo::core::model::MeshNode *mesh,
-	const size_t                      &vertThreshold) :
+	const size_t                    &vertThreshold,
+	const size_t					&faceThreshold) :
 	mesh(mesh),
 	maxVertices(vertThreshold),
+	maxFaces(faceThreshold),
 	oldFaces(mesh->getFaces()),
 	oldVertices(mesh->getVertices()),
 	oldNormals(mesh->getNormals()),
@@ -219,7 +221,7 @@ bool MeshMapReorganiser::performSplitting()
 		// If the current cumulative count of vertices is greater than the
 		// vertex limit then start a new mesh.
 		// If newMappings === 0 we need to initialize the first mesh
-		if (((subMeshVertexCount + currentMeshNumVertices) > maxVertices) || finishedSubMesh) {
+		if (((subMeshVertexCount + currentMeshNumVertices) > maxVertices) || ((subMeshFaceCount + currentMeshNumFaces) > maxFaces) || finishedSubMesh) {
 			// Close off the previous sub mesh
 			if (!finishedSubMesh) // Have we already finished this one
 			{
@@ -238,7 +240,7 @@ bool MeshMapReorganiser::performSplitting()
 
 		// Now we've started a new mesh is the mesh that we're trying to add greater than
 		// the limit itself. In the case that it is, this will always flag as above.
-		if (currentMeshNumVertices > maxVertices) {
+		if ((currentMeshNumVertices > maxVertices) || (currentMeshNumFaces > maxFaces)) {
 			size_t retTotalVCount, retTotalFCount;
 			newMatMapEntry(currentSubMesh, totalVertexCount, totalFaceCount);
 			if (!splitLargeMesh(currentSubMesh, newMappings, idMapIdx, orgFaceIdx, totalVertexCount, totalFaceCount))
@@ -339,7 +341,7 @@ bool MeshMapReorganiser::splitLargeMesh(
 		
 		// If we haven't started yet, or the current number of vertices that we have
 		// split is greater than the limit we need to start a new subMesh
-		if (((splitMeshVertexCount + nSides) > maxVertices) || !startedLargeMeshSplit) {
+		if (((splitMeshVertexCount + nSides) > maxVertices) || (splitMeshFaceCount >= maxFaces) || !startedLargeMeshSplit) {
 			
 			// If we have started we must be here because we have created a split mesh
 			// greater than the required number of vertices
@@ -366,7 +368,7 @@ bool MeshMapReorganiser::splitLargeMesh(
 			splitMeshVertexCount = 0;
 			splitMeshFaceCount = 0;
 			reIndexMap.clear();
-		}//if (((splitMeshVertexCount + nSides) > maxVertices) || !startedLargeMeshSplit)
+		}//if (((splitMeshVertexCount + nSides) > maxVertices) || ((splitMeshFaceCount + 1) > maxFaces) || !startedLargeMeshSplit)
 
 		repo_face_t newFace;
 		for (const auto& indexValue : currentFace)
@@ -399,8 +401,8 @@ bool MeshMapReorganiser::splitLargeMesh(
 			}
 			if (splitMeshVertexCount < reIndexMap[indexValue])
 			{
-				repoError << "SplitMesh Vertex count(" << splitMeshVertexCount << ") "
-					<< "is smaller than remapped index value(" << reIndexMap[indexValue] << ") -  potentially out of range.";
+				repoError << "SplitMesh Vertex count (" << splitMeshVertexCount << ") "
+					<< "is smaller than remapped index value (" << reIndexMap[indexValue] << ") -  potentially out of range.";
 				return false;
 			}
 

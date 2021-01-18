@@ -33,7 +33,8 @@ namespace repo{
 				*/
 				MeshMapReorganiser(
 					const repo::core::model::MeshNode *mesh,
-					const size_t                        &vertThreshold);
+					const size_t                        &vertThreshold,
+					const size_t						&faceThreshold);
 				~MeshMapReorganiser();
 
 				/**
@@ -162,6 +163,7 @@ namespace repo{
 
 				const repo::core::model::MeshNode *mesh;
 				const size_t maxVertices;
+				const size_t maxFaces;
 				const std::vector<repo::lib::RepoVector3D> oldVertices;
 				const std::vector<repo::lib::RepoVector3D> oldNormals;
 				const std::vector<std::vector<repo::lib::RepoVector2D>> oldUVs;
