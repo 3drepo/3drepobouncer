@@ -19,7 +19,10 @@
 #ODA_LIBRARIES will point to the libraries
 
 set(ODA_LIB_NAMES
-	TD_ExamplesCommon TG_ExamplesCommon TB_Common TB_ExamplesCommon TG_Db TD_DbRoot TD_Gs TD_Gi TD_Ge TD_Root TD_Alloc TB_Loader TB_Database TB_Base TB_ModelerGeometry TD_Br TD_TfCore TB_Main TB_MEP TB_Analytical TB_Architecture TB_StairsRamp TB_Geometry TB_HostObj)
+	TD_ExamplesCommon TG_ExamplesCommon TB_Common TB_ExamplesCommon TB_Essential
+	TG_Db TD_DbRoot TD_Gs TD_Gi TD_Ge TD_Root TD_Alloc TB_Loader
+	TB_Database TB_Base TB_ModelerGeometry TD_Br TD_TfCore TB_Main
+	TB_MEP TB_Analytical TB_Architecture TB_StairsRamp TB_Geometry TB_HostObj)
 
 
 if(DEFINED ENV{ODA_LIB_DIR})
@@ -37,6 +40,7 @@ if(DEFINED ENV{ODA_ROOT})
 	set(ODA_INCLUDE_DIR
 			${ODA_ROOT}/ThirdParty/activation
 			${ODA_ROOT}/Kernel/Include
+			${ODA_ROOT}/KernelBase/Include
 			${ODA_ROOT}/Drawing/include
 			${ODA_ROOT}/Dgn/include
 			${ODA_ROOT}/Dgn/Examples/Common

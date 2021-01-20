@@ -40,7 +40,7 @@
 
 #include <Database/Entities/BmElementHeader.h>
 
-#include <HostObj/Entities/BmLevel.h>
+#include <Essential/Entities/BmLevel.h>
 
 #include <Database/BmElement.h>
 #include <Database/PE/BmLabelUtilsPE.h>
@@ -71,7 +71,6 @@ namespace repo {
 				{
 					//Environment variable name for Revit textures
 					const char* RVT_TEXTURES_ENV_VARIABLE = "REPO_RVT_TEXTURES";
-
 
 				public:
 					DataProcessorRvt();
@@ -137,10 +136,8 @@ namespace repo {
 					uint64_t meshesCount;
 					OdBmDatabasePtr database;
 					OdBmSampleLabelUtilsPE* labelUtils = nullptr;
-
 				};
 			}
 		}
 	}
 }
-
