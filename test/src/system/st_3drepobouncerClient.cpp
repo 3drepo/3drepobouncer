@@ -352,7 +352,7 @@ TEST(RepoClientTest, UploadTestRVT2021)
 
 	//Upload RVT file
 	std::string rvtUpload = produceUploadArgs(db, "rvtTest2021", getDataPath(rvtModel2021));
-	EXPECT_EQ((int)REPOERR_LOAD_SCENE_MISSING_TEXTURE, runProcess(rvtUpload));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload));
 	EXPECT_TRUE(projectExists(db, "rvtTest2021"));
 }
 
