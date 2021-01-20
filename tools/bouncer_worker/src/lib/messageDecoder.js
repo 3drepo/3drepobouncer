@@ -25,7 +25,7 @@ const replaceSharedDirPlaceHolder = (command) => {
 	// we need to do a find/replace to make it use rabbitmq sharedDir instead
 	let cmd = command;
 	cmd = cmd.replace(tagToReplace, config.rabbitmq.sharedDir);
-	const cmdArr = cmd.split(' ');
+	const cmdArr = cmd.split(/\s+/);
 	if (cmdArr[0] === 'import') {
 		const data = fs.readFileSync(cmdArr[2], 'utf8');
 		const result = data.replace(tagToReplace, config.rabbitmq.sharedDir);
@@ -35,7 +35,7 @@ const replaceSharedDirPlaceHolder = (command) => {
 };
 
 const messageDecoder = (cmd) => {
-	const args = replaceSharedDirPlaceHolder(cmd).split(' ');
+	const args = replaceSharedDirPlaceHolder(cmd).split(/\s+/);
 	let res = { command: args[0] };
 
 	switch (args[0]) {

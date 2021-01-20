@@ -27,11 +27,7 @@ const accumulateCollectionFiles = (modelDir, modelId) => {
 	const importCollectionFiles = {};
 
 	fs.readdirSync(modelDir).forEach((file) => {
-		// remove '.json' in string
-		let collectionName = file.split('.');
-		collectionName.pop();
-		collectionName = collectionName.join('.');
-
+		const collectionName = file.replace(/\.json$/, '');
 		importCollectionFiles[`${modelId}.${collectionName}`] = file;
 	});
 
