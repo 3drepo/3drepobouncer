@@ -495,11 +495,16 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 				parseTexture(element.second, dataBuffer);
 			}
 			repoInfo << "Loaded: " << textures.size() << " textures";
-			int maxTextureId = textureIdToParents.rbegin()->first;
-			if (maxTextureId > (textures.size() - 1))
+			if (textureIdToParents.size() > 0)
 			{
-				repoError << "A material is referencing a missing texture";
-				missingTextures = true;
+				int maxTextureId = textureIdToParents.rbegin()->first;
+				// Texture ids in the material JSON should map 
+				// directly on to the order they appear in the texture JSON
+				if (maxTextureId > (textures.size() - 1))
+				{
+					repoError << "A material is referencing a missing texture";
+					missingTextures = true;
+				}
 			}
 		}
 
