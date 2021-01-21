@@ -10,6 +10,9 @@ const run = (exe, params, { codesAsSuccess = [], verbose = true, logLabel }) => 
 	const cmdExec = spawn(exe, params);
 	let isTimeout = false;
 	cmdExec.on('close', (code) => {
+		if (verbose) {
+			logger.info(`Command executed. Code: ${isTimeout ? 'TIMEDOUT' : code}`, logLabel);
+		}
 		if (isTimeout) {
 			reject(ERRCODE_TIMEOUT);
 		} else if (code === 0 || codesAsSuccess.includes(code)) {
