@@ -18,7 +18,7 @@
 const { config } = require('../lib/config');
 const { generateAssetBundles, validateUnityConfigurations } = require('../tasks/unityEditor');
 const { ERRCODE_ARG_FILE_FAIL, ERRCODE_BUNDLE_GEN_FAIL } = require('../constants/errorCodes');
-const { UNITY_PROCESSING } = require('../constants/errorCodes');
+const { UNITY_PROCESSING } = require('../constants/statuses');
 const logger = require('../lib/logger');
 
 const logLabel = { label: 'UNITYQ' };
