@@ -27,7 +27,7 @@ const logLabel = { label: 'MODELQ' };
 
 Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const logDir = `${config.logging.taskLogDir}/${rid.toString()}/`;
-	const { errorCode, database, model, cmdParams } = messageDecoder(cmd);
+	const { errorCode, database, model, user, cmdParams } = messageDecoder(cmd);
 
 	if (errorCode) {
 		callback({ value: errorCode });
@@ -43,6 +43,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		value: ERRCODE_OK,
 		database,
 		project: model,
+		user,
 	};
 
 	try {

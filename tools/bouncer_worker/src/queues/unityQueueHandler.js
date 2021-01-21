@@ -23,11 +23,12 @@ const logger = require('../lib/logger');
 
 const logLabel = { label: 'UNITYQ' };
 
-const processUnity = async (database, model, logDir, modelImportErrCode) => {
+const processUnity = async (database, model, user, logDir, modelImportErrCode) => {
 	const returnMessage = {
 		value: modelImportErrCode,
 		database,
 		project: model,
+		user,
 	};
 
 	try {
@@ -47,7 +48,7 @@ const processUnity = async (database, model, logDir, modelImportErrCode) => {
 const Handler = {};
 
 Handler.onMessageReceived = async (cmd, rid, callback) => {
-	const { database, project, value } = JSON.parse(cmd);
+	const { database, project, user, value } = JSON.parse(cmd);
 	const logDir = `${config.logging.taskLogDir}/${rid.toString()}/`;
 
 	callback(JSON.stringify({
@@ -56,7 +57,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		project,
 	}));
 
-	const message = await processUnity(database, project, logDir, value);
+	const message = await processUnity(database, project, user, logDir, value);
 	callback(JSON.stringify(message));
 };
 
