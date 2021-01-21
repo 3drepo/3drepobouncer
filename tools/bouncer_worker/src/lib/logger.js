@@ -16,17 +16,17 @@
  */
 
 const winston = require('winston');
-const { workerLogPath } = require('./config').config.logging;
+const { logLevel, workerLogPath } = require('./config').config.logging;
 
 const stringFormat = ({ level, message, label, timestamp }) => `${timestamp} [${level}] [${label || 'APP'}] ${message}`;
 
 const getTransporters = () => {
 	const transporters = [
-		new (winston.transports.Console)({ timestamp: true }),
+		new (winston.transports.Console)({ timestamp: true, level: logLevel }),
 	];
 
 	if (workerLogPath) {
-		transporters.push(new (winston.transports.File)({ filename: workerLogPath }));
+		transporters.push(new (winston.transports.File)({ filename: workerLogPath, timestamp: true, level: logLevel }));
 	}
 
 	return transporters;
