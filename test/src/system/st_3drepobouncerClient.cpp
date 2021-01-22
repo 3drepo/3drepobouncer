@@ -123,12 +123,11 @@ static int runProcess(
 #endif
 }
 
-
-static int testUpload (
+static int testUpload(
 	std::string mongoDbName,
 	std::string projectName,
 	std::string fileName
-	)
+)
 {
 	std::string uploadCmd = produceUploadArgs(
 		mongoDbName,
@@ -141,7 +140,6 @@ static int testUpload (
 		<< ", " << (int)errCode;
 	return errCode;
 };
-
 
 TEST(RepoClientTest, UploadTestInvalidDBConn)
 {
@@ -344,6 +342,18 @@ TEST(RepoClientTest, UploadTestRVT)
 	std::string rvtUpload3 = produceUploadArgs(db, "rvtTest3", getDataPath(rvtNo3DViewModel));
 	EXPECT_EQ((int)REPOERR_VALID_3D_VIEW_NOT_FOUND, runProcess(rvtUpload3));
 	EXPECT_FALSE(projectExists(db, "rvtTest3"));
+}
+
+TEST(RepoClientTest, UploadTestRVT2021)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
+
+	//Upload RVT file
+	std::string rvtUpload = produceUploadArgs(db, "rvtTest2021", getDataPath(rvtModel2021));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload));
+	EXPECT_TRUE(projectExists(db, "rvtTest2021"));
 }
 
 TEST(RepoClientTest, UploadTestSPM)
