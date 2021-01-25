@@ -28,7 +28,7 @@ It performs 3 notable actions:
   yarn run-worker --config prod_config.json
   ````
 
-  `--queue [queueType]` will only listen to the specified queue
+  `--queue [job|model|unity]` will only listen to the specified queue
   ````
   yarn run-worker --queue unity
   ````
