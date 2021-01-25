@@ -28,9 +28,14 @@ It performs 3 notable actions:
   yarn run-worker --config prod_config.json
   ````
 
-  `--runOnceOnQueue [queueType]` will fetch a job from a specific queue and exit when finished
+  `--queue [queueType]` will only listen to the specified queue
   ````
-  yarn run-worker --runOnceOnQueue unity
+  yarn run-worker --queue unity
+  ````
+
+  `--exitAfter <number>` will process the specified amount of tasks on the queue and exit the process. note: `--queue` must be specified in this mode.
+  ````
+  yarn run-worker --queue unity --exitAfter 10
   ````
 
   Run with `--help` to see the list of available options
