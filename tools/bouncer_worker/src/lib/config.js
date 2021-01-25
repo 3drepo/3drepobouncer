@@ -17,26 +17,10 @@
 
 const path = require('path');
 const fs = require('fs');
-const yargs = require('yargs/yargs');
-const { hideBin } = require('yargs/helpers');
 const { exitApplication } = require('./utils');
+const { parseParameters } = require('./paramsParser');
 
 const Config = {};
-
-const parseParameters = () => {
-	const args = yargs(hideBin(process.argv));
-	return args.option('config', {
-		describe: 'specify the path to a custom configuration file (default: config.json at root level)',
-		string: true,
-	}).option('exitAfter', {
-		describe: 'exit upon finishing the defined amount of tasks. Queue must also specified.',
-		number: true,
-	}).option('queue', {
-		describe: 'specify which queue to run on [job|model|unity]',
-		choice: ['job', 'model', 'unity'],
-		string: true,
-	}).help().argv;
-};
 
 /* eslint-disable no-param-reassign */
 const applyDefaultValuesIfUndefined = (config) => {
@@ -68,8 +52,6 @@ const init = () => {
 		const params = parseParameters();
 		Config.configPath = params.config || path.resolve(__dirname, '../../config.json');
 		const config = JSON.parse(fs.readFileSync(Config.configPath));
-		config.exitAfter = params.exitAfter || 0;
-		config.runOnQueue = params.queue;
 		applyDefaultValuesIfUndefined(config);
 		if (config.umask) {
 			// can't use logger -> circular dependency.

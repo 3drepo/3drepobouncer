@@ -15,28 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const { parseParameters } = require('../lib/paramsParser');
-const { exitApplication } = require('../lib/utils');
-const { connectToQueue, runNTasks } = require('../lib/queueHandler');
-const { testClient } = require('../tasks/bouncerClient');
-const logger = require('../lib/logger');
+const yargs = require('yargs/yargs');
+const { hideBin } = require('yargs/helpers');
 
-const startBouncerWorker = async () => {
-	try {
-		await testClient();
-		const { exitAfter, queue } = parseParameters();
-		if (exitAfter > 0) {
-			if (!queue) {
-				throw '--queue must be specified running with --exitAfter option';
-			}
-			runNTasks(queue, exitAfter);
-		} else {
-			connectToQueue(queue);
-		}
-	} catch (err) {
-		logger.error(`Error occured: ${err}`);
-		exitApplication();
-	}
+const ParamsParser = {};
+
+ParamsParser.parseParameters = () => {
+	const args = yargs(hideBin(process.argv));
+	return args.option('config', {
+		describe: 'specify the path to a custom configuration file (default: config.json at root level)',
+		string: true,
+	}).option('exitAfter', {
+		describe: 'exit upon finishing the defined amount of tasks. Queue must also specified.',
+		number: true,
+	}).option('queue', {
+		describe: 'specify which queue to run on [job|model|unity]',
+		choice: ['job', 'model', 'unity'],
+		string: true,
+	}).help().argv;
 };
 
-startBouncerWorker();
+module.exports = ParamsParser;
