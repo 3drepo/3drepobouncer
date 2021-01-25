@@ -18,9 +18,7 @@
 const yargs = require('yargs/yargs');
 const { hideBin } = require('yargs/helpers');
 
-const ParamsParser = {};
-
-ParamsParser.parseParameters = () => {
+const parseParameters = () => {
 	const args = yargs(hideBin(process.argv));
 	return args.option('config', {
 		describe: 'specify the path to a custom configuration file (default: config.json at root level)',
@@ -35,4 +33,4 @@ ParamsParser.parseParameters = () => {
 	}).help().argv;
 };
 
-module.exports = ParamsParser;
+module.exports = parseParameters();

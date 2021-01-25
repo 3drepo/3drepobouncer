@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const { parseParameters } = require('../lib/paramsParser');
+const { exitAfter, queue } = require('../lib/processParams');
 const { exitApplication } = require('../lib/utils');
 const { connectToQueue, runNTasks } = require('../lib/queueHandler');
 const { testClient } = require('../tasks/bouncerClient');
@@ -24,7 +24,6 @@ const logger = require('../lib/logger');
 const startBouncerWorker = async () => {
 	try {
 		await testClient();
-		const { exitAfter, queue } = parseParameters();
 		if (exitAfter > 0) {
 			if (!queue) {
 				throw '--queue must be specified running with --exitAfter option';

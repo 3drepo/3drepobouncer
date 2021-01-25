@@ -18,7 +18,7 @@
 const path = require('path');
 const fs = require('fs');
 const { exitApplication } = require('./utils');
-const { parseParameters } = require('./paramsParser');
+const params = require('./processParams');
 
 const Config = {};
 
@@ -49,7 +49,6 @@ const applyDefaultValuesIfUndefined = (config) => {
 // eslint-disable-next-line consistent-return
 const init = () => {
 	try {
-		const params = parseParameters();
 		Config.configPath = params.config || path.resolve(__dirname, '../../config.json');
 		const config = JSON.parse(fs.readFileSync(Config.configPath));
 		applyDefaultValuesIfUndefined(config);
