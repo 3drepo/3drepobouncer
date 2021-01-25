@@ -27,9 +27,14 @@ const parseParameters = () => {
 	const args = yargs(hideBin(process.argv));
 	return args.option('config', {
 		describe: 'specify the path to a custom configuration file (default: config.json at root level)',
-	}).option('runOnceOnQueue', {
-		describe: 'Exit upon processing a single task on the specified queue [job|model|unity]',
+		string: true,
+	}).option('exitAfter', {
+		describe: 'exit upon finishing the defined amount of tasks. Queue must also specified.',
+		number: true,
+	}).option('queue', {
+		describe: 'specify which queue to run on [job|model|unity]',
 		choice: ['job', 'model', 'unity'],
+		string: true,
 	}).help().argv;
 };
 
@@ -63,7 +68,8 @@ const init = () => {
 		const params = parseParameters();
 		Config.configPath = params.config || path.resolve(__dirname, '../../config.json');
 		const config = JSON.parse(fs.readFileSync(Config.configPath));
-		config.runOnceOnQueue = params.runOnceOnQueue;
+		config.exitAfter = params.exitAfter || 0;
+		config.runOnQueue = params.queue;
 		applyDefaultValuesIfUndefined(config);
 		if (config.umask) {
 			// can't use logger -> circular dependency.

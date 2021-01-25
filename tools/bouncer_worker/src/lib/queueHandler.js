@@ -30,6 +30,12 @@ const logLabel = { label: 'AMQP' };
 
 const QueueHandler = {};
 
+const queueLabel = {
+	JOB: 'job',
+	MODEL: 'model',
+	UNITY: 'unity',
+};
+
 const listenToQueue = (channel, queueName, prefetchCount, callback) => {
 	channel.assertQueue(queueName, { durable: true });
 	logger.info(`Waiting for messages in ${queueName}...`, logLabel);
@@ -50,39 +56,55 @@ const listenToQueue = (channel, queueName, prefetchCount, callback) => {
 const establishChannel = async (conn, listenToJobQueue, listenToModelQueue, listenToUnityQueue) => {
 	const channel = await conn.createChannel();
 	channel.assertQueue(rabbitmq.callback_queue, { durable: true });
-	if (listenToJobQueue && JobQHandler.validateConfiguration()) {
+	if (listenToJobQueue) {
+		if (!JobQHandler.validateConfiguration()) {
+			exitApplication();
+		}
 		listenToQueue(channel, rabbitmq.worker_queue, rabbitmq.task_prefetch, JobQHandler.onMessageReceived);
 	}
 
-	if (listenToModelQueue && ModelQHandler.validateConfiguration()) {
+	if (listenToModelQueue) {
+		if (!ModelQHandler.validateConfiguration()) {
+			exitApplication();
+		}
 		listenToQueue(channel, rabbitmq.model_queue, rabbitmq.model_prefetch, ModelQHandler.onMessageReceived);
 	}
 
-	if (listenToUnityQueue && UnityQHandler.validateConfiguration()) {
+	if (listenToUnityQueue) {
+		if (!UnityQHandler.validateConfiguration()) {
+			exitApplication();
+		}
 		listenToQueue(channel, rabbitmq.unity_queue, rabbitmq.unity_prefetch, UnityQHandler.onMessageReceived);
 	}
 };
 
-const executeOneTask = async (conn, queueName, callback) => {
+const executeTasks = async (conn, queueName, nTasks, callback) => {
 	const channel = await conn.createChannel();
 	channel.assertQueue(rabbitmq.callback_queue, { durable: true });
 	channel.prefetch(1);
-	const msg = await channel.get(queueName, { noAck: false });
-	if (msg) {
-		logger.info(`Received ${msg.content.toString()} from ${queueName}`, logLabel);
-		await callback(msg.content.toString(), msg.properties.correlationId,
-			(reply, queue = rabbitmq.callback_queue) => {
-				logger.info(`Sending to reply to ${queue}: ${reply}`, logLabel);
-				// eslint-disable-next-line new-cap
-				channel.sendToQueue(queue, new Buffer.from(reply),
-					{ correlationId: msg.properties.correlationId, appId: msg.properties.appId });
-			});
-		channel.ack(msg);
-		// There's no promise/callback for knowing when Ack has been received by the server. So we're doing a wait here.
-		await sleep(rabbitmq.waitBeforeShutdownMS);
-	} else {
-		logger.info(`No message found in ${queueName}.`, logLabel);
+	logger.info(`Processing ${nTasks} tasks on ${queueName}...`, logLabel);
+	for (let count = 1; count <= nTasks; ++count) {
+		// eslint-disable-next-line no-await-in-loop
+		const msg = await channel.get(queueName, { noAck: false });
+		if (msg) {
+			logger.info(`[${count}/${nTasks}] Received ${msg.content.toString()} from ${queueName}`, logLabel);
+			// eslint-disable-next-line no-await-in-loop
+			await callback(msg.content.toString(), msg.properties.correlationId,
+				(reply, queue = rabbitmq.callback_queue) => {
+					logger.info(`[${count}/${nTasks}] Sending to reply to ${queue}: ${reply}`, logLabel);
+					// eslint-disable-next-line new-cap
+					channel.sendToQueue(queue, new Buffer.from(reply),
+						{ correlationId: msg.properties.correlationId, appId: msg.properties.appId });
+				});
+			channel.ack(msg);
+		} else {
+			logger.info(`[${count}/${nTasks}] No message found in ${queueName}.`, logLabel);
+			break;
+		}
 	}
+
+	// There's no promise/callback for knowing when Ack has been received by the server. So we're doing a wait here.
+	await sleep(rabbitmq.waitBeforeShutdownMS);
 	await channel.close();
 	await conn.close();
 	exitApplication(0);
@@ -129,29 +151,39 @@ const connectToRabbitMQ = async (autoReconnect, uponConnected) => {
 	}
 };
 
-QueueHandler.connectToQueue = async (listenToJobQueue, listenToModelQueue, listenToUnityQueue) => {
-	connectToRabbitMQ(true, (conn) => establishChannel(conn, listenToJobQueue, listenToModelQueue, listenToUnityQueue));
+QueueHandler.connectToQueue = async (specificQueue) => {
+	const listenToJobQueue = !specificQueue || specificQueue === queueLabel.JOB;
+	const listenToModelQueue = !specificQueue || specificQueue === queueLabel.MODEL;
+	const listenToUnityQueue = !specificQueue || specificQueue === queueLabel.UNITY;
+
+	if (listenToJobQueue || listenToModelQueue || listenToUnityQueue) {
+		connectToRabbitMQ(true,
+			(conn) => establishChannel(conn, listenToJobQueue, listenToModelQueue, listenToUnityQueue));
+	} else {
+		logger.error(`Unrecognised queue type: ${specificQueue}. Expected [job|model|unity]`, logLabel);
+		exitApplication();
+	}
 };
 
-QueueHandler.runSingleTask = async (queueType) => {
+QueueHandler.runNTasks = async (queueType, nTasks) => {
 	let queueName;
 	let callback;
 	switch (queueType) {
-		case 'job':
+		case queueLabel.JOB:
 			if (!JobQHandler.validateConfiguration()) {
 				exitApplication();
 			}
 			queueName = rabbitmq.worker_queue;
 			callback = JobQHandler.onMessageReceived;
 			break;
-		case 'model':
+		case queueLabel.MODEL:
 			if (!ModelQHandler.validateConfiguration()) {
 				exitApplication();
 			}
 			queueName = rabbitmq.model_queue;
 			callback = ModelQHandler.onMessageReceived;
 			break;
-		case 'unity':
+		case queueLabel.UNITY:
 			if (!UnityQHandler.validateConfiguration()) {
 				exitApplication();
 			}
@@ -162,7 +194,7 @@ QueueHandler.runSingleTask = async (queueType) => {
 			logger.error(`Unrecognised queue type: ${queueType}. Expected [job|model|unity]`, logLabel);
 			exitApplication();
 	}
-	connectToRabbitMQ(false, (conn) => executeOneTask(conn, queueName, callback));
+	connectToRabbitMQ(false, (conn) => executeTasks(conn, queueName, nTasks, callback));
 };
 
 module.exports = QueueHandler;

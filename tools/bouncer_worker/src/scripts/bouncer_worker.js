@@ -15,19 +15,19 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-const { runOnceOnQueue } = require('../lib/config').config;
+const { exitAfter, runOnQueue } = require('../lib/config').config;
 const { exitApplication } = require('../lib/utils');
-const { connectToQueue, runSingleTask } = require('../lib/queueHandler');
+const { connectToQueue, runNTasks } = require('../lib/queueHandler');
 const { testClient } = require('../tasks/bouncerClient');
 const logger = require('../lib/logger');
 
 const startBouncerWorker = async () => {
 	try {
 		await testClient();
-		if (runOnceOnQueue) {
-			runSingleTask(runOnceOnQueue);
+		if (exitAfter > 0) {
+			runNTasks(runOnQueue, exitAfter);
 		} else {
-			connectToQueue(true, true, true);
+			connectToQueue(runOnQueue);
 		}
 	} catch (err) {
 		logger.error(`Error occured: ${err}`);
