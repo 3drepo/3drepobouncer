@@ -107,7 +107,6 @@ const executeTasks = async (conn, queueName, nTasks, callback) => {
 	await sleep(rabbitmq.waitBeforeShutdownMS);
 	await channel.close();
 	await conn.close();
-	exitApplication(0);
 };
 
 const reconnect = (uponConnected) => {
@@ -136,7 +135,7 @@ const connectToRabbitMQ = async (autoReconnect, uponConnected) => {
 				if (autoReconnect) {
 					reconnect(uponConnected);
 				} else {
-					exitApplication();
+					exitApplication(0);
 				}
 			}
 		});
