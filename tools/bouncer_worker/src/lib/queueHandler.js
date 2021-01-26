@@ -135,6 +135,8 @@ const connectToRabbitMQ = async (autoReconnect, uponConnected) => {
 				logger.info('Connection closed.', logLabel);
 				if (autoReconnect) {
 					reconnect(uponConnected);
+				} else {
+					exitApplication();
 				}
 			}
 		});
@@ -147,6 +149,8 @@ const connectToRabbitMQ = async (autoReconnect, uponConnected) => {
 		logger.error(`Failed to establish connection to rabbit mq: ${err}.`, logLabel);
 		if (autoReconnect) {
 			reconnect(uponConnected);
+		} else {
+			exitApplication();
 		}
 	}
 };
