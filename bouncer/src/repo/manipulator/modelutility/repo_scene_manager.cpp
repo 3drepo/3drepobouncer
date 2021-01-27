@@ -154,7 +154,8 @@ uint8_t SceneManager::commitScene(
 
 			if (success) {
 				errCode = REPOERR_OK;
-				scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES);
+				bool isFed = scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size();
+				scene->updateRevisionStatus(handler, isFed ? repo::core::model::RevisionNode::UploadStatus::COMPLETE : repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES);
 			}
 			else {
 				errCode = REPOERR_UPLOAD_FAILED;
