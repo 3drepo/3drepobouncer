@@ -21,7 +21,7 @@
 
 using namespace repo::lib;
 
-using text_sink = boost::log::sinks::synchronous_sink < boost::log::sinks::text_ostream_backend > ;
+using text_sink = boost::log::sinks::synchronous_sink < boost::log::sinks::text_ostream_backend >;
 
 RepoLog::RepoLog()
 {
@@ -68,7 +68,7 @@ static std::string getTimeAsString()
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
 
-	strftime(buffer, 80, "%d-%m-%Y_%Ih%Mm%S", timeinfo);
+	strftime(buffer, 80, "%d-%m-%Y_%Hh%Mm%S", timeinfo);
 	return std::string(buffer);
 }
 
@@ -78,21 +78,21 @@ void RepoLog::logToFile(const std::string &filePath)
 	std::string fileName;
 	// a directory is given
 	std::string name = getTimeAsString() + "_%N.log";
-	fileName = (logPath/ name).string();
+	fileName = (logPath / name).string();
 
 	boost::log::add_file_log
-		(
+	(
 		boost::log::keywords::file_name = fileName,
 		boost::log::keywords::rotation_size = 10 * 1024 * 1024,
 		boost::log::keywords::time_based_rotation = boost::log::sinks::file::rotation_at_time_point(0, 0, 0),
 		boost::log::keywords::auto_flush = true,
 		boost::log::keywords::format = (
-		boost::log::expressions::stream
-		<< "[" << boost::log::expressions::format_date_time(timestamp, "%Y-%m-%d %H:%M:%S") << "]"
-		<< "(" << threadid << ") <" << boost::log::trivial::severity
-		<< ">"
-		<< ": " << boost::log::expressions::smessage
-		));
+			boost::log::expressions::stream
+			<< "[" << boost::log::expressions::format_date_time(timestamp, "%Y-%m-%d %H:%M:%S") << "]"
+			<< "(" << threadid << ") <" << boost::log::trivial::severity
+			<< ">"
+			<< ": " << boost::log::expressions::smessage
+			));
 	boost::log::add_common_attributes();
 
 	repoInfo << "Log file registered: " << filePath;
@@ -130,7 +130,7 @@ void RepoLog::setLoggingLevel(const RepoLogLevel &level)
 		boost::log::trivial::severity >= loggingLevel);
 }
 
-void RepoLog::subscribeBroadcaster(RepoBroadcaster *broadcaster){
+void RepoLog::subscribeBroadcaster(RepoBroadcaster *broadcaster) {
 	boost::iostreams::stream<RepoBroadcaster> *streamptr =
 		new boost::iostreams::stream<RepoBroadcaster>(*broadcaster);
 
@@ -147,7 +147,7 @@ void RepoLog::subscribeBroadcaster(RepoBroadcaster *broadcaster){
 	sink->set_filter(boost::log::trivial::severity >= boost::log::trivial::trace);
 	//FIXME: better format!
 	sink->set_formatter
-		(
+	(
 		boost::log::expressions::stream
 		<< "%" << boost::log::trivial::severity << "%"
 		<< boost::log::expressions::smessage);

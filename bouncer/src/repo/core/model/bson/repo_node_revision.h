@@ -49,7 +49,7 @@ namespace repo {
 			class REPO_API_EXPORT RevisionNode : public RepoNode
 			{
 			public:
-				enum class UploadStatus{ COMPLETE = 0, GEN_DEFAULT = 1, GEN_REPO_STASH = 2, GEN_WEB_STASH = 3, GEN_SEL_TREE = 4, UNKNOWN = 5 };
+				enum class UploadStatus { COMPLETE = 0, GEN_DEFAULT = 1, GEN_REPO_STASH = 2, GEN_WEB_STASH = 3, GEN_SEL_TREE = 4, MISSING_BUNDLES = 5, UNKNOWN = 6 };
 
 				/**
 				* Constructor

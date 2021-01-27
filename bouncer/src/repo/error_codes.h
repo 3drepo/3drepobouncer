@@ -81,3 +81,5 @@
 #define REPOERR_SYNCHRO_SEQUENCE_TOO_BIG 31
 //Imported successfully, but failed to upload it to the database/fileshares
 #define REPOERR_UPLOAD_FAILED 32
+//Trying to import toy project but failed (only used by bouncer_worker)
+#define REPOERR_TOY_IMPORT_FAILED 33
