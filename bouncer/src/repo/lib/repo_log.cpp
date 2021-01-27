@@ -7,14 +7,12 @@
 #endif
 
 #include <boost/iostreams/stream.hpp>
-#include <boost/log/core/core.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/sinks/sync_frontend.hpp>
 #include <boost/log/sinks/text_ostream_backend.hpp>
 #include <boost/log/sources/record_ostream.hpp>
 #include <boost/log/sources/severity_logger.hpp>
 #include <boost/log/support/date_time.hpp>
-#include <boost/log/utility/setup.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/make_shared.hpp>
@@ -22,26 +20,11 @@
 #include <ctime>
 
 using namespace repo::lib;
+
 using text_sink = boost::log::sinks::synchronous_sink < boost::log::sinks::text_ostream_backend >;
-
-BOOST_LOG_ATTRIBUTE_KEYWORD(timestamp, "TimeStamp", boost::posix_time::ptime)
-BOOST_LOG_ATTRIBUTE_KEYWORD(threadid, "ThreadID", boost::log::attributes::current_thread_id::value_type)
-
-auto logFormatting = boost::log::expressions::stream
-<< "[" << boost::log::expressions::format_date_time(timestamp, "%Y-%m-%d %H:%M:%S") << "]"
-<< "(" << threadid << ") <" << boost::log::trivial::severity
-<< ">"
-<< ": " << boost::log::expressions::smessage;
 
 RepoLog::RepoLog()
 {
-	boost::log::core::get()->remove_all_sinks();
-	auto sink = boost::log::add_console_log(std::cout);
-	sink->set_formatter
-	(
-		logFormatting
-	);
-	sink->imbue(sink->getloc());
 }
 RepoLog::~RepoLog()
 {
@@ -73,6 +56,9 @@ void RepoLog::log(
 	}
 }
 
+BOOST_LOG_ATTRIBUTE_KEYWORD(timestamp, "TimeStamp", boost::posix_time::ptime)
+BOOST_LOG_ATTRIBUTE_KEYWORD(threadid, "ThreadID", boost::log::attributes::current_thread_id::value_type)
+
 static std::string getTimeAsString()
 {
 	time_t rawtime;
@@ -101,8 +87,12 @@ void RepoLog::logToFile(const std::string &filePath)
 		boost::log::keywords::time_based_rotation = boost::log::sinks::file::rotation_at_time_point(0, 0, 0),
 		boost::log::keywords::auto_flush = true,
 		boost::log::keywords::format = (
-			logFormatting)
-	);
+			boost::log::expressions::stream
+			<< "[" << boost::log::expressions::format_date_time(timestamp, "%Y-%m-%d %H:%M:%S") << "]"
+			<< "(" << threadid << ") <" << boost::log::trivial::severity
+			<< ">"
+			<< ": " << boost::log::expressions::smessage
+			));
 	boost::log::add_common_attributes();
 
 	repoInfo << "Log file registered: " << filePath;
