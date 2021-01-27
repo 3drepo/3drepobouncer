@@ -7,6 +7,7 @@
 #endif
 
 #include <boost/iostreams/stream.hpp>
+#include <boost/log/core/core.hpp>
 #include <boost/log/expressions.hpp>
 #include <boost/log/sinks/sync_frontend.hpp>
 #include <boost/log/sinks/text_ostream_backend.hpp>
@@ -34,6 +35,7 @@ auto logFormatting = boost::log::expressions::stream
 
 RepoLog::RepoLog()
 {
+	boost::log::core::get()->remove_all_sinks();
 	auto sink = boost::log::add_console_log(std::cout);
 	sink->set_formatter
 	(
