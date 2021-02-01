@@ -402,7 +402,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 			{
 				repoWarning << "number of indices in this face is 0!";
 			}
-			if (primitive == MeshNode::Primitive::UNKNOWN)
+			if (primitive == MeshNode::Primitive::UNKNOWN) // The primitive type is unknown, so attempt to infer it
 			{
 				if (nIndices == 2) {
 					primitive = MeshNode::Primitive::LINES;
@@ -411,12 +411,12 @@ MeshNode RepoBSONFactory::makeMeshNode(
 					primitive = MeshNode::Primitive::TRIANGLES;
 				}
 
-				if (primitive == MeshNode::Primitive::UNKNOWN)
+				if (primitive == MeshNode::Primitive::UNKNOWN)	// If the primitive type is not set by here, it must not be one we support
 				{
 					repoWarning << "unsupported primitive type - only lines and triangles are supported but this face has " << nIndices << " indices!";
 				}
 			}
-			else
+			else  // (otherwise check for consistency with the existing type)
 			{
 				if (nIndices != static_cast<int>(primitive))
 				{
