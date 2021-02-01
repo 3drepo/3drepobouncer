@@ -37,12 +37,17 @@ TEST(MeshNodeTest, Constructor)
 	EXPECT_TRUE(empty.isEmpty());
 	EXPECT_EQ(NodeType::MESH, empty.getTypeAsEnum());
 
+	// the default type for bson objects without the primitive label, for backwards compatibility
+
+	EXPECT_EQ(MeshNode::Primitive::TRIANGLES, empty.getPrimitive());
+
 	auto repoBson = RepoBSON(BSON("test" << "blah" << "test2" << 2));
 
 	auto fromRepoBSON = MeshNode(repoBson);
 	EXPECT_EQ(NodeType::MESH, fromRepoBSON.getTypeAsEnum());
 	EXPECT_EQ(fromRepoBSON.nFields(), repoBson.nFields());
 	EXPECT_EQ(0, fromRepoBSON.getFileList().size());
+	EXPECT_EQ(MeshNode::Primitive::TRIANGLES, fromRepoBSON.getPrimitive());
 }
 
 TEST(MeshNodeTest, TypeTest)
@@ -51,6 +56,15 @@ TEST(MeshNodeTest, TypeTest)
 
 	EXPECT_EQ(REPO_NODE_TYPE_MESH, node.getType());
 	EXPECT_EQ(NodeType::MESH, node.getTypeAsEnum());
+
+	// It is expected that the value of these types can (and will) be cast to the numerical size of the primitive
+	// for control flow, so make sure this happens correctly.
+
+	EXPECT_EQ(0, static_cast<int>(MeshNode::Primitive::UNKNOWN));
+	EXPECT_EQ(1, static_cast<int>(MeshNode::Primitive::POINTS));
+	EXPECT_EQ(2, static_cast<int>(MeshNode::Primitive::LINES));
+	EXPECT_EQ(3, static_cast<int>(MeshNode::Primitive::TRIANGLES));
+	EXPECT_EQ(4, static_cast<int>(MeshNode::Primitive::QUADS));
 }
 
 TEST(MeshNodeTest, PositionDependantTest)
@@ -140,7 +154,7 @@ TEST(MeshNodeTest, GetMFormatTest)
 	auto mesh8 = RepoBSONFactory::makeMeshNode(v, f, v, bbox, emptyUV, cols);
 	auto mesh8F = mesh8.getMFormat();
 
-	EXPECT_NE(emptyF, mesh7F);
+	EXPECT_NE(emptyF, mesh8F);
 	EXPECT_NE(mesh8F, mesh1F);
 	EXPECT_NE(mesh8F, mesh2F);
 	EXPECT_NE(mesh8F, mesh3F);
@@ -148,6 +162,102 @@ TEST(MeshNodeTest, GetMFormatTest)
 	EXPECT_NE(mesh8F, mesh5F);
 	EXPECT_NE(mesh8F, mesh6F);
 	EXPECT_NE(mesh8F, mesh7F);
+
+	for (auto& face : f)
+		face.resize(2);
+
+	auto mesh9 = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, emptyCol);
+	auto mesh9F = mesh9.getMFormat();
+
+	EXPECT_NE(emptyF, mesh9F);
+	EXPECT_NE(mesh9F, mesh1F);
+	EXPECT_NE(mesh9F, mesh2F);
+	EXPECT_NE(mesh9F, mesh3F);
+	EXPECT_NE(mesh9F, mesh4F);
+	EXPECT_NE(mesh9F, mesh5F);
+	EXPECT_NE(mesh9F, mesh6F);
+	EXPECT_NE(mesh9F, mesh7F);
+	EXPECT_NE(mesh9F, mesh8F);
+
+	auto mesh10 = RepoBSONFactory::makeMeshNode(v, f, v, bbox, emptyUV, emptyCol);
+	auto mesh10F = mesh10.getMFormat();
+
+	EXPECT_NE(emptyF, mesh10F);
+	EXPECT_NE(mesh10F, mesh1F);
+	EXPECT_NE(mesh10F, mesh2F);
+	EXPECT_NE(mesh10F, mesh3F);
+	EXPECT_NE(mesh10F, mesh4F);
+	EXPECT_NE(mesh10F, mesh5F);
+	EXPECT_NE(mesh10F, mesh6F);
+	EXPECT_NE(mesh10F, mesh7F);
+	EXPECT_NE(mesh10F, mesh8F);
+	EXPECT_NE(mesh10F, mesh9F);
+
+	auto mesh11 = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol);
+	auto mesh11F = mesh11.getMFormat();
+
+	EXPECT_NE(emptyF, mesh11F);
+	EXPECT_NE(mesh11F, mesh1F);
+	EXPECT_NE(mesh11F, mesh2F);
+	EXPECT_NE(mesh11F, mesh3F);
+	EXPECT_NE(mesh11F, mesh4F);
+	EXPECT_NE(mesh11F, mesh5F);
+	EXPECT_NE(mesh11F, mesh6F);
+	EXPECT_NE(mesh11F, mesh7F);
+	EXPECT_NE(mesh11F, mesh8F);
+	EXPECT_NE(mesh11F, mesh9F);
+	EXPECT_NE(mesh11F, mesh10F);
+
+	auto mesh12 = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, cols);
+	auto mesh12F = mesh12.getMFormat();
+
+	EXPECT_NE(emptyF, mesh12F);
+	EXPECT_NE(mesh12F, mesh1F);
+	EXPECT_NE(mesh12F, mesh2F);
+	EXPECT_NE(mesh12F, mesh3F);
+	EXPECT_NE(mesh12F, mesh4F);
+	EXPECT_NE(mesh12F, mesh5F);
+	EXPECT_NE(mesh12F, mesh6F);
+	EXPECT_NE(mesh12F, mesh7F);
+	EXPECT_NE(mesh12F, mesh8F);
+	EXPECT_NE(mesh12F, mesh9F);
+	EXPECT_NE(mesh12F, mesh10F);
+	EXPECT_NE(mesh12F, mesh11F);
+
+	auto mesh13 = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, cols);
+	auto mesh13F = mesh13.getMFormat();
+
+	EXPECT_NE(emptyF, mesh13F);
+	EXPECT_NE(mesh13F, mesh1F);
+	EXPECT_NE(mesh13F, mesh2F);
+	EXPECT_NE(mesh13F, mesh3F);
+	EXPECT_NE(mesh13F, mesh4F);
+	EXPECT_NE(mesh13F, mesh5F);
+	EXPECT_NE(mesh13F, mesh6F);
+	EXPECT_NE(mesh13F, mesh7F);
+	EXPECT_NE(mesh13F, mesh8F);
+	EXPECT_NE(mesh13F, mesh9F);
+	EXPECT_NE(mesh13F, mesh10F);
+	EXPECT_NE(mesh13F, mesh11F);
+	EXPECT_NE(mesh13F, mesh12F);
+
+	auto mesh14 = RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, cols);
+	auto mesh14F = mesh14.getMFormat();
+
+	EXPECT_NE(emptyF, mesh14F);
+	EXPECT_NE(mesh14F, mesh1F);
+	EXPECT_NE(mesh14F, mesh2F);
+	EXPECT_NE(mesh14F, mesh3F);
+	EXPECT_NE(mesh14F, mesh4F);
+	EXPECT_NE(mesh14F, mesh5F);
+	EXPECT_NE(mesh14F, mesh6F);
+	EXPECT_NE(mesh14F, mesh7F);
+	EXPECT_NE(mesh14F, mesh8F);
+	EXPECT_NE(mesh14F, mesh9F);
+	EXPECT_NE(mesh14F, mesh10F);
+	EXPECT_NE(mesh14F, mesh11F);
+	EXPECT_NE(mesh14F, mesh12F);
+	EXPECT_NE(mesh14F, mesh13F);
 }
 
 TEST(MeshNodeTest, SEqualTest)
@@ -208,6 +318,12 @@ TEST(MeshNodeTest, SEqualTest)
 	uvs[1].resize(10);
 	auto mesh5 = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol);
 	EXPECT_FALSE(mesh3ChangedUV.sEqual(mesh5));
+
+	for (auto& face : f)
+		face.resize(2);
+	auto mesh6 = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol);
+	EXPECT_FALSE(mesh3ChangedUV.sEqual(mesh6));
+
 }
 
 TEST(MeshNodeTest, CloneAndApplyTransformation)
