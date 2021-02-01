@@ -410,8 +410,7 @@ MeshNode RepoBSONFactory::makeMeshNode(
 				else if (nIndices == 3) {
 					primitive = MeshNode::Primitive::TRIANGLES;
 				}
-
-				if (primitive == MeshNode::Primitive::UNKNOWN)	// If the primitive type is not set by here, it must not be one we support
+				else // The primitive type is not one we support
 				{
 					repoWarning << "unsupported primitive type - only lines and triangles are supported but this face has " << nIndices << " indices!";
 				}
