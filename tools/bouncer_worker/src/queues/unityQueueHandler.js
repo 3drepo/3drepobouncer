@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
+const { callbackQueueSpecified, unityQueueSpecified, logDirExists } = require('./common');
 const { config } = require('../lib/config');
 const { generateAssetBundles, validateUnityConfigurations } = require('../tasks/unityEditor');
 const { ERRCODE_ARG_FILE_FAIL, ERRCODE_BUNDLE_GEN_FAIL } = require('../constants/errorCodes');
@@ -61,23 +62,9 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	callback(JSON.stringify(message));
 };
 
-Handler.validateConfiguration = () => {
-	if (!(config.rabbitmq && config.rabbitmq.callback_queue)) {
-		logger.error('rabbitmq.callback_queue is not specified!', logLabel);
-		return false;
-	}
-
-	if (!config.rabbitmq.unity_queue) {
-		logger.error('rabbitmq.unity_queue is not specified!', logLabel);
-		return false;
-	}
-
-	if (!(config.logging && config.logging.taskLogDir)) {
-		logger.error('config.logging.taskLogDir is not specified!', logLabel);
-		return false;
-	}
-
-	return validateUnityConfigurations();
-};
+Handler.validateConfiguration = (label) => callbackQueueSpecified(label)
+		&& unityQueueSpecified(label)
+		&& logDirExists(label)
+		&& validateUnityConfigurations();
 
 module.exports = Handler;

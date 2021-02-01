@@ -57,21 +57,21 @@ const establishChannel = async (conn, listenToJobQueue, listenToModelQueue, list
 	const channel = await conn.createChannel();
 	channel.assertQueue(rabbitmq.callback_queue, { durable: true });
 	if (listenToJobQueue) {
-		if (!JobQHandler.validateConfiguration()) {
+		if (!JobQHandler.validateConfiguration(logLabel)) {
 			exitApplication();
 		}
 		listenToQueue(channel, rabbitmq.worker_queue, rabbitmq.task_prefetch, JobQHandler.onMessageReceived);
 	}
 
 	if (listenToModelQueue) {
-		if (!ModelQHandler.validateConfiguration()) {
+		if (!ModelQHandler.validateConfiguration(logLabel)) {
 			exitApplication();
 		}
 		listenToQueue(channel, rabbitmq.model_queue, rabbitmq.model_prefetch, ModelQHandler.onMessageReceived);
 	}
 
 	if (listenToUnityQueue) {
-		if (!UnityQHandler.validateConfiguration()) {
+		if (!UnityQHandler.validateConfiguration(logLabel)) {
 			exitApplication();
 		}
 		listenToQueue(channel, rabbitmq.unity_queue, rabbitmq.unity_prefetch, UnityQHandler.onMessageReceived);
@@ -173,21 +173,21 @@ QueueHandler.runNTasks = async (queueType, nTasks) => {
 	let callback;
 	switch (queueType) {
 		case queueLabel.JOB:
-			if (!JobQHandler.validateConfiguration()) {
+			if (!JobQHandler.validateConfiguration(logLabel)) {
 				exitApplication();
 			}
 			queueName = rabbitmq.worker_queue;
 			callback = JobQHandler.onMessageReceived;
 			break;
 		case queueLabel.MODEL:
-			if (!ModelQHandler.validateConfiguration()) {
+			if (!ModelQHandler.validateConfiguration(logLabel)) {
 				exitApplication();
 			}
 			queueName = rabbitmq.model_queue;
 			callback = ModelQHandler.onMessageReceived;
 			break;
 		case queueLabel.UNITY:
-			if (!UnityQHandler.validateConfiguration()) {
+			if (!UnityQHandler.validateConfiguration(logLabel)) {
 				exitApplication();
 			}
 			queueName = rabbitmq.unity_queue;

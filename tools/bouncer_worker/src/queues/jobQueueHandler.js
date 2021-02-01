@@ -15,6 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
+const {
+	callbackQueueSpecified,
+	jobQueueSpecified,
+	logDirExists,
+	sharedDirExists } = require('./common');
 const { importToyModel, validateToyImporterSettings } = require('../tasks/importToy');
 const { ERRCODE_OK, ERRCODE_TOY_IMPORT_FAILED } = require('../constants/errorCodes');
 const { config } = require('../lib/config');
@@ -84,28 +89,10 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	}
 };
 
-Handler.validateConfiguration = () => {
-	if (!config.logging.taskLogDir) {
-		logger.error('logging.taskLogDir is not specified.', logLabel);
-		return false;
-	}
-
-	if (!config.rabbitmq.worker_queue) {
-		logger.error('rabbitmq.worker_queue is not specified!', logLabel);
-		return false;
-	}
-
-	if (!config.rabbitmq.sharedDir) {
-		logger.error('rabbitmq.sharedDir is not specified!', logLabel);
-		return false;
-	}
-
-	if (!config.rabbitmq.callback_queue) {
-		logger.error('rabbitmq.callback_queue is not specified!', logLabel);
-		return false;
-	}
-
-	return validateToyImporterSettings();
-};
+Handler.validateConfiguration = (label) => logDirExists(label)
+		&& jobQueueSpecified(label)
+		&& sharedDirExists(label)
+		&& callbackQueueSpecified(label)
+		&& validateToyImporterSettings();
 
 module.exports = Handler;

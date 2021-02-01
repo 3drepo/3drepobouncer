@@ -15,6 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
+const {
+	callbackQueueSpecified,
+	modelQueueSpecified,
+	unityQueueSpecified,
+	logDirExists,
+	sharedDirExists } = require('./common');
 const { config } = require('../lib/config');
 const { runBouncerCommand } = require('../tasks/bouncerClient');
 const { ERRCODE_OK, ERRCODE_BOUNCER_CRASH } = require('../constants/errorCodes');
@@ -61,33 +67,10 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	}
 };
 
-Handler.validateConfiguration = () => {
-	if (!config.rabbitmq.model_queue) {
-		logger.error('rabbitmq.model_queue is not specified!', logLabel);
-		return false;
-	}
-
-	if (!config.rabbitmq.callback_queue) {
-		logger.error('rabbitmq.callback_queue is not specified!', logLabel);
-		return false;
-	}
-
-	if (!config.rabbitmq.unity_queue) {
-		logger.error('rabbitmq.unity_queue is not specified!', logLabel);
-		return false;
-	}
-
-	if (!config.rabbitmq.sharedDir) {
-		logger.error('rabbitmq.sharedDir is not specified!', logLabel);
-		return false;
-	}
-
-	if (!config.logging.taskLogDir) {
-		logger.error('logging.taskLogDir is not specified!', logLabel);
-		return false;
-	}
-
-	return true;
-};
+Handler.validateConfiguration = (label) => modelQueueSpecified(label)
+		&& callbackQueueSpecified(label)
+		&& unityQueueSpecified(label)
+		&& logDirExists(label)
+		&& sharedDirExists(label);
 
 module.exports = Handler;
