@@ -122,7 +122,7 @@ namespace repo {
 				}
 
 				/**
-				* Get the mesh primitive type (points, lines, triangles, quads) as a string (triangles if not set).
+				* Get the mesh primitive type (points, lines, triangles, quads) (triangles if not set).
 				*/
 				virtual MeshNode::Primitive getPrimitive() const;
 
