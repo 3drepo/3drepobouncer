@@ -83,23 +83,35 @@ const executeTasks = async (conn, queueName, nTasks, callback) => {
 	channel.assertQueue(rabbitmq.callback_queue, { durable: true });
 	channel.prefetch(1);
 	logger.info(`Processing ${nTasks} tasks on ${queueName}...`, logLabel);
-	for (let count = 1; count <= nTasks; ++count) {
+
+	let lastActive = new Date();
+	let tasksCompleted = 0;
+	while (tasksCompleted !== nTasks) {
 		// eslint-disable-next-line no-await-in-loop
 		const msg = await channel.get(queueName, { noAck: false });
 		if (msg) {
-			logger.info(`[${count}/${nTasks}] Received ${msg.content.toString()} from ${queueName}`, logLabel);
+			logger.info(`[${tasksCompleted}/${nTasks}] Received ${msg.content.toString()} from ${queueName}`, logLabel);
 			// eslint-disable-next-line no-await-in-loop
 			await callback(msg.content.toString(), msg.properties.correlationId,
+				// eslint-disable-next-line no-loop-func
 				(reply, queue = rabbitmq.callback_queue) => {
-					logger.info(`[${count}/${nTasks}] Sending to reply to ${queue}: ${reply}`, logLabel);
+					logger.info(`[${tasksCompleted}/${nTasks}] Sending to reply to ${queue}: ${reply}`, logLabel);
 					// eslint-disable-next-line new-cap
 					channel.sendToQueue(queue, new Buffer.from(reply),
 						{ correlationId: msg.properties.correlationId, appId: msg.properties.appId });
 				});
 			channel.ack(msg);
-		} else {
-			logger.info(`[${count}/${nTasks}] No message found in ${queueName}.`, logLabel);
+			lastActive = new Date();
+			++tasksCompleted;
+		} else if (new Date() - lastActive > rabbitmq.maxWaitTimeMS) {
+			logger.info(`[${tasksCompleted}/${nTasks}] No message found in ${queueName}. Max wait time reached.`, logLabel);
 			break;
+		} else {
+			const waitTime = rabbitmq.pollingIntervalMS;
+			logger.info(`[${tasksCompleted}/${nTasks}] No message found in ${queueName}. Retrying in ${waitTime / 1000}s`, logLabel);
+
+			// eslint-disable-next-line no-await-in-loop
+			await sleep(waitTime);
 		}
 	}
 

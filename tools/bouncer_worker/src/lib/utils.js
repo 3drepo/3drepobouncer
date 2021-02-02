@@ -15,6 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
+const moment = require('moment');
+
 const Utils = {};
 
 Utils.exitApplication = (errCode = -1) => {
@@ -25,5 +27,7 @@ Utils.exitApplication = (errCode = -1) => {
 Utils.sleep = (ms) => new Promise((resolve) => {
 	setTimeout(resolve, ms);
 });
+
+Utils.getCurrentDateTimeAsString = () => moment().format('DD-MM-YY_HH[h]mm[m]ss[s]');
 
 module.exports = Utils;
