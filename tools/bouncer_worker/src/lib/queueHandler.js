@@ -108,7 +108,7 @@ const executeTasks = async (conn, queueName, nTasks, callback) => {
 			break;
 		} else {
 			const waitTime = rabbitmq.pollingIntervalMS;
-			logger.info(`[${tasksCompleted}/${nTasks}] No message found in ${queueName}. Retrying in ${waitTime / 1000}s`, logLabel);
+			logger.verbose(`[${tasksCompleted}/${nTasks}] No message found in ${queueName}. Retrying in ${waitTime / 1000}s`, logLabel);
 
 			// eslint-disable-next-line no-await-in-loop
 			await sleep(waitTime);
