@@ -48,3 +48,4 @@ sandbox/sandbox.cpp
 *.opendb
 tools/bouncer_worker/log.log
 *.json
+tools/bouncer_worker/bouncer_worker.log

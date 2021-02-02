@@ -1,16 +1,20 @@
 {
-	"logLocation": "log.log",
+	"logging": {
+		"taskLogDir": "C:/sharedSpace/",
+		"workerLogPath": "./bouncer_worker.log"
+	},
 	"rabbitmq":{
 		"host": "amqp://username:password@localhost:5672",
 		"worker_queue": "jobq",
 		"callback_queue": "callbackq",
 		"model_queue": "modelq",
 		"task_prefetch": 4,
-		"model_prefetch": 1
+		"model_prefetch": 1,
+		"sharedDir" : "C:/sharedSpace/"
+
 	},
 	"bouncer":{
 		"path" : "C:/local/3drepobouncer/bin/repobouncerclient.exe",
-		"log_dir" : "/var/log/3drepo/bouncer/",
 		"envars": {
 			"REPO_RVT_TEXTURES" : "C:/local/revit_materials/"
 		}
@@ -20,10 +24,6 @@
 		"dbport": 27017,
 		"username" : "username",
 		"password" : "password"
-	},
-	"aws": {
-		"bucket_name" : "3drepo-sandbox",
-		"bucket_region" : "eu-west-2"
 	},
 	"fs": {
 		"path" : "~/",
