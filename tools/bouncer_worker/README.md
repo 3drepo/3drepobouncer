@@ -66,8 +66,8 @@ Bouncer worker takes in a JSON file with the following parameters.
     "sharedDir": //Path to the sharedSpace being referenced by the queue
     "maxRetries": //Maximum number of attempts to reconnect to the queue before giving up (default: 3)
     "waitBeforeShutdownMS": //In exitAfter mode, the number of ms to wait before shutting down the application (default: 60000)
-	"pollingIntervalMS" : //In exitAfter mode, the number of ms to wait inbetween polling the queue for tasks (default: 10000)
-	"maxWaitTimeMS" : //In exitAfter mode, the maximum wait time for a task before exiting the process (default: 300000 - aka 5mins)
+    "pollingIntervalMS" : //In exitAfter mode, the number of ms to wait inbetween polling the queue for tasks (default: 10000)
+    "maxWaitTimeMS" : //In exitAfter mode, the maximum wait time for a task before exiting the process (default: 300000 - aka 5mins)
   },
   "bouncer": {
     "path": //path to 3drepobouncerClient
