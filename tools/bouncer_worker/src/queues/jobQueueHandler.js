@@ -79,8 +79,11 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const cmdMsg = messageDecoder(cmd);
 
 	if (cmdMsg.errorCode) {
-		callback({ value: cmdMsg.errorCode });
-	} else if (cmdMsg.command === 'importToy') {
+		callback(JSON.stringify({ value: cmdMsg.errorCode }));
+		return;
+	}
+
+	if (cmdMsg.command === 'importToy') {
 		const message = await importToy(cmdMsg, logDir);
 		callback(JSON.stringify(message));
 	} else {

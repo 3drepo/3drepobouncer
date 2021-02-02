@@ -36,10 +36,10 @@ const replaceSharedDirPlaceHolder = (command) => {
 };
 
 const messageDecoder = (cmd) => {
-	const args = replaceSharedDirPlaceHolder(cmd).split(/\s+/);
-	let res = { command: args[0] };
-
+	let res = { };
 	try {
+		const args = replaceSharedDirPlaceHolder(cmd).split(/\s+/);
+		res = { command: args[0] };
 		switch (args[0]) {
 			case 'importToy':
 				res = {

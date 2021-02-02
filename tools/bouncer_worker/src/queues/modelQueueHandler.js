@@ -36,14 +36,15 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const { errorCode, database, model, user, cmdParams } = messageDecoder(cmd);
 
 	if (errorCode) {
-		callback({ value: errorCode });
-	} else {
-		callback(JSON.stringify({
-			status: MODEL_PROCESSING,
-			database,
-			project: model,
-		}));
+		callback(JSON.stringify({ value: errorCode }));
+		return;
 	}
+
+	callback(JSON.stringify({
+		status: MODEL_PROCESSING,
+		database,
+		project: model,
+	}));
 
 	const returnMessage = {
 		value: ERRCODE_OK,
