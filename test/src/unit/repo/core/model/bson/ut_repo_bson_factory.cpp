@@ -418,6 +418,19 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	EXPECT_EQ(bbox[0], repo::lib::RepoVector3D(boundingBox[0][0], boundingBox[0][1], boundingBox[0][2]));
 	EXPECT_EQ(bbox[1], repo::lib::RepoVector3D(boundingBox[1][0], boundingBox[1][1], boundingBox[1][2]));
 
+	// Re-create the mesh but with an unsupported primitive type. If the mesh does not have a type set, the API should return triangles, 
+	// but if the primitive has *attempted* to be inferred and failed, the type should report as unknown.
+
+	faces.clear();
+	for (uint32_t i = 0; i < nCount; ++i)
+	{
+		repo_face_t face; // empty faces should result in an unknown primitive type
+		faces.push_back(face);
+	}
+
+	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, outLine, name);
+
+	ASSERT_EQ(MeshNode::Primitive::UNKNOWN, mesh.getPrimitive());
 }
 
 TEST(RepoBSONFactoryTest, MakeReferenceNodeTest)

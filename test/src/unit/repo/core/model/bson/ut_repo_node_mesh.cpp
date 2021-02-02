@@ -37,9 +37,7 @@ TEST(MeshNodeTest, Constructor)
 	EXPECT_TRUE(empty.isEmpty());
 	EXPECT_EQ(NodeType::MESH, empty.getTypeAsEnum());
 
-	// the default type for bson objects without the primitive label, for backwards compatibility
-
-	EXPECT_EQ(MeshNode::Primitive::TRIANGLES, empty.getPrimitive());
+	EXPECT_EQ(MeshNode::Primitive::TRIANGLES, empty.getPrimitive());	// the default type for bson objects without the primitive label, for backwards compatibility
 
 	auto repoBson = RepoBSON(BSON("test" << "blah" << "test2" << 2));
 
@@ -87,177 +85,69 @@ TEST(MeshNodeTest, GetMFormatTest)
 	for (auto &face : f)
 		face.resize(3);
 	cols.resize(10);
-
-	MeshNode empty;
-	auto emptyF = empty.getMFormat();
-
-	auto mesh1 = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, emptyCol);
-	auto mesh1F = mesh1.getMFormat();
-
-	EXPECT_NE(emptyF, mesh1F);
-
-	auto mesh2 = RepoBSONFactory::makeMeshNode(v, f, v, bbox, emptyUV, emptyCol);
-	auto mesh2F = mesh2.getMFormat();
-
-	EXPECT_NE(emptyF, mesh2F);
-	EXPECT_NE(mesh2F, mesh1F);
-
 	uvs.resize(1);
 	uvs[0].resize(10);
-	auto mesh3 = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol);
-	auto mesh3F = mesh3.getMFormat();
 
-	EXPECT_NE(emptyF, mesh3F);
-	EXPECT_NE(mesh3F, mesh1F);
-	EXPECT_NE(mesh3F, mesh2F);
+	std::vector<repo::core::model::MeshNode> meshNodes;
 
-	auto mesh4 = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, cols);
-	auto mesh4F = mesh4.getMFormat();
+	// Create a set of mesh nodes with all possible variations that should result in different formats
+	meshNodes.push_back(MeshNode()); // empty
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, emptyCol));
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, cols));
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol));
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, cols));
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, emptyUV, emptyCol));
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, emptyCol));
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, cols));
 
-	EXPECT_NE(emptyF, mesh4F);
-	EXPECT_NE(mesh4F, mesh1F);
-	EXPECT_NE(mesh4F, mesh2F);
-	EXPECT_NE(mesh4F, mesh3F);
+	// (Different numbers of uv channels)
 
 	uvs.resize(2);
 	uvs[1].resize(10);
-	auto mesh5 = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol);
-	auto mesh5F = mesh5.getMFormat();
 
-	EXPECT_NE(emptyF, mesh5F);
-	EXPECT_NE(mesh5F, mesh1F);
-	EXPECT_NE(mesh5F, mesh2F);
-	EXPECT_NE(mesh5F, mesh3F);
-	EXPECT_NE(mesh5F, mesh4F);
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol));
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, cols));
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, emptyCol));
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, cols));
 
-	auto mesh6 = RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, emptyCol);
-	auto mesh6F = mesh6.getMFormat();
+	// (Different primtives)
 
-	EXPECT_NE(emptyF, mesh6F);
-	EXPECT_NE(mesh6F, mesh1F);
-	EXPECT_NE(mesh6F, mesh2F);
-	EXPECT_NE(mesh6F, mesh3F);
-	EXPECT_NE(mesh6F, mesh4F);
-	EXPECT_NE(mesh6F, mesh5F);
-
-	auto mesh7 = RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, cols);
-	auto mesh7F = mesh7.getMFormat();
-
-	EXPECT_NE(emptyF, mesh7F);
-	EXPECT_NE(mesh7F, mesh1F);
-	EXPECT_NE(mesh7F, mesh2F);
-	EXPECT_NE(mesh7F, mesh3F);
-	EXPECT_NE(mesh7F, mesh4F);
-	EXPECT_NE(mesh7F, mesh5F);
-	EXPECT_NE(mesh7F, mesh6F);
-
-	auto mesh8 = RepoBSONFactory::makeMeshNode(v, f, v, bbox, emptyUV, cols);
-	auto mesh8F = mesh8.getMFormat();
-
-	EXPECT_NE(emptyF, mesh8F);
-	EXPECT_NE(mesh8F, mesh1F);
-	EXPECT_NE(mesh8F, mesh2F);
-	EXPECT_NE(mesh8F, mesh3F);
-	EXPECT_NE(mesh8F, mesh4F);
-	EXPECT_NE(mesh8F, mesh5F);
-	EXPECT_NE(mesh8F, mesh6F);
-	EXPECT_NE(mesh8F, mesh7F);
+	uvs.resize(1);
+	uvs[0].resize(10);
 
 	for (auto& face : f)
 		face.resize(2);
 
-	auto mesh9 = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, emptyCol);
-	auto mesh9F = mesh9.getMFormat();
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, emptyCol));
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, cols));
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol));
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, cols));
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, emptyUV, emptyCol));
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, emptyCol));
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, cols));
 
-	EXPECT_NE(emptyF, mesh9F);
-	EXPECT_NE(mesh9F, mesh1F);
-	EXPECT_NE(mesh9F, mesh2F);
-	EXPECT_NE(mesh9F, mesh3F);
-	EXPECT_NE(mesh9F, mesh4F);
-	EXPECT_NE(mesh9F, mesh5F);
-	EXPECT_NE(mesh9F, mesh6F);
-	EXPECT_NE(mesh9F, mesh7F);
-	EXPECT_NE(mesh9F, mesh8F);
+	uvs.resize(2);
+	uvs[1].resize(10);
 
-	auto mesh10 = RepoBSONFactory::makeMeshNode(v, f, v, bbox, emptyUV, emptyCol);
-	auto mesh10F = mesh10.getMFormat();
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol));
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, cols));
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, emptyCol));
+	meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, cols));
 
-	EXPECT_NE(emptyF, mesh10F);
-	EXPECT_NE(mesh10F, mesh1F);
-	EXPECT_NE(mesh10F, mesh2F);
-	EXPECT_NE(mesh10F, mesh3F);
-	EXPECT_NE(mesh10F, mesh4F);
-	EXPECT_NE(mesh10F, mesh5F);
-	EXPECT_NE(mesh10F, mesh6F);
-	EXPECT_NE(mesh10F, mesh7F);
-	EXPECT_NE(mesh10F, mesh8F);
-	EXPECT_NE(mesh10F, mesh9F);
+	// All formats should be distinct from eachother and the empty mesh
 
-	auto mesh11 = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol);
-	auto mesh11F = mesh11.getMFormat();
-
-	EXPECT_NE(emptyF, mesh11F);
-	EXPECT_NE(mesh11F, mesh1F);
-	EXPECT_NE(mesh11F, mesh2F);
-	EXPECT_NE(mesh11F, mesh3F);
-	EXPECT_NE(mesh11F, mesh4F);
-	EXPECT_NE(mesh11F, mesh5F);
-	EXPECT_NE(mesh11F, mesh6F);
-	EXPECT_NE(mesh11F, mesh7F);
-	EXPECT_NE(mesh11F, mesh8F);
-	EXPECT_NE(mesh11F, mesh9F);
-	EXPECT_NE(mesh11F, mesh10F);
-
-	auto mesh12 = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, cols);
-	auto mesh12F = mesh12.getMFormat();
-
-	EXPECT_NE(emptyF, mesh12F);
-	EXPECT_NE(mesh12F, mesh1F);
-	EXPECT_NE(mesh12F, mesh2F);
-	EXPECT_NE(mesh12F, mesh3F);
-	EXPECT_NE(mesh12F, mesh4F);
-	EXPECT_NE(mesh12F, mesh5F);
-	EXPECT_NE(mesh12F, mesh6F);
-	EXPECT_NE(mesh12F, mesh7F);
-	EXPECT_NE(mesh12F, mesh8F);
-	EXPECT_NE(mesh12F, mesh9F);
-	EXPECT_NE(mesh12F, mesh10F);
-	EXPECT_NE(mesh12F, mesh11F);
-
-	auto mesh13 = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, cols);
-	auto mesh13F = mesh13.getMFormat();
-
-	EXPECT_NE(emptyF, mesh13F);
-	EXPECT_NE(mesh13F, mesh1F);
-	EXPECT_NE(mesh13F, mesh2F);
-	EXPECT_NE(mesh13F, mesh3F);
-	EXPECT_NE(mesh13F, mesh4F);
-	EXPECT_NE(mesh13F, mesh5F);
-	EXPECT_NE(mesh13F, mesh6F);
-	EXPECT_NE(mesh13F, mesh7F);
-	EXPECT_NE(mesh13F, mesh8F);
-	EXPECT_NE(mesh13F, mesh9F);
-	EXPECT_NE(mesh13F, mesh10F);
-	EXPECT_NE(mesh13F, mesh11F);
-	EXPECT_NE(mesh13F, mesh12F);
-
-	auto mesh14 = RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, cols);
-	auto mesh14F = mesh14.getMFormat();
-
-	EXPECT_NE(emptyF, mesh14F);
-	EXPECT_NE(mesh14F, mesh1F);
-	EXPECT_NE(mesh14F, mesh2F);
-	EXPECT_NE(mesh14F, mesh3F);
-	EXPECT_NE(mesh14F, mesh4F);
-	EXPECT_NE(mesh14F, mesh5F);
-	EXPECT_NE(mesh14F, mesh6F);
-	EXPECT_NE(mesh14F, mesh7F);
-	EXPECT_NE(mesh14F, mesh8F);
-	EXPECT_NE(mesh14F, mesh9F);
-	EXPECT_NE(mesh14F, mesh10F);
-	EXPECT_NE(mesh14F, mesh11F);
-	EXPECT_NE(mesh14F, mesh12F);
-	EXPECT_NE(mesh14F, mesh13F);
+	for (auto& meshNodeOuter : meshNodes)
+	{
+		for (auto& meshNodeInner : meshNodes)
+		{
+			if (&meshNodeOuter != &meshNodeInner)
+			{
+				auto mesh1F = meshNodeOuter.getMFormat();
+				auto mesh2F = meshNodeInner.getMFormat();
+				EXPECT_NE(mesh1F, mesh2F);
+			}
+		}
+	}
 }
 
 TEST(MeshNodeTest, SEqualTest)
@@ -268,6 +158,11 @@ TEST(MeshNodeTest, SEqualTest)
 	EXPECT_FALSE(mesh.sEqual(node));
 	EXPECT_TRUE(mesh.sEqual(mesh));
 
+	// Similar to the GetMFormatTest, meshes with different combinations of attributes should not return equal. Different objects
+	// with the same configurations however should.
+
+	// Create two lists, with intra-list meshes being separate but equivalent, and inter-list meshes being different
+
 	std::vector<repo::lib::RepoVector3D> emptyV, v;
 	std::vector<repo_face_t> f;
 	std::vector<std::vector<float>> bbox;
@@ -275,55 +170,139 @@ TEST(MeshNodeTest, SEqualTest)
 	std::vector<repo_color4d_t> emptyCol, cols;
 	v.resize(10);
 	f.resize(10);
-	for (auto &face : f)
-		face.resize(3);
 	cols.resize(10);
 
-	auto mesh1 = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, emptyCol);
+	std::vector< std::vector<repo::core::model::MeshNode>> meshNodesLists;
+	meshNodesLists.resize(2);
 
-	EXPECT_FALSE(mesh.sEqual(mesh1));
+	for (int i = 0; i < 2; i++) {
 
-	v[2] = { 0.0, 0.5, 0.0 };
+		auto& meshNodes = meshNodesLists[i];
 
-	auto mesh1changedV = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, emptyCol);
-	EXPECT_FALSE(mesh1.sEqual(mesh1changedV));
+		// Create a set of mesh nodes with all possible variations that should result in different formats
+		meshNodes.push_back(MeshNode()); // empty
 
-	f[2][2] = 1;
+		for (auto& face : f)
+			face.resize(3);
 
-	auto mesh1changedF = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, emptyCol);
-	EXPECT_FALSE(mesh1.sEqual(mesh1changedF));
+		uvs.resize(1);
+		uvs[0].resize(10);
 
-	auto mesh2 = RepoBSONFactory::makeMeshNode(v, f, v, bbox, emptyUV, emptyCol);
-	EXPECT_FALSE(mesh2.sEqual(mesh1changedF));
+		v[2] = { 0.0, 0.0, 0.0 };
+		f[2][1] = 0;
 
-	v[1] = { 0.0f, 0.6f, 0.0f };
-	auto mesh2changedN = RepoBSONFactory::makeMeshNode(v, f, v, bbox, emptyUV, emptyCol);
-	EXPECT_FALSE(mesh2.sEqual(mesh2changedN));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, cols));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, cols));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, emptyUV, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, cols));
 
-	uvs.resize(1);
-	uvs[0].resize(10);
-	auto mesh3 = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol);
+		// Different buffer contents
 
-	EXPECT_FALSE(mesh1changedF.sEqual(mesh3));
+		v[2] = { 0.0, 0.5, 0.0 };
 
-	uvs[0][3] = { 0.3f, 0.1f };
-	auto mesh3ChangedUV = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol);
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, cols));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, cols));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, emptyUV, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, cols));
 
-	EXPECT_FALSE(mesh3ChangedUV.sEqual(mesh3));
+		f[2][1] = 1;
 
-	auto mesh4 = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, cols);
-	EXPECT_FALSE(mesh1changedF.sEqual(mesh4));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, cols));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, cols));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, emptyUV, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, cols));
 
-	uvs.resize(2);
-	uvs[1].resize(10);
-	auto mesh5 = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol);
-	EXPECT_FALSE(mesh3ChangedUV.sEqual(mesh5));
+		// (Different numbers of uv channels)
 
-	for (auto& face : f)
-		face.resize(2);
-	auto mesh6 = RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol);
-	EXPECT_FALSE(mesh3ChangedUV.sEqual(mesh6));
+		uvs.resize(2);
+		uvs[1].resize(10);
 
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, cols));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, cols));
+
+		// (Different primtives)
+
+		for (auto& face : f)
+			face.resize(2);
+
+		uvs.resize(1);
+		uvs[0].resize(10);
+
+		v[2] = { 0.0, 0.0, 0.0 };
+		f[2][1] = 0;
+
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, cols));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, cols));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, emptyUV, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, cols));
+
+		v[2] = { 0.0, 1.0, 0.0 };
+
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, cols));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, cols));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, emptyUV, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, cols));
+
+		f[2][1] = 2;
+
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, emptyUV, cols));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, cols));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, emptyUV, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, cols));
+
+		uvs.resize(2);
+		uvs[1].resize(10);
+
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, emptyV, bbox, uvs, cols));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, emptyCol));
+		meshNodes.push_back(RepoBSONFactory::makeMeshNode(v, f, v, bbox, uvs, cols));
+
+	}
+
+	for (size_t i = 0; i < meshNodesLists[0].size(); i++)
+	{
+		auto& meshNode1 = meshNodesLists[0][i];
+		auto& meshNode2 = meshNodesLists[1][i];
+
+		// The meshes in the two lists should be the same 
+		// (note that resize was used to initialise the buffers above, so they should be initialised to the type defaults not random memory)
+
+		EXPECT_TRUE(meshNode1.sEqual(meshNode2));
+	}
+
+	auto& meshNodes = meshNodesLists[0];
+
+	for (auto& meshNodeOuter : meshNodes)
+	{
+		for (auto& meshNodeInner : meshNodes)
+		{
+			if (&meshNodeOuter != &meshNodeInner)
+			{
+				EXPECT_FALSE(meshNodeInner.sEqual(meshNodeOuter));
+			}
+		}
+	}
 }
 
 TEST(MeshNodeTest, CloneAndApplyTransformation)
