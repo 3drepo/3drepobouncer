@@ -501,7 +501,8 @@ bool MeshNode::sEqual(const RepoNode &other) const
 		&& normals.size() == normals2.size()
 		&& uvChannels.size() == uvChannels2.size()
 		&& facesSerialized.size() == facesSerialized2.size()
-		&& colors.size() == colors2.size();
+		&& colors.size() == colors2.size()
+		&& getPrimitive() == otherMesh.getPrimitive();
 
 	if (success)
 	{
@@ -527,7 +528,7 @@ bool MeshNode::sEqual(const RepoNode &other) const
 
 		if (success && facesSerialized.size())
 		{
-			success &= !memcmp(facesSerialized.data(), facesSerialized.data(), facesSerialized.size() * sizeof(*facesSerialized.data()));
+			success &= !memcmp(facesSerialized.data(), facesSerialized2.data(), facesSerialized.size() * sizeof(*facesSerialized.data()));
 		}
 	}
 
