@@ -28,6 +28,6 @@ Utils.sleep = (ms) => new Promise((resolve) => {
 	setTimeout(resolve, ms);
 });
 
-Utils.getCurrentDateTimeAsString = () => moment().format('DD-MM-YY_HH[h]mm[m]ss[s]');
+Utils.getCurrentDateTimeAsString = () => moment().format('YYYY-MM-DD_HH[h]mm[m]ss[s]');
 
 module.exports = Utils;
