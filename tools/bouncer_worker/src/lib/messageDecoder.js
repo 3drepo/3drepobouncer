@@ -18,6 +18,7 @@
 const fs = require('fs');
 const { config, configPath } = require('./config');
 const { ERRCODE_ARG_FILE_FAIL } = require('../constants/errorCodes');
+const logger = require('./logger');
 
 const replaceSharedDirPlaceHolder = (command) => {
 	const tagToReplace = '$SHARED_SPACE';
@@ -35,56 +36,61 @@ const replaceSharedDirPlaceHolder = (command) => {
 };
 
 const messageDecoder = (cmd) => {
-	const args = replaceSharedDirPlaceHolder(cmd).split(/\s+/);
-	let res = { command: args[0] };
-
-	switch (args[0]) {
-		case 'importToy':
-			res = {
-				command: args[0],
-				database: args[1],
-				model: args[2],
-				toyModelID: args[3],
-				skipPostProcessing: (args[4] && JSON.parse(args[4])) || {},
-			};
-			break;
-		case 'import':
-			{
-				// eslint-disable-next-line
-				const cmdFile = require(args[2]);
+	let res = { };
+	try {
+		const args = replaceSharedDirPlaceHolder(cmd).split(/\s+/);
+		res = { command: args[0] };
+		switch (args[0]) {
+			case 'importToy':
+				res = {
+					command: args[0],
+					database: args[1],
+					model: args[2],
+					toyModelID: args[3],
+					skipPostProcessing: (args[4] && JSON.parse(args[4])) || {},
+				};
+				break;
+			case 'import':
+				{
+					// eslint-disable-next-line
+					const cmdFile = require(args[2]);
+					res = {
+						cmdParams: [configPath, ...args],
+						database: cmdFile.database,
+						model: cmdFile.project,
+						user: cmdFile.owner,
+						...res,
+					};
+				}
+				break;
+			case 'genFed':
+				{
+					// eslint-disable-next-line
+					const cmdFile = require(args[1]);
+					res = {
+						cmdParams: [configPath, ...args],
+						database: cmdFile.database,
+						model: cmdFile.project,
+						toyFed: cmdFile.toyFed,
+						user: cmdFile.owner,
+						...res,
+					};
+				}
+				break;
+			case 'genStash':
 				res = {
 					cmdParams: [configPath, ...args],
-					database: cmdFile.database,
-					model: cmdFile.project,
-					user: cmdFile.owner,
+					database: args[1],
+					model: args[2],
 					...res,
 				};
-			}
-			break;
-		case 'genFed':
-			{
-				// eslint-disable-next-line
-				const cmdFile = require(args[1]);
-				res = {
-					cmdParams: [configPath, ...args],
-					database: cmdFile.database,
-					model: cmdFile.project,
-					toyFed: cmdFile.toyFed,
-					user: cmdFile.owner,
-					...res,
-				};
-			}
-			break;
-		case 'genStash':
-			res = {
-				cmdParams: [configPath, ...args],
-				database: args[1],
-				model: args[2],
-				...res,
-			};
-			break;
-		default:
-			res = { errorCode: ERRCODE_ARG_FILE_FAIL };
+				break;
+			default:
+				res = { errorCode: ERRCODE_ARG_FILE_FAIL };
+		}
+	} catch (err) {
+		logger.error(`Failed to parse message: ${err.message || err}`);
+		res = { errorCode: ERRCODE_ARG_FILE_FAIL };
 	}
 	return res;
 };

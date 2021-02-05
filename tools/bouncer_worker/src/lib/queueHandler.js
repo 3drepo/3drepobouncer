@@ -44,7 +44,7 @@ const listenToQueue = (channel, queueName, prefetchCount, callback) => {
 		logger.info(`Received ${msg.content.toString()} from ${queueName}`, logLabel);
 		await callback(msg.content.toString(), msg.properties.correlationId,
 			(reply, queue = rabbitmq.callback_queue) => {
-				logger.info(`Sending to reply to ${queue}: ${reply}`, logLabel);
+				logger.info(`Sending reply to ${queue}: ${reply}`, logLabel);
 				// eslint-disable-next-line new-cap
 				channel.sendToQueue(queue, new Buffer.from(reply),
 					{ correlationId: msg.properties.correlationId, appId: msg.properties.appId });
@@ -57,21 +57,21 @@ const establishChannel = async (conn, listenToJobQueue, listenToModelQueue, list
 	const channel = await conn.createChannel();
 	channel.assertQueue(rabbitmq.callback_queue, { durable: true });
 	if (listenToJobQueue) {
-		if (!JobQHandler.validateConfiguration()) {
+		if (!JobQHandler.validateConfiguration(logLabel)) {
 			exitApplication();
 		}
 		listenToQueue(channel, rabbitmq.worker_queue, rabbitmq.task_prefetch, JobQHandler.onMessageReceived);
 	}
 
 	if (listenToModelQueue) {
-		if (!ModelQHandler.validateConfiguration()) {
+		if (!ModelQHandler.validateConfiguration(logLabel)) {
 			exitApplication();
 		}
 		listenToQueue(channel, rabbitmq.model_queue, rabbitmq.model_prefetch, ModelQHandler.onMessageReceived);
 	}
 
 	if (listenToUnityQueue) {
-		if (!UnityQHandler.validateConfiguration()) {
+		if (!UnityQHandler.validateConfiguration(logLabel)) {
 			exitApplication();
 		}
 		listenToQueue(channel, rabbitmq.unity_queue, rabbitmq.unity_prefetch, UnityQHandler.onMessageReceived);
@@ -83,23 +83,35 @@ const executeTasks = async (conn, queueName, nTasks, callback) => {
 	channel.assertQueue(rabbitmq.callback_queue, { durable: true });
 	channel.prefetch(1);
 	logger.info(`Processing ${nTasks} tasks on ${queueName}...`, logLabel);
-	for (let count = 1; count <= nTasks; ++count) {
+
+	let lastActive = new Date();
+	let currentTaskNum = 1;
+	while (currentTaskNum <= nTasks) {
 		// eslint-disable-next-line no-await-in-loop
 		const msg = await channel.get(queueName, { noAck: false });
 		if (msg) {
-			logger.info(`[${count}/${nTasks}] Received ${msg.content.toString()} from ${queueName}`, logLabel);
+			logger.info(`[${currentTaskNum}/${nTasks}] Received ${msg.content.toString()} from ${queueName}`, logLabel);
 			// eslint-disable-next-line no-await-in-loop
 			await callback(msg.content.toString(), msg.properties.correlationId,
+				// eslint-disable-next-line no-loop-func
 				(reply, queue = rabbitmq.callback_queue) => {
-					logger.info(`[${count}/${nTasks}] Sending to reply to ${queue}: ${reply}`, logLabel);
+					logger.info(`[${currentTaskNum}/${nTasks}] Sending to reply to ${queue}: ${reply}`, logLabel);
 					// eslint-disable-next-line new-cap
 					channel.sendToQueue(queue, new Buffer.from(reply),
 						{ correlationId: msg.properties.correlationId, appId: msg.properties.appId });
 				});
 			channel.ack(msg);
-		} else {
-			logger.info(`[${count}/${nTasks}] No message found in ${queueName}.`, logLabel);
+			lastActive = new Date();
+			++currentTaskNum;
+		} else if (new Date() - lastActive > rabbitmq.maxWaitTimeMS) {
+			logger.info(`[${currentTaskNum}/${nTasks}] No message found in ${queueName}. Max wait time reached.`, logLabel);
 			break;
+		} else {
+			const waitTime = rabbitmq.pollingIntervalMS;
+			logger.verbose(`[${currentTaskNum}/${nTasks}] No message found in ${queueName}. Retrying in ${waitTime / 1000}s`, logLabel);
+
+			// eslint-disable-next-line no-await-in-loop
+			await sleep(waitTime);
 		}
 	}
 
@@ -173,21 +185,21 @@ QueueHandler.runNTasks = async (queueType, nTasks) => {
 	let callback;
 	switch (queueType) {
 		case queueLabel.JOB:
-			if (!JobQHandler.validateConfiguration()) {
+			if (!JobQHandler.validateConfiguration(logLabel)) {
 				exitApplication();
 			}
 			queueName = rabbitmq.worker_queue;
 			callback = JobQHandler.onMessageReceived;
 			break;
 		case queueLabel.MODEL:
-			if (!ModelQHandler.validateConfiguration()) {
+			if (!ModelQHandler.validateConfiguration(logLabel)) {
 				exitApplication();
 			}
 			queueName = rabbitmq.model_queue;
 			callback = ModelQHandler.onMessageReceived;
 			break;
 		case queueLabel.UNITY:
-			if (!UnityQHandler.validateConfiguration()) {
+			if (!UnityQHandler.validateConfiguration(logLabel)) {
 				exitApplication();
 			}
 			queueName = rabbitmq.unity_queue;
