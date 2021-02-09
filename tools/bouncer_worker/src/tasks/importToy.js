@@ -206,14 +206,13 @@ const renameGroups = async (db, database, modelId) => {
 
 	const collection = db.collection(`${modelId}.groups`);
 
-	const setting = db.collection('settings').findOne({ _id: modelId });
+	const setting = await db.collection('settings').findOne({ _id: modelId });
 
 	if (!setting) {
 		throw `Model ${setting} not found`;
 	}
 
 	const oldIdToNewId = {};
-
 	if (setting.subModels) {
 		const subModelList = [];
 		setting.subModels.forEach((subModel) => {
