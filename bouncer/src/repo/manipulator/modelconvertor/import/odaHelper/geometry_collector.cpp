@@ -19,6 +19,8 @@
 
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
+#include <boost/uuid/uuid_io.hpp>
+#include <boost/lexical_cast.hpp>
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
@@ -95,17 +97,22 @@ void  GeometryCollector::startMeshEntry() {
 	nextLayer = nextLayer.empty() ? nextMeshName : nextLayer;
 
 	if (meshData.find(nextGroupName) == meshData.end()) {
-		meshData[nextGroupName] = std::unordered_map<std::string, std::unordered_map<int, mesh_data_t>>();
+		meshData[nextGroupName] = std::unordered_map<std::string, std::unordered_map<int, std::unordered_map<std::string, mesh_data_t>>>();
 	}
 
 	if (meshData[nextGroupName].find(nextLayer) == meshData[nextGroupName].end()) {
-		meshData[nextGroupName][nextLayer] = std::unordered_map<int, mesh_data_t>();
+		meshData[nextGroupName][nextLayer] = std::unordered_map<int, std::unordered_map<std::string, mesh_data_t>>();
 	}
 
 	if (meshData[nextGroupName][nextLayer].find(currMat) == meshData[nextGroupName][nextLayer].end()) {
-		meshData[nextGroupName][nextLayer][currMat] = createMeshEntry();
+		meshData[nextGroupName][nextLayer][currMat] = std::unordered_map<std::string, mesh_data_t>();
 	}
-	currentEntry = &meshData[nextGroupName][nextLayer][currMat];
+
+	if (meshData[nextGroupName][nextLayer][currMat].find(nextMeshName) == meshData[nextGroupName][nextLayer][currMat].end()) {
+		meshData[nextGroupName][nextLayer][currMat][nextMeshName] = createMeshEntry();
+	}
+
+	currentEntry = &meshData[nextGroupName][nextLayer][currMat][nextMeshName];
 }
 
 void  GeometryCollector::stopMeshEntry() {
@@ -114,28 +121,142 @@ void  GeometryCollector::stopMeshEntry() {
 	nextMeshName = "";
 }
 
+void GeometryCollector::startOrContinueMeshByFormat(bool hasUvs, bool hasNormals, int faceSize)
+{
+	if (!meshData.size()) 
+	{
+		startMeshEntry();
+	}
+
+	//Start a new mesh if the current mesh has UVs and/or normals but this face doesn't, or vice versa.
+	if (currentEntry->rawVertices.size())
+	{
+		bool matchNormals = (currentEntry->rawNormals.size() > 0) == hasNormals;
+
+		bool matchUVs = (currentEntry->uvCoords.size() > 0) == hasUvs;
+
+		bool matchFaceSize = true;
+		if (currentEntry->faces.size())
+		{
+			matchFaceSize = currentEntry->faces.begin()->size() == faceSize;
+		}
+
+		if (!matchNormals || !matchUVs || !matchFaceSize)
+		{
+			auto lastMeshName = nextMeshName;
+			stopMeshEntry();
+			nextMeshName = lastMeshName + "_" + boost::lexical_cast<std::string>(uuidGenerator());
+
+			if (!matchNormals)
+			{
+				repoDebug << "Starting a new mesh due to normals (" << currentEntry->rawNormals.size() << " vs. " << hasNormals << ")";
+			}
+			if (!matchUVs)
+			{
+				repoDebug << "Starting a new mesh due to UVs (" << currentEntry->uvCoords.size() << " vs. " << hasUvs << ")";
+			}
+			if (!matchFaceSize)
+			{
+				repoDebug << "Starting a new mesh due to faces (" << currentEntry->faces.begin()->size() << " vs. " << faceSize << ")";
+			}
+
+			startMeshEntry();
+		}
+	}
+}
+
+void GeometryCollector::addFace(
+	const std::vector<repo::lib::RepoVector3D64>& vertices)
+{
+	if (!vertices.size())
+	{
+		repoError << "Vertices size[" << vertices.size() << "] is unsupported. A face must have more than 0 vertices";
+	}
+
+	startOrContinueMeshByFormat(false, false, vertices.size());
+
+	repo_face_t face;
+	for (auto i = 0; i < vertices.size(); ++i) 
+	{
+		auto& v = vertices[i];
+		int vertIdx = 0;
+
+		// match the vertex to generate an index for this face
+		if (currentEntry->vToVIndex.find(v) == currentEntry->vToVIndex.end())
+		{
+			vertIdx = currentEntry->rawVertices.size();
+			currentEntry->rawVertices.push_back(v);
+
+			currentEntry->vToVIndex.insert(
+				std::pair<repo::lib::RepoVector3D64,
+				std::pair<int, repo::lib::RepoVector3D64>>(
+					v,
+					std::pair<int,
+					repo::lib::RepoVector3D64>(
+						currentEntry->rawVertices.size(),
+						repo::lib::RepoVector3D64())));
+
+
+			// if the vertex has not yet been seen, also update the bounding box
+
+			if (!currentEntry->boundingBox.size())
+			{
+				currentEntry->boundingBox.push_back({ (float)v.x, (float)v.y, (float)v.z });
+				currentEntry->boundingBox.push_back({ (float)v.x, (float)v.y, (float)v.z });
+			}
+			else
+			{
+				currentEntry->boundingBox[0][0] = currentEntry->boundingBox[0][0] > v.x ? (float)v.x : currentEntry->boundingBox[0][0];
+				currentEntry->boundingBox[0][1] = currentEntry->boundingBox[0][1] > v.y ? (float)v.y : currentEntry->boundingBox[0][1];
+				currentEntry->boundingBox[0][2] = currentEntry->boundingBox[0][2] > v.z ? (float)v.z : currentEntry->boundingBox[0][2];
+
+				currentEntry->boundingBox[1][0] = currentEntry->boundingBox[1][0] < v.x ? (float)v.x : currentEntry->boundingBox[1][0];
+				currentEntry->boundingBox[1][1] = currentEntry->boundingBox[1][1] < v.y ? (float)v.y : currentEntry->boundingBox[1][1];
+				currentEntry->boundingBox[1][2] = currentEntry->boundingBox[1][2] < v.z ? (float)v.z : currentEntry->boundingBox[1][2];
+			}
+
+			if (minMeshBox.size()) {
+				minMeshBox[0] = v.x < minMeshBox[0] ? v.x : minMeshBox[0];
+				minMeshBox[1] = v.y < minMeshBox[1] ? v.y : minMeshBox[1];
+				minMeshBox[2] = v.z < minMeshBox[2] ? v.z : minMeshBox[2];
+			}
+			else {
+				minMeshBox = { v.x, v.y, v.z };
+			}
+		}
+		{
+			auto iterators = currentEntry->vToVIndex.equal_range(v);
+			vertIdx = iterators.first->second.first;
+		}
+
+		face.push_back(vertIdx);
+	}
+
+	currentEntry->faces.push_back(face);
+}
+
 void GeometryCollector::addFace(
 	const std::vector<repo::lib::RepoVector3D64> &vertices,
 	const repo::lib::RepoVector3D64& normal,
 	const std::vector<repo::lib::RepoVector2D>& uvCoords)
 {
-	if (!meshData.size()) startMeshEntry();
-
-	bool currentEntryHasUV = currentEntry->uvCoords.size();
-	bool faceHasUV = uvCoords.size();
-	if (currentEntry->rawVertices.size() && currentEntryHasUV != faceHasUV) {
-		//Start a new mesh if the current mesh has UVs but this face doesn't or vice versa.
-		auto lastMeshName = nextMeshName;
-		stopMeshEntry();
-		nextMeshName = lastMeshName + "_";
-		repoDebug << "Staring a new mesh due to UV difference";
-		startMeshEntry();
+	if (!vertices.size())
+	{
+		repoError << "Vertices size[" << vertices.size() << "] is unsupported. A face must have more than 0 vertices";
+		exit(-1);
 	}
 
-	if (faceHasUV && uvCoords.size() != vertices.size()) {
+	startOrContinueMeshByFormat(uvCoords.size(), true, vertices.size());
+
+	if ((uvCoords.size() > 0) && uvCoords.size() != vertices.size()) {
 		repoError << "Vertices size[" << vertices.size() << "] and UV size [" << uvCoords.size() << "] mismatched!";
 		exit(-1);
 	}
+
+	// Todo: this method attempts to generate indices by matching vertex based on attributes, but doesn't yet match the uv coordinates.
+	// ISSUE #432 has been raised about this.
+	// To fix this properly, merge this function and the addFace overload above, and update the matching code to support an arbitrary number
+	// of flat attributes.
 
 	repo_face_t face;
 	for (auto i = 0; i < vertices.size(); ++i) {
@@ -232,54 +353,60 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 	for (const auto &meshGroupEntry : meshData) {
 		for (const auto &meshLayerEntry : meshGroupEntry.second) {
 			for (const auto &meshMatEntry : meshLayerEntry.second) {
-				if (!meshMatEntry.second.rawVertices.size()) continue;
+				for (const auto &meshEntry : meshMatEntry.second) {
+					auto &meshData = meshEntry.second;
 
-				auto uvChannels = meshMatEntry.second.uvCoords.size() ?
-					std::vector<std::vector<repo::lib::RepoVector2D>>{meshMatEntry.second.uvCoords} :
-					std::vector<std::vector<repo::lib::RepoVector2D>>();
-
-				if (layerToTrans.find(meshLayerEntry.first) == layerToTrans.end()) {
-					layerToTrans[meshLayerEntry.first] = createTransNode(layerIDToName[meshLayerEntry.first], meshLayerEntry.first, rootId);
-					transNodes.insert(layerToTrans[meshLayerEntry.first]);
-				}
-
-				std::vector<repo::lib::RepoVector3D> vertices32;
-				vertices32.reserve(meshMatEntry.second.rawVertices.size());
-
-				std::vector<repo::lib::RepoVector3D> normals32;
-				normals32.reserve(meshMatEntry.second.rawNormals.size());
-
-				for (int i = 0; i < meshMatEntry.second.rawVertices.size(); ++i) {
-					auto v = meshMatEntry.second.rawVertices[i];
-					vertices32.push_back({ (float)(v.x - minMeshBox[0]), (float)(v.y - minMeshBox[1]), (float)(v.z - minMeshBox[2]) });
-					if (i < meshMatEntry.second.rawNormals.size()) {
-						auto n = meshMatEntry.second.rawNormals[i];
-						normals32.push_back({ (float)(n.x), (float)(n.y), (float)(n.z) });
+					if (!meshData.rawVertices.size()) {
+						continue;
 					}
+
+					auto uvChannels = meshData.uvCoords.size() ?
+						std::vector<std::vector<repo::lib::RepoVector2D>>{meshData.uvCoords} :
+						std::vector<std::vector<repo::lib::RepoVector2D>>();
+
+					if (layerToTrans.find(meshLayerEntry.first) == layerToTrans.end()) {
+						layerToTrans[meshLayerEntry.first] = createTransNode(layerIDToName[meshLayerEntry.first], meshLayerEntry.first, rootId);
+						transNodes.insert(layerToTrans[meshLayerEntry.first]);
+					}
+
+					std::vector<repo::lib::RepoVector3D> vertices32;
+					vertices32.reserve(meshData.rawVertices.size());
+
+					std::vector<repo::lib::RepoVector3D> normals32;
+					normals32.reserve(meshData.rawNormals.size());
+
+					for (int i = 0; i < meshData.rawVertices.size(); ++i) {
+						auto& v = meshData.rawVertices[i];
+						vertices32.push_back({ (float)(v.x - minMeshBox[0]), (float)(v.y - minMeshBox[1]), (float)(v.z - minMeshBox[2]) });
+						if (i < meshData.rawNormals.size()) {
+							auto& n = meshData.rawNormals[i];
+							normals32.push_back({ (float)(n.x), (float)(n.y), (float)(n.z) });
+						}
+					}
+
+					auto meshNode = repo::core::model::RepoBSONFactory::makeMeshNode(
+						vertices32,
+						meshData.faces,
+						normals32,
+						meshData.boundingBox,
+						uvChannels,
+						dummyCol,
+						dummyOutline,
+						meshGroupEntry.first,
+						{ layerToTrans[meshLayerEntry.first]->getSharedID() }
+					);
+
+					if (idToMeta.find(meshGroupEntry.first) != idToMeta.end()) {
+						metaNodes.insert(createMetaNode(meshGroupEntry.first, { meshNode.getSharedID() }, idToMeta[meshGroupEntry.first]));
+					}
+
+					if (matToMeshes.find(meshData.matIdx) == matToMeshes.end()) {
+						matToMeshes[meshData.matIdx] = std::vector<repo::lib::RepoUUID>();
+					}
+					matToMeshes[meshData.matIdx].push_back(meshNode.getSharedID());
+
+					res.insert(new repo::core::model::MeshNode(meshNode));
 				}
-
-				auto meshNode = repo::core::model::RepoBSONFactory::makeMeshNode(
-					vertices32,
-					meshMatEntry.second.faces,
-					normals32,
-					meshMatEntry.second.boundingBox,
-					uvChannels,
-					dummyCol,
-					dummyOutline,
-					meshGroupEntry.first,
-					{ layerToTrans[meshLayerEntry.first]->getSharedID() }
-				);
-
-				if (idToMeta.find(meshGroupEntry.first) != idToMeta.end()) {
-					metaNodes.insert(createMetaNode(meshGroupEntry.first, { meshNode.getSharedID() }, idToMeta[meshGroupEntry.first]));
-				}
-
-				if (matToMeshes.find(meshMatEntry.second.matIdx) == matToMeshes.end()) {
-					matToMeshes[meshMatEntry.second.matIdx] = std::vector<repo::lib::RepoUUID>();
-				}
-				matToMeshes[meshMatEntry.second.matIdx].push_back(meshNode.getSharedID());
-
-				res.insert(new repo::core::model::MeshNode(meshNode));
 			}
 		}
 	}

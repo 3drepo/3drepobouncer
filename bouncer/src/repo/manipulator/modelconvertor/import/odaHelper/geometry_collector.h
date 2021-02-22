@@ -24,7 +24,7 @@
 #include <fstream>
 #include <vector>
 #include <string>
-
+#include <boost/uuid/uuid_generators.hpp>
 
 namespace repo {
 	namespace manipulator {
@@ -158,13 +158,21 @@ namespace repo {
 					}
 
 					/**
-					* Add a face to the current mesh
+					* Add a face to the current mesh, setting the normal for all the vertices
 					* @param vertices a vector of vertices that makes up this face
 					*/
 					void addFace(
 						const std::vector<repo::lib::RepoVector3D64> &vertices,
 						const repo::lib::RepoVector3D64& normal,
 						const std::vector<repo::lib::RepoVector2D>& uvCoords = std::vector<repo::lib::RepoVector2D>()
+					);
+
+					/**
+					* Add a face to the current mesh. This has no normals or uvs (such as would be the case with polylines)
+					* @param vertices a vector of vertices that makes up this face
+					*/
+					void addFace(
+						const std::vector<repo::lib::RepoVector3D64>& vertices
 					);
 
 					/**
@@ -233,7 +241,7 @@ namespace repo {
 
 				private:
 
-					std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<int, mesh_data_t>>> meshData;
+					std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<int, std::unordered_map<std::string, mesh_data_t>>>> meshData;
 					std::unordered_map<std::string, std::unordered_map<std::string, std::string> > idToMeta;
 					std::unordered_map<std::string, std::string> layerIDToName;
 					std::string nextMeshName, nextLayer, nextGroupName;
@@ -261,7 +269,11 @@ namespace repo {
 						const  std::unordered_map<std::string, std::string> &metaValues
 					);
 
+					void startOrContinueMeshByFormat(bool hasUvs, bool hasNormals, int faceSize);
+
 					mesh_data_t createMeshEntry();
+
+					boost::uuids::random_generator uuidGenerator; // Common generator because they are apparently expensive to seed (https://stackoverflow.com/questions/3247861)
 				};
 			}
 		}
