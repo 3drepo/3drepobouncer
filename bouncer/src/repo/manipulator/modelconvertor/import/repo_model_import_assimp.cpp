@@ -826,8 +826,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 								(char*)texture->pcData,
 								size,
 								texture->mWidth,
-								texture->mHeight,
-								REPO_NODE_API_LEVEL_1));
+								texture->mHeight));
 
 							free(memblock);
 						}
@@ -859,8 +858,7 @@ repo::core::model::RepoScene* AssimpModelImport::convertAiSceneToRepoScene()
 								memblock,
 								size,
 								size,
-								0,
-								REPO_NODE_API_LEVEL_1));
+								0));
 
 							if (memblock)delete[] memblock;
 						}

@@ -34,6 +34,7 @@
 #include "../../../core/model/bson/repo_node_mesh.h"
 #include "../../../core/model/bson/repo_node_metadata.h"
 #include "../../../core/model/bson/repo_node_transformation.h"
+#include "../../../core/model/bson/repo_node_texture.h"
 
 namespace repo {
 	namespace manipulator {
@@ -44,85 +45,124 @@ namespace repo {
 			const char REPO_IMPORT_TYPE_BOOL = 'B';
 			const char REPO_IMPORT_TYPE_DATETIME = 'T';
 
-			const std::string REPO_IMPORT_METADATA = "metadata";
-			const std::string REPO_IMPORT_GEOMETRY = "geometry";
-			const std::string REPO_IMPORT_MATERIAL = "material";
+			// Node JSON fields
+			const  std::string REPO_IMPORT_METADATA = "metadata";
+			const  std::string REPO_IMPORT_GEOMETRY = "geometry";
+			const  std::string REPO_IMPORT_MATERIAL = "material";
+			const  std::string REPO_IMPORT_VERTICES = "vertices";
+			const  std::string REPO_IMPORT_UV	   = "uv";
+			const  std::string REPO_IMPORT_NORMALS  = "normals";
+			const  std::string REPO_IMPORT_INDICES  = "indices";
+			const  std::string REPO_IMPORT_BBOX 	   = "bbox";
 
-			const std::string REPO_IMPORT_VERTICES = "vertices";
-			const std::string REPO_IMPORT_NORMALS = "normals";
-			const std::string REPO_IMPORT_INDICES = "indices";
+			// Texture JSON fields
+			const  std::string REPO_TXTR_FNAME = "filename";
+			const  std::string REPO_TXTR_NUM_BYTES = "numImageBytes";
+			const  std::string REPO_TXTR_WIDTH = "width";
+			const  std::string REPO_TXTR_HEIGHT = "height";
+			const  std::string REPO_TXTR_ID = "id";
+			const  std::string REPO_TXTR_IMG_BYTES = "imageBytes";
 
-			const std::string REPO_IMPORT_BBOX = "bbox";
 
-			const std::string REPO_V1 = "BIM001";
-			const std::string REPO_V2 = "BIM002";
-
-			const std::set<std::string> supportedFileVersions = { REPO_V1, REPO_V2 };
 			const static int REPO_VERSION_LENGTH = 6;
 
 			class RepoModelImport : public AbstractModelImport
 			{
 			private:
-				std::vector<repo::core::model::RepoNode *> node_map;
-				std::vector<repo::lib::RepoMatrix> trans_map;
-				bool is32Bit = false;
+				const std::string REPO_V1 = "BIM001";
+				const std::string REPO_V2 = "BIM002";
+				const std::string REPO_V3 = "BIM003";
+				const std::set<std::string> supportedFileVersions = 
+				{ 
+					REPO_V2,
+					REPO_V3
+				};
 
-				void createObject(const boost::property_tree::ptree& tree);
-
-				char *geomBuf;
-				std::ifstream *finCompressed;
-				boost::iostreams::filtering_streambuf<boost::iostreams::input> *inbuf;
-				std::istream *fin;
+				const int REPO_V1_FILEMETA_BYTE_LEN = 56;
+				const int REPO_V2_FILEMETA_BYTE_LEN = REPO_V1_FILEMETA_BYTE_LEN;
+				const int REPO_V3_FILEMETA_BYTE_LEN = 72;
 
 				typedef struct
 				{
-					int64_t headerSize;
-					int64_t geometrySize;
-					int64_t sizesStart;
-					int64_t sizesSize;
-					int64_t matStart;
-					int64_t matSize;
-					int64_t numChildren;
+					int64_t jsonSize	 = -1;	//!< Size of the entire JSON segment
+					int64_t dataSize	 = -1;	//!< Size of the entire binary footer segment
+					int64_t sizesStart	 = -1;	//!< Starting location of the JSON sizes array from the top of file in bytes 
+					int64_t sizesSize	 = -1;	//!< Length of the JSON sizes array in bytes
+					int64_t matStart	 = -1;	//!< Starting location of the JSON materials array from the top of the file in bytes 
+					int64_t matSize		 = -1;	//!< Size of the JSON materials array in bytes
+					int64_t numChildren	 = -1;	//!< Number of children of the root node
+					int64_t textureStart = -1;	//!< Starting location of the JSON textures array from the top of the file in bytes 
+					int64_t textureSize  = -1;  //!< Size of the JSON textures array in bytes
 				} fileMeta;
 
-				struct mesh_data_t {
+				struct mesh_data_t 
+				{
 					std::vector<repo::lib::RepoVector3D64> rawVertices;
 					std::vector<repo::lib::RepoVector3D> normals;
+					std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
 					std::vector<repo_face_t> faces;
 					std::vector<std::vector<double>> boundingBox;
 					repo::lib::RepoUUID parent;
 					repo::lib::RepoUUID sharedID;
 				};
 
-				fileMeta file_meta;
-
-				std::vector<long> sizes;
-
-				repo::core::model::MaterialNode* parseMaterial(const boost::property_tree::ptree &pt);
-
+				void parseMaterial(const boost::property_tree::ptree& pt);
+				void parseTexture(const boost::property_tree::ptree& textureTree, char * dataBuffer);
 				repo::core::model::MetadataNode*  createMetadataNode(const boost::property_tree::ptree &metadata, const std::string &parentName, const repo::lib::RepoUUID &parentID);
 				mesh_data_t createMeshRecord(const boost::property_tree::ptree &geometry, const std::string &parentName, const repo::lib::RepoUUID &parentID, const repo::lib::RepoMatrix &trans);
+
+				/**
+				 * @brief Creates a property tree from the current
+				 * position in the fine input stream (fin)
+				 * @param number of chars to read
+				 * @return boost poperty tree
+				*/
 				boost::property_tree::ptree getNextJSON(long jsonSize);
 				void skipAheadInFile(long amount);
 
-				std::vector<repo::core::model::MaterialNode *> matNodeList;
-				std::vector<std::vector<repo::lib::RepoUUID>> matParents;
+				/**
+				 * @brief Creates relevant nodes for given child
+				 * of the root node in the BIM file
+				 * Directly updates:
+				 * trans_matrix_map
+				 * node_map
+				 * transformations
+				 * @param tree 
+				*/
+				void createObject(const boost::property_tree::ptree& tree);
 
-				std::vector<mesh_data_t> meshEntries;
-				repo::core::model::RepoNodeSet cameras; //!< Cameras
-				repo::core::model::RepoNodeSet materials; //!< Materials
-				repo::core::model::RepoNodeSet metadata; //!< Metadata
-				repo::core::model::RepoNodeSet transformations; //!< Transformations
-				repo::core::model::RepoNodeSet textures;
-
+				// File handling variables
 				std::string orgFile;
+				std::ifstream *finCompressed;
+				boost::iostreams::filtering_streambuf<boost::iostreams::input> *inbuf;
+				std::istream *fin;
 
+				// Source file meta data storage
+				fileMeta file_meta;
+				std::vector<long> sizes; //!< Sizes of the nodes component, used for navigation.
+				char *dataBuffer;
+				bool missingTextures = false;
+				
+				// Intermediary variables used to keep track of node hierarchy
+				std::vector<repo::core::model::RepoNode *> node_map;				//!< List of all transform nodes in order of decoding
+				std::vector<repo::lib::RepoMatrix> trans_matrix_map;				//!< List of all transformation matrices in same order as node_map
+				std::vector<repo::core::model::MaterialNode *> matNodeList;			//!< Stores a list of materials
+				std::vector<std::vector<repo::lib::RepoUUID>> matParents;			//!< Stores the UUIDs of all parents of a given material node in the same order matNodeList
+				std::map<int, std::vector<repo::lib::RepoUUID>> textureIdToParents; //!< Maps a texture to the UUID of all the parents that reference it 
+				std::vector<mesh_data_t> meshEntries;
+
+				// Variables directly used to instantiate the RepoScene
+				repo::core::model::RepoNodeSet cameras;
+				repo::core::model::RepoNodeSet materials;
+				repo::core::model::RepoNodeSet metadata;
+				repo::core::model::RepoNodeSet transformations;
+				repo::core::model::RepoNodeSet textures;
 				std::vector<double> offset;
 
 			public:
 
 				/**
-				* Create IFCModelImport with specific settings
+				* Create RepoModelImport with specific settings
 				* NOTE: The destructor will destroy the settings object referenced
 				* in this object!
 				* @param settings
@@ -145,9 +185,10 @@ namespace repo {
 				virtual repo::core::model::RepoScene* generateRepoScene(uint8_t &errMsg);
 
 				/**
-				* Import model from a given file
+				* Import model from a given file.
+				* Loads material nodes.
 				* This does not generate the Repo Scene Graph
-				* Use getRepoScene() to generate a Repo Scene Graph.
+				* Use generateRepoScene() to generate a Repo Scene Graph.
 				* @param path to the file
 				* @param error message if failed
 				* @return returns true upon success

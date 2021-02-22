@@ -25,7 +25,7 @@ void printHelp()
 {
 	std::cout << "Usage: 3drepobouncerClient path_to_config [<args>]" << std::endl;
 	std::cout << std::endl;
-	std::cout << "path_to_config\t\tPath to configuration json" << std::endl;	
+	std::cout << "path_to_config\t\tPath to configuration json" << std::endl;
 	std::cout << std::endl;
 	std::cout << "Supported Commands:" << std::endl;
 	std::cout << helpInfo() << std::endl;
@@ -66,6 +66,7 @@ repo::RepoController* instantiateController()
 		logPath = "./log/";
 
 	controller->logToFile(logPath);
+	repoLog("3D Repo Bouncer Version: " + controller->getVersion());
 	return controller;
 }
 
@@ -84,9 +85,9 @@ void logCommand(int argc, char* argv[])
 	}
 }
 
-int main(int argc, char* argv[]){
+int main(int argc, char* argv[]) {
 	repo::RepoController *controller = instantiateController();
-	if (argc < minArgs){
+	if (argc < minArgs) {
 		if (argc == 2 && isSpecialCommand(argv[1]))
 		{
 			repo_op_t op;
@@ -106,7 +107,7 @@ int main(int argc, char* argv[]){
 	}
 
 	int idx = 0;
-	std::string configPath = argv[++idx];	
+	std::string configPath = argv[++idx];
 	logCommand(argc, argv);
 	repo_op_t op;
 	op.command = argv[++idx];
@@ -142,7 +143,6 @@ int main(int argc, char* argv[]){
 			repoLogError("Failed to read configuration from file: " + configPath + " : " + e.what());
 			return REPOERR_INVALID_CONFIG_FILE;
 		}
-		
 	}
 	else
 	{

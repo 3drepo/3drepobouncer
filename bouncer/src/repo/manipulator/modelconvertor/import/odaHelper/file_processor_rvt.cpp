@@ -19,6 +19,7 @@
 #include <BimCommon.h>
 #include <Common/BmBuildSettings.h>
 #include <Gs/Gs.h>
+#include <Base/BmForgeTypeId.h>
 #include <Database/BmDatabase.h>
 #include <Database/BmUnitUtils.h>
 #include <Database/Entities/BmDBDrawing.h>
@@ -79,7 +80,7 @@ ODRX_DEFINE_PSEUDO_STATIC_MODULE(StubDeviceModuleRvt);
 class RepoRvtServices : public ExSystemServices, public OdExBimHostAppServices
 {
 protected:
-    ODRX_USING_HEAP_OPERATORS(ExSystemServices);
+	ODRX_USING_HEAP_OPERATORS(ExSystemServices);
 };
 
 OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimDatabase)
@@ -91,7 +92,7 @@ OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimData
 	{
 		OdBmDBDrawingPtr pDBDrawing = layouts->object();
 		OdDbBaseLayoutPEPtr pLayout(layouts->object());
-		
+
 		if (pDBDrawing->getBaseViewNameFormat() == OdBm::ViewType::_3d)
 		{
 			//set first 3D view available
@@ -119,7 +120,6 @@ OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimData
 
 repo::manipulator::modelconvertor::odaHelper::FileProcessorRvt::~FileProcessorRvt()
 {
-
 }
 
 void FileProcessorRvt::setTessellationParams(wrTriangulationParams params)
@@ -137,18 +137,18 @@ void setupUnitsFormat(OdBmDatabasePtr pDb, double accuracy)
 {
 	OdBmUnitsTrackingPtr pUnitsTracking = pDb->getAppInfo(OdBm::ManagerType::UnitsTracking);
 	OdBmUnitsElemPtr pUnitsElem = pUnitsTracking->getUnitsElemId().safeOpenObject();
-	if (pUnitsElem.isNull()) 
-		return;
-	
-	OdBmAUnitsPtr units = pUnitsElem->getUnits();
-	if (units.isNull()) 
+	if (pUnitsElem.isNull())
 		return;
 
-	OdBmFormatOptionsPtrArray formatOptionsArr;
-	units->getFormatOptionsArr(formatOptionsArr);
-	for (uint32_t i = 0; i < formatOptionsArr.size(); i++)
+	OdBmAUnitsPtr units = pUnitsElem->getUnits();
+	if (units.isNull())
+		return;
+
+	OdBmMap<OdBmForgeTypeId, OdBmFormatOptionsPtr> aFormatOptions;
+
+	for (const auto &entry : aFormatOptions)
 	{
-		OdBmFormatOptions* formatOptions = formatOptionsArr[i];
+		auto formatOptions = entry.second;
 		//.. NOTE: Here the format of units is configured
 		formatOptions->setAccuracy(accuracy);
 		formatOptions->setRoundingMethod(OdBm::RoundingMethod::Nearest);
@@ -168,42 +168,43 @@ uint8_t FileProcessorRvt::readFile()
 	OdStaticRxObject<RepoRvtServices> svcs;
 	odrxInitialize(&svcs);
 	OdRxModule* pModule = ::odrxDynamicLinker()->loadModule(OdBmLoaderModuleName, false);
+	odgsInitialize();
 	try
 	{
 		//.. change tessellation params here
 		wrTriangulationParams triParams(USE_NEW_TESSELLATION);
 		setTessellationParams(triParams);
-
-		odgsInitialize();
 		OdBmDatabasePtr pDb = svcs.readFile(OdString(file.c_str()));
 		if (!pDb.isNull())
 		{
 			OdDbBaseDatabasePEPtr pDbPE(pDb);
 			OdString layout = Get3DLayout(pDbPE, pDb);
 			repoInfo << "Using 3D View: " << convertToStdString(layout);
-			if (layout.isEmpty())
-				return REPOERR_VALID_3D_VIEW_NOT_FOUND;
+			if (layout.isEmpty()) {
+				nRes = REPOERR_VALID_3D_VIEW_NOT_FOUND;
+			}
+			else {
+				pDbPE->setCurrentLayout(pDb, layout);
 
-			pDbPE->setCurrentLayout(pDb, layout);
+				OdGiContextForBmDatabasePtr pBimContext = OdGiContextForBmDatabase::createObject();
+				OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(StubDeviceModuleRvt)(OD_T("StubDeviceModuleRvt"));
 
-			OdGiContextForBmDatabasePtr pBimContext = OdGiContextForBmDatabase::createObject();
-			OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(StubDeviceModuleRvt)(OD_T("StubDeviceModuleRvt"));
+				((StubDeviceModuleRvt*)pGsModule.get())->init(collector, pDb);
+				OdGsDevicePtr pDevice = pGsModule->createDevice();
 
-			((StubDeviceModuleRvt*)pGsModule.get())->init(collector, pDb);
-			OdGsDevicePtr pDevice = pGsModule->createDevice();
+				pBimContext->setDatabase(pDb);
+				pDevice = pDbPE->setupActiveLayoutViews(pDevice, pBimContext);
 
-			pBimContext->setDatabase(pDb);
-			pDevice = pDbPE->setupActiveLayoutViews(pDevice, pBimContext);
+				// NOTE: Render mode can be kFlatShaded, kGouraudShaded, kFlatShadedWithWireframe, kGouraudShadedWithWireframe
+				// kHiddenLine mode prevents materails from being uploaded
+				// Uncomment the setupRenderMode function call to change render mode
+				//setupRenderMode(pDb, pDevice, pBimContext, OdGsView::kFlatShaded);
 
-			// NOTE: Render mode can be kFlatShaded, kGouraudShaded, kFlatShadedWithWireframe, kGouraudShadedWithWireframe
-			// kHiddenLine mode prevents materails from being uploaded
-			// Uncomment the setupRenderMode function call to change render mode
-			//setupRenderMode(pDb, pDevice, pBimContext, OdGsView::kFlatShaded);
-
-			OdGsDCRect screenRect(OdGsDCPoint(0, 0), OdGsDCPoint(1000, 1000)); //Set the screen space to the borders of the scene
-			pDevice->onSize(screenRect);
-			setupUnitsFormat(pDb, ROUNDING_ACCURACY);
-			pDevice->update();
+				OdGsDCRect screenRect(OdGsDCPoint(0, 0), OdGsDCPoint(1000, 1000)); //Set the screen space to the borders of the scene
+				pDevice->onSize(screenRect);
+				setupUnitsFormat(pDb, ROUNDING_ACCURACY);
+				pDevice->update();
+			}
 		}
 	}
 	catch (OdError& e)
@@ -214,9 +215,10 @@ uint8_t FileProcessorRvt::readFile()
 		}
 		else {
 			nRes = REPOERR_LOAD_SCENE_FAIL;
-		}	
+		}
 	}
+	odgsUninitialize();
+	odrxUninitialize();
 
 	return nRes;
 }
-

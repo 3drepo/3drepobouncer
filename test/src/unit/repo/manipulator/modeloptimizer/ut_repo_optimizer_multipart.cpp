@@ -55,7 +55,9 @@ repo::core::model::MeshNode* createRandomMesh(const bool hasUV, const std::vecto
 	std::vector<repo_face_t> faces;
 
 	for (int i = 0; i < nVertices; ++i) {
-		vertices.push_back({ (float)std::rand(), (float)std::rand(), (float)std::rand() });
+		vertices.push_back({static_cast<float>(std::rand()), 
+							static_cast<float>(std::rand()),
+							static_cast<float>(std::rand())});
 	}
 
 	for (int i = 0; i < nFaces; ++i) {

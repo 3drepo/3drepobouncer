@@ -123,6 +123,24 @@ static int runProcess(
 #endif
 }
 
+static int testUpload(
+	std::string mongoDbName,
+	std::string projectName,
+	std::string fileName
+)
+{
+	std::string uploadCmd = produceUploadArgs(
+		mongoDbName,
+		projectName,
+		getDataPath(fileName));
+
+	int errCode = runProcess(uploadCmd);
+	;
+	repoInfo << "Error code from bouncer client: " << errCode
+		<< ", " << (int)errCode;
+	return errCode;
+};
+
 TEST(RepoClientTest, UploadTestInvalidDBConn)
 {
 	//this ensures we can run processes
@@ -134,6 +152,7 @@ TEST(RepoClientTest, UploadTestInvalidDBConn)
 	EXPECT_EQ((int)REPOERR_AUTH_FAILED, runProcess(failToConnect));
 	EXPECT_FALSE(projectExists(db, "failConn"));
 }
+
 TEST(RepoClientTest, UploadTestBadDBAuth)
 {
 	//this ensures we can run processes
@@ -239,6 +258,39 @@ TEST(RepoClientTest, UploadTestMissingNodes)
 	EXPECT_TRUE(projectExists(db, "missing"));
 }
 
+TEST(RepoClientTest, UploadTestBIM)
+{
+	////this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+
+	std::string mongoDbName = "stUpload";
+
+	//OK BIM003 file with textures
+	std::string okBim3PrjName = "okBIM3Test";
+	EXPECT_EQ(REPOERR_OK, testUpload(mongoDbName, okBim3PrjName, "RepoModelImport/BrickWalls_bim3.bim"));
+	EXPECT_TRUE(projectExists(mongoDbName, okBim3PrjName));
+
+	// OK BIM002 file with no textures
+	std::string okBim2PrjName = "okBIM2Test";
+	EXPECT_EQ(REPOERR_OK, testUpload(mongoDbName, okBim2PrjName, "RepoModelImport/cube_bim2_navis_2021_repo_4.6.1.bim"));
+	EXPECT_TRUE(projectExists(mongoDbName, okBim2PrjName));
+
+	// Spoofed BIM001
+	std::string spoofedBim1PrjName = "spoofedBIM1Test";
+	EXPECT_EQ(REPOERR_UNSUPPORTED_BIM_VERSION, testUpload(mongoDbName, spoofedBim1PrjName, "RepoModelImport/cube_bim1_spoofed.bim"));
+	EXPECT_FALSE(projectExists(mongoDbName, spoofedBim1PrjName));
+
+	// Corrupt BIM003 - Missing numImageBytes field
+	std::string corrTxtrBim3PrjName = "corruptedTextureBIM3Test";
+	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_TEXTURE, testUpload(mongoDbName, corrTxtrBim3PrjName, "RepoModelImport/BrickWalls_bim3_CorruptedTextureField.bim"));
+	EXPECT_TRUE(projectExists(mongoDbName, corrTxtrBim3PrjName));
+
+	// Corrupt BIM003 - Material references a texture id not included in file
+	std::string corrMatBim3PrjName = "corruptedMaterialBIM3Test";
+	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_NODES, testUpload(mongoDbName, corrMatBim3PrjName, "RepoModelImport/BrickWalls_bim3_MissingTexture.bim"));
+	EXPECT_TRUE(projectExists(mongoDbName, corrMatBim3PrjName));
+}
+
 TEST(RepoClientTest, UploadTestIFC)
 {
 	//this ensures we can run processes
@@ -290,6 +342,18 @@ TEST(RepoClientTest, UploadTestRVT)
 	std::string rvtUpload3 = produceUploadArgs(db, "rvtTest3", getDataPath(rvtNo3DViewModel));
 	EXPECT_EQ((int)REPOERR_VALID_3D_VIEW_NOT_FOUND, runProcess(rvtUpload3));
 	EXPECT_FALSE(projectExists(db, "rvtTest3"));
+}
+
+TEST(RepoClientTest, UploadTestRVT2021)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
+
+	//Upload RVT file
+	std::string rvtUpload = produceUploadArgs(db, "rvtTest2021", getDataPath(rvtModel2021));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(rvtUpload));
+	EXPECT_TRUE(projectExists(db, "rvtTest2021"));
 }
 
 TEST(RepoClientTest, UploadTestSPM)

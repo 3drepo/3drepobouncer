@@ -141,80 +141,22 @@ uint8_t RepoManipulator::commitScene(
 	const std::string                      &desc)
 {
 	repoLog("Manipulator: Committing model to database");
-	uint8_t errCode = REPOERR_UPLOAD_FAILED;
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	auto manager = repo::core::handler::fileservice::FileManager::getManager();
 	std::string projOwner = owner.empty() ? cred->getStringField("user") : owner;
 
-	std::string msg;
 	//Check if database exists
 	std::string dbName = scene->getDatabaseName();
 	std::string projectName = scene->getProjectName();
 	if (dbName.empty() || projectName.empty())
 	{
 		repoError << "Failed to commit scene : database name or project name is empty!";
-		errCode = REPOERR_UPLOAD_FAILED;
+		return REPOERR_UPLOAD_FAILED;
 	}
 
-	if (handler && scene)
-	{
-		errCode = scene->commit(handler, manager, msg, projOwner, desc, tag);
-		if (errCode == REPOERR_OK) {
-			repoInfo << "Scene successfully committed to the database";
-			bool success = true;
-			if (!(success = (scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size())))
-			{
-				if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)) {
-					repoInfo << "Optimised scene not found. Attempt to generate...";
-					success = generateAndCommitStashGraph(databaseAd, cred, scene);
-				}
-				else if (success = scene->commitStash(handler, msg))
-				{
-					repoInfo << "Commited scene stash successfully.";
-				}
-				else
-				{
-					repoError << "Failed to commit scene stash : " << msg;
-				}
-			}
-
-			if (success)
-			{
-				repoInfo << "Generating Selection Tree JSON...";
-				if (generateAndCommitSelectionTree(databaseAd, cred, bucketName, bucketRegion, scene))
-					repoInfo << "Selection Tree Stored into the database";
-				else
-					repoError << "failed to commit selection tree";
-			}
-
-			if (success)
-			{
-				modelutility::SceneManager sceneManager;
-				if (sceneManager.isSrcEnabled(scene, handler))
-				{
-					repoInfo << "Generating SRC stashes...";
-					if (success = generateAndCommitSRCBuffer(databaseAd, cred, bucketName, bucketRegion, scene))
-						repoInfo << "SRC Stashes Stored into the database";
-					else
-						repoError << "failed to commit SRC";
-				}
-			}
-
-			errCode = success ? REPOERR_OK : REPOERR_UPLOAD_FAILED;
-		}
-	}
-	else
-	{
-		if (!handler)
-			msg += "Failed to connect to database";
-		if (!scene)
-			msg += "Trying to commit a scene that does not exist!";
-		repoError << "Error committing scene to the database : " << msg;
-		errCode = REPOERR_UPLOAD_FAILED;
-	}
-
-	return errCode;
+	modelutility::SceneManager sceneManager;
+	return sceneManager.commitScene(scene, projOwner, tag, desc, handler, manager);
 }
 
 void RepoManipulator::compareScenes(
@@ -394,16 +336,17 @@ repo::core::model::RepoScene* RepoManipulator::fetchScene(
 	const repo::core::model::RepoBSON             *cred,
 	const std::string                             &database,
 	const std::string                             &project,
-	const repo::lib::RepoUUID                                &uuid,
+	const repo::lib::RepoUUID                     &uuid,
 	const bool                                    &headRevision,
 	const bool                                    &lightFetch,
 	const bool                                    &ignoreRefScene,
-	const bool                                    &skeletonFetch)
+	const bool                                    &skeletonFetch,
+	const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus)
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
 	modelutility::SceneManager sceneManager;
-	return sceneManager.fetchScene(handler, database, project, uuid, headRevision, lightFetch, ignoreRefScene, skeletonFetch);
+	return sceneManager.fetchScene(handler, database, project, uuid, headRevision, lightFetch, ignoreRefScene, skeletonFetch, includeStatus);
 }
 
 void RepoManipulator::fetchScene(

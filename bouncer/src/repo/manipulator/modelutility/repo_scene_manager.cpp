@@ -18,6 +18,7 @@
 
 #include "../../core/model/bson/repo_bson_builder.h"
 #include "../../core/model/bson/repo_bson_ref.h"
+#include "../../error_codes.h"
 #include "../modeloptimizer/repo_optimizer_multipart.h"
 #include "../modelconvertor/export/repo_model_export_gltf.h"
 #include "../modelconvertor/export/repo_model_export_src.h"
@@ -42,7 +43,6 @@ bool SceneManager::commitWebBuffers(
 	//Upload the files
 	for (const auto &bufferPair : resultBuffers.geoFiles)
 	{
-
 		if (success &= fileManager->uploadFileAndCommit(databaseName, projectName + "." + geoStashExt, bufferPair.first, bufferPair.second))
 		{
 			repoInfo << "File (" << bufferPair.first << ") added successfully to file storage.";
@@ -57,7 +57,7 @@ bool SceneManager::commitWebBuffers(
 	{
 		std::string errMsg;
 		std::string fileName = bufferPair.first;
-		
+
 		if (success &= fileManager->uploadFileAndCommit(databaseName, projectName + "." + jsonStashExt, bufferPair.first, bufferPair.second))
 		{
 			repoInfo << "File (" << fileName << ") added successfully to file storage.";
@@ -71,7 +71,7 @@ bool SceneManager::commitWebBuffers(
 	std::string errMsg;
 	if (REPO_COLLECTION_STASH_UNITY == geoStashExt)
 	{
-	       if (success &= handler->upsertDocument(databaseName, projectName + "." + geoStashExt, resultBuffers.unityAssets,
+		if (success &= handler->upsertDocument(databaseName, projectName + "." + geoStashExt, resultBuffers.unityAssets,
 			true, errMsg))
 		{
 			repoInfo << "Unity assets list added successfully.";
@@ -98,15 +98,93 @@ bool SceneManager::commitWebBuffers(
 	return success;
 }
 
+uint8_t SceneManager::commitScene(
+	repo::core::model::RepoScene                          *scene,
+	const std::string									  &owner,
+	const std::string									  &tag,
+	const std::string									  &desc,
+	repo::core::handler::AbstractDatabaseHandler          *handler,
+	repo::core::handler::fileservice::FileManager         *fileManager
+) {
+	uint8_t errCode = REPOERR_UPLOAD_FAILED;
+	std::string msg;
+	if (handler && scene)
+	{
+		errCode = scene->commit(handler, fileManager, msg, owner, desc, tag);
+		if (errCode == REPOERR_OK) {
+			repoInfo << "Scene successfully committed to the database";
+			bool success = true;
+			if (!(success = (scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size())))
+			{
+				if (!scene->hasRoot(repo::core::model::RepoScene::GraphType::OPTIMIZED)) {
+					repoInfo << "Optimised scene not found. Attempt to generate...";
+					success = generateStashGraph(scene, handler);
+				}
+				else if (success = scene->commitStash(handler, msg))
+				{
+					repoInfo << "Commited scene stash successfully.";
+				}
+				else
+				{
+					repoError << "Failed to commit scene stash : " << msg;
+				}
+			}
+
+			if (success)
+			{
+				repoInfo << "Generating Selection Tree JSON...";
+				if (generateAndCommitSelectionTree(scene, handler, fileManager))
+					repoInfo << "Selection Tree Stored into the database";
+				else
+					repoError << "failed to commit selection tree";
+			}
+
+			if (success)
+			{
+				if (shouldGenerateSrcFiles(scene, handler))
+				{
+					repoInfo << "Generating SRC stashes...";
+					repo_web_buffers_t buffers;
+					if (success = generateWebViewBuffers(scene, repo::manipulator::modelconvertor::WebExportType::SRC, buffers, handler, fileManager))
+						repoInfo << "SRC Stashes Stored into the database";
+					else
+						repoError << "failed to commit SRC";
+				}
+			}
+
+			if (success) {
+				errCode = REPOERR_OK;
+				bool isFed = scene->getAllReferences(repo::core::model::RepoScene::GraphType::DEFAULT).size();
+				scene->updateRevisionStatus(handler, isFed ? repo::core::model::RevisionNode::UploadStatus::COMPLETE : repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES);
+			}
+			else {
+				errCode = REPOERR_UPLOAD_FAILED;
+			}
+		}
+	}
+	else
+	{
+		if (!handler)
+			msg += "Failed to connect to database";
+		if (!scene)
+			msg += "Trying to commit a scene that does not exist!";
+		repoError << "Error committing scene to the database : " << msg;
+		errCode = REPOERR_UPLOAD_FAILED;
+	}
+
+	return errCode;
+}
+
 repo::core::model::RepoScene* SceneManager::fetchScene(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	const std::string                             &database,
 	const std::string                             &project,
-	const repo::lib::RepoUUID                                &uuid,
+	const repo::lib::RepoUUID                     &uuid,
 	const bool                                    &headRevision,
 	const bool                                    &lightFetch,
 	const bool                                    &ignoreRefScenes,
-	const bool                                    &skeletonFetch)
+	const bool                                    &skeletonFetch,
+	const std::vector<repo::core::model::RevisionNode::UploadStatus> &includeStatus)
 {
 	repo::core::model::RepoScene* scene = nullptr;
 	if (handler)
@@ -118,7 +196,7 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 		{
 			if (skeletonFetch)
 				scene->skipLoadingExtFiles();
-			if(ignoreRefScenes)
+			if (ignoreRefScenes)
 				scene->ignoreReferenceScene();
 			if (headRevision)
 				scene->setBranch(uuid);
@@ -126,13 +204,13 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 				scene->setRevision(uuid);
 
 			std::string errMsg;
-			if (scene->loadRevision(handler, errMsg))
+			if (scene->loadRevision(handler, errMsg, includeStatus))
 			{
 				repoInfo << "Loaded" <<
 					(headRevision ? (" head revision of branch " + uuid.toString())
-					: (" revision " + uuid.toString()))
+						: (" revision " + uuid.toString()))
 					<< " of " << database << "." << project;
-				if (lightFetch )
+				if (lightFetch)
 				{
 					if (scene->loadStash(handler, errMsg))
 					{
@@ -146,7 +224,7 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 						{
 							repoTrace << "Scene Loaded";
 						}
-						else{
+						else {
 							delete scene;
 							scene = nullptr;
 						}
@@ -170,7 +248,7 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 							}
 						}
 					}
-					else{
+					else {
 						delete scene;
 						scene = nullptr;
 					}
@@ -184,7 +262,7 @@ repo::core::model::RepoScene* SceneManager::fetchScene(
 				scene = nullptr;
 			}
 		}
-		else{
+		else {
 			repoError << "Failed to create a RepoScene(out of memory?)!";
 		}
 	}
@@ -238,7 +316,7 @@ void SceneManager::fetchScene(
 bool SceneManager::generateStashGraph(
 	repo::core::model::RepoScene              *scene,
 	repo::core::handler::AbstractDatabaseHandler *handler
-	)
+)
 {
 	bool success = false;
 	if (success = (scene && scene->hasRoot(repo::core::model::RepoScene::GraphType::DEFAULT)))
@@ -378,10 +456,10 @@ bool SceneManager::generateAndCommitSelectionTree(
 				std::string fileName = fileNamePrefix + file.first;
 
 				if (handler && fileManager->uploadFileAndCommit(
-							databaseName,
-							projectName + "." + REPO_COLLECTION_STASH_JSON,
-							fileName,
-							file.second))
+					databaseName,
+					projectName + "." + REPO_COLLECTION_STASH_JSON,
+					fileName,
+					file.second))
 				{
 					repoInfo << "File (" << fileName << ") added successfully to file storage.";
 				}
@@ -433,18 +511,19 @@ bool SceneManager::isVrEnabled(
 	return user.isVREnabled();
 }
 
-bool SceneManager::isSrcEnabled(
+bool SceneManager::shouldGenerateSrcFiles(
 	const repo::core::model::RepoScene* scene,
 	repo::core::handler::AbstractDatabaseHandler* handler) const
 {
 	repo::core::model::RepoUser user(handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, BSON("user" << scene->getDatabaseName())));
-	return user.isSrcEnabled();
+	//only generate SRC files if the user has the src flag enabled and there are meshes
+	return scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size() && user.isSrcEnabled();
 }
 
 bool SceneManager::removeStashGraph(
 	repo::core::model::RepoScene                 *scene,
 	repo::core::handler::AbstractDatabaseHandler *handler
-	)
+)
 {
 	bool success;
 	if (success = scene)
@@ -466,4 +545,3 @@ bool SceneManager::removeStashGraph(
 
 	return success;
 }
-
