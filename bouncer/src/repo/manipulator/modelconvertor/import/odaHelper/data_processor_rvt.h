@@ -93,10 +93,11 @@ namespace repo {
 						bool& missingTexture) override;
 
 					void convertTo3DRepoVertices(
+						int numVertices,
 						const OdInt32* p3Vertices,
 						std::vector<repo::lib::RepoVector3D64>& verticesOut,
 						repo::lib::RepoVector3D64& normalOut,
-						std::vector<repo::lib::RepoVector2D>& uvOut) override;
+						std::vector<repo::lib::RepoVector2D>& uvOut);
 
 				private:
 					void hiddenElementsViewRejection(OdBmDBViewPtr pDBView);
