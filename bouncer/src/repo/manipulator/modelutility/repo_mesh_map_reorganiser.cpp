@@ -22,9 +22,11 @@ using namespace repo::manipulator::modelutility;
 
 MeshMapReorganiser::MeshMapReorganiser(
 	const repo::core::model::MeshNode *mesh,
-	const size_t                      &vertThreshold) :
+	const size_t                    &vertThreshold,
+	const size_t					&faceThreshold) :
 	mesh(mesh),
 	maxVertices(vertThreshold),
+	maxFaces(faceThreshold),
 	oldFaces(mesh->getFaces()),
 	oldVertices(mesh->getVertices()),
 	oldNormals(mesh->getNormals()),
@@ -39,7 +41,7 @@ MeshMapReorganiser::MeshMapReorganiser(
 		newColors = oldColors;
 		newUVs = oldUVs;
 		newFaces.reserve(oldFaces.size());
-		serialisedFaces.reserve(oldFaces.size() * 3);
+		serialisedFaces.reserve(oldFaces.size() * static_cast<int>(mesh->getPrimitive()));
 
 		if (!(reMapSuccess = performSplitting()))
 		{
@@ -219,7 +221,7 @@ bool MeshMapReorganiser::performSplitting()
 		// If the current cumulative count of vertices is greater than the
 		// vertex limit then start a new mesh.
 		// If newMappings === 0 we need to initialize the first mesh
-		if (((subMeshVertexCount + currentMeshNumVertices) > maxVertices) || finishedSubMesh) {
+		if (((subMeshVertexCount + currentMeshNumVertices) > maxVertices) || ((subMeshFaceCount + currentMeshNumFaces) > maxFaces) || finishedSubMesh) {
 			// Close off the previous sub mesh
 			if (!finishedSubMesh) // Have we already finished this one
 			{
@@ -238,7 +240,7 @@ bool MeshMapReorganiser::performSplitting()
 
 		// Now we've started a new mesh is the mesh that we're trying to add greater than
 		// the limit itself. In the case that it is, this will always flag as above.
-		if (currentMeshNumVertices > maxVertices) {
+		if ((currentMeshNumVertices > maxVertices) || (currentMeshNumFaces > maxFaces)) {
 			size_t retTotalVCount, retTotalFCount;
 			newMatMapEntry(currentSubMesh, totalVertexCount, totalFaceCount);
 			if (!splitLargeMesh(currentSubMesh, newMappings, idMapIdx, orgFaceIdx, totalVertexCount, totalFaceCount))
@@ -253,31 +255,23 @@ bool MeshMapReorganiser::performSplitting()
 		else
 		{
 			newMatMapEntry(currentSubMesh, totalVertexCount, totalFaceCount);
+
 			for (uint32_t fIdx = 0; fIdx < currentMeshNumFaces; fIdx++)
 			{
 				repo_face_t currentFace = oldFaces[orgFaceIdx++];
-				auto        nSides = currentFace.size();
-
-				if (nSides != 3)
+				repo_face_t newFace;
+				for (const auto& indexValue : currentFace)
 				{
-					repoError << "Non triangulated face with " << nSides << " vertices.";
+					// Take currentMeshVFrom from Index Value to reset to zero start,
+					// then add back in the current running total to append after
+					// previous mesh.
+					auto newIdx = indexValue + (subMeshVertexCount - currentMeshVFrom);
+					newFace.push_back(newIdx);
+					serialisedFaces.push_back(newIdx);
 				}
-				else
-				{
-					repo_face_t newFace;
-					for (const auto &indexValue : currentFace)
-					{
-						// Take currentMeshVFrom from Index Value to reset to zero start,
-						// then add back in the current running total to append after
-						// previous mesh.
-						auto newIdx = indexValue + (subMeshVertexCount - currentMeshVFrom);
-						newFace.push_back(newIdx);
-						serialisedFaces.push_back(newIdx);
-					}
-					newFaces.push_back(newFace);
-					++subMeshFaceCount;
-					++totalFaceCount;
-				}
+				newFaces.push_back(newFace);
+				++subMeshFaceCount;
+				++totalFaceCount;
 			}
 
 			updateIDMapArray(currentMeshNumVertices, idMapIdx++);
@@ -344,85 +338,80 @@ bool MeshMapReorganiser::splitLargeMesh(
 	for (uint32_t fIdx = 0; fIdx < currentMeshNumFaces; ++fIdx) {
 		repo_face_t currentFace = oldFaces[orgFaceIdx++];
 		auto        nSides = currentFace.size();
-		if (nSides != 3)
+		
+		// If we haven't started yet, or the current number of vertices that we have
+		// split is greater than the limit we need to start a new subMesh
+		if (((splitMeshVertexCount + nSides) > maxVertices) || (splitMeshFaceCount >= maxFaces) || !startedLargeMeshSplit) {
+			
+			// If we have started we must be here because we have created a split mesh
+			// greater than the required number of vertices
+
+			if (fIdx)
+				splitMap[currentSubMesh.mesh_id].push_back(newMappings.size() - 1);
+
+			if (startedLargeMeshSplit) {
+				updateIDMapArray(splitMeshVertexCount, idMapIdx++);
+				finishSubMesh(newMappings.back(), bboxMin, bboxMax, splitMeshVertexCount, splitMeshFaceCount);
+
+				completeLastMatMapEntry(matMap.back().back().vertFrom + splitMeshVertexCount,
+					matMap.back().back().triFrom + splitMeshFaceCount, bboxMin, bboxMax);
+			}
+
+			totalVertexCount += splitMeshVertexCount;
+			totalFaceCount += splitMeshFaceCount;
+			totalLargeMeshVertexCount += splitMeshVertexCount;
+			startedLargeMeshSplit = true;
+			newMappings.resize(newMappings.size() + 1);
+
+			startSubMesh(newMappings.back(), mesh->getUniqueID(), currentSubMesh.material_id, totalVertexCount, totalFaceCount);
+			newMatMapEntry(currentSubMesh, totalVertexCount, totalFaceCount);
+			splitMeshVertexCount = 0;
+			splitMeshFaceCount = 0;
+			reIndexMap.clear();
+		}//if (((splitMeshVertexCount + nSides) > maxVertices) || ((splitMeshFaceCount + 1) > maxFaces) || !startedLargeMeshSplit)
+
+		repo_face_t newFace;
+		for (const auto& indexValue : currentFace)
 		{
-			repoError << "Non triangulated face with " << nSides << " vertices.";
-		}
-		else
-		{
-			// If we haven't started yet, or the current number of vertices that we have
-			// split is greater than the limit we need to start a new subMesh
-			if (((splitMeshVertexCount + nSides) > maxVertices) || !startedLargeMeshSplit) {
-				// If we have started we must be here because we have created a split mesh
-				// greater than the required number of vertices
-
-				if (fIdx)
-					splitMap[currentSubMesh.mesh_id].push_back(newMappings.size() - 1);
-
-				if (startedLargeMeshSplit) {
-					updateIDMapArray(splitMeshVertexCount, idMapIdx++);
-					finishSubMesh(newMappings.back(), bboxMin, bboxMax, splitMeshVertexCount, splitMeshFaceCount);
-
-					completeLastMatMapEntry(matMap.back().back().vertFrom + splitMeshVertexCount,
-						matMap.back().back().triFrom + splitMeshFaceCount, bboxMin, bboxMax);
-				}
-
-				totalVertexCount += splitMeshVertexCount;
-				totalFaceCount += splitMeshFaceCount;
-				totalLargeMeshVertexCount += splitMeshVertexCount;
-				startedLargeMeshSplit = true;
-				newMappings.resize(newMappings.size() + 1);
-
-				startSubMesh(newMappings.back(), mesh->getUniqueID(), currentSubMesh.material_id, totalVertexCount, totalFaceCount);
-				newMatMapEntry(currentSubMesh, totalVertexCount, totalFaceCount);
-				splitMeshVertexCount = 0;
-				splitMeshFaceCount = 0;
-				reIndexMap.clear();
-			}//if (((splitMeshVertexCount + nSides) > maxVertices) || !startedLargeMeshSplit)
-
-			repo_face_t newFace;
-			for (const auto &indexValue : currentFace)
+			const auto it = reIndexMap.find(indexValue);
+			if (it == reIndexMap.end())
 			{
-				const auto it = reIndexMap.find(indexValue);
-				if (it == reIndexMap.end())
+				reIndexMap[indexValue] = splitMeshVertexCount;
+				repo::lib::RepoVector3D vertex = oldVertices[indexValue];
+				reMappedVertices.push_back(vertex);
+
+				if (hasNormal)
 				{
-					reIndexMap[indexValue] = splitMeshVertexCount;
-					repo::lib::RepoVector3D vertex = oldVertices[indexValue];
-					reMappedVertices.push_back(vertex);
-
-					if (hasNormal)
-					{
-						reMappedNormals.push_back(oldNormals[indexValue]);
-					}
-
-					if (hasColor)
-					{
-						reMappedCols.push_back(oldColors[indexValue]);
-					}
-
-					if (hasUV)
-					{
-						for (int iUV = 0; iUV < oldUVs.size(); ++iUV)
-							reMappedUVs[iUV].push_back(oldUVs[iUV][indexValue]);
-					}
-
-					updateBoundingBoxes(bboxMin, bboxMax, vertex, vertex);
-					splitMeshVertexCount++;
-				}
-				if (splitMeshVertexCount < reIndexMap[indexValue])
-				{
-					repoError << "SplitMesh Vertex count(" << splitMeshVertexCount << ") "
-						<< "is smaller than remapped index value(" << reIndexMap[indexValue] << ") -  potentially out of range.";
-					return false;
+					reMappedNormals.push_back(oldNormals[indexValue]);
 				}
 
-				newFace.push_back(reIndexMap[indexValue]);
-				serialisedFaces.push_back(reIndexMap[indexValue]);
-			}//for (const auto &indexValue : currentFace)
+				if (hasColor)
+				{
+					reMappedCols.push_back(oldColors[indexValue]);
+				}
 
-			newFaces.push_back(newFace);
-			splitMeshFaceCount++;
-		}//else nSides != 3
+				if (hasUV)
+				{
+					for (int iUV = 0; iUV < oldUVs.size(); ++iUV)
+						reMappedUVs[iUV].push_back(oldUVs[iUV][indexValue]);
+				}
+
+				updateBoundingBoxes(bboxMin, bboxMax, vertex, vertex);
+				splitMeshVertexCount++;
+			}
+			if (splitMeshVertexCount < reIndexMap[indexValue])
+			{
+				repoError << "SplitMesh Vertex count (" << splitMeshVertexCount << ") "
+					<< "is smaller than remapped index value (" << reIndexMap[indexValue] << ") -  potentially out of range.";
+				return false;
+			}
+
+			newFace.push_back(reIndexMap[indexValue]);
+			serialisedFaces.push_back(reIndexMap[indexValue]);
+		}//for (const auto &indexValue : currentFace)
+
+		newFaces.push_back(newFace);
+		splitMeshFaceCount++;
 	}//for (uint32_t fIdx = 0; fIdx < currentMeshNumFaces; ++fIdx)
 
 	updateIDMapArray(splitMeshVertexCount, idMapIdx);

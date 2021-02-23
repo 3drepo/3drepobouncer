@@ -55,15 +55,24 @@ namespace repo {
 #define REPO_NODE_MESH_LABEL_VERTEX_FROM 		    "v_from"
 #define REPO_NODE_MESH_LABEL_VERTEX_TO 		        "v_to"
 #define REPO_NODE_MESH_LABEL_TRIANGLE_FROM	        "t_from"
-#define REPO_NODE_MESH_LABEL_TRIANGLE_TO		        "t_to"
-#define REPO_NODE_MESH_LABEL_MATERIAL_ID		        "mat_id"
+#define REPO_NODE_MESH_LABEL_TRIANGLE_TO		    "t_to"
+#define REPO_NODE_MESH_LABEL_MATERIAL_ID		    "mat_id"
 #define REPO_NODE_MESH_LABEL_MERGE_MAP		        "m_map"
 			//------------------------------------------------------------------------------
 #define REPO_NODE_MESH_LABEL_GROUPING		        "grouping"
+			//------------------------------------------------------------------------------
+#define REPO_NODE_MESH_LABEL_PRIMITIVE		        "primitive"
 
 			class REPO_API_EXPORT MeshNode :public RepoNode
 			{
 			public:
+				enum class Primitive {
+					UNKNOWN = 0, 
+					POINTS = 1,
+					LINES = 2,
+					TRIANGLES = 3, 
+					QUADS = 4
+				};
 
 				/**
 				* Default constructor
@@ -88,7 +97,7 @@ namespace repo {
 				/**
 				* Returns a number, indicating it's mesh format
 				* maximum of 32 bit, each bit represent the presents of the following
-				*  vertices faces normals colors #uvs
+				*  vertices faces normals colors #uvs #primitive
 				* where vertices is the LSB
 				* @return returns the mFormat flag
 				*/
@@ -111,6 +120,11 @@ namespace repo {
 				{
 					return NodeType::MESH;
 				}
+
+				/**
+				* Get the mesh primitive type (points, lines, triangles, quads) (triangles if not set).
+				*/
+				virtual MeshNode::Primitive getPrimitive() const;
 
 				/**
 				* Check if the node is position dependant.
@@ -154,7 +168,7 @@ namespace repo {
 				*/
 				MeshNode cloneAndUpdateMeshMapping(
 					const std::vector<repo_mesh_mapping_t> &vec,
-					const bool                             &overwrite = false);
+					const bool& overwrite = false);
 
 				MeshNode cloneAndNoteGrouping(const std::string &group) const;
 

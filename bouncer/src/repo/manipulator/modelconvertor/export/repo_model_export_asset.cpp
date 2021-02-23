@@ -24,7 +24,9 @@
 #include "../../../lib/repo_log.h"
 
 using namespace repo::manipulator::modelconvertor;
-const static size_t SRC_MAX_VERTEX_LIMIT = 65535;
+const static size_t ASSET_MAX_VERTEX_LIMIT = 65535;
+const static size_t ASSET_MAX_TRIANGLE_LIMIT = SIZE_MAX;
+const static size_t ASSET_MAX_LINE_LIMIT = (65536 / 4);
 //Labels for multipart JSON descriptor files
 const static std::string MP_LABEL_APPEARANCE = "appearance";
 const static std::string MP_LABEL_MAT_DIFFUSE = "diffuseColor";
@@ -169,13 +171,27 @@ bool AssetModelExport::generateTreeRepresentation()
 			auto mesh = dynamic_cast<const repo::core::model::MeshNode*>(node);
 			if (!mesh)
 			{
-				repoError << "Failed to cast a Repo Node of type mesh into a MeshNode(" << node->getUniqueID() << "). Skipping...";
+				repoError << "Failed to cast a Repo Node of type mesh into a MeshNode (" << node->getUniqueID() << "). Skipping...";
+				continue;
 			}
-			std::string textureID = scene->getTextureIDForMesh(gType, mesh->getSharedID());
 
-			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter =
-				new repo::manipulator::modelutility::MeshMapReorganiser(mesh, SRC_MAX_VERTEX_LIMIT);
-
+			repo::manipulator::modelutility::MeshMapReorganiser* reSplitter;
+			switch (mesh->getPrimitive())
+			{
+			case repo::core::model::MeshNode::Primitive::TRIANGLES:
+				// For Triangles, the vertex limit is 65536, as Unity stores indices as shorts.
+				// The maximum index array length in Unity is unknown, so the face limit is to SIZE_MAX.
+				reSplitter = new repo::manipulator::modelutility::MeshMapReorganiser(mesh, ASSET_MAX_VERTEX_LIMIT, ASSET_MAX_TRIANGLE_LIMIT);
+				break;
+			case repo::core::model::MeshNode::Primitive::LINES:
+				// For lines, each line (face) takes four vertices to draw (no-reuse between lines), so the face limit is 65536/4 to ensure they can all fit in the vertex buffer.
+				reSplitter = new repo::manipulator::modelutility::MeshMapReorganiser(mesh, ASSET_MAX_VERTEX_LIMIT, ASSET_MAX_LINE_LIMIT);
+				break;
+			default:
+				repoError << "MeshMapReorganiser cannot operate on node " << node->getUniqueID() << " because it has primitive type " << (int)mesh->getPrimitive() << " and AssetModelExport does not have known limits for this type. Skipping...";
+				continue;
+			}
+				
 			if (success = !std::make_shared<repo::core::model::MeshNode>(reSplitter->getRemappedMesh())->isEmpty())
 			{
 				reorganisedMeshes.push_back(std::make_shared<repo::core::model::MeshNode>(reSplitter->getRemappedMesh()));

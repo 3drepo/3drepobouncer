@@ -393,6 +393,8 @@ MeshNode RepoBSONFactory::makeMeshNode(
 		// [n1, v1, v2, ..., n2, v1, v2...]
 		std::vector<repo_face_t>::iterator faceIt;
 
+		MeshNode::Primitive primitive = MeshNode::Primitive::UNKNOWN;
+
 		std::vector<uint32_t> facesLevel1;
 		for (auto &face : faces) {
 			auto nIndices = face.size();
@@ -400,12 +402,34 @@ MeshNode RepoBSONFactory::makeMeshNode(
 			{
 				repoWarning << "number of indices in this face is 0!";
 			}
+			if (primitive == MeshNode::Primitive::UNKNOWN) // The primitive type is unknown, so attempt to infer it
+			{
+				if (nIndices == 2) {
+					primitive = MeshNode::Primitive::LINES;
+				}
+				else if (nIndices == 3) {
+					primitive = MeshNode::Primitive::TRIANGLES;
+				}
+				else // The primitive type is not one we support
+				{
+					repoWarning << "unsupported primitive type - only lines and triangles are supported but this face has " << nIndices << " indices!";
+				}
+			}
+			else  // (otherwise check for consistency with the existing type)
+			{
+				if (nIndices != static_cast<int>(primitive))
+				{
+					repoWarning << "mixing different primitives within a mesh is not supported!";
+				}
+			}
 			facesLevel1.push_back(nIndices);
 			for (uint32_t ind = 0; ind < nIndices; ind++)
 			{
 				facesLevel1.push_back(face[ind]);
 			}
 		}
+
+		builder.append(REPO_NODE_MESH_LABEL_PRIMITIVE, static_cast<int>(primitive));
 
 		uint64_t facesByteCount = facesLevel1.size() * sizeof(facesLevel1[0]);
 

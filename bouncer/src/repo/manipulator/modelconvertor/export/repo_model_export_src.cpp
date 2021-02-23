@@ -34,6 +34,7 @@ const static uint32_t SRC_MAGIC_BIT = 23;
 const static uint32_t SRC_MAGIC_BIT_COMPRESSED = 24;
 const static uint32_t SRC_VERSION = 42;
 const static size_t SRC_MAX_VERTEX_LIMIT = 65535;
+const static size_t SRC_MAX_TRIANGLE_LIMIT = SIZE_MAX;
 const static size_t SRC_X3DOM_FLOAT = 5126;
 const static size_t SRC_X3DOM_USHORT = 5123;
 const static size_t SRC_X3DOM_TRIANGLE = 4;
@@ -315,11 +316,20 @@ bool SRCModelExport::generateTreeRepresentation(
 			if (!mesh)
 			{
 				repoError << "Failed to cast a Repo Node of type mesh into a MeshNode(" << node->getUniqueID() << "). Skipping...";
+				continue;
 			}
+
+			if (mesh->getPrimitive() != repo::core::model::MeshNode::Primitive::TRIANGLES) 
+			{
+				repoError << "SRCModelExport does not support primitive type " << (int)mesh->getPrimitive() << " on node " << node->getUniqueID() << ". Skipping...";
+				continue;
+			}
+
 			std::string textureID = scene->getTextureIDForMesh(gType, mesh->getSharedID());
 
 			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter =
-				new repo::manipulator::modelutility::MeshMapReorganiser(mesh, SRC_MAX_VERTEX_LIMIT);
+				new repo::manipulator::modelutility::MeshMapReorganiser(mesh, SRC_MAX_VERTEX_LIMIT, SRC_MAX_TRIANGLE_LIMIT);
+
 			repo::core::model::MeshNode splittedMesh = reSplitter->getRemappedMesh();
 			if (success = !(splittedMesh.isEmpty()))
 			{

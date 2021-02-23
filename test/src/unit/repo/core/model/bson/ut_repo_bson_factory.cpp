@@ -325,15 +325,6 @@ TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest2)
 TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 {
 	uint32_t nCount = 10;
-	//using malloc to get un-initalised values to fill the memory.
-	repo::lib::RepoVector3D *rawVec = (repo::lib::RepoVector3D*)malloc(sizeof(*rawVec) * nCount);
-	repo::lib::RepoVector3D *rawNorm = (repo::lib::RepoVector3D*)malloc(sizeof(*rawNorm) * nCount);
-	repo::lib::RepoVector2D *rawUV = (repo::lib::RepoVector2D*)malloc(sizeof(*rawUV) * nCount);
-	repo_color4d_t *rawColors = (repo_color4d_t*)malloc(sizeof(*rawColors) * nCount);
-
-	ASSERT_TRUE(rawVec);
-	ASSERT_TRUE(rawNorm);
-	ASSERT_TRUE(rawUV);
 
 	//Set up faces
 	std::vector<repo_face_t> faces;
@@ -370,6 +361,8 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 
 	MeshNode mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, outLine, name);
 
+	repoTrace << mesh.toString();
+
 	auto vOut = mesh.getVertices();
 	auto nOut = mesh.getNormals();
 	auto fOut = mesh.getFaces();
@@ -380,15 +373,64 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	EXPECT_TRUE(compareStdVectors(faces, fOut));
 	EXPECT_TRUE(compareVectors(colors, cOut));
 	EXPECT_TRUE(compareStdVectors(uvChannels, uvOut));
+	
+	ASSERT_EQ(MeshNode::Primitive::TRIANGLES, mesh.getPrimitive());
 
 	auto bbox = mesh.getBoundingBox();
-	repoTrace << mesh.toString();
 	ASSERT_EQ(boundingBox.size(), bbox.size());
 	ASSERT_EQ(3, boundingBox[0].size());
 	ASSERT_EQ(3, boundingBox[1].size());
 
 	EXPECT_EQ(bbox[0], repo::lib::RepoVector3D( boundingBox[0][0], boundingBox[0][1], boundingBox[0][2] ));
 	EXPECT_EQ(bbox[1], repo::lib::RepoVector3D( boundingBox[1][0], boundingBox[1][1], boundingBox[1][2] ));
+
+	faces.clear();
+	for (uint32_t i = 0; i < nCount; ++i)
+	{
+		repo_face_t face = { (uint32_t)std::rand(), (uint32_t)std::rand() };
+		faces.push_back(face);
+	}
+
+	// Re-create the mesh but using lines instead of triangles. This should change the primitive type, but otherwise all properties should be handled identically.
+
+	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, outLine, name);
+
+	repoTrace << mesh.toString();
+
+	ASSERT_EQ(MeshNode::Primitive::LINES, mesh.getPrimitive());
+
+	vOut = mesh.getVertices();
+	nOut = mesh.getNormals();
+	fOut = mesh.getFaces();
+	cOut = mesh.getColors();
+	uvOut = mesh.getUVChannelsSeparated();
+	EXPECT_TRUE(compareStdVectors(vectors, vOut));
+	EXPECT_TRUE(compareStdVectors(normals, nOut));
+	EXPECT_TRUE(compareStdVectors(faces, fOut));
+	EXPECT_TRUE(compareVectors(colors, cOut));
+	EXPECT_TRUE(compareStdVectors(uvChannels, uvOut));
+
+	bbox = mesh.getBoundingBox();
+	ASSERT_EQ(boundingBox.size(), bbox.size());
+	ASSERT_EQ(3, boundingBox[0].size());
+	ASSERT_EQ(3, boundingBox[1].size());
+
+	EXPECT_EQ(bbox[0], repo::lib::RepoVector3D(boundingBox[0][0], boundingBox[0][1], boundingBox[0][2]));
+	EXPECT_EQ(bbox[1], repo::lib::RepoVector3D(boundingBox[1][0], boundingBox[1][1], boundingBox[1][2]));
+
+	// Re-create the mesh but with an unsupported primitive type. If the mesh does not have a type set, the API should return triangles, 
+	// but if the primitive has *attempted* to be inferred and failed, the type should report as unknown.
+
+	faces.clear();
+	for (uint32_t i = 0; i < nCount; ++i)
+	{
+		repo_face_t face; // empty faces should result in an unknown primitive type
+		faces.push_back(face);
+	}
+
+	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, outLine, name);
+
+	ASSERT_EQ(MeshNode::Primitive::UNKNOWN, mesh.getPrimitive());
 }
 
 TEST(RepoBSONFactoryTest, MakeReferenceNodeTest)
