@@ -193,7 +193,7 @@ void GeometryCollector::addFace(
 					v,
 					std::pair<int,
 					repo::lib::RepoVector3D64>(
-						currentEntry->rawVertices.size(),
+						vertIdx,
 						repo::lib::RepoVector3D64())));
 
 
