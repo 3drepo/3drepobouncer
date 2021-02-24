@@ -18,7 +18,8 @@ const run = (exe, params, { codesAsSuccess = [], verbose = true, logLabel }) => 
 		} else if (code === 0 || codesAsSuccess.includes(code)) {
 			resolve(code);
 		} else {
-			reject(code);
+			// NOTE: for some reason we're seeing code is null in linux. using -1 when that happens
+			reject(code || -1);
 		}
 	});
 
