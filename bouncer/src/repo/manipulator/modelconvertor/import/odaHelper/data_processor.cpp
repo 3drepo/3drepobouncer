@@ -26,17 +26,19 @@
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-void DataProcessor::convertTo3DRepoVertices(
-	int numVertices,
+void DataProcessor::convertTo3DRepoTriangle(
 	const OdInt32* p3Vertices,
-	std::vector<repo::lib::RepoVector3D64>& verticesOut)
+	std::vector<repo::lib::RepoVector3D64>& verticesOut,
+	repo::lib::RepoVector3D64& normalOut,
+	std::vector<repo::lib::RepoVector2D>& uvOut)
 {
 	const auto pVertexDataList = vertexDataList();
-	for (int i = 0; i < numVertices; i++)
+	for (int i = 0; i < 3; i++)
 	{
 		auto position = pVertexDataList[p3Vertices[i]];
 		verticesOut.push_back(convertTo3DRepoWorldCoorindates(position));
 	}
+	normalOut = calcNormal(verticesOut[0], verticesOut[1], verticesOut[2]);
 }
 
 void DataProcessor::getVertices(
@@ -63,11 +65,12 @@ void DataProcessor::getVertices(
 void DataProcessor::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* pNormal)
 {
 	std::vector<repo::lib::RepoVector3D64> vertices;
-	convertTo3DRepoVertices(3, p3Vertices, vertices);
+	std::vector<repo::lib::RepoVector2D> uv;
+	repo::lib::RepoVector3D64 normal;
+	
+	convertTo3DRepoTriangle(p3Vertices, vertices, normal, uv);
 
 	if (vertices.size()) {
-		repo::lib::RepoVector3D64 normal = calcNormal(vertices[0], vertices[1], vertices[2]);
-		std::vector<repo::lib::RepoVector2D> uv; // empty UVs
 		collector->addFace(vertices, normal, uv);
 	}
 }

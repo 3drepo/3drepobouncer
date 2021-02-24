@@ -82,10 +82,11 @@ namespace repo {
 					* @param verticesOut - output vertices in 3D Repo format
 					* @param uvOut - output texture coordinates
 					*/
-					virtual void convertTo3DRepoVertices(
-						int numVertices,
+					virtual void convertTo3DRepoTriangle(
 						const OdInt32* p3Vertices,
-						std::vector<repo::lib::RepoVector3D64>& verticesOut);
+						std::vector<repo::lib::RepoVector3D64>& verticesOut,
+						repo::lib::RepoVector3D64& normalOut,
+						std::vector<repo::lib::RepoVector2D>& uvOut);
 
 					repo_material_t GetDefaultMaterial() const;
 
