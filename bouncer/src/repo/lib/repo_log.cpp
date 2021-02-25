@@ -68,7 +68,7 @@ static std::string getTimeAsString()
 	time(&rawtime);
 	timeinfo = localtime(&rawtime);
 
-	strftime(buffer, 80, "%d-%m-%Y_%Hh%Mm%S", timeinfo);
+	strftime(buffer, 80, "%Y-%m-%d_%Hh%Mm%S", timeinfo);
 	return std::string(buffer);
 }
 

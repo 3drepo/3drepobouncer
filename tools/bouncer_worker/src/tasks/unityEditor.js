@@ -19,6 +19,7 @@ const { config, configPath } = require('../lib/config');
 const { ERRCODE_BUNDLE_GEN_FAIL } = require('../constants/errorCodes');
 const run = require('../lib/runCommand');
 const logger = require('../lib/logger');
+const { getCurrentDateTimeAsString } = require('../lib/utils');
 
 const UnityHandler = {};
 
@@ -26,12 +27,14 @@ const logLabel = { label: 'UNITY' };
 
 UnityHandler.generateAssetBundles = async (database, model, logDir) => {
 	const unityCommand = config.unity.batPath;
+	const dateStr = getCurrentDateTimeAsString();
 	const unityCmdParams = [
 		config.unity.project,
 		configPath,
 		database,
 		model,
-		logDir,
+		`${logDir}/unity_${dateStr}.log`,
+		`${logDir}/run_unity_${dateStr}.log`,
 	];
 
 	try {

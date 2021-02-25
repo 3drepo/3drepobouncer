@@ -31,6 +31,8 @@ const applyDefaultValuesIfUndefined = (config) => {
 	config.rabbitmq.task_prefetch = config.rabbitmq.task_prefetch || 4;
 	config.rabbitmq.model_prefetch = config.rabbitmq.model_prefetch || 1;
 	config.rabbitmq.unity_prefetch = config.rabbitmq.unity_prefetch || 1;
+	config.rabbitmq.pollingIntervalMS = config.rabbitmq.pollingIntervalMS || 10 * 1000;
+	config.rabbitmq.maxWaitTimeMS = config.rabbitmq.maxWaitTimeMS || 5 * 60 * 1000;
 	config.rabbitmq.waitBeforeShutdownMS = config.rabbitmq.waitBeforeShutdownMS || 60000;
 
 	// toy project configurations
