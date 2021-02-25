@@ -43,7 +43,6 @@ namespace repo {
 					std::string name;
 				};
 
-
 				struct mesh_data_t {
 					std::vector<repo::lib::RepoVector3D64> rawVertices;
 					std::vector<repo::lib::RepoVector3D64> rawNormals;
@@ -57,6 +56,7 @@ namespace repo {
 					std::string layerName;
 					std::string groupName;
 					uint32_t matIdx;
+					uint32_t format;
 				};
 
 				class GeometryCollector
@@ -241,17 +241,19 @@ namespace repo {
 
 				private:
 
-					std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<int, std::unordered_map<std::string, mesh_data_t>>>> meshData;
+					std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<int, std::vector<mesh_data_t>>>> meshData;
 					std::unordered_map<std::string, std::unordered_map<std::string, std::string> > idToMeta;
 					std::unordered_map<std::string, std::string> layerIDToName;
 					std::string nextMeshName, nextLayer, nextGroupName;
+					uint32_t nextFormat;
 					std::unordered_map< uint32_t, std::pair<repo::core::model::MaterialNode, repo::core::model::TextureNode> > idxToMat;
 					std::unordered_map<uint32_t, std::vector<repo::lib::RepoUUID> > matToMeshes;
 					repo::core::model::RepoNodeSet transNodes, metaNodes;
 					uint32_t currMat;
 					std::vector<double> minMeshBox, origin;
 
-					mesh_data_t *currentEntry = nullptr;
+					std::vector<mesh_data_t>* currentEntry = nullptr;
+					mesh_data_t* currentMesh = nullptr;
 					bool missingTextures = false;
 					repo::lib::RepoMatrix rootMatrix;
 					std::vector<repo::manipulator::modelconvertor::odaHelper::camera_t> cameras;
@@ -269,9 +271,11 @@ namespace repo {
 						const  std::unordered_map<std::string, std::string> &metaValues
 					);
 
-					void startOrContinueMeshByFormat(bool hasUvs, bool hasNormals, int faceSize);
+					mesh_data_t* startOrContinueMeshByFormat(uint32_t format);
+					uint32_t getMeshFormat(bool hasUvs, bool hasNormals, int faceSize);
 
-					mesh_data_t createMeshEntry();
+					mesh_data_t createMeshEntry(uint32_t format);
+
 
 					boost::uuids::random_generator uuidGenerator; // Common generator because they are apparently expensive to seed (https://stackoverflow.com/questions/3247861)
 				};

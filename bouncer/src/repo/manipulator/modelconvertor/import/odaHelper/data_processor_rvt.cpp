@@ -277,6 +277,8 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 	if (!element->isDBRO())
 		return;
 
+	collector->stopMeshEntry();
+
 	std::string elementName = getElementName(element, meshesCount++);
 
 	collector->setNextMeshName(elementName);
@@ -297,7 +299,6 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 		repoError << "Caught exception whilst trying to retrieve Material/metadata: " << convertToStdString(er.description());
 	}
 
-	collector->stopMeshEntry();
 	collector->startMeshEntry();
 }
 
