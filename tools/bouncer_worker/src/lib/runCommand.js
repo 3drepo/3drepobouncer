@@ -1,7 +1,7 @@
 // eslint-disable-next-line security/detect-child-process
 const { spawn } = require('child_process');
 
-const { ERRCODE_TIMEOUT } = require('../constants/errorCodes');
+const { ERRCODE_TIMEOUT, ERRCODE_UNKNOWN_ERROR } = require('../constants/errorCodes');
 const logger = require('./logger');
 const { timeoutMS } = require('./config').config;
 
@@ -18,7 +18,8 @@ const run = (exe, params, { codesAsSuccess = [], verbose = true, logLabel }) => 
 		} else if (code === 0 || codesAsSuccess.includes(code)) {
 			resolve(code);
 		} else {
-			reject(code);
+			// NOTE: for some reason we're seeing code is null in linux. using -1 when that happens
+			reject(code || ERRCODE_UNKNOWN_ERROR);
 		}
 	});
 
