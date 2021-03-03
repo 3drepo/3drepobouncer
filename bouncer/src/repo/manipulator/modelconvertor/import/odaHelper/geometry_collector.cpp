@@ -92,7 +92,7 @@ mesh_data_t GeometryCollector::createMeshEntry(uint32_t format) {
 }
 
 void GeometryCollector::startMeshEntry() {
-	nextMeshName = nextMeshName.empty() ? boost::lexical_cast<std::string>(uuidGenerator()) : nextMeshName;
+	nextMeshName = nextMeshName.empty() ? RepoUUID::createUUID().toString() : nextMeshName;
 	nextGroupName = nextGroupName.empty() ? nextMeshName : nextGroupName;
 	nextLayer = nextLayer.empty() ? nextMeshName : nextLayer;
 
