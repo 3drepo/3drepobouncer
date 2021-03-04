@@ -390,14 +390,18 @@ namespace repo {
 
 				static RepoSequence makeSequence(
 					const std::vector<repo::core::model::RepoSequence::FrameData> &frameData,
-					const std::string &name
+					const std::string &name,
+					const repo::lib::RepoUUID &id = repo::lib::RepoUUID::createUUID()
 				);
 
 				static RepoTask makeTask(
 					const std::string &name,
+					const uint64_t &startTime,
+					const uint64_t &endTime,
+					const repo::lib::RepoUUID &sequenceID,
 					const std::unordered_map<std::string, std::string>  &data,
 					const std::vector<repo::lib::RepoUUID> &resources,
-					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>(),
+					const repo::lib::RepoUUID &parent = repo::lib::RepoUUID::createUUID(),
 					const repo::lib::RepoUUID &id = repo::lib::RepoUUID::createUUID()
 				);
 			};

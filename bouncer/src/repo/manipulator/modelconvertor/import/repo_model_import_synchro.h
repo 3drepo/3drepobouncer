@@ -160,7 +160,8 @@ namespace repo {
 				uint64_t generateTaskInformation(
 					const synchro_reader::TasksInformation &taskInfo,
 					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
-					repo::core::model::RepoScene* &scene
+					repo::core::model::RepoScene* &scene,
+					const repo::lib::RepoUUID &sequenceID
 				);
 
 				std::vector<repo::lib::RepoUUID> findRecursiveMeshSharedIDs(
