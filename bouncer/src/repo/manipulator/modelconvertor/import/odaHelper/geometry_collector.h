@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include "../../../../error_codes.h"
 #include "../../../../core/model/bson/repo_bson_factory.h"
 #include "../../../../lib/datastructure/repo_structs.h"
 #include "helper_functions.h"
@@ -24,7 +25,6 @@
 #include <fstream>
 #include <vector>
 #include <string>
-#include <boost/uuid/uuid_generators.hpp>
 
 namespace repo {
 	namespace manipulator {
@@ -70,6 +70,12 @@ namespace repo {
 					* @return returns true if at least one texture is missing
 					*/
 					bool hasMissingTextures();
+
+					/**
+					* If a geometry processing error is encountered the import will attempt to continue. 
+					* This checks if any errors were encountered. Returns REPOERR_OK if not.
+					*/
+					int getErrorCode();
 
 					/**
 					* Get all the material and texture nodes collected.
@@ -255,6 +261,7 @@ namespace repo {
 					std::vector<mesh_data_t>* currentEntry = nullptr;
 					mesh_data_t* currentMesh = nullptr;
 					bool missingTextures = false;
+					int errorCode = REPOERR_OK;
 					repo::lib::RepoMatrix rootMatrix;
 					std::vector<repo::manipulator::modelconvertor::odaHelper::camera_t> cameras;
 
@@ -275,9 +282,6 @@ namespace repo {
 					uint32_t getMeshFormat(bool hasUvs, bool hasNormals, int faceSize);
 
 					mesh_data_t createMeshEntry(uint32_t format);
-
-
-					boost::uuids::random_generator uuidGenerator; // Common generator because they are apparently expensive to seed (https://stackoverflow.com/questions/3247861)
 				};
 			}
 		}

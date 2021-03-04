@@ -19,8 +19,6 @@
 
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-#include <boost/uuid/uuid_io.hpp>
-#include <boost/lexical_cast.hpp>
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
@@ -92,7 +90,7 @@ mesh_data_t GeometryCollector::createMeshEntry(uint32_t format) {
 }
 
 void GeometryCollector::startMeshEntry() {
-	nextMeshName = nextMeshName.empty() ? RepoUUID::createUUID().toString() : nextMeshName;
+	nextMeshName = nextMeshName.empty() ? repo::lib::RepoUUID::createUUID().toString() : nextMeshName;
 	nextGroupName = nextGroupName.empty() ? nextMeshName : nextGroupName;
 	nextLayer = nextLayer.empty() ? nextMeshName : nextLayer;
 
@@ -160,7 +158,9 @@ void GeometryCollector::addFace(
 {
 	if (!vertices.size())
 	{
-		repoError << "Vertices size[" << vertices.size() << "] is unsupported. A face must have more than 0 vertices";
+		repoError << "Vertices size[" << vertices.size() << "] is unsupported. A face must have more than 0 vertices.";
+		errorCode = REPOERR_ODA_GEOMETRY_ERROR;
+		return;
 	}
 
 	auto meshData = startOrContinueMeshByFormat(getMeshFormat(false, false, vertices.size()));
@@ -232,15 +232,17 @@ void GeometryCollector::addFace(
 {
 	if (!vertices.size())
 	{
-		repoError << "Vertices size[" << vertices.size() << "] is unsupported. A face must have more than 0 vertices";
-		exit(-1);
+		repoError << "Vertices size[" << vertices.size() << "] is unsupported. A face must have more than 0 vertices.";
+		errorCode = REPOERR_ODA_GEOMETRY_ERROR;
+		return;
 	}
 
 	auto meshData = startOrContinueMeshByFormat(getMeshFormat(uvCoords.size(), true, vertices.size()));
 
 	if ((uvCoords.size() > 0) && uvCoords.size() != vertices.size()) {
 		repoError << "Vertices size[" << vertices.size() << "] and UV size [" << uvCoords.size() << "] mismatched!";
-		exit(-1);
+		errorCode = REPOERR_ODA_GEOMETRY_ERROR;
+		return;
 	}
 
 	// Todo: this method attempts to generate indices by matching vertex based on attributes, but doesn't yet match the uv coordinates.
@@ -440,6 +442,11 @@ repo::core::model::TransformationNode*  GeometryCollector::createTransNode(
 void repo::manipulator::modelconvertor::odaHelper::GeometryCollector::setRootMatrix(repo::lib::RepoMatrix matrix)
 {
 	rootMatrix = matrix;
+}
+
+int GeometryCollector::getErrorCode()
+{
+	return errorCode;
 }
 
 bool GeometryCollector::hasMissingTextures()
