@@ -82,7 +82,7 @@ namespace repo {
 					* @param verticesOut - output vertices in 3D Repo format
 					* @param uvOut - output texture coordinates
 					*/
-					virtual void convertTo3DRepoVertices(
+					virtual void convertTo3DRepoTriangle(
 						const OdInt32* p3Vertices,
 						std::vector<repo::lib::RepoVector3D64>& verticesOut,
 						repo::lib::RepoVector3D64& normalOut,
@@ -97,6 +97,7 @@ namespace repo {
 					* @param repoPoint - [OUTPUT] vector to store repoPoint
 					*/
 					void getVertices(
+						int numVertices,
 						const OdInt32* p3Vertices,
 						std::vector<OdGePoint3d> &odaPoint,
 						std::vector<repo::lib::RepoVector3D64> &repoPoint
@@ -123,6 +124,19 @@ namespace repo {
 					void triangleOut(
 						const OdInt32* p3Vertices,
 						const OdGeVector3d* pNormal) final;
+
+					/**
+					* This callback is invoked when the next line should be processed.
+					* Defined in OdGiGeometrySimplifier
+					* @param numPoints Number of points.
+					* @param vertexIndexList Pointer to an array of vertex indices.
+					*/
+					void polylineOut(
+						OdInt32 numPoints,
+						const OdInt32* vertexIndexList) final;
+
+					void polylineOut(OdInt32 numPoints, 
+						const OdGePoint3d* vertexList) final;
 
 					/**
 					* This callback is invoked when next material should be processed

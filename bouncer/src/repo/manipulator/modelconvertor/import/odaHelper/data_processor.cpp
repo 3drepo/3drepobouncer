@@ -26,20 +26,23 @@
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
-void DataProcessor::convertTo3DRepoVertices(
+void DataProcessor::convertTo3DRepoTriangle(
 	const OdInt32* p3Vertices,
 	std::vector<repo::lib::RepoVector3D64>& verticesOut,
 	repo::lib::RepoVector3D64& normalOut,
 	std::vector<repo::lib::RepoVector2D>& uvOut)
 {
-	
-	std::vector<OdGePoint3d> odaPoints;
-	getVertices(p3Vertices, odaPoints, verticesOut);
-	if(verticesOut.size() >=3)
-		normalOut = calcNormal(verticesOut[0], verticesOut[1], verticesOut[2]);
+	const auto pVertexDataList = vertexDataList();
+	for (int i = 0; i < 3; i++)
+	{
+		auto position = pVertexDataList[p3Vertices[i]];
+		verticesOut.push_back(convertTo3DRepoWorldCoorindates(position));
+	}
+	normalOut = calcNormal(verticesOut[0], verticesOut[1], verticesOut[2]);
 }
 
 void DataProcessor::getVertices(
+	int numVertices,
 	const OdInt32* p3Vertices,
 	std::vector<OdGePoint3d> &odaPoint,
 	std::vector<repo::lib::RepoVector3D64> &repoPoint
@@ -50,7 +53,7 @@ void DataProcessor::getVertices(
 		(pVertexDataList + p3Vertices[0]) != (pVertexDataList + p3Vertices[2]) &&
 		(pVertexDataList + p3Vertices[1]) != (pVertexDataList + p3Vertices[2]))
 	{
-		for (int i = 0; i < 3; ++i)
+		for (int i = 0; i < numVertices; ++i)
 		{
 			auto point = pVertexDataList[p3Vertices[i]];
 			odaPoint.push_back(point);
@@ -64,11 +67,37 @@ void DataProcessor::triangleOut(const OdInt32* p3Vertices, const OdGeVector3d* p
 	std::vector<repo::lib::RepoVector3D64> vertices;
 	std::vector<repo::lib::RepoVector2D> uv;
 	repo::lib::RepoVector3D64 normal;
+	
+	convertTo3DRepoTriangle(p3Vertices, vertices, normal, uv);
 
-	convertTo3DRepoVertices(p3Vertices, vertices, normal, uv);
-
-	if (vertices.size())
+	if (vertices.size()) {
 		collector->addFace(vertices, normal, uv);
+	}
+}
+
+void DataProcessor::polylineOut(OdInt32 numPoints, const OdInt32* vertexIndexList)
+{
+	std::vector<OdGePoint3d> vertices;
+	const auto pVertexDataList = vertexDataList();
+	for (int i = 0; i < numPoints; i++)
+	{
+		vertices.push_back(pVertexDataList[vertexIndexList[i]]);
+	}
+
+	polylineOut(numPoints, vertices.data());
+}
+
+void DataProcessor::polylineOut(OdInt32 numPoints, const OdGePoint3d* vertexList)
+{
+	std::vector<repo::lib::RepoVector3D64> vertices;
+
+	for (OdInt32 i = 0; i < (numPoints - 1); i++)
+	{
+		vertices.clear();
+		vertices.push_back(convertTo3DRepoWorldCoorindates(vertexList[i]));
+		vertices.push_back(convertTo3DRepoWorldCoorindates(vertexList[i + 1]));
+		collector->addFace(vertices);
+	}
 }
 
 double DataProcessor::deviation(

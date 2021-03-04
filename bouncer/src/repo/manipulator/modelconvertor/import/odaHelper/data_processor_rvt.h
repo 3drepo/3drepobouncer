@@ -92,7 +92,7 @@ namespace repo {
 						repo_material_t& material,
 						bool& missingTexture) override;
 
-					void convertTo3DRepoVertices(
+					void convertTo3DRepoTriangle(
 						const OdInt32* p3Vertices,
 						std::vector<repo::lib::RepoVector3D64>& verticesOut,
 						repo::lib::RepoVector3D64& normalOut,
