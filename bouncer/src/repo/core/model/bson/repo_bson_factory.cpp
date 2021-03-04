@@ -994,8 +994,8 @@ RepoTask RepoBSONFactory::makeTask(
 	RepoBSONBuilder builder;
 	builder.append(REPO_LABEL_ID, id);
 	builder.append(REPO_TASK_LABEL_NAME, name);
-	builder.append(REPO_TASK_LABEL_START, startTime);
-	builder.append(REPO_TASK_LABEL_END, endTime);
+	builder.append(REPO_TASK_LABEL_START, (int64_t) startTime);
+	builder.append(REPO_TASK_LABEL_END, (int64_t) endTime);
 	builder.append(REPO_TASK_LABEL_SEQ_ID, sequenceID);
 
 	if (!parent.isDefaultValue())
