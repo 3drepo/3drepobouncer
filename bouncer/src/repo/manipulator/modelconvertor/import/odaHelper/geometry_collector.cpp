@@ -139,7 +139,7 @@ mesh_data_t* GeometryCollector::startOrContinueMeshByFormat(uint32_t format)
 		{
 			if (meshDataIterator->format == format)
 			{
-				currentMesh = meshDataIterator._Ptr;
+				currentMesh = &(*meshDataIterator);
 			}
 		}
 
