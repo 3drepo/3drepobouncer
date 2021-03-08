@@ -517,27 +517,26 @@ bool SceneManager::shouldGenerateSrcFiles(
 {
 	//only generate SRC files if the user has the src flag enabled and there are meshes
 	
-	bool hasTriangleMeshes = false;
-	auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
-	for (const repo::core::model::RepoNode* node : meshes)
+	repo::core::model::RepoUser user(handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, BSON("user" << scene->getDatabaseName())));
+	if (user.isSrcEnabled())
 	{
-		auto mesh = dynamic_cast<const repo::core::model::MeshNode*>(node);
-		if (!mesh)
+		auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
+		for (const repo::core::model::RepoNode* node : meshes)
 		{
-			continue;
-		}
+			auto mesh = dynamic_cast<const repo::core::model::MeshNode*>(node);
+			if (!mesh)
+			{
+				continue;
+			}
 
-		if (mesh->getPrimitive() == repo::core::model::MeshNode::Primitive::TRIANGLES)
-		{
-			hasTriangleMeshes = true;
-			break;
+			if (mesh->getPrimitive() == repo::core::model::MeshNode::Primitive::TRIANGLES)
+			{
+				return true; // only need one triangle mesh to warrant generating srcs
+			}
 		}
 	}
 
-	repo::core::model::RepoUser user(handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, BSON("user" << scene->getDatabaseName())));
-	bool userHasSrcFlag = user.isSrcEnabled();
-
-	return hasTriangleMeshes && userHasSrcFlag;
+	return false;
 }
 
 bool SceneManager::removeStashGraph(
