@@ -89,7 +89,7 @@ namespace repo {
 				const std::string TASK_NAME = "name";
 				const std::string TASK_START_DATE = "startDate";
 				const std::string TASK_END_DATE = "endDate";
-				const std::string TASK_CHILDREN = "subTasks";
+				const std::string TASK_CHILDREN = "subActivities";
 
 				repo::lib::RepoMatrix64 convertMatrixTo3DRepoWorld(
 					const repo::lib::RepoMatrix64 &matrix,

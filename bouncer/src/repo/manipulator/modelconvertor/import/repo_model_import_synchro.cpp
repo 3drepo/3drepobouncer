@@ -634,7 +634,7 @@ std::vector<uint8_t> SynchroModelImport::generateTaskCache(
 	}
 
 	repo::lib::PropertyTree root;
-	root.addArrayObjects("tasks", tasks);
+	root.addArrayObjects("activities", tasks);
 	return root.writeJsonToBuffer();
 }
 
