@@ -76,9 +76,9 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 				returnCode: returnMessage.returnCode
 			};
 			try { await Elastic.createBouncerRecord(elasticBody); } catch (err) {
-				logger.error(`[processMonitor] Failed to create Elastic record: ${err.message || err}`, processMonitor.logLabel);
+				logger.error(`[processMonitor] Failed to create Elastic record: ${err.message || err}`, logLabel);
 			}
-			logger.verbose(`[processMonitor] ProcessTime: ${elasticBody.ProcessTime} MaxMemory: ${elasticBody.MaxMemory} FileType: ${elasticBody.FileType} `, processMonitor.logLabel);
+			logger.verbose(`[processMonitor] ProcessTime: ${elasticBody.ProcessTime} MaxMemory: ${elasticBody.MaxMemory} FileType: ${elasticBody.FileType} `, logLabel);
 		}
 		callback(JSON.stringify(returnMessage), config.rabbitmq.unity_queue);
 		callback(JSON.stringify({
