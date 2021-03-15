@@ -812,7 +812,7 @@ bool RepoScene::commitNodes(
 		{
 			repoInfo << "Committing " << count << " of " << total;
 		}
-		bool debug = true;
+
 		const repo::lib::RepoUUID uniqueID = gType == GraphType::OPTIMIZED ? id : g.sharedIDtoUniqueID[id];
 		RepoNode *node = g.nodesByUniqueID[uniqueID];
 		RepoNode shrunkNode = node->cloneAndShrink();
