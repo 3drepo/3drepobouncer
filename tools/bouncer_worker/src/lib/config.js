@@ -45,6 +45,13 @@ const applyDefaultValuesIfUndefined = (config) => {
 	config.logging.taskLogDir = config.logging.taskLogDir || config.bouncer.log_dir || config.rabbitmq.sharedDir;
 	config.logging.workerLogPath = config.logging.workerLogPath || config.logLocation;
 	config.logging.logLevel = config.logging.logLevel || 'info';
+
+	// elastic related settings
+	config.elastic.enabled = config.elastic.enabled || false;
+	config.elastic.cloudID = config.elastic.cloudID || '';
+	config.elastic.cloudAuth = config.elastic.cloudAuth || '';
+	config.elastic.memoryReporting = config.elastic.memoryReporting || false;
+	config.elastic.memoryIntervalMS = config.elastic.memoryIntervalMS || 100;
 };
 /* eslint-enable no-param-reassign */
 

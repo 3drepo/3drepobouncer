@@ -25,7 +25,7 @@ const UnityHandler = {};
 
 const logLabel = { label: 'UNITY' };
 
-UnityHandler.generateAssetBundles = async (database, model, logDir) => {
+UnityHandler.generateAssetBundles = async (database, model, logDir, memoryReporting) => {
 	const unityCommand = config.unity.batPath;
 	const dateStr = getCurrentDateTimeAsString();
 	const unityCmdParams = [
@@ -38,7 +38,7 @@ UnityHandler.generateAssetBundles = async (database, model, logDir) => {
 	];
 
 	try {
-		return await run(unityCommand, unityCmdParams, { logLabel });
+		return await run(unityCommand, unityCmdParams, { logLabel }, memoryReporting);
 	} catch (err) {
 		logger.info(`Failed to execute unity command: ${err}`, logLabel);
 		throw ERRCODE_BUNDLE_GEN_FAIL;
