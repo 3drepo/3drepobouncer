@@ -50,7 +50,7 @@ const processUnity = async (database, model, user, logDir, modelImportErrCode) =
 				try { await Elastic.createBouncerRecord(elasticBody); } catch (err) {
 					logger.error(`[processMonitor] Failed to create Elastic record: ${err.message || err}`);
 				}
-				logger.verbose(`[processMonitor] ProcessTime: ${elasticBody.ProcessTime} MaxMemory: ${elasticBody.MaxMemory} Process: ${elasticBody.Process} `, processMonitor.logLabel);
+				logger.verbose(`[processMonitor] ProcessTime: ${elasticBody.ProcessTime} MaxMemory: ${elasticBody.MaxMemory} Process: ${elasticBody.Process} `, logLabel);
 			}
 		} else {
 			returnMessage.value = ERRCODE_ARG_FILE_FAIL;
