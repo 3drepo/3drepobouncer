@@ -812,26 +812,20 @@ bool RepoScene::commitNodes(
 		{
 			repoInfo << "Committing " << count << " of " << total;
 		}
-
+		bool debug = true;
 		const repo::lib::RepoUUID uniqueID = gType == GraphType::OPTIMIZED ? id : g.sharedIDtoUniqueID[id];
 		RepoNode *node = g.nodesByUniqueID[uniqueID];
-		if (node->objsize() > handler->documentSizeLimit())
+		RepoNode shrunkNode = node->cloneAndShrink();
+		if (shrunkNode.objsize() > handler->documentSizeLimit())
 		{
-			//Try to extract binary data out of the bson to shrink it.
-			RepoNode shrunkNode = node->cloneAndShrink();
-			if (shrunkNode.objsize() > handler->documentSizeLimit())
-			{
-				success = false;
-				errMsg += "Node '" + node->getUniqueID().toString() + "' over 16MB in size is not committed.";
-			}
-			else
-			{
-				node->swap(shrunkNode);
-				success &= handler->insertDocument(databaseName, projectName + "." + ext, *node, errMsg);
-			}
+			success = false;
+			errMsg += "Node '" + node->getUniqueID().toString() + "' over 16MB in size is not committed.";
 		}
 		else
+		{
+			node->swap(shrunkNode);
 			success &= handler->insertDocument(databaseName, projectName + "." + ext, *node, errMsg);
+		}
 	}
 
 	return success;
