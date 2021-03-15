@@ -102,6 +102,7 @@ Elastic.createBouncerRecord = async (elasticBody) => {
 			MaxMemory: { type: 'double' },
 			ProcessTime: { type: 'double' },
 			Process: { type: 'text' },
+            ReturnCode: { type: 'double' }
 		};
 		// eslint-disable-next-line
         await Elastic.createElasticRecord(elasticClient, Utils.bouncerIndexPrefix, elasticBody, undefined, activityMapping);
