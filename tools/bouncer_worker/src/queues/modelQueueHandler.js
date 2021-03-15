@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
+const fs = require('fs');
 const {
 	callbackQueueSpecified,
 	modelQueueSpecified,
@@ -27,6 +28,7 @@ const { ERRCODE_OK, ERRCODE_BOUNCER_CRASH } = require('../constants/errorCodes')
 const { MODEL_PROCESSING, UNITY_QUEUED } = require('../constants/statuses');
 const { messageDecoder } = require('../lib/messageDecoder');
 const logger = require('../lib/logger');
+const Elastic = require('../lib/elastic');
 
 const Handler = {};
 const logLabel = { label: 'MODELQ' };
@@ -54,7 +56,29 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	};
 
 	try {
-		returnMessage.value = await runBouncerCommand(logDir, cmdParams);
+		const memoryReporting = { enabled: config.elastic.memoryReporting, maxMemory: 0, processTime: 0 };
+		returnMessage.value = await runBouncerCommand(logDir, cmdParams, memoryReporting);
+		if (memoryReporting.maxMemory > 0) {
+			const importFile = cmdParams[3];
+			// eslint-disable-next-line
+			const fileStats = fs.statSync(require(importFile).file);
+			const elasticBody = {
+				Teamspace: user,
+				Model: model,
+				Database: database,
+				MaxMemory: memoryReporting.maxMemory,
+				ProcessTime: memoryReporting.processTime,
+				DateTime: Date.now(),
+				// eslint-disable-next-line
+				FileType: require(importFile).file.split('.').pop().toString(),
+				FileSize: fileStats.size,
+				Process: '3drepobouncer',
+			};
+			try { await Elastic.createBouncerRecord(elasticBody); } catch (err) {
+				logger.error(`[processMonitor] Failed to create Elastic record: ${err.message || err}`, processMonitor.logLabel);
+			}
+			logger.verbose(`[processMonitor] ProcessTime: ${elasticBody.ProcessTime} MaxMemory: ${elasticBody.MaxMemory} FileType: ${elasticBody.FileType} `, processMonitor.logLabel);
+		}
 		callback(JSON.stringify(returnMessage), config.rabbitmq.unity_queue);
 		callback(JSON.stringify({
 			status: UNITY_QUEUED,

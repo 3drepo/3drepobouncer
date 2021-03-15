@@ -21,9 +21,11 @@ const { generateAssetBundles, validateUnityConfigurations } = require('../tasks/
 const { ERRCODE_ARG_FILE_FAIL, ERRCODE_BUNDLE_GEN_FAIL } = require('../constants/errorCodes');
 const { UNITY_PROCESSING } = require('../constants/statuses');
 const logger = require('../lib/logger');
+const Elastic = require('../lib/elastic');
 
 const logLabel = { label: 'UNITYQ' };
 
+// eslint-disable-next-line max-len
 const processUnity = async (database, model, user, logDir, modelImportErrCode) => {
 	const returnMessage = {
 		value: modelImportErrCode,
@@ -34,7 +36,22 @@ const processUnity = async (database, model, user, logDir, modelImportErrCode) =
 
 	try {
 		if (database && model) {
-			await generateAssetBundles(database, model, logDir);
+			const memoryReporting = { enabled: config.elastic.memoryReporting, maxMemory: 0, processTime: 0 };
+			await generateAssetBundles(database, model, logDir, memoryReporting);
+			if (memoryReporting.enabled) {
+				const elasticBody = {
+					Teamspace: user,
+					Model: model,
+					Database: database,
+					MaxMemory: memoryReporting.maxMemory,
+					ProcessTime: memoryReporting.processTime,
+					Process: 'Unity',
+				};
+				try { await Elastic.createBouncerRecord(elasticBody); } catch (err) {
+					logger.error(`[processMonitor] Failed to create Elastic record: ${err.message || err}`);
+				}
+				logger.verbose(`[processMonitor] ProcessTime: ${elasticBody.ProcessTime} MaxMemory: ${elasticBody.MaxMemory} Process: ${elasticBody.Process} `, processMonitor.logLabel);
+			}
 		} else {
 			returnMessage.value = ERRCODE_ARG_FILE_FAIL;
 		}
@@ -57,7 +74,6 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		database,
 		project,
 	}));
-
 	const message = await processUnity(database, project, user, logDir, value);
 	callback(JSON.stringify(message));
 };
