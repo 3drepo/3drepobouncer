@@ -6,17 +6,22 @@ const processMonitor = require('./processMonitor');
 const { timeoutMS } = require('./config').config;
 
 const run = (
-	exe,
-	params,
-	{ codesAsSuccess = [], verbose = true, logLabel },
-	memoryReporting = { enabled: false, maxMemory: 0, processTime: 0 },
-) => new Promise((resolve, reject) => {
+		exe,
+		params,
+		{ codesAsSuccess = [], verbose = true, logLabel },
+		memoryReporting = { enabled: false, maxMemory: 0, processTime: 0 },
+	) => new Promise((resolve, reject) => {
 	if (verbose) logger.info(`Executing command: ${exe} ${params.join(' ')} memoryReporting: ${memoryReporting.enabled}`, logLabel);
-	const cmdExec = spawn(exe, params);
-	if (memoryReporting.enabled) { processMonitor.startMonitor(cmdExec.pid); }
+	const cmdExec = spawn(exe, params, { shell: true });
+	if (memoryReporting.enabled) {
+		processMonitor.startMonitor(cmdExec.pid); 
+	}
 	let isTimeout = false;
-	cmdExec.on('close', (code) => {
-		if (memoryReporting.enabled) { processMonitor.stopMonitor(cmdExec.pid); }
+	cmdExec.on('close', (code, stats) => {
+		console.log(stats)
+		if (memoryReporting.enabled) {
+			processMonitor.stopMonitor(cmdExec.pid); 
+		}
 		if (verbose) {
 			logger.info(`Command executed. Code: ${isTimeout ? 'TIMEDOUT' : code}`, logLabel);
 			if (memoryReporting.enabled) { logger.info(`[processMonitor] elapsed: ${processMonitor.processTime} maxMemory: ${processMonitor.maxMemory}`, logLabel); }
@@ -35,6 +40,7 @@ const run = (
 			// NOTE: for some reason we're seeing code is null in linux. using -1 when that happens
 			reject(code || ERRCODE_UNKNOWN_ERROR);
 		}
+
 	});
 
 	cmdExec.stdout.on('data', (data) => logger.verbose(`[STDOUT]: ${data}`, logLabel));

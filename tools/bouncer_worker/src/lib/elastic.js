@@ -40,7 +40,7 @@ Elastic.createElasticClient = () => {
 	};
 	const elasticClient = new Client(config);
 	elasticClient.cluster.health({}, (err, resp) => {
-		logger.verbose(`[ELASTIC]: ${resp}`, Elastic.loglabel);
+		if (err) logger.debug(`[ELASTIC]:  health ${resp.toString()}`, Elastic.loglabel);
 	});
 	return elasticClient;
 };
