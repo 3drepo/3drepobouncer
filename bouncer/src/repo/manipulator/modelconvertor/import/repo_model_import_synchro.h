@@ -19,7 +19,7 @@
 
 #include <string>
 #ifdef SYNCHRO_SUPPORT
-#include <synchro_reader/synchro_reader.h>
+#include <synchro_reader.h>
 #endif
 #include <memory>
 
