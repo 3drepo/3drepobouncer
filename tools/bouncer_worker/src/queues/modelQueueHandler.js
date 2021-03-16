@@ -73,7 +73,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 				FileType: require(importFile).file.split('.').pop().toString(),
 				FileSize: fileStats.size,
 				Process: '3drepobouncer',
-				returnCode: returnMessage.returnCode
+				ReturnCode: returnMessage.returnCode
 			};
 			try { await Elastic.createBouncerRecord(elasticBody); } catch (err) {
 				logger.error(`[processMonitor] Failed to create Elastic record: ${err.message || err}`, logLabel);
