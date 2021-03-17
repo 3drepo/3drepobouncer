@@ -156,118 +156,65 @@ mesh_data_t* GeometryCollector::startOrContinueMeshByFormat(uint32_t format)
 void GeometryCollector::addFace(
 	const std::vector<repo::lib::RepoVector3D64>& vertices)
 {
-	if (!vertices.size())
-	{
-		repoError << "Vertices size[" << vertices.size() << "] is unsupported. A face must have more than 0 vertices.";
-		errorCode = REPOERR_ODA_GEOMETRY_ERROR;
-		return;
-	}
-
-	auto meshData = startOrContinueMeshByFormat(getMeshFormat(false, false, vertices.size()));
-
-	repo_face_t face;
-	for (auto i = 0; i < vertices.size(); ++i) 
-	{
-		auto& v = vertices[i];
-		int vertIdx = 0;
-
-		// match the vertex to generate an index for this face
-		if (meshData->vToVIndex.find(v) == meshData->vToVIndex.end())
-		{
-			vertIdx = meshData->rawVertices.size();
-			meshData->rawVertices.push_back(v);
-
-			meshData->vToVIndex.insert(
-				std::pair<repo::lib::RepoVector3D64,
-				std::pair<int, repo::lib::RepoVector3D64>>(
-					v,
-					std::pair<int,
-					repo::lib::RepoVector3D64>(
-						vertIdx,
-						repo::lib::RepoVector3D64())));
-
-
-			// if the vertex has not yet been seen, also update the bounding box
-
-			if (!meshData->boundingBox.size())
-			{
-				meshData->boundingBox.push_back({ (float)v.x, (float)v.y, (float)v.z });
-				meshData->boundingBox.push_back({ (float)v.x, (float)v.y, (float)v.z });
-			}
-			else
-			{
-				meshData->boundingBox[0][0] = meshData->boundingBox[0][0] > v.x ? (float)v.x : meshData->boundingBox[0][0];
-				meshData->boundingBox[0][1] = meshData->boundingBox[0][1] > v.y ? (float)v.y : meshData->boundingBox[0][1];
-				meshData->boundingBox[0][2] = meshData->boundingBox[0][2] > v.z ? (float)v.z : meshData->boundingBox[0][2];
-
-				meshData->boundingBox[1][0] = meshData->boundingBox[1][0] < v.x ? (float)v.x : meshData->boundingBox[1][0];
-				meshData->boundingBox[1][1] = meshData->boundingBox[1][1] < v.y ? (float)v.y : meshData->boundingBox[1][1];
-				meshData->boundingBox[1][2] = meshData->boundingBox[1][2] < v.z ? (float)v.z : meshData->boundingBox[1][2];
-			}
-
-			if (minMeshBox.size()) {
-				minMeshBox[0] = v.x < minMeshBox[0] ? v.x : minMeshBox[0];
-				minMeshBox[1] = v.y < minMeshBox[1] ? v.y : minMeshBox[1];
-				minMeshBox[2] = v.z < minMeshBox[2] ? v.z : minMeshBox[2];
-			}
-			else {
-				minMeshBox = { v.x, v.y, v.z };
-			}
-		}
-		{
-			auto iterators = meshData->vToVIndex.equal_range(v);
-			vertIdx = iterators.first->second.first;
-		}
-
-		face.push_back(vertIdx);
-	}
-
-	meshData->faces.push_back(face);
+	addFace(vertices, false, false);
 }
 
 void GeometryCollector::addFace(
-	const std::vector<repo::lib::RepoVector3D64> &vertices,
+	const std::vector<repo::lib::RepoVector3D64>& vertices,
 	const repo::lib::RepoVector3D64& normal,
 	const std::vector<repo::lib::RepoVector2D>& uvCoords)
 {
+	addFace(vertices, boost::optional<const repo::lib::RepoVector3D64&>(normal), boost::optional<const std::vector<repo::lib::RepoVector2D>&>(uvCoords)); // make the boost option type explicit so we get the correct overload
+}
+
+void GeometryCollector::addFace(
+	const std::vector<repo::lib::RepoVector3D64>& vertices,
+	boost::optional<const repo::lib::RepoVector3D64&> normal,
+	boost::optional<const std::vector<repo::lib::RepoVector2D>&> uvCoords
+)
+{
 	if (!vertices.size())
 	{
-		repoError << "Vertices size[" << vertices.size() << "] is unsupported. A face must have more than 0 vertices.";
+		repoError << "Vertices size [" << vertices.size() << "] is unsupported. A face must have more than 0 vertices.";
 		errorCode = REPOERR_ODA_GEOMETRY_ERROR;
 		return;
 	}
 
-	auto meshData = startOrContinueMeshByFormat(getMeshFormat(uvCoords.size(), true, vertices.size()));
+	bool hasNormals = (bool)normal;
+	bool hasUvs = (bool)uvCoords && (*uvCoords).size();
 
-	if ((uvCoords.size() > 0) && uvCoords.size() != vertices.size()) {
-		repoError << "Vertices size[" << vertices.size() << "] and UV size [" << uvCoords.size() << "] mismatched!";
-		errorCode = REPOERR_ODA_GEOMETRY_ERROR;
-		return;
-	}
-
-	// Todo: this method attempts to generate indices by matching vertex based on attributes, but doesn't yet match the uv coordinates.
-	// ISSUE #432 has been raised about this.
-	// To fix this properly, merge this function and the addFace overload above, and update the matching code to support an arbitrary number
-	// of flat attributes.
+	auto meshData = startOrContinueMeshByFormat(getMeshFormat(hasUvs, hasNormals, vertices.size()));
 
 	repo_face_t face;
 	for (auto i = 0; i < vertices.size(); ++i) {
 		auto& v = vertices[i];
-		int vertIdx = 0;
-		if (meshData->vToVIndex.find(v) == meshData->vToVIndex.end()) {
-			//..insert new vertex along with index and normal
-			meshData->vToVIndex.insert(
-				std::pair<repo::lib::RepoVector3D64,
-				std::pair<int, repo::lib::RepoVector3D64>>(
-					v,
-					std::pair<int, repo::lib::RepoVector3D64>(meshData->rawVertices.size(), normal))
-			);
-			vertIdx = meshData->rawVertices.size();
-			meshData->rawVertices.push_back(v);
-			meshData->rawNormals.push_back(normal);
-			if (i < uvCoords.size())
-				meshData->uvCoords.push_back(uvCoords[i]);
 
+		VertexMap::result_t vertexReference;
+		if (hasNormals)
+		{
+			if (hasUvs)
+			{
+				auto& uv = (*uvCoords)[i];
+				vertexReference = meshData->vertexMap.find(v, *normal, uv);
+			}
+			else
+			{
+				vertexReference = meshData->vertexMap.find(v, *normal);
+			}
+		}
+		else if (hasUvs)
+		{
+			repoError << "Face has uvs but no normals. This is not supported. Faces that have uvs must also have a normal.";
+			errorCode = REPOERR_ODA_GEOMETRY_ERROR;
+			return;
+		}
+		else
+		{
+			vertexReference = meshData->vertexMap.find(v);
+		}
+
+		if (vertexReference.added)
+		{
 			if (meshData->boundingBox.size()) {
 				meshData->boundingBox[0][0] = meshData->boundingBox[0][0] > v.x ? (float)v.x : meshData->boundingBox[0][0];
 				meshData->boundingBox[0][1] = meshData->boundingBox[0][1] > v.y ? (float)v.y : meshData->boundingBox[0][1];
@@ -291,44 +238,8 @@ void GeometryCollector::addFace(
 				minMeshBox = { v.x, v.y, v.z };
 			}
 		}
-		else
-		{
-			//..if the vertex already exists - receive all entries of this vertex in multimap
-			bool normalFound = false;
-			auto iterators = meshData->vToVIndex.equal_range(v);
 
-			for (auto it = iterators.first; it != iterators.second; it++)
-			{
-				//..try to find a point with the same normal
-				auto result = it->second.second.dotProduct(normal);
-				if (!compare(result, 1.0))
-				{
-					vertIdx = it->second.first;
-					normalFound = true;
-					break;
-				}
-			}
-
-			if (!normalFound)
-			{
-				//.. in case the normal for this point doesn't exist yet - we should add it
-				//.. as duplicated and add new normal and index
-				meshData->vToVIndex.insert(
-					std::pair<repo::lib::RepoVector3D64,
-					std::pair<int, repo::lib::RepoVector3D64>>(
-						v,
-						std::pair<int, repo::lib::RepoVector3D64>(meshData->rawVertices.size(), normal))
-				);
-
-				vertIdx = meshData->rawVertices.size();
-				meshData->rawVertices.push_back(v);
-				meshData->rawNormals.push_back(normal);
-				if (i < uvCoords.size())
-					meshData->uvCoords.push_back(uvCoords[i]);
-			}
-		}
-
-		face.push_back(vertIdx);
+		face.push_back(vertexReference.index);
 	}
 
 	meshData->faces.push_back(face);
@@ -360,12 +271,19 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 			for (const auto& meshMatEntry : meshLayerEntry.second) {
 				for (const auto& meshData : meshMatEntry.second) {
 
-					if (!meshData.rawVertices.size()) {
+					if (!meshData.vertexMap.vertices.size()) {
 						continue;
 					}
 
-					auto uvChannels = meshData.uvCoords.size() ?
-						std::vector<std::vector<repo::lib::RepoVector2D>>{meshData.uvCoords} :
+					if (meshData.vertexMap.uvs.size() && (meshData.vertexMap.uvs.size() != meshData.vertexMap.vertices.size()))
+					{
+						repoError << "Vertices size [" << meshData.vertexMap.vertices.size() << "] does not match the uvs size [" << meshData.vertexMap.uvs.size() << "]. Skipping...";
+						errorCode = REPOERR_ODA_GEOMETRY_ERROR;
+						continue;
+					}
+
+					auto uvChannels = meshData.vertexMap.uvs.size() ?
+						std::vector<std::vector<repo::lib::RepoVector2D>>{meshData.vertexMap.uvs} :
 						std::vector<std::vector<repo::lib::RepoVector2D>>();
 
 					if (layerToTrans.find(meshLayerEntry.first) == layerToTrans.end()) {
@@ -373,19 +291,31 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 						transNodes.insert(layerToTrans[meshLayerEntry.first]);
 					}
 
-					std::vector<repo::lib::RepoVector3D> vertices32;
-					vertices32.reserve(meshData.rawVertices.size());
-
 					std::vector<repo::lib::RepoVector3D> normals32;
-					normals32.reserve(meshData.rawNormals.size());
 
-					for (int i = 0; i < meshData.rawVertices.size(); ++i) {
-						auto& v = meshData.rawVertices[i];
-						vertices32.push_back({ (float)(v.x - minMeshBox[0]), (float)(v.y - minMeshBox[1]), (float)(v.z - minMeshBox[2]) });
-						if (i < meshData.rawNormals.size()) {
-							auto& n = meshData.rawNormals[i];
+					if (meshData.vertexMap.normals.size()) {
+
+						if ((meshData.vertexMap.normals.size() != meshData.vertexMap.vertices.size()))
+						{
+							repoError << "Vertices size [" << meshData.vertexMap.vertices.size() << "] does not match the Normals size [" << meshData.vertexMap.uvs.size() << "]. At this point the normals must be defined per-vertex. Skipping...";
+							errorCode = REPOERR_ODA_GEOMETRY_ERROR;
+							continue;
+						}
+
+						normals32.reserve(meshData.vertexMap.normals.size());
+
+						for (int i = 0; i < meshData.vertexMap.vertices.size(); ++i) {
+							auto& n = meshData.vertexMap.normals[i];
 							normals32.push_back({ (float)(n.x), (float)(n.y), (float)(n.z) });
 						}
+					}
+
+					std::vector<repo::lib::RepoVector3D> vertices32;
+					vertices32.reserve(meshData.vertexMap.vertices.size());
+
+					for (int i = 0; i < meshData.vertexMap.vertices.size(); ++i) {
+						auto& v = meshData.vertexMap.vertices[i];
+						vertices32.push_back({ (float)(v.x - minMeshBox[0]), (float)(v.y - minMeshBox[1]), (float)(v.z - minMeshBox[2]) });
 					}
 
 					auto meshNode = repo::core::model::RepoBSONFactory::makeMeshNode(

@@ -21,10 +21,12 @@
 #include "../../../../core/model/bson/repo_bson_factory.h"
 #include "../../../../lib/datastructure/repo_structs.h"
 #include "helper_functions.h"
+#include "vertex_map.h"
 
 #include <fstream>
 #include <vector>
 #include <string>
+#include <boost/optional.hpp>
 
 namespace repo {
 	namespace manipulator {
@@ -44,14 +46,9 @@ namespace repo {
 				};
 
 				struct mesh_data_t {
-					std::vector<repo::lib::RepoVector3D64> rawVertices;
-					std::vector<repo::lib::RepoVector3D64> rawNormals;
 					std::vector<repo_face_t> faces;
 					std::vector<std::vector<float>> boundingBox;
-					std::multimap<repo::lib::RepoVector3D64, 
-						std::pair<int, repo::lib::RepoVector3D64>, 
-						RepoVector3D64SortComparator> vToVIndex;
-					std::vector<repo::lib::RepoVector2D> uvCoords;
+					VertexMap vertexMap;
 					std::string name;
 					std::string layerName;
 					std::string groupName;
@@ -264,6 +261,16 @@ namespace repo {
 					int errorCode = REPOERR_OK;
 					repo::lib::RepoMatrix rootMatrix;
 					std::vector<repo::manipulator::modelconvertor::odaHelper::camera_t> cameras;
+
+					/**
+					* Add a face to the current mesh. This method should only be called by one of the overloads above.
+					* Setting a face with uvs but no normals is not supported.
+					*/
+					void addFace(
+						const std::vector<repo::lib::RepoVector3D64>& vertices,
+						boost::optional<const repo::lib::RepoVector3D64&> normal,
+						boost::optional<const std::vector<repo::lib::RepoVector2D>&> uvCoords
+					);
 
 					repo::core::model::TransformationNode* createTransNode(
 						const std::string &name,
