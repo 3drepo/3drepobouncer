@@ -53,7 +53,7 @@ matrix:
           - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
           - tar -zxf testData/bouncer/ext_libs/xenial/synchro_6.2/thrift-0.12.0.tgz
           - tar -zxf testData/bouncer/ext_libs/xenial/synchro_6.2/synchro.tgz
-          - tar -zxf testData/bouncer/ext_libs/xenial/synchro_6.2/3drepoSynchroReader.tgz
+          - tar -zxf testData/bouncer/ext_libs/xenial/synchro_6.2/3drepoSynchroReader-2.0.0.tgz
 
       install:
           - sudo pip install cpp-coveralls
@@ -67,8 +67,8 @@ matrix:
           - export IFCOPENSHELL_ROOT=$PWD/../IfcOpenShell
           - export ODA_ROOT=$PWD/../teighaLinuxGCC5.3
           - export THRIFT_ROOT=$PWD/../thrift-0.12.0
-          - export SYNCHRO_ROOT=$PWD/../synchro
           - export SYNCHRO_READER_ROOT=$PWD/../3drepoSynchroReader
+          - export SYNCHRO_PLUGIN_LOCATION=$PWD/../plugins
           - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_5.3dll/
           - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_CXX_STANDARD=11 -DCMAKE_BUILD_TYPE=Release -DSYNCHRO_SUPPORT=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
           - mongo mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'

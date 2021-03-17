@@ -97,7 +97,6 @@ if (SYNCHRO_SUPPORT)
 	find_package(SYNCHROREADER REQUIRED)
 	find_package(THRIFT REQUIRED)
 	find_package(ZLIB REQUIRED)
-	find_package(SYNCHRO REQUIRED)
 endif()
 
 
