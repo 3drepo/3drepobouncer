@@ -362,13 +362,20 @@ TEST(RepoClientTest, UploadTestSPM)
 	ASSERT_TRUE(system(nullptr));
 	std::string db = "stUpload";
 
+	//we support 6.2
 	std::string spmUpload = produceUploadArgs(db, "synchroTest", getDataPath(synchroFile));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(spmUpload));
 	EXPECT_TRUE(projectExists(db, "synchroTest"));
 
+	//we don't support 6.1
 	std::string spmUpload2 = produceUploadArgs(db, "synchroTest2", getDataPath(synchroOldVersion));
 	EXPECT_EQ((int)REPOERR_UNSUPPORTED_VERSION, runProcess(spmUpload2));
 	EXPECT_FALSE(projectExists(db, "synchroTest2"));
+
+	//we also support 6.3
+	std::string spmUpload3 = produceUploadArgs(db, "synchroTest3", getDataPath(synchroVersion_6_3));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(spmUpload3));
+	EXPECT_TRUE(projectExists(db, "synchroTest3"));
 }
 
 TEST(RepoClientTest, UploadTestRVTRegressionTests)
