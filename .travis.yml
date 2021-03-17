@@ -67,7 +67,7 @@ matrix:
           - export ODA_ROOT=$PWD/../teighaLinuxGCC5.3
           - export THRIFT_ROOT=$PWD/../thrift-0.12.0
           - export SYNCHRO_READER_ROOT=$PWD/../3drepoSynchroReader
-          - export SYNCHRO_PLUGIN_LOCATION=$PWD/../plugins
+          - export SYNCHRO_PLUGIN_LOCATION=$PWD/../3drepoSynchroReader/plugins
           - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_5.3dll/
           - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_CXX_STANDARD=11 -DCMAKE_BUILD_TYPE=Release -DSYNCHRO_SUPPORT=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
           - mongo mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
