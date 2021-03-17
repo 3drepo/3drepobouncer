@@ -373,7 +373,7 @@ TEST(RepoClientTest, UploadTestSPM)
 	EXPECT_FALSE(projectExists(db, "synchroTest2"));
 
 	//we also support 6.3
-	std::string spmUpload3 = produceUploadArgs(db, "synchroTest3", getDataPath(synchroVersion_6_3));
+	std::string spmUpload3 = produceUploadArgs(db, "synchroTest3", getDataPath(synchroVersion6_3));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(spmUpload3));
 	EXPECT_TRUE(projectExists(db, "synchroTest3"));
 }
