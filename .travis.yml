@@ -78,6 +78,7 @@ matrix:
           - cd ~/bouncer_install
           - cp bin/* $ODA_ROOT/bin/lnxX64_5.3dll/
           - cd $ODA_ROOT/bin/lnxX64_5.3dll/
+          - ls $SYNCHRO_PLUGIN_LOCATION
           - ODA_CSV_LOCATION=$ODA_ROOT/bin/lnxX64_5.3dll/ PATH=$ODA_ROOT/bin/lnxX64_5.3dll/:$PATH LD_LIBRARY_PATH=$SYNCHRO_READER_ROOT/lib:$THRIFT_ROOT/lib:$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$ODA_ROOT/bin/lnxX64_5.3dll/:$LD_LIBRARY_PATH:$HOME/bouncer_install/lib ldd $SYNCHRO_PLUGIN_LOCATION/libSynchro_6.2.so
           - ODA_CSV_LOCATION=$ODA_ROOT/bin/lnxX64_5.3dll/ PATH=$ODA_ROOT/bin/lnxX64_5.3dll/:$PATH LD_LIBRARY_PATH=$SYNCHRO_READER_ROOT/lib:$THRIFT_ROOT/lib:$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$ODA_ROOT/bin/lnxX64_5.3dll/:$LD_LIBRARY_PATH:$HOME/bouncer_install/lib 3drepobouncerTest --gtest_filter=SynchroModelImport.ImportModel
       after_success:
