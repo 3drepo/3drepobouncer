@@ -52,8 +52,7 @@ matrix:
           - echo ============ SYNCHRO INSTALL =============
           - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
           - tar -zxf testData/bouncer/ext_libs/xenial/synchro_6.2/thrift-0.12.0.tgz
-          - tar -zxf testData/bouncer/ext_libs/xenial/synchro_6.2/synchro.tgz
-          - tar -zxf testData/bouncer/ext_libs/xenial/synchro_6.2/3drepoSynchroReader-2.0.0.tgz
+          - tar -zxf testData/bouncer/ext_libs/xenial/3drepoSynchroReader-2.0.0.tgz
 
       install:
           - sudo pip install cpp-coveralls
