@@ -52,7 +52,7 @@ matrix:
           - echo ============ SYNCHRO INSTALL =============
           - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
           - tar -zxf testData/bouncer/ext_libs/xenial/synchro_6.2/thrift-0.12.0.tgz
-          - git clone -b ISSUE_3 https://$TESTS_USER:$TESTS_PASSWORD@github.com/3drepo/SynchroReader.git
+          - git clone -b ISSUE_3 https://$TESTUSER:$TESTPW@github.com/3drepo/SynchroReader.git
           - export THRIFT_ROOT=$PWD/../thrift-0.12.0
           - mkdir -p SynchroReader/build && cd  SynchroReader/build
           - cmake -DUSE_ORIGINAL_THRIFT=on -DCMAKE_PREFIX_PATH=~/3drepoSynchroReader -DCMAKE_BUILD_TYPE=Release ../
