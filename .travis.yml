@@ -55,7 +55,7 @@ matrix:
           - git clone -b ISSUE_3 https://$TESTUSER:$TESTPW@github.com/3drepo/SynchroReader.git
           - export THRIFT_ROOT=$PWD/thrift-0.12.0
           - mkdir -p SynchroReader/build && cd  SynchroReader/build
-          - cmake -DUSE_ORIGINAL_THRIFT=on -DCMAKE_PREFIX_PATH=~/3drepoSynchroReader -DCMAKE_BUILD_TYPE=Release ../
+          - cmake -DUSE_ORIGINAL_THRIFT=on -DCMAKE_INSTALL_PREFIX=~/3drepoSynchroReader -DCMAKE_BUILD_TYPE=Release ../
           - make -j8 install
           - cd -
             #          - tar -zxf testData/bouncer/ext_libs/xenial/3drepoSynchroReader-2.0.0.tgz
