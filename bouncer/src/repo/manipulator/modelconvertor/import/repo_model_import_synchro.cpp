@@ -72,7 +72,9 @@ bool SynchroModelImport::importModel(std::string filePath, uint8_t &errCode) {
 	std::string msg;
 	auto synchroErrCode = reader->init(msg);
 	if (synchroErrCode != synchro_reader::SynchroError::ERR_OK) {
-		if (synchroErrCode == synchro_reader::SynchroError::ERR_UNSUPPORTED_VERSION)
+		if (synchroErrCode == synchro_reader::SynchroError::ERR_UNSUPPORTED_VERSION_PREV ||
+			synchroErrCode == synchro_reader::SynchroError::ERR_UNSUPPORTED_VERSION_FUTURE
+			)
 			errCode = REPOERR_UNSUPPORTED_VERSION;
 		else
 			errCode = REPOERR_LOAD_SCENE_FAIL;
