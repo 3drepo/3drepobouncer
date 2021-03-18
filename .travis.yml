@@ -52,7 +52,13 @@ matrix:
           - echo ============ SYNCHRO INSTALL =============
           - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
           - tar -zxf testData/bouncer/ext_libs/xenial/synchro_6.2/thrift-0.12.0.tgz
-          - tar -zxf testData/bouncer/ext_libs/xenial/3drepoSynchroReader-2.0.0.tgz
+          - git clone -b ISSUE_3 https://$TESTS_USER:$TESTS_PASSWORD@github.com/3drepo/SynchroReader.git
+          - export THRIFT_ROOT=$PWD/../thrift-0.12.0
+          - mkdir -p SynchroReader/build && cd  SynchroReader/build
+          - cmake -DUSE_ORIGINAL_THRIFT=on -DCMAKE_PREFIX_PATH=~/3drepoSynchroReader -DCMAKE_BUILD_TYPE=Release ../
+          - make -j8 install
+          - cd -
+            #          - tar -zxf testData/bouncer/ext_libs/xenial/3drepoSynchroReader-2.0.0.tgz
 
       install:
           - sudo pip install cpp-coveralls
@@ -66,8 +72,10 @@ matrix:
           - export IFCOPENSHELL_ROOT=$PWD/../IfcOpenShell
           - export ODA_ROOT=$PWD/../teighaLinuxGCC5.3
           - export THRIFT_ROOT=$PWD/../thrift-0.12.0
-          - export SYNCHRO_READER_ROOT=$PWD/../3drepoSynchroReader
-          - export SYNCHRO_PLUGIN_LOCATION=$PWD/../3drepoSynchroReader/plugins
+            #          - export SYNCHRO_READER_ROOT=$PWD/../3drepoSynchroReader
+            #          - export SYNCHRO_PLUGIN_LOCATION=$PWD/../3drepoSynchroReader/plugins
+          - export SYNCHRO_READER_ROOT=~/3drepoSynchroReader
+          - export SYNCHRO_PLUGIN_LOCATION=~/3drepoSynchroReader/plugins
           - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_5.3dll/
           - cmake -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_CXX_STANDARD=11 -DCMAKE_BUILD_TYPE=Release -DSYNCHRO_SUPPORT=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
           - mongo mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
