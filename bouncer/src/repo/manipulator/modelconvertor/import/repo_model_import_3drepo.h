@@ -72,10 +72,12 @@ namespace repo {
 				const std::string REPO_V1 = "BIM001";
 				const std::string REPO_V2 = "BIM002";
 				const std::string REPO_V3 = "BIM003";
-				const std::set<std::string> supportedFileVersions = 
+				const std::string REPO_V4 = "BIM004";
+				const std::set<std::string> supportedFileVersions =
 				{ 
 					REPO_V2,
-					REPO_V3
+					REPO_V3,
+					REPO_V4
 				};
 
 				const int REPO_V1_FILEMETA_BYTE_LEN = 56;
