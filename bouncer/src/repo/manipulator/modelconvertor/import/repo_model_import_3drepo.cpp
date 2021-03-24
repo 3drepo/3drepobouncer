@@ -26,7 +26,9 @@
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../lib/repo_log.h"
 #include "../../../error_codes.h"
+#include "../../../core/model/bson/repo_node_mesh.h"
 
+using namespace repo::core::model;
 using namespace repo::manipulator::modelconvertor;
 using namespace boost::property_tree;
 
@@ -222,7 +224,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 
 	std::vector<double> minBBox;
 	std::vector<double> maxBBox;
-
+	
 	for (ptree::const_iterator props = mesh.begin(); props != mesh.end(); props++)
 	{
 		if (props->first == REPO_IMPORT_MATERIAL)
@@ -285,15 +287,43 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 
 			uint32_t *tmpIndices = (uint32_t*)(dataBuffer + startEnd[0]);
 
-			for (int i = 0; i < numIndices; i += 3)
+			// figure out primitive type
+			boost::optional<const ptree&> primitiveProp = mesh.get_child_optional(REPO_IMPORT_PRIMITIVE);
+			MeshNode::Primitive primitiveType;
+			if (primitiveProp)
 			{
-				repo_face_t tmpFace;
+				primitiveType = static_cast<MeshNode::Primitive>(primitiveProp.get().get_value<int8_t>());
+			}
+			else
+			{
+				primitiveType = MeshNode::Primitive::TRIANGLES;
+			}
 
-				tmpFace.push_back(tmpIndices[i]);
-				tmpFace.push_back(tmpIndices[i + 1]);
-				tmpFace.push_back(tmpIndices[i + 2]);
-
-				faces.push_back(tmpFace);
+			// pull out faces
+			switch (primitiveType)
+			{
+			case repo::core::model::MeshNode::Primitive::LINES:
+				for (int i = 0; i < numIndices; i += 2)
+				{
+					repo_face_t tmpFace;
+					tmpFace.push_back(tmpIndices[i]);
+					tmpFace.push_back(tmpIndices[i + 1]);
+					faces.push_back(tmpFace);
+				}
+				break;
+			case repo::core::model::MeshNode::Primitive::TRIANGLES:
+				for (int i = 0; i < numIndices; i += 3)
+				{
+					repo_face_t tmpFace;
+					tmpFace.push_back(tmpIndices[i]);
+					tmpFace.push_back(tmpIndices[i + 1]);
+					tmpFace.push_back(tmpIndices[i + 2]);
+					faces.push_back(tmpFace);
+				}
+				break;
+			default:
+				//TODO: how to error out here?
+				break;
 			}
 		}
 	}

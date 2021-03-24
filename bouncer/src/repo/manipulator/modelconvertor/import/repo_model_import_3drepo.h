@@ -54,6 +54,8 @@ namespace repo {
 			const  std::string REPO_IMPORT_NORMALS  = "normals";
 			const  std::string REPO_IMPORT_INDICES  = "indices";
 			const  std::string REPO_IMPORT_BBOX 	   = "bbox";
+			const  std::string REPO_IMPORT_PRIMITIVE = "primitive";
+
 
 			// Texture JSON fields
 			const  std::string REPO_TXTR_FNAME = "filename";
@@ -73,6 +75,7 @@ namespace repo {
 				const std::string REPO_V2 = "BIM002";
 				const std::string REPO_V3 = "BIM003";
 				const std::string REPO_V4 = "BIM004";
+
 				const std::set<std::string> supportedFileVersions =
 				{ 
 					REPO_V2,
