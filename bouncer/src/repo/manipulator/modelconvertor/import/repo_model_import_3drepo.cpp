@@ -432,7 +432,9 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 		repoInfo << "Loading BIM file [VERSION: " << incomingVersion << "]";
 
 		size_t metaSize = REPO_VERSION_LENGTH + sizeof(fileMeta);
-		if (incomingVersion == REPO_V3)
+		//TODO: Clean up the version string/number/comparison stuff into a class
+		uint8_t incomingVersionNo = std::stoi(incomingVersion.substr(3,3));
+		if (incomingVersionNo > 2)
 		{
 			fin->read((char*)&file_meta, REPO_V3_FILEMETA_BYTE_LEN);
 		}
