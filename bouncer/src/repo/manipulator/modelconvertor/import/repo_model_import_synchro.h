@@ -19,7 +19,7 @@
 
 #include <string>
 #ifdef SYNCHRO_SUPPORT
-#include <synchro_reader/spm_reader.h>
+#include <synchro_reader.h>
 #endif
 #include <memory>
 
@@ -176,7 +176,7 @@ namespace repo {
 
 				std::unordered_map<std::string, repo::core::model::MeshNode> createMeshTemplateNodes();
 
-				std::shared_ptr<synchro_reader::SPMReader> reader;
+				std::shared_ptr<synchro_reader::SynchroReader> reader;
 
 				std::string orgFile;
 #else

@@ -22,14 +22,14 @@
 if(DEFINED ENV{SYNCHRO_READER_ROOT})
 	set(SYNCHRO_READER_ROOT $ENV{SYNCHRO_READER_ROOT})
 	message(STATUS "$SYNCHRO_READER_ROOT defined: ${SYNCHRO_READER_ROOT}")
-	find_path(SYNCHRO_READER_INCLUDE_DIR synchro_reader
+	find_path(SYNCHRO_READER_INCLUDE_DIR interface
 		${SYNCHRO_READER_ROOT}/include
 		)
-	find_library(SYNCHRO_READER_LIBRARIES_RELEASE NAMES 3drepoSynchroReader_1_0_0
+	find_library(SYNCHRO_READER_LIBRARIES_RELEASE NAMES 3drepoSynchroReader_2_0_0
 		PATHS
 		${SYNCHRO_READER_ROOT}/lib
 	)
-find_library(SYNCHRO_READER_LIBRARIES_DEBUG NAMES 3drepoSynchroReader_1_0_0d 3drepoSynchroReader_1_0_0
+find_library(SYNCHRO_READER_LIBRARIES_DEBUG NAMES 3drepoSynchroReader_2_0_0d 3drepoSynchroReader_2_0_0
 		PATHS
 		${SYNCHRO_READER_ROOT}/lib
 	)
@@ -43,20 +43,20 @@ if(SYNCHRO_READER_INCLUDE_DIR AND SYNCHRO_READER_LIBRARIES)
 	set(SYNCHRO_READER_FOUND TRUE)
 
 else(SYNCHRO_READER_INCLUDE_DIR AND SYNCHRO_READER_LIBRARIES)
-	find_path(_SYNCHRO_READER_INCLUDE_DIR synchro_reader
+	find_path(_SYNCHRO_READER_INCLUDE_DIR interface
 		/usr/include
 		/usr/local/include
 		/opt/local/include
     )
 
-	find_library(SYNCHRO_READER_LIBRARIES_RELEASE NAMES 3drepoSynchroReader_1_0_0
+	find_library(SYNCHRO_READER_LIBRARIES_RELEASE NAMES 3drepoSynchroReader_2_0_0
     	PATHS
     	/usr/lib/
     	/usr/local/lib/
     	/opt/local/lib/
     )
 
-	find_library(SYNCHRO_READER_LIBRARIES_DEBUG NAMES 3drepoSynchroReader_1_0_0d 3drepoSynchroReader_1_0_0
+	find_library(SYNCHRO_READER_LIBRARIES_DEBUG NAMES 3drepoSynchroReader_2_0_0d 3drepoSynchroReader_2_0_0
     	PATHS
     	/usr/lib/
     	/usr/local/lib/
