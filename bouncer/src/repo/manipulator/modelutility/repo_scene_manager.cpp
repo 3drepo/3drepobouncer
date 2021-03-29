@@ -515,9 +515,28 @@ bool SceneManager::shouldGenerateSrcFiles(
 	const repo::core::model::RepoScene* scene,
 	repo::core::handler::AbstractDatabaseHandler* handler) const
 {
-	repo::core::model::RepoUser user(handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, BSON("user" << scene->getDatabaseName())));
 	//only generate SRC files if the user has the src flag enabled and there are meshes
-	return scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size() && user.isSrcEnabled();
+	
+	repo::core::model::RepoUser user(handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, BSON("user" << scene->getDatabaseName())));
+	if (user.isSrcEnabled())
+	{
+		auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
+		for (const repo::core::model::RepoNode* node : meshes)
+		{
+			auto mesh = dynamic_cast<const repo::core::model::MeshNode*>(node);
+			if (!mesh)
+			{
+				continue;
+			}
+
+			if (mesh->getPrimitive() == repo::core::model::MeshNode::Primitive::TRIANGLES)
+			{
+				return true; // only need one triangle mesh to warrant generating srcs
+			}
+		}
+	}
+
+	return false;
 }
 
 bool SceneManager::removeStashGraph(

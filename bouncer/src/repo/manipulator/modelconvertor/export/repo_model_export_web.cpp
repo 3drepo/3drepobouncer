@@ -57,7 +57,9 @@ WebModelExport::~WebModelExport()
 bool WebModelExport::exportToFile(
 	const std::string &filePath)
 {
-	if (!convertSuccess) return convertSuccess;
+	if (!convertSuccess) {
+		return convertSuccess;
+	}
 
 	const repo_web_buffers_t buffers = getAllFilesExportedAsBuffer();
 
@@ -94,6 +96,8 @@ bool WebModelExport::exportToFile(
 			repoError << "Failed to open file for writing: " << fname;
 		}
 	}
+
+	return convertSuccess;
 }
 
 std::unordered_map<std::string, std::vector<uint8_t>> WebModelExport::getJSONFilesAsBuffer() const

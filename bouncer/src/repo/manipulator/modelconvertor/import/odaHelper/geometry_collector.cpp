@@ -79,94 +79,154 @@ repo::core::model::RepoNodeSet repo::manipulator::modelconvertor::odaHelper::Geo
 	return metaNodes;
 }
 
-mesh_data_t GeometryCollector::createMeshEntry() {
+mesh_data_t GeometryCollector::createMeshEntry(uint32_t format) {
 	mesh_data_t entry;
 	entry.matIdx = currMat;
 	entry.name = nextMeshName;
 	entry.groupName = nextGroupName;
 	entry.layerName = nextLayer.empty() ? "UnknownLayer" : nextLayer;
-
+	entry.format = format;
 	return entry;
 }
 
-void  GeometryCollector::startMeshEntry() {
-	nextMeshName = nextMeshName.empty() ? std::to_string(std::time(0)) : nextMeshName;
+void GeometryCollector::startMeshEntry() {
+	nextMeshName = nextMeshName.empty() ? repo::lib::RepoUUID::createUUID().toString() : nextMeshName;
 	nextGroupName = nextGroupName.empty() ? nextMeshName : nextGroupName;
 	nextLayer = nextLayer.empty() ? nextMeshName : nextLayer;
 
 	if (meshData.find(nextGroupName) == meshData.end()) {
-		meshData[nextGroupName] = std::unordered_map<std::string, std::unordered_map<int, mesh_data_t>>();
+		meshData[nextGroupName] = std::unordered_map<std::string, std::unordered_map<int, std::vector<mesh_data_t>>>();
 	}
 
 	if (meshData[nextGroupName].find(nextLayer) == meshData[nextGroupName].end()) {
-		meshData[nextGroupName][nextLayer] = std::unordered_map<int, mesh_data_t>();
+		meshData[nextGroupName][nextLayer] = std::unordered_map<int, std::vector<mesh_data_t>>();
 	}
 
 	if (meshData[nextGroupName][nextLayer].find(currMat) == meshData[nextGroupName][nextLayer].end()) {
-		meshData[nextGroupName][nextLayer][currMat] = createMeshEntry();
+		meshData[nextGroupName][nextLayer][currMat] = std::vector<mesh_data_t>();
 	}
+
 	currentEntry = &meshData[nextGroupName][nextLayer][currMat];
 }
 
 void  GeometryCollector::stopMeshEntry() {
-	if (currentEntry)
-		currentEntry->vToVIndex.clear();
 	nextMeshName = "";
+	currentEntry = nullptr;
+	currentMesh = nullptr;
+}
+
+uint32_t GeometryCollector::getMeshFormat(bool hasUvs, bool hasNormals, int faceSize)
+{
+	uint32_t vBit = 1;
+	uint32_t fBit = faceSize << 8;
+	uint32_t nBit = hasNormals ? 1 : 0 << 16;
+	uint32_t uBit = hasUvs ? 1 : 0 << 17;
+	return vBit | fBit | nBit | uBit;
+}
+
+mesh_data_t* GeometryCollector::startOrContinueMeshByFormat(uint32_t format)
+{
+	if (!currentMesh || currentMesh->format != format)
+	{
+		currentMesh = nullptr;
+
+		if (!currentEntry)
+		{
+			startMeshEntry();
+		}
+
+		for (auto meshDataIterator = currentEntry->begin(); meshDataIterator != currentEntry->end(); meshDataIterator++)
+		{
+			if (meshDataIterator->format == format)
+			{
+				currentMesh = &(*meshDataIterator);
+			}
+		}
+
+		if (!currentMesh)
+		{
+			currentEntry->push_back(createMeshEntry(format));
+			currentMesh = &currentEntry->back();
+		}
+	}
+
+	return currentMesh;
 }
 
 void GeometryCollector::addFace(
-	const std::vector<repo::lib::RepoVector3D64> &vertices,
+	const std::vector<repo::lib::RepoVector3D64>& vertices)
+{
+	addFace(vertices, false, false);
+}
+
+void GeometryCollector::addFace(
+	const std::vector<repo::lib::RepoVector3D64>& vertices,
 	const repo::lib::RepoVector3D64& normal,
 	const std::vector<repo::lib::RepoVector2D>& uvCoords)
 {
-	if (!meshData.size()) startMeshEntry();
+	addFace(vertices, boost::optional<const repo::lib::RepoVector3D64&>(normal), boost::optional<const std::vector<repo::lib::RepoVector2D>&>(uvCoords)); // make the boost option type explicit so we get the correct overload
+}
 
-	bool currentEntryHasUV = currentEntry->uvCoords.size();
-	bool faceHasUV = uvCoords.size();
-	if (currentEntry->rawVertices.size() && currentEntryHasUV != faceHasUV) {
-		//Start a new mesh if the current mesh has UVs but this face doesn't or vice versa.
-		auto lastMeshName = nextMeshName;
-		stopMeshEntry();
-		nextMeshName = lastMeshName + "_";
-		repoDebug << "Staring a new mesh due to UV difference";
-		startMeshEntry();
+void GeometryCollector::addFace(
+	const std::vector<repo::lib::RepoVector3D64>& vertices,
+	boost::optional<const repo::lib::RepoVector3D64&> normal,
+	boost::optional<const std::vector<repo::lib::RepoVector2D>&> uvCoords
+)
+{
+	if (!vertices.size())
+	{
+		repoError << "Vertices size [" << vertices.size() << "] is unsupported. A face must have more than 0 vertices.";
+		errorCode = REPOERR_ODA_GEOMETRY_ERROR;
+		return;
 	}
 
-	if (faceHasUV && uvCoords.size() != vertices.size()) {
-		repoError << "Vertices size[" << vertices.size() << "] and UV size [" << uvCoords.size() << "] mismatched!";
-		exit(-1);
-	}
+	bool hasNormals = (bool)normal;
+	bool hasUvs = (bool)uvCoords && (*uvCoords).size();
+
+	auto meshData = startOrContinueMeshByFormat(getMeshFormat(hasUvs, hasNormals, vertices.size()));
 
 	repo_face_t face;
 	for (auto i = 0; i < vertices.size(); ++i) {
 		auto& v = vertices[i];
-		int vertIdx = 0;
-		if (currentEntry->vToVIndex.find(v) == currentEntry->vToVIndex.end()) {
-			//..insert new vertex along with index and normal
-			currentEntry->vToVIndex.insert(
-				std::pair<repo::lib::RepoVector3D64,
-				std::pair<int, repo::lib::RepoVector3D64>>(
-					v,
-					std::pair<int, repo::lib::RepoVector3D64>(currentEntry->rawVertices.size(), normal))
-			);
-			vertIdx = currentEntry->rawVertices.size();
-			currentEntry->rawVertices.push_back(v);
-			currentEntry->rawNormals.push_back(normal);
-			if (i < uvCoords.size())
-				currentEntry->uvCoords.push_back(uvCoords[i]);
 
-			if (currentEntry->boundingBox.size()) {
-				currentEntry->boundingBox[0][0] = currentEntry->boundingBox[0][0] > v.x ? (float)v.x : currentEntry->boundingBox[0][0];
-				currentEntry->boundingBox[0][1] = currentEntry->boundingBox[0][1] > v.y ? (float)v.y : currentEntry->boundingBox[0][1];
-				currentEntry->boundingBox[0][2] = currentEntry->boundingBox[0][2] > v.z ? (float)v.z : currentEntry->boundingBox[0][2];
+		VertexMap::result_t vertexReference;
+		if (hasNormals)
+		{
+			if (hasUvs)
+			{
+				auto& uv = (*uvCoords)[i];
+				vertexReference = meshData->vertexMap.find(v, *normal, uv);
+			}
+			else
+			{
+				vertexReference = meshData->vertexMap.find(v, *normal);
+			}
+		}
+		else if (hasUvs)
+		{
+			repoError << "Face has uvs but no normals. This is not supported. Faces that have uvs must also have a normal.";
+			errorCode = REPOERR_ODA_GEOMETRY_ERROR;
+			return;
+		}
+		else
+		{
+			vertexReference = meshData->vertexMap.find(v);
+		}
 
-				currentEntry->boundingBox[1][0] = currentEntry->boundingBox[1][0] < v.x ? (float)v.x : currentEntry->boundingBox[1][0];
-				currentEntry->boundingBox[1][1] = currentEntry->boundingBox[1][1] < v.y ? (float)v.y : currentEntry->boundingBox[1][1];
-				currentEntry->boundingBox[1][2] = currentEntry->boundingBox[1][2] < v.z ? (float)v.z : currentEntry->boundingBox[1][2];
+		if (vertexReference.added)
+		{
+			if (meshData->boundingBox.size()) {
+				meshData->boundingBox[0][0] = meshData->boundingBox[0][0] > v.x ? (float)v.x : meshData->boundingBox[0][0];
+				meshData->boundingBox[0][1] = meshData->boundingBox[0][1] > v.y ? (float)v.y : meshData->boundingBox[0][1];
+				meshData->boundingBox[0][2] = meshData->boundingBox[0][2] > v.z ? (float)v.z : meshData->boundingBox[0][2];
+
+				meshData->boundingBox[1][0] = meshData->boundingBox[1][0] < v.x ? (float)v.x : meshData->boundingBox[1][0];
+				meshData->boundingBox[1][1] = meshData->boundingBox[1][1] < v.y ? (float)v.y : meshData->boundingBox[1][1];
+				meshData->boundingBox[1][2] = meshData->boundingBox[1][2] < v.z ? (float)v.z : meshData->boundingBox[1][2];
 			}
 			else {
-				currentEntry->boundingBox.push_back({ (float)v.x, (float)v.y, (float)v.z });
-				currentEntry->boundingBox.push_back({ (float)v.x, (float)v.y, (float)v.z });
+				meshData->boundingBox.push_back({ (float)v.x, (float)v.y, (float)v.z });
+				meshData->boundingBox.push_back({ (float)v.x, (float)v.y, (float)v.z });
 			}
 
 			if (minMeshBox.size()) {
@@ -178,47 +238,11 @@ void GeometryCollector::addFace(
 				minMeshBox = { v.x, v.y, v.z };
 			}
 		}
-		else
-		{
-			//..if the vertex already exists - receive all entries of this vertex in multimap
-			bool normalFound = false;
-			auto iterators = currentEntry->vToVIndex.equal_range(v);
 
-			for (auto it = iterators.first; it != iterators.second; it++)
-			{
-				//..try to find a point with the same normal
-				auto result = it->second.second.dotProduct(normal);
-				if (!compare(result, 1.0))
-				{
-					vertIdx = it->second.first;
-					normalFound = true;
-					break;
-				}
-			}
-
-			if (!normalFound)
-			{
-				//.. in case the normal for this point doesn't exist yet - we should add it
-				//.. as duplicated and add new normal and index
-				currentEntry->vToVIndex.insert(
-					std::pair<repo::lib::RepoVector3D64,
-					std::pair<int, repo::lib::RepoVector3D64>>(
-						v,
-						std::pair<int, repo::lib::RepoVector3D64>(currentEntry->rawVertices.size(), normal))
-				);
-
-				vertIdx = currentEntry->rawVertices.size();
-				currentEntry->rawVertices.push_back(v);
-				currentEntry->rawNormals.push_back(normal);
-				if (i < uvCoords.size())
-					currentEntry->uvCoords.push_back(uvCoords[i]);
-			}
-		}
-
-		face.push_back(vertIdx);
+		face.push_back(vertexReference.index);
 	}
 
-	currentEntry->faces.push_back(face);
+	meshData->faces.push_back(face);
 }
 
 repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core::model::TransformationNode& root) {
@@ -228,58 +252,95 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 
 	std::unordered_map<std::string, repo::core::model::TransformationNode*> layerToTrans;
 
+	int numEntries = 0;
+	for (const auto& meshGroupEntry : meshData) {
+		for (const auto& meshLayerEntry : meshGroupEntry.second) {
+			for (const auto& meshMatEntry : meshLayerEntry.second) {
+				for (const auto& meshData : meshMatEntry.second) {
+					numEntries++;
+				}
+			}
+		}
+	}
+
+	repoInfo << "Collecting " << numEntries << " mesh nodes...";
+
 	auto rootId = root.getSharedID();
-	for (const auto &meshGroupEntry : meshData) {
-		for (const auto &meshLayerEntry : meshGroupEntry.second) {
-			for (const auto &meshMatEntry : meshLayerEntry.second) {
-				if (!meshMatEntry.second.rawVertices.size()) continue;
+	for (const auto& meshGroupEntry : meshData) {
+		for (const auto& meshLayerEntry : meshGroupEntry.second) {
+			for (const auto& meshMatEntry : meshLayerEntry.second) {
+				for (const auto& meshData : meshMatEntry.second) {
 
-				auto uvChannels = meshMatEntry.second.uvCoords.size() ?
-					std::vector<std::vector<repo::lib::RepoVector2D>>{meshMatEntry.second.uvCoords} :
-					std::vector<std::vector<repo::lib::RepoVector2D>>();
-
-				if (layerToTrans.find(meshLayerEntry.first) == layerToTrans.end()) {
-					layerToTrans[meshLayerEntry.first] = createTransNode(layerIDToName[meshLayerEntry.first], meshLayerEntry.first, rootId);
-					transNodes.insert(layerToTrans[meshLayerEntry.first]);
-				}
-
-				std::vector<repo::lib::RepoVector3D> vertices32;
-				vertices32.reserve(meshMatEntry.second.rawVertices.size());
-
-				std::vector<repo::lib::RepoVector3D> normals32;
-				normals32.reserve(meshMatEntry.second.rawNormals.size());
-
-				for (int i = 0; i < meshMatEntry.second.rawVertices.size(); ++i) {
-					auto v = meshMatEntry.second.rawVertices[i];
-					vertices32.push_back({ (float)(v.x - minMeshBox[0]), (float)(v.y - minMeshBox[1]), (float)(v.z - minMeshBox[2]) });
-					if (i < meshMatEntry.second.rawNormals.size()) {
-						auto n = meshMatEntry.second.rawNormals[i];
-						normals32.push_back({ (float)(n.x), (float)(n.y), (float)(n.z) });
+					if (!meshData.vertexMap.vertices.size()) {
+						continue;
 					}
+
+					if (meshData.vertexMap.uvs.size() && (meshData.vertexMap.uvs.size() != meshData.vertexMap.vertices.size()))
+					{
+						repoError << "Vertices size [" << meshData.vertexMap.vertices.size() << "] does not match the uvs size [" << meshData.vertexMap.uvs.size() << "]. Skipping...";
+						errorCode = REPOERR_ODA_GEOMETRY_ERROR;
+						continue;
+					}
+
+					auto uvChannels = meshData.vertexMap.uvs.size() ?
+						std::vector<std::vector<repo::lib::RepoVector2D>>{meshData.vertexMap.uvs} :
+						std::vector<std::vector<repo::lib::RepoVector2D>>();
+
+					if (layerToTrans.find(meshLayerEntry.first) == layerToTrans.end()) {
+						layerToTrans[meshLayerEntry.first] = createTransNode(layerIDToName[meshLayerEntry.first], meshLayerEntry.first, rootId);
+						transNodes.insert(layerToTrans[meshLayerEntry.first]);
+					}
+
+					std::vector<repo::lib::RepoVector3D> normals32;
+
+					if (meshData.vertexMap.normals.size()) {
+
+						if ((meshData.vertexMap.normals.size() != meshData.vertexMap.vertices.size()))
+						{
+							repoError << "Vertices size [" << meshData.vertexMap.vertices.size() << "] does not match the Normals size [" << meshData.vertexMap.uvs.size() << "]. At this point the normals must be defined per-vertex. Skipping...";
+							errorCode = REPOERR_ODA_GEOMETRY_ERROR;
+							continue;
+						}
+
+						normals32.reserve(meshData.vertexMap.normals.size());
+
+						for (int i = 0; i < meshData.vertexMap.vertices.size(); ++i) {
+							auto& n = meshData.vertexMap.normals[i];
+							normals32.push_back({ (float)(n.x), (float)(n.y), (float)(n.z) });
+						}
+					}
+
+					std::vector<repo::lib::RepoVector3D> vertices32;
+					vertices32.reserve(meshData.vertexMap.vertices.size());
+
+					for (int i = 0; i < meshData.vertexMap.vertices.size(); ++i) {
+						auto& v = meshData.vertexMap.vertices[i];
+						vertices32.push_back({ (float)(v.x - minMeshBox[0]), (float)(v.y - minMeshBox[1]), (float)(v.z - minMeshBox[2]) });
+					}
+
+					auto meshNode = repo::core::model::RepoBSONFactory::makeMeshNode(
+						vertices32,
+						meshData.faces,
+						normals32,
+						meshData.boundingBox,
+						uvChannels,
+						dummyCol,
+						dummyOutline,
+						meshGroupEntry.first,
+						{ layerToTrans[meshLayerEntry.first]->getSharedID() }
+					);
+
+					if (idToMeta.find(meshGroupEntry.first) != idToMeta.end()) {
+						metaNodes.insert(createMetaNode(meshGroupEntry.first, { meshNode.getSharedID() }, idToMeta[meshGroupEntry.first]));
+					}
+
+					if (matToMeshes.find(meshData.matIdx) == matToMeshes.end()) {
+						matToMeshes[meshData.matIdx] = std::vector<repo::lib::RepoUUID>();
+					}
+					matToMeshes[meshData.matIdx].push_back(meshNode.getSharedID());
+
+					res.insert(new repo::core::model::MeshNode(meshNode));
 				}
-
-				auto meshNode = repo::core::model::RepoBSONFactory::makeMeshNode(
-					vertices32,
-					meshMatEntry.second.faces,
-					normals32,
-					meshMatEntry.second.boundingBox,
-					uvChannels,
-					dummyCol,
-					dummyOutline,
-					meshGroupEntry.first,
-					{ layerToTrans[meshLayerEntry.first]->getSharedID() }
-				);
-
-				if (idToMeta.find(meshGroupEntry.first) != idToMeta.end()) {
-					metaNodes.insert(createMetaNode(meshGroupEntry.first, { meshNode.getSharedID() }, idToMeta[meshGroupEntry.first]));
-				}
-
-				if (matToMeshes.find(meshMatEntry.second.matIdx) == matToMeshes.end()) {
-					matToMeshes[meshMatEntry.second.matIdx] = std::vector<repo::lib::RepoUUID>();
-				}
-				matToMeshes[meshMatEntry.second.matIdx].push_back(meshNode.getSharedID());
-
-				res.insert(new repo::core::model::MeshNode(meshNode));
 			}
 		}
 	}
@@ -311,6 +372,11 @@ repo::core::model::TransformationNode*  GeometryCollector::createTransNode(
 void repo::manipulator::modelconvertor::odaHelper::GeometryCollector::setRootMatrix(repo::lib::RepoMatrix matrix)
 {
 	rootMatrix = matrix;
+}
+
+int GeometryCollector::getErrorCode()
+{
+	return errorCode;
 }
 
 bool GeometryCollector::hasMissingTextures()

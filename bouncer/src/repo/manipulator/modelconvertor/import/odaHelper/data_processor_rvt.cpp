@@ -201,18 +201,18 @@ void DataProcessorRvt::convertTo3DRepoMaterial(
 	fillTexture(materialElem, material, missingTexture);
 }
 
-void DataProcessorRvt::convertTo3DRepoVertices(
+void DataProcessorRvt::convertTo3DRepoTriangle(
 	const OdInt32* p3Vertices,
 	std::vector<repo::lib::RepoVector3D64>& verticesOut,
 	repo::lib::RepoVector3D64& normalOut,
 	std::vector<repo::lib::RepoVector2D>& uvOut)
 {
 	std::vector<OdGePoint3d> odaPoints;
-	getVertices(p3Vertices, odaPoints, verticesOut);
+	getVertices(3, p3Vertices, odaPoints, verticesOut);
 
-	const int numVertices = 3;
-	if (verticesOut.size() != numVertices)
+	if (verticesOut.size() != 3) {
 		return;
+	}
 
 	normalOut = calcNormal(verticesOut[0], verticesOut[1], verticesOut[2]);
 
@@ -234,8 +234,9 @@ void DataProcessorRvt::convertTo3DRepoVertices(
 	}
 
 	uvOut.clear();
-	for (int i = 0; i < numVertices; ++i)
+	for (int i = 0; i < 3; ++i) {
 		uvOut.push_back({ (float)outTex.outCoord[i].x, (float)outTex.outCoord[i].y });
+	}
 }
 
 std::string DataProcessorRvt::getLevel(OdBmElementPtr element, const std::string& name)
@@ -276,6 +277,8 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 	if (!element->isDBRO())
 		return;
 
+	collector->stopMeshEntry();
+
 	std::string elementName = getElementName(element, meshesCount++);
 
 	collector->setNextMeshName(elementName);
@@ -296,7 +299,6 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 		repoError << "Caught exception whilst trying to retrieve Material/metadata: " << convertToStdString(er.description());
 	}
 
-	collector->stopMeshEntry();
 	collector->startMeshEntry();
 }
 

@@ -17,14 +17,16 @@
 
 #pragma once
 
+#include "../../../../error_codes.h"
 #include "../../../../core/model/bson/repo_bson_factory.h"
 #include "../../../../lib/datastructure/repo_structs.h"
 #include "helper_functions.h"
+#include "vertex_map.h"
 
 #include <fstream>
 #include <vector>
 #include <string>
-
+#include <boost/optional.hpp>
 
 namespace repo {
 	namespace manipulator {
@@ -43,20 +45,15 @@ namespace repo {
 					std::string name;
 				};
 
-
 				struct mesh_data_t {
-					std::vector<repo::lib::RepoVector3D64> rawVertices;
-					std::vector<repo::lib::RepoVector3D64> rawNormals;
 					std::vector<repo_face_t> faces;
 					std::vector<std::vector<float>> boundingBox;
-					std::multimap<repo::lib::RepoVector3D64, 
-						std::pair<int, repo::lib::RepoVector3D64>, 
-						RepoVector3D64SortComparator> vToVIndex;
-					std::vector<repo::lib::RepoVector2D> uvCoords;
+					VertexMap vertexMap;
 					std::string name;
 					std::string layerName;
 					std::string groupName;
 					uint32_t matIdx;
+					uint32_t format;
 				};
 
 				class GeometryCollector
@@ -70,6 +67,12 @@ namespace repo {
 					* @return returns true if at least one texture is missing
 					*/
 					bool hasMissingTextures();
+
+					/**
+					* If a geometry processing error is encountered the import will attempt to continue. 
+					* This checks if any errors were encountered. Returns REPOERR_OK if not.
+					*/
+					int getErrorCode();
 
 					/**
 					* Get all the material and texture nodes collected.
@@ -158,13 +161,21 @@ namespace repo {
 					}
 
 					/**
-					* Add a face to the current mesh
+					* Add a face to the current mesh, setting the normal for all the vertices
 					* @param vertices a vector of vertices that makes up this face
 					*/
 					void addFace(
 						const std::vector<repo::lib::RepoVector3D64> &vertices,
 						const repo::lib::RepoVector3D64& normal,
 						const std::vector<repo::lib::RepoVector2D>& uvCoords = std::vector<repo::lib::RepoVector2D>()
+					);
+
+					/**
+					* Add a face to the current mesh. This has no normals or uvs (such as would be the case with polylines)
+					* @param vertices a vector of vertices that makes up this face
+					*/
+					void addFace(
+						const std::vector<repo::lib::RepoVector3D64>& vertices
 					);
 
 					/**
@@ -233,20 +244,33 @@ namespace repo {
 
 				private:
 
-					std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<int, mesh_data_t>>> meshData;
+					std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<int, std::vector<mesh_data_t>>>> meshData;
 					std::unordered_map<std::string, std::unordered_map<std::string, std::string> > idToMeta;
 					std::unordered_map<std::string, std::string> layerIDToName;
 					std::string nextMeshName, nextLayer, nextGroupName;
+					uint32_t nextFormat;
 					std::unordered_map< uint32_t, std::pair<repo::core::model::MaterialNode, repo::core::model::TextureNode> > idxToMat;
 					std::unordered_map<uint32_t, std::vector<repo::lib::RepoUUID> > matToMeshes;
 					repo::core::model::RepoNodeSet transNodes, metaNodes;
 					uint32_t currMat;
 					std::vector<double> minMeshBox, origin;
 
-					mesh_data_t *currentEntry = nullptr;
+					std::vector<mesh_data_t>* currentEntry = nullptr;
+					mesh_data_t* currentMesh = nullptr;
 					bool missingTextures = false;
+					int errorCode = REPOERR_OK;
 					repo::lib::RepoMatrix rootMatrix;
 					std::vector<repo::manipulator::modelconvertor::odaHelper::camera_t> cameras;
+
+					/**
+					* Add a face to the current mesh. This method should only be called by one of the overloads above.
+					* Setting a face with uvs but no normals is not supported.
+					*/
+					void addFace(
+						const std::vector<repo::lib::RepoVector3D64>& vertices,
+						boost::optional<const repo::lib::RepoVector3D64&> normal,
+						boost::optional<const std::vector<repo::lib::RepoVector2D>&> uvCoords
+					);
 
 					repo::core::model::TransformationNode* createTransNode(
 						const std::string &name,
@@ -261,7 +285,10 @@ namespace repo {
 						const  std::unordered_map<std::string, std::string> &metaValues
 					);
 
-					mesh_data_t createMeshEntry();
+					mesh_data_t* startOrContinueMeshByFormat(uint32_t format);
+					uint32_t getMeshFormat(bool hasUvs, bool hasNormals, int faceSize);
+
+					mesh_data_t createMeshEntry(uint32_t format);
 				};
 			}
 		}
