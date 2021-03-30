@@ -994,8 +994,8 @@ RepoTask RepoBSONFactory::makeTask(
 	RepoBSONBuilder builder;
 	builder.append(REPO_LABEL_ID, id);
 	builder.append(REPO_TASK_LABEL_NAME, name);
-	builder.append(REPO_TASK_LABEL_START, (long long) startTime);
-	builder.append(REPO_TASK_LABEL_END, (long long) endTime);
+	builder.append(REPO_TASK_LABEL_START, (long long)startTime);
+	builder.append(REPO_TASK_LABEL_END, (long long)endTime);
 	builder.append(REPO_TASK_LABEL_SEQ_ID, sequenceID);
 
 	if (!parent.isDefaultValue())
@@ -1006,9 +1006,9 @@ RepoTask RepoBSONFactory::makeTask(
 		resourceBuilder.appendArray(REPO_TASK_SHARED_IDS, resources);
 		builder.append(REPO_TASK_LABEL_RESOURCES, resourceBuilder.obj());
 	}
-	
+
 	std::vector<RepoBSON> metaEntries;
-	for (const auto &entry : data) {				
+	for (const auto &entry : data) {
 		std::string key = sanitiseKey(entry.first);
 		std::string value = entry.second;
 
@@ -1048,11 +1048,15 @@ RepoTask RepoBSONFactory::makeTask(
 RepoSequence RepoBSONFactory::makeSequence(
 	const std::vector<repo::core::model::RepoSequence::FrameData> &frameData,
 	const std::string &name,
-	const repo::lib::RepoUUID &id
+	const repo::lib::RepoUUID &id,
+	const uint64_t firstFrame,
+	const uint64_t lastFrame
 ) {
 	RepoBSONBuilder builder;
 	builder.append(REPO_LABEL_ID, id);
 	builder.append(REPO_SEQUENCE_LABEL_NAME, name);
+	builder.append(REPO_SEQUENCE_LABEL_START_DATE, firstFrame);
+	builder.append(REPO_SEQUENCE_LABEL_END_DATE, lastFrame);
 
 	std::vector<RepoBSON> frames;
 

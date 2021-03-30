@@ -642,7 +642,7 @@ std::vector<uint8_t> SynchroModelImport::generateTaskCache(
 	return root.writeJsonToBuffer();
 }
 
-uint64_t SynchroModelImport::generateTaskInformation(
+std::pair<uint64_t, uint64_t> SynchroModelImport::generateTaskInformation(
 	const synchro_reader::TasksInformation &taskInfo,
 	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
 	repo::core::model::RepoScene* &scene,
@@ -654,6 +654,7 @@ uint64_t SynchroModelImport::generateTaskInformation(
 	std::vector<repo::core::model::RepoTask> taskBSONs;
 
 	uint64_t firstTS = (uint64_t)std::numeric_limits<uint64_t>::max;
+	uint64_t lastTS = (uint64_t)std::numeric_limits<uint64_t>::min;
 	for (const auto &task : taskInfo.tasks) {
 		auto parentID = task.second.parentTask;
 		repo::lib::RepoUUID parentUUID;
@@ -665,6 +666,7 @@ uint64_t SynchroModelImport::generateTaskInformation(
 
 		SequenceTask taskItem = { taskIDtoRepoID[taskID] , task.second.name, task.second.startTime * 1000, task.second.endTime * 1000 };
 		firstTS = std::min(task.second.startTime, firstTS);
+		lastTS = std::max(task.second.endTime, lastTS);
 
 		if (parentID.empty()) {
 			rootTasks.insert(taskItem);
@@ -690,7 +692,7 @@ uint64_t SynchroModelImport::generateTaskInformation(
 
 	scene->addSequenceTasks(taskBSONs, generateTaskCache(rootTasks, taskToChildren));
 
-	return firstTS;
+	return { firstTS, lastTS };
 }
 
 repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &errMsg) {
@@ -706,7 +708,10 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 
 		repoInfo << "Getting tasks... ";
 
-		auto firstFrame = generateTaskInformation(reader->getTasks(), resourceIDsToSharedIDs, scene, sequenceID);
+		auto taskFrame = generateTaskInformation(reader->getTasks(), resourceIDsToSharedIDs, scene, sequenceID);
+
+		auto firstFrame = taskFrame.first;
+		auto lastFrame = taskFrame.second;
 
 		repoInfo << "Getting animations... ";
 		auto animation = reader->getAnimation();
@@ -787,6 +792,8 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 
 		for (const auto &currentFrame : animation.frames) {
 			auto currentTime = currentFrame.first;
+			firstFrame = std::min(firstFrame, currentTime);
+			lastFrame = std::max(lastFrame, currentTime);
 			updateFrameState(currentFrame.second, resourceIDsToSharedIDs, resourceIDLastTrans, alphaValueToIDs, meshAlphaState, meshColourState, resourceIDTransState, clipState, cam, transformingResources, offset);
 			repo::core::model::RepoSequence::FrameData data;
 			data.ref = generateCache(resourceIDsToSharedIDs, alphaValueToIDs, meshColourState, resourceIDTransState, clipState, cam, stateBuffers);
@@ -806,7 +813,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 		}
 
 		std::string animationName = animation.name.empty() ? DEFAULT_SEQUENCE_NAME : animation.name;
-		auto sequence = repo::core::model::RepoBSONFactory::makeSequence(frameData, animationName, sequenceID);
+		auto sequence = repo::core::model::RepoBSONFactory::makeSequence(frameData, animationName, sequenceID, firstFrame, lastFrame);
 
 		if (sequence.objsize() > REPO_MAX_OBJ_SIZE) {
 			errMsg = REPOERR_SYNCHRO_SEQUENCE_TOO_BIG;

@@ -18,6 +18,7 @@
 #pragma once
 
 #include <string>
+#include <utility>
 #ifdef SYNCHRO_SUPPORT
 #include <synchro_reader.h>
 #endif
@@ -157,7 +158,7 @@ namespace repo {
 					const std::unordered_map<repo::lib::RepoUUID, std::set<SequenceTask, SequenceTaskComparator>, repo::lib::RepoUUIDHasher> &taskToChildren
 				);
 
-				uint64_t generateTaskInformation(
+				std::pair<uint64_t, uint64_t> generateTaskInformation(
 					const synchro_reader::TasksInformation &taskInfo,
 					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
 					repo::core::model::RepoScene* &scene,

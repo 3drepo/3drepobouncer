@@ -391,7 +391,9 @@ namespace repo {
 				static RepoSequence makeSequence(
 					const std::vector<repo::core::model::RepoSequence::FrameData> &frameData,
 					const std::string &name,
-					const repo::lib::RepoUUID &id = repo::lib::RepoUUID::createUUID()
+					const repo::lib::RepoUUID &id,
+					const uint64_t firstFrame,
+					const uint64_t lastFrame
 				);
 
 				static RepoTask makeTask(
