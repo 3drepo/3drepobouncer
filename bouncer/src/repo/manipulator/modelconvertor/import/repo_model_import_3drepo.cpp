@@ -669,7 +669,7 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errCod
 	}
 	if(geometryImportError)
 	{
-		repoError << "Unsupported geometry primitive type found";
+		repoError << "Unsupported geometry primitive type found	";
 		errCode = REPOERR_GEOMETRY_ERROR;
 	}
 
