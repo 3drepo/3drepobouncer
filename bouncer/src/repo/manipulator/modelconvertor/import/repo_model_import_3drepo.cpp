@@ -444,7 +444,8 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t& err)
 		char fileVersion[REPO_VERSION_LENGTH + 1] = { 0 };
 		fin->read(fileVersion, REPO_VERSION_LENGTH);
 		std::string incomingVersion = fileVersion;
-		if (supportedFileVersions.find(incomingVersion) == supportedFileVersions.end())
+		uint8_t incomingVersionNo = std::stoi(incomingVersion.substr(3, 3));
+		if(FILE_META_BYTE_LEN_BY_VERSION.find(incomingVersionNo) == FILE_META_BYTE_LEN_BY_VERSION.end())
 		{
 			repoError << "Unsupported BIM file version: " << fileVersion;
 			err = REPOERR_UNSUPPORTED_BIM_VERSION;
@@ -453,18 +454,9 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t& err)
 
 		// Loading file metadata
 		repoInfo << "Loading BIM file [VERSION: " << incomingVersion << "]";
-
 		size_t metaSize = REPO_VERSION_LENGTH + sizeof(fileMeta);
-		//TODO: Clean up the version string/number/comparison stuff into a class
-		uint8_t incomingVersionNo = std::stoi(incomingVersion.substr(3, 3));
-		if (incomingVersionNo > 2)
-		{
-			fin->read((char*)&file_meta, REPO_V3_FILEMETA_BYTE_LEN);
-		}
-		else
-		{
-			fin->read((char*)&file_meta, REPO_V2_FILEMETA_BYTE_LEN);
-		}
+		fin->read((char*)&file_meta, FILE_META_BYTE_LEN_BY_VERSION.at(incomingVersionNo));
+
 		repoInfo << std::left << std::setw(30) << "File meta size: " << metaSize;
 		repoInfo << std::left << std::setw(30) << "JSON size: " << file_meta.jsonSize << " bytes";
 		repoInfo << std::left << std::setw(30) << "Data buffer size: " << file_meta.dataSize << " bytes";

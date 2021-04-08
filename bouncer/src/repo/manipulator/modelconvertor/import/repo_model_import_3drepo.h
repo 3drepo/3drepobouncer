@@ -71,21 +71,13 @@ namespace repo {
 			class RepoModelImport : public AbstractModelImport
 			{
 			private:
-				const std::string REPO_V1 = "BIM001";
-				const std::string REPO_V2 = "BIM002";
-				const std::string REPO_V3 = "BIM003";
-				const std::string REPO_V4 = "BIM004";
 
-				const std::set<std::string> supportedFileVersions =
+				std::unordered_map<uint8_t, uint8_t> FILE_META_BYTE_LEN_BY_VERSION = 
 				{ 
-					REPO_V2,
-					REPO_V3,
-					REPO_V4
+					{2, 56}, 
+					{3, 72}, 
+					{4, 72} 
 				};
-
-				const int REPO_V1_FILEMETA_BYTE_LEN = 56;
-				const int REPO_V2_FILEMETA_BYTE_LEN = REPO_V1_FILEMETA_BYTE_LEN;
-				const int REPO_V3_FILEMETA_BYTE_LEN = 72;
 
 				typedef struct
 				{
