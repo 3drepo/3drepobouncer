@@ -299,24 +299,18 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 			}
 
 			// pull out faces
+			const auto primitiveIdxLen = (int8_t)primitiveType;
 			switch (primitiveType)
 			{
 			case repo::core::model::MeshNode::Primitive::LINES:
-				for (int i = 0; i < numIndices; i += 2)
-				{
-					repo_face_t tmpFace;
-					tmpFace.push_back(tmpIndices[i]);
-					tmpFace.push_back(tmpIndices[i + 1]);
-					faces.push_back(tmpFace);
-				}
-				break;
 			case repo::core::model::MeshNode::Primitive::TRIANGLES:
-				for (int i = 0; i < numIndices; i += 3)
+				for (int i = 0; i < numIndices; i += primitiveIdxLen)
 				{
 					repo_face_t tmpFace;
-					tmpFace.push_back(tmpIndices[i]);
-					tmpFace.push_back(tmpIndices[i + 1]);
-					tmpFace.push_back(tmpIndices[i + 2]);
+					for (int j = 0; j < primitiveIdxLen; ++j)
+					{
+						tmpFace.push_back(tmpIndices[i + j]);
+					}
 					faces.push_back(tmpFace);
 				}
 				break;
