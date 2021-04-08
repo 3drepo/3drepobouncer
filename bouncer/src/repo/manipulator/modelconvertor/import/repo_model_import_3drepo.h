@@ -146,7 +146,10 @@ namespace repo {
 				fileMeta file_meta;
 				std::vector<long> sizes; //!< Sizes of the nodes component, used for navigation.
 				char *dataBuffer;
+
+				// Error tags
 				bool missingTextures = false;
+				bool geometryImportError = false;
 				
 				// Intermediary variables used to keep track of node hierarchy
 				std::vector<repo::core::model::RepoNode *> node_map;				//!< List of all transform nodes in order of decoding

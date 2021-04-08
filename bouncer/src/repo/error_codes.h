@@ -84,4 +84,4 @@
 //Trying to import toy project but failed (only used by bouncer_worker)
 #define REPOERR_TOY_IMPORT_FAILED 33
 //The scene was read successfully but failed during geometry processing due to content problem
-#define REPOERR_ODA_GEOMETRY_ERROR 34
+#define REPOERR_GEOMETRY_ERROR 34

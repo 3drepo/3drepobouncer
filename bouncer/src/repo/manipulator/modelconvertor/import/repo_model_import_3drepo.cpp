@@ -315,7 +315,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 				}
 				break;
 			default:
-				//TODO: how to error out here?
+				geometryImportError = true;
 				break;
 			}
 		}
@@ -574,7 +574,7 @@ boost::property_tree::ptree RepoModelImport::getNextJSON(long jsonSize)
 	return singleJSON;
 }
 
-repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errMsg)
+repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errCode)
 {
 	repoInfo << "Generating scene";
 
@@ -584,7 +584,7 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errMsg
 	boost::optional< ptree& > rootBBOX = root.get_child_optional("bbox");
 	if (!rootBBOX) {
 		repoError << "No root bounding box specified.";
-		errMsg = REPOERR_MODEL_FILE_READ;
+		errCode = REPOERR_MODEL_FILE_READ;
 		return nullptr;
 	}
 	boost::optional< ptree& > transMatTree = root.get_child_optional("transformation");
@@ -668,10 +668,17 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errMsg
 	// Generate scene
 	repo::core::model::RepoScene* scenePtr = new repo::core::model::RepoScene(fileVect, cameras, meshes, materials, metadata, textures, transformations);
 	scenePtr->setWorldOffset(offset);
+
+	// Error handling
 	if (missingTextures)
 	{
-		errMsg = REPOERR_LOAD_SCENE_MISSING_TEXTURE;
+		errCode = REPOERR_LOAD_SCENE_MISSING_TEXTURE;
 		scenePtr->setMissingTexture();
+	}
+	if(geometryImportError)
+	{
+		repoError << "Unsupported geometry primitive type found";
+		errCode = REPOERR_GEOMETRY_ERROR;
 	}
 
 	// Cleanup
