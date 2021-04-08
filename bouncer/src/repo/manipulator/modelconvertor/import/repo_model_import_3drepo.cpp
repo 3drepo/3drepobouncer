@@ -127,6 +127,11 @@ void RepoModelImport::parseMaterial(const boost::property_tree::ptree& matTree)
 		textureId = matTree.get<int>("texture");
 	}
 
+	if (matTree.find("lineWeight") != matTree.not_found())
+	{
+		repo_material.lineWeight = matTree.get<float>("lineWeight");
+	}
+
 	repo_material.shininessStrength = 0.25f;
 	repo_material.isWireframe = false;
 	repo_material.isTwoSided = false;

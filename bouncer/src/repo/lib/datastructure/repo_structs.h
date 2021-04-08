@@ -104,6 +104,7 @@ typedef struct{
 	float opacity = 1;
 	float shininess = 0;
 	float shininessStrength = 0;
+	float lineWeight = 0;
 	bool isWireframe = false;
 	bool isTwoSided = false;
 
@@ -128,7 +129,7 @@ typedef struct{
 			ss << n;
 		}
 
-		ss << opacity << shininess << shininessStrength << isWireframe << isTwoSided;
+		ss << opacity << shininess << shininessStrength << lineWeight << isWireframe << isTwoSided;
 		auto stringified = ss.str();
 
 		boost::crc_32_type crc32;
