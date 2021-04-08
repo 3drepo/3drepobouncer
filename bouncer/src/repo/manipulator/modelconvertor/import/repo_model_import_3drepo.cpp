@@ -26,13 +26,12 @@
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../lib/repo_log.h"
 #include "../../../error_codes.h"
-#include "../../../core/model/bson/repo_node_mesh.h"
 
 using namespace repo::core::model;
 using namespace repo::manipulator::modelconvertor;
 using namespace boost::property_tree;
 
-RepoModelImport::RepoModelImport(const ModelImportConfig &settings) :
+RepoModelImport::RepoModelImport(const ModelImportConfig& settings) :
 	AbstractModelImport(settings)
 {
 	fin = nullptr;
@@ -44,9 +43,9 @@ RepoModelImport::~RepoModelImport()
 }
 
 repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(
-	const ptree &metaTree,
-	const std::string &parentName,
-	const repo::lib::RepoUUID &parentID)
+	const ptree& metaTree,
+	const std::string& parentName,
+	const repo::lib::RepoUUID& parentID)
 {
 	std::vector<std::string> keys, values;
 
@@ -80,7 +79,7 @@ repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(
 		values.push_back(value);
 	}
 
-	repo::core::model::MetadataNode *metaNode = new repo::core::model::MetadataNode(
+	repo::core::model::MetadataNode* metaNode = new repo::core::model::MetadataNode(
 		repo::core::model::RepoBSONFactory::makeMetaDataNode(keys, values, parentName));
 
 	metadata.insert(metaNode);
@@ -88,7 +87,7 @@ repo::core::model::MetadataNode* RepoModelImport::createMetadataNode(
 	return metaNode;
 }
 
-void RepoModelImport::parseMaterial(const boost::property_tree::ptree &matTree)
+void RepoModelImport::parseMaterial(const boost::property_tree::ptree& matTree)
 {
 	repo_material_t repo_material;
 	int textureId = -1;
@@ -135,7 +134,7 @@ void RepoModelImport::parseMaterial(const boost::property_tree::ptree &matTree)
 	std::stringstream ss("");
 	ss << "Material." << std::setfill('0') << std::setw(5) << materials.size();
 
-	repo::core::model::MaterialNode * materialNode = new repo::core::model::MaterialNode(repo::core::model::RepoBSONFactory::makeMaterialNode(repo_material, ss.str(), REPO_NODE_API_LEVEL_1));
+	repo::core::model::MaterialNode* materialNode = new repo::core::model::MaterialNode(repo::core::model::RepoBSONFactory::makeMaterialNode(repo_material, ss.str(), REPO_NODE_API_LEVEL_1));
 	materials.insert(materialNode);
 	matNodeList.push_back(materialNode);
 
@@ -147,7 +146,7 @@ void RepoModelImport::parseMaterial(const boost::property_tree::ptree &matTree)
 
 void RepoModelImport::parseTexture(
 	const boost::property_tree::ptree& textureTree,
-	char * const dataBuffer)
+	char* const dataBuffer)
 {
 	bool fileNameOk = textureTree.find(REPO_TXTR_FNAME) != textureTree.not_found();
 	bool byteCountOK = textureTree.find(REPO_TXTR_NUM_BYTES) != textureTree.not_found();
@@ -189,10 +188,10 @@ void RepoModelImport::parseTexture(
 }
 
 RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
-	const ptree &mesh,
-	const std::string &parentName,
-	const repo::lib::RepoUUID &parentID,
-	const repo::lib::RepoMatrix &trans)
+	const ptree& mesh,
+	const std::string& parentName,
+	const repo::lib::RepoUUID& parentID,
+	const repo::lib::RepoMatrix& trans)
 {
 	int materialID = -1;
 
@@ -224,7 +223,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 
 	std::vector<double> minBBox;
 	std::vector<double> maxBBox;
-	
+
 	for (ptree::const_iterator props = mesh.begin(); props != mesh.end(); props++)
 	{
 		if (props->first == REPO_IMPORT_MATERIAL)
@@ -235,8 +234,8 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 		{
 			std::vector<int64_t> startEnd = as_vector<int64_t>(mesh, props->first);
 
-			double *tmpVerticesDouble = (double *)(dataBuffer + startEnd[0]);
-			float *tmpVerticesSingle = (float *)(dataBuffer + startEnd[0]);
+			double* tmpVerticesDouble = (double*)(dataBuffer + startEnd[0]);
+			float* tmpVerticesSingle = (float*)(dataBuffer + startEnd[0]);
 
 			for (int i = 0; i < numVertices; i++)
 			{
@@ -285,7 +284,7 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 		{
 			std::vector<int64_t> startEnd = as_vector<int64_t>(mesh, REPO_IMPORT_INDICES);
 
-			uint32_t *tmpIndices = (uint32_t*)(dataBuffer + startEnd[0]);
+			uint32_t* tmpIndices = (uint32_t*)(dataBuffer + startEnd[0]);
 
 			// figure out primitive type
 			boost::optional<const ptree&> primitiveProp = mesh.get_child_optional(REPO_IMPORT_PRIMITIVE);
@@ -379,7 +378,7 @@ void RepoModelImport::createObject(const ptree& tree)
 
 	trans_matrix_map.push_back(parentTransform * transMat);
 
-	repo::core::model::TransformationNode * transNode =
+	repo::core::model::TransformationNode* transNode =
 		new repo::core::model::TransformationNode(
 			repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), transName, parentIDs));
 
@@ -407,7 +406,7 @@ void RepoModelImport::createObject(const ptree& tree)
 
 	metaParentIDs.push_back(transNode->getSharedID());
 
-	for (auto &meta : metas)
+	for (auto& meta : metas)
 	{
 		*meta = meta->cloneAndAddParent(metaParentIDs);
 	}
@@ -420,13 +419,13 @@ void RepoModelImport::skipAheadInFile(long amount)
 	if (amount > 0)
 	{
 		// Cannot use seekg on GZIP file
-		char *tmpBuf = new char[amount];
+		char* tmpBuf = new char[amount];
 		fin->read(tmpBuf, amount);
 		delete[] tmpBuf;
 	}
 }
 
-bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
+bool RepoModelImport::importModel(std::string filePath, uint8_t& err)
 {
 	orgFile = filePath;
 	std::string fileName = getFileName(filePath);
@@ -463,7 +462,7 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 
 		size_t metaSize = REPO_VERSION_LENGTH + sizeof(fileMeta);
 		//TODO: Clean up the version string/number/comparison stuff into a class
-		uint8_t incomingVersionNo = std::stoi(incomingVersion.substr(3,3));
+		uint8_t incomingVersionNo = std::stoi(incomingVersion.substr(3, 3));
 		if (incomingVersionNo > 2)
 		{
 			fin->read((char*)&file_meta, REPO_V3_FILEMETA_BYTE_LEN);
@@ -530,7 +529,7 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 			if (textureIdToParents.size() > 0)
 			{
 				int maxTextureId = textureIdToParents.rbegin()->first;
-				// Texture ids in the material JSON should map 
+				// Texture ids in the material JSON should map
 				// directly on to the order they appear in the texture JSON
 				if (maxTextureId > (textures.size() - 1))
 				{
@@ -568,7 +567,7 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t &err)
 boost::property_tree::ptree RepoModelImport::getNextJSON(long jsonSize)
 {
 	boost::property_tree::ptree singleJSON;
-	char *jsonBuf = new char[jsonSize + 1];
+	char* jsonBuf = new char[jsonSize + 1];
 
 	fin->read(jsonBuf, jsonSize);
 	jsonBuf[jsonSize] = '\0';
@@ -581,7 +580,7 @@ boost::property_tree::ptree RepoModelImport::getNextJSON(long jsonSize)
 	return singleJSON;
 }
 
-repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t &errMsg)
+repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errMsg)
 {
 	repoInfo << "Generating scene";
 
@@ -600,7 +599,7 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t &errMsg
 	{
 		transMat = repo::lib::RepoMatrix(as_vector<float>(root, "transformation"));
 	}
-	repo::core::model::TransformationNode *rootNode =
+	repo::core::model::TransformationNode* rootNode =
 		new repo::core::model::TransformationNode(
 			repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), rootName, std::vector<repo::lib::RepoUUID>()));
 	node_map.push_back(rootNode);
@@ -625,7 +624,7 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t &errMsg
 	materials.clear();
 	for (int i = 0; i < matNodeList.size(); i++)
 	{
-		repo::core::model::MaterialNode *tmpMaterial = new repo::core::model::MaterialNode();
+		repo::core::model::MaterialNode* tmpMaterial = new repo::core::model::MaterialNode();
 		*tmpMaterial = matNodeList[i]->cloneAndAddParent(matParents[i]);
 		materials.insert(tmpMaterial);
 	}
@@ -640,16 +639,16 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t &errMsg
 	// Processing meshes
 	repo::core::model::RepoNodeSet meshes;
 	if (!offset.size()) { offset = { 0, 0, 0 }; }
-	for (const auto &entry : meshEntries) {
+	for (const auto& entry : meshEntries) {
 		std::vector<repo::lib::RepoVector3D> vertices;
 		std::vector<std::vector<float>> boundingBox;
 		// Offsetting all the verts by the world offset to reduce the magnitude
 		// of their values so they can be cast to floats (widely used in 3D libs)
-		for (const auto &v : entry.rawVertices) {
+		for (const auto& v : entry.rawVertices) {
 			repo::lib::RepoVector3D v32 = { (float)(v.x - offset[0]), (float)(v.y - offset[1]), (float)(v.z - offset[2]) };
 			vertices.push_back(v32);
 		}
-		for (const auto &bbArr : entry.boundingBox) {
+		for (const auto& bbArr : entry.boundingBox) {
 			std::vector<float> bb;
 			for (int i = 0; i < bbArr.size(); ++i) {
 				bb.push_back((float)bbArr[i] - offset[i]);
@@ -673,7 +672,7 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t &errMsg
 	}
 
 	// Generate scene
-	repo::core::model::RepoScene * scenePtr = new repo::core::model::RepoScene(fileVect, cameras, meshes, materials, metadata, textures, transformations);
+	repo::core::model::RepoScene* scenePtr = new repo::core::model::RepoScene(fileVect, cameras, meshes, materials, metadata, textures, transformations);
 	scenePtr->setWorldOffset(offset);
 	if (missingTextures)
 	{
