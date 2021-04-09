@@ -51,9 +51,9 @@ matrix:
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
           - echo ============ TEIGHA INSTALL =============
           - wget -q $TEIGHA_FOCAL_LIBS_2021_12
-          - tar -zxf teighaLinuxGCC5.3.tgz
-          - ls teighaLinuxGCC5.3/Kernel/Include
-          - export ODA_ROOT=$PWD/teighaLinuxGCC5.3
+          - tar -zxf teighaLinuxGCC8.3.tgz
+          - ls teighaLinuxGCC8.3/Kernel/Include
+          - export ODA_ROOT=$PWD/teighaLinuxGCC8.3
           - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_8.3dll/
           - echo ============ SYNCHRO INSTALL =============
           - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
