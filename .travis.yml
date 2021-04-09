@@ -2,11 +2,13 @@
 matrix:
   include:
     - language: node_js
+      dist: focal
       node_js:
         - "10.15.1"
       script:
         - cd tools/bouncer_worker && yarn install && yarn lint
     - language: cpp
+      dist: focal
       compiler:
            - gcc
 
@@ -38,27 +40,27 @@ matrix:
             #    - sudo apt-get install libboost1.60-all-dev
           - sudo apt-get install libboost-all-dev
           - echo ============ MONGO  INSTALL =============
-          - tar -zxf testData/bouncer/ext_libs/xenial/mongo-cxx-driver.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/mongo-cxx-driver.tgz
           - export MONGO_ROOT=$PWD/mongo-cxx-driver
           - echo ============ ASSIMP INSTALL =============
-          - tar -zxf testData/bouncer/ext_libs/xenial/assimp.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/assimp.tgz
           - export ASSIMP_ROOT=$PWD/assimp
           - echo ============ IFCOPENSHELL INSTALL =============
-          - tar -zxf testData/bouncer/ext_libs/xenial/OCCT.tgz
-          - tar -zxf testData/bouncer/ext_libs/xenial/IfcOpenShell.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/OCCT.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/IfcOpenShell.tgz
           - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev
           - export OCCT_ROOT=$PWD/OCCT
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
           - echo ============ TEIGHA INSTALL =============
-          - wget -q $TEIGHA_LIBS_2021_12
+          - wget -q $TEIGHA_FOCAL_LIBS_2021_12
           - tar -zxf teighaLinuxGCC5.3.tgz
           - ls teighaLinuxGCC5.3/Kernel/Include
           - export ODA_ROOT=$PWD/teighaLinuxGCC5.3
-          - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_5.3dll/
+          - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_8.3dll/
           - echo ============ SYNCHRO INSTALL =============
           - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
-          - tar -zxf testData/bouncer/ext_libs/xenial/synchro_6.2/thrift-0.12.0.tgz
-          - tar -zxf testData/bouncer/ext_libs/xenial/3drepoSynchroReader-2.0.0.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/synchro_6.2/thrift-0.12.0.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/3drepoSynchroReader-2.0.0.tgz
           - export THRIFT_ROOT=$PWD/thrift-0.12.0
           - export SYNCHRO_READER_ROOT=$PWD/3drepoSynchroReader
           - export SYNCHRO_PLUGIN_LOCATION=$PWD/3drepoSynchroReader/plugins
@@ -76,9 +78,9 @@ matrix:
           - export REPO_MODEL_PATH=$PWD/../testData/bouncer/data/models
           - for f in $REPO_MODEL_PATH/*.json; do sed -i.bak -e 's|$REPO_MODEL_PATH|'$REPO_MODEL_PATH'|g' $f; done
           - cd ~/bouncer_install
-          - cp bin/* $ODA_ROOT/bin/lnxX64_5.3dll/
-          - cd $ODA_ROOT/bin/lnxX64_5.3dll/
-          - ODA_CSV_LOCATION=$ODA_ROOT/bin/lnxX64_5.3dll/ PATH=$ODA_ROOT/bin/lnxX64_5.3dll/:$PATH LD_LIBRARY_PATH=$SYNCHRO_READER_ROOT/lib:$THRIFT_ROOT/lib:$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$ODA_ROOT/bin/lnxX64_5.3dll/:$LD_LIBRARY_PATH:$HOME/bouncer_install/lib ./3drepobouncerTest
+          - cp bin/* $ODA_ROOT/bin/lnxX64_8.3dll/
+          - cd $ODA_ROOT/bin/lnxX64_8.3dll/
+          - ODA_CSV_LOCATION=$ODA_ROOT/bin/lnxX64_8.3dll/ PATH=$ODA_ROOT/bin/lnxX64_8.3dll/:$PATH LD_LIBRARY_PATH=$SYNCHRO_READER_ROOT/lib:$THRIFT_ROOT/lib:$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$ODA_ROOT/bin/lnxX64_8.3dll/:$LD_LIBRARY_PATH:$HOME/bouncer_install/lib ./3drepobouncerTest
       after_success:
           - cd - && coveralls --root ../ -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0" -e "aws-install"
 notifications:
