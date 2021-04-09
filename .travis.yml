@@ -34,7 +34,6 @@ matrix:
           - cd ../../../../
           - export CXX="g++"
           - export CC="gcc"
-          - gcov --version
           - echo ============ BOOST  INSTALL =============
           - sudo apt-get install libboost-all-dev
           - echo ============ MONGO  INSTALL =============
