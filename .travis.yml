@@ -57,7 +57,7 @@ matrix:
           - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_8.3dll/
           - echo ============ SYNCHRO INSTALL =============
           - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
-          - tar -zxf testData/bouncer/ext_libs/focal/synchro_6.2/thrift-0.12.0.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/thrift-0.12.0.tgz
           - tar -zxf testData/bouncer/ext_libs/focal/3drepoSynchroReader-2.0.0.tgz
           - export THRIFT_ROOT=$PWD/thrift-0.12.0
           - export SYNCHRO_READER_ROOT=$PWD/3drepoSynchroReader
