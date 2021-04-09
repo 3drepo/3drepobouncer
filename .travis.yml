@@ -29,15 +29,13 @@ matrix:
           - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
           - mongo admin testData/bouncer/createUser.js
           - cd  testData/bouncer/data/database/
+          - sudo apt-get install mongo-tools
           - mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin --quiet
           - cd ../../../../
           - export CXX="g++"
           - export CC="gcc"
           - gcov --version
           - echo ============ BOOST  INSTALL =============
-            #    - sudo add-apt-repository -y ppa:samuel-bachmann/boost
-            #    - sudo apt-get update
-            #    - sudo apt-get install libboost1.60-all-dev
           - sudo apt-get install libboost-all-dev
           - echo ============ MONGO  INSTALL =============
           - tar -zxf testData/bouncer/ext_libs/focal/mongo-cxx-driver.tgz
