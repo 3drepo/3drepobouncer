@@ -31,9 +31,9 @@
 #include "../../../core/model/bson/repo_node_mesh.h"
 #include "../../../core/model/collection/repo_scene.h"
 
-namespace repo{
-	namespace manipulator{
-		namespace modelconvertor{
+namespace repo {
+	namespace manipulator {
+		namespace modelconvertor {
 			class IFCUtilsParser
 			{
 			public:
@@ -63,7 +63,7 @@ namespace repo{
 					std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> &meshes,
 					std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
 					const std::vector<double>                                                  &offset
-					);
+				);
 
 			protected:
 				repo::core::model::RepoNodeSet createTransformations(
@@ -71,7 +71,7 @@ namespace repo{
 					std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> &meshes,
 					std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
 					repo::core::model::RepoNodeSet											   &metaSet
-					);
+				);
 
 				repo::core::model::RepoNodeSet createTransformationsRecursive(
 					IfcParse::IfcFile &ifcfile,
@@ -79,15 +79,15 @@ namespace repo{
 					std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> &meshes,
 					std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
 					repo::core::model::RepoNodeSet											   &metaSet,
-					std::pair<std::vector<std::string>, std::vector<std::string>>               &metaValue,
-					const repo::lib::RepoUUID																&parentID,
+					std::unordered_map<std::string, std::string>                               &metaValue,
+					const repo::lib::RepoUUID												   &parentID,
 					const std::set<int>													       &ancestorsID = std::set<int>()
-					);
+				);
 
 				void determineActionsByElementType(
 					IfcParse::IfcFile &ifcfile,
 					const IfcUtil::IfcBaseClass *element,
-					std::pair<std::vector<std::string>, std::vector<std::string>> &metaValues,
+					std::unordered_map<std::string, std::string>                  &metaValues,
 					bool                                                          &createElement,
 					bool                                                          &traverseChildren,
 					bool                                                          &isIFCSpace,

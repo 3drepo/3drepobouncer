@@ -37,8 +37,8 @@ const static std::string IFC_TYPE_SPACE_LABEL = "(IFC Space)";
 using namespace repo::manipulator::modelconvertor;
 
 IFCUtilsParser::IFCUtilsParser(const std::string &file) :
-file(file),
-missingEntities(false)
+	file(file),
+	missingEntities(false)
 {
 }
 
@@ -51,7 +51,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformations(
 	std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> &meshes,
 	std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
 	repo::core::model::RepoNodeSet											   &metaSet
-	)
+)
 {
 	//The ifc file shoudl always have a IFC Site as the starting tag
 	auto initialElements = ifcfile.entitiesByType(IfcSchema::Type::IfcSite);
@@ -82,7 +82,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformations(
 		for (auto &element : *initialElements)
 		{
 			//auto element = *it;
-			std::pair<std::vector<std::string>, std::vector<std::string>> metaValue({ std::vector<std::string>(), std::vector<std::string>() });
+			std::unordered_map<std::string, std::string> metaValue;
 			auto childTransNodes = createTransformationsRecursive(ifcfile, element, meshes, materials, metaSet, metaValue, parentID);
 			transNodes.insert(childTransNodes.begin(), childTransNodes.end());
 		}
@@ -101,16 +101,16 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> &meshes,
 	std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
 	repo::core::model::RepoNodeSet											   &metaSet,
-	std::pair<std::vector<std::string>, std::vector<std::string>>               &metaValue,
-	const repo::lib::RepoUUID															   &parentID,
+	std::unordered_map<std::string, std::string>                               &metaValue,
+	const repo::lib::RepoUUID												   &parentID,
 	const std::set<int>													       &ancestorsID
-	)
+)
 {
 	bool createElement = true; //create a transformation for this element
 	bool traverseChildren = true; //keep recursing its children
 	bool isIFCSpace = false;
 	std::vector<int> extraChildren; //children outside of reference
-	std::pair<std::vector<std::string>, std::vector<std::string>> myMetaValues({ std::vector<std::string>(), std::vector<std::string>() });
+	std::unordered_map<std::string, std::string> myMetaValues;
 
 	auto id = element->entity->id();
 	std::string guid, name;
@@ -119,16 +119,23 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	std::transform(ifcType.begin(), ifcType.end(), ifcTypeUpper.begin(), ::toupper);
 	createElement = ifcTypeUpper.find("IFCREL") == std::string::npos;
 
+	determineActionsByElementType(ifcfile, element, myMetaValues, createElement, traverseChildren, isIFCSpace, extraChildren);
+
+	repo::lib::RepoUUID transID = parentID;
+	repo::core::model::RepoNodeSet transNodeSet;
+
+	if (isIFCSpace) name += " " + IFC_TYPE_SPACE_LABEL;
+
 	for (int i = 0; i < element->getArgumentCount(); ++i)
 	{
-		if (element->getArgumentName(i) == IFC_ARGUMENT_GLOBAL_ID)
+		auto argumentName = element->getArgumentName(i);
+		if (argumentName == IFC_ARGUMENT_GLOBAL_ID)
 		{
 			//It comes with single quotes. remove those
 			guid = element->getArgument(i)->toString().erase(0, 1);
 			guid = guid.erase(guid.size() - 1, 1);
 		}
-
-		if (element->getArgumentName(i) == IFC_ARGUMENT_NAME)
+		else if (argumentName == IFC_ARGUMENT_NAME)
 		{
 			name = element->getArgument(i)->toString();
 			if (name != "$")
@@ -145,14 +152,12 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 				name = "(" + ifcType + ")";;
 			}
 		}
+		else if (createElement) {
+			repoInfo << "arguemnt: " << element->getArgumentName(i) << " value:  " << element->getArgument(i)->toString();
+		}
 	}
-
-	determineActionsByElementType(ifcfile, element, myMetaValues, createElement, traverseChildren, isIFCSpace, extraChildren);
-
-	repo::lib::RepoUUID transID = parentID;
-	repo::core::model::RepoNodeSet transNodeSet;
-
-	if (isIFCSpace) name += " " + IFC_TYPE_SPACE_LABEL;
+	if (guid == "2XnCNfbvb5mfgxvK1MPFfM")
+		exit(0);
 
 	if (createElement)
 	{
@@ -163,7 +168,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 
 		transID = transNode.getSharedID();
 
-		transNodeSet.insert(new repo::core::model::TransformationNode(transNode));	
+		transNodeSet.insert(new repo::core::model::TransformationNode(transNode));
 	}
 
 	bool hasTransChildren = false;
@@ -190,8 +195,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 		{
 			if (ancestorsID.find(childrenId) == ancestorsID.end())
 			{
-
-				try{
+				try {
 					auto childEntity = ifcfile.entityById(childrenId);
 					auto childTransNodes = createTransformationsRecursive(ifcfile, childEntity, meshes, materials, metaSet, myMetaValues, transID, childrenAncestors);
 					transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
@@ -202,8 +206,6 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 					repoError << "Failed to find child entity " << childrenId << " (" << e.what() << ")";
 					missingEntities = true;
 				}
-				
-				
 			}
 		}
 	}
@@ -211,10 +213,12 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	//If we created an element, add a metanode to it. if not, add them to our parent's meta info
 	if (createElement)
 	{
-		myMetaValues.first.insert(myMetaValues.first.begin(), REPO_LABEL_IFC_GUID);
-		myMetaValues.second.insert(myMetaValues.second.begin(), guid);
-		myMetaValues.first.insert(myMetaValues.first.begin(), REPO_LABEL_IFC_TYPE);
-		myMetaValues.second.insert(myMetaValues.second.begin(), ifcType);
+		myMetaValues[REPO_LABEL_IFC_GUID] = guid;
+		myMetaValues[REPO_LABEL_IFC_TYPE] = ifcType;
+
+		if (!name.empty()) {
+			myMetaValues[IFC_ARGUMENT_NAME] = name;
+		}
 
 		std::vector<repo::lib::RepoUUID> metaParents = { transID };
 		if (meshes.find(guid) != meshes.end())
@@ -230,12 +234,11 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 			}
 		}
 
-		metaSet.insert(new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(myMetaValues.first, myMetaValues.second, name, metaParents)));
+		metaSet.insert(new repo::core::model::MetadataNode(repo::core::model::RepoBSONFactory::makeMetaDataNode(myMetaValues, name, metaParents)));
 	}
 	else
 	{
-		metaValue.first.insert(metaValue.first.end(), myMetaValues.first.begin(), myMetaValues.first.end());
-		metaValue.second.insert(metaValue.second.end(), myMetaValues.second.begin(), myMetaValues.second.end());
+		metaValue.insert(myMetaValues.begin(), myMetaValues.end());
 	}
 	return transNodeSet;
 }
@@ -245,7 +248,7 @@ repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
 	std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> &meshes,
 	std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
 	const std::vector<double>                                                  &offset
-	)
+)
 {
 	IfcParse::IfcFile ifcfile;
 	if (!ifcfile.Init(file))
@@ -289,7 +292,7 @@ repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
 void IFCUtilsParser::determineActionsByElementType(
 	IfcParse::IfcFile &ifcfile,
 	const IfcUtil::IfcBaseClass *element,
-	std::pair<std::vector<std::string>, std::vector<std::string>> &metaValues,
+	std::unordered_map<std::string, std::string>                  &metaValues,
 	bool                                                          &createElement,
 	bool                                                          &traverseChildren,
 	bool                                                          &isIFCSpace,
@@ -314,13 +317,11 @@ void IFCUtilsParser::determineActionsByElementType(
 		{
 			if (project->hasName())
 			{
-				metaValues.first.push_back("Project Name");
-				metaValues.second.push_back(project->Name());
+				metaValues["Project Name"] = project->Name();
 			}
 			if (project->hasDescription())
 			{
-				metaValues.first.push_back("Project Description");
-				metaValues.second.push_back(project->Description());
+				metaValues["Project Description"] = project->Description();
 			}
 		}
 
@@ -333,8 +334,6 @@ void IFCUtilsParser::determineActionsByElementType(
 		auto propVal = static_cast<const IfcSchema::IfcPropertySingleValue *>(element);
 		if (propVal)
 		{
-			metaValues.first.push_back(propVal->Name());
-
 			std::string value = "n/a";
 			if (propVal->hasNominalValue())
 			{
@@ -349,7 +348,7 @@ void IFCUtilsParser::determineActionsByElementType(
 				auto units = propVal->Unit();
 			}
 
-			metaValues.second.push_back(value);
+			metaValues[propVal->Name()] = value;
 		}
 		createElement = false;
 		traverseChildren = false;
@@ -384,7 +383,6 @@ void IFCUtilsParser::determineActionsByElementType(
 		traverseChildren = false;
 		if (relCS)
 		{
-			metaValues.first.push_back(relCS->hasName()? relCS->Name() : "Classification (No Name)");
 			std::string classValue;
 			try
 			{
@@ -425,7 +423,8 @@ void IFCUtilsParser::determineActionsByElementType(
 				//This will throw an exception if there is no relating classification.
 				classValue = "n/a";
 			}
-			metaValues.second.push_back(classValue);
+
+			metaValues["Classification (No Name)"] = classValue;
 		}
 		else
 		{
@@ -439,7 +438,7 @@ void IFCUtilsParser::determineActionsByElementType(
 		createElement = false;
 		if (relCS)
 		{
-			try{
+			try {
 				auto relatedObjects = relCS->RelatedElements();
 				if (relatedObjects)
 				{
