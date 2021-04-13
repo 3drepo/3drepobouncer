@@ -110,7 +110,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	bool traverseChildren = true; //keep recursing its children
 	bool isIFCSpace = false;
 	std::vector<int> extraChildren; //children outside of reference
-	std::unordered_map<std::string, std::string> myMetaValues;
+	std::unordered_map<std::string, std::string> myMetaValues, elementInfo;
 
 	auto id = element->entity->id();
 	std::string guid, name;
@@ -134,6 +134,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 			//It comes with single quotes. remove those
 			guid = element->getArgument(i)->toString().erase(0, 1);
 			guid = guid.erase(guid.size() - 1, 1);
+			elementInfo[REPO_LABEL_IFC_GUID] = guid;
 		}
 		else if (argumentName == IFC_ARGUMENT_NAME)
 		{
@@ -151,13 +152,33 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 			{
 				name = "(" + ifcType + ")";;
 			}
+			elementInfo[argumentName] = name;
 		}
 		else if (createElement) {
-			repoInfo << "arguemnt: " << element->getArgumentName(i) << " value:  " << element->getArgument(i)->toString();
+			std::string value;
+			auto type = element->getArgument(i)->type();
+
+			switch (type) {
+			case IfcUtil::ArgumentType::Argument_ENTITY_INSTANCE:
+			case IfcUtil::ArgumentType::Argument_NULL:
+			case IfcUtil::ArgumentType::Argument_AGGREGATE_OF_AGGREGATE_OF_ENTITY_INSTANCE:
+				//do nothing. ignore these as they are either empty or it's linkage
+				break;
+			case IfcUtil::ArgumentType::Argument_STRING:
+			case IfcUtil::ArgumentType::Argument_ENUMERATION:
+				value = element->getArgument(i)->toString();
+				//It comes with single quotes or . for enumeration. remove these
+				value = element->getArgument(i)->toString().erase(0, 1);
+				value = value.erase(value.size() - 1, 1);
+				break;
+			default:
+				value = element->getArgument(i)->toString();
+			}
+
+			if (!value.empty())
+				elementInfo[argumentName] = value;
 		}
 	}
-	if (guid == "2XnCNfbvb5mfgxvK1MPFfM")
-		exit(0);
 
 	if (createElement)
 	{
@@ -213,12 +234,9 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	//If we created an element, add a metanode to it. if not, add them to our parent's meta info
 	if (createElement)
 	{
-		myMetaValues[REPO_LABEL_IFC_GUID] = guid;
 		myMetaValues[REPO_LABEL_IFC_TYPE] = ifcType;
 
-		if (!name.empty()) {
-			myMetaValues[IFC_ARGUMENT_NAME] = name;
-		}
+		myMetaValues.insert(elementInfo.begin(), elementInfo.end());
 
 		std::vector<repo::lib::RepoUUID> metaParents = { transID };
 		if (meshes.find(guid) != meshes.end())
