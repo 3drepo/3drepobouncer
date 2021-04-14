@@ -110,7 +110,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	bool createElement = true; //create a transformation for this element
 	bool traverseChildren = true; //keep recursing its children
 	bool isIFCSpace = false;
-	std::vector<int> extraChildren; //children outside of reference
+	std::vector<IfcUtil::IfcBaseClass *> extraChildren; //children outside of reference
 	std::unordered_map<std::string, std::string> myMetaValues, elementInfo;
 
 	auto id = element->entity->id();
@@ -119,7 +119,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	std::string ifcTypeUpper = ifcType;
 	std::transform(ifcType.begin(), ifcType.end(), ifcTypeUpper.begin(), ::toupper);
 	createElement = ifcTypeUpper.find("IFCREL") == std::string::npos;
-
+	repoInfo << element->type();
 	determineActionsByElementType(ifcfile, element, myMetaValues, createElement, traverseChildren, isIFCSpace, extraChildren, metaPrefix, childrenMetaPrefix);
 
 	repo::lib::RepoUUID transID = parentID;
@@ -213,19 +213,19 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 			}
 		}
 
-		for (const auto &childrenId : extraChildren)
+		for (const auto &child : extraChildren)
 		{
-			if (ancestorsID.find(childrenId) == ancestorsID.end())
+			if (ancestorsID.find(child->entity->id()) == ancestorsID.end())
 			{
 				try {
-					auto childEntity = ifcfile.entityById(childrenId);
-					auto childTransNodes = createTransformationsRecursive(ifcfile, childEntity, meshes, materials, metaSet, myMetaValues, transID, childrenAncestors, childrenMetaPrefix);
+					auto childTransNodes = createTransformationsRecursive(ifcfile, child, meshes, materials, metaSet, myMetaValues, transID, childrenAncestors, childrenMetaPrefix);
 					transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
 					hasTransChildren |= childTransNodes.size();
 				}
 				catch (IfcParse::IfcException &e)
 				{
-					repoError << "Failed to find child entity " << childrenId << " (" << e.what() << ")";
+					repoError << "Failed to find child entity " << child->entity->id() << " (" << e.what() << ")";
+					exit(0);
 					missingEntities = true;
 				}
 			}
@@ -322,10 +322,11 @@ void IFCUtilsParser::determineActionsByElementType(
 	bool                                                          &createElement,
 	bool                                                          &traverseChildren,
 	bool                                                          &isIFCSpace,
-	std::vector<int>                                              &extraChildren,
+	std::vector<IfcUtil::IfcBaseClass *>                          &extraChildren,
 	const std::string											  &metaPrefix,
 	std::string													  &childrenMetaPrefix)
 {
+	childrenMetaPrefix = metaPrefix;
 	switch (element->type())
 	{
 	case IfcSchema::Type::IfcRelAssignsToGroup: //This is group!
@@ -386,7 +387,7 @@ void IFCUtilsParser::determineActionsByElementType(
 		auto defByProp = static_cast<const IfcSchema::IfcRelDefinesByProperties *>(element);
 		if (defByProp)
 		{
-			extraChildren.push_back(defByProp->RelatingPropertyDefinition()->entity->id());
+			extraChildren.push_back(defByProp->RelatingPropertyDefinition());
 		}
 
 		createElement = false;
@@ -397,10 +398,7 @@ void IFCUtilsParser::determineActionsByElementType(
 		auto propSet = static_cast<const IfcSchema::IfcPropertySet *>(element);
 		auto propDefs = propSet->HasProperties();
 
-		for (auto &pd : *propDefs)
-		{
-			extraChildren.push_back(pd->entity->id());
-		}
+		extraChildren.insert(extraChildren.end(), propDefs->begin(), propDefs->end());
 		createElement = false;
 		childrenMetaPrefix = appendMetaPrefix(propSet->Name(), metaPrefix);
 		break;
@@ -409,10 +407,10 @@ void IFCUtilsParser::determineActionsByElementType(
 	{
 		auto eleQuan = static_cast<const IfcSchema::IfcElementQuantity *>(element);
 		auto quantities = eleQuan->Quantities();
-		for (const auto &entry : *quantities) {
-			extraChildren.push_back(entry->entity->id());
-		}
+		extraChildren.insert(extraChildren.end(), quantities->begin(), quantities->end());
 		childrenMetaPrefix = appendMetaPrefix(eleQuan->Name(), metaPrefix);
+		createElement = false;
+		break;
 	}
 	case IfcSchema::Type::IfcQuantityLength:
 	{
@@ -594,10 +592,7 @@ void IFCUtilsParser::determineActionsByElementType(
 				auto relatedObjects = relCS->RelatedElements();
 				if (relatedObjects)
 				{
-					for (auto &e : *relatedObjects)
-					{
-						extraChildren.push_back(e->entity->id());
-					}
+					extraChildren.insert(extraChildren.end(), relatedObjects->begin(), relatedObjects->end());
 				}
 				else
 				{
@@ -625,10 +620,7 @@ void IFCUtilsParser::determineActionsByElementType(
 			auto relatedObjects = relAgg->RelatedObjects();
 			if (relatedObjects)
 			{
-				for (auto &e : *relatedObjects)
-				{
-					extraChildren.push_back(e->entity->id());
-				}
+				extraChildren.insert(extraChildren.end(), relatedObjects->begin(), relatedObjects->end());
 			}
 			else
 			{

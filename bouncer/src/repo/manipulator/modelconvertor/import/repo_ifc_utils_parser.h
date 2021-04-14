@@ -92,7 +92,7 @@ namespace repo {
 					bool                                                          &createElement,
 					bool                                                          &traverseChildren,
 					bool                                                          &isIFCSpace,
-					std::vector<int>                                              &extraChildren,
+					std::vector<IfcUtil::IfcBaseClass *>                          &extraChildren,
 					const std::string											  &metaPrefix,
 					std::string											          &childrenMetaPrefix);
 
