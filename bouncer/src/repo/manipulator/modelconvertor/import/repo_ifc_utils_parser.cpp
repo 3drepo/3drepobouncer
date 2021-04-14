@@ -54,17 +54,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformations(
 )
 {
 	//The ifc file shoudl always have a IFC Site as the starting tag
-	auto initialElements = ifcfile.entitiesByType(IfcSchema::Type::IfcSite);
-	if (!initialElements || !initialElements->size())
-	{
-		repoWarning << "Could not find IFC Site tag... trying IfcBuilding";
-		//If there is no site, get the buildings
-		initialElements = ifcfile.entitiesByType(IfcSchema::Type::IfcBuilding);
-		if (!initialElements || !initialElements->size())
-		{
-			repoError << "Could not find IFCBuilding tag either. ";
-		}
-	}
+	auto initialElements = ifcfile.entitiesByType(IfcSchema::Type::IfcProject);
 
 	repo::core::model::RepoNodeSet transNodes;
 	if (initialElements->size())
@@ -89,7 +79,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformations(
 	}
 	else //if (initialElements.size())
 	{
-		repoError << "Failed to generate IFC Tree: could not find a starting node (IFCSite, IFCBuilding)";
+		repoError << "Failed to generate IFC Tree: could not find a starting node (IFCProject)";
 	}
 
 	return transNodes;
@@ -306,7 +296,7 @@ repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
 	return scene;
 }
 
-std::string appendMetaPrefix(
+std::string IFCUtilsParser::constructMetadataLabel(
 	const std::string &label,
 	const std::string &prefix
 ) {
@@ -339,20 +329,9 @@ void IFCUtilsParser::determineActionsByElementType(
 	case IfcSchema::Type::IfcProject:
 	{
 		auto project = static_cast<const IfcSchema::IfcProject *>(element);
-		if (project)
-		{
-			if (project->hasName())
-			{
-				metaValues[appendMetaPrefix("Project Name", metaPrefix)] = project->Name();
-			}
-			if (project->hasDescription())
-			{
-				metaValues[appendMetaPrefix("Project Description", metaPrefix)] = project->Description();
-			}
-		}
 
-		createElement = false;
-		traverseChildren = false;
+		createElement = true;
+		traverseChildren = true;
 		break;
 	}
 	case IfcSchema::Type::IfcPropertySingleValue:
@@ -372,9 +351,11 @@ void IFCUtilsParser::determineActionsByElementType(
 				repoTrace << "Property has units - We are currently not supporting this.";
 				//FIXME: units
 				auto units = propVal->Unit();
+				repoInfo << units->entity->toString();
+				exit(0);
 			}
 
-			metaValues[appendMetaPrefix(propVal->Name(), metaPrefix)] = value;
+			metaValues[constructMetadataLabel(propVal->Name(), metaPrefix)] = value;
 		}
 		createElement = false;
 		traverseChildren = false;
@@ -398,7 +379,7 @@ void IFCUtilsParser::determineActionsByElementType(
 
 		extraChildren.insert(extraChildren.end(), propDefs->begin(), propDefs->end());
 		createElement = false;
-		childrenMetaPrefix = appendMetaPrefix(propSet->Name(), metaPrefix);
+		childrenMetaPrefix = constructMetadataLabel(propSet->Name(), metaPrefix);
 		break;
 	}
 	case IfcSchema::Type::IfcElementQuantity:
@@ -406,7 +387,7 @@ void IFCUtilsParser::determineActionsByElementType(
 		auto eleQuan = static_cast<const IfcSchema::IfcElementQuantity *>(element);
 		auto quantities = eleQuan->Quantities();
 		extraChildren.insert(extraChildren.end(), quantities->begin(), quantities->end());
-		childrenMetaPrefix = appendMetaPrefix(eleQuan->Name(), metaPrefix);
+		childrenMetaPrefix = constructMetadataLabel(eleQuan->Name(), metaPrefix);
 		createElement = false;
 		break;
 	}
@@ -421,9 +402,11 @@ void IFCUtilsParser::determineActionsByElementType(
 				repoTrace << "Property has units - We are currently not supporting this.";
 				//FIXME: units
 				auto units = quantity->Unit();
+				repoInfo << units->entity->toString();
+				exit(0);
 			}
 
-			metaValues[appendMetaPrefix(quantity->Name(), metaPrefix)] = quantity->LengthValue();
+			metaValues[constructMetadataLabel(quantity->Name(), metaPrefix)] = std::to_string(quantity->LengthValue());
 		}
 		createElement = false;
 		traverseChildren = false;
@@ -442,7 +425,7 @@ void IFCUtilsParser::determineActionsByElementType(
 				auto units = quantity->Unit();
 			}
 
-			metaValues[appendMetaPrefix(quantity->Name(), metaPrefix)] = quantity->AreaValue();
+			metaValues[constructMetadataLabel(quantity->Name(), metaPrefix)] = std::to_string(quantity->AreaValue());
 		}
 		createElement = false;
 		traverseChildren = false;
@@ -461,7 +444,7 @@ void IFCUtilsParser::determineActionsByElementType(
 				auto units = quantity->Unit();
 			}
 
-			metaValues[appendMetaPrefix(quantity->Name(), metaPrefix)] = quantity->CountValue();
+			metaValues[constructMetadataLabel(quantity->Name(), metaPrefix)] = std::to_string(quantity->CountValue());
 		}
 		createElement = false;
 		traverseChildren = false;
@@ -480,7 +463,7 @@ void IFCUtilsParser::determineActionsByElementType(
 				auto units = quantity->Unit();
 			}
 
-			metaValues[appendMetaPrefix(quantity->Name(), metaPrefix)] = quantity->TimeValue();
+			metaValues[constructMetadataLabel(quantity->Name(), metaPrefix)] = std::to_string(quantity->TimeValue());
 		}
 		createElement = false;
 		traverseChildren = false;
@@ -499,7 +482,7 @@ void IFCUtilsParser::determineActionsByElementType(
 				auto units = quantity->Unit();
 			}
 
-			metaValues[appendMetaPrefix(quantity->Name(), metaPrefix)] = quantity->VolumeValue();
+			metaValues[constructMetadataLabel(quantity->Name(), metaPrefix)] = std::to_string(quantity->VolumeValue());
 		}
 		createElement = false;
 		traverseChildren = false;
@@ -518,7 +501,7 @@ void IFCUtilsParser::determineActionsByElementType(
 				auto units = quantity->Unit();
 			}
 
-			metaValues[appendMetaPrefix(quantity->Name(), metaPrefix)] = quantity->WeightValue();
+			metaValues[constructMetadataLabel(quantity->Name(), metaPrefix)] = std::to_string(quantity->WeightValue());
 		}
 		createElement = false;
 		traverseChildren = false;
@@ -572,7 +555,7 @@ void IFCUtilsParser::determineActionsByElementType(
 				classValue = "n/a";
 			}
 
-			metaValues[appendMetaPrefix("Classification (No Name)", metaPrefix)] = classValue;
+			metaValues[constructMetadataLabel("Classification (No Name)", metaPrefix)] = classValue;
 		}
 		else
 		{

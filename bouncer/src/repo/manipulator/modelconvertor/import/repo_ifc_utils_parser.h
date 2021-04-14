@@ -96,6 +96,11 @@ namespace repo {
 					const std::string											  &metaPrefix,
 					std::string											          &childrenMetaPrefix);
 
+				std::string constructMetadataLabel(
+					const std::string &label,
+					const std::string &prefix
+				);
+
 				std::string getValueAsString(
 					const IfcSchema::IfcValue    *ifcValue);
 
