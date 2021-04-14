@@ -61,20 +61,21 @@ bool IFCModelImport::importModel(std::string filePath, uint8_t &err)
 	bool success = false;
 
 	std::string errMsg;
-	IFCUtilsGeometry geoUtil(filePath, settings);
-	if (success = geoUtil.generateGeometry(errMsg, partialFailure))
-	{
-		//generate tree;
-		repoInfo << "Geometry generated successfully";
-		meshes = geoUtil.getGeneratedMeshes();
-		materials = geoUtil.getGeneratedMaterials();
-		offset = geoUtil.getGeometryOffset();
-	}
-	else
-	{
-		repoError << "Failed to generate geometry: " << errMsg;
-		err = REPOERR_FILE_IFC_GEO_GEN;
-	}
+	//IFCUtilsGeometry geoUtil(filePath, settings);
+	//if (success = geoUtil.generateGeometry(errMsg, partialFailure))
+	//{
+	//	//generate tree;
+	//	repoInfo << "Geometry generated successfully";
+	//	meshes = geoUtil.getGeneratedMeshes();
+	//	materials = geoUtil.getGeneratedMaterials();
+	//	offset = geoUtil.getGeometryOffset();
+	//}
+	//else
+	//{
+	//	repoError << "Failed to generate geometry: " << errMsg;
+	//	err = REPOERR_FILE_IFC_GEO_GEN;
+	//}
+	success = true;
 
 	return success;
 }

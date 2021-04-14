@@ -81,7 +81,8 @@ namespace repo {
 					repo::core::model::RepoNodeSet											   &metaSet,
 					std::unordered_map<std::string, std::string>                               &metaValue,
 					const repo::lib::RepoUUID												   &parentID,
-					const std::set<int>													       &ancestorsID = std::set<int>()
+					const std::set<int>													       &ancestorsID = std::set<int>(),
+					const std::string														   &metaPrefix = std::string()
 				);
 
 				void determineActionsByElementType(
@@ -91,7 +92,9 @@ namespace repo {
 					bool                                                          &createElement,
 					bool                                                          &traverseChildren,
 					bool                                                          &isIFCSpace,
-					std::vector<int>                                              &extraChildren);
+					std::vector<int>                                              &extraChildren,
+					const std::string											  &metaPrefix,
+					std::string											          &childrenMetaPrefix);
 
 				std::string getValueAsString(
 					const IfcSchema::IfcValue    *ifcValue);

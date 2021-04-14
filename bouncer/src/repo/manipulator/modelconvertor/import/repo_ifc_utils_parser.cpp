@@ -103,7 +103,8 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	repo::core::model::RepoNodeSet											   &metaSet,
 	std::unordered_map<std::string, std::string>                               &metaValue,
 	const repo::lib::RepoUUID												   &parentID,
-	const std::set<int>													       &ancestorsID
+	const std::set<int>													       &ancestorsID,
+	const std::string														   &metaPrefix
 )
 {
 	bool createElement = true; //create a transformation for this element
@@ -113,13 +114,13 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	std::unordered_map<std::string, std::string> myMetaValues, elementInfo;
 
 	auto id = element->entity->id();
-	std::string guid, name;
+	std::string guid, name, childrenMetaPrefix;
 	std::string ifcType = element->entity->datatype();
 	std::string ifcTypeUpper = ifcType;
 	std::transform(ifcType.begin(), ifcType.end(), ifcTypeUpper.begin(), ::toupper);
 	createElement = ifcTypeUpper.find("IFCREL") == std::string::npos;
 
-	determineActionsByElementType(ifcfile, element, myMetaValues, createElement, traverseChildren, isIFCSpace, extraChildren);
+	determineActionsByElementType(ifcfile, element, myMetaValues, createElement, traverseChildren, isIFCSpace, extraChildren, metaPrefix, childrenMetaPrefix);
 
 	repo::lib::RepoUUID transID = parentID;
 	repo::core::model::RepoNodeSet transNodeSet;
@@ -205,7 +206,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 			{
 				if (ancestorsID.find(element->entity->id()) == ancestorsID.end())
 				{
-					auto childTransNodes = createTransformationsRecursive(ifcfile, element, meshes, materials, metaSet, myMetaValues, transID, childrenAncestors);
+					auto childTransNodes = createTransformationsRecursive(ifcfile, element, meshes, materials, metaSet, myMetaValues, transID, childrenAncestors, childrenMetaPrefix);
 					transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
 					hasTransChildren |= childTransNodes.size();
 				}
@@ -218,7 +219,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 			{
 				try {
 					auto childEntity = ifcfile.entityById(childrenId);
-					auto childTransNodes = createTransformationsRecursive(ifcfile, childEntity, meshes, materials, metaSet, myMetaValues, transID, childrenAncestors);
+					auto childTransNodes = createTransformationsRecursive(ifcfile, childEntity, meshes, materials, metaSet, myMetaValues, transID, childrenAncestors, childrenMetaPrefix);
 					transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
 					hasTransChildren |= childTransNodes.size();
 				}
@@ -307,6 +308,13 @@ repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
 	return scene;
 }
 
+std::string appendMetaPrefix(
+	const std::string &label,
+	const std::string &prefix
+) {
+	return prefix.empty() ? label : prefix + "::" + label;
+}
+
 void IFCUtilsParser::determineActionsByElementType(
 	IfcParse::IfcFile &ifcfile,
 	const IfcUtil::IfcBaseClass *element,
@@ -314,13 +322,14 @@ void IFCUtilsParser::determineActionsByElementType(
 	bool                                                          &createElement,
 	bool                                                          &traverseChildren,
 	bool                                                          &isIFCSpace,
-	std::vector<int>                                              &extraChildren)
+	std::vector<int>                                              &extraChildren,
+	const std::string											  &metaPrefix,
+	std::string													  &childrenMetaPrefix)
 {
 	switch (element->type())
 	{
 	case IfcSchema::Type::IfcRelAssignsToGroup: //This is group!
 	case IfcSchema::Type::IfcRelSpaceBoundary: //This is group?
-	case IfcSchema::Type::IfcElementQuantity:
 	case IfcSchema::Type::IfcRelConnectsPathElements:
 	case IfcSchema::Type::IfcAnnotation:
 	case IfcSchema::Type::IfcComplexProperty: //We don't support this atm.
@@ -335,11 +344,11 @@ void IFCUtilsParser::determineActionsByElementType(
 		{
 			if (project->hasName())
 			{
-				metaValues["Project Name"] = project->Name();
+				metaValues[appendMetaPrefix("Project Name", metaPrefix)] = project->Name();
 			}
 			if (project->hasDescription())
 			{
-				metaValues["Project Description"] = project->Description();
+				metaValues[appendMetaPrefix("Project Description", metaPrefix)] = project->Description();
 			}
 		}
 
@@ -366,7 +375,7 @@ void IFCUtilsParser::determineActionsByElementType(
 				auto units = propVal->Unit();
 			}
 
-			metaValues[propVal->Name()] = value;
+			metaValues[appendMetaPrefix(propVal->Name(), metaPrefix)] = value;
 		}
 		createElement = false;
 		traverseChildren = false;
@@ -379,6 +388,7 @@ void IFCUtilsParser::determineActionsByElementType(
 		{
 			extraChildren.push_back(defByProp->RelatingPropertyDefinition()->entity->id());
 		}
+
 		createElement = false;
 		break;
 	}
@@ -392,6 +402,130 @@ void IFCUtilsParser::determineActionsByElementType(
 			extraChildren.push_back(pd->entity->id());
 		}
 		createElement = false;
+		childrenMetaPrefix = appendMetaPrefix(propSet->Name(), metaPrefix);
+		break;
+	}
+	case IfcSchema::Type::IfcElementQuantity:
+	{
+		auto eleQuan = static_cast<const IfcSchema::IfcElementQuantity *>(element);
+		auto quantities = eleQuan->Quantities();
+		for (const auto &entry : *quantities) {
+			extraChildren.push_back(entry->entity->id());
+		}
+		childrenMetaPrefix = appendMetaPrefix(eleQuan->Name(), metaPrefix);
+	}
+	case IfcSchema::Type::IfcQuantityLength:
+	{
+		auto quantity = static_cast<const IfcSchema::IfcQuantityLength *>(element);
+		if (quantity)
+		{
+			if (quantity->hasUnit())
+			{
+				repoTrace << quantity->entity->toString();
+				repoTrace << "Property has units - We are currently not supporting this.";
+				//FIXME: units
+				auto units = quantity->Unit();
+			}
+
+			metaValues[appendMetaPrefix(quantity->Name(), metaPrefix)] = quantity->LengthValue();
+		}
+		createElement = false;
+		traverseChildren = false;
+		break;
+	}
+	case IfcSchema::Type::IfcQuantityArea:
+	{
+		auto quantity = static_cast<const IfcSchema::IfcQuantityArea *>(element);
+		if (quantity)
+		{
+			if (quantity->hasUnit())
+			{
+				repoTrace << quantity->entity->toString();
+				repoTrace << "Property has units - We are currently not supporting this.";
+				//FIXME: units
+				auto units = quantity->Unit();
+			}
+
+			metaValues[appendMetaPrefix(quantity->Name(), metaPrefix)] = quantity->AreaValue();
+		}
+		createElement = false;
+		traverseChildren = false;
+		break;
+	}
+	case IfcSchema::Type::IfcQuantityCount:
+	{
+		auto quantity = static_cast<const IfcSchema::IfcQuantityCount *>(element);
+		if (quantity)
+		{
+			if (quantity->hasUnit())
+			{
+				repoTrace << quantity->entity->toString();
+				repoTrace << "Property has units - We are currently not supporting this.";
+				//FIXME: units
+				auto units = quantity->Unit();
+			}
+
+			metaValues[appendMetaPrefix(quantity->Name(), metaPrefix)] = quantity->CountValue();
+		}
+		createElement = false;
+		traverseChildren = false;
+		break;
+	}
+	case IfcSchema::Type::IfcQuantityTime:
+	{
+		auto quantity = static_cast<const IfcSchema::IfcQuantityTime *>(element);
+		if (quantity)
+		{
+			if (quantity->hasUnit())
+			{
+				repoTrace << quantity->entity->toString();
+				repoTrace << "Property has units - We are currently not supporting this.";
+				//FIXME: units
+				auto units = quantity->Unit();
+			}
+
+			metaValues[appendMetaPrefix(quantity->Name(), metaPrefix)] = quantity->TimeValue();
+		}
+		createElement = false;
+		traverseChildren = false;
+		break;
+	}
+	case IfcSchema::Type::IfcQuantityVolume:
+	{
+		auto quantity = static_cast<const IfcSchema::IfcQuantityVolume *>(element);
+		if (quantity)
+		{
+			if (quantity->hasUnit())
+			{
+				repoTrace << quantity->entity->toString();
+				repoTrace << "Property has units - We are currently not supporting this.";
+				//FIXME: units
+				auto units = quantity->Unit();
+			}
+
+			metaValues[appendMetaPrefix(quantity->Name(), metaPrefix)] = quantity->VolumeValue();
+		}
+		createElement = false;
+		traverseChildren = false;
+		break;
+	}
+	case IfcSchema::Type::IfcQuantityWeight:
+	{
+		auto quantity = static_cast<const IfcSchema::IfcQuantityWeight *>(element);
+		if (quantity)
+		{
+			if (quantity->hasUnit())
+			{
+				repoTrace << quantity->entity->toString();
+				repoTrace << "Property has units - We are currently not supporting this.";
+				//FIXME: units
+				auto units = quantity->Unit();
+			}
+
+			metaValues[appendMetaPrefix(quantity->Name(), metaPrefix)] = quantity->WeightValue();
+		}
+		createElement = false;
+		traverseChildren = false;
 		break;
 	}
 	case IfcSchema::Type::IfcRelAssociatesClassification:
@@ -442,7 +576,7 @@ void IFCUtilsParser::determineActionsByElementType(
 				classValue = "n/a";
 			}
 
-			metaValues["Classification (No Name)"] = classValue;
+			metaValues[appendMetaPrefix("Classification (No Name)", metaPrefix)] = classValue;
 		}
 		else
 		{
