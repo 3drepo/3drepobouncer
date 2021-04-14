@@ -119,7 +119,6 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	std::string ifcTypeUpper = ifcType;
 	std::transform(ifcType.begin(), ifcType.end(), ifcTypeUpper.begin(), ::toupper);
 	createElement = ifcTypeUpper.find("IFCREL") == std::string::npos;
-	repoInfo << element->type();
 	determineActionsByElementType(ifcfile, element, myMetaValues, createElement, traverseChildren, isIFCSpace, extraChildren, metaPrefix, childrenMetaPrefix);
 
 	repo::lib::RepoUUID transID = parentID;
@@ -225,7 +224,6 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 				catch (IfcParse::IfcException &e)
 				{
 					repoError << "Failed to find child entity " << child->entity->id() << " (" << e.what() << ")";
-					exit(0);
 					missingEntities = true;
 				}
 			}
