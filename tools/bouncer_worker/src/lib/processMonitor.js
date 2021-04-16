@@ -1,13 +1,13 @@
 const pidusage = require('pidusage');
 const processExists = require('process-exists');
+const fs = require('fs');
 const logger = require('./logger');
 const { elastic } = require('./config').config;
-const fs = require('fs');
 
 const processMonitor = {};
 processMonitor.logLabel = { label: 'PROCESSMON' };
 
-let pidArray = [];
+const pidArray = [];
 let stats = [];
 let maxMemory = 0;
 let startMemory = 0;
@@ -15,10 +15,10 @@ let startMemory = 0;
 processMonitor.maxmem = async () => {
 	try {
 		// logger.debug(("[processMonitor]:maxmem: " + Date.now(),"pidArray",pidArray),processMonitor.logLabel)
-		let data = Number(fs.readFileSync('/sys/fs/cgroup/memory/memory.usage_in_bytes'))
+		const data = Number(fs.readFileSync('/sys/fs/cgroup/memory/memory.usage_in_bytes'));
 		if (pidArray.length > 0) {
 			stats = await pidusage(pidArray);
-			if (data > maxMemory) maxMemory = data
+			if (data > maxMemory) maxMemory = data;
 			// console.log(stats)
 			// logger.debug(stats,processMonitor.logLabel)
 		}
@@ -42,14 +42,14 @@ processMonitor.monitor = async () => {
 
 processMonitor.startMonitor = async (inputPID) => {
 	pidArray.push(inputPID);
-	startMemory = Number(fs.readFileSync('/sys/fs/cgroup/memory/memory.usage_in_bytes'))
+	startMemory = Number(fs.readFileSync('/sys/fs/cgroup/memory/memory.usage_in_bytes'));
 	processMonitor.monitor();
 	logger.verbose(`[${inputPID}]: a startMonitor event occurred!`, processMonitor.logLabel);
 };
 
 processMonitor.stopMonitor = async (inputPID) => {
 	// console.log(stats)
-	var index = pidArray.indexOf(inputPID);
+	const index = pidArray.indexOf(inputPID);
 	if (index !== -1) {
 		pidArray.splice(index, 1);
 	}
@@ -57,8 +57,8 @@ processMonitor.stopMonitor = async (inputPID) => {
 	processMonitor.processTime = stats[inputPID].elapsed;
 	logger.verbose(`[${inputPID}]: a stopMonitor event occurred! elapsed: ${processMonitor.processTime}`, processMonitor.logLabel);
 	// stats = [];
-	startMemory = 0 
-	maxMemory = 0
+	startMemory = 0;
+	maxMemory = 0;
 };
 
 module.exports = processMonitor;
