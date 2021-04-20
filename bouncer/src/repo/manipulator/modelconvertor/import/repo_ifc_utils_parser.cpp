@@ -25,9 +25,6 @@
 #include <boost/filesystem.hpp>
 #include <algorithm>
 
-#include <ifcparse/IfcParse.h>
-#include <ifcparse/IfcFile.h>
-
 const static std::string IFC_ARGUMENT_GLOBAL_ID = "GlobalId";
 const static std::string IFC_ARGUMENT_NAME = "Name";
 const static std::string REPO_LABEL_IFC_TYPE = "IFC Type";
@@ -303,6 +300,128 @@ std::string IFCUtilsParser::constructMetadataLabel(
 	return prefix.empty() ? label : prefix + "::" + label;
 }
 
+std::string determineUnitsLabel(
+	const IfcSchema::IfcSIUnitName::IfcSIUnitName &unitName) {
+	switch (unitName) {
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_AMPERE:
+		return "A";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_BECQUEREL:
+		return "Bq";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_CANDELA:
+		return "cd";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_COULOMB:
+		return "C";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_CUBIC_METRE:
+		return "m3"; //FIXME: add unicode
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_DEGREE_CELSIUS:
+		return "oC"; //FIXME: unicode
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_FARAD:
+		return "F";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_GRAM:
+		return "g";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_GRAY:
+		return "gy";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_HENRY:
+		return "H";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_HERTZ:
+		return "Hz";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_JOULE:
+		return "J";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_KELVIN:
+		return "K";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_LUMEN:
+		return "lm";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_LUX:
+		return "lx";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_METRE:
+		return "m";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_MOLE:
+		return "mol";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_NEWTON:
+		return "N";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_OHM:
+		return "Ohm"; //FIXME: unicode
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_PASCAL:
+		return "Pa";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_RADIAN:
+		return "rad";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_SECOND:
+		return "s";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_SIEMENS:
+		return "S";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_SIEVERT:
+		return "Sv";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_SQUARE_METRE:
+		return "m2"; //FIXME: Unicode
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_STERADIAN:
+		return "sr";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_TESLA:
+		return "T";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_VOLT:
+		return "V";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_WATT:
+		return "W";
+	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_WEBER:
+		return "Wb";
+	}
+}
+
+std::string determineUnitsLabel(
+	const IfcSchema::IfcSIPrefix::IfcSIPrefix &prefixType) {
+	switch (prefixType) {
+	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_EXA:
+		return "E";
+	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_PETA:
+		return "P";
+	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_TERA:
+		return "T";
+	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_GIGA:
+		return "G";
+	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_MEGA:
+		return "M";
+	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_KILO:
+		return "k";
+	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_HECTO:
+		return "h";
+	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_DECA:
+		return "da";
+	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_DECI:
+		return "d";
+	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_CENTI:
+		return "c";
+	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_MILLI:
+		return "m";
+	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_MICRO:
+		return "micro"; //FIXME: unicode
+	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_NANO:
+		return "n";
+	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_PICO:
+		return "p";
+	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_FEMTO:
+		return "f";
+	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_ATTO:
+		return "a";
+	}
+}
+
+void IFCUtilsParser::setProjectUnits(const IfcSchema::IfcUnitAssignment* unitsAssignment) {
+	const auto unitsList = unitsAssignment->Units();
+	repoInfo << "Units assignment: " << unitsAssignment->entity->toString();
+	for (const auto &element : *unitsList) {
+		repoInfo << element->entity->toString();
+
+		switch (element->type()) {
+		case IfcSchema::Type::IfcSIUnit:
+			auto units = static_cast<const IfcSchema::IfcSIUnit *>(element);
+			auto baseUnits = determineUnitsLabel(units->Name());
+			auto prefix = units->hasPrefix() ? determinePrefix(units->Prefix()) : "";
+			projectUnits[units->UnitType()] = prefix + baseUnits;
+		}
+	}
+	repoInfo << "Units displayed.";
+	exit(0);
+}
+
 void IFCUtilsParser::determineActionsByElementType(
 	IfcParse::IfcFile &ifcfile,
 	const IfcUtil::IfcBaseClass *element,
@@ -329,6 +448,7 @@ void IFCUtilsParser::determineActionsByElementType(
 	case IfcSchema::Type::IfcProject:
 	{
 		auto project = static_cast<const IfcSchema::IfcProject *>(element);
+		setProjectUnits(project->UnitsInContext());
 
 		createElement = true;
 		traverseChildren = true;

@@ -26,6 +26,8 @@
 
 #include <ifcgeom/IfcGeom.h>
 #include <ifcgeom/IfcGeomIterator.h>
+#include <ifcparse/IfcParse.h>
+#include <ifcparse/IfcFile.h>
 
 #include "../../../core/model/bson/repo_node_material.h"
 #include "../../../core/model/bson/repo_node_mesh.h"
@@ -101,11 +103,14 @@ namespace repo {
 					const std::string &prefix
 				);
 
+				void setProjectUnits(const IfcSchema::IfcUnitAssignment* unitsAssignment);
+
 				std::string getValueAsString(
 					const IfcSchema::IfcValue    *ifcValue);
 
 				const std::string file;
 				bool missingEntities;
+				std::unordered_map<IfcSchema::IfcUnitEnum::IfcUnitEnum, std::string> projectUnits;
 			};
 		} //namespace modelconvertor
 	} //namespace manipulator
