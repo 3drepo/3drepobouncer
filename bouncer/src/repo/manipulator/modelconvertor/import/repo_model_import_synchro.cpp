@@ -713,8 +713,6 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 		auto firstFrame = taskFrame.first;
 		auto lastFrame = taskFrame.second;
 
-		repoInfo << "(From tasks) start frame " << firstFrame << " last frame " << lastFrame;
-
 		repoInfo << "Getting animations... ";
 		auto animation = reader->getAnimation();
 
