@@ -654,7 +654,7 @@ std::pair<uint64_t, uint64_t> SynchroModelImport::generateTaskInformation(
 	std::vector<repo::core::model::RepoTask> taskBSONs;
 
 	uint64_t firstTS = (uint64_t)std::numeric_limits<uint64_t>::max;
-	uint64_t lastTS = (uint64_t)std::numeric_limits<uint64_t>::min;
+	uint64_t lastTS = 0;
 	for (const auto &task : taskInfo.tasks) {
 		auto parentID = task.second.parentTask;
 		repo::lib::RepoUUID parentUUID;
@@ -665,8 +665,8 @@ std::pair<uint64_t, uint64_t> SynchroModelImport::generateTaskInformation(
 		}
 
 		SequenceTask taskItem = { taskIDtoRepoID[taskID] , task.second.name, task.second.startTime * 1000, task.second.endTime * 1000 };
-		firstTS = std::min(task.second.startTime, firstTS);
-		lastTS = std::max(task.second.endTime, lastTS);
+		firstTS = std::min(task.second.startTime * 1000, firstTS);
+		lastTS = std::max(task.second.endTime * 1000, lastTS);
 
 		if (parentID.empty()) {
 			rootTasks.insert(taskItem);
@@ -712,6 +712,8 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 
 		auto firstFrame = taskFrame.first;
 		auto lastFrame = taskFrame.second;
+
+		repoInfo << "(From tasks) start frame " << firstFrame << " last frame " << lastFrame;
 
 		repoInfo << "Getting animations... ";
 		auto animation = reader->getAnimation();
@@ -792,8 +794,8 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 
 		for (const auto &currentFrame : animation.frames) {
 			auto currentTime = currentFrame.first;
-			firstFrame = std::min(firstFrame, currentTime);
-			lastFrame = std::max(lastFrame, currentTime);
+			firstFrame = std::min(firstFrame, currentTime * 1000);
+			lastFrame = std::max(lastFrame, currentTime * 1000);
 			updateFrameState(currentFrame.second, resourceIDsToSharedIDs, resourceIDLastTrans, alphaValueToIDs, meshAlphaState, meshColourState, resourceIDTransState, clipState, cam, transformingResources, offset);
 			repo::core::model::RepoSequence::FrameData data;
 			data.ref = generateCache(resourceIDsToSharedIDs, alphaValueToIDs, meshColourState, resourceIDTransState, clipState, cam, stateBuffers);
