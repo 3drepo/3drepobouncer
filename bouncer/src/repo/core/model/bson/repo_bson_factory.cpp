@@ -1055,8 +1055,8 @@ RepoSequence RepoBSONFactory::makeSequence(
 	RepoBSONBuilder builder;
 	builder.append(REPO_LABEL_ID, id);
 	builder.append(REPO_SEQUENCE_LABEL_NAME, name);
-	builder.append(REPO_SEQUENCE_LABEL_START_DATE, (unsigned long long) firstFrame);
-	builder.append(REPO_SEQUENCE_LABEL_END_DATE, (unsigned long long)lastFrame);
+	builder.append(REPO_SEQUENCE_LABEL_START_DATE, (long long)firstFrame);
+	builder.append(REPO_SEQUENCE_LABEL_END_DATE, (long long)lastFrame);
 
 	std::vector<RepoBSON> frames;
 
