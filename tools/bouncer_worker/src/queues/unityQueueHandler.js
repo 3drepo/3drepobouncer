@@ -45,8 +45,12 @@ const processUnity = async (database, model, user, logDir, modelImportErrCode) =
 					Database: database,
 					MaxMemory: memoryReporting.maxMemory,
 					ProcessTime: memoryReporting.processTime,
+					DateTime: Date.now(),
+					FileType: "",
+					FileSize: 0,
 					Process: 'Unity',
-				};
+					ReturnCode: returnMessage.value,
+				};				
 				try { await Elastic.createBouncerRecord(elasticBody); } catch (err) {
 					logger.error(`[processMonitor] Failed to create Elastic record: ${err.message || err}`);
 				}
