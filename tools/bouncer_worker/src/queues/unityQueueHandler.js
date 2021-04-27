@@ -46,8 +46,8 @@ const processUnity = async (database, model, user, logDir, modelImportErrCode) =
 					MaxMemory: memoryReporting.maxMemory,
 					ProcessTime: memoryReporting.processTime,
 					DateTime: Date.now(),
-					FileType: "",
-					FileSize: 0,
+					FileType: null,
+					FileSize: null,
 					Process: 'Unity',
 					ReturnCode: returnMessage.value,
 				};				
