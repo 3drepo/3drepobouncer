@@ -32,7 +32,6 @@ namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-
 				struct camera_t
 				{
 					float aspectRatio;
@@ -61,7 +60,7 @@ namespace repo {
 				public:
 					GeometryCollector();
 					~GeometryCollector();
-					
+
 					/**
 					* Check whether collector has missing textures.
 					* @return returns true if at least one texture is missing
@@ -69,7 +68,7 @@ namespace repo {
 					bool hasMissingTextures();
 
 					/**
-					* If a geometry processing error is encountered the import will attempt to continue. 
+					* If a geometry processing error is encountered the import will attempt to continue.
 					* This checks if any errors were encountered. Returns REPOERR_OK if not.
 					*/
 					int getErrorCode();
@@ -79,7 +78,6 @@ namespace repo {
 					* @return returns a repoNodeSet containing material nodes
 					*/
 					void getMaterialAndTextureNodes(repo::core::model::RepoNodeSet& materials, repo::core::model::RepoNodeSet& textures);
-
 
 					/**
 					* Get all the transformation nodes collected.
@@ -222,7 +220,7 @@ namespace repo {
 					* @return cameras
 					*/
 					repo::core::model::RepoNodeSet getCameraNodes(repo::lib::RepoUUID parentID);
-					
+
 					/**
 					* Create transformation root node
 					* @return root transformation node
@@ -237,10 +235,9 @@ namespace repo {
 					void setMetadata(const std::string &groupName,
 						const std::unordered_map<std::string, std::string> &metaEntry)
 					{
-						if(metaEntry.size() > 0)
+						if (metaEntry.size() > 0)
 							idToMeta[groupName] = metaEntry;
 					}
-
 
 				private:
 
@@ -294,4 +291,3 @@ namespace repo {
 		}
 	}
 }
-

@@ -156,7 +156,7 @@ mesh_data_t* GeometryCollector::startOrContinueMeshByFormat(uint32_t format)
 void GeometryCollector::addFace(
 	const std::vector<repo::lib::RepoVector3D64>& vertices)
 {
-	addFace(vertices, false, false);
+	addFace(vertices, boost::optional<const repo::lib::RepoVector3D64&>(), boost::optional<const std::vector<repo::lib::RepoVector2D>&>());
 }
 
 void GeometryCollector::addFace(
@@ -270,7 +270,6 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 		for (const auto& meshLayerEntry : meshGroupEntry.second) {
 			for (const auto& meshMatEntry : meshLayerEntry.second) {
 				for (const auto& meshData : meshMatEntry.second) {
-
 					if (!meshData.vertexMap.vertices.size()) {
 						continue;
 					}
@@ -294,7 +293,6 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 					std::vector<repo::lib::RepoVector3D> normals32;
 
 					if (meshData.vertexMap.normals.size()) {
-
 						if ((meshData.vertexMap.normals.size() != meshData.vertexMap.vertices.size()))
 						{
 							repoError << "Vertices size [" << meshData.vertexMap.vertices.size() << "] does not match the Normals size [" << meshData.vertexMap.uvs.size() << "]. At this point the normals must be defined per-vertex. Skipping...";
