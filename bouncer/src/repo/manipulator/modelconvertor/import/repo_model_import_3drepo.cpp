@@ -269,11 +269,11 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 					vertices.push_back(tmpVec);
 				}
 				else {
-					repo::lib::RepoVector3D tmpVec = 
-					{ 
-						tmpVerticesSingle[i * 3] ,  
-						tmpVerticesSingle[i * 3 + 1] , 
-						tmpVerticesSingle[i * 3 + 2] 
+					repo::lib::RepoVector3D tmpVec =
+					{
+						tmpVerticesSingle[i * 3] ,
+						tmpVerticesSingle[i * 3 + 1] ,
+						tmpVerticesSingle[i * 3 + 2]
 					};
 					normals.push_back(needTransform ? normalTrans * tmpVec : tmpVec);
 				}
@@ -456,7 +456,7 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t& err)
 		fin->read(fileVersion, REPO_VERSION_LENGTH);
 		std::string incomingVersion = fileVersion;
 		uint8_t incomingVersionNo = std::stoi(incomingVersion.substr(3, 3));
-		if(FILE_META_BYTE_LEN_BY_VERSION.find(incomingVersionNo) == FILE_META_BYTE_LEN_BY_VERSION.end())
+		if (FILE_META_BYTE_LEN_BY_VERSION.find(incomingVersionNo) == FILE_META_BYTE_LEN_BY_VERSION.end())
 		{
 			repoError << "Unsupported BIM file version: " << fileVersion;
 			err = REPOERR_UNSUPPORTED_BIM_VERSION;
