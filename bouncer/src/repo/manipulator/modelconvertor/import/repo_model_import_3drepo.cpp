@@ -430,6 +430,12 @@ void RepoModelImport::skipAheadInFile(long amount)
 	}
 }
 
+/**
+* Will parse the entire BIM file and store the results in 
+* temporary datastructures in preperation for scene generation.
+* @param filePath
+* @param err
+*/
 bool RepoModelImport::importModel(std::string filePath, uint8_t& err)
 {
 	orgFile = filePath;
@@ -531,6 +537,7 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t& err)
 				if (maxTextureId > (textures.size() - 1))
 				{
 					repoError << "A material is referencing a missing texture";
+					err = REPOERR_LOAD_SCENE_MISSING_TEXTURE;
 					missingTextures = true;
 				}
 			}
@@ -680,7 +687,7 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errCod
 		errCode = REPOERR_LOAD_SCENE_MISSING_TEXTURE;
 		scenePtr->setMissingTexture();
 	}
-	if(geometryImportError)
+	if (geometryImportError)
 	{
 		repoError << "Unsupported geometry primitive type found	";
 		errCode = REPOERR_GEOMETRY_ERROR;
