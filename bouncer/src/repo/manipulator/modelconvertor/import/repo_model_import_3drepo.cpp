@@ -139,7 +139,8 @@ void RepoModelImport::parseMaterial(const boost::property_tree::ptree& matTree)
 	std::stringstream ss("");
 	ss << "Material." << std::setfill('0') << std::setw(5) << materials.size();
 
-	repo::core::model::MaterialNode* materialNode = new repo::core::model::MaterialNode(repo::core::model::RepoBSONFactory::makeMaterialNode(repo_material, ss.str(), REPO_NODE_API_LEVEL_1));
+	repo::core::model::MaterialNode* materialNode = new repo::core::model::MaterialNode(
+		repo::core::model::RepoBSONFactory::makeMaterialNode(repo_material, ss.str(), REPO_NODE_API_LEVEL_1));
 	materials.insert(materialNode);
 	matNodeList.push_back(materialNode);
 
@@ -268,7 +269,12 @@ RepoModelImport::mesh_data_t RepoModelImport::createMeshRecord(
 					vertices.push_back(tmpVec);
 				}
 				else {
-					repo::lib::RepoVector3D tmpVec = { tmpVerticesSingle[i * 3] ,  tmpVerticesSingle[i * 3 + 1] , tmpVerticesSingle[i * 3 + 2] };
+					repo::lib::RepoVector3D tmpVec = 
+					{ 
+						tmpVerticesSingle[i * 3] ,  
+						tmpVerticesSingle[i * 3 + 1] , 
+						tmpVerticesSingle[i * 3 + 2] 
+					};
 					normals.push_back(needTransform ? normalTrans * tmpVec : tmpVec);
 				}
 			}
@@ -592,7 +598,8 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errCod
 	}
 	repo::core::model::TransformationNode* rootNode =
 		new repo::core::model::TransformationNode(
-			repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), rootName, std::vector<repo::lib::RepoUUID>()));
+			repo::core::model::RepoBSONFactory::makeTransformationNode(
+				repo::lib::RepoMatrix(), rootName, std::vector<repo::lib::RepoUUID>()));
 	node_map.push_back(rootNode);
 	trans_matrix_map.push_back(transMat);
 	transformations.insert(rootNode);
@@ -663,7 +670,8 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errCod
 	}
 
 	// Generate scene
-	repo::core::model::RepoScene* scenePtr = new repo::core::model::RepoScene(fileVect, cameras, meshes, materials, metadata, textures, transformations);
+	repo::core::model::RepoScene* scenePtr = new repo::core::model::RepoScene(
+		fileVect, cameras, meshes, materials, metadata, textures, transformations);
 	scenePtr->setWorldOffset(offset);
 
 	// Error handling
