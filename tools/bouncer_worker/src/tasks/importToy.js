@@ -93,7 +93,7 @@ const updateAuthorAndDate = async (db, database, model, ext) => {
 			});
 		}
 		updatedIssue.comments = comments;
-		promises.push(collection.updateOne({ _id: updatedIssue._id }, updatedIssue));
+		promises.push(collection.replaceOne({ _id: updatedIssue._id }, updatedIssue));
 	});
 
 	await Promise.all(promises);
@@ -119,7 +119,7 @@ const renameUnityAssetList = (db, database, model) => {
 			entry.assets[i] = prefix + dirArr[dirArr.length - 1];
 		}
 
-		promises.push(collection.updateOne({ _id: entry._id }, entry));
+		promises.push(collection.replaceOne({ _id: entry._id }, entry));
 	});
 	return Promise.all(promises);
 };
@@ -242,7 +242,7 @@ const renameGroups = async (db, database, modelId) => {
 				obj.model = oldIdToNewId[obj.model] || modelId;
 			});
 		}
-		updateObjectPromises.push(collection.updateOne({ _id: group._id }, group));
+		updateObjectPromises.push(collection.replaceOne({ _id: group._id }, group));
 	});
 
 	await Promise.all(updateObjectPromises);
@@ -255,7 +255,7 @@ ToyImporter.importToyModel = async (toyModelID, database, modelId) => {
 	await importJSON(modelDir, database, modelId);
 
 	const url = `mongodb://${config.db.username}:${config.db.password}@${config.db.dbhost}:${config.db.dbport}/admin`;
-	const dbConn = await MongoClient.connect(url);
+	const dbConn = await MongoClient.connect(url, { useUnifiedTopology: true });
 	const db = dbConn.db(database);
 
 	const promises = [];

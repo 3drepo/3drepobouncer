@@ -1,6 +1,6 @@
 {
   "name": "3drepobouncerWorker",
-  "version": "4.15.1",
+  "version": "4.15.2",
   "engines": {
     "node": "10.x.x"
   },
@@ -15,7 +15,7 @@
   "dependencies": {
     "amqplib": "0.5.3",
     "moment": "2.29.1",
-    "mongodb": "2.2.24",
+    "mongodb": "3.6.6",
     "winston": "3.3.3",
     "yargs": "16.2.0"
   },
