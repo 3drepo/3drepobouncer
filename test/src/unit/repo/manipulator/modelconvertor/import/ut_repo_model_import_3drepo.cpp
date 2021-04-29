@@ -136,41 +136,48 @@ TEST(RepoModelImport, ValidBIM001Import)
 	uint8_t errCode = 0;
 	RepoModelImportUtils::ImportBIMFile(
 		getDataPath("RepoModelImport/cube_bim1_spoofed.bim"), errCode);
-	EXPECT_EQ(errCode, REPOERR_UNSUPPORTED_BIM_VERSION);
+	EXPECT_EQ(REPOERR_UNSUPPORTED_BIM_VERSION, errCode);
 }
 
 TEST(RepoModelImport, ValidBIM002Import)
 {
 	uint8_t errCode = 0;
 	RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/cube_bim2_navis_2021_repo_4.6.1.bim"), errCode);
-	EXPECT_EQ(errCode, REPOERR_OK);
+	EXPECT_EQ(REPOERR_OK, errCode);
 }
 
 TEST(RepoModelImport, ValidBIM003Import)
 {
 	uint8_t errCode = 0;
 	RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/BrickWalls_bim3.bim"), errCode);
-	EXPECT_EQ(errCode, REPOERR_OK);
+	EXPECT_EQ(REPOERR_OK, errCode);
 }
 
 TEST(RepoModelImport, ValidBIM004Import)
 {
 	uint8_t errCode = 0;
 	RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/wall_section_bim4.bim"), errCode);
-	EXPECT_EQ(errCode, REPOERR_OK);
+	EXPECT_EQ(REPOERR_OK, errCode);
 }
 
 TEST(RepoModelImport, MissingTextureFields)
 {
 	uint8_t errCode = 0;
 	RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/BrickWalls_bim3_CorruptedTextureField.bim"), errCode);
-	EXPECT_EQ(errCode, REPOERR_LOAD_SCENE_MISSING_TEXTURE);
+	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_TEXTURE, errCode);
+}
+
+TEST(RepoModelImport, EmptyTextureByteCount)
+{
+	uint8_t errCode = 0;
+	RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/missingTextureByteCount.bim"), errCode);
+	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_TEXTURE, errCode);
 }
 
 TEST(RepoModelImport, UnreferencedTextures)
 {
 	uint8_t errCode = 0;
 	RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/BrickWalls_bim3_MissingTexture.bim"), errCode);
-	EXPECT_EQ(errCode, REPOERR_LOAD_SCENE_MISSING_TEXTURE);
+	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_TEXTURE, errCode);
 }
 

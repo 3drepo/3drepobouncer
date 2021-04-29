@@ -160,6 +160,7 @@ void RepoModelImport::parseTexture(
 	bool heightOk = textureTree.find(REPO_TXTR_HEIGHT) != textureTree.not_found();
 	bool idOk = textureTree.find(REPO_TXTR_ID) != textureTree.not_found();
 
+	// do the fields exist
 	if (!byteCountOK ||
 		!widthOk ||
 		!heightOk ||
@@ -175,6 +176,15 @@ void RepoModelImport::parseTexture(
 	uint32_t width = textureTree.get<uint32_t>(REPO_TXTR_WIDTH);
 	uint32_t height = textureTree.get<uint32_t>(REPO_TXTR_HEIGHT);
 	uint32_t id = textureTree.get<uint32_t>(REPO_TXTR_ID);
+
+
+	// are they valid
+	if (byteCount == 0)
+	{
+		repoError << "No data buffer size for the texture " << name;
+		missingTextures = true;
+		return;
+	}
 
 	std::vector<uint64_t> DataStartEnd = as_vector<uint64_t>(textureTree, REPO_TXTR_IMG_BYTES);
 
@@ -537,10 +547,14 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t& err)
 				if (maxTextureId > (textures.size() - 1))
 				{
 					repoError << "A material is referencing a missing texture";
-					err = REPOERR_LOAD_SCENE_MISSING_TEXTURE;
 					missingTextures = true;
 				}
 			}
+		}
+
+		if(missingTextures)
+		{
+			err = REPOERR_LOAD_SCENE_MISSING_TEXTURE;
 		}
 
 		// Clean up
