@@ -1,4 +1,4 @@
-/**
+﻿/**
 *  Copyright (C) 2015 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
@@ -22,6 +22,7 @@
 #include "repo_ifc_utils_parser.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../core/model/collection/repo_scene.h"
+#include "../../../lib/repo_utils.h"
 #include <boost/filesystem.hpp>
 #include <algorithm>
 
@@ -301,6 +302,39 @@ std::string IFCUtilsParser::constructMetadataLabel(
 }
 
 std::string determineUnitsLabel(
+	const std::string &unitName) {
+	std::string data = unitName;
+	repo::lib::toLower(data);
+
+	if (unitName == "inch") return "in";
+	if (unitName == "foot") return "ft";
+	if (unitName == "yard") return "yd";
+	if (unitName == "mile") return "mi";
+	if (unitName == "acre") return "ac";
+	if (unitName == "square inch") return "in^2"; //FIXME: unicode
+	if (unitName == "square foot") return "ft^2"; //FIXME: unicode
+	if (unitName == "square yard") return "yd^2"; //FIXME: unicode
+	if (unitName == "square mile") return "mi^2"; //FIXME: unicode
+	if (unitName == "cubie inch") return "in^3"; //FIXME: unicode
+	if (unitName == "cubic foot") return "ft^3"; //FIXME: unicode
+	if (unitName == "cubic yard") return "yd^3"; //FIXME: unicode
+	if (unitName == "litre") return "l";
+	if (unitName == "fluid ounce uk") return "fl oz(UK)";
+	if (unitName == "fluid ounce us") return "fl oz(US)";
+	if (unitName == "pint uk") return "pint(UK)";
+	if (unitName == "pint us") return "pint(UK)";
+	if (unitName == "gallon uk") return "gal(UK)";
+	if (unitName == "gallon us") return "gal(UK)";
+	if (unitName == "degree") return "degree"; //FIXME: unicode
+	if (unitName == "ounce") return "oz";
+	if (unitName == "pound") return "lb";
+	if (unitName == "ton uk") return "t(UK)";
+	if (unitName == "ton us") return "t(US)";
+
+	return data;
+}
+
+std::string determineUnitsLabel(
 	const IfcSchema::IfcSIUnitName::IfcSIUnitName &unitName) {
 	switch (unitName) {
 	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_AMPERE:
@@ -364,9 +398,11 @@ std::string determineUnitsLabel(
 	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_WEBER:
 		return "Wb";
 	}
+
+	return "";
 }
 
-std::string determineUnitsLabel(
+std::string determinePrefix(
 	const IfcSchema::IfcSIPrefix::IfcSIPrefix &prefixType) {
 	switch (prefixType) {
 	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_EXA:
@@ -402,20 +438,35 @@ std::string determineUnitsLabel(
 	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_ATTO:
 		return "a";
 	}
+
+	return "";
 }
 
 void IFCUtilsParser::setProjectUnits(const IfcSchema::IfcUnitAssignment* unitsAssignment) {
 	const auto unitsList = unitsAssignment->Units();
 	repoInfo << "Units assignment: " << unitsAssignment->entity->toString();
 	for (const auto &element : *unitsList) {
-		repoInfo << element->entity->toString();
-
 		switch (element->type()) {
 		case IfcSchema::Type::IfcSIUnit:
+		{
 			auto units = static_cast<const IfcSchema::IfcSIUnit *>(element);
 			auto baseUnits = determineUnitsLabel(units->Name());
 			auto prefix = units->hasPrefix() ? determinePrefix(units->Prefix()) : "";
 			projectUnits[units->UnitType()] = prefix + baseUnits;
+			repoInfo << IfcSchema::IfcUnitEnum::ToString(units->UnitType()) << ": " << projectUnits[units->UnitType()];
+			break;
+		}
+		case IfcSchema::Type::IfcConversionBasedUnit:
+		{
+			auto units = static_cast<const IfcSchema::IfcConversionBasedUnit *>(element);
+			projectUnits[units->UnitType()] = determineUnitsLabel(units->Name());
+			repoInfo << IfcSchema::IfcUnitEnum::ToString(units->UnitType()) << ": " << projectUnits[units->UnitType()];
+			break;
+		}
+		//Missing derived units
+		//Monetary unit
+		default:
+			repoWarning << "Unrecognised units entry: " << element->entity->toString();
 		}
 	}
 	repoInfo << "Units displayed.";
