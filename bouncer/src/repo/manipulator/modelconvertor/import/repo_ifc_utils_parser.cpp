@@ -32,6 +32,10 @@ const static std::string REPO_LABEL_IFC_TYPE = "IFC Type";
 const static std::string REPO_LABEL_IFC_GUID = "IFC GUID";
 const static std::string IFC_TYPE_SPACE_LABEL = "(IFC Space)";
 const static std::string MONETARY_UNIT = "MONETARYUNIT";
+const static std::string LOCATION_LABEL = "Location";
+const static std::string PROJECT_LABEL = "Project";
+const static std::string BUILDING_LABEL = "Building";
+const static std::string STOREY_LABEL = "Storey";
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -70,9 +74,8 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformations(
 		repoTrace << "Looping through Elements";
 		for (auto &element : *initialElements)
 		{
-			//auto element = *it;
-			std::unordered_map<std::string, std::string> metaValue;
-			auto childTransNodes = createTransformationsRecursive(ifcfile, element, meshes, materials, metaSet, metaValue, parentID);
+			std::unordered_map<std::string, std::string> metaValue, locationInfo;
+			auto childTransNodes = createTransformationsRecursive(ifcfile, element, meshes, materials, metaSet, metaValue, locationInfo, parentID);
 			transNodes.insert(childTransNodes.begin(), childTransNodes.end());
 		}
 	}
@@ -91,6 +94,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
 	repo::core::model::RepoNodeSet											   &metaSet,
 	std::unordered_map<std::string, std::string>                               &metaValue,
+	std::unordered_map<std::string, std::string>                               &locationValue,
 	const repo::lib::RepoUUID												   &parentID,
 	const std::set<int>													       &ancestorsID,
 	const std::string														   &metaPrefix
@@ -100,7 +104,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	bool traverseChildren = true; //keep recursing its children
 	bool isIFCSpace = false;
 	std::vector<IfcUtil::IfcBaseClass *> extraChildren; //children outside of reference
-	std::unordered_map<std::string, std::string> myMetaValues, elementInfo;
+	std::unordered_map<std::string, std::string> myMetaValues, elementInfo, locationInfo(locationValue);
 
 	auto id = element->entity->id();
 	std::string guid, name, childrenMetaPrefix;
@@ -108,7 +112,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	std::string ifcTypeUpper = ifcType;
 	std::transform(ifcType.begin(), ifcType.end(), ifcTypeUpper.begin(), ::toupper);
 	createElement = ifcTypeUpper.find("IFCREL") == std::string::npos;
-	determineActionsByElementType(ifcfile, element, myMetaValues, createElement, traverseChildren, isIFCSpace, extraChildren, metaPrefix, childrenMetaPrefix);
+	determineActionsByElementType(ifcfile, element, myMetaValues, locationInfo, createElement, traverseChildren, isIFCSpace, extraChildren, metaPrefix, childrenMetaPrefix);
 
 	repo::lib::RepoUUID transID = parentID;
 	repo::core::model::RepoNodeSet transNodeSet;
@@ -194,7 +198,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 			{
 				if (ancestorsID.find(element->entity->id()) == ancestorsID.end())
 				{
-					auto childTransNodes = createTransformationsRecursive(ifcfile, element, meshes, materials, metaSet, myMetaValues, transID, childrenAncestors, childrenMetaPrefix);
+					auto childTransNodes = createTransformationsRecursive(ifcfile, element, meshes, materials, metaSet, myMetaValues, locationInfo, transID, childrenAncestors, childrenMetaPrefix);
 					transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
 					hasTransChildren |= childTransNodes.size();
 				}
@@ -206,7 +210,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 			if (ancestorsID.find(child->entity->id()) == ancestorsID.end())
 			{
 				try {
-					auto childTransNodes = createTransformationsRecursive(ifcfile, child, meshes, materials, metaSet, myMetaValues, transID, childrenAncestors, childrenMetaPrefix);
+					auto childTransNodes = createTransformationsRecursive(ifcfile, child, meshes, materials, metaSet, myMetaValues, locationInfo, transID, childrenAncestors, childrenMetaPrefix);
 					transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
 					hasTransChildren |= childTransNodes.size();
 				}
@@ -222,9 +226,11 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	//If we created an element, add a metanode to it. if not, add them to our parent's meta info
 	if (createElement)
 	{
+		//NOTE: if we ever recursive after creating the element, we'd have to take a copy of the metadata or it'll leak into the children.
 		myMetaValues[REPO_LABEL_IFC_TYPE] = ifcType;
 
 		myMetaValues.insert(elementInfo.begin(), elementInfo.end());
+		myMetaValues.insert(locationInfo.begin(), locationInfo.end());
 
 		std::vector<repo::lib::RepoUUID> metaParents = { transID };
 		if (meshes.find(guid) != meshes.end())
@@ -551,6 +557,7 @@ void IFCUtilsParser::determineActionsByElementType(
 	IfcParse::IfcFile &ifcfile,
 	const IfcUtil::IfcBaseClass *element,
 	std::unordered_map<std::string, std::string>                  &metaValues,
+	std::unordered_map<std::string, std::string>                  &locationData,
 	bool                                                          &createElement,
 	bool                                                          &traverseChildren,
 	bool                                                          &isIFCSpace,
@@ -574,6 +581,25 @@ void IFCUtilsParser::determineActionsByElementType(
 	{
 		auto project = static_cast<const IfcSchema::IfcProject *>(element);
 		setProjectUnits(project->UnitsInContext());
+		locationData[constructMetadataLabel(PROJECT_LABEL, LOCATION_LABEL)] = project->Name();
+
+		createElement = true;
+		traverseChildren = true;
+		break;
+	}
+	case IfcSchema::Type::IfcBuilding:
+	{
+		auto building = static_cast<const IfcSchema::IfcBuilding *>(element);
+		locationData[constructMetadataLabel(BUILDING_LABEL, LOCATION_LABEL)] = building->Name();
+
+		createElement = true;
+		traverseChildren = true;
+		break;
+	}
+	case IfcSchema::Type::IfcBuildingStorey:
+	{
+		auto storey = static_cast<const IfcSchema::IfcBuildingStorey *>(element);
+		locationData[constructMetadataLabel(STOREY_LABEL, LOCATION_LABEL)] = storey->Name();
 
 		createElement = true;
 		traverseChildren = true;

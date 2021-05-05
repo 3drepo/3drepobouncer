@@ -82,6 +82,7 @@ namespace repo {
 					std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
 					repo::core::model::RepoNodeSet											   &metaSet,
 					std::unordered_map<std::string, std::string>                               &metaValue,
+					std::unordered_map<std::string, std::string>                               &locationValue,
 					const repo::lib::RepoUUID												   &parentID,
 					const std::set<int>													       &ancestorsID = std::set<int>(),
 					const std::string														   &metaPrefix = std::string()
@@ -91,6 +92,7 @@ namespace repo {
 					IfcParse::IfcFile &ifcfile,
 					const IfcUtil::IfcBaseClass *element,
 					std::unordered_map<std::string, std::string>                  &metaValues,
+					std::unordered_map<std::string, std::string>                  &locationData,
 					bool                                                          &createElement,
 					bool                                                          &traverseChildren,
 					bool                                                          &isIFCSpace,
