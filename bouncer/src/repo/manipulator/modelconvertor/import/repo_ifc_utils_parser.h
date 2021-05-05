@@ -100,17 +100,31 @@ namespace repo {
 
 				std::string constructMetadataLabel(
 					const std::string &label,
-					const std::string &prefix
+					const std::string &prefix,
+					const std::string &unitType = ""
 				);
 
 				void setProjectUnits(const IfcSchema::IfcUnitAssignment* unitsAssignment);
 
 				std::string getValueAsString(
-					const IfcSchema::IfcValue    *ifcValue);
+					const IfcSchema::IfcValue    *ifcValue,
+					std::string &unitType);
+
+				std::string getUnits(
+					const IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum &unitType
+				);
+
+				std::string getUnits(
+					const IfcSchema::IfcUnitEnum::IfcUnitEnum &unitType
+				);
+
+				std::string getUnits(
+					const std::string &unitType
+				);
 
 				const std::string file;
 				bool missingEntities;
-				std::unordered_map<IfcSchema::IfcUnitEnum::IfcUnitEnum, std::string> projectUnits;
+				std::unordered_map<std::string, std::string> projectUnits;
 			};
 		} //namespace modelconvertor
 	} //namespace manipulator

@@ -59,7 +59,6 @@ bool IFCModelImport::importModel(std::string filePath, uint8_t &err)
 	repoInfo << "IMPORT [" << fileName << "]";
 	repoInfo << "=== IMPORTING MODEL WITH IFC OPEN SHELL ===";
 	bool success = false;
-	return true;
 	std::string errMsg;
 	IFCUtilsGeometry geoUtil(filePath, settings);
 	if (success = geoUtil.generateGeometry(errMsg, partialFailure))
