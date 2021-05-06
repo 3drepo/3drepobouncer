@@ -152,6 +152,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 			switch (type) {
 			case IfcUtil::ArgumentType::Argument_ENTITY_INSTANCE:
 			case IfcUtil::ArgumentType::Argument_NULL:
+			case IfcUtil::ArgumentType::Argument_AGGREGATE_OF_ENTITY_INSTANCE:
 			case IfcUtil::ArgumentType::Argument_AGGREGATE_OF_AGGREGATE_OF_ENTITY_INSTANCE:
 				//do nothing. ignore these as they are either empty or it's linkage
 				break;
@@ -166,8 +167,9 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 				value = element->getArgument(i)->toString();
 			}
 
-			if (!value.empty())
+			if (!value.empty()) {
 				elementInfo[argumentName] = value;
+			}
 		}
 	}
 	if (isIFCSpace) {
