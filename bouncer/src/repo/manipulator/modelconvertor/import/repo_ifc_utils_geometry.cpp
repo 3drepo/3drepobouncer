@@ -97,7 +97,7 @@ IfcGeom::IteratorSettings IFCUtilsGeometry::createSettings()
 	itSettings.set(IfcGeom::IteratorSettings::CENTER_MODEL, repoDefaultIOSCentreModel);
 	itSettings.set(IfcGeom::IteratorSettings::GENERATE_UVS, repoDefaultIOSGenerateUVs);
 	itSettings.set(IfcGeom::IteratorSettings::APPLY_LAYERSETS, repoDefaultIOSApplyLayerSets);
-	//itSettings.set(IfcGeom::IteratorSettings::INCLUDE_CURVES, true); //Enable to get 2D lines.
+	//itSettings.set(IfcGeom::IteratorSettings::INCLUDE_CURVES, true); //Enable to get 2D lines. You will need to set CONVERT_BACK_UNITS to false or the model may not align.
 
 	return itSettings;
 }
