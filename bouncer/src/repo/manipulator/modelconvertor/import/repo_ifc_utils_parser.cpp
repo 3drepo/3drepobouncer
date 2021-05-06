@@ -112,6 +112,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	std::transform(ifcType.begin(), ifcType.end(), ifcTypeUpper.begin(), ::toupper);
 	createElement = ifcTypeUpper.find("IFCREL") == std::string::npos;
 	bool isIFCSpace = IfcSchema::Type::IfcSpace == element->type();
+
 	determineActionsByElementType(ifcfile, element, myMetaValues, locationInfo, createElement, traverseChildren, extraChildren, metaPrefix, childrenMetaPrefix);
 
 	repo::lib::RepoUUID transID = parentID;
@@ -172,6 +173,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 			}
 		}
 	}
+
 	if (isIFCSpace) {
 		name += " " + IFC_TYPE_SPACE_LABEL;
 	}
@@ -189,7 +191,6 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	}
 
 	bool hasTransChildren = false;
-
 	if (traverseChildren)
 	{
 		auto childrenElements = ifcfile.entitiesByReference(id);
@@ -583,7 +584,13 @@ void IFCUtilsParser::determineActionsByElementType(
 	{
 		auto project = static_cast<const IfcSchema::IfcProject *>(element);
 		setProjectUnits(project->UnitsInContext());
-		locationData[constructMetadataLabel(PROJECT_LABEL, LOCATION_LABEL)] = project->Name();
+		try {
+			locationData[constructMetadataLabel(PROJECT_LABEL, LOCATION_LABEL)] = project->Name();
+		}
+		catch (IfcParse::IfcException &e) {
+			//This will throw an exception if it has no name.
+			locationData[constructMetadataLabel(PROJECT_LABEL, LOCATION_LABEL)] = "(" + IfcSchema::Type::ToString(element->type()) + ")";
+		}
 
 		createElement = true;
 		traverseChildren = true;
@@ -592,7 +599,13 @@ void IFCUtilsParser::determineActionsByElementType(
 	case IfcSchema::Type::IfcBuilding:
 	{
 		auto building = static_cast<const IfcSchema::IfcBuilding *>(element);
-		locationData[constructMetadataLabel(BUILDING_LABEL, LOCATION_LABEL)] = building->Name();
+		try {
+			locationData[constructMetadataLabel(BUILDING_LABEL, LOCATION_LABEL)] = building->Name();
+		}
+		catch (IfcParse::IfcException &e) {
+			//This will throw an exception if it has no name.
+			locationData[constructMetadataLabel(BUILDING_LABEL, LOCATION_LABEL)] = "(" + IfcSchema::Type::ToString(element->type()) + ")";
+		}
 
 		createElement = true;
 		traverseChildren = true;
@@ -601,7 +614,13 @@ void IFCUtilsParser::determineActionsByElementType(
 	case IfcSchema::Type::IfcBuildingStorey:
 	{
 		auto storey = static_cast<const IfcSchema::IfcBuildingStorey *>(element);
-		locationData[constructMetadataLabel(STOREY_LABEL, LOCATION_LABEL)] = storey->Name();
+		try {
+			locationData[constructMetadataLabel(PROJECT_LABEL, STOREY_LABEL)] = storey->Name();
+		}
+		catch (IfcParse::IfcException &e) {
+			//This will throw an exception if it has no name.
+			locationData[constructMetadataLabel(PROJECT_LABEL, STOREY_LABEL)] = "(" + IfcSchema::Type::ToString(element->type()) + ")";
+		}
 
 		createElement = true;
 		traverseChildren = true;
