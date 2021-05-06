@@ -102,7 +102,6 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 {
 	bool createElement = true; //create a transformation for this element
 	bool traverseChildren = true; //keep recursing its children
-	bool isIFCSpace = false;
 	std::vector<IfcUtil::IfcBaseClass *> extraChildren; //children outside of reference
 	std::unordered_map<std::string, std::string> myMetaValues, elementInfo, locationInfo(locationValue);
 
@@ -112,12 +111,11 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	std::string ifcTypeUpper = ifcType;
 	std::transform(ifcType.begin(), ifcType.end(), ifcTypeUpper.begin(), ::toupper);
 	createElement = ifcTypeUpper.find("IFCREL") == std::string::npos;
-	determineActionsByElementType(ifcfile, element, myMetaValues, locationInfo, createElement, traverseChildren, isIFCSpace, extraChildren, metaPrefix, childrenMetaPrefix);
+	bool isIFCSpace = IfcSchema::Type::IfcSpace == element->type();
+	determineActionsByElementType(ifcfile, element, myMetaValues, locationInfo, createElement, traverseChildren, extraChildren, metaPrefix, childrenMetaPrefix);
 
 	repo::lib::RepoUUID transID = parentID;
 	repo::core::model::RepoNodeSet transNodeSet;
-
-	if (isIFCSpace) name += " " + IFC_TYPE_SPACE_LABEL;
 
 	for (int i = 0; i < element->getArgumentCount(); ++i)
 	{
@@ -171,6 +169,9 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 			if (!value.empty())
 				elementInfo[argumentName] = value;
 		}
+	}
+	if (isIFCSpace) {
+		name += " " + IFC_TYPE_SPACE_LABEL;
 	}
 
 	if (createElement)
@@ -560,7 +561,6 @@ void IFCUtilsParser::determineActionsByElementType(
 	std::unordered_map<std::string, std::string>                  &locationData,
 	bool                                                          &createElement,
 	bool                                                          &traverseChildren,
-	bool                                                          &isIFCSpace,
 	std::vector<IfcUtil::IfcBaseClass *>                          &extraChildren,
 	const std::string											  &metaPrefix,
 	std::string													  &childrenMetaPrefix)
@@ -842,9 +842,6 @@ void IFCUtilsParser::determineActionsByElementType(
 		}
 		break;
 	}
-	case IfcSchema::Type::IfcSpace:
-		isIFCSpace = true;
-		break;
 	}
 }
 

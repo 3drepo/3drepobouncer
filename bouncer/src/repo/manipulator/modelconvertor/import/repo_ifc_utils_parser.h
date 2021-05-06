@@ -95,7 +95,6 @@ namespace repo {
 					std::unordered_map<std::string, std::string>                  &locationData,
 					bool                                                          &createElement,
 					bool                                                          &traverseChildren,
-					bool                                                          &isIFCSpace,
 					std::vector<IfcUtil::IfcBaseClass *>                          &extraChildren,
 					const std::string											  &metaPrefix,
 					std::string											          &childrenMetaPrefix);
