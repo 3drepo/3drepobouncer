@@ -584,13 +584,8 @@ void IFCUtilsParser::determineActionsByElementType(
 	{
 		auto project = static_cast<const IfcSchema::IfcProject *>(element);
 		setProjectUnits(project->UnitsInContext());
-		try {
-			locationData[constructMetadataLabel(PROJECT_LABEL, LOCATION_LABEL)] = project->Name();
-		}
-		catch (IfcParse::IfcException &e) {
-			//This will throw an exception if it has no name.
-			locationData[constructMetadataLabel(PROJECT_LABEL, LOCATION_LABEL)] = "(" + IfcSchema::Type::ToString(element->type()) + ")";
-		}
+
+		locationData[constructMetadataLabel(PROJECT_LABEL, LOCATION_LABEL)] = project->hasName() ? project->Name() : "(" + IfcSchema::Type::ToString(element->type()) + ")";
 
 		createElement = true;
 		traverseChildren = true;
@@ -599,13 +594,7 @@ void IFCUtilsParser::determineActionsByElementType(
 	case IfcSchema::Type::IfcBuilding:
 	{
 		auto building = static_cast<const IfcSchema::IfcBuilding *>(element);
-		try {
-			locationData[constructMetadataLabel(BUILDING_LABEL, LOCATION_LABEL)] = building->Name();
-		}
-		catch (IfcParse::IfcException &e) {
-			//This will throw an exception if it has no name.
-			locationData[constructMetadataLabel(BUILDING_LABEL, LOCATION_LABEL)] = "(" + IfcSchema::Type::ToString(element->type()) + ")";
-		}
+		locationData[constructMetadataLabel(BUILDING_LABEL, LOCATION_LABEL)] = building->hasName() ? building->Name() : "(" + IfcSchema::Type::ToString(element->type()) + ")";
 
 		createElement = true;
 		traverseChildren = true;
@@ -614,13 +603,7 @@ void IFCUtilsParser::determineActionsByElementType(
 	case IfcSchema::Type::IfcBuildingStorey:
 	{
 		auto storey = static_cast<const IfcSchema::IfcBuildingStorey *>(element);
-		try {
-			locationData[constructMetadataLabel(PROJECT_LABEL, STOREY_LABEL)] = storey->Name();
-		}
-		catch (IfcParse::IfcException &e) {
-			//This will throw an exception if it has no name.
-			locationData[constructMetadataLabel(PROJECT_LABEL, STOREY_LABEL)] = "(" + IfcSchema::Type::ToString(element->type()) + ")";
-		}
+		locationData[constructMetadataLabel(STOREY_LABEL, LOCATION_LABEL)] = storey->hasName() ? storey->Name() : "(" + IfcSchema::Type::ToString(element->type()) + ")";
 
 		createElement = true;
 		traverseChildren = true;
