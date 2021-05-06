@@ -82,7 +82,7 @@ IfcGeom::IteratorSettings IFCUtilsGeometry::createSettings()
 
 	itSettings.set(IfcGeom::IteratorSettings::WELD_VERTICES, repoDefaultIOSWieldVertices);
 	itSettings.set(IfcGeom::IteratorSettings::USE_WORLD_COORDS, repoDefaultIOSUseWorldCoords);
-	itSettings.set(IfcGeom::IteratorSettings::CONVERT_BACK_UNITS, false);
+	itSettings.set(IfcGeom::IteratorSettings::CONVERT_BACK_UNITS, repoDefaultIOSConvertBackUnits);
 	itSettings.set(IfcGeom::IteratorSettings::USE_BREP_DATA, repoDefaultIOSUseBrepData);
 	itSettings.set(IfcGeom::IteratorSettings::SEW_SHELLS, repoDefaultIOSSewShells);
 	itSettings.set(IfcGeom::IteratorSettings::FASTER_BOOLEANS, repoDefaultIOSFasterBooleans);
@@ -97,7 +97,7 @@ IfcGeom::IteratorSettings IFCUtilsGeometry::createSettings()
 	itSettings.set(IfcGeom::IteratorSettings::CENTER_MODEL, repoDefaultIOSCentreModel);
 	itSettings.set(IfcGeom::IteratorSettings::GENERATE_UVS, repoDefaultIOSGenerateUVs);
 	itSettings.set(IfcGeom::IteratorSettings::APPLY_LAYERSETS, repoDefaultIOSApplyLayerSets);
-	itSettings.set(IfcGeom::IteratorSettings::INCLUDE_CURVES, true);
+	//itSettings.set(IfcGeom::IteratorSettings::INCLUDE_CURVES, true); //Enable to get 2D lines.
 
 	return itSettings;
 }
