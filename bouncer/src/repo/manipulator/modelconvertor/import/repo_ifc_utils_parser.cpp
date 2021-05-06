@@ -353,13 +353,13 @@ std::string determineUnitsLabel(
 	if (unitName == "yard") return "yd";
 	if (unitName == "mile") return "mi";
 	if (unitName == "acre") return "ac";
-	if (unitName == "square inch") return "in^2"; //FIXME: unicode
-	if (unitName == "square foot") return "ft^2"; //FIXME: unicode
-	if (unitName == "square yard") return "yd^2"; //FIXME: unicode
-	if (unitName == "square mile") return "mi^2"; //FIXME: unicode
-	if (unitName == "cubie inch") return "in^3"; //FIXME: unicode
-	if (unitName == "cubic foot") return "ft^3"; //FIXME: unicode
-	if (unitName == "cubic yard") return "yd^3"; //FIXME: unicode
+	if (unitName == "square inch") return u8"in²";
+	if (unitName == "square foot") return u8"ft²";
+	if (unitName == "square yard") return u8"yd²";
+	if (unitName == "square mile") return u8"mi²";
+	if (unitName == "cubie inch") return u8"in³";
+	if (unitName == "cubic foot") return u8"ft³";
+	if (unitName == "cubic yard") return u8"yd³";
 	if (unitName == "litre") return "l";
 	if (unitName == "fluid ounce uk") return "fl oz(UK)";
 	if (unitName == "fluid ounce us") return "fl oz(US)";
@@ -367,7 +367,7 @@ std::string determineUnitsLabel(
 	if (unitName == "pint us") return "pint(UK)";
 	if (unitName == "gallon uk") return "gal(UK)";
 	if (unitName == "gallon us") return "gal(UK)";
-	if (unitName == "degree") return "degree"; //FIXME: unicode
+	if (unitName == "degree") return u8"°";
 	if (unitName == "ounce") return "oz";
 	if (unitName == "pound") return "lb";
 	if (unitName == "ton uk") return "t(UK)";
@@ -388,9 +388,9 @@ std::string determineUnitsLabel(
 	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_COULOMB:
 		return "C";
 	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_CUBIC_METRE:
-		return "m3"; //FIXME: add unicode
+		return u8"m³";
 	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_DEGREE_CELSIUS:
-		return "oC"; //FIXME: unicode
+		return u8"°C";
 	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_FARAD:
 		return "F";
 	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_GRAM:
@@ -416,7 +416,7 @@ std::string determineUnitsLabel(
 	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_NEWTON:
 		return "N";
 	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_OHM:
-		return "Ohm"; //FIXME: unicode
+		return u8"Ω";
 	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_PASCAL:
 		return "Pa";
 	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_RADIAN:
@@ -428,7 +428,7 @@ std::string determineUnitsLabel(
 	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_SIEVERT:
 		return "Sv";
 	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_SQUARE_METRE:
-		return "m2"; //FIXME: Unicode
+		return u8"m²";
 	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_STERADIAN:
 		return "sr";
 	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_TESLA:
@@ -470,7 +470,7 @@ std::string determinePrefix(
 	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_MILLI:
 		return "m";
 	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_MICRO:
-		return "micro"; //FIXME: unicode
+		return u8"µ";
 	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_NANO:
 		return "n";
 	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_PICO:
@@ -482,6 +482,34 @@ std::string determinePrefix(
 	}
 
 	return "";
+}
+
+std::string getSuperScriptAsString(int value) {
+	auto valueStr = std::to_string(value);
+	std::stringstream ss;
+	std::string symbolMapping[] = {
+		u8"⁰",
+		u8"¹",
+		u8"²",
+		u8"³",
+		u8"⁴",
+		u8"⁵",
+		u8"⁶",
+		u8"⁷",
+		u8"⁸",
+		u8"⁹"
+	};
+	for (const auto &chr : valueStr) {
+		if (chr == '-') {
+			ss << u8"⁻";
+		}
+		else {
+			int digit = atoi(&chr);
+			ss << symbolMapping[digit];
+		}
+	}
+
+	return ss.str();
 }
 
 std::pair<std::string, std::string> processUnits(
@@ -529,7 +557,7 @@ std::pair<std::string, std::string> processUnits(
 				auto subUnit = static_cast<const IfcSchema::IfcSIUnit *>(ele->Unit());
 				auto baseUnits = determineUnitsLabel(subUnit->Name());
 				auto prefix = subUnit->hasPrefix() ? determinePrefix(subUnit->Prefix()) : "";
-				ss << prefix << baseUnits << (ele->Exponent() == 1 ? "" : ("^" + std::to_string(ele->Exponent()))); //FIXME: unicode for the exponent
+				ss << prefix << baseUnits << (ele->Exponent() == 1 ? "" : getSuperScriptAsString(ele->Exponent()));
 			}
 			else {
 				//We only know how to deal with IfcSIUnit at the moment - haven't seen an example of something else yet.
