@@ -983,63 +983,80 @@ TransformationNode RepoBSONFactory::makeTransformationNode(
 
 RepoTask RepoBSONFactory::makeTask(
 	const std::string &name,
+	const uint64_t &startTime,
+	const uint64_t &endTime,
+	const repo::lib::RepoUUID &sequenceID,
 	const std::unordered_map<std::string, std::string> &data,
 	const std::vector<repo::lib::RepoUUID> &resources,
-	const std::vector<repo::lib::RepoUUID> &parents,
+	const repo::lib::RepoUUID &parent,
 	const repo::lib::RepoUUID &id
 ) {
-	RepoBSONBuilder builder, metaBuilder;
+	RepoBSONBuilder builder;
 	builder.append(REPO_LABEL_ID, id);
 	builder.append(REPO_TASK_LABEL_NAME, name);
+	builder.append(REPO_TASK_LABEL_START, (long long)startTime);
+	builder.append(REPO_TASK_LABEL_END, (long long)endTime);
+	builder.append(REPO_TASK_LABEL_SEQ_ID, sequenceID);
 
-	if (parents.size())
-		builder.appendArray(REPO_TASK_LABEL_PARENTS, parents);
+	if (!parent.isDefaultValue())
+		builder.append(REPO_TASK_LABEL_PARENT, parent);
 
 	if (resources.size()) {
-		builder.appendArray(REPO_TASK_LABEL_RESOURCES, resources);
+		RepoBSONBuilder resourceBuilder;
+		resourceBuilder.appendArray(REPO_TASK_SHARED_IDS, resources);
+		builder.append(REPO_TASK_LABEL_RESOURCES, resourceBuilder.obj());
 	}
 
+	std::vector<RepoBSON> metaEntries;
 	for (const auto &entry : data) {
 		std::string key = sanitiseKey(entry.first);
 		std::string value = entry.second;
 
 		if (!key.empty() && !value.empty())
 		{
+			RepoBSONBuilder metaBuilder;
 			//Check if it is a number, if it is, store it as a number
 
+			metaBuilder.append(REPO_TASK_META_KEY, key);
 			try {
 				long long valueInt = boost::lexical_cast<long long>(value);
-				metaBuilder.append(key, valueInt);
+				metaBuilder.append(REPO_TASK_META_VALUE, valueInt);
 			}
 			catch (boost::bad_lexical_cast &)
 			{
 				//not an int, try a double
-
 				try {
 					double valueFloat = boost::lexical_cast<double>(value);
-					metaBuilder.append(key, valueFloat);
+					metaBuilder.append(REPO_TASK_META_VALUE, valueFloat);
 				}
 				catch (boost::bad_lexical_cast &)
 				{
 					//not an int or float, store as string
-					metaBuilder.append(key, value);
+					metaBuilder.append(REPO_TASK_META_VALUE, value);
 				}
 			}
+
+			metaEntries.push_back(metaBuilder.obj());
 		}
 	}
 
-	builder.append(REPO_TASK_LABEL_DATA, metaBuilder.obj());
+	builder.appendArray(REPO_TASK_LABEL_DATA, metaEntries);
 
 	return builder.obj();
 }
 
 RepoSequence RepoBSONFactory::makeSequence(
 	const std::vector<repo::core::model::RepoSequence::FrameData> &frameData,
-	const std::string &name
+	const std::string &name,
+	const repo::lib::RepoUUID &id,
+	const uint64_t firstFrame,
+	const uint64_t lastFrame
 ) {
 	RepoBSONBuilder builder;
-	builder.append(REPO_LABEL_ID, repo::lib::RepoUUID::createUUID());
+	builder.append(REPO_LABEL_ID, id);
 	builder.append(REPO_SEQUENCE_LABEL_NAME, name);
+	builder.append(REPO_SEQUENCE_LABEL_START_DATE, (long long)firstFrame);
+	builder.append(REPO_SEQUENCE_LABEL_END_DATE, (long long)lastFrame);
 
 	std::vector<RepoBSON> frames;
 
