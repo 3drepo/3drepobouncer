@@ -21,13 +21,7 @@ const Utils = {};
 
 const CryptoJS = require('crypto-js');
 
-Utils.teamspaceIndexPrefix = 'io-teamspace';
-Utils.statsIndexPrefix = 'io-stats';
-Utils.bouncerIndexPrefix = 'io-bouncer';
-
-Utils.hashCode = function hashCode(s) {
-	return CryptoJS.MD5(s).toString();
-};
+Utils.hashCode = (s) => CryptoJS.MD5(s).toString();
 
 Utils.exitApplication = (errCode = -1) => {
 	// eslint-disable-next-line no-process-exit

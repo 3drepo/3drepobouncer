@@ -1,59 +1,108 @@
 const pidusage = require('pidusage');
 const processExists = require('process-exists');
+const si = require('systeminformation');
 const fs = require('fs');
 const logger = require('./logger');
-const { elastic } = require('./config').config;
+const Elastic = require('../lib/elastic');
+const { enabled, memoryIntervalMS } = require('./config').config.elastic;
 
-const processMonitor = {};
-processMonitor.logLabel = { label: 'PROCESSMON' };
+const ProcessMonitor = {};
+const logLabel = { label: 'ProcessMonitor' };
 
+const informationDict = {}
+const workingDict = {}
 const pidArray = [];
 let stats = [];
-let maxMemory = 0;
-let startMemory = 0;
 
-processMonitor.maxmem = async () => {
+// const getCurrentMemUsage = () =>  Number(fs.readFileSync('/sys/fs/cgroup/memory/memory.usage_in_bytes'));
+
+const getCurrentMemUsage = async () => {
 	try {
-		const data = Number(fs.readFileSync('/sys/fs/cgroup/memory/memory.usage_in_bytes'));
+		const data = await si.mem();
+		return data.used
+	} catch (e) {
+		logger.error("Failed to get memory information record", logLabel)
+	}
+}
+const getCurrentOperatingSystem = async () => {
+	try {
+		const data = await si.osInfo();
+		return data.platform
+	} catch (e) {
+		logger.error("Failed to get operating system information record", logLabel)
+	}
+}
+
+const maxmem = async () => {
+	try {
+		const data = getCurrentMemUsage();
 		if (pidArray.length > 0) {
 			stats = await pidusage(pidArray);
-			if (data > maxMemory) maxMemory = data;
+			for (stat in stats){
+				logger.verbose(stat, logLabel)
+				if (!workingDict[stat.pid] === undefined ){
+					if (data > workingDict[stat.pid].maxMemory) workingDict[stat.pid].maxMemory = data
+				}
+			}
+			// if (data > maxMemory) maxMemory = data;
 		}
-		} catch (err) { logger.verbose(`[processMonitor][maxmem][error]: ${err}`, processMonitor.logLabel); }
+		} catch (err) { logger.verbose(`[maxmem][error]: ${err}`, logLabel); }
 };
 
 // Compute statistics every interval:
-processMonitor.interval = async (time) => {
-	const exists = await processExists.all(pidArray);
-	if (pidArray.length > 0 && exists) {
+const interval = async (time) => {
+	if (pidArray.length > 0) {
 		setTimeout(async () => {
-			await processMonitor.maxmem();
-			processMonitor.interval(time);
+			await maxmem();
+			interval(time);
 		}, time);
 	}
 };
 
-processMonitor.monitor = async () => {
-	processMonitor.interval(elastic.memoryIntervalMS);
+const monitor = async () => {
+	interval(memoryIntervalMS);
 };
 
-processMonitor.startMonitor = async (inputPID) => {
-	pidArray.push(inputPID);
-	startMemory = Number(fs.readFileSync('/sys/fs/cgroup/memory/memory.usage_in_bytes'));
-	processMonitor.monitor();
-	logger.verbose(`[${inputPID}]: a startMonitor event occurred!`, processMonitor.logLabel);
-};
-
-processMonitor.stopMonitor = async (inputPID) => {
-	const index = pidArray.indexOf(inputPID);
-	if (index !== -1) {
-		pidArray.splice(index, 1);
+ProcessMonitor.startMonitor = async (inputPID, processInformation) => {
+	if (currentOS === "linux" ) {
+		pidArray.push(inputPID);
+		informationDict[inputPID] = processInformation
+		workingDict[inputPID] = { startMemory: 0, maxMemory: 0 }
+		workingDict[inputPID].startMemory = getCurrentMemUsage();
+		monitor();
+		logger.verbose(`[${inputPID}]: a startMonitor event occurred!`, logLabel);
 	}
-	processMonitor.maxMemory = maxMemory - startMemory;
-	processMonitor.processTime = stats[inputPID].elapsed;
-	logger.verbose(`[${inputPID}]: a stopMonitor event occurred! elapsed: ${processMonitor.processTime}`, processMonitor.logLabel);
-	startMemory = 0;
-	maxMemory = 0;
 };
 
-module.exports = processMonitor;
+ProcessMonitor.stopMonitor = async (inputPID) => {
+	if (currentOS === "linux" ) {
+		if (!informationDict[inputPID] === undefined ){
+
+			informationDict[inputPID].maxMemory = workingDict[inputPID].maxMemory - workingDict[inputPID].startMemory;
+			informationDict[inputPID].processTime = stats[inputPID].elapsed;
+			
+			workingDict[inputPID] = { startMemory: 0, maxMemory: 0 }
+
+			logger.verbose(`[${inputPID}]: a stopMonitor event occurred! elapsed: ${informationDict[inputPID].processTime}`, logLabel);
+			if (enabled) {
+				try { 
+					Elastic.createRecord (informationDict[inputPID])
+				} catch (err){
+					logger.error("Failed to create record", logLabel)
+				}
+			}
+
+			const index = pidArray.indexOf(inputPID);
+			if (index !== -1) {
+				pidArray.splice(index, 1);
+			}
+
+			delete informationDict[inputPID]
+			delete workingDict[inputPID]
+		}
+	}
+};
+
+const currentOS = getCurrentOperatingSystem()
+
+module.exports = ProcessMonitor;

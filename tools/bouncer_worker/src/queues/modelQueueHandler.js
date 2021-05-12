@@ -28,14 +28,13 @@ const { ERRCODE_OK, ERRCODE_BOUNCER_CRASH } = require('../constants/errorCodes')
 const { MODEL_PROCESSING, UNITY_QUEUED } = require('../constants/statuses');
 const { messageDecoder } = require('../lib/messageDecoder');
 const logger = require('../lib/logger');
-const Elastic = require('../lib/elastic');
 
 const Handler = {};
 const logLabel = { label: 'MODELQ' };
 
 Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const logDir = `${config.logging.taskLogDir}/${rid.toString()}/`;
-	const { errorCode, database, model, user, cmdParams } = messageDecoder(cmd);
+	const { errorCode, database, model, user, cmdParams, file } = messageDecoder(cmd);
 
 	if (errorCode) {
 		callback(JSON.stringify({ value: errorCode }));
@@ -56,30 +55,21 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	};
 
 	try {
-		const memoryReporting = { enabled: config.elastic.memoryReporting, maxMemory: 0, processTime: 0 };
-		returnMessage.value = await runBouncerCommand(logDir, cmdParams, memoryReporting);
-		if (memoryReporting.maxMemory > 0) {
-			const importFile = cmdParams[3];
-			// eslint-disable-next-line
-			const fileStats = fs.statSync(require(importFile).file);
-			const elasticBody = {
-				Teamspace: user,
-				Model: model,
-				Database: database,
-				MaxMemory: memoryReporting.maxMemory,
-				ProcessTime: memoryReporting.processTime,
-				DateTime: Date.now(),
-				// eslint-disable-next-line
-				FileType: require(importFile).file.split('.').pop().toString(),
-				FileSize: fileStats.size,
-				Process: '3drepobouncer',
-				ReturnCode: returnMessage.value,
-			};
-			try { await Elastic.createBouncerRecord(elasticBody); } catch (err) {
-				logger.error(`[processMonitor] Failed to create Elastic record: ${err.message || err}`, logLabel);
-			}
-			logger.verbose(`[processMonitor] ProcessTime: ${elasticBody.ProcessTime} MaxMemory: ${elasticBody.MaxMemory} FileType: ${elasticBody.FileType} `, logLabel);
-		}
+		const fileStats = fs.statSync(file);
+		const processInformation = {
+			Teamspace: user,
+			Model: model,
+			Database: database,
+			MaxMemory: null, // processReporting.maxMemory,
+			ProcessTime: null, //processReporting.processTime,
+			DateTime: Date.now(),
+			FileType: file.split('.').pop().toString(),
+			FileSize: fileStats.size,
+			Process: logLabel.label,
+			ReturnCode: returnMessage.value,
+		};
+		returnMessage.value = await runBouncerCommand(logDir, cmdParams, processInformation);
+
 		callback(JSON.stringify(returnMessage), config.rabbitmq.unity_queue);
 		callback(JSON.stringify({
 			status: UNITY_QUEUED,

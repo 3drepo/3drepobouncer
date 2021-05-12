@@ -21,7 +21,6 @@ const { generateAssetBundles, validateUnityConfigurations } = require('../tasks/
 const { ERRCODE_ARG_FILE_FAIL, ERRCODE_BUNDLE_GEN_FAIL } = require('../constants/errorCodes');
 const { UNITY_PROCESSING } = require('../constants/statuses');
 const logger = require('../lib/logger');
-const Elastic = require('../lib/elastic');
 
 const logLabel = { label: 'UNITYQ' };
 
@@ -36,26 +35,19 @@ const processUnity = async (database, model, user, logDir, modelImportErrCode) =
 
 	try {
 		if (database && model) {
-			const memoryReporting = { enabled: config.elastic.memoryReporting, maxMemory: 0, processTime: 0 };
-			await generateAssetBundles(database, model, logDir, memoryReporting);
-			if (memoryReporting.enabled) {
-				const elasticBody = {
-					Teamspace: user,
-					Model: model,
-					Database: database,
-					MaxMemory: memoryReporting.maxMemory,
-					ProcessTime: memoryReporting.processTime,
-					DateTime: Date.now(),
-					FileType: 'Unity',
-					FileSize: null,
-					Process: 'Unity',
-					ReturnCode: returnMessage.value,
-				};
-				try { await Elastic.createBouncerRecord(elasticBody); } catch (err) {
-					logger.error(`[processMonitor] Failed to create Elastic record: ${err.message || err}`);
-				}
-				logger.verbose(`[processMonitor] ProcessTime: ${elasticBody.ProcessTime} MaxMemory: ${elasticBody.MaxMemory} Process: ${elasticBody.Process} `, logLabel);
-			}
+			const processInformation = {
+				Teamspace: user,
+				Model: model,
+				Database: database,
+				MaxMemory: null,    // processMonitor.maxMemory,
+				ProcessTime: null,  // processMonitor.processTime,
+				DateTime: Date.now(),
+				FileType: 'Unity',
+				FileSize: null,     // Unity doesn't know the original model size
+				Process: logLabel.label,
+				ReturnCode: returnMessage.value,
+			};
+			await generateAssetBundles(database, model, logDir, processInformation);
 		} else {
 			returnMessage.value = ERRCODE_ARG_FILE_FAIL;
 		}
@@ -63,7 +55,6 @@ const processUnity = async (database, model, user, logDir, modelImportErrCode) =
 		logger.error(`Failed to generate asset bundle: ${err.message || err}`, logLabel);
 		returnMessage.value = ERRCODE_BUNDLE_GEN_FAIL;
 	}
-
 	return returnMessage;
 };
 

@@ -18,17 +18,31 @@
 const { Client } = require('@elastic/elasticsearch');
 const logger = require('./logger');
 const Utils = require('./utils');
-const { elastic } = require('./config').config;
+const { cloudAuth, cloudId } = require('./config').config.elastic;
 
 const Elastic = {};
+const bouncerIndexPrefix = 'io-bouncer';
 
-Elastic.logLabel = { label: 'Elastic' };
+const processingRecordMapping = {
+	DateTime: { type: 'date' },
+	Teamspace: { type: 'keyword' },
+	Model: { type: 'text' },
+	Queue: { type: 'text' },
+	Database: { type: 'text' },
+	FileType: { type: 'keyword' },
+	FileSize: { type: 'double' },
+	MaxMemory: { type: 'double' },
+	ProcessTime: { type: 'double' },
+	ReturnCode: { type: 'double' },
+};
 
-Elastic.createElasticClient = () => {
-	const ELASTIC_CLOUD_AUTH = elastic.cloudAuth.split(':');
+const logLabel = { label: 'Elastic' };
+
+const createElasticClient = async () => {
+	const ELASTIC_CLOUD_AUTH = cloudAuth.split(':');
 	const config = {
 		cloud: {
-			id: elastic.cloudId.trim(),
+			id: cloudId.trim(),
 		},
 		auth: {
 			username: ELASTIC_CLOUD_AUTH[0],
@@ -38,31 +52,36 @@ Elastic.createElasticClient = () => {
 		maxRetries: 5,
 		request_timeout: 60,
 	};
-	const elasticClient = new Client(config);
-	elasticClient.cluster.health({}, (err, resp) => {
-		if (err) logger.debug(`[ELASTIC]:  health ${resp.toString()}`, Elastic.loglabel);
-	});
-	return elasticClient;
+	const internalElastic = new Client(config);
+	try { 
+		await internalElastic.cluster.health();
+		logger.verbose("Succesfully connected to " + cloudId.trim(), loglabel)
+	}
+	catch (err) { 
+		logger.error("Health check failed on elastic connection, please check settings.", loglabel)
+		Utils.exitApplication()
+	}
+	return internalElastic;
 };
 
-Elastic.createElasticRecord = async (elasticClient, index, elasticBody, id, mapping) => {
+const createElasticRecord = async (index, elasticBody, id, mapping) => {
 	try {
 		// eslint-disable-next-line no-param-reassign
 		id = id || Utils.hashCode(Object.values(elasticBody || {}).toString());
 		const indexName = index.toLowerCase(); // requirement of elastic that indexs be lowercase
-		const configured = await elasticClient.indices.exists({ index: indexName });
-		if (!configured.body) {
+		const { body } = await elasticClient.indices.exists({ index: indexName });
+		if (!body) {
 			await elasticClient.indices.create({
 				index: indexName,
 			});
-			logger.verbose(`[ELASTIC]: Created index ${indexName}`, Elastic.loglabel);
+			logger.verbose(`[ELASTIC]: Created index ${indexName}`, loglabel);
 			if (mapping) {
 				await elasticClient.indices.putMapping({
 					index,
 					body: { properties: mapping },
 				});
 			}
-			logger.verbose(`[ELASTIC]: Created mapping ${indexName}`, Elastic.loglabel);
+			logger.verbose(`[ELASTIC]: Created mapping ${indexName}`, loglabel);
 		}
 
 		if (elasticBody) {
@@ -72,97 +91,33 @@ Elastic.createElasticRecord = async (elasticClient, index, elasticBody, id, mapp
 				refresh: true,
 				body: elasticBody,
 			});
-			logger.verbose(`[ELASTIC]: created doc ${indexName} ${Object.values(elasticBody).toString()}`, Elastic.loglabel);
+			logger.verbose(`[ELASTIC]: created doc ${indexName} ${Object.values(elasticBody).toString()}`, loglabel);
 		}
 	} catch (error) {
-		logger.verbose(`[ELASTIC]: ERROR:${index}`, elasticBody, error, Elastic.loglabel);
+		logger.verbose(`[ELASTIC]: ERROR:${index}`, elasticBody, error, loglabel);
 		throw (error.body.error);
 	}
 };
 
-Elastic.createElasticIndex = async (elasticClient, index, mapping) => {
+const createElasticIndex = async (index, mapping) => {
 	try {
-		await Elastic.createElasticRecord(elasticClient, index, undefined, undefined, mapping);
+		await Elastic.createElasticRecord( index, undefined, undefined, mapping);
 	} catch (error) {
 		throw (error.body.error);
 	}
 };
 
-Elastic.createBouncerRecord = async (elasticBody) => {
-	if (elasticBody) {
-		const elasticClient = Elastic.createElasticClient();
+const createMissingIndicies = async () => {
+	// initialise indicies if missing
+	await createElasticIndex( bouncerIndexPrefix, processingRecordMapping);
+};
 
-		const activityMapping = {
-			DateTime: { type: 'date' },
-			Teamspace: { type: 'keyword' },
-			Model: { type: 'text' },
-			Database: { type: 'text' },
-			FileType: { type: 'keyword' },
-			FileSize: { type: 'double' },
-			MaxMemory: { type: 'double' },
-			ProcessTime: { type: 'double' },
-			Process: { type: 'text' },
-			ReturnCode: { type: 'double' },
-		};
-		// eslint-disable-next-line
-        await Elastic.createElasticRecord(elasticClient, Utils.bouncerIndexPrefix, elasticBody, undefined, activityMapping);
+Elastic.createRecord = async (elasticBody) => {
+	if (elasticBody) {
+        await createElasticRecord(bouncerIndexPrefix, elasticBody, undefined, processingRecordMapping );
 	}
 };
 
-Elastic.createMissingIndicies = async (elasticClient) => {
-	// initialise indicies if missing
-
-	const activityMapping = {
-		Teamspace: { type: 'keyword' },
-		licenseType: { type: 'text' },
-		Year: { type: 'text' },
-		Month: { type: 'text' },
-		DateTime: { type: 'date' },
-		Issues: { type: 'double' },
-		'Model Revisions': { type: 'double' },
-	};
-	await Elastic.createElasticIndex(elasticClient, `${Utils.teamspaceIndexPrefix}-activity`, activityMapping);
-
-	const quotaMapping = {
-		Teamspace: { type: 'keyword' },
-		Type: { type: 'text' },
-		'User Count': { type: 'double' },
-		'Max Users': { type: 'double' },
-		'Max Data(GB)': { type: 'double' },
-		'Expiry Date': { type: 'date' },
-		Expired: { type: 'boolean' },
-	};
-	await Elastic.createElasticIndex(elasticClient, `${Utils.teamspaceIndexPrefix}-quota`, quotaMapping);
-
-	const usersMapping = {
-		Teamspace: { type: 'keyword' },
-		Email: { type: 'text' },
-		'First Name': { type: 'text' },
-		'Last Name': { type: 'text' },
-		Country: { type: 'text' },
-		Company: { type: 'text' },
-		'Date Created': { type: 'text' },
-		DateTime: { type: 'date' },
-		'Mail Optout': { type: 'text' },
-		Verified: { type: 'boolean' },
-	};
-	await Elastic.createElasticIndex(elasticClient, `${Utils.teamspaceIndexPrefix}-users`, usersMapping);
-
-	const loginMapping = {
-		Teamspace: { type: 'keyword' },
-		'Last Login': { type: 'text' },
-		DateTime: { type: 'date' },
-	};
-	await Elastic.createElasticIndex(elasticClient, `${Utils.teamspaceIndexPrefix}-login`, loginMapping);
-
-	const statsMapping = {
-		Month: { type: 'text' },
-		Year: { type: 'text' },
-		Count: { type: 'double' },
-		Total: { type: 'double' },
-		DateTime: { type: 'date' },
-	};
-	await Elastic.createElasticIndex(elasticClient, Utils.statsIndexPrefix, statsMapping);
-};
+const elasticClient = createElasticClient()
 
 module.exports = Elastic;
