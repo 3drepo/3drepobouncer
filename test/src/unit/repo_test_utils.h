@@ -179,6 +179,7 @@ static bool compareMaterialStructs(const repo_material_t &m1, const repo_materia
 		&& m1.opacity == m2.opacity
 		&& m1.shininess == m2.shininess
 		&& m1.shininessStrength == m2.shininessStrength
+		&& m1.lineWeight == m2.lineWeight
 		&& m1.isWireframe == m2.isWireframe
 		&& m1.isTwoSided == m2.isTwoSided;
 }

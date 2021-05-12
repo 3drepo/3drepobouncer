@@ -25,58 +25,37 @@
 
 using namespace repo::manipulator::modelconvertor;
 
-static bool testBIMFileImport(
-	std::string bimFilePath,
-	int expMaterialsCount,
-	int expTexturesCount,
-	int expMeshesCount,
-	bool checkUvs = false,
-	int expImpModelErrCode = REPOERR_OK,
-	int expGenSceneErrCode = REPOERR_OK,
-	bool generateScene = true,
-	std::string debugMeshDataFilePath = "",
-	std::string textureFilesDumpPath = "")
+namespace RepoModelImportUtils
 {
-	ModelImportConfig config;
-	uint8_t impModelErrCode = 0;
-	auto modelConvertor = std::unique_ptr<AbstractModelImport>(new RepoModelImport(config));
-	modelConvertor->importModel(bimFilePath, impModelErrCode);
-	if (impModelErrCode != expImpModelErrCode)
-	{ 
-		repoError << "Error from importModel(): " << (int)impModelErrCode;
-		return false; 
+	static std::unique_ptr<AbstractModelImport> ImportBIMFile(
+		std::string bimFilePath, 
+		uint8_t& impModelErrCode)
+	{
+		ModelImportConfig config;
+		auto modelConvertor = std::unique_ptr<AbstractModelImport>(new RepoModelImport(config));
+		modelConvertor->importModel(bimFilePath, impModelErrCode);
+		return modelConvertor;
 	}
 
-	if(generateScene)
+	static bool CheckUVs(const repo::core::model::RepoNodeSet& meshes)
 	{
-		uint8_t genSceneErrCode = 0;
-		auto repoScene = modelConvertor->generateRepoScene(genSceneErrCode);
-		if (genSceneErrCode != expGenSceneErrCode)
+		for (auto const mesh : meshes)
 		{
-			repoError << "Error from generateRepoScene(): " << (int)genSceneErrCode;
-			return false;
-		}
-
-		auto materials = repoScene->getAllMaterials(repo::core::model::RepoScene::GraphType::DEFAULT);
-		auto textures = repoScene->getAllTextures(repo::core::model::RepoScene::GraphType::DEFAULT);
-		auto meshes = repoScene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
-
-		if(checkUvs)
-		{
-			for (auto const mesh : meshes)
+			auto meshNode = static_cast<repo::core::model::MeshNode*>(mesh);
+			std::vector<repo::lib::RepoVector2D> uvs = meshNode->getUVChannels();
+			std::vector<repo::lib::RepoVector3D> vertices = meshNode->getVertices();
+			if (uvs.size() != vertices.size())
 			{
-				auto meshNode = static_cast<repo::core::model::MeshNode*>(mesh);
-				std::vector<repo::lib::RepoVector2D> uvs = meshNode->getUVChannels();
-				std::vector<repo::lib::RepoVector3D> vertices = meshNode->getVertices();
-				if(uvs.size() != vertices.size())
-				{
-					repoError << "UV count mesh is incorrect. Expected " << vertices.size() << ", found : " << uvs.size();
-					return false;
-				}
+				repoError << "UV count mesh is incorrect. Expected " << vertices.size() << ", found : " << uvs.size();
+				return false;
 			}
 		}
+		return true;
+	}
 
-		if(debugMeshDataFilePath != "")
+	static void PrintDebugMesh(std::string debugMeshDataFilePath, const repo::core::model::RepoNodeSet& meshes)
+	{
+		if (debugMeshDataFilePath != "")
 		{
 			// Print out the mesh debug text file
 			std::ofstream stream;
@@ -120,7 +99,7 @@ static bool testBIMFileImport(
 					lastsep = ',';
 					for (auto uvIt = uvs.begin(); uvIt != uvs.end(); ++uvIt)
 					{
-						if (uvIt== (uvs.end() - 1)) { lastsep = '\n'; }
+						if (uvIt == (uvs.end() - 1)) { lastsep = '\n'; }
 						stream << uvIt->x << ",";
 						stream << uvIt->y << lastsep;
 					}
@@ -128,67 +107,77 @@ static bool testBIMFileImport(
 			}
 			stream.close();
 		}
-
-		if(textureFilesDumpPath != "")
-		{
-			for (auto const img : textures)
-			{
-				auto textureNode = static_cast<repo::core::model::TextureNode*>(img);
-				std::vector<char> imgData = textureNode->getRawData();
-				boost::filesystem::path dirPath(textureFilesDumpPath);
-				boost::filesystem::path fileName( "DUMP_" + textureNode->getName());
-				auto fullPath = dirPath / fileName;
-				std::ofstream stream;
-				stream.open(fullPath.string(), std::ios::binary);
-				if (stream)
-				{
-					stream.write(&imgData[0], imgData.size());
-				}
-				stream.close();
-			}
-		}
-
-		bool materialsOk = materials.size() == expMaterialsCount;
-		if (!materialsOk) { repoError << "Expected " << expMaterialsCount << " materials, found " << materials.size(); }
-		bool texturesOk = textures.size() == expTexturesCount;
-		if (!materialsOk) { repoError << "Expected " << expTexturesCount << " textures, found " << textures.size(); }
-		bool meshesOk = meshes.size() == expMeshesCount;
-		if (!materialsOk) { repoError << "Expected " << expMeshesCount << " meshes, found " << meshes.size(); }
-		if (!repoScene->isOK()) { repoError << "Scene is not healthy"; }
-
-		bool scenePassed = materialsOk && texturesOk && meshesOk && repoScene->isOK();
-		repoInfo << "Generated scene passed: " << std::boolalpha << scenePassed;
-		return scenePassed;
 	}
 
-	return true;
-};
-
-TEST(RepoModelImport, BIM002ValidFile)
-{
-	EXPECT_TRUE(testBIMFileImport(getDataPath("RepoModelImport/cube_bim2_navis_2021_repo_4.6.1.bim"), 3, 0, 4));
+	static void DumpTextureFileImage(
+		std::string textureFilesDumpPath, 
+		const repo::core::model::RepoNodeSet& textures)
+	{
+		for (auto const img : textures)
+		{
+			auto textureNode = static_cast<repo::core::model::TextureNode*>(img);
+			std::vector<char> imgData = textureNode->getRawData();
+			boost::filesystem::path dirPath(textureFilesDumpPath);
+			boost::filesystem::path fileName("DUMP_" + textureNode->getName());
+			auto fullPath = dirPath / fileName;
+			std::ofstream stream;
+			stream.open(fullPath.string(), std::ios::binary);
+			if (stream)
+			{
+				stream.write(&imgData[0], imgData.size());
+			}
+			stream.close();
+		}
+	}
 }
 
-TEST(RepoModelImport, BIM003ValidFile)
+TEST(RepoModelImport, ValidBIM001Import)
 {
-	EXPECT_TRUE(testBIMFileImport(getDataPath("RepoModelImport/BrickWalls_bim3.bim"), 3, 2, 6, true));
+	uint8_t errCode = 0;
+	RepoModelImportUtils::ImportBIMFile(
+		getDataPath("RepoModelImport/cube_bim1_spoofed.bim"), errCode);
+	EXPECT_EQ(REPOERR_UNSUPPORTED_BIM_VERSION, errCode);
 }
 
-TEST(RepoModelImport, BIM001ValidFile)
+TEST(RepoModelImport, ValidBIM002Import)
 {
-	EXPECT_TRUE(testBIMFileImport(
-		getDataPath("RepoModelImport/cube_bim1_spoofed.bim"), 0, 0, 0, false, REPOERR_UNSUPPORTED_BIM_VERSION, REPOERR_OK, false));
+	uint8_t errCode = 0;
+	RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/cube_bim2_navis_2021_repo_4.6.1.bim"), errCode);
+	EXPECT_EQ(REPOERR_OK, errCode);
 }
 
-TEST(RepoModelImport, BIM003MissingTextureFields)
+TEST(RepoModelImport, ValidBIM003Import)
 {
-	EXPECT_FALSE(testBIMFileImport(
-		getDataPath("RepoModelImport/BrickWalls_bim3_CorruptedTextureField.bim"), 3, 1, 6, true, REPOERR_OK, REPOERR_LOAD_SCENE_MISSING_TEXTURE));
+	uint8_t errCode = 0;
+	RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/BrickWalls_bim3.bim"), errCode);
+	EXPECT_EQ(REPOERR_OK, errCode);
 }
 
-TEST(RepoModelImport, BIM003MissingReferencedTexture)
+TEST(RepoModelImport, ValidBIM004Import)
 {
-	EXPECT_FALSE(testBIMFileImport(
-		getDataPath("RepoModelImport/BrickWalls_bim3_MissingTexture.bim"), 3, 2, 6, true, REPOERR_OK, REPOERR_LOAD_SCENE_MISSING_TEXTURE));
+	uint8_t errCode = 0;
+	RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/wall_section_bim4.bim"), errCode);
+	EXPECT_EQ(REPOERR_OK, errCode);
+}
+
+TEST(RepoModelImport, MissingTextureFields)
+{
+	uint8_t errCode = 0;
+	RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/BrickWalls_bim3_CorruptedTextureField.bim"), errCode);
+	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_TEXTURE, errCode);
+}
+
+TEST(RepoModelImport, EmptyTextureByteCount)
+{
+	uint8_t errCode = 0;
+	RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/missingTextureByteCount.bim"), errCode);
+	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_TEXTURE, errCode);
+}
+
+TEST(RepoModelImport, UnreferencedTextures)
+{
+	uint8_t errCode = 0;
+	RepoModelImportUtils::ImportBIMFile(getDataPath("RepoModelImport/BrickWalls_bim3_MissingTexture.bim"), errCode);
+	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_TEXTURE, errCode);
 }
 

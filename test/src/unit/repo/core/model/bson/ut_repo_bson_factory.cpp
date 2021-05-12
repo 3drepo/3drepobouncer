@@ -257,6 +257,7 @@ TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
 	mat_struct.opacity = 0.9;
 	mat_struct.shininess = 1.0;
 	mat_struct.shininessStrength = 0.5;
+	mat_struct.lineWeight = 3;
 	mat_struct.isWireframe = true;
 	mat_struct.isTwoSided = false;
 
@@ -270,7 +271,7 @@ TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
 
 	auto matOut = material.getMaterialStruct();
 
-	compareMaterialStructs(mat_struct, matOut);
+	EXPECT_TRUE(compareMaterialStructs(mat_struct, matOut));
 
 	repo_material_t emptyStruct;
 
