@@ -39,6 +39,7 @@ namespace repo {
 #define REPO_NODE_MATERIAL_LABEL_OPACITY					"opacity"
 #define REPO_NODE_MATERIAL_LABEL_SHININESS				"shininess"
 #define REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH		"shininess_strength"
+#define REPO_NODE_MATERIAL_LABEL_LINE_WEIGHT		"line_weight"
 
 			//------------------------------------------------------------------------------
 

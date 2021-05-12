@@ -146,14 +146,15 @@ MaterialNode RepoBSONFactory::makeMaterialNode(
 	if (material.isTwoSided)
 		builder.append(REPO_NODE_MATERIAL_LABEL_TWO_SIDED, material.isTwoSided);
 
+	// Checking for NaN values
 	if (material.opacity == material.opacity)
 		builder.append(REPO_NODE_MATERIAL_LABEL_OPACITY, material.opacity);
-
 	if (material.shininess == material.shininess)
 		builder.append(REPO_NODE_MATERIAL_LABEL_SHININESS, material.shininess);
-
 	if (material.shininessStrength == material.shininessStrength)
 		builder.append(REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH, material.shininessStrength);
+	if (material.lineWeight == material.lineWeight)
+		builder.append(REPO_NODE_MATERIAL_LABEL_LINE_WEIGHT, material.lineWeight);
 
 	return MaterialNode(builder.obj());
 }
