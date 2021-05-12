@@ -131,6 +131,10 @@ void RepoModelImport::parseMaterial(const boost::property_tree::ptree& matTree)
 	{
 		repo_material.lineWeight = matTree.get<float>("lineWeight");
 	}
+	else
+	{
+		repo_material.lineWeight = std::numeric_limits<float>::quiet_NaN();
+	}
 
 	repo_material.shininessStrength = 0.25f;
 	repo_material.isWireframe = false;

@@ -104,7 +104,7 @@ typedef struct{
 	float opacity = 1;
 	float shininess = 0;
 	float shininessStrength = 0;
-	float lineWeight = 0;
+	float lineWeight = 1;
 	bool isWireframe = false;
 	bool isTwoSided = false;
 
