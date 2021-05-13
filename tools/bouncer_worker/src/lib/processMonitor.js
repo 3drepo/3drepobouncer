@@ -12,7 +12,7 @@ const logLabel = { label: 'PROCESSMONITOR' };
 const informationDict = {};
 const workingDict = {};
 const pidSet = new Set();
-const permittedOS = ['linux', 'windows'];
+const permittedOS = ['linux', 'win32'];
 // const getCurrentMemUsage = () =>  Number(fs.readFileSync('/sys/fs/cgroup/memory/memory.usage_in_bytes'));
 
 const getCurrentMemUsage = async () => {
@@ -90,7 +90,7 @@ const monitor = async () => {
 ProcessMonitor.startMonitor = async (inputPID, processInformation) => {
 	const currentOS = await currentOSPromise;
 	logger.verbose(`[${currentOS}]: booting!`, logLabel);
-	if (currentOS in permittedOS) {
+	if (permittedOS.includes (currentOS)) {
 		pidSet.add(inputPID);
 		informationDict[inputPID] = processInformation;
 		logger.verbose(informationDict[inputPID].toString(), logLabel);
@@ -107,7 +107,7 @@ ProcessMonitor.stopMonitor = async (inputPID, returnCode) => {
 	logger.verbose(`[${inputPID}]: a stopMonitor event occurred! returnCode: ${returnCode}`, logLabel);
 
 	const currentOS = await currentOSPromise;
-	if (currentOS in permittedOS) {
+	if (permittedOS.includes (currentOS)) {
 		// take the PID out of circulation for checking immediately.
 		pidSet.delete(inputPID);
 
