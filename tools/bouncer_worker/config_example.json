@@ -44,7 +44,9 @@
 		"enabled"   : false,
 		"cloudId"   : "cloudhost:xxx",
 		"cloudAuth" : "username:password",
-		"processReporting" : true,
+	},
+	"processMonitoring" : {
+		"enabled" : false,
 		"memoryIntervalMS" : 10
 	}
 }

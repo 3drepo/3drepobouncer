@@ -4,7 +4,7 @@ const { ERRCODE_TIMEOUT, ERRCODE_UNKNOWN_ERROR } = require('../constants/errorCo
 const logger = require('./logger');
 const processMonitor = require('./processMonitor');
 const { timeoutMS } = require('./config').config;
-const { processReporting } = require('./config').config.elastic;
+const processReporting = require('./config').config.processMonitoring.enabled;
 
 const run = (
 	exe,

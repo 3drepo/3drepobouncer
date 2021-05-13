@@ -13,7 +13,6 @@ const informationDict = {};
 const workingDict = {};
 const pidSet = new Set();
 const permittedOS = ['linux', 'win32'];
-// const getCurrentMemUsage = () =>  Number(fs.readFileSync('/sys/fs/cgroup/memory/memory.usage_in_bytes'));
 
 const getCurrentMemUsage = async () => {
 	let data;
@@ -45,23 +44,16 @@ const maxmem = async () => {
 		data = await getCurrentMemUsage();
 		if (pidSet.size > 0) {
 			pids = await pidusage(Array.from(pidSet));
-			// console.log (stats);
 			for (const pid in pids) {
-				// console.log(stats[stat].pid)
-				// console.log(workingDict[stat].maxMemory)
-				// console.log(data)
+
 				if (pid in workingDict) {
 					workingDict[pid].elapsedTime = pids[pid].elapsed;
 					if (data > workingDict[pid].maxMemory) {
-						// let current = workingDict[stat].maxMemory
-						// logger.verbose(`${stat}, ${data}, ${current}`, logLabel)
+
 						workingDict[pid].maxMemory = data;
 					}
-				} else {
-					// console..log(workingDict);
-				}
+				} 
 			}
-			// if (data > maxMemory) maxMemory = data;
 		}
 	} catch (err) { logger.error(`[maxmem]: ${err}`, logLabel); }
 };
@@ -89,25 +81,22 @@ const monitor = async () => {
 
 ProcessMonitor.startMonitor = async (inputPID, processInformation) => {
 	const currentOS = await currentOSPromise;
-	logger.verbose(`[${currentOS}]: booting!`, logLabel);
 	if (permittedOS.includes (currentOS)) {
 		pidSet.add(inputPID);
 		informationDict[inputPID] = processInformation;
-		logger.verbose(informationDict[inputPID].toString(), logLabel);
 		workingDict[inputPID] = { startMemory: 0, maxMemory: 0 };
 		workingDict[inputPID].startMemory = await getCurrentMemUsage();
 		monitor();
-		logger.verbose(`[${inputPID}]: a startMonitor event occurred!`, logLabel);
+		logger.verbose(`Monitoring enabled for process ${inputPID}`, logLabel);
 	} else {
-		logger.verbose(`[${currentOS}]: not linux?!`, logLabel);
+		logger.error(`[${currentOS}]: not a supported operating system for monitoring.`, logLabel);
 	}
 };
 
 ProcessMonitor.stopMonitor = async (inputPID, returnCode) => {
-	logger.verbose(`[${inputPID}]: a stopMonitor event occurred! returnCode: ${returnCode}`, logLabel);
-
 	const currentOS = await currentOSPromise;
 	if (permittedOS.includes (currentOS)) {
+		
 		// take the PID out of circulation for checking immediately.
 		pidSet.delete(inputPID);
 
@@ -118,20 +107,21 @@ ProcessMonitor.stopMonitor = async (inputPID, returnCode) => {
 
 		workingDict[inputPID] = { startMemory: 0, maxMemory: 0 };
 
-		// console.log(informationDict[inputPID]);
-
 		if (enabled) {
 			try {
 				Elastic.createRecord(informationDict[inputPID]);
 			} catch (err) {
 				logger.error('Failed to create record', logLabel);
 			}
+		} else {
+			logger.info(`ProcessTime: ${informationDict[inputPID].ProcessTime} MaxMemory: ${informationDict[inputPID].MaxMemory}`,logLabel)
 		}
 
 		delete informationDict[inputPID];
 		delete workingDict[inputPID];
+
 	} else {
-		logger.verbose(`[${currentOS}]: not linux?!`, logLabel);
+		logger.error(`[${currentOS}]: not a supported operating system for monitoring.`, logLabel);
 	}
 };
 
