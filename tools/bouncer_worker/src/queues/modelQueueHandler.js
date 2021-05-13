@@ -28,6 +28,7 @@ const { ERRCODE_OK, ERRCODE_BOUNCER_CRASH } = require('../constants/errorCodes')
 const { MODEL_PROCESSING, UNITY_QUEUED } = require('../constants/statuses');
 const { messageDecoder } = require('../lib/messageDecoder');
 const logger = require('../lib/logger');
+const Utils = require('../lib/utils');
 
 const Handler = {};
 const logLabel = { label: 'MODELQ' };
@@ -56,18 +57,19 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 
 	try {
 		const fileStats = fs.statSync(file);
-		const processInformation = {
-			Teamspace: user,
-			Model: model,
-			Database: database,
-			MaxMemory: null, // processReporting.maxMemory,
-			ProcessTime: null, //processReporting.processTime,
-			DateTime: Date.now(),
-			FileType: file.split('.').pop().toString(),
-			FileSize: fileStats.size,
-			Process: logLabel.label,
-			ReturnCode: returnMessage.value,
-		};
+		// (owner, model, database, maxmemory, processtime, filetype, filesize, queue, returncode)
+		const processInformation = Utils.gatherProcessInformation(
+			user,
+			model,
+			database,
+			null, // maxmemory
+			null, // processtime
+			file.split('.').pop().toString(), // filetype
+			fileStats.size, // filesize
+			logLabel.label, // queue
+			null,
+		); // returncode
+
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams, processInformation);
 
 		callback(JSON.stringify(returnMessage), config.rabbitmq.unity_queue);

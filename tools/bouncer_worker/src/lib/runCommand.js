@@ -12,15 +12,16 @@ const run = (
 	{ codesAsSuccess = [], verbose = true, logLabel },
 	processInformation,
 ) => new Promise((resolve, reject) => {
-
 	if (verbose) logger.info(`Executing command: ${exe} ${params.join(' ')} processMonitoring: ${processReporting}`, logLabel);
 	const cmdExec = spawn(exe, params, { shell: true });
 	if (processReporting) {
-		if ( !processInformation.doNotMonitor )  processMonitor.startMonitor(cmdExec.pid, processInformation);
- 	}
+		if (!processInformation.doNotMonitor) processMonitor.startMonitor(cmdExec.pid, processInformation);
+	}
 	let isTimeout = false;
 	cmdExec.on('close', (code, signal) => {
-		if (processReporting) { processMonitor.stopMonitor(cmdExec.pid); }
+		if (processReporting && !processInformation.doNotMonitor) {
+			processMonitor.stopMonitor(cmdExec.pid, code);
+		}
 		if (verbose) {
 			logger.info(`Command executed. Code: ${isTimeout ? 'TIMEDOUT' : code} signal: ${signal}`, logLabel);
 		}

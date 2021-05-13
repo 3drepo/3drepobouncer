@@ -34,4 +34,28 @@ Utils.sleep = (ms) => new Promise((resolve) => {
 
 Utils.getCurrentDateTimeAsString = () => moment().format('YYYY-MM-DD_HH[h]mm[m]ss[s]');
 
+Utils.gatherProcessInformation = (
+	owner,
+	model,
+	database,
+	maxmemory,
+	processtime,
+	filetype,
+	filesize,
+	queue,
+	returncode,
+) => (
+	{
+		DateTime: Date.now(),
+		Owner: owner,
+		Model: model,
+		Database: database,
+		Queue: queue, // logLabel.label,
+		FileType: filetype, // file.split('.').pop().toString(),
+		FileSize: filesize, // fileStats.size,
+		MaxMemory: maxmemory, // null, // processReporting.maxMemory,
+		ProcessTime: processtime, // null, //processReporting.processTime,
+		ReturnCode: returncode, // returnMessage.value,
+	});
+
 module.exports = Utils;

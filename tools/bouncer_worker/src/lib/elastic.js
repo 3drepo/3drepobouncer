@@ -25,10 +25,10 @@ const bouncerIndexPrefix = 'io-bouncer';
 
 const processingRecordMapping = {
 	DateTime: { type: 'date' },
-	Teamspace: { type: 'keyword' },
+	Owner: { type: 'keyword' },
 	Model: { type: 'text' },
-	Queue: { type: 'text' },
 	Database: { type: 'text' },
+	Queue: { type: 'text' },
 	FileType: { type: 'keyword' },
 	FileSize: { type: 'double' },
 	MaxMemory: { type: 'double' },
@@ -36,7 +36,7 @@ const processingRecordMapping = {
 	ReturnCode: { type: 'double' },
 };
 
-const logLabel = { label: 'Elastic' };
+const logLabel = { label: 'ELASTIC' };
 
 const createElasticClient = async () => {
 	const ELASTIC_CLOUD_AUTH = cloudAuth.split(':');
@@ -53,71 +53,60 @@ const createElasticClient = async () => {
 		request_timeout: 60,
 	};
 	const internalElastic = new Client(config);
-	try { 
+	try {
 		await internalElastic.cluster.health();
-		logger.verbose("Succesfully connected to " + cloudId.trim(), loglabel)
-	}
-	catch (err) { 
-		logger.error("Health check failed on elastic connection, please check settings.", loglabel)
-		Utils.exitApplication()
+		logger.verbose(`Succesfully connected to ${cloudId.trim()}`, logLabel);
+	} catch (err) {
+		logger.error('Health check failed on elastic connection, please check settings.', logLabel);
+		Utils.exitApplication();
 	}
 	return internalElastic;
 };
 
-const createElasticRecord = async (index, elasticBody, id, mapping) => {
+const elasticClientPromise = createElasticClient();
+
+const createElasticRecord = async (elasticIndex, elasticBody, id, mapping) => {
 	try {
-		// eslint-disable-next-line no-param-reassign
-		id = id || Utils.hashCode(Object.values(elasticBody || {}).toString());
-		const indexName = index.toLowerCase(); // requirement of elastic that indexs be lowercase
+		const elasticClient = await elasticClientPromise;
+		let internalID = id;
+		if (internalID === undefined) {
+			internalID = Utils.hashCode(Object.values(elasticBody || {}).toString());
+		}
+
+		const indexName = elasticIndex.toLowerCase(); // requirement of elastic that indexs be lowercase
 		const { body } = await elasticClient.indices.exists({ index: indexName });
 		if (!body) {
 			await elasticClient.indices.create({
 				index: indexName,
 			});
-			logger.verbose(`[ELASTIC]: Created index ${indexName}`, loglabel);
+			logger.verbose(`Created index ${indexName}`, logLabel);
 			if (mapping) {
 				await elasticClient.indices.putMapping({
-					index,
+					index: indexName,
 					body: { properties: mapping },
 				});
 			}
-			logger.verbose(`[ELASTIC]: Created mapping ${indexName}`, loglabel);
+			logger.verbose(`Created mapping ${indexName}`, logLabel);
 		}
 
 		if (elasticBody) {
 			await elasticClient.index({
 				index: indexName,
-				id,
+				id: internalID,
 				refresh: true,
 				body: elasticBody,
 			});
-			logger.verbose(`[ELASTIC]: created doc ${indexName} ${Object.values(elasticBody).toString()}`, loglabel);
+			logger.verbose(`created doc ${indexName} ${Object.values(elasticBody).toString()}`, logLabel);
 		}
 	} catch (error) {
-		logger.verbose(`[ELASTIC]: ERROR:${index}`, elasticBody, error, loglabel);
-		throw (error.body.error);
+		logger.verbose(`ERROR:${elasticIndex}`, elasticBody, error, logLabel);
 	}
-};
-
-const createElasticIndex = async (index, mapping) => {
-	try {
-		await Elastic.createElasticRecord( index, undefined, undefined, mapping);
-	} catch (error) {
-		throw (error.body.error);
-	}
-};
-
-const createMissingIndicies = async () => {
-	// initialise indicies if missing
-	await createElasticIndex( bouncerIndexPrefix, processingRecordMapping);
 };
 
 Elastic.createRecord = async (elasticBody) => {
 	if (elasticBody) {
-        await createElasticRecord(bouncerIndexPrefix, elasticBody, undefined, processingRecordMapping );
+		await createElasticRecord(bouncerIndexPrefix, elasticBody, undefined, processingRecordMapping);
 	}
 };
-
-const elasticClient = createElasticClient()
 
 module.exports = Elastic;

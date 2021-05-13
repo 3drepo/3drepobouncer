@@ -33,7 +33,7 @@ BouncerHandler.testClient = async () => {
 
 	const processInformation = {
 		doNotMonitor: true,
-	}
+	};
 
 	try {
 		await run(bouncerClientPath, cmdParams, { logLabel }, processInformation);

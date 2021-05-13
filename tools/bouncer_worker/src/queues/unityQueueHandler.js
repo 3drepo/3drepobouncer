@@ -21,6 +21,7 @@ const { generateAssetBundles, validateUnityConfigurations } = require('../tasks/
 const { ERRCODE_ARG_FILE_FAIL, ERRCODE_BUNDLE_GEN_FAIL } = require('../constants/errorCodes');
 const { UNITY_PROCESSING } = require('../constants/statuses');
 const logger = require('../lib/logger');
+const Utils = require('../lib/utils');
 
 const logLabel = { label: 'UNITYQ' };
 
@@ -35,18 +36,17 @@ const processUnity = async (database, model, user, logDir, modelImportErrCode) =
 
 	try {
 		if (database && model) {
-			const processInformation = {
-				Teamspace: user,
-				Model: model,
-				Database: database,
-				MaxMemory: null,    // processMonitor.maxMemory,
-				ProcessTime: null,  // processMonitor.processTime,
-				DateTime: Date.now(),
-				FileType: 'Unity',
-				FileSize: null,     // Unity doesn't know the original model size
-				Process: logLabel.label,
-				ReturnCode: returnMessage.value,
-			};
+			const processInformation = Utils.gatherProcessInformation(
+				user,
+				model,
+				database,
+				null, // maxmemory
+				null, // processtime
+				null, // filetype
+				null, // filesize
+				logLabel.label, // queue
+				null,
+			); // returncode
 			await generateAssetBundles(database, model, logDir, processInformation);
 		} else {
 			returnMessage.value = ERRCODE_ARG_FILE_FAIL;

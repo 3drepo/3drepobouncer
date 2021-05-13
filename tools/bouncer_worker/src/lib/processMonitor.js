@@ -1,59 +1,83 @@
 const pidusage = require('pidusage');
 const processExists = require('process-exists');
 const si = require('systeminformation');
-const fs = require('fs');
+// const fs = require('fs');
 const logger = require('./logger');
-const Elastic = require('../lib/elastic');
+const Elastic = require('./elastic');
 const { enabled, memoryIntervalMS } = require('./config').config.elastic;
 
 const ProcessMonitor = {};
-const logLabel = { label: 'ProcessMonitor' };
+const logLabel = { label: 'PROCESSMONITOR' };
 
-const informationDict = {}
-const workingDict = {}
-const pidArray = [];
-let stats = [];
-
+const informationDict = {};
+const workingDict = {};
+const pidSet = new Set();
+const permittedOS = ['linux', 'windows'];
 // const getCurrentMemUsage = () =>  Number(fs.readFileSync('/sys/fs/cgroup/memory/memory.usage_in_bytes'));
 
 const getCurrentMemUsage = async () => {
+	let data;
 	try {
-		const data = await si.mem();
-		return data.used
+		data = await si.mem();
 	} catch (e) {
-		logger.error("Failed to get memory information record", logLabel)
+		logger.error('Failed to get memory information record', logLabel);
 	}
-}
+	return data.used;
+};
+
 const getCurrentOperatingSystem = async () => {
+	let data;
 	try {
-		const data = await si.osInfo();
-		return data.platform
+		data = await si.osInfo();
 	} catch (e) {
-		logger.error("Failed to get operating system information record", logLabel)
+		logger.error('Failed to get operating system information record', logLabel);
 	}
-}
+	return data.platform;
+};
+
+const currentOSPromise = getCurrentOperatingSystem();
 
 const maxmem = async () => {
+	let data;
+	let pids;
+
 	try {
-		const data = getCurrentMemUsage();
-		if (pidArray.length > 0) {
-			stats = await pidusage(pidArray);
-			for (stat in stats){
-				logger.verbose(stat, logLabel)
-				if (!workingDict[stat.pid] === undefined ){
-					if (data > workingDict[stat.pid].maxMemory) workingDict[stat.pid].maxMemory = data
+		data = await getCurrentMemUsage();
+		if (pidSet.size > 0) {
+			pids = await pidusage(Array.from(pidSet));
+			// console.log (stats);
+			for (const pid in pids) {
+				// console.log(stats[stat].pid)
+				// console.log(workingDict[stat].maxMemory)
+				// console.log(data)
+				if (pid in workingDict) {
+					workingDict[pid].elapsedTime = pids[pid].elapsed;
+					if (data > workingDict[pid].maxMemory) {
+						// let current = workingDict[stat].maxMemory
+						// logger.verbose(`${stat}, ${data}, ${current}`, logLabel)
+						workingDict[pid].maxMemory = data;
+					}
+				} else {
+					// console..log(workingDict);
 				}
 			}
 			// if (data > maxMemory) maxMemory = data;
 		}
-		} catch (err) { logger.verbose(`[maxmem][error]: ${err}`, logLabel); }
+	} catch (err) { logger.error(`[maxmem]: ${err}`, logLabel); }
 };
 
 // Compute statistics every interval:
 const interval = async (time) => {
-	if (pidArray.length > 0) {
+	const exists = await processExists.all(Array.from(pidSet));
+	for (const pid of pidSet) {
+		if (!exists.get(pid)) {
+			pidSet.delete(pid);
+		}
+	}
+
+	if (pidSet.size > 0) {
 		setTimeout(async () => {
-			await maxmem();
+			await maxmem(exists);
 			interval(time);
 		}, time);
 	}
@@ -64,45 +88,51 @@ const monitor = async () => {
 };
 
 ProcessMonitor.startMonitor = async (inputPID, processInformation) => {
-	if (currentOS === "linux" ) {
-		pidArray.push(inputPID);
-		informationDict[inputPID] = processInformation
-		workingDict[inputPID] = { startMemory: 0, maxMemory: 0 }
-		workingDict[inputPID].startMemory = getCurrentMemUsage();
+	const currentOS = await currentOSPromise;
+	logger.verbose(`[${currentOS}]: booting!`, logLabel);
+	if (currentOS in permittedOS) {
+		pidSet.add(inputPID);
+		informationDict[inputPID] = processInformation;
+		logger.verbose(informationDict[inputPID].toString(), logLabel);
+		workingDict[inputPID] = { startMemory: 0, maxMemory: 0 };
+		workingDict[inputPID].startMemory = await getCurrentMemUsage();
 		monitor();
 		logger.verbose(`[${inputPID}]: a startMonitor event occurred!`, logLabel);
+	} else {
+		logger.verbose(`[${currentOS}]: not linux?!`, logLabel);
 	}
 };
 
-ProcessMonitor.stopMonitor = async (inputPID) => {
-	if (currentOS === "linux" ) {
-		if (!informationDict[inputPID] === undefined ){
+ProcessMonitor.stopMonitor = async (inputPID, returnCode) => {
+	logger.verbose(`[${inputPID}]: a stopMonitor event occurred! returnCode: ${returnCode}`, logLabel);
 
-			informationDict[inputPID].maxMemory = workingDict[inputPID].maxMemory - workingDict[inputPID].startMemory;
-			informationDict[inputPID].processTime = stats[inputPID].elapsed;
-			
-			workingDict[inputPID] = { startMemory: 0, maxMemory: 0 }
+	const currentOS = await currentOSPromise;
+	if (currentOS in permittedOS) {
+		// take the PID out of circulation for checking immediately.
+		pidSet.delete(inputPID);
 
-			logger.verbose(`[${inputPID}]: a stopMonitor event occurred! elapsed: ${informationDict[inputPID].processTime}`, logLabel);
-			if (enabled) {
-				try { 
-					Elastic.createRecord (informationDict[inputPID])
-				} catch (err){
-					logger.error("Failed to create record", logLabel)
-				}
+		// add the missing properties for sending.
+		informationDict[inputPID].ReturnCode = returnCode;
+		informationDict[inputPID].MaxMemory = workingDict[inputPID].maxMemory - workingDict[inputPID].startMemory;
+		informationDict[inputPID].ProcessTime = workingDict[inputPID].elapsedTime;
+
+		workingDict[inputPID] = { startMemory: 0, maxMemory: 0 };
+
+		// console.log(informationDict[inputPID]);
+
+		if (enabled) {
+			try {
+				Elastic.createRecord(informationDict[inputPID]);
+			} catch (err) {
+				logger.error('Failed to create record', logLabel);
 			}
-
-			const index = pidArray.indexOf(inputPID);
-			if (index !== -1) {
-				pidArray.splice(index, 1);
-			}
-
-			delete informationDict[inputPID]
-			delete workingDict[inputPID]
 		}
+
+		delete informationDict[inputPID];
+		delete workingDict[inputPID];
+	} else {
+		logger.verbose(`[${currentOS}]: not linux?!`, logLabel);
 	}
 };
-
-const currentOS = getCurrentOperatingSystem()
 
 module.exports = ProcessMonitor;
