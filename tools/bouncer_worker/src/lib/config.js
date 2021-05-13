@@ -50,8 +50,10 @@ const applyDefaultValuesIfUndefined = (config) => {
 	config.elastic.enabled = config.elastic.enabled || false;
 	config.elastic.cloudID = config.elastic.cloudID || '';
 	config.elastic.cloudAuth = config.elastic.cloudAuth || '';
-	config.elastic.processReporting = config.elastic.processReporting || false;
-	config.elastic.memoryIntervalMS = config.elastic.memoryIntervalMS || 100;
+
+	// processMonitoring
+	config.processMonitoring.enabled = config.processMonitoring.enabled || false;
+	config.processMonitoring.memoryIntervalMS = config.processMonitoring.memoryIntervalMS || 100;
 };
 /* eslint-enable no-param-reassign */
 
