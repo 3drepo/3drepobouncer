@@ -45,14 +45,13 @@ const maxmem = async () => {
 		if (pidSet.size > 0) {
 			pids = await pidusage(Array.from(pidSet));
 			for (const pid in pids) {
-
 				if (pid in workingDict) {
 					workingDict[pid].elapsedTime = pids[pid].elapsed;
 					if (data > workingDict[pid].maxMemory) {
-						logger.verbose(`Updating MaxMemory for ${pid} to ${data}`, logLabel)
+						logger.verbose(`Updating MaxMemory for ${pid} to ${data}`, logLabel);
 						workingDict[pid].maxMemory = data;
 					}
-				} 
+				}
 			}
 		}
 	} catch (err) { logger.error(`[maxmem]: ${err}`, logLabel); }
@@ -81,13 +80,13 @@ const monitor = async () => {
 
 ProcessMonitor.startMonitor = async (inputPID, processInformation) => {
 	const currentOS = await currentOSPromise;
-	if (permittedOS.includes (currentOS)) {
+	if (permittedOS.includes(currentOS)) {
 		pidSet.add(inputPID);
 		informationDict[inputPID] = processInformation;
 		workingDict[inputPID] = { startMemory: 0, maxMemory: 0 };
 		workingDict[inputPID].startMemory = await getCurrentMemUsage();
 		monitor();
-		logger.verbose(`Monitoring enabled for process ${inputPID}`, logLabel);
+		logger.verbose(`Monitoring enabled for process ${inputPID} starting at ${workingDict[inputPID].startMemory}`, logLabel);
 	} else {
 		logger.error(`[${currentOS}]: not a supported operating system for monitoring.`, logLabel);
 	}
@@ -95,18 +94,15 @@ ProcessMonitor.startMonitor = async (inputPID, processInformation) => {
 
 ProcessMonitor.stopMonitor = async (inputPID, returnCode) => {
 	const currentOS = await currentOSPromise;
-	if (permittedOS.includes (currentOS)) {
-		
+	if (permittedOS.includes(currentOS)) {
 		// take the PID out of circulation for checking immediately.
 		pidSet.delete(inputPID);
 
 		// add the missing properties for sending.
 		informationDict[inputPID].ReturnCode = returnCode;
 		informationDict[inputPID].MaxMemory = workingDict[inputPID].maxMemory - workingDict[inputPID].startMemory;
-		logger.verbose(`${inputPID} ${workingDict[inputPID].maxMemory} - ${workingDict[inputPID].startMemory} = ${informationDict[inputPID].MaxMemory}`, logLabel)
+		logger.verbose(`${inputPID} ${workingDict[inputPID].maxMemory} - ${workingDict[inputPID].startMemory} = ${informationDict[inputPID].MaxMemory}`, logLabel);
 		informationDict[inputPID].ProcessTime = workingDict[inputPID].elapsedTime;
-
-		workingDict[inputPID] = { startMemory: 0, maxMemory: 0 };
 
 		if (enabled) {
 			try {
@@ -115,12 +111,11 @@ ProcessMonitor.stopMonitor = async (inputPID, returnCode) => {
 				logger.error('Failed to create record', logLabel);
 			}
 		} else {
-			logger.info(`ProcessTime: ${informationDict[inputPID].ProcessTime} MaxMemory: ${informationDict[inputPID].MaxMemory}`,logLabel)
+			logger.info(`${inputPID} stats ProcessTime: ${informationDict[inputPID].ProcessTime} MaxMemory: ${informationDict[inputPID].MaxMemory}`, logLabel);
 		}
 
 		delete informationDict[inputPID];
 		delete workingDict[inputPID];
-
 	} else {
 		logger.error(`[${currentOS}]: not a supported operating system for monitoring.`, logLabel);
 	}
