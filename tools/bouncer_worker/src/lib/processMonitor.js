@@ -42,6 +42,12 @@ const maxmem = async () => {
 
 	try {
 		data = await getCurrentMemUsage();
+		const exists = await processExists.all(Array.from(pidSet));
+		for (const pid of pidSet) {
+			if (!exists.get(pid)) {
+				pidSet.delete(pid);
+			}
+		}
 		if (pidSet.size > 0) {
 			pids = await pidusage(Array.from(pidSet));
 			for (const pid in pids) {
@@ -59,16 +65,9 @@ const maxmem = async () => {
 
 // Compute statistics every interval:
 const interval = async (time) => {
-	const exists = await processExists.all(Array.from(pidSet));
-	for (const pid of pidSet) {
-		if (!exists.get(pid)) {
-			pidSet.delete(pid);
-		}
-	}
-
 	if (pidSet.size > 0) {
 		setTimeout(async () => {
-			await maxmem(exists);
+			await maxmem();
 			interval(time);
 		}, time);
 	}
@@ -78,44 +77,44 @@ const monitor = async () => {
 	interval(memoryIntervalMS);
 };
 
-ProcessMonitor.startMonitor = async (inputPID, processInformation) => {
+ProcessMonitor.startMonitor = async (startPID, processInformation) => {
 	const currentOS = await currentOSPromise;
+	const currentMemUsage = await getCurrentMemUsage();
 	if (permittedOS.includes(currentOS)) {
-		pidSet.add(inputPID);
-		informationDict[inputPID] = processInformation;
-		workingDict[inputPID] = { startMemory: 0, maxMemory: 0 };
-		workingDict[inputPID].startMemory = await getCurrentMemUsage();
+		pidSet.add(startPID);
+		informationDict[startPID] = processInformation;
+		workingDict[startPID] = { startMemory: currentMemUsage, maxMemory: currentMemUsage };
 		monitor();
-		logger.verbose(`Monitoring enabled for process ${inputPID} starting at ${workingDict[inputPID].startMemory}`, logLabel);
+		logger.verbose(`Monitoring enabled for process ${startPID} starting at ${workingDict[startPID].startMemory}`, logLabel);
 	} else {
 		logger.error(`[${currentOS}]: not a supported operating system for monitoring.`, logLabel);
 	}
 };
 
-ProcessMonitor.stopMonitor = async (inputPID, returnCode) => {
+ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
 	const currentOS = await currentOSPromise;
 	if (permittedOS.includes(currentOS)) {
 		// take the PID out of circulation for checking immediately.
-		pidSet.delete(inputPID);
+		pidSet.delete(stopPID);
 
 		// add the missing properties for sending.
-		informationDict[inputPID].ReturnCode = returnCode;
-		informationDict[inputPID].MaxMemory = workingDict[inputPID].maxMemory - workingDict[inputPID].startMemory;
-		logger.verbose(`${inputPID} ${workingDict[inputPID].maxMemory} - ${workingDict[inputPID].startMemory} = ${informationDict[inputPID].MaxMemory}`, logLabel);
-		informationDict[inputPID].ProcessTime = workingDict[inputPID].elapsedTime;
+		informationDict[stopPID].ReturnCode = returnCode;
+		informationDict[stopPID].MaxMemory = workingDict[stopPID].maxMemory - workingDict[stopPID].startMemory;
+		logger.verbose(`${stopPID} ${workingDict[stopPID].maxMemory} - ${workingDict[stopPID].startMemory} = ${informationDict[stopPID].MaxMemory}`, logLabel);
+		informationDict[stopPID].ProcessTime = workingDict[stopPID].elapsedTime;
 
 		if (enabled) {
 			try {
-				Elastic.createRecord(informationDict[inputPID]);
+				Elastic.createRecord(informationDict[stopPID]);
 			} catch (err) {
 				logger.error('Failed to create record', logLabel);
 			}
 		} else {
-			logger.info(`${inputPID} stats ProcessTime: ${informationDict[inputPID].ProcessTime} MaxMemory: ${informationDict[inputPID].MaxMemory}`, logLabel);
+			logger.info(`${stopPID} stats ProcessTime: ${informationDict[stopPID].ProcessTime} MaxMemory: ${informationDict[stopPID].MaxMemory}`, logLabel);
 		}
 
-		delete informationDict[inputPID];
-		delete workingDict[inputPID];
+		delete informationDict[stopPID];
+		delete workingDict[stopPID];
 	} else {
 		logger.error(`[${currentOS}]: not a supported operating system for monitoring.`, logLabel);
 	}
