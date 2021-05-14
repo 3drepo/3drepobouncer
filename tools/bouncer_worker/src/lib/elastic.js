@@ -99,7 +99,7 @@ const createElasticRecord = async (elasticIndex, elasticBody, id, mapping) => {
 			logger.verbose(`created doc ${indexName} ${Object.values(elasticBody).toString()}`, logLabel);
 		}
 	} catch (error) {
-		logger.verbose(`ERROR:${elasticIndex}`, elasticBody, error, logLabel);
+		logger.error(`createElasticRecord ${error} ${elasticIndex}`, elasticBody, error, logLabel);
 	}
 };
 

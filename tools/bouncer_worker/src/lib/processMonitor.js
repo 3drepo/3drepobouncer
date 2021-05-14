@@ -49,7 +49,7 @@ const maxmem = async () => {
 				if (pid in workingDict) {
 					workingDict[pid].elapsedTime = pids[pid].elapsed;
 					if (data > workingDict[pid].maxMemory) {
-
+						logger.verbose(`Updating MaxMemory for ${pid} to ${data}`, logLabel)
 						workingDict[pid].maxMemory = data;
 					}
 				} 
@@ -103,6 +103,7 @@ ProcessMonitor.stopMonitor = async (inputPID, returnCode) => {
 		// add the missing properties for sending.
 		informationDict[inputPID].ReturnCode = returnCode;
 		informationDict[inputPID].MaxMemory = workingDict[inputPID].maxMemory - workingDict[inputPID].startMemory;
+		logger.verbose(`${inputPID} ${workingDict[inputPID].maxMemory} - ${workingDict[inputPID].startMemory} = ${informationDict[inputPID].MaxMemory}`, logLabel)
 		informationDict[inputPID].ProcessTime = workingDict[inputPID].elapsedTime;
 
 		workingDict[inputPID] = { startMemory: 0, maxMemory: 0 };
