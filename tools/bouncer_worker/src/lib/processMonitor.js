@@ -1,10 +1,10 @@
 const pidusage = require('pidusage');
 const processExists = require('process-exists');
 const si = require('systeminformation');
-// const fs = require('fs');
+const fs = require('fs');
 const logger = require('./logger');
 const Elastic = require('./elastic');
-const { enabled, memoryIntervalMS } = require('./config').config.elastic;
+const { enabled, memoryIntervalMS } = require('./config').config.processMonitoring;
 
 const ProcessMonitor = {};
 const logLabel = { label: 'PROCESSMONITOR' };
@@ -15,13 +15,19 @@ const pidSet = new Set();
 const permittedOS = ['linux', 'win32'];
 
 const getCurrentMemUsage = async () => {
+	const currentOS = await currentOSPromise;
 	let data;
 	try {
-		data = await si.mem();
+		if (currentOS === 'linux' && fs.existsSync('/.dockerenv')) {
+			// required to get more accurate information in docker
+			return Number(fs.readFileSync('/sys/fs/cgroup/memory/memory.usage_in_bytes'));
+		} else {
+			data = await si.mem();
+			return data.used;
+		}
 	} catch (e) {
 		logger.error('Failed to get memory information record', logLabel);
 	}
-	return data.used;
 };
 
 const getCurrentOperatingSystem = async () => {
