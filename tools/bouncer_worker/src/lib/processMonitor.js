@@ -18,7 +18,7 @@ const getCurrentMemUsage = async () => {
 	const currentOS = await currentOSPromise;
 	let data;
 	try {
-		if (currentOS === 'linux' && fs.existsSync('/.dockerenv')) {
+		if (isDockerEnvironment) {
 			// required to get more accurate information in docker
 			return Number(fs.readFileSync('/sys/fs/cgroup/memory/memory.usage_in_bytes'));
 		} else {
@@ -40,7 +40,14 @@ const getCurrentOperatingSystem = async () => {
 	return data.platform;
 };
 
-const currentOSPromise = getCurrentOperatingSystem();
+const getDockerEnvironment = async () => {
+	const currentOS = await currentOSPromise;
+	if ( currentOS === 'linux' && fs.existsSync('/.dockerenv') ) {
+		return true 
+	} else {
+		return false
+	}
+};
 
 const maxmem = async () => {
 	let data;
@@ -125,5 +132,8 @@ ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
 		logger.error(`[${currentOS}]: not a supported operating system for monitoring.`, logLabel);
 	}
 };
+
+const currentOSPromise = getCurrentOperatingSystem();
+const isDockerEnvironment = getDockerEnvironment();
 
 module.exports = ProcessMonitor;
