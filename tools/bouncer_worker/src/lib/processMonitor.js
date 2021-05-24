@@ -28,10 +28,7 @@ const currentOSPromise = getCurrentOperatingSystem();
 
 const getDockerEnvironment = async () => {
 	const currentOS = await currentOSPromise;
-	if (currentOS === 'linux' && fs.existsSync('/.dockerenv')) {
-		return true;
-	}
-	return false;
+    return currentOS === 'linux' && fs.existsSync('/.dockerenv');
 };
 const isDockerEnvironment = getDockerEnvironment();
 
@@ -42,9 +39,9 @@ const getCurrentMemUsage = async () => {
 		if (isDockerEnvironment) {
 			// required to get more accurate information in docker
 			result = Number(fs.readFileSync('/sys/fs/cgroup/memory/memory.usage_in_bytes'));
+		} else {
+			result = (await si.mem()).used;
 		}
-		data = await si.mem();
-		result = data.used;
 	} catch (e) {
 		logger.error('Failed to get memory information record', logLabel);
 		result = 0;
@@ -53,11 +50,8 @@ const getCurrentMemUsage = async () => {
 };
 
 const maxmem = async () => {
-	let data;
-	let pids;
-
 	try {
-		data = await getCurrentMemUsage();
+		const data = await getCurrentMemUsage();
 		const exists = await processExists.all(Array.from(pidSet));
 		for (const pid of pidSet) {
 			if (!exists.get(pid)) {
@@ -65,7 +59,7 @@ const maxmem = async () => {
 			}
 		}
 		if (pidSet.size > 0) {
-			pids = await pidusage(Array.from(pidSet));
+			const pids = await pidusage(Array.from(pidSet));
 			for (const pid in pids) {
 				if (pid in workingDict) {
 					workingDict[pid].elapsedTime = pids[pid].elapsed;
@@ -121,7 +115,7 @@ ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
 
 		if (elasticEnabled) {
 			try {
-				Elastic.createRecord(informationDict[stopPID]);
+				await Elastic.createRecord(informationDict[stopPID]);
 			} catch (err) {
 				logger.error('Failed to create record', logLabel);
 			}
