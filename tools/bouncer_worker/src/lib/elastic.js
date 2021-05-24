@@ -55,7 +55,7 @@ const createElasticClient = async () => {
 	const internalElastic = new Client(config);
 	try {
 		await internalElastic.cluster.health();
-		logger.verbose(`Succesfully connected to ${cloudId.trim()}`, logLabel);
+		logger.info(`Succesfully connected to ${cloudId.trim()}`, logLabel);
 	} catch (err) {
 		logger.error('Health check failed on elastic connection, please check settings.', logLabel);
 		Utils.exitApplication();
