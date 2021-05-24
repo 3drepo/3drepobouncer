@@ -5,6 +5,7 @@ const fs = require('fs');
 const logger = require('./logger');
 const Elastic = require('./elastic');
 const { enabled, memoryIntervalMS } = require('./config').config.processMonitoring;
+const elasticEnabled = require('./config').config.elastic.enabled;
 
 const ProcessMonitor = {};
 const logLabel = { label: 'PROCESSMONITOR' };
@@ -13,22 +14,6 @@ const informationDict = {};
 const workingDict = {};
 const pidSet = new Set();
 const permittedOS = ['linux', 'win32'];
-
-const getCurrentMemUsage = async () => {
-	const currentOS = await currentOSPromise;
-	let data;
-	try {
-		if (isDockerEnvironment) {
-			// required to get more accurate information in docker
-			return Number(fs.readFileSync('/sys/fs/cgroup/memory/memory.usage_in_bytes'));
-		} else {
-			data = await si.mem();
-			return data.used;
-		}
-	} catch (e) {
-		logger.error('Failed to get memory information record', logLabel);
-	}
-};
 
 const getCurrentOperatingSystem = async () => {
 	let data;
@@ -39,14 +24,32 @@ const getCurrentOperatingSystem = async () => {
 	}
 	return data.platform;
 };
+const currentOSPromise = getCurrentOperatingSystem();
 
 const getDockerEnvironment = async () => {
 	const currentOS = await currentOSPromise;
-	if ( currentOS === 'linux' && fs.existsSync('/.dockerenv') ) {
-		return true 
-	} else {
-		return false
+	if (currentOS === 'linux' && fs.existsSync('/.dockerenv')) {
+		return true;
 	}
+	return false;
+};
+const isDockerEnvironment = getDockerEnvironment();
+
+const getCurrentMemUsage = async () => {
+	let data;
+	let result;
+	try {
+		if (isDockerEnvironment) {
+			// required to get more accurate information in docker
+			result = Number(fs.readFileSync('/sys/fs/cgroup/memory/memory.usage_in_bytes'));
+		}
+		data = await si.mem();
+		result = data.used;
+	} catch (e) {
+		logger.error('Failed to get memory information record', logLabel);
+		result = 0;
+	}
+	return result;
 };
 
 const maxmem = async () => {
@@ -93,7 +96,7 @@ const monitor = async () => {
 ProcessMonitor.startMonitor = async (startPID, processInformation) => {
 	const currentOS = await currentOSPromise;
 	const currentMemUsage = await getCurrentMemUsage();
-	if (permittedOS.includes(currentOS)) {
+	if (permittedOS.includes(currentOS) && enabled) {
 		pidSet.add(startPID);
 		informationDict[startPID] = processInformation;
 		workingDict[startPID] = { startMemory: currentMemUsage, maxMemory: currentMemUsage };
@@ -116,7 +119,7 @@ ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
 		logger.verbose(`${stopPID} ${workingDict[stopPID].maxMemory} - ${workingDict[stopPID].startMemory} = ${informationDict[stopPID].MaxMemory}`, logLabel);
 		informationDict[stopPID].ProcessTime = workingDict[stopPID].elapsedTime;
 
-		if (enabled) {
+		if (elasticEnabled) {
 			try {
 				Elastic.createRecord(informationDict[stopPID]);
 			} catch (err) {
@@ -132,8 +135,5 @@ ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
 		logger.error(`[${currentOS}]: not a supported operating system for monitoring.`, logLabel);
 	}
 };
-
-const currentOSPromise = getCurrentOperatingSystem();
-const isDockerEnvironment = getDockerEnvironment();
 
 module.exports = ProcessMonitor;
