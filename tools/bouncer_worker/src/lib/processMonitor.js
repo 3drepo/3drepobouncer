@@ -70,7 +70,7 @@ const maxmem = async () => {
 				if (pid in workingDict) {
 					workingDict[pid].elapsedTime = pids[pid].elapsed;
 					if (data > workingDict[pid].maxMemory) {
-						logger.verbose(`Updating MaxMemory for ${pid} to ${data}`, logLabel);
+						logger.debug(`Updating MaxMemory for ${pid} to ${data}`, logLabel);
 						workingDict[pid].maxMemory = data;
 					}
 				}
