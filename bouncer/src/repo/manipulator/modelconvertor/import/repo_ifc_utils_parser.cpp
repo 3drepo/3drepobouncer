@@ -114,12 +114,11 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	bool isIFCSpace = IfcSchema::Type::IfcSpace == element->type();
 
 	determineActionsByElementType(ifcfile, element, myMetaValues, locationInfo, createElement, traverseChildren, extraChildren, metaPrefix, childrenMetaPrefix);
-
 	repo::lib::RepoUUID transID = parentID;
 	repo::core::model::RepoNodeSet transNodeSet;
-
 	for (int i = 0; i < element->getArgumentCount(); ++i)
 	{
+		if (element->getArgument(i)->isNull()) continue;
 		auto argumentName = element->getArgumentName(i);
 		if (argumentName == IFC_ARGUMENT_GLOBAL_ID)
 		{
@@ -194,6 +193,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	if (traverseChildren)
 	{
 		auto childrenElements = ifcfile.entitiesByReference(id);
+
 		std::set<int> childrenAncestors(ancestorsID);
 		childrenAncestors.insert(id);
 		if (childrenElements)
@@ -208,7 +208,6 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 				}
 			}
 		}
-
 		for (const auto &child : extraChildren)
 		{
 			if (ancestorsID.find(child->entity->id()) == ancestorsID.end())
@@ -220,13 +219,12 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 				}
 				catch (IfcParse::IfcException &e)
 				{
-					repoError << "Failed to find child entity " << child->entity->id() << " (" << e.what() << ")";
+					repoError << "Failed to find child entity " << child->entity->id() << " (" << e.what() << ")" << " element: " << element->entity->id();
 					missingEntities = true;
 				}
 			}
 		}
 	}
-
 	//If we created an element, add a metanode to it. if not, add them to our parent's meta info
 	if (createElement)
 	{
@@ -256,6 +254,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	{
 		metaValue.insert(myMetaValues.begin(), myMetaValues.end());
 	}
+
 	return transNodeSet;
 }
 
@@ -597,6 +596,7 @@ void IFCUtilsParser::determineActionsByElementType(
 	std::string													  &childrenMetaPrefix)
 {
 	childrenMetaPrefix = metaPrefix;
+
 	switch (element->type())
 	{
 	case IfcSchema::Type::IfcRelAssignsToGroup: //This is group!
@@ -607,7 +607,16 @@ void IFCUtilsParser::determineActionsByElementType(
 		createElement = false;
 		traverseChildren = false;
 		break;
-
+	case IfcSchema::Type::IfcRelDefinesByType:
+	{
+		auto def = static_cast<const IfcSchema::IfcRelDefinesByType *>(element);
+		auto typeObj = static_cast<const IfcSchema::IfcTypeObject *>(def->RelatingType());
+		if (typeObj->hasHasPropertySets()) {
+			auto propSets = typeObj->HasPropertySets();
+			extraChildren.insert(extraChildren.end(), propSets->begin(), propSets->end());
+		}
+		break;
+	}
 	case IfcSchema::Type::IfcProject:
 	{
 		auto project = static_cast<const IfcSchema::IfcProject *>(element);
