@@ -54,6 +54,8 @@ namespace repo {
 			const  std::string REPO_IMPORT_NORMALS  = "normals";
 			const  std::string REPO_IMPORT_INDICES  = "indices";
 			const  std::string REPO_IMPORT_BBOX 	   = "bbox";
+			const  std::string REPO_IMPORT_PRIMITIVE = "primitive";
+
 
 			// Texture JSON fields
 			const  std::string REPO_TXTR_FNAME = "filename";
@@ -69,18 +71,13 @@ namespace repo {
 			class RepoModelImport : public AbstractModelImport
 			{
 			private:
-				const std::string REPO_V1 = "BIM001";
-				const std::string REPO_V2 = "BIM002";
-				const std::string REPO_V3 = "BIM003";
-				const std::set<std::string> supportedFileVersions = 
-				{ 
-					REPO_V2,
-					REPO_V3
-				};
 
-				const int REPO_V1_FILEMETA_BYTE_LEN = 56;
-				const int REPO_V2_FILEMETA_BYTE_LEN = REPO_V1_FILEMETA_BYTE_LEN;
-				const int REPO_V3_FILEMETA_BYTE_LEN = 72;
+				std::unordered_map<uint8_t, uint8_t> FILE_META_BYTE_LEN_BY_VERSION = 
+				{ 
+					{2, 56}, 
+					{3, 72}, 
+					{4, 72} 
+				};
 
 				typedef struct
 				{
@@ -141,7 +138,10 @@ namespace repo {
 				fileMeta file_meta;
 				std::vector<long> sizes; //!< Sizes of the nodes component, used for navigation.
 				char *dataBuffer;
+
+				// Error tags
 				bool missingTextures = false;
+				bool geometryImportError = false;
 				
 				// Intermediary variables used to keep track of node hierarchy
 				std::vector<repo::core::model::RepoNode *> node_map;				//!< List of all transform nodes in order of decoding
