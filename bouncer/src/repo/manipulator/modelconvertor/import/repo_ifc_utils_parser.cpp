@@ -337,7 +337,7 @@ std::string IFCUtilsParser::constructMetadataLabel(
 	ss << label;
 
 	if (!units.empty()) {
-		ss << "(" << units << ")";
+		ss << " (" << units << ")";
 	}
 	return ss.str();
 }
