@@ -105,6 +105,12 @@ namespace repo {
 					const std::string &unitType = ""
 				);
 
+				void generateClassificationInformation(
+					const IfcSchema::IfcRelAssociatesClassification * &relCS,
+					std::unordered_map<std::string, std::string>    &metaValues
+
+				);
+
 				void setProjectUnits(const IfcSchema::IfcUnitAssignment* unitsAssignment);
 
 				std::string getValueAsString(

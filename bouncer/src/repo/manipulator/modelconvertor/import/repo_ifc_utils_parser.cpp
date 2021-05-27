@@ -781,56 +781,7 @@ void IFCUtilsParser::determineActionsByElementType(
 		auto relCS = static_cast<const IfcSchema::IfcRelAssociatesClassification *>(element);
 		createElement = false;
 		traverseChildren = false;
-		if (relCS)
-		{
-			std::string classValue;
-			try
-			{
-				auto relatedClassification = relCS->RelatingClassification();
-				if (relatedClassification)
-				{
-					//A classifcation can either be a classification notation or reference
-					if (relatedClassification->type() == IfcSchema::Type::IfcClassificationNotation)
-					{
-						auto notation = static_cast<const IfcSchema::IfcClassificationNotation *>(relatedClassification);
-						auto facets = notation->NotationFacets();
-						for (IfcSchema::IfcClassificationNotationFacet *facet : *facets)
-						{
-							if (!classValue.empty()) classValue += ", ";
-							classValue += facet->NotationValue();
-						}
-					}
-					else
-					{
-						/*
-						* A classification reference can hold classificationReferenceSelect again so this can be quite a bit more complicated
-						* Not sure how far into it do we want to delve into
-						*/
-						auto reference = static_cast<const IfcSchema::IfcClassificationReference *>(relatedClassification);
-						classValue = reference->Name();
-
-						if (reference->hasLocation())
-							classValue += " [ " + reference->Location() + " ]";
-					}
-				}
-				else
-				{
-					repoError << "Nullptr to relatedClassification!!!";
-				}
-			}
-			catch (...)
-			{
-				//This will throw an exception if there is no relating classification.
-				classValue = "n/a";
-			}
-
-			metaValues[constructMetadataLabel("Classification (No Name)", metaPrefix)] = classValue;
-		}
-		else
-		{
-			repoError << "Failed to convert a IfcRelContainedInSpatialStructure element into a IfcRelContainedInSpatialStructureclass.";
-		}
-		break;
+		generateClassificationInformation(relCS, metaValues);
 	}
 	case IfcSchema::Type::IfcRelContainedInSpatialStructure:
 	{
@@ -1270,4 +1221,55 @@ std::string IFCUtilsParser::getValueAsString(
 	}
 
 	return value;
+}
+
+std::string ifcDateToString(const IfcSchema::IfcCalendarDate *date) {
+	std::stringstream ss;
+	ss << date->YearComponent() << "-" << date->MonthComponent() << "-" << date->DayComponent();
+	return ss.str();
+}
+
+void IFCUtilsParser::generateClassificationInformation(
+	const IfcSchema::IfcRelAssociatesClassification * &relCS,
+	std::unordered_map<std::string, std::string>         &metaValues
+
+) {
+	auto relatedClassification = relCS->RelatingClassification();
+	if (relatedClassification)
+	{
+		//A classifcation can either be a classification notation or reference
+		if (relatedClassification->type() == IfcSchema::Type::IfcClassificationNotation)
+		{
+			auto notation = static_cast<const IfcSchema::IfcClassificationNotation *>(relatedClassification);
+			std::string facetList;
+			auto facets = notation->NotationFacets();
+			for (IfcSchema::IfcClassificationNotationFacet *facet : *facets)
+			{
+				if (!facetList.empty()) facetList += ", ";
+				facetList += facet->NotationValue();
+			}
+		}
+		else {
+			auto reference = static_cast<const IfcSchema::IfcClassificationReference *>(relatedClassification);
+			std::string classificationName = "Unknown Classification";
+			if (reference->hasReferencedSource()) {
+				auto refSource = reference->ReferencedSource();
+				classificationName = refSource->Name();
+				metaValues[constructMetadataLabel("Name", classificationName)] = classificationName;
+				metaValues[constructMetadataLabel("Source", classificationName)] = refSource->Source();
+				metaValues[constructMetadataLabel("Edition", classificationName)] = refSource->Edition();
+
+				if (refSource->hasEditionDate()) {
+					metaValues[constructMetadataLabel("Edition date", classificationName)] = ifcDateToString(refSource->EditionDate());
+				}
+			}
+			const auto refPrefix = constructMetadataLabel("Reference", classificationName);
+			if (reference->hasName())
+				metaValues[constructMetadataLabel("Name", refPrefix)] = reference->Name();
+			if (reference->hasItemReference())
+				metaValues[constructMetadataLabel("Identification", refPrefix)] = reference->ItemReference();
+			if (reference->hasLocation())
+				metaValues[constructMetadataLabel("Location", refPrefix)] = reference->Location();
+		}
+	}
 }
