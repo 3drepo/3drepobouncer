@@ -786,7 +786,7 @@ bool RepoScene::commitRevisionNode(
 	}
 
 	if (success)
-		return handler->insertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *newRevNode, errMsg);
+		return handler->upsertDocument(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, *newRevNode, true, errMsg);
 
 	return success;
 }

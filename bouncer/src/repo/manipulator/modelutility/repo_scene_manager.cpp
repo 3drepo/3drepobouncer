@@ -372,8 +372,6 @@ bool SceneManager::generateWebViewBuffers(
 	if (success = (scene&& scene->isRevisioned()))
 	{
 		bool toCommit = handler;
-		if (toCommit)
-			scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_WEB_STASH);
 
 		std::string geoStashExt;
 		std::string jsonStashExt = REPO_COLLECTION_STASH_JSON;
