@@ -903,7 +903,7 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 	// original files references
 	if (files.size() > 0)
 	{
-		std::string uniqueIDStr = uniqueID.toString();
+		std::string uniqueIDStr = id.toString();
 		mongo::BSONObjBuilder arrbuilder;
 		for (int i = 0; i < files.size(); ++i)
 		{

@@ -157,7 +157,7 @@ uint8_t RepoManipulator::commitScene(
 	}
 
 	modelutility::SceneManager sceneManager;
-	return sceneManager.commitScene(scene, projOwner, tag, desc, handler, manager);
+	return sceneManager.commitScene(scene, projOwner, tag, desc, revId, handler, manager);
 }
 
 void RepoManipulator::compareScenes(

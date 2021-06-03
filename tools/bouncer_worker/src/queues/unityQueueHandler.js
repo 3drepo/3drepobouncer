@@ -24,7 +24,7 @@ const logger = require('../lib/logger');
 
 const logLabel = { label: 'UNITYQ' };
 
-const processUnity = async (database, model, user, logDir, modelImportErrCode) => {
+const processUnity = async (database, model, user, rid, logDir, modelImportErrCode) => {
 	const returnMessage = {
 		value: modelImportErrCode,
 		database,
@@ -34,7 +34,7 @@ const processUnity = async (database, model, user, logDir, modelImportErrCode) =
 
 	try {
 		if (database && model) {
-			await generateAssetBundles(database, model, logDir);
+			await generateAssetBundles(database, model, rid, logDir);
 		} else {
 			returnMessage.value = ERRCODE_ARG_FILE_FAIL;
 		}
@@ -58,7 +58,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		project,
 	}));
 
-	const message = await processUnity(database, project, user, logDir, value);
+	const message = await processUnity(database, project, user, rid, logDir, value);
 	callback(JSON.stringify(message));
 };
 
