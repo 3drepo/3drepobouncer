@@ -849,6 +849,7 @@ ReferenceNode RepoBSONFactory::makeReferenceNode(
 RevisionNode RepoBSONFactory::makeRevisionNode(
 	const std::string			   &user,
 	const repo::lib::RepoUUID                 &branch,
+	const repo::lib::RepoUUID                 &id,
 	const std::vector<repo::lib::RepoUUID>    &currentNodes,
 	//const std::vector<repo::lib::RepoUUID>    &added,
 	//const std::vector<repo::lib::RepoUUID>    &removed,
@@ -862,11 +863,10 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 )
 {
 	RepoBSONBuilder builder;
-	repo::lib::RepoUUID uniqueID = repo::lib::RepoUUID::createUUID();
 
 	//--------------------------------------------------------------------------
 	// Compulsory fields such as _id, type, api as well as path
-	auto defaults = appendDefaults(REPO_NODE_TYPE_REVISION, apiLevel, branch, "", parent, uniqueID);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_REVISION, apiLevel, branch, "", parent, id);
 	builder.appendElements(defaults);
 
 	//--------------------------------------------------------------------------

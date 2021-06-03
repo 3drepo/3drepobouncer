@@ -498,7 +498,8 @@ uint8_t RepoScene::commit(
 	std::string &errMsg,
 	const std::string &userName,
 	const std::string &message,
-	const std::string &tag)
+	const std::string &tag,
+	const repo::lib::RepoUUID &revId)
 {
 	bool success = true;
 
@@ -530,7 +531,7 @@ uint8_t RepoScene::commit(
 		if (!message.empty())
 			commitMsg = message;
 
-		if (success &= commitRevisionNode(handler, manager, errMsg, newRevNode, userName, commitMsg, tag))
+		if (success &= commitRevisionNode(handler, manager, errMsg, newRevNode, userName, commitMsg, tag, revId))
 		{
 			repoInfo << "Commited revision node, commiting scene nodes...";
 			//commited the revision node, commit the modification on the scene
@@ -681,7 +682,8 @@ bool RepoScene::commitRevisionNode(
 	RevisionNode *&newRevNode,
 	const std::string &userName,
 	const std::string &message,
-	const std::string &tag)
+	const std::string &tag,
+	const repo::lib::RepoUUID &revId)
 {
 	bool success = true;
 	std::vector<repo::lib::RepoUUID> parent;
@@ -712,7 +714,7 @@ bool RepoScene::commitRevisionNode(
 	}
 
 	newRevNode =
-		new RevisionNode(RepoBSONFactory::makeRevisionNode(userName, branch, uniqueIDs,
+		new RevisionNode(RepoBSONFactory::makeRevisionNode(userName, branch, revId, uniqueIDs,
 			fileNames, parent, worldOffset, message, tag));
 	*newRevNode = newRevNode->cloneAndUpdateStatus(RevisionNode::UploadStatus::GEN_DEFAULT);
 
