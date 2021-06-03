@@ -282,7 +282,6 @@ TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
 	EXPECT_EQ(material2.getTypeAsEnum(), NodeType::MATERIAL);
 }
 
-
 TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 {
 	RepoBSON data = BSON("something" << "Something else" << "something2" << "somethingelse2");
@@ -374,7 +373,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	EXPECT_TRUE(compareStdVectors(faces, fOut));
 	EXPECT_TRUE(compareVectors(colors, cOut));
 	EXPECT_TRUE(compareStdVectors(uvChannels, uvOut));
-	
+
 	ASSERT_EQ(MeshNode::Primitive::TRIANGLES, mesh.getPrimitive());
 
 	auto bbox = mesh.getBoundingBox();
@@ -382,8 +381,8 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	ASSERT_EQ(3, boundingBox[0].size());
 	ASSERT_EQ(3, boundingBox[1].size());
 
-	EXPECT_EQ(bbox[0], repo::lib::RepoVector3D( boundingBox[0][0], boundingBox[0][1], boundingBox[0][2] ));
-	EXPECT_EQ(bbox[1], repo::lib::RepoVector3D( boundingBox[1][0], boundingBox[1][1], boundingBox[1][2] ));
+	EXPECT_EQ(bbox[0], repo::lib::RepoVector3D(boundingBox[0][0], boundingBox[0][1], boundingBox[0][2]));
+	EXPECT_EQ(bbox[1], repo::lib::RepoVector3D(boundingBox[1][0], boundingBox[1][1], boundingBox[1][2]));
 
 	faces.clear();
 	for (uint32_t i = 0; i < nCount; ++i)
@@ -419,7 +418,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 	EXPECT_EQ(bbox[0], repo::lib::RepoVector3D(boundingBox[0][0], boundingBox[0][1], boundingBox[0][2]));
 	EXPECT_EQ(bbox[1], repo::lib::RepoVector3D(boundingBox[1][0], boundingBox[1][1], boundingBox[1][2]));
 
-	// Re-create the mesh but with an unsupported primitive type. If the mesh does not have a type set, the API should return triangles, 
+	// Re-create the mesh but with an unsupported primitive type. If the mesh does not have a type set, the API should return triangles,
 	// but if the primitive has *attempted* to be inferred and failed, the type should report as unknown.
 
 	faces.clear();
@@ -474,10 +473,12 @@ TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 	std::string message = "this is some random message to test message";
 	std::string tag = "this is a random tag to test tags";
 	std::vector<double> offset = { std::rand() / 100., std::rand() / 100., std::rand() / 100. };
+	repo::lib::RepoUUID revId = repo::lib::RepoUUID::createUUID();
 
-	RevisionNode rev = RepoBSONFactory::makeRevisionNode(owner, branchID, currentNodes, files, parents, offset, message, tag);
+	RevisionNode rev = RepoBSONFactory::makeRevisionNode(owner, branchID, revId, currentNodes, files, parents, offset, message, tag);
 	EXPECT_EQ(owner, rev.getAuthor());
 	EXPECT_EQ(branchID, rev.getSharedID());
+	EXPECT_EQ(revId, rev.getUniqueID());
 	EXPECT_EQ(message, rev.getMessage());
 	EXPECT_EQ(tag, rev.getTag());
 	//fileNames changes after it gets into the bson, just check the size
@@ -489,7 +490,7 @@ TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 
 	//ensure no random parent being generated
 	std::vector<repo::lib::RepoUUID> emptyParents;
-	RevisionNode rev2 = RepoBSONFactory::makeRevisionNode(owner, branchID, currentNodes, files, emptyParents, offset, message, tag);
+	RevisionNode rev2 = RepoBSONFactory::makeRevisionNode(owner, branchID, revId, currentNodes, files, emptyParents, offset, message, tag);
 	EXPECT_EQ(0, rev2.getParentIDs().size());
 }
 
