@@ -34,7 +34,7 @@ UnityHandler.generateAssetBundles = async (database, model, rid, logDir) => {
 		database,
 		model,
 		rid,
-		`${logDir}/unity_${dateStr}.log`
+		`${logDir}/unity_${dateStr}.log`,
 	];
 
 	try {
