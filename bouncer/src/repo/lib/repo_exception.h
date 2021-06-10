@@ -22,11 +22,16 @@ namespace repo {
 	namespace lib {
 		class RepoException : std::exception {
 		public:
-			RepoException(const std::string &msg) : errMsg(msg){};
+			RepoException(const std::string &msg) : errMsg(msg) {};
 
 			char const* what() const throw() { return errMsg.c_str(); }
 		private:
 			const std::string errMsg;
+		};
+
+		class RepoValidityExpiredException : RepoException {
+		public:
+			RepoValidityExpiredException(const std::string &msg = "Validity expired") : RepoException(msg) {};
 		};
 	}
 }
