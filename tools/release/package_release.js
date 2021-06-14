@@ -42,7 +42,7 @@ const externalLibraries = [
 	{
 		rootEnvVar: "SYNCHRO_READER_ROOT",
 		subPath: ["lib"],
-		subFolder: ["../plugins"],
+		subFolder: ["plugins"],
 		extensions: exts
 	},
 	{

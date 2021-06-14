@@ -62,7 +62,6 @@ matrix:
           - tar -zxf testData/bouncer/ext_libs/focal/3drepoSynchroReader-2.0.0.tgz
           - export THRIFT_ROOT=$PWD/thrift-0.12.0
           - export SYNCHRO_READER_ROOT=$PWD/3drepoSynchroReader
-          - export SYNCHRO_PLUGIN_LOCATION=$PWD/3drepoSynchroReader/plugins
 
       install:
           - sudo pip install cpp-coveralls
@@ -79,8 +78,8 @@ matrix:
           - export BOUNCER_ROOT=$HOME/bouncer_install
           - cd ../tools/release
           - node package_release.js
-          - LD_LIBRARY_PATH=$PWD/3drepobouncer ldd ./3drepobouncer/3drepobouncerTest
-          - LD_LIBRARY_PATH=$PWD/3drepobouncer ./3drepobouncer/3drepobouncerTest
+          - export SYNCHRO_PLUGIN_LOCATION=$PWD/3drepobouncer/plugins
+          - LD_LIBRARY_PATH=$PWD/3drepobouncer PATH=$PWD/3drepobouncer:$PATH ./3drepobouncer/3drepobouncerTest
       after_success:
           - pwd
           - cd - && coveralls --root ../ -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0" -e "aws-install"
