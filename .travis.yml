@@ -9,6 +9,8 @@ matrix:
         - cd tools/bouncer_worker && yarn install && yarn lint
     - language: cpp
       dist: focal
+      node_js:
+        - "10.15.1"
       compiler:
            - gcc
 
@@ -74,10 +76,10 @@ matrix:
           - sudo make -j8 install
           - export REPO_MODEL_PATH=$PWD/../testData/bouncer/data/models
           - for f in $REPO_MODEL_PATH/*.json; do sed -i.bak -e 's|$REPO_MODEL_PATH|'$REPO_MODEL_PATH'|g' $f; done
-          - cd ~/bouncer_install
-          - cp bin/* $ODA_ROOT/bin/lnxX64_8.3dll/
-          - cd $ODA_ROOT/bin/lnxX64_8.3dll/
-          - ODA_CSV_LOCATION=$ODA_ROOT/bin/lnxX64_8.3dll/ PATH=$ODA_ROOT/bin/lnxX64_8.3dll/:$PATH LD_LIBRARY_PATH=$SYNCHRO_READER_ROOT/lib:$THRIFT_ROOT/lib:$OCCT_ROOT/lib/:$IFCOPENSHELL_ROOT/lib:$MONGO_ROOT/lib/:$ASSIMP_ROOT/lib:/usr/local/lib:$ODA_ROOT/bin/lnxX64_8.3dll/:$LD_LIBRARY_PATH:$HOME/bouncer_install/lib ./3drepobouncerTest
+          - export BOUNCER_INSTALL=$HOME/bouncer_install
+          - cd ../tools/release
+          - node package_release.js
+          - ./3drepobouncer/3drepobouncerTest
       after_success:
           - pwd
           - cd - && coveralls --root ../ -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0" -e "aws-install"
