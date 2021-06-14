@@ -27,7 +27,7 @@ const externalLibraries = [
 	{
 		rootEnvVar: "THRIFT_ROOT",
 		subPath: ["lib"],
-		extensions: exts
+		extensions: [exts, ".0"]
 	},
 	{
 		rootEnvVar: "OCCT_ROOT",
