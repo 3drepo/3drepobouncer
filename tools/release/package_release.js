@@ -22,7 +22,7 @@ const externalLibraries = [
 		rootEnvVar: "ODA_ROOT",
 		subPath: ["exe/vc14_amd64dll", "bin/lnxX64_8.3dll"],
 		subFolder:  ["exe/vc14_amd64dll/CSV", "bin/lnxX64_8.3dll/CSV"],
-		extensions: [...exts, ".7"]
+		extensions: exts
 	},
 	{
 		rootEnvVar: "THRIFT_ROOT",
@@ -32,7 +32,7 @@ const externalLibraries = [
 	{
 		rootEnvVar: "OCCT_ROOT",
 		subPath: ["lib", "exe/vc14_amd64dll", "bin/lnxX64_8.3dll"],
-		extensions: exts
+		extensions: [...exts, ".7"]
 	},
 	{
 		rootEnvVar: "IFCOPENSHELL_ROOT",
