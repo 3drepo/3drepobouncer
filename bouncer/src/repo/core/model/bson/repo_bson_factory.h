@@ -343,6 +343,7 @@ namespace repo {
 				static RevisionNode makeRevisionNode(
 					const std::string			   &user,
 					const repo::lib::RepoUUID                 &branch,
+					const repo::lib::RepoUUID                 &revId,
 					const std::vector<repo::lib::RepoUUID>    &currentNodes,
 					//const std::vector<repo::lib::RepoUUID>    &added,
 					//const std::vector<repo::lib::RepoUUID>    &removed,
