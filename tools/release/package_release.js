@@ -16,13 +16,13 @@ const externalLibraries = [
 	{
 		rootEnvVar: "ASSIMP_ROOT",
 		subPath: ["bin", "lib"],
-		extensions: exts
+		extensions: [...exts, ".5"]
 	},
 	{
 		rootEnvVar: "ODA_ROOT",
 		subPath: ["exe/vc14_amd64dll", "bin/lnxX64_8.3dll"],
 		subFolder:  ["exe/vc14_amd64dll/CSV", "bin/lnxX64_8.3dll/CSV"],
-		extensions: exts
+		extensions: [...exts, ".7"]
 	},
 	{
 		rootEnvVar: "THRIFT_ROOT",
