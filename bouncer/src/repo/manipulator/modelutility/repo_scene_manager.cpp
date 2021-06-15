@@ -103,6 +103,7 @@ uint8_t SceneManager::commitScene(
 	const std::string									  &owner,
 	const std::string									  &tag,
 	const std::string									  &desc,
+	const repo::lib::RepoUUID              &revId,
 	repo::core::handler::AbstractDatabaseHandler          *handler,
 	repo::core::handler::fileservice::FileManager         *fileManager
 ) {
@@ -110,7 +111,7 @@ uint8_t SceneManager::commitScene(
 	std::string msg;
 	if (handler && scene)
 	{
-		errCode = scene->commit(handler, fileManager, msg, owner, desc, tag);
+		errCode = scene->commit(handler, fileManager, msg, owner, desc, tag, revId);
 		if (errCode == REPOERR_OK) {
 			repoInfo << "Scene successfully committed to the database";
 			bool success = true;
@@ -371,8 +372,6 @@ bool SceneManager::generateWebViewBuffers(
 	if (success = (scene&& scene->isRevisioned()))
 	{
 		bool toCommit = handler;
-		if (toCommit)
-			scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_WEB_STASH);
 
 		std::string geoStashExt;
 		std::string jsonStashExt = REPO_COLLECTION_STASH_JSON;
@@ -516,7 +515,7 @@ bool SceneManager::shouldGenerateSrcFiles(
 	repo::core::handler::AbstractDatabaseHandler* handler) const
 {
 	//only generate SRC files if the user has the src flag enabled and there are meshes
-	
+
 	repo::core::model::RepoUser user(handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, BSON("user" << scene->getDatabaseName())));
 	if (user.isSrcEnabled())
 	{

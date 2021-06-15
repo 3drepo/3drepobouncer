@@ -74,9 +74,10 @@ uint8_t RepoController::commitScene(
 	repo::core::model::RepoScene        *scene,
 	const std::string                   &owner,
 	const std::string                      &tag,
-	const std::string                      &desc)
+	const std::string                      &desc,
+	const repo::lib::RepoUUID           &revId)
 {
-	return impl->commitScene(token, scene, owner, tag, desc);
+	return impl->commitScene(token, scene, owner, tag, desc, revId);
 }
 
 uint64_t RepoController::countItemsInCollection(

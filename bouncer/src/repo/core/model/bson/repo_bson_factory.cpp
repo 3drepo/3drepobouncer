@@ -849,10 +849,8 @@ ReferenceNode RepoBSONFactory::makeReferenceNode(
 RevisionNode RepoBSONFactory::makeRevisionNode(
 	const std::string			   &user,
 	const repo::lib::RepoUUID                 &branch,
+	const repo::lib::RepoUUID                 &id,
 	const std::vector<repo::lib::RepoUUID>    &currentNodes,
-	//const std::vector<repo::lib::RepoUUID>    &added,
-	//const std::vector<repo::lib::RepoUUID>    &removed,
-	//const std::vector<repo::lib::RepoUUID>    &modified,
 	const std::vector<std::string> &files,
 	const std::vector<repo::lib::RepoUUID>    &parent,
 	const std::vector<double>    &worldOffset,
@@ -862,11 +860,10 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 )
 {
 	RepoBSONBuilder builder;
-	repo::lib::RepoUUID uniqueID = repo::lib::RepoUUID::createUUID();
 
 	//--------------------------------------------------------------------------
 	// Compulsory fields such as _id, type, api as well as path
-	auto defaults = appendDefaults(REPO_NODE_TYPE_REVISION, apiLevel, branch, "", parent, uniqueID);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_REVISION, apiLevel, branch, "", parent, id);
 	builder.appendElements(defaults);
 
 	//--------------------------------------------------------------------------
@@ -903,7 +900,7 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 	// original files references
 	if (files.size() > 0)
 	{
-		std::string uniqueIDStr = uniqueID.toString();
+		std::string uniqueIDStr = id.toString();
 		mongo::BSONObjBuilder arrbuilder;
 		for (int i = 0; i < files.size(); ++i)
 		{

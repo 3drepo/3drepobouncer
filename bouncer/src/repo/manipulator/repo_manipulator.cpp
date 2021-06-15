@@ -138,7 +138,8 @@ uint8_t RepoManipulator::commitScene(
 	repo::core::model::RepoScene           *scene,
 	const std::string                      &owner,
 	const std::string                      &tag,
-	const std::string                      &desc)
+	const std::string                      &desc,
+	const repo::lib::RepoUUID              &revId)
 {
 	repoLog("Manipulator: Committing model to database");
 	repo::core::handler::AbstractDatabaseHandler* handler =
@@ -156,7 +157,7 @@ uint8_t RepoManipulator::commitScene(
 	}
 
 	modelutility::SceneManager sceneManager;
-	return sceneManager.commitScene(scene, projOwner, tag, desc, handler, manager);
+	return sceneManager.commitScene(scene, projOwner, tag, desc, revId, handler, manager);
 }
 
 void RepoManipulator::compareScenes(
@@ -709,8 +710,6 @@ std::vector<std::shared_ptr<repo::core::model::MeshNode>> RepoManipulator::initi
 	{
 		modelutility::SceneManager sceneManager;
 		vrEnabled = sceneManager.isVrEnabled(scene, handler);
-
-		scene->updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_WEB_STASH);
 	}
 	repo::manipulator::modelconvertor::AssetModelExport assetExport(scene, vrEnabled);
 	jsonFiles = assetExport.getJSONFilesAsBuffer();

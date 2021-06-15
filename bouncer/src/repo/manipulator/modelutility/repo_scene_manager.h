@@ -50,6 +50,7 @@ namespace repo {
 					const std::string									  &owner,
 					const std::string									  &tag,
 					const std::string									  &desc,
+					const repo::lib::RepoUUID                             &revId,
 					repo::core::handler::AbstractDatabaseHandler          *handler,
 					repo::core::handler::fileservice::FileManager         *fileManager
 				);

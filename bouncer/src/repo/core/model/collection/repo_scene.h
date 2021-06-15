@@ -255,7 +255,8 @@ namespace repo {
 					std::string &errMsg,
 					const std::string &userName,
 					const std::string &message = std::string(),
-					const std::string &tag = std::string());
+					const std::string &tag = std::string(),
+					const repo::lib::RepoUUID &revId = repo::lib::RepoUUID::createUUID());
 
 				/**
 				* Commit the stash representation into the database
@@ -975,7 +976,8 @@ namespace repo {
 					RevisionNode *&newRevNode,
 					const std::string &userName,
 					const std::string &message,
-					const std::string &tag);
+					const std::string &tag,
+					const repo::lib::RepoUUID &revId);
 
 				/**
 				* Commit a new nodes into project.sceneExt base on the
