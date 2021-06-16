@@ -77,7 +77,7 @@ const copyDir = (src, dest) => {
     }
 };
 
-const folderPath = `3drepobouncer`
+const folderPath = process.argv[2] || `3drepobouncer`
 /*
  uncomment when we upgrade nodejs.
 if(fs.existsSync(folderPath)) {
