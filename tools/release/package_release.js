@@ -51,7 +51,7 @@ const externalLibraries = [
 		extensions: exts
 	},
 	{
-		rootEnvVar: "BOUNCER_ROOT",
+		rootEnvVar: "REPOBOUNCER_ROOT",
 		subPath: ["lib", "bin"],
 		extensions: [...exts, ".exe", ""]
 	}
