@@ -135,6 +135,7 @@ int32_t performOperation(
 	else if (command.command == cmdVersion || command.command == cmdVersion2)
 	{
 		std::cout << "3D Repo Bouncer Client v" + controller->getVersion() << std::endl;
+		std::cout << controller->getLicenseInfo() << std::endl;
 		errCode = REPOERR_OK;
 	}
 	else

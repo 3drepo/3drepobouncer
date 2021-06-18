@@ -47,6 +47,7 @@ repo::RepoController* instantiateController()
 	}
 	catch (const repo::lib::RepoValidityExpiredException) {
 		std::cerr << "License expired. Please contact support@3drepo.org should you wish to continue using the software." << std::endl;
+		std::cerr << repo::RepoController::getLicenseInfo() << std::endl;
 		exit(REPOERR_AUTH_FAILED);
 	}
 

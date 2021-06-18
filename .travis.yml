@@ -75,7 +75,7 @@ matrix:
           - sudo make -j8 install
           - export REPO_MODEL_PATH=$PWD/../testData/bouncer/data/models
           - for f in $REPO_MODEL_PATH/*.json; do sed -i.bak -e 's|$REPO_MODEL_PATH|'$REPO_MODEL_PATH'|g' $f; done
-          - export BOUNCER_ROOT=$HOME/bouncer_install
+          - export REPOBOUNCER_ROOT=$HOME/bouncer_install
           - cd ../tools/release
           - node package_release.js
           - export SYNCHRO_PLUGIN_LOCATION=$PWD/3drepobouncer/plugins
