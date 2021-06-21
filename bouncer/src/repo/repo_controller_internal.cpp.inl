@@ -107,7 +107,8 @@ uint8_t RepoController::_RepoControllerImpl::commitScene(
 	repo::core::model::RepoScene        *scene,
 	const std::string                   &owner,
 	const std::string                      &tag,
-	const std::string                      &desc)
+	const std::string                      &desc,
+	const repo::lib::RepoUUID           &revId)
 {
 	uint8_t errCode = REPOERR_UNKNOWN_ERR;
 	if (scene)
@@ -129,7 +130,8 @@ uint8_t RepoController::_RepoControllerImpl::commitScene(
 					scene,
 					sceneOwner,
 					tag,
-					desc);
+					desc,
+					revId);
 				workerPool.push(worker);
 			}
 			else

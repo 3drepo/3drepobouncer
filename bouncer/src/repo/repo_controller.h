@@ -309,7 +309,8 @@ namespace repo {
 			repo::core::model::RepoScene        *scene,
 			const std::string                   &owner = "",
 			const std::string                      &tag = "",
-			const std::string                      &desc = "");
+			const std::string                      &desc = "",
+			const repo::lib::RepoUUID           &revId = repo::lib::RepoUUID::createUUID());
 
 		/**
 		* Insert a binary file into the database (GridFS)
