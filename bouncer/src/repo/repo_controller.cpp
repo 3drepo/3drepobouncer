@@ -16,6 +16,9 @@
 */
 
 #include "repo_controller_internal.cpp.inl" //Inner class implementation
+#include <ctime>
+#include <boost/date_time.hpp>
+#include "lib/repo_exception.h"
 
 using namespace repo;
 
@@ -24,6 +27,14 @@ RepoController::RepoController(
 	const uint32_t &numConcurrentOps,
 	const uint32_t &numDbConn)
 {
+#ifdef VALID_UNTIL
+
+	std::time_t currentTS = std::time(nullptr);
+	if (currentTS > VALID_UNTIL) {
+		throw repo::lib::RepoValidityExpiredException();
+	}
+#endif
+
 	//RepoController follows the Pimpl idiom http://www.gotw.ca/gotw/028.htm
 	//This is done to avoid high dependencies on other headers for library users
 	//Actual implementations are in _RepoControllerImpl
@@ -420,4 +431,18 @@ bool RepoController::isVREnabled(const RepoController::RepoToken *token,
 std::string RepoController::getVersion()
 {
 	return impl->getVersion();
+}
+
+std::string RepoController::getLicenseInfo()
+{
+	std::stringstream ss;
+	ss << "License is valid until: ";
+#ifdef VALID_UNTIL
+	int64_t validity = VALID_UNTIL;
+	auto timeUntil = boost::posix_time::from_time_t(validity);
+	ss << boost::posix_time::to_iso_extended_string(timeUntil) << " (timestamp in seconds: " << validity << ")";
+#else
+	ss << "Forever";
+#endif
+	return ss.str();
 }
