@@ -26,14 +26,16 @@
 
 #include <ifcgeom/IfcGeom.h>
 #include <ifcgeom/IfcGeomIterator.h>
+#include <ifcparse/IfcParse.h>
+#include <ifcparse/IfcFile.h>
 
 #include "../../../core/model/bson/repo_node_material.h"
 #include "../../../core/model/bson/repo_node_mesh.h"
 #include "../../../core/model/collection/repo_scene.h"
 
-namespace repo{
-	namespace manipulator{
-		namespace modelconvertor{
+namespace repo {
+	namespace manipulator {
+		namespace modelconvertor {
 			class IFCUtilsParser
 			{
 			public:
@@ -63,7 +65,7 @@ namespace repo{
 					std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> &meshes,
 					std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
 					const std::vector<double>                                                  &offset
-					);
+				);
 
 			protected:
 				repo::core::model::RepoNodeSet createTransformations(
@@ -71,7 +73,7 @@ namespace repo{
 					std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> &meshes,
 					std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
 					repo::core::model::RepoNodeSet											   &metaSet
-					);
+				);
 
 				repo::core::model::RepoNodeSet createTransformationsRecursive(
 					IfcParse::IfcFile &ifcfile,
@@ -79,25 +81,57 @@ namespace repo{
 					std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> &meshes,
 					std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
 					repo::core::model::RepoNodeSet											   &metaSet,
-					std::pair<std::vector<std::string>, std::vector<std::string>>               &metaValue,
-					const repo::lib::RepoUUID																&parentID,
-					const std::set<int>													       &ancestorsID = std::set<int>()
-					);
+					std::unordered_map<std::string, std::string>                               &metaValue,
+					std::unordered_map<std::string, std::string>                               &locationValue,
+					const repo::lib::RepoUUID												   &parentID,
+					const std::set<int>													       &ancestorsID = std::set<int>(),
+					const std::string														   &metaPrefix = std::string()
+				);
 
 				void determineActionsByElementType(
 					IfcParse::IfcFile &ifcfile,
 					const IfcUtil::IfcBaseClass *element,
-					std::pair<std::vector<std::string>, std::vector<std::string>> &metaValues,
+					std::unordered_map<std::string, std::string>                  &metaValues,
+					std::unordered_map<std::string, std::string>                  &locationData,
 					bool                                                          &createElement,
 					bool                                                          &traverseChildren,
-					bool                                                          &isIFCSpace,
-					std::vector<int>                                              &extraChildren);
+					std::vector<IfcUtil::IfcBaseClass *>                          &extraChildren,
+					const std::string											  &metaPrefix,
+					std::string											          &childrenMetaPrefix);
+
+				std::string constructMetadataLabel(
+					const std::string &label,
+					const std::string &prefix,
+					const std::string &unitType = ""
+				);
+
+				void generateClassificationInformation(
+					const IfcSchema::IfcRelAssociatesClassification * &relCS,
+					std::unordered_map<std::string, std::string>    &metaValues
+
+				);
+
+				void setProjectUnits(const IfcSchema::IfcUnitAssignment* unitsAssignment);
 
 				std::string getValueAsString(
-					const IfcSchema::IfcValue    *ifcValue);
+					const IfcSchema::IfcValue    *ifcValue,
+					std::string &unitType);
+
+				std::string getUnits(
+					const IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum &unitType
+				);
+
+				std::string getUnits(
+					const IfcSchema::IfcUnitEnum::IfcUnitEnum &unitType
+				);
+
+				std::string getUnits(
+					const std::string &unitType
+				);
 
 				const std::string file;
 				bool missingEntities;
+				std::unordered_map<std::string, std::string> projectUnits;
 			};
 		} //namespace modelconvertor
 	} //namespace manipulator
