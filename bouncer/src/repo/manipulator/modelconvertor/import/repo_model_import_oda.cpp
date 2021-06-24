@@ -11,7 +11,7 @@
 
 using namespace repo::manipulator::modelconvertor;
 
-const std::string OdaModelImport::supportedExtensions = ".dgn.rvt.rfa";
+const std::string OdaModelImport::supportedExtensions = ".dgn.rvt.rfa.dwg.dxf";
 
 OdaModelImport::~OdaModelImport()
 {
@@ -75,7 +75,7 @@ bool OdaModelImport::importModel(std::string filePath, uint8_t &err)
 	err = REPOERR_OK;
 	try {
 		err = odaProcessor->readFile();
-		if(err == REPOERR_OK){ 
+		if (err == REPOERR_OK) {
 			err = geoCollector.getErrorCode(); // the outermost error codes should take precedence as they could cause inner errors
 		}
 		success = odaProcessor != nullptr && err == REPOERR_OK;

@@ -15,7 +15,6 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include <OdaCommon.h>
 
 #include <StaticRxObject.h>
@@ -28,10 +27,13 @@
 #include <ExSystemServices.h>
 #include <ExDgnServices.h>
 #include <ExDgnHostAppServices.h>
+#include <ExHostAppServices.h>
 
 #include <DgGiContext.h>
 #include <DgGsManager.h>
+#include <Exports/DgnExport/DgnExport.h>
 
+#include "../../../../lib/repo_exception.h"
 #include "file_processor_dgn.h"
 #include "data_processor_dgn.h"
 #include "vectorise_device_dgn.h"
@@ -39,6 +41,7 @@
 
 #include <DgLine.h>      // This file puts OdDgLine3d in the output file
 using namespace repo::manipulator::modelconvertor::odaHelper;
+using namespace TD_DGN_EXPORT;
 
 class StubDeviceModuleDgn : public OdGsBaseModule
 {
@@ -81,16 +84,21 @@ protected:
 	ODRX_USING_HEAP_OPERATORS(OdExDgnSystemServices);
 };
 
+class RepoDwgServices : public  ExSystemServices, public ExHostAppServices
+{
+protected:
+	ODRX_USING_HEAP_OPERATORS(ExSystemServices);
+};
+
 repo::manipulator::modelconvertor::odaHelper::FileProcessorDgn::~FileProcessorDgn()
 {
 }
-uint8_t FileProcessorDgn::readFile() {
 
+uint8_t FileProcessorDgn::readFile() {
 	uint8_t nRes = 0;               // Return value for the function
 	OdStaticRxObject<RepoDgnServices> svcs;
 	OdString fileSource = file.c_str();
 	OdString strStlFilename = OdString::kEmpty;
-
 
 	/**********************************************************************/
 	/* Initialize Runtime Extension environment                           */
@@ -98,19 +106,53 @@ uint8_t FileProcessorDgn::readFile() {
 	odrxInitialize(&svcs);
 	odgsInitialize();
 
-
 	try
 	{
 		/**********************************************************************/
 		/* Initialize Teigha™ for .dgn files                                               */
 		/**********************************************************************/
 		::odrxDynamicLinker()->loadModule(L"TG_Db", false);
-
+		/*
 		OdDgDatabasePtr pDb = svcs.readFile(fileSource);
+		*/
+
+		OdDgDatabasePtr pDb;
+		// Register ODA Drawings API for DGN
+		::odrxDynamicLinker()->loadModule(OdDbModuleName, false); // for instance, to draw .dwg file XRefs
+		::odrxDynamicLinker()->loadModule(L"TG_DwgDb", false);
+		// Dgn level table overrides for dwg reference attachments support
+		::odrxDynamicLinker()->loadModule(L"ExDgnImportLineStyle");
+		OdDgnExportModulePtr pModule = ::odrxDynamicLinker()->loadApp(OdDgnExportModuleName, false);
+		OdDgnExportPtr pExporter = pModule->create();
+
+		pExporter->properties()->putAt(L"DgnServices", static_cast<OdDgHostAppServices*>(&svcs));
+		pExporter->properties()->putAt(L"DwgPath", OdRxVariantValue(OdString(fileSource)));
+
+		OdDgnExport::ExportResult res = pExporter->exportDb();
+		if (res == OdDgnExport::success)
+			pDb = pExporter->properties()->getAt(L"DgnDatabase");
+		else
+		{
+			switch (res)
+			{
+			case OdDgnExport::bad_database:
+				throw new repo::lib::RepoException("Bad database");
+			case OdDgnExport::bad_file:
+				throw new repo::lib::RepoException("DGN export");
+
+			case OdDgnExport::encrypted_file:
+			case OdDgnExport::bad_password:
+				throw new repo::lib::RepoException("The file is encrypted");
+
+			case OdDgnExport::fail:
+				throw new repo::lib::RepoException("Unknown import error");
+			}
+		}
+
+		pExporter.release();
 
 		if (!pDb.isNull())
 		{
-
 			const ODCOLORREF* refColors = OdDgColorTable::currentPalette(pDb);
 			ODGSPALETTE pPalCpy;
 			pPalCpy.insert(pPalCpy.begin(), refColors, refColors + 256);
@@ -230,9 +272,15 @@ uint8_t FileProcessorDgn::readFile() {
 			}
 		}
 	}
+	catch (OdError & e)
+	{
+		repoError << convertToStdString(e.description());
+		nRes = REPOERR_MODEL_FILE_READ;
+	}
 	catch (std::exception &e)
 	{
 		repoError << "Failed: " << e.what();
+		nRes = REPOERR_MODEL_FILE_READ;
 	}
 	return nRes;
 }
@@ -245,17 +293,15 @@ int FileProcessorDgn::importDgn(OdDbBaseDatabase *pDb,
 	const OdGeMatrix3d& matTransform,
 	const std::map<OdDbStub*, double>* pMapDeviations)
 {
-
 	int ret = 0;
 	OdUInt32 iCurEntData = 0;
 	try
 	{
 		odgsInitialize();
-		
+
 		OdGsModulePtr pGsModule = ODRX_STATIC_MODULE_ENTRY_POINT(StubDeviceModuleDgn)(OD_T("StubDeviceModuleDgn"));
 
 		((StubDeviceModuleDgn*)pGsModule.get())->init(collector, extModel);
-
 
 		OdDbBaseDatabasePEPtr pDbPE(pDb);
 		OdGiDefaultContextPtr pContext = pDbPE->createGiContext(pDb);
@@ -284,13 +330,13 @@ int FileProcessorDgn::importDgn(OdDbBaseDatabase *pDb,
 
 		pContext.release();
 		pGsModule.release();
-		
+
 		odgsUninitialize();
-	}	
+	}
 	catch (OdError& e)
 	{
 		ret = e.code();
-		repoError << e.description().c_str();
+		repoError << convertToStdString(e.description());
 	}
 	catch (...)
 	{
@@ -298,4 +344,3 @@ int FileProcessorDgn::importDgn(OdDbBaseDatabase *pDb,
 	}
 	return ret;
 }
-
