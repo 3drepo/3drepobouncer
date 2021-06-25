@@ -149,6 +149,9 @@ uint8_t FileProcessorDgn::readFile() {
 			}
 		}
 
+		pExporter.release();
+		pModule.release();
+
 		if (pDb.isNull()) {
 			throw new repo::lib::RepoException("Could not establish database");
 		}
@@ -269,8 +272,6 @@ uint8_t FileProcessorDgn::readFile() {
 
 		importDgn(pDb, pPalCpy.asArrayPtr(), 256, extModel);
 		pDb.release();
-		pExporter.release();
-		pModule.release();
 		odgsUninitialize();
 		odrxUninitialize();
 	}
