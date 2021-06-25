@@ -28,7 +28,6 @@
 #include "geometry_collector.h"
 #include "file_processor.h"
 
-
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
@@ -42,17 +41,15 @@ namespace repo {
 					uint8_t readFile() override;
 
 				private:
-					int importDgn(OdDbBaseDatabase *pDb,
+					void importDgn(OdDbBaseDatabase *pDb,
 						const ODCOLORREF* pPallete,
 						int numColors,
 						const OdGeExtents3d &extModel,
 						const OdGiDrawable* pEntity = nullptr,
 						const OdGeMatrix3d& matTransform = OdGeMatrix3d::kIdentity,
 						const std::map<OdDbStub*, double>* pMapDeviations = nullptr);
-
 				};
 			}
 		}
 	}
 }
-

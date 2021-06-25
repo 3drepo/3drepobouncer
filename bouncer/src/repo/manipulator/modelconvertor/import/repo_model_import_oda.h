@@ -23,6 +23,7 @@
 
 #ifdef ODA_SUPPORT
 #include "odaHelper/geometry_collector.h"
+#include "odaHelper/file_processor.h"
 #endif
 
 namespace repo {
@@ -66,6 +67,7 @@ namespace repo {
 				std::string filePath;
 #ifdef ODA_SUPPORT
 				odaHelper::GeometryCollector geoCollector;
+				std::unique_ptr<odaHelper::FileProcessor> odaProcessor;
 #endif
 			};
 		}
