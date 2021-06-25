@@ -14,9 +14,7 @@
 *  You should have received a copy of the GNU Affero General Public License
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-
 #include <OdaCommon.h>
-
 #include <StaticRxObject.h>
 #include <RxInit.h>
 #include <RxDynamicModule.h>
@@ -24,14 +22,8 @@
 #include <DgDatabase.h>
 #include <RxDynamicModule.h>
 
-#include <ExSystemServices.h>
-#include <ExDgnServices.h>
-#include <ExDgnHostAppServices.h>
-#include <ExHostAppServices.h>
-
 #include <DgGiContext.h>
 #include <DgGsManager.h>
-#include <Exports/DgnExport/DgnExport.h>
 
 #include "../../../../lib/repo_exception.h"
 #include "file_processor_dgn.h"
@@ -41,7 +33,6 @@
 
 #include <DgLine.h>      // This file puts OdDgLine3d in the output file
 using namespace repo::manipulator::modelconvertor::odaHelper;
-using namespace TD_DGN_EXPORT;
 
 class StubDeviceModuleDgn : public OdGsBaseModule
 {
@@ -78,26 +69,18 @@ protected:
 };
 ODRX_DEFINE_PSEUDO_STATIC_MODULE(StubDeviceModuleDgn);
 
-class RepoDgnServices : public OdExDgnSystemServices, public OdExDgnHostAppServices
-{
-protected:
-	ODRX_USING_HEAP_OPERATORS(OdExDgnSystemServices);
-};
-
-class RepoDwgServices : public  ExSystemServices, public ExHostAppServices
-{
-protected:
-	ODRX_USING_HEAP_OPERATORS(ExSystemServices);
-};
-
 repo::manipulator::modelconvertor::odaHelper::FileProcessorDgn::~FileProcessorDgn()
 {
 }
 
+OdDgDatabasePtr FileProcessorDgn::initialiseOdDatabase() {
+	OdString fileSource = file.c_str();
+	return svcs.readFile(fileSource);
+}
+
 uint8_t FileProcessorDgn::readFile() {
 	uint8_t nRes = 0;               // Return value for the function
-	OdStaticRxObject<RepoDgnServices> svcs;
-	OdString fileSource = file.c_str();
+
 	OdString strStlFilename = OdString::kEmpty;
 
 	/**********************************************************************/
@@ -112,52 +95,8 @@ uint8_t FileProcessorDgn::readFile() {
 		/* Initialize Teigha™ for .dgn files                                               */
 		/**********************************************************************/
 		::odrxDynamicLinker()->loadModule(L"TG_Db", false);
-		/*
-		OdDgDatabasePtr pDb = svcs.readFile(fileSource);
-		*/
 
-		OdDgDatabasePtr pDb;
-		// Register ODA Drawings API for DGN
-		::odrxDynamicLinker()->loadModule(OdDbModuleName, false);
-		::odrxDynamicLinker()->loadModule(L"TG_DwgDb", false);
-		// Dgn level table overrides for dwg reference attachments support
-		::odrxDynamicLinker()->loadModule(L"ExDgnImportLineStyle");
-		OdDgnExportModulePtr pModule = ::odrxDynamicLinker()->loadApp(OdDgnExportModuleName, false);
-		OdDgnExportPtr pExporter = pModule->create();
-
-		pExporter->properties()->putAt(L"DgnServices", static_cast<OdDgHostAppServices*>(&svcs));
-		pExporter->properties()->putAt(L"DwgPath", OdRxVariantValue(OdString(fileSource)));
-
-		OdDgnExport::ExportResult res = pExporter->exportDb();
-		if (res == OdDgnExport::success)
-			pDb = pExporter->properties()->getAt(L"DgnDatabase");
-		else
-		{
-			std::stringstream ss;
-
-			ss << "Failed to export dwg/dxf into a dgn: ";
-			switch (res)
-			{
-			case OdDgnExport::bad_database:
-				ss << "Bad database";
-				break;
-			case OdDgnExport::bad_file:
-				ss << "DGN export";
-				break;
-			case OdDgnExport::encrypted_file:
-			case OdDgnExport::bad_password:
-				ss << "The file is encrypted";
-				break;
-
-			case OdDgnExport::fail:
-				ss << "Unknown import error";
-				break;
-			}
-			throw new repo::lib::RepoException(ss.str());
-		}
-
-		pExporter.release();
-		pModule.release();
+		OdDgDatabasePtr pDb = initialiseOdDatabase();
 
 		if (pDb.isNull()) {
 			throw new repo::lib::RepoException("Could not establish OdDgDatabasePtr from file");

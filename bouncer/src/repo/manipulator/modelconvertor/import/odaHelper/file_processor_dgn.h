@@ -20,8 +20,13 @@
 #include "../../../../core/model/bson/repo_node_mesh.h"
 
 #include <OdaCommon.h>
+#include <DgDatabase.h>
 #include <Gs/GsBaseInclude.h>
 #include <RxObjectImpl.h>
+#include <ExSystemServices.h>
+#include <ExDgnServices.h>
+#include <ExDgnHostAppServices.h>
+
 #include <vector>
 #include <string>
 
@@ -32,6 +37,12 @@ namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
+				class RepoDgnServices : public OdExDgnSystemServices, public OdExDgnHostAppServices
+				{
+				protected:
+					ODRX_USING_HEAP_OPERATORS(OdExDgnSystemServices);
+				};
+
 				class FileProcessorDgn : public FileProcessor
 				{
 				public:
@@ -40,6 +51,9 @@ namespace repo {
 
 					uint8_t readFile() override;
 
+				protected:
+					virtual OdDgDatabasePtr initialiseOdDatabase();
+					OdStaticRxObject<RepoDgnServices> svcs;
 				private:
 					void importDgn(OdDbBaseDatabase *pDb,
 						const ODCOLORREF* pPallete,

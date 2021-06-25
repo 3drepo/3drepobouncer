@@ -19,6 +19,7 @@
 #include <memory>
 #include "file_processor.h"
 #include "file_processor_dgn.h"
+#include "file_processor_dwg.h"
 #include "file_processor_rvt.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
@@ -43,8 +44,10 @@ std::unique_ptr<FileProcessor> FileProcessor::getFileProcessor(const std::string
 	std::string fileExt = filePathP.extension().string();
 	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
 
-	if (fileExt == ".DGN" || fileExt == ".DWG" || fileExt == ".DXF")
+	if (fileExt == ".DGN")
 		return makeUnique<FileProcessorDgn>(inputFile, geoCollector);
+	else if (fileExt == ".DWG" || fileExt == ".DXF")
+		return makeUnique<FileProcessorDwg>(inputFile, geoCollector);
 	else if (fileExt == ".RVT" || fileExt == ".RFA")
 		return makeUnique<FileProcessorRvt>(inputFile, geoCollector);
 
