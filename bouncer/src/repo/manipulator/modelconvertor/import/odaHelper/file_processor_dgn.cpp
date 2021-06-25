@@ -118,7 +118,7 @@ uint8_t FileProcessorDgn::readFile() {
 
 		OdDgDatabasePtr pDb;
 		// Register ODA Drawings API for DGN
-		::odrxDynamicLinker()->loadModule(OdDbModuleName, false); // for instance, to draw .dwg file XRefs
+		::odrxDynamicLinker()->loadModule(OdDbModuleName, false);
 		::odrxDynamicLinker()->loadModule(L"TG_DwgDb", false);
 		// Dgn level table overrides for dwg reference attachments support
 		::odrxDynamicLinker()->loadModule(L"ExDgnImportLineStyle");
@@ -133,27 +133,34 @@ uint8_t FileProcessorDgn::readFile() {
 			pDb = pExporter->properties()->getAt(L"DgnDatabase");
 		else
 		{
+			std::stringstream ss;
+
+			ss << "Failed to export dwg/dxf into a dgn: ";
 			switch (res)
 			{
 			case OdDgnExport::bad_database:
-				throw new repo::lib::RepoException("Bad database");
+				ss << "Bad database";
+				break;
 			case OdDgnExport::bad_file:
-				throw new repo::lib::RepoException("DGN export");
-
+				ss << "DGN export";
+				break;
 			case OdDgnExport::encrypted_file:
 			case OdDgnExport::bad_password:
-				throw new repo::lib::RepoException("The file is encrypted");
+				ss << "The file is encrypted";
+				break;
 
 			case OdDgnExport::fail:
-				throw new repo::lib::RepoException("Unknown import error");
+				ss << "Unknown import error";
+				break;
 			}
+			throw new repo::lib::RepoException(ss.str());
 		}
 
 		pExporter.release();
 		pModule.release();
 
 		if (pDb.isNull()) {
-			throw new repo::lib::RepoException("Could not establish database");
+			throw new repo::lib::RepoException("Could not establish OdDgDatabasePtr from file");
 		}
 
 		const ODCOLORREF* refColors = OdDgColorTable::currentPalette(pDb);
