@@ -7,7 +7,6 @@
 #include <DgDatabase.h>
 #include <RxDynamicModule.h>
 #include <Exports/DgnExport/DgnExport.h>
-#include <ExHostAppServices.h>
 #include "../../../../lib/repo_exception.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
