@@ -91,10 +91,6 @@ IfcGeom::IteratorSettings IFCUtilsGeometry::createSettings()
 	itSettings.set(IfcGeom::IteratorSettings::APPLY_DEFAULT_MATERIALS, repoDefaultIOSApplyDefaultMaterials);
 	itSettings.set(IfcGeom::IteratorSettings::EXCLUDE_SOLIDS_AND_SURFACES, repoDefaultIOSExcludesSolidsAndSurfaces);
 	itSettings.set(IfcGeom::IteratorSettings::NO_NORMALS, repoDefaultIOSNoNormals);
-	itSettings.set(IfcGeom::IteratorSettings::USE_ELEMENT_NAMES, repoDefaultIOSUseElementNames);
-	itSettings.set(IfcGeom::IteratorSettings::USE_ELEMENT_GUIDS, repoDefaultIOSUseElementGuids);
-	itSettings.set(IfcGeom::IteratorSettings::USE_MATERIAL_NAMES, repoDefaultIOSUseMatNames);
-	itSettings.set(IfcGeom::IteratorSettings::CENTER_MODEL, repoDefaultIOSCentreModel);
 	itSettings.set(IfcGeom::IteratorSettings::GENERATE_UVS, repoDefaultIOSGenerateUVs);
 	itSettings.set(IfcGeom::IteratorSettings::APPLY_LAYERSETS, repoDefaultIOSApplyLayerSets);
 	//itSettings.set(IfcGeom::IteratorSettings::INCLUDE_CURVES, true); //Enable to get 2D lines. You will need to set CONVERT_BACK_UNITS to false or the model may not align.
@@ -110,47 +106,35 @@ bool IFCUtilsGeometry::generateGeometry(
 	repoInfo << "Initialising Geometry....." << std::endl;
 
 	auto itSettings = createSettings();
+	IfcParse::IfcFile ifcfile(file);
 
-	IfcGeom::Iterator<double> contextIterator(itSettings, file);
+	IfcGeom::Iterator<double> contextIterator(itSettings, &ifcfile);
 
-	auto filter = repoDefaultIfcOpenShellFilterList;
-	if (repoDefaultIOSUseFilter && filter.size())
-	{
-		std::set<std::string> filterSet(filter.begin(), filter.end());
+	//auto filter = repoDefaultIfcOpenShellFilterList;
+	//if (repoDefaultIOSUseFilter && filter.size())
+	//{
+	//	std::set<std::string> filterSet(filter.begin(), filter.end());
 
-		if (repoDefaultIsExclusion)
-		{
-			contextIterator.excludeEntities(filterSet);
-		}
-		else
-		{
-			contextIterator.includeEntities(filterSet);
-		}
-	}
+	//	if (repoDefaultIsExclusion)
+	//	{
+	//		contextIterator.excludeEntities(filterSet);
+	//	}
+	//	else
+	//	{
+	//		contextIterator.includeEntities(filterSet);
+	//	}
+	//}
 
 	repoTrace << "Initialising Geom iterator";
-	int res = IFCOPENSHELL_GEO_INIT_FAILED;
+
 	try {
-		res = contextIterator.initialize();
+		if (contextIterator.initialize()) {
+			repoTrace << "Geom Iterator initialized";
+		}
 	}
 	catch (const std::exception &e)
 	{
 		repoError << "Failed to initialise Geom iterator: " << e.what();
-	}
-
-	if (IFCOPENSHELL_GEO_INIT_SUCCESS)
-	{
-		repoTrace << "Geom Iterator initialized";
-	}
-	else if (IFCOPENSHELL_GEO_INIT_PART_SUCCESS)
-	{
-		repoWarning << "Geom Iterator initialized with part failure";
-		partialFailure = true;
-	}
-	else
-	{
-		errMsg = "Failed to initialised Geom Iterator";
-		return false;
 	}
 
 	std::vector<std::vector<repo_face_t>> allFaces;
@@ -159,7 +143,7 @@ bool IFCUtilsGeometry::generateGeometry(
 	std::vector<std::vector<double>> allUVs;
 	std::vector<std::string> allIds, allNames, allMaterials;
 
-	retrieveGeometryFromIterator(contextIterator, itSettings.get(IfcGeom::IteratorSettings::USE_MATERIAL_NAMES),
+	retrieveGeometryFromIterator(contextIterator, true,
 		allVertices, allFaces, allNormals, allUVs, allIds, allNames, allMaterials);
 
 	//now we have found all meshes, take the minimum bounding box of the scene as offset

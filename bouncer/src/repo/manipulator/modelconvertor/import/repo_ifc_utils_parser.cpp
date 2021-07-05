@@ -1,41 +1,14 @@
 ﻿/**
-*  Copyright (C) 2015 3D Repo Ltd
-*
-*  This program is free software: you can redistribute it and/or modify
-*  it under the terms of the GNU Affero General Public License as
-*  published by the Free Software Foundation, either version 3 of the
-*  License, or (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU Affero General Public License for more details.
-*
-*  You should have received a copy of the GNU Affero General Public License
-*  along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
-/**
 * Allows geometry creation using ifcopenshell
 */
 
 #include "repo_ifc_utils_parser.h"
+#include "repo_ifc_utils_constants.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../core/model/collection/repo_scene.h"
 #include "../../../lib/repo_utils.h"
 #include <boost/filesystem.hpp>
 #include <algorithm>
-
-const static std::string IFC_ARGUMENT_GLOBAL_ID = "GlobalId";
-const static std::string IFC_ARGUMENT_NAME = "Name";
-const static std::string REPO_LABEL_IFC_TYPE = "IFC Type";
-const static std::string REPO_LABEL_IFC_GUID = "IFC GUID";
-const static std::string IFC_TYPE_SPACE_LABEL = "(IFC Space)";
-const static std::string MONETARY_UNIT = "MONETARYUNIT";
-const static std::string LOCATION_LABEL = "Location";
-const static std::string PROJECT_LABEL = "Project";
-const static std::string BUILDING_LABEL = "Building";
-const static std::string STOREY_LABEL = "Storey";
 
 using namespace repo::manipulator::modelconvertor;
 
@@ -57,7 +30,8 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformations(
 )
 {
 	//The ifc file shoudl always have a IFC Site as the starting tag
-	auto initialElements = ifcfile.entitiesByType(IfcSchema::Type::IfcProject);
+
+	auto initialElements = ifcfile.instances_by_type<IfcSchema::IfcProject>();
 
 	repo::core::model::RepoNodeSet transNodes;
 	if (initialElements->size())
@@ -105,49 +79,55 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	std::vector<IfcUtil::IfcBaseClass *> extraChildren; //children outside of reference
 	std::unordered_map<std::string, std::string> myMetaValues, elementInfo, locationInfo(locationValue);
 
-	auto id = element->entity->id();
+	auto id = element->data().id();
 	std::string guid, name, childrenMetaPrefix;
-	std::string ifcType = element->entity->datatype();
-	std::string ifcTypeUpper = ifcType;
-	std::transform(ifcType.begin(), ifcType.end(), ifcTypeUpper.begin(), ::toupper);
-	createElement = ifcTypeUpper.find("IFCREL") == std::string::npos;
-	bool isIFCSpace = IfcSchema::Type::IfcSpace == element->type();
+	std::string ifcType = element->data().type()->name_lc();
+	createElement = ifcType.find(IFC_TYPE_IFCREL_PREFIX) == std::string::npos;
+	bool isIFCSpace = IFC_TYPE_SPACE == ifcType;
 
 	determineActionsByElementType(ifcfile, element, myMetaValues, locationInfo, createElement, traverseChildren, extraChildren, metaPrefix, childrenMetaPrefix);
 	repo::lib::RepoUUID transID = parentID;
 	repo::core::model::RepoNodeSet transNodeSet;
-	for (int i = 0; i < element->getArgumentCount(); ++i)
+
+	auto eleEntity = element->declaration().as_entity();
+	for (int i = 0; i < element->data().getArgumentCount(); ++i)
 	{
-		if (element->getArgument(i)->isNull()) continue;
-		auto argumentName = element->getArgumentName(i);
+		if (element->data().getArgument(i)->isNull()) continue;
+		auto argumentName = eleEntity->attribute_by_index(i)->name();
 		if (argumentName == IFC_ARGUMENT_GLOBAL_ID)
 		{
 			//It comes with single quotes. remove those
-			guid = element->getArgument(i)->toString().erase(0, 1);
+			guid = element->data().getArgument(i)->toString().erase(0, 1);
 			guid = guid.erase(guid.size() - 1, 1);
 			elementInfo[REPO_LABEL_IFC_GUID] = guid;
 		}
 		else if (argumentName == IFC_ARGUMENT_NAME)
 		{
-			name = element->getArgument(i)->toString();
+			name = element->data().getArgument(i)->toString();
+			auto typeName = element->data().type()->name();
 			if (name != "$")
 			{
 				name = name.erase(0, 1);;
 				name = name.erase(name.size() - 1, 1);
 				if (name.empty())
 				{
-					name = "(" + ifcType + ")";
+					name = "(" + typeName + ")";
 				}
 			}
 			else
 			{
-				name = "(" + ifcType + ")";;
+				name = "(" + typeName + ")";;
 			}
+
+			if (isIFCSpace) {
+				name += " " + IFC_TYPE_SPACE_LABEL;
+			}
+
 			elementInfo[argumentName] = name;
 		}
 		else if (createElement) {
 			std::string value;
-			auto type = element->getArgument(i)->type();
+			auto type = element->data().getArgument(i)->type();
 
 			switch (type) {
 			case IfcUtil::ArgumentType::Argument_ENTITY_INSTANCE:
@@ -158,23 +138,19 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 				break;
 			case IfcUtil::ArgumentType::Argument_STRING:
 			case IfcUtil::ArgumentType::Argument_ENUMERATION:
-				value = element->getArgument(i)->toString();
+				value = element->data().getArgument(i)->toString();
 				//It comes with single quotes or . for enumeration. remove these
-				value = element->getArgument(i)->toString().erase(0, 1);
+				value = element->data().getArgument(i)->toString().erase(0, 1);
 				value = value.erase(value.size() - 1, 1);
 				break;
 			default:
-				value = element->getArgument(i)->toString();
+				value = element->data().getArgument(i)->toString();
 			}
 
 			if (!value.empty()) {
 				elementInfo[argumentName] = value;
 			}
 		}
-	}
-
-	if (isIFCSpace) {
-		name += " " + IFC_TYPE_SPACE_LABEL;
 	}
 
 	if (createElement)
@@ -192,7 +168,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	bool hasTransChildren = false;
 	if (traverseChildren)
 	{
-		auto childrenElements = ifcfile.entitiesByReference(id);
+		auto childrenElements = ifcfile.instances_by_reference(id);
 
 		std::set<int> childrenAncestors(ancestorsID);
 		childrenAncestors.insert(id);
@@ -200,7 +176,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 		{
 			for (auto &element : *childrenElements)
 			{
-				if (ancestorsID.find(element->entity->id()) == ancestorsID.end())
+				if (ancestorsID.find(element->data().id()) == ancestorsID.end())
 				{
 					auto childTransNodes = createTransformationsRecursive(ifcfile, element, meshes, materials, metaSet, myMetaValues, locationInfo, transID, childrenAncestors, childrenMetaPrefix);
 					transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
@@ -210,7 +186,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 		}
 		for (const auto &child : extraChildren)
 		{
-			if (ancestorsID.find(child->entity->id()) == ancestorsID.end())
+			if (ancestorsID.find(child->data().id()) == ancestorsID.end())
 			{
 				try {
 					auto childTransNodes = createTransformationsRecursive(ifcfile, child, meshes, materials, metaSet, myMetaValues, locationInfo, transID, childrenAncestors, childrenMetaPrefix);
@@ -219,7 +195,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 				}
 				catch (IfcParse::IfcException &e)
 				{
-					repoError << "Failed to find child entity " << child->entity->id() << " (" << e.what() << ")" << " element: " << element->entity->id();
+					repoError << "Failed to find child entity " << child->data().id() << " (" << e.what() << ")" << " element: " << element->data().id();
 					missingEntities = true;
 				}
 			}
@@ -229,8 +205,7 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 	if (createElement)
 	{
 		//NOTE: if we ever recursive after creating the element, we'd have to take a copy of the metadata or it'll leak into the children.
-		myMetaValues[REPO_LABEL_IFC_TYPE] = ifcType;
-
+		myMetaValues[REPO_LABEL_IFC_TYPE] = element->data().type()->name();
 		myMetaValues.insert(elementInfo.begin(), elementInfo.end());
 		myMetaValues.insert(locationInfo.begin(), locationInfo.end());
 
@@ -265,12 +240,7 @@ repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
 	const std::vector<double>                                                  &offset
 )
 {
-	IfcParse::IfcFile ifcfile;
-	if (!ifcfile.Init(file))
-	{
-		errMsg = "Failed initialising " + file;
-		return nullptr;
-	}
+	IfcParse::IfcFile ifcfile(file);
 
 	repoInfo << "IFC Parser initialised.";
 
@@ -305,13 +275,13 @@ repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
 }
 
 std::string IFCUtilsParser::getUnits(
-	const IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum &unitType
+	const IfcSchema::IfcDerivedUnitEnum::Value &unitType
 ) {
 	return getUnits(IfcSchema::IfcDerivedUnitEnum::ToString(unitType));
 }
 
 std::string IFCUtilsParser::getUnits(
-	const IfcSchema::IfcUnitEnum::IfcUnitEnum &unitType
+	const IfcSchema::IfcUnitEnum::Value &unitType
 ) {
 	return getUnits(IfcSchema::IfcUnitEnum::ToString(unitType));
 }
@@ -376,67 +346,67 @@ std::string determineUnitsLabel(
 }
 
 std::string determineUnitsLabel(
-	const IfcSchema::IfcSIUnitName::IfcSIUnitName &unitName) {
+	const IfcSchema::IfcSIUnitName::Value &unitName) {
 	switch (unitName) {
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_AMPERE:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_AMPERE:
 		return "A";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_BECQUEREL:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_BECQUEREL:
 		return "Bq";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_CANDELA:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_CANDELA:
 		return "cd";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_COULOMB:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_COULOMB:
 		return "C";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_CUBIC_METRE:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_CUBIC_METRE:
 		return u8"m³";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_DEGREE_CELSIUS:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_DEGREE_CELSIUS:
 		return u8"°C";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_FARAD:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_FARAD:
 		return "F";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_GRAM:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_GRAM:
 		return "g";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_GRAY:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_GRAY:
 		return "gy";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_HENRY:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_HENRY:
 		return "H";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_HERTZ:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_HERTZ:
 		return "Hz";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_JOULE:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_JOULE:
 		return "J";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_KELVIN:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_KELVIN:
 		return "K";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_LUMEN:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_LUMEN:
 		return "lm";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_LUX:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_LUX:
 		return "lx";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_METRE:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_METRE:
 		return "m";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_MOLE:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_MOLE:
 		return "mol";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_NEWTON:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_NEWTON:
 		return "N";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_OHM:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_OHM:
 		return u8"Ω";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_PASCAL:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_PASCAL:
 		return "Pa";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_RADIAN:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_RADIAN:
 		return "rad";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_SECOND:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_SECOND:
 		return "s";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_SIEMENS:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_SIEMENS:
 		return "S";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_SIEVERT:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_SIEVERT:
 		return "Sv";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_SQUARE_METRE:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_SQUARE_METRE:
 		return u8"m²";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_STERADIAN:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_STERADIAN:
 		return "sr";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_TESLA:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_TESLA:
 		return "T";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_VOLT:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_VOLT:
 		return "V";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_WATT:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_WATT:
 		return "W";
-	case IfcSchema::IfcSIUnitName::IfcSIUnitName::IfcSIUnitName_WEBER:
+	case IfcSchema::IfcSIUnitName::Value::IfcSIUnitName_WEBER:
 		return "Wb";
 	}
 
@@ -444,39 +414,39 @@ std::string determineUnitsLabel(
 }
 
 std::string determinePrefix(
-	const IfcSchema::IfcSIPrefix::IfcSIPrefix &prefixType) {
+	const IfcSchema::IfcSIPrefix::Value &prefixType) {
 	switch (prefixType) {
-	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_EXA:
+	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_EXA:
 		return "E";
-	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_PETA:
+	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_PETA:
 		return "P";
-	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_TERA:
+	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_TERA:
 		return "T";
-	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_GIGA:
+	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_GIGA:
 		return "G";
-	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_MEGA:
+	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_MEGA:
 		return "M";
-	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_KILO:
+	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_KILO:
 		return "k";
-	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_HECTO:
+	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_HECTO:
 		return "h";
-	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_DECA:
+	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_DECA:
 		return "da";
-	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_DECI:
+	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_DECI:
 		return "d";
-	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_CENTI:
+	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_CENTI:
 		return "c";
-	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_MILLI:
+	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_MILLI:
 		return "m";
-	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_MICRO:
+	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_MICRO:
 		return u8"µ";
-	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_NANO:
+	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_NANO:
 		return "n";
-	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_PICO:
+	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_PICO:
 		return "p";
-	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_FEMTO:
+	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_FEMTO:
 		return "f";
-	case IfcSchema::IfcSIPrefix::IfcSIPrefix::IfcSIPrefix_ATTO:
+	case IfcSchema::IfcSIPrefix::Value::IfcSIPrefix_ATTO:
 		return "a";
 	}
 
@@ -514,45 +484,42 @@ std::string getSuperScriptAsString(int value) {
 std::pair<std::string, std::string> processUnits(
 	const IfcUtil::IfcBaseClass *element) {
 	std::string unitType, unitsLabel;
-	switch (element->type()) {
-	case IfcSchema::Type::IfcSIUnit:
+	auto typeName = element->data().type()->name_lc();
+
+	if (typeName == IFC_TYPE_SI_UNIT)
 	{
 		auto units = static_cast<const IfcSchema::IfcSIUnit *>(element);
 		auto baseUnits = determineUnitsLabel(units->Name());
 		auto prefix = units->hasPrefix() ? determinePrefix(units->Prefix()) : "";
 		unitType = IfcSchema::IfcUnitEnum::ToString(units->UnitType());
 		unitsLabel = prefix + baseUnits;
-		break;
 	}
-	case IfcSchema::Type::IfcContextDependentUnit:
+	else if (typeName == IFC_TYPE_CONTEXT_DEPENDENT_UNIT)
 	{
 		auto units = static_cast<const IfcSchema::IfcContextDependentUnit *>(element);
 		auto baseUnits = determineUnitsLabel(units->Name());
 		unitType = IfcSchema::IfcUnitEnum::ToString(units->UnitType());
 		unitsLabel = baseUnits;
-		break;
 	}
-	case IfcSchema::Type::IfcConversionBasedUnit:
+	else if (typeName == IFC_TYPE_CONVERSION_BASED_UNIT)
 	{
 		auto units = static_cast<const IfcSchema::IfcConversionBasedUnit *>(element);
 		unitType = IfcSchema::IfcUnitEnum::ToString(units->UnitType());
 		unitsLabel = determineUnitsLabel(units->Name());;
-		break;
 	}
-	case IfcSchema::Type::IfcMonetaryUnit:
+	else if (typeName == IFC_TYPE_MONETARY_UNIT)
 	{
 		auto units = static_cast<const IfcSchema::IfcMonetaryUnit *>(element);
 		unitType = MONETARY_UNIT;
 		unitsLabel = IfcSchema::IfcCurrencyEnum::ToString(units->Currency());
-		break;
 	}
-	case IfcSchema::Type::IfcDerivedUnit:
+	else if (typeName == IFC_TYPE_DERIVED_UNIT)
 	{
 		auto units = static_cast<const IfcSchema::IfcDerivedUnit *>(element);
 		auto elementList = units->Elements();
 		std::stringstream ss;
 		for (const auto & ele : *elementList) {
-			if (ele->Unit()->type() == IfcSchema::Type::IfcSIUnit) {
+			if (ele->Unit()->data().type()->name_lc() == IFC_TYPE_SI_UNIT) {
 				auto subUnit = static_cast<const IfcSchema::IfcSIUnit *>(ele->Unit());
 				auto baseUnits = determineUnitsLabel(subUnit->Name());
 				auto prefix = subUnit->hasPrefix() ? determinePrefix(subUnit->Prefix()) : "";
@@ -560,15 +527,14 @@ std::pair<std::string, std::string> processUnits(
 			}
 			else {
 				//We only know how to deal with IfcSIUnit at the moment - haven't seen an example of something else yet.
-				repoError << "Unrecognised sub unit type: " << ele->Unit()->entity->toString();
+				repoError << "Unrecognised sub unit type: " << ele->Unit()->data().toString();
 			}
 		}
 		unitType = IfcSchema::IfcDerivedUnitEnum::ToString(units->UnitType());
 		unitsLabel = ss.str();
-		break;
 	}
-	default:
-		repoWarning << "Unrecognised units entry: " << element->entity->toString();
+	else {
+		repoWarning << "Unrecognised units entry: " << element->data().toString();
 	}
 
 	return { unitType, unitsLabel };
@@ -597,57 +563,44 @@ void IFCUtilsParser::determineActionsByElementType(
 {
 	childrenMetaPrefix = metaPrefix;
 
-	switch (element->type())
-	{
-	case IfcSchema::Type::IfcRelAssignsToGroup: //This is group!
-	case IfcSchema::Type::IfcRelSpaceBoundary: //This is group?
-	case IfcSchema::Type::IfcRelConnectsPathElements:
-	case IfcSchema::Type::IfcAnnotation:
-	case IfcSchema::Type::IfcComplexProperty: //We don't support this atm.
+	auto typeName = element->data().type()->name_lc();
+
+	if (typesToIgnore.find(typeName) != typesToIgnore.end()) {
 		createElement = false;
 		traverseChildren = false;
-		break;
-	case IfcSchema::Type::IfcRelDefinesByType:
-	{
+	}
+	else if (typeName == IFC_TYPE_REL_DEFINES_BY_TYPE) {
 		auto def = static_cast<const IfcSchema::IfcRelDefinesByType *>(element);
 		auto typeObj = static_cast<const IfcSchema::IfcTypeObject *>(def->RelatingType());
 		if (typeObj->hasHasPropertySets()) {
 			auto propSets = typeObj->HasPropertySets();
 			extraChildren.insert(extraChildren.end(), propSets->begin(), propSets->end());
 		}
-		break;
 	}
-	case IfcSchema::Type::IfcProject:
-	{
+	else if (typeName == IFC_TYPE_PROJECT) {
 		auto project = static_cast<const IfcSchema::IfcProject *>(element);
 		setProjectUnits(project->UnitsInContext());
 
-		locationData[constructMetadataLabel(PROJECT_LABEL, LOCATION_LABEL)] = project->hasName() ? project->Name() : "(" + IfcSchema::Type::ToString(element->type()) + ")";
+		locationData[constructMetadataLabel(PROJECT_LABEL, LOCATION_LABEL)] = project->hasName() ? project->Name() : "(" + element->data().type()->name() + ")";
 
 		createElement = true;
 		traverseChildren = true;
-		break;
 	}
-	case IfcSchema::Type::IfcBuilding:
-	{
+	else if (typeName == IFC_TYPE_BUILDING) {
 		auto building = static_cast<const IfcSchema::IfcBuilding *>(element);
-		locationData[constructMetadataLabel(BUILDING_LABEL, LOCATION_LABEL)] = building->hasName() ? building->Name() : "(" + IfcSchema::Type::ToString(element->type()) + ")";
+		locationData[constructMetadataLabel(BUILDING_LABEL, LOCATION_LABEL)] = building->hasName() ? building->Name() : "(" + element->data().type()->name() + ")";
 
 		createElement = true;
 		traverseChildren = true;
-		break;
 	}
-	case IfcSchema::Type::IfcBuildingStorey:
-	{
+	else if (typeName == IFC_TYPE_BUILDING_STOREY) {
 		auto storey = static_cast<const IfcSchema::IfcBuildingStorey *>(element);
-		locationData[constructMetadataLabel(STOREY_LABEL, LOCATION_LABEL)] = storey->hasName() ? storey->Name() : "(" + IfcSchema::Type::ToString(element->type()) + ")";
+		locationData[constructMetadataLabel(STOREY_LABEL, LOCATION_LABEL)] = storey->hasName() ? storey->Name() : "(" + element->data().type()->name() + ")";
 
 		createElement = true;
 		traverseChildren = true;
-		break;
 	}
-	case IfcSchema::Type::IfcPropertySingleValue:
-	{
+	else if (typeName == IFC_TYPE_PROPERTY_SINGLE_VALUE) {
 		auto propVal = static_cast<const IfcSchema::IfcPropertySingleValue *>(element);
 		if (propVal)
 		{
@@ -667,10 +620,8 @@ void IFCUtilsParser::determineActionsByElementType(
 		}
 		createElement = false;
 		traverseChildren = false;
-		break;
 	}
-	case IfcSchema::Type::IfcRelDefinesByProperties:
-	{
+	else if (typeName == IFC_TYPE_REL_DEFINES_BY_PROPERTIES) {
 		auto defByProp = static_cast<const IfcSchema::IfcRelDefinesByProperties *>(element);
 		if (defByProp)
 		{
@@ -678,29 +629,23 @@ void IFCUtilsParser::determineActionsByElementType(
 		}
 
 		createElement = false;
-		break;
 	}
-	case IfcSchema::Type::IfcPropertySet:
-	{
+	else if (typeName == IFC_TYPE_PROPERTY_SET) {
 		auto propSet = static_cast<const IfcSchema::IfcPropertySet *>(element);
 		auto propDefs = propSet->HasProperties();
 
 		extraChildren.insert(extraChildren.end(), propDefs->begin(), propDefs->end());
 		createElement = false;
 		childrenMetaPrefix = constructMetadataLabel(propSet->Name(), metaPrefix);
-		break;
 	}
-	case IfcSchema::Type::IfcElementQuantity:
-	{
+	else if (typeName == IFC_TYPE_ELEMENT_QUANTITY) {
 		auto eleQuan = static_cast<const IfcSchema::IfcElementQuantity *>(element);
 		auto quantities = eleQuan->Quantities();
 		extraChildren.insert(extraChildren.end(), quantities->begin(), quantities->end());
 		childrenMetaPrefix = constructMetadataLabel(eleQuan->Name(), metaPrefix);
 		createElement = false;
-		break;
 	}
-	case IfcSchema::Type::IfcQuantityLength:
-	{
+	else if (typeName == IFC_TYPE_QUANTITY_LENGTH) {
 		auto quantity = static_cast<const IfcSchema::IfcQuantityLength *>(element);
 		if (quantity)
 		{
@@ -711,10 +656,8 @@ void IFCUtilsParser::determineActionsByElementType(
 		}
 		createElement = false;
 		traverseChildren = false;
-		break;
 	}
-	case IfcSchema::Type::IfcQuantityArea:
-	{
+	else if (typeName == IFC_TYPE_QUANTITY_AREA) {
 		auto quantity = static_cast<const IfcSchema::IfcQuantityArea *>(element);
 		if (quantity)
 		{
@@ -724,10 +667,8 @@ void IFCUtilsParser::determineActionsByElementType(
 		}
 		createElement = false;
 		traverseChildren = false;
-		break;
 	}
-	case IfcSchema::Type::IfcQuantityCount:
-	{
+	else if (typeName == IFC_TYPE_QUANTITY_COUNT) {
 		auto quantity = static_cast<const IfcSchema::IfcQuantityCount *>(element);
 		if (quantity)
 		{
@@ -736,10 +677,8 @@ void IFCUtilsParser::determineActionsByElementType(
 		}
 		createElement = false;
 		traverseChildren = false;
-		break;
 	}
-	case IfcSchema::Type::IfcQuantityTime:
-	{
+	else if (typeName == IFC_TYPE_QUANTITY_TIME) {
 		auto quantity = static_cast<const IfcSchema::IfcQuantityTime *>(element);
 		if (quantity)
 		{
@@ -748,10 +687,8 @@ void IFCUtilsParser::determineActionsByElementType(
 		}
 		createElement = false;
 		traverseChildren = false;
-		break;
 	}
-	case IfcSchema::Type::IfcQuantityVolume:
-	{
+	else if (typeName == IFC_TYPE_QUANTITY_VOLUME) {
 		auto quantity = static_cast<const IfcSchema::IfcQuantityVolume *>(element);
 		if (quantity)
 		{
@@ -761,10 +698,8 @@ void IFCUtilsParser::determineActionsByElementType(
 		}
 		createElement = false;
 		traverseChildren = false;
-		break;
 	}
-	case IfcSchema::Type::IfcQuantityWeight:
-	{
+	else if (typeName == IFC_TYPE_QUANTITY_WEIGHT) {
 		auto quantity = static_cast<const IfcSchema::IfcQuantityWeight *>(element);
 		if (quantity)
 		{
@@ -774,51 +709,18 @@ void IFCUtilsParser::determineActionsByElementType(
 		}
 		createElement = false;
 		traverseChildren = false;
-		break;
 	}
-	case IfcSchema::Type::IfcRelAssociatesClassification:
-	{
+	else if (typeName == IFC_TYPE_REL_ASSOCIATES_CLASSIFICATION) {
 		auto relCS = static_cast<const IfcSchema::IfcRelAssociatesClassification *>(element);
 		createElement = false;
 		traverseChildren = false;
 		generateClassificationInformation(relCS, metaValues);
 	}
-	case IfcSchema::Type::IfcRelContainedInSpatialStructure:
-	{
+	else if (typeName == IFC_TYPE_REL_CONTAINED_IN_SPATIAL_STRUCTURE) {
 		auto relCS = static_cast<const IfcSchema::IfcRelContainedInSpatialStructure *>(element);
-		createElement = false;
-		if (relCS)
-		{
-			try {
-				auto relatedObjects = relCS->RelatedElements();
-				if (relatedObjects)
-				{
-					extraChildren.insert(extraChildren.end(), relatedObjects->begin(), relatedObjects->end());
-				}
-				else
-				{
-					repoError << "Nullptr to relatedObjects!!!";
-				}
-			}
-			catch (const IfcParse::IfcException &e)
-			{
-				repoError << "Failed to retrieve related elements from " << relCS->entity->id() << ": " << e.what();
-				missingEntities = true;
-			}
-		}
-		else
-		{
-			repoError << "Failed to convert a IfcRelContainedInSpatialStructure element into a IfcRelContainedInSpatialStructureclass.";
-		}
-		break;
-	}
-	case IfcSchema::Type::IfcRelAggregates:
-	{
-		auto relAgg = static_cast<const IfcSchema::IfcRelAggregates *>(element);
-		createElement = false;
-		if (relAgg)
-		{
-			auto relatedObjects = relAgg->RelatedObjects();
+
+		try {
+			auto relatedObjects = relCS->RelatedElements();
 			if (relatedObjects)
 			{
 				extraChildren.insert(extraChildren.end(), relatedObjects->begin(), relatedObjects->end());
@@ -828,12 +730,24 @@ void IFCUtilsParser::determineActionsByElementType(
 				repoError << "Nullptr to relatedObjects!!!";
 			}
 		}
+		catch (const IfcParse::IfcException &e)
+		{
+			repoError << "Failed to retrieve related elements from " << relCS->data().id() << ": " << e.what();
+			missingEntities = true;
+		}
+		createElement = false;
+	}
+	else if (typeName == IFC_TYPE_REL_AGGREGATES) {
+		auto relAgg = static_cast<const IfcSchema::IfcRelAggregates *>(element);
+		auto relatedObjects = relAgg->RelatedObjects();
+		if (relatedObjects)
+		{
+			extraChildren.insert(extraChildren.end(), relatedObjects->begin(), relatedObjects->end());
+		}
 		else
 		{
-			repoError << "Failed to convert a Rel Aggregate element into a Rel Aggregate class.";
+			repoError << "Nullptr to relatedObjects!!!";
 		}
-		break;
-	}
 	}
 }
 
@@ -845,378 +759,494 @@ std::string IFCUtilsParser::getValueAsString(
 	//FIXME: should change this on IFCOpenShell to be an inheritance with a toString() function - but this is easier said than done due ot crazy inheritance (or lack of ) in the code
 	if (ifcValue)
 	{
-		switch (ifcValue->type())
-		{
-		case IfcSchema::Type::IfcAbsorbedDoseMeasure:
-			value = static_cast<const IfcSchema::IfcAbsorbedDoseMeasure *>(ifcValue)->valueAsString();
+		auto typeName = ifcValue->data().type()->name_lc();
+		if (typeName == IFC_TYPE_ABSORBED_DOSE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcAbsorbedDoseMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_ABSORBEDDOSEUNIT);
-			break;
-		case IfcSchema::Type::IfcAccelerationMeasure:
-			value = static_cast<const IfcSchema::IfcAccelerationMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_ACCELERATION_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcAccelerationMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_ACCELERATIONUNIT);
-			break;
-		case IfcSchema::Type::IfcAmountOfSubstanceMeasure:
-			value = static_cast<const IfcSchema::IfcAmountOfSubstanceMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_AMOUNT_OF_SUBSTANCE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcAmountOfSubstanceMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_AMOUNTOFSUBSTANCEUNIT);
-			break;
-		case IfcSchema::Type::IfcAngularVelocityMeasure:
-			value = static_cast<const IfcSchema::IfcAngularVelocityMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_ANGULAR_VELOCITY_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcAngularVelocityMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_ANGULARVELOCITYUNIT);
-			break;
-		case IfcSchema::Type::IfcAreaMeasure:
-			value = static_cast<const IfcSchema::IfcAreaMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_AREA_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcAreaMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_AREAUNIT);
-			break;
-		case IfcSchema::Type::IfcBoolean:
-			value = static_cast<const IfcSchema::IfcBoolean *>(ifcValue)->valueAsString();
-			break;
-		case IfcSchema::Type::IfcComplexNumber:
-			value = static_cast<const IfcSchema::IfcComplexNumber *>(ifcValue)->valueAsString();
-			break;
-		case IfcSchema::Type::IfcCompoundPlaneAngleMeasure:
-			value = static_cast<const IfcSchema::IfcCompoundPlaneAngleMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_BOOLEAN) {
+			auto element = static_cast<const IfcSchema::IfcBoolean *>(ifcValue);
+			value = element ? std::to_string((bool)*element) : value;
+		}
+		else if (typeName == IFC_TYPE_COMPLEX_NUMBER) {
+			auto element = static_cast<const IfcSchema::IfcComplexNumber *>(ifcValue);
+			if (element) {
+				std::vector<double> num = *element;
+				value = std::to_string(num[0]) + "+" + std::to_string(num[1]) + "i";
+			}
+		}
+		else if (typeName == IFC_TYPE_COMPOUND_PLANE_ANGLE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcCompoundPlaneAngleMeasure *>(ifcValue);
+			if (element) {
+				std::vector<int> num = *element;
+				std::stringstream ss;
+				ss >> std::string("[");
+				bool first = true;
+				for (const auto &i : num) {
+					if (!first) {
+						ss << ", ";
+					}
+					ss << i;
+					first = false;
+				}
+				ss << "]";
+				value = ss.str();
+			}
 			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_PLANEANGLEUNIT);
-			break;
-		case IfcSchema::Type::IfcContextDependentMeasure:
-			value = static_cast<const IfcSchema::IfcContextDependentMeasure *>(ifcValue)->valueAsString();
-			break;
-		case IfcSchema::Type::IfcCountMeasure:
-			value = static_cast<const IfcSchema::IfcCountMeasure *>(ifcValue)->valueAsString();
-			break;
-		case IfcSchema::Type::IfcCurvatureMeasure:
-			value = static_cast<const IfcSchema::IfcCurvatureMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_CONTEXT_DEPENDENT_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcContextDependentMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+		}
+		else if (typeName == IFC_TYPE_COUNT_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcCountMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+		}
+		else if (typeName == IFC_TYPE_CURVATURE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcCurvatureMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_CURVATUREUNIT);
-			break;
-		case IfcSchema::Type::IfcDescriptiveMeasure:
-			value = static_cast<const IfcSchema::IfcDescriptiveMeasure *>(ifcValue)->valueAsString();
-			break;
-		case IfcSchema::Type::IfcDoseEquivalentMeasure:
-			value = static_cast<const IfcSchema::IfcDoseEquivalentMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_DESCRIPTIVE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcDescriptiveMeasure *>(ifcValue);
+			value = element ? *element : value;
+		}
+		else if (typeName == IFC_TYPE_DOSE_EQUIVALENT_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcDoseEquivalentMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_DOSEEQUIVALENTUNIT);
-			break;
-		case IfcSchema::Type::IfcDynamicViscosityMeasure:
-			value = static_cast<const IfcSchema::IfcDynamicViscosityMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_DYNAMIC_VISCOSITY_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcDynamicViscosityMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_DYNAMICVISCOSITYUNIT);
-			break;
-		case IfcSchema::Type::IfcElectricCapacitanceMeasure:
-			value = static_cast<const IfcSchema::IfcElectricCapacitanceMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_ELECTRIC_CAPACITANCE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcElectricCapacitanceMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_ELECTRICCAPACITANCEUNIT);
-			break;
-		case IfcSchema::Type::IfcElectricChargeMeasure:
-			value = static_cast<const IfcSchema::IfcElectricChargeMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_ELECTRIC_CHARGE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcElectricChargeMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_ELECTRICCHARGEUNIT);
-			break;
-		case IfcSchema::Type::IfcElectricConductanceMeasure:
-			value = static_cast<const IfcSchema::IfcElectricConductanceMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_ELECTRIC_CONDUCTANCE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcElectricConductanceMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_ELECTRICCONDUCTANCEUNIT);
-			break;
-		case IfcSchema::Type::IfcElectricCurrentMeasure:
-			value = static_cast<const IfcSchema::IfcElectricCurrentMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_ELECTRIC_CURRENT_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcElectricCurrentMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_ELECTRICCURRENTUNIT);
-			break;
-		case IfcSchema::Type::IfcElectricResistanceMeasure:
-			value = static_cast<const IfcSchema::IfcElectricResistanceMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_ELECTRIC_RESISTANCE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcElectricResistanceMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_ELECTRICRESISTANCEUNIT);
-			break;
-		case IfcSchema::Type::IfcElectricVoltageMeasure:
-			value = static_cast<const IfcSchema::IfcElectricVoltageMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_ELECTRIC_VOLTAGE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcElectricVoltageMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_ELECTRICVOLTAGEUNIT);
-			break;
-		case IfcSchema::Type::IfcEnergyMeasure:
-			value = static_cast<const IfcSchema::IfcEnergyMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_ENERGY_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcEnergyMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_ENERGYUNIT);
-			break;
-		case IfcSchema::Type::IfcForceMeasure:
-			value = static_cast<const IfcSchema::IfcForceMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_FORCE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcForceMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_FORCEUNIT);
-			break;
-		case IfcSchema::Type::IfcFrequencyMeasure:
-			value = static_cast<const IfcSchema::IfcFrequencyMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_FREQUENCY_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcFrequencyMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_FREQUENCYUNIT);
-			break;
-		case IfcSchema::Type::IfcHeatFluxDensityMeasure:
-			value = static_cast<const IfcSchema::IfcHeatFluxDensityMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_HEAT_FLUX_DENSITY_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcHeatFluxDensityMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_HEATFLUXDENSITYUNIT);
-			break;
-		case IfcSchema::Type::IfcHeatingValueMeasure:
-			value = static_cast<const IfcSchema::IfcHeatingValueMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_HEATING_VALUE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcHeatingValueMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_HEATINGVALUEUNIT);
-			break;
-		case IfcSchema::Type::IfcIdentifier:
-			value = static_cast<const IfcSchema::IfcIdentifier *>(ifcValue)->valueAsString();
-			break;
-		case IfcSchema::Type::IfcIlluminanceMeasure:
-			value = static_cast<const IfcSchema::IfcIlluminanceMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_IDENTIFIER) {
+			auto element = static_cast<const IfcSchema::IfcIdentifier *>(ifcValue);
+			if (element) {
+				value = *element;
+			}
+		}
+		else if (typeName == IFC_TYPE_ILLUMINANCE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcIlluminanceMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_ILLUMINANCEUNIT);
-			break;
-		case IfcSchema::Type::IfcInductanceMeasure:
-			value = static_cast<const IfcSchema::IfcInductanceMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_INDUCTANCE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcInductanceMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_INDUCTANCEUNIT);
-			break;
-		case IfcSchema::Type::IfcInteger:
-			value = static_cast<const IfcSchema::IfcInteger *>(ifcValue)->valueAsString();
-			break;
-		case IfcSchema::Type::IfcIntegerCountRateMeasure:
-			value = static_cast<const IfcSchema::IfcIntegerCountRateMeasure *>(ifcValue)->valueAsString();
-			break;
-		case IfcSchema::Type::IfcIonConcentrationMeasure:
-			value = static_cast<const IfcSchema::IfcIonConcentrationMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_IONCONCENTRATIONUNIT);
-			break;
-		case IfcSchema::Type::IfcIsothermalMoistureCapacityMeasure:
-			value = static_cast<const IfcSchema::IfcIsothermalMoistureCapacityMeasure *>(ifcValue)->valueAsString();
+		}
+		else if (typeName == IFC_TYPE_INTEGER) {
+			auto element = static_cast<const IfcSchema::IfcInteger *>(ifcValue);
+			value = element ? std::to_string((int)*element) : value;
+		}
+		else if (typeName == IFC_TYPE_INTEGER_COUNT_RATE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcIntegerCountRateMeasure *>(ifcValue);
+			value = element ? std::to_string((int)*element) : value;
+		}
+		else if (typeName == IFC_TYPE_ION_CONCENTRATION_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcIonConcentrationMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+		}
+		else if (typeName == IFC_TYPE_ISOTHERMAL_MOISTURE_CAPACITY_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcIsothermalMoistureCapacityMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_ISOTHERMALMOISTURECAPACITYUNIT);
-			break;
-		case IfcSchema::Type::IfcKinematicViscosityMeasure:
-			value = static_cast<const IfcSchema::IfcKinematicViscosityMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_KINEMATICVISCOSITYUNIT);
-			break;
-		case IfcSchema::Type::IfcLabel:
-			value = static_cast<const IfcSchema::IfcLabel *>(ifcValue)->valueAsString();
-			break;
-		case IfcSchema::Type::IfcLengthMeasure:
-			value = static_cast<const IfcSchema::IfcLengthMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_LENGTHUNIT);
-			break;
-		case IfcSchema::Type::IfcLinearForceMeasure:
-			value = static_cast<const IfcSchema::IfcLinearForceMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_LINEARFORCEUNIT);
-			break;
-		case IfcSchema::Type::IfcLinearMomentMeasure:
-			value = static_cast<const IfcSchema::IfcLinearMomentMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_LINEARMOMENTUNIT);
-			break;
-		case IfcSchema::Type::IfcLinearStiffnessMeasure:
-			value = static_cast<const IfcSchema::IfcLinearStiffnessMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_LINEARSTIFFNESSUNIT);
-			break;
-		case IfcSchema::Type::IfcLinearVelocityMeasure:
-			value = static_cast<const IfcSchema::IfcLinearVelocityMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_LINEARVELOCITYUNIT);
-			break;
-		case IfcSchema::Type::IfcLogical:
-			value = static_cast<const IfcSchema::IfcLogical *>(ifcValue)->valueAsString();
-			break;
-		case IfcSchema::Type::IfcLuminousFluxMeasure:
-			value = static_cast<const IfcSchema::IfcLuminousFluxMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_LUMINOUSFLUXUNIT);
-			break;
-		case IfcSchema::Type::IfcLuminousIntensityDistributionMeasure:
-			value = static_cast<const IfcSchema::IfcLuminousIntensityDistributionMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_LUMINOUSINTENSITYDISTRIBUTIONUNIT);
-			break;
-		case IfcSchema::Type::IfcLuminousIntensityMeasure:
-			value = static_cast<const IfcSchema::IfcLuminousIntensityMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_LUMINOUSINTENSITYUNIT);
-			break;
-		case IfcSchema::Type::IfcMagneticFluxDensityMeasure:
-			value = static_cast<const IfcSchema::IfcMagneticFluxDensityMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_MAGNETICFLUXDENSITYUNIT);
-			break;
-		case IfcSchema::Type::IfcMagneticFluxMeasure:
-			value = static_cast<const IfcSchema::IfcMagneticFluxMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_MAGNETICFLUXUNIT);
-			break;
-		case IfcSchema::Type::IfcMassDensityMeasure:
-			value = static_cast<const IfcSchema::IfcMassDensityMeasure *>(ifcValue)->valueAsString();
-			break;
-		case IfcSchema::Type::IfcMassFlowRateMeasure:
-			value = static_cast<const IfcSchema::IfcMassFlowRateMeasure *>(ifcValue)->valueAsString();
-			break;
-		case IfcSchema::Type::IfcMassMeasure:
-			value = static_cast<const IfcSchema::IfcMassMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_MASSUNIT);
-			break;
-		case IfcSchema::Type::IfcMassPerLengthMeasure:
-			value = static_cast<const IfcSchema::IfcMassPerLengthMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_MASSPERLENGTHUNIT);
-			break;
-		case IfcSchema::Type::IfcModulusOfElasticityMeasure:
-			value = static_cast<const IfcSchema::IfcModulusOfElasticityMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_MODULUSOFELASTICITYUNIT);
-			break;
-		case IfcSchema::Type::IfcModulusOfLinearSubgradeReactionMeasure:
-			value = static_cast<const IfcSchema::IfcModulusOfLinearSubgradeReactionMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_MODULUSOFLINEARSUBGRADEREACTIONUNIT);
-			break;
-		case IfcSchema::Type::IfcModulusOfRotationalSubgradeReactionMeasure:
-			value = static_cast<const IfcSchema::IfcModulusOfRotationalSubgradeReactionMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_MODULUSOFROTATIONALSUBGRADEREACTIONUNIT);
-			break;
-		case IfcSchema::Type::IfcModulusOfSubgradeReactionMeasure:
-			value = static_cast<const IfcSchema::IfcModulusOfSubgradeReactionMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_MODULUSOFSUBGRADEREACTIONUNIT);
-			break;
-		case IfcSchema::Type::IfcMoistureDiffusivityMeasure:
-			value = static_cast<const IfcSchema::IfcMoistureDiffusivityMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_MOISTUREDIFFUSIVITYUNIT);
-			break;
-		case IfcSchema::Type::IfcMolecularWeightMeasure:
-			value = static_cast<const IfcSchema::IfcMolecularWeightMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_MOLECULARWEIGHTUNIT);
-			break;
-		case IfcSchema::Type::IfcMomentOfInertiaMeasure:
-			value = static_cast<const IfcSchema::IfcMomentOfInertiaMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_MOMENTOFINERTIAUNIT);
-			break;
-		case IfcSchema::Type::IfcMonetaryMeasure:
-			value = static_cast<const IfcSchema::IfcMonetaryMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(MONETARY_UNIT);
-			break;
-		case IfcSchema::Type::IfcNumericMeasure:
-			value = static_cast<const IfcSchema::IfcNumericMeasure *>(ifcValue)->valueAsString();
-			break;
-		case IfcSchema::Type::IfcPHMeasure:
-			value = static_cast<const IfcSchema::IfcPHMeasure *>(ifcValue)->valueAsString();
-			break;
-		case IfcSchema::Type::IfcParameterValue:
-			value = static_cast<const IfcSchema::IfcParameterValue *>(ifcValue)->valueAsString();
-			break;
-		case IfcSchema::Type::IfcPlanarForceMeasure:
-			value = static_cast<const IfcSchema::IfcPlanarForceMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_PLANARFORCEUNIT);
-			break;
-		case IfcSchema::Type::IfcPlaneAngleMeasure:
-			value = static_cast<const IfcSchema::IfcPlaneAngleMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_PLANEANGLEUNIT);
-			break;
-		case IfcSchema::Type::IfcPositiveLengthMeasure:
-			value = static_cast<const IfcSchema::IfcPositiveLengthMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_LENGTHUNIT);
-			break;
-		case IfcSchema::Type::IfcPowerMeasure:
-			value = static_cast<const IfcSchema::IfcPowerMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_POWERUNIT);
-			break;
-		case IfcSchema::Type::IfcPressureMeasure:
-			value = static_cast<const IfcSchema::IfcPressureMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_PRESSUREUNIT);
-			break;
-		case IfcSchema::Type::IfcRadioActivityMeasure:
-			value = static_cast<const IfcSchema::IfcRadioActivityMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_RADIOACTIVITYUNIT);
-			break;
-		case IfcSchema::Type::IfcRatioMeasure:
-			value = static_cast<const IfcSchema::IfcRatioMeasure *>(ifcValue)->valueAsString();
-			break;
-		case IfcSchema::Type::IfcReal:
-			value = static_cast<const IfcSchema::IfcReal *>(ifcValue)->valueAsString();
-			break;
-		case IfcSchema::Type::IfcRotationalFrequencyMeasure:
-			value = static_cast<const IfcSchema::IfcRotationalFrequencyMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_ROTATIONALFREQUENCYUNIT);
-			break;
-		case IfcSchema::Type::IfcRotationalMassMeasure:
-			value = static_cast<const IfcSchema::IfcRotationalMassMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_ROTATIONALMASSUNIT);
-			break;
-		case IfcSchema::Type::IfcRotationalStiffnessMeasure:
-			value = static_cast<const IfcSchema::IfcRotationalStiffnessMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_ROTATIONALSTIFFNESSUNIT);
-			break;
-		case IfcSchema::Type::IfcSectionModulusMeasure:
-			value = static_cast<const IfcSchema::IfcSectionModulusMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_SECTIONMODULUSUNIT);
-			break;
-		case IfcSchema::Type::IfcSectionalAreaIntegralMeasure:
-			value = static_cast<const IfcSchema::IfcSectionalAreaIntegralMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_SECTIONAREAINTEGRALUNIT);
-			break;
-		case IfcSchema::Type::IfcShearModulusMeasure:
-			value = static_cast<const IfcSchema::IfcShearModulusMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_SHEARMODULUSUNIT);
-			break;
-		case IfcSchema::Type::IfcSolidAngleMeasure:
-			value = static_cast<const IfcSchema::IfcSolidAngleMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_SOLIDANGLEUNIT);
-			break;
-		case IfcSchema::Type::IfcSoundPowerMeasure:
-			value = static_cast<const IfcSchema::IfcSoundPowerMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_SOUNDPOWERUNIT);
-			break;
-		case IfcSchema::Type::IfcSoundPressureMeasure:
-			value = static_cast<const IfcSchema::IfcSoundPressureMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_SOUNDPRESSUREUNIT);
-			break;
-		case IfcSchema::Type::IfcSpecificHeatCapacityMeasure:
-			value = static_cast<const IfcSchema::IfcSpecificHeatCapacityMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_SPECIFICHEATCAPACITYUNIT);
-			break;
-		case IfcSchema::Type::IfcTemperatureGradientMeasure:
-			value = static_cast<const IfcSchema::IfcTemperatureGradientMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_TEMPERATUREGRADIENTUNIT);
-			break;
-		case IfcSchema::Type::IfcText:
-			value = static_cast<const IfcSchema::IfcText *>(ifcValue)->valueAsString();
-			break;
-		case IfcSchema::Type::IfcThermalAdmittanceMeasure:
-			value = static_cast<const IfcSchema::IfcThermalAdmittanceMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_THERMALADMITTANCEUNIT);
-			break;
-		case IfcSchema::Type::IfcThermalConductivityMeasure:
-			value = static_cast<const IfcSchema::IfcThermalConductivityMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_THERMALCONDUCTANCEUNIT);
-			break;
-		case IfcSchema::Type::IfcThermalExpansionCoefficientMeasure:
-			value = static_cast<const IfcSchema::IfcThermalExpansionCoefficientMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_THERMALEXPANSIONCOEFFICIENTUNIT);
-			break;
-		case IfcSchema::Type::IfcThermalResistanceMeasure:
-			value = static_cast<const IfcSchema::IfcThermalResistanceMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_THERMALRESISTANCEUNIT);
-			break;
-		case IfcSchema::Type::IfcThermalTransmittanceMeasure:
-			value = static_cast<const IfcSchema::IfcThermalTransmittanceMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_THERMALTRANSMITTANCEUNIT);
-			break;
-		case IfcSchema::Type::IfcThermodynamicTemperatureMeasure:
-			value = static_cast<const IfcSchema::IfcThermodynamicTemperatureMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_THERMODYNAMICTEMPERATUREUNIT);
-			break;
-		case IfcSchema::Type::IfcTimeMeasure:
-			value = static_cast<const IfcSchema::IfcTimeMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_TIMEUNIT);
-			break;
-		case IfcSchema::Type::IfcTimeStamp:
-			value = static_cast<const IfcSchema::IfcTimeStamp *>(ifcValue)->valueAsString();
-			break;
-		case IfcSchema::Type::IfcTorqueMeasure:
-			value = static_cast<const IfcSchema::IfcTorqueMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_TORQUEUNIT);
-			break;
-		case IfcSchema::Type::IfcVaporPermeabilityMeasure:
-			value = static_cast<const IfcSchema::IfcVaporPermeabilityMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_VAPORPERMEABILITYUNIT);
-			break;
-		case IfcSchema::Type::IfcVolumeMeasure:
-			value = static_cast<const IfcSchema::IfcVolumeMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_VOLUMEUNIT);
-			break;
-		case IfcSchema::Type::IfcVolumetricFlowRateMeasure:
-			value = static_cast<const IfcSchema::IfcVolumetricFlowRateMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_VOLUMETRICFLOWRATEUNIT);
-			break;
-		case IfcSchema::Type::IfcWarpingConstantMeasure:
-			value = static_cast<const IfcSchema::IfcWarpingConstantMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_WARPINGCONSTANTUNIT);
-			break;
-		case IfcSchema::Type::IfcWarpingMomentMeasure:
-			value = static_cast<const IfcSchema::IfcWarpingMomentMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_WARPINGMOMENTUNIT);
-			break;
-		case IfcSchema::Type::IfcPositivePlaneAngleMeasure:
-			value = static_cast<const IfcSchema::IfcPositivePlaneAngleMeasure *>(ifcValue)->valueAsString();
-			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_PLANEANGLEUNIT);
-			break;
-		case IfcSchema::Type::IfcNormalisedRatioMeasure:
-			value = static_cast<const IfcSchema::IfcNormalisedRatioMeasure *>(ifcValue)->valueAsString();
-			break;
-		case IfcSchema::Type::IfcPositiveRatioMeasure:
-			value = static_cast<const IfcSchema::IfcPositiveRatioMeasure *>(ifcValue)->valueAsString();
-			break;
+		}
 
-		default:
-			repoWarning << "Unrecognised IFC Property value type : " << ifcValue->type();
+		else if (typeName == IFC_TYPE_ISOTHERMAL_MOISTURE_CAPACITY_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcIsothermalMoistureCapacityMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_ISOTHERMALMOISTURECAPACITYUNIT);
+		}
+		else if (typeName == IFC_TYPE_KINEMATIC_VISCOSITY_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcKinematicViscosityMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_KINEMATICVISCOSITYUNIT);
+		}
+		else if (typeName == IFC_TYPE_LABEL) {
+			auto element = static_cast<const IfcSchema::IfcLabel *>(ifcValue);
+			value = element ? *element : value;
+		}
+		else if (typeName == IFC_TYPE_LENGTH_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcLengthMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_LENGTHUNIT);
+		}
+		else if (typeName == IFC_TYPE_LINEAR_FORCE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcLinearForceMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_LINEARFORCEUNIT);
+		}
+		else if (typeName == IFC_TYPE_LINEAR_MOMENT_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcLinearMomentMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_LINEARMOMENTUNIT);
+		}
+		else if (typeName == IFC_TYPE_LINEAR_STIFFNESS_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcLinearStiffnessMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_LINEARSTIFFNESSUNIT);
+		}
+		else if (typeName == IFC_TYPE_LINEAR_VELOCITY_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcLinearVelocityMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_LINEARVELOCITYUNIT);
+		}
+		else if (typeName == IFC_TYPE_LOGICAL) {
+			auto element = static_cast<const IfcSchema::IfcLogical *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+		}
+		else if (typeName == IFC_TYPE_LUMINOUS_FLUX_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcLuminousFluxMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_LUMINOUSFLUXUNIT);
+		}
+		else if (typeName == IFC_TYPE_LUMINOUS_INTENSITY_DISTRIBUTION_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcLuminousIntensityDistributionMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_LUMINOUSINTENSITYDISTRIBUTIONUNIT);
+		}
+		else if (typeName == IFC_TYPE_LUMINOUS_INTENSITY_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcLuminousIntensityMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_LUMINOUSINTENSITYUNIT);
+		}
+		else if (typeName == IFC_TYPE_MAGNETIC_FLUX_DENSITY_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcMagneticFluxDensityMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_MAGNETICFLUXDENSITYUNIT);
+		}
+		else if (typeName == IFC_TYPE_MAGNETIC_FLUX_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcMagneticFluxMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_MAGNETICFLUXUNIT);
+		}
+		else if (typeName == IFC_TYPE_MASS_DENSITY_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcMassDensityMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+		}
+		else if (typeName == IFC_TYPE_MASS_FLOW_RATE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcMassFlowRateMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+		}
+		else if (typeName == IFC_TYPE_MASS_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcMassMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_MASSUNIT);
+		}
+		else if (typeName == IFC_TYPE_MASS_PER_LENGTH_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcMassPerLengthMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_MASSPERLENGTHUNIT);
+		}
+		else if (typeName == IFC_TYPE_MODULUS_OF_ELASTICITY_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcModulusOfElasticityMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_MODULUSOFELASTICITYUNIT);
+		}
+		else if (typeName == IFC_TYPE_MODULUS_OF_LINEAR_SUBGRADE_REACTION_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcModulusOfLinearSubgradeReactionMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_MODULUSOFLINEARSUBGRADEREACTIONUNIT);
+		}
+		else if (typeName == IFC_TYPE_MODULUS_OF_ROTATIONAL_SUBGRADE_REACTION_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcModulusOfRotationalSubgradeReactionMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_MODULUSOFROTATIONALSUBGRADEREACTIONUNIT);
+		}
+		else if (typeName == IFC_TYPE_MODULUS_OF_SUBGRADE_REACTION_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcModulusOfSubgradeReactionMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_MODULUSOFSUBGRADEREACTIONUNIT);
+		}
+		else if (typeName == IFC_TYPE_MOISTURE_DIFFUSIVITY_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcMoistureDiffusivityMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_MOISTUREDIFFUSIVITYUNIT);
+		}
+		else if (typeName == IFC_TYPE_MOLECULAR_WEIGHT_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcMolecularWeightMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_MOLECULARWEIGHTUNIT);
+		}
+		else if (typeName == IFC_TYPE_MOMENT_OF_INERTIA_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcMomentOfInertiaMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_MOMENTOFINERTIAUNIT);
+		}
+		else if (typeName == IFC_TYPE_MONETARY_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcMonetaryMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(MONETARY_UNIT);
+		}
+		else if (typeName == IFC_TYPE_NUMERIC_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcNumericMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+		}
+		else if (typeName == IFC_TYPE_PH_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcPHMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+		}
+		else if (typeName == IFC_TYPE_PARAMETER_VALUE) {
+			auto element = static_cast<const IfcSchema::IfcParameterValue *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+		}
+		else if (typeName == IFC_TYPE_PLANAR_FORCE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcPlanarForceMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_PLANARFORCEUNIT);
+		}
+		else if (typeName == IFC_TYPE_PLANE_ANGLE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcPlaneAngleMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_PLANEANGLEUNIT);
+		}
+		else if (typeName == IFC_TYPE_POSITIVE_LENGTH_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcPositiveLengthMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_LENGTHUNIT);
+		}
+		else if (typeName == IFC_TYPE_POWER_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcPowerMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_POWERUNIT);
+		}
+		else if (typeName == IFC_TYPE_PRESSURE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcPressureMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_PRESSUREUNIT);
+		}
+		else if (typeName == IFC_TYPE_RADIO_ACTIVITY_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcRadioActivityMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_RADIOACTIVITYUNIT);
+		}
+		else if (typeName == IFC_TYPE_RATIO_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcRatioMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+		}
+		else if (typeName == IFC_TYPE_REAL) {
+			auto element = static_cast<const IfcSchema::IfcReal *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+		}
+		else if (typeName == IFC_TYPE_ROTATIONAL_FREQUENCY_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcRotationalFrequencyMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_ROTATIONALFREQUENCYUNIT);
+		}
+		else if (typeName == IFC_TYPE_ROTATIONAL_MASS_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcRotationalMassMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_ROTATIONALMASSUNIT);
+		}
+		else if (typeName == IFC_TYPE_ROTATIONAL_STIFFNESS_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcRotationalStiffnessMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_ROTATIONALSTIFFNESSUNIT);
+		}
+		else if (typeName == IFC_TYPE_SECTION_MODULUS_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcSectionModulusMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_SECTIONMODULUSUNIT);
+		}
+		else if (typeName == IFC_TYPE_SECTIONAL_AREA_INTEGRAL_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcSectionalAreaIntegralMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_SECTIONAREAINTEGRALUNIT);
+		}
+		else if (typeName == IFC_TYPE_SHEAR_MODULUS_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcShearModulusMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_SHEARMODULUSUNIT);
+		}
+		else if (typeName == IFC_TYPE_SOLID_ANGLE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcSolidAngleMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_SOLIDANGLEUNIT);
+		}
+		else if (typeName == IFC_TYPE_SOUND_POWER_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcSoundPowerMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_SOUNDPOWERUNIT);
+		}
+		else if (typeName == IFC_TYPE_SOUND_PRESSURE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcSoundPressureMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_SOUNDPRESSUREUNIT);
+		}
+		else if (typeName == IFC_TYPE_SPECIFIC_HEAT_CAPACITY_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcSpecificHeatCapacityMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_SPECIFICHEATCAPACITYUNIT);
+		}
+		else if (typeName == IFC_TYPE_TEMPERATURE_GRADIENT_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcTemperatureGradientMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_TEMPERATUREGRADIENTUNIT);
+		}
+		else if (typeName == IFC_TYPE_TEXT) {
+			auto element = static_cast<const IfcSchema::IfcText *>(ifcValue);
+			value = element ? *element : value;
+		}
+		else if (typeName == IFC_TYPE_THERMAL_ADMITTANCE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcThermalAdmittanceMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_THERMALADMITTANCEUNIT);
+		}
+		else if (typeName == IFC_TYPE_THERMAL_CONDUCTIVITY_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcThermalConductivityMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_THERMALCONDUCTANCEUNIT);
+		}
+		else if (typeName == IFC_TYPE_THERMAL_EXPANSION_COEFFICIENT_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcThermalExpansionCoefficientMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_THERMALEXPANSIONCOEFFICIENTUNIT);
+		}
+		else if (typeName == IFC_TYPE_THERMAL_RESISTANCE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcThermalResistanceMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_THERMALRESISTANCEUNIT);
+		}
+		else if (typeName == IFC_TYPE_THERMAL_TRANSMITTANCE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcThermalTransmittanceMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_THERMALTRANSMITTANCEUNIT);
+		}
+		else if (typeName == IFC_TYPE_THERMODYNAMIC_TEMPERATURE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcThermodynamicTemperatureMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_THERMODYNAMICTEMPERATUREUNIT);
+		}
+		else if (typeName == IFC_TYPE_TIME_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcTimeMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_TIMEUNIT);
+		}
+		else if (typeName == IFC_TYPE_TIME_STAMP) {
+			auto element = static_cast<const IfcSchema::IfcTimeStamp *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+		}
+		else if (typeName == IFC_TYPE_TORQUE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcTorqueMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_TORQUEUNIT);
+		}
+		else if (typeName == IFC_TYPE_VAPOR_PERMEABILITY_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcVaporPermeabilityMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_VAPORPERMEABILITYUNIT);
+		}
+		else if (typeName == IFC_TYPE_VOLUME_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcVolumeMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_VOLUMEUNIT);
+		}
+		else if (typeName == IFC_TYPE_VOLUMETRIC_FLOW_RATE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcVolumetricFlowRateMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_VOLUMETRICFLOWRATEUNIT);
+		}
+		else if (typeName == IFC_TYPE_WARPING_CONSTANT_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcWarpingConstantMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_WARPINGCONSTANTUNIT);
+		}
+		else if (typeName == IFC_TYPE_WARPING_MOMENT_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcWarpingMomentMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum::IfcDerivedUnit_WARPINGMOMENTUNIT);
+		}
+		else if (typeName == IFC_TYPE_POSITIVE_PLANE_ANGLE_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcPositivePlaneAngleMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+			units = getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_PLANEANGLEUNIT);
+		}
+		else if (typeName == IFC_TYPE_NORMALISED_RATIO_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcNormalisedRatioMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
+		}
+		else if (typeName == IFC_TYPE_POSITIVE_RATIO_MEASURE) {
+			auto element = static_cast<const IfcSchema::IfcPositiveRatioMeasure *>(ifcValue);
+			value = element ? std::to_string((double)*element) : value;
 		}
 	}
 
@@ -1238,7 +1268,7 @@ void IFCUtilsParser::generateClassificationInformation(
 	if (relatedClassification)
 	{
 		//A classifcation can either be a classification notation or reference
-		if (relatedClassification->type() == IfcSchema::Type::IfcClassificationNotation)
+		if (relatedClassification->data().type()->name_lc() == IFC_TYPE_CLASSIFICATION_NOTATION)
 		{
 			auto notation = static_cast<const IfcSchema::IfcClassificationNotation *>(relatedClassification);
 			std::string facetList;

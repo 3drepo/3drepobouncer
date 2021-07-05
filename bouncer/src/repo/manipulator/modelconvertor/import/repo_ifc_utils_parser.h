@@ -24,10 +24,12 @@
 #include <string>
 #include <unordered_map>
 
-#include <ifcgeom/IfcGeom.h>
-#include <ifcgeom/IfcGeomIterator.h>
-#include <ifcparse/IfcParse.h>
-#include <ifcparse/IfcFile.h>
+#define IfcSchema Ifc2x3
+
+#include <IfcGeom.h>
+#include <IfcGeomIterator.h>
+#include <IfcParse.h>
+#include <IfcFile.h>
 
 #include "../../../core/model/bson/repo_node_material.h"
 #include "../../../core/model/bson/repo_node_mesh.h"
@@ -118,11 +120,11 @@ namespace repo {
 					std::string &unitType);
 
 				std::string getUnits(
-					const IfcSchema::IfcDerivedUnitEnum::IfcDerivedUnitEnum &unitType
+					const IfcSchema::IfcDerivedUnitEnum::Value &unitType
 				);
 
 				std::string getUnits(
-					const IfcSchema::IfcUnitEnum::IfcUnitEnum &unitType
+					const IfcSchema::IfcUnitEnum::Value &unitType
 				);
 
 				std::string getUnits(

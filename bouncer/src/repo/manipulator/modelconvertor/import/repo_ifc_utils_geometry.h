@@ -24,8 +24,10 @@
 #include <string>
 #include <unordered_map>
 
-#include <ifcgeom/IfcGeom.h>
-#include <ifcgeom/IfcGeomIterator.h>
+#define IfcSchema Ifc2x3
+
+#include <IfcGeom.h>
+#include <IfcGeomIterator.h>
 
 #include "repo_model_import_config.h"
 #include "../../../core/model/bson/repo_node_material.h"
