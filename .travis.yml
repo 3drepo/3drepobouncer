@@ -4,13 +4,13 @@ matrix:
     - language: node_js
       dist: focal
       node_js:
-        - "10.15.1"
+        - "14.17.3"
       script:
         - cd tools/bouncer_worker && yarn install && yarn lint
     - language: cpp
       dist: focal
       node_js:
-        - "10.15.1"
+        - "14.17.3"
       compiler:
            - gcc
 
