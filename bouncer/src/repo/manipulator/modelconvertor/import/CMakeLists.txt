@@ -21,6 +21,7 @@ set(SOURCES
 
 set(HEADERS
 	${HEADERS}
+	${CMAKE_CURRENT_SOURCE_DIR}/repo_ifc_utils_constants.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_ifc_utils_geometry.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_ifc_utils_parser.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_metadata_import_csv.h

@@ -26,10 +26,9 @@
 
 #define IfcSchema Ifc2x3
 
-#include <IfcGeom.h>
-#include <IfcGeomIterator.h>
-#include <IfcParse.h>
-#include <IfcFile.h>
+#include <ifcgeom/IfcGeom.h>
+#include <ifcparse/IfcParse.h>
+#include <ifcparse/IfcFile.h>
 
 #include "../../../core/model/bson/repo_node_material.h"
 #include "../../../core/model/bson/repo_node_mesh.h"
