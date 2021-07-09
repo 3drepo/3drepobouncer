@@ -110,21 +110,6 @@ bool IFCUtilsGeometry::generateGeometry(
 
 	IfcGeom::Iterator<double> contextIterator(itSettings, &ifcfile);
 
-	//auto filter = repoDefaultIfcOpenShellFilterList;
-	//if (repoDefaultIOSUseFilter && filter.size())
-	//{
-	//	std::set<std::string> filterSet(filter.begin(), filter.end());
-
-	//	if (repoDefaultIsExclusion)
-	//	{
-	//		contextIterator.excludeEntities(filterSet);
-	//	}
-	//	else
-	//	{
-	//		contextIterator.includeEntities(filterSet);
-	//	}
-	//}
-
 	repoTrace << "Initialising Geom iterator";
 
 	try {
