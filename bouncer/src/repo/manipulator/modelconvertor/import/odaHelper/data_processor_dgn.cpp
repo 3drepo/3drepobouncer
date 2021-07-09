@@ -43,7 +43,6 @@ void printTree(const boost::property_tree::ptree &tree,
 	const std::string & parentName = "",
 	const bool isXMLAttri = false)
 {
-
 	for (const auto &it : tree) {
 		const auto field = isXMLAttri ? "<xmlattr>." + it.first : it.first;
 		const bool isAttriChild = field == "<xmlattr>";
@@ -63,7 +62,7 @@ std::unordered_map<std::string, std::string> DataProcessorDgn::extractXMLLinkage
 	std::unordered_map<std::string, std::string> entries;
 
 	entries["Element ID"] = convertToStdString(toString(pElm->elementId().getHandle()));
-	
+
 	OdRxObjectPtrArray arrLinkages;
 	pElm->getLinkages(OdDgAttributeLinkage::kXmlLinkage, arrLinkages);
 
@@ -81,7 +80,6 @@ std::unordered_map<std::string, std::string> DataProcessorDgn::extractXMLLinkage
 			}
 		}
 	}
-
 
 	return entries;
 }
@@ -101,25 +99,32 @@ bool DataProcessorDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 	//We want to group meshes together up to 1 below the top.
 	std::string groupID = convertToStdString(toString(previousItem->elementId().getHandle()));
 	collector->setMeshGroup(groupID);
-
-	if (!collector->hasMeta(groupID)) {
-		collector->setMetadata(groupID, extractXMLLinkages(previousItem));
-	}
-
+	std::unordered_map<std::string, std::string> meta;
 
 	OdString sHandle = pElm->isDBRO() ? toString(pElm->elementId().getHandle()) : toString(OD_T("non-DbResident"));
 	collector->setNextMeshName(convertToStdString(sHandle));
 
 	OdGiSubEntityTraitsData traits = effectiveTraits();
 	OdDgElementId idLevel = traits.layer();
+	std::string layerName;
 	if (!idLevel.isNull())
 	{
 		OdDgLevelTableRecordPtr pLevel = idLevel.openObject(OdDg::kForRead);
 		const auto levelID = convertToStdString(toString(idLevel.getHandle()));
-		collector->setLayer(levelID, convertToStdString(pLevel->getName()));
+		layerName = convertToStdString(pLevel->getName());
+		collector->setLayer(levelID, layerName);
+
 		if (!collector->hasMeta(levelID)) {
 			collector->setMetadata(levelID, extractXMLLinkages(pLevel));
 		}
+	}
+
+	if (!collector->hasMeta(groupID)) {
+		auto meta = extractXMLLinkages(previousItem);
+		if (!layerName.empty()) {
+			meta["Layer Name"] = layerName;
+		}
+		collector->setMetadata(groupID, meta);
 	}
 	return OdGsBaseMaterialView::doDraw(i, pDrawable);
 }

@@ -5,13 +5,12 @@
 #ifdef ODA_SUPPORT
 #include <OdaCommon.h>
 #include <Gs/GsBaseInclude.h>
-#include "odaHelper/file_processor.h"
 #include "odaHelper/helper_functions.h"
 #endif
 
 using namespace repo::manipulator::modelconvertor;
 
-const std::string OdaModelImport::supportedExtensions = ".dgn.rvt.rfa";
+const std::string OdaModelImport::supportedExtensions = ".dgn.rvt.rfa.dwg.dxf";
 
 OdaModelImport::~OdaModelImport()
 {
@@ -64,18 +63,17 @@ repo::core::model::RepoScene* OdaModelImport::generateRepoScene(uint8_t &errMsg)
 #endif
 	return scene;
 }
-
 bool OdaModelImport::importModel(std::string filePath, uint8_t &err)
 {
 #ifdef ODA_SUPPORT
 	this->filePath = filePath;
 	repoInfo << " ==== Importing with Teigha Library [" << filePath << "] ====";
-	std::unique_ptr<odaHelper::FileProcessor> odaProcessor = odaHelper::FileProcessor::getFileProcessor(filePath, &geoCollector);
+	odaProcessor = odaHelper::FileProcessor::getFileProcessor(filePath, &geoCollector);
 	bool success = false;
 	err = REPOERR_OK;
 	try {
 		err = odaProcessor->readFile();
-		if(err == REPOERR_OK){ 
+		if (err == REPOERR_OK) {
 			err = geoCollector.getErrorCode(); // the outermost error codes should take precedence as they could cause inner errors
 		}
 		success = odaProcessor != nullptr && err == REPOERR_OK;

@@ -19,13 +19,14 @@
 #include <memory>
 #include "file_processor.h"
 #include "file_processor_dgn.h"
+#include "file_processor_dwg.h"
 #include "file_processor_rvt.h"
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 FileProcessor::FileProcessor(const std::string &inputFile, GeometryCollector *geoCollector)
 	: file(inputFile),
-	  collector(geoCollector)
+	collector(geoCollector)
 {
 }
 
@@ -38,18 +39,17 @@ std::unique_ptr<T> makeUnique(Args&&... args) {
 	return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
 }
 
-
 std::unique_ptr<FileProcessor> FileProcessor::getFileProcessor(const std::string &inputFile, GeometryCollector * geoCollector) {
-
 	boost::filesystem::path filePathP(inputFile);
 	std::string fileExt = filePathP.extension().string();
 	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
 
 	if (fileExt == ".DGN")
 		return makeUnique<FileProcessorDgn>(inputFile, geoCollector);
+	else if (fileExt == ".DWG" || fileExt == ".DXF")
+		return makeUnique<FileProcessorDwg>(inputFile, geoCollector);
 	else if (fileExt == ".RVT" || fileExt == ".RFA")
 		return makeUnique<FileProcessorRvt>(inputFile, geoCollector);
 
 	return nullptr;
 }
-
