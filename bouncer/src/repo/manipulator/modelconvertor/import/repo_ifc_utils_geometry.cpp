@@ -97,6 +97,7 @@ IfcGeom::IteratorSettings IFCUtilsGeometry::createSettings()
 	itSettings.set(IfcGeom::IteratorSettings::CENTER_MODEL, repoDefaultIOSCentreModel);
 	itSettings.set(IfcGeom::IteratorSettings::GENERATE_UVS, repoDefaultIOSGenerateUVs);
 	itSettings.set(IfcGeom::IteratorSettings::APPLY_LAYERSETS, repoDefaultIOSApplyLayerSets);
+	//itSettings.set(IfcGeom::IteratorSettings::INCLUDE_CURVES, true); //Enable to get 2D lines. You will need to set CONVERT_BACK_UNITS to false or the model may not align.
 
 	return itSettings;
 }
@@ -275,7 +276,17 @@ void IFCUtilsGeometry::retrieveGeometryFromIterator(
 		auto ob_geo = static_cast<const IfcGeom::TriangulationElement<double>*>(ob);
 		if (ob_geo)
 		{
+			auto primitive = 3;
 			auto faces = ob_geo->geometry().faces();
+			if (!faces.size()) {
+				if ((faces = ob_geo->geometry().edges()).size()) {
+					primitive = 2;
+				}
+				else {
+					continue;
+				}
+			}
+
 			auto vertices = ob_geo->geometry().verts();
 			auto normals = ob_geo->geometry().normals();
 			auto uvs = ob_geo->geometry().uvs();
@@ -303,9 +314,9 @@ void IFCUtilsGeometry::retrieveGeometryFromIterator(
 				}
 			}
 
-			for (int iface = 0; iface < faces.size(); iface += 3)
+			for (int iface = 0; iface < faces.size(); iface += primitive)
 			{
-				auto matInd = *matIndIt;
+				auto matInd = primitive == 3 ? *matIndIt : ob_geo->geometry().materials().size();
 				if (indexMapping.find(matInd) == indexMapping.end())
 				{
 					//new material
@@ -320,20 +331,24 @@ void IFCUtilsGeometry::retrieveGeometryFromIterator(
 					post_uvs[matInd] = std::vector<double>();
 					post_faces[matInd] = std::vector<repo_face_t>();
 
-					auto material = ob_geo->geometry().materials()[matInd];
-					std::string matName = useMaterialNames ? material.original_name() : material.name();
-
-					post_materials[matInd] = matName;
-					if (materials.find(matName) == materials.end())
-					{
-						//new material, add it to the vector
-						repo_material_t matProp = createMaterial(material);
-						materials[matName] = new repo::core::model::MaterialNode(repo::core::model::RepoBSONFactory::makeMaterialNode(matProp, matName));
+					if (matInd < ob_geo->geometry().materials().size()) {
+						auto material = ob_geo->geometry().materials()[matInd];
+						std::string matName = useMaterialNames ? material.original_name() : material.name();
+						post_materials[matInd] = matName;
+						if (materials.find(matName) == materials.end())
+						{
+							//new material, add it to the vector
+							repo_material_t matProp = createMaterial(material);
+							materials[matName] = new repo::core::model::MaterialNode(repo::core::model::RepoBSONFactory::makeMaterialNode(matProp, matName));
+						}
+					}
+					else {
+						post_materials[matInd] = "";
 					}
 				}
 
 				repo_face_t face;
-				for (int j = 0; j < 3; ++j)
+				for (int j = 0; j < primitive; ++j)
 				{
 					auto vIndex = faces[iface + j];
 					if (indexMapping[matInd].find(vIndex) == indexMapping[matInd].end())
@@ -360,7 +375,7 @@ void IFCUtilsGeometry::retrieveGeometryFromIterator(
 
 				post_faces[matInd].push_back(face);
 
-				++matIndIt;
+				if (primitive == 3) ++matIndIt;
 			}
 
 			auto guid = ob_geo->guid();

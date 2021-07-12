@@ -25,7 +25,7 @@ const UnityHandler = {};
 
 const logLabel = { label: 'UNITY' };
 
-UnityHandler.generateAssetBundles = async (database, model, logDir, processInformation) => {
+UnityHandler.generateAssetBundles = async (database, model, rid, logDir, processInformation) => {
 	const unityCommand = config.unity.batPath;
 	const dateStr = getCurrentDateTimeAsString();
 	const unityCmdParams = [
@@ -33,8 +33,8 @@ UnityHandler.generateAssetBundles = async (database, model, logDir, processInfor
 		configPath,
 		database,
 		model,
+		rid,
 		`${logDir}/unity_${dateStr}.log`,
-		`${logDir}/run_unity_${dateStr}.log`,
 	];
 
 	try {

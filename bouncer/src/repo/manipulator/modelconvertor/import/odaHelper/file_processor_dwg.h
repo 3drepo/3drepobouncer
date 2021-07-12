@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2019 3D Repo Ltd
+*  Copyright (C) 2021 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -17,21 +17,21 @@
 
 #pragma once
 
-#include <string>
+#include "file_processor_dgn.h"
+
 namespace repo {
-	namespace lib {
-		class RepoException : std::exception {
-		public:
-			RepoException(const std::string &msg) : errMsg(msg) {};
-
-			char const* what() const throw() { return errMsg.c_str(); }
-		private:
-			const std::string errMsg;
-		};
-
-		class RepoValidityExpiredException : RepoException {
-		public:
-			RepoValidityExpiredException(const std::string &msg = "Validity expired") : RepoException(msg) {};
-		};
+	namespace manipulator {
+		namespace modelconvertor {
+			namespace odaHelper {
+				class FileProcessorDwg : public FileProcessorDgn
+				{
+				public:
+					FileProcessorDwg(const std::string &inputFile, GeometryCollector * geoCollector) : FileProcessorDgn(inputFile, geoCollector) {}
+					~FileProcessorDwg() override {}
+				protected:
+					virtual OdDgDatabasePtr initialiseOdDatabase();
+				};
+			}
+		}
 	}
 }

@@ -309,7 +309,8 @@ namespace repo {
 			repo::core::model::RepoScene        *scene,
 			const std::string                   &owner = "",
 			const std::string                      &tag = "",
-			const std::string                      &desc = "");
+			const std::string                      &desc = "",
+			const repo::lib::RepoUUID           &revId = repo::lib::RepoUUID::createUUID());
 
 		/**
 		* Insert a binary file into the database (GridFS)
@@ -736,6 +737,8 @@ namespace repo {
 		* Get bouncer version in the form of a string
 		*/
 		std::string getVersion();
+
+		static std::string getLicenseInfo();
 
 	private:
 		class _RepoControllerImpl;

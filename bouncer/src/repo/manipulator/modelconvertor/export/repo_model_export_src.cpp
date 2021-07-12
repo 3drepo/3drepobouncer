@@ -104,6 +104,11 @@ const static std::string MP_LABEL_MIN = "min";
 const static std::string MP_LABEL_NAME = "name";
 const static std::string MP_LABEL_NUM_IDs = "numberOfIDs";
 const static std::string MP_LABEL_USAGE = "usage";
+const static std::string MP_LABEL_TEXTURES = "textures";
+const static std::string MP_LABEL_TEXTURE_MAPTYPE = "mapType";
+const static std::string MP_LABEL_TEXTURE_NAME = "name";
+const static std::string MP_LABEL_TEXTURE_EXTENSION = "extension"; // The format of the file; this is different to the pixel format, which can be retrieved from the file itself
+const static std::string MP_LABEL_TEXTURE_ID = "id";
 
 SRCModelExport::SRCModelExport(
 	const repo::core::model::RepoScene *scene
@@ -230,6 +235,28 @@ bool SRCModelExport::generateJSONMapping(
 		std::vector<repo::core::model::RepoNode*> matChild =
 			scene->getChildrenNodesFiltered(gType, mesh->getSharedID(), repo::core::model::NodeType::MATERIAL);
 
+		// This current implementation assumes that there is only one texture for all materials in a mesh, or no textures
+		// for any material in a mesh. This is consistent with the existing multipart mapping behaviour.
+
+		std::vector<repo::core::model::RepoNode*> textureNodes = scene->getChildrenNodesFiltered(
+			repo::core::model::RepoScene::GraphType::DEFAULT, matChild[0]->getSharedID(), repo::core::model::NodeType::TEXTURE); // The texture UID is referenced to the default scene graph
+		if (textureNodes.size())
+		{
+			std::vector<repo::lib::PropertyTree> textureTrees;
+
+			const repo::core::model::TextureNode* textureNode = (const repo::core::model::TextureNode*)textureNodes[0];
+
+			repo::lib::PropertyTree textureTree;
+			textureTree.addToTree(MP_LABEL_TEXTURE_MAPTYPE, "diffuse"); // The current implementation assumes there is only one texture and it is a diffuse map; in the future new maps can be added here
+			textureTree.addToTree(MP_LABEL_TEXTURE_NAME, textureNode->getName());
+			textureTree.addToTree(MP_LABEL_TEXTURE_ID, textureNode->getUniqueID().toString());
+			textureTree.addToTree(MP_LABEL_TEXTURE_EXTENSION, textureNode->getFileExtension());
+
+			textureTrees.push_back(textureTree);
+
+			jsonTree.addArrayObjects(MP_LABEL_TEXTURES, textureTrees);
+		}
+
 		std::vector <repo::lib::PropertyTree> matChildrenTrees;
 		for (size_t i = 0; i < matChild.size(); ++i)
 		{
@@ -325,8 +352,6 @@ bool SRCModelExport::generateTreeRepresentation(
 				continue;
 			}
 
-			std::string textureID = scene->getTextureIDForMesh(gType, mesh->getSharedID());
-
 			repo::manipulator::modelutility::MeshMapReorganiser *reSplitter =
 				new repo::manipulator::modelutility::MeshMapReorganiser(mesh, SRC_MAX_VERTEX_LIMIT, SRC_MAX_TRIANGLE_LIMIT);
 
@@ -339,12 +364,6 @@ bool SRCModelExport::generateTreeRepresentation(
 				delete reSplitter;
 
 				std::string ext = ".src.mpc";
-
-				if (!textureID.empty())
-				{
-					//ext += "?tex_uuid=" + textureID;
-					repoWarning << "Mesh " << mesh->getSharedID() << " has textures but the current Unreal SRC importer does not use them. Textures will be ignored in SRCs.";
-				}
 
 				if (success = addMeshToExport(splittedMesh, index, facebuf, idMapBuf, ext))
 				{

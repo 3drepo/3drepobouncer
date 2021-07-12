@@ -40,7 +40,16 @@ repo::RepoController* instantiateController()
 {
 	repo::lib::LogToStdout *stdOutListener = new repo::lib::LogToStdout();
 	std::vector<repo::lib::RepoAbstractListener*> listeners = { stdOutListener };
-	repo::RepoController *controller = new repo::RepoController(listeners);
+	repo::RepoController *controller = nullptr;
+
+	try {
+		controller = new repo::RepoController(listeners);
+	}
+	catch (const repo::lib::RepoValidityExpiredException) {
+		std::cerr << "License expired. Please contact support@3drepo.org should you wish to continue using the software." << std::endl;
+		std::cerr << repo::RepoController::getLicenseInfo() << std::endl;
+		exit(REPOERR_AUTH_FAILED);
+	}
 
 	char* debug = getenv("REPO_DEBUG");
 	char* verbose = getenv("REPO_VERBOSE");

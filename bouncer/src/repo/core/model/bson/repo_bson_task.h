@@ -28,8 +28,14 @@ namespace repo {
 			//------------------------------------------------------------------------------
 			#define REPO_TASK_LABEL_NAME "name"
 			#define REPO_TASK_LABEL_DATA "data"
-			#define REPO_TASK_LABEL_PARENTS "parents"
+			#define REPO_TASK_LABEL_SEQ_ID "sequenceId"
+			#define REPO_TASK_LABEL_START "startDate"
+			#define REPO_TASK_LABEL_END "endDate"
+			#define REPO_TASK_LABEL_PARENT "parent"
 			#define REPO_TASK_LABEL_RESOURCES "resources"
+			#define REPO_TASK_SHARED_IDS "shared_ids"
+			#define REPO_TASK_META_KEY "key"
+			#define REPO_TASK_META_VALUE "value"
 
 			class REPO_API_EXPORT RepoTask : public RepoBSON
 			{

@@ -100,8 +100,9 @@ TEST(RevisionNodeTest, GetterTest)
 
 	auto message = getRandomString(rand() % 10 + 1);
 	auto tag = getRandomString(rand() % 10 + 1);
+	auto rId = repo::lib::RepoUUID::createUUID();
 
-	auto revisionNode = RepoBSONFactory::makeRevisionNode(user, branch, currentNodes, files, parents, offsetIn, message, tag);
+	auto revisionNode = RepoBSONFactory::makeRevisionNode(user, branch, rId, currentNodes, files, parents, offsetIn, message, tag);
 
 	EXPECT_EQ(user, revisionNode.getAuthor());
 	auto offset2 = revisionNode.getCoordOffset();

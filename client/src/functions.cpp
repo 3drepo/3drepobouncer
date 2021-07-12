@@ -135,6 +135,7 @@ int32_t performOperation(
 	else if (command.command == cmdVersion || command.command == cmdVersion2)
 	{
 		std::cout << "3D Repo Bouncer Client v" + controller->getVersion() << std::endl;
+		std::cout << controller->getLicenseInfo() << std::endl;
 		errCode = REPOERR_OK;
 	}
 	else
@@ -390,6 +391,7 @@ int32_t importFileAndCommit(
 	std::string database;
 	std::string project;
 	std::string  owner, tag, desc;
+	repo::lib::RepoUUID revId = repo::lib::RepoUUID::createUUID();
 
 	bool success = true;
 	bool rotate = false;
@@ -410,6 +412,10 @@ int32_t importFileAndCommit(
 			rotate = jsonTree.get<bool>("dxrotate", rotate);
 			importAnimations = jsonTree.get<bool>("importAnimations", importAnimations);
 			fileLoc = jsonTree.get<std::string>("file", "");
+			auto revIdStr = jsonTree.get<std::string>("revId", "");
+			if (!revIdStr.empty()) {
+				revId = repo::lib::RepoUUID(revIdStr);
+			}
 
 			if (database.empty() || project.empty() || fileLoc.empty())
 			{
@@ -472,7 +478,7 @@ int32_t importFileAndCommit(
 		repoLog("Trying to commit this scene to database as " + database + "." + project);
 		graph->setDatabaseAndProjectName(database, project);
 
-		err = controller->commitScene(token, graph, owner, tag, desc);
+		err = controller->commitScene(token, graph, owner, tag, desc, revId);
 
 		if (err == REPOERR_OK)
 		{

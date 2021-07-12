@@ -94,14 +94,15 @@ std::shared_ptr<AbstractModelImport> ModelImportManager::chooseModelConvertor(
 
 	std::shared_ptr<AbstractModelImport> modelConvertor = nullptr;
 
+	//NOTE: IFC and ODA checks needs to be done before assimp otherwise assimp will try to import IFC/DXF
 	if (fileExt == ".IFC")
 		modelConvertor = std::shared_ptr<AbstractModelImport>(new repo::manipulator::modelconvertor::IFCModelImport(config));
+	else if (repo::manipulator::modelconvertor::OdaModelImport::isSupportedExts(fileExt))
+		modelConvertor = std::shared_ptr<AbstractModelImport>(new repo::manipulator::modelconvertor::OdaModelImport(config));
 	else if (repo::manipulator::modelconvertor::AssimpModelImport::isSupportedExts(fileExt))
 		modelConvertor = std::shared_ptr<AbstractModelImport>(new repo::manipulator::modelconvertor::AssimpModelImport(config));
 	else if (fileExt == ".BIM")
 		modelConvertor = std::shared_ptr<AbstractModelImport>(new repo::manipulator::modelconvertor::RepoModelImport(config));
-	else if (repo::manipulator::modelconvertor::OdaModelImport::isSupportedExts(fileExt))
-		modelConvertor = std::shared_ptr<AbstractModelImport>(new repo::manipulator::modelconvertor::OdaModelImport(config));
 	else if (fileExt == ".SPM")
 		modelConvertor = std::shared_ptr<AbstractModelImport>(new repo::manipulator::modelconvertor::SynchroModelImport(config));
 

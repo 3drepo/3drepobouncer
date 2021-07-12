@@ -75,6 +75,10 @@ repo_material_t MaterialNode::getMaterialStruct() const
 		getDoubleField(REPO_NODE_MATERIAL_LABEL_SHININESS_STRENGTH):
 		std::numeric_limits<float>::quiet_NaN();
 
+	mat.lineWeight = hasField(REPO_NODE_MATERIAL_LABEL_LINE_WEIGHT) ?
+		getDoubleField(REPO_NODE_MATERIAL_LABEL_LINE_WEIGHT) :
+		std::numeric_limits<float>::quiet_NaN();
+
 	return mat;
 }
 

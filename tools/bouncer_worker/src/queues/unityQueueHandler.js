@@ -26,7 +26,7 @@ const Utils = require('../lib/utils');
 const logLabel = { label: 'UNITYQ' };
 
 // eslint-disable-next-line max-len
-const processUnity = async (database, model, user, logDir, modelImportErrCode) => {
+const processUnity = async (database, model, user, rid, logDir, modelImportErrCode) => {
 	const returnMessage = {
 		value: modelImportErrCode,
 		database,
@@ -47,7 +47,7 @@ const processUnity = async (database, model, user, logDir, modelImportErrCode) =
 				logLabel.label, // queue
 				null,
 			); // returncode
-			await generateAssetBundles(database, model, logDir, processInformation);
+			await generateAssetBundles(database, model, rid, logDir, processInformation);
 		} else {
 			returnMessage.value = ERRCODE_ARG_FILE_FAIL;
 		}
@@ -69,7 +69,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		database,
 		project,
 	}));
-	const message = await processUnity(database, project, user, logDir, value);
+	const message = await processUnity(database, project, user, rid, logDir, value);
 	callback(JSON.stringify(message));
 };
 

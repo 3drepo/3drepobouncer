@@ -31,6 +31,8 @@ namespace repo {
 #define REPO_SEQUENCE_LABEL_NAME "name"
 #define REPO_SEQUENCE_LABEL_FRAMES "frames"
 #define REPO_SEQUENCE_LABEL_DATE "dateTime"
+#define REPO_SEQUENCE_LABEL_START_DATE "startDate"
+#define REPO_SEQUENCE_LABEL_END_DATE "endDate"
 #define REPO_SEQUENCE_LABEL_STATE "state"
 
 			class REPO_API_EXPORT RepoSequence : public RepoBSON

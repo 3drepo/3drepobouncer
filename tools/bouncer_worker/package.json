@@ -1,8 +1,8 @@
 {
   "name": "3drepobouncerWorker",
-  "version": "4.15.2",
+  "version": "4.17.0",
   "engines": {
-    "node": "10.x.x"
+    "node": "14.x.x"
   },
   "private": true,
   "scripts": {
@@ -18,7 +18,7 @@
     "crypto-js": "4.0.0",
     "elastic-apm-node": "3.12.1",
     "moment": "2.29.1",
-    "mongodb": "2.2.24",
+    "mongodb": "3.6.6",
     "pidusage": "2.0.21",
     "process-exists": "4.0.0",
     "systeminformation": "5.6.20",

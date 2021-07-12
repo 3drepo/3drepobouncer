@@ -45,6 +45,7 @@ if(DEFINED ENV{ODA_ROOT})
 			${ODA_ROOT}/Dgn/include
 			${ODA_ROOT}/Dgn/Examples/Common
 			${ODA_ROOT}/Dgn/Extensions/ExServices
+			${ODA_ROOT}/Exchange
 			${ODA_ROOT}/Kernel/Extensions/ExServices
 			${ODA_ROOT}/BimRv/Include
 			${ODA_ROOT}/BimRv/Extensions
