@@ -28,12 +28,11 @@ const currentOSPromise = getCurrentOperatingSystem();
 
 const getDockerEnvironment = async () => {
 	const currentOS = await currentOSPromise;
-    return currentOS === 'linux' && fs.existsSync('/.dockerenv');
+	return currentOS === 'linux' && fs.existsSync('/.dockerenv');
 };
 const isDockerEnvironment = getDockerEnvironment();
 
 const getCurrentMemUsage = async () => {
-	let data;
 	let result;
 	try {
 		if (isDockerEnvironment) {
