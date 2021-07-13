@@ -1,17 +1,29 @@
 // eslint-disable-next-line security/detect-child-process
 const { spawn } = require('child_process');
-
 const { ERRCODE_TIMEOUT, ERRCODE_UNKNOWN_ERROR } = require('../constants/errorCodes');
 const logger = require('./logger');
+const processMonitor = require('./processMonitor');
 const { timeoutMS } = require('./config').config;
+const processReporting = require('./config').config.processMonitoring.enabled;
 
-const run = (exe, params, { codesAsSuccess = [], verbose = true, logLabel }) => new Promise((resolve, reject) => {
-	if (verbose) logger.info(`Executing command: ${exe} ${params.join(' ')}`, logLabel);
-	const cmdExec = spawn(exe, params);
+const run = (
+	exe,
+	params,
+	{ codesAsSuccess = [], verbose = true, logLabel },
+	processInformation,
+) => new Promise((resolve, reject) => {
+	if (verbose) logger.info(`Executing command: ${exe} ${params.join(' ')} processMonitoring: ${processReporting}`, logLabel);
+	const cmdExec = spawn(exe, params, { shell: true });
+	if (processReporting) {
+		if (!processInformation.doNotMonitor) processMonitor.startMonitor(cmdExec.pid, processInformation);
+	}
 	let isTimeout = false;
-	cmdExec.on('close', (code) => {
+	cmdExec.on('close', (code, signal) => {
+		if (processReporting && !processInformation.doNotMonitor) {
+			processMonitor.stopMonitor(cmdExec.pid, code);
+		}
 		if (verbose) {
-			logger.info(`Command executed. Code: ${isTimeout ? 'TIMEDOUT' : code}`, logLabel);
+			logger.info(`Command executed. Code: ${isTimeout ? 'TIMEDOUT' : code} signal: ${signal}`, logLabel);
 		}
 		if (isTimeout) {
 			reject(ERRCODE_TIMEOUT);
@@ -19,6 +31,7 @@ const run = (exe, params, { codesAsSuccess = [], verbose = true, logLabel }) => 
 			resolve(code);
 		} else {
 			// NOTE: for some reason we're seeing code is null in linux. using -1 when that happens
+			logger.info(`exiting with ERRCODE_UNKNOWN_ERROR: ${code} signal: ${signal}`, logLabel);
 			reject(code || ERRCODE_UNKNOWN_ERROR);
 		}
 	});

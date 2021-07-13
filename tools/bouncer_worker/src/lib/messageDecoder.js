@@ -59,6 +59,7 @@ const messageDecoder = (cmd) => {
 						database: cmdFile.database,
 						model: cmdFile.project,
 						user: cmdFile.owner,
+						file: cmdFile.file,
 						...res,
 					};
 				}

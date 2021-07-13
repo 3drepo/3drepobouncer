@@ -31,8 +31,12 @@ BouncerHandler.testClient = async () => {
 		'test',
 	];
 
+	const processInformation = {
+		doNotMonitor: true,
+	};
+
 	try {
-		await run(bouncerClientPath, cmdParams, { logLabel });
+		await run(bouncerClientPath, cmdParams, { logLabel }, processInformation);
 		logger.info('Bouncer call passed', logLabel);
 	} catch (code) {
 		logger.error(`Bouncer call errored (Error code: ${code})`, logLabel);
@@ -40,9 +44,13 @@ BouncerHandler.testClient = async () => {
 	}
 };
 
-BouncerHandler.runBouncerCommand = async (logDir, cmdParams) => {
+BouncerHandler.runBouncerCommand = async (
+	logDir,
+	cmdParams,
+	processInformation,
+) => {
 	setBouncerEnvars(logDir);
-	return run(bouncerClientPath, cmdParams, { codesAsSuccess: BOUNCER_SOFT_FAILS, logLabel: { label: 'BOUNCER' } });
+	return run(bouncerClientPath, cmdParams, { codesAsSuccess: BOUNCER_SOFT_FAILS, logLabel: { label: 'BOUNCER' } }, processInformation);
 };
 
 BouncerHandler.generateTreeStash = async (logDir, database, modelId, stashType, rev = 'all') => {
