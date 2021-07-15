@@ -29,6 +29,7 @@
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 static const char* ODA_CSV_LOCATION = "ODA_CSV_LOCATION";
+static const std::string REVIT_ELEMENT_ID = "Element ID";
 
 //These metadata params are not of interest to users. Do not read.
 const std::set<std::string> IGNORE_PARAMS = {
@@ -381,6 +382,7 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBmElementPtr element)
 {
 	std::unordered_map<std::string, std::string> metadata;
+	metadata[REVIT_ELEMENT_ID] = std::to_string((OdUInt64)element->objectId().getHandle());
 	try
 	{
 		fillMetadataByElemPtr(element, metadata);
