@@ -38,12 +38,9 @@ Utils.gatherProcessInformation = (
 	owner,
 	model,
 	database,
-	maxmemory,
-	processtime,
+	queue,
 	filetype,
 	filesize,
-	queue,
-	returncode,
 ) => (
 	{
 		DateTime: Date.now(),
@@ -53,9 +50,6 @@ Utils.gatherProcessInformation = (
 		Queue: queue, // logLabel.label,
 		FileType: filetype, // file.split('.').pop().toString(),
 		FileSize: filesize, // fileStats.size,
-		MaxMemory: maxmemory, // null, // processReporting.maxMemory,
-		ProcessTime: processtime, // null, //processReporting.processTime,
-		ReturnCode: returncode, // returnMessage.value,
 	});
 
 module.exports = Utils;

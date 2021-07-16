@@ -56,19 +56,16 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	};
 
 	try {
-		const fileStats = fs.statSync(file);
+		const { size } = fs.statSync(file);
 		// (owner, model, database, maxmemory, processtime, filetype, filesize, queue, returncode)
 		const processInformation = Utils.gatherProcessInformation(
 			user,
 			model,
 			database,
-			null, // maxmemory
-			null, // processtime
-			file.split('.').pop().toString(), // filetype
-			fileStats.size, // filesize
 			logLabel.label, // queue
-			null,
-		); // returncode
+			file.split('.').pop().toString(), // filetype
+			size, // filesize
+		);
 
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams, processInformation);
 

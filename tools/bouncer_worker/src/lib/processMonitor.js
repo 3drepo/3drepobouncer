@@ -1,18 +1,15 @@
-const pidusage = require('pidusage');
-const processExists = require('process-exists');
 const si = require('systeminformation');
 const fs = require('fs');
 const logger = require('./logger');
 const Elastic = require('./elastic');
 const { enabled, memoryIntervalMS } = require('./config').config.processMonitoring;
 const elasticEnabled = require('./config').config.elastic;
+const { sleep } = require('./utils');
 
 const ProcessMonitor = {};
 const logLabel = { label: 'PROCESSMONITOR' };
 
-const informationDict = {};
-const workingDict = {};
-const pidSet = new Set();
+const dataByPid = {};
 const permittedOS = ['linux', 'win32'];
 
 const getCurrentOperatingSystem = async () => {
@@ -47,80 +44,60 @@ const getCurrentMemUsage = async () => {
 	return result;
 };
 
-const maxmem = async () => {
+const updateMemory = async (pid) => {
 	try {
-		const data = await getCurrentMemUsage();
-		const exists = await processExists.all(Array.from(pidSet));
-		for (const pid of pidSet) {
-			if (!exists.get(pid)) {
-				pidSet.delete(pid);
-			}
+		if (dataByPid[pid]) {
+			const data = await getCurrentMemUsage();
+			dataByPid[pid].maxMemory = Math.max(dataByPid[pid].maxMemory, data);
 		}
-		if (pidSet.size > 0) {
-			const pids = await pidusage(Array.from(pidSet));
-			for (const pid in pids) {
-				if (pid in workingDict) {
-					workingDict[pid].elapsedTime = pids[pid].elapsed;
-					if (data > workingDict[pid].maxMemory) {
-						logger.debug(`Updating MaxMemory for ${pid} to ${data}`, logLabel);
-						workingDict[pid].maxMemory = data;
-					}
-				}
-			}
-		}
-	} catch (err) { logger.error(`[maxmem]: ${err}`, logLabel); }
-};
-
-// Compute statistics every interval:
-const interval = async (time) => {
-	if (pidSet.size > 0) {
-		setTimeout(async () => {
-			await maxmem();
-			interval(time);
-		}, time);
+	} catch (err) {
+		logger.error(`[maxmem]: ${err}`, logLabel);
 	}
 };
 
-const monitor = async () => {
-	interval(memoryIntervalMS);
-};
+const monitor = (pid) => setInterval(() => updateMemory(pid), memoryIntervalMS);
 
 const shouldMonitor = async () => enabled && permittedOS.includes(await currentOSPromise);
 const monitorEnabled = shouldMonitor();
 
-ProcessMonitor.startMonitor = async (startPID, processInformation) => {
+ProcessMonitor.startMonitor = async (startPID, processInfo) => {
 	if (!(await monitorEnabled)) return;
-	pidSet.add(startPID);
-	informationDict[startPID] = processInformation;
 	const currentMemUsage = await getCurrentMemUsage();
-	workingDict[startPID] = { startMemory: currentMemUsage, maxMemory: currentMemUsage };
-	monitor();
-	logger.verbose(`Monitoring enabled for process ${startPID} starting at ${workingDict[startPID].startMemory}`, logLabel);
+	dataByPid[startPID] = {
+		startMemory: currentMemUsage,
+		maxMemory: currentMemUsage,
+		startTime: Date.now(),
+		processInfo };
+	dataByPid[startPID].timer = monitor(startPID);
+	logger.verbose(`Monitoring enabled for process ${startPID} starting at ${dataByPid[startPID].startMemory}`, logLabel);
 };
 
 ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
-	if (!(await monitorEnabled)) return;
-	// take the PID out of circulation for checking immediately.
-	pidSet.delete(stopPID);
+	if (!(await monitorEnabled) || !dataByPid[stopPID]) return;
 
-	// add the missing properties for sending.
-	informationDict[stopPID].ReturnCode = returnCode;
-	informationDict[stopPID].MaxMemory = workingDict[stopPID].maxMemory - workingDict[stopPID].startMemory;
-	logger.verbose(`${stopPID} ${workingDict[stopPID].maxMemory} - ${workingDict[stopPID].startMemory} = ${informationDict[stopPID].MaxMemory}`, logLabel);
-	informationDict[stopPID].ProcessTime = workingDict[stopPID].elapsedTime;
+	const { processInfo, maxMemory, startMemory, startTime, timer } = dataByPid[stopPID];
+	clearInterval(timer);
+	// Ensure there's no race condition with the last interval being processed
+	await sleep(memoryIntervalMS);
+	const report = {
+		...processInfo,
+		ReturnCode: returnCode,
+		MaxMemory: maxMemory - startMemory,
+		ProcessTime: Date.now() - startTime,
+	};
 
+	logger.verbose(`${stopPID} ${maxMemory} - ${startMemory} = ${report.MaxMemory}`, logLabel);
 	if (elasticEnabled) {
 		try {
-			await Elastic.createProcessRecord(informationDict[stopPID]);
+			await Elastic.createProcessRecord(report);
 		} catch (err) {
 			logger.error('Failed to create record', logLabel);
 		}
 	} else {
-		logger.info(`${stopPID} stats ProcessTime: ${informationDict[stopPID].ProcessTime} MaxMemory: ${informationDict[stopPID].MaxMemory}`, logLabel);
+		logger.info(`${stopPID} stats ProcessTime: ${report.ProcessTime} MaxMemory: ${report.MaxMemory}`, logLabel);
 	}
 
-	delete informationDict[stopPID];
-	delete workingDict[stopPID];
+	delete dataByPid[stopPID];
 };
 
 module.exports = ProcessMonitor;

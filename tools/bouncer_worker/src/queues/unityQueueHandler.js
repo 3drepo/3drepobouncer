@@ -40,13 +40,8 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
 				user,
 				model,
 				database,
-				null, // maxmemory
-				null, // processtime
-				null, // filetype
-				null, // filesize
 				logLabel.label, // queue
-				null,
-			); // returncode
+			);
 			await generateAssetBundles(database, model, rid, logDir, processInformation);
 		} else {
 			returnMessage.value = ERRCODE_ARG_FILE_FAIL;
