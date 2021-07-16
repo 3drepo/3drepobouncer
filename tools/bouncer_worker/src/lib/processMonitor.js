@@ -77,8 +77,6 @@ ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
 
 	const { processInfo, maxMemory, startMemory, startTime, timer } = dataByPid[stopPID];
 	clearInterval(timer);
-	// Ensure there's no race condition with the last interval being processed
-	await sleep(memoryIntervalMS);
 	const report = {
 		...processInfo,
 		ReturnCode: returnCode,
@@ -96,6 +94,9 @@ ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
 	} else {
 		logger.info(`${stopPID} stats ProcessTime: ${report.ProcessTime} MaxMemory: ${report.MaxMemory}`, logLabel);
 	}
+
+	// Ensure there's no race condition with the last interval being processed
+	await sleep(memoryIntervalMS);
 
 	delete dataByPid[stopPID];
 };

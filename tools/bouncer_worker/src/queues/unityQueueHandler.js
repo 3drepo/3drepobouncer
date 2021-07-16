@@ -25,7 +25,6 @@ const Utils = require('../lib/utils');
 
 const logLabel = { label: 'UNITYQ' };
 
-// eslint-disable-next-line max-len
 const processUnity = async (database, model, user, rid, logDir, modelImportErrCode) => {
 	const returnMessage = {
 		value: modelImportErrCode,

@@ -57,7 +57,6 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 
 	try {
 		const { size } = fs.statSync(file);
-		// (owner, model, database, maxmemory, processtime, filetype, filesize, queue, returncode)
 		const processInformation = Utils.gatherProcessInformation(
 			user,
 			model,
