@@ -5,7 +5,7 @@ const fs = require('fs');
 const logger = require('./logger');
 const Elastic = require('./elastic');
 const { enabled, memoryIntervalMS } = require('./config').config.processMonitoring;
-const elasticEnabled = require('./config').config.elastic.enabled;
+const elasticEnabled = require('./config').config.elastic;
 
 const ProcessMonitor = {};
 const logLabel = { label: 'PROCESSMONITOR' };
@@ -16,13 +16,13 @@ const pidSet = new Set();
 const permittedOS = ['linux', 'win32'];
 
 const getCurrentOperatingSystem = async () => {
-	let data;
 	try {
-		data = await si.osInfo();
+		return (await si.osInfo()).platform;
 	} catch (e) {
 		logger.error('Failed to get operating system information record', logLabel);
 	}
-	return data.platform;
+
+	return undefined;
 };
 const currentOSPromise = getCurrentOperatingSystem();
 
@@ -33,9 +33,9 @@ const getDockerEnvironment = async () => {
 const isDockerEnvironment = getDockerEnvironment();
 
 const getCurrentMemUsage = async () => {
-	let result;
+	let result = 0;
 	try {
-		if (isDockerEnvironment) {
+		if (await isDockerEnvironment) {
 			// required to get more accurate information in docker
 			result = Number(fs.readFileSync('/sys/fs/cgroup/memory/memory.usage_in_bytes'));
 		} else {
@@ -43,7 +43,6 @@ const getCurrentMemUsage = async () => {
 		}
 	} catch (e) {
 		logger.error('Failed to get memory information record', logLabel);
-		result = 0;
 	}
 	return result;
 };
@@ -86,47 +85,42 @@ const monitor = async () => {
 	interval(memoryIntervalMS);
 };
 
+const shouldMonitor = async () => enabled && permittedOS.includes(await currentOSPromise);
+const monitorEnabled = shouldMonitor();
+
 ProcessMonitor.startMonitor = async (startPID, processInformation) => {
-	const currentOS = await currentOSPromise;
+	if (!(await monitorEnabled)) return;
+	pidSet.add(startPID);
+	informationDict[startPID] = processInformation;
 	const currentMemUsage = await getCurrentMemUsage();
-	if (permittedOS.includes(currentOS) && enabled) {
-		pidSet.add(startPID);
-		informationDict[startPID] = processInformation;
-		workingDict[startPID] = { startMemory: currentMemUsage, maxMemory: currentMemUsage };
-		monitor();
-		logger.verbose(`Monitoring enabled for process ${startPID} starting at ${workingDict[startPID].startMemory}`, logLabel);
-	} else {
-		logger.error(`[${currentOS}]: not a supported operating system for monitoring.`, logLabel);
-	}
+	workingDict[startPID] = { startMemory: currentMemUsage, maxMemory: currentMemUsage };
+	monitor();
+	logger.verbose(`Monitoring enabled for process ${startPID} starting at ${workingDict[startPID].startMemory}`, logLabel);
 };
 
 ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
-	const currentOS = await currentOSPromise;
-	if (permittedOS.includes(currentOS)) {
-		// take the PID out of circulation for checking immediately.
-		pidSet.delete(stopPID);
+	if (!(await monitorEnabled)) return;
+	// take the PID out of circulation for checking immediately.
+	pidSet.delete(stopPID);
 
-		// add the missing properties for sending.
-		informationDict[stopPID].ReturnCode = returnCode;
-		informationDict[stopPID].MaxMemory = workingDict[stopPID].maxMemory - workingDict[stopPID].startMemory;
-		logger.verbose(`${stopPID} ${workingDict[stopPID].maxMemory} - ${workingDict[stopPID].startMemory} = ${informationDict[stopPID].MaxMemory}`, logLabel);
-		informationDict[stopPID].ProcessTime = workingDict[stopPID].elapsedTime;
+	// add the missing properties for sending.
+	informationDict[stopPID].ReturnCode = returnCode;
+	informationDict[stopPID].MaxMemory = workingDict[stopPID].maxMemory - workingDict[stopPID].startMemory;
+	logger.verbose(`${stopPID} ${workingDict[stopPID].maxMemory} - ${workingDict[stopPID].startMemory} = ${informationDict[stopPID].MaxMemory}`, logLabel);
+	informationDict[stopPID].ProcessTime = workingDict[stopPID].elapsedTime;
 
-		if (elasticEnabled) {
-			try {
-				await Elastic.createRecord(informationDict[stopPID]);
-			} catch (err) {
-				logger.error('Failed to create record', logLabel);
-			}
-		} else {
-			logger.info(`${stopPID} stats ProcessTime: ${informationDict[stopPID].ProcessTime} MaxMemory: ${informationDict[stopPID].MaxMemory}`, logLabel);
+	if (elasticEnabled) {
+		try {
+			await Elastic.createProcessRecord(informationDict[stopPID]);
+		} catch (err) {
+			logger.error('Failed to create record', logLabel);
 		}
-
-		delete informationDict[stopPID];
-		delete workingDict[stopPID];
 	} else {
-		logger.error(`[${currentOS}]: not a supported operating system for monitoring.`, logLabel);
+		logger.info(`${stopPID} stats ProcessTime: ${informationDict[stopPID].ProcessTime} MaxMemory: ${informationDict[stopPID].MaxMemory}`, logLabel);
 	}
+
+	delete informationDict[stopPID];
+	delete workingDict[stopPID];
 };
 
 module.exports = ProcessMonitor;

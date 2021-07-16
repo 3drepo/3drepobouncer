@@ -31,12 +31,8 @@ BouncerHandler.testClient = async () => {
 		'test',
 	];
 
-	const processInformation = {
-		doNotMonitor: true,
-	};
-
 	try {
-		await run(bouncerClientPath, cmdParams, { logLabel }, processInformation);
+		await run(bouncerClientPath, cmdParams, { logLabel });
 		logger.info('Bouncer call passed', logLabel);
 	} catch (code) {
 		logger.error(`Bouncer call errored (Error code: ${code})`, logLabel);

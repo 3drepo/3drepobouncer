@@ -61,10 +61,7 @@ const createFed = async ({ database, model, toyFed, cmdParams }, logDir) => {
 		project: model,
 	};
 	try {
-		const processInformation = {
-			doNotMonitor: true,
-		};
-		returnMessage.value = await runBouncerCommand(logDir, cmdParams, processInformation);
+		returnMessage.value = await runBouncerCommand(logDir, cmdParams);
 		if (toyFed) {
 			await importToyModel(toyFed, database, model, { tree: 1 });
 		}

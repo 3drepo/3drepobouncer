@@ -4,7 +4,6 @@ const { ERRCODE_TIMEOUT, ERRCODE_UNKNOWN_ERROR } = require('../constants/errorCo
 const logger = require('./logger');
 const processMonitor = require('./processMonitor');
 const { timeoutMS } = require('./config').config;
-const processReporting = require('./config').config.processMonitoring.enabled;
 
 const run = (
 	exe,
@@ -12,16 +11,13 @@ const run = (
 	{ codesAsSuccess = [], verbose = true, logLabel },
 	processInformation,
 ) => new Promise((resolve, reject) => {
-	if (verbose) logger.info(`Executing command: ${exe} ${params.join(' ')} processMonitoring: ${processReporting}`, logLabel);
+	if (verbose) logger.info(`Executing command: ${exe} ${params.join(' ')}`, logLabel);
 	const cmdExec = spawn(exe, params, { shell: true });
-	if (processReporting) {
-		if (!processInformation.doNotMonitor) processMonitor.startMonitor(cmdExec.pid, processInformation);
-	}
+	if (processInformation) processMonitor.startMonitor(cmdExec.pid, processInformation);
 	let isTimeout = false;
 	cmdExec.on('close', (code, signal) => {
-		if (processReporting && !processInformation.doNotMonitor) {
-			processMonitor.stopMonitor(cmdExec.pid, code);
-		}
+		if (processInformation) processMonitor.stopMonitor(cmdExec.pid, code);
+
 		if (verbose) {
 			logger.info(`Command executed. Code: ${isTimeout ? 'TIMEDOUT' : code} signal: ${signal}`, logLabel);
 		}

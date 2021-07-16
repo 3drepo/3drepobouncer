@@ -46,13 +46,8 @@ const applyDefaultValuesIfUndefined = (config) => {
 	config.logging.workerLogPath = config.logging.workerLogPath || config.logLocation;
 	config.logging.logLevel = config.logging.logLevel || 'info';
 
-	// elastic related settings
-	config.elastic.enabled = config.elastic.enabled || false;
-	config.elastic.cloudID = config.elastic.cloudID || '';
-	config.elastic.cloudAuth = config.elastic.cloudAuth || '';
-
 	// processMonitoring
-	config.processMonitoring.enabled = config.processMonitoring.enabled || false;
+	config.processMonitoring = config.processMonitoring || {};
 	config.processMonitoring.memoryIntervalMS = config.processMonitoring.memoryIntervalMS || 100;
 };
 /* eslint-enable no-param-reassign */
