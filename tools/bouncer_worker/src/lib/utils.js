@@ -19,6 +19,10 @@ const moment = require('moment');
 
 const Utils = {};
 
+const CryptoJS = require('crypto-js');
+
+Utils.hashCode = (s) => CryptoJS.MD5(s).toString();
+
 Utils.exitApplication = (errCode = -1) => {
 	// eslint-disable-next-line no-process-exit
 	process.exit(errCode);
@@ -29,5 +33,23 @@ Utils.sleep = (ms) => new Promise((resolve) => {
 });
 
 Utils.getCurrentDateTimeAsString = () => moment().format('YYYY-MM-DD_HH[h]mm[m]ss[s]');
+
+Utils.gatherProcessInformation = (
+	owner,
+	model,
+	database,
+	queue,
+	filetype,
+	filesize,
+) => (
+	{
+		DateTime: Date.now(),
+		Owner: owner,
+		Model: model,
+		Database: database,
+		Queue: queue, // logLabel.label,
+		FileType: filetype, // file.split('.').pop().toString(),
+		FileSize: filesize, // fileStats.size,
+	});
 
 module.exports = Utils;

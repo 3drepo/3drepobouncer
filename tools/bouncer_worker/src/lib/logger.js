@@ -16,7 +16,7 @@
  */
 
 const winston = require('winston');
-const { logLevel, workerLogPath } = require('./config').config.logging;
+const { logLevel, noColors, jsonOutput, workerLogPath } = require('./config').config.logging;
 
 const stringFormat = ({ level, message, label, timestamp }) => `${timestamp} [${level}] [${label || 'APP'}] ${message}`;
 
@@ -32,14 +32,34 @@ const getTransporters = () => {
 	return transporters;
 };
 
-const logger = winston.createLogger({
-	transports: getTransporters(),
-	format: winston.format.combine(
-		winston.format.colorize(),
-		winston.format.timestamp(),
-		winston.format.align(),
-		winston.format.printf(stringFormat),
-	),
-});
+const logger = () => {
+	let formats;
 
-module.exports = logger;
+	if (jsonOutput) {
+		formats = winston.format.combine(
+			winston.format.timestamp(),
+			winston.format.align(),
+			winston.format.json(),
+		);
+	} else if (noColors) {
+		formats = winston.format.combine(
+			winston.format.timestamp(),
+			winston.format.align(),
+			winston.format.printf(stringFormat),
+		);
+	} else {
+		formats = winston.format.combine(
+			winston.format.timestamp(),
+			winston.format.colorize(),
+			winston.format.align(),
+			winston.format.printf(stringFormat),
+		);
+	}
+
+	return winston.createLogger({
+		transports: getTransporters(),
+		format: formats,
+	});
+};
+
+module.exports = logger();
