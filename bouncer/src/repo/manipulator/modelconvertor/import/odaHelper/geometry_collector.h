@@ -135,10 +135,14 @@ namespace repo {
 					*/
 					void stopMeshEntry();
 
-					void setLayer(const std::string id, const std::string &name) {
+					void setLayer(const std::string id, const std::string &name, const std::string parentID = std::string()) {
 						nextLayer = id;
-						if (layerIDToName.find(id) == layerIDToName.end())
+						if (layerIDToName.find(id) == layerIDToName.end()) {
 							layerIDToName[id] = name;
+							if (!parentID.empty()) {
+								layerIDToParent[id] = parentID;
+							}
+						}
 					}
 
 					/**
@@ -243,7 +247,7 @@ namespace repo {
 
 					std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<int, std::vector<mesh_data_t>>>> meshData;
 					std::unordered_map<std::string, std::unordered_map<std::string, std::string> > idToMeta;
-					std::unordered_map<std::string, std::string> layerIDToName;
+					std::unordered_map<std::string, std::string> layerIDToName, layerIDToParent;
 					std::string nextMeshName, nextLayer, nextGroupName;
 					uint32_t nextFormat;
 					std::unordered_map< uint32_t, std::pair<repo::core::model::MaterialNode, repo::core::model::TextureNode> > idxToMat;
@@ -284,6 +288,11 @@ namespace repo {
 
 					mesh_data_t* startOrContinueMeshByFormat(uint32_t format);
 					uint32_t getMeshFormat(bool hasUvs, bool hasNormals, int faceSize);
+					repo::core::model::TransformationNode* ensureParentNodeExists(
+						const std::string &layerId,
+						const repo::lib::RepoUUID &rootId,
+						std::unordered_map<std::string, repo::core::model::TransformationNode*> &layerToTrans
+					);
 
 					mesh_data_t createMeshEntry(uint32_t format);
 				};

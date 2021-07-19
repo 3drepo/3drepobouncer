@@ -69,6 +69,7 @@ bool OdaModelImport::importModel(std::string filePath, uint8_t &err)
 	this->filePath = filePath;
 	repoInfo << " ==== Importing with Teigha Library [" << filePath << "] ====";
 	odaProcessor = odaHelper::FileProcessor::getFileProcessor(filePath, &geoCollector);
+	shouldReduce = odaProcessor->shouldApplyReduction;
 	bool success = false;
 	err = REPOERR_OK;
 	try {
