@@ -37,7 +37,9 @@ namespace repo {
 				class FileProcessorRvt : public FileProcessor
 				{
 				public:
-					FileProcessorRvt(const std::string& inputFile, GeometryCollector* geoCollector) : FileProcessor(inputFile, geoCollector) {};
+					FileProcessorRvt(const std::string& inputFile, GeometryCollector* geoCollector) : FileProcessor(inputFile, geoCollector) {
+						shouldApplyReduction = true;
+					};
 					~FileProcessorRvt() override;
 
 					uint8_t readFile() override;
@@ -53,4 +55,3 @@ namespace repo {
 		}
 	}
 }
-

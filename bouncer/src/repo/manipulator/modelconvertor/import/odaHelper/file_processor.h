@@ -32,7 +32,8 @@ namespace repo {
 					static std::unique_ptr<FileProcessor> getFileProcessor(const std::string& inputFile, GeometryCollector* geoCollector);
 					virtual ~FileProcessor();
 					virtual uint8_t readFile() = 0;
-					
+					bool shouldApplyReduction = false;
+
 				protected:
 					const std::string file;
 					GeometryCollector *collector;
@@ -41,4 +42,3 @@ namespace repo {
 		}
 	}
 }
-

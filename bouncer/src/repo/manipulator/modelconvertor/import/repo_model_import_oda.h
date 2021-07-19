@@ -60,11 +60,12 @@ namespace repo {
 				*/
 				virtual bool importModel(std::string filePath, uint8_t &err);
 
-				virtual bool applyReduction() const { return true; }
+				virtual bool applyReduction() const { return shouldReduce; }
 				virtual bool requireReorientation() const { return true; }
 
 			private:
 				std::string filePath;
+				bool shouldReduce = false;
 #ifdef ODA_SUPPORT
 				odaHelper::GeometryCollector geoCollector;
 				std::unique_ptr<odaHelper::FileProcessor> odaProcessor;
