@@ -44,13 +44,13 @@ bool DataProcessorRvt::ignoreParam(const std::string& param)
 	return IGNORE_PARAMS.find(paramUpper) != IGNORE_PARAMS.end();
 }
 
-std::string DataProcessorRvt::getElementName(OdBmElementPtr element, uint64_t id)
+std::string DataProcessorRvt::getElementName(OdBmElementPtr element)
 {
 	std::string elName(convertToStdString(element->getElementName()));
 	if (!elName.empty())
 		elName.append("_");
 
-	elName.append(std::to_string(id));
+	elName.append(std::to_string((OdUInt64)element->objectId().getHandle()));
 
 	return elName;
 }
@@ -156,8 +156,7 @@ void DataProcessorRvt::init(GeometryCollector* geoColl, OdBmDatabasePtr database
 	establishProjectTranslation(database);
 }
 
-DataProcessorRvt::DataProcessorRvt() :
-	meshesCount(0)
+DataProcessorRvt::DataProcessorRvt()
 {
 }
 
@@ -280,13 +279,16 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 
 	collector->stopMeshEntry();
 
-	std::string elementName = getElementName(element, meshesCount++);
+	std::string elementName = getElementName(element);
 
 	collector->setNextMeshName(elementName);
 	collector->setMeshGroup(elementName);
 
 	std::string layerName = getLevel(element, "Layer Default");
+	// Calling this first time to ensure the layer exists
 	collector->setLayer(layerName, layerName);
+	// This is the actual layer we want to be on.
+	collector->setLayer(elementName, elementName, layerName);
 
 	try
 	{

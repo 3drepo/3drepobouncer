@@ -118,7 +118,7 @@ namespace repo {
 
 					std::unordered_map<std::string, std::string> fillMetadata(OdBmElementPtr element);
 					std::string getLevel(OdBmElementPtr element, const std::string& name);
-					std::string getElementName(OdBmElementPtr element, uint64_t id);
+					std::string getElementName(OdBmElementPtr element);
 
 					void initLabelUtils();
 
@@ -133,7 +133,6 @@ namespace repo {
 						OdBmDatabase* database,
 						OdBm::BuiltInParameterDefinition::Enum param);
 
-					uint64_t meshesCount;
 					OdBmDatabasePtr database;
 					OdBmSampleLabelUtilsPE* labelUtils = nullptr;
 				};
