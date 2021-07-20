@@ -18,7 +18,7 @@
 const { callbackQueueSpecified, unityQueueSpecified, logDirExists } = require('./common');
 const { config } = require('../lib/config');
 const { generateAssetBundles, validateUnityConfigurations } = require('../tasks/unityEditor');
-const { ERRCODE_ARG_FILE_FAIL, ERRCODE_BUNDLE_GEN_FAIL } = require('../constants/errorCodes');
+const { ERRCODE_ARG_FILE_FAIL, ERRCODE_UNITY_LICENCE_INVALID } = require('../constants/errorCodes');
 const { UNITY_PROCESSING } = require('../constants/statuses');
 const logger = require('../lib/logger');
 const Utils = require('../lib/utils');
@@ -46,8 +46,12 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
 			returnMessage.value = ERRCODE_ARG_FILE_FAIL;
 		}
 	} catch (err) {
-		logger.error(`Failed to generate asset bundle: ${err.message || err}`, logLabel);
-		returnMessage.value = ERRCODE_BUNDLE_GEN_FAIL;
+		if (err === ERRCODE_UNITY_LICENCE_INVALID) {
+			logger.error('Failed to generate asset bundle: Invalid unity license', logLabel);
+			throw err;
+		}
+		logger.error(`Failed to generate asset bundle: ${err}`, logLabel);
+		returnMessage.value = err;
 	}
 	return returnMessage;
 };

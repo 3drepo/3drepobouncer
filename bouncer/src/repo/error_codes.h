@@ -85,3 +85,5 @@
 #define REPOERR_TOY_IMPORT_FAILED 33
 //The scene was read successfully but failed during geometry processing due to content problem
 #define REPOERR_GEOMETRY_ERROR 34
+//Used in bouncer worker only
+#define REPOERR_UNITY_LICENSE_INVALID 35
