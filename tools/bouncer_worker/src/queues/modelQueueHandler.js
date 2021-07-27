@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
+const fs = require('fs');
 const {
 	callbackQueueSpecified,
 	modelQueueSpecified,
@@ -27,13 +28,14 @@ const { ERRCODE_OK, ERRCODE_BOUNCER_CRASH } = require('../constants/errorCodes')
 const { MODEL_PROCESSING, UNITY_QUEUED } = require('../constants/statuses');
 const { messageDecoder } = require('../lib/messageDecoder');
 const logger = require('../lib/logger');
+const Utils = require('../lib/utils');
 
 const Handler = {};
 const logLabel = { label: 'MODELQ' };
 
 Handler.onMessageReceived = async (cmd, rid, callback) => {
 	const logDir = `${config.logging.taskLogDir}/${rid.toString()}/`;
-	const { errorCode, database, model, user, cmdParams } = messageDecoder(cmd);
+	const { errorCode, database, model, user, cmdParams, file } = messageDecoder(cmd);
 
 	if (errorCode) {
 		callback(JSON.stringify({ value: errorCode }));
@@ -54,7 +56,18 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	};
 
 	try {
-		returnMessage.value = await runBouncerCommand(logDir, cmdParams);
+		const { size } = fs.statSync(file);
+		const processInformation = Utils.gatherProcessInformation(
+			user,
+			model,
+			database,
+			logLabel.label, // queue
+			file.split('.').pop().toString(), // filetype
+			size, // filesize
+		);
+
+		returnMessage.value = await runBouncerCommand(logDir, cmdParams, processInformation);
+
 		callback(JSON.stringify(returnMessage), config.rabbitmq.unity_queue);
 		callback(JSON.stringify({
 			status: UNITY_QUEUED,

@@ -40,9 +40,13 @@ BouncerHandler.testClient = async () => {
 	}
 };
 
-BouncerHandler.runBouncerCommand = async (logDir, cmdParams) => {
+BouncerHandler.runBouncerCommand = async (
+	logDir,
+	cmdParams,
+	processInformation,
+) => {
 	setBouncerEnvars(logDir);
-	return run(bouncerClientPath, cmdParams, { codesAsSuccess: BOUNCER_SOFT_FAILS, logLabel: { label: 'BOUNCER' } });
+	return run(bouncerClientPath, cmdParams, { codesAsSuccess: BOUNCER_SOFT_FAILS, logLabel: { label: 'BOUNCER' } }, processInformation);
 };
 
 BouncerHandler.generateTreeStash = async (logDir, database, modelId, stashType, rev = 'all') => {

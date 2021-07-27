@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2018 3D Repo Ltd
+*  Copyright (C) 2021 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -17,39 +17,19 @@
 
 #pragma once
 
-#include "../../../../core/model/bson/repo_node_mesh.h"
-
-#include <OdaCommon.h>
-#include <Gs/GsBaseInclude.h>
-#include <RxObjectImpl.h>
-#include <Wr/wrTriangulationParams.h>
-
-#include <vector>
-#include <string>
-
-#include "geometry_collector.h"
-#include "file_processor.h"
+#include "file_processor_dgn.h"
 
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-				class FileProcessorRvt : public FileProcessor
+				class FileProcessorDwg : public FileProcessorDgn
 				{
 				public:
-					FileProcessorRvt(const std::string& inputFile, GeometryCollector* geoCollector) : FileProcessor(inputFile, geoCollector) {
-						shouldApplyReduction = true;
-					};
-					~FileProcessorRvt() override;
-
-					uint8_t readFile() override;
-
-				private:
-					/**
-					* This method changes tessellation options
-					* @param edgeLength - maximum triangle edge length
-					*/
-					void setTessellationParams(wrTriangulationParams params);
+					FileProcessorDwg(const std::string &inputFile, GeometryCollector * geoCollector) : FileProcessorDgn(inputFile, geoCollector) {}
+					~FileProcessorDwg() override {}
+				protected:
+					virtual OdDgDatabasePtr initialiseOdDatabase();
 				};
 			}
 		}

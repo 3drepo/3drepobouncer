@@ -266,17 +266,17 @@ TEST(RepoClientTest, UploadTestBIM)
 	std::string mongoDbName = "stUpload";
 
 	std::string spoofedBim1PrjName = "spoofedBIM1Test";
-	EXPECT_EQ(REPOERR_UNSUPPORTED_BIM_VERSION, 
+	EXPECT_EQ(REPOERR_UNSUPPORTED_BIM_VERSION,
 		testUpload(mongoDbName, spoofedBim1PrjName, "RepoModelImport/cube_bim1_spoofed.bim"));
 	EXPECT_FALSE(projectExists(mongoDbName, spoofedBim1PrjName));
 
 	std::string okBim2PrjName = "okBIM2Test";
-	EXPECT_EQ(REPOERR_OK, 
+	EXPECT_EQ(REPOERR_OK,
 		testUpload(mongoDbName, okBim2PrjName, "RepoModelImport/cube_bim2_navis_2021_repo_4.6.1.bim"));
 	EXPECT_TRUE(projectExists(mongoDbName, okBim2PrjName));
 
 	std::string okBim3PrjName = "okBIM3Test";
-	EXPECT_EQ(REPOERR_OK, 
+	EXPECT_EQ(REPOERR_OK,
 		testUpload(mongoDbName, okBim3PrjName, "RepoModelImport/BrickWalls_bim3.bim"));
 	EXPECT_TRUE(projectExists(mongoDbName, okBim3PrjName));
 
@@ -286,12 +286,12 @@ TEST(RepoClientTest, UploadTestBIM)
 	EXPECT_TRUE(projectExists(mongoDbName, okBim4PrjName));
 
 	std::string corrTxtrBim3PrjName = "corruptedTextureBIM3Test";
-	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_TEXTURE, 
+	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_TEXTURE,
 		testUpload(mongoDbName, corrTxtrBim3PrjName, "RepoModelImport/BrickWalls_bim3_CorruptedTextureField.bim"));
 	EXPECT_TRUE(projectExists(mongoDbName, corrTxtrBim3PrjName));
 
 	std::string corrMatBim3PrjName = "corruptedMaterialBIM3Test";
-	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_NODES, 
+	EXPECT_EQ(REPOERR_LOAD_SCENE_MISSING_NODES,
 		testUpload(mongoDbName, corrMatBim3PrjName, "RepoModelImport/BrickWalls_bim3_MissingTexture.bim"));
 	EXPECT_TRUE(projectExists(mongoDbName, corrMatBim3PrjName));
 }
@@ -318,6 +318,30 @@ TEST(RepoClientTest, UploadTestDGN)
 	std::string dgnUpload = produceUploadArgs(db, "dgnTest", getDataPath(dgnModel));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(dgnUpload));
 	EXPECT_TRUE(projectExists(db, "dgnTest"));
+}
+
+TEST(RepoClientTest, UploadTestDWG)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
+
+	//Upload DWG file
+	std::string dwgUpload = produceUploadArgs(db, "dwgTest", getDataPath(dwgModel));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(dwgUpload));
+	EXPECT_TRUE(projectExists(db, "dwgTest"));
+}
+
+TEST(RepoClientTest, UploadTestDXF)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
+
+	//Upload XF file
+	std::string dxfUpload = produceUploadArgs(db, "dxfTest", getDataPath(dxfModel));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(dxfUpload));
+	EXPECT_TRUE(projectExists(db, "dxfTest"));
 }
 
 TEST(RepoClientTest, UploadTestRVT)

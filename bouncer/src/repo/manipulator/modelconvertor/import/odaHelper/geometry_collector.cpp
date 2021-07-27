@@ -245,6 +245,23 @@ void GeometryCollector::addFace(
 	meshData->faces.push_back(face);
 }
 
+repo::core::model::TransformationNode* GeometryCollector::ensureParentNodeExists(
+	const std::string &layerId,
+	const repo::lib::RepoUUID &rootId,
+	std::unordered_map<std::string, repo::core::model::TransformationNode*> &layerToTrans
+
+) {
+	if (layerToTrans.find(layerId) == layerToTrans.end()) {
+		auto parent = rootId;
+		if (layerIDToParent.find(layerId) != layerIDToParent.end()) {
+			parent = ensureParentNodeExists(layerIDToParent[layerId], rootId, layerToTrans)->getSharedID();
+		}
+		layerToTrans[layerId] = createTransNode(layerIDToName[layerId], layerId, parent);
+		transNodes.insert(layerToTrans[layerId]);
+	}
+	return layerToTrans[layerId];
+}
+
 repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core::model::TransformationNode& root) {
 	repo::core::model::RepoNodeSet res;
 	auto dummyCol = std::vector<repo_color4d_t>();
@@ -285,10 +302,7 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 						std::vector<std::vector<repo::lib::RepoVector2D>>{meshData.vertexMap.uvs} :
 						std::vector<std::vector<repo::lib::RepoVector2D>>();
 
-					if (layerToTrans.find(meshLayerEntry.first) == layerToTrans.end()) {
-						layerToTrans[meshLayerEntry.first] = createTransNode(layerIDToName[meshLayerEntry.first], meshLayerEntry.first, rootId);
-						transNodes.insert(layerToTrans[meshLayerEntry.first]);
-					}
+					ensureParentNodeExists(meshLayerEntry.first, rootId, layerToTrans);
 
 					std::vector<repo::lib::RepoVector3D> normals32;
 
@@ -310,6 +324,8 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 
 					std::vector<repo::lib::RepoVector3D> vertices32;
 					vertices32.reserve(meshData.vertexMap.vertices.size());
+					bool partialObject = meshGroupEntry.first == meshLayerEntry.first;
+					auto parentId = layerToTrans[meshLayerEntry.first]->getSharedID();
 
 					for (int i = 0; i < meshData.vertexMap.vertices.size(); ++i) {
 						auto& v = meshData.vertexMap.vertices[i];
@@ -324,12 +340,12 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 						uvChannels,
 						dummyCol,
 						dummyOutline,
-						meshGroupEntry.first,
-						{ layerToTrans[meshLayerEntry.first]->getSharedID() }
+						partialObject ? "" : meshGroupEntry.first,
+						{ parentId }
 					);
 
 					if (idToMeta.find(meshGroupEntry.first) != idToMeta.end()) {
-						metaNodes.insert(createMetaNode(meshGroupEntry.first, { meshNode.getSharedID() }, idToMeta[meshGroupEntry.first]));
+						metaNodes.insert(createMetaNode(meshGroupEntry.first, { partialObject ? parentId : meshNode.getSharedID() }, idToMeta[meshGroupEntry.first]));
 					}
 
 					if (matToMeshes.find(meshData.matIdx) == matToMeshes.end()) {

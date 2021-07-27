@@ -21,6 +21,7 @@ const { generateAssetBundles, validateUnityConfigurations } = require('../tasks/
 const { ERRCODE_ARG_FILE_FAIL, ERRCODE_BUNDLE_GEN_FAIL } = require('../constants/errorCodes');
 const { UNITY_PROCESSING } = require('../constants/statuses');
 const logger = require('../lib/logger');
+const Utils = require('../lib/utils');
 
 const logLabel = { label: 'UNITYQ' };
 
@@ -34,7 +35,13 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
 
 	try {
 		if (database && model) {
-			await generateAssetBundles(database, model, rid, logDir);
+			const processInformation = Utils.gatherProcessInformation(
+				user,
+				model,
+				database,
+				logLabel.label, // queue
+			);
+			await generateAssetBundles(database, model, rid, logDir, processInformation);
 		} else {
 			returnMessage.value = ERRCODE_ARG_FILE_FAIL;
 		}
@@ -42,7 +49,6 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
 		logger.error(`Failed to generate asset bundle: ${err.message || err}`, logLabel);
 		returnMessage.value = ERRCODE_BUNDLE_GEN_FAIL;
 	}
-
 	return returnMessage;
 };
 
@@ -57,7 +63,6 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		database,
 		project,
 	}));
-
 	const message = await processUnity(database, project, user, rid, logDir, value);
 	callback(JSON.stringify(message));
 };
