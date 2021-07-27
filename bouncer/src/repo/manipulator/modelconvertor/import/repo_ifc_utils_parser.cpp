@@ -801,7 +801,7 @@ std::string IFCUtilsParser::getValueAsString(
 			if (element) {
 				std::vector<int> num = *element;
 				std::stringstream ss;
-				ss >> std::string("[");
+				ss << "[";
 				bool first = true;
 				for (const auto &i : num) {
 					if (!first) {
