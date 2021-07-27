@@ -830,7 +830,7 @@ std::string IFCUtilsParser::getValueAsString(
 		}
 		else if (typeName == IFC_TYPE_DESCRIPTIVE_MEASURE) {
 			auto element = static_cast<const IfcSchema::IfcDescriptiveMeasure *>(ifcValue);
-			value = element ? *element : value;
+			value = element ? (std::string)*element : value;
 		}
 		else if (typeName == IFC_TYPE_DOSE_EQUIVALENT_MEASURE) {
 			auto element = static_cast<const IfcSchema::IfcDoseEquivalentMeasure *>(ifcValue);
@@ -943,7 +943,7 @@ std::string IFCUtilsParser::getValueAsString(
 		}
 		else if (typeName == IFC_TYPE_LABEL) {
 			auto element = static_cast<const IfcSchema::IfcLabel *>(ifcValue);
-			value = element ? *element : value;
+			value = element ? (std::string)*element : value;
 		}
 		else if (typeName == IFC_TYPE_LENGTH_MEASURE) {
 			auto element = static_cast<const IfcSchema::IfcLengthMeasure *>(ifcValue);
@@ -1164,7 +1164,7 @@ std::string IFCUtilsParser::getValueAsString(
 		}
 		else if (typeName == IFC_TYPE_TEXT) {
 			auto element = static_cast<const IfcSchema::IfcText *>(ifcValue);
-			value = element ? *element : value;
+			value = element ? (std::string)*element : value;
 		}
 		else if (typeName == IFC_TYPE_THERMAL_ADMITTANCE_MEASURE) {
 			auto element = static_cast<const IfcSchema::IfcThermalAdmittanceMeasure *>(ifcValue);
