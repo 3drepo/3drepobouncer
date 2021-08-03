@@ -25,11 +25,6 @@
 
 using namespace repo::lib;
 
-const static int MAJOR_NUMBER = 4;
-const static int MINOR_NUMBER = 17;
-const static int MINOR_REV = 1;
-
-
 CSharpWrapper* CSharpWrapper::wrapper = nullptr;
 CSharpWrapper::CSharpWrapper()
 	: controller(new repo::RepoController()),
@@ -274,7 +269,7 @@ void CSharpWrapper::getTexture(
 std::string CSharpWrapper::getVersion() const
 {
 	std::stringstream ss;
-	ss << "v" << MAJOR_NUMBER << "." << MINOR_NUMBER << "." << MINOR_REV << " (Bouncer version: v" + controller->getVersion() << ")";
+	ss << "3D Repo Bouncer Version: " + controller->getVersion();
 	return ss.str();
 }
 
