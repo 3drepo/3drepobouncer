@@ -1,104 +1,12 @@
-#  Copyright (C) 2015 3D Repo Ltd
-#
-#  This program is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU Affero General Public License as
-#  published by the Free Software Foundation, either version 3 of the
-#  License, or (at your option) any later version.
-#
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU Affero General Public License for more details.
-#
-#  You should have received a copy of the GNU Affero General Public License
-#  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+add_subdirectory(src)
 
-# Code to automatically generate CMakeList.txt in sub directories
-# This project compiles a library with source files span across multiple directories
-# So this generates a CMakeList.txt for each sub directory within the src folder
-# update the SOURCES and HEADERS variable, and include their child directory
+include_directories(src ../bouncer/src ${Boost_INCLUDE_DIR} ${MONGO_INCLUDE_DIR})
 
-project("3drepobouncer")
-
-cmake_minimum_required(VERSION 2.8)
-
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
-
-
-option (REPO_BUILD_COVERAGE "Building with coverage report" OFF)
-if(REPO_BUILD_COVERAGE)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 --coverage")
-endif()
-
-#================BOOST SETTINGS=======================
-add_definitions(-DBOOST_ALL_NO_LIB)
-add_definitions(-DBOOST_LOG_DYN_LINK)
-add_definitions(-DBOOST_PROGRAM_OPTIONS_DYN_LINK)
-add_definitions(-DBOOST_UUID_NO_SIMD)
-set(Boost_USE_STATIC_LIBS OFF)
-set(Boost_USE_MULTITHREADED ON)
-set(Boost_USE_STATIC_RUNTIME OFF)
-
-unset(Boost_INCLUDE_DIR CACHE)
-unset(Boost_LIBRARY_DIRS CACHE)
-
-find_package(Boost REQUIRED COMPONENTS system thread chrono log log_setup filesystem program_options regex)
-add_definitions(${Boost_LIB_DIAGNOSTIC_DEFINITIONS})
-add_definitions(-DBOOST_OPTIONAL_USE_OLD_DEFINITION_OF_NONE)
-
-if(NOT ${Boost_FOUND})
-	message(FATAL_ERROR "Cannot find boost")
-endif()
-
-
-#================MONGO SETTINGS=======================
-find_package(Mongo REQUIRED)
-if(NOT ${MONGO_FOUND})
-	message(FATAL_ERROR "Cannot find mongo cxx driver")
-endif()
-
-
-#================ASSIMP SETTINGS=======================
-find_package(ASSIMPM REQUIRED)
-if(NOT ${ASSIMPM_FOUND})
-	message(FATAL_ERROR "Cannot find assimp")
-endif()
-
-#===============IFCOPENSHELL SETTINGS==================
-find_package(OCCT REQUIRED)
-find_package(IFCOPENSHELL REQUIRED)
-if(NOT ${OCCT_FOUND})
-	message(FATAL_ERROR "Cannot find OCCT")
-endif()
-if(NOT ${IFCOPENSHELL_FOUND})
-	message(FATAL_ERROR "Cannot find IFCOpenShell")
-endif()
-
-#===============3D REPO BOUNCER SETTINGS==================
-find_package(BOUNCER REQUIRED)
-if(NOT ${BOUNCER_FOUND})
-	message(FATAL_ERROR "Cannot find 3D RepoBouncer")
-endif()
-
-#================COMPILE BOUNCER WRAPPER ==============
-add_definitions( -DWIN32_LEAN_AND_MEAN )
-add_definitions( -DREPO_WRAPPER_API_LIBRARY)
-
-set(WRAPPER_SOURCES
-	${CMAKE_CURRENT_SOURCE_DIR}/src/c_sharp_wrapper.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/repo_csharp_interface.cpp
-	CACHE STRING "WRAPPER_SOURCES" FORCE)
-
-set(TOOLS_HEADERS
-	${CMAKE_CURRENT_SOURCE_DIR}/src/c_sharp_wrapper.h
-	${CMAKE_CURRENT_SOURCE_DIR}/src/repo_csharp_interface.h
-	CACHE STRING "WRAPPER_HEADERS" FORCE)
-
-include_directories(src ${BOUNCER_INCLUDE_DIR} ${Boost_INCLUDE_DIR} ${MONGO_INCLUDE_DIR})
 add_library(3drepobouncerwrapper SHARED ${WRAPPER_SOURCES})
-target_link_libraries(3drepobouncerwrapper ${BOUNCER_LIBRARIES} 
+
+target_link_libraries(3drepobouncerwrapper 3drepobouncer
 	${Boost_LIBRARIES} ${MONGO_LIBRARIES} ${ASSIMP_LIBRARIES} ${OCCT_LIBRARIES} ${IFCOPENSHELL_GEOMLIB} ${IFCOPENSHELL_PARSERLIB})
 
 install(DIRECTORY src/ DESTINATION include FILES_MATCHING PATTERN "*.h")
+
 install(TARGETS 3drepobouncerwrapper DESTINATION lib)
