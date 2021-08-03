@@ -113,6 +113,7 @@ endif()
 
 #================COMPILE 3D REPO BOUNCER ==============
 option (REPO_BUILD_WRAPPER "If the C# wrapper is built in addition to the library" OFF)
+option (REPO_BUILD_WRAPPER_TESTS "If the C# wrapper test suite is built" OFF)
 option (REPO_BUILD_CLIENT "If the Command Line Client is built in addition to the library" ON)
 option (REPO_BUILD_TOOLS "If the Command Line Tool is built in addition to the library" ON)
 option (REPO_BUILD_TESTS "If the test suite is built in addition to the library" OFF)
@@ -154,4 +155,12 @@ if (REPO_BUILD_WRAPPER)
 	add_subdirectory(wrapper)
 endif()
 
+#wrapper test exe
+if (REPO_BUILD_WRAPPER_TESTS)
+	if (NOT REPO_BUILD_TESTS)
+		set(gtest_force_shared_crt ON CACHE BOOL "Build gtest as shared library" FORCE)
+		add_subdirectory(submodules/googletest)
+	endif()
+	add_subdirectory(wrapper_test)
+endif()
 
