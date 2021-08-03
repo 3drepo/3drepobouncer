@@ -3,6 +3,7 @@ import os
 srcDir='bouncer/src'
 testDir='test/src'
 clientDir='client/src'
+wrapperDir='wrapper/src'
 
 
 def printHeaderForCMakeFiles(file):
@@ -85,4 +86,9 @@ for dir, subDirList, fl in os.walk(testDir):
 
 for dir, subDirList, fl in os.walk(clientDir):
 	createCMakeList(dir, fl, subDirList, "CLIENT_SOURCES", "CLIENT_HEADERS")
+    
+for dir, subDirList, fl in os.walk(wrapperDir):
+	createCMakeList(dir, fl, subDirList, "WRAPPER_SOURCES", "WRAPPER_HEADERS")
+
+
 
