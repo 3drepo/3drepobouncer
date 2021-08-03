@@ -1,3 +1,6 @@
+# Required for exporting the wrapper API in the built library
+add_definitions( -DREPO_WRAPPER_API_LIBRARY)
+
 add_subdirectory(src)
 
 include_directories(src ../bouncer/src ${Boost_INCLUDE_DIR} ${MONGO_INCLUDE_DIR})
