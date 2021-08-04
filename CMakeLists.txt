@@ -141,6 +141,12 @@ if (REPO_BUILD_CLIENT)
 	add_subdirectory(client)
 endif()
 
+# gtest
+if(REPO_BUILD_TESTS OR REPO_BUILD_WRAPPER_TESTS)
+	set(gtest_force_shared_crt ON CACHE BOOL "Build gtest as shared library" FORCE)
+	add_subdirectory(submodules/googletest)
+endif()
+
 #tool exe
 if (REPO_BUILD_TOOLS)
 	add_subdirectory(tools)
@@ -161,9 +167,4 @@ if (REPO_BUILD_WRAPPER_TESTS)
 	add_subdirectory(wrapper_test)
 endif()
 
-# gtest
-if(REPO_BUILD_TESTS OR REPO_BUILD_WRAPPER_TESTS)
-	set(gtest_force_shared_crt ON CACHE BOOL "Build gtest as shared library" FORCE)
-	add_subdirectory(submodules/googletest)
-endif()
 
