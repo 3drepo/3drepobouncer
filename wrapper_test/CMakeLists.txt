@@ -1,15 +1,13 @@
 add_subdirectory(src)
 
 enable_testing()
-# add_definitions(-DREPO_API_LIBRARY)
-add_definitions(-DREPO_WRAPPER_API_EXPORT)
-
 
 include_directories(
+	src
 	${gtest_SOURCE_DIR}/include 
 	${gtest_SOURCE_DIR} 
 	../bouncer/src 
-	../wrapper/src
+	../wrapper/src 
 	${Boost_INCLUDE_DIR} 
 	${MONGO_INCLUDE_DIR} 
 	${ASSIMP_INCLUDE_DIR}  
@@ -24,6 +22,7 @@ add_executable(3drepobouncerwrapperTest ${WRAPPERTEST_SOURCES})
 target_link_libraries(3drepobouncerwrapperTest 
 	gtest 
 	3drepobouncerwrapper
+	3drepobouncer
 	${Boost_LIBRARIES} 
 	${MONGO_LIBRARIES} 
 	${ASSIMP_LIBRARIES} 
