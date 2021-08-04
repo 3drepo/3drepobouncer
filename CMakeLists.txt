@@ -118,7 +118,7 @@ option (REPO_BUILD_WRAPPER "If the C# wrapper is built in addition to the librar
 cmake_dependent_option (REPO_BUILD_WRAPPER_TESTS "If the C# wrapper test suite is built" OFF "REPO_BUILD_WRAPPER" OFF)
 option (REPO_BUILD_CLIENT "If the Command Line Client is built in addition to the library" ON)
 option (REPO_BUILD_TOOLS "If the Command Line Tool is built in addition to the library" ON)
-option (REPO_BUILD_TESTS "If the test suite is built in addition to the library" OFF)
+option (REPO_BUILD_TESTS "If the test suite for the core bouncer logic is built in addition to the library" OFF)
 option (REPO_NO_GZIP "If zlib is not compiled into boost" OFF)
 
 add_definitions( -DWIN32_LEAN_AND_MEAN )
