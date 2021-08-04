@@ -74,22 +74,14 @@ extern "C"
 	* @return returns true if successfully connected, false otherwise
 	*/
 	REPO_WRAPPER_API_EXPORT bool repoConnect(
-		char* configPath)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return wrapper->connect(configPath);
-	}
+		char* configPath);
 
 	/*
 	 * Free memory occupied by the super mesh at a given index
 	 * @param meshIndex index of the super mesh to free
 	 */
 	REPO_WRAPPER_API_EXPORT void repoFreeSuperMesh(
-		int meshIndex)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		wrapper->freeSuperMesh(meshIndex);
-	}
+		int meshIndex);
 
 	/**
 	* Get ID Map buffer for submesh
@@ -97,11 +89,7 @@ extern "C"
 	* @param smIndex submesh index
 	* @param idMap pre-allocated buffer for the ID Map
 	*/
-	REPO_WRAPPER_API_EXPORT void repoGetIdMapBuffer(int index, int smIndex, float* idMap)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		wrapper->getIdMapBuffer(index, smIndex, idMap);
-	}
+	REPO_WRAPPER_API_EXPORT void repoGetIdMapBuffer(int index, int smIndex, float* idMap);
 
 	/**
 	* Retrieve the information of the materials given the material ID
@@ -116,11 +104,7 @@ extern "C"
 		float* diffuse,
 		float* specular,
 		float* shininess,
-		float* shininessStrength)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		wrapper->getMaterialInfo(materialID, diffuse, specular, shininess, shininessStrength);
-	}
+		float* shininessStrength);
 
 	/**
 	* Get original mesh information from submesh
@@ -135,21 +119,13 @@ extern "C"
 		int smIndex,
 		int orgMeshIdx,
 		int* smFFrom,
-		int* smFTo)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return  cStringCopy(wrapper->getOrgMeshInfoFromSubMesh(index, smIndex, orgMeshIdx, smFFrom, smFTo));
-	}
+		int* smFTo);
 
 	/**
 	* Get number of super meshes in the loaded project
 	* @return returns the number of super meshes in this project
 	*/
-	REPO_WRAPPER_API_EXPORT int repoGetNumSuperMeshes()
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return wrapper->getNumSuperMeshes();
-	}
+	REPO_WRAPPER_API_EXPORT int repoGetNumSuperMeshes();
 
 	/**
 	 * Get number of revisions within the given project
@@ -159,11 +135,7 @@ extern "C"
 	 */
 	REPO_WRAPPER_API_EXPORT char* repoGetRevisionList(
 		char* database,
-		char* project)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return cStringCopy(wrapper->getRevisionList(database, project));
-	}
+		char* project);
 
 	/**
 	* Retrieve location of buffers for this supermesh submesh
@@ -180,11 +152,7 @@ extern "C"
 		int* vFrom,
 		int* vTo,
 		int* fFrom,
-		int* fTo)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return wrapper->getSubMeshInfo(index, subIdx, vFrom, vTo, fFrom, fTo);
-	}
+		int* fTo);
 
 	/**
 	* Copy over buffers from superMesh
@@ -200,11 +168,7 @@ extern "C"
 		float* normals,
 		uint16_t* faces,
 		float* uvs,
-		int* numOrgMeshes)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		wrapper->getSuperMeshBuffers(index, vertices, normals, faces, uvs, numOrgMeshes);
-	}
+		int* numOrgMeshes);
 
 	/**
 	* Get info on a supermesh
@@ -224,11 +188,7 @@ extern "C"
 		bool* hasNormals,
 		bool* hasUV,
 		int* primitiveType,
-		int* numMappings)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return cStringCopy(wrapper->getSuperMeshInfo(index, subMeshes, numVertices, numFaces, hasNormals, hasUV, primitiveType, numMappings));
-	}
+		int* numMappings);
 
 	/**
 	* Get texture binary for the given material
@@ -237,17 +197,9 @@ extern "C"
 	*/
 	REPO_WRAPPER_API_EXPORT void repoGetTexture(
 		char* materialID,
-		char* texBuf)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return wrapper->getTexture(materialID, texBuf);
-	}
+		char* texBuf);
 
-	REPO_WRAPPER_API_EXPORT char* repoGetWrapperVersionString()
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return cStringCopy(wrapper->getVersion());
-	}
+	REPO_WRAPPER_API_EXPORT char* repoGetWrapperVersionString();
 
 	/**
 	* Check if the material has textures
@@ -255,21 +207,13 @@ extern "C"
 	* @return returns size of texture, 0 if none
 	*/
 	REPO_WRAPPER_API_EXPORT int repoHasTexture(
-		char* materialID)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return wrapper->hasTexture(materialID);
-	}
+		char* materialID);
 
 	/**
 	 * Check if VR is enabled for this model
 	 * @return returns true if it is enabled, false otherwise
 	 */
-	REPO_WRAPPER_API_EXPORT bool repoIsVREnabled()
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return wrapper->isVREnabled();
-	}
+	REPO_WRAPPER_API_EXPORT bool repoIsVREnabled();
 
 	/**
 	* Check if thegiven model is a federation of models
@@ -279,11 +223,7 @@ extern "C"
 	*/
 	REPO_WRAPPER_API_EXPORT bool repoIsFederation(
 		char* database,
-		char* project)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return wrapper->isFederation(database, project);
-	}
+		char* project);
 
 	/**
 	* Load a Repo scene from the database, in preparation for asset bundle generation
@@ -295,11 +235,7 @@ extern "C"
 	REPO_WRAPPER_API_EXPORT bool repoLoadSceneForAssetBundleGeneration(
 		char* database,
 		char* project,
-		char* revisionID)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return wrapper->initialiseSceneForAssetBundle(database, project, revisionID);
-	}
+		char* revisionID);
 
 	/**
 	* Save asset bundles into the database
@@ -309,11 +245,5 @@ extern "C"
 	REPO_WRAPPER_API_EXPORT bool repoSaveAssetBundles(
 		char** assetFiles,
 		int      length
-		)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return wrapper->saveAssetBundles(assetFiles, length);
-	}
-
-
+	);
 }

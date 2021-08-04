@@ -18,12 +18,152 @@
 #include "repo_csharp_interface.h"
 #include "c_sharp_wrapper.h"
 
-//REPO_API_EXPORT bool connect(
-//		char* address,
-//		int   port,
-//		char* username,
-//		char* password)
-//{
-//	auto wrapper = repo::lib::CSharpWrapper::getInstance();
-//
-//}
+extern "C"
+{
+	REPO_WRAPPER_API_EXPORT bool repoConnect(
+		char* configPath)
+	{
+		auto wrapper = repo::lib::CSharpWrapper::getInstance();
+		return wrapper->connect(configPath);
+	}
+
+	REPO_WRAPPER_API_EXPORT void repoFreeSuperMesh(
+		int meshIndex)
+	{
+		auto wrapper = repo::lib::CSharpWrapper::getInstance();
+		wrapper->freeSuperMesh(meshIndex);
+	}
+
+	REPO_WRAPPER_API_EXPORT void repoGetIdMapBuffer(int index, int smIndex, float* idMap)
+	{
+		auto wrapper = repo::lib::CSharpWrapper::getInstance();
+		wrapper->getIdMapBuffer(index, smIndex, idMap);
+	}
+
+	REPO_WRAPPER_API_EXPORT void repoGetMaterialInfo(
+		char* materialID,
+		float* diffuse,
+		float* specular,
+		float* shininess,
+		float* shininessStrength)
+	{
+		auto wrapper = repo::lib::CSharpWrapper::getInstance();
+		wrapper->getMaterialInfo(materialID, diffuse, specular, shininess, shininessStrength);
+	}
+
+	REPO_WRAPPER_API_EXPORT char* repoGetOrgMeshInfoFromSubMesh(
+		int index,
+		int smIndex,
+		int orgMeshIdx,
+		int* smFFrom,
+		int* smFTo)
+	{
+		auto wrapper = repo::lib::CSharpWrapper::getInstance();
+		return  cStringCopy(wrapper->getOrgMeshInfoFromSubMesh(index, smIndex, orgMeshIdx, smFFrom, smFTo));
+	}
+
+	REPO_WRAPPER_API_EXPORT int repoGetNumSuperMeshes()
+	{
+		auto wrapper = repo::lib::CSharpWrapper::getInstance();
+		return wrapper->getNumSuperMeshes();
+	}
+
+	REPO_WRAPPER_API_EXPORT char* repoGetRevisionList(
+		char* database,
+		char* project)
+	{
+		auto wrapper = repo::lib::CSharpWrapper::getInstance();
+		return cStringCopy(wrapper->getRevisionList(database, project));
+	}
+
+	REPO_WRAPPER_API_EXPORT void repoGetSubMeshInfo(
+		int index,
+		int subIdx,
+		int* vFrom,
+		int* vTo,
+		int* fFrom,
+		int* fTo)
+	{
+		auto wrapper = repo::lib::CSharpWrapper::getInstance();
+		return wrapper->getSubMeshInfo(index, subIdx, vFrom, vTo, fFrom, fTo);
+	}
+
+	REPO_WRAPPER_API_EXPORT void repoGetSuperMeshBuffers(
+		int index,
+		float* vertices,
+		float* normals,
+		uint16_t* faces,
+		float* uvs,
+		int* numOrgMeshes)
+	{
+		auto wrapper = repo::lib::CSharpWrapper::getInstance();
+		wrapper->getSuperMeshBuffers(index, vertices, normals, faces, uvs, numOrgMeshes);
+	}
+
+	REPO_WRAPPER_API_EXPORT char* repoGetSuperMeshInfo(
+		int index,
+		long* subMeshes,
+		long* numVertices,
+		long* numFaces,
+		bool* hasNormals,
+		bool* hasUV,
+		int* primitiveType,
+		int* numMappings)
+	{
+		auto wrapper = repo::lib::CSharpWrapper::getInstance();
+		return cStringCopy(wrapper->getSuperMeshInfo(index, subMeshes, numVertices, numFaces, hasNormals, hasUV, primitiveType, numMappings));
+	}
+
+	REPO_WRAPPER_API_EXPORT void repoGetTexture(
+		char* materialID,
+		char* texBuf)
+	{
+		auto wrapper = repo::lib::CSharpWrapper::getInstance();
+		return wrapper->getTexture(materialID, texBuf);
+	}
+
+	REPO_WRAPPER_API_EXPORT char* repoGetWrapperVersionString()
+	{
+		auto wrapper = repo::lib::CSharpWrapper::getInstance();
+		return cStringCopy(wrapper->getVersion());
+	}
+
+	REPO_WRAPPER_API_EXPORT int repoHasTexture(
+		char* materialID)
+	{
+		auto wrapper = repo::lib::CSharpWrapper::getInstance();
+		return wrapper->hasTexture(materialID);
+	}
+
+	REPO_WRAPPER_API_EXPORT bool repoIsVREnabled()
+	{
+		auto wrapper = repo::lib::CSharpWrapper::getInstance();
+		return wrapper->isVREnabled();
+	}
+
+	REPO_WRAPPER_API_EXPORT bool repoIsFederation(
+		char* database,
+		char* project)
+	{
+		auto wrapper = repo::lib::CSharpWrapper::getInstance();
+		return wrapper->isFederation(database, project);
+	}
+
+	REPO_WRAPPER_API_EXPORT bool repoLoadSceneForAssetBundleGeneration(
+		char* database,
+		char* project,
+		char* revisionID)
+	{
+		auto wrapper = repo::lib::CSharpWrapper::getInstance();
+		return wrapper->initialiseSceneForAssetBundle(database, project, revisionID);
+	}
+
+	REPO_WRAPPER_API_EXPORT bool repoSaveAssetBundles(
+		char** assetFiles,
+		int      length
+	)
+	{
+		auto wrapper = repo::lib::CSharpWrapper::getInstance();
+		return wrapper->saveAssetBundles(assetFiles, length);
+	}
+}
