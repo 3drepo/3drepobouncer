@@ -18,6 +18,8 @@
 # So this generates a CMakeList.txt for each sub directory within the src folder
 # update the SOURCES and HEADERS variable, and include their child directory
 
+include(CMakeDependentOption)
+
 project("3drepobouncer")
 
 cmake_minimum_required(VERSION 2.8)
@@ -113,11 +115,12 @@ endif()
 
 #================COMPILE 3D REPO BOUNCER ==============
 option (REPO_BUILD_WRAPPER "If the C# wrapper is built in addition to the library" OFF)
-option (REPO_BUILD_WRAPPER_TESTS "If the C# wrapper test suite is built" OFF)
+cmake_dependent_option (REPO_BUILD_WRAPPER_TESTS "If the C# wrapper test suite is built" OFF "REPO_BUILD_WRAPPER" OFF)
 option (REPO_BUILD_CLIENT "If the Command Line Client is built in addition to the library" ON)
 option (REPO_BUILD_TOOLS "If the Command Line Tool is built in addition to the library" ON)
 option (REPO_BUILD_TESTS "If the test suite is built in addition to the library" OFF)
 option (REPO_NO_GZIP "If zlib is not compiled into boost" OFF)
+
 add_definitions( -DWIN32_LEAN_AND_MEAN )
 
 if(VALID_UNTIL GREATER 0)
@@ -145,8 +148,6 @@ endif()
 
 #test exe
 if (REPO_BUILD_TESTS)
-	set(gtest_force_shared_crt ON CACHE BOOL "Build gtest as shared library" FORCE)
-	add_subdirectory(submodules/googletest)
 	add_subdirectory(test)
 endif()
 
@@ -157,10 +158,12 @@ endif()
 
 #wrapper test exe
 if (REPO_BUILD_WRAPPER_TESTS)
-	if (NOT REPO_BUILD_TESTS)
-		set(gtest_force_shared_crt ON CACHE BOOL "Build gtest as shared library" FORCE)
-		add_subdirectory(submodules/googletest)
-	endif()
 	add_subdirectory(wrapper_test)
+endif()
+
+# gtest
+if(REPO_BUILD_TESTS OR REPO_BUILD_WRAPPER_TESTS)
+	set(gtest_force_shared_crt ON CACHE BOOL "Build gtest as shared library" FORCE)
+	add_subdirectory(submodules/googletest)
 endif()
 
