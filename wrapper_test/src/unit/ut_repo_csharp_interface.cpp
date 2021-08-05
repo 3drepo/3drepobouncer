@@ -37,34 +37,33 @@ static std::string getDataPath(
 	return returnPath;
 }
 
-// Assumes that the test database has been reset to its original 
-// state. It will change the state of the database (adds a dummy file)
-TEST(RepoCsharpInterface, ConfirmingProjectEntryInDatabase)
+TEST(RepoCsharpInterface, TestingMainAPIFlow)
 {
-	std::string database = "sampleDataRW";
-	std::string project = "cube";
-	std::string revisionID = "";
+	// using the readly ony database so the project should be in 
+	// the test db, even if a round of tests has already been run on it
+	std::string database = "sampleDataReadOnly";
+	std::string project = "3drepoBIM";
+	std::string revisionID = "5be1aca9-e4d0-4cec-987d-80d2fde3dade";
 	std::string configPath = getDataPath("config/config.json");
 	bool connected = repoConnect(&configPath[0]);
 	// check connection
-	EXPECT_TRUE(connected);
-	if (!connected) return;
+	ASSERT_TRUE(connected);
 	bool loadedScene = repoLoadSceneForAssetBundleGeneration(
 		&database[0],
 		&project[0],
 		&revisionID[0]);
 	// check scene loaded
-	EXPECT_TRUE(loadedScene);
+	ASSERT_TRUE(loadedScene);
 	// vr enabled check
-	EXPECT_FALSE(repoIsVREnabled());
+	ASSERT_FALSE(repoIsVREnabled());
 	// super mesh count
 	int numSuperMeshes = repoGetNumSuperMeshes();
-	EXPECT_EQ(numSuperMeshes, 1);
+	ASSERT_EQ(4, numSuperMeshes);
 	// federation check
 	bool isFederation = repoIsFederation(
 		&database[0],
 		&project[0]);
-	EXPECT_FALSE(isFederation);
+	ASSERT_FALSE(isFederation);
 	// asset bundle save check
 	std::string dummyAssetBundlePath = getDataPath(
 		"textures/brick_non_uniform_running_burgundy.png");
