@@ -95,6 +95,7 @@ const static std::string IFC_TYPE_MONETARY_MEASURE = "ifcmonetarymeasure";
 const static std::string IFC_TYPE_MONETARY_UNIT = "ifcmonetaryunit";
 const static std::string IFC_TYPE_NORMALISED_RATIO_MEASURE = "ifcnormalisedratiomeasure";
 const static std::string IFC_TYPE_NUMERIC_MEASURE = "ifcnumericmeasure";
+const static std::string IFC_TYPE_OPENING_ELEMENT = "ifcopeningelement";
 const static std::string IFC_TYPE_PARAMETER_VALUE = "ifcparametervalue";
 const static std::string IFC_TYPE_PH_MEASURE = "ifcphmeasure";
 const static std::string IFC_TYPE_PLANAR_FORCE_MEASURE = "ifcplanarforcemeasure";

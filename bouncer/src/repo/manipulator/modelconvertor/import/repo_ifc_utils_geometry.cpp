@@ -20,6 +20,7 @@
 */
 
 #include "repo_ifc_utils_geometry.h"
+#include "repo_ifc_utils_constants.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include <boost/filesystem.hpp>
 #include "repo_model_import_config_default_values.h"
@@ -128,7 +129,7 @@ bool IFCUtilsGeometry::generateGeometry(
 	std::vector<std::vector<double>> allUVs;
 	std::vector<std::string> allIds, allNames, allMaterials;
 
-	retrieveGeometryFromIterator(contextIterator, true,
+	retrieveGeometryFromIterator(ifcfile, contextIterator, true,
 		allVertices, allFaces, allNormals, allUVs, allIds, allNames, allMaterials);
 
 	//now we have found all meshes, take the minimum bounding box of the scene as offset
@@ -228,6 +229,7 @@ bool IFCUtilsGeometry::generateGeometry(
 }
 
 void IFCUtilsGeometry::retrieveGeometryFromIterator(
+	IfcParse::IfcFile &file,
 	IfcGeom::Iterator<double> &contextIterator,
 	const bool useMaterialNames,
 	std::vector < std::vector<double>> &allVertices,
@@ -242,6 +244,8 @@ void IFCUtilsGeometry::retrieveGeometryFromIterator(
 	do
 	{
 		IfcGeom::Element<double> *ob = contextIterator.get();
+		if (file.instance_by_guid(ob->guid())->data().type()->name_lc() == IFC_TYPE_OPENING_ELEMENT) continue;
+
 		auto ob_geo = static_cast<const IfcGeom::TriangulationElement<double>*>(ob);
 		if (ob_geo)
 		{

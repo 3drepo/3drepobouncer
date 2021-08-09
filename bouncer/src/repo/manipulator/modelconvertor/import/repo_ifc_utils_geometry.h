@@ -118,6 +118,7 @@ namespace repo {
 				* @param allMaterials where materials associated to all meshes will be stored as a result
 				*/
 				void retrieveGeometryFromIterator(
+					IfcParse::IfcFile &file,
 					IfcGeom::Iterator<double> &contextIterator,
 					const bool useMaterialNames,
 					std::vector < std::vector<double>> &allVertices,
