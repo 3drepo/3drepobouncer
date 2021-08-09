@@ -18,7 +18,7 @@
 #include <gtest/gtest.h>
 #include <repo/manipulator/modelconvertor/import/repo_model_import_assimp.h>
 
-// #include <repo/lib/repo_log.h>
+ #include <repo/lib/repo_log.h>
 // #include "../../../../repo_test_utils.h"
 // #include "../../../../repo_test_database_info.h"
 // #include "boost/filesystem.hpp"
@@ -26,14 +26,32 @@
 
 using namespace repo::manipulator::modelconvertor;
 
+namespace RepoModelImportUtils
+{
+	static std::unique_ptr<AbstractModelImport> ImportFBXFile(
+		std::string bimFilePath,
+		uint8_t& impModelErrCode)
+	{
+		ModelImportConfig config;
+		auto modelConvertor = std::unique_ptr<AbstractModelImport>(new AssimpModelImport(config));
+		modelConvertor->importModel(bimFilePath, impModelErrCode);
+		return modelConvertor;
+	}
+}
+
 TEST(AssimpModelImport, MainTest)
 {
-	std::string bimFilePath = "";
-	uint8_t impModelErrCode = 0;
-	ModelImportConfig config;
-	auto modelConvertor = std::unique_ptr<AbstractModelImport>(new AssimpModelImport(config));
-	bool importedSuccesfully = modelConvertor->importModel(bimFilePath, impModelErrCode);
-	EXPECT_TRUE(importedSuccesfully);
+	uint8_t errCode = 0;
+	RepoModelImportUtils::ImportFBXFile(R"(C:\Users\haroo\Downloads\XYZ.arrows\XYZ arrows.FBX)", errCode);
+	RepoModelImportUtils::ImportFBXFile(R"(C:\Users\haroo\Downloads\XYZ.arrows\XYZ arrows blender.FBX)", errCode);
+	//RepoModelImportUtils::ImportFBXFile(R"(C:\DevProjects\tests\cplusplus\bouncer\data\models\unsupported.FBX)", errCode);
+	RepoModelImportUtils::ImportFBXFile(R"(C:\Users\haroo\Downloads\apartment block.fbx)", errCode);
+	RepoModelImportUtils::ImportFBXFile(R"(C:\Users\haroo\Downloads\AIM4G.fbx)", errCode);
+	RepoModelImportUtils::ImportFBXFile(R"(C:\Users\haroo\Downloads\Ch44_nonPBR.fbx)", errCode);
+	RepoModelImportUtils::ImportFBXFile(R"(C:\Users\haroo\Downloads\character.fbx)", errCode);
+	
 }
+
+
 
 

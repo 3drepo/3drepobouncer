@@ -213,6 +213,8 @@ namespace repo {
 				uint32_t composeAssimpPostProcessingFlags(
 					uint32_t flag = 0);
 
+				aiMatrix4x4 GetRootOrientationFromMetadata(const aiScene* assimpScene);
+
 				Assimp::Importer importer;  /*! Stores ASSIMP related settings for model import */
 				const aiScene *assimpScene; /*! ASSIMP scene representation of the model */
 				std::string orgFile; /*! orgFileName */
