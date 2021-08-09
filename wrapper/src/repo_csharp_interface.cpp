@@ -18,163 +18,161 @@
 #include "repo_csharp_interface.h"
 #include "c_sharp_wrapper.h"
 
-extern "C"
+
+char* cStringCopy(const std::string& string)
 {
-	char* cStringCopy(const std::string& string)
-	{
-		if (string.empty())
-			return nullptr;
+	if (string.empty())
+		return nullptr;
 
-		char* p = (char*)malloc(sizeof(*p) * string.length());
-		strcpy(p, string.c_str());
+	char* p = (char*)malloc(sizeof(*p) * string.length());
+	strcpy(p, string.c_str());
 
-		return p;
-	}
+	return p;
+}
 
-	bool repoConnect(
-		char* configPath)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return wrapper->connect(configPath);
-	}
+bool repoConnect(
+	char* configPath)
+{
+	auto wrapper = repo::lib::CSharpWrapper::getInstance();
+	return wrapper->connect(configPath);
+}
 
-	void repoFreeSuperMesh(
-		int meshIndex)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		wrapper->freeSuperMesh(meshIndex);
-	}
+void repoFreeSuperMesh(
+	int meshIndex)
+{
+	auto wrapper = repo::lib::CSharpWrapper::getInstance();
+	wrapper->freeSuperMesh(meshIndex);
+}
 
-	void repoGetIdMapBuffer(int index, int smIndex, float* idMap)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		wrapper->getIdMapBuffer(index, smIndex, idMap);
-	}
+void repoGetIdMapBuffer(int index, int smIndex, float* idMap)
+{
+	auto wrapper = repo::lib::CSharpWrapper::getInstance();
+	wrapper->getIdMapBuffer(index, smIndex, idMap);
+}
 
-	void repoGetMaterialInfo(
-		char* materialID,
-		float* diffuse,
-		float* specular,
-		float* shininess,
-		float* shininessStrength)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		wrapper->getMaterialInfo(materialID, diffuse, specular, shininess, shininessStrength);
-	}
+void repoGetMaterialInfo(
+	char* materialID,
+	float* diffuse,
+	float* specular,
+	float* shininess,
+	float* shininessStrength)
+{
+	auto wrapper = repo::lib::CSharpWrapper::getInstance();
+	wrapper->getMaterialInfo(materialID, diffuse, specular, shininess, shininessStrength);
+}
 
-	char* repoGetOrgMeshInfoFromSubMesh(
-		int index,
-		int smIndex,
-		int orgMeshIdx,
-		int* smFFrom,
-		int* smFTo)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return  cStringCopy(wrapper->getOrgMeshInfoFromSubMesh(index, smIndex, orgMeshIdx, smFFrom, smFTo));
-	}
+char* repoGetOrgMeshInfoFromSubMesh(
+	int index,
+	int smIndex,
+	int orgMeshIdx,
+	int* smFFrom,
+	int* smFTo)
+{
+	auto wrapper = repo::lib::CSharpWrapper::getInstance();
+	return  cStringCopy(wrapper->getOrgMeshInfoFromSubMesh(index, smIndex, orgMeshIdx, smFFrom, smFTo));
+}
 
-	int repoGetNumSuperMeshes()
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return wrapper->getNumSuperMeshes();
-	}
+int repoGetNumSuperMeshes()
+{
+	auto wrapper = repo::lib::CSharpWrapper::getInstance();
+	return wrapper->getNumSuperMeshes();
+}
 
-	char* repoGetRevisionList(
-		char* database,
-		char* project)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return cStringCopy(wrapper->getRevisionList(database, project));
-	}
+char* repoGetRevisionList(
+	char* database,
+	char* project)
+{
+	auto wrapper = repo::lib::CSharpWrapper::getInstance();
+	return cStringCopy(wrapper->getRevisionList(database, project));
+}
 
-	void repoGetSubMeshInfo(
-		int index,
-		int subIdx,
-		int* vFrom,
-		int* vTo,
-		int* fFrom,
-		int* fTo)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return wrapper->getSubMeshInfo(index, subIdx, vFrom, vTo, fFrom, fTo);
-	}
+void repoGetSubMeshInfo(
+	int index,
+	int subIdx,
+	int* vFrom,
+	int* vTo,
+	int* fFrom,
+	int* fTo)
+{
+	auto wrapper = repo::lib::CSharpWrapper::getInstance();
+	return wrapper->getSubMeshInfo(index, subIdx, vFrom, vTo, fFrom, fTo);
+}
 
-	void repoGetSuperMeshBuffers(
-		int index,
-		float* vertices,
-		float* normals,
-		uint16_t* faces,
-		float* uvs,
-		int* numOrgMeshes)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		wrapper->getSuperMeshBuffers(index, vertices, normals, faces, uvs, numOrgMeshes);
-	}
+void repoGetSuperMeshBuffers(
+	int index,
+	float* vertices,
+	float* normals,
+	uint16_t* faces,
+	float* uvs,
+	int* numOrgMeshes)
+{
+	auto wrapper = repo::lib::CSharpWrapper::getInstance();
+	wrapper->getSuperMeshBuffers(index, vertices, normals, faces, uvs, numOrgMeshes);
+}
 
-	char* repoGetSuperMeshInfo(
-		int index,
-		long* subMeshes,
-		long* numVertices,
-		long* numFaces,
-		bool* hasNormals,
-		bool* hasUV,
-		int* primitiveType,
-		int* numMappings)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return cStringCopy(wrapper->getSuperMeshInfo(index, subMeshes, numVertices, numFaces, hasNormals, hasUV, primitiveType, numMappings));
-	}
+char* repoGetSuperMeshInfo(
+	int index,
+	long* subMeshes,
+	long* numVertices,
+	long* numFaces,
+	bool* hasNormals,
+	bool* hasUV,
+	int* primitiveType,
+	int* numMappings)
+{
+	auto wrapper = repo::lib::CSharpWrapper::getInstance();
+	return cStringCopy(wrapper->getSuperMeshInfo(index, subMeshes, numVertices, numFaces, hasNormals, hasUV, primitiveType, numMappings));
+}
 
-	void repoGetTexture(
-		char* materialID,
-		char* texBuf)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return wrapper->getTexture(materialID, texBuf);
-	}
+void repoGetTexture(
+	char* materialID,
+	char* texBuf)
+{
+	auto wrapper = repo::lib::CSharpWrapper::getInstance();
+	return wrapper->getTexture(materialID, texBuf);
+}
 
-	char* repoGetWrapperVersionString()
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return cStringCopy(wrapper->getVersion());
-	}
+char* repoGetWrapperVersionString()
+{
+	auto wrapper = repo::lib::CSharpWrapper::getInstance();
+	return cStringCopy(wrapper->getVersion());
+}
 
-	int repoHasTexture(
-		char* materialID)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return wrapper->hasTexture(materialID);
-	}
+int repoHasTexture(
+	char* materialID)
+{
+	auto wrapper = repo::lib::CSharpWrapper::getInstance();
+	return wrapper->hasTexture(materialID);
+}
 
-	bool repoIsVREnabled()
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return wrapper->isVREnabled();
-	}
+bool repoIsVREnabled()
+{
+	auto wrapper = repo::lib::CSharpWrapper::getInstance();
+	return wrapper->isVREnabled();
+}
 
-	bool repoIsFederation(
-		char* database,
-		char* project)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return wrapper->isFederation(database, project);
-	}
+bool repoIsFederation(
+	char* database,
+	char* project)
+{
+	auto wrapper = repo::lib::CSharpWrapper::getInstance();
+	return wrapper->isFederation(database, project);
+}
 
-	bool repoLoadSceneForAssetBundleGeneration(
-		char* database,
-		char* project,
-		char* revisionID)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return wrapper->initialiseSceneForAssetBundle(database, project, revisionID);
-	}
+bool repoLoadSceneForAssetBundleGeneration(
+	char* database,
+	char* project,
+	char* revisionID)
+{
+	auto wrapper = repo::lib::CSharpWrapper::getInstance();
+	return wrapper->initialiseSceneForAssetBundle(database, project, revisionID);
+}
 
-	bool repoSaveAssetBundles(
-		char** assetFiles,
-		int      length
-	)
-	{
-		auto wrapper = repo::lib::CSharpWrapper::getInstance();
-		return wrapper->saveAssetBundles(assetFiles, length);
-	}
+bool repoSaveAssetBundles(
+	char** assetFiles,
+	int      length
+)
+{
+	auto wrapper = repo::lib::CSharpWrapper::getInstance();
+	return wrapper->saveAssetBundles(assetFiles, length);
 }
