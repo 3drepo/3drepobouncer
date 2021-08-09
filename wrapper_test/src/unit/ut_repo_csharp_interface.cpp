@@ -43,7 +43,7 @@ TEST(RepoCsharpInterface, LoadScene)
 	// the test db, even if a round of tests has already been run on it
 	std::string database = "sampleDataReadOnly";
 	std::string project = "3drepoBIM";
-	std::string revisionID = "5be1aca9-e4d0-4cec-987d-80d2fde3dade";
+	std::string revisionID = "";
 	std::string configPath = getDataPath("config/config.json");
 	bool connected = repoConnect(&configPath[0]);
 	// check connection
@@ -71,7 +71,7 @@ TEST(RepoCsharpInterface, AssetBundleSave)
 	// using the read/write database
 	std::string database = "stUpload";
 	std::string project = "cube";
-	std::string revisionID = "82272074-74d1-4e1a-bdaf-a6fa39af227f";
+	std::string revisionID = "";
 	std::string configPath = getDataPath("config/config.json");
 	bool connected = repoConnect(&configPath[0]);
 	// check connection
