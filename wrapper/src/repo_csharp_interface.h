@@ -57,17 +57,6 @@
 
 extern "C"
 {
-	char* cStringCopy(const std::string &string)
-	{
-		if (string.empty())
-			return nullptr;
-
-		char* p = (char*)malloc(sizeof(*p) * string.length());
-		strcpy(p, string.c_str());
-
-		return p;
-	}
-
 	/**
 	* Connect to a mongo database, authenticate by the admin database
 	* @param configPath path to configuration file

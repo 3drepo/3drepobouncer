@@ -20,6 +20,17 @@
 
 extern "C"
 {
+	char* cStringCopy(const std::string& string)
+	{
+		if (string.empty())
+			return nullptr;
+
+		char* p = (char*)malloc(sizeof(*p) * string.length());
+		strcpy(p, string.c_str());
+
+		return p;
+	}
+
 	REPO_WRAPPER_API_EXPORT bool repoConnect(
 		char* configPath)
 	{
