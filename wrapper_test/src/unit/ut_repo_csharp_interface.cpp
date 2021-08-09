@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2015 3D Repo Ltd
+*  Copyright (C) 2021 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -69,4 +69,5 @@ TEST(RepoCsharpInterface, TestingMainAPIFlow)
 		"textures/brick_non_uniform_running_burgundy.png");
 	char* dummyAssetBundlePathPtr = &dummyAssetBundlePath[0];
 	bool assetsSavedCorrectly = repoSaveAssetBundles(&dummyAssetBundlePathPtr, 1);
+	ASSERT_TRUE(assetsSavedCorrectly);
 }
