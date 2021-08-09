@@ -36,7 +36,7 @@ TEST(SynchroModelImport, ImportModel)
 {
 	auto import = SynchroModelImport(ModelImportConfig());
 	uint8_t errCode;
-	EXPECT_TRUE(import.importModel(getDataPath(synchroWithTransform), errCode));
+	EXPECT_TRUE(import.importModel(getDataPath(synchroVersion6_4), errCode));
 	EXPECT_EQ(0, errCode);
 
 	auto scene = import.generateRepoScene(errCode);
