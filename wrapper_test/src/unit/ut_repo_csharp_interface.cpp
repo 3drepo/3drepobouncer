@@ -37,7 +37,7 @@ static std::string getDataPath(
 	return returnPath;
 }
 
-TEST(RepoCsharpInterface, TestingMainAPIFlow)
+TEST(RepoCsharpInterface, LoadScene)
 {
 	// using the readly ony database so the project should be in 
 	// the test db, even if a round of tests has already been run on it
@@ -64,6 +64,25 @@ TEST(RepoCsharpInterface, TestingMainAPIFlow)
 		&database[0],
 		&project[0]);
 	ASSERT_FALSE(isFederation);
+}
+
+TEST(RepoCsharpInterface, AssetBundleSave)
+{
+	// using the read/write database
+	std::string database = "stUpload";
+	std::string project = "cube";
+	std::string revisionID = "82272074-74d1-4e1a-bdaf-a6fa39af227f";
+	std::string configPath = getDataPath("config/config.json");
+	bool connected = repoConnect(&configPath[0]);
+	// check connection
+	ASSERT_TRUE(connected);
+	// load scene
+	bool loadedScene = repoLoadSceneForAssetBundleGeneration(
+		&database[0],
+		&project[0],
+		&revisionID[0]);
+	// check scene loaded
+	ASSERT_TRUE(loadedScene);
 	// asset bundle save check
 	std::string dummyAssetBundlePath = getDataPath(
 		"textures/brick_non_uniform_running_burgundy.png");
