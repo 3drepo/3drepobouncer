@@ -1381,5 +1381,6 @@ bool AssimpModelImport::SetRootOrientationFromMetadata()
 
 	// apply to scene
 	assimpScene->mRootNode->mTransformation = orientation;
+	repoInfo << "Set the root orientation from metadata";
 	return true;
 }
