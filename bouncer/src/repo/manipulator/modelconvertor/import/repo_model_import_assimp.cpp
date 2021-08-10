@@ -93,7 +93,7 @@ std::string AssimpModelImport::getSupportedFormats()
 }
 
 bool AssimpModelImport::requireReorientation() const {
-	return false;
+	return requiresOrientation;
 }
 
 uint32_t AssimpModelImport::composeAssimpPostProcessingFlags(
@@ -1251,14 +1251,12 @@ bool AssimpModelImport::importModel(std::string filePath, uint8_t &err)
 	}
 	else
 	{
-		// currently only applies to FBX 
-		auto ext = repo::lib::getExtension(orgFile);
+		// try to set the orientation from metadata
+		bool rootOrientatonSet = SetRootOrientationFromMetadata();
+		std::string ext = repo::lib::getExtension(orgFile);
 		repo::lib::toLower(ext);
-		bool isFbx = ext == ".fbx";
-		if(isFbx)
-		{
-			assimpScene->mRootNode->mTransformation = GetRootOrientationFromMetadata(assimpScene);
-		}
+		bool isFbxFile = ext == ".fbx";
+		requiresOrientation = !rootOrientatonSet && isFbxFile ? true : false;
 
 		//-------------------------------------------------------------------------
 		// Polygon count
@@ -1339,12 +1337,11 @@ void AssimpModelImport::setAssimpProperties() {
 		importer.SetPropertyInteger(AI_CONFIG_PP_SBBC_MAX_BONES, repoDefaultSplitByBoneCountMaxBones);
 }
 
-
-
-aiMatrix4x4 AssimpModelImport::GetRootOrientationFromMetadata(const aiScene* assimpScene)
+bool AssimpModelImport::SetRootOrientationFromMetadata()
 {
-	aiMatrix4x4 orientation;
+	if (!assimpScene || !assimpScene->mMetaData) return false;
 
+	aiMatrix4x4 orientation;
 	// assumed axis, if no metadata is found 
 	// 0 - x 
 	// 1 - y
@@ -1358,13 +1355,16 @@ aiMatrix4x4 AssimpModelImport::GetRootOrientationFromMetadata(const aiScene* ass
 	double unitScaleFactor = 1.0;
 
 	// values will only be populated if key exists
-	assimpScene->mMetaData->Get<int32_t>("UpAxis", upAxis);
-	assimpScene->mMetaData->Get<int32_t>("UpAxisSign", upAxisSign);
-	assimpScene->mMetaData->Get<int32_t>("FrontAxis", frontAxis);
-	assimpScene->mMetaData->Get<int32_t>("FrontAxisSign", frontAxisSign);
-	assimpScene->mMetaData->Get<int32_t>("CoordAxis", coordAxis);
-	assimpScene->mMetaData->Get<int32_t>("CoordAxisSign", coordAxisSign);
-	assimpScene->mMetaData->Get<double>("UnitScaleFactor", unitScaleFactor);
+	bool reqMetadataExists = true;
+	reqMetadataExists &= assimpScene->mMetaData->Get<int32_t>("UpAxis", upAxis);
+	reqMetadataExists &= assimpScene->mMetaData->Get<int32_t>("UpAxisSign", upAxisSign);
+	reqMetadataExists &= assimpScene->mMetaData->Get<int32_t>("FrontAxis", frontAxis);
+	reqMetadataExists &= assimpScene->mMetaData->Get<int32_t>("FrontAxisSign", frontAxisSign);
+	reqMetadataExists &= assimpScene->mMetaData->Get<int32_t>("CoordAxis", coordAxis);
+	reqMetadataExists &= assimpScene->mMetaData->Get<int32_t>("CoordAxisSign", coordAxisSign);
+	// ignore the scale factor from the file as we set this explicitly online
+	//reqMetadataExists &= assimpScene->mMetaData->Get<double>("UnitScaleFactor", unitScaleFactor);
+	if (!reqMetadataExists) return false;
 
 	// create the transformation
 	aiVector3D uV;
@@ -1378,5 +1378,8 @@ aiMatrix4x4 AssimpModelImport::GetRootOrientationFromMetadata(const aiScene* ass
 		uV.x, uV.y, uV.z, 0.0f,
 		fV.x, fV.y, fV.z, 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f);
-	return orientation;
+
+	// apply to scene
+	assimpScene->mRootNode->mTransformation = orientation;
+	return true;
 }

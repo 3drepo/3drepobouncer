@@ -213,12 +213,18 @@ namespace repo {
 				uint32_t composeAssimpPostProcessingFlags(
 					uint32_t flag = 0);
 
-				aiMatrix4x4 GetRootOrientationFromMetadata(const aiScene* assimpScene);
+				/**
+				* Attempts to get orientation information from metadata in the fbx file,
+				* and set it to the loaded assimp scene. Requires loaded assimp scene.
+				* @return whether the orientation could be set from the meta data
+				*/
+				bool SetRootOrientationFromMetadata();
 
 				Assimp::Importer importer;  /*! Stores ASSIMP related settings for model import */
 				const aiScene *assimpScene; /*! ASSIMP scene representation of the model */
 				std::string orgFile; /*! orgFileName */
 				bool keepMetadata;
+				bool requiresOrientation = false;
 			};
 		} //namespace AssimpModelImport
 	} //namespace manipulator
