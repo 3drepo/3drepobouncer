@@ -40,7 +40,7 @@ IFCModelImport::~IFCModelImport()
 
 repo::core::model::RepoScene* IFCModelImport::generateRepoScene(uint8_t &errCode)
 {
-	IFCUtilsParser parserUtil(ifcFile);
+	ifcHelper::IFCUtilsParser parserUtil(ifcFile);
 	std::string errMsg;
 	auto scene = parserUtil.generateRepoScene(errMsg, meshes, materials, offset);
 	if (!scene) {
@@ -60,7 +60,7 @@ bool IFCModelImport::importModel(std::string filePath, uint8_t &err)
 	repoInfo << "=== IMPORTING MODEL WITH IFC OPEN SHELL ===";
 	bool success = false;
 	std::string errMsg;
-	IFCUtilsGeometry geoUtil(filePath, settings);
+	ifcHelper::IFCUtilsGeometry geoUtil(filePath, settings);
 	if (success = geoUtil.generateGeometry(errMsg, partialFailure))
 	{
 		//generate tree;

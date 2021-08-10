@@ -24,9 +24,10 @@
 #include "../../../../core/model/bson/repo_bson_factory.h"
 #include <boost/filesystem.hpp>
 #include "../repo_model_import_config_default_values.h"
-using namespace repo::manipulator::modelconvertor;
 
-IFCUtilsGeometry::IFCUtilsGeometry(const std::string &file, const ModelImportConfig &settings) :
+using namespace repo::manipulator::modelconvertor::ifcHelper;
+
+IFCUtilsGeometry::IFCUtilsGeometry(const std::string &file, const modelConverter::ModelImportConfig &settings) :
 	file(file),
 	settings(settings)
 {

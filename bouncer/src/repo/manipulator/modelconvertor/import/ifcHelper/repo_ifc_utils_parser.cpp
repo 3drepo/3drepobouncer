@@ -10,7 +10,7 @@
 #include <boost/filesystem.hpp>
 #include <algorithm>
 
-using namespace repo::manipulator::modelconvertor;
+using namespace repo::manipulator::modelconvertor::ifcHelper;
 
 IFCUtilsParser::IFCUtilsParser(const std::string &file) :
 	file(file),
