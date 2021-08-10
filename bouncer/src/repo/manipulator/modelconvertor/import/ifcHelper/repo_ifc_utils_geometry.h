@@ -29,9 +29,9 @@
 #include <ifcgeom/IfcGeom.h>
 #include <ifcgeom_schema_agnostic/IfcGeomIterator.h>
 
-#include "repo_model_import_config.h"
-#include "../../../core/model/bson/repo_node_material.h"
-#include "../../../core/model/bson/repo_node_mesh.h"
+#include "../repo_model_import_config.h"
+#include "../../../../core/model/bson/repo_node_material.h"
+#include "../../../../core/model/bson/repo_node_mesh.h"
 
 namespace repo {
 	namespace manipulator {

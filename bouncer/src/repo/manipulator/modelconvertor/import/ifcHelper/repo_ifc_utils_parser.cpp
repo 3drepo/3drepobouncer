@@ -4,9 +4,9 @@
 
 #include "repo_ifc_utils_parser.h"
 #include "repo_ifc_utils_constants.h"
-#include "../../../core/model/bson/repo_bson_factory.h"
-#include "../../../core/model/collection/repo_scene.h"
-#include "../../../lib/repo_utils.h"
+#include "../../../../core/model/bson/repo_bson_factory.h"
+#include "../../../../core/model/collection/repo_scene.h"
+#include "../../../../lib/repo_utils.h"
 #include <boost/filesystem.hpp>
 #include <algorithm>
 
