@@ -24,11 +24,6 @@
 #include <string>
 #include <unordered_map>
 
-#define IfcSchema Ifc2x3
-
-#include <ifcgeom/IfcGeom.h>
-#include <ifcgeom_schema_agnostic/IfcGeomIterator.h>
-
 #include "../repo_model_import_config.h"
 #include "../../../../core/model/bson/repo_node_material.h"
 #include "../../../../core/model/bson/repo_node_mesh.h"
@@ -94,45 +89,7 @@ namespace repo {
 					}
 
 				protected:
-					/**
-					* construct a repo_material_t based on the IfcGeom Material
-					* @param material IfcGeom material
-					* @return returns a repo_material_t with properties from the provided ifcgeom material
-					*/
-					repo_material_t createMaterial(
-						const IfcGeom::Material &material);
-
-					/**
-					* Create an IFCGeom Iterator settings
-					* @return returns a Iterator settings with default settings
-					*/
-					IfcGeom::IteratorSettings createSettings();
-
-					/**
-					* Retrieve geometry from the iterator
-					* @param contextIterator iterator with ifc file loaded
-					* @param allVertices where vertices of all meshes will be stored as a result
-					* @param allFaces where faces of all meshes will be stored as a result
-					* @param allNormals where normals of all meshes will be stored as a result
-					* @param allUVs where uvs of all meshes will be stored as a result
-					* @param allIds where ifcIDs associated to all meshes will be stored as a result
-					* @param allNames where names associated to all meshes will be stored as a result
-					* @param allMaterials where materials associated to all meshes will be stored as a result
-					*/
-					void retrieveGeometryFromIterator(
-						IfcParse::IfcFile &file,
-						IfcGeom::Iterator<double> &contextIterator,
-						const bool useMaterialNames,
-						std::vector < std::vector<double>> &allVertices,
-						std::vector<std::vector<repo_face_t>> &allFaces,
-						std::vector < std::vector<double>> &allNormals,
-						std::vector < std::vector<double>> &allUVs,
-						std::vector<std::string> &allIds,
-						std::vector<std::string> &allNames,
-						std::vector<std::string> &allMaterials);
-
 					const std::string file;
-					const ModelImportConfig settings;
 					std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> meshes;
 					std::unordered_map<std::string, repo::core::model::MaterialNode*> materials;
 					std::vector<double> offset;

@@ -123,6 +123,9 @@ if(VALID_UNTIL GREATER 0)
 	add_definitions(-DVALID_UNTIL=${VALID_UNTIL})
 endif()
 
+#Build IFCUtils
+add_subdirectory(ifcUtils)
+
 if(REPO_NO_GZIP)
 	add_definitions(-DREPO_BOOST_NO_GZIP)
 endif()

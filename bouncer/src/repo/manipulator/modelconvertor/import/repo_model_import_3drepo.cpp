@@ -144,7 +144,7 @@ void RepoModelImport::parseMaterial(const boost::property_tree::ptree& matTree)
 	ss << "Material." << std::setfill('0') << std::setw(5) << materials.size();
 
 	repo::core::model::MaterialNode* materialNode = new repo::core::model::MaterialNode(
-		repo::core::model::RepoBSONFactory::makeMaterialNode(repo_material, ss.str(), REPO_NODE_API_LEVEL_1));
+		repo::core::model::RepoBSONFactory::makeMaterialNode(repo_material, ss.str()));
 	materials.insert(materialNode);
 	matNodeList.push_back(materialNode);
 
@@ -180,7 +180,6 @@ void RepoModelImport::parseTexture(
 	uint32_t width = textureTree.get<uint32_t>(REPO_TXTR_WIDTH);
 	uint32_t height = textureTree.get<uint32_t>(REPO_TXTR_HEIGHT);
 	uint32_t id = textureTree.get<uint32_t>(REPO_TXTR_ID);
-
 
 	// are they valid
 	if (byteCount == 0)
@@ -445,7 +444,7 @@ void RepoModelImport::skipAheadInFile(long amount)
 }
 
 /**
-* Will parse the entire BIM file and store the results in 
+* Will parse the entire BIM file and store the results in
 * temporary datastructures in preperation for scene generation.
 * @param filePath
 * @param err
@@ -556,7 +555,7 @@ bool RepoModelImport::importModel(std::string filePath, uint8_t& err)
 			}
 		}
 
-		if(missingTextures)
+		if (missingTextures)
 		{
 			err = REPOERR_LOAD_SCENE_MISSING_TEXTURE;
 		}
