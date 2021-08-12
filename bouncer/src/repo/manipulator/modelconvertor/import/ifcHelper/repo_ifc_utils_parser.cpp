@@ -78,13 +78,10 @@ repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
 
 	if (ifcfile.schema()->name() == "IFC2X3") {
 		tree = IfcUtils::Schema_Ifc2x3::TreeParser::createTransformations(file, missingEntities);
-	}/*
+	}
 	else {
-		IfcUtils::Schema_Ifc4::TreeParser treeParser(file);
-		tree = treeParser.createTransformations();
-		missingEntities = treeParser.missingEntities;
-	}*/
-
+		tree = IfcUtils::Schema_Ifc4::TreeParser::createTransformations(file, missingEntities);
+	}
 	repoDebug << "Tree generated. root node is " << tree.name << " with " << tree.children.size() << " children";
 
 	repo::core::model::RepoNodeSet dummy, meshSet, matSet, metaSet, transSet;

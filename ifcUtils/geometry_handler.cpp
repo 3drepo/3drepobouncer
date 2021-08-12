@@ -16,10 +16,7 @@
 */
 
 #define TO_STRING(x) #x
-#include <string>
 #define INCLUDE_HEADER(x) TO_STRING(x.h)
-const std::string headerFile = INCLUDE_HEADER(IfcSchema);
-const std::string schemaUsed = TO_STRING(IfcSchema);
 #include INCLUDE_HEADER(IfcSchema)
 #undef INCLUDE_HEADER
 
@@ -108,7 +105,6 @@ bool IfcUtils::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 	auto itSettings = createSettings();
 
 	IfcGeom::Iterator<double> contextIterator(itSettings, &ifcfile);
-	repoInfo << "Generating geometry, IfcSchema: " << schemaUsed << " header file used: " << headerFile;
 
 	try {
 		if (!contextIterator.initialize()) {

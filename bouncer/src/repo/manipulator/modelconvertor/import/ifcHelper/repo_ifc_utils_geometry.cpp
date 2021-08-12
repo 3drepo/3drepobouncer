@@ -20,7 +20,7 @@
 */
 
 #include <ifcUtils/Ifc2x3.h>
-//#include <ifcUtils/Ifc4.h>
+#include <ifcUtils/Ifc4.h>
 #include <ifcparse/IfcFile.h>
 #include "repo_ifc_utils_geometry.h"
 #include "repo_ifc_utils_constants.h"
@@ -58,12 +58,12 @@ bool IFCUtilsGeometry::generateGeometry(
 		if (!IfcUtils::Schema_Ifc2x3::GeometryHandler::retrieveGeometry(file,
 			allVertices, allFaces, allNormals, allUVs, allIds, allNames, allMaterials, matNameToMaterials, offset, errMsg))
 			return false;
-	}/*
+	}
 	else {
 		if (!IfcUtils::Schema_Ifc4::GeometryHandler::retrieveGeometry(file,
 			allVertices, allFaces, allNormals, allUVs, allIds, allNames, allMaterials, matNameToMaterials, offset, errMsg))
 			return false;
-	}*/
+	}
 
 	//now we have found all meshes, take the minimum bounding box of the scene as offset
 	//and create repo meshes
