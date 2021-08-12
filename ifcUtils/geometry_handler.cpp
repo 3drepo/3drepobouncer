@@ -118,10 +118,12 @@ bool IfcUtils::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 		return false;
 	}
 
+	const std::set<std::string> unwantedGeometry = { "ifcopeningelement", "ifcvoidingfeature" };
 	do
 	{
 		IfcGeom::Element<double> *ob = contextIterator.get();
-		if (ifcfile.instance_by_guid(ob->guid())->data().type()->name_lc() == "ifcopeningelement") continue;
+		auto ifcType = ifcfile.instance_by_guid(ob->guid())->data().type()->name_lc();
+		if (unwantedGeometry.find(ifcType) != unwantedGeometry.end()) continue;
 
 		auto ob_geo = static_cast<const IfcGeom::TriangulationElement<double>*>(ob);
 		if (ob_geo)

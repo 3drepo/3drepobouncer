@@ -124,6 +124,7 @@ const static std::string IFC_TYPE_REL_CONNECTS_PATH_ELEMENTS = "ifcrelconnectspa
 const static std::string IFC_TYPE_REL_CONTAINED_IN_SPATIAL_STRUCTURE = "ifcrelcontainedinspatialstructure";
 const static std::string IFC_TYPE_REL_DEFINES_BY_PROPERTIES = "ifcreldefinesbyproperties";
 const static std::string IFC_TYPE_REL_DEFINES_BY_TYPE = "ifcreldefinesbytype";
+const static std::string IFC_TYPE_REL_NESTS = "ifcrelnests";
 const static std::string IFC_TYPE_REL_SPACE_BOUNDARY = "ifcrelspaceboundary";
 const static std::string IFC_TYPE_ROTATIONAL_FREQUENCY_MEASURE = "ifcrotationalfrequencymeasure";
 const static std::string IFC_TYPE_ROTATIONAL_MASS_MEASURE = "ifcrotationalmassmeasure";

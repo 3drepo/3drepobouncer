@@ -242,6 +242,13 @@ void IfcUtils::SCHEMA_NS::TreeParser::determineActionsByElementType(
 		createElement = false;
 		traverseChildren = false;
 	}
+	else if (typeName == IFC_TYPE_REL_NESTS) {
+		createElement = false;
+		traverseChildren = true;
+		auto nest = static_cast<const IfcSchema::IfcRelNests *>(element);
+		auto objs = nest->RelatedObjects();
+		extraChildren.insert(extraChildren.end(), objs->begin(), objs->end());
+	}
 	else if (typeName == IFC_TYPE_REL_DEFINES_BY_TYPE) {
 		auto def = static_cast<const IfcSchema::IfcRelDefinesByType *>(element);
 		auto typeObj = static_cast<const IfcSchema::IfcTypeObject *>(def->RelatingType());
@@ -1246,6 +1253,6 @@ void  IfcUtils::SCHEMA_NS::TreeParser::generateClassificationInformation(
 			if (reference->hasLocation())
 				metaValues[constructMetadataLabel("Location", refPrefix)] = reference->Location();
 		}
-	}
+}
 #endif
 }

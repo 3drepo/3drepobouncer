@@ -94,8 +94,12 @@ repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
 	}
 	for (auto &m : meshes)
 	{
-		for (auto &mesh : m.second)
+		for (auto &mesh : m.second) {
+			if (!mesh->getParentIDs().size()) {
+				repoWarning << "Zombie mesh found with guid: " << m.first;
+			}
 			meshSet.insert(mesh);
+		}
 	}
 
 	for (auto &m : materials)
