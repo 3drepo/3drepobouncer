@@ -15,10 +15,15 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#define STRINGIFY(x) #x
-#define INCLUDE_HEADER(x) STRINGIFY(x.h)
+#define TO_STRING(x) #x
+#include <string>
+#define INCLUDE_HEADER(x) TO_STRING(x.h)
+const std::string headerFile = INCLUDE_HEADER(IfcSchema);
+const std::string schemaUsed = TO_STRING(IfcSchema);
 #include INCLUDE_HEADER(IfcSchema)
 #undef INCLUDE_HEADER
+
+#define SCHEMA_NS CREATE_SCHEMA_NS(Schema_)
 
 #include <ifcgeom/IfcGeom.h>
 #include <ifcgeom_schema_agnostic/IfcGeomIterator.h>
@@ -86,7 +91,7 @@ repo_material_t createMaterial(
 	return matProp;
 }
 
-bool IfcUtils::IfcSchema::GeometryHandler::retrieveGeometry(
+bool IfcUtils::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 	const std::string &file,
 	std::vector < std::vector<double>> &allVertices,
 	std::vector<std::vector<repo_face_t>> &allFaces,
@@ -103,6 +108,7 @@ bool IfcUtils::IfcSchema::GeometryHandler::retrieveGeometry(
 	auto itSettings = createSettings();
 
 	IfcGeom::Iterator<double> contextIterator(itSettings, &ifcfile);
+	repoInfo << "Generating geometry, IfcSchema: " << schemaUsed << " header file used: " << headerFile;
 
 	try {
 		if (!contextIterator.initialize()) {

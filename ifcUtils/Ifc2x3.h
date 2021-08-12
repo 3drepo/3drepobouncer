@@ -17,10 +17,15 @@
 
 #pragma once
 #include "globals.h"
+#include <ifcparse/Ifc2x3.h>
+#include <ifcparse/IfcParse.h>
+#include <ifcparse/IfcFile.h>
+
+//FIXME
 #include "../bouncer/src/repo/lib/datastructure/repo_structs.h"
 
 namespace IfcUtils {
-	namespace Ifc2x3 {
+	namespace Schema_Ifc2x3 {
 		class IFC_UTILS_API_EXPORT GeometryHandler {
 		public:
 			static bool retrieveGeometry(
@@ -36,5 +41,80 @@ namespace IfcUtils {
 				std::vector<double>		&offset,
 				std::string              &errMsg);
 		};
-	};
+
+		class IFC_UTILS_API_EXPORT TreeParser
+		{
+		public:
+			bool missingEntities = false;
+
+			TreeParser() {}
+			~TreeParser() {}
+
+			static TransNode createTransformations(const std::string &filePath, bool &missingEntities);
+
+		protected:
+
+			static std::pair<std::string, std::string> processUnits(
+				const IfcUtil::IfcBaseClass *element);
+
+			static std::string getUnits(
+				const Ifc2x3::IfcDerivedUnitEnum::Value &unitType,
+				const std::unordered_map<std::string, std::string> &projectUnits
+			);
+
+			static std::string getUnits(
+				const Ifc2x3::IfcUnitEnum::Value &unitType,
+				const std::unordered_map<std::string, std::string> &projectUnits
+			);
+
+			static std::string getUnits(
+				const std::string &unitType,
+				const std::unordered_map<std::string, std::string> &projectUnits
+			);
+
+			static void generateClassificationInformation(
+				const Ifc2x3::IfcRelAssociatesClassification * &relCS,
+				std::unordered_map<std::string, std::string>    &metaValues
+
+			);
+
+			static TransNode createTransformationsRecursive(
+				IfcParse::IfcFile &ifcFile,
+				bool &missingEntities,
+				const IfcUtil::IfcBaseClass *element,
+				std::unordered_map<std::string, std::string>                               &metaValue,
+				std::unordered_map<std::string, std::string>                               &locationValue,
+				std::unordered_map<std::string, std::string>                               &projectUnits,
+				const std::set<int>													       &ancestorsID = std::set<int>(),
+				const std::string														   &metaPrefix = std::string()
+			);
+
+			static void determineActionsByElementType(
+				const IfcUtil::IfcBaseClass *element,
+				bool &missingEntities,
+				std::unordered_map<std::string, std::string>                  &metaValues,
+				std::unordered_map<std::string, std::string>                  &locationData,
+				std::unordered_map<std::string, std::string>                  &projectUnits,
+				bool                                                          &createElement,
+				bool                                                          &traverseChildren,
+				std::vector<IfcUtil::IfcBaseClass *>                          &extraChildren,
+				const std::string											  &metaPrefix,
+				std::string											          &childrenMetaPrefix);
+
+			static void setProjectUnits(
+				const Ifc2x3::IfcUnitAssignment* unitsAssignment,
+				std::unordered_map<std::string, std::string> &projectUnits);
+
+			static std::string constructMetadataLabel(
+				const std::string &label,
+				const std::string &prefix = "",
+				const std::string &units = ""
+			);
+
+			static std::string getValueAsString(
+				const Ifc2x3::IfcValue    *ifcValue,
+				std::string &unitType,
+				const std::unordered_map<std::string, std::string> &projectUnits);
+		};
+	}
 }

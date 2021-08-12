@@ -24,10 +24,6 @@
 #include <string>
 #include <unordered_map>
 
-#define IfcSchema Ifc2x3
-
-#include <ifcgeom/IfcGeom.h>
-#include <ifcparse/IfcParse.h>
 #include <ifcparse/IfcFile.h>
 
 #include "../../../../core/model/bson/repo_node_material.h"
@@ -70,70 +66,8 @@ namespace repo {
 					);
 
 				protected:
-					repo::core::model::RepoNodeSet createTransformations(
-						IfcParse::IfcFile &ifcfile,
-						std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> &meshes,
-						std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
-						repo::core::model::RepoNodeSet											   &metaSet
-					);
-
-					repo::core::model::RepoNodeSet createTransformationsRecursive(
-						IfcParse::IfcFile &ifcfile,
-						const IfcUtil::IfcBaseClass *element,
-						std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> &meshes,
-						std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
-						repo::core::model::RepoNodeSet											   &metaSet,
-						std::unordered_map<std::string, std::string>                               &metaValue,
-						std::unordered_map<std::string, std::string>                               &locationValue,
-						const repo::lib::RepoUUID												   &parentID,
-						const std::set<int>													       &ancestorsID = std::set<int>(),
-						const std::string														   &metaPrefix = std::string()
-					);
-
-					void determineActionsByElementType(
-						IfcParse::IfcFile &ifcfile,
-						const IfcUtil::IfcBaseClass *element,
-						std::unordered_map<std::string, std::string>                  &metaValues,
-						std::unordered_map<std::string, std::string>                  &locationData,
-						bool                                                          &createElement,
-						bool                                                          &traverseChildren,
-						std::vector<IfcUtil::IfcBaseClass *>                          &extraChildren,
-						const std::string											  &metaPrefix,
-						std::string											          &childrenMetaPrefix);
-
-					std::string constructMetadataLabel(
-						const std::string &label,
-						const std::string &prefix,
-						const std::string &unitType = ""
-					);
-
-					void generateClassificationInformation(
-						const IfcSchema::IfcRelAssociatesClassification * &relCS,
-						std::unordered_map<std::string, std::string>    &metaValues
-
-					);
-
-					void setProjectUnits(const IfcSchema::IfcUnitAssignment* unitsAssignment);
-
-					std::string getValueAsString(
-						const IfcSchema::IfcValue    *ifcValue,
-						std::string &unitType);
-
-					std::string getUnits(
-						const IfcSchema::IfcDerivedUnitEnum::Value &unitType
-					);
-
-					std::string getUnits(
-						const IfcSchema::IfcUnitEnum::Value &unitType
-					);
-
-					std::string getUnits(
-						const std::string &unitType
-					);
 
 					const std::string file;
-					bool missingEntities;
-					std::unordered_map<std::string, std::string> projectUnits;
 				};
 			}
 		} //namespace modelconvertor

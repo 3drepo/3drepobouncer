@@ -16,6 +16,8 @@
 */
 
 #pragma once
+#include <vector>
+#include <unordered_map>
 #include <cstdint>
 #if defined(_WIN32) || defined(_WIN64)
 #   define IFC_UTILS_DECL_EXPORT __declspec(dllexport)
@@ -33,3 +35,19 @@
 #endif
 
 //------------------------------------------------------------------------------
+
+#define __CREATE_SCHEMA_NS(a, b)  a ## b
+//For some reason this extra abstraction is needed or it won't append IfcSchema properly..
+#define _CREATE_SCHEMA_NS(a, b)  __CREATE_SCHEMA_NS(a, b)
+#define CREATE_SCHEMA_NS(prefix) _CREATE_SCHEMA_NS(prefix, IfcSchema)
+
+struct TransNode {
+	std::vector<float> transformation;
+	std::string name;
+	std::string guid;
+	std::unordered_map<std::string, std::string> meta;
+	std::vector<TransNode> children;
+	bool createNode = false;
+	bool meshTakeName = false;
+	bool isIfcSpace = false;
+};
