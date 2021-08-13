@@ -21,7 +21,7 @@
 
 #include <ifcUtils/Ifc2x3.h>
 #include <ifcUtils/Ifc4.h>
-#include <ifcparse/IfcFile.h>
+#include "repo_ifc_utils_common.h"
 #include "repo_ifc_utils_geometry.h"
 #include "repo_ifc_utils_constants.h"
 #include "../../../../core/model/bson/repo_bson_factory.h"
@@ -45,8 +45,6 @@ bool IFCUtilsGeometry::generateGeometry(
 {
 	partialFailure = false;
 
-	IfcParse::IfcFile ifcfile(file);
-
 	std::vector<std::vector<repo_face_t>> allFaces;
 	std::vector<std::vector<double>> allVertices;
 	std::vector<std::vector<double>> allNormals;
@@ -54,15 +52,20 @@ bool IFCUtilsGeometry::generateGeometry(
 	std::vector<std::string> allIds, allNames, allMaterials;
 	std::unordered_map<std::string, repo_material_t> matNameToMaterials;
 
-	if (ifcfile.schema()->name() == "IFC2X3") {
+	switch (getIFCSchema(file)) {
+	case IfcSchemaVersion::IFC2x3:
 		if (!IfcUtils::Schema_Ifc2x3::GeometryHandler::retrieveGeometry(file,
 			allVertices, allFaces, allNormals, allUVs, allIds, allNames, allMaterials, matNameToMaterials, offset, errMsg))
 			return false;
-	}
-	else {
+		break;
+	case IfcSchemaVersion::IFC4:
 		if (!IfcUtils::Schema_Ifc4::GeometryHandler::retrieveGeometry(file,
 			allVertices, allFaces, allNormals, allUVs, allIds, allNames, allMaterials, matNameToMaterials, offset, errMsg))
 			return false;
+		break;
+	default:
+		errMsg = "Unsupported IFC Version";
+		return false;
 	}
 
 	//now we have found all meshes, take the minimum bounding box of the scene as offset

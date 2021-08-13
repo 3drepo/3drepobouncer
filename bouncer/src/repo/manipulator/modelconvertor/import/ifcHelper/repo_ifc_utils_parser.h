@@ -24,8 +24,6 @@
 #include <string>
 #include <unordered_map>
 
-#include <ifcparse/IfcFile.h>
-
 #include "../../../../core/model/bson/repo_node_material.h"
 #include "../../../../core/model/bson/repo_node_mesh.h"
 #include "../../../../core/model/collection/repo_scene.h"

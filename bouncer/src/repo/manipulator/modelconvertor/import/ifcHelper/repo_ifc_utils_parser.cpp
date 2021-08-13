@@ -4,6 +4,7 @@
 
 #include "repo_ifc_utils_parser.h"
 #include "repo_ifc_utils_constants.h"
+#include "repo_ifc_utils_common.h"
 #include "ifcUtils/Ifc2x3.h"
 #include "ifcUtils/Ifc4.h"
 
@@ -67,8 +68,6 @@ repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
 	const std::vector<double>                                                  &offset
 )
 {
-	IfcParse::IfcFile ifcfile(file);
-
 	repoInfo << "IFC Parser initialised.";
 
 	//repoInfo << "Creating Transformations..." << ifcfile.schema()->name();
@@ -76,12 +75,18 @@ repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
 	TransNode tree;
 	bool missingEntities = false;
 
-	if (ifcfile.schema()->name() == "IFC2X3") {
+	switch (getIFCSchema(file)) {
+	case IfcSchemaVersion::IFC2x3:
 		tree = IfcUtils::Schema_Ifc2x3::TreeParser::createTransformations(file, missingEntities);
-	}
-	else {
+		break;
+	case IfcSchemaVersion::IFC4:
 		tree = IfcUtils::Schema_Ifc4::TreeParser::createTransformations(file, missingEntities);
+		break;
+	default:
+		errMsg = "Unsupported IFC Version";
+		return nullptr;
 	}
+
 	repoDebug << "Tree generated. root node is " << tree.name << " with " << tree.children.size() << " children";
 
 	repo::core::model::RepoNodeSet dummy, meshSet, matSet, metaSet, transSet;
