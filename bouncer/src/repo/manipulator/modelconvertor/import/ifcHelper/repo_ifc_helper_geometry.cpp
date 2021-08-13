@@ -53,12 +53,12 @@ bool IFCUtilsGeometry::generateGeometry(
 
 	switch (getIFCSchema(file)) {
 	case IfcSchemaVersion::IFC2x3:
-		if (!IfcUtils::Schema_Ifc2x3::GeometryHandler::retrieveGeometry(file,
+		if (!repo::ifcUtility::Schema_Ifc2x3::GeometryHandler::retrieveGeometry(file,
 			allVertices, allFaces, allNormals, allUVs, allIds, allNames, allMaterials, matNameToMaterials, offset, errMsg))
 			return false;
 		break;
 	case IfcSchemaVersion::IFC4:
-		if (!IfcUtils::Schema_Ifc4::GeometryHandler::retrieveGeometry(file,
+		if (!repo::ifcUtility::Schema_Ifc4::GeometryHandler::retrieveGeometry(file,
 			allVertices, allFaces, allNormals, allUVs, allIds, allNames, allMaterials, matNameToMaterials, offset, errMsg))
 			return false;
 		break;

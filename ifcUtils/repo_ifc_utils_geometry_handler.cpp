@@ -90,7 +90,7 @@ repo_material_t createMaterial(
 	return matProp;
 }
 
-bool IfcUtils::SCHEMA_NS::GeometryHandler::retrieveGeometry(
+bool repo::ifcUtility::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 	const std::string &file,
 	std::vector < std::vector<double>> &allVertices,
 	std::vector<std::vector<repo_face_t>> &allFaces,

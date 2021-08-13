@@ -23,11 +23,10 @@
 
 #define SCHEMA_NS CREATE_SCHEMA_NS(Schema_)
 
-//FIXME
 #include "repo_ifc_utils_constants.h"
-#include "../bouncer/src/repo/lib/repo_utils.h"
+#include <repo/lib/repo_utils.h>
 
-TransNode  IfcUtils::SCHEMA_NS::TreeParser::createTransformations(const std::string &filePath, bool &missingEntities)
+TransNode  repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformations(const std::string &filePath, bool &missingEntities)
 {
 	IfcParse::IfcFile ifcFile = filePath;
 	auto initialElements = ifcFile.instances_by_type<IfcSchema::IfcProject>();
@@ -48,7 +47,7 @@ TransNode  IfcUtils::SCHEMA_NS::TreeParser::createTransformations(const std::str
 	return node;
 }
 
-TransNode IfcUtils::SCHEMA_NS::TreeParser::createTransformationsRecursive(
+TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursive(
 	IfcParse::IfcFile &ifcFile,
 	bool &missingEntities,
 	const IfcUtil::IfcBaseClass *element,
@@ -204,7 +203,7 @@ TransNode IfcUtils::SCHEMA_NS::TreeParser::createTransformationsRecursive(
 	return transNode;
 }
 
-std::string IfcUtils::SCHEMA_NS::TreeParser::constructMetadataLabel(
+std::string repo::ifcUtility::SCHEMA_NS::TreeParser::constructMetadataLabel(
 	const std::string &label,
 	const std::string &prefix,
 	const std::string &units
@@ -222,7 +221,7 @@ std::string IfcUtils::SCHEMA_NS::TreeParser::constructMetadataLabel(
 	return ss.str();
 }
 
-void IfcUtils::SCHEMA_NS::TreeParser::determineActionsByElementType(
+void repo::ifcUtility::SCHEMA_NS::TreeParser::determineActionsByElementType(
 	const IfcUtil::IfcBaseClass *element,
 	bool & missingEntities,
 	std::unordered_map<std::string, std::string>                  &metaValues,
@@ -600,7 +599,7 @@ std::string getSuperScriptAsString(int value) {
 	return ss.str();
 }
 
-std::pair<std::string, std::string> IfcUtils::SCHEMA_NS::TreeParser::processUnits(
+std::pair<std::string, std::string> repo::ifcUtility::SCHEMA_NS::TreeParser::processUnits(
 	const IfcUtil::IfcBaseClass *element) {
 	std::string unitType, unitsLabel;
 	auto typeName = element->data().type()->name_lc();
@@ -663,7 +662,7 @@ std::pair<std::string, std::string> IfcUtils::SCHEMA_NS::TreeParser::processUnit
 	return { unitType, unitsLabel };
 }
 
-void IfcUtils::SCHEMA_NS::TreeParser::setProjectUnits(
+void repo::ifcUtility::SCHEMA_NS::TreeParser::setProjectUnits(
 	const IfcSchema::IfcUnitAssignment* unitsAssignment,
 	std::unordered_map<std::string, std::string>                  &projectUnits
 ) {
@@ -676,21 +675,21 @@ void IfcUtils::SCHEMA_NS::TreeParser::setProjectUnits(
 	}
 }
 
-std::string IfcUtils::SCHEMA_NS::TreeParser::getUnits(
+std::string repo::ifcUtility::SCHEMA_NS::TreeParser::getUnits(
 	const IfcSchema::IfcDerivedUnitEnum::Value &unitType,
 	const std::unordered_map<std::string, std::string> &projectUnits
 ) {
 	return getUnits(IfcSchema::IfcDerivedUnitEnum::ToString(unitType), projectUnits);
 }
 
-std::string IfcUtils::SCHEMA_NS::TreeParser::getUnits(
+std::string repo::ifcUtility::SCHEMA_NS::TreeParser::getUnits(
 	const IfcSchema::IfcUnitEnum::Value &unitType,
 	const std::unordered_map<std::string, std::string> &projectUnits
 ) {
 	return getUnits(IfcSchema::IfcUnitEnum::ToString(unitType), projectUnits);
 }
 
-std::string IfcUtils::SCHEMA_NS::TreeParser::getUnits(
+std::string repo::ifcUtility::SCHEMA_NS::TreeParser::getUnits(
 	const std::string &unitType,
 	const std::unordered_map<std::string, std::string> &projectUnits
 ) {
@@ -699,7 +698,7 @@ std::string IfcUtils::SCHEMA_NS::TreeParser::getUnits(
 	return "";
 }
 
-std::string IfcUtils::SCHEMA_NS::TreeParser::getValueAsString(
+std::string repo::ifcUtility::SCHEMA_NS::TreeParser::getValueAsString(
 	const IfcSchema::IfcValue    *ifcValue,
 	std::string &units,
 	const std::unordered_map<std::string, std::string> &projectUnits)
@@ -1209,7 +1208,7 @@ std::string ifcDateToString(const IfcSchema::IfcCalendarDate *date) {
 }
 #endif
 
-void  IfcUtils::SCHEMA_NS::TreeParser::generateClassificationInformation(
+void  repo::ifcUtility::SCHEMA_NS::TreeParser::generateClassificationInformation(
 	const IfcSchema::IfcRelAssociatesClassification * &relCS,
 	std::unordered_map<std::string, std::string>         &metaValues
 

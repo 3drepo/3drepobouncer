@@ -77,10 +77,10 @@ repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
 
 	switch (getIFCSchema(file)) {
 	case IfcSchemaVersion::IFC2x3:
-		tree = IfcUtils::Schema_Ifc2x3::TreeParser::createTransformations(file, missingEntities);
+		tree = repo::ifcUtility::Schema_Ifc2x3::TreeParser::createTransformations(file, missingEntities);
 		break;
 	case IfcSchemaVersion::IFC4:
-		tree = IfcUtils::Schema_Ifc4::TreeParser::createTransformations(file, missingEntities);
+		tree = repo::ifcUtility::Schema_Ifc4::TreeParser::createTransformations(file, missingEntities);
 		break;
 	default:
 		errMsg = "Unsupported IFC Version";
