@@ -21,8 +21,6 @@
 #undef INCLUDE_HEADER
 #undef _INCLUDE_HEADER
 
-#define SCHEMA_NS CREATE_SCHEMA_NS(Schema_)
-
 #include "repo_ifc_utils_constants.h"
 #include <repo/lib/repo_utils.h>
 

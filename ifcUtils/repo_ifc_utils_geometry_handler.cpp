@@ -21,8 +21,7 @@
 #include INCLUDE_HEADER(IfcSchema)
 #undef INCLUDE_HEADER
 #undef _INCLUDE_HEADER
-
-#define SCHEMA_NS CREATE_SCHEMA_NS(Schema_)
+#undef TO_STRING
 
 #include <ifcgeom/IfcGeom.h>
 #include <ifcgeom_schema_agnostic/IfcGeomIterator.h>

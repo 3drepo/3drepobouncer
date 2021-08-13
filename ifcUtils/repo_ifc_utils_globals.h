@@ -40,6 +40,7 @@
 //For some reason this extra abstraction is needed or it won't append IfcSchema properly..
 #define _CREATE_SCHEMA_NS(a, b)  __CREATE_SCHEMA_NS(a, b)
 #define CREATE_SCHEMA_NS(prefix) _CREATE_SCHEMA_NS(prefix, IfcSchema)
+#define SCHEMA_NS CREATE_SCHEMA_NS(Schema_)
 
 struct TransNode {
 	std::vector<float> transformation;
