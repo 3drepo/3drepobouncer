@@ -14,6 +14,8 @@
 *  You should have received a copy of the GNU Affero General Public License
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+
+#include "repo_ifc_utils_globals.h"
 #define _INCLUDE_HEADER(x) TO_STRING(repo_ifc_utils_ ## x)
 #define INCLUDE_HEADER(x) _INCLUDE_HEADER(x.h)
 #include INCLUDE_HEADER(IfcSchema)
