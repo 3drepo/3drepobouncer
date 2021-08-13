@@ -16,9 +16,11 @@
 */
 
 #define TO_STRING(x) #x
-#define INCLUDE_HEADER(x) TO_STRING(x.h)
+#define _INCLUDE_HEADER(x) TO_STRING(repo_ifc_utils_ ## x)
+#define INCLUDE_HEADER(x) _INCLUDE_HEADER(x.h)
 #include INCLUDE_HEADER(IfcSchema)
 #undef INCLUDE_HEADER
+#undef _INCLUDE_HEADER
 
 #define SCHEMA_NS CREATE_SCHEMA_NS(Schema_)
 

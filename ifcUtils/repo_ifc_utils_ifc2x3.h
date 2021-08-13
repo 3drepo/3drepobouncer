@@ -16,7 +16,7 @@
 */
 
 #pragma once
-#include "globals.h"
+#include "repo_ifc_utils_globals.h"
 #include <ifcparse/Ifc2x3.h>
 #include <ifcparse/IfcParse.h>
 #include <ifcparse/IfcFile.h>

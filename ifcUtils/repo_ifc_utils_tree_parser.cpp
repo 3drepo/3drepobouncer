@@ -15,16 +15,16 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #define TO_STRING(x) #x
-#define INCLUDE_HEADER(x) TO_STRING(x.h)
+#define _INCLUDE_HEADER(x) TO_STRING(repo_ifc_utils_ ## x)
+#define INCLUDE_HEADER(x) _INCLUDE_HEADER(x.h)
 #include INCLUDE_HEADER(IfcSchema)
-const std::string headerFile = INCLUDE_HEADER(IfcSchema);
-const std::string schemaUsed = TO_STRING(IfcSchema);
 #undef INCLUDE_HEADER
+#undef _INCLUDE_HEADER
 
 #define SCHEMA_NS CREATE_SCHEMA_NS(Schema_)
 
 //FIXME
-#include "../bouncer/src/repo/manipulator/modelconvertor/import/ifcHelper/repo_ifc_utils_constants.h"
+#include "repo_ifc_utils_constants.h"
 #include "../bouncer/src/repo/lib/repo_utils.h"
 
 TransNode  IfcUtils::SCHEMA_NS::TreeParser::createTransformations(const std::string &filePath, bool &missingEntities)
@@ -1253,6 +1253,6 @@ void  IfcUtils::SCHEMA_NS::TreeParser::generateClassificationInformation(
 			if (reference->hasLocation())
 				metaValues[constructMetadataLabel("Location", refPrefix)] = reference->Location();
 		}
-}
+	}
 #endif
 }

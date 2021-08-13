@@ -3,10 +3,10 @@
 */
 
 #include "repo_ifc_utils_parser.h"
-#include "repo_ifc_utils_constants.h"
 #include "repo_ifc_utils_common.h"
-#include "ifcUtils/Ifc2x3.h"
-#include "ifcUtils/Ifc4.h"
+#include <ifcUtils/repo_ifc_utils_constants.h>
+#include <ifcUtils/repo_ifc_utils_ifc2x3.h>
+#include <ifcUtils/repo_ifc_utils_ifc4.h>
 
 #include "../../../../core/model/bson/repo_bson_factory.h"
 #include "../../../../core/model/collection/repo_scene.h"
