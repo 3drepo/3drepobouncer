@@ -20,8 +20,8 @@
 */
 
 #include "repo_model_import_ifc.h"
-#include "ifcHelper/repo_ifc_utils_geometry.h"
-#include "ifcHelper/repo_ifc_utils_parser.h"
+#include "ifcHelper/repo_ifc_helper_geometry.h"
+#include "ifcHelper/repo_ifc_helper_parser.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../error_codes.h"
 #include <boost/filesystem.hpp>

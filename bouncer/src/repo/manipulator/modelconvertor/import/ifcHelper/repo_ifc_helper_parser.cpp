@@ -2,8 +2,8 @@
 * Allows geometry creation using ifcopenshell
 */
 
-#include "repo_ifc_utils_parser.h"
-#include "repo_ifc_utils_common.h"
+#include "repo_ifc_helper_parser.h"
+#include "repo_ifc_helper_common.h"
 #include <ifcUtils/repo_ifc_utils_constants.h>
 #include <ifcUtils/repo_ifc_utils_ifc2x3.h>
 #include <ifcUtils/repo_ifc_utils_ifc4.h>

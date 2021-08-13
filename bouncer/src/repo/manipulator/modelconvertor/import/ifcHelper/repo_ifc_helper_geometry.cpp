@@ -21,8 +21,8 @@
 
 #include <ifcUtils/repo_ifc_utils_ifc2x3.h>
 #include <ifcUtils/repo_ifc_utils_ifc4.h>
-#include "repo_ifc_utils_common.h"
-#include "repo_ifc_utils_geometry.h"
+#include "repo_ifc_helper_common.h"
+#include "repo_ifc_helper_geometry.h"
 #include "../../../../core/model/bson/repo_bson_factory.h"
 #include <boost/filesystem.hpp>
 #include "../repo_model_import_config_default_values.h"
