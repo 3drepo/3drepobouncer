@@ -36,6 +36,7 @@
 
 //------------------------------------------------------------------------------
 
+#define TO_STRING(x) #x
 #define __CREATE_SCHEMA_NS(a, b)  a ## b
 //For some reason this extra abstraction is needed or it won't append IfcSchema properly..
 #define _CREATE_SCHEMA_NS(a, b)  __CREATE_SCHEMA_NS(a, b)

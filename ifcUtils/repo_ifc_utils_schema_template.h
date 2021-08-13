@@ -22,13 +22,11 @@
 #include <ifcparse/IfcParse.h>
 #include <ifcparse/IfcFile.h>
 
-#define TO_STRING(x) #x
-#define _INCLUDE_HEADER(x) TO_STRING(ifcparse/ ## x)
-#define INCLUDE_HEADER(x) _INCLUDE_HEADER(x.h)
-#include INCLUDE_HEADER(SCHEMA_IN_FILE)
-#undef INCLUDE_HEADER
-#undef _INCLUDE_HEADER
-#undef TO_STRING
+#define _INCLUDE_SCHEMA_HEADER(x) TO_STRING(ifcparse/ ## x)
+#define INCLUDE_SCHEMA_HEADER(x) _INCLUDE_SCHEMA_HEADER(x.h)
+#include INCLUDE_SCHEMA_HEADER(SCHEMA_IN_FILE)
+#undef INCLUDE_SCHEMA_HEADER
+#undef _INCLUDE_SCHEMA_HEADER
 
 #include <repo/lib/datastructure/repo_structs.h>
 
