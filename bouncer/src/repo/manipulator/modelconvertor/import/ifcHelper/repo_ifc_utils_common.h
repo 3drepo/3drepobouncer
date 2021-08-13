@@ -17,7 +17,7 @@
 
 #pragma once
 #include <string>
-#include <ifcparse/IfcParse.h>
+#include <ifcparse/IfcFile.h>
 
 enum IfcSchemaVersion { IFC2x3, IFC4, UNKNOWN };
 
