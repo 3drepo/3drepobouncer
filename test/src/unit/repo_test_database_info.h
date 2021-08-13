@@ -57,6 +57,7 @@ const static std::string synchroFile = "synchro.spm";
 const static std::string synchroWithTransform = "withTransformations.spm";
 const static std::string synchroOldVersion = "synchro6_1.spm";
 const static std::string synchroVersion6_3 = "synchro6_3.spm";
+const static std::string synchroVersion6_4 = "synchro6_4.spm";
 
 const static std::string emptyFile = "empty.json";
 const static std::string emptyJSONFile = "empty2.json";
