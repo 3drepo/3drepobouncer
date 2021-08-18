@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2020 3D Repo Ltd
+*  Copyright (C) 2021 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -16,30 +16,9 @@
 */
 
 #include <gtest/gtest.h>
-#include <repo/manipulator/modelconvertor/import/repo_model_import_synchro.h>
-#include "../../../../repo_test_database_info.h"
 
-using namespace repo::manipulator::modelconvertor;
-
-TEST(SynchroModelImport, ConstructorTest)
+int main(int argc, char *argv[])
 {
-	SynchroModelImport(ModelImportConfig());
-}
-
-TEST(SynchroModelImport, DeconstructorTest)
-{
-	auto ptr = new SynchroModelImport(ModelImportConfig());
-	delete ptr;
-}
-
-TEST(SynchroModelImport, ImportModel)
-{
-	auto import = SynchroModelImport(ModelImportConfig());
-	uint8_t errCode;
-	EXPECT_TRUE(import.importModel(getDataPath(synchroVersion6_4), errCode));
-	EXPECT_EQ(0, errCode);
-
-	auto scene = import.generateRepoScene(errCode);
-
-	ASSERT_TRUE(scene);
+	::testing::InitGoogleTest(&argc, argv);
+	return RUN_ALL_TESTS();
 }
