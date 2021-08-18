@@ -48,6 +48,7 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
 	} catch (err) {
 		if (err === ERRCODE_UNITY_LICENCE_INVALID) {
 			logger.error('Failed to generate asset bundle: Invalid unity license', logLabel);
+			await Utils.sleep(config.rabbitmq.maxWaitTimeMS);
 			throw err;
 		}
 		logger.error(`Failed to generate asset bundle: ${err}`, logLabel);
