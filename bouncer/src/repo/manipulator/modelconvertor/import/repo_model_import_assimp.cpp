@@ -1256,7 +1256,7 @@ bool AssimpModelImport::importModel(std::string filePath, uint8_t &err)
 		std::string ext = repo::lib::getExtension(orgFile);
 		repo::lib::toLower(ext);
 		bool isFbxFile = ext == ".fbx";
-		requiresOrientation = !rootOrientatonSet && isFbxFile ? true : false;
+		requiresOrientation = !rootOrientatonSet && isFbxFile;
 
 		//-------------------------------------------------------------------------
 		// Polygon count
