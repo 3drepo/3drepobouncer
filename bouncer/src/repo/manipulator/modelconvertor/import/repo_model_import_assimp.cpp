@@ -1341,7 +1341,6 @@ bool AssimpModelImport::SetRootOrientationFromMetadata()
 {
 	if (!assimpScene || !assimpScene->mMetaData) return false;
 
-	aiMatrix4x4 orientation;
 	// assumed axis, if no metadata is found 
 	// 0 - x 
 	// 1 - y
@@ -1352,7 +1351,6 @@ bool AssimpModelImport::SetRootOrientationFromMetadata()
 	int32_t frontAxisSign = 1;
 	int32_t coordAxis = 0;
 	int32_t coordAxisSign = 1;
-	double unitScaleFactor = 1.0;
 
 	// values will only be populated if key exists
 	bool reqMetadataExists = true;
@@ -1362,25 +1360,23 @@ bool AssimpModelImport::SetRootOrientationFromMetadata()
 	reqMetadataExists &= assimpScene->mMetaData->Get<int32_t>("FrontAxisSign", frontAxisSign);
 	reqMetadataExists &= assimpScene->mMetaData->Get<int32_t>("CoordAxis", coordAxis);
 	reqMetadataExists &= assimpScene->mMetaData->Get<int32_t>("CoordAxisSign", coordAxisSign);
-	// ignore the scale factor from the file as we set this explicitly online
-	//reqMetadataExists &= assimpScene->mMetaData->Get<double>("UnitScaleFactor", unitScaleFactor);
 	if (!reqMetadataExists) return false;
 
 	// create the transformation
 	aiVector3D uV;
 	aiVector3D fV;
 	aiVector3D rV;
-	uV[upAxis] = upAxisSign * (float)unitScaleFactor;
-	fV[frontAxis] = frontAxisSign * (float)unitScaleFactor;
-	rV[coordAxis] = coordAxisSign * (float)unitScaleFactor;
-	orientation = aiMatrix4x4(
+	uV[upAxis] = upAxisSign;
+	fV[frontAxis] = frontAxisSign;
+	rV[coordAxis] = coordAxisSign;
+	aiMatrix4x4 orientationCorrection = aiMatrix4x4(
 		rV.x, rV.y, rV.z, 0.0f,
 		uV.x, uV.y, uV.z, 0.0f,
 		fV.x, fV.y, fV.z, 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f);
 
 	// apply to scene
-	assimpScene->mRootNode->mTransformation = orientation;
+	assimpScene->mRootNode->mTransformation *= orientationCorrection;
 	repoInfo << "Set the root orientation from metadata";
 	return true;
 }
