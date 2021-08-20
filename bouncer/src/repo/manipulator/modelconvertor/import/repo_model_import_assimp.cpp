@@ -30,7 +30,6 @@
 
 #include "../../../core/model/bson/repo_bson_builder.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
-#include "../../../lib/repo_log.h"
 #include "../../../lib/repo_utils.h"
 #include "../../../error_codes.h"
 #include "./repo_model_import_config_default_values.h"
@@ -94,12 +93,7 @@ std::string AssimpModelImport::getSupportedFormats()
 }
 
 bool AssimpModelImport::requireReorientation() const {
-	if (orgFile.empty()) return false;
-
-	auto ext = repo::lib::getExtension(orgFile);
-	repo::lib::toLower(ext);
-
-	return ext == ".fbx";
+	return requiresOrientation;
 }
 
 uint32_t AssimpModelImport::composeAssimpPostProcessingFlags(
@@ -1257,6 +1251,13 @@ bool AssimpModelImport::importModel(std::string filePath, uint8_t &err)
 	}
 	else
 	{
+		// try to set the orientation from metadata
+		bool rootOrientatonSet = SetRootOrientationFromMetadata();
+		std::string ext = repo::lib::getExtension(orgFile);
+		repo::lib::toLower(ext);
+		bool isFbxFile = ext == ".fbx";
+		requiresOrientation = !rootOrientatonSet && isFbxFile;
+
 		//-------------------------------------------------------------------------
 		// Polygon count
 		uint64_t polyCount = 0;
@@ -1334,4 +1335,48 @@ void AssimpModelImport::setAssimpProperties() {
 	}
 	if (repoDefaultSplitByBoneCount)
 		importer.SetPropertyInteger(AI_CONFIG_PP_SBBC_MAX_BONES, repoDefaultSplitByBoneCountMaxBones);
+}
+
+bool AssimpModelImport::SetRootOrientationFromMetadata()
+{
+	if (!assimpScene || !assimpScene->mMetaData) return false;
+
+	// assumed axis, if no metadata is found 
+	// 0 - x 
+	// 1 - y
+	// 2 - z
+	int32_t upAxis = 1;
+	int32_t upAxisSign = 1;
+	int32_t frontAxis = 2;
+	int32_t frontAxisSign = 1;
+	int32_t coordAxis = 0;
+	int32_t coordAxisSign = 1;
+
+	// values will only be populated if key exists
+	bool reqMetadataExists = true;
+	reqMetadataExists &= assimpScene->mMetaData->Get<int32_t>("UpAxis", upAxis);
+	reqMetadataExists &= assimpScene->mMetaData->Get<int32_t>("UpAxisSign", upAxisSign);
+	reqMetadataExists &= assimpScene->mMetaData->Get<int32_t>("FrontAxis", frontAxis);
+	reqMetadataExists &= assimpScene->mMetaData->Get<int32_t>("FrontAxisSign", frontAxisSign);
+	reqMetadataExists &= assimpScene->mMetaData->Get<int32_t>("CoordAxis", coordAxis);
+	reqMetadataExists &= assimpScene->mMetaData->Get<int32_t>("CoordAxisSign", coordAxisSign);
+	if (!reqMetadataExists) return false;
+
+	// create the transformation
+	aiVector3D uV;
+	aiVector3D fV;
+	aiVector3D rV;
+	uV[upAxis] = upAxisSign;
+	fV[frontAxis] = frontAxisSign;
+	rV[coordAxis] = coordAxisSign;
+	aiMatrix4x4 orientationCorrection = aiMatrix4x4(
+		rV.x, rV.y, rV.z, 0.0f,
+		uV.x, uV.y, uV.z, 0.0f,
+		fV.x, fV.y, fV.z, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f);
+
+	// apply to scene
+	assimpScene->mRootNode->mTransformation *= orientationCorrection;
+	repoInfo << "Set the root orientation from metadata";
+	return true;
 }
