@@ -41,7 +41,7 @@ const run = (
 	setTimeout(() => {
 		isTimeout = true;
 		if (!hasTerminated) {
-			logger.info('Max processing time reached, terminating the process');
+			logger.info('Max processing time reached, terminating the process', logLabel);
 			kill(cmdExec.pid);
 		}
 	}, timeoutMS);
