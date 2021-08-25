@@ -15,7 +15,9 @@ const run = (
 	const cmdExec = spawn(exe, params, { shell: true });
 	if (processInformation) processMonitor.startMonitor(cmdExec.pid, processInformation);
 	let isTimeout = false;
+	let hasTerminated = false;
 	cmdExec.on('close', (code, signal) => {
+		hasTerminated = true;
 		if (processInformation) processMonitor.stopMonitor(cmdExec.pid, code);
 
 		if (verbose) {
@@ -37,7 +39,13 @@ const run = (
 
 	setTimeout(() => {
 		isTimeout = true;
-		cmdExec.kill();
+		if (!hasTerminated) {
+			logger.info('Max processing time reached, terminating the process');
+			if (!cmdExec.kill()) {
+				logger.info('Could not kill with SIGTERM, using SIGKILL');
+				logger.info('Trying to with SIGKILL, success? ', !!cmdExec.kill('SIGKILL'));
+			}
+		}
 	}, timeoutMS);
 });
 
