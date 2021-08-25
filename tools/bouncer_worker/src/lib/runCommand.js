@@ -1,5 +1,6 @@
 // eslint-disable-next-line security/detect-child-process
 const { spawn } = require('child_process');
+const kill = require('tree-kill');
 const { ERRCODE_TIMEOUT, ERRCODE_UNKNOWN_ERROR } = require('../constants/errorCodes');
 const logger = require('./logger');
 const processMonitor = require('./processMonitor');
@@ -41,10 +42,7 @@ const run = (
 		isTimeout = true;
 		if (!hasTerminated) {
 			logger.info('Max processing time reached, terminating the process');
-			if (!cmdExec.kill()) {
-				logger.info('Could not kill with SIGTERM, using SIGKILL');
-				logger.info('Trying to with SIGKILL, success? ', !!cmdExec.kill('SIGKILL'));
-			}
+			kill(cmdExec.pid);
 		}
 	}, timeoutMS);
 });
