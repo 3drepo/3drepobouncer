@@ -305,10 +305,10 @@ bool CSharpWrapper::initialiseSceneForAssetBundle(
 
 	if(revisionID.empty())
 		scene = controller->fetchScene(token, database, project, REPO_HISTORY_MASTER_BRANCH, true,
-				false, false, false, { repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES });
+				true, false, false, { repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES });
 	else
 		scene = controller->fetchScene(token, database, project, revisionID, false,
-				false, false, false, { repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES });
+				true, false, false, { repo::core::model::RevisionNode::UploadStatus::MISSING_BUNDLES });
 	bool success  = false;
 	if (scene)
 	{
