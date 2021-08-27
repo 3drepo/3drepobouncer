@@ -52,6 +52,7 @@ namespace repo {
 #define REPO_NODE_MESH_LABEL_COLORS                  "colors"
 			//------------------------------------------------------------------------------
 #define REPO_NODE_MESH_LABEL_MAP_ID			        "map_id"
+#define REPO_NODE_MESH_LABEL_MAP_SHARED_ID			"shared_id"
 #define REPO_NODE_MESH_LABEL_VERTEX_FROM 		    "v_from"
 #define REPO_NODE_MESH_LABEL_VERTEX_TO 		        "v_to"
 #define REPO_NODE_MESH_LABEL_TRIANGLE_FROM	        "t_from"
@@ -67,10 +68,10 @@ namespace repo {
 			{
 			public:
 				enum class Primitive {
-					UNKNOWN = 0, 
+					UNKNOWN = 0,
 					POINTS = 1,
 					LINES = 2,
-					TRIANGLES = 3, 
+					TRIANGLES = 3,
 					QUADS = 4
 				};
 
