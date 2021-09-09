@@ -1,5 +1,6 @@
 // eslint-disable-next-line security/detect-child-process
 const { spawn } = require('child_process');
+const kill = require('tree-kill');
 const { ERRCODE_TIMEOUT, ERRCODE_UNKNOWN_ERROR } = require('../constants/errorCodes');
 const logger = require('./logger');
 const processMonitor = require('./processMonitor');
@@ -15,7 +16,9 @@ const run = (
 	const cmdExec = spawn(exe, params, { shell: true });
 	if (processInformation) processMonitor.startMonitor(cmdExec.pid, processInformation);
 	let isTimeout = false;
+	let hasTerminated = false;
 	cmdExec.on('close', (code, signal) => {
+		hasTerminated = true;
 		if (processInformation) processMonitor.stopMonitor(cmdExec.pid, code);
 
 		if (verbose) {
@@ -37,7 +40,10 @@ const run = (
 
 	setTimeout(() => {
 		isTimeout = true;
-		cmdExec.kill();
+		if (!hasTerminated) {
+			logger.info('Max processing time reached, terminating the process', logLabel);
+			kill(cmdExec.pid);
+		}
 	}, timeoutMS);
 });
 
