@@ -25,10 +25,38 @@ const bouncerIndexPrefix = 'io-bouncer';
 
 const processingRecordMapping = {
 	DateTime: { type: 'date' },
-	Owner: { type: 'text' },
-	Model: { type: 'text' },
-	Database: { type: 'text' },
-	Queue: { type: 'text' },
+	Owner: { 
+		type: 'text' ,
+		'fields': {
+			'raw': { 
+				'type':  'keyword'
+			}
+		}
+	},
+	Model: { 
+		type: 'text' ,
+		'fields': {
+			'raw': { 
+				'type':  'keyword'
+			}
+		}
+	},
+	Database: { 
+		type: 'text' ,
+		'fields': {
+			'raw': { 
+				'type':  'keyword'
+			}
+		}
+	},
+	Queue: { 
+		type: 'text' ,
+		'fields': {
+			'raw': { 
+				'type':  'keyword'
+			}
+		}
+	},
 	FileType: { 
 		type: 'text' ,
 		'fields': {
