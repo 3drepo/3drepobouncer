@@ -27,7 +27,7 @@ const processingRecordMapping = {
 	DateTime: { type: 'date' },
 	Owner: { type: 'keyword' },
 	Model: { type: 'keyword' },
-	Database: { type: 'text' },
+	Database: { type: 'keyword' },
 	Queue: { type: 'keyword' },
 	FileType: { type: 'keyword'	},
 	FileSize: { type: 'double' },
