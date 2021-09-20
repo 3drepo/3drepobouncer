@@ -29,7 +29,14 @@ const processingRecordMapping = {
 	Model: { type: 'text' },
 	Database: { type: 'text' },
 	Queue: { type: 'text' },
-	FileType: { type: 'text' },
+	FileType: { 
+		type: 'text' ,
+		'fields': {
+			'raw': { 
+				'type':  'keyword'
+			}
+		}
+	},
 	FileSize: { type: 'double' },
 	MaxMemory: { type: 'double' },
 	ProcessTime: { type: 'double' },
