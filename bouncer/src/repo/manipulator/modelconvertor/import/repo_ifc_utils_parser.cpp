@@ -210,7 +210,6 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 					{
 						repoError << "Failed to process child entity " << child->entity->id() << " (" << e.what() << ")" << " element: " << element->entity->id();
 						missingEntities = true;
-						exit(0);
 					}
 				}
 			}
@@ -228,7 +227,6 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 				{
 					repoError << "Failed to process child entity " << child->entity->id() << " (" << e.what() << ")" << " element: " << element->entity->id();
 					missingEntities = true;
-					exit(0);
 				}
 			}
 		}
