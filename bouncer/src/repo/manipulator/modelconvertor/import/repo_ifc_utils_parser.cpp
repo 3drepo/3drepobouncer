@@ -188,7 +188,6 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 
 		transNodeSet.insert(new repo::core::model::TransformationNode(transNode));
 	}
-
 	bool hasTransChildren = false;
 	if (traverseChildren)
 	{
@@ -198,13 +197,21 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 		childrenAncestors.insert(id);
 		if (childrenElements)
 		{
-			for (auto &element : *childrenElements)
+			for (auto &child : *childrenElements)
 			{
-				if (ancestorsID.find(element->entity->id()) == ancestorsID.end())
+				if (ancestorsID.find(child->entity->id()) == ancestorsID.end())
 				{
-					auto childTransNodes = createTransformationsRecursive(ifcfile, element, meshes, materials, metaSet, myMetaValues, locationInfo, transID, childrenAncestors, childrenMetaPrefix);
-					transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
-					hasTransChildren |= childTransNodes.size();
+					try {
+						auto childTransNodes = createTransformationsRecursive(ifcfile, child, meshes, materials, metaSet, myMetaValues, locationInfo, transID, childrenAncestors, childrenMetaPrefix);
+						transNodeSet.insert(childTransNodes.begin(), childTransNodes.end());
+						hasTransChildren |= childTransNodes.size();
+					}
+					catch (IfcParse::IfcException &e)
+					{
+						repoError << "Failed to process child entity " << child->entity->id() << " (" << e.what() << ")" << " element: " << element->entity->id();
+						missingEntities = true;
+						exit(0);
+					}
 				}
 			}
 		}
@@ -219,8 +226,9 @@ repo::core::model::RepoNodeSet IFCUtilsParser::createTransformationsRecursive(
 				}
 				catch (IfcParse::IfcException &e)
 				{
-					repoError << "Failed to find child entity " << child->entity->id() << " (" << e.what() << ")" << " element: " << element->entity->id();
+					repoError << "Failed to process child entity " << child->entity->id() << " (" << e.what() << ")" << " element: " << element->entity->id();
 					missingEntities = true;
+					exit(0);
 				}
 			}
 		}
@@ -552,14 +560,12 @@ std::pair<std::string, std::string> processUnits(
 		auto elementList = units->Elements();
 		std::stringstream ss;
 		for (const auto & ele : *elementList) {
-			if (ele->Unit()->type() == IfcSchema::Type::IfcSIUnit) {
-				auto subUnit = static_cast<const IfcSchema::IfcSIUnit *>(ele->Unit());
-				auto baseUnits = determineUnitsLabel(subUnit->Name());
-				auto prefix = subUnit->hasPrefix() ? determinePrefix(subUnit->Prefix()) : "";
-				ss << prefix << baseUnits << (ele->Exponent() == 1 ? "" : getSuperScriptAsString(ele->Exponent()));
+			auto parentUnits = processUnits(ele->Unit());
+			auto baseUnits = parentUnits.second;
+			if (!baseUnits.empty()) {
+				ss << baseUnits << (ele->Exponent() == 1 ? "" : getSuperScriptAsString(ele->Exponent()));
 			}
 			else {
-				//We only know how to deal with IfcSIUnit at the moment - haven't seen an example of something else yet.
 				repoError << "Unrecognised sub unit type: " << ele->Unit()->entity->toString();
 			}
 		}
@@ -1257,7 +1263,17 @@ void IFCUtilsParser::generateClassificationInformation(
 				classificationName = refSource->Name();
 				metaValues[constructMetadataLabel("Name", classificationName)] = classificationName;
 				metaValues[constructMetadataLabel("Source", classificationName)] = refSource->Source();
-				metaValues[constructMetadataLabel("Edition", classificationName)] = refSource->Edition();
+				// Ad-hoc check to make sure Edition is not null, as we've found some schema defying IFC files which put $ which breaks the API.
+
+				int editionIdx = -1;
+				for (int i = 0; i < refSource->getArgumentCount(); ++i) {
+					if (refSource->getArgumentName(i) == "Edition") {
+						editionIdx = i;
+					}
+				}
+
+				if (editionIdx >= 0 && !refSource->getArgument(editionIdx)->isNull())
+					metaValues[constructMetadataLabel("Edition", classificationName)] = refSource->Edition();
 
 				if (refSource->hasEditionDate()) {
 					metaValues[constructMetadataLabel("Edition date", classificationName)] = ifcDateToString(refSource->EditionDate());
