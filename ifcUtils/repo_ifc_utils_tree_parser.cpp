@@ -166,7 +166,7 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 				}
 				catch (IfcParse::IfcException &e)
 				{
-					repoError << "Failed to process child entity " << child->data()->id() << " (" << e.what() << ")" << " element: " << element->data().id();
+					repoError << "Failed to process child entity " << child->data().id() << " (" << e.what() << ")" << " element: " << element->data().id();
 					missingEntities = true;
 				}
 			}
@@ -649,7 +649,7 @@ std::pair<std::string, std::string> repo::ifcUtility::SCHEMA_NS::TreeParser::pro
 		for (const auto & ele : *elementList) {
 			auto baseUnit = processUnits(ele).second;
 			if (!baseUnit.empty()) {
-				ss << baseUnits << (ele->Exponent() == 1 ? "" : getSuperScriptAsString(ele->Exponent()));
+				ss << baseUnit << (ele->Exponent() == 1 ? "" : getSuperScriptAsString(ele->Exponent()));
 			}
 			else {
 				repoError << "Unrecognised sub unit type: " << ele->Unit()->data().toString();
