@@ -652,7 +652,6 @@ std::pair<std::string, std::string> repo::ifcUtility::SCHEMA_NS::TreeParser::pro
 				ss << baseUnits << (ele->Exponent() == 1 ? "" : getSuperScriptAsString(ele->Exponent()));
 			}
 			else {
-				//We only know how to deal with IfcSIUnit at the moment - haven't seen an example of something else yet.
 				repoError << "Unrecognised sub unit type: " << ele->Unit()->data().toString();
 			}
 		}
