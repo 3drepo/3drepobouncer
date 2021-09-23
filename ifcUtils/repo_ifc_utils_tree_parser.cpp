@@ -154,13 +154,20 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 		{
 			for (auto &child : *childrenElements)
 			{
-				if (ancestorsID.find(child->data().id()) == ancestorsID.end())
-				{
-					auto childNode = createTransformationsRecursive(ifcFile, missingEntities, child, myMetaValues, locationValue, projectUnits, childrenAncestors, childrenMetaPrefix);
-					if (childNode.children.size() || childNode.createNode) {
-						transNode.children.push_back(childNode);
-						hasTransChildren = true;
+				try {
+					if (ancestorsID.find(child->data().id()) == ancestorsID.end())
+					{
+						auto childNode = createTransformationsRecursive(ifcFile, missingEntities, child, myMetaValues, locationValue, projectUnits, childrenAncestors, childrenMetaPrefix);
+						if (childNode.children.size() || childNode.createNode) {
+							transNode.children.push_back(childNode);
+							hasTransChildren = true;
+						}
 					}
+				}
+				catch (IfcParse::IfcException &e)
+				{
+					repoError << "Failed to process child entity " << child->data()->id() << " (" << e.what() << ")" << " element: " << element->data().id();
+					missingEntities = true;
 				}
 			}
 		}
@@ -177,7 +184,7 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 				}
 				catch (IfcParse::IfcException &e)
 				{
-					repoError << "Failed to find child entity " << child->data().id() << " (" << e.what() << ")" << " element: " << element->data().id();
+					repoError << "Failed to process child entity " << child->data().id() << " (" << e.what() << ")" << " element: " << element->data().id();
 					missingEntities = true;
 				}
 			}
@@ -640,11 +647,9 @@ std::pair<std::string, std::string> repo::ifcUtility::SCHEMA_NS::TreeParser::pro
 		auto elementList = units->Elements();
 		std::stringstream ss;
 		for (const auto & ele : *elementList) {
-			if (ele->Unit()->data().type()->name_lc() == IFC_TYPE_SI_UNIT) {
-				auto subUnit = static_cast<const IfcSchema::IfcSIUnit *>(ele->Unit());
-				auto baseUnits = determineUnitsLabel(subUnit->Name());
-				auto prefix = subUnit->hasPrefix() ? determinePrefix(subUnit->Prefix()) : "";
-				ss << prefix << baseUnits << (ele->Exponent() == 1 ? "" : getSuperScriptAsString(ele->Exponent()));
+			auto baseUnit = processUnits(ele).second;
+			if (!baseUnit.empty()) {
+				ss << baseUnits << (ele->Exponent() == 1 ? "" : getSuperScriptAsString(ele->Exponent()));
 			}
 			else {
 				//We only know how to deal with IfcSIUnit at the moment - haven't seen an example of something else yet.
@@ -1237,7 +1242,17 @@ void  repo::ifcUtility::SCHEMA_NS::TreeParser::generateClassificationInformation
 				classificationName = refSource->Name();
 				metaValues[constructMetadataLabel("Name", classificationName)] = classificationName;
 				metaValues[constructMetadataLabel("Source", classificationName)] = refSource->Source();
-				metaValues[constructMetadataLabel("Edition", classificationName)] = refSource->Edition();
+				int editionIdx = -1;
+				auto eleEntity = refSource->declaration().as_entity();
+				for (int i = 0; i < refSource->data().getArgumentCount(); ++i) {
+					if (eleEntity->attribute_by_index(i)->name() == "Edition") {
+						editionIdx = i;
+					}
+				}
+
+				if (editionIdx >= 0 && !refSource->data().getArgument(editionIdx)->isNull()) {
+					metaValues[constructMetadataLabel("Edition", classificationName)] = refSource->Edition();
+				}
 
 				if (refSource->hasEditionDate()) {
 					metaValues[constructMetadataLabel("Edition date", classificationName)] = ifcDateToString(refSource->EditionDate());
