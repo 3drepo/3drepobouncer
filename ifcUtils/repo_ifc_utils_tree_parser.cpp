@@ -135,6 +135,9 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 		}
 	}
 
+	//Do not create element if there's no guid
+	createElement &= !guid.empty();
+
 	TransNode transNode;
 	if (createElement)
 	{
@@ -322,6 +325,24 @@ void repo::ifcUtility::SCHEMA_NS::TreeParser::determineActionsByElementType(
 		extraChildren.insert(extraChildren.end(), propDefs->begin(), propDefs->end());
 		createElement = false;
 		childrenMetaPrefix = constructMetadataLabel(propSet->Name(), metaPrefix);
+	}
+	else if (typeName == IFC_TYPE_PROPERTY_BOUNDED_VALUE) {
+		auto propSet = static_cast<const IfcSchema::IfcPropertyBoundedValue *>(element);
+		auto unitsOverride = propSet->hasUnit() ? processUnits(propSet->Unit()).second : "";
+		std::string upperBound, lowerBound;
+		if (propSet->hasUpperBoundValue()) {
+			std::string units;
+			upperBound = getValueAsString(propSet->UpperBoundValue(), units, projectUnits);
+		}
+		if (propSet->hasLowerBoundValue()) {
+			std::string units;
+			lowerBound = getValueAsString(propSet->UpperBoundValue(), units, projectUnits);
+		}
+
+		metaValues[constructMetadataLabel(propSet->Name(), metaPrefix, unitsOverride)] = "[" + lowerBound + ", " + upperBound + "]";
+
+		createElement = false;
+		traverseChildren = false;
 	}
 	else if (typeName == IFC_TYPE_ELEMENT_QUANTITY) {
 		auto eleQuan = static_cast<const IfcSchema::IfcElementQuantity *>(element);
@@ -640,7 +661,7 @@ std::pair<std::string, std::string> repo::ifcUtility::SCHEMA_NS::TreeParser::pro
 #else
 		unitsLabel = units->Currency();
 #endif
-	}
+}
 	else if (typeName == IFC_TYPE_DERIVED_UNIT)
 	{
 		auto units = static_cast<const IfcSchema::IfcDerivedUnit *>(element);
@@ -1265,6 +1286,6 @@ void  repo::ifcUtility::SCHEMA_NS::TreeParser::generateClassificationInformation
 			if (reference->hasLocation())
 				metaValues[constructMetadataLabel("Location", refPrefix)] = reference->Location();
 		}
-	}
+}
 #endif
 }

@@ -106,6 +106,7 @@ const static std::string IFC_TYPE_POSITIVE_RATIO_MEASURE = "ifcpositiveratiomeas
 const static std::string IFC_TYPE_POWER_MEASURE = "ifcpowermeasure";
 const static std::string IFC_TYPE_PRESSURE_MEASURE = "ifcpressuremeasure";
 const static std::string IFC_TYPE_PROJECT = "ifcproject";
+const static std::string IFC_TYPE_PROPERTY_BOUNDED_VALUE = "ifcpropertyboundedvalue";
 const static std::string IFC_TYPE_PROPERTY_SET = "ifcpropertyset";
 const static std::string IFC_TYPE_PROPERTY_SINGLE_VALUE = "ifcpropertysinglevalue";
 const static std::string IFC_TYPE_QUANTITY_AREA = "ifcquantityarea";
