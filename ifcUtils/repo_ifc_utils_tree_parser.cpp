@@ -86,15 +86,15 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 		}
 		else if (argumentName == IFC_ARGUMENT_NAME)
 		{
-			name = element->data().getArgument(i)->toString();
+			auto elementName = element->data().getArgument(i)->toString();
 			auto typeName = element->data().type()->name();
-			if (name != "$")
+			if (elementName != "$")
 			{
-				name = name.erase(0, 1);;
-				name = name.erase(name.size() - 1, 1);
-				if (name.empty())
+				elementName = elementName.erase(0, 1);;
+				elementName = elementName.erase(elementName.size() - 1, 1);
+				if (!elementName.empty())
 				{
-					name = "(" + typeName + ")";
+					name = elementName;
 				}
 			}
 
