@@ -185,7 +185,8 @@ bool repo::ifcUtility::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 
 					if (matInd < ob_geo->geometry().materials().size()) {
 						auto material = ob_geo->geometry().materials()[matInd];
-						std::string matName = material.original_name();
+						std::string matName = material.name();
+
 						post_materials[matInd] = matName;
 						if (matNameToMaterials.find(matName) == matNameToMaterials.end())
 						{
