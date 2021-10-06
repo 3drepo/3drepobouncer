@@ -63,7 +63,8 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 	std::unordered_map<std::string, std::string> myMetaValues, elementInfo, locationInfo(locationValue);
 
 	auto id = element->data().id();
-	std::string guid, name, childrenMetaPrefix;
+	std::string guid, childrenMetaPrefix;
+	std::string name = "(" + element->data().type()->name() + ")";
 	std::string ifcType = element->data().type()->name_lc();
 	createElement = ifcType.find(IFC_TYPE_IFCREL_PREFIX) == std::string::npos;
 	bool isIFCSpace = IFC_TYPE_SPACE == ifcType;
@@ -95,10 +96,6 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 				{
 					name = "(" + typeName + ")";
 				}
-			}
-			else
-			{
-				name = "(" + typeName + ")";;
 			}
 
 			if (isIFCSpace) {
@@ -333,10 +330,12 @@ void repo::ifcUtility::SCHEMA_NS::TreeParser::determineActionsByElementType(
 		if (propSet->hasUpperBoundValue()) {
 			std::string units;
 			upperBound = getValueAsString(propSet->UpperBoundValue(), units, projectUnits);
+			if (unitsOverride.empty()) unitsOverride = units;
 		}
 		if (propSet->hasLowerBoundValue()) {
 			std::string units;
 			lowerBound = getValueAsString(propSet->UpperBoundValue(), units, projectUnits);
+			if (unitsOverride.empty()) unitsOverride = units;
 		}
 
 		metaValues[constructMetadataLabel(propSet->Name(), metaPrefix, unitsOverride)] = "[" + lowerBound + ", " + upperBound + "]";
@@ -661,7 +660,7 @@ std::pair<std::string, std::string> repo::ifcUtility::SCHEMA_NS::TreeParser::pro
 #else
 		unitsLabel = units->Currency();
 #endif
-}
+	}
 	else if (typeName == IFC_TYPE_DERIVED_UNIT)
 	{
 		auto units = static_cast<const IfcSchema::IfcDerivedUnit *>(element);
@@ -1286,6 +1285,6 @@ void  repo::ifcUtility::SCHEMA_NS::TreeParser::generateClassificationInformation
 			if (reference->hasLocation())
 				metaValues[constructMetadataLabel("Location", refPrefix)] = reference->Location();
 		}
-}
+	}
 #endif
 }
