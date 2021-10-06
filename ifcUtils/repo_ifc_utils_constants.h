@@ -45,6 +45,7 @@ const static std::string IFC_TYPE_CONVERSION_BASED_UNIT = "ifcconversionbaseduni
 const static std::string IFC_TYPE_COUNT_MEASURE = "ifccountmeasure";
 const static std::string IFC_TYPE_CURVATURE_MEASURE = "ifccurvaturemeasure";
 const static std::string IFC_TYPE_DERIVED_UNIT = "ifcderivedunit";
+const static std::string IFC_TYPE_DERIVED_UNIT_ELEMENT = "ifcderivedunitelement";
 const static std::string IFC_TYPE_DESCRIPTIVE_MEASURE = "ifcdescriptivemeasure";
 const static std::string IFC_TYPE_DOSE_EQUIVALENT_MEASURE = "ifcdoseequivalentmeasure";
 const static std::string IFC_TYPE_DYNAMIC_VISCOSITY_MEASURE = "ifcdynamicviscositymeasure";

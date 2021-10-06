@@ -629,7 +629,6 @@ std::pair<std::string, std::string> repo::ifcUtility::SCHEMA_NS::TreeParser::pro
 	const IfcUtil::IfcBaseClass *element) {
 	std::string unitType, unitsLabel;
 	auto typeName = element->data().type()->name_lc();
-
 	if (typeName == IFC_TYPE_SI_UNIT)
 	{
 		auto units = static_cast<const IfcSchema::IfcSIUnit *>(element);
@@ -677,6 +676,18 @@ std::pair<std::string, std::string> repo::ifcUtility::SCHEMA_NS::TreeParser::pro
 		}
 		unitType = IfcSchema::IfcDerivedUnitEnum::ToString(units->UnitType());
 		unitsLabel = ss.str();
+	}
+	else if (typeName == IFC_TYPE_DERIVED_UNIT_ELEMENT)
+	{
+		auto units = static_cast<const IfcSchema::IfcDerivedUnitElement *>(element);
+
+		auto baseUnit = processUnits(units->Unit()).second;
+		if (!baseUnit.empty()) {
+			unitsLabel = baseUnit + (units->Exponent() == 1 ? "" : getSuperScriptAsString(units->Exponent()));
+		}
+		else {
+			repoError << "Unrecognised sub unit type: " << units->Unit()->data().toString();
+		}
 	}
 	else {
 		repoWarning << "Unrecognised units entry: " << element->data().toString();
