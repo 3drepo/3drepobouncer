@@ -479,13 +479,11 @@ void repo::ifcUtility::SCHEMA_NS::TreeParser::determineActionsByElementType(
 		cacheMetadata = true;
 	}
 	else if (
-		//Ignore anything that is to do with styles (e.g. IfcWindowStyle)
 		boost::algorithm::ends_with(element->data().type()->name_lc(), "style") ||
-
 		boost::algorithm::ends_with(element->data().type()->name_lc(), "material")
 		) {
 		createElement = false;
-		traverseChildren = false;
+		traverseChildren = true;
 	}
 }
 
@@ -706,10 +704,10 @@ std::pair<std::string, std::string> repo::ifcUtility::SCHEMA_NS::TreeParser::pro
 			else {
 				repoError << "Unrecognised sub unit type: " << ele->Unit()->data().toString();
 			}
-	}
+		}
 		unitType = IfcSchema::IfcDerivedUnitEnum::ToString(units->UnitType());
 		unitsLabel = ss.str();
-}
+	}
 	else if (typeName == IFC_TYPE_DERIVED_UNIT_ELEMENT)
 	{
 		auto units = static_cast<const IfcSchema::IfcDerivedUnitElement *>(element);
@@ -1280,11 +1278,10 @@ void  repo::ifcUtility::SCHEMA_NS::TreeParser::generateClassificationInformation
 	std::unordered_map<std::string, std::string>         &metaValues
 
 ) {
-	//TODO: add implementation for Ifc4 once we have a sample to work with
-#if DEFINED_Ifc2x3
 	auto relatedClassification = relCS->RelatingClassification();
 	if (relatedClassification)
 	{
+#if DEFINED_Ifc2x3
 		//A classifcation can either be a classification notation or reference
 		if (relatedClassification->data().type()->name_lc() == IFC_TYPE_CLASSIFICATION_NOTATION)
 		{
@@ -1297,14 +1294,23 @@ void  repo::ifcUtility::SCHEMA_NS::TreeParser::generateClassificationInformation
 				facetList += facet->NotationValue();
 			}
 		}
-		else {
+#endif
+		if (relatedClassification->data().type()->name_lc() == IFC_TYPE_CLASSIFICATION_REFERENCE) {
 			auto reference = static_cast<const IfcSchema::IfcClassificationReference *>(relatedClassification);
 			std::string classificationName = "Unknown Classification";
-			if (reference->hasReferencedSource()) {
-				auto refSource = reference->ReferencedSource();
-				classificationName = refSource->Name();
-				metaValues[constructMetadataLabel("Name", classificationName)] = classificationName;
-				metaValues[constructMetadataLabel("Source", classificationName)] = refSource->Source();
+			auto refSourceBase = reference->ReferencedSource();
+			if (refSourceBase && refSourceBase->data().type()->name_lc() == IFC_TYPE_CLASSIFICATION) {
+				auto refSource = static_cast<const IfcSchema::IfcClassification *>(refSourceBase);
+#if DEFINED_Ifc4
+				if (refSource->hasSource()) {
+#endif
+					classificationName = refSource->Name();
+					metaValues[constructMetadataLabel("Name", classificationName)] = classificationName;
+					metaValues[constructMetadataLabel("Source", classificationName)] = refSource->Source();
+#if DEFINED_Ifc4
+				}
+#endif
+#if DEFINED_Ifc2x3
 				int editionIdx = -1;
 				auto eleEntity = refSource->declaration().as_entity();
 				for (int i = 0; i < refSource->data().getArgumentCount(); ++i) {
@@ -1314,21 +1320,52 @@ void  repo::ifcUtility::SCHEMA_NS::TreeParser::generateClassificationInformation
 				}
 
 				if (editionIdx >= 0 && !refSource->data().getArgument(editionIdx)->isNull()) {
+#else
+				if (refSource->hasEdition()) {
+#endif
 					metaValues[constructMetadataLabel("Edition", classificationName)] = refSource->Edition();
 				}
 
+#if DEFINED_Ifc4
+				if (refSource->hasDescription()) {
+					metaValues[constructMetadataLabel("Description", classificationName)] = refSource->Description();
+				}
+
+				if (refSource->hasReferenceTokens()) {
+					std::stringstream ss;
+					ss << "[";
+					bool isFirst = true;
+					for (const auto &token : refSource->ReferenceTokens()) {
+						if (!isFirst) ss << ", ";
+						ss << token;
+						isFirst = false;
+					}
+					ss << "]";
+					metaValues[constructMetadataLabel("Reference Tokens", classificationName)] = ss.str();
+				}
+#endif
+
 				if (refSource->hasEditionDate()) {
+#if DEFINED_Ifc2x3
 					metaValues[constructMetadataLabel("Edition date", classificationName)] = ifcDateToString(refSource->EditionDate());
+#else
+					metaValues[constructMetadataLabel("Edition date", classificationName)] = refSource->EditionDate();
+#endif
 				}
 			}
 			const auto refPrefix = constructMetadataLabel("Reference", classificationName);
 			if (reference->hasName())
 				metaValues[constructMetadataLabel("Name", refPrefix)] = reference->Name();
+#if DEFINED_Ifc2x3
 			if (reference->hasItemReference())
 				metaValues[constructMetadataLabel("Identification", refPrefix)] = reference->ItemReference();
+#else
+			if (reference->hasIdentification()) {
+				metaValues[constructMetadataLabel("Identification", refPrefix)] = reference->Identification();
+			}
+#endif
 			if (reference->hasLocation())
 				metaValues[constructMetadataLabel("Location", refPrefix)] = reference->Location();
 		}
 	}
-#endif
 }
