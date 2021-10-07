@@ -94,6 +94,7 @@ namespace repo {
 					std::unordered_map<std::string, std::string>                               &metaValue,
 					std::unordered_map<std::string, std::string>                               &locationValue,
 					std::unordered_map<std::string, std::string>                               &projectUnits,
+					std::unordered_map<int, std::unordered_map<std::string, std::string>>      &metadataGroup,
 					const std::set<int>													       &ancestorsID = std::set<int>(),
 					const std::string														   &metaPrefix = std::string()
 				);
@@ -106,6 +107,7 @@ namespace repo {
 					std::unordered_map<std::string, std::string>                  &projectUnits,
 					bool                                                          &createElement,
 					bool                                                          &traverseChildren,
+					bool                                                          &cacheMetadata,
 					std::vector<IfcUtil::IfcBaseClass *>                          &extraChildren,
 					const std::string											  &metaPrefix,
 					std::string											          &childrenMetaPrefix);
