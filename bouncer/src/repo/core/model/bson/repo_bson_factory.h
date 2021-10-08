@@ -217,6 +217,7 @@ namespace repo {
 				static MaterialNode makeMaterialNode(
 					const repo_material_t &material,
 					const std::string     &name = std::string(),
+					const std::vector<repo::lib::RepoUUID> &parents = std::vector<repo::lib::RepoUUID>(),
 					const int             &apiLevel = REPO_NODE_API_LEVEL_1);
 
 				/**

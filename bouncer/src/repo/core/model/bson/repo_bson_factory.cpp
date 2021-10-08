@@ -123,13 +123,14 @@ CameraNode RepoBSONFactory::makeCameraNode(
 MaterialNode RepoBSONFactory::makeMaterialNode(
 	const repo_material_t &material,
 	const std::string     &name,
+	const std::vector<repo::lib::RepoUUID> &parents,
 	const int             &apiLevel)
 {
 	RepoBSONBuilder builder;
 
 	// Compulsory fields such as _id, type, api as well as path
 	// and optional name
-	auto defaults = appendDefaults(REPO_NODE_TYPE_MATERIAL, apiLevel, repo::lib::RepoUUID::createUUID(), name);
+	auto defaults = appendDefaults(REPO_NODE_TYPE_MATERIAL, apiLevel, repo::lib::RepoUUID::createUUID(), name, parents);
 	builder.appendElements(defaults);
 
 	if (material.ambient.size() > 0)

@@ -20,8 +20,8 @@
 */
 
 #include "repo_model_import_ifc.h"
-#include "repo_ifc_utils_geometry.h"
-#include "repo_ifc_utils_parser.h"
+#include "ifcHelper/repo_ifc_helper_geometry.h"
+#include "ifcHelper/repo_ifc_helper_parser.h"
 #include "../../../core/model/bson/repo_bson_factory.h"
 #include "../../../error_codes.h"
 #include <boost/filesystem.hpp>
@@ -40,7 +40,7 @@ IFCModelImport::~IFCModelImport()
 
 repo::core::model::RepoScene* IFCModelImport::generateRepoScene(uint8_t &errCode)
 {
-	IFCUtilsParser parserUtil(ifcFile);
+	ifcHelper::IFCUtilsParser parserUtil(ifcFile);
 	std::string errMsg;
 	auto scene = parserUtil.generateRepoScene(errMsg, meshes, materials, offset);
 	if (!scene) {
@@ -58,9 +58,10 @@ bool IFCModelImport::importModel(std::string filePath, uint8_t &err)
 
 	repoInfo << "IMPORT [" << fileName << "]";
 	repoInfo << "=== IMPORTING MODEL WITH IFC OPEN SHELL ===";
+
 	bool success = false;
 	std::string errMsg;
-	IFCUtilsGeometry geoUtil(filePath, settings);
+	ifcHelper::IFCUtilsGeometry geoUtil(filePath, settings);
 	if (success = geoUtil.generateGeometry(errMsg, partialFailure))
 	{
 		//generate tree;
