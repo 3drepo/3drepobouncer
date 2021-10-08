@@ -101,6 +101,7 @@ const static std::string IFC_TYPE_NUMERIC_MEASURE = "ifcnumericmeasure";
 const static std::string IFC_TYPE_OPENING_ELEMENT = "ifcopeningelement";
 const static std::string IFC_TYPE_PARAMETER_VALUE = "ifcparametervalue";
 const static std::string IFC_TYPE_PH_MEASURE = "ifcphmeasure";
+const static std::string IFC_TYPE_PHYSICAL_COMPLEX_QUANTITY = "ifcphysicalcomplexquantity";
 const static std::string IFC_TYPE_PLANAR_FORCE_MEASURE = "ifcplanarforcemeasure";
 const static std::string IFC_TYPE_PLANE_ANGLE_MEASURE = "ifcplaneanglemeasure";
 const static std::string IFC_TYPE_POSITIVE_LENGTH_MEASURE = "ifcpositivelengthmeasure";

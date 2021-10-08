@@ -61,9 +61,6 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 	const std::string														   &metaPrefix
 )
 {
-	bool createElement = true; //create a transformation for this element
-	bool traverseChildren = true; //keep recursing its children
-	bool traverseReferences = true; //find references and traverse them as if they're children
 	std::vector<IfcUtil::IfcBaseClass *> extraChildren; //children outside of reference
 	std::unordered_map<std::string, std::string> myMetaValues, elementInfo, locationInfo(locationValue);
 
@@ -71,13 +68,11 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 	std::string guid, childrenMetaPrefix;
 	std::string name = "(" + element->data().type()->name() + ")";
 	std::string ifcType = element->data().type()->name_lc();
-	createElement = ifcType.find(IFC_TYPE_IFCREL_PREFIX) == std::string::npos;
 	bool isIFCSpace = IFC_TYPE_SPACE == ifcType;
-	bool cacheMetadata = false;
-	determineActionsByElementType(element, missingEntities, myMetaValues, locationInfo, projectUnits, createElement, traverseChildren, cacheMetadata, traverseReferences, extraChildren, metaPrefix, childrenMetaPrefix);
+	auto actions = determineActionsByElementType(element, missingEntities, myMetaValues, locationInfo, projectUnits, extraChildren, metaPrefix, childrenMetaPrefix);
 	std::vector<TransNode> nodesCollected;
 
-	if (cacheMetadata && metadataGroup.find(id) != metadataGroup.end()) {
+	if (actions.cacheMetadata && metadataGroup.find(id) != metadataGroup.end()) {
 		metaValue.insert(metadataGroup[id].begin(), metadataGroup[id].end());
 		return TransNode();
 	}
@@ -114,7 +109,7 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 
 			elementInfo[argumentName] = name;
 		}
-		else if (createElement) {
+		else if (actions.createElement) {
 			std::string value;
 			auto type = element->data().getArgument(i)->type();
 
@@ -143,10 +138,10 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 	}
 
 	//Do not create element if there's no guid
-	createElement &= !guid.empty();
+	actions.createElement &= !guid.empty();
 
 	TransNode transNode;
-	if (createElement)
+	if (actions.createElement)
 	{
 		transNode.createNode = true;
 		transNode.name = name;
@@ -155,7 +150,7 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 
 	bool hasTransChildren = false;
 
-	if (traverseChildren)
+	if (actions.traverseChildren)
 	{
 		std::set<int> childrenAncestors(ancestorsID);
 		childrenAncestors.insert(id);
@@ -178,7 +173,7 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 			}
 		}
 
-		if (traverseReferences) {
+		if (actions.takeRefsAsChildren) {
 			auto childrenElements = ifcFile.instances_by_reference(id);
 			if (childrenElements)
 			{
@@ -204,7 +199,7 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 		}
 	}
 	//If we created an element, add a metanode to it. if not, add them to our parent's meta info
-	if (createElement)
+	if (actions.createElement)
 	{
 		transNode.meta = myMetaValues;
 		//NOTE: if we ever recursive after creating the element, we'd have to take a copy of the metadata or it'll leak into the children.
@@ -216,7 +211,7 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 	}
 	else
 	{
-		if (cacheMetadata) {
+		if (actions.cacheMetadata) {
 			metadataGroup[id] = std::unordered_map<std::string, std::string>(myMetaValues);
 		}
 		metaValue.insert(myMetaValues.begin(), myMetaValues.end());
@@ -243,111 +238,81 @@ std::string repo::ifcUtility::SCHEMA_NS::TreeParser::constructMetadataLabel(
 	return ss.str();
 }
 
-void repo::ifcUtility::SCHEMA_NS::TreeParser::determineActionsByElementType(
+repo::ifcUtility::SCHEMA_NS::TreeParser::Actions_t repo::ifcUtility::SCHEMA_NS::TreeParser::determineActionsByElementType(
 	const IfcUtil::IfcBaseClass *element,
 	bool & missingEntities,
 	std::unordered_map<std::string, std::string>                  &metaValues,
 	std::unordered_map<std::string, std::string>                  &locationData,
 	std::unordered_map<std::string, std::string>                  &projectUnits,
-	bool                                                          &createElement,
-	bool                                                          &traverseChildren,
-	bool                                                          &cacheMetadata,
-	bool                                                          &traverseReferences,
 	std::vector<IfcUtil::IfcBaseClass *>                          &extraChildren,
 	const std::string											  &metaPrefix,
 	std::string													  &childrenMetaPrefix)
 {
+	Actions_t action;
+	action.createElement = !dynamic_cast<const IfcSchema::IfcRelationship *>(element);
+
 	childrenMetaPrefix = metaPrefix;
 
 	auto typeName = element->data().type()->name_lc();
 
 	if (typesToIgnore.find(typeName) != typesToIgnore.end()) {
-		createElement = false;
-		traverseChildren = false;
+		action.createElement = false;
+		action.traverseChildren = false;
 	}
-	else if (typeName == IFC_TYPE_REL_NESTS) {
-		createElement = false;
-		traverseChildren = true;
-		auto nest = static_cast<const IfcSchema::IfcRelNests *>(element);
+	else if (auto nest = dynamic_cast<const IfcSchema::IfcRelNests *>(element)) {
 		auto objs = nest->RelatedObjects();
 		extraChildren.insert(extraChildren.end(), objs->begin(), objs->end());
-		traverseReferences = false;
+		action.takeRefsAsChildren = false;
 	}
-	else if (typeName == IFC_TYPE_REL_DEFINES_BY_TYPE) {
-		auto def = static_cast<const IfcSchema::IfcRelDefinesByType *>(element);
+	else if (auto def = dynamic_cast<const IfcSchema::IfcRelDefinesByType *>(element)) {
 		auto typeObj = static_cast<IfcSchema::IfcTypeObject *>(def->RelatingType());
 		extraChildren.push_back(static_cast<IfcUtil::IfcBaseClass *>(typeObj));
-		cacheMetadata = true;
-		createElement = false;
-		traverseReferences = false;
+		action.cacheMetadata = true;
+		action.takeRefsAsChildren = false;
 	}
-	else if (typeName == IFC_TYPE_PROJECT) {
-		auto project = static_cast<const IfcSchema::IfcProject *>(element);
+	else if (auto project = dynamic_cast<const IfcSchema::IfcProject *>(element)) {
 		setProjectUnits(project->UnitsInContext(), projectUnits);
-
 		locationData[constructMetadataLabel(PROJECT_LABEL, LOCATION_LABEL)] = project->hasName() ? project->Name() : "(" + element->data().type()->name() + ")";
-
-		createElement = true;
-		traverseChildren = true;
 	}
-	else if (typeName == IFC_TYPE_BUILDING) {
-		auto building = static_cast<const IfcSchema::IfcBuilding *>(element);
+	else if (auto building = dynamic_cast<const IfcSchema::IfcBuilding *>(element)) {
 		locationData[constructMetadataLabel(BUILDING_LABEL, LOCATION_LABEL)] = building->hasName() ? building->Name() : "(" + element->data().type()->name() + ")";
-
-		createElement = true;
-		traverseChildren = true;
 	}
-	else if (typeName == IFC_TYPE_BUILDING_STOREY) {
-		auto storey = static_cast<const IfcSchema::IfcBuildingStorey *>(element);
+	else if (auto storey = dynamic_cast<const IfcSchema::IfcBuildingStorey *>(element)) {
 		locationData[constructMetadataLabel(STOREY_LABEL, LOCATION_LABEL)] = storey->hasName() ? storey->Name() : "(" + element->data().type()->name() + ")";
-
-		createElement = true;
-		traverseChildren = true;
 	}
-	else if (typeName == IFC_TYPE_PROPERTY_SINGLE_VALUE) {
-		auto propVal = static_cast<const IfcSchema::IfcPropertySingleValue *>(element);
-		if (propVal)
+	else if (auto propVal = dynamic_cast<const IfcSchema::IfcPropertySingleValue *>(element)) {
+		std::string value = "n/a";
+		std::string units = "";
+		if (propVal->hasNominalValue())
 		{
-			std::string value = "n/a";
-			std::string units = "";
-			if (propVal->hasNominalValue())
-			{
-				value = getValueAsString(propVal->NominalValue(), units, projectUnits);
-			}
-
-			if (propVal->hasUnit())
-			{
-				units = processUnits(propVal->Unit()).second;
-			}
-
-			metaValues[constructMetadataLabel(propVal->Name(), metaPrefix, units)] = value;
-		}
-		createElement = false;
-		traverseChildren = false;
-	}
-	else if (typeName == IFC_TYPE_REL_DEFINES_BY_PROPERTIES) {
-		auto defByProp = static_cast<const IfcSchema::IfcRelDefinesByProperties *>(element);
-		if (defByProp)
-		{
-			extraChildren.push_back(defByProp->RelatingPropertyDefinition());
+			value = getValueAsString(propVal->NominalValue(), units, projectUnits);
 		}
 
-		createElement = false;
-		cacheMetadata = true;
-		traverseReferences = false;
+		if (propVal->hasUnit())
+		{
+			units = processUnits(propVal->Unit()).second;
+		}
+
+		metaValues[constructMetadataLabel(propVal->Name(), metaPrefix, units)] = value;
+
+		action.createElement = false;
+		action.traverseChildren = false;
 	}
-	else if (typeName == IFC_TYPE_PROPERTY_SET) {
-		auto propSet = static_cast<const IfcSchema::IfcPropertySet *>(element);
+	else if (auto defByProp = dynamic_cast<const IfcSchema::IfcRelDefinesByProperties *>(element)) {
+		extraChildren.push_back(defByProp->RelatingPropertyDefinition());
+		action.cacheMetadata = true;
+		action.takeRefsAsChildren = false;
+	}
+	else if (auto propSet = dynamic_cast<const IfcSchema::IfcPropertySet *>(element)) {
 		auto propDefs = propSet->HasProperties();
-
 		extraChildren.insert(extraChildren.end(), propDefs->begin(), propDefs->end());
-		createElement = false;
-		cacheMetadata = true;
-		traverseReferences = false;
 		childrenMetaPrefix = constructMetadataLabel(propSet->Name(), metaPrefix);
+
+		action.createElement = false;
+		action.cacheMetadata = true;
+		action.takeRefsAsChildren = false;
 	}
-	else if (typeName == IFC_TYPE_PROPERTY_BOUNDED_VALUE) {
-		auto propSet = static_cast<const IfcSchema::IfcPropertyBoundedValue *>(element);
+	else if (auto propSet = dynamic_cast<const IfcSchema::IfcPropertyBoundedValue *>(element)) {
 		auto unitsOverride = propSet->hasUnit() ? processUnits(propSet->Unit()).second : "";
 		std::string upperBound, lowerBound;
 		if (propSet->hasUpperBoundValue()) {
@@ -363,102 +328,84 @@ void repo::ifcUtility::SCHEMA_NS::TreeParser::determineActionsByElementType(
 
 		metaValues[constructMetadataLabel(propSet->Name(), metaPrefix, unitsOverride)] = "[" + lowerBound + ", " + upperBound + "]";
 
-		createElement = false;
-		traverseChildren = false;
+		action.createElement = false;
+		action.traverseChildren = false;
 	}
-	else if (typeName == IFC_TYPE_ELEMENT_QUANTITY) {
-		auto eleQuan = static_cast<const IfcSchema::IfcElementQuantity *>(element);
+	else if (auto eleQuan = dynamic_cast<const IfcSchema::IfcElementQuantity *>(element)) {
 		auto quantities = eleQuan->Quantities();
-		cacheMetadata = true;
 		extraChildren.insert(extraChildren.end(), quantities->begin(), quantities->end());
 		childrenMetaPrefix = constructMetadataLabel(eleQuan->Name(), metaPrefix);
-		createElement = false;
-		traverseReferences = false;
-	}
-	else if (typeName == IFC_TYPE_QUANTITY_LENGTH) {
-		auto quantity = static_cast<const IfcSchema::IfcQuantityLength *>(element);
-		if (quantity)
-		{
-			const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second :
-				getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_LENGTHUNIT, projectUnits);
 
-			metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = std::to_string(quantity->LengthValue());
-		}
-		createElement = false;
-		traverseChildren = false;
+		action.createElement = false;
+		action.takeRefsAsChildren = false;
+		action.cacheMetadata = true;
 	}
-	else if (typeName == IFC_TYPE_QUANTITY_AREA) {
-		auto quantity = static_cast<const IfcSchema::IfcQuantityArea *>(element);
-		if (quantity)
-		{
-			const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second : getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_AREAUNIT, projectUnits);
+	else if (auto quantities = dynamic_cast<const IfcSchema::IfcPhysicalComplexQuantity *>(element)) {
+		childrenMetaPrefix = constructMetadataLabel(quantities->Name(), metaPrefix);
+		auto quantitySet = quantities->HasQuantities();
+		extraChildren.insert(extraChildren.end(), quantitySet->begin(), quantitySet->end());
 
-			metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = std::to_string(quantity->AreaValue());
-		}
-		createElement = false;
-		traverseChildren = false;
+		action.createElement = false;
+		action.takeRefsAsChildren = false;
 	}
-	else if (typeName == IFC_TYPE_QUANTITY_COUNT) {
-		auto quantity = static_cast<const IfcSchema::IfcQuantityCount *>(element);
-		if (quantity)
-		{
-			const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second : "";
-			metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = std::to_string(quantity->CountValue());
-		}
-		createElement = false;
-		traverseChildren = false;
-	}
-	else if (typeName == IFC_TYPE_QUANTITY_TIME) {
-		auto quantity = static_cast<const IfcSchema::IfcQuantityTime *>(element);
-		if (quantity)
-		{
-			const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second : getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_TIMEUNIT, projectUnits);
-			metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = std::to_string(quantity->TimeValue());
-		}
-		createElement = false;
-		traverseChildren = false;
-	}
-	else if (typeName == IFC_TYPE_QUANTITY_VOLUME) {
-		auto quantity = static_cast<const IfcSchema::IfcQuantityVolume *>(element);
-		if (quantity)
-		{
-			const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second : getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_VOLUMEUNIT, projectUnits);
+	else if (auto quantity = dynamic_cast<const IfcSchema::IfcQuantityLength *>(element)) {
+		const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second :
+			getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_LENGTHUNIT, projectUnits);
 
-			metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = std::to_string(quantity->VolumeValue());
-		}
-		createElement = false;
-		traverseChildren = false;
-	}
-	else if (typeName == IFC_TYPE_QUANTITY_WEIGHT) {
-		auto quantity = static_cast<const IfcSchema::IfcQuantityWeight *>(element);
-		if (quantity)
-		{
-			const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second : getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_MASSUNIT, projectUnits);
+		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = std::to_string(quantity->LengthValue());
 
-			metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = std::to_string(quantity->WeightValue());
-		}
-		createElement = false;
-		traverseChildren = false;
+		action.createElement = false;
+		action.traverseChildren = false;
 	}
-	else if (typeName == IFC_TYPE_REL_ASSOCIATES_CLASSIFICATION) {
-		auto relCS = static_cast<const IfcSchema::IfcRelAssociatesClassification *>(element);
-		createElement = false;
-		traverseChildren = false;
-		traverseReferences = false;
+	else if (auto quantity = dynamic_cast<const IfcSchema::IfcQuantityArea *>(element)) {
+		const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second : getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_AREAUNIT, projectUnits);
+
+		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = std::to_string(quantity->AreaValue());
+
+		action.createElement = false;
+		action.traverseChildren = false;
+	}
+	else if (auto quantity = dynamic_cast<const IfcSchema::IfcQuantityCount *>(element)) {
+		const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second : "";
+		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = std::to_string(quantity->CountValue());
+
+		action.createElement = false;
+		action.traverseChildren = false;
+	}
+	else if (auto quantity = dynamic_cast<const IfcSchema::IfcQuantityTime *>(element)) {
+		const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second : getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_TIMEUNIT, projectUnits);
+		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = std::to_string(quantity->TimeValue());
+
+		action.createElement = false;
+		action.traverseChildren = false;
+	}
+	else if (auto quantity = dynamic_cast<const IfcSchema::IfcQuantityVolume *>(element)) {
+		const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second : getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_VOLUMEUNIT, projectUnits);
+
+		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = std::to_string(quantity->VolumeValue());
+
+		action.createElement = false;
+		action.traverseChildren = false;
+	}
+	else if (auto quantity = dynamic_cast<const IfcSchema::IfcQuantityWeight *>(element)) {
+		const std::string units = quantity->hasUnit() ? processUnits(quantity->Unit()).second : getUnits(IfcSchema::IfcUnitEnum::IfcUnitEnum::IfcUnit_MASSUNIT, projectUnits);
+
+		metaValues[constructMetadataLabel(quantity->Name(), metaPrefix, units)] = std::to_string(quantity->WeightValue());
+
+		action.createElement = false;
+		action.traverseChildren = false;
+	}
+	else if (auto relCS = dynamic_cast<const IfcSchema::IfcRelAssociatesClassification *>(element)) {
+		action.traverseChildren = false;
+		action.takeRefsAsChildren = false;
 		generateClassificationInformation(relCS, metaValues);
 	}
-	else if (typeName == IFC_TYPE_REL_CONTAINED_IN_SPATIAL_STRUCTURE) {
-		auto relCS = static_cast<const IfcSchema::IfcRelContainedInSpatialStructure *>(element);
-
+	else if (auto relCS = dynamic_cast<const IfcSchema::IfcRelContainedInSpatialStructure *>(element)) {
 		try {
 			auto relatedObjects = relCS->RelatedElements();
 			if (relatedObjects)
 			{
 				extraChildren.insert(extraChildren.end(), relatedObjects->begin(), relatedObjects->end());
-			}
-			else
-			{
-				repoError << "Nullptr to relatedObjects!!!";
 			}
 		}
 		catch (const IfcParse::IfcException &e)
@@ -466,41 +413,36 @@ void repo::ifcUtility::SCHEMA_NS::TreeParser::determineActionsByElementType(
 			repoError << "Failed to retrieve related elements from " << relCS->data().id() << ": " << e.what();
 			missingEntities = true;
 		}
-		createElement = false;
-		traverseReferences = false;
+		action.createElement = false;
+		action.takeRefsAsChildren = false;
 	}
-	else if (typeName == IFC_TYPE_REL_AGGREGATES) {
-		auto relAgg = static_cast<const IfcSchema::IfcRelAggregates *>(element);
+	else if (auto relAgg = dynamic_cast<const IfcSchema::IfcRelAggregates *>(element)) {
 		auto relatedObjects = relAgg->RelatedObjects();
 		if (relatedObjects)
 		{
 			extraChildren.insert(extraChildren.end(), relatedObjects->begin(), relatedObjects->end());
 		}
-		else
-		{
-			repoError << "Nullptr to relatedObjects!!!";
-		}
-		traverseReferences = false;
+		action.takeRefsAsChildren = false;
 	}
-	else if (dynamic_cast<const IfcSchema::IfcElementType *>(element)) {
-		auto eleType = static_cast<const IfcSchema::IfcElementType *>(element);
+	else if (auto eleType = dynamic_cast<const IfcSchema::IfcElementType *>(element)) {
 		if (eleType->hasHasPropertySets()) {
 			auto propSets = eleType->HasPropertySets();
 			extraChildren.insert(extraChildren.end(), propSets->begin(), propSets->end());
 		}
 
-		createElement = false;
-		traverseChildren = true;
-		cacheMetadata = true;
-		traverseReferences = false;
+		action.createElement = false;
+		action.traverseChildren = true;
+		action.cacheMetadata = true;
+		action.takeRefsAsChildren = false;
 	}
 	else if (
 		boost::algorithm::ends_with(element->data().type()->name_lc(), "style") ||
 		boost::algorithm::ends_with(element->data().type()->name_lc(), "material")
 		) {
-		createElement = false;
-		traverseChildren = true;
+		action.createElement = false;
 	}
+
+	return action;
 }
 
 std::string determineUnitsLabel(

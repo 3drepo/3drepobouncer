@@ -63,6 +63,13 @@ namespace repo {
 
 			protected:
 
+				struct Actions_t {
+					bool createElement = true;
+					bool traverseChildren = true;
+					bool takeRefsAsChildren = true;
+					bool cacheMetadata = false;
+				};
+
 				static std::pair<std::string, std::string> processUnits(
 					const IfcUtil::IfcBaseClass *element);
 
@@ -99,16 +106,12 @@ namespace repo {
 					const std::string														   &metaPrefix = std::string()
 				);
 
-				static void determineActionsByElementType(
+				static Actions_t determineActionsByElementType(
 					const IfcUtil::IfcBaseClass *element,
 					bool &missingEntities,
 					std::unordered_map<std::string, std::string>                  &metaValues,
 					std::unordered_map<std::string, std::string>                  &locationData,
 					std::unordered_map<std::string, std::string>                  &projectUnits,
-					bool                                                          &createElement,
-					bool                                                          &traverseChildren,
-					bool                                                          &cacheMetadata,
-					bool                                                          &traverseReferences,
 					std::vector<IfcUtil::IfcBaseClass *>                          &extraChildren,
 					const std::string											  &metaPrefix,
 					std::string											          &childrenMetaPrefix);
