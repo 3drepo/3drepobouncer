@@ -63,6 +63,7 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 {
 	bool createElement = true; //create a transformation for this element
 	bool traverseChildren = true; //keep recursing its children
+	bool traverseReferences = true; //find references and traverse them as if they're children
 	std::vector<IfcUtil::IfcBaseClass *> extraChildren; //children outside of reference
 	std::unordered_map<std::string, std::string> myMetaValues, elementInfo, locationInfo(locationValue);
 
@@ -73,7 +74,7 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 	createElement = ifcType.find(IFC_TYPE_IFCREL_PREFIX) == std::string::npos;
 	bool isIFCSpace = IFC_TYPE_SPACE == ifcType;
 	bool cacheMetadata = false;
-	determineActionsByElementType(element, missingEntities, myMetaValues, locationInfo, projectUnits, createElement, traverseChildren, cacheMetadata, extraChildren, metaPrefix, childrenMetaPrefix);
+	determineActionsByElementType(element, missingEntities, myMetaValues, locationInfo, projectUnits, createElement, traverseChildren, cacheMetadata, traverseReferences, extraChildren, metaPrefix, childrenMetaPrefix);
 	std::vector<TransNode> nodesCollected;
 
 	if (cacheMetadata && metadataGroup.find(id) != metadataGroup.end()) {
@@ -156,31 +157,8 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 
 	if (traverseChildren)
 	{
-		auto childrenElements = ifcFile.instances_by_reference(id);
-
 		std::set<int> childrenAncestors(ancestorsID);
 		childrenAncestors.insert(id);
-		if (childrenElements)
-		{
-			for (auto &child : *childrenElements)
-			{
-				try {
-					if (ancestorsID.find(child->data().id()) == ancestorsID.end())
-					{
-						auto childNode = createTransformationsRecursive(ifcFile, missingEntities, child, myMetaValues, locationValue, projectUnits, metadataGroup, childrenAncestors, childrenMetaPrefix);
-						if (childNode.children.size() || childNode.createNode) {
-							transNode.children.push_back(childNode);
-							hasTransChildren = true;
-						}
-					}
-				}
-				catch (IfcParse::IfcException &e)
-				{
-					repoError << "Failed to process child entity " << child->data().id() << " (" << e.what() << ")" << " element: " << element->data().id();
-					missingEntities = true;
-				}
-			}
-		}
 		for (const auto &child : extraChildren)
 		{
 			if (ancestorsID.find(child->data().id()) == ancestorsID.end())
@@ -196,6 +174,31 @@ TransNode repo::ifcUtility::SCHEMA_NS::TreeParser::createTransformationsRecursiv
 				{
 					repoError << "Failed to process child entity " << child->data().id() << " (" << e.what() << ")" << " element: " << element->data().id();
 					missingEntities = true;
+				}
+			}
+		}
+
+		if (traverseReferences) {
+			auto childrenElements = ifcFile.instances_by_reference(id);
+			if (childrenElements)
+			{
+				for (auto &child : *childrenElements)
+				{
+					try {
+						if (ancestorsID.find(child->data().id()) == ancestorsID.end())
+						{
+							auto childNode = createTransformationsRecursive(ifcFile, missingEntities, child, myMetaValues, locationValue, projectUnits, metadataGroup, childrenAncestors, childrenMetaPrefix);
+							if (childNode.children.size() || childNode.createNode) {
+								transNode.children.push_back(childNode);
+								hasTransChildren = true;
+							}
+						}
+					}
+					catch (IfcParse::IfcException &e)
+					{
+						repoError << "Failed to process child entity " << child->data().id() << " (" << e.what() << ")" << " element: " << element->data().id();
+						missingEntities = true;
+					}
 				}
 			}
 		}
@@ -249,6 +252,7 @@ void repo::ifcUtility::SCHEMA_NS::TreeParser::determineActionsByElementType(
 	bool                                                          &createElement,
 	bool                                                          &traverseChildren,
 	bool                                                          &cacheMetadata,
+	bool                                                          &traverseReferences,
 	std::vector<IfcUtil::IfcBaseClass *>                          &extraChildren,
 	const std::string											  &metaPrefix,
 	std::string													  &childrenMetaPrefix)
@@ -267,16 +271,15 @@ void repo::ifcUtility::SCHEMA_NS::TreeParser::determineActionsByElementType(
 		auto nest = static_cast<const IfcSchema::IfcRelNests *>(element);
 		auto objs = nest->RelatedObjects();
 		extraChildren.insert(extraChildren.end(), objs->begin(), objs->end());
+		traverseReferences = false;
 	}
 	else if (typeName == IFC_TYPE_REL_DEFINES_BY_TYPE) {
 		auto def = static_cast<const IfcSchema::IfcRelDefinesByType *>(element);
-		auto typeObj = static_cast<const IfcSchema::IfcTypeObject *>(def->RelatingType());
-		if (typeObj->hasHasPropertySets()) {
-			auto propSets = typeObj->HasPropertySets();
-			extraChildren.insert(extraChildren.end(), propSets->begin(), propSets->end());
-		}
+		auto typeObj = static_cast<IfcSchema::IfcTypeObject *>(def->RelatingType());
+		extraChildren.push_back(static_cast<IfcUtil::IfcBaseClass *>(typeObj));
 		cacheMetadata = true;
 		createElement = false;
+		traverseReferences = false;
 	}
 	else if (typeName == IFC_TYPE_PROJECT) {
 		auto project = static_cast<const IfcSchema::IfcProject *>(element);
@@ -331,6 +334,7 @@ void repo::ifcUtility::SCHEMA_NS::TreeParser::determineActionsByElementType(
 
 		createElement = false;
 		cacheMetadata = true;
+		traverseReferences = false;
 	}
 	else if (typeName == IFC_TYPE_PROPERTY_SET) {
 		auto propSet = static_cast<const IfcSchema::IfcPropertySet *>(element);
@@ -339,6 +343,7 @@ void repo::ifcUtility::SCHEMA_NS::TreeParser::determineActionsByElementType(
 		extraChildren.insert(extraChildren.end(), propDefs->begin(), propDefs->end());
 		createElement = false;
 		cacheMetadata = true;
+		traverseReferences = false;
 		childrenMetaPrefix = constructMetadataLabel(propSet->Name(), metaPrefix);
 	}
 	else if (typeName == IFC_TYPE_PROPERTY_BOUNDED_VALUE) {
@@ -368,6 +373,7 @@ void repo::ifcUtility::SCHEMA_NS::TreeParser::determineActionsByElementType(
 		extraChildren.insert(extraChildren.end(), quantities->begin(), quantities->end());
 		childrenMetaPrefix = constructMetadataLabel(eleQuan->Name(), metaPrefix);
 		createElement = false;
+		traverseReferences = false;
 	}
 	else if (typeName == IFC_TYPE_QUANTITY_LENGTH) {
 		auto quantity = static_cast<const IfcSchema::IfcQuantityLength *>(element);
@@ -438,6 +444,7 @@ void repo::ifcUtility::SCHEMA_NS::TreeParser::determineActionsByElementType(
 		auto relCS = static_cast<const IfcSchema::IfcRelAssociatesClassification *>(element);
 		createElement = false;
 		traverseChildren = false;
+		traverseReferences = false;
 		generateClassificationInformation(relCS, metaValues);
 	}
 	else if (typeName == IFC_TYPE_REL_CONTAINED_IN_SPATIAL_STRUCTURE) {
@@ -460,6 +467,7 @@ void repo::ifcUtility::SCHEMA_NS::TreeParser::determineActionsByElementType(
 			missingEntities = true;
 		}
 		createElement = false;
+		traverseReferences = false;
 	}
 	else if (typeName == IFC_TYPE_REL_AGGREGATES) {
 		auto relAgg = static_cast<const IfcSchema::IfcRelAggregates *>(element);
@@ -472,11 +480,19 @@ void repo::ifcUtility::SCHEMA_NS::TreeParser::determineActionsByElementType(
 		{
 			repoError << "Nullptr to relatedObjects!!!";
 		}
+		traverseReferences = false;
 	}
 	else if (dynamic_cast<const IfcSchema::IfcElementType *>(element)) {
+		auto eleType = static_cast<const IfcSchema::IfcElementType *>(element);
+		if (eleType->hasHasPropertySets()) {
+			auto propSets = eleType->HasPropertySets();
+			extraChildren.insert(extraChildren.end(), propSets->begin(), propSets->end());
+		}
+
 		createElement = false;
 		traverseChildren = true;
 		cacheMetadata = true;
+		traverseReferences = false;
 	}
 	else if (
 		boost::algorithm::ends_with(element->data().type()->name_lc(), "style") ||

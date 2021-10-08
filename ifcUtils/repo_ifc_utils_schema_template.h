@@ -108,6 +108,7 @@ namespace repo {
 					bool                                                          &createElement,
 					bool                                                          &traverseChildren,
 					bool                                                          &cacheMetadata,
+					bool                                                          &traverseReferences,
 					std::vector<IfcUtil::IfcBaseClass *>                          &extraChildren,
 					const std::string											  &metaPrefix,
 					std::string											          &childrenMetaPrefix);
