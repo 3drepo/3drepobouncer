@@ -268,7 +268,6 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 	auto dummyOutline = std::vector<std::vector<float>>();
 
 	std::unordered_map<std::string, repo::core::model::TransformationNode*> layerToTrans;
-	std::unordered_map<std::string, repo::core::model::MetadataNode*> elementToMetaNode;
 	std::unordered_map < repo::core::model::MetadataNode*, std::vector<repo::lib::RepoUUID>>  metaNodeToParents;
 
 	int numEntries = 0;
@@ -397,7 +396,14 @@ repo::core::model::TransformationNode*  GeometryCollector::createTransNode(
 {
 	auto transNode = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name, { parentId }));
 	if (idToMeta.find(id) != idToMeta.end()) {
-		metaNodes.insert(createMetaNode(name, transNode->getSharedID(), idToMeta[id]));
+		if (elementToMetaNode.find(id) == elementToMetaNode.end()) {
+			auto metaNode = createMetaNode(name, transNode->getSharedID(), idToMeta[id]);
+			metaNodes.insert(metaNode);
+			elementToMetaNode[id] = metaNode;
+		}
+		else {
+			*elementToMetaNode[id] = elementToMetaNode[id]->cloneAndAddParent(transNode->getSharedID());
+		}
 	}
 	return transNode;
 }
