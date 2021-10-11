@@ -209,7 +209,7 @@ uint8_t FileProcessorRvt::readFile()
 	}
 	catch (OdError& e)
 	{
-		repoError << e.description().c_str() << ", code: " << e.code();
+		repoError << convertToStdString(e.description()) << ", code: " << e.code();
 		if (e.code() == OdResult::eUnsupportedFileFormat) {
 			nRes = REPOERR_UNSUPPORTED_VERSION;
 		}
