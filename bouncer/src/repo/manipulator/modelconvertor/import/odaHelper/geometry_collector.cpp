@@ -268,6 +268,8 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 	auto dummyOutline = std::vector<std::vector<float>>();
 
 	std::unordered_map<std::string, repo::core::model::TransformationNode*> layerToTrans;
+	std::unordered_map<std::string, repo::core::model::MetadataNode*> elementToMetaNode;
+	std::unordered_map < repo::core::model::MetadataNode*, std::vector<repo::lib::RepoUUID>>  metaNodeToParents;
 
 	int numEntries = 0;
 	for (const auto& meshGroupEntry : meshData) {
@@ -345,7 +347,19 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 					);
 
 					if (idToMeta.find(meshGroupEntry.first) != idToMeta.end()) {
-						metaNodes.insert(createMetaNode(meshGroupEntry.first, { partialObject ? parentId : meshNode.getSharedID() }, idToMeta[meshGroupEntry.first]));
+						auto itPtr = elementToMetaNode.find(meshGroupEntry.first);
+						auto metaParent = partialObject ? parentId : meshNode.getSharedID();
+						if (itPtr == elementToMetaNode.end()) {
+							repoInfo << " Creating metadata for " << meshGroupEntry.first;
+							auto metaNode = createMetaNode(meshGroupEntry.first, {}, idToMeta[meshGroupEntry.first]);
+							elementToMetaNode[meshGroupEntry.first] = metaNode;
+							metaNodes.insert(metaNode);
+							metaNodeToParents[metaNode] = { metaParent };
+						}
+						else {
+							auto parentArray = metaNodeToParents[itPtr->second];
+							parentArray.push_back(metaParent);
+						}
 					}
 
 					if (matToMeshes.find(meshData.matIdx) == matToMeshes.end()) {
@@ -357,6 +371,11 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 				}
 			}
 		}
+	}
+	for (auto &metaEntry : metaNodeToParents) {
+		auto metaNode = metaEntry.first;
+		auto parentSet = metaEntry.second;
+		*metaNode = metaNode->cloneAndAddParent(parentSet);
 	}
 
 	transNodes.insert(new repo::core::model::TransformationNode(root));

@@ -239,8 +239,9 @@ namespace repo {
 					void setMetadata(const std::string &groupName,
 						const std::unordered_map<std::string, std::string> &metaEntry)
 					{
-						if (metaEntry.size() > 0)
+						if (!hasMeta(groupName) && metaEntry.size() > 0) {
 							idToMeta[groupName] = metaEntry;
+						}
 					}
 
 				private:
@@ -248,6 +249,7 @@ namespace repo {
 					std::unordered_map<std::string, std::unordered_map<std::string, std::unordered_map<int, std::vector<mesh_data_t>>>> meshData;
 					std::unordered_map<std::string, std::unordered_map<std::string, std::string> > idToMeta;
 					std::unordered_map<std::string, std::string> layerIDToName, layerIDToParent;
+					std::unordered_map<std::string, repo::core::model::MetadataNode*> elementToMetaNode;
 					std::string nextMeshName, nextLayer, nextGroupName;
 					uint32_t nextFormat;
 					std::unordered_map< uint32_t, std::pair<repo::core::model::MaterialNode, repo::core::model::TextureNode> > idxToMat;

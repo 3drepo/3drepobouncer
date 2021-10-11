@@ -294,7 +294,7 @@ void DataProcessorRvt::fillMeshData(const OdGiDrawable* pDrawable)
 	{
 		//some objects material is not set. set default here
 		collector->setCurrentMaterial(GetDefaultMaterial());
-		collector->setMetadata(elementName, fillMetadata(element));
+		if (!collector->hasMeta(elementName)) collector->setMetadata(elementName, fillMetadata(element));
 	}
 	catch (OdError& er)
 	{
