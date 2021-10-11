@@ -349,15 +349,13 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 						auto itPtr = elementToMetaNode.find(meshGroupEntry.first);
 						auto metaParent = partialObject ? parentId : meshNode.getSharedID();
 						if (itPtr == elementToMetaNode.end()) {
-							repoInfo << " Creating metadata for " << meshGroupEntry.first;
 							auto metaNode = createMetaNode(meshGroupEntry.first, {}, idToMeta[meshGroupEntry.first]);
 							elementToMetaNode[meshGroupEntry.first] = metaNode;
 							metaNodes.insert(metaNode);
 							metaNodeToParents[metaNode] = { metaParent };
 						}
 						else {
-							auto parentArray = metaNodeToParents[itPtr->second];
-							parentArray.push_back(metaParent);
+							metaNodeToParents[itPtr->second].push_back(metaParent);
 						}
 					}
 
