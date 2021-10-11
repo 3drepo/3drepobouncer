@@ -17,7 +17,6 @@
 
 #pragma once
 
-
 #include <vector>
 #include <Gi/GiGeometrySimplifier.h>
 #include <Gs/GsBaseMaterialView.h>
@@ -32,7 +31,6 @@ namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
 			namespace odaHelper {
-
 				class DataProcessor : public OdGiGeometrySimplifier, public OdGsBaseMaterialView
 				{
 				protected:
@@ -112,7 +110,6 @@ namespace repo {
 					*/
 					std::function<repo::lib::RepoVector3D64(OdGePoint3d)> convertTo3DRepoWorldCoorindates = [](OdGePoint3d pnt) { return repo::lib::RepoVector3D64(pnt.x, pnt.y, pnt.z); };
 
-
 					double deviationValue = 0;
 				private:
 					/**
@@ -135,7 +132,7 @@ namespace repo {
 						OdInt32 numPoints,
 						const OdInt32* vertexIndexList) final;
 
-					void polylineOut(OdInt32 numPoints, 
+					void polylineOut(OdInt32 numPoints,
 						const OdGePoint3d* vertexList) final;
 
 					/**
@@ -148,7 +145,6 @@ namespace repo {
 						OdGiMaterialItemPtr prevCache,
 						OdDbStub* materialId,
 						const OdGiMaterialTraitsData & materialData) final;
-
 				};
 			}
 		}

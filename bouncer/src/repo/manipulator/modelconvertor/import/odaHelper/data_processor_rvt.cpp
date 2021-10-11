@@ -337,47 +337,61 @@ void DataProcessorRvt::initLabelUtils() {
 
 void DataProcessorRvt::fillMetadataByElemPtr(
 	OdBmElementPtr element,
-	std::unordered_map<std::string, std::string>& metadata)
+	std::unordered_map<std::string, std::string>& outputData)
 {
 	OdBmParameterSet aParams;
 	element->getListParams(aParams);
 
-	if (!labelUtils) return;
+	std::unordered_map<std::string, std::string> metadata;
 
-	for (const auto &entry : aParams.getBuiltInParamsIterator()) {
-		std::string builtInName = convertToStdString(OdBm::BuiltInParameter(entry).toString());
-		//.. HOTFIX: handle access violation exception (reported to ODA)
-		if (ignoreParam(builtInName)) continue;
+	auto id = std::to_string((OdUInt64)element->objectId().getHandle());
+	if (collector->metadataCache.find(id) != collector->metadataCache.end()) {
+		metadata = collector->metadataCache[id];
+	}
+	else {
+		if (!labelUtils) return;
 
-		std::string paramName;
-		if (!labelUtils->getLabelFor(entry).isEmpty())
-			paramName = convertToStdString(labelUtils->getLabelFor(entry));
-		else
-			paramName = builtInName;
+		for (const auto &entry : aParams.getBuiltInParamsIterator()) {
+			std::string builtInName = convertToStdString(OdBm::BuiltInParameter(entry).toString());
+			//.. HOTFIX: handle access violation exception (reported to ODA)
+			if (ignoreParam(builtInName)) continue;
 
-		OdTfVariant value;
-		OdResult res = element->getParam(entry, value);
+			std::string paramName;
+			if (!labelUtils->getLabelFor(entry).isEmpty())
+				paramName = convertToStdString(labelUtils->getLabelFor(entry));
+			else
+				paramName = builtInName;
 
-		if (res == eOk)
-		{
-			OdBmParamElemPtr pParamElem = element->database()->getObjectId(entry).safeOpenObject();
-			OdBmParamDefPtr pDescParam = pParamElem->getParamDef();
+			OdTfVariant value;
+			OdResult res = element->getParam(entry, value);
 
-			auto metaKey = convertToStdString(pDescParam->getCaption());
-			if (!ignoreParam(metaKey)) {
-				std::string variantValue = translateMetadataValue(value, labelUtils, pDescParam, element->getDatabase(), entry);
-				if (!variantValue.empty())
-				{
-					if (metadata.find(metaKey) != metadata.end() && metadata[metaKey] != variantValue) {
-						repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << "value before: " << metadata[metaKey] << " after: " << variantValue;
+			if (res == eOk)
+			{
+				OdBmParamElemPtr pParamElem = element->database()->getObjectId(entry).safeOpenObject();
+				OdBmParamDefPtr pDescParam = pParamElem->getParamDef();
+
+				auto metaKey = convertToStdString(pDescParam->getCaption());
+				if (!ignoreParam(metaKey)) {
+					std::string variantValue = translateMetadataValue(value, labelUtils, pDescParam, element->getDatabase(), entry);
+					if (!variantValue.empty())
+					{
+						if (metadata.find(metaKey) != metadata.end() && metadata[metaKey] != variantValue) {
+							repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << "value before: " << metadata[metaKey] << " after: " << variantValue;
+						}
+						metadata[metaKey] = variantValue;
 					}
-					metadata[metaKey] = variantValue;
 				}
 			}
+			//FIXME: we can probably use aParams.getUserParamsIterator here.
+			CustomDataProcessorRVT customDataProcessor(element);
+			customDataProcessor.fillCustomMetadata(metadata);
 		}
-		//FIXME: we can probably use aParams.getUserParamsIterator here.
-		CustomDataProcessorRVT customDataProcessor(element);
-		customDataProcessor.fillCustomMetadata(metadata);
+
+		collector->metadataCache[id] = metadata;
+	}
+
+	if (metadata.size()) {
+		outputData.insert(metadata.begin(), metadata.end());
 	}
 }
 

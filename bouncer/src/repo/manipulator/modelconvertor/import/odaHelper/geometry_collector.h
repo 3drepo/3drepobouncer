@@ -61,6 +61,8 @@ namespace repo {
 					GeometryCollector();
 					~GeometryCollector();
 
+					std::unordered_map<std::string, std::unordered_map<std::string, std::string>> metadataCache;
+
 					/**
 					* Check whether collector has missing textures.
 					* @return returns true if at least one texture is missing
