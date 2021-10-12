@@ -39,7 +39,7 @@ namespace repo {
 				* in this object!
 				* @param settings
 				*/
-				IFCModelImport(const ModelImportConfig &settings);
+				IFCModelImport(const ModelImportConfig & settings);
 
 				/**
 				* Default Deconstructor

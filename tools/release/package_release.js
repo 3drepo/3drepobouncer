@@ -27,7 +27,7 @@ const externalLibraries = [
 	{
 		rootEnvVar: "THRIFT_ROOT",
 		subPath: ["lib"],
-		extensions: [exts, ".0"]
+		extensions: [...exts, ".0"]
 	},
 	{
 		rootEnvVar: "OCCT_ROOT",
@@ -37,7 +37,7 @@ const externalLibraries = [
 	{
 		rootEnvVar: "IFCOPENSHELL_ROOT",
 		subPath: ["lib"],
-		extensions: exts
+		extensions: [...exts, ".6"]
 	},
 	{
 		rootEnvVar: "SYNCHRO_READER_ROOT",

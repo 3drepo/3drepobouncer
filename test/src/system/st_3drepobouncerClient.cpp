@@ -306,6 +306,10 @@ TEST(RepoClientTest, UploadTestIFC)
 	std::string ifcUpload = produceUploadArgs(db, "ifcTest", getDataPath(ifcModel));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(ifcUpload));
 	EXPECT_TRUE(projectExists(db, "ifcTest"));
+
+	std::string ifc4Upload = produceUploadArgs(db, "ifc4Test", getDataPath(ifc4Model));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(ifc4Upload));
+	EXPECT_TRUE(projectExists(db, "ifc4Test"));
 }
 
 TEST(RepoClientTest, UploadTestDGN)
