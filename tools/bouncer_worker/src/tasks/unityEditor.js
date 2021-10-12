@@ -41,6 +41,7 @@ const checkLicenceError = (log) => new Promise((resolve) => {
 		if (
 			line.includes('Current license is invalid and cannot be activated')
 				|| line.includes('Unity has not been activated with a valid License')
+				|| line.includes('Failed to activate/update license')
 		) {
 			licenseError = true;
 			rl.close();
