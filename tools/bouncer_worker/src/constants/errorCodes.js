@@ -24,6 +24,6 @@ module.exports = {
 	ERRCODE_ARG_FILE_FAIL: 16,
 	ERRCODE_TIMEOUT: 29,
 	ERRCODE_TOY_IMPORT_FAILED: 33,
-	BOUNCER_SOFT_FAILS: [7, 10, 15], // failures that should go through to generate bundle
-
+	ERRCODE_UNITY_LICENCE_INVALID: 35,
+	BOUNCER_SOFT_FAILS: [7, 10, 15], // failures that should go through to generate
 };

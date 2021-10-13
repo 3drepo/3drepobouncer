@@ -42,14 +42,17 @@ const listenToQueue = (channel, queueName, prefetchCount, callback) => {
 	channel.prefetch(prefetchCount);
 	channel.consume(queueName, async (msg) => {
 		logger.info(`Received ${msg.content.toString()} from ${queueName}`, logLabel);
-		await callback(msg.content.toString(), msg.properties.correlationId,
-			(reply, queue = rabbitmq.callback_queue) => {
-				logger.info(`Sending reply to ${queue}: ${reply}`, logLabel);
-				// eslint-disable-next-line new-cap
-				channel.sendToQueue(queue, new Buffer.from(reply),
-					{ correlationId: msg.properties.correlationId, appId: msg.properties.appId });
-			});
-		channel.ack(msg);
+		callback(msg.content.toString(), msg.properties.correlationId, (reply, queue = rabbitmq.callback_queue) => {
+			logger.info(`Sending reply to ${queue}: ${reply}`, logLabel);
+			// eslint-disable-next-line new-cap
+			channel.sendToQueue(queue, new Buffer.from(reply),
+				{ correlationId: msg.properties.correlationId, appId: msg.properties.appId });
+		}).then(() => {
+			channel.ack(msg);
+		}).catch((err) => {
+			logger.error(`Message ${msg.properties.correlationId} was placed back into the queue due to error ${err}`, logLabel);
+			channel.nack(msg);
+		});
 	}, { noAck: false });
 };
 
@@ -92,15 +95,22 @@ const executeTasks = async (conn, queueName, nTasks, callback) => {
 		if (msg) {
 			logger.info(`[${currentTaskNum}/${nTasks}] Received ${msg.content.toString()} from ${queueName}`, logLabel);
 			// eslint-disable-next-line no-await-in-loop
-			await callback(msg.content.toString(), msg.properties.correlationId,
+			await callback(
+				msg.content.toString(),
+				msg.properties.correlationId,
 				// eslint-disable-next-line no-loop-func
 				(reply, queue = rabbitmq.callback_queue) => {
 					logger.info(`[${currentTaskNum}/${nTasks}] Sending to reply to ${queue}: ${reply}`, logLabel);
 					// eslint-disable-next-line new-cap
 					channel.sendToQueue(queue, new Buffer.from(reply),
 						{ correlationId: msg.properties.correlationId, appId: msg.properties.appId });
-				});
-			channel.ack(msg);
+				},
+			).then(() => {
+				channel.ack(msg);
+			}).catch((err) => {
+				logger.error(`Message ${msg.properties.correlationId} was placed back into the queue due to error ${err}`, logLabel);
+				channel.nack(msg);
+			});
 			lastActive = new Date();
 			++currentTaskNum;
 		} else if (new Date() - lastActive > rabbitmq.maxWaitTimeMS) {
