@@ -35,7 +35,6 @@ matrix:
           - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
           - mongo admin testData/bouncer/createUser.js
           - cd  testData/bouncer/data/database/
-          - sudo apt-get install mongo-tools
           - mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin --quiet
           - cd ../../../../
           - export CXX="g++"
