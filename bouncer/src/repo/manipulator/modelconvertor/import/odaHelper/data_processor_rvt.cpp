@@ -130,7 +130,13 @@ std::string DataProcessorRvt::translateMetadataValue(
 				else
 				{
 					OdBm::BuiltInCategory::Enum builtInValue = static_cast<OdBm::BuiltInCategory::Enum>((OdUInt64)rawValue.getHandle());
-					strOut = convertToStdString(OdBm::BuiltInCategory(builtInValue).toString());
+					auto category = labelUtils->getLabelFor(OdBm::BuiltInCategory::Enum(builtInValue));
+					if (!category.isEmpty()) {
+						strOut = convertToStdString(category);
+					}
+					else {
+						strOut = convertToStdString(OdBm::BuiltInCategory(builtInValue).toString());
+					}
 				}
 			}
 			else
@@ -337,6 +343,7 @@ void DataProcessorRvt::initLabelUtils() {
 
 void DataProcessorRvt::fillMetadataByElemPtr(
 	OdBmElementPtr element,
+
 	std::unordered_map<std::string, std::string>& outputData)
 {
 	OdBmParameterSet aParams;
@@ -350,17 +357,10 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 	}
 	else {
 		if (!labelUtils) return;
-
 		for (const auto &entry : aParams.getBuiltInParamsIterator()) {
 			std::string builtInName = convertToStdString(OdBm::BuiltInParameter(entry).toString());
 			//.. HOTFIX: handle access violation exception (reported to ODA)
 			if (ignoreParam(builtInName)) continue;
-
-			std::string paramName;
-			if (!labelUtils->getLabelFor(entry).isEmpty())
-				paramName = convertToStdString(labelUtils->getLabelFor(entry));
-			else
-				paramName = builtInName;
 
 			OdTfVariant value;
 			OdResult res = element->getParam(entry, value);
@@ -369,9 +369,16 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 			{
 				OdBmParamElemPtr pParamElem = element->database()->getObjectId(entry).safeOpenObject();
 				OdBmParamDefPtr pDescParam = pParamElem->getParamDef();
+				OdInt64 groupId = pDescParam->getGroupElemId();
 
 				auto metaKey = convertToStdString(pDescParam->getCaption());
 				if (!ignoreParam(metaKey)) {
+					auto paramGroup = labelUtils->getLabelFor(OdBm::BuiltInParameterGroup::Enum(groupId));
+					if (!paramGroup.isEmpty()) {
+						metaKey = convertToStdString(paramGroup) + "::" + metaKey;
+					}
+					repoInfo << metaKey;
+
 					std::string variantValue = translateMetadataValue(value, labelUtils, pDescParam, element->getDatabase(), entry);
 					if (!variantValue.empty())
 					{
@@ -382,11 +389,10 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 					}
 				}
 			}
-			//FIXME: we can probably use aParams.getUserParamsIterator here.
-			CustomDataProcessorRVT customDataProcessor(element);
-			customDataProcessor.fillCustomMetadata(metadata);
 		}
-
+		//FIXME: we can probably use aParams.getUserParamsIterator here.
+		CustomDataProcessorRVT customDataProcessor(element);
+		customDataProcessor.fillCustomMetadata(metadata);
 		collector->metadataCache[id] = metadata;
 	}
 
