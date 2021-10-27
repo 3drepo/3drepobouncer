@@ -1,6 +1,6 @@
 {
   "name": "3drepobouncerWorker",
-  "version": "4.18.2",
+  "version": "4.19.1",
   "engines": {
     "node": "14.x.x"
   },

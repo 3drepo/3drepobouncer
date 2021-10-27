@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2015 3D Repo Ltd
+*  Copyright (C) 2021 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -16,25 +16,19 @@
 */
 
 #pragma once
-#include <cstdint>
-#if defined(_WIN32) || defined(_WIN64)
-#   define REPO_DECL_EXPORT __declspec(dllexport)
-#   define REPO_DECL_IMPORT __declspec(dllimport)
-#else
-#   define REPO_DECL_EXPORT
-#   define REPO_DECL_IMPORT
-#endif
+#include <string>
+#include <ifcparse/IfcFile.h>
 
-//------------------------------------------------------------------------------
-#if defined(REPO_API_LIBRARY)
-#   define REPO_API_EXPORT REPO_DECL_EXPORT
-#else
-#   define REPO_API_EXPORT REPO_DECL_IMPORT
-#endif
+enum IfcSchemaVersion { IFC2x3, IFC4, UNKNOWN };
 
-//------------------------------------------------------------------------------
-#define BOUNCER_VMAJOR 4
+static IfcSchemaVersion getIFCSchema(const std::string &file) {
+	IfcParse::IfcFile ifcFile = file;
+	if (ifcFile.schema()->name() == "IFC2X3") {
+		return IfcSchemaVersion::IFC2x3;
+	}
+	else if (ifcFile.schema()->name() == "IFC4") {
+		return IfcSchemaVersion::IFC4;
+	}
 
-#define BOUNCER_VMINOR "19_1"
-#define REPO_MAX_OBJ_SIZE (16 * 1024 * 1024)
-//
+	return IfcSchemaVersion::UNKNOWN;
+}

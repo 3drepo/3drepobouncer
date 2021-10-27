@@ -345,7 +345,7 @@ repo::core::model::MaterialNode* AssimpModelImport::createMaterialRepoNode(
 			repo_material.shininessStrength = std::numeric_limits<float>::quiet_NaN();
 
 		materialNode = new repo::core::model::MaterialNode(
-			repo::core::model::RepoBSONFactory::makeMaterialNode(repo_material, name, REPO_NODE_API_LEVEL_1));
+			repo::core::model::RepoBSONFactory::makeMaterialNode(repo_material, name));
 
 		//--------------------------------------------------------------------------
 		// Texture (one diffuse for the moment)

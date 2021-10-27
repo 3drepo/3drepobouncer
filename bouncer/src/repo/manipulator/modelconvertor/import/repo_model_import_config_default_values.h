@@ -82,7 +82,6 @@ static const std::string repoDefaultRemoveRedundantNodesSkip = "";
 static const bool		repoDefaultUseIfcOpenShell = true;
 static const bool		repoDefaultIOSUseFilter = true;
 static const bool		repoDefaultIsExclusion = true;
-static const std::vector<std::string> repoDefaultIfcOpenShellFilterList = { "IfcOpeningElement"};
 static const bool       repoDefaultIOSWieldVertices = false;
 static const bool       repoDefaultIOSUseWorldCoords = true;
 static const bool       repoDefaultIOSConvertBackUnits = true;
