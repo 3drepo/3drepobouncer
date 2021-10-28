@@ -133,6 +133,8 @@ namespace repo {
 						OdBmDatabase* database,
 						OdBm::BuiltInParameterDefinition::Enum param);
 
+					std::string unitsToString(const OdBm::DisplayUnitType::Enum &units);
+
 					OdBmDatabasePtr database;
 					OdBmSampleLabelUtilsPE* labelUtils = nullptr;
 				};
