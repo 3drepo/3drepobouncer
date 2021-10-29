@@ -21,7 +21,6 @@
 #include "vectorise_device_rvt.h"
 #include "data_processor_rvt.h"
 #include "helper_functions.h"
-#include "custom_data_util_rvt.h"
 #include "../../../../lib/repo_utils.h"
 #include <Database/BmTransaction.h>
 #include <Database/BmUnitUtils.h>
@@ -854,6 +853,45 @@ std::string DataProcessorRvt::unitsToString(const OdBm::DisplayUnitType::Enum &u
 	return unitsText;
 }
 
+void DataProcessorRvt::processParameter(
+	OdBmElementPtr element,
+	OdBmObjectId paramId,
+	OdBmAUnitsPtr pAUnits,
+	std::unordered_map<std::string, std::string> &metadata,
+	const OdBm::BuiltInParameterDefinition::Enum &buildInEnum
+) {
+	OdTfVariant value;
+	OdResult res = element->getParam(paramId, value);
+
+	if (res == eOk)
+	{
+		OdBmParamElemPtr pParamElem = paramId.safeOpenObject();
+		OdBmParamDefPtr pDescParam = pParamElem->getParamDef();
+		OdInt64 groupId = pDescParam->getGroupElemId();
+
+		auto metaKey = convertToStdString(pDescParam->getCaption());
+		if (!ignoreParam(metaKey)) {
+			auto paramGroup = labelUtils->getLabelFor(OdBm::BuiltInParameterGroup::Enum(groupId));
+			if (!paramGroup.isEmpty()) {
+				metaKey = convertToStdString(paramGroup) + "::" + metaKey;
+			}
+
+			if (pDescParam->getUnitType() != OdBm::UnitType::UT_Undefined) {
+				auto units = unitsToString(OdBmUnitUtils::getDefaultDUT(pAUnits, pDescParam->getUnitType()));
+				if (!units.empty()) metaKey += " (" + units + ")";
+			}
+			std::string variantValue = translateMetadataValue(value, labelUtils, pDescParam, element->getDatabase(), buildInEnum);
+			if (!variantValue.empty())
+			{
+				if (metadata.find(metaKey) != metadata.end() && metadata[metaKey] != variantValue) {
+					repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << "value before: " << metadata[metaKey] << " after: " << variantValue;
+				}
+				metadata[metaKey] = variantValue;
+			}
+		}
+	}
+}
+
 void DataProcessorRvt::fillMetadataByElemPtr(
 	OdBmElementPtr element,
 
@@ -879,41 +917,14 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 			//.. HOTFIX: handle access violation exception (reported to ODA)
 			if (ignoreParam(builtInName)) continue;
 
-			OdTfVariant value;
-			OdResult res = element->getParam(entry, value);
-
-			if (res == eOk)
-			{
-				OdBmParamElemPtr pParamElem = element->database()->getObjectId(entry).safeOpenObject();
-				OdBmParamDefPtr pDescParam = pParamElem->getParamDef();
-				OdInt64 groupId = pDescParam->getGroupElemId();
-
-				auto metaKey = convertToStdString(pDescParam->getCaption());
-				if (!ignoreParam(metaKey)) {
-					auto paramGroup = labelUtils->getLabelFor(OdBm::BuiltInParameterGroup::Enum(groupId));
-					if (!paramGroup.isEmpty()) {
-						metaKey = convertToStdString(paramGroup) + "::" + metaKey;
-					}
-
-					if (pDescParam->getUnitType() != OdBm::UnitType::UT_Undefined) {
-						auto units = unitsToString(OdBmUnitUtils::getDefaultDUT(pAUnits, pDescParam->getUnitType()));
-						if (!units.empty()) metaKey += " (" + units + ")";
-					}
-					std::string variantValue = translateMetadataValue(value, labelUtils, pDescParam, element->getDatabase(), entry);
-					if (!variantValue.empty())
-					{
-						if (metadata.find(metaKey) != metadata.end() && metadata[metaKey] != variantValue) {
-							repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << "value before: " << metadata[metaKey] << " after: " << variantValue;
-						}
-						metadata[metaKey] = variantValue;
-					}
-				}
-			}
+			processParameter(element, element->database()->getObjectId(entry), pAUnits, metadata, entry);
 		}
-		//FIXME: we can probably use aParams.getUserParamsIterator here.
-		CustomDataProcessorRVT customDataProcessor(element);
-		customDataProcessor.fillCustomMetadata(metadata);
-		collector->metadataCache[id] = metadata;
+	}
+
+	for (const auto &entry : aParams.getUserParamsIterator()) {
+		processParameter(element, entry, pAUnits, metadata,
+			//A dummy entry, as long as it's not ELEM_CATEGORY_PARAM_MT or ELEM_CATEGORY_PARAM it's not utilised.
+			OdBm::BuiltInParameterDefinition::Enum::ACTUAL_MAX_RIDGE_HEIGHT_PARAM);
 	}
 
 	if (metadata.size()) {

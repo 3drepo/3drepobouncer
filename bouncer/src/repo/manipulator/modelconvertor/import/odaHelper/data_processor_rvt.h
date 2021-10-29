@@ -99,7 +99,6 @@ namespace repo {
 						std::vector<repo::lib::RepoVector2D>& uvOut) override;
 
 				private:
-					void hiddenElementsViewRejection(OdBmDBViewPtr pDBView);
 					void getCameras(OdBmDatabasePtr database);
 					camera_t convertCamera(OdBmDBViewPtr view);
 					std::string determineTexturePath(const std::string& inputPath);
@@ -134,6 +133,14 @@ namespace repo {
 						OdBm::BuiltInParameterDefinition::Enum param);
 
 					std::string unitsToString(const OdBm::DisplayUnitType::Enum &units);
+
+					void processParameter(
+						OdBmElementPtr element,
+						OdBmObjectId paramId,
+						OdBmAUnitsPtr pAUnits,
+						std::unordered_map<std::string, std::string> &metadata,
+						const OdBm::BuiltInParameterDefinition::Enum &buildInEnum
+					);
 
 					OdBmDatabasePtr database;
 					OdBmSampleLabelUtilsPE* labelUtils = nullptr;
