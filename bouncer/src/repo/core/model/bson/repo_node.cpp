@@ -24,7 +24,7 @@
 using namespace repo::core::model;
 
 RepoNode::RepoNode(RepoBSON bson,
-	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping) : RepoBSON(bson, binMapping){
+	const std::unordered_map<std::string, std::pair<std::string, std::vector<uint8_t>>> &binMapping) : RepoBSON(bson, binMapping) {
 	if (binMapping.size() == 0)
 		bigFiles = bson.getFilesMapping();
 }
@@ -35,7 +35,7 @@ RepoNode::~RepoNode()
 
 RepoNode RepoNode::cloneAndChangeIdentity() const {
 	RepoBSONBuilder builder;
-	
+
 	builder.append(REPO_NODE_LABEL_ID, repo::lib::RepoUUID::createUUID());
 
 	builder.append(REPO_NODE_LABEL_SHARED_ID, repo::lib::RepoUUID::createUUID());
@@ -78,18 +78,25 @@ RepoNode RepoNode::cloneAndAddParent(
 RepoNode RepoNode::cloneAndAddParent(
 	const std::vector<repo::lib::RepoUUID> &parentIDs) const
 {
+	if (!parentIDs.size()) return RepoNode(*this, bigFiles);
+
 	RepoBSONBuilder builder;
 	RepoBSONBuilder arrayBuilder;
+	std::set<std::string> currentParents;
+	for (const auto &parent : getParentIDs()) {
+		currentParents.insert(parent.toString());
+	}
 
-	std::vector<repo::lib::RepoUUID> currentParents = getParentIDs();
-	currentParents.insert(currentParents.end(), parentIDs.begin(), parentIDs.end());
+	for (const auto &parent : parentIDs) {
+		currentParents.insert(parent.toString());
+	}
 
-	std::sort(currentParents.begin(), currentParents.end());
-	auto last = std::unique(currentParents.begin(), currentParents.end());
-	if (last != currentParents.end())
-		currentParents.erase(last, currentParents.end());
+	std::vector<repo::lib::RepoUUID> newParents;
+	for (const auto &parent : currentParents) {
+		newParents.push_back(repo::lib::RepoUUID(parent));
+	}
 
-	builder.appendArray(REPO_NODE_LABEL_PARENTS, currentParents);
+	builder.appendArray(REPO_NODE_LABEL_PARENTS, newParents);
 
 	builder.appendElementsUnique(*this);
 

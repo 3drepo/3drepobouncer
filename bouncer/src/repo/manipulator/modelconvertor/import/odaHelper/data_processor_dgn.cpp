@@ -49,7 +49,7 @@ void printTree(const boost::property_tree::ptree &tree,
 		const auto value = it.second.data();
 		if (!isAttriChild && !value.empty())
 		{
-			const auto fieldLabel = parentName + ":" + it.first;
+			const auto fieldLabel = parentName + "::" + it.first;
 			resultCollector[fieldLabel] = value;
 		}
 

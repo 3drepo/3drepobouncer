@@ -66,9 +66,10 @@ generateVR(vrEnabled)
 		{
 			convertSuccess = generateTreeRepresentation();
 		}
-		else  if (!(convertSuccess = !scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()))
+		else
 		{
-			repoError << "Scene has no optimised graph and it is not a federation graph. SRC Exporter relies on this.";
+			convertSuccess = false;
+			repoError << "Scene has no optimised graph.";
 		}
 	}
 	else
@@ -128,9 +129,7 @@ bool AssetModelExport::generateJSONMapping(
 					mappingTree.addToTree(MP_LABEL_NAME, mappings[i].mesh_id.toString());
 
 					repo::lib::RepoUUID id(mappings[i].mesh_id.toString());
-					auto mesh = scene->getNodeByUniqueID(repo::core::model::RepoScene::GraphType::DEFAULT, id);
-					if (mesh)
-						mappingTree.addToTree(MP_LABEL_SHARED, mesh->getSharedID().toString());
+					mappingTree.addToTree(MP_LABEL_SHARED, mappings[i].shared_id.toString());
 					mappingTree.addToTree(MP_LABEL_MIN, mappings[i].min.toStdVector());
 					mappingTree.addToTree(MP_LABEL_MAX, mappings[i].max.toStdVector());
 					std::vector<std::string> usageArr = { meshUID + "_" + std::to_string(subMeshID) };
@@ -191,7 +190,7 @@ bool AssetModelExport::generateTreeRepresentation()
 				repoError << "MeshMapReorganiser cannot operate on node " << node->getUniqueID() << " because it has primitive type " << (int)mesh->getPrimitive() << " and AssetModelExport does not have known limits for this type. Skipping...";
 				continue;
 			}
-				
+
 			if (success = !std::make_shared<repo::core::model::MeshNode>(reSplitter->getRemappedMesh())->isEmpty())
 			{
 				reorganisedMeshes.push_back(std::make_shared<repo::core::model::MeshNode>(reSplitter->getRemappedMesh()));

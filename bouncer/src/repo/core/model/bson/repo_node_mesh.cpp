@@ -304,7 +304,7 @@ uint32_t MeshNode::getMFormat(const bool isTransparent, const bool isInvisibleDe
 	uint32_t transBit = isTransparent ? 1 : 0 << 4;
 	uint32_t visiBit = isInvisibleDefault ? 1 : 0 << 5;
 
-	/* 
+	/*
 	 * The current packing supports 255 uv channels and 255 face index counts, both much higher than currently used in any realtime graphics pipeline
 	 * The offsets for the multi-bit fields are powers of 2 for simplicity.
 	 */
@@ -329,6 +329,7 @@ std::vector<repo_mesh_mapping_t> MeshNode::getMeshMapping() const
 			RepoBSON mappingObj = mapArray.getObjectField(name);
 
 			mapping.mesh_id = mappingObj.getUUIDField(REPO_NODE_MESH_LABEL_MAP_ID);
+			mapping.shared_id = mappingObj.getUUIDField(REPO_NODE_MESH_LABEL_MAP_SHARED_ID);
 			mapping.material_id = mappingObj.getUUIDField(REPO_NODE_MESH_LABEL_MATERIAL_ID);
 			mapping.vertFrom = mappingObj.getIntField(REPO_NODE_MESH_LABEL_VERTEX_FROM);
 			mapping.vertTo = mappingObj.getIntField(REPO_NODE_MESH_LABEL_VERTEX_TO);
@@ -452,6 +453,7 @@ RepoBSON MeshNode::meshMappingAsBSON(const repo_mesh_mapping_t  &mapping)
 {
 	RepoBSONBuilder builder;
 	builder.append(REPO_NODE_MESH_LABEL_MAP_ID, mapping.mesh_id);
+	builder.append(REPO_NODE_MESH_LABEL_MAP_SHARED_ID, mapping.shared_id);
 	builder.append(REPO_NODE_MESH_LABEL_MATERIAL_ID, mapping.material_id);
 	builder.append(REPO_NODE_MESH_LABEL_VERTEX_FROM, mapping.vertFrom);
 	builder.append(REPO_NODE_MESH_LABEL_VERTEX_TO, mapping.vertTo);

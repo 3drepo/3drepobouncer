@@ -235,7 +235,7 @@ bool MeshMapReorganiser::performSplitting()
 			finishedSubMesh = false;
 
 			newMappings.resize(newMappings.size() + 1);
-			startSubMesh(newMappings.back(), superMeshID, currentSubMesh.material_id, totalVertexCount, totalFaceCount);
+			startSubMesh(newMappings.back(), superMeshID, mesh->getSharedID(), currentSubMesh.material_id, totalVertexCount, totalFaceCount);
 		}
 
 		// Now we've started a new mesh is the mesh that we're trying to add greater than
@@ -338,11 +338,10 @@ bool MeshMapReorganiser::splitLargeMesh(
 	for (uint32_t fIdx = 0; fIdx < currentMeshNumFaces; ++fIdx) {
 		repo_face_t currentFace = oldFaces[orgFaceIdx++];
 		auto        nSides = currentFace.size();
-		
+
 		// If we haven't started yet, or the current number of vertices that we have
 		// split is greater than the limit we need to start a new subMesh
 		if (((splitMeshVertexCount + nSides) > maxVertices) || (splitMeshFaceCount >= maxFaces) || !startedLargeMeshSplit) {
-			
 			// If we have started we must be here because we have created a split mesh
 			// greater than the required number of vertices
 
@@ -363,7 +362,7 @@ bool MeshMapReorganiser::splitLargeMesh(
 			startedLargeMeshSplit = true;
 			newMappings.resize(newMappings.size() + 1);
 
-			startSubMesh(newMappings.back(), mesh->getUniqueID(), currentSubMesh.material_id, totalVertexCount, totalFaceCount);
+			startSubMesh(newMappings.back(), mesh->getUniqueID(), mesh->getSharedID(), currentSubMesh.material_id, totalVertexCount, totalFaceCount);
 			newMatMapEntry(currentSubMesh, totalVertexCount, totalFaceCount);
 			splitMeshVertexCount = 0;
 			splitMeshFaceCount = 0;
@@ -506,6 +505,7 @@ bool MeshMapReorganiser::splitLargeMesh(
 void MeshMapReorganiser::startSubMesh(
 	repo_mesh_mapping_t &mapping,
 	const repo::lib::RepoUUID      &meshID,
+	const repo::lib::RepoUUID      &sharedID,
 	const repo::lib::RepoUUID      &matID,
 	const size_t        &sVertices,
 	const size_t        &sFaces
@@ -515,6 +515,7 @@ void MeshMapReorganiser::startSubMesh(
 	mapping.triFrom = sFaces;
 	mapping.material_id = matID; //Not a reliable source. Just filled in for completeness
 	mapping.mesh_id = meshID;
+	mapping.shared_id = sharedID;
 
 	idMapBuf.resize(idMapBuf.size() + 1);
 	idMapBuf.back().clear();

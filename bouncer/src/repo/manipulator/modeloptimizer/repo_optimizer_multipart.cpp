@@ -117,6 +117,7 @@ bool MultipartOptimizer::collectMeshData(
 					newMatID = matIDMap[matID];
 				meshMap.material_id = newMatID;
 				meshMap.mesh_id = meshUniqueID;
+				meshMap.shared_id = node->getSharedID();
 				auto bbox = transformedMesh.getBoundingBox();
 				if (bbox.size() >= 2)
 				{

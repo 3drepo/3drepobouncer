@@ -25,7 +25,6 @@
 #include "repo_vector.h"
 #include <boost/crc.hpp>
 
-
 typedef struct {
 	std::unordered_map<std::string, std::vector<uint8_t>> geoFiles; //files where geometery are stored
 	std::unordered_map<std::string, std::vector<uint8_t>> jsonFiles; //JSON mapping files
@@ -33,10 +32,11 @@ typedef struct {
 }repo_web_buffers_t;
 
 //This is used to map info for multipart optimization
-typedef struct{
+typedef struct {
 	repo::lib::RepoVector3D min;
 	repo::lib::RepoVector3D max;
 	repo::lib::RepoUUID  mesh_id;
+	repo::lib::RepoUUID  shared_id;
 	repo::lib::RepoUUID  material_id;
 	int32_t       vertFrom;
 	int32_t       vertTo;
@@ -58,12 +58,12 @@ struct repo_mesh_entry_t
 	}
 };
 
-namespace repo{
-	enum class PartitioningTreeType{ PARTITION_X, PARTITION_Y, PARTITION_Z, LEAF_NODE };
-	enum class DiffMode{ DIFF_BY_ID, DIFF_BY_NAME };
+namespace repo {
+	enum class PartitioningTreeType { PARTITION_X, PARTITION_Y, PARTITION_Z, LEAF_NODE };
+	enum class DiffMode { DIFF_BY_ID, DIFF_BY_NAME };
 }
 
-struct repo_partitioning_tree_t{
+struct repo_partitioning_tree_t {
 	repo::PartitioningTreeType              type;
 	std::vector<repo_mesh_entry_t>            meshes; //mesh ids if it is a leaf node
 	float                             pValue; //partitioning value if not
@@ -78,7 +78,7 @@ struct repo_partitioning_tree_t{
 		std::shared_ptr<repo_partitioning_tree_t> right)
 		: type(type), pValue(pValue),
 		left(left),
-		right(right){}
+		right(right) {}
 
 	//Construction of leaf node
 	repo_partitioning_tree_t(
@@ -87,16 +87,16 @@ struct repo_partitioning_tree_t{
 		type(repo::PartitioningTreeType::LEAF_NODE),
 		meshes(meshes), pValue(0),
 		left(std::shared_ptr<repo_partitioning_tree_t>(nullptr)),
-		right(std::shared_ptr<repo_partitioning_tree_t>(nullptr)){}
+		right(std::shared_ptr<repo_partitioning_tree_t>(nullptr)) {}
 };
 
-struct repo_diff_result_t{
+struct repo_diff_result_t {
 	std::vector<repo::lib::RepoUUID> added; //nodes that does not exist on the other model
 	std::vector<repo::lib::RepoUUID> modified; //nodes that exist on the other model but it is modified.
 	std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher > correspondence;
 };
 
-typedef struct{
+typedef struct {
 	std::vector<float> ambient;
 	std::vector<float> diffuse;
 	std::vector<float> specular;
@@ -114,7 +114,7 @@ typedef struct{
 		std::stringstream ss;
 		ss.precision(17);
 		for (const auto &n : ambient) {
-			ss << std::fixed <<  n;
+			ss << std::fixed << n;
 		}
 		for (const auto &n : diffuse) {
 			ss << std::fixed << n;
@@ -138,7 +138,7 @@ typedef struct{
 	}
 }repo_material_t;
 
-typedef struct{
+typedef struct {
 	float r;
 	float g;
 	float b;

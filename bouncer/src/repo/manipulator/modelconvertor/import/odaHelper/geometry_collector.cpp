@@ -268,6 +268,7 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 	auto dummyOutline = std::vector<std::vector<float>>();
 
 	std::unordered_map<std::string, repo::core::model::TransformationNode*> layerToTrans;
+	std::unordered_map < repo::core::model::MetadataNode*, std::vector<repo::lib::RepoUUID>>  metaNodeToParents;
 
 	int numEntries = 0;
 	for (const auto& meshGroupEntry : meshData) {
@@ -345,7 +346,17 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 					);
 
 					if (idToMeta.find(meshGroupEntry.first) != idToMeta.end()) {
-						metaNodes.insert(createMetaNode(meshGroupEntry.first, { partialObject ? parentId : meshNode.getSharedID() }, idToMeta[meshGroupEntry.first]));
+						auto itPtr = elementToMetaNode.find(meshGroupEntry.first);
+						auto metaParent = partialObject ? parentId : meshNode.getSharedID();
+						if (itPtr == elementToMetaNode.end()) {
+							auto metaNode = createMetaNode(meshGroupEntry.first, {}, idToMeta[meshGroupEntry.first]);
+							elementToMetaNode[meshGroupEntry.first] = metaNode;
+							metaNodes.insert(metaNode);
+							metaNodeToParents[metaNode] = { metaParent };
+						}
+						else {
+							metaNodeToParents[itPtr->second].push_back(metaParent);
+						}
 					}
 
 					if (matToMeshes.find(meshData.matIdx) == matToMeshes.end()) {
@@ -357,6 +368,11 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 				}
 			}
 		}
+	}
+	for (auto &metaEntry : metaNodeToParents) {
+		auto metaNode = metaEntry.first;
+		auto parentSet = metaEntry.second;
+		*metaNode = metaNode->cloneAndAddParent(parentSet);
 	}
 
 	transNodes.insert(new repo::core::model::TransformationNode(root));
@@ -378,7 +394,14 @@ repo::core::model::TransformationNode*  GeometryCollector::createTransNode(
 {
 	auto transNode = new repo::core::model::TransformationNode(repo::core::model::RepoBSONFactory::makeTransformationNode(repo::lib::RepoMatrix(), name, { parentId }));
 	if (idToMeta.find(id) != idToMeta.end()) {
-		metaNodes.insert(createMetaNode(name, transNode->getSharedID(), idToMeta[id]));
+		if (elementToMetaNode.find(id) == elementToMetaNode.end()) {
+			auto metaNode = createMetaNode(name, transNode->getSharedID(), idToMeta[id]);
+			metaNodes.insert(metaNode);
+			elementToMetaNode[id] = metaNode;
+		}
+		else {
+			*elementToMetaNode[id] = elementToMetaNode[id]->cloneAndAddParent(transNode->getSharedID());
+		}
 	}
 	return transNode;
 }

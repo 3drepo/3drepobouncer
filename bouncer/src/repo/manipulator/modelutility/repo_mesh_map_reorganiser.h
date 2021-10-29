@@ -18,9 +18,9 @@
 #include <unordered_map>
 #include "../../core/model/bson/repo_node_mesh.h"
 
-namespace repo{
-	namespace manipulator{
-		namespace modelutility{
+namespace repo {
+	namespace manipulator {
+		namespace modelutility {
 			class MeshMapReorganiser
 			{
 			public:
@@ -82,20 +82,20 @@ namespace repo{
 					std::vector<float> &maxBox,
 					const size_t &nVertices,
 					const size_t &nFaces
-					);
+				);
 
 				void newMatMapEntry(
 					const repo_mesh_mapping_t &mapping,
 					const size_t        &sVertices,
 					const size_t        &sFaces
-					);
+				);
 
 				void completeLastMatMapEntry(
 					const size_t        &eVertices,
 					const size_t        &eFaces,
 					const std::vector<float>  &minBox = std::vector<float>(),
 					const std::vector<float>  &maxBox = std::vector<float>()
-					);
+				);
 
 				/**
 				* The beginning function for the whole process.
@@ -132,10 +132,11 @@ namespace repo{
 				void startSubMesh(
 					repo_mesh_mapping_t &mapping,
 					const repo::lib::RepoUUID      &meshID,
+					const repo::lib::RepoUUID      &sharedID,
 					const repo::lib::RepoUUID      &matID,
 					const size_t        &sVertices,
 					const size_t        &sFaces
-					);
+				);
 
 				/**
 				* Update the given bounding boxes given the current sub mesh's bounding boxes
