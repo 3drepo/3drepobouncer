@@ -24,7 +24,7 @@
 
 #include "repo_optimizer_trans_reduction.h"
 #include "../../core/model/bson/repo_node_transformation.h"
-#include "../modeloptimizer/repo_optimizer_ifc.h"
+#include <ifcUtils/repo_ifc_utils_constants.h>
 
 using namespace repo::manipulator::modeloptimizer;
 
@@ -112,7 +112,7 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 	*/
 	std::vector<repo::core::model::RepoNode*> transParents =
 		scene->getParentNodesFiltered(gType,
-		mesh, repo::core::model::NodeType::TRANSFORMATION);
+			mesh, repo::core::model::NodeType::TRANSFORMATION);
 
 	if (transParents.size() == 1)
 	{
@@ -137,16 +137,16 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 				{
 					switch (child->getTypeAsEnum())
 					{
-						case repo::core::model::NodeType::TRANSFORMATION:
-							++transSiblingCount;
-							break;
-						case repo::core::model::NodeType::MESH:
-							meshVector.push_back(child);
-							break;
-						case repo::core::model::NodeType::METADATA:
-							metaVector.push_back(child);
-							break;
-					}					
+					case repo::core::model::NodeType::TRANSFORMATION:
+						++transSiblingCount;
+						break;
+					case repo::core::model::NodeType::MESH:
+						meshVector.push_back(child);
+						break;
+					case repo::core::model::NodeType::METADATA:
+						metaVector.push_back(child);
+						break;
+					}
 				}
 
 				bool noTransSiblings = transSiblingCount == 0;
@@ -159,7 +159,6 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 
 				if (!strictMode && meshVector.size() || absorbTrans)
 				{
-
 					//connect all metadata to children mesh
 					for (const auto &meta : metaVector)
 					{
@@ -241,7 +240,7 @@ void TransformationReductionOptimizer::applyOptimOnCamera(
 	*/
 	std::vector<repo::core::model::RepoNode*> transParents =
 		scene->getParentNodesFiltered(gType,
-		camera, repo::core::model::NodeType::TRANSFORMATION);
+			camera, repo::core::model::NodeType::TRANSFORMATION);
 
 	if (transParents.size() == 1)
 	{
@@ -267,7 +266,7 @@ void TransformationReductionOptimizer::applyOptimOnCamera(
 
 				std::vector<repo::core::model::RepoNode*> granTransParents =
 					scene->getParentNodesFiltered(gType,
-					trans, repo::core::model::NodeType::TRANSFORMATION);
+						trans, repo::core::model::NodeType::TRANSFORMATION);
 
 				if (sameName && noMeshSiblings && noTransSiblings && granTransParents.size() == 1)
 				{
@@ -288,7 +287,7 @@ void TransformationReductionOptimizer::applyOptimOnCamera(
 							{
 								scene->abandonChild(gType,
 									parentSharedID, node, false, true);
-								if (!isIdentity && node->positionDependant()){
+								if (!isIdentity && node->positionDependant()) {
 									//Parent is not the identity matrix, we need to reapply the transformation if
 									//the node is position dependant
 									node->swap(node->cloneAndApplyTransformation(trans->getTransMatrix(false)));

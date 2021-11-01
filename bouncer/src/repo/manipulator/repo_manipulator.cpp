@@ -35,7 +35,6 @@
 #include "modelconvertor/export/repo_model_export_asset.h"
 #include "modelconvertor/export/repo_model_export_assimp.h"
 #include "modelconvertor/import/repo_metadata_import_csv.h"
-#include "modeloptimizer/repo_optimizer_ifc.h"
 #include "modelutility/repo_scene_manager.h"
 #include "modelutility/spatialpartitioning/repo_spatial_partitioner_rdtree.h"
 #include "modeloptimizer/repo_optimizer_trans_reduction.h"

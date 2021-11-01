@@ -37,4 +37,5 @@
 
 #define BOUNCER_VMINOR "19_2"
 #define REPO_MAX_OBJ_SIZE (16 * 1024 * 1024)
+
 //

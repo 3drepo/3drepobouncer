@@ -721,7 +721,7 @@ bool RepoScene::commitRevisionNode(
 	if (newRevNode)
 	{
 		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, BSON(REPO_NODE_REVISION_LABEL_TIMESTAMP << -1));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON("metadata.IFC GUID" << 1 << REPO_NODE_LABEL_PARENTS << 1));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON("metadata.key" << 1 << REPO_LABEL_ID << 1));
 		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_LABEL_SHARED_ID << 1 << REPO_LABEL_TYPE << 1 << REPO_LABEL_ID << 1));
 		//Creation of the revision node will append unique id onto the filename (e.g. <uniqueID>chair.obj)
 		//we need to store the file in GridFS under the new name
