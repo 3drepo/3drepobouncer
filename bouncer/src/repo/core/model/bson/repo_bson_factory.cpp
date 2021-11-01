@@ -214,7 +214,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 		std::string key = sanitiseKey(entry.first);
 		std::string value = entry.second;
 
-		if (!key.empty() && !value.empty())
+		if (!key.empty() && !value.empty() && value.length() < REPO_NODE_META_MAX_VALUE_LENGTH && key.length() < REPO_NODE_META_MAX_VALUE_LENGTH)
 		{
 			RepoBSONBuilder metaEntryBuilder;
 			metaEntryBuilder.append(REPO_NODE_LABEL_META_KEY, key);
