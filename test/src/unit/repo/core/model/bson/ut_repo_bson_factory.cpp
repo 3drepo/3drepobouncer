@@ -282,24 +282,7 @@ TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
 	EXPECT_EQ(material2.getTypeAsEnum(), NodeType::MATERIAL);
 }
 
-TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
-{
-	RepoBSON data = BSON("something" << "Something else" << "something2" << "somethingelse2");
-	std::string mimeType = "application/x-mswrite";
-	std::string name = "MetaTest";
-
-	MetadataNode metaNode = RepoBSONFactory::makeMetaDataNode(data, mimeType, name);
-
-	EXPECT_FALSE(metaNode.isEmpty());
-	EXPECT_EQ(name, metaNode.getName());
-	EXPECT_EQ(metaNode.getTypeAsEnum(), NodeType::METADATA);
-
-	EXPECT_EQ(mimeType, metaNode.getStringField(REPO_LABEL_MEDIA_TYPE));
-
-	EXPECT_EQ(data.toString(), metaNode.getObjectField(REPO_NODE_LABEL_METADATA).toString());
-}
-
-TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest2)
+TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest1)
 {
 	std::vector<std::string> keys({ "one", "two", "three", "four", "five" }), values({ "!", "!!", "!!!", "!!!!", "!!!!!" });
 
