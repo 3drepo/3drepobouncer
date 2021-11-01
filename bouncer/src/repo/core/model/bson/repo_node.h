@@ -23,10 +23,10 @@
 #include "repo_bson.h"
 #include "../../../lib/datastructure/repo_matrix.h"
 
-namespace repo{
-	namespace core{
-		namespace model{
-			enum class NodeType{
+namespace repo {
+	namespace core {
+		namespace model {
+			enum class NodeType {
 				CAMERA, MATERIAL, MESH, METADATA, REFERENCE,
 				REVISION, TEXTURE, TRANSFORMATION, UNKNOWN
 			};
@@ -97,6 +97,19 @@ namespace repo{
 
 				/**
 				* Create a new object with this object's values,
+				* and add another parent into this new object
+				* NOTE: this object is unchanged!
+				* @param parentID the shared uuid of the parent
+				* @param newUniqueID assign a new unique ID
+				* @param newSharedID assign a new shared ID
+				* @param overwrite overwrite the current parenting information
+				* @return new object with the field updated
+				*/
+				RepoNode cloneAndAddRevId(
+					const repo::lib::RepoUUID &revId) const;
+
+				/**
+				* Create a new object with this object's values,
 				* and add other parents into this new object
 				* NOTE: this object is unchanged!
 				* @param parentID the shared uuid of the parent
@@ -127,7 +140,7 @@ namespace repo{
 				RepoNode cloneAndChangeName(
 					const std::string &newName,
 					const bool &newUniqueID = true
-					) const
+				) const
 				{
 					return cloneAndAddFields(new RepoBSON(BSON(REPO_NODE_LABEL_NAME << newName)), newUniqueID);
 				}
@@ -194,7 +207,7 @@ namespace repo{
 				* Get the unique ID from the object
 				* @return returns the unique ID of the object
 				*/
-				repo::lib::RepoUUID getUniqueID() const{ return getUUIDField(REPO_NODE_LABEL_ID); }
+				repo::lib::RepoUUID getUniqueID() const { return getUUIDField(REPO_NODE_LABEL_ID); }
 
 				/**
 				* Get the list of parent IDs
@@ -216,10 +229,10 @@ namespace repo{
 				{
 					repo::lib::RepoUUID sharedID = getSharedID();
 
-					if (sharedID == other.getSharedID()){
+					if (sharedID == other.getSharedID()) {
 						return getUniqueID() < other.getUniqueID();
 					}
-					else{
+					else {
 						return sharedID < other.getSharedID();
 					}
 				}
@@ -245,10 +258,10 @@ namespace repo{
 				{
 					repo::lib::RepoUUID sharedID = getSharedID();
 
-					if (sharedID == other.getSharedID()){
+					if (sharedID == other.getSharedID()) {
 						return getUniqueID() > other.getUniqueID();
 					}
-					else{
+					else {
 						return sharedID > other.getSharedID();
 					}
 				}

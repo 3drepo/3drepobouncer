@@ -937,6 +937,7 @@ namespace repo {
 				bool commitNodes(
 					repo::core::handler::AbstractDatabaseHandler *handler,
 					const std::vector<repo::lib::RepoUUID> &nodesToCommit,
+					const repo::lib::RepoUUID &revId,
 					const GraphType &gType,
 					std::string &errMsg);
 
@@ -987,6 +988,7 @@ namespace repo {
 				*/
 				bool commitSceneChanges(
 					repo::core::handler::AbstractDatabaseHandler *handler,
+					const repo::lib::RepoUUID &revId,
 					std::string &errMsg);
 
 				/**
