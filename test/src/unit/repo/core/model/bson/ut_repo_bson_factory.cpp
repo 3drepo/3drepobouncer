@@ -282,7 +282,7 @@ TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
 	EXPECT_EQ(material2.getTypeAsEnum(), NodeType::MATERIAL);
 }
 
-TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest1)
+TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 {
 	std::vector<std::string> keys({ "one", "two", "three", "four", "five" }), values({ "!", "!!", "!!!", "!!!!", "!!!!!" });
 
@@ -300,8 +300,11 @@ TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest1)
 
 	for (uint32_t i = 0; i < keys.size(); ++i)
 	{
-		ASSERT_TRUE(metaBSON.hasField(keys[i]));
-		EXPECT_EQ(values[i], metaBSON.getStringField(keys[i]));
+		auto index = std::to_string(i);
+		ASSERT_TRUE(metaBSON.hasField(index));
+		auto metaEntry = metaBSON.getObjectField(index);
+		EXPECT_EQ(metaEntry.getStringField(REPO_NODE_LABEL_META_KEY), keys[i]);
+		EXPECT_EQ(metaEntry.getStringField(REPO_NODE_LABEL_META_VALUE), values[i]);
 	}
 }
 
