@@ -24,11 +24,11 @@
 using namespace repo::core::model;
 
 RevisionNode::RevisionNode(RepoBSON bson) :
-RepoNode(bson)
+	RepoNode(bson)
 {
 }
 RevisionNode::RevisionNode() :
-RepoNode()
+	RepoNode()
 {
 }
 
@@ -96,26 +96,6 @@ std::vector<double> RevisionNode::getCoordOffset() const
 
 	return offset;
 }
-
-std::vector<repo::lib::RepoUUID> RevisionNode::getCurrentIDs() const
-{
-	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS);
-}
-//
-//std::vector<repo::lib::RepoUUID> RevisionNode::getAddedIDs() const
-//{
-// 	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_ADDED_SHARED_IDS);
-//}
-//
-//std::vector<repo::lib::RepoUUID> RevisionNode::getModifiedIDs() const
-//{
-//	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_MODIFIED_SHARED_IDS);
-//}
-//
-//std::vector<repo::lib::RepoUUID> RevisionNode::getDeletedIDs() const
-//{
-//	return getUUIDFieldArray(REPO_NODE_REVISION_LABEL_DELETED_SHARED_IDS);
-//}
 
 std::vector<std::string> RevisionNode::getOrgFiles() const
 {

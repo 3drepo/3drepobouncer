@@ -214,7 +214,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 		std::string key = sanitiseKey(entry.first);
 		std::string value = entry.second;
 
-		if (!key.empty() && !value.empty() && value.length() < REPO_NODE_META_MAX_VALUE_LENGTH && key.length() < REPO_NODE_META_MAX_VALUE_LENGTH)
+		if (!key.empty() && !value.empty())
 		{
 			RepoBSONBuilder metaEntryBuilder;
 			metaEntryBuilder.append(REPO_NODE_LABEL_META_KEY, key);
@@ -795,7 +795,6 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 	const std::string			   &user,
 	const repo::lib::RepoUUID                 &branch,
 	const repo::lib::RepoUUID                 &id,
-	const std::vector<repo::lib::RepoUUID>    &currentNodes,
 	const std::vector<std::string> &files,
 	const std::vector<repo::lib::RepoUUID>    &parent,
 	const std::vector<double>    &worldOffset,
@@ -829,12 +828,6 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 	//--------------------------------------------------------------------------
 	// Timestamp
 	builder.appendTimeStamp(REPO_NODE_REVISION_LABEL_TIMESTAMP);
-
-	//--------------------------------------------------------------------------
-
-	// Current Unique IDs
-	if (currentNodes.size() > 0)
-		builder.appendArray(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS, currentNodes);
 
 	//--------------------------------------------------------------------------
 	// Shift for world coordinates

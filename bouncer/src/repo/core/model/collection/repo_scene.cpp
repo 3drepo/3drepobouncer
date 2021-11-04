@@ -696,14 +696,6 @@ bool RepoScene::commitRevisionNode(
 		parent.push_back(revNode->getUniqueID());
 	}
 
-	std::vector<repo::lib::RepoUUID> uniqueIDs;
-
-	// Using a more standard transform to cope with use of unordered_map
-	for (auto& keyVal : graph.nodesByUniqueID)
-	{
-		uniqueIDs.push_back(keyVal.first);
-	}
-
 	repoTrace << "Committing Revision Node....";
 
 	std::vector<std::string> fileNames;
@@ -714,7 +706,7 @@ bool RepoScene::commitRevisionNode(
 	}
 
 	newRevNode =
-		new RevisionNode(RepoBSONFactory::makeRevisionNode(userName, branch, revId, uniqueIDs,
+		new RevisionNode(RepoBSONFactory::makeRevisionNode(userName, branch, revId,
 			fileNames, parent, worldOffset, message, tag));
 	*newRevNode = newRevNode->cloneAndUpdateStatus(RevisionNode::UploadStatus::GEN_DEFAULT);
 
@@ -863,7 +855,7 @@ bool RepoScene::commitStash(
 	/*
 	* Don't bother if:
 	* 1. root node is null (not instantiated)
-	* 2. revnode is null (unoptimised scene graph needs to be commited first
+	* 2. revnode is null (unoptimised scene graph needs to be commited first)
 	*/
 
 	repo::lib::RepoUUID rev;

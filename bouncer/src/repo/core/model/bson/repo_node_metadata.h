@@ -32,7 +32,6 @@ namespace repo {
 #define REPO_NODE_LABEL_METADATA     			"metadata"
 #define REPO_NODE_LABEL_META_KEY     			"key"
 #define REPO_NODE_LABEL_META_VALUE     			"value"
-#define REPO_NODE_META_MAX_VALUE_LENGTH         1024
 			//------------------------------------------------------------------------------
 
 			class REPO_API_EXPORT MetadataNode :public RepoNode

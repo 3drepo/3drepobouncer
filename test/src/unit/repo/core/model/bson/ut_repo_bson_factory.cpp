@@ -445,11 +445,6 @@ TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 {
 	std::string owner = "revOwner";
 	repo::lib::RepoUUID branchID = repo::lib::RepoUUID::createUUID();
-	std::vector<repo::lib::RepoUUID> currentNodes;
-	size_t currCount = 10;
-	currentNodes.reserve(currCount);
-	for (size_t i = 0; i < currCount; ++i)
-		currentNodes.push_back(repo::lib::RepoUUID::createUUID());
 	std::vector<std::string> files = { "test1", "test5" };
 	std::vector<repo::lib::RepoUUID> parents;
 	size_t parentCount = 5;
@@ -461,7 +456,7 @@ TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 	std::vector<double> offset = { std::rand() / 100., std::rand() / 100., std::rand() / 100. };
 	repo::lib::RepoUUID revId = repo::lib::RepoUUID::createUUID();
 
-	RevisionNode rev = RepoBSONFactory::makeRevisionNode(owner, branchID, revId, currentNodes, files, parents, offset, message, tag);
+	RevisionNode rev = RepoBSONFactory::makeRevisionNode(owner, branchID, revId, files, parents, offset, message, tag);
 	EXPECT_EQ(owner, rev.getAuthor());
 	EXPECT_EQ(branchID, rev.getSharedID());
 	EXPECT_EQ(revId, rev.getUniqueID());
@@ -470,13 +465,12 @@ TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 	//fileNames changes after it gets into the bson, just check the size
 	EXPECT_EQ(files.size(), rev.getOrgFiles().size());
 
-	EXPECT_TRUE(compareStdVectors(currentNodes, rev.getCurrentIDs()));
 	EXPECT_TRUE(compareStdVectors(parents, rev.getParentIDs()));
 	EXPECT_TRUE(compareStdVectors(offset, rev.getCoordOffset()));
 
 	//ensure no random parent being generated
 	std::vector<repo::lib::RepoUUID> emptyParents;
-	RevisionNode rev2 = RepoBSONFactory::makeRevisionNode(owner, branchID, revId, currentNodes, files, emptyParents, offset, message, tag);
+	RevisionNode rev2 = RepoBSONFactory::makeRevisionNode(owner, branchID, revId, files, emptyParents, offset, message, tag);
 	EXPECT_EQ(0, rev2.getParentIDs().size());
 }
 
