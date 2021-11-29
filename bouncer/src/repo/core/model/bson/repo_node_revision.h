@@ -31,11 +31,6 @@
 #define REPO_NODE_REVISION_LABEL_MESSAGE					"desc" //!< Message
 #define REPO_NODE_REVISION_LABEL_TAG						"tag" //!< Tag
 #define REPO_NODE_REVISION_LABEL_TIMESTAMP				"timestamp" //!< Timestamp
-#define REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS		"current" //!< Current UIDs
-#define REPO_NODE_REVISION_LABEL_ADDED_SHARED_IDS		"added" //!< Added SIDs
-#define REPO_NODE_REVISION_LABEL_DELETED_SHARED_IDS		"deleted" //!< Deleted SIDs
-#define REPO_NODE_REVISION_LABEL_MODIFIED_SHARED_IDS		"modified" //!< Modified SIDs
-#define REPO_NODE_REVISION_LABEL_UNMODIFIED_SHARED_IDS	"unmodified" //!< Unmodified SIDs
 #define REPO_NODE_REVISION_LABEL_BRANCH_MASTER			"master" //!< Master branch
 #define REPO_NODE_REVISION_LABEL_REF_FILE               "rFile" //!< Reference file
 #define REPO_NODE_REVISION_LABEL_INCOMPLETE             "incomplete"

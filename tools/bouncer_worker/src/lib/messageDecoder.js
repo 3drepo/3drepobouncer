@@ -47,6 +47,7 @@ const messageDecoder = (cmd) => {
 					database: args[1],
 					model: args[2],
 					toyModelID: args[3],
+					user: args[1],
 					skipPostProcessing: (args[4] && JSON.parse(args[4])) || {},
 				};
 				break;

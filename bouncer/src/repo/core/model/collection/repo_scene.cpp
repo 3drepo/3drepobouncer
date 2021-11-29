@@ -880,7 +880,10 @@ bool RepoScene::commitStash(
 		updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_REPO_STASH);
 		//Add rev id onto the stash nodes before committing.
 		std::vector<repo::lib::RepoUUID> nodes;
-
+		for (auto &pair : stashGraph.nodesByUniqueID)
+		{
+			nodes.push_back(pair.first);
+		}
 		auto success = commitNodes(handler, nodes, rev, GraphType::OPTIMIZED, errMsg);
 
 		if (success)
@@ -1228,10 +1231,10 @@ bool RepoScene::loadScene(
 		if (!loadRevision(handler, errMsg)) return false;
 	}
 
-	//Get the relevant nodes from the scene graph using the unique IDs stored in this revision node
-	RepoBSON idArray = revNode->getObjectField(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS);
-	std::vector<RepoBSON> nodes = handler->findAllByUniqueIDs(
-		databaseName, projectName + "." + REPO_COLLECTION_SCENE, idArray, !loadExtFiles);
+	RepoBSONBuilder builder;
+	builder.append(REPO_NODE_STASH_REF, revNode->getUniqueID());
+	std::vector<RepoBSON> nodes = handler->findAllByCriteria(
+		databaseName, projectName + "." + REPO_COLLECTION_SCENE, builder.obj());
 
 	repoInfo << "# of nodes in this unoptimised scene = " << nodes.size();
 

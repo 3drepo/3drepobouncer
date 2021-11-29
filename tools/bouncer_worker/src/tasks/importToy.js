@@ -199,9 +199,9 @@ const renameStash = (db, database, modelId, bucketName) => {
 
 const renameGroups = async (db, database, modelId) => {
 	const subModelNameToOldID = {
-		Lego_House_Architecture: '1cac0310-e3cc-11ea-bc6b-69e466be9639',
-		Lego_House_Landscape: '1cab8de0-e3cc-11ea-bc6b-69e466be9639',
-		Lego_House_Structure: '1cac5130-e3cc-11ea-bc6b-69e466be9639',
+		Lego_House_Architecture: 'cac0c1c0-4eb5-11ec-934b-b1a3427c3c40',
+		Lego_House_Landscape: 'cac332c0-4eb5-11ec-934b-b1a3427c3c40',
+		Lego_House_Structure: 'cac332c1-4eb5-11ec-934b-b1a3427c3c40',
 	};
 
 	const collection = db.collection(`${modelId}.groups`);
