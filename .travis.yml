@@ -30,8 +30,7 @@ matrix:
           - sudo apt-get install -y gnupg mongodb-org=5.0.2 mongodb-org-database=5.0.2 mongodb-org-server=5.0.2 mongodb-org-shell=5.0.2 mongodb-org-tools=5.0.2
           - sudo systemctl daemon-reload && sudo systemctl start mongod && echo $(mongod --version)
           - mkdir testData && cd testData
-          - svn ls --no-auth-cache --username $TESTUSER --password $TESTPW https://github.com/3drepo/tests/branches/
-          - svn --no-auth-cache export --username $TESTUSER --password $TESTPW https://github.com/3drepo/tests/trunk/cplusplus/bouncer
+          - svn --no-auth-cache export --username $TESTUSER --password $TESTPW https://github.com/3drepo/tests/branches/ISSUE_514_tests/cplusplus/bouncer
           - cd ../
           - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
           - mongo admin testData/bouncer/createUser.js
