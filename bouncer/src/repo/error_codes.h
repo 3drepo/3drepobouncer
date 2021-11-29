@@ -87,3 +87,5 @@
 #define REPOERR_GEOMETRY_ERROR 34
 //Used in bouncer worker only
 #define REPOERR_UNITY_LICENSE_INVALID 35
+//When a component fails a 3drepo license check (currently used by bouncer/asset bundle generator)
+#define ERRCODE_REPO_LICENCE_INVALID 36
