@@ -18,7 +18,7 @@
 const { callbackQueueSpecified, unityQueueSpecified, logDirExists } = require('./common');
 const { config } = require('../lib/config');
 const { generateAssetBundles, validateUnityConfigurations } = require('../tasks/unityEditor');
-const { ERRCODE_ARG_FILE_FAIL, ERRCODE_UNITY_LICENCE_INVALID, ERRCODE_UNITY_ABC_LICENCE_INVALID } = require('../constants/errorCodes');
+const { ERRCODE_ARG_FILE_FAIL, ERRCODE_UNITY_LICENCE_INVALID, ERRCODE_REPO_LICENCE_INVALID } = require('../constants/errorCodes');
 const { UNITY_PROCESSING } = require('../constants/statuses');
 const logger = require('../lib/logger');
 const Utils = require('../lib/utils');
@@ -52,8 +52,8 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
         await Utils.sleep(config.rabbitmq.maxWaitTimeMS);
         throw err;
         break;
-      case ERRCODE_UNITY_ABC_LICENCE_INVALID:
-        logger.error(`Failed to generate asset bundle, license activation failed: ${err}`, logLabel);
+      case ERRCODE_REPO_LICENCE_INVALID:
+        logger.error(`Failed to generate asset bundle, 3drepo license activation failed: ${err}`, logLabel);
         returnMessage.value = err;
         break;
       default:
