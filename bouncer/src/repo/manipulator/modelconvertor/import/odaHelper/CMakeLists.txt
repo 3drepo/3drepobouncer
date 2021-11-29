@@ -13,6 +13,7 @@ if(ODA_SUPPORT)
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_dgn.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_dwg.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_nwd.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_rvt.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/geometry_collector.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/helper_functions.cpp
@@ -28,6 +29,7 @@ if(ODA_SUPPORT)
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor.h
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_dgn.h
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_dwg.h
+		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_nwd.h
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_rvt.h
 		${CMAKE_CURRENT_SOURCE_DIR}/geometry_collector.h
 		${CMAKE_CURRENT_SOURCE_DIR}/helper_functions.h
