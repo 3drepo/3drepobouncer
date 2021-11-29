@@ -190,7 +190,7 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 
 	std::unordered_map<std::string, std::string> metadataMap;
 
-	for (int i = 0; i < keysLen < valLen ? keysLen : valLen; ++i) {
+	for (int i = 0; i < (keysLen < valLen ? keysLen : valLen); ++i) {
 		metadataMap[keys[i]] = values[i];
 	}
 

@@ -297,14 +297,18 @@ TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 	auto metaBSON = metaNode.getObjectField(REPO_NODE_LABEL_METADATA);
 
 	ASSERT_FALSE(metaBSON.isEmpty());
-
 	for (uint32_t i = 0; i < keys.size(); ++i)
 	{
 		auto index = std::to_string(i);
 		ASSERT_TRUE(metaBSON.hasField(index));
 		auto metaEntry = metaBSON.getObjectField(index);
-		EXPECT_EQ(metaEntry.getStringField(REPO_NODE_LABEL_META_KEY), keys[i]);
-		EXPECT_EQ(metaEntry.getStringField(REPO_NODE_LABEL_META_VALUE), values[i]);
+		auto key = metaEntry.getStringField(REPO_NODE_LABEL_META_KEY);
+		auto value = metaEntry.getStringField(REPO_NODE_LABEL_META_VALUE);
+		auto keyIt = std::find(keys.begin(), keys.end(), key);
+		ASSERT_NE(keyIt, keys.end());
+		auto vectorIdx = keyIt - keys.begin();
+		EXPECT_EQ(key, keys[vectorIdx]);
+		EXPECT_EQ(value, values[vectorIdx]);
 	}
 }
 
