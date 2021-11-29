@@ -18,7 +18,7 @@
 const fs = require('fs');
 const readline = require('readline');
 const { config, configPath } = require('../lib/config');
-const { ERRCODE_BUNDLE_GEN_FAIL, ERRCODE_UNITY_LICENCE_INVALID } = require('../constants/errorCodes');
+const { ERRCODE_BUNDLE_GEN_FAIL, ERRCODE_UNITY_LICENCE_INVALID, ERRCODE_UNITY_ABC_LICENCE_INVALID } = require('../constants/errorCodes');
 const run = require('../lib/runCommand');
 const logger = require('../lib/logger');
 const { getCurrentDateTimeAsString } = require('../lib/utils');
@@ -75,8 +75,16 @@ UnityHandler.generateAssetBundles = async (database, model, rid, logDir, process
 		return retVal;
 	} catch (err) {
 		logger.info(`Failed to execute unity command: ${err}`, logLabel);
-		const invalidLicence = err === ERRCODE_UNITY_LICENCE_INVALID || await checkLicenceError(unityLog);
-		throw invalidLicence ? ERRCODE_UNITY_LICENCE_INVALID : ERRCODE_BUNDLE_GEN_FAIL;
+    switch (err) {
+      case ERRCODE_UNITY_LICENCE_INVALID:
+        throw ERRCODE_UNITY_LICENCE_INVALID;
+      case ERRCODE_UNITY_ABC_LICENCE_INVALID:
+        throw ERRCODE_UNITY_ABC_LICENCE_INVALID;
+      default:
+        // double check the unity license on linux scenario 
+        const invalidLicence = await checkLicenceError(unityLog);
+        throw invalidLicence ? ERRCODE_UNITY_LICENCE_INVALID : ERRCODE_BUNDLE_GEN_FAIL;
+    }
 	}
 };
 
