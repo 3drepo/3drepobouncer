@@ -33,6 +33,7 @@ endif()
 option (REPO_BUILD_COVERAGE "Building with coverage report" OFF)
 option (ODA_SUPPORT "If ODA library is present" OFF)
 option (SYNCHRO_SUPPORT "If Synchro library is present" OFF)
+option (CRYPTOLENS_LICENSE "Build with cryptolens license check" OFF)
 option (VALID_UNTIL "Set timestamp for how long (sec since epoch) this library should be valid for (-1 for unlimited) " -1)
 if(REPO_BUILD_COVERAGE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 --coverage")
@@ -111,6 +112,13 @@ if (S3_SUPPORT)
 	if(NOT ${AWSSDK_FOUND})
 		message(FATAL_ERROR "Cannot find AWS SDK")
 	endif()
+endif()
+
+#===================== CRYPTOLENS ============================
+
+if (CRYPTOLENS_LICENSE)
+	add_definitions(-DCRYPTOLENS_LICENSE)
+	find_package(CRYPTOLENS REQUIRED)
 endif()
 
 #================COMPILE 3D REPO BOUNCER ==============
