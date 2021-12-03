@@ -129,7 +129,8 @@ RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 }
 
 bool RepoConfig::validate() const {
-	const bool dbOk = !dbConf.addr.empty() && (dbConf.username.empty() == dbConf.password.empty()) && dbConf.port > 0;
+	const bool validDBConn = !dbConf.connString.empty() || (!dbConf.addr.empty() && dbConf.port > 0);
+	const bool dbOk = validDBConn && (dbConf.username.empty() == dbConf.password.empty());
 	const bool s3Ok = !s3Conf.configured || (!s3Conf.bucketName.empty() && !s3Conf.bucketRegion.empty());
 	const bool fsOk = !fsConf.configured || (!fsConf.dir.empty() && fsConf.nLevel >= 0);
 
