@@ -27,7 +27,6 @@
 #include <boost/filesystem.hpp>
 using namespace repo::lib;
 
-
 RepoConfig::RepoConfig(
 	const std::string &databaseAddr,
 	const int &port,
@@ -37,6 +36,18 @@ RepoConfig::RepoConfig(
 {
 	dbConf.addr = databaseAddr;
 	dbConf.port = port;
+	dbConf.username = username;
+	dbConf.password = password;
+	dbConf.pwDigested = pwDigested;
+}
+
+RepoConfig::RepoConfig(
+	const std::string &connString,
+	const std::string &username,
+	const std::string &password,
+	const bool pwDigested) : defaultStorage(FileStorageEngine::GRIDFS)
+{
+	dbConf.connString = connString;
 	dbConf.username = username;
 	dbConf.password = password;
 	dbConf.pwDigested = pwDigested;
@@ -74,7 +85,7 @@ RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 	catch (const std::exception &e) {
 		throw RepoException("Failed to read configuration file [" + filePath + "] : " + e.what());
 	}
-	
+
 	//Read database configurations
 	auto dbTree = jsonTree.get_child_optional("db");
 
@@ -100,7 +111,7 @@ RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 	if (s3Tree) {
 		auto bucketName = s3Tree->get<std::string>("bucket_name", "");
 		auto bucketRegion = s3Tree->get<std::string>("bucket_region", "");
-		if(!bucketName.empty() && !bucketRegion.empty())
+		if (!bucketName.empty() && !bucketRegion.empty())
 			config.configureS3(bucketName, bucketRegion, useAsDefault == "s3");
 	}
 
@@ -115,10 +126,9 @@ RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 	}
 
 	return config;
-
 }
 
-bool RepoConfig::validate() const{
+bool RepoConfig::validate() const {
 	const bool dbOk = !dbConf.addr.empty() && (dbConf.username.empty() == dbConf.password.empty()) && dbConf.port > 0;
 	const bool s3Ok = !s3Conf.configured || (!s3Conf.bucketName.empty() && !s3Conf.bucketRegion.empty());
 	const bool fsOk = !fsConf.configured || (!fsConf.dir.empty() && fsConf.nLevel >= 0);
