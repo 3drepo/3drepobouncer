@@ -95,14 +95,17 @@ RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 
 	auto dbAddr = dbTree->get<std::string>("dbhost", "");
 	auto dbPort = dbTree->get<int>("dbport", -1);
+	auto dbConn = dbTree->get<std::string>("connectionString", "");
 	auto username = dbTree->get<std::string>("username", "");
 	auto password = dbTree->get<std::string>("password", "");
 
-	if (dbAddr.empty() || dbPort == -1) {
+	auto useHostAndPort = !dbAddr.empty() && dbPort > 0;
+	if (!useHostAndPort && dbConn.empty()) {
 		throw RepoException("Database address and port not specified within configuration file.");
 	}
 
-	repo::lib::RepoConfig config = { dbAddr, dbPort, username, password };
+	repo::lib::RepoConfig config = useHostAndPort ? RepoConfig(dbAddr, dbPort, username, password) : RepoConfig(dbConn, username, password);
+
 	auto useAsDefault = jsonTree.get<std::string>("defaultStorage", "");
 
 	//Read S3 configurations if found
