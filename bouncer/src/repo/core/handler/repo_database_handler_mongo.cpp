@@ -74,6 +74,7 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 */
 MongoDatabaseHandler::~MongoDatabaseHandler()
 {
+	mongo::client::shutdown();
 	if (workerPool)
 		delete workerPool;
 }
