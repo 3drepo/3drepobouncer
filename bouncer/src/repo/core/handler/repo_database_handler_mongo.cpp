@@ -74,9 +74,9 @@ MongoDatabaseHandler::MongoDatabaseHandler(
 */
 MongoDatabaseHandler::~MongoDatabaseHandler()
 {
-	mongo::client::shutdown();
 	if (workerPool)
 		delete workerPool;
+	mongo::client::shutdown();
 }
 
 bool MongoDatabaseHandler::caseInsensitiveStringCompare(
