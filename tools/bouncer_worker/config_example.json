@@ -48,5 +48,6 @@
 	"processMonitoring" : {
 		"enabled" : false,
 		"memoryIntervalMS" : 10
-	}
+	},
+	"repoLicense": "xyz"
 }

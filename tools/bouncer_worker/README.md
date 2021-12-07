@@ -87,6 +87,7 @@ Bouncer worker takes in a JSON file with the following parameters.
   "unity": {
     "project": //location of AssetBundleCreator project
     "batPath": //path to buildBundle script.
-  }
+  },
+  repoLicense: //license string for license check (only required on builds that are license enforced)
 }
 ````
