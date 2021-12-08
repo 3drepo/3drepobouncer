@@ -23,7 +23,6 @@
 #include "datastructure/repo_uuid.h"
 #include "repo_exception.h"
 
-
 namespace cryptolens = ::cryptolens_io::v20190401;
 
 using Cryptolens = cryptolens::basic_Cryptolens<cryptolens::Configuration_Windows<cryptolens::MachineCodeComputer_static>>;
@@ -100,7 +99,11 @@ namespace Licensing
 				cryptolens::ActivateError error = cryptolens::ActivateError::from_reason(e.get_reason());
 				repoInfo << "- server error: " << error.what();
 				repoInfo << "- license check: false";
-				repoInfo << "- session not added to license ";
+				repoInfo << "- session not added to license";
+				//TODO: fix the assertion error here:
+				//bool hasEpired = (bool)license_key->check().has_expired(1000000000 * (uint64_t)std::time(0));
+				//repoInfo << "- session expired: " << hasEpired;
+				//repoInfo << "- licensed expires on: " << );
 				//TODO: make proper exception class for this
 				throw repo::lib::RepoValidityExpiredException();
 			}
@@ -114,10 +117,8 @@ namespace Licensing
 			repoInfo << "- session license ID: " << instanceId.toString();
 			repoInfo << "- server message: " << notes;
 			repoInfo << "- license check: true";
-			if(noUsedInsances > -1 && maxInstances >> -1)
-			{
-				repoInfo << "- instance usage: " << noUsedInsances << "/" << maxInstances;
-			}
+			if (noUsedInsances >= 0) repoInfo << "- activated instances: " << noUsedInsances;
+			if (maxInstances > 0) repoInfo << "- allowed instances: " << maxInstances;
 			repoInfo << "- session succesfully added to license";
 #endif
 		}
