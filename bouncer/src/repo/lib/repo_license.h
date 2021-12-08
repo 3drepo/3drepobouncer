@@ -58,17 +58,14 @@ namespace Licensing
 			// only run once 
 			if (!instanceId.isDefaultValue()) return;
 
-			// get the license string
 			licenseStr = GetLicenseString();
-
-			// attempt activation
 			cryptolens::Error e;
 			Cryptolens cryptolens_handle(e);
 
+			// setting up the handle
 			// seting the public key
 			cryptolens_handle.signature_verifier.set_modulus_base64(e, pubKeyModulus);
 			cryptolens_handle.signature_verifier.set_exponent_base64(e, pubKeyExponent);
-
 			// machine/instance id
 			// Using machine code to store the instance UUID instead, as per
 			// https://help.cryptolens.io/licensing-models/containers
@@ -96,28 +93,32 @@ namespace Licensing
 					10
 				);
 
-			// dealing with the result
+			// dealing with the error in activation
 			repoInfo << "****License activation summary****";
 			if (e)
 			{
 				cryptolens::ActivateError error = cryptolens::ActivateError::from_reason(e.get_reason());
 				repoInfo << "- server error: " << error.what();
 				repoInfo << "- license check: false";
-				//TODO: make proper exception class for this
 				repoInfo << "- session not added to license ";
+				//TODO: make proper exception class for this
 				throw repo::lib::RepoValidityExpiredException();
 			}
-
+			// printing out the result
+			std::string notes = license_key->get_notes().has_value() ? 
+				license_key->get_notes().value() : "";
+			int noUsedInsances = license_key->get_activated_machines().has_value() ? 
+				license_key->get_activated_machines()->size() : -1;
+			int maxInstances = license_key->get_maxnoofmachines().has_value() ? 
+				license_key->get_maxnoofmachines().value() : -1;
 			repoInfo << "- session license ID: " << instanceId.toString();
-			//repoInfo << "- server message: " << license_key->get_notes() ? *license_key->get_notes() : "";
+			repoInfo << "- server message: " << notes;
 			repoInfo << "- license check: true";
-			//repoInfo << "- instance usage: " << 
-			//	(license_key->get_activated_machines() ? license_key->get_activated_machines()->size() : 0)<<
-			//	"/" << 
-			//	(license_key->get_maxnoofmachines() ? *license_key->get_maxnoofmachines() : 0);
+			if(noUsedInsances > -1 && maxInstances >> -1)
+			{
+				repoInfo << "- instance usage: " << noUsedInsances << "/" << maxInstances;
+			}
 			repoInfo << "- session succesfully added to license";
-
-
 #endif
 		}
 
