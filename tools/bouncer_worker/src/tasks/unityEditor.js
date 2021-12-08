@@ -66,6 +66,10 @@ UnityHandler.generateAssetBundles = async (database, model, rid, logDir, process
 		unityLog,
 	];
 
+	if (config.repoLicense) {
+		process.env.REPO_LICENSE = config.repoLicense;
+	}
+
 	try {
 		const retVal = await run(unityCommand, unityCmdParams, { logLabel }, processInformation);
 		if (await checkLicenceError(unityLog)) {
@@ -75,16 +79,13 @@ UnityHandler.generateAssetBundles = async (database, model, rid, logDir, process
 		return retVal;
 	} catch (err) {
 		logger.info(`Failed to execute unity command: ${err}`, logLabel);
-    switch (err) {
-      case ERRCODE_UNITY_LICENCE_INVALID:
-        throw ERRCODE_UNITY_LICENCE_INVALID;
-      case ERRCODE_REPO_LICENCE_INVALID:
-        throw ERRCODE_REPO_LICENCE_INVALID;
-      default:
-        // double check the unity license on linux scenario 
-        const invalidLicence = await checkLicenceError(unityLog);
-        throw invalidLicence ? ERRCODE_UNITY_LICENCE_INVALID : ERRCODE_BUNDLE_GEN_FAIL;
-    }
+		switch (err) {
+			case ERRCODE_UNITY_LICENCE_INVALID:
+			case ERRCODE_REPO_LICENCE_INVALID:
+				throw err;
+			default:
+				throw await checkLicenceError(unityLog) ? ERRCODE_UNITY_LICENCE_INVALID : ERRCODE_BUNDLE_GEN_FAIL;
+		}
 	}
 };
 
