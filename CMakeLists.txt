@@ -117,8 +117,13 @@ endif()
 #===================== CRYPTOLENS ============================
 
 if (CRYPTOLENS_LICENSE)
-	add_definitions(-DCRYPTOLENS_LICENSE)
 	find_package(CRYPTOLENS REQUIRED)
+	add_definitions(-DREPO_LICENSE_CHECK)
+	add_definitions(-DLICENSE_RSA_PUB_KEY_MOD=$ENV{LICENSE_RSA_PUB_KEY_MOD})
+	add_definitions(-DLICENSE_RSA_PUB_KEY_EXP=$ENV{LICENSE_RSA_PUB_KEY_EXP})
+	add_definitions(-DLICENSE_AUTH_TOKEN=$ENV{LICENSE_AUTH_TOKEN})
+	add_definitions(-DLICENSE_PRODUCT_ID=$ENV{LICENSE_PRODUCT_ID})
+	add_definitions(-DLICENSE_TIMEOUT_SECONDS=$ENV{LICENSE_TIMEOUT_SECONDS})
 endif()
 
 #================COMPILE 3D REPO BOUNCER ==============
@@ -131,6 +136,7 @@ option (REPO_NO_GZIP "If zlib is not compiled into boost" OFF)
 
 add_definitions( -DWIN32_LEAN_AND_MEAN )
 
+#TODO: remove this once crypto works
 if(VALID_UNTIL GREATER 0)
 	message("setting software validity to ${VALID_UNTIL}")
 	add_definitions(-DVALID_UNTIL=${VALID_UNTIL})
