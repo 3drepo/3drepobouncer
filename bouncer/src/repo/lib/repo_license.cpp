@@ -17,3 +17,10 @@
 
 #include "repo_license.h"
 
+
+namespace Licensing
+{
+	repo::lib::RepoUUID LicenseValidator::instanceId;
+	std::string LicenseValidator::licenseStr;
+}
+
