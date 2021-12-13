@@ -40,6 +40,7 @@ RepoController::RepoController(
 
 RepoController::~RepoController()
 {
+	Licensing::LicenseValidator::RunDeactivation();
 	if (impl) delete impl;
 }
 
