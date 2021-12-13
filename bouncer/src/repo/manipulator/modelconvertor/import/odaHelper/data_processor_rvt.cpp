@@ -91,49 +91,58 @@ std::string DataProcessorRvt::translateMetadataValue(
 {
 	std::string strOut;
 	switch (val.type()) {
-	case OdTfVariant::kString:
+	case OdVariant::kVoid:
+		break;
+	case OdVariant::kString:
 		strOut = convertToStdString(val.getString());
 		break;
-	case OdTfVariant::kBool:
+	case OdVariant::kBool:
 		strOut = std::to_string(val.getBool());
 		break;
-	case OdTfVariant::kInt8:
+	case OdVariant::kInt8:
 		strOut = std::to_string(val.getInt8());
 		break;
-	case OdTfVariant::kInt16:
+	case OdVariant::kInt16:
 		strOut = std::to_string(val.getInt16());
 		break;
-	case OdTfVariant::kInt32:
+	case OdVariant::kInt32:
 		if (paramDef->getParameterType() == OdBm::ParameterType::YesNo)
 			(val.getInt32()) ? strOut = "Yes" : strOut = "No";
 		else
 			strOut = std::to_string(val.getInt32());
 		break;
-	case OdTfVariant::kInt64:
+	case OdVariant::kInt64:
 		strOut = std::to_string(val.getInt64());
 		break;
-	case OdTfVariant::kDouble:
+	case OdVariant::kDouble:
 	{
-		auto valWithUnits = convertToStdString(labelUtils->format(database, paramDef->getUnitType(), val.getDouble(), false));
+		auto valWithUnits = convertToStdString(labelUtils->format(database, paramDef->getSpecTypeId(), val.getDouble(), false));
 		std::size_t pos = valWithUnits.find(" ");
 		strOut = pos == std::string::npos ? valWithUnits : valWithUnits.substr(0, pos);
 	}
 	break;
+	case OdVariant::kAnsiString:
+		strOut = std::string(val.getAnsiString().c_str());
+		break;
 	case OdTfVariant::kDbStubPtr:
+
+		// A stub is effectively a pointer to another database, or built-in, object. We don't recurse these objects, but will try to extract
+		// their names or identities where possible (e.g. if a key pointed to a wall object, we would get the name of the wall object).
+
 		OdDbStub* stub = val.getDbStubPtr();
+		OdBmObjectId bmId = OdBmObjectId(stub);
 		if (stub)
 		{
-			OdBmObjectId rawValue = OdBmObjectId(stub);
+			OdDbHandle hdl = bmId.getHandle();
 			if (param == OdBm::BuiltInParameter::ELEM_CATEGORY_PARAM || param == OdBm::BuiltInParameter::ELEM_CATEGORY_PARAM_MT)
 			{
-				OdDbHandle hdl = rawValue.getHandle();
-				if (OdBmObjectId::isRegularHandle(hdl))
+				if (OdBmObjectId::isRegularHandle(hdl)) // A regular handle points to a database entry; if it is not regular, it is built-in.
 				{
 					strOut = std::to_string((OdUInt64)hdl);
 				}
 				else
 				{
-					OdBm::BuiltInCategory::Enum builtInValue = static_cast<OdBm::BuiltInCategory::Enum>((OdUInt64)rawValue.getHandle());
+					OdBm::BuiltInCategory::Enum builtInValue = static_cast<OdBm::BuiltInCategory::Enum>((OdUInt64)hdl);
 					auto category = labelUtils->getLabelFor(OdBm::BuiltInCategory::Enum(builtInValue));
 					if (!category.isEmpty()) {
 						strOut = convertToStdString(category);
@@ -145,11 +154,27 @@ std::string DataProcessorRvt::translateMetadataValue(
 			}
 			else
 			{
-				OdBmElementPtr elem = database->getObjectId(rawValue.getHandle()).safeOpenObject();
-				if (elem->getElementName() == OdString::kEmpty)
-					strOut = std::to_string((OdUInt64)rawValue.getHandle());
-				else
-					strOut = convertToStdString(elem->getElementName());
+				OdBmObjectPtr bmPtr = bmId.openObject();
+				if (!bmPtr.isNull()) 
+				{
+					// The object class is unknown - some superclasses we can handle explicitly.
+
+					auto bmPtrClass = bmPtr->isA();
+					if (!bmPtrClass->isKindOf(OdBmElement::desc())) 
+					{
+						OdBmElementPtr elem = bmPtr;
+						if (elem->getElementName() == OdString::kEmpty) {
+							strOut = std::to_string((OdUInt64)bmId.getHandle());
+						}
+						else {
+							strOut = convertToStdString(elem->getElementName());
+						}
+					}
+					else 
+					{
+						repoError << "Unsupported metadata value type (class) " << convertToStdString(bmPtrClass->name()) << " currently only OdBmElement's are supported.";
+					}
+				}
 			}
 		}
 	}
@@ -252,7 +277,7 @@ void DataProcessorRvt::convertTo3DRepoTriangle(
 std::string DataProcessorRvt::getLevel(OdBmElementPtr element, const std::string& name)
 {
 	auto levelId = element->getAssocLevelId();
-	if (levelId.isValid())
+	if (levelId.isValid() && !levelId.isNull()) // (Opening a valid, null pointer will result in an exception)
 	{
 		auto levelObject = levelId.safeOpenObject();
 		if (!levelObject.isNull())
@@ -264,7 +289,7 @@ std::string DataProcessorRvt::getLevel(OdBmElementPtr element, const std::string
 	}
 
 	auto owner = element->getOwningElementId();
-	if (owner.isValid())
+	if (owner.isValid() && !owner.isNull())
 	{
 		auto object = owner.openObject();
 		if (!object.isNull())
@@ -345,518 +370,760 @@ void DataProcessorRvt::initLabelUtils() {
 	}
 }
 
-std::string DataProcessorRvt::unitsToString(const OdBm::DisplayUnitType::Enum &units) {
-	switch (units) {
-	case  OdBm::DisplayUnitType::Enum::DUT_UNDEFINED:
-	case  OdBm::DisplayUnitType::Enum::DUT_CUSTOM:
-	case  OdBm::DisplayUnitType::Enum::DUT_GENERAL:
-	case  OdBm::DisplayUnitType::Enum::DUT_FIXED:
-	case OdBm::DisplayUnitType::Enum::DUT_CURRENCY:
+boost::optional<std::string> DataProcessorRvt::unitsToString(const OdBmForgeTypeId& units) {
+	if (units.isEmpty()) { // Use if not if..else in this function because otherwise we reach compiler limits on nested blocks
 		return std::string();
-	case  OdBm::DisplayUnitType::Enum::DUT_METERS:
-	case  OdBm::DisplayUnitType::Enum::DUT_METERS_CENTIMETERS:
+	}
+	if (units == OdBmUnitTypeId::kCustom) {
+		return std::string();
+	}
+	if (units == OdBmUnitTypeId::kGeneral) {
+		return std::string();
+	}
+	if (units == OdBmUnitTypeId::kFixed) {
+		return std::string();
+	}
+	if (units == OdBmUnitTypeId::kCurrency) {
+		return std::string();
+	}
+	if (units == OdBmUnitTypeId::kMeters) {
 		return "m";
-	case  OdBm::DisplayUnitType::Enum::DUT_CENTIMETERS:
+	}
+	if (units == OdBmUnitTypeId::kMetersCentimeters) {
+		return "m";
+	}
+	if (units == OdBmUnitTypeId::kCentimeters) {
 		return "cm";
-	case  OdBm::DisplayUnitType::Enum::DUT_MILLIMETERS:
+	}
+	if (units == OdBmUnitTypeId::kMillimeters) {
 		return "mm";
-	case  OdBm::DisplayUnitType::Enum::DUT_DECIMAL_FEET:
+	}
+	if (units == OdBmUnitTypeId::kFeet) {
 		return "ft";
-	case  OdBm::DisplayUnitType::Enum::DUT_FEET_FRACTIONAL_INCHES:
+	}
+	if (units == OdBmUnitTypeId::kFeetFractionalInches) {
 		return "ft and in";
-	case  OdBm::DisplayUnitType::Enum::DUT_FRACTIONAL_INCHES:
-	case  OdBm::DisplayUnitType::Enum::DUT_DECIMAL_INCHES:
+	}
+	if (units == OdBmUnitTypeId::kInches) {
 		return "\"";
-	case  OdBm::DisplayUnitType::Enum::DUT_ACRES:
+	}
+	if (units == OdBmUnitTypeId::kAcres) {
 		return "ac";
-	case  OdBm::DisplayUnitType::Enum::DUT_HECTARES:
+	}
+	if (units == OdBmUnitTypeId::kHectares) {
 		return "ha";
-	case  OdBm::DisplayUnitType::Enum::DUT_CUBIC_YARDS:
+	}
+	if (units == OdBmUnitTypeId::kCubicYards) {
 		return  u8"yd³";
-	case  OdBm::DisplayUnitType::Enum::DUT_SQUARE_FEET:
+	}
+	if (units == OdBmUnitTypeId::kSquareFeet) {
 		return  u8"ft²";
-	case  OdBm::DisplayUnitType::Enum::DUT_SQUARE_METERS:
+	}
+	if (units == OdBmUnitTypeId::kSquareMeters) {
 		return  u8"m²";
-	case  OdBm::DisplayUnitType::Enum::DUT_CUBIC_METERS:
+	}
+	if (units == OdBmUnitTypeId::kCubicCentimeters) {
 		return  u8"m³";
-	case  OdBm::DisplayUnitType::Enum::DUT_DECIMAL_DEGREES:
+	}
+	if (units == OdBmUnitTypeId::kDegrees) {
 		return  u8"°";
-	case  OdBm::DisplayUnitType::Enum::DUT_DEGREES_AND_MINUTES:
+	}
+	if (units == OdBmUnitTypeId::kDegreesMinutes) {
 		return  u8"°,'";
-	case  OdBm::DisplayUnitType::Enum::DUT_PERCENTAGE:
+	}
+	if (units == OdBmUnitTypeId::kPercentage) {
 		return  "%";
-	case  OdBm::DisplayUnitType::Enum::DUT_SQUARE_INCHES:
+	}
+	if (units == OdBmUnitTypeId::kSquareInches) {
 		return  u8"in²";
-	case  OdBm::DisplayUnitType::Enum::DUT_SQUARE_CENTIMETERS:
+	}
+	if (units == OdBmUnitTypeId::kSquareCentimeters) {
 		return  u8"cm²";
-	case  OdBm::DisplayUnitType::Enum::DUT_SQUARE_MILLIMETERS:
+	}
+	if (units == OdBmUnitTypeId::kSquareMillimeters) {
 		return  u8"mm²";
-	case  OdBm::DisplayUnitType::Enum::DUT_CUBIC_INCHES:
+	}
+	if (units == OdBmUnitTypeId::kCubicInches) {
 		return  u8"in³";
-	case  OdBm::DisplayUnitType::Enum::DUT_CUBIC_CENTIMETERS:
+	}
+	if (units == OdBmUnitTypeId::kCubicCentimeters) {
 		return  u8"cm³";
-	case  OdBm::DisplayUnitType::Enum::DUT_CUBIC_MILLIMETERS:
+	}
+	if (units == OdBmUnitTypeId::kCubicMillimeters) {
 		return  u8"mm³";
-	case  OdBm::DisplayUnitType::Enum::DUT_LITERS:
+	}
+	if (units == OdBmUnitTypeId::kLiters) {
 		return  "l";
-	case  OdBm::DisplayUnitType::Enum::DUT_GALLONS_US:
+	}
+	if (units == OdBmUnitTypeId::kUsGallons) {
 		return  "gal US";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOGRAMS_PER_CUBIC_METER:
+	}
+	if (units == OdBmUnitTypeId::kKilogramsPerCubicMeter) {
 		return  u8"kg/m³";
-	case  OdBm::DisplayUnitType::Enum::DUT_POUNDS_MASS_PER_CUBIC_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kPoundsMassPerCubicFoot) {
 		return  u8"lb/ft³";
-	case  OdBm::DisplayUnitType::Enum::DUT_POUNDS_MASS_PER_CUBIC_INCH:
+	}
+	if (units == OdBmUnitTypeId::kPoundsMassPerCubicInch) {
 		return  u8"lb/in³";
-	case  OdBm::DisplayUnitType::Enum::DUT_BRITISH_THERMAL_UNITS:
+	}
+	if (units == OdBmUnitTypeId::kBritishThermalUnits) {
 		return  "Btu";
-	case  OdBm::DisplayUnitType::Enum::DUT_CALORIES:
+	}
+	if (units == OdBmUnitTypeId::kCalories) {
 		return  "cal";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOCALORIES:
+	}
+	if (units == OdBmUnitTypeId::kKilocalories) {
 		return  "kcal";
-	case  OdBm::DisplayUnitType::Enum::DUT_JOULES:
+	}
+	if (units == OdBmUnitTypeId::kJoules) {
 		return  "J";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOWATT_HOURS:
+	}
+	if (units == OdBmUnitTypeId::kKilowattHours) {
 		return  "kWh";
-	case  OdBm::DisplayUnitType::Enum::DUT_THERMS:
+	}
+	if (units == OdBmUnitTypeId::kTherms) {
 		return  "thm";
-	case  OdBm::DisplayUnitType::Enum::DUT_INCHES_OF_WATER_PER_100FT:
+	}
+	if (units == OdBmUnitTypeId::kInchesOfWater60DegreesFahrenheitPer100Feet) {
 		return  "inAq/100ft";
-	case  OdBm::DisplayUnitType::Enum::DUT_PASCALS_PER_METER:
+	}
+	if (units == OdBmUnitTypeId::kPascalsPerMeter) {
 		return  "pa/m";
-	case  OdBm::DisplayUnitType::Enum::DUT_WATTS:
+	}
+	if (units == OdBmUnitTypeId::kWatts) {
 		return  "W";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOWATTS:
+	}
+	if (units == OdBmUnitTypeId::kKilowatts) {
 		return  "kW";
-	case  OdBm::DisplayUnitType::Enum::DUT_BRITISH_THERMAL_UNITS_PER_SECOND:
+	}
+	if (units == OdBmUnitTypeId::kBritishThermalUnitsPerSecond) {
 		return  "Btu/s";
-	case  OdBm::DisplayUnitType::Enum::DUT_BRITISH_THERMAL_UNITS_PER_HOUR:
+	}
+	if (units == OdBmUnitTypeId::kBritishThermalUnitsPerHour) {
 		return  "Btu/hr";
-	case  OdBm::DisplayUnitType::Enum::DUT_CALORIES_PER_SECOND:
+	}
+	if (units == OdBmUnitTypeId::kCaloriesPerSecond) {
 		return  "cal/s";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOCALORIES_PER_SECOND:
+	}
+	if (units == OdBmUnitTypeId::kKilocaloriesPerSecond) {
 		return  "kcal/s";
-	case  OdBm::DisplayUnitType::Enum::DUT_WATTS_PER_SQUARE_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kWattsPerSquareFoot) {
 		return  u8"W/ft²";
-	case  OdBm::DisplayUnitType::Enum::DUT_WATTS_PER_SQUARE_METER:
+	}
+	if (units == OdBmUnitTypeId::kWattsPerSquareMeter) {
 		return  u8"W/m²";
-	case  OdBm::DisplayUnitType::Enum::DUT_INCHES_OF_WATER:
+	}
+	if (units == OdBmUnitTypeId::kInchesOfWater60DegreesFahrenheit) {
 		return  "inAq";
-	case  OdBm::DisplayUnitType::Enum::DUT_PASCALS:
+	}
+	if (units == OdBmUnitTypeId::kPascals) {
 		return  "Pa";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOPASCALS:
+	}
+	if (units == OdBmUnitTypeId::kKilopascals) {
 		return  "kPa";
-	case  OdBm::DisplayUnitType::Enum::DUT_MEGAPASCALS:
+	}
+	if (units == OdBmUnitTypeId::kMegapascals) {
 		return  "MPa";
-	case  OdBm::DisplayUnitType::Enum::DUT_POUNDS_FORCE_PER_SQUARE_INCH:
+	}
+	if (units == OdBmUnitTypeId::kPoundsForcePerSquareInch) {
 		return  u8"lbf/in²";
-	case  OdBm::DisplayUnitType::Enum::DUT_INCHES_OF_MERCURY:
+	}
+	if (units == OdBmUnitTypeId::kInchesOfMercury32DegreesFahrenheit) {
 		return  "inHg";
-	case  OdBm::DisplayUnitType::Enum::DUT_MILLIMETERS_OF_MERCURY:
+	}
+	if (units == OdBmUnitTypeId::kMillimetersOfMercury) {
 		return  "mmHg";
-	case  OdBm::DisplayUnitType::Enum::DUT_ATMOSPHERES:
+	}
+	if (units == OdBmUnitTypeId::kAtmospheres) {
 		return  "atm";
-	case  OdBm::DisplayUnitType::Enum::DUT_BARS:
+	}
+	if (units == OdBmUnitTypeId::kBars) {
 		return  "100kPa";
-	case  OdBm::DisplayUnitType::Enum::DUT_FAHRENHEIT:
+	}
+	if (units == OdBmUnitTypeId::kFahrenheit) {
 		return  u8"°F";
-	case  OdBm::DisplayUnitType::Enum::DUT_CELSIUS:
+	}
+	if (units == OdBmUnitTypeId::kCelsius) {
 		return  u8"°C";
-	case  OdBm::DisplayUnitType::Enum::DUT_KELVIN:
+	}
+	if (units == OdBmUnitTypeId::kKelvin) {
 		return  "K";
-	case  OdBm::DisplayUnitType::Enum::DUT_RANKINE:
+	}
+	if (units == OdBmUnitTypeId::kRankine) {
 		return  u8"°R";
-	case  OdBm::DisplayUnitType::Enum::DUT_FEET_PER_MINUTE:
+	}
+	if (units == OdBmUnitTypeId::kFeetPerMinute) {
 		return  "ft/min";
-	case  OdBm::DisplayUnitType::Enum::DUT_METERS_PER_SECOND:
+	}
+	if (units == OdBmUnitTypeId::kMetersPerSecond) {
 		return  "m/s";
-	case  OdBm::DisplayUnitType::Enum::DUT_CENTIMETERS_PER_MINUTE:
+	}
+	if (units == OdBmUnitTypeId::kCentimetersPerMinute) {
 		return  "cm/min";
-	case  OdBm::DisplayUnitType::Enum::DUT_CUBIC_FEET_PER_MINUTE:
+	}
+	if (units == OdBmUnitTypeId::kCubicFeetPerMinute) {
 		return  u8"ft³/min";
-	case  OdBm::DisplayUnitType::Enum::DUT_LITERS_PER_SECOND:
+	}
+	if (units == OdBmUnitTypeId::kLitersPerSecond) {
 		return  "l/s";
-	case  OdBm::DisplayUnitType::Enum::DUT_CUBIC_METERS_PER_SECOND:
+	}
+	if (units == OdBmUnitTypeId::kCubicMetersPerSecond) {
 		return  u8"m³/s";
-	case  OdBm::DisplayUnitType::Enum::DUT_CUBIC_METERS_PER_HOUR:
+	}
+	if (units == OdBmUnitTypeId::kCubicMetersPerHour) {
 		return  u8"m³/hr";
-	case  OdBm::DisplayUnitType::Enum::DUT_GALLONS_US_PER_MINUTE:
+	}
+	if (units == OdBmUnitTypeId::kUsGallonsPerMinute) {
 		return  "gal/min";
-	case  OdBm::DisplayUnitType::Enum::DUT_GALLONS_US_PER_HOUR:
+	}
+	if (units == OdBmUnitTypeId::kUsGallonsPerHour) {
 		return  "gal/hr";
-	case  OdBm::DisplayUnitType::Enum::DUT_AMPERES:
+	}
+	if (units == OdBmUnitTypeId::kAmperes) {
 		return  "A";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOAMPERES:
+	}
+	if (units == OdBmUnitTypeId::kKiloamperes) {
 		return  "kA";
-	case  OdBm::DisplayUnitType::Enum::DUT_MILLIAMPERES:
+	}
+	if (units == OdBmUnitTypeId::kMilliamperes) {
 		return  "mA";
-	case  OdBm::DisplayUnitType::Enum::DUT_VOLTS:
+	}
+	if (units == OdBmUnitTypeId::kVolts) {
 		return  "V";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOVOLTS:
+	}
+	if (units == OdBmUnitTypeId::kKilovolts) {
 		return  "kV";
-	case  OdBm::DisplayUnitType::Enum::DUT_MILLIVOLTS:
+	}
+	if (units == OdBmUnitTypeId::kMillivolts) {
 		return  "mV";
-	case  OdBm::DisplayUnitType::Enum::DUT_HERTZ:
+	}
+	if (units == OdBmUnitTypeId::kHertz) {
 		return  "Hz";
-	case  OdBm::DisplayUnitType::Enum::DUT_CYCLES_PER_SECOND:
+	}
+	if (units == OdBmUnitTypeId::kCyclesPerSecond) {
 		return  "cycles/s";
-	case  OdBm::DisplayUnitType::Enum::DUT_LUX:
+	}
+	if (units == OdBmUnitTypeId::kLux) {
 		return  "lx";
-	case  OdBm::DisplayUnitType::Enum::DUT_FOOTCANDLES:
+	}
+	if (units == OdBmUnitTypeId::kFootcandles) {
 		return  "fc";
-	case  OdBm::DisplayUnitType::Enum::DUT_FOOTLAMBERTS:
+	}
+	if (units == OdBmUnitTypeId::kFootlamberts) {
 		return  "ftL";
-	case  OdBm::DisplayUnitType::Enum::DUT_CANDELAS_PER_SQUARE_METER:
+	}
+	if (units == OdBmUnitTypeId::kCandelasPerSquareMeter) {
 		return  u8"cd/m²";
-	case  OdBm::DisplayUnitType::Enum::DUT_CANDELAS:
+	}
+	if (units == OdBmUnitTypeId::kCandelas) {
 		return  "cd";
-	case  OdBm::DisplayUnitType::Enum::DUT_CANDLEPOWER:
-		return  "cp";
-	case  OdBm::DisplayUnitType::Enum::DUT_LUMENS:
+	}
+	if (units == OdBmUnitTypeId::kLumens) {
 		return  "lm";
-	case  OdBm::DisplayUnitType::Enum::DUT_VOLT_AMPERES:
+	}
+	if (units == OdBmUnitTypeId::kVoltAmperes) {
 		return  "VA";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOVOLT_AMPERES:
+	}
+	if (units == OdBmUnitTypeId::kKilovoltAmperes) {
 		return  "kVA";
-	case  OdBm::DisplayUnitType::Enum::DUT_HORSEPOWER:
+	}
+	if (units == OdBmUnitTypeId::kHorsepower) {
 		return  "hp";
-	case  OdBm::DisplayUnitType::Enum::DUT_NEWTONS:
+	}
+	if (units == OdBmUnitTypeId::kNewtons) {
 		return  "N";
-	case  OdBm::DisplayUnitType::Enum::DUT_DECANEWTONS:
+	}
+	if (units == OdBmUnitTypeId::kDekanewtons) {
 		return  "dN";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILONEWTONS:
+	}
+	if (units == OdBmUnitTypeId::kKilonewtons) {
 		return  "kN";
-	case  OdBm::DisplayUnitType::Enum::DUT_MEGANEWTONS:
+	}
+	if (units == OdBmUnitTypeId::kMeganewtons) {
 		return  "MN";
-	case  OdBm::DisplayUnitType::Enum::DUT_KIPS:
+	}
+	if (units == OdBmUnitTypeId::kKips) {
 		return  "kip";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOGRAMS_FORCE:
+	}
+	if (units == OdBmUnitTypeId::kKilogramsForce) {
 		return  "kgF";
-	case  OdBm::DisplayUnitType::Enum::DUT_TONNES_FORCE:
+	}
+	if (units == OdBmUnitTypeId::kTonnesForce) {
 		return  "tF";
-	case  OdBm::DisplayUnitType::Enum::DUT_POUNDS_FORCE:
+	}
+	if (units == OdBmUnitTypeId::kPoundsForce) {
 		return  "lbF";
-	case  OdBm::DisplayUnitType::Enum::DUT_NEWTONS_PER_METER:
+	}
+	if (units == OdBmUnitTypeId::kNewtonsPerMeter) {
 		return  "N/m";
-	case  OdBm::DisplayUnitType::Enum::DUT_DECANEWTONS_PER_METER:
+	}
+	if (units == OdBmUnitTypeId::kDekanewtonsPerMeter) {
 		return  "dN/m";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILONEWTONS_PER_METER:
+	}
+	if (units == OdBmUnitTypeId::kKilonewtonsPerMeter) {
 		return  "kN/m";
-	case  OdBm::DisplayUnitType::Enum::DUT_MEGANEWTONS_PER_METER:
+	}
+	if (units == OdBmUnitTypeId::kMeganewtonsPerMeter) {
 		return  "MN/m";
-	case  OdBm::DisplayUnitType::Enum::DUT_KIPS_PER_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kKipsPerFoot) {
 		return  "kip/ft";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOGRAMS_FORCE_PER_METER:
+	}
+	if (units == OdBmUnitTypeId::kKilogramsForcePerMeter) {
 		return  "kgF/m";
-	case  OdBm::DisplayUnitType::Enum::DUT_TONNES_FORCE_PER_METER:
+	}
+	if (units == OdBmUnitTypeId::kTonnesForcePerMeter) {
 		return  "tF/m";
-	case  OdBm::DisplayUnitType::Enum::DUT_POUNDS_FORCE_PER_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kPoundsForcePerFoot) {
 		return  "lbF/ft";
-	case  OdBm::DisplayUnitType::Enum::DUT_NEWTONS_PER_SQUARE_METER:
+	}
+	if (units == OdBmUnitTypeId::kNewtonsPerSquareMeter) {
 		return  u8"N/m²";
-	case  OdBm::DisplayUnitType::Enum::DUT_DECANEWTONS_PER_SQUARE_METER:
+	}
+	if (units == OdBmUnitTypeId::kDekanewtonsPerSquareMeter) {
 		return  u8"dN/m²";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILONEWTONS_PER_SQUARE_METER:
+	}
+	if (units == OdBmUnitTypeId::kKilonewtonsPerSquareMeter) {
 		return  u8"kN/m²";
-	case  OdBm::DisplayUnitType::Enum::DUT_MEGANEWTONS_PER_SQUARE_METER:
+	}
+	if (units == OdBmUnitTypeId::kMeganewtonsPerSquareMeter) {
 		return  u8"MN/m²";
-	case  OdBm::DisplayUnitType::Enum::DUT_KIPS_PER_SQUARE_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kKipsPerSquareFoot) {
 		return  u8"kip/ft²";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOGRAMS_FORCE_PER_SQUARE_METER:
+	}
+	if (units == OdBmUnitTypeId::kKilogramsForcePerSquareMeter) {
 		return  u8"kg/m²";
-	case  OdBm::DisplayUnitType::Enum::DUT_TONNES_FORCE_PER_SQUARE_METER:
+	}
+	if (units == OdBmUnitTypeId::kTonnesForcePerSquareMeter) {
 		return  u8"TF/m²";
-	case  OdBm::DisplayUnitType::Enum::DUT_POUNDS_FORCE_PER_SQUARE_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kPoundsForcePerSquareFoot) {
 		return  u8"lbF/m²";
-	case  OdBm::DisplayUnitType::Enum::DUT_NEWTON_METERS:
+	}
+	if (units == OdBmUnitTypeId::kNewtonMeters) {
 		return  "Nm";
-	case  OdBm::DisplayUnitType::Enum::DUT_DECANEWTON_METERS:
+	}
+	if (units == OdBmUnitTypeId::kDekanewtonMeters) {
 		return  "dNm";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILONEWTON_METERS:
+	}
+	if (units == OdBmUnitTypeId::kKilonewtonMeters) {
 		return  "kNm";
-	case  OdBm::DisplayUnitType::Enum::DUT_MEGANEWTON_METERS:
+	}
+	if (units == OdBmUnitTypeId::kMeganewtonMeters) {
 		return  "MNm";
-	case  OdBm::DisplayUnitType::Enum::DUT_KIP_FEET:
+	}
+	if (units == OdBmUnitTypeId::kKipFeet) {
 		return  "kipft";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOGRAM_FORCE_METERS:
+	}
+	if (units == OdBmUnitTypeId::kKilogramForceMeters) {
 		return  "kgFm";
-	case  OdBm::DisplayUnitType::Enum::DUT_TONNE_FORCE_METERS:
+	}
+	if (units == OdBmUnitTypeId::kTonneForceMeters) {
 		return  "TFm";
-	case  OdBm::DisplayUnitType::Enum::DUT_POUND_FORCE_FEET:
+	}
+	if (units == OdBmUnitTypeId::kPoundForceFeet) {
 		return  "lbFft";
-	case  OdBm::DisplayUnitType::Enum::DUT_METERS_PER_KILONEWTON:
+	}
+	if (units == OdBmUnitTypeId::kMetersPerKilonewton) {
 		return  "m/kN";
-	case  OdBm::DisplayUnitType::Enum::DUT_FEET_PER_KIP:
+	}
+	if (units == OdBmUnitTypeId::kFeetPerKip) {
 		return  "ft/kip";
-	case  OdBm::DisplayUnitType::Enum::DUT_SQUARE_METERS_PER_KILONEWTON:
+	}
+	if (units == OdBmUnitTypeId::kSquareMetersPerKilonewton) {
 		return  u8"m²/kN";
-	case  OdBm::DisplayUnitType::Enum::DUT_SQUARE_FEET_PER_KIP:
+	}
+	if (units == OdBmUnitTypeId::kSquareFeetPerKip) {
 		return  "ft/kip";
-	case  OdBm::DisplayUnitType::Enum::DUT_CUBIC_METERS_PER_KILONEWTON:
+	}
+	if (units == OdBmUnitTypeId::kCubicMetersPerKilonewton) {
 		return  u8"m³/kN";
-	case  OdBm::DisplayUnitType::Enum::DUT_CUBIC_FEET_PER_KIP:
+	}
+	if (units == OdBmUnitTypeId::kCubicFeetPerKip) {
 		return  u8"ft³/kip";
-	case  OdBm::DisplayUnitType::Enum::DUT_INV_KILONEWTONS:
+	}
+	if (units == OdBmUnitTypeId::kInverseKilonewtons) {
 		return  u8"kN⁻¹";
-	case  OdBm::DisplayUnitType::Enum::DUT_INV_KIPS:
+	}
+	if (units == OdBmUnitTypeId::kInverseKips) {
 		return u8"kip⁻¹";
-	case  OdBm::DisplayUnitType::Enum::DUT_FEET_OF_WATER_PER_100FT:
+	}
+	if (units == OdBmUnitTypeId::kFeetOfWater39_2DegreesFahrenheitPer100Feet) {
 		return "ftAq/100ft";
-	case  OdBm::DisplayUnitType::Enum::DUT_FEET_OF_WATER:
+	}
+	if (units == OdBmUnitTypeId::kFeetOfWater39_2DegreesFahrenheit) {
 		return "ftAq";
-	case  OdBm::DisplayUnitType::Enum::DUT_PASCAL_SECONDS:
+	}
+	if (units == OdBmUnitTypeId::kPascalSeconds) {
 		return "Pas";
-	case  OdBm::DisplayUnitType::Enum::DUT_POUNDS_MASS_PER_FOOT_SECOND:
+	}
+	if (units == OdBmUnitTypeId::kPoundsMassPerFootSecond) {
 		return "lb/fts";
-	case  OdBm::DisplayUnitType::Enum::DUT_CENTIPOISES:
+	}
+	if (units == OdBmUnitTypeId::kCentipoises) {
 		return "cP";
-	case  OdBm::DisplayUnitType::Enum::DUT_FEET_PER_SECOND:
+	}
+	if (units == OdBmUnitTypeId::kFeetPerSecond) {
 		return "ft/s";
-	case  OdBm::DisplayUnitType::Enum::DUT_KIPS_PER_SQUARE_INCH:
+	}
+	if (units == OdBmUnitTypeId::kKipsPerSquareInch) {
 		return u8"kips/in²";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILONEWTONS_PER_CUBIC_METER:
+	}
+	if (units == OdBmUnitTypeId::kKilonewtonsPerCubicMeter) {
 		return u8"kN/m³";
-	case  OdBm::DisplayUnitType::Enum::DUT_POUNDS_FORCE_PER_CUBIC_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kPoundsForcePerCubicFoot) {
 		return u8"lbF/ft³";
-	case  OdBm::DisplayUnitType::Enum::DUT_KIPS_PER_CUBIC_INCH:
+	}
+	if (units == OdBmUnitTypeId::kKipsPerCubicInch) {
 		return u8"kip/in³";
-	case  OdBm::DisplayUnitType::Enum::DUT_INV_FAHRENHEIT:
+	}
+	if (units == OdBmUnitTypeId::kInverseDegreesFahrenheit) {
 		return u8"°F⁻¹";
-	case  OdBm::DisplayUnitType::Enum::DUT_INV_CELSIUS:
+	}
+	if (units == OdBmUnitTypeId::kInverseDegreesCelsius) {
 		return u8"°C⁻¹";
-	case  OdBm::DisplayUnitType::Enum::DUT_NEWTON_METERS_PER_METER:
+	}
+	if (units == OdBmUnitTypeId::kNewtonMetersPerMeter) {
 		return "Nm/m";
-	case  OdBm::DisplayUnitType::Enum::DUT_DECANEWTON_METERS_PER_METER:
+	}
+	if (units == OdBmUnitTypeId::kDekanewtonMetersPerMeter) {
 		return "dNm/m";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILONEWTON_METERS_PER_METER:
+	}
+	if (units == OdBmUnitTypeId::kKilonewtonMetersPerMeter) {
 		return "km/m";
-	case  OdBm::DisplayUnitType::Enum::DUT_MEGANEWTON_METERS_PER_METER:
+	}
+	if (units == OdBmUnitTypeId::kMeganewtonMetersPerMeter) {
 		return "Mm/m";
-	case  OdBm::DisplayUnitType::Enum::DUT_KIP_FEET_PER_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kKipFeetPerFoot) {
 		return "kipft/ft";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOGRAM_FORCE_METERS_PER_METER:
+	}
+	if (units == OdBmUnitTypeId::kKilogramForceMetersPerMeter) {
 		return "kgFm/m";
-	case  OdBm::DisplayUnitType::Enum::DUT_TONNE_FORCE_METERS_PER_METER:
+	}
+	if (units == OdBmUnitTypeId::kTonneForceMetersPerMeter) {
 		return "TFm/m";
-	case  OdBm::DisplayUnitType::Enum::DUT_POUND_FORCE_FEET_PER_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kPoundForceFeetPerFoot) {
 		return "lbFft/ft";
-	case  OdBm::DisplayUnitType::Enum::DUT_POUNDS_MASS_PER_FOOT_HOUR:
+	}
+	if (units == OdBmUnitTypeId::kPoundsMassPerFootHour) {
 		return "lb/fth";
-	case  OdBm::DisplayUnitType::Enum::DUT_KIPS_PER_INCH:
+	}
+	if (units == OdBmUnitTypeId::kKipsPerInch) {
 		return "kip/in";
-	case  OdBm::DisplayUnitType::Enum::DUT_KIPS_PER_CUBIC_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kKipsPerCubicFoot) {
 		return u8"kip/ft³";
-	case  OdBm::DisplayUnitType::Enum::DUT_KIP_FEET_PER_DEGREE:
+	}
+	if (units == OdBmUnitTypeId::kKipFeetPerDegree) {
 		return u8"kipft/°";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILONEWTON_METERS_PER_DEGREE:
+	}
+	if (units == OdBmUnitTypeId::kKilonewtonMetersPerDegree) {
 		return u8"kNm/°";
-	case  OdBm::DisplayUnitType::Enum::DUT_KIP_FEET_PER_DEGREE_PER_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kKipFeetPerDegreePerFoot) {
 		return "kipft/ft";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILONEWTON_METERS_PER_DEGREE_PER_METER:
+	}
+	if (units == OdBmUnitTypeId::kKilonewtonMetersPerDegreePerMeter) {
 		return u8"kipft/°/ft";
-	case  OdBm::DisplayUnitType::Enum::DUT_WATTS_PER_SQUARE_METER_KELVIN:
+	}
+	if (units == OdBmUnitTypeId::kWattsPerSquareMeterKelvin) {
 		return u8"W/m²K";
-	case  OdBm::DisplayUnitType::Enum::DUT_BRITISH_THERMAL_UNITS_PER_HOUR_SQUARE_FOOT_FAHRENHEIT:
+	}
+	if (units == OdBmUnitTypeId::kBritishThermalUnitsPerHourSquareFootDegreeFahrenheit) {
 		return u8"btu/hft²/°";
-	case  OdBm::DisplayUnitType::Enum::DUT_CUBIC_FEET_PER_MINUTE_SQUARE_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kCubicFeetPerMinuteSquareFoot) {
 		return u8"ft³/mft²";
-	case  OdBm::DisplayUnitType::Enum::DUT_LITERS_PER_SECOND_SQUARE_METER:
+	}
+	if (units == OdBmUnitTypeId::kLitersPerSecondSquareMeter) {
 		return u8"l/sm²";
-	case  OdBm::DisplayUnitType::Enum::DUT_RATIO_10:
-		return "10:x";
-	case  OdBm::DisplayUnitType::Enum::DUT_RATIO_12:
-		return "12:x";
-	case  OdBm::DisplayUnitType::Enum::DUT_SLOPE_DEGREES:
+	}
+	if (units == OdBmUnitTypeId::kRatioTo10) {
+		return "x:10";
+	}
+	if (units == OdBmUnitTypeId::kRatioTo12) {
+		return "x:12";
+	}
+	if (units == OdBmUnitTypeId::kSlopeDegrees) {
 		return "slope degrees";
-	case  OdBm::DisplayUnitType::Enum::DUT_RISE_OVER_INCHES:
-		return "rise over in";
-	case  OdBm::DisplayUnitType::Enum::DUT_RISE_OVER_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kRiseDividedBy1Foot) {
 		return "rise over ft";
-	case  OdBm::DisplayUnitType::Enum::DUT_RISE_OVER_MMS:
-		return "rise over mms";
-	case  OdBm::DisplayUnitType::Enum::DUT_WATTS_PER_CUBIC_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kWattsPerCubicFoot) {
 		return u8"W/ft³";
-	case  OdBm::DisplayUnitType::Enum::DUT_WATTS_PER_CUBIC_METER:
+	}
+	if (units == OdBmUnitTypeId::kWattsPerCubicMeter) {
 		return "W/m³";
-	case  OdBm::DisplayUnitType::Enum::DUT_BRITISH_THERMAL_UNITS_PER_HOUR_SQUARE_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kBritishThermalUnitsPerHourSquareFoot) {
 		return u8"btu/hft²";
-	case  OdBm::DisplayUnitType::Enum::DUT_BRITISH_THERMAL_UNITS_PER_HOUR_CUBIC_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kBritishThermalUnitsPerHourCubicFoot) {
 		return u8"btu/hft³";
-	case  OdBm::DisplayUnitType::Enum::DUT_CUBIC_FEET_PER_MINUTE_CUBIC_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kCubicFeetPerMinuteCubicFoot) {
 		return u8"ft³/mft³";
-	case  OdBm::DisplayUnitType::Enum::DUT_LITERS_PER_SECOND_CUBIC_METER:
+	}
+	if (units == OdBmUnitTypeId::kLitersPerSecondCubicMeter) {
 		return u8"l/sm³";
-	case  OdBm::DisplayUnitType::Enum::DUT_CUBIC_FEET_PER_MINUTE_TON_OF_REFRIGERATION:
+	}
+	if (units == OdBmUnitTypeId::kCubicFeetPerMinuteTonOfRefrigeration) {
 		return u8"ft³/mRT";
-	case  OdBm::DisplayUnitType::Enum::DUT_LITERS_PER_SECOND_KILOWATTS:
+	}
+	if (units == OdBmUnitTypeId::kLitersPerSecondKilowatt) {
 		return "l/skW";
-	case  OdBm::DisplayUnitType::Enum::DUT_SQUARE_FEET_PER_TON_OF_REFRIGERATION:
+	}
+	if (units == OdBmUnitTypeId::kSquareFeetPerTonOfRefrigeration) {
 		return u8"ft²/RT";
-	case  OdBm::DisplayUnitType::Enum::DUT_SQUARE_METERS_PER_KILOWATTS:
+	}
+	if (units == OdBmUnitTypeId::kSquareMetersPerKilowatt) {
 		return u8"m²/kW";
-	case  OdBm::DisplayUnitType::Enum::DUT_LUMENS_PER_WATT:
+	}
+	if (units == OdBmUnitTypeId::kLumensPerWatt) {
 		return "lum/W";
-	case  OdBm::DisplayUnitType::Enum::DUT_SQUARE_FEET_PER_THOUSAND_BRITISH_THERMAL_UNITS_PER_HOUR:
+	}
+	if (units == OdBmUnitTypeId::kSquareFeetPer1000BritishThermalUnitsPerHour) {
 		return u8"ft²/kbtu/h";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILONEWTONS_PER_SQUARE_CENTIMETER:
+	}
+	if (units == OdBmUnitTypeId::kKilonewtonsPerSquareCentimeter) {
 		return u8"kN/cm²";
-	case  OdBm::DisplayUnitType::Enum::DUT_NEWTONS_PER_SQUARE_MILLIMETER:
+	}
+	if (units == OdBmUnitTypeId::kNewtonsPerSquareMillimeter) {
 		return u8"N/mm²";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILONEWTONS_PER_SQUARE_MILLIMETER:
+	}
+	if (units == OdBmUnitTypeId::kKilonewtonsPerSquareMeter) {
 		return u8"kN/m²";
-	case  OdBm::DisplayUnitType::Enum::DUT_RISE_OVER_120_INCHES:
+	}
+	if (units == OdBmUnitTypeId::kRiseDividedBy120Inches) {
 		return u8"rise/120in";
-	case  OdBm::DisplayUnitType::Enum::DUT_1_RATIO:
+	}
+	if (units == OdBmUnitTypeId::kOneToRatio) {
 		return u8"1:x";
-	case  OdBm::DisplayUnitType::Enum::DUT_RISE_OVER_10_FEET:
+	}
+	if (units == OdBmUnitTypeId::kRiseDividedBy10Feet) {
 		return u8"rise/10ft";
-	case  OdBm::DisplayUnitType::Enum::DUT_HOUR_SQUARE_FOOT_FAHRENHEIT_PER_BRITISH_THERMAL_UNIT:
+	}
+	if (units == OdBmUnitTypeId::kHourSquareFootDegreesFahrenheitPerBritishThermalUnit) {
 		return u8"hft²°F/btu";
-	case  OdBm::DisplayUnitType::Enum::DUT_SQUARE_METER_KELVIN_PER_WATT:
+	}
+	if (units == OdBmUnitTypeId::kSquareMeterKelvinsPerWatt) {
 		return u8"m²K/W";
-	case  OdBm::DisplayUnitType::Enum::DUT_BRITISH_THERMAL_UNIT_PER_FAHRENHEIT:
+	}
+	if (units == OdBmUnitTypeId::kBritishThermalUnitsPerDegreeFahrenheit) {
 		return u8"btu/°F";
-	case  OdBm::DisplayUnitType::Enum::DUT_JOULES_PER_KELVIN:
+	}
+	if (units == OdBmUnitTypeId::kJoulesPerKelvin) {
 		return u8"J/K";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOJOULES_PER_KELVIN:
+	}
+	if (units == OdBmUnitTypeId::kKilojoulesPerKelvin) {
 		return u8"kJ/K";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOGRAMS_MASS:
+	}
+	if (units == OdBmUnitTypeId::kKilograms) {
 		return u8"kg";
-	case  OdBm::DisplayUnitType::Enum::DUT_TONNES_MASS:
+	}
+	if (units == OdBmUnitTypeId::kTonnes) {
 		return u8"T";
-	case  OdBm::DisplayUnitType::Enum::DUT_POUNDS_MASS:
+	}
+	if (units == OdBmUnitTypeId::kPoundsMass) {
 		return u8"lb";
-	case  OdBm::DisplayUnitType::Enum::DUT_METERS_PER_SECOND_SQUARED:
+	}
+	if (units == OdBmUnitTypeId::kMetersPerSecondSquared) {
 		return u8"m/s²";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOMETERS_PER_SECOND_SQUARED:
+	}
+	if (units == OdBmUnitTypeId::kKilometersPerSecondSquared) {
 		return u8"km/s²";
-	case  OdBm::DisplayUnitType::Enum::DUT_INCHES_PER_SECOND_SQUARED:
+	}
+	if (units == OdBmUnitTypeId::kInchesPerSecondSquared) {
 		return u8"in/s²";
-	case  OdBm::DisplayUnitType::Enum::DUT_FEET_PER_SECOND_SQUARED:
+	}
+	if (units == OdBmUnitTypeId::kFeetPerSecondSquared) {
 		return u8"ft/s²";
-	case  OdBm::DisplayUnitType::Enum::DUT_MILES_PER_SECOND_SQUARED:
+	}
+	if (units == OdBmUnitTypeId::kMilesPerSecondSquared) {
 		return u8"miles/s²";
-	case  OdBm::DisplayUnitType::Enum::DUT_FEET_TO_THE_FOURTH_POWER:
+	}
+	if (units == OdBmUnitTypeId::kFeetToTheFourthPower) {
 		return u8"ft⁴";
-	case  OdBm::DisplayUnitType::Enum::DUT_INCHES_TO_THE_FOURTH_POWER:
+	}
+	if (units == OdBmUnitTypeId::kInchesToTheFourthPower) {
 		return u8"in⁴";
-	case  OdBm::DisplayUnitType::Enum::DUT_MILLIMETERS_TO_THE_FOURTH_POWER:
+	}
+	if (units == OdBmUnitTypeId::kMillimetersToTheFourthPower) {
 		return u8"mm⁴";
-	case  OdBm::DisplayUnitType::Enum::DUT_CENTIMETERS_TO_THE_FOURTH_POWER:
+	}
+	if (units == OdBmUnitTypeId::kCentimetersToTheFourthPower) {
 		return u8"cm⁴";
-	case  OdBm::DisplayUnitType::Enum::DUT_METERS_TO_THE_FOURTH_POWER:
+	}
+	if (units == OdBmUnitTypeId::kMetersToTheFourthPower) {
 		return u8"m⁴";
-	case  OdBm::DisplayUnitType::Enum::DUT_FEET_TO_THE_SIXTH_POWER:
+	}
+	if (units == OdBmUnitTypeId::kFeetToTheSixthPower) {
 		return u8"ft⁶";
-	case  OdBm::DisplayUnitType::Enum::DUT_INCHES_TO_THE_SIXTH_POWER:
+	}
+	if (units == OdBmUnitTypeId::kInchesToTheSixthPower) {
 		return u8"in⁶";
-	case  OdBm::DisplayUnitType::Enum::DUT_MILLIMETERS_TO_THE_SIXTH_POWER:
+	}
+	if (units == OdBmUnitTypeId::kMillimetersToTheSixthPower) {
 		return u8"mm⁶";
-	case  OdBm::DisplayUnitType::Enum::DUT_CENTIMETERS_TO_THE_SIXTH_POWER:
+	}
+	if (units == OdBmUnitTypeId::kCentimetersToTheSixthPower) {
 		return u8"cm⁶";
-	case  OdBm::DisplayUnitType::Enum::DUT_METERS_TO_THE_SIXTH_POWER:
+	}
+	if (units == OdBmUnitTypeId::kMetersToTheSixthPower) {
 		return u8"m⁶";
-	case  OdBm::DisplayUnitType::Enum::DUT_SQUARE_FEET_PER_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kSquareFeetPerFoot) {
 		return u8"ft²/ft";
-	case  OdBm::DisplayUnitType::Enum::DUT_SQUARE_INCHES_PER_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kSquareInchesPerFoot) {
 		return u8"in²/ft";
-	case  OdBm::DisplayUnitType::Enum::DUT_SQUARE_MILLIMETERS_PER_METER:
+	}
+	if (units == OdBmUnitTypeId::kSquareMillimetersPerMeter) {
 		return u8"mm²/m";
-	case  OdBm::DisplayUnitType::Enum::DUT_SQUARE_CENTIMETERS_PER_METER:
+	}
+	if (units == OdBmUnitTypeId::kSquareCentimetersPerMeter) {
 		return u8"cm²/m";
-	case  OdBm::DisplayUnitType::Enum::DUT_SQUARE_METERS_PER_METER:
+	}
+	if (units == OdBmUnitTypeId::kSquareMetersPerMeter) {
 		return u8"m²/m";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOGRAMS_MASS_PER_METER:
+	}
+	if (units == OdBmUnitTypeId::kKilogramsPerMeter) {
 		return u8"kg/m";
-	case  OdBm::DisplayUnitType::Enum::DUT_POUNDS_MASS_PER_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kPoundsMassPerFoot) {
 		return u8"lb/ft";
-	case  OdBm::DisplayUnitType::Enum::DUT_RADIANS:
+	}
+	if (units == OdBmUnitTypeId::kRadians) {
 		return u8"rad";
-	case  OdBm::DisplayUnitType::Enum::DUT_GRADS:
+	}
+	if (units == OdBmUnitTypeId::kGradians) {
 		return u8"grad";
-	case  OdBm::DisplayUnitType::Enum::DUT_RADIANS_PER_SECOND:
+	}
+	if (units == OdBmUnitTypeId::kRadiansPerSecond) {
 		return u8"rad/s";
-	case  OdBm::DisplayUnitType::Enum::DUT_MILISECONDS:
+	}
+	if (units == OdBmUnitTypeId::kMilliseconds) {
 		return u8"ms";
-	case  OdBm::DisplayUnitType::Enum::DUT_SECONDS:
+	}
+	if (units == OdBmUnitTypeId::kSeconds) {
 		return u8"s";
-	case  OdBm::DisplayUnitType::Enum::DUT_MINUTES:
+	}
+	if (units == OdBmUnitTypeId::kMinutes) {
 		return u8"min";
-	case  OdBm::DisplayUnitType::Enum::DUT_HOURS:
+	}
+	if (units == OdBmUnitTypeId::kHours) {
 		return u8"h";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOMETERS_PER_HOUR:
+	}
+	if (units == OdBmUnitTypeId::kKilometersPerHour) {
 		return u8"km/h";
-	case  OdBm::DisplayUnitType::Enum::DUT_MILES_PER_HOUR:
+	}
+	if (units == OdBmUnitTypeId::kMilesPerHour) {
 		return u8"mile/h";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOJOULES:
+	}
+	if (units == OdBmUnitTypeId::kKilojoules) {
 		return u8"kJ";
-	case  OdBm::DisplayUnitType::Enum::DUT_KILOGRAMS_MASS_PER_SQUARE_METER:
+	}
+	if (units == OdBmUnitTypeId::kKilogramsPerSquareMeter) {
 		return u8"kg/m²";
-	case  OdBm::DisplayUnitType::Enum::DUT_POUNDS_MASS_PER_SQUARE_FOOT:
+	}
+	if (units == OdBmUnitTypeId::kPoundsMassPerSquareFoot) {
 		return u8"lb/ft²";
-	case  OdBm::DisplayUnitType::Enum::DUT_WATTS_PER_METER_KELVIN:
+	}
+	if (units == OdBmUnitTypeId::kWattsPerMeterKelvin) {
 		return u8"W/mK";
-	case  OdBm::DisplayUnitType::Enum::DUT_JOULES_PER_GRAM_CELSIUS:
+	}
+	if (units == OdBmUnitTypeId::kJoulesPerGramDegreeCelsius) {
 		return u8"J/g°C";
-	case  OdBm::DisplayUnitType::Enum::DUT_JOULES_PER_GRAM:
+	}
+	if (units == OdBmUnitTypeId::kJoulesPerGram) {
 		return u8"J/g";
-	case  OdBm::DisplayUnitType::Enum::DUT_NANOGRAMS_PER_PASCAL_SECOND_SQUARE_METER:
+	}
+	if (units == OdBmUnitTypeId::kNanogramsPerPascalSecondSquareMeter) {
 		return u8"ng/Pasm²";
-	case  OdBm::DisplayUnitType::Enum::DUT_OHM_METERS:
+	}
+	if (units == OdBmUnitTypeId::kOhmMeters) {
 		return u8"Ωm";
-	case  OdBm::DisplayUnitType::Enum::DUT_BRITISH_THERMAL_UNITS_PER_HOUR_FOOT_FAHRENHEIT:
+	}
+	if (units == OdBmUnitTypeId::kBritishThermalUnitsPerHourFootDegreeFahrenheit) {
 		return u8"btu/hft°F";
-	case  OdBm::DisplayUnitType::Enum::DUT_BRITISH_THERMAL_UNITS_PER_POUND_FAHRENHEIT:
+	}
+	if (units == OdBmUnitTypeId::kBritishThermalUnitsPerPoundDegreeFahrenheit) {
 		return u8"btu/lb°F";
-	case  OdBm::DisplayUnitType::Enum::DUT_BRITISH_THERMAL_UNITS_PER_POUND:
-		return u8"btulb";
-	case  OdBm::DisplayUnitType::Enum::DUT_GRAINS_PER_HOUR_SQUARE_FOOT_INCH_MERCURY:
+	}
+	if (units == OdBmUnitTypeId::kBritishThermalUnitsPerPound) {
+		return u8"btu/lb";
+	}
+	if (units == OdBmUnitTypeId::kGrainsPerHourSquareFootInchMercury) {
 		return u8"gr/ft²inHg";
-	case  OdBm::DisplayUnitType::Enum::DUT_PER_MILLE:
+	}
+	if (units == OdBmUnitTypeId::kPerMille) {
 		return u8"per mille";
-	case  OdBm::DisplayUnitType::Enum::DUT_DECIMETERS:
+	}
+	if (units == OdBmUnitTypeId::kDecimeters) {
 		return u8"dm";
-	case  OdBm::DisplayUnitType::Enum::DUT_JOULES_PER_KILOGRAM_CELSIUS:
+	}
+	if (units == OdBmUnitTypeId::kJoulesPerKilogramDegreeCelsius) {
 		return u8"J/kg°C";
-	case  OdBm::DisplayUnitType::Enum::DUT_MICROMETERS_PER_METER_CELSIUS:
+	}
+	if (units == OdBmUnitTypeId::kMicrometersPerMeterDegreeCelsius) {
 		return u8" μm/m°C";
-	case  OdBm::DisplayUnitType::Enum::DUT_MICROINCHES_PER_INCH_FAHRENHEIT:
+	}
+	if (units == OdBmUnitTypeId::kMicroinchesPerInchDegreeFahrenheit) {
 		return u8"μin/in°F";
-	case  OdBm::DisplayUnitType::Enum::DUT_USTONNES_MASS:
+	}
+	if (units == OdBmUnitTypeId::kUsTonnesMass) {
 		return u8"T (US)";
-	case  OdBm::DisplayUnitType::Enum::DUT_USTONNES_FORCE:
+	}
+	if (units == OdBmUnitTypeId::kUsTonnesForce) {
 		return u8"stones";
-	case  OdBm::DisplayUnitType::Enum::DUT_LITERS_PER_MINUTE:
+	}
+	if (units == OdBmUnitTypeId::kLitersPerMinute) {
 		return u8"l/min";
-	case  OdBm::DisplayUnitType::Enum::DUT_FAHRENHEIT_DIFFERENCE:
-		return u8"°F diff";
-	case  OdBm::DisplayUnitType::Enum::DUT_CELSIUS_DIFFERENCE:
-		return u8"°C diff";
-	case  OdBm::DisplayUnitType::Enum::DUT_KELVIN_DIFFERENCE:
-		return u8"K diff";
-	case  OdBm::DisplayUnitType::Enum::DUT_RANKINE_DIFFERENCE:
-		return u8"°R difference";
-	case  OdBm::DisplayUnitType::Enum::DUT_STATIONING_METERS:
+	}
+	if (units == OdBmUnitTypeId::kFahrenheitInterval) {
+		return u8"°F d";
+	}
+	if (units == OdBmUnitTypeId::kCelsiusInterval) {
+		return u8"°C d";
+	}
+	if (units == OdBmUnitTypeId::kKelvinInterval) {
+		return u8"K d";
+	}
+	if (units == OdBmUnitTypeId::kRankineInterval) {
+		return u8"°R d";
+	}
+	if (units == OdBmUnitTypeId::kStationingMeters) {
 		return u8"stationing m";
-	case  OdBm::DisplayUnitType::Enum::DUT_STATIONING_FEET:
+	}
+	if (units == OdBmUnitTypeId::kStationingFeet) {
 		return u8"stationing ft";
-	case  OdBm::DisplayUnitType::Enum::DUT_CUBIC_FEET_PER_HOUR:
+	}
+	if (units == OdBmUnitTypeId::kCubicFeetPerHour) {
 		return u8"ft³/hr";
-	case  OdBm::DisplayUnitType::Enum::DUT_LITERS_PER_HOUR:
+	}
+	if (units == OdBmUnitTypeId::kLitersPerHour) {
 		return u8"l/hr";
-	case  OdBm::DisplayUnitType::Enum::DUT_RATIO_TO_1:
-		return u8"1:x";
-	case  OdBm::DisplayUnitType::Enum::DUT_DECIMAL_US_SURVEY_FEET:
+	}
+	if (units == OdBmUnitTypeId::kRatioTo1) {
+		return u8"x:1";
+	}
+	if (units == OdBmUnitTypeId::kUsSurveyFeet) {
 		return u8"ft (US)";
 	}
-	auto unitsText = convertToStdString(labelUtils->getLabelFor(OdBm::DisplayUnitType::Enum(units)));
-	repoError << "Unrecongised unit type : " << unitsText;
-	return unitsText;
+	return boost::none;
 }
 
 void DataProcessorRvt::processParameter(
 	OdBmElementPtr element,
 	OdBmObjectId paramId,
-	OdBmAUnitsPtr pAUnits,
 	std::unordered_map<std::string, std::string> &metadata,
 	const OdBm::BuiltInParameterDefinition::Enum &buildInEnum
 ) {
@@ -870,16 +1137,25 @@ void DataProcessorRvt::processParameter(
 		OdInt64 groupId = pDescParam->getGroupElemId();
 
 		auto metaKey = convertToStdString(pDescParam->getCaption());
+
 		if (!ignoreParam(metaKey)) {
-			auto paramGroup = labelUtils->getLabelFor(OdBm::BuiltInParameterGroup::Enum(groupId));
+			auto paramGroup = labelUtils->getLabelFor(OdBm::BuiltInParameterGroupDefinition::Enum(groupId));
 			if (!paramGroup.isEmpty()) {
 				metaKey = convertToStdString(paramGroup) + "::" + metaKey;
 			}
 
-			if (pDescParam->getUnitType() != OdBm::UnitType::UT_Undefined) {
-				auto units = unitsToString(OdBmUnitUtils::getDefaultDUT(pAUnits, pDescParam->getUnitType()));
-				if (!units.empty()) metaKey += " (" + units + ")";
+			if (OdBmUnitUtils::isUnit(pDescParam->getTypeId())) {
+				auto units = unitsToString(pDescParam->getTypeId());
+				if (units) {
+					if (!units->empty()) {
+						metaKey += " (" + *units + ")";
+					}
+				}
+				else {
+					repoWarning << "Unrecognised units: " << convertToStdString(pDescParam->getTypeId().asString()) << " (" << convertToStdString(pDescParam->getSpecTypeId().asString()) << ") for " << metaKey << " on " << convertToStdString(element->getElementName());
+				}
 			}
+
 			std::string variantValue = translateMetadataValue(value, labelUtils, pDescParam, element->getDatabase(), buildInEnum);
 			if (!variantValue.empty())
 			{
@@ -894,7 +1170,6 @@ void DataProcessorRvt::processParameter(
 
 void DataProcessorRvt::fillMetadataByElemPtr(
 	OdBmElementPtr element,
-
 	std::unordered_map<std::string, std::string>& outputData)
 {
 	OdBmParameterSet aParams;
@@ -902,27 +1177,29 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 
 	std::unordered_map<std::string, std::string> metadata;
 
-	OdBmUnitsTrackingPtr pUnitsTracking = database->getAppInfo(OdBm::ManagerType::UnitsTracking);
-	OdBmUnitsElemPtr pUnitsElem = pUnitsTracking->getUnitsElemId().safeOpenObject();
-	OdBmAUnitsPtr pAUnits = pUnitsElem->getUnits();
-
 	auto id = std::to_string((OdUInt64)element->objectId().getHandle());
 	if (collector->metadataCache.find(id) != collector->metadataCache.end()) {
 		metadata = collector->metadataCache[id];
 	}
 	else {
 		if (!labelUtils) return;
+
 		for (const auto &entry : aParams.getBuiltInParamsIterator()) {
 			std::string builtInName = convertToStdString(OdBm::BuiltInParameter(entry).toString());
+			
 			//.. HOTFIX: handle access violation exception (reported to ODA)
 			if (ignoreParam(builtInName)) continue;
-
-			processParameter(element, element->database()->getObjectId(entry), pAUnits, metadata, entry);
+			
+			auto paramId = element->database()->getObjectId(entry);
+			if (paramId.isValid() && !paramId.isNull()) {
+				processParameter(element, paramId, metadata, entry);
+			}
+			
 		}
 	}
 
 	for (const auto &entry : aParams.getUserParamsIterator()) {
-		processParameter(element, entry, pAUnits, metadata,
+		processParameter(element, entry, metadata,
 			//A dummy entry, as long as it's not ELEM_CATEGORY_PARAM_MT or ELEM_CATEGORY_PARAM it's not utilised.
 			OdBm::BuiltInParameterDefinition::Enum::ACTUAL_MAX_RIDGE_HEIGHT_PARAM);
 	}
@@ -936,15 +1213,15 @@ std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBm
 {
 	std::unordered_map<std::string, std::string> metadata;
 	metadata[REVIT_ELEMENT_ID] = std::to_string((OdUInt64)element->objectId().getHandle());
+
 	try
 	{
 		fillMetadataByElemPtr(element, metadata);
 	}
 	catch (OdError& er)
 	{
-		repoInfo << "Caught exception whilst trying to fetch metadata by element pointer " << convertToStdString(er.description());
-
-		repoTrace << "Caught exception whilst trying to fetch metadata by element pointer " << convertToStdString(er.description());
+		repoInfo << "Caught exception whilst trying to fetch metadata by element pointer " << convertToStdString(er.description()) << " Code: " << er.code();
+		repoTrace << "Caught exception whilst trying to fetch metadata by element pointer " << convertToStdString(er.description()) << " Code: " << er.code();
 	}
 
 	try
@@ -953,7 +1230,7 @@ std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBm
 	}
 	catch (OdError& er)
 	{
-		repoTrace << "Caught exception whilst trying to get metadata by family ID: " << convertToStdString(er.description());
+		repoTrace << "Caught exception whilst trying to get metadata by family ID: " << convertToStdString(er.description()) << " Code: " << er.code();
 	}
 
 	try
@@ -962,16 +1239,18 @@ std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBm
 	}
 	catch (OdError& er)
 	{
-		repoTrace << "Caught exception whilst trying to get metadata by Type ID: " << convertToStdString(er.description());
+		repoTrace << "Caught exception whilst trying to get metadata by Type ID: " << convertToStdString(er.description()) << " Code: " << er.code();
 	}
+
 	try
 	{
 		fillMetadataById(element->getHeaderCategoryId(), metadata);
 	}
 	catch (OdError& er)
 	{
-		repoTrace << "Caught exception whilst trying to get ,etadata nu category ID: " << convertToStdString(er.description());
+		repoTrace << "Caught exception whilst trying to get metadata by category ID: " << convertToStdString(er.description()) << " Code: " << er.code();
 	}
+
 	return metadata;
 }
 
@@ -1022,13 +1301,14 @@ void DataProcessorRvt::fillTexture(OdBmMaterialElemPtr materialPtr, repo_materia
 	material.texturePath = validTextureName;
 }
 
-OdBm::DisplayUnitType::Enum DataProcessorRvt::getUnits(OdBmDatabasePtr database)
+OdBmForgeTypeId DataProcessorRvt::getUnits(OdBmDatabasePtr database)
 {
 	OdBmFormatOptionsPtrArray aFormatOptions;
 	OdBmUnitsTrackingPtr pUnitsTracking = database->getAppInfo(OdBm::ManagerType::UnitsTracking);
 	OdBmUnitsElemPtr pUnitsElem = pUnitsTracking->getUnitsElemId().safeOpenObject();
 	OdBmAUnitsPtr ptrAUnits = pUnitsElem->getUnits().get();
-	OdBmFormatOptionsPtr formatOptionsLength = ptrAUnits->getFormatOptions(OdBm::UnitType::Enum::UT_Length);
+
+	OdBmFormatOptionsPtr formatOptionsLength = ptrAUnits->getFormatOptions(OdBmSpecTypeId::kLength);
 	return formatOptionsLength->getUnitTypeId();
 }
 
@@ -1096,7 +1376,7 @@ void DataProcessorRvt::establishProjectTranslation(OdBmDatabase* pDb)
 				OdGeMatrix3d alignedLocation;
 				alignedLocation.setToAlignCoordSys(activeOrigin, activeX, activeY, activeZ, projectOrigin, projectX, projectY, projectZ);
 
-				auto scaleCoef = 1.0 / OdBmUnitUtils::getDisplayUnitTypeInfo(getUnits(database)).inIntUnitsCoeff;
+				auto scaleCoef = 1.0 / OdBmUnitUtils::getUnitTypeIdInfo(getUnits(database)).inIntUnitsCoeff;
 				convertTo3DRepoWorldCoorindates = [activeOrigin, alignedLocation, scaleCoef](OdGePoint3d point) {
 					auto convertedPoint = (point - activeOrigin).transformBy(alignedLocation);
 					return repo::lib::RepoVector3D64(convertedPoint.x * scaleCoef, convertedPoint.y * scaleCoef, convertedPoint.z * scaleCoef);
