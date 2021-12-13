@@ -49,8 +49,6 @@ namespace Licensing
 
 		/**
 		* Uses the cryptolens API to verify a floating license
-		* 
-		* TODO: write description - Exception when license is not valid/expired
 		*/
 		static void RunActivation()
 		{
@@ -84,8 +82,7 @@ namespace Licensing
 					authToken, // Cryptolens Access Token
 					productId, // Product key associated with the 3drepo.io pipeline
 					licenseStr, // License Key
-					floatingTimeIntervalSec, // The amount of time the user has to wait before an actived machine (or session in our case) is taken off the license.
-					10
+					floatingTimeIntervalSec // The amount of time the user has to wait before an actived machine (or session in our case) is taken off the license.
 				);
 
 			// dealing with the error in activation
@@ -96,26 +93,30 @@ namespace Licensing
 				repoInfo << "- server error: " << error.what();
 				repoInfo << "- license check: false";
 				repoInfo << "- session not added to license";
-				//TODO: fix the assertion error here:
-				//bool hasEpired = (bool)license_key->check().has_expired(1000000000 * (uint64_t)std::time(0));
-				//repoInfo << "- session expired: " << hasEpired;
-				//repoInfo << "- licensed expires on: " << );
-				//TODO: make proper exception class for this
-				throw repo::lib::RepoValidityExpiredException();
+				if(license_key.has_value())
+				{
+					time_t expiredTimeStamp = license_key->get_expires() / 1000000000;
+					bool hasEpired = (bool)license_key->check().has_expired(1000000000 * (uint64_t)std::time(0));
+					repoInfo << "- session expired: " << hasEpired << std::gmtime(&expiredTimeStamp);
+				}
+				throw repo::lib::RepoInvalidLicenseException(error.what());
 			}
-			// printing out the result
-			std::string notes = license_key->get_notes().has_value() ? 
-				license_key->get_notes().value() : "";
-			int noUsedInsances = license_key->get_activated_machines().has_value() ? 
-				license_key->get_activated_machines()->size() : -1;
-			int maxInstances = license_key->get_maxnoofmachines().has_value() ? 
-				license_key->get_maxnoofmachines().value() : -1;
-			repoInfo << "- session license ID: " << instanceId.toString();
-			repoInfo << "- server message: " << notes;
-			repoInfo << "- license check: true";
-			if (noUsedInsances >= 0) repoInfo << "- activated instances: " << noUsedInsances;
-			if (maxInstances > 0) repoInfo << "- allowed instances: " << maxInstances;
-			repoInfo << "- session succesfully added to license";
+			else
+			{
+				// printing out the result
+				std::string notes = license_key->get_notes().has_value() ? 
+					license_key->get_notes().value() : "";
+				int noUsedInsances = license_key->get_activated_machines().has_value() ? 
+					license_key->get_activated_machines()->size() : -1;
+				int maxInstances = license_key->get_maxnoofmachines().has_value() ? 
+					license_key->get_maxnoofmachines().value() : -1;
+				repoInfo << "- session license ID: " << instanceId.toString();
+				repoInfo << "- server message: " << notes;
+				repoInfo << "- license check: true";
+				if (noUsedInsances >= 0) repoInfo << "- activated instances: " << noUsedInsances;
+				if (maxInstances > 0) repoInfo << "- allowed instances: " << maxInstances;
+				repoInfo << "- session succesfully added to license";
+			}
 #endif
 		}
 
@@ -141,18 +142,17 @@ namespace Licensing
 				repoInfo << "- server error: " << error.what();
 				repoInfo << "- session not removed from license. " <<
 					"Error trying to deactivate license, " <<
-					"this instance will be taken off the license in less than" <<
+					"this instance will be taken off the license in less than " <<
 					floatingTimeIntervalSec << " seconds";
 			}
 			else
 			{
-				repoInfo <<"- session succesfully removed from license";
+				repoInfo << "- session succesfully removed from license";
 			}
 #endif
 		}
 
 	private:
-
 
 		static std::string GetLicenseString()
 		{
@@ -164,11 +164,11 @@ namespace Licensing
 			}
 			else 
 			{
-				repoError <<
-					"License not found, expected to find it in this " <<
+				std::stringstream ss;
+				ss << "License not found, expected to find it in this " <<
 					"environment variable: " <<
 					licenseEnvVarName;
-				throw repo::lib::RepoValidityExpiredException();
+				throw repo::lib::RepoInvalidLicenseException(ss.str());
 			}
 			return licenseStr;
 		}
