@@ -59,22 +59,18 @@ namespace Licensing
 			licenseStr = GetLicenseString();
 
 			cryptolens::Error e;
-			cryptolens_handle = std::unique_ptr<Cryptolens>(new Cryptolens(e));
+			cryptolens_handle = std::make_unique<Cryptolens>(e);
 
 			// seting the public key
 			cryptolens_handle->signature_verifier.set_modulus_base64(e, pubKeyModulus);
 			cryptolens_handle->signature_verifier.set_exponent_base64(e, pubKeyExponent);
-			// machine/instance id
+
 			// Using machine code to store the instance UUID instead, as per
 			// https://help.cryptolens.io/licensing-models/containers
-			// TODO: need to get a UUID for the instance session
 			instanceId = repo::lib::RepoUUID::createUUID();
 			cryptolens_handle->machine_code_computer.set_machine_code(e, instanceId.toString());
 			
-
 			// License activation 
-			// License key will not be saved, and we activation will be done each time,
-			// as we don't want offline verification periods.
 			cryptolens::optional<cryptolens::LicenseKey> license_key =
 				cryptolens_handle->activate_floating
 				(
@@ -93,12 +89,6 @@ namespace Licensing
 				repoInfo << "- server error: " << error.what();
 				repoInfo << "- license check: false";
 				repoInfo << "- session not added to license";
-				if(license_key.has_value())
-				{
-					time_t expiredTimeStamp = license_key->get_expires() / 1000000000;
-					bool hasEpired = (bool)license_key->check().has_expired(1000000000 * (uint64_t)std::time(0));
-					repoInfo << "- session expired: " << hasEpired << std::gmtime(&expiredTimeStamp);
-				}
 				throw repo::lib::RepoInvalidLicenseException(error.what());
 			}
 			else
@@ -113,6 +103,8 @@ namespace Licensing
 				repoInfo << "- session license ID: " << instanceId.toString();
 				repoInfo << "- server message: " << notes;
 				repoInfo << "- license check: true";
+				repoInfo << "- license expiry date: " << 
+					GetFormattedUtcTime(license_key->get_expires()) << " (UTC)";
 				if (noUsedInsances >= 0) repoInfo << "- activated instances: " << noUsedInsances;
 				if (maxInstances > 0) repoInfo << "- allowed instances: " << maxInstances;
 				repoInfo << "- session succesfully added to license";
@@ -171,6 +163,15 @@ namespace Licensing
 				throw repo::lib::RepoInvalidLicenseException(ss.str());
 			}
 			return licenseStr;
+		}
+
+		static std::string GetFormattedUtcTime(time_t timeStamp)
+		{
+			struct tm  tstruct = *gmtime(&timeStamp);
+			char buf[80];
+			strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct);
+			std::string formatedStr(buf);
+			return formatedStr;
 		}
 
 	};
