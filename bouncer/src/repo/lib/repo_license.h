@@ -22,6 +22,7 @@
 #include "repo_log.h"
 #include "datastructure/repo_uuid.h"
 #include "repo_exception.h"
+#include <memory>
 
 namespace cryptolens = ::cryptolens_io::v20190401;
 
@@ -42,7 +43,7 @@ namespace Licensing
 	private:
 		static std::string licenseStr;
 		static repo::lib::RepoUUID instanceId;
-		static Cryptolens cryptolens_handle;
+		static std::unique_ptr<Cryptolens> cryptolens_handle;
 
 	public:
 
@@ -55,40 +56,35 @@ namespace Licensing
 		{
 #ifdef REPO_LICENSE_CHECK
 			// only run once 
-			if (!instanceId.isDefaultValue()) return;
+			if (!instanceId.isDefaultValue() && cryptolens_handle) return;
 
 			licenseStr = GetLicenseString();
-			cryptolens::Error e;
-			Cryptolens cryptolens_handle(e);
 
-			// setting up the handle
+			cryptolens::Error e;
+			cryptolens_handle = std::unique_ptr<Cryptolens>(new Cryptolens(e));
+
 			// seting the public key
-			cryptolens_handle.signature_verifier.set_modulus_base64(e, pubKeyModulus);
-			cryptolens_handle.signature_verifier.set_exponent_base64(e, pubKeyExponent);
+			cryptolens_handle->signature_verifier.set_modulus_base64(e, pubKeyModulus);
+			cryptolens_handle->signature_verifier.set_exponent_base64(e, pubKeyExponent);
 			// machine/instance id
 			// Using machine code to store the instance UUID instead, as per
 			// https://help.cryptolens.io/licensing-models/containers
 			// TODO: need to get a UUID for the instance session
 			instanceId = repo::lib::RepoUUID::createUUID();
-			cryptolens_handle.machine_code_computer.set_machine_code(e, instanceId.toString());
+			cryptolens_handle->machine_code_computer.set_machine_code(e, instanceId.toString());
+			
 
 			// License activation 
 			// License key will not be saved, and we activation will be done each time,
 			// as we don't want offline verification periods.
 			cryptolens::optional<cryptolens::LicenseKey> license_key =
-				cryptolens_handle.activate_floating
+				cryptolens_handle->activate_floating
 				(
-					// Object used for reporting if an error occured
-					e,
-					// Cryptolens Access Token
-					authToken,
-					// Product key associated with the 3drepo.io pipeline
-					productId,
-					// License Key
-					licenseStr,
-					// The amount of time the user has to wait before an actived
-					// machine (or session in our case) is taken off the license.
-					floatingTimeIntervalSec,
+					e, // Object used for reporting if an error occured
+					authToken, // Cryptolens Access Token
+					productId, // Product key associated with the 3drepo.io pipeline
+					licenseStr, // License Key
+					floatingTimeIntervalSec, // The amount of time the user has to wait before an actived machine (or session in our case) is taken off the license.
 					10
 				);
 
@@ -123,35 +119,40 @@ namespace Licensing
 #endif
 		}
 
-
-		/**
-		* TODO: figure out how to do this with th C++ API
-		*/
 		static void RunDeactivation()
 		{
 #ifdef REPO_LICENSE_CHECK
 			// only deactivate if we have succesfully activated
-			if (instanceId.isDefaultValue()) return;
+			if (instanceId.isDefaultValue() && cryptolens_handle) return;
 
-			// attempt deactivation here
-			//repoInfo << "****License deactivation summary****\n";
-			//repoInfo << "- license message: {result.Message}\n";
-			//repoInfo << "- session license ID: {deactivateModel.MachineCode}\n";
-			//if (true)
-			//{
-			//	repoInfo <<
-			//		"- deactivation message: Error trying to deactivate license, " <<
-			//		"this instance will be taken off the license in less than" <<
-			//		"{LicenseConfig.floatingLicenseTimeout} seconds\n";
-			//}
-			//else
-			//{
-			//	repoInfo <<"- session succesfully removed from license";
-			//}
+			cryptolens::Error e;
+			cryptolens_handle->deactivate(
+				e,
+				authToken,
+				productId,
+				licenseStr,
+				true);
+
+			// dealing with the error in deactivation
+			repoInfo << "****License deactivation summary****";
+			if (e)
+			{
+				cryptolens::ActivateError error = cryptolens::ActivateError::from_reason(e.get_reason());
+				repoInfo << "- server error: " << error.what();
+				repoInfo << "- session not removed from license. " <<
+					"Error trying to deactivate license, " <<
+					"this instance will be taken off the license in less than" <<
+					floatingTimeIntervalSec << " seconds";
+			}
+			else
+			{
+				repoInfo <<"- session succesfully removed from license";
+			}
 #endif
 		}
 
 	private:
+
 
 		static std::string GetLicenseString()
 		{

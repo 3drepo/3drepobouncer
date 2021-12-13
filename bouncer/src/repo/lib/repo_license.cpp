@@ -22,5 +22,6 @@ namespace Licensing
 {
 	repo::lib::RepoUUID LicenseValidator::instanceId;
 	std::string LicenseValidator::licenseStr;
+	std::unique_ptr<Cryptolens> LicenseValidator::cryptolens_handle;
 }
 
