@@ -12,7 +12,16 @@ add_library(3drepobouncer SHARED ${SOURCES})
 set_target_properties(3drepobouncer PROPERTIES RELEASE_POSTFIX "_${VERSION_MAJOR}_${VERSION_MINOR}")
 set_target_properties(3drepobouncer PROPERTIES DEBUG_POSTFIX "_${VERSION_MAJOR}_${VERSION_MINOR}_d")
 #TODO see what needs to be done to make the linux crypto version work
-target_link_libraries(3drepobouncer ${Boost_LIBRARIES} ${MONGO_LIBRARIES} ${ASSIMP_LIBRARIES} ${OCCT_LIBRARIES} ${IFCOPENSHELL_PARSERLIB} ${IFCOPENSHELL_GEOMLIB} ${ODA_LIB} ${SYNCHRO_READER_LIBRARIES} ${THRIFT_LIBRARIES} ${ZLIB_LIBRARIES} ${SYNCHRO_LIBRARIES} ${AWSSDK_LIBRARIES} ${CRYPTOLENS_LIBRARIES} ifcUtils_2x3 ifcUtils_4 Winhttp.lib)
+
+set(LIBS ${Boost_LIBRARIES} ${MONGO_LIBRARIES} ${ASSIMP_LIBRARIES} ${OCCT_LIBRARIES} ${IFCOPENSHELL_PARSERLIB} ${IFCOPENSHELL_GEOMLIB} ${ODA_LIB} ${SYNCHRO_READER_LIBRARIES} ${THRIFT_LIBRARIES} ${ZLIB_LIBRARIES} ${SYNCHRO_LIBRARIES} ${AWSSDK_LIBRARIES} ${CRYPTOLENS_LIBRARIES} ifcUtils_2x3 ifcUtils_4)
+
+if(WIN32)
+# required for cryptolens on windows
+	Set(LIBS ${LIBS} Winhttp.lib)
+endif()
+
+target_link_libraries(3drepobouncer ${LIBS})
+
 
 install(DIRECTORY src/ DESTINATION include FILES_MATCHING PATTERN "*.h")
 install(TARGETS 3drepobouncer DESTINATION lib)
