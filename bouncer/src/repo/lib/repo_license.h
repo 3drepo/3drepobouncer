@@ -56,15 +56,13 @@ namespace Licensing
 			// only run once 
 			if (!instanceId.isDefaultValue() && cryptolens_handle) return;
 
+			// Setting up the handle
 			licenseStr = GetLicenseString();
-
 			cryptolens::Error e;
 			cryptolens_handle = std::make_unique<Cryptolens>(e);
-
 			// seting the public key
 			cryptolens_handle->signature_verifier.set_modulus_base64(e, pubKeyModulus);
 			cryptolens_handle->signature_verifier.set_exponent_base64(e, pubKeyExponent);
-
 			// Using machine code to store the instance UUID instead, as per
 			// https://help.cryptolens.io/licensing-models/containers
 			instanceId = repo::lib::RepoUUID::createUUID();
@@ -81,16 +79,23 @@ namespace Licensing
 					floatingTimeIntervalSec // The amount of time the user has to wait before an actived machine (or session in our case) is taken off the license.
 				);
 
-			// dealing with the error in activation
+			// dealing with early bail out scenarios
 			repoInfo << "****License activation summary****";
 			if (e)
 			{
 				cryptolens::ActivateError error = cryptolens::ActivateError::from_reason(e.get_reason());
-				repoInfo << "- server error: " << error.what();
-				repoInfo << "- license check: false";
+				repoInfo << "- server message: " << error.what();
+				repoInfo << "- server respose ok: false";
 				repoInfo << "- session not added to license";
-				throw repo::lib::RepoInvalidLicenseException(error.what());
+				throw repo::lib::RepoInvalidLicenseException();
 			}
+			else if (!license_key) 
+			{
+				repoInfo << "- server respose ok: false";
+				repoInfo << "- session not added to license. Error license LicenseKey is null";
+				throw repo::lib::RepoInvalidLicenseException();
+			}
+			// dealing with the license check logic once all info is present
 			else
 			{
 				// printing out the result
@@ -100,14 +105,29 @@ namespace Licensing
 					license_key->get_activated_machines()->size() : -1;
 				int maxInstances = license_key->get_maxnoofmachines().has_value() ? 
 					license_key->get_maxnoofmachines().value() : -1;
+				bool licenseBlocked = license_key->get_block();
+				bool licenseExpired = license_key->check().has_expired(time(0)) ? true : false;
 				repoInfo << "- session license ID: " << instanceId.toString();
 				repoInfo << "- server message: " << notes;
-				repoInfo << "- license check: true";
-				repoInfo << "- license expiry date: " << 
+				repoInfo << "- server respose ok: true";
+				repoInfo << "- license blocked: " << licenseBlocked;
+				repoInfo << "- license expired: " << licenseExpired;
+				repoInfo << "- license expiry on: " <<
 					GetFormattedUtcTime(license_key->get_expires()) << " (UTC)";
 				if (noUsedInsances >= 0) repoInfo << "- activated instances: " << noUsedInsances;
 				if (maxInstances > 0) repoInfo << "- allowed instances: " << maxInstances;
-				repoInfo << "- session succesfully added to license";
+
+				// handle result
+				bool allCheck = !licenseExpired && !licenseBlocked;
+				if (allCheck)
+				{
+					repoInfo << "- activation result: session succesfully added to license";
+				}
+				else
+				{
+					repoInfo << "- activation result: session activation failed";
+					throw repo::lib::RepoInvalidLicenseException();
+				}
 			}
 #endif
 		}
@@ -131,15 +151,15 @@ namespace Licensing
 			if (e)
 			{
 				cryptolens::ActivateError error = cryptolens::ActivateError::from_reason(e.get_reason());
-				repoInfo << "- server error: " << error.what();
-				repoInfo << "- session not removed from license. " <<
+				repoInfo << "- server message: " << error.what();
+				repoInfo << "- deactivation result: session not removed from license. " <<
 					"Error trying to deactivate license, " <<
 					"this instance will be taken off the license in less than " <<
 					floatingTimeIntervalSec << " seconds";
 			}
 			else
 			{
-				repoInfo << "- session succesfully removed from license";
+				repoInfo << "- deactivation result: session succesfully removed from license";
 			}
 #endif
 		}
@@ -169,7 +189,7 @@ namespace Licensing
 		{
 			struct tm  tstruct = *gmtime(&timeStamp);
 			char buf[80];
-			strftime(buf, sizeof(buf), "%Y-%m-%d.%X", &tstruct);
+			strftime(buf, sizeof(buf), "%Y/%m/%d %X", &tstruct);
 			std::string formatedStr(buf);
 			return formatedStr;
 		}
