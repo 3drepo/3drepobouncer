@@ -19,31 +19,31 @@
 
 namespace Licensing
 {
+	// definitions for class static variables
 	repo::lib::RepoUUID LicenseValidator::instanceId;
 	std::string LicenseValidator::licenseStr;
-	std::unique_ptr<Cryptolens> LicenseValidator::cryptolens_handle;
+	std::unique_ptr<Cryptolens> LicenseValidator::cryptolensHandle;
 
 	void LicenseValidator::RunActivation()
 	{
 #ifdef REPO_LICENSE_CHECK
 		// only run once 
-		if (!instanceId.isDefaultValue() && cryptolens_handle) return;
+		if (!instanceId.isDefaultValue() && cryptolensHandle) return;
 
 		// Setting up the handle
 		licenseStr = GetLicenseString();
 		cryptolens::Error e;
-		cryptolens_handle = std::make_unique<Cryptolens>(e);
-		// seting the public key
-		cryptolens_handle->signature_verifier.set_modulus_base64(e, pubKeyModulus);
-		cryptolens_handle->signature_verifier.set_exponent_base64(e, pubKeyExponent);
+		cryptolensHandle = std::make_unique<Cryptolens>(e);
+		cryptolensHandle->signature_verifier.set_modulus_base64(e, pubKeyModulus);
+		cryptolensHandle->signature_verifier.set_exponent_base64(e, pubKeyExponent);
 		// Using machine code to store the instance UUID instead, as per
 		// https://help.cryptolens.io/licensing-models/containers
 		instanceId = repo::lib::RepoUUID::createUUID();
-		cryptolens_handle->machine_code_computer.set_machine_code(e, instanceId.toString());
+		cryptolensHandle->machine_code_computer.set_machine_code(e, instanceId.toString());
 
 		// License activation 
-		cryptolens::optional<cryptolens::LicenseKey> license_key =
-			cryptolens_handle->activate_floating
+		cryptolens::optional<cryptolens::LicenseKey> licenseKey =
+			cryptolensHandle->activate_floating
 			(
 				e, // Object used for reporting if an error occured
 				authToken, // Cryptolens Access Token
@@ -62,7 +62,7 @@ namespace Licensing
 			repoInfo << "- session not added to license";
 			throw repo::lib::RepoInvalidLicenseException();
 		}
-		else if (!license_key)
+		else if (!licenseKey)
 		{
 			repoInfo << "- server respose ok: false";
 			repoInfo << "- session not added to license. Error license LicenseKey is null";
@@ -72,21 +72,21 @@ namespace Licensing
 		else
 		{
 			// printing out the result
-			std::string notes = license_key->get_notes().has_value() ?
-				license_key->get_notes().value() : "";
-			int noUsedInsances = license_key->get_activated_machines().has_value() ?
-				license_key->get_activated_machines()->size() : -1;
-			int maxInstances = license_key->get_maxnoofmachines().has_value() ?
-				license_key->get_maxnoofmachines().value() : -1;
-			bool licenseBlocked = license_key->get_block();
-			bool licenseExpired = license_key->check().has_expired(time(0)) ? true : false;
+			std::string notes = licenseKey->get_notes().has_value() ?
+				licenseKey->get_notes().value() : "";
+			int noUsedInsances = licenseKey->get_activated_machines().has_value() ?
+				licenseKey->get_activated_machines()->size() : -1;
+			int maxInstances = licenseKey->get_maxnoofmachines().has_value() ?
+				licenseKey->get_maxnoofmachines().value() : -1;
+			bool licenseBlocked = licenseKey->get_block();
+			bool licenseExpired = licenseKey->check().has_expired(time(0)) ? true : false;
 			repoInfo << "- session license ID: " << instanceId.toString();
 			repoInfo << "- server message: " << notes;
 			repoInfo << "- server respose ok: true";
 			repoInfo << "- license blocked: " << licenseBlocked;
 			repoInfo << "- license expired: " << licenseExpired;
 			repoInfo << "- license expiry on: " <<
-				GetFormattedUtcTime(license_key->get_expires()) << " (UTC)";
+				GetFormattedUtcTime(licenseKey->get_expires()) << " (UTC)";
 			if (noUsedInsances >= 0) repoInfo << "- activated instances: " << noUsedInsances;
 			if (maxInstances > 0) repoInfo << "- allowed instances: " << maxInstances;
 
@@ -109,10 +109,10 @@ namespace Licensing
 	{
 #ifdef REPO_LICENSE_CHECK
 		// only deactivate if we have succesfully activated
-		if (instanceId.isDefaultValue() && cryptolens_handle) return;
+		if (instanceId.isDefaultValue() && cryptolensHandle) return;
 
 		cryptolens::Error e;
-		cryptolens_handle->deactivate(
+		cryptolensHandle->deactivate(
 			e,
 			authToken,
 			productId,

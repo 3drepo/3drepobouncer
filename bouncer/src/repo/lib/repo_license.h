@@ -43,7 +43,7 @@ namespace Licensing
 	private:
 		static std::string licenseStr;
 		static repo::lib::RepoUUID instanceId;
-		static std::unique_ptr<Cryptolens> cryptolens_handle;
+		static std::unique_ptr<Cryptolens> cryptolensHandle;
 
 	public:
 		static void RunActivation();
