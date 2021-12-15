@@ -18,6 +18,7 @@
 #pragma once
 #include "repo_controller.cpp.inl"
 #include "error_codes.h"
+#include "lib/repo_license.h"
 
 #include "manipulator/modelconvertor/import/repo_model_import_assimp.h"
 #include "manipulator/modelconvertor/export/repo_model_export_assimp.h"
@@ -38,6 +39,30 @@ RepoController::_RepoControllerImpl::_RepoControllerImpl(
 	{
 		subscribeToLogger(listeners);
 	}
+
+	// set logging directory
+	char* logDir = getenv("REPO_LOG_DIR");
+	std::string logPath;
+	logPath = logDir ? std::string(logDir) : "./log/";
+	this->logToFile(logPath);
+
+	// set logging level
+	char* debug = getenv("REPO_DEBUG");
+	char* verbose = getenv("REPO_VERBOSE");
+	if (verbose)
+	{
+		this->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::TRACE);
+	}
+	else if (debug)
+	{
+		this->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::DEBUG);
+	}
+	else
+	{
+		this->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::INFO);
+	}
+
+	Licensing::LicenseValidator::RunActivation();
 }
 
 RepoController::_RepoControllerImpl::~_RepoControllerImpl()
@@ -50,6 +75,8 @@ RepoController::_RepoControllerImpl::~_RepoControllerImpl()
 		if (man)
 			delete man;
 	}
+
+	Licensing::LicenseValidator::RunDeactivation();
 }
 
 RepoController::RepoToken* RepoController::_RepoControllerImpl::init(

@@ -16,11 +16,6 @@
 */
 
 #include "repo_controller_internal.cpp.inl" //Inner class implementation
-#include <ctime>
-#include <boost/date_time.hpp>
-#include "lib/repo_exception.h"
-#include "lib/repo_license.h"
-
 
 using namespace repo;
 
@@ -29,7 +24,6 @@ RepoController::RepoController(
 	const uint32_t &numConcurrentOps,
 	const uint32_t &numDbConn)
 {
-	Licensing::LicenseValidator::RunActivation();
 	//RepoController follows the Pimpl idiom http://www.gotw.ca/gotw/028.htm
 	//This is done to avoid high dependencies on other headers for library users
 	//Actual implementations are in _RepoControllerImpl
@@ -38,7 +32,6 @@ RepoController::RepoController(
 
 RepoController::~RepoController()
 {
-	Licensing::LicenseValidator::RunDeactivation();
 	if (impl) delete impl;
 }
 

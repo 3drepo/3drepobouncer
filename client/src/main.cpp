@@ -42,7 +42,8 @@ repo::RepoController* instantiateController()
 	std::vector<repo::lib::RepoAbstractListener*> listeners = { stdOutListener };
 	repo::RepoController *controller = nullptr;
 
-	try {
+	try 
+	{
 		controller = new repo::RepoController(listeners);
 	}
 	catch (const repo::lib::RepoInvalidLicenseException e) {
@@ -50,30 +51,6 @@ repo::RepoController* instantiateController()
 		exit(ERRCODE_REPO_LICENCE_INVALID);
 	}
 
-	char* debug = getenv("REPO_DEBUG");
-	char* verbose = getenv("REPO_VERBOSE");
-	char* logDir = getenv("REPO_LOG_DIR");
-
-	if (verbose)
-	{
-		controller->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::TRACE);
-	}
-	else if (debug)
-	{
-		controller->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::DEBUG);
-	}
-	else
-	{
-		controller->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::INFO);
-	}
-
-	std::string logPath;
-	if (logDir)
-		logPath = std::string(logDir);
-	else
-		logPath = "./log/";
-
-	controller->logToFile(logPath);
 	repoLog("3D Repo Bouncer Version: " + controller->getVersion());
 	return controller;
 }
