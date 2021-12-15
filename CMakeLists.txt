@@ -34,7 +34,6 @@ option (REPO_BUILD_COVERAGE "Building with coverage report" OFF)
 option (ODA_SUPPORT "If ODA library is present" OFF)
 option (SYNCHRO_SUPPORT "If Synchro library is present" OFF)
 option (CRYPTOLENS_LICENSE "Build with cryptolens license check" OFF)
-option (VALID_UNTIL "Set timestamp for how long (sec since epoch) this library should be valid for (-1 for unlimited) " -1)
 if(REPO_BUILD_COVERAGE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 --coverage")
 endif()
@@ -135,12 +134,6 @@ option (REPO_BUILD_TESTS "If the test suite for the core bouncer logic is built 
 option (REPO_NO_GZIP "If zlib is not compiled into boost" OFF)
 
 add_definitions( -DWIN32_LEAN_AND_MEAN )
-
-#TODO: remove this once crypto works
-if(VALID_UNTIL GREATER 0)
-	message("setting software validity to ${VALID_UNTIL}")
-	add_definitions(-DVALID_UNTIL=${VALID_UNTIL})
-endif()
 
 #Build IFCUtils
 add_subdirectory(ifcUtils)
