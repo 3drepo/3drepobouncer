@@ -26,7 +26,7 @@
 
 namespace cryptolens = ::cryptolens_io::v20190401;
 
-using Cryptolens = cryptolens::basic_Cryptolens<cryptolens::Configuration_Windows<cryptolens::MachineCodeComputer_static>>;
+using Cryptolens = cryptolens::basic_Cryptolens<cryptolens::Configuration_Windows_IgnoreExpires<cryptolens::MachineCodeComputer_static>>;
 
 namespace Licensing
 {
