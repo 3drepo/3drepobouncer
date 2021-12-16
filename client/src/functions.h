@@ -61,7 +61,7 @@ int32_t knownValid(const std::string &cmd);
 * @return returns true upon success
 */
 int32_t performOperation(
-	repo::RepoController *controller,
+	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
 	);
@@ -79,7 +79,7 @@ int32_t performOperation(
 * @return returns true upon success
 */
 int32_t generateFederation(
-	repo::RepoController       *controller,
+	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
 	);
@@ -92,7 +92,7 @@ int32_t generateFederation(
 * @return returns true upon success
 */
 static int32_t generateStash(
-	repo::RepoController       *controller,
+	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
 	);
@@ -105,7 +105,7 @@ static int32_t generateStash(
 * @return returns true upon success
 */
 static int32_t getFileFromProject(
-	repo::RepoController       *controller,
+	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
 	);
@@ -118,7 +118,7 @@ static int32_t getFileFromProject(
 * @return returns true upon success
 */
 static int32_t importFileAndCommit(
-	repo::RepoController *controller,
+	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
 	);

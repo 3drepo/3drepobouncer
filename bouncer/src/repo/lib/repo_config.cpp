@@ -27,7 +27,6 @@
 #include <boost/filesystem.hpp>
 using namespace repo::lib;
 
-
 RepoConfig::RepoConfig(
 	const std::string &databaseAddr,
 	const int &port,
@@ -37,6 +36,18 @@ RepoConfig::RepoConfig(
 {
 	dbConf.addr = databaseAddr;
 	dbConf.port = port;
+	dbConf.username = username;
+	dbConf.password = password;
+	dbConf.pwDigested = pwDigested;
+}
+
+RepoConfig::RepoConfig(
+	const std::string &connString,
+	const std::string &username,
+	const std::string &password,
+	const bool pwDigested) : defaultStorage(FileStorageEngine::GRIDFS)
+{
+	dbConf.connString = connString;
 	dbConf.username = username;
 	dbConf.password = password;
 	dbConf.pwDigested = pwDigested;
@@ -74,7 +85,7 @@ RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 	catch (const std::exception &e) {
 		throw RepoException("Failed to read configuration file [" + filePath + "] : " + e.what());
 	}
-	
+
 	//Read database configurations
 	auto dbTree = jsonTree.get_child_optional("db");
 
@@ -84,14 +95,17 @@ RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 
 	auto dbAddr = dbTree->get<std::string>("dbhost", "");
 	auto dbPort = dbTree->get<int>("dbport", -1);
+	auto dbConn = dbTree->get<std::string>("connectionString", "");
 	auto username = dbTree->get<std::string>("username", "");
 	auto password = dbTree->get<std::string>("password", "");
 
-	if (dbAddr.empty() || dbPort == -1) {
+	auto useHostAndPort = !dbAddr.empty() && dbPort > 0;
+	if (!useHostAndPort && dbConn.empty()) {
 		throw RepoException("Database address and port not specified within configuration file.");
 	}
 
-	repo::lib::RepoConfig config = { dbAddr, dbPort, username, password };
+	repo::lib::RepoConfig config = useHostAndPort ? RepoConfig(dbAddr, dbPort, username, password) : RepoConfig(dbConn, username, password);
+
 	auto useAsDefault = jsonTree.get<std::string>("defaultStorage", "");
 
 	//Read S3 configurations if found
@@ -100,7 +114,7 @@ RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 	if (s3Tree) {
 		auto bucketName = s3Tree->get<std::string>("bucket_name", "");
 		auto bucketRegion = s3Tree->get<std::string>("bucket_region", "");
-		if(!bucketName.empty() && !bucketRegion.empty())
+		if (!bucketName.empty() && !bucketRegion.empty())
 			config.configureS3(bucketName, bucketRegion, useAsDefault == "s3");
 	}
 
@@ -115,11 +129,11 @@ RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 	}
 
 	return config;
-
 }
 
-bool RepoConfig::validate() const{
-	const bool dbOk = !dbConf.addr.empty() && (dbConf.username.empty() == dbConf.password.empty()) && dbConf.port > 0;
+bool RepoConfig::validate() const {
+	const bool validDBConn = !dbConf.connString.empty() || (!dbConf.addr.empty() && dbConf.port > 0);
+	const bool dbOk = validDBConn && (dbConf.username.empty() == dbConf.password.empty());
 	const bool s3Ok = !s3Conf.configured || (!s3Conf.bucketName.empty() && !s3Conf.bucketRegion.empty());
 	const bool fsOk = !fsConf.configured || (!fsConf.dir.empty() && fsConf.nLevel >= 0);
 
