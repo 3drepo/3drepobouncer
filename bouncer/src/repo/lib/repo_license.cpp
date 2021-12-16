@@ -22,7 +22,12 @@ namespace Licensing
 	// definitions for class static variables
 	repo::lib::RepoUUID LicenseValidator::instanceId;
 	std::string LicenseValidator::licenseStr;
+
+#ifdef REPO_LICENSE_CHECK
+
 	std::unique_ptr<Cryptolens> LicenseValidator::cryptolensHandle;
+
+#endif
 
 	void LicenseValidator::RunActivation()
 	{

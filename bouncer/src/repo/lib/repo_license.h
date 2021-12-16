@@ -15,18 +15,23 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "cryptolens/core.hpp"
-#include "cryptolens/Error.hpp"
-#include "cryptolens/Configuration_Windows.hpp"
-#include "cryptolens/MachineCodeComputer_static.hpp"
 #include "repo_log.h"
 #include "datastructure/repo_uuid.h"
 #include "repo_exception.h"
 #include <memory>
 
+#ifdef REPO_LICENSE_CHECK
+
+#include "cryptolens/core.hpp"
+#include "cryptolens/Error.hpp"
+#include "cryptolens/Configuration_Windows.hpp"
+#include "cryptolens/MachineCodeComputer_static.hpp"
+
 namespace cryptolens = ::cryptolens_io::v20190401;
 
 using Cryptolens = cryptolens::basic_Cryptolens<cryptolens::Configuration_Windows_IgnoreExpires<cryptolens::MachineCodeComputer_static>>;
+
+#endif
 
 namespace Licensing
 {
@@ -43,7 +48,12 @@ namespace Licensing
 	private:
 		static std::string licenseStr;
 		static repo::lib::RepoUUID instanceId;
+
+#ifdef REPO_LICENSE_CHECK
+
 		static std::unique_ptr<Cryptolens> cryptolensHandle;
+
+#endif
 
 	public:
 		static void RunActivation();
