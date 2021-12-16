@@ -31,7 +31,7 @@ namespace repo {
 
 		class RepoInvalidLicenseException : public RepoException {
 		public:
-			RepoInvalidLicenseException(const std::string &msg) : RepoException(msg) {};
+			RepoInvalidLicenseException(const std::string &msg="") : RepoException(msg) {};
 		};
 	}
 }
