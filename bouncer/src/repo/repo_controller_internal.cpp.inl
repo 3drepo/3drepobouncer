@@ -68,7 +68,7 @@ RepoController::RepoToken* RepoController::_RepoControllerImpl::init(
 
 		if (success)
 		{
-			const std::string dbFullAd = dbConf.addr + ":" + std::to_string(dbConf.port);
+			const std::string dbFullAd = dbConf.connString.empty() ? dbConf.addr + ":" + std::to_string(dbConf.port) : dbConf.connString;
 			token = new RepoController::RepoToken(config);
 			repoInfo << "Successfully connected to the " << dbFullAd;
 			if (!dbConf.username.empty())

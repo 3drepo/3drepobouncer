@@ -20,18 +20,17 @@
 #include "../repo_bouncer_global.h"
 #include "../core/model/bson/repo_bson_ref.h"
 
-
-namespace repo{
-	namespace lib{
+namespace repo {
+	namespace lib {
 		static int REPO_CONFIG_FS_DEFAULT_LEVEL = 2;
 		class RepoConfig
 		{
-
 		public:
 			using FileStorageEngine = repo::core::model::RepoRef::RefType;
 			struct database_config_t {
 				std::string addr;
 				int port = 27017;
+				std::string connString;
 				std::string username;
 				std::string password;
 				bool pwDigested = false;
@@ -48,7 +47,7 @@ namespace repo{
 				int nLevel;
 				bool configured = false;
 			};
-		
+
 			/**
 			* Instantiate Repo Config with a database connection
 			* @params databaseAddr database address
@@ -60,6 +59,19 @@ namespace repo{
 			REPO_API_EXPORT RepoConfig(
 				const std::string &databaseAddr,
 				const int &port,
+				const std::string &username,
+				const std::string &password,
+				const bool pwDigested = false);
+
+			/**
+			* Instantiate Repo Config with a database connection
+			* @params connString connection string
+			* @params username username to login with
+			* @params password password to login with
+			* @param pwDigested true if password given is digested.
+			*/
+			REPO_API_EXPORT RepoConfig(
+				const std::string &connString,
 				const std::string &username,
 				const std::string &password,
 				const bool pwDigested = false);
@@ -93,7 +105,7 @@ namespace repo{
 				const std::string &directory,
 				const int         &level = REPO_CONFIG_FS_DEFAULT_LEVEL,
 				const bool useAsDefault = true
-				);			
+			);
 
 			const database_config_t getDatabaseConfig() const { return dbConf; }
 			const s3_config_t getS3Config() const { return s3Conf; }
@@ -112,7 +124,6 @@ namespace repo{
 			s3_config_t s3Conf;
 			fs_config_t fsConf;
 			FileStorageEngine defaultStorage;
-
 		};
 	}
 }
