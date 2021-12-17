@@ -37,6 +37,7 @@ CSharpWrapper::CSharpWrapper()
 
 CSharpWrapper::~CSharpWrapper()
 {
+	repoInfo << "@wrapper deconstructor";
 	if (controller)
 	{
 		repoInfo << "Controller around, destroying token";
