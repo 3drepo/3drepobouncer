@@ -44,8 +44,11 @@ RepoController::RepoController(
 
 RepoController::~RepoController()
 {
+	repoInfo << "Destorying impl";
 	if (impl) delete impl;
+	repoInfo << "disconnecting handler";
 	repo::core::handler::MongoDatabaseHandler::disconnectHandler();
+	repoInfo << "done.";
 }
 
 void RepoController::addAlias(
