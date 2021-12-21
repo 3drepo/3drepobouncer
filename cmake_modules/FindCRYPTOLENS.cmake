@@ -33,7 +33,7 @@ if(DEFINED ENV{CRYPTOLENS_ROOT})
 	message(STATUS "$CRYPTOLENS_ROOT defined: ${CRYPTOLENS_ROOT}")
 	find_path(CRYPTOLENS_INCLUDE_DIR cryptolens/core.hpp
 		${CRYPTOLENS_ROOT}/include
-		)    
+	)  
 	find_library(CRYPTOLENS_LIBRARIES_RELEASE 
 		NAMES cryptolens
 		PATHS
@@ -48,6 +48,10 @@ if(DEFINED ENV{CRYPTOLENS_ROOT})
 		debug ${CRYPTOLENS_LIBRARIES_DEBUG}
 		optimized ${CRYPTOLENS_LIBRARIES_RELEASE}
 		)
+	if(WIN32)
+	# required for cryptolens on windows
+		set(CRYPTOLENS_LIBRARIES ${CRYPTOLENS_LIBRARIES} Winhttp.lib)
+	endif()
 endif()
 
 # exit if we found libs/includes

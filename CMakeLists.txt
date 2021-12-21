@@ -33,7 +33,14 @@ endif()
 option (REPO_BUILD_COVERAGE "Building with coverage report" OFF)
 option (ODA_SUPPORT "If ODA library is present" OFF)
 option (SYNCHRO_SUPPORT "If Synchro library is present" OFF)
-option (CRYPTOLENS_LICENSE "Build with cryptolens license check" $ENV{ENABLE_LICENSE_CHECK})
+
+option (LICENSE_CHECK  "Build with a license check" OFF)
+option (LICENSE_RSA_PUB_KEY_MOD "Licensing public token modulus" "")
+option (LICENSE_RSA_PUB_KEY_EXP "Licensing public token exponent" "")
+option (LICENSE_AUTH_TOKEN "Access token to communicate with licence server" "")
+option (LICENSE_PRODUCT_ID "The product ID assigned in the licensing server" "")
+option (LICENSE_TIMEOUT_SECONDS "Time after which an occupied seat is released" 1800)
+
 if(REPO_BUILD_COVERAGE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 --coverage")
 endif()
@@ -115,14 +122,14 @@ endif()
 
 #===================== CRYPTOLENS ============================
 
-if (CRYPTOLENS_LICENSE)
+if (LICENSE_CHECK )
 	find_package(CRYPTOLENS REQUIRED)
 	add_definitions(-DREPO_LICENSE_CHECK)
-	add_definitions(-DLICENSE_RSA_PUB_KEY_MOD=$ENV{LICENSE_RSA_PUB_KEY_MOD})
-	add_definitions(-DLICENSE_RSA_PUB_KEY_EXP=$ENV{LICENSE_RSA_PUB_KEY_EXP})
-	add_definitions(-DLICENSE_AUTH_TOKEN=$ENV{LICENSE_AUTH_TOKEN})
-	add_definitions(-DLICENSE_PRODUCT_ID=$ENV{LICENSE_PRODUCT_ID})
-	add_definitions(-DLICENSE_TIMEOUT_SECONDS=$ENV{LICENSE_TIMEOUT_SECONDS})
+	add_definitions(-DLICENSE_RSA_PUB_KEY_MOD="${LICENSE_RSA_PUB_KEY_MOD}")
+	add_definitions(-DLICENSE_RSA_PUB_KEY_EXP="${LICENSE_RSA_PUB_KEY_EXP}")
+	add_definitions(-DLICENSE_AUTH_TOKEN="${LICENSE_AUTH_TOKEN}")
+	add_definitions(-DLICENSE_PRODUCT_ID=${LICENSE_PRODUCT_ID})
+	add_definitions(-DLICENSE_TIMEOUT_SECONDS=${LICENSE_TIMEOUT_SECONDS})
 endif()
 
 #================COMPILE 3D REPO BOUNCER ==============
