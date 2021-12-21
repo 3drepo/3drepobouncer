@@ -37,6 +37,7 @@ namespace Licensing
 {
 
 	static const std::string licenseEnvVarName = "REPO_LICENSE";
+	static const std::string instanceUuidEnvVarName = "REPO_INSTANCE_ID";
 	static const std::string pubKeyModulus = LICENSE_RSA_PUB_KEY_MOD;
 	static const std::string pubKeyExponent = LICENSE_RSA_PUB_KEY_EXP;
 	static const std::string authToken = LICENSE_AUTH_TOKEN;
@@ -46,8 +47,8 @@ namespace Licensing
 	class LicenseValidator
 	{
 	private:
-		static std::string licenseStr;
-		static repo::lib::RepoUUID instanceId;
+		static std::string license;
+		static std::string instanceUuid;
 
 #ifdef REPO_LICENSE_CHECK
 
@@ -60,6 +61,7 @@ namespace Licensing
 		static void RunDeactivation();
 
 	private:
+		static std::string GetInstanceUuid();
 		static std::string GetLicenseString();
 		static std::string GetFormattedUtcTime(time_t timeStamp);
 	};
