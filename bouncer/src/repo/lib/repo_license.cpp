@@ -91,7 +91,7 @@ namespace Licensing
 			int maxInstances = licenseKey->get_maxnoofmachines().has_value() ?
 				licenseKey->get_maxnoofmachines().value() : -1;
 			bool licenseBlocked = licenseKey->get_block();
-			bool licenseExpired = licenseKey->check().has_expired(time(0)) ? true : false;
+			bool licenseExpired = static_cast<bool>(licenseKey->check().has_expired(time(0)));
 			repoInfo << "- session license ID: " << instanceUuid;
 			repoInfo << "- server message: " << notes;
 			repoInfo << "- server respose ok: true";
