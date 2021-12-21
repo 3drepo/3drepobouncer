@@ -35,7 +35,8 @@ using Cryptolens = cryptolens::basic_Cryptolens<cryptolens::Configuration_Window
 
 namespace Licensing
 {
-
+	static const std::string activationSummaryBlock = "****License activation summary****";
+	static const std::string deactivationSummaryBlock = "****License deactivation summary****";
 	static const std::string licenseEnvVarName = "REPO_LICENSE";
 	static const std::string instanceUuidEnvVarName = "REPO_INSTANCE_ID";
 	static const std::string pubKeyModulus = LICENSE_RSA_PUB_KEY_MOD;

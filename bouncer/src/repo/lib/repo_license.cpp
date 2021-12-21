@@ -62,28 +62,22 @@ namespace Licensing
 				floatingTimeIntervalSec // The amount of time the user has to wait before an actived machine (or session in our case) is taken off the license.
 			);
 
-		// TODO: Remove this debug code 
-		repoInfo << "****License debug info****";
-		repoInfo << "- machine code           : " << cryptolensHandle->machine_code_computer.get_machine_code(e);
-		repoInfo << "- authToken              : " << authToken;
-		repoInfo << "- productId              : " << productId;
-		repoInfo << "- licenseStr             : " << license;
-		repoInfo << "- floatingTimeIntervalSec: " << floatingTimeIntervalSec;
-
 		// dealing with early bail out scenarios
-		repoInfo << "****License activation summary****";
+		repoInfo << activationSummaryBlock;
 		if (e)
 		{
 			cryptolens::ActivateError error = cryptolens::ActivateError::from_reason(e.get_reason());
 			repoInfo << "- server message: " << error.what();
 			repoInfo << "- server respose ok: false";
 			repoInfo << "- session not added to license";
+			repoInfo << activationSummaryBlock;
 			throw repo::lib::RepoInvalidLicenseException();
 		}
 		else if (!licenseKey)
 		{
 			repoInfo << "- server respose ok: false";
 			repoInfo << "- session not added to license. Error license LicenseKey is null";
+			repoInfo << activationSummaryBlock;
 			throw repo::lib::RepoInvalidLicenseException();
 		}
 		// dealing with the license check logic once all info is present
@@ -113,10 +107,12 @@ namespace Licensing
 			if (allCheck)
 			{
 				repoInfo << "- activation result: session succesfully added to license";
+				repoInfo << activationSummaryBlock;
 			}
 			else
 			{
 				repoInfo << "- activation result: session activation failed";
+				repoInfo << activationSummaryBlock;
 				throw repo::lib::RepoInvalidLicenseException();
 			}
 		}
@@ -142,16 +138,8 @@ namespace Licensing
 			cryptolensHandle->machine_code_computer.get_machine_code(e),
 			true);
 
-		// TODO: Remove this debug code 
-		repoInfo << "****License debug info****";
-		repoInfo << "- machine code           : " << cryptolensHandle->machine_code_computer.get_machine_code(e);
-		repoInfo << "- authToken              : " << authToken;
-		repoInfo << "- productId              : " << productId;
-		repoInfo << "- licenseStr             : " << license;
-		repoInfo << "- floatingTimeIntervalSec: " << floatingTimeIntervalSec;
-
 		// dealing with the error in deactivation
-		repoInfo << "****License deactivation summary****";
+		repoInfo << deactivationSummaryBlock;
 		if (e)
 		{
 			cryptolens::ActivateError error = cryptolens::ActivateError::from_reason(e.get_reason());
@@ -161,10 +149,12 @@ namespace Licensing
 				"Error trying to deactivate license, " <<
 				"this instance will be taken off the license in less than " <<
 				floatingTimeIntervalSec << " seconds";
+			repoInfo << deactivationSummaryBlock;
 		}
 		else
 		{
 			repoInfo << "- deactivation result: session succesfully removed from license";
+			repoInfo << deactivationSummaryBlock;
 		}
 #endif
 	}
