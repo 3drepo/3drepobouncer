@@ -33,12 +33,17 @@ namespace Licensing
 	{
 #ifdef REPO_LICENSE_CHECK
 		// only run once 
-		if (!instanceId.isDefaultValue() && cryptolensHandle) return;
+		if (!instanceId.isDefaultValue() && cryptolensHandle)
+		{
+			repoError << " Attempting to activate more than once, aborting activation";
+			return;
+		}
 
 		// Setting up the handle
 		licenseStr = GetLicenseString();
 		cryptolens::Error e;
 		cryptolensHandle = std::make_unique<Cryptolens>(e);
+		// setting the public key
 		cryptolensHandle->signature_verifier.set_modulus_base64(e, pubKeyModulus);
 		cryptolensHandle->signature_verifier.set_exponent_base64(e, pubKeyExponent);
 		// Using machine code to store the instance UUID instead, as per
@@ -56,6 +61,14 @@ namespace Licensing
 				licenseStr, // License Key
 				floatingTimeIntervalSec // The amount of time the user has to wait before an actived machine (or session in our case) is taken off the license.
 			);
+
+		// TODO: Remove this debug code 
+		repoInfo << "****License debug info****";
+		repoInfo << "- machine code           : " << cryptolensHandle->machine_code_computer.get_machine_code(e);
+		repoInfo << "- authToken              : " << authToken;
+		repoInfo << "- productId              : " << productId;
+		repoInfo << "- licenseStr             : " << licenseStr;
+		repoInfo << "- floatingTimeIntervalSec: " << floatingTimeIntervalSec;
 
 		// dealing with early bail out scenarios
 		repoInfo << "****License activation summary****";
@@ -114,7 +127,11 @@ namespace Licensing
 	{
 #ifdef REPO_LICENSE_CHECK
 		// only deactivate if we have succesfully activated
-		if (instanceId.isDefaultValue() && cryptolensHandle) return;
+		if (instanceId.isDefaultValue() && cryptolensHandle) 
+		{
+			repoError << " Attempting to deactivate without activation, aborting deactivation";
+			return;
+		}
 
 		cryptolens::Error e;
 		cryptolensHandle->deactivate(
@@ -122,7 +139,16 @@ namespace Licensing
 			authToken,
 			productId,
 			licenseStr,
+			cryptolensHandle->machine_code_computer.get_machine_code(e),
 			true);
+
+		// TODO: Remove this debug code 
+		repoInfo << "****License debug info****";
+		repoInfo << "- machine code           : " << cryptolensHandle->machine_code_computer.get_machine_code(e);
+		repoInfo << "- authToken              : " << authToken;
+		repoInfo << "- productId              : " << productId;
+		repoInfo << "- licenseStr             : " << licenseStr;
+		repoInfo << "- floatingTimeIntervalSec: " << floatingTimeIntervalSec;
 
 		// dealing with the error in deactivation
 		repoInfo << "****License deactivation summary****";
