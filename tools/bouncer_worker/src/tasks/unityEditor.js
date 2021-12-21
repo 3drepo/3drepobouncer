@@ -22,6 +22,9 @@ const { ERRCODE_BUNDLE_GEN_FAIL, ERRCODE_UNITY_LICENCE_INVALID, ERRCODE_REPO_LIC
 const run = require('../lib/runCommand');
 const logger = require('../lib/logger');
 const { getCurrentDateTimeAsString } = require('../lib/utils');
+const crypto = require("crypto");
+
+
 
 const UnityHandler = {};
 
@@ -71,6 +74,7 @@ UnityHandler.generateAssetBundles = async (database, model, rid, logDir, process
 	}
 
 	try {
+    process.env.REPO_INSTANCE_ID = crypto.randomBytes(16).toString("hex");
 		const retVal = await run(unityCommand, unityCmdParams, { logLabel }, processInformation);
 		if (await checkLicenceError(unityLog)) {
 			throw ERRCODE_UNITY_LICENCE_INVALID;
@@ -86,7 +90,9 @@ UnityHandler.generateAssetBundles = async (database, model, rid, logDir, process
 			default:
 				throw await checkLicenceError(unityLog) ? ERRCODE_UNITY_LICENCE_INVALID : ERRCODE_BUNDLE_GEN_FAIL;
 		}
-	}
+	} finally{
+    delete process.env.REPO_INSTANCE_ID
+  }
 };
 
 UnityHandler.validateUnityConfigurations = () => {
