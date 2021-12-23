@@ -780,6 +780,24 @@ namespace repo {
 				const std::string &password,
 				const bool        &pwDigested = false
 			);
+			/**
+			* Connect to the given database address/port and authenticat the user using Admin database
+			* @param errMsg error message if the function returns false
+			* @param connString connection string to connect to mongo
+			* @param maxConnections maxmimum number of concurrent connections allowed to the database
+			* @param username user name
+			* @param password password of the user
+			* @param pwDigested is the password provided in digested form (default: false)
+			* @return returns true upon success
+			*/
+			bool connectAndAuthenticateWithAdmin(
+				std::string       &errMsg,
+				const std::string &connString,
+				const uint32_t    &maxConnections,
+				const std::string &username,
+				const std::string &password,
+				const bool        &pwDigested = false
+			);
 		};
 	}
 }

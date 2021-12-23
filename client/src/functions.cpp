@@ -75,7 +75,7 @@ int32_t knownValid(const std::string &cmd)
 
 int32_t performOperation(
 
-	repo::RepoController *controller,
+	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
 )
@@ -148,7 +148,7 @@ int32_t performOperation(
 */
 
 int32_t generateFederation(
-	repo::RepoController       *controller,
+	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
 )
@@ -258,7 +258,7 @@ int32_t generateFederation(
 }
 
 bool _generateStash(
-	repo::RepoController       *controller,
+	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken      *token,
 	const std::string            &type,
 	const std::string            &dbName,
@@ -293,7 +293,7 @@ bool _generateStash(
 }
 
 int32_t generateStash(
-	repo::RepoController       *controller,
+	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
 )
@@ -345,7 +345,7 @@ int32_t generateStash(
 }
 
 int32_t getFileFromProject(
-	repo::RepoController       *controller,
+	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
 )
@@ -370,7 +370,7 @@ int32_t getFileFromProject(
 }
 
 int32_t importFileAndCommit(
-	repo::RepoController *controller,
+	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
 )
