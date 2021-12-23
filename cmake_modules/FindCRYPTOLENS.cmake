@@ -14,7 +14,7 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-# attempt to find CRYPTOLENS C++ driver 
+# attempt to find CRYPTOLENS C++ driver via CRYPTOLENS_ROOT
 # if CRYPTOLENS is found, CRYPTOLENS_FOUND is set to true
 # CRYPTOLENS_INCLUDE_DIR will point to the include folder of the installation
 # CRYPTOLENS_LIBRARIES will point to the libraries
@@ -53,6 +53,28 @@ if(DEFINED ENV{CRYPTOLENS_ROOT})
 		set(CRYPTOLENS_LIBRARIES ${CRYPTOLENS_LIBRARIES} Winhttp.lib)
 	endif()
 endif()
+
+# attempt to find CRYPTOLENS C++ driver via common install dirs
+if(CRYPTOLENS_INCLUDE_DIR AND CRYPTOLENS_LIBRARIES)
+	set(CRYPTOLENS_FOUND TRUE)
+else(CRYPTOLENS_INCLUDE_DIR AND CRYPTOLENS_LIBRARIES)
+	find_path(CRYPTOLENS_INCLUDE_DIR cryptolens/core.hpp
+		/usr/include
+		/usr/local/include
+		/opt/local/include
+    )
+	find_library(CRYPTOLENS_LIBRARIES_RELEASE NAMES cryptolens
+    	PATHS
+    	/usr/lib
+    	/usr/local/lib
+    	/opt/local/lib
+		/usr/lib64
+    )
+	set(CRYPTOLENS_LIBRARIES
+		debug ${CRYPTOLENS_LIBRARIES_RELEASE}
+		optimized ${CRYPTOLENS_LIBRARIES_RELEASE}
+		)
+endif(CRYPTOLENS_INCLUDE_DIR AND CRYPTOLENS_LIBRARIES)
 
 # exit if we found libs/includes
 if(CRYPTOLENS_INCLUDE_DIR AND CRYPTOLENS_LIBRARIES)
