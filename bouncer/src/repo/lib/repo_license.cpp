@@ -40,7 +40,7 @@ namespace Licensing
 	std::string LicenseValidator::GetLicenseString()
 	{
 		std::string licenseStr = repo::lib::getEnvString(licenseEnvVarName);
-		if(license.empty())
+		if(licenseStr.empty())
 		{
 			std::stringstream ss;
 			ss << "License not found, expected to find it in this " <<
