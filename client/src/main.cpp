@@ -31,6 +31,9 @@ void printHelp()
 	std::cout << helpInfo() << std::endl;
 	std::cout << std::endl;
 	std::cout << "Environmental Variables:" << std::endl;
+#ifdef REPO_LICENSE_CHECK
+	std::cout << "REPO_LICENSE\tLicense key for running bouncer" << std::endl;
+#endif
 	std::cout << "REPO_DEBUG\tEnable debug logging" << std::endl;
 	std::cout << "REPO_LOG_DIR\tSpecify the log directory (default is ./log)" << std::endl;
 	std::cout << "REPO_VERBOSE\tEnable verbose logging" << std::endl;
