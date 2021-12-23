@@ -34,7 +34,7 @@ option (REPO_BUILD_COVERAGE "Building with coverage report" OFF)
 option (ODA_SUPPORT "If ODA library is present" OFF)
 option (SYNCHRO_SUPPORT "If Synchro library is present" OFF)
 
-option (LICENSE_CHECK  "Build with a license check" OFF)
+option (LICENSE_CHECK  "Build with a license check, see for details: https://github.com/3drepo/wiki/wiki/Licensing-components-of-3drepo.io " OFF)
 option (LICENSE_RSA_PUB_KEY_MOD "Licensing public token modulus" "")
 option (LICENSE_RSA_PUB_KEY_EXP "Licensing public token exponent" "")
 option (LICENSE_AUTH_TOKEN "Access token to communicate with licence server" "")
