@@ -75,6 +75,8 @@ RepoController::_RepoControllerImpl::~_RepoControllerImpl()
 			delete man;
 	}
 
+	repo::core::handler::MongoDatabaseHandler::disconnectHandler();
+
 	Licensing::LicenseValidator::RunDeactivation();
 }
 
