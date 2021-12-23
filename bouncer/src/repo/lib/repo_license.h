@@ -35,12 +35,14 @@ using Cryptolens = cryptolens::basic_Cryptolens<cryptolens::Configuration_Window
 
 namespace Licensing
 {
+
+#ifdef REPO_LICENSE_CHECK
+
 	static const std::string activationSummaryBlock = "****License activation summary****";
 	static const std::string deactivationSummaryBlock = "****License deactivation summary****";
 	static const std::string licenseEnvVarName = "REPO_LICENSE";
 	static const std::string instanceUuidEnvVarName = "REPO_INSTANCE_ID";
 
-#ifdef REPO_LICENSE_CHECK
 
 	static const std::string pubKeyModulus = LICENSE_RSA_PUB_KEY_MOD;
 	static const std::string pubKeyExponent = LICENSE_RSA_PUB_KEY_EXP;
@@ -52,23 +54,23 @@ namespace Licensing
 
 	class LicenseValidator
 	{
-	private:
-		static std::string license;
-		static std::string instanceUuid;
 
 #ifdef REPO_LICENSE_CHECK
 
+	private:
+		static std::string license;
+		static std::string instanceUuid;
 		static std::unique_ptr<Cryptolens> cryptolensHandle;
+
+		static std::string GetInstanceUuid();
+		static std::string GetLicenseString();
+		static std::string GetFormattedUtcTime(time_t timeStamp);
+		static void Reset();
 
 #endif
 
 	public:
 		static void RunActivation();
 		static void RunDeactivation();
-
-	private:
-		static std::string GetInstanceUuid();
-		static std::string GetLicenseString();
-		static std::string GetFormattedUtcTime(time_t timeStamp);
 	};
 }

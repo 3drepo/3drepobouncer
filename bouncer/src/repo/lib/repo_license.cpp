@@ -19,13 +19,62 @@
 
 namespace Licensing
 {
-	// definitions for class static variables
-	std::string LicenseValidator::instanceUuid;
-	std::string LicenseValidator::license;
 
 #ifdef REPO_LICENSE_CHECK
 
+	// definitions for class static variables
+	std::string LicenseValidator::instanceUuid;
+	std::string LicenseValidator::license;
 	std::unique_ptr<Cryptolens> LicenseValidator::cryptolensHandle;
+
+	std::string LicenseValidator::GetInstanceUuid()
+	{
+		std::string instanceUuid;
+		char* instanceUuidCharPtr = getenv(instanceUuidEnvVarName.c_str());
+		if (instanceUuidCharPtr && strlen(instanceUuidCharPtr) > 0)
+		{
+			instanceUuid = std::string(instanceUuidCharPtr);
+		}
+		else
+		{
+			instanceUuid = repo::lib::RepoUUID::createUUID().toString();
+		}
+		return instanceUuid;
+	}
+
+	std::string LicenseValidator::GetLicenseString()
+	{
+		std::string licenseStr;
+		char* licenseStrPtr = getenv(licenseEnvVarName.c_str());
+		if (licenseStrPtr && strlen(licenseStrPtr) > 0)
+		{
+			licenseStr = std::string(licenseStrPtr);
+		}
+		else
+		{
+			std::stringstream ss;
+			ss << "License not found, expected to find it in this " <<
+				"environment variable: " <<
+				licenseEnvVarName;
+			throw repo::lib::RepoInvalidLicenseException(ss.str());
+		}
+		return licenseStr;
+	}
+
+	std::string LicenseValidator::GetFormattedUtcTime(time_t timeStamp)
+	{
+		struct tm  tstruct = *gmtime(&timeStamp);
+		char buf[80];
+		strftime(buf, sizeof(buf), "%Y/%m/%d %X", &tstruct);
+		std::string formatedStr(buf);
+		return formatedStr;
+	}
+
+	void LicenseValidator::Reset()
+	{
+		cryptolensHandle.reset();
+		instanceUuid.clear();
+	}
 
 #endif
 
@@ -71,6 +120,7 @@ namespace Licensing
 			repoInfo << "- server respose ok: false";
 			repoInfo << "- session not added to license";
 			repoInfo << activationSummaryBlock;
+			Reset();
 			throw repo::lib::RepoInvalidLicenseException();
 		}
 		else if (!licenseKey)
@@ -78,6 +128,7 @@ namespace Licensing
 			repoInfo << "- server respose ok: false";
 			repoInfo << "- session not added to license. Error license LicenseKey is null";
 			repoInfo << activationSummaryBlock;
+			Reset();
 			throw repo::lib::RepoInvalidLicenseException();
 		}
 		// dealing with the license check logic once all info is present
@@ -113,6 +164,7 @@ namespace Licensing
 			{
 				repoInfo << "- activation result: session activation failed";
 				repoInfo << activationSummaryBlock;
+				Reset();
 				throw repo::lib::RepoInvalidLicenseException();
 			}
 		}
@@ -135,7 +187,7 @@ namespace Licensing
 			authToken,
 			productId,
 			license,
-			cryptolensHandle->machine_code_computer.get_machine_code(e),
+			instanceUuid,
 			true);
 
 		// dealing with the error in deactivation
@@ -156,51 +208,9 @@ namespace Licensing
 			repoInfo << "- deactivation result: session succesfully removed from license";
 			repoInfo << deactivationSummaryBlock;
 		}
+
+		Reset();
 #endif
-	}
-
-	std::string LicenseValidator::GetInstanceUuid()
-	{
-		std::string instanceUuid;
-		char* instanceUuidCharPtr = getenv(instanceUuidEnvVarName.c_str());
-		if (instanceUuidCharPtr && strlen(instanceUuidCharPtr) > 0)
-		{
-			instanceUuid = std::string(instanceUuidCharPtr);
-		}
-		else
-		{
-			instanceUuid = repo::lib::RepoUUID::createUUID().toString();
-		}
-		return instanceUuid;
-	}
-
-
-	std::string LicenseValidator::GetLicenseString()
-	{
-		std::string licenseStr;
-		char* licenseStrPtr = getenv(licenseEnvVarName.c_str());
-		if (licenseStrPtr && strlen(licenseStrPtr) > 0)
-		{
-			licenseStr = std::string(licenseStrPtr);
-		}
-		else
-		{
-			std::stringstream ss;
-			ss << "License not found, expected to find it in this " <<
-				"environment variable: " <<
-				licenseEnvVarName;
-			throw repo::lib::RepoInvalidLicenseException(ss.str());
-		}
-		return licenseStr;
-	}
-
-	std::string LicenseValidator::GetFormattedUtcTime(time_t timeStamp)
-	{
-		struct tm  tstruct = *gmtime(&timeStamp);
-		char buf[80];
-		strftime(buf, sizeof(buf), "%Y/%m/%d %X", &tstruct);
-		std::string formatedStr(buf);
-		return formatedStr;
 	}
 
 }
