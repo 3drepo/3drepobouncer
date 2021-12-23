@@ -41,9 +41,8 @@ RepoController::_RepoControllerImpl::_RepoControllerImpl(
 	}
 
 	// set logging directory
-	char* logDir = getenv("REPO_LOG_DIR");
-	std::string logPath;
-	logPath = logDir ? std::string(logDir) : "./log/";
+	std::string logDir = repo::lib::getEnvString("REPO_LOG_DIR");
+	std::string logPath = logDir.empty() ? "./log/" : logDir;
 	this->logToFile(logPath);
 
 	// set logging level

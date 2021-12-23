@@ -29,13 +29,8 @@ namespace Licensing
 
 	std::string LicenseValidator::GetInstanceUuid()
 	{
-		std::string instanceUuid;
-		char* instanceUuidCharPtr = getenv(instanceUuidEnvVarName.c_str());
-		if (instanceUuidCharPtr && strlen(instanceUuidCharPtr) > 0)
-		{
-			instanceUuid = std::string(instanceUuidCharPtr);
-		}
-		else
+		std::string instanceUuid = repo::lib::getEnvString(instanceUuidEnvVarName);
+		if (instanceUuid.empty())
 		{
 			instanceUuid = repo::lib::RepoUUID::createUUID().toString();
 		}
@@ -44,13 +39,8 @@ namespace Licensing
 
 	std::string LicenseValidator::GetLicenseString()
 	{
-		std::string licenseStr;
-		char* licenseStrPtr = getenv(licenseEnvVarName.c_str());
-		if (licenseStrPtr && strlen(licenseStrPtr) > 0)
-		{
-			licenseStr = std::string(licenseStrPtr);
-		}
-		else
+		std::string licenseStr = repo::lib::getEnvString(licenseEnvVarName);
+		if(license.empty())
 		{
 			std::stringstream ss;
 			ss << "License not found, expected to find it in this " <<

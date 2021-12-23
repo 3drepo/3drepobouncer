@@ -18,7 +18,7 @@
 #include "repo_log.h"
 #include "datastructure/repo_uuid.h"
 #include "repo_exception.h"
-#include <memory>
+#include "repo_utils.h"
 
 #ifdef REPO_LICENSE_CHECK
 
@@ -40,9 +40,8 @@ namespace Licensing
 
 	static const std::string activationSummaryBlock = "****License activation summary****";
 	static const std::string deactivationSummaryBlock = "****License deactivation summary****";
-	static const std::string licenseEnvVarName = "REPO_LICENSE";
-	static const std::string instanceUuidEnvVarName = "REPO_INSTANCE_ID";
-
+	static const char * licenseEnvVarName = "REPO_LICENSE";
+	static const char * instanceUuidEnvVarName = "REPO_INSTANCE_ID";
 
 	static const std::string pubKeyModulus = LICENSE_RSA_PUB_KEY_MOD;
 	static const std::string pubKeyExponent = LICENSE_RSA_PUB_KEY_EXP;
