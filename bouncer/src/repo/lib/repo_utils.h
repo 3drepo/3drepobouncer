@@ -45,15 +45,10 @@ namespace repo {
 			std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) { return std::toupper(c); });
 		}
 
-		static std::string getEnvString(char const * const & envVarName)
+		static std::string getEnvString(std::string const & envVarName)
 		{
-			std::string envVarStr;
-			char* envVarStsPtr = getenv(envVarName);
-			if (envVarStsPtr && strlen(envVarStsPtr) > 0)
-			{
-				envVarStr = envVarStsPtr;
-			}
-			return envVarStr;
+			char* value = getenv(envVarName.c_str());
+			return (value && strlen(value) > 0) ? value : "";
 		}
 	}
 }

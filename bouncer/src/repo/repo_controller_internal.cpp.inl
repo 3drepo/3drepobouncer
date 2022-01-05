@@ -46,13 +46,13 @@ RepoController::_RepoControllerImpl::_RepoControllerImpl(
 	this->logToFile(logPath);
 
 	// set logging level
-	char* debug = getenv("REPO_DEBUG");
-	char* verbose = getenv("REPO_VERBOSE");
-	if (verbose)
+	std::string debug = repo::lib::getEnvString("REPO_DEBUG");
+	std::string verbose = repo::lib::getEnvString("REPO_VERBOSE");
+	if (verbose.length() > 0)
 	{
 		this->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::TRACE);
 	}
-	else if (debug)
+	else if (debug.length() > 0)
 	{
 		this->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::DEBUG);
 	}
