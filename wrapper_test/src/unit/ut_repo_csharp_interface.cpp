@@ -68,13 +68,13 @@ TEST(RepoCsharpInterface, FullWrapperTest)
 	for (int superMeshIdx = 0; superMeshIdx < numSuperMeshes; superMeshIdx++)
 	{
 		// get info regarding the current supermesh
-		long numSubSupermeshes{0};
-		long numVertices{0};
-		long numFaces{0};
-		bool hasNormals{false};
-		bool hasUV{false};
-		int primitiveType{0};
-		int numMappings{0};
+		long numSubSupermeshes = 0;
+		long numVertices = 0;
+		long numFaces = 0;
+		bool hasNormals = false;
+		bool hasUV = false;
+		int primitiveType = 0;
+		int numMappings = 0;
 		std::string superMeshId = repoGetSuperMeshInfo(
 			superMeshIdx,
 			&numSubSupermeshes,
@@ -110,10 +110,10 @@ TEST(RepoCsharpInterface, FullWrapperTest)
 		{
 			repoInfo << "sub supermesh id: " << superMeshId << "_" << subSuperMeshIdx;
 			// get info regarding the sub supermesh
-			int vFrom{0};
-			int vTo{0};
-			int fFrom{0};
-			int fTo{0};
+			int vFrom = 0;
+			int vTo = 0;
+			int fFrom = 0;
+			int fTo = 0;
 			repoGetSubMeshInfo(superMeshIdx, subSuperMeshIdx, &vFrom, &vTo, &fFrom, &fTo);
 			// initialize and fill buffers to hold sub supermesh data
 			int subSuerMeshNumVertices = vTo - vFrom;
