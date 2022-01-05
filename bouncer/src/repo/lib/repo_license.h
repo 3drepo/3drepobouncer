@@ -51,27 +51,6 @@ namespace Licensing
 
 #endif
 
-
-	/**
-	* Class that performs license checks given an license key taken from an
-	* environment variable.
-	* 
-	* The class implements a floating license model:
-	* https://help.cryptolens.io/licensing-models/floating
-	* Supports only one active session per process
-	* 
-	* Intended flow:
-	* 
-	* 1. RunActivation -> attempts activation, retains session data if succesful,
-	* otherwise throws RepoInvalidLicenseException
-	* 
-	* 2. Perfom license protected processing
-	* 
-	* 3. RunDeactivation -> attempts to deactivate the activated session id. The
-	* session data will always be cleared
-	* 
-	* In all other scenarios the function will do nothing
-	*/
 	class LicenseValidator
 	{
 
