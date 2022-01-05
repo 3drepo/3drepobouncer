@@ -35,11 +35,6 @@ option (ODA_SUPPORT "If ODA library is present" OFF)
 option (SYNCHRO_SUPPORT "If Synchro library is present" OFF)
 
 option (LICENSE_CHECK  "Build with a license check, see for details: https://github.com/3drepo/wiki/wiki/Licensing-components-of-3drepo.io " OFF)
-option (LICENSE_RSA_PUB_KEY_MOD "Licensing public token modulus" "")
-option (LICENSE_RSA_PUB_KEY_EXP "Licensing public token exponent" "")
-option (LICENSE_AUTH_TOKEN "Access token to communicate with licence server" "")
-option (LICENSE_PRODUCT_ID "The product ID assigned in the licensing server" "")
-option (LICENSE_TIMEOUT_SECONDS "Time after which an occupied seat is released" 1800)
 
 if(REPO_BUILD_COVERAGE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 --coverage")
@@ -124,6 +119,13 @@ endif()
 
 if (LICENSE_CHECK )
 	find_package(CRYPTOLENS REQUIRED)
+	# pulling required license configuration strings from user defined values
+	set(LICENSE_RSA_PUB_KEY_MOD "" CACHE STRING "Licensing public token modulus")
+	set(LICENSE_RSA_PUB_KEY_EXP "" CACHE STRING "Licensing public token exponent")
+	set(LICENSE_AUTH_TOKEN "" CACHE STRING "Access token to communicate with licence server")
+	set(LICENSE_PRODUCT_ID "" CACHE STRING "The product ID assigned in the licensing server")
+	set(LICENSE_TIMEOUT_SECONDS "1800" CACHE STRING "Time after which an occupied seat is released")
+	# setting up definitions to inject values into code
 	add_definitions(-DREPO_LICENSE_CHECK)
 	add_definitions(-DLICENSE_RSA_PUB_KEY_MOD="${LICENSE_RSA_PUB_KEY_MOD}")
 	add_definitions(-DLICENSE_RSA_PUB_KEY_EXP="${LICENSE_RSA_PUB_KEY_EXP}")
