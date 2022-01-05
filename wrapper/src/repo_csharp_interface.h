@@ -218,4 +218,10 @@ extern "C"
 		char** assetFiles,
 		int      length
 	);
+	
+	/**
+	* Deinitialisation. Call this function when you are done so
+	* the library can clean itself up properly.
+	*/
+	REPO_WRAPPER_API_EXPORT void repoDeinit();
 }

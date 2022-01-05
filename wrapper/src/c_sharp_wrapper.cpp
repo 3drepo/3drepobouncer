@@ -25,7 +25,7 @@
 
 using namespace repo::lib;
 
-std::shared_ptr<CSharpWrapper> CSharpWrapper::wrapper = nullptr;
+CSharpWrapper* CSharpWrapper::wrapper = nullptr;
 
 CSharpWrapper::CSharpWrapper()
 	: controller(new repo::RepoController()),
@@ -88,12 +88,18 @@ void CSharpWrapper::getIdMapBuffer(
 	}
 }
 
-std::shared_ptr<CSharpWrapper> CSharpWrapper::getInstance()
+CSharpWrapper* CSharpWrapper::getInstance()
 {
 	if (!wrapper) {
-		wrapper = std::shared_ptr<CSharpWrapper>(new CSharpWrapper());
+		wrapper = new CSharpWrapper();
 	}
 	return wrapper;
+}
+
+void CSharpWrapper::destroyInstance() {
+	if(wrapper) {
+		delete wrapper;
+	}
 }
 
 void CSharpWrapper::getMaterialInfo(
