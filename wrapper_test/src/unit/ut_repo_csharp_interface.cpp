@@ -64,6 +64,7 @@ TEST(RepoCsharpInterface, LoadScene)
 		&database[0],
 		&project[0]);
 	ASSERT_FALSE(isFederation);
+	repoDeinit();
 }
 
 TEST(RepoCsharpInterface, AssetBundleSave)
@@ -89,4 +90,5 @@ TEST(RepoCsharpInterface, AssetBundleSave)
 	char* dummyAssetBundlePathPtr = &dummyAssetBundlePath[0];
 	bool assetsSavedCorrectly = repoSaveAssetBundles(&dummyAssetBundlePathPtr, 1);
 	ASSERT_TRUE(assetsSavedCorrectly);
+	repoDeinit();
 }
