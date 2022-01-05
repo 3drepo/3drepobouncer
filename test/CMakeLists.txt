@@ -2,8 +2,6 @@ add_subdirectory(src)
 
 enable_testing()
 add_definitions(-DREPO_API_LIBRARY)
-# override as we do not want to impose license checks on the test project
-remove_definitions(-DREPO_LICENSE_CHECK)
 
 include_directories(${gtest_SOURCE_DIR}/include ${gtest_SOURCE_DIR} src ../bouncer/src ../client/src ../
 	${Boost_INCLUDE_DIR} ${MONGO_INCLUDE_DIR} ${ASSIMP_INCLUDE_DIR}  ${OCCT_INCLUDE_DIR} ${IFCOPENSHELL_INCLUDE_DIR}  ${ODA_INCLUDE_DIR} ${AWSSDK_INCLUDE_DIR}  ${SYNCHRO_READER_INCLUDE_DIR})
