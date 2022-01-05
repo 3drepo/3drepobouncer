@@ -65,7 +65,7 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 		return texturePath.generic_string();
 
 	// Try to apply absolute path
-	std::string env = repo::lib::getEnvString((RVT_TEXTURES_ENV_VARIABLE);
+	std::string env = repo::lib::getEnvString(RVT_TEXTURES_ENV_VARIABLE);
 	if (env.length() == 0)
 		return std::string();
 
@@ -337,7 +337,7 @@ void DataProcessorRvt::initLabelUtils() {
 		std::string env = repo::lib::getEnvString(ODA_CSV_LOCATION);
 		if (env.length() > 0) {
 			repoInfo << "Setting root as: " << env;
-			labelUtils->setLookupRoot(OdString(env));
+			labelUtils->setLookupRoot(OdString(env.c_str()));
 		}
 		else {
 			repoWarning << "Cannot find envar ODA_CSV_LOCATION. Metadata may not be processed.";
