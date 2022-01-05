@@ -18,6 +18,7 @@
 #include "repo_controller_internal.cpp.inl" //Inner class implementation
 #include <ctime>
 #include <boost/date_time.hpp>
+#include <repo/core/handler/repo_database_handler_mongo.h>
 #include "lib/repo_exception.h"
 
 using namespace repo;
@@ -44,6 +45,7 @@ RepoController::RepoController(
 RepoController::~RepoController()
 {
 	if (impl) delete impl;
+	repo::core::handler::MongoDatabaseHandler::disconnectHandler();
 }
 
 void RepoController::addAlias(
