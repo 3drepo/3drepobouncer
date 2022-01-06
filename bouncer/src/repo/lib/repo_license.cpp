@@ -81,7 +81,7 @@ namespace Licensing
 		// Setting up the handle
 		license = GetLicenseString();
 		cryptolens::Error e;
-		cryptolensHandle = std::make_unique<Cryptolens>(e);
+		cryptolensHandle = std::unique_ptr<Cryptolens>(new Cryptolens(e));
 		// setting the public key
 		cryptolensHandle->signature_verifier.set_modulus_base64(e, pubKeyModulus);
 		cryptolensHandle->signature_verifier.set_exponent_base64(e, pubKeyExponent);
