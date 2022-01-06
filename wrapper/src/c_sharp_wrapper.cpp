@@ -37,19 +37,14 @@ CSharpWrapper::CSharpWrapper()
 
 CSharpWrapper::~CSharpWrapper()
 {
-	repoInfo << "@wrapper deconstructor";
 	if (controller)
 	{
-		repoInfo << "Controller around, destroying token";
 		if (token)
 			controller->destroyToken(token);
-		repoInfo << "Destroying scene...";
 		if (scene)
 			delete scene;
-		repoInfo << "Destroying controller..";
 		delete controller;
 
-		repoInfo << "done";
 	}
 
 }
