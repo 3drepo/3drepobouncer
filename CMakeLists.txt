@@ -125,13 +125,22 @@ if (LICENSE_CHECK )
 	set(LICENSE_AUTH_TOKEN "" CACHE STRING "Access token to communicate with licence server")
 	set(LICENSE_PRODUCT_ID "" CACHE STRING "The product ID assigned in the licensing server")
 	set(LICENSE_TIMEOUT_SECONDS "1800" CACHE STRING "Time after which an occupied seat is released")
-	# setting up definitions to inject values into code
-	add_definitions(-DREPO_LICENSE_CHECK)
-	add_definitions(-DLICENSE_RSA_PUB_KEY_MOD="${LICENSE_RSA_PUB_KEY_MOD}")
-	add_definitions(-DLICENSE_RSA_PUB_KEY_EXP="${LICENSE_RSA_PUB_KEY_EXP}")
-	add_definitions(-DLICENSE_AUTH_TOKEN="${LICENSE_AUTH_TOKEN}")
-	add_definitions(-DLICENSE_PRODUCT_ID=${LICENSE_PRODUCT_ID})
-	add_definitions(-DLICENSE_TIMEOUT_SECONDS=${LICENSE_TIMEOUT_SECONDS})
+	# check to see if require variables are set
+	if(
+		("${LICENSE_RSA_PUB_KEY_MOD}" STREQUAL "") OR 
+		("${LICENSE_RSA_PUB_KEY_EXP}" STREQUAL "") OR 
+		("${LICENSE_AUTH_TOKEN}" STREQUAL "") OR 
+		("${LICENSE_PRODUCT_ID}" STREQUAL ""))
+		message(FATAL_ERROR "Required values were not defined for the license check")
+	else()
+		# setting up definitions to inject values into code
+		add_definitions(-DREPO_LICENSE_CHECK)
+		add_definitions(-DLICENSE_RSA_PUB_KEY_MOD="${LICENSE_RSA_PUB_KEY_MOD}")
+		add_definitions(-DLICENSE_RSA_PUB_KEY_EXP="${LICENSE_RSA_PUB_KEY_EXP}")
+		add_definitions(-DLICENSE_AUTH_TOKEN="${LICENSE_AUTH_TOKEN}")
+		add_definitions(-DLICENSE_PRODUCT_ID=${LICENSE_PRODUCT_ID})
+		add_definitions(-DLICENSE_TIMEOUT_SECONDS=${LICENSE_TIMEOUT_SECONDS})
+	endif()
 endif()
 
 #================COMPILE 3D REPO BOUNCER ==============
