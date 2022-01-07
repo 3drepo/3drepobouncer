@@ -74,7 +74,7 @@ int32_t knownValid(const std::string &cmd)
 
 int32_t performOperation(
 
-	repo::RepoController *controller,
+	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
 )
@@ -123,22 +123,22 @@ int32_t performOperation(
 * ======================== Command helper functions ===================
 */
 
-static bool genRepoStash(repo::RepoController *controller, const repo::RepoController::RepoToken *token, repo::core::model::RepoScene *scene)
+static bool genRepoStash(std::shared_ptr<repo::RepoController> controller, const repo::RepoController::RepoToken *token, repo::core::model::RepoScene *scene)
 {
 	return controller->generateAndCommitStashGraph(token, scene);
 }
 
-static bool genSrcStash(repo::RepoController *controller, const repo::RepoController::RepoToken *token, repo::core::model::RepoScene *scene)
+static bool genSrcStash(std::shared_ptr<repo::RepoController> controller, const repo::RepoController::RepoToken *token, repo::core::model::RepoScene *scene)
 {
 	return controller->generateAndCommitSRCBuffer(token, scene);
 }
 
-static bool genGLTFStash(repo::RepoController *controller, const repo::RepoController::RepoToken *token, repo::core::model::RepoScene *scene)
+static bool genGLTFStash(std::shared_ptr<repo::RepoController> controller, const repo::RepoController::RepoToken *token, repo::core::model::RepoScene *scene)
 {
 	return controller->generateAndCommitGLTFBuffer(token, scene);
 }
 
-static bool genSelectionTree(repo::RepoController *controller, const repo::RepoController::RepoToken *token, repo::core::model::RepoScene *scene)
+static bool genSelectionTree(std::shared_ptr<repo::RepoController> controller, const repo::RepoController::RepoToken *token, repo::core::model::RepoScene *scene)
 {
 	return controller->generateAndCommitSelectionTree(token, scene);
 }
@@ -172,7 +172,7 @@ static std::list<std::string> readListFromFile(const std::string &fileLoc)
 */
 
 int32_t generateStash(
-	repo::RepoController       *controller,
+	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken      *token,
 	const repo_op_t            &command
 )
@@ -217,7 +217,7 @@ int32_t generateStash(
 		return REPOERR_INVALID_ARG;
 	}
 
-	std::function<bool(repo::RepoController*, const repo::RepoController::RepoToken*, repo::core::model::RepoScene*)> genFn;
+	std::function<bool(std::shared_ptr<repo::RepoController> , const repo::RepoController::RepoToken*, repo::core::model::RepoScene*)> genFn;
 	bool stashOnly = false;
 
 	if (type == "repo")
@@ -301,7 +301,7 @@ int32_t generateStash(
 }
 
 int32_t runImport(
-	repo::RepoController       *controller,
+	std::shared_ptr<repo::RepoController> controller,
 	const repo_op_t            &command
 )
 {

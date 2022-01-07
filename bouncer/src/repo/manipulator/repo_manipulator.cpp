@@ -70,6 +70,25 @@ bool RepoManipulator::connectAndAuthenticateWithAdmin(
 	return handler != 0;
 }
 
+bool RepoManipulator::connectAndAuthenticateWithAdmin(
+	std::string       &errMsg,
+	const std::string &connString,
+	const uint32_t    &maxConnections,
+	const std::string &username,
+	const std::string &password,
+	const bool        &pwDigested
+)
+{
+	//FIXME: we should have a database manager class that will instantiate new handlers/give existing handlers
+	repo::core::handler::AbstractDatabaseHandler *handler =
+		repo::core::handler::MongoDatabaseHandler::getHandler(
+			errMsg, connString, maxConnections,
+			repo::core::handler::MongoDatabaseHandler::getAdminDatabaseName(),
+			username, password, pwDigested);
+
+	return handler != 0;
+}
+
 repo::core::model::RepoBSON* RepoManipulator::createCredBSON(
 	const std::string &databaseAd,
 	const std::string &username,
@@ -683,7 +702,14 @@ bool RepoManipulator::init(
 ) {
 	auto dbConf = config.getDatabaseConfig();
 	bool success = true;
-	if (success = connectAndAuthenticateWithAdmin(errMsg, dbConf.addr, dbConf.port, nDbConnections, dbConf.username, dbConf.password)) {
+	if (dbConf.connString.empty()) {
+		success = connectAndAuthenticateWithAdmin(errMsg, dbConf.addr, dbConf.port, nDbConnections, dbConf.username, dbConf.password);
+	}
+	else {
+		success = connectAndAuthenticateWithAdmin(errMsg, dbConf.connString, nDbConnections, dbConf.username, dbConf.password);
+	}
+
+	if (success) {
 		repo::core::handler::AbstractDatabaseHandler* handler =
 			repo::core::handler::MongoDatabaseHandler::getHandler(dbConf.addr);
 		success = (bool)repo::core::handler::fileservice::FileManager::instantiateManager(config, handler);
