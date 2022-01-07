@@ -109,6 +109,7 @@ namespace Licensing
 			repoTrace << "- server message: " << error.what();
 			repoTrace << "- server respose ok: false";
 			repoTrace << "- session not added to license";
+			repoInfo  << "License activation failed: " << error.what();
 			repoTrace << activationSummaryBlock;
 			Reset();
 			throw repo::lib::RepoInvalidLicenseException();
@@ -117,6 +118,7 @@ namespace Licensing
 		{
 			repoTrace << "- server respose ok: false";
 			repoTrace << "- session not added to license. Error license LicenseKey is null";
+			repoInfo << "License activation failed: license LicenseKey is null";
 			repoTrace << activationSummaryBlock;
 			Reset();
 			throw repo::lib::RepoInvalidLicenseException();
@@ -148,11 +150,13 @@ namespace Licensing
 			if (allCheck)
 			{
 				repoTrace << "- activation result: session succesfully added to license";
+				repoInfo << "License activation passed";
 				repoTrace << activationSummaryBlock;
 			}
 			else
 			{
 				repoTrace << "- activation result: session activation failed";
+				repoInfo << "License activation failed: some checks failed";
 				repoTrace << activationSummaryBlock;
 				Reset();
 				throw repo::lib::RepoInvalidLicenseException();
@@ -191,11 +195,13 @@ namespace Licensing
 				"Error trying to deactivate license, " <<
 				"this instance will be taken off the license in less than " <<
 				floatingTimeIntervalSec << " seconds";
+			repoInfo << "License deactivation failed: " << error.what();
 			repoTrace << deactivationSummaryBlock;
 		}
 		else
 		{
 			repoTrace << "- deactivation result: session succesfully removed from license";
+			repoInfo << "License deactivation passed";
 			repoTrace << deactivationSummaryBlock;
 		}
 
