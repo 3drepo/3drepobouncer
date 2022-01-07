@@ -68,7 +68,7 @@ public:
 bool SynchroModelImport::importModel(std::string filePath, uint8_t &errCode) {
 	orgFile = filePath;
 	reader = std::make_shared<synchro_reader::SynchroReader>(filePath);
-	repoInfo << "=== IMPORTING MODEL WITH SYNCHRO MODEL CONVERTOR ===";
+	repoInfo << "=== IMPORTING MODEL WITH SYNCHRO MODEL CONVERTOR (animations: " << settings.shouldImportAnimations() <<") ===";
 	std::string msg;
 	auto synchroErrCode = reader->init(msg);
 	if (synchroErrCode != synchro_reader::SynchroError::ERR_OK) {
