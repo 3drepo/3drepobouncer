@@ -39,7 +39,6 @@ CSharpWrapper::~CSharpWrapper()
 {
 	if (controller)
 	{
-		repoInfo << "Deconstructing the controller.";
 		if (token)
 			controller->destroyToken(token);
 		if (scene)
