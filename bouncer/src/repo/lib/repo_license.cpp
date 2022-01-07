@@ -102,22 +102,22 @@ namespace Licensing
 			);
 
 		// dealing with early bail out scenarios
-		repoInfo << activationSummaryBlock;
+		repoTrace << activationSummaryBlock;
 		if (e)
 		{
 			cryptolens::ActivateError error = cryptolens::ActivateError::from_reason(e.get_reason());
-			repoInfo << "- server message: " << error.what();
-			repoInfo << "- server respose ok: false";
-			repoInfo << "- session not added to license";
-			repoInfo << activationSummaryBlock;
+			repoTrace << "- server message: " << error.what();
+			repoTrace << "- server respose ok: false";
+			repoTrace << "- session not added to license";
+			repoTrace << activationSummaryBlock;
 			Reset();
 			throw repo::lib::RepoInvalidLicenseException();
 		}
 		else if (!licenseKey)
 		{
-			repoInfo << "- server respose ok: false";
-			repoInfo << "- session not added to license. Error license LicenseKey is null";
-			repoInfo << activationSummaryBlock;
+			repoTrace << "- server respose ok: false";
+			repoTrace << "- session not added to license. Error license LicenseKey is null";
+			repoTrace << activationSummaryBlock;
 			Reset();
 			throw repo::lib::RepoInvalidLicenseException();
 		}
@@ -133,27 +133,27 @@ namespace Licensing
 				licenseKey->get_maxnoofmachines().value() : -1;
 			bool licenseBlocked = licenseKey->get_block();
 			bool licenseExpired = static_cast<bool>(licenseKey->check().has_expired(time(0)));
-			repoInfo << "- session license ID: " << instanceUuid;
-			repoInfo << "- server message: " << notes;
-			repoInfo << "- server respose ok: true";
-			repoInfo << "- license blocked: " << licenseBlocked;
-			repoInfo << "- license expired: " << licenseExpired;
-			repoInfo << "- license expiry on: " <<
+			repoTrace << "- session license ID: " << instanceUuid;
+			repoTrace << "- server message: " << notes;
+			repoTrace << "- server respose ok: true";
+			repoTrace << "- license blocked: " << licenseBlocked;
+			repoTrace << "- license expired: " << licenseExpired;
+			repoTrace << "- license expiry on: " <<
 				GetFormattedUtcTime(licenseKey->get_expires()) << " (UTC)";
-			if (noUsedInsances >= 0) repoInfo << "- activated instances: " << noUsedInsances;
-			if (maxInstances > 0) repoInfo << "- allowed instances: " << maxInstances;
+			if (noUsedInsances >= 0) repoTrace << "- activated instances: " << noUsedInsances;
+			if (maxInstances > 0) repoTrace << "- allowed instances: " << maxInstances;
 
 			// handle result
 			bool allCheck = !licenseExpired && !licenseBlocked;
 			if (allCheck)
 			{
-				repoInfo << "- activation result: session succesfully added to license";
-				repoInfo << activationSummaryBlock;
+				repoTrace << "- activation result: session succesfully added to license";
+				repoTrace << activationSummaryBlock;
 			}
 			else
 			{
-				repoInfo << "- activation result: session activation failed";
-				repoInfo << activationSummaryBlock;
+				repoTrace << "- activation result: session activation failed";
+				repoTrace << activationSummaryBlock;
 				Reset();
 				throw repo::lib::RepoInvalidLicenseException();
 			}
@@ -181,22 +181,22 @@ namespace Licensing
 			true);
 
 		// dealing with the error in deactivation
-		repoInfo << deactivationSummaryBlock;
+		repoTrace << deactivationSummaryBlock;
 		if (e)
 		{
 			cryptolens::ActivateError error = cryptolens::ActivateError::from_reason(e.get_reason());
-			repoInfo << "- server message: " << error.what();
-			repoInfo << "- session license ID: " << instanceUuid;
-			repoInfo << "- deactivation result: session not removed from license. " <<
+			repoTrace << "- server message: " << error.what();
+			repoTrace << "- session license ID: " << instanceUuid;
+			repoTrace << "- deactivation result: session not removed from license. " <<
 				"Error trying to deactivate license, " <<
 				"this instance will be taken off the license in less than " <<
 				floatingTimeIntervalSec << " seconds";
-			repoInfo << deactivationSummaryBlock;
+			repoTrace << deactivationSummaryBlock;
 		}
 		else
 		{
-			repoInfo << "- deactivation result: session succesfully removed from license";
-			repoInfo << deactivationSummaryBlock;
+			repoTrace << "- deactivation result: session succesfully removed from license";
+			repoTrace << deactivationSummaryBlock;
 		}
 
 		Reset();
