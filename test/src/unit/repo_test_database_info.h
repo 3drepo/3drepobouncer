@@ -48,6 +48,7 @@ const static std::string dwgModel = "box.dwg";
 const static std::string dxfModel = "box.dxf";
 const static std::string rvtModel = "sample.rvt";
 const static std::string rvtModel2021 = "sample2021.rvt";
+const static std::string rvtModel2022 = "sample2022.rvt";
 const static std::string rvtNo3DViewModel = "sample_bad.rvt";
 const static std::string rvtRoofTest = "RoofTest.rvt";
 const static std::string rvtMeta1 = "MetaTest1.rvt";
