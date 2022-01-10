@@ -469,7 +469,6 @@ std::unordered_map<std::string, std::string> DataProcessorRvt::fillMetadata(OdBm
 	}
 	catch (OdError& er)
 	{
-		repoInfo << "Caught exception whilst trying to fetch metadata by element pointer " << convertToStdString(er.description()) << " Code: " << er.code();
 		repoTrace << "Caught exception whilst trying to fetch metadata by element pointer " << convertToStdString(er.description()) << " Code: " << er.code();
 	}
 
