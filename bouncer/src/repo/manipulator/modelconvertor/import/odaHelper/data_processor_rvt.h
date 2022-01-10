@@ -121,8 +121,8 @@ namespace repo {
 					std::string getElementName(OdBmElementPtr element);
 
 					void initLabelUtils();
-
-					OdBmForgeTypeId getUnits(OdBmDatabasePtr database);
+					OdBmAUnitsPtr getUnits(OdBmDatabasePtr database);
+					OdBmForgeTypeId getLengthUnits(OdBmDatabasePtr database);
 
 					bool ignoreParam(const std::string& param);
 
@@ -132,8 +132,6 @@ namespace repo {
 						OdBmParamDefPtr paramDef,
 						OdBmDatabase* database,
 						OdBm::BuiltInParameterDefinition::Enum param);
-
-					boost::optional<std::string> unitsToString(const OdBmForgeTypeId& units);
 
 					void processParameter(
 						OdBmElementPtr element,
