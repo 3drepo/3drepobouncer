@@ -15,9 +15,9 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- *  Mongo database handler
- */
+ /**
+  *  Mongo database handler
+  */
 
 #pragma once
 
@@ -42,10 +42,10 @@
 #include "../model/bson/repo_bson_user.h"
 #include "../../lib/repo_stack.h"
 
-namespace repo{
-	namespace core{
+namespace repo {
+	namespace core {
 		namespace handler {
-			class MongoDatabaseHandler : public AbstractDatabaseHandler{
+			class MongoDatabaseHandler : public AbstractDatabaseHandler {
 				enum class OPERATION { DROP, INSERT, UPDATE };
 			public:
 				/*
@@ -65,13 +65,13 @@ namespace repo{
 				 *	=============================================================================================
 				 */
 
-				/*
-				 *	=================================== Public Functions ========================================
-				 */
+				 /*
+				  *	=================================== Public Functions ========================================
+				  */
 
-				/**
-				 * A Deconstructor
-				 */
+				  /**
+				   * A Deconstructor
+				   */
 				~MongoDatabaseHandler();
 
 				/**
@@ -79,6 +79,26 @@ namespace repo{
 				* Must call this before trying to reconnect to another database!
 				*/
 				static void disconnectHandler();
+
+				/**
+				 * Returns the instance of MongoDatabaseHandler
+				 * @param errMsg error message if this fails
+				 * @param host hostname of the database
+				 * @param port port number
+				 * @param number of maximum simultaneous connections
+				 * @param username username for authentication
+				 * @param password for authentication
+				 * @param pwDigested true if password is digested
+				 * @return Returns the single instance
+				 */
+				static MongoDatabaseHandler* getHandler(
+					std::string &errMsg,
+					const std::string &connectionString,
+					const uint32_t    &maxConnections = 1,
+					const std::string &dbName = std::string(),
+					const std::string &username = std::string(),
+					const std::string &password = std::string(),
+					const bool        &pwDigested = false);
 
 				/**
 				 * Returns the instance of MongoDatabaseHandler
@@ -179,13 +199,13 @@ namespace repo{
 				*/
 				std::vector<repo::core::model::RepoBSON>
 					getAllFromCollectionTailable(
-					const std::string                             &database,
-					const std::string                             &collection,
-					const uint64_t                                &skip = 0,
-					const uint32_t								  &limit = 0,
-					const std::list<std::string>				  &fields = std::list<std::string>(),
-					const std::string							  &sortField = std::string(),
-					const int									  &sortOrder = -1);
+						const std::string                             &database,
+						const std::string                             &collection,
+						const uint64_t                                &skip = 0,
+						const uint32_t								  &limit = 0,
+						const std::list<std::string>				  &fields = std::list<std::string>(),
+						const std::string							  &sortField = std::string(),
+						const int									  &sortOrder = -1);
 
 				/**
 				* Get a list of all available collections.
@@ -195,14 +215,13 @@ namespace repo{
 				*/
 				std::list<std::string> getCollections(const std::string &database);
 
-
 				/**
 				 * Get a list of all available databases, alphabetically sorted by default.
 				 * @param sort the database
 				 * @return returns a list of database names
 				 */
 				std::list<std::string> getDatabases(const bool &sorted = true);
-			
+
 				/** get the associated projects for the list of database.
 				 * @param list of database
 				 * @return returns a map of database -> list of projects
@@ -261,7 +280,7 @@ namespace repo{
 				* Create an index within the given collection
 				* @param database name of the database
 				* @param name name of the collection
-				* @param index BSONObj specifying the index 
+				* @param index BSONObj specifying the index
 				*/
 				virtual void createIndex(const std::string &database, const std::string &collection, const mongo::BSONObj & obj);
 
@@ -381,7 +400,7 @@ namespace repo{
 					const std::vector<uint8_t> &bin,
 					std::string          &errMsg,
 					const std::string          &contentType = "binary/octet-stream"
-					);
+				);
 
 				/**
 				* Insert a role into the database
@@ -494,7 +513,7 @@ namespace repo{
 					const std::string& collection,
 					const repo::core::model::RepoBSON& criteria,
 					const std::string& sortField = ""
-					);
+				);
 
 				/**
 				*Retrieves the first document matching given Shared ID (SID), sorting is descending
@@ -535,7 +554,7 @@ namespace repo{
 					const std::string& database,
 					const std::string& collection,
 					const std::string& fname
-					);
+				);
 
 				/*
 				 *	=============================================================================================
@@ -570,18 +589,18 @@ namespace repo{
 				 *	=============================================================================================
 				 */
 
-				/*
-				 *	=================================== Private Functions ========================================
-				 */
+				 /*
+				  *	=================================== Private Functions ========================================
+				  */
 
-				/**
-				 * Constructor is private because this class follows the singleton pattern
-				 * @param dbAddress ConnectionString that holds the address to the mongo database
-				 * @param maxConnections max. number of connections to the database
-				 * @param username user name for authentication (optional)
-				 * @param password password of the user (optional)
-				 * @param pwDigested true if pw is digested (optional)
-				 */
+				  /**
+				   * Constructor is private because this class follows the singleton pattern
+				   * @param dbAddress ConnectionString that holds the address to the mongo database
+				   * @param maxConnections max. number of connections to the database
+				   * @param username user name for authentication (optional)
+				   * @param password password of the user (optional)
+				   * @param pwDigested true if pw is digested (optional)
+				   */
 				MongoDatabaseHandler(
 					const mongo::ConnectionString &dbAddress,
 					const uint32_t                &maxConnections,

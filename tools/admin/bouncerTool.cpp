@@ -40,11 +40,11 @@ void printHelp()
 	std::cout << "REPO_VERBOSE\tEnable verbose logging" << std::endl;
 }
 
-repo::RepoController* instantiateController()
+std::shared_ptr<repo::RepoController> instantiateController()
 {
 	repo::lib::LogToStdout *stdOutListener = new repo::lib::LogToStdout();
 	std::vector<repo::lib::RepoAbstractListener*> listeners = { stdOutListener };
-	repo::RepoController *controller = new repo::RepoController(listeners);
+	auto controller = std::make_shared<repo::RepoController>(listeners);
 
 	char* debug = getenv("REPO_DEBUG");
 	char* verbose = getenv("REPO_VERBOSE");
@@ -89,7 +89,7 @@ void logCommand(int argc, char* argv[])
 }
 
 int main(int argc, char* argv[]) {
-	repo::RepoController *controller = instantiateController();
+	auto controller = instantiateController();
 	auto noConn = argc > 1 && noConnectionRequired(argv[1]);
 	if (argc < minArgs && !noConn) {
 		if (argc == 2 && isSpecialCommand(argv[1]))
@@ -99,9 +99,7 @@ int main(int argc, char* argv[]) {
 			op.nArgcs = 0;
 
 			int32_t errcode = performOperation(controller, nullptr, op);
-
-			delete controller;
-
+			
 			return errcode;
 		}
 
@@ -138,8 +136,7 @@ int main(int argc, char* argv[]) {
 		std::string errMsg;
 
 		if (noConn) {
-			int32_t errcode = performOperation(controller, nullptr, op);
-			delete controller;
+			int32_t errcode = performOperation(controller, nullptr, op);			
 			repoLog("Process completed, returning with error code: " + std::to_string(errcode));
 			return errcode;
 		}
@@ -154,13 +151,11 @@ int main(int argc, char* argv[]) {
 				int32_t errcode = performOperation(controller, token, op);
 
 				controller->destroyToken(token);
-				delete controller;
 				repoLog("Process completed, returning with error code: " + std::to_string(errcode));
 				return errcode;
 			}
 			else {
 				repoLogError("Failed to authenticate to the database: " + errMsg);
-				delete controller;
 				return REPOERR_AUTH_FAILED;
 			}
 		}
@@ -169,12 +164,10 @@ int main(int argc, char* argv[]) {
 	{
 		repoLogError("Not enough arguments for command: " + op.command);
 		printHelp();
-		delete controller;
 		return REPOERR_INVALID_ARG;
 	}
 
 	repoLogError("Unknown command: " + op.command);
 	printHelp();
-	delete controller;
 	return REPOERR_UNKNOWN_CMD;
 }
