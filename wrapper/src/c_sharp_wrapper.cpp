@@ -83,7 +83,7 @@ void CSharpWrapper::getIdMapBuffer(
 	}
 }
 
-std::shared_ptr<CSharpWrapper> CSharpWrapper::getInstance()
+CSharpWrapper* CSharpWrapper::getInstance()
 {
 	if (!wrapper) {
 		wrapper = new CSharpWrapper();

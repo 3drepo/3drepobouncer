@@ -40,19 +40,16 @@ RepoController::_RepoControllerImpl::_RepoControllerImpl(
 		subscribeToLogger(listeners);
 	}
 
-	// set logging directory
-	std::string logDir = repo::lib::getEnvString("REPO_LOG_DIR");
-	std::string logPath = logDir.empty() ? "./log/" : logDir;
-	this->logToFile(logPath);
+	std::string logDir = repo::lib::getEnvString("REPO_LOG_DIR").empty() ? "./log/" : logDir;
+	this->logToFile(logDir);
 
-	// set logging level
 	std::string debug = repo::lib::getEnvString("REPO_DEBUG");
 	std::string verbose = repo::lib::getEnvString("REPO_VERBOSE");
-	if (verbose.length() > 0)
+	if (!verbose.empty())
 	{
 		this->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::TRACE);
 	}
-	else if (debug.length() > 0)
+	else if (!debug.empty())
 	{
 		this->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::DEBUG);
 	}
@@ -61,7 +58,7 @@ RepoController::_RepoControllerImpl::_RepoControllerImpl(
 		this->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::INFO);
 	}
 
-	Licensing::LicenseValidator::RunActivation();
+	repo::lib::LicenseValidator::activate();
 }
 
 RepoController::_RepoControllerImpl::~_RepoControllerImpl()
@@ -75,9 +72,7 @@ RepoController::_RepoControllerImpl::~_RepoControllerImpl()
 			delete man;
 	}
 
-	repo::core::handler::MongoDatabaseHandler::disconnectHandler();
-
-	Licensing::LicenseValidator::RunDeactivation();
+	repo::lib::LicenseValidator::deactivate();
 }
 
 RepoController::RepoToken* RepoController::_RepoControllerImpl::init(

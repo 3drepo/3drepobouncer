@@ -221,7 +221,7 @@ namespace repo{
 				int      length
 				);
 
-			static std::shared_ptr<CSharpWrapper> wrapper;
+			static CSharpWrapper* wrapper;
 		private:
 			CSharpWrapper();
 			repo::RepoController* controller;
