@@ -80,11 +80,16 @@ endif(CRYPTOLENS_INCLUDE_DIR AND CRYPTOLENS_LIBRARIES)
 
 # exit if we found libs/includes
 if(CRYPTOLENS_INCLUDE_DIR AND CRYPTOLENS_LIBRARIES)
-	set(CRYPTOLENS_FOUND TRUE)
-	message(STATUS "CRYPTOLENS installation found.")
-	message(STATUS "CRYPTOLENS_INCLUDE_DIR: ${CRYPTOLENS_INCLUDE_DIR}")
-	message(STATUS "CRYPTOLENS_LIBRARIES: ${CRYPTOLENS_LIBRARIES}")
-	
+	# confirm structure of the folder is correct
+	get_filename_component(THIRD_PARTY_FULLPATH "${CRYPTOLENS_INCLUDE_DIR}/../third_party" REALPATH)
+    if (NOT EXISTS "${THIRD_PARTY_FULLPATH}")
+		message(FATAL_ERROR "cryptolens third party folder not found")
+    else()
+		set(CRYPTOLENS_FOUND TRUE)
+		message(STATUS "CRYPTOLENS installation found.")
+		message(STATUS "CRYPTOLENS_INCLUDE_DIR: ${CRYPTOLENS_INCLUDE_DIR}")
+		message(STATUS "CRYPTOLENS_LIBRARIES: ${CRYPTOLENS_LIBRARIES}")
+	endif()
 # cannot find CRYPTOLENS anywhere!
 else(CRYPTOLENS_INCLUDE_DIR AND CRYPTOLENS_LIBRARIES)
 	set(CRYPTOLENS_FOUND FALSE)
