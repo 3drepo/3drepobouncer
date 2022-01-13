@@ -18,22 +18,12 @@
 #include <repo/lib/time_zone_converter.h>
 #include <gtest/gtest.h>
 
-
 TEST(RepoTimeZoneConverter, ZoneCheck)
 {
-	
-	using namespace std::literals;
-	// time zone is Asia/Tokyo (UTC+9)
-	// a given timestamp in the sequence is 1641555767 (Friday, 7 January 2022 11:42:47 GMT+00:00)
-	// the timestamp should be converted to 1641523367 (Friday, 7 January 2022 02:42:47 GMT+00:00)
+	using namespace std::literals; // chrono literals e.g. seconds
 	auto tzc1 = repo::lib::TimeZoneConverter("Asia/Tokyo");
-	std::cout << "test result: " << (1641523367s == tzc1.timeZoneEpochToUtcEpoch(1641555767s) ? "true" : "false") << "\n";
-	// 1642076100 converts to Thursday January 13, 2022 07:15 : 00 (am)in time zone America / New York(EST)
-	// The offset(difference to Greenwich Time / GMT) is - 05 : 00 or in seconds - 18000.	
-	//runTest(1642076100s, 1642058100s, tz2);
+	EXPECT_EQ(1641523367s, tzc1.timeZoneEpochToUtcEpoch(1641555767s));
 	auto tzc2 = repo::lib::TimeZoneConverter("America/New_York");
-	std::cout << "test result: " << (1642076100s == tzc2.timeZoneEpochToUtcEpoch(1642058100s) ? "true" : "false") << "\n";
-	
-
+	EXPECT_EQ(1642076100s, tzc2.timeZoneEpochToUtcEpoch(1642058100s));
 }
 
