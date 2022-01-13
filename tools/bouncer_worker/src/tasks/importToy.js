@@ -37,7 +37,7 @@ const accumulateCollectionFiles = (modelDir, modelId) => {
 const runMongoImport = async (database, collection, filePath) => {
 	const params = [
 		'-j', '8',
-		'--host', `${config.db.dbhost}:${config.db.dbport}`,
+		'--uri', config.db.connectionString,
 		'--username', config.db.username,
 		'--password', config.db.password,
 		'--authenticationDatabase', 'admin',
@@ -248,14 +248,19 @@ const renameGroups = async (db, database, modelId) => {
 	await Promise.all(updateObjectPromises);
 };
 
+const getURLWithAuth = () => {
+	const protocol = 'mongodb://';
+	const authStr = `${config.db.username}:${encodeURIComponent(config.db.password)}@`;
+	return config.db.connectionString.replace(protocol, `${protocol}${authStr}`);
+};
+
 const ToyImporter = {};
 
 ToyImporter.importToyModel = async (toyModelID, database, modelId) => {
 	const modelDir = `${config.toyModelDir}/${toyModelID}`;
 	await importJSON(modelDir, database, modelId);
 
-	const url = `mongodb://${config.db.username}:${config.db.password}@${config.db.dbhost}:${config.db.dbport}/admin`;
-	const dbConn = await MongoClient.connect(url, { useUnifiedTopology: true });
+	const dbConn = await MongoClient.connect(getURLWithAuth(), { useUnifiedTopology: true });
 	const db = dbConn.db(database);
 
 	const promises = [];

@@ -49,6 +49,11 @@ const applyDefaultValuesIfUndefined = (config) => {
 	// processMonitoring
 	config.processMonitoring = config.processMonitoring || {};
 	config.processMonitoring.memoryIntervalMS = config.processMonitoring.memoryIntervalMS || 100;
+
+	// create connection string for db
+	if (!config.db.connectionString) {
+		config.db.connectionString = `mongodb://${config.db.dbhost}:${config.db.dbport}`;
+	}
 };
 /* eslint-enable no-param-reassign */
 
