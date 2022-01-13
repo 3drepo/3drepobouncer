@@ -17,10 +17,7 @@
 
 #pragma once
 
-#include "repo_log.h"
-#include "datastructure/repo_uuid.h"
-#include "repo_exception.h"
-#include "repo_utils.h"
+#include <memory>
 
 #ifdef REPO_LICENSE_CHECK
 

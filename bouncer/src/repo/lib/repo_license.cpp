@@ -16,6 +16,11 @@
 */
 
 #include "repo_license.h"
+#include "repo_log.h"
+#include "datastructure/repo_uuid.h"
+#include "repo_exception.h"
+#include "repo_utils.h"
+
 using namespace repo::lib;
 
 #ifdef REPO_LICENSE_CHECK
