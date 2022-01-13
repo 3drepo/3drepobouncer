@@ -113,6 +113,12 @@ if (S3_SUPPORT)
 	endif()
 endif()
 
+#================DATE SETTINGS=======================
+find_package(date REQUIRED)
+if(NOT ${DATE_FOUND})
+	message(FATAL_ERROR "Cannot find date c++ driver")
+endif()
+
 #================COMPILE 3D REPO BOUNCER ==============
 option (REPO_BUILD_WRAPPER "If the C# wrapper is built in addition to the library" ON)
 cmake_dependent_option (REPO_BUILD_WRAPPER_TESTS "If the C# wrapper test suite is built" OFF "REPO_BUILD_WRAPPER" OFF)
