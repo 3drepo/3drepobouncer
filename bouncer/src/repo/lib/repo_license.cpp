@@ -24,6 +24,7 @@
 using namespace repo::lib;
 
 #ifdef REPO_LICENSE_CHECK
+#include "cryptolens/Error.hpp"
 
 std::string LicenseValidator::instanceUuid;
 std::string LicenseValidator::license;

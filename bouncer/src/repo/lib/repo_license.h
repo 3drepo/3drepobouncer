@@ -22,11 +22,9 @@
 #ifdef REPO_LICENSE_CHECK
 
 #include "cryptolens/core.hpp"
-#include "cryptolens/Error.hpp"
 #include "cryptolens/MachineCodeComputer_static.hpp"
 
 namespace cryptolens = ::cryptolens_io::v20190401;
-
 #if defined(_WIN32) || defined(_WIN64)
 #include "cryptolens/Configuration_Windows.hpp"
 using Cryptolens = cryptolens::basic_Cryptolens<cryptolens::Configuration_Windows_IgnoreExpires<cryptolens::MachineCodeComputer_static>>;
