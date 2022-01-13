@@ -15,6 +15,8 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#pragma once
+
 #include "repo_log.h"
 #include "datastructure/repo_uuid.h"
 #include "repo_exception.h"
