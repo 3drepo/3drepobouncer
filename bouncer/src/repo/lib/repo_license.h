@@ -36,21 +36,6 @@ using Cryptolens = cryptolens::basic_Cryptolens<cryptolens::Configuration_Unix_I
 #endif
 namespace repo {
 	namespace lib {
-#ifdef REPO_LICENSE_CHECK
-
-		static const std::string activationSummaryBlock = "****License activation summary****";
-		static const std::string deactivationSummaryBlock = "****License deactivation summary****";
-		static const std::string licenseEnvVarName = "REPO_LICENSE";
-		static const std::string instanceUuidEnvVarName = "REPO_INSTANCE_ID";
-
-		static const std::string pubKeyModulus = LICENSE_RSA_PUB_KEY_MOD;
-		static const std::string pubKeyExponent = LICENSE_RSA_PUB_KEY_EXP;
-		static const std::string authToken = LICENSE_AUTH_TOKEN;
-		static const int floatingTimeIntervalSec = LICENSE_TIMEOUT_SECONDS;
-		static const int productId = LICENSE_PRODUCT_ID;
-
-#endif
-
 		class LicenseValidator
 		{
 #ifdef REPO_LICENSE_CHECK
