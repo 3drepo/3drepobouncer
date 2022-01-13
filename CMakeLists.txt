@@ -34,7 +34,7 @@ option (REPO_BUILD_COVERAGE "Building with coverage report" OFF)
 option (ODA_SUPPORT "If ODA library is present" OFF)
 option (SYNCHRO_SUPPORT "If Synchro library is present" OFF)
 
-option (LICENSE_CHECK  "Build with a license check, see for details: https://github.com/3drepo/wiki/wiki/Licensing-components-of-3drepo.io " OFF)
+option (LICENSE_CHECK  "Build with a license check" OFF)
 
 if(REPO_BUILD_COVERAGE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 --coverage")
@@ -117,21 +117,33 @@ endif()
 
 #===================== CRYPTOLENS ============================
 
+function (ensureNotEmpty varName data)
+	if(data STREQUAL "")
+		message(FATAL_ERROR "${varName} cannot be empty when LICENSE_CHECK is set.")
+	endif()
+
+endfunction()
+
 if (LICENSE_CHECK )
 	find_package(CRYPTOLENS REQUIRED)
-	# pulling required license configuration strings from user defined values
 	set(LICENSE_RSA_PUB_KEY_MOD "" CACHE STRING "Licensing public token modulus")
 	set(LICENSE_RSA_PUB_KEY_EXP "" CACHE STRING "Licensing public token exponent")
 	set(LICENSE_AUTH_TOKEN "" CACHE STRING "Access token to communicate with licence server")
 	set(LICENSE_PRODUCT_ID "" CACHE STRING "The product ID assigned in the licensing server")
 	set(LICENSE_TIMEOUT_SECONDS "1800" CACHE STRING "Time after which an occupied seat is released")
-	# setting up definitions to inject values into code
+
+	ensureNotEmpty(LICENSE_RSA_PUB_KEY_MOD "${LICENSE_RSA_PUB_KEY_MOD}")
+	ensureNotEmpty(LICENSE_RSA_PUB_KEY_EXP "${LICENSE_RSA_PUB_KEY_EXP}")
+	ensureNotEmpty(LICENSE_AUTH_TOKEN "${LICENSE_AUTH_TOKEN}")
+	ensureNotEmpty(LICENSE_PRODUCT_ID "${LICENSE_PRODUCT_ID}")
+
 	add_definitions(-DREPO_LICENSE_CHECK)
 	add_definitions(-DLICENSE_RSA_PUB_KEY_MOD="${LICENSE_RSA_PUB_KEY_MOD}")
 	add_definitions(-DLICENSE_RSA_PUB_KEY_EXP="${LICENSE_RSA_PUB_KEY_EXP}")
 	add_definitions(-DLICENSE_AUTH_TOKEN="${LICENSE_AUTH_TOKEN}")
 	add_definitions(-DLICENSE_PRODUCT_ID=${LICENSE_PRODUCT_ID})
 	add_definitions(-DLICENSE_TIMEOUT_SECONDS=${LICENSE_TIMEOUT_SECONDS})
+
 endif()
 
 #================COMPILE 3D REPO BOUNCER ==============

@@ -45,12 +45,11 @@ std::shared_ptr<repo::RepoController>  instantiateController()
 	std::vector<repo::lib::RepoAbstractListener*> listeners = { stdOutListener };
 	std::shared_ptr<repo::RepoController> controller;
 
-	try 
+	try
 	{
 		controller = std::make_shared<repo::RepoController>(listeners);
 	}
 	catch (const repo::lib::RepoInvalidLicenseException e) {
-		std::cerr << e.what() << std::endl;
 		exit(ERRCODE_REPO_LICENCE_INVALID);
 	}
 

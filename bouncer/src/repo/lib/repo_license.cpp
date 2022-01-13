@@ -16,192 +16,146 @@
 */
 
 #include "repo_license.h"
+using namespace repo::lib;
 
-namespace Licensing
+#ifdef REPO_LICENSE_CHECK
+
+std::string LicenseValidator::instanceUuid;
+std::string LicenseValidator::license;
+std::unique_ptr<Cryptolens> LicenseValidator::cryptolensHandle;
+
+std::string LicenseValidator::getInstanceUuid()
 {
-
-#ifdef REPO_LICENSE_CHECK
-
-	// definitions for class static variables
-	std::string LicenseValidator::instanceUuid;
-	std::string LicenseValidator::license;
-	std::unique_ptr<Cryptolens> LicenseValidator::cryptolensHandle;
-
-	std::string LicenseValidator::GetInstanceUuid()
+	instanceUuid = instanceUuid.empty() ? repo::lib::getEnvString(instanceUuidEnvVarName) : instanceUuid;
+	if (instanceUuid.empty())
 	{
-		std::string instanceUuid = repo::lib::getEnvString(instanceUuidEnvVarName);
-		if (instanceUuid.empty())
-		{
-			instanceUuid = repo::lib::RepoUUID::createUUID().toString();
-		}
-		return instanceUuid;
+		instanceUuid = repo::lib::RepoUUID::createUUID().toString();
 	}
+	return instanceUuid;
+}
 
-	std::string LicenseValidator::GetLicenseString()
+std::string LicenseValidator::getLicenseString()
+{
+	std::string licenseStr = repo::lib::getEnvString(licenseEnvVarName);
+	if (licenseStr.empty())
 	{
-		std::string licenseStr = repo::lib::getEnvString(licenseEnvVarName);
-		if(licenseStr.empty())
-		{
-			std::stringstream ss;
-			ss << "License not found, expected to find it in this " <<
-				"environment variable: " <<
-				licenseEnvVarName;
-			throw repo::lib::RepoInvalidLicenseException(ss.str());
-		}
-		return licenseStr;
+		std::string errMsg = "License not found, please ensure " + licenseEnvVarName + " is set.";
+		throw repo::lib::RepoInvalidLicenseException(errMsg);
 	}
+	return licenseStr;
+}
 
-	std::string LicenseValidator::GetFormattedUtcTime(time_t timeStamp)
-	{
-		struct tm  tstruct = *gmtime(&timeStamp);
-		char buf[80];
-		strftime(buf, sizeof(buf), "%Y/%m/%d %X", &tstruct);
-		std::string formatedStr(buf);
-		return formatedStr;
-	}
-
-	void LicenseValidator::Reset()
-	{
-		cryptolensHandle.reset();
-		instanceUuid.clear();
-	}
+std::string LicenseValidator::getFormattedUtcTime(time_t timeStamp)
+{
+	struct tm  tstruct = *gmtime(&timeStamp);
+	char buf[80];
+	strftime(buf, sizeof(buf), "%Y/%m/%d %X", &tstruct);
+	std::string formatedStr(buf);
+	return formatedStr;
+}
 
 #endif
 
-	void LicenseValidator::RunActivation()
-	{
+void LicenseValidator::activate()
+{
 #ifdef REPO_LICENSE_CHECK
-		// only run once 
-		if (!instanceUuid.empty() || cryptolensHandle)
-		{
-			repoError << " Attempting to activate more than once, aborting activation";
-			return;
-		}
-
-		// Setting up the handle
-		license = GetLicenseString();
-		cryptolens::Error e;
-		cryptolensHandle = std::unique_ptr<Cryptolens>(new Cryptolens(e));
-		// setting the public key
-		cryptolensHandle->signature_verifier.set_modulus_base64(e, pubKeyModulus);
-		cryptolensHandle->signature_verifier.set_exponent_base64(e, pubKeyExponent);
-		// Using machine code to store the instance UUID instead, as per
-		// https://help.cryptolens.io/licensing-models/containers
-		instanceUuid = GetInstanceUuid();
-		cryptolensHandle->machine_code_computer.set_machine_code(e, instanceUuid);
-
-		// License activation 
-		cryptolens::optional<cryptolens::LicenseKey> licenseKey =
-			cryptolensHandle->activate_floating
-			(
-				e, // Object used for reporting if an error occured
-				authToken, // Cryptolens Access Token
-				productId, // Product key associated with the 3drepo.io pipeline
-				license, // License Key
-				floatingTimeIntervalSec // The amount of time the user has to wait before an actived machine (or session in our case) is taken off the license.
-			);
-
-		// dealing with early bail out scenarios
-		repoInfo << activationSummaryBlock;
-		if (e)
-		{
-			cryptolens::ActivateError error = cryptolens::ActivateError::from_reason(e.get_reason());
-			repoInfo << "- server message: " << error.what();
-			repoInfo << "- server respose ok: false";
-			repoInfo << "- session not added to license";
-			repoInfo << activationSummaryBlock;
-			Reset();
-			throw repo::lib::RepoInvalidLicenseException();
-		}
-		else if (!licenseKey)
-		{
-			repoInfo << "- server respose ok: false";
-			repoInfo << "- session not added to license. Error license LicenseKey is null";
-			repoInfo << activationSummaryBlock;
-			Reset();
-			throw repo::lib::RepoInvalidLicenseException();
-		}
-		// dealing with the license check logic once all info is present
-		else
-		{
-			// printing out the result
-			std::string notes = licenseKey->get_notes().has_value() ?
-				licenseKey->get_notes().value() : "";
-			int noUsedInsances = licenseKey->get_activated_machines().has_value() ?
-				licenseKey->get_activated_machines()->size() : -1;
-			int maxInstances = licenseKey->get_maxnoofmachines().has_value() ?
-				licenseKey->get_maxnoofmachines().value() : -1;
-			bool licenseBlocked = licenseKey->get_block();
-			bool licenseExpired = static_cast<bool>(licenseKey->check().has_expired(time(0)));
-			repoInfo << "- session license ID: " << instanceUuid;
-			repoInfo << "- server message: " << notes;
-			repoInfo << "- server respose ok: true";
-			repoInfo << "- license blocked: " << licenseBlocked;
-			repoInfo << "- license expired: " << licenseExpired;
-			repoInfo << "- license expiry on: " <<
-				GetFormattedUtcTime(licenseKey->get_expires()) << " (UTC)";
-			if (noUsedInsances >= 0) repoInfo << "- activated instances: " << noUsedInsances;
-			if (maxInstances > 0) repoInfo << "- allowed instances: " << maxInstances;
-
-			// handle result
-			bool allCheck = !licenseExpired && !licenseBlocked;
-			if (allCheck)
-			{
-				repoInfo << "- activation result: session succesfully added to license";
-				repoInfo << activationSummaryBlock;
-			}
-			else
-			{
-				repoInfo << "- activation result: session activation failed";
-				repoInfo << activationSummaryBlock;
-				Reset();
-				throw repo::lib::RepoInvalidLicenseException();
-			}
-		}
-#endif
+	if (!instanceUuid.empty() || cryptolensHandle)
+	{
+		repoError << " Attempting to activate more than once, aborting activation";
+		return;
 	}
 
-	void LicenseValidator::RunDeactivation()
-	{
-#ifdef REPO_LICENSE_CHECK
-		// only deactivate if we have succesfully activated
-		if (instanceUuid.empty() || !cryptolensHandle)
-		{
-			repoError << " Attempting to deactivate without activation, aborting deactivation";
-			return;
-		}
+	license = getLicenseString();
+	cryptolens::Error e;
+	cryptolensHandle = std::unique_ptr<Cryptolens>(new Cryptolens(e));
+	cryptolensHandle->signature_verifier.set_modulus_base64(e, pubKeyModulus);
+	cryptolensHandle->signature_verifier.set_exponent_base64(e, pubKeyExponent);
 
-		cryptolens::Error e;
-		cryptolensHandle->deactivate(
+	cryptolensHandle->machine_code_computer.set_machine_code(e, getInstanceUuid());
+
+	cryptolens::optional<cryptolens::LicenseKey> licenseKey =
+		cryptolensHandle->activate_floating
+		(
 			e,
 			authToken,
 			productId,
 			license,
-			instanceUuid,
-			true);
+			floatingTimeIntervalSec
+		);
 
-		// dealing with the error in deactivation
-		repoInfo << deactivationSummaryBlock;
-		if (e)
+	if (e)
+	{
+		cryptolens::ActivateError error = cryptolens::ActivateError::from_reason(e.get_reason());
+		std::string errMsg = error.what();
+		repoError << "License activation failed: " << errMsg;
+		throw repo::lib::RepoInvalidLicenseException(errMsg);
+	}
+	else
+	{
+		bool licenseBlocked = licenseKey->get_block();
+		bool licenseExpired = static_cast<bool>(licenseKey->check().has_expired(time(0)));
+		if (!licenseExpired && !licenseBlocked)
 		{
-			cryptolens::ActivateError error = cryptolens::ActivateError::from_reason(e.get_reason());
-			repoInfo << "- server message: " << error.what();
-			repoInfo << "- session license ID: " << instanceUuid;
-			repoInfo << "- deactivation result: session not removed from license. " <<
-				"Error trying to deactivate license, " <<
-				"this instance will be taken off the license in less than " <<
-				floatingTimeIntervalSec << " seconds";
-			repoInfo << deactivationSummaryBlock;
+			repoTrace << activationSummaryBlock;
+			repoTrace << "- session license ID: " << instanceUuid;
+			repoTrace << "- server message: " << licenseKey->get_notes().has_value() ? licenseKey->get_notes().value() : "";
+			repoTrace << "- server respose ok: true";
+			repoTrace << "- license blocked: " << licenseBlocked;
+			repoTrace << "- license expired: " << licenseExpired;
+			repoTrace << "- license expiry on: " << getFormattedUtcTime(licenseKey->get_expires()) << " (UTC)";
+			if (licenseKey->get_activated_machines().has_value()) repoTrace << "- #activated instances: " << licenseKey->get_activated_machines()->size();
+			if (licenseKey->get_maxnoofmachines().has_value()) repoTrace << "- allowed instances: " << licenseKey->get_maxnoofmachines().value();
+			repoInfo << "License activated";
+			repoTrace << activationSummaryBlock;
 		}
 		else
 		{
-			repoInfo << "- deactivation result: session succesfully removed from license";
-			repoInfo << deactivationSummaryBlock;
+			std::string errMsg = licenseExpired ? "License expired." : " License is blocked";
+			repoError << "License activation failed: " << errMsg;
+			repoTrace << activationSummaryBlock;
+			deactivate();
+			throw repo::lib::RepoInvalidLicenseException(errMsg);
 		}
-
-		Reset();
-#endif
 	}
-
+#endif
 }
 
+void LicenseValidator::deactivate()
+{
+#ifdef REPO_LICENSE_CHECK
+	if (instanceUuid.empty() || !cryptolensHandle)
+	{
+		repoError << " Attempting to deactivate without activation, aborting deactivation";
+		return;
+	}
+
+	cryptolens::Error e;
+	cryptolensHandle->deactivate(
+		e,
+		authToken,
+		productId,
+		license,
+		instanceUuid,
+		true);
+
+	if (e)
+	{
+		repoTrace << deactivationSummaryBlock;
+		cryptolens::ActivateError error = cryptolens::ActivateError::from_reason(e.get_reason());
+		repoTrace << "- server message: " << error.what();
+		repoTrace << "- session license ID: " << instanceUuid;
+		repoTrace << "- deactivation result: session not removed from license. Error trying to deactivate license. ";
+		repoTrace << " this allocation will time out in less than " << floatingTimeIntervalSec << " seconds";
+		repoTrace << deactivationSummaryBlock;
+		repoError << "License deactivation failed: " << error.what();
+	}
+	else
+	{
+		repoInfo << "License allocation relinquished";
+		repoTrace << deactivationSummaryBlock;
+	}
+
+	cryptolensHandle.reset();
+	instanceUuid.clear();
+#endif
+}

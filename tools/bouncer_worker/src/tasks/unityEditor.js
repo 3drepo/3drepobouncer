@@ -17,12 +17,12 @@
 
 const fs = require('fs');
 const readline = require('readline');
+const { v4: uuidv4 } = require('uuid');
 const { config, configPath } = require('../lib/config');
 const { ERRCODE_BUNDLE_GEN_FAIL, ERRCODE_UNITY_LICENCE_INVALID, ERRCODE_REPO_LICENCE_INVALID } = require('../constants/errorCodes');
 const run = require('../lib/runCommand');
 const logger = require('../lib/logger');
 const { getCurrentDateTimeAsString } = require('../lib/utils');
-const { v4: uuidv4 } = require('uuid');
 
 const UnityHandler = {};
 
@@ -69,7 +69,7 @@ UnityHandler.generateAssetBundles = async (database, model, rid, logDir, process
 
 	if (config.repoLicense) {
 		process.env.REPO_LICENSE = config.repoLicense;
-    process.env.REPO_INSTANCE_ID = uuidv4();
+		process.env.REPO_INSTANCE_ID = uuidv4();
 	}
 
 	try {

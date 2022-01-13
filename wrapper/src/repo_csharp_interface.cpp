@@ -176,3 +176,7 @@ bool repoSaveAssetBundles(
 	auto wrapper = repo::lib::CSharpWrapper::getInstance();
 	return wrapper->saveAssetBundles(assetFiles, length);
 }
+
+void repoDeinit() {
+	repo::lib::CSharpWrapper::destroyInstance();
+}

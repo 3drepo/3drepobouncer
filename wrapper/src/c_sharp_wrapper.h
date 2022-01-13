@@ -29,7 +29,9 @@ namespace repo{
 			/**
 			* Singleton class - get its instance
 			*/
-			static std::shared_ptr<CSharpWrapper> getInstance();
+			static CSharpWrapper* getInstance();
+
+			static void destroyInstance();
 
 			/**
 			* Connect to a mongo database, authenticate by the admin database
@@ -219,7 +221,7 @@ namespace repo{
 				int      length
 				);
 
-			static std::shared_ptr<CSharpWrapper> wrapper;
+			static CSharpWrapper* wrapper;
 		private:
 			CSharpWrapper();
 			repo::RepoController* controller;

@@ -66,7 +66,7 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 
 	// Try to apply absolute path
 	std::string env = repo::lib::getEnvString(RVT_TEXTURES_ENV_VARIABLE);
-	if (env.length() == 0)
+	if (env.empty())
 		return std::string();
 
 	auto absolutePath = boost::filesystem::absolute(texturePath, env);
@@ -335,7 +335,7 @@ void DataProcessorRvt::initLabelUtils() {
 		OdBmLabelUtilsPEPtr _labelUtils = OdBmObject::desc()->getX(OdBmLabelUtilsPE::desc());
 		labelUtils = (OdBmSampleLabelUtilsPE*)_labelUtils.get();
 		std::string env = repo::lib::getEnvString(ODA_CSV_LOCATION);
-		if (env.length() > 0) {
+		if (!env.empty()) {
 			repoInfo << "Setting root as: " << env;
 			labelUtils->setLookupRoot(OdString(env.c_str()));
 		}

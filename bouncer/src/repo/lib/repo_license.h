@@ -36,47 +36,42 @@ using Cryptolens = cryptolens::basic_Cryptolens<cryptolens::Configuration_Window
 using Cryptolens = cryptolens::basic_Cryptolens<cryptolens::Configuration_Unix_IgnoreExpires<cryptolens::MachineCodeComputer_static>>;
 #endif
 
-
-
 #endif
-
-namespace Licensing
-{
-
+namespace repo {
+	namespace lib {
 #ifdef REPO_LICENSE_CHECK
 
-	static const std::string activationSummaryBlock = "****License activation summary****";
-	static const std::string deactivationSummaryBlock = "****License deactivation summary****";
-	static const char * licenseEnvVarName = "REPO_LICENSE";
-	static const char * instanceUuidEnvVarName = "REPO_INSTANCE_ID";
+		static const std::string activationSummaryBlock = "****License activation summary****";
+		static const std::string deactivationSummaryBlock = "****License deactivation summary****";
+		static const std::string licenseEnvVarName = "REPO_LICENSE";
+		static const std::string instanceUuidEnvVarName = "REPO_INSTANCE_ID";
 
-	static const std::string pubKeyModulus = LICENSE_RSA_PUB_KEY_MOD;
-	static const std::string pubKeyExponent = LICENSE_RSA_PUB_KEY_EXP;
-	static const std::string authToken = LICENSE_AUTH_TOKEN;
-	static const int floatingTimeIntervalSec = LICENSE_TIMEOUT_SECONDS;
-	static const int productId = LICENSE_PRODUCT_ID;
+		static const std::string pubKeyModulus = LICENSE_RSA_PUB_KEY_MOD;
+		static const std::string pubKeyExponent = LICENSE_RSA_PUB_KEY_EXP;
+		static const std::string authToken = LICENSE_AUTH_TOKEN;
+		static const int floatingTimeIntervalSec = LICENSE_TIMEOUT_SECONDS;
+		static const int productId = LICENSE_PRODUCT_ID;
 
 #endif
 
-	class LicenseValidator
-	{
-
+		class LicenseValidator
+		{
 #ifdef REPO_LICENSE_CHECK
 
-	private:
-		static std::string license;
-		static std::string instanceUuid;
-		static std::unique_ptr<Cryptolens> cryptolensHandle;
+		private:
+			static std::string license;
+			static std::string instanceUuid;
+			static std::unique_ptr<Cryptolens> cryptolensHandle;
 
-		static std::string GetInstanceUuid();
-		static std::string GetLicenseString();
-		static std::string GetFormattedUtcTime(time_t timeStamp);
-		static void Reset();
+			static std::string getInstanceUuid();
+			static std::string getLicenseString();
+			static std::string getFormattedUtcTime(time_t timeStamp);
 
 #endif
 
-	public:
-		static void RunActivation();
-		static void RunDeactivation();
-	};
+		public:
+			static void activate();
+			static void deactivate();
+		};
+	}
 }
