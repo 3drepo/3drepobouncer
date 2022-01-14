@@ -59,7 +59,7 @@ RepoController::_RepoControllerImpl::_RepoControllerImpl(
 		this->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::INFO);
 	}
 
-	repo::lib::LicenseValidator::activate();
+	licenseValidator.activate();
 }
 
 RepoController::_RepoControllerImpl::~_RepoControllerImpl()
@@ -73,7 +73,7 @@ RepoController::_RepoControllerImpl::~_RepoControllerImpl()
 			delete man;
 	}
 
-	repo::lib::LicenseValidator::deactivate();
+	repo::core::handler::MongoDatabaseHandler::disconnectHandler();
 }
 
 RepoController::RepoToken* RepoController::_RepoControllerImpl::init(

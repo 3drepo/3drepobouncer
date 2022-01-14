@@ -761,4 +761,5 @@ private:
 
 	lib::RepoStack<manipulator::RepoManipulator> workerPool;
 	const uint32_t numDBConnections;
+	repo::lib::LicenseValidator licenseValidator;
 };
