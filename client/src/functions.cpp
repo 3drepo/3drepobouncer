@@ -472,7 +472,7 @@ int32_t importFileAndCommit(
 
 	repo::manipulator::modelconvertor::ModelImportConfig config(true, rotate, importAnimations);
 	uint8_t err;
-	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, err, &config);
+	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, err, config);
 	if (graph)
 	{
 		repoLog("Trying to commit this scene to database as " + database + "." + project);

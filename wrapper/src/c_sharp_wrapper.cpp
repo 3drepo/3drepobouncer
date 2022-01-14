@@ -26,6 +26,7 @@
 using namespace repo::lib;
 
 CSharpWrapper* CSharpWrapper::wrapper = nullptr;
+
 CSharpWrapper::CSharpWrapper()
 	: controller(new repo::RepoController()),
 	token(nullptr),
@@ -43,6 +44,7 @@ CSharpWrapper::~CSharpWrapper()
 		if (scene)
 			delete scene;
 		delete controller;
+
 	}
 
 }
@@ -83,9 +85,16 @@ void CSharpWrapper::getIdMapBuffer(
 
 CSharpWrapper* CSharpWrapper::getInstance()
 {
-	if (!wrapper)
+	if (!wrapper) {
 		wrapper = new CSharpWrapper();
+	}
 	return wrapper;
+}
+
+void CSharpWrapper::destroyInstance() {
+	if(wrapper) {
+		delete wrapper;
+	}
 }
 
 void CSharpWrapper::getMaterialInfo(
