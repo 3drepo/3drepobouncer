@@ -2,6 +2,7 @@
 matrix:
   include:
     - language: node_js
+      name: Bouncer Worker linter check
       dist: focal
       node_js:
         - "14.17.3"
@@ -9,6 +10,7 @@ matrix:
         - cd tools/bouncer_worker && yarn install && yarn lint
     - language: cpp
       dist: focal
+      name: Unit tests and integration tests
       node_js:
         - "14.17.3"
       compiler:
@@ -65,16 +67,6 @@ matrix:
           - tar -zxf testData/bouncer/ext_libs/focal/3drepoSynchroReader-2.0.1.tgz
           - export THRIFT_ROOT=$PWD/thrift-0.12.0
           - export SYNCHRO_READER_ROOT=$PWD/3drepoSynchroReader
-          - echo ============ CRYPTOLENS INSTALL =============
-          - sudo apt-get install libcurl4-openssl-dev
-          - tar -zxf testData/bouncer/ext_libs/focal/cryptoLens.tgz
-          - export CRYPTOLENS_ROOT=$PWD/cryptoLens
-            # dummy values just to ensure it compiles
-          - export LICENSE_RSA_PUB_KEY_MOD="1bc"
-          - export LICENSE_RSA_PUB_KEY_EXP="1bc"
-          - export LICENSE_AUTH_TOKEN="1bc"
-          - export LICENSE_PRODUCT_ID=123
-
 
       install:
           - sudo pip install cpp-coveralls
@@ -95,12 +87,73 @@ matrix:
           - export SYNCHRO_PLUGIN_LOCATION=$PWD/3drepobouncer/plugins
           - LD_LIBRARY_PATH=$PWD/3drepobouncer PATH=$PWD/3drepobouncer:$PATH ./3drepobouncer/3drepobouncerTest
           - LD_LIBRARY_PATH=$PWD/3drepobouncer PATH=$PWD/3drepobouncer:$PATH ./3drepobouncer/3drepobouncerwrapperTest
+
+      after_success:
+          - cd $BOUNCER_DIR - && coveralls --root . -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0" -e "aws-install"
+
+    - language: cpp
+      dist: focal
+      name: license support compilation check
+      node_js:
+        - "14.17.3"
+      compiler:
+           - gcc
+
+      addons:
+          apt:
+              sources:
+                  - ubuntu-toolchain-r-test
+              packages:
+                  - gcc
+                  - g++
+
+      before_install:
+          - export CXX="g++"
+          - export CC="gcc"
+          - echo ============ BOOST  INSTALL =============
+          - sudo apt-get install libboost-all-dev
+          - echo ============ MONGO  INSTALL =============
+          - tar -zxf testData/bouncer/ext_libs/focal/mongo-cxx-driver.tgz
+          - export MONGO_ROOT=$PWD/mongo-cxx-driver
+          - echo ============ ASSIMP INSTALL =============
+          - tar -zxf testData/bouncer/ext_libs/focal/assimp.tgz
+          - export ASSIMP_ROOT=$PWD/assimp
+          - echo ============ IFCOPENSHELL INSTALL =============
+          - tar -zxf testData/bouncer/ext_libs/focal/IfcOpenShell_v0.6.0/OCCT.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/IfcOpenShell_v0.6.0/IfcOpenShell.tgz
+          - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev
+          - export OCCT_ROOT=$PWD/OCCT
+          - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
+          - echo ============ TEIGHA INSTALL =============
+          - wget -q $TEIGHA_FOCAL_LIBS_2021_12
+          - tar -zxf teighaLinuxGCC8.3.tgz
+          - ls teighaLinuxGCC8.3/Kernel/Include
+          - export ODA_ROOT=$PWD/teighaLinuxGCC8.3
+          - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_8.3dll/
+          - echo ============ SYNCHRO INSTALL =============
+          - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
+          - tar -zxf testData/bouncer/ext_libs/focal/thrift-0.12.0.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/3drepoSynchroReader-2.0.1.tgz
+          - export THRIFT_ROOT=$PWD/thrift-0.12.0
+          - export SYNCHRO_READER_ROOT=$PWD/3drepoSynchroReader
+          - echo ============ CRYPTOLENS INSTALL =============
+          - sudo apt-get install libcurl4-openssl-dev
+          - tar -zxf testData/bouncer/ext_libs/focal/cryptoLens.tgz
+          - export CRYPTOLENS_ROOT=$PWD/cryptoLens
+            # dummy values just to ensure it compiles
+          - export LICENSE_RSA_PUB_KEY_MOD="1bc"
+          - export LICENSE_RSA_PUB_KEY_EXP="1bc"
+          - export LICENSE_AUTH_TOKEN="1bc"
+          - export LICENSE_PRODUCT_ID=123
+
+      before_script:
+          - export BOUNCER_DIR=$PWD
+          - mkdir build && cd build
+      script:
             # check compilation with license enabled
           - cd $BOUNCER_DIR/build && cmake -DREPO_BUILD_WRAPPER=ON -DREPO_BUILD_WRAPPER_TESTS=ON -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_CXX_STANDARD=11 -DCMAKE_BUILD_TYPE=Debug -DSYNCHRO_SUPPORT=ON -DLICENSE_CHECK=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
           - sudo make install -j8
 
-      after_success:
-          - cd $BOUNCER_DIR - && coveralls --root . -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0" -e "aws-install"
 notifications:
     email:
         recipients:
