@@ -16,6 +16,7 @@
 */
 #pragma once
 #include "lib/repo_stack.h"
+#include "lib/repo_license.h"
 #include "manipulator/repo_manipulator.h"
 #include "repo_controller.h"
 #include "core/model/bson/repo_bson_builder.h"
