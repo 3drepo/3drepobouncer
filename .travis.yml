@@ -65,12 +65,23 @@ matrix:
           - tar -zxf testData/bouncer/ext_libs/focal/3drepoSynchroReader-2.0.1.tgz
           - export THRIFT_ROOT=$PWD/thrift-0.12.0
           - export SYNCHRO_READER_ROOT=$PWD/3drepoSynchroReader
+          - echo ============ CRYPTOLENS INSTALL =============
+          - sudo apt-get install libcurl4-openssl-dev
+          - tar -zxf testData/bouncer/ext_libs/focal/cryptolens.tgz
+          - export CRYPTOLENS_ROOT=$PWD/cryptolens
+            # dummy values just to ensure it compiles
+          - export LICENSE_RSA_PUB_KEY_MOD=1bc
+          - export LICENSE_RSA_PUB_KEY_EXP=1bc
+          - export LICENSE_AUTH_TOKEN=1bc
+          - export LICENSE_PRODUCT_ID=1bc
+
 
       install:
           - sudo pip install cpp-coveralls
       services:
           - mongodb
       before_script:
+          - export BOUNCER_DIR=$PWD
           - mkdir build && cd build
           - cmake -DREPO_BUILD_WRAPPER=ON -DREPO_BUILD_WRAPPER_TESTS=ON -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_CXX_STANDARD=11 -DCMAKE_BUILD_TYPE=Debug -DSYNCHRO_SUPPORT=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
           - mongo mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
@@ -84,9 +95,12 @@ matrix:
           - export SYNCHRO_PLUGIN_LOCATION=$PWD/3drepobouncer/plugins
           - LD_LIBRARY_PATH=$PWD/3drepobouncer PATH=$PWD/3drepobouncer:$PATH ./3drepobouncer/3drepobouncerTest
           - LD_LIBRARY_PATH=$PWD/3drepobouncer PATH=$PWD/3drepobouncer:$PATH ./3drepobouncer/3drepobouncerwrapperTest
+            # check compilation with license enabled
+          - cd $BOUNCER_DIR/build && cmake -DREPO_BUILD_WRAPPER=ON -DREPO_BUILD_WRAPPER_TESTS=ON -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_CXX_STANDARD=11 -DCMAKE_BUILD_TYPE=Debug -DSYNCHRO_SUPPORT=ON -DLICENSE_CHECK=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
+          - sudo make install -j8
+
       after_success:
-          - pwd
-          - cd - && coveralls --root ../ -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0" -e "aws-install"
+          - cd $BOUNCER_DIR - && coveralls --root . -e "test" -e "submodules" -e "cmake_modules" -e "tools" -e "mongo" -e "assimp" -e "assimp-install" -e "mongo-cxx-1.1.0" -e "aws-install"
 notifications:
     email:
         recipients:
