@@ -16,6 +16,11 @@ const setBouncerEnvars = (logDir) => {
 	if (logDir) {
 		process.env.REPO_LOG_DIR = logDir;
 	}
+
+	if (config.repoLicense) {
+		process.env.REPO_LICENSE = config.repoLicense;
+		process.env.REPO_INSTANCE_ID = config.instanceID;
+	}
 };
 
 const BouncerHandler = {};
