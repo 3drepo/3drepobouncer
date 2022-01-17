@@ -108,19 +108,23 @@ matrix:
                   - g++
 
       before_install:
+          - export BOUNCER_DIR=$PWD
           - export CXX="g++"
           - export CC="gcc"
+          - mkdir testData && cd testData
+          - svn --no-auth-cache export --username $TESTUSER --password $TESTPW https://github.com/3drepo/tests/trunk/cplusplus/bouncer/ext_libs/focal
+          - cd ../
           - echo ============ BOOST  INSTALL =============
           - sudo apt-get install libboost-all-dev
           - echo ============ MONGO  INSTALL =============
-          - tar -zxf testData/bouncer/ext_libs/focal/mongo-cxx-driver.tgz
+          - tar -zxf testData/mongo-cxx-driver.tgz
           - export MONGO_ROOT=$PWD/mongo-cxx-driver
           - echo ============ ASSIMP INSTALL =============
-          - tar -zxf testData/bouncer/ext_libs/focal/assimp.tgz
+          - tar -zxf testData/assimp.tgz
           - export ASSIMP_ROOT=$PWD/assimp
           - echo ============ IFCOPENSHELL INSTALL =============
-          - tar -zxf testData/bouncer/ext_libs/focal/IfcOpenShell_v0.6.0/OCCT.tgz
-          - tar -zxf testData/bouncer/ext_libs/focal/IfcOpenShell_v0.6.0/IfcOpenShell.tgz
+          - tar -zxf testData/IfcOpenShell_v0.6.0/OCCT.tgz
+          - tar -zxf testData/IfcOpenShell_v0.6.0/IfcOpenShell.tgz
           - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev
           - export OCCT_ROOT=$PWD/OCCT
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
@@ -132,13 +136,13 @@ matrix:
           - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_8.3dll/
           - echo ============ SYNCHRO INSTALL =============
           - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
-          - tar -zxf testData/bouncer/ext_libs/focal/thrift-0.12.0.tgz
-          - tar -zxf testData/bouncer/ext_libs/focal/3drepoSynchroReader-2.0.1.tgz
+          - tar -zxf testData/thrift-0.12.0.tgz
+          - tar -zxf testData/3drepoSynchroReader-2.0.1.tgz
           - export THRIFT_ROOT=$PWD/thrift-0.12.0
           - export SYNCHRO_READER_ROOT=$PWD/3drepoSynchroReader
           - echo ============ CRYPTOLENS INSTALL =============
           - sudo apt-get install libcurl4-openssl-dev
-          - tar -zxf testData/bouncer/ext_libs/focal/cryptoLens.tgz
+          - tar -zxf testData/cryptoLens.tgz
           - export CRYPTOLENS_ROOT=$PWD/cryptoLens
             # dummy values just to ensure it compiles
           - export LICENSE_RSA_PUB_KEY_MOD="1bc"
@@ -147,7 +151,6 @@ matrix:
           - export LICENSE_PRODUCT_ID=123
 
       before_script:
-          - export BOUNCER_DIR=$PWD
           - mkdir build && cd build
       script:
             # check compilation with license enabled
