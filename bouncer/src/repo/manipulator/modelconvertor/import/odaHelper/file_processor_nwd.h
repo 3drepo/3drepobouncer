@@ -41,6 +41,10 @@ namespace repo {
 				class FileProcessorNwd : public FileProcessor
 				{
 				public:
+
+					//Environment variable name for Autodesk textures
+					const char* RVT_TEXTURES_ENV_VARIABLE = "REPO_RVT_TEXTURES";
+
 					FileProcessorNwd(const std::string& inputFile, GeometryCollector* geoCollector) : FileProcessor(inputFile, geoCollector) {
 						shouldApplyReduction = true;
 					};
