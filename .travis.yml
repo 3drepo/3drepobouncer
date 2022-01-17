@@ -58,7 +58,6 @@ matrix:
           - echo ============ TEIGHA INSTALL =============
           - wget -q $TEIGHA_FOCAL_LIBS_2021_12
           - tar -zxf teighaLinuxGCC8.3.tgz
-          - ls teighaLinuxGCC8.3/Kernel/Include
           - export ODA_ROOT=$PWD/teighaLinuxGCC8.3
           - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_8.3dll/
           - echo ============ SYNCHRO INSTALL =============
