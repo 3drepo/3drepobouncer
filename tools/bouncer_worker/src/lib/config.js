@@ -17,7 +17,6 @@
 
 const path = require('path');
 const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
 const { exitApplication } = require('./utils');
 const params = require('./processParams');
 
@@ -54,10 +53,6 @@ const applyDefaultValuesIfUndefined = (config) => {
 	// create connection string for db
 	if (!config.db.connectionString) {
 		config.db.connectionString = `mongodb://${config.db.dbhost}:${config.db.dbport}`;
-	}
-
-	if (config.repoLicense) {
-		config.instanceID = config.instanceID || uuidv4();
 	}
 };
 /* eslint-enable no-param-reassign */

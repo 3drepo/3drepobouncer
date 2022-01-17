@@ -89,6 +89,5 @@ Bouncer worker takes in a JSON file with the following parameters.
     "batPath": //path to buildBundle script.
   },
   "repoLicense": //license string for license check (only required on builds that are license enforced)
-  "instanceID": //identification string to identify the machine instance (only used when repoLicense is set to true, optional - will auto generate if not given)
 }
 ````
