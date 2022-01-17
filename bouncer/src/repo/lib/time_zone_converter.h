@@ -41,7 +41,9 @@ namespace repo {
                     timeZone,
                     date::local_seconds(tzEpoch) };
                 // return the converted duration since unix epoch in utc time zone
-                return date::zoned_seconds{ utcTimeZone, localTime }.get_sys_time().time_since_epoch();
+                return date::zoned_seconds{ 
+                    utcTimeZone, 
+                    localTime }.get_sys_time().time_since_epoch();
 		    }
 
         private:

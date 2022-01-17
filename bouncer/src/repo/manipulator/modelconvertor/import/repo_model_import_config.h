@@ -37,21 +37,25 @@ namespace repo {
 				bool applyReductions;
 				bool rotateModel;
 				bool importAnimations;
+				std::string timeZone;
 			public:
 				ModelImportConfig(
 					const bool applyReductions = true,
 					const bool rotateModel = false,
-					const bool importAnimations = true
-				) {
+					const bool importAnimations = true,
+					const std::string timeZone = "") 
+				{
 					this->applyReductions = applyReductions;
 					this->rotateModel = rotateModel;
 					this->importAnimations = importAnimations;
+					this->timeZone = timeZone;
 				}
 				~ModelImportConfig() {}
 
 				bool shouldApplyReductions() const { return applyReductions; }
 				bool shouldRotateModel() const { return rotateModel; }
 				bool shouldImportAnimations() const { return importAnimations; }
+				std::string getTimeZone() const { return timeZone; }
 			};
 		}//namespace modelconvertor
 	}//namespace manipulator
