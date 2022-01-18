@@ -32,7 +32,8 @@ std::string getEnvString(std::string const & envVarName)
 
 RepoLog::RepoLog()
 {
-	std::string logDir = getEnvString("REPO_LOG_DIR").empty() ? "./log/" : logDir;
+	std::string logDir = getEnvString("REPO_LOG_DIR");
+	logDir = logDir.empty() ? "./log/" : logDir;
 	std::cout << "Logging directory is set to " << logDir;
 	this->logToFile(logDir);
 
