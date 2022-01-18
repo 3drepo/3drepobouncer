@@ -23,8 +23,32 @@ using namespace repo::lib;
 
 using text_sink = boost::log::sinks::synchronous_sink < boost::log::sinks::text_ostream_backend >;
 
+// Cannot use repo_utils.h -> for some reason it switches the headers for :toupper.
+std::string getEnvString(std::string const & envVarName)
+{
+	char* value = getenv(envVarName.c_str());
+	return (value && strlen(value) > 0) ? value : "";
+}
+
 RepoLog::RepoLog()
 {
+	std::string logDir = getEnvString("REPO_LOG_DIR").empty() ? "./log/" : logDir;
+	this->logToFile(logDir);
+
+	std::string debug = getEnvString("REPO_DEBUG");
+	std::string verbose = getEnvString("REPO_VERBOSE");
+	if (!verbose.empty())
+	{
+		this->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::TRACE);
+	}
+	else if (!debug.empty())
+	{
+		this->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::DEBUG);
+	}
+	else
+	{
+		this->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::INFO);
+	}
 }
 RepoLog::~RepoLog()
 {

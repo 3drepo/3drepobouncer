@@ -18,7 +18,6 @@
 #pragma once
 #include "repo_controller.cpp.inl"
 #include "error_codes.h"
-#include "lib/repo_utils.h"
 
 #include "manipulator/modelconvertor/import/repo_model_import_assimp.h"
 #include "manipulator/modelconvertor/export/repo_model_export_assimp.h"
@@ -38,24 +37,6 @@ RepoController::_RepoControllerImpl::_RepoControllerImpl(
 	if (listeners.size() > 0)
 	{
 		subscribeToLogger(listeners);
-	}
-
-	std::string logDir = repo::lib::getEnvString("REPO_LOG_DIR").empty() ? "./log/" : logDir;
-	this->logToFile(logDir);
-
-	std::string debug = repo::lib::getEnvString("REPO_DEBUG");
-	std::string verbose = repo::lib::getEnvString("REPO_VERBOSE");
-	if (!verbose.empty())
-	{
-		this->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::TRACE);
-	}
-	else if (!debug.empty())
-	{
-		this->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::DEBUG);
-	}
-	else
-	{
-		this->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::INFO);
 	}
 
 	licenseValidator.activate();
