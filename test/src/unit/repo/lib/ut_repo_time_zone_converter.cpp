@@ -15,7 +15,7 @@
 *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <repo/lib/time_zone_converter.h>
+#include <repo/lib/repo_time_zone_converter.h>
 #include <gtest/gtest.h>
 #include <iostream>
 
