@@ -30,12 +30,11 @@ namespace repo {
 			TimeZoneConverter(const std::string &timeZoneName)
 #ifdef SYNCHRO_SUPPORT
 				// Current this is only used by synchro imports. So #defs are introduced to reduce unnecessary external libraries.
-				: timeZone(date::locate_zone(timeZoneName)),
-				utcTimeZone(date::locate_zone("Etc/UTC"))
+				: timeZone(date::locate_zone(timeZoneName))
 #endif
 			{};
 
-			uint64_t timeZoneEpochToUtcEpoch(const uint64_t tzEpoch)
+			uint64_t timeZoneEpochToUtcEpoch(const uint64_t &tzEpoch)
 			{
 #ifdef SYNCHRO_SUPPORT
 				// convert the duration since unix epoch to local time zone
@@ -52,8 +51,8 @@ namespace repo {
 
 		private:
 
-			date::time_zone const* const timeZone;
-			date::time_zone const* const utcTimeZone;
+			const date::time_zone *timeZone;
+			const date::time_zone *utcTimeZone = date::locate_zone("Etc/UTC");
 
 			std::chrono::seconds toChronoSec(const uint64_t &input) {
 				return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::from_time_t(input).time_since_epoch());
