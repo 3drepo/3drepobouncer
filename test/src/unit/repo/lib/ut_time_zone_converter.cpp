@@ -21,15 +21,11 @@
 
 TEST(RepoTimeZoneConverter, ZoneCheck)
 {
-	using namespace std::literals; // chrono literals e.g. seconds
-	using namespace date;
 	auto tzc1 = repo::lib::TimeZoneConverter("Asia/Tokyo");
-	EXPECT_EQ(1641523367s, tzc1.timeZoneEpochToUtcEpoch(1641555767s));
+	EXPECT_EQ(1641523367, tzc1.timeZoneEpochToUtcEpoch(1641555767));
 	auto tzc2 = repo::lib::TimeZoneConverter("America/New_York");
-	EXPECT_EQ(1642076100s, tzc2.timeZoneEpochToUtcEpoch(1642058100s));
+	EXPECT_EQ(1642076100, tzc2.timeZoneEpochToUtcEpoch(1642058100));
 	auto tzc3 = repo::lib::TimeZoneConverter("Europe/London");
-	EXPECT_EQ(1652455409s, tzc3.timeZoneEpochToUtcEpoch(1652459009s)); // during dst
-	EXPECT_EQ(1642091009s, tzc3.timeZoneEpochToUtcEpoch(1642091009s)); // outside dst
-
+	EXPECT_EQ(1652455409, tzc3.timeZoneEpochToUtcEpoch(1652459009)); // during dst
+	EXPECT_EQ(1642091009, tzc3.timeZoneEpochToUtcEpoch(1642091009)); // outside dst
 }
-
