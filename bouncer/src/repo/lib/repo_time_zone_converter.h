@@ -17,6 +17,7 @@
 #pragma once
 
 #include <string>
+#include "repo_log.h"
 #ifdef SYNCHRO_SUPPORT
 #include <date/tz.h>
 #endif
@@ -27,32 +28,41 @@ namespace repo {
 		{
 		public:
 
-			TimeZoneConverter(const std::string &timeZoneName)
+			TimeZoneConverter(const std::string &timeZoneName) {
 #ifdef SYNCHRO_SUPPORT
 				// Current this is only used by synchro imports. So #defs are introduced to reduce unnecessary external libraries.
-				: timeZone(date::locate_zone(timeZoneName))
+				try {
+					targetTz = date::locate_zone(timeZoneName);
+				}
+				catch (std::exception) {
+					repoWarning << "Unrecognised time zone : " << timeZoneName << ", dateTime will not be converted.";
+				}
 #endif
-			{};
+			};
 
-			uint64_t timeZoneEpochToUtcEpoch(const uint64_t &tzEpoch)
+			/**
+			* Given a time in UTC, shift the time so it is the exact same time in the timezone
+			* E.g If timeZoneName is set to "America/New York":
+			*   with input: 3rd January 2022 10:30 UTC
+			*   will return: 3rd January 2022 10:30 EST
+			*/
+			uint64_t shiftToTimezone(const uint64_t &dateTimeInUTC)
 			{
 #ifdef SYNCHRO_SUPPORT
+				if (!targetTz) return dateTimeInUTC;
 				// convert the duration since unix epoch to local time zone
-				auto localTime = date::zoned_seconds{
-					timeZone, date::local_seconds(toChronoSec(tzEpoch)) };
+				auto localTime = date::zoned_seconds(targetTz, date::local_seconds(toChronoSec(dateTimeInUTC)));
 				// return the converted duration since unix epoch in utc time zone
-				return fromChronoSec(date::zoned_seconds{
-					utcTimeZone,
-					localTime }.get_sys_time().time_since_epoch());
+				return fromChronoSec(date::zoned_seconds(utc, localTime).get_sys_time().time_since_epoch());
 #else
 				return tzEpoch;
 #endif
 			}
 
 		private:
-
-			const date::time_zone *timeZone;
-			const date::time_zone *utcTimeZone = date::locate_zone("Etc/UTC");
+#ifdef SYNCHRO_SUPPORT
+			const date::time_zone *targetTz = nullptr;
+			const date::time_zone *utc = date::locate_zone("Etc/UTC");
 
 			std::chrono::seconds toChronoSec(const uint64_t &input) {
 				return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::from_time_t(input).time_since_epoch());
@@ -61,6 +71,7 @@ namespace repo {
 			uint64_t fromChronoSec(const std::chrono::seconds &input) {
 				return input.count();
 			}
+#endif
 		};
 	}
 }
