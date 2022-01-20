@@ -97,7 +97,7 @@ repo::manipulator::modelconvertor::odaHelper::FileProcessorNwd::~FileProcessorNw
 struct RepoNwTraversalContext {
 	OdNwModelItemPtr layer;
 	OdNwPartitionPtr partition;
-	OdNwModelItemPtr parent;
+	std::string parent;
 	GeometryCollector* collector;
 };
 
@@ -131,9 +131,15 @@ void setMetadataValue(const OdString& category, const OdString& key, const T& va
 {
 	auto metaKey = convertToStdString(category) + "::" + (key.isEmpty() ? std::string("Value") : convertToStdString(key));
 	auto metaValue = boost::lexical_cast<std::string>(value);
+	
+	if constexpr (std::is_floating_point<T>()){
+		metaValue = std::to_string(value); // lexical_cast can format most types, but doesn't offer control over precision, so when we have floating point values use the std conversion which defaults to six decimal places
+	
+	}
 	if (metadata.find(metaKey) != metadata.end() && metadata[metaKey] != metaValue) {
 		repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << "value before: " << metadata[metaKey] << " after: " << metaValue;
 	}
+	
 	metadata[metaKey] = metaValue;
 }
 
@@ -269,7 +275,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 	// entire path (the path where the NWD is stored, if an NWD).
 	if (!context.partition.isNull()) {
 		auto ItemSourceFile = boost::filesystem::path(convertToStdString(context.partition->getSourceFileName()));
-		setMetadataValue(OD_T("Item"), OD_T("Source File"), ItemSourceFile.filename(), metadata);
+		setMetadataValue(OD_T("Item"), OD_T("Source File"), ItemSourceFile.filename().string(), metadata);
 	}
 	else {
 		repoError << "Unknown partition (model source file) for " << convertToStdString(ItemName) << " this should never happen.";
@@ -618,6 +624,34 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 	}
 }
 
+bool isInstanced(OdNwModelItemPtr pNode)
+{
+	if (pNode.isNull()) {
+		return false;
+	}
+	if (pNode->getIcon() == NwModelItemIcon::INSERT_GEOMETRY) {
+		return true;
+	}
+	if (pNode->getIcon() == NwModelItemIcon::INSERT_GROUP) {
+		return true;
+	}
+	return false;
+}
+
+bool isCollection(OdNwModelItemPtr pNode)
+{
+	if (pNode.isNull()){
+		return false;
+	}
+	if (pNode->getIcon() == NwModelItemIcon::COLLECTION) {
+		return true;
+	}
+	if (pNode->getIcon() == NwModelItemIcon::GROUP) {
+		return true;
+	}
+	return false;
+}
+
 // Traverses the scene graph recursively. Each invocation of this method operates 
 // on one OdNwModelItem, which is the basic OdNwObject that makes up the geometry 
 // scene/the tree in the Standard View.
@@ -648,44 +682,56 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 
 	const auto levelName = convertToStdString(pNode->getDisplayName());
 	const auto levelId = convertToStdString(toString(pNode->objectId().getHandle()));
-	const auto levelParentId = pNode->getParent().isNull() ? std::string() : convertToStdString(toString(pNode->getParentId().getHandle()));
+	//const auto levelParentId = pNode->getParent().isNull() ? std::string() : convertToStdString(toString(pNode->getParentId().getHandle()));
 
-	context.collector->setLayer(levelId, levelName, levelParentId);
-
-	if (pNode->hasGeometry())
+	// The importer will not create tree entries for Instance nodes, though it will
+	// import their metadata.
+	
+	const bool shouldImport = !isInstanced(pNode);
+	if (shouldImport)
 	{
-		context.collector->setNextMeshName(convertToStdString(pNode->getDisplayName()));
-		processGeometry(pNode, context);
+		context.collector->setLayer(levelId, levelName, context.parent);
+
+		context.parent = levelId; // Store the ancestry manually so we can skip nodes at will.
+
+		if (pNode->hasGeometry())
+		{
+			context.collector->setNextMeshName(convertToStdString(pNode->getDisplayName()));
+			processGeometry(pNode, context);
+		}
+
+		// GetIcon distinguishes the type of node. This corresponds to the icon seen in
+		// the Selection Tree View in Navisworks.
+		// https://docs.opendesign.com/bimnv/OdNwModelItem__getIcon@const.html
+		// https://knowledge.autodesk.com/support/navisworks-products/learn-explore/caas/CloudHelp/cloudhelp/2017/ENU/Navisworks-Manage/files/GUID-BC657B3A-5104-45B7-93A9-C6F4A10ED0D4-htm.html
+		// (Note "INSERT" -> "INSTANCED")
+
+		if (pNode->getIcon() == NwModelItemIcon::LAYER)
+		{
+			context.layer = pNode;
+		}
+
+		// To match the plug-in, some nodes adopt the metadata of their parents.
+		// Geometry under a Composite or Instance node takes the metadata of its parent.
+		// Geometry on its own (i.e. directly under a collection) is imported as normal.
+		// Items under Instance nodes adopt the Instances metdata. The instance node
+		// itself is ignored.
+
+		auto metadataNode = pNode;
+
+		if (pNode->getIcon() == NwModelItemIcon::GEOMETRY && !isCollection(pNode->getParent())){
+			metadataNode = pNode->getParent();
+		}
+		if (isInstanced(pNode->getParent())) {
+			metadataNode = pNode->getParent();
+		}
+
+		std::unordered_map<std::string, std::string> metadata;
+		processAttributes(metadataNode, context, metadata);
+		context.collector->setMetadata(levelId, metadata);
+
+		context.collector->stopMeshEntry();
 	}
-
-	// GetIcon distinguishes the type of node. This corresponds to the icon seen in
-	// the Selection Tree View in Navisworks.
-	// https://docs.opendesign.com/bimnv/OdNwModelItem__getIcon@const.html
-	// https://knowledge.autodesk.com/support/navisworks-products/learn-explore/caas/CloudHelp/cloudhelp/2017/ENU/Navisworks-Manage/files/GUID-BC657B3A-5104-45B7-93A9-C6F4A10ED0D4-htm.html
-	// (Note "INSERT" -> "INSTANCED")
-
-	if (pNode->getIcon() == NwModelItemIcon::LAYER)
-	{
-		context.layer = pNode;
-	}
-
-	if (pNode->getIcon() == NwModelItemIcon::GEOMETRY || pNode->getIcon() == NwModelItemIcon::INSERT_GEOMETRY)
-	{
-		// To match the plug-in, any geometry nodes adopt the metadata of their
-		// parent node.
-		// This is achieved simply by leaving the context pointing to the parent node
-		// for the purposes of collecting metadata.
-	}
-	else
-	{
-		context.parent = pNode;
-	}
-
-	std::unordered_map<std::string, std::string> metadata;
-	processAttributes(context.parent, context, metadata);
-	context.collector->setMetadata(levelId, metadata);
-
-	context.collector->stopMeshEntry();
 
 	OdNwObjectIdArray aNodeChildren;
 	OdResult res = pNode->getChildren(aNodeChildren);
@@ -736,7 +782,6 @@ uint8_t FileProcessorNwd::readFile()
 			RepoNwTraversalContext context;
 			context.collector = this->collector;
 			context.layer = pModelItemRoot;
-			context.parent = pModelItemRoot;
 			traverseSceneGraph(pModelItemRoot, context);
 		}
 	}
