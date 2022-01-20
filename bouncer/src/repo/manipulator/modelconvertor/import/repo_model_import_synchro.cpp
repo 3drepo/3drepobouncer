@@ -69,6 +69,7 @@ bool SynchroModelImport::importModel(std::string filePath, uint8_t &errCode) {
 	orgFile = filePath;
 	reader = std::make_shared<synchro_reader::SynchroReader>(filePath);
 	repoInfo << "=== IMPORTING MODEL WITH SYNCHRO MODEL CONVERTOR (animations: " << settings.shouldImportAnimations() << ") ===";
+	repoInfo << "Sequence timezone is set to : " << settings.getTimeZone().empty() ? "UTC" : settings.getTimeZone();
 	std::string msg;
 	auto synchroErrCode = reader->init(msg);
 	if (synchroErrCode != synchro_reader::SynchroError::ERR_OK) {
@@ -663,10 +664,17 @@ std::pair<uint64_t, uint64_t> SynchroModelImport::generateTaskInformation(
 		if (taskIDtoRepoID.find(taskID) == taskIDtoRepoID.end()) {
 			taskIDtoRepoID[taskID] = repo::lib::RepoUUID::createUUID();
 		}
+		auto startTime = timezoneConverter.shiftToTimezone(task.second.startTime);
+		auto endTime = timezoneConverter.shiftToTimezone(task.second.endTime);
 
-		SequenceTask taskItem = { taskIDtoRepoID[taskID] , task.second.name, task.second.startTime * 1000, task.second.endTime * 1000 };
-		firstTS = std::min(task.second.startTime * 1000, firstTS);
-		lastTS = std::max(task.second.endTime * 1000, lastTS);
+		SequenceTask taskItem = {
+			taskIDtoRepoID[taskID] ,
+			task.second.name,
+			startTime * 1000,
+			endTime * 1000
+		};
+		firstTS = std::min(startTime * 1000, firstTS);
+		lastTS = std::max(endTime * 1000, lastTS);
 
 		if (parentID.empty()) {
 			rootTasks.insert(taskItem);
@@ -687,7 +695,7 @@ std::pair<uint64_t, uint64_t> SynchroModelImport::generateTaskInformation(
 				relatedEntities.insert(relatedEntities.end(), resourceIDsToSharedIDs[resourceID].begin(), resourceIDsToSharedIDs[resourceID].end());
 			}
 		}
-		taskBSONs.push_back(repo::core::model::RepoBSONFactory::makeTask(task.second.name, task.second.startTime * 1000, task.second.endTime * 1000, sequenceID, task.second.data, relatedEntities, parentUUID, taskIDtoRepoID[taskID]));
+		taskBSONs.push_back(repo::core::model::RepoBSONFactory::makeTask(task.second.name, startTime * 1000, endTime * 1000, sequenceID, task.second.data, relatedEntities, parentUUID, taskIDtoRepoID[taskID]));
 	}
 
 	scene->addSequenceTasks(taskBSONs, generateTaskCache(rootTasks, taskToChildren));
@@ -791,7 +799,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 		}
 
 		for (const auto &currentFrame : animation.frames) {
-			auto currentTime = currentFrame.first;
+			auto currentTime = timezoneConverter.shiftToTimezone(currentFrame.first);
 			firstFrame = std::min(firstFrame, currentTime * 1000);
 			lastFrame = std::max(lastFrame, currentTime * 1000);
 			updateFrameState(currentFrame.second, resourceIDsToSharedIDs, resourceIDLastTrans, alphaValueToIDs, meshAlphaState, meshColourState, resourceIDTransState, clipState, cam, transformingResources, offset);
