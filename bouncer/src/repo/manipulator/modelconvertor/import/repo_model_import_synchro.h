@@ -31,7 +31,6 @@
 #include "../../../core/model/bson/repo_node_metadata.h"
 #include "../../../core/model/bson/repo_node_transformation.h"
 #include "../../../lib/repo_property_tree.h"
-#include "../../../lib/repo_time_zone_converter.h"
 #include "../../../error_codes.h"
 
 namespace repo {
@@ -43,9 +42,7 @@ namespace repo {
 				/**
 				* Default Constructor, generate model with default settings
 				*/
-				SynchroModelImport(const ModelImportConfig &settings) : AbstractModelImport(settings),
-					timezoneConverter(settings.getTimeZone()) {
-				}
+				SynchroModelImport(const ModelImportConfig &settings) : AbstractModelImport(settings) {	}
 
 				/**
 				* Default Deconstructor
@@ -73,8 +70,6 @@ namespace repo {
 
 			private:
 				class CameraChange;
-
-				repo::lib::TimeZoneConverter timezoneConverter;
 
 				struct SequenceTask {
 					repo::lib::RepoUUID id;
@@ -204,9 +199,9 @@ namespace repo {
 				bool importModel(std::string filePath, uint8_t &errMsg) {
 					errMsg = REPOERR_SYNCHRO_UNAVAILABLE;
 					return false;
-			}
+				}
 #endif
-		};
-	} //namespace SynchroModelImport
-} //namespace manipulator
-} //namespace repo
+			};
+			} //namespace SynchroModelImport
+		} //namespace manipulator
+	} //namespace repo

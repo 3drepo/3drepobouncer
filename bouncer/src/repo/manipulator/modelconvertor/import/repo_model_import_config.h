@@ -25,6 +25,7 @@
 #include <map>
 #include <vector>
 #include <stdint.h>
+#include "../../../lib/repo_log.h"
 
 #include "../../../repo_bouncer_global.h"
 
@@ -43,7 +44,7 @@ namespace repo {
 					const bool applyReductions = true,
 					const bool rotateModel = false,
 					const bool importAnimations = true,
-					const std::string timeZone = "") 
+					const std::string timeZone = "")
 				{
 					this->applyReductions = applyReductions;
 					this->rotateModel = rotateModel;

@@ -30,8 +30,8 @@ if(${APPLE})
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -framework Foundation")
 endif()
 
-if(WIN32)
-	add_definitions(-DNOMINMAX)
+if(${WIN32})
+	add_definitions( -DWIN32_LEAN_AND_MEAN )
 endif()
 
 option (REPO_BUILD_COVERAGE "Building with coverage report" OFF)
@@ -104,7 +104,6 @@ if (SYNCHRO_SUPPORT)
 	find_package(SYNCHROREADER REQUIRED)
 	find_package(THRIFT REQUIRED)
 	find_package(ZLIB REQUIRED)
-	find_package(date REQUIRED)
 endif()
 
 
@@ -127,7 +126,6 @@ option (REPO_BUILD_TOOLS "If the Command Line Tool is built in addition to the l
 option (REPO_BUILD_TESTS "If the test suite for the core bouncer logic is built in addition to the library" OFF)
 option (REPO_NO_GZIP "If zlib is not compiled into boost" OFF)
 
-add_definitions( -DWIN32_LEAN_AND_MEAN )
 
 if(VALID_UNTIL GREATER 0)
 	message("setting software validity to ${VALID_UNTIL}")

@@ -67,9 +67,9 @@ public:
 
 bool SynchroModelImport::importModel(std::string filePath, uint8_t &errCode) {
 	orgFile = filePath;
-	reader = std::make_shared<synchro_reader::SynchroReader>(filePath);
+	reader = std::make_shared<synchro_reader::SynchroReader>(filePath, settings.getTimeZone());
 	repoInfo << "=== IMPORTING MODEL WITH SYNCHRO MODEL CONVERTOR (animations: " << settings.shouldImportAnimations() << ") ===";
-	repoInfo << "Sequence timezone is set to : " << settings.getTimeZone().empty() ? "UTC" : settings.getTimeZone();
+	repoInfo << "Sequence timezone is set to : " << (settings.getTimeZone().empty() ? "UTC" : settings.getTimeZone());
 	std::string msg;
 	auto synchroErrCode = reader->init(msg);
 	if (synchroErrCode != synchro_reader::SynchroError::ERR_OK) {
@@ -664,8 +664,8 @@ std::pair<uint64_t, uint64_t> SynchroModelImport::generateTaskInformation(
 		if (taskIDtoRepoID.find(taskID) == taskIDtoRepoID.end()) {
 			taskIDtoRepoID[taskID] = repo::lib::RepoUUID::createUUID();
 		}
-		auto startTime = timezoneConverter.shiftToTimezone(task.second.startTime);
-		auto endTime = timezoneConverter.shiftToTimezone(task.second.endTime);
+		auto startTime = task.second.startTime;
+		auto endTime = task.second.endTime;
 
 		SequenceTask taskItem = {
 			taskIDtoRepoID[taskID] ,
@@ -799,7 +799,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 		}
 
 		for (const auto &currentFrame : animation.frames) {
-			auto currentTime = timezoneConverter.shiftToTimezone(currentFrame.first);
+			auto currentTime = currentFrame.first;
 			firstFrame = std::min(firstFrame, currentTime * 1000);
 			lastFrame = std::max(lastFrame, currentTime * 1000);
 			updateFrameState(currentFrame.second, resourceIDsToSharedIDs, resourceIDLastTrans, alphaValueToIDs, meshAlphaState, meshColourState, resourceIDTransState, clipState, cam, transformingResources, offset);
