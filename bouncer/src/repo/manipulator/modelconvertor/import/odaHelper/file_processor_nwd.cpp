@@ -206,14 +206,14 @@ void processMaterial(OdNwComponentPtr pComp, repo_material_t& repoMaterial)
 	// 
 	// e.g. if (pMaterial->isA() == OdNwTexture::desc()) { }
 	//
-	// Unlike BimRv, the texture references in NWDs are not simple filenames, 
-	// but GUIDs into the shared Autodesk material database. A complete copy 
-	// of the database is required to resolve textures, and if this is not set
-	// correctly returned texture paths will be null.
+	// Unlike BimRv, the texture references in NWDs are not simple filenames, but 
+	// GUIDs into the shared Autodesk material database. A complete copy of the 
+	// database is required to resolve textures, and if this is not set correctly
+	// returned texture paths will be null.
 	//
 	// e.g.
 	// svcs.setTextureDirectoryPath(OD_T("C:\\Program Files(x86)\\Common Files\\Autodesk Shared\\Materials\\Textures"), false);
-	// pNwDb->setTextureFolder(OD_T("D:\\3drepo\\bouncer\\revit_materials_edited"));
+	// pNwDb->setTextureFolder(OD_T("C:\\3drepo\\bouncer\\revit_materials_edited"));
 	//
 	// Note that only Realistic materials have textures, so get the Realistic
 	// material with getMaterialId() (instead of Shaded with getOriginalMaterialId()
@@ -240,22 +240,15 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 	// We can infer these parameters from the OdNwModelItem, and its positition 
 	// in the scene graph.
 
-	// Note to match the plugin, if we are processing a Geometry OdNwModelItem, 
-	// we should take the name and type of the immediate parent (?)
-
 	auto ItemName = modelItemPtr->getDisplayName(); // e.g. "Newspaper"
 	auto ItemType = modelItemPtr->getClassDisplayName();  // e.g. "Furniture: Newspaper: Newspaper"
 	auto ItemInternalType = modelItemPtr->getClassName(); // e.g. "LcRevitInstance"
 	auto ItemHidden = modelItemPtr->isHidden();
 
-	// There are no search results suggesting any methods to get the required flag.
-	// This flag is set in Navisworks to indicate an element should always be drawn. 
+	// There are no search results suggesting any methods to get the 'required' flag.
+	// This flag is set in Navisworks to indicate an element should always be drawn.
 	// It is not required to store it.
-	//auto ItemRequired = modelItemPtr->?
-
-	// The only search results in the BimNv documentation around source file are 
-	// in the OdNwModel type, which is for composite files.
-	//auto ItemSourceFile = modelItemPtr->
+	//	auto ItemRequired = modelItemPtr->?
 
 	// For the Layer, we can use the scene graph hierarchy.
 	auto ItemLayer = context.layer->getDisplayName();
@@ -277,6 +270,7 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 	// The source file name is contained within the OdNwPartition entry in the 
 	// scene graph, which segments branches. Note that this will contain the 
 	// entire path (the path where the NWD is stored, if an NWD).
+
 	if (!context.partition.isNull()) {
 		auto ItemSourceFile = boost::filesystem::path(convertToStdString(context.partition->getSourceFileName()));
 		setMetadataValue(OD_T("Item"), OD_T("Source File"), ItemSourceFile.filename().string(), metadata);
@@ -296,16 +290,17 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 			continue;
 		}
 
-		// getClassDisplayName() is the human-readable label that is seen in the 
+		// getClassDisplayName() is the human-readable label that is seen in the
 		// Navisworks GUI (on the Tabs)
-		// getClassName() is the internal name. This can also be seen on the tabs 
-		// by activating the 'Show Property Internal Names' option in 
+		// getClassName() is the internal name. This can also be seen on the tabs by
+		// activating the 'Show Property Internal Names' option in
 		//     Navisworks -> Options -> Interface -> Developer.
 
 		auto name = attribute->getClassName();
 		auto category = attribute->getClassDisplayName();
 
-		// Ignore some specific Categories based on their name, regardless of Attribute Type
+		// Ignore some specific Categories based on their name, regardless of 
+		// Attribute Type
 
 		if (std::find(ignoredCategories.begin(), ignoredCategories.end(), convertToStdString(category)) != ignoredCategories.end()) {
 			continue;
@@ -420,11 +415,6 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 			}
 		}
 
-		// Todo: transform in web format...
-		// The closest thing to the reverses flag is this,
-		// https://docs.opendesign.com/bimnv/frames.html?frmname=topic&frmfile=OdNwTransformAttribute__isReverse@const.html
-		// which indicates if the matrix is reversed.
-
 		// Translation and Rotation attribute
 		auto transRotationAttribute = OdNwTransRotationAttribute::cast(attribute);
 		if (!transRotationAttribute.isNull())
@@ -452,6 +442,8 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 			setMetadataValue(OD_T("Transform"), OD_T("Translation:X"), translation.x, metadata);
 			setMetadataValue(OD_T("Transform"), OD_T("Translation:Y"), translation.y, metadata);
 			setMetadataValue(OD_T("Transform"), OD_T("Translation:Z"), translation.z, metadata);
+
+			//Todo: extract rotation (in angle axis format) and scale
 		}
 
 		// Translation attribute
@@ -684,6 +676,7 @@ bool isCollection(OdNwModelItemPtr pNode)
 // As the scene is traversed we pass nodes that delimit branches, e.g. nodes that 
 // define the start of whole files. These stateful properties are stored in the 
 // context.
+
 OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext context) 
 {
 	// The OdNwPartition distinguishes between branches of the scene graph from 
@@ -708,6 +701,7 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 
 	// Some items (e.g. certain IFC entries) don't have names, so we use their Type
 	// instead to name the layer.
+
 	if (levelName.empty()) {
 		levelName = convertToStdString(pNode->getClassDisplayName());
 	}
