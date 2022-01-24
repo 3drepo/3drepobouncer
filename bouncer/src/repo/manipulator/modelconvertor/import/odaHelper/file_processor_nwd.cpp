@@ -150,6 +150,15 @@ void convertColor(OdString color, std::vector<float>& dest)
 	}
 }
 
+// This operator is needed on Linux for Boost Lexical Cast to convert an OdString to a std::string
+
+namespace std{
+	std::ostream& operator<<(std::ostream& os, OdString& str){
+		os << convertToStdString(str);
+		return os;
+	}
+}
+
 template<class T>
 void setMetadataValue(const OdString& category, const OdString& key, const T& value, std::unordered_map<std::string, std::string>& metadata)
 {
@@ -639,6 +648,8 @@ OdResult processGeometry(OdNwModelItemPtr pNode, RepoNwTraversalContext context)
 			}
 		}
 	}
+
+	return eOk;
 }
 
 bool isInstanced(OdNwModelItemPtr pNode)
