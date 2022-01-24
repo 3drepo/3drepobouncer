@@ -77,6 +77,8 @@
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
 static OdString sNwDbModuleName = L"TNW_Db";
+static std::string sElementIdKey = "Element ID::Value";
+static std::vector<std::string> ignoredCategories = { "Material", "Geometry", "Autodesk Material", "Revit Material" };
 
 class OdExNwSystemServices : public ExSystemServices
 {
@@ -99,6 +101,7 @@ struct RepoNwTraversalContext {
 	OdNwPartitionPtr partition;
 	std::string parent;
 	GeometryCollector* collector;
+	std::string lastElementId;
 };
 
 repo::lib::RepoVector3D64 convertPoint(OdGePoint3d pnt, OdGeMatrix3d& transform)
@@ -126,23 +129,6 @@ void convertColor(OdNwColor color, std::vector<float>& dest)
 	dest.push_back(color.A());
 }
 
-template<class T>
-void setMetadataValue(const OdString& category, const OdString& key, const T& value, std::unordered_map<std::string, std::string>& metadata)
-{
-	auto metaKey = convertToStdString(category) + "::" + (key.isEmpty() ? std::string("Value") : convertToStdString(key));
-	auto metaValue = boost::lexical_cast<std::string>(value);
-	
-	if constexpr (std::is_floating_point<T>()){
-		metaValue = std::to_string(value); // lexical_cast can format most types, but doesn't offer control over precision, so when we have floating point values use the std conversion which defaults to six decimal places
-	
-	}
-	if (metadata.find(metaKey) != metadata.end() && metadata[metaKey] != metaValue) {
-		repoDebug << "FOUND MULTIPLE ENTRY WITH DIFFERENT VALUES: " << metaKey << "value before: " << metadata[metaKey] << " after: " << metaValue;
-	}
-	
-	metadata[metaKey] = metaValue;
-}
-
 void convertColor(OdString color, std::vector<float>& dest)
 {
 	dest.clear();
@@ -163,6 +149,20 @@ void convertColor(OdString color, std::vector<float>& dest)
 	{
 		repoError << "Exception parsing string " << convertToStdString(color) << " to a color.";
 	}
+}
+
+template<class T>
+void setMetadataValue(const OdString& category, const OdString& key, const T& value, std::unordered_map<std::string, std::string>& metadata)
+{
+	auto metaKey = convertToStdString(category) + "::" + (key.isEmpty() ? std::string("Value") : convertToStdString(key));
+	auto metaValue = boost::lexical_cast<std::string>(value);
+
+	if constexpr (std::is_floating_point<T>()) {
+		metaValue = std::to_string(value); // lexical_cast can format most types, but doesn't offer control over precision, so when we have floating point values use the std conversion which defaults to six decimal places
+
+	}
+
+	metadata[metaKey] = metaValue;
 }
 
 // Materials are defined at the Component level. Components contain different types
@@ -227,6 +227,10 @@ void processMaterial(OdNwComponentPtr pComp, repo_material_t& repoMaterial)
 
 void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext context, std::unordered_map<std::string, std::string>& metadata)
 {
+	if (modelItemPtr.isNull()) {
+		return;
+	}
+
 	// This method extracts all the metadata for the model Item node, and stores 
 	// in in the metadata map as text, in the form it will be displayed on the 
 	// web.
@@ -300,6 +304,12 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 
 		auto name = attribute->getClassName();
 		auto category = attribute->getClassDisplayName();
+
+		// Ignore some specific Categories based on their name, regardless of Attribute Type
+
+		if (std::find(ignoredCategories.begin(), ignoredCategories.end(), convertToStdString(category)) != ignoredCategories.end()) {
+			continue;
+		}
 
 		// OdNwAttributes don't self-identify their type like the OdNwFragments. 
 		// Cast to one of the sub-classes to determine the type.
@@ -421,21 +431,37 @@ void processAttributes(OdNwModelItemPtr modelItemPtr, RepoNwTraversalContext con
 		{
 			auto translation = transRotationAttribute->getTranslation();
 			auto rotation = transRotationAttribute->getRotation();
-			// Transforms are ignored for now.
+
+			setMetadataValue(OD_T("Transform"), OD_T("Rotation:X"), rotation.x, metadata);
+			setMetadataValue(OD_T("Transform"), OD_T("Rotation:Y"), rotation.y, metadata);
+			setMetadataValue(OD_T("Transform"), OD_T("Rotation:Z"), rotation.z, metadata);
+			setMetadataValue(OD_T("Transform"), OD_T("Rotation:W"), rotation.w, metadata);
+			setMetadataValue(OD_T("Transform"), OD_T("Translation:X"), translation.x, metadata);
+			setMetadataValue(OD_T("Transform"), OD_T("Translation:Y"), translation.y, metadata);
+			setMetadataValue(OD_T("Transform"), OD_T("Translation:Z"), translation.z, metadata);
 		}
 
 		// Transform matrix attribute
 		auto transformAttribute = OdNwTransformAttribute::cast(attribute);
 		if (!transformAttribute.isNull())
 		{
-			// Transforms are ignored for now.
+			setMetadataValue(OD_T("Transform"), OD_T("Reverses"), transformAttribute->isReverse(), metadata);
+			auto matrix = transformAttribute->getTransform();
+		
+			OdGeVector3d translation(matrix.entry[0][3], matrix.entry[1][3], matrix.entry[2][3]);
+			setMetadataValue(OD_T("Transform"), OD_T("Translation:X"), translation.x, metadata);
+			setMetadataValue(OD_T("Transform"), OD_T("Translation:Y"), translation.y, metadata);
+			setMetadataValue(OD_T("Transform"), OD_T("Translation:Z"), translation.z, metadata);
 		}
 
 		// Translation attribute
 		auto transAttribute = OdNwTransAttribute::cast(attribute);
 		if (!transAttribute.isNull())
 		{
-			// Transforms are ignored for now.
+			auto translation = transAttribute->getTranslation();
+			setMetadataValue(OD_T("Transform"), OD_T("Translation:X"), translation.x, metadata);
+			setMetadataValue(OD_T("Transform"), OD_T("Translation:Y"), translation.y, metadata);
+			setMetadataValue(OD_T("Transform"), OD_T("Translation:Z"), translation.z, metadata);
 		}
 
 		// (Note The Guid in the Item block is not an attribute, but rather is retrieved using getInstanceGuid(). This will be something else.)
@@ -677,12 +703,14 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 	// Calling setLayer will immediately create the layer, even before geometry is
 	// added.
 
-	// The BimNv Object handles (getHandle()) are unique identifiers for each node,
-	// and can be used to re-construct the hierarchy.
+	auto levelName = convertToStdString(pNode->getDisplayName());
+	auto levelId = convertToStdString(toString(pNode->objectId().getHandle()));
 
-	const auto levelName = convertToStdString(pNode->getDisplayName());
-	const auto levelId = convertToStdString(toString(pNode->objectId().getHandle()));
-	//const auto levelParentId = pNode->getParent().isNull() ? std::string() : convertToStdString(toString(pNode->getParentId().getHandle()));
+	// Some items (e.g. certain IFC entries) don't have names, so we use their Type
+	// instead to name the layer.
+	if (levelName.empty()) {
+		levelName = convertToStdString(pNode->getClassDisplayName());
+	}
 
 	// The importer will not create tree entries for Instance nodes, though it will
 	// import their metadata.
@@ -691,12 +719,12 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 	if (shouldImport)
 	{
 		context.collector->setLayer(levelId, levelName, context.parent);
-
 		context.parent = levelId; // Store the ancestry manually so we can skip nodes at will.
 
 		if (pNode->hasGeometry())
 		{
-			context.collector->setNextMeshName(convertToStdString(pNode->getDisplayName()));
+			context.collector->setMeshGroup(levelId); // Group and Layer names must match, so the mesh is flagged as a partial object and different primitives are combined in the tree view
+			context.collector->setNextMeshName(levelName);
 			processGeometry(pNode, context);
 		}
 
@@ -711,23 +739,23 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 			context.layer = pNode;
 		}
 
-		// To match the plug-in, some nodes adopt the metadata of their parents.
-		// Geometry under a Composite or Instance node takes the metadata of its parent.
-		// Geometry on its own (i.e. directly under a collection) is imported as normal.
-		// Items under Instance nodes adopt the Instances metdata. The instance node
-		// itself is ignored.
-
-		auto metadataNode = pNode;
-
-		if (pNode->getIcon() == NwModelItemIcon::GEOMETRY && !isCollection(pNode->getParent())){
-			metadataNode = pNode->getParent();
-		}
-		if (isInstanced(pNode->getParent())) {
-			metadataNode = pNode->getParent();
-		}
+		// To match the plug-in, and ensure metadata ends up in the right place for 
+		// the benefit of smart groups, node properties are overridden with their
+		// parent's metadata
 
 		std::unordered_map<std::string, std::string> metadata;
-		processAttributes(metadataNode, context, metadata);
+		processAttributes(pNode, context, metadata);
+		processAttributes(pNode->getParent(), context, metadata);
+		
+		// For the benefit of smart-groups, unidentified layers take the Element
+		// Id of their nearest identified ancestor, where available...
+
+		if (metadata.count(sElementIdKey)) {
+			context.lastElementId = metadata[sElementIdKey];
+		} else if (!context.lastElementId.empty()) {
+			metadata[sElementIdKey] = context.lastElementId;
+		}
+		
 		context.collector->setMetadata(levelId, metadata);
 
 		context.collector->stopMeshEntry();
