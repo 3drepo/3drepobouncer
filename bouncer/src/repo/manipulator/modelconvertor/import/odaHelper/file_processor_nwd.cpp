@@ -101,7 +101,6 @@ struct RepoNwTraversalContext {
 	OdNwPartitionPtr partition;
 	std::string parent;
 	GeometryCollector* collector;
-	std::string lastElementId;
 };
 
 repo::lib::RepoVector3D64 convertPoint(OdGePoint3d pnt, OdGeMatrix3d& transform)
@@ -740,16 +739,7 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 		std::unordered_map<std::string, std::string> metadata;
 		processAttributes(pNode, context, metadata);
 		processAttributes(pNode->getParent(), context, metadata);
-		
-		// For the benefit of smart-groups, unidentified layers take the Element
-		// Id of their nearest identified ancestor, where available...
-
-		if (metadata.count(sElementIdKey)) {
-			context.lastElementId = metadata[sElementIdKey];
-		} else if (!context.lastElementId.empty()) {
-			metadata[sElementIdKey] = context.lastElementId;
-		}
-		
+				
 		context.collector->setMetadata(levelId, metadata);
 
 		context.collector->stopMeshEntry();
