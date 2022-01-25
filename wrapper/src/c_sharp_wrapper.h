@@ -30,6 +30,8 @@ namespace repo{
 			* Singleton class - get its instance
 			*/
 			static CSharpWrapper* getInstance();
+			
+			static void destroyInstance();
 
 			/**
 			* Connect to a mongo database, authenticate by the admin database
