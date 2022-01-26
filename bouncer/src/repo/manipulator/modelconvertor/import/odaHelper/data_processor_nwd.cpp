@@ -134,27 +134,26 @@ void convertColor(OdString color, std::vector<float>& dest)
 	}
 }
 
-template<class T>
+template <class T>
 void setMetadataValue(const OdString& category, const OdString& key, const T& value, std::unordered_map<std::string, std::string>& metadata)
 {
 	auto metaKey = convertToStdString(category) + "::" + (key.isEmpty() ? std::string("Value") : convertToStdString(key));
-	std::string metaValue;
-
-	if constexpr (std::is_floating_point<T>()) {
-		metaValue = std::to_string(value); // lexical_cast can format most types, but doesn't offer control over precision, so when we have floating point values use the std conversion which defaults to six decimal places
-	}
-	else {
-		metaValue = boost::lexical_cast<std::string>(value);
-	}
-
+	auto metaValue = boost::lexical_cast<std::string>(value);
 	metadata[metaKey] = metaValue;
 }
 
 // This specialisation is required for Linux as lexical cast doesn't know what to with OdString there
-template<>
+template <>
 void setMetadataValue(const OdString& category, const OdString& key, const OdString& value, std::unordered_map<std::string, std::string>& metadata)
 {
 	setMetadataValue(category, key, convertToStdString(value), metadata);
+}
+
+// This specialisation is because v140 doesn't support constexpr and will attempt to find a to_string overload regardless of the if-statement
+template <>
+void setMetadataValue(const OdString& category, const OdString& key, const double& value, std::unordered_map<std::string, std::string>& metadata)
+{
+	setMetadataValue(category, key, std::to_string(value), metadata);
 }
 
 // Materials are defined at the Component level. Components contain different types
