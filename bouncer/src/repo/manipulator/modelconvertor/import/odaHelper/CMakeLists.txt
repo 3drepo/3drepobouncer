@@ -9,6 +9,7 @@ if(ODA_SUPPORT)
 		${SOURCES}
 		${CMAKE_CURRENT_SOURCE_DIR}/data_processor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/data_processor_dgn.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/data_processor_nwd.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/data_processor_rvt.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_dgn.cpp
@@ -25,6 +26,7 @@ if(ODA_SUPPORT)
 		${HEADERS}
 		${CMAKE_CURRENT_SOURCE_DIR}/data_processor.h
 		${CMAKE_CURRENT_SOURCE_DIR}/data_processor_dgn.h
+		${CMAKE_CURRENT_SOURCE_DIR}/data_processor_nwd.h
 		${CMAKE_CURRENT_SOURCE_DIR}/data_processor_rvt.h
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor.h
 		${CMAKE_CURRENT_SOURCE_DIR}/file_processor_dgn.h
