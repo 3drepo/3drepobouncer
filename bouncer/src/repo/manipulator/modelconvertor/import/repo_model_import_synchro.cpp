@@ -67,8 +67,9 @@ public:
 
 bool SynchroModelImport::importModel(std::string filePath, uint8_t &errCode) {
 	orgFile = filePath;
-	reader = std::make_shared<synchro_reader::SynchroReader>(filePath);
-	repoInfo << "=== IMPORTING MODEL WITH SYNCHRO MODEL CONVERTOR (animations: " << settings.shouldImportAnimations() <<") ===";
+	reader = std::make_shared<synchro_reader::SynchroReader>(filePath, settings.getTimeZone());
+	repoInfo << "=== IMPORTING MODEL WITH SYNCHRO MODEL CONVERTOR (animations: " << settings.shouldImportAnimations() << ") ===";
+	repoInfo << "Sequence timezone is set to : " << (settings.getTimeZone().empty() ? "UTC" : settings.getTimeZone());
 	std::string msg;
 	auto synchroErrCode = reader->init(msg);
 	if (synchroErrCode != synchro_reader::SynchroError::ERR_OK) {
@@ -663,10 +664,17 @@ std::pair<uint64_t, uint64_t> SynchroModelImport::generateTaskInformation(
 		if (taskIDtoRepoID.find(taskID) == taskIDtoRepoID.end()) {
 			taskIDtoRepoID[taskID] = repo::lib::RepoUUID::createUUID();
 		}
+		auto startTime = task.second.startTime;
+		auto endTime = task.second.endTime;
 
-		SequenceTask taskItem = { taskIDtoRepoID[taskID] , task.second.name, task.second.startTime * 1000, task.second.endTime * 1000 };
-		firstTS = std::min(task.second.startTime * 1000, firstTS);
-		lastTS = std::max(task.second.endTime * 1000, lastTS);
+		SequenceTask taskItem = {
+			taskIDtoRepoID[taskID] ,
+			task.second.name,
+			startTime * 1000,
+			endTime * 1000
+		};
+		firstTS = std::min(startTime * 1000, firstTS);
+		lastTS = std::max(endTime * 1000, lastTS);
 
 		if (parentID.empty()) {
 			rootTasks.insert(taskItem);
@@ -687,7 +695,7 @@ std::pair<uint64_t, uint64_t> SynchroModelImport::generateTaskInformation(
 				relatedEntities.insert(relatedEntities.end(), resourceIDsToSharedIDs[resourceID].begin(), resourceIDsToSharedIDs[resourceID].end());
 			}
 		}
-		taskBSONs.push_back(repo::core::model::RepoBSONFactory::makeTask(task.second.name, task.second.startTime * 1000, task.second.endTime * 1000, sequenceID, task.second.data, relatedEntities, parentUUID, taskIDtoRepoID[taskID]));
+		taskBSONs.push_back(repo::core::model::RepoBSONFactory::makeTask(task.second.name, startTime * 1000, endTime * 1000, sequenceID, task.second.data, relatedEntities, parentUUID, taskIDtoRepoID[taskID]));
 	}
 
 	scene->addSequenceTasks(taskBSONs, generateTaskCache(rootTasks, taskToChildren));

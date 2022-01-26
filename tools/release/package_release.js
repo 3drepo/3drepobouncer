@@ -46,6 +46,11 @@ const externalLibraries = [
 		extensions: exts
 	},
 	{
+		rootEnvVar: "DATE_ROOT",
+		subPath: ["bin", "lib"],
+		extensions: [...exts, ".1", ".3"]
+	},
+	{
 		rootEnvVar: "BOOST_ROOT",
 		subPath: ["lib", "lib64-msvc-14.0"],
 		extensions: exts

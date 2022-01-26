@@ -42,7 +42,7 @@ namespace repo {
 				/**
 				* Default Constructor, generate model with default settings
 				*/
-				SynchroModelImport(const ModelImportConfig &settings) : AbstractModelImport(settings) {}
+				SynchroModelImport(const ModelImportConfig &settings) : AbstractModelImport(settings) {	}
 
 				/**
 				* Default Deconstructor
@@ -202,6 +202,6 @@ namespace repo {
 				}
 #endif
 			};
-		} //namespace SynchroModelImport
-	} //namespace manipulator
-} //namespace repo
+			} //namespace SynchroModelImport
+		} //namespace manipulator
+	} //namespace repo
