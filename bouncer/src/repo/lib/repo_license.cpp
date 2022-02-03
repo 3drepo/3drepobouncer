@@ -115,7 +115,7 @@ void LicenseValidator::activate()
 		{
 			repoTrace << "****License activation summary****";
 			repoTrace << "- session license ID: " << instanceUuid;
-			repoTrace << "- server message: " << licenseKey->get_notes().has_value() ? licenseKey->get_notes().value() : "";
+			repoTrace << "- server message: " << (licenseKey->get_notes().has_value() ? licenseKey->get_notes().value() : "");
 			repoTrace << "- server respose ok: true";
 			repoTrace << "- license blocked: " << licenseBlocked;
 			repoTrace << "- license expired: " << licenseExpired;
