@@ -49,6 +49,8 @@ namespace repo {
 			std::string getLicenseString();
 			std::string getFormattedUtcTime(time_t timeStamp);
 
+			bool sendActivateRequest(bool verbose = false);
+
 #endif
 
 		public:

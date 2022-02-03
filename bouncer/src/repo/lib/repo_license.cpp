@@ -67,6 +67,56 @@ std::string LicenseValidator::getFormattedUtcTime(time_t timeStamp)
 	return formatedStr;
 }
 
+bool LicenseValidator::sendHeartBeat(bool verbose) {
+	cryptolens::Error e;
+	cryptolens::optional<cryptolens::LicenseKey> licenseKey =
+		cryptolensHandle->activate_floating
+		(
+			e,
+			authToken,
+			productId,
+			license,
+			floatingTimeIntervalSec
+		);
+
+	if (e)
+	{
+		cryptolens::ActivateError error = cryptolens::ActivateError::from_reason(e.get_reason());
+		std::string errMsg = error.what();
+		repoError << "License activation failed: " << errMsg;
+		return false;
+	}
+	else
+	{
+		bool licenseBlocked = licenseKey->get_block();
+		bool licenseExpired = static_cast<bool>(licenseKey->check().has_expired(time(0)));
+		if (!licenseExpired && !licenseBlocked)
+		{
+			if (verbose) {
+				repoTrace << "****License activation summary****";
+				repoTrace << "- session license ID: " << instanceUuid;
+				repoTrace << "- server message: " << (licenseKey->get_notes().has_value() ? licenseKey->get_notes().value() : "");
+				repoTrace << "- server respose ok: true";
+				repoTrace << "- license blocked: " << licenseBlocked;
+				repoTrace << "- license expired: " << licenseExpired;
+				repoTrace << "- license expiry on: " << getFormattedUtcTime(licenseKey->get_expires()) << " (UTC)";
+				if (licenseKey->get_activated_machines().has_value()) repoTrace << "- #activated instances: " << licenseKey->get_activated_machines()->size();
+				if (licenseKey->get_maxnoofmachines().has_value()) repoTrace << "- allowed instances: " << licenseKey->get_maxnoofmachines().value();
+				repoInfo << "License activated";
+				repoTrace << "**********************************";
+			}
+			return true;
+		}
+		else
+		{
+			std::string errMsg = licenseExpired ? "License expired." : " License is blocked";
+			repoError << "License activation failed: " << errMsg;
+			deactivate();
+			return false;
+		}
+	}
+}
+
 #endif
 
 void LicenseValidator::activate()
@@ -86,49 +136,16 @@ void LicenseValidator::activate()
 
 	cryptolensHandle->machine_code_computer.set_machine_code(e, getInstanceUuid());
 
-	cryptolens::optional<cryptolens::LicenseKey> licenseKey =
-		cryptolensHandle->activate_floating
-		(
-			e,
-			authToken,
-			productId,
-			license,
-			floatingTimeIntervalSec
-		);
+	if (e || !sendHeartBeat(true)) {
+		std::string errMsg = "Failed to activate license";
+		if (e) {
+			cryptolens::ActivateError error = cryptolens::ActivateError::from_reason(e.get_reason());
+			errMsg = error.what();
+		}
 
-	if (e)
-	{
-		cryptolens::ActivateError error = cryptolens::ActivateError::from_reason(e.get_reason());
-		std::string errMsg = error.what();
-		repoError << "License activation failed: " << errMsg;
 		throw repo::lib::RepoInvalidLicenseException(errMsg);
 	}
-	else
-	{
-		bool licenseBlocked = licenseKey->get_block();
-		bool licenseExpired = static_cast<bool>(licenseKey->check().has_expired(time(0)));
-		if (!licenseExpired && !licenseBlocked)
-		{
-			repoTrace << "****License activation summary****";
-			repoTrace << "- session license ID: " << instanceUuid;
-			repoTrace << "- server message: " << (licenseKey->get_notes().has_value() ? licenseKey->get_notes().value() : "");
-			repoTrace << "- server respose ok: true";
-			repoTrace << "- license blocked: " << licenseBlocked;
-			repoTrace << "- license expired: " << licenseExpired;
-			repoTrace << "- license expiry on: " << getFormattedUtcTime(licenseKey->get_expires()) << " (UTC)";
-			if (licenseKey->get_activated_machines().has_value()) repoTrace << "- #activated instances: " << licenseKey->get_activated_machines()->size();
-			if (licenseKey->get_maxnoofmachines().has_value()) repoTrace << "- allowed instances: " << licenseKey->get_maxnoofmachines().value();
-			repoInfo << "License activated";
-			repoTrace << "**********************************";
-		}
-		else
-		{
-			std::string errMsg = licenseExpired ? "License expired." : " License is blocked";
-			repoError << "License activation failed: " << errMsg;
-			deactivate();
-			throw repo::lib::RepoInvalidLicenseException(errMsg);
-		}
-	}
+
 #endif
 }
 
