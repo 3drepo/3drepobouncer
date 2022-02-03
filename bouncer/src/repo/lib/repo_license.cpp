@@ -175,7 +175,7 @@ void LicenseValidator::deactivate()
 	}
 
 	if (heartBeatThread) {
-		repoTrace << "Waiting for heart beat thread to finish...";
+		repoInfo << "Waiting for heart beat thread to finish...";
 		sendHeartBeat = false;
 		heartBeatThread->join();
 	}
@@ -199,10 +199,6 @@ void LicenseValidator::deactivate()
 		repoTrace << " this allocation will time out in less than " << floatingTimeIntervalSec << " seconds";
 		repoTrace << "************************************";
 		repoTrace << "License deactivation failed: " << error.what();
-	}
-	else
-	{
-		repoInfo << "License allocation relinquished";
 	}
 
 	cryptolensHandle.reset();
