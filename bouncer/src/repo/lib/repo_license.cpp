@@ -35,10 +35,6 @@ static const std::string authToken = LICENSE_AUTH_TOKEN;
 static const int floatingTimeIntervalSec = LICENSE_TIMEOUT_SECONDS;
 static const int productId = LICENSE_PRODUCT_ID;
 
-std::string LicenseValidator::instanceUuid;
-std::string LicenseValidator::license;
-std::unique_ptr<Cryptolens> LicenseValidator::cryptolensHandle;
-
 std::string LicenseValidator::getInstanceUuid()
 {
 	instanceUuid = instanceUuid.empty() ? repo::lib::getEnvString(instanceUuidEnvVarName) : instanceUuid;

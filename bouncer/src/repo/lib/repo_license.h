@@ -41,19 +41,19 @@ namespace repo {
 #ifdef REPO_LICENSE_CHECK
 
 		private:
-			static std::string license;
-			static std::string instanceUuid;
-			static std::unique_ptr<Cryptolens> cryptolensHandle;
+			std::string license;
+			std::string instanceUuid;
+			std::unique_ptr<Cryptolens> cryptolensHandle;
 
-			static std::string getInstanceUuid();
-			static std::string getLicenseString();
-			static std::string getFormattedUtcTime(time_t timeStamp);
+			std::string getInstanceUuid();
+			std::string getLicenseString();
+			std::string getFormattedUtcTime(time_t timeStamp);
 
 #endif
 
 		public:
-			static void activate();
-			static void deactivate();
+			void activate();
+			void deactivate();
 		};
 	}
 }
