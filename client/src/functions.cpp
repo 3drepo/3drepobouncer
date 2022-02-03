@@ -387,6 +387,7 @@ int32_t importFileAndCommit(
 		return REPOERR_INVALID_ARG;
 	}
 
+	std::string timeZone;
 	std::string fileLoc;
 	std::string database;
 	std::string project;
@@ -409,6 +410,7 @@ int32_t importFileAndCommit(
 			owner = jsonTree.get<std::string>("owner", "");
 			tag = jsonTree.get<std::string>("tag", "");
 			desc = jsonTree.get<std::string>("desc", "");
+			timeZone = jsonTree.get<std::string>("timezone", "");
 			rotate = jsonTree.get<bool>("dxrotate", rotate);
 			importAnimations = jsonTree.get<bool>("importAnimations", importAnimations);
 			fileLoc = jsonTree.get<std::string>("file", "");
@@ -470,7 +472,7 @@ int32_t importFileAndCommit(
 		+ " project: " + project + " rotate:"
 		+ (rotate ? "true" : "false") + " owner :" + owner + " importAnimations: " + (importAnimations ? "true" : "false"));
 
-	repo::manipulator::modelconvertor::ModelImportConfig config(true, rotate, importAnimations);
+	repo::manipulator::modelconvertor::ModelImportConfig config(true, rotate, importAnimations, timeZone);
 	uint8_t err;
 	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, err, config);
 	if (graph)
