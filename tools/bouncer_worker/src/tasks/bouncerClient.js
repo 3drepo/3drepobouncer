@@ -26,19 +26,17 @@ const bouncerClientPath = path.normalize(config.bouncer.path);
 const setBouncerEnvars = (logDir) => {
 	if (config.bouncer.envars) {
 		Object.keys(config.bouncer.envars).forEach((key) => {
-			logger.info(`[ENVAR]: ${key} - ${config.bouncer.envars[key]}`);
 			process.env[key] = config.bouncer.envars[key];
 		});
 	}
 
 	if (logDir) {
-		logger.info(`[ENVAR]: REPO_LOG_DIR - ${logDir}`);
 		process.env.REPO_LOG_DIR = logDir;
 	}
 
 	if (config.repoLicense) {
-		logger.info(`[ENVAR]: REPO_LICENSE - ${config.repoLicense}`);
 		process.env.REPO_LICENSE = config.repoLicense;
+		process.env.REPO_INSTANCE_ID = config.instanceId;
 	}
 };
 
