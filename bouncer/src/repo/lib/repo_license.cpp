@@ -174,8 +174,6 @@ void LicenseValidator::deactivate()
 		return;
 	}
 
-	repoTrace << "Deactivating";
-
 	if (heartBeatThread) {
 		repoTrace << "Waiting for heart beat thread to finish...";
 		sendHeartBeat = false;
@@ -200,7 +198,7 @@ void LicenseValidator::deactivate()
 		repoTrace << "- deactivation result: session not removed from license. Error trying to deactivate license. ";
 		repoTrace << " this allocation will time out in less than " << floatingTimeIntervalSec << " seconds";
 		repoTrace << "************************************";
-		repoError << "License deactivation failed: " << error.what();
+		repoTrace << "License deactivation failed: " << error.what();
 	}
 	else
 	{
