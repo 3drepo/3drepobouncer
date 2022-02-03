@@ -45,7 +45,7 @@ std::string LicenseValidator::getInstanceUuid()
 	if (instanceUuid.empty())
 	{
 		instanceUuid = repo::lib::RepoUUID::createUUID().toString();
-		repoTrace << instanceUuidEnvVarName << " is not set. Setting machine instance ID to " << instanceUuid;
+		repoInfo << instanceUuidEnvVarName << " is not set. Setting machine instance ID to " << instanceUuid;
 	}
 	return instanceUuid;
 }
@@ -56,6 +56,7 @@ std::string LicenseValidator::getLicenseString()
 	if (licenseStr.empty())
 	{
 		std::string errMsg = "License not found, please ensure " + licenseEnvVarName + " is set.";
+		repoError << errMsg;
 		throw repo::lib::RepoInvalidLicenseException(errMsg);
 	}
 	return licenseStr;

@@ -34,7 +34,7 @@ RepoLog::RepoLog()
 {
 	std::string logDir = getEnvString("REPO_LOG_DIR");
 	logDir = logDir.empty() ? "./log/" : logDir;
-	std::cout << "Logging directory is set to " << logDir;
+	std::cout << "Logging directory is set to " << logDir << std::endl;
 	this->logToFile(logDir);
 
 	std::string debug = getEnvString("REPO_DEBUG");
