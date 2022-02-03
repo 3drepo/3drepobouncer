@@ -67,7 +67,7 @@ std::string LicenseValidator::getFormattedUtcTime(time_t timeStamp)
 	return formatedStr;
 }
 
-bool LicenseValidator::sendHeartBeat(bool verbose) {
+bool LicenseValidator::sendActivateRequest(bool verbose) {
 	cryptolens::Error e;
 	cryptolens::optional<cryptolens::LicenseKey> licenseKey =
 		cryptolensHandle->activate_floating
@@ -117,6 +117,18 @@ bool LicenseValidator::sendHeartBeat(bool verbose) {
 	}
 }
 
+void LicenseValidator::runHeartBeatLoop() {
+	auto interval = floatingTimeIntervalSec < 10 ? floatingTimeIntervalSec / 2 : floatingTimeIntervalSec - 10;
+	while (true) {
+		std::this_thread::sleep_for(std::chrono::seconds(interval));
+		if (!sendHeartBeat || !sendActivateRequest()) {
+			std::string msg = sendHeartBeat ? "Heart beat to license server was not acknowledged" : "Signal received to stop heart beat";
+			repoError << msg;
+			break;
+		}
+	}
+}
+
 #endif
 
 void LicenseValidator::activate()
@@ -136,7 +148,7 @@ void LicenseValidator::activate()
 
 	cryptolensHandle->machine_code_computer.set_machine_code(e, getInstanceUuid());
 
-	if (e || !sendHeartBeat(true)) {
+	if (e || !sendActivateRequest(true)) {
 		std::string errMsg = "Failed to activate license";
 		if (e) {
 			cryptolens::ActivateError error = cryptolens::ActivateError::from_reason(e.get_reason());
@@ -145,6 +157,10 @@ void LicenseValidator::activate()
 
 		throw repo::lib::RepoInvalidLicenseException(errMsg);
 	}
+
+	// launch a thread to keep sending heart beats
+	auto thread = new std::thread([](LicenseValidator *obj) {obj->runHeartBeatLoop();}, this);
+	heartBeatThread = std::unique_ptr<std::thread>(thread);
 
 #endif
 }
@@ -156,6 +172,14 @@ void LicenseValidator::deactivate()
 	{
 		repoError << " Attempting to deactivate without activation, aborting deactivation";
 		return;
+	}
+
+	repoTrace << "Deactivating";
+
+	if (heartBeatThread) {
+		repoTrace << "Waiting for heart beat thread to finish...";
+		sendHeartBeat = false;
+		heartBeatThread->join();
 	}
 
 	cryptolens::Error e;

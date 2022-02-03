@@ -18,6 +18,7 @@
 #pragma once
 
 #include <memory>
+#include <thread>
 
 #ifdef REPO_LICENSE_CHECK
 
@@ -44,18 +45,22 @@ namespace repo {
 			std::string license;
 			std::string instanceUuid;
 			std::unique_ptr<Cryptolens> cryptolensHandle;
+			bool sendHeartBeat = true;
+			std::unique_ptr<std::thread> heartBeatThread;
 
 			std::string getInstanceUuid();
 			std::string getLicenseString();
 			std::string getFormattedUtcTime(time_t timeStamp);
 
 			bool sendActivateRequest(bool verbose = false);
+			void runHeartBeatLoop();
 
 #endif
 
 		public:
 			void activate();
 			void deactivate();
+			~LicenseValidator() { deactivate(); }
 		};
 	}
 }
