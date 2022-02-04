@@ -19,6 +19,7 @@
 
 #include <memory>
 #include <thread>
+#include <atomic>
 
 #ifdef REPO_LICENSE_CHECK
 
@@ -45,7 +46,7 @@ namespace repo {
 			std::string license;
 			std::string instanceUuid;
 			std::unique_ptr<Cryptolens> cryptolensHandle;
-			bool sendHeartBeat = true;
+			std::atomic<bool> sendHeartBeat = true;
 			std::unique_ptr<std::thread> heartBeatThread;
 
 			std::string getInstanceUuid();
