@@ -46,7 +46,7 @@ namespace repo {
 			std::string license;
 			std::string instanceUuid;
 			std::unique_ptr<Cryptolens> cryptolensHandle;
-			std::atomic<bool> sendHeartBeat = true;
+			std::atomic<bool> sendHeartBeat(true);
 			std::unique_ptr<std::thread> heartBeatThread;
 
 			std::string getInstanceUuid();
