@@ -46,7 +46,7 @@ namespace repo {
 			std::string license;
 			std::string instanceUuid;
 			std::unique_ptr<Cryptolens> cryptolensHandle;
-			std::atomic<bool> sendHeartBeat(true);
+			std::atomic_bool sendHeartBeat;
 			std::unique_ptr<std::thread> heartBeatThread;
 
 			std::string getInstanceUuid();
@@ -61,6 +61,9 @@ namespace repo {
 		public:
 			void activate();
 			void deactivate();
+			LicenseValidator() {
+				sendHeartBeat.store(true);
+			}
 			~LicenseValidator() { deactivate(); }
 		};
 	}
