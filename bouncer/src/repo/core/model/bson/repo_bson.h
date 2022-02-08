@@ -54,7 +54,7 @@ namespace repo {
 			//TODO: Eventually we should inherit from a generic BSON object.
 			//work seems to have been started in here:https://github.com/jbenet/bson-cpp
 			//alternatively we can use a c++ wrapper on https://github.com/mongodb/libbson
-			class REPO_API_EXPORT RepoBSON : private mongo::BSONObj
+			class REPO_API_EXPORT RepoBSON : public mongo::BSONObj
 			{
 				friend class RepoBSONBuilder;
 				friend class repo::core::handler::MongoDatabaseHandler;
