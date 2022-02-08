@@ -118,17 +118,21 @@ bool LicenseValidator::sendActivateRequest(bool verbose) {
 }
 
 void LicenseValidator::runHeartBeatLoop() {
-	auto interval = floatingTimeIntervalSec <= 10 ? floatingTimeIntervalSec / 2 : floatingTimeIntervalSec - 5;
+	auto interval = floatingTimeIntervalSec <= 10 ? floatingTimeIntervalSec / 2 : 5;
 	while (true) {
 		std::this_thread::sleep_for(std::chrono::seconds(interval));
 		if (!sendHeartBeat.load()) {
 			repoTrace << "Signal received to stop heart beat";
 			break;
 		}
+		auto start = std::chrono::high_resolution_clock::now();
 		if (!sendActivateRequest()) {
 			repoError << "Heart beat to license server was not acknowledged";
 			break;
 		}
+		auto stop = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start);
+		repoTrace << "Heart beat acknowledged ["<< duration<< "ms]";
 	}
 }
 

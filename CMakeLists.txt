@@ -134,7 +134,7 @@ if (LICENSE_CHECK )
 	set(LICENSE_RSA_PUB_KEY_EXP $ENV{LICENSE_RSA_PUB_KEY_EXP} CACHE STRING "Licensing public token exponent")
 	set(LICENSE_AUTH_TOKEN $ENV{LICENSE_AUTH_TOKEN} CACHE STRING "Access token to communicate with licence server")
 	set(LICENSE_PRODUCT_ID $ENV{LICENSE_PRODUCT_ID} CACHE STRING "The product ID assigned in the licensing server")
-	set(LICENSE_TIMEOUT_SECONDS "10" CACHE STRING "Time after which an occupied seat is released")
+	set(LICENSE_TIMEOUT_SECONDS "30" CACHE STRING "Time after which an occupied seat is released")
 
 	ensureNotEmpty(LICENSE_RSA_PUB_KEY_MOD "${LICENSE_RSA_PUB_KEY_MOD}")
 	ensureNotEmpty(LICENSE_RSA_PUB_KEY_EXP "${LICENSE_RSA_PUB_KEY_EXP}")
