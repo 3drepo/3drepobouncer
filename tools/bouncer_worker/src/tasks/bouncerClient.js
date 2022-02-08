@@ -45,6 +45,9 @@ const BouncerHandler = {};
 BouncerHandler.testClient = async () => {
 	const logLabel = { label: 'INIT' };
 	logger.info('Checking status of client...', logLabel);
+	if (config.repoLicense) {
+		logger.info(`Machine Instance ID is set to ${config.instanceId}`);
+	}
 
 	setBouncerEnvars();
 
