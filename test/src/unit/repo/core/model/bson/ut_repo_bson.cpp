@@ -42,9 +42,9 @@ TEST(RepoBSONTest, ConstructFromMongo)
 	RepoBSON bson2(builder);
 	RepoBSON bsonDiff(BSON("something" << "different"));
 
-	EXPECT_TRUE(bson1 == bson2);
+	EXPECT_EQ(bson1, bson2);
 	EXPECT_EQ(bson1.toString(), bson2.toString());
-	EXPECT_FALSE(bson1 == bsonDiff);
+	EXPECT_NE(bson1, bsonDiff);
 }
 
 TEST(RepoBSONTest, ConstructFromMongoSizeExceeds) {
@@ -367,7 +367,7 @@ TEST(RepoBSONTest, CloneAndShrink)
 	//shrinking a bson without any binary fields should yield an identical bson
 	RepoBSON shrunkBson = testBson.cloneAndShrink();
 
-	EXPECT_TRUE(testBson == shrunkBson);
+	EXPECT_EQ(testBson, shrunkBson);
 	EXPECT_EQ(testBson.getFilesMapping().size(), shrunkBson.getFilesMapping().size());
 
 	mongo::BSONObjBuilder builder;
@@ -390,7 +390,7 @@ TEST(RepoBSONTest, CloneAndShrink)
 	shrunkBson = binBson.cloneAndShrink();
 	outMapping = shrunkBson.getFilesMapping();
 
-	EXPECT_FALSE(shrunkBson == binBson);
+	EXPECT_NE(shrunkBson, binBson);
 	EXPECT_FALSE(shrunkBson.hasField("binDataTest"));
 	EXPECT_EQ(2, outMapping.size());
 	EXPECT_TRUE(outMapping.find("orgRef") != outMapping.end());

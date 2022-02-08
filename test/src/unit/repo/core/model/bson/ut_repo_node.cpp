@@ -104,7 +104,7 @@ TEST(RepoNodeTest, CloneAndAddParentTest)
 	RepoNode nodeWithParent = node.cloneAndAddParent(parent);
 
 	ASSERT_TRUE(nodeWithParent.hasField(REPO_NODE_LABEL_PARENTS));
-	EXPECT_FALSE(node == nodeWithParent);
+	EXPECT_NE(node, nodeWithParent);
 	EXPECT_NE(node.toString(), nodeWithParent.toString());
 
 	RepoBSONElement parentField = nodeWithParent.getField(REPO_NODE_LABEL_PARENTS);
@@ -170,7 +170,7 @@ TEST(RepoNodeTest, CloneAndAddParentTest_MultipleParents)
 	RepoNode nodeWithParent = node.cloneAndAddParent(parent);
 
 	ASSERT_TRUE(nodeWithParent.hasField(REPO_NODE_LABEL_PARENTS));
-	EXPECT_FALSE(node == nodeWithParent);
+	EXPECT_NE(node, nodeWithParent);
 	EXPECT_NE(node.toString(), nodeWithParent.toString());
 
 	RepoBSONElement parentField = nodeWithParent.getField(REPO_NODE_LABEL_PARENTS);
@@ -523,13 +523,13 @@ TEST(RepoNodeTest, GetParentsIDTest)
 TEST(RepoNodeTest, OperatorEqualTest)
 {
 	RepoNode typicalNode = makeTypicalNode();
-	EXPECT_FALSE(makeRandomNode() == typicalNode);
-	EXPECT_FALSE(makeRandomNode() == makeRandomNode());
-	EXPECT_FALSE(typicalNode == typicalNode);
+	EXPECT_NE(makeRandomNode(), typicalNode);
+	EXPECT_NE(makeRandomNode(), makeRandomNode());
+	EXPECT_EQ(typicalNode, typicalNode);
 
 	repo::lib::RepoUUID sharedID = repo::lib::RepoUUID::createUUID();
-	EXPECT_FALSE(makeNode(repo::lib::RepoUUID::createUUID(), sharedID) == makeNode(repo::lib::RepoUUID::createUUID(), sharedID));
-	EXPECT_FALSE(makeNode(sharedID, repo::lib::RepoUUID::createUUID()) == makeNode(sharedID, repo::lib::RepoUUID::createUUID()));
+	EXPECT_NE(makeNode(repo::lib::RepoUUID::createUUID(), sharedID), makeNode(repo::lib::RepoUUID::createUUID(), sharedID));
+	EXPECT_NE(makeNode(sharedID, repo::lib::RepoUUID::createUUID()), makeNode(sharedID, repo::lib::RepoUUID::createUUID()));
 }
 
 TEST(RepoNodeTest, OperatorCompareTest)
