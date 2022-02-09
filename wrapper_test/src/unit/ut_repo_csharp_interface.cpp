@@ -38,9 +38,9 @@ static std::string getDataPath(
 }
 
 // Only one test for the whole wrapper, as the current implementation is done
-// via the singleton pattern, and the core repo controller state may 
+// via the singleton pattern, and the core repo controller state may
 // be carried over between tests.
-// This test covers all the wrapper functions that are run by the asset bundle 
+// This test covers all the wrapper functions that are run by the asset bundle
 // creator via the `BuildAllAssetBundles` entry point
 TEST(RepoCsharpInterface, FullWrapperTest)
 {
@@ -49,8 +49,7 @@ TEST(RepoCsharpInterface, FullWrapperTest)
 	std::string project = "cube";
 	std::string revisionID = "";
 	std::string configPath = getDataPath("config/config.json");
-	bool connected = repoConnect(&configPath[0]);
-	ASSERT_TRUE(connected);
+	ASSERT_EQ(repoConnect(&configPath[0]), 0);
 	bool loadedScene = repoLoadSceneForAssetBundleGeneration(
 		&database[0],
 		&project[0],
@@ -98,11 +97,11 @@ TEST(RepoCsharpInterface, FullWrapperTest)
 		std::vector<int> numSubmeshesPerSubSupermesh(numSubSupermeshes);
 		std::vector<float> uvs(numVertices * 2);
 		repoGetSuperMeshBuffers(
-			superMeshIdx, 
-			&vertices[0], 
-			&normals[0], 
-			&faces[0], 
-			&uvs[0], 
+			superMeshIdx,
+			&vertices[0],
+			&normals[0],
+			&faces[0],
+			&uvs[0],
 			&numSubmeshesPerSubSupermesh[0]);
 		// sub supermesh loop
 		repoInfo << "looping over sub supermeshes";
@@ -127,10 +126,10 @@ TEST(RepoCsharpInterface, FullWrapperTest)
 				int supermeshFaceFrom{0};
 				int supermeshFaceTo{0};
 				std::string subMeshId = repoGetOrgMeshInfoFromSubMesh(
-					superMeshIdx, 
-					subSuperMeshIdx, 
-					subMeshIdx, 
-					&supermeshFaceFrom, 
+					superMeshIdx,
+					subSuperMeshIdx,
+					subMeshIdx,
+					&supermeshFaceFrom,
 					&supermeshFaceTo);
 			}
 		}
