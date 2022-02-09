@@ -62,7 +62,9 @@ namespace repo {
 			void activate();
 			void deactivate();
 			LicenseValidator() {
+#ifdef REPO_LICENSE_CHECK
 				sendHeartBeat.store(true);
+#endif
 			}
 			~LicenseValidator() { deactivate(); }
 		};
