@@ -84,12 +84,26 @@ std::unordered_map<std::string, std::string> DataProcessorDgn::extractXMLLinkage
 	return entries;
 }
 
+// Returns true when the type of element should be part of a grouped hierarchy
+// and so the traversal should continue upwards, and false when the type means
+// the traversal should terminate.
+bool shouldBeInGroupHierarchy(OdDgElement::ElementTypes type)
+{
+	switch (type) {
+	case OdDgElement::ElementTypes::kTypeUnapplicable:
+	case OdDgElement::ElementTypes::kTypeUndefined:
+		return false;
+	default:
+		return true;
+	}
+}
+
 bool DataProcessorDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 {
 	OdDgElementPtr pElm = OdDgElement::cast(pDrawable);
 	auto currentItem = pElm;
 	auto previousItem = pElm;
-	while (currentItem->ownerId()) {
+	while (currentItem->ownerId() && shouldBeInGroupHierarchy(currentItem->getElementType())) {
 		previousItem = currentItem;
 		auto ownerId = currentItem->ownerId();
 		auto ownerItem = OdDgElement::cast(ownerId.openObject(OdDg::kForRead));
@@ -98,6 +112,7 @@ bool DataProcessorDgn::doDraw(OdUInt32 i, const OdGiDrawable* pDrawable)
 
 	//We want to group meshes together up to 1 below the top.
 	std::string groupID = convertToStdString(toString(previousItem->elementId().getHandle()));
+
 	collector->setMeshGroup(groupID);
 	std::unordered_map<std::string, std::string> meta;
 
