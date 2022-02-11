@@ -105,13 +105,13 @@ externalLibraries.forEach(({rootEnvVar, subPath, subFolder, extensions}) => {
 			const fullPath = path.join(rootPath, subDir);
 			verbose && console.log(`\tSub dir: ${subDir}... (${fullPath})`);
 			if(fs.existsSync(fullPath)) {
-				const files = fs.readdirSync(fullPath);
+				const files = fs.readdirSync(fullPath, {withFileTypes: true});
 				files.forEach((file) => {
-					const fileExt = path.extname(file);
-					if (extensions.includes(fileExt)) {
-						const filePath = path.join(fullPath, file);
+					const fileExt = path.extname(file.name);
+					if (!file.isDirectory() && extensions.includes(fileExt)) {
+						const filePath = path.join(fullPath, file.name);
 						verbose && console.log(`\tCopying file: ${filePath}...`);
-						const destPath = path.join(folderPath, file);
+						const destPath = path.join(folderPath, file.name);
 						fs.copyFileSync(filePath, destPath);
 					}
 				});
