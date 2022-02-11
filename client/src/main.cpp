@@ -31,6 +31,9 @@ void printHelp()
 	std::cout << helpInfo() << std::endl;
 	std::cout << std::endl;
 	std::cout << "Environmental Variables:" << std::endl;
+#ifdef REPO_LICENSE_CHECK
+	std::cout << "REPO_LICENSE\tLicense key for running bouncer" << std::endl;
+#endif
 	std::cout << "REPO_DEBUG\tEnable debug logging" << std::endl;
 	std::cout << "REPO_LOG_DIR\tSpecify the log directory (default is ./log)" << std::endl;
 	std::cout << "REPO_VERBOSE\tEnable verbose logging" << std::endl;
@@ -42,39 +45,14 @@ std::shared_ptr<repo::RepoController>  instantiateController()
 	std::vector<repo::lib::RepoAbstractListener*> listeners = { stdOutListener };
 	std::shared_ptr<repo::RepoController> controller;
 
-	try {
-		controller =std::make_shared<repo::RepoController>(listeners);
-	}
-	catch (const repo::lib::RepoValidityExpiredException) {
-		std::cerr << "License expired. Please contact support@3drepo.org should you wish to continue using the software." << std::endl;
-		std::cerr << repo::RepoController::getLicenseInfo() << std::endl;
-		exit(REPOERR_AUTH_FAILED);
-	}
-
-	char* debug = getenv("REPO_DEBUG");
-	char* verbose = getenv("REPO_VERBOSE");
-	char* logDir = getenv("REPO_LOG_DIR");
-
-	if (verbose)
+	try
 	{
-		controller->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::TRACE);
+		controller = std::make_shared<repo::RepoController>(listeners);
 	}
-	else if (debug)
-	{
-		controller->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::DEBUG);
-	}
-	else
-	{
-		controller->setLoggingLevel(repo::lib::RepoLog::RepoLogLevel::INFO);
+	catch (const repo::lib::RepoInvalidLicenseException e) {
+		exit(ERRCODE_REPO_LICENCE_INVALID);
 	}
 
-	std::string logPath;
-	if (logDir)
-		logPath = std::string(logDir);
-	else
-		logPath = "./log/";
-
-	controller->logToFile(logPath);
 	repoLog("3D Repo Bouncer Version: " + controller->getVersion());
 	return controller;
 }
@@ -95,7 +73,7 @@ void logCommand(int argc, char* argv[])
 }
 
 int main(int argc, char* argv[]) {
-	auto controller = instantiateController();
+	std::shared_ptr<repo::RepoController> controller = instantiateController();
 	if (argc < minArgs) {
 		if (argc == 2 && isSpecialCommand(argv[1]))
 		{

@@ -18,7 +18,7 @@
 const { callbackQueueSpecified, unityQueueSpecified, logDirExists } = require('./common');
 const { config } = require('../lib/config');
 const { generateAssetBundles, validateUnityConfigurations } = require('../tasks/unityEditor');
-const { ERRCODE_ARG_FILE_FAIL, ERRCODE_UNITY_LICENCE_INVALID } = require('../constants/errorCodes');
+const { ERRCODE_ARG_FILE_FAIL, ERRCODE_UNITY_LICENCE_INVALID, ERRCODE_REPO_LICENCE_INVALID } = require('../constants/errorCodes');
 const { UNITY_PROCESSING } = require('../constants/statuses');
 const logger = require('../lib/logger');
 const Utils = require('../lib/utils');
@@ -46,13 +46,20 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
 			returnMessage.value = ERRCODE_ARG_FILE_FAIL;
 		}
 	} catch (err) {
-		if (err === ERRCODE_UNITY_LICENCE_INVALID) {
-			logger.error('Failed to generate asset bundle: Invalid unity license', logLabel);
-			await Utils.sleep(config.rabbitmq.maxWaitTimeMS);
-			throw err;
+		switch (err) {
+			case ERRCODE_UNITY_LICENCE_INVALID:
+				logger.error('Failed to generate asset bundle: Invalid unity license', logLabel);
+				await Utils.sleep(config.rabbitmq.maxWaitTimeMS);
+				throw err;
+			case ERRCODE_REPO_LICENCE_INVALID:
+				logger.error('Failed to generate asset bundle: Invalid 3D Repo license', logLabel);
+				await Utils.sleep(config.rabbitmq.maxWaitTimeMS);
+				throw err;
+			default:
+				logger.error(`Failed to generate asset bundle: ${err}`, logLabel);
+				returnMessage.value = err;
+				break;
 		}
-		logger.error(`Failed to generate asset bundle: ${err}`, logLabel);
-		returnMessage.value = err;
 	}
 	return returnMessage;
 };

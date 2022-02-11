@@ -25,7 +25,7 @@ project("3drepobouncer")
 cmake_minimum_required(VERSION 2.8)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake_modules)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -w -std=c++11 -pthread")
 if(${APPLE})
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -framework Foundation")
 endif()
@@ -37,7 +37,9 @@ endif()
 option (REPO_BUILD_COVERAGE "Building with coverage report" OFF)
 option (ODA_SUPPORT "If ODA library is present" OFF)
 option (SYNCHRO_SUPPORT "If Synchro library is present" OFF)
-option (VALID_UNTIL "Set timestamp for how long (sec since epoch) this library should be valid for (-1 for unlimited) " -1)
+
+option (LICENSE_CHECK  "Build with a license check" OFF)
+
 if(REPO_BUILD_COVERAGE)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 --coverage")
 endif()
@@ -117,6 +119,36 @@ if (S3_SUPPORT)
 	endif()
 endif()
 
+#===================== CRYPTOLENS ============================
+
+function (ensureNotEmpty varName data)
+	if(data STREQUAL "")
+		message(FATAL_ERROR "${varName} cannot be empty when LICENSE_CHECK is set.")
+	endif()
+
+endfunction()
+
+if (LICENSE_CHECK )
+	find_package(CRYPTOLENS REQUIRED)
+	set(LICENSE_RSA_PUB_KEY_MOD $ENV{LICENSE_RSA_PUB_KEY_MOD} CACHE STRING "Licensing public token modulus")
+	set(LICENSE_RSA_PUB_KEY_EXP $ENV{LICENSE_RSA_PUB_KEY_EXP} CACHE STRING "Licensing public token exponent")
+	set(LICENSE_AUTH_TOKEN $ENV{LICENSE_AUTH_TOKEN} CACHE STRING "Access token to communicate with licence server")
+	set(LICENSE_PRODUCT_ID $ENV{LICENSE_PRODUCT_ID} CACHE STRING "The product ID assigned in the licensing server")
+	set(LICENSE_TIMEOUT_SECONDS "30" CACHE STRING "Time after which an occupied seat is released")
+
+	ensureNotEmpty(LICENSE_RSA_PUB_KEY_MOD "${LICENSE_RSA_PUB_KEY_MOD}")
+	ensureNotEmpty(LICENSE_RSA_PUB_KEY_EXP "${LICENSE_RSA_PUB_KEY_EXP}")
+	ensureNotEmpty(LICENSE_AUTH_TOKEN "${LICENSE_AUTH_TOKEN}")
+	ensureNotEmpty(LICENSE_PRODUCT_ID "${LICENSE_PRODUCT_ID}")
+
+	add_definitions(-DREPO_LICENSE_CHECK)
+	add_definitions(-DLICENSE_RSA_PUB_KEY_MOD="${LICENSE_RSA_PUB_KEY_MOD}")
+	add_definitions(-DLICENSE_RSA_PUB_KEY_EXP="${LICENSE_RSA_PUB_KEY_EXP}")
+	add_definitions(-DLICENSE_AUTH_TOKEN="${LICENSE_AUTH_TOKEN}")
+	add_definitions(-DLICENSE_PRODUCT_ID=${LICENSE_PRODUCT_ID})
+	add_definitions(-DLICENSE_TIMEOUT_SECONDS=${LICENSE_TIMEOUT_SECONDS})
+
+endif()
 
 #================COMPILE 3D REPO BOUNCER ==============
 option (REPO_BUILD_WRAPPER "If the C# wrapper is built in addition to the library" ON)
@@ -126,11 +158,6 @@ option (REPO_BUILD_TOOLS "If the Command Line Tool is built in addition to the l
 option (REPO_BUILD_TESTS "If the test suite for the core bouncer logic is built in addition to the library" OFF)
 option (REPO_NO_GZIP "If zlib is not compiled into boost" OFF)
 
-
-if(VALID_UNTIL GREATER 0)
-	message("setting software validity to ${VALID_UNTIL}")
-	add_definitions(-DVALID_UNTIL=${VALID_UNTIL})
-endif()
 
 #Build IFCUtils
 add_subdirectory(ifcUtils)
