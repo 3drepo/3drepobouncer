@@ -30,7 +30,7 @@ namespace repo{
 			* Singleton class - get its instance
 			*/
 			static CSharpWrapper* getInstance();
-			
+
 			static void destroyInstance();
 
 			/**

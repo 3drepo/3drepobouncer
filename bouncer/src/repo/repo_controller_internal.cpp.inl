@@ -38,6 +38,8 @@ RepoController::_RepoControllerImpl::_RepoControllerImpl(
 	{
 		subscribeToLogger(listeners);
 	}
+
+	licenseValidator.activate();
 }
 
 RepoController::_RepoControllerImpl::~_RepoControllerImpl()
@@ -50,6 +52,8 @@ RepoController::_RepoControllerImpl::~_RepoControllerImpl()
 		if (man)
 			delete man;
 	}
+
+	repo::core::handler::MongoDatabaseHandler::disconnectHandler();
 }
 
 RepoController::RepoToken* RepoController::_RepoControllerImpl::init(

@@ -29,9 +29,9 @@ namespace repo {
 			const std::string errMsg;
 		};
 
-		class RepoValidityExpiredException : RepoException {
+		class RepoInvalidLicenseException : public RepoException {
 		public:
-			RepoValidityExpiredException(const std::string &msg = "Validity expired") : RepoException(msg) {};
+			RepoInvalidLicenseException(const std::string &msg) : RepoException(msg) {};
 		};
 	}
 }

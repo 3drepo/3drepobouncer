@@ -17,7 +17,7 @@
 
 #include "repo_csharp_interface.h"
 #include "c_sharp_wrapper.h"
-
+#include <repo/lib/repo_exception.h>
 
 char* cStringCopy(const std::string& string)
 {
@@ -30,11 +30,16 @@ char* cStringCopy(const std::string& string)
 	return p;
 }
 
-bool repoConnect(
+int repoConnect(
 	char* configPath)
 {
-	auto wrapper = repo::lib::CSharpWrapper::getInstance();
-	return wrapper->connect(configPath);
+	try {
+		auto wrapper = repo::lib::CSharpWrapper::getInstance();
+		return wrapper->connect(configPath) ? 0 : 1;
+	}
+	catch (const repo::lib::RepoInvalidLicenseException) {
+		return 2;
+	}
 }
 
 void repoFreeSuperMesh(

@@ -59,7 +59,13 @@ const externalLibraries = [
 		rootEnvVar: "REPOBOUNCER_ROOT",
 		subPath: ["lib", "bin"],
 		extensions: [...exts, ".exe", ""]
+	},
+	{
+		rootEnvVar: "CRYPTOLENS_ROOT",
+		subPath: ["lib"],
+		extensions: exts
 	}
+
 ];
 
 /**
