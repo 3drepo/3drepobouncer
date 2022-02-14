@@ -53,6 +53,7 @@
 #include <Database/Entities/BmHiddenElementsViewSettings.h>
 #include <Database/Entities/BmBasePoint.h>
 #include <Database/Entities/BmGeoLocation.h>
+#include <Tf/TfVariant.h>
 
 #include <TB_ExLabelUtils/BmSampleLabelUtilsPE.h>
 
@@ -120,8 +121,8 @@ namespace repo {
 					std::string getElementName(OdBmElementPtr element);
 
 					void initLabelUtils();
-
-					OdBm::DisplayUnitType::Enum getUnits(OdBmDatabasePtr database);
+					OdBmAUnitsPtr getUnits(OdBmDatabasePtr database);
+					OdBmForgeTypeId getLengthUnits(OdBmDatabasePtr database);
 
 					bool ignoreParam(const std::string& param);
 
@@ -132,12 +133,9 @@ namespace repo {
 						OdBmDatabase* database,
 						OdBm::BuiltInParameterDefinition::Enum param);
 
-					std::string unitsToString(const OdBm::DisplayUnitType::Enum &units);
-
 					void processParameter(
 						OdBmElementPtr element,
 						OdBmObjectId paramId,
-						OdBmAUnitsPtr pAUnits,
 						std::unordered_map<std::string, std::string> &metadata,
 						const OdBm::BuiltInParameterDefinition::Enum &buildInEnum
 					);
