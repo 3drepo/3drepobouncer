@@ -85,7 +85,7 @@ const createElasticRecord = async (index, body, id) => {
 			return;
 		}
 
-		await elasticClient.index({
+		await elasticClient.create({
 			index,
 			id,
 			refresh: true,
