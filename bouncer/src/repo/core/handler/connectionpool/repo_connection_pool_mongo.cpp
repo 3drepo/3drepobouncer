@@ -49,6 +49,7 @@ MongoConnectionPool::MongoConnectionPool(
 				repoTrace << auth->toString();
 				if (!worker->auth(auth->getStringField("db"), auth->getStringField("user"), auth->getStringField("pwd"), errMsg, auth->getField("digestPassword").boolean()))
 				{
+					repoError << "Failed to connect to the mongo database. Authentication Failed.";
 					throw mongo::DBException(errMsg, mongo::ErrorCodes::AuthenticationFailed);
 				}
 			}
