@@ -34,6 +34,7 @@ const processingRecordMapping = {
 	MaxMemory: { type: 'double' },
 	ProcessTime: { type: 'double' },
 	ReturnCode: { type: 'double' },
+	licenseKey: { type: 'keyword' },
 };
 
 const indicesMappings = [

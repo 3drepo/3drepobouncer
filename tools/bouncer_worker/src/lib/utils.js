@@ -16,6 +16,7 @@
  */
 
 const moment = require('moment');
+const repoLicense = require('./config').config.repoLicense;
 
 const Utils = {};
 
@@ -50,6 +51,7 @@ Utils.gatherProcessInformation = (
 		Queue: queue, // logLabel.label,
 		FileType: filetype, // file.split('.').pop().toString(),
 		FileSize: filesize, // fileStats.size,
+		repoLicense: repoLicense
 	});
 
 module.exports = Utils;
