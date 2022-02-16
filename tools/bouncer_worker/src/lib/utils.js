@@ -51,7 +51,7 @@ Utils.gatherProcessInformation = (
 		Queue: queue, // logLabel.label,
 		FileType: filetype, // file.split('.').pop().toString(),
 		FileSize: filesize, // fileStats.size,
-		repoLicense: repoLicense
+		licenseKey: repoLicense
 	});
 
 module.exports = Utils;
