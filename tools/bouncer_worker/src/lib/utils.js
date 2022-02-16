@@ -15,12 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
+const CryptoJS = require('crypto-js');
 const moment = require('moment');
-const repoLicense = require('./config').config.repoLicense;
+const { repoLicense } = require('./config').config;
 
 const Utils = {};
-
-const CryptoJS = require('crypto-js');
 
 Utils.hashCode = (s) => CryptoJS.MD5(s).toString();
 
@@ -51,7 +50,7 @@ Utils.gatherProcessInformation = (
 		Queue: queue, // logLabel.label,
 		FileType: filetype, // file.split('.').pop().toString(),
 		FileSize: filesize, // fileStats.size,
-		licenseKey: repoLicense
+		licenseKey: repoLicense,
 	});
 
 module.exports = Utils;
