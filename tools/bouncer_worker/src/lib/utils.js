@@ -17,7 +17,6 @@
 
 const CryptoJS = require('crypto-js');
 const moment = require('moment');
-const { repoLicense } = require('./config').config;
 
 const Utils = {};
 
@@ -41,6 +40,7 @@ Utils.gatherProcessInformation = (
 	queue,
 	filetype,
 	filesize,
+	repoLicense
 ) => (
 	{
 		DateTime: Date.now(),

@@ -40,6 +40,7 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
 				model,
 				database,
 				logLabel.label, // queue
+				config.repoLicense
 			);
 			await generateAssetBundles(database, model, rid, logDir, processInformation);
 		} else {
