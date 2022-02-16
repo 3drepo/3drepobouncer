@@ -40,7 +40,7 @@ Utils.gatherProcessInformation = (
 	queue,
 	filetype,
 	filesize,
-	repoLicense
+	repoLicense,
 ) => (
 	{
 		DateTime: Date.now(),
