@@ -1,1 +1,0 @@
-echo xvfb-run --auto-servernum --server-args='-screen 0 640x480x24' $UNITY_EDITOR_DIR/Unity -nographics -quit -batchmode -projectPath $1 -executeMethod CreateAssetBundles.BuildAllAssetBundles -quit -repoDatabase $3 -repoProject $4 -repoConfig $2 -repoRevID $5  -logfile > $6 || true
