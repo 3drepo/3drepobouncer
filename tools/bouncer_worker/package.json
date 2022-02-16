@@ -10,7 +10,8 @@
     "stop": "pm2 kill",
     "restart": "npm stop; npm start",
     "lint": "eslint --ext .js src",
-    "run-worker": "node src/scripts/bouncer_worker.js"
+    "run-worker": "node src/scripts/bouncer_worker.js",
+    "run-worker-trace": "node --trace-warnings src/scripts/bouncer_worker.js"
   },
   "dependencies": {
     "@elastic/elasticsearch": "7.12.0",
