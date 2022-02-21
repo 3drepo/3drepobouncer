@@ -20,7 +20,7 @@
 
 set(ODA_LIB_NAMES
 	TD_ExamplesCommon TG_ExamplesCommon TB_Common TB_ExamplesCommon TB_Essential
-	TG_Db TD_DbRoot TD_Gs TD_Gi TD_Ge TD_Root TD_Alloc TB_Loader
+	TG_Db TD_DbRoot TD_Gs TD_Gi TD_Ge TD_Root TD_Alloc TB_Loader TNW_Db
 	TB_Database TB_Base TB_ModelerGeometry TD_Br TD_TfCore TB_Main
 	TB_MEP TB_Analytical TB_Architecture TB_StairsRamp TB_Geometry TB_HostObj)
 
@@ -52,6 +52,8 @@ if(DEFINED ENV{ODA_ROOT})
 			${ODA_ROOT}/BimRv/Extensions/ExServices
 			${ODA_ROOT}/BimRv/Examples/Common
 			${ODA_ROOT}/BimRv/Examples
+			${ODA_ROOT}/BimNv/Include
+			${ODA_ROOT}/BimNv/Extensions/ExServices
 			${ODA_ROOT}/Prc/Include
 	)
 

@@ -1,6 +1,6 @@
 {
   "name": "3drepobouncerWorker",
-  "version": "4.19.2",
+  "version": "4.21.2",
   "engines": {
     "node": "14.x.x"
   },
@@ -10,7 +10,8 @@
     "stop": "pm2 kill",
     "restart": "npm stop; npm start",
     "lint": "eslint --ext .js src",
-    "run-worker": "node src/scripts/bouncer_worker.js"
+    "run-worker": "node src/scripts/bouncer_worker.js",
+    "run-worker-trace": "node --trace-warnings src/scripts/bouncer_worker.js"
   },
   "dependencies": {
     "@elastic/elasticsearch": "7.12.0",
@@ -21,6 +22,7 @@
     "mongodb": "3.6.6",
     "systeminformation": "5.6.20",
     "tree-kill": "1.2.2",
+    "uuid": "8.3.2",
     "winston": "3.3.3",
     "yargs": "16.2.0"
   },

@@ -31,6 +31,8 @@ namespace repo{
 			*/
 			static CSharpWrapper* getInstance();
 
+			static void destroyInstance();
+
 			/**
 			* Connect to a mongo database, authenticate by the admin database
 			* @param config configuration file path

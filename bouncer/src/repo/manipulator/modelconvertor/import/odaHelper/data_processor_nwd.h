@@ -1,5 +1,5 @@
 /**
-*  Copyright (C) 2015 3D Repo Ltd
+*  Copyright (C) 2018 3D Repo Ltd
 *
 *  This program is free software: you can redistribute it and/or modify
 *  it under the terms of the GNU Affero General Public License as
@@ -16,26 +16,33 @@
 */
 
 #pragma once
-#include <cstdint>
-#if defined(_WIN32) || defined(_WIN64)
-#   define REPO_DECL_EXPORT __declspec(dllexport)
-#   define REPO_DECL_IMPORT __declspec(dllimport)
-#else
-#   define REPO_DECL_EXPORT
-#   define REPO_DECL_IMPORT
-#endif
 
-//------------------------------------------------------------------------------
-#if defined(REPO_API_LIBRARY)
-#   define REPO_API_EXPORT REPO_DECL_EXPORT
-#else
-#   define REPO_API_EXPORT REPO_DECL_IMPORT
-#endif
+#include "../../../../core/model/bson/repo_node_mesh.h"
+#include "geometry_collector.h"
 
-//------------------------------------------------------------------------------
-#define BOUNCER_VMAJOR 4
+#include <vector>
+#include <string>
 
-#define BOUNCER_VMINOR "21_2"
-#define REPO_MAX_OBJ_SIZE (16 * 1024 * 1024)
+#include <OdaCommon.h>
+#include <NwDatabase.h>
 
-//
+namespace repo {
+	namespace manipulator {
+		namespace modelconvertor {
+			namespace odaHelper {
+				class DataProcessorNwd
+				{
+				public:
+					DataProcessorNwd(GeometryCollector* collector) {
+						this->collector = collector;
+					}
+
+					void process(OdNwDatabasePtr pNwDb);
+
+				private:
+					GeometryCollector* collector;
+				};
+			}
+		}
+	}
+}

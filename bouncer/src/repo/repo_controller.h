@@ -738,8 +738,6 @@ namespace repo {
 		*/
 		std::string getVersion();
 
-		static std::string getLicenseInfo();
-
 	private:
 		class _RepoControllerImpl;
 		_RepoControllerImpl *impl;

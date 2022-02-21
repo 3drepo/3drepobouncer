@@ -17,6 +17,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const { v4: uuidv4 } = require('uuid');
 const { exitApplication } = require('./utils');
 const params = require('./processParams');
 
@@ -49,6 +50,15 @@ const applyDefaultValuesIfUndefined = (config) => {
 	// processMonitoring
 	config.processMonitoring = config.processMonitoring || {};
 	config.processMonitoring.memoryIntervalMS = config.processMonitoring.memoryIntervalMS || 100;
+
+	// create connection string for db
+	if (!config.db.connectionString) {
+		config.db.connectionString = `mongodb://${config.db.dbhost}:${config.db.dbport}`;
+	}
+
+	if (config.repoLicense) {
+		config.instanceId = uuidv4();
+	}
 };
 /* eslint-enable no-param-reassign */
 

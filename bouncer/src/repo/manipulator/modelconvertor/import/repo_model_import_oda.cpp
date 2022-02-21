@@ -10,7 +10,7 @@
 
 using namespace repo::manipulator::modelconvertor;
 
-const std::string OdaModelImport::supportedExtensions = ".dgn.rvt.rfa.dwg.dxf";
+const std::string OdaModelImport::supportedExtensions = ".dgn.rvt.rfa.dwg.dxf.nwd";
 
 OdaModelImport::~OdaModelImport()
 {

@@ -43,9 +43,9 @@ extern "C"
 	/**
 	* Connect to a mongo database, authenticate by the admin database
 	* @param configPath path to configuration file
-	* @return returns true if successfully connected, false otherwise
+	* @return returns 0 on success, 2 if license validation failed, 1 for general failures
 	*/
-	REPO_WRAPPER_API_EXPORT bool repoConnect(
+	REPO_WRAPPER_API_EXPORT int repoConnect(
 		char* configPath);
 
 	/*
@@ -218,4 +218,10 @@ extern "C"
 		char** assetFiles,
 		int      length
 	);
+
+	/**
+	* Deinitialisation. Call this function when you are done so
+	* the library can clean itself up properly.
+	*/
+	REPO_WRAPPER_API_EXPORT void repoDeinit();
 }
