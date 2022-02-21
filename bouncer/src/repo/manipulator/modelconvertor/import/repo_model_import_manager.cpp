@@ -56,12 +56,7 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 			error = errCode;
 		}
 		else {
-			if (scene->exceedsMaximumNodes()) {
-				delete scene;
-				scene = nullptr;
-				error = REPOERR_MAX_NODES_EXCEEDED;
-			}
-			else if (!scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
+			if (!scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT).size()) {
 				delete scene;
 				scene = nullptr;
 				error = REPOERR_NO_MESHES;
