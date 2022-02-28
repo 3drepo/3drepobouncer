@@ -34,6 +34,7 @@ const processingRecordMapping = {
 	MaxMemory: { type: 'double' },
 	ProcessTime: { type: 'double' },
 	ReturnCode: { type: 'double' },
+	licenseKey: { type: 'keyword' },
 };
 
 const indicesMappings = [
@@ -85,7 +86,7 @@ const createElasticRecord = async (index, body, id) => {
 			return;
 		}
 
-		await elasticClient.index({
+		await elasticClient.create({
 			index,
 			id,
 			refresh: true,
