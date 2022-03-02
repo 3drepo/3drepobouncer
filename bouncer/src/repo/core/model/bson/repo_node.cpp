@@ -137,6 +137,17 @@ RepoNode RepoNode::cloneAndRemoveParent(
 	return RepoNode(builder.obj(), bigFiles);
 }
 
+RepoNode RepoNode::cloneAndAddRevId(
+	const repo::lib::RepoUUID &revId) const
+{
+	RepoBSONBuilder builder;
+
+	builder.append(REPO_NODE_REVISION_ID, revId);
+
+	builder.appendElementsUnique(*this);
+
+	return RepoNode(builder.obj(), bigFiles);
+}
 RepoNode RepoNode::cloneAndAddFields(
 	const RepoBSON *changes,
 	const bool     &newUniqueID) const

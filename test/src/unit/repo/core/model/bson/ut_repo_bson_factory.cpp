@@ -284,23 +284,6 @@ TEST(RepoBSONFactoryTest, MakeMaterialNodeTest)
 
 TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest)
 {
-	RepoBSON data = BSON("something" << "Something else" << "something2" << "somethingelse2");
-	std::string mimeType = "application/x-mswrite";
-	std::string name = "MetaTest";
-
-	MetadataNode metaNode = RepoBSONFactory::makeMetaDataNode(data, mimeType, name);
-
-	EXPECT_FALSE(metaNode.isEmpty());
-	EXPECT_EQ(name, metaNode.getName());
-	EXPECT_EQ(metaNode.getTypeAsEnum(), NodeType::METADATA);
-
-	EXPECT_EQ(mimeType, metaNode.getStringField(REPO_LABEL_MEDIA_TYPE));
-
-	EXPECT_EQ(data.toString(), metaNode.getObjectField(REPO_NODE_LABEL_METADATA).toString());
-}
-
-TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest2)
-{
 	std::vector<std::string> keys({ "one", "two", "three", "four", "five" }), values({ "!", "!!", "!!!", "!!!!", "!!!!!" });
 
 	std::string name = "MetaTest";
@@ -314,11 +297,18 @@ TEST(RepoBSONFactoryTest, MakeMetaDataNodeTest2)
 	auto metaBSON = metaNode.getObjectField(REPO_NODE_LABEL_METADATA);
 
 	ASSERT_FALSE(metaBSON.isEmpty());
-
 	for (uint32_t i = 0; i < keys.size(); ++i)
 	{
-		ASSERT_TRUE(metaBSON.hasField(keys[i]));
-		EXPECT_EQ(values[i], metaBSON.getStringField(keys[i]));
+		auto index = std::to_string(i);
+		ASSERT_TRUE(metaBSON.hasField(index));
+		auto metaEntry = metaBSON.getObjectField(index);
+		auto key = metaEntry.getStringField(REPO_NODE_LABEL_META_KEY);
+		auto value = metaEntry.getStringField(REPO_NODE_LABEL_META_VALUE);
+		auto keyIt = std::find(keys.begin(), keys.end(), key);
+		ASSERT_NE(keyIt, keys.end());
+		auto vectorIdx = keyIt - keys.begin();
+		EXPECT_EQ(key, keys[vectorIdx]);
+		EXPECT_EQ(value, values[vectorIdx]);
 	}
 }
 
@@ -459,11 +449,6 @@ TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 {
 	std::string owner = "revOwner";
 	repo::lib::RepoUUID branchID = repo::lib::RepoUUID::createUUID();
-	std::vector<repo::lib::RepoUUID> currentNodes;
-	size_t currCount = 10;
-	currentNodes.reserve(currCount);
-	for (size_t i = 0; i < currCount; ++i)
-		currentNodes.push_back(repo::lib::RepoUUID::createUUID());
 	std::vector<std::string> files = { "test1", "test5" };
 	std::vector<repo::lib::RepoUUID> parents;
 	size_t parentCount = 5;
@@ -475,7 +460,7 @@ TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 	std::vector<double> offset = { std::rand() / 100., std::rand() / 100., std::rand() / 100. };
 	repo::lib::RepoUUID revId = repo::lib::RepoUUID::createUUID();
 
-	RevisionNode rev = RepoBSONFactory::makeRevisionNode(owner, branchID, revId, currentNodes, files, parents, offset, message, tag);
+	RevisionNode rev = RepoBSONFactory::makeRevisionNode(owner, branchID, revId, files, parents, offset, message, tag);
 	EXPECT_EQ(owner, rev.getAuthor());
 	EXPECT_EQ(branchID, rev.getSharedID());
 	EXPECT_EQ(revId, rev.getUniqueID());
@@ -484,13 +469,12 @@ TEST(RepoBSONFactoryTest, MakeRevisionNodeTest)
 	//fileNames changes after it gets into the bson, just check the size
 	EXPECT_EQ(files.size(), rev.getOrgFiles().size());
 
-	EXPECT_TRUE(compareStdVectors(currentNodes, rev.getCurrentIDs()));
 	EXPECT_TRUE(compareStdVectors(parents, rev.getParentIDs()));
 	EXPECT_TRUE(compareStdVectors(offset, rev.getCoordOffset()));
 
 	//ensure no random parent being generated
 	std::vector<repo::lib::RepoUUID> emptyParents;
-	RevisionNode rev2 = RepoBSONFactory::makeRevisionNode(owner, branchID, revId, currentNodes, files, emptyParents, offset, message, tag);
+	RevisionNode rev2 = RepoBSONFactory::makeRevisionNode(owner, branchID, revId, files, emptyParents, offset, message, tag);
 	EXPECT_EQ(0, rev2.getParentIDs().size());
 }
 

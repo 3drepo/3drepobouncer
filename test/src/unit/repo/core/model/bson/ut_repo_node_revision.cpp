@@ -76,8 +76,6 @@ TEST(RevisionNodeTest, GetterTest)
 	for (const auto &v : offset)
 		EXPECT_EQ(0, v);
 
-	EXPECT_EQ(0, empty.getCurrentIDs().size());
-
 	EXPECT_TRUE(empty.getMessage().empty());
 	EXPECT_TRUE(empty.getTag().empty());
 	EXPECT_EQ(RevisionNode::UploadStatus::COMPLETE, empty.getUploadStatus());
@@ -87,11 +85,10 @@ TEST(RevisionNodeTest, GetterTest)
 
 	auto user = getRandomString(rand() % 10 + 1);
 	auto branch = repo::lib::RepoUUID::createUUID();
-	std::vector<repo::lib::RepoUUID> currentNodes, parents;
+	std::vector<repo::lib::RepoUUID> parents;
 
 	for (int i = 0; i < rand() % 10 + 1; ++i)
 	{
-		currentNodes.push_back(repo::lib::RepoUUID::createUUID());
 		parents.push_back(repo::lib::RepoUUID::createUUID());
 	}
 
@@ -102,16 +99,13 @@ TEST(RevisionNodeTest, GetterTest)
 	auto tag = getRandomString(rand() % 10 + 1);
 	auto rId = repo::lib::RepoUUID::createUUID();
 
-	auto revisionNode = RepoBSONFactory::makeRevisionNode(user, branch, rId, currentNodes, files, parents, offsetIn, message, tag);
+	auto revisionNode = RepoBSONFactory::makeRevisionNode(user, branch, rId, files, parents, offsetIn, message, tag);
 
 	EXPECT_EQ(user, revisionNode.getAuthor());
 	auto offset2 = revisionNode.getCoordOffset();
 	EXPECT_EQ(offsetIn.size(), offset2.size());
 	for (uint32_t i = 0; i < offset2.size(); ++i)
 		EXPECT_EQ(offsetIn[i], offset2[i]);
-
-	auto currentNodesOut = revisionNode.getCurrentIDs();
-	EXPECT_EQ(currentNodes.size(), currentNodesOut.size());
 
 	EXPECT_EQ(message, revisionNode.getMessage());
 	EXPECT_EQ(tag, revisionNode.getTag());

@@ -30,6 +30,8 @@ namespace repo {
 			//
 			//------------------------------------------------------------------------------
 #define REPO_NODE_LABEL_METADATA     			"metadata"
+#define REPO_NODE_LABEL_META_KEY     			"key"
+#define REPO_NODE_LABEL_META_VALUE     			"value"
 			//------------------------------------------------------------------------------
 
 			class REPO_API_EXPORT MetadataNode :public RepoNode

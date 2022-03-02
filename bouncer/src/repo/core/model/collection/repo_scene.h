@@ -60,7 +60,6 @@ namespace repo {
 				static const std::vector<std::string> collectionsInProject;
 				static const uint16_t REPO_SCENE_TEXTURE_BIT = 0x0001;
 				static const uint16_t REPO_SCENE_ENTITIES_BIT = 0x0002;
-				const static uint32_t REPO_SCENE_MAX_NODES = 1030000;
 			public:
 
 				/**
@@ -285,14 +284,6 @@ namespace repo {
 				std::string getDatabaseName() const
 				{
 					return databaseName;
-				}
-
-				/**
-				* Check if this scene exceeds the max amount of nodes
-				*/
-				bool exceedsMaximumNodes() const
-				{
-					return graph.nodesByUniqueID.size() > REPO_SCENE_MAX_NODES;
 				}
 
 				/**
@@ -937,6 +928,7 @@ namespace repo {
 				bool commitNodes(
 					repo::core::handler::AbstractDatabaseHandler *handler,
 					const std::vector<repo::lib::RepoUUID> &nodesToCommit,
+					const repo::lib::RepoUUID &revId,
 					const GraphType &gType,
 					std::string &errMsg);
 
@@ -987,6 +979,7 @@ namespace repo {
 				*/
 				bool commitSceneChanges(
 					repo::core::handler::AbstractDatabaseHandler *handler,
+					const repo::lib::RepoUUID &revId,
 					std::string &errMsg);
 
 				/**
