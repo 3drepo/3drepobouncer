@@ -121,18 +121,13 @@ uint8_t RepoController::_RepoControllerImpl::commitScene(
 		{
 			if (token)
 			{
-				std::string sceneOwner = owner;
-				if (!token->getCredentials())
-				{
-					sceneOwner = "ANONYMOUS USER";
-				}
 				manipulator::RepoManipulator* worker = workerPool.pop();
 				errCode = worker->commitScene(token->databaseAd,
 					token->getCredentials(),
 					token->bucketName,
 					token->bucketRegion,
 					scene,
-					sceneOwner,
+					owner.empty? "ANONYMOUS USER" : owner,
 					tag,
 					desc,
 					revId);
