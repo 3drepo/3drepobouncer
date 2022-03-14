@@ -127,7 +127,7 @@ uint8_t RepoController::_RepoControllerImpl::commitScene(
 					token->bucketName,
 					token->bucketRegion,
 					scene,
-					owner.empty? "ANONYMOUS USER" : owner,
+					owner.empty() ? "ANONYMOUS USER" : owner,
 					tag,
 					desc,
 					revId);
