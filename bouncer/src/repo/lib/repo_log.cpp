@@ -15,6 +15,7 @@
 #include <boost/log/support/date_time.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/console.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/shared_ptr.hpp>
 #include <ctime>
@@ -30,12 +31,25 @@ std::string getEnvString(std::string const & envVarName)
 	return (value && strlen(value) > 0) ? value : "";
 }
 
+BOOST_LOG_ATTRIBUTE_KEYWORD(timestamp, "TimeStamp", boost::posix_time::ptime)
+BOOST_LOG_ATTRIBUTE_KEYWORD(threadid, "ThreadID", boost::log::attributes::current_thread_id::value_type)
+
 RepoLog::RepoLog()
 {
 	std::string logDir = getEnvString("REPO_LOG_DIR");
 	logDir = logDir.empty() ? "./log/" : logDir;
 	std::cout << "Logging directory is set to " << logDir << std::endl;
 	this->logToFile(logDir);
+
+	boost::log::add_console_log
+	(std::cout,
+		boost::log::keywords::format = (
+			boost::log::expressions::stream
+			<< "[" << boost::log::expressions::format_date_time(timestamp, "%Y-%m-%d %H:%M:%S") << "]"
+			<< "(" << threadid << ") <" << boost::log::trivial::severity
+			<< ">"
+			<< ": " << boost::log::expressions::smessage
+			));
 
 	std::string debug = getEnvString("REPO_DEBUG");
 	std::string verbose = getEnvString("REPO_VERBOSE");
@@ -81,9 +95,6 @@ void RepoLog::log(
 		repoFatal << msg;
 	}
 }
-
-BOOST_LOG_ATTRIBUTE_KEYWORD(timestamp, "TimeStamp", boost::posix_time::ptime)
-BOOST_LOG_ATTRIBUTE_KEYWORD(threadid, "ThreadID", boost::log::attributes::current_thread_id::value_type)
 
 static std::string getTimeAsString()
 {
