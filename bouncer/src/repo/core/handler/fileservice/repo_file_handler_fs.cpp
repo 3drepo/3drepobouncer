@@ -60,24 +60,6 @@ bool FSFileHandler::deleteFile(
 	return success;
 }
 
-std::vector<std::string> FSFileHandler::determineHierachy(
-	const std::string &name
-) const {
-	auto nameChunkLen = name.length() / level;
-	nameChunkLen = nameChunkLen < minChunkLength ? minChunkLength : nameChunkLen;
-
-	std::hash<std::string> stringHasher;
-	std::vector<std::string> levelNames;
-	for (int i = 0; i < level; ++i) {
-		auto chunkStart = (i * nameChunkLen) % (name.length() - nameChunkLen);
-		auto stringToHash = name.substr(i, nameChunkLen) + std::to_string((float)std::rand() / RAND_MAX);
-		auto hashedValue = stringHasher(stringToHash) & 255;
-		levelNames.push_back(std::to_string(hashedValue));
-	}
-
-	return levelNames;
-}
-
 std::vector<uint8_t> FSFileHandler::getFile(
 	const std::string          &database,
 	const std::string          &collection,
