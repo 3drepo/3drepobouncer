@@ -16,7 +16,7 @@
 */
 
 /**
- *  AWS S3 handler
+ *  filesystem based handler
  */
 
 #pragma once
@@ -29,10 +29,10 @@
 
 #include "repo_file_handler_abstract.h"
 
-namespace repo{
-	namespace core{
-		namespace handler{
-			namespace fileservice{
+namespace repo {
+	namespace core {
+		namespace handler {
+			namespace fileservice {
 				class FSFileHandler : public AbstractFileHandler
 				{
 				public:
@@ -40,15 +40,15 @@ namespace repo{
 					 *	=================================== Public Functions ========================================
 					 */
 
-					/**
-					 * A Deconstructor
-					 */
+					 /**
+					  * A Deconstructor
+					  */
 					~FSFileHandler();
 
 					FSFileHandler(
 						const std::string &dir,
 						const int &nLevel
-						);
+					);
 
 					repo::core::model::RepoRef::RefType getType() const {
 						return repo::core::model::RepoRef::RefType::FS;
@@ -63,12 +63,19 @@ namespace repo{
 						const std::string          &collection,
 						const std::string          &keyName,
 						const std::vector<uint8_t> &bin
-						);
+					);
 
 					/**
 					 * Delete file from FS.
 					 */
 					bool deleteFile(
+						const std::string          &database,
+						const std::string          &collection,
+						const std::string &keyName);
+					/**
+					 * Get file from FS.
+					 */
+					std::vector<uint8_t> getFile(
 						const std::string          &database,
 						const std::string          &collection,
 						const std::string &keyName);
@@ -78,7 +85,7 @@ namespace repo{
 					 *	=================================== Private Fields ========================================
 					 */
 					std::vector<std::string> determineHierachy(const std::string &name) const;
-					
+
 					const std::string dirPath;
 					const int level;
 					const static int minChunkLength = 4;
@@ -87,4 +94,3 @@ namespace repo{
 		}
 	}
 }
-

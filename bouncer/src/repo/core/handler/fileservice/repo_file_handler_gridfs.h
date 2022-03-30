@@ -16,7 +16,7 @@
 */
 
 /**
- *  AWS S3 handler
+ *  Grid FS handler
  */
 
 #pragma once
@@ -26,10 +26,10 @@
 #include "repo_file_handler_abstract.h"
 #include "../repo_database_handler_abstract.h"
 
-namespace repo{
-	namespace core{
-		namespace handler{
-			namespace fileservice{
+namespace repo {
+	namespace core {
+		namespace handler {
+			namespace fileservice {
 				class GridFSFileHandler : public AbstractFileHandler
 				{
 				public:
@@ -37,13 +37,13 @@ namespace repo{
 					 *	=================================== Public Functions ========================================
 					 */
 
-					/**
-					 * A Deconstructor
-					 */
+					 /**
+					  * A Deconstructor
+					  */
 					~GridFSFileHandler();
 					GridFSFileHandler(
 						repo::core::handler::AbstractDatabaseHandler* handler
-						);
+					);
 
 					repo::core::model::RepoRef::RefType getType() const {
 						return repo::core::model::RepoRef::RefType::GRIDFS;
@@ -58,7 +58,7 @@ namespace repo{
 						const std::string          &collection,
 						const std::string          &keyName,
 						const std::vector<uint8_t> &bin
-						);
+					);
 
 					/**
 					 * Delete file from FS.
@@ -67,6 +67,14 @@ namespace repo{
 						const std::string          &database,
 						const std::string          &collection,
 						const std::string		   &keyName);
+
+					/**
+					 * Get file from FS.
+					 */
+					std::vector<uint8_t> getFile(
+						const std::string          &database,
+						const std::string          &collection,
+						const std::string &keyName);
 
 				private:
 					/*
@@ -78,4 +86,3 @@ namespace repo{
 		}
 	}
 }
-

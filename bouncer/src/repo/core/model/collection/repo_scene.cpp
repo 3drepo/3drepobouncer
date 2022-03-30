@@ -842,8 +842,6 @@ bool RepoScene::commitSceneChanges(
 
 	nodesToCommit.insert(nodesToCommit.end(), newAdded.begin(), newAdded.end());
 	nodesToCommit.insert(nodesToCommit.end(), newModified.begin(), newModified.end());
-	//There is nothign to commit on removed nodes
-	//nodesToCommit.insert(nodesToCommit.end(), newRemoved.begin(), newRemoved.end());
 
 	commitNodes(handler, nodesToCommit, revId, GraphType::DEFAULT, errMsg);
 

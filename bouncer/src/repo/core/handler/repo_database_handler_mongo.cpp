@@ -23,6 +23,7 @@
 #include <unordered_map>
 
 #include "repo_database_handler_mongo.h"
+#include "fileservice/repo_file_manager.h"
 #include "../../lib/repo_log.h"
 
 using namespace repo::core::handler;
@@ -730,36 +731,9 @@ std::vector<uint8_t> MongoDatabaseHandler::getBigFile(
 	const std::string &collection,
 	const std::string &fileName)
 {
-	mongo::GridFS gfs(*worker, database, collection);
-	mongo::GridFile tmpFile = gfs.findFileByName(fileName);
+	auto fileManager = fileservice::FileManager::getManager();
 
-	std::vector<uint8_t> bin;
-	if (tmpFile.exists())
-	{
-		std::ostringstream oss;
-		tmpFile.write(oss);
-
-		std::string fileStr = oss.str();
-
-		assert(sizeof(*fileStr.c_str()) == sizeof(uint8_t));
-
-		if (!fileStr.empty())
-		{
-			bin.resize(fileStr.size());
-			memcpy(&bin[0], fileStr.c_str(), fileStr.size());
-		}
-		else
-		{
-			repoError << "GridFS file : " << fileName << " in "
-				<< database << "." << collection << " is empty.";
-		}
-	}
-	else
-	{
-		repoError << "Failed to find file within GridFS";
-	}
-
-	return bin;
+	return fileManager->getFile(database, collection, fileName);
 }
 
 std::string MongoDatabaseHandler::getProjectFromCollection(const std::string &ns, const std::string &projectExt)
@@ -1326,28 +1300,16 @@ bool MongoDatabaseHandler::storeBigFiles(
 {
 	bool success = true;
 
-	//insert files into gridFS if applicable
 	if (obj.hasOversizeFiles())
 	{
 		const std::vector<std::pair<std::string, std::string>> fNames = obj.getFileList();
 		repoTrace << "storeBigFiles: #oversized files: " << fNames.size();
-
+		auto fileManager = fileservice::FileManager::getManager();
 		for (const auto &file : fNames)
 		{
 			std::vector<uint8_t> binary = obj.getBigBinary(file.first);
-			if (binary.size())
-			{
-				//store the big biary file within GridFS
-				mongo::GridFS gfs(*worker, database, collection);
-				//FIXME: there must be errors to catch...
-				repoTrace << "storing " << file.second << "(" << file.first << ") in gridfs: " << database << "." << collection;
-				mongo::BSONObj bson = gfs.storeFile((char*)&binary[0], binary.size() * sizeof(binary[0]), file.second);
-
-				repoTrace << "returned object: " << bson.toString();
-			}
-			else
-			{
-				repoError << "A oversized entry exist but binary not found!";
+			if (!(binary.size() && fileManager->uploadFileAndCommit(database, collection, file.second, binary))) {
+				repoError << "Failed to upload binary into file service";
 				success = false;
 			}
 		}

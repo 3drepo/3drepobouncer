@@ -26,7 +26,6 @@ using namespace repo::core::model;
 
 TEST(RepoRefTest, ConvertTypeAsString)
 {
-	EXPECT_EQ(RepoRef::convertTypeAsString(RepoRef::RefType::S3), RepoRef::REPO_REF_TYPE_S3);
 	EXPECT_EQ(RepoRef::convertTypeAsString(RepoRef::RefType::FS), RepoRef::REPO_REF_TYPE_FS);
 	EXPECT_EQ(RepoRef::convertTypeAsString(RepoRef::RefType::GRIDFS), RepoRef::REPO_REF_TYPE_GRIDFS);
 	EXPECT_EQ(RepoRef::convertTypeAsString(RepoRef::RefType::UNKNOWN), RepoRef::REPO_REF_TYPE_UNKNOWN);
@@ -36,7 +35,7 @@ TEST(RepoRefTest, ConvertTypeAsString)
 TEST(RepoRefTest, GeneralTest)
 {
 	std::string fileName = "FileNameTest";
-	auto type = RepoRef::RefType::S3;
+	auto type = RepoRef::RefType::GRIDFS;
 	std::string link = "linkOfThisFile";
 	uint32_t size = std::rand();
 	auto ref = RepoBSONFactory::makeRepoRef(fileName, type, link, size);
@@ -46,5 +45,4 @@ TEST(RepoRefTest, GeneralTest)
 	EXPECT_EQ(type, ref.getType());
 	EXPECT_EQ(link, ref.getRefLink());
 	EXPECT_EQ(size, ref.getIntField(REPO_REF_LABEL_SIZE));
-	
 }

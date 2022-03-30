@@ -65,6 +65,15 @@ namespace repo {
 					);
 
 					/**
+					 * Get the file base on the the ref entry in database
+					 */
+					std::vector<uint8_t> getFile(
+						const std::string                            &databaseName,
+						const std::string                            &collectionNamePrefix,
+						const std::string                            &fileName
+					);
+
+					/**
 					 * Delete file ref and associated file from database.
 					 */
 					bool deleteFileAndRef(
@@ -110,7 +119,7 @@ namespace repo {
 
 					static FileManager* manager;
 					repo::core::handler::AbstractDatabaseHandler *dbHandler;
-					std::shared_ptr<AbstractFileHandler> defaultHandler, s3Handler, fsHandler, gridfsHandler;
+					std::shared_ptr<AbstractFileHandler> defaultHandler, fsHandler, gridfsHandler;
 				};
 			}
 		}

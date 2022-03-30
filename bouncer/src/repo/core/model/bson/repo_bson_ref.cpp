@@ -19,15 +19,12 @@
 
 using namespace repo::core::model;
 
-const std::string RepoRef::REPO_REF_TYPE_S3 = "s3";
 const std::string RepoRef::REPO_REF_TYPE_FS = "fs";
 const std::string RepoRef::REPO_REF_TYPE_GRIDFS = "gridfs";
 const std::string RepoRef::REPO_REF_TYPE_UNKNOWN = "unknown";
 
 std::string RepoRef::convertTypeAsString(const RefType &type) {
 	switch (type) {
-	case RefType::S3:
-		return REPO_REF_TYPE_S3;
 	case RefType::GRIDFS:
 		return REPO_REF_TYPE_GRIDFS;
 	case RefType::FS:
@@ -48,9 +45,7 @@ std::string RepoRef::getRefLink() const {
 RepoRef::RefType RepoRef::getType() const {
 	auto typeStr = getStringField(REPO_REF_LABEL_TYPE);
 	auto type = RefType::UNKNOWN;
-	if (typeStr == REPO_REF_TYPE_S3)
-		type = RefType::S3;
-	else if (typeStr == REPO_REF_TYPE_FS)
+	if (typeStr == REPO_REF_TYPE_FS)
 		type = RefType::FS;
 	if (typeStr == REPO_REF_TYPE_GRIDFS)
 		type = RefType::GRIDFS;

@@ -36,12 +36,6 @@ namespace repo {
 				bool pwDigested = false;
 			};
 
-			struct s3_config_t {
-				std::string bucketName;
-				std::string bucketRegion;
-				bool configured = false;
-			};
-
 			struct fs_config_t {
 				std::string dir;
 				int nLevel;
@@ -85,17 +79,6 @@ namespace repo {
 			REPO_API_EXPORT ~RepoConfig() {}
 
 			/**
-			* Set configurations to connect to S3 to store files
-			* @params bucketName name of the bucket
-			* @params bucketRegion name of the region the bucket sits in
-			* @params useAsDefault use this as the default storage engine
-			*/
-			void REPO_API_EXPORT configureS3(
-				const std::string &bucketName,
-				const std::string &bucketRegion,
-				const bool useAsDefault = true);
-
-			/**
 			* Set configurations to connect to use Filesystem to store files
 			* @params directory directory to the file share
 			* @params level number of hierachys to use
@@ -108,7 +91,6 @@ namespace repo {
 			);
 
 			const database_config_t getDatabaseConfig() const { return dbConf; }
-			const s3_config_t getS3Config() const { return s3Conf; }
 			const fs_config_t getFSConfig() const { return fsConf; }
 
 			/**
@@ -121,7 +103,6 @@ namespace repo {
 
 		private:
 			database_config_t dbConf;
-			s3_config_t s3Conf;
 			fs_config_t fsConf;
 			FileStorageEngine defaultStorage;
 		};
