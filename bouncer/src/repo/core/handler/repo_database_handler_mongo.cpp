@@ -977,8 +977,9 @@ bool MongoDatabaseHandler::insertDocument(
 			if (worker)
 			{
 				worker->insert(getNamespace(database, collection), obj);
-
-				success = storeBigFiles(worker, database, collection, obj, errMsg);
+				workerPool->returnWorker(worker);
+				worker = nullptr;
+				success = storeBigFiles(database, collection, obj, errMsg);
 			}
 			else
 				errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
@@ -988,8 +989,8 @@ bool MongoDatabaseHandler::insertDocument(
 			std::string errString(e.what());
 			errMsg += errString;
 		}
-
-		workerPool->returnWorker(worker);
+		if (worker)
+			workerPool->returnWorker(worker);
 	}
 	else
 	{
@@ -1273,8 +1274,11 @@ bool MongoDatabaseHandler::upsertDocument(
 				}
 			}
 
-			if (success)
-				success = storeBigFiles(worker, database, collection, obj, errMsg);
+			if (success) {
+				workerPool->returnWorker(worker);
+				worker = nullptr;
+				success = storeBigFiles(database, collection, obj, errMsg);
+			}
 		}
 		else
 			errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
@@ -1284,14 +1288,13 @@ bool MongoDatabaseHandler::upsertDocument(
 		success = false;
 		std::string errString(e.what());
 		errMsg += errString;
+		if (worker) workerPool->returnWorker(worker);
 	}
 
-	workerPool->returnWorker(worker);
 	return success;
 }
 
 bool MongoDatabaseHandler::storeBigFiles(
-	mongo::DBClientBase *worker,
 	const std::string &database,
 	const std::string &collection,
 	const repo::core::model::RepoBSON &obj,
@@ -1308,10 +1311,12 @@ bool MongoDatabaseHandler::storeBigFiles(
 		for (const auto &file : fNames)
 		{
 			std::vector<uint8_t> binary = obj.getBigBinary(file.first);
+			repoTrace << "Uploading " << file.second << " file size " << binary.size();
 			if (!(binary.size() && fileManager->uploadFileAndCommit(database, collection, file.second, binary))) {
 				repoError << "Failed to upload binary into file service";
 				success = false;
 			}
+			repoTrace << "Upload completed " << success;
 		}
 	}
 

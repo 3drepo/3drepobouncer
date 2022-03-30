@@ -737,7 +737,6 @@ namespace repo {
 				* @return returns true upon success
 				*/
 				bool storeBigFiles(
-					mongo::DBClientBase *worker,
 					const std::string &database,
 					const std::string &collection,
 					const repo::core::model::RepoBSON &obj,
