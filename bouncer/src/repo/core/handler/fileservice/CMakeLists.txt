@@ -8,7 +8,6 @@ set(SOURCES
 	${SOURCES}
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_file_handler_fs.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_file_handler_gridfs.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_file_handler_s3.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_file_manager.cpp
 	CACHE STRING "SOURCES" FORCE)
 
@@ -17,7 +16,6 @@ set(HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_file_handler_abstract.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_file_handler_fs.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_file_handler_gridfs.h
-	${CMAKE_CURRENT_SOURCE_DIR}/repo_file_handler_s3.h
 	${CMAKE_CURRENT_SOURCE_DIR}/repo_file_manager.h
 	CACHE STRING "HEADERS" FORCE)
 
