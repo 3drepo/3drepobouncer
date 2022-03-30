@@ -25,8 +25,6 @@
 
 using namespace repo::core::handler::fileservice;
 
-#define LEGACY_SUPPORT 1
-
 FileManager* FileManager::manager = nullptr;
 
 FileManager* FileManager::getManager() {
@@ -38,7 +36,7 @@ FileManager* FileManager::getManager() {
 FileManager* FileManager::instantiateManager(
 	const repo::lib::RepoConfig &config,
 	repo::core::handler::AbstractDatabaseHandler *dbHandler
-){
+) {
 	if (manager) disconnect();
 
 	return manager = new FileManager(config, dbHandler);
@@ -53,8 +51,7 @@ bool FileManager::uploadFileAndCommit(
 	bool success = true;
 	auto fileUUID = repo::lib::RepoUUID::createUUID();
 	auto linkName = defaultHandler->uploadFile(databaseName, collectionNamePrefix, fileUUID.toString(), bin);
-	if (success = !linkName.empty()){
-
+	if (success = !linkName.empty()) {
 		success = upsertFileRef(
 			databaseName,
 			collectionNamePrefix,
@@ -62,9 +59,6 @@ bool FileManager::uploadFileAndCommit(
 			linkName,
 			defaultHandler->getType(),
 			bin.size());
-#ifdef LEGACY_SUPPORT
-		gridfsHandler->uploadFile(databaseName, collectionNamePrefix, fileName, bin);
-#endif
 	}
 
 	return success;
@@ -82,11 +76,6 @@ bool FileManager::deleteFileAndRef(
 		collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
 		criteria);
 
-#ifdef LEGACY_SUPPORT
-	gridfsHandler->deleteFile(databaseName, collectionNamePrefix, fileName);
-#endif
-
-
 	if (ref.isEmpty())
 	{
 		repoTrace << "Failed: cannot find file ref "
@@ -94,7 +83,7 @@ bool FileManager::deleteFileAndRef(
 			<< databaseName << "/"
 			<< collectionNamePrefix << "." << REPO_COLLECTION_EXT_REF;
 		success = false;
-	}
+}
 	else
 	{
 		const auto keyName = ref.getRefLink();
@@ -107,9 +96,9 @@ bool FileManager::deleteFileAndRef(
 			break;
 		case repo::core::model::RepoRef::RefType::FS:
 			handler = fsHandler;
-			break;		
+			break;
 		}
-		
+
 		if (handler) {
 			success = defaultHandler->deleteFile(databaseName, collectionNamePrefix, keyName) &&
 				dropFileRef(
@@ -130,8 +119,7 @@ FileManager::FileManager(
 	const repo::lib::RepoConfig &config,
 	repo::core::handler::AbstractDatabaseHandler *dbHandler
 ) : dbHandler(dbHandler) {
-
-	if(!dbHandler)
+	if (!dbHandler)
 		throw repo::lib::RepoException("Trying to instantiate FileManager with a nullptr to database!");
 
 	gridfsHandler = std::make_shared<GridFSFileHandler>(dbHandler);
@@ -144,7 +132,7 @@ FileManager::FileManager(
 			defaultHandler = s3Handler;
 	}
 #endif
-	
+
 	auto fsConfig = config.getFSConfig();
 	if (fsConfig.configured) {
 		fsHandler = std::make_shared<FSFileHandler>(fsConfig.dir, fsConfig.nLevel);
