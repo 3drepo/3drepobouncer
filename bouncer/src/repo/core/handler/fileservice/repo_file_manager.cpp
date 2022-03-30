@@ -221,12 +221,8 @@ bool FileManager::upsertFileRef(
 
 	auto refObj = repo::core::model::RepoBSONFactory::makeRepoRef(id, type, link, size);
 	std::string collectionName = collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF;
-
-	if (success = dbHandler->upsertDocument(databaseName, collectionName, refObj, true, errMsg))
-	{
-		repoInfo << "File ref for " << collectionName << " added.";
-	}
-	else
+	success = dbHandler->upsertDocument(databaseName, collectionName, refObj, true, errMsg);
+	if (!success)
 	{
 		repoError << "Failed to add " << collectionName << " file ref: " << errMsg;;
 	}
