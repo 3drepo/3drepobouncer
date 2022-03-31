@@ -634,7 +634,6 @@ namespace repo {
 				* @return returns a repo BSON that is fully populated
 				*/
 				repo::core::model::RepoBSON createRepoBSON(
-					mongo::DBClientBase *worker,
 					const std::string &database,
 					const std::string &collection,
 					const mongo::BSONObj &obj,
@@ -679,7 +678,6 @@ namespace repo {
 				* @return returns true upon success
 				*/
 				std::vector<uint8_t> getBigFile(
-					mongo::DBClientBase *worker,
 					const std::string &database,
 					const std::string &collection,
 					const std::string &fileName);

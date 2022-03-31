@@ -143,6 +143,7 @@ std::vector<uint8_t> FileManager::getFile(
 		}
 
 		if (handler) {
+			repoTrace << "Getting file (" << keyName << ")";
 			file = defaultHandler->getFile(databaseName, collectionNamePrefix, keyName);
 		}
 		else {

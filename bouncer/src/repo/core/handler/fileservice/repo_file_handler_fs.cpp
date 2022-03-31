@@ -66,16 +66,15 @@ std::vector<uint8_t> FSFileHandler::getFile(
 	const std::string &keyName)
 {
 	std::vector<uint8_t> results;
-
 	auto fullPath = boost::filesystem::absolute(keyName, dirPath);
 	if (repo::lib::doesFileExist(fullPath)) {
 		auto fileStr = fullPath.string();
-		std::ostringstream buf;
-		std::ifstream input(fileStr.c_str(), std::ios::binary | std::ios::ate);
-		buf << input.rdbuf();
-		std::string stringBuf = buf.str();
-		results.resize(stringBuf.length());
-		memcpy(results.data(), stringBuf.data(), stringBuf.length());
+		std::ifstream stream(fileStr, std::ios::in | std::ios::binary);
+		results = std::vector<uint8_t>((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+		stream.close();
+	}
+	else {
+		repoError << "File " << fullPath.string() << " does not exist";
 	}
 	return results;
 }
