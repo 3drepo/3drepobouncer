@@ -48,13 +48,13 @@ bool FileManager::uploadFileAndCommit(
 	const std::vector<uint8_t>                   &bin)
 {
 	bool success = true;
-	auto fileUUID = repo::lib::RepoUUID::createUUID();
-	auto linkName = defaultHandler->uploadFile(databaseName, collectionNamePrefix, fileUUID.toString(), bin);
+	auto cleanedName = cleanFileName(fileName);
+	auto linkName = defaultHandler->uploadFile(databaseName, collectionNamePrefix, cleanedName, bin);
 	if (success = !linkName.empty()) {
 		success = upsertFileRef(
 			databaseName,
 			collectionNamePrefix,
-			cleanFileName(fileName),
+			cleanedName,
 			linkName,
 			defaultHandler->getType(),
 			bin.size());
