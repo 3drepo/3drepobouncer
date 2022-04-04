@@ -21,18 +21,21 @@ dbName = sys.argv[6]
 fileToModelIDs = sys.argv[7]
 fedID = sys.argv[8]
 
+print "db add: " + dbAdd
+print "db port: " + dbPort
+print "db username: " + dbUsername
+print "db pw: " + dbPassword
+print "fileshare location: " + fileShareDir
+print "db Name: " + dbName
+print "model file: " + fileToModelIDs
+print "fedId: " + fedID
+
 from datetime import datetime
 
 #Find out the model IDs by reading the model ID file
 fp = open(fileToModelIDs, "r")
 modelList = fp.readlines()
 fp.close()
-
-colsInModel = ["groups", "history", "history.ref", "history.chunks", "history.files",
-                "issues", "risks", "views", "scene",
-                "scene.files", "scene.chunks", "stash.3drepo", "stash.3drepo.chunks", "stash.3drepo.files",
-                "stash.json_mpc.ref", "stash.json_mpc.chunks", "stash.json_mpc.files", "stash.unity3d",
-                "stash.unity3d.ref", "stash.unity3d.chunks", "stash.unity3d.files"]
 
 connString = "mongodb://"+ dbUsername + ":" + dbPassword +"@"+dbAdd + ":" + dbPort + "/"
 db = MongoClient(connString)[dbName]
@@ -56,17 +59,24 @@ def  grabExternalFilesAndRewrite(collection):
         db[collection].save(entry);
     return
 
+def findModelCols(model):
+    res = []
+    for collection in  db.list_collection_names():
+        if collection.startswith(model):
+            res.append(collection)
+    return res
+
 
 for model in modelList:
     model = model.replace('\n', '')
     modelDirectory = "toy/" + model
     if not os.path.exists(modelDirectory):
         os.makedirs(modelDirectory)
-    for ext in colsInModel:
-        if ext.endswith(".ref"):
-            grabExternalFilesAndRewrite(model + "." + ext)
+    for col in findModelCols(model):
+        if col.endswith(".ref"):
+            grabExternalFilesAndRewrite(col)
 
-        cmd =  "mongoexport /host:" + dbAdd + " /port:" + dbPort + " /username:" + dbUsername + " /password:" + dbPassword + " /authenticationDatabase:admin /db:" + dbName + " /collection:" + model + "." + ext  + " /out:" + modelDirectory + "/"  + ext + ".json";
+        cmd =  "mongoexport /host:" + dbAdd + " /port:" + dbPort + " /username:" + dbUsername + " /password:" + dbPassword + " /authenticationDatabase:admin /db:" + dbName + " /collection:" + col  + " /out:" + modelDirectory + "/"  + col.replace(model +".", "", 1) + ".json";
         os.system(cmd)
 
 #export groups, issues, risks, and views from federation
