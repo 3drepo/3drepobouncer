@@ -199,9 +199,9 @@ const renameStash = (db, database, modelId, bucketName) => {
 
 const renameGroups = async (db, database, modelId) => {
 	const subModelNameToOldID = {
-		Lego_House_Architecture: 'cac0c1c0-4eb5-11ec-934b-b1a3427c3c40',
-		Lego_House_Landscape: 'cac332c0-4eb5-11ec-934b-b1a3427c3c40',
-		Lego_House_Structure: 'cac332c1-4eb5-11ec-934b-b1a3427c3c40',
+		Lego_House_Architecture: '9f101b80-b4c6-11ec-8b15-4f0e6dbe2114',
+		Lego_House_Landscape: '9f117b10-b4c6-11ec-8b15-4f0e6dbe2114',
+		Lego_House_Structure: '9f11f040-b4c6-11ec-8b15-4f0e6dbe2114',
 	};
 
 	const collection = db.collection(`${modelId}.groups`);
@@ -213,18 +213,12 @@ const renameGroups = async (db, database, modelId) => {
 	}
 
 	const oldIdToNewId = {};
-	if (setting.subModels) {
-		const subModelList = [];
-		setting.subModels.forEach((subModel) => {
-			subModelList.push(subModel.model);
-		});
-		const submodels = await db.collection('settings').find({ _id: { $in: subModelList } }).toArray();
-		submodels.forEach((subModelSetting) => {
-			if (subModelNameToOldID[subModelSetting.name]) {
-				oldIdToNewId[subModelNameToOldID[subModelSetting.name]] = subModelSetting._id;
-			}
-		});
-	}
+	const submodels = await db.collection('settings').find({ type: 'sample' }).toArray();
+	submodels.forEach((subModelSetting) => {
+		if (subModelNameToOldID[subModelSetting.name]) {
+			oldIdToNewId[subModelNameToOldID[subModelSetting.name]] = subModelSetting._id;
+		}
+	});
 
 	const groups = await collection.find().toArray();
 	const updateObjectPromises = [];
