@@ -88,7 +88,7 @@ bool FileManager::deleteFileAndRef(
 		const auto keyName = ref.getRefLink();
 		const auto type = ref.getType(); //Should return enum
 
-		std::shared_ptr<AbstractFileHandler> handler = gridfsHandler;;
+		std::shared_ptr<AbstractFileHandler> handler = gridfsHandler;
 		switch (type) {
 		case repo::core::model::RepoRef::RefType::FS:
 			handler = fsHandler;
@@ -96,7 +96,7 @@ bool FileManager::deleteFileAndRef(
 		}
 
 		if (handler) {
-			success = defaultHandler->deleteFile(databaseName, collectionNamePrefix, keyName) &&
+			success = handler->deleteFile(databaseName, collectionNamePrefix, keyName) &&
 				dropFileRef(
 					ref,
 					databaseName,
@@ -143,8 +143,8 @@ std::vector<uint8_t> FileManager::getFile(
 		}
 
 		if (handler) {
-			repoTrace << "Getting file (" << keyName << ")";
-			file = defaultHandler->getFile(databaseName, collectionNamePrefix, keyName);
+			repoTrace << "Getting file (" << keyName << ") from " << (type == repo::core::model::RepoRef::RefType::FS ? "FS" : "GridFS");
+			file = handler->getFile(databaseName, collectionNamePrefix, keyName);
 		}
 		else {
 			repoError << "Trying to delete a file from " << repo::core::model::RepoRef::convertTypeAsString(type) << " but connection to this service is not configured.";
