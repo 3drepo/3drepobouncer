@@ -536,3 +536,25 @@ bool MeshNode::sEqual(const RepoNode &other) const
 
 	return success;
 }
+
+std::uint32_t MeshNode::getNumFaces() const
+{
+	return getIntField(REPO_NODE_MESH_LABEL_FACES_COUNT);
+}
+
+std::uint32_t MeshNode::getNumVertices() const
+{
+	return getIntField(REPO_NODE_MESH_LABEL_VERTICES_COUNT);
+}
+
+std::uint32_t MeshNode::getNumUVChannels() const
+{
+	if (hasField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT))
+	{
+		return getIntField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT);
+	}
+	else
+	{
+		return 0;
+	}
+}

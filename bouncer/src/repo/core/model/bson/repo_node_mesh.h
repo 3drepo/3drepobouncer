@@ -220,6 +220,12 @@ namespace repo {
 				*/
 				std::vector<repo::lib::RepoVector3D> getVertices() const;
 
+				std::uint32_t getNumFaces() const;
+
+				std::uint32_t getNumVertices() const;
+
+				std::uint32_t getNumUVChannels() const;
+
 			private:
 				/**
 				* Given a mesh mapping, convert it into a bson object

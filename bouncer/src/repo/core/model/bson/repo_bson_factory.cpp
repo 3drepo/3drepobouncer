@@ -308,6 +308,8 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 	if (vertices.size() > 0)
 	{
+		builder.append(REPO_NODE_MESH_LABEL_VERTICES_COUNT, (uint32_t)(vertices.size()));
+
 		uint64_t verticesByteCount = vertices.size() * sizeof(vertices[0]);
 
 		if (verticesByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
