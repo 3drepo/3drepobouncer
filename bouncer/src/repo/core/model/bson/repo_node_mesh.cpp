@@ -544,7 +544,15 @@ std::uint32_t MeshNode::getNumFaces() const
 
 std::uint32_t MeshNode::getNumVertices() const
 {
-	return getIntField(REPO_NODE_MESH_LABEL_VERTICES_COUNT);
+	if (hasField(REPO_NODE_MESH_LABEL_VERTICES_COUNT)) 
+	{
+		return getIntField(REPO_NODE_MESH_LABEL_VERTICES_COUNT);
+	}
+	else
+	{
+		repoWarning << "MeshNode does not have the vertices_count member. Falling back on getting the full vertices array to get the size, but this is inefficient.";
+		return getVertices().size();
+	}
 }
 
 std::uint32_t MeshNode::getNumUVChannels() const
