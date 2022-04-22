@@ -48,47 +48,76 @@ namespace repo {
 				*/
 				bool apply(repo::core::model::RepoScene *scene);
 
+				/*
+				* Maps from a material UUID in the original scene graph, and the duplicate node in the stash graph
+				*/
+				typedef std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher> MaterialUUIDMap;
+
+				/*
+				* A dictionary of MaterialNodes for a set of UUIDs
+				*/
+				typedef std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> MaterialNodes;
+
 			private:
 				/**
-				* A Recursive call to traverse down the scene graph,
-				* collect all the mesh data that is within meshGroup
-				* @param scene scene to traverse
-				* @param node current node
-				* @param meshGroup the group of meshes to look for
-				* @param matrix matrix to transform the vertices
-				* @param vertices vertices collected
-				* @param normals normals collected
-				* @param faces faces collected
-				* @param uvChannels uvChannels collected
-				* @param colors colors collected
-				* @param meshMapping meshMapping for this superMesh
+				* Recursively enumerates scene to find all the instances of 
+				* MeshNodes that match the Id, and returns copies of them 
+				* with geometry baked to its world space location in the 
+				* scene graph.
 				*/
-				bool collectMeshData(
-					const repo::core::model::RepoScene        *scene,
-					const repo::core::model::RepoNode         *node,
-					const std::set<repo::lib::RepoUUID>                  &meshGroup,
-					repo::lib::RepoMatrix                        &mat,
-					std::vector<repo::lib::RepoVector3D>                &vertices,
-					std::vector<repo::lib::RepoVector3D>                &normals,
-					std::vector<repo_face_t>                  &faces,
-					std::vector<std::vector<repo::lib::RepoVector2D>> &uvChannels,
-					std::vector<repo_color4d_t>               &colors,
-					std::vector<repo_mesh_mapping_t>          &meshMapping,
-					std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>    &matIDMap
+				bool getBakedMeshNodes(
+					const repo::core::model::RepoScene* scene, 
+					const repo::core::model::RepoNode* node, 
+					repo::lib::RepoMatrix mat,
+					repo::lib::RepoUUID id,
+					std::vector<repo::core::model::MeshNode> &nodes);
+
+				/**
+				* Represents a batched set of geometry.
+				*/
+				struct mapped_mesh_t {
+					std::vector<repo::lib::RepoVector3D> vertices;
+					std::vector<repo::lib::RepoVector3D> normals;
+					std::vector<repo_face_t> faces;
+					std::vector<std::vector<repo::lib::RepoVector2D>> uvChannels;
+					std::vector<repo_color4d_t> colors;
+					std::vector<repo_mesh_mapping_t> meshMapping;
+				};
+
+				void appendMeshes(
+					const repo::core::model::RepoScene* scene,
+					repo::core::model::MeshNode node,
+					mapped_mesh_t& mappedMesh
+				);
+
+				void splitMeshes(
+					const repo::core::model::RepoScene* scene, 
+					repo::core::model::MeshNode node,
+					std::vector<mapped_mesh_t> &mappedMeshes
+				);
+
+				/*
+				* Turns a mapped_mesh_t into a MeshNode that can be added to the database
+				*/
+				repo::core::model::MeshNode* createMeshNode(
+					mapped_mesh_t& mapped,
+					bool isGrouped
 				);
 
 				/**
-				* Merge all meshes within the mesh group and generate a
-				* super mesh.
-				* @param scene where the meshes are
-				* @param meshGroup contains all the meshes to c merge
-				* @param matIDs the unique IDs f materials required by this mesh
-				* @return returns a pointer to a newly created merged mesh
+				* Builds a set of Supermesh MeshNodes, based on the UUIDs in meshGroup.
+				* The method may output an arbitrary number (including 1) supermeshes, 
+				* from an arbitrary number (including 1) UUIDs. If no UUIDs are provided, 
+				* no Supermeshes are created.
+				* Each Supermesh mapping re-maps its Material UUID to a new UUID, which
+				* is used to copy the materials. If an existing remapping exists, it is
+				* used, otherwise one is created on demand.
+				* Each Supermesh is guaranteed to be below a certain size.
 				*/
-				repo::core::model::MeshNode* createSuperMesh(
+				std::vector<repo::core::model::MeshNode*> createSuperMeshes(
 					const repo::core::model::RepoScene *scene,
-					const std::set<repo::lib::RepoUUID>           &meshGroup,
-					std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher> &matIDs,
+					const std::set<repo::lib::RepoUUID> &meshGroup,
+					MaterialUUIDMap &materialMap,
 					const bool isGrouped);
 
 				/**
@@ -118,8 +147,8 @@ namespace repo {
 				*/
 				bool hasTexture(
 					const repo::core::model::RepoScene *scene,
-					const repo::core::model::MeshNode  *mesh,
-					repo::lib::RepoUUID                           &texID);
+					const repo::core::model::MeshNode *mesh,
+					repo::lib::RepoUUID &texID);
 
 				/**
 				* Check if the mesh is (semi) Transparent
@@ -132,19 +161,24 @@ namespace repo {
 					const repo::core::model::MeshNode  *mesh);
 
 				/**
-				* Process a mesh grouping, great a merged mesh base on the information
-				* @param scene as reference
-				* @param meshes mesh groupings
-				* @param mergedMeshes add newly created meshes into this set
-				* @param matNodes contains already processed materials
+				* Creates a set of supermesh MeshNodes which contain the submeshes
+				* in meshes (passed by UUID), along with a set of duplicate material
+				* nodes for use by the supermeshes.
+				* Multiple supermeshes may be created, depending on the composition
+				* of meshes.
+				* Supermeshes and duplicated materials are passed back via the 
+				* mergedMeshes and matNodes arrays.
+				* The matIDs map is used to map between the original graph materials
+				* and the stash graph materials, in case this method is called multiple
+				* times for one graph.
 				*/
 				bool processMeshGroup(
-					const repo::core::model::RepoScene                                         *scene,
-					const std::set<repo::lib::RepoUUID>							                       & meshes,
-					const repo::lib::RepoUUID                                                             &rootID,
-					repo::core::model::RepoNodeSet                                             &mergedMeshes,
-					std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> &matNodes,
-					std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>                    &matIDs,
+					const repo::core::model::RepoScene *scene,
+					const std::set<repo::lib::RepoUUID>	& meshes,
+					const repo::lib::RepoUUID &rootID,
+					repo::core::model::RepoNodeSet &mergedMeshes,
+					MaterialNodes &matNodes,
+					MaterialUUIDMap &matIDs,
 					const bool isGrouped);
 
 				/**
@@ -156,8 +190,8 @@ namespace repo {
 				* @param texturedMeshes    container to store textured meshes
 				*/
 				void sortMeshes(
-					const repo::core::model::RepoScene                                      *scene,
-					const repo::core::model::RepoNodeSet                                    &meshes,
+					const repo::core::model::RepoScene *scene,
+					const repo::core::model::RepoNodeSet &meshes,
 					std::unordered_map<std::string, std::unordered_map<uint32_t, std::vector<std::set<repo::lib::RepoUUID>>>>	&normalMeshes,
 					std::unordered_map < std::string, std::unordered_map<uint32_t, std::vector<std::set<repo::lib::RepoUUID>>>>	&transparentMeshes,
 					std::unordered_map < std::string, std::unordered_map < uint32_t, std::unordered_map < repo::lib::RepoUUID,
