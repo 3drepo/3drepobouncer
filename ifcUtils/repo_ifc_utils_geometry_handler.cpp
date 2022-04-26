@@ -104,7 +104,23 @@ bool repo::ifcUtility::SCHEMA_NS::GeometryHandler::retrieveGeometry(
 	IfcParse::IfcFile ifcfile(file);
 	auto itSettings = createSettings();
 
-	IfcGeom::Iterator<double> contextIterator(itSettings, &ifcfile);
+	char* value = getenv("REPO_NUM_THREADS");
+
+	int nThreads = 0;
+	try {
+		if (value && strlen(value) > 0) {
+			nThreads = std::stoi(value);
+		}
+	}
+	catch (...) {
+		//do nothing.
+	}
+
+	nThreads = nThreads ? nThreads : 4;
+
+	repoInfo << "Initialising Geom iterator with " << nThreads << "...";
+
+	IfcGeom::Iterator<double> contextIterator(itSettings, &ifcfile, nThreads);
 
 	try {
 		if (!contextIterator.initialize()) {
