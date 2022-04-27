@@ -114,11 +114,12 @@ namespace repo {
 				* used, otherwise one is created on demand.
 				* Each Supermesh is guaranteed to be below a certain size.
 				*/
-				std::vector<repo::core::model::MeshNode*> createSuperMeshes(
+				void createSuperMeshes(
 					const repo::core::model::RepoScene *scene,
-					const std::set<repo::lib::RepoUUID> &meshGroup,
+					const std::vector<repo::core::model::MeshNode> &nodes,
 					MaterialUUIDMap &materialMap,
-					const bool isGrouped);
+					const bool isGrouped,
+					std::vector<repo::core::model::MeshNode*> &supermeshNodes);
 
 				/**
 				* Generate the multipart scene
@@ -174,12 +175,35 @@ namespace repo {
 				*/
 				bool processMeshGroup(
 					const repo::core::model::RepoScene *scene,
-					const std::set<repo::lib::RepoUUID>	& meshes,
+					const std::set<repo::lib::RepoUUID>	&groupMeshIds,
 					const repo::lib::RepoUUID &rootID,
 					repo::core::model::RepoNodeSet &mergedMeshes,
-					MaterialNodes &matNodes,
-					MaterialUUIDMap &matIDs,
+					MaterialNodes & mergedMeshesMaterials,
+					MaterialUUIDMap &originalIdToStashIdMap,
 					const bool isGrouped);
+
+				/**
+				* Creates or updates the stash material nodes for all the 
+				* materials in the supermesh MeshNode.
+				* This method will create any new Material nodes on demand
+				* by copying them from the original graph, otherwise it 
+				* updates their parents array.
+				*/
+				void processSupermeshMaterials(
+					const repo::core::model::RepoScene* scene,
+					const repo::core::model::MeshNode* supermeshNode,
+					MaterialNodes& mergedMaterialNodes,
+					MaterialUUIDMap& stashIdToOriginalIdMap
+				);
+
+				/**
+				* Groups the MeshNodes into sets based on their location and
+				* geometry size.
+				*/
+				void clusterMeshNodes(
+					const std::vector<repo::core::model::MeshNode>& nodes,
+					std::vector<std::vector<repo::core::model::MeshNode>>& clusters
+				);
 
 				/**
 				* Sort the given RepoNodeSet of meshes for multipart merging
