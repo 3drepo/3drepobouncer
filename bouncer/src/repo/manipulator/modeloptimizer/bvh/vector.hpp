@@ -70,13 +70,13 @@ struct Vector {
         set(first, second, args...);
     }
 
-    template <typename F, size_t N>
+    template <typename F>
     bvh_always_inline Vector(F f) {
         for (size_t i = 0; i < N; ++i)
             values[i] = f(i);
     }
 
-    template <typename F, size_t N>
+    template <typename F>
     bvh_always_inline Vector(std::vector<F> v){
         for (size_t i = 0; i < N; ++i)
             values[i] = v[i];
@@ -153,7 +153,7 @@ Vector<Scalar, N> operator * (const Vector<Scalar, N>& a, const Vector<Scalar, N
 
 template <typename Scalar, size_t N>
 bvh_always_inline
-inline Vector<Scalar, N> min(const Vector<Scalar, N>& a, const Vector<Scalar, N>& b) {
+Vector<Scalar, N> min(const Vector<Scalar, N>& a, const Vector<Scalar, N>& b) {
     Vector<Scalar, N> v;
     for (size_t i = 0; i < N; i++)
     {

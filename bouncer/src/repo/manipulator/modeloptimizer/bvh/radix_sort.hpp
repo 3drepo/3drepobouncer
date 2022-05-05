@@ -26,6 +26,7 @@ SOFTWARE.
 #include <memory>
 #include <algorithm>
 #include <cstddef>
+#include <type_traits>
 
 #include "platform.hpp"
 #include "utilities.hpp"
