@@ -28,6 +28,8 @@
 #include "../../core/model/bson/repo_bson_factory.h"
 #include "../../core/model/bson/repo_bson_builder.h"
 
+#include "boost/chrono.hpp"
+
 using namespace repo::manipulator::modeloptimizer;
 
 auto defaultGraph = repo::core::model::RepoScene::GraphType::DEFAULT;
@@ -189,13 +191,290 @@ void MultipartOptimizer::appendMeshes(
 	}
 }
 
+void updateMinMax(repo::lib::RepoVector3D& min, repo::lib::RepoVector3D& max, repo::lib::RepoVector3D v)
+{
+	if (v.x < min.x) {
+		min.x = v.x;
+	}
+	if (v.y < min.y) {
+		min.y = v.y;
+	}
+	if (v.z < min.z) {
+		min.z = v.z;
+	}
+
+	if (v.x > max.x) {
+		max.x = v.x;
+	}
+	if (v.y > max.y) {
+		max.y = v.y;
+	}
+	if (v.z > max.z) {
+		max.z = v.z;
+	}
+}
+
 void MultipartOptimizer::splitMeshes(
 	const repo::core::model::RepoScene* scene,
 	repo::core::model::MeshNode node,
 	std::vector<mapped_mesh_t>& mappedMeshes
 )
 {
-	repoError << "MultipartOptimizer::splitMeshes not yet implemented.";
+	auto start = boost::chrono::high_resolution_clock::now();
+
+	using Scalar = float;
+	using Bvh = bvh::Bvh<Scalar>;
+	using Vector3 = bvh::Vector3<Scalar>;
+
+	// Create a set of bounding boxes & centers for each Face in the oversized 
+	// mesh.
+	// The BVH builder expects a set of bounding boxes and centers to work with.
+
+	auto faces = node.getFaces();
+	auto vertices = node.getVertices();
+	auto boundingBoxes = std::vector<bvh::BoundingBox<Scalar>>();
+
+	for (auto& face : faces)
+	{
+		auto v = vertices[face[0]];
+		auto b = bvh::BoundingBox<Scalar>(Vector3(v.x, v.y, v.z));
+
+		for (int i = 1; i < face.size(); i++)
+		{
+			v = vertices[face[i]];
+			b.extend(Vector3(v.x, v.y, v.z));
+		}
+
+		boundingBoxes.push_back(b);
+	}
+
+	auto centers = std::vector<Vector3>();
+	for (auto& bounds : boundingBoxes)
+	{
+		centers.push_back(bounds.center());
+	}
+
+	auto globalBounds = bvh::compute_bounding_boxes_union(boundingBoxes.data(), boundingBoxes.size());
+
+	// Create an acceleration data structure based on the face bounds
+
+	Bvh bvh;
+	bvh::SweepSahBuilder<Bvh> builder(bvh);
+	builder.max_leaf_size = 16;
+	builder.build(globalBounds, boundingBoxes.data(), centers.data(), boundingBoxes.size());
+
+	// The tree now contains all the face bounds. To know where to cut the tree, 
+	// we need to get the number of unique vertices in each node.
+
+	// To do this, first get the unique counts for each leaf node by partitioning
+	// the tree into leaf and branch nodes.
+
+	std::vector<size_t> leaves;
+	std::vector<size_t> flattened;
+
+	std::queue<size_t> nodeQueue; // Using a queue instead of a stack means the child nodes are handled later, resulting in a breadth first traversal
+	nodeQueue.push(0);
+	do {
+		auto index = nodeQueue.front();
+		nodeQueue.pop();
+
+		auto& node = bvh.nodes[index];
+
+		if (node.is_leaf())
+		{
+			leaves.push_back(index);
+		}
+		else
+		{
+			nodeQueue.push(node.first_child_or_primitive);
+			nodeQueue.push(node.first_child_or_primitive + 1);
+
+			flattened.push_back(index);
+		}
+	} while (!nodeQueue.empty());
+
+	// Next get the unique vertex indices for each leaf node...
+
+	std::vector<std::set<uint32_t>> uniqueVerticesByNode;
+	uniqueVerticesByNode.resize(bvh.node_count);
+
+	for (auto nodeIndex : leaves)
+	{
+		auto& node = bvh.nodes[nodeIndex];
+		auto& uniqueVertices = uniqueVerticesByNode[nodeIndex];
+		for (int i = 0; i < node.primitive_count; i++)
+		{
+			auto faceIndex = bvh.primitive_indices[node.first_child_or_primitive + i];
+			auto& face = faces[faceIndex];
+			std::copy(face.begin(), face.end(), std::inserter(uniqueVertices, uniqueVertices.end()));
+		}
+	}
+
+	// ...and extend this for each branch node
+
+	std::reverse(flattened.begin(), flattened.end());
+
+	for (auto nodeIndex : flattened)
+	{
+		auto& node = bvh.nodes[nodeIndex];
+		auto& uniqueVertices = uniqueVerticesByNode[nodeIndex];
+		auto& left = uniqueVerticesByNode[node.first_child_or_primitive];
+		auto& right = uniqueVerticesByNode[node.first_child_or_primitive + 1];
+
+		std::copy(left.begin(), left.end(), std::inserter(uniqueVertices, uniqueVertices.end()));
+		std::copy(right.begin(), right.end(), std::inserter(uniqueVertices, uniqueVertices.end()));
+	}
+
+	// Next, traverse the tree again, but this time depth first, cutting the tree 
+	// at places the unique vertex count drops below the target threshold.
+
+	std::vector<size_t> branchNodes;
+	std::stack<size_t> nodeStack;
+	nodeStack.push(0);
+	do {
+		auto index = nodeStack.top();
+		nodeStack.pop();
+
+		auto& node = bvh.nodes[index];
+		auto& vertexSet = uniqueVerticesByNode[index];
+		auto numVertices = vertexSet.size();
+
+		// As we are traversing top-down, the vertex counts get smaller.
+		// As soon as a node's count drops below the target, all the nodes in
+		// that branch can become a mesh.
+
+		if (node.is_leaf())
+		{
+			// We should never make it to a leaf with more than 65k vertices, 
+			// because the leaves should have at most 16 faces.
+			repoError << "splitMeshes() encountered a leaf node with " << numVertices << " unique vertices across " << node.primitive_count << " faces.";
+			continue;
+		}
+
+		if (numVertices < REPO_MP_MAX_VERTEX_COUNT) // This node is the head of a branch that should become a sub mesh
+		{
+			branchNodes.push_back(index);
+		}
+		else
+		{
+			nodeStack.push(node.first_child_or_primitive);
+			nodeStack.push(node.first_child_or_primitive + 1);
+		}
+	} while (!nodeStack.empty());
+
+	// Finally, get all the leaf nodes for each branch in order to build the
+	// groups of MeshNodes
+
+	// Get the other vertex attributes for building the sub mapped meshes
+
+	auto normals = node.getNormals();
+	auto uvChannels = node.getUVChannelsSeparated();
+	auto colors = node.getColors();
+
+	for (auto head : branchNodes)
+	{
+		// Get all the leaf nodes within the branch
+
+		std::vector<size_t> primitives;
+
+		nodeStack.push(head);
+		do
+		{
+			auto node = bvh.nodes[nodeStack.top()];
+			nodeStack.pop();
+
+			if (node.is_leaf())
+			{
+				for (int i = 0; i < node.primitive_count; i++)
+				{
+					auto primitive = bvh.primitive_indices[node.first_child_or_primitive + i];
+					primitives.push_back(primitive);
+				}
+			}
+			else
+			{
+				nodeStack.push(node.first_child_or_primitive);
+				nodeStack.push(node.first_child_or_primitive + 1);
+			}
+		} while (!nodeStack.empty());
+
+		// Now collect the faces into a new mesh.
+
+		// Re-index each face for the new reduced vertex arrays; this can be
+		// done through a reverse lookup into the set of unique vertices
+		// referenced by all the faces in the new mesh (i.e. at the branch node).
+
+		auto& meshGlobalIndicesSet = uniqueVerticesByNode[head];
+		std::vector<size_t> globalVertexIndices(meshGlobalIndicesSet.begin(), meshGlobalIndicesSet.end()); // An array of indices into the gloabl vertex array, for this submesh
+		std::map<size_t, size_t> globalToLocalIndex;
+
+		// Create the inverse lookup table for the re-indexing
+
+		for (auto i = 0; i < globalVertexIndices.size(); i++)
+		{
+			globalToLocalIndex[globalVertexIndices[i]] = i;
+		}
+
+		mapped_mesh_t mapped;
+
+		for (auto faceIndex : primitives)
+		{
+			mapped.faces.push_back(faces[faceIndex]);
+		}
+
+		for (auto& face : mapped.faces)
+		{
+			for (auto i = 0; i < face.size(); i++)
+			{
+				face[i] = globalToLocalIndex[face[i]]; // Re-index the face
+			}
+		}
+
+		// Using the same sets, create the local vertex arrays
+
+		mapped.uvChannels.resize(uvChannels.size());
+		
+		for (auto globalIndex : globalVertexIndices)
+		{
+			mapped.vertices.push_back(vertices[globalIndex]);
+			if (normals.size()) {
+				mapped.normals.push_back(normals[globalIndex]);
+			}
+			if (colors.size()) {
+				mapped.colors.push_back(colors[globalIndex]);
+			}
+			for (auto i = 0; i < uvChannels.size(); i++)
+			{
+				if (uvChannels[i].size()) {
+					mapped.uvChannels[i].push_back(uvChannels[i][globalIndex]);
+				}
+			}
+		}
+
+		// Finally, add the mapping for this mesh...
+
+		repo_mesh_mapping_t mapping;
+
+		mapping.vertFrom = 0;
+		mapping.vertTo = mapped.vertices.size();
+		mapping.triFrom = 0;
+		mapping.triTo = mapped.faces.size();
+		mapping.min = mapped.vertices[0];
+		mapping.max = mapped.vertices[0];
+		for (auto v : mapped.vertices)
+		{
+			updateMinMax(mapping.min, mapping.max, v);
+		}
+		mapping.mesh_id = node.getUniqueID();
+		mapping.shared_id = node.getSharedID();
+		mapping.material_id = getMaterialID(scene, &node);
+
+		mapped.meshMapping.push_back(mapping);
+
+		mappedMeshes.push_back(mapped);
+	}
+	
+	repoInfo << "Split mesh with " << vertices.size() << " vertices into " << mappedMeshes.size() << " submeshes in " << boost::chrono::duration_cast<boost::chrono::milliseconds>(boost::chrono::high_resolution_clock::now() - start).count() << " ms";
 }
 
 void MultipartOptimizer::createSuperMeshes(
@@ -215,7 +494,7 @@ void MultipartOptimizer::createSuperMeshes(
 
 	mapped_mesh_t currentSupermesh;
 
-	int vertexLimit = 2147483647; //65536
+	int vertexLimit = 65536;
 
 	for (auto& node : nodes)
 	{
@@ -333,9 +612,7 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 
 		//Sort the meshes into 3 different grouping
 		
-		// ISSUE #422 (Don't sort)
-		sortMeshes(scene, meshes, normalMeshes, transparentMeshes, texturedMeshes);
-		
+		sortMeshes(scene, meshes, normalMeshes, transparentMeshes, texturedMeshes);		
 
 		repo::core::model::RepoNodeSet mergedMeshes, materials, trans, textures, dummy;
 
@@ -344,18 +621,7 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 		repo::lib::RepoUUID rootID = rootNode->getSharedID();
 
 		MaterialNodes mergedMeshesMaterials;
-		MaterialUUIDMap materialIdMap;
-
-
-		// ISSUE #422 -- This tweak simply makes the stash graph store one supermesh for each regular mesh
-		/*
-		for (auto mesh : meshes)
-		{
-			std::set<repo::lib::RepoUUID> s { ((repo::core::model::MeshNode*)mesh)->getUniqueID() };
-			success &= processMeshGroup(scene, s, rootID, mergedMeshes, mergedMeshesMaterials, materialIdMap, true);
-		}
-		*/
-		
+		MaterialUUIDMap materialIdMap;		
 
 		for (const auto &meshGroup : normalMeshes)
 		{

@@ -29,6 +29,7 @@ SOFTWARE.
 #include <cmath>
 #include <limits>
 #include <type_traits>
+#include <vector>
 
 #include "platform.hpp"
 
@@ -73,6 +74,12 @@ struct Vector {
     bvh_always_inline Vector(F f) {
         for (size_t i = 0; i < N; ++i)
             values[i] = f(i);
+    }
+
+    template <typename F, size_t N>
+    bvh_always_inline Vector(std::vector<F> v){
+        for (size_t i = 0; i < N; ++i)
+            values[i] = v[i];
     }
 
     template <typename... Args>
