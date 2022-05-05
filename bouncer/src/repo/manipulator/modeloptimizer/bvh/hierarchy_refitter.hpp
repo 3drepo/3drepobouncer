@@ -23,9 +23,9 @@ SOFTWARE.
 #ifndef BVH_HIERARCHY_REFITTER_HPP
 #define BVH_HIERARCHY_REFITTER_HPP
 
-#include "bvh/bvh.hpp"
-#include "bvh/bottom_up_algorithm.hpp"
-#include "bvh/platform.hpp"
+#include "bvh.hpp"
+#include "bottom_up_algorithm.hpp"
+#include "platform.hpp"
 
 namespace bvh {
 

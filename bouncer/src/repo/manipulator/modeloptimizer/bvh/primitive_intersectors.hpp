@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include <optional>
 
-#include "bvh/ray.hpp"
+#include "ray.hpp"
 
 namespace bvh {
 

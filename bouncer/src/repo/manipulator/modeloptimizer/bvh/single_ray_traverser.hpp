@@ -25,10 +25,10 @@ SOFTWARE.
 
 #include <cassert>
 
-#include "bvh/bvh.hpp"
-#include "bvh/ray.hpp"
-#include "bvh/node_intersectors.hpp"
-#include "bvh/utilities.hpp"
+#include "bvh.hpp"
+#include "ray.hpp"
+#include "node_intersectors.hpp"
+#include "utilities.hpp"
 
 namespace bvh {
 

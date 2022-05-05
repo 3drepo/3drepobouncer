@@ -25,9 +25,9 @@ SOFTWARE.
 
 #include <numeric>
 
-#include "bvh/morton_code_based_builder.hpp"
-#include "bvh/prefix_sum.hpp"
-#include "bvh/platform.hpp"
+#include "morton_code_based_builder.hpp"
+#include "prefix_sum.hpp"
+#include "platform.hpp"
 
 namespace bvh {
 

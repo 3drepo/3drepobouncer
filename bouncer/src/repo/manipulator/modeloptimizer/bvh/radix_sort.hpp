@@ -27,8 +27,8 @@ SOFTWARE.
 #include <algorithm>
 #include <cstddef>
 
-#include "bvh/platform.hpp"
-#include "bvh/utilities.hpp"
+#include "platform.hpp"
+#include "utilities.hpp"
 
 namespace bvh {
 

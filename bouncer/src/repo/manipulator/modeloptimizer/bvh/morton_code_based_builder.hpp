@@ -28,10 +28,10 @@ SOFTWARE.
 #include <cassert>
 #include <type_traits>
 
-#include "bvh/bounding_box.hpp"
-#include "bvh/vector.hpp"
-#include "bvh/morton.hpp"
-#include "bvh/radix_sort.hpp"
+#include "bounding_box.hpp"
+#include "vector.hpp"
+#include "morton.hpp"
+#include "radix_sort.hpp"
 
 namespace bvh {
 

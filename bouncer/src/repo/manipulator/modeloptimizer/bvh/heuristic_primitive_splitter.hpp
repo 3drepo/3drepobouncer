@@ -27,9 +27,9 @@ SOFTWARE.
 #include <optional>
 #include <stack>
 
-#include "bvh/bvh.hpp"
-#include "bvh/bounding_box.hpp"
-#include "bvh/prefix_sum.hpp"
+#include "bvh.hpp"
+#include "bounding_box.hpp"
+#include "prefix_sum.hpp"
 
 namespace bvh {
 

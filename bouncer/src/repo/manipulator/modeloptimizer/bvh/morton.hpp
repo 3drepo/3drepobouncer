@@ -27,7 +27,7 @@ SOFTWARE.
 #include <climits>
 #include <cassert>
 
-#include "bvh/utilities.hpp"
+#include "utilities.hpp"
 
 namespace bvh {
 

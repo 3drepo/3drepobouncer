@@ -25,9 +25,9 @@ SOFTWARE.
 
 #include <memory>
 
-#include "bvh/bvh.hpp"
-#include "bvh/utilities.hpp"
-#include "bvh/radix_sort.hpp"
+#include "bvh.hpp"
+#include "utilities.hpp"
+#include "radix_sort.hpp"
 
 namespace bvh {
 

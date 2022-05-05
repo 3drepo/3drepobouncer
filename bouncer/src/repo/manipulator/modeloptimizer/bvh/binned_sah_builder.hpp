@@ -25,10 +25,10 @@ SOFTWARE.
 
 #include <optional>
 
-#include "bvh/bvh.hpp"
-#include "bvh/bounding_box.hpp"
-#include "bvh/top_down_builder.hpp"
-#include "bvh/sah_based_algorithm.hpp"
+#include "bvh.hpp"
+#include "bounding_box.hpp"
+#include "top_down_builder.hpp"
+#include "sah_based_algorithm.hpp"
 
 namespace bvh {
 

@@ -23,7 +23,7 @@ SOFTWARE.
 #ifndef BVH_RAY_HPP
 #define BVH_RAY_HPP
 
-#include "bvh/vector.hpp"
+#include "vector.hpp"
 
 namespace bvh {
 

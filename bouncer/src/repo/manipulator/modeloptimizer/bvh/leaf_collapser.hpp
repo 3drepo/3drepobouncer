@@ -25,11 +25,11 @@ SOFTWARE.
 
 #include <memory>
 
-#include "bvh/bvh.hpp"
-#include "bvh/sah_based_algorithm.hpp"
-#include "bvh/bottom_up_algorithm.hpp"
-#include "bvh/prefix_sum.hpp"
-#include "bvh/platform.hpp"
+#include "bvh.hpp"
+#include "sah_based_algorithm.hpp"
+#include "bottom_up_algorithm.hpp"
+#include "prefix_sum.hpp"
+#include "platform.hpp"
 
 namespace bvh {
 

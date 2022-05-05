@@ -27,8 +27,8 @@ SOFTWARE.
 #include <cassert>
 #include <numeric>
 
-#include "bvh/morton_code_based_builder.hpp"
-#include "bvh/prefix_sum.hpp"
+#include "morton_code_based_builder.hpp"
+#include "prefix_sum.hpp"
 
 namespace bvh {
 

@@ -25,9 +25,9 @@ SOFTWARE.
 
 #include <optional>
 
-#include "bvh/vector.hpp"
-#include "bvh/bounding_box.hpp"
-#include "bvh/ray.hpp"
+#include "vector.hpp"
+#include "bounding_box.hpp"
+#include "ray.hpp"
 
 namespace bvh {
 

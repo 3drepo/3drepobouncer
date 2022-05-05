@@ -26,8 +26,8 @@ SOFTWARE.
 #include <memory>
 #include <cstddef>
 
-#include "bvh/bvh.hpp"
-#include "bvh/platform.hpp"
+#include "bvh.hpp"
+#include "platform.hpp"
 
 namespace bvh {
 

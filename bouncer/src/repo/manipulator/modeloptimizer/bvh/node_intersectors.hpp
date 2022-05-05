@@ -25,10 +25,10 @@ SOFTWARE.
 
 #include <cmath>
 
-#include "bvh/vector.hpp"
-#include "bvh/ray.hpp"
-#include "bvh/platform.hpp"
-#include "bvh/utilities.hpp"
+#include "vector.hpp"
+#include "ray.hpp"
+#include "platform.hpp"
+#include "utilities.hpp"
 
 namespace bvh {
 

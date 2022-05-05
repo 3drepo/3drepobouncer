@@ -25,9 +25,9 @@ SOFTWARE.
 
 #include <cassert>
 
-#include "bvh/bvh.hpp"
-#include "bvh/sah_based_algorithm.hpp"
-#include "bvh/hierarchy_refitter.hpp"
+#include "bvh.hpp"
+#include "sah_based_algorithm.hpp"
+#include "hierarchy_refitter.hpp"
 
 namespace bvh {
 

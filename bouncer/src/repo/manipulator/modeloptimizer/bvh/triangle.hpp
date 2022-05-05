@@ -26,10 +26,10 @@ SOFTWARE.
 #include <optional>
 #include <cassert>
 
-#include "bvh/utilities.hpp"
-#include "bvh/vector.hpp"
-#include "bvh/bounding_box.hpp"
-#include "bvh/ray.hpp"
+#include "utilities.hpp"
+#include "vector.hpp"
+#include "bounding_box.hpp"
+#include "ray.hpp"
 
 namespace bvh {
 

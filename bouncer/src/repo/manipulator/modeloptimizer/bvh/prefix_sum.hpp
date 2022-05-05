@@ -27,7 +27,7 @@ SOFTWARE.
 #include <memory>
 #include <numeric>
 
-#include "bvh/utilities.hpp"
+#include "utilities.hpp"
 
 namespace bvh {
 
