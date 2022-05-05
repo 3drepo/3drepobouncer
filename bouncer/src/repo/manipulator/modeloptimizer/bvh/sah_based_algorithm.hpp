@@ -23,7 +23,7 @@ SOFTWARE.
 #ifndef BVH_SAH_BASED_ALGORITHM_HPP
 #define BVH_SAH_BASED_ALGORITHM_HPP
 
-#include "bvh/bvh.hpp"
+#include "bvh.hpp"
 
 namespace bvh {
 
