@@ -77,8 +77,8 @@ struct Bvh {
             }
 
             BoundingBox<Scalar> to_bounding_box() const {
-                auto& n = *this;
-                return static_cast<BoundingBox<Scalar>>(n);
+                BoundingBox<Scalar> B(*this);
+                return B;
             }
 
             Scalar half_area() const { return to_bounding_box().half_area(); }
