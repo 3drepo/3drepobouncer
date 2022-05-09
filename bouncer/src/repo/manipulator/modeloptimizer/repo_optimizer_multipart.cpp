@@ -1002,7 +1002,7 @@ void MultipartOptimizer::processSupermeshMaterials(
 	for (const auto stashMaterialId : supermeshStashMaterials)
 	{
 		// Has another supermesh created a Node for this duplicated material already?
-		auto& existing = mergedMaterialNodes.find(stashMaterialId);
+		auto existing = mergedMaterialNodes.find(stashMaterialId);
 		if (existing == mergedMaterialNodes.end())
 		{
 			// No, so we must clone the material here.
