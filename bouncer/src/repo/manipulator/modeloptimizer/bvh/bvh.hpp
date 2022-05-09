@@ -77,8 +77,9 @@ struct Bvh {
             }
 
             BoundingBox<Scalar> to_bounding_box() const {
-                BoundingBox<Scalar> B(*this);
-                return B;
+                return BoundingBox<Scalar>(
+                    Vector3<Scalar>(node.bounds[0], node.bounds[2], node.bounds[4]),
+                    Vector3<Scalar>(node.bounds[1], node.bounds[3], node.bounds[5]));
             }
 
             Scalar half_area() const { return to_bounding_box().half_area(); }
