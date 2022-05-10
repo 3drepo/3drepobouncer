@@ -98,6 +98,9 @@ namespace std {
     template<class T, class... Args>
     typename _Unique_if<T>::_Known_bound
         make_unique(Args&&...) = delete;
+
+    template< bool Condition, typename T = void >
+    using enable_if_t = typename std::enable_if<Condition, T>::type;
 }
 
 #endif
