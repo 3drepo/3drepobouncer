@@ -31,29 +31,27 @@ matrix:
           - sudo apt-get update
           - sudo apt-get install -y gnupg mongodb-org=5.0.2 mongodb-org-database=5.0.2 mongodb-org-server=5.0.2 mongodb-org-shell=5.0.2 mongodb-org-tools=5.0.2
           - sudo systemctl daemon-reload && sudo systemctl start mongod && echo $(mongod --version)
-          - git clone https://$TESTUSER:$TESTPW@github.com/3drepo/tests.git
-          - mv tests testData
-          - cd testData
-          - git checkout a0075bae97cf5e115689c6f227db06675a804673
+          - mkdir testData && cd testData
+          - svn --no-auth-cache export --username $TESTUSER --password $TESTPW https://github.com/3drepo/tests/trunk/cplusplus/bouncer
           - cd ../
           - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
-          - mongo admin testData/cplusplus/bouncer/createUser.js
-          - cd  testData/cplusplus/bouncer/data/database/
+          - mongo admin testData/bouncer/createUser.js
+          - cd  testData/bouncer/data/database/
           - mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin --quiet
-          - cd ../../../../../
+          - cd ../../../../
           - export CXX="g++"
           - export CC="gcc"
           - echo ============ BOOST  INSTALL =============
           - sudo apt-get install libboost-all-dev
           - echo ============ MONGO  INSTALL =============
-          - tar -zxf testData/cplusplus/bouncer/ext_libs/focal/mongo-cxx-driver.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/mongo-cxx-driver.tgz
           - export MONGO_ROOT=$PWD/mongo-cxx-driver
           - echo ============ ASSIMP INSTALL =============
-          - tar -zxf testData/cplusplus/bouncer/ext_libs/focal/assimp.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/assimp.tgz
           - export ASSIMP_ROOT=$PWD/assimp
           - echo ============ IFCOPENSHELL INSTALL =============
-          - tar -zxf testData/cplusplus/bouncer/ext_libs/focal/IfcOpenShell_v0.6.0/OCCT.tgz
-          - tar -zxf testData/cplusplus/bouncer/ext_libs/focal/IfcOpenShell_v0.6.0/IfcOpenShell.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/IfcOpenShell_v0.6.0/OCCT.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/IfcOpenShell_v0.6.0/IfcOpenShell.tgz
           - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev
           - export OCCT_ROOT=$PWD/OCCT
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
@@ -64,9 +62,9 @@ matrix:
           - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_8.3dll/
           - echo ============ SYNCHRO INSTALL =============
           - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
-          - tar -zxf testData/cplusplus/bouncer/ext_libs/focal/thrift-0.12.0.tgz
-          - tar -zxf testData/cplusplus/bouncer/ext_libs/focal/3drepoSynchroReader-3.0.0.tgz
-          - tar -zxf testData/cplusplus/bouncer/ext_libs/focal/date.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/thrift-0.12.0.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/3drepoSynchroReader-3.0.0.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/date.tgz
           - export THRIFT_ROOT=$PWD/thrift-0.12.0
           - export DATE_ROOT=$PWD/date
           - export SYNCHRO_READER_ROOT=$PWD/3drepoSynchroReader
@@ -82,7 +80,7 @@ matrix:
           - mongo mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
       script:
           - sudo make -j8 install
-          - export REPO_MODEL_PATH=$PWD/../testData/cplusplus/bouncer/data/models
+          - export REPO_MODEL_PATH=$PWD/../testData/bouncer/data/models
           - for f in $REPO_MODEL_PATH/*.json; do sed -i.bak -e 's|$REPO_MODEL_PATH|'$REPO_MODEL_PATH'|g' $f; done
           - export REPOBOUNCER_ROOT=$HOME/bouncer_install
           - cd ../tools/release
