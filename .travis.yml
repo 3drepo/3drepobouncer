@@ -40,7 +40,7 @@ matrix:
           - mongo admin testData/cplusplus/bouncer/createUser.js
           - cd  testData/cplusplus/bouncer/data/database/
           - mongorestore -u "testUser" -p "3drepotest" --authenticationDatabase admin --quiet
-          - cd ../../../../
+          - cd ../../../../../
           - export CXX="g++"
           - export CC="gcc"
           - echo ============ BOOST  INSTALL =============
