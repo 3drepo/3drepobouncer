@@ -31,8 +31,9 @@ matrix:
           - sudo apt-get update
           - sudo apt-get install -y gnupg mongodb-org=5.0.2 mongodb-org-database=5.0.2 mongodb-org-server=5.0.2 mongodb-org-shell=5.0.2 mongodb-org-tools=5.0.2
           - sudo systemctl daemon-reload && sudo systemctl start mongod && echo $(mongod --version)
-          - mkdir testData && cd testData
           - git clone https://$TESTUSER:$TESTPW@github.com/3drepo/tests.git
+          - mv tests testData
+          - cd testData
           - git checkout a0075bae97cf5e115689c6f227db06675a804673
           - cd ../
           - until nc -z localhost 27017; do echo Waiting for MongoDB; sleep 1; done
