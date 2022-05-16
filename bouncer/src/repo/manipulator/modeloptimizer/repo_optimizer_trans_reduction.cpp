@@ -45,6 +45,7 @@ bool TransformationReductionOptimizer::apply(repo::core::model::RepoScene *scene
 	bool success = false;
 	if (scene && scene->hasRoot(gType))
 	{
+		std::unordered_map < repo::core::model::RepoNode*, repo::core::model::RepoNodeSet> metaToNewParents;
 		auto meshes = scene->getAllMeshes(gType);
 		size_t count = 0;
 		size_t total = meshes.size();
@@ -61,10 +62,16 @@ bool TransformationReductionOptimizer::apply(repo::core::model::RepoScene *scene
 			{
 				repo::core::model::MeshNode *mesh = dynamic_cast<repo::core::model::MeshNode*>(node);
 				if (mesh)
-					applyOptimOnMesh(scene, mesh);
+					applyOptimOnMesh(scene, mesh, metaToNewParents);
 				else
-					repoError << "Failed to dynamically cast a mesh node!!!";
+					repoError << "Failed to dynamically cast a mesh node";
 			}
+		}
+
+		repoInfo << "Wiring up metadata nodes to their new parents...";
+
+		for (const auto &pair : metaToNewParents) {
+			scene->addInheritance(gType, pair.second, pair.first);
 		}
 
 		repoInfo << "Mesh Optimisation complete. Number of transformations has been reduced from "
@@ -102,7 +109,9 @@ bool TransformationReductionOptimizer::apply(repo::core::model::RepoScene *scene
 
 void TransformationReductionOptimizer::applyOptimOnMesh(
 	repo::core::model::RepoScene *scene,
-	repo::core::model::MeshNode  *mesh)
+	repo::core::model::MeshNode  *mesh,
+	std::unordered_map < repo::core::model::RepoNode*, repo::core::model::RepoNodeSet> &metaToNewParents
+)
 {
 	/*
 	* Assimp importer generates an extra transformation as a parent for a mesh
@@ -162,7 +171,12 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 					//connect all metadata to children mesh
 					for (const auto &meta : metaVector)
 					{
-						scene->addInheritance(gType, mesh, meta);
+						if (metaToNewParents.find(meta) == metaToNewParents.end()) {
+							metaToNewParents[meta] = { mesh };
+						}
+						else {
+							metaToNewParents[meta].insert(mesh);
+						}
 					}
 
 					//change mesh name FIXME: this is a bit hacky.
