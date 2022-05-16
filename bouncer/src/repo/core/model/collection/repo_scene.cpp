@@ -248,6 +248,67 @@ void RepoScene::addInheritance(
 	}
 }
 
+void RepoScene::addInheritance(
+	const GraphType &gType,
+	const RepoNodeSet &parentNodes,
+	RepoNode        *childNode,
+	const bool      &noUpdate)
+{
+	repoGraphInstance &g = gType == GraphType::OPTIMIZED ? stashGraph : graph;
+	//stash has no sense of version control, so only default graph needs to track changes
+	bool trackChanges = !noUpdate && gType == GraphType::DEFAULT;
+
+	if (parentNodes.size() && childNode)
+	{
+		auto parentArr = childNode->getParentIDs();
+		std::set<repo::lib::RepoUUID> currentParents(parentArr.begin(), parentArr.end());
+		std::set<repo::lib::RepoUUID> parentShareIDs;
+		for (const auto &parent : parentNodes) {
+			auto parentShareID = parent->getSharedID();
+			if (currentParents.find(parentShareID) == currentParents.end()) {
+				parentShareIDs.insert(parentShareID);
+
+				//add children to parentToChildren mapping
+				auto childrenIT =
+					g.parentToChildren.find(parentShareID);
+
+				if (childrenIT != g.parentToChildren.end())
+				{
+					std::vector<RepoNode*> &children = childrenIT->second;
+					auto childrenInd = std::find(children.begin(), children.end(), childNode);
+					if (childrenInd == children.end())
+					{
+						children.push_back(childNode);
+					}
+				}
+				else
+				{
+					g.parentToChildren[parentShareID] = std::vector<RepoNode*>();
+					g.parentToChildren[parentShareID].push_back(childNode);
+				}
+			}
+		}
+
+		repo::lib::RepoUUID childShareID = childNode->getSharedID();
+
+		if (parentShareIDs.size())
+		{
+			RepoNode childWithParent = childNode->cloneAndAddParent(std::vector<repo::lib::RepoUUID>(parentShareIDs.begin(), parentShareIDs.end()));
+
+			if (trackChanges)
+			{
+				//this is considered a change on the node, we need to make a new node with new uniqueID
+				modifyNode(GraphType::DEFAULT, childNode, &childWithParent);
+			}
+			else
+			{
+				//not tracking, just swap the content
+				childNode->swap(childWithParent);
+			}
+		}
+	}
+}
+
 void RepoScene::addMetadata(
 	RepoNodeSet &metadata,
 	const bool  &exactMatch,

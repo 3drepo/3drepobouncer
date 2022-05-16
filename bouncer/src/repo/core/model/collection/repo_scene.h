@@ -559,6 +559,12 @@ namespace repo {
 					RepoNode  *child,
 					const bool      &noUpdate = false);
 
+				void addInheritance(
+					const GraphType &gType,
+					const RepoNodeSet &parentNodes,
+					RepoNode  *child,
+					const bool      &noUpdate = false);
+
 				/**
 				* Get children nodes of a specified parent
 				* @param g graph to retrieve from

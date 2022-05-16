@@ -45,6 +45,7 @@ bool TransformationReductionOptimizer::apply(repo::core::model::RepoScene *scene
 	bool success = false;
 	if (scene && scene->hasRoot(gType))
 	{
+		std::unordered_map < repo::core::model::RepoNode*, repo::core::model::RepoNodeSet> metaToNewParents;
 		auto meshes = scene->getAllMeshes(gType);
 		size_t count = 0;
 		size_t total = meshes.size();
@@ -61,10 +62,16 @@ bool TransformationReductionOptimizer::apply(repo::core::model::RepoScene *scene
 			{
 				repo::core::model::MeshNode *mesh = dynamic_cast<repo::core::model::MeshNode*>(node);
 				if (mesh)
-					applyOptimOnMesh(scene, mesh);
+					applyOptimOnMesh(scene, mesh, metaToNewParents);
 				else
-					repoError << "Failed to dynamically cast a mesh node!!!";
+					repoError << "Failed to dynamically cast a mesh node";
 			}
+		}
+
+		repoInfo << "Wiring up metadata nodes to their new parents...";
+
+		for (const auto &pair : metaToNewParents) {
+			scene->addInheritance(gType, pair.second, pair.first);
 		}
 
 		repoInfo << "Mesh Optimisation complete. Number of transformations has been reduced from "
@@ -102,7 +109,9 @@ bool TransformationReductionOptimizer::apply(repo::core::model::RepoScene *scene
 
 void TransformationReductionOptimizer::applyOptimOnMesh(
 	repo::core::model::RepoScene *scene,
-	repo::core::model::MeshNode  *mesh)
+	repo::core::model::MeshNode  *mesh,
+	std::unordered_map < repo::core::model::RepoNode*, repo::core::model::RepoNodeSet> &metaToNewParents
+)
 {
 	/*
 	* Assimp importer generates an extra transformation as a parent for a mesh
@@ -112,7 +121,7 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 	*/
 	std::vector<repo::core::model::RepoNode*> transParents =
 		scene->getParentNodesFiltered(gType,
-		mesh, repo::core::model::NodeType::TRANSFORMATION);
+			mesh, repo::core::model::NodeType::TRANSFORMATION);
 
 	if (transParents.size() == 1)
 	{
@@ -137,16 +146,16 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 				{
 					switch (child->getTypeAsEnum())
 					{
-						case repo::core::model::NodeType::TRANSFORMATION:
-							++transSiblingCount;
-							break;
-						case repo::core::model::NodeType::MESH:
-							meshVector.push_back(child);
-							break;
-						case repo::core::model::NodeType::METADATA:
-							metaVector.push_back(child);
-							break;
-					}					
+					case repo::core::model::NodeType::TRANSFORMATION:
+						++transSiblingCount;
+						break;
+					case repo::core::model::NodeType::MESH:
+						meshVector.push_back(child);
+						break;
+					case repo::core::model::NodeType::METADATA:
+						metaVector.push_back(child);
+						break;
+					}
 				}
 
 				bool noTransSiblings = transSiblingCount == 0;
@@ -159,11 +168,15 @@ void TransformationReductionOptimizer::applyOptimOnMesh(
 
 				if (!strictMode && meshVector.size() || absorbTrans)
 				{
-
 					//connect all metadata to children mesh
 					for (const auto &meta : metaVector)
 					{
-						scene->addInheritance(gType, mesh, meta);
+						if (metaToNewParents.find(meta) == metaToNewParents.end()) {
+							metaToNewParents[meta] = { mesh };
+						}
+						else {
+							metaToNewParents[meta].insert(mesh);
+						}
 					}
 
 					//change mesh name FIXME: this is a bit hacky.
@@ -241,7 +254,7 @@ void TransformationReductionOptimizer::applyOptimOnCamera(
 	*/
 	std::vector<repo::core::model::RepoNode*> transParents =
 		scene->getParentNodesFiltered(gType,
-		camera, repo::core::model::NodeType::TRANSFORMATION);
+			camera, repo::core::model::NodeType::TRANSFORMATION);
 
 	if (transParents.size() == 1)
 	{
@@ -267,7 +280,7 @@ void TransformationReductionOptimizer::applyOptimOnCamera(
 
 				std::vector<repo::core::model::RepoNode*> granTransParents =
 					scene->getParentNodesFiltered(gType,
-					trans, repo::core::model::NodeType::TRANSFORMATION);
+						trans, repo::core::model::NodeType::TRANSFORMATION);
 
 				if (sameName && noMeshSiblings && noTransSiblings && granTransParents.size() == 1)
 				{
@@ -288,7 +301,7 @@ void TransformationReductionOptimizer::applyOptimOnCamera(
 							{
 								scene->abandonChild(gType,
 									parentSharedID, node, false, true);
-								if (!isIdentity && node->positionDependant()){
+								if (!isIdentity && node->positionDependant()) {
 									//Parent is not the identity matrix, we need to reapply the transformation if
 									//the node is position dependant
 									node->swap(node->cloneAndApplyTransformation(trans->getTransMatrix(false)));
