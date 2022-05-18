@@ -30,11 +30,6 @@
 		"level": 10
 	},
 	"defaultStorage": "db",
-	"mongoimport":{
-		"writeConcern": {
-			"w": 1
-		}
-	},
 	"unity":
 	{
 		"project": "C:\\unity.bat",

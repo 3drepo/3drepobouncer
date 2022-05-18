@@ -43,7 +43,6 @@ const runMongoImport = async (database, collection, filePath) => {
 		'--authenticationDatabase', 'admin',
 		'--db', database,
 		'--collection', collection,
-		'--writeConcern', JSON.stringify(config.mongoimport.writeConcern),
 		'--file', filePath,
 	];
 
