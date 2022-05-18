@@ -37,8 +37,6 @@ const applyDefaultValuesIfUndefined = (config) => {
 	config.rabbitmq.waitBeforeShutdownMS = config.rabbitmq.waitBeforeShutdownMS || 60000;
 
 	// toy project configurations
-	config.mongoimport = config.mongoimport || {};
-	config.mongoimport.writeConcern = config.mongoimport.writeConcern || { w: 1 };
 	config.toyModelDir = config.toyModelDir || path.resolve(__dirname, '../../toy');
 
 	// logging related
