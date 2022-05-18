@@ -11,6 +11,7 @@
     "restart": "npm stop; npm start",
     "lint": "eslint --ext .js src",
     "run-worker": "node src/scripts/bouncer_worker.js",
+    "run-rename": "node src/scripts/rename_toy.js",
     "run-worker-trace": "node --trace-warnings src/scripts/bouncer_worker.js"
   },
   "dependencies": {
