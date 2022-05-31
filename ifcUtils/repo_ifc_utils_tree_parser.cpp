@@ -424,7 +424,7 @@ repo::ifcUtility::SCHEMA_NS::TreeParser::Actions_t repo::ifcUtility::SCHEMA_NS::
 		}
 		action.takeRefsAsChildren = false;
 	}
-	else if (auto eleType = dynamic_cast<const IfcSchema::IfcElementType *>(element)) {
+	else if (auto eleType = dynamic_cast<const IfcSchema::IfcTypeObject *>(element)) {
 		if (eleType->hasHasPropertySets()) {
 			auto propSets = eleType->HasPropertySets();
 			extraChildren.insert(extraChildren.end(), propSets->begin(), propSets->end());
@@ -662,10 +662,10 @@ std::pair<std::string, std::string> repo::ifcUtility::SCHEMA_NS::TreeParser::pro
 			else {
 				repoError << "Unrecognised sub unit type: " << ele->Unit()->data().toString();
 			}
-		}
+	}
 		unitType = IfcSchema::IfcDerivedUnitEnum::ToString(units->UnitType());
 		unitsLabel = ss.str();
-	}
+}
 	else if (typeName == IFC_TYPE_DERIVED_UNIT_ELEMENT)
 	{
 		auto units = static_cast<const IfcSchema::IfcDerivedUnitElement *>(element);
@@ -1266,7 +1266,7 @@ void  repo::ifcUtility::SCHEMA_NS::TreeParser::generateClassificationInformation
 					metaValues[constructMetadataLabel("Name", classificationName)] = classificationName;
 					metaValues[constructMetadataLabel("Source", classificationName)] = refSource->Source();
 #if DEFINED_Ifc4
-				}
+			}
 #endif
 #if DEFINED_Ifc2x3
 				int editionIdx = -1;
@@ -1310,7 +1310,7 @@ void  repo::ifcUtility::SCHEMA_NS::TreeParser::generateClassificationInformation
 					metaValues[constructMetadataLabel("Edition date", classificationName)] = refSource->EditionDate();
 #endif
 				}
-			}
+				}
 			const auto refPrefix = constructMetadataLabel("Reference", classificationName);
 			if (reference->hasName())
 				metaValues[constructMetadataLabel("Name", refPrefix)] = reference->Name();
@@ -1325,5 +1325,5 @@ void  repo::ifcUtility::SCHEMA_NS::TreeParser::generateClassificationInformation
 			if (reference->hasLocation())
 				metaValues[constructMetadataLabel("Location", refPrefix)] = reference->Location();
 		}
+		}
 	}
-}
