@@ -431,8 +431,13 @@ repo::ifcUtility::SCHEMA_NS::TreeParser::Actions_t repo::ifcUtility::SCHEMA_NS::
 		}
 
 		action.createElement = false;
-		action.traverseChildren = false;
+		action.traverseChildren = true;
 		action.cacheMetadata = true;
+		action.takeRefsAsChildren = false;
+	}
+	else if (auto eleType = dynamic_cast<const IfcSchema::IfcPropertyDefinition *>(element)) {
+		action.createElement = false;
+		action.traverseChildren = false;
 		action.takeRefsAsChildren = false;
 	}
 	else if (
