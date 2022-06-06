@@ -92,6 +92,12 @@ if(NOT ${IFCOPENSHELL_FOUND})
 	message(FATAL_ERROR "Cannot find IFCOpenShell")
 endif()
 
+#===============IFCPP==================
+find_package(IFCPP REQUIRED)
+if(NOT ${IFCPP_FOUND})
+	message(FATAL_ERROR "Cannot find IFCPlusPlus")
+endif()
+
 #===================== ODA ============================
 if (ODA_SUPPORT)
 	add_definitions(-D_TOOLKIT_IN_DLL_)

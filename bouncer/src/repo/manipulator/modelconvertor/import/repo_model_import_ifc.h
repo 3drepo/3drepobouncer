@@ -66,7 +66,7 @@ namespace repo {
 				*/
 				virtual bool importModel(std::string filePath, uint8_t &err);
 
-				virtual bool requireReorientation() const { return true; }
+				virtual bool requireReorientation() const { return false; }
 
 			protected:
 
