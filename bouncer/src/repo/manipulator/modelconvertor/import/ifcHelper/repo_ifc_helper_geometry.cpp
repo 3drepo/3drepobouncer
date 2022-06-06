@@ -19,6 +19,8 @@
 * Allows geometry creation using ifcopenshell
 */
 
+#define NOMINMAX
+
 #include <ifcpp/model/BuildingModel.h>
 #include <ifcpp/reader/ReaderSTEP.h>
 #include <ifcpp/geometry/Carve/GeometryConverter.h>
@@ -85,7 +87,7 @@ repo::core::model::MeshNode* processMesh(const carve::mesh::Mesh<3> * mesh, cons
 				vert0 = matrix * vert0;
 				vert1 = matrix * vert1;
 				vert2 = matrix * vert2;
-				auto firstVertex = (uint32_t)vertices.size() + 1;
+				auto firstVertex = (uint32_t)vertices.size();
 				vertices.push_back({ (float)vert0.x, (float)vert0.z, (float)-vert0.y });
 				vertices.push_back({ (float)vert1.x, (float)vert1.z, (float)-vert1.y });
 				vertices.push_back({ (float)vert2.x, (float)vert2.z, (float)-vert2.y });
@@ -98,7 +100,18 @@ repo::core::model::MeshNode* processMesh(const carve::mesh::Mesh<3> * mesh, cons
 		}
 	}
 
-	return vertices.size() ? new repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces)) : nullptr;
+	auto bbox = mesh->getAABB();
+	auto min = bbox.min();
+	auto max = bbox.max();
+
+	const std::vector<std::vector<float>> boundingBox = {
+		{ (float)min.x, (float)min.z, (float)(-min.y) },
+		{ (float)max.x, (float)max.z, (float)(-max.y) },
+	};
+
+	return vertices.size() ?
+		new repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces, std::vector<repo::lib::RepoVector3D>(), boundingBox))
+		: nullptr;
 }
 
 std::vector<repo::core::model::MeshNode*> processShapeData(
@@ -164,6 +177,8 @@ bool IFCUtilsGeometry::generateGeometry(
 	auto geomSettings = geometryConv->getGeomSettings();
 	auto shapeData = geometryConv->getShapeInputData();
 
+	std::vector<repo::lib::RepoUUID> meshSharedIds;
+
 	for (const auto &shape : shapeData)
 	{
 		if (shape.second) {
@@ -171,9 +186,21 @@ bool IFCUtilsGeometry::generateGeometry(
 			if (productGeos.size()) {
 				std::shared_ptr<IfcObjectDefinition> objDef(shape.second->m_ifc_object_definition);
 				meshes[toNString(objDef->m_GlobalId->m_value)] = productGeos;
+				for (const auto &mesh : productGeos)
+					meshSharedIds.push_back(mesh->getSharedID());
 			}
 		}
 	}
+
+	// create default mat
+
+	repo_material_t matProp;
+	matProp.diffuse = { 0.5, 0.0, 0.0, 1 };
+
+	auto matNode = repo::core::model::RepoBSONFactory::makeMaterialNode(matProp, "Default", meshSharedIds);
+	materials["Default"] = new repo::core::model::MaterialNode(matNode);
+
+	offset = { 0,0,0 };
 
 	//std::vector<std::vector<repo_face_t>> allFaces;
 	//std::vector<std::vector<double>> allVertices;
