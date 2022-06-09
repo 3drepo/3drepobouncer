@@ -60,9 +60,15 @@ std::string toNString(const std::wstring &str) {
 	return narrow;
 }
 
-repo::core::model::MeshNode* processMesh(const carve::mesh::Mesh<3> * mesh, const carve::math::Matrix &matrix, double minTriArea) {
+repo::core::model::MeshNode* processMesh(
+	const carve::mesh::Mesh<3> * mesh,
+	const carve::math::Matrix &matrix,
+	double minTriArea,
+	const vec3 &offsetVec
+) {
 	std::vector<repo_face_t> faces;
 	std::vector<repo::lib::RepoVector3D> vertices;
+
 	for (const auto &face : mesh->faces) {
 		const size_t nVertices = face->nVertices();
 		auto e = face->edge;
@@ -84,13 +90,13 @@ repo::core::model::MeshNode* processMesh(const carve::mesh::Mesh<3> * mesh, cons
 			double area = (carve::geom::cross(v0v1, v0v2).length())*0.5;
 			if (abs(area) > minTriArea)   // skip degenerated triangle
 			{
-				vert0 = matrix * vert0;
-				vert1 = matrix * vert1;
-				vert2 = matrix * vert2;
+				vert0 = matrix * vert0 - offsetVec;
+				vert1 = matrix * vert1 - offsetVec;
+				vert2 = matrix * vert2 - offsetVec;
 				auto firstVertex = (uint32_t)vertices.size();
-				vertices.push_back({ (float)vert0.x, (float)vert0.z, (float)-vert0.y });
-				vertices.push_back({ (float)vert1.x, (float)vert1.z, (float)-vert1.y });
-				vertices.push_back({ (float)vert2.x, (float)vert2.z, (float)-vert2.y });
+				vertices.push_back({ (float)vert0.x, (float)vert0.y, (float)vert0.z });
+				vertices.push_back({ (float)vert1.x, (float)vert1.y, (float)vert1.z });
+				vertices.push_back({ (float)vert2.x, (float)vert2.y, (float)vert2.z });
 
 				faces.push_back({ firstVertex, firstVertex + 1, firstVertex + 2 });
 			}
@@ -101,12 +107,12 @@ repo::core::model::MeshNode* processMesh(const carve::mesh::Mesh<3> * mesh, cons
 	}
 
 	auto bbox = mesh->getAABB();
-	auto min = bbox.min();
-	auto max = bbox.max();
+	auto min = matrix * bbox.min() - offsetVec;
+	auto max = matrix * bbox.max() - offsetVec;
 
 	const std::vector<std::vector<float>> boundingBox = {
-		{ (float)min.x, (float)min.z, (float)(-min.y) },
-		{ (float)max.x, (float)max.z, (float)(-max.y) },
+		{ (float)min.x, (float)min.y, (float)(min.z) },
+		{ (float)max.x, (float)max.y, (float)(max.z) },
 	};
 
 	return vertices.size() ?
@@ -116,7 +122,8 @@ repo::core::model::MeshNode* processMesh(const carve::mesh::Mesh<3> * mesh, cons
 
 std::vector<repo::core::model::MeshNode*> processShapeData(
 	const std::shared_ptr<ProductShapeData> &shapeData,
-	const double &minTriArea
+	const double &minTriArea,
+	const vec3 &offsetVec
 ) {
 	std::vector<repo::core::model::MeshNode*> meshNodes;
 	if (shapeData->m_ifc_object_definition.expired()) return meshNodes;
@@ -138,7 +145,7 @@ std::vector<repo::core::model::MeshNode*> processShapeData(
 				CSG_Adapter::retriangulateMeshSet(meshOpen);
 				for (const auto &mesh : meshOpen->meshes)
 				{
-					auto meshNode = processMesh(mesh, shapeData->getTransform(), minTriArea);
+					auto meshNode = processMesh(mesh, shapeData->getTransform(), minTriArea, offsetVec);
 					if (meshNode) {
 						meshNodes.push_back(meshNode);
 					}
@@ -149,7 +156,7 @@ std::vector<repo::core::model::MeshNode*> processShapeData(
 				CSG_Adapter::retriangulateMeshSet(meshGroup);
 				for (const auto &mesh : meshGroup->meshes)
 				{
-					auto meshNode = processMesh(mesh, shapeData->getTransform(), minTriArea);
+					auto meshNode = processMesh(mesh, shapeData->getTransform(), minTriArea, offsetVec);
 					if (meshNode) {
 						meshNodes.push_back(meshNode);
 					}
@@ -181,8 +188,34 @@ bool IFCUtilsGeometry::generateGeometry(
 
 	for (const auto &shape : shapeData)
 	{
+		auto shapePtr = shape.second;
+		if (shapePtr) {
+			carve::geom3d::AABB bbox;
+			shapePtr->computeBoundingBox(bbox, true);
+
+			auto min = shapePtr->getTransform() * bbox.min();
+			if (offset.size()) {
+				offset[0] = offset[0] < min.x ? offset[0] : min.x;
+				offset[1] = offset[1] < min.y ? offset[1] : min.y;
+				offset[2] = offset[2] < min.z ? offset[2] : min.z;
+			}
+			else {
+				offset = { min.x, min.y , min.z };
+			}
+		}
+	};
+
+	vec3 offsetVec;
+	if (offset.size()) {
+		offsetVec.x = offset[0];
+		offsetVec.y = offset[1];
+		offsetVec.z = offset[2];
+	}
+
+	for (const auto &shape : shapeData)
+	{
 		if (shape.second) {
-			auto productGeos = processShapeData(shape.second, geomSettings->getMinTriangleArea());
+			auto productGeos = processShapeData(shape.second, geomSettings->getMinTriangleArea(), offsetVec);
 			if (productGeos.size()) {
 				std::shared_ptr<IfcObjectDefinition> objDef(shape.second->m_ifc_object_definition);
 				meshes[toNString(objDef->m_GlobalId->m_value)] = productGeos;
@@ -193,14 +226,14 @@ bool IFCUtilsGeometry::generateGeometry(
 	}
 
 	// create default mat
-
+/*
 	repo_material_t matProp;
 	matProp.diffuse = { 0.5, 0.0, 0.0, 1 };
 
 	auto matNode = repo::core::model::RepoBSONFactory::makeMaterialNode(matProp, "Default", meshSharedIds);
-	materials["Default"] = new repo::core::model::MaterialNode(matNode);
+	materials["Default"] = new repo::core::model::MaterialNode(matNode);*/
 
-	offset = { 0,0,0 };
+	model->clearIfcModel();
 
 	//std::vector<std::vector<repo_face_t>> allFaces;
 	//std::vector<std::vector<double>> allVertices;
