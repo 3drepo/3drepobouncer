@@ -73,7 +73,7 @@ namespace repo {
 					* this object
 					* @return returns a map of mesh nodes, empty if process failed
 					*/
-					std::unordered_map < std::string, repo::core::model::MaterialNode* >
+					std::vector <repo::core::model::MaterialNode* >
 						getGeneratedMaterials()
 					{
 						return materials;
@@ -91,7 +91,7 @@ namespace repo {
 				protected:
 					const std::string file;
 					std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> meshes;
-					std::unordered_map<std::string, repo::core::model::MaterialNode*> materials;
+					std::vector<repo::core::model::MaterialNode*> materials;
 					std::vector<double> offset;
 				};
 			}

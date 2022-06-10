@@ -28,7 +28,6 @@ IFCUtilsParser::~IFCUtilsParser()
 void convertTreeToNodes(
 	const TransNode &tree,
 	std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> &meshes,
-	std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
 	repo::core::model::RepoNodeSet                                             &metaSet,
 	repo::core::model::RepoNodeSet                                             &transSet,
 	const std::vector<repo::lib::RepoUUID>                                     &parents = std::vector<repo::lib::RepoUUID>()
@@ -57,14 +56,14 @@ void convertTreeToNodes(
 	}
 
 	for (const auto child : tree.children) {
-		convertTreeToNodes(child, meshes, materials, metaSet, transSet, childrenParents);
+		convertTreeToNodes(child, meshes, metaSet, transSet, childrenParents);
 	}
 }
 
 repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
 	std::string                                                                &errMsg,
 	std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> &meshes,
-	std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
+	std::vector<repo::core::model::MaterialNode*>          &materials,
 	const std::vector<double>                                                  &offset
 )
 {
@@ -89,8 +88,8 @@ repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
 
 	repoDebug << "Tree generated. root node is " << tree.name << " with " << tree.children.size() << " children";
 
-	repo::core::model::RepoNodeSet dummy, meshSet, matSet, metaSet, transSet;
-	convertTreeToNodes(tree, meshes, materials, metaSet, transSet);
+	repo::core::model::RepoNodeSet dummy, meshSet, matSet(materials.begin(), materials.end()), metaSet, transSet;
+	convertTreeToNodes(tree, meshes, metaSet, transSet);
 
 	if (!transSet.size())
 	{
@@ -105,11 +104,6 @@ repo::core::model::RepoScene* IFCUtilsParser::generateRepoScene(
 			}
 			meshSet.insert(mesh);
 		}
-	}
-
-	for (auto &m : materials)
-	{
-		matSet.insert(m.second);
 	}
 
 	std::vector<std::string> files = { file };

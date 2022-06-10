@@ -71,7 +71,7 @@ namespace repo {
 			protected:
 
 				std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> meshes;
-				std::unordered_map<std::string, repo::core::model::MaterialNode*> materials;
+				std::vector<repo::core::model::MaterialNode*> materials;
 				std::vector<double> offset;
 				std::string ifcFile;
 				bool partialFailure;

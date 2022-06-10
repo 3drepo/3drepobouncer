@@ -59,7 +59,7 @@ namespace repo {
 					repo::core::model::RepoScene* generateRepoScene(
 						std::string                                                                &errMsg,
 						std::unordered_map<std::string, std::vector<repo::core::model::MeshNode*>> &meshes,
-						std::unordered_map<std::string, repo::core::model::MaterialNode*>          &materials,
+						std::vector<repo::core::model::MaterialNode*>                              &materials,
 						const std::vector<double>                                                  &offset
 					);
 
