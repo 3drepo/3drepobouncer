@@ -71,7 +71,6 @@ repo::core::model::MeshNode* processMesh(
 	repo::lib::VertexMap32 vertexMap;
 
 	for (const auto &face : mesh->faces) {
-		const size_t nVertices = face->nVertices();
 		auto e = face->edge;
 		if (face->n_edges == 3)
 		{
