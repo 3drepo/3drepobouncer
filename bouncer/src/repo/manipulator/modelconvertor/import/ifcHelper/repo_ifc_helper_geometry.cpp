@@ -30,6 +30,7 @@
 
 #include "repo_ifc_helper_geometry.h"
 #include "../../../../core/model/bson/repo_bson_factory.h"
+#include "../../../../lib/datastructure/vertex_map.h"
 #include <boost/filesystem.hpp>
 #include "../repo_model_import_config_default_values.h"
 
@@ -67,9 +68,7 @@ repo::core::model::MeshNode* processMesh(
 	const vec3 &offsetVec
 ) {
 	std::vector<repo_face_t> faces;
-	std::vector<repo::lib::RepoVector3D> vertices;
-	std::unordered_map<void*, int> vertexToEdge;
-	std::set<void*> vTracker;
+	repo::lib::VertexMap32 vertexMap;
 
 	for (const auto &face : mesh->faces) {
 		const size_t nVertices = face->nVertices();
@@ -95,37 +94,20 @@ repo::core::model::MeshNode* processMesh(
 				vert0 = matrix * vert0 - offsetVec;
 				vert1 = matrix * vert1 - offsetVec;
 				vert2 = matrix * vert2 - offsetVec;
+
+				repo::lib::RepoVector3D repoVec0 = { (float)vert0.x, (float)vert0.y, (float)vert0.z };
+				repo::lib::RepoVector3D repoVec1 = { (float)vert1.x, (float)vert1.y, (float)vert1.z };
+				repo::lib::RepoVector3D repoVec2 = { (float)vert2.x, (float)vert2.y, (float)vert2.z };
+
+				repo::lib::RepoVector3D normal = (repoVec1 - repoVec0).crossProduct(repoVec2 - repoVec1);
+				normal.normalize();
+
 				repo_face_t face;
-				if (vertexToEdge.find(v0) == vertexToEdge.end()) {
-					auto idx = vertices.size();
-					vertices.push_back({ (float)vert0.x, (float)vert0.y, (float)vert0.z });
-					face.push_back(idx);
-					vertexToEdge[v0] = idx;
-				}
-				else {
-					face.push_back(vertexToEdge[v0]);
-				};
+				auto res0 = vertexMap.find(repoVec0, normal);
+				auto res1 = vertexMap.find(repoVec1, normal);
+				auto res2 = vertexMap.find(repoVec2, normal);
 
-				if (vertexToEdge.find(v1) == vertexToEdge.end()) {
-					auto idx = vertices.size();
-					vertices.push_back({ (float)vert1.x, (float)vert1.y, (float)vert1.z });
-					face.push_back(idx);
-					vertexToEdge[v1] = idx;
-				}
-				else {
-					face.push_back(vertexToEdge[v1]);
-				};
-
-				if (vertexToEdge.find(v2) == vertexToEdge.end()) {
-					auto idx = vertices.size();
-					vertices.push_back({ (float)vert2.x, (float)vert2.y, (float)vert2.z });
-					face.push_back(idx);
-					vertexToEdge[v2] = idx;
-				}
-				else {
-					face.push_back(vertexToEdge[v2]);
-				};
-				faces.push_back(face);
+				faces.push_back({ res0.index, res1.index, res2.index });
 			}
 		}
 		else {
@@ -142,8 +124,8 @@ repo::core::model::MeshNode* processMesh(
 		{ (float)max.x, (float)max.y, (float)(max.z) },
 	};
 
-	return vertices.size() ?
-		new repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces, std::vector<repo::lib::RepoVector3D>(), boundingBox))
+	return vertexMap.vertices.size() ?
+		new repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(vertexMap.vertices, faces, vertexMap.normals, boundingBox))
 		: nullptr;
 }
 

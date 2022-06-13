@@ -20,11 +20,11 @@
 #include "repo_vector2d.h"
 #include "repo_vector3d.h"
 
-namespace repo{
-	namespace lib{
-		using RepoVector2D = _RepoVector2D < float > ;
-		using RepoVector3D = _RepoVector3D < float > ;
-		using RepoVector3D64 = _RepoVector3D < double > ;
+namespace repo {
+	namespace lib {
+		using RepoVector2D = _RepoVector2D < float >;
+		using RepoVector3D = _RepoVector3D < float >;
+		using RepoVector3D64 = _RepoVector3D < double >;
 
 		template <typename T>
 		std::ostream& operator<<(std::ostream& stream, const _RepoVector2D<T>& v)
