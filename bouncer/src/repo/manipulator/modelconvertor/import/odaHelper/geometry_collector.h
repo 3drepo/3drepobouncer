@@ -20,8 +20,8 @@
 #include "../../../../error_codes.h"
 #include "../../../../core/model/bson/repo_bson_factory.h"
 #include "../../../../lib/datastructure/repo_structs.h"
+#include "../../../../lib/datastructure/vertex_map.h"
 #include "helper_functions.h"
-#include "vertex_map.h"
 
 #include <fstream>
 #include <vector>
@@ -47,7 +47,7 @@ namespace repo {
 				struct mesh_data_t {
 					std::vector<repo_face_t> faces;
 					std::vector<std::vector<float>> boundingBox;
-					VertexMap vertexMap;
+					repo::lib::VertexMap vertexMap;
 					std::string name;
 					std::string layerName;
 					std::string groupName;

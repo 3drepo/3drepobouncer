@@ -68,6 +68,8 @@ repo::core::model::MeshNode* processMesh(
 ) {
 	std::vector<repo_face_t> faces;
 	std::vector<repo::lib::RepoVector3D> vertices;
+	std::unordered_map<void*, int> vertexToEdge;
+	std::set<void*> vTracker;
 
 	for (const auto &face : mesh->faces) {
 		const size_t nVertices = face->nVertices();
@@ -93,12 +95,37 @@ repo::core::model::MeshNode* processMesh(
 				vert0 = matrix * vert0 - offsetVec;
 				vert1 = matrix * vert1 - offsetVec;
 				vert2 = matrix * vert2 - offsetVec;
-				auto firstVertex = (uint32_t)vertices.size();
-				vertices.push_back({ (float)vert0.x, (float)vert0.y, (float)vert0.z });
-				vertices.push_back({ (float)vert1.x, (float)vert1.y, (float)vert1.z });
-				vertices.push_back({ (float)vert2.x, (float)vert2.y, (float)vert2.z });
+				repo_face_t face;
+				if (vertexToEdge.find(v0) == vertexToEdge.end()) {
+					auto idx = vertices.size();
+					vertices.push_back({ (float)vert0.x, (float)vert0.y, (float)vert0.z });
+					face.push_back(idx);
+					vertexToEdge[v0] = idx;
+				}
+				else {
+					face.push_back(vertexToEdge[v0]);
+				};
 
-				faces.push_back({ firstVertex, firstVertex + 1, firstVertex + 2 });
+				if (vertexToEdge.find(v1) == vertexToEdge.end()) {
+					auto idx = vertices.size();
+					vertices.push_back({ (float)vert1.x, (float)vert1.y, (float)vert1.z });
+					face.push_back(idx);
+					vertexToEdge[v1] = idx;
+				}
+				else {
+					face.push_back(vertexToEdge[v1]);
+				};
+
+				if (vertexToEdge.find(v2) == vertexToEdge.end()) {
+					auto idx = vertices.size();
+					vertices.push_back({ (float)vert2.x, (float)vert2.y, (float)vert2.z });
+					face.push_back(idx);
+					vertexToEdge[v2] = idx;
+				}
+				else {
+					face.push_back(vertexToEdge[v2]);
+				};
+				faces.push_back(face);
 			}
 		}
 		else {

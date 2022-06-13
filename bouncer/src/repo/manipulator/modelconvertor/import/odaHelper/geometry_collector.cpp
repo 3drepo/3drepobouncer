@@ -189,7 +189,7 @@ void GeometryCollector::addFace(
 	for (auto i = 0; i < vertices.size(); ++i) {
 		auto& v = vertices[i];
 
-		VertexMap::result_t vertexReference;
+		repo::lib::VertexMap::result_t vertexReference;
 		if (hasNormals)
 		{
 			if (hasUvs)
