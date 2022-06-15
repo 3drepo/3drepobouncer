@@ -76,14 +76,14 @@ repo::core::model::MeshNode* processPolyLine(
 			for (size_t i = 0; i < line->vertexCount(); ++i) {
 				if (i <= polyLineSet->vertices.size()) {
 					auto v = matrix * line->vertex(i)->v - offsetVec;
-					auto vertex = repo::lib::RepoVector3D({
+					auto vertex = repo::lib::RepoVector3D(
 						(float)(v.x),
 						(float)(v.y),
 						(float)(v.z)
-						});
+					);
 					auto res = vertexMap.find(vertex);
 					if (lastIndx >= 0) {
-						repo_face_t face = { (uint32_t)lastIndx ,res.index };
+						repo_face_t face = { (uint32_t)lastIndx , res.index };
 						faces.push_back(face);
 
 						if (min.size()) {
