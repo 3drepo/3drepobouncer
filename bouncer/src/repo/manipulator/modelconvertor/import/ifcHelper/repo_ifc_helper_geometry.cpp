@@ -36,7 +36,7 @@
 
 using namespace repo::manipulator::modelconvertor::ifcHelper;
 
-const double eps = 1.5e-08;
+const double eps = 1.5e-8;
 
 IFCUtilsGeometry::IFCUtilsGeometry(const std::string &file, const modelConverter::ModelImportConfig &settings) :
 	file(file)
@@ -59,6 +59,60 @@ std::string toNString(const std::wstring &str) {
 	std::string narrow = converter.to_bytes(str);
 
 	return narrow;
+}
+
+repo::core::model::MeshNode* processPolyLine(
+	const std::shared_ptr<carve::input::PolylineSetData> &line,
+	const carve::math::Matrix &matrix,
+	const vec3 &offsetVec
+) {
+	if (line && line->points.size() > 1 && line->polylines.size()) {
+		std::vector<float> min, max;
+		auto polyLineSet = line->create(carve::input::opts());
+		repo::lib::VertexMap32 vertexMap;
+		std::vector<repo_face_t> faces;
+		for (const auto &line : polyLineSet->lines) {
+			int64_t lastIndx = -1;
+			for (size_t i = 0; i < line->vertexCount(); ++i) {
+				if (i <= polyLineSet->vertices.size()) {
+					auto v = matrix * line->vertex(i)->v - offsetVec;
+					auto vertex = repo::lib::RepoVector3D({
+						(float)(v.x),
+						(float)(v.y),
+						(float)(v.z)
+						});
+					auto res = vertexMap.find(vertex);
+					if (lastIndx >= 0) {
+						repo_face_t face = { (uint32_t)lastIndx ,res.index };
+						faces.push_back(face);
+
+						if (min.size()) {
+							min[0] = min[0] < vertex.x ? min[0] : vertex.x;
+							min[1] = min[1] < vertex.y ? min[1] : vertex.y;
+							min[2] = min[2] < vertex.z ? min[2] : vertex.z;
+
+							max[0] = max[0] < vertex.x ? max[0] : vertex.x;
+							max[1] = max[1] < vertex.y ? max[1] : vertex.y;
+							max[2] = max[2] < vertex.z ? max[2] : vertex.z;
+						}
+						else {
+							min = { vertex.x, vertex.y, vertex.z };
+							max = { vertex.x, vertex.y, vertex.z };
+						}
+					}
+
+					lastIndx = res.index;
+				}
+			}
+		}
+
+		if (vertexMap.vertices.size()) {
+			auto meshNode = new repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(vertexMap.vertices, faces, vertexMap.normals, { min, max }));
+			return meshNode;
+		}
+
+		return nullptr;
+	}
 }
 
 repo::core::model::MeshNode* processMesh(
@@ -196,6 +250,7 @@ std::vector<repo::core::model::MeshNode*> processShapeData(
 			}
 
 			int matId = -1;
+			int lineMat = -2;
 			if (matToUse) {
 				matId = matToUse->m_step_style_id;
 				if (stepIdToMat.find(matId) == stepIdToMat.end()) {
@@ -211,7 +266,6 @@ std::vector<repo::core::model::MeshNode*> processShapeData(
 					stepIdToMat[matId] = new repo::core::model::MaterialNode(matNode);
 				}
 			}
-
 			for (auto &meshOpen : items->m_meshsets_open) {
 				CSG_Adapter::retriangulateMeshSet(meshOpen);
 				for (const auto &mesh : meshOpen->meshes)
@@ -245,6 +299,27 @@ std::vector<repo::core::model::MeshNode*> processShapeData(
 					}
 				}
 			}
+
+			for (const auto &line : items->m_polylines) {
+				auto meshNode = processPolyLine(line, shapeData->getTransform(), offsetVec);
+				if (meshNode) {
+					meshNodes.push_back(meshNode);
+					if (matToMeshes.find(lineMat) == matToMeshes.end()) {
+						matToMeshes[lineMat] = { meshNode->getSharedID() };
+					}
+					else {
+						matToMeshes[lineMat].push_back(meshNode->getSharedID());
+					}
+
+					if (stepIdToMat.find(lineMat) == stepIdToMat.end()) {
+						repo_material_t matProp;
+						matProp.diffuse = { 0,0,0, 1 };
+
+						auto matNode = repo::core::model::RepoBSONFactory::makeMaterialNode(matProp, "DefaultPolyLineMat");
+						stepIdToMat[lineMat] = new repo::core::model::MaterialNode(matNode);
+					}
+				}
+			}
 		}
 	}
 
@@ -261,6 +336,7 @@ bool IFCUtilsGeometry::generateGeometry(
 	stepReader->loadModelFromFile(toWString(file), model);
 	//extract geometry
 	std::shared_ptr<GeometryConverter> geometryConv = std::make_shared<GeometryConverter>(model);
+	repoInfo << " !!!" << geometryConv->getBuildingModel()->getUnitConverter()->getLengthInMeterFactor();
 	geometryConv->setCsgEps(eps* geometryConv->getBuildingModel()->getUnitConverter()->getLengthInMeterFactor());
 	geometryConv->convertGeometry();
 
