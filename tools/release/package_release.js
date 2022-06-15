@@ -40,6 +40,11 @@ const externalLibraries = [
 		extensions: [...exts, ".6"]
 	},
 	{
+		rootEnvVar: "IFCPP_ROOT",
+		subPath: ["lib", "bin"],
+		extensions: exts
+	},
+	{
 		rootEnvVar: "SYNCHRO_READER_ROOT",
 		subPath: ["lib"],
 		subFolder: ["plugins"],

@@ -55,6 +55,9 @@ matrix:
           - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev
           - export OCCT_ROOT=$PWD/OCCT
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
+          - echo ============ IFCPP INSTALL =============
+          - tar -zxf testData/focal/ifcpp.tgz
+          - export IFCPP_ROOT=$PWD/ifcpp
           - echo ============ TEIGHA INSTALL =============
           - wget -q -O teighaLinuxGCC8.3.tgz $TEIGHA_LIBS_2022_11
           - tar -zxf teighaLinuxGCC8.3.tgz
@@ -129,6 +132,9 @@ matrix:
           - sudo apt-get install tk-dev tcl-dev libxmu-dev libxi-dev
           - export OCCT_ROOT=$PWD/OCCT
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
+          - echo ============ IFCPP INSTALL =============
+          - tar -zxf testData/focal/ifcpp.tgz
+          - export IFCPP_ROOT=$PWD/ifcpp
           - echo ============ TEIGHA INSTALL =============
           - wget -q $TEIGHA_FOCAL_LIBS_2021_12
           - tar -zxf teighaLinuxGCC8.3.tgz
