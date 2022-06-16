@@ -79,7 +79,7 @@ matrix:
       before_script:
           - export BOUNCER_DIR=$PWD
           - mkdir build && cd build
-          - cmake -DREPO_BUILD_WRAPPER=ON -DREPO_BUILD_WRAPPER_TESTS=ON -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_CXX_STANDARD=11 -DCMAKE_BUILD_TYPE=Debug -DSYNCHRO_SUPPORT=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
+          - cmake -DREPO_BUILD_WRAPPER=OFF -DREPO_BUILD_WRAPPER_TESTS=OFF -DREPO_BUILD_TOOLS=OFF -DREPO_BUILD_CLIENT=OFF -DREPO_BUILD_TESTS=OFF  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_CXX_STANDARD=11 -DCMAKE_BUILD_TYPE=Debug -DSYNCHRO_SUPPORT=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
           - mongo mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
       script:
           - sudo make -j8 install
