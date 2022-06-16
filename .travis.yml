@@ -56,7 +56,7 @@ matrix:
           - export OCCT_ROOT=$PWD/OCCT
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
           - echo ============ IFCPP INSTALL =============
-          - tar -zxf testData/bouncer/focal/ifcpp.tgz
+          - tar -zxf testData/bouncer/ext_libs/focal/ifcpp.tgz
           - export IFCPP_ROOT=$PWD/ifcpp
           - echo ============ TEIGHA INSTALL =============
           - wget -q -O teighaLinuxGCC8.3.tgz $TEIGHA_LIBS_2022_11
@@ -133,6 +133,7 @@ matrix:
           - export OCCT_ROOT=$PWD/OCCT
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
           - echo ============ IFCPP INSTALL =============
+          - ls testData/focal
           - tar -zxf testData/bouncer/focal/ifcpp.tgz
           - export IFCPP_ROOT=$PWD/ifcpp
           - echo ============ TEIGHA INSTALL =============
