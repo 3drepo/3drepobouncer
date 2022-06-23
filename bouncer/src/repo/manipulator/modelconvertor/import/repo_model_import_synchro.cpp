@@ -72,6 +72,7 @@ bool SynchroModelImport::importModel(std::string filePath, uint8_t &errCode) {
 	repoInfo << "Sequence timezone is set to : " << (settings.getTimeZone().empty() ? "UTC" : settings.getTimeZone());
 	std::string msg;
 	auto synchroErrCode = reader->init(msg);
+
 	if (synchroErrCode != synchro_reader::SynchroError::ERR_OK) {
 		if (synchroErrCode == synchro_reader::SynchroError::ERR_UNSUPPORTED_VERSION_PREV ||
 			synchroErrCode == synchro_reader::SynchroError::ERR_UNSUPPORTED_VERSION_FUTURE
@@ -714,9 +715,24 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 
 		const auto sequenceID = repo::lib::RepoUUID::createUUID();
 
+		auto sequenceStartDate = 1672531200; //1/1/2023
+		auto sequenceEndDate = 1704067200; //1/1/2024
 		repoInfo << "Getting tasks... ";
+		auto tasks = reader->getTasks();
 
-		auto taskFrame = generateTaskInformation(reader->getTasks(), resourceIDsToSharedIDs, scene, sequenceID);
+		for (const auto &task : tasks.tasks) {
+			auto startTime = task.second.startTime;
+			auto endTime = task.second.endTime;
+
+			auto finishedBefore = endTime < sequenceStartDate;
+			auto startsAfter = startTime >= sequenceEndDate;
+
+			if (finishedBefore && startsAfter) {
+				tasks.tasks.erase(task.first);
+			}
+		};
+
+		auto taskFrame = generateTaskInformation(tasks, resourceIDsToSharedIDs, scene, sequenceID);
 
 		auto firstFrame = taskFrame.first;
 		auto lastFrame = taskFrame.second;
@@ -758,7 +774,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 				meshAlphaState[id] = { defaultAlpha, defaultAlpha };
 			}
 		}
-
+		std::set<std::string> transformingResources;
 		for (const auto &lastStateEntry : animation.lastTransformation) {
 			auto resourceID = lastStateEntry.first;
 			if (resourceIDsToRootTransID.find(resourceID) == resourceIDsToRootTransID.end()) {
@@ -775,6 +791,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 
 				auto matInverse = matrix.invert();
 				resourceIDTransState[lastStateEntry.first] = convertMatrixTo3DRepoWorld(matInverse, offset).getData();
+				transformingResources.insert(resourceID);
 			}
 		}
 
@@ -782,13 +799,12 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 		std::unordered_map<float, std::set<std::string>> alphaValueToIDs;
 		std::unordered_map<repo::lib::RepoUUID, std::pair<repo::lib::RepoVector3D64, repo::lib::RepoVector3D64>, repo::lib::RepoUUIDHasher> clipState;
 
-		std::set<std::string> transformingResources;
-
 		int count = 0;
 		auto total = animation.frames.size();
 		int step = total > 10 ? total / 10 : 1;
 
-		if (animation.frames.begin()->first > firstFrame &&
+		if (animation.frames.begin()->first >= sequenceStartDate &&
+			animation.frames.begin()->first > firstFrame &&
 			resourceIDTransState.size()) {
 			//First animation frame is bigger than the task frame
 			//And we have animations... need to reset the state of the transforms.
@@ -800,13 +816,17 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 
 		for (const auto &currentFrame : animation.frames) {
 			auto currentTime = currentFrame.first;
-			firstFrame = std::min(firstFrame, currentTime * 1000);
-			lastFrame = std::max(lastFrame, currentTime * 1000);
+			if (currentTime >= sequenceEndDate) break;
 			updateFrameState(currentFrame.second, resourceIDsToSharedIDs, resourceIDLastTrans, alphaValueToIDs, meshAlphaState, meshColourState, resourceIDTransState, clipState, cam, transformingResources, offset);
-			repo::core::model::RepoSequence::FrameData data;
-			data.ref = generateCache(resourceIDsToSharedIDs, alphaValueToIDs, meshColourState, resourceIDTransState, clipState, cam, stateBuffers);
-			data.timestamp = currentTime;
-			frameData.push_back(data);
+			if (currentTime >= sequenceStartDate) {
+				firstFrame = std::min(firstFrame, currentTime * 1000);
+				lastFrame = std::max(lastFrame, currentTime * 1000);
+				repo::core::model::RepoSequence::FrameData data;
+				data.ref = generateCache(resourceIDsToSharedIDs, alphaValueToIDs, meshColourState, resourceIDTransState, clipState, cam, stateBuffers);
+				data.timestamp = currentTime;
+				frameData.push_back(data);
+			}
+
 			if (++count % step == 0) {
 				repoInfo << "Processed " << count << " of " << total << " frames";
 			};
