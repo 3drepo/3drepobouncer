@@ -69,6 +69,17 @@ inline void assert_in_parallel() {}
 
 } // namespace bvh
 
+/* 
+* The following directives implement a couple of C++14 features used by the bvh
+* library that are not present in the target standard library (c++11).
+* These are guarded as MSVC only goes down to C++14.
+*/
+
+// https://stackoverflow.com/questions/17902405/how-to-implement-make-unique-function-in-c11
+// https://www.fluentcpp.com/2018/05/18/make-sfinae-pretty-2-hidden-beauty-sfinae/
+
+#ifndef _MSC_VER // We explicitly target C++11, and MSVC is the one that doesn't support it, so on any other compiler assume the standard is the nominated one
+
 namespace std {
     template<class T> struct _Unique_if {
         typedef unique_ptr<T> _Single_object;
@@ -102,5 +113,7 @@ namespace std {
     template< bool Condition, typename T = void >
     using enable_if_t = typename std::enable_if<Condition, T>::type;
 }
+
+#endif // ! _MSC_VER
 
 #endif

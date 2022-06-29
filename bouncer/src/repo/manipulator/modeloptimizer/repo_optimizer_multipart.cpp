@@ -37,6 +37,8 @@ auto defaultGraph = repo::core::model::RepoScene::GraphType::DEFAULT;
 static const size_t REPO_MP_MAX_VERTEX_COUNT = 65536;
 static const size_t REPO_MP_MAX_MESHES_IN_SUPERMESH = 5000;
 
+#define CHRONO_DURATION(start) boost::chrono::duration_cast<boost::chrono::milliseconds>(boost::chrono::high_resolution_clock::now() - start).count()
+
 MultipartOptimizer::MultipartOptimizer() :
 	AbstractOptimizer()
 {
@@ -612,6 +614,8 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 
 		//Sort the meshes into 3 different grouping
 		
+		repoInfo << "Sorting " << meshes.size() << " meshes...";
+
 		sortMeshes(scene, meshes, normalMeshes, transparentMeshes, texturedMeshes);		
 
 		repo::core::model::RepoNodeSet mergedMeshes, materials, trans, textures, dummy;
@@ -749,6 +753,9 @@ void MultipartOptimizer::clusterMeshNodes(
 	std::vector<std::vector<repo::core::model::MeshNode>>& clusters
 )
 {
+	repoInfo << "Clustering " << meshes.size() << " meshes...";
+	auto start = boost::chrono::high_resolution_clock::now();
+
 	using Scalar = float;
 	using Bvh = bvh::Bvh<Scalar>;
 	using Vector3 = bvh::Vector3<Scalar>;
@@ -907,6 +914,8 @@ void MultipartOptimizer::clusterMeshNodes(
 
 		clusters.push_back(cluster);
 	}
+
+	repoInfo << "Created " << clusters.size() << " clusters in " << CHRONO_DURATION(start) << " milliseconds.";
 }
 
 bool MultipartOptimizer::processMeshGroup(
