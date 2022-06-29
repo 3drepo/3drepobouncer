@@ -35,8 +35,7 @@ typedef std::tuple<repo::core::model::RepoScene::GraphType, repo::lib::RepoUUID,
 namespace repo {
 	namespace manipulator {
 		namespace modeloptimizer {
-
-			class TransformationReductionOptimizer : AbstractOptimizer{
+			class TransformationReductionOptimizer : AbstractOptimizer {
 			public:
 				/**
 				* Default constructor
@@ -70,7 +69,9 @@ namespace repo {
 				*/
 				void applyOptimOnMesh(
 					repo::core::model::RepoScene *scene,
-					repo::core::model::MeshNode  *mesh);
+					repo::core::model::MeshNode  *mesh,
+					std::unordered_map < repo::core::model::RepoNode*, repo::core::model::RepoNodeSet> &metaToNewParents
+				);
 
 				/**
 				* Apply optimization on the camera, given
