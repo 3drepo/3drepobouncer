@@ -596,7 +596,7 @@ uint8_t RepoScene::commit(
 		{
 			repoInfo << "Commited revision node, commiting scene nodes...";
 			//commited the revision node, commit the modification on the scene
-			if (success &= commitSceneChanges(handler, errMsg))
+			if (success &= commitSceneChanges(handler, revId, errMsg))
 			{
 				handler->createCollection(databaseName, projectName + "." + REPO_COLLECTION_ISSUES);
 
@@ -757,14 +757,6 @@ bool RepoScene::commitRevisionNode(
 		parent.push_back(revNode->getUniqueID());
 	}
 
-	std::vector<repo::lib::RepoUUID> uniqueIDs;
-
-	// Using a more standard transform to cope with use of unordered_map
-	for (auto& keyVal : graph.nodesByUniqueID)
-	{
-		uniqueIDs.push_back(keyVal.first);
-	}
-
 	repoTrace << "Committing Revision Node....";
 
 	std::vector<std::string> fileNames;
@@ -775,15 +767,17 @@ bool RepoScene::commitRevisionNode(
 	}
 
 	newRevNode =
-		new RevisionNode(RepoBSONFactory::makeRevisionNode(userName, branch, revId, uniqueIDs,
+		new RevisionNode(RepoBSONFactory::makeRevisionNode(userName, branch, revId,
 			fileNames, parent, worldOffset, message, tag));
 	*newRevNode = newRevNode->cloneAndUpdateStatus(RevisionNode::UploadStatus::GEN_DEFAULT);
 
 	if (newRevNode)
 	{
 		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_HISTORY, BSON(REPO_NODE_REVISION_LABEL_TIMESTAMP << -1));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON("metadata.IFC GUID" << 1 << REPO_NODE_LABEL_PARENTS << 1));
-		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_LABEL_SHARED_ID << 1 << REPO_LABEL_TYPE << 1 << REPO_LABEL_ID << 1));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_REVISION_ID << 1 << "metadata.key" << 1 << "metadata.value" << 1));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON("metadata.key" << 1 << "metadata.value" << 1));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_REVISION_ID << 1 << REPO_NODE_LABEL_SHARED_ID << 1 << REPO_LABEL_TYPE << 1));
+		handler->createIndex(databaseName, projectName + "." + REPO_COLLECTION_SCENE, BSON(REPO_NODE_LABEL_SHARED_ID << 1));
 		//Creation of the revision node will append unique id onto the filename (e.g. <uniqueID>chair.obj)
 		//we need to store the file in GridFS under the new name
 		std::vector<std::string> newRefFileNames = newRevNode->getOrgFiles();
@@ -855,6 +849,7 @@ bool RepoScene::commitRevisionNode(
 bool RepoScene::commitNodes(
 	repo::core::handler::AbstractDatabaseHandler *handler,
 	const std::vector<repo::lib::RepoUUID> &nodesToCommit,
+	const repo::lib::RepoUUID &revId,
 	const GraphType &gType,
 	std::string &errMsg)
 {
@@ -878,7 +873,8 @@ bool RepoScene::commitNodes(
 
 		const repo::lib::RepoUUID uniqueID = gType == GraphType::OPTIMIZED ? id : g.sharedIDtoUniqueID[id];
 		RepoNode *node = g.nodesByUniqueID[uniqueID];
-		RepoNode shrunkNode = node->cloneAndShrink();
+
+		RepoNode shrunkNode = node->cloneAndAddRevId(revId).cloneAndShrink();
 		if (shrunkNode.objsize() > handler->documentSizeLimit())
 		{
 			success = false;
@@ -896,6 +892,7 @@ bool RepoScene::commitNodes(
 
 bool RepoScene::commitSceneChanges(
 	repo::core::handler::AbstractDatabaseHandler *handler,
+	const repo::lib::RepoUUID &revId,
 	std::string &errMsg)
 {
 	bool success = true;
@@ -909,7 +906,7 @@ bool RepoScene::commitSceneChanges(
 	//There is nothign to commit on removed nodes
 	//nodesToCommit.insert(nodesToCommit.end(), newRemoved.begin(), newRemoved.end());
 
-	commitNodes(handler, nodesToCommit, GraphType::DEFAULT, errMsg);
+	commitNodes(handler, nodesToCommit, revId, GraphType::DEFAULT, errMsg);
 
 	return success;
 }
@@ -921,7 +918,7 @@ bool RepoScene::commitStash(
 	/*
 	* Don't bother if:
 	* 1. root node is null (not instantiated)
-	* 2. revnode is null (unoptimised scene graph needs to be commited first
+	* 2. revnode is null (unoptimised scene graph needs to be commited first)
 	*/
 
 	repo::lib::RepoUUID rev;
@@ -944,17 +941,11 @@ bool RepoScene::commitStash(
 		updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::GEN_REPO_STASH);
 		//Add rev id onto the stash nodes before committing.
 		std::vector<repo::lib::RepoUUID> nodes;
-		RepoBSONBuilder builder;
-		builder.append(REPO_NODE_STASH_REF, rev);
-		RepoBSON revID = builder.obj(); // this should be RepoBSON?
-
 		for (auto &pair : stashGraph.nodesByUniqueID)
 		{
 			nodes.push_back(pair.first);
-			*pair.second = pair.second->cloneAndAddFields(&revID, false);
 		}
-
-		auto success = commitNodes(handler, nodes, GraphType::OPTIMIZED, errMsg);
+		auto success = commitNodes(handler, nodes, rev, GraphType::OPTIMIZED, errMsg);
 
 		if (success)
 			updateRevisionStatus(handler, repo::core::model::RevisionNode::UploadStatus::COMPLETE);
@@ -1301,10 +1292,10 @@ bool RepoScene::loadScene(
 		if (!loadRevision(handler, errMsg)) return false;
 	}
 
-	//Get the relevant nodes from the scene graph using the unique IDs stored in this revision node
-	RepoBSON idArray = revNode->getObjectField(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS);
-	std::vector<RepoBSON> nodes = handler->findAllByUniqueIDs(
-		databaseName, projectName + "." + REPO_COLLECTION_SCENE, idArray, !loadExtFiles);
+	RepoBSONBuilder builder;
+	builder.append(REPO_NODE_STASH_REF, revNode->getUniqueID());
+	std::vector<RepoBSON> nodes = handler->findAllByCriteria(
+		databaseName, projectName + "." + REPO_COLLECTION_SCENE, builder.obj());
 
 	repoInfo << "# of nodes in this unoptimised scene = " << nodes.size();
 

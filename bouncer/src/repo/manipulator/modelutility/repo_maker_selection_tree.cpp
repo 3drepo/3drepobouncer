@@ -16,8 +16,7 @@
 */
 #include "repo_maker_selection_tree.h"
 #include "../../core/model/bson/repo_node_reference.h"
-#include "../modeloptimizer/repo_optimizer_ifc.h"
-
+#include <ifcUtils/repo_ifc_utils_constants.h>
 using namespace repo::manipulator::modelutility;
 
 const static std::string REPO_LABEL_VISIBILITY_STATE = "toggleState";
@@ -44,7 +43,6 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 	repo::lib::PropertyTree tree;
 	if (currentNode)
 	{
-		
 		std::string idString = currentNode->getUniqueID().toString();
 
 		repo::lib::RepoUUID sharedID = currentNode->getSharedID();
@@ -68,9 +66,7 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 					childrenTypes[0].push_back(child);
 				else
 					childrenTypes[1].push_back(child);
-
 			}
-
 		}
 
 		bool hasHiddenChildren = false;
@@ -127,7 +123,7 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 
 		if (scene->isHiddenByDefault(currentNode->getUniqueID()) ||
 			(name.find(IFC_TYPE_SPACE_LABEL) != std::string::npos
-			&& currentNode->getTypeAsEnum() == repo::core::model::NodeType::MESH))
+				&& currentNode->getTypeAsEnum() == repo::core::model::NodeType::MESH))
 		{
 			tree.addToTree(REPO_LABEL_VISIBILITY_STATE, REPO_VISIBILITY_STATE_HIDDEN);
 			hiddenOnDefault = true;
@@ -147,7 +143,7 @@ repo::lib::PropertyTree SelectionTreeMaker::generatePTree(
 		sharedIDToUniqueID.push_back({ idString, sharedID.toString() });
 		if (meshIds.size())
 			idToMeshesTree.addToTree(idString, meshIds);
-		else if (currentNode->getTypeAsEnum() == repo::core::model::NodeType::MESH){
+		else if (currentNode->getTypeAsEnum() == repo::core::model::NodeType::MESH) {
 			std::vector<repo::lib::RepoUUID> self = { currentNode->getUniqueID() };
 			idToMeshesTree.addToTree(idString, self);
 		}
@@ -197,12 +193,12 @@ std::map<std::string, repo::lib::PropertyTree>  SelectionTreeMaker::getSelection
 		std::vector<std::string> hiddenNodes, childrenMeshes;
 		bool dummy = false;
 		repo::lib::PropertyTree tree, settingsTree, treePathTree, shareIDToUniqueIDMap, idToMeshes;
-		std::vector<std::pair<std::string, std::string>>  sharedIDToUniqueID; 
+		std::vector<std::pair<std::string, std::string>>  sharedIDToUniqueID;
 		tree.mergeSubTree("nodes", generatePTree(root, map, sharedIDToUniqueID, idToMeshes, "", dummy, hiddenNodes, childrenMeshes));
 		for (const auto pair : map)
 		{
 			//if there's an entry in maps it must have an entry in paths
-			tree.addToTree("idToName." + pair.first, pair.second.first);			
+			tree.addToTree("idToName." + pair.first, pair.second.first);
 			treePathTree.addToTree("idToPath." + pair.first, pair.second.second);
 		}
 		for (const auto pair : sharedIDToUniqueID)

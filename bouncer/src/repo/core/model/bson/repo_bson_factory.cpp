@@ -160,33 +160,6 @@ MaterialNode RepoBSONFactory::makeMaterialNode(
 	return MaterialNode(builder.obj());
 }
 
-MetadataNode RepoBSONFactory::makeMetaDataNode(
-	RepoBSON			          &metadata,
-	const std::string             &mimeType,
-	const std::string             &name,
-	const std::vector<repo::lib::RepoUUID>  &parents,
-	const int                     &apiLevel)
-{
-	RepoBSONBuilder builder;
-
-	// Compulsory fields such as _id, type, api as well as path
-	// and optional name
-	auto defaults = appendDefaults(REPO_NODE_TYPE_METADATA, apiLevel, repo::lib::RepoUUID::createUUID(), name, parents);
-	builder.appendElements(defaults);
-
-	//--------------------------------------------------------------------------
-	// Media type
-	if (!mimeType.empty())
-		builder.append(REPO_LABEL_MEDIA_TYPE, mimeType);
-
-	//--------------------------------------------------------------------------
-	// Add metadata subobject
-	if (!metadata.isEmpty())
-		builder.append(REPO_NODE_LABEL_METADATA, metadata);
-
-	return MetadataNode(builder.obj());
-}
-
 static bool keyCheck(const char &c)
 {
 	return c == '$' || c == '.';
@@ -206,55 +179,22 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	const std::vector<repo::lib::RepoUUID>     &parents,
 	const int                       &apiLevel)
 {
-	RepoBSONBuilder builder, metaBuilder;
-	// Compulsory fields such as _id, type, api as well as path
-	// and optional name
-	auto defaults = appendDefaults(REPO_NODE_TYPE_METADATA, apiLevel, repo::lib::RepoUUID::createUUID(), name, parents);
-	builder.appendElements(defaults);
-
+	auto keysLen = keys.size();
+	auto valLen = values.size();
 	//check keys and values have the same sizes
-
-	if (keys.size() != values.size())
+	if (keysLen != valLen)
 	{
 		repoWarning << "makeMetaDataNode: number of keys (" << keys.size()
 			<< ") does not match the number of values(" << values.size() << ")!";
 	}
 
-	std::vector<std::string>::const_iterator kit = keys.begin();
-	std::vector<std::string>::const_iterator vit = values.begin();
-	for (; kit != keys.end() && vit != values.end(); ++kit, ++vit)
-	{
-		std::string key = sanitiseKey(*kit);
-		std::string value = *vit;
+	std::unordered_map<std::string, std::string> metadataMap;
 
-		if (!key.empty() && !value.empty())
-		{
-			//Check if it is a number, if it is, store it as a number
-
-			try {
-				long long valueInt = boost::lexical_cast<long long>(value);
-				metaBuilder.append(key, valueInt);
-			}
-			catch (boost::bad_lexical_cast &)
-			{
-				//not an int, try a double
-
-				try {
-					double valueFloat = boost::lexical_cast<double>(value);
-					metaBuilder.append(key, valueFloat);
-				}
-				catch (boost::bad_lexical_cast &)
-				{
-					//not an int or float, store as string
-					metaBuilder.append(key, value);
-				}
-			}
-		}
+	for (int i = 0; i < (keysLen < valLen ? keysLen : valLen); ++i) {
+		metadataMap[keys[i]] = values[i];
 	}
 
-	builder.append(REPO_NODE_LABEL_METADATA, metaBuilder.obj());
-
-	return MetadataNode(builder.obj());
+	return makeMetaDataNode(metadataMap, name, parents);
 }
 
 MetadataNode RepoBSONFactory::makeMetaDataNode(
@@ -263,23 +203,26 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 	const std::vector<repo::lib::RepoUUID>     &parents,
 	const int                       &apiLevel)
 {
-	RepoBSONBuilder builder, metaBuilder;
+	RepoBSONBuilder builder;
 	// Compulsory fields such as _id, type, api as well as path
 	// and optional name
 	auto defaults = appendDefaults(REPO_NODE_TYPE_METADATA, apiLevel, repo::lib::RepoUUID::createUUID(), name, parents);
 	builder.appendElements(defaults);
-
+	std::vector<RepoBSON> metaEntries;
+	auto count = 0;
 	for (const auto &entry : data) {
 		std::string key = sanitiseKey(entry.first);
 		std::string value = entry.second;
 
 		if (!key.empty() && !value.empty())
 		{
+			RepoBSONBuilder metaEntryBuilder;
+			metaEntryBuilder.append(REPO_NODE_LABEL_META_KEY, key);
 			//Check if it is a number, if it is, store it as a number
 
 			try {
 				long long valueInt = boost::lexical_cast<long long>(value);
-				metaBuilder.append(key, valueInt);
+				metaEntryBuilder.append(REPO_NODE_LABEL_META_VALUE, valueInt);
 			}
 			catch (boost::bad_lexical_cast &)
 			{
@@ -287,18 +230,19 @@ MetadataNode RepoBSONFactory::makeMetaDataNode(
 
 				try {
 					double valueFloat = boost::lexical_cast<double>(value);
-					metaBuilder.append(key, valueFloat);
+					metaEntryBuilder.append(REPO_NODE_LABEL_META_VALUE, valueFloat);
 				}
 				catch (boost::bad_lexical_cast &)
 				{
 					//not an int or float, store as string
-					metaBuilder.append(key, value);
+					metaEntryBuilder.append(REPO_NODE_LABEL_META_VALUE, value);
 				}
 			}
+			metaEntries.push_back(metaEntryBuilder.obj());
 		}
 	}
 
-	builder.append(REPO_NODE_LABEL_METADATA, metaBuilder.obj());
+	builder.appendArray(REPO_NODE_LABEL_METADATA, metaEntries);
 
 	return MetadataNode(builder.obj());
 }
@@ -851,7 +795,6 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 	const std::string			   &user,
 	const repo::lib::RepoUUID                 &branch,
 	const repo::lib::RepoUUID                 &id,
-	const std::vector<repo::lib::RepoUUID>    &currentNodes,
 	const std::vector<std::string> &files,
 	const std::vector<repo::lib::RepoUUID>    &parent,
 	const std::vector<double>    &worldOffset,
@@ -885,12 +828,6 @@ RevisionNode RepoBSONFactory::makeRevisionNode(
 	//--------------------------------------------------------------------------
 	// Timestamp
 	builder.appendTimeStamp(REPO_NODE_REVISION_LABEL_TIMESTAMP);
-
-	//--------------------------------------------------------------------------
-
-	// Current Unique IDs
-	if (currentNodes.size() > 0)
-		builder.appendArray(REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS, currentNodes);
 
 	//--------------------------------------------------------------------------
 	// Shift for world coordinates

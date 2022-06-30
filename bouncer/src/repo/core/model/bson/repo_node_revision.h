@@ -31,11 +31,6 @@
 #define REPO_NODE_REVISION_LABEL_MESSAGE					"desc" //!< Message
 #define REPO_NODE_REVISION_LABEL_TAG						"tag" //!< Tag
 #define REPO_NODE_REVISION_LABEL_TIMESTAMP				"timestamp" //!< Timestamp
-#define REPO_NODE_REVISION_LABEL_CURRENT_UNIQUE_IDS		"current" //!< Current UIDs
-#define REPO_NODE_REVISION_LABEL_ADDED_SHARED_IDS		"added" //!< Added SIDs
-#define REPO_NODE_REVISION_LABEL_DELETED_SHARED_IDS		"deleted" //!< Deleted SIDs
-#define REPO_NODE_REVISION_LABEL_MODIFIED_SHARED_IDS		"modified" //!< Modified SIDs
-#define REPO_NODE_REVISION_LABEL_UNMODIFIED_SHARED_IDS	"unmodified" //!< Unmodified SIDs
 #define REPO_NODE_REVISION_LABEL_BRANCH_MASTER			"master" //!< Master branch
 #define REPO_NODE_REVISION_LABEL_REF_FILE               "rFile" //!< Reference file
 #define REPO_NODE_REVISION_LABEL_INCOMPLETE             "incomplete"
@@ -105,31 +100,6 @@ namespace repo {
 				* @return return a vector of double (size of 3)
 				*/
 				std::vector<double> getCoordOffset() const;
-
-				/**
-				* Get a list of current IDs for this revision
-				* @return returns a vector of unique IDs.
-				*/
-				std::vector<repo::lib::RepoUUID> getCurrentIDs() const;
-
-				///**
-				//* Get a list of IDs of nodes which were Added for this revision
-				//* @return returns a vector of shared IDs.
-				//*/
-				//std::vector<repo::lib::RepoUUID> getAddedIDs() const;
-
-				///**
-				//* Get a list of IDs of nodes which were deleted for this revision
-				//* @return returns a vector of shared IDs.
-				//*/
-				//std::vector<repo::lib::RepoUUID> getDeletedIDs() const;
-
-				///**
-				//* Get a list of IDs of nodes which were modified for this revision
-				//* @return returns a vector of shared IDs.
-				//*/
-				//std::vector<repo::lib::RepoUUID> getModifiedIDs() const;
-
 				/**
 				* Get the message commited with the revision
 				* @return returns a string for message. empty string if none.

@@ -24,7 +24,7 @@
 
 #include "repo_optimizer_trans_reduction.h"
 #include "../../core/model/bson/repo_node_transformation.h"
-#include "../modeloptimizer/repo_optimizer_ifc.h"
+#include <ifcUtils/repo_ifc_utils_constants.h>
 
 using namespace repo::manipulator::modeloptimizer;
 

@@ -169,6 +169,7 @@
 //-----------------------------------------------------------------------------
 #define REPO_NODE_LABEL_NAME			"name" //!< optional bson field label
 #define REPO_NODE_LABEL_PARENTS			"parents" //!< optional field label
+#define REPO_NODE_REVISION_ID           "rev_id"
 #define REPO_NODE_STASH_REF              "rev_id"
 //-----------------------------------------------------------------------------
 

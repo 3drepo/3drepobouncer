@@ -582,6 +582,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 	const std::vector<repo::lib::RepoUUID> &parents)
 {
 	repo::core::model::MetadataNode *metaNode;
+	std::unordered_map<std::string, std::string> metaEntries;
 	std::string val;
 	if (assimpMeta)
 	{
@@ -599,27 +600,27 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 			switch (currentValue.mType)
 			{
 			case AI_BOOL:
-				builder.append(key, *(static_cast<bool *>(currentValue.mData)));
+				metaEntries[key] = std::to_string(*(static_cast<bool *>(currentValue.mData)));
 				break;
 
 			case AI_INT32:
-				builder.append(key, *(static_cast<int *>(currentValue.mData)));
+				metaEntries[key] = std::to_string(*(static_cast<int *>(currentValue.mData)));
 				break;
 
 			case AI_UINT64:
-				//mongo doesn't support 64bit unsigned. storing it as a signed number
-				builder.append(key, (long long)(*(static_cast<uint64_t *>(currentValue.mData))));
+				metaEntries[key] = std::to_string(*(static_cast<uint64_t *>(currentValue.mData)));
 				break;
 
 			case AI_FLOAT:
-				builder.append(key, *(static_cast<float *>(currentValue.mData)));
+				metaEntries[key] = std::to_string(*(static_cast<float *>(currentValue.mData)));
 				break;
 
 			case AI_AISTRING:
 				val = (static_cast<aiString *>(currentValue.mData))->C_Str();
 
-				if (val.compare(key))
-					builder.append(key, val);
+				if (val.compare(key)) {
+					metaEntries[key] = val;
+				}
 
 				break;
 			case AI_AIVECTOR3D:
@@ -627,8 +628,7 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 				aiVector3D *vector = (static_cast<aiVector3D *>(currentValue.mData));
 
 				repo::lib::RepoVector3D repoVector = { (float)vector->x, (float)vector->y, (float)vector->z };
-
-				builder.append(key, repoVector);
+				metaEntries[key] = repoVector.toString();
 			}
 			break;
 			case FORCE_32BIT:
@@ -638,10 +638,8 @@ repo::core::model::MetadataNode* AssimpModelImport::createMetadataRepoNode(
 			}
 		}
 
-		repo::core::model::RepoBSON metaBSON = builder.obj();
-
 		metaNode = new repo::core::model::MetadataNode(
-			repo::core::model::RepoBSONFactory::makeMetaDataNode(metaBSON, "", metadataName, parents));
+			repo::core::model::RepoBSONFactory::makeMetaDataNode(metaEntries, metadataName, parents));
 	}//if(assimpMeta)
 
 	return metaNode;
@@ -1341,8 +1339,8 @@ bool AssimpModelImport::SetRootOrientationFromMetadata()
 {
 	if (!assimpScene || !assimpScene->mMetaData) return false;
 
-	// assumed axis, if no metadata is found 
-	// 0 - x 
+	// assumed axis, if no metadata is found
+	// 0 - x
 	// 1 - y
 	// 2 - z
 	int32_t upAxis = 1;

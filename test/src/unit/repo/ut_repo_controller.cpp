@@ -61,7 +61,7 @@ TEST(RepoControllerTest, CommitScene) {
 	EXPECT_EQ(REPOERR_OK, controller->commitScene(initController(controller.get()), scene));
 	EXPECT_TRUE(scene->isRevisioned());
 	EXPECT_TRUE(projectExists("commitSceneTest", "commitCube"));
-	EXPECT_EQ(scene->getOwner(), REPO_GTEST_DBUSER);
+	EXPECT_EQ(scene->getOwner(), "ANONYMOUS USER");
 
 	auto scene2 = controller->loadSceneFromFile(getDataPath(simpleModel), errCode);
 	std::string owner = "dog";
