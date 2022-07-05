@@ -732,30 +732,10 @@ bool MultipartOptimizer::hasTexture(
 	return hasText;
 }
 
-bool MultipartOptimizer::isTransparent(
-	const repo::core::model::RepoScene *scene,
-	const repo::core::model::MeshNode  *mesh)
-{
-	bool isTransparent = false;
-	const auto mat = scene->getChildrenNodesFiltered(defaultGraph, mesh->getSharedID(), repo::core::model::NodeType::MATERIAL);
-	if (mat.size())
-	{
-		const repo::core::model::MaterialNode* matNode = (repo::core::model::MaterialNode*)mat[0];
-		const auto matStruct = matNode->getMaterialStruct();
-		isTransparent = matStruct.opacity != 1;
-	}
-
-	return isTransparent;
-}
-
-void MultipartOptimizer::clusterMeshNodes(
+void clusterMeshNodesBvh(
 	const std::vector<repo::core::model::MeshNode>& meshes,
-	std::vector<std::vector<repo::core::model::MeshNode>>& clusters
-)
+	std::vector<std::vector<repo::core::model::MeshNode>>& clusters) 
 {
-	repoInfo << "Clustering " << meshes.size() << " meshes...";
-	auto start = boost::chrono::high_resolution_clock::now();
-
 	using Scalar = float;
 	using Bvh = bvh::Bvh<Scalar>;
 	using Vector3 = bvh::Vector3<Scalar>;
@@ -773,13 +753,13 @@ void MultipartOptimizer::clusterMeshNodes(
 		auto max = Vector3(bounds[1].x, bounds[1].y, bounds[1].z);
 		boundingBoxes.push_back(bvh::BoundingBox<Scalar>(min, max));
 	}
-	
+
 	auto centers = std::vector<Vector3>();
 	for (auto& bounds : boundingBoxes)
 	{
 		centers.push_back(bounds.center());
 	}
-	
+
 	auto globalBounds = bvh::compute_bounding_boxes_union(boundingBoxes.data(), boundingBoxes.size());
 
 	// Create an acceleration data structure based on the bounds
@@ -913,6 +893,98 @@ void MultipartOptimizer::clusterMeshNodes(
 		} while (!nodeStack.empty());
 
 		clusters.push_back(cluster);
+	}
+}
+
+bool MultipartOptimizer::isTransparent(
+	const repo::core::model::RepoScene *scene,
+	const repo::core::model::MeshNode  *mesh)
+{
+	bool isTransparent = false;
+	const auto mat = scene->getChildrenNodesFiltered(defaultGraph, mesh->getSharedID(), repo::core::model::NodeType::MATERIAL);
+	if (mat.size())
+	{
+		const repo::core::model::MaterialNode* matNode = (repo::core::model::MaterialNode*)mat[0];
+		const auto matStruct = matNode->getMaterialStruct();
+		isTransparent = matStruct.opacity != 1;
+	}
+
+	return isTransparent;
+}
+
+void MultipartOptimizer::clusterMeshNodes(
+	const std::vector<repo::core::model::MeshNode>& meshes,
+	std::vector<std::vector<repo::core::model::MeshNode>>& clusters
+)
+{
+	// Takes one set of MeshNodes and groups them into N sets of MeshNodes, 
+	// where each set will form a Supermesh.
+
+	repoInfo << "Clustering " << meshes.size() << " meshes...";
+	auto start = boost::chrono::high_resolution_clock::now();
+
+	// Start by creating a metric for each mesh which will be used to group
+	// nodes by their efficiency
+
+	struct mesh {
+		repo::core::model::MeshNode node;
+		float efficiency;
+	};
+
+	std::vector<mesh> metrics(meshes.size());
+	for (size_t i = 0; i < meshes.size(); i++)
+	{
+		auto& mesh = metrics[i];
+		mesh.node = meshes[i];
+		auto bounds = mesh.node.getBoundingBox();
+		auto numVertices = mesh.node.getNumVertices();
+		auto width = bounds[1].x - bounds[0].x;
+		auto height = bounds[1].y - bounds[0].y;
+		auto length = bounds[1].z - bounds[0].z;
+		auto metric = (float)numVertices / (width + height + length);
+		mesh.efficiency = metric;
+	}
+
+	// Next order the outer nodes by their efficiency
+
+	std::sort(metrics.begin(), metrics.end(), [](mesh a, mesh b) {
+		return a.efficiency < b.efficiency;
+	});
+
+	// Bin the nodes based on the vertex count into sets with similar total 
+	// vertex counts (number of supermeshes)
+
+	// The bin sizes are set at 10% of the model, so all models will have ten
+	// efficiency groups
+
+	auto totalVertices = 0;
+	for (auto& mesh : meshes) {
+		totalVertices += mesh.getNumVertices();
+	}
+
+	auto binVertexSize = 65536 * 8;
+
+	std::vector<repo::core::model::MeshNode> bin;
+	auto binVertexCount = 0;
+	for (auto item : metrics) {
+		
+		binVertexCount += item.node.getNumVertices();
+		bin.push_back(item.node);
+
+		if (binVertexCount > binVertexSize)
+		{
+			// do grouping...
+			clusterMeshNodesBvh(bin, clusters);
+
+			// And reset
+			bin.clear();
+			binVertexCount = 0;
+		}
+	}
+
+	// For the ones left over...
+	if (binVertexCount > 0) {
+		clusterMeshNodesBvh(bin, clusters);
 	}
 
 	repoInfo << "Created " << clusters.size() << " clusters in " << CHRONO_DURATION(start) << " milliseconds.";
