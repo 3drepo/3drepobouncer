@@ -951,39 +951,63 @@ void MultipartOptimizer::clusterMeshNodes(
 		return a.efficiency < b.efficiency;
 	});
 
-	// Bin the nodes based on the vertex count into sets with similar total 
-	// vertex counts (number of supermeshes)
-
-	// The bin sizes are set at 10% of the model, so all models will have ten
-	// efficiency groups
+	// Bin the nodes based on vertex count. The bottom 80% will form pure-LOD
+	// groups, while the top 20% will be spatialised.
 
 	auto totalVertices = 0;
 	for (auto& mesh : meshes) {
 		totalVertices += mesh.getNumVertices();
 	}
 
-	auto binVertexSize = 65536 * 8;
+	auto modelLowerThreshold = (int)(totalVertices * 0.2f);
+	
+	// For the lower 80% of the model, supermesh purely on LOD
 
+	auto binVertexSize = 65536;
 	std::vector<repo::core::model::MeshNode> bin;
 	auto binVertexCount = 0;
-	for (auto item : metrics) {
-		
+	auto binsVertexCount = 0;
+	
+	int i = 0;
+	for (; i < metrics.size(); i++)
+	{
+		auto& item = metrics[i];
+
 		binVertexCount += item.node.getNumVertices();
+		binsVertexCount += item.node.getNumVertices();
 		bin.push_back(item.node);
 
 		if (binVertexCount > binVertexSize)
 		{
-			// do grouping...
-			clusterMeshNodesBvh(bin, clusters);
+			// Copy
+			auto cluster = std::vector<repo::core::model::MeshNode>(bin);
+			clusters.push_back(cluster);
 
 			// And reset
 			bin.clear();
 			binVertexCount = 0;
 		}
+
+		if (binsVertexCount > modelLowerThreshold) {
+			break;
+		}
 	}
 
 	// For the ones left over...
-	if (binVertexCount > 0) {
+	if (bin.size()) {
+		auto cluster = std::vector<repo::core::model::MeshNode>(bin);
+		clusters.push_back(cluster);
+	}
+
+	// Now the high-part
+	for (; i < metrics.size(); i++)
+	{
+		auto& item = metrics[i];
+
+		bin.push_back(item.node);
+	}
+
+	if (bin.size()) {
 		clusterMeshNodesBvh(bin, clusters);
 	}
 
