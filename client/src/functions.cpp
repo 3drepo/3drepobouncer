@@ -165,6 +165,7 @@ int32_t generateFederation(
 
 	std::string fedFile = command.args[0];
 	std::string owner;
+	repo::lib::RepoUUID revId = repo::lib::RepoUUID::createUUID();
 	if (command.nArgcs > 1)
 		owner = command.args[1];
 
@@ -179,6 +180,10 @@ int32_t generateFederation(
 
 		const std::string database = jsonTree.get<std::string>("database", "");
 		const std::string project = jsonTree.get<std::string>("project", "");
+		auto revIdStr = jsonTree.get<std::string>("revId", "");
+		if (!revIdStr.empty()) {
+			revId = repo::lib::RepoUUID(revIdStr);
+		}
 		std::map< repo::core::model::TransformationNode, repo::core::model::ReferenceNode> refMap;
 
 		if (database.empty() || project.empty())
@@ -239,7 +244,7 @@ int32_t generateFederation(
 				if (success = scene)
 				{
 					scene->setDatabaseAndProjectName(database, project);
-					errCode = controller->commitScene(token, scene, owner);
+					errCode = controller->commitScene(token, scene, owner, "", "", revId);
 				}
 			}
 			else

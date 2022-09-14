@@ -424,7 +424,7 @@ repo::ifcUtility::SCHEMA_NS::TreeParser::Actions_t repo::ifcUtility::SCHEMA_NS::
 		}
 		action.takeRefsAsChildren = false;
 	}
-	else if (auto eleType = dynamic_cast<const IfcSchema::IfcElementType *>(element)) {
+	else if (auto eleType = dynamic_cast<const IfcSchema::IfcTypeObject *>(element)) {
 		if (eleType->hasHasPropertySets()) {
 			auto propSets = eleType->HasPropertySets();
 			extraChildren.insert(extraChildren.end(), propSets->begin(), propSets->end());
@@ -433,6 +433,11 @@ repo::ifcUtility::SCHEMA_NS::TreeParser::Actions_t repo::ifcUtility::SCHEMA_NS::
 		action.createElement = false;
 		action.traverseChildren = true;
 		action.cacheMetadata = true;
+		action.takeRefsAsChildren = false;
+	}
+	else if (auto eleType = dynamic_cast<const IfcSchema::IfcPropertyDefinition *>(element)) {
+		action.createElement = false;
+		action.traverseChildren = false;
 		action.takeRefsAsChildren = false;
 	}
 	else if (

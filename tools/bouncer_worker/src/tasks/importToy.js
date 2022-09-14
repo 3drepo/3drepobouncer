@@ -43,7 +43,6 @@ const runMongoImport = async (database, collection, filePath) => {
 		'--authenticationDatabase', 'admin',
 		'--db', database,
 		'--collection', collection,
-		'--writeConcern', JSON.stringify(config.mongoimport.writeConcern),
 		'--file', filePath,
 	];
 
@@ -248,15 +247,9 @@ const getURLWithAuth = () => {
 	return config.db.connectionString.replace(protocol, `${protocol}${authStr}`);
 };
 
-const ToyImporter = {};
-
-ToyImporter.importToyModel = async (toyModelID, database, modelId) => {
-	const modelDir = `${config.toyModelDir}/${toyModelID}`;
-	await importJSON(modelDir, database, modelId);
-
+const renameData = async (database, modelId) => {
 	const dbConn = await MongoClient.connect(getURLWithAuth(), { useUnifiedTopology: true });
 	const db = dbConn.db(database);
-
 	const promises = [];
 
 	promises.push(renameStash(db, database, modelId, `${modelId}.stash.json_mpc`));
@@ -270,8 +263,21 @@ ToyImporter.importToyModel = async (toyModelID, database, modelId) => {
 	promises.push(renameGroups(db, database, modelId));
 
 	await Promise.all(promises);
+
+	dbConn.close();
+};
+
+const ToyImporter = {};
+
+ToyImporter.importToyModel = async (toyModelID, database, modelId) => {
+	const modelDir = `${config.toyModelDir}/${toyModelID}`;
+	await importJSON(modelDir, database, modelId);
+
+	await renameData(database, modelId);
 	logger.info(`${toyModelID} imported to ${modelId}`, logLabel);
 };
+
+ToyImporter.runRenameScripts = renameData;
 
 ToyImporter.validateToyImporterSettings = () => {
 	if (!config.toyModelDir) {
