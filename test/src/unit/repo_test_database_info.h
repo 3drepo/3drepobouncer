@@ -174,8 +174,6 @@ static std::unordered_map<std::string, uint32_t> getCollectionCounts(
 	if (databaseName == REPO_GTEST_DBNAME1)
 	{
 		results["3drepoBIM.history"] = 1;
-		results["3drepoBIM.history.chunks"] = 24;
-		results["3drepoBIM.history.files"] = 1;
 		results["3drepoBIM.issues"] = 0;
 		results["3drepoBIM.scene"] = 14;
 		results["3drepoBIM.stash.3drepo"] = 17;
@@ -183,15 +181,9 @@ static std::unordered_map<std::string, uint32_t> getCollectionCounts(
 	else
 	{
 		results["sphere.history"] = 1;
-		results["sphere.history.chunks"] = 20;
-		results["sphere.history.files"] = 1;
 		results["sphere.issues"] = 0;
 		results["sphere.scene"] = 3;
-		results["sphere.scene.chunks"] = 69;
-		results["sphere.scene.files"] = 1;
 		results["sphere.stash.3drepo"] = 3;
-		results["sphere.stash.3drepo.chunks"] = 138;
-		results["sphere.stash.3drepo.files"] = 2;
 	}
 
 	return results;
@@ -202,13 +194,13 @@ static std::vector<std::string> getCollectionList(
 {
 	if (databaseName == REPO_GTEST_DBNAME1)
 	{
-		return{ "3drepoBIM.history", "3drepoBIM.history.chunks", "3drepoBIM.history.files", "3drepoBIM.issues", "3drepoBIM.scene", "3drepoBIM.stash.3drepo",
+		return{ "3drepoBIM.history", "3drepoBIM.history.ref", "3drepoBIM.issues", "3drepoBIM.scene", "3drepoBIM.scene.ref", "3drepoBIM.stash.3drepo", "3drepoBIM.stash.3drepo.ref",
 			"fedTest.history", "fedTest.issues", "fedTest.scene"
 			, "settings" };
 	}
 	else
 	{
-		return{ "sphere.history", "sphere.history.chunks", "sphere.history.files", "sphere.issues", "sphere.scene", "sphere.scene.files", "sphere.scene.chunks", "sphere.stash.3drepo", "sphere.stash.3drepo.chunks", "sphere.stash.3drepo.files", "settings" };
+		return{ "sphere.history","sphere.history.ref", "sphere.issues", "sphere.scene", "sphere.scene.ref", "sphere.stash.3drepo", "sphere.stash.3drepo.ref", "settings" };
 	}
 }
 
