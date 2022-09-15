@@ -27,9 +27,9 @@ TEST(MongoDatabaseHandlerTest, GetHandlerDisconnectHandler)
 	std::string errMsg;
 	MongoDatabaseHandler* handler =
 		MongoDatabaseHandler::getHandler(errMsg, REPO_GTEST_DBADDRESS, REPO_GTEST_DBPORT,
-		1,
-		REPO_GTEST_AUTH_DATABASE,
-		REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
+			1,
+			REPO_GTEST_AUTH_DATABASE,
+			REPO_GTEST_DBUSER, REPO_GTEST_DBPW);
 
 	EXPECT_TRUE(handler);
 	EXPECT_TRUE(errMsg.empty());
@@ -118,7 +118,6 @@ TEST(MongoDatabaseHandlerTest, GetAllFromCollectionTailable)
 		goldenData.first.first, goldenData.first.second);
 
 	ASSERT_EQ(bsons.size(), goldenData.second.size());
-
 
 	//Test limit and skip
 	std::vector<repo::core::model::RepoBSON> bsonsLimitSkip = handler->getAllFromCollectionTailable(
@@ -728,11 +727,11 @@ TEST(MongoDatabaseHandlerTest, GetRawFile)
 {
 	auto handler = getHandler();
 	ASSERT_TRUE(handler);
-	auto file = handler->getRawFile(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".history", REPO_GTEST_RAWFILE_FETCH_TEST);
+	auto file = handler->getRawFile(REPO_GTEST_DBNAME_FILE_MANAGER, REPO_GTEST_COLNAME_FILE_MANAGER, REPO_GTEST_RAWFILE_FETCH_TEST);
 
 	EXPECT_EQ(REPO_GTEST_RAWFILE_FETCH_SIZE, file.size());
 
-	EXPECT_EQ(0, handler->getRawFile(REPO_GTEST_DBNAME1, REPO_GTEST_DBNAME1_PROJ + ".history", "some_non_existent_file").size());
-	EXPECT_EQ(0, handler->getRawFile("", REPO_GTEST_DBNAME1_PROJ + ".history", REPO_GTEST_RAWFILE_FETCH_TEST).size());
-	EXPECT_EQ(0, handler->getRawFile(REPO_GTEST_DBNAME1, "", REPO_GTEST_RAWFILE_FETCH_TEST).size());
+	EXPECT_EQ(0, handler->getRawFile(REPO_GTEST_DBNAME_FILE_MANAGER, REPO_GTEST_COLNAME_FILE_MANAGER, "some_non_existent_file").size());
+	EXPECT_EQ(0, handler->getRawFile("", REPO_GTEST_COLNAME_FILE_MANAGER, REPO_GTEST_RAWFILE_FETCH_TEST).size());
+	EXPECT_EQ(0, handler->getRawFile(REPO_GTEST_DBNAME_FILE_MANAGER, "", REPO_GTEST_RAWFILE_FETCH_TEST).size());
 }

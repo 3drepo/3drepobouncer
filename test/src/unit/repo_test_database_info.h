@@ -32,6 +32,9 @@ const static std::string REPO_GTEST_DBNAME1_PROJ = "3drepoBIM";
 const static std::string REPO_GTEST_DBNAME2_PROJ = "sphere";
 const static std::string REPO_GTEST_DBNAME1_FED = "fedTest";
 const static std::string REPO_GTEST_DBNAME_ROLEUSERTEST = "sampleDataRWRolesUsers";
+const static std::string REPO_GTEST_DBNAME_FILE_MANAGER = "testFileManager";
+
+const static std::string REPO_GTEST_COLNAME_FILE_MANAGER = "testFileUpload";
 
 const static std::string connectionConfig = "config/config.json";
 
@@ -107,8 +110,8 @@ const static mongo::BSONObj REPO_GTEST_UPDATEUSERTEST = BSON("db" << "admin" << 
 const static std::vector<repo::lib::RepoUUID> uuidsToSearch = { repo::lib::RepoUUID("0ab45528-9258-421a-927c-c51bf40fc478"), repo::lib::RepoUUID("126f9de3-c942-4d66-862a-16cc4f11841b") };
 
 const static std::pair<std::string, std::string> REPO_GTEST_DROPCOL_TESTCASE = { "sampleDataRW", "collectionToDrop" };
-const static std::string REPO_GTEST_RAWFILE_FETCH_TEST = "5be1aca9-e4d0-4cec-987d-80d2fde3dade3DrepoBIM_obj";
-const static size_t REPO_GTEST_RAWFILE_FETCH_SIZE = 6050508;
+const static std::string REPO_GTEST_RAWFILE_FETCH_TEST = "gridFSFile";
+const static size_t REPO_GTEST_RAWFILE_FETCH_SIZE = 1024;
 
 static repo::core::handler::MongoDatabaseHandler* getHandler()
 {
