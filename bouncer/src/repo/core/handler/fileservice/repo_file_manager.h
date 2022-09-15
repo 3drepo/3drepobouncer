@@ -24,17 +24,17 @@
 #include "../../model/bson/repo_bson_ref.h"
 #include "../../../lib/repo_config.h"
 
-namespace repo{
-	namespace core{
-		namespace handler{
-			namespace fileservice{
+namespace repo {
+	namespace core {
+		namespace handler {
+			namespace fileservice {
 				class FileManager
 				{
 				public:
 					/**
 					 * A Deconstructor
 					 */
-					~FileManager(){}
+					~FileManager() {}
 
 					/*
 					* Returns file handler.
@@ -62,7 +62,16 @@ namespace repo{
 						const std::string                            &collectionNamePrefix,
 						const std::string                            &fileName,
 						const std::vector<uint8_t>                   &bin
-						);
+					);
+
+					/**
+					 * Get the file base on the the ref entry in database
+					 */
+					std::vector<uint8_t> getFile(
+						const std::string                            &databaseName,
+						const std::string                            &collectionNamePrefix,
+						const std::string                            &fileName
+					);
 
 					/**
 					 * Delete file ref and associated file from database.
@@ -71,7 +80,7 @@ namespace repo{
 						const std::string                            &databaseName,
 						const std::string                            &collectionNamePrefix,
 						const std::string                            &fileName
-						);
+					);
 
 				private:
 					/**
@@ -110,7 +119,7 @@ namespace repo{
 
 					static FileManager* manager;
 					repo::core::handler::AbstractDatabaseHandler *dbHandler;
-					std::shared_ptr<AbstractFileHandler> defaultHandler, s3Handler, fsHandler, gridfsHandler;
+					std::shared_ptr<AbstractFileHandler> defaultHandler, fsHandler, gridfsHandler;
 				};
 			}
 		}

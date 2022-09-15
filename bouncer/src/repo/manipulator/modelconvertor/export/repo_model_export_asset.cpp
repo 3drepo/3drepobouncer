@@ -217,24 +217,6 @@ bool AssetModelExport::generateTreeRepresentation()
 			}
 		}
 
-		std::string assetListFile = "/" + scene->getDatabaseName() + "/" + scene->getProjectName() + "/revision/" + scene->getRevisionID().toString() + "/unityAssets.json";
-		repo::lib::PropertyTree assetListTree;
-		assetListTree.addToTree(MP_LABEL_ASSETS, assetFiles);
-
-		if (vrAssetFiles.size()) {
-			assetListTree.addToTree(MP_LABEL_VR_ASSETS, vrAssetFiles);
-		}
-
-		if (iosAssetsFiles.size()) {
-			assetListTree.addToTree(MP_LABEL_IOS_ASSETS, iosAssetsFiles);
-		}
-
-		assetListTree.addToTree(MP_LABEL_JSONS, jsons);
-		assetListTree.addToTree(MP_LABEL_OFFSET, scene->getWorldOffset());
-		assetListTree.addToTree(MP_LABEL_DATABASE, scene->getDatabaseName());
-		assetListTree.addToTree(MP_LABEL_PROJECT, scene->getProjectName());
-		jsonTrees[assetListFile] = assetListTree;
-
 		unityAssets = core::model::RepoBSONFactory::makeRepoUnityAssets(
 			scene->getRevisionID(),
 			assetFiles,

@@ -23,22 +23,30 @@
 
 #include "../../model/bson/repo_bson_ref.h"
 
-namespace repo{
-	namespace core{
-		namespace handler{
-			namespace fileservice{
+namespace repo {
+	namespace core {
+		namespace handler {
+			namespace fileservice {
 				class AbstractFileHandler
 				{
 				public:
 					/**
 					 * A Deconstructor
 					 */
-					virtual ~AbstractFileHandler(){}
+					virtual ~AbstractFileHandler() {}
 
 					/**
 					* Delete file.
 					*/
 					virtual bool deleteFile(
+						const std::string          &database,
+						const std::string          &collection,
+						const std::string &fileName) = 0;
+
+					/**
+					* Get file.
+					*/
+					virtual std::vector<uint8_t> getFile(
 						const std::string          &database,
 						const std::string          &collection,
 						const std::string &fileName) = 0;
@@ -55,13 +63,11 @@ namespace repo{
 
 					virtual repo::core::model::RepoRef::RefType getType() const = 0;
 
-
-
 				protected:
 					/**
 					 * Default constructor
 					 */
-					AbstractFileHandler(){};							
+					AbstractFileHandler() {};
 				};
 			}
 		}

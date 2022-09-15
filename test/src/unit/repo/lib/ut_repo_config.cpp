@@ -24,70 +24,37 @@
 
 using namespace repo::lib;
 
-TEST(RepoConfigTest, ConstructFromFile) 
+TEST(RepoConfigTest, ConstructFromFile)
 {
 	EXPECT_NO_THROW({
 		auto config = RepoConfig::fromFile(getDataPath("/config/justDB.json"));
 		EXPECT_TRUE(config.validate());
-	});
+		});
 
 	EXPECT_THROW(RepoConfig::fromFile(getDataPath("/empty.json")), RepoException);
 
 	EXPECT_THROW(RepoConfig::fromFile(getDataPath("/config/doesntExist.json")), RepoException);
 
 	EXPECT_NO_THROW({
-		auto config = RepoConfig::fromFile(getDataPath("/config/withS3.json"));
-		EXPECT_TRUE(config.validate());
-		EXPECT_TRUE(config.getS3Config().configured);
-		EXPECT_FALSE(config.getFSConfig().configured);
-		EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::GRIDFS);
-	});
-
-	EXPECT_NO_THROW({
-		auto config = RepoConfig::fromFile(getDataPath("/config/withS3Default.json"));
-		EXPECT_TRUE(config.getS3Config().configured);
-		EXPECT_FALSE(config.getFSConfig().configured);
-		EXPECT_TRUE(config.validate());
-		EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::S3);
-	});
-
-
-	EXPECT_NO_THROW({
 		auto config = RepoConfig::fromFile(getDataPath("/config/withFS.json"));
 		EXPECT_TRUE(config.validate());
-		EXPECT_FALSE(config.getS3Config().configured);
 		EXPECT_TRUE(config.getFSConfig().configured);
 		EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::FS);
-	});
+		});
 
 	EXPECT_NO_THROW({
 		auto config = RepoConfig::fromFile(getDataPath("/config/withAllDbDefault.json"));
 		EXPECT_TRUE(config.validate());
-		EXPECT_TRUE(config.getS3Config().configured);
 		EXPECT_TRUE(config.getFSConfig().configured);
 		EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::GRIDFS);
-	});
+		});
 
 	EXPECT_NO_THROW({
 		auto config = RepoConfig::fromFile(getDataPath("/config/withAllNoDefault.json"));
 		EXPECT_TRUE(config.validate());
-		EXPECT_TRUE(config.getS3Config().configured);
 		EXPECT_TRUE(config.getFSConfig().configured);
 		EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::FS);
-	});
-
-	EXPECT_NO_THROW({
-		auto config = RepoConfig::fromFile(getDataPath("/config/withAllS3Default.json"));
-		EXPECT_TRUE(config.validate());
-		EXPECT_TRUE(config.getS3Config().configured);
-		EXPECT_TRUE(config.getFSConfig().configured);
-		EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::S3);
-	});
-
-
-
-
-
+		});
 }
 
 TEST(RepoConfigTest, dbConfigTest)
@@ -95,7 +62,7 @@ TEST(RepoConfigTest, dbConfigTest)
 	std::string db = "database", user = "username", password = "password";
 	int port = 10000;
 	bool pwDigested = true;
-	RepoConfig config = {db, port, user, password, pwDigested };
+	RepoConfig config = { db, port, user, password, pwDigested };
 	auto dbData = config.getDatabaseConfig();
 	EXPECT_EQ(dbData.addr, db);
 	EXPECT_EQ(dbData.port, port);
@@ -107,35 +74,12 @@ TEST(RepoConfigTest, dbConfigTest)
 }
 
 repo::lib::RepoConfig createConfig() {
-
 	std::string db = "database", user = "username", password = "password";
 	int port = 10000;
 	bool pwDigested = true;
 	RepoConfig config = { db, port, user, password, pwDigested };
 
 	return config;
-}
-
-TEST(RepoConfigTest, s3ConfigTest)
-{
-	auto config = createConfig();
-	std::string bucketName = "b1", bucketRegion = "r1", bucketName1 = "b2", bucketRegion1 = "r2";
-	config.configureS3(bucketName, bucketRegion, false);
-	auto s3Conf = config.getS3Config();
-	EXPECT_EQ(s3Conf.bucketName, bucketName);
-	EXPECT_EQ(s3Conf.bucketRegion, bucketRegion);
-	EXPECT_TRUE(s3Conf.configured);
-
-	EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::GRIDFS);
-
-	config.configureS3(bucketName1, bucketRegion1, true);
-
-	s3Conf = config.getS3Config();
-	EXPECT_EQ(s3Conf.bucketName, bucketName1);
-	EXPECT_EQ(s3Conf.bucketRegion, bucketRegion1);
-	EXPECT_TRUE(s3Conf.configured);
-
-	EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::S3);
 }
 
 TEST(RepoConfigTest, fsConfigTest)
@@ -158,8 +102,6 @@ TEST(RepoConfigTest, fsConfigTest)
 	EXPECT_TRUE(fsConf.configured);
 
 	EXPECT_EQ(config.getDefaultStorageEngine(), repo::lib::RepoConfig::FileStorageEngine::FS);
-
-
 }
 
 TEST(RepoConfigTest, validationTestDB)
@@ -179,25 +121,6 @@ TEST(RepoConfigTest, validationTestDB)
 
 	//database connection with password but no username
 	EXPECT_FALSE(RepoConfig(dummy, 1, "", dummy).validate());
-
-}
-
-TEST(RepoConfigTest, validationTestS3)
-{
-	std::string dummy = "dummy";
-	auto config = createConfig();
-
-	config.configureS3(dummy, dummy);
-	EXPECT_TRUE(config.validate());
-
-	config.configureS3("", "");
-	EXPECT_FALSE(config.validate());
-
-	config.configureS3(dummy, "");
-	EXPECT_FALSE(config.validate());
-
-	config.configureS3("", dummy);
-	EXPECT_FALSE(config.validate());
 }
 
 TEST(RepoConfigTest, validationTestFS)
@@ -211,8 +134,6 @@ TEST(RepoConfigTest, validationTestFS)
 	config.configureFS("", 0);
 	EXPECT_FALSE(config.validate());
 
-	config.configureFS(dummy,-1);
+	config.configureFS(dummy, -1);
 	EXPECT_FALSE(config.validate());
-
 }
-

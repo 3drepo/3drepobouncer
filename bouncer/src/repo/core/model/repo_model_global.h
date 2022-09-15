@@ -118,7 +118,6 @@
 #define REPO_DOCUMENT_ID_SUFFIX_IDMAP           "idMap.json"
 #define REPO_DOCUMENT_ID_SUFFIX_IDTOMESHES      "idToMeshes.json"
 #define REPO_DOCUMENT_ID_SUFFIX_TREEPATH        "tree_path.json"
-#define REPO_DOCUMENT_ID_SUFFIX_UNITYASSETS     "unityAssets.json"
 #define REPO_DOCUMENT_ID_SUFFIX_UNITY_JSON      "_unity.json.mpc"
 #define REPO_DOCUMENT_ID_SUFFIX_UNITY3D         ".unity3d"
 #define REPO_DOCUMENT_ID_SUFFIX_UNITY3D_WIN     "_win64.unity3d"

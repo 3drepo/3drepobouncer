@@ -38,16 +38,15 @@ GridFSFileHandler::GridFSFileHandler(
  */
 GridFSFileHandler::~GridFSFileHandler()
 {
-	
 }
 
 bool GridFSFileHandler::deleteFile(
 	const std::string          &database,
 	const std::string          &collection,
 	const std::string			&keyName)
-{	
+{
 	std::string errMsg;
-	auto success =  handler->dropRawFile(database, collection, keyName, errMsg);
+	auto success = handler->dropRawFile(database, collection, keyName, errMsg);
 	if (!success) {
 		repoError << "Failed to load file to GridFS: " << errMsg;
 	}
@@ -55,12 +54,20 @@ bool GridFSFileHandler::deleteFile(
 	return success;
 }
 
+std::vector<uint8_t> GridFSFileHandler::getFile(
+	const std::string          &database,
+	const std::string          &collection,
+	const std::string			&keyName)
+{
+	return handler->getRawFile(database, collection, keyName);
+}
+
 std::string GridFSFileHandler::uploadFile(
 	const std::string          &database,
 	const std::string          &collection,
 	const std::string          &keyName,
 	const std::vector<uint8_t> &bin
-	)
+)
 {
 	std::string errMsg;
 	auto success = handler->insertRawFile(database, collection, keyName, bin, errMsg);
@@ -70,5 +77,3 @@ std::string GridFSFileHandler::uploadFile(
 
 	return success ? keyName : "";
 }
-
-

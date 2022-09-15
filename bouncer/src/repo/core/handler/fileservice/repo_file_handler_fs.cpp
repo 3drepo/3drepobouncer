@@ -43,7 +43,6 @@ FSFileHandler::FSFileHandler(
  */
 FSFileHandler::~FSFileHandler()
 {
-	
 }
 
 bool FSFileHandler::deleteFile(
@@ -52,13 +51,32 @@ bool FSFileHandler::deleteFile(
 	const std::string &keyName)
 {
 	bool success = false;
-	
+
 	auto fullPath = boost::filesystem::absolute(keyName, dirPath);
 	if (repo::lib::doesFileExist(fullPath)) {
 		auto fileStr = fullPath.string();
 		success = std::remove(fileStr.c_str()) == 0;
 	}
 	return success;
+}
+
+std::vector<uint8_t> FSFileHandler::getFile(
+	const std::string          &database,
+	const std::string          &collection,
+	const std::string &keyName)
+{
+	std::vector<uint8_t> results;
+	auto fullPath = boost::filesystem::absolute(keyName, dirPath);
+	if (repo::lib::doesFileExist(fullPath)) {
+		auto fileStr = fullPath.string();
+		std::ifstream stream(fileStr, std::ios::in | std::ios::binary);
+		results = std::vector<uint8_t>((std::istreambuf_iterator<char>(stream)), std::istreambuf_iterator<char>());
+		stream.close();
+	}
+	else {
+		repoError << "File " << fullPath.string() << " does not exist";
+	}
+	return results;
 }
 
 std::vector<std::string> FSFileHandler::determineHierachy(
@@ -71,7 +89,7 @@ std::vector<std::string> FSFileHandler::determineHierachy(
 	std::vector<std::string> levelNames;
 	for (int i = 0; i < level; ++i) {
 		auto chunkStart = (i * nameChunkLen) % (name.length() - nameChunkLen);
-		auto stringToHash = name.substr(i, nameChunkLen) + std::to_string((float)std::rand()/ RAND_MAX);
+		auto stringToHash = name.substr(i, nameChunkLen) + std::to_string((float)std::rand() / RAND_MAX);
 		auto hashedValue = stringHasher(stringToHash) & 255;
 		levelNames.push_back(std::to_string(hashedValue));
 	}
@@ -84,11 +102,10 @@ std::string FSFileHandler::uploadFile(
 	const std::string          &collection,
 	const std::string          &keyName,
 	const std::vector<uint8_t> &bin
-	)
+)
 {
-
 	auto hierachy = level > 0 ? determineHierachy(keyName) : std::vector<std::string>();
-	
+
 	boost::filesystem::path path(dirPath);
 	std::stringstream ss;
 	for (const auto &levelName : hierachy) {
@@ -100,7 +117,7 @@ std::string FSFileHandler::uploadFile(
 	}
 
 	path /= keyName;
-	ss <<  keyName;
+	ss << keyName;
 	int retries = 0;
 	bool failed;
 	do {
@@ -108,12 +125,10 @@ std::string FSFileHandler::uploadFile(
 		outs.write((char*)bin.data(), bin.size());
 		outs.close();
 		if (failed = (!outs || !repo::lib::doesFileExist(path))) {
-			repoError << "Failed to write to file " << path.string() << ((retries +1) < 3? ". Retrying... " : "");
+			repoError << "Failed to write to file " << path.string() << ((retries + 1) < 3 ? ". Retrying... " : "");
 			boost::this_thread::sleep(boost::posix_time::seconds(5));
 		}
 	} while (failed && ++retries < 3);
 
-	return /*failed ?  "" :*/ ss.str(); //Returning link regardless for now.
+	return failed ? "" : ss.str();
 }
-
-

@@ -30,25 +30,24 @@ namespace repo {
 			// Fields specific to ref only
 			//
 			//------------------------------------------------------------------------------
-			#define REPO_REF_LABEL_LINK "link"
-			#define REPO_REF_LABEL_SIZE "size"
-			#define REPO_REF_LABEL_TYPE "type"
+#define REPO_REF_LABEL_LINK "link"
+#define REPO_REF_LABEL_SIZE "size"
+#define REPO_REF_LABEL_TYPE "type"
 
 			class REPO_API_EXPORT RepoRef : public RepoBSON
 			{
 			public:
-				const static std::string REPO_REF_TYPE_S3;
 				const static std::string REPO_REF_TYPE_FS;
 				const static std::string REPO_REF_TYPE_GRIDFS;
 				const static std::string REPO_REF_TYPE_UNKNOWN;
 
 				enum class RefType {
-					S3, GRIDFS, FS, UNKNOWN
+					GRIDFS, FS, UNKNOWN
 				};
 
 				RepoRef() : RepoBSON() {}
 
-				RepoRef(RepoBSON bson) : RepoBSON(bson){}
+				RepoRef(RepoBSON bson) : RepoBSON(bson) {}
 
 				~RepoRef() {}
 
@@ -59,7 +58,6 @@ namespace repo {
 				std::string getRefLink() const;
 
 				RefType getType() const;
-
 			};
 		}// end namespace model
 	} // end namespace core
