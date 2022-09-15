@@ -984,6 +984,7 @@ bool RepoManipulator::saveOriginalFiles(
 {
 	repo::core::handler::AbstractDatabaseHandler* handler =
 		repo::core::handler::MongoDatabaseHandler::getHandler(databaseAd);
+	auto manager = repo::core::handler::fileservice::FileManager::getManager();
 	bool success = false;
 	if (handler && scene)
 	{
@@ -996,8 +997,9 @@ bool RepoManipulator::saveOriginalFiles(
 
 			for (const std::string &file : files)
 			{
-				std::vector<uint8_t> rawFile = handler->getRawFile(scene->getDatabaseName(),
+				std::vector<uint8_t> rawFile = manager->getFile(scene->getDatabaseName(),
 					scene->getProjectName() + "." + REPO_COLLECTION_RAW, file);
+
 				if (rawFile.size() > 0)
 				{
 					boost::filesystem::path filePath(file);
