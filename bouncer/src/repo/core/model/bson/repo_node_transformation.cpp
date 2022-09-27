@@ -103,9 +103,15 @@ bool TransformationNode::isIdentity(const float &eps) const
 	return  getTransMatrix(false).isIdentity(eps);
 }
 
+// Keeping these vectors around avoids the allocations on the very frequent
+// calls to getTransMatrix, as the contents are always the same size.
+// (Static here means they are not exported.)
+static std::vector<mongo::BSONElement> rows;
+static std::vector<mongo::BSONElement> cols;
+static std::vector<float> transformationMatrix;
+
 repo::lib::RepoMatrix TransformationNode::getTransMatrix(const bool &rowMajor) const
 {
-	std::vector<float> transformationMatrix;
 	uint32_t rowInd = 0, colInd = 0;
 	if (hasField(REPO_NODE_LABEL_MATRIX))
 	{
@@ -113,22 +119,19 @@ repo::lib::RepoMatrix TransformationNode::getTransMatrix(const bool &rowMajor) c
 		float *transArr = &transformationMatrix.at(0);
 
 		// matrix is stored as array of arrays
-		RepoBSON matrixObj =
+		auto matrixObj =
 			getField(REPO_NODE_LABEL_MATRIX).embeddedObject();
 
-		std::set<std::string> mFields = matrixObj.getFieldNames();
-		for (auto &field : mFields)
+		rows.clear();
+		matrixObj.elems(rows);
+		for (size_t rowInd = 0; rowInd < 4; rowInd++)
 		{
-			rowInd = std::stoi(field);
-			RepoBSON arrayObj = matrixObj.getField(field).embeddedObject();
-			std::set<std::string> aFields = arrayObj.getFieldNames();
-			for (auto &aField : aFields)
+			cols.clear();
+			rows[rowInd].embeddedObject().elems(cols);
+			for (size_t colInd = 0; colInd < 4; colInd++)
 			{
-				colInd = std::stoi(aField);
-
-				//figure out the index depending on if it's row or col major
 				uint32_t index;
-				if (rowMajor)
+				if (rowMajor) // Whether to return the matrix transposed - matrices are always *stored* row-major.
 				{
 					index = colInd * 4 + rowInd;
 				}
@@ -137,24 +140,16 @@ repo::lib::RepoMatrix TransformationNode::getTransMatrix(const bool &rowMajor) c
 					index = rowInd * 4 + colInd;
 				}
 
-				auto f = arrayObj.getField(aField);
-				if (f.type() == ElementType::DOUBLE)
-					transArr[index] = (float)f.Double();
-				else if (f.type() == ElementType::INT)
-					transArr[index] = (float)f.Int();
-				else
-				{
-					repoError << "Unexpected type within transformation matrix!";
-				}
+				transArr[index] = cols[colInd].number();
 			}
 		}
+		return repo::lib::RepoMatrix(transformationMatrix);
 	}
 	else
 	{
 		repoWarning << "This transformation has no matrix field, returning identity";
-		transformationMatrix = { 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1 };
+		return repo::lib::RepoMatrix();
 	}
-	return repo::lib::RepoMatrix(transformationMatrix);
 }
 
 bool TransformationNode::sEqual(const RepoNode &other) const

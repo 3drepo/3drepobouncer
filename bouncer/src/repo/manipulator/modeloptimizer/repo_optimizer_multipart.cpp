@@ -76,8 +76,7 @@ bool MultipartOptimizer::getBakedMeshNodes(
 	const repo::core::model::RepoScene* scene,
 	const repo::core::model::RepoNode* node,
 	repo::lib::RepoMatrix mat,
-	repo::lib::RepoUUID id,
-	std::vector<repo::core::model::MeshNode>& nodes)
+	BakedMeshNodes& nodes)
 {
 	bool success = false;
 	if (success = scene && node)
@@ -91,19 +90,16 @@ bool MultipartOptimizer::getBakedMeshNodes(
 			auto children = scene->getChildrenAsNodes(defaultGraph, trans->getSharedID());
 			for (const auto& child : children)
 			{
-				success &= getBakedMeshNodes(scene, child, mat, id, nodes);
+				success &= getBakedMeshNodes(scene, child, mat, nodes);
 			}
 			break;
 		}
 
 		case repo::core::model::NodeType::MESH:
 		{
-			if (node->getUniqueID() == id)
-			{
-				auto mesh = (repo::core::model::MeshNode*)node;
-				repo::core::model::MeshNode transformedMesh = mesh->cloneAndApplyTransformation(mat);
-				nodes.push_back(transformedMesh);
-			}
+			auto mesh = (repo::core::model::MeshNode*)node;
+			repo::core::model::MeshNode transformedMesh = mesh->cloneAndApplyTransformation(mat);
+			nodes.insert({ node->getUniqueID(), transformedMesh });
 		}
 		}
 	}
@@ -515,6 +511,7 @@ void MultipartOptimizer::createSuperMeshes(
 			// The node is small enough to fit within one supermesh, just not this one
 			mappedMeshes.push_back(currentSupermesh);
 			currentSupermesh = mapped_mesh_t();
+			appendMeshes(scene, node, currentSupermesh);
 		}
 	}
 
@@ -608,12 +605,19 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 	auto meshes = scene->getAllMeshes(defaultGraph);
 	if (success = meshes.size())
 	{
+		// Bake all the meshes into model space, creating a lookup for processMeshGroup
+
+		repoInfo << "Baking " << meshes.size() << " meshes...";
+
+		BakedMeshNodes bakedMeshNodes;
+		getBakedMeshNodes(scene, scene->getRoot(defaultGraph), repo::lib::RepoMatrix(), bakedMeshNodes);
+
+		//Sort the meshes into 3 different groupings
+
 		std::unordered_map<std::string, std::unordered_map<uint32_t, std::vector<std::set<repo::lib::RepoUUID>>>> transparentMeshes, normalMeshes;
 		std::unordered_map < std::string, std::unordered_map < uint32_t, std::unordered_map < repo::lib::RepoUUID,
 			std::vector<std::set<repo::lib::RepoUUID>>, repo::lib::RepoUUIDHasher >>>texturedMeshes;
 
-		//Sort the meshes into 3 different grouping
-		
 		repoInfo << "Sorting " << meshes.size() << " meshes...";
 
 		sortMeshes(scene, meshes, normalMeshes, transparentMeshes, texturedMeshes);		
@@ -633,7 +637,7 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 			{
 				for (const auto formatSet : formats.second)
 				{
-					success &= processMeshGroup(scene, formatSet, rootID, mergedMeshes, mergedMeshesMaterials, materialIdMap, !meshGroup.first.empty());
+					success &= processMeshGroup(scene, bakedMeshNodes, formatSet, rootID, mergedMeshes, mergedMeshesMaterials, materialIdMap, !meshGroup.first.empty());
 				}
 			}
 		}
@@ -644,7 +648,7 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 			{
 				for (const auto grouping : groupings.second)
 				{
-					success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, mergedMeshesMaterials, materialIdMap, !meshGroup.first.empty());
+					success &= processMeshGroup(scene, bakedMeshNodes, grouping, rootID, mergedMeshes, mergedMeshesMaterials, materialIdMap, !meshGroup.first.empty());
 				}
 			}
 		}
@@ -659,7 +663,7 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 				{
 					for (const auto grouping : groupings.second)
 					{
-						success &= processMeshGroup(scene, grouping, rootID, mergedMeshes, mergedMeshesMaterials, materialIdMap, !meshGroup.first.empty());
+						success &= processMeshGroup(scene, bakedMeshNodes, grouping, rootID, mergedMeshes, mergedMeshesMaterials, materialIdMap, !meshGroup.first.empty());
 					}
 				}
 			}
@@ -1015,12 +1019,13 @@ void MultipartOptimizer::clusterMeshNodes(
 }
 
 bool MultipartOptimizer::processMeshGroup(
-	const repo::core::model::RepoScene *scene,
-	const std::set<repo::lib::RepoUUID> &groupMeshIds,
-	const repo::lib::RepoUUID &rootID,
-	repo::core::model::RepoNodeSet &mergedMeshes,
-	MaterialNodes &mergedMeshesMaterials,
-	MaterialUUIDMap &materialMap,
+	const repo::core::model::RepoScene* scene,
+	const BakedMeshNodes& bakedMeshNodes,
+	const std::set<repo::lib::RepoUUID>& groupMeshIds,
+	const repo::lib::RepoUUID& rootID,
+	repo::core::model::RepoNodeSet& mergedMeshes,
+	MaterialNodes& mergedMeshesMaterials,
+	MaterialUUIDMap& materialMap,
 	const bool isGrouped
 )
 {
@@ -1042,7 +1047,11 @@ bool MultipartOptimizer::processMeshGroup(
 	std::vector<repo::core::model::MeshNode> nodes;
 	for (auto id : groupMeshIds)
 	{
-		getBakedMeshNodes(scene, scene->getRoot(defaultGraph), repo::lib::RepoMatrix(), id, nodes);
+		auto range = bakedMeshNodes.equal_range(id);
+		for (auto pair = range.first; pair != range.second; pair++)
+		{
+			nodes.push_back(pair->second);
+		}
 	}
 
 	// Next partition them into sets that should form the supermeshes

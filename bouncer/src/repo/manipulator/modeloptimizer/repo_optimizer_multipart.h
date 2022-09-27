@@ -58,6 +58,11 @@ namespace repo {
 				*/
 				typedef std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> MaterialNodes;
 
+				/*
+				* A dictionary of MeshNode instances baked into model space based on the transform hierarchy they sit in
+				*/
+				typedef std::unordered_multimap<repo::lib::RepoUUID, repo::core::model::MeshNode, repo::lib::RepoUUIDHasher> BakedMeshNodes;
+
 			private:
 				/**
 				* Recursively enumerates scene to find all the instances of 
@@ -69,8 +74,7 @@ namespace repo {
 					const repo::core::model::RepoScene* scene, 
 					const repo::core::model::RepoNode* node, 
 					repo::lib::RepoMatrix mat,
-					repo::lib::RepoUUID id,
-					std::vector<repo::core::model::MeshNode> &nodes);
+					BakedMeshNodes &nodes);
 
 				/**
 				* Represents a batched set of geometry.
@@ -175,6 +179,7 @@ namespace repo {
 				*/
 				bool processMeshGroup(
 					const repo::core::model::RepoScene *scene,
+					const BakedMeshNodes &bakedMeshNodes,
 					const std::set<repo::lib::RepoUUID>	&groupMeshIds,
 					const repo::lib::RepoUUID &rootID,
 					repo::core::model::RepoNodeSet &mergedMeshes,
