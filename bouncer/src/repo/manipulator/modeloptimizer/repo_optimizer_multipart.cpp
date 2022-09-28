@@ -955,17 +955,15 @@ void MultipartOptimizer::clusterMeshNodes(
 		return a.efficiency < b.efficiency;
 	});
 
-	// Bin the nodes based on vertex count. The bottom 80% will form pure-LOD
-	// groups, while the top 20% will be spatialised.
+	// Bin the nodes based on vertex count. The bottom 20% will form pure-LOD
+	// groups, while the top 80% will be spatialised.
 
 	auto totalVertices = 0;
 	for (auto& mesh : meshes) {
 		totalVertices += mesh.getNumVertices();
 	}
 
-	auto modelLowerThreshold = (int)(totalVertices * 0.2f);
-	
-	// For the lower 80% of the model, supermesh purely on LOD
+	auto modelLowerThreshold = max(65536, (int)(totalVertices * 0.2f));
 
 	auto binVertexSize = 65536;
 	std::vector<repo::core::model::MeshNode> bin;
@@ -973,15 +971,15 @@ void MultipartOptimizer::clusterMeshNodes(
 	auto binsVertexCount = 0;
 	
 	int i = 0;
-	for (; i < metrics.size(); i++)
+	for (; i < metrics.size(); )
 	{
-		auto& item = metrics[i];
+		auto& item = metrics[i++]; // i is incremented here to make sure its always incremented for the second loop, even if we break in the first iteration
 
 		binVertexCount += item.node.getNumVertices();
 		binsVertexCount += item.node.getNumVertices();
 		bin.push_back(item.node);
 
-		if (binVertexCount > binVertexSize)
+		if (binVertexCount >= binVertexSize) // If we've filled up one supermesh
 		{
 			// Copy
 			auto cluster = std::vector<repo::core::model::MeshNode>(bin);
@@ -992,21 +990,24 @@ void MultipartOptimizer::clusterMeshNodes(
 			binVertexCount = 0;
 		}
 
-		if (binsVertexCount > modelLowerThreshold) {
+		if (binsVertexCount > modelLowerThreshold) // If we've covered the bottom 20% of the model
+		{
 			break;
 		}
 	}
 
-	// For the ones left over...
-	if (bin.size()) {
+	if (bin.size()) // Either we have some % of the model remaining, or the entire model fits below 65K
+	{
 		auto cluster = std::vector<repo::core::model::MeshNode>(bin);
 		clusters.push_back(cluster);
+
+		bin.clear();
 	}
 
 	// Now the high-part
-	for (; i < metrics.size(); i++)
+	for (; i < metrics.size();)
 	{
-		auto& item = metrics[i];
+		auto& item = metrics[i++];
 
 		bin.push_back(item.node);
 	}
