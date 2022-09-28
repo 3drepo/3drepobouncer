@@ -19,6 +19,7 @@
 #include <cstdlib>
 #include <repo/manipulator/modeloptimizer/repo_optimizer_multipart.h>
 #include <repo/core/model/bson/repo_bson_factory.h>
+#include <limits>
 
 using namespace repo::manipulator::modeloptimizer;
 
@@ -52,10 +53,44 @@ repo::core::model::MeshNode* createRandomMesh(const int nVertices, const int nFa
 	std::vector<repo::lib::RepoVector3D> vertices;
 	std::vector<repo_face_t> faces;
 
+	std::vector<std::vector<float>> bbox = { 
+		{FLT_MAX, FLT_MAX, FLT_MAX},
+		{FLT_MIN, FLT_MIN, FLT_MIN}
+	};
+
 	for (int i = 0; i < nVertices; ++i) {
-		vertices.push_back({static_cast<float>(std::rand()), 
-							static_cast<float>(std::rand()),
-							static_cast<float>(std::rand())});
+		repo::lib::RepoVector3D vertex = {	
+			static_cast<float>(std::rand()),
+			static_cast<float>(std::rand()),
+			static_cast<float>(std::rand()) 
+		};
+		vertices.push_back(vertex);
+
+		if (vertex.x < bbox[0][0])
+		{
+			bbox[0][0] = vertex.x;
+		}
+		if (vertex.y < bbox[0][1])
+		{
+			bbox[0][1] = vertex.y;
+		}
+		if (vertex.z < bbox[0][2])
+		{
+			bbox[0][2] = vertex.z;
+		}
+
+		if (vertex.x > bbox[1][0])
+		{
+			bbox[1][0] = vertex.x;
+		}
+		if (vertex.y > bbox[1][1])
+		{
+			bbox[1][1] = vertex.y;
+		}
+		if (vertex.z > bbox[1][2])
+		{
+			bbox[1][2] = vertex.z;
+		}
 	}
 
 	for (int i = 0; i < nFaces; ++i) {
@@ -74,7 +109,7 @@ repo::core::model::MeshNode* createRandomMesh(const int nVertices, const int nFa
 		uvs.push_back(channel);
 	}
 
-	auto mesh = new repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces, {}, {}, uvs, {}, {}, "mesh", parent));
+	auto mesh = new repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces, {}, bbox, uvs, {}, {}, "mesh", parent));
 
 	return mesh;
 }
