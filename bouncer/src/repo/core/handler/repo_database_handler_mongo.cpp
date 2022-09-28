@@ -23,6 +23,7 @@
 #include <unordered_map>
 
 #include "repo_database_handler_mongo.h"
+#include "fileservice/repo_file_manager.h"
 #include "../../lib/repo_log.h"
 
 using namespace repo::core::handler;
@@ -190,7 +191,6 @@ void MongoDatabaseHandler::createIndex(const std::string &database, const std::s
 }
 
 repo::core::model::RepoBSON MongoDatabaseHandler::createRepoBSON(
-	mongo::DBClientBase *worker,
 	const std::string &database,
 	const std::string &collection,
 	const mongo::BSONObj &obj,
@@ -203,8 +203,8 @@ repo::core::model::RepoBSON MongoDatabaseHandler::createRepoBSON(
 		std::vector<std::pair<std::string, std::string>> extFileList = orgBson.getFileList();
 		for (const auto &pair : extFileList)
 		{
-			repoTrace << "Found existing GridFS reference, retrieving file @ " << database << "." << collection << ":" << pair.first;
-			binMap[pair.first] = std::pair<std::string, std::vector<uint8_t>>(pair.second, getBigFile(worker, database, collection, pair.second));
+			repoTrace << "Found existing external file reference, retrieving file @ " << database << "." << collection << ":" << pair.second;
+			binMap[pair.first] = std::pair<std::string, std::vector<uint8_t>>(pair.second, getBigFile(database, collection, pair.second));
 		}
 	}
 
@@ -450,10 +450,13 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 						0,
 						retrieved);
 
+					workerPool->returnWorker(worker);
+					worker = nullptr;
 					for (; cursor.get() && cursor->more(); ++retrieved)
 					{
-						data.push_back(createRepoBSON(worker, database, collection, cursor->nextSafe().copy()));
+						data.push_back(createRepoBSON(database, collection, cursor->nextSafe().copy()));
 					}
+					worker = workerPool->getWorker();
 				} while (cursor.get() && cursor->more());
 			}
 			else
@@ -463,8 +466,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByCriteria
 		{
 			repoError << "Error in MongoDatabaseHandler::findAllByCriteria: " << e.what();
 		}
-
-		workerPool->returnWorker(worker);
+		if (worker) workerPool->returnWorker(worker);
 	}
 	return data;
 }
@@ -534,10 +536,13 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 						0,
 						retrieved);
 
+					workerPool->returnWorker(worker);
+					worker = nullptr;
 					for (; cursor.get() && cursor->more(); ++retrieved)
 					{
-						data.push_back(createRepoBSON(worker, database, collection, cursor->nextSafe().copy(), ignoreExtFiles));
+						data.push_back(createRepoBSON(database, collection, cursor->nextSafe().copy(), ignoreExtFiles));
 					}
+					worker = workerPool->getWorker();
 				} while (cursor.get() && cursor->more());
 			}
 			else
@@ -554,7 +559,7 @@ std::vector<repo::core::model::RepoBSON> MongoDatabaseHandler::findAllByUniqueID
 			repoError << e.what();
 		}
 
-		workerPool->returnWorker(worker);
+		if (worker) workerPool->returnWorker(worker);
 	}
 
 	return data;
@@ -585,7 +590,9 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 				getNamespace(database, collection),
 				query);
 
-			bson = createRepoBSON(worker, database, collection, bsonMongo);
+			workerPool->returnWorker(worker);
+			worker = nullptr;
+			bson = createRepoBSON(database, collection, bsonMongo);
 		}
 		else
 		{
@@ -594,10 +601,10 @@ repo::core::model::RepoBSON MongoDatabaseHandler::findOneBySharedID(
 	}
 	catch (mongo::DBException& e)
 	{
+		if (worker) workerPool->returnWorker(worker);
 		repoError << "Error querying the database: " << std::string(e.what());
 	}
 
-	workerPool->returnWorker(worker);
 	return bson;
 }
 
@@ -618,7 +625,9 @@ repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
 			mongo::BSONObj bsonMongo = worker->findOne(getNamespace(database, collection),
 				mongo::Query(queryBuilder.mongoObj()));
 
-			bson = createRepoBSON(worker, database, collection, bsonMongo);
+			workerPool->returnWorker(worker);
+			worker = nullptr;
+			bson = createRepoBSON(database, collection, bsonMongo);
 		}
 		else
 			repoError << "Failed to count number of items in collection: cannot obtain a database worker from the pool";
@@ -626,9 +635,9 @@ repo::core::model::RepoBSON  MongoDatabaseHandler::findOneByUniqueID(
 	catch (mongo::DBException& e)
 	{
 		repoError << e.what();
+		if (worker) workerPool->returnWorker(worker);
 	}
 
-	workerPool->returnWorker(worker);
 	return bson;
 }
 
@@ -657,12 +666,14 @@ MongoDatabaseHandler::getAllFromCollectionTailable(
 				limit,
 				skip,
 				fields.size() > 0 ? &tmp : nullptr);
-
+			workerPool->returnWorker(worker);
+			worker = nullptr;
 			while (cursor.get() && cursor->more())
 			{
 				//have to copy since the bson info gets cleaned up when cursor gets out of scope
-				bsons.push_back(createRepoBSON(worker, database, collection, cursor->nextSafe().copy()));
+				bsons.push_back(createRepoBSON(database, collection, cursor->nextSafe().copy()));
 			}
+			worker = workerPool->getWorker();
 		}
 		else
 			repoError << "Failed to count number of items in collection: cannot obtain a database worker from the pool";
@@ -671,8 +682,8 @@ MongoDatabaseHandler::getAllFromCollectionTailable(
 	{
 		repoError << "Failed retrieving bsons from mongo: " << e.what();
 	}
-
-	workerPool->returnWorker(worker);
+	if (worker)
+		workerPool->returnWorker(worker);
 	return bsons;
 }
 
@@ -725,41 +736,13 @@ std::list<std::string> MongoDatabaseHandler::getDatabases(
 }
 
 std::vector<uint8_t> MongoDatabaseHandler::getBigFile(
-	mongo::DBClientBase *worker,
 	const std::string &database,
 	const std::string &collection,
 	const std::string &fileName)
 {
-	mongo::GridFS gfs(*worker, database, collection);
-	mongo::GridFile tmpFile = gfs.findFileByName(fileName);
+	auto fileManager = fileservice::FileManager::getManager();
 
-	std::vector<uint8_t> bin;
-	if (tmpFile.exists())
-	{
-		std::ostringstream oss;
-		tmpFile.write(oss);
-
-		std::string fileStr = oss.str();
-
-		assert(sizeof(*fileStr.c_str()) == sizeof(uint8_t));
-
-		if (!fileStr.empty())
-		{
-			bin.resize(fileStr.size());
-			memcpy(&bin[0], fileStr.c_str(), fileStr.size());
-		}
-		else
-		{
-			repoError << "GridFS file : " << fileName << " in "
-				<< database << "." << collection << " is empty.";
-		}
-	}
-	else
-	{
-		repoError << "Failed to find file within GridFS";
-	}
-
-	return bin;
+	return fileManager->getFile(database, collection, fileName);
 }
 
 std::string MongoDatabaseHandler::getProjectFromCollection(const std::string &ns, const std::string &projectExt)
@@ -1003,8 +986,9 @@ bool MongoDatabaseHandler::insertDocument(
 			if (worker)
 			{
 				worker->insert(getNamespace(database, collection), obj);
-
-				success = storeBigFiles(worker, database, collection, obj, errMsg);
+				workerPool->returnWorker(worker);
+				worker = nullptr;
+				success = storeBigFiles(database, collection, obj, errMsg);
 			}
 			else
 				errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
@@ -1014,8 +998,8 @@ bool MongoDatabaseHandler::insertDocument(
 			std::string errString(e.what());
 			errMsg += errString;
 		}
-
-		workerPool->returnWorker(worker);
+		if (worker)
+			workerPool->returnWorker(worker);
 	}
 	else
 	{
@@ -1299,8 +1283,11 @@ bool MongoDatabaseHandler::upsertDocument(
 				}
 			}
 
-			if (success)
-				success = storeBigFiles(worker, database, collection, obj, errMsg);
+			if (success) {
+				workerPool->returnWorker(worker);
+				worker = nullptr;
+				success = storeBigFiles(database, collection, obj, errMsg);
+			}
 		}
 		else
 			errMsg = "Failed to count number of items in collection: cannot obtain a database worker from the pool";
@@ -1310,14 +1297,13 @@ bool MongoDatabaseHandler::upsertDocument(
 		success = false;
 		std::string errString(e.what());
 		errMsg += errString;
+		if (worker) workerPool->returnWorker(worker);
 	}
 
-	workerPool->returnWorker(worker);
 	return success;
 }
 
 bool MongoDatabaseHandler::storeBigFiles(
-	mongo::DBClientBase *worker,
 	const std::string &database,
 	const std::string &collection,
 	const repo::core::model::RepoBSON &obj,
@@ -1326,30 +1312,20 @@ bool MongoDatabaseHandler::storeBigFiles(
 {
 	bool success = true;
 
-	//insert files into gridFS if applicable
 	if (obj.hasOversizeFiles())
 	{
 		const std::vector<std::pair<std::string, std::string>> fNames = obj.getFileList();
 		repoTrace << "storeBigFiles: #oversized files: " << fNames.size();
-
+		auto fileManager = fileservice::FileManager::getManager();
 		for (const auto &file : fNames)
 		{
 			std::vector<uint8_t> binary = obj.getBigBinary(file.first);
-			if (binary.size())
-			{
-				//store the big biary file within GridFS
-				mongo::GridFS gfs(*worker, database, collection);
-				//FIXME: there must be errors to catch...
-				repoTrace << "storing " << file.second << "(" << file.first << ") in gridfs: " << database << "." << collection;
-				mongo::BSONObj bson = gfs.storeFile((char*)&binary[0], binary.size() * sizeof(binary[0]), file.second);
-
-				repoTrace << "returned object: " << bson.toString();
-			}
-			else
-			{
-				repoError << "A oversized entry exist but binary not found!";
+			repoTrace << "Uploading " << file.second << " file size " << binary.size();
+			if (!(binary.size() && fileManager->uploadFileAndCommit(database, collection, file.second, binary))) {
+				repoError << "Failed to upload binary into file service";
 				success = false;
 			}
+			repoTrace << "Upload completed " << success;
 		}
 	}
 

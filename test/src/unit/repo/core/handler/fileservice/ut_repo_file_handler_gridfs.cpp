@@ -26,10 +26,9 @@ using namespace repo::core::handler::fileservice;
 
 TEST(GridFSFileHandlerTest, Constructor)
 {
-	
 	EXPECT_NO_THROW({
 		auto fileHandler = GridFSFileHandler(getHandler());
-	});
+		});
 	EXPECT_THROW(GridFSFileHandler(nullptr), repo::lib::RepoException);
 }
 
@@ -45,12 +44,11 @@ TEST(GridFSFileHandlerTest, deleteFile)
 	auto dbHandler = getHandler();
 	std::string db = "testFileManager";
 	std::string col = "testFileUpload";
-	std::string fName = "gridFSFile";
+	std::string fName = "testFileRemove";
 
 	ASSERT_TRUE(dbHandler->getRawFile(db, col, fName).size() > 0);
 	EXPECT_TRUE(handler.deleteFile(db, col, fName));
 	EXPECT_EQ(dbHandler->getRawFile(db, col, fName).size(), 0);
-	
 }
 
 TEST(GridFSFileHandlerTest, writeFile)

@@ -53,18 +53,6 @@ RepoConfig::RepoConfig(
 	dbConf.pwDigested = pwDigested;
 }
 
-void RepoConfig::configureS3(
-	const std::string &bucketName,
-	const std::string &bucketRegion,
-	const bool useAsDefault)
-{
-	s3Conf.bucketName = bucketName;
-	s3Conf.bucketRegion = bucketRegion;
-	s3Conf.configured = true;
-
-	if (useAsDefault) defaultStorage = FileStorageEngine::S3;
-}
-
 void RepoConfig::configureFS(
 	const std::string &directory,
 	const int         &level,
@@ -108,16 +96,6 @@ RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 
 	auto useAsDefault = jsonTree.get<std::string>("defaultStorage", "");
 
-	//Read S3 configurations if found
-	auto s3Tree = jsonTree.get_child_optional("aws");
-
-	if (s3Tree) {
-		auto bucketName = s3Tree->get<std::string>("bucket_name", "");
-		auto bucketRegion = s3Tree->get<std::string>("bucket_region", "");
-		if (!bucketName.empty() && !bucketRegion.empty())
-			config.configureS3(bucketName, bucketRegion, useAsDefault == "s3");
-	}
-
 	//Read FS configuirations if found
 	auto fsTree = jsonTree.get_child_optional("fs");
 
@@ -134,8 +112,7 @@ RepoConfig RepoConfig::fromFile(const std::string &filePath) {
 bool RepoConfig::validate() const {
 	const bool validDBConn = !dbConf.connString.empty() || (!dbConf.addr.empty() && dbConf.port > 0);
 	const bool dbOk = validDBConn && (dbConf.username.empty() == dbConf.password.empty());
-	const bool s3Ok = !s3Conf.configured || (!s3Conf.bucketName.empty() && !s3Conf.bucketRegion.empty());
 	const bool fsOk = !fsConf.configured || (!fsConf.dir.empty() && fsConf.nLevel >= 0);
 
-	return dbOk && s3Ok && fsOk;
+	return dbOk && fsOk;
 }

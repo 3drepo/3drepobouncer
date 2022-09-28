@@ -28,8 +28,6 @@ void printHelp()
 	std::cout << "port\t\tPort of database instance" << std::endl;
 	std::cout << "username\tUsername to connect to database" << std::endl;
 	std::cout << "password\tPassword of user" << std::endl;
-	std::cout << "bucketName\tName of AWS S3 bucket" << std::endl;
-	std::cout << "bucketRegion\tRegion of S3 bucket" << std::endl;
 	std::cout << std::endl;
 	std::cout << "Supported Commands:" << std::endl;
 	std::cout << helpInfo() << std::endl;
@@ -99,7 +97,7 @@ int main(int argc, char* argv[]) {
 			op.nArgcs = 0;
 
 			int32_t errcode = performOperation(controller, nullptr, op);
-			
+
 			return errcode;
 		}
 
@@ -136,14 +134,13 @@ int main(int argc, char* argv[]) {
 		std::string errMsg;
 
 		if (noConn) {
-			int32_t errcode = performOperation(controller, nullptr, op);			
+			int32_t errcode = performOperation(controller, nullptr, op);
 			repoLog("Process completed, returning with error code: " + std::to_string(errcode));
 			return errcode;
 		}
 		else {
 			repo::lib::RepoConfig config = { address, port, username, password };
-			if (!bucketName.empty() && !bucketRegion.empty())
-				config.configureS3(bucketName, bucketRegion);
+
 			repo::RepoController::RepoToken* token = controller->init(errMsg, config);
 			if (token)
 			{

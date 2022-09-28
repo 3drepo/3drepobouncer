@@ -21,11 +21,8 @@
 #include "../../model/bson/repo_bson_factory.h"
 #include "repo_file_handler_fs.h"
 #include "repo_file_handler_gridfs.h"
-#include "repo_file_handler_s3.h"
 
 using namespace repo::core::handler::fileservice;
-
-#define LEGACY_SUPPORT 1
 
 FileManager* FileManager::manager = nullptr;
 
@@ -38,7 +35,7 @@ FileManager* FileManager::getManager() {
 FileManager* FileManager::instantiateManager(
 	const repo::lib::RepoConfig &config,
 	repo::core::handler::AbstractDatabaseHandler *dbHandler
-){
+) {
 	if (manager) disconnect();
 
 	return manager = new FileManager(config, dbHandler);
@@ -53,8 +50,7 @@ bool FileManager::uploadFileAndCommit(
 	bool success = true;
 	auto fileUUID = repo::lib::RepoUUID::createUUID();
 	auto linkName = defaultHandler->uploadFile(databaseName, collectionNamePrefix, fileUUID.toString(), bin);
-	if (success = !linkName.empty()){
-
+	if (success = !linkName.empty()) {
 		success = upsertFileRef(
 			databaseName,
 			collectionNamePrefix,
@@ -62,9 +58,6 @@ bool FileManager::uploadFileAndCommit(
 			linkName,
 			defaultHandler->getType(),
 			bin.size());
-#ifdef LEGACY_SUPPORT
-		gridfsHandler->uploadFile(databaseName, collectionNamePrefix, fileName, bin);
-#endif
 	}
 
 	return success;
@@ -82,11 +75,6 @@ bool FileManager::deleteFileAndRef(
 		collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
 		criteria);
 
-#ifdef LEGACY_SUPPORT
-	gridfsHandler->deleteFile(databaseName, collectionNamePrefix, fileName);
-#endif
-
-
 	if (ref.isEmpty())
 	{
 		repoTrace << "Failed: cannot find file ref "
@@ -100,18 +88,15 @@ bool FileManager::deleteFileAndRef(
 		const auto keyName = ref.getRefLink();
 		const auto type = ref.getType(); //Should return enum
 
-		std::shared_ptr<AbstractFileHandler> handler = gridfsHandler;;
+		std::shared_ptr<AbstractFileHandler> handler = gridfsHandler;
 		switch (type) {
-		case repo::core::model::RepoRef::RefType::S3:
-			handler = s3Handler;
-			break;
 		case repo::core::model::RepoRef::RefType::FS:
 			handler = fsHandler;
-			break;		
+			break;
 		}
-		
+
 		if (handler) {
-			success = defaultHandler->deleteFile(databaseName, collectionNamePrefix, keyName) &&
+			success = handler->deleteFile(databaseName, collectionNamePrefix, keyName) &&
 				dropFileRef(
 					ref,
 					databaseName,
@@ -126,25 +111,59 @@ bool FileManager::deleteFileAndRef(
 	return success;
 }
 
+std::vector<uint8_t> FileManager::getFile(
+	const std::string                            &databaseName,
+	const std::string                            &collectionNamePrefix,
+	const std::string                            &fileName
+) {
+	repo::core::model::RepoBSON criteria = BSON(REPO_LABEL_ID << cleanFileName(fileName));
+	repo::core::model::RepoRef ref = dbHandler->findOneByCriteria(
+		databaseName,
+		collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF,
+		criteria);
+
+	std::vector<uint8_t> file;
+	if (ref.isEmpty())
+	{
+		repoTrace << "Failed: cannot find file ref "
+			<< cleanFileName(fileName) << " from "
+			<< databaseName << "/"
+			<< collectionNamePrefix << "." << REPO_COLLECTION_EXT_REF;
+	}
+	else
+	{
+		const auto keyName = ref.getRefLink();
+		const auto type = ref.getType(); //Should return enum
+
+		std::shared_ptr<AbstractFileHandler> handler = gridfsHandler;
+		switch (type) {
+		case repo::core::model::RepoRef::RefType::FS:
+			handler = fsHandler;
+			break;
+		}
+
+		if (handler) {
+			repoTrace << "Getting file (" << keyName << ") from " << (type == repo::core::model::RepoRef::RefType::FS ? "FS" : "GridFS");
+			file = handler->getFile(databaseName, collectionNamePrefix, keyName);
+		}
+		else {
+			repoError << "Trying to delete a file from " << repo::core::model::RepoRef::convertTypeAsString(type) << " but connection to this service is not configured.";
+		}
+	}
+
+	return file;
+}
+
 FileManager::FileManager(
 	const repo::lib::RepoConfig &config,
 	repo::core::handler::AbstractDatabaseHandler *dbHandler
 ) : dbHandler(dbHandler) {
-
-	if(!dbHandler)
+	if (!dbHandler)
 		throw repo::lib::RepoException("Trying to instantiate FileManager with a nullptr to database!");
 
 	gridfsHandler = std::make_shared<GridFSFileHandler>(dbHandler);
 	defaultHandler = gridfsHandler;
-#ifdef S3_SUPPORT
-	auto s3Config = config.getS3Config();
-	if (s3Config.configured) {
-		s3Handler = std::make_shared<S3FileHandler>(s3Config.bucketName, s3Config.bucketRegion);
-		if (config.getDefaultStorageEngine() == repo::lib::RepoConfig::FileStorageEngine::S3)
-			defaultHandler = s3Handler;
-	}
-#endif
-	
+
 	auto fsConfig = config.getFSConfig();
 	if (fsConfig.configured) {
 		fsHandler = std::make_shared<FSFileHandler>(fsConfig.dir, fsConfig.nLevel);
@@ -203,12 +222,8 @@ bool FileManager::upsertFileRef(
 
 	auto refObj = repo::core::model::RepoBSONFactory::makeRepoRef(id, type, link, size);
 	std::string collectionName = collectionNamePrefix + "." + REPO_COLLECTION_EXT_REF;
-
-	if (success = dbHandler->upsertDocument(databaseName, collectionName, refObj, true, errMsg))
-	{
-		repoInfo << "File ref for " << collectionName << " added.";
-	}
-	else
+	success = dbHandler->upsertDocument(databaseName, collectionName, refObj, true, errMsg);
+	if (!success)
 	{
 		repoError << "Failed to add " << collectionName << " file ref: " << errMsg;;
 	}
