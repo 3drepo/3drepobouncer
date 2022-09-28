@@ -29,6 +29,7 @@
 #include "../../core/model/bson/repo_bson_builder.h"
 
 #include "boost/chrono.hpp"
+#include <algorithm>
 
 using namespace repo::manipulator::modeloptimizer;
 
@@ -963,7 +964,7 @@ void MultipartOptimizer::clusterMeshNodes(
 		totalVertices += mesh.getNumVertices();
 	}
 
-	auto modelLowerThreshold = max(65536, (int)(totalVertices * 0.2f));
+	auto modelLowerThreshold = std::max<int>(65536, (int)(totalVertices * 0.2f));
 
 	auto binVertexSize = 65536;
 	std::vector<repo::core::model::MeshNode> bin;
