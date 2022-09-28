@@ -30,7 +30,7 @@ const setBouncerEnvars = (logDir) => {
 		});
 	}
 
-	if(config.bouncer.envpath){
+	if (config.bouncer.envpath) {
 		process.env.Path += config.bouncer.envpath;
 	}
 
