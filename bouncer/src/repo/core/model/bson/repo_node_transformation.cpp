@@ -103,15 +103,12 @@ bool TransformationNode::isIdentity(const float &eps) const
 	return  getTransMatrix(false).isIdentity(eps);
 }
 
-// Keeping these vectors around avoids the allocations on the very frequent
-// calls to getTransMatrix, as the contents are always the same size.
-// (Static here means they are not exported.)
-static std::vector<mongo::BSONElement> rows;
-static std::vector<mongo::BSONElement> cols;
-static std::vector<float> transformationMatrix;
-
 repo::lib::RepoMatrix TransformationNode::getTransMatrix(const bool &rowMajor) const
 {
+	std::vector<mongo::BSONElement> rows;
+	std::vector<mongo::BSONElement> cols;
+	std::vector<float> transformationMatrix;
+
 	uint32_t rowInd = 0, colInd = 0;
 	if (hasField(REPO_NODE_LABEL_MATRIX))
 	{
