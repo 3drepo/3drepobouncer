@@ -340,7 +340,6 @@ repo::core::model::RepoNodeSet GeometryCollector::getMeshNodes(const repo::core:
 						meshData.boundingBox,
 						uvChannels,
 						dummyCol,
-						dummyOutline,
 						partialObject ? "" : meshGroupEntry.first,
 						{ parentId }
 					);

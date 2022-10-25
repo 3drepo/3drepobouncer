@@ -551,13 +551,8 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 	boundingBox.push_back(minBound);
 	boundingBox.push_back(maxBound);
 
-	outline.push_back({ minVertex.x, minVertex.y });
-	outline.push_back({ maxVertex.x, minVertex.y });
-	outline.push_back({ maxVertex.x, maxVertex.y });
-	outline.push_back({ minVertex.x, maxVertex.y });
-
 	meshNode = repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(
-		vertices, faces, normals, boundingBox, uvChannels, colors, outline));
+		vertices, faces, normals, boundingBox, uvChannels, colors));
 
 	///*
 	//*------------------------------ setParents ----------------------------------

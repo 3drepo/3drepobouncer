@@ -109,7 +109,7 @@ repo::core::model::MeshNode* createRandomMesh(const int nVertices, const int nFa
 		uvs.push_back(channel);
 	}
 
-	auto mesh = new repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces, {}, bbox, uvs, {}, {}, "mesh", parent));
+	auto mesh = new repo::core::model::MeshNode(repo::core::model::RepoBSONFactory::makeMeshNode(vertices, faces, {}, bbox, uvs, {}, "mesh", parent));
 
 	return mesh;
 }

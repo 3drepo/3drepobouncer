@@ -622,7 +622,7 @@ repo::core::model::MeshNode* MultipartOptimizer::createMeshNode(
 		return resultMesh;
 	}
 
-	//workout bbox and outline from meshMapping
+	//workout bbox from meshMapping
 	auto meshMapping = mapped.meshMapping;
 	std::vector<repo::lib::RepoVector3D> bbox;
 	bbox.push_back(meshMapping[0].min);
@@ -633,12 +633,6 @@ repo::core::model::MeshNode* MultipartOptimizer::createMeshNode(
 		updateMax(bbox[1], meshMapping[i].max);
 	}
 
-	std::vector < std::vector<float> > outline;
-	outline.push_back({ bbox[0].x, bbox[0].y });
-	outline.push_back({ bbox[1].x, bbox[0].y });
-	outline.push_back({ bbox[1].x, bbox[1].y });
-	outline.push_back({ bbox[0].x, bbox[1].y });
-
 	std::vector<std::vector<float>> bboxVec = { { bbox[0].x, bbox[0].y, bbox[0].z }, { bbox[1].x, bbox[1].y, bbox[1].z } };
 
 	repo::core::model::MeshNode superMesh = repo::core::model::RepoBSONFactory::makeMeshNode(
@@ -647,7 +641,8 @@ repo::core::model::MeshNode* MultipartOptimizer::createMeshNode(
 		mapped.normals, 
 		bboxVec,
 		mapped.uvChannels,
-		mapped.colors, outline, isGrouped ? "grouped" : "");
+		mapped.colors, 
+		isGrouped ? "grouped" : "");
 	resultMesh = new repo::core::model::MeshNode(superMesh.cloneAndUpdateMeshMapping(meshMapping, true));
 
 	return resultMesh;
@@ -794,10 +789,6 @@ void clusterMeshNodesBvh(
 	const std::vector<repo::core::model::MeshNode>& meshes,
 	std::vector<std::vector<repo::core::model::MeshNode>>& clusters) 
 {
-	using Scalar = float;
-	using Bvh = bvh::Bvh<Scalar>;
-	using Vector3 = bvh::Vector3<Scalar>;
-
 	// The BVH builder requires a set of bounding boxes and centers to work with.
 	// Each of these corresponds to a primitive. The primitive indices in the tree
 	// refer to entries in this list, and so the entries in meshes, if the order
@@ -807,12 +798,12 @@ void clusterMeshNodesBvh(
 	for (const auto& node : meshes)
 	{
 		auto bounds = node.getBoundingBox();
-		auto min = Vector3(bounds[0].x, bounds[0].y, bounds[0].z);
-		auto max = Vector3(bounds[1].x, bounds[1].y, bounds[1].z);
+		auto min = BvhVector3(bounds[0].x, bounds[0].y, bounds[0].z);
+		auto max = BvhVector3(bounds[1].x, bounds[1].y, bounds[1].z);
 		boundingBoxes.push_back(bvh::BoundingBox<Scalar>(min, max));
 	}
 
-	auto centers = std::vector<Vector3>();
+	auto centers = std::vector<BvhVector3>();
 	for (const auto& bounds : boundingBoxes)
 	{
 		centers.push_back(bounds.center());

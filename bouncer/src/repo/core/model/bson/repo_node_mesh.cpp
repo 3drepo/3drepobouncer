@@ -162,16 +162,6 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 		}
 		builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, arrayBuilder.obj());
 
-		std::vector<float> outline0 = { newBbox[0].x, newBbox[0].y };
-		std::vector<float> outline1 = { newBbox[1].x, newBbox[0].y };
-		std::vector<float> outline2 = { newBbox[1].x, newBbox[1].y };
-		std::vector<float> outline3 = { newBbox[0].x, newBbox[1].y };
-		outlineBuilder.appendArray("0", outline0);
-		outlineBuilder.appendArray("1", outline1);
-		outlineBuilder.appendArray("2", outline2);
-		outlineBuilder.appendArray("3", outline3);
-		builder.appendArray(REPO_NODE_MESH_LABEL_OUTLINE, outlineBuilder.obj());
-
 		builder.appendElementsUnique(*this);
 
 		return MeshNode(builder.obj(), newBigFiles);

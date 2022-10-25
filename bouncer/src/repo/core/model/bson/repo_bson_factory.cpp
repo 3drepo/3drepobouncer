@@ -254,7 +254,6 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	const std::vector<std::vector<float>>             &boundingBox,
 	const std::vector<std::vector<repo::lib::RepoVector2D>>   &uvChannels,
 	const std::vector<repo_color4d_t>                 &colors,
-	const std::vector<std::vector<float>>             &outline,
 	const std::string                           &name,
 	const std::vector<repo::lib::RepoUUID>      &parents,
 	const int                                   &apiLevel)
@@ -283,19 +282,6 @@ MeshNode RepoBSONFactory::makeMeshNode(
 		}
 
 		builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, arrayBuilder.obj());
-	}
-
-	if (outline.size() > 0)
-	{
-		RepoBSONBuilder arrayBuilder;
-
-		for (int i = 0; i < outline.size(); i++)
-		{
-			arrayBuilder.appendArray(boost::lexical_cast<std::string>(i), outline[i]);
-			bytesize += outline[i].size() * sizeof(outline[i][0]);
-		}
-
-		builder.appendArray(REPO_NODE_MESH_LABEL_OUTLINE, arrayBuilder.obj());
 	}
 
 	/*

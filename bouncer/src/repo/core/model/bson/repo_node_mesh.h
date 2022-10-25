@@ -42,7 +42,6 @@ namespace repo {
 			//------------------------------------------------------------------------------
 #define REPO_NODE_MESH_LABEL_NORMALS					"normals" //!< normals array label
 			//------------------------------------------------------------------------------
-#define REPO_NODE_MESH_LABEL_OUTLINE					"outline" //!< outline array label
 #define REPO_NODE_MESH_LABEL_BOUNDING_BOX			"bounding_box" //!< bounding box
 			//------------------------------------------------------------------------------
 #define REPO_NODE_MESH_LABEL_UV_CHANNELS				"uv_channels" //!< uv channels array
