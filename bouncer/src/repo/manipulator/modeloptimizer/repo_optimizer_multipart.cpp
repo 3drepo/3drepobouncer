@@ -28,17 +28,23 @@
 #include "../../core/model/bson/repo_bson_factory.h"
 #include "../../core/model/bson/repo_bson_builder.h"
 
-#include "boost/chrono.hpp"
 #include <algorithm>
+#include <chrono>
 
 using namespace repo::manipulator::modeloptimizer;
 
 auto defaultGraph = repo::core::model::RepoScene::GraphType::DEFAULT;
 
+using Scalar = float;
+using Bvh = bvh::Bvh<Scalar>;
+using BvhVector3 = bvh::Vector3<Scalar>;
+
 static const size_t REPO_MP_MAX_VERTEX_COUNT = 65536;
 static const size_t REPO_MP_MAX_MESHES_IN_SUPERMESH = 5000;
+static const size_t REPO_BVH_MAX_LEAF_SIZE = 16;
+static const size_t REPO_MODEL_LOW_CLUSTERING_RATIO = 0.2f;
 
-#define CHRONO_DURATION(start) boost::chrono::duration_cast<boost::chrono::milliseconds>(boost::chrono::high_resolution_clock::now() - start).count()
+#define CHRONO_DURATION(start) std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count()
 
 MultipartOptimizer::MultipartOptimizer() :
 	AbstractOptimizer()
@@ -77,7 +83,7 @@ bool MultipartOptimizer::getBakedMeshNodes(
 	const repo::core::model::RepoScene* scene,
 	const repo::core::model::RepoNode* node,
 	repo::lib::RepoMatrix mat,
-	BakedMeshNodes& nodes)
+	MeshMap& nodes)
 {
 	bool success = false;
 	if (success = scene && node)
@@ -112,7 +118,7 @@ bool MultipartOptimizer::getBakedMeshNodes(
 	return success;
 }
 
-void MultipartOptimizer::appendMeshes(
+void MultipartOptimizer::appendMesh(
 	const repo::core::model::RepoScene* scene,
 	repo::core::model::MeshNode node,
 	mapped_mesh_t& mapped
@@ -190,7 +196,7 @@ void MultipartOptimizer::appendMeshes(
 	}
 }
 
-void updateMinMax(repo::lib::RepoVector3D& min, repo::lib::RepoVector3D& max, repo::lib::RepoVector3D v)
+void updateMin(repo::lib::RepoVector3D& min, const repo::lib::RepoVector3D v)
 {
 	if (v.x < min.x) {
 		min.x = v.x;
@@ -201,7 +207,10 @@ void updateMinMax(repo::lib::RepoVector3D& min, repo::lib::RepoVector3D& max, re
 	if (v.z < min.z) {
 		min.z = v.z;
 	}
+}
 
+void updateMax(repo::lib::RepoVector3D& max, const repo::lib::RepoVector3D v)
+{
 	if (v.x > max.x) {
 		max.x = v.x;
 	}
@@ -213,18 +222,18 @@ void updateMinMax(repo::lib::RepoVector3D& min, repo::lib::RepoVector3D& max, re
 	}
 }
 
-void MultipartOptimizer::splitMeshes(
-	const repo::core::model::RepoScene* scene,
-	repo::core::model::MeshNode node,
-	std::vector<mapped_mesh_t>& mappedMeshes
+void updateMinMax(repo::lib::RepoVector3D& min, repo::lib::RepoVector3D& max, const repo::lib::RepoVector3D v)
+{
+	updateMin(min, v);
+	updateMax(max, v);
+}
+
+// Constructs a bounding volumne hierarchy of all the Faces in the MeshNode
+
+Bvh buildBvh(
+	const repo::core::model::MeshNode node
 )
 {
-	auto start = boost::chrono::high_resolution_clock::now();
-
-	using Scalar = float;
-	using Bvh = bvh::Bvh<Scalar>;
-	using Vector3 = bvh::Vector3<Scalar>;
-
 	// Create a set of bounding boxes & centers for each Face in the oversized 
 	// mesh.
 	// The BVH builder expects a set of bounding boxes and centers to work with.
@@ -232,25 +241,21 @@ void MultipartOptimizer::splitMeshes(
 	auto faces = node.getFaces();
 	auto vertices = node.getVertices();
 	auto boundingBoxes = std::vector<bvh::BoundingBox<Scalar>>();
+	auto centers = std::vector<BvhVector3>();
 
-	for (auto& face : faces)
+	for (const auto& face : faces)
 	{
 		auto v = vertices[face[0]];
-		auto b = bvh::BoundingBox<Scalar>(Vector3(v.x, v.y, v.z));
+		auto b = bvh::BoundingBox<Scalar>(BvhVector3(v.x, v.y, v.z));
 
 		for (int i = 1; i < face.size(); i++)
 		{
 			v = vertices[face[i]];
-			b.extend(Vector3(v.x, v.y, v.z));
+			b.extend(BvhVector3(v.x, v.y, v.z));
 		}
 
 		boundingBoxes.push_back(b);
-	}
-
-	auto centers = std::vector<Vector3>();
-	for (auto& bounds : boundingBoxes)
-	{
-		centers.push_back(bounds.center());
+		centers.push_back(b.center());
 	}
 
 	auto globalBounds = bvh::compute_bounding_boxes_union(boundingBoxes.data(), boundingBoxes.size());
@@ -259,18 +264,21 @@ void MultipartOptimizer::splitMeshes(
 
 	Bvh bvh;
 	bvh::SweepSahBuilder<Bvh> builder(bvh);
-	builder.max_leaf_size = 16;
+	builder.max_leaf_size = REPO_BVH_MAX_LEAF_SIZE;
 	builder.build(globalBounds, boundingBoxes.data(), centers.data(), boundingBoxes.size());
 
-	// The tree now contains all the face bounds. To know where to cut the tree, 
-	// we need to get the number of unique vertices in each node.
+	return bvh;
+}
 
-	// To do this, first get the unique counts for each leaf node by partitioning
-	// the tree into leaf and branch nodes.
+// Create a breadth first list of all the leaf, and branch, nodes in a Bvh.
+// Nodes will only appear in one of the two lists.
 
-	std::vector<size_t> leaves;
-	std::vector<size_t> flattened;
-
+void flattenBvh(
+	const Bvh& bvh,
+	std::vector<size_t>& leaves,
+	std::vector<size_t>& branches
+)
+{
 	std::queue<size_t> nodeQueue; // Using a queue instead of a stack means the child nodes are handled later, resulting in a breadth first traversal
 	nodeQueue.push(0);
 	do {
@@ -288,16 +296,68 @@ void MultipartOptimizer::splitMeshes(
 			nodeQueue.push(node.first_child_or_primitive);
 			nodeQueue.push(node.first_child_or_primitive + 1);
 
-			flattened.push_back(index);
+			branches.push_back(index);
 		}
 	} while (!nodeQueue.empty());
+}
+
+// Get a list of all the primitives under a branch of a Bvh.
+
+std::vector<size_t> getPrimitives(
+	const Bvh& bvh,
+	size_t head
+)
+{
+	std::vector<size_t> primitives;
+
+	std::stack<size_t> nodeStack;
+	nodeStack.push(head);
+	do
+	{
+		auto node = bvh.nodes[nodeStack.top()];
+		nodeStack.pop();
+
+		if (node.is_leaf())
+		{
+			for (int i = 0; i < node.primitive_count; i++)
+			{
+				auto primitive = bvh.primitive_indices[node.first_child_or_primitive + i];
+				primitives.push_back(primitive);
+			}
+		}
+		else
+		{
+			nodeStack.push(node.first_child_or_primitive);
+			nodeStack.push(node.first_child_or_primitive + 1);
+		}
+	} while (!nodeStack.empty());
+
+	return primitives;
+}
+
+// For each node in the Bvh, return a list of unique vertex Ids that are 
+// referenced by the faces(primitives) in that node.
+
+std::vector<std::set<uint32_t>> getUniqueVertices(
+	const std::vector<repo_face_t>& faces,
+	const Bvh& bvh
+)
+{
+	// Before starting to accumulate the indices, we need to split the tree into
+	// leaf and branch nodes, so we can update the vertices for all the nodes
+	// from the bottom up...
+	// We can do this by peforming a breadth first traversal.
+
+	std::vector<size_t> leaves;
+	std::vector<size_t> branches;
+	flattenBvh(bvh, leaves, branches);
 
 	// Next get the unique vertex indices for each leaf node...
 
 	std::vector<std::set<uint32_t>> uniqueVerticesByNode;
 	uniqueVerticesByNode.resize(bvh.node_count);
 
-	for (auto nodeIndex : leaves)
+	for (const auto nodeIndex : leaves)
 	{
 		auto& node = bvh.nodes[nodeIndex];
 		auto& uniqueVertices = uniqueVerticesByNode[nodeIndex];
@@ -309,11 +369,11 @@ void MultipartOptimizer::splitMeshes(
 		}
 	}
 
-	// ...and extend this for each branch node
+	// ...and extend these into each branch node
 
-	std::reverse(flattened.begin(), flattened.end());
+	std::reverse(branches.begin(), branches.end());
 
-	for (auto nodeIndex : flattened)
+	for (const auto nodeIndex : branches)
 	{
 		auto& node = bvh.nodes[nodeIndex];
 		auto& uniqueVertices = uniqueVerticesByNode[nodeIndex];
@@ -324,8 +384,33 @@ void MultipartOptimizer::splitMeshes(
 		std::copy(right.begin(), right.end(), std::inserter(uniqueVertices, uniqueVertices.end()));
 	}
 
+	return uniqueVerticesByNode;
+}
+
+void MultipartOptimizer::splitMesh(
+	const repo::core::model::RepoScene* scene,
+	repo::core::model::MeshNode node,
+	std::vector<mapped_mesh_t>& mappedMeshes
+)
+{
+	// The purpose of this method is to split large MeshNodes into smaller ones.
+	// We do this by splitting faces into groups, so we don't have to worry about
+	// breaking across faces.
+
+	auto start = std::chrono::high_resolution_clock::now();
+
+	// Start by creating a bvh of all the faces in the oversized mesh
+
+	auto bvh = buildBvh(node);	
+
+	// The tree now contains all the faces. To know where to cut the tree, we 
+	// need to get the number of vertices referenced by each node.
+
+	auto faces = node.getFaces();
+	auto uniqueVerticesByNode = getUniqueVertices(faces, bvh);
+
 	// Next, traverse the tree again, but this time depth first, cutting the tree 
-	// at places the unique vertex count drops below the target threshold.
+	// at nodes where the unique vertex count drops below the target threshold.
 
 	std::vector<size_t> branchNodes;
 	std::stack<size_t> nodeStack;
@@ -346,7 +431,7 @@ void MultipartOptimizer::splitMeshes(
 		{
 			// We should never make it to a leaf with more than 65k vertices, 
 			// because the leaves should have at most 16 faces.
-			repoError << "splitMeshes() encountered a leaf node with " << numVertices << " unique vertices across " << node.primitive_count << " faces.";
+			repoError << "splitMesh() encountered a leaf node with " << numVertices << " unique vertices across " << node.primitive_count << " faces.";
 			continue;
 		}
 
@@ -361,41 +446,21 @@ void MultipartOptimizer::splitMeshes(
 		}
 	} while (!nodeStack.empty());
 
-	// Finally, get all the leaf nodes for each branch in order to build the
-	// groups of MeshNodes
+	// Finally, get the geometry from under these branches and return it as a 
+	// set of mapped_mesh_t instances
 
-	// Get the other vertex attributes for building the sub mapped meshes
+	// Get the vertex attributes for building the sub mapped meshes
 
+	auto vertices = node.getVertices();
 	auto normals = node.getNormals();
 	auto uvChannels = node.getUVChannelsSeparated();
 	auto colors = node.getColors();
 
-	for (auto head : branchNodes)
+	for (const auto head : branchNodes)
 	{
-		// Get all the leaf nodes within the branch
+		// Get all the faces, from all the leaf nodes within the branch
 
-		std::vector<size_t> primitives;
-
-		nodeStack.push(head);
-		do
-		{
-			auto node = bvh.nodes[nodeStack.top()];
-			nodeStack.pop();
-
-			if (node.is_leaf())
-			{
-				for (int i = 0; i < node.primitive_count; i++)
-				{
-					auto primitive = bvh.primitive_indices[node.first_child_or_primitive + i];
-					primitives.push_back(primitive);
-				}
-			}
-			else
-			{
-				nodeStack.push(node.first_child_or_primitive);
-				nodeStack.push(node.first_child_or_primitive + 1);
-			}
-		} while (!nodeStack.empty());
+		std::vector<size_t> primitives = getPrimitives(bvh, head);
 
 		// Now collect the faces into a new mesh.
 
@@ -416,7 +481,7 @@ void MultipartOptimizer::splitMeshes(
 
 		mapped_mesh_t mapped;
 
-		for (auto faceIndex : primitives)
+		for (const auto faceIndex : primitives)
 		{
 			mapped.faces.push_back(faces[faceIndex]);
 		}
@@ -432,8 +497,8 @@ void MultipartOptimizer::splitMeshes(
 		// Using the same sets, create the local vertex arrays
 
 		mapped.uvChannels.resize(uvChannels.size());
-		
-		for (auto globalIndex : globalVertexIndices)
+
+		for (const auto globalIndex : globalVertexIndices)
 		{
 			mapped.vertices.push_back(vertices[globalIndex]);
 			if (normals.size()) {
@@ -460,7 +525,7 @@ void MultipartOptimizer::splitMeshes(
 		mapping.triTo = mapped.faces.size();
 		mapping.min = mapped.vertices[0];
 		mapping.max = mapped.vertices[0];
-		for (auto v : mapped.vertices)
+		for (const auto v : mapped.vertices)
 		{
 			updateMinMax(mapping.min, mapping.max, v);
 		}
@@ -472,14 +537,15 @@ void MultipartOptimizer::splitMeshes(
 
 		mappedMeshes.push_back(mapped);
 	}
+
 	
-	repoInfo << "Split mesh with " << vertices.size() << " vertices into " << mappedMeshes.size() << " submeshes in " << boost::chrono::duration_cast<boost::chrono::milliseconds>(boost::chrono::high_resolution_clock::now() - start).count() << " ms";
+	repoInfo << "Split mesh with " << node.getNumVertices() << " vertices into " << mappedMeshes.size() << " submeshes in " << CHRONO_DURATION(start) << " ms";
 }
 
 void MultipartOptimizer::createSuperMeshes(
 	const repo::core::model::RepoScene* scene,
 	const std::vector<repo::core::model::MeshNode> &nodes,
-	MaterialUUIDMap &materialMap,
+	UUIDMap &materialMap,
 	const bool isGrouped,
 	std::vector<repo::core::model::MeshNode*> &supermeshNodes)
 {
@@ -493,26 +559,24 @@ void MultipartOptimizer::createSuperMeshes(
 
 	mapped_mesh_t currentSupermesh;
 
-	int vertexLimit = 65536;
-
-	for (auto& node : nodes)
+	for (const auto& node : nodes)
 	{
-		if (currentSupermesh.vertices.size() + node.getNumVertices() <= vertexLimit) 
+		if (currentSupermesh.vertices.size() + node.getNumVertices() <= REPO_MP_MAX_VERTEX_COUNT)
 		{
 			// The current node can be added to the supermesh OK
-			appendMeshes(scene, node, currentSupermesh);
+			appendMesh(scene, node, currentSupermesh);
 		}
-		else if (node.getNumVertices() > vertexLimit)
+		else if (node.getNumVertices() > REPO_MP_MAX_VERTEX_COUNT)
 		{
 			// The node is too big to fit into any supermesh, so it must be split
-			splitMeshes(scene, node, mappedMeshes);
+			splitMesh(scene, node, mappedMeshes);
 		}
 		else
 		{
 			// The node is small enough to fit within one supermesh, just not this one
 			mappedMeshes.push_back(currentSupermesh);
 			currentSupermesh = mapped_mesh_t();
-			appendMeshes(scene, node, currentSupermesh);
+			appendMesh(scene, node, currentSupermesh);
 		}
 	}
 
@@ -540,14 +604,14 @@ void MultipartOptimizer::createSuperMeshes(
 
 	// Finally, construct MeshNodes for each Supermesh
 
-	for (auto& mapped : mappedMeshes) 
+	for (const auto& mapped : mappedMeshes) 
 	{
 		supermeshNodes.push_back(createMeshNode(mapped, isGrouped));
 	}
 }
 
 repo::core::model::MeshNode* MultipartOptimizer::createMeshNode(
-	mapped_mesh_t& mapped,
+	const mapped_mesh_t& mapped,
 	bool isGrouped
 )
 {
@@ -565,19 +629,8 @@ repo::core::model::MeshNode* MultipartOptimizer::createMeshNode(
 	bbox.push_back(meshMapping[0].max);
 	for (int i = 1; i < meshMapping.size(); ++i)
 	{
-		if (bbox[0].x > meshMapping[i].min.x)
-			bbox[0].x = meshMapping[i].min.x;
-		if (bbox[0].y > meshMapping[i].min.y)
-			bbox[0].y = meshMapping[i].min.y;
-		if (bbox[0].z > meshMapping[i].min.z)
-			bbox[0].z = meshMapping[i].min.z;
-
-		if (bbox[1].x < meshMapping[i].max.x)
-			bbox[1].x = meshMapping[i].max.x;
-		if (bbox[1].y < meshMapping[i].max.y)
-			bbox[1].y = meshMapping[i].max.y;
-		if (bbox[1].z < meshMapping[i].max.z)
-			bbox[1].z = meshMapping[i].max.z;
+		updateMin(bbox[0], meshMapping[i].min);
+		updateMax(bbox[1], meshMapping[i].max);
 	}
 
 	std::vector < std::vector<float> > outline;
@@ -610,7 +663,7 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 
 		repoInfo << "Baking " << meshes.size() << " meshes...";
 
-		BakedMeshNodes bakedMeshNodes;
+		MeshMap bakedMeshNodes;
 		getBakedMeshNodes(scene, scene->getRoot(defaultGraph), repo::lib::RepoMatrix(), bakedMeshNodes);
 
 		//Sort the meshes into 3 different groupings
@@ -629,8 +682,8 @@ bool MultipartOptimizer::generateMultipartScene(repo::core::model::RepoScene *sc
 		trans.insert(rootNode);
 		repo::lib::RepoUUID rootID = rootNode->getSharedID();
 
-		MaterialNodes mergedMeshesMaterials;
-		MaterialUUIDMap materialIdMap;		
+		MaterialMap mergedMeshesMaterials;
+		UUIDMap materialIdMap;		
 
 		for (const auto &meshGroup : normalMeshes)
 		{
@@ -751,7 +804,7 @@ void clusterMeshNodesBvh(
 	// is the same (which it is).
 
 	auto boundingBoxes = std::vector<bvh::BoundingBox<Scalar>>();
-	for (auto& node : meshes)
+	for (const auto& node : meshes)
 	{
 		auto bounds = node.getBoundingBox();
 		auto min = Vector3(bounds[0].x, bounds[0].y, bounds[0].z);
@@ -760,7 +813,7 @@ void clusterMeshNodesBvh(
 	}
 
 	auto centers = std::vector<Vector3>();
-	for (auto& bounds : boundingBoxes)
+	for (const auto& bounds : boundingBoxes)
 	{
 		centers.push_back(bounds.center());
 	}
@@ -809,7 +862,7 @@ void clusterMeshNodesBvh(
 	std::vector<size_t> vertexCounts;
 	vertexCounts.resize(bvh.node_count);
 
-	for (auto nodeIndex : leaves)
+	for (const auto nodeIndex : leaves)
 	{
 		size_t vertexCount = 0;
 		auto& node = bvh.nodes[nodeIndex];
@@ -832,7 +885,7 @@ void clusterMeshNodesBvh(
 
 	std::reverse(flattened.begin(), flattened.end());
 
-	for (auto nodeIndex : flattened)
+	for (const auto nodeIndex : flattened)
 	{
 		auto& node = bvh.nodes[nodeIndex];
 		vertexCounts[nodeIndex] = vertexCounts[node.first_child_or_primitive] + vertexCounts[node.first_child_or_primitive + 1];
@@ -871,7 +924,7 @@ void clusterMeshNodesBvh(
 	// Finally, get all the leaf nodes for each branch in order to build the
 	// groups of MeshNodes
 
-	for (auto head : branchNodes)
+	for (const auto head : branchNodes)
 	{
 		std::vector<repo::core::model::MeshNode> cluster;
 
@@ -926,17 +979,17 @@ void MultipartOptimizer::clusterMeshNodes(
 	// where each set will form a Supermesh.
 
 	repoInfo << "Clustering " << meshes.size() << " meshes...";
-	auto start = boost::chrono::high_resolution_clock::now();
+	auto start = std::chrono::high_resolution_clock::now();
 
 	// Start by creating a metric for each mesh which will be used to group
 	// nodes by their efficiency
 
-	struct mesh {
+	struct meshMetric {
 		repo::core::model::MeshNode node;
 		float efficiency;
 	};
 
-	std::vector<mesh> metrics(meshes.size());
+	std::vector<meshMetric> metrics(meshes.size());
 	for (size_t i = 0; i < meshes.size(); i++)
 	{
 		auto& mesh = metrics[i];
@@ -952,7 +1005,7 @@ void MultipartOptimizer::clusterMeshNodes(
 
 	// Next order the outer nodes by their efficiency
 
-	std::sort(metrics.begin(), metrics.end(), [](mesh a, mesh b) {
+	std::sort(metrics.begin(), metrics.end(), [](meshMetric a, meshMetric b) {
 		return a.efficiency < b.efficiency;
 	});
 
@@ -960,13 +1013,13 @@ void MultipartOptimizer::clusterMeshNodes(
 	// groups, while the top 80% will be spatialised.
 
 	auto totalVertices = 0;
-	for (auto& mesh : meshes) {
+	for (const auto& mesh : meshes) 
+	{
 		totalVertices += mesh.getNumVertices();
 	}
 
-	auto modelLowerThreshold = std::max<int>(65536, (int)(totalVertices * 0.2f));
+	auto modelLowerThreshold = std::max<int>(REPO_MP_MAX_VERTEX_COUNT, (int)(totalVertices * REPO_MODEL_LOW_CLUSTERING_RATIO));
 
-	auto binVertexSize = 65536;
 	std::vector<repo::core::model::MeshNode> bin;
 	auto binVertexCount = 0;
 	auto binsVertexCount = 0;
@@ -980,7 +1033,7 @@ void MultipartOptimizer::clusterMeshNodes(
 		binsVertexCount += item.node.getNumVertices();
 		bin.push_back(item.node);
 
-		if (binVertexCount >= binVertexSize) // If we've filled up one supermesh
+		if (binVertexCount >= REPO_MP_MAX_VERTEX_COUNT) // If we've filled up one supermesh
 		{
 			// Copy
 			auto cluster = std::vector<repo::core::model::MeshNode>(bin);
@@ -1022,12 +1075,12 @@ void MultipartOptimizer::clusterMeshNodes(
 
 bool MultipartOptimizer::processMeshGroup(
 	const repo::core::model::RepoScene* scene,
-	const BakedMeshNodes& bakedMeshNodes,
+	const MeshMap& bakedMeshNodes,
 	const std::set<repo::lib::RepoUUID>& groupMeshIds,
 	const repo::lib::RepoUUID& rootID,
 	repo::core::model::RepoNodeSet& mergedMeshes,
-	MaterialNodes& mergedMeshesMaterials,
-	MaterialUUIDMap& materialMap,
+	MaterialMap& mergedMeshesMaterials,
+	UUIDMap& materialMap,
 	const bool isGrouped
 )
 {
@@ -1047,7 +1100,7 @@ bool MultipartOptimizer::processMeshGroup(
 	// combined).
 
 	std::vector<repo::core::model::MeshNode> nodes;
-	for (auto id : groupMeshIds)
+	for (const auto id : groupMeshIds)
 	{
 		auto range = bakedMeshNodes.equal_range(id);
 		for (auto pair = range.first; pair != range.second; pair++)
@@ -1064,7 +1117,7 @@ bool MultipartOptimizer::processMeshGroup(
 	// Build the actual supermesh nodes that hold the combined or split geometry from the sets
 
 	std::vector<repo::core::model::MeshNode*> supermeshes;
-	for (auto cluster : clusters)
+	for (const auto cluster : clusters)
 	{
 		createSuperMeshes(scene, cluster, materialMap, isGrouped, supermeshes);
 	}
@@ -1073,13 +1126,13 @@ bool MultipartOptimizer::processMeshGroup(
 	// original Id so processSupermeshMaterials can find the node to
 	// copy (when necessary).
 
-	MaterialUUIDMap stashIdToOriginalId;
+	UUIDMap stashIdToOriginalId;
 	for (const auto mapping : materialMap)
 	{
 		stashIdToOriginalId[mapping.second] = mapping.first;
 	}
 
-	for (auto supermesh : supermeshes)
+	for (const auto supermesh : supermeshes)
 	{
 		// First create a new entry parented to the scene root. This will be the final 
 		// object.
@@ -1100,8 +1153,8 @@ bool MultipartOptimizer::processMeshGroup(
 void MultipartOptimizer::processSupermeshMaterials(
 	const repo::core::model::RepoScene* scene,
 	const repo::core::model::MeshNode* supermeshNode,
-	MaterialNodes& mergedMaterialNodes,
-	MaterialUUIDMap& stashIdToOriginalIdMap
+	MaterialMap& mergedMaterialNodes,
+	UUIDMap& stashIdToOriginalIdMap
 )
 {
 	std::set<repo::lib::RepoUUID> supermeshStashMaterials;

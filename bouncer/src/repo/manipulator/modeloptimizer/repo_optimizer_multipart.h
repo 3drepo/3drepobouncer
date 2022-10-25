@@ -24,6 +24,7 @@
 #include "repo_optimizer_abstract.h"
 #include "../../core/model/collection/repo_scene.h"
 #include "../../core/model/bson/repo_node_mesh.h"
+#include "../../core/model/bson/repo_node_material.h"
 
 namespace repo {
 	namespace manipulator {
@@ -48,22 +49,22 @@ namespace repo {
 				*/
 				bool apply(repo::core::model::RepoScene *scene);
 
+			private:
 				/*
-				* Maps from a material UUID in the original scene graph, and the duplicate node in the stash graph
+				* Maps from a material UUID in the original scene graph, to the duplicate node in the stash graph
 				*/
-				typedef std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher> MaterialUUIDMap;
+				using UUIDMap = std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>;
 
 				/*
-				* A dictionary of MaterialNodes for a set of UUIDs
+				* A dictionary of MaterialMap for a set of UUIDs
 				*/
-				typedef std::unordered_map<repo::lib::RepoUUID, repo::core::model::RepoNode*, repo::lib::RepoUUIDHasher> MaterialNodes;
+				using MaterialMap = std::unordered_map<repo::lib::RepoUUID, repo::core::model::MaterialNode*, repo::lib::RepoUUIDHasher>;
 
 				/*
 				* A dictionary of MeshNode instances baked into model space based on the transform hierarchy they sit in
 				*/
-				typedef std::unordered_multimap<repo::lib::RepoUUID, repo::core::model::MeshNode, repo::lib::RepoUUIDHasher> BakedMeshNodes;
+				using MeshMap = std::unordered_multimap<repo::lib::RepoUUID, repo::core::model::MeshNode, repo::lib::RepoUUIDHasher>;
 
-			private:
 				/**
 				* Recursively enumerates scene to find all the instances of 
 				* MeshNodes that match the Id, and returns copies of them 
@@ -74,7 +75,7 @@ namespace repo {
 					const repo::core::model::RepoScene* scene, 
 					const repo::core::model::RepoNode* node, 
 					repo::lib::RepoMatrix mat,
-					BakedMeshNodes &nodes);
+					MeshMap &nodes);
 
 				/**
 				* Represents a batched set of geometry.
@@ -88,13 +89,17 @@ namespace repo {
 					std::vector<repo_mesh_mapping_t> meshMapping;
 				};
 
-				void appendMeshes(
+				void appendMesh(
 					const repo::core::model::RepoScene* scene,
 					repo::core::model::MeshNode node,
 					mapped_mesh_t& mappedMesh
 				);
 
-				void splitMeshes(
+				/*
+				* Splits a MeshNode into a set of mapped_mesh_ts based on face location, so 
+				* each mapped_mesh_t has a vertex count below a certain size.
+				*/
+				void splitMesh(
 					const repo::core::model::RepoScene* scene, 
 					repo::core::model::MeshNode node,
 					std::vector<mapped_mesh_t> &mappedMeshes
@@ -104,7 +109,7 @@ namespace repo {
 				* Turns a mapped_mesh_t into a MeshNode that can be added to the database
 				*/
 				repo::core::model::MeshNode* createMeshNode(
-					mapped_mesh_t& mapped,
+					const mapped_mesh_t& mapped,
 					bool isGrouped
 				);
 
@@ -121,7 +126,7 @@ namespace repo {
 				void createSuperMeshes(
 					const repo::core::model::RepoScene *scene,
 					const std::vector<repo::core::model::MeshNode> &nodes,
-					MaterialUUIDMap &materialMap,
+					UUIDMap &materialMap,
 					const bool isGrouped,
 					std::vector<repo::core::model::MeshNode*> &supermeshNodes);
 
@@ -179,12 +184,12 @@ namespace repo {
 				*/
 				bool processMeshGroup(
 					const repo::core::model::RepoScene *scene,
-					const BakedMeshNodes &bakedMeshNodes,
+					const MeshMap &bakedMeshNodes,
 					const std::set<repo::lib::RepoUUID>	&groupMeshIds,
 					const repo::lib::RepoUUID &rootID,
 					repo::core::model::RepoNodeSet &mergedMeshes,
-					MaterialNodes & mergedMeshesMaterials,
-					MaterialUUIDMap &originalIdToStashIdMap,
+					MaterialMap & mergedMeshesMaterials,
+					UUIDMap &originalIdToStashIdMap,
 					const bool isGrouped);
 
 				/**
@@ -197,8 +202,8 @@ namespace repo {
 				void processSupermeshMaterials(
 					const repo::core::model::RepoScene* scene,
 					const repo::core::model::MeshNode* supermeshNode,
-					MaterialNodes& mergedMaterialNodes,
-					MaterialUUIDMap& stashIdToOriginalIdMap
+					MaterialMap& mergedMaterialNodes,
+					UUIDMap& stashIdToOriginalIdMap
 				);
 
 				/**
