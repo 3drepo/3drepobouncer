@@ -30,10 +30,6 @@ const setBouncerEnvars = (logDir) => {
 		});
 	}
 
-	if (config.bouncer.envpath) {
-		process.env.Path += config.bouncer.envpath;
-	}
-
 	if (logDir) {
 		process.env.REPO_LOG_DIR = logDir;
 	}
