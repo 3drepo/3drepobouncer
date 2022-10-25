@@ -119,7 +119,6 @@ repo::lib::RepoMatrix TransformationNode::getTransMatrix(const bool &rowMajor) c
 		auto matrixObj =
 			getField(REPO_NODE_LABEL_MATRIX).embeddedObject();
 
-		rows.clear();
 		matrixObj.elems(rows);
 		for (size_t rowInd = 0; rowInd < 4; rowInd++)
 		{
