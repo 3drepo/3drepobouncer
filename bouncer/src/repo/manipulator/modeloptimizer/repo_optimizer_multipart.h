@@ -51,17 +51,17 @@ namespace repo {
 
 			private:
 				/*
-				* Maps from a material UUID in the original scene graph, to the duplicate node in the stash graph
+				* Maps between two Repo UUIDs
 				*/
 				using UUIDMap = std::unordered_map<repo::lib::RepoUUID, repo::lib::RepoUUID, repo::lib::RepoUUIDHasher>;
 
 				/*
-				* A dictionary of MaterialMap for a set of UUIDs
+				* A dictionary of MaterialNodes indexed by UUIDs
 				*/
 				using MaterialMap = std::unordered_map<repo::lib::RepoUUID, repo::core::model::MaterialNode*, repo::lib::RepoUUIDHasher>;
 
 				/*
-				* A dictionary of MeshNode instances baked into model space based on the transform hierarchy they sit in
+				* A dictionary of MeshNodes indexed by UUIDs. Each UUID may map to multiple nodes.
 				*/
 				using MeshMap = std::unordered_multimap<repo::lib::RepoUUID, repo::core::model::MeshNode, repo::lib::RepoUUIDHasher>;
 
@@ -188,31 +188,27 @@ namespace repo {
 					const std::set<repo::lib::RepoUUID>	&groupMeshIds,
 					const repo::lib::RepoUUID &rootID,
 					repo::core::model::RepoNodeSet &mergedMeshes,
-					MaterialMap & mergedMeshesMaterials,
 					UUIDMap &originalIdToStashIdMap,
 					const bool isGrouped);
 
 				/**
-				* Creates or updates the stash material nodes for all the 
-				* materials in the supermesh MeshNode.
-				* This method will create any new Material nodes on demand
-				* by copying them from the original graph, otherwise it 
-				* updates their parents array.
+				* Creates a set of Stash MaterialNodes for all the supermeshes 
+				* in the set. It is assumed the supermeshes mappings are using
+				* the new stash Ids, which are mapped from the original Ids in
+				* originalIdToStashIdMap.
 				*/
-				void processSupermeshMaterials(
+				repo::core::model::RepoNodeSet processSupermeshMaterials(
 					const repo::core::model::RepoScene* scene,
-					const repo::core::model::MeshNode* supermeshNode,
-					MaterialMap& mergedMaterialNodes,
-					UUIDMap& stashIdToOriginalIdMap
+					const repo::core::model::RepoNodeSet& supermeshes,
+					const UUIDMap& originalIdToStashIdMap
 				);
 
 				/**
 				* Groups the MeshNodes into sets based on their location and
 				* geometry size.
 				*/
-				void clusterMeshNodes(
-					const std::vector<repo::core::model::MeshNode>& nodes,
-					std::vector<std::vector<repo::core::model::MeshNode>>& clusters
+				std::vector<std::vector<repo::core::model::MeshNode>> clusterMeshNodes(
+					const std::vector<repo::core::model::MeshNode>& nodes
 				);
 
 				/**
