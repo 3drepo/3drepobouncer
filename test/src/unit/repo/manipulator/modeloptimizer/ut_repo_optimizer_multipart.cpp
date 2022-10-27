@@ -517,7 +517,7 @@ TEST(MultipartOptimizer, TestTinyMeshes)
 
 	for (const auto stash : scene->getAllMeshes(OPTIMIZED_GRAPH))
 	{
-		auto& mapping = dynamic_cast<repo::core::model::MeshNode*>(stash)->getMeshMapping();
+		auto mapping = dynamic_cast<repo::core::model::MeshNode*>(stash)->getMeshMapping();
 		EXPECT_LE(mapping.size(), 5000);
 	}
 
