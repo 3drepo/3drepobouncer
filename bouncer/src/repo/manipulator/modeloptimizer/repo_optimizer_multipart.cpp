@@ -474,7 +474,8 @@ void MultipartOptimizer::splitMesh(
 			{
 				return false;
 			}
-		})
+		}),
+		branchNodes.end()
 	);
 
 	// Finally, get the geometry from under these branches and return it as a 
@@ -972,8 +973,9 @@ void splitBigClusters(std::vector<std::vector<repo::core::model::MeshNode>>& clu
 			{
 				return false;
 			}
-		}
-	));
+		}),
+		clusters.end()
+	);
 
 	std::vector<repo::core::model::MeshNode> cluster;
 	for (auto const clusterToSplit : clustersToSplit)
@@ -1012,19 +1014,12 @@ std::vector<std::vector<repo::core::model::MeshNode>> MultipartOptimizer::cluste
 	struct meshMetric {
 		repo::core::model::MeshNode node;
 		float efficiency;
-
-		// The () operator allows the class type to be called like a function. 
-		// In this overload we implement the comparison.
-
-		bool operator() (meshMetric a, meshMetric b) {
-			return a.efficiency < b.efficiency;
-		}
 	};
 
-	std::set<meshMetric, meshMetric> metrics;
+	std::vector<meshMetric> metrics(meshes.size());
 	for (size_t i = 0; i < meshes.size(); i++)
 	{
-		meshMetric mesh;
+		auto& mesh = metrics[i];
 		mesh.node = meshes[i];
 		auto bounds = mesh.node.getBoundingBox();
 		auto numVertices = mesh.node.getNumVertices();
@@ -1033,8 +1028,11 @@ std::vector<std::vector<repo::core::model::MeshNode>> MultipartOptimizer::cluste
 		auto length = bounds[1].z - bounds[0].z;
 		auto metric = (float)numVertices / (width + height + length);
 		mesh.efficiency = metric;
-		metrics.insert(mesh);
 	}
+
+	std::sort(metrics.begin(), metrics.end(), [](meshMetric a, meshMetric b) {
+		return a.efficiency < b.efficiency;
+	});
 
 	// Bin the nodes based on vertex count. The bottom 20% will form pure-LOD
 	// groups, while the top 80% will be spatialised.
@@ -1101,6 +1099,8 @@ std::vector<std::vector<repo::core::model::MeshNode>> MultipartOptimizer::cluste
 	splitBigClusters(clusters);
 
 	repoInfo << "Created " << clusters.size() << " clusters in " << CHRONO_DURATION(start) << " milliseconds.";
+
+	return clusters;
 }
 
 bool MultipartOptimizer::processMeshGroup(
