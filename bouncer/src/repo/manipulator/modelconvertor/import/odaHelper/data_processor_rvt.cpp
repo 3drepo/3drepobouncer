@@ -25,6 +25,8 @@
 #include <Database/BmTransaction.h>
 #include <Database/BmUnitUtils.h>
 #include <Base/BmForgeTypeId.h>
+#include <Base/BmParameterSet.h>
+#include <Base/BmSpecTypeId.h>
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
@@ -39,7 +41,7 @@ const std::set<std::string> IGNORE_PARAMS = {
 
 bool DataProcessorRvt::ignoreParam(const std::string& param)
 {
-	auto paramUpper = param;
+	std::string paramUpper = param; // Copy the string to transform it in place
 	std::transform(paramUpper.begin(), paramUpper.end(), paramUpper.begin(), ::toupper);
 	return IGNORE_PARAMS.find(paramUpper) != IGNORE_PARAMS.end();
 }
@@ -60,7 +62,7 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 	// Try to extract one valid paths if multiple paths are provided
 	auto pathStr = inputPath.substr(0, inputPath.find("|", 0));
 	std::replace(pathStr.begin(), pathStr.end(), '\\', '/');
-	auto texturePath = boost::filesystem::path(pathStr).make_preferred();
+	auto& texturePath = boost::filesystem::path(pathStr).make_preferred();
 	if (repo::lib::doesFileExist(texturePath))
 		return texturePath.generic_string();
 
@@ -87,7 +89,7 @@ std::string DataProcessorRvt::translateMetadataValue(
 	OdBmLabelUtilsPEPtr labelUtils,
 	OdBmParamDefPtr paramDef,
 	OdBmDatabase* database,
-	OdBm::BuiltInParameterDefinition::Enum param)
+	OdBm::BuiltInParameter::Enum param)
 {
 	std::string strOut;
 	switch (val.type()) {
@@ -106,7 +108,7 @@ std::string DataProcessorRvt::translateMetadataValue(
 		strOut = std::to_string(val.getInt16());
 		break;
 	case OdVariant::kInt32:
-		if (paramDef->getParameterType() == OdBm::ParameterType::YesNo)
+		if (paramDef->getParameterTypeId() == OdBmSpecTypeId::Boolean::kYesNo)
 			(val.getInt32()) ? strOut = "Yes" : strOut = "No";
 		else
 			strOut = std::to_string(val.getInt32());
@@ -374,7 +376,7 @@ void DataProcessorRvt::processParameter(
 	OdBmElementPtr element,
 	OdBmObjectId paramId,
 	std::unordered_map<std::string, std::string> &metadata,
-	const OdBm::BuiltInParameterDefinition::Enum &buildInEnum
+	const OdBm::BuiltInParameter::Enum &buildInEnum
 ) {
 	OdTfVariant value;
 	OdResult res = element->getParam(paramId, value);
@@ -388,7 +390,7 @@ void DataProcessorRvt::processParameter(
 		auto metaKey = convertToStdString(pDescParam->getCaption());
 
 		if (!ignoreParam(metaKey)) {
-			auto paramGroup = labelUtils->getLabelFor(OdBm::BuiltInParameterGroupDefinition::Enum(groupId));
+			auto paramGroup = labelUtils->getLabelFor(OdBm::BuiltInParameterGroup::Enum(groupId));
 			if (!paramGroup.isEmpty()) {
 				metaKey = convertToStdString(paramGroup) + "::" + metaKey;
 			}
@@ -450,7 +452,7 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 	for (const auto &entry : aParams.getUserParamsIterator()) {
 		processParameter(element, entry, metadata,
 			//A dummy entry, as long as it's not ELEM_CATEGORY_PARAM_MT or ELEM_CATEGORY_PARAM it's not utilised.
-			OdBm::BuiltInParameterDefinition::Enum::ACTUAL_MAX_RIDGE_HEIGHT_PARAM);
+			OdBm::BuiltInParameter::Enum::ACTUAL_MAX_RIDGE_HEIGHT_PARAM);
 	}
 
 	if (metadata.size()) {
@@ -631,7 +633,7 @@ void DataProcessorRvt::establishProjectTranslation(OdBmDatabase* pDb)
 
 				auto scaleCoef = 1.0 / OdBmUnitUtils::getUnitTypeIdInfo(getLengthUnits(database)).inIntUnitsCoeff;
 				convertTo3DRepoWorldCoorindates = [activeOrigin, alignedLocation, scaleCoef](OdGePoint3d point) {
-					auto convertedPoint = (point - activeOrigin).transformBy(alignedLocation);
+					OdGeVector3d convertedPoint = (point - activeOrigin).transformBy(alignedLocation);
 					return repo::lib::RepoVector3D64(convertedPoint.x * scaleCoef, convertedPoint.y * scaleCoef, convertedPoint.z * scaleCoef);
 				};
 			}
