@@ -3,6 +3,7 @@ const fs = require('fs');
 const logger = require('./logger');
 const Elastic = require('./elastic');
 const { enabled, memoryIntervalMS } = require('./config').config.processMonitoring;
+const { ERRCODE_UNITY_LICENCE_INVALID, ERRCODE_REPO_LICENCE_INVALID } = require('../constants/errorCodes');
 const elasticEnabled = require('./config').config.elastic;
 const { sleep } = require('./utils');
 
@@ -85,14 +86,15 @@ ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
 	};
 
 	logger.verbose(`${stopPID} ${maxMemory} - ${startMemory} = ${report.MaxMemory}`, logLabel);
-	if (elasticEnabled) {
+	const statusToIgnore = [ERRCODE_UNITY_LICENCE_INVALID, ERRCODE_REPO_LICENCE_INVALID];
+	if (elasticEnabled && !statusToIgnore.has(report.ReturnCode)) {
 		try {
 			await Elastic.createProcessRecord(report);
 		} catch (err) {
 			logger.error('Failed to create record', logLabel);
 		}
 	} else {
-		logger.info(`${stopPID} stats ProcessTime: ${report.ProcessTime} MaxMemory: ${report.MaxMemory}`, logLabel);
+		logger.info(`${stopPID} stats ProcessTime: ${report.ProcessTime} MaxMemory: ${report.MaxMemory} ReturnCode: ${report.ReturnCode}`, logLabel);
 	}
 
 	// Ensure there's no race condition with the last interval being processed
