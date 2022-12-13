@@ -87,7 +87,7 @@ ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
 
 	logger.verbose(`${stopPID} ${maxMemory} - ${startMemory} = ${report.MaxMemory}`, logLabel);
 	const statusToIgnore = [ERRCODE_UNITY_LICENCE_INVALID, ERRCODE_REPO_LICENCE_INVALID];
-	if (elasticEnabled && !statusToIgnore.has(report.ReturnCode)) {
+	if (elasticEnabled && !statusToIgnore.includes(report.ReturnCode)) {
 		try {
 			await Elastic.createProcessRecord(report);
 		} catch (err) {
