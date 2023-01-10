@@ -56,10 +56,11 @@ matrix:
           - export OCCT_ROOT=$PWD/OCCT
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
           - echo ============ TEIGHA INSTALL =============
-          - wget -q -O teighaLinuxGCC8.3.tgz $TEIGHA_LIBS_2022_11
+          - wget -q -O teighaLinuxGCC8.3.tgz $TEIGHA_LIBS_2023_11
           - tar -zxf teighaLinuxGCC8.3.tgz
           - export ODA_ROOT=$PWD/teighaLinuxGCC8.3
           - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_8.3dll/
+          - ls $ODA_ROOT/BimRv/Include/Database
           - echo ============ SYNCHRO INSTALL =============
           - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
           - tar -zxf testData/bouncer/ext_libs/focal/thrift-0.12.0.tgz
