@@ -62,7 +62,7 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 	// Try to extract one valid paths if multiple paths are provided
 	auto pathStr = inputPath.substr(0, inputPath.find("|", 0));
 	std::replace(pathStr.begin(), pathStr.end(), '\\', '/');
-	auto& texturePath = boost::filesystem::path(pathStr); // explictly store the reference before calling make_preferred().
+	auto texturePath = boost::filesystem::path(pathStr); // explictly store the reference before calling make_preferred().
 	texturePath = texturePath.make_preferred();
 	if (repo::lib::doesFileExist(texturePath))
 		return texturePath.generic_string();
