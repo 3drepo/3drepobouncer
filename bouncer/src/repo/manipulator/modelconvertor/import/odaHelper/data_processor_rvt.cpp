@@ -62,7 +62,8 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 	// Try to extract one valid paths if multiple paths are provided
 	auto pathStr = inputPath.substr(0, inputPath.find("|", 0));
 	std::replace(pathStr.begin(), pathStr.end(), '\\', '/');
-	auto& texturePath = boost::filesystem::path(pathStr).make_preferred();
+	auto& texturePath = boost::filesystem::path(pathStr); // explictly store the reference before calling make_preferred().
+	texturePath = texturePath.make_preferred();
 	if (repo::lib::doesFileExist(texturePath))
 		return texturePath.generic_string();
 
@@ -239,13 +240,13 @@ void DataProcessorRvt::convertTo3DRepoMaterial(
 }
 
 void DataProcessorRvt::convertTo3DRepoTriangle(
-	const OdInt32* p3Vertices,
+	const OdInt32* indices,
 	std::vector<repo::lib::RepoVector3D64>& verticesOut,
 	repo::lib::RepoVector3D64& normalOut,
-	std::vector<repo::lib::RepoVector2D>& uvOut)
+	std::vector<repo::lib::RepoVector2D>& uvsOut)
 {
 	std::vector<OdGePoint3d> odaPoints;
-	getVertices(3, p3Vertices, odaPoints, verticesOut);
+	getVertices(3, indices, odaPoints, verticesOut);
 
 	if (verticesOut.size() != 3) {
 		return;
@@ -253,26 +254,34 @@ void DataProcessorRvt::convertTo3DRepoTriangle(
 
 	normalOut = calcNormal(verticesOut[0], verticesOut[1], verticesOut[2]);
 
-	OdGiMapperItemEntry::MapInputTriangle trg;
+	std::vector<OdGePoint2d> odaUvs;
+	odaUvs.resize(verticesOut.size());
 
-	for (int i = 0; i < odaPoints.size(); ++i)
+	if(vertexData() && vertexData()->mappingCoords(OdGiVertexData::kAllChannels))
 	{
-		trg.inPt[i] = odaPoints[i];
+		// Where Uvs are predefined, we need to get them for each vertex from the
+		// dedicated array using the indices again...
+
+		OdGiMapperItemEntryPtr mapper = currentMapper(false)->diffuseMapper();
+		const OdGePoint3d* predefinedUvCoords = vertexData()->mappingCoords(OdGiVertexData::kAllChannels);
+		for (OdInt32 i = 0; i < verticesOut.size(); i++) 
+		{
+			mapper->mapPredefinedCoords(predefinedUvCoords + indices[i], odaUvs.data() + i, 1);
+		}
+	}
+	else
+	{
+		// ...Otherwise we can look up uvs directly from the world positions
+
+		if (!currentMapper().isNull() && !currentMapper()->diffuseMapper().isNull())
+		{
+			currentMapper()->diffuseMapper()->mapCoords(odaPoints.data(), odaUvs.data());
+		}
 	}
 
-	OdGiMapperItemEntry::MapOutputCoords outTex;
-
-	auto currentMap = currentMapper();
-	if (!currentMap.isNull())
-	{
-		auto diffuseMap = currentMap->diffuseMapper();
-		if (!diffuseMap.isNull())
-			diffuseMap->mapCoords(trg, outTex);
-	}
-
-	uvOut.clear();
-	for (int i = 0; i < 3; ++i) {
-		uvOut.push_back({ (float)outTex.outCoord[i].x, (float)outTex.outCoord[i].y });
+	uvsOut.clear();
+	for (int i = 0; i < odaUvs.size(); ++i) {
+		uvsOut.push_back({ (float)odaUvs[i].x, (float)odaUvs[i].y });
 	}
 }
 
