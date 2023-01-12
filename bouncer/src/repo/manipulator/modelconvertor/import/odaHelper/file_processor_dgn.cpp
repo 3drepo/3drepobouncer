@@ -189,8 +189,8 @@ uint8_t FileProcessorDgn::readFile() {
 
 		repoInfo << "Importing view: " <<
 			convertToStdString(OdDgView::cast(vectorizedViewId.openObject(OdDg::kForRead))->getName()) <<
-			" (Group: '" << pViewGroup->getName() << "') " <<
-			" (Model: '" << OdDgModel::cast(pViewGroup->getModelId().openObject(OdDg::kForRead))->getName() << "')";
+			" (Group: '" << convertToStdString(pViewGroup->getName()) << "') " <<
+			" (Model: '" << convertToStdString(OdDgModel::cast(pViewGroup->getModelId().openObject(OdDg::kForRead))->getName()) << "')";
 
 		OdGeExtents3d extModel;
 		//pModel->getGeomExtents(vectorizedViewId, extModel);
