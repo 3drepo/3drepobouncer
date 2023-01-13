@@ -21,6 +21,7 @@ const { generateAssetBundles, validateUnityConfigurations } = require('../tasks/
 const { ERRCODE_ARG_FILE_FAIL, ERRCODE_UNITY_LICENCE_INVALID, ERRCODE_REPO_LICENCE_INVALID } = require('../constants/errorCodes');
 const { UNITY_PROCESSING } = require('../constants/statuses');
 const logger = require('../lib/logger');
+const processMonitor = require('../lib/processMonitor');
 const Utils = require('../lib/utils');
 
 const logLabel = { label: 'UNITYQ' };
@@ -45,6 +46,7 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
 				config.repoLicense,
 			);
 			await generateAssetBundles(database, model, rid, logDir, processInformation);
+			processMonitor.sendReport(model);
 		} else {
 			returnMessage.value = ERRCODE_ARG_FILE_FAIL;
 		}
@@ -63,6 +65,7 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
 				returnMessage.value = err;
 				break;
 		}
+		processMonitor.clearModel(model);
 	}
 	return returnMessage;
 };

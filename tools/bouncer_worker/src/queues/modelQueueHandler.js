@@ -28,6 +28,7 @@ const { ERRCODE_OK, ERRCODE_BOUNCER_CRASH, ERRCODE_REPO_LICENCE_INVALID } = requ
 const { MODEL_PROCESSING, UNITY_QUEUED } = require('../constants/statuses');
 const { messageDecoder } = require('../lib/messageDecoder');
 const logger = require('../lib/logger');
+const processMonitor = require('../lib/processMonitor');
 const Utils = require('../lib/utils');
 
 const Handler = {};
@@ -79,10 +80,12 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		switch (err) {
 			case ERRCODE_REPO_LICENCE_INVALID:
 				logger.error('Failed to run 3drepobouncer: Invalid 3D Repo license', logLabel);
+				processMonitor.clearModel(model);
 				await Utils.sleep(config.rabbitmq.maxWaitTimeMS);
 				throw err;
 			default:
 				logger.error(`Import model error: ${err.message || err}`, logLabel);
+				processMonitor.clearModel(model);
 				returnMessage.value = err || ERRCODE_BOUNCER_CRASH;
 				callback(JSON.stringify(returnMessage));
 		}
