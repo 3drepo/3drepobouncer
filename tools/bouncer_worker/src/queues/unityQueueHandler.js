@@ -46,7 +46,7 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
 				config.repoLicense,
 			);
 			await generateAssetBundles(database, model, rid, logDir, processInformation);
-			processMonitor.sendReport(model);
+			if (processMonitor.enabled) processMonitor.sendReport(model);
 		} else {
 			returnMessage.value = ERRCODE_ARG_FILE_FAIL;
 		}
@@ -65,7 +65,7 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
 				returnMessage.value = err;
 				break;
 		}
-		processMonitor.clearReport(model);
+		if (processMonitor.enabled) processMonitor.clearReport(model);
 	}
 	return returnMessage;
 };
