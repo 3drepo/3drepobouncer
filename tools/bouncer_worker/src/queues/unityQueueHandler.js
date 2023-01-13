@@ -51,6 +51,7 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
 			returnMessage.value = ERRCODE_ARG_FILE_FAIL;
 		}
 	} catch (err) {
+		if (processMonitor.enabled) processMonitor.clearReport(model);
 		switch (err) {
 			case ERRCODE_UNITY_LICENCE_INVALID:
 				logger.error('Failed to generate asset bundle: Invalid unity license', logLabel);
@@ -65,7 +66,6 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
 				returnMessage.value = err;
 				break;
 		}
-		if (processMonitor.enabled) processMonitor.clearReport(model);
 	}
 	return returnMessage;
 };
