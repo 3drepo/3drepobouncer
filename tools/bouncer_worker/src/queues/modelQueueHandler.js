@@ -80,12 +80,12 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		switch (err) {
 			case ERRCODE_REPO_LICENCE_INVALID:
 				logger.error('Failed to run 3drepobouncer: Invalid 3D Repo license', logLabel);
-				processMonitor.clearModel(model);
+				processMonitor.clearReport(model);
 				await Utils.sleep(config.rabbitmq.maxWaitTimeMS);
 				throw err;
 			default:
 				logger.error(`Import model error: ${err.message || err}`, logLabel);
-				processMonitor.clearModel(model);
+				processMonitor.clearReport(model);
 				returnMessage.value = err || ERRCODE_BOUNCER_CRASH;
 				callback(JSON.stringify(returnMessage));
 		}

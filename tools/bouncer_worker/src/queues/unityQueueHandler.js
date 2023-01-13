@@ -65,7 +65,7 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
 				returnMessage.value = err;
 				break;
 		}
-		processMonitor.clearModel(model);
+		processMonitor.clearReport(model);
 	}
 	return returnMessage;
 };
