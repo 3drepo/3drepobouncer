@@ -3,7 +3,6 @@ const fs = require('fs');
 const logger = require('./logger');
 const Elastic = require('./elastic');
 const { enabled, memoryIntervalMS } = require('./config').config.processMonitoring;
-const { ERRCODE_UNITY_LICENCE_INVALID, ERRCODE_REPO_LICENCE_INVALID } = require('../constants/errorCodes');
 const elasticEnabled = require('./config').config.elastic;
 const { sleep } = require('./utils');
 
