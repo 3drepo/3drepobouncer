@@ -51,17 +51,19 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
 			returnMessage.value = ERRCODE_ARG_FILE_FAIL;
 		}
 	} catch (err) {
-		if (processMonitor.enabled) processMonitor.clearReport(model);
 		switch (err) {
 			case ERRCODE_UNITY_LICENCE_INVALID:
 				logger.error('Failed to generate asset bundle: Invalid unity license', logLabel);
+				if (processMonitor.enabled) processMonitor.clearReport(model);
 				await Utils.sleep(config.rabbitmq.maxWaitTimeMS);
 				throw err;
 			case ERRCODE_REPO_LICENCE_INVALID:
 				logger.error('Failed to generate asset bundle: Invalid 3D Repo license', logLabel);
+				if (processMonitor.enabled) processMonitor.clearReport(model);
 				await Utils.sleep(config.rabbitmq.maxWaitTimeMS);
 				throw err;
 			default:
+				if (processMonitor.enabled) processMonitor.sendReport(model);
 				logger.error(`Failed to generate asset bundle: ${err}`, logLabel);
 				returnMessage.value = err;
 				break;
