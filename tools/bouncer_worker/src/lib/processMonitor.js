@@ -63,6 +63,7 @@ const monitorEnabled = shouldMonitor();
 
 ProcessMonitor.startMonitor = async (startPID, processInfo) => {
 	if (!(await monitorEnabled)) return;
+	if (dataByModel[processInfo.model]) delete dataByModel[processInfo.model];
 	const currentMemUsage = await getCurrentMemUsage();
 	dataByPid[startPID] = {
 		startMemory: currentMemUsage,
@@ -111,7 +112,7 @@ ProcessMonitor.sendReport = async (model) => {
 	delete dataByModel[model];
 };
 
-ProcessMonitor.clearModel = async (model) => {
+ProcessMonitor.clearReport = async (model) => {
 	if (!(await monitorEnabled) || !dataByModel[model]) return;
 	const report = dataByPid[model];
 	logger.info(`${model} stats ProcessTime: ${report.ProcessTime} MaxMemory: ${report.MaxMemory}`, logLabel);
