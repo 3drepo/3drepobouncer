@@ -86,7 +86,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 				throw err;
 			default:
 				logger.error(`Import model error: ${err.message || err}`, logLabel);
-				if (processMonitor.enabled) processMonitor.clearReport(model);
+				if (processMonitor.enabled) processMonitor.sendReport(model);
 				returnMessage.value = err || ERRCODE_BOUNCER_CRASH;
 				callback(JSON.stringify(returnMessage));
 		}
