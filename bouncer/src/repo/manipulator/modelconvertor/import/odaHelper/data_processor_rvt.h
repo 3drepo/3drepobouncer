@@ -76,8 +76,6 @@ namespace repo {
 				public:
 					DataProcessorRvt();
 
-					VectoriseDeviceRvt* device();
-
 					void init(GeometryCollector* geoColl, OdBmDatabasePtr database);
 
 				protected:

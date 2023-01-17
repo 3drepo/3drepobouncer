@@ -211,11 +211,6 @@ void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
 	OdGsBaseMaterialView::draw(pDrawable);
 }
 
-VectoriseDeviceRvt* DataProcessorRvt::device()
-{
-	return (VectoriseDeviceRvt*)OdGsBaseVectorizeView::device();
-}
-
 void DataProcessorRvt::convertTo3DRepoMaterial(
 	OdGiMaterialItemPtr prevCache,
 	OdDbStub* materialId,
@@ -368,16 +363,13 @@ void DataProcessorRvt::fillMetadataById(
 
 void DataProcessorRvt::initLabelUtils() {
 	if (!labelUtils) {
+		// LabelUtils should be used in embedded mode - where the CSV files are built
+		// into TB_ExLabelUtils.
+		// This is configured with the EMBEDED_CSV environment variable. Make sure this
+		// is not set, as Regular mode will result in runtime errors if the CSVs and
+		// Checksums are not also maintained.
 		OdBmLabelUtilsPEPtr _labelUtils = OdBmObject::desc()->getX(OdBmLabelUtilsPE::desc());
 		labelUtils = (OdBmSampleLabelUtilsPE*)_labelUtils.get();
-		std::string env = repo::lib::getEnvString(ODA_CSV_LOCATION);
-		if (!env.empty()) {
-			repoInfo << "Setting root as: " << env;
-			labelUtils->setLookupRoot(OdString(env.c_str()));
-		}
-		else {
-			repoWarning << "Cannot find envar ODA_CSV_LOCATION. Metadata may not be processed.";
-		}
 	}
 }
 
