@@ -45,6 +45,7 @@ if(REPO_BUILD_COVERAGE)
 endif()
 
 #================BOOST SETTINGS=======================
+set(Boost_NO_BOOST_CMAKE ON)
 #add_definitions(-DBOOST_ALL_NO_LIB)
 add_definitions(-DBOOST_ALL_DYN_LINK)
 add_definitions(-DBOOST_LOG_DYN_LINK)
