@@ -33,7 +33,7 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
 		project: model,
 		user,
 	};
-
+	const monitorEnabled = await processMonitor.enabled
 	try {
 		if (database && model) {
 			const processInformation = Utils.gatherProcessInformation(
@@ -46,7 +46,7 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
 				config.repoLicense,
 			);
 			await generateAssetBundles(database, model, rid, logDir, processInformation);
-			if (processMonitor.enabled) processMonitor.sendReport(model);
+			if (monitorEnabled) processMonitor.sendReport(model);
 		} else {
 			returnMessage.value = ERRCODE_ARG_FILE_FAIL;
 		}
@@ -54,16 +54,16 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
 		switch (err) {
 			case ERRCODE_UNITY_LICENCE_INVALID:
 				logger.error('Failed to generate asset bundle: Invalid unity license', logLabel);
-				if (processMonitor.enabled) processMonitor.clearReport(model);
+				if (monitorEnabled) processMonitor.clearReport(model);
 				await Utils.sleep(config.rabbitmq.maxWaitTimeMS);
 				throw err;
 			case ERRCODE_REPO_LICENCE_INVALID:
 				logger.error('Failed to generate asset bundle: Invalid 3D Repo license', logLabel);
-				if (processMonitor.enabled) processMonitor.clearReport(model);
+				if (monitorEnabled) processMonitor.clearReport(model);
 				await Utils.sleep(config.rabbitmq.maxWaitTimeMS);
 				throw err;
 			default:
-				if (processMonitor.enabled) processMonitor.sendReport(model);
+				if (monitorEnabled) processMonitor.sendReport(model);
 				logger.error(`Failed to generate asset bundle: ${err}`, logLabel);
 				returnMessage.value = err;
 				break;

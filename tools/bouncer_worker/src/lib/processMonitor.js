@@ -59,10 +59,11 @@ const updateMemory = async (pid) => {
 const monitor = (pid) => setInterval(() => updateMemory(pid), memoryIntervalMS);
 
 const shouldMonitor = async () => enabled && permittedOS.includes(await currentOSPromise);
-const monitorEnabled = shouldMonitor();
+
+ProcessMonitor.enabled = shouldMonitor();
 
 ProcessMonitor.startMonitor = async (startPID, processInfo) => {
-	if (!(await monitorEnabled)) return;
+	if (!(await ProcessMonitor.enabled)) return;
 	if (dataByModel[processInfo.model]) delete dataByModel[processInfo.model];
 	const currentMemUsage = await getCurrentMemUsage();
 	dataByPid[startPID] = {
@@ -75,8 +76,7 @@ ProcessMonitor.startMonitor = async (startPID, processInfo) => {
 };
 
 ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
-	if (!(await monitorEnabled) || !dataByPid[stopPID]) return;
-
+	if (!(await ProcessMonitor.enabled) || !dataByPid[stopPID]) return;
 	const { processInfo, maxMemory, startMemory, startTime, timer } = dataByPid[stopPID];
 	clearInterval(timer);
 	const report = {
@@ -86,7 +86,7 @@ ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
 		ProcessTime: Date.now() - startTime,
 	};
 
-	dataByModel[report.model] = report;
+	dataByModel[report.Model] = report;
 	logger.verbose(`Stopping monitoring for ${stopPID} MaxMemory = ${report.MaxMemory}`, logLabel);
 	// Ensure there's no race condition with the last interval being processed
 	await sleep(memoryIntervalMS);
@@ -94,7 +94,7 @@ ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
 };
 
 ProcessMonitor.sendReport = async (model) => {
-	if (!(await monitorEnabled) || !dataByModel[model]) return;
+	if (!(await ProcessMonitor.enabled) || !dataByModel[model]) return;
 	const report = dataByModel[model];
 	logger.verbose(`Sending report for ${model}`, logLabel);
 	if (elasticEnabled) {
@@ -113,8 +113,8 @@ ProcessMonitor.sendReport = async (model) => {
 };
 
 ProcessMonitor.clearReport = async (model) => {
-	if (!(await monitorEnabled) || !dataByModel[model]) return;
-	const report = dataByPid[model];
+	if (!(await ProcessMonitor.enabled) || !dataByModel[model]) return;
+	const report = dataByModel[model];
 	logger.info(`${model} stats ProcessTime: ${report.ProcessTime} MaxMemory: ${report.MaxMemory}`, logLabel);
 	// Ensure there's no race condition with the last interval being processed
 	await sleep(memoryIntervalMS);
