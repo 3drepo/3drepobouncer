@@ -19,7 +19,7 @@ const run = (
 	let hasTerminated = false;
 	cmdExec.on('close', (code, signal) => {
 		hasTerminated = true;
-		if (processInformation) processMonitor.stopMonitor(cmdExec.pid, code);
+		if (processInformation) processMonitor.stopMonitor(cmdExec.pid, (isTimeout ? 29 : code));
 		if (verbose) {
 			logger.info(`Command executed. Code: ${isTimeout ? 'TIMEDOUT' : code} signal: ${signal}`, logLabel);
 		}
