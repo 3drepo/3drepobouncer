@@ -52,7 +52,9 @@ const updateMemory = async (pid) => {
 			dataByPid[pid].maxMemory = Math.max(dataByPid[pid].maxMemory, data);
 		}
 	} catch (err) {
-		logger.error(`[maxmem]: ${err}`, logLabel);
+		if (dataByPid[pid]) {
+			logger.error(`[ProcessMonitor.updateMemory]: ${err}`, logLabel);
+		}
 	}
 };
 
@@ -87,6 +89,7 @@ ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
 	};
 
 	dataByModel[report.Model] = report;
+	console.log(dataByModel)
 	logger.verbose(`Stopping monitoring for ${stopPID} MaxMemory = ${report.MaxMemory}`, logLabel);
 	// Ensure there's no race condition with the last interval being processed
 	await sleep(memoryIntervalMS);
