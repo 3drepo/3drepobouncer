@@ -44,6 +44,7 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
 				'unity',
 				0,
 				config.repoLicense,
+				rid.toString(),
 			);
 			await generateAssetBundles(database, model, rid, logDir, processInformation);
 			if (monitorEnabled) processMonitor.sendReport(model);

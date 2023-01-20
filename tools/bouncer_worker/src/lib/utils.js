@@ -41,11 +41,13 @@ Utils.gatherProcessInformation = (
 	filetype,
 	filesize,
 	repoLicense,
+	rid,
 ) => (
 	{
 		DateTime: Date.now(),
 		Owner: owner,
 		Model: model,
+		Rid: rid,
 		Database: database,
 		Queue: queue, // logLabel.label,
 		FileType: filetype, // file.split('.').pop().toString(),
