@@ -56,7 +56,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		user,
 	};
 
-	const monitorEnabled = await processMonitor.enabled
+	const monitorEnabled = await processMonitor.enabled;
 
 	try {
 		const { size } = fs.statSync(file);

@@ -33,7 +33,7 @@ const processUnity = async (database, model, user, rid, logDir, modelImportErrCo
 		project: model,
 		user,
 	};
-	const monitorEnabled = await processMonitor.enabled
+	const monitorEnabled = await processMonitor.enabled;
 	try {
 		if (database && model) {
 			const processInformation = Utils.gatherProcessInformation(
