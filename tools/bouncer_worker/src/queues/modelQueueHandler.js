@@ -57,10 +57,10 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 	};
 
 	const monitorEnabled = await processMonitor.enabled;
+	const ridString = rid.toString();
 
 	try {
 		const { size } = fs.statSync(file);
-		const ridString = rid.toString()
 		const processInformation = Utils.gatherProcessInformation(
 			user,
 			model,
