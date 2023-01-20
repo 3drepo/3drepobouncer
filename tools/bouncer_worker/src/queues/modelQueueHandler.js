@@ -60,6 +60,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 
 	try {
 		const { size } = fs.statSync(file);
+		const ridString = rid.toString()
 		const processInformation = Utils.gatherProcessInformation(
 			user,
 			model,
@@ -68,11 +69,11 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 			file.split('.').pop().toString(), // filetype
 			size, // filesize
 			config.repoLicense,
-			rid.toString(),
+			ridString,
 		);
 
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams, processInformation);
-		if (monitorEnabled) processMonitor.sendReport(model);
+		if (monitorEnabled) processMonitor.sendReport(ridString);
 
 		callback(JSON.stringify(returnMessage), config.rabbitmq.unity_queue);
 		callback(JSON.stringify({
@@ -84,12 +85,12 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		switch (err) {
 			case ERRCODE_REPO_LICENCE_INVALID:
 				logger.error('Failed to run 3drepobouncer: Invalid 3D Repo license', logLabel);
-				if (monitorEnabled) processMonitor.clearReport(model);
+				if (monitorEnabled) processMonitor.clearReport(ridString);
 				await Utils.sleep(config.rabbitmq.maxWaitTimeMS);
 				throw err;
 			default:
 				logger.error(`Import model error: ${err.message || err}`, logLabel);
-				if (monitorEnabled) processMonitor.sendReport(model);
+				if (monitorEnabled) processMonitor.sendReport(ridString);
 				returnMessage.value = err || ERRCODE_BOUNCER_CRASH;
 				callback(JSON.stringify(returnMessage));
 		}

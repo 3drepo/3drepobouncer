@@ -88,17 +88,17 @@ ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
 		ProcessTime: Date.now() - startTime,
 	};
 
-	dataByModel[report.Model] = report;
+	dataByModel[report.Rid] = report;
 	logger.verbose(`Stopping monitoring for ${stopPID} MaxMemory = ${report.MaxMemory}`, logLabel);
 	// Ensure there's no race condition with the last interval being processed
 	await sleep(memoryIntervalMS);
 	delete dataByPid[stopPID];
 };
 
-ProcessMonitor.sendReport = async (model) => {
-	if (!(await ProcessMonitor.enabled) || !dataByModel[model]) return;
-	const report = dataByModel[model];
-	logger.verbose(`Sending report for ${model}`, logLabel);
+ProcessMonitor.sendReport = async (ridString) => {
+	if (!(await ProcessMonitor.enabled) || !dataByModel[ridString]) return;
+	const report = dataByModel[ridString];
+	logger.verbose(`Sending report for ${ridString}`, logLabel);
 	if (elasticEnabled) {
 		try {
 			await Elastic.createProcessRecord(report);
@@ -106,21 +106,21 @@ ProcessMonitor.sendReport = async (model) => {
 			logger.error('Failed to create elastic record', report, logLabel);
 		}
 	} else {
-		logger.info(`${model} stats ProcessTime: ${report.ProcessTime} MaxMemory: ${report.MaxMemory}`, logLabel);
+		logger.info(`${ridString} stats ProcessTime: ${report.ProcessTime} MaxMemory: ${report.MaxMemory}`, logLabel);
 	}
 
 	// Ensure there's no race condition with the last interval being processed
 	await sleep(memoryIntervalMS);
-	delete dataByModel[model];
+	delete dataByModel[ridString];
 };
 
-ProcessMonitor.clearReport = async (model) => {
-	if (!(await ProcessMonitor.enabled) || !dataByModel[model]) return;
-	const report = dataByModel[model];
-	logger.info(`${model} stats ProcessTime: ${report.ProcessTime} MaxMemory: ${report.MaxMemory}`, logLabel);
+ProcessMonitor.clearReport = async (ridString) => {
+	if (!(await ProcessMonitor.enabled) || !dataByModel[ridString]) return;
+	const report = dataByModel[ridString];
+	logger.info(`${ridString} stats ProcessTime: ${report.ProcessTime} MaxMemory: ${report.MaxMemory}`, logLabel);
 	// Ensure there's no race condition with the last interval being processed
 	await sleep(memoryIntervalMS);
-	delete dataByModel[model];
+	delete dataByModel[ridString];
 };
 
 module.exports = ProcessMonitor;
