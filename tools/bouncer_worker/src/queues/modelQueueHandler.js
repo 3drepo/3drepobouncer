@@ -65,6 +65,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 			file.split('.').pop().toString(), // filetype
 			size, // filesize
 			config.repoLicense,
+			rid.toString(),
 		);
 
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams, processInformation);
