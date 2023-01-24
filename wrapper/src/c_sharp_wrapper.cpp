@@ -56,7 +56,7 @@ bool CSharpWrapper::connect(
 	std::string msg;
 	try {
 		token = controller->init(msg, repo::lib::RepoConfig::fromFile(config));
-		return token;
+		return token != nullptr;
 	} catch(const repo::lib::RepoException &exception) {
 		return false;
 	}
