@@ -270,7 +270,6 @@ namespace repo {
 					const std::vector<std::vector<float>>             &boundingBox = std::vector<std::vector<float>>(),
 					const std::vector<std::vector<repo::lib::RepoVector2D>>   &uvChannels = std::vector<std::vector<repo::lib::RepoVector2D>>(),
 					const std::vector<repo_color4d_t>                 &colors = std::vector<repo_color4d_t>(),
-					const std::vector<std::vector<float>>             &outline = std::vector<std::vector<float>>(),
 					const std::string                                 &name = std::string(),
 					const std::vector<repo::lib::RepoUUID>            &parents = std::vector<repo::lib::RepoUUID>(),
 					const int                                         &apiLevel = REPO_NODE_API_LEVEL_1);
@@ -284,7 +283,6 @@ namespace repo {
 					return makeMeshNode(vertices, faces, normals, boundingBox,
 						std::vector<std::vector<repo::lib::RepoVector2D>>(),
 						std::vector<repo_color4d_t>(),
-						std::vector<std::vector<float>>(),
 						std::string(),
 						parents
 					);
