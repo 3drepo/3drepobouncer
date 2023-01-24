@@ -684,7 +684,6 @@ repo::core::model::RepoScene* RepoModelImport::generateRepoScene(uint8_t& errCod
 			boundingBox,
 			entry.uvChannels,
 			std::vector<repo_color4d_t>(),
-			std::vector<std::vector<float>>(),
 			std::string(),
 			{ entry.parent });
 		repo::core::model::RepoBSONBuilder builder;
