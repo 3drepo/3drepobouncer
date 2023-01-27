@@ -56,7 +56,6 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		user,
 	};
 
-	const monitorEnabled = await processMonitor.enabled;
 	const ridString = rid.toString();
 
 	try {
@@ -73,7 +72,7 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		);
 
 		returnMessage.value = await runBouncerCommand(logDir, cmdParams, processInformation);
-		if (monitorEnabled) processMonitor.sendReport(ridString);
+		processMonitor.sendReport(ridString);
 
 		callback(JSON.stringify(returnMessage), config.rabbitmq.unity_queue);
 		callback(JSON.stringify({
@@ -85,12 +84,12 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		switch (err) {
 			case ERRCODE_REPO_LICENCE_INVALID:
 				logger.error('Failed to run 3drepobouncer: Invalid 3D Repo license', logLabel);
-				if (monitorEnabled) processMonitor.clearReport(ridString);
+				processMonitor.clearReport(ridString);
 				await Utils.sleep(config.rabbitmq.maxWaitTimeMS);
 				throw err;
 			default:
 				logger.error(`Import model error: ${err.message || err}`, logLabel);
-				if (monitorEnabled) processMonitor.sendReport(ridString);
+				processMonitor.sendReport(ridString);
 				returnMessage.value = err || ERRCODE_BOUNCER_CRASH;
 				callback(JSON.stringify(returnMessage));
 		}

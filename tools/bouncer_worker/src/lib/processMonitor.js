@@ -10,7 +10,7 @@ const ProcessMonitor = {};
 const logLabel = { label: 'PROCESSMONITOR' };
 
 const dataByPid = {};
-const dataByModel = {};
+const dataByRid = {};
 const permittedOS = ['linux', 'win32'];
 
 const getCurrentOperatingSystem = async () => {
@@ -62,11 +62,9 @@ const monitor = (pid) => setInterval(() => updateMemory(pid), memoryIntervalMS);
 
 const shouldMonitor = async () => enabled && permittedOS.includes(await currentOSPromise);
 
-ProcessMonitor.enabled = shouldMonitor();
-
 ProcessMonitor.startMonitor = async (startPID, processInfo) => {
-	if (!(await ProcessMonitor.enabled)) return;
-	if (dataByModel[processInfo.model]) delete dataByModel[processInfo.model];
+	if (!(await shouldMonitor())) return;
+	if (dataByRid[processInfo.model]) delete dataByRid[processInfo.model];
 	const currentMemUsage = await getCurrentMemUsage();
 	dataByPid[startPID] = {
 		startMemory: currentMemUsage,
@@ -78,7 +76,7 @@ ProcessMonitor.startMonitor = async (startPID, processInfo) => {
 };
 
 ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
-	if (!(await ProcessMonitor.enabled) || !dataByPid[stopPID]) return;
+	if (!(await shouldMonitor()) || !dataByPid[stopPID]) return;
 	const { processInfo, maxMemory, startMemory, startTime, timer } = dataByPid[stopPID];
 	clearInterval(timer);
 	const report = {
@@ -88,7 +86,7 @@ ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
 		ProcessTime: Date.now() - startTime,
 	};
 
-	dataByModel[report.Rid] = report;
+	dataByRid[report.Rid] = report;
 	logger.verbose(`Stopping monitoring for ${stopPID} MaxMemory = ${report.MaxMemory}`, logLabel);
 	// Ensure there's no race condition with the last interval being processed
 	await sleep(memoryIntervalMS);
@@ -96,8 +94,8 @@ ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
 };
 
 ProcessMonitor.sendReport = async (ridString) => {
-	if (!(await ProcessMonitor.enabled) || !dataByModel[ridString]) return;
-	const report = dataByModel[ridString];
+	if (!(await shouldMonitor()) || !dataByRid[ridString]) return;
+	const report = dataByRid[ridString];
 	logger.verbose(`Sending report for ${ridString}`, logLabel);
 	if (elasticEnabled) {
 		try {
@@ -111,16 +109,16 @@ ProcessMonitor.sendReport = async (ridString) => {
 
 	// Ensure there's no race condition with the last interval being processed
 	await sleep(memoryIntervalMS);
-	delete dataByModel[ridString];
+	delete dataByRid[ridString];
 };
 
 ProcessMonitor.clearReport = async (ridString) => {
-	if (!(await ProcessMonitor.enabled) || !dataByModel[ridString]) return;
-	const report = dataByModel[ridString];
+	if (!(await shouldMonitor()) || !dataByRid[ridString]) return;
+	const report = dataByRid[ridString];
 	logger.info(`${ridString} stats ProcessTime: ${report.ProcessTime} MaxMemory: ${report.MaxMemory}`, logLabel);
 	// Ensure there's no race condition with the last interval being processed
 	await sleep(memoryIntervalMS);
-	delete dataByModel[ridString];
+	delete dataByRid[ridString];
 };
 
 module.exports = ProcessMonitor;
