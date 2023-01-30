@@ -64,7 +64,7 @@ const shouldMonitor = async () => enabled && permittedOS.includes(await currentO
 
 ProcessMonitor.startMonitor = async (startPID, processInfo) => {
 	if (!(await shouldMonitor())) return;
-	if (dataByRid[processInfo.model]) delete dataByRid[processInfo.model];
+	if (dataByRid[processInfo.Rid]) delete dataByRid[processInfo.Rid];
 	const currentMemUsage = await getCurrentMemUsage();
 	dataByPid[startPID] = {
 		startMemory: currentMemUsage,
