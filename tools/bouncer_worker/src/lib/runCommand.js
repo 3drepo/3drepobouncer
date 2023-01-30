@@ -14,12 +14,13 @@ const run = (
 ) => new Promise((resolve, reject) => {
 	if (verbose) logger.info(`Executing command: ${exe} ${params.join(' ')}`, logLabel);
 	const cmdExec = spawn(exe, params, { shell: true });
-	if (processInformation) processMonitor.startMonitor(cmdExec.pid, processInformation);
+	if (processInformation) processMonitor.startMonitor(processInformation);
 	let isTimeout = false;
 	let hasTerminated = false;
 	cmdExec.on('close', (code, signal) => {
 		hasTerminated = true;
-		if (processInformation) processMonitor.stopMonitor(cmdExec.pid, (isTimeout ? ERRCODE_TIMEOUT : code));
+		// eslint-disable-next-line max-len
+		if (processInformation) processMonitor.stopMonitor(processInformation.Rid, (isTimeout ? ERRCODE_TIMEOUT : code));
 		if (verbose) {
 			logger.info(`Command executed. Code: ${isTimeout ? 'TIMEDOUT' : code} signal: ${signal}`, logLabel);
 		}
