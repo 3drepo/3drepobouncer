@@ -9,7 +9,7 @@ const { sleep } = require('./utils');
 const ProcessMonitor = {};
 const logLabel = { label: 'PROCESSMONITOR' };
 
-const dataByPid = {};
+const dataByRid = {};
 const permittedOS = ['linux', 'win32'];
 
 const getCurrentOperatingSystem = async () => {
@@ -44,38 +44,39 @@ const getCurrentMemUsage = async () => {
 	return result;
 };
 
-const updateMemory = async (pid) => {
+const updateMemory = async (rid) => {
 	try {
-		if (dataByPid[pid]) {
+		if (dataByRid[rid]) {
 			const data = await getCurrentMemUsage();
-			dataByPid[pid].maxMemory = Math.max(dataByPid[pid].maxMemory, data);
+			dataByRid[rid].maxMemory = Math.max(dataByRid[rid].maxMemory, data);
 		}
 	} catch (err) {
-		logger.error(`[maxmem]: ${err}`, logLabel);
+		if (dataByRid[rid]) {
+			logger.error(`[ProcessMonitor.updateMemory]: ${err}`, logLabel);
+		}
 	}
 };
 
-const monitor = (pid) => setInterval(() => updateMemory(pid), memoryIntervalMS);
+const monitor = (rid) => setInterval(() => updateMemory(rid), memoryIntervalMS);
 
 const shouldMonitor = async () => enabled && permittedOS.includes(await currentOSPromise);
-const monitorEnabled = shouldMonitor();
 
-ProcessMonitor.startMonitor = async (startPID, processInfo) => {
-	if (!(await monitorEnabled)) return;
+ProcessMonitor.startMonitor = async (processInfo) => {
+	if (!(await shouldMonitor())) return;
+	if (dataByRid[processInfo.Rid]) delete dataByRid[processInfo.Rid];
 	const currentMemUsage = await getCurrentMemUsage();
-	dataByPid[startPID] = {
+	dataByRid[processInfo.Rid] = {
 		startMemory: currentMemUsage,
 		maxMemory: currentMemUsage,
 		startTime: Date.now(),
 		processInfo };
-	dataByPid[startPID].timer = monitor(startPID);
-	logger.verbose(`Monitoring enabled for process ${startPID} starting at ${dataByPid[startPID].startMemory}`, logLabel);
+	dataByRid[processInfo.Rid].timer = monitor(processInfo.Rid);
+	logger.verbose(`Monitoring enabled for revision ${processInfo.Rid} starting at ${dataByRid[processInfo.Rid].startMemory}`, logLabel);
 };
 
-ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
-	if (!(await monitorEnabled) || !dataByPid[stopPID]) return;
-
-	const { processInfo, maxMemory, startMemory, startTime, timer } = dataByPid[stopPID];
+ProcessMonitor.stopMonitor = async (rid, returnCode) => {
+	if (!(await shouldMonitor()) || !dataByRid[rid]) return;
+	const { processInfo, maxMemory, startMemory, startTime, timer } = dataByRid[rid];
 	clearInterval(timer);
 	const report = {
 		...processInfo,
@@ -84,21 +85,38 @@ ProcessMonitor.stopMonitor = async (stopPID, returnCode) => {
 		ProcessTime: Date.now() - startTime,
 	};
 
-	logger.verbose(`${stopPID} ${maxMemory} - ${startMemory} = ${report.MaxMemory}`, logLabel);
+	dataByRid[rid] = report;
+	logger.verbose(`Stopping monitoring for ${rid} MaxMemory = ${report.MaxMemory}`, logLabel);
+	// Ensure there's no race condition with the last interval being processed
+	await sleep(memoryIntervalMS);
+};
+
+ProcessMonitor.sendReport = async (rid) => {
+	if (!(await shouldMonitor()) || !dataByRid[rid]) return;
+	const report = dataByRid[rid];
+	logger.verbose(`Sending report for ${rid}`, logLabel);
 	if (elasticEnabled) {
 		try {
 			await Elastic.createProcessRecord(report);
 		} catch (err) {
-			logger.error('Failed to create record', logLabel);
+			logger.error('Failed to create elastic record', report, logLabel);
 		}
 	} else {
-		logger.info(`${stopPID} stats ProcessTime: ${report.ProcessTime} MaxMemory: ${report.MaxMemory}`, logLabel);
+		logger.info(`${rid} stats ProcessTime: ${report.ProcessTime} MaxMemory: ${report.MaxMemory}`, logLabel);
 	}
 
 	// Ensure there's no race condition with the last interval being processed
 	await sleep(memoryIntervalMS);
+	delete dataByRid[rid];
+};
 
-	delete dataByPid[stopPID];
+ProcessMonitor.clearReport = async (rid) => {
+	if (!(await shouldMonitor()) || !dataByRid[rid]) return;
+	const report = dataByRid[rid];
+	logger.info(`${rid} stats ProcessTime: ${report.ProcessTime} MaxMemory: ${report.MaxMemory}`, logLabel);
+	// Ensure there's no race condition with the last interval being processed
+	await sleep(memoryIntervalMS);
+	delete dataByRid[rid];
 };
 
 module.exports = ProcessMonitor;

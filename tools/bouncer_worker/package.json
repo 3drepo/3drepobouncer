@@ -15,9 +15,9 @@
     "run-worker-trace": "node --trace-warnings src/scripts/bouncer_worker.js"
   },
   "dependencies": {
-    "@elastic/elasticsearch": "7.12.0",
-    "amqplib": "0.5.3",
-    "crypto-js": "4.0.0",
+    "@elastic/elasticsearch": "7.17.0",
+    "amqplib": "0.10.3",
+    "crypto-js": "4.1.1",
     "elastic-apm-node": "3.41.1",
     "moment": "2.29.1",
     "mongodb": "3.6.6",
