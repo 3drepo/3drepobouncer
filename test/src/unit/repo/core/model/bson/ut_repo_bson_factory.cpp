@@ -339,17 +339,16 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 		colors.push_back({ (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f, (float)std::rand() / 100.0f });
 	}
 
-	std::vector<std::vector<float>> boundingBox, outLine;
+	std::vector<std::vector<float>> boundingBox;
 	boundingBox.resize(2);
 	boundingBox[0] = { std::rand() / 100.f, std::rand() / 100.f, std::rand() / 100.f };
 	boundingBox[1] = { std::rand() / 100.f, std::rand() / 100.f, std::rand() / 100.f };
-	outLine = boundingBox;
 
 	std::string name = "meshTest";
 
 	//End of setting up data... the actual testing happens here.
 
-	MeshNode mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, outLine, name);
+	MeshNode mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, name);
 
 	repoTrace << mesh.toString();
 
@@ -383,7 +382,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 
 	// Re-create the mesh but using lines instead of triangles. This should change the primitive type, but otherwise all properties should be handled identically.
 
-	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, outLine, name);
+	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, name);
 
 	repoTrace << mesh.toString();
 
@@ -418,7 +417,7 @@ TEST(RepoBSONFactoryTest, MakeMeshNodeTest)
 		faces.push_back(face);
 	}
 
-	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, outLine, name);
+	mesh = RepoBSONFactory::makeMeshNode(vectors, faces, normals, boundingBox, uvChannels, colors, name);
 
 	ASSERT_EQ(MeshNode::Primitive::UNKNOWN, mesh.getPrimitive());
 }

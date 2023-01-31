@@ -5,14 +5,14 @@ matrix:
       name: Bouncer Worker linter check
       dist: focal
       node_js:
-        - "14.17.3"
+        - "18.12.1"
       script:
         - cd tools/bouncer_worker && yarn install && yarn lint
     - language: cpp
       dist: focal
       name: Unit tests and integration tests
       node_js:
-        - "14.17.3"
+        - "18.12.1"
       compiler:
            - gcc
 
@@ -98,7 +98,7 @@ matrix:
       dist: focal
       name: license support compilation check
       node_js:
-        - "14.17.3"
+        - "18.12.1"
       compiler:
            - gcc
 
