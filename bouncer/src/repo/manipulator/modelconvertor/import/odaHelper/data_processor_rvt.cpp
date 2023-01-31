@@ -223,7 +223,7 @@ void DataProcessorRvt::convertTo3DRepoMaterial(
 
 	OdBmObjectId matId(materialId);
 	OdBmMaterialElemPtr materialElem;
-	if (matId.isValid())
+	if (!matId.isNull() && matId.isValid())
 	{
 		OdBmObjectPtr objectPtr = matId.safeOpenObject();
 		if (!objectPtr.isNull())
