@@ -56,10 +56,11 @@ matrix:
           - export OCCT_ROOT=$PWD/OCCT
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
           - echo ============ TEIGHA INSTALL =============
-          - wget -q -O teighaLinuxGCC8.3.tgz $TEIGHA_LIBS_2022_11
+          - wget -q -O teighaLinuxGCC8.3.tgz $TEIGHA_LIBS_2023_11
           - tar -zxf teighaLinuxGCC8.3.tgz
           - export ODA_ROOT=$PWD/teighaLinuxGCC8.3
           - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_8.3dll/
+          - ls $ODA_ROOT/BimRv/Include/Database
           - echo ============ SYNCHRO INSTALL =============
           - sudo apt-get install zlib1g-dev libssl-dev libxft-dev
           - tar -zxf testData/bouncer/ext_libs/focal/thrift-0.12.0.tgz
@@ -76,7 +77,7 @@ matrix:
       before_script:
           - export BOUNCER_DIR=$PWD
           - mkdir build && cd build
-          - cmake -DREPO_BUILD_WRAPPER=ON -DREPO_BUILD_WRAPPER_TESTS=ON -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_CXX_STANDARD=11 -DCMAKE_BUILD_TYPE=Debug -DSYNCHRO_SUPPORT=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
+          - cmake -DREPO_BUILD_WRAPPER=ON -DREPO_BUILD_WRAPPER_TESTS=ON -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON  -DREPO_BUILD_COVERAGE=ON -DODA_SUPPORT=ON -DCMAKE_BUILD_TYPE=Debug -DSYNCHRO_SUPPORT=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
           - mongo mydb_test --eval 'db.createUser({user:"testUser",pwd:"3drepotest",roles:["readWrite"]});'
       script:
           - sudo make -j8 install
@@ -131,7 +132,7 @@ matrix:
           - export OCCT_ROOT=$PWD/OCCT
           - export IFCOPENSHELL_ROOT=$PWD/IfcOpenShell
           - echo ============ TEIGHA INSTALL =============
-          - wget -q $TEIGHA_FOCAL_LIBS_2021_12
+          - wget -q -O teighaLinuxGCC8.3.tgz $TEIGHA_LIBS_2023_11
           - tar -zxf teighaLinuxGCC8.3.tgz
           - export ODA_ROOT=$PWD/teighaLinuxGCC8.3
           - export ODA_LIB_DIR=$ODA_ROOT/lib/lnxX64_8.3dll/
@@ -155,7 +156,7 @@ matrix:
           - mkdir build && cd build
       script:
             # check compilation with license enabled
-          - cd $BOUNCER_DIR/build && cmake -DREPO_BUILD_WRAPPER=ON -DREPO_BUILD_WRAPPER_TESTS=ON -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON -DCMAKE_CXX_STANDARD=11 -DCMAKE_BUILD_TYPE=Debug -DLICENSE_CHECK=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
+          - cd $BOUNCER_DIR/build && cmake -DREPO_BUILD_WRAPPER=ON -DREPO_BUILD_WRAPPER_TESTS=ON -DREPO_BUILD_TOOLS=ON -DREPO_BUILD_CLIENT=ON -DREPO_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Debug -DLICENSE_CHECK=ON -DCMAKE_INSTALL_PREFIX=$HOME/bouncer_install ../
           - sudo make install -j8
 
 notifications:

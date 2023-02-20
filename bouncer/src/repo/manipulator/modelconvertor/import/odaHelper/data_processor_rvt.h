@@ -31,7 +31,7 @@
 #include <Common/BuiltIns/BmBuiltInParameter.h>
 #include <Database/Entities/BmMaterialElem.h>
 #include <Geometry/Entities/BmMaterial.h>
-#include <Database/BmAssetHelpers.h>
+#include <Database/BmAppearanceAssetHelper.h>
 #include <Database/Entities/BmParamElem.h>
 
 #include <Main/Entities/BmDirectShape.h>
@@ -75,8 +75,6 @@ namespace repo {
 
 				public:
 					DataProcessorRvt();
-
-					VectoriseDeviceRvt* device();
 
 					void init(GeometryCollector* geoColl, OdBmDatabasePtr database);
 
@@ -131,13 +129,13 @@ namespace repo {
 						OdBmLabelUtilsPEPtr labelUtils,
 						OdBmParamDefPtr paramDef,
 						OdBmDatabase* database,
-						OdBm::BuiltInParameterDefinition::Enum param);
+						OdBm::BuiltInParameter::Enum param);
 
 					void processParameter(
 						OdBmElementPtr element,
 						OdBmObjectId paramId,
 						std::unordered_map<std::string, std::string> &metadata,
-						const OdBm::BuiltInParameterDefinition::Enum &buildInEnum
+						const OdBm::BuiltInParameter::Enum &buildInEnum
 					);
 
 					OdBmDatabasePtr database;

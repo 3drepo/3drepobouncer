@@ -25,6 +25,8 @@
 #include <Database/BmTransaction.h>
 #include <Database/BmUnitUtils.h>
 #include <Base/BmForgeTypeId.h>
+#include <Base/BmParameterSet.h>
+#include <Base/BmSpecTypeId.h>
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
@@ -39,7 +41,7 @@ const std::set<std::string> IGNORE_PARAMS = {
 
 bool DataProcessorRvt::ignoreParam(const std::string& param)
 {
-	auto paramUpper = param;
+	std::string paramUpper = param; // Copy the string to transform it in place
 	std::transform(paramUpper.begin(), paramUpper.end(), paramUpper.begin(), ::toupper);
 	return IGNORE_PARAMS.find(paramUpper) != IGNORE_PARAMS.end();
 }
@@ -60,7 +62,8 @@ std::string DataProcessorRvt::determineTexturePath(const std::string& inputPath)
 	// Try to extract one valid paths if multiple paths are provided
 	auto pathStr = inputPath.substr(0, inputPath.find("|", 0));
 	std::replace(pathStr.begin(), pathStr.end(), '\\', '/');
-	auto texturePath = boost::filesystem::path(pathStr).make_preferred();
+	auto texturePath = boost::filesystem::path(pathStr); // explictly store the value before calling make_preferred().
+	texturePath = texturePath.make_preferred();
 	if (repo::lib::doesFileExist(texturePath))
 		return texturePath.generic_string();
 
@@ -87,7 +90,7 @@ std::string DataProcessorRvt::translateMetadataValue(
 	OdBmLabelUtilsPEPtr labelUtils,
 	OdBmParamDefPtr paramDef,
 	OdBmDatabase* database,
-	OdBm::BuiltInParameterDefinition::Enum param)
+	OdBm::BuiltInParameter::Enum param)
 {
 	std::string strOut;
 	switch (val.type()) {
@@ -106,7 +109,7 @@ std::string DataProcessorRvt::translateMetadataValue(
 		strOut = std::to_string(val.getInt16());
 		break;
 	case OdVariant::kInt32:
-		if (paramDef->getParameterType() == OdBm::ParameterType::YesNo)
+		if (paramDef->getParameterTypeId() == OdBmSpecTypeId::Boolean::kYesNo)
 			(val.getInt32()) ? strOut = "Yes" : strOut = "No";
 		else
 			strOut = std::to_string(val.getInt32());
@@ -208,11 +211,6 @@ void DataProcessorRvt::draw(const OdGiDrawable* pDrawable)
 	OdGsBaseMaterialView::draw(pDrawable);
 }
 
-VectoriseDeviceRvt* DataProcessorRvt::device()
-{
-	return (VectoriseDeviceRvt*)OdGsBaseVectorizeView::device();
-}
-
 void DataProcessorRvt::convertTo3DRepoMaterial(
 	OdGiMaterialItemPtr prevCache,
 	OdDbStub* materialId,
@@ -225,7 +223,7 @@ void DataProcessorRvt::convertTo3DRepoMaterial(
 
 	OdBmObjectId matId(materialId);
 	OdBmMaterialElemPtr materialElem;
-	if (matId.isValid())
+	if (!matId.isNull() && matId.isValid())
 	{
 		OdBmObjectPtr objectPtr = matId.safeOpenObject();
 		if (!objectPtr.isNull())
@@ -237,13 +235,13 @@ void DataProcessorRvt::convertTo3DRepoMaterial(
 }
 
 void DataProcessorRvt::convertTo3DRepoTriangle(
-	const OdInt32* p3Vertices,
+	const OdInt32* indices,
 	std::vector<repo::lib::RepoVector3D64>& verticesOut,
 	repo::lib::RepoVector3D64& normalOut,
-	std::vector<repo::lib::RepoVector2D>& uvOut)
+	std::vector<repo::lib::RepoVector2D>& uvsOut)
 {
 	std::vector<OdGePoint3d> odaPoints;
-	getVertices(3, p3Vertices, odaPoints, verticesOut);
+	getVertices(3, indices, odaPoints, verticesOut);
 
 	if (verticesOut.size() != 3) {
 		return;
@@ -251,26 +249,34 @@ void DataProcessorRvt::convertTo3DRepoTriangle(
 
 	normalOut = calcNormal(verticesOut[0], verticesOut[1], verticesOut[2]);
 
-	OdGiMapperItemEntry::MapInputTriangle trg;
+	std::vector<OdGePoint2d> odaUvs;
+	odaUvs.resize(verticesOut.size());
 
-	for (int i = 0; i < odaPoints.size(); ++i)
+	if(vertexData() && vertexData()->mappingCoords(OdGiVertexData::kAllChannels))
 	{
-		trg.inPt[i] = odaPoints[i];
+		// Where Uvs are predefined, we need to get them for each vertex from the
+		// dedicated array using the indices again...
+
+		OdGiMapperItemEntryPtr mapper = currentMapper(false)->diffuseMapper();
+		const OdGePoint3d* predefinedUvCoords = vertexData()->mappingCoords(OdGiVertexData::kAllChannels);
+		for (OdInt32 i = 0; i < verticesOut.size(); i++) 
+		{
+			mapper->mapPredefinedCoords(predefinedUvCoords + indices[i], odaUvs.data() + i, 1);
+		}
+	}
+	else
+	{
+		// ...Otherwise we can look up uvs directly from the world positions
+
+		if (!currentMapper().isNull() && !currentMapper()->diffuseMapper().isNull())
+		{
+			currentMapper()->diffuseMapper()->mapCoords(odaPoints.data(), odaUvs.data());
+		}
 	}
 
-	OdGiMapperItemEntry::MapOutputCoords outTex;
-
-	auto currentMap = currentMapper();
-	if (!currentMap.isNull())
-	{
-		auto diffuseMap = currentMap->diffuseMapper();
-		if (!diffuseMap.isNull())
-			diffuseMap->mapCoords(trg, outTex);
-	}
-
-	uvOut.clear();
-	for (int i = 0; i < 3; ++i) {
-		uvOut.push_back({ (float)outTex.outCoord[i].x, (float)outTex.outCoord[i].y });
+	uvsOut.clear();
+	for (int i = 0; i < odaUvs.size(); ++i) {
+		uvsOut.push_back({ (float)odaUvs[i].x, (float)odaUvs[i].y });
 	}
 }
 
@@ -357,16 +363,13 @@ void DataProcessorRvt::fillMetadataById(
 
 void DataProcessorRvt::initLabelUtils() {
 	if (!labelUtils) {
+		// LabelUtils should be used in embedded mode - where the CSV files are built
+		// into TB_ExLabelUtils.
+		// This is configured with the EMBEDED_CSV environment variable. Make sure this
+		// is not set, as Regular mode will result in runtime errors if the CSVs and
+		// Checksums are not also maintained.
 		OdBmLabelUtilsPEPtr _labelUtils = OdBmObject::desc()->getX(OdBmLabelUtilsPE::desc());
 		labelUtils = (OdBmSampleLabelUtilsPE*)_labelUtils.get();
-		std::string env = repo::lib::getEnvString(ODA_CSV_LOCATION);
-		if (!env.empty()) {
-			repoInfo << "Setting root as: " << env;
-			labelUtils->setLookupRoot(OdString(env.c_str()));
-		}
-		else {
-			repoWarning << "Cannot find envar ODA_CSV_LOCATION. Metadata may not be processed.";
-		}
 	}
 }
 
@@ -374,7 +377,7 @@ void DataProcessorRvt::processParameter(
 	OdBmElementPtr element,
 	OdBmObjectId paramId,
 	std::unordered_map<std::string, std::string> &metadata,
-	const OdBm::BuiltInParameterDefinition::Enum &buildInEnum
+	const OdBm::BuiltInParameter::Enum &buildInEnum
 ) {
 	OdTfVariant value;
 	OdResult res = element->getParam(paramId, value);
@@ -388,7 +391,7 @@ void DataProcessorRvt::processParameter(
 		auto metaKey = convertToStdString(pDescParam->getCaption());
 
 		if (!ignoreParam(metaKey)) {
-			auto paramGroup = labelUtils->getLabelFor(OdBm::BuiltInParameterGroupDefinition::Enum(groupId));
+			auto paramGroup = labelUtils->getLabelFor(OdBm::BuiltInParameterGroup::Enum(groupId));
 			if (!paramGroup.isEmpty()) {
 				metaKey = convertToStdString(paramGroup) + "::" + metaKey;
 			}
@@ -450,7 +453,7 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 	for (const auto &entry : aParams.getUserParamsIterator()) {
 		processParameter(element, entry, metadata,
 			//A dummy entry, as long as it's not ELEM_CATEGORY_PARAM_MT or ELEM_CATEGORY_PARAM it's not utilised.
-			OdBm::BuiltInParameterDefinition::Enum::ACTUAL_MAX_RIDGE_HEIGHT_PARAM);
+			OdBm::BuiltInParameter::Enum::ACTUAL_MAX_RIDGE_HEIGHT_PARAM);
 	}
 
 	if (metadata.size()) {
@@ -631,7 +634,7 @@ void DataProcessorRvt::establishProjectTranslation(OdBmDatabase* pDb)
 
 				auto scaleCoef = 1.0 / OdBmUnitUtils::getUnitTypeIdInfo(getLengthUnits(database)).inIntUnitsCoeff;
 				convertTo3DRepoWorldCoorindates = [activeOrigin, alignedLocation, scaleCoef](OdGePoint3d point) {
-					auto convertedPoint = (point - activeOrigin).transformBy(alignedLocation);
+					OdGeVector3d convertedPoint = (point - activeOrigin).transformBy(alignedLocation);
 					return repo::lib::RepoVector3D64(convertedPoint.x * scaleCoef, convertedPoint.y * scaleCoef, convertedPoint.z * scaleCoef);
 				};
 			}

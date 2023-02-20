@@ -45,7 +45,6 @@
 #include <NwColor.h>
 #include <NwBackgroundElement.h>
 #include <NwViewpoint.h>
-#include <NwTextFontInfo.h>
 #include <NwModel.h>
 #include <NwProperty.h>
 #include <NwPartition.h>
@@ -83,7 +82,8 @@ static std::string sElementIdKey = "Element ID::Value";
 struct RepoNwTraversalContext {
 	OdNwModelItemPtr layer;
 	OdNwPartitionPtr partition;
-	std::string parent;
+	OdNwModelItemPtr parent;
+	std::string parentLayerId;
 	GeometryCollector* collector;
 };
 
@@ -172,20 +172,12 @@ void processMaterial(OdNwComponentPtr pComp, repo_material_t& repoMaterial)
 	auto materialId = pComp->getOriginalMaterialId();
 	if (!materialId.isNull())
 	{
-		OdNwColor odColor;
 		OdNwMaterialPtr pMaterial = materialId.safeOpenObject();
 
-		pMaterial->getDiffuse(odColor);
-		convertColor(odColor, repoMaterial.diffuse);
-
-		pMaterial->getAmbient(odColor);
-		convertColor(odColor, repoMaterial.ambient);
-
-		pMaterial->getEmissive(odColor);
-		convertColor(odColor, repoMaterial.emissive);
-
-		pMaterial->getSpecular(odColor);
-		convertColor(odColor, repoMaterial.specular);
+		convertColor(pMaterial->getDiffuse(), repoMaterial.diffuse);
+		convertColor(pMaterial->getAmbient(), repoMaterial.ambient);
+		convertColor(pMaterial->getEmissive(), repoMaterial.emissive);
+		convertColor(pMaterial->getSpecular(), repoMaterial.specular);
 
 		repoMaterial.shininess = pMaterial->getShininess();
 		repoMaterial.opacity = 1 - pMaterial->getTransparency();
@@ -705,8 +697,8 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 	const bool shouldImport = !isInstanced(pNode);
 	if (shouldImport)
 	{
-		context.collector->setLayer(levelId, levelName, context.parent);
-		context.parent = levelId; // Store the ancestry manually so we can skip nodes at will.
+		context.collector->setLayer(levelId, levelName, context.parentLayerId);
+		context.parentLayerId = levelId; // Track the ancestry manually so we can skip nodes at will when building the output tree
 
 		if (pNode->hasGeometry())
 		{
@@ -732,7 +724,7 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 
 		std::unordered_map<std::string, std::string> metadata;
 		processAttributes(pNode, context, metadata);
-		processAttributes(pNode->getParent(), context, metadata);
+		processAttributes(context.parent, context, metadata);
 
 		context.collector->setMetadata(levelId, metadata);
 
@@ -745,6 +737,8 @@ OdResult traverseSceneGraph(OdNwModelItemPtr pNode, RepoNwTraversalContext conte
 	{
 		return res;
 	}
+
+	context.parent = pNode; // The node for getting parent metadata should always be the parent in the Nw tree, even if its a (e.g. instance) node that doesn't appear in our tree
 
 	for (OdNwObjectIdArray::const_iterator itRootChildren = aNodeChildren.begin(); itRootChildren != aNodeChildren.end(); ++itRootChildren)
 	{

@@ -19,6 +19,7 @@
 #include <vector>
 #include <unordered_map>
 #include <cstdint>
+#include <string>
 #if defined(_WIN32) || defined(_WIN64)
 #   define IFC_UTILS_DECL_EXPORT __declspec(dllexport)
 #   define IFC_UTILS_DECL_IMPORT __declspec(dllimport)
