@@ -221,7 +221,7 @@ void SynchroModelImport::determineMeshesInResources(
 
 repo::core::model::RepoScene* SynchroModelImport::constructScene(
 	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
-	std::unordered_map<std::string, repo::lib::RepoUUID> &resourceIDsToRootTransID
+	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToTransIDs
 ) {
 	repo::core::model::RepoNodeSet transNodes, matNodes, textNodes, meshNodes, metaNodes;
 	std::unordered_map<std::string, repo::lib::RepoUUID> synchroIDToRepoID;
@@ -249,8 +249,13 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 		auto resourceID = entity.second.resourceID;
 		transNodes.insert(trans);
 		auto transUniqueID = trans->getUniqueID();
-		if (!resourceID.empty())
-			resourceIDsToRootTransID[resourceID] = transUniqueID;
+		if (!resourceID.empty()) {
+			if (resourceIDsToTransIDs.find(resourceID) == resourceIDsToTransIDs.end())
+				resourceIDsToTransIDs[resourceID] = { transUniqueID };
+			else
+				resourceIDsToTransIDs[resourceID].push_back(transUniqueID);
+			
+		}
 		repoIDToNode[transUniqueID] = trans;
 		synchroIDToRepoID[entity.second.id] = transUniqueID;
 		nodeToSynchroParent[transUniqueID] = entity.second.parentID;
@@ -552,7 +557,7 @@ void SynchroModelImport::updateFrameState(
 					isTransforming = false;
 				}
 
-				if (isTransforming) {
+				if (isTransforming) {					
 					if (resourceIDLastTrans.find(transTask->resourceID) != resourceIDLastTrans.end()) {
 						//the geometry takes the transformation of the final frame as the default position. undo it before applying a new transformation.
 						matrix = matrix * resourceIDLastTrans.at(transTask->resourceID).invert();
@@ -704,13 +709,12 @@ std::pair<uint64_t, uint64_t> SynchroModelImport::generateTaskInformation(
 }
 
 repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &errMsg) {
-	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> resourceIDsToSharedIDs;
-	std::unordered_map<std::string, repo::lib::RepoUUID> resourceIDsToRootTransID;
+	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> resourceIDsToSharedIDs, resourceIDsToTransIDs;
 
 	repo::core::model::RepoScene* scene = nullptr;
 	try {
 		repoInfo << "Constructing scene...";
-		scene = constructScene(resourceIDsToSharedIDs, resourceIDsToRootTransID);
+		scene = constructScene(resourceIDsToSharedIDs, resourceIDsToTransIDs);
 
 		const auto sequenceID = repo::lib::RepoUUID::createUUID();
 
@@ -739,6 +743,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 				continue;
 			};
 
+
 			for (const auto &id : resourceIDsToSharedIDs[lastStateEntry.first]) {
 				float defaultAlpha = 1;
 
@@ -760,22 +765,26 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 		}
 
 		for (const auto &lastStateEntry : animation.lastTransformation) {
+
 			auto resourceID = lastStateEntry.first;
-			if (resourceIDsToRootTransID.find(resourceID) == resourceIDsToRootTransID.end()) {
+			if (resourceIDsToTransIDs.find(resourceID) == resourceIDsToTransIDs.end()) {
 				continue;
 			};
 
 			auto matrix = repo::lib::RepoMatrix64(lastStateEntry.second);
 			if (!matrix.isIdentity()) {
 				resourceIDLastTrans[resourceID] = matrix;
-				auto node = (repo::core::model::TransformationNode*) scene->getNodeByUniqueID(
-					repo::core::model::RepoScene::GraphType::DEFAULT, resourceIDsToRootTransID[resourceID]);
+				for (const auto transId : resourceIDsToTransIDs[resourceID]) {
+					auto node = (repo::core::model::TransformationNode*) scene->getNodeByUniqueID(
+						repo::core::model::RepoScene::GraphType::DEFAULT, transId);
 
-				node->swap(node->cloneAndApplyTransformation(matrix.getData()));
+					node->swap(node->cloneAndApplyTransformation(matrix.getData()));
+				}
 
 				auto matInverse = matrix.invert();
 				resourceIDTransState[lastStateEntry.first] = convertMatrixTo3DRepoWorld(matInverse, offset).getData();
 			}
+
 		}
 
 		std::shared_ptr<CameraChange> cam = nullptr;
@@ -789,7 +798,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 		int step = total > 10 ? total / 10 : 1;
 
 		if (animation.frames.begin()->first > firstFrame &&
-			resourceIDTransState.size()) {
+			resourceIDTransState.size()) {			
 			//First animation frame is bigger than the task frame
 			//And we have animations... need to reset the state of the transforms.
 			repo::core::model::RepoSequence::FrameData data;
@@ -802,6 +811,7 @@ repo::core::model::RepoScene* SynchroModelImport::generateRepoScene(uint8_t &err
 			auto currentTime = currentFrame.first;
 			firstFrame = std::min(firstFrame, currentTime * 1000);
 			lastFrame = std::max(lastFrame, currentTime * 1000);
+
 			updateFrameState(currentFrame.second, resourceIDsToSharedIDs, resourceIDLastTrans, alphaValueToIDs, meshAlphaState, meshColourState, resourceIDTransState, clipState, cam, transformingResources, offset);
 			repo::core::model::RepoSequence::FrameData data;
 			data.ref = generateCache(resourceIDsToSharedIDs, alphaValueToIDs, meshColourState, resourceIDTransState, clipState, cam, stateBuffers);

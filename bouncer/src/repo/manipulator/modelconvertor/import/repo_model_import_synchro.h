@@ -118,7 +118,7 @@ namespace repo {
 
 				repo::core::model::RepoScene* constructScene(
 					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
-					std::unordered_map<std::string, repo::lib::RepoUUID> &resourceIDsToRootTransID);
+					std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToTransIDs);
 
 				uint32_t colourIn32Bit(const std::vector<float> &color) const;
 
