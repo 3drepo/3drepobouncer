@@ -31,7 +31,7 @@ IfcGeom::IteratorSettings createSettings()
 
 	itSettings.set(IfcGeom::IteratorSettings::WELD_VERTICES, false);
 	itSettings.set(IfcGeom::IteratorSettings::USE_WORLD_COORDS, true);
-	itSettings.set(IfcGeom::IteratorSettings::CONVERT_BACK_UNITS, true);
+	itSettings.set(IfcGeom::IteratorSettings::CONVERT_BACK_UNITS, false);
 	itSettings.set(IfcGeom::IteratorSettings::USE_BREP_DATA, false);
 	itSettings.set(IfcGeom::IteratorSettings::SEW_SHELLS, false);
 	itSettings.set(IfcGeom::IteratorSettings::FASTER_BOOLEANS, false);
