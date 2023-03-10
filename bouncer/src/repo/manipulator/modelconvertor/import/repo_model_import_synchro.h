@@ -178,6 +178,8 @@ namespace repo {
 
 				std::unordered_map<std::string, repo::core::model::MeshNode> createMeshTemplateNodes();
 
+				void determineUnits(const synchro_reader::Units &units);
+
 				std::shared_ptr<synchro_reader::SynchroReader> reader;
 
 				std::string orgFile;

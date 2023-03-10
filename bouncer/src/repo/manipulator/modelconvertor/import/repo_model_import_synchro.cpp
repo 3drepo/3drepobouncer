@@ -219,6 +219,28 @@ void SynchroModelImport::determineMeshesInResources(
 	}
 }
 
+void SynchroModelImport::determineUnits(const synchro_reader::Units &units) {
+	switch (units) {
+	case synchro_reader::Units::CENTIMETRES:
+		modelUnits = ModelUnits::CENTIMETRES;
+		break;
+	case synchro_reader::Units::FEET:
+		modelUnits = ModelUnits::FEET;
+		break;
+	case synchro_reader::Units::INCHES:
+		modelUnits = ModelUnits::INCHES;
+		break;
+	case synchro_reader::Units::METRES:
+		modelUnits = ModelUnits::METRES;
+		break;
+	case synchro_reader::Units::MILIMETRES:
+		modelUnits = ModelUnits::MILIMETRES;
+		break;
+	default:
+		modelUnits = ModelUnits::UNKNOWN;
+	}
+}
+
 repo::core::model::RepoScene* SynchroModelImport::constructScene(
 	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToSharedIDs,
 	std::unordered_map<std::string, std::vector<repo::lib::RepoUUID>> &resourceIDsToTransIDs
@@ -232,6 +254,7 @@ repo::core::model::RepoScene* SynchroModelImport::constructScene(
 	textNodes = matPairs.second;
 
 	auto identity = repo::lib::RepoMatrix();
+	determineUnits(reader->getUnits());
 	auto root = createTransNode(identity, reader->getProjectName());
 	transNodes.insert(root);
 

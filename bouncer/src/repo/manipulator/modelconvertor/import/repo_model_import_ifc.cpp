@@ -32,6 +32,7 @@ IFCModelImport::IFCModelImport(const ModelImportConfig &settings) :
 	AbstractModelImport(settings),
 	partialFailure(false)
 {
+	modelUnits = ModelUnits::FEET;
 }
 
 IFCModelImport::~IFCModelImport()

@@ -374,6 +374,16 @@ int32_t getFileFromProject(
 	return success ? REPOERR_OK : REPOERR_GET_FILE_FAILED;
 }
 
+repo::manipulator::modelconvertor::ModelUnits determineUnits(const std::string &units) {
+	if (units == "m") return repo::manipulator::modelconvertor::ModelUnits::METRES;
+	if (units == "cm") return repo::manipulator::modelconvertor::ModelUnits::CENTIMETRES;
+	if (units == "mm") return repo::manipulator::modelconvertor::ModelUnits::MILIMETRES;
+	if (units == "dm") return repo::manipulator::modelconvertor::ModelUnits::DECIMETRES;
+	if (units == "ft") return repo::manipulator::modelconvertor::ModelUnits::FEET;
+
+	return repo::manipulator::modelconvertor::ModelUnits::UNKNOWN;
+}
+
 int32_t importFileAndCommit(
 	std::shared_ptr<repo::RepoController> controller,
 	const repo::RepoController::RepoToken      *token,
@@ -395,7 +405,7 @@ int32_t importFileAndCommit(
 	std::string fileLoc;
 	std::string database;
 	std::string project;
-	std::string  owner, tag, desc;
+	std::string  owner, tag, desc, units;
 	repo::lib::RepoUUID revId = repo::lib::RepoUUID::createUUID();
 
 	bool success = true;
@@ -403,7 +413,7 @@ int32_t importFileAndCommit(
 	bool importAnimations = true;
 	if (usingSettingFiles)
 	{
-		//if we're using settles file then arg[1] must be file path
+		//if we're using settings file then arg[1] must be file path
 		boost::property_tree::ptree jsonTree;
 		try {
 			boost::property_tree::read_json(command.args[1], jsonTree);
@@ -415,6 +425,7 @@ int32_t importFileAndCommit(
 			tag = jsonTree.get<std::string>("tag", "");
 			desc = jsonTree.get<std::string>("desc", "");
 			timeZone = jsonTree.get<std::string>("timezone", "");
+			units = jsonTree.get<std::string>("units", "");
 			rotate = jsonTree.get<bool>("dxrotate", rotate);
 			importAnimations = jsonTree.get<bool>("importAnimations", importAnimations);
 			fileLoc = jsonTree.get<std::string>("file", "");
@@ -469,6 +480,12 @@ int32_t importFileAndCommit(
 	std::transform(fileExt.begin(), fileExt.end(), fileExt.begin(), ::toupper);
 	rotate |= fileExt == FBX_EXTENSION;
 
+	auto targetUnits = repo::manipulator::modelconvertor::ModelUnits::UNKNOWN;
+
+	if (!units.empty()) {
+		targetUnits = determineUnits(units);
+	}
+
 	//FIXME: This is getting complicated, we should consider using boost::program_options and start utilising flags...
 	//Something like this: http://stackoverflow.com/questions/15541498/how-to-implement-subcommands-using-boost-program-options
 
@@ -476,7 +493,7 @@ int32_t importFileAndCommit(
 		+ " project: " + project + " rotate:"
 		+ (rotate ? "true" : "false") + " owner :" + owner + " importAnimations: " + (importAnimations ? "true" : "false"));
 
-	repo::manipulator::modelconvertor::ModelImportConfig config(true, rotate, importAnimations, timeZone);
+	repo::manipulator::modelconvertor::ModelImportConfig config(true, rotate, importAnimations, targetUnits, timeZone);
 	uint8_t err;
 	repo::core::model::RepoScene *graph = controller->loadSceneFromFile(fileLoc, err, config);
 	if (graph)

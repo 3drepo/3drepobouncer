@@ -28,6 +28,25 @@
 
 using namespace repo::manipulator::modelconvertor;
 
+const std::string strlookUp[] = { "m", "mm", "cm", "dm", "ft", "in", "unknown" };
+const float toMetreLookUp[] = { 1.0, 0.001, 0.01, 0.1, 0.3048 , 0.0254 , 1.0 };
+const float fromMetreLookUp[] = { 1.0, 1000, 100, 10, 3.28084, 39.3701, 1.0 };
+
+std::string toUnitsString(const ModelUnits &units) {
+	int index = (int)units;
+	return strlookUp[index];
+}
+
+float determineScaleFactor(const ModelUnits &base, const ModelUnits &target) {
+	if (base == target || base == ModelUnits::UNKNOWN || target == ModelUnits::UNKNOWN) {
+		return 1.0;
+	}
+
+	auto baseToM = toMetreLookUp[(int)base];
+	auto mToTarget = fromMetreLookUp[(int)target];
+	return baseToM * mToTarget;
+}
+
 repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 	const std::string &file,
 	const repo::manipulator::modelconvertor::ModelImportConfig &config,
@@ -51,6 +70,17 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 		repoTrace << "model Imported, generating Repo Scene";
 		uint8_t errCode = REPOERR_LOAD_SCENE_FAIL;
 		scene = modelConvertor->generateRepoScene(errCode);
+
+		auto fileUnits = modelConvertor->getUnits();
+		auto targetUnits = config.getTargetUnits();
+
+		auto unitsScale = determineScaleFactor(fileUnits, targetUnits);
+		repoInfo << "File units: " << toUnitsString(fileUnits) << "\tTarget units: " << toUnitsString(targetUnits);
+
+		if (unitsScale != 1.0) {
+			repoInfo << "Applying scaling factor of " << unitsScale << " to convert " << toUnitsString(fileUnits) << " to " << toUnitsString(targetUnits);
+			scene->applyScaleFactor(unitsScale);
+		}
 
 		if (!scene) {
 			error = errCode;
