@@ -23,27 +23,18 @@
 #include "repo_model_import_3drepo.h"
 #include "repo_model_import_oda.h"
 #include "repo_model_import_synchro.h"
+#include "repo_model_units.h"
 #include "../../modeloptimizer/repo_optimizer_trans_reduction.h"
 #include <boost/filesystem.hpp>
 
 using namespace repo::manipulator::modelconvertor;
 
-const std::string strlookUp[] = { "m", "mm", "cm", "dm", "ft", "in", "unknown" };
-const float toMetreLookUp[] = { 1.0, 0.001, 0.01, 0.1, 0.3048 , 0.0254 , 1.0 };
-const float fromMetreLookUp[] = { 1.0, 1000, 100, 10, 3.28084, 39.3701, 1.0 };
-
-std::string toUnitsString(const ModelUnits &units) {
-	int index = (int)units;
-	return strlookUp[index];
-}
-
 float determineScaleFactor(const ModelUnits &base, const ModelUnits &target) {
 	if (base == target || base == ModelUnits::UNKNOWN || target == ModelUnits::UNKNOWN) {
 		return 1.0;
 	}
-
-	auto baseToM = toMetreLookUp[(int)base];
-	auto mToTarget = fromMetreLookUp[(int)target];
+	auto baseToM = scaleFactorToMetres(base);
+	auto mToTarget = scaleFactorFromMetres(target);
 	return baseToM * mToTarget;
 }
 

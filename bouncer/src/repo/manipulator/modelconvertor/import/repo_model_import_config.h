@@ -29,11 +29,11 @@
 
 #include "../../../repo_bouncer_global.h"
 
+#include "repo_model_units.h"
+
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
-			enum class ModelUnits { METRES, MILIMETRES, CENTIMETRES, DECIMETRES, FEET, INCHES, UNKNOWN };
-
 			class REPO_API_EXPORT ModelImportConfig
 			{
 			private:
