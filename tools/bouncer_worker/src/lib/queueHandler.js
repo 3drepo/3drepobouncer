@@ -42,6 +42,7 @@ const listenToQueue = (channel, queueName, prefetchCount, callback) => {
 	channel.prefetch(prefetchCount);
 	channel.consume(queueName, async (msg) => {
 		logger.info(`Received ${msg.content.toString()} from ${queueName}`, logLabel);
+		async sleep(100);
 		callback(msg.content.toString(), msg.properties.correlationId, (reply, queue = rabbitmq.callback_queue) => {
 			logger.info(`Sending reply to ${queue}: ${reply}`, logLabel);
 			// eslint-disable-next-line new-cap
