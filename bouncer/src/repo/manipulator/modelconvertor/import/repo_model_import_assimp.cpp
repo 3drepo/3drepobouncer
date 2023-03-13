@@ -457,29 +457,6 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 			normals.push_back({ (float)assimpMesh->mNormals[i].x, (float)assimpMesh->mNormals[i].y, (float)assimpMesh->mNormals[i].z });
 		}
 	}
-	/*
-	*-----------------------------------------------------------------------------
-	*/
-
-	/*
-	*--------------------------------- Bones ---------------------------------------
-	*/
-	/*
-	TODO:
-	if (mesh->HasBones())
-	{
-	}
-
-	if (mesh->HasPositions())
-	{
-	}
-
-	if (mesh->HasTangentsAndBitangents())
-	{
-	}*/
-	/*
-	*-----------------------------------------------------------------------------
-	*/
 
 	/*
 	*------------------------------ UV Channels ----------------------------------
@@ -1227,9 +1204,9 @@ bool AssimpModelImport::importModel(std::string filePath, uint8_t &err)
 	importer.SetPropertyBool(AI_CONFIG_IMPORT_FBX_READ_TEXTURES, true);
 	assimpScene = importer.ReadFile(filePath, 0);
 
-	// FIXME: To investigate
-	double unitScale = 1;
-	assimpScene->mMetaData->Get<double>("UnitScaleFactor", unitScale);
+	//// FIXME: To investigate
+	//double unitScale = 1;
+	//assimpScene->mMetaData->Get<double>("UnitScaleFactor", unitScale);
 
 	if (!assimpScene) {
 		std::string errorString = importer.GetErrorString();
