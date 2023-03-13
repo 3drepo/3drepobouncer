@@ -31,7 +31,7 @@
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
-			enum class REPO_API_EXPORT ModelUnits { METRES, MILIMETRES, CENTIMETRES, DECIMETRES, FEET, INCHES, UNKNOWN };
+			enum class REPO_API_EXPORT ModelUnits { METRES, MILLIMETRES, CENTIMETRES, DECIMETRES, FEET, INCHES, UNKNOWN };
 
 			static std::string toUnitsString(const ModelUnits &units) {
 				const std::string strlookUp[] = { "m", "mm", "cm", "dm", "ft", "in", "unknown" };

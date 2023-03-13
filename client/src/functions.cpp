@@ -377,7 +377,7 @@ int32_t getFileFromProject(
 repo::manipulator::modelconvertor::ModelUnits determineUnits(const std::string &units) {
 	if (units == "m") return repo::manipulator::modelconvertor::ModelUnits::METRES;
 	if (units == "cm") return repo::manipulator::modelconvertor::ModelUnits::CENTIMETRES;
-	if (units == "mm") return repo::manipulator::modelconvertor::ModelUnits::MILIMETRES;
+	if (units == "mm") return repo::manipulator::modelconvertor::ModelUnits::MILLIMETRES;
 	if (units == "dm") return repo::manipulator::modelconvertor::ModelUnits::DECIMETRES;
 	if (units == "ft") return repo::manipulator::modelconvertor::ModelUnits::FEET;
 
