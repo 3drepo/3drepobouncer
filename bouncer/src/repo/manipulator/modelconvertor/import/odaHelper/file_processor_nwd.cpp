@@ -71,8 +71,8 @@ uint8_t FileProcessorNwd::readFile()
 		{
 			throw new OdError("Navisworks Composite/Index files (.nwf) are not supported. Files must contain embedded geometry (.nwd)");
 		}
-
-		switch (pNwDb->getUnits()) {
+		auto fileUnits = pNwDb->getUnits();
+		switch (fileUnits) {
 		case  NwModelUnits::UNITS_METERS:
 			collector->units = ModelUnits::METRES;
 			break;
@@ -88,6 +88,9 @@ uint8_t FileProcessorNwd::readFile()
 		case  NwModelUnits::UNITS_INCHES:
 			collector->units = ModelUnits::INCHES;
 			break;
+		default:
+			repoWarning << "Unsupported project units: " << (int)fileUnits;
+			collector->units = ModelUnits::UNKNOWN;
 		}
 
 		DataProcessorNwd dataProcessor(collector);

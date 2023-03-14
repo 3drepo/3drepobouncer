@@ -68,12 +68,6 @@ namespace repo {
 				virtual bool applyReduction() const { return true; }
 				virtual bool requireReorientation() const { return false; }
 
-				/**
-				* Retrieve the filename from a full path
-				* e.g /home/user/file.txt would return file.txt
-				* @param full path of the file
-				* @return returns the file name
-				*/
 				ModelUnits getUnits() const { return modelUnits; }
 
 			protected:

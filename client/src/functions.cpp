@@ -490,7 +490,7 @@ int32_t importFileAndCommit(
 	//Something like this: http://stackoverflow.com/questions/15541498/how-to-implement-subcommands-using-boost-program-options
 
 	repoLog("File: " + fileLoc + " database: " + database
-		+ " project: " + project + " rotate:"
+		+ " project: " + project + " target units: " + (units.empty() ? "none" : units) + " rotate:"
 		+ (rotate ? "true" : "false") + " owner :" + owner + " importAnimations: " + (importAnimations ? "true" : "false"));
 
 	repo::manipulator::modelconvertor::ModelImportConfig config(true, rotate, importAnimations, targetUnits, timeZone);
