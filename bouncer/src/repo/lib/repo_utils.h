@@ -37,12 +37,12 @@ namespace repo {
 
 		static void toLower(std::string &str)
 		{
-			std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) { return std::tolower(c, std::locale()); });
+			std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) { return std::tolower(c); });
 		}
 
 		static void toUpper(std::string &str)
 		{
-			std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) { return std::toupper(c, std::locale()); });
+			std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) { return std::toupper(c); });
 		}
 
 		static std::string getEnvString(std::string const & envVarName)
