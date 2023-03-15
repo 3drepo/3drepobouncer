@@ -30,19 +30,19 @@ namespace repo {
 			return boost::filesystem::exists(inputPath) && boost::filesystem::is_directory(inputPath);
 		}
 
-		static std::string getExtension(const boost::filesystem::path &inputPath) 
+		static std::string getExtension(const boost::filesystem::path &inputPath)
 		{
 			return inputPath.extension().string();
 		}
 
-		static void toLower(std::string &str) 
+		static void toLower(std::string &str)
 		{
-			std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) { return std::tolower(c); });
+			std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) { return std::tolower(c, std::locale()); });
 		}
 
-		static void toUpper(std::string &str) 
+		static void toUpper(std::string &str)
 		{
-			std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) { return std::toupper(c); });
+			std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) { return std::toupper(c, std::locale()); });
 		}
 
 		static std::string getEnvString(std::string const & envVarName)
