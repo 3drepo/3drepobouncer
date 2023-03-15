@@ -75,13 +75,7 @@ bool MeshSimplificationOptimizer::apply(repo::core::model::RepoScene *scene)
 				if (mesh)
 				{
 					if (shouldOptimizeMeshNode(scene, mesh)) {
-						// todo:: check if we want to do this, or use the mesh->swap() member
-						scene->modifyNode(
-							gType,
-							mesh,
-							&optimizeMeshNode(mesh),
-							true
-						);
+						mesh->swap(optimizeMeshNode(mesh));
 					}
 				}
 				else
@@ -100,19 +94,21 @@ bool MeshSimplificationOptimizer::apply(repo::core::model::RepoScene *scene)
 
 bool MeshSimplificationOptimizer::shouldOptimizeMeshNode(repo::core::model::RepoScene* scene, repo::core::model::MeshNode* node)
 {
-	// Check if the mesh can be simplified with the current
-	// implementation.
+	// Check if the mesh can be simplified with the current implementation.
 
-	// Some meshes may have UVs by default, but no textures assigned, in which case the UVs should be ignored
-	// Todo:: when we support UVs, we need to distinguish whether we should keep them or not
+	// Some meshes may have UVs by default, but no textures assigned, in which 
+	// case the UVs should be dropped.
+
 	if (node->getNumUVChannels() > 0 && scene->getTextureIDForMesh(gType, node->getSharedID()).length() > 0)
 	{
 		return false;
 	}
+
 	if (node->getPrimitive() != repo::core::model::MeshNode::Primitive::TRIANGLES)
 	{
 		return false;
 	}
+
 	if (node->getColors().size() > 0)
 	{
 		return false;
@@ -172,13 +168,13 @@ void MeshSimplificationOptimizer::convertMeshNode(repo::core::model::MeshNode* n
 
 repo::core::model::MeshNode MeshSimplificationOptimizer::updateMeshNode(repo::core::model::MeshNode* node, Mesh& mesh)
 {
-	std::vector<uint32_t> simplexIndices;
+	std::vector<uint32_t> level1faces; // (Api Level 1 Faces prepend each face with the number of indices, in this case always 3.)
 	for (auto face : mesh.faces())
 	{
-		simplexIndices.push_back(3);
+		level1faces.push_back(3);
 		for (auto vertex : mesh.vertices(face)) 
 		{
-			simplexIndices.push_back(vertex.idx());
+			level1faces.push_back(vertex.idx());
 		}
 	}
 
@@ -193,7 +189,7 @@ repo::core::model::MeshNode MeshSimplificationOptimizer::updateMeshNode(repo::co
 	return node->cloneAndUpdateGeometry(
 		vertices,
 		normals,
-		simplexIndices
+		level1faces
 	);
 }
 
@@ -207,11 +203,7 @@ repo::core::model::MeshNode MeshSimplificationOptimizer::optimizeMeshNode(repo::
 
 	auto positions = mesh.get_vertex_property<pmp::Point>("v:point");
 	for (auto v : mesh.vertices()) {
-		positions[v] = pmp::Point(
-			positions[v](0, 0) * 1.2f,
-			positions[v](1, 0),
-			positions[v](2, 0)
-		);
+		positions[v](0, 0) *= 1.5f;
 	}	
 
 	return updateMeshNode(meshNode, mesh);

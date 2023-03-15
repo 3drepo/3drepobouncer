@@ -176,14 +176,19 @@ MeshNode MeshNode::cloneAndUpdateGeometry(
 		return *this;
 	}
 
-	// Some members we may have to remove, so create a copy
-	// todo:: is there a way to do this without builder?
+	// Unlike most other modification functions, we may need to remove some
+	// fields, so create a copy in order to do this.
 
 	auto copy = *this;
 	copy.removeField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT);
 
 	RepoBSONBuilder builder;
-	auto newBigFiles = bigFiles; // drop uvs and colours here...
+	auto newBigFiles = bigFiles;
+
+	// This overload should drop colours and Uvs
+
+	newBigFiles.erase(REPO_NODE_MESH_LABEL_UV_CHANNELS);
+	newBigFiles.erase(REPO_NODE_MESH_LABEL_COLORS);
 
 	auto newFaceCount = facesLevel1.size() / (int)this->getPrimitive();
 
@@ -201,8 +206,6 @@ MeshNode MeshNode::cloneAndUpdateGeometry(
 	auto normalsByteCount = normals.size() * sizeof(repo::lib::RepoVector3D);
 	newBigFiles[REPO_NODE_MESH_LABEL_NORMALS].second.resize(normalsByteCount);
 	memcpy(newBigFiles[REPO_NODE_MESH_LABEL_NORMALS].second.data(), normals.data(), normalsByteCount);
-
-	//todo: this needs to support dropping the textures array
 
 	builder.appendElementsUnique(copy);
 
