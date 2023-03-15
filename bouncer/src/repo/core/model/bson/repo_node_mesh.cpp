@@ -23,6 +23,7 @@
 
 #include "../../../lib/repo_log.h"
 #include "repo_bson_builder.h"
+
 using namespace repo::core::model;
 
 MeshNode::MeshNode() :
@@ -109,14 +110,10 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 				newBbox.push_back(resultVertice.back());
 			}
 		}
-		if (newBigFiles.find(REPO_NODE_MESH_LABEL_VERTICES) != newBigFiles.end())
-		{
-			const uint64_t verticesByteCount = resultVertice.size() * sizeof(repo::lib::RepoVector3D);
-			newBigFiles[REPO_NODE_MESH_LABEL_VERTICES].second.resize(verticesByteCount);
-			memcpy(newBigFiles[REPO_NODE_MESH_LABEL_VERTICES].second.data(), resultVertice.data(), verticesByteCount);
-		}
-		else
-			builder.appendBinary(REPO_NODE_MESH_LABEL_VERTICES, resultVertice.data(), resultVertice.size() * sizeof(repo::lib::RepoVector3D));
+
+		const uint64_t verticesByteCount = resultVertice.size() * sizeof(repo::lib::RepoVector3D);
+		newBigFiles[REPO_NODE_MESH_LABEL_VERTICES].second.resize(verticesByteCount);
+		memcpy(newBigFiles[REPO_NODE_MESH_LABEL_VERTICES].second.data(), resultVertice.data(), verticesByteCount);
 
 		if (normals.size())
 		{
@@ -139,14 +136,9 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 				resultNormals.push_back(transformedNormal);
 			}
 
-			if (newBigFiles.find(REPO_NODE_MESH_LABEL_NORMALS) != newBigFiles.end())
-			{
-				const uint64_t byteCount = resultNormals.size() * sizeof(repo::lib::RepoVector3D);
-				newBigFiles[REPO_NODE_MESH_LABEL_NORMALS].second.resize(byteCount);
-				memcpy(newBigFiles[REPO_NODE_MESH_LABEL_NORMALS].second.data(), resultNormals.data(), byteCount);
-			}
-			else
-				builder.appendBinary(REPO_NODE_MESH_LABEL_NORMALS, resultNormals.data(), resultNormals.size() * sizeof(repo::lib::RepoVector3D));
+			const uint64_t byteCount = resultNormals.size() * sizeof(repo::lib::RepoVector3D);
+			newBigFiles[REPO_NODE_MESH_LABEL_NORMALS].second.resize(byteCount);
+			memcpy(newBigFiles[REPO_NODE_MESH_LABEL_NORMALS].second.data(), resultNormals.data(), byteCount);
 		}
 
 		RepoBSONBuilder arrayBuilder, outlineBuilder;
@@ -171,6 +163,50 @@ RepoNode MeshNode::cloneAndApplyTransformation(
 		repoError << "Unable to apply transformation: Cannot find vertices within a mesh!";
 		return  RepoNode(*this, bigFiles);
 	}
+}
+
+MeshNode MeshNode::cloneAndUpdateGeometry(
+	const std::vector<repo::lib::RepoVector3D>& vertices,
+	const std::vector<repo::lib::RepoVector3D>& normals,
+	const std::vector<uint32_t>& facesLevel1
+)
+{
+	if (facesLevel1.size() % ((int)this->getPrimitive() + 1) != 0) {
+		repoError << "New index array is not a multiple of the primitive. cloneAndUpdateGeometry cannot be used to change the primitive type.";
+		return *this;
+	}
+
+	// Some members we may have to remove, so create a copy
+	// todo:: is there a way to do this without builder?
+
+	auto copy = *this;
+	copy.removeField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT);
+
+	RepoBSONBuilder builder;
+	auto newBigFiles = bigFiles; // drop uvs and colours here...
+
+	auto newFaceCount = facesLevel1.size() / (int)this->getPrimitive();
+
+	builder.append(REPO_NODE_MESH_LABEL_VERTICES_COUNT, (uint32_t)(vertices.size()));
+	builder.append(REPO_NODE_MESH_LABEL_FACES_COUNT, (uint32_t)newFaceCount);
+
+	auto facesByteCount = facesLevel1.size() * sizeof(uint32_t);
+	newBigFiles[REPO_NODE_MESH_LABEL_FACES].second.resize(facesByteCount);
+	memcpy(newBigFiles[REPO_NODE_MESH_LABEL_FACES].second.data(), facesLevel1.data(), facesByteCount);
+
+	auto verticesByteCount = vertices.size() * sizeof(repo::lib::RepoVector3D);
+	newBigFiles[REPO_NODE_MESH_LABEL_VERTICES].second.resize(verticesByteCount);
+	memcpy(newBigFiles[REPO_NODE_MESH_LABEL_VERTICES].second.data(), vertices.data(), verticesByteCount);
+
+	auto normalsByteCount = normals.size() * sizeof(repo::lib::RepoVector3D);
+	newBigFiles[REPO_NODE_MESH_LABEL_NORMALS].second.resize(normalsByteCount);
+	memcpy(newBigFiles[REPO_NODE_MESH_LABEL_NORMALS].second.data(), normals.data(), normalsByteCount);
+
+	//todo: this needs to support dropping the textures array
+
+	builder.appendElementsUnique(copy);
+
+	return MeshNode(builder.obj(), newBigFiles);
 }
 
 MeshNode MeshNode::cloneAndUpdateMeshMapping(

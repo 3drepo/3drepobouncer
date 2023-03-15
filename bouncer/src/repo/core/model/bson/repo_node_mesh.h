@@ -173,6 +173,17 @@ namespace repo {
 				MeshNode cloneAndNoteGrouping(const std::string &group) const;
 
 				/**
+				* Create a new copy of the node with new geometry. All existing
+				* geometry is removed (so, this overload removes any colours
+				* and texture coordinates).
+				*/
+				MeshNode cloneAndUpdateGeometry(
+					const std::vector<repo::lib::RepoVector3D>& vertices,
+					const std::vector<repo::lib::RepoVector3D>& normals,
+					const std::vector<uint32_t>& facesLevel1
+				);
+
+				/**
 				* --------- Convenience functions -----------
 				*/
 

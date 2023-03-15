@@ -284,39 +284,17 @@ MeshNode RepoBSONFactory::makeMeshNode(
 		builder.appendArray(REPO_NODE_MESH_LABEL_BOUNDING_BOX, arrayBuilder.obj());
 	}
 
-	/*
-		* TODO: because mongo has a stupid internal limit of 64MB, we can't store everything in a BSON
-		* There are 2 options
-		* 1. store binaries in memory outside of the bson and put it into GRIDFS at the point of commit
-		* 2. leave mongo's bson, use our own/exteral library that doesn't have this limit and database handle this at the point of commit
-		* below uses option 1, but ideally we should be doing option 2.
-		*/
-
 	if (vertices.size() > 0)
 	{
 		builder.append(REPO_NODE_MESH_LABEL_VERTICES_COUNT, (uint32_t)(vertices.size()));
 
 		uint64_t verticesByteCount = vertices.size() * sizeof(vertices[0]);
 
-		if (verticesByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
-		{
-			std::string bName = uniqueID.toString() + "_vertices";
-			//inclusion of this binary exceeds the maximum, store separately
-			binMapping[REPO_NODE_MESH_LABEL_VERTICES] =
-				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
-			binMapping[REPO_NODE_MESH_LABEL_VERTICES].second.resize(verticesByteCount); //uint8_t will ensure it is a byte addrressing
-			memcpy(binMapping[REPO_NODE_MESH_LABEL_VERTICES].second.data(), &vertices[0], verticesByteCount);
-			bytesize += sizeof(bName);
-		}
-		else
-		{
-			builder.appendBinary(
-				REPO_NODE_MESH_LABEL_VERTICES,
-				&vertices[0],
-				vertices.size() * sizeof(vertices[0])
-			);
-			bytesize += verticesByteCount;
-		}
+		std::string bName = uniqueID.toString() + "_vertices";
+		binMapping[REPO_NODE_MESH_LABEL_VERTICES] = std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
+		binMapping[REPO_NODE_MESH_LABEL_VERTICES].second.resize(verticesByteCount); //uint8_t will ensure it is a byte addrressing
+		memcpy(binMapping[REPO_NODE_MESH_LABEL_VERTICES].second.data(), &vertices[0], verticesByteCount);
+		bytesize += sizeof(bName);
 	}
 
 	if (faces.size() > 0)
@@ -367,53 +345,20 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 		uint64_t facesByteCount = facesLevel1.size() * sizeof(facesLevel1[0]);
 
-		if (facesByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
-		{
-			std::string bName = uniqueID.toString() + "_faces";
-			//inclusion of this binary exceeds the maximum, store separately
-			binMapping[REPO_NODE_MESH_LABEL_FACES] =
-				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
-			binMapping[REPO_NODE_MESH_LABEL_FACES].second.resize(facesByteCount); //uint8_t will ensure it is a byte addrressing
-			memcpy(binMapping[REPO_NODE_MESH_LABEL_FACES].second.data(), &facesLevel1[0], facesByteCount);
-
-			bytesize += sizeof(bName);
-		}
-		else
-		{
-			builder.appendBinary(
-				REPO_NODE_MESH_LABEL_FACES,
-				&facesLevel1[0],
-				facesLevel1.size() * sizeof(facesLevel1[0])
-			);
-
-			bytesize += facesByteCount;
-		}
+		std::string bName = uniqueID.toString() + "_faces";
+		binMapping[REPO_NODE_MESH_LABEL_FACES] = std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
+		binMapping[REPO_NODE_MESH_LABEL_FACES].second.resize(facesByteCount); //uint8_t will ensure it is a byte addrressing
+		memcpy(binMapping[REPO_NODE_MESH_LABEL_FACES].second.data(), &facesLevel1[0], facesByteCount);
 	}
 
 	if (normals.size() > 0)
 	{
 		uint64_t normalsByteCount = normals.size() * sizeof(normals[0]);
 
-		if (normalsByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
-		{
-			std::string bName = uniqueID.toString() + "_normals";
-			//inclusion of this binary exceeds the maximum, store separately
-			binMapping[REPO_NODE_MESH_LABEL_NORMALS] =
-				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
-			binMapping[REPO_NODE_MESH_LABEL_NORMALS].second.resize(normalsByteCount); //uint8_t will ensure it is a byte addrressing
-			memcpy(binMapping[REPO_NODE_MESH_LABEL_NORMALS].second.data(), &normals[0], normalsByteCount);
-
-			bytesize += sizeof(bName);
-		}
-		else
-		{
-			builder.appendBinary(
-				REPO_NODE_MESH_LABEL_NORMALS,
-				&normals[0],
-				normals.size() * sizeof(normals[0]));
-
-			bytesize += normalsByteCount;
-		}
+		std::string bName = uniqueID.toString() + "_normals";
+		binMapping[REPO_NODE_MESH_LABEL_NORMALS] = std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
+		binMapping[REPO_NODE_MESH_LABEL_NORMALS].second.resize(normalsByteCount); //uint8_t will ensure it is a byte addrressing
+		memcpy(binMapping[REPO_NODE_MESH_LABEL_NORMALS].second.data(), &normals[0], normalsByteCount);
 	}
 
 	//if (!vertexHash.empty())
@@ -428,25 +373,10 @@ MeshNode RepoBSONFactory::makeMeshNode(
 	{
 		uint64_t colorsByteCount = colors.size() * sizeof(colors[0]);
 
-		if (colorsByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
-		{
-			std::string bName = uniqueID.toString() + "_colors";
-			//inclusion of this binary exceeds the maximum, store separately
-			binMapping[REPO_NODE_MESH_LABEL_COLORS] =
-				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
-			binMapping[REPO_NODE_MESH_LABEL_COLORS].second.resize(colorsByteCount); //uint8_t will ensure it is a byte addrressing
-			memcpy(binMapping[REPO_NODE_MESH_LABEL_COLORS].second.data(), &colors[0], colorsByteCount);
-
-			bytesize += sizeof(bName);
-		}
-		else
-		{
-			builder.appendBinary(
-				REPO_NODE_MESH_LABEL_COLORS,
-				&colors[0],
-				colors.size() * sizeof(colors[0]));
-			bytesize += colorsByteCount;
-		}
+		std::string bName = uniqueID.toString() + "_colors";
+		binMapping[REPO_NODE_MESH_LABEL_COLORS] = std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
+		binMapping[REPO_NODE_MESH_LABEL_COLORS].second.resize(colorsByteCount); //uint8_t will ensure it is a byte addrressing
+		memcpy(binMapping[REPO_NODE_MESH_LABEL_COLORS].second.data(), &colors[0], colorsByteCount);
 	}
 
 	//--------------------------------------------------------------------------
@@ -471,26 +401,10 @@ MeshNode RepoBSONFactory::makeMeshNode(
 
 		uint64_t uvByteCount = concatenated.size() * sizeof(concatenated[0]);
 
-		if (uvByteCount + bytesize >= REPO_BSON_MAX_BYTE_SIZE)
-		{
-			std::string bName = uniqueID.toString() + "_uv";
-			//inclusion of this binary exceeds the maximum, store separately
-			binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS] =
-				std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
-			binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS].second.resize(uvByteCount); //uint8_t will ensure it is a byte addrressing
-			memcpy(binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS].second.data(), &concatenated[0], uvByteCount);
-
-			bytesize += sizeof(bName);
-		}
-		else
-		{
-			builder.appendBinary(
-				REPO_NODE_MESH_LABEL_UV_CHANNELS,
-				&concatenated[0],
-				concatenated.size() * sizeof(concatenated[0]));
-
-			bytesize += uvByteCount;
-		}
+		std::string bName = uniqueID.toString() + "_uv";
+		binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS] = std::pair<std::string, std::vector<uint8_t>>(bName, std::vector<uint8_t>());
+		binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS].second.resize(uvByteCount); //uint8_t will ensure it is a byte addrressing
+		memcpy(binMapping[REPO_NODE_MESH_LABEL_UV_CHANNELS].second.data(), &concatenated[0], uvByteCount);
 	}
 
 	return MeshNode(builder.obj(), binMapping);

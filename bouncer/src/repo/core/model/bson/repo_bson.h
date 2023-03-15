@@ -42,8 +42,6 @@
 #include "../../../lib/datastructure/repo_uuid.h"
 #include "repo_bson_element.h"
 
-#define REPO_BSON_MAX_BYTE_SIZE 16770000 //max size is 16MB,but leave a bit for buffer
-
 namespace repo {
 	namespace core {
 		namespace handler {
