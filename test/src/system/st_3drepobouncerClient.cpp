@@ -413,6 +413,18 @@ TEST(RepoClientTest, UploadTestNWD2022)
 	EXPECT_TRUE(projectExists(db, "nwdTest2022"));
 }
 
+TEST(RepoClientTest, UploadTestNWC)
+{
+	//this ensures we can run processes
+	ASSERT_TRUE(system(nullptr));
+	std::string db = "stUpload";
+	std::string project = "nwcTest";
+
+	std::string nwcUpload = produceUploadArgs(db, project, getDataPath(nwcModel));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(nwcUpload));
+	EXPECT_TRUE(projectExists(db, project));
+}
+
 TEST(RepoClientTest, UploadTestSPM)
 {
 	//this ensures we can run processes

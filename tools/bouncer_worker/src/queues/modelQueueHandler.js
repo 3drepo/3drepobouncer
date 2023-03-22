@@ -43,6 +43,9 @@ Handler.onMessageReceived = async (cmd, rid, callback) => {
 		return;
 	}
 
+	// A short pause before we update the model status as sometimes this happens so fast that
+	// it preceeds the amqp confirming to io that the item has been queued.
+	await Utils.sleep(100);
 	callback(JSON.stringify({
 		status: MODEL_PROCESSING,
 		database,
