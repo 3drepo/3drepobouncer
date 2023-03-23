@@ -449,6 +449,10 @@ TEST(RepoClientTest, UploadTestSPM)
 	std::string spmUpload4 = produceUploadArgs(db, "synchroTest4", getDataPath(synchroVersion6_4));
 	EXPECT_EQ((int)REPOERR_OK, runProcess(spmUpload4));
 	EXPECT_TRUE(projectExists(db, "synchroTest4"));
+
+	std::string spmUpload5 = produceUploadArgs(db, "synchroTest5", getDataPath(synchroVersion6_5));
+	EXPECT_EQ((int)REPOERR_OK, runProcess(spmUpload5));
+	EXPECT_TRUE(projectExists(db, "synchroTest5"));
 }
 
 TEST(RepoClientTest, UploadTestRVTRegressionTests)
