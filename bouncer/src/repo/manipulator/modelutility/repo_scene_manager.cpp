@@ -502,12 +502,24 @@ repo_web_buffers_t SceneManager::generateSRCBuffer(
 	return result;
 }
 
+bool isAddOnEnabled(repo::core::handler::AbstractDatabaseHandler *handler, const std::string &database, const std::string addOn) {
+	auto teamspaceSetting = handler->findOneByCriteria(database, "teamspace", BSON("_id" << database));
+	if (teamspaceSetting.hasField("addOns")) {
+		auto addOns = teamspaceSetting.getObjectField("addOns");
+		if (addOns.hasField(addOn)) {
+			return addOns.getBoolField(addOn);
+		}
+	}
+
+	return false;
+}
+
 bool SceneManager::isVrEnabled(
 	const repo::core::model::RepoScene                 *scene,
 	repo::core::handler::AbstractDatabaseHandler *handler) const
 {
-	repo::core::model::RepoUser user(handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, BSON("user" << scene->getDatabaseName())));
-	return user.isVREnabled();
+	auto dbName = scene->getDatabaseName();
+	return isAddOnEnabled(handler, dbName, REPO_USER_LABEL_VR_ENABLED);
 }
 
 bool SceneManager::shouldGenerateSrcFiles(
@@ -516,8 +528,7 @@ bool SceneManager::shouldGenerateSrcFiles(
 {
 	//only generate SRC files if the user has the src flag enabled and there are meshes
 
-	repo::core::model::RepoUser user(handler->findOneByCriteria(REPO_ADMIN, REPO_SYSTEM_USERS, BSON("user" << scene->getDatabaseName())));
-	if (user.isSrcEnabled())
+	if (isAddOnEnabled(handler, scene->getDatabaseName(), REPO_USER_LABEL_SRC_ENABLED))
 	{
 		auto meshes = scene->getAllMeshes(repo::core::model::RepoScene::GraphType::DEFAULT);
 		for (const repo::core::model::RepoNode* node : meshes)
