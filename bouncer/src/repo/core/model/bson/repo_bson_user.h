@@ -59,10 +59,9 @@ namespace repo {
 #define REPO_USER_LABEL_SUB_DATA					"data"
 #define REPO_USER_LABEL_SUB_COLLABORATOR			"collaborators"
 #define REPO_USER_LABEL_SUB_EXPIRY_DATE				"expiryDate"
-#define REPO_USER_LABAL_SUB_UNLIMITED				"unlimited"			
+#define REPO_USER_LABAL_SUB_UNLIMITED				"unlimited"
 #define REPO_USER_LABAL_SUB_PAYPAL_QUANTITY			"quantity"
 #define REPO_USER_LABAL_SUB_PAYPAL_PLAN				"plan"
-
 
 			class REPO_API_EXPORT RepoUser : public RepoBSON
 			{
@@ -71,14 +70,14 @@ namespace repo {
 				{
 					int32_t quantity;
 					int64_t expiryDate;
-					std::string plan;					
+					std::string plan;
 				};
 
 				struct QuotaLimit
 				{
 					bool unlimitedUsers = false;
 					int32_t collaborators = 0;
-					int32_t data = 0 ;
+					int32_t data = 0;
 					int64_t expiryDate = 0;
 				};
 
@@ -91,7 +90,7 @@ namespace repo {
 
 				RepoUser();
 
-				RepoUser(RepoBSON bson) : RepoBSON(bson){}
+				RepoUser(RepoBSON bson) : RepoBSON(bson) {}
 
 				~RepoUser();
 
@@ -113,7 +112,6 @@ namespace repo {
 				*/
 				RepoUser cloneAndMergeUserInfo(
 					const RepoUser &newUserInfo) const;
-	
 
 				RepoUser cloneAndUpdateSubscriptions(
 					const QuotaLimit &discretionary,
@@ -178,7 +176,6 @@ namespace repo {
 				* @return returns timestamp value of when the user is created, 0 if unknown
 				*/
 				uint64_t getUserCreatedAt() const;
-				
 
 				/**
 				* Get the username from this user
@@ -230,16 +227,6 @@ namespace repo {
 				*/
 				double getQuota() const;
 
-				/**
-				* Check if VR is enabled for this teamspace
-				*/
-				bool isVREnabled() const;
-
-				/**
-				* Check if SRC stashes are enabled for this teamspace
-				*/
-				bool isSrcEnabled() const;
-
 			private:
 				/**
 				* Converts a RepoBSON object into a PaypalSubscription Object
@@ -256,7 +243,7 @@ namespace repo {
 				/**
 				* Given a quota limit, construct a bson object
 				* @param quota quota struct that contains quota information
-				* @return 
+				* @return
 				*/
 				RepoBSON createQuotaBSON(QuotaLimit quota) const;
 
@@ -264,13 +251,12 @@ namespace repo {
 				* Return subscription bson object
 				*/
 				RepoBSON getSubscriptionBSON() const;
-				
+
 				/**
 				* Determine if the given entry has any quota
 				* @return returns true if there's quota
 				*/
 				bool quotaEntryHasQuota(const QuotaLimit &quota) const;
-
 			};
 		}// end namespace model
 	} // end namespace core
