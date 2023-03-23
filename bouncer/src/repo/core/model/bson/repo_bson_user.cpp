@@ -73,7 +73,7 @@ RepoUser RepoUser::cloneAndMergeUserInfo(
 RepoBSON RepoUser::createQuotaBSON(QuotaLimit quota) const {
 	RepoBSONBuilder quotaBuilder;
 
-	if(quota.unlimitedUsers)
+	if (quota.unlimitedUsers)
 		quotaBuilder.append(REPO_USER_LABEL_SUB_COLLABORATOR, REPO_USER_LABAL_SUB_UNLIMITED);
 	else
 		quotaBuilder.append(REPO_USER_LABEL_SUB_COLLABORATOR, quota.collaborators);
@@ -86,15 +86,14 @@ RepoBSON RepoUser::createQuotaBSON(QuotaLimit quota) const {
 uint64_t RepoUser::getUserCreatedAt() const {
 	uint64_t res = 0;
 	auto customData = getCustomDataBSON();
-	if (!customData.isEmpty()) 
+	if (!customData.isEmpty())
 	{
 		res = customData.getTimeStampField(REPO_USER_LABEL_CREATED_AT);
 	}
-	return res == -1? 0 : res;
+	return res == -1 ? 0 : res;
 }
 
 bool RepoUser::quotaEntryHasQuota(const QuotaLimit &quota) const {
-
 	return quota.unlimitedUsers || quota.collaborators || quota.data;
 }
 
@@ -112,7 +111,6 @@ RepoUser RepoUser::cloneAndUpdateSubscriptions(
 	auto oldSub = getSubscriptionBSON();
 	if (oldSub.hasField(REPO_USER_LABEL_SUB_PAYPAL))
 		updatedLicenses.append(REPO_USER_LABEL_SUB_PAYPAL, oldSub.getObjectField(REPO_USER_LABEL_SUB_PAYPAL));
-	
 
 	RepoBSONBuilder newCustomDataBuilder, newUserBSON, billingBuilder;
 	billingBuilder.append(REPO_USER_LABEL_SUBS, updatedLicenses.obj());
@@ -164,7 +162,6 @@ RepoBSON RepoUser::getCustomDataBSON() const
 	return customData;
 }
 
-
 RepoBSON RepoUser::getRolesBSON() const
 {
 	RepoBSON roles;
@@ -199,16 +196,15 @@ RepoUser::getRolesList() const
 RepoBSON RepoUser::getSubscriptionBSON() const
 {
 	RepoBSON customData = getCustomDataBSON();
-	
-	auto billing = !customData.isEmpty()? customData.getObjectField(REPO_USER_LABEL_BILLING) : RepoBSON();	
-	return !billing.isEmpty()? billing.getObjectField(REPO_USER_LABEL_SUBS) : RepoBSON();
-	
+
+	auto billing = !customData.isEmpty() ? customData.getObjectField(REPO_USER_LABEL_BILLING) : RepoBSON();
+	return !billing.isEmpty() ? billing.getObjectField(REPO_USER_LABEL_SUBS) : RepoBSON();
 }
 
 RepoUser::QuotaLimit RepoUser::convertToQuotaObject(const RepoBSON &bson) const
 {
 	QuotaLimit res;
-	
+
 	if (!bson.isEmpty())
 	{
 		if (bson.hasField(REPO_USER_LABEL_SUB_COLLABORATOR)) {
@@ -237,16 +233,15 @@ std::vector<RepoUser::PaypalSubscription> RepoUser::convertPayPalSub(const RepoB
 				if (entryBson.hasField(REPO_USER_LABAL_SUB_PAYPAL_PLAN) &&
 					entryBson.hasField(REPO_USER_LABAL_SUB_PAYPAL_QUANTITY) &&
 					entryBson.hasField(REPO_USER_LABEL_SUB_EXPIRY_DATE)
-				) {
+					) {
 					PaypalSubscription sub;
 					sub.plan = entryBson.getStringField(REPO_USER_LABAL_SUB_PAYPAL_PLAN);
 					sub.quantity = entryBson.getIntField(REPO_USER_LABAL_SUB_PAYPAL_QUANTITY);
 					sub.expiryDate = ((RepoBSON)entryBson).getTimeStampField(REPO_USER_LABEL_SUB_EXPIRY_DATE);
 					subs.push_back(sub);
-				}		
+				}
 			}
 		}
-		
 	}
 
 	return subs;
@@ -256,12 +251,12 @@ RepoUser::SubscriptionInfo RepoUser::getSubscriptionInfo() const
 {
 	auto subs = getSubscriptionBSON();
 	SubscriptionInfo result;
-if (!subs.isEmpty())
+	if (!subs.isEmpty())
 	{
 		result.discretionary = convertToQuotaObject(subs.getObjectField(REPO_USER_LABEL_SUB_DISCRETIONARY));
 		result.enterprise = convertToQuotaObject(subs.getObjectField(REPO_USER_LABEL_SUB_ENTERPRISE));
 
-		result.paypal = convertPayPalSub(subs);		
+		result.paypal = convertPayPalSub(subs);
 	}
 
 	return result;
@@ -269,15 +264,15 @@ if (!subs.isEmpty())
 
 int32_t RepoUser::getNCollaborators() const
 {
-	auto subs = getSubscriptionInfo();	
+	auto subs = getSubscriptionInfo();
 	bool activeDis = RepoBSON::getCurrentTimestamp() > subs.discretionary.expiryDate;
 	bool activeEnt = RepoBSON::getCurrentTimestamp() > subs.enterprise.expiryDate;
 
-	if (activeDis && subs.discretionary.unlimitedUsers || 
+	if (activeDis && subs.discretionary.unlimitedUsers ||
 		activeEnt && subs.enterprise.unlimitedUsers) return -1;
 
 	return activeDis ? subs.discretionary.collaborators : 0
-		+ activeEnt? subs.enterprise.collaborators : 0;
+		+ activeEnt ? subs.enterprise.collaborators : 0;
 }
 
 double RepoUser::getQuota() const
@@ -286,18 +281,3 @@ double RepoUser::getQuota() const
 
 	return subs.discretionary.data + subs.enterprise.data;
 }
-
-bool RepoUser::isVREnabled() const
-{
-	auto customData = getCustomDataBSON();
-
-	return customData.isEmpty() ? false : customData.getBoolField(REPO_USER_LABEL_VR_ENABLED);
-}
-
-bool RepoUser::isSrcEnabled() const
-{
-	auto customData = getCustomDataBSON();
-
-	return customData.isEmpty() ? false : customData.getBoolField(REPO_USER_LABEL_SRC_ENABLED);
-}
-
