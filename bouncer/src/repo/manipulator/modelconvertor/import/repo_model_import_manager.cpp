@@ -23,10 +23,20 @@
 #include "repo_model_import_3drepo.h"
 #include "repo_model_import_oda.h"
 #include "repo_model_import_synchro.h"
+#include "repo_model_units.h"
 #include "../../modeloptimizer/repo_optimizer_trans_reduction.h"
 #include <boost/filesystem.hpp>
 
 using namespace repo::manipulator::modelconvertor;
+
+float determineScaleFactor(const ModelUnits &base, const ModelUnits &target) {
+	if (base == target || base == ModelUnits::UNKNOWN || target == ModelUnits::UNKNOWN) {
+		return 1.0;
+	}
+	auto baseToM = scaleFactorToMetres(base);
+	auto mToTarget = scaleFactorFromMetres(target);
+	return baseToM * mToTarget;
+}
 
 repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 	const std::string &file,
@@ -51,6 +61,17 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 		repoTrace << "model Imported, generating Repo Scene";
 		uint8_t errCode = REPOERR_LOAD_SCENE_FAIL;
 		scene = modelConvertor->generateRepoScene(errCode);
+
+		auto fileUnits = modelConvertor->getUnits();
+		auto targetUnits = config.getTargetUnits();
+
+		auto unitsScale = determineScaleFactor(fileUnits, targetUnits);
+		repoInfo << "File units: " << toUnitsString(fileUnits) << "\tTarget units: " << toUnitsString(targetUnits);
+
+		if (unitsScale != 1.0) {
+			repoInfo << "Applying scaling factor of " << unitsScale << " to convert " << toUnitsString(fileUnits) << " to " << toUnitsString(targetUnits);
+			scene->applyScaleFactor(unitsScale);
+		}
 
 		if (!scene) {
 			error = errCode;

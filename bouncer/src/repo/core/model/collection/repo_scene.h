@@ -209,6 +209,13 @@ namespace repo {
 					repo::core::handler::AbstractDatabaseHandler *handler
 				);
 
+				/**
+				* Apply a scale factor to the unoptimised scene; this will apply a scaling matrix to the root node.
+				* This is typically done for units conversion.
+				* @param scale the scaling factor to apply
+				*/
+				void applyScaleFactor(const float &scale);
+
 				void addSequence(
 					const RepoSequence &animationSequence,
 					const std::unordered_map<std::string, std::vector<uint8_t>> &states

@@ -138,6 +138,8 @@ namespace repo {
 						const OdBm::BuiltInParameter::Enum &buildInEnum
 					);
 
+					repo::manipulator::modelconvertor::ModelUnits getProjectUnits(OdBmDatabase* pDb);
+
 					OdBmDatabasePtr database;
 					OdBmSampleLabelUtilsPE* labelUtils = nullptr;
 				};

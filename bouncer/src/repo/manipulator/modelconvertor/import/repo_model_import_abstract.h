@@ -32,7 +32,6 @@ namespace repo {
 			class AbstractModelImport
 			{
 			public:
-
 				/**
 				* Create AbstractModelImport with specific settings
 				* NOTE: The destructor will destroy the settings object referenced
@@ -69,6 +68,8 @@ namespace repo {
 				virtual bool applyReduction() const { return true; }
 				virtual bool requireReorientation() const { return false; }
 
+				ModelUnits getUnits() const { return modelUnits; }
+
 			protected:
 				/**
 				* Retrieve the directory to the file
@@ -87,6 +88,7 @@ namespace repo {
 				std::string  getFileName(std::string fullPath);
 
 				const ModelImportConfig settings; /*! Stores related settings for model import */
+				ModelUnits modelUnits = ModelUnits::UNKNOWN;
 			};
 		} //namespace modelconvertor
 	} //namespace manipulator

@@ -28,8 +28,8 @@
 #include "file_processor.h"
 
 /*
- * FileProcessorNwd handles Navisworks NWD files; these are the files that contain 
- * geometry of federations. Navisworks also outputs NWF (which are indices) and 
+ * FileProcessorNwd handles Navisworks NWD files; these are the files that contain
+ * geometry of federations. Navisworks also outputs NWF (which are indices) and
  * NWCs (which are caches). These are not currently supported.
  * https://knowledge.autodesk.com/support/navisworks-products/troubleshooting/caas/sfdcarticles/sfdcarticles/NavisWorks-JetStream-file-formats-NWC-NWF-NWD-and-NWP.html
  */
