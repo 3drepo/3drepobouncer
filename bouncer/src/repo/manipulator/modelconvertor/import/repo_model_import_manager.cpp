@@ -24,6 +24,7 @@
 #include "repo_model_import_oda.h"
 #include "repo_model_import_synchro.h"
 #include "../../modeloptimizer/repo_optimizer_trans_reduction.h"
+#include "../../modeloptimizer/repo_optimizer_mesh_simplification.h"
 #include <boost/filesystem.hpp>
 
 using namespace repo::manipulator::modelconvertor;
@@ -65,6 +66,12 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 				if (config.shouldRotateModel() || modelConvertor->requireReorientation()) {
 					repoTrace << "rotating model by 270 degress on the x axis...";
 					scene->reorientateDirectXModel();
+				}
+
+				if (config.shouldSimplifyMeshes()) {
+					repoTrace << "Simplifying meshes...";
+					repo::manipulator::modeloptimizer::MeshSimplificationOptimizer optimizer(config.getSimplificationQuality());
+					optimizer.apply(scene);
 				}
 
 				if (config.shouldApplyReductions() && modelConvertor->applyReduction()) {

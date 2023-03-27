@@ -38,6 +38,7 @@ namespace repo {
 				bool applyReductions;
 				bool rotateModel;
 				bool importAnimations;
+				int modelDetail;
 				std::string timeZone;
 			public:
 				ModelImportConfig(
@@ -50,12 +51,15 @@ namespace repo {
 					this->rotateModel = rotateModel;
 					this->importAnimations = importAnimations;
 					this->timeZone = timeZone;
+					this->modelDetail = 10000;
 				}
 				~ModelImportConfig() {}
 
 				bool shouldApplyReductions() const { return applyReductions; }
 				bool shouldRotateModel() const { return rotateModel; }
 				bool shouldImportAnimations() const { return importAnimations; }
+				bool shouldSimplifyMeshes() const { return modelDetail != 0; }
+				int getSimplificationQuality() const { return modelDetail; }
 				std::string getTimeZone() const { return timeZone; }
 			};
 		}//namespace modelconvertor
