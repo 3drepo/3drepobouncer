@@ -51,7 +51,7 @@ std::unique_ptr<FileProcessor> FileProcessor::getFileProcessor(const std::string
 		return makeUnique<FileProcessorDwg>(inputFile, geoCollector);
 	else if (fileExt == ".RVT" || fileExt == ".RFA")
 		return makeUnique<FileProcessorRvt>(inputFile, geoCollector);
-	else if (fileExt == ".NWD")
+	else if (fileExt == ".NWD" || fileExt == ".NWC")
 		return makeUnique<FileProcessorNwd>(inputFile, geoCollector);
 
 	return nullptr;

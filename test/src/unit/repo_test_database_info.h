@@ -53,6 +53,7 @@ const static std::string rvtModel = "sample.rvt";
 const static std::string rvtModel2021 = "sample2021.rvt";
 const static std::string rvtModel2022 = "sample2022.rvt";
 const static std::string nwdModel2022 = "sample2022.nwd";
+const static std::string nwcModel = "test.nwc";
 const static std::string rvtNo3DViewModel = "sample_bad.rvt";
 const static std::string rvtRoofTest = "RoofTest.rvt";
 const static std::string rvtMeta1 = "MetaTest1.rvt";
@@ -64,6 +65,7 @@ const static std::string synchroWithTransform = "withTransformations.spm";
 const static std::string synchroOldVersion = "synchro6_1.spm";
 const static std::string synchroVersion6_3 = "synchro6_3.spm";
 const static std::string synchroVersion6_4 = "synchro6_4.spm";
+const static std::string synchroVersion6_5 = "synchro6_5.spm";
 
 const static std::string emptyFile = "empty.json";
 const static std::string emptyJSONFile = "empty2.json";

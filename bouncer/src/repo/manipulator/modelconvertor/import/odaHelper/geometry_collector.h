@@ -18,6 +18,7 @@
 #pragma once
 
 #include "../../../../error_codes.h"
+#include "../repo_model_units.h"
 #include "../../../../core/model/bson/repo_bson_factory.h"
 #include "../../../../lib/datastructure/repo_structs.h"
 #include "helper_functions.h"
@@ -62,6 +63,7 @@ namespace repo {
 					~GeometryCollector();
 
 					std::unordered_map<std::string, std::unordered_map<std::string, std::string>> metadataCache;
+					ModelUnits units = ModelUnits::UNKNOWN;
 
 					/**
 					* Check whether collector has missing textures.

@@ -457,29 +457,6 @@ repo::core::model::MeshNode AssimpModelImport::createMeshRepoNode(
 			normals.push_back({ (float)assimpMesh->mNormals[i].x, (float)assimpMesh->mNormals[i].y, (float)assimpMesh->mNormals[i].z });
 		}
 	}
-	/*
-	*-----------------------------------------------------------------------------
-	*/
-
-	/*
-	*--------------------------------- Bones ---------------------------------------
-	*/
-	/*
-	TODO:
-	if (mesh->HasBones())
-	{
-	}
-
-	if (mesh->HasPositions())
-	{
-	}
-
-	if (mesh->HasTangentsAndBitangents())
-	{
-	}*/
-	/*
-	*-----------------------------------------------------------------------------
-	*/
 
 	/*
 	*------------------------------ UV Channels ----------------------------------

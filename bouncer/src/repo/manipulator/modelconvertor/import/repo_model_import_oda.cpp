@@ -10,7 +10,7 @@
 
 using namespace repo::manipulator::modelconvertor;
 
-const std::string OdaModelImport::supportedExtensions = ".dgn.rvt.rfa.dwg.dxf.nwd";
+const std::string OdaModelImport::supportedExtensions = ".dgn.rvt.rfa.dwg.dxf.nwd.nwc";
 
 OdaModelImport::~OdaModelImport()
 {
@@ -36,6 +36,7 @@ repo::core::model::RepoScene* OdaModelImport::generateRepoScene(uint8_t &errMsg)
 #ifdef ODA_SUPPORT
 	repoInfo << "Constructing Repo Scene...";
 	const repo::core::model::RepoNodeSet dummy;
+	modelUnits = geoCollector.units;
 	auto rootNode = geoCollector.createRootNode();
 	auto meshSet = geoCollector.getMeshNodes(rootNode);
 	if (meshSet.size()) {

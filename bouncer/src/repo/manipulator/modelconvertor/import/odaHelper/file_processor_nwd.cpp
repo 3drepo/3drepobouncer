@@ -19,6 +19,8 @@
 #include "file_processor_nwd.h"
 #include "data_processor_nwd.h"
 
+#include "../repo_model_units.h"
+
 // ODA
 #include <OdaCommon.h>
 #include <RxDynamicModule.h>
@@ -29,6 +31,7 @@
 #include <NwDatabase.h>
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
+using ModelUnits = repo::manipulator::modelconvertor::ModelUnits;
 
 static OdString sNwDbModuleName = L"TNW_Db";
 
@@ -67,6 +70,27 @@ uint8_t FileProcessorNwd::readFile()
 		if (pNwDb->isComposite())
 		{
 			throw new OdError("Navisworks Composite/Index files (.nwf) are not supported. Files must contain embedded geometry (.nwd)");
+		}
+		auto fileUnits = pNwDb->getUnits();
+		switch (fileUnits) {
+		case  NwModelUnits::UNITS_METERS:
+			collector->units = ModelUnits::METRES;
+			break;
+		case  NwModelUnits::UNITS_CENTIMETERS:
+			collector->units = ModelUnits::CENTIMETRES;
+			break;
+		case  NwModelUnits::UNITS_MILLIMETERS:
+			collector->units = ModelUnits::MILLIMETRES;
+			break;
+		case  NwModelUnits::UNITS_FEET:
+			collector->units = ModelUnits::FEET;
+			break;
+		case  NwModelUnits::UNITS_INCHES:
+			collector->units = ModelUnits::INCHES;
+			break;
+		default:
+			repoWarning << "Unsupported project units: " << (int)fileUnits;
+			collector->units = ModelUnits::UNKNOWN;
 		}
 
 		DataProcessorNwd dataProcessor(collector);

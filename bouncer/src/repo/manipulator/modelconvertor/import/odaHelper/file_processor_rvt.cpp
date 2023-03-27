@@ -38,6 +38,8 @@
 #include <StaticRxObject.h>
 #include "Database/BmGsManager.h"
 
+#include "../../../../lib/repo_utils.h"
+
 //3d repo bouncer
 #include "file_processor_rvt.h"
 #include "data_processor_rvt.h"
@@ -87,6 +89,7 @@ OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimData
 {
 	OdString layoutName;
 	OdRxIteratorPtr layouts = baseDatabase->layouts(bimDatabase);
+	bool navisNameFound = false;
 
 	for (; !layouts->done(); layouts->next())
 	{
@@ -95,22 +98,32 @@ OdString Get3DLayout(OdDbBaseDatabasePEPtr baseDatabase, OdBmDatabasePtr bimData
 
 		if (pDBDrawing->getBaseViewNameFormat() == OdBm::ViewType::_3d)
 		{
+			auto viewName = pLayout->name(layouts->object());
+			auto viewNameStr = convertToStdString(viewName);
+			repo::lib::toLower(viewNameStr);
 			//set first 3D view available
 			if (layoutName.isEmpty()) {
 				layoutName = pLayout->name(layouts->object());
 				repoInfo << "First layout name is " << convertToStdString(layoutName);
 			}
 
-			//3D View called "3D" has precedence
-			if (pDBDrawing->getName().iCompare("{3D}") == 0) {
-				repoInfo << "Found default named 3D view.";
-				layoutName = pLayout->name(layouts->object());
-			}
-
 			//3D view called "3D Repo" should return straight away
-			if (pDBDrawing->getName().iCompare("3D Repo") == 0) {
+			if (viewNameStr.find("3drepo") != std::string::npos || viewNameStr.find("3d repo") != std::string::npos) {
 				repoInfo << "Found 3D view named 3D Repo.";
 				return pLayout->name(layouts->object());
+			}
+
+			if (!navisNameFound) {
+				navisNameFound = viewNameStr.find("navis") != std::string::npos;
+				if (navisNameFound) {
+					//3D View called "navis" has precedence over default 3D view
+					repoInfo << "Found default named 3D view.";
+					layoutName = pLayout->name(layouts->object());
+				}
+				else if (pDBDrawing->getName().iCompare("{3D}") == 0) {
+					repoInfo << "Found default named 3D view.";
+					layoutName = pLayout->name(layouts->object());
+				}
 			}
 		}
 	}

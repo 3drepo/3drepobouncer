@@ -62,6 +62,8 @@ namespace repo {
 						const OdGiDrawable* pEntity = nullptr,
 						const OdGeMatrix3d& matTransform = OdGeMatrix3d::kIdentity,
 						const std::map<OdDbStub*, double>* pMapDeviations = nullptr);
+
+					ModelUnits determineModelUnits(const OdDgModel::UnitMeasure &units);
 				};
 			}
 		}

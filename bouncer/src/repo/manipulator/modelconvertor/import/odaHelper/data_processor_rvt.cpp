@@ -30,6 +30,8 @@
 
 using namespace repo::manipulator::modelconvertor::odaHelper;
 
+using ModelUnits = repo::manipulator::modelconvertor::ModelUnits;
+
 static const char* ODA_CSV_LOCATION = "ODA_CSV_LOCATION";
 static const std::string REVIT_ELEMENT_ID = "Element ID";
 
@@ -158,12 +160,12 @@ std::string DataProcessorRvt::translateMetadataValue(
 			else
 			{
 				OdBmObjectPtr bmPtr = bmId.openObject();
-				if (!bmPtr.isNull()) 
+				if (!bmPtr.isNull())
 				{
 					// The object class is unknown - some superclasses we can handle explicitly.
 
 					auto bmPtrClass = bmPtr->isA();
-					if (!bmPtrClass->isKindOf(OdBmElement::desc())) 
+					if (!bmPtrClass->isKindOf(OdBmElement::desc()))
 					{
 						OdBmElementPtr elem = bmPtr;
 						if (elem->getElementName() == OdString::kEmpty) {
@@ -173,7 +175,7 @@ std::string DataProcessorRvt::translateMetadataValue(
 							strOut = convertToStdString(elem->getElementName());
 						}
 					}
-					else 
+					else
 					{
 						repoError << "Unsupported metadata value type (class) " << convertToStdString(bmPtrClass->name()) << " currently only OdBmElement's are supported.";
 					}
@@ -192,6 +194,8 @@ void DataProcessorRvt::init(GeometryCollector* geoColl, OdBmDatabasePtr database
 	//getCameras(database);
 
 	establishProjectTranslation(database);
+
+	geoColl->units = getProjectUnits(database);
 }
 
 DataProcessorRvt::DataProcessorRvt()
@@ -252,14 +256,14 @@ void DataProcessorRvt::convertTo3DRepoTriangle(
 	std::vector<OdGePoint2d> odaUvs;
 	odaUvs.resize(verticesOut.size());
 
-	if(vertexData() && vertexData()->mappingCoords(OdGiVertexData::kAllChannels))
+	if (vertexData() && vertexData()->mappingCoords(OdGiVertexData::kAllChannels))
 	{
 		// Where Uvs are predefined, we need to get them for each vertex from the
 		// dedicated array using the indices again...
 
 		OdGiMapperItemEntryPtr mapper = currentMapper(false)->diffuseMapper();
 		const OdGePoint3d* predefinedUvCoords = vertexData()->mappingCoords(OdGiVertexData::kAllChannels);
-		for (OdInt32 i = 0; i < verticesOut.size(); i++) 
+		for (OdInt32 i = 0; i < verticesOut.size(); i++)
 		{
 			mapper->mapPredefinedCoords(predefinedUvCoords + indices[i], odaUvs.data() + i, 1);
 		}
@@ -395,9 +399,9 @@ void DataProcessorRvt::processParameter(
 			if (!paramGroup.isEmpty()) {
 				metaKey = convertToStdString(paramGroup) + "::" + metaKey;
 			}
-			
+
 			// Get the label for the units, using the same mechanism as the OdBmSampleLabelUtilsPE::getParamValueAsString.
-		
+
 			auto pAUnits = getUnits(pParamElem->getDatabase());
 			auto pFormatOptions = pAUnits->getFormatOptions(pDescParam->getSpecTypeId());
 			if (!pFormatOptions.isNull()) {
@@ -438,15 +442,14 @@ void DataProcessorRvt::fillMetadataByElemPtr(
 
 		for (const auto &entry : aParams.getBuiltInParamsIterator()) {
 			std::string builtInName = convertToStdString(OdBm::BuiltInParameter(entry).toString());
-			
+
 			//.. HOTFIX: handle access violation exception (reported to ODA)
 			if (ignoreParam(builtInName)) continue;
-			
+
 			auto paramId = element->database()->getObjectId(entry);
 			if (paramId.isValid() && !paramId.isNull()) {
 				processParameter(element, paramId, metadata, entry);
 			}
-			
 		}
 	}
 
@@ -598,6 +601,21 @@ camera_t DataProcessorRvt::convertCamera(OdBmDBViewPtr view)
 	return camera;
 }
 
+ModelUnits DataProcessorRvt::getProjectUnits(OdBmDatabase* pDb) {
+	initLabelUtils();
+	auto unitsStr = convertToStdString(labelUtils->getLabelForUnit(getLengthUnits(database)));
+
+	if (unitsStr == "Millimeters") return ModelUnits::MILLIMETRES;
+	if (unitsStr == "Centimeters") return ModelUnits::CENTIMETRES;
+	if (unitsStr == "Decimeters") return ModelUnits::DECIMETRES;
+	if (unitsStr == "Meters") return ModelUnits::METRES;
+	if (unitsStr == "Feet") return ModelUnits::FEET;
+	if (unitsStr == "Inches") return ModelUnits::INCHES;
+
+	repoWarning << "Unrecognised model units: " << unitsStr;
+	return ModelUnits::UNKNOWN;
+}
+
 //.. TODO: Comment this code for newer version of ODA BIM library
 void DataProcessorRvt::establishProjectTranslation(OdBmDatabase* pDb)
 {
@@ -630,8 +648,6 @@ void DataProcessorRvt::establishProjectTranslation(OdBmDatabase* pDb)
 
 				OdGeMatrix3d alignedLocation;
 				alignedLocation.setToAlignCoordSys(activeOrigin, activeX, activeY, activeZ, projectOrigin, projectX, projectY, projectZ);
-
-
 				auto scaleCoef = 1.0 / OdBmUnitUtils::getUnitTypeIdInfo(getLengthUnits(database)).inIntUnitsCoeff;
 				convertTo3DRepoWorldCoorindates = [activeOrigin, alignedLocation, scaleCoef](OdGePoint3d point) {
 					OdGeVector3d convertedPoint = (point - activeOrigin).transformBy(alignedLocation);

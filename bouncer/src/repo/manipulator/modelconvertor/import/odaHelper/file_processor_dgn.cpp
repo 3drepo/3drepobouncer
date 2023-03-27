@@ -26,6 +26,7 @@
 #include <DgGsManager.h>
 
 #include "../../../../lib/repo_exception.h"
+#include "../repo_model_units.h"
 #include "file_processor_dgn.h"
 #include "data_processor_dgn.h"
 #include "vectorise_device_dgn.h"
@@ -33,6 +34,8 @@
 
 #include <DgLine.h>      // This file puts OdDgLine3d in the output file
 using namespace repo::manipulator::modelconvertor::odaHelper;
+
+using ModelUnits = repo::manipulator::modelconvertor::ModelUnits;
 
 class StubDeviceModuleDgn : public OdGsBaseModule
 {
@@ -76,6 +79,20 @@ repo::manipulator::modelconvertor::odaHelper::FileProcessorDgn::~FileProcessorDg
 OdDgDatabasePtr FileProcessorDgn::initialiseOdDatabase() {
 	OdString fileSource = file.c_str();
 	return svcs.readFile(fileSource);
+}
+
+ModelUnits FileProcessorDgn::determineModelUnits(const OdDgModel::UnitMeasure &units) {
+	switch (units) {
+	case OdDgModel::UnitMeasure::kMeters: return ModelUnits::METRES;
+	case OdDgModel::UnitMeasure::kDecimeters: return ModelUnits::DECIMETRES;
+	case OdDgModel::UnitMeasure::kCentimeters: return ModelUnits::CENTIMETRES;
+	case OdDgModel::UnitMeasure::kMillimeters: return ModelUnits::MILLIMETRES;
+	case OdDgModel::UnitMeasure::kFeet: return ModelUnits::FEET;
+	case OdDgModel::UnitMeasure::kInches: return ModelUnits::INCHES;
+	default:
+		repoWarning << "Unrecognised unit measure: " << (int)units;
+		return ModelUnits::UNKNOWN;
+	}
 }
 
 uint8_t FileProcessorDgn::readFile() {
@@ -137,6 +154,8 @@ uint8_t FileProcessorDgn::readFile() {
 		OdDgElementId elementActId = pDb->getActiveModelId();
 		OdDgModelPtr pModel = elementId.safeOpenObject();
 		ODCOLORREF background = pModel->getBackground();
+
+		collector->units = determineModelUnits(pModel->getMasterUnit());
 
 		OdDgElementId vectorizedViewId;
 		OdDgViewGroupPtr pViewGroup = pDb->getActiveViewGroupId().openObject();

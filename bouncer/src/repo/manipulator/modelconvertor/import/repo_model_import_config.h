@@ -29,6 +29,8 @@
 
 #include "../../../repo_bouncer_global.h"
 
+#include "repo_model_units.h"
+
 namespace repo {
 	namespace manipulator {
 		namespace modelconvertor {
@@ -40,19 +42,19 @@ namespace repo {
 				bool importAnimations;
 				int modelDetail;
 				std::string timeZone;
+				ModelUnits targetUnits;
 			public:
 				ModelImportConfig(
 					const bool applyReductions = true,
 					const bool rotateModel = false,
 					const bool importAnimations = true,
-					const std::string timeZone = "")
+					const ModelUnits targetUnits = ModelUnits::UNKNOWN,					
+					const std::string timeZone = "") :
+					applyReductions(applyReductions), rotateModel(rotateModel), importAnimations(importAnimations), targetUnits(targetUnits), timeZone(timeZone) 
 				{
-					this->applyReductions = applyReductions;
-					this->rotateModel = rotateModel;
-					this->importAnimations = importAnimations;
-					this->timeZone = timeZone;
 					this->modelDetail = 10000;
 				}
+
 				~ModelImportConfig() {}
 
 				bool shouldApplyReductions() const { return applyReductions; }
@@ -61,6 +63,7 @@ namespace repo {
 				bool shouldSimplifyMeshes() const { return modelDetail != 0; }
 				int getSimplificationQuality() const { return modelDetail; }
 				std::string getTimeZone() const { return timeZone; }
+				ModelUnits getTargetUnits() const { return targetUnits; }
 			};
 		}//namespace modelconvertor
 	}//namespace manipulator

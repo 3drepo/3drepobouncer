@@ -1631,6 +1631,32 @@ void RepoScene::populateAndUpdate(
 	addNodeToScene(gType, unknowns, errMsg, &(instance.unknowns));
 }
 
+void RepoScene::applyScaleFactor(const float &scale) {
+	if (graph.rootNode)
+	{
+		auto rootTrans = dynamic_cast<TransformationNode*>(graph.rootNode);
+		std::vector<float> scalingMatrix = {
+			scale, 0, 0, 0,
+			0, scale, 0, 0,
+			0, 0, scale, 0,
+			0, 0, 0, 1
+		};
+
+		TransformationNode newRoot = rootTrans->cloneAndApplyTransformation(repo::lib::RepoMatrix(scalingMatrix));
+		modifyNode(GraphType::DEFAULT, rootTrans->getSharedID(), &newRoot);
+
+		//Clear the stash as bounding boxes in mesh mappings are no longer valid like this.
+		clearStash();
+
+		if (worldOffset.size())
+		{
+			for (int i = 0; i < worldOffset.size(); ++i) {
+				worldOffset[i] *= scale;
+			}
+		}
+	}
+}
+
 void RepoScene::reorientateDirectXModel()
 {
 	//Need to rotate the model by 270 degrees on the X axis
