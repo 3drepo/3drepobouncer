@@ -899,6 +899,67 @@ void SurfaceMesh::collapse(Halfedge h)
     }
 }
 
+void SurfaceMesh::collapse(Vertex v0, Vertex v1) 
+{
+    // Check that this operation is possible; both vertices must have open
+    // corners at which the connection between their patches can take place.
+
+    if (!is_boundary(v0))
+    {
+        auto what = "Merge::merge_vertices cannot combine complex vertices";
+        throw TopologyException(what);
+    }
+    if (!is_boundary(v1))
+    {
+        auto what = "Merge::merge_vertices cannot combine complex vertices";
+        throw TopologyException(what);
+    }
+
+    // halfedge returns the outgoing boundary edge, if there is one.
+
+    auto hv0 = halfedge(v0);
+    auto hv1 = halfedge(v1);
+    auto pv0 = prev_halfedge(hv0);
+    auto pv1 = prev_halfedge(hv1);
+
+    // Redirect all the edges that point to v1, to v0
+
+    for (auto h : halfedges(v1))
+    {
+        // halfedges() returns the outgoing half-edges around v.
+        // Each half-edge stores the vertex it points to, so to update
+        // the topolgy, we get the opposites of the outgoing half-edges
+        // and set these.
+
+        set_vertex(opposite_halfedge(h), v0);
+    }
+
+    // Connect the two patches: the previous edge of v0's boundary will
+    // point to the ingoing edge of v1's boundary, and vice versa.
+
+    set_prev_halfedge(hv0, pv1);
+    set_prev_halfedge(hv1, pv0);
+
+    // Before deleting the vertex, make sure the mesh doesn't think it
+    // points to anything that should be deleted with it.
+
+    set_halfedge(v1, Halfedge());
+
+    delete_vertex(v1);
+
+    // remove loops
+
+    if (next_halfedge(next_halfedge(hv0)) == hv0)
+    {
+        remove_loop_helper(hv0);
+    }
+
+    if (next_halfedge(next_halfedge(hv1)) == hv1)
+    {
+        remove_loop_helper(hv1);
+    }
+}
+
 void SurfaceMesh::remove_edge_helper(Halfedge h)
 {
     Halfedge hn = next_halfedge(h);
@@ -989,6 +1050,161 @@ void SurfaceMesh::remove_loop_helper(Halfedge h)
     has_garbage_ = true;
 }
 
+void SurfaceMesh::remove_edges_helper(Halfedge h1, Halfedge h3) 
+{
+    // Reroutes the topology at vertex to_vertex(ha) around ha & hb, so that
+    // ha and hb no longer form part of the fan around the vertex.
+    // ha is in, and hb is out.
+
+    // Collect the halfedges involved in this operation
+
+    auto h1n = next_halfedge(h1);
+    auto h3p = prev_halfedge(h3);
+
+    // Connect h1n and h3p to eachother
+
+    set_next_halfedge(h3p, h1n);
+
+    // That operation may have bisected the
+
+
+
+
+}
+
+void SurfaceMesh::combine_edges(Halfedge h1, Halfedge h2)
+{
+    // Merges h2 into h1, removing a boundary and joining two faces.
+    // h1 must be a boundary halfedge, with the same vertices at each
+    // end as h2. The opposite of h2 must also be a boundary.
+    // After this operation h2's edge will be deleted.
+
+    // Check that the edges can be collapsed...
+
+    assert(!is_deleted(h1));
+    assert(!is_deleted(h2));
+    assert(edge(h1) != edge(h2));
+    assert(to_vertex(h1) == to_vertex(h2));
+    assert(from_vertex(h1) == from_vertex(h2));
+   
+    // If h1 is not a boundary, then changing its connectivity will break an
+    // existing face.
+
+    assert(is_boundary(h1));
+
+    // If the opposite side of h2 is not a boundary, then then changing it's
+    // connectivity will also break a face.
+
+    assert(is_boundary(opposite_halfedge(h2)));
+
+    auto v0 = to_vertex(h1);
+    auto v1 = from_vertex(h1);
+
+    // Remember the number of outgoing edges reachable from v0 & v1; we will use
+    // this to check if the graph needs to be repaired later on
+
+    auto vv0 = valence(v0);
+    auto vv1 = valence(v1);
+
+    // h1 is going to become h2; it will adopt h2's connectivity and face, but
+    // retain its place in memory.
+
+    // Before we start to change references, collect the edges involved
+
+    auto h0 = opposite_halfedge(h1);
+    auto h1n = next_halfedge(h1);
+    auto h1p = prev_halfedge(h1);
+    auto h2n = next_halfedge(h2);
+    auto h2p = prev_halfedge(h2);
+    auto h3 = opposite_halfedge(h2);
+    auto h3n = next_halfedge(h3);
+    auto h3p = prev_halfedge(h3);
+
+    // When h2/h3 is removed, it will leave h1n & h3p, and h1p & h3n dangling.
+    // These effectively form corners. The corners must be inserted into the
+    // existing topology at each vertex, to avoid creating distinct patches.
+
+    // First re-route each end around h1 and h3.
+
+    set_next_halfedge(h3p, h1n);
+    set_next_halfedge(h1p, h3n);
+
+    // Now h1 is isolated, and can adopt h2's connectivity.
+
+    set_next_halfedge(h1, h2n);
+    set_prev_halfedge(h1, h2p);
+    set_face(h1, face(h2));
+
+    // In case the face pointed to a side of the deleted edge
+    if (face(h2).is_valid())
+    {
+        set_halfedge(face(h2), h1);
+    }
+
+    // In case either vertex points to the deleted edge
+    
+    set_halfedge(v1, h1);
+    set_halfedge(v0, next_halfedge(h1));
+
+    adjust_outgoing_halfedge(v0);
+    adjust_outgoing_halfedge(v1);
+
+    // The above operation can bisect the graph, if a halfedge crosses h1/h3.
+    // Identify if there are separate patches around each corner and reconnect
+    // them if so.
+
+    if (valence(v0) != vv0 - 1)
+    {
+        // Find a boundary around v0 in which to insert h3p/h1n
+
+        auto b = halfedge(v0); // halfedge returns a boundary edge, if there is one
+
+        if (is_boundary(b))
+        {
+            auto a = prev_halfedge(b);
+            set_next_halfedge(h3p, b);
+            set_next_halfedge(a, h1n);
+        }
+        else
+        {
+            // If we have created a non-boundary vertex, then the newly created 
+            // patch will have to go attach to a new vertex
+            auto nv = add_vertex(vpoint_[v0]);
+            set_vertex(h3p, nv);
+            set_vertex(opposite_halfedge(h1n), nv);
+            set_halfedge(nv, opposite_halfedge(h3p));
+        }
+    }
+
+    auto vv12 = valence(v1);
+    if (valence(v1) != vv1 - 1)
+    {
+        // Find a boundary around v1 in which to insert h1p/h3n
+
+        auto b = halfedge(v1);
+
+        if (is_boundary(b))
+        {
+            auto a = prev_halfedge(b);
+            set_next_halfedge(h1p, b);
+            set_next_halfedge(a, h3n);
+        }
+        else
+        {
+            auto nv = add_vertex(vpoint_[v1]);
+            set_vertex(h1p, nv);
+            set_vertex(opposite_halfedge(h3n), nv);
+            set_halfedge(nv, opposite_halfedge(h1p));
+        }
+    }
+
+    // Now h2/h3 can be deleted.
+
+    edeleted_[edge(h2)] = true;
+    ++deleted_edges_;
+    has_garbage_ = true;
+}
+
 void SurfaceMesh::delete_vertex(Vertex v)
 {
     if (is_deleted(v))
@@ -1026,6 +1242,13 @@ void SurfaceMesh::delete_edge(Edge e)
         delete_face(f0);
     if (f1.is_valid())
         delete_face(f1);
+
+    if (!edeleted_[e])
+    {
+        edeleted_[e] = true;
+        deleted_edges_++;
+        has_garbage_ = true;
+    }
 }
 
 void SurfaceMesh::delete_face(Face f)

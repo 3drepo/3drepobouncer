@@ -5,15 +5,14 @@
 #pragma once
 
 #include <vector>
+#include <filesystem>
 
 #include "pmp/Types.h"
 #include "pmp/Properties.h"
 #include "pmp/io/IOFlags.h"
 
 namespace std {
-    namespace filesystem {
-        class path;
-    }
+    namespace filesystem = std::experimental::filesystem;
 }
 
 namespace pmp {
@@ -1705,6 +1704,8 @@ public:
     //! to call garbage_collection() to finally remove them.
     void collapse(Halfedge h);
 
+    void collapse(Vertex v0, Vertex v1);
+
     //! \return whether removing the edge \p e is topologically legal.
     bool is_removal_ok(Edge e) const;
 
@@ -1874,6 +1875,10 @@ public:
         return Face(static_cast<IndexType>(faces_size()) - 1);
     }
 
+    // Merges boundary h1 into non-boundary h2, connecting the incident faces
+    // and removing the boundary.
+    void combine_edges(Halfedge h1, Halfedge h2);
+
     //!@}
 
 private:
@@ -1906,6 +1911,8 @@ private:
 
     // Helper for halfedge collapse
     void remove_loop_helper(Halfedge h);
+
+    void remove_edges_helper(Halfedge ha, Halfedge hb);
 
     // are there any deleted entities?
     inline bool has_garbage() const { return has_garbage_; }

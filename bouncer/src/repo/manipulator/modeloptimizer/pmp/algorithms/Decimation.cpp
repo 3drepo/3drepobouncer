@@ -113,6 +113,23 @@ void Decimation::initialize(Scalar aspect_ratio, Scalar edge_length,
             {
                 vquadric_[v] += Quadric(fnormal_[f], vpoint_[v]);
             }
+
+            for (auto h : mesh_.halfedges(v))
+            {
+                if (mesh_.is_boundary(mesh_.edge(h)))
+                {
+                    auto f = mesh_.face(h);
+                    if (f.is_valid())
+                    {
+                        auto d = normalize(vpoint_[mesh_.to_vertex(h)] -
+                                           vpoint_[mesh_.from_vertex(h)]);
+                        auto n = fnormal_[f];
+                        auto en = normalize(cross(d, n));
+
+                        vquadric_[v] += Quadric(en, vpoint_[v]);
+                    }
+                }
+            }
         }
     }
 

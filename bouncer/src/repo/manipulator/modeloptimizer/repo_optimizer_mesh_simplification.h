@@ -40,7 +40,7 @@ namespace repo {
 				* many primitives there should be per unit volume.
 				*/
 				MeshSimplificationOptimizer(
-					const int quality);
+					const double quality, const int minVertexCount);
 
 				/**
 				* Default deconstructor
@@ -56,7 +56,19 @@ namespace repo {
 
 			private:
 				const repo::core::model::RepoScene::GraphType gType;
-				const int quality;
+
+				/**
+				* The target number of vertices per-unit cubed (in whichever
+				* units the vertices are defined in).
+				*/
+				const double quality;
+
+				/**
+				* The minimum number of absolulte vertices in the mesh for 
+				* simplification to be considered. Meshes with fewer vertices
+				* will not be decimated.
+				*/
+				const int minVertexCount;
 
 				/**
 				* Defines a local mesh description used for the simplification
@@ -75,6 +87,17 @@ namespace repo {
 				*/
 				repo::core::model::MeshNode updateMeshNode(repo::core::model::MeshNode* node, Mesh& mesh);
 
+				/**
+				* Returns whether it is possible to run decimation on the mesh
+				* node. Only meshes with specific attributes and topologies can
+				* be decimated.
+				*/
+				bool canOptimizeMeshNode(repo::core::model::RepoScene* scene, repo::core::model::MeshNode* node);
+
+				/**
+				* Returns whether the mesh node meets the criteria for 
+				* decimation. This check includes canOptimizeMeshNode.
+				*/
 				bool shouldOptimizeMeshNode(repo::core::model::RepoScene* scene, repo::core::model::MeshNode* node);
 
 				/**
@@ -82,6 +105,17 @@ namespace repo {
 				* that should be used in its place.
 				*/
 				repo::core::model::MeshNode optimizeMeshNode(repo::core::model::MeshNode* mesh);
+
+				/**
+				* Returns the volume of the mesh based on the bounding box.
+				*/
+				static double getVolume(repo::core::model::MeshNode* mesh);
+
+				/**
+				* Returns a metric defining the quality of the mesh. Currently
+				* this is the number of vertices per unit volume.
+				*/
+				static double getQuality(repo::core::model::MeshNode* mesh);
 			};
 		}
 	}

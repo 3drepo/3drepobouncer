@@ -40,7 +40,8 @@ namespace repo {
 				bool applyReductions;
 				bool rotateModel;
 				bool importAnimations;
-				int modelDetail;
+				double simplificationQuality;
+				int simplificationMinVertexCount;
 				std::string timeZone;
 				ModelUnits targetUnits;
 			public:
@@ -48,11 +49,12 @@ namespace repo {
 					const bool applyReductions = true,
 					const bool rotateModel = false,
 					const bool importAnimations = true,
-					const ModelUnits targetUnits = ModelUnits::UNKNOWN,					
+					const ModelUnits targetUnits = ModelUnits::UNKNOWN,
+					const double quality = 0.0,
+					const int minVertexCount = 0.0,
 					const std::string timeZone = "") :
-					applyReductions(applyReductions), rotateModel(rotateModel), importAnimations(importAnimations), targetUnits(targetUnits), timeZone(timeZone) 
+					applyReductions(applyReductions), rotateModel(rotateModel), importAnimations(importAnimations), targetUnits(targetUnits), simplificationQuality(quality), simplificationMinVertexCount(minVertexCount), timeZone(timeZone)
 				{
-					this->modelDetail = 10000;
 				}
 
 				~ModelImportConfig() {}
@@ -60,8 +62,9 @@ namespace repo {
 				bool shouldApplyReductions() const { return applyReductions; }
 				bool shouldRotateModel() const { return rotateModel; }
 				bool shouldImportAnimations() const { return importAnimations; }
-				bool shouldSimplifyMeshes() const { return modelDetail != 0; }
-				int getSimplificationQuality() const { return modelDetail; }
+				bool shouldSimplifyMeshes() const { return simplificationQuality > 0; }
+				double getSimplificationQuality() const { return simplificationQuality; }
+				int getSimplificationMinVertexCount() const { return simplificationMinVertexCount; }
 				std::string getTimeZone() const { return timeZone; }
 				ModelUnits getTargetUnits() const { return targetUnits; }
 			};

@@ -91,7 +91,7 @@ repo::core::model::RepoScene* ModelImportManager::ImportFromFile(
 
 				if (config.shouldSimplifyMeshes()) {
 					repoTrace << "Simplifying meshes...";
-					repo::manipulator::modeloptimizer::MeshSimplificationOptimizer optimizer(config.getSimplificationQuality());
+					repo::manipulator::modeloptimizer::MeshSimplificationOptimizer optimizer(config.getSimplificationQuality() * std::pow((double)scaleFactorToMetres(fileUnits), 3), config.getSimplificationMinVertexCount());
 					optimizer.apply(scene);
 				}
 

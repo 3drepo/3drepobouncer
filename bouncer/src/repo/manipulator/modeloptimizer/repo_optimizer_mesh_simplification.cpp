@@ -36,7 +36,14 @@
 #undef min
 
 #include "pmp/SurfaceMesh.h"
+#include "pmp/algorithms/Merge.h"
+#include "pmp/algorithms/Manifold.h"
 #include "pmp/algorithms/Normals.h"
+#include "pmp/algorithms/Decimation.h"
+#include "pmp/algorithms/Triangulation.h"
+#include "pmp/BoundingBox.h"
+#include "pmp/utilities.h";
+#include "pmp/io/write_pmp.h"
 
 using namespace repo::manipulator::modeloptimizer;
 
@@ -45,10 +52,12 @@ class MeshSimplificationOptimizer::Mesh : public pmp::SurfaceMesh
 };
 
 MeshSimplificationOptimizer::MeshSimplificationOptimizer(
-	const int quality) :
-	AbstractOptimizer()
-	, gType(repo::core::model::RepoScene::GraphType::DEFAULT) //we only perform optimisation on default graphs
-	, quality(quality)
+	const double quality,
+	const int minVertexCount) :
+	AbstractOptimizer(), 
+	gType(repo::core::model::RepoScene::GraphType::DEFAULT), //we only perform optimisation on default graphs
+	quality(quality),
+	minVertexCount(minVertexCount)
 {
 }
 
@@ -92,7 +101,36 @@ bool MeshSimplificationOptimizer::apply(repo::core::model::RepoScene *scene)
 	return success;
 }
 
+double MeshSimplificationOptimizer::getVolume(repo::core::model::MeshNode* node)
+{
+	auto bounds = node->getBoundingBox();
+	auto x = bounds[1].x - bounds[0].x;
+	auto y = bounds[1].y - bounds[0].y;
+	auto z = bounds[1].z - bounds[0].z;
+	return x * y * z;
+}
+
+double MeshSimplificationOptimizer::getQuality(repo::core::model::MeshNode* node)
+{
+	return (double)node->getNumVertices() / getVolume(node);
+}
+
 bool MeshSimplificationOptimizer::shouldOptimizeMeshNode(repo::core::model::RepoScene* scene, repo::core::model::MeshNode* node)
+{
+	if (!canOptimizeMeshNode(scene, node))
+	{
+		return false;
+	}
+	
+	if (getQuality(node) <= quality)
+	{
+		return false;
+	}
+
+	return true;
+}
+
+bool MeshSimplificationOptimizer::canOptimizeMeshNode(repo::core::model::RepoScene* scene, repo::core::model::MeshNode* node)
 {
 	// Check if the mesh can be simplified with the current implementation.
 
@@ -195,16 +233,79 @@ repo::core::model::MeshNode MeshSimplificationOptimizer::updateMeshNode(repo::co
 
 repo::core::model::MeshNode MeshSimplificationOptimizer::optimizeMeshNode(repo::core::model::MeshNode* meshNode)
 {
+	// do the simplification here...
+	repoInfo << "Simplifying mesh " << meshNode->getName();
+
 	MeshSimplificationOptimizer::Mesh mesh;
 	convertMeshNode(meshNode, mesh);
 
-	// do the simplification here...
-	repoInfo << "Converting mesh... ";
+	auto maxVertices = getVolume(meshNode) * quality;
 
-	auto positions = mesh.get_vertex_property<pmp::Point>("v:point");
-	for (auto v : mesh.vertices()) {
-		positions[v](0, 0) *= 1.5f;
-	}	
+	if(meshNode->getNumVertices() < minVertexCount) // Don't try and do anything with very small meshes
+	{
+		return *meshNode;
+	}
 
-	return updateMeshNode(meshNode, mesh);
+	try {
+
+		// The first step is to collapse coincident vertices; most importers will 
+		// generate multiple vertices when encountering per-vertex normals, which
+		// prevent the identification of common edges to collapse.
+
+		// The merge algorithm expects that meshes are manifold to begin with, 
+		// though it may not leave it manifold.
+
+		pmp::Manifold manifold(mesh);
+		manifold.fix_manifold();
+
+		pmp::check_mesh(mesh);
+
+		pmp::Merge merge(mesh);
+		merge.merge();
+
+		// The decimation expects a pure triangle mesh. The triangulation expects 
+		// manifold polygons.
+
+		manifold.fix_manifold();
+
+		pmp::check_mesh(mesh);
+
+		pmp::Triangulation(mesh).triangulate();
+
+		pmp::Decimation decimation(mesh);
+		decimation.initialize();
+		decimation.decimate(maxVertices);
+
+		pmp::check_mesh(mesh);
+
+		manifold.fix_manifold();
+	
+		// Finally make sure the mesh is still a pure triangle mesh since that
+		// is the highest order primitive we handle.
+
+		pmp::Triangulation(mesh).triangulate();
+
+		repoInfo << "Reduced mesh from " << meshNode->getNumVertices() << " to " << mesh.n_vertices() << " vertices (target " << maxVertices << " vertices)";
+
+		return updateMeshNode(meshNode, mesh);
+	}
+	catch (std::exception e)
+	{
+		repoInfo << "Exception " << e.what() << " simplifying mesh " << meshNode->getUniqueID().toString() << " to " << maxVertices << " vertices.";
+
+		// uncomment this to have the bouncer output a pmp of any failed meshes so the algorithm can be run in isolation
+		
+		/*
+		MeshSimplificationOptimizer::Mesh original;
+		convertMeshNode(meshNode, original);
+		std::string path = "D:\\3drepo\\ISSUE_599\\exception\\" + meshNode->getUniqueID().toString();
+		pmp::IOFlags flags;
+		flags.use_vertex_normals = true;
+		pmp::write_pmp(original, path, flags);
+		*/
+
+		return *meshNode;
+	}
 }
+
+

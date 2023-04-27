@@ -177,10 +177,14 @@ MeshNode MeshNode::cloneAndUpdateGeometry(
 	}
 
 	// Unlike most other modification functions, we may need to remove some
-	// fields, so create a copy in order to do this.
+	// fields, which requires making a copy.
 
-	auto copy = *this;
-	copy.removeField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT);
+	auto copy = this->removeField(REPO_NODE_MESH_LABEL_UV_CHANNELS_COUNT);
+
+	// In case the number of files shrinks, make sure the RepoBSON constructor
+	// rebuilds the external references array.
+
+	copy = copy.removeField(REPO_LABEL_OVERSIZED_FILES);
 
 	RepoBSONBuilder builder;
 	auto newBigFiles = bigFiles;

@@ -14,4 +14,8 @@ BoundingBox bounds(const SurfaceMesh& mesh);
 //! Flip the orientation of all faces in \p mesh .
 void flip_faces(SurfaceMesh& mesh);
 
+//! Checks for possible topological errors in the mesh and throws an exception
+//! on encountering such an error.
+void check_mesh(SurfaceMesh& mesh);
+
 } // namespace pmp
